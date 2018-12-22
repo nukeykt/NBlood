@@ -2234,10 +2234,10 @@ int32_t handleevents_pollsdl(void)
                         {
                             if (keyGetState(j))
                             {
-                                keySetState(j, 0);
                                 if (keypresscallback)
                                     keypresscallback(j, 0);
                             }
+                            keySetState(j, 0);
                         }
                     }
                     break;
@@ -2247,10 +2247,10 @@ int32_t handleevents_pollsdl(void)
                 {
                     if (!keyGetState(code))
                     {
-                        keySetState(code, 1);
                         if (keypresscallback)
                             keypresscallback(code, 1);
                     }
+                    keySetState(code, 1);
                 }
                 else
                 {

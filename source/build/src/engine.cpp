@@ -95,7 +95,7 @@ uint8_t globalr = 255, globalg = 255, globalb = 255;
 
 int16_t pskybits_override = -1;
 
-//void loadvoxel(int32_t voxindex) { UNREFERENCED_PARAMATER(voxindex); }
+void (*loadvoxel_replace)(int32_t voxindex) = NULL;
 int16_t tiletovox[MAXTILES];
 int32_t usevoxels = 1;
 #ifdef USE_OPENGL
@@ -187,6 +187,10 @@ static void draw_rainbow_background(void);
 int16_t editstatus = 0;
 static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to drawrooms)
 
+int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
+
+int32_t automapping = 0;
+int32_t yax_disablehack = 0;
 
 ////////// YAX //////////
 
@@ -311,6 +315,8 @@ static FORCE_INLINE int32_t yax_islockededge(int32_t line, int32_t cf)
 //// bunch getters/setters
 int16_t yax_getbunch(int16_t i, int16_t cf)
 {
+    if (yax_disablehack)
+        return -1;
     if (editstatus==0)
         return yax_bunchnum[i][cf];
 
@@ -1394,7 +1400,7 @@ static int32_t *lastx;
 
 int32_t halfxdim16, midydim16;
 
-static vec2_t const hitscangoal = { (1<<29)-1, (1<<29)-1 };
+vec2_t hitscangoal = { (1<<29)-1, (1<<29)-1 };
 #ifdef USE_OPENGL
 int32_t hitallsprites = 0;
 #endif
@@ -1632,6 +1638,8 @@ static void classicScanSector(int16_t startsectnum)
 {
     if (startsectnum < 0)
         return;
+
+	if (automapping) show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
 
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;
@@ -2278,8 +2286,14 @@ static void prepwall(int32_t z, const uwalltype *wal)
 //
 // animateoffs (internal)
 //
-int32_t animateoffs(int const tilenum)
+int32_t (*animateoffs_replace)(int const tilenum, int fakevar) = NULL;
+int32_t animateoffs(int const tilenum, int fakevar)
 {
+    if (animateoffs_replace)
+    {
+        return animateoffs_replace(tilenum, fakevar);
+    }
+
     int const animnum = picanm[tilenum].num;
 
     if (animnum <= 0)
@@ -5669,14 +5683,15 @@ draw_as_face_sprite:
                 if (lwall[x] < swall[x]) break;
             if (x == rx) return;
         }
-/*
+
         for (i=0; i<MAXVOXMIPS; i++)
             if (!voxoff[vtilenum][i])
             {
-                kloadvoxel(vtilenum);
+                if (loadvoxel_replace)
+                    loadvoxel_replace(vtilenum);
                 break;
             }
-*/
+
         const int32_t *const longptr = (int32_t *)voxoff[vtilenum][0];
         if (longptr == NULL)
         {
@@ -7082,7 +7097,7 @@ static void dosetaspect(void)
             radarang2[i] = (int16_t)((radarang[k]+j)>>6);
         }
 
-        if (xdimen != oxdimen && voxoff[0][0])
+        if (xdimen != oxdimen/* && voxoff[0][0]*/)
         {
             if (distrecip == NULL)
                 distrecip = (uint32_t *)Xaligned_alloc(16, DISTRECIPSIZ * sizeof(uint32_t));
@@ -7280,8 +7295,11 @@ LISTFN_STATIC void do_deletespritestat(int16_t deleteme)
 //
 // insertsprite
 //
+int32_t(*insertsprite_replace)(int16_t sectnum, int16_t statnum) = NULL;
 int32_t insertsprite(int16_t sectnum, int16_t statnum)
 {
+    if (insertsprite_replace)
+        return insertsprite_replace(sectnum, statnum);
     // TODO: guard against bad sectnum?
     int32_t const newspritenum = insertspritestat(statnum);
 
@@ -7300,8 +7318,11 @@ int32_t insertsprite(int16_t sectnum, int16_t statnum)
 //
 // deletesprite
 //
+int32_t (*deletesprite_replace)(int16_t spritenum) = NULL;
 int32_t deletesprite(int16_t spritenum)
 {
+    if (deletesprite_replace)
+        return deletesprite_replace(spritenum);
     Bassert((sprite[spritenum].statnum == MAXSTATUS)
             == (sprite[spritenum].sectnum == MAXSECTORS));
 
@@ -7333,8 +7354,11 @@ int32_t deletesprite(int16_t spritenum)
 //
 // changespritesect
 //
+int32_t (*changespritesect_replace)(int16_t spritenum, int16_t newsectnum) = NULL;
 int32_t changespritesect(int16_t spritenum, int16_t newsectnum)
 {
+    if (changespritesect_replace)
+        return changespritesect_replace(spritenum, newsectnum);
     // XXX: NOTE: MAXSECTORS is allowed
     if ((newsectnum < 0 || newsectnum > MAXSECTORS) || (sprite[spritenum].sectnum == MAXSECTORS))
         return -1;
@@ -7351,8 +7375,11 @@ int32_t changespritesect(int16_t spritenum, int16_t newsectnum)
 //
 // changespritestat
 //
+int32_t (*changespritestat_replace)(int16_t spritenum, int16_t newstatnum) = NULL;
 int32_t changespritestat(int16_t spritenum, int16_t newstatnum)
 {
+    if (changespritestat_replace)
+        return changespritestat_replace(spritenum, newstatnum);
     // XXX: NOTE: MAXSTATUS is allowed
     if ((newstatnum < 0 || newstatnum > MAXSTATUS) || (sprite[spritenum].statnum == MAXSTATUS))
         return -1;  // can't set the statnum of a sprite not in the world
@@ -7821,8 +7848,14 @@ void engineUnInit(void)
 //
 // initspritelists
 //
+void (*initspritelists_replace)(void) = NULL;
 void initspritelists(void)
 {
+    if (initspritelists_replace)
+    {
+        initspritelists_replace();
+        return;
+    }
     int32_t i;
 
     // initial list state for statnum lists:
@@ -7982,16 +8015,16 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         if (wall[i].cstat & CSTAT_WALL_ROTATE_90)
         {
             auto &w    = wall[i];
-            auto &tile = rottile[w.picnum+animateoffs(w.picnum)];
+            auto &tile = rottile[w.picnum+animateoffs(w.picnum,16384)];
 
             if (tile.newtile == -1 && tile.owner == -1)
             {
                 tile.newtile = findUnusedTile();
                 Bassert(tile.newtile != -1);
 
-                rottile[tile.newtile].owner = w.picnum+animateoffs(w.picnum);
+                rottile[tile.newtile].owner = w.picnum+animateoffs(w.picnum,16384);
 
-                auto &siz  = tilesiz[w.picnum+animateoffs(w.picnum)];
+                auto &siz  = tilesiz[w.picnum+animateoffs(w.picnum,16384)];
                 tileSetSize(tile.newtile, siz.x, siz.y);
 
                 tileLoad(tile.newtile);
@@ -8155,6 +8188,12 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         }
 
         classicDrawBunches(closest);
+
+        if (automapping)
+        {
+            for (int z = bunchfirst[closest]; z >= 0; z = bunchp2[z])
+                show2dwall[thewall[z] >> 3] |= pow2char[thewall[z] & 7];
+        }
 
         numbunches--;
         bunchfirst[closest] = bunchfirst[numbunches];

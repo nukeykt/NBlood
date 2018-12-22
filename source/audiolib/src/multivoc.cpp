@@ -82,7 +82,7 @@ static VoiceNode VoicePool;
 static int32_t MV_MixPage = 0;
 
 void (*MV_Printf)(const char *fmt, ...) = NULL;
-static void (*MV_CallBackFunc)(uint32_t) = NULL;
+static void (*MV_CallBackFunc)(intptr_t) = NULL;
 
 char *MV_MixDestination;
 const int16_t *MV_LeftVolume;
@@ -94,19 +94,7 @@ int32_t MV_ErrorCode = MV_NotInstalled;
 
 float MV_GlobalVolume = 1.f;
 
-static int32_t lockdepth = 0;
-
-static FORCE_INLINE void DisableInterrupts(void)
-{
-    if (lockdepth++ <= 0)
-        SoundDriver_Lock();
-}
-
-static FORCE_INLINE void RestoreInterrupts(void)
-{
-    if (--lockdepth <= 0)
-        SoundDriver_Unlock();
-}
+int32_t lockdepth = 0;
 
 const char *MV_ErrorString(int32_t ErrorNumber)
 {
@@ -437,7 +425,7 @@ int32_t MV_Kill(int32_t handle)
     if (voice == NULL)
         return MV_Error;
 
-    uint32_t const callbackval = voice->callbackval;
+    intptr_t const callbackval = voice->callbackval;
 
     MV_StopVoice(voice);
 
@@ -906,7 +894,7 @@ void MV_SetVolume(int32_t volume)
 
 int32_t MV_GetVolume(void) { return MV_TotalVolume; }
 
-void MV_SetCallBack(void (*function)(uint32_t)) { MV_CallBackFunc = function; }
+void MV_SetCallBack(void (*function)(intptr_t)) { MV_CallBackFunc = function; }
 
 void MV_SetReverseStereo(int32_t setting) { MV_ReverseStereo = setting; }
 

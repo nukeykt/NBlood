@@ -218,6 +218,7 @@ void joySetCallback(void (*callback)(int32_t,int32_t));
 const char *keyGetName(int32_t num);
 const char *joyGetName(int32_t what, int32_t num); // what: 0=axis, 1=button, 2=hat
 
+char keyGetScan(void);
 char keyGetChar(void);
 #define keyBufferWaiting() (g_keyAsciiPos != g_keyAsciiEnd)
 
@@ -232,6 +233,7 @@ static FORCE_INLINE void keyBufferInsert(char code)
     g_keyAsciiEnd = ((g_keyAsciiEnd+1)&(KEYFIFOSIZ-1));
 }
 
+void keyFlushScans(void);
 void keyFlushChars(void);
 
 void mouseInit(void);

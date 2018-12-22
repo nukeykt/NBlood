@@ -103,7 +103,7 @@ enum rendmode_t {
 #define MAXSTATUS 1024
 #define MAXPLAYERS 16
 // Maximum number of component tiles in a multi-psky:
-#define MAXPSKYTILES 8
+#define MAXPSKYTILES 16
 #define MAXSPRITESONSCREEN 2560
 #define MAXUNIQHUDID 256 //Extra slots so HUD models can store animation state without messing game sprites
 
@@ -1139,6 +1139,7 @@ void bfirst_search_try(int16_t *list, uint8_t *bitmap, int32_t *eltnumptr, int16
 
 void   getzrange(const vec3_t *pos, int16_t sectnum, int32_t *ceilz, int32_t *ceilhit, int32_t *florz,
                  int32_t *florhit, int32_t walldist, uint32_t cliptype) ATTRIBUTE((nonnull(1,3,4,5,6)));
+extern vec2_t hitscangoal;
 int32_t   hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32_t vz,
                   hitdata_t *hitinfo, uint32_t cliptype) ATTRIBUTE((nonnull(1,6)));
 void   neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange,
@@ -1522,6 +1523,19 @@ extern int32_t rintersect(int32_t x1, int32_t y1, int32_t z1,
     int32_t vx_, int32_t vy_, int32_t vz,
     int32_t x3, int32_t y3, int32_t x4, int32_t y4,
     int32_t *intx, int32_t *inty, int32_t *intz);
+
+extern int32_t(*animateoffs_replace)(int const tilenum, int fakevar);
+extern void(*paletteLoadFromDisk_replace)(void);
+extern int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade);
+extern void(*initspritelists_replace)(void);
+extern int32_t(*insertsprite_replace)(int16_t sectnum, int16_t statnum);
+extern int32_t(*deletesprite_replace)(int16_t spritenum);
+extern int32_t(*changespritesect_replace)(int16_t spritenum, int16_t newsectnum);
+extern int32_t(*changespritestat_replace)(int16_t spritenum, int16_t newstatnum);
+extern void(*loadvoxel_replace)(int32_t voxel);
+
+extern int32_t automapping;
+extern int32_t yax_disablehack;
 
 #ifdef __cplusplus
 }

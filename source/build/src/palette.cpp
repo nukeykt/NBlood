@@ -138,6 +138,8 @@ static void alloc_palookup(int32_t pal)
 
 static void maybe_alloc_palookup(int32_t palnum);
 
+void (*paletteLoadFromDisk_replace)(void) = NULL;
+
 //
 // loadpalette (internal)
 //
@@ -150,6 +152,12 @@ void paletteLoadFromDisk(void)
     for (auto & x : glblend)
         x = defaultglblend;
 #endif
+
+    if (paletteLoadFromDisk_replace)
+    {
+        paletteLoadFromDisk_replace();
+        return;
+    }
 
     int32_t fil;
     if ((fil = kopen4load("palette.dat", 0)) == -1)
