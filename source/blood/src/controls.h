@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma pack(push, 1)
+
 union BUTTONFLAGS
 {
     int8_t byte;
@@ -74,6 +76,8 @@ struct GINPUT
     uint8_t newWeapon;
     int8_t mlook;
 };
+
+#pragma pack(pop)
 
 extern GINPUT gInput;
 extern bool bSilentAim;

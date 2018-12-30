@@ -223,7 +223,9 @@ _DEMOPLAYBACK:
                 atb = atf.nInputCount;
                 myconnectindex = atf.nMyConnectIndex;
                 connecthead = atf.nConnectHead;
-                memcpy(connectpoint2, atf.connectPoints, sizeof(atf.connectPoints));
+                for (int i = 0; i < 8; i++)
+                    connectpoint2[i] = atf.connectPoints[i];
+                //memcpy(connectpoint2, atf.connectPoints, sizeof(atf.connectPoints));
                 memcpy(&gGameOptions, &atf.gameOptions, sizeof(GAMEOPTIONS));
                 gSkill = gGameOptions.nDifficulty;
                 for (int i = 0; i < 8; i++)
@@ -287,6 +289,28 @@ void CDemo::StopPlayback(void)
 void CDemo::LoadDemoInfo(void)
 {
     at59ef = 0;
+    BDIR *dirr;
+    struct Bdirent *dirent;
+    dirr = Bopendir("./");
+    if (dirr)
+    {
+        while (dirent = Breaddir(dirr))
+        {
+            if (!Bwildmatch(dirent->name, "BLOOD*.DEM"))
+                continue;
+            FILE *pFile = fopen(dirent->name, "rb");
+            if (!pFile)
+                ThrowError("File error #%d loading demo file header.", errno);
+            fread(&atf, 1, sizeof(atf), pFile);
+            fclose(pFile);
+            if (atf.signature == '\x1aMED' && (atf.nVersion == BloodVersion || BloodVersion != 0x10b || atf.nVersion == 0x10a) && nBuild == atf.nBuild)
+            {
+                strcpy(at59aa[at59ef], dirent->name);
+                at59ef++;
+            }
+        }
+        Bclosedir(dirr);
+    }
     // PORT-TODO:
 #if 0
     struct find_t find;

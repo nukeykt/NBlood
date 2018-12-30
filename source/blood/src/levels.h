@@ -4,6 +4,8 @@
 
 #define kMaxMessages 32
 
+#pragma pack(push, 1)
+
 struct GAMEOPTIONS {
     char nGameType;
     char nDifficulty;
@@ -29,6 +31,8 @@ struct GAMEOPTIONS {
     int nItemRespawnTime;
     int nSpecialRespawnTime;
 };
+
+#pragma pack(pop)
 
 struct LEVELINFO
 {
