@@ -1828,18 +1828,18 @@ char sub_4F484(PLAYER *pPlayer)
         {
             pPlayer->atc3 = 2;
             if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
-                StartQAV(pPlayer, 87, nClientFireTesla, 1);
+                StartQAV(pPlayer, 87, -1, 0);
             else
-                StartQAV(pPlayer, 80, nClientFireTesla, 1);
+                StartQAV(pPlayer, 80, -1, 0);
             return 1;
         }
         break;
     case 7:
         pPlayer->atc3 = 2;
         if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
-            StartQAV(pPlayer, 87, nClientFireTesla, 1);
+            StartQAV(pPlayer, 87, -1, 0);
         else
-            StartQAV(pPlayer, 80, nClientFireTesla, 1);
+            StartQAV(pPlayer, 80, -1, 0);
         return 1;
     }
     return 0;
@@ -2187,7 +2187,6 @@ void WeaponProcess(PLAYER *pPlayer)
                     StartQAV(pPlayer, 77, nClientFireTesla, 0);
                 return;
             case 5:
-                pPlayer->atc3 = 10;
                 if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
                     StartQAV(pPlayer, 84, nClientFireTesla, 0);
                 else
