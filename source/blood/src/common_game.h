@@ -185,22 +185,22 @@ inline int interpolate(int a, int b, int c)
 
 inline char Chance(int a1)
 {
-    return rand() < (a1>>1);
+    return wrand() < (a1>>1);
 }
 
 inline unsigned int Random(int a1)
 {
-    return mulscale(rand(), a1, 15);
+    return mulscale(wrand(), a1, 15);
 }
 
 inline int Random2(int a1)
 {
-    return mulscale(rand(), a1, 14)-a1;
+    return mulscale(wrand(), a1, 14)-a1;
 }
 
 inline int Random3(int a1)
 {
-    return mulscale(rand()+rand(), a1, 15) - a1;
+    return mulscale(wrand()+wrand(), a1, 15) - a1;
 }
 
 inline unsigned int QRandom(int a1)

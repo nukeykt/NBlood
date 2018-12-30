@@ -2535,7 +2535,7 @@ void sub_2AA94(SPRITE *pSprite, XSPRITE *pXSprite)
     int nSprite = actOwnerIdToSpriteId(pSprite->owner);
     actPostSprite(pSprite->index, 0);
     seqSpawn(9, 3, pSprite->extra);
-    if (rand() < 0x4000)
+    if (Chance(0x8000))
         pSprite->cstat |= 4;
     sfxPlay3DSound(pSprite, 303, 24+(pSprite->hitag&3), 1);
     sub_2A620(nSprite, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, 128, 0, 60, DAMAGE_TYPE_3, 15, 120, 0, 0);

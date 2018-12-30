@@ -2165,7 +2165,7 @@ void WeaponProcess(PLAYER *pPlayer)
         case 10:
         {
             static int nChance[] = { 0xa000, 0xc000, 0xe000, 0x10000 };
-            int nRand = rand()*2;
+            int nRand = wrand()*2;
             int i;
             for (i = 0; nChance[i] < nRand; i++)
             {

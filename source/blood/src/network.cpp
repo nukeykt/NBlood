@@ -166,7 +166,7 @@ void sub_79760(void)
 void CalcGameChecksum(void)
 {
     memset(gChecksum, 0, sizeof(gChecksum));
-    gChecksum[0] = rand();
+    gChecksum[0] = wrand();
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
         int *pBuffer = &gPlayer[p].at22;

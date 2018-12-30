@@ -5,4 +5,6 @@ bool FileWrite(FILE *, void *, unsigned long);
 bool FileLoad(const char *, void *, unsigned long);
 int FileLength(FILE *);
 unsigned long qrand(void);
+int wrand(void);
+void wsrand(int);
 void ChangeExtension(char *pzFile, const char *pzExt);

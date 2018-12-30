@@ -89,7 +89,7 @@ static void BlastSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     SPRITE *pSprite = &qsprite[nSprite];
-    rand(); // ???
+    wrand(); // ???
     SPRITE *pTarget = &qsprite[pXSprite->target];
     int height = (pSprite->yrepeat*dudeInfo[pSprite->type-kDudeBase].atb) << 2;
     int dx = pXSprite->at20_0-pSprite->x;

@@ -87,6 +87,19 @@ unsigned long qrand(void)
     return randSeed&0x7fff;
 }
 
+unsigned long wRandSeed = 1;
+
+int wrand(void)
+{
+    wRandSeed = (wRandSeed*1103515245)+12345;
+    return wRandSeed&0x7fff;
+}
+
+void wsrand(int seed)
+{
+    wRandSeed = seed;
+}
+
 void ChangeExtension(char *pzFile, const char *pzExt)
 {
     char drive[BMAX_PATH];

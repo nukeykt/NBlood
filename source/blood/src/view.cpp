@@ -1365,9 +1365,9 @@ void viewInit(void)
 
     for (int i = 0; i < 16; i++)
     {
-        dword_172CE0[i][0] = mulscale16(rand(), 2048);
-        dword_172CE0[i][1] = mulscale16(rand(), 2048);
-        dword_172CE0[i][2] = mulscale16(rand(), 2048);
+        dword_172CE0[i][0] = mulscale16(wrand(), 2048);
+        dword_172CE0[i][1] = mulscale16(wrand(), 2048);
+        dword_172CE0[i][2] = mulscale16(wrand(), 2048);
     }
     gViewMap.sub_25C38(0, 0, gZoom, 0, gFollowMap);
 }
@@ -2422,6 +2422,7 @@ void DoLensEffect(void)
             *d = *(s+lensTable[i]);
         }
     }
+    tileInvalidate(4077, -1, -1);
 }
 
 void UpdateDacs(int nPalette)

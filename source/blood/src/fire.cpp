@@ -24,7 +24,7 @@ void InitSeedBuffers(void)
 {
     for (int i = 0; i < 16; i++)
         for (int j = 0; j < fireSize; j += 2)
-            SeedBuffer[i][j] = SeedBuffer[i][j+1] = rand();
+            SeedBuffer[i][j] = SeedBuffer[i][j+1] = wrand();
 }
 
 void BuildCoolTable(void)
