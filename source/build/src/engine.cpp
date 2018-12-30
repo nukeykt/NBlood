@@ -109,7 +109,6 @@ int32_t novoxmips = 1;
 #define MAXXSIZ 256
 #define MAXYSIZ 256
 #define MAXZSIZ 255
-#define MAXVOXMIPS 5
 #ifdef EDUKE32_TOUCH_DEVICES
 # define DISTRECIPSIZ (65536+256)
 #else
@@ -190,7 +189,7 @@ static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to dr
 int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
 
 int32_t automapping = 0;
-int32_t yax_disablehack = 0;
+int32_t bloodhack = 0;
 
 ////////// YAX //////////
 
@@ -315,7 +314,7 @@ static FORCE_INLINE int32_t yax_islockededge(int32_t line, int32_t cf)
 //// bunch getters/setters
 int16_t yax_getbunch(int16_t i, int16_t cf)
 {
-    if (yax_disablehack)
+    if (bloodhack)
         return -1;
     if (editstatus==0)
         return yax_bunchnum[i][cf];
@@ -8010,25 +8009,28 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         dmost[0] = shortptr2[0]-windowxy1.y;
     }
 
-    for (int i = 0; i < numwalls; ++i)
+    if (!bloodhack)
     {
-        if (wall[i].cstat & CSTAT_WALL_ROTATE_90)
+        for (int i = 0; i < numwalls; ++i)
         {
-            auto &w    = wall[i];
-            auto &tile = rottile[w.picnum+animateoffs(w.picnum,16384)];
-
-            if (tile.newtile == -1 && tile.owner == -1)
+            if (wall[i].cstat & CSTAT_WALL_ROTATE_90)
             {
-                tile.newtile = findUnusedTile();
-                Bassert(tile.newtile != -1);
+                auto &w    = wall[i];
+                auto &tile = rottile[w.picnum+animateoffs(w.picnum,16384)];
 
-                rottile[tile.newtile].owner = w.picnum+animateoffs(w.picnum,16384);
+                if (tile.newtile == -1 && tile.owner == -1)
+                {
+                    tile.newtile = findUnusedTile();
+                    Bassert(tile.newtile != -1);
 
-                auto &siz  = tilesiz[w.picnum+animateoffs(w.picnum,16384)];
-                tileSetSize(tile.newtile, siz.x, siz.y);
+                    rottile[tile.newtile].owner = w.picnum+animateoffs(w.picnum,16384);
 
-                tileLoad(tile.newtile);
-                Bassert(waloff[tile.newtile]);
+                    auto &siz  = tilesiz[w.picnum+animateoffs(w.picnum,16384)];
+                    tileSetSize(tile.newtile, siz.x, siz.y);
+
+                    tileLoad(tile.newtile);
+                    Bassert(waloff[tile.newtile]);
+                }
             }
         }
     }
@@ -8576,7 +8578,7 @@ killsprite:
 
                             get_wallspr_points((const uspritetype *)tspr, &xx[0], &xx[1], &yy[0], &yy[1]);
 
-                            if ((tspr->cstat & 48) == 0)
+                            if ((tspr->cstat & 48) != 16)
                                 tspriteptr[i]->ang = oang;
                         }
 
@@ -10967,7 +10969,7 @@ restart_grand:
                 daz = spr->z + spriteheightofs(z, &k, 1);
                 if (intz > daz-k && intz < daz)
                 {
-                    if (picanm[tilenum].sf&PICANM_TEXHITSCAN_BIT)
+                    if (!bloodhack && (picanm[tilenum].sf&PICANM_TEXHITSCAN_BIT))
                     {
                         DO_TILE_ANIM(tilenum, 0);
 
@@ -11190,7 +11192,7 @@ void neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange,
 //  1: don't reset walbitmap[] (the bitmap of already dragged vertices)
 //  2: In the editor, do wall[].cstat |= (1<<14) also for the lastwall().
 void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
-#ifdef YAX_ENABLE
+#if 0
 {
     int32_t i, numyaxwalls=0;
     static int16_t yaxwalls[MAXWALLS];

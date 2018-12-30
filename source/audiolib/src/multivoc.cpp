@@ -72,7 +72,7 @@ static int32_t MV_ReverseStereo = FALSE;
 int32_t MV_MixRate;
 
 static int32_t MV_BufferEmpty[MV_NUMBEROFBUFFERS];
-char *MV_MixBuffer[MV_NUMBEROFBUFFERS + 1];
+char *MV_MixBuffer[MV_NUMBEROFBUFFERS*2 + 1];
 
 static VoiceNode *MV_Voices = NULL;
 
@@ -95,6 +95,10 @@ int32_t MV_ErrorCode = MV_NotInstalled;
 float MV_GlobalVolume = 1.f;
 
 int32_t lockdepth = 0;
+
+static char *MV_MusicBuffer;
+static void (*MV_MusicCallback)(char *buffer, int length) = NULL;
+static int32_t MV_MixMusic = FALSE;
 
 const char *MV_ErrorString(int32_t ErrorNumber)
 {
@@ -279,57 +283,75 @@ static void MV_ServiceVoc(void)
     //DisableInterrupts();
 
 
-    if (!VoiceList.next || VoiceList.next == &VoiceList)
-        return;
-
-    VoiceNode *voice = VoiceList.next;
-
-    int iter = 0;
-
-    VoiceNode *next;
-
-    do
+    if (VoiceList.next != 0 && VoiceList.next != &VoiceList)
     {
-        next = voice->next;
+        VoiceNode *voice = VoiceList.next;
 
-        if (++iter > MV_MaxVoices && MV_Printf)
-            MV_Printf("more iterations than voices! iter: %d\n",iter);
+        int iter = 0;
 
-        if (voice->Paused)
-            continue;
+        VoiceNode *next;
 
-        MV_BufferEmpty[ MV_MixPage ] = FALSE;
-
-        // Is this voice done?
-        if (!MV_Mix(voice, MV_MixPage))
+        do
         {
-            //JBF: prevent a deadlock caused by MV_StopVoice grabbing the mutex again
-            //MV_StopVoice( voice );
-            LL_Remove(voice, next, prev);
-            LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
+            next = voice->next;
 
-            switch (voice->wavetype)
+            if (++iter > MV_MaxVoices && MV_Printf)
+                MV_Printf("more iterations than voices! iter: %d\n",iter);
+
+            if (voice->Paused)
+                continue;
+
+            MV_BufferEmpty[ MV_MixPage ] = FALSE;
+
+            // Is this voice done?
+            if (!MV_Mix(voice, MV_MixPage))
             {
-#ifdef HAVE_VORBIS
-                case FMT_VORBIS: MV_ReleaseVorbisVoice(voice); break;
-#endif
-#ifdef HAVE_FLAC
-                case FMT_FLAC: MV_ReleaseFLACVoice(voice); break;
-#endif
-                case FMT_XA: MV_ReleaseXAVoice(voice); break;
-#ifdef HAVE_XMP
-                case FMT_XMP: MV_ReleaseXMPVoice(voice); break;
-#endif
-                default: break;
+                //JBF: prevent a deadlock caused by MV_StopVoice grabbing the mutex again
+                //MV_StopVoice( voice );
+                LL_Remove(voice, next, prev);
+                LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
+
+                switch (voice->wavetype)
+                {
+    #ifdef HAVE_VORBIS
+                    case FMT_VORBIS: MV_ReleaseVorbisVoice(voice); break;
+    #endif
+    #ifdef HAVE_FLAC
+                    case FMT_FLAC: MV_ReleaseFLACVoice(voice); break;
+    #endif
+                    case FMT_XA: MV_ReleaseXAVoice(voice); break;
+    #ifdef HAVE_XMP
+                    case FMT_XMP: MV_ReleaseXMPVoice(voice); break;
+    #endif
+                    default: break;
+                }
+
+                voice->handle = 0;
+
+                if (MV_CallBackFunc)
+                    MV_CallBackFunc(voice->callbackval);
             }
+        }
+        while ((voice = next) != &VoiceList);
+    }
 
-            voice->handle = 0;
+    Bmemcpy(MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers], MV_MixBuffer[MV_MixPage], MV_BufferSize);
 
-            if (MV_CallBackFunc)
-                MV_CallBackFunc(voice->callbackval);
+    if (MV_MixMusic)
+    {
+        MV_MusicCallback(MV_MusicBuffer, MV_BufferSize);
+        int16_t *source = (int16_t*)MV_MusicBuffer;
+        int16_t *dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
+        for (int i = 0; i < MV_BufferSize / 4; i++)
+        {
+            int32_t sl = *source++;
+            int32_t sr = *source++;
+            *dest++ = clamp(*dest+sl*2,INT16_MIN, INT16_MAX);
+            //*(dest+(MV_RightChannelOffset>>1)) = clamp(*(dest+(MV_RightChannelOffset>>1))+sr,INT16_MIN, INT16_MAX);
+            //dest++;
+            *dest++ = clamp(*dest+sr*2,INT16_MIN, INT16_MAX);
         }
     }
-    while ((voice = next) != &VoiceList);
 
     //RestoreInterrupts();
 }
@@ -807,14 +829,14 @@ static int32_t MV_SetMixMode(int32_t numchannels)
 static int32_t MV_StartPlayback(void)
 {
     // Initialize the buffers
-    Bmemset(MV_MixBuffer[0], 0, MV_TOTALBUFFERSIZE);
+    Bmemset(MV_MixBuffer[0], 0, MV_TOTALBUFFERSIZE*2);
 
     for (int buffer = 0; buffer < MV_NumberOfBuffers; buffer++)
         MV_BufferEmpty[buffer] = TRUE;
 
     MV_MixPage = 1;
 
-    if (SoundDriver_BeginPlayback(MV_MixBuffer[0], MV_BufferSize, MV_NumberOfBuffers, MV_ServiceVoc) != MV_Ok)
+    if (SoundDriver_BeginPlayback(MV_MixBuffer[MV_NumberOfBuffers], MV_BufferSize, MV_NumberOfBuffers, MV_ServiceVoc) != MV_Ok)
     {
         MV_SetErrorCode(MV_DriverError);
         return MV_Error;
@@ -908,7 +930,7 @@ int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numc
     MV_SetErrorCode(MV_Ok);
 
     // MV_TotalMemory + 2: FIXME, see valgrind_errors.log
-    int const totalmem = Voices * sizeof(VoiceNode) + MV_TOTALBUFFERSIZE + 2;
+    int const totalmem = Voices * sizeof(VoiceNode) + MV_TOTALBUFFERSIZE*2 + MV_MIXBUFFERSIZE*sizeof(uint8_t)*2*2 + 2;
 
     char *ptr = (char *) Xaligned_alloc(16, totalmem);
 
@@ -960,12 +982,15 @@ int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numc
     MV_ReverbDelay = MV_BufferSize * 3;
 
     // Make sure we don't cross a physical page
-    MV_MixBuffer[ MV_NumberOfBuffers ] = ptr;
-    for (int buffer = 0; buffer < MV_NumberOfBuffers; buffer++)
+    MV_MixBuffer[ MV_NumberOfBuffers*2 ] = ptr;
+    for (int buffer = 0; buffer < MV_NumberOfBuffers*2; buffer++)
     {
         MV_MixBuffer[ buffer ] = ptr;
         ptr += MV_BufferSize;
     }
+
+    MV_MusicBuffer = ptr;
+    ptr += MV_MIXBUFFERSIZE*sizeof(uint8_t)*2*2;
 
     // Calculate pan table
     MV_CalcPanTable();
@@ -1008,12 +1033,28 @@ int32_t MV_Shutdown(void)
     MV_MaxVoices = 1;
 
     // Release the descriptor from our mix buffer
-    for (int buffer = 0; buffer < MV_NUMBEROFBUFFERS; buffer++)
+    for (int buffer = 0; buffer < MV_NUMBEROFBUFFERS*2; buffer++)
         MV_MixBuffer[ buffer ] = NULL;
 
     MV_SetErrorCode(MV_NotInstalled);
 
     return MV_Ok;
+}
+
+void MV_HookMusicRoutine(void(*callback)(char *buffer, int length))
+{
+    DisableInterrupts();
+    MV_MusicCallback = callback;
+    MV_MixMusic = TRUE;
+    RestoreInterrupts();
+}
+
+void MV_UnhookMusicRoutine(void)
+{
+    DisableInterrupts();
+    MV_MusicCallback = NULL;
+    MV_MixMusic = FALSE;
+    RestoreInterrupts();
 }
 
 void MV_SetPrintf(void (*function)(const char *, ...)) { MV_Printf = function; }

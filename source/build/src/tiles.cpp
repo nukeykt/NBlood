@@ -364,7 +364,7 @@ int32_t artCheckUnitFileHeader(uint8_t const * const buf, int32_t length)
 
 void tileConvertAnimFormat(int32_t const picnum)
 {
-    if (animateoffs_replace) // Stupid hack
+    if (bloodhack) // Stupid hack
         return;
     EDUKE32_STATIC_ASSERT(sizeof(picanm_t) == 4);
     EDUKE32_STATIC_ASSERT(PICANM_ANIMTYPE_MASK == 192);

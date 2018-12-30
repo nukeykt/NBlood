@@ -81,7 +81,7 @@ static GLuint drawpolyVertsID = 0;
 static GLint drawpolyVertsOffset = 0;
 static int32_t drawpolyVertsSubBufferIndex = 0;
 static GLsync drawpolyVertsSync[3] = { 0 };
-static float defaultDrawpolyVertsArray[MAX_DRAWPOLY_VERTS*5];
+static float defaultDrawpolyVertsArray[MAX_DRAWPOLY_VERTS*8];
 static float* drawpolyVerts = defaultDrawpolyVertsArray;
 
 struct glfiltermodes glfiltermodes[NUMGLFILTERMODES] =
@@ -2161,7 +2161,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
         }
         else
         {
-            const int dofullbright = !(picanm[dapic].sf & PICANM_NOFULLBRIGHT_BIT) && !(globalflags & GLOBAL_NO_GL_FULLBRIGHT);
+            const int dofullbright = (bloodhack || !(picanm[dapic].sf & PICANM_NOFULLBRIGHT_BIT)) && !(globalflags & GLOBAL_NO_GL_FULLBRIGHT);
 
             for (bssize_t y = 0; y < siz.y; y++)
             {
@@ -3554,7 +3554,7 @@ static void polymost_mostcliphack(vec2f_t *dpxy, int &n, float x0, float x1, flo
 
     //Clip to (x0,y0top)-(x1,y1top)
 
-    vec2f_t dp2[5];
+    vec2f_t dp2[8];
 
     float t0, t1;
     int n2 = 0;
@@ -3758,7 +3758,7 @@ skip: ;
                     case 5:
                     case 7:
                     {
-                        vec2f_t dpxy[6] = {
+                        vec2f_t dpxy[8] = {
                             { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y }, { dx0, n0.y }
                         };
 
@@ -3774,7 +3774,7 @@ skip: ;
                     case 1:
                     case 2:
                     {
-                        vec2f_t dpxy[6] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx0, n0.y } };
+                        vec2f_t dpxy[86] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx0, n0.y } };
 
                         int n = 3;
                         polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
@@ -3787,7 +3787,7 @@ skip: ;
                     case 3:
                     case 6:
                     {
-                        vec2f_t dpxy[6] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y } };
+                        vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y } };
 
                         int n = 3;
                         polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
@@ -3799,7 +3799,7 @@ skip: ;
                     break;
                     case 8:
                     {
-                        vec2f_t dpxy[6] = {
+                        vec2f_t dpxy[8] = {
                             { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] }
                         };
 
@@ -3820,7 +3820,7 @@ skip: ;
                 case 3:
                 case 1:
                 {
-                    vec2f_t dpxy[6] = {
+                    vec2f_t dpxy[8] = {
                         { dx0, n0.y }, { dx1, n1.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] }
                     };
 
@@ -3836,7 +3836,7 @@ skip: ;
                 case 7:
                 case 6:
                 {
-                    vec2f_t dpxy[6] = { { dx0, n0.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
+                    vec2f_t dpxy[8] = { { dx0, n0.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
 
                     int n = 3;
                     polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
@@ -3849,7 +3849,7 @@ skip: ;
                 case 5:
                 case 2:
                 {
-                    vec2f_t dpxy[6] = { { dx0, vsp[i].fy[0] }, { dx1, n1.y }, { dx1, vsp[i].fy[1] } };
+                    vec2f_t dpxy[8] = { { dx0, vsp[i].fy[0] }, { dx1, n1.y }, { dx1, vsp[i].fy[1] } };
 
                     int n = 3;
                     polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
@@ -3861,7 +3861,7 @@ skip: ;
                     break;
                 case 0:
                 {
-                    vec2f_t dpxy[6] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
+                    vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
 
                     int n = 4;
                     polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);

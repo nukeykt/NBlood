@@ -47,6 +47,8 @@ enum rendmode_t {
 #define MAXWALLSV7 8192
 #define MAXSPRITESV7 4096
 
+#define MAXVOXMIPS 5
+
 #if !defined GEKKO && !defined __OPENDINGUX__
 # define MAXSECTORS MAXSECTORSV8
 # define MAXWALLS MAXWALLSV8
@@ -1535,7 +1537,8 @@ extern int32_t(*changespritestat_replace)(int16_t spritenum, int16_t newstatnum)
 extern void(*loadvoxel_replace)(int32_t voxel);
 
 extern int32_t automapping;
-extern int32_t yax_disablehack;
+extern int32_t bloodhack;
+extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 
 #ifdef __cplusplus
 }

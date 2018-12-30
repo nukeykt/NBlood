@@ -1,0 +1,41 @@
+#pragma once
+#include "ai.h"
+
+extern AISTATE cultistIdle;
+extern AISTATE cultistProneIdle;
+extern AISTATE fanaticProneIdle;
+extern AISTATE cultistProneIdle3;
+extern AISTATE cultistChase;
+extern AISTATE fanaticChase;
+extern AISTATE cultistDodge;
+extern AISTATE cultistGoto;
+extern AISTATE cultistProneChase;
+extern AISTATE cultistProneDodge;
+extern AISTATE cultistTThrow;
+extern AISTATE cultistSThrow;
+extern AISTATE cultistTsThrow;
+extern AISTATE cultistDThrow;
+extern AISTATE cultist139A78;
+extern AISTATE cultist139A94;
+extern AISTATE cultist139AB0;
+extern AISTATE cultist139ACC;
+extern AISTATE cultist139AE8;
+extern AISTATE cultistSearch;
+extern AISTATE cultistSFire;
+extern AISTATE cultistTFire;
+extern AISTATE cultistTsFire;
+extern AISTATE cultistSProneFire;
+extern AISTATE cultistTProneFir;
+extern AISTATE cultistTsProneFire;
+extern AISTATE cultistRecoil;
+extern AISTATE cultistProneRecoil;
+extern AISTATE cultistTeslaRecoil;
+extern AISTATE cultistSwimIdle;
+extern AISTATE cultistSwimChase;
+extern AISTATE cultistSwimDodge;
+extern AISTATE cultistSwimGoto;
+extern AISTATE cultistSwimSearch;
+extern AISTATE cultistSSwimFire;
+extern AISTATE cultistTSwimFire;
+extern AISTATE cultistTsSwimFire;
+extern AISTATE cultistSwimRecoil;

@@ -144,6 +144,10 @@ int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numc
 int32_t MV_Shutdown(void);
 void MV_SetPrintf(void (*function)(const char *fmt, ...));
 
+void MV_HookMusicRoutine(void (*callback)(char *buffer, int length));
+void MV_UnhookMusicRoutine(void);
+
+
 #ifdef __cplusplus
 }
 #endif
