@@ -4250,17 +4250,11 @@ void MoveDude(SPRITE *pSprite)
         {
         case 12:
             if (pPlayer == gView)
-            {
-                int nTile = sector[pSprite->sectnum].floorpicnum;
-                gotpic[nTile>>3] |= 1<<(nTile&7);
-            }
+                SetBitString(gotpic, sector[pSprite->sectnum].floorpicnum);
             break;
         case 11:
             if (pPlayer == gView)
-            {
-                int nTile = sector[pSprite->sectnum].ceilingpicnum;
-                gotpic[nTile>>3] |= 1<<(nTile&7);
-            }
+                SetBitString(gotpic, sector[pSprite->sectnum].ceilingpicnum);
             break;
         case 10:
         case 14:
@@ -5095,8 +5089,7 @@ void actProcessSprites(void)
             SPRITE *pDude = &qsprite[nSprite2];
             if (pDude->hitag & 32)
                 continue;
-            int nSector2 = pDude->sectnum;
-            if (v24c[nSector2>>3]&(1<<(nSector2&7)))
+            if (TestBitString(v24c, pDude->sectnum))
             {
                 if (pXSprite->at10_0 && CheckProximity(pDude, x, y, z, nSector, pExplodeInfo->at3))
                 {
@@ -5123,8 +5116,7 @@ void actProcessSprites(void)
             SPRITE *pThing = &qsprite[nSprite2];
             if (pThing->hitag & 32)
                 continue;
-            int nSector2 = pThing->sectnum;
-            if (v24c[nSector2>>3]&(1<<(nSector2&7)))
+            if (TestBitString(v24c, pThing->sectnum))
             {
                 if (pXSprite->at10_0 && CheckProximity(pThing, x, y, z, nSector, pExplodeInfo->at3))
                 {

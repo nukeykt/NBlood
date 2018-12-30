@@ -60,7 +60,7 @@ extern int dword_138BB0[5];
 extern DUDEEXTRA gDudeExtra[];
 int gDudeSlope[];
 
-char sub_5BDA8(SPRITE *pSprite, int nSeq);
+bool sub_5BDA8(SPRITE *pSprite, int nSeq);
 void aiPlay3DSound(SPRITE *pSprite, int a2, AI_SFX_PRIORITY a3, int a4);
 void aiNewState(SPRITE *pSprite, XSPRITE *pXSprite, AISTATE *pAIState);
 void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3);

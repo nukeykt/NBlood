@@ -98,7 +98,7 @@ inline short GetPacketWord(char *&p)
 inline int GetPacketDWord(char *&p)
 {
     int t = *(int*)p;
-    p += 2;
+    p += 4;
     return t;
 }
 

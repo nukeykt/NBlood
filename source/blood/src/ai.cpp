@@ -49,16 +49,16 @@ AISTATE genRecoil = { 5, -1, 20, NULL, NULL, NULL, NULL };
 
 int dword_138BB0[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
 
-char sub_5BDA8(SPRITE *pSprite, int nSeq)
+bool sub_5BDA8(SPRITE *pSprite, int nSeq)
 {
     // ???
     if (pSprite->statnum == 6 && (pSprite->type >= kDudeBase || pSprite->type < kDudeMax))
     {
         DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
         if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq && seqGetStatus(3, pSprite->extra) >= 0)
-            return 1;
+            return true;
     }
-    return 0;
+    return false;
 }
 
 void aiPlay3DSound(SPRITE *pSprite, int a2, AI_SFX_PRIORITY a3, int a4)
@@ -81,14 +81,12 @@ void aiNewState(SPRITE *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
     pXSprite->at32_0 = pAIState->at8;
     pXSprite->at34 = pAIState;
     if (pAIState->at0 >= 0 && gSysRes.Lookup(pDudeInfo->seqStartID+pAIState->at0, "SEQ"))
-    {
         seqSpawn(pDudeInfo->seqStartID+pAIState->at0, 3, pSprite->extra, pAIState->at4);
-        if (pAIState->atc)
-            pAIState->atc(pSprite, pXSprite);
-    }
+    if (pAIState->atc)
+        pAIState->atc(pSprite, pXSprite);
 }
 
-char CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
+bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
 {
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -100,15 +98,15 @@ char CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
     if (nDist - (pSprite->clipdist << 2) < nRange)
     {
         if (gHitInfo.hitsprite < 0 || a2 != 0)
-            return 0;
-        return 1;
+            return false;
+        return true;
     }
     x += mulscale30(nRange, Cos(nAngle));
     y += mulscale30(nRange, Sin(nAngle));
     int nSector = pSprite->sectnum;
     dassert(nSector >= 0 && nSector < kMaxSectors);
     if (!FindSector(x, y, z, &nSector))
-        return 0;
+        return false;
     int floorZ = getflorzofslope(nSector, x, y);
     int ceilZ = getceilzofslope(nSector, x, y);
     int nXSector = sector[nSector].extra;
@@ -149,24 +147,24 @@ char CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
         {
             // Ouch...
             if (vdl)
-                return 0;
+                return false;
             if (vdh)
-                return 0;
+                return false;
         }
         break;
     case 218:
         if (vbh)
-            return 0;
+            return false;
         if (!vbl)
-            return 0;
+            return false;
         if (vbl)
-            return 1;
+            return true;
         break;
     case 217:
         if (vdh)
-            return 0;
+            return false;
         if (!xsector[nXSector].at13_4 && !xsector[nXSector].at13_5 && floorZ-bottom > 0x2000)
-            return 0;
+            return false;
         break;
     case 204:
     case 213:
@@ -178,19 +176,19 @@ char CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
     case 227:
     case 245:
         if (vdh)
-            return 0;
+            return false;
         if (vdl || vbl)
-            return 0;
+            return false;
         if (floorZ - bottom > 0x2000)
-            return 0;
+            return false;
         break;
     case 203:
     case 210:
     default:
         if (vdh)
-            return 0;
+            return false;
         if (!xsector[nXSector].at13_4 && !xsector[nXSector].at13_5 && floorZ - bottom > 0x2000)
-            return 0;
+            return false;
         break;
     }
     return 1;
@@ -213,21 +211,21 @@ void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3)
     if (vc < 0)
         v8 = -341;
     if (CanMove(pSprite, pXSprite->target, pSprite->ang+vc, vsi))
-        pXSprite->at16_0 = (pSprite->ang+vc)&2047;
+        pXSprite->at16_0 = pSprite->ang+vc;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang+vc/2, vsi))
-        pXSprite->at16_0 = (pSprite->ang+vc/2)&2047;
+        pXSprite->at16_0 = pSprite->ang+vc/2;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang-vc/2, vsi))
-        pXSprite->at16_0 = (pSprite->ang-vc/2)&2047;
+        pXSprite->at16_0 = pSprite->ang-vc/2;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang+v8, vsi))
-        pXSprite->at16_0 = (pSprite->ang+v8)&2047;
+        pXSprite->at16_0 = pSprite->ang+v8;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang, vsi))
-        pXSprite->at16_0 = (pSprite->ang)&2047;
+        pXSprite->at16_0 = pSprite->ang;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang-v8, vsi))
-        pXSprite->at16_0 = (pSprite->ang-v8)&2047;
+        pXSprite->at16_0 = pSprite->ang-v8;
     else if (pSprite->hitag&2)
-        pXSprite->at16_0 = (pSprite->ang+341)&2047;
+        pXSprite->at16_0 = pSprite->ang+341;
     else // Weird..
-        pXSprite->at16_0 = (pSprite->ang+341)&2047;
+        pXSprite->at16_0 = pSprite->ang+341;
     if (Chance(0x8000))
         pXSprite->at17_3 = 1;
     else
@@ -1211,22 +1209,20 @@ void aiThinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
             {
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
+                return;
             }
             else if (nDist < pDudeInfo->at13)
             {
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
+                return;
             }
-            else
-                continue;
-            break;
         }
     }
 }
 
 void sub_5F15C(SPRITE *pSprite, XSPRITE *pXSprite)
 {
-    char va4[(kMaxSectors+7)>>3];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     if (Chance(pDudeInfo->at33))
@@ -1252,38 +1248,38 @@ void sub_5F15C(SPRITE *pSprite, XSPRITE *pXSprite)
             {
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
+                return;
             }
             else if (nDist < pDudeInfo->at13)
             {
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
+                return;
             }
-            else
+        }
+        if (pXSprite->at1_6)
+        {
+            char va4[(kMaxSectors+7)>>3];
+            gAffectedSectors[0] = 0;
+            gAffectedXWalls[0] = 0;
+            GetClosestSpriteSectors(pSprite->sectnum, pSprite->x, pSprite->y, 400, gAffectedSectors, va4, gAffectedXWalls);
+            for (int nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
             {
-                if (!pXSprite->at1_6)
-                    return;
-                gAffectedSectors[0] = 0;
-                gAffectedXWalls[0] = 0;
-                GetClosestSpriteSectors(pSprite->sectnum, pSprite->x, pSprite->y, 400, gAffectedSectors, va4, gAffectedXWalls);
-                for (int nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
+                SPRITE *pSprite2 = &qsprite[nSprite2];
+                int dx = pSprite2->x-pSprite->x;
+                int dy = pSprite2->y-pSprite->y;
+                int nDist = approxDist(dx, dy);
+                if (pSprite2->type == 245)
                 {
-                    SPRITE *pSprite2 = &qsprite[nSprite2];
-                    int dx = pSprite2->x-pSprite->x;
-                    int dy = pSprite2->y-pSprite->y;
-                    int nDist = approxDist(dx, dy);
-                    if (pSprite2->type == 245)
-                    {
-                        DUDEINFO *pDudeInfo = &dudeInfo[pSprite2->type-kDudeBase];
-                        if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
-                            continue;
-                        int nAngle = getangle(dx,dy);
-                        aiSetTarget(pXSprite, pSprite2->index);
-                        aiActivateDude(pSprite, pXSprite);
-                        break;
-                    }
+                    DUDEINFO *pDudeInfo = &dudeInfo[pSprite2->type-kDudeBase];
+                    if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+                        continue;
+                    int nAngle = getangle(dx,dy);
+                    aiSetTarget(pXSprite, pSprite2->index);
+                    aiActivateDude(pSprite, pXSprite);
+                    return;
                 }
             }
-            break;
         }
     }
 }
@@ -1305,7 +1301,7 @@ void aiProcessDudes(void)
         pXSprite->at32_0 = ClipLow(pXSprite->at32_0-4, 0);
         if (pXSprite->at34->at10)
             pXSprite->at34->at10(pSprite, pXSprite);
-        if (pXSprite->at34->at14 != NULL && ((gFrame&3) == (nSprite&3)))
+        if (pXSprite->at34->at14 && (gFrame&3) == (nSprite&3))
             pXSprite->at34->at14(pSprite, pXSprite);
         if (pXSprite->at32_0 == 0 && pXSprite->at34->at18)
         {
