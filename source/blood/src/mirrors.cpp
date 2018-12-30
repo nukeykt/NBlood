@@ -39,6 +39,7 @@ void InitMirrors(void)
     mirrorcnt = 0;
     tilesiz[504].x = 0;
     tilesiz[504].y = 0;
+    tileDelete(504);
     
     for(int i = 0; i < 16; i++)
         tilesiz[4080+i].x = 0, tilesiz[4080+i].y = 0;
@@ -46,7 +47,7 @@ void InitMirrors(void)
     {
         if (mirrorcnt == 16)
             break;
-        int nTile = 4080+i;
+        int nTile = 4080+mirrorcnt;
         if (wall[i].overpicnum == 504)
         {
             if (wall[i].extra > 0 && wall[i].lotag == 501)
@@ -81,7 +82,7 @@ void InitMirrors(void)
         {
             mirror[mirrorcnt].at4 = i;
             mirror[mirrorcnt].at14 = i;
-            wall[i].overpicnum = nTile;
+            wall[i].picnum = nTile;
             mirror[mirrorcnt].at0 = 0;
             wall[i].cstat |= 32;
             mirrorcnt++;
@@ -290,9 +291,9 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
     for (int i = mirrorcnt - 1; i >= 0; i--)
     {
         int nTile = 4080+i;
-        if (gotpic[nTile>>3]&(1<<(nTile&7)))
+        if (TestBitString(gotpic, nTile))
         {
-            gotpic[nTile>>3]&=~(1<<(nTile&7));
+            ClearBitString(gotpic, nTile);
             switch (mirror[i].at0)
             {
             case 0:
@@ -321,13 +322,13 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
                 {
                      cx = x - (wall[pWall->hitag].x-wall[pWall->point2].x);
                      cy = y - (wall[pWall->hitag].y-wall[pWall->point2].y);
-                     ca = a;
+                     ca = fix16_from_int(a);
                 }
                 else
                 {
                     renderPrepareMirror(x,y, fix16_from_int(a),nWall,&cx,&cy,&ca);
                 }
-                drawrooms(cx, cy, z, ca,horiz,mirrorsector|MAXSECTORS);
+                renderDrawRoomsQ16(cx, cy, z, ca,fix16_from_int(horiz),mirrorsector|MAXSECTORS);
                 viewProcessSprites(cx,cy,z);
                 renderDrawMasks();
                 if (pWall->lotag != 501)
