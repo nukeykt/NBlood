@@ -3852,7 +3852,7 @@ void actAirDrag(SPRITE *pSprite, int a2)
     {
         dassert(nXSector < kMaxXSectors);
         XSECTOR *pXSector = &xsector[nXSector];
-        if (pXSector->at31_1 && (pXSector->at37_6 || pXSector->at1_7))
+        if (pXSector->at35_1 && (pXSector->at37_6 || pXSector->at1_7))
         {
             int vcx = pXSector->at35_1<<12;
             if (!pXSector->at37_6 && pXSector->at1_7)

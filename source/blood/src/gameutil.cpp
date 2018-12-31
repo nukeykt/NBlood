@@ -419,7 +419,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
     gHitInfo.hitwall = -1;
     gHitInfo.hitsprite = -1;
     int x1 = pSprite->x+mulscale30(nOffset, Cos(pSprite->ang+512));
-    int y1 = pSprite->y+mulscale30(nOffset, Cos(pSprite->ang));
+    int y1 = pSprite->y+mulscale30(nOffset, Sin(pSprite->ang+512));
     int z1 = pSprite->z+nZOffset;
     int bakCstat = pSprite->cstat;
     pSprite->cstat &= ~256;

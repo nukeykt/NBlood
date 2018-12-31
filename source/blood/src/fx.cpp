@@ -258,7 +258,7 @@ void fxSpawnBlood(SPRITE *pSprite, int a2)
     {
         xvel[pBlood->index] = Random2(0x6aaaa);
         yvel[pBlood->index] = Random2(0x6aaaa);
-        zvel[pBlood->index] = -Random2(0x10aaaa);
+        zvel[pBlood->index] = -Random(0x10aaaa);
         evPost(pBlood->index, 3, 8, CALLBACK_ID_6);
     }
 }

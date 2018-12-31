@@ -187,7 +187,6 @@ void ZombieSpurt(int nSprite) // 5
 void BloodSpurt(int nSprite) // 6
 {
     SPRITE *pSprite = &qsprite[nSprite];
-    int nXSprite = pSprite->extra;
     SPRITE *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
