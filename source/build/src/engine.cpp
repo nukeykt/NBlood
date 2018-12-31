@@ -190,6 +190,7 @@ int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
 
 int32_t automapping = 0;
 int32_t bloodhack = 0;
+int32_t blooddemohack = 0;
 
 ////////// YAX //////////
 
@@ -10146,8 +10147,45 @@ void vox_undefine(int32_t const tile)
 //
 // See http://fabiensanglard.net/duke3d/build_engine_internals.php,
 // "Inside details" for the idea behind the algorithm.
+
+int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
+{
+    if (sectnum >= 0 && sectnum < numsectors)
+    {
+        uint32_t cnt = 0;
+        uwalltype const * wal = (uwalltype *) &wall[sector[sectnum].wallptr];
+        int wallsleft = sector[sectnum].wallnum;
+
+        do
+        {
+            // Get the x and y components of the [tested point]-->[wall
+            // point{1,2}] vectors.
+            vec2_t v1 = { wal->x - x, wal->y - y };
+            vec2_t v2 = { wall[wal->point2].x - x, wall[wal->point2].y - y };
+
+            // If their signs differ[*], ...
+            //
+            // [*] where '-' corresponds to <0 and '+' corresponds to >=0.
+            // Equivalently, the branch is taken iff
+            //   y1 != y2 AND y_m <= y < y_M,
+            // where y_m := min(y1, y2) and y_M := max(y1, y2).
+            if ((v1.y^v2.y) < 0)
+                cnt ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+
+            wal++;
+        }
+        while (--wallsleft);
+
+        return cnt>>31;
+    }
+
+    return -1;
+}
+
 int32_t inside(int32_t x, int32_t y, int16_t sectnum)
 {
+    if (blooddemohack)
+        return inside_old(x, y, sectnum);
     if (sectnum >= 0 && sectnum < numsectors)
     {
         uint32_t cnt1 = 0, cnt2 = 0;
@@ -12584,7 +12622,8 @@ int32_t getceilzofslopeptr(const usectortype *sec, int32_t dax, int32_t day)
     if (i == 0) return sec->ceilingz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    return sec->ceilingz + (scale(sec->ceilingheinum,j>>1,i)<<1);
+    int const shift = blooddemohack ? 0 : 1;
+    return sec->ceilingz + (scale(sec->ceilingheinum,j>>shift,i)<<shift);
 }
 
 int32_t getflorzofslopeptr(const usectortype *sec, int32_t dax, int32_t day)
@@ -12601,7 +12640,8 @@ int32_t getflorzofslopeptr(const usectortype *sec, int32_t dax, int32_t day)
     if (i == 0) return sec->floorz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    return sec->floorz + (scale(sec->floorheinum,j>>1,i)<<1);
+    int const shift = blooddemohack ? 0 : 1;
+    return sec->floorz + (scale(sec->floorheinum,j>>shift,i)<<shift);
 }
 
 void getzsofslopeptr(const usectortype *sec, int32_t dax, int32_t day, int32_t *ceilz, int32_t *florz)
@@ -12619,10 +12659,11 @@ void getzsofslopeptr(const usectortype *sec, int32_t dax, int32_t day, int32_t *
     if (i == 0) return;
 
     int const j = dmulscale3(d.x,day-wal->y, -d.y,dax-wal->x);
+    int const shift = blooddemohack ? 0 : 1;
     if (sec->ceilingstat&2)
-        *ceilz += scale(sec->ceilingheinum,j>>1,i)<<1;
+        *ceilz += scale(sec->ceilingheinum,j>>shift,i)<<shift;
     if (sec->floorstat&2)
-        *florz += scale(sec->floorheinum,j>>1,i)<<1;
+        *florz += scale(sec->floorheinum,j>>shift,i)<<shift;
 }
 
 

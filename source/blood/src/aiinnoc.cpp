@@ -68,6 +68,11 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &innocentSearch);
         return;
     }
+    if (IsPlayerSprite(pTarget))
+    {
+        aiNewState(pSprite, pXSprite, &innocentSearch);
+        return;
+    }
     int nDist = approxDist(dx, dy);
     if (nDist <= pDudeInfo->at17)
     {

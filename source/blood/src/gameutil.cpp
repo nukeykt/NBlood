@@ -453,7 +453,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
         if (gHitInfo.hitsprite >= 0)
         {
             SPRITE *pOther = &qsprite[gHitInfo.hitsprite];
-            if ((pOther->hitag & 8) && ac == 1)
+            if ((pOther->hitag & 8) && !(ac & 1))
                 return 3;
             if ((pOther->cstat & 0x30) != 0)
                 return 3;
@@ -473,7 +473,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
                 height2 = tilesiz[nPicnum].y-height2;
             if (height2 >= 0 && height2 < tilesiz[nPicnum].y)
             {
-                int width = (tilesiz[nPicnum].y*pOther->xrepeat)>>2;
+                int width = (tilesiz[nPicnum].x*pOther->xrepeat)>>2;
                 width = (width*3)/4;
                 int check1 = ((y1 - pOther->y)*dx - (x1 - pOther->x)*dy) / ksqrt(dx*dx+dy*dy);
                 dassert(width > 0);

@@ -1197,6 +1197,8 @@ int app_main(int argc, char const * const * argv)
         changespritestat_replace = qchangespritestat;
         loadvoxel_replace = qloadvoxel;
         bloodhack = true;
+        // PORT-TODO:
+        blooddemohack = true;
     }
 
     initprintf("Initializing Build 3D engine\n");

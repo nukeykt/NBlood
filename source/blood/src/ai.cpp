@@ -230,10 +230,10 @@ void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3)
         pXSprite->at17_3 = 1;
     else
         pXSprite->at17_3 = -1;
-    if (!CanMove(pSprite, pXSprite->target, pXSprite->at17_3<<9, 512))
+    if (!CanMove(pSprite, pXSprite->target, pSprite->ang+(pXSprite->at17_3<<9), 512))
     {
         pXSprite->at17_3 = -pXSprite->at17_3;
-        if (!CanMove(pSprite, pXSprite->target, pXSprite->at17_3<<9, 512))
+        if (!CanMove(pSprite, pXSprite->target, pSprite->ang+(pXSprite->at17_3<<9), 512))
             pXSprite->at17_3 = 0;
     }
 }
@@ -861,7 +861,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
         SPRITE *pSource = &qsprite[nSource];
         if (pSprite == pSource)
             return 0;
-        if (pXSprite->target == -1 || (nSource != -1 && Chance(pSprite->type == pSource->type ? nDamage*pDudeInfo->at2f : nDamage*pDudeInfo->at2b)))
+        if (pXSprite->target == -1 || (nSource != pXSprite->target && Chance(pSprite->type == pSource->type ? nDamage*pDudeInfo->at2f : nDamage*pDudeInfo->at2b)))
         {
             aiSetTarget(pXSprite, nSource);
             aiActivateDude(pSprite, pXSprite);
@@ -884,7 +884,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
                 else if (sub_5BDA8(pSprite, 14 && !pXSprite->at17_6))
                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
                 else if (sub_5BDA8(pSprite, 13) && (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2))
-                    aiNewState(pSprite, pXSprite, &cultistProneDodge);
+                    aiNewState(pSprite, pXSprite, &cultistSwimDodge);
             }
             else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23 && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2))
             {
