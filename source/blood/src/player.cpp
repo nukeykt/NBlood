@@ -1113,7 +1113,7 @@ void CheckPickUp(PLAYER *pPlayer)
             vb = (pItem->z-bottom)>>8;
         if (vb > 32)
             continue;
-        if (approxDist(dx,dy) > 32)
+        if (approxDist(dx,dy) > 48)
             continue;
         GetSpriteExtents(pItem, &top, &bottom);
         if (cansee(x, y, z, nSector, pItem->x, pItem->y, pItem->z, pItem->sectnum)

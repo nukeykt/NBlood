@@ -2889,6 +2889,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
             sfxPlay3DSound(pSprite, 718, -1, 0);
         else
             sfxPlay3DSound(pSprite, 1018+Random(2), -1, 0);
+        a3 = DAMAGE_TYPE_3;
         if (Chance(0x8000))
         {
             for (int i = 0; i < 3; i++)
@@ -2903,6 +2904,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
             sfxPlay3DSound(pSprite, 1109, -1, 0);
         else
             sfxPlay3DSound(pSprite, 1107+Random(2), -1, 0);
+        a3 = DAMAGE_TYPE_3;
         if (Chance(0x8000))
         {
             seqSpawn(dudeInfo[nType].seqStartID+13, 3, nXSprite, nDudeToGibClient1);
@@ -3692,14 +3694,14 @@ void ProcessTouchObjects(SPRITE *pSprite, int nXSprite)
                     if (pThingInfo->at5&2)
                         pSprite2->hitag |= 4;
                     // Inlined ?
-                    xvel[pSprite2->index] += mulscale(4, pSprite->x-sprite[nSprite].x, 2);
-                    yvel[pSprite2->index] += mulscale(4, pSprite->y-sprite[nSprite].y, 2);
+                    xvel[pSprite2->index] += mulscale(4, pSprite2->x-sprite[nSprite].x, 2);
+                    yvel[pSprite2->index] += mulscale(4, pSprite2->y-sprite[nSprite].y, 2);
                 }
                 else
                 {
                     pSprite2->hitag |= 5;
-                    xvel[pSprite2->index] += mulscale(4, pSprite->x-sprite[nSprite].x, 2);
-                    yvel[pSprite2->index] += mulscale(4, pSprite->y-sprite[nSprite].y, 2);
+                    xvel[pSprite2->index] += mulscale(4, pSprite2->x-sprite[nSprite].x, 2);
+                    yvel[pSprite2->index] += mulscale(4, pSprite2->y-sprite[nSprite].y, 2);
                     if (pSprite2->type == 229)
                         if (!IsPlayerSprite(pSprite) || gPlayer[pSprite->type-kDudePlayer1].at31a == 0)
                             actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_3, pXSprite->health<<2);
@@ -3935,9 +3937,9 @@ int MoveThing(SPRITE *pSprite)
                 RotateVector(&v2c,&v28,vbx);
                 RotateVector(&v2c,&v24,v30);
                 RotateVector(&v28,&v24,v34);
-                xvel[pFX->index] += v2c;
-                yvel[pFX->index] += v28;
-                zvel[pFX->index] += v24;
+                xvel[pFX->index] = xvel[pSprite->index]+v2c;
+                yvel[pFX->index] = yvel[pSprite->index]+v28;
+                zvel[pFX->index] = zvel[pSprite->index]+v24;
             }
         }
     }
@@ -4987,7 +4989,7 @@ void actProcessSprites(void)
                 }
             }
             actAirDrag(pSprite, 128);
-            if ((pSprite->index>>8) == (gFrame&15) || (pSprite->hitag&2))
+            if ((pSprite->index>>8) == (gFrame&15) && (pSprite->hitag&2))
                 pSprite->hitag |= 4;
             if ((pSprite->hitag&4) || xvel[nSprite] || yvel[nSprite] || zvel[nSprite] ||
                 velFloor[pSprite->sectnum] || velCeil[pSprite->sectnum])
@@ -5510,7 +5512,7 @@ SPRITE * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
         pXThing->at12_0 = 0;
         pXThing->at14_0 = 0;
         pXThing->at18_2 = 318;
-        pXThing->at20_0 = gFrame+180.0;
+        pXThing->at20_0 = gFrameClock+180.0;
         pXThing->at17_5 = 1;
         pXThing->at1_6 = 1;
         pXThing->atd_1 = 0;
@@ -5525,7 +5527,7 @@ SPRITE * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
         pXThing->at12_0 = 0;
         pXThing->at14_0 = 0;
         pXThing->at18_2 = 318;
-        pXThing->at20_0 = gFrame+180.0;
+        pXThing->at20_0 = gFrameClock+180.0;
         pXThing->at17_5 = 1;
         pXThing->at1_6 = 1;
         pXThing->atd_1 = 0;

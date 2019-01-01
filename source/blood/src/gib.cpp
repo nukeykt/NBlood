@@ -319,7 +319,7 @@ void GibFX(SPRITE *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *pVel)
                     }
                     else if (dz2 > dz1 && dz1 < 0x4000)
                     {
-                        zvel[pFX->index] = -Random((pGFX->at11<<18)/120);
+                        zvel[pFX->index] = -Random((klabs(pGFX->at11)<<18)/120);
                     }
                     else
                     {
@@ -353,8 +353,9 @@ void GibThing(SPRITE *pSprite, GIBTHING *pGThing, CGibPosition *pPos, CGibVeloci
         int x, y, z;
         if (!pPos)
         {
-            x = pSprite->x+mulscale30(pSprite->clipdist<<2, Cos(pSprite->ang));
-            y = pSprite->y+mulscale30(pSprite->clipdist<<2, Sin(pSprite->ang));
+            int nAngle = Random(2048);
+            x = pSprite->x+mulscale30(pSprite->clipdist<<2, Cos(nAngle));
+            y = pSprite->y+mulscale30(pSprite->clipdist<<2, Sin(nAngle));
             z = bottom-Random(bottom-top);
         }
         else
