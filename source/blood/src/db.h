@@ -167,8 +167,8 @@ struct XWALL {
     unsigned int atd_4 : 1; // restState
     unsigned int atd_5 : 1; // Interruptable
     unsigned int atd_6 : 1; // panAlways
-    unsigned int atd_7 : 8; // panX
-    unsigned int ate_7 : 8; // panY
+    signed   int atd_7 : 8; // panX
+    signed   int ate_7 : 8; // panY
     unsigned int atf_7 : 1; // Decoupled
     unsigned int at10_0 : 1; // 1-shot
     unsigned int at10_1 : 1;

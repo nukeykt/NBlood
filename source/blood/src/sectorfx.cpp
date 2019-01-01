@@ -303,8 +303,8 @@ void DoSectorPanning(void)
             int nTile = wall[nWall].picnum;
             int px = (wall[nWall].xpanning<<8)+pXWall->at11_2;
             int py = (wall[nWall].ypanning<<8)+pXWall->at12_2;
-            px += (psx<<2)>>(picsiz[nTile]&15);
-            py += (psy<<2)>>(picsiz[nTile]/16);
+            px += (psx<<2)>>((uint8_t)picsiz[nTile]&15);
+            py += (psy<<2)>>((uint8_t)picsiz[nTile]/16);
             wall[nWall].xpanning = px>>8;
             wall[nWall].ypanning = py>>8;
             pXWall->at11_2 = px&255;
