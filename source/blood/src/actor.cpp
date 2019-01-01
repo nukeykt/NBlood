@@ -3581,7 +3581,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
                 int nOwner = actSpriteOwnerToSpriteId(pMissile);
                 int nDamage = (10+Random(10))<<4;
                 actDamageSprite(nOwner, pObject, DAMAGE_TYPE_5, nDamage);
-                SPRITE *pOwner = &qsprite[nObject];
+                SPRITE *pOwner = &qsprite[nOwner];
                 XSPRITE *pXOwner = &xsprite[pOwner->extra];
                 int nType = pOwner->type-kDudeBase;
                 if (pXOwner->health > 0)

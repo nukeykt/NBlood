@@ -66,8 +66,8 @@ static void PukeSeqCallback(int, int nXSprite)
     SPRITE *pTarget = &qsprite[pXSprite->target];
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
-    int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
-    int height2 = (pDudeInfoT->atb*pTarget->yrepeat)<<2;
+    int height = (pDudeInfo->atb*pSprite->yrepeat);
+    int height2 = (pDudeInfoT->atb*pTarget->yrepeat);
     int tx = pXSprite->at20_0-pSprite->x;
     int ty = pXSprite->at24_0-pSprite->y;
     int nDist = approxDist(tx, ty);
@@ -83,7 +83,7 @@ static void ThrowSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     SPRITE *pSprite = &qsprite[nSprite];
-    actFireMissile(pSprite, 0, dudeInfo[pSprite->type].atb, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 300);
+    actFireMissile(pSprite, 0, dudeInfo[pSprite->type-kDudeBase].atb, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 300);
 }
 
 static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
