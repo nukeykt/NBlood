@@ -159,7 +159,7 @@ char CheckAmmo(PLAYER *pPlayer, int a2, int a3)
         return 1;
     if (pPlayer->atbd == 12 && pPlayer->atc7 == 11 && pPlayer->atc3 == 11)
         return 1;
-    if (a2 == 9 && pPlayer->pXSprite->health >= (a3<<4))
+    if (pPlayer->atbd == 9 && pPlayer->pXSprite->health >= (a3<<4))
         return 1;
     return pPlayer->at181[a2] >= a3;
 }
@@ -2030,10 +2030,11 @@ void WeaponProcess(PLAYER *pPlayer)
         if (!pPlayer->atbd)
         {
             int nAmmoType = weaponModes[nWeapon].at4;
-            if (nAmmoType > 1)
+            if (v4c > 1)
             {
                 if (CheckAmmo(pPlayer, nAmmoType, 1) || nAmmoType == 11)
                     WeaponRaise(pPlayer);
+                pPlayer->atc.newWeapon = 0;
             }
             else
             {

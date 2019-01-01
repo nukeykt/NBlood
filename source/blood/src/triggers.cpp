@@ -247,7 +247,7 @@ void sub_43CF8(SPRITE *pSprite, XSPRITE *pXSprite, EVENT a3)
                     GetSpriteExtents(pSprite, &top, &bottom);
                     int nType = pTarget->type-kDudeBase;
                     DUDEINFO *pDudeInfo = &dudeInfo[nType];
-                    int z1 = pSprite->x-256;
+                    int z1 = (top-pSprite->z)-256;
                     int x = pTarget->x;
                     int y = pTarget->y;
                     int z = pTarget->z;
@@ -258,7 +258,7 @@ void sub_43CF8(SPRITE *pSprite, XSPRITE *pXSprite, EVENT a3)
                         x += (xvel[nTarget]*t)>>12;
                         y += (yvel[nTarget]*t)>>12;
                         int angBak = pSprite->ang;
-                        pSprite->ang = getangle(x, y);
+                        pSprite->ang = getangle(x-pSprite->x, y-pSprite->y);
                         int dx = Cos(pSprite->ang)>>16;
                         int dy = Sin(pSprite->ang)>>16;
                         int tz = pTarget->z - (pTarget->yrepeat * pDudeInfo->atf) * 4;

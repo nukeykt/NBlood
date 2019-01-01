@@ -4583,7 +4583,7 @@ int MoveMissile(SPRITE *pSprite)
             pXTarget = NULL;
         if (pTarget->statnum == 6 && pXTarget && pXTarget->health > 0)
         {
-            int nTargetAngle = getangle(pTarget->x-pSprite->x, pTarget->y-pSprite->y);
+            int nTargetAngle = getangle(-(pTarget->y-pSprite->y), pTarget->x-pSprite->x);
             int nAngle = getangle(xvel[nSprite]>>12,yvel[nSprite]>>12);
             long vx = missileInfo[pSprite->type-300].at2;
             long vy = 0;
