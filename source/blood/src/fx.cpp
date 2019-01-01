@@ -256,9 +256,10 @@ void fxSpawnBlood(SPRITE *pSprite, int a2)
     SPRITE *pBlood = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pBlood)
     {
+        pBlood->ang = 1024;
         xvel[pBlood->index] = Random2(0x6aaaa);
         yvel[pBlood->index] = Random2(0x6aaaa);
-        zvel[pBlood->index] = -Random(0x10aaaa);
+        zvel[pBlood->index] = -Random(0x10aaaa)-100;
         evPost(pBlood->index, 3, 8, CALLBACK_ID_6);
     }
 }

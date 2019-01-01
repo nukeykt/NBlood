@@ -97,7 +97,7 @@ bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
     int nDist = approxDist(x-gHitInfo.hitx, y-gHitInfo.hity);
     if (nDist - (pSprite->clipdist << 2) < nRange)
     {
-        if (gHitInfo.hitsprite < 0 || a2 != 0)
+        if (gHitInfo.hitsprite < 0 || a2 != gHitInfo.hitsprite)
             return false;
         return true;
     }

@@ -114,9 +114,9 @@ static void ShotSeqCallback(int, int nXSprite)
     int dx = Cos(pSprite->ang) >> 16;
     int dy = Sin(pSprite->ang) >> 16;
     int dz = gDudeSlope[nXSprite];
-    dx += Random3((5-gGameOptions.nDifficulty)*1000-500);
-    dy += Random3((5-gGameOptions.nDifficulty)*1000-500);
-    dz += Random3((5-gGameOptions.nDifficulty)*500);
+    dx += Random2((5-gGameOptions.nDifficulty)*1000-500);
+    dy += Random2((5-gGameOptions.nDifficulty)*1000-500);
+    dz += Random2((5-gGameOptions.nDifficulty)*500);
     for (int i = 0; i < 8; i++)
     {
         int r1 = Random3(500);

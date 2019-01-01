@@ -4510,7 +4510,7 @@ void MoveDude(SPRITE *pSprite)
     {
         gSpriteHit[nXSprite].ceilhit = ceilHit;
         pSprite->z += ClipLow(ceilZ-top, 0);
-        if (zvel[nSector] <= 0 && (pSprite->hitag&4))
+        if (zvel[nSprite] <= 0 && (pSprite->hitag&4))
             zvel[nSprite] = mulscale16(-zvel[nSprite], 0x2000);
     }
     else
@@ -4987,7 +4987,7 @@ void actProcessSprites(void)
                 }
             }
             actAirDrag(pSprite, 128);
-            if ((pSprite->index>>8) == (gFrame&15) && (pSprite->hitag&2))
+            if ((pSprite->index>>8) == (gFrame&15) || (pSprite->hitag&2))
                 pSprite->hitag |= 4;
             if ((pSprite->hitag&4) || xvel[nSprite] || yvel[nSprite] || zvel[nSprite] ||
                 velFloor[pSprite->sectnum] || velCeil[pSprite->sectnum])

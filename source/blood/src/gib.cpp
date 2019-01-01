@@ -287,8 +287,9 @@ void GibFX(SPRITE *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *pVel)
     {
         if (!pPos && (pSprite->cstat&48) == 0)
         {
-            gPos.x = pSprite->x+mulscale30(pSprite->clipdist<<2, Cos(pSprite->ang));
-            gPos.y = pSprite->y+mulscale30(pSprite->clipdist<<2, Sin(pSprite->ang));
+            int nAngle = Random(2048);
+            gPos.x = pSprite->x+mulscale30(pSprite->clipdist<<2, Cos(nAngle));
+            gPos.y = pSprite->y+mulscale30(pSprite->clipdist<<2, Sin(nAngle));
             gPos.z = bottom-Random(bottom-top);
         }
         SPRITE *pFX = gFX.fxSpawn(pGFX->at0, nSector, gPos.x, gPos.y, gPos.z, 0);
