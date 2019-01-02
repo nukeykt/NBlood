@@ -941,7 +941,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
                 if (v14)
                     RotatePoint(&pSprite->x, &pSprite->y, v14, v20, v24);
                 viewBackupSpriteLoc(nSprite, pSprite);
-                pSprite->ang = (pSprite->ang-v14)&2047;
+                pSprite->ang = (pSprite->ang+v14)&2047;
                 pSprite->x += v28;
                 pSprite->y += v2c;
             }
