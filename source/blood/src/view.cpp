@@ -1674,6 +1674,12 @@ SPRITE *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         int height = tilesiz[pNSprite->picnum].y;
         int center = height/2+qpicanm[pNSprite->picnum].yoffset;
         pNSprite->z -= (pNSprite->yrepeat<<2)*(height-center);
+        if (videoGetRenderMode() >= REND_POLYMOST)
+        {
+            int nAngle = getangle(pNSprite->x-gView->pSprite->x, pNSprite->y-gView->pSprite->y);
+            pNSprite->x += Cos(nAngle)>>25;
+            pNSprite->y += Sin(nAngle)>>25;
+        }
         break;
     }
     case VIEW_EFFECT_1:
