@@ -281,7 +281,7 @@ void levelGetNextLevels(int nEpisode, int nLevel, int *pnEndingA, int *pnEndingB
     int nEndingA = pLevelInfo->ate4;
     if (nEndingA >= 0)
         nEndingA--;
-    int nEndingB = pLevelInfo->ate4;
+    int nEndingB = pLevelInfo->ate8;
     if (nEndingB >= 0)
         nEndingB--;
     *pnEndingA = nEndingA;
