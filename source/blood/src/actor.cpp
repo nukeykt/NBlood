@@ -5269,7 +5269,7 @@ void actProcessSprites(void)
                     if (!pPlayer->at2f2)
                     {
                         pPlayer->at36e += 4;
-                        if (Chance(pPlayer->at362))
+                        if (Chance(pPlayer->at36e))
                             actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_4, 3<<4);
                     }
                     else
