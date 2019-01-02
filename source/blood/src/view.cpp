@@ -2762,8 +2762,19 @@ void viewDrawScreen(void)
                 vd0 = vc8+(8<<4);
             }
             v54 = ClipRange(v54, -200, 200);
+RORHACKOTHER:
+            int ror_status[16];
+            for (int i = 0; i < 16; i++)
+                ror_status[i] = TestBitString(gotpic, 4080 + i);
             DrawMirrors(vd8, vd4, vd0, v50, v54 + 90);
             drawrooms(vd8, vd4, vd0, v50, v54 + 90, vcc);
+            bool do_ror_hack = false;
+            for (int i = 0; i < 16; i++)
+                if (!ror_status[i] && TestBitString(gotpic, 4080 + i))
+                    do_ror_hack = true;
+            if (do_ror_hack)
+                goto RORHACKOTHER;
+            memcpy(otherMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, bakMirrorGotpic, 2);
             viewProcessSprites(vd8, vd4, vd0);
             renderDrawMasks();
@@ -2825,6 +2836,10 @@ void viewDrawScreen(void)
             cZ = vfc+(8<<8);
         }
         va0 = ClipRange(va0, -200, 200);
+RORHACK:
+        int ror_status[16];
+        for (int i = 0; i < 16; i++)
+            ror_status[i] = TestBitString(gotpic, 4080+i);
         DrawMirrors(cX, cY, cZ, cA, va0 + 90 + deliriumPitch);
         int bakCstat = gView->pSprite->cstat;
         if (gViewPos == 0)
@@ -2836,6 +2851,13 @@ void viewDrawScreen(void)
             gView->pSprite->cstat |= 514;
         }
         drawrooms(cX, cY, cZ, cA, va0 + 90 + deliriumPitch, nSectnum);
+        bool do_ror_hack = false;
+        for (int i = 0; i < 16; i++)
+            if (!ror_status[i] && TestBitString(gotpic, 4080+i))
+                do_ror_hack = true;
+        if (do_ror_hack)
+            goto RORHACK;
+
         viewProcessSprites(cX, cY, cZ);
         sub_5571C(1);
         renderDrawMasks();

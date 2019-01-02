@@ -27,6 +27,7 @@ MIRROR mirror[16];
 #ifdef USE_OPENGL
 extern int r_rortexture;
 extern int r_rortexturerange;
+extern int r_rorrendering;
 #endif
 
 void InitMirrors(void)
@@ -157,7 +158,7 @@ void sub_5571C(char mode)
     for (int i = mirrorcnt-1; i >= 0; i--)
     {
         int nTile = 4080+i;
-        if (gotpic[nTile>>3]&(1<<(nTile&7)))
+        if (TestBitString(gotpic, nTile))
         {
             switch (mirror[i].at0)
             {
@@ -189,7 +190,7 @@ void sub_557C4(int x, int y, int interpolation)
     for (int i = mirrorcnt-1; i >= 0; i--)
     {
         int nTile = 4080+i;
-        if (gotpic[nTile>>3]&(1<<(nTile&7)))
+        if (TestBitString(gotpic, nTile))
         {
             if (mirror[i].at0 == 1 || mirror[i].at0 == 2)
             {
@@ -341,6 +342,7 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
             }
             case 1:
             {
+                r_rorrendering = 1;
                 int nSector = mirror[i].at4;
                 drawrooms(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
                 viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
@@ -348,10 +350,12 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
                 sector[nSector].floorstat |= 1;
                 renderDrawMasks();
                 sector[nSector].floorstat = fstat;
+                r_rorrendering = 0;
                 return;
             }
             case 2:
             {
+                r_rorrendering = 1;
                 int nSector = mirror[i].at4;
                 drawrooms(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
                 viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
@@ -359,6 +363,7 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
                 sector[nSector].ceilingstat |= 1;
                 renderDrawMasks();
                 sector[nSector].ceilingstat = cstat;
+                r_rorrendering = 0;
                 return;
             }
             }
