@@ -2809,7 +2809,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
             nSeq = 14;
             break;
         case 204:
-            nSeq = 14;
+            nSeq = 11;
             break;
         default:
             nSeq = 1;
