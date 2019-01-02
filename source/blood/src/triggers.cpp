@@ -1445,7 +1445,7 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
     dassert(pDest->statnum == kStatMarker);
     dassert(pDest->type == kMarkerWarpDest);
     dassert(pDest->sectnum >= 0 && pDest->sectnum < kMaxSectors);
-    for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         SPRITE *pSprite = &qsprite[nSprite];
         if (pSprite->statnum == 6)
