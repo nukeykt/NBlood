@@ -487,14 +487,14 @@ static void entryFStatue(SPRITE *pSprite, XSPRITE *pXSprite)
 {
     DUDEINFO *pDudeInfo = &dudeInfo[6];
     actHealDude(pXSprite, pDudeInfo->at2, pDudeInfo->at2);
-    pSprite->type = 6;
+    pSprite->type = 206;
 }
 
 static void entrySStatue(SPRITE *pSprite, XSPRITE *pXSprite)
 {
     DUDEINFO *pDudeInfo = &dudeInfo[7];
     actHealDude(pXSprite, pDudeInfo->at2, pDudeInfo->at2);
-    pSprite->type = 7;
+    pSprite->type = 207;
 }
 
 static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
