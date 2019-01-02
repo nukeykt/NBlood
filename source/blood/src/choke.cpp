@@ -105,7 +105,7 @@ void sub_84230(PLAYER *pPlayer)
     if (pPlayer->at372 < 64)
         pPlayer->at372 = ClipHigh(pPlayer->at372+t, 64);
     if (pPlayer->at372 > (7-gGameOptions.nDifficulty)*5)
-        pPlayer->at36a = ClipHigh(pPlayer->at36a+t, 128);
+        pPlayer->at36a = ClipHigh(pPlayer->at36a+t*4, 128);
 }
 
 CChoke gChoke;

@@ -2903,11 +2903,13 @@ void viewDrawScreen(void)
     PLAYER *pPSprite = &gPlayer[gMe->pSprite->type-kDudePlayer1];
     if (pPSprite->at376 == 1)
     {
+        static int lastClock;
         gChoke.sub_84110(160, zn);
-        if ((gGameClock % 5) == 0)
+        if ((gGameClock % 5) == 0 && gGameClock != lastClock)
         {
             gChoke.at1c(pPSprite);
         }
+        lastClock = gGameClock;
     }
     if (byte_1A76C6)
     {
