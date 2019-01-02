@@ -1848,7 +1848,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             case 6:
             case 7:
             {
-                if (gDetail >= 4 && videoGetRenderMode() == REND_CLASSIC)
+                if (gDetail >= 4 && videoGetRenderMode() != REND_POLYMER)
                 {
                     if ((pTSprite->hitag&16) == 0)
                     {

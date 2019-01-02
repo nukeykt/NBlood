@@ -81,6 +81,16 @@ int tileInit(char a1, const char *a2)
         fclose(hFile);
     }
     artLoaded = 1;
+
+    for (int i = 0; i < kMaxVoxels; i++)
+    {
+        DICTNODE *hVox = gSysRes.Lookup(i, "KVX");
+        if (!hVox)
+            continue;
+        char *pVox = (char*)gSysRes.Load(hVox);
+        voxmodels[i] = loadkvxfrombuf(pVox, hVox->size);
+    }
+
     return 1;
 }
 
