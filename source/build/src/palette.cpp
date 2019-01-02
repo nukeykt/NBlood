@@ -111,6 +111,7 @@ void fullscreen_tint_gl_blood(void)
     glEnd();
     glBlendEquation(GL_FUNC_ADD);
     glColor4ub(0,0,0,0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     polymost_useColorOnly(false);
 
     glPopMatrix();
