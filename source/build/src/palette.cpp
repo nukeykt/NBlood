@@ -75,6 +75,47 @@ void fullscreen_tint_gl(uint8_t r, uint8_t g, uint8_t b, uint8_t f)
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 }
+
+int32_t tint_blood_r = 0, tint_blood_g = 0, tint_blood_b = 0;
+
+void fullscreen_tint_gl_blood(void)
+{
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_TEXTURE_2D);
+    polymost_setFogEnabled(false);
+
+    glBlendFunc(GL_ONE, GL_ONE);
+    glEnable(GL_BLEND);
+
+    polymost_useColorOnly(true);
+    glColor4ub(max(tint_blood_r, 0), max(tint_blood_g, 0), max(tint_blood_b, 0), 255);
+    glBegin(GL_TRIANGLES);
+    glVertex2f(-2.5f, 1.f);
+    glVertex2f(2.5f, 1.f);
+    glVertex2f(.0f, -2.5f);
+    glEnd();
+    glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+    glColor4ub(max(-tint_blood_r, 0), max(-tint_blood_g, 0), max(-tint_blood_b, 0), 255);
+    glBegin(GL_TRIANGLES);
+    glVertex2f(-2.5f, 1.f);
+    glVertex2f(2.5f, 1.f);
+    glVertex2f(.0f, -2.5f);
+    glEnd();
+    glBlendEquation(GL_FUNC_ADD);
+    polymost_useColorOnly(false);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+}
 #endif
 
 void videoFadeToBlack(int32_t moreopaquep)
@@ -837,4 +878,11 @@ void videoFadePalette(uint8_t r, uint8_t g, uint8_t b, uint8_t offset)
     }
 
     g_lastpalettesum = lastpalettesum = newpalettesum;
+}
+
+void videoTintBlood(int32_t r, int32_t g, int32_t b)
+{
+    tint_blood_r = r;
+    tint_blood_g = g;
+    tint_blood_b = b;
 }

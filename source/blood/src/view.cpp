@@ -2435,11 +2435,51 @@ void UpdateDacs(int nPalette)
         oldPalette = nPalette;
     }
 
-    for (int i = 0; i < 256; i++)
+    if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        int nRed = baseDAC[i].red;
-        int nGreen = baseDAC[i].green;
-        int nBlue = baseDAC[i].blue;
+        polytint_t *tint = &hictinting[MAXPALOOKUPS-1];
+        int nRed = 0;
+        int nGreen = 0;
+        int nBlue = 0;
+        tint->f = 0;
+        switch (nPalette)
+        {
+        case 0:
+        default:
+            tint->r = 255;
+            tint->g = 255;
+            tint->b = 255;
+            break;
+        case 1:
+            tint->r = 180;
+            tint->g = 190;
+            tint->b = 205;
+            nRed += 0;
+            nGreen += 3;
+            nBlue += 9;
+            break;
+        case 2:
+            tint->r = 255;
+            tint->g = 218;
+            tint->b = 215;
+            nRed += 1;
+            nGreen += 0;
+            nBlue += 0;
+            break;
+        case 3:
+            tint->r = 79;
+            tint->g = 78;
+            tint->b = 54;
+            nRed += 25;
+            nGreen += 26;
+            nBlue += 0;
+            break;
+        case 4:
+            tint->r = 255;
+            tint->g = 255;
+            tint->b = 255;
+            break;
+        }
         nRed += gView->at377;
         nGreen += gView->at377;
         nBlue -= gView->at377;
@@ -2456,14 +2496,41 @@ void UpdateDacs(int nPalette)
         nGreen -= gView->at36e>>5;
         nBlue -= gView->at36e>>6;
 
-        newDAC[i].red = ClipRange(nRed, 0, 255);
-        newDAC[i].green = ClipRange(nGreen, 0, 255);
-        newDAC[i].blue = ClipRange(nBlue, 0, 255);
+        videoSetPalette(0, nPalette, 8+2);
+        videoTintBlood(nRed, nGreen, nBlue);
     }
-    if (memcmp(newDAC, curDAC, 768) != 0)
+    else
     {
-        memcpy(curDAC, newDAC, 768);
-        gSetDacRange(0, 256, curDAC);
+        for (int i = 0; i < 256; i++)
+        {
+            int nRed = baseDAC[i].red;
+            int nGreen = baseDAC[i].green;
+            int nBlue = baseDAC[i].blue;
+            nRed += gView->at377;
+            nGreen += gView->at377;
+            nBlue -= gView->at377;
+
+            nRed += ClipHigh(gView->at366, 85)*2;
+            nGreen -= ClipHigh(gView->at366, 85)*3;
+            nBlue -= ClipHigh(gView->at366, 85)*3;
+
+            nRed -= gView->at36a;
+            nGreen -= gView->at36a;
+            nBlue -= gView->at36a;
+
+            nRed -= gView->at36e>>6;
+            nGreen -= gView->at36e>>5;
+            nBlue -= gView->at36e>>6;
+
+            newDAC[i].red = ClipRange(nRed, 0, 255);
+            newDAC[i].green = ClipRange(nGreen, 0, 255);
+            newDAC[i].blue = ClipRange(nBlue, 0, 255);
+        }
+        if (memcmp(newDAC, curDAC, 768) != 0)
+        {
+            memcpy(curDAC, newDAC, 768);
+            gSetDacRange(0, 256, curDAC);
+        }
     }
 }
 
@@ -2479,7 +2546,7 @@ int gShowFrameRate = 1;
 
 void viewDrawScreen(void)
 {
-    int arg = 0;
+    int nPalette = 0;
     static int lastUpdate;
 
     int yxAspect = yxaspect;
@@ -2869,11 +2936,11 @@ void viewDrawScreen(void)
         }
         if (powerupCheck(gView, 14) > 0)
         {
-            arg = 4;
+            nPalette = 4;
         }
         else if(powerupCheck(gView, 24) > 0)
         {
-            arg = 1;
+            nPalette = 1;
         }
         else
         {
@@ -2881,15 +2948,15 @@ void viewDrawScreen(void)
             {
                 if (gView->pXSprite->at17_6 == 1)
                 {
-                    arg = 1;
+                    nPalette = 1;
                 }
                 else if (gView->pXSprite->at17_6 == 2)
                 {
-                    arg = 3;
+                    nPalette = 3;
                 }
                 else
                 {
-                    arg = 2;
+                    nPalette = 2;
                 }
             }
         }
@@ -2963,7 +3030,7 @@ void viewDrawScreen(void)
     {
         RestoreInterpolations();
     }
-    UpdateDacs(arg);
+    UpdateDacs(nPalette);
 }
 
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3)

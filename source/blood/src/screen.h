@@ -6,10 +6,11 @@ struct LOADITEM {
     const char *name;
 };
 
+#pragma pack(push, 1)
 struct RGB {
     char red, green, blue;
 };
-
+#pragma pack(pop)
 
 extern bool DacInvalid;
 extern RGB curDAC[256];

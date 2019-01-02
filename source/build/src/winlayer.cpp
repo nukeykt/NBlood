@@ -1905,6 +1905,7 @@ void videoShowFrame(int32_t w)
     {
         if (palfadedelta)
             fullscreen_tint_gl(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
+        fullscreen_tint_gl_blood();
 
         SwapBuffers(hDC);
         return;

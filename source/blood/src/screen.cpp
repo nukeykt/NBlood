@@ -94,6 +94,7 @@ void scrLoadPalette(void)
         if (!pPal)
             ThrowError("%s.PAL not found (RFF files may be wrong version)", PAL[i].name);
         palTable[PAL[i].id] = (RGB*)gSysRes.Lock(pPal);
+        paletteSetColorTable(PAL[i].id, (uint8_t*)palTable[PAL[i].id]);
     }
     memcpy(palette, palTable[0], sizeof(palette));
     numshades = 64;
