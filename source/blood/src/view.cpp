@@ -2454,25 +2454,25 @@ void UpdateDacs(int nPalette)
             tint->r = 180;
             tint->g = 190;
             tint->b = 205;
-            nRed += 0;
-            nGreen += 3;
-            nBlue += 9;
+            //nRed += 0;
+            //nGreen += 3;
+            //nBlue += 9;
             break;
         case 2:
             tint->r = 255;
             tint->g = 218;
             tint->b = 215;
-            nRed += 1;
-            nGreen += 0;
-            nBlue += 0;
+            //nRed += 1;
+            //nGreen += 0;
+            //nBlue += 0;
             break;
         case 3:
             tint->r = 79;
             tint->g = 78;
             tint->b = 54;
-            nRed += 25;
-            nGreen += 26;
-            nBlue += 0;
+            //nRed += 25;
+            //nGreen += 26;
+            //nBlue += 0;
             break;
         case 4:
             tint->r = 255;
