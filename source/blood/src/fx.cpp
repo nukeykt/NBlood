@@ -155,7 +155,7 @@ SPRITE * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned long
     pSprite->cstat |= pFX->at16;
     pSprite->shade = pFX->at18;
     pSprite->pal = pFX->at19;
-    pSprite->filler = pFX->at1;
+    qsprite_filler[pSprite->index] = pFX->at1;
     if (pFX->at14 > 0)
         pSprite->xrepeat = pFX->at14;
     if (pFX->at15 > 0)

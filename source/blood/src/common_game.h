@@ -131,6 +131,7 @@ struct Aim {
 
 extern SECTOR *qsector;
 extern SPRITE *qsprite, *qtsprite;
+extern char qsprite_filler[], qsector_filler[];
 extern WALL *qwall;
 extern PICANM *qpicanm;
 

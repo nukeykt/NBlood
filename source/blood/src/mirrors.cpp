@@ -362,7 +362,7 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
                 renderDrawMasks();
                 sector[nSector].ceilingstat = cstat;
                 for (int i = 0; i < 16; i++)
-                    ClearBitString(gotpic, 4080 + i);
+                    ClearBitString(gotpic, 4080+i);
                 return;
             }
             }

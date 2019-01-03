@@ -776,6 +776,8 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         {
             dbCrypt((char*)pSector, sizeof(SECTOR), gMapRev*sizeof(SECTOR));
         }
+        qsector_filler[i] = pSector->filler;
+        pSector->filler = 0;
         if (qsector[i].extra > 0)
         {
             int nXSector = dbInsertXSector(i);
@@ -835,6 +837,8 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         InsertSpriteSect(i, qsprite[i].sectnum);
         InsertSpriteStat(i, qsprite[i].statnum);
         qsprite[i].index = i;
+        qsprite_filler[i] = pSprite->filler;
+        pSprite->filler = 0;
         if (qsprite[i].extra > 0)
         {
             int nXSprite = dbInsertXSprite(i);

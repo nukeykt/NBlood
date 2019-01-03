@@ -1877,9 +1877,9 @@ void AlignSlopes(void)
     int nSector;
     for (pSector = qsector, nSector = 0; nSector < numsectors; nSector++, pSector++)
     {
-        if (pSector->filler)
+        if (qsector_filler[nSector])
         {
-            WALL *pWall = &qwall[pSector->wallptr+pSector->filler];
+            WALL *pWall = &qwall[pSector->wallptr+qsector_filler[nSector]];
             WALL *pWall2 = &qwall[pWall->point2];
             int nNextSector = pWall->nextsector;
             if (nNextSector >= 0)

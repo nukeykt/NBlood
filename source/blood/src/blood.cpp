@@ -67,6 +67,7 @@ EDUKE32_STATIC_ASSERT(sizeof(XWALL) == 24);
 
 SECTOR *qsector;
 SPRITE *qsprite, *qtsprite;
+char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
 WALL *qwall;
 PICANM *qpicanm;
 
