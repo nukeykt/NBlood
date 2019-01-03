@@ -2683,19 +2683,25 @@ void viewDrawScreen(void)
         char v10 = 0;
         char vc = powerupCheck(gView, 28) > 0;
         char v4 = powerupCheck(gView, 21) > 0;
+        renderSetRollAngle(0);
         if (v78 || vc)
         {
-            if (!waloff[4078])
+            if (videoGetRenderMode() == REND_CLASSIC)
             {
-                tileAllocTile(4078, 320, 320, 0, 0);
+                if (!waloff[4078])
+                {
+                    tileAllocTile(4078, 320, 320, 0, 0);
+                }
+                renderSetTarget(4078, 320, 320);
+                int nAng = v78&511;
+                if (nAng > 256)
+                {
+                    nAng = 512-nAng;
+                }
+                renderSetAspect(dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000), yxaspect);
             }
-            renderSetTarget(4078, 320, 320);
-            int nAng = v78&511;
-            if (nAng > 256)
-            {
-                nAng = 512-nAng;
-            }
-            renderSetAspect(dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000), yxaspect);
+            else
+                renderSetRollAngle(v78);
         }
         else if (v4 && gNetPlayers > 1)
         {
@@ -2874,20 +2880,23 @@ RORHACK:
 
         if (v78 || vc)
         {
-            dassert(waloff[ TILTBUFFER ] != NULL);
-            renderRestoreTarget();
-            char vrc = 70;
-            if (vc)
+            if (videoGetRenderMode() == REND_CLASSIC)
             {
-                vrc = 103;
+                dassert(waloff[ TILTBUFFER ] != NULL);
+                renderRestoreTarget();
+                char vrc = 70;
+                if (vc)
+                {
+                    vrc = 103;
+                }
+                int nAng = v78 & 511;
+                if (nAng > 256)
+                {
+                    nAng = 512 - nAng;
+                }
+                int nScale = dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000);
+                rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
             }
-            int nAng = v78 & 511;
-            if (nAng > 256)
-            {
-                nAng = 512 - nAng;
-            }
-            int nScale = dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000);
-            rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
         }
         int nClipDist = gView->pSprite->clipdist<<2;
         long ve8, vec, vf0, vf4;

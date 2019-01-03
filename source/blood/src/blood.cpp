@@ -696,7 +696,8 @@ void LocalKeys(void)
 	if (powerCount = powerupCheck(gView,28))
 	{
 		int tilt1 = 170, tilt2 = 170, pitch = 20;
-		timer += 4;
+		//timer += 4;
+        timer = gFrameClock*4;
 		if (powerCount < 512)
 		{
 			int powerScale = (powerCount<<16) / 512;
