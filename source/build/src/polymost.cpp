@@ -134,7 +134,6 @@ int32_t r_downsizevar = -1;
 
 int r_rortexture = 0;
 int r_rortexturerange = 0;
-int r_rorrendering = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
@@ -4433,7 +4432,7 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->floorxpanning; global_cf_ypanning = sec->floorypanning, global_cf_heinum = sec->floorheinum;
         global_getzofslope_func = &getflorzofslope;
 
-        if (!r_rorrendering && globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange)
+        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange)
         {
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
             ytex.d = 0;
@@ -4776,7 +4775,7 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->ceilingxpanning; global_cf_ypanning = sec->ceilingypanning, global_cf_heinum = sec->ceilingheinum;
         global_getzofslope_func = &getceilzofslope;
         
-        if (!r_rorrendering && globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange)
+        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange)
         {
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
             ytex.d = 0;
