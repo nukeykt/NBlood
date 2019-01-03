@@ -48,6 +48,7 @@ extern VIEWPOS gViewPos;
 extern int gViewIndex;
 extern long gScreenTilt;
 extern int deliriumTilt, deliriumTurn, deliriumPitch;
+extern int gScreenTiltO, deliriumTurnO, deliriumPitchO;
 extern int gShowFrameRate;
 extern char gInterpolateSprite[512];
 extern char gInterpolateWall[1024];
@@ -104,7 +105,7 @@ void DoLensEffect(void);
 void UpdateDacs(int nPalette);
 void viewDrawScreen(void);
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3);
-
+void viewUpdateDelirium(void);
 
 
 inline void viewInterpolateSector(int nSector, SECTOR *pSector)

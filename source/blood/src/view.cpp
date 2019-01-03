@@ -2547,8 +2547,50 @@ char bakMirrorGotpic[2];
 // long gVisibility;
 
 int deliriumTilt, deliriumTurn, deliriumPitch;
+int gScreenTiltO, deliriumTurnO, deliriumPitchO;
 
 int gShowFrameRate = 1;
+
+void viewUpdateDelirium(void)
+{
+    gScreenTiltO = gScreenTilt;
+    deliriumTurnO = deliriumTurn;
+    deliriumPitchO = deliriumPitch;
+	int powerCount;
+	if (powerCount = powerupCheck(gView,28))
+	{
+		int tilt1 = 170, tilt2 = 170, pitch = 20;
+        int timer = gFrameClock*4;
+		if (powerCount < 512)
+		{
+			int powerScale = (powerCount<<16) / 512;
+			tilt1 = mulscale16(tilt1, powerScale);
+			tilt2 = mulscale16(tilt2, powerScale);
+			pitch = mulscale16(pitch, powerScale);
+		}
+		int sin2 = costable[(2*timer-512)&2047] / 2;
+		int sin3 = costable[(3*timer-512)&2047] / 2;
+		gScreenTilt = mulscale30(sin2+sin3,tilt1);
+		int sin4 = costable[(4*timer-512)&2047] / 2;
+		deliriumTurn = mulscale30(sin3+sin4,tilt2);
+		int sin5 = costable[(5*timer-512)&2047] / 2;
+		deliriumPitch = mulscale30(sin4+sin5,pitch);
+		return;
+	}
+	gScreenTilt = ((gScreenTilt+1024)&2047)-1024;
+	if (gScreenTilt > 0)
+	{
+		gScreenTilt -= 8;
+		if (gScreenTilt < 0)
+			gScreenTilt = 0;
+	}
+	else if (gScreenTilt < 0)
+	{
+		gScreenTilt += 8;
+		if (gScreenTilt >= 0)
+			gScreenTilt = 0;
+	}
+}
 
 void viewDrawScreen(void)
 {
@@ -2678,7 +2720,7 @@ void viewDrawScreen(void)
             CalcPosition(gView->pSprite, (long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum, cA, va0);
         }
         CheckLink((long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum);
-        int v78 = gScreenTilt;
+        int v78 = interpolateang(gScreenTiltO, gScreenTilt, gInterpolate);
         char v14 = 0;
         char v10 = 0;
         char vc = powerupCheck(gView, 28) > 0;
@@ -2830,7 +2872,7 @@ RORHACKOTHER:
             nSprite = nextspritestat[nSprite];
         }
         g_visibility = ClipLow(gVisibility - 32 * gView->at362 - unk, 0);
-        cA = (cA + deliriumTurn) & 2047;
+        cA = (cA + interpolateang(deliriumTurnO, deliriumTurn, gInterpolate)) & 2047;
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
         if (cZ >= vf8)
@@ -2846,7 +2888,8 @@ RORHACK:
         int ror_status[16];
         for (int i = 0; i < 16; i++)
             ror_status[i] = TestBitString(gotpic, 4080+i);
-        DrawMirrors(cX, cY, cZ, cA, va0 + 90 + deliriumPitch);
+        int deliriumPitchI = interpolate(deliriumPitchO, deliriumPitch, gInterpolate);
+        DrawMirrors(cX, cY, cZ, cA, va0 + 90 + deliriumPitchI);
         int bakCstat = gView->pSprite->cstat;
         if (gViewPos == 0)
         {
@@ -2856,7 +2899,7 @@ RORHACK:
         {
             gView->pSprite->cstat |= 514;
         }
-        drawrooms(cX, cY, cZ, cA, va0 + 90 + deliriumPitch, nSectnum);
+        drawrooms(cX, cY, cZ, cA, va0 + 90 + deliriumPitchI, nSectnum);
         bool do_ror_hack = false;
         for (int i = 0; i < 16; i++)
             if (!ror_status[i] && TestBitString(gotpic, 4080+i))

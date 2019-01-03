@@ -692,41 +692,6 @@ void LocalKeys(void)
 			break;
 		}
 	}
-	int powerCount;
-	if (powerCount = powerupCheck(gView,28))
-	{
-		int tilt1 = 170, tilt2 = 170, pitch = 20;
-		//timer += 4;
-        timer = gFrameClock*4;
-		if (powerCount < 512)
-		{
-			int powerScale = (powerCount<<16) / 512;
-			tilt1 = mulscale16(tilt1, powerScale);
-			tilt2 = mulscale16(tilt2, powerScale);
-			pitch = mulscale16(pitch, powerScale);
-		}
-		int sin2 = costable[(2*timer-512)&2047] / 2;
-		int sin3 = costable[(3*timer-512)&2047] / 2;
-		gScreenTilt = mulscale30(sin2+sin3,tilt1);
-		int sin4 = costable[(4*timer-512)&2047] / 2;
-		deliriumTurn = mulscale30(sin3+sin4,tilt2);
-		int sin5 = costable[(5*timer-512)&2047] / 2;
-		deliriumPitch = mulscale30(sin4+sin5,pitch);
-		return;
-	}
-	gScreenTilt = ((gScreenTilt+1024)&2047)-1024;
-	if (gScreenTilt > 0)
-	{
-		gScreenTilt -= 8;
-		if (gScreenTilt < 0)
-			gScreenTilt = 0;
-	}
-	else if (gScreenTilt < 0)
-	{
-		gScreenTilt += 8;
-		if (gScreenTilt >= 0)
-			gScreenTilt = 0;
-	}
 }
 
 bool gRestartGame = false;
@@ -800,6 +765,7 @@ void ProcessFrame(void)
 	viewCorrectPrediction();
 	sndProcess();
 	ambProcess();
+    viewUpdateDelirium();
 	sfxUpdate3DSounds();
 	gFrame++;
 	gFrameClock += 4;

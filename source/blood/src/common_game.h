@@ -184,6 +184,11 @@ inline int interpolate(int a, int b, int c)
     return a+mulscale16(b-a,c);
 }
 
+inline int interpolateang(int a, int b, int c)
+{
+    return a+((mulscale16(b-a,c)+1024)&2047)-1024;
+}
+
 inline char Chance(int a1)
 {
     return wrand() < (a1>>1);
