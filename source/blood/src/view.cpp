@@ -2597,9 +2597,6 @@ void viewDrawScreen(void)
     int nPalette = 0;
     static int lastUpdate;
 
-    int yxAspect = yxaspect;
-    int viewingRange = viewingrange;
-
     int delta = ClipLow(gGameClock - lastUpdate, 0);
     lastUpdate = gGameClock;
     if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
@@ -2621,11 +2618,12 @@ void viewDrawScreen(void)
     }
     if (gViewMode == 3 || gOverlayMap)
     {
+        int yxAspect = yxaspect;
+        int viewingRange = viewingrange;
         if (r_usenewaspect)
         {
             newaspect_enable = 1;
             videoSetCorrectedAspect();
-            yxAspect = tabledivide32_noinline(65536 * ydim * 8, xdim * 5);
         }
         int cX = gView->pSprite->x;
         int cY = gView->pSprite->y;
@@ -2730,17 +2728,18 @@ void viewDrawScreen(void)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
             {
+                int vr = viewingrange;
                 if (!waloff[4078])
                 {
-                    tileAllocTile(4078, 320, 320, 0, 0);
+                    tileAllocTile(4078, 640, 640, 0, 0);
                 }
-                renderSetTarget(4078, 320, 320);
+                renderSetTarget(4078, 640, 640);
                 int nAng = v78&511;
                 if (nAng > 256)
                 {
                     nAng = 512-nAng;
                 }
-                renderSetAspect(dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000), yxaspect);
+                renderSetAspect(mulscale16(vr, dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000)), yxaspect);
             }
             else
                 renderSetRollAngle(v78);
@@ -2915,12 +2914,6 @@ RORHACK:
         renderDrawMasks();
         gView->pSprite->cstat = bakCstat;
 
-        if (r_usenewaspect)
-        {
-            newaspect_enable = 0;
-            renderSetAspect(viewingRange, yxAspect);
-        }
-
         if (v78 || vc)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
@@ -2937,9 +2930,15 @@ RORHACK:
                 {
                     nAng = 512 - nAng;
                 }
-                int nScale = dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000);
+                int nScale = dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000)>>1;
                 rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
             }
+        }
+
+        if (r_usenewaspect)
+        {
+            newaspect_enable = 0;
+            renderSetAspect(viewingRange, yxAspect);
         }
         int nClipDist = gView->pSprite->clipdist<<2;
         long ve8, vec, vf0, vf4;
@@ -3012,7 +3011,8 @@ RORHACK:
             renderSetAspect(65536, 54613);
             rotatesprite(280<<16, 35<<16, 53248, 512, 4077, v10, v14, 6, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(280<<16, 35<<16, 53248, 0, 1683, v10, 0, 35, gViewX0, gViewY0, gViewX1, gViewY1);
-            renderSetAspect(65536, divscale16(xdim*200, ydim*320));
+            //renderSetAspect(65536, divscale16(xdim*200, ydim*320));
+            videoSetCorrectedAspect();
         }
         if (powerupCheck(gView, 14) > 0)
         {
