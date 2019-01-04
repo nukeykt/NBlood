@@ -4440,7 +4440,7 @@ void MoveDude(SPRITE *pSprite)
         int floorZ2 = floorZ;
         int floorHit2 = floorHit;
         GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, 0x13001);
-        if (bottom <= floorZ && pSprite->z - floorZ < bz)
+        if (bottom <= floorZ && pSprite->z - floorZ2 < bz)
         {
             floorZ = floorZ2;
             floorHit = floorHit2;

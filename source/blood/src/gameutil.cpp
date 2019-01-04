@@ -322,7 +322,9 @@ void GetWallNormal(int nWall, int *pX, int *pY)
     dX >>= 4;
     int dY = wall[nWall2].x - wall[nWall].x;
     dY >>= 4;
-    int nLength = ClipLow(ksqrt(dX*dX+dY*dY), 0);
+    int nLength = ksqrt(dX*dX+dY*dY);
+    if (nLength <= 0)
+        nLength = 1;
     *pX = divscale16(dX, nLength);
     *pY = divscale16(dY, nLength);
 }
