@@ -977,7 +977,7 @@ void netInitialize(void)
                         case BLOOD_SERVICE_CONNECTINFO:
                         {
                             PKT_CONNECTINFO *connectinfo = (PKT_CONNECTINFO*)pPacket;
-                            numplayers = connectinfo->numplayers;
+                            gInitialNetPlayers = gNetPlayers = numplayers = connectinfo->numplayers;
                             connecthead = connectinfo->connecthead;
                             for (int i = 0; i < numplayers; i++)
                                 connectpoint2[i] = connectinfo->connectpoint2[i];

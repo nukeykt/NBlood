@@ -2369,12 +2369,8 @@ void DoLensEffect(void)
     char *s = (char*)waloff[4079];
     dassert(s != NULL);
     for (int i = 0; i < kLensSize*kLensSize; i++, d++)
-    {
         if (lensTable[i] >= 0)
-        {
-            *d = *(s+lensTable[i]);
-        }
-    }
+            *d = s[lensTable[i]];
     tileInvalidate(4077, -1, -1);
 }
 
@@ -2727,9 +2723,9 @@ void viewDrawScreen(void)
             //othercameraclock = gGameClock;
             if (!waloff[4079])
             {
-                tileAllocTile(4079, kLensSize, kLensSize, 0, 0);
+                tileAllocTile(4079, 128, 128, 0, 0);
             }
-            renderSetTarget(4079, kLensSize, kLensSize);
+            renderSetTarget(4079, 128, 128);
             renderSetAspect(65536, 78643);
             long vd8 = pOther->pSprite->x;
             long vd4 = pOther->pSprite->y;
