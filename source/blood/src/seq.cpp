@@ -391,7 +391,7 @@ int seqGetID(int a1, int a2)
 {
     SEQINST *pInst = GetInstance(a1, a2);
     if (pInst)
-        pInst->at8;
+        return pInst->at8;
     return -1;
 }
 

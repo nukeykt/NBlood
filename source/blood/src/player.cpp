@@ -2030,9 +2030,9 @@ void PlayerKeelsOver(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        PLAYER *pPlayer = &gPlayer[p];
-        if (pXSprite == pXSprite)
+        if (gPlayer[p].pXSprite == pXSprite)
         {
+            PLAYER *pPlayer = &gPlayer[p];
             playerDamageSprite(pPlayer->at2ee, pPlayer, DAMAGE_TYPE_5, 500<<4);
             return;
         }
