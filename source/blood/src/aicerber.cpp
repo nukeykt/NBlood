@@ -135,10 +135,10 @@ static void BurnSeqCallback(int, int nXSprite)
     {
     case 227:
         actFireMissile(pSprite, -350, 0, aim.dx, aim.dy, aim.dz, 313);
-        actFireMissile(pSprite, -350, -100, aim.dx, aim.dy, aim.dz, 313);
+        actFireMissile(pSprite, 350, -100, aim.dx, aim.dy, aim.dz, 313);
         break;
     case 228:
-        actFireMissile(pSprite, -350, -100, aim.dx, aim.dy, aim.dz, 313);
+        actFireMissile(pSprite, 350, -100, aim.dx, aim.dy, aim.dz, 313);
         break;
     }
 }
