@@ -1699,18 +1699,21 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
     }
     else
     {
-        pVictim->at2c6++;
-        pVictim->at2ca[nVictim]++;
+        pKiller->at2c6++;
+        pKiller->at2ca[nKiller]++;
         if (gGameOptions.nGameType == 3)
         {
             if (pKiller->at2ea == pVictim->at2ea)
-                dword_21EFB0[pVictim->at2ea]--;
+                dword_21EFB0[pKiller->at2ea]--;
             else
-                dword_21EFB0[pVictim->at2ea]++;
+            {
+                dword_21EFB0[pKiller->at2ea]++;
+                dword_21EFD0[pKiller->at2ea]+=120;
+            }
         }
         int nMessage = Random(25);
-        int nSound = gSuicide[nMessage].at4;
-        const char* pzMessage = gSuicide[nMessage].at0;
+        int nSound = gVictory[nMessage].at4;
+        const char* pzMessage = gVictory[nMessage].at0;
         sprintf(buffer, pzMessage, gProfile[nKiller].name, gProfile[nVictim].name);
         if (gGameOptions.nGameType > 0 && nSound >= 0 && pKiller == gMe)
             sndStartSample(nSound, 255, 2, 0);
