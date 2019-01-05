@@ -69,7 +69,7 @@ void sub_158B4(PLAYER *pPlayer);
 void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput);
 void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput);
 void fakeMoveDude(SPRITE *pSprite);
-void sub_17430(SPRITE *pSprite, int num);
+void fakeActAirDrag(SPRITE *pSprite, int num);
 void fakeActProcessSprites(void);
 void viewCorrectPrediction(void);
 void viewBackupView(int nPlayer);

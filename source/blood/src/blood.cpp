@@ -1285,7 +1285,7 @@ RESTART:
 				netGetPackets();
 			while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
 			{
-				viewUpdatePrediction(&gFifoInput[gPredictTail][myconnectindex]);
+				viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
 			}
 			if (numplayers == 1)
 				gBufferJitter = 0;

@@ -52,22 +52,22 @@ struct VIEW {
 	int at3c;
 	int at40;
 	int at44;
-	int at48;
-	int at4c;
+	int at48; // posture
+	int at4c; // spin
 	long at50; // x
 	long at54; // y
 	long at58; // z
 	long at5c; //xvel
 	long at60; //yvel
 	long at64; //zvel
-	short at68;
-	unsigned int at6a;
-	char at6e;
+	short at68; // sectnum
+	unsigned int at6a; // floordist
+	char at6e; // look center
 	char at6f;
-	char at70;
-	char at71;
-	char at72;
-	short at73;
+	char at70; // run
+	char at71; // jump
+	char at72; // underwater
+	short at73; // sprite flags
 	SPRITEHIT at75;
 };
 
@@ -244,18 +244,17 @@ void viewInitializePrediction(void)
 	predict.at3c = gMe->at6b;
 	predict.at40 = gMe->at6f;
 	predict.at44 = gMe->at73;
-	memcpy(&predictOld, &predict, sizeof(VIEW));
+    predictOld = predict;
 }
 
 void viewUpdatePrediction(GINPUT *pInput)
 {
-	int top, bottom;
-	memcpy(&predictOld, &predict, sizeof(VIEW));
-	short var_18 = gMe->pSprite->cstat;
+    predictOld = predict;
+	short bakCstat = gMe->pSprite->cstat;
     gMe->pSprite->cstat = 0;
     fakePlayerProcess(gMe, pInput);
     fakeActProcessSprites();
-    gMe->pSprite->cstat = var_18;
+    gMe->pSprite->cstat = bakCstat;
     predictFifo[gPredictTail&255] = predict;
     gPredictTail++;
 }
@@ -270,75 +269,74 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
 {
     POSTURE *pPosture = &gPosture[pPlayer->at5f][predict.at48];
     predict.at70 = pInput->syncFlags.run;
+    predict.at70 = 0;
     predict.at71 = pInput->buttonFlags.jump;
     if (predict.at48 == 1)
     {
-        int sinVal = Sin(predict.at30);
-        int cosVal = Cos(predict.at30);
+        int x = Cos(predict.at30);
+        int y = Sin(predict.at30);
         if (pInput->forward)
         {
-            int fwd = pInput->forward;
-            if (fwd > 0)
-                fwd *= pPosture->at0;
+            int forward = pInput->forward;
+            if (forward > 0)
+                forward *= pPosture->at0;
             else
-                fwd *= pPosture->at8;
-            predict.at5c += mulscale30(fwd, cosVal);
-            predict.at60 += mulscale30(fwd, sinVal);
+                forward *= pPosture->at8;
+            predict.at5c += mulscale30(forward, x);
+            predict.at60 += mulscale30(forward, y);
         }
         if (pInput->strafe)
         {
-            int stf = pInput->strafe*pPosture->at4;
-            predict.at5c += mulscale16(stf, sinVal);
-            predict.at60 -= mulscale16(stf, cosVal);
+            int strafe = pInput->strafe;
+            strafe *= pPosture->at4;
+            predict.at5c += mulscale16(strafe, y);
+            predict.at60 -= mulscale16(strafe, x);
         }
     }
     else if (predict.at6a < 0x100)
     {
-        int drag = 0x10000;
+        int speed = 0x10000;
         if (predict.at6a > 0)
-            drag -= divscale16(predict.at6a, 0x100);
-        int sinVal = Sin(predict.at30);
-        int cosVal = Cos(predict.at30);
+            speed -= divscale16(predict.at6a, 0x100);
+        int x = Cos(predict.at30);
+        int y = Sin(predict.at30);
         if (pInput->forward)
         {
-            int fwd = pInput->forward;
-            if (fwd > 0)
-                fwd *= pPosture->at0;
+            int forward = pInput->forward;
+            if (forward > 0)
+                forward *= pPosture->at0;
             else
-                fwd *= pPosture->at8;
+                forward *= pPosture->at8;
             if (predict.at6a)
-                fwd = mulscale16(fwd, drag);
-            predict.at5c += mulscale30(fwd, cosVal);
-            predict.at60 += mulscale30(fwd, sinVal);
+                forward = mulscale16(forward, speed);
+            predict.at5c += mulscale30(forward, x);
+            predict.at60 += mulscale30(forward, y);
         }
         if (pInput->strafe)
         {
-            int stf = pInput->strafe*pPosture->at4;
+            int strafe = pInput->strafe;
+            strafe *= pPosture->at4;
             if (predict.at6a)
-                stf = mulscale16(stf, drag);
-            predict.at5c += mulscale30(stf, sinVal);
-            predict.at60 -= mulscale30(stf, cosVal);
+                strafe = mulscale16(strafe, speed);
+            predict.at5c += mulscale30(strafe, y);
+            predict.at60 -= mulscale30(strafe, x);
         }
     }
     if (pInput->turn)
-    {
-        predict.at30 = (predict.at30+pInput->turn*4)&2047;
-    }
-    if (pInput->keyFlags.spin180 && predict.at4c == 0)
-        predict.at4c = -1024;
+        predict.at30 = (predict.at30+((pInput->turn<<2)>>4))&2047;
+    if (pInput->keyFlags.spin180)
+        if (!predict.at4c)
+            predict.at4c = -1024;
     if (predict.at4c < 0)
     {
-        short step;
+        int speed;
         if (predict.at48 == 1)
-            step = 64;
+            speed = 64;
         else
-            step = 128;
+            speed = 128;
 
-        predict.at4c += step;
-        if (predict.at4c >= 0)
-            predict.at4c = 0;
-
-        predict.at30 += step;
+        predict.at4c = ClipLow(predict.at4c+speed, 0);
+        predict.at30 += speed;
     }
 
     if (!predict.at71)
@@ -348,28 +346,28 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     {
     case 1:
         if (predict.at71)
-            predict.at64 -= 23301;
-        if (predict.at8&2)
-            predict.at64 += 23301;
+            predict.at64 -= 0x5b05;
+        if (pInput->buttonFlags.crouch)
+            predict.at64 += 0x5b05;
         break;
     case 2:
-        if (predict.at8&2)
+        if (!pInput->buttonFlags.crouch)
             predict.at48 = 0;
         break;
     default:
         if (!predict.at6f && predict.at71 && predict.at6a == 0)
         {
             if (packItemActive(pPlayer, 4))
-                predict.at64 = -1529173;
+                predict.at64 = -0x175555;
             else
-                predict.at64 = -764586;
+                predict.at64 = -0xbaaaa;
             predict.at6f = 1;
         }
-        if (predict.at8 & 2)
+        if (pInput->buttonFlags.crouch)
             predict.at48 = 2;
         break;
     }
-    if (predict.at6e && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookUp)
+    if (predict.at6e && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookDown)
     {
         if (predict.at20 < 0)
             predict.at20 = ClipHigh(predict.at20+4, 0);
@@ -382,13 +380,13 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     {
         if (pInput->buttonFlags.lookUp)
             predict.at20 = ClipHigh(predict.at20+4, 60);
-        if (pInput->buttonFlags.lookUp)
+        if (pInput->buttonFlags.lookDown)
             predict.at20 = ClipLow(predict.at20-4, -60);
     }
     if (pInput->mlook < 0)
-        predict.at20 = ClipRange((pInput->mlook+3)>>2, -60, 60);
-    else if (pInput->mlook < 0)
-        predict.at20 = ClipRange(pInput->mlook>>2, -60, 60);
+        predict.at20 = ClipRange(predict.at20+((pInput->mlook+3)>>2), -60, 60);
+    else
+        predict.at20 = ClipRange(predict.at20+(pInput->mlook>>2), -60, 60);
 
     if (predict.at20 > 0)
         predict.at24 = mulscale30(120, Sin(predict.at20*8));
@@ -398,17 +396,23 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         predict.at24 = 0;
 
     int nSector = predict.at68;
-    if (predict.at6a < 16 && ((predict.at75.florhit&0xe000) == 0x4000 || (predict.at75.florhit&0xe000) == 0) && (sector[nSector].floorstat&2) != 0)
+    int florhit = predict.at75.florhit & 0xe000;
+    char va;
+    if (predict.at6a < 16 && (florhit == 0x4000 || florhit == 0))
+        va = 1;
+    else
+        va = 0;
+    if (va && (sector[nSector].floorstat&2) != 0)
     {
-        int floorZ = getflorzofslope(nSector, predict.at50, predict.at54);
-        int newX = predict.at50 + mulscale16(64, Cos(predict.at30));
-        int newY = predict.at54 + mulscale16(64, Sin(predict.at30));
-        short newSector;
-        updatesector(newX, newY, &newSector);
-        if (newSector == nSector)
+        int z1 = getflorzofslope(nSector, predict.at50, predict.at54);
+        int x2 = predict.at50 + mulscale16(64, Cos(predict.at30));
+        int y2 = predict.at54 + mulscale16(64, Sin(predict.at30));
+        short nSector2 = nSector;
+        updatesector(x2, y2, &nSector2);
+        if (nSector2 == nSector)
         {
-            int newFloorZ = getflorzofslope(newSector, newX, newY);
-            predict.at28 = interpolate(predict.at28, (floorZ-newFloorZ)>>3, 0x4000);
+            int z2 = getflorzofslope(nSector2, x2, y2);
+            predict.at28 = interpolate(predict.at28, (z1-z2)>>3, 0x4000);
         }
     }
     else
@@ -432,85 +436,85 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
     top += predict.at58-pSprite->z;
     bottom += predict.at58-pSprite->z;
 
-    int floordist = (predict.at58-bottom)/4;
-    int ceildist = (predict.at58-top)/4;
+    int dzb = (bottom-predict.at58)/4;
+    int dzt = (predict.at58-top)/4;
 
-    int clipdist = pSprite->clipdist<<2;
+    int dw = pSprite->clipdist<<2;
     short nSector = predict.at68;
     if (!gNoClip)
     {
-        pushmove_old((int32_t*)&predict.at50, (int32_t*)&predict.at54, (int32_t*)&predict.at58, &predict.at68, clipdist, ceildist, floordist, 0x10001);
+        pushmove_old((int32_t*)&predict.at50, (int32_t*)&predict.at54, (int32_t*)&predict.at58, &predict.at68, dw, dzt, dzb, CLIPMASK0);
         if (predict.at68 == -1)
             predict.at68 = nSector;
     }
     fakeProcessInput(pPlayer, pInput);
 
-    int vel = approxDist(predict.at5c, predict.at60);
+    int nSpeed = approxDist(predict.at5c, predict.at60);
 
-    predict.at3c += mulscale16(0x7000, predict.at64-predict.at3c);
-    int tmp = predict.at5c-pPosture->at24-predict.at38;
-    int mult;
-    if (tmp > 0) mult = 40960; else mult = 6144;
-    predict.at3c += mulscale16(tmp<<8, mult);
-    predict.at38 += predict.at38>>8;
+    predict.at3c = interpolate(predict.at3c, predict.at64, 0x7000);
+    int dz = predict.at58-pPosture->at24-predict.at38;
+    if (dz > 0)
+        predict.at3c += mulscale16(dz<<8, 0xa000);
+    else
+        predict.at3c += mulscale16(dz<<8, 0x1800);
+    predict.at38 += predict.at3c>>8;
 
-    predict.at44 += mulscale16(0x5000,predict.at64-predict.at44);
-    tmp = predict.at58-pPosture->at28-predict.at40;
-    if (tmp > 0) mult = 32768; else mult = 3072;
-    predict.at44 += mulscale16(tmp<<8, mult);
+    predict.at44 = interpolate(predict.at44, predict.at64, 0x5000);
+    dz = predict.at58-pPosture->at28-predict.at40;
+    if (dz > 0)
+        predict.at44 += mulscale16(dz<<8, 0x8000);
+    else
+        predict.at44 += mulscale16(dz<<8, 0xc00);
     predict.at40 += predict.at44>>8;
 
-    predict.at0 -= 4;
-    if (predict.at0 < 0)
-        predict.at0 = 0;
+    predict.at34 = predict.at40 - predict.at38 - (12<<8);
 
-    vel >>= 16;
+    predict.at0 = ClipLow(predict.at0-4, 0);
+
+    nSpeed >>= 16;
 	if (predict.at48 == 1)
 	{
 		predict.at4 = (predict.at4+17)&2047;
 		predict.at14 = (predict.at14+17)&2047;
-		predict.at8 = mulscale30(10*pPosture->at14,Sin(predict.at4));
+		predict.at8 = mulscale30(10*pPosture->at14,Sin(predict.at4*2));
 		predict.atc = mulscale30(predict.at0*pPosture->at18,Sin(predict.at4-256));
 		predict.at18 = mulscale30(predict.at0*pPosture->at1c,Sin(predict.at14*2));
-		predict.at1c = mulscale30(predict.at0*pPosture->at20,Sin(predict.at14-341));
+		predict.at1c = mulscale30(predict.at0*pPosture->at20,Sin(predict.at14-0x155));
 	}
 	else
 	{
 		if (pXSprite->at30_0 < 256)
 		{
-			predict.at4 = (predict.at4+(pPosture->atc[predict.at70]<<2))&2047;
-			predict.at14 = (predict.at14+(pPosture->atc[predict.at70]<<2)/2)&2047;
+			predict.at4 = (predict.at4+(pPosture->atc[predict.at70]*4))&2047;
+			predict.at14 = (predict.at14+(pPosture->atc[predict.at70]*4)/2)&2047;
 			if (predict.at70)
 			{
 				if (predict.at0 < 60)
-                    predict.at0 = ClipHigh(predict.at0 + vel, 60);
+                    predict.at0 = ClipHigh(predict.at0 + nSpeed, 60);
 			}
 			else
 			{
 				if (predict.at0 < 30)
-                    predict.at0 = ClipHigh(predict.at0 + vel, 30);
+                    predict.at0 = ClipHigh(predict.at0 + nSpeed, 30);
 			}
 		}
-		predict.at8 = mulscale30(predict.at0*pPosture->at14,Sin(predict.at4));
+		predict.at8 = mulscale30(predict.at0*pPosture->at14,Sin(predict.at4*2));
 		predict.atc = mulscale30(predict.at0*pPosture->at18,Sin(predict.at4-256));
 		predict.at18 = mulscale30(predict.at0*pPosture->at1c,Sin(predict.at14*2));
-		predict.at1c = mulscale30(predict.at0*pPosture->at20,Sin(predict.at14-341));
+		predict.at1c = mulscale30(predict.at0*pPosture->at20,Sin(predict.at14-0x155));
 	}
-	if (pXSprite->health != 0)
+	if (!pXSprite->health)
+        return;
+	predict.at72 = 0;
+	if (predict.at48 == 1)
 	{
-		predict.at72 = 0;
-		if (predict.at48 == 1)
+		predict.at72 = 1;
+        int nSector = predict.at68;
+        int nLink = gLowerLink[nSector];
+		if (nLink > 0 && (qsprite[nLink].type == 14 || qsprite[nLink].type == 10))
 		{
-			predict.at72 = 1;
-			if (gLowerLink[predict.at68] > 0)
-			{
-				if (sprite[gLowerLink[predict.at68]].lotag == 14 || sprite[gLowerLink[predict.at68]].lotag == 10)
-				{
-					int z = getceilzofslope(predict.at68, predict.at50, predict.at54);
-					if (z > predict.at38)
-						predict.at72 = 0;
-				}
-			}
+			if (getceilzofslope(nSector, predict.at50, predict.at54) > predict.at38)
+				predict.at72 = 0;
 		}
 	}
 }
@@ -519,62 +523,63 @@ void fakeMoveDude(SPRITE *pSprite)
 {
     PLAYER *pPlayer = NULL;
     int bottom, top;
-    if (pSprite->type >= 231 && pSprite->type <= 238)
-    {
-        pPlayer = &gPlayer[pSprite->type - 231];
-    }
+    if (IsPlayerSprite(pSprite))
+        pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     GetSpriteExtents(pSprite, &top, &bottom);
 	top += predict.at58 - pSprite->z;
 	bottom += predict.at58 - pSprite->z;
-    int var28 = (bottom-predict.at58)/4;
-    int var5c = (predict.at58-top)/4;
-    int clipdist = pSprite->clipdist*4;
+    int bz = (bottom-predict.at58)/4;
+    int tz = (predict.at58-top)/4;
+    int wd = pSprite->clipdist*4;
     int nSector = predict.at68;
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    if (predict.at5c != 0 || predict.at60 != 0)
+    if (predict.at5c || predict.at60)
     {
         if (pPlayer && gNoClip)
         {
-            int x = predict.at50 + (predict.at5c >> 12);
-            int y = predict.at54 + (predict.at60 >> 12);
-            predict.at50 = x;
-            predict.at54 = y;
-            if (!FindSector(x, y, &nSector))
+            predict.at50 += predict.at5c>>12;
+            predict.at54 += predict.at60>>12;
+            if (!FindSector(predict.at50, predict.at54, &nSector))
                 nSector = predict.at68;
         }
         else
         {
-            int cstatbak = pSprite->cstat;
-            pSprite->cstat &= ~0x101;
-            predict.at75.hit = ClipMove(&predict.at50, &predict.at54, &predict.at58, &nSector, predict.at5c >> 12, predict.at60 >> 12, clipdist, var5c, var28, 0x13001);
+            short bakCstat = pSprite->cstat;
+            pSprite->cstat &= ~257;
+            predict.at75.hit = ClipMove(&predict.at50, &predict.at54, &predict.at58, &nSector, predict.at5c >> 12, predict.at60 >> 12, wd, tz, bz, 0x13001);
             if (nSector == -1)
                 nSector = predict.at68;
                     
             if (sector[nSector].lotag >= 612 && sector[nSector].lotag <= 617)
             {
                 short nSector2 = nSector;
-                pushmove_old((int32_t*)&predict.at50, (int32_t*)&predict.at54, (int32_t*)&predict.at58, &nSector2, clipdist, var5c, var28, 0x10001);
+                pushmove_old((int32_t*)&predict.at50, (int32_t*)&predict.at54, (int32_t*)&predict.at58, &nSector2, wd, tz, bz, 0x10001);
                 if (nSector2 != -1)
                     nSector = nSector2;
             }
 
             dassert(nSector >= 0);
 
-            predict.at68 = nSector;
-
-            pSprite->cstat = cstatbak;
+            pSprite->cstat = bakCstat;
         }
-        if ((predict.at75.hit & 0xe000) == 0x8000)
+        switch (predict.at75.hit&0xe000)
         {
-            int nWall = predict.at75.hit&(kMaxWalls-1);
-            WALL *pWall = &qwall[nWall];
-            if (pWall->nextsector != -1)
+        case 0x8000:
+        {
+            int nHitWall = predict.at75.hit&0x1fff;
+            WALL *pHitWall = &qwall[nHitWall];
+            if (pHitWall->nextsector != -1)
             {
-                SECTOR *pSector = &qsector[pWall->nextsector];
-                if (top >= pSector->ceilingz && bottom <= pSector->ceilingz) { }
-                actWallBounceVector(&predict.at5c, &predict.at60, nWall, 0);
+                SECTOR *pHitSector = &qsector[pHitWall->nextsector];
+                if (top < pHitSector->ceilingz || bottom > pHitSector->floorz)
+                {
+                    // ???
+                }
             }
+            actWallBounceVector(&predict.at5c, &predict.at60, nHitWall, 0);
+            break;
+        }
         }
     }
     if (predict.at68 != nSector)
@@ -582,167 +587,156 @@ void fakeMoveDude(SPRITE *pSprite)
         dassert(nSector >= 0 && nSector < kMaxSectors);
         predict.at68 = nSector;
     }
-    char var4 = 0, var8 = 0;
+    char bUnderwater = 0;
+    char bDepth = 0;
     int nXSector = sector[nSector].extra;
     if (nXSector > 0)
     {
         XSECTOR *pXSector = &xsector[nXSector];
         if (pXSector->at13_4)
-            var8 = 1;
+            bUnderwater = 1;
         if (pXSector->at13_5)
-            var4 = 1;
+            bDepth = 1;
     }
-    int link1 = gUpperLink[nSector];
-    int link2 = gLowerLink[nSector];
-    if (link1 >= 0 && (qsprite[link1].type == 9 || qsprite[link1].type == 13))
-        var4 = 1;
-    if (link2 >= 0 && (qsprite[link2].type == 10 || qsprite[link1].type == 14))
-        var4 = 1;
+    int nUpperLink = gUpperLink[nSector];
+    int nLowerLink = gLowerLink[nSector];
+    if (nUpperLink >= 0 && (qsprite[nUpperLink].type == 9 || qsprite[nUpperLink].type == 13))
+        bDepth = 1;
+    if (nLowerLink >= 0 && (qsprite[nLowerLink].type == 10 || qsprite[nUpperLink].type == 14))
+        bDepth = 1;
     if (pPlayer)
-        clipdist += 16;
+        wd += 16;
 
     if (predict.at64)
         predict.at58 += predict.at64 >> 8;
 
-    SPRITE tSprite = *pSprite;
-    tSprite.x = predict.at50;
-    tSprite.y = predict.at54;
-    tSprite.z = predict.at58;
-    tSprite.sectnum = predict.at68;
-    long var54, var50, var4c, var48;
-    GetZRange(&tSprite, &var54, &var50, &var4c, &var48, clipdist, 0x10001);
-    GetSpriteExtents(&tSprite, &top, &bottom);
+    SPRITE pTempSprite = *pSprite;
+    pTempSprite.x = predict.at50;
+    pTempSprite.y = predict.at54;
+    pTempSprite.z = predict.at58;
+    pTempSprite.sectnum = predict.at68;
+    long ceilZ, ceilHit, floorZ, floorHit;
+    GetZRange(&pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, 0x10001);
+    GetSpriteExtents(&pTempSprite, &top, &bottom);
     if (predict.at73 & 2)
     {
-        int tmp = 58254;
-        if (var4)
+        int vc = 58254;
+        if (bDepth)
         {
-            if (var8)
+            if (bUnderwater)
             {
-                int z = getceilzofslope(nSector, predict.at50, predict.at54);
-                if (z > top)
-                {
-                    tmp = 58254+(-80099*(bottom-z))/(bottom-top);
-                }
+                int cz = getceilzofslope(nSector, predict.at50, predict.at54);
+                if (cz > top)
+                    vc += ((bottom-cz)*-80099) / (bottom-top);
+                else
+                    vc = 0;
             }
             else
             {
-                int z = getflorzofslope(nSector, predict.at50, predict.at54);
-                if (z < bottom)
-                {
-                    tmp = 58254+(-80099*(top-z))/(bottom-top);
-                }
+                int fz = getflorzofslope(nSector, predict.at50, predict.at54);
+                if (fz < bottom)
+                    vc += ((bottom-fz)*-80099) / (bottom-top);
             }
         }
         else
         {
-            if (!var8 && bottom >= var4c)
-            {
-                tmp = 0;
-            }
+            if (bUnderwater)
+                vc = 0;
+            else if (bottom >= floorZ)
+                vc = 0;
         }
-        if (tmp)
+        if (vc)
         {
-            GetSpriteExtents(&tSprite, &top, &bottom);
-            if (bottom >= var4c)
+            predict.at58 += ((vc*4)/2)>>8;
+            predict.at64 += vc;
+        }
+    }
+    GetSpriteExtents(&pTempSprite, &top, &bottom);
+    if (bottom >= floorZ)
+    {
+        int floorZ2 = floorZ;
+        int floorHit2 = floorHit;
+        GetZRange(&pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, 0x13001);
+        if (bottom <= floorZ && predict.at58-floorZ2 < bz)
+        {
+            floorZ = floorZ2;
+            floorHit = floorHit2;
+        }
+    }
+    if (floorZ <= bottom)
+    {
+        predict.at75.florhit = floorHit;
+        predict.at58 += floorZ-bottom;
+        long var44 = predict.at64-velFloor[predict.at68];
+        if (var44 > 0)
+        {
+            actFloorBounceVector(&predict.at5c, &predict.at60, &var44, predict.at68, 0);
+            predict.at64 = var44;
+            if (klabs(predict.at64) < 0x10000)
             {
-                int var48_bak = var48;
-                int var4c_bak = var4c;
-                GetZRange(&tSprite, &var54, &var50, &var4c, &var48, pSprite->clipdist<<2, 0x13001);
-                if (bottom <= var4c && predict.at58-var4c_bak < var28)
-                {
-                    var48 = var48_bak;
-                    var4c = var4c_bak;
-                }
-            }
-            if (bottom >= var4c)
-            {
-                predict.at75.florhit = var48;
-                predict.at58 += var4c-bottom;
-                long var44 = predict.at64-velFloor[predict.at68];
-                if (var44 > 0)
-                {
-                    actFloorBounceVector(&predict.at5c, &predict.at60, &var44, predict.at68, 0);
-                    predict.at64 = var44;
-                    if (klabs(var44) >= 0x1000)
-                    {
-                        predict.at73 &= ~4;
-                        predict.at64 = velFloor[predict.at68];
-                    }
-                    else
-                        predict.at73 |= 4;
-                }
-                else if (predict.at64 == 0)
-                {
-                    predict.at73 &= ~4;
-                }
+                predict.at64 = velFloor[predict.at68];
+                predict.at73 &= ~4;
             }
             else
-            {
-                predict.at75.florhit = 0;
-                if (predict.at73 & 2)
-                    predict.at73 |= 4;
-            }
-            if (top <= var54)
-            {
-                predict.at75.ceilhit = var50;
-                predict.at58 += klabs(var54-top);
-                if (predict.at64 <= 0)
-                {
-                    if (predict.at73 & 4)
-                    {
-                        predict.at64 = mulscale16(-predict.at64,0x2000);
-                    }
-                }
-            }
-            else
-                predict.at75.ceilhit = 0;
+                predict.at73 |= 4;
+        }
+        else if (predict.at64 == 0)
+            predict.at73 &= ~4;
+    }
+    else
+    {
+        predict.at75.florhit = 0;
+        if (predict.at73 & 2)
+            predict.at73 |= 4;
+    }
+    if (top <= ceilZ)
+    {
+        predict.at75.ceilhit = ceilHit;
+        predict.at58 += ClipLow(ceilZ-top, 0);
+        if (predict.at64 <= 0 && (predict.at73&4))
+            predict.at64 = mulscale16(-predict.at64, 0x2000);
+    }
+    else
+        predict.at75.ceilhit = 0;
 
-            GetSpriteExtents(&tSprite, &top, &bottom);
+    GetSpriteExtents(&pTempSprite, &top, &bottom);
 
-            int zDiff = var4c-bottom;
-            if (zDiff < 0)
-                zDiff = 0;
-            predict.at6a = zDiff >> 8;
-            if (predict.at5c != 0 || predict.at60 != 0)
+    predict.at6a = ClipLow(floorZ-bottom, 0)>>8;
+    if (predict.at5c || predict.at60)
+    {
+        if ((floorHit & 0xe000) == 0xc000)
+        {
+            int nHitSprite = floorHit & 0x1fff;
+            if ((sprite[nHitSprite].cstat & 0x30) == 0)
             {
-                if ((var48 & 0xe000) == 0xc000 && (sprite[var48 & (kMaxSprites-1)].cstat&0x30) == 0)
-                {
-                    int nSprite = var48 & (kMaxSprites-1);
-                    predict.at5c += mulscale(4,predict.at50-sprite[nSprite].x,2);
-                    predict.at60 += mulscale(4,predict.at54-sprite[nSprite].y,2);
-                }
-                else
-                {
-                    int nSector = pSprite->sectnum;
-                    if ((sector[nSector].extra <= 0 || !xsector[sector[nSector].extra].at13_4) && predict.at6a < 0x100)
-                    {
-                        int drag = gDudeDrag;
-                        if (predict.at6a > 0)
-                        {
-                            drag -= scale(gDudeDrag,predict.at6a,0x100);
-                        }
-                        predict.at5c -= mulscale16r(predict.at5c, drag);
-                        predict.at60 -= mulscale16r(predict.at60, drag);
-                        if (approxDist(predict.at5c, predict.at60) < 0x1000)
-                        {
-                            predict.at5c = 0;
-                            predict.at60 = 0;
-                        }
-                    }
-                }
+                predict.at5c += mulscale(4, predict.at50 - sprite[nHitSprite].x, 2);
+                predict.at60 += mulscale(4, predict.at54 - sprite[nHitSprite].y, 2);
+                return;
             }
         }
+        int nXSector = sector[pSprite->sectnum].extra;
+        if (nXSector > 0 && xsector[nXSector].at13_4)
+            return;
+        if (predict.at6a >= 0x100)
+            return;
+        int nDrag = gDudeDrag;
+        if (predict.at6a > 0)
+            nDrag -= scale(gDudeDrag, predict.at6a, 0x100);
+        predict.at5c -= mulscale16r(predict.at5c, nDrag);
+        predict.at60 -= mulscale16r(predict.at60, nDrag);
+        if (approxDist(predict.at5c, predict.at60) < 0x1000)
+            predict.at5c = predict.at60 = 0;
     }
 }
 
-void sub_17430(SPRITE *pSprite, int num)
+void fakeActAirDrag(SPRITE *pSprite, int num)
 {
-    int nSector = predict.at68;
     int xvec = 0;
     int yvec = 0;
+    int nSector = predict.at68;
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    int nXSector = sector[nSector].extra;
+    SECTOR *pSector = &qsector[nSector];
+    int nXSector = pSector->extra;
     if (nXSector > 0)
     {
         dassert(nXSector < kMaxXSectors);
@@ -751,16 +745,14 @@ void sub_17430(SPRITE *pSprite, int num)
         {
             int vel = pXSector->at35_1<<12;
             if (!pXSector->at37_6 && pXSector->at1_7)
-            {
                 vel = mulscale16(vel, pXSector->at1_7);
-            }
             xvec = mulscale30(vel, Cos(pXSector->at36_3));
             yvec = mulscale30(vel, Sin(pXSector->at36_3));
         }
     }
-    predict.at5c = interpolate(predict.at5c, xvec, num);
-    predict.at60 = interpolate(predict.at60, yvec, num);
-    predict.at64 = interpolate(predict.at64, 0, num);
+    predict.at5c += mulscale16(xvec-predict.at5c, num);
+    predict.at60 += mulscale16(yvec-predict.at60, num);
+    predict.at64 -= mulscale16(predict.at64, num);
 }
 
 void fakeActProcessSprites(void)
@@ -787,24 +779,24 @@ void fakeActProcessSprites(void)
 			bottom += predict.at58 - pSprite->z;
 			if (getflorzofslope(nSector, predict.at50, predict.at54) < bottom)
 			{
-				int ua = pXSector->at15_0;
+				int angle = pXSector->at15_0;
+                int speed = 0;
 				if (pXSector->at13_0 || pXSector->at1_6 || pXSector->at1_7)
 				{
-					int uv = pXSector->at14_0 << 9;
+					speed = pXSector->at14_0 << 9;
 					if (!pXSector->at13_0 && pXSector->at1_7)
-						uv = mulscale16(uv, pXSector->at1_7);
-					
-					if (sector[nSector].floorstat&0x40)
-						ua = (GetWallAngle(sector[nSector].wallptr)+512)&2047;
-					predict.at5c += mulscale30(uv,Cos(ua));
-					predict.at60 += mulscale30(uv,Sin(ua));
+						speed = mulscale16(speed, pXSector->at1_7);
 				}
+				if (sector[nSector].floorstat&64)
+					angle = (GetWallAngle(sector[nSector].wallptr)+512)&2047;
+				predict.at5c += mulscale30(speed,Cos(angle));
+				predict.at60 += mulscale30(speed,Sin(angle));
 			}
 		}
         if (pXSector && pXSector->at13_4)
-            sub_17430(pSprite, 5376);
+            fakeActAirDrag(pSprite, 5376);
         else
-            sub_17430(pSprite, 128);
+            fakeActAirDrag(pSprite, 128);
 
         if ((predict.at73 & 4) != 0 || predict.at5c != 0 || predict.at60 != 0 || predict.at64 != 0 || velFloor[predict.at68] != 0 || velCeil[predict.at68] != 0)
         {
@@ -2483,7 +2475,7 @@ void UpdateDacs(int nPalette)
     }
 }
 
-bool gPrediction = 0;
+bool gPrediction = true;
 
 char otherMirrorGotpic[2];
 char bakMirrorGotpic[2];
