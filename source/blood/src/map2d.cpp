@@ -164,6 +164,7 @@ void CViewMap::sub_25C74(void)
     if (!bActive)
         return;
     char tm = 0;
+    int viewSize = gViewSize;
     if (gViewSize > 2)
     {
         viewResizeView(2);
@@ -189,6 +190,8 @@ void CViewMap::sub_25C74(void)
         viewDrawText(3, "MAP FOLLOW MODE", gViewX1S, nViewY+8, -128, 0, 2, 0);
     else
         viewDrawText(3, "MAP SCROLL MODE", gViewX1S, nViewY+8, -128, 0, 2, 0);
+    if (tm)
+        viewResizeView(viewSize);
 }
 
 void CViewMap::sub_25DB0(SPRITE *pSprite)

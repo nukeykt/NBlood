@@ -957,8 +957,6 @@ void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int 
 
 void viewTileSprite(int nTile, int nShade, int nPalette, int x1, int y1, int x2, int y2)
 {
-    // PORT-TODO:
-#if 0
     Rect rect1 = Rect(x1, y1, x2, y2);
     Rect rect2 = Rect(0, 0, xdim, ydim);
     rect1 &= rect2;
@@ -969,64 +967,13 @@ void viewTileSprite(int nTile, int nShade, int nPalette, int x1, int y1, int x2,
     dassert(nTile >= 0 && nTile < kMaxTiles);
     int width = tilesiz[nTile].x;
     int height = tilesiz[nTile].y;
-    int pixels = width * height;
-
-    if (!pixels) return;
-
-    char *pPalookup = palookup[nPalette] + (qgetpalookup(0, nShade)<<8);
-    char *pTile = tileLoadTile(nTile);
-    char *pEnd = pTile+pixels;
-    setupvlineasm(16);
-
-    extern intptr_t palookupoffse[4];
-    extern int32_t vince[4];
-    extern intptr_t frameplace;
-    extern intptr_t bufplce[4];
-    extern intptr_t vplce[4];
-
-    for (int i = 0; i < 4; i++)
-    {
-        palookupoffse[i] = (intptr_t)pPalookup;
-        vince[i] = 65536;
-    }
-
-    int y, yend;
-    for (y = rect1.y1; y < rect1.y2; y = yend)
-    {
-        yend = IncBy(y, height);
-        if (yend >= rect1.y2)
-            yend = rect1.y2;
-        char *pSource = pTile + (rect1.x1 % width)*height+(y % height);
-        char *pDest = (char*)frameplace+ylookup[y]+rect1.x1;
-        int x;
-        for (x = rect1.x1; x < rect1.x2 && (x&3) != 0; pDest++, x++);
-        {
-            vlineasm1(65536, (intptr_t)pPalookup, yend-y-1, 0, (intptr_t)pSource, (intptr_t)pDest);
-            pSource += height;
-            if (pSource >= pEnd)
-                pSource -= pixels;
-        }
-        for(;x+3 < rect1.x2; pDest += 4, x += 4)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                bufplce[i] = (intptr_t)pSource;
-                pSource += height;
-                if (pSource >= pEnd)
-                    pSource -= pixels;
-                vplce[i] = 0;
-            }
-            vlineasm4(yend-y, pDest);
-        }
-        for (; x < rect1.x2; pDest++, x++)
-        {
-            vlineasm1(65536, (intptr_t)pPalookup, yend-y-1, 0, (intptr_t)pSource, (intptr_t)pDest);
-            pSource += height;
-            if (pSource >= pEnd)
-                pSource -= pixels;
-        }
-    }
-#endif
+    int bx1 = DecBy(rect1.x1+1, width);
+    int by1 = DecBy(rect1.y1+1, height);
+    int bx2 = IncBy(rect1.x2, width);
+    int by2 = IncBy(rect1.y2, height);
+    for (int x = bx1; x < bx2; x += width)
+        for (int y = by1; y < by2; y += height)
+            rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 64+16+8, x1, y1, x2-1, y2-1);
 }
 
 void InitStatusBar(void)
@@ -1437,7 +1384,7 @@ void UpdateFrame(void)
 
 void viewDrawInterface(int arg)
 {
-    if (gViewMode == 3 && gViewSize > 2 && pcBackground != 0)
+    if (gViewMode == 3 && gViewSize >= 2 && pcBackground != 0)
     {
         UpdateFrame();
         pcBackground--;
