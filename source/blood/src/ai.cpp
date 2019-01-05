@@ -489,7 +489,7 @@ void aiActivateDude(SPRITE *pSprite, XSPRITE *pXSprite)
         DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
         XSECTOR *pXSector = NULL;
         if (sprite[pSprite->sectnum].extra > 0)
-            pXSector = &xsector[sprite[pSprite->sectnum].extra];
+            pXSector = &xsector[sector[pSprite->sectnum].extra];
         pDudeExtraE->at0 = 0;
         pDudeExtraE->at4 = 0;
         pDudeExtraE->at8 = 1;
@@ -1097,7 +1097,7 @@ void RecoilDude(SPRITE *pSprite, XSPRITE *pXSprite)
         {
             XSECTOR *pXSector = NULL;
             if (sector[pSprite->sectnum].extra > 0)
-                pXSector = &xsector[sprite[pSprite->sectnum].extra];
+                pXSector = &xsector[sector[pSprite->sectnum].extra];
             aiPlay3DSound(pSprite, 1702, AI_SFX_PRIORITY_2, -1);
             if (pXSector && pXSector->at13_4)
                 aiNewState(pSprite, pXSprite, &gillBeastSwimRecoil);
