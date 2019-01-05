@@ -1,6 +1,10 @@
+#include <stdio.h>
 #include "build.h"
 #include "compat.h"
 #include "common_game.h"
+#ifdef WITHKPLIB
+#include "kplib.h"
+#endif
 #include "config.h"
 #include "ai.h"
 #include "asound.h"
@@ -32,7 +36,7 @@ unsigned int dword_27AA40 = 0;
 void *dword_27AA44 = NULL;
 
 LoadSave LoadSave::head(123);
-int LoadSave::hFile = -1;
+FILE *LoadSave::hFile = NULL;
 
 short word_27AA54 = 0;
 
@@ -55,8 +59,8 @@ void LoadSave::Load(void)
 void LoadSave::Read(void *pData, int nSize)
 {
     dword_27AA38 += nSize;
-    dassert(hFile != -1);
-    if (read(hFile, pData, nSize) == -1)
+    dassert(hFile != NULL);
+    if (fread(pData, 1, nSize, hFile) != nSize)
         ThrowError("File error #%d reading save file.", errno);
 }
 
@@ -64,8 +68,8 @@ void LoadSave::Write(void *pData, int nSize)
 {
     dword_27AA38 += nSize;
     dword_27AA3C += nSize;
-    dassert(hFile != -1);
-    if (write(hFile, pData, nSize) == -1)
+    dassert(hFile != NULL);
+    if (fwrite(pData, 1, nSize, hFile) != nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
 
@@ -84,8 +88,8 @@ void LoadSave::LoadGame(char *pzFile)
         memset(qsprite, 0, sizeof(SPRITE)*kMaxSprites);
         automapping = 1;
     }
-    hFile = open(pzFile, 0x200);
-    if (hFile == -1)
+    hFile = fopen(pzFile, "rb");
+    if (!hFile)
         ThrowError("File error #%d loading save file.", errno);
     LoadSave *rover = head.next;
     while (rover != &head)
@@ -93,8 +97,8 @@ void LoadSave::LoadGame(char *pzFile)
         rover->Load();
         rover = rover->next;
     }
-    close(hFile);
-    hFile = -1;
+    fclose(hFile);
+    hFile = NULL;
     if (!gGameStarted)
         scrLoadPLUs();
     InitSectorFX();
@@ -144,8 +148,8 @@ void LoadSave::LoadGame(char *pzFile)
 
 void LoadSave::SaveGame(char *pzFile)
 {
-    hFile = open(pzFile, 0x261, 0x1b0);
-    if (hFile == -1)
+    hFile = fopen(pzFile, "wb");
+    if (hFile == NULL)
         ThrowError("File error #%d creating save file.", errno);
     dword_27AA38 = 0;
     dword_27AA40 = 0;
@@ -158,8 +162,8 @@ void LoadSave::SaveGame(char *pzFile)
         dword_27AA38 = 0;
         rover = rover->next;
     }
-    close(hFile);
-    hFile = -1;
+    fclose(hFile);
+    hFile = NULL;
 }
 
 class MyLoadSave : public LoadSave
@@ -190,12 +194,12 @@ void MyLoadSave::Load(void)
     Read(&numsectors, sizeof(numsectors));
     int nNumSprites;
     Read(&nNumSprites, sizeof(nNumSprites));
-    memset(sector, 0, sizeof(sector));
-    memset(wall, 0, sizeof(wall));
-    memset(sprite, 0, sizeof(sprite));
+    memset(sector, 0, sizeof(sector[0])*kMaxSectors);
+    memset(wall, 0, sizeof(wall[0])*kMaxWalls);
+    memset(sprite, 0, sizeof(sprite[0])*kMaxSprites);
     Read(sector, sizeof(sector[0])*numsectors);
     Read(wall, sizeof(wall[0])*numwalls);
-    Read(sprite, sizeof(sprite));
+    Read(sprite, sizeof(sprite[0])*kMaxSprites);
     Read(qsector_filler, sizeof(qsector_filler[0])*numsectors);
     Read(qsprite_filler, sizeof(qsprite_filler[0])*kMaxSprites);
     Read(&randomseed, sizeof(randomseed));
@@ -262,7 +266,7 @@ void MyLoadSave::Load(void)
             Read(&xwall[nXWall], sizeof(XWALL));
     }
     memset(xsector, 0, sizeof(xsector));
-    for (int nSector = 0; nSector < numwalls; nSector++)
+    for (int nSector = 0; nSector < numsectors; nSector++)
     {
         int nXSector = sector[nSector].extra;
         if (nXSector > 0)
@@ -299,7 +303,7 @@ void MyLoadSave::Save(void)
     Write(&nNumSprites, sizeof(nNumSprites));
     Write(sector, sizeof(sector[0])*numsectors);
     Write(wall, sizeof(wall[0])*numwalls);
-    Write(sprite, sizeof(sprite));
+    Write(sprite, sizeof(sprite[0])*kMaxSprites);
     Write(qsector_filler, sizeof(qsector_filler[0])*numsectors);
     Write(qsprite_filler, sizeof(qsprite_filler[0])*kMaxSprites);
     Write(&randomseed, sizeof(randomseed));
@@ -362,7 +366,7 @@ void MyLoadSave::Save(void)
         if (nXWall > 0)
             Write(&xwall[nXWall], sizeof(XWALL));
     }
-    for (int nSector = 0; nSector < numwalls; nSector++)
+    for (int nSector = 0; nSector < numsectors; nSector++)
     {
         int nXSector = sector[nSector].extra;
         if (nXSector > 0)
@@ -378,6 +382,59 @@ void MyLoadSave::Save(void)
 
 void LoadSavedInfo(void)
 {
+    BDIR *dirr;
+    struct Bdirent *dirent;
+    dirr = Bopendir("./");
+    int nCount = 0;
+    if (dirr)
+    {
+        while ((dirent = Breaddir(dirr)) && nCount < 10)
+        {
+            if (!Bwildmatch(dirent->name, "GAME*.SAV"))
+                continue;
+            FILE *pFile = fopen(dirent->name, "rb");
+            if (!pFile)
+                ThrowError("File error #%d loading save file header.", errno);
+            int vc, v8;
+            short v4;
+            vc = 0;
+            v8 = 0;
+            v4 = word_27AA54;
+            if (fread(&vc, 1, sizeof(vc), pFile) != sizeof(vc))
+            {
+                fclose(pFile);
+                nCount++;
+                continue;
+            }
+            if (vc != 'DULB')
+            {
+                fclose(pFile);
+                nCount++;
+                continue;
+            }
+            fread(&v4, 1, sizeof(v4), pFile);
+            if (v4 != BloodVersion)
+            {
+                fclose(pFile);
+                nCount++;
+                continue;
+            }
+            fread(&v8, 1, sizeof(v8), pFile);
+            vc = 4;
+            if (v8 != vc)
+            {
+                fclose(pFile);
+                nCount++;
+                continue;
+            }
+            if (fread(&gSaveGameOptions[nCount], 1, sizeof(gSaveGameOptions[0]), pFile) != sizeof(gSaveGameOptions[0]))
+                ThrowError("File error #%d reading save file.", errno);
+            strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
+            fclose(pFile);
+            nCount++;
+        }
+        Bclosedir(dirr);
+    }
     // PORT-TODO:
 #if 0
     struct find_t find;

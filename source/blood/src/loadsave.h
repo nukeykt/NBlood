@@ -1,11 +1,11 @@
 #pragma once
-
+#include <stdio.h>
 #include "levels.h"
 
 class LoadSave {
 public:
     static LoadSave head;
-    static int hFile;
+    static FILE *hFile;
     LoadSave *prev;
     LoadSave *next;
     LoadSave() {

@@ -1391,7 +1391,7 @@ void CGameMenuItemZEditBitmap::Draw(void)
     int x = atc+at14-1-(at24+1)*height;
     if (at20 && *at20)
     {
-        gMenuTextMgr.GetFontInfo(at8, NULL, &width, NULL);
+        gMenuTextMgr.GetFontInfo(at8, at20, &width, NULL);
         int shade2;
         if (at36)
         {
@@ -1419,7 +1419,7 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
     static char buffer[256];
     switch (event.at0)
     {
-    case 6:
+    case 7:
         if (at34)
         {
             strncpy(at20, buffer, at24);
@@ -1430,7 +1430,7 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         }
         gSaveGameActive = true;
         return true;
-    case 5:
+    case 6:
         if (!at35)
         {
             if (at30)
@@ -1452,12 +1452,12 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         buffer[at24-1] = 0;
         at34 = 1;
         return false;
-    case 8:
+    case 9:
         if (at34)
             BackChar();
         return false;
-    case 0:
-    case 7:
+    case 1:
+    case 8:
     {
         char key;
 #ifdef WIN32CODE
@@ -1477,11 +1477,11 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         }
         return CGameMenuItem::Event(event);
     }
-    case 1:
+    case 2:
         if (at34)
             return false;
         return CGameMenuItem::Event(event);
-    case 2:
+    case 3:
         if (at34)
             return false;
         return CGameMenuItem::Event(event);
