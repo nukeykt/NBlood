@@ -48,7 +48,7 @@ AISTATE zombieEUp = { 9, -1, 180, entryEStand, NULL, NULL, &zombieEUp2 };
 AISTATE zombie2Idle = { 0, -1, 0, entryAIdle, NULL, myThinkTarget, NULL };
 AISTATE zombie2Search = { 8, -1, 1800, NULL, NULL, myThinkSearch, &zombie2Idle };
 AISTATE zombieSIdle = { 10, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE zombie13AC2C = { 11, 0, 0, entryEZombie, NULL, NULL, &zombieAPonder };
+AISTATE zombie13AC2C = { 11, nStandClient, 0, entryEZombie, NULL, NULL, &zombieAPonder };
 
 static void HackSeqCallback(int, int nXSprite)
 {
