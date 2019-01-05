@@ -1300,15 +1300,15 @@ int StepRotateBusy(unsigned int nSector, unsigned int a2)
     int vbp;
     if (pXSector->at1_7 < a2)
     {
-        vbp = pSprite->ang+pXSector->at4_0;
+        vbp = pXSector->at4_0+pSprite->ang;
         int nWave = pXSector->at7_2;
         TranslateSector(nSector, GetWaveValue(pXSector->at1_7, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, pXSector->at4_0, pSprite->x, pSprite->y, vbp, 1);
     }
     else
     {
-        vbp = pSprite->ang-pXSector->at4_0;
+        vbp = pXSector->at4_0-pSprite->ang;
         int nWave = pXSector->at7_5;
-        TranslateSector(nSector, GetWaveValue(pXSector->at1_7, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, pXSector->at4_0, pSprite->x, pSprite->y, vbp, 1);
+        TranslateSector(nSector, GetWaveValue(pXSector->at1_7, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, vbp, pSprite->x, pSprite->y, pXSector->at4_0, 1);
     }
     pXSector->at1_7 = a2;
     if (pXSector->at9_2 == 5 && pXSector->at6_0)
