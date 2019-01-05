@@ -1784,10 +1784,18 @@ void viewProcessSprites(int cX, int cY, int cZ)
             }
             case 3:
             {
-                int top, bottom;
-                GetSpriteExtents(pTSprite, &top, &bottom);
-                if (getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) > bottom)
-                    nAnim = 1;
+                if (nXSprite > 0)
+                {
+                    if (gSpriteHit[nXSprite].florhit == 0)
+                        nAnim = 1;
+                }
+                else
+                {
+                    int top, bottom;
+                    GetSpriteExtents(pTSprite, &top, &bottom);
+                    if (getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) > bottom)
+                        nAnim = 1;
+                }
                 break;
             }
             case 6:
