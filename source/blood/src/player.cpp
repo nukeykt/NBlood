@@ -1673,7 +1673,7 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
     char buffer[128] = "";
     int nKiller = pKiller->pSprite->type-kDudePlayer1;
     dassert(nKiller >= 0 && nKiller < kMaxPlayers);
-    int nVictim = pKiller->pSprite->type-kDudePlayer1;
+    int nVictim = pVictim->pSprite->type-kDudePlayer1;
     dassert(nVictim >= 0 && nVictim < kMaxPlayers);
     if (myconnectindex == connecthead)
     {
