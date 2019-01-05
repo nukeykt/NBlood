@@ -210,16 +210,15 @@ static void thinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
                 pDudeExtraE->at4 = 0;
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
+                return;
             }
             else if (nDist < pDudeInfo->at13)
             {
                 pDudeExtraE->at4 = 0;
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
+                return;
             }
-            else
-                continue;
-            break;
         }
     }
 }
@@ -352,6 +351,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                             if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 210)
                                 aiNewState(pSprite, pXSprite, &ghostBlast);
                             break;
+                        default:
                             aiNewState(pSprite, pXSprite, &ghostBlast);
                             break;
                         }
@@ -465,7 +465,7 @@ static void MoveSlow(SPRITE *pSprite, XSPRITE *pXSprite)
     switch (pSprite->type)
     {
     case 210:
-        yvel[nSprite] = 0x44444;
+        zvel[nSprite] = 0x44444;
         break;
     }
 }
