@@ -2539,6 +2539,41 @@ void viewUpdateDelirium(void)
 	}
 }
 
+int shakeHoriz, shakeAngle, shakeX, shakeY, shakeZ, shakeBobX, shakeBobY;
+
+void viewUpdateShake(void)
+{
+    shakeHoriz = 0;
+    shakeAngle = 0;
+    shakeX = 0;
+    shakeY = 0;
+    shakeZ = 0;
+    shakeBobX = 0;
+    shakeBobY = 0;
+    if (gView->at35a)
+    {
+        int nValue = ClipHigh(gView->at35a * 8, 2000);
+        shakeHoriz += QRandom2(nValue >> 8);
+        shakeAngle += QRandom2(nValue >> 8);
+        shakeX += QRandom2(nValue >> 4);
+        shakeY += QRandom2(nValue >> 4);
+        shakeZ += QRandom2(nValue);
+        shakeBobX += QRandom2(nValue);
+        shakeBobY += QRandom2(nValue);
+    }
+    if (gView->at37f)
+    {
+        int nValue = ClipHigh(gView->at37f * 8, 2000);
+        shakeHoriz += QRandom2(nValue >> 8);
+        shakeAngle += QRandom2(nValue >> 8);
+        shakeX += QRandom2(nValue >> 4);
+        shakeY += QRandom2(nValue >> 4);
+        shakeZ += QRandom2(nValue);
+        shakeBobX += QRandom2(nValue);
+        shakeBobY += QRandom2(nValue);
+    }
+}
+
 void viewDrawScreen(void)
 {
     int nPalette = 0;
@@ -2593,7 +2628,7 @@ void viewDrawScreen(void)
                 cY = interpolate(predictOld.at54, predict.at54, gInterpolate);
                 cZ = interpolate(predictOld.at38, predict.at38, gInterpolate);
                 zDelta = interpolate(predictOld.at34, predict.at34, gInterpolate);
-                cA = mulscale16(((predict.at30-predictOld.at30+1024)&2047)-1024, gInterpolate) + predictOld.at30;
+                cA = interpolateang(predictOld.at30, predict.at30, gInterpolate);
                 va0 = interpolate(predictOld.at24, predict.at24, gInterpolate);
                 v90 = interpolate(predictOld.at28, predict.at28, gInterpolate);
                 v74 = interpolate(predictOld.atc, predict.atc, gInterpolate);
@@ -2608,7 +2643,7 @@ void viewDrawScreen(void)
                 cY = interpolate(pView->at54, cY, gInterpolate);
                 cZ = interpolate(pView->at38, cZ, gInterpolate);
                 zDelta = interpolate(pView->at34, zDelta, gInterpolate);
-                cA = mulscale16(((cA-pView->at30+1024)&2047)-1024, gInterpolate) + pView->at30;
+                cA = interpolateang(pView->at30, cA, gInterpolate);
                 va0 = interpolate(pView->at24, va0, gInterpolate);
                 v90 = interpolate(pView->at28, v90, gInterpolate);
                 v74 = interpolate(pView->atc, v74, gInterpolate);
@@ -2617,29 +2652,13 @@ void viewDrawScreen(void)
                 v48 = interpolate(pView->at18, v48, gInterpolate);
             }
         }
-
-        if (gView->at35a)
-        {
-            int nValue = ClipHigh(gView->at35a*8, 2000);
-            va0 += QRandom2(nValue>>8);
-            cA += QRandom2(nValue>>8);
-            cX += QRandom2(nValue>>4);
-            cY += QRandom2(nValue>>4);
-            cZ += QRandom2(nValue);
-            v4c += QRandom2(nValue);
-            v48 += QRandom2(nValue);
-        }
-        if (gView->at37f)
-        {
-            int nValue = ClipHigh(gView->at37f*8, 2000);
-            va0 += QRandom2(nValue>>8);
-            cA += QRandom2(nValue>>8);
-            cX += QRandom2(nValue>>4);
-            cY += QRandom2(nValue>>4);
-            cZ += QRandom2(nValue);
-            v4c += QRandom2(nValue);
-            v48 += QRandom2(nValue);
-        }
+        va0 += shakeHoriz;
+        cA += shakeAngle;
+        cX += shakeX;
+        cY += shakeY;
+        cZ += shakeZ;
+        v4c += shakeBobX;
+        v48 += shakeBobY;
         va0 += mulscale30(0x40000000-Cos(gView->at35e<<2), 30);
         if (gViewPos == 0)
         {

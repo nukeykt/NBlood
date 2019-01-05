@@ -106,6 +106,7 @@ void UpdateDacs(int nPalette);
 void viewDrawScreen(void);
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3);
 void viewUpdateDelirium(void);
+void viewUpdateShake(void);
 
 
 inline void viewInterpolateSector(int nSector, SECTOR *pSector)

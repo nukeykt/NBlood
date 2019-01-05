@@ -766,6 +766,7 @@ void ProcessFrame(void)
 	sndProcess();
 	ambProcess();
     viewUpdateDelirium();
+    viewUpdateShake();
 	sfxUpdate3DSounds();
 	gFrame++;
 	gFrameClock += 4;
