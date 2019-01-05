@@ -168,7 +168,7 @@ void IniFile::Load()
         fclose(fp);
     }
 
-    curNode->next = head.next;
+    curNode->next = &head;
 }
 
 void IniFile::Save(void)
