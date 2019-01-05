@@ -89,7 +89,7 @@ static void SpidBiteSeqCallback(int, int nXSprite)
                     {
                     case 213:
                         actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_17);
-                        if (IsPlayerSprite(pSprite) && !pPlayer->at31a && powerupCheck(pPlayer, 14) <= 0
+                        if (IsPlayerSprite(pTarget) && !pPlayer->at31a && powerupCheck(pPlayer, 14) <= 0
                             && Chance(0x4000))
                             powerupActivate(pPlayer, 28);
                         break;
