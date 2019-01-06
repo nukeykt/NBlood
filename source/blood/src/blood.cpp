@@ -421,7 +421,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 		}
 	}
 	scrLoadPLUs();
-	startpos.z = getflorzofslope(startpos.x,startpos.y,startsectnum);
+	startpos.z = getflorzofslope(startsectnum,startpos.x,startpos.y);
 	for (int i = 0; i < kMaxPlayers; i++)
 	{
 		gStartZone[i].x = startpos.x;
