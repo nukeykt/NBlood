@@ -289,8 +289,8 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         {
             int strafe = pInput->strafe;
             strafe *= pPosture->at4;
-            predict.at5c += mulscale16(strafe, y);
-            predict.at60 -= mulscale16(strafe, x);
+            predict.at5c += mulscale30(strafe, y);
+            predict.at60 -= mulscale30(strafe, x);
         }
     }
     else if (predict.at6a < 0x100)
@@ -405,8 +405,8 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     if (va && (sector[nSector].floorstat&2) != 0)
     {
         int z1 = getflorzofslope(nSector, predict.at50, predict.at54);
-        int x2 = predict.at50 + mulscale16(64, Cos(predict.at30));
-        int y2 = predict.at54 + mulscale16(64, Sin(predict.at30));
+        int x2 = predict.at50+mulscale30(64, Cos(predict.at30));
+        int y2 = predict.at54+mulscale30(64, Sin(predict.at30));
         short nSector2 = nSector;
         updatesector(x2, y2, &nSector2);
         if (nSector2 == nSector)
