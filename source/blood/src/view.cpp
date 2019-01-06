@@ -2866,7 +2866,10 @@ RORHACK:
             if (!ror_status[i] && TestBitString(gotpic, 4080+i))
                 do_ror_hack = true;
         if (do_ror_hack)
+        {
+            gView->pSprite->cstat = bakCstat;
             goto RORHACK;
+        }
 
         viewProcessSprites(cX, cY, cZ);
         sub_5571C(1);

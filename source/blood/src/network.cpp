@@ -891,7 +891,18 @@ void netInitialize(void)
                     for (int i = 1; i < kMaxPlayers; i++)
                     {
                         if (gNetPlayerPeer[i] == event.peer)
+                        {
                             gNetPlayerPeer[i] = NULL;
+                            for (int j = kMaxPlayers-1; j > i; j--)
+                            {
+                                if (gNetPlayerPeer[j])
+                                {
+                                    gNetPlayerPeer[i] = gNetPlayerPeer[j];
+                                    gNetPlayerPeer[j] = NULL;
+                                    break;
+                                }
+                            }
+                        }
                     }
                     break;
                 }
