@@ -303,7 +303,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         return;
     case 8:
         pXSprite->at17_5 = pXSprite->at17_5 ^ 1;
-        break;
+        return;
     }
     if (pSprite->statnum == 6 && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
@@ -1669,6 +1669,7 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         {
             int nSprite2 = a3.at0_0;
             int nXSprite2 = sprite[nSprite2].extra;
+            dassert(nXSprite2 > 0 && nXSprite2 < kMaxXSprites);
             pXSprite->at10_0 = xsprite[nXSprite2].at10_0;
             if (pXSprite->at10_0 == pXSprite->at12_0)
                 SetSpriteState(nSprite, pXSprite, 1);
