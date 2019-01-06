@@ -1376,10 +1376,10 @@ void UpdateFrame(void)
 
 void viewDrawInterface(int arg)
 {
-    if (gViewMode == 3 && gViewSize >= 2 && pcBackground != 0)
+    if (gViewMode == 3/* && gViewSize >= 2 && pcBackground != 0*/)
     {
         UpdateFrame();
-        pcBackground--;
+        //pcBackground--;
     }
     UpdateStatusBar(arg);
 }
