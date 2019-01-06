@@ -14,7 +14,7 @@
 
 char packet[576];
 bool gStartNewGame = 0;
-PACKETMODE gPacketMode = PACKETMODE_2;
+PACKETMODE gPacketMode = PACKETMODE_1;
 int gNetFifoClock = 0;
 int gNetFifoTail = 0;
 int gNetFifoHead[8];
