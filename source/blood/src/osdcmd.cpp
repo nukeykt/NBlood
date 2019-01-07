@@ -26,9 +26,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "control.h"
 #include "osd.h"
 #include "compat.h"
+#include "mmulti.h"
 #include "common_game.h"
 #include "config.h"
 #include "blood.h"
+#include "demo.h"
+#include "gamemenu.h"
+#include "levels.h"
+#include "messages.h"
+#include "network.h"
 #include "osdcmds.h"
 #include "view.h"
 
@@ -38,6 +44,148 @@ static inline int osdcmd_quit(osdcmdptr_t UNUSED(parm))
     UNREFERENCED_CONST_PARAMETER(parm);
     OSD_ShowDisplay(0);
     QuitGame();
+    return OSDCMD_OK;
+}
+
+static int osdcmd_changelevel(osdcmdptr_t parm)
+{
+    int32_t volume,level;
+    char *p;
+
+    volume = strtol(parm->parms[0], &p, 10) - 1;
+    if (p[0]) return OSDCMD_SHOWHELP;
+    level = strtol(parm->parms[1], &p, 10) - 1;
+    if (p[0]) return OSDCMD_SHOWHELP;
+
+    if (volume < 0) return OSDCMD_SHOWHELP;
+    if (level < 0) return OSDCMD_SHOWHELP;
+
+    if (volume >= 6)
+    {
+        OSD_Printf("changelevel: invalid volume number (range 1-%d)\n",6);
+        return OSDCMD_OK;
+    }
+
+    if (level >= gEpisodeInfo[volume].nLevels)
+    {
+        OSD_Printf("changelevel: invalid level number\n");
+        return OSDCMD_SHOWHELP;
+    }
+
+    if (numplayers > 1)
+    {
+        gPacketStartGame.episodeId = volume;
+        gPacketStartGame.levelId = level;
+        netBroadcastNewGame();
+        gStartNewGame = 1;
+        gGameMenuMgr.Deactivate();
+        return OSDCMD_OK;
+    }
+    levelSetupOptions(volume, level);
+    StartLevel(&gGameOptions);
+    viewResizeView(gViewSize);
+    gGameMenuMgr.Deactivate();
+
+    return OSDCMD_OK;
+}
+
+static int osdcmd_map(osdcmdptr_t parm)
+{
+    int32_t i;
+    char filename[BMAX_PATH];
+
+    const int32_t wildcardp = parm->numparms==1 &&
+        (Bstrchr(parm->parms[0], '*') != NULL);
+
+    if (parm->numparms != 1 || wildcardp)
+    {
+        CACHE1D_FIND_REC *r;
+        fnlist_t fnlist = FNLIST_INITIALIZER;
+        int32_t maxwidth = 0;
+
+        if (wildcardp)
+            maybe_append_ext(filename, sizeof(filename), parm->parms[0], ".map");
+        else
+            Bstrcpy(filename, "*.MAP");
+
+        fnlist_getnames(&fnlist, "/", filename, -1, 0);
+
+        for (r=fnlist.findfiles; r; r=r->next)
+            maxwidth = max<int>(maxwidth, Bstrlen(r->name));
+
+        if (maxwidth > 0)
+        {
+            int32_t x = 0;
+            maxwidth += 3;
+            OSD_Printf(OSDTEXT_RED "Map listing:\n");
+            for (r=fnlist.findfiles; r; r=r->next)
+            {
+                OSD_Printf("%-*s",maxwidth,r->name);
+                x += maxwidth;
+                if (x > OSD_GetCols() - maxwidth)
+                {
+                    x = 0;
+                    OSD_Printf("\n");
+                }
+            }
+            if (x) OSD_Printf("\n");
+            OSD_Printf(OSDTEXT_RED "Found %d maps\n", fnlist.numfiles);
+        }
+
+        fnlist_clearnames(&fnlist);
+
+        return OSDCMD_SHOWHELP;
+    }
+
+    maybe_append_ext(filename, sizeof(filename), parm->parms[0], ".map");
+
+    // PORT-TODO:
+    //if (!gSysRes.Lookup(filename, "MAP"))
+    //{
+    //    OSD_Printf(OSD_ERROR "map: file \"%s\" not found.\n", filename);
+    //    return OSDCMD_OK;
+    //}
+
+    levelAddUserMap(filename);
+
+    if (numplayers > 1)
+    {
+        gPacketStartGame.episodeId = gGameOptions.nEpisode;
+        gPacketStartGame.levelId = gGameOptions.nLevel;
+        netBroadcastNewGame();
+        gStartNewGame = 1;
+        gGameMenuMgr.Deactivate();
+        return OSDCMD_OK;
+    }
+    levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+    StartLevel(&gGameOptions);
+    viewResizeView(gViewSize);
+    gGameMenuMgr.Deactivate();
+
+    return OSDCMD_OK;
+}
+
+static int osdcmd_demo(osdcmdptr_t parm)
+{
+    if (numplayers > 1)
+    {
+        OSD_Printf("Command not allowed in multiplayer\n");
+        return OSDCMD_OK;
+    }
+
+    //if (g_player[myconnectindex].ps->gm & MODE_GAME)
+    //{
+    //    OSD_Printf("demo: Must not be in a game.\n");
+    //    return OSDCMD_OK;
+    //}
+
+    if (parm->numparms != 1/* && parm->numparms != 2*/)
+        return OSDCMD_SHOWHELP;
+
+    gDemo.SetupPlayback(parm->parms[0]);
+    gGameStarted = 0;
+    gDemo.Playback();
+
     return OSDCMD_OK;
 }
 
@@ -97,6 +245,98 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     gSetup.fullscreen = newfs;
     onvideomodechange(gSetup.bpp>8);
     viewResizeView(gViewSize);
+    return OSDCMD_OK;
+}
+
+static int osdcmd_give(osdcmdptr_t parm)
+{
+    int32_t i;
+
+    if (numplayers != 1 || !gGameStarted || gMe->pXSprite->health == 0)
+    {
+        OSD_Printf("give: Cannot give while dead or not in a single-player game.\n");
+        return OSDCMD_OK;
+    }
+
+    if (parm->numparms != 1) return OSDCMD_SHOWHELP;
+
+    if (!Bstrcasecmp(parm->parms[0], "all"))
+    {
+        SetWeapons(true);
+        SetAmmo(true);
+        SetToys(true);
+        SetArmor(true);
+        SetKeys(true);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    else if (!Bstrcasecmp(parm->parms[0], "health"))
+    {
+        actHealDude(gMe->pXSprite, 200, 200);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    else if (!Bstrcasecmp(parm->parms[0], "weapons"))
+    {
+        SetWeapons(true);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    else if (!Bstrcasecmp(parm->parms[0], "ammo"))
+    {
+        SetAmmo(true);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    else if (!Bstrcasecmp(parm->parms[0], "armor"))
+    {
+        SetArmor(true);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    else if (!Bstrcasecmp(parm->parms[0], "keys"))
+    {
+        SetKeys(true);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    else if (!Bstrcasecmp(parm->parms[0], "inventory"))
+    {
+        SetToys(true);
+        gCheatMgr.m_bPlayerCheated = true;
+        return OSDCMD_OK;
+    }
+    return OSDCMD_SHOWHELP;
+}
+
+static int osdcmd_god(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+    if (numplayers == 1 && gGameStarted)
+    {
+        SetGodMode(!gMe->at31a);
+        gCheatMgr.m_bPlayerCheated = true;
+    }
+    else
+        OSD_Printf("god: Not in a single-player game.\n");
+
+    return OSDCMD_OK;
+}
+
+static int osdcmd_noclip(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+
+    if (numplayers == 1 && gGameStarted)
+    {
+        SetClipMode(!gNoClip);
+        gCheatMgr.m_bPlayerCheated = true;
+    }
+    else
+    {
+        OSD_Printf("noclip: Not in a single-player game.\n");
+    }
+
     return OSDCMD_OK;
 }
 
@@ -352,12 +592,7 @@ static int osdcmd_unbind(osdcmdptr_t parm)
 
 static int osdcmd_screenshot(osdcmdptr_t parm)
 {
-//    KB_ClearKeysDown();
-#ifndef EDUKE32_STANDALONE
-    static const char *fn = "duke0000.png";
-#else
-    static const char *fn = "capt0000.png";
-#endif
+    static const char *fn = "ss000000.png";
 
     if (parm->numparms == 1 && !Bstrcasecmp(parm->parms[0], "tga"))
         videoCaptureScreenTGA(fn, 0);
@@ -692,13 +927,13 @@ int32_t registerosdcommands(void)
 //        OSD_RegisterFunction("changelevel","changelevel <level>: warps to the given level", osdcmd_changelevel);
 //    else
 //    {
-//        OSD_RegisterFunction("changelevel","changelevel <volume> <level>: warps to the given level", osdcmd_changelevel);
-//        OSD_RegisterFunction("map","map <mapfile>: loads the given user map", osdcmd_map);
-//        OSD_RegisterFunction("demo","demo <demofile or demonum>: starts the given demo", osdcmd_demo);
+    OSD_RegisterFunction("changelevel","changelevel <volume> <level>: warps to the given level", osdcmd_changelevel);
+    OSD_RegisterFunction("map","map <mapfile>: loads the given user map", osdcmd_map);
+    OSD_RegisterFunction("demo","demo <demofile or demonum>: starts the given demo", osdcmd_demo);
 //    }
 //
 //    OSD_RegisterFunction("addpath","addpath <path>: adds path to game filesystem", osdcmd_addpath);
-//    OSD_RegisterFunction("bind",R"(bind <key> <string>: associates a keypress with a string of console input. Type "bind showkeys" for a list of keys and "listsymbols" for a list of valid console commands.)", osdcmd_bind);
+    OSD_RegisterFunction("bind",R"(bind <key> <string>: associates a keypress with a string of console input. Type "bind showkeys" for a list of keys and "listsymbols" for a list of valid console commands.)", osdcmd_bind);
 //    OSD_RegisterFunction("cmenu","cmenu <#>: jumps to menu", osdcmd_cmenu);
 //    OSD_RegisterFunction("crosshaircolor","crosshaircolor: changes the crosshair color", osdcmd_crosshaircolor);
 //
@@ -723,8 +958,8 @@ int32_t registerosdcommands(void)
         OSD_RegisterFunction(t, Xstrdup(buffer), osdcmd_button);
     }
 
-//    OSD_RegisterFunction("give","give <all|health|weapons|ammo|armor|keys|inventory>: gives requested item", osdcmd_give);
-//    OSD_RegisterFunction("god","god: toggles god mode", osdcmd_god);
+    OSD_RegisterFunction("give","give <all|health|weapons|ammo|armor|keys|inventory>: gives requested item", osdcmd_give);
+    OSD_RegisterFunction("god","god: toggles god mode", osdcmd_god);
 //    OSD_RegisterFunction("activatecheat","activatecheat <id>: activates a cheat code", osdcmd_activatecheat);
 //
 //    OSD_RegisterFunction("initgroupfile","initgroupfile <path>: adds a grp file into the game filesystem", osdcmd_initgroupfile);
@@ -743,7 +978,7 @@ int32_t registerosdcommands(void)
 //    OSD_RegisterFunction("name","name: change your multiplayer nickname", osdcmd_name);
 //#endif
 //
-//    OSD_RegisterFunction("noclip","noclip: toggles clipping mode", osdcmd_noclip);
+    OSD_RegisterFunction("noclip","noclip: toggles clipping mode", osdcmd_noclip);
 //
 //#if !defined NETCODE_DISABLE
 //    OSD_RegisterFunction("password","password: sets multiplayer game password", osdcmd_password);

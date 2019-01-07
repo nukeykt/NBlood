@@ -1,5 +1,6 @@
 #pragma once
 
+#include "player.h"
 
 class CGameMessageMgr
 {
@@ -112,3 +113,11 @@ public:
 
 extern CPlayerMsg gPlayerMsg;
 extern CCheatMgr gCheatMgr;
+
+void SetAmmo(bool stat);
+void SetWeapons(bool stat);
+void SetToys(bool stat);
+void SetArmor(bool stat);
+void SetKeys(bool stat);
+void SetGodMode(bool god);
+void SetClipMode(bool noclip);

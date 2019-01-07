@@ -42,10 +42,10 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 
 // NUKE-TODO:
 #define OSDTEXT_DEFAULT   "^00"
-#define OSDTEXT_DARKRED   "^10"
-#define OSDTEXT_GREEN     "^11"
-#define OSDTEXT_RED       "^21"
-#define OSDTEXT_YELLOW    "^23"
+#define OSDTEXT_DARKRED   "^00"
+#define OSDTEXT_GREEN     "^00"
+#define OSDTEXT_RED       "^00"
+#define OSDTEXT_YELLOW    "^00"
 
 #define OSDTEXT_BRIGHT    "^S0"
 

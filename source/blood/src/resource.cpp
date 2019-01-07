@@ -288,6 +288,7 @@ void Resource::Grow(void)
     memcpy(p, dict, count * sizeof(DICTNODE));
     Free(dict);
     dict = (DICTNODE*)p;
+    Reindex();
 }
 
 void Resource::AddExternalResource(const char *name, const char *type, int size)
