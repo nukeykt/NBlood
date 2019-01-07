@@ -2,6 +2,9 @@
 #include <string.h>
 #include "common.h"
 #include "common_game.h"
+#include "keyboard.h"
+#include "control.h"
+#include "osd.h"
 #include "mmulti.h"
 #ifdef WITHKPLIB
 #include "kplib.h"
@@ -201,6 +204,7 @@ void CDemo::ProcessKeys(void)
 
 void CDemo::Playback(void)
 {
+    CONTROL_BindsEnabled = false;
     ready2send = 0;
     int v4 = 0;
     if (!CGameMenuMgr::m_bActive)
@@ -232,6 +236,7 @@ _DEMOPLAYBACK:
                     playerInit(i, 0);
                 StartLevel(&gGameOptions);
             }
+            OSD_DispatchQueued();
             ProcessKeys();
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
             {

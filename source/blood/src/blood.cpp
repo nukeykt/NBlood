@@ -148,7 +148,35 @@ void __dassert(const char * pzExpr, const char * pzFile, int nLine)
     exit(0);
 }
 
+void ShutDown(void)
+{
+    if (!in3dmode())
+        return;
+    CONFIG_WriteSetup(0);
+    netDeinitialize();
+    sndTerm();
+    scrUnInit();
+    CONTROL_Shutdown();
+    KB_Shutdown();
+    OSD_Cleanup();
+    // PORT_TODO: Check argument
+    if (syncstate)
+        printf("A packet was lost! (syncstate)\n");
+    for (int i = 0; i < 10; i++)
+    {
+        if (gSaveGamePic[i])
+            Resource::Free(gSaveGamePic[i]);
+    }
+    DO_FREE_AND_NULL(pUserTiles);
+    DO_FREE_AND_NULL(pUserSoundRFF);
+    DO_FREE_AND_NULL(pUserRFF);
+}
 
+void QuitGame(void)
+{
+    ShutDown();
+    exit(0);
+}
 
 void sub_1053c(SPRITE *pSprite)
 {
@@ -1263,7 +1291,7 @@ RESTART:
 		//if (gRedBookInstalled)
 		//	Redbook.preprocess();
         netUpdate();
-        CONTROL_BindsEnabled = true;
+        CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
 		switch (gInputMode)
 		{
 		case INPUT_MODE_1:
@@ -1276,6 +1304,9 @@ RESTART:
 		}
 		if (gQuitGame)
 			continue;
+
+        OSD_DispatchQueued();
+        
         // PORT-TODO:
 		//if (gRedBookInstalled)
 		//	Redbook.postprocess();
@@ -1345,7 +1376,6 @@ RESTART:
 		if (gStartNewGame)
 			StartLevel(&gGameOptions);
 	}
-    netDeinitialize();
     ready2send = 0;
     if (gDemo.at0)
         gDemo.Close();
@@ -1374,17 +1404,7 @@ RESTART:
         }
         goto RESTART;
     }
-    sndTerm();
-    scrUnInit();
-    // PORT_TODO: Check argument
-    CONFIG_WriteSetup(0);
-    if (syncstate)
-        printf("A packet was lost! (syncstate)\n");
-    for (int i = 0; i < 10; i++)
-    {
-        if (gSaveGamePic[i])
-            Resource::Free(gSaveGamePic[i]);
-    }
+    ShutDown();
     // PORT-TODO:
     //if (gRedBookInstalled)
     //{

@@ -120,8 +120,6 @@ void *QHeap::Alloc(long blockSize)
 {
     dassert(blockSize > 0);
     dassert(heapPtr != NULL);
-
-    Check();
     if (blockSize > 0)
     {
         blockSize = ((blockSize + 0xf) & ~0xf) + 0x30;
@@ -142,7 +140,6 @@ void *QHeap::Alloc(long blockSize)
                     nextNode->next->prev = nextNode;
                     nextNode->isFree = false;
                     InstallFenceposts(nextNode);
-                    Check();
                     return (void*)((char*)nextNode + 0x20);
                 }
                 else
@@ -151,7 +148,6 @@ void *QHeap::Alloc(long blockSize)
                     freeNode->freeNext->freePrev = freeNode->freePrev;
                     freeNode->isFree = false;
                     InstallFenceposts(freeNode);
-                    Check();
                     return (void*)((char*)freeNode + 0x20);
                 }
             }

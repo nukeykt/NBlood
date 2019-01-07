@@ -30,13 +30,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "config.h"
 #include "blood.h"
 #include "osdcmds.h"
+#include "view.h"
 
 
 static inline int osdcmd_quit(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
     OSD_ShowDisplay(0);
-    //G_GameQuit();
+    QuitGame();
     return OSDCMD_OK;
 }
 
@@ -47,7 +48,7 @@ int osdcmd_restartvid(osdcmdptr_t UNUSED(parm))
     if (videoSetGameMode(gSetup.fullscreen,gSetup.xdim,gSetup.ydim,gSetup.bpp,0))
         ThrowError("restartvid: Reset failed...\n");
     onvideomodechange(gSetup.bpp>8);
-    //G_UpdateScreenArea();
+    viewResizeView(gViewSize);
 
     return OSDCMD_OK;
 }
@@ -95,7 +96,7 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     gSetup.ydim = newheight;
     gSetup.fullscreen = newfs;
     onvideomodechange(gSetup.bpp>8);
-    //G_UpdateScreenArea();
+    viewResizeView(gViewSize);
     return OSDCMD_OK;
 }
 
@@ -142,7 +143,8 @@ static int osdcmd_button(osdcmdptr_t parm)
     char const *p = parm->name + strlen_gamefunc_;
 
 //    if (g_player[myconnectindex].ps->gm == MODE_GAME) // only trigger these if in game
-    CONTROL_ButtonFlags[CONFIG_FunctionNameToNum(p)] = 1; // FIXME
+    if (gInputMode == INPUT_MODE_0)
+        CONTROL_ButtonFlags[CONFIG_FunctionNameToNum(p)] = 1; // FIXME
 
     return OSDCMD_OK;
 }
@@ -396,12 +398,149 @@ static int osdcmd_inittimer(osdcmdptr_t parm)
 }
 #endif
 
+static int osdcmd_cvar_set_game(osdcmdptr_t parm)
+{
+    int const r = osdcmd_cvar_set(parm);
+
+    if (r != OSDCMD_OK) return r;
+
+#if 0
+    if (!Bstrcasecmp(parm->name, "r_upscalefactor"))
+    {
+        if (in3dmode())
+        {
+            videoSetGameMode(fullscreen, xres, yres, bpp, ud.detail);
+        }
+    }
+    else if (!Bstrcasecmp(parm->name, "r_size"))
+    {
+        ud.statusbarmode = (ud.screen_size < 8);
+        G_UpdateScreenArea();
+    }
+    else if (!Bstrcasecmp(parm->name, "r_maxfps") || !Bstrcasecmp(parm->name, "r_maxfpsoffset"))
+    {
+        if (r_maxfps != 0) r_maxfps = clamp(r_maxfps, 30, 1000);
+        g_frameDelay = r_maxfps ? (timerGetFreqU64()/(r_maxfps + r_maxfpsoffset)) : 0;
+    }
+    else if (!Bstrcasecmp(parm->name, "r_ambientlight"))
+    {
+        if (r_ambientlight == 0)
+            r_ambientlightrecip = 256.f;
+        else r_ambientlightrecip = 1.f/r_ambientlight;
+    }
+    else if (!Bstrcasecmp(parm->name, "in_mouse"))
+    {
+        CONTROL_MouseEnabled = (ud.setup.usemouse && CONTROL_MousePresent);
+    }
+    else if (!Bstrcasecmp(parm->name, "in_joystick"))
+    {
+        CONTROL_JoystickEnabled = (ud.setup.usejoystick && CONTROL_JoyPresent);
+    }
+    else if (!Bstrcasecmp(parm->name, "vid_gamma"))
+    {
+        ud.brightness = GAMMA_CALC;
+        ud.brightness <<= 2;
+        videoSetPalette(ud.brightness>>2,g_player[myconnectindex].ps->palette,0);
+    }
+    else if (!Bstrcasecmp(parm->name, "vid_brightness") || !Bstrcasecmp(parm->name, "vid_contrast"))
+    {
+        videoSetPalette(ud.brightness>>2,g_player[myconnectindex].ps->palette,0);
+    }
+    else if (!Bstrcasecmp(parm->name, "hud_scale")
+             || !Bstrcasecmp(parm->name, "hud_statusbarmode")
+             || !Bstrcasecmp(parm->name, "r_rotatespritenowidescreen"))
+    {
+        G_UpdateScreenArea();
+    }
+    else if (!Bstrcasecmp(parm->name, "skill"))
+    {
+        if (numplayers > 1)
+            return r;
+
+        ud.player_skill = ud.m_player_skill;
+    }
+    else if (!Bstrcasecmp(parm->name, "color"))
+    {
+        ud.color = G_CheckPlayerColor(ud.color);
+        g_player[0].ps->palookup = g_player[0].pcolor = ud.color;
+    }
+    else if (!Bstrcasecmp(parm->name, "osdscale"))
+    {
+        osdrscale = 1.f/osdscale;
+
+        if (xdim && ydim)
+            OSD_ResizeDisplay(xdim, ydim);
+    }
+    else if (!Bstrcasecmp(parm->name, "wchoice"))
+    {
+        if (parm->numparms == 1)
+        {
+            if (g_forceWeaponChoice) // rewrite ud.wchoice because osdcmd_cvar_set already changed it
+            {
+                int j = 0;
+
+                while (j < 10)
+                {
+                    ud.wchoice[j] = g_player[myconnectindex].wchoice[j] + '0';
+                    j++;
+                }
+
+                ud.wchoice[j] = 0;
+            }
+            else
+            {
+                char const *c = parm->parms[0];
+
+                if (*c)
+                {
+                    int j = 0;
+
+                    while (*c && j < 10)
+                    {
+                        g_player[myconnectindex].wchoice[j] = *c - '0';
+                        c++;
+                        j++;
+                    }
+
+                    while (j < 10)
+                    {
+                        if (j == 9)
+                            g_player[myconnectindex].wchoice[9] = 1;
+                        else
+                            g_player[myconnectindex].wchoice[j] = 2;
+
+                        j++;
+                    }
+                }
+            }
+
+            g_forceWeaponChoice = 0;
+        }
+
+        /*    Net_SendClientInfo();*/
+    }
+#endif
+
+    return r;
+}
+
+static int osdcmd_cvar_set_multi(osdcmdptr_t parm)
+{
+    int const r = osdcmd_cvar_set_game(parm);
+
+    if (r != OSDCMD_OK) return r;
+
+    //G_UpdatePlayerFromMenu();
+
+    return r;
+}
+
 int32_t registerosdcommands(void)
 {
     char buffer[256];
-//    static osdcvardata_t cvars_game[] =
-//    {
-//        { "crosshair", "enable/disable crosshair", (void *)&ud.crosshair, CVAR_BOOL, 0, 1 },
+    static osdcvardata_t cvars_game[] =
+    {
+        { "crosshair", "enable/disable crosshair", (void *)&gAimReticle, CVAR_BOOL, 0, 1 },
 //
 //        { "cl_autoaim", "enable/disable weapon autoaim", (void *)&ud.config.AutoAim, CVAR_INT|CVAR_MULTI, 0, 3 },
 //        { "cl_automsg", "enable/disable automatically sending messages to all players", (void *)&ud.automsg, CVAR_BOOL, 0, 1 },
@@ -531,23 +670,23 @@ int32_t registerosdcommands(void)
 //        { "vid_contrast","adjusts contrast component of gamma ramp",(void *)&g_videoContrast, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
 //        { "vid_brightness","adjusts brightness component of gamma ramp",(void *)&g_videoBrightness, CVAR_FLOAT|CVAR_FUNCPTR, 0, 10 },
 //        { "wchoice","sets weapon autoselection order", (void *)ud.wchoice, CVAR_STRING|CVAR_FUNCPTR, 0, MAX_WEAPONS },
-//    };
+    };
 //
 //    osdcmd_cheatsinfo_stat.cheatnum = -1;
 //
-//    for (auto & cv : cvars_game)
-//    {
-//        switch (cv.flags & (CVAR_FUNCPTR|CVAR_MULTI))
-//        {
-//            case CVAR_FUNCPTR:
-//                OSD_RegisterCvar(&cv, osdcmd_cvar_set_game); break;
-//            case CVAR_MULTI:
-//            case CVAR_FUNCPTR|CVAR_MULTI:
-//                OSD_RegisterCvar(&cv, osdcmd_cvar_set_multi); break;
-//            default:
-//                OSD_RegisterCvar(&cv, osdcmd_cvar_set); break;
-//        }
-//    }
+    for (auto & cv : cvars_game)
+    {
+        switch (cv.flags & (CVAR_FUNCPTR|CVAR_MULTI))
+        {
+            case CVAR_FUNCPTR:
+                OSD_RegisterCvar(&cv, osdcmd_cvar_set_game); break;
+            case CVAR_MULTI:
+            case CVAR_FUNCPTR|CVAR_MULTI:
+                OSD_RegisterCvar(&cv, osdcmd_cvar_set_multi); break;
+            default:
+                OSD_RegisterCvar(&cv, osdcmd_cvar_set); break;
+        }
+    }
 //
 //    if (VOLUMEONE)
 //        OSD_RegisterFunction("changelevel","changelevel <level>: warps to the given level", osdcmd_changelevel);
@@ -616,12 +755,12 @@ int32_t registerosdcommands(void)
 //
 //    OSD_RegisterFunction("quicksave","quicksave: performs a quick save", osdcmd_quicksave);
 //    OSD_RegisterFunction("quickload","quickload: performs a quick load", osdcmd_quickload);
-//    OSD_RegisterFunction("quit","quit: exits the game immediately", osdcmd_quit);
-//    OSD_RegisterFunction("exit","exit: exits the game immediately", osdcmd_quit);
+    OSD_RegisterFunction("quit","quit: exits the game immediately", osdcmd_quit);
+    OSD_RegisterFunction("exit","exit: exits the game immediately", osdcmd_quit);
 //
 //    OSD_RegisterFunction("restartmap", "restartmap: restarts the current map", osdcmd_restartmap);
 //    OSD_RegisterFunction("restartsound","restartsound: reinitializes the sound system",osdcmd_restartsound);
-//    OSD_RegisterFunction("restartvid","restartvid: reinitializes the video mode",osdcmd_restartvid);
+    OSD_RegisterFunction("restartvid","restartvid: reinitializes the video mode",osdcmd_restartvid);
 //#if !defined LUNATIC
 //    OSD_RegisterFunction("addlogvar","addlogvar <gamevar>: prints the value of a gamevar", osdcmd_addlogvar);
 //    OSD_RegisterFunction("setvar","setvar <gamevar> <value>: sets the value of a gamevar", osdcmd_setvar);
@@ -637,10 +776,10 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("unbind","unbind <key>: unbinds a key", osdcmd_unbind);
     OSD_RegisterFunction("unbindall","unbindall: unbinds all keys", osdcmd_unbindall);
 
-//    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: change the video mode",osdcmd_vidmode);
-//#ifdef USE_OPENGL
-//    baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
-//#endif
+    OSD_RegisterFunction("vidmode","vidmode <xdim> <ydim> <bpp> <fullscreen>: change the video mode",osdcmd_vidmode);
+#ifdef USE_OPENGL
+    baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
+#endif
 //
 //#ifndef NETCODE_DISABLE
 //    OSD_RegisterFunction("dumpmapstates", "Dumps current snapshots to CL/Srv_MapStates.bin", osdcmd_dumpmapstate);

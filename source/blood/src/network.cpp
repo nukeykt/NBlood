@@ -848,7 +848,7 @@ void netInitialize(void)
     if (enet_initialize() != 0)
         ThrowError("An error occurred while initializing ENet.\n");
     atexit(enet_deinitialize);
-
+    gNetENetInit = true;
     if (gNetMode == NETWORK_SERVER)
     {
         memset(gNetPlayerPeer, 0, sizeof(gNetPlayerPeer));
@@ -865,9 +865,7 @@ void netInitialize(void)
         {
             handleevents();
             if (quitevent)
-            {
-                ThrowError("Quit");
-            }
+                QuitGame();
             enet_host_service(gNetENetServer, NULL, 0);
             if (enet_host_check_events(gNetENetServer, &event) > 0)
             {
@@ -970,9 +968,7 @@ void netInitialize(void)
         {
             handleevents();
             if (quitevent)
-            {
-                ThrowError("Quit");
-            }
+                QuitGame();
             enet_host_service(gNetENetClient, NULL, 0);
             if (enet_host_check_events(gNetENetClient, &event) > 0)
             {
@@ -1011,7 +1007,6 @@ void netInitialize(void)
         enet_host_service(gNetENetClient, NULL, 0);
         initprintf("Successfully connected to server\n");
     }
-    gNetENetInit = true;
 }
 
 void netDeinitialize(void)

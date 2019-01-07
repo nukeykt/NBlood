@@ -54,7 +54,7 @@ extern int32_t gNoSetup;
 extern short BloodVersion;
 extern int gNetPlayers;
 
-
+void QuitGame(void);
 void PreloadCache(void);
 void StartLevel(GAMEOPTIONS *gameOptions);
 void ProcessFrame(void);
