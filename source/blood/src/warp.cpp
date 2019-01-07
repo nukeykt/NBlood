@@ -136,7 +136,7 @@ int CheckLink(SPRITE *pSprite)
             pSprite->x += pLower->x-pUpper->x;
             pSprite->y += pLower->y-pUpper->y;
             int z2;
-            if (pUpper->type == 6)
+            if (pLower->type == 6)
                 z2 = pLower->z;
             else
                 z2 = getceilzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
@@ -163,7 +163,7 @@ int CheckLink(SPRITE *pSprite)
             pSprite->x += pUpper->x-pLower->x;
             pSprite->y += pUpper->y-pLower->y;
             int z2;
-            if (pLower->type == 7)
+            if (pUpper->type == 7)
                 z2 = pUpper->z;
             else
                 z2 = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
