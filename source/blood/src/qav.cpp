@@ -27,6 +27,11 @@ void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum)
         stat &= ~0x100;
         stat ^= 0x4;
     }
+    if (stat & kQavOrientationLeft)
+    {
+        stat &= ~kQavOrientationLeft;
+        stat |= 256;
+    }
     if (palnum <= 0)
         palnum = pTile->palnum;
     rotatesprite((x + pTile->x) << 16, (y + pTile->y) << 16, pTile->z, angle,

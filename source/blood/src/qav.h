@@ -3,6 +3,8 @@
 #include "common_game.h"
 #include "blood.h"
 
+#define kQavOrientationLeft 4096
+
 struct TILE_FRAME
 {
     int picnum;

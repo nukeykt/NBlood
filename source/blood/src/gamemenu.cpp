@@ -1497,7 +1497,7 @@ CGameMenuItemQAV::CGameMenuItemQAV()
     at18 &= ~2;
 }
 
-CGameMenuItemQAV::CGameMenuItemQAV(const char *a1, int a2, int a3, int a4, const char *a5)
+CGameMenuItemQAV::CGameMenuItemQAV(const char *a1, int a2, int a3, int a4, const char *a5, bool widescreen, bool clearbackground)
 {
     at14 = 0;
     at4 = a1;
@@ -1506,10 +1506,14 @@ CGameMenuItemQAV::CGameMenuItemQAV(const char *a1, int a2, int a3, int a4, const
     at20 = a5;
     atc = a3;
     at18 &= ~2;
+    bWideScreen = widescreen;
+    bClearBackground = clearbackground;
 }
 
 void CGameMenuItemQAV::Draw(void)
 {
+    if (bClearBackground)
+        videoClearScreen(0);
     if (at24)
     {
         int backFC = gFrameClock;
@@ -1531,7 +1535,20 @@ void CGameMenuItemQAV::Draw(void)
         windowxy1.y = 0;
         windowxy2.x = xdim-1;
         windowxy2.y = ydim-1;
-        at28->Draw(at28->at10 - at2c, 10, 0, 0);
+        if (bWideScreen)
+        {
+            int xdim43 = scale(ydim, 4, 3);
+            int nCount = (xdim+xdim43-1)/xdim43;
+            int backX = at28->x;
+            for (int i = 0; i < nCount; i++)
+            {
+                at28->Draw(at28->at10 - at2c, 10+kQavOrientationLeft, 0, 0);
+                at28->x += 320;
+            }
+            at28->x = backX;
+        }
+        else
+            at28->Draw(at28->at10 - at2c, 10, 0, 0);
 
         windowxy1.x = wx1;
         windowxy1.y = wy1;

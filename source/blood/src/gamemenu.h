@@ -238,8 +238,10 @@ public:
     QAV *at28;
     int at2c;
     int at30;
+    bool bWideScreen;
+    bool bClearBackground;
     CGameMenuItemQAV();
-    CGameMenuItemQAV(const char *, int, int, int, const char *);
+    CGameMenuItemQAV(const char *, int, int, int, const char *, bool widescreen = false, bool clearbackground = false);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
     void Reset(void);

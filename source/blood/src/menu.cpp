@@ -126,12 +126,12 @@ CGameMenu unk_26C120;
 CGameMenu unk_26C1B0;
 CGameMenu unk_26C240;
 
-CGameMenuItemQAV itemBloodQAV("", 3, 160, 100, "BDRIP");
-CGameMenuItemQAV unk_26C304("", 3, 160, 100, "CREDITS");
-CGameMenuItemQAV unk_26C338("", 3, 160, 100, "HELP3");
-CGameMenuItemQAV unk_26C36C("", 3, 160, 100, "HELP3B");
-CGameMenuItemQAV unk_26C3A0("", 3, 160, 100, "HELP4");
-CGameMenuItemQAV unk_26C3D4("", 3, 160, 100, "HELP5");
+CGameMenuItemQAV itemBloodQAV("", 3, 160, 100, "BDRIP", true);
+CGameMenuItemQAV unk_26C304("", 3, 160, 100, "CREDITS", false, true);
+CGameMenuItemQAV unk_26C338("", 3, 160, 100, "HELP3", false, false);
+CGameMenuItemQAV unk_26C36C("", 3, 160, 100, "HELP3B", false, false);
+CGameMenuItemQAV unk_26C3A0("", 3, 160, 100, "HELP4", false, true);
+CGameMenuItemQAV unk_26C3D4("", 3, 160, 100, "HELP5", false, true);
 
 CGameMenuItemTitle unk_26C408("BLOOD", 1, 160, 20, 2038);
 CGameMenuItemChain unk_26C42C("NEW GAME", 1, 0, 45, 320, 1, &unk_26B940, -1, NULL, 0);
