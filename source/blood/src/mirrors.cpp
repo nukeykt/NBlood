@@ -141,6 +141,9 @@ void InitMirrors(void)
 
 void TranslateMirrorColors(int nShade, int nPalette)
 {
+    if (videoGetRenderMode() != REND_CLASSIC)
+        return;
+    videoBeginDrawing();
     nShade = ClipRange(nShade, 0, 63);
     char *pMap = palookup[nPalette] + (nShade<<8);
     extern intptr_t frameplace;
@@ -150,6 +153,7 @@ void TranslateMirrorColors(int nShade, int nPalette)
     {
         *pFrame = pMap[*pFrame];
     }
+    videoEndDrawing();
 }
 
 void sub_5571C(char mode)
