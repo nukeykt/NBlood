@@ -513,7 +513,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	//	Redbook.cd_status();
 	//	Redbook.sub_82bb4();
 	//}
-	viewSetMessage("");
+	// viewSetMessage("");
 	viewSetErrorMessage("");
 	viewResizeView(gViewSize);
 	if (gGameOptions.nGameType == 3)

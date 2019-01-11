@@ -6,6 +6,7 @@
 #include "build.h"
 #include "pragmas.h"
 #include "mmulti.h"
+#include "osd.h"
 #include "common_game.h"
 
 #include "aihand.h"
@@ -2340,6 +2341,7 @@ void viewBurnTime(int gScale)
 
 void viewSetMessage(const char *pMessage)
 {
+    OSD_Printf("%s\n", pMessage);
     gGameMessageMgr.Add(pMessage, 15);
 }
 
