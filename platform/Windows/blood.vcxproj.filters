@@ -243,6 +243,9 @@
     <ClCompile Include="..\..\source\blood\src\al_midi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\blood\rsrc\gameres.rc">

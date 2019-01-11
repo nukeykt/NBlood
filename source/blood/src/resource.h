@@ -66,14 +66,14 @@ public:
     Resource(void);
     ~Resource(void);
 
-    void Init(const char *filename, const char *external);
+    void Init(const char *filename);
     static void Flush(CACHENODE *h);
     void Purge(void);
     DICTNODE **Probe(const char *fname, const char *type);
     DICTNODE **Probe(unsigned long id, const char *type);
     void Reindex(void);
     void Grow(void);
-    void AddExternalResource(const char *name, const char *type, int size);
+    void AddExternalResource(const char *name, const char *type, int id = -1);
     static void *Alloc(long nSize);
     static void Free(void *p);
     DICTNODE *Lookup(const char *name, const char *type);
@@ -96,7 +96,6 @@ public:
     //FILE *handle;
     int handle;
     bool crypt;
-    //char ext[92];
 
     static QHeap *heap;
     static CACHENODE purgeHead;

@@ -1169,13 +1169,11 @@ int app_main(int argc, char const * const * argv)
 #endif
 
     Resource::heap = new QHeap(nMaxAlloc);
-    strcpy(buffer, UserPath);
-    strcat(buffer, "*.map");
     if (pUserRFF)
-        gSysRes.Init(pUserRFF, buffer);
+        gSysRes.Init(pUserRFF);
     else
-        gSysRes.Init("BLOOD.RFF", buffer);
-    gGuiRes.Init("GUI.RFF", "*.*");
+        gSysRes.Init("BLOOD.RFF");
+    gGuiRes.Init("GUI.RFF");
 
 
     { // Replace

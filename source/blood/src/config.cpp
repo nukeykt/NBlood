@@ -78,7 +78,6 @@ int32_t LastUpdateCheck;
 int32_t useprecache;
 char CommbatMacro[MAXRIDECULE][MAXRIDECULELENGTH];
 char szPlayerName[MAXPLAYERNAME];
-char UserPath[BMAX_PATH];
 int32_t gTurnSpeed;
 int32_t gDetail;
 //int32_t gMouseAim;

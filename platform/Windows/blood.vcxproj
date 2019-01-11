@@ -198,6 +198,7 @@
     <ClCompile Include="..\..\source\blood\src\blood.cpp" />
     <ClCompile Include="..\..\source\blood\src\callback.cpp" />
     <ClCompile Include="..\..\source\blood\src\choke.cpp" />
+    <ClCompile Include="..\..\source\blood\src\common.cpp" />
     <ClCompile Include="..\..\source\blood\src\config.cpp" />
     <ClCompile Include="..\..\source\blood\src\controls.cpp" />
     <ClCompile Include="..\..\source\blood\src\credits.cpp" />

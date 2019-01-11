@@ -334,7 +334,7 @@ void sndTerm(void)
 extern char *pUserSoundRFF;
 void sndInit(void)
 {
-    gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF", NULL);
+    gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF");
     memset(Channel, 0, sizeof(Channel));
     pSong = (char*)Resource::Alloc(65535);
     if (pSong)

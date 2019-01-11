@@ -60,7 +60,6 @@ extern int32_t LastUpdateCheck;
 extern int32_t useprecache;
 extern char CommbatMacro[MAXRIDECULE][MAXRIDECULELENGTH];
 extern char szPlayerName[MAXPLAYERNAME];
-extern char UserPath[BMAX_PATH];
 extern int32_t gTurnSpeed;
 extern int32_t gDetail;
 extern int32_t gAutoAim;

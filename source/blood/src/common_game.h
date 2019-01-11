@@ -53,6 +53,10 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 
 #define WASDCONTROLS
 
+extern char UserPath[BMAX_PATH];
+
+int kopen4loadfrommod(const char *fileName, char searchfirst);
+
 #pragma pack(push,1)
 
 struct SECTOR

@@ -27,7 +27,6 @@ Resource::Resource(void)
     count = 0;
     handle = -1;
     crypt = true;
-    //ext[0] = 0;
 }
 
 Resource::~Resource(void)
@@ -52,7 +51,7 @@ Resource::~Resource(void)
     }
 }
 
-void Resource::Init(const char *filename, const char *external)
+void Resource::Init(const char *filename)
 {
     RFFHeader header;
     dassert(heap != NULL);
@@ -322,10 +321,16 @@ void Resource::Grow(void)
     Reindex();
 }
 
-void Resource::AddExternalResource(const char *name, const char *type, int size)
+void Resource::AddExternalResource(const char *name, const char *type, int id)
 {
-    char name2[BMAX_PATH], type2[BMAX_PATH];
+    char name2[BMAX_PATH], type2[BMAX_PATH], filename[BMAX_PATH];
     //if (strlen(name) > 8 || strlen(type) > 3) return;
+    sprintf(filename, "%s.%s", name, type);
+    int fhandle = kopen4loadfrommod(filename, 0);
+    if (fhandle == -1)
+        return;
+    int size = kfilelength(fhandle);
+    kclose(fhandle);
     strcpy(name2, name);
     strcpy(type2, type);
     strupr(name2);
@@ -399,6 +404,8 @@ DICTNODE *Resource::Lookup(const char *name, const char *type)
     dassert(name != NULL);
     dassert(type != NULL);
     //if (strlen(name) > 8 || strlen(type) > 3) return NULL;
+    // Try to load external resource first
+    AddExternalResource(name, type);
     strcpy(name2, name);
     strcpy(type2, type);
     strupr(type2);
@@ -424,15 +431,17 @@ void Resource::Read(DICTNODE *n)
 
 void Resource::Read(DICTNODE *n, void *p)
 {
-    char buf[BMAX_PATH];
+    char filename[BMAX_PATH];
     dassert(n != NULL);
     if (n->flags & DICT_EXTERNAL)
     {
-        sprintf(buf, "%s.%s", n->name, n->type);
-        if (!FileLoad(buf, p, n->size))
+        sprintf(filename, "%s.%s", n->name, n->type);
+        int fhandle = kopen4loadfrommod(filename, 0);
+        if (fhandle == -1 || kread(fhandle, p, n->size) != n->size)
         {
             ThrowError("Error reading external resource (%i)", errno);
         }
+        kclose(fhandle);
     }
     else
     {
