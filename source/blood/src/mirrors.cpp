@@ -330,13 +330,14 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
                 }
                 else
                 {
-                    renderPrepareMirror(x,y, fix16_from_int(a),nWall,&cx,&cy,&ca);
+                    //renderPrepareMirror(x,y, fix16_from_int(a),nWall,&cx,&cy,&ca);
+                    renderPrepareMirrorOld(x,y,z,fix16_from_int(a),fix16_from_int(horiz),nWall,mirrorsector,&cx,&cy,&ca);
                 }
                 renderDrawRoomsQ16(cx, cy, z, ca,fix16_from_int(horiz),mirrorsector|MAXSECTORS);
                 viewProcessSprites(cx,cy,z);
                 renderDrawMasks();
                 if (pWall->lotag != 501)
-                    renderCompleteMirror();
+                    renderCompleteMirrorOld();
                 if (wall[nWall].pal != 0 || wall[nWall].shade != 0)
                     TranslateMirrorColors(wall[nWall].shade, wall[nWall].pal);
                 pWall->nextwall = nNextWall;
