@@ -109,6 +109,7 @@ static int osdcmd_map(osdcmdptr_t parm)
             Bstrcpy(filename, "*.MAP");
 
         fnlist_getnames(&fnlist, "/", filename, -1, 0);
+        gSysRes.FNAddFiles(&fnlist, filename);
 
         for (r=fnlist.findfiles; r; r=r->next)
             maxwidth = max<int>(maxwidth, Bstrlen(r->name));
@@ -137,14 +138,14 @@ static int osdcmd_map(osdcmdptr_t parm)
         return OSDCMD_SHOWHELP;
     }
 
-    maybe_append_ext(filename, sizeof(filename), parm->parms[0], ".map");
+    strcpy(filename, parm->parms[0]);
+    ChangeExtension(filename, "");
 
-    // PORT-TODO:
-    //if (!gSysRes.Lookup(filename, "MAP"))
-    //{
-    //    OSD_Printf(OSD_ERROR "map: file \"%s\" not found.\n", filename);
-    //    return OSDCMD_OK;
-    //}
+    if (!gSysRes.Lookup(filename, "MAP"))
+    {
+        OSD_Printf(OSD_ERROR "map: file \"%s\" not found.\n", filename);
+        return OSDCMD_OK;
+    }
 
     levelAddUserMap(filename);
 

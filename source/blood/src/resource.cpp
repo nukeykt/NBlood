@@ -59,7 +59,7 @@ void Resource::Init(const char *filename)
     if (filename)
     {
         handle = kopen4load(filename, 0);
-        if (handle != NULL)
+        if (handle != -1)
         {
             int nFileLength = kfilelength(handle);
             dassert(nFileLength != -1);
@@ -558,4 +558,26 @@ void Resource::RemoveMRU(CACHENODE *h)
 {
     h->prev->next = h->next;
     h->next->prev = h->prev;
+}
+
+void Resource::FNAddFiles(fnlist_t * fnlist, const char *pattern)
+{
+    char filename[BMAX_PATH];
+    for (int i = 0; i < count; i++)
+    {
+        DICTNODE *pNode = &dict[i];
+        if (pNode->flags & DICT_EXTERNAL)
+            continue;
+        sprintf(filename, "%s.%s", pNode->name, pNode->type);
+        if (!Bwildmatch(filename, pattern))
+            continue;
+        switch (klistaddentry(&fnlist->findfiles, filename, CACHE1D_FIND_FILE, CACHE1D_SOURCE_GRP))
+        {
+        case -1:
+            return;
+        case 0:
+            fnlist->numfiles++;
+            break;
+        }
+    }
 }

@@ -80,6 +80,7 @@ typedef struct _CACHE1D_FIND_REC {
     int32_t type, source;
     struct _CACHE1D_FIND_REC *next, *prev, *usera, *userb;
 } CACHE1D_FIND_REC;
+int32_t klistaddentry(CACHE1D_FIND_REC **rec, const char *name, int32_t type, int32_t source);
 void klistfree(CACHE1D_FIND_REC *rec);
 CACHE1D_FIND_REC *klistpath(const char *path, const char *mask, int32_t type);
 
