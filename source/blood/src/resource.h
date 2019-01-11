@@ -96,7 +96,7 @@ public:
     //FILE *handle;
     int handle;
     bool crypt;
-    char ext[92];
+    //char ext[92];
 
     static QHeap *heap;
     static CACHENODE purgeHead;

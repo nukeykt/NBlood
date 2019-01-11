@@ -27,7 +27,7 @@ Resource::Resource(void)
     count = 0;
     handle = -1;
     crypt = true;
-    ext[0] = 0;
+    //ext[0] = 0;
 }
 
 Resource::~Resource(void)
@@ -108,12 +108,14 @@ void Resource::Init(const char *filename, const char *external)
                     dict[i].offset = tdict[i].offset;
                     dict[i].size = tdict[i].size;
                     dict[i].flags = tdict[i].flags;
-                    int nTypeLength = strlen(tdict[i].type);
-                    int nTypeName = strlen(tdict[i].name);
+                    int nTypeLength = strnlen(tdict[i].type, 3);
+                    int nNameLength = strnlen(tdict[i].name, 8);
                     dict[i].type = (char*)Alloc(nTypeLength+1);
-                    dict[i].name = (char*)Alloc(nTypeName+1);
+                    dict[i].name = (char*)Alloc(nNameLength+1);
                     strncpy(dict[i].type, tdict[i].type, 3);
                     strncpy(dict[i].name, tdict[i].name, 8);
+                    dict[i].type[nTypeLength] = 0;
+                    dict[i].name[nNameLength] = 0;
                     dict[i].id = tdict[i].id;
                 }
                 Free(tdict);
@@ -218,13 +220,13 @@ void Resource::Purge(void)
 
 DICTNODE **Resource::Probe(const char *fname, const char *type)
 {
-    char name[11];
+    char name[BMAX_PATH];
     dassert(indexName != NULL);
     memset(name, 0, sizeof(name));
-    strncpy(name, type, 3);
-    strncpy(name + 3, fname, 8);
+    strcpy(name, type);
+    strcat(name, fname);
     dassert(dict != NULL);
-    int hash = Bcrc32(name, sizeof(name), 0) & (buffSize - 1);
+    int hash = Bcrc32(name, strlen(name), 0) & (buffSize - 1);
     int i = hash;
     do
     {
@@ -232,8 +234,8 @@ DICTNODE **Resource::Probe(const char *fname, const char *type)
         {
             return &indexName[i];
         }
-        if (!memcmp((*indexName[i]).type, name, 3)
-            && !memcmp((*indexName[i]).name, name + 3, 8))
+        if (!strcmp((*indexName[i]).type, type)
+            && !strcmp((*indexName[i]).name, fname))
         {
             return &indexName[i];
         }
@@ -248,13 +250,16 @@ DICTNODE **Resource::Probe(const char *fname, const char *type)
 
 DICTNODE **Resource::Probe(unsigned long id, const char *type)
 {
-    char name[7];
+    struct {
+        int id;
+        char type[BMAX_PATH];
+    } name;
     dassert(indexName != NULL);
-    memset(name, 0, sizeof(name));
-    strncpy(name, type, 3);
-    *(int*)(name + 3) = id;
+    memset(&name, 0, sizeof(name));
+    strcpy(name.type, type);
+    name.id = id;
     dassert(dict != NULL);
-    int hash = Bcrc32(name, sizeof(name), 0) & (buffSize - 1);
+    int hash = Bcrc32(&name, strlen(name.type)+sizeof(name.id), 0) & (buffSize - 1);
     int i = hash;
     do
     {
@@ -262,8 +267,8 @@ DICTNODE **Resource::Probe(unsigned long id, const char *type)
         {
             return &indexId[i];
         }
-        if (!memcmp(indexId[i]->type, name, 3)
-            && *(int*)(name + 3) == indexId[i]->id)
+        if (!strcmp((*indexId[i]).type, type)
+            && (*indexId[i]).id == id)
         {
             return &indexId[i];
         }
@@ -298,7 +303,7 @@ void Resource::Reindex(void)
     memset(indexId, 0, buffSize * sizeof(DICTNODE*));
     for (int i = 0; i < count; i++)
     {
-        if (dict[i].flags & 1)
+        if (dict[i].flags & DICT_ID)
         {
             DICTNODE **node = Probe(dict[i].id, dict[i].type);
             *node = &dict[i];
@@ -319,16 +324,15 @@ void Resource::Grow(void)
 
 void Resource::AddExternalResource(const char *name, const char *type, int size)
 {
-#if 0
-    char name2[10], type2[10];
-    if (strlen(name) > 8 || strlen(type) > 3) return;
+    char name2[BMAX_PATH], type2[BMAX_PATH];
+    //if (strlen(name) > 8 || strlen(type) > 3) return;
     strcpy(name2, name);
     strcpy(type2, type);
+    strupr(name2);
+    strupr(type2);
     dassert(dict != NULL);
     DICTNODE **index = Probe(name2, type2);
     dassert(index != NULL);
-    strupr(name2);
-    strupr(type2);
     DICTNODE *node = *index;
     if (!node)
     {
@@ -339,13 +343,20 @@ void Resource::AddExternalResource(const char *name, const char *type, int size)
         node = &dict[count++];
         index = Probe(name2, type2);
         *index = node;
-        strncpy(node->type, type2, 3);
-        strncpy(node->name, name2, 8);
+        if (node->type)
+            Free(node->type);
+        if (node->name)
+            Free(node->name);
+        int nTypeLength = strlen(type2);
+        int nNameLength = strlen(name2);
+        node->type = (char*)Alloc(nTypeLength+1);
+        node->name = (char*)Alloc(nNameLength+1);
+        strcpy(node->type, type2);
+        strcpy(node->name, name2);
     }
     node->size = size;
-    node->flags |= 2;
+    node->flags |= DICT_EXTERNAL;
     Flush((CACHENODE*)node);
-#endif
 }
 
 void *Resource::Alloc(long nSize)
@@ -384,10 +395,10 @@ void Resource::Free(void *p)
 
 DICTNODE *Resource::Lookup(const char *name, const char *type)
 {
-    char name2[10], type2[10];
+    char name2[BMAX_PATH], type2[BMAX_PATH];
     dassert(name != NULL);
     dassert(type != NULL);
-    if (strlen(name) > 8 || strlen(type) > 3) return NULL;
+    //if (strlen(name) > 8 || strlen(type) > 3) return NULL;
     strcpy(name2, name);
     strcpy(type2, type);
     strupr(type2);
@@ -397,9 +408,9 @@ DICTNODE *Resource::Lookup(const char *name, const char *type)
 
 DICTNODE *Resource::Lookup(unsigned long id, const char *type)
 {
-    char type2[10];
+    char type2[BMAX_PATH];
     dassert(type != NULL);
-    if (strlen(type) > 3) return NULL;
+    //if (strlen(type) > 3) return NULL;
     strcpy(type2, type);
     strupr(type2);
     return *Probe(id, type2);
@@ -413,11 +424,11 @@ void Resource::Read(DICTNODE *n)
 
 void Resource::Read(DICTNODE *n, void *p)
 {
-    char buf[144];
+    char buf[BMAX_PATH];
     dassert(n != NULL);
-    if (n->flags & 2)
+    if (n->flags & DICT_EXTERNAL)
     {
-        sprintf(buf, "%s%.8s.%.3s", ext, n->name, n->type);
+        sprintf(buf, "%s.%s", n->name, n->type);
         if (!FileLoad(buf, p, n->size))
         {
             ThrowError("Error reading external resource (%i)", errno);
@@ -434,7 +445,7 @@ void Resource::Read(DICTNODE *n, void *p)
         {
             ThrowError("Error loading resource!");
         }
-        if (n->flags & 0x10)
+        if (n->flags & DICT_CRYPT)
         {
             int size;
             if (n->size > 0x100)
