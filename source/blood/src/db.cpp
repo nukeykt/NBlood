@@ -678,6 +678,9 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
     memset(show2dsector, 0, sizeof(show2dsector));
     memset(show2dwall, 0, sizeof(show2dwall));
     memset(show2dsprite, 0, sizeof(show2dsprite));
+#ifdef USE_OPENGL
+    Polymost_prepare_loadboard();
+#endif
     _splitpath(pPath, node, dir, fname, ext);
     _makepath(path2, NULL, NULL, fname, NULL);
     DICTNODE *pNode = gSysRes.Lookup(path2, "MAP");

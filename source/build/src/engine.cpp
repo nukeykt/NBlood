@@ -393,6 +393,8 @@ void yax_setbunches(int16_t i, int16_t cb, int16_t fb)
 //// nextwall getters/setters
 int16_t yax_getnextwall(int16_t wal, int16_t cf)
 {
+    if (bloodhack)
+        return -1;
     if (editstatus==0)
         return yax_nextwall[wal][cf];
 
