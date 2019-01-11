@@ -2,6 +2,16 @@
 
 #include "qheap.h"
 
+#pragma pack(push, 1)
+
+enum DICTFLAGS {
+    DICT_ID = 1,
+    DICT_EXTERNAL = 2,
+    DICT_LOAD = 4,
+    DICT_LOCK = 8,
+    DICT_CRYPT = 16,
+};
+
 struct RFFHeader
 {
     char sign[4];
@@ -11,6 +21,20 @@ struct RFFHeader
     unsigned long filenum;
     int pad2[4];
 };
+
+struct DICTNODE_FILE
+{
+    char unused1[16];
+    unsigned long offset;
+    unsigned long size;
+    char unused2[8];
+    char flags;
+    char type[3];
+    char name[8];
+    int id;
+};
+
+#pragma pack(pop)
 
 struct CACHENODE
 {
@@ -28,10 +52,11 @@ struct DICTNODE
     int lockCount;
     unsigned long offset;
     unsigned long size;
-    int pad1[2];
     char flags;
-    char type[3];
-    char name[8];
+    //char type[3];
+    //char name[8];
+    char *type;
+    char *name;
     int id;
 };
 
@@ -68,7 +93,8 @@ public:
     DICTNODE **indexId;
     unsigned long buffSize;
     unsigned long count;
-    FILE *handle;
+    //FILE *handle;
+    int handle;
     bool crypt;
     char ext[92];
 

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "crc32.h"
+#include "compat.h"
+#include "cache1d.h"
 #ifdef WITHKPLIB
 #include "kplib.h"
 #endif
@@ -23,7 +25,7 @@ Resource::Resource(void)
     indexId = NULL;
     buffSize = 0;
     count = 0;
-    handle = NULL;
+    handle = -1;
     crypt = true;
     ext[0] = 0;
 }
@@ -32,14 +34,21 @@ Resource::~Resource(void)
 {
     if (dict)
     {
+        for (int i = 0; i < count; i++)
+        {
+            if (dict[i].type)
+                Free(dict[i].type);
+            if (dict[i].name)
+                Free(dict[i].name);
+        }
         Free(dict);
         dict = NULL;
         buffSize = 0;
         count = 0;
     }
-    if (handle != NULL)
+    if (handle != -1)
     {
-        fclose(handle);
+        kclose(handle);
     }
 }
 
@@ -50,12 +59,12 @@ void Resource::Init(const char *filename, const char *external)
 
     if (filename)
     {
-        handle = fopen(filename, "rb");
+        handle = kopen4load(filename, 0);
         if (handle != NULL)
         {
-            int nFileLength = FileLength(handle);
+            int nFileLength = kfilelength(handle);
             dassert(nFileLength != -1);
-            if (!FileRead(handle, &header, sizeof(RFFHeader))
+            if (kread(handle, &header, sizeof(RFFHeader)) != sizeof(RFFHeader)
                 || memcmp(header.sign, "RFF\x1a", 4))
             {
                 ThrowError("RFF header corrupted");
@@ -82,17 +91,32 @@ void Resource::Init(const char *filename, const char *external)
                 }
                 dict = (DICTNODE*)Alloc(buffSize * sizeof(DICTNODE));
                 memset(dict, 0, buffSize * sizeof(DICTNODE));
-                int r = fseek(handle, header.offset, SEEK_SET);
+                DICTNODE_FILE *tdict = (DICTNODE_FILE*)Alloc(count*sizeof(DICTNODE_FILE));
+                int r = klseek(handle, header.offset, SEEK_SET);
                 dassert(r != -1);
-                if (!FileRead(handle, dict, count * sizeof(DICTNODE)))
+                if (kread(handle, tdict, count * sizeof(DICTNODE_FILE)) != count*sizeof(DICTNODE_FILE))
                 {
                     ThrowError("RFF dictionary corrupted");
                 }
                 if (crypt)
                 {
-                    Crypt(dict, count * sizeof(DICTNODE),
+                    Crypt(tdict, count * sizeof(DICTNODE_FILE),
                         header.offset + (header.version && 0xff) * header.offset);
                 }
+                for (int i = 0; i < count; i++)
+                {
+                    dict[i].offset = tdict[i].offset;
+                    dict[i].size = tdict[i].size;
+                    dict[i].flags = tdict[i].flags;
+                    int nTypeLength = strlen(tdict[i].type);
+                    int nTypeName = strlen(tdict[i].name);
+                    dict[i].type = (char*)Alloc(nTypeLength+1);
+                    dict[i].name = (char*)Alloc(nTypeName+1);
+                    strncpy(dict[i].type, tdict[i].type, 3);
+                    strncpy(dict[i].name, tdict[i].name, 8);
+                    dict[i].id = tdict[i].id;
+                }
+                Free(tdict);
             }
         }
     }
@@ -103,6 +127,7 @@ void Resource::Init(const char *filename, const char *external)
         memset(dict, 0, buffSize * sizeof(DICTNODE));
     }
     Reindex();
+#if 0
     if (external)
     {
         char fname[BMAX_PATH];
@@ -148,16 +173,17 @@ void Resource::Init(const char *filename, const char *external)
         _dos_findclose(&info);
 #endif
     }
+#endif
     for (int i = 0; i < count; i++)
     {
-        if (dict[i].flags & 8)
+        if (dict[i].flags & DICT_LOCK)
         {
             Lock(&dict[i]);
         }
     }
     for (int i = 0; i < count; i++)
     {
-        if (dict[i].flags & 4)
+        if (dict[i].flags & DICT_LOAD)
         {
             Load(&dict[i]);
         }
@@ -293,6 +319,7 @@ void Resource::Grow(void)
 
 void Resource::AddExternalResource(const char *name, const char *type, int size)
 {
+#if 0
     char name2[10], type2[10];
     if (strlen(name) > 8 || strlen(type) > 3) return;
     strcpy(name2, name);
@@ -318,6 +345,7 @@ void Resource::AddExternalResource(const char *name, const char *type, int size)
     node->size = size;
     node->flags |= 2;
     Flush((CACHENODE*)node);
+#endif
 }
 
 void *Resource::Alloc(long nSize)
@@ -397,12 +425,12 @@ void Resource::Read(DICTNODE *n, void *p)
     }
     else
     {
-        int r = fseek(handle, n->offset, SEEK_SET);
+        int r = klseek(handle, n->offset, SEEK_SET);
         if (r == -1)
         {
             ThrowError("Error seeking to resource!");
         }
-        if (!FileRead(handle, p, n->size))
+        if (kread(handle, p, n->size) != n->size)
         {
             ThrowError("Error loading resource!");
         }
