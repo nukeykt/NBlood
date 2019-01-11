@@ -444,9 +444,12 @@ void sub_763BC(int nSprite) // 16
         int nChannel = 28+(pSprite->index&2);
         dassert(nChannel < 32);
         if (pSprite->type >= 37 && pSprite->type <= 39)
+        {
+            Random(3);
             sfxPlay3DSound(pSprite, 608+Random(2), nChannel, 1);
+        }
         else
-            sfxPlay3DSound(pSprite, dword_13B338[Random2(2)], nChannel, 1);
+            sfxPlay3DSound(pSprite, dword_13B338[Random(2)], nChannel, 1);
     }
     else if (zvel[nSprite] == 0)
         sub_7632C(pSprite);
