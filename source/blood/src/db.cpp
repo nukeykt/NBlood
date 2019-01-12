@@ -553,7 +553,7 @@ void dbInit(void)
 
 void PropagateMarkerReferences(void)
 {
-    int nSprite = headspritestat[19];
+    int nSprite = headspritestat[10];
     while (nSprite != -1)
     {
         int nNextSprite = nextspritestat[nSprite];
