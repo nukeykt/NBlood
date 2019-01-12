@@ -1508,7 +1508,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
     case 1:
         pXSector->at1_6 = 0;
         pXSector->at1_7 = 0;
-        AddBusy(nSector, BUSYID_7, 65536/ClipLow((120*pXSprite2->at8_0),1));
+        AddBusy(nSector, BUSYID_7, 65536/ClipLow((120*pXSprite2->at8_0)/10,1));
         if (pXSprite2->at14_0)
             PathSound(nSector, pXSprite2->at14_0);
         break;
