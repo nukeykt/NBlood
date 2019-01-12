@@ -2668,7 +2668,7 @@ SPRITE *actDropObject(SPRITE *pSprite, int nType)
     else if (nType >= 60 && nType < 81)
         pSprite2 = actDropAmmo(pSprite, nType);
     else if (nType >= 40 && nType < 51)
-        pSprite2 = actDropAmmo(pSprite, nType);
+        pSprite2 = actDropWeapon(pSprite, nType);
     if (pSprite2)
     {
         int top, bottom;
