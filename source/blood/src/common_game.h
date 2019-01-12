@@ -306,3 +306,40 @@ public:
     }
 };
 
+class BitReader {
+public:
+    int nBitPos;
+    char *pBuffer;
+    BitReader(char *_pBuffer, int _nBitPos) : pBuffer(_pBuffer), nBitPos(_nBitPos) {}
+    BitReader(char *_pBuffer) : pBuffer(_pBuffer), nBitPos(0) {}
+    int readBit()
+    {
+        int bit = ((*pBuffer)>>nBitPos)&1;
+        if (++nBitPos >= 8)
+            nBitPos = 0, pBuffer++;
+        return bit;
+    }
+    void skipBits(int nBits)
+    {
+        nBitPos += nBits;
+        pBuffer += nBitPos>>3;
+        nBitPos &= 7;
+    }
+    unsigned int readUnsigned(int nBits)
+    {
+        unsigned int n = 0;
+        dassert(nBits <= 32);
+        for (int i = 0; i < nBits; i++)
+            n += readBit()<<i;
+        return n;
+    }
+    int readSigned(int nBits)
+    {
+        dassert(nBits <= 32);
+        int n = (int)readUnsigned(nBits);
+        n <<= 32-nBits;
+        n >>= 32-nBits;
+        return n;
+    }
+};
+

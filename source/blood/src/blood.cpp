@@ -60,9 +60,6 @@ const char* AppTechnicalName = APPBASENAME;
 EDUKE32_STATIC_ASSERT(sizeof(SPRITE) == sizeof(spritetype));
 EDUKE32_STATIC_ASSERT(sizeof(SECTOR) == sizeof(sectortype));
 EDUKE32_STATIC_ASSERT(sizeof(WALL) == sizeof(walltype));
-EDUKE32_STATIC_ASSERT(sizeof(XSPRITE) == 56);
-EDUKE32_STATIC_ASSERT(sizeof(XSECTOR) == 60);
-EDUKE32_STATIC_ASSERT(sizeof(XWALL) == 24);
 
 
 SECTOR *qsector;

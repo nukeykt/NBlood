@@ -783,19 +783,100 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         pSector->filler = 0;
         if (qsector[i].extra > 0)
         {
+            const int nXSectorSize = 60;
+            char pBuffer[nXSectorSize];
             int nXSector = dbInsertXSector(i);
             XSECTOR *pXSector = &xsector[nXSector];
             memset(pXSector, 0, sizeof(XSECTOR));
             int nCount;
             if (!byte_1A76C8)
             {
-                nCount = sizeof(XSECTOR);
+                nCount = nXSectorSize;
             }
             else
             {
                 nCount = byte_19AE44.at48;
             }
-            IOBuffer1.Read(pXSector, nCount);
+            dassert(nCount <= nXSectorSize);
+            IOBuffer1.Read(pBuffer, nCount);
+            BitReader bitReader(pBuffer);
+            pXSector->reference = bitReader.readSigned(14);
+            pXSector->at1_6 = bitReader.readUnsigned(1);
+            pXSector->at1_7 = bitReader.readUnsigned(17);
+            pXSector->at4_0 = bitReader.readUnsigned(16);
+            pXSector->at6_0 = bitReader.readUnsigned(10);
+            pXSector->at7_2 = bitReader.readUnsigned(3);
+            pXSector->at7_5 = bitReader.readUnsigned(3);
+            pXSector->at8_0 = bitReader.readUnsigned(10);
+            pXSector->at9_2 = bitReader.readUnsigned(8);
+            pXSector->ata_2 = bitReader.readUnsigned(1);
+            pXSector->ata_3 = bitReader.readUnsigned(1);
+            pXSector->ata_4 = bitReader.readUnsigned(12);
+            pXSector->atc_0 = bitReader.readUnsigned(12);
+            pXSector->atd_4 = bitReader.readUnsigned(1);
+            pXSector->atd_5 = bitReader.readUnsigned(1);
+            pXSector->atd_6 = bitReader.readSigned(8);
+            pXSector->ate_6 = bitReader.readUnsigned(8);
+            pXSector->atf_6 = bitReader.readUnsigned(1);
+            pXSector->atf_7 = bitReader.readUnsigned(1);
+            pXSector->at10_0 = bitReader.readUnsigned(8);
+            pXSector->at11_0 = bitReader.readUnsigned(4);
+            pXSector->at11_4 = bitReader.readUnsigned(1);
+            pXSector->at11_5 = bitReader.readUnsigned(1);
+            pXSector->at11_6 = bitReader.readUnsigned(1);
+            pXSector->at11_7 = bitReader.readUnsigned(1);
+            pXSector->at12_0 = bitReader.readSigned(8);
+            pXSector->at13_0 = bitReader.readUnsigned(1);
+            pXSector->at13_1 = bitReader.readUnsigned(1);
+            pXSector->at13_2 = bitReader.readUnsigned(1);
+            pXSector->at13_3 = bitReader.readUnsigned(1);
+            pXSector->at13_4 = bitReader.readUnsigned(1);
+            pXSector->at13_5 = bitReader.readUnsigned(3);
+            pXSector->at14_0 = bitReader.readUnsigned(8);
+            pXSector->at15_0 = bitReader.readUnsigned(11);
+            pXSector->at16_3 = bitReader.readUnsigned(1);
+            pXSector->at16_4 = bitReader.readUnsigned(1);
+            pXSector->at16_5 = bitReader.readUnsigned(1);
+            pXSector->at16_6 = bitReader.readUnsigned(1);
+            pXSector->at16_7 = bitReader.readUnsigned(3);
+            pXSector->at17_2 = bitReader.readUnsigned(1);
+            pXSector->at17_3 = bitReader.readUnsigned(1);
+            pXSector->at17_4 = bitReader.readUnsigned(1);
+            pXSector->at17_5 = bitReader.readUnsigned(1);
+            pXSector->at17_6 = bitReader.readUnsigned(1);
+            pXSector->at17_7 = bitReader.readUnsigned(1);
+            pXSector->at18_0 = bitReader.readUnsigned(1);
+            pXSector->at18_1 = bitReader.readUnsigned(1);
+            pXSector->at18_2 = bitReader.readUnsigned(12);
+            pXSector->at19_6 = bitReader.readUnsigned(12);
+            pXSector->at1b_2 = bitReader.readUnsigned(1);
+            pXSector->at1b_3 = bitReader.readUnsigned(1);
+            pXSector->at1b_4 = bitReader.readUnsigned(4);
+            pXSector->at1c_0 = bitReader.readSigned(32);
+            pXSector->at20_0 = bitReader.readSigned(32);
+            pXSector->at24_0 = bitReader.readSigned(32);
+            pXSector->at28_0 = bitReader.readSigned(32);
+            pXSector->at2c_0 = bitReader.readUnsigned(16);
+            pXSector->at2e_0 = bitReader.readUnsigned(16);
+            pXSector->at30_0 = bitReader.readUnsigned(1);
+            pXSector->at30_1 = bitReader.readUnsigned(8);
+            pXSector->at31_1 = bitReader.readUnsigned(8);
+            pXSector->at32_1 = bitReader.readUnsigned(8);
+            pXSector->at33_1 = bitReader.readUnsigned(3);
+            pXSector->at33_4 = bitReader.readUnsigned(4);
+            pXSector->at34_0 = bitReader.readUnsigned(8);
+            pXSector->at35_0 = bitReader.readUnsigned(1);
+            pXSector->at35_1 = bitReader.readUnsigned(10);
+            pXSector->at36_3 = bitReader.readUnsigned(11);
+            pXSector->at37_6 = bitReader.readUnsigned(1);
+            pXSector->at37_7 = bitReader.readUnsigned(1);
+            pXSector->at38_0 = bitReader.readUnsigned(11);
+            pXSector->at39_3 = bitReader.readUnsigned(5);
+            pXSector->at3a_0 = bitReader.readSigned(12);
+            pXSector->at3b_4 = bitReader.readUnsigned(1);
+            pXSector->at3b_5 = bitReader.readUnsigned(1);
+            pXSector->at3b_6 = bitReader.readUnsigned(1);
+            pXSector->at3b_7 = bitReader.readUnsigned(1);
             xsector[qsector[i].extra].reference = i;
             xsector[qsector[i].extra].at1_7 = xsector[qsector[i].extra].at1_6<<16;
         }
@@ -810,19 +891,54 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         }
         if (qwall[i].extra > 0)
         {
+            const int nXWallSize = 24;
+            char pBuffer[nXWallSize];
             int nXWall = dbInsertXWall(i);
             XWALL *pXWall = &xwall[nXWall];
             memset(pXWall, 0, sizeof(XWALL));
             int nCount;
             if (!byte_1A76C8)
             {
-                nCount = sizeof(XWALL);
+                nCount = nXWallSize;
             }
             else
             {
                 nCount = byte_19AE44.at44;
             }
-            IOBuffer1.Read(pXWall, nCount);
+            dassert(nCount <= nXWallSize);
+            IOBuffer1.Read(pBuffer, nCount);
+            BitReader bitReader(pBuffer);
+            pXWall->reference = bitReader.readSigned(14);
+            pXWall->at1_6 = bitReader.readUnsigned(1);
+            pXWall->at1_7 = bitReader.readUnsigned(17);
+            pXWall->at4_0 = bitReader.readSigned(16);
+            pXWall->at6_0 = bitReader.readUnsigned(10);
+            pXWall->at7_2 = bitReader.readUnsigned(6);
+            pXWall->at8_0 = bitReader.readUnsigned(10);
+            pXWall->at9_2 = bitReader.readUnsigned(8);
+            pXWall->ata_2 = bitReader.readUnsigned(1);
+            pXWall->ata_3 = bitReader.readUnsigned(1);
+            pXWall->ata_4 = bitReader.readUnsigned(12);
+            pXWall->atc_0 = bitReader.readUnsigned(12);
+            pXWall->atd_4 = bitReader.readUnsigned(1);
+            pXWall->atd_5 = bitReader.readUnsigned(1);
+            pXWall->atd_6 = bitReader.readUnsigned(1);
+            pXWall->atd_7 = bitReader.readSigned(8);
+            pXWall->ate_7 = bitReader.readSigned(8);
+            pXWall->atf_7 = bitReader.readUnsigned(1);
+            pXWall->at10_0 = bitReader.readUnsigned(1);
+            pXWall->at10_1 = bitReader.readUnsigned(1);
+            pXWall->at10_2 = bitReader.readUnsigned(3);
+            pXWall->at10_5 = bitReader.readUnsigned(1);
+            pXWall->at10_6 = bitReader.readUnsigned(1);
+            pXWall->at10_7 = bitReader.readUnsigned(1);
+            pXWall->at11_0 = bitReader.readUnsigned(2);
+            pXWall->at11_2 = bitReader.readUnsigned(8);
+            pXWall->at12_2 = bitReader.readUnsigned(8);
+            pXWall->at13_2 = bitReader.readUnsigned(1);
+            pXWall->at13_3 = bitReader.readUnsigned(1);
+            pXWall->at13_4 = bitReader.readUnsigned(4);
+            pXWall->at14_0 = bitReader.readUnsigned(32);
             xwall[qwall[i].extra].reference = i;
             xwall[qwall[i].extra].at1_7 = xwall[qwall[i].extra].at1_6 << 16;
         }
@@ -844,19 +960,84 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         pSprite->filler = 0;
         if (qsprite[i].extra > 0)
         {
+            const int nXSpriteSize = 56;
+            char pBuffer[nXSpriteSize];
             int nXSprite = dbInsertXSprite(i);
             XSPRITE *pXSprite = &xsprite[nXSprite];
             memset(pXSprite, 0, sizeof(XSPRITE));
             int nCount;
             if (!byte_1A76C8)
             {
-                nCount = sizeof(XSPRITE);
+                nCount = nXSpriteSize;
             }
             else
             {
                 nCount = byte_19AE44.at40;
             }
-            IOBuffer1.Read(pXSprite, nCount);
+            dassert(nCount <= nXSpriteSize);
+            IOBuffer1.Read(pBuffer, nCount);
+            BitReader bitReader(pBuffer);
+            pXSprite->reference = bitReader.readSigned(14);
+            pXSprite->at1_6 = bitReader.readUnsigned(1);
+            pXSprite->at1_7 = bitReader.readUnsigned(17);
+            pXSprite->at4_0 = bitReader.readUnsigned(10);
+            pXSprite->at5_2 = bitReader.readUnsigned(10);
+            pXSprite->at6_4 = bitReader.readUnsigned(8);
+            pXSprite->at7_4 = bitReader.readUnsigned(1);
+            pXSprite->at7_5 = bitReader.readUnsigned(1);
+            pXSprite->at7_6 = bitReader.readUnsigned(2);
+            pXSprite->at8_0 = bitReader.readUnsigned(12);
+            pXSprite->at9_4 = bitReader.readUnsigned(12);
+            pXSprite->atb_0 = bitReader.readUnsigned(1);
+            pXSprite->atb_1 = bitReader.readUnsigned(1);
+            pXSprite->atb_2 = bitReader.readUnsigned(2);
+            pXSprite->atb_4 = bitReader.readUnsigned(2);
+            pXSprite->atb_6 = bitReader.readUnsigned(1);
+            pXSprite->atb_7 = bitReader.readUnsigned(1);
+            pXSprite->atc_0 = bitReader.readUnsigned(8);
+            pXSprite->atd_0 = bitReader.readUnsigned(1);
+            pXSprite->atd_1 = bitReader.readUnsigned(1);
+            pXSprite->atd_2 = bitReader.readUnsigned(1);
+            pXSprite->atd_3 = bitReader.readUnsigned(3);
+            pXSprite->atd_6 = bitReader.readUnsigned(1);
+            pXSprite->atd_7 = bitReader.readUnsigned(1);
+            pXSprite->ate_0 = bitReader.readUnsigned(1);
+            pXSprite->ate_1 = bitReader.readUnsigned(1);
+            pXSprite->ate_2 = bitReader.readUnsigned(1);
+            pXSprite->ate_3 = bitReader.readUnsigned(1);
+            pXSprite->ate_4 = bitReader.readUnsigned(1);
+            pXSprite->ate_5 = bitReader.readUnsigned(2);
+            pXSprite->ate_7 = bitReader.readUnsigned(5);
+            pXSprite->atf_4 = bitReader.readUnsigned(1);
+            pXSprite->atf_5 = bitReader.readUnsigned(1);
+            pXSprite->atf_6 = bitReader.readUnsigned(1);
+            pXSprite->atf_7 = bitReader.readUnsigned(1);
+            pXSprite->at10_0 = bitReader.readSigned(16);
+            pXSprite->at12_0 = bitReader.readSigned(16);
+            pXSprite->at14_0 = bitReader.readSigned(16);
+            pXSprite->at16_0 = bitReader.readUnsigned(11);
+            pXSprite->at17_3 = bitReader.readSigned(2);
+            pXSprite->at17_5 = bitReader.readUnsigned(1);
+            pXSprite->at17_6 = bitReader.readUnsigned(2);
+            pXSprite->at18_0 = bitReader.readUnsigned(2);
+            pXSprite->at18_2 = bitReader.readUnsigned(16);
+            pXSprite->at1a_2 = bitReader.readUnsigned(6);
+            pXSprite->at1b_0 = bitReader.readUnsigned(8);
+            pXSprite->health = bitReader.readUnsigned(12);
+            pXSprite->at1d_4 = bitReader.readUnsigned(1);
+            pXSprite->at1d_5 = bitReader.readUnsigned(1);
+            pXSprite->at1d_6 = bitReader.readUnsigned(1);
+            pXSprite->at1d_7 = bitReader.readUnsigned(1);
+            pXSprite->target = bitReader.readSigned(16);
+            pXSprite->at20_0 = bitReader.readSigned(32);
+            pXSprite->at24_0 = bitReader.readSigned(32);
+            pXSprite->at28_0 = bitReader.readSigned(32);
+            pXSprite->at2c_0 = bitReader.readUnsigned(16);
+            pXSprite->at2e_0 = bitReader.readSigned(16);
+            pXSprite->at30_0 = bitReader.readUnsigned(16);
+            pXSprite->at32_0 = bitReader.readUnsigned(16);
+            pXSprite->at34 = NULL;
+            bitReader.skipBits(32);
             xsprite[qsprite[i].extra].reference = i;
             xsprite[qsprite[i].extra].at1_7 = xsprite[qsprite[i].extra].at1_6 << 16;
             if (!byte_1A76C8)
