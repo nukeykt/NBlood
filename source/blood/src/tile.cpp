@@ -24,7 +24,7 @@ void qloadvoxel(int32_t nVoxel)
     {
         int nSize = *((int*)pVox);
         pVox += 4;
-        voxoff[nVoxel][i] = (int)pVox;
+        voxoff[nVoxel][i] = (intptr_t)pVox;
         pVox += nSize;
     }
 }

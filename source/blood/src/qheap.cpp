@@ -9,13 +9,13 @@
 void InstallFenceposts(HEAPNODE *n)
 {
     char *address = (char*)n;
-    memset(address + 0x10, 0xcc, 0x10);
+    memset(address + 0x20, 0xcc, 0x10);
     memset(address + n->size - 0x10, 0xcc, 0x10);
 }
 
 void CheckFenceposts(HEAPNODE *n)
 {
-    char *data = (char*)n + 0x10;
+    char *data = (char*)n + 0x20;
     for (int i = 0; i < 0x10; i++)
     {
         if (data[i] != 0xcc)
@@ -122,14 +122,14 @@ void *QHeap::Alloc(long blockSize)
     dassert(heapPtr != NULL);
     if (blockSize > 0)
     {
-        blockSize = ((blockSize + 0xf) & ~0xf) + 0x30;
+        blockSize = ((blockSize + 0xf) & ~0xf) + 0x40;
         HEAPNODE *freeNode = freeHeap.freeNext;
         while (freeNode != &freeHeap)
         {
             dassert(freeNode->isFree);
             if (blockSize <= freeNode->size)
             {
-                if (blockSize + 0x20 <= freeNode->size)
+                if (blockSize + 0x30 <= freeNode->size)
                 {
                     freeNode->size -= blockSize;
                     HEAPNODE *nextNode = (HEAPNODE *)((char*)freeNode + freeNode->size);
@@ -140,7 +140,7 @@ void *QHeap::Alloc(long blockSize)
                     nextNode->next->prev = nextNode;
                     nextNode->isFree = false;
                     InstallFenceposts(nextNode);
-                    return (void*)((char*)nextNode + 0x20);
+                    return (void*)((char*)nextNode + 0x30);
                 }
                 else
                 {
@@ -148,7 +148,7 @@ void *QHeap::Alloc(long blockSize)
                     freeNode->freeNext->freePrev = freeNode->freePrev;
                     freeNode->isFree = false;
                     InstallFenceposts(freeNode);
-                    return (void*)((char*)freeNode + 0x20);
+                    return (void*)((char*)freeNode + 0x30);
                 }
             }
             freeNode = freeNode->freeNext;
@@ -164,7 +164,7 @@ long QHeap::Free(void *p)
         return 0;
     }
     dassert(heapPtr != NULL);
-    HEAPNODE *node = (HEAPNODE*)((char*)p - 0x20);
+    HEAPNODE *node = (HEAPNODE*)((char*)p - 0x30);
     if (node->isFree)
     {
         ThrowError("Free on bad or freed block");
@@ -194,5 +194,5 @@ long QHeap::Free(void *p)
         nextNode->prev->next = nextNode->next;
         nextNode->next->prev = nextNode->prev;
     }
-    return node->size - 0x30;
+    return node->size - 0x40;
 }

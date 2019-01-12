@@ -198,6 +198,7 @@ void WeaponInit(void)
         if (!hRes)
             ThrowError("Could not load QAV %d\n", i);
         weaponQAV[i] = (QAV*)gSysRes.Lock(hRes);
+        weaponQAV[i]->nSprite = -1;
     }
 }
 
@@ -230,7 +231,7 @@ void WeaponPlay(PLAYER *pPlayer)
     if (pPlayer->at26 == -1)
         return;
     QAV *pQAV = weaponQAV[pPlayer->at26];
-    pQAV->pSprite = pPlayer->pSprite;
+    pQAV->nSprite = pPlayer->pSprite->index;
     int nTicks = pQAV->at10 - pPlayer->atbf;
     pQAV->Play(nTicks-4, nTicks, pPlayer->at2a, pPlayer);
 }

@@ -22,6 +22,7 @@ void CChoke::sub_83F54(char *a1, int _x, int _y, void (*a2)(PLAYER*))
         if (!at4)
             ThrowError("Could not load QAV %s\n", at0);
         at8 = (QAV*)gSysRes.Lock(at4);
+        at8->nSprite = -1;
         at8->x = at14;
         at8->y = at18;
         at8->Preload();
@@ -39,6 +40,7 @@ void CChoke::sub_83ff0(int a1, void(*a2)(PLAYER*))
         if (!at4)
             ThrowError("Could not load QAV %d\n", a1);
         at8 = (QAV*)gSysRes.Lock(at4);
+        at8->nSprite = -1;
         at8->x = at14;
         at8->y = at18;
         at8->Preload();
@@ -56,6 +58,7 @@ void CChoke::sub_84080(char *a1, void(*a2)(PLAYER*))
         if (!at4)
             ThrowError("Could not load QAV %s\n", at0);
         at8 = (QAV*)gSysRes.Lock(at4);
+        at8->nSprite = -1;
         at8->x = at14;
         at8->y = at18;
         at8->Preload();

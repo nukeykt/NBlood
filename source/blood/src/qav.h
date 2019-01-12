@@ -5,6 +5,8 @@
 
 #define kQavOrientationLeft 4096
 
+#pragma pack(push, 1)
+
 struct TILE_FRAME
 {
     int picnum;
@@ -39,7 +41,8 @@ struct QAV
     int at10; // 10
     int x; // 14
     int y; // 18
-    SPRITE *pSprite; // 1c
+    int nSprite; // 1c
+    //SPRITE *pSprite; // 1c
     char pad3[4]; // 20
     FRAMEINFO frames[1]; // 24
     void Draw(long ticks, int stat, int shade, int palnum);
@@ -49,5 +52,7 @@ struct QAV
     void PlaySound(int nSound);
     void PlaySound3D(SPRITE *pSprite, int nSound, int a3, int a4);
 };
+
+#pragma pack(pop)
 
 int qavRegisterClient(void(*pClient)(int, void *));

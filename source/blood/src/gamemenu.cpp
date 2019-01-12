@@ -1580,6 +1580,7 @@ bool CGameMenuItemQAV::Event(CGameMenuEvent &event)
                 if (!at24)
                     ThrowError("Could not load QAV %s\n", at20);
                 at28 = (QAV*)gSysRes.Lock(at24);
+                at28->nSprite = -1;
                 at28->x = atc;
                 at28->y = at10;
                 at28->Preload();
