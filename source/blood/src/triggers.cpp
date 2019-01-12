@@ -1494,7 +1494,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
         if (pSprite->type == 15)
         {
             pXSprite = &xsprite[pSprite->extra];
-            if (pXSector->at10_0 == nId)
+            if (pXSprite->at10_0 == nId)
                 break;
         }
     }
@@ -1619,7 +1619,7 @@ void InitPath(unsigned int nSector, XSECTOR *pXSector)
         if (pSprite->type == 15)
         {
             pXSprite = &xsprite[pSprite->extra];
-            if (pXSector->at10_0 == nId)
+            if (pXSprite->at10_0 == nId)
                 break;
         }
     }
