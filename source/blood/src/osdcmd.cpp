@@ -1025,3 +1025,21 @@ int32_t registerosdcommands(void)
     return 0;
 }
 
+void GAME_onshowosd(int shown)
+{
+    // G_UpdateScreenArea();
+
+    mouseLockToWindow((!shown) + 2);
+
+    //osdshown = shown;
+
+    // XXX: it's weird to fake a keypress like this.
+//    if (numplayers == 1 && ((shown && !ud.pause_on) || (!shown && ud.pause_on)))
+//        KB_KeyDown[sc_Pause] = 1;
+}
+
+void GAME_clearbackground(int numcols, int numrows)
+{
+    COMMON_clearbackground(numcols, numrows);
+}
+

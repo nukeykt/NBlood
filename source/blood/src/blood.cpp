@@ -1110,6 +1110,15 @@ int app_main(int argc, char const * const * argv)
 
     OSD_SetLogFile(APPBASENAME ".log");
 
+    OSD_SetFunctions(NULL,
+                     NULL,
+                     NULL,
+                     NULL,
+                     NULL,
+                     GAME_clearbackground,
+                     BGetTime,
+                     GAME_onshowosd);
+
     wm_setapptitle(APPNAME);
 
     initprintf(APPNAME " %s\n", s_buildRev);
