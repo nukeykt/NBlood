@@ -734,9 +734,9 @@ void ProcessFrame(void)
 		if (gFifoInput[gNetFifoTail&255][i].newWeapon)
 			gPlayer[i].atc.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
 		gPlayer[i].atc.forward = gFifoInput[gNetFifoTail&255][i].forward;
-		gPlayer[i].atc.turn = gFifoInput[gNetFifoTail&255][i].turn;
+		gPlayer[i].atc.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
 		gPlayer[i].atc.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
-		gPlayer[i].atc.mlook = gFifoInput[gNetFifoTail&255][i].mlook;
+		gPlayer[i].atc.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
 	}
 	gNetFifoTail++;
 	if (!(gFrame&((gSyncRate<<3)-1)))

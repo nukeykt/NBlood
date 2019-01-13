@@ -290,7 +290,7 @@ void sub_557C4(int x, int y, int interpolation)
     }
 }
 
-void DrawMirrors(long x, long y, long z, int a, long horiz)
+void DrawMirrors(long x, long y, long z, fix16_t a, fix16_t horiz)
 {
     for (int i = mirrorcnt - 1; i >= 0; i--)
     {
@@ -326,14 +326,14 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
                 {
                      cx = x - (wall[pWall->hitag].x-wall[pWall->point2].x);
                      cy = y - (wall[pWall->hitag].y-wall[pWall->point2].y);
-                     ca = fix16_from_int(a);
+                     ca = a;
                 }
                 else
                 {
                     //renderPrepareMirror(x,y, fix16_from_int(a),nWall,&cx,&cy,&ca);
-                    renderPrepareMirrorOld(x,y,z,fix16_from_int(a),fix16_from_int(horiz),nWall,mirrorsector,&cx,&cy,&ca);
+                    renderPrepareMirrorOld(x,y,z,a,horiz,nWall,mirrorsector,&cx,&cy,&ca);
                 }
-                renderDrawRoomsQ16(cx, cy, z, ca,fix16_from_int(horiz),mirrorsector|MAXSECTORS);
+                renderDrawRoomsQ16(cx, cy, z, ca,horiz,mirrorsector|MAXSECTORS);
                 viewProcessSprites(cx,cy,z);
                 renderDrawMasks();
                 if (pWall->lotag != 501)
@@ -347,7 +347,7 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
             case 1:
             {
                 int nSector = mirror[i].at4;
-                drawrooms(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
+                renderDrawRoomsQ16(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
                 viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
                 short fstat = sector[nSector].floorstat;
                 sector[nSector].floorstat |= 1;
@@ -360,7 +360,7 @@ void DrawMirrors(long x, long y, long z, int a, long horiz)
             case 2:
             {
                 int nSector = mirror[i].at4;
-                drawrooms(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
+                renderDrawRoomsQ16(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
                 viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
                 short cstat = sector[nSector].ceilingstat;
                 sector[nSector].ceilingstat |= 1;

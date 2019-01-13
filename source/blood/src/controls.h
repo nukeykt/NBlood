@@ -67,14 +67,14 @@ union SYNCFLAGS
 struct GINPUT
 {
     SYNCFLAGS syncFlags;
-    int8_t forward;
-    int16_t turn;
-    int8_t strafe;
+    int16_t forward;
+    fix16_t q16turn;
+    int16_t strafe;
     BUTTONFLAGS buttonFlags;
     KEYFLAGS keyFlags;
     USEFLAGS useFlags;
     uint8_t newWeapon;
-    int8_t mlook;
+    fix16_t q16mlook;
 };
 
 #pragma pack(pop)

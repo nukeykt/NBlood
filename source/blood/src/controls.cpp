@@ -90,15 +90,79 @@ void ctrlTerm(void)
     CONTROL_Shutdown();
 }
 
+int32_t mouseyaxismode = -1;
+
 void ctrlGetInput(void)
 {
     ControlInfo info;
-    signed char forward = 0, strafe = 0;
-    short turn = 0;
+    int forward = 0, strafe = 0;
+    fix16_t turn = 0;
     memset(&gInput, 0, sizeof(gInput));
 
+    if (!gGameStarted || gInputMode != INPUT_MODE_0)
+    {
+        CONTROL_GetInput(&info);
+        return;
+    }
+
     CONTROL_ProcessBinds();
+
+    if (gMouseAiming)
+        gMouseAim = 0;
+
+    if (BUTTON(gamefunc_Mouse_Aiming))
+    {
+        if (gMouseAiming)
+            gMouseAim = 1;
+        else
+        {
+            CONTROL_ClearButton(gamefunc_Mouse_Aiming);
+            gMouseAim = !gMouseAim;
+            if (gMouseAim)
+            {
+                if (!bSilentAim)
+                    viewSetMessage("Mouse aiming ON");
+            }
+            else
+            {
+                if (!bSilentAim)
+                    viewSetMessage("Mouse aiming OFF");
+                gInput.keyFlags.lookCenter = 1;
+            }
+        }
+    }
+    else if (gMouseAiming)
+        gInput.keyFlags.lookCenter = 1;
+
+    int32_t const aimMode = (gMouseAim) ? (int32_t)analog_lookingupanddown : MouseAnalogueAxes[1];
+
+    if (aimMode != mouseyaxismode)
+    {
+        CONTROL_MapAnalogAxis(1, aimMode, controldevice_mouse);
+        mouseyaxismode = aimMode;
+    }
+
     CONTROL_GetInput(&info);
+
+    if (MouseDeadZone)
+    {
+        if (info.dpitch > 0)
+            info.dpitch = max(info.dpitch - MouseDeadZone, 0);
+        else if (info.dpitch < 0)
+            info.dpitch = min(info.dpitch + MouseDeadZone, 0);
+
+        if (info.dyaw > 0)
+            info.dyaw = max(info.dyaw - MouseDeadZone, 0);
+        else if (info.dyaw < 0)
+            info.dyaw = min(info.dyaw + MouseDeadZone, 0);
+    }
+
+    if (MouseBias)
+    {
+        if (klabs(info.dyaw) > klabs(info.dpitch))
+            info.dpitch = tabledivide32_noinline(info.dpitch, MouseBias);
+        else info.dyaw = tabledivide32_noinline(info.dyaw, MouseBias);
+    }
 
     if (gQuitRequest)
         gInput.keyFlags.quit = 1;
@@ -110,12 +174,6 @@ void ctrlGetInput(void)
         keyFlushScans();
         gInputMode = INPUT_MODE_2;
     }
-
-    if (!gGameStarted)
-        return;
-
-    if (gInputMode != INPUT_MODE_0)
-        return;
 
     if (BUTTON(gamefunc_AutoRun))
     {
@@ -227,33 +285,6 @@ void ctrlGetInput(void)
         gInput.keyFlags.lookCenter = 1;
     }
 
-    if (gMouseAiming)
-        gMouseAim = 0;
-
-    if (BUTTON(gamefunc_Mouse_Aiming))
-    {
-        if (gMouseAiming)
-            gMouseAim = 1;
-        else
-        {
-            CONTROL_ClearButton(gamefunc_Mouse_Aiming);
-            gMouseAim = !gMouseAim;
-            if (gMouseAim)
-            {
-                if (!bSilentAim)
-                    viewSetMessage("Mouse aiming ON");
-            }
-            else
-            {
-                if (!bSilentAim)
-                    viewSetMessage("Mouse aiming OFF");
-                gInput.keyFlags.lookCenter = 1;
-            }
-        }
-    }
-    else if (gMouseAiming)
-        gInput.keyFlags.lookCenter = 1;
-
     gInput.keyFlags.spin180 = BUTTON(gamefunc_Turn_Around);
 
     if (BUTTON(gamefunc_Inventory_Left))
@@ -325,32 +356,32 @@ void ctrlGetInput(void)
         gInput.keyFlags.holsterWeapon = 1;
     }
 
-    char run = BUTTON(gamefunc_Run) || gAutoRun;
+    char run = gRunKeyMode ? (BUTTON(gamefunc_Run) | gAutoRun) : (BUTTON(gamefunc_Run) ^ gAutoRun);
     char run2 = BUTTON(gamefunc_Run);
 
     gInput.syncFlags.run = run;
 
     if (BUTTON(gamefunc_Move_Forward))
-        forward += (1+run)<<2;
+        forward += (1+run)<<10;
 
     if (BUTTON(gamefunc_Move_Backward))
-        forward -= (1+run)<<2;
+        forward -= (1+run)<<10;
 
     char turnLeft = 0, turnRight = 0;
 
     if (BUTTON(gamefunc_Strafe))
     {
         if (BUTTON(gamefunc_Turn_Left))
-            strafe += (1 + run) << 2;
+            strafe += (1 + run) << 10;
         if (BUTTON(gamefunc_Turn_Right))
-            strafe -= (1 + run) << 2;
+            strafe -= (1 + run) << 10;
     }
     else
     {
         if (BUTTON(gamefunc_Strafe_Left))
-            strafe += (1 + run) << 2;
+            strafe += (1 + run) << 10;
         if (BUTTON(gamefunc_Strafe_Right))
-            strafe -= (1 + run) << 2;
+            strafe -= (1 + run) << 10;
         if (BUTTON(gamefunc_Turn_Left))
             turnLeft = 1;
         if (BUTTON(gamefunc_Turn_Right))
@@ -363,31 +394,30 @@ void ctrlGetInput(void)
         iTurnCount = 0;
 
     if (turnLeft)
-        turn -= ClipHigh(12 * iTurnCount, gTurnSpeed);
+        turn -= fix16_from_int(ClipHigh(12 * iTurnCount, gTurnSpeed))>>2;
     if (turnRight)
-        turn += ClipHigh(12 * iTurnCount, gTurnSpeed);
+        turn += fix16_from_int(ClipHigh(12 * iTurnCount, gTurnSpeed))>>2;
 
     if ((run2 || run) && iTurnCount > 24)
         turn <<= 1;
 
     if (BUTTON(gamefunc_Strafe))
-        strafe = ClipRange(strafe - (info.dyaw>>3), -8, 8);
+        strafe = ClipRange(strafe - info.dyaw, -2048, 2048);
     else
-        turn = ClipRange(turn + (info.dyaw>>4), -1024, 1024);
+        turn = fix16_clamp(turn + fix16_div(fix16_from_int(info.dyaw), F16(64)), F16(-1024)>>2, F16(1024)>>2);
 
-    strafe = ClipRange(strafe+(info.dx>>3), -8, 8);
+    strafe = ClipRange(strafe+(info.dx<<5), -2048, 2048);
 
-    if (gMouseAim)
-    {
-        if (info.dz < 0)
-            gInput.mlook = ClipRange((info.dz+127)>>7, -127, 127);
-        else
-            gInput.mlook = ClipRange(info.dz>>7, -127, 127);
-        if (gMouseAimingFlipped)
-            gInput.mlook = -gInput.mlook;
-    }
+#if 0
+    if (info.dz < 0)
+        gInput.mlook = ClipRange((info.dz+127)>>7, -127, 127);
     else
-        forward = ClipRange(forward - (info.dz>>8), -8, 8);
+        gInput.mlook = ClipRange(info.dz>>7, -127, 127);
+#endif
+    gInput.q16mlook = fix16_clamp(fix16_div(fix16_from_int(info.dpitch), F16(512)), F16(-127)>>2, F16(127)>>2);
+    if (gMouseAimingFlipped)
+        gInput.q16mlook = -gInput.q16mlook;
+    forward = ClipRange(forward - info.dz, -2048, 2048);
 
     if (KB_KeyPressed(sc_Pause)) // 0xc5 in disassembly
     {
@@ -397,14 +427,14 @@ void ctrlGetInput(void)
 
     if (!gViewMap.bFollowMode && gViewMode == 4)
     {
-        gViewMap.turn = turn;
-        gViewMap.forward = forward;
-        gViewMap.strafe = strafe;
+        gViewMap.turn = fix16_to_int(turn<<2);
+        gViewMap.forward = forward>>8;
+        gViewMap.strafe = strafe>>8;
         turn = 0;
         forward = 0;
         strafe = 0;
     }
     gInput.forward = forward;
-    gInput.turn = turn;
+    gInput.q16turn = turn;
     gInput.strafe = strafe;
 }

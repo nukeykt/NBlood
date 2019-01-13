@@ -51,6 +51,8 @@ hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
 int32_t MAXCACHE1DSIZE = (96*1024*1024);
 
+int32_t MouseDeadZone, MouseBias;
+int32_t SmoothInput;
 int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
 int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
 int32_t MouseAnalogueAxes[MAXMOUSEAXES];
@@ -102,6 +104,7 @@ int32_t gShowWeapon;
 int32_t gMouseSensitivity;
 int32_t gMouseAiming;
 int32_t gMouseAimingFlipped;
+int32_t gRunKeyMode;
 bool gNoClip;
 bool gInfiniteAmmo;
 bool gFullMap;
@@ -295,8 +298,8 @@ void CONFIG_SetDefaults(void)
     //ud.config.AutoAim         = 1;
     CheckForUpdates = 1;
     FXVolume        = 255;
-    //ud.config.MouseBias       = 0;
-    //ud.config.MouseDeadZone   = 0;
+    MouseBias       = 0;
+    MouseDeadZone   = 0;
     //ud.config.MusicToggle     = 1;
     MusicVolume     = 195;
     NumBits         = 16;
@@ -333,7 +336,7 @@ void CONFIG_SetDefaults(void)
     //ud.msgdisptime            = 120;
     //ud.obituaries             = 1;
     //ud.pwlockout[0]           = '\0';
-    //ud.runkey_mode            = 0;
+    gRunKeyMode            = 0;
     //ud.screen_size            = 4;
     //ud.screen_tilting         = 1;
     //ud.screenfade             = 1;

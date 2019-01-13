@@ -276,9 +276,9 @@ void netGetPackets(void)
                     GINPUT *pInput = &gFifoInput[gNetFifoHead[p]&255][p];
                     memset(pInput, 0, sizeof(GINPUT));
                     pInput->syncFlags.byte = GetPacketByte(pPacket);
-                    pInput->forward = GetPacketByte(pPacket);
-                    pInput->turn = GetPacketWord(pPacket);
-                    pInput->strafe = GetPacketByte(pPacket);
+                    pInput->forward = GetPacketWord(pPacket);
+                    pInput->q16turn = GetPacketDWord(pPacket);
+                    pInput->strafe = GetPacketWord(pPacket);
                     if (pInput->syncFlags.buttonChange)
                         pInput->buttonFlags.byte = GetPacketByte(pPacket);
                     if (pInput->syncFlags.keyChange)
@@ -288,7 +288,7 @@ void netGetPackets(void)
                     if (pInput->syncFlags.weaponChange)
                         pInput->newWeapon = GetPacketByte(pPacket);
                     if (pInput->syncFlags.mlookChange)
-                        pInput->mlook = GetPacketByte(pPacket);
+                        pInput->q16mlook = GetPacketDWord(pPacket);
                     gNetFifoHead[p]++;
                 }
                 else
@@ -336,9 +336,9 @@ void netGetPackets(void)
             GINPUT *pInput = &gFifoInput[gNetFifoHead[nPlayer]&255][nPlayer];
             memset(pInput, 0, sizeof(GINPUT));
             pInput->syncFlags.byte = GetPacketByte(pPacket);
-            pInput->forward = GetPacketByte(pPacket);
-            pInput->turn = GetPacketWord(pPacket);
-            pInput->strafe = GetPacketByte(pPacket);
+            pInput->forward = GetPacketWord(pPacket);
+            pInput->q16turn = GetPacketDWord(pPacket);
+            pInput->strafe = GetPacketWord(pPacket);
             if (pInput->syncFlags.buttonChange)
                 pInput->buttonFlags.byte = GetPacketByte(pPacket);
             if (pInput->syncFlags.keyChange)
@@ -348,7 +348,7 @@ void netGetPackets(void)
             if (pInput->syncFlags.weaponChange)
                 pInput->newWeapon = GetPacketByte(pPacket);
             if (pInput->syncFlags.mlookChange)
-                pInput->mlook = GetPacketByte(pPacket);
+                pInput->q16mlook = GetPacketDWord(pPacket);
             gNetFifoHead[nPlayer]++;
             while (pPacket < packet+nSize)
             {
@@ -373,9 +373,9 @@ void netGetPackets(void)
             GINPUT *pInput = &gFifoInput[gNetFifoHead[nPlayer]&255][nPlayer];
             memset(pInput, 0, sizeof(GINPUT));
             pInput->syncFlags.byte = GetPacketByte(pPacket);
-            pInput->forward = GetPacketByte(pPacket);
-            pInput->turn = GetPacketWord(pPacket);
-            pInput->strafe = GetPacketByte(pPacket);
+            pInput->forward = GetPacketWord(pPacket);
+            pInput->q16turn = GetPacketDWord(pPacket);
+            pInput->strafe = GetPacketWord(pPacket);
             if (pInput->syncFlags.buttonChange)
                 pInput->buttonFlags.byte = GetPacketByte(pPacket);
             if (pInput->syncFlags.keyChange)
@@ -385,7 +385,7 @@ void netGetPackets(void)
             if (pInput->syncFlags.weaponChange)
                 pInput->newWeapon = GetPacketByte(pPacket);
             if (pInput->syncFlags.mlookChange)
-                pInput->mlook = GetPacketByte(pPacket);
+                pInput->q16mlook = GetPacketDWord(pPacket);
             gNetFifoHead[nPlayer]++;
             for (int i = gSyncRate; i > 1; i--)
             {
@@ -566,27 +566,27 @@ void sub_7AD90(GINPUT *pInput)
 {
     byte_28E3B0.at0 |= pInput->syncFlags.byte;
     byte_28E3B0.at4 += pInput->forward;
-    byte_28E3B0.at8 += pInput->turn;
+    byte_28E3B0.at8 += pInput->q16turn;
     byte_28E3B0.atc += pInput->strafe;
     byte_28E3B0.at10 |= pInput->buttonFlags.byte;
     byte_28E3B0.at14 |= pInput->keyFlags.word;
     byte_28E3B0.at18 |= pInput->useFlags.byte;
     if (pInput->newWeapon)
         byte_28E3B0.at1c = pInput->newWeapon;
-    byte_28E3B0.at1d = pInput->mlook;
+    byte_28E3B0.at1d = pInput->q16mlook;
 }
 
 void sub_7AE2C(GINPUT *pInput)
 {
     pInput->syncFlags.byte = byte_28E3B0.at0;
     pInput->forward = byte_28E3B0.at4;
-    pInput->turn = byte_28E3B0.at8;
+    pInput->q16turn = byte_28E3B0.at8;
     pInput->strafe = byte_28E3B0.atc;
     pInput->buttonFlags.byte = byte_28E3B0.at10;
     pInput->keyFlags.word = byte_28E3B0.at14;
     pInput->useFlags.byte = byte_28E3B0.at18;
     pInput->newWeapon = byte_28E3B0.at1c;
-    pInput->mlook = byte_28E3B0.at1d;
+    pInput->q16mlook = byte_28E3B0.at1d;
     memset(&byte_28E3B0, 0, sizeof(byte_28E3B0));
 }
 
@@ -687,12 +687,12 @@ void netGetInput(void)
             gInput.syncFlags.useChange = 1;
         if (gInput.newWeapon)
             gInput.syncFlags.weaponChange = 1;
-        if (gInput.mlook)
+        if (gInput.q16mlook)
             gInput.syncFlags.mlookChange = 1;
         PutPacketByte(pPacket, gInput.syncFlags.byte);
-        PutPacketByte(pPacket, gInput.forward);
-        PutPacketWord(pPacket, gInput.turn);
-        PutPacketByte(pPacket, gInput.strafe);
+        PutPacketWord(pPacket, gInput.forward);
+        PutPacketDWord(pPacket, gInput.q16turn);
+        PutPacketWord(pPacket, gInput.strafe);
         if (gInput.syncFlags.buttonChange)
             PutPacketByte(pPacket, gInput.buttonFlags.byte);
         if (gInput.syncFlags.keyChange)
@@ -702,7 +702,7 @@ void netGetInput(void)
         if (gInput.syncFlags.weaponChange)
             PutPacketByte(pPacket, gInput.newWeapon);
         if (gInput.syncFlags.mlookChange)
-            PutPacketByte(pPacket, gInput.mlook);
+            PutPacketDWord(pPacket, gInput.q16mlook);
         while (gSendCheckTail != gCheckHead[myconnectindex])
         {
             unsigned long *checkSum = gCheckFifo[gSendCheckTail&255][myconnectindex];
@@ -724,12 +724,12 @@ void netGetInput(void)
             gInput.syncFlags.useChange = 1;
         if (gInput.newWeapon)
             gInput.syncFlags.weaponChange = 1;
-        if (gInput.mlook)
+        if (gInput.q16mlook)
             gInput.syncFlags.mlookChange = 1;
         PutPacketByte(pPacket, gInput.syncFlags.byte);
-        PutPacketByte(pPacket, gInput.forward);
-        PutPacketWord(pPacket, gInput.turn);
-        PutPacketByte(pPacket, gInput.strafe);
+        PutPacketWord(pPacket, gInput.forward);
+        PutPacketDWord(pPacket, gInput.q16turn);
+        PutPacketWord(pPacket, gInput.strafe);
         if (gInput.syncFlags.buttonChange)
             PutPacketByte(pPacket, gInput.buttonFlags.byte);
         if (gInput.syncFlags.keyChange)
@@ -739,7 +739,7 @@ void netGetInput(void)
         if (gInput.syncFlags.weaponChange)
             PutPacketByte(pPacket, gInput.newWeapon);
         if (gInput.syncFlags.mlookChange)
-            PutPacketByte(pPacket, gInput.mlook);
+            PutPacketDWord(pPacket, gInput.q16mlook);
         if (((gNetFifoHead[myconnectindex]-1)&15) == 0)
         {
             int t = myMinLag[connecthead]-otherMinLag;
@@ -796,12 +796,12 @@ void netGetInput(void)
                 pInput->syncFlags.useChange = 1;
             if (pInput->newWeapon)
                 pInput->syncFlags.weaponChange = 1;
-            if (pInput->mlook)
+            if (pInput->q16mlook)
                 pInput->syncFlags.mlookChange = 1;
             PutPacketByte(pPacket, pInput->syncFlags.byte);
-            PutPacketByte(pPacket, pInput->forward);
-            PutPacketWord(pPacket, pInput->turn);
-            PutPacketByte(pPacket, pInput->strafe);
+            PutPacketWord(pPacket, pInput->forward);
+            PutPacketDWord(pPacket, pInput->q16turn);
+            PutPacketWord(pPacket, pInput->strafe);
             if (pInput->syncFlags.buttonChange)
                 PutPacketByte(pPacket, pInput->buttonFlags.byte);
             if (pInput->syncFlags.keyChange)
@@ -811,7 +811,7 @@ void netGetInput(void)
             if (pInput->syncFlags.weaponChange)
                 PutPacketByte(pPacket, pInput->newWeapon);
             if (pInput->syncFlags.mlookChange)
-                PutPacketByte(pPacket, pInput->mlook);
+                PutPacketDWord(pPacket, pInput->q16mlook);
         }
         if ((gNetFifoMasterTail&15) == 0)
         {

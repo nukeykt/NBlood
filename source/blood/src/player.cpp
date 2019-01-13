@@ -649,7 +649,8 @@ void playerStart(int nPlayer)
     GetSpriteExtents(pSprite, &top, &bottom);
     pSprite->z -= bottom - pSprite->z;
     pSprite->pal = 11+(pPlayer->at2ea&3);
-    pSprite->ang = pStartZone->ang;
+    pPlayer->angold = pSprite->ang = pStartZone->ang;
+    pPlayer->q16ang = fix16_from_int(pSprite->ang);
     pSprite->type = kDudePlayer1+nPlayer;
     pSprite->clipdist = pDudeInfo->ata;
     pSprite->hitag = 15;
@@ -658,9 +659,9 @@ void playerStart(int nPlayer)
     pPlayer->pXSprite->health = pDudeInfo->at2<<4;
     pPlayer->pSprite->cstat &= ~32768;
     pPlayer->at63 = 0;
-    pPlayer->at7b = 0;
-    pPlayer->at7f = 0;
-    pPlayer->at77 = 0;
+    pPlayer->q16horiz = 0;
+    pPlayer->q16slopehoriz = 0;
+    pPlayer->q16look = 0;
     pPlayer->at83 = 0;
     pPlayer->at2ee = -1;
     pPlayer->at2f2 = 1200;
@@ -700,11 +701,11 @@ void playerStart(int nPlayer)
     pPlayer->at1fe = 0;
     pPlayer->atbe = 0;
     xvel[pSprite->index] = yvel[pSprite->index] = zvel[pSprite->index] = 0;
-    pInput->turn = 0;
+    pInput->q16turn = 0;
     pInput->keyFlags.word = 0;
     pInput->forward = 0;
     pInput->strafe = 0;
-    pInput->mlook = 0;
+    pInput->q16mlook = 0;
     pInput->buttonFlags.byte = 0;
     pInput->useFlags.byte = 0;
     pPlayer->at35a = 0;
@@ -1208,7 +1209,7 @@ void ProcessInput(PLAYER *pPlayer)
     POSTURE *pPosture = &gPosture[pPlayer->at5f][pPlayer->at2f];
     GINPUT *pInput = &pPlayer->atc;
     pPlayer->at2e = pInput->syncFlags.run;
-    if (pInput->buttonFlags.byte || pInput->forward || pInput->strafe || pInput->strafe)
+    if (pInput->buttonFlags.byte || pInput->forward || pInput->strafe || pInput->q16turn)
         pPlayer->at30a = 0;
     else if (pPlayer->at30a >= 0)
         pPlayer->at30a += 4;
@@ -1217,10 +1218,13 @@ void ProcessInput(PLAYER *pPlayer)
     {
         char bSeqStat = playerSeqPlaying(pPlayer, 16);
         if (pPlayer->at2ee != -1)
-            pSprite->ang = getangle(sprite[pPlayer->at2ee].x-pSprite->x, sprite[pPlayer->at2ee].y-pSprite->y);
+        {
+            pPlayer->angold = pSprite->ang = getangle(sprite[pPlayer->at2ee].x - pSprite->x, sprite[pPlayer->at2ee].y - pSprite->y);
+            pPlayer->q16ang = fix16_from_int(pSprite->ang);
+        }
         pPlayer->at1fe += 4;
         if (!bSeqStat)
-            pPlayer->at7b = mulscale16(0x8000-(Cos(ClipHigh(pPlayer->at1fe*8, 1024))>>15), 120);
+            pPlayer->q16horiz = mulscale16(0x8000-(Cos(ClipHigh(pPlayer->at1fe*8, 1024))>>15), F16(120));
         if (pPlayer->atbd)
             pInput->newWeapon = pPlayer->atbd;
         if (pInput->keyFlags.action)
@@ -1258,16 +1262,16 @@ void ProcessInput(PLAYER *pPlayer)
         {
             int forward = pInput->forward;
             if (forward > 0)
-                forward *= pPosture->at0;
+                forward = mulscale8(pPosture->at0, forward);
             else
-                forward *= pPosture->at8;
+                forward = mulscale8(pPosture->at8, forward);
             xvel[nSprite] += mulscale30(forward, x);
             yvel[nSprite] += mulscale30(forward, y);
         }
         if (pInput->strafe)
         {
             int strafe = pInput->strafe;
-            strafe *= pPosture->at4;
+            strafe = mulscale8(pPosture->at4, strafe);
             xvel[nSprite] += mulscale30(strafe, y);
             yvel[nSprite] -= mulscale30(strafe, x);
         }
@@ -1283,9 +1287,9 @@ void ProcessInput(PLAYER *pPlayer)
         {
             int forward = pInput->forward;
             if (forward > 0)
-                forward *= pPosture->at0;
+                forward = mulscale8(pPosture->at0, forward);
             else
-                forward *= pPosture->at8;
+                forward = mulscale8(pPosture->at8, forward);
             if (pXSprite->at30_0)
                 forward = mulscale16(forward, speed);
             xvel[nSprite] += mulscale30(forward, x);
@@ -1294,15 +1298,15 @@ void ProcessInput(PLAYER *pPlayer)
         if (pInput->strafe)
         {
             int strafe = pInput->strafe;
-            strafe *= pPosture->at4;
+            strafe = mulscale8(pPosture->at4, strafe);
             if (pXSprite->at30_0)
                 strafe = mulscale16(strafe, speed);
             xvel[nSprite] += mulscale30(strafe, y);
             yvel[nSprite] -= mulscale30(strafe, x);
         }
     }
-    if (pInput->turn)
-        pSprite->ang = (pSprite->ang+((pInput->turn<<2)>>4))&2047;
+    if (pInput->q16turn)
+        pPlayer->q16ang = (pPlayer->q16ang+pInput->q16turn)&0x7ffffff;
     if (pInput->keyFlags.spin180)
     {
         if (!pPlayer->at316)
@@ -1317,8 +1321,10 @@ void ProcessInput(PLAYER *pPlayer)
         else
             speed = 128;
         pPlayer->at316 = ClipLow(pPlayer->at316+speed, 0);
-        pSprite->ang += speed;
+        pPlayer->q16ang += fix16_from_int(speed);
     }
+    pPlayer->q16ang = (pPlayer->q16ang+fix16_from_int(pSprite->ang-pPlayer->angold))&0x7ffffff;
+    pPlayer->angold = pSprite->ang = fix16_to_int(pPlayer->q16ang);
     if (!pInput->buttonFlags.jump)
         pPlayer->at31c = 0;
 
@@ -1425,30 +1431,27 @@ void ProcessInput(PLAYER *pPlayer)
     }
     if (pInput->keyFlags.lookCenter && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookDown)
     {
-        if (pPlayer->at77 < 0)
-            pPlayer->at77 = ClipHigh(pPlayer->at77+4, 0);
-        if (pPlayer->at77 > 0)
-            pPlayer->at77 = ClipLow(pPlayer->at77-4, 0);
-        if (!pPlayer->at77)
+        if (pPlayer->q16look < 0)
+            pPlayer->q16look = fix16_min(pPlayer->q16look+F16(4), F16(0));
+        if (pPlayer->q16look > 0)
+            pPlayer->q16look = fix16_max(pPlayer->q16look-F16(4), F16(0));
+        if (!pPlayer->q16look)
             pInput->keyFlags.lookCenter = 0;
     }
     else
     {
         if (pInput->buttonFlags.lookUp)
-            pPlayer->at77 = ClipHigh(pPlayer->at77+4, 60);
+            pPlayer->q16look = fix16_max(pPlayer->q16look+F16(4), F16(60));
         if (pInput->buttonFlags.lookDown)
-            pPlayer->at77 = ClipLow(pPlayer->at77-4, -60);
+            pPlayer->q16look = fix16_min(pPlayer->q16look-F16(4), F16(-60));
     }
-    if (pInput->mlook < 0)
-        pPlayer->at77 = (signed char)ClipRange(pPlayer->at77+((pInput->mlook+3)>>2), -60, 60);
+    pPlayer->q16look = fix16_clamp(pPlayer->q16look+pInput->q16mlook, F16(-60), F16(60));
+    if (pPlayer->q16look > 0)
+        pPlayer->q16horiz = mulscale30(F16(120), Sin(fix16_to_int(pPlayer->q16look<<3)));
+    else if (pPlayer->q16look < 0)
+        pPlayer->q16horiz = mulscale30(F16(180), Sin(fix16_to_int(pPlayer->q16look<<3)));
     else
-        pPlayer->at77 = (signed char)ClipRange(pPlayer->at77+(pInput->mlook>>2), -60, 60);
-    if (pPlayer->at77 > 0)
-        pPlayer->at7b = mulscale30(120, Sin(pPlayer->at77*8));
-    else if (pPlayer->at77 < 0)
-        pPlayer->at7b = mulscale30(180, Sin(pPlayer->at77*8));
-    else
-        pPlayer->at7b = 0;
+        pPlayer->q16horiz = 0;
     int nSector = pSprite->sectnum;
     int florhit = gSpriteHit[pSprite->extra].florhit & 0xe000;
     char va;
@@ -1466,16 +1469,16 @@ void ProcessInput(PLAYER *pPlayer)
         if (nSector2 == nSector)
         {
             int z2 = getflorzofslope(nSector2, x2, y2);
-            pPlayer->at7f = interpolate(pPlayer->at7f, (z1-z2)>>3, 0x4000);
+            pPlayer->q16slopehoriz = interpolate(pPlayer->q16slopehoriz, fix16_from_int(z1-z2)>>3, 0x4000);
         }
     }
     else
     {
-        pPlayer->at7f = interpolate(pPlayer->at7f, 0, 0x4000);
-        if (klabs(pPlayer->at7f) < 4)
-            pPlayer->at7f = 0;
+        pPlayer->q16slopehoriz = interpolate(pPlayer->q16slopehoriz, F16(0), 0x4000);
+        if (klabs(pPlayer->q16slopehoriz) < 4)
+            pPlayer->q16slopehoriz = 0;
     }
-    pPlayer->at83 = (-pPlayer->at7b)<<7;
+    pPlayer->at83 = (-fix16_to_int(pPlayer->q16horiz))<<7;
     if (pInput->keyFlags.prevItem)
     {
         pInput->keyFlags.prevItem = 0;

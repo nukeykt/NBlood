@@ -1,4 +1,5 @@
 #pragma once
+#include "fix16.h"
 #include "common_game.h"
 #include "actor.h"
 #include "blood.h"
@@ -52,9 +53,9 @@ struct PLAYER {
     int at6b;
     int at6f; // weapon z
     int at73;
-    int at77;
-    int at7b; // horiz
-    int at7f; // horizoff
+    fix16_t q16look;
+    int q16horiz; // horiz
+    int q16slopehoriz; // horizoff
     int at83;
     char at87; // underwater
     char at88[8]; // keys
@@ -122,6 +123,8 @@ struct PLAYER {
     int at377;
     char at37b; // weapon flash
     int at37f; // quake2
+    fix16_t q16ang;
+    int angold;
 };
 
 struct POSTURE {

@@ -350,6 +350,7 @@ const int nInputSize = 22;
 
 void CDemo::FlushInput(int nCount)
 {
+    // TODO: Fix q16turn & q16mlook
     char pBuffer[nInputSize*kInputBufferSize];
     BitWriter bitWriter(pBuffer, sizeof(pBuffer));
     for (int i = 0; i < nCount; i++)
@@ -362,9 +363,9 @@ void CDemo::FlushInput(int nCount)
         bitWriter.writeBit(pInput->syncFlags.mlookChange);
         bitWriter.writeBit(pInput->syncFlags.run);
         bitWriter.skipBits(26);
-        bitWriter.write(pInput->forward, 8);
-        bitWriter.write(pInput->turn, 16);
-        bitWriter.write(pInput->strafe, 8);
+        bitWriter.write(pInput->forward>>8, 8);
+        bitWriter.write(fix16_to_int(pInput->q16turn<<2), 16);
+        bitWriter.write(pInput->strafe>>8, 8);
         bitWriter.writeBit(pInput->buttonFlags.jump);
         bitWriter.writeBit(pInput->buttonFlags.crouch);
         bitWriter.writeBit(pInput->buttonFlags.shoot);
@@ -394,7 +395,7 @@ void CDemo::FlushInput(int nCount)
         bitWriter.writeBit(pInput->useFlags.useMedKit);
         bitWriter.skipBits(28);
         bitWriter.write(pInput->newWeapon, 8);
-        bitWriter.write(pInput->mlook, 8);
+        bitWriter.write(fix16_to_int(pInput->q16turn<<2), 8);
     }
     fwrite(pBuffer, 1, nInputSize*nCount, at7);
 }
@@ -415,9 +416,9 @@ void CDemo::ReadInput(int nCount)
         pInput->syncFlags.mlookChange = bitReader.readBit();
         pInput->syncFlags.run = bitReader.readBit();
         bitReader.skipBits(26);
-        pInput->forward = bitReader.readSigned(8);
-        pInput->turn = bitReader.readSigned(16);
-        pInput->strafe = bitReader.readSigned(8);
+        pInput->forward = bitReader.readSigned(8)<<8;
+        pInput->q16turn = fix16_from_int(bitReader.readSigned(16)>>2);
+        pInput->strafe = bitReader.readSigned(8)<<8;
         pInput->buttonFlags.jump = bitReader.readBit();
         pInput->buttonFlags.crouch = bitReader.readBit();
         pInput->buttonFlags.shoot = bitReader.readBit();
@@ -447,6 +448,7 @@ void CDemo::ReadInput(int nCount)
         pInput->useFlags.useMedKit = bitReader.readBit();
         bitReader.skipBits(28);
         pInput->newWeapon = bitReader.readUnsigned(8);
-        pInput->mlook = bitReader.readSigned(8);
+        int mlook = bitReader.readSigned(8);
+        pInput->q16mlook = fix16_from_int(mlook / 4);
     }
 }

@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MAXRIDECULELENGTH 40
 #define MAXPLAYERNAME 32
 
+extern int32_t MouseDeadZone, MouseBias;
+extern int32_t SmoothInput;
 extern int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
 extern int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
 extern int32_t MouseAnalogueAxes[MAXMOUSEAXES];
@@ -83,6 +85,7 @@ extern int32_t gShowWeapon;
 extern int32_t gMouseSensitivity;
 extern int32_t gMouseAiming;
 extern int32_t gMouseAimingFlipped;
+extern int32_t gRunKeyMode;
 extern bool gNoClip;
 extern bool gInfiniteAmmo;
 extern bool gFullMap;

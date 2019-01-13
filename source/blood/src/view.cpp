@@ -43,11 +43,11 @@ struct VIEW {
 	int at14;
 	int at18; // bob sway y
 	int at1c; // bob sway x
-	int at20;
-	int at24; // horiz
+	fix16_t at20;
+	fix16_t at24; // horiz
 	int at28; // horizoff
 	int at2c;
-	int at30; // angle
+	fix16_t at30; // angle
 	int at34; // weapon z
 	int at38; // view z
 	int at3c;
@@ -210,10 +210,10 @@ void viewToggle(int viewMode)
 
 void viewInitializePrediction(void)
 {
-	predict.at30 = gMe->pSprite->ang;
-	predict.at20 = gMe->at77;
-	predict.at24 = gMe->at7b;
-	predict.at28 = gMe->at7f;
+	predict.at30 = gMe->q16ang;
+	predict.at20 = gMe->q16look;
+	predict.at24 = gMe->q16horiz;
+	predict.at28 = gMe->q16slopehoriz;
 	predict.at2c = gMe->at83;
 	predict.at6f = gMe->at31c;
 	predict.at70 = gMe->at2e;
@@ -274,22 +274,22 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     predict.at71 = pInput->buttonFlags.jump;
     if (predict.at48 == 1)
     {
-        int x = Cos(predict.at30);
-        int y = Sin(predict.at30);
+        int x = Cos(fix16_to_int(predict.at30));
+        int y = Sin(fix16_to_int(predict.at30));
         if (pInput->forward)
         {
             int forward = pInput->forward;
             if (forward > 0)
-                forward *= pPosture->at0;
+                forward = mulscale8(pPosture->at0, forward);
             else
-                forward *= pPosture->at8;
+                forward = mulscale8(pPosture->at8, forward);
             predict.at5c += mulscale30(forward, x);
             predict.at60 += mulscale30(forward, y);
         }
         if (pInput->strafe)
         {
             int strafe = pInput->strafe;
-            strafe *= pPosture->at4;
+            strafe = mulscale8(pPosture->at4, strafe);
             predict.at5c += mulscale30(strafe, y);
             predict.at60 -= mulscale30(strafe, x);
         }
@@ -299,15 +299,15 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         int speed = 0x10000;
         if (predict.at6a > 0)
             speed -= divscale16(predict.at6a, 0x100);
-        int x = Cos(predict.at30);
-        int y = Sin(predict.at30);
+        int x = Cos(fix16_to_int(predict.at30));
+        int y = Sin(fix16_to_int(predict.at30));
         if (pInput->forward)
         {
             int forward = pInput->forward;
             if (forward > 0)
-                forward *= pPosture->at0;
+                forward = mulscale8(pPosture->at0, forward);
             else
-                forward *= pPosture->at8;
+                forward = mulscale8(pPosture->at8, forward);
             if (predict.at6a)
                 forward = mulscale16(forward, speed);
             predict.at5c += mulscale30(forward, x);
@@ -316,15 +316,15 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         if (pInput->strafe)
         {
             int strafe = pInput->strafe;
-            strafe *= pPosture->at4;
+            strafe = mulscale8(pPosture->at4, strafe);
             if (predict.at6a)
                 strafe = mulscale16(strafe, speed);
             predict.at5c += mulscale30(strafe, y);
             predict.at60 -= mulscale30(strafe, x);
         }
     }
-    if (pInput->turn)
-        predict.at30 = (predict.at30+((pInput->turn<<2)>>4))&2047;
+    if (pInput->q16turn)
+        predict.at30 = (predict.at30+pInput->q16turn)&0x7ffffff;
     if (pInput->keyFlags.spin180)
         if (!predict.at4c)
             predict.at4c = -1024;
@@ -337,7 +337,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
             speed = 128;
 
         predict.at4c = ClipLow(predict.at4c+speed, 0);
-        predict.at30 += speed;
+        predict.at30 += fix16_from_int(speed);
     }
 
     if (!predict.at71)
@@ -371,28 +371,25 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     if (predict.at6e && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookDown)
     {
         if (predict.at20 < 0)
-            predict.at20 = ClipHigh(predict.at20+4, 0);
+            predict.at20 = fix16_min(predict.at20+F16(4), F16(0));
         if (predict.at20 > 0)
-            predict.at20 = ClipLow(predict.at20-4, 0);
+            predict.at20 = fix16_max(predict.at20-F16(4), F16(0));
         if (predict.at20 == 0)
             predict.at6e = 0;
     }
     else
     {
         if (pInput->buttonFlags.lookUp)
-            predict.at20 = ClipHigh(predict.at20+4, 60);
+            predict.at20 = fix16_max(predict.at20+F16(4), F16(60));
         if (pInput->buttonFlags.lookDown)
-            predict.at20 = ClipLow(predict.at20-4, -60);
+            predict.at20 = fix16_min(predict.at20-F16(4), F16(-60));
     }
-    if (pInput->mlook < 0)
-        predict.at20 = ClipRange(predict.at20+((pInput->mlook+3)>>2), -60, 60);
-    else
-        predict.at20 = ClipRange(predict.at20+(pInput->mlook>>2), -60, 60);
+    predict.at20 = fix16_clamp(predict.at20+pInput->q16mlook, F16(-60), F16(60));
 
     if (predict.at20 > 0)
-        predict.at24 = mulscale30(120, Sin(predict.at20*8));
+        predict.at24 = mulscale30(F16(120), Sin(fix16_to_int(predict.at20<<3)));
     else if (predict.at20 < 0)
-        predict.at24 = mulscale30(180, Sin(predict.at20*8));
+        predict.at24 = mulscale30(F16(180), Sin(fix16_to_int(predict.at20<<3)));
     else
         predict.at24 = 0;
 
@@ -406,14 +403,14 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     if (va && (sector[nSector].floorstat&2) != 0)
     {
         int z1 = getflorzofslope(nSector, predict.at50, predict.at54);
-        int x2 = predict.at50+mulscale30(64, Cos(predict.at30));
-        int y2 = predict.at54+mulscale30(64, Sin(predict.at30));
+        int x2 = predict.at50+mulscale30(64, Cos(fix16_to_int(predict.at30)));
+        int y2 = predict.at54+mulscale30(64, Sin(fix16_to_int(predict.at30)));
         short nSector2 = nSector;
         updatesector(x2, y2, &nSector2);
         if (nSector2 == nSector)
         {
             int z2 = getflorzofslope(nSector2, x2, y2);
-            predict.at28 = interpolate(predict.at28, (z1-z2)>>3, 0x4000);
+            predict.at28 = interpolate(predict.at28, fix16_from_int(z1-z2)>>3, 0x4000);
         }
     }
     else
@@ -422,7 +419,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         if (klabs(predict.at28) < 4)
             predict.at28 = 0;
     }
-    predict.at2c = (-predict.at24)<<7;
+    predict.at2c = (-fix16_to_int(predict.at24))<<7;
 }
 
 void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
@@ -811,7 +808,7 @@ void viewCorrectPrediction(void)
     if (gGameOptions.nGameType == 0) return;
     SPRITE *pSprite = gMe->pSprite;
     VIEW *pView = &predictFifo[(gNetFifoTail-1)&255];
-    if (pSprite->ang != pView->at30 || pView->at24 != gMe->at7b || pView->at50 != pSprite->x || pView->at54 != pSprite->y || pView->at58 != pSprite->z)
+    if (gMe->q16ang != pView->at30 || pView->at24 != gMe->q16horiz || pView->at50 != pSprite->x || pView->at54 != pSprite->y || pView->at58 != pSprite->z)
     {
         viewInitializePrediction();
         predictOld = gPrevView[myconnectindex];
@@ -827,13 +824,13 @@ void viewBackupView(int nPlayer)
 {
     PLAYER *pPlayer = &gPlayer[nPlayer];
     VIEW *pView = &gPrevView[nPlayer];
-    pView->at30 = pPlayer->pSprite->ang;
+    pView->at30 = pPlayer->q16ang;
     pView->at50 = pPlayer->pSprite->x;
     pView->at54 = pPlayer->pSprite->y;
     pView->at38 = pPlayer->at67;
     pView->at34 = pPlayer->at6f-pPlayer->at67-0xc00;
-    pView->at24 = pPlayer->at7b;
-    pView->at28 = pPlayer->at7f;
+    pView->at24 = pPlayer->q16horiz;
+    pView->at28 = pPlayer->q16slopehoriz;
     pView->at2c = pPlayer->at83;
     pView->at8 = pPlayer->at3f;
     pView->atc = pPlayer->at43;
@@ -2197,11 +2194,11 @@ long cameradist = -1;
 long othercameraclock;
 long cameraclock;
 
-void CalcOtherPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, int zm)
+void CalcOtherPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, fix16_t zm)
 {
     int vX = mulscale30(-Cos(nAng), 1280);
     int vY = mulscale30(-Sin(nAng), 1280);
-    int vZ = mulscale(zm, 1280, 3)-(16<<8);
+    int vZ = fix16_to_int(mulscale(zm, 1280, 3))-(16<<8);
     int bakCstat = pSprite->cstat;
     pSprite->cstat &= ~256;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
@@ -2245,11 +2242,11 @@ void CalcOtherPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsect
     pSprite->cstat = bakCstat;
 }
 
-void CalcPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, int zm)
+void CalcPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, fix16_t zm)
 {
     int vX = mulscale30(-Cos(nAng), 1280);
     int vY = mulscale30(-Sin(nAng), 1280);
-    int vZ = mulscale(zm, 1280, 3)-(16<<8);
+    int vZ = fix16_to_int(mulscale(zm, 1280, 3))-(16<<8);
     int bakCstat = pSprite->cstat;
     pSprite->cstat &= ~256;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
@@ -2609,9 +2606,9 @@ void viewDrawScreen(void)
         int cY = gView->pSprite->y;
         int cZ = gView->at67;
         int zDelta = gView->at6f-gView->at67-(12<<8);
-        int cA = gView->pSprite->ang;
-        int va0 = gView->at7b;
-        int v90 = gView->at7f;
+        fix16_t cA = gView->q16ang;
+        fix16_t q16horiz = gView->q16horiz;
+        fix16_t q16slopehoriz = gView->q16slopehoriz;
         int v74 = gView->at43;
         int v8c = gView->at3f;
         int v4c = gView->at53;
@@ -2626,9 +2623,9 @@ void viewDrawScreen(void)
                 cY = interpolate(predictOld.at54, predict.at54, gInterpolate);
                 cZ = interpolate(predictOld.at38, predict.at38, gInterpolate);
                 zDelta = interpolate(predictOld.at34, predict.at34, gInterpolate);
-                cA = interpolateang(predictOld.at30, predict.at30, gInterpolate);
-                va0 = interpolate(predictOld.at24, predict.at24, gInterpolate);
-                v90 = interpolate(predictOld.at28, predict.at28, gInterpolate);
+                cA = interpolateangfix16(predictOld.at30, predict.at30, gInterpolate);
+                q16horiz = interpolate(predictOld.at24, predict.at24, gInterpolate);
+                q16slopehoriz = interpolate(predictOld.at28, predict.at28, gInterpolate);
                 v74 = interpolate(predictOld.atc, predict.atc, gInterpolate);
                 v8c = interpolate(predictOld.at8, predict.at8, gInterpolate);
                 v4c = interpolate(predictOld.at1c, predict.at1c, gInterpolate);
@@ -2641,29 +2638,29 @@ void viewDrawScreen(void)
                 cY = interpolate(pView->at54, cY, gInterpolate);
                 cZ = interpolate(pView->at38, cZ, gInterpolate);
                 zDelta = interpolate(pView->at34, zDelta, gInterpolate);
-                cA = interpolateang(pView->at30, cA, gInterpolate);
-                va0 = interpolate(pView->at24, va0, gInterpolate);
-                v90 = interpolate(pView->at28, v90, gInterpolate);
+                cA = interpolateangfix16(pView->at30, cA, gInterpolate);
+                q16horiz = interpolate(pView->at24, q16horiz, gInterpolate);
+                q16slopehoriz = interpolate(pView->at28, q16slopehoriz, gInterpolate);
                 v74 = interpolate(pView->atc, v74, gInterpolate);
                 v8c = interpolate(pView->at8, v8c, gInterpolate);
                 v4c = interpolate(pView->at1c, v4c, gInterpolate);
                 v48 = interpolate(pView->at18, v48, gInterpolate);
             }
         }
-        va0 += shakeHoriz;
-        cA += shakeAngle;
+        q16horiz += fix16_from_int(shakeHoriz);
+        cA += fix16_from_int(shakeAngle);
         cX += shakeX;
         cY += shakeY;
         cZ += shakeZ;
         v4c += shakeBobX;
         v48 += shakeBobY;
-        va0 += mulscale30(0x40000000-Cos(gView->at35e<<2), 30);
+        q16horiz += mulscale30(0x40000000-Cos(gView->at35e<<2), F16(30));
         if (gViewPos == 0)
         {
             if (gViewHBobbing)
             {
-                cX -= mulscale30(v74, Sin(cA))>>4;
-                cY += mulscale30(v74, Cos(cA))>>4;
+                cX -= mulscale30(v74, Sin(fix16_to_int(cA)))>>4;
+                cY += mulscale30(v74, Cos(fix16_to_int(cA)))>>4;
             }
             if (gViewVBobbing)
             {
@@ -2671,15 +2668,15 @@ void viewDrawScreen(void)
             }
             if (gSlopeTilting)
             {
-                va0 += v90;
+                q16horiz += q16slopehoriz;
             }
-            cZ += va0*10;
+            cZ += fix16_to_int(q16horiz*10);
             cameradist = -1;
             cameraclock = gGameClock;
         }
         else
         {
-            CalcPosition(gView->pSprite, (long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum, cA, va0);
+            CalcPosition(gView->pSprite, (long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum, fix16_to_int(cA), q16horiz);
         }
         CheckLink((long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum);
         int v78 = interpolateang(gScreenTiltO, gScreenTilt, gInterpolate);
@@ -2777,7 +2774,7 @@ RORHACKOTHER:
             int ror_status[16];
             for (int i = 0; i < 16; i++)
                 ror_status[i] = TestBitString(gotpic, 4080 + i);
-            DrawMirrors(vd8, vd4, vd0, v50, v54 + 90);
+            DrawMirrors(vd8, vd4, vd0, fix16_from_int(v50), fix16_from_int(v54 + 90));
             drawrooms(vd8, vd4, vd0, v50, v54 + 90, vcc);
             bool do_ror_hack = false;
             for (int i = 0; i < 16; i++)
@@ -2835,7 +2832,7 @@ RORHACKOTHER:
             nSprite = nextspritestat[nSprite];
         }
         g_visibility = ClipLow(gVisibility - 32 * gView->at362 - unk, 0);
-        cA = (cA + interpolateang(deliriumTurnO, deliriumTurn, gInterpolate)) & 2047;
+        cA = (cA + interpolateangfix16(fix16_from_int(deliriumTurnO), fix16_from_int(deliriumTurn), gInterpolate)) & 0x7ffffff;
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
         if (cZ >= vf8)
@@ -2846,13 +2843,13 @@ RORHACKOTHER:
         {
             cZ = vfc+(8<<8);
         }
-        va0 = ClipRange(va0, -200, 200);
+        q16horiz = ClipRange(q16horiz, F16(-200), F16(200));
 RORHACK:
         int ror_status[16];
         for (int i = 0; i < 16; i++)
             ror_status[i] = TestBitString(gotpic, 4080+i);
-        int deliriumPitchI = interpolate(deliriumPitchO, deliriumPitch, gInterpolate);
-        DrawMirrors(cX, cY, cZ, cA, va0 + 90 + deliriumPitchI);
+        fix16_t deliriumPitchI = interpolate(fix16_from_int(deliriumPitchO), fix16_from_int(deliriumPitch), gInterpolate);
+        DrawMirrors(cX, cY, cZ, cA, q16horiz + F16(90) + deliriumPitchI);
         int bakCstat = gView->pSprite->cstat;
         if (gViewPos == 0)
         {
@@ -2862,7 +2859,7 @@ RORHACK:
         {
             gView->pSprite->cstat |= 514;
         }
-        drawrooms(cX, cY, cZ, cA, va0 + 90 + deliriumPitchI, nSectnum);
+        renderDrawRoomsQ16(cX, cY, cZ, cA, q16horiz + F16(90) + deliriumPitchI, nSectnum);
         bool do_ror_hack = false;
         for (int i = 0; i < 16; i++)
             if (!ror_status[i] && TestBitString(gotpic, 4080+i))
@@ -2919,7 +2916,7 @@ RORHACK:
         int v8 = byte_1CE5C2 > 0 && (sector[tmpSect].ceilingstat&1);
         if (gWeather.at12d8 > 0 || v8)
         {
-            gWeather.Draw(cX, cY, cZ, cA, va0 + 90 + deliriumPitch, gWeather.at12d8);
+            gWeather.Draw(cX, cY, cZ, cA, q16horiz + 90 + deliriumPitch, gWeather.at12d8);
             if (v8)
             {
                 gWeather.at12d8 = ClipRange(delta*8+gWeather.at12d8, 0, 4095);
