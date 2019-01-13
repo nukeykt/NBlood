@@ -29,6 +29,15 @@ void ctrlInit(void)
     KB_FlushKeyboardQueue();
     KB_FlushKeyboardQueueScans();
     CONTROL_Startup(controltype_keyboardandmouse, &GetTime, 120);
+    CONFIG_SetupMouse();
+    CONFIG_SetupJoystick();
+
+    CONTROL_JoystickEnabled = (gSetup.usejoystick && CONTROL_JoyPresent);
+    CONTROL_MouseEnabled = (gSetup.usemouse && CONTROL_MousePresent);
+
+    // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
+    for (int i = 0; i < joystick.numAxes; i++)
+        joySetDeadZone(i, JoystickAnalogueDead[i], JoystickAnalogueSaturate[i]);
     CONTROL_DefineFlag(gamefunc_Move_Forward, false);
     CONTROL_DefineFlag(gamefunc_Move_Backward, false);
     CONTROL_DefineFlag(gamefunc_Turn_Left, false);
