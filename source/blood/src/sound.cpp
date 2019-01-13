@@ -302,7 +302,7 @@ void DeinitSoundDevice(void)
 
 void InitMusicDevice(void)
 {
-    int nStatus = MUSIC_Init(1, 0);
+    int nStatus = MUSIC_Init(0, 0);
     if (nStatus != 0)
         ThrowError(MUSIC_ErrorString(nStatus));
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");

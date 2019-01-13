@@ -3,6 +3,8 @@
 #include "controls.h"
 #include "levels.h"
 
+#define kInputBufferSize 1024
+
 #pragma pack(push, 1)
 
 struct DEMOHEADER
@@ -33,6 +35,8 @@ public:
     void StopPlayback(void);
     void LoadDemoInfo(void);
     void NextDemo(void);
+    void FlushInput(int nCount);
+    void ReadInput(int nCount);
     bool at0; // record
     bool at1; // playback
     char at2;
@@ -40,7 +44,7 @@ public:
     FILE *at7;
     int atb;
     DEMOHEADER atf;
-    GINPUT at1aa[1024];
+    GINPUT at1aa[kInputBufferSize];
     char at59aa[5][13];
     int at59eb;
     int at59ef;

@@ -799,7 +799,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             }
             dassert(nCount <= nXSectorSize);
             IOBuffer1.Read(pBuffer, nCount);
-            BitReader bitReader(pBuffer);
+            BitReader bitReader(pBuffer, nCount);
             pXSector->reference = bitReader.readSigned(14);
             pXSector->at1_6 = bitReader.readUnsigned(1);
             pXSector->at1_7 = bitReader.readUnsigned(17);
@@ -907,7 +907,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             }
             dassert(nCount <= nXWallSize);
             IOBuffer1.Read(pBuffer, nCount);
-            BitReader bitReader(pBuffer);
+            BitReader bitReader(pBuffer, nCount);
             pXWall->reference = bitReader.readSigned(14);
             pXWall->at1_6 = bitReader.readUnsigned(1);
             pXWall->at1_7 = bitReader.readUnsigned(17);
@@ -976,7 +976,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             }
             dassert(nCount <= nXSpriteSize);
             IOBuffer1.Read(pBuffer, nCount);
-            BitReader bitReader(pBuffer);
+            BitReader bitReader(pBuffer, nCount);
             pXSprite->reference = bitReader.readSigned(14);
             pXSprite->at1_6 = bitReader.readUnsigned(1);
             pXSprite->at1_7 = bitReader.readUnsigned(17);

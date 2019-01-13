@@ -309,21 +309,31 @@ public:
 class BitReader {
 public:
     int nBitPos;
+    int nSize;
     char *pBuffer;
-    BitReader(char *_pBuffer, int _nBitPos) : pBuffer(_pBuffer), nBitPos(_nBitPos) {}
-    BitReader(char *_pBuffer) : pBuffer(_pBuffer), nBitPos(0) {}
+    BitReader(char *_pBuffer, int _nSize, int _nBitPos) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(_nBitPos) { nSize -= nBitPos>>3; }
+    BitReader(char *_pBuffer, int _nSize) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(0) {}
     int readBit()
     {
+        if (nSize <= 0)
+            ThrowError("Buffer overflow");
         int bit = ((*pBuffer)>>nBitPos)&1;
         if (++nBitPos >= 8)
-            nBitPos = 0, pBuffer++;
+        {
+            nBitPos = 0;
+            pBuffer++;
+            nSize--;
+        }
         return bit;
     }
     void skipBits(int nBits)
     {
         nBitPos += nBits;
         pBuffer += nBitPos>>3;
+        nSize -= nBitPos>>3;
         nBitPos &= 7;
+        if ((nSize == 0 && nBitPos > 0) || nSize < 0)
+            ThrowError("Buffer overflow");
     }
     unsigned int readUnsigned(int nBits)
     {
@@ -340,6 +350,42 @@ public:
         n <<= 32-nBits;
         n >>= 32-nBits;
         return n;
+    }
+};
+
+class BitWriter {
+public:
+    int nBitPos;
+    int nSize;
+    char *pBuffer;
+    BitWriter(char *_pBuffer, int _nSize, int _nBitPos) : pBuffer(_pBuffer), nBitPos(_nBitPos) { memset(pBuffer, 0, sizeof(nSize)); nSize -= nBitPos>>3; }
+    BitWriter(char *_pBuffer, int _nSize) : pBuffer(_pBuffer), nBitPos(0) { memset(pBuffer, 0, sizeof(nSize)); }
+    void writeBit(int bit)
+    {
+        if (nSize <= 0)
+            ThrowError("Buffer overflow");
+        *pBuffer |= bit<<nBitPos;
+        if (++nBitPos >= 8)
+        {
+            nBitPos = 0;
+            pBuffer++;
+            nSize--;
+        }
+    }
+    void skipBits(int nBits)
+    {
+        nBitPos += nBits;
+        pBuffer += nBitPos>>3;
+        nSize -= nBitPos>>3;
+        nBitPos &= 7;
+        if ((nSize == 0 && nBitPos > 0) || nSize < 0)
+            ThrowError("Buffer overflow");
+    }
+    void write(int nValue, int nBits)
+    {
+        dassert(nBits <= 32);
+        for (int i = 0; i < nBits; i++)
+            writeBit((nValue>>i)&1);
     }
 };
 

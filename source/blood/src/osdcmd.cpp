@@ -52,6 +52,8 @@ static int osdcmd_changelevel(osdcmdptr_t parm)
     int32_t volume,level;
     char *p;
 
+    if (parm->numparms != 2) return OSDCMD_SHOWHELP;
+
     volume = strtol(parm->parms[0], &p, 10) - 1;
     if (p[0]) return OSDCMD_SHOWHELP;
     level = strtol(parm->parms[1], &p, 10) - 1;
