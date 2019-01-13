@@ -236,6 +236,7 @@ _DEMOPLAYBACK:
                     playerInit(i, 0);
                 StartLevel(&gGameOptions);
             }
+            ready2send = 0;
             OSD_DispatchQueued();
             ProcessKeys();
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
@@ -395,13 +396,13 @@ void CDemo::FlushInput(int nCount)
         bitWriter.write(pInput->newWeapon, 8);
         bitWriter.write(pInput->mlook, 8);
     }
-    fwrite(pBuffer, 1, sizeof(pBuffer), at7);
+    fwrite(pBuffer, 1, nInputSize*nCount, at7);
 }
 
 void CDemo::ReadInput(int nCount)
 {
     char pBuffer[nInputSize*kInputBufferSize];
-    fread(pBuffer, 1, sizeof(pBuffer), at7);
+    fread(pBuffer, 1, nInputSize*nCount, at7);
     BitReader bitReader(pBuffer, sizeof(pBuffer));
     memset(at1aa, 0, nCount*sizeof(GINPUT));
     for (int i = 0; i < nCount; i++)
