@@ -380,9 +380,9 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     else
     {
         if (pInput->buttonFlags.lookUp)
-            predict.at20 = fix16_max(predict.at20+F16(4), F16(60));
+            predict.at20 = fix16_min(predict.at20+F16(4), F16(60));
         if (pInput->buttonFlags.lookDown)
-            predict.at20 = fix16_min(predict.at20-F16(4), F16(-60));
+            predict.at20 = fix16_max(predict.at20-F16(4), F16(-60));
     }
     predict.at20 = fix16_clamp(predict.at20+pInput->q16mlook, F16(-60), F16(60));
 

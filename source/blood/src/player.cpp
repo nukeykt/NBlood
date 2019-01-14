@@ -1441,9 +1441,9 @@ void ProcessInput(PLAYER *pPlayer)
     else
     {
         if (pInput->buttonFlags.lookUp)
-            pPlayer->q16look = fix16_max(pPlayer->q16look+F16(4), F16(60));
+            pPlayer->q16look = fix16_min(pPlayer->q16look+F16(4), F16(60));
         if (pInput->buttonFlags.lookDown)
-            pPlayer->q16look = fix16_min(pPlayer->q16look-F16(4), F16(-60));
+            pPlayer->q16look = fix16_max(pPlayer->q16look-F16(4), F16(-60));
     }
     pPlayer->q16look = fix16_clamp(pPlayer->q16look+pInput->q16mlook, F16(-60), F16(60));
     if (pPlayer->q16look > 0)
