@@ -1145,13 +1145,6 @@ int app_main(int argc, char const * const * argv)
     if (bCustomName)
         strcpy(szPlayerName, gPName);
 
-    initprintf("Initializing OSD...\n");
-
-    //Bsprintf(tempbuf, HEAD2 " %s", s_buildRev);
-    OSD_SetVersion("Blood", 10, 0);
-    OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
-    registerosdcommands();
-
     if (enginePreInit())
     {
         wm_msgbox("Build Engine Initialization Error",
@@ -1173,6 +1166,30 @@ int app_main(int argc, char const * const * argv)
         }
     }
 #endif
+
+    initprintf("Initializing OSD...\n");
+
+    //Bsprintf(tempbuf, HEAD2 " %s", s_buildRev);
+    OSD_SetVersion("Blood", 10, 0);
+    OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
+    registerosdcommands();
+
+    char *const setupFileName = Xstrdup(SetupFilename);
+    char *const p = strtok(setupFileName, ".");
+
+    if (!p || !Bstrcmp(SetupFilename, SETUPFILENAME))
+        Bsprintf(buffer, "settings.cfg");
+    else
+        Bsprintf(buffer, "%s_settings.cfg", p);
+
+    Bfree(setupFileName);
+
+    OSD_Exec(buffer);
+    OSD_Exec("autoexec.cfg");
+
+    CONFIG_SetDefaultKeys(keydefaults, true);
+
+    system_getcvars();
 
     Resource::heap = new QHeap(nMaxAlloc);
     if (pUserRFF)

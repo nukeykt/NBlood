@@ -12,8 +12,6 @@
 #include "resource.h"
 #include "view.h"
 
-#define WIN32CODE
-
 CMenuTextMgr gMenuTextMgr;
 CGameMenuMgr gGameMenuMgr;
 
@@ -133,12 +131,8 @@ void CGameMenuMgr::Process(void)
     char key;
     if ( (key = keyGetScan()) != 0 )
     {
-#ifdef WIN32CODE
         keyFlushScans();
         keyFlushChars();
-#else
-        keyFlushStream();
-#endif
         event.at2 = key;
         switch (key)
         {
@@ -193,12 +187,8 @@ void CGameMenuMgr::Process(void)
 void CGameMenuMgr::Deactivate(void)
 {
     Clear();
-#ifdef WIN32CODE
     keyFlushScans();
     keyFlushChars();
-#else
-    keyFlushStream();
-#endif
     m_bActive = false;
 
     mouseLockToWindow(1);
@@ -722,9 +712,6 @@ void CGameMenuItem7EE34::Setup(void)
         pItem3->at18 |= 2;
         at2c->Add(&itemBloodQAV, false);
     }
-#ifndef WIN32CODE
-    getvalidvesamodes();
-#endif
     sprintf(buffer[0], "640 x 480 (default)");
     int y = 40;
     at28->Add(new CGameMenuItemChain(buffer[0], 3, 0, y, 320, 1, at2c, -1, SetVideoMode, validmodecnt), true);
@@ -928,18 +915,14 @@ void CGameMenuItemKeyList::Draw(void)
     for (int i = 0; i < at28; i++, y += height, k++)
     {
         BYTE key1, key2;
-#ifdef WIN32CODE
         key1 = KeyboardKeys[k][0];
         key2 = KeyboardKeys[k][1];
-#else
-        CONTROL_GetKeyMap(k, &key1, &key2);
-#endif
         const char *sKey1 = KB_ScanCodeToString(key1);
         const char *sKey2 = KB_ScanCodeToString(key2);
         sprintf(buffer, "%s", CONFIG_FunctionNumToName(k));
-        if (key2 == 0)
+        if (key2 == 0 || key2 == 0xff)
         {
-            if (key1 == 0)
+            if (key1 == 0 || key1 == 0xff)
                 sprintf(buffer2, "????");
             else
                 sprintf(buffer2, "%s", sKey1);
@@ -979,35 +962,25 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
             if (KB_KeyWaiting())
                 KB_GetCh();
             BYTE key1, key2;
-#ifdef WIN32CODE
             extern uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
             key1 = KeyboardKeys[at30][0];
             key2 = KeyboardKeys[at30][1];
-#else
-            CONTROL_GetKeyMap(at30, &key1, &key2);
-#endif
             if (key1 > 0 && key2 != KB_LastScan)
                 key2 = key1;
             key1 = KB_LastScan;
             if (key1 == key2)
                 key2 = 0;
-#ifdef WIN32CODE
             uint8_t oldKey[2];
             oldKey[0] = KeyboardKeys[at30][0];
             oldKey[1] = KeyboardKeys[at30][1];
+            KeyboardKeys[at30][0] = key1;
+            KeyboardKeys[at30][1] = key2;
             CONFIG_MapKey(at30, key1, oldKey[0], key2, oldKey[1]);
-#else
-            CONTROL_MapKey(key1, key2);
-#endif
             KB_FlushKeyboardQueue();
             KB_FlushKeyboardQueueScans();
             KB_ClearKeysDown();
-#ifdef WIN32CODE
             keyFlushScans();
             keyFlushChars();
-#else
-            keyFlushStream();
-#endif
             at38 = 0;
         }
         return false;
@@ -1042,14 +1015,12 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
     case 10:
         if (keystatus[sc_LeftControl] || keystatus[sc_RightControl])
         {
-#ifdef WIN32CODE
             uint8_t oldKey[2];
             oldKey[0] = KeyboardKeys[at30][0];
             oldKey[1] = KeyboardKeys[at30][1];
+            KeyboardKeys[at30][0] = 0;
+            KeyboardKeys[at30][1] = 0;
             CONFIG_MapKey(at30, 0, oldKey[0], 0, oldKey[1]);
-#else
-            CONTROL_MapKey(at30, 0, 0);
-#endif
         }
         return false;
     }
@@ -1295,16 +1266,9 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
     case 7:
     {
         char key;
-#ifdef WIN32CODE
         key = g_keyAsciiTable[event.at2];
         if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
             key = Btoupper(key);
-#else
-        if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
-            key = ScanToAsciiShifted[event.at2];
-        else
-            key = ScanToAscii[event.at2];
-#endif
         if (at30 && (isalnum(key) || ispunct(key) || isspace(key)))
         {
             AddChar(key);
@@ -1460,16 +1424,9 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
     case 8:
     {
         char key;
-#ifdef WIN32CODE
         key = g_keyAsciiTable[event.at2];
         if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
             key = Btoupper(key);
-#else
-        if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
-            key = ScanToAsciiShifted[event.at2];
-        else
-            key = ScanToAscii[event.at2];
-#endif
         if (at34 && (isalnum(key) || ispunct(key) || isspace(key)))
         {
             AddChar(key);
