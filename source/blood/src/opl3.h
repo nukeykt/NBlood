@@ -1,30 +1,24 @@
-//
-// Copyright (C) 2013-2018 Alexey Skrybykin (Nuke.YKT)
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU
-// Lesser General Public License for more details.
-//
-//
-//  Nuked OPL3 emulator.
-//  Thanks:
-//      MAME Development Team(Jarek Burczynski, Tatsuyuki Satoh):
-//          Feedback and Rhythm part calculation information.
-//      forums.submarine.org.uk(carbon14, opl3):
-//          Tremolo and phase generator calculation information.
-//      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
-//          OPL2 ROMs.
-//      siliconpr0n.org(John McMaster, digshadow):
-//          YMF262 and VRC VII decaps and die shots.
-//
-// version: 1.8
-//
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2013-2019 Nuke.YKT
+
+This file is part of NBlood.
+
+NBlood is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #ifndef OPL_OPL3_H
 #define OPL_OPL3_H
