@@ -29,7 +29,7 @@ void SetShowWeapons(CGameMenuItemZBool *);
 void SetSlopeTilting(CGameMenuItemZBool *);
 void SetViewBobbing(CGameMenuItemZBool *);
 void SetViewSwaying(CGameMenuItemZBool *);
-void SetMouseSensitivity(CGameMenuItemSlider *);
+void SetMouseSensitivity(CGameMenuItemSliderFloat *);
 void SetMouseAimFlipped(CGameMenuItemZBool *);
 void SetTurnSpeed(CGameMenuItemSlider *);
 void ResetKeys(CGameMenuItemChain *);
@@ -180,7 +180,7 @@ CGameMenuItem7EE34 itemOption2("VIDEO MODE...", 3, 0, 160, 320, 1);
 CGameMenuItemChain itemChainParentalLock("PARENTAL LOCK", 3, 0, 170, 320, 1, &menuParentalLock, -1, NULL, 0);
 
 CGameMenuItemTitle itemControlsTitle("CONTROLS", 1, 160, 20, 2038);
-CGameMenuItemSlider sliderMouseSpeed("Mouse Sensitivity:", 1, 10, 70, 300, gMouseSensitivity, 0, 0x1000, 0x20000, SetMouseSensitivity, -1,-1);
+CGameMenuItemSliderFloat sliderMouseSpeed("Mouse Sensitivity:", 1, 10, 70, 300, CONTROL_MouseSensitivity, 0.5f, 16.f, 0.5f, SetMouseSensitivity, -1,-1);
 CGameMenuItemZBool boolMouseFlipped("Invert Mouse Aim:", 1, 10, 90, 300, gMouseAimingFlipped, SetMouseAimFlipped, NULL, NULL);
 CGameMenuItemSlider sliderTurnSpeed("Key Turn Speed:", 1, 10, 110, 300, gTurnSpeed, 64, 128, 4, SetTurnSpeed, -1, -1);
 CGameMenuItemChain itemChainKeyList("Configure Keys...", 1, 0, 130, 320, 1, &menuKeys, -1, NULL, 0);
@@ -734,9 +734,8 @@ void SetMessages(CGameMenuItemZBool *pItem)
     gGameMessageMgr.SetState(pItem->at20);
 }
 
-void SetMouseSensitivity(CGameMenuItemSlider *pItem)
+void SetMouseSensitivity(CGameMenuItemSliderFloat *pItem)
 {
-    // NUKE-TODO:
 	CONTROL_MouseSensitivity = pItem->at24;
 }
 

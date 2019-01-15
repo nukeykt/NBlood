@@ -192,6 +192,24 @@ public:
     virtual bool Event(CGameMenuEvent &);
 };
 
+class CGameMenuItemSliderFloat : public CGameMenuItem
+{
+public:
+    float *at20;
+    float at24;
+    float at28;
+    float at2c;
+    float at30;
+    void(*at34)(CGameMenuItemSliderFloat *);
+    int at38;
+    int at3c;
+    CGameMenuItemSliderFloat();
+    CGameMenuItemSliderFloat(const char *, int, int, int, int, float, float, float, float, void(*)(CGameMenuItemSliderFloat *), int, int);
+    CGameMenuItemSliderFloat(const char *, int, int, int, int, float *, float, float, float, void(*)(CGameMenuItemSliderFloat *), int, int);
+    virtual void Draw(void);
+    virtual bool Event(CGameMenuEvent &);
+};
+
 class CGameMenuItemZEdit : public CGameMenuItem
 {
 public:

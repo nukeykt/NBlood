@@ -139,6 +139,14 @@ extern char qsprite_filler[], qsector_filler[];
 extern WALL *qwall;
 extern PICANM *qpicanm;
 
+inline int ksgnf(float f)
+{
+    if (f < 0)
+        return -1;
+    if (f > 0)
+        return 1;
+    return 0;
+}
 
 inline int IncBy(int a, int b)
 {
@@ -160,6 +168,28 @@ inline int DecBy(int a, int b)
     return a;
 }
 
+
+inline float IncByF(float a, float b)
+{
+    a += b;
+    float q = fmod(a, b);
+    a -= q;
+    if (q < 0)
+        a -= b;
+    return a;
+}
+
+inline float DecByF(float a, float b)
+{
+    //a--;
+    a -= fabs(b)*0.001;
+    float q = fmod(a, b);
+    a -= q;
+    if (q < 0)
+        a -= b;
+    return a;
+}
+
 inline int ClipLow(int a, int b)
 {
     if (a < b)
@@ -175,6 +205,15 @@ inline int ClipHigh(int a, int b)
 }
 
 inline int ClipRange(int a, int b, int c)
+{
+    if (a < b)
+        return b;
+    if (a > c)
+        return c;
+    return a;
+}
+
+inline float ClipRangeF(float a, float b, float c)
 {
     if (a < b)
         return b;

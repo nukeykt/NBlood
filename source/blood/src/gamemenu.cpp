@@ -1141,6 +1141,120 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
     return CGameMenuItem::Event(event);
 }
 
+CGameMenuItemSliderFloat::CGameMenuItemSliderFloat()
+{
+    at4 = NULL;
+    at8 = -1;
+    atc = 0;
+    at10 = 0;
+    at24 = 0;
+    at28 = 0;
+    at30 = 0;
+    at34 = NULL;
+    at20 = NULL;
+    at38 = 2204;
+    at3c = 2028;
+}
+
+CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *a1, int a2, int a3, int a4, int a5, float a6, float a7, float a8, float a9, void(*a10)(CGameMenuItemSliderFloat *), int a11, int a12)
+{
+    at4 = a1;
+    at8 = a2;
+    atc = a3;
+    at10 = a4;
+    at14 = a5;
+    at28 = a7;
+    at2c = a8;
+    at30 = a9;
+    at24 = ClipRangeF(a6, at28, at2c);
+    at34 = a10;
+    at38 = 2204;
+    at3c = 2028;
+    if (a11 >= 0)
+        at38 = a11;
+    if (a12 >= 0)
+        at3c = a12;
+}
+
+CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *a1, int a2, int a3, int a4, int a5, float *pnValue, float a7, float a8, float a9, void(*a10)(CGameMenuItemSliderFloat *), int a11, int a12)
+{
+    at4 = a1;
+    at8 = a2;
+    atc = a3;
+    at10 = a4;
+    at14 = a5;
+    at28 = a7;
+    at2c = a8;
+    at30 = a9;
+    dassert(pnValue != NULL);
+    at20 = pnValue;
+    at24 = ClipRangeF(*pnValue, at28, at2c);
+    at34 = a10;
+    at38 = 2204;
+    at3c = 2028;
+    if (a11 >= 0)
+        at38 = a11;
+    if (a12 >= 0)
+        at3c = a12;
+}
+
+void CGameMenuItemSliderFloat::Draw(void)
+{
+    int height;
+    at24 = at20 ? *at20 : at24;
+    gMenuTextMgr.GetFontInfo(at8, NULL, NULL, &height);
+    int shade = 32;
+    if (pMenu->IsFocusItem(this))
+        shade = 32-(totalclock&63);
+    if (at4)
+        gMenuTextMgr.DrawText(at4, at8, atc, at10, shade, 0, false);
+    int sliderX = atc+at14-1-tilesiz[at38].x/2;
+    rotatesprite(sliderX<<16, (at10+height/2)<<16, 65536, 0, at38, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+    float nRange = at2c - at28;
+    dassert(nRange > 0);
+    float nValue = at24 - at28;
+    int nWidth = tilesiz[at38].x-8;
+    int cursorX = sliderX + (int)(ksgnf(at30)*(nValue * nWidth / nRange - nWidth / 2));
+    rotatesprite(cursorX<<16, (at10+height/2)<<16, 65536, 0, at3c, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+}
+
+bool CGameMenuItemSliderFloat::Event(CGameMenuEvent &event)
+{
+    at24 = at20 ? *at20 : at24;
+    switch (event.at0)
+    {
+    case 2:
+        pMenu->FocusPrevItem();
+        return false;
+    case 3:
+        pMenu->FocusNextItem();
+        return false;
+    case 4:
+        if (at24 > 0)
+            at24 = DecByF(at24, at30);
+        else
+            at24 = IncByF(at24, -at30);
+        at24 = ClipRangeF(at24, at28, at2c);
+        if (at34)
+            at34(this);
+        return false;
+    case 5:
+        if (at24 >= 0)
+            at24 = IncByF(at24, at30);
+        else
+            at24 = DecByF(at24, -at30);
+        at24 = ClipRangeF(at24, at28, at2c);
+        if (at34)
+            at34(this);
+        return false;
+    case 6:
+        if (at34)
+            at34(this);
+        return false;
+    }
+    return CGameMenuItem::Event(event);
+}
+
 CGameMenuItemZEdit::CGameMenuItemZEdit()
 {
     at4 = NULL;
