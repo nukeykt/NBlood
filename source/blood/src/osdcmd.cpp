@@ -377,6 +377,8 @@ void onvideomodechange(int32_t newmode)
     g_restorePalette = -1;
     g_crosshairSum = -1;
 #endif
+    videoSetPalette(0, 0, 0);
+    g_crosshairSum = -1;
 }
 
 static int osdcmd_button(osdcmdptr_t parm)

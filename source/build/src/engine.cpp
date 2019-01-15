@@ -4786,6 +4786,10 @@ static void classicDrawSprite(int32_t snum)
                 cstat |= 512;
             else
                 cstat &= ~512;
+
+            // Blood's transparency table is inverted
+            if (bloodhack)
+                cstat ^= 512;
         }
 
         tspr->cstat = cstat;
@@ -6633,6 +6637,10 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
                 dastat |= RS_TRANS2;
             else
                 dastat &= ~RS_TRANS2;
+
+            // Blood's transparency table is inverted
+            if (bloodhack)
+                dastat ^= RS_TRANS2;
         }
     }
 

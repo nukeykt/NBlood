@@ -29,10 +29,39 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "resource.h"
 #include "qav.h"
 
+#define M_MOUSETIMEOUT 210
 
 #define kMaxGameMenuItems 32
 #define kMaxGameCycleItems 32
 #define kMaxPicCycleItems 32
+
+// alpha increments of 3 --> 255 / 3 = 85 --> round up to power of 2 --> 128 --> divide by 2 --> 64 alphatabs required
+// use 16 anyway :P
+#define MOUSEUSEALPHA (videoGetRenderMode() != REND_CLASSIC || numalphatabs >= 15)
+#define MOUSEALPHA (MOUSEUSEALPHA ? clamp((totalclock - gGameMenuMgr.m_mouselastactivity - 90)*3, 0, 255) : 0)
+#define CURSORALPHA (MOUSEUSEALPHA ? clamp((totalclock - gGameMenuMgr.m_mouselastactivity - 90)*2 + (255/3), (255/3), 255) : 255/3)
+#define MOUSEACTIVECONDITION (totalclock - gGameMenuMgr.m_mouselastactivity < M_MOUSETIMEOUT)
+#define MOUSEACTIVECONDITIONAL(condition) (MOUSEACTIVECONDITION && (condition))
+#define MOUSEINACTIVECONDITIONAL(condition) (!MOUSEACTIVECONDITION && (condition))
+#define MOUSEWATCHPOINTCONDITIONAL(condition) ((condition) || gGameMenuMgr.m_mousewake_watchpoint || gGameMenuMgr.m_menuchange_watchpoint == 3)
+
+enum {
+    kMenuEventNone = 0,
+    kMenuEventKey = 1,
+    kMenuEventUp = 2,
+    kMenuEventDown = 3,
+    kMenuEventLeft = 4,
+    kMenuEventRight = 5,
+    kMenuEventEnter = 6,
+    kMenuEventEscape = 7,
+    kMenuEventSpace = 8,
+    kMenuEventBackSpace = 9,
+    kMenuEventDelete = 10,
+
+
+    kMenuEventInit = 0x8000,
+    kMenuEventDeInit = 0x8001
+};
 
 struct CGameMenuEvent {
     unsigned short at0;
@@ -392,10 +421,14 @@ public:
     CGameMenu *pActiveMenu;
     CGameMenu *pMenuStack[8];
     int nMenuPointer;
+    int32_t m_mouselastactivity;
+    int32_t m_mousewake_watchpoint, m_menuchange_watchpoint;
+    int32_t m_mousecaught;
+    vec2_t m_prevmousepos, m_mousepos, m_mousedownpos;
     CGameMenuMgr();
     ~CGameMenuMgr();
     void InitializeMenu(void);
-    void sub_7DF1C(void);
+    void DeInitializeMenu(void);
     bool Push(CGameMenu *pMenu, int data);
     void Pop(void);
     void Draw(void);

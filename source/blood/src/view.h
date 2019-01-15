@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 
+#include "palette.h"
 #include "common_game.h"
 #include "controls.h"
 #include "messages.h"
@@ -59,6 +60,9 @@ enum INTERPOLATE_TYPE {
     INTERPOLATE_TYPE_SHORT,
 };
 
+#define CROSSHAIR_PAL (MAXPALOOKUPS-RESERVEDPALS-1)
+#define kCrosshairTile 2319
+
 struct FONT {
     int tile, xSize, ySize, space;
 };
@@ -81,6 +85,9 @@ extern CGameMessageMgr gGameMessageMgr;
 extern int gViewXCenter, gViewYCenter;
 extern int gViewX0, gViewY0, gViewX1, gViewY1;
 extern int gViewX0S, gViewY0S, gViewX1S, gViewY1S;
+extern palette_t CrosshairColors;
+extern palette_t DefaultCrosshairColors;
+extern int32_t g_crosshairSum;
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize);
 void viewUpdatePages(void);
@@ -129,6 +136,8 @@ void viewDrawScreen(void);
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3);
 void viewUpdateDelirium(void);
 void viewUpdateShake(void);
+void viewGetCrosshairColor(void);
+void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
 
 
 inline void viewInterpolateSector(int nSector, SECTOR *pSector)

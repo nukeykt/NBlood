@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "a.h"
 #include "build.h"
+#include "colmatch.h"
 #include "pragmas.h"
 #include "mmulti.h"
 #include "osd.h"
@@ -1354,30 +1355,32 @@ void viewResizeView(int size)
         gViewY0S = divscale16(gViewY0, yscale);
         gViewX1S = divscale16(gViewX1, xscale);
         gViewY1S = divscale16(gViewY1, yscale);
-        videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
-        gGameMessageMgr.SetCoordinates(gViewX0S+1, gViewY0S+1);
-        return;
     }
-    gViewX0 = 0;
-    gViewY0 = 0;
-    gViewX1 = xdim-1;
-    gViewY1 = ydim-1-(25*ydim)/200;
-    if (gGameOptions.nGameType > 0 && gGameOptions.nGameType < 3)
+    else
     {
-        gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
-    }
+        gViewX0 = 0;
+        gViewY0 = 0;
+        gViewX1 = xdim-1;
+        gViewY1 = ydim-1-(25*ydim)/200;
+        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType < 3)
+        {
+            gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
+        }
 
-    int height = gViewY1-gViewY0;
-    gViewX0 += mulscale16(xdim*(gViewSize-2),4096);
-    gViewX1 -= mulscale16(xdim*(gViewSize-2),4096);
-    gViewY0 += mulscale16(height*(gViewSize-2),4096);
-    gViewY1 -= mulscale16(height*(gViewSize-2),4096);
-    gViewX0S = divscale16(gViewX0, xscale);
-    gViewY0S = divscale16(gViewY0, yscale);
-    gViewX1S = divscale16(gViewX1, xscale);
-    gViewY1S = divscale16(gViewY1, yscale);
+        int height = gViewY1-gViewY0;
+        gViewX0 += mulscale16(xdim*(gViewSize-2),4096);
+        gViewX1 -= mulscale16(xdim*(gViewSize-2),4096);
+        gViewY0 += mulscale16(height*(gViewSize-2),4096);
+        gViewY1 -= mulscale16(height*(gViewSize-2),4096);
+        gViewX0S = divscale16(gViewX0, xscale);
+        gViewY0S = divscale16(gViewY0, yscale);
+        gViewX1S = divscale16(gViewX1, xscale);
+        gViewY1S = divscale16(gViewY1, yscale);
+    }
     videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
     gGameMessageMgr.SetCoordinates(gViewX0S + 1, gViewY0S + 1);
+    viewGetCrosshairColor();
+    viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     viewUpdatePages();
 }
 
@@ -2953,7 +2956,7 @@ RORHACK:
         {
             if (gAimReticle)
             {
-                rotatesprite(160<<16, 100<<16, 65536, 0, 2319, 0, 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(160<<16, 100<<16, 65536, 0, kCrosshairTile, 0, CROSSHAIR_PAL, 2, gViewX0, gViewY0, gViewX1, gViewY1);
             }
             cX = (v4c>>8)+160;
             cY = (v48>>8)+220+(zDelta>>7);
@@ -3122,6 +3125,91 @@ void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const c
         viewDrawText(1, pText3, 160, 70, -128, 0, 1, 1);
     }
     viewDrawText(3, "Please Wait", 160, 134, -128, 0, 1, 1);
+}
+
+palette_t CrosshairColors = { 255, 255, 255, 0 };
+palette_t DefaultCrosshairColors = { 0, 0, 0, 0 };
+int32_t g_crosshairSum = -1;
+
+void viewGetCrosshairColor(void)
+{
+    if (DefaultCrosshairColors.f)
+        return;
+
+    tileLoad(kCrosshairTile);
+
+    if (!waloff[kCrosshairTile])
+        return;
+
+    char const *ptr = (char const *)waloff[kCrosshairTile];
+
+    // find the brightest color in the original 8-bit tile
+    int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
+    int32_t bri = 0, j = 0, i;
+
+    Bassert(ii > 0);
+
+    do
+    {
+        if (*ptr != 255)
+        {
+            i = curpalette[(int32_t)*ptr].r + curpalette[(int32_t)*ptr].g + curpalette[(int32_t)*ptr].b;
+            if (i > j) { j = i; bri = *ptr; }
+        }
+        ptr++;
+    } while (--ii);
+
+    Bmemcpy(&CrosshairColors, &curpalette[bri], sizeof(palette_t));
+    Bmemcpy(&DefaultCrosshairColors, &curpalette[bri], sizeof(palette_t));
+    DefaultCrosshairColors.f = 1; // this flag signifies that the color has been detected
+}
+
+void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
+{
+    if (g_crosshairSum == r + (g << 8) + (b << 16))
+        return;
+
+    tileLoad(kCrosshairTile);
+
+    if (!waloff[kCrosshairTile])
+        return;
+
+    if (!DefaultCrosshairColors.f)
+        viewGetCrosshairColor();
+
+    g_crosshairSum = r + (g << 8) + (b << 16);
+    CrosshairColors.r = r;
+    CrosshairColors.g = g;
+    CrosshairColors.b = b;
+
+    char *ptr = (char *)waloff[kCrosshairTile];
+
+    int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
+
+    dassert(ii > 0);
+
+    int32_t i = (videoGetRenderMode() == REND_CLASSIC)
+        ? paletteGetClosestColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b)
+        : paletteGetClosestColor(255, 255, 255);  // use white in GL so we can tint it to the right color
+
+    do
+    {
+        if (*ptr != 255)
+            *ptr = i;
+        ptr++;
+    } while (--ii);
+
+    paletteMakeLookupTable(CROSSHAIR_PAL, NULL, CrosshairColors.r, CrosshairColors.g, CrosshairColors.b, 1);
+
+#ifdef USE_OPENGL
+    // XXX: this makes us also load all hightile textures tinted with the crosshair color!
+    polytint_t & crosshairtint = hictinting[CROSSHAIR_PAL];
+    crosshairtint.r = CrosshairColors.r;
+    crosshairtint.g = CrosshairColors.g;
+    crosshairtint.b = CrosshairColors.b;
+    crosshairtint.f = HICTINT_USEONART | HICTINT_GRAYSCALE;
+#endif
+    tileInvalidate(kCrosshairTile, -1, -1);
 }
 
 class ViewLoadSave : public LoadSave {

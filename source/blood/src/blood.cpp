@@ -1313,6 +1313,8 @@ int app_main(int argc, char const * const * argv)
 RESTART:
     scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
     scrSetGamma(gGamma);
+    viewGetCrosshairColor();
+    viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     gQuitGame = 0;
     gRestartGame = 0;
     if (gGameOptions.nGameType > 0)

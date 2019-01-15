@@ -80,18 +80,18 @@ void CGameMenuMgr::InitializeMenu(void)
     if (pActiveMenu)
     {
         CGameMenuEvent event;
-        event.at0 = 0x8000;
+        event.at0 = kMenuEventInit;
         event.at2 = 0;
         pActiveMenu->Event(event);
     }
 }
 
-void CGameMenuMgr::sub_7DF1C(void)
+void CGameMenuMgr::DeInitializeMenu(void)
 {
     if (pActiveMenu)
     {
         CGameMenuEvent event;
-        event.at0 = 0x8001;
+        event.at0 = kMenuEventDeInit;
         event.at2 = 0;
         pActiveMenu->Event(event);
     }
@@ -99,6 +99,13 @@ void CGameMenuMgr::sub_7DF1C(void)
 
 bool CGameMenuMgr::Push(CGameMenu *pMenu, int nItem)
 {
+    if (nMenuPointer == 0)
+    {
+        mouseReadAbs(&m_prevmousepos, &g_mouseAbs);
+        m_mouselastactivity = -M_MOUSETIMEOUT;
+        m_mousewake_watchpoint = 0;
+        mouseLockToWindow(0);
+    }
     dassert(pMenu != NULL);
     if (nMenuPointer == 8)
         return false;
@@ -109,8 +116,6 @@ bool CGameMenuMgr::Push(CGameMenu *pMenu, int nItem)
     m_bActive = true;
     gInputMode = INPUT_MODE_1;
     InitializeMenu();
-
-    mouseLockToWindow(0);
     return true;
 }
 
@@ -118,7 +123,7 @@ void CGameMenuMgr::Pop(void)
 {
     if (nMenuPointer > 0)
     {
-        sub_7DF1C();
+        DeInitializeMenu();
         nMenuPointer--;
         if (nMenuPointer == 0)
             Deactivate();
@@ -134,6 +139,53 @@ void CGameMenuMgr::Draw(void)
         pActiveMenu->Draw();
         viewUpdatePages();
     }
+
+    int32_t mousestatus = mouseReadAbs(&m_mousepos, &g_mouseAbs);
+    if (mousestatus && g_mouseClickState == MOUSE_PRESSED)
+        m_mousedownpos = m_mousepos;
+
+
+    if (tilesiz[kCrosshairTile].x > 0 && mousestatus)
+    {
+        if (!MOUSEACTIVECONDITION)
+            m_mousewake_watchpoint = 1;
+
+        if (MOUSEACTIVECONDITIONAL(mouseAdvanceClickState()) || m_mousepos.x != m_prevmousepos.x || m_mousepos.y != m_prevmousepos.y)
+        {
+            m_prevmousepos = m_mousepos;
+            m_mouselastactivity = totalclock;
+        }
+        else
+            m_mousewake_watchpoint = 0;
+
+        m_mousecaught = 0;
+    }
+    else
+    {
+        m_mouselastactivity = -M_MOUSETIMEOUT;
+
+        m_mousewake_watchpoint = 0;
+    }
+    // Display the mouse cursor, except on touch devices.
+    if (MOUSEACTIVECONDITION)
+    {
+        int32_t a = kCrosshairTile;
+
+        if ((unsigned) a < MAXTILES)
+        {
+            vec2_t cursorpos = m_mousepos;
+            int32_t z = 65536;
+            uint8_t p = CROSSHAIR_PAL;
+            uint32_t o = 2;
+
+            auto const oyxaspect = yxaspect;
+            int32_t alpha = CURSORALPHA;
+
+            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, 0, a, 0, p, o, alpha);
+        }
+    }
+    else
+        g_mouseClickState = MOUSE_IDLE;
 }
 
 void CGameMenuMgr::Clear(void)
@@ -159,46 +211,46 @@ void CGameMenuMgr::Process(void)
         switch (key)
         {
         case sc_Escape:
-            event.at0 = 7;
+            event.at0 = kMenuEventEscape;
             break;
         case sc_Tab:
             if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
-                event.at0 = 2;
+                event.at0 = kMenuEventUp;
             else
-                event.at0 = 3;
+                event.at0 = kMenuEventDown;
             break;
         case sc_UpArrow:
         case sc_kpad_8:
-            event.at0 = 2;
+            event.at0 = kMenuEventUp;
             break;
         case sc_DownArrow:
         case sc_kpad_2:
-            event.at0 = 3;
+            event.at0 = kMenuEventDown;
             break;
         case sc_Enter:
         case sc_kpad_Enter:
-            event.at0 = 6;
+            event.at0 = kMenuEventEnter;
             break;
         case sc_Space:
-            event.at0 = 8;
+            event.at0 = kMenuEventSpace;
             break;
         case sc_LeftArrow:
         case sc_kpad_4:
-            event.at0 = 4;
+            event.at0 = kMenuEventLeft;
             break;
         case sc_RightArrow:
         case sc_kpad_6:
-            event.at0 = 5;
+            event.at0 = kMenuEventRight;
             break;
         case sc_Delete:
         case sc_kpad_Period:
-            event.at0 = 10;
+            event.at0 = kMenuEventDelete;
             break;
         case sc_BackSpace:
-            event.at0 = 9;
+            event.at0 = kMenuEventBackSpace;
             break;
         default:
-            event.at0 = 1;
+            event.at0 = kMenuEventKey;
             break;
         }
     }
@@ -265,8 +317,8 @@ bool CGameMenu::Event(CGameMenuEvent &event)
         return true;
     switch (event.at0)
     {
-    case 0x8000:
-    case 0x8001:
+    case kMenuEventInit:
+    case kMenuEventDeInit:
         if (at8 >= 0)
             m_nFocus = at8;
         InitializeItems(event);
@@ -351,12 +403,12 @@ bool CGameMenuItem::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 7:
+    case kMenuEventEscape:
         return true;
-    case 2:
+    case kMenuEventUp:
         pMenu->FocusPrevItem();
         break;
-    case 3:
+    case kMenuEventDown:
         pMenu->FocusNextItem();
         break;
     }
@@ -473,8 +525,8 @@ bool CGameMenuItemZBool::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 6:
-    case 8:
+    case kMenuEventEnter:
+    case kMenuEventSpace:
         at20 = !at20;
         if (at29)
             at29(this);
@@ -535,7 +587,7 @@ bool CGameMenuItemChain::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 6:
+    case kMenuEventEnter:
         if (at2c)
             at2c(this);
         if (at24)
@@ -631,7 +683,7 @@ bool CGameMenuItem7EA1C::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 6:
+    case kMenuEventEnter:
     {
         if (at2c)
             at2c(this);
@@ -648,7 +700,7 @@ bool CGameMenuItem7EA1C::Event(CGameMenuEvent &event)
             gGameMenuMgr.Push(at24, at28);
         return false;
     }
-    case 0x8001:
+    case kMenuEventDeInit:
         if (at34)
         {
             delete at34;
@@ -754,7 +806,7 @@ bool CGameMenuItem7EE34::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 6:
+    case kMenuEventEnter:
         if (at28)
             delete at28;
         at28 = new CGameMenu(1);
@@ -762,7 +814,7 @@ bool CGameMenuItem7EE34::Event(CGameMenuEvent &event)
         if (at28)
             gGameMenuMgr.Push(at28, at20);
         return false;
-    case 0x8001:
+    case kMenuEventDeInit:
         if (at28)
         {
             delete at28;
@@ -788,7 +840,7 @@ bool CGameMenuItemChain7F2F0::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 6:
+    case kMenuEventEnter:
         if (at34 > -1)
             gGameOptions.nEpisode = at34;
         return CGameMenuItemChain::Event(event);
@@ -1009,7 +1061,7 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
     }
     switch (event.at0)
     {
-    case 2:
+    case kMenuEventUp:
         if (event.at2 == sc_Tab || at30 == 0)
         {
             pMenu->FocusPrevItem();
@@ -1019,7 +1071,7 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
         if (at2c > 0)
             at2c--;
         return false;
-    case 3:
+    case kMenuEventDown:
         if (event.at2 == sc_Tab || at30 == at34-1)
         {
             pMenu->FocusNextItem();
@@ -1029,12 +1081,12 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
         if (at2c+1 < at28)
             at2c++;
         return false;
-    case 6:
+    case kMenuEventEnter:
         if (at20)
             at20(this);
         Scan();
         return false;
-    case 10:
+    case kMenuEventDelete:
         if (keystatus[sc_LeftControl] || keystatus[sc_RightControl])
         {
             uint8_t oldKey[2];
@@ -1131,13 +1183,13 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
     at24 = at20 ? *at20 : at24;
     switch (event.at0)
     {
-    case 2:
+    case kMenuEventUp:
         pMenu->FocusPrevItem();
         return false;
-    case 3:
+    case kMenuEventDown:
         pMenu->FocusNextItem();
         return false;
-    case 4:
+    case kMenuEventLeft:
         if (at24 > 0)
             at24 = DecBy(at24, at30);
         else
@@ -1146,7 +1198,7 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
         if (at34)
             at34(this);
         return false;
-    case 5:
+    case kMenuEventRight:
         if (at24 >= 0)
             at24 = IncBy(at24, at30);
         else
@@ -1155,7 +1207,7 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
         if (at34)
             at34(this);
         return false;
-    case 6:
+    case kMenuEventEnter:
         if (at34)
             at34(this);
         return false;
@@ -1245,13 +1297,13 @@ bool CGameMenuItemSliderFloat::Event(CGameMenuEvent &event)
     at24 = at20 ? *at20 : at24;
     switch (event.at0)
     {
-    case 2:
+    case kMenuEventUp:
         pMenu->FocusPrevItem();
         return false;
-    case 3:
+    case kMenuEventDown:
         pMenu->FocusNextItem();
         return false;
-    case 4:
+    case kMenuEventLeft:
         if (at24 > 0)
             at24 = DecByF(at24, at30);
         else
@@ -1260,7 +1312,7 @@ bool CGameMenuItemSliderFloat::Event(CGameMenuEvent &event)
         if (at34)
             at34(this);
         return false;
-    case 5:
+    case kMenuEventRight:
         if (at24 >= 0)
             at24 = IncByF(at24, at30);
         else
@@ -1269,7 +1321,7 @@ bool CGameMenuItemSliderFloat::Event(CGameMenuEvent &event)
         if (at34)
             at34(this);
         return false;
-    case 6:
+    case kMenuEventEnter:
         if (at34)
             at34(this);
         return false;
@@ -1367,7 +1419,7 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
     static char buffer[256];
     switch (event.at0)
     {
-    case 6:
+    case kMenuEventEscape:
         if (at30)
         {
             strncpy(at20, buffer, at24);
@@ -1376,7 +1428,7 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
             return false;
         }
         return true;
-    case 5:
+    case kMenuEventEnter:
         if (!at31)
         {
             if (at2c)
@@ -1394,12 +1446,12 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
         buffer[at24-1] = 0;
         at30 = 1;
         return false;
-    case 8:
+    case kMenuEventBackSpace:
         if (at30)
             BackChar();
         return false;
-    case 0:
-    case 7:
+    case kMenuEventKey:
+    case kMenuEventSpace:
     {
         char key;
         key = g_keyAsciiTable[event.at2];
@@ -1412,11 +1464,11 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
         }
         return CGameMenuItem::Event(event);
     }
-    case 1:
+    case kMenuEventUp:
         if (at30)
             return false;
         return CGameMenuItem::Event(event);
-    case 2:
+    case kMenuEventDown:
         if (at30)
             return false;
         return CGameMenuItem::Event(event);
@@ -1519,7 +1571,7 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
     static char buffer[256];
     switch (event.at0)
     {
-    case 7:
+    case kMenuEventEscape:
         if (at34)
         {
             strncpy(at20, buffer, at24);
@@ -1530,7 +1582,7 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         }
         gSaveGameActive = true;
         return true;
-    case 6:
+    case kMenuEventEnter:
         if (!at35)
         {
             if (at30)
@@ -1552,12 +1604,12 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         buffer[at24-1] = 0;
         at34 = 1;
         return false;
-    case 9:
+    case kMenuEventBackSpace:
         if (at34)
             BackChar();
         return false;
-    case 1:
-    case 8:
+    case kMenuEventKey:
+    case kMenuEventSpace:
     {
         char key;
         key = g_keyAsciiTable[event.at2];
@@ -1570,11 +1622,11 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         }
         return CGameMenuItem::Event(event);
     }
-    case 2:
+    case kMenuEventUp:
         if (at34)
             return false;
         return CGameMenuItem::Event(event);
-    case 3:
+    case kMenuEventDown:
         if (at34)
             return false;
         return CGameMenuItem::Event(event);
@@ -1655,16 +1707,16 @@ bool CGameMenuItemQAV::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 4:
-    case 9:
+    case kMenuEventLeft:
+    case kMenuEventBackSpace:
         pMenu->FocusPrevItem();
         return false;
-    case 5:
-    case 6:
-    case 8:
+    case kMenuEventRight:
+    case kMenuEventEnter:
+    case kMenuEventSpace:
         pMenu->FocusNextItem();
         return false;
-    case 0x8000:
+    case kMenuEventInit:
         if (at20)
         {
             if (!at28)
@@ -1684,7 +1736,7 @@ bool CGameMenuItemQAV::Event(CGameMenuEvent &event)
             gSysRes.Lock(at24);
         }
         return false;
-    case 0x8001:
+    case kMenuEventDeInit:
         if (at20 && at28)
         {
             gSysRes.Unlock(at24);
@@ -1777,14 +1829,14 @@ bool CGameMenuItemZCycle::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 5:
-    case 6:
-    case 8:
+    case kMenuEventRight:
+    case kMenuEventEnter:
+    case kMenuEventEscape:
         Next();
         if (atb4)
             atb4(this);
         return false;
-    case 4:
+    case kMenuEventLeft:
         Prev();
         if (atb4)
             atb4(this);
@@ -1895,13 +1947,13 @@ bool CGameMenuItemYesNoQuit::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 1:
+    case kMenuEventKey:
         if (event.at2 == sc_Y)
             Quit(NULL);
         else if (event.at2 == sc_N)
             gGameMenuMgr.Pop();
         return false;
-    case 6:
+    case kMenuEventEnter:
         Quit(NULL);
         return false;
     }
@@ -1943,14 +1995,14 @@ bool CGameMenuItemPicCycle::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case 1:
-    case 2:
-    case 4:
+    case kMenuEventRight:
+    case kMenuEventEnter:
+    case kMenuEventSpace:
         Next();
         if (atb0)
             atb0(this);
         return false;
-    case 0:
+    case kMenuEventLeft:
         Prev();
         if (atb0)
             atb0(this);
@@ -2091,7 +2143,7 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
     {
     case 0:
     case 4:
-        if (event.at0 == 6)
+        if (event.at0 == kMenuEventEnter)
         {
             at29[0] = 0;
             if (strcmp(at20, ""))
@@ -2106,7 +2158,7 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
     case 3:
         switch (event.at0)
         {
-        case 5:
+        case kMenuEventEnter:
             switch (at37)
             {
             case 1:
@@ -2157,11 +2209,11 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
                 return false;
             }
             break;
-        case 6:
+        case kMenuEventEscape:
             at37 = 0;
             Draw();
             return false;
-        case 0:
+        case kMenuEventKey:
             if (at32 < 8)
             {
                 char key = Btoupper(g_keyAsciiTable[event.at2]);
@@ -2172,13 +2224,13 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
                 }
             }
             return false;
-        case 8:
+        case kMenuEventBackSpace:
             if (at32 > 0)
                 at29[--at32] = 0;
             return false;
-        case 3:
-        case 4:
-        case 7:
+        case kMenuEventLeft:
+        case kMenuEventRight:
+        case kMenuEventSpace:
             return false;
         }
     }
