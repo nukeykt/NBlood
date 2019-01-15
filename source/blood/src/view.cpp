@@ -2796,8 +2796,8 @@ RORHACKOTHER:
             int ror_status[16];
             for (int i = 0; i < 16; i++)
                 ror_status[i] = TestBitString(gotpic, 4080 + i);
-            DrawMirrors(vd8, vd4, vd0, fix16_from_int(v50), fix16_from_int(v54 + 90));
-            drawrooms(vd8, vd4, vd0, v50, v54 + 90, vcc);
+            DrawMirrors(vd8, vd4, vd0, fix16_from_int(v50), fix16_from_int(v54 + 100));
+            drawrooms(vd8, vd4, vd0, v50, v54 + 100, vcc);
             bool do_ror_hack = false;
             for (int i = 0; i < 16; i++)
                 if (!ror_status[i] && TestBitString(gotpic, 4080 + i))
@@ -2871,7 +2871,7 @@ RORHACK:
         for (int i = 0; i < 16; i++)
             ror_status[i] = TestBitString(gotpic, 4080+i);
         fix16_t deliriumPitchI = interpolate(fix16_from_int(deliriumPitchO), fix16_from_int(deliriumPitch), gInterpolate);
-        DrawMirrors(cX, cY, cZ, cA, q16horiz + F16(90) + deliriumPitchI);
+        DrawMirrors(cX, cY, cZ, cA, q16horiz + F16(100) + deliriumPitchI);
         int bakCstat = gView->pSprite->cstat;
         if (gViewPos == 0)
         {
@@ -2881,7 +2881,7 @@ RORHACK:
         {
             gView->pSprite->cstat |= 514;
         }
-        renderDrawRoomsQ16(cX, cY, cZ, cA, q16horiz + F16(90) + deliriumPitchI, nSectnum);
+        renderDrawRoomsQ16(cX, cY, cZ, cA, q16horiz + F16(100) + deliriumPitchI, nSectnum);
         bool do_ror_hack = false;
         for (int i = 0; i < 16; i++)
             if (!ror_status[i] && TestBitString(gotpic, 4080+i))
@@ -2938,7 +2938,7 @@ RORHACK:
         int v8 = byte_1CE5C2 > 0 && (sector[tmpSect].ceilingstat&1);
         if (gWeather.at12d8 > 0 || v8)
         {
-            gWeather.Draw(cX, cY, cZ, cA, q16horiz + 90 + deliriumPitch, gWeather.at12d8);
+            gWeather.Draw(cX, cY, cZ, cA, q16horiz + 100 + deliriumPitch, gWeather.at12d8);
             if (v8)
             {
                 gWeather.at12d8 = ClipRange(delta*8+gWeather.at12d8, 0, 4095);
@@ -2953,7 +2953,7 @@ RORHACK:
         {
             if (gAimReticle)
             {
-                rotatesprite(160<<16, 90<<16, 65536, 0, 2319, 0, 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(160<<16, 100<<16, 65536, 0, 2319, 0, 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
             }
             cX = (v4c>>8)+160;
             cY = (v48>>8)+220+(zDelta>>7);
