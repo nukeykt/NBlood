@@ -220,7 +220,7 @@ CGameMenuItemZBool boolMsgOther("OTHER PICKUP:", 3, 66, 130, 180, 0, 0, NULL, NU
 CGameMenuItemZBool boolMsgRespawn("RESPAWN:", 3, 66, 140, 180, 0, 0, NULL, NULL);
 
 CGameMenuItemTitle itemKeysTitle("KEY SETUP", 1, 160, 20, 2038);
-CGameMenuItemKeyList itemKeyList("", 3, 56, 40, 200, 16, 54, 0);
+CGameMenuItemKeyList itemKeyList("", 3, 56, 40, 200, 16, NUMGAMEFUNCTIONS, 0);
 
 CGameMenuItemTitle itemSaveTitle("Save Game", 1, 160, 20, 2038);
 CGameMenuItemZEditBitmap itemSaveGame1(NULL, 3, 20, 60, 320, strRestoreGameStrings[0], 16, 1, SaveGame, 0);
@@ -323,8 +323,8 @@ void SetupMessagesMenu(void)
 
 void SetupControlsMenu(void)
 {
-    sliderMouseSpeed.at24 = ClipRange(gMouseSensitivity, sliderMouseSpeed.at28, sliderMouseSpeed.at2c);
-    sliderTurnSpeed.at24 = ClipRange(gTurnSpeed, sliderTurnSpeed.at28, sliderTurnSpeed.at2c);
+    sliderMouseSpeed.fValue = ClipRangeF(CONTROL_MouseSensitivity, sliderMouseSpeed.fRangeLow, sliderMouseSpeed.fRangeHigh);
+    sliderTurnSpeed.nValue = ClipRange(gTurnSpeed, sliderTurnSpeed.nRangeLow, sliderTurnSpeed.nRangeHigh);
     boolMouseFlipped.at20 = gMouseAimingFlipped;
     menuControls.Add(&itemControlsTitle, false);
     menuControls.Add(&sliderMouseSpeed, true);
@@ -338,10 +338,10 @@ void SetupControlsMenu(void)
 
 void SetupOptionsMenu(void)
 {
-    sliderDetail.at24 = ClipRange(gDetail, sliderDetail.at28, sliderDetail.at2c);
-    sliderGamma.at24 = ClipRange(gGamma, sliderGamma.at28, sliderGamma.at2c);
-    sliderMusic.at24 = ClipRange(MusicVolume, sliderMusic.at28, sliderMusic.at2c);
-    sliderSound.at24 = ClipRange(FXVolume, sliderSound.at28, sliderSound.at2c);
+    sliderDetail.nValue = ClipRange(gDetail, sliderDetail.nRangeLow, sliderDetail.nRangeHigh);
+    sliderGamma.nValue = ClipRange(gGamma, sliderGamma.nRangeLow, sliderGamma.nRangeHigh);
+    sliderMusic.nValue = ClipRange(MusicVolume, sliderMusic.nRangeLow, sliderMusic.nRangeHigh);
+    sliderSound.nValue = ClipRange(FXVolume, sliderSound.nRangeLow, sliderSound.nRangeHigh);
     // NUKE-TODO: unk_26CB50.at24 = ClipRange(Redbook.GetVolume(), unk_26CB50.at28, unk_26CB50.at2c);
     bool3DAudio.at20 = gDoppler;
     boolCrosshair.at20 = gAimReticle;
@@ -394,12 +394,12 @@ void SetupEpisodeMenu(void)
             if (j < gEpisodeCount)
             {
                 CGameMenuItemChain7F2F0 *pEpisodeItem = &itemEpisodes[j];
-                pEpisodeItem->at8 = 1;
-                pEpisodeItem->atc = 0;
-                pEpisodeItem->at14 = 320;
+                pEpisodeItem->nFont = 1;
+                pEpisodeItem->nX = 0;
+                pEpisodeItem->nWidth = 320;
                 pEpisodeItem->at20 = 1;
-                pEpisodeItem->at4 = pEpisode->at0;
-                pEpisodeItem->at10 = 55+(height+8)*j;
+                pEpisodeItem->pzText = pEpisode->at0;
+                pEpisodeItem->nY = 55+(height+8)*j;
                 pEpisodeItem->at34 = i;
                 if (!unk || j == 0)
                 {
@@ -585,8 +585,8 @@ void SetupLoadGameMenu(void)
 
 void SetupSoundsMenu(void)
 {
-    itemSoundsMusic.at24 = ClipRange(MusicVolume, itemSoundsMusic.at28, itemSoundsMusic.at2c);
-    itemSoundsSound.at24 = ClipRange(FXVolume, itemSoundsSound.at28, itemSoundsSound.at2c);
+    itemSoundsMusic.nValue = ClipRange(MusicVolume, itemSoundsMusic.nRangeLow, itemSoundsMusic.nRangeHigh);
+    itemSoundsSound.nValue = ClipRange(FXVolume, itemSoundsSound.nRangeLow, itemSoundsSound.nRangeHigh);
     // NUKE-TODO: unk_26DB90.at24 = ClipRange(Redbook.GetVolume(), unk_26DB90.at28, unk_26DB90.at2c);
     menuSounds.Add(&itemSoundsTitle, false);
     menuSounds.Add(&itemSoundsMusic, true);
@@ -727,23 +727,23 @@ void SetViewSwaying(CGameMenuItemZBool *pItem)
 
 void SetDetail(CGameMenuItemSlider *pItem)
 {
-    gDetail = pItem->at24;
+    gDetail = pItem->nValue;
 }
 
 void SetGamma(CGameMenuItemSlider *pItem)
 {
-    gGamma = pItem->at24;
+    gGamma = pItem->nValue;
     scrSetGamma(gGamma);
 }
 
 void SetMusicVol(CGameMenuItemSlider *pItem)
 {
-    sndSetMusicVolume(pItem->at24);
+    sndSetMusicVolume(pItem->nValue);
 }
 
 void SetSoundVol(CGameMenuItemSlider *pItem)
 {
-    sndSetFXVolume(pItem->at24);
+    sndSetFXVolume(pItem->nValue);
 }
 
 void SetCDVol(CGameMenuItemSlider *pItem)
@@ -758,7 +758,7 @@ void SetMessages(CGameMenuItemZBool *pItem)
 
 void SetMouseSensitivity(CGameMenuItemSliderFloat *pItem)
 {
-	CONTROL_MouseSensitivity = pItem->at24;
+	CONTROL_MouseSensitivity = pItem->fValue;
 }
 
 void SetMouseAimFlipped(CGameMenuItemZBool *pItem)
@@ -768,7 +768,7 @@ void SetMouseAimFlipped(CGameMenuItemZBool *pItem)
 
 void SetTurnSpeed(CGameMenuItemSlider *pItem)
 {
-    gTurnSpeed = pItem->at24;
+    gTurnSpeed = pItem->nValue;
 }
 
 extern bool gStartNewGame;

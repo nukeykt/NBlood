@@ -57,6 +57,8 @@ enum {
     kMenuEventSpace = 8,
     kMenuEventBackSpace = 9,
     kMenuEventDelete = 10,
+    kMenuEventScrollUp = 11,
+    kMenuEventScrollDown = 12,
 
 
     kMenuEventInit = 0x8000,
@@ -87,15 +89,16 @@ class CGameMenu;
 class CGameMenuItem {
 public:
     CGameMenu *pMenu;
-    const char* at4;
-    int at8;
-    int atc;
-    int at10;
-    int at14;
+    const char* pzText;
+    int nFont;
+    int nX;
+    int nY;
+    int nWidth;
     int at18;
     CGameMenuItem();
     virtual void Draw(void) = 0;
     virtual bool Event(CGameMenuEvent &);
+    virtual bool MouseEvent(CGameMenuEvent &);
 };
 
 class CGameMenuItemText : public CGameMenuItem
@@ -211,49 +214,51 @@ public:
 class CGameMenuItemKeyList : public CGameMenuItem
 {
 public:
-    void(*at20)(CGameMenuItemKeyList *);
+    void(*pCallback)(CGameMenuItemKeyList *);
     int at24;
-    int at28;
-    int at2c;
-    int at30;
-    int at34;
-    bool at38;
+    int nRows;
+    int nTopDelta;
+    int nFocus;
+    int nGameFuncs;
+    bool bScan;
     CGameMenuItemKeyList();
     CGameMenuItemKeyList(const char * a1, int a2, int a3, int a4, int a5, int a6, int a7, void(*a8)(CGameMenuItemKeyList *));
     void Scan(void);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
+    virtual bool MouseEvent(CGameMenuEvent &);
 };
 
 class CGameMenuItemSlider : public CGameMenuItem
 {
 public:
-    int *at20;
-    int at24;
-    int at28;
-    int at2c;
-    int at30;
-    void(*at34)(CGameMenuItemSlider *);
-    int at38;
-    int at3c;
+    int *pValue;
+    int nValue;
+    int nRangeLow;
+    int nRangeHigh;
+    int nStep;
+    void(*pCallback)(CGameMenuItemSlider *);
+    int nSliderTile;
+    int nCursorTile;
     CGameMenuItemSlider();
     CGameMenuItemSlider(const char *, int, int, int, int, int, int, int, int, void(*)(CGameMenuItemSlider *), int, int);
     CGameMenuItemSlider(const char *, int, int, int, int, int *, int, int, int, void(*)(CGameMenuItemSlider *), int, int);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
+    virtual bool MouseEvent(CGameMenuEvent &);
 };
 
 class CGameMenuItemSliderFloat : public CGameMenuItem
 {
 public:
-    float *at20;
-    float at24;
-    float at28;
-    float at2c;
-    float at30;
-    void(*at34)(CGameMenuItemSliderFloat *);
-    int at38;
-    int at3c;
+    float *pValue;
+    float fValue;
+    float fRangeLow;
+    float fRangeHigh;
+    float fStep;
+    void(*pCallback)(CGameMenuItemSliderFloat *);
+    int nSliderTile;
+    int nCursorTile;
     CGameMenuItemSliderFloat();
     CGameMenuItemSliderFloat(const char *, int, int, int, int, float, float, float, float, void(*)(CGameMenuItemSliderFloat *), int, int);
     CGameMenuItemSliderFloat(const char *, int, int, int, int, float *, float, float, float, void(*)(CGameMenuItemSliderFloat *), int, int);
@@ -407,10 +412,12 @@ public:
     bool Event(CGameMenuEvent &event);
     void Add(CGameMenuItem *pItem, bool active);
     void SetFocusItem(int nItem);
+    void SetFocusItem(CGameMenuItem *Item);
     bool CanSelectItem(int nItem);
     void FocusPrevItem(void);
     void FocusNextItem(void);
     bool IsFocusItem(CGameMenuItem *pItem);
+    bool MouseEvent(CGameMenuEvent &event);
 };
 
 class CGameMenuMgr
@@ -435,6 +442,7 @@ public:
     void Clear(void);
     void Process(void);
     void Deactivate(void);
+    bool MouseOutsideBounds(vec2_t const * const pos, const int32_t x, const int32_t y, const int32_t width, const int32_t height);
 };
 
 extern CMenuTextMgr gMenuTextMgr;
