@@ -68,8 +68,10 @@ void SetAutoAim(CGameMenuItemZBool *);
 void SetupVideoModeMenu(CGameMenuItemChain *);
 void SetVideoMode(CGameMenuItemChain *);
 void UpdateVideoModeMenu(CGameMenuItemZCycle *);
-void UpdateVideModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
-void UpdateVideModeMenuFPSOffset(CGameMenuItemSlider *pItem);
+void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
+void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
+void UpdateVideoColorMenu(CGameMenuItemSliderFloat *);
+void ResetVideoColor(CGameMenuItemChain *);
 
 char strRestoreGameStrings[][16] = 
 {
@@ -402,9 +404,16 @@ CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 1
 CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 0, UpdateVideoModeMenu, pzRendererStrings, 2, 0);
 CGameMenuItemZBool itemOptionsDisplayModeFullscreen("FULLSCREEN:", 3, 66, 80, 180, 0, NULL, NULL, NULL);
 CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, UpdateVideoModeMenu, pzVSyncStrings, 3, 0);
-CGameMenuItemZCycle itemOptionsDisplayModeFrameLimit("FRAMERATE LIMIT:", 3, 66, 100, 180, 0, UpdateVideModeMenuFrameLimit, pzFrameLimitStrings, 7, 0);
-CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideModeMenuFPSOffset, -1, -1);
+CGameMenuItemZCycle itemOptionsDisplayModeFrameLimit("FRAMERATE LIMIT:", 3, 66, 100, 180, 0, UpdateVideoModeMenuFrameLimit, pzFrameLimitStrings, 7, 0);
+CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideoModeMenuFPSOffset, -1, -1);
 CGameMenuItemChain itemOptionsDisplayModeApply("APPLY CHANGES", 3, 66, 125, 180, 0, NULL, 0, SetVideoMode, 0);
+
+CGameMenuItemTitle itemOptionsDisplayColorTitle("COLOR CORRECTION", 1, 160, 20, -1);
+CGameMenuItemSliderFloat itemOptionsDisplayColorGamma("GAMMA:", 3, 66, 140, 180, &g_videoGamma, 0.3f, 4.f, 0.1f, UpdateVideoColorMenu, -1, -1);
+CGameMenuItemSliderFloat itemOptionsDisplayColorContrast("CONTRAST:", 3, 66, 150, 180, &g_videoContrast, 0.1f, 2.7f, 0.05f, UpdateVideoColorMenu, -1, -1);
+CGameMenuItemSliderFloat itemOptionsDisplayColorBrightness("BRIGHTNESS:", 3, 66, 160, 180, &g_videoBrightness, -0.8f, 0.8f, 0.05f, UpdateVideoColorMenu, -1, -1);
+CGameMenuItemSliderFloat itemOptionsDisplayColorVisibility("VISIBILITY:", 3, 66, 170, 180, &r_ambientlight, 0.125f, 4.f, 0.125f, UpdateVideoColorMenu, -1, -1);
+CGameMenuItemChain itemOptionsDisplayColorReset("RESET TO DEFAULTS", 3, 66, 180, 180, 0, NULL, 0, ResetVideoColor, 0);
 
 void SetupLoadingScreen(void)
 {
@@ -850,6 +859,14 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFPSOffset, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeApply, false);
     menuOptionsDisplayMode.Add(&itemBloodQAV, false);
+
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorTitle, false);
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorGamma, true);
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorContrast, false);
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorBrightness, false);
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorVisibility, false);
+    menuOptionsDisplayColor.Add(&itemOptionsDisplayColorReset, false);
+    menuOptionsDisplayColor.Add(&itemBloodQAV, false);
 }
 
 void SetupMenus(void)
@@ -1091,16 +1108,39 @@ void UpdateVideoModeMenu(CGameMenuItemZCycle *pItem)
     itemOptionsDisplayModeFPSOffset.bEnable = !!itemOptionsDisplayModeFrameLimit.at24;
 }
 
-void UpdateVideModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
+void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
 {
     r_maxfps = nFrameLimitValues[pItem->at24];
     g_frameDelay = r_maxfps ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
 }
 
-void UpdateVideModeMenuFPSOffset(CGameMenuItemSlider *pItem)
+void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem)
 {
     r_maxfpsoffset = pItem->nValue;
     g_frameDelay = r_maxfps ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
+}
+
+void UpdateVideoColorMenu(CGameMenuItemSliderFloat *)
+{
+    g_videoGamma = itemOptionsDisplayColorGamma.fValue;
+    g_videoContrast = itemOptionsDisplayColorContrast.fValue;
+    g_videoBrightness = itemOptionsDisplayColorBrightness.fValue;
+    r_ambientlight = itemOptionsDisplayColorVisibility.fValue;
+    r_ambientlightrecip = 1.f/r_ambientlight;
+    gBrightness = GAMMA_CALC<<2;
+    itemOptionsDisplayColorContrast.bEnable = gammabrightness;
+    itemOptionsDisplayColorBrightness.bEnable = gammabrightness;
+    videoSetPalette(gBrightness>>2, gLastPal, 0);
+}
+
+void ResetVideoColor(CGameMenuItemChain *)
+{
+    g_videoGamma = DEFAULT_GAMMA;
+    g_videoContrast = DEFAULT_CONTRAST;
+    g_videoBrightness = DEFAULT_BRIGHTNESS;
+    gBrightness = 0;
+    r_ambientlight = r_ambientlightrecip = 1.f;
+    videoSetPalette(gBrightness>>2, gLastPal, 0);
 }
 
 void SaveGameProcess(CGameMenuItemChain *)

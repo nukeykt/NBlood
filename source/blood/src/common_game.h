@@ -190,7 +190,7 @@ inline int DecBy(int a, int b)
     return a;
 }
 
-
+#if 0
 inline float IncByF(float a, float b)
 {
     a += b;
@@ -211,6 +211,7 @@ inline float DecByF(float a, float b)
         a -= b;
     return a;
 }
+#endif
 
 inline int ClipLow(int a, int b)
 {

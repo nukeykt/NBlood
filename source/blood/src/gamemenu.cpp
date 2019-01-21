@@ -549,7 +549,8 @@ void CGameMenuItemTitle::Draw(void)
     {
         int height;
         gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
-        rotatesprite(320<<15, nY<<16, 65536, 0, at20, -128, 0, 78, 0, 0, xdim-1, ydim-1);
+        if (at20 >= 0)
+            rotatesprite(320<<15, nY<<16, 65536, 0, at20, -128, 0, 78, 0, 0, xdim-1, ydim-1);
         viewDrawText(nFont, pzText, nX, nY-height/2, -128, 0, 1, false);
     }
 }
@@ -1431,7 +1432,7 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
         pMenu->FocusNextItem();
         return false;
     case kMenuEventLeft:
-        if (nValue > 0)
+        if (nStep > 0)
             nValue = DecBy(nValue, nStep);
         else
             nValue = IncBy(nValue, -nStep);
@@ -1440,7 +1441,7 @@ bool CGameMenuItemSlider::Event(CGameMenuEvent &event)
             pCallback(this);
         return false;
     case kMenuEventRight:
-        if (nValue >= 0)
+        if (nStep >= 0)
             nValue = IncBy(nValue, nStep);
         else
             nValue = DecBy(nValue, -nStep);
@@ -1635,19 +1636,19 @@ bool CGameMenuItemSliderFloat::Event(CGameMenuEvent &event)
         pMenu->FocusNextItem();
         return false;
     case kMenuEventLeft:
-        if (fValue > 0)
-            fValue = DecByF(fValue, fStep);
+        if (fStep > 0)
+            fValue -= fStep;
         else
-            fValue = IncByF(fValue, -fStep);
+            fValue += fStep;
         fValue = ClipRangeF(fValue, fRangeLow, fRangeHigh);
         if (pCallback)
             pCallback(this);
         return false;
     case kMenuEventRight:
-        if (fValue >= 0)
-            fValue = IncByF(fValue, fStep);
+        if (fStep >= 0)
+            fValue += fStep;
         else
-            fValue = DecByF(fValue, -fStep);
+            fValue -= fStep;
         fValue = ClipRangeF(fValue, fRangeLow, fRangeHigh);
         if (pCallback)
             pCallback(this);
