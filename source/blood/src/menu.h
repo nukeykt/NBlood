@@ -29,7 +29,7 @@ extern CGameMenu menuNetMain;
 extern CGameMenu menuNetStart;
 extern CGameMenu menuEpisode;
 extern CGameMenu menuDifficulty;
-extern CGameMenu menuOptions;
+extern CGameMenu menuOptionsOld;
 extern CGameMenu menuControls;
 extern CGameMenu menuMessages;
 extern CGameMenu menuKeys;
@@ -44,6 +44,8 @@ extern CGameMenu menuPlayOnline;
 extern CGameMenu menuParentalLock;
 extern CGameMenu menuSorry;
 extern CGameMenu menuSorry2;
+
+extern CGameMenu menuOptions;
 extern short gQuickLoadSlot;
 extern short gQuickSaveSlot;
 extern char strRestoreGameStrings[][16];

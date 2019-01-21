@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 
 #include "blood.h"
+#include "config.h"
 #include "resource.h"
 #include "screen.h"
 
@@ -71,8 +72,11 @@ bool gFogMode = false;
 
 void gSetDacRange(int start, int end, RGB *pPal)
 {
-    memcpy(palette, pPal, sizeof(palette));
-    videoSetPalette(0, 0, 0);
+    if (videoGetRenderMode() == REND_CLASSIC)
+    {
+        memcpy(palette, pPal, sizeof(palette));
+        videoSetPalette(gBrightness>>2, 0, 0);
+    }
 }
 
 void scrLoadPLUs(void)
@@ -140,7 +144,7 @@ void scrLoadPalette(void)
 void scrSetPalette(int palId)
 {
     curPalette = palId;
-    scrSetGamma(curGamma);
+    scrSetGamma(0/*curGamma*/);
 }
 
 void scrSetGamma(int nGamma)

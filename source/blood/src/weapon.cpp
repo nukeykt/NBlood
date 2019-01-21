@@ -313,7 +313,7 @@ void UpdateAimVector(PLAYER * pPlayer)
     WEAPONTRACK *pWeaponTrack = &gWeaponTrack[pPlayer->atbd];
     int nTarget = -1;
     pPlayer->at1da = 0;
-    if (gProfile[pPlayer->at57].at0 || pPlayer->atbd == 10 || pPlayer->atbd == 9)
+    if (gProfile[pPlayer->at57].bAutoAim || pPlayer->atbd == 10 || pPlayer->atbd == 9)
     {
         int nClosest = 0x7fffffff;
         for (nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])

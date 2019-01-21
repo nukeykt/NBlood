@@ -88,6 +88,12 @@ extern int gViewX0S, gViewY0S, gViewX1S, gViewY1S;
 extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 extern int32_t g_crosshairSum;
+extern int32_t r_maxfps;
+extern int32_t r_maxfpsoffset;
+extern uint64_t g_frameDelay;
+extern float r_ambientlight, r_ambientlightrecip;
+extern int gLastPal;
+extern int32_t gShowFps;
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize);
 void viewUpdatePages(void);
@@ -132,12 +138,14 @@ void viewDisplayMessage(void);
 void viewSetErrorMessage(const char *pMessage);
 void DoLensEffect(void);
 void UpdateDacs(int nPalette);
+int viewFPSLimit(void);
 void viewDrawScreen(void);
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3);
 void viewUpdateDelirium(void);
 void viewUpdateShake(void);
 void viewGetCrosshairColor(void);
 void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
+void viewPrintFPS(void);
 
 
 inline void viewInterpolateSector(int nSector, SECTOR *pSector)

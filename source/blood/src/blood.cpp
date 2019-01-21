@@ -116,6 +116,11 @@ char *pUserTiles = NULL;
 char *pUserSoundRFF = NULL;
 char *pUserRFF = NULL;
 
+int gChokeCounter = 0;
+
+uint32_t g_gameUpdateTime, g_gameUpdateAndDrawTime;
+float g_gameUpdateAvgTime = -1.f;
+
 void app_crashhandler(void)
 {
     // NUKE-TODO:
@@ -488,7 +493,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 			if (numplayers == 1)
 			{
 				gProfile[i].skill = gSkill;
-				gProfile[i].at0 = 1; //byte_13b838;
+				gProfile[i].bAutoAim = gAutoAim;
 			}
 			playerInit(i,0);
 		}
@@ -521,6 +526,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	sub_79760();
 	gCacheMiss = 0;
 	gFrame = 0;
+    gChokeCounter = 0;
 	if (!gDemo.at1)
 		gGameMenuMgr.Deactivate();
     // PORT-TODO;
@@ -815,6 +821,17 @@ void ProcessFrame(void)
     viewUpdateDelirium();
     viewUpdateShake();
 	sfxUpdate3DSounds();
+    if (gMe->at376 == 1)
+    {
+#define CHOKERATE 8
+#define TICRATE 30
+        gChokeCounter += CHOKERATE;
+        while (gChokeCounter >= TICRATE)
+        {
+            gChoke.at1c(gMe);
+            gChokeCounter -= TICRATE;
+        }
+    }
 	gFrame++;
 	gFrameClock += 4;
 	if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
@@ -1355,8 +1372,11 @@ RESTART:
         // PORT-TODO:
 		//if (gRedBookInstalled)
 		//	Redbook.postprocess();
+        bool bDraw = viewFPSLimit() != 0;
 		if (gGameStarted)
 		{
+            char gameUpdate = false;
+            uint32_t gameUpdateStartTime = timerGetTicks();
 			if (numplayers > 1)
 				netGetPackets();
 			while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
@@ -1375,39 +1395,57 @@ RESTART:
 					break;
 				faketimerhandler();
 				ProcessFrame();
+                gameUpdate = true;
 			}
+            if (gameUpdate)
+            {
+                g_gameUpdateTime = timerGetTicks()-gameUpdateStartTime;
+                if (g_gameUpdateAvgTime < 0.f)
+                    g_gameUpdateAvgTime = g_gameUpdateTime;
+                g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
+            }
 			if (gQuitRequest && gQuitGame)
 				videoClearScreen(0);
 			else
 			{
 				netCheckSync();
-				viewDrawScreen();
+                if (bDraw)
+                {
+                    viewDrawScreen();
+                    g_gameUpdateAndDrawTime = timerGetTicks() - gameUpdateStartTime;
+                }
 			}
 		}
 		else
 		{
-            videoClearScreen(0);
-			rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
+            if (bDraw)
+            {
+                videoClearScreen(0);
+			    rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
+            }
 			netGetPackets();
 			if (gQuitRequest && !gQuitGame)
 				netBroadcastMyLogoff();
 		}
-		switch (gInputMode)
-		{
-		case INPUT_MODE_1:
-			if (gGameMenuMgr.m_bActive)
-				gGameMenuMgr.Draw();
-			break;
-		case INPUT_MODE_2:
-			gPlayerMsg.ProcessKeys();
-			gPlayerMsg.Draw();
-			break;
-		case INPUT_MODE_3:
-			gEndGameMgr.ProcessKeys();
-			gEndGameMgr.Draw();
-			break;
-		}
-		scrNextPage();
+        if (bDraw)
+        {
+            switch (gInputMode)
+            {
+            case INPUT_MODE_1:
+                if (gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Draw();
+                break;
+            case INPUT_MODE_2:
+                gPlayerMsg.ProcessKeys();
+                gPlayerMsg.Draw();
+                break;
+            case INPUT_MODE_3:
+                gEndGameMgr.ProcessKeys();
+                gEndGameMgr.Draw();
+                break;
+            }
+        }
+		//scrNextPage();
 		if (TestBitString(gotpic, 2342))
 		{
 			FireProcess();
@@ -1435,8 +1473,8 @@ RESTART:
 			gGameMenuMgr.Process();
             videoClearScreen(0);
 			netGetPackets();
-			gGameMenuMgr.Draw();
-			scrNextPage();
+			if (viewFPSLimit())
+                gGameMenuMgr.Draw();
 		}
 		if (gGameOptions.nGameType != 0)
         {

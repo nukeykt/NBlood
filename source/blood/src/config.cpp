@@ -110,6 +110,8 @@ bool gNoClip;
 bool gInfiniteAmmo;
 bool gFullMap;
 bool gMouseAim;
+int32_t gUpscaleFactor;
+int32_t gBrightness;
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
@@ -306,6 +308,7 @@ void CONFIG_SetDefaults(void)
     NumBits         = 16;
     NumChannels     = 2;
     ReverseStereo   = 0;
+    gBrightness = 8;
     //ud.config.ShowWeapons     = 0;
     //ud.config.SmoothInput     = 1;
     //ud.config.SoundToggle     = 1;
@@ -316,7 +319,7 @@ void CONFIG_SetDefaults(void)
     //ud.crosshairscale         = 50;
     //ud.default_skill          = 1;
     //ud.democams               = 1;
-    //ud.detail                 = 0;
+    gUpscaleFactor = 0;
     //ud.display_bonus_screen   = 1;
     //ud.drawweapon             = 1;
     //ud.hudontop               = 0;

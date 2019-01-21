@@ -235,7 +235,7 @@ void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
         pChannel = FindChannel();
     else
         pChannel = &Channel[nChannel];
-    if (pChannel->at0 > 0)
+    if (pChannel->bAutoAim > 0)
         sndKillSound(pChannel);
     struct find_t dosFind;
     if (_dos_findfirst(pzFile, NULL, &dosFind) != 0)
@@ -247,7 +247,7 @@ void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
         return;
     pChannel->at5 = (DICTNODE*)pData;
     pChannel->at4 |= 2;
-    pChannel->at0 = FX_PlayWAV(pData, 0, nVolume, nVolume, nVolume, nVolume, &pChannel->at0);
+    pChannel->bAutoAim = FX_PlayWAV(pData, 0, nVolume, nVolume, nVolume, nVolume, &pChannel->bAutoAim);
 #endif
 }
 
@@ -324,7 +324,7 @@ void DeinitSoundDevice(void)
 
 void InitMusicDevice(void)
 {
-    int nStatus = MUSIC_Init(0, 0);
+    int nStatus = MUSIC_Init(1, 0);
     if (nStatus != 0)
         ThrowError(MUSIC_ErrorString(nStatus));
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");

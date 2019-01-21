@@ -38,7 +38,7 @@ void onvideomodechange(int32_t newmode);
 void GAME_onshowosd(int32_t shown);
 void GAME_clearbackground(int32_t numcols, int32_t numrows);
 
-extern float r_ambientlight,r_ambientlightrecip;
+// extern float r_ambientlight,r_ambientlightrecip;
 
 extern const char *const ConsoleButtons[];
 

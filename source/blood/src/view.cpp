@@ -2410,6 +2410,7 @@ void UpdateDacs(int nPalette)
 
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
+        gLastPal = 0;
         polytint_t *tint = &hictinting[MAXPALOOKUPS-1];
         int nRed = 0;
         int nGreen = 0;
@@ -2474,6 +2475,7 @@ void UpdateDacs(int nPalette)
     }
     else
     {
+        gLastPal = nPalette;
         for (int i = 0; i < 256; i++)
         {
             int nRed = baseDAC[i].red;
@@ -2593,6 +2595,39 @@ void viewUpdateShake(void)
         shakeBobY += QRandom2(nValue);
     }
 }
+
+int32_t r_maxfps = 60;
+int32_t r_maxfpsoffset = 0;
+uint64_t g_frameDelay = 17;
+
+int viewFPSLimit(void)
+{
+    static uint64_t nextPageTicks = 0;
+    static unsigned frameWaiting = 0;
+
+    if (frameWaiting)
+    {
+        frameWaiting--;
+        videoNextPage();
+    }
+
+    uint64_t const frameTicks = timerGetTicksU64();
+
+    if (!r_maxfps || frameTicks >= nextPageTicks)
+    {
+        if (frameTicks >= nextPageTicks + g_frameDelay)
+            nextPageTicks = frameTicks;
+
+        nextPageTicks += g_frameDelay;
+        frameWaiting++;
+    }
+
+    return frameWaiting;
+}
+
+float r_ambientlight = 1.0, r_ambientlightrecip = 1.0;
+
+int gLastPal = 0;
 
 void viewDrawScreen(void)
 {
@@ -2783,7 +2818,7 @@ void viewDrawScreen(void)
             }
             memcpy(bakMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, otherMirrorGotpic, 2);
-            g_visibility = ClipLow(gVisibility-32*pOther->at362, 0);
+            g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->at362, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
             int vc4, vc8;
             getzsofslope(vcc, vd8, vd4, &vc8, &vc4);
             if (vd0 >= vc4)
@@ -2856,7 +2891,7 @@ RORHACKOTHER:
             }
             nSprite = nextspritestat[nSprite];
         }
-        g_visibility = ClipLow(gVisibility - 32 * gView->at362 - unk, 0);
+        g_visibility = (int32_t)(ClipLow(gVisibility - 32 * gView->at362 - unk, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
         cA = (cA + interpolateangfix16(fix16_from_int(deliriumTurnO), fix16_from_int(deliriumTurn), gInterpolate)) & 0x7ffffff;
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
@@ -3039,13 +3074,13 @@ RORHACK:
     PLAYER *pPSprite = &gPlayer[gMe->pSprite->type-kDudePlayer1];
     if (pPSprite->at376 == 1)
     {
-        static int lastClock;
+        //static int lastClock;
         gChoke.sub_84110(160, zn);
-        if ((gGameClock % 5) == 0 && gGameClock != lastClock)
-        {
-            gChoke.at1c(pPSprite);
-        }
-        lastClock = gGameClock;
+        //if ((gGameClock % 5) == 0 && gGameClock != lastClock)
+        //{
+        //    gChoke.at1c(pPSprite);
+        //}
+        //lastClock = gGameClock;
     }
     if (byte_1A76C6)
     {
@@ -3053,6 +3088,7 @@ RORHACK:
     }
     viewDisplayMessage();
     CalcFrameRate();
+#if 0
     if (gShowFrameRate)
     {
         int fX, fY;
@@ -3082,6 +3118,8 @@ RORHACK:
         sprintf(gTempStr, "pos=%d,%d,%d", gView->pSprite->x, gView->pSprite->y, gView->pSprite->z);
         printext256(fX-strlen(gTempStr)*4, fY, 31, -1, gTempStr, 1);
     }
+#endif
+    viewPrintFPS();
     if (gPaused)
     {
         viewDrawText(1, "PAUSED", 160, 10, 0, 0, 1, 0);
@@ -3147,7 +3185,7 @@ void viewGetCrosshairColor(void)
     int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
     int32_t bri = 0, j = 0, i;
 
-    Bassert(ii > 0);
+    dassert(ii > 0);
 
     do
     {
@@ -3211,6 +3249,132 @@ void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
 #endif
     tileInvalidate(kCrosshairTile, -1, -1);
 }
+
+#define COLOR_RED redcol
+#define COLOR_WHITE whitecol
+
+#define LOW_FPS 60
+#define SLOW_FRAME_TIME 20
+
+#if defined GEKKO
+# define FPS_YOFFSET 16
+#else
+# define FPS_YOFFSET 0
+#endif
+
+#define FPS_COLOR(x) ((x) ? COLOR_RED : COLOR_WHITE)
+
+int32_t gShowFps, g_frameRate;
+
+void viewPrintFPS(void)
+{
+    char tempbuf[128];
+    static int32_t frameCount = 0, lastFPS = 0, lastFrameTime = 0, cumulativeFrameDelay = 0;
+    static int32_t minFPS = -1, maxFPS = 0;
+    static uint32_t minGameUpdate = -1, maxGameUpdate = 0;
+
+    int32_t frameTime = timerGetTicks();
+    int32_t frameDelay = frameTime - lastFrameTime;
+    cumulativeFrameDelay += frameDelay;
+
+    if (frameDelay >= 0)
+    {
+        int32_t x = (xdim <= 640);
+
+        if (gShowFps)
+        {
+            int32_t chars = Bsprintf(tempbuf, "%d ms (%3d fps)", frameDelay, lastFPS);
+
+            printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+            printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+1+FPS_YOFFSET,
+                FPS_COLOR(lastFPS < LOW_FPS), -1, tempbuf, x);
+
+            if (gShowFps > 1)
+            {
+                chars = Bsprintf(tempbuf, "max fps: %3d", maxFPS);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+10+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+10+FPS_YOFFSET,
+                    FPS_COLOR(maxFPS < LOW_FPS), -1, tempbuf, x);
+
+                chars = Bsprintf(tempbuf, "min fps: %3d", minFPS);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+20+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+20+FPS_YOFFSET,
+                    FPS_COLOR(minFPS < LOW_FPS), -1, tempbuf, x);
+            }
+            if (gShowFps > 2)
+            {
+                if (g_gameUpdateTime > maxGameUpdate) maxGameUpdate = g_gameUpdateTime;
+                if (g_gameUpdateTime < minGameUpdate) minGameUpdate = g_gameUpdateTime;
+
+                chars = Bsprintf(tempbuf, "Game Update: %2u ms + draw: %2u ms", g_gameUpdateTime, g_gameUpdateAndDrawTime);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+30+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+30+FPS_YOFFSET,
+                    FPS_COLOR(g_gameUpdateAndDrawTime >= SLOW_FRAME_TIME), -1, tempbuf, x);
+
+                chars = Bsprintf(tempbuf, "GU min/max/avg: %2u/%2u/%5.2f ms", minGameUpdate, maxGameUpdate, g_gameUpdateAvgTime);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+40+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+40+FPS_YOFFSET,
+                    FPS_COLOR(maxGameUpdate >= SLOW_FRAME_TIME), -1, tempbuf, x);
+
+#if 0
+                chars = Bsprintf(tempbuf, "G_MoveActors(): %.3e ms", g_moveActorsTime);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+50+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+50+FPS_YOFFSET,
+                    COLOR_WHITE, -1, tempbuf, x);
+
+                chars = Bsprintf(tempbuf, "G_MoveWorld(): %.3e ms", g_moveWorldTime);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+60+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+60+FPS_YOFFSET,
+                    COLOR_WHITE, -1, tempbuf, x);
+#endif
+            }
+#if 0
+            // lag meter
+            if (g_netClientPeer)
+            {
+                chars = Bsprintf(tempbuf, "%d +- %d ms", (g_netClientPeer->lastRoundTripTime + g_netClientPeer->roundTripTime)/2,
+                    (g_netClientPeer->lastRoundTripTimeVariance + g_netClientPeer->roundTripTimeVariance)/2);
+
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+30+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+30+1+FPS_YOFFSET, FPS_COLOR(g_netClientPeer->lastRoundTripTime > 200), -1, tempbuf, x);
+            }
+#endif
+        }
+
+        if (cumulativeFrameDelay >= 1000)
+        {
+            g_frameRate = lastFPS = tabledivide32_noinline(1000*frameCount, cumulativeFrameDelay);
+            frameCount = 0;
+            cumulativeFrameDelay = 0;
+
+            if (gShowFps > 1)
+            {
+                if (lastFPS > maxFPS) maxFPS = lastFPS;
+                if ((unsigned) lastFPS < (unsigned) minFPS) minFPS = lastFPS;
+                static int secondCounter;
+
+                if (++secondCounter == 3)
+                {
+                    maxFPS = (lastFPS + maxFPS) >> 1;
+                    minFPS = (lastFPS + minFPS) >> 1;
+                    maxGameUpdate = (g_gameUpdateTime + maxGameUpdate) >> 1;
+                    minGameUpdate = (g_gameUpdateTime + minGameUpdate) >> 1;
+                    secondCounter = 0;
+                }
+            }
+        }
+        frameCount++;
+    }
+    lastFrameTime = frameTime;
+}
+
+#undef FPS_COLOR
 
 class ViewLoadSave : public LoadSave {
 public:

@@ -487,7 +487,7 @@ void netBroadcastPlayerInfo(int nPlayer)
     PROFILE *pProfile = &gProfile[nPlayer];
     strcpy(pProfile->name, szPlayerName);
     pProfile->skill = gSkill;
-    pProfile->at0 = gAutoAim;
+    pProfile->bAutoAim = gAutoAim;
     char *pPacket = packet;
     PutPacketByte(pPacket, 251);
     PutPacketBuffer(pPacket, pProfile, sizeof(PROFILE));

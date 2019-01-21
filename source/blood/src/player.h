@@ -165,7 +165,7 @@ struct POSTURE {
 };
 
 struct PROFILE {
-    char at0;
+    char bAutoAim;
     int skill;
     char name[12];
 };

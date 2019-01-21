@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "menu.h"
 #include "messages.h"
 #include "network.h"
+#include "osdcmds.h"
 #include "screen.h"
 #include "sound.h"
 #include "view.h"
@@ -63,6 +64,12 @@ void StartNetGame(CGameMenuItemChain *);
 void SetParentalLock(CGameMenuItemZBool *);
 void TenProcess(CGameMenuItem7EA1C *);
 void SetupLevelMenuItem(int);
+void SetAutoAim(CGameMenuItemZBool *);
+void SetupVideoModeMenu(CGameMenuItemChain *);
+void SetVideoMode(CGameMenuItemChain *);
+void UpdateVideoModeMenu(CGameMenuItemZCycle *);
+void UpdateVideModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
+void UpdateVideModeMenuFPSOffset(CGameMenuItemSlider *pItem);
 
 char strRestoreGameStrings[][16] = 
 {
@@ -133,7 +140,7 @@ CGameMenu menuNetMain;
 CGameMenu menuNetStart;
 CGameMenu menuEpisode;
 CGameMenu menuDifficulty;
-CGameMenu menuOptions;
+CGameMenu menuOptionsOld;
 CGameMenu menuControls;
 CGameMenu menuMessages;
 CGameMenu menuKeys;
@@ -185,7 +192,7 @@ CGameMenuItemChain itemDifficulty3("LIGHTLY BROILED", 1, 0, 100, 320, 1, NULL, -
 CGameMenuItemChain itemDifficulty4("WELL DONE", 1, 0, 120, 320, 1, NULL, -1, SetDifficultyAndStart, 3);
 CGameMenuItemChain itemDifficulty5("EXTRA CRISPY", 1, 0, 140, 320, 1, 0, -1, SetDifficultyAndStart, 4);
 
-CGameMenuItemTitle itemOptionsTitle("OPTIONS", 1, 160, 20, 2038);
+CGameMenuItemTitle itemOptionsOldTitle("OPTIONS", 1, 160, 20, 2038);
 CGameMenuItemChain itemOption1("CONTROLS...", 3, 0, 40, 320, 1, &menuControls, -1, NULL, 0);
 CGameMenuItemSlider sliderDetail("DETAIL:", 3, 66, 50, 180, gDetail, 0, 4, 1, SetDetail, -1, -1);
 CGameMenuItemSlider sliderGamma("GAMMA:", 3, 66, 60, 180, gGamma, 0, 15, 2, SetGamma, -1, -1);
@@ -295,6 +302,110 @@ CGameMenuItem7EA1C unk_26E198("KALI", 1, 0, 105, 320, "matt", "KALI", 1, -1, NUL
 CGameMenuItem7EA1C unk_26E1F0("MPATH", 1, 0, 125, 320, "matt", "MPATH", 1, -1, NULL, NULL);
 CGameMenuItem7EA1C unk_26E248("TEN", 1, 0, 145, 320, "matt", "TEN", 1, -1, TenProcess, NULL);
 
+
+// static int32_t newresolution, newrendermode, newfullscreen, newvsync;
+
+enum resflags_t {
+    RES_FS = 0x1,
+    RES_WIN = 0x2,
+};
+
+#define MAXRESOLUTIONSTRINGLENGTH 19
+
+struct resolution_t {
+    int32_t xdim, ydim;
+    int32_t flags;
+    int32_t bppmax;
+    char name[MAXRESOLUTIONSTRINGLENGTH];
+};
+
+resolution_t gResolution[MAXVALIDMODES];
+int gResolutionNum;
+char *gResolutionName[MAXVALIDMODES];
+
+CGameMenu menuOptions;
+CGameMenu menuOptionsGame;
+CGameMenu menuOptionsDisplay;
+CGameMenu menuOptionsDisplayColor;
+CGameMenu menuOptionsDisplayMode;
+CGameMenu menuOptionsSound;
+CGameMenu menuOptionsPlayer;
+CGameMenu menuOptionsControl;
+
+CGameMenuItemTitle itemOptionsTitle("OPTIONS", 1, 160, 20, 2038);
+CGameMenuItemChain itemOptionsChainGame("GAME SETUP", 1, 0, 50, 320, 1, &menuOptionsGame, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainDisplay("DISPLAY SETUP", 1, 0, 70, 320, 1, &menuOptionsDisplay, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainSound("SOUND SETUP", 1, 0, 90, 320, 1, &menuOptionsSound, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainPlayer("PLAYER SETUP", 1, 0, 110, 320, 1, &menuOptionsPlayer, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainControl("CONTROL SETUP", 1, 0, 130, 320, 1, &menuOptionsControl, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainOld("OLD MENU", 1, 0, 170, 320, 1, &menuOptionsOld, -1, NULL, 0);
+
+
+CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
+CGameMenuItemZBool itemOptionsGameBoolShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, gShowWeapon, SetShowWeapons, NULL, NULL);
+CGameMenuItemZBool itemOptionsGameBoolSlopeTilting("SLOPE TILTING:", 3, 66, 80, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
+CGameMenuItemZBool itemOptionsGameBoolViewBobbing("VIEW BOBBING:", 3, 66, 90, 180, gViewVBobbing, SetViewBobbing, NULL, NULL);
+CGameMenuItemZBool itemOptionsGameBoolViewSwaying("VIEW SWAYING:", 3, 66, 100, 180, gViewHBobbing, SetViewSwaying, NULL, NULL);
+CGameMenuItemZBool itemOptionsGameBoolAutoAim("AUTO AIM:", 3, 66, 110, 180, gAutoAim, SetAutoAim, NULL, NULL);
+CGameMenuItemChain itemOptionsGameChainParentalLock("PARENTAL LOCK", 3, 0, 120, 320, 1, &menuParentalLock, -1, NULL, 0);
+
+CGameMenuItemTitle itemOptionsDisplayTitle("DISPLAY SETUP", 1, 160, 20, 2038);
+CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0, &menuOptionsDisplayColor, -1, NULL, 0);
+CGameMenuItemChain itemOptionsDisplayMode("VIDEO MODE", 3, 66, 70, 180, 0, &menuOptionsDisplayMode, -1, SetupVideoModeMenu, 0);
+CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, gAimReticle, SetCrosshair, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 90, 180, 0, SetMessages, NULL, NULL);
+
+const char *pzRendererStrings[] = {
+    "CLASSIC",
+    "POLYMOST"
+};
+
+const int nRendererValues[] = {
+    REND_CLASSIC,
+    REND_POLYMOST
+};
+
+const char *pzVSyncStrings[] = {
+    "ADAPTIVE",
+    "OFF",
+    "ON"
+};
+
+const int nVSyncValues[] = {
+    -1,
+    0,
+    1
+};
+
+const char *pzFrameLimitStrings[] = {
+    "NONE",
+    "30 FPS",
+    "60 FPS",
+    "120 FPS",
+    "144 FPS",
+    "165 FPS",
+    "240 FPS"
+};
+
+const int nFrameLimitValues[] = {
+    0,
+    30,
+    60,
+    120,
+    144,
+    165,
+    240
+};
+
+CGameMenuItemTitle itemOptionsDisplayModeTitle("VIDEO MODE", 1, 160, 20, 2038);
+CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 180, 0, UpdateVideoModeMenu, NULL, 0, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 0, UpdateVideoModeMenu, pzRendererStrings, 2, 0);
+CGameMenuItemZBool itemOptionsDisplayModeFullscreen("FULLSCREEN:", 3, 66, 80, 180, 0, NULL, NULL, NULL);
+CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, UpdateVideoModeMenu, pzVSyncStrings, 3, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeFrameLimit("FRAMERATE LIMIT:", 3, 66, 100, 180, 0, UpdateVideModeMenuFrameLimit, pzFrameLimitStrings, 7, 0);
+CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideModeMenuFPSOffset, -1, -1);
+CGameMenuItemChain itemOptionsDisplayModeApply("APPLY CHANGES", 3, 66, 125, 180, 0, NULL, 0, SetVideoMode, 0);
+
 void SetupLoadingScreen(void)
 {
     menuLoading.Add(&itemLoadingText, true);
@@ -336,7 +447,7 @@ void SetupControlsMenu(void)
     menuControls.Add(&itemBloodQAV, false);
 }
 
-void SetupOptionsMenu(void)
+void SetupOptionsOldMenu(void)
 {
     sliderDetail.nValue = ClipRange(gDetail, sliderDetail.nRangeLow, sliderDetail.nRangeHigh);
     sliderGamma.nValue = ClipRange(gGamma, sliderGamma.nRangeLow, sliderGamma.nRangeHigh);
@@ -350,22 +461,22 @@ void SetupOptionsMenu(void)
     boolViewBobbing.at20 = gViewVBobbing;
     boolViewSwaying.at20 = gViewHBobbing;
     boolMessages.at20 = gGameMessageMgr.at0;
-    menuOptions.Add(&itemOptionsTitle, false);
-    menuOptions.Add(&itemOption1, true);
-    menuOptions.Add(&sliderDetail, false);
-    menuOptions.Add(&sliderGamma, false);
-    menuOptions.Add(&sliderMusic, false);
-    menuOptions.Add(&sliderSound, false);
-    menuOptions.Add(&sliderCDAudio, false);
-    menuOptions.Add(&bool3DAudio, false);
-    menuOptions.Add(&boolCrosshair, false);
-    menuOptions.Add(&boolShowWeapons, false);
-    menuOptions.Add(&boolSlopeTilting, false);
-    menuOptions.Add(&boolViewBobbing, false);
-    menuOptions.Add(&boolViewSwaying, false);
-    menuOptions.Add(&itemOption2, false);
-    menuOptions.Add(&itemChainParentalLock, false);
-    menuOptions.Add(&itemBloodQAV, false);
+    menuOptionsOld.Add(&itemOptionsTitle, false);
+    menuOptionsOld.Add(&itemOption1, true);
+    menuOptionsOld.Add(&sliderDetail, false);
+    menuOptionsOld.Add(&sliderGamma, false);
+    menuOptionsOld.Add(&sliderMusic, false);
+    menuOptionsOld.Add(&sliderSound, false);
+    menuOptionsOld.Add(&sliderCDAudio, false);
+    menuOptionsOld.Add(&bool3DAudio, false);
+    menuOptionsOld.Add(&boolCrosshair, false);
+    menuOptionsOld.Add(&boolShowWeapons, false);
+    menuOptionsOld.Add(&boolSlopeTilting, false);
+    menuOptionsOld.Add(&boolViewBobbing, false);
+    menuOptionsOld.Add(&boolViewSwaying, false);
+    menuOptionsOld.Add(&itemOption2, false);
+    menuOptionsOld.Add(&itemChainParentalLock, false);
+    menuOptionsOld.Add(&itemBloodQAV, false);
 }
 
 void SetupDifficultyMenu(void)
@@ -413,7 +524,8 @@ void SetupEpisodeMenu(void)
                     pEpisodeItem->at28 = 1;
                 }
                 pEpisodeItem = &itemEpisodes[j];
-                pEpisodeItem->at18 |= 3;
+                pEpisodeItem->bCanSelect = 1;
+                pEpisodeItem->bEnable = 1;
                 bool first = j == 0;
                 menuEpisode.Add(&itemEpisodes[j], first);
                 if (first)
@@ -610,16 +722,21 @@ void SetupHelpOrderMenu(void)
     menuOrder.Add(&itemHelp5QAV, false);
     menuOrder.Add(&itemHelp3QAV, false);
     menuOrder.Add(&itemHelp3BQAV, false);
-    itemHelp4QAV.at18 |= 10;
-    itemHelp5QAV.at18 |= 10;
-    itemHelp3QAV.at18 |= 10;
-    itemHelp3BQAV.at18 |= 10;
+    itemHelp4QAV.bEnable = 1;
+    itemHelp4QAV.bNoDraw = 1;
+    itemHelp5QAV.bEnable = 1;
+    itemHelp5QAV.bNoDraw = 1;
+    itemHelp3QAV.bEnable = 1;
+    itemHelp3QAV.bNoDraw = 1;
+    itemHelp3BQAV.bEnable = 1;
+    itemHelp3BQAV.bNoDraw = 1;
 }
 
 void SetupCreditsMenu(void)
 {
     menuCredits.Add(&itemCreditsQAV, true);
-    itemCreditsQAV.at18 |= 10;
+    itemCreditsQAV.bEnable = 1;
+    itemCreditsQAV.bNoDraw = 1;
 }
 
 void SetupParentalLockMenu(void)
@@ -661,6 +778,80 @@ void SetupSorry2Menu(void)
     menuSorry2.Add(&itemBloodQAV, false);
 }
 
+void SetupOptionsMenu(void)
+{
+    menuOptions.Add(&itemOptionsTitle, false);
+    menuOptions.Add(&itemOptionsChainGame, true);
+    menuOptions.Add(&itemOptionsChainDisplay, false);
+    menuOptions.Add(&itemOptionsChainSound, false);
+    menuOptions.Add(&itemOptionsChainPlayer, false);
+    menuOptions.Add(&itemOptionsChainControl, false);
+    menuOptions.Add(&itemOptionsChainOld, false);
+    menuOptions.Add(&itemBloodQAV, false);
+
+    menuOptionsGame.Add(&itemOptionsGameTitle, false);
+    menuOptionsGame.Add(&itemOptionsGameBoolShowWeapons, true);
+    menuOptionsGame.Add(&itemOptionsGameBoolSlopeTilting, false);
+    menuOptionsGame.Add(&itemOptionsGameBoolViewBobbing, false);
+    menuOptionsGame.Add(&itemOptionsGameBoolViewSwaying, false);
+    menuOptionsGame.Add(&itemOptionsGameBoolAutoAim, false);
+    menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
+    menuOptionsGame.Add(&itemBloodQAV, false);
+    itemOptionsGameBoolShowWeapons.at20 = gShowWeapon;
+    itemOptionsGameBoolSlopeTilting.at20 = gSlopeTilting;
+    itemOptionsGameBoolViewBobbing.at20 = gViewVBobbing;
+    itemOptionsGameBoolViewSwaying.at20 = gViewHBobbing;
+    itemOptionsGameBoolAutoAim.at20 = gAutoAim;
+
+    menuOptionsDisplay.Add(&itemOptionsDisplayTitle, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayColor, true);
+    menuOptionsDisplay.Add(&itemOptionsDisplayMode, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayBoolCrosshair, true);
+    menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
+    menuOptionsDisplay.Add(&itemBloodQAV, false);
+    itemOptionsDisplayBoolCrosshair.at20 = gAimReticle;
+    itemOptionsDisplayBoolMessages.at20 = gMessageState;
+
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeTitle, false);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeResolution, true);
+    // prepare video setup
+    for (int i = 0; i < validmodecnt; ++i)
+    {
+        int j;
+        for (j = 0; j < gResolutionNum; ++j)
+        {
+            if (validmode[i].xdim == gResolution[j].xdim && validmode[i].ydim == gResolution[j].ydim)
+            {
+                gResolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
+                Bsnprintf(gResolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", gResolution[j].xdim, gResolution[j].ydim, (gResolution[j].flags & RES_FS) ? "" : "Win");
+                gResolutionName[j] = gResolution[j].name;
+                if (validmode[i].bpp > gResolution[j].bppmax)
+                    gResolution[j].bppmax = validmode[i].bpp;
+                break;
+            }
+        }
+
+        if (j == gResolutionNum) // no match found
+        {
+            gResolution[j].xdim = validmode[i].xdim;
+            gResolution[j].ydim = validmode[i].ydim;
+            gResolution[j].bppmax = validmode[i].bpp;
+            gResolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
+            Bsnprintf(gResolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", gResolution[j].xdim, gResolution[j].ydim, (gResolution[j].flags & RES_FS) ? "" : "Win");
+            gResolutionName[j] = gResolution[j].name;
+            ++gResolutionNum;
+        }
+    }
+    itemOptionsDisplayModeResolution.SetTextArray((const char**)gResolutionName, gResolutionNum, 0);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeRenderer, false);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFullscreen, false);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeVSync, false);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFrameLimit, false);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFPSOffset, false);
+    menuOptionsDisplayMode.Add(&itemOptionsDisplayModeApply, false);
+    menuOptionsDisplayMode.Add(&itemBloodQAV, false);
+}
+
 void SetupMenus(void)
 {
     SetupLoadingScreen();
@@ -669,7 +860,7 @@ void SetupMenus(void)
     SetupControlsMenu();
     SetupSaveGameMenu();
     SetupLoadGameMenu();
-    SetupOptionsMenu();
+    SetupOptionsOldMenu();
     SetupCreditsMenu();
     SetupHelpOrderMenu();
     SetupSoundsMenu();
@@ -683,6 +874,8 @@ void SetupMenus(void)
     SetupSorryMenu();
     SetupSorry2Menu();
     SetupSorry3Menu();
+
+    SetupOptionsMenu();
 }
 
 void SetDoppler(CGameMenuItemZBool *pItem)
@@ -753,7 +946,8 @@ void SetCDVol(CGameMenuItemSlider *pItem)
 
 void SetMessages(CGameMenuItemZBool *pItem)
 {
-    gGameMessageMgr.SetState(pItem->at20);
+    gMessageState = pItem->at20;
+    gGameMessageMgr.SetState(gMessageState);
 }
 
 void SetMouseSensitivity(CGameMenuItemSliderFloat *pItem)
@@ -771,6 +965,16 @@ void SetTurnSpeed(CGameMenuItemSlider *pItem)
     gTurnSpeed = pItem->nValue;
 }
 
+void SetAutoAim(CGameMenuItemZBool *pItem)
+{
+    gAutoAim = pItem->at20;
+    if (!gDemo.at0 && !gDemo.at1)
+    {
+        gProfile[myconnectindex].bAutoAim = gAutoAim;
+        netBroadcastPlayerInfo(myconnectindex);
+    }
+}
+
 extern bool gStartNewGame;
 
 void SetDifficultyAndStart(CGameMenuItemChain *pItem)
@@ -785,7 +989,7 @@ void SetDifficultyAndStart(CGameMenuItemChain *pItem)
     gGameMenuMgr.Deactivate();
 }
 
-void SetVideoMode(CGameMenuItemChain *pItem)
+void SetVideoModeOld(CGameMenuItemChain *pItem)
 {
     if (pItem->at30 == validmodecnt)
     {
@@ -802,6 +1006,101 @@ void SetVideoMode(CGameMenuItemChain *pItem)
     scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
     scrSetDac();
     viewResizeView(gViewSize);
+}
+
+void SetVideoMode(CGameMenuItemChain *pItem)
+{
+    resolution_t p = { xres, yres, fullscreen, bpp, 0 };
+    int32_t prend = videoGetRenderMode();
+    int32_t pvsync = vsync;
+
+    int32_t nResolution = itemOptionsDisplayModeResolution.at24;
+    resolution_t n = { gResolution[nResolution].xdim, gResolution[nResolution].ydim,
+                       (gResolution[nResolution].flags & RES_FS) ? itemOptionsDisplayModeFullscreen.at20 : 0,
+                       (nRendererValues[itemOptionsDisplayModeRenderer.at24] == REND_CLASSIC) ? 8 : gResolution[nResolution].bppmax, 0 };
+    int32_t nrend = nRendererValues[itemOptionsDisplayModeRenderer.at24];
+    int32_t nvsync = nVSyncValues[itemOptionsDisplayModeVSync.at24];
+
+    if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
+    {
+        if (videoSetGameMode(p.flags, p.xdim, p.ydim, p.bppmax, upscalefactor) < 0)
+        {
+            videoSetRenderMode(prend);
+            ThrowError("Failed restoring old video mode.");
+        }
+        else
+        {
+            onvideomodechange(p.bppmax > 8);
+            vsync = videoSetVsync(pvsync);
+        }
+    }
+    else onvideomodechange(n.bppmax > 8);
+
+    viewResizeView(gViewSize);
+    vsync = videoSetVsync(nvsync);
+    gSetup.fullscreen = fullscreen;
+    gSetup.xdim = xres;
+    gSetup.ydim = yres;
+    gSetup.bpp = bpp;
+}
+
+void SetupVideoModeMenu(CGameMenuItemChain *pItem)
+{
+    for (int i = 0; i < gResolutionNum; i++)
+    {
+        if (gSetup.xdim == gResolution[i].xdim && gSetup.ydim == gResolution[i].ydim)
+        {
+            itemOptionsDisplayModeResolution.at24 = i;
+            break;
+        }
+    }
+    itemOptionsDisplayModeFullscreen.at20 = gSetup.fullscreen;
+    for (int i = 0; i < 2; i++)
+    {
+        if (videoGetRenderMode() == nRendererValues[i])
+        {
+            itemOptionsDisplayModeRenderer.at24 = i;
+            break;
+        }
+    }
+    for (int i = 0; i < 3; i++)
+    {
+        if (vsync == nVSyncValues[i])
+        {
+            itemOptionsDisplayModeVSync.at24 = i;
+            break;
+        }
+    }
+    for (int i = 0; i < 7; i++)
+    {
+        if (r_maxfps == nFrameLimitValues[i])
+        {
+            itemOptionsDisplayModeFrameLimit.at24 = i;
+            break;
+        }
+    }
+    itemOptionsDisplayModeFPSOffset.nValue = r_maxfpsoffset;
+
+    UpdateVideoModeMenu(NULL);
+}
+
+void UpdateVideoModeMenu(CGameMenuItemZCycle *pItem)
+{
+    itemOptionsDisplayModeFullscreen.bEnable = !!(gResolution[itemOptionsDisplayModeResolution.at24].flags & RES_FS);
+    itemOptionsDisplayModeRenderer.bEnable = gResolution[itemOptionsDisplayModeResolution.at24].bppmax > 8;
+    itemOptionsDisplayModeFPSOffset.bEnable = !!itemOptionsDisplayModeFrameLimit.at24;
+}
+
+void UpdateVideModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
+{
+    r_maxfps = nFrameLimitValues[pItem->at24];
+    g_frameDelay = r_maxfps ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
+}
+
+void UpdateVideModeMenuFPSOffset(CGameMenuItemSlider *pItem)
+{
+    r_maxfpsoffset = pItem->nValue;
+    g_frameDelay = r_maxfps ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
 }
 
 void SaveGameProcess(CGameMenuItemChain *)

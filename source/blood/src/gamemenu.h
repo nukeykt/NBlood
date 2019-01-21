@@ -94,7 +94,10 @@ public:
     int nX;
     int nY;
     int nWidth;
-    int at18;
+    //int nFlags;
+    unsigned int bCanSelect : 1;
+    unsigned int bEnable : 1;
+    unsigned int bNoDraw : 1;
     CGameMenuItem();
     virtual void Draw(void) = 0;
     virtual bool Event(CGameMenuEvent &);
