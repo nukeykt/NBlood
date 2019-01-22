@@ -98,6 +98,7 @@ void CEndGameMgr::Setup(void)
     at0 = 1;
     EndLevel();
     sndStartSample(268, 128, -1, 1);
+    keyFlushScans();
 }
 
 //int gNextLevel;
