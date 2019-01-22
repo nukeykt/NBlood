@@ -230,8 +230,8 @@ void CViewMap::sub_25DB0(SPRITE *pSprite)
         angle += turn>>3;
         x += mulscale24(forward, Cos(angle));
         y += mulscale24(forward, Sin(angle));
-        x += mulscale24(strafe, Cos(angle+512));
-        y += mulscale24(strafe, Sin(angle+512));
+        x -= mulscale24(strafe, Cos(angle+512));
+        y -= mulscale24(strafe, Sin(angle+512));
         forward = 0;
         strafe = 0;
         turn = 0;
