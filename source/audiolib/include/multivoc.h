@@ -68,17 +68,20 @@ enum MV_Errors
 };
 
 extern int32_t lockdepth;
+extern void (*MV_Printf)(const char *fmt, ...);
 
 static FORCE_INLINE void DisableInterrupts(void)
 {
-    if (lockdepth++ <= 0)
+    if (!lockdepth++)
         SoundDriver_Lock();
 }
 
 static FORCE_INLINE void RestoreInterrupts(void)
 {
-    if (--lockdepth <= 0)
+    if (!--lockdepth)
         SoundDriver_Unlock();
+    else if (lockdepth < 0 && MV_Printf)
+        MV_Printf("RestoreInterrupts(): lockdepth < 0!\n");
 }
 
 extern void (*MV_Printf)(const char *fmt, ...);
