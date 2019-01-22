@@ -317,7 +317,7 @@ void netGetPackets(void)
                 {
                     SYNCFLAGS syncFlags;
                     syncFlags.byte = GetPacketByte(pPacket);
-                    pPacket += 1+2+1;
+                    pPacket += 2+4+2;
                     if (syncFlags.buttonChange)
                         pPacket++;
                     if (syncFlags.keyChange)
@@ -327,7 +327,7 @@ void netGetPackets(void)
                     if (syncFlags.weaponChange)
                         pPacket++;
                     if (syncFlags.mlookChange)
-                        pPacket++;
+                        pPacket+=4;
                 }
             }
             if (((gNetFifoHead[connecthead]-1)&15)==0)
