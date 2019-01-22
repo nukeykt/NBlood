@@ -49,6 +49,7 @@ MIRROR mirror[16];
 #ifdef USE_OPENGL
 extern int r_rortexture;
 extern int r_rortexturerange;
+extern int r_rorphase;
 #endif
 
 void InitMirrors(void)
@@ -368,6 +369,7 @@ void DrawMirrors(long x, long y, long z, fix16_t a, fix16_t horiz)
             }
             case 1:
             {
+                r_rorphase = 1;
                 int nSector = mirror[i].at4;
                 renderDrawRoomsQ16(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
                 viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
@@ -377,10 +379,12 @@ void DrawMirrors(long x, long y, long z, fix16_t a, fix16_t horiz)
                 sector[nSector].floorstat = fstat;
                 for (int i = 0; i < 16; i++)
                     ClearBitString(gotpic, 4080+i);
+                r_rorphase = 0;
                 return;
             }
             case 2:
             {
+                r_rorphase = 1;
                 int nSector = mirror[i].at4;
                 renderDrawRoomsQ16(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
                 viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
@@ -390,6 +394,7 @@ void DrawMirrors(long x, long y, long z, fix16_t a, fix16_t horiz)
                 sector[nSector].ceilingstat = cstat;
                 for (int i = 0; i < 16; i++)
                     ClearBitString(gotpic, 4080+i);
+                r_rorphase = 0;
                 return;
             }
             }
