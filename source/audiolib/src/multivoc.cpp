@@ -202,15 +202,10 @@ void MV_PlayVoice(VoiceNode *voice)
     RestoreInterrupts();
 }
 
-static void MV_StopVoice(VoiceNode *voice)
+static void MV_CleanupVoice(VoiceNode *voice)
 {
-    DisableInterrupts();
-
-    // move the voice from the play list to the free list
-    LL_Remove(voice, next, prev);
-    LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
-
-    RestoreInterrupts();
+    if (MV_CallBackFunc)
+        MV_CallBackFunc(voice->callbackval);
 
     switch (voice->wavetype)
     {
@@ -228,6 +223,17 @@ static void MV_StopVoice(VoiceNode *voice)
     }
 
     voice->handle = 0;
+}
+
+static void MV_StopVoice(VoiceNode *voice)
+{
+    MV_CleanupVoice(voice);
+
+    DisableInterrupts();
+    // move the voice from the play list to the free list
+    LL_Remove(voice, next, prev);
+    LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
+    RestoreInterrupts();
 }
 
 /*---------------------------------------------------------------------
@@ -313,16 +319,16 @@ static void MV_ServiceVoc(void)
 
                 switch (voice->wavetype)
                 {
-    #ifdef HAVE_VORBIS
+#ifdef HAVE_VORBIS
                     case FMT_VORBIS: MV_ReleaseVorbisVoice(voice); break;
-    #endif
-    #ifdef HAVE_FLAC
+#endif
+#ifdef HAVE_FLAC
                     case FMT_FLAC: MV_ReleaseFLACVoice(voice); break;
-    #endif
+#endif
                     case FMT_XA: MV_ReleaseXAVoice(voice); break;
-    #ifdef HAVE_XMP
+#ifdef HAVE_XMP
                     case FMT_XMP: MV_ReleaseXMPVoice(voice); break;
-    #endif
+#endif
                     default: break;
                 }
 
@@ -386,16 +392,15 @@ VoiceNode *MV_BeginService(int32_t handle)
     if (!MV_Installed)
         return NULL;
 
-    DisableInterrupts();
+    VoiceNode *voice = MV_GetVoice(handle);
 
-    VoiceNode *voice;
-
-    if ((voice = MV_GetVoice(handle)) == NULL)
+    if (voice == NULL)
     {
-        RestoreInterrupts();
         MV_SetErrorCode(MV_VoiceNotFound);
         return NULL;
     }
+
+    DisableInterrupts();
 
     return voice;
 }
@@ -447,14 +452,8 @@ int32_t MV_Kill(int32_t handle)
     if (voice == NULL)
         return MV_Error;
 
-    intptr_t const callbackval = voice->callbackval;
-
     MV_StopVoice(voice);
-
     MV_EndService();
-
-    if (MV_CallBackFunc)
-        MV_CallBackFunc(callbackval);
 
     return MV_Ok;
 }
@@ -772,7 +771,7 @@ int32_t MV_SetPan(int32_t handle, int32_t vol, int32_t left, int32_t right)
     if (voice == NULL)
         return MV_Error;
 
-    MV_SetVoiceVolume(voice, vol, left, right, MV_GetVoice(handle)->volume);
+    MV_SetVoiceVolume(voice, vol, left, right, voice->volume);
     MV_EndService();
     return MV_Ok;
 }
@@ -855,11 +854,7 @@ static void MV_StopPlayback(void)
     for (VoiceNode *voice = VoiceList.next, *next; voice != &VoiceList; voice = next)
     {
         next = voice->next;
-
         MV_StopVoice(voice);
-
-        if (MV_CallBackFunc)
-            MV_CallBackFunc(voice->callbackval);
     }
 
     RestoreInterrupts();

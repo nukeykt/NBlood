@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "renderlayer.h" // for win_gethwnd()
 #include <atomic>
 
-#define DQSIZE 128
+#define DQSIZE 256
 
 int32_t g_numEnvSoundsPlaying, g_highestSoundIdx = 0;
 
@@ -38,6 +38,7 @@ static bool SoundPaused = false;
 
 std::atomic<uint32_t> dnum;
 uint32_t dq[DQSIZE];
+static mutex_t m_callback;
 
 void S_SoundStartup(void)
 {
@@ -78,8 +79,9 @@ void S_SoundStartup(void)
     S_MusicVolume(ud.config.MusicVolume);
 
     FX_SetReverseStereo(ud.config.ReverseStereo);
+    mutex_init(&m_callback);
     FX_SetCallBack(S_Callback);
-    FX_SetPrintf(initprintf);
+    FX_SetPrintf(OSD_Printf);
 }
 
 void S_SoundShutdown(void)
@@ -377,9 +379,8 @@ void S_StopMusic(void)
 void S_Cleanup(void)
 {
     static uint32_t ldnum;
-    uint32_t const odnum = dnum;
 
-    while (ldnum < odnum)
+    while (ldnum < dnum)
     {
         uint32_t num = dq[ldnum++ & (DQSIZE - 1)];
 
@@ -816,6 +817,8 @@ void S_StopEnvSound(int32_t num, int32_t i)
     {
         for (j=0; j<MAXSOUNDINSTANCES; ++j)
         {
+            S_Cleanup();
+
             if ((i == -1 && g_sounds[num].voices[j].id > FX_Ok) || (i != -1 && g_sounds[num].voices[j].owner == i))
             {
 #ifdef DEBUGGINGAIDS
@@ -825,8 +828,8 @@ void S_StopEnvSound(int32_t num, int32_t i)
 #endif
                 if (g_sounds[num].voices[j].id > FX_Ok)
                 {
-                    FX_StopSound(g_sounds[num].voices[j].id);
-                    S_Cleanup();
+                    if (FX_SoundActive(g_sounds[num].voices[j].id))
+                        FX_StopSound(g_sounds[num].voices[j].id);
                     break;
                 }
             }
@@ -861,8 +864,6 @@ void S_ChangeSoundPitch(int soundNum, int spriteNum, int pitchoffset)
 
 void S_Update(void)
 {
-    S_Cleanup();
-
     if ((g_player[myconnectindex].ps->gm & (MODE_GAME|MODE_DEMO)) == 0)
         return;
 
@@ -892,6 +893,8 @@ void S_Update(void)
         if (g_sounds[sndnum].num == 0)
             continue;
 
+        S_Cleanup();
+
         for (auto &voice : g_sounds[sndnum].voices)
         {
             int const spriteNum = voice.owner;
@@ -914,12 +917,18 @@ void S_Update(void)
     } while (++sndnum <= highest);
 }
 
+// S_Callback() can be called from either the audio thread when a sound ends, or the main thread
+// when playing back a new sound needs an existing sound to be stopped first
 void S_Callback(intptr_t num)
 {
     if ((int32_t)num == MUSIC_ID)
         return;
 
-    dq[dnum++ & (DQSIZE - 1)] = (uint32_t)num;
+    mutex_lock(&m_callback);
+    int const ldnum = dnum;
+    dq[ldnum & (DQSIZE - 1)] = (uint32_t)num;
+    dnum++;
+    mutex_unlock(&m_callback);
 }
 
 void S_ClearSoundLocks(void)

@@ -522,8 +522,8 @@ static MenuOptionSet_t MEOS_VIDEOSETUP_VSYNC = MAKE_MENUOPTIONSET(MEOSN_VIDEOSET
 static MenuOption_t MEO_VIDEOSETUP_VSYNC = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_VSYNC, &newvsync);
 static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_VSYNC, Option);
 
-static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "None", "30 fps", "60 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
-static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { 0, 30, 60, 120, 144, 165, 240 };
+static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
+static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { 30, 60, 75, 100, 120, 144, 165, 240 };
 static MenuOptionSet_t MEOS_VIDEOSETUP_FRAMELIMIT = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_FRAMELIMIT, MEOSV_VIDEOSETUP_FRAMELIMIT, 0x0);
 static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &r_maxfps);
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY("Framerate limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, Option);
@@ -1096,7 +1096,7 @@ static MenuEntry_t *MEL_RENDERERSETUP_POLYMER [] = {
 #ifdef EDUKE32_ANDROID_MENU
 static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, 1.f, 2.5f, 0.f, 39, 1 );
 #else
-static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, 0.3f, 4.f, 0.f, 38, 1 );
+static MenuRangeFloat_t MEO_COLCORR_GAMMA = MAKE_MENURANGE( &g_videoGamma, &MF_Bluefont, 0.3f, 4.f, 0.f, 75, 1 );
 #endif
 static MenuEntry_t ME_COLCORR_GAMMA = MAKE_MENUENTRY( "Gamma:", &MF_Redfont, &MEF_ColorCorrect, &MEO_COLCORR_GAMMA, RangeFloat );
 static MenuRangeFloat_t MEO_COLCORR_CONTRAST = MAKE_MENURANGE( &g_videoContrast, &MF_Bluefont, 0.1f, 2.7f, 0.f, 53, 1 );
@@ -3220,13 +3220,7 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         }
     }
     else if (entry == &ME_VIDEOSETUP_FRAMELIMIT)
-    {
-        g_frameDelay = newOption ? (timerGetFreqU64()/(newOption + r_maxfpsoffset)) : 0;
-    }
-    else if (entry == &ME_VIDEOSETUP_FRAMELIMITOFFSET)
-    {
-        g_frameDelay = r_maxfps ? (timerGetFreqU64()/(r_maxfps + newOption)) : 0;
-    }
+        g_frameDelay = calcFrameDelay(newOption + r_maxfpsoffset);
 
     switch (g_currentMenu)
     {
@@ -3333,6 +3327,8 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
         joySetDeadZone(M_JOYSTICKAXES.currentEntry, newValue, *MEO_JOYSTICKAXIS_SATU.variable);
     else if (entry == &ME_JOYSTICKAXIS_SATU)
         joySetDeadZone(M_JOYSTICKAXES.currentEntry, *MEO_JOYSTICKAXIS_DEAD.variable, newValue);
+    else if (entry == &ME_VIDEOSETUP_FRAMELIMITOFFSET)
+        g_frameDelay = calcFrameDelay(r_maxfps + newValue);
 
     return 0;
 }
