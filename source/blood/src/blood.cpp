@@ -118,8 +118,8 @@ char *pUserRFF = NULL;
 
 int gChokeCounter = 0;
 
-uint32_t g_gameUpdateTime, g_gameUpdateAndDrawTime;
-float g_gameUpdateAvgTime = -1.f;
+double g_gameUpdateTime, g_gameUpdateAndDrawTime;
+double g_gameUpdateAvgTime = 0.001;
 
 void app_crashhandler(void)
 {
@@ -1376,7 +1376,7 @@ RESTART:
 		if (gGameStarted)
 		{
             char gameUpdate = false;
-            uint32_t gameUpdateStartTime = timerGetTicks();
+            double const gameUpdateStartTime = timerGetHiTicks();
 			if (numplayers > 1)
 				netGetPackets();
 			while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
@@ -1399,7 +1399,7 @@ RESTART:
 			}
             if (gameUpdate)
             {
-                g_gameUpdateTime = timerGetTicks()-gameUpdateStartTime;
+                g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
                 if (g_gameUpdateAvgTime < 0.f)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
                 g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);

@@ -65,6 +65,12 @@ enum {
     kMenuEventDeInit = 0x8001
 };
 
+enum {
+    kMenuSliderNone = 0,
+    kMenuSliderValue,
+    kMenuSliderPercent
+};
+
 struct CGameMenuEvent {
     unsigned short at0;
     char at2;
@@ -94,6 +100,7 @@ public:
     int nX;
     int nY;
     int nWidth;
+    void (*pPreDrawCallback)(CGameMenuItem *pItem);
     //int nFlags;
     unsigned int bCanSelect : 1;
     unsigned int bEnable : 1;
@@ -243,9 +250,10 @@ public:
     void(*pCallback)(CGameMenuItemSlider *);
     int nSliderTile;
     int nCursorTile;
+    int nShowValue;
     CGameMenuItemSlider();
-    CGameMenuItemSlider(const char *, int, int, int, int, int, int, int, int, void(*)(CGameMenuItemSlider *), int, int);
-    CGameMenuItemSlider(const char *, int, int, int, int, int *, int, int, int, void(*)(CGameMenuItemSlider *), int, int);
+    CGameMenuItemSlider(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, int _nValue, int _nRangeLow, int _nRangeHigh, int _nStep, void(*_pCallback)(CGameMenuItemSlider *), int _nSliderTile, int _nCursorTile, int _nShowValue = kMenuSliderNone);
+    CGameMenuItemSlider(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, int *pnValue, int _nRangeLow, int _nRangeHigh, int _nStep, void(*_pCallback)(CGameMenuItemSlider *), int _nSliderTile, int _nCursorTile, int _nShowValue = kMenuSliderNone);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
     virtual bool MouseEvent(CGameMenuEvent &);
@@ -262,9 +270,10 @@ public:
     void(*pCallback)(CGameMenuItemSliderFloat *);
     int nSliderTile;
     int nCursorTile;
+    int nShowValue;
     CGameMenuItemSliderFloat();
-    CGameMenuItemSliderFloat(const char *, int, int, int, int, float, float, float, float, void(*)(CGameMenuItemSliderFloat *), int, int);
-    CGameMenuItemSliderFloat(const char *, int, int, int, int, float *, float, float, float, void(*)(CGameMenuItemSliderFloat *), int, int);
+    CGameMenuItemSliderFloat(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, float _fValue, float _fRangeLow, float _fRangeHigh, float _fStep, void(*_pCallback)(CGameMenuItemSliderFloat *), int _nSliderTile, int _nCursorTile, int _nShowValue = kMenuSliderNone);
+    CGameMenuItemSliderFloat(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, float *pnValue, float _fRangeLow, float _fRangeHigh, float _fStep, void(*_pCallback)(CGameMenuItemSliderFloat *), int _nSliderTile, int _nCursorTile, int _nShowValue = kMenuSliderNone);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
 };

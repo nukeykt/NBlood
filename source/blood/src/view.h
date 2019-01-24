@@ -93,7 +93,7 @@ extern int32_t r_maxfpsoffset;
 extern uint64_t g_frameDelay;
 extern float r_ambientlight, r_ambientlightrecip;
 extern int gLastPal;
-extern int32_t gShowFps;
+extern int32_t gShowFps, gFramePeriod;
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize);
 void viewUpdatePages(void);

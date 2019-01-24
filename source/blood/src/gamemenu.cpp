@@ -184,7 +184,7 @@ void CGameMenuMgr::Draw(void)
             uint32_t o = 2;
 
             auto const oyxaspect = yxaspect;
-            int32_t alpha = CURSORALPHA;
+            int32_t alpha = MOUSEALPHA; //CURSORALPHA;
 
             rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, 0, a, 0, p, o, alpha);
         }
@@ -324,7 +324,11 @@ void CGameMenu::Draw(void)
     for (int i = 0; i < m_nItems; i++)
     {
         if (i == m_nFocus || (i != m_nFocus && !pItemList[i]->bNoDraw))
+        {
+            if (pItemList[i]->pPreDrawCallback)
+                pItemList[i]->pPreDrawCallback(pItemList[i]);
             pItemList[i]->Draw();
+        }
     }
 }
 
@@ -432,6 +436,7 @@ CGameMenuItem::CGameMenuItem()
     nFont = -1;
     pMenu = NULL;
     bNoDraw = 0;
+    pPreDrawCallback = NULL;
 }
 
 bool CGameMenuItem::Event(CGameMenuEvent &event)
@@ -1299,52 +1304,56 @@ CGameMenuItemSlider::CGameMenuItemSlider()
     pValue = NULL;
     nSliderTile = 2204;
     nCursorTile = 2028;
+    nShowValue = kMenuSliderNone;
 }
 
-CGameMenuItemSlider::CGameMenuItemSlider(const char *a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, void(*a10)(CGameMenuItemSlider *), int a11, int a12)
+CGameMenuItemSlider::CGameMenuItemSlider(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, int _nValue, int _nRangeLow, int _nRangeHigh, int _nStep, void(*_pCallback)(CGameMenuItemSlider *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
-    nRangeLow = a7;
-    nRangeHigh = a8;
-    nStep = a9;
-    nValue = ClipRange(a6, nRangeLow, nRangeHigh);
-    pCallback = a10;
+    pzText = _pzText;
+    nFont = _nFont;
+    nX = _nX;
+    nY = _nY;
+    nWidth = _nWidth;
+    nRangeLow = _nRangeLow;
+    nRangeHigh = _nRangeHigh;
+    nStep = _nStep;
+    nValue = ClipRange(_nValue, nRangeLow, nRangeHigh);
+    pCallback = _pCallback;
     nSliderTile = 2204;
     nCursorTile = 2028;
-    if (a11 >= 0)
-        nSliderTile = a11;
-    if (a12 >= 0)
-        nCursorTile = a12;
+    if (_nSliderTile >= 0)
+        nSliderTile = _nSliderTile;
+    if (_nCursorTile >= 0)
+        nCursorTile = _nCursorTile;
+    nShowValue = _nShowValue;
 }
 
-CGameMenuItemSlider::CGameMenuItemSlider(const char *a1, int a2, int a3, int a4, int a5, int *pnValue, int a7, int a8, int a9, void(*a10)(CGameMenuItemSlider *), int a11, int a12)
+CGameMenuItemSlider::CGameMenuItemSlider(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, int *pnValue, int _nRangeLow, int _nRangeHigh, int _nStep, void(*_pCallback)(CGameMenuItemSlider *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
-    nRangeLow = a7;
-    nRangeHigh = a8;
-    nStep = a9;
+    pzText = _pzText;
+    nFont = _nFont;
+    nX = _nX;
+    nY = _nY;
+    nWidth = _nWidth;
+    nRangeLow = _nRangeLow;
+    nRangeHigh = _nRangeHigh;
+    nStep = _nStep;
     dassert(pnValue != NULL);
     pValue = pnValue;
     nValue = ClipRange(*pnValue, nRangeLow, nRangeHigh);
-    pCallback = a10;
+    pCallback = _pCallback;
     nSliderTile = 2204;
     nCursorTile = 2028;
-    if (a11 >= 0)
-        nSliderTile = a11;
-    if (a12 >= 0)
-        nCursorTile = a12;
+    if (_nSliderTile >= 0)
+        nSliderTile = _nSliderTile;
+    if (_nCursorTile >= 0)
+        nCursorTile = _nCursorTile;
+    nShowValue = _nShowValue;
 }
 
 void CGameMenuItemSlider::Draw(void)
 {
+    char buffer[16];
     int height;
     nValue = pValue ? *pValue : nValue;
     gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
@@ -1361,6 +1370,24 @@ void CGameMenuItemSlider::Draw(void)
     int width = tilesiz[nSliderTile].x-8;
     int cursorX = sliderX + ksgn(nStep)*(value * width / nRange - width / 2);
     rotatesprite(cursorX<<16, (nY+height/2)<<16, 65536, 0, nCursorTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+
+    buffer[0] = 0;
+    switch (nShowValue)
+    {
+    case kMenuSliderNone:
+        break;
+    case kMenuSliderValue:
+        sprintf(buffer, "%i ", nValue);
+        break;
+    case kMenuSliderPercent:
+        sprintf(buffer, "%i%% ", roundscale(nValue, 100, nRange));
+        break;
+    }
+    int valueWidth;
+    gMenuTextMgr.GetFontInfo(nFont, buffer, &valueWidth, NULL);
+    int valueX = nX+nWidth-1-tilesiz[nSliderTile].x-valueWidth;
+    gMenuTextMgr.DrawText(buffer, nFont, valueX, nY, 32, 0, false);
+
     int mx = nX;
     int my = nY;
     int mw = nWidth;
@@ -1503,53 +1530,58 @@ CGameMenuItemSliderFloat::CGameMenuItemSliderFloat()
     pValue = NULL;
     nSliderTile = 2204;
     nCursorTile = 2028;
+    nShowValue = kMenuSliderNone;
 }
 
-CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *a1, int a2, int a3, int a4, int a5, float a6, float a7, float a8, float a9, void(*a10)(CGameMenuItemSliderFloat *), int a11, int a12)
+CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, float _fValue, float _fRangeLow, float _fRangeHigh, float _fStep, void(*_pCallback)(CGameMenuItemSliderFloat *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
-    fRangeLow = a7;
-    fRangeHigh = a8;
-    fStep = a9;
-    fValue = ClipRangeF(a6, fRangeLow, fRangeHigh);
-    pCallback = a10;
+    pzText = _pzText;
+    nFont = _nFont;
+    nX = _nX;
+    nY = _nY;
+    nWidth = _nWidth;
+    fRangeLow = _fRangeLow;
+    fRangeHigh = _fRangeHigh;
+    fStep = _fStep;
+    fValue = ClipRangeF(_fValue, fRangeLow, fRangeHigh);
+    pCallback = _pCallback;
     nSliderTile = 2204;
     nCursorTile = 2028;
-    if (a11 >= 0)
-        nSliderTile = a11;
-    if (a12 >= 0)
-        nCursorTile = a12;
+    if (_nSliderTile >= 0)
+        nSliderTile = _nSliderTile;
+    if (_nCursorTile >= 0)
+        nCursorTile = _nCursorTile;
+    nShowValue = _nShowValue;
 }
 
-CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *a1, int a2, int a3, int a4, int a5, float *pnValue, float a7, float a8, float a9, void(*a10)(CGameMenuItemSliderFloat *), int a11, int a12)
+CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, float *pnValue, float _fRangeLow, float _fRangeHigh, float _fStep, void(*_pCallback)(CGameMenuItemSliderFloat *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
-    fRangeLow = a7;
-    fRangeHigh = a8;
-    fStep = a9;
+    pzText = _pzText;
+    nFont = _nFont;
+    nX = _nX;
+    nY = _nY;
+    nWidth = _nWidth;
+    fRangeLow = _fRangeLow;
+    fRangeHigh = _fRangeHigh;
+    fStep = _fStep;
     dassert(pnValue != NULL);
     pValue = pnValue;
     fValue = ClipRangeF(*pnValue, fRangeLow, fRangeHigh);
-    pCallback = a10;
+    pCallback = _pCallback;
     nSliderTile = 2204;
     nCursorTile = 2028;
-    if (a11 >= 0)
-        nSliderTile = a11;
-    if (a12 >= 0)
-        nCursorTile = a12;
+    if (_nSliderTile >= 0)
+        nSliderTile = _nSliderTile;
+    if (_nCursorTile >= 0)
+        nCursorTile = _nCursorTile;
+    nShowValue = _nShowValue;
 }
 
 void CGameMenuItemSliderFloat::Draw(void)
 {
+    char buffer[16];
     int height;
+
     fValue = pValue ? *pValue : fValue;
     gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
     int shade = 32;
@@ -1565,6 +1597,24 @@ void CGameMenuItemSliderFloat::Draw(void)
     int width = tilesiz[nSliderTile].x-8;
     int cursorX = sliderX + (int)(ksgnf(fStep)*(value * width / fRange - width / 2));
     rotatesprite(cursorX<<16, (nY+height/2)<<16, 65536, 0, nCursorTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+
+    buffer[0] = 0;
+    switch (nShowValue)
+    {
+    case kMenuSliderNone:
+        break;
+    case kMenuSliderValue:
+        snprintf(buffer, 16, "%.3f ", fValue);
+        break;
+    case kMenuSliderPercent:
+        snprintf(buffer, 16, "%.3f%% ", fValue*100.f/fRange);
+        break;
+    }
+    int valueWidth;
+    gMenuTextMgr.GetFontInfo(nFont, buffer, &valueWidth, NULL);
+    int valueX = nX+nWidth-1-tilesiz[nSliderTile].x-valueWidth;
+    gMenuTextMgr.DrawText(buffer, nFont, valueX, nY, 32, 0, false);
+
     int mx = nX;
     int my = nY;
     int mw = nWidth;

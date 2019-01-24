@@ -76,8 +76,8 @@ extern int32_t gNoSetup;
 extern short BloodVersion;
 extern int gNetPlayers;
 #define GAMEUPDATEAVGTIMENUMSAMPLES 100
-extern uint32_t g_gameUpdateTime, g_gameUpdateAndDrawTime;
-extern float g_gameUpdateAvgTime;
+extern double g_gameUpdateTime, g_gameUpdateAndDrawTime;
+extern double g_gameUpdateAvgTime;
 
 void QuitGame(void);
 void PreloadCache(void);
