@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx_man.h"
 #include "common_game.h"
 #include "blood.h"
+#include "config.h"
 #include "db.h"
 #include "player.h"
 #include "resource.h"
@@ -45,6 +46,8 @@ int nAmbChannels = 0;
 
 void ambProcess(void)
 {
+    if (!SoundToggle)
+        return;
     for (int nSprite = headspritestat[12]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         SPRITE *pSprite = &qsprite[nSprite];

@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "blood.h"
 #include "gamedefs.h"
 #include "config.h"
+#include "view.h"
 
 #ifdef __ANDROID__
 # include "android.h"
@@ -67,6 +68,9 @@ int32_t JoystickAnalogueSaturate[MAXJOYAXES];
 uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 int32_t scripthandle;
 int32_t setupread;
+int32_t SoundToggle;
+int32_t MusicToggle;
+int32_t CDAudioToggle;
 int32_t FXVolume;
 int32_t MusicVolume;
 int32_t CDVolume;
@@ -75,6 +79,7 @@ int32_t NumChannels;
 int32_t NumBits;
 int32_t MixRate;
 int32_t ReverseStereo;
+int32_t MusicDevice;
 int32_t configversion;
 int32_t CheckForUpdates;
 int32_t LastUpdateCheck;
@@ -189,6 +194,9 @@ const char *CONFIG_AnalogNumToName(int32_t func)
 
 void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy/*=false*/)
 {
+    static char const s_gamefunc_[] = "gamefunc_";
+    int constexpr strlen_gamefunc_ = ARRAY_SIZE(s_gamefunc_) - 1;
+
     if (!lazy)
     {
         Bmemset(KeyboardKeys, 0xff, sizeof(KeyboardKeys));
@@ -207,8 +215,15 @@ void CONFIG_SetDefaultKeys(const char (*keyptr)[MAXGAMEFUNCLEN], bool lazy/*=fal
 
         // skip the function if the default key is already used
         // or the function is assigned to another key
-        if (lazy && (CONTROL_KeyIsBound(default0) || key[0] != 0xff))
+        if (lazy && (key[0] != 0xff || (CONTROL_KeyIsBound(default0) && Bstrlen(CONTROL_KeyBinds[default0].cmdstr) > strlen_gamefunc_
+                        && CONFIG_FunctionNameToNum(CONTROL_KeyBinds[default0].cmdstr + strlen_gamefunc_) >= 0)))
+        {
+#if 0 // defined(DEBUGGINGAIDS)
+            if (key[0] != 0xff)
+                initprintf("Skipping %s bound to %s\n", keyptr[i<<1], CONTROL_KeyBinds[default0].cmdstr);
+#endif
             continue;
+        }
 
         key[0] = default0;
         key[1] = default1;
@@ -303,15 +318,17 @@ void CONFIG_SetDefaults(void)
     FXVolume        = 255;
     MouseBias       = 0;
     MouseDeadZone   = 0;
-    //ud.config.MusicToggle     = 1;
+    MusicToggle     = 1;
     MusicVolume     = 195;
     NumBits         = 16;
     NumChannels     = 2;
     ReverseStereo   = 0;
     gBrightness = 8;
     //ud.config.ShowWeapons     = 0;
-    //ud.config.SmoothInput     = 1;
-    //ud.config.SoundToggle     = 1;
+    SmoothInput     = 1;
+    SoundToggle     = 1;
+    CDAudioToggle = 0;
+    MusicDevice = 0;
     //ud.config.VoiceToggle     = 5;  // bitfield, 1 = local, 2 = dummy, 4 = other players in DM
     useprecache     = 1;
     configversion          = 0;
@@ -357,6 +374,7 @@ void CONFIG_SetDefaults(void)
     //ud.weaponscale            = 100;
     //ud.weaponsway             = 1;
     //ud.weaponswitch           = 3;  // new+empty
+    gViewSize = 1;
     gTurnSpeed = 92;
     gDetail = 4;
     gAutoRun = 0;
@@ -367,7 +385,7 @@ void CONFIG_SetDefaults(void)
     gOverlayMap = 0;
     gRotateMap = 0;
     gAimReticle = 0;
-    gSlopeTilting = 1;
+    gSlopeTilting = 0;
     gMessageState = 1;
     gMessageCount = 4;
     gMessageTime = 5;

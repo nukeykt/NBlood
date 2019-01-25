@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "actor.h"
 #include "blood.h"
+#include "config.h"
 #include "controls.h"
 #include "db.h"
 #include "dude.h"
@@ -167,7 +168,7 @@ struct POSTURE {
 struct PROFILE {
     char bAutoAim;
     int skill;
-    char name[12];
+    char name[MAXPLAYERNAME];
 };
 
 struct AMMOINFO {

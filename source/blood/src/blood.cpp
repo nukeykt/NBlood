@@ -179,6 +179,7 @@ void ShutDown(void)
     CONFIG_WriteSetup(0);
     netDeinitialize();
     sndTerm();
+    sfxTerm();
     scrUnInit();
     CONTROL_Shutdown();
     KB_Shutdown();
@@ -1231,11 +1232,9 @@ int app_main(int argc, char const * const * argv)
     system_getcvars();
 
     Resource::heap = new QHeap(nMaxAlloc);
-    if (pUserRFF)
-        gSysRes.Init(pUserRFF);
-    else
-        gSysRes.Init("BLOOD.RFF");
+    gSysRes.Init(pUserRFF ? pUserRFF : "BLOOD.RFF");
     gGuiRes.Init("GUI.RFF");
+    gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF");
 
 
     { // Replace

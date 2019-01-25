@@ -74,6 +74,8 @@ int songSize;
 
 void sndPlaySong(const char *songName, bool bLoop)
 {
+    if (!MusicToggle)
+        return;
     if (*pSong)
         sndStopSong();
     if (!songName || strlen(songName) == 0)
@@ -136,6 +138,8 @@ void sndKillSound(SAMPLE2D *pChannel);
 
 void sndStartSample(const char *pzSound, int nVolume, int nChannel)
 {
+    if (!SoundToggle)
+        return;
     if (!strlen(pzSound))
         return;
     dassert(nChannel >= -1 && nChannel < kMaxChannels);
@@ -156,6 +160,8 @@ void sndStartSample(const char *pzSound, int nVolume, int nChannel)
 
 void sndStartSample(unsigned long nSound, int nVolume, int nChannel, bool bLoop)
 {
+    if (!SoundToggle)
+        return;
     dassert(nChannel >= -1 && nChannel < kMaxChannels);
     DICTNODE *hSfx = gSoundRes.Lookup(nSound, "SFX");
     if (!hSfx)
@@ -198,6 +204,8 @@ void sndStartSample(unsigned long nSound, int nVolume, int nChannel, bool bLoop)
 
 void sndStartWavID(unsigned long nSound, int nVolume, int nChannel)
 {
+    if (!SoundToggle)
+        return;
     dassert(nChannel >= -1 && nChannel < kMaxChannels);
     SAMPLE2D *pChannel;
     if (nChannel == -1)
@@ -324,7 +332,7 @@ void DeinitSoundDevice(void)
 
 void InitMusicDevice(void)
 {
-    int nStatus = MUSIC_Init(1, 0);
+    int nStatus = MUSIC_Init(MusicDevice, 0);
     if (nStatus != 0)
         ThrowError(MUSIC_ErrorString(nStatus));
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
@@ -356,13 +364,12 @@ void sndTerm(void)
 extern char *pUserSoundRFF;
 void sndInit(void)
 {
-    gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF");
     memset(Channel, 0, sizeof(Channel));
     pSong = (char*)Resource::Alloc(65535);
     if (pSong)
         *pSong = 0;
     InitSoundDevice();
     InitMusicDevice();
-    atexit(sndTerm);
+    //atexit(sndTerm);
     sndActive = true;
 }

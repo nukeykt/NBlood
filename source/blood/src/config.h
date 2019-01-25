@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define MAXRIDECULE 10
 #define MAXRIDECULELENGTH 40
-#define MAXPLAYERNAME 32
+#define MAXPLAYERNAME 16
 
 extern int32_t MouseDeadZone, MouseBias;
 extern int32_t SmoothInput;
@@ -49,6 +49,9 @@ extern int32_t JoystickAnalogueSaturate[MAXJOYAXES];
 extern uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 extern int32_t scripthandle;
 extern int32_t setupread;
+extern int32_t SoundToggle;
+extern int32_t MusicToggle;
+extern int32_t CDAudioToggle;
 extern int32_t FXVolume;
 extern int32_t MusicVolume;
 extern int32_t CDVolume;
@@ -57,6 +60,7 @@ extern int32_t NumChannels;
 extern int32_t NumBits;
 extern int32_t MixRate;
 extern int32_t ReverseStereo;
+extern int32_t MusicDevice;
 extern int32_t configversion;
 extern int32_t CheckForUpdates;
 extern int32_t LastUpdateCheck;

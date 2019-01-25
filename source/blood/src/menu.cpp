@@ -23,6 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "mmulti.h"
 #include "common_game.h"
+#include "fx_man.h"
+#include "music.h"
 #include "blood.h"
 #include "demo.h"
 #include "config.h"
@@ -33,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "messages.h"
 #include "network.h"
 #include "osdcmds.h"
+#include "sfx.h"
 #include "screen.h"
 #include "sound.h"
 #include "view.h"
@@ -68,12 +71,10 @@ void SetAutoAim(CGameMenuItemZBool *);
 void SetupVideoModeMenu(CGameMenuItemChain *);
 void SetVideoMode(CGameMenuItemChain *);
 void SetWidescreen(CGameMenuItemZBool *);
-void UpdateVideoModeMenu(CGameMenuItemZCycle *);
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
 void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *);
 void ResetVideoColor(CGameMenuItemChain *);
-void SetupVideoColorMenu(CGameMenuItemChain *);
 void SetupVideoPolymostMenu(CGameMenuItemChain *);
 
 char strRestoreGameStrings[][16] = 
@@ -338,10 +339,12 @@ CGameMenu menuOptionsSound;
 CGameMenu menuOptionsPlayer;
 CGameMenu menuOptionsControl;
 
+void SetupOptionsSound(CGameMenuItemChain *pItem);
+
 CGameMenuItemTitle itemOptionsTitle("OPTIONS", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsChainGame("GAME SETUP", 1, 0, 50, 320, 1, &menuOptionsGame, -1, NULL, 0);
 CGameMenuItemChain itemOptionsChainDisplay("DISPLAY SETUP", 1, 0, 70, 320, 1, &menuOptionsDisplay, -1, NULL, 0);
-CGameMenuItemChain itemOptionsChainSound("SOUND SETUP", 1, 0, 90, 320, 1, &menuOptionsSound, -1, NULL, 0);
+CGameMenuItemChain itemOptionsChainSound("SOUND SETUP", 1, 0, 90, 320, 1, &menuOptionsSound, -1, SetupOptionsSound, 0);
 CGameMenuItemChain itemOptionsChainPlayer("PLAYER SETUP", 1, 0, 110, 320, 1, &menuOptionsPlayer, -1, NULL, 0);
 CGameMenuItemChain itemOptionsChainControl("CONTROL SETUP", 1, 0, 130, 320, 1, &menuOptionsControl, -1, NULL, 0);
 CGameMenuItemChain itemOptionsChainOld("OLD MENU", 1, 0, 170, 320, 1, &menuOptionsOld, -1, NULL, 0);
@@ -356,7 +359,7 @@ CGameMenuItemZBool itemOptionsGameBoolAutoAim("AUTO AIM:", 3, 66, 110, 180, gAut
 CGameMenuItemChain itemOptionsGameChainParentalLock("PARENTAL LOCK", 3, 0, 120, 320, 1, &menuParentalLock, -1, NULL, 0);
 
 CGameMenuItemTitle itemOptionsDisplayTitle("DISPLAY SETUP", 1, 160, 20, 2038);
-CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0, &menuOptionsDisplayColor, -1, SetupVideoColorMenu, 0);
+CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0, &menuOptionsDisplayColor, -1, NULL, 0);
 CGameMenuItemChain itemOptionsDisplayMode("VIDEO MODE", 3, 66, 70, 180, 0, &menuOptionsDisplayMode, -1, SetupVideoModeMenu, 0);
 CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, &gAimReticle, SetCrosshair, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 90, 180, &gMessageState, SetMessages, NULL, NULL);
@@ -407,14 +410,19 @@ const int nFrameLimitValues[] = {
     240
 };
 
+
+void PreDrawVideoModeMenu(CGameMenuItem *);
+
 CGameMenuItemTitle itemOptionsDisplayModeTitle("VIDEO MODE", 1, 160, 20, 2038);
-CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 180, 0, UpdateVideoModeMenu, NULL, 0, 0);
-CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 0, UpdateVideoModeMenu, pzRendererStrings, 2, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 180, 0, NULL, NULL, 0, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 0, NULL, pzRendererStrings, 2, 0);
 CGameMenuItemZBool itemOptionsDisplayModeFullscreen("FULLSCREEN:", 3, 66, 80, 180, 0, NULL, NULL, NULL);
-CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, UpdateVideoModeMenu, pzVSyncStrings, 3, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, NULL, pzVSyncStrings, 3, 0);
 CGameMenuItemZCycle itemOptionsDisplayModeFrameLimit("FRAMERATE LIMIT:", 3, 66, 100, 180, 0, UpdateVideoModeMenuFrameLimit, pzFrameLimitStrings, 8, 0);
 CGameMenuItemSlider itemOptionsDisplayModeFPSOffset("FPS OFFSET:", 3, 66, 110, 180, 0, -10, 10, 1, UpdateVideoModeMenuFPSOffset, -1, -1, kMenuSliderValue);
 CGameMenuItemChain itemOptionsDisplayModeApply("APPLY CHANGES", 3, 66, 125, 180, 0, NULL, 0, SetVideoMode, 0);
+
+void PreDrawDisplayColor(CGameMenuItem *);
 
 CGameMenuItemTitle itemOptionsDisplayColorTitle("COLOR CORRECTION", 1, 160, 20, -1);
 CGameMenuItemSliderFloat itemOptionsDisplayColorGamma("GAMMA:", 3, 66, 140, 180, &g_videoGamma, 0.3f, 4.f, 0.1f, UpdateVideoColorMenu, -1, -1, kMenuSliderValue);
@@ -473,6 +481,7 @@ void UpdateDetailTex(CGameMenuItemZBool *pItem);
 void UpdateGlowTex(CGameMenuItemZBool *pItem);
 void Update3DModels(CGameMenuItemZBool *pItem);
 void UpdatePaletteEmulation(CGameMenuItemZBool *pItem);
+void PreDrawDisplayPolymost(CGameMenuItem *pItem);
 CGameMenuItemTitle itemOptionsDisplayPolymostTitle("POLYMOST SETUP", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemOptionsDisplayPolymostTextureMode("TEXTURE MODE:", 3, 66, 60, 180, 0, UpdateTextureMode, pzTextureModeStrings, 2, 0);
 CGameMenuItemZCycle itemOptionsDisplayPolymostAnisotropy("ANISOTROPY:", 3, 66, 70, 180, 0, UpdateAnisotropy, pzAnisotropyStrings, 6, 0);
@@ -485,7 +494,58 @@ CGameMenuItemZBool itemOptionsDisplayPolymostGlowTex("GLOW TEXTURES:", 3, 66, 13
 CGameMenuItemZBool itemOptionsDisplayPolymost3DModels("3D MODELS:", 3, 66, 140, 180, 0, Update3DModels, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayPolymostPaletteEmulation("PALETTE EMULATION:", 3, 66, 150, 180, 0, UpdatePaletteEmulation, NULL, NULL);
 
+void UpdateSoundToggle(CGameMenuItemZBool *pItem);
+void UpdateMusicToggle(CGameMenuItemZBool *pItem);
+void Update3DToggle(CGameMenuItemZBool *pItem);
+void UpdateCDToggle(CGameMenuItemZBool *pItem);
+void UpdateSoundVolume(CGameMenuItemSlider *pItem);
+void UpdateMusicVolume(CGameMenuItemSlider *pItem);
+void UpdateSoundRate(CGameMenuItemZCycle *pItem);
+void UpdateNumVoices(CGameMenuItemSlider *pItem);
+void UpdateMusicDevice(CGameMenuItemZCycle *pItem);
+void SetSound(CGameMenuItemChain *pItem);
+void PreDrawSound(CGameMenuItem *pItem);
+const char *pzSoundRateStrings[] = {
+    "22050HZ",
+    "44100HZ",
+    "48000HZ"
+};
+
+int nSoundRateValues[] = {
+    22050,
+    44100,
+    48000
+};
+
+const char *pzMusicDeviceStrings[] = {
+    "SYSTEM MIDI",
+    "OPL3(SB/ADLIB)"
+};
+
 CGameMenuItemTitle itemOptionsSoundTitle("SOUND SETUP", 1, 160, 20, 2038);
+CGameMenuItemZBool itemOptionsSoundSoundToggle("SOUND:", 3, 66, 60, 180, false, UpdateSoundToggle, NULL, NULL);
+CGameMenuItemZBool itemOptionsSoundMusicToggle("MUSIC:", 3, 66, 70, 180, false, UpdateMusicToggle, NULL, NULL);
+CGameMenuItemZBool itemOptionsSound3DToggle("3D AUDIO:", 3, 66, 80, 180, false, Update3DToggle, NULL, NULL);
+CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 90, 180, false, UpdateCDToggle, NULL, NULL);
+CGameMenuItemSlider itemOptionsSoundSoundVolume("SOUND VOLUME:", 3, 66, 100, 180, &FXVolume, 0, 256, 48, UpdateSoundVolume, -1, -1, kMenuSliderPercent);
+CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 110, 180, &MusicVolume, 0, 256, 48, UpdateMusicVolume, -1, -1, kMenuSliderPercent);
+CGameMenuItemZCycle itemOptionsSoundSampleRate("SAMPLE RATE:", 3, 66, 120, 180, 0, UpdateSoundRate, pzSoundRateStrings, 3, 0);
+CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 130, 180, NumVoices, 16, 256, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
+CGameMenuItemZCycle itemOptionsSoundMusicDevice("MUSIC DEVICE:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, 2, 0);
+CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 150, 180, 0, NULL, 0, SetSound, 0);
+
+
+void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent);
+
+CGameMenuItemTitle itemOptionsPlayerTitle("PLAYER SETUP", 1, 160, 20, 2038);
+CGameMenuItemZEdit itemOptionsPlayerName("PLAYER NAME:", 3, 66, 60, 250, szPlayerName, MAXPLAYERNAME, 0, UpdatePlayerName, 0);
+
+CGameMenu menuOptionsControlKeyboard;
+CGameMenu menuOptionsControlMouse;
+
+CGameMenuItemTitle itemOptionsControlTitle("CONTROL SETUP", 1, 160, 20, 2038);
+CGameMenuItemChain itemOptionsControlKeyboard("KEYBOARD SETUP", 1, 0, 60, 320, 1, &menuOptionsControlKeyboard, -1, NULL, 0);
+CGameMenuItemChain itemOptionsControlMouse("MOUSE SETUP", 1, 0, 85, 320, 1, &menuOptionsControlMouse, -1, NULL, 0);
 
 void SetupLoadingScreen(void)
 {
@@ -876,7 +936,7 @@ void SetupOptionsMenu(void)
     menuOptionsGame.Add(&itemOptionsGameBoolViewBobbing, false);
     menuOptionsGame.Add(&itemOptionsGameBoolViewSwaying, false);
     menuOptionsGame.Add(&itemOptionsGameBoolAutoAim, false);
-    menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
+    //menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
     menuOptionsGame.Add(&itemBloodQAV, false);
     itemOptionsGameBoolShowWeapons.at20 = gShowWeapon;
     itemOptionsGameBoolSlopeTilting.at20 = gSlopeTilting;
@@ -934,6 +994,10 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeApply, false);
     menuOptionsDisplayMode.Add(&itemBloodQAV, false);
 
+    itemOptionsDisplayModeRenderer.pPreDrawCallback = PreDrawVideoModeMenu;
+    itemOptionsDisplayModeFullscreen.pPreDrawCallback = PreDrawVideoModeMenu;
+    itemOptionsDisplayModeFPSOffset.pPreDrawCallback = PreDrawVideoModeMenu;
+
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorTitle, false);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorGamma, true);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorContrast, false);
@@ -941,6 +1005,9 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorVisibility, false);
     menuOptionsDisplayColor.Add(&itemOptionsDisplayColorReset, false);
     menuOptionsDisplayColor.Add(&itemBloodQAV, false);
+
+    itemOptionsDisplayColorContrast.pPreDrawCallback = PreDrawDisplayColor;
+    itemOptionsDisplayColorBrightness.pPreDrawCallback = PreDrawDisplayColor;
 
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTitle, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTextureMode, true);
@@ -954,6 +1021,35 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymost3DModels, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostPaletteEmulation, false);
     menuOptionsDisplayPolymost.Add(&itemBloodQAV, false);
+
+    itemOptionsDisplayPolymostTexQuality.pPreDrawCallback = PreDrawDisplayPolymost;
+    itemOptionsDisplayPolymostPreloadCache.pPreDrawCallback = PreDrawDisplayPolymost;
+    itemOptionsDisplayPolymostTexCache.pPreDrawCallback = PreDrawDisplayPolymost;
+    itemOptionsDisplayPolymostDetailTex.pPreDrawCallback = PreDrawDisplayPolymost;
+    itemOptionsDisplayPolymostGlowTex.pPreDrawCallback = PreDrawDisplayPolymost;
+    itemOptionsDisplayPolymostPaletteEmulation.pPreDrawCallback = PreDrawDisplayPolymost;
+
+    menuOptionsSound.Add(&itemOptionsSoundTitle, false);
+    menuOptionsSound.Add(&itemOptionsSoundSoundToggle, true);
+    menuOptionsSound.Add(&itemOptionsSoundMusicToggle, false);
+    menuOptionsSound.Add(&itemOptionsSound3DToggle, false);
+    menuOptionsSound.Add(&itemOptionsSoundCDToggle, false);
+    menuOptionsSound.Add(&itemOptionsSoundSoundVolume, false);
+    menuOptionsSound.Add(&itemOptionsSoundMusicVolume, false);
+    menuOptionsSound.Add(&itemOptionsSoundSampleRate, false);
+    menuOptionsSound.Add(&itemOptionsSoundNumVoices, false);
+    menuOptionsSound.Add(&itemOptionsSoundMusicDevice, false);
+    menuOptionsSound.Add(&itemOptionsSoundApplyChanges, false);
+    menuOptionsSound.Add(&itemBloodQAV, false);
+
+    menuOptionsPlayer.Add(&itemOptionsPlayerTitle, false);
+    menuOptionsPlayer.Add(&itemOptionsPlayerName, true);
+    menuOptionsPlayer.Add(&itemBloodQAV, false);
+
+    menuOptionsControl.Add(&itemOptionsControlTitle, false);
+    menuOptionsControl.Add(&itemOptionsControlKeyboard, true);
+    menuOptionsControl.Add(&itemOptionsControlMouse, false);
+    menuOptionsControl.Add(&itemBloodQAV, false);
 }
 
 void SetupMenus(void)
@@ -1180,7 +1276,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
             break;
         }
     }
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++)
     {
         if (r_maxfps == nFrameLimitValues[i])
         {
@@ -1189,15 +1285,16 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
         }
     }
     itemOptionsDisplayModeFPSOffset.nValue = r_maxfpsoffset;
-
-    UpdateVideoModeMenu(NULL);
 }
 
-void UpdateVideoModeMenu(CGameMenuItemZCycle *pItem)
+void PreDrawVideoModeMenu(CGameMenuItem *pItem)
 {
-    itemOptionsDisplayModeFullscreen.bEnable = !!(gResolution[itemOptionsDisplayModeResolution.at24].flags & RES_FS);
-    itemOptionsDisplayModeRenderer.bEnable = gResolution[itemOptionsDisplayModeResolution.at24].bppmax > 8;
-    itemOptionsDisplayModeFPSOffset.bEnable = !!itemOptionsDisplayModeFrameLimit.at24;
+    if (pItem == &itemOptionsDisplayModeFullscreen)
+        pItem->bEnable = !!(gResolution[itemOptionsDisplayModeResolution.at24].flags & RES_FS);
+    else if (pItem == &itemOptionsDisplayModeRenderer)
+        pItem->bEnable = gResolution[itemOptionsDisplayModeResolution.at24].bppmax > 8;
+    else if (pItem == &itemOptionsDisplayModeFPSOffset)
+        pItem->bEnable = !!itemOptionsDisplayModeFrameLimit.at24;
 }
 
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
@@ -1220,9 +1317,15 @@ void UpdateVideoColorMenu(CGameMenuItemSliderFloat *)
     r_ambientlight = itemOptionsDisplayColorVisibility.fValue;
     r_ambientlightrecip = 1.f/r_ambientlight;
     gBrightness = GAMMA_CALC<<2;
-    itemOptionsDisplayColorContrast.bEnable = gammabrightness;
-    itemOptionsDisplayColorBrightness.bEnable = gammabrightness;
     videoSetPalette(gBrightness>>2, gLastPal, 0);
+}
+
+void PreDrawDisplayColor(CGameMenuItem *pItem)
+{
+    if (pItem == &itemOptionsDisplayColorContrast)
+        pItem->bEnable = gammabrightness;
+    else if (pItem == &itemOptionsDisplayColorBrightness)
+        pItem->bEnable = gammabrightness;
 }
 
 void ResetVideoColor(CGameMenuItemChain *)
@@ -1233,14 +1336,6 @@ void ResetVideoColor(CGameMenuItemChain *)
     gBrightness = 0;
     r_ambientlight = r_ambientlightrecip = 1.f;
     videoSetPalette(gBrightness>>2, gLastPal, 0);
-    itemOptionsDisplayColorContrast.bEnable = 1;
-    itemOptionsDisplayColorBrightness.bEnable = 1;
-}
-
-void SetupVideoColorMenu(CGameMenuItemChain *)
-{
-    itemOptionsDisplayColorContrast.bEnable = gammabrightness;
-    itemOptionsDisplayColorBrightness.bEnable = gammabrightness;
 }
 
 void SetupVideoPolymostMenu(CGameMenuItemChain *)
@@ -1271,38 +1366,23 @@ void SetupVideoPolymostMenu(CGameMenuItemChain *)
     itemOptionsDisplayPolymostGlowTex.at20 = r_glowmapping;
     itemOptionsDisplayPolymost3DModels.at20 = usemodels;
     itemOptionsDisplayPolymostPaletteEmulation.at20 = r_usetileshades;
-
-    itemOptionsDisplayPolymostTexQuality.bEnable = usehightile;
-    itemOptionsDisplayPolymostPreloadCache.bEnable = usehightile;
-    itemOptionsDisplayPolymostTexCache.bEnable = glusetexcompr && usehightile;
-    itemOptionsDisplayPolymostDetailTex.bEnable = usehightile;
-    itemOptionsDisplayPolymostGlowTex.bEnable = usehightile;
-    itemOptionsDisplayPolymostPaletteEmulation.bEnable = !(videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
 }
 
 void UpdateTextureMode(CGameMenuItemZCycle *pItem)
 {
     gltexfiltermode = nTextureModeValues[pItem->at24];
     gltexapplyprops();
-    itemOptionsDisplayPolymostPaletteEmulation.bEnable = !(videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
 }
 
 void UpdateAnisotropy(CGameMenuItemZCycle *pItem)
 {
     glanisotropy = nAnisotropyValues[pItem->at24];
     gltexapplyprops();
-    itemOptionsDisplayPolymostPaletteEmulation.bEnable = !(videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
 }
 
 void UpdateTrueColorTextures(CGameMenuItemZBool *pItem)
 {
     usehightile = pItem->at20;
-
-    itemOptionsDisplayPolymostTexQuality.bEnable = usehightile;
-    itemOptionsDisplayPolymostPreloadCache.bEnable = usehightile;
-    itemOptionsDisplayPolymostTexCache.bEnable = glusetexcompr && usehightile;
-    itemOptionsDisplayPolymostDetailTex.bEnable = usehightile;
-    itemOptionsDisplayPolymostGlowTex.bEnable = usehightile;
 }
 
 void DoModeChange(void)
@@ -1349,6 +1429,122 @@ void Update3DModels(CGameMenuItemZBool *pItem)
 void UpdatePaletteEmulation(CGameMenuItemZBool *pItem)
 {
     r_usetileshades = pItem->at20;
+}
+
+void PreDrawDisplayPolymost(CGameMenuItem *pItem)
+{
+    if (pItem == &itemOptionsDisplayPolymostTexQuality)
+        pItem->bEnable = usehightile;
+    else if (pItem == &itemOptionsDisplayPolymostPreloadCache)
+        pItem->bEnable = usehightile;
+    else if (pItem == &itemOptionsDisplayPolymostTexCache)
+        pItem->bEnable = glusetexcompr && usehightile;
+    else if (pItem == &itemOptionsDisplayPolymostDetailTex)
+        pItem->bEnable = usehightile;
+    else if (pItem == &itemOptionsDisplayPolymostGlowTex)
+        pItem->bEnable = usehightile;
+    else if (pItem == &itemOptionsDisplayPolymostPaletteEmulation)
+        pItem->bEnable = !(videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
+}
+
+void UpdateSoundToggle(CGameMenuItemZBool *pItem)
+{
+    SoundToggle = pItem->at20;
+    if (!SoundToggle)
+        FX_StopAllSounds();
+}
+
+void UpdateMusicToggle(CGameMenuItemZBool *pItem)
+{
+    MusicToggle = pItem->at20;
+    if (!MusicToggle)
+        sndStopSong();
+    else
+    {
+        if (gGameStarted || gDemo.at1)
+            sndPlaySong(gGameOptions.zLevelSong, true);
+    }
+}
+
+void Update3DToggle(CGameMenuItemZBool *pItem)
+{
+    gDoppler = pItem->at20;
+}
+
+void UpdateCDToggle(CGameMenuItemZBool *pItem)
+{
+    CDAudioToggle = pItem->at20;
+    // PORT-TODO:
+}
+
+void UpdateSoundVolume(CGameMenuItemSlider *pItem)
+{
+    sndSetFXVolume(pItem->nValue);
+}
+
+void UpdateMusicVolume(CGameMenuItemSlider *pItem)
+{
+    sndSetMusicVolume(pItem->nValue);
+}
+
+void UpdateSoundRate(CGameMenuItemZCycle *pItem)
+{
+
+}
+
+void UpdateNumVoices(CGameMenuItemSlider *pItem)
+{
+
+}
+
+void UpdateMusicDevice(CGameMenuItemZCycle *pItem)
+{
+
+}
+
+void SetSound(CGameMenuItemChain *pItem)
+{
+    MixRate = nSoundRateValues[itemOptionsSoundSampleRate.at24];
+    NumVoices = itemOptionsSoundNumVoices.nValue;
+    MusicDevice = itemOptionsSoundMusicDevice.at24;
+    sfxTerm();
+    sndTerm();
+
+    sndInit();
+    sfxInit();
+
+    if (MusicToggle && (gGameStarted || gDemo.at1))
+        sndPlaySong(gGameOptions.zLevelSong, true);
+}
+
+void PreDrawSound(CGameMenuItem *pItem)
+{
+
+}
+
+void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)
+{
+    if (pEvent->at0 == kMenuEventEnter)
+        netBroadcastPlayerInfo(myconnectindex);
+}
+
+void SetupOptionsSound(CGameMenuItemChain *pItem)
+{
+    itemOptionsSoundSoundToggle.at20 = SoundToggle;
+    itemOptionsSoundMusicToggle.at20 = MusicToggle;
+    itemOptionsSound3DToggle.at20 = gDoppler;
+    itemOptionsSoundCDToggle.at20 = CDAudioToggle;
+    itemOptionsSoundSampleRate.at24 = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        if (nSoundRateValues[i] == MixRate)
+        {
+            itemOptionsSoundSampleRate.at24 = i;
+            break;
+        }
+    }
+    itemOptionsSoundNumVoices.nValue = NumVoices;
+    itemOptionsSoundMusicDevice.at24 = MusicDevice;
 }
 
 void SaveGameProcess(CGameMenuItemChain *)

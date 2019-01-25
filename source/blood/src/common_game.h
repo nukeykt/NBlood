@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #pragma once
+#include "build.h"
 #include "common.h"
 #include "pragmas.h"
 #include "misc.h"
@@ -58,7 +59,7 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 #define kMaxYDim 1200
 #define kMaxPaLookups 256
 #define kMaxPSkyTiles 256
-#define kMaxViewSprites 1024
+#define kMaxViewSprites maxspritesonscreen
 
 #define kMaxVoxels 512
 

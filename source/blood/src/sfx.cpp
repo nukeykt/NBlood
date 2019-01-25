@@ -116,6 +116,8 @@ void Calc3DValues(BONKLE *pBonkle)
 
 void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
 {
+    if (!SoundToggle)
+        return;
     if (soundId < 0)
         ThrowError("Invalid sound ID");
     DICTNODE *hRes = gSoundRes.Lookup(soundId, "SFX");
@@ -167,6 +169,8 @@ void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
 
 void sfxPlay3DSound(SPRITE *pSprite, int soundId, int a3, int a4)
 {
+    if (!SoundToggle)
+        return;
     if (!pSprite)
         return;
     if (soundId < 0)
