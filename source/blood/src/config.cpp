@@ -395,7 +395,7 @@ void CONFIG_SetDefaults(void)
     gShowWeapon = 0;
     gzAdultPassword[0] = 0;
 
-    gMouseAimingFlipped = 1;
+    gMouseAimingFlipped = 0;
     gMouseAim = 1;
     gAutoAim = 1;
 

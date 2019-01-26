@@ -68,7 +68,8 @@ enum {
 enum {
     kMenuSliderNone = 0,
     kMenuSliderValue,
-    kMenuSliderPercent
+    kMenuSliderPercent,
+    kMenuSliderQ16
 };
 
 struct CGameMenuEvent {

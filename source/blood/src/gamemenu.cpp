@@ -1378,7 +1378,10 @@ void CGameMenuItemSlider::Draw(void)
         sprintf(buffer, "%i ", nValue);
         break;
     case kMenuSliderPercent:
-        sprintf(buffer, "%i%% ", roundscale(nValue, 100, nRange));
+        sprintf(buffer, "%i%% ", roundscale(value, 100, nRange));
+        break;
+    case kMenuSliderQ16:
+        snprintf(buffer, 16, "%.3f ", nValue/65536.f);
         break;
     }
     int valueWidth;
@@ -1605,7 +1608,7 @@ void CGameMenuItemSliderFloat::Draw(void)
         snprintf(buffer, 16, "%.3f ", fValue);
         break;
     case kMenuSliderPercent:
-        snprintf(buffer, 16, "%.3f%% ", fValue*100.f/fRange);
+        snprintf(buffer, 16, "%.3f%% ", value*100.f/fRange);
         break;
     }
     int valueWidth;
