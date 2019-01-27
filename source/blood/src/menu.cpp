@@ -140,6 +140,12 @@ char zUserMapName[16];
 char *zEpisodeNames[6];
 char *zLevelNames[6][16];
 
+static char MenuGameFuncs[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
+static char const *MenuGameFuncNone = "  -None-";
+static char const *pzGamefuncsStrings[NUMGAMEFUNCTIONS + 1];
+static int nGamefuncsValues[NUMGAMEFUNCTIONS + 1];
+static int nGamefuncsNum;
+
 CGameMenu menuMain;
 CGameMenu menuMainWithSave;
 CGameMenu menuNetMain;
@@ -414,7 +420,7 @@ const int nFrameLimitValues[] = {
 void PreDrawVideoModeMenu(CGameMenuItem *);
 
 CGameMenuItemTitle itemOptionsDisplayModeTitle("VIDEO MODE", 1, 160, 20, 2038);
-CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 180, 0, NULL, NULL, 0, 0);
+CGameMenuItemZCycle itemOptionsDisplayModeResolution("RESOLUTION:", 3, 66, 60, 180, 0, NULL, NULL, 0, 0, true);
 CGameMenuItemZCycle itemOptionsDisplayModeRenderer("RENDERER:", 3, 66, 70, 180, 0, NULL, pzRendererStrings, 2, 0);
 CGameMenuItemZBool itemOptionsDisplayModeFullscreen("FULLSCREEN:", 3, 66, 80, 180, 0, NULL, NULL, NULL);
 CGameMenuItemZCycle itemOptionsDisplayModeVSync("VSYNC:", 3, 66, 90, 180, 0, NULL, pzVSyncStrings, 3, 0);
@@ -669,12 +675,12 @@ void SetupEpisodeMenu(void)
             if (j < gEpisodeCount)
             {
                 CGameMenuItemChain7F2F0 *pEpisodeItem = &itemEpisodes[j];
-                pEpisodeItem->nFont = 1;
-                pEpisodeItem->nX = 0;
-                pEpisodeItem->nWidth = 320;
+                pEpisodeItem->m_nFont = 1;
+                pEpisodeItem->m_nX = 0;
+                pEpisodeItem->m_nWidth = 320;
                 pEpisodeItem->at20 = 1;
-                pEpisodeItem->pzText = pEpisode->at0;
-                pEpisodeItem->nY = 55+(height+8)*j;
+                pEpisodeItem->m_pzText = pEpisode->at0;
+                pEpisodeItem->m_nY = 55+(height+8)*j;
                 pEpisodeItem->at34 = i;
                 if (!unk || j == 0)
                 {
@@ -1094,6 +1100,28 @@ void SetupOptionsMenu(void)
 
 void SetupMenus(void)
 {
+    // prepare gamefuncs and keys
+    pzGamefuncsStrings[0] = MenuGameFuncNone;
+    nGamefuncsValues[0] = -1;
+    int k = 1;
+    for (int i = 0; i < NUMGAMEFUNCTIONS; ++i)
+    {
+        Bstrcpy(MenuGameFuncs[i], gamefunctions[i]);
+
+        for (int j = 0; j < MAXGAMEFUNCLEN; ++j)
+            if (MenuGameFuncs[i][j] == '_')
+                MenuGameFuncs[i][j] = ' ';
+
+        if (gamefunctions[i][0] != '\0')
+        {
+            pzGamefuncsStrings[k] = MenuGameFuncs[i];
+            nGamefuncsValues[k] = i;
+            ++k;
+        }
+    }
+
+    nGamefuncsNum = k;
+
     SetupLoadingScreen();
     SetupKeyListMenu();
     SetupMessagesMenu();
@@ -1254,12 +1282,12 @@ void SetVideoMode(CGameMenuItemChain *pItem)
     int32_t prend = videoGetRenderMode();
     int32_t pvsync = vsync;
 
-    int32_t nResolution = itemOptionsDisplayModeResolution.at24;
+    int32_t nResolution = itemOptionsDisplayModeResolution.m_nFocus;
     resolution_t n = { gResolution[nResolution].xdim, gResolution[nResolution].ydim,
                        (gResolution[nResolution].flags & RES_FS) ? itemOptionsDisplayModeFullscreen.at20 : 0,
-                       (nRendererValues[itemOptionsDisplayModeRenderer.at24] == REND_CLASSIC) ? 8 : gResolution[nResolution].bppmax, 0 };
-    int32_t nrend = nRendererValues[itemOptionsDisplayModeRenderer.at24];
-    int32_t nvsync = nVSyncValues[itemOptionsDisplayModeVSync.at24];
+                       (nRendererValues[itemOptionsDisplayModeRenderer.m_nFocus] == REND_CLASSIC) ? 8 : gResolution[nResolution].bppmax, 0 };
+    int32_t nrend = nRendererValues[itemOptionsDisplayModeRenderer.m_nFocus];
+    int32_t nvsync = nVSyncValues[itemOptionsDisplayModeVSync.m_nFocus];
 
     if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
     {
@@ -1295,7 +1323,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
     {
         if (gSetup.xdim == gResolution[i].xdim && gSetup.ydim == gResolution[i].ydim)
         {
-            itemOptionsDisplayModeResolution.at24 = i;
+            itemOptionsDisplayModeResolution.m_nFocus = i;
             break;
         }
     }
@@ -1304,7 +1332,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
     {
         if (videoGetRenderMode() == nRendererValues[i])
         {
-            itemOptionsDisplayModeRenderer.at24 = i;
+            itemOptionsDisplayModeRenderer.m_nFocus = i;
             break;
         }
     }
@@ -1312,7 +1340,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
     {
         if (vsync == nVSyncValues[i])
         {
-            itemOptionsDisplayModeVSync.at24 = i;
+            itemOptionsDisplayModeVSync.m_nFocus = i;
             break;
         }
     }
@@ -1320,7 +1348,7 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
     {
         if (r_maxfps == nFrameLimitValues[i])
         {
-            itemOptionsDisplayModeFrameLimit.at24 = i;
+            itemOptionsDisplayModeFrameLimit.m_nFocus = i;
             break;
         }
     }
@@ -1330,16 +1358,16 @@ void SetupVideoModeMenu(CGameMenuItemChain *pItem)
 void PreDrawVideoModeMenu(CGameMenuItem *pItem)
 {
     if (pItem == &itemOptionsDisplayModeFullscreen)
-        pItem->bEnable = !!(gResolution[itemOptionsDisplayModeResolution.at24].flags & RES_FS);
+        pItem->bEnable = !!(gResolution[itemOptionsDisplayModeResolution.m_nFocus].flags & RES_FS);
     else if (pItem == &itemOptionsDisplayModeRenderer)
-        pItem->bEnable = gResolution[itemOptionsDisplayModeResolution.at24].bppmax > 8;
+        pItem->bEnable = gResolution[itemOptionsDisplayModeResolution.m_nFocus].bppmax > 8;
     else if (pItem == &itemOptionsDisplayModeFPSOffset)
-        pItem->bEnable = !!itemOptionsDisplayModeFrameLimit.at24;
+        pItem->bEnable = !!itemOptionsDisplayModeFrameLimit.m_nFocus;
 }
 
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
 {
-    r_maxfps = nFrameLimitValues[pItem->at24];
+    r_maxfps = nFrameLimitValues[pItem->m_nFocus];
     g_frameDelay = (r_maxfps + r_maxfpsoffset) ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
 }
 
@@ -1380,28 +1408,28 @@ void ResetVideoColor(CGameMenuItemChain *)
 
 void SetupVideoPolymostMenu(CGameMenuItemChain *)
 {
-    itemOptionsDisplayPolymostTextureMode.at24 = 0;
+    itemOptionsDisplayPolymostTextureMode.m_nFocus = 0;
     for (int i = 0; i < 2; i++)
     {
         if (nTextureModeValues[i] == gltexfiltermode)
         {
-            itemOptionsDisplayPolymostTextureMode.at24 = i;
+            itemOptionsDisplayPolymostTextureMode.m_nFocus = i;
             break;
         }
     }
-    itemOptionsDisplayPolymostAnisotropy.at24 = 0;
+    itemOptionsDisplayPolymostAnisotropy.m_nFocus = 0;
     for (int i = 0; i < 6; i++)
     {
         if (nAnisotropyValues[i] == glanisotropy)
         {
-            itemOptionsDisplayPolymostAnisotropy.at24 = i;
+            itemOptionsDisplayPolymostAnisotropy.m_nFocus = i;
             break;
         }
     }
     itemOptionsDisplayPolymostTrueColorTextures.at20 = usehightile;
-    itemOptionsDisplayPolymostTexQuality.at24 = r_downsize;
+    itemOptionsDisplayPolymostTexQuality.m_nFocus = r_downsize;
     itemOptionsDisplayPolymostPreloadCache.at20 = useprecache;
-    itemOptionsDisplayPolymostTexCache.at24 = glusetexcache;
+    itemOptionsDisplayPolymostTexCache.m_nFocus = glusetexcache;
     itemOptionsDisplayPolymostDetailTex.at20 = r_detailmapping;
     itemOptionsDisplayPolymostGlowTex.at20 = r_glowmapping;
     itemOptionsDisplayPolymost3DModels.at20 = usemodels;
@@ -1410,13 +1438,13 @@ void SetupVideoPolymostMenu(CGameMenuItemChain *)
 
 void UpdateTextureMode(CGameMenuItemZCycle *pItem)
 {
-    gltexfiltermode = nTextureModeValues[pItem->at24];
+    gltexfiltermode = nTextureModeValues[pItem->m_nFocus];
     gltexapplyprops();
 }
 
 void UpdateAnisotropy(CGameMenuItemZCycle *pItem)
 {
-    glanisotropy = nAnisotropyValues[pItem->at24];
+    glanisotropy = nAnisotropyValues[pItem->m_nFocus];
     gltexapplyprops();
 }
 
@@ -1435,7 +1463,7 @@ void DoModeChange(void)
 
 void UpdateTexQuality(CGameMenuItemZCycle *pItem)
 {
-    r_downsize = pItem->at24;
+    r_downsize = pItem->m_nFocus;
     texcache_invalidate();
     r_downsizevar = r_downsize;
     DoModeChange();
@@ -1448,7 +1476,7 @@ void UpdatePreloadCache(CGameMenuItemZBool *pItem)
 
 void UpdateTexCache(CGameMenuItemZCycle *pItem)
 {
-    glusetexcache = pItem->at24;
+    glusetexcache = pItem->m_nFocus;
 }
 
 void UpdateDetailTex(CGameMenuItemZBool *pItem)
@@ -1544,9 +1572,9 @@ void UpdateMusicDevice(CGameMenuItemZCycle *pItem)
 
 void SetSound(CGameMenuItemChain *pItem)
 {
-    MixRate = nSoundRateValues[itemOptionsSoundSampleRate.at24];
+    MixRate = nSoundRateValues[itemOptionsSoundSampleRate.m_nFocus];
     NumVoices = itemOptionsSoundNumVoices.nValue;
-    MusicDevice = itemOptionsSoundMusicDevice.at24;
+    MusicDevice = itemOptionsSoundMusicDevice.m_nFocus;
     sfxTerm();
     sndTerm();
 
@@ -1568,17 +1596,17 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
     itemOptionsSoundMusicToggle.at20 = MusicToggle;
     itemOptionsSound3DToggle.at20 = gDoppler;
     itemOptionsSoundCDToggle.at20 = CDAudioToggle;
-    itemOptionsSoundSampleRate.at24 = 0;
+    itemOptionsSoundSampleRate.m_nFocus = 0;
     for (int i = 0; i < 3; i++)
     {
         if (nSoundRateValues[i] == MixRate)
         {
-            itemOptionsSoundSampleRate.at24 = i;
+            itemOptionsSoundSampleRate.m_nFocus = i;
             break;
         }
     }
     itemOptionsSoundNumVoices.nValue = NumVoices;
-    itemOptionsSoundMusicDevice.at24 = MusicDevice;
+    itemOptionsSoundMusicDevice.m_nFocus = MusicDevice;
 }
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)
@@ -1715,20 +1743,20 @@ void SetupLevelMenuItem(int nEpisode)
 
 void SetupNetLevels(CGameMenuItemZCycle *pItem)
 {
-    SetupLevelMenuItem(pItem->at24);
+    SetupLevelMenuItem(pItem->m_nFocus);
 }
 
 void StartNetGame(CGameMenuItemChain *)
 {
-    gPacketStartGame.gameType = itemNetStart1.at24+1;
+    gPacketStartGame.gameType = itemNetStart1.m_nFocus+1;
     if (gPacketStartGame.gameType == 0)
         gPacketStartGame.gameType = 2;
-    gPacketStartGame.episodeId = itemNetStart2.at24;
-    gPacketStartGame.levelId = itemNetStart3.at24;
-    gPacketStartGame.difficulty = itemNetStart4.at24;
-    gPacketStartGame.monsterSettings = itemNetStart5.at24;
-    gPacketStartGame.weaponSettings = itemNetStart6.at24;
-    gPacketStartGame.itemSettings = itemNetStart7.at24;
+    gPacketStartGame.episodeId = itemNetStart2.m_nFocus;
+    gPacketStartGame.levelId = itemNetStart3.m_nFocus;
+    gPacketStartGame.difficulty = itemNetStart4.m_nFocus;
+    gPacketStartGame.monsterSettings = itemNetStart5.m_nFocus;
+    gPacketStartGame.weaponSettings = itemNetStart6.m_nFocus;
+    gPacketStartGame.itemSettings = itemNetStart7.m_nFocus;
     gPacketStartGame.respawnSettings = 0;
     gPacketStartGame.unk = 0;
     gPacketStartGame.userMapName[0] = 0;

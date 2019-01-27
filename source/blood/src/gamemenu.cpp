@@ -138,12 +138,23 @@ void CGameMenuMgr::Pop(void)
     m_mousecaught = 1;
 }
 
+void CGameMenuMgr::PostPop(void)
+{
+    m_postPop = true;
+}
+
 void CGameMenuMgr::Draw(void)
 {
     if (pActiveMenu)
     {
         pActiveMenu->Draw();
         viewUpdatePages();
+    }
+
+    if (m_postPop)
+    {
+        Pop();
+        m_postPop = false;
     }
 
     int32_t mousestatus = mouseReadAbs(&m_mousepos, &g_mouseAbs);
@@ -198,6 +209,7 @@ void CGameMenuMgr::Clear(void)
     pActiveMenu = NULL;
     memset(pMenuStack, 0, sizeof(pMenuStack));
     nMenuPointer = 0;
+    m_postPop = false;
 }
 
 void CGameMenuMgr::Process(void)
@@ -427,11 +439,11 @@ bool CGameMenu::MouseEvent(CGameMenuEvent &event)
 
 CGameMenuItem::CGameMenuItem()
 {
-    pzText = NULL;
-    nX = nY = nWidth = 0;
+    m_pzText = NULL;
+    m_nX = m_nY = m_nWidth = 0;
     bCanSelect = 1;
     bEnable = 1;
-    nFont = -1;
+    m_nFont = -1;
     pMenu = NULL;
     bNoDraw = 0;
     pPreDrawCallback = NULL;
@@ -493,86 +505,86 @@ bool CGameMenuItem::MouseEvent(CGameMenuEvent &event)
 
 CGameMenuItemText::CGameMenuItemText()
 {
-    pzText = 0;
+    m_pzText = 0;
     bEnable = 0;
 }
 
 CGameMenuItemText::CGameMenuItemText(const char *a1, int a2, int a3, int a4, int a5)
 {
-    nWidth = 0;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
+    m_nWidth = 0;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
     at20 = a5;
     bEnable = 0;
 }
 
 void CGameMenuItemText::Draw(void)
 {
-    if (pzText)
+    if (m_pzText)
     {
         int width;
-        int x = nX;
+        int x = m_nX;
         switch (at20)
         {
         case 1:
-            gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-            x = nX-width/2;
+            gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+            x = m_nX-width/2;
             break;
         case 2:
-            gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-            x = nX-width;
+            gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+            x = m_nX-width;
             break;
         }
-        gMenuTextMgr.DrawText(pzText,nFont, x, nY, -128, 0, false);
+        gMenuTextMgr.DrawText(m_pzText,m_nFont, x, m_nY, -128, 0, false);
     }
 }
 
 CGameMenuItemTitle::CGameMenuItemTitle()
 {
-    pzText = 0;
+    m_pzText = 0;
     bEnable = 0;
 }
 
 CGameMenuItemTitle::CGameMenuItemTitle(const char *a1, int a2, int a3, int a4, int a5)
 {
-    nWidth = 0;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
+    m_nWidth = 0;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
     at20 = a5;
     bEnable = 0;
 }
 
 void CGameMenuItemTitle::Draw(void)
 {
-    if (pzText)
+    if (m_pzText)
     {
         int height;
-        gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
+        gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
         if (at20 >= 0)
-            rotatesprite(320<<15, nY<<16, 65536, 0, at20, -128, 0, 78, 0, 0, xdim-1, ydim-1);
-        viewDrawText(nFont, pzText, nX, nY-height/2, -128, 0, 1, false);
+            rotatesprite(320<<15, m_nY<<16, 65536, 0, at20, -128, 0, 78, 0, 0, xdim-1, ydim-1);
+        viewDrawText(m_nFont, m_pzText, m_nX, m_nY-height/2, -128, 0, 1, false);
     }
 }
 
 CGameMenuItemZBool::CGameMenuItemZBool()
 {
     at20 = false;
-    pzText = 0;
+    m_pzText = 0;
     at21 = "On";
     at25 = "Off";
 }
 
 CGameMenuItemZBool::CGameMenuItemZBool(const char *a1, int a2, int a3, int a4, int a5, bool a6, void(*a7)(CGameMenuItemZBool *), const char *a8, const char *a9)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     at20 = a6;
     at29 = a7;
     if (!a8)
@@ -590,15 +602,15 @@ void CGameMenuItemZBool::Draw(void)
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
-    if (pzText)
-        gMenuTextMgr.DrawText(pzText, nFont, nX, nY, shade, 0, false);
+    if (m_pzText)
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, 0, false);
     const char *value = at20 ? at21 : at25;
     int width, height;
-    gMenuTextMgr.GetFontInfo(nFont, value, &width, &height);
-    gMenuTextMgr.DrawText(value, nFont, nWidth-1+nX-width, nY, shade, 0, false);
-    int mx = nX<<16;
-    int my = nY<<16;
-    int mw = nWidth<<16;
+    gMenuTextMgr.GetFontInfo(m_nFont, value, &width, &height);
+    gMenuTextMgr.DrawText(value, m_nFont, m_nWidth-1+m_nX-width, m_nY, shade, 0, false);
+    int mx = m_nX<<16;
+    int my = m_nY<<16;
+    int mw = m_nWidth<<16;
     int mh = height<<16;
     if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, mx, my, mw, mh)))
     {
@@ -636,7 +648,7 @@ bool CGameMenuItemZBool::Event(CGameMenuEvent &event)
 
 CGameMenuItemChain::CGameMenuItemChain()
 {
-    pzText = NULL;
+    m_pzText = NULL;
     at24 = NULL;
     at28 = -1;
     at2c = NULL;
@@ -645,11 +657,11 @@ CGameMenuItemChain::CGameMenuItemChain()
 
 CGameMenuItemChain::CGameMenuItemChain(const char *a1, int a2, int a3, int a4, int a5, int a6, CGameMenu *a7, int a8, void(*a9)(CGameMenuItemChain *), int a10)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     at20 = a6;
     at24 = a7;
     at28 = a8;
@@ -659,27 +671,27 @@ CGameMenuItemChain::CGameMenuItemChain(const char *a1, int a2, int a3, int a4, i
 
 void CGameMenuItemChain::Draw(void)
 {
-    if (!pzText) return;
+    if (!m_pzText) return;
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
     int width, height;
-    int x = nX;
-    int y = nY;
-    gMenuTextMgr.GetFontInfo(nFont, pzText, &width, &height);
+    int x = m_nX;
+    int y = m_nY;
+    gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, &height);
     switch (at20)
     {
     case 1:
-        x = nX+nWidth/2-width/2;
+        x = m_nX+m_nWidth/2-width/2;
         break;
     case 2:
-        x = nX+nWidth-1-width;
+        x = m_nX+m_nWidth-1-width;
         break;
     case 0:
     default:
         break;
     }
-    gMenuTextMgr.DrawText(pzText, nFont, x, nY, shade, 0, true);
+    gMenuTextMgr.DrawText(m_pzText, m_nFont, x, m_nY, shade, 0, true);
     if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, x<<16, y<<16, width<<16, height<<16)))
     {
         if (MOUSEWATCHPOINTCONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_prevmousepos, x<<16, y<<16, width<<16, height<<16)))
@@ -716,7 +728,7 @@ bool CGameMenuItemChain::Event(CGameMenuEvent &event)
 
 CGameMenuItem7EA1C::CGameMenuItem7EA1C()
 {
-    pzText = NULL;
+    m_pzText = NULL;
     at24 = NULL;
     at28 = -1;
     at2c = NULL;
@@ -728,11 +740,11 @@ CGameMenuItem7EA1C::CGameMenuItem7EA1C()
 
 CGameMenuItem7EA1C::CGameMenuItem7EA1C(const char *a1, int a2, int a3, int a4, int a5, const char *a6, const char *a7, int a8, int a9, void(*a10)(CGameMenuItem7EA1C *), int a11)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     at20 = a8;
     at28 = a9;
     at2c = a10;
@@ -743,27 +755,27 @@ CGameMenuItem7EA1C::CGameMenuItem7EA1C(const char *a1, int a2, int a3, int a4, i
 
 void CGameMenuItem7EA1C::Draw(void)
 {
-    if (!pzText) return;
+    if (!m_pzText) return;
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
     int width;
-    int x = nX;
+    int x = m_nX;
     switch (at20)
     {
     case 1:
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-        x = nX+nWidth/2-width/2;
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+        x = m_nX+m_nWidth/2-width/2;
         break;
     case 2:
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-        x = nX+nWidth-1-width;
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+        x = m_nX+m_nWidth-1-width;
         break;
     case 0:
     default:
         break;
     }
-    gMenuTextMgr.DrawText(pzText, nFont, x, nY, shade, 0, true);
+    gMenuTextMgr.DrawText(m_pzText, m_nFont, x, m_nY, shade, 0, true);
 }
 
 void CGameMenuItem7EA1C::Setup(void)
@@ -835,7 +847,7 @@ bool CGameMenuItem7EA1C::Event(CGameMenuEvent &event)
 
 CGameMenuItem7EE34::CGameMenuItem7EE34()
 {
-    pzText = NULL;
+    m_pzText = NULL;
     at28 = NULL;
     at20 = -1;
     at2c = NULL;
@@ -843,41 +855,41 @@ CGameMenuItem7EE34::CGameMenuItem7EE34()
 
 CGameMenuItem7EE34::CGameMenuItem7EE34(const char *a1, int a2, int a3, int a4, int a5, int a6)
 {
-    pzText = NULL;
+    m_pzText = NULL;
     at28 = NULL;
     at20 = -1;
     at2c = NULL;
-    nFont = a2;
-    nX = a3;
-    pzText = a1;
-    nY = a4;
-    nWidth = a5;
+    m_nFont = a2;
+    m_nX = a3;
+    m_pzText = a1;
+    m_nY = a4;
+    m_nWidth = a5;
     at24 = a6;
 }
 
 void CGameMenuItem7EE34::Draw(void)
 {
-    if (!pzText) return;
+    if (!m_pzText) return;
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
     int width;
-    int x = nX;
+    int x = m_nX;
     switch (at24)
     {
     case 1:
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-        x = nX+nWidth/2-width/2;
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+        x = m_nX+m_nWidth/2-width/2;
         break;
     case 2:
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-        x = nX+nWidth-1-width;
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+        x = m_nX+m_nWidth-1-width;
         break;
     case 0:
     default:
         break;
     }
-    gMenuTextMgr.DrawText(pzText, nFont, x, nY, shade, 0, true);
+    gMenuTextMgr.DrawText(m_pzText, m_nFont, x, m_nY, shade, 0, true);
 }
 
 extern void SetVideoModeOld(CGameMenuItemChain *pItem);
@@ -967,15 +979,15 @@ bool CGameMenuItemChain7F2F0::Event(CGameMenuEvent &event)
 
 CGameMenuItemBitmap::CGameMenuItemBitmap()
 {
-    pzText = NULL;
+    m_pzText = NULL;
 }
 
 CGameMenuItemBitmap::CGameMenuItemBitmap(const char *a1, int a2, int a3, int a4, int a5)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
     at20 = a5;
 }
 
@@ -984,13 +996,13 @@ void CGameMenuItemBitmap::Draw(void)
     int shade = 32;
     if (bEnable && pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
-    int x = nX;
-    int y = nY;
-    if (pzText)
+    int x = m_nX;
+    int y = m_nY;
+    if (m_pzText)
     {
         int height;
-        gMenuTextMgr.DrawText(pzText, nFont, x, y, shade, 0, false);
-        gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, x, y, shade, 0, false);
+        gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
         y += height + 2;
     }
     rotatesprite(x<<15,y<<15, 65536, 0, at20, 0, 0, 82, 0, 0, xdim-1,ydim-1);
@@ -1005,16 +1017,16 @@ bool CGameMenuItemBitmap::Event(CGameMenuEvent &event)
 
 CGameMenuItemBitmapLS::CGameMenuItemBitmapLS()
 {
-    pzText = NULL;
+    m_pzText = NULL;
 }
 
 CGameMenuItemBitmapLS::CGameMenuItemBitmapLS(const char *a1, int a2, int a3, int a4, int a5)
 {
     at24 = -1;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
     at28 = a5;
 }
 
@@ -1023,13 +1035,13 @@ void CGameMenuItemBitmapLS::Draw(void)
     int shade = 32;
     if (bEnable && pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
-    int x = nX;
-    int y = nY;
-    if (pzText)
+    int x = m_nX;
+    int y = m_nY;
+    if (m_pzText)
     {
         int height;
-        gMenuTextMgr.DrawText(pzText, nFont, x, y, shade, 0, false);
-        gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, x, y, shade, 0, false);
+        gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
         y += height + 2;
     }
     char stat;
@@ -1059,10 +1071,10 @@ bool CGameMenuItemBitmapLS::Event(CGameMenuEvent &event)
 
 CGameMenuItemKeyList::CGameMenuItemKeyList()
 {
-    pzText = NULL;
-    nFont = 3;
-    nX = 0;
-    nY = 0;
+    m_pzText = NULL;
+    m_nFont = 3;
+    m_nX = 0;
+    m_nY = 0;
     nRows = 0;
     nTopDelta = 0;
     nFocus = 0;
@@ -1075,11 +1087,11 @@ CGameMenuItemKeyList::CGameMenuItemKeyList(const char *a1, int a2, int a3, int a
     nTopDelta = 0;
     nFocus = 0;
     bScan = false;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     nRows = a6;
     pCallback = a8;
     nGameFuncs = a7;
@@ -1100,8 +1112,8 @@ void CGameMenuItemKeyList::Draw(void)
     char buffer[40], buffer2[40];
     int width, height;
     int shade;
-    gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
-    int y = nY;
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
+    int y = m_nY;
     int k = nFocus - nTopDelta;
     int nNewFocus = nFocus;
     bool bClick = false;
@@ -1128,24 +1140,24 @@ void CGameMenuItemKeyList::Draw(void)
             shade = 32;
             if (pMenu->IsFocusItem(this))
                 shade = 32-(totalclock&63);
-            viewDrawText(3, buffer, nX, y, shade, 0, 0, false);
+            viewDrawText(3, buffer, m_nX, y, shade, 0, 0, false);
             const char *sVal;
             if (bScan && (gGameClock & 32))
                 sVal = "____";
             else
                 sVal = buffer2;
-            gMenuTextMgr.GetFontInfo(nFont, sVal, &width, 0);
-            viewDrawText(nFont, sVal, nX+nWidth-1-width, y, shade, 0, 0, false);
+            gMenuTextMgr.GetFontInfo(m_nFont, sVal, &width, 0);
+            viewDrawText(m_nFont, sVal, m_nX+m_nWidth-1-width, y, shade, 0, 0, false);
         }
         else
         {
-            viewDrawText(3, buffer, nX, y, 24, 0, 0, false);
-            gMenuTextMgr.GetFontInfo(nFont, buffer2, &width, 0);
-            viewDrawText(nFont, buffer2, nX+nWidth-1-width, y, 24, 0, 0, false);
+            viewDrawText(3, buffer, m_nX, y, 24, 0, 0, false);
+            gMenuTextMgr.GetFontInfo(m_nFont, buffer2, &width, 0);
+            viewDrawText(m_nFont, buffer2, m_nX+m_nWidth-1-width, y, 24, 0, 0, false);
         }
-        int mx = nX<<16;
+        int mx = m_nX<<16;
         int my = y<<16;
-        int mw = nWidth<<16;
+        int mw = m_nWidth<<16;
         int mh = height<<16;
         if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, mx, my, mw, mh)))
         {
@@ -1291,10 +1303,10 @@ bool CGameMenuItemKeyList::MouseEvent(CGameMenuEvent &event)
 
 CGameMenuItemSlider::CGameMenuItemSlider()
 {
-    pzText = NULL;
-    nFont = -1;
-    nX = 0;
-    nY = 0;
+    m_pzText = NULL;
+    m_nFont = -1;
+    m_nX = 0;
+    m_nY = 0;
     nValue = 0;
     nRangeLow = 0;
     nStep = 0;
@@ -1307,11 +1319,11 @@ CGameMenuItemSlider::CGameMenuItemSlider()
 
 CGameMenuItemSlider::CGameMenuItemSlider(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, int _nValue, int _nRangeLow, int _nRangeHigh, int _nStep, void(*_pCallback)(CGameMenuItemSlider *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = _pzText;
-    nFont = _nFont;
-    nX = _nX;
-    nY = _nY;
-    nWidth = _nWidth;
+    m_pzText = _pzText;
+    m_nFont = _nFont;
+    m_nX = _nX;
+    m_nY = _nY;
+    m_nWidth = _nWidth;
     nRangeLow = _nRangeLow;
     nRangeHigh = _nRangeHigh;
     nStep = _nStep;
@@ -1328,11 +1340,11 @@ CGameMenuItemSlider::CGameMenuItemSlider(const char *_pzText, int _nFont, int _n
 
 CGameMenuItemSlider::CGameMenuItemSlider(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, int *pnValue, int _nRangeLow, int _nRangeHigh, int _nStep, void(*_pCallback)(CGameMenuItemSlider *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = _pzText;
-    nFont = _nFont;
-    nX = _nX;
-    nY = _nY;
-    nWidth = _nWidth;
+    m_pzText = _pzText;
+    m_nFont = _nFont;
+    m_nX = _nX;
+    m_nY = _nY;
+    m_nWidth = _nWidth;
     nRangeLow = _nRangeLow;
     nRangeHigh = _nRangeHigh;
     nStep = _nStep;
@@ -1354,20 +1366,20 @@ void CGameMenuItemSlider::Draw(void)
     char buffer[16];
     int height;
     nValue = pValue ? *pValue : nValue;
-    gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
-    if (pzText)
-        gMenuTextMgr.DrawText(pzText, nFont, nX, nY, shade, 0, false);
-    int sliderX = nX+nWidth-1-tilesiz[nSliderTile].x/2;
-    rotatesprite(sliderX<<16, (nY+height/2)<<16, 65536, 0, nSliderTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+    if (m_pzText)
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, 0, false);
+    int sliderX = m_nX+m_nWidth-1-tilesiz[nSliderTile].x/2;
+    rotatesprite(sliderX<<16, (m_nY+height/2)<<16, 65536, 0, nSliderTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
     int nRange = nRangeHigh - nRangeLow;
     dassert(nRange > 0);
     int value = nValue - nRangeLow;
     int width = tilesiz[nSliderTile].x-8;
     int cursorX = sliderX + ksgn(nStep)*(value * width / nRange - width / 2);
-    rotatesprite(cursorX<<16, (nY+height/2)<<16, 65536, 0, nCursorTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+    rotatesprite(cursorX<<16, (m_nY+height/2)<<16, 65536, 0, nCursorTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
 
     buffer[0] = 0;
     switch (nShowValue)
@@ -1385,13 +1397,13 @@ void CGameMenuItemSlider::Draw(void)
         break;
     }
     int valueWidth;
-    gMenuTextMgr.GetFontInfo(nFont, buffer, &valueWidth, NULL);
-    int valueX = nX+nWidth-1-tilesiz[nSliderTile].x-valueWidth;
-    gMenuTextMgr.DrawText(buffer, nFont, valueX, nY, 32, 0, false);
+    gMenuTextMgr.GetFontInfo(m_nFont, buffer, &valueWidth, NULL);
+    int valueX = m_nX+m_nWidth-1-tilesiz[nSliderTile].x-valueWidth;
+    gMenuTextMgr.DrawText(buffer, m_nFont, valueX, m_nY, 32, 0, false);
 
-    int mx = nX;
-    int my = nY;
-    int mw = nWidth;
+    int mx = m_nX;
+    int my = m_nY;
+    int mw = m_nWidth;
     int mh = height;
     if (height < tilesiz[nSliderTile].y)
     {
@@ -1414,7 +1426,7 @@ void CGameMenuItemSlider::Draw(void)
         {
             pMenu->SetFocusItem(this);
 
-            int sliderx = nX+nWidth-1-tilesiz[nSliderTile].x;
+            int sliderx = m_nX+m_nWidth-1-tilesiz[nSliderTile].x;
             int sliderwidth = tilesiz[nSliderTile].x;
             int regionwidth = sliderwidth-8;
             int regionx = sliderx+(sliderwidth-regionwidth)/2;
@@ -1520,10 +1532,10 @@ bool CGameMenuItemSlider::MouseEvent(CGameMenuEvent &event)
 
 CGameMenuItemSliderFloat::CGameMenuItemSliderFloat()
 {
-    pzText = NULL;
-    nFont = -1;
-    nX = 0;
-    nY = 0;
+    m_pzText = NULL;
+    m_nFont = -1;
+    m_nX = 0;
+    m_nY = 0;
     fValue = 0;
     fRangeLow = 0;
     fStep = 0;
@@ -1536,11 +1548,11 @@ CGameMenuItemSliderFloat::CGameMenuItemSliderFloat()
 
 CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, float _fValue, float _fRangeLow, float _fRangeHigh, float _fStep, void(*_pCallback)(CGameMenuItemSliderFloat *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = _pzText;
-    nFont = _nFont;
-    nX = _nX;
-    nY = _nY;
-    nWidth = _nWidth;
+    m_pzText = _pzText;
+    m_nFont = _nFont;
+    m_nX = _nX;
+    m_nY = _nY;
+    m_nWidth = _nWidth;
     fRangeLow = _fRangeLow;
     fRangeHigh = _fRangeHigh;
     fStep = _fStep;
@@ -1557,11 +1569,11 @@ CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *_pzText, int _nFo
 
 CGameMenuItemSliderFloat::CGameMenuItemSliderFloat(const char *_pzText, int _nFont, int _nX, int _nY, int _nWidth, float *pnValue, float _fRangeLow, float _fRangeHigh, float _fStep, void(*_pCallback)(CGameMenuItemSliderFloat *), int _nSliderTile, int _nCursorTile, int _nShowValue)
 {
-    pzText = _pzText;
-    nFont = _nFont;
-    nX = _nX;
-    nY = _nY;
-    nWidth = _nWidth;
+    m_pzText = _pzText;
+    m_nFont = _nFont;
+    m_nX = _nX;
+    m_nY = _nY;
+    m_nWidth = _nWidth;
     fRangeLow = _fRangeLow;
     fRangeHigh = _fRangeHigh;
     fStep = _fStep;
@@ -1584,20 +1596,20 @@ void CGameMenuItemSliderFloat::Draw(void)
     int height;
 
     fValue = pValue ? *pValue : fValue;
-    gMenuTextMgr.GetFontInfo(nFont, NULL, NULL, &height);
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
-    if (pzText)
-        gMenuTextMgr.DrawText(pzText, nFont, nX, nY, shade, 0, false);
-    int sliderX = nX+nWidth-1-tilesiz[nSliderTile].x/2;
-    rotatesprite(sliderX<<16, (nY+height/2)<<16, 65536, 0, nSliderTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+    if (m_pzText)
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, 0, false);
+    int sliderX = m_nX+m_nWidth-1-tilesiz[nSliderTile].x/2;
+    rotatesprite(sliderX<<16, (m_nY+height/2)<<16, 65536, 0, nSliderTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
     float fRange = fRangeHigh - fRangeLow;
     dassert(fRange > 0);
     float value = fValue - fRangeLow;
     int width = tilesiz[nSliderTile].x-8;
     int cursorX = sliderX + (int)(ksgnf(fStep)*(value * width / fRange - width / 2));
-    rotatesprite(cursorX<<16, (nY+height/2)<<16, 65536, 0, nCursorTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+    rotatesprite(cursorX<<16, (m_nY+height/2)<<16, 65536, 0, nCursorTile, 0, 0, 10, 0, 0, xdim-1, ydim-1);
 
     buffer[0] = 0;
     switch (nShowValue)
@@ -1612,13 +1624,13 @@ void CGameMenuItemSliderFloat::Draw(void)
         break;
     }
     int valueWidth;
-    gMenuTextMgr.GetFontInfo(nFont, buffer, &valueWidth, NULL);
-    int valueX = nX+nWidth-1-tilesiz[nSliderTile].x-valueWidth;
-    gMenuTextMgr.DrawText(buffer, nFont, valueX, nY, 32, 0, false);
+    gMenuTextMgr.GetFontInfo(m_nFont, buffer, &valueWidth, NULL);
+    int valueX = m_nX+m_nWidth-1-tilesiz[nSliderTile].x-valueWidth;
+    gMenuTextMgr.DrawText(buffer, m_nFont, valueX, m_nY, 32, 0, false);
 
-    int mx = nX;
-    int my = nY;
-    int mw = nWidth;
+    int mx = m_nX;
+    int my = m_nY;
+    int mw = m_nWidth;
     int mh = height;
     if (height < tilesiz[nSliderTile].y)
     {
@@ -1641,7 +1653,7 @@ void CGameMenuItemSliderFloat::Draw(void)
         {
             pMenu->SetFocusItem(this);
 
-            int sliderx = nX+nWidth-1-tilesiz[nSliderTile].x;
+            int sliderx = m_nX+m_nWidth-1-tilesiz[nSliderTile].x;
             int sliderwidth = tilesiz[nSliderTile].x;
             int regionwidth = sliderwidth-8;
             int regionx = sliderx+(sliderwidth-regionwidth)/2;
@@ -1714,10 +1726,10 @@ bool CGameMenuItemSliderFloat::Event(CGameMenuEvent &event)
 
 CGameMenuItemZEdit::CGameMenuItemZEdit()
 {
-    pzText = NULL;
-    nFont = -1;
-    nX = 0;
-    nY = 0;
+    m_pzText = NULL;
+    m_nFont = -1;
+    m_nX = 0;
+    m_nY = 0;
     at20 = NULL;
     at24 = 0;
     at32 = 0;
@@ -1731,11 +1743,11 @@ CGameMenuItemZEdit::CGameMenuItemZEdit(const char *a1, int a2, int a3, int a4, i
 {
     at30 = 0;
     at31 = 1;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     at20 = a6;
     at24 = a7;
     at32 = a8;
@@ -1763,19 +1775,19 @@ void CGameMenuItemZEdit::BackChar(void)
 void CGameMenuItemZEdit::Draw(void)
 {
     int height, width;
-    gMenuTextMgr.GetFontInfo(nFont, NULL, &width, &height);
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, &width, &height);
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
     if (at30)
         shade = -128;
-    if (pzText)
-        gMenuTextMgr.DrawText(pzText, nFont, nX, nY, shade, 0, false);
-    int x = nX+nWidth-1-(at24+1)*width;
+    if (m_pzText)
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, 0, false);
+    int x = m_nX+m_nWidth-1-(at24+1)*width;
     if (at20 && *at20)
     {
         int width;
-        gMenuTextMgr.GetFontInfo(nFont, at20, &width, NULL);
+        gMenuTextMgr.GetFontInfo(m_nFont, at20, &width, NULL);
         int shade2;
         if (at32)
         {
@@ -1791,15 +1803,15 @@ void CGameMenuItemZEdit::Draw(void)
             else
                 shade2 = 32;
         }
-        gMenuTextMgr.DrawText(at20, nFont, x, nY, shade2, 0, false);
+        gMenuTextMgr.DrawText(at20, m_nFont, x, m_nY, shade2, 0, false);
         x += width;
     }
     if (at30 && (gGameClock & 32))
-        gMenuTextMgr.DrawText("_", nFont, x, nY, shade, 0, false);
+        gMenuTextMgr.DrawText("_", m_nFont, x, m_nY, shade, 0, false);
 
-    int mx = nX<<16;
-    int my = nY<<16;
-    int mw = nWidth<<16;
+    int mx = m_nX<<16;
+    int my = m_nY<<16;
+    int mw = m_nWidth<<16;
     int mh = height<<16;
 
     if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, mx, my, mw, mh)))
@@ -1886,10 +1898,10 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
 
 CGameMenuItemZEditBitmap::CGameMenuItemZEditBitmap()
 {
-    pzText = NULL;
-    nFont = -1;
-    nX = 0;
-    nY = 0;
+    m_pzText = NULL;
+    m_nFont = -1;
+    m_nX = 0;
+    m_nY = 0;
     at20 = NULL;
     at24 = 0;
     at36 = 0;
@@ -1907,11 +1919,11 @@ CGameMenuItemZEditBitmap::CGameMenuItemZEditBitmap(char *a1, int a2, int a3, int
     at34 = 0;
     at35 = 1;
     at37 = 0;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     at20 = a6;
     at24 = a7;
     at36 = a8;
@@ -1939,20 +1951,20 @@ void CGameMenuItemZEditBitmap::BackChar(void)
 void CGameMenuItemZEditBitmap::Draw(void)
 {
     int height, width;
-    gMenuTextMgr.GetFontInfo(nFont, NULL, &width, &height);
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, &width, &height);
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
     at2c->at24 = -1;
     if (at34)
         shade = -128;
-    if (pzText)
-        gMenuTextMgr.DrawText(pzText, nFont, nX, nY, shade, 0, false);
-    int x = nX+nWidth-1-(at24+1)*width;
+    if (m_pzText)
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, 0, false);
+    int x = m_nX+m_nWidth-1-(at24+1)*width;
     if (at20 && *at20)
     {
         int width;
-        gMenuTextMgr.GetFontInfo(nFont, at20, &width, NULL);
+        gMenuTextMgr.GetFontInfo(m_nFont, at20, &width, NULL);
         int shade2;
         if (at36)
         {
@@ -1968,15 +1980,15 @@ void CGameMenuItemZEditBitmap::Draw(void)
             else
                 shade2 = 32;
         }
-        gMenuTextMgr.DrawText(at20, nFont, x, nY, shade2, 0, false);
+        gMenuTextMgr.DrawText(at20, m_nFont, x, m_nY, shade2, 0, false);
         x += width;
     }
     if (at34 && (gGameClock & 32))
-        gMenuTextMgr.DrawText("_", nFont, x, nY, shade, 0, false);
+        gMenuTextMgr.DrawText("_", m_nFont, x, m_nY, shade, 0, false);
 
-    int mx = nX<<16;
-    int my = nY<<16;
-    int mw = nWidth<<16;
+    int mx = m_nX<<16;
+    int my = m_nY<<16;
+    int mw = m_nWidth<<16;
     int mh = height<<16;
 
     if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, mx, my, mw, mh)))
@@ -2077,12 +2089,12 @@ CGameMenuItemQAV::CGameMenuItemQAV()
 
 CGameMenuItemQAV::CGameMenuItemQAV(const char *a1, int a2, int a3, int a4, const char *a5, bool widescreen, bool clearbackground)
 {
-    nWidth = 0;
-    pzText = a1;
-    nFont = a2;
-    nY = a4;
+    m_nWidth = 0;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nY = a4;
     at20 = a5;
-    nX = a3;
+    m_nX = a3;
     bEnable = 0;
     bWideScreen = widescreen;
     bClearBackground = clearbackground;
@@ -2159,8 +2171,8 @@ bool CGameMenuItemQAV::Event(CGameMenuEvent &event)
                     ThrowError("Could not load QAV %s\n", at20);
                 at28 = (QAV*)gSysRes.Lock(at24);
                 at28->nSprite = -1;
-                at28->x = nX;
-                at28->y = nY;
+                at28->x = m_nX;
+                at28->y = m_nY;
                 at28->Preload();
                 at2c = at28->at10;
                 at30 = totalclock;
@@ -2187,39 +2199,203 @@ void CGameMenuItemQAV::Reset(void)
     at30 = totalclock;
 }
 
-CGameMenuItemZCycle::CGameMenuItemZCycle()
+CGameMenuItemZCycleSelect::CGameMenuItemZCycleSelect()
 {
-    pzText = NULL;
-    at24 = 0;
+    m_pzText = NULL;
+    m_nFont = 3;
+    m_nX = 0;
+    m_nY = 0;
+    m_nRows = 0;
+    m_nTopDelta = 0;
+    m_nFocus = 0;
     m_nItems = 0;
-    atb4 = 0;
-    at2c = 0;
-    at30 = 0;
+    m_pzStrings = NULL;
+    m_pReturn = NULL;
 }
 
-CGameMenuItemZCycle::CGameMenuItemZCycle(const char *a1, int a2, int a3, int a4, int a5, int a6, void(*a7)(CGameMenuItemZCycle *), const char **a8, int a9, int a10)
+CGameMenuItemZCycleSelect::CGameMenuItemZCycleSelect(const char *pzText, int nFont, int nX, int nY, int nWidth, int nRows, int nItems, const char **pzStrings, int *pReturn, void(*pCallback)(CGameMenuItemZCycleSelect *))
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    at24 = 0;
-    nWidth = a5;
-    at28 = a6;
-    atb4 = a7;
+    m_nTopDelta = 0;
+    m_nFocus = 0;
+    m_pzText = pzText;
+    m_nFont = nFont;
+    m_nX = nX;
+    m_nY = nY;
+    m_nWidth = nWidth;
+    m_nRows = nRows;
+    m_pCallback = pCallback;
+    m_nItems = nItems;
+    m_pzStrings = pzStrings;
+    m_pReturn = pReturn;
+}
+
+void CGameMenuItemZCycleSelect::Draw(void)
+{
+    int width, height;
+    int shade;
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
+    int y = m_nY;
+    int k = m_nFocus - m_nTopDelta;
+    int nNewFocus = m_nFocus;
+    bool bClick = false;
+    for (int i = 0; i < m_nRows; i++, y += height, k++)
+    {
+        if (k == m_nFocus)
+        {
+            shade = 32;
+            if (pMenu->IsFocusItem(this))
+                shade = 32-(totalclock&63);
+            viewDrawText(3, m_pzStrings[k], m_nX, y, shade, 0, 0, false);
+        }
+        else
+        {
+            viewDrawText(3, m_pzStrings[k], m_nX, y, 24, 0, 0, false);
+        }
+        int mx = m_nX<<16;
+        int my = y<<16;
+        int mw = m_nWidth<<16;
+        int mh = height<<16;
+        if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, mx, my, mw, mh)))
+        {
+            if (MOUSEWATCHPOINTCONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_prevmousepos, mx, my, mw, mh)))
+            {
+                nNewFocus = k;
+            }
+
+            if (!gGameMenuMgr.m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousedownpos, mx, my, mw, mh))
+            {
+                nNewFocus = k;
+                bClick = true;
+            }
+        }
+    }
+    m_nTopDelta += nNewFocus-m_nFocus;
+    m_nFocus = nNewFocus;
+    if (bClick)
+    {
+        CGameMenuEvent event = { kMenuEventEnter, 0 };
+
+        gGameMenuMgr.m_mousecaught = 1;
+
+        if (Event(event))
+            gGameMenuMgr.PostPop();
+    }
+}
+
+bool CGameMenuItemZCycleSelect::Event(CGameMenuEvent &event)
+{
+    switch (event.at0)
+    {
+    case kMenuEventUp:
+        if (event.at2 == sc_Tab || m_nFocus == 0)
+        {
+            pMenu->FocusPrevItem();
+            return false;
+        }
+        m_nFocus--;
+        if (m_nTopDelta > 0)
+            m_nTopDelta--;
+        return false;
+    case kMenuEventDown:
+        if (event.at2 == sc_Tab || m_nFocus == m_nItems-1)
+        {
+            pMenu->FocusNextItem();
+            return false;
+        }
+        m_nFocus++;
+        if (m_nTopDelta+1 < m_nRows)
+            m_nTopDelta++;
+        return false;
+    case kMenuEventEnter:
+        if (m_pCallback)
+            m_pCallback(this);
+        *m_pReturn = m_nFocus;
+        return true;
+    case kMenuEventScrollUp:
+        if (m_nFocus-m_nTopDelta > 0)
+        {
+            m_nTopDelta++;
+            if (m_nTopDelta>0)
+            {
+                m_nFocus--;
+                m_nTopDelta--;
+            }
+        }
+        return false;
+    case kMenuEventScrollDown:
+        if (m_nFocus-m_nTopDelta+m_nRows < m_nItems)
+        {
+            m_nTopDelta--;
+            if (m_nTopDelta+1 < m_nRows)
+            {
+                m_nFocus++;
+                m_nTopDelta++;
+            }
+        }
+        return false;
+    }
+    return CGameMenuItem::Event(event);
+}
+
+bool CGameMenuItemZCycleSelect::MouseEvent(CGameMenuEvent &event)
+{
+    event.at0 = kMenuEventNone;
+    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELUP_MOUSE))
+    {
+        gGameMenuMgr.m_mouselastactivity = totalclock;
+        MOUSE_ClearButton(WHEELUP_MOUSE);
+        event.at0 = kMenuEventScrollUp;
+    }
+    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+    {
+        gGameMenuMgr.m_mouselastactivity = totalclock;
+        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        event.at0 = kMenuEventScrollDown;
+    }
+    else
+        return CGameMenuItem::MouseEvent(event);
+    return event.at0 != kMenuEventNone;
+}
+
+CGameMenuItemZCycle::CGameMenuItemZCycle()
+{
+    m_pzText = NULL;
+    m_nFocus = 0;
     m_nItems = 0;
+    m_pCallback = NULL;
+    m_pCallbackSelect = NULL;
+    m_pMenuSelect = NULL;
+    m_nMenuSelectReturn = -1;
+}
+
+CGameMenuItemZCycle::CGameMenuItemZCycle(const char *a1, int a2, int a3, int a4, int a5, int a6, void(*a7)(CGameMenuItemZCycle *), const char **a8, int a9, int a10, bool bMenu, void(*pCallbackSelect)(CGameMenuItemZCycleSelect*))
+{
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nFocus = 0;
+    m_nWidth = a5;
+    m_nAlign = a6;
+    m_pCallback = a7;
+    m_pCallbackSelect = pCallbackSelect;
+    m_nItems = 0;
+    m_bMenu = bMenu;
+    m_pMenuSelect = NULL;
+    m_nMenuSelectReturn = -1;
     SetTextArray(a8, a9, a10);
 }
 
 CGameMenuItemZCycle::~CGameMenuItemZCycle()
 {
-    pzText = NULL;
-    at24 = 0;
+    m_pzText = NULL;
+    m_nFocus = 0;
     m_nItems = 0;
-    atb4 = 0;
-    memset(at34, 0, sizeof(at34));
-    at2c = 0;
-    at30 = 0;
+    m_pCallback = NULL;
+    m_pCallbackSelect = NULL;
+    m_pMenuSelect = NULL;
+    m_nMenuSelectReturn = -1;
+    memset(m_pzStrings, 0, sizeof(m_pzStrings));
 }
 
 void CGameMenuItemZCycle::Draw(void)
@@ -2228,41 +2404,50 @@ void CGameMenuItemZCycle::Draw(void)
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
-    int x = nX;
-    int y = nY;
-    if (pzText)
+    int x = m_nX;
+    int y = m_nY;
+
+    if (m_nMenuSelectReturn != -1)
     {
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, &height);
-        switch (at28)
+        m_nFocus = m_nMenuSelectReturn;
+        if (m_pCallback)
+            m_pCallback(this);
+        m_nMenuSelectReturn = -1;
+    }
+
+    if (m_pzText)
+    {
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, &height);
+        switch (m_nAlign)
         {
         case 1:
-            x = nX+nWidth/2-width/2;
+            x = m_nX+m_nWidth/2-width/2;
             break;
         case 2:
-            x = nX+nWidth-1-width;
+            x = m_nX+m_nWidth-1-width;
             break;
         case 0:
         default:
             break;
         }
-        gMenuTextMgr.DrawText(pzText, nFont, x, y, shade, 0, false);
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, x, y, shade, 0, false);
     }
     const char *pzText;
     if (!m_nItems)
         pzText = "????";
     else
-        pzText = at34[at24];
+        pzText = m_pzStrings[m_nFocus];
     dassert(pzText != NULL);
-    gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-    gMenuTextMgr.DrawText(pzText, nFont, nX + nWidth - 1 - width, y, shade, 0, false);
-    if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, x<<16, y<<16, nWidth<<16, height<<16)))
+    gMenuTextMgr.GetFontInfo(m_nFont, pzText, &width, NULL);
+    gMenuTextMgr.DrawText(pzText, m_nFont, m_nX + m_nWidth - 1 - width, y, shade, 0, false);
+    if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, x<<16, y<<16, m_nWidth<<16, height<<16)))
     {
-        if (MOUSEWATCHPOINTCONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_prevmousepos, x<<16, y<<16, nWidth<<16, height<<16)))
+        if (MOUSEWATCHPOINTCONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_prevmousepos, x<<16, y<<16, m_nWidth<<16, height<<16)))
         {
             pMenu->SetFocusItem(this);
         }
 
-        if (!gGameMenuMgr.m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousedownpos, x<<16, y<<16, nWidth<<16, height<<16))
+        if (!gGameMenuMgr.m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousedownpos, x<<16, y<<16, m_nWidth<<16, height<<16))
         {
             pMenu->SetFocusItem(this);
 
@@ -2279,17 +2464,69 @@ bool CGameMenuItemZCycle::Event(CGameMenuEvent &event)
 {
     switch (event.at0)
     {
-    case kMenuEventRight:
     case kMenuEventEnter:
+        if (m_bMenu)
+        {
+            if (m_pMenuSelect)
+            {
+                delete m_pMenuSelect;
+                m_pMenuSelect = NULL;
+            }
+            if (m_pItemSelectTitle)
+            {
+                delete m_pItemSelectTitle;
+                m_pItemSelectTitle = NULL;
+            }
+            if (m_pItemSelect)
+            {
+                delete m_pItemSelect;
+                m_pItemSelect = NULL;
+            }
+            m_pMenuSelect = new CGameMenu();
+            dassert(m_pMenuSelect != NULL);
+            strncpy(m_zTitle, m_pzText, kMaxTitleLength);
+            int l = strlen(m_zTitle);
+            if (l > 0 && m_zTitle[l-1] == ':')
+                l--;
+            m_zTitle[l] = 0;
+            m_pItemSelectTitle = new CGameMenuItemTitle(m_zTitle, 1, 160, 20, 2038);
+            dassert(m_pItemSelectTitle != NULL);
+            m_pItemSelect = new CGameMenuItemZCycleSelect("", 3, 100, 40, 100, 16, m_nItems, m_pzStrings, &m_nMenuSelectReturn, m_pCallbackSelect);
+            dassert(m_pItemSelect != NULL);
+            m_pMenuSelect->Add(m_pItemSelectTitle, false);
+            m_pMenuSelect->Add(m_pItemSelect, true);
+            m_pMenuSelect->Add(&itemBloodQAV, false);
+            gGameMenuMgr.Push(m_pMenuSelect, -1);
+            return false;
+        }
+        fallthrough__;
+    case kMenuEventRight:
     case kMenuEventSpace:
         Next();
-        if (atb4)
-            atb4(this);
+        if (m_pCallback)
+            m_pCallback(this);
         return false;
     case kMenuEventLeft:
         Prev();
-        if (atb4)
-            atb4(this);
+        if (m_pCallback)
+            m_pCallback(this);
+        return false;
+    case kMenuEventDeInit:
+        if (m_pMenuSelect)
+        {
+            delete m_pMenuSelect;
+            m_pMenuSelect = NULL;
+        }
+        if (m_pItemSelectTitle)
+        {
+            delete m_pItemSelectTitle;
+            m_pItemSelectTitle = NULL;
+        }
+        if (m_pItemSelect)
+        {
+            delete m_pItemSelect;
+            m_pItemSelect = NULL;
+        }
         return false;
     }
     return CGameMenuItem::Event(event);
@@ -2299,9 +2536,9 @@ void CGameMenuItemZCycle::Add(const char *pItem, bool active)
 {
     dassert(pItem != NULL);
     dassert(m_nItems < kMaxGameCycleItems);
-    at34[m_nItems] = pItem;
+    m_pzStrings[m_nItems] = pItem;
     if (active)
-        at24 = m_nItems;
+        m_nFocus = m_nItems;
     m_nItems++;
 }
 
@@ -2309,9 +2546,9 @@ void CGameMenuItemZCycle::Next(void)
 {
     if (m_nItems > 0)
     {
-        at24++;
-        if (at24 >= m_nItems)
-            at24 = 0;
+        m_nFocus++;
+        if (m_nFocus >= m_nItems)
+            m_nFocus = 0;
     }
 }
 
@@ -2319,18 +2556,16 @@ void CGameMenuItemZCycle::Prev(void)
 {
     if (m_nItems > 0)
     {
-        at24--;
-        if (at24 < 0)
-            at24 += m_nItems;
+        m_nFocus--;
+        if (m_nFocus < 0)
+            m_nFocus += m_nItems;
     }
 }
 
 void CGameMenuItemZCycle::Clear(void)
 {
-    m_nItems = at24 = 0;
-    memset(at34, 0, sizeof(at34));
-    at2c = 0;
-    at30 = 0;
+    m_nItems = m_nFocus = 0;
+    memset(m_pzStrings, 0, sizeof(m_pzStrings));
 }
 
 void CGameMenuItemZCycle::SetTextArray(const char **pTextArray, int nTextPtrCount, int nIndex)
@@ -2344,23 +2579,23 @@ void CGameMenuItemZCycle::SetTextArray(const char **pTextArray, int nTextPtrCoun
 
 void CGameMenuItemZCycle::SetTextIndex(int nIndex)
 {
-    at24 = ClipRange(nIndex, 0, m_nItems);
+    m_nFocus = ClipRange(nIndex, 0, m_nItems);
 }
 
 CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit()
 {
-    pzText = NULL;
+    m_pzText = NULL;
     at24 = -1;
     at28 = 0;
 }
 
 CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit(const char *a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8)
 {
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
-    nWidth = a5;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
+    m_nWidth = a5;
     at20 = a6;
     at24 = a7;
     at28 = a8;
@@ -2368,27 +2603,27 @@ CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit(const char *a1, int a2, int a3, i
 
 void CGameMenuItemYesNoQuit::Draw(void)
 {
-    if (!pzText) return;
+    if (!m_pzText) return;
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
     int width;
-    int x = nX;
+    int x = m_nX;
     switch (at20)
     {
     case 1:
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-        x = nX+nWidth/2-width/2;
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+        x = m_nX+m_nWidth/2-width/2;
         break;
     case 2:
-        gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-        x = nX+nWidth-1-width;
+        gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+        x = m_nX+m_nWidth-1-width;
         break;
     case 0:
     default:
         break;
     }
-    gMenuTextMgr.DrawText(pzText, nFont, x, nY, shade, 0, true);
+    gMenuTextMgr.DrawText(m_pzText, m_nFont, x, m_nY, shade, 0, true);
 }
 
 extern void Quit(CGameMenuItemChain *pItem);
@@ -2412,7 +2647,7 @@ bool CGameMenuItemYesNoQuit::Event(CGameMenuEvent &event)
 
 CGameMenuItemPicCycle::CGameMenuItemPicCycle()
 {
-    pzText = NULL;
+    m_pzText = NULL;
     at24 = 0;
     m_nItems = 0;
     atb0 = 0;
@@ -2422,11 +2657,11 @@ CGameMenuItemPicCycle::CGameMenuItemPicCycle()
 
 CGameMenuItemPicCycle::CGameMenuItemPicCycle(int a1, int a2, void(*a3)(CGameMenuItemPicCycle *), int *a4, int a5, int a6)
 {
-    nWidth = 0;
+    m_nWidth = 0;
     at24 = 0;
     m_nItems = 0;
-    nX = a1;
-    nY = a2;
+    m_nX = a1;
+    m_nY = a2;
     atb0 = a3;
     atb4 = 0;
     SetPicArray(a4, a5, a6);
@@ -2515,7 +2750,7 @@ void CGameMenuItemPicCycle::SetPicIndex(int nIndex)
 CGameMenuItemPassword::CGameMenuItemPassword()
 {
     at37 = 0;
-    pzText = NULL;
+    m_pzText = NULL;
     at36 = 0;
     at32 = 0;
     at5b = 0;
@@ -2524,14 +2759,14 @@ CGameMenuItemPassword::CGameMenuItemPassword()
 CGameMenuItemPassword::CGameMenuItemPassword(const char *a1, int a2, int a3, int a4)
 {
     at37 = 0;
-    nWidth = 0;
+    m_nWidth = 0;
     at36 = 0;
     at32 = 0;
     at5b = 0;
-    pzText = a1;
-    nFont = a2;
-    nX = a3;
-    nY = a4;
+    m_pzText = a1;
+    m_nFont = a2;
+    m_nX = a3;
+    m_nY = a4;
 }
 
 const char *kCheckPasswordMsg = "ENTER PASSWORD: ";
@@ -2565,15 +2800,15 @@ void CGameMenuItemPassword::Draw(void)
         for (int i = 0; i < at32; i++)
             strcat(at3b, "*");
         strcat(at3b, "_");
-        gMenuTextMgr.GetFontInfo(nFont, at3b, &width, NULL);
-        gMenuTextMgr.DrawText(at3b, nFont, nX-width/2, nY+20, shadef, 0, false);
+        gMenuTextMgr.GetFontInfo(m_nFont, at3b, &width, NULL);
+        gMenuTextMgr.DrawText(at3b, m_nFont, m_nX-width/2, m_nY+20, shadef, 0, false);
         shadef = 32;
         break;
     case 4:
         if ((totalclock - at5b) & 32)
         {
-            gMenuTextMgr.GetFontInfo(nFont, kInvalidPasswordMsg, &width, NULL);
-            gMenuTextMgr.DrawText(kInvalidPasswordMsg, nFont, nX - width / 2, nY + 20, shade, 0, false);
+            gMenuTextMgr.GetFontInfo(m_nFont, kInvalidPasswordMsg, &width, NULL);
+            gMenuTextMgr.DrawText(kInvalidPasswordMsg, m_nFont, m_nX - width / 2, m_nY + 20, shade, 0, false);
         }
         if (at5b && totalclock-at5b > 256)
         {
@@ -2582,8 +2817,8 @@ void CGameMenuItemPassword::Draw(void)
         }
         break;
     }
-    gMenuTextMgr.GetFontInfo(nFont, pzText, &width, NULL);
-    gMenuTextMgr.DrawText(pzText, nFont, nX-width/2, nY, focus ? shadef : shade, 0, false);
+    gMenuTextMgr.GetFontInfo(m_nFont, m_pzText, &width, NULL);
+    gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX-width/2, m_nY, focus ? shadef : shade, 0, false);
 }
 
 bool CGameMenuItemPassword::Event(CGameMenuEvent &event)

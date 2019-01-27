@@ -31,9 +31,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define M_MOUSETIMEOUT 210
 
-#define kMaxGameMenuItems 32
-#define kMaxGameCycleItems 32
-#define kMaxPicCycleItems 32
+#define kMaxGameMenuItems 128
+#define kMaxGameCycleItems 128
+#define kMaxPicCycleItems 128
+#define kMaxTitleLength 32
 
 // alpha increments of 3 --> 255 / 3 = 85 --> round up to power of 2 --> 128 --> divide by 2 --> 64 alphatabs required
 // use 16 anyway :P
@@ -96,11 +97,11 @@ class CGameMenu;
 class CGameMenuItem {
 public:
     CGameMenu *pMenu;
-    const char* pzText;
-    int nFont;
-    int nX;
-    int nY;
-    int nWidth;
+    const char* m_pzText;
+    int m_nFont;
+    int m_nX;
+    int m_nY;
+    int m_nWidth;
     void (*pPreDrawCallback)(CGameMenuItem *pItem);
     //int nFlags;
     unsigned int bCanSelect : 1;
@@ -334,18 +335,41 @@ public:
     void Reset(void);
 };
 
+class CGameMenuItemZCycleSelect : public CGameMenuItem
+{
+public:
+    void(*m_pCallback)(CGameMenuItemZCycleSelect *);
+    int m_nRows;
+    int m_nTopDelta;
+    int m_nFocus;
+    int m_nItems;
+    int *m_pReturn;
+    const char **m_pzStrings;
+    CGameMenuItemZCycleSelect();
+    CGameMenuItemZCycleSelect(const char *pzText, int nFont, int nX, int nY, int nWidth, int nRows, int nItems, const char **pzStrings, int *pReturn, void(*pCallback)(CGameMenuItemZCycleSelect *));
+    virtual void Draw(void);
+    virtual bool Event(CGameMenuEvent &);
+    virtual bool MouseEvent(CGameMenuEvent &);
+};
+
+
 class CGameMenuItemZCycle : public CGameMenuItem
 {
 public:
     int m_nItems;
-    int at24;
-    int at28;
-    int at2c;
-    int at30;
-    const char *at34[kMaxGameCycleItems];
-    void(*atb4)(CGameMenuItemZCycle *);
+    int m_nFocus;
+    int m_nAlign;
+    const char *m_pzStrings[kMaxGameCycleItems];
+    char m_zTitle[kMaxTitleLength];
+    void(*m_pCallback)(CGameMenuItemZCycle *);
+    void(*m_pCallbackSelect)(CGameMenuItemZCycleSelect *);
+    bool m_bMenu;
+    int m_nMenuSelectReturn;
+    CGameMenu *m_pMenuSelect;
+    CGameMenuItemTitle *m_pItemSelectTitle;
+    CGameMenuItemZCycleSelect *m_pItemSelect;
     CGameMenuItemZCycle();
-    CGameMenuItemZCycle(const char *, int, int, int, int, int, void(*)(CGameMenuItemZCycle *), const char **, int, int);
+    CGameMenuItemZCycle(const char *, int, int, int, int, int, void(*)(CGameMenuItemZCycle *), const char **, int, int, bool = false, void(*)(CGameMenuItemZCycleSelect*) = NULL);
     ~CGameMenuItemZCycle();
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
@@ -438,6 +462,7 @@ class CGameMenuMgr
 public:
     static bool m_bInitialized;
     static bool m_bActive;
+    CGameMenu *pTempMenu;
     CGameMenu *pActiveMenu;
     CGameMenu *pMenuStack[8];
     int nMenuPointer;
@@ -445,12 +470,14 @@ public:
     int32_t m_mousewake_watchpoint, m_menuchange_watchpoint;
     int32_t m_mousecaught;
     vec2_t m_prevmousepos, m_mousepos, m_mousedownpos;
+    bool m_postPop;
     CGameMenuMgr();
     ~CGameMenuMgr();
     void InitializeMenu(void);
     void DeInitializeMenu(void);
     bool Push(CGameMenu *pMenu, int data);
     void Pop(void);
+    void PostPop(void);
     void Draw(void);
     void Clear(void);
     void Process(void);
