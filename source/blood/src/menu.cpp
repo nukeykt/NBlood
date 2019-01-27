@@ -548,6 +548,7 @@ CGameMenuItemZEdit itemOptionsPlayerName("PLAYER NAME:", 3, 66, 60, 250, szPlaye
 
 CGameMenu menuOptionsControlKeyboard;
 CGameMenu menuOptionsControlMouse;
+CGameMenu menuOptionsControlMouseButtonAssignment;
 
 void SetupMouseMenu(CGameMenuItemChain *pItem);
 
@@ -565,9 +566,14 @@ void SetMouseAimMode(CGameMenuItemZBool *pItem);
 void SetMouseVerticalAim(CGameMenuItemZBool *pItem);
 void SetMouseXScale(CGameMenuItemSlider *pItem);
 void SetMouseYScale(CGameMenuItemSlider *pItem);
+void SetMouseDigitalAxis(CGameMenuItemZCycle *pItem);
+
+void PreDrawControlMouse(CGameMenuItem *pItem);
+
+void SetupMouseButtonMenu(CGameMenuItemChain *pItem);
 
 CGameMenuItemTitle itemOptionsControlMouseTitle("MOUSE SETUP", 1, 160, 20, 2038);
-CGameMenuItemChain itemOptionsControlMouseButton("BUTTON ASSIGNMENT", 3, 66, 60, 180, 0, NULL, 0, NULL, 0);
+CGameMenuItemChain itemOptionsControlMouseButton("BUTTON ASSIGNMENT", 3, 66, 60, 180, 0, &menuOptionsControlMouseButtonAssignment, 0, SetupMouseButtonMenu, 0);
 CGameMenuItemSliderFloat itemOptionsControlMouseSensitivity("SENSITIVITY:", 3, 66, 70, 180, &CONTROL_MouseSensitivity, 0.5f, 16.f, 0.5f, SetMouseSensitivity, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsControlMouseAimFlipped("INVERT AIMING:", 3, 66, 80, 180, false, SetMouseAimFlipped, NULL, NULL);
 CGameMenuItemZBool itemOptionsControlMouseFilterInput("FILTER INPUT:", 3, 66, 90, 180, false, SetMouseFilterInput, NULL, NULL);
@@ -575,6 +581,53 @@ CGameMenuItemZBool itemOptionsControlMouseAimMode("AIMING TYPE:", 3, 66, 100, 18
 CGameMenuItemZBool itemOptionsControlMouseVerticalAim("VERTICAL AIMING:", 3, 66, 110, 180, false, SetMouseVerticalAim, NULL, NULL);
 CGameMenuItemSlider itemOptionsControlMouseXScale("X-SCALE:", 3, 66, 120, 180, (int*)&MouseAnalogueScale[0], 0, 65536, 1024, SetMouseXScale, -1, -1, kMenuSliderQ16);
 CGameMenuItemSlider itemOptionsControlMouseYScale("Y-SCALE:", 3, 66, 130, 180, (int*)&MouseAnalogueScale[1], 0, 65536, 1024, SetMouseYScale, -1, -1, kMenuSliderQ16);
+CGameMenuItemZCycle itemOptionsControlMouseDigitalUp("DIGITAL UP", 3, 66, 140, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
+CGameMenuItemZCycle itemOptionsControlMouseDigitalDown("DIGITAL DOWN", 3, 66, 150, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
+CGameMenuItemZCycle itemOptionsControlMouseDigitalLeft("DIGITAL LEFT", 3, 66, 160, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
+CGameMenuItemZCycle itemOptionsControlMouseDigitalRight("DIGITAL RIGHT", 3, 66, 170, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
+
+// There is no better way to do this than manually.
+
+#define MENUMOUSEFUNCTIONS 12
+
+static char const *MenuMouseNames[MENUMOUSEFUNCTIONS] = {
+    "Button 1",
+    "Double Button 1",
+    "Button 2",
+    "Double Button 2",
+    "Button 3",
+    "Double Button 3",
+
+    "Wheel Up",
+    "Wheel Down",
+
+    "Button 4",
+    "Double Button 4",
+    "Button 5",
+    "Double Button 5",
+};
+
+static int32_t MenuMouseDataIndex[MENUMOUSEFUNCTIONS][2] = {
+    { 0, 0, },
+    { 0, 1, },
+    { 1, 0, },
+    { 1, 1, },
+    { 2, 0, },
+    { 2, 1, },
+
+    // note the mouse wheel
+    { 4, 0, },
+    { 5, 0, },
+
+    { 3, 0, },
+    { 3, 1, },
+    { 6, 0, },
+    { 6, 1, },
+};
+
+void SetMouseButton(CGameMenuItemZCycle *pItem);
+
+CGameMenuItemZCycle *pItemOptionsControlMouseButton[MENUMOUSEFUNCTIONS];
 
 void SetupLoadingScreen(void)
 {
@@ -956,7 +1009,7 @@ void SetupOptionsMenu(void)
     menuOptions.Add(&itemOptionsChainSound, false);
     menuOptions.Add(&itemOptionsChainPlayer, false);
     menuOptions.Add(&itemOptionsChainControl, false);
-    menuOptions.Add(&itemOptionsChainOld, false);
+    //menuOptions.Add(&itemOptionsChainOld, false);
     menuOptions.Add(&itemBloodQAV, false);
 
     menuOptionsGame.Add(&itemOptionsGameTitle, false);
@@ -1095,7 +1148,29 @@ void SetupOptionsMenu(void)
     menuOptionsControlMouse.Add(&itemOptionsControlMouseVerticalAim, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseXScale, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseYScale, false);
+    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalUp, false);
+    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalDown, false);
+    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalLeft, false);
+    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalRight, false);
     menuOptionsControlMouse.Add(&itemBloodQAV, false);
+
+    itemOptionsControlMouseDigitalUp.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
+    itemOptionsControlMouseDigitalDown.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
+    itemOptionsControlMouseDigitalLeft.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
+    itemOptionsControlMouseDigitalRight.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
+
+    itemOptionsControlMouseVerticalAim.pPreDrawCallback = PreDrawControlMouse;
+
+    menuOptionsControlMouseButtonAssignment.Add(&itemOptionsControlMouseTitle, false);
+    int y = 60;
+    for (int i = 0; i < MENUMOUSEFUNCTIONS; i++)
+    {
+        pItemOptionsControlMouseButton[i] = new CGameMenuItemZCycle(MenuMouseNames[i], 3, 66, y, 180, 0, SetMouseButton, pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0, true);
+        dassert(pItemOptionsControlMouseButton[i] != NULL);
+        menuOptionsControlMouseButtonAssignment.Add(pItemOptionsControlMouseButton[i], i == 0);
+        y += 10;
+    }
+    menuOptionsControlMouseButtonAssignment.Add(&itemBloodQAV, false);
 }
 
 void SetupMenus(void)
@@ -1642,12 +1717,93 @@ void SetMouseYScale(CGameMenuItemSlider *pItem)
     CONTROL_SetAnalogAxisScale(1, pItem->nValue, controldevice_mouse);
 }
 
+void SetMouseDigitalAxis(CGameMenuItemZCycle *pItem)
+{
+    if (pItem == &itemOptionsControlMouseDigitalUp)
+    {
+        MouseDigitalFunctions[1][0] = nGamefuncsValues[pItem->m_nFocus];
+        CONTROL_MapDigitalAxis(1, MouseDigitalFunctions[1][0], 0, controldevice_mouse);
+    }
+    else if (pItem == &itemOptionsControlMouseDigitalDown)
+    {
+        MouseDigitalFunctions[1][1] = nGamefuncsValues[pItem->m_nFocus];
+        CONTROL_MapDigitalAxis(1, MouseDigitalFunctions[1][1], 1, controldevice_mouse);
+    }
+    else if (pItem == &itemOptionsControlMouseDigitalLeft)
+    {
+        MouseDigitalFunctions[0][0] = nGamefuncsValues[pItem->m_nFocus];
+        CONTROL_MapDigitalAxis(0, MouseDigitalFunctions[0][0], 0, controldevice_mouse);
+    }
+    else if (pItem == &itemOptionsControlMouseDigitalRight)
+    {
+        MouseDigitalFunctions[0][1] = nGamefuncsValues[pItem->m_nFocus];
+        CONTROL_MapDigitalAxis(0, MouseDigitalFunctions[0][1], 1, controldevice_mouse);
+    }
+}
+
 void SetupMouseMenu(CGameMenuItemChain *pItem)
 {
+    static CGameMenuItemZCycle *pMouseDigitalAxis[4] = {
+        &itemOptionsControlMouseDigitalLeft,
+        &itemOptionsControlMouseDigitalRight,
+        &itemOptionsControlMouseDigitalUp,
+        &itemOptionsControlMouseDigitalDown
+    };
+    for (int i = 0; i < ARRAY_SSIZE(pMouseDigitalAxis); i++)
+    {
+        CGameMenuItemZCycle *pItem = pMouseDigitalAxis[i];
+        pItem->m_nFocus = 0;
+        for (int j = 0; j < NUMGAMEFUNCTIONS+1; j++)
+        {
+            if (nGamefuncsValues[j] == MouseDigitalFunctions[i>>1][i&1])
+            {
+                pItem->m_nFocus = j;
+                break;
+            }
+        }
+    }
     itemOptionsControlMouseAimFlipped.at20 = gMouseAimingFlipped;
     itemOptionsControlMouseFilterInput.at20 = SmoothInput;
     itemOptionsControlMouseAimMode.at20 = gMouseAiming;
     itemOptionsControlMouseVerticalAim.at20 = gMouseAim;
+}
+
+void PreDrawControlMouse(CGameMenuItem *pItem)
+{
+    if (pItem == &itemOptionsControlMouseVerticalAim)
+        pItem->bEnable = !gMouseAiming;
+}
+
+void SetMouseButton(CGameMenuItemZCycle *pItem)
+{
+    for (int i = 0; i < MENUMOUSEFUNCTIONS; i++)
+    {
+        if (pItem == pItemOptionsControlMouseButton[i])
+        {
+            int nFunc = nGamefuncsValues[pItem->m_nFocus];
+            MouseFunctions[MenuMouseDataIndex[i][0]][MenuMouseDataIndex[i][1]] = nFunc;
+            CONTROL_MapButton(nFunc, MenuMouseDataIndex[i][0], MenuMouseDataIndex[i][1], controldevice_mouse);
+            CONTROL_FreeMouseBind(MenuMouseDataIndex[i][0]);
+            break;
+        }
+    }
+}
+
+void SetupMouseButtonMenu(CGameMenuItemChain *pItem)
+{
+    for (int i = 0; i < MENUMOUSEFUNCTIONS; i++)
+    {
+        auto pItem = pItemOptionsControlMouseButton[i];
+        pItem->m_nFocus = 0;
+        for (int j = 0; j < NUMGAMEFUNCTIONS+1; j++)
+        {
+            if (MouseFunctions[MenuMouseDataIndex[i][0]][MenuMouseDataIndex[i][1]] == nGamefuncsValues[j])
+            {
+                pItem->m_nFocus = j;
+                break;
+            }
+        }
+    }
 }
 
 void SaveGameProcess(CGameMenuItemChain *)

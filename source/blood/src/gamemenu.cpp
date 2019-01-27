@@ -627,7 +627,8 @@ void CGameMenuItemZBool::Draw(void)
 
             gGameMenuMgr.m_mousecaught = 1;
 
-            Event(event);
+            if (Event(event))
+                gGameMenuMgr.PostPop();
         }
     }
 }
@@ -707,7 +708,8 @@ void CGameMenuItemChain::Draw(void)
 
             gGameMenuMgr.m_mousecaught = 1;
 
-            Event(event);
+            if (Event(event))
+                gGameMenuMgr.PostPop();
         }
     }
 }
@@ -1181,7 +1183,8 @@ void CGameMenuItemKeyList::Draw(void)
 
         gGameMenuMgr.m_mousecaught = 1;
 
-        Event(event);
+        if (Event(event))
+            gGameMenuMgr.PostPop();
     }
 }
 
@@ -1829,7 +1832,8 @@ void CGameMenuItemZEdit::Draw(void)
 
             gGameMenuMgr.m_mousecaught = 1;
 
-            Event(event);
+            if (Event(event))
+                gGameMenuMgr.PostPop();
         }
     }
 }
@@ -2006,7 +2010,8 @@ void CGameMenuItemZEditBitmap::Draw(void)
 
             gGameMenuMgr.m_mousecaught = 1;
 
-            Event(event);
+            if (Event(event))
+                gGameMenuMgr.PostPop();
         }
     }
 }
@@ -2145,6 +2150,18 @@ void CGameMenuItemQAV::Draw(void)
         windowxy2.x = wx2;
         windowxy2.y = wy2;
         gFrameClock = backFC;
+    }
+
+    if (bEnable && !gGameMenuMgr.m_mousecaught && g_mouseClickState == MOUSE_RELEASED)
+    {
+        pMenu->SetFocusItem(this);
+
+        CGameMenuEvent event = { kMenuEventEnter, 0 };
+
+        gGameMenuMgr.m_mousecaught = 1;
+
+        if (Event(event))
+            gGameMenuMgr.PostPop();
     }
 }
 
@@ -2365,6 +2382,8 @@ CGameMenuItemZCycle::CGameMenuItemZCycle()
     m_pCallback = NULL;
     m_pCallbackSelect = NULL;
     m_pMenuSelect = NULL;
+    m_pItemSelectTitle = NULL;
+    m_pItemSelect = NULL;
     m_nMenuSelectReturn = -1;
 }
 
@@ -2382,6 +2401,8 @@ CGameMenuItemZCycle::CGameMenuItemZCycle(const char *a1, int a2, int a3, int a4,
     m_nItems = 0;
     m_bMenu = bMenu;
     m_pMenuSelect = NULL;
+    m_pItemSelectTitle = NULL;
+    m_pItemSelect = NULL;
     m_nMenuSelectReturn = -1;
     SetTextArray(a8, a9, a10);
 }
@@ -2394,6 +2415,8 @@ CGameMenuItemZCycle::~CGameMenuItemZCycle()
     m_pCallback = NULL;
     m_pCallbackSelect = NULL;
     m_pMenuSelect = NULL;
+    m_pItemSelectTitle = NULL;
+    m_pItemSelect = NULL;
     m_nMenuSelectReturn = -1;
     memset(m_pzStrings, 0, sizeof(m_pzStrings));
 }
@@ -2455,7 +2478,8 @@ void CGameMenuItemZCycle::Draw(void)
 
             gGameMenuMgr.m_mousecaught = 1;
 
-            Event(event);
+            if (Event(event))
+                gGameMenuMgr.PostPop();
         }
     }
 }
@@ -2624,6 +2648,18 @@ void CGameMenuItemYesNoQuit::Draw(void)
         break;
     }
     gMenuTextMgr.DrawText(m_pzText, m_nFont, x, m_nY, shade, 0, true);
+
+    if (bEnable && !gGameMenuMgr.m_mousecaught && g_mouseClickState == MOUSE_RELEASED)
+    {
+        pMenu->SetFocusItem(this);
+
+        CGameMenuEvent event = { kMenuEventEnter, 0 };
+
+        gGameMenuMgr.m_mousecaught = 1;
+
+        if (Event(event))
+            gGameMenuMgr.PostPop();
+    }
 }
 
 extern void Quit(CGameMenuItemChain *pItem);
