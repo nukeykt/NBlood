@@ -70,6 +70,7 @@ extern char szPlayerName[MAXPLAYERNAME];
 extern int32_t gTurnSpeed;
 extern int32_t gDetail;
 extern int32_t gAutoAim;
+extern int32_t gWeaponSwitch;
 extern int32_t gAutoRun;
 extern int32_t gViewInterpolate;
 extern int32_t gViewHBobbing;

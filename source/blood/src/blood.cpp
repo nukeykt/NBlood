@@ -529,7 +529,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 			if (numplayers == 1)
 			{
 				gProfile[i].skill = gSkill;
-				gProfile[i].bAutoAim = gAutoAim;
+				gProfile[i].nAutoAim = gAutoAim;
+                gProfile[i].nWeaponSwitch = gWeaponSwitch;
 			}
 			playerInit(i,0);
 		}

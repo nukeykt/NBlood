@@ -166,7 +166,8 @@ struct POSTURE {
 };
 
 struct PROFILE {
-    char bAutoAim;
+    int nAutoAim;
+    int nWeaponSwitch;
     int skill;
     char name[MAXPLAYERNAME];
 };

@@ -258,7 +258,10 @@ _DEMOPLAYBACK:
                     playerInit(i, 0);
                 StartLevel(&gGameOptions);
                 for (int i = 0; i < 8; i++)
-                    gProfile[i].bAutoAim = true;
+                {
+                    gProfile[i].nAutoAim = 1;
+                    gProfile[i].nWeaponSwitch = 1;
+                }
             }
             ready2send = 0;
             OSD_DispatchQueued();

@@ -67,7 +67,6 @@ void StartNetGame(CGameMenuItemChain *);
 void SetParentalLock(CGameMenuItemZBool *);
 void TenProcess(CGameMenuItem7EA1C *);
 void SetupLevelMenuItem(int);
-void SetAutoAim(CGameMenuItemZBool *);
 void SetupVideoModeMenu(CGameMenuItemChain *);
 void SetVideoMode(CGameMenuItemChain *);
 void SetWidescreen(CGameMenuItemZBool *);
@@ -355,13 +354,28 @@ CGameMenuItemChain itemOptionsChainPlayer("PLAYER SETUP", 1, 0, 110, 320, 1, &me
 CGameMenuItemChain itemOptionsChainControl("CONTROL SETUP", 1, 0, 130, 320, 1, &menuOptionsControl, -1, NULL, 0);
 CGameMenuItemChain itemOptionsChainOld("OLD MENU", 1, 0, 170, 320, 1, &menuOptionsOld, -1, NULL, 0);
 
+const char *pzAutoAimStrings[] = {
+    "NEVER",
+    "ALWAYS",
+    "HITSCAN ONLY"
+};
+
+const char *pzWeaponSwitchStrings[] = {
+    "NEVER",
+    "IF NEW",
+    "BY RATING"
+};
+
+void SetAutoAim(CGameMenuItemZCycle *);
+void SetWeaponSwitch(CGameMenuItemZCycle *pItem);
 
 CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
 CGameMenuItemZBool itemOptionsGameBoolShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, gShowWeapon, SetShowWeapons, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolSlopeTilting("SLOPE TILTING:", 3, 66, 80, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolViewBobbing("VIEW BOBBING:", 3, 66, 90, 180, gViewVBobbing, SetViewBobbing, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolViewSwaying("VIEW SWAYING:", 3, 66, 100, 180, gViewHBobbing, SetViewSwaying, NULL, NULL);
-CGameMenuItemZBool itemOptionsGameBoolAutoAim("AUTO AIM:", 3, 66, 110, 180, gAutoAim, SetAutoAim, NULL, NULL);
+CGameMenuItemZCycle itemOptionsGameBoolAutoAim("AUTO AIM:", 3, 66, 110, 180, 0, SetAutoAim, pzAutoAimStrings, ARRAY_SSIZE(pzAutoAimStrings), 0);
+CGameMenuItemZCycle itemOptionsGameWeaponSwitch("EQUIP PICKUPS:", 3, 66, 120, 180, 0, SetWeaponSwitch, pzWeaponSwitchStrings, ARRAY_SSIZE(pzWeaponSwitchStrings), 0);
 CGameMenuItemChain itemOptionsGameChainParentalLock("PARENTAL LOCK", 3, 0, 120, 320, 1, &menuParentalLock, -1, NULL, 0);
 
 CGameMenuItemTitle itemOptionsDisplayTitle("DISPLAY SETUP", 1, 160, 20, 2038);
@@ -1018,13 +1032,15 @@ void SetupOptionsMenu(void)
     menuOptionsGame.Add(&itemOptionsGameBoolViewBobbing, false);
     menuOptionsGame.Add(&itemOptionsGameBoolViewSwaying, false);
     menuOptionsGame.Add(&itemOptionsGameBoolAutoAim, false);
+    menuOptionsGame.Add(&itemOptionsGameWeaponSwitch, false);
     //menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
     menuOptionsGame.Add(&itemBloodQAV, false);
     itemOptionsGameBoolShowWeapons.at20 = gShowWeapon;
     itemOptionsGameBoolSlopeTilting.at20 = gSlopeTilting;
     itemOptionsGameBoolViewBobbing.at20 = gViewVBobbing;
     itemOptionsGameBoolViewSwaying.at20 = gViewHBobbing;
-    itemOptionsGameBoolAutoAim.at20 = gAutoAim;
+    itemOptionsGameBoolAutoAim.m_nFocus = gAutoAim;
+    itemOptionsGameWeaponSwitch.m_nFocus = (gWeaponSwitch&1) ? ((gWeaponSwitch&2) ? 1 : 2) : 0;
 
     menuOptionsDisplay.Add(&itemOptionsDisplayTitle, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayColor, true);
@@ -1308,12 +1324,34 @@ void SetTurnSpeed(CGameMenuItemSlider *pItem)
     gTurnSpeed = pItem->nValue;
 }
 
-void SetAutoAim(CGameMenuItemZBool *pItem)
+void SetAutoAim(CGameMenuItemZCycle *pItem)
 {
-    gAutoAim = pItem->at20;
+    gAutoAim = pItem->m_nFocus;
     if (!gDemo.at0 && !gDemo.at1)
     {
-        gProfile[myconnectindex].bAutoAim = gAutoAim;
+        gProfile[myconnectindex].nAutoAim = gAutoAim;
+        netBroadcastPlayerInfo(myconnectindex);
+    }
+}
+
+void SetWeaponSwitch(CGameMenuItemZCycle *pItem)
+{
+    gWeaponSwitch &= ~(1|2);
+    switch (pItem->m_nFocus)
+    {
+    case 0:
+        break;
+    case 1:
+        gWeaponSwitch |= 2;
+        fallthrough__;
+    case 2:
+    default:
+        gWeaponSwitch |= 1;
+        break;
+    }
+    if (!gDemo.at0 && !gDemo.at1)
+    {
+        gProfile[myconnectindex].nWeaponSwitch = gWeaponSwitch;
         netBroadcastPlayerInfo(myconnectindex);
     }
 }

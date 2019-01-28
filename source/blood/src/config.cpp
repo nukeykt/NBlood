@@ -90,6 +90,7 @@ int32_t gTurnSpeed;
 int32_t gDetail;
 //int32_t gMouseAim;
 int32_t gAutoAim;
+int32_t gWeaponSwitch;
 int32_t gAutoRun;
 int32_t gViewInterpolate;
 int32_t gViewHBobbing;
@@ -311,7 +312,6 @@ void CONFIG_SetDefaults(void)
     gSetup.fullscreen       = 1;
     gSetup.usemouse         = 1;
 
-    gAutoAim = 1;
     //ud.config.AmbienceToggle  = 1;
     //ud.config.AutoAim         = 1;
     CheckForUpdates = 1;
@@ -398,6 +398,7 @@ void CONFIG_SetDefaults(void)
     gMouseAimingFlipped = 0;
     gMouseAim = 1;
     gAutoAim = 1;
+    gWeaponSwitch = 1;
 
     Bstrcpy(szPlayerName, "Player");
 

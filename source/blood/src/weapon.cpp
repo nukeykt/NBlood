@@ -277,23 +277,24 @@ struct WEAPONTRACK
     int at8; // angle range
     int atc;
     int at10; // predict
+    bool bIsProjectile;
 };
 
 WEAPONTRACK gWeaponTrack[] = {
-    { 0, 0, 0, 0, 0 },
-    { 0x6000, 0x6000, 0x71, 0x55, 0x111111 },
-    { 0x8000, 0x8000, 0x71, 0x55, 0x2aaaaa },
-    { 0x10000, 0x10000, 0x38, 0x1c, 0 },
-    { 0x6000, 0x8000, 0x38, 0x1c, 0x2aaaaa },
-    { 0x6000, 0x6000, 0x38, 0x1c, 0x2aaaaa },
-    { 0x6000, 0x6000, 0x71, 0x55, 0 },
-    { 0x6000, 0x6000, 0x71, 0x38, 0 },
-    { 0x8000, 0x10000, 0x71, 0x55, 0x255555 },
-    { 0x10000, 0x10000, 0x71, 0, 0 },
-    { 0x10000, 0x10000, 0xaa, 0, 0 },
-    { 0x6000, 0x6000, 0x71, 0x55, 0 },
-    { 0x6000, 0x6000, 0x71, 0x55, 0 },
-    { 0x6000, 0x6000, 0x71, 0x55, 0 },
+    { 0, 0, 0, 0, 0, false },
+    { 0x6000, 0x6000, 0x71, 0x55, 0x111111, false },
+    { 0x8000, 0x8000, 0x71, 0x55, 0x2aaaaa, true },
+    { 0x10000, 0x10000, 0x38, 0x1c, 0, false },
+    { 0x6000, 0x8000, 0x38, 0x1c, 0x2aaaaa, false },
+    { 0x6000, 0x6000, 0x38, 0x1c, 0x2aaaaa, true },
+    { 0x6000, 0x6000, 0x71, 0x55, 0, true },
+    { 0x6000, 0x6000, 0x71, 0x38, 0, true },
+    { 0x8000, 0x10000, 0x71, 0x55, 0x255555, true },
+    { 0x10000, 0x10000, 0x71, 0, 0, true },
+    { 0x10000, 0x10000, 0xaa, 0, 0, false },
+    { 0x6000, 0x6000, 0x71, 0x55, 0, true },
+    { 0x6000, 0x6000, 0x71, 0x55, 0, true },
+    { 0x6000, 0x6000, 0x71, 0x55, 0, false },
 };
 
 void UpdateAimVector(PLAYER * pPlayer)
@@ -312,7 +313,7 @@ void UpdateAimVector(PLAYER * pPlayer)
     WEAPONTRACK *pWeaponTrack = &gWeaponTrack[pPlayer->atbd];
     int nTarget = -1;
     pPlayer->at1da = 0;
-    if (gProfile[pPlayer->at57].bAutoAim || pPlayer->atbd == 10 || pPlayer->atbd == 9)
+    if (gProfile[pPlayer->at57].nAutoAim == 1 || (gProfile[pPlayer->at57].nAutoAim == 2 && !pWeaponTrack->bIsProjectile) || pPlayer->atbd == 10 || pPlayer->atbd == 9)
     {
         int nClosest = 0x7fffffff;
         for (nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
@@ -608,7 +609,7 @@ void WeaponLower(PLAYER *pPlayer)
     if (sub_4B1A4(pPlayer))
         return;
     pPlayer->at1ba = 0;
-    int vc = pPlayer->atc3;
+    int prevState = pPlayer->atc3;
     switch (pPlayer->atbd)
     {
     case 1:
@@ -616,7 +617,7 @@ void WeaponLower(PLAYER *pPlayer)
         break;
     case 7:
         sfxKill3DSound(pPlayer->pSprite, -1, 441);
-        switch (vc)
+        switch (prevState)
         {
         case 1:
             StartQAV(pPlayer, 7, -1, 0);
@@ -654,7 +655,7 @@ void WeaponLower(PLAYER *pPlayer)
         }
         break;
     case 6:
-        switch (vc)
+        switch (prevState)
         {
         case 1:
             StartQAV(pPlayer, 7, -1, 0);
@@ -678,7 +679,7 @@ void WeaponLower(PLAYER *pPlayer)
         }
         break;
     case 11:
-        switch (vc)
+        switch (prevState)
         {
         case 7:
             StartQAV(pPlayer, 26, -1, 0);
@@ -686,7 +687,7 @@ void WeaponLower(PLAYER *pPlayer)
         }
         break;
     case 12:
-        switch (vc)
+        switch (prevState)
         {
         case 10:
             StartQAV(pPlayer, 34, -1, 0);
@@ -1619,7 +1620,7 @@ char gWeaponUpgrade[][13] = {
 char WeaponUpgrade(PLAYER *pPlayer, char newWeapon)
 {
     char weapon = pPlayer->atbd;
-    if (!sub_4B1A4(pPlayer) && gWeaponUpgrade[pPlayer->atbd][newWeapon])
+    if (!sub_4B1A4(pPlayer) && (gProfile[pPlayer->at57].nWeaponSwitch&1) && (gWeaponUpgrade[pPlayer->atbd][newWeapon] || (gProfile[pPlayer->at57].nWeaponSwitch&2)))
         weapon = newWeapon;
     return weapon;
 }
