@@ -104,6 +104,7 @@ bool bCustomName = false;
 char bAddUserMap = false;
 bool bNoDemo = false;
 bool bQuickStart = true;
+bool bNoAutoLoad = false;
 
 char gUserMapFilename[BMAX_PATH];
 char gPName[MAXPLAYERNAME];
@@ -120,6 +121,40 @@ int gChokeCounter = 0;
 
 double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 double g_gameUpdateAvgTime = 0.001;
+
+enum gametokens
+{
+    T_INCLUDE = 0,
+    T_INTERFACE = 0,
+    T_LOADGRP = 1,
+    T_MODE = 1,
+    T_CACHESIZE = 2,
+    T_ALLOW = 2,
+    T_NOAUTOLOAD,
+    T_INCLUDEDEFAULT,
+    T_MUSIC,
+    T_SOUND,
+    T_FILE,
+    T_CUTSCENE,
+    T_ANIMSOUNDS,
+    T_NOFLOORPALRANGE,
+    T_ID,
+    T_MINPITCH,
+    T_MAXPITCH,
+    T_PRIORITY,
+    T_TYPE,
+    T_DISTANCE,
+    T_VOLUME,
+    T_DELAY,
+    T_RENAMEFILE,
+    T_GLOBALGAMEFLAGS,
+    T_ASPECT,
+    T_FORCEFILTER,
+    T_FORCENOFILTER,
+    T_TEXTUREFILTER,
+};
+
+int blood_globalflags;
 
 void app_crashhandler(void)
 {
@@ -895,6 +930,7 @@ SWITCH switches[] = {
     { "maxalloc", 29, 1 },
     { "server", 30, 1 },
     { "client", 31, 1 },
+    { "noautoload", 32, 1 },
     { 0 }
 };
 
@@ -1099,6 +1135,9 @@ void ParseOptions(void)
         case 11:
             //bNoCDAudio = 1;
             break;
+        case 32:
+            bNoAutoLoad = true;
+            break;
         }
     }
     if (bAddUserMap)
@@ -1161,6 +1200,9 @@ int app_main(int argc, char const * const * argv)
     initprintf(APPNAME " %s\n", s_buildRev);
     PrintBuildInfo();
 
+    if (!g_useCwd)
+        G_AddSearchPaths();
+
     memcpy(&gGameOptions, &gSingleGameOptions, sizeof(GAMEOPTIONS));
     ParseOptions();
     sub_26988();
@@ -1206,6 +1248,8 @@ int app_main(int argc, char const * const * argv)
         }
     }
 #endif
+
+    G_LoadGroups(!bNoAutoLoad && !gSetup.noautoload);
 
     initprintf("Initializing OSD...\n");
 
@@ -1279,6 +1323,16 @@ int app_main(int argc, char const * const * argv)
 		if (!tileInit(0,NULL))
 			ThrowError("TILES###.ART files not found");
 	}
+
+    const char *defsfile = G_DefFile();
+    uint32_t stime = timerGetTicks();
+    if (!loaddefinitionsfile(defsfile))
+    {
+        uint32_t etime = timerGetTicks();
+        initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
+    }
+    loaddefinitions_game(defsfile, FALSE);
+
     powerupInit();
     initprintf("Loading cosine table\n");
     trigInit(gSysRes);
@@ -1496,3 +1550,436 @@ RESTART:
 
     return 0;
 }
+
+static int parsedefinitions_game(scriptfile *, int);
+
+static void parsedefinitions_game_include(const char *fileName, scriptfile *pScript, const char *cmdtokptr, int const firstPass)
+{
+    scriptfile *included = scriptfile_fromfile(fileName);
+
+    if (!included)
+    {
+        if (!Bstrcasecmp(cmdtokptr,"null") || pScript == NULL) // this is a bit overboard to prevent unused parameter warnings
+            {
+           // initprintf("Warning: Failed including %s as module\n", fn);
+            }
+/*
+        else
+            {
+            initprintf("Warning: Failed including %s on line %s:%d\n",
+                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+            }
+*/
+    }
+    else
+    {
+        parsedefinitions_game(included, firstPass);
+        scriptfile_close(included);
+    }
+}
+
+#if 0
+static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * blockEnd, char const * fileName, dukeanim_t * animPtr)
+{
+    Bfree(animPtr->sounds);
+
+    size_t numPairs = 0, allocSize = 4;
+
+    animPtr->sounds = (animsound_t *)Xmalloc(allocSize * sizeof(animsound_t));
+    animPtr->numsounds = 0;
+
+    int defError = 1;
+    uint16_t lastFrameNum = 1;
+
+    while (pScript->textptr < blockEnd)
+    {
+        int32_t frameNum;
+        int32_t soundNum;
+
+        // HACK: we've reached the end of the list
+        //  (hack because it relies on knowledge of
+        //   how scriptfile_* preprocesses the text)
+        if (blockEnd - pScript->textptr == 1)
+            break;
+
+        // would produce error when it encounters the closing '}'
+        // without the above hack
+        if (scriptfile_getnumber(pScript, &frameNum))
+            break;
+
+        defError = 1;
+
+        if (scriptfile_getsymbol(pScript, &soundNum))
+            break;
+
+        // frame numbers start at 1 for us
+        if (frameNum <= 0)
+        {
+            initprintf("Error: frame number must be greater zero on line %s:%d\n", pScript->filename,
+                       scriptfile_getlinum(pScript, pScript->ltextptr));
+            break;
+        }
+
+        if (frameNum < lastFrameNum)
+        {
+            initprintf("Error: frame numbers must be in (not necessarily strictly)"
+                       " ascending order (line %s:%d)\n",
+                       pScript->filename, scriptfile_getlinum(pScript, pScript->ltextptr));
+            break;
+        }
+
+        lastFrameNum = frameNum;
+
+        if ((unsigned)soundNum >= MAXSOUNDS && soundNum != -1)
+        {
+            initprintf("Error: sound number #%d invalid on line %s:%d\n", soundNum, pScript->filename,
+                       scriptfile_getlinum(pScript, pScript->ltextptr));
+            break;
+        }
+
+        if (numPairs >= allocSize)
+        {
+            allocSize *= 2;
+            animPtr->sounds = (animsound_t *)Xrealloc(animPtr->sounds, allocSize * sizeof(animsound_t));
+        }
+
+        defError = 0;
+
+        animsound_t & sound = animPtr->sounds[numPairs];
+        sound.frame = frameNum;
+        sound.sound = soundNum;
+
+        ++numPairs;
+    }
+
+    if (!defError)
+    {
+        animPtr->numsounds = numPairs;
+        // initprintf("Defined sound sequence for hi-anim \"%s\" with %d frame/sound pairs\n",
+        //           hardcoded_anim_tokens[animnum].text, numpairs);
+    }
+    else
+    {
+        DO_FREE_AND_NULL(animPtr->sounds);
+        initprintf("Failed defining sound sequence for anim \"%s\".\n", fileName);
+    }
+}
+
+#endif
+
+extern int32_t MAXCACHE1DSIZE;
+
+static int parsedefinitions_game(scriptfile *pScript, int firstPass)
+{
+    int   token;
+    char *pToken;
+
+    static const tokenlist tokens[] =
+    {
+        { "include",         T_INCLUDE          },
+        { "#include",        T_INCLUDE          },
+        { "includedefault",  T_INCLUDEDEFAULT   },
+        { "#includedefault", T_INCLUDEDEFAULT   },
+        { "loadgrp",         T_LOADGRP          },
+        { "cachesize",       T_CACHESIZE        },
+        { "noautoload",      T_NOAUTOLOAD       },
+        { "music",           T_MUSIC            },
+        { "sound",           T_SOUND            },
+        { "cutscene",        T_CUTSCENE         },
+        { "animsounds",      T_ANIMSOUNDS       },
+        { "renamefile",      T_RENAMEFILE       },
+        { "globalgameflags", T_GLOBALGAMEFLAGS  },
+    };
+
+    static const tokenlist soundTokens[] =
+    {
+        { "id",       T_ID },
+        { "file",     T_FILE },
+        { "minpitch", T_MINPITCH },
+        { "maxpitch", T_MAXPITCH },
+        { "priority", T_PRIORITY },
+        { "type",     T_TYPE },
+        { "distance", T_DISTANCE },
+        { "volume",   T_VOLUME },
+    };
+
+    static const tokenlist animTokens [] =
+    {
+        { "delay",         T_DELAY },
+        { "aspect",        T_ASPECT },
+        { "sounds",        T_SOUND },
+        { "forcefilter",   T_FORCEFILTER },
+        { "forcenofilter", T_FORCENOFILTER },
+        { "texturefilter", T_TEXTUREFILTER },
+    };
+
+    do
+    {
+        token  = getatoken(pScript, tokens, ARRAY_SIZE(tokens));
+        pToken = pScript->ltextptr;
+
+        switch (token)
+        {
+        case T_LOADGRP:
+        {
+            char *fileName;
+
+            pathsearchmode = 1;
+            if (!scriptfile_getstring(pScript,&fileName) && firstPass)
+            {
+                if (initgroupfile(fileName) == -1)
+                    initprintf("Could not find file \"%s\".\n", fileName);
+                else
+                {
+                    initprintf("Using file \"%s\" as game data.\n", fileName);
+                    if (!bNoAutoLoad && !gSetup.noautoload)
+                        G_DoAutoload(fileName);
+                }
+            }
+
+            pathsearchmode = 0;
+        }
+        break;
+        case T_CACHESIZE:
+        {
+            int32_t cacheSize;
+
+            if (scriptfile_getnumber(pScript, &cacheSize) || !firstPass)
+                break;
+
+            if (cacheSize > 0)
+                MAXCACHE1DSIZE = cacheSize << 10;
+        }
+        break;
+        case T_INCLUDE:
+        {
+            char *fileName;
+
+            if (!scriptfile_getstring(pScript, &fileName))
+                parsedefinitions_game_include(fileName, pScript, pToken, firstPass);
+
+            break;
+        }
+        case T_INCLUDEDEFAULT:
+        {
+            parsedefinitions_game_include(G_DefaultDefFile(), pScript, pToken, firstPass);
+            break;
+        }
+        case T_NOAUTOLOAD:
+            if (firstPass)
+                bNoAutoLoad = true;
+            break;
+#if 0
+        case T_MUSIC:
+        {
+            char *tokenPtr = pScript->ltextptr;
+            char *musicID  = NULL;
+            char *fileName = NULL;
+            char *musicEnd;
+
+            if (scriptfile_getbraces(pScript, &musicEnd))
+                break;
+
+            while (pScript->textptr < musicEnd)
+            {
+                switch (getatoken(pScript, soundTokens, ARRAY_SIZE(soundTokens)))
+                {
+                    case T_ID: scriptfile_getstring(pScript, &musicID); break;
+                    case T_FILE: scriptfile_getstring(pScript, &fileName); break;
+                }
+            }
+
+            if (!firstPass)
+            {
+                if (musicID==NULL)
+                {
+                    initprintf("Error: missing ID for music definition near line %s:%d\n",
+                               pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    break;
+                }
+
+                if (fileName == NULL || check_file_exist(fileName))
+                    break;
+
+                if (S_DefineMusic(musicID, fileName) == -1)
+                    initprintf("Error: invalid music ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+            }
+        }
+        break;
+
+        case T_CUTSCENE:
+        {
+            char *fileName = NULL;
+
+            scriptfile_getstring(pScript, &fileName);
+
+            char *animEnd;
+
+            if (scriptfile_getbraces(pScript, &animEnd))
+                break;
+
+            if (!firstPass)
+            {
+                dukeanim_t *animPtr = Anim_Find(fileName);
+
+                if (!animPtr)
+                {
+                    animPtr = Anim_Create(fileName);
+                    animPtr->framedelay = 10;
+                    animPtr->frameflags = 0;
+                }
+
+                int32_t temp;
+
+                while (pScript->textptr < animEnd)
+                {
+                    switch (getatoken(pScript, animTokens, ARRAY_SIZE(animTokens)))
+                    {
+                        case T_DELAY:
+                            scriptfile_getnumber(pScript, &temp);
+                            animPtr->framedelay = temp;
+                            break;
+                        case T_ASPECT:
+                        {
+                            double dtemp, dtemp2;
+                            scriptfile_getdouble(pScript, &dtemp);
+                            scriptfile_getdouble(pScript, &dtemp2);
+                            animPtr->frameaspect1 = dtemp;
+                            animPtr->frameaspect2 = dtemp2;
+                            break;
+                        }
+                        case T_SOUND:
+                        {
+                            char *animSoundsEnd = NULL;
+                            if (scriptfile_getbraces(pScript, &animSoundsEnd))
+                                break;
+                            parsedefinitions_game_animsounds(pScript, animSoundsEnd, fileName, animPtr);
+                            break;
+                        }
+                        case T_FORCEFILTER:
+                            animPtr->frameflags |= CUTSCENE_FORCEFILTER;
+                            break;
+                        case T_FORCENOFILTER:
+                            animPtr->frameflags |= CUTSCENE_FORCENOFILTER;
+                            break;
+                        case T_TEXTUREFILTER:
+                            animPtr->frameflags |= CUTSCENE_TEXTUREFILTER;
+                            break;
+                    }
+                }
+            }
+            else
+                pScript->textptr = animEnd;
+        }
+        break;
+        case T_ANIMSOUNDS:
+        {
+            char *tokenPtr     = pScript->ltextptr;
+            char *fileName     = NULL;
+
+            scriptfile_getstring(pScript, &fileName);
+            if (!fileName)
+                break;
+
+            char *animSoundsEnd = NULL;
+
+            if (scriptfile_getbraces(pScript, &animSoundsEnd))
+                break;
+
+            if (firstPass)
+            {
+                pScript->textptr = animSoundsEnd;
+                break;
+            }
+
+            dukeanim_t *animPtr = Anim_Find(fileName);
+
+            if (!animPtr)
+            {
+                initprintf("Error: expected animation filename on line %s:%d\n",
+                    pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                break;
+            }
+
+            parsedefinitions_game_animsounds(pScript, animSoundsEnd, fileName, animPtr);
+        }
+        break;
+        case T_SOUND:
+        {
+            char *tokenPtr = pScript->ltextptr;
+            char *fileName = NULL;
+            char *musicEnd;
+
+            double volume = 1.0;
+
+            int32_t soundNum = -1;
+            int32_t maxpitch = 0;
+            int32_t minpitch = 0;
+            int32_t priority = 0;
+            int32_t type     = 0;
+            int32_t distance = 0;
+
+            if (scriptfile_getbraces(pScript, &musicEnd))
+                break;
+
+            while (pScript->textptr < musicEnd)
+            {
+                switch (getatoken(pScript, soundTokens, ARRAY_SIZE(soundTokens)))
+                {
+                    case T_ID:       scriptfile_getsymbol(pScript, &soundNum); break;
+                    case T_FILE:     scriptfile_getstring(pScript, &fileName); break;
+                    case T_MINPITCH: scriptfile_getsymbol(pScript, &minpitch); break;
+                    case T_MAXPITCH: scriptfile_getsymbol(pScript, &maxpitch); break;
+                    case T_PRIORITY: scriptfile_getsymbol(pScript, &priority); break;
+                    case T_TYPE:     scriptfile_getsymbol(pScript, &type);     break;
+                    case T_DISTANCE: scriptfile_getsymbol(pScript, &distance); break;
+                    case T_VOLUME:   scriptfile_getdouble(pScript, &volume);   break;
+                }
+            }
+
+            if (!firstPass)
+            {
+                if (soundNum==-1)
+                {
+                    initprintf("Error: missing ID for sound definition near line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+                    break;
+                }
+
+                if (fileName == NULL || check_file_exist(fileName))
+                    break;
+
+                // maybe I should have just packed this into a sound_t and passed a reference...
+                if (S_DefineSound(soundNum, fileName, minpitch, maxpitch, priority, type, distance, volume) == -1)
+                    initprintf("Error: invalid sound ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
+            }
+        }
+        break;
+#endif
+        case T_GLOBALGAMEFLAGS: scriptfile_getnumber(pScript, &blood_globalflags); break;
+        case T_EOF: return 0;
+        default: break;
+        }
+    }
+    while (1);
+
+    return 0;
+}
+
+int loaddefinitions_game(const char *fileName, int32_t firstPass)
+{
+    scriptfile *pScript = scriptfile_fromfile(fileName);
+
+    if (pScript)
+        parsedefinitions_game(pScript, firstPass);
+
+    for (char const * m : g_defModules)
+        parsedefinitions_game_include(m, NULL, "null", firstPass);
+
+    if (pScript)
+        scriptfile_close(pScript);
+
+    scriptfile_clearsymbols();
+
+    return 0;
+}
+

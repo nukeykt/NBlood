@@ -1824,13 +1824,16 @@ void viewProcessSprites(int cX, int cY, int cZ)
             case 6:
             case 7:
             {
-                if (gDetail >= 4 && videoGetRenderMode() != REND_POLYMER)
+                // Can be overridden by def script
+                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1)
                 {
                     if ((pTSprite->hitag&16) == 0)
                     {
                         pTSprite->cstat |= 48;
-                        pTSprite->yoffset = qpicanm[pTSprite->picnum].yoffset;
+                        pTSprite->yoffset += qpicanm[pTSprite->picnum].yoffset;
                         pTSprite->picnum = voxelIndex[pTSprite->picnum];
+                        if (!voxoff[pTSprite->picnum])
+                            qloadvoxel(pTSprite->picnum);
                         if (qpicanm[nTile].at3_4 == 7)
                         {
                             pTSprite->ang = (gGameClock<<3)&2047;
@@ -1845,6 +1848,12 @@ void viewProcessSprites(int cX, int cY, int cZ)
             pTSprite->picnum += qpicanm[pTSprite->picnum].animframes+1;
             nAnim--;
         }
+
+        if (usevoxels && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] != -1)
+        {
+            pTSprite->yoffset += qpicanm[pTSprite->picnum].yoffset;
+        }
+
         SECTOR *pSector = &qsector[pTSprite->sectnum];
         XSECTOR *pXSector;
         int nShade = pTSprite->shade;

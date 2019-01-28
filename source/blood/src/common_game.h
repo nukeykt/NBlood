@@ -26,12 +26,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pragmas.h"
 #include "misc.h"
 
+extern int g_useCwd;
+
 #ifndef APPNAME
-#define APPNAME "Blood"
+#define APPNAME "NBlood"
 #endif
 
 #ifndef APPBASENAME
-#define APPBASENAME "blood"
+#define APPBASENAME "nblood"
 #endif
 
 #define BYTEVERSION 100
@@ -74,11 +76,27 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 
 #define OSD_ERROR OSDTEXT_DARKRED OSDTEXT_BRIGHT
 
-#define WASDCONTROLS
+// PORT-TODO:
+enum BLOOD_GLOBALFLAGS {
+    BLOOS_NO_WIDESCREEN_PINNING = 1<<0,
+    BLOOS_NO_HARDCODED_FOGPALS = 1<<1,
+    BLOOS_NO_PALETTE_CHANGES = 1<<2,
+};
 
+enum searchpathtypes_t {
+    SEARCHPATH_REMOVE = 1<<0,
+};
+
+extern int loaddefinitions_game(const char *fn, int32_t preload);
 extern char UserPath[BMAX_PATH];
 
 int kopen4loadfrommod(const char *fileName, char searchfirst);
+extern void G_AddSearchPaths(void);
+extern void G_CleanupSearchPaths(void);
+
+void G_LoadGroupsInDir(const char *dirname);
+void G_DoAutoload(const char *dirname);
+extern void G_LoadGroups(int32_t autoload);
 
 #pragma pack(push,1)
 

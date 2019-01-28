@@ -78,6 +78,7 @@ extern int gNetPlayers;
 #define GAMEUPDATEAVGTIMENUMSAMPLES 100
 extern double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 extern double g_gameUpdateAvgTime;
+extern int blood_globalflags;
 
 void QuitGame(void);
 void PreloadCache(void);

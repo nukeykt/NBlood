@@ -102,7 +102,11 @@ int tileInit(char a1, const char *a2)
         fread(tileShade, 1, sizeof(tileShade), hFile);
         fclose(hFile);
     }
-    artLoaded = 1;
+    for (int i = 0; i < kMaxTiles; i++)
+    {
+        if (voxelIndex[i] >= 0 && voxelIndex[i] < kMaxVoxels)
+            SetBitString((char*)voxreserve, voxelIndex[i]);
+    }
 
     for (int i = 0; i < kMaxVoxels; i++)
     {
@@ -112,6 +116,7 @@ int tileInit(char a1, const char *a2)
         char *pVox = (char*)gSysRes.Load(hVox);
         voxmodels[i] = loadkvxfrombuf(pVox, hVox->size);
     }
+    artLoaded = 1;
 
     return 1;
 }

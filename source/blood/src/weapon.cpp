@@ -279,7 +279,6 @@ struct WEAPONTRACK
     int at10; // predict
 };
 
-// TODO: fill
 WEAPONTRACK gWeaponTrack[] = {
     { 0, 0, 0, 0, 0 },
     { 0x6000, 0x6000, 0x71, 0x55, 0x111111 },

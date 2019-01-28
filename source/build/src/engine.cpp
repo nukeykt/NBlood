@@ -114,6 +114,7 @@ int32_t novoxmips = 1;
 #else
 # define DISTRECIPSIZ 131072
 #endif
+int8_t voxreserve[(MAXVOXELS+7)>>3];
 intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 static char voxlock[MAXVOXELS][MAXVOXMIPS];
 int32_t voxscale[MAXVOXELS];
