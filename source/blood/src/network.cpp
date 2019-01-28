@@ -894,7 +894,11 @@ void netInitialize(void)
                 switch (event.type)
                 {
                 case ENET_EVENT_TYPE_CONNECT:
-                    initprintf("Client connected: %i:%i\n", event.peer->address.host, event.peer->address.port);
+                {
+                    char ipaddr[32];
+
+                    enet_address_get_host_ip(&event.peer->address, ipaddr, sizeof(ipaddr));
+                    initprintf("Client connected: %s:%u\n", ipaddr, event.peer->address.port);
                     numplayers++;
                     for (int i = 1; i < kMaxPlayers; i++)
                     {
@@ -905,6 +909,7 @@ void netInitialize(void)
                         }
                     }
                     break;
+                }
                 case ENET_EVENT_TYPE_DISCONNECT:
                     initprintf("Client disconnected: %i:%i\n", event.peer->address.host, event.peer->address.port);
                     numplayers--;
