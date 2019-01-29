@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "inifile.h"
 
 #define kMaxMessages 32
+#define kMaxEpisodes 7
+#define kMaxLevels 16
 
 #pragma pack(push, 1)
 
@@ -33,8 +35,8 @@ struct GAMEOPTIONS {
     char nDifficulty;
     int nEpisode;
     int nLevel;
-    char zLevelName[144];
-    char zLevelSong[144];
+    char zLevelName[BMAX_PATH];
+    char zLevelSong[BMAX_PATH];
     int nTrackNumber; //at12a;
     char szSaveGameName[16];
     char szUserGameName[16];
@@ -58,10 +60,10 @@ struct GAMEOPTIONS {
 
 struct LEVELINFO
 {
-    char at0[144]; // Filename
+    char at0[BMAX_PATH]; // Filename
     char at90[32]; // Title
     char atb0[32]; // Author
-    char atd0[16]; // Song;
+    char atd0[BMAX_PATH]; // Song;
     int ate0; // SongId
     int ate4; // EndingA
     int ate8; // EndingB
@@ -76,13 +78,13 @@ struct EPISODEINFO
     int nLevels;
     unsigned int bloodbath : 1;
     unsigned int cutALevel : 4;
-    LEVELINFO at28[16];
-    char at8f08[144];
-    char at8f98[144];
+    LEVELINFO at28[kMaxLevels];
+    char at8f08[BMAX_PATH];
+    char at8f98[BMAX_PATH];
     int at9028;
     int at902c;
-    char at9030[144];
-    char at90c0[144];
+    char at9030[BMAX_PATH];
+    char at90c0[BMAX_PATH];
 };
 
 extern EPISODEINFO gEpisodeInfo[];
@@ -115,3 +117,6 @@ void levelAddUserMap(const char *pzMap);
 void levelGetNextLevels(int nEpisode, int nLevel, int *pnEndingA, int *pnEndingB);
 void levelEndLevel(int arg);
 void levelRestart(void);
+int levelGetMusicIdx(const char *str);
+bool levelTryPlayMusic(int nEpisode, int nlevel, bool bSetLevelSong = false);
+void levelTryPlayMusicOrNothing(int nEpisode, int nLevel);

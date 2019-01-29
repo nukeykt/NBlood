@@ -69,26 +69,120 @@ SAMPLE2D * FindChannel(void)
 }
 
 DICTNODE *hSong;
-char *pSong;
-int songSize;
+char *pSongPtr;
+int nSongSize;
+bool bWaveMusic;
+int nWaveMusicHandle;
 
-void sndPlaySong(const char *songName, bool bLoop)
+int sndPlaySong(const char *songName, bool bLoop)
 {
     if (!MusicToggle)
-        return;
-    if (*pSong)
-        sndStopSong();
+        return 0;
     if (!songName || strlen(songName) == 0)
-        return;
-    hSong = gSoundRes.Lookup(songName, "MID");
-    if (!hSong)
-        return;
-    songSize = hSong->size;
-    if (songSize > 65535)
-        return;
-    gSoundRes.Load(hSong, pSong);
-    MUSIC_SetVolume(MusicVolume);
-    MUSIC_PlaySong(pSong, songSize, bLoop);
+        return 1;
+
+    int32_t fp = S_OpenAudio(songName, 0, 1);
+    if (EDUKE32_PREDICT_FALSE(fp < 0))
+    {
+        hSong = gSoundRes.Lookup(songName, "MID");
+        if (!hSong)
+        {
+            OSD_Printf(OSD_ERROR "sndPlaySong(): error: can't open \"%s\" for playback!\n", songName);
+            return 2;
+        }
+        int nNewSongSize = hSong->size;
+        char *pNewSongPtr = (char *)Xaligned_alloc(16, nNewSongSize);
+        gSoundRes.Load(hSong, pNewSongPtr);
+        MUSIC_SetVolume(MusicVolume);
+        int32_t retval = MUSIC_PlaySong(pNewSongPtr, nNewSongSize, bLoop);
+
+        if (retval != MUSIC_Ok)
+        {
+            ALIGNED_FREE_AND_NULL(pNewSongPtr);
+            return 5;
+        }
+
+        if (bWaveMusic && nWaveMusicHandle >= 0)
+        {
+            FX_StopSound(nWaveMusicHandle);
+            nWaveMusicHandle = -1;
+        }
+
+        bWaveMusic = false;
+        ALIGNED_FREE_AND_NULL(pSongPtr);
+        pSongPtr = pNewSongPtr;
+        nSongSize = nNewSongSize;
+        return 0;
+    }
+
+    int32_t nSongLen = kfilelength(fp);
+
+    if (EDUKE32_PREDICT_FALSE(nSongLen < 4))
+    {
+        OSD_Printf(OSD_ERROR "sndPlaySong(): error: empty music file \"%s\"\n", songName);
+        kclose(fp);
+        return 3;
+    }
+
+    char * pNewSongPtr = (char *)Xaligned_alloc(16, nSongLen);
+    int nNewSongSize = kread(fp, pNewSongPtr, nSongLen);
+
+    if (EDUKE32_PREDICT_FALSE(nNewSongSize != nSongLen))
+    {
+        OSD_Printf(OSD_ERROR "sndPlaySong(): error: read %d bytes from \"%s\", expected %d\n",
+            nNewSongSize, songName, nSongLen);
+        kclose(fp);
+        ALIGNED_FREE_AND_NULL(pNewSongPtr);
+        return 4;
+    }
+
+    kclose(fp);
+
+    if (!Bmemcmp(pNewSongPtr, "MThd", 4))
+    {
+        int32_t retval = MUSIC_PlaySong(pNewSongPtr, nNewSongSize, bLoop);
+
+        if (retval != MUSIC_Ok)
+        {
+            ALIGNED_FREE_AND_NULL(pNewSongPtr);
+            return 5;
+        }
+
+        if (bWaveMusic && nWaveMusicHandle >= 0)
+        {
+            FX_StopSound(nWaveMusicHandle);
+            nWaveMusicHandle = -1;
+        }
+
+        bWaveMusic = false;
+        ALIGNED_FREE_AND_NULL(pSongPtr);
+        pSongPtr = pNewSongPtr;
+        nSongSize = nNewSongSize;
+    }
+    else
+    {
+        int nNewWaveMusicHandle = FX_Play(pNewSongPtr, bLoop ? nNewSongSize : -1, 0, 0, 0, MusicVolume, MusicVolume, MusicVolume,
+                                   FX_MUSIC_PRIORITY, 1.f, (intptr_t)&nWaveMusicHandle);
+
+        if (nNewWaveMusicHandle <= FX_Ok)
+        {
+            ALIGNED_FREE_AND_NULL(pNewSongPtr);
+            return 5;
+        }
+
+        if (bWaveMusic && nWaveMusicHandle >= 0)
+            FX_StopSound(nWaveMusicHandle);
+
+        MUSIC_StopSong();
+
+        nWaveMusicHandle = nNewWaveMusicHandle;
+        bWaveMusic = true;
+        ALIGNED_FREE_AND_NULL(pSongPtr);
+        pSongPtr = pNewSongPtr;
+        nSongSize = nNewSongSize;
+    }
+
+    return 0;
 }
 
 bool sndIsSongPlaying(void)
@@ -123,9 +217,17 @@ void sndSetFXVolume(int nVolume)
 
 void sndStopSong(void)
 {
+    if (bWaveMusic && nWaveMusicHandle >= 0)
+    {
+        FX_StopSound(nWaveMusicHandle);
+        nWaveMusicHandle = -1;
+        bWaveMusic = false;
+    }
+
     MUSIC_StopSong();
-    hSong = NULL;
-    *pSong = 0;
+
+    ALIGNED_FREE_AND_NULL(pSongPtr);
+    nSongSize = 0;
 }
 
 void SoundCallback(intptr_t val)
@@ -357,7 +459,6 @@ void sndTerm(void)
         return;
     sndActive = false;
     sndStopSong();
-    Resource::Free(pSong);
     DeinitSoundDevice();
     DeinitMusicDevice();
 }
@@ -365,9 +466,10 @@ extern char *pUserSoundRFF;
 void sndInit(void)
 {
     memset(Channel, 0, sizeof(Channel));
-    pSong = (char*)Resource::Alloc(65535);
-    if (pSong)
-        *pSong = 0;
+    pSongPtr = NULL;
+    nSongSize = 0;
+    bWaveMusic = false;
+    nWaveMusicHandle = -1;
     InitSoundDevice();
     InitMusicDevice();
     //atexit(sndTerm);

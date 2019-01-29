@@ -46,8 +46,34 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "screen.h"
 #include "view.h"
 
-
 int nBuild = 0;
+
+void ReadGameOptionsLegacy(GAMEOPTIONS &gameOptions, GAMEOPTIONSLEGACY &gameOptionsLegacy)
+{
+    gameOptions.nGameType = gameOptionsLegacy.nGameType;
+    gameOptions.nDifficulty = gameOptionsLegacy.nDifficulty;
+    gameOptions.nEpisode = gameOptionsLegacy.nEpisode;
+    gameOptions.nLevel = gameOptionsLegacy.nLevel;
+    strcpy(gameOptions.zLevelName, gameOptionsLegacy.zLevelName);
+    strcpy(gameOptions.zLevelSong, gameOptionsLegacy.zLevelSong);
+    gameOptions.nTrackNumber = gameOptionsLegacy.nTrackNumber;
+    strcpy(gameOptions.szSaveGameName, gameOptionsLegacy.szSaveGameName);
+    strcpy(gameOptions.szUserGameName, gameOptionsLegacy.szUserGameName);
+    gameOptions.nSaveGameSlot = gameOptionsLegacy.nSaveGameSlot;
+    gameOptions.picEntry = gameOptionsLegacy.picEntry;
+    gameOptions.uMapCRC = gameOptionsLegacy.uMapCRC;
+    gameOptions.nMonsterSettings = gameOptionsLegacy.nMonsterSettings;
+    gameOptions.uGameFlags = gameOptionsLegacy.uGameFlags;
+    gameOptions.uNetGameFlags = gameOptionsLegacy.uNetGameFlags;
+    gameOptions.nWeaponSettings = gameOptionsLegacy.nWeaponSettings;
+    gameOptions.nItemSettings = gameOptionsLegacy.nItemSettings;
+    gameOptions.nRespawnSettings = gameOptionsLegacy.nRespawnSettings;
+    gameOptions.nTeamSettings = gameOptionsLegacy.nTeamSettings;
+    gameOptions.nMonsterRespawnTime = gameOptionsLegacy.nMonsterRespawnTime;
+    gameOptions.nWeaponRespawnTime = gameOptionsLegacy.nWeaponRespawnTime;
+    gameOptions.nItemRespawnTime = gameOptionsLegacy.nItemRespawnTime;
+    gameOptions.nSpecialRespawnTime = gameOptionsLegacy.nSpecialRespawnTime;
+}
 
 CDemo gDemo;
 
@@ -81,6 +107,7 @@ CDemo::~CDemo()
 
 bool CDemo::Create(const char *pzFile)
 {
+    ThrowError("Demo recording is broken :P");
     char buffer[13] = "";
     char vc = 0;
     if (at0 || at1)
@@ -252,7 +279,8 @@ _DEMOPLAYBACK:
                 for (int i = 0; i < 8; i++)
                     connectpoint2[i] = atf.connectPoints[i];
                 //memcpy(connectpoint2, atf.connectPoints, sizeof(atf.connectPoints));
-                memcpy(&gGameOptions, &atf.gameOptions, sizeof(GAMEOPTIONS));
+                GAMEOPTIONSLEGACY gGameOptionsLegacy;
+                memcpy(&gGameOptionsLegacy, &atf.gameOptions, sizeof(GAMEOPTIONSLEGACY));
                 gSkill = gGameOptions.nDifficulty;
                 for (int i = 0; i < 8; i++)
                     playerInit(i, 0);

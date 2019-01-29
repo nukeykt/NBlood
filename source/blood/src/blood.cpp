@@ -135,9 +135,9 @@ enum gametokens
     T_MUSIC,
     T_SOUND,
     T_FILE,
-    T_CUTSCENE,
-    T_ANIMSOUNDS,
-    T_NOFLOORPALRANGE,
+    //T_CUTSCENE,
+    //T_ANIMSOUNDS,
+    //T_NOFLOORPALRANGE,
     T_ID,
     T_MINPITCH,
     T_MAXPITCH,
@@ -153,6 +153,8 @@ enum gametokens
     T_FORCENOFILTER,
     T_TEXTUREFILTER,
 };
+
+extern int32_t MAXCACHE1DSIZE;
 
 int blood_globalflags;
 
@@ -566,9 +568,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     gChokeCounter = 0;
 	if (!gDemo.at1)
 		gGameMenuMgr.Deactivate();
-    // PORT-TODO;
-	//if (!gRedBookInstalled)
-		sndPlaySong(gGameOptions.zLevelSong,1);
+    levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
 	//if (!bNoCDAudio && gRedBookInstalled && Redbook.preprocess() && !gDemo.at1)
 	//{
 	//	Redbook.playsong(gGameOptions.at12a);
@@ -911,10 +911,10 @@ SWITCH switches[] = {
     { "robust", 8, 0 },
     { "setupfile", 9, 1 },
     { "skill", 10, 1 },
-    { "nocd", 11, 0 },
-    { "8250", 12, 0 },
+    //{ "nocd", 11, 0 },
+    //{ "8250", 12, 0 },
     { "ini", 13, 1 },
-    { "noaim", 14, 0 },
+    //{ "noaim", 14, 0 },
     { "f", 15, 1 },
     { "control", 16, 1 },
     { "vector", 17, 1 },
@@ -932,6 +932,8 @@ SWITCH switches[] = {
     { "server", 30, 1 },
     { "client", 31, 1 },
     { "noautoload", 32, 1 },
+    { "usecwd", 33, 1 },
+    { "cachesize", 34, 1 },
     { 0 }
 };
 
@@ -940,14 +942,14 @@ void PrintHelp(void)
     puts("Blood Command-line Options:");
     // NUKE-TODO:
     puts("-?            This help");
-    puts("-8250         Enforce obsolete UART I/O");
-    puts("-auto         Automatic Network start. Implies -quick");
-    puts("-getopt       Use network game options from file.  Implies -auto");
+    //puts("-8250         Enforce obsolete UART I/O");
+    //puts("-auto         Automatic Network start. Implies -quick");
+    //puts("-getopt       Use network game options from file.  Implies -auto");
     puts("-broadcast    Set network to broadcast packet mode");
     puts("-masterslave  Set network to master/slave packet mode");
-    puts("-net          Net mode game");
-    puts("-noaim        Disable auto-aiming");
-    puts("-nocd         Disable CD audio");
+    //puts("-net          Net mode game");
+    //puts("-noaim        Disable auto-aiming");
+    //puts("-nocd         Disable CD audio");
     puts("-nodudes      No monsters");
     puts("-nodemo       No Demos");
     puts("-robust       Robust network sync checking");
@@ -1139,6 +1141,18 @@ void ParseOptions(void)
         case 32:
             bNoAutoLoad = true;
             break;
+        case 33:
+            g_useCwd = true;
+            break;
+        case 34:
+        {
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            uint32_t j = strtoul(OptArgv[0], NULL, 0);
+            MAXCACHE1DSIZE = j<<10;
+            initprintf("Cache size: %dkB\n", j);
+            break;
+        }
         }
     }
     if (bAddUserMap)
@@ -1179,6 +1193,8 @@ int app_main(int argc, char const * const * argv)
 
     backgroundidle = 0;
 
+    G_ExtPreInit(argc, argv);
+
 #ifdef DEBUGGINGAIDS
     extern int32_t (*check_filename_casing_fn)(void);
     check_filename_casing_fn = check_filename_casing;
@@ -1206,6 +1222,7 @@ int app_main(int argc, char const * const * argv)
 
     memcpy(&gGameOptions, &gSingleGameOptions, sizeof(GAMEOPTIONS));
     ParseOptions();
+    G_ExtInit();
     sub_26988();
 
     // used with binds for fast function lookup
@@ -1251,6 +1268,9 @@ int app_main(int argc, char const * const * argv)
 #endif
 
     G_LoadGroups(!bNoAutoLoad && !gSetup.noautoload);
+
+    if (!g_useCwd)
+        G_CleanupSearchPaths();
 
     initprintf("Initializing OSD...\n");
 
@@ -1668,8 +1688,6 @@ static void parsedefinitions_game_animsounds(scriptfile *pScript, const char * b
 
 #endif
 
-extern int32_t MAXCACHE1DSIZE;
-
 static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 {
     int   token;
@@ -1686,8 +1704,8 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "noautoload",      T_NOAUTOLOAD       },
         { "music",           T_MUSIC            },
         { "sound",           T_SOUND            },
-        { "cutscene",        T_CUTSCENE         },
-        { "animsounds",      T_ANIMSOUNDS       },
+        //{ "cutscene",        T_CUTSCENE         },
+        //{ "animsounds",      T_ANIMSOUNDS       },
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
     };
@@ -1704,6 +1722,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "volume",   T_VOLUME },
     };
 
+#if 0
     static const tokenlist animTokens [] =
     {
         { "delay",         T_DELAY },
@@ -1713,6 +1732,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "forcenofilter", T_FORCENOFILTER },
         { "texturefilter", T_TEXTUREFILTER },
     };
+#endif
 
     do
     {

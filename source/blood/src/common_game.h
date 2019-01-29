@@ -94,9 +94,19 @@ int kopen4loadfrommod(const char *fileName, char searchfirst);
 extern void G_AddSearchPaths(void);
 extern void G_CleanupSearchPaths(void);
 
+extern void G_ExtPreInit(int32_t argc, char const * const * argv);
+extern void G_ExtInit(void);
+
 void G_LoadGroupsInDir(const char *dirname);
 void G_DoAutoload(const char *dirname);
 extern void G_LoadGroups(int32_t autoload);
+
+#if defined HAVE_FLAC || defined HAVE_VORBIS
+# define FORMAT_UPGRADE_ELIGIBLE
+extern int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
+#else
+# define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)
+#endif
 
 #pragma pack(push,1)
 

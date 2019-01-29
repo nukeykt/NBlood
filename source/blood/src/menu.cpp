@@ -1655,7 +1655,8 @@ void Update3DToggle(CGameMenuItemZBool *pItem)
 void UpdateCDToggle(CGameMenuItemZBool *pItem)
 {
     CDAudioToggle = pItem->at20;
-    // PORT-TODO:
+    if (gGameStarted || gDemo.at1)
+        levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
 }
 
 void UpdateSoundVolume(CGameMenuItemSlider *pItem)

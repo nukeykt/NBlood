@@ -29,6 +29,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma pack(push, 1)
 
+struct GAMEOPTIONSLEGACY {
+    char nGameType;
+    char nDifficulty;
+    int nEpisode;
+    int nLevel;
+    char zLevelName[144];
+    char zLevelSong[144];
+    int nTrackNumber; //at12a;
+    char szSaveGameName[16];
+    char szUserGameName[16];
+    short nSaveGameSlot;
+    int picEntry;
+    unsigned int uMapCRC;
+    char nMonsterSettings;
+    int uGameFlags;
+    int uNetGameFlags;
+    char nWeaponSettings;
+    char nItemSettings;
+    char nRespawnSettings;
+    char nTeamSettings;
+    int nMonsterRespawnTime;
+    int nWeaponRespawnTime;
+    int nItemRespawnTime;
+    int nSpecialRespawnTime;
+};
+
 struct DEMOHEADER
 {
     int signature;
@@ -39,7 +65,7 @@ struct DEMOHEADER
     short nMyConnectIndex;
     short nConnectHead;
     short connectPoints[8];
-    GAMEOPTIONS gameOptions;
+    GAMEOPTIONSLEGACY gameOptions;
 };
 
 #pragma pack(pop)

@@ -206,6 +206,45 @@ int osdcmd_restartvid(osdcmdptr_t UNUSED(parm))
 
     return OSDCMD_OK;
 }
+
+static int osdcmd_music(osdcmdptr_t parm)
+{
+    char buffer[128];
+    if (parm->numparms == 1)
+    {
+        int32_t sel = levelGetMusicIdx(parm->parms[0]);
+
+        if (sel == -1)
+            return OSDCMD_SHOWHELP;
+
+        if (sel == -2)
+        {
+            OSD_Printf("%s is not a valid episode/level number pair\n", parm->parms[0]);
+            return OSDCMD_OK;
+        }
+
+        int nEpisode = sel/kMaxLevels;
+        int nLevel = sel%kMaxLevels;
+
+        if (!levelTryPlayMusic(nEpisode, nLevel))
+        {
+            if (CDAudioToggle)
+                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].at28[nLevel].ate0);
+            else
+                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].at28[nLevel].atd0);
+            viewSetMessage(buffer);
+        }
+        else
+        {
+            OSD_Printf("No music defined for %s\n", parm->parms[0]);
+        }
+
+        return OSDCMD_OK;
+    }
+
+    return OSDCMD_SHOWHELP;
+}
+
 static int osdcmd_vidmode(osdcmdptr_t parm)
 {
     int32_t newbpp = gSetup.bpp, newwidth = gSetup.xdim,
@@ -1006,7 +1045,7 @@ int32_t registerosdcommands(void)
 //
 //    OSD_RegisterFunction("listplayers","listplayers: lists currently connected multiplayer clients", osdcmd_listplayers);
 //#endif
-//    OSD_RegisterFunction("music","music E<ep>L<lev>: change music", osdcmd_music);
+    OSD_RegisterFunction("music","music E<ep>L<lev>: change music", osdcmd_music);
 //
 //#if !defined NETCODE_DISABLE
 //    OSD_RegisterFunction("name","name: change your multiplayer nickname", osdcmd_name);
