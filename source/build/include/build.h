@@ -832,6 +832,7 @@ typedef struct {
     uint8_t num;  // animate number
     int8_t xofs, yofs;
     uint8_t sf;  // anim. speed and flags
+    uint8_t extra;
 } picanm_t;
 EXTERN picanm_t picanm[MAXTILES];
 typedef struct { int16_t newtile; int16_t owner; } rottile_t;
@@ -1056,7 +1057,7 @@ void    tileSetSize(int32_t picnum, int16_t dasizx, int16_t dasizy);
 int32_t artReadHeader(int32_t fil, char const *fn, artheader_t *local);
 int32_t artReadHeaderFromBuffer(uint8_t const *buf, artheader_t *local);
 int32_t artCheckUnitFileHeader(uint8_t const *buf, int32_t length);
-void    tileConvertAnimFormat(int32_t picnum);
+void    tileConvertAnimFormat(int32_t const picnum, int32_t const picanmdisk);
 void    artReadManifest(int32_t fil, artheader_t const *local);
 void    artPreloadFile(int32_t fil, artheader_t const *local);
 int32_t artLoadFiles(const char *filename, int32_t askedsize);

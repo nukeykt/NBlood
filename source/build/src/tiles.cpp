@@ -362,22 +362,16 @@ int32_t artCheckUnitFileHeader(uint8_t const * const buf, int32_t length)
     return 0;
 }
 
-void tileConvertAnimFormat(int32_t const picnum)
+void tileConvertAnimFormat(int32_t const picnum, int32_t const picanmdisk)
 {
-    if (bloodhack) // Stupid hack
-        return;
-    EDUKE32_STATIC_ASSERT(sizeof(picanm_t) == 4);
     EDUKE32_STATIC_ASSERT(PICANM_ANIMTYPE_MASK == 192);
 
     picanm_t * const thispicanm = &picanm[picnum];
-
-    // Old on-disk format: anim type is in the 2 highest bits of the lowest byte.
-    thispicanm->sf &= ~192;
-    thispicanm->sf |= thispicanm->num&192;
-    thispicanm->num &= ~192;
-
-    // don't allow setting texhitscan/nofullbright from ART
-    thispicanm->sf &= ~PICANM_MISC_MASK;
+    thispicanm->num = picanmdisk&63;
+    thispicanm->xofs = (picanmdisk>>8)&255;
+    thispicanm->yofs = (picanmdisk>>16)&255;
+    thispicanm->sf = ((picanmdisk>>24)&15) | (picanmdisk&192);
+    thispicanm->extra = (picanmdisk>>28)&15;
 }
 
 void artReadManifest(int32_t const fil, artheader_t const * const local)
@@ -386,14 +380,18 @@ void artReadManifest(int32_t const fil, artheader_t const * const local)
     int16_t *tilesizy = (int16_t *) Xmalloc(local->numtiles * sizeof(int16_t));
     kread(fil, tilesizx, local->numtiles*sizeof(int16_t));
     kread(fil, tilesizy, local->numtiles*sizeof(int16_t));
-    kread(fil, &picanm[local->tilestart], local->numtiles*sizeof(picanm_t));
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
+        int32_t picanmdisk;
+
         tilesiz[i].x = B_LITTLE16(tilesizx[i-local->tilestart]);
         tilesiz[i].y = B_LITTLE16(tilesizy[i-local->tilestart]);
 
-        tileConvertAnimFormat(i);
+        kread(fil, &picanmdisk, sizeof(int32_t));
+        picanmdisk = B_LITTLE32(picanmdisk);
+
+        tileConvertAnimFormat(i, picanmdisk);
     }
 
     DO_FREE_AND_NULL(tilesizx);

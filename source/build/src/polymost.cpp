@@ -2162,7 +2162,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
         }
         else
         {
-            const int dofullbright = (bloodhack || !(picanm[dapic].sf & PICANM_NOFULLBRIGHT_BIT)) && !(globalflags & GLOBAL_NO_GL_FULLBRIGHT);
+            const int dofullbright = !(picanm[dapic].sf & PICANM_NOFULLBRIGHT_BIT) && !(globalflags & GLOBAL_NO_GL_FULLBRIGHT);
 
             for (bssize_t y = 0; y < siz.y; y++)
             {

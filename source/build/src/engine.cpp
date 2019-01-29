@@ -11018,7 +11018,7 @@ restart_grand:
                 daz = spr->z + spriteheightofs(z, &k, 1);
                 if (intz > daz-k && intz < daz)
                 {
-                    if (!bloodhack && (picanm[tilenum].sf&PICANM_TEXHITSCAN_BIT))
+                    if (picanm[tilenum].sf&PICANM_TEXHITSCAN_BIT)
                     {
                         DO_TILE_ANIM(tilenum, 0);
 
