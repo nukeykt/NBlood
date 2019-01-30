@@ -29,7 +29,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxmp-lite", "libxmp-lite.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glad", "glad.vcxproj", "{6AC1D997-8DAE-4343-8DD8-DA2A1CA63212}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blood", "blood.vcxproj", "{5407CB5A-4B15-41FA-B79B-8B386A14D275}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nblood", "nblood.vcxproj", "{5407CB5A-4B15-41FA-B79B-8B386A14D275}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
