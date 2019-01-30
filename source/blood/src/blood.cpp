@@ -2062,7 +2062,6 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             char *resName = NULL;
             char *resType = NULL;
             char *rffName = NULL;
-            char *rffDefineEnd;
             int resID;
 
             if (scriptfile_getstring(pScript, &resName))

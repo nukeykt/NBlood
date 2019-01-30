@@ -77,14 +77,16 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 
 // PORT-TODO:
 enum BLOOD_GLOBALFLAGS {
-    BLOOS_NO_WIDESCREEN_PINNING = 1<<0,
-    BLOOS_NO_HARDCODED_FOGPALS = 1<<1,
-    BLOOS_NO_PALETTE_CHANGES = 1<<2,
+    BLOOD_NO_WIDESCREEN_PINNING = 1<<0,
+    BLOOD_NO_HARDCODED_FOGPALS = 1<<1,
+    BLOOD_NO_PALETTE_CHANGES = 1<<2,
 };
 
 enum searchpathtypes_t {
     SEARCHPATH_REMOVE = 1<<0,
 };
+
+extern char *g_grpNamePtr;
 
 extern int loaddefinitions_game(const char *fn, int32_t preload);
 extern char UserPath[BMAX_PATH];

@@ -119,6 +119,7 @@ enum scripttoken_t
     T_DST_COLOR, T_ONE_MINUS_DST_COLOR,
     T_SHADERED, T_SHADEGREEN, T_SHADEBLUE,
     T_SHADEFACTOR,
+    T_RFFDEFINEID,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -401,6 +402,8 @@ static int32_t defsparser(scriptfile *script)
         { "undefpalookuprange", T_UNDEFPALOOKUPRANGE },
         { "undefblendtablerange", T_UNDEFBLENDTABLERANGE },
         { "shadefactor",     T_SHADEFACTOR      },
+
+        { "rffdefineid",     T_RFFDEFINEID      },  // dummy
     };
 
     while (1)
@@ -3622,6 +3625,21 @@ static int32_t defsparser(scriptfile *script)
 
             if (id0 == 0)
                 paletteloaded &= ~PALETTE_TRANSLUC;
+        }
+        break;
+        case T_RFFDEFINEID:
+        {
+            char *dummy;
+            int dummy2;
+
+            if (scriptfile_getstring(script, &dummy))
+                break;
+            if (scriptfile_getstring(script, &dummy))
+                break;
+            if (scriptfile_getnumber(script, &dummy2))
+                break;
+            if (scriptfile_getstring(script, &dummy))
+                break;
         }
         break;
 

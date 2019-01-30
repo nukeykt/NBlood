@@ -47,9 +47,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "common_game.h"
 
+// g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
+char *g_grpNamePtr = NULL;
+
+const char *G_DefaultGrpFile(void)
+{
+    return "nblood.pk3";
+}
+
 const char *G_DefaultDefFile(void)
 {
     return "blood.def";
+}
+
+const char *G_GrpFile(void)
+{
+    return (g_grpNamePtr == NULL) ? G_DefaultGrpFile() : g_grpNamePtr;
 }
 
 const char *G_DefFile(void)
@@ -156,6 +169,18 @@ void G_ExtInit(void)
     }
 }
 
+static int32_t G_TryLoadingGrp(char const * const grpfile)
+{
+    int32_t i;
+
+    if ((i = initgroupfile(grpfile)) == -1)
+        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
+    else
+        initprintf("Using \"%s\" as main game data file.\n", grpfile);
+
+    return i;
+}
+
 void G_LoadGroups(int32_t autoload)
 {
     if (UserPath[0] != '/')
@@ -184,6 +209,8 @@ void G_LoadGroups(int32_t autoload)
         Bstrcpy(TEXCACHEFILE, path);
 #endif
     }
+    const char *grpfile = G_GrpFile();
+    G_TryLoadingGrp(grpfile);
 
     if (autoload)
     {
