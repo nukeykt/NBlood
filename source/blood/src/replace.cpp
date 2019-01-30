@@ -32,25 +32,25 @@ int qanimateoffs(int a1, int a2)
     int offset = 0;
     if (a1 >= 0 && a1 < kMaxTiles)
     {
-        int frames = qpicanm[a1].animframes;
+        int frames = picanm[a1].num;
         if (frames > 0)
         {
             int vd;
             if ((a2&0xc000) == 0x8000)
-                vd = (Bcrc32(&a2, 2, 0)+gFrameClock)>>qpicanm[a1].animspeed;
+                vd = (Bcrc32(&a2, 2, 0)+gFrameClock)>>(picanm[a1].sf&PICANM_ANIMSPEED_MASK);
             else
-                vd = gFrameClock>>qpicanm[a1].animspeed;
-            switch (qpicanm[a1].animtype)
+                vd = gFrameClock>>(picanm[a1].sf&PICANM_ANIMSPEED_MASK);
+            switch (picanm[a1].sf&PICANM_ANIMTYPE_MASK)
             {
-            case 1:
+            case PICANM_ANIMTYPE_OSC:
                 offset = vd % (2*frames);
                 if (offset >= frames)
                     offset = 2*frames-offset;
                 break;
-            case 2:
+            case PICANM_ANIMTYPE_FWD:
                 offset = vd % (frames+1);
                 break;
-            case 3:
+            case PICANM_ANIMTYPE_BACK:
                 offset = -(vd % (frames+1));
                 break;
             }

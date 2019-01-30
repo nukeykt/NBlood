@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "al_midi.h"
 #include "common_game.h"
 #include "config.h"
+#include "levels.h"
 #include "resource.h"
 #include "sound.h"
 #include "renderlayer.h"
@@ -185,6 +186,29 @@ int sndPlaySong(const char *songName, bool bLoop)
     return 0;
 }
 
+int sndTryPlaySpecialMusic(int nMusic)
+{
+    int nEpisode = nMusic/kMaxLevels;
+    int nLevel = nMusic%kMaxLevels;
+    if (!sndPlaySong(gEpisodeInfo[nEpisode].at28[nLevel].atd0, true))
+    {
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        return 0;
+    }
+    return 1;
+}
+
+void sndPlaySpecialMusicOrNothing(int nMusic)
+{
+    int nEpisode = nMusic/kMaxLevels;
+    int nLevel = nMusic%kMaxLevels;
+    if (sndTryPlaySpecialMusic(nMusic))
+    {
+        sndStopSong();
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+    }
+}
+
 bool sndIsSongPlaying(void)
 {
     //return MUSIC_SongPlaying();
@@ -199,6 +223,12 @@ void sndFadeSong(int nTime)
     //if (gEightyTwoFifty && sndMultiPlayer)
     //    return;
     //MUSIC_FadeVolume(0, nTime);
+    if (bWaveMusic && nWaveMusicHandle >= 0)
+    {
+        FX_StopSound(nWaveMusicHandle);
+        nWaveMusicHandle = -1;
+        bWaveMusic = false;
+    }
     MUSIC_SetVolume(0);
     MUSIC_StopSong();
 }
@@ -206,6 +236,8 @@ void sndFadeSong(int nTime)
 void sndSetMusicVolume(int nVolume)
 {
     MusicVolume = nVolume;
+    if (bWaveMusic && nWaveMusicHandle >= 0)
+        FX_SetPan(nWaveMusicHandle, nVolume, nVolume, nVolume);
     MUSIC_SetVolume(nVolume);
 }
 

@@ -54,5 +54,5 @@ int tileInit(char a1, const char *a2);
 char * tileLoadTile(int nTile);
 char * tileAllocTile(int nTile, int x, int y, int ox, int oy);
 void tilePreloadTile(int nTile);
-void tilePreloadTile2(int nTile);
+void tilePrecacheTile(int nTile, int nType = 1);
 char tileGetSurfType(int hit);

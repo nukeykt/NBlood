@@ -77,6 +77,9 @@ static int osdcmd_changelevel(osdcmdptr_t parm)
         return OSDCMD_SHOWHELP;
     }
 
+    if (gDemo.at1)
+        gDemo.StopPlayback();
+
     if (numplayers > 1)
     {
         gPacketStartGame.episodeId = volume;
@@ -151,6 +154,9 @@ static int osdcmd_map(osdcmdptr_t parm)
         OSD_Printf(OSD_ERROR "map: file \"%s\" not found.\n", filename);
         return OSDCMD_OK;
     }
+
+    if (gDemo.at1)
+        gDemo.StopPlayback();
 
     levelAddUserMap(filename);
 

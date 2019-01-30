@@ -58,6 +58,13 @@ struct GAMEOPTIONS {
 
 #pragma pack(pop)
 
+enum {
+    MUS_FIRST_SPECIAL = kMaxEpisodes*kMaxLevels,
+
+    MUS_INTRO = MUS_FIRST_SPECIAL,
+    MUS_LOADING = MUS_FIRST_SPECIAL + 1,
+};
+
 struct LEVELINFO
 {
     char at0[BMAX_PATH]; // Filename

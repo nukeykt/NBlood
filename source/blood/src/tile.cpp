@@ -132,15 +132,15 @@ char * tileAllocTile(int nTile, int x, int y, int ox, int oy)
     dassert(nTile >= 0 && nTile < kMaxTiles);
     char *p = (char*)tileCreate(nTile, x, y);
     dassert(p != NULL);
-    qpicanm[nTile].xoffset = ClipRange(ox, -127, 127);
-    qpicanm[nTile].yoffset = ClipRange(oy, -127, 127);
+    picanm[nTile].xofs = ClipRange(ox, -127, 127);
+    picanm[nTile].yofs = ClipRange(oy, -127, 127);
     return (char*)waloff[nTile];
 }
 
 void tilePreloadTile(int nTile)
 {
     int n = 0;
-    switch (qpicanm[nTile].at3_4)
+    switch (picanm[nTile].extra&7)
     {
     case 0:
         n = 1;
@@ -159,7 +159,7 @@ void tilePreloadTile(int nTile)
         if (voxelIndex[nTile] < 0 || voxelIndex[nTile] >= kMaxVoxels)
         {
             voxelIndex[nTile] = -1;
-            qpicanm[nTile].at3_4 = 0;
+            picanm[nTile].extra &= ~7;
         }
         else
             qloadvoxel(voxelIndex[nTile]);
@@ -167,11 +167,11 @@ void tilePreloadTile(int nTile)
     }
     while(n--)
     {
-        if (qpicanm[nTile].animtype)
+        if (picanm[nTile].sf&PICANM_ANIMTYPE_MASK)
         {
-            for (int frame = qpicanm[nTile].animframes; frame >= 0; frame--)
+            for (int frame = picanm[nTile].num; frame >= 0; frame--)
             {
-                if (qpicanm[nTile].animtype == 3)
+                if ((picanm[nTile].sf&PICANM_ANIMTYPE_MASK) == PICANM_ANIMTYPE_BACK)
                     tileLoadTile(nTile-frame);
                 else
                     tileLoadTile(nTile+frame);
@@ -179,14 +179,17 @@ void tilePreloadTile(int nTile)
         }
         else
             tileLoadTile(nTile);
-        nTile += 1+qpicanm[nTile].animframes;
+        nTile += 1+picanm[nTile].num;
     }
 }
 
-void tilePreloadTile2(int nTile)
+extern int nPrecacheCount;
+extern char precachehightile[2][(MAXTILES+7)>>3];
+
+void tilePrecacheTile(int nTile, int nType)
 {
     int n = 0;
-    switch (qpicanm[nTile].at3_4)
+    switch (picanm[nTile].extra&7)
     {
     case 0:
         n = 1;
@@ -203,19 +206,33 @@ void tilePreloadTile2(int nTile)
     }
     while(n--)
     {
-        if (qpicanm[nTile].animtype)
+        if (picanm[nTile].sf&PICANM_ANIMTYPE_MASK)
         {
-            for (int frame = qpicanm[nTile].animframes; frame >= 0; frame--)
+            for (int frame = picanm[nTile].num; frame >= 0; frame--)
             {
-                if (qpicanm[nTile].animtype == 3)
-                    SetBitString(gotpic, nTile-frame);
+                int tile;
+                if ((picanm[nTile].sf&PICANM_ANIMTYPE_MASK) == PICANM_ANIMTYPE_BACK)
+                    tile = nTile-frame;
                 else
-                    SetBitString(gotpic, nTile+frame);
+                    tile = nTile+frame;
+                if (!TestBitString(gotpic, tile))
+                {
+                    nPrecacheCount++;
+                    SetBitString(gotpic, tile);
+                }
+                SetBitString(precachehightile[nType], tile);
             }
         }
         else
-            SetBitString(gotpic, nTile);
-        nTile += 1+qpicanm[nTile].animframes;
+        {
+            if (!TestBitString(gotpic, nTile))
+            {
+                nPrecacheCount++;
+                SetBitString(gotpic, nTile);
+            }
+            SetBitString(precachehightile[nType], nTile);
+        }
+        nTile += 1+picanm[nTile].num;
     }
 }
 

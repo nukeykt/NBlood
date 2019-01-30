@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 #include "controls.h"
-#include "common_game.h"
 
 enum PACKETMODE {
     PACKETMODE_0 = 0,

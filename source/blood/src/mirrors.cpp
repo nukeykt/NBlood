@@ -277,7 +277,7 @@ void sub_557C4(int x, int y, int interpolation)
     {
         SPRITE *pTSprite = &qtsprite[nTSprite];
         int nAnim = 0;
-        switch (qpicanm[pTSprite->picnum].at3_4)
+        switch (picanm[pTSprite->picnum].extra&7)
         {
         case 1:
         {
@@ -307,7 +307,7 @@ void sub_557C4(int x, int y, int interpolation)
         }
         while (nAnim > 0)
         {
-            pTSprite->picnum += qpicanm[pTSprite->picnum].animframes+1;
+            pTSprite->picnum += picanm[pTSprite->picnum].num+1;
             nAnim--;
         }
     }

@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "pragmas.h"
 #include "misc.h"
+#include "network.h"
 
 extern int g_useCwd;
 
@@ -54,16 +55,14 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 #define kMaxWalls 8192
 #define kMaxSprites 4096
 
-#define kMaxTiles 6144
-#define kMaxStatus 1024
+#define kMaxTiles MAXTILES
+#define kMaxStatus MAXSTATUS
 #define kMaxPlayers 8
-#define kMaxXDim 1600
-#define kMaxYDim 1200
-#define kMaxPaLookups 256
-#define kMaxPSkyTiles 256
 #define kMaxViewSprites maxspritesonscreen
 
-#define kMaxVoxels 512
+#define kMaxVoxels MAXVOXELS
+
+#define kTicRate 120
 
 // NUKE-TODO:
 #define OSDTEXT_DEFAULT   "^00"
@@ -100,6 +99,12 @@ extern void G_ExtInit(void);
 void G_LoadGroupsInDir(const char *dirname);
 void G_DoAutoload(const char *dirname);
 extern void G_LoadGroups(int32_t autoload);
+
+static inline void G_HandleAsync(void)
+{
+    handleevents();
+    netGetPackets();
+}
 
 #if defined HAVE_FLAC || defined HAVE_VORBIS
 # define FORMAT_UPGRADE_ELIGIBLE
@@ -150,6 +155,7 @@ struct SPRITE
     short type, hitag, extra;
 };
 
+#if 0
 struct PICANM {
     unsigned int animframes : 5;
     unsigned int at0_5 : 1;
@@ -160,6 +166,7 @@ struct PICANM {
     unsigned int at3_4 : 3; // type
     unsigned int at3_7 : 1; // filler
 };
+#endif
 
 struct LOCATION {
     int x, y, z;
@@ -188,7 +195,7 @@ extern SECTOR *qsector;
 extern SPRITE *qsprite, *qtsprite;
 extern char qsprite_filler[], qsector_filler[];
 extern WALL *qwall;
-extern PICANM *qpicanm;
+//extern PICANM *qpicanm;
 
 inline int ksgnf(float f)
 {

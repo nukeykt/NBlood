@@ -36,6 +36,7 @@ char Wait(int nTicks)
     gGameClock = 0;
     while (gGameClock < nTicks)
     {
+        timerUpdate();
         char key = keyGetScan();
         if (key)
         {
@@ -111,7 +112,7 @@ void credLogosDos(void)
                 return;
         //}
     }
-    sndPlaySong("PESTIS", 1);
+    sndPlaySpecialMusicOrNothing(MUS_INTRO);
     sndStartSample("THUNDER2", 128, -1);
     if (!DoFade(0, 0, 0, 60))
         return;

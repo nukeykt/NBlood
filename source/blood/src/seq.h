@@ -51,8 +51,8 @@ struct Seq {
     short ata;
     int atc;
     SEQFRAME frames[1]; // at10
-    void sub_53998(void);
     void Preload(void);
+    void Precache(void);
 };
 
 struct ACTIVE
@@ -74,7 +74,7 @@ struct SEQINST
 };
 
 int seqRegisterClient(void(*pClient)(int, int));
-void seqPreloadId(int id);
+void seqPrecacheId(int id);
 SEQINST * GetInstance(int a1, int a2);
 void UnlockInstance(SEQINST *pInst);
 void seqSpawn(int a1, int a2, int a3, int a4 = -1);

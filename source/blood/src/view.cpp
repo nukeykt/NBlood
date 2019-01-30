@@ -1014,13 +1014,13 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
     }
 }
 
-void TileHGauge(int nTile, int x, int y, int nMult, int nDiv)
+void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nScale)
 {
-    int bx = (tilesiz[nTile].x*nMult)/nDiv+x-160;
+    int bx = (mulscale16(tilesiz[nTile].x,nScale)*nMult)/nDiv+x-160;
     int xdimcorrect = scale(ydim, 4, 3);
     int xscalecorrect = divscale16(xdimcorrect, 320);
     int sbx = (xdim>>1)+mulscale16(bx, xscalecorrect)-1;
-    rotatesprite(x<<16, y<<16, 65536, 0, nTile, 0, 0, 90, 0, 0, sbx, ydim-1);
+    rotatesprite(x<<16, y<<16, nScale, 0, nTile, 0, 0, 90, 0, 0, sbx, ydim-1);
 }
 
 int gPackIcons[5] = {
@@ -1634,7 +1634,7 @@ SPRITE *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->picnum = pTSprite->picnum;
         pNSprite->pal = 5;
         int height = tilesiz[pNSprite->picnum].y;
-        int center = height/2+qpicanm[pNSprite->picnum].yoffset;
+        int center = height/2+picanm[pNSprite->picnum].yofs;
         pNSprite->z -= (pNSprite->yrepeat<<2)*(height-center);
         if (videoGetRenderMode() >= REND_POLYMOST)
         {
@@ -1759,7 +1759,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             pTSprite->ang = pPrevLoc->ang+mulscale16(((pTSprite->ang-pPrevLoc->ang+1024)&2047)-1024, gInterpolate);
         }
         int nAnim = 0;
-        switch (qpicanm[nTile].at3_4)
+        switch (picanm[nTile].extra&7)
         {
             case 0:
                 if (nXSprite > 0)
@@ -1782,6 +1782,11 @@ void viewProcessSprites(int cX, int cY, int cZ)
                 break;
             case 1:
             {
+                if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+                {
+                    pTSprite->cstat &= ~4;
+                    break;
+                }
                 long dX = cX - pTSprite->x;
                 long dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
@@ -1799,6 +1804,11 @@ void viewProcessSprites(int cX, int cY, int cZ)
             }
             case 2:
             {
+                if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+                {
+                    pTSprite->cstat &= ~4;
+                    break;
+                }
                 long dX = cX - pTSprite->x;
                 long dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
@@ -1830,11 +1840,11 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     if ((pTSprite->hitag&16) == 0)
                     {
                         pTSprite->cstat |= 48;
-                        pTSprite->yoffset += qpicanm[pTSprite->picnum].yoffset;
+                        pTSprite->yoffset += picanm[pTSprite->picnum].yofs;
                         pTSprite->picnum = voxelIndex[pTSprite->picnum];
                         if (!voxoff[pTSprite->picnum])
                             qloadvoxel(pTSprite->picnum);
-                        if (qpicanm[nTile].at3_4 == 7)
+                        if ((picanm[nTile].extra&7) == 7)
                         {
                             pTSprite->ang = (gGameClock<<3)&2047;
                         }
@@ -1845,13 +1855,13 @@ void viewProcessSprites(int cX, int cY, int cZ)
         }
         while (nAnim > 0)
         {
-            pTSprite->picnum += qpicanm[pTSprite->picnum].animframes+1;
+            pTSprite->picnum += picanm[pTSprite->picnum].num+1;
             nAnim--;
         }
 
         if (usevoxels && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] != -1)
         {
-            pTSprite->yoffset += qpicanm[pTSprite->picnum].yoffset;
+            pTSprite->yoffset += picanm[pTSprite->picnum].yofs;
         }
 
         SECTOR *pSector = &qsector[pTSprite->sectnum];
@@ -2187,7 +2197,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
     {
         SPRITE *pTSprite = &qtsprite[nTSprite];
         int nAnim = 0;
-        switch (qpicanm[pTSprite->picnum].at3_4)
+        switch (picanm[pTSprite->picnum].extra&7)
         {
             case 1:
             {
@@ -2217,7 +2227,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
         }
         while (nAnim > 0)
         {
-            pTSprite->picnum += qpicanm[pTSprite->picnum].animframes+1;
+            pTSprite->picnum += picanm[pTSprite->picnum].num+1;
             nAnim--;
         }
     }
@@ -3149,29 +3159,59 @@ RORHACK:
     UpdateDacs(nPalette);
 }
 
-void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3)
+int nLoadingScreenTile;
+char pzLoadingScreenText1[256], pzLoadingScreenText2[256], pzLoadingScreenText3[256];
+
+void viewLoadingScreenUpdate(const char *pzText4, int nPercent)
 {
     int vc;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &vc);
-    if (nTile)
+    if (nLoadingScreenTile)
     {
         videoClearScreen(0);
-        rotatesprite(160<<16, 100<<16, 65536, 0, nTile, 0, 0, 74, 0, 0, xdim-1, ydim-1);
+        rotatesprite(160<<16, 100<<16, 65536, 0, nLoadingScreenTile, 0, 0, 74, 0, 0, xdim-1, ydim-1);
     }
-    if (pText)
+    if (pzLoadingScreenText1[0])
     {
         rotatesprite(160<<16, 20<<16, 65536, 0, 2038, -128, 0, 78, 0, 0, xdim-1, ydim-1);
-        viewDrawText(1, pText, 160, 20, -128, 0, 1, 1);
+        viewDrawText(1, pzLoadingScreenText1, 160, 20-vc/2, -128, 0, 1, 1);
     }
-    if (pText2)
+    if (pzLoadingScreenText2[0])
     {
-        viewDrawText(1, pText2, 160, 50, -128, 0, 1, 1);
+        viewDrawText(1, pzLoadingScreenText2, 160, 50, -128, 0, 1, 1);
     }
-    if (pText3)
+    if (pzLoadingScreenText3[0])
     {
-        viewDrawText(1, pText3, 160, 70, -128, 0, 1, 1);
+        viewDrawText(1, pzLoadingScreenText3, 160, 70, -128, 0, 1, 1);
     }
+    if (pzText4)
+    {
+        viewDrawText(3, pzText4, 160, 124, -128, 0, 1, 1);
+    }
+
+    if (nPercent != -1)
+        TileHGauge(2260, 86, 110, nPercent, 100, 131072);
+
     viewDrawText(3, "Please Wait", 160, 134, -128, 0, 1, 1);
+    scrNextPage();
+}
+
+void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3)
+{
+    nLoadingScreenTile = nTile;
+    if (pText)
+        strncpy(pzLoadingScreenText1, pText, 256);
+    else
+        pzLoadingScreenText1[0] = 0;
+    if (pText2)
+        strncpy(pzLoadingScreenText2, pText2, 256);
+    else
+        pzLoadingScreenText2[0] = 0;
+    if (pText3)
+        strncpy(pzLoadingScreenText3, pText3, 256);
+    else
+        pzLoadingScreenText3[0] = 0;
+    viewLoadingScreenUpdate(NULL, -1);
 }
 
 palette_t CrosshairColors = { 255, 255, 255, 0 };

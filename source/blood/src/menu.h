@@ -49,7 +49,7 @@ extern CGameMenu menuOptions;
 extern short gQuickLoadSlot;
 extern short gQuickSaveSlot;
 extern char strRestoreGameStrings[][16];
-void sub_5A828(void);
+void drawLoadingScreen(void);
 void SetupMenus(void);
 void QuickSaveGame(void);
 void QuickLoadGame(void);

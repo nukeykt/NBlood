@@ -48,7 +48,7 @@ int seqRegisterClient(void(*pClient)(int, int))
     return nClients++;
 }
 
-void Seq::sub_53998(void)
+void Seq::Preload(void)
 {
     if (memcmp(signature, "SEQ\x1a", 4) != 0)
         ThrowError("Invalid sequence");
@@ -58,23 +58,23 @@ void Seq::sub_53998(void)
         tilePreloadTile(frames[i].tile);
 }
 
-void Seq::Preload(void)
+void Seq::Precache(void)
 {
     if (memcmp(signature, "SEQ\x1a", 4) != 0)
         ThrowError("Invalid sequence");
     if ((version & 0xff00) != 0x300)
         ThrowError("Obsolete sequence version");
     for (int i = 0; i < nFrames; i++)
-        tilePreloadTile2(frames[i].tile);
+        tilePrecacheTile(frames[i].tile);
 }
 
-void seqPreloadId(int id)
+void seqPrecacheId(int id)
 {
     DICTNODE *hSeq = gSysRes.Lookup(id, "SEQ");
     if (!hSeq)
         return;
     Seq *pSeq = (Seq*)gSysRes.Lock(hSeq);
-    pSeq->Preload();
+    pSeq->Precache();
     gSysRes.Unlock(hSeq);
 }
 
@@ -93,7 +93,7 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     dassert(pSprite->extra == nXSprite);
     if (pSprite->hitag & 2)
     {
-        if (tilesiz[pSprite->picnum].y != tilesiz[pFrame->tile].y || qpicanm[pSprite->picnum].yoffset != qpicanm[pFrame->tile].yoffset
+        if (tilesiz[pSprite->picnum].y != tilesiz[pFrame->tile].y || picanm[pSprite->picnum].yofs != picanm[pFrame->tile].yofs
             || (pFrame->at3_0 && pFrame->at3_0 != pSprite->yrepeat))
             pSprite->hitag |= 4;
     }

@@ -101,9 +101,6 @@ void LoadSave::LoadGame(char *pzFile)
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
-    // PORT-TODO:
-    //if (gRedBookInstalled)
-    //    Redbook.StopSong();
     if (!gGameStarted)
     {
         memset(xsprite, 0, sizeof(xsprite));
@@ -157,15 +154,7 @@ void LoadSave::LoadGame(char *pzFile)
     gGameClock = 0;
     gPaused = 0;
     gGameStarted = 1;
-    // PORT-TODO:
-    //if (!bNoCDAudio && gRedbookInstalled && Redbook.preprocess())
-    //{
-    //    Redbook.play_song(gGameOptions.nTrackNumber);
-    //    Redbook.cd_status();
-    //    Redbook.sub_82bb4();
-    //}
-    //else
-        sndPlaySong(gGameOptions.zLevelSong, 1);
+    sndPlaySong(gGameOptions.zLevelSong, 1);
 }
 
 void LoadSave::SaveGame(char *pzFile)

@@ -690,7 +690,6 @@ void SetupOptionsOldMenu(void)
     sliderGamma.nValue = ClipRange(gGamma, sliderGamma.nRangeLow, sliderGamma.nRangeHigh);
     sliderMusic.nValue = ClipRange(MusicVolume, sliderMusic.nRangeLow, sliderMusic.nRangeHigh);
     sliderSound.nValue = ClipRange(FXVolume, sliderSound.nRangeLow, sliderSound.nRangeHigh);
-    // NUKE-TODO: unk_26CB50.at24 = ClipRange(Redbook.GetVolume(), unk_26CB50.at28, unk_26CB50.at2c);
     bool3DAudio.at20 = gDoppler;
     boolCrosshair.at20 = gAimReticle;
     boolShowWeapons.at20 = gShowWeapon;
@@ -936,7 +935,6 @@ void SetupSoundsMenu(void)
 {
     itemSoundsMusic.nValue = ClipRange(MusicVolume, itemSoundsMusic.nRangeLow, itemSoundsMusic.nRangeHigh);
     itemSoundsSound.nValue = ClipRange(FXVolume, itemSoundsSound.nRangeLow, itemSoundsSound.nRangeHigh);
-    // NUKE-TODO: unk_26DB90.at24 = ClipRange(Redbook.GetVolume(), unk_26DB90.at28, unk_26DB90.at2c);
     menuSounds.Add(&itemSoundsTitle, false);
     menuSounds.Add(&itemSoundsMusic, true);
     menuSounds.Add(&itemSoundsSound, false);
@@ -1907,7 +1905,7 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     if (gGameOptions.nGameType > 0)
         return;
     sprintf(strLoadGameName, "GAME00%02d.SAV", nSlot);
-    if (access(strLoadGameName, 4) == -1)
+    if (access(strLoadGameName, F_OK) == -1)
         return;
     if (gDemo.at1)
         gDemo.Close();
@@ -1923,7 +1921,7 @@ void QuickLoadGame(void)
     if (gGameOptions.nGameType > 0)
         return;
     sprintf(strLoadGameName, "GAME00%02d.SAV", gQuickLoadSlot);
-    if (access(strLoadGameName, 4) == -1)
+    if (access(strLoadGameName, F_OK) == -1)
         return;
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
     LoadSave::LoadGame(strLoadGameName);
@@ -2020,7 +2018,7 @@ void MenuSetupEpisodeInfo(void)
     }
 }
 
-void sub_5A828(void)
+void drawLoadingScreen(void)
 {
     char buffer[80];
     if (gGameOptions.nGameType == 0)

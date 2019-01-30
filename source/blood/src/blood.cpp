@@ -88,7 +88,7 @@ SECTOR *qsector;
 SPRITE *qsprite, *qtsprite;
 char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
 WALL *qwall;
-PICANM *qpicanm;
+//PICANM *qpicanm;
 
 ud_setup_t gSetup;
 char SetupFilename[BMAX_PATH] = SETUPFILENAME;
@@ -240,46 +240,48 @@ void QuitGame(void)
     exit(0);
 }
 
-void sub_1053c(SPRITE *pSprite)
+int nPrecacheCount;
+
+void PrecacheDude(SPRITE *pSprite)
 {
 	DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-	seqPreloadId(pDudeInfo->seqStartID);
-	seqPreloadId(pDudeInfo->seqStartID+5);
-	seqPreloadId(pDudeInfo->seqStartID+1);
-	seqPreloadId(pDudeInfo->seqStartID+2);
+	seqPrecacheId(pDudeInfo->seqStartID);
+	seqPrecacheId(pDudeInfo->seqStartID+5);
+	seqPrecacheId(pDudeInfo->seqStartID+1);
+	seqPrecacheId(pDudeInfo->seqStartID+2);
 	switch (pSprite->type)
 	{
 	case 201:
 	case 202:
 	case 247:
 	case 248:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+7);
-		seqPreloadId(pDudeInfo->seqStartID+8);
-		seqPreloadId(pDudeInfo->seqStartID+9);
-		seqPreloadId(pDudeInfo->seqStartID+13);
-		seqPreloadId(pDudeInfo->seqStartID+14);
-		seqPreloadId(pDudeInfo->seqStartID+15);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+7);
+		seqPrecacheId(pDudeInfo->seqStartID+8);
+		seqPrecacheId(pDudeInfo->seqStartID+9);
+		seqPrecacheId(pDudeInfo->seqStartID+13);
+		seqPrecacheId(pDudeInfo->seqStartID+14);
+		seqPrecacheId(pDudeInfo->seqStartID+15);
 		break;
 	case 204:
 	case 217:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+7);
-		seqPreloadId(pDudeInfo->seqStartID+8);
-		seqPreloadId(pDudeInfo->seqStartID+9);
-		seqPreloadId(pDudeInfo->seqStartID+10);
-		seqPreloadId(pDudeInfo->seqStartID+11);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+7);
+		seqPrecacheId(pDudeInfo->seqStartID+8);
+		seqPrecacheId(pDudeInfo->seqStartID+9);
+		seqPrecacheId(pDudeInfo->seqStartID+10);
+		seqPrecacheId(pDudeInfo->seqStartID+11);
 		break;
 	case 208:
 	case 209:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
 	case 206:
 	case 207:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+7);
-		seqPreloadId(pDudeInfo->seqStartID+8);
-		seqPreloadId(pDudeInfo->seqStartID+9);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+7);
+		seqPrecacheId(pDudeInfo->seqStartID+8);
+		seqPrecacheId(pDudeInfo->seqStartID+9);
 		break;
 	case 210:
 	case 211:
@@ -288,61 +290,61 @@ void sub_1053c(SPRITE *pSprite)
 	case 215:
 	case 216:
 	case 229:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+7);
-		seqPreloadId(pDudeInfo->seqStartID+8);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+7);
+		seqPrecacheId(pDudeInfo->seqStartID+8);
 		break;
 	case 227:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+7);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+7);
 	case 212:
 	case 218:
 	case 219:
 	case 220:
-		seqPreloadId(pDudeInfo->seqStartID+6);
-		seqPreloadId(pDudeInfo->seqStartID+7);
+		seqPrecacheId(pDudeInfo->seqStartID+6);
+		seqPrecacheId(pDudeInfo->seqStartID+7);
 		break;
 	case 249:
-        seqPreloadId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+6);
 		break;
 	case 205:
-        seqPreloadId(pDudeInfo->seqStartID+12);
-        seqPreloadId(pDudeInfo->seqStartID+9);
+        seqPrecacheId(pDudeInfo->seqStartID+12);
+        seqPrecacheId(pDudeInfo->seqStartID+9);
 	case 244:
-        seqPreloadId(pDudeInfo->seqStartID+10);
+        seqPrecacheId(pDudeInfo->seqStartID+10);
 	case 203:
-        seqPreloadId(pDudeInfo->seqStartID+6);
-        seqPreloadId(pDudeInfo->seqStartID+7);
-        seqPreloadId(pDudeInfo->seqStartID+8);
-        seqPreloadId(pDudeInfo->seqStartID+11);
-        seqPreloadId(pDudeInfo->seqStartID+13);
-        seqPreloadId(pDudeInfo->seqStartID+14);
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        seqPrecacheId(pDudeInfo->seqStartID+11);
+        seqPrecacheId(pDudeInfo->seqStartID+13);
+        seqPrecacheId(pDudeInfo->seqStartID+14);
 		break;
 	}
 }
 
-void sub_1081c(SPRITE *pSprite)
+void PrecacheThing(SPRITE *pSprite)
 {
 	switch (pSprite->type)
 	{
 	case 406:
 	case 407:
-        seqPreloadId(12);
+        seqPrecacheId(12);
 		break;
 	case 410:
-        seqPreloadId(15);
+        seqPrecacheId(15);
 		break;
 	case 411:
-        seqPreloadId(21);
+        seqPrecacheId(21);
 		break;
 	case 412:
-        seqPreloadId(25);
-        seqPreloadId(26);
+        seqPrecacheId(25);
+        seqPrecacheId(26);
 		break;
 	case 413:
-        seqPreloadId(38);
-        seqPreloadId(40);
-        seqPreloadId(28);
+        seqPrecacheId(38);
+        seqPrecacheId(40);
+        seqPrecacheId(28);
 		break;
 	case 416:
 		break;
@@ -350,10 +352,10 @@ void sub_1081c(SPRITE *pSprite)
 		tilePreloadTile(pSprite->picnum);
 		break;
 	}
-    seqPreloadId(3);
-    seqPreloadId(4);
-    seqPreloadId(5);
-    seqPreloadId(9);
+    seqPrecacheId(3);
+    seqPrecacheId(4);
+    seqPrecacheId(5);
+    seqPrecacheId(9);
 }
 
 void PreloadTiles(void)
@@ -362,16 +364,16 @@ void PreloadTiles(void)
 	memset(gotpic,0,sizeof(gotpic));
 	for (int i = 0; i < numsectors; i++)
 	{
-		tilePreloadTile2(sector[i].floorpicnum);
-		tilePreloadTile2(sector[i].ceilingpicnum);
+		tilePrecacheTile(sector[i].floorpicnum, 0);
+		tilePrecacheTile(sector[i].ceilingpicnum, 0);
 		if ((sector[i].ceilingstat&1) != 0 && skyTile == -1)
 			skyTile = sector[i].ceilingpicnum;
 	}
 	for (int i = 0; i < numwalls; i++)
 	{
-		tilePreloadTile2(wall[i].picnum);
+		tilePrecacheTile(wall[i].picnum, 0);
 		if (wall[i].overpicnum >= 0)
-			tilePreloadTile2(wall[i].overpicnum);
+			tilePrecacheTile(wall[i].overpicnum, 0);
 	}
 	for (int i = 0; i < kMaxSprites; i++)
 	{
@@ -381,50 +383,132 @@ void PreloadTiles(void)
 			switch (pSprite->statnum)
 			{
 			case 6:
-				sub_1053c(pSprite);
+				PrecacheDude(pSprite);
 				break;
 			case 4:
-				sub_1081c(pSprite);
+				PrecacheThing(pSprite);
 				break;
 			default:
-				tilePreloadTile2(pSprite->picnum);
+				tilePrecacheTile(pSprite->picnum);
 				break;
 			}
 		}
 	}
 	if (numplayers > 1)
 	{
-		seqPreloadId(dudeInfo[31].seqStartID+6);
-		seqPreloadId(dudeInfo[31].seqStartID+7);
-		seqPreloadId(dudeInfo[31].seqStartID+8);
-		seqPreloadId(dudeInfo[31].seqStartID+9);
-		seqPreloadId(dudeInfo[31].seqStartID+10);
-		seqPreloadId(dudeInfo[31].seqStartID+14);
-		seqPreloadId(dudeInfo[31].seqStartID+15);
-		seqPreloadId(dudeInfo[31].seqStartID+12);
-		seqPreloadId(dudeInfo[31].seqStartID+16);
-		seqPreloadId(dudeInfo[31].seqStartID+17);
-		seqPreloadId(dudeInfo[31].seqStartID+18);
+		seqPrecacheId(dudeInfo[31].seqStartID+6);
+		seqPrecacheId(dudeInfo[31].seqStartID+7);
+		seqPrecacheId(dudeInfo[31].seqStartID+8);
+		seqPrecacheId(dudeInfo[31].seqStartID+9);
+		seqPrecacheId(dudeInfo[31].seqStartID+10);
+		seqPrecacheId(dudeInfo[31].seqStartID+14);
+		seqPrecacheId(dudeInfo[31].seqStartID+15);
+		seqPrecacheId(dudeInfo[31].seqStartID+12);
+		seqPrecacheId(dudeInfo[31].seqStartID+16);
+		seqPrecacheId(dudeInfo[31].seqStartID+17);
+		seqPrecacheId(dudeInfo[31].seqStartID+18);
 	}
 	if (skyTile > -1 && skyTile < kMaxTiles)
 	{
 		for (int i = 1; i < gSkyCount; i++)
-			tilePreloadTile2(skyTile+i);
+			tilePrecacheTile(skyTile+i, 0);
 	}
-	netGetPackets();
+    G_HandleAsync();
 }
+
+char precachehightile[2][(MAXTILES+7)>>3];
+#ifdef USE_OPENGL
+void PrecacheExtraTextureMaps(int nTile)
+{
+    // PRECACHE
+    if (useprecache && bpp > 8)
+    {
+        for (int type = 0; type < 2 && !KB_KeyPressed(sc_Space); type++)
+        {
+            if (TestBitString(precachehightile[type], nTile))
+            {
+                for (int k = 0; k < MAXPALOOKUPS - RESERVEDPALS && !KB_KeyPressed(sc_Space); k++)
+                {
+                    // this is the CROSSHAIR_PAL, see screens.cpp
+                    if (k == MAXPALOOKUPS - RESERVEDPALS - 1)
+                        break;
+#ifdef POLYMER
+                    if (videoGetRenderMode() != REND_POLYMER || !polymer_havehighpalookup(0, k))
+#endif
+                        polymost_precache(nTile, k, type);
+                }
+
+#ifdef USE_GLEXT
+                if (r_detailmapping)
+                    polymost_precache(nTile, DETAILPAL, type);
+
+                if (r_glowmapping)
+                    polymost_precache(nTile, GLOWPAL, type);
+#endif
+#ifdef POLYMER
+                if (videoGetRenderMode() == REND_POLYMER)
+                {
+                    if (pr_specularmapping)
+                        polymost_precache(nTile, SPECULARPAL, type);
+
+                    if (pr_normalmapping)
+                        polymost_precache(nTile, NORMALPAL, type);
+                }
+#endif
+            }
+        }
+    }
+}
+#endif
 
 void PreloadCache(void)
 {
+    char tempbuf[128];
+    if (gDemo.at1)
+        return;
 	PreloadTiles();
-	for (int i = 0; i < kMaxTiles; i++)
-	{
-		if (gotpic[i>>3]&(1<<(i&7)))
-		{
-			tileLoadTile(i);
-			netGetPackets();
-		}
-	}
+    int clock = totalclock;
+    int cnt = 0;
+    int percentDisplayed = -1;
+
+    for (int i=0; i<kMaxTiles && !KB_KeyPressed(sc_Space); i++)
+    {
+        if (TestBitString(gotpic, i))
+        {
+            if (waloff[i] == 0)
+                tileLoad((int16_t)i);
+
+#ifdef USE_OPENGL
+            PrecacheExtraTextureMaps(i);
+#endif
+
+            MUSIC_Update();
+
+            if ((++cnt & 7) == 0)
+                G_HandleAsync();
+
+            if (videoGetRenderMode() != REND_CLASSIC && totalclock - clock > (kTicRate>>2))
+            {
+                int const percentComplete = min(100, tabledivide32_noinline(100 * cnt, nPrecacheCount));
+
+                // this just prevents the loading screen percentage bar from making large jumps
+                while (percentDisplayed < percentComplete)
+                {
+                    Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, nPrecacheCount);
+                    viewLoadingScreenUpdate(tempbuf, percentDisplayed);
+                    timerUpdate();
+
+                    if (totalclock - clock >= 1)
+                    {
+                        clock = totalclock;
+                        percentDisplayed++;
+                    }
+                }
+
+                clock = totalclock;
+            }
+        }
+    }
 	memset(gotpic,0,sizeof(gotpic));
 }
 
@@ -436,9 +520,6 @@ void EndLevel(void)
 	sfxKillAllSounds();
 	ambKillAll();
 	seqKillAll();
-    // PORT-TODO:
-	//if (gRedBookInstalled)
-	//	Redbook.StopSong();
 }
 
 PLAYER gPlayerTemp[kMaxPlayers];
@@ -490,7 +571,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	}
 	memset(xsprite,0,sizeof(xsprite));
 	memset(sprite,0,sizeof(sprite));
-	sub_5A828();
+	drawLoadingScreen();
 	dbLoadMap(gameOptions->zLevelName,(long*)&startpos.x,(long*)&startpos.y,(long*)&startpos.z,&startang,&startsectnum,(unsigned long*)&gameOptions->uMapCRC);
 	wsrand(gameOptions->uMapCRC);
 	gKillMgr.Clear();
@@ -569,12 +650,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	if (!gDemo.at1)
 		gGameMenuMgr.Deactivate();
     levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
-	//if (!bNoCDAudio && gRedBookInstalled && Redbook.preprocess() && !gDemo.at1)
-	//{
-	//	Redbook.playsong(gGameOptions.at12a);
-	//	Redbook.cd_status();
-	//	Redbook.sub_82bb4();
-	//}
 	// viewSetMessage("");
 	viewSetErrorMessage("");
 	viewResizeView(gViewSize);
@@ -1223,7 +1298,6 @@ int app_main(int argc, char const * const * argv)
     memcpy(&gGameOptions, &gSingleGameOptions, sizeof(GAMEOPTIONS));
     ParseOptions();
     G_ExtInit();
-    sub_26988();
 
     // used with binds for fast function lookup
     hash_init(&h_gamefuncs);
@@ -1328,7 +1402,7 @@ int app_main(int argc, char const * const * argv)
     qsprite = (SPRITE*)sprite;
     qwall = (WALL*)wall;
     qsector = (SECTOR*)sector;
-    qpicanm = (PICANM*)picanm;
+    //qpicanm = (PICANM*)picanm;
     qtsprite = (SPRITE*)tsprite;
     
     initprintf("Loading tiles\n");
@@ -1345,6 +1419,7 @@ int app_main(int argc, char const * const * argv)
 			ThrowError("TILES###.ART files not found");
 	}
 
+    levelLoadDefaults();
     const char *defsfile = G_DefFile();
     uint32_t stime = timerGetTicks();
     if (!loaddefinitionsfile(defsfile))
@@ -1353,7 +1428,6 @@ int app_main(int argc, char const * const * argv)
         initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
     }
     loaddefinitions_game(defsfile, FALSE);
-
     powerupInit();
     initprintf("Loading cosine table\n");
     trigInit(gSysRes);
@@ -1390,7 +1464,6 @@ int app_main(int argc, char const * const * argv)
     sndInit();
     sfxInit();
     gChoke.sub_83ff0(518, sub_84230);
-    levelLoadDefaults();
     if (bAddUserMap)
     {
         levelAddUserMap(gUserMapFilename);
@@ -1423,9 +1496,6 @@ RESTART:
     ready2send = 1;
 	while (!gQuitGame)
 	{
-        // PORT-TODO:
-		//if (gRedBookInstalled)
-		//	Redbook.preprocess();
         netUpdate();
         CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
 		switch (gInputMode)
@@ -1443,16 +1513,13 @@ RESTART:
 
         OSD_DispatchQueued();
         
-        // PORT-TODO:
-		//if (gRedBookInstalled)
-		//	Redbook.postprocess();
         bool bDraw = viewFPSLimit() != 0;
 		if (gGameStarted)
 		{
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
 			if (numplayers > 1)
-				netGetPackets();
+                G_HandleAsync();
 			while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
 			{
 				viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
@@ -1497,7 +1564,7 @@ RESTART:
                 videoClearScreen(0);
 			    rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
             }
-			netGetPackets();
+            G_HandleAsync();
 			if (gQuitRequest && !gQuitGame)
 				netBroadcastMyLogoff();
 		}
@@ -1546,7 +1613,7 @@ RESTART:
 		{
 			gGameMenuMgr.Process();
             videoClearScreen(0);
-			netGetPackets();
+            G_HandleAsync();
 			if (viewFPSLimit())
                 gGameMenuMgr.Draw();
 		}
@@ -1562,14 +1629,54 @@ RESTART:
         goto RESTART;
     }
     ShutDown();
-    // PORT-TODO:
-    //if (gRedBookInstalled)
-    //{
-    //    Redbook.StopSong();
-    //    Redbook.cdrom_shutdown();
-    //}
 
     return 0;
+}
+
+static int32_t S_DefineAudioIfSupported(char *fn, const char *name)
+{
+#if !defined HAVE_FLAC || !defined HAVE_VORBIS
+    const char *extension = Bstrrchr(name, '.');
+# if !defined HAVE_FLAC
+    if (extension && !Bstrcasecmp(extension, ".flac"))
+        return -2;
+# endif
+# if !defined HAVE_VORBIS
+    if (extension && !Bstrcasecmp(extension, ".ogg"))
+        return -2;
+# endif
+#endif
+    Bstrncpy(fn, name, BMAX_PATH);
+    return 0;
+}
+
+// Returns:
+//   0: all OK
+//  -1: ID declaration was invalid:
+static int32_t S_DefineMusic(const char *ID, const char *name)
+{
+    int32_t sel = MUS_FIRST_SPECIAL;
+
+    Bassert(ID != NULL);
+
+    if (!Bstrcmp(ID,"intro"))
+    {
+        sel = MUS_INTRO;
+    }
+    else if (!Bstrcmp(ID,"loading"))
+    {
+        sel = MUS_LOADING;
+    }
+    else
+    {
+        sel = levelGetMusicIdx(ID);
+        if (sel < 0)
+            return -1;
+    }
+
+    int nEpisode = sel/kMaxLevels;
+    int nLevel = sel%kMaxLevels;
+    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].at28[nLevel].atd0, name);
 }
 
 static int parsedefinitions_game(scriptfile *, int);
@@ -1790,7 +1897,6 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             if (firstPass)
                 bNoAutoLoad = true;
             break;
-#if 0
         case T_MUSIC:
         {
             char *tokenPtr = pScript->ltextptr;
@@ -1828,6 +1934,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         }
         break;
 
+#if 0
         case T_CUTSCENE:
         {
             char *fileName = NULL;

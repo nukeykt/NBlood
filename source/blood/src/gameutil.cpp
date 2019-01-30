@@ -488,7 +488,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
             int otherZ = pOther->z;
             if (pOther->cstat & 0x80)
                 otherZ += height / 2;
-            int nOffset = qpicanm[nPicnum].yoffset;
+            int nOffset = picanm[nPicnum].yofs;
             if (nOffset)
                 otherZ -= (nOffset*pOther->yrepeat)<<2;
             dassert(height > 0);
@@ -502,7 +502,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
                 int check1 = ((y1 - pOther->y)*dx - (x1 - pOther->x)*dy) / ksqrt(dx*dx+dy*dy);
                 dassert(width > 0);
                 int width2 = scale(check1, tilesiz[nPicnum].x, width);
-                int nOffset = qpicanm[nPicnum].xoffset;
+                int nOffset = picanm[nPicnum].xofs;
                 width2 += nOffset + tilesiz[nPicnum].x / 2;
                 if (width2 >= 0 && width2 < tilesiz[nPicnum].x)
                 {

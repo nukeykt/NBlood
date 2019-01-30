@@ -185,7 +185,7 @@ inline void GetSpriteExtents(SPRITE *pSprite, int *top, int *bottom)
     if ((pSprite->cstat & 0x30) != 0x20)
     {
         int height = tilesiz[pSprite->picnum].y;
-        int center = height / 2 + qpicanm[pSprite->picnum].yoffset;
+        int center = height / 2 + picanm[pSprite->picnum].yofs;
         *top -= (pSprite->yrepeat << 2)*center;
         *bottom += (pSprite->yrepeat << 2)*(height - center);
     }

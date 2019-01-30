@@ -221,7 +221,9 @@ void levelLoadDefaults(void)
 {
     char buffer[64];
     char buffer2[16];
+    sub_26988();
     memset(gEpisodeInfo, 0, sizeof(gEpisodeInfo));
+    strncpy(gEpisodeInfo[MUS_INTRO/kMaxLevels].at28[MUS_INTRO%kMaxLevels].atd0, "PESTIS", BMAX_PATH);
     int i;
     for (i = 0; i < kMaxEpisodes; i++)
     {
@@ -382,7 +384,7 @@ bool levelTryPlayMusic(int nEpisode, int nLevel, bool bSetLevelSong)
         strncpy(buffer, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
     bool bReturn = !!sndPlaySong(buffer, true);
     if (!bReturn || bSetLevelSong)
-        strcpy(gGameOptions.zLevelSong, buffer);
+        strncpy(gGameOptions.zLevelSong, buffer, BMAX_PATH);
     return bReturn;
 }
 

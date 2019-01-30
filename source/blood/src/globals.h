@@ -36,7 +36,6 @@ extern bool gSaveGameActive;
 extern bool gSavingGame;
 extern bool gQuitGame;
 extern bool gQuitRequest;
-extern int gSaveGameNum;
 extern int gCacheMiss;
 
 const char *GetVersionString(void);
