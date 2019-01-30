@@ -1834,6 +1834,8 @@ void viewProcessSprites(int cX, int cY, int cZ)
             case 6:
             case 7:
             {
+                if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+                    break;
                 // Can be overridden by def script
                 if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1)
                 {

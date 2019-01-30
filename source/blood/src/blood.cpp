@@ -92,7 +92,7 @@ WALL *qwall;
 
 ud_setup_t gSetup;
 char SetupFilename[BMAX_PATH] = SETUPFILENAME;
-int32_t gNoSetup = 0;
+int32_t gNoSetup = 0, gCommandSetup = 0;
 
 Resource gSysRes, gGuiRes;
 
@@ -467,6 +467,7 @@ void PreloadCache(void)
     char tempbuf[128];
     if (gDemo.at1)
         return;
+    sndPlaySpecialMusicOrNothing(MUS_LOADING);
 	PreloadTiles();
     int clock = totalclock;
     int cnt = 0;
@@ -977,6 +978,7 @@ void ProcessFrame(void)
 
 SWITCH switches[] = {
     { "?", 0, 0 },
+    { "help", 0, 0 },
     { "broadcast", 1, 0 },
     { "map", 2, 1 },
     { "masterslave", 3, 0 },
@@ -1007,14 +1009,62 @@ SWITCH switches[] = {
     { "maxalloc", 29, 1 },
     { "server", 30, 1 },
     { "client", 31, 1 },
-    { "noautoload", 32, 1 },
-    { "usecwd", 33, 1 },
+    { "noautoload", 32, 0 },
+    { "usecwd", 33, 0 },
     { "cachesize", 34, 1 },
+    { "g", 35, 1 },
+    { "grp", 35, 1 },
+    { "game_dir", 36, 1 },
+    { "cfg", 9, 1 },
+    { "setup", 37, 0 },
+    { "nosetup", 38, 0 },
+    { "port", 39, 1 },
+    { "h", 40, 1 },
+    { "mh", 41, 1 },
+    { "j", 42, 1 },
     { 0 }
 };
 
 void PrintHelp(void)
 {
+    char tempbuf[128];
+    static char const s[] = "Usage: " APPBASENAME " [files] [options]\n"
+        "Example: " APPBASENAME " -usecwd -cfg myconfig.cfg -map nukeland.map\n\n"
+        "Files can be of type [grp|zip|map|def]\n"
+        "\n"
+        "-art [file.art]\tSpecify an art base file name\n"
+        "-cachesize #\tSet cache size in kB\n"
+        "-cfg [file.cfg]\tUse an alternate configuration file\n"
+        "-client [host]\tConnect to a multiplayer game\n"
+        "-game_dir [dir]\tSpecify game data directory\n"
+        "-g [file.grp]\tLoad additional game data\n"
+        "-h [file.def]\tLoad an alternate definitions file\n"
+        "-ini [file.ini]\tSpecify an INI file name (default is blood.ini)\n"
+        "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
+        "-map [file.map]\tLoad an external map file\n"
+        "-mh [file.def]\tInclude an additional definitions module\n"
+        "-noautoload\tDisable loading from autoload directory\n"
+        "-nodemo\t\tNo Demos\n"
+        "-nodudes\tNo monsters\n"
+        "-playback\tPlay back a demo\n"
+        "-pname\t\tOverride player name setting from config file\n"
+        "-record\t\tRecord demo\n"
+        "-rff\t\tSpecify an RFF file for Blood game resources\n"
+        "-server [players]\tStart a multiplayer server\n"
+#ifdef STARTUP_SETUP_WINDOW
+        "-setup/nosetup\tEnable or disable startup window\n"
+#endif
+        "-skill\t\tSet player handicap; Range:0..4; Default:2; (NOT difficulty level.)\n"
+        "-snd\t\tSpecify an RFF Sound file name\n"
+        "-usecwd\t\tRead data and configuration from current directory\n"
+        ;
+#ifdef WM_MSGBOX_WINDOW
+    Bsnprintf(tempbuf, sizeof(tempbuf), APPNAME " %s", s_buildRev);
+    wm_msgbox(tempbuf, s);
+#else
+    initprintf("%s\n", s);
+#endif
+#if 0
     puts("Blood Command-line Options:");
     // NUKE-TODO:
     puts("-?            This help");
@@ -1039,6 +1089,7 @@ void PrintHelp(void)
     puts("-snd          Specify an RFF Sound file name");
     puts("-RFF          Specify an RFF file for Blood game resources");
     puts("-ini          Specify an INI file name (default is blood.ini)");
+#endif
     exit(0);
 }
 
@@ -1207,14 +1258,41 @@ void ParseOptions(void)
                 gSyncRate = 1;
             break;
         case -2:
-            strcpy(gUserMapFilename, OptFull);
-            bAddUserMap = 1;
-            bNoDemo = 1;
+        {
+            const char *k = strrchr(OptFull, '.');
+            if (k)
+            {
+                if (!Bstrcasecmp(k, ".map"))
+                {
+                    strcpy(gUserMapFilename, OptFull);
+                    bAddUserMap = 1;
+                    bNoDemo = 1;
+                }
+                else if (!Bstrcasecmp(k, ".grp") || !Bstrcasecmp(k, ".zip") || !Bstrcasecmp(k, ".pk3") || !Bstrcasecmp(k, ".pk4"))
+                {
+                    G_AddGroup(OptFull);
+                }
+                else if (!Bstrcasecmp(k, ".def"))
+                {
+                    clearDefNamePtr();
+                    g_defNamePtr = dup_filename(OptFull);
+                    initprintf("Using DEF file \"%s\".\n", g_defNamePtr);
+                    continue;
+                }
+            }
+            else
+            {
+                strcpy(gUserMapFilename, OptFull);
+                bAddUserMap = 1;
+                bNoDemo = 1;
+            }
             break;
+        }
         case 11:
             //bNoCDAudio = 1;
             break;
         case 32:
+            initprintf("Autoload disabled\n");
             bNoAutoLoad = true;
             break;
         case 33:
@@ -1229,8 +1307,47 @@ void ParseOptions(void)
             initprintf("Cache size: %dkB\n", j);
             break;
         }
+        case 35:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            G_AddGroup(OptArgv[0]);
+            break;
+        case 36:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            Bstrncpyz(UserPath, OptArgv[0], sizeof(UserPath));
+            G_AddPath(OptArgv[0]);
+            break;
+        case 37:
+            gCommandSetup = true;
+            break;
+        case 38:
+            gNoSetup = true;
+            gCommandSetup = false;
+            break;
+        case 39:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            gNetPort = strtoul(OptArgv[0], NULL, 0);
+            break;
+        case 40:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            G_AddDef(OptArgv[0]);
+            break;
+        case 41:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            G_AddDefModule(OptArgv[0]);
+            break;
+        case 42:
+            if (OptArgc < 1)
+                ThrowError("Missing argument");
+            G_AddPath(OptArgv[0]);
+            break;
         }
     }
+#if 0
     if (bAddUserMap)
     {
         char zNode[BMAX_PATH];
@@ -1241,6 +1358,7 @@ void ParseOptions(void)
         strcat(UserPath, zDir);
         strcpy(gUserMapFilename, zFName);
     }
+#endif
 }
 
 void ClockStrobe()
@@ -1332,7 +1450,7 @@ int app_main(int argc, char const * const * argv)
         initprintf("Using config file \"%s\".\n", SetupFilename);
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (readSetup < 0 || (/*!g_noSetup && */(configversion != BYTEVERSION || gSetup.forcesetup))/* || g_commandSetup*/)
+    if (readSetup < 0 || (!gNoSetup && (configversion != BYTEVERSION || gSetup.forcesetup)) || gCommandSetup)
     {
         if (quitevent || !startwin_run())
         {

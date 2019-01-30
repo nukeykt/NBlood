@@ -63,7 +63,7 @@ extern bool bOutOfSync;
 extern bool ready2send;
 extern NETWORKMODE gNetMode;
 extern char gNetAddress[32];
-
+extern int gNetPort;
 
 
 struct PKT_STARTGAME {
