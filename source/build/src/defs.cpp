@@ -120,6 +120,7 @@ enum scripttoken_t
     T_SHADERED, T_SHADEGREEN, T_SHADEBLUE,
     T_SHADEFACTOR,
     T_RFFDEFINEID,
+    T_IFCRC,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -795,6 +796,7 @@ static int32_t defsparser(scriptfile *script)
             int32_t havexoffset = 0, haveyoffset = 0;
             int32_t xoffset = 0, yoffset = 0;
             int32_t istexture = 0;
+            int32_t tilecrc = 0, origcrc = 0;
 
             static const tokenlist tilefromtexturetokens[] =
             {
@@ -808,6 +810,7 @@ static int32_t defsparser(scriptfile *script)
                 { "texhitscan",      T_TEXHITSCAN },
                 { "nofullbright",    T_NOFULLBRIGHT },
                 { "texture",         T_TEXTURE },
+                { "ifcrc",           T_IFCRC },
             };
 
             if (scriptfile_getsymbol(script,&tile)) break;
@@ -834,6 +837,9 @@ static int32_t defsparser(scriptfile *script)
                     scriptfile_getsymbol(script,&yoffset);
                     yoffset = clamp(yoffset, -128, 127);
                     break;
+                case T_IFCRC:
+                    scriptfile_getsymbol(script, &tilecrc);
+                    break;
                 case T_TEXHITSCAN:
                     flags |= PICANM_TEXHITSCAN_BIT;
                     break;
@@ -844,6 +850,16 @@ static int32_t defsparser(scriptfile *script)
                     istexture = 1;
                     break;
                 default:
+                    break;
+                }
+            }
+ 
+            if (tilecrc)
+            {
+                origcrc = tileCRC(tile);
+                if (origcrc != tilecrc)
+                {
+                    //initprintf("CRC of tile %d doesn't match! CRC: %d, Expected: %d\n", tile, origcrc, tilecrc);
                     break;
                 }
             }
