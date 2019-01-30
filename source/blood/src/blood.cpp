@@ -1612,10 +1612,12 @@ RESTART:
 		while (gGameMenuMgr.m_bActive)
 		{
 			gGameMenuMgr.Process();
-            videoClearScreen(0);
             G_HandleAsync();
-			if (viewFPSLimit())
+            if (viewFPSLimit())
+            {
+                videoClearScreen(0);
                 gGameMenuMgr.Draw();
+            }
 		}
 		if (gGameOptions.nGameType != 0)
         {
