@@ -345,7 +345,7 @@ void Resource::Grow(void)
 
 void Resource::AddExternalResource(const char *name, const char *type, int id)
 {
-    char name2[BMAX_PATH], type2[BMAX_PATH], filename[BMAX_PATH];
+    char name2[BMAX_PATH], type2[BMAX_PATH], filename[BMAX_PATH*2];
     //if (strlen(name) > 8 || strlen(type) > 3) return;
     sprintf(filename, "%s.%s", name, type);
     int fhandle = kopen4loadfrommod(filename, 0);
@@ -384,6 +384,36 @@ void Resource::AddExternalResource(const char *name, const char *type, int id)
     node->size = size;
     node->flags |= DICT_EXTERNAL;
     Flush((CACHENODE*)node);
+    if (id != -1)
+    {
+        index = Probe(id, type2);
+        dassert(index != NULL);
+        DICTNODE *node = *index;
+        if (!node)
+        {
+            if (2 * count >= buffSize)
+            {
+                Grow();
+            }
+            node = &dict[count++];
+            index = Probe(id, type2);
+            *index = node;
+        }
+        if (node->type)
+            Free(node->type);
+        if (node->name)
+            Free(node->name);
+        int nTypeLength = strlen(type2);
+        int nNameLength = strlen(name2);
+        node->type = (char*)Alloc(nTypeLength+1);
+        node->name = (char*)Alloc(nNameLength+1);
+        strcpy(node->type, type2);
+        strcpy(node->name, name2);
+        node->id = id;
+        node->size = size;
+        node->flags |= DICT_EXTERNAL;
+        Flush((CACHENODE*)node);
+    }
 }
 
 void *Resource::Alloc(long nSize)

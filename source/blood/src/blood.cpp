@@ -152,6 +152,7 @@ enum gametokens
     T_FORCEFILTER,
     T_FORCENOFILTER,
     T_TEXTUREFILTER,
+    T_RFFDEFINEID,
 };
 
 extern int32_t MAXCACHE1DSIZE;
@@ -1817,6 +1818,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         //{ "animsounds",      T_ANIMSOUNDS       },
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
+        { "rffdefineid",     T_RFFDEFINEID      },
     };
 
     static const tokenlist soundTokens[] =
@@ -1932,6 +1934,37 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
                 if (S_DefineMusic(musicID, fileName) == -1)
                     initprintf("Error: invalid music ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+            }
+        }
+        break;
+
+        case T_RFFDEFINEID:
+        {
+            char *tokenPtr = pScript->ltextptr;
+            char *resName = NULL;
+            char *resType = NULL;
+            char *rffName = NULL;
+            char *rffDefineEnd;
+            int resID;
+
+            if (scriptfile_getstring(pScript, &resName))
+                break;
+
+            if (scriptfile_getstring(pScript, &resType))
+                break;
+
+            if (scriptfile_getnumber(pScript, &resID))
+                break;
+
+            if (scriptfile_getstring(pScript, &rffName))
+                break;
+
+            if (!firstPass)
+            {
+                if (!Bstrcasecmp(rffName, "SYSTEM"))
+                    gSysRes.AddExternalResource(resName, resType, resID);
+                else if (!Bstrcasecmp(rffName, "SOUND"))
+                    gSoundRes.AddExternalResource(resName, resType, resID);
             }
         }
         break;
