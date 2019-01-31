@@ -50,7 +50,7 @@ GAMEOPTIONS gSingleGameOptions = {
 
 EPISODEINFO gEpisodeInfo[kMaxEpisodes+1];
 
-int gSkill;
+int gSkill = 2;
 int gEpisodeCount;
 int gNextLevel;
 bool gGameStarted;

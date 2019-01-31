@@ -153,7 +153,7 @@ void SetArmor(bool stat)
         nAmount = 0;
     }
     for (int i = 0; i < 3; i++)
-        gMe->at33e[i] = 0;
+        gMe->at33e[i] = nAmount;
 }
 
 void SetKeys(bool stat)
@@ -342,7 +342,7 @@ void CGameMessageMgr::Display(void)
                 at22--;
                 continue;
             }
-            viewDrawText(at11, pMessage->at4, v14, v8, vc, 0, 0, false);
+            viewDrawText(at11, pMessage->at4, v14, v8, vc, 0, 0, false, 256);
             if (gViewMode == 3)
             {
                 int height;
@@ -415,7 +415,7 @@ void CPlayerMsg::Draw(void)
     int y = gViewMode == 3 ? gViewY0S : 0;
     if (gViewSize >= 1)
         y += tilesiz[2229].y*((gNetPlayers+3)/4);
-    viewDrawText(0, buffer, x+1,y+1, -128, 0, 0, false);
+    viewDrawText(0, buffer, x+1,y+1, -128, 0, 0, false, 256);
     viewUpdatePages();
 }
 

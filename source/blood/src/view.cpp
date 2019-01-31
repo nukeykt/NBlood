@@ -933,7 +933,7 @@ void RestoreInterpolations(void)
     }
 }
 
-void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow)
+void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat)
 {
     if (nFont < 0 || nFont >= 5 || !pString) return;
     FONT *pFont = &gFont[nFont];
@@ -961,9 +961,9 @@ void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int 
         {
             if (shadow)
             {
-                viewDrawSprite((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26, 0, 0, xdim-1, ydim-1);
+                rotatesprite((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
             }
-            viewDrawSprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26, 0, 0, xdim-1, ydim-1);
+            rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
             x += tilesiz[nTile].x+pFont->space;
         }
         s++;
@@ -1004,7 +1004,7 @@ void DrawStatMaskedSprite(int nTile, int x, int y, int nShade, int nPalette, uns
     rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
 }
 
-void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, int nShade, int nPalette)
+void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat)
 {
     char tempbuf[80];
     int width = tilesiz[nTile].x+1;
@@ -1012,17 +1012,31 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
     for (unsigned int i = 0; i < strlen(tempbuf); i++, x += width)
     {
         if (tempbuf[i] == ' ') continue;
-        DrawStatMaskedSprite(nTile+tempbuf[i]-'0', x, y, nShade, nPalette);
+        DrawStatMaskedSprite(nTile+tempbuf[i]-'0', x, y, nShade, nPalette, nStat);
     }
 }
 
-void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nScale)
+void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nStat, int nScale)
 {
-    int bx = (mulscale16(tilesiz[nTile].x,nScale)*nMult)/nDiv+x-160;
+    int bx = scale(mulscale16(tilesiz[nTile].x,nScale),nMult,nDiv)+x;
     int xdimcorrect = scale(ydim, 4, 3);
     int xscalecorrect = divscale16(xdimcorrect, 320);
-    int sbx = (xdim>>1)+mulscale16(bx, xscalecorrect)-1;
-    rotatesprite(x<<16, y<<16, nScale, 0, nTile, 0, 0, 90, 0, 0, sbx, ydim-1);
+    int sbx;
+    switch (nStat&(512+256))
+    {
+    case 256:
+        sbx = mulscale16(bx, xscalecorrect)-1;
+        break;
+    case 512:
+        bx -= 320;
+        sbx = xdim+mulscale16(bx, xscalecorrect)-1;
+        break;
+    default:
+        bx -= 160;
+        sbx = (xdim>>1)+mulscale16(bx, xscalecorrect)-1;
+        break;
+    }
+    rotatesprite(x<<16, y<<16, nScale, 0, nTile, 0, 0, nStat|90, 0, 0, sbx, ydim-1);
 }
 
 int gPackIcons[5] = {
@@ -1092,12 +1106,12 @@ void viewDrawPack(PLAYER *pPlayer, int x, int y)
     dword_14C508 = pPlayer->at31d;
 }
 
-void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2)
+void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat)
 {
     if (pPlayer->at321 < 0) return;
 
-    DrawStatSprite(gPackIcons[pPlayer->at321], x, y);
-    DrawStatNumber("%3d", pPlayer->packInfo[pPlayer->at321].at1, 2250, x2, y2, 0, 0);
+    DrawStatSprite(gPackIcons[pPlayer->at321], x, y, 0, 0, nStat);
+    DrawStatNumber("%3d", pPlayer->packInfo[pPlayer->at321].at1, 2250, x2, y2, 0, 0, nStat);
 }
 
 char gTempStr[128];
@@ -1128,35 +1142,35 @@ void UpdateStatusBar(int arg)
     }
     if (gViewSize == 1)
     {
-        DrawStatSprite(2201, 34, 187, 16, nPalette);
+        DrawStatSprite(2201, 34, 187, 16, nPalette, 256);
         if (pXSprite->health >= 16 || (gGameClock&16) || pXSprite->health == 0)
         {
-            DrawStatNumber("%3d", pXSprite->health>>4, 2190, 8, 183, 0, 0);
+            DrawStatNumber("%3d", pXSprite->health>>4, 2190, 8, 183, 0, 0, 256);
         }
         if (pPlayer->atbd && pPlayer->atc7 != -1)
         {
             int num = pPlayer->at181[pPlayer->atc7];
             if (pPlayer->atc7 == 6)
                 num /= 10;
-            DrawStatNumber("%3d", num, 2240, 42, 183, 0, 0);
+            DrawStatNumber("%3d", num, 2240, 42, 183, 0, 0, 256);
         }
-        DrawStatSprite(2173, 284, 187, 16, nPalette);
+        DrawStatSprite(2173, 284, 187, 16, nPalette, 512);
         if (pPlayer->at33e[1])
         {
-            TileHGauge(2207, 250, 175, pPlayer->at33e[1], 3200);
-            DrawStatNumber("%3d", pPlayer->at33e[1]>>4, 2230, 255, 178, 0, 0);
+            TileHGauge(2207, 250, 175, pPlayer->at33e[1], 3200, 512);
+            DrawStatNumber("%3d", pPlayer->at33e[1]>>4, 2230, 255, 178, 0, 0, 512);
         }
         if (pPlayer->at33e[0])
         {
-            TileHGauge(2209, 250, 183, pPlayer->at33e[0], 3200);
-            DrawStatNumber("%3d", pPlayer->at33e[0]>>4, 2230, 255, 186, 0, 0);
+            TileHGauge(2209, 250, 183, pPlayer->at33e[0], 3200, 512);
+            DrawStatNumber("%3d", pPlayer->at33e[0]>>4, 2230, 255, 186, 0, 0, 512);
         }
         if (pPlayer->at33e[2])
         {
-            TileHGauge(2208, 250, 191, pPlayer->at33e[2], 3200);
-            DrawStatNumber("%3d", pPlayer->at33e[2]>>4, 2230, 255, 194, 0, 0);
+            TileHGauge(2208, 250, 191, pPlayer->at33e[2], 3200, 512);
+            DrawStatNumber("%3d", pPlayer->at33e[2]>>4, 2230, 255, 194, 0, 0, 512);
         }
-        DrawPackItemInStatusBar(pPlayer, 286, 186, 302, 183);
+        DrawPackItemInStatusBar(pPlayer, 286, 186, 302, 183, 512);
     }
     else if (gViewSize > 1)
     {
@@ -1251,18 +1265,18 @@ void UpdateStatusBar(int arg)
         int x = 1, y = 1;
         if (dword_21EFD0[0] == 0 || (gGameClock & 8))
         {
-            viewDrawText(0, "BLUE", x, y, -128, 10, 0, 0);
+            viewDrawText(0, "BLUE", x, y, -128, 10, 0, 0, 256);
             dword_21EFD0[0] = ClipLow(dword_21EFD0[0]-arg, 0);
             sprintf(gTempStr, "%-3d", dword_21EFB0[0]);
-            viewDrawText(0, gTempStr, x, y+10, -128, 10, 0, 0);
+            viewDrawText(0, gTempStr, x, y+10, -128, 10, 0, 0, 256);
         }
         x = 319;
         if (dword_21EFD0[1] == 0 || (gGameClock & 8))
         {
-            viewDrawText(0, "RED", x, y, -128, 7, 2, 0);
+            viewDrawText(0, "RED", x, y, -128, 7, 2, 0, 512);
             dword_21EFD0[1] = ClipLow(dword_21EFD0[1]-arg, 0);
             sprintf(gTempStr, "%3d", dword_21EFB0[1]);
-            viewDrawText(0, gTempStr, x, y+10, -128, 7, 2, 0);
+            viewDrawText(0, gTempStr, x, y+10, -128, 7, 2, 0, 512);
         }
         return;
     }
@@ -2343,16 +2357,6 @@ void CalcPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, 
     pSprite->cstat = bakCstat;
 }
 
-void viewDrawSprite(long x, long y, long z, int a, int pn, signed char shade, char pal, unsigned short stat, long xd1, long yd1, long xd2, long yd2)
-{
-    if (stat & 256)
-    {
-        a = (a+1024)&2047;
-        stat ^= 4;
-    }
-    rotatesprite(x, y, z, a, pn, shade, pal, stat, xd1, yd1, xd2, yd2);
-}
-
 struct {
     short nTile;
     unsigned char nStat;
@@ -2383,7 +2387,7 @@ void viewBurnTime(int gScale)
         {
             nScale = scale(nScale, gScale, 600);
         }
-        viewDrawSprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
+        rotatesprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
             0, burnTable[i].nPal, burnTable[i].nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
 }
@@ -3226,7 +3230,7 @@ void viewLoadingScreenUpdate(const char *pzText4, int nPercent)
     }
 
     if (nPercent != -1)
-        TileHGauge(2260, 86, 110, nPercent, 100, 131072);
+        TileHGauge(2260, 86, 110, nPercent, 100, 0, 131072);
 
     viewDrawText(3, "Please Wait", 160, 134, -128, 0, 1, 1);
     scrNextPage();
