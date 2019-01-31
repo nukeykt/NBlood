@@ -181,7 +181,7 @@ CGameMenuItemQAV itemHelp5QAV("", 3, 160, 100, "HELP5", false, true);
 CGameMenuItemTitle itemMainTitle("BLOOD", 1, 160, 20, 2038);
 CGameMenuItemChain itemMain1("NEW GAME", 1, 0, 45, 320, 1, &menuEpisode, -1, NULL, 0);
 //CGameMenuItemChain itemMain2("PLAY ONLINE", 1, 0, 65, 320, 1, &menuPlayOnline, -1, NULL, 0);
-CGameMenuItemChain itemMain2("NETWORK GAME", 1, 0, 65, 320, 1, &menuNetwork, -1, NULL, 0);
+CGameMenuItemChain itemMain2("MULTIPLAYER", 1, 0, 65, 320, 1, &menuNetwork, -1, NULL, 0);
 CGameMenuItemChain itemMain3("OPTIONS", 1, 0, 85, 320, 1, &menuOptions, -1, NULL, 0);
 CGameMenuItemChain itemMain4("LOAD GAME", 1, 0, 105, 320, 1, &menuLoadGame, -1, NULL, 0);
 CGameMenuItemChain itemMain5("HELP", 1, 0, 125, 320, 1, &menuOrder, -1, NULL, 0);
@@ -196,7 +196,7 @@ CGameMenuItemChain itemMainSave3("SAVE GAME", 1, 0, 75, 320, 1, &menuSaveGame, -
 CGameMenuItemChain itemMainSave4("LOAD GAME", 1, 0, 90, 320, 1, &menuLoadGame, -1, NULL, 0);
 CGameMenuItemChain itemMainSave5("HELP", 1, 0, 105, 320, 1, &menuOrder, -1, NULL, 0);
 CGameMenuItemChain itemMainSave6("CREDITS", 1, 0, 120, 320, 1, &menuCredits, -1, NULL, 0);
-CGameMenuItemChain itemMainSave7("RESTART GAME", 1, 0, 135, 320, 1, &menuRestart, -1, NULL, 0);
+CGameMenuItemChain itemMainSave7("END GAME", 1, 0, 135, 320, 1, &menuRestart, -1, NULL, 0);
 CGameMenuItemChain itemMainSave8("QUIT", 1, 0, 150, 320, 1, &menuQuit, -1, NULL, 0);
 
 CGameMenuItemTitle itemEpisodesTitle("EPISODES", 1, 160, 20, 2038);
@@ -272,7 +272,7 @@ CGameMenuItemZEditBitmap itemLoadGame9(NULL, 3, 20, 140, 320, strRestoreGameStri
 CGameMenuItemZEditBitmap itemLoadGame10(NULL, 3, 20, 150, 320, strRestoreGameStrings[9], 16, 1, LoadGame, 9);
 CGameMenuItemBitmapLS itemLoadGamePic(NULL, 3, 0, 0, 2518);
 
-CGameMenuItemTitle itemNetStartTitle("NETWORK GAME", 1, 160, 20, 2038);
+CGameMenuItemTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemNetStart1("GAME", 1, 20, 35, 280, 0, 0, zNetGameTypes, 3, 0);
 CGameMenuItemZCycle itemNetStart2("EPISODE", 1, 20, 50, 280, 0, SetupNetLevels, NULL, 0, 0);
 CGameMenuItemZCycle itemNetStart3("LEVEL", 1, 20, 65, 280, 0, NULL, NULL, 0, 0);
@@ -619,7 +619,7 @@ void NetworkJoinGame(CGameMenuItemChain *pItem);
 char zNetAddressBuffer[16] = "localhost";
 char zNetPortBuffer[6];
 
-CGameMenuItemTitle itemNetworkTitle("NETWORK GAME", 1, 160, 20, 2038);
+CGameMenuItemTitle itemNetworkTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemChain itemNetworkHost("HOST A GAME", 1, 0, 80, 320, 1, &menuNetworkHost, -1, SetupNetworkHostMenu, 0);
 CGameMenuItemChain itemNetworkJoin("JOIN A GAME", 1, 0, 100, 320, 1, &menuNetworkJoin, -1, SetupNetworkJoinMenu, 0);
 
