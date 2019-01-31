@@ -133,6 +133,7 @@ void netSendPacket(int nDest, char *pBuffer, int nSize)
             PutPacketByte(pPBuffer, myconnectindex);
             PutPacketBuffer(pPBuffer, pBuffer, nSize);
             enet_peer_send(gNetPlayerPeer[nDest], BLOOD_ENET_GAME, pNetPacket);
+            enet_host_service(gNetENetServer, NULL, 0);
         }
     }
     else
@@ -155,6 +156,7 @@ void netSendPacket(int nDest, char *pBuffer, int nSize)
             PutPacketBuffer(pPBuffer, pBuffer, nSize);
             enet_peer_send(gNetENetPeer, BLOOD_ENET_SERVICE, pNetPacket);
         }
+        enet_host_service(gNetENetClient, NULL, 0);
     }
 
     netUpdate();
@@ -446,6 +448,11 @@ void netGetPackets(void)
             netWaitForEveryone(0);
             netPlayerQuit(nPlayer);
             netWaitForEveryone(0);
+            break;
+        case 249:
+            nPlayer = GetPacketDWord(pPacket);
+            dassert(nPlayer != myconnectindex);
+            netPlayerQuit(nPlayer);
             break;
         case 250:
             gPlayerReady[nPlayer]++;
@@ -1069,6 +1076,26 @@ void netUpdate(void)
         {
             switch (event.type)
             {
+            case ENET_EVENT_TYPE_DISCONNECT:
+            {
+                int nPlayer;
+                for (nPlayer = connectpoint2[connecthead]; nPlayer >= 0; nPlayer = connectpoint2[nPlayer])
+                    if (gNetPlayerPeer[nPlayer] == event.peer)
+                        break;
+
+                for (int p = 0; p < kMaxPlayers; p++)
+                    if (gNetPlayerPeer[p] == event.peer)
+                        gNetPlayerPeer[p] = NULL;
+                if (nPlayer >= 0)
+                {
+                    netPlayerQuit(nPlayer);
+                    char *pPacket = packet;
+                    PutPacketByte(pPacket, 249);
+                    PutPacketDWord(pPacket, nPlayer);
+                    netSendPacketAll(packet, pPacket - packet);
+                }
+                break;
+            }
             case ENET_EVENT_TYPE_RECEIVE:
                 switch (event.channelID)
                 {
@@ -1108,6 +1135,9 @@ void netUpdate(void)
         {
             switch (event.type)
             {
+            case ENET_EVENT_TYPE_DISCONNECT:
+                ThrowError("Lost connection to server");
+                break;
             case ENET_EVENT_TYPE_RECEIVE:
                 switch (event.channelID)
                 {
