@@ -125,7 +125,7 @@ INTERPOLATE gInterpolation[4096];
 int gViewXCenter, gViewYCenter;
 int gViewX0, gViewY0, gViewX1, gViewY1;
 int gViewX0S, gViewY0S, gViewX1S, gViewY1S;
-int xscale, yscale, xstep, ystep;
+int xscale, xscalecorrect, yscale, xstep, ystep;
 
 long gScreenTilt;
 
@@ -1019,8 +1019,6 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
 void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nStat, int nScale)
 {
     int bx = scale(mulscale16(tilesiz[nTile].x,nScale),nMult,nDiv)+x;
-    int xdimcorrect = scale(ydim, 4, 3);
-    int xscalecorrect = divscale16(xdimcorrect, 320);
     int sbx;
     switch (nStat&(512+256))
     {
@@ -1352,9 +1350,11 @@ void viewInit(void)
 
 void viewResizeView(int size)
 {
+    int xdimcorrect = scale(ydim, 4, 3);
     gViewXCenter = xdim-xdim/2;
     gViewYCenter = ydim-ydim/2;
     xscale = divscale16(xdim, 320);
+    xscalecorrect = divscale16(xdimcorrect, 320);
     yscale = divscale16(ydim, 200);
     xstep = divscale16(320, xdim);
     ystep = divscale16(200, ydim);
@@ -1369,9 +1369,9 @@ void viewResizeView(int size)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
-        gViewX0S = divscale16(gViewX0, xscale);
+        gViewX0S = divscale16(gViewX0, xscalecorrect);
         gViewY0S = divscale16(gViewY0, yscale);
-        gViewX1S = divscale16(gViewX1, xscale);
+        gViewX1S = divscale16(gViewX1, xscalecorrect);
         gViewY1S = divscale16(gViewY1, yscale);
     }
     else
@@ -1390,9 +1390,9 @@ void viewResizeView(int size)
         gViewX1 -= mulscale16(xdim*(gViewSize-2),4096);
         gViewY0 += mulscale16(height*(gViewSize-2),4096);
         gViewY1 -= mulscale16(height*(gViewSize-2),4096);
-        gViewX0S = divscale16(gViewX0, xscale);
+        gViewX0S = divscale16(gViewX0, xscalecorrect);
         gViewY0S = divscale16(gViewY0, yscale);
-        gViewX1S = divscale16(gViewX1, xscale);
+        gViewX1S = divscale16(gViewX1, xscalecorrect);
         gViewY1S = divscale16(gViewY1, yscale);
     }
     videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
@@ -3410,7 +3410,12 @@ void viewPrintFPS(void)
                 printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+40+2+FPS_YOFFSET, 0, -1, tempbuf, x);
                 printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+40+FPS_YOFFSET,
                     FPS_COLOR(maxGameUpdate >= SLOW_FRAME_TIME), -1, tempbuf, x);
+                
+                chars = Bsprintf(tempbuf, "bufferjitter: %i", gBufferJitter);
 
+                printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+50+2+FPS_YOFFSET, 0, -1, tempbuf, x);
+                printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+50+FPS_YOFFSET,
+                    COLOR_WHITE, -1, tempbuf, x);
 #if 0
                 chars = Bsprintf(tempbuf, "G_MoveActors(): %.3e ms", g_moveActorsTime);
 

@@ -52,7 +52,7 @@ int gCheckHead[8];
 int gSendCheckTail = 0;
 int gCheckTail = 0;
 int gInitialNetPlayers = 0;
-int gBufferJitter = 0;
+int gBufferJitter = 1;
 int gPlayerReady[8];
 int gSyncRate = 1;
 bool bNoResend = true;
@@ -543,10 +543,9 @@ void netWaitForEveryone(char a1)
     int p;
     do
     {
-        netUpdate();
-        if (keystatus[1] && a1)
+        if (keystatus[sc_Escape] && a1)
             exit(0);
-        netGetPackets();
+        G_HandleAsync();
         for (p = connecthead; p >= 0; p = connectpoint2[p])
             if (gPlayerReady[p] < gPlayerReady[myconnectindex])
                 break;
@@ -661,14 +660,14 @@ void netGetInput(void)
             myMaxLag = ClipLow(nLag, myMaxLag);
         }
     }
-    if ((gNetFifoHead[myconnectindex]&15) == 0)
+    if (((gNetFifoHead[myconnectindex]-1)&15) == 0)
     {
         int t = myMaxLag-gBufferJitter;
         myMaxLag = 0;
         if (t > 0)
-            gBufferJitter += (2+t)>>2;
+            gBufferJitter += (3+t)>>2;
         else if (t < 0)
-            gBufferJitter -= (2-t)>>2;
+            gBufferJitter -= (1-t)>>2;
     }
     if (gPacketMode == PACKETMODE_2)
     {
@@ -1098,6 +1097,7 @@ void netUpdate(void)
                     break;
                 }
             }
+            enet_host_service(gNetENetServer, NULL, 0);
         }
         enet_host_service(gNetENetServer, NULL, 0);
     }
@@ -1121,6 +1121,7 @@ void netUpdate(void)
                     break;
                 }
             }
+            enet_host_service(gNetENetClient, NULL, 0);
         }
         enet_host_service(gNetENetClient, NULL, 0);
     }
