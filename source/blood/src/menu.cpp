@@ -1286,8 +1286,26 @@ void SetupMenus(void)
 
 void UpdateNetworkMenus(void)
 {
-    SetupMainMenu();
-    SetupMainMenuWithSave();
+    if (gGameOptions.nGameType > 0)
+    {
+        itemMain1.at24 = &menuNetStart;
+        itemMain1.at28 = 2;
+    }
+    else
+    {
+        itemMain1.at24 = &menuEpisode;
+        itemMain1.at28 = -1;
+    }
+    if (gGameOptions.nGameType > 0)
+    {
+        itemMainSave1.at24 = &menuNetStart;
+        itemMainSave1.at28 = 2;
+    }
+    else
+    {
+        itemMainSave1.at24 = &menuEpisode;
+        itemMainSave1.at28 = -1;
+    }
 }
 
 void SetDoppler(CGameMenuItemZBool *pItem)

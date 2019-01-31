@@ -140,6 +140,7 @@ void sub_7AC28(const char *pzString);
 void netGetPackets(void);
 void netBroadcastTaunt(int nPlayer, int nTaunt);
 void CalcGameChecksum(void);
+void netBroadcastPlayerLogoff(int nPlayer);
 void netBroadcastMyLogoff(bool bRestart);
 void netInitialize(bool bConsole);
 void netBroadcastPlayerInfo(int nPlayer);

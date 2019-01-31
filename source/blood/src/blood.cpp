@@ -890,11 +890,19 @@ void ProcessFrame(void)
 	}
 	for (int i = connecthead; i >= 0; i = connectpoint2[i])
 	{
-		if (gPlayer[i].atc.keyFlags.quit && i == myconnectindex)
+		if (gPlayer[i].atc.keyFlags.quit)
 		{
             gPlayer[i].atc.keyFlags.quit = 0;
-			netBroadcastMyLogoff(gQuitRequest == 2);
-			return;
+            netBroadcastPlayerLogoff(i);
+            if (i == myconnectindex)
+            {
+                // netBroadcastMyLogoff(gQuitRequest == 2);
+                gQuitGame = true;
+                gRestartGame = gQuitRequest == 2;
+                netDeinitialize();
+                netResetToSinglePlayer();
+                return;
+            }
 		}
 		if (gPlayer[i].atc.keyFlags.restart)
 		{
@@ -1589,6 +1597,15 @@ RESTART:
     netBroadcastPlayerInfo(myconnectindex);
     initprintf("Waiting for network players!\n");
     netWaitForEveryone(0);
+    if (gRestartGame)
+    {
+        // Network error
+        gQuitGame = false;
+        gRestartGame = false;
+        netDeinitialize();
+        netResetToSinglePlayer();
+        goto RESTART;
+    }
     UpdateNetworkMenus();
     if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
         gDemo.SetupPlayback(NULL);

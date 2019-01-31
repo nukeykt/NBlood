@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "controls.h"
 #include "globals.h"
 #include "network.h"
+#include "menu.h"
 #include "player.h"
 #include "seq.h"
 #include "sound.h"
@@ -126,7 +127,7 @@ void netServerDisconnect(void)
         if (gNetPlayerPeer[p])
         {
             bool bDisconnectStatus = false;
-            enet_peer_disconnect(gNetPlayerPeer[p], 0);
+            enet_peer_disconnect_later(gNetPlayerPeer[p], 0);
             if (enet_host_service(gNetENetServer, &event, 3000) > 0)
             {
                 switch (event.type)
@@ -147,7 +148,7 @@ void netClientDisconnect(void)
     ENetEvent event;
     if (gNetMode != NETWORK_CLIENT || gNetENetPeer == NULL)
         return;
-    enet_peer_disconnect(gNetENetPeer, 0);
+    enet_peer_disconnect_later(gNetENetPeer, 0);
     bool bDisconnectStatus = false;
     if (enet_host_service(gNetENetClient, &event, 3000) > 0)
     {
@@ -170,6 +171,7 @@ void netResetToSinglePlayer(void)
     connectpoint2[0] = -1;
     gGameOptions.nGameType = 0;
     gNetMode = NETWORK_NONE;
+    UpdateNetworkMenus();
 }
 
 void netSendPacket(int nDest, char *pBuffer, int nSize)
@@ -498,7 +500,7 @@ void netGetPackets(void)
             sndStartSample(4400+GetPacketByte(pPacket), 128, 1, 0);
             break;
         case 7:
-            pPacket += 4;
+            nPlayer = GetPacketDWord(pPacket);
             dassert(nPlayer != myconnectindex);
             netWaitForEveryone(0);
             netPlayerQuit(nPlayer);
@@ -508,6 +510,7 @@ void netGetPackets(void)
             nPlayer = GetPacketDWord(pPacket);
             dassert(nPlayer != myconnectindex);
             netPlayerQuit(nPlayer);
+            netWaitForEveryone(0);
             break;
         case 250:
             gPlayerReady[nPlayer]++;
@@ -527,6 +530,16 @@ void netGetPackets(void)
             break;
         }
     }
+}
+
+void netBroadcastPlayerLogoff(int nPlayer)
+{
+    if (numplayers < 2)
+        return;
+    netWaitForEveryone(0);
+    netPlayerQuit(nPlayer);
+    if (nPlayer != myconnectindex)
+        netWaitForEveryone(0);
 }
 
 void netBroadcastMyLogoff(bool bRestart)
@@ -1190,10 +1203,12 @@ void netDeinitialize(void)
     {
         if (gNetENetServer)
         {
+            netServerDisconnect();
             enet_host_destroy(gNetENetServer);
         }
         else if (gNetENetClient)
         {
+            netClientDisconnect();
             enet_host_destroy(gNetENetClient);
         }
         enet_deinitialize();
@@ -1234,11 +1249,13 @@ void netUpdate(void)
                         gNetPlayerPeer[p] = NULL;
                 if (nPlayer >= 0)
                 {
-                    netPlayerQuit(nPlayer);
+                    // TODO: Game most likely will go out of sync here...
                     char *pPacket = packet;
                     PutPacketByte(pPacket, 249);
                     PutPacketDWord(pPacket, nPlayer);
                     netSendPacketAll(packet, pPacket - packet);
+                    netPlayerQuit(nPlayer);
+                    netWaitForEveryone(0);
                 }
                 if (gNetPlayers <= 1)
                 {
