@@ -329,10 +329,12 @@ _DEMOPLAYBACK:
                 ProcessFrame();
             ready2send = 0;
         }
-        viewDrawScreen();
-        if (gInputMode == INPUT_MODE_1 && CGameMenuMgr::m_bActive)
-            gGameMenuMgr.Draw();
-        scrNextPage();
+        if (viewFPSLimit())
+        {
+            viewDrawScreen();
+            if (gInputMode == INPUT_MODE_1 && CGameMenuMgr::m_bActive)
+                gGameMenuMgr.Draw();
+        }
         if (TestBitString(gotpic, 2342))
         {
             FireProcess();
