@@ -815,6 +815,11 @@ void SetupMainMenu(void)
         itemMain1.at24 = &menuNetStart;
         itemMain1.at28 = 2;
     }
+    else
+    {
+        itemMain1.at24 = &menuEpisode;
+        itemMain1.at28 = -1;
+    }
     menuMain.Add(&itemMain2, false);
     menuMain.Add(&itemMain3, false);
     menuMain.Add(&itemMain4, false);
@@ -832,6 +837,11 @@ void SetupMainMenuWithSave(void)
     {
         itemMainSave1.at24 = &menuNetStart;
         itemMainSave1.at28 = 2;
+    }
+    else
+    {
+        itemMainSave1.at24 = &menuEpisode;
+        itemMainSave1.at28 = -1;
     }
     menuMainWithSave.Add(&itemMainSave2, false);
     menuMainWithSave.Add(&itemMainSave3, false);

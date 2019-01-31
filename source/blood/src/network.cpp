@@ -163,6 +163,15 @@ void netClientDisconnect(void)
     gNetENetPeer = NULL;
 }
 
+void netResetToSinglePlayer(void)
+{
+    myconnectindex = connecthead = 0;
+    gInitialNetPlayers = gNetPlayers = numplayers = 1;
+    connectpoint2[0] = -1;
+    gGameOptions.nGameType = 0;
+    gNetMode = NETWORK_NONE;
+}
+
 void netSendPacket(int nDest, char *pBuffer, int nSize)
 {
     if (gNetMode == NETWORK_NONE)
@@ -230,6 +239,7 @@ void sub_79760(void)
     gCheckTail = 0;
     memset(&byte_28E3B0, 0, sizeof(byte_28E3B0));
     bOutOfSync = 0;
+    gBufferJitter = 1;
 }
 
 void CalcGameChecksum(void)
@@ -240,7 +250,7 @@ void CalcGameChecksum(void)
     {
         int *pBuffer = &gPlayer[p].at22;
         int sum = 0;
-        int length = 216;
+        int length = ((char*)&gPlayer[p+1]-(char*)pBuffer)/4;
         while (length--)
         {
             sum += *pBuffer++;
@@ -248,7 +258,7 @@ void CalcGameChecksum(void)
         gChecksum[1] ^= sum;
         pBuffer = (int*)gPlayer[p].pSprite;
         sum = 0;
-        length = 11;
+        length = sizeof(SPRITE)/4;
         while (length--)
         {
             sum += *pBuffer++;
@@ -256,7 +266,7 @@ void CalcGameChecksum(void)
         gChecksum[2] ^= sum;
         pBuffer = (int*)gPlayer[p].pXSprite;
         sum = 0;
-        length = 14;
+        length = sizeof(XSPRITE)/4;
         while (length--)
         {
             sum += *pBuffer++;
@@ -532,6 +542,8 @@ void netBroadcastMyLogoff(bool bRestart)
     gQuitGame = true;
     if (bRestart)
         gRestartGame = true;
+    netDeinitialize();
+    netResetToSinglePlayer();
 }
 
 void netBroadcastPlayerInfo(int nPlayer)
@@ -603,7 +615,7 @@ void netWaitForEveryone(char a1)
         for (p = connecthead; p >= 0; p = connectpoint2[p])
             if (gPlayerReady[p] < gPlayerReady[myconnectindex])
                 break;
-        if (gRestartGame || numplayers <= 1)
+        if (gRestartGame || gNetPlayers <= 1)
             break;
     } while (p >= 0);
 }
@@ -913,23 +925,22 @@ void netInitialize(bool bConsole)
 {
     char buffer[128];
     netDeinitialize();
+    memset(gPlayerReady, 0, sizeof(gPlayerReady));
     gNetENetServer = gNetENetClient = NULL;
     //gNetServerPacketHead = gNetServerPacketTail = 0;
     gNetPacketHead = gNetPacketTail = 0;
+    sub_79760();
     if (gNetMode == NETWORK_NONE)
     {
-        gInitialNetPlayers = gNetPlayers = 1;
-        numplayers = 1;
-        myconnectindex = 0;
-        connecthead = 0;
-        connectpoint2[0] = -1;
-        gGameOptions.nGameType = 0;
-        gViewIndex = myconnectindex;
-        gMe = gView = &gPlayer[myconnectindex];
+        netResetToSinglePlayer();
         return;
     }
     if (enet_initialize() != 0)
-        ThrowError("An error occurred while initializing ENet.\n");
+    {
+        initprintf("An error occurred while initializing ENet.\n");
+        netResetToSinglePlayer();
+        return;
+    }
     gNetENetInit = true;
     if (gNetMode == NETWORK_SERVER)
     {
@@ -939,7 +950,12 @@ void netInitialize(bool bConsole)
         gNetENetAddress.port = gNetPort;
         gNetENetServer = enet_host_create(&gNetENetAddress, 8, BLOOD_ENET_CHANNEL_MAX, 0, 0);
         if (!gNetENetServer)
-            ThrowError("An error occurred while trying to create an ENet server host.\n");
+        {
+            initprintf("An error occurred while trying to create an ENet server host.\n");
+            netDeinitialize();
+            netResetToSinglePlayer();
+            return;
+        }
 
         numplayers = 1;
         // Wait for clients
@@ -961,6 +977,7 @@ void netInitialize(bool bConsole)
             {
                 netServerDisconnect();
                 netDeinitialize();
+                netResetToSinglePlayer();
                 return;
             }
             enet_host_service(gNetENetServer, NULL, 0);
@@ -1074,7 +1091,7 @@ void netInitialize(bool bConsole)
     {
         ENetEvent event;
         sprintf(buffer, "Connecting to %s:%u", gNetAddress, gNetPort);
-        initprintf(buffer);
+        initprintf("%s\n", buffer);
         if (!bConsole)
         {
             viewLoadingScreen(2518, "Network Game", NULL, buffer);
@@ -1087,6 +1104,7 @@ void netInitialize(bool bConsole)
         {
             initprintf("No available peers for initiating an ENet connection.\n");
             netDeinitialize();
+            netResetToSinglePlayer();
             return;
         }
         if (enet_host_service(gNetENetClient, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
@@ -1114,6 +1132,7 @@ void netInitialize(bool bConsole)
             {
                 netClientDisconnect();
                 netDeinitialize();
+                netResetToSinglePlayer();
                 return;
             }
             enet_host_service(gNetENetClient, NULL, 0);
@@ -1124,6 +1143,7 @@ void netInitialize(bool bConsole)
                 case ENET_EVENT_TYPE_DISCONNECT:
                     initprintf("Lost connection to server\n");
                     netDeinitialize();
+                    netResetToSinglePlayer();
                     return;
                 case ENET_EVENT_TYPE_RECEIVE:
                     //initprintf("NETEVENT\n");
@@ -1159,11 +1179,6 @@ void netInitialize(bool bConsole)
         initprintf("Successfully connected to server\n");
     }
     gGameOptions.nGameType = 2;
-    gViewIndex = myconnectindex;
-    gMe = gView = &gPlayer[myconnectindex];
-    netBroadcastPlayerInfo(myconnectindex);
-    initprintf("Waiting for network players!\n");
-    netWaitForEveryone(0);
 }
 
 void netDeinitialize(void)
@@ -1171,12 +1186,6 @@ void netDeinitialize(void)
     if (!gNetENetInit)
         return;
     gNetENetInit = false;
-    myconnectindex = connecthead = 0;
-    gInitialNetPlayers = gNetPlayers = numplayers = 1;
-    connectpoint2[0] = -1;
-    gGameOptions.nGameType = 0;
-    gViewIndex = myconnectindex;
-    gMe = gView = &gPlayer[myconnectindex];
     if (gNetMode != NETWORK_NONE)
     {
         if (gNetENetServer)
@@ -1189,7 +1198,6 @@ void netDeinitialize(void)
         }
         enet_deinitialize();
     }
-    gNetMode = NETWORK_NONE;
     gNetENetServer = gNetENetClient = NULL;
 }
 
@@ -1231,6 +1239,11 @@ void netUpdate(void)
                     PutPacketByte(pPacket, 249);
                     PutPacketDWord(pPacket, nPlayer);
                     netSendPacketAll(packet, pPacket - packet);
+                }
+                if (gNetPlayers <= 1)
+                {
+                    netDeinitialize();
+                    netResetToSinglePlayer();
                 }
                 break;
             }
@@ -1276,6 +1289,7 @@ void netUpdate(void)
             case ENET_EVENT_TYPE_DISCONNECT:
                 initprintf("Lost connection to server\n");
                 netDeinitialize();
+                netResetToSinglePlayer();
                 gQuitGame = gRestartGame = true;
                 return;
             case ENET_EVENT_TYPE_RECEIVE:
@@ -1332,6 +1346,7 @@ void netPlayerQuit(int nPlayer)
             //byte_27B2CC = 1;
             gQuitGame = true;
             gRestartGame = true;
+            gNetPlayers = 1;
             //gQuitRequest = 1;
         }
     }
@@ -1342,7 +1357,13 @@ void netPlayerQuit(int nPlayer)
             if (connectpoint2[p] == nPlayer)
                 connectpoint2[p] = connectpoint2[nPlayer];
         }
+        gNetPlayerPeer[nPlayer] = NULL;
     }
     gNetPlayers--;
     numplayers = ClipLow(numplayers-1, 1);
+    if (gNetPlayers <= 1)
+    {
+        netDeinitialize();
+        netResetToSinglePlayer();
+    }
 }

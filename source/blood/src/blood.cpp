@@ -893,7 +893,7 @@ void ProcessFrame(void)
 		if (gPlayer[i].atc.keyFlags.quit && i == myconnectindex)
 		{
             gPlayer[i].atc.keyFlags.quit = 0;
-			netBroadcastMyLogoff(false);
+			netBroadcastMyLogoff(gQuitRequest == 2);
 			return;
 		}
 		if (gPlayer[i].atc.keyFlags.restart)
@@ -1583,6 +1583,12 @@ int app_main(int argc, char const * const * argv)
         credLogosDos();
     scrSetDac();
 RESTART:
+    sub_79760();
+    gViewIndex = myconnectindex;
+    gMe = gView = &gPlayer[myconnectindex];
+    netBroadcastPlayerInfo(myconnectindex);
+    initprintf("Waiting for network players!\n");
+    netWaitForEveryone(0);
     UpdateNetworkMenus();
     if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
         gDemo.SetupPlayback(NULL);
@@ -1718,6 +1724,7 @@ RESTART:
         sndStopSong();
         FX_StopAllSounds();
 		gQuitGame = 0;
+        gQuitRequest = 0;
 		gRestartGame = 0;
 		gGameStarted = 0;
 		levelSetupOptions(0,0);
