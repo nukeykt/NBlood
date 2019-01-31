@@ -43,8 +43,7 @@ CEndGameMgr::CEndGameMgr()
 
 void CEndGameMgr::Draw(void)
 {
-    videoClearScreen(0);
-    rotatesprite(160<<16, 100<<16, 65536, 0, 2049, 0, 0, 74, 0, 0, xdim-1, ydim-1);
+    viewLoadingScreenWide();
     int nHeight;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &nHeight);
     rotatesprite(160<<16, 20<<16, 65536, 0, 2038, -128, 0, 6, 0, 0, xdim-1, ydim-1);

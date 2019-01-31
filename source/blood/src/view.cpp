@@ -131,6 +131,8 @@ long gScreenTilt;
 
 CGameMessageMgr gGameMessageMgr;
 
+bool bLoadScreenCrcMatch = false;
+
 void RotateYZ(int *pX, int *pY, int *pZ, int ang)
 {
 	int oY, oZ, angSin, angCos;
@@ -1330,6 +1332,8 @@ void viewInit(void)
         dword_172CE0[i][2] = mulscale16(wrand(), 2048);
     }
     gViewMap.sub_25C38(0, 0, gZoom, 0, gFollowMap);
+
+    bLoadScreenCrcMatch = tileCRC(kLoadScreen) == kLoadScreenCRC;
 }
 
 void viewResizeView(int size)
@@ -1384,17 +1388,19 @@ void viewResizeView(int size)
     viewUpdatePages();
 }
 
+#define kBackTile 253
+
 void UpdateFrame(void)
 {
-    viewTileSprite(230, 0, 0, 0, 0, xdim, gViewY0-3);
-    viewTileSprite(230, 0, 0, 0, gViewY1+4, xdim, ydim);
-    viewTileSprite(230, 0, 0, 0, gViewY0-3, gViewX0-3, gViewY1+4);
-    viewTileSprite(230, 0, 0, gViewX1+4, gViewY0-3, xdim, gViewY1+4);
+    viewTileSprite(kBackTile, 0, 0, 0, 0, xdim, gViewY0-3);
+    viewTileSprite(kBackTile, 0, 0, 0, gViewY1+4, xdim, ydim);
+    viewTileSprite(kBackTile, 0, 0, 0, gViewY0-3, gViewX0-3, gViewY1+4);
+    viewTileSprite(kBackTile, 0, 0, gViewX1+4, gViewY0-3, xdim, gViewY1+4);
 
-    viewTileSprite(230, 20, 0, gViewX0-3, gViewY0-3, gViewX0, gViewY1+1);
-    viewTileSprite(230, 20, 0, gViewX0, gViewY0-3, gViewX1+4, gViewY0);
-    viewTileSprite(230, 10, 1, gViewX1+1, gViewY0, gViewX1+4, gViewY1+4);
-    viewTileSprite(230, 10, 1, gViewX0-3, gViewY1+1, gViewX1+1, gViewY1+4);
+    viewTileSprite(kBackTile, 20, 0, gViewX0-3, gViewY0-3, gViewX0, gViewY1+1);
+    viewTileSprite(kBackTile, 20, 0, gViewX0, gViewY0-3, gViewX1+4, gViewY0);
+    viewTileSprite(kBackTile, 10, 1, gViewX1+1, gViewY0, gViewX1+4, gViewY1+4);
+    viewTileSprite(kBackTile, 10, 1, gViewX0-3, gViewY1+1, gViewX1+1, gViewY1+4);
 }
 
 void viewDrawInterface(int arg)
@@ -3164,11 +3170,39 @@ RORHACK:
 int nLoadingScreenTile;
 char pzLoadingScreenText1[256], pzLoadingScreenText2[256], pzLoadingScreenText3[256];
 
+void viewLoadingScreenWide(void)
+{
+    videoClearScreen(0);
+    if ((blood_globalflags&BLOOD_FORCE_WIDELOADSCREEN) || (bLoadScreenCrcMatch && !(usehightile && h_xsize[kLoadScreen])))
+    {
+        if (yxaspect >= 65536)
+        {
+            rotatesprite(160<<16, 100<<16, 65536, 0, kLoadScreen, 0, 0, 1024+64+8+2, 0, 0, xdim-1, ydim-1);
+        }
+        else
+        {
+            int width = roundscale(xdim, 240, ydim);
+            int nCount = (width+kLoadScreenWideBackWidth-1)/kLoadScreenWideBackWidth;
+            for (int i = 0; i < nCount; i++)
+            {
+                rotatesprite_fs((i*kLoadScreenWideBackWidth)<<16, 0, 65536, 0, kLoadScreenWideBack, 0, 0, 256+64+16+8+2);
+            }
+            rotatesprite_fs((kLoadScreenWideSideWidth>>1)<<16, 200<<15, 65536, 0, kLoadScreenWideLeft, 0, 0, 256+8+2);
+            rotatesprite_fs((320-(kLoadScreenWideSideWidth>>1))<<16, 200<<15, 65536, 0, kLoadScreenWideRight, 0, 0, 512+8+2);
+            rotatesprite_fs(320<<15, 200<<15, 65536, 0, kLoadScreenWideMiddle, 0, 0, 8+2);
+        }
+    }
+    else
+        rotatesprite(160<<16, 100<<16, 65536, 0, kLoadScreen, 0, 0, 64+8+2, 0, 0, xdim-1, ydim-1);
+}
+
 void viewLoadingScreenUpdate(const char *pzText4, int nPercent)
 {
     int vc;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &vc);
-    if (nLoadingScreenTile)
+    if (nLoadingScreenTile == kLoadScreen)
+        viewLoadingScreenWide();
+    else if (nLoadingScreenTile)
     {
         videoClearScreen(0);
         rotatesprite(160<<16, 100<<16, 65536, 0, nLoadingScreenTile, 0, 0, 74, 0, 0, xdim-1, ydim-1);

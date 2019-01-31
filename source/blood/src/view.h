@@ -62,6 +62,14 @@ enum INTERPOLATE_TYPE {
 
 #define CROSSHAIR_PAL (MAXPALOOKUPS-RESERVEDPALS-1)
 #define kCrosshairTile 2319
+#define kLoadScreen 2049
+#define kLoadScreenCRC -2051908571
+#define kLoadScreenWideBackWidth 256
+#define kLoadScreenWideSideWidth 128
+#define kLoadScreenWideBack 9216
+#define kLoadScreenWideLeft 9217
+#define kLoadScreenWideRight 9218
+#define kLoadScreenWideMiddle 9219
 
 struct FONT {
     int tile, xSize, ySize, space;
@@ -140,6 +148,7 @@ void DoLensEffect(void);
 void UpdateDacs(int nPalette);
 int viewFPSLimit(void);
 void viewDrawScreen(void);
+void viewLoadingScreenWide(void);
 void viewLoadingScreenUpdate(const char *pzText4 = NULL, int nPercent = -1);
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3);
 void viewUpdateDelirium(void);

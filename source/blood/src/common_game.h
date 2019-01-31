@@ -75,11 +75,8 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 
 #define OSD_ERROR OSDTEXT_DARKRED OSDTEXT_BRIGHT
 
-// PORT-TODO:
 enum BLOOD_GLOBALFLAGS {
-    BLOOD_NO_WIDESCREEN_PINNING = 1<<0,
-    BLOOD_NO_HARDCODED_FOGPALS = 1<<1,
-    BLOOD_NO_PALETTE_CHANGES = 1<<2,
+    BLOOD_FORCE_WIDELOADSCREEN = 1<<0,
 };
 
 enum searchpathtypes_t {
