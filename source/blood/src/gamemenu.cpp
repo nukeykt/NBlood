@@ -1777,8 +1777,10 @@ void CGameMenuItemZEdit::BackChar(void)
 
 void CGameMenuItemZEdit::Draw(void)
 {
-    int height, width;
+    int height, width, textWidth = 0;
     gMenuTextMgr.GetFontInfo(m_nFont, NULL, &width, &height);
+    if (at20)
+        gMenuTextMgr.GetFontInfo(m_nFont, at20, &textWidth, NULL);
     int shade = 32;
     if (pMenu->IsFocusItem(this))
         shade = 32-(totalclock&63);
@@ -1786,7 +1788,7 @@ void CGameMenuItemZEdit::Draw(void)
         shade = -128;
     if (m_pzText)
         gMenuTextMgr.DrawText(m_pzText, m_nFont, m_nX, m_nY, shade, 0, false);
-    int x = m_nX+m_nWidth-1-(at24+1)*width;
+    int x = m_nX+m_nWidth-1-textWidth;//(at24+1)*width;
     if (at20 && *at20)
     {
         int width;
@@ -2609,11 +2611,10 @@ void CGameMenuItemZCycle::SetTextIndex(int nIndex)
 CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit()
 {
     m_pzText = NULL;
-    at24 = -1;
-    at28 = 0;
+    m_nRestart = 0;
 }
 
-CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit(const char *a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8)
+CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit(const char *a1, int a2, int a3, int a4, int a5, int a6, int a7)
 {
     m_pzText = a1;
     m_nFont = a2;
@@ -2621,8 +2622,7 @@ CGameMenuItemYesNoQuit::CGameMenuItemYesNoQuit(const char *a1, int a2, int a3, i
     m_nY = a4;
     m_nWidth = a5;
     at20 = a6;
-    at24 = a7;
-    at28 = a8;
+    m_nRestart = a7;
 }
 
 void CGameMenuItemYesNoQuit::Draw(void)
@@ -2662,6 +2662,7 @@ void CGameMenuItemYesNoQuit::Draw(void)
     }
 }
 
+extern void Restart(CGameMenuItemChain *pItem);
 extern void Quit(CGameMenuItemChain *pItem);
 
 bool CGameMenuItemYesNoQuit::Event(CGameMenuEvent &event)
@@ -2670,7 +2671,12 @@ bool CGameMenuItemYesNoQuit::Event(CGameMenuEvent &event)
     {
     case kMenuEventKey:
         if (event.at2 == sc_Y)
-            Quit(NULL);
+        {
+            if (m_nRestart)
+                Restart(NULL);
+            else
+                Quit(NULL);
+        }
         else if (event.at2 == sc_N)
             gGameMenuMgr.Pop();
         return false;

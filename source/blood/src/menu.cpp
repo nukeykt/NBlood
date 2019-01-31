@@ -160,12 +160,16 @@ CGameMenu menuLoadGame;
 CGameMenu menuLoading;
 CGameMenu menuSounds;
 CGameMenu menuQuit;
+CGameMenu menuRestart;
 CGameMenu menuCredits;
 CGameMenu menuOrder;
 CGameMenu menuPlayOnline;
 CGameMenu menuParentalLock;
 CGameMenu menuSorry;
 CGameMenu menuSorry2;
+CGameMenu menuNetwork;
+CGameMenu menuNetworkHost;
+CGameMenu menuNetworkJoin;
 
 CGameMenuItemQAV itemBloodQAV("", 3, 160, 100, "BDRIP", true);
 CGameMenuItemQAV itemCreditsQAV("", 3, 160, 100, "CREDITS", false, true);
@@ -176,7 +180,8 @@ CGameMenuItemQAV itemHelp5QAV("", 3, 160, 100, "HELP5", false, true);
 
 CGameMenuItemTitle itemMainTitle("BLOOD", 1, 160, 20, 2038);
 CGameMenuItemChain itemMain1("NEW GAME", 1, 0, 45, 320, 1, &menuEpisode, -1, NULL, 0);
-CGameMenuItemChain itemMain2("PLAY ONLINE", 1, 0, 65, 320, 1, &menuPlayOnline, -1, NULL, 0);
+//CGameMenuItemChain itemMain2("PLAY ONLINE", 1, 0, 65, 320, 1, &menuPlayOnline, -1, NULL, 0);
+CGameMenuItemChain itemMain2("NETWORK GAME", 1, 0, 65, 320, 1, &menuNetwork, -1, NULL, 0);
 CGameMenuItemChain itemMain3("OPTIONS", 1, 0, 85, 320, 1, &menuOptions, -1, NULL, 0);
 CGameMenuItemChain itemMain4("LOAD GAME", 1, 0, 105, 320, 1, &menuLoadGame, -1, NULL, 0);
 CGameMenuItemChain itemMain5("HELP", 1, 0, 125, 320, 1, &menuOrder, -1, NULL, 0);
@@ -185,12 +190,13 @@ CGameMenuItemChain itemMain7("QUIT", 1, 0, 165, 320, 1, &menuQuit, -1, NULL, 0);
 
 CGameMenuItemTitle itemMainSaveTitle("BLOOD", 1, 160, 20, 2038);
 CGameMenuItemChain itemMainSave1("NEW GAME", 1, 0, 45, 320, 1, &menuEpisode, -1, NULL, 0);
-CGameMenuItemChain itemMainSave2("PLAY ONLINE", 1, 0, 60, 320, 1, &menuPlayOnline, -1, NULL, 0);
-CGameMenuItemChain itemMainSave3("OPTIONS", 1, 0, 75, 320, 1, &menuOptions, -1, NULL, 0);
-CGameMenuItemChain itemMainSave4("SAVE GAME", 1, 0, 90, 320, 1, &menuSaveGame, -1, SaveGameProcess, 0);
-CGameMenuItemChain itemMainSave5("LOAD GAME", 1, 0, 105, 320, 1, &menuLoadGame, -1, NULL, 0);
-CGameMenuItemChain itemMainSave6("HELP", 1, 0, 120, 320, 1, &menuOrder, -1, NULL, 0);
-CGameMenuItemChain itemMainSave7("CREDITS", 1, 0, 135, 320, 1, &menuCredits, -1, NULL, 0);
+//CGameMenuItemChain itemMainSave2("PLAY ONLINE", 1, 0, 60, 320, 1, &menuPlayOnline, -1, NULL, 0);
+CGameMenuItemChain itemMainSave2("OPTIONS", 1, 0, 60, 320, 1, &menuOptions, -1, NULL, 0);
+CGameMenuItemChain itemMainSave3("SAVE GAME", 1, 0, 75, 320, 1, &menuSaveGame, -1, SaveGameProcess, 0);
+CGameMenuItemChain itemMainSave4("LOAD GAME", 1, 0, 90, 320, 1, &menuLoadGame, -1, NULL, 0);
+CGameMenuItemChain itemMainSave5("HELP", 1, 0, 105, 320, 1, &menuOrder, -1, NULL, 0);
+CGameMenuItemChain itemMainSave6("CREDITS", 1, 0, 120, 320, 1, &menuCredits, -1, NULL, 0);
+CGameMenuItemChain itemMainSave7("RESTART GAME", 1, 0, 135, 320, 1, &menuRestart, -1, NULL, 0);
 CGameMenuItemChain itemMainSave8("QUIT", 1, 0, 150, 320, 1, &menuQuit, -1, NULL, 0);
 
 CGameMenuItemTitle itemEpisodesTitle("EPISODES", 1, 160, 20, 2038);
@@ -287,7 +293,11 @@ CGameMenuItemZBool itemSounds3DAudio("3D SOUND:", 3, 40, 90, 180, gDoppler, SetD
 
 CGameMenuItemTitle itemQuitTitle("QUIT", 1, 160, 20, 2038);
 CGameMenuItemText itemQuitText1("Do you really want to quit?", 0, 160, 100, 1);
-CGameMenuItemYesNoQuit itemQuitYesNo("[Y/N]", 0, 20, 110, 280, 1, -1, 0);
+CGameMenuItemYesNoQuit itemQuitYesNo("[Y/N]", 0, 20, 110, 280, 1, 0);
+
+CGameMenuItemTitle itemRestartTitle("RESTART GAME", 1, 160, 20, 2038);
+CGameMenuItemText itemRestartText1("Do you really want to restart game?", 0, 160, 100, 1);
+CGameMenuItemYesNoQuit itemRestartYesNo("[Y/N]", 0, 20, 110, 280, 1, 1);
 
 CGameMenuItemPicCycle itemCreditsPicCycle(0, 0, NULL, NULL, 0, 0);
 CGameMenuItemPicCycle itemOrderPicCycle(0, 0, NULL, NULL, 0, 0);
@@ -599,6 +609,29 @@ CGameMenuItemZCycle itemOptionsControlMouseDigitalUp("DIGITAL UP", 3, 66, 140, 1
 CGameMenuItemZCycle itemOptionsControlMouseDigitalDown("DIGITAL DOWN", 3, 66, 150, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
 CGameMenuItemZCycle itemOptionsControlMouseDigitalLeft("DIGITAL LEFT", 3, 66, 160, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
 CGameMenuItemZCycle itemOptionsControlMouseDigitalRight("DIGITAL RIGHT", 3, 66, 170, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
+
+void SetupNetworkMenu(void);
+void SetupNetworkHostMenu(CGameMenuItemChain *pItem);
+void SetupNetworkJoinMenu(CGameMenuItemChain *pItem);
+void NetworkHostGame(CGameMenuItemChain *pItem);
+void NetworkJoinGame(CGameMenuItemChain *pItem);
+
+char zNetAddressBuffer[16] = "localhost";
+char zNetPortBuffer[6];
+
+CGameMenuItemTitle itemNetworkTitle("NETWORK GAME", 1, 160, 20, 2038);
+CGameMenuItemChain itemNetworkHost("HOST A GAME", 1, 0, 80, 320, 1, &menuNetworkHost, -1, SetupNetworkHostMenu, 0);
+CGameMenuItemChain itemNetworkJoin("JOIN A GAME", 1, 0, 100, 320, 1, &menuNetworkJoin, -1, SetupNetworkJoinMenu, 0);
+
+CGameMenuItemTitle itemNetworkHostTitle("HOST A GAME", 1, 160, 20, 2038);
+CGameMenuItemSlider itemNetworkHostPlayerNum("PLAYER NUMBER:", 3, 66, 70, 180, 1, 2, kMaxPlayers, 1, NULL, -1, -1, kMenuSliderValue);
+CGameMenuItemZEdit itemNetworkHostPort("NETWORK PORT:", 3, 66, 80, 180, zNetPortBuffer, 6, 0, NULL, 0);
+CGameMenuItemChain itemNetworkHostHost("HOST A GAME", 3, 66, 100, 180, 1, NULL, -1, NetworkHostGame, 0);
+
+CGameMenuItemTitle itemNetworkJoinTitle("JOIN A GAME", 1, 160, 20, 2038);
+CGameMenuItemZEdit itemNetworkJoinAddress("NETWORK ADDRESS:", 3, 66, 70, 180, zNetAddressBuffer, 16, 0, NULL, 0);
+CGameMenuItemZEdit itemNetworkJoinPort("NETWORK PORT:", 3, 66, 80, 180, zNetPortBuffer, 6, 0, NULL, 0);
+CGameMenuItemChain itemNetworkJoinJoin("JOIN A GAME", 3, 66, 100, 180, 1, NULL, -1, NetworkJoinGame, 0);
 
 // There is no better way to do this than manually.
 
@@ -949,6 +982,11 @@ void SetupQuitMenu(void)
     menuQuit.Add(&itemQuitText1, false);
     menuQuit.Add(&itemQuitYesNo, true);
     menuQuit.Add(&itemBloodQAV, false);
+
+    menuRestart.Add(&itemRestartTitle, false);
+    menuRestart.Add(&itemRestartText1, false);
+    menuRestart.Add(&itemRestartYesNo, true);
+    menuRestart.Add(&itemBloodQAV, false);
 }
 
 void SetupHelpOrderMenu(void)
@@ -1233,6 +1271,13 @@ void SetupMenus(void)
     SetupSorry3Menu();
 
     SetupOptionsMenu();
+    SetupNetworkMenu();
+}
+
+void UpdateNetworkMenus(void)
+{
+    SetupMainMenu();
+    SetupMainMenuWithSave();
 }
 
 void SetDoppler(CGameMenuItemZBool *pItem)
@@ -1843,6 +1888,66 @@ void SetupMouseButtonMenu(CGameMenuItemChain *pItem)
     }
 }
 
+void SetupNetworkMenu(void)
+{
+    itoa(gNetPort, zNetPortBuffer, 10);
+    if (strlen(gNetAddress) > 0)
+        strncpy(zNetAddressBuffer, gNetAddress, sizeof(zNetAddressBuffer)-1);
+
+    menuNetwork.Add(&itemNetworkTitle, false);
+    menuNetwork.Add(&itemNetworkHost, true);
+    menuNetwork.Add(&itemNetworkJoin, false);
+    menuNetwork.Add(&itemBloodQAV, false);
+
+    menuNetworkHost.Add(&itemNetworkHostTitle, false);
+    menuNetworkHost.Add(&itemNetworkHostPlayerNum, true);
+    menuNetworkHost.Add(&itemNetworkHostPort, false);
+    menuNetworkHost.Add(&itemNetworkHostHost, false);
+    menuNetworkHost.Add(&itemBloodQAV, false);
+
+    menuNetworkJoin.Add(&itemNetworkJoinTitle, false);
+    menuNetworkJoin.Add(&itemNetworkJoinAddress, true);
+    menuNetworkJoin.Add(&itemNetworkJoinPort, false);
+    menuNetworkJoin.Add(&itemNetworkJoinJoin, false);
+    menuNetworkJoin.Add(&itemBloodQAV, false);
+}
+
+void SetupNetworkHostMenu(CGameMenuItemChain *pItem)
+{
+}
+
+void SetupNetworkJoinMenu(CGameMenuItemChain *pItem)
+{
+}
+
+void NetworkHostGame(CGameMenuItemChain *pItem)
+{
+    sndStopSong();
+    FX_StopAllSounds();
+    gNetPlayers = itemNetworkHostPlayerNum.nValue;
+    gNetPort = strtoul(zNetPortBuffer, NULL, 10);
+    if (!gNetPort)
+        gNetPort = kNetDefaultPort;
+    gNetMode = NETWORK_SERVER;
+    netInitialize(false);
+    gGameMenuMgr.Deactivate();
+    gQuitGame = gRestartGame = true;
+}
+
+void NetworkJoinGame(CGameMenuItemChain *pItem)
+{
+    sndStopSong();
+    FX_StopAllSounds();
+    strcpy(gNetAddress, zNetAddressBuffer);
+    gNetPort = strtoul(zNetPortBuffer, NULL, 10);
+    if (!gNetPort)
+        gNetPort = kNetDefaultPort;
+    gNetMode = NETWORK_CLIENT;
+    netInitialize(false);
+    gGameMenuMgr.Deactivate();
+    gQuitGame = gRestartGame = true;
+}
+
 void SaveGameProcess(CGameMenuItemChain *)
 {
 }
@@ -1961,12 +2066,24 @@ void StartNetGame(CGameMenuItemChain *)
     gGameMenuMgr.Deactivate();
 }
 
+void Restart(CGameMenuItemChain *pItem)
+{
+    if (gGameOptions.nGameType == 0 || numplayers == 1)
+    {
+        gQuitGame = true;
+        gRestartGame = true;
+    }
+    else
+        gQuitRequest = 2;
+    gGameMenuMgr.Deactivate();
+}
+
 void Quit(CGameMenuItemChain *pItem)
 {
     if (gGameOptions.nGameType == 0 || numplayers == 1)
         gQuitGame = true;
     else
-        gQuitRequest = true;
+        gQuitRequest = 1;
     gGameMenuMgr.Deactivate();
 }
 

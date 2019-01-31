@@ -117,7 +117,7 @@ void IniFile::LoadRes(void *res)
         }
     }
 
-    curNode->next = head.next;
+    curNode->next = &head;
 }
 
 void IniFile::Load()

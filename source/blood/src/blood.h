@@ -75,6 +75,7 @@ extern char SetupFilename[BMAX_PATH];
 extern int32_t gNoSetup;
 extern short BloodVersion;
 extern int gNetPlayers;
+extern bool gRestartGame;
 #define GAMEUPDATEAVGTIMENUMSAMPLES 100
 extern double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 extern double g_gameUpdateAvgTime;

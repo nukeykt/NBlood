@@ -34,7 +34,7 @@ long gGamma;
 int gSaveGameNum;
 
 bool gQuitGame;
-bool gQuitRequest;
+int gQuitRequest;
 bool gPaused;
 bool gSaveGameActive;
 int gCacheMiss;

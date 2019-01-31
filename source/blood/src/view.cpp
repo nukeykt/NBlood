@@ -2429,7 +2429,7 @@ void DoLensEffect(void)
     tileInvalidate(4077, -1, -1);
 }
 
-void UpdateDacs(int nPalette)
+void UpdateDacs(int nPalette, bool bNoTint)
 {
     static RGB newDAC[256];
     static int oldPalette;
@@ -2485,33 +2485,8 @@ void UpdateDacs(int nPalette)
             tint->b = 255;
             break;
         }
-        nRed += gView->at377;
-        nGreen += gView->at377;
-        nBlue -= gView->at377;
-
-        nRed += ClipHigh(gView->at366, 85)*2;
-        nGreen -= ClipHigh(gView->at366, 85)*3;
-        nBlue -= ClipHigh(gView->at366, 85)*3;
-
-        nRed -= gView->at36a;
-        nGreen -= gView->at36a;
-        nBlue -= gView->at36a;
-
-        nRed -= gView->at36e>>6;
-        nGreen -= gView->at36e>>5;
-        nBlue -= gView->at36e>>6;
-
-        videoSetPalette(0, nPalette, 8+2);
-        videoTintBlood(nRed, nGreen, nBlue);
-    }
-    else
-    {
-        gLastPal = nPalette;
-        for (int i = 0; i < 256; i++)
+        if (!bNoTint)
         {
-            int nRed = baseDAC[i].red;
-            int nGreen = baseDAC[i].green;
-            int nBlue = baseDAC[i].blue;
             nRed += gView->at377;
             nGreen += gView->at377;
             nBlue -= gView->at377;
@@ -2527,10 +2502,45 @@ void UpdateDacs(int nPalette)
             nRed -= gView->at36e>>6;
             nGreen -= gView->at36e>>5;
             nBlue -= gView->at36e>>6;
+        }
 
-            newDAC[i].red = ClipRange(nRed, 0, 255);
-            newDAC[i].green = ClipRange(nGreen, 0, 255);
-            newDAC[i].blue = ClipRange(nBlue, 0, 255);
+        videoSetPalette(0, nPalette, 8+2);
+        videoTintBlood(nRed, nGreen, nBlue);
+    }
+    else
+    {
+        gLastPal = nPalette;
+        if (bNoTint)
+        {
+            memcpy(newDAC, baseDAC, sizeof(newDAC));
+        }
+        else
+        {
+            for (int i = 0; i < 256; i++)
+            {
+                int nRed = baseDAC[i].red;
+                int nGreen = baseDAC[i].green;
+                int nBlue = baseDAC[i].blue;
+                nRed += gView->at377;
+                nGreen += gView->at377;
+                nBlue -= gView->at377;
+
+                nRed += ClipHigh(gView->at366, 85)*2;
+                nGreen -= ClipHigh(gView->at366, 85)*3;
+                nBlue -= ClipHigh(gView->at366, 85)*3;
+
+                nRed -= gView->at36a;
+                nGreen -= gView->at36a;
+                nBlue -= gView->at36a;
+
+                nRed -= gView->at36e>>6;
+                nGreen -= gView->at36e>>5;
+                nBlue -= gView->at36e>>6;
+
+                newDAC[i].red = ClipRange(nRed, 0, 255);
+                newDAC[i].green = ClipRange(nGreen, 0, 255);
+                newDAC[i].blue = ClipRange(nBlue, 0, 255);
+            }
         }
         if (memcmp(newDAC, curDAC, 768) != 0)
         {

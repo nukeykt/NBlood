@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mmulti.h"
 #include "compat.h"
 #include "renderlayer.h"
+#include "fx_man.h"
 #include "common.h"
 #include "common_game.h"
 #include "gamedefs.h"
@@ -195,7 +196,7 @@ void _ThrowError(const char *pzFormat, ...)
     wm_msgbox(titlebuf, "%s(%i): %s\n", _module, _line, buffer);
 
     Bfflush(NULL);
-    exit(0);
+    QuitGame();
 }
 
 void __dassert(const char * pzExpr, const char * pzFile, int nLine)
@@ -892,7 +893,7 @@ void ProcessFrame(void)
 		if (gPlayer[i].atc.keyFlags.quit && i == myconnectindex)
 		{
             gPlayer[i].atc.keyFlags.quit = 0;
-			netBroadcastMyLogoff();
+			netBroadcastMyLogoff(false);
 			return;
 		}
 		if (gPlayer[i].atc.keyFlags.restart)
@@ -1165,15 +1166,11 @@ void ParseOptions(void)
             if (OptArgc < 1)
                 ThrowError("Missing argument");
             gNetPlayers = ClipRange(atoi(OptArgv[0]), 1, kMaxPlayers);
-            if (gGameOptions.nGameType == 0)
-                gGameOptions.nGameType = 2;
             gNetMode = NETWORK_SERVER;
             break;
         case 31:
             if (OptArgc < 1)
                 ThrowError("Missing argument");
-            if (gGameOptions.nGameType == 0)
-                gGameOptions.nGameType = 2;
             gNetMode = NETWORK_CLIENT;
             strncpy(gNetAddress, OptArgv[0], sizeof(gNetAddress)-1);
             break;
@@ -1560,8 +1557,6 @@ int app_main(int argc, char const * const * argv)
     gDemo.LoadDemoInfo();
     sprintf(buffer, "There are %d demo(s) in the loop\n", gDemo.at59ef);
     initprintf(buffer);
-    if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
-        gDemo.SetupPlayback(NULL);
     initprintf("Loading control setup\n");
     ctrlInit();
     timerInit(120);
@@ -1569,13 +1564,7 @@ int app_main(int argc, char const * const * argv)
     // PORT-TODO: CD audio init
 
     initprintf("Initializing network users\n");
-    netInitialize();
-    gViewIndex = myconnectindex;
-    gMe = gView = &gPlayer[myconnectindex];
-    // sub_2906C()
-    netBroadcastPlayerInfo(myconnectindex);
-    initprintf("Waiting for network players!\n");
-    netWaitForEveryone(0);
+    netInitialize(true);
     scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
     scrSetGamma(gGamma);
     viewResizeView(gViewSize);
@@ -1594,8 +1583,9 @@ int app_main(int argc, char const * const * argv)
         credLogosDos();
     scrSetDac();
 RESTART:
-    scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
-    scrSetGamma(gGamma);
+    UpdateNetworkMenus();
+    if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
+        gDemo.SetupPlayback(NULL);
     viewGetCrosshairColor();
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     gQuitGame = 0;
@@ -1685,7 +1675,7 @@ RESTART:
             }
             G_HandleAsync();
 			if (gQuitRequest && !gQuitGame)
-				netBroadcastMyLogoff();
+				netBroadcastMyLogoff(gQuitRequest == 2);
 		}
         if (bDraw)
         {
@@ -1724,6 +1714,9 @@ RESTART:
         gDemo.Close();
     if (gRestartGame)
     {
+        UpdateDacs(0, true);
+        sndStopSong();
+        FX_StopAllSounds();
 		gQuitGame = 0;
 		gRestartGame = 0;
 		gGameStarted = 0;

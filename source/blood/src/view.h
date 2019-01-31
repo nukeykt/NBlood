@@ -143,7 +143,7 @@ void viewSetMessage(const char *pMessage);
 void viewDisplayMessage(void);
 void viewSetErrorMessage(const char *pMessage);
 void DoLensEffect(void);
-void UpdateDacs(int nPalette);
+void UpdateDacs(int nPalette, bool bNoTint = false);
 int viewFPSLimit(void);
 void viewDrawScreen(void);
 void viewLoadingScreenWide(void);

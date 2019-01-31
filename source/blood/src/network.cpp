@@ -63,7 +63,7 @@ bool ready2send = false;
 NETWORKMODE gNetMode = NETWORK_NONE;
 char gNetAddress[32];
 // PORT-TODO: Use different port?
-int gNetPort = 23513;
+int gNetPort = kNetDefaultPort;
 
 const short word_1328AC = 0x214;
 
@@ -117,6 +117,51 @@ struct PKT_CONNECTINFO {
     short connectpoint2[kMaxPlayers];
 };
 
+void netServerDisconnect(void)
+{
+    ENetEvent event;
+    if (gNetMode != NETWORK_SERVER)
+        return;
+    for (int p = 0; p < kMaxPlayers; p++)
+        if (gNetPlayerPeer[p])
+        {
+            bool bDisconnectStatus = false;
+            enet_peer_disconnect(gNetPlayerPeer[p], 0);
+            if (enet_host_service(gNetENetServer, &event, 3000) > 0)
+            {
+                switch (event.type)
+                {
+                case ENET_EVENT_TYPE_DISCONNECT:
+                    bDisconnectStatus = true;
+                    break;
+                }
+            }
+            if (!bDisconnectStatus)
+                enet_peer_reset(gNetPlayerPeer[p]);
+            gNetPlayerPeer[p] = NULL;
+        }
+}
+
+void netClientDisconnect(void)
+{
+    ENetEvent event;
+    if (gNetMode != NETWORK_CLIENT || gNetENetPeer == NULL)
+        return;
+    enet_peer_disconnect(gNetENetPeer, 0);
+    bool bDisconnectStatus = false;
+    if (enet_host_service(gNetENetClient, &event, 3000) > 0)
+    {
+        switch (event.type)
+        {
+        case ENET_EVENT_TYPE_DISCONNECT:
+            bDisconnectStatus = true;
+            break;
+        }
+    }
+    if (!bDisconnectStatus)
+        enet_peer_reset(gNetENetPeer);
+    gNetENetPeer = NULL;
+}
 
 void netSendPacket(int nDest, char *pBuffer, int nSize)
 {
@@ -474,7 +519,7 @@ void netGetPackets(void)
     }
 }
 
-void netBroadcastMyLogoff(void)
+void netBroadcastMyLogoff(bool bRestart)
 {
     if (numplayers < 2)
         return;
@@ -484,7 +529,9 @@ void netBroadcastMyLogoff(void)
     netSendPacketAll(packet, pPacket - packet);
     netWaitForEveryone(0);
     ready2send = 0;
-    gQuitGame = 1;
+    gQuitGame = true;
+    if (bRestart)
+        gRestartGame = true;
 }
 
 void netBroadcastPlayerInfo(int nPlayer)
@@ -556,6 +603,8 @@ void netWaitForEveryone(char a1)
         for (p = connecthead; p >= 0; p = connectpoint2[p])
             if (gPlayerReady[p] < gPlayerReady[myconnectindex])
                 break;
+        if (gRestartGame || numplayers <= 1)
+            break;
     } while (p >= 0);
 }
 
@@ -860,8 +909,10 @@ void netGetInput(void)
     } while (1);
 }
 
-void netInitialize(void)
+void netInitialize(bool bConsole)
 {
+    char buffer[128];
+    netDeinitialize();
     gNetENetServer = gNetENetClient = NULL;
     //gNetServerPacketHead = gNetServerPacketTail = 0;
     gNetPacketHead = gNetPacketTail = 0;
@@ -872,11 +923,13 @@ void netInitialize(void)
         myconnectindex = 0;
         connecthead = 0;
         connectpoint2[0] = -1;
+        gGameOptions.nGameType = 0;
+        gViewIndex = myconnectindex;
+        gMe = gView = &gPlayer[myconnectindex];
         return;
     }
     if (enet_initialize() != 0)
         ThrowError("An error occurred while initializing ENet.\n");
-    atexit(enet_deinitialize);
     gNetENetInit = true;
     if (gNetMode == NETWORK_SERVER)
     {
@@ -890,11 +943,26 @@ void netInitialize(void)
 
         numplayers = 1;
         // Wait for clients
+        if (!bConsole)
+        {
+            char buffer[128];
+            sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
+            viewLoadingScreen(2518, "Network Game", NULL, buffer);
+        }
         while (numplayers < gNetPlayers)
         {
             handleevents();
             if (quitevent)
+            {
+                netServerDisconnect();
                 QuitGame();
+            }
+            if (!bConsole && KB_KeyPressed(sc_Escape))
+            {
+                netServerDisconnect();
+                netDeinitialize();
+                return;
+            }
             enet_host_service(gNetENetServer, NULL, 0);
             if (enet_host_check_events(gNetENetServer, &event) > 0)
             {
@@ -915,10 +983,20 @@ void netInitialize(void)
                             break;
                         }
                     }
+                    if (!bConsole)
+                    {
+                        char buffer[128];
+                        sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
+                        viewLoadingScreen(2518, "Network Game", NULL, buffer);
+                    }
                     break;
                 }
                 case ENET_EVENT_TYPE_DISCONNECT:
-                    initprintf("Client disconnected: %i:%i\n", event.peer->address.host, event.peer->address.port);
+                {
+                    char ipaddr[32];
+
+                    enet_address_get_host_ip(&event.peer->address, ipaddr, sizeof(ipaddr));
+                    initprintf("Client disconnected: %s:%u\n", ipaddr, event.peer->address.port);
                     numplayers--;
                     for (int i = 1; i < kMaxPlayers; i++)
                     {
@@ -936,9 +1014,17 @@ void netInitialize(void)
                             }
                         }
                     }
+                    if (!bConsole)
+                    {
+                        char buffer[128];
+                        sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
+                        viewLoadingScreen(2518, "Network Game", NULL, buffer);
+                    }
                     break;
                 }
+                }
             }
+            enet_host_service(gNetENetServer, NULL, 0);
         }
         initprintf("All clients connected\n");
 
@@ -987,27 +1073,58 @@ void netInitialize(void)
     else if (gNetMode == NETWORK_CLIENT)
     {
         ENetEvent event;
+        sprintf(buffer, "Connecting to %s:%u", gNetAddress, gNetPort);
+        initprintf(buffer);
+        if (!bConsole)
+        {
+            viewLoadingScreen(2518, "Network Game", NULL, buffer);
+        }
         gNetENetClient = enet_host_create(NULL, 1, BLOOD_ENET_CHANNEL_MAX, 0, 0);
         enet_address_set_host(&gNetENetAddress, gNetAddress);
         gNetENetAddress.port = gNetPort;
         gNetENetPeer = enet_host_connect(gNetENetClient, &gNetENetAddress, BLOOD_ENET_CHANNEL_MAX, 0);
         if (!gNetENetPeer)
-            ThrowError("No available peers for initiating an ENet connection.\n");
+        {
+            initprintf("No available peers for initiating an ENet connection.\n");
+            netDeinitialize();
+            return;
+        }
         if (enet_host_service(gNetENetClient, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
             initprintf("Connected to %s:%i\n", gNetAddress, gNetPort);
         else
-            ThrowError("Could not connect to %s:%i\n", gNetAddress, gNetPort);
+        {
+            initprintf("Could not connect to %s:%i\n", gNetAddress, gNetPort);
+            netDeinitialize();
+            return;
+        }
         bool bWaitServer = true;
+        if (!bConsole)
+        {
+            viewLoadingScreen(2518, "Network Game", NULL, "Waiting for server response");
+        }
         while (bWaitServer)
         {
             handleevents();
             if (quitevent)
+            {
+                netClientDisconnect();
                 QuitGame();
+            }
+            if (!bConsole && KB_KeyPressed(sc_Escape))
+            {
+                netClientDisconnect();
+                netDeinitialize();
+                return;
+            }
             enet_host_service(gNetENetClient, NULL, 0);
             if (enet_host_check_events(gNetENetClient, &event) > 0)
             {
                 switch (event.type)
                 {
+                case ENET_EVENT_TYPE_DISCONNECT:
+                    initprintf("Lost connection to server\n");
+                    netDeinitialize();
+                    return;
                 case ENET_EVENT_TYPE_RECEIVE:
                     //initprintf("NETEVENT\n");
                     if (event.channelID == BLOOD_ENET_SERVICE)
@@ -1041,18 +1158,39 @@ void netInitialize(void)
         enet_host_service(gNetENetClient, NULL, 0);
         initprintf("Successfully connected to server\n");
     }
+    gGameOptions.nGameType = 2;
+    gViewIndex = myconnectindex;
+    gMe = gView = &gPlayer[myconnectindex];
+    netBroadcastPlayerInfo(myconnectindex);
+    initprintf("Waiting for network players!\n");
+    netWaitForEveryone(0);
 }
 
 void netDeinitialize(void)
 {
-    gNetENetInit = false;
-    if (gNetMode == NETWORK_NONE)
+    if (!gNetENetInit)
         return;
-
-    if (gNetMode == NETWORK_SERVER)
-        enet_host_destroy(gNetENetServer);
-    else if (gNetMode == NETWORK_CLIENT)
-        enet_host_destroy(gNetENetClient);
+    gNetENetInit = false;
+    myconnectindex = connecthead = 0;
+    gInitialNetPlayers = gNetPlayers = numplayers = 1;
+    connectpoint2[0] = -1;
+    gGameOptions.nGameType = 0;
+    gViewIndex = myconnectindex;
+    gMe = gView = &gPlayer[myconnectindex];
+    if (gNetMode != NETWORK_NONE)
+    {
+        if (gNetENetServer)
+        {
+            enet_host_destroy(gNetENetServer);
+        }
+        else if (gNetENetClient)
+        {
+            enet_host_destroy(gNetENetClient);
+        }
+        enet_deinitialize();
+    }
+    gNetMode = NETWORK_NONE;
+    gNetENetServer = gNetENetClient = NULL;
 }
 
 void netPostEPacket(ENetPacket *pEPacket)
@@ -1069,7 +1207,7 @@ void netUpdate(void)
     if (gNetMode == NETWORK_NONE)
         return;
 
-    if (gNetMode == NETWORK_SERVER)
+    if (gNetENetServer)
     {
         enet_host_service(gNetENetServer, NULL, 0);
         while (enet_host_check_events(gNetENetServer, &event) > 0)
@@ -1128,7 +1266,7 @@ void netUpdate(void)
         }
         enet_host_service(gNetENetServer, NULL, 0);
     }
-    else if (gNetMode == NETWORK_CLIENT)
+    else if (gNetENetClient)
     {
         enet_host_service(gNetENetClient, NULL, 0);
         while (enet_host_check_events(gNetENetClient, &event) > 0)
@@ -1136,8 +1274,10 @@ void netUpdate(void)
             switch (event.type)
             {
             case ENET_EVENT_TYPE_DISCONNECT:
-                ThrowError("Lost connection to server");
-                break;
+                initprintf("Lost connection to server\n");
+                netDeinitialize();
+                gQuitGame = gRestartGame = true;
+                return;
             case ENET_EVENT_TYPE_RECEIVE:
                 switch (event.channelID)
                 {
@@ -1187,11 +1327,12 @@ void netPlayerQuit(int nPlayer)
     if (nPlayer == connecthead)
     {
         connecthead = connectpoint2[connecthead];
-        if (gPacketMode == PACKETMODE_1)
+        //if (gPacketMode == PACKETMODE_1)
         {
             //byte_27B2CC = 1;
-            gQuitGame = 1;
-            gQuitRequest = 1;
+            gQuitGame = true;
+            gRestartGame = true;
+            //gQuitRequest = 1;
         }
     }
     else

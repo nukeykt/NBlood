@@ -36,6 +36,8 @@ enum NETWORKMODE {
     NETWORK_CLIENT
 };
 
+#define kNetDefaultPort 23513
+
 extern char packet[576];
 extern bool gStartNewGame;
 extern PACKETMODE gPacketMode;
@@ -137,8 +139,8 @@ void sub_7AC28(const char *pzString);
 void netGetPackets(void);
 void netBroadcastTaunt(int nPlayer, int nTaunt);
 void CalcGameChecksum(void);
-void netBroadcastMyLogoff(void);
-void netInitialize(void);
+void netBroadcastMyLogoff(bool bRestart);
+void netInitialize(bool bConsole);
 void netBroadcastPlayerInfo(int nPlayer);
 void netCheckSync(void);
 void netGetInput(void);

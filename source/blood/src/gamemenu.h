@@ -385,10 +385,9 @@ class CGameMenuItemYesNoQuit : public CGameMenuItem
 {
 public:
     int at20;
-    int at24;
-    int at28;
+    int m_nRestart;
     CGameMenuItemYesNoQuit();
-    CGameMenuItemYesNoQuit(const char *, int, int, int, int, int, int, int);
+    CGameMenuItemYesNoQuit(const char *, int, int, int, int, int, int);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent &);
 };
