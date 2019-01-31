@@ -186,6 +186,7 @@ public:
 
 void MyLoadSave::Load(void)
 {
+    psky_t *pSky = tileSetupSky(0);
     int id;
     Read(&id, sizeof(id));
     if (id != 'DULB')
@@ -216,14 +217,13 @@ void MyLoadSave::Load(void)
     Read(&randomseed, sizeof(randomseed));
     Read(&parallaxtype, sizeof(parallaxtype));
     Read(&showinvisibility, sizeof(showinvisibility));
-    // PORT-TODO:
-    // Read(&parallaxyoffs, sizeof(parallaxyoffs));
-    // Read(&parallaxyscale, sizeof(parallaxyscale));
+    Read(&pSky->horizfrac, sizeof(pSky->horizfrac));
+    Read(&pSky->yoffs, sizeof(pSky->yoffs));
+    Read(&pSky->yscale, sizeof(pSky->yscale));
     Read(&g_visibility, sizeof(g_visibility));
     Read(&parallaxvisibility, sizeof(parallaxvisibility));
-    // PORT-TODO:
-    // Read(pskyoff, sizeof(pskyoff));
-    // Read(&pskybits, sizeof(pskybits));
+    Read(pSky->tileofs, sizeof(pSky->tileofs));
+    Read(&pSky->lognumtiles, sizeof(pSky->lognumtiles));
     Read(headspritesect, sizeof(headspritesect));
     Read(headspritestat, sizeof(headspritestat));
     Read(prevspritesect, sizeof(prevspritesect));
@@ -294,6 +294,7 @@ void MyLoadSave::Load(void)
 
 void MyLoadSave::Save(void)
 {
+    psky_t *pSky = tileSetupSky(0);
     int nNumSprites = 0;
     int id = 'DULB';
     Write(&id, sizeof(id));
@@ -320,14 +321,13 @@ void MyLoadSave::Save(void)
     Write(&randomseed, sizeof(randomseed));
     Write(&parallaxtype, sizeof(parallaxtype));
     Write(&showinvisibility, sizeof(showinvisibility));
-    // PORT-TODO:
-    // Write(&parallaxyoffs, sizeof(parallaxyoffs));
-    // Write(&parallaxyscale, sizeof(parallaxyscale));
+    Write(&pSky->horizfrac, sizeof(pSky->horizfrac));
+    Write(&pSky->yoffs, sizeof(pSky->yoffs));
+    Write(&pSky->yscale, sizeof(pSky->yscale));
     Write(&g_visibility, sizeof(g_visibility));
     Write(&parallaxvisibility, sizeof(parallaxvisibility));
-    // PORT-TODO:
-    // Write(pskyoff, sizeof(pskyoff));
-    // Write(&pskybits, sizeof(pskybits));
+    Write(pSky->tileofs, sizeof(pSky->tileofs));
+    Write(&pSky->lognumtiles, sizeof(pSky->lognumtiles));
     Write(headspritesect, sizeof(headspritesect));
     Write(headspritestat, sizeof(headspritestat));
     Write(prevspritesect, sizeof(prevspritesect));
