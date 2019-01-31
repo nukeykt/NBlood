@@ -835,14 +835,6 @@ void LocalKeys(void)
 				gGameMenuMgr.Push(&menuQuit,-1);
 			break;
 		case 0x57:
-			if (gGamma == gGammaLevels-1)
-				gGamma = 0;
-			else
-				gGamma = ClipHigh(gGamma+1,gGammaLevels-1);
-			scrSetGamma(gGamma);
-
-			sprintf(buffer,"Gamma correction level %i",gGamma);
-			viewSetMessage(buffer);
 			break;
 		case 0x58:
 			if (name[0] == 0)
