@@ -2504,7 +2504,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
             nBlue -= gView->at36e>>6;
         }
 
-        videoSetPalette(0, nPalette, 8+2);
+        videoSetPalette(0, nPalette, 2);
         videoTintBlood(nRed, nGreen, nBlue);
     }
     else
