@@ -3055,14 +3055,14 @@ RORHACK:
         }
         if (packItemActive(gView, 1))
         {
-            rotatesprite(0, 0, 65536, 0, 2344, 0, 0, 18, gViewX0, gViewY0, gViewX1, gViewY1);
-            rotatesprite(320<<16, 0, 65536, 1024, 2344, 0, 0, 22, gViewX0, gViewY0, gViewX1, gViewY1);
-            rotatesprite(0, 200<<16, 65536, 0, 2344, 0, 0, 22, gViewX0, gViewY0, gViewX1, gViewY1);
-            rotatesprite(320<<16, 200<<16, 65536, 1024, 2344, 0, 0, 18, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(0, 0, 65536, 0, 2344, 0, 0, 256+18, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(320<<16, 0, 65536, 1024, 2344, 0, 0, 512+22, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(0, 200<<16, 65536, 0, 2344, 0, 0, 256+22, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(320<<16, 200<<16, 65536, 1024, 2344, 0, 0, 512+18, gViewX0, gViewY0, gViewX1, gViewY1);
             if (gDetail >= 4)
             {
-                rotatesprite(15<<16, 3<<16, 65536, 0, 2346, 32, 0, 19, gViewX0, gViewY0, gViewX1, gViewY1);
-                rotatesprite(212<<16, 77<<16, 65536, 0, 2347, 32, 0, 19, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(15<<16, 3<<16, 65536, 0, 2346, 32, 0, 256+19, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(212<<16, 77<<16, 65536, 0, 2347, 32, 0, 512+19, gViewX0, gViewY0, gViewX1, gViewY1);
             }
         }
         if (powerupCheck(gView, 39) > 0)
@@ -3074,8 +3074,8 @@ RORHACK:
         {
             DoLensEffect();
             renderSetAspect(65536, 54613);
-            rotatesprite(280<<16, 35<<16, 53248, 512, 4077, v10, v14, 6, gViewX0, gViewY0, gViewX1, gViewY1);
-            rotatesprite(280<<16, 35<<16, 53248, 0, 1683, v10, 0, 35, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(280<<16, 35<<16, 53248, 512, 4077, v10, v14, 512+6, gViewX0, gViewY0, gViewX1, gViewY1);
+            rotatesprite(280<<16, 35<<16, 53248, 0, 1683, v10, 0, 512+35, gViewX0, gViewY0, gViewX1, gViewY1);
             //renderSetAspect(65536, divscale16(xdim*200, ydim*320));
             videoSetCorrectedAspect();
         }
