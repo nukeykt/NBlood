@@ -108,7 +108,7 @@ struct INTERPOLATE {
 
 int pcBackground;
 int gViewMode = 3;
-long gViewSize = 1;
+long gViewSize = 2;
 
 VIEW predict, predictOld;
 
@@ -984,8 +984,8 @@ void viewTileSprite(int nTile, int nShade, int nPalette, int x1, int y1, int x2,
     int height = tilesiz[nTile].y;
     int bx1 = DecBy(rect1.x1+1, width);
     int by1 = DecBy(rect1.y1+1, height);
-    int bx2 = IncBy(rect1.x2, width);
-    int by2 = IncBy(rect1.y2, height);
+    int bx2 = IncBy(rect1.x2-1, width);
+    int by2 = IncBy(rect1.y2-1, height);
     for (int x = bx1; x < bx2; x += width)
         for (int y = by1; y < by2; y += height)
             rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 64+16+8, x1, y1, x2-1, y2-1);
@@ -995,24 +995,25 @@ void InitStatusBar(void)
 {
     tileLoadTile(2200);
 }
-void DrawStatSprite(int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat)
+void DrawStatSprite(int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat, int nScale)
 {
-    rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, nStat | 74, 0, 0, xdim-1, ydim-1);
+    rotatesprite(x<<16, y<<16, nScale, 0, nTile, nShade, nPalette, nStat | 74, 0, 0, xdim-1, ydim-1);
 }
-void DrawStatMaskedSprite(int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat)
+void DrawStatMaskedSprite(int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat, int nScale)
 {
-    rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
+    rotatesprite(x<<16, y<<16, nScale, 0, nTile, nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
 }
 
-void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat)
+void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat, int nScale)
 {
     char tempbuf[80];
     int width = tilesiz[nTile].x+1;
+    x <<= 16;
     sprintf(tempbuf, pFormat, nNumber);
-    for (unsigned int i = 0; i < strlen(tempbuf); i++, x += width)
+    for (unsigned int i = 0; i < strlen(tempbuf); i++, x += width*nScale)
     {
         if (tempbuf[i] == ' ') continue;
-        DrawStatMaskedSprite(nTile+tempbuf[i]-'0', x, y, nShade, nPalette, nStat);
+        rotatesprite(x, y<<16, nScale, 0, nTile+tempbuf[i]-'0', nShade, nPalette, nStat | 10, 0, 0, xdim-1, ydim-1);
     }
 }
 
@@ -1041,11 +1042,46 @@ int gPackIcons[5] = {
     2569, 2564, 2566, 2568, 2560
 };
 
-typedef struct {
+struct PACKICON2 {
+    short nTile;
+    int nScale;
+    int nYOffs;
+};
+
+PACKICON2 gPackIcons2[] = {
+    { 519, (int)(65536*0.5), 0 },
+    { 830, (int)(65536*0.3), 0 },
+    { 760, (int)(65536*0.6), 0 },
+    { 839, (int)(65536*0.5), -4 },
+    { 827, (int)(65536*0.4), 0 },
+};
+
+struct AMMOICON {
+    short nTile;
+    int nScale;
+    int nYOffs;
+};
+
+AMMOICON gAmmoIcons[] = {
+    { -1, 0 },
+    { 816, (int)(65536 * 0.5), 0 },
+    { 619, (int)(65536 * 0.8), 0 },
+    { 817, (int)(65536 * 0.7), 3 },
+    { 801, (int)(65536 * 0.5), -6 },
+    { 589, (int)(65536 * 0.7), 2 },
+    { 618, (int)(65536 * 0.5), 4 },
+    { 548, (int)(65536 * 0.3), -6 },
+    { 820, (int)(65536 * 0.3), -6 },
+    { 525, (int)(65536 * 0.6), -6 },
+    { 811, (int)(65536 * 0.5), 2 },
+    { 810, (int)(65536 * 0.45), 2 },
+};
+
+struct WEAPONICON {
     short nTile;
     char xRepeat;
     char yRepeat;
-} WEAPONICON;
+};
 
 WEAPONICON gWeaponIcon[] = {
     { -1, 0, 0 },
@@ -1059,6 +1095,9 @@ WEAPONICON gWeaponIcon[] = {
     { 539, 32, 32 },
     { 800, 32, 32 },
     { 525, 32, 32 },
+    { 811, 32, 32 },
+    { 810, 32, 32 },
+    { -1, 0, 0 },
 };
 
 int dword_14C508;
@@ -1097,12 +1136,19 @@ void viewDrawPack(PLAYER *pPlayer, int x, int y)
             x += tilesiz[gPackIcons[nPack]].x + 1;
         }
     }
-    if (pPlayer->at31d == dword_14C508)
+    if (pPlayer->at31d != dword_14C508)
     {
         viewUpdatePages();
     }
     dword_14C508 = pPlayer->at31d;
 }
+
+#define kSBarNumberHealth 9220
+#define kSBarNumberAmmo 9230
+#define kSBarNumberInv 9240
+#define kSBarNumberArmor1 9250
+#define kSBarNumberArmor2 9260
+#define kSBarNumberArmor3 9270
 
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat)
 {
@@ -1110,6 +1156,14 @@ void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int 
 
     DrawStatSprite(gPackIcons[pPlayer->at321], x, y, 0, 0, nStat);
     DrawStatNumber("%3d", pPlayer->packInfo[pPlayer->at321].at1, 2250, x2, y2, 0, 0, nStat);
+}
+
+void DrawPackItemInStatusBar2(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat, int nScale)
+{
+    if (pPlayer->at321 < 0) return;
+
+    DrawStatMaskedSprite(gPackIcons2[pPlayer->at321].nTile, x, y+gPackIcons2[pPlayer->at321].nYOffs, 0, 0, nStat, gPackIcons2[pPlayer->at321].nScale);
+    DrawStatNumber("%3d", pPlayer->packInfo[pPlayer->at321].at1, kSBarNumberInv, x2, y2, 0, 0, nStat, nScale);
 }
 
 char gTempStr[128];
@@ -1131,14 +1185,58 @@ void UpdateStatusBar(int arg)
 
     if (gViewSize < 0) return;
 
-    if (gViewSize <= 1)
+    if (gViewSize == 1)
+    {
+        DrawStatMaskedSprite(2169, 12, 195, 0, 0, 256, (int)(65536*0.56));
+        DrawStatNumber("%d", pXSprite->health>>4, kSBarNumberHealth, 28, 187, 0, 0, 256);
+        if (pPlayer->at33e[1])
+        {
+            DrawStatMaskedSprite(2578, 70, 186, 0, 0, 256, (int)(65536*0.5));
+            DrawStatNumber("%3d", pPlayer->at33e[1]>>4, kSBarNumberArmor2, 83, 187, 0, 0, 256, (int)(65536*0.65));
+        }
+        if (pPlayer->at33e[0])
+        {
+            DrawStatMaskedSprite(2586, 112, 195, 0, 0, 256, (int)(65536*0.5));
+            DrawStatNumber("%3d", pPlayer->at33e[0]>>4, kSBarNumberArmor1, 125, 187, 0, 0, 256, (int)(65536*0.65));
+        }
+        if (pPlayer->at33e[2])
+        {
+            DrawStatMaskedSprite(2602, 155, 196, 0, 0, 256, (int)(65536*0.5));
+            DrawStatNumber("%3d", pPlayer->at33e[2]>>4, kSBarNumberArmor3, 170, 187, 0, 0, 256, (int)(65536*0.65));
+        }
+
+        DrawPackItemInStatusBar2(pPlayer, 225, 194, 240, 187, 512, (int)(65536*0.7));
+
+        if (pPlayer->atbd && pPlayer->atc7 != -1)
+        {
+            int num = pPlayer->at181[pPlayer->atc7];
+            if (pPlayer->atc7 == 6)
+                num /= 10;
+            if ((unsigned int)gAmmoIcons[pPlayer->atc7].nTile < kMaxTiles)
+                DrawStatMaskedSprite(gAmmoIcons[pPlayer->atc7].nTile, 304, 192+gAmmoIcons[pPlayer->atc7].nYOffs,
+                    0, 0, 512, gAmmoIcons[pPlayer->atc7].nScale);
+            DrawStatNumber("%3d", num, kSBarNumberAmmo, 267, 187, 0, 0, 512);
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            if (pPlayer->at88[i+1])
+                DrawStatMaskedSprite(2552+i, 10+10*i, 170, 0, 0, 256, (int)(65536*0.25));
+        }
+
+        if (pPlayer->at1ba)
+            TileHGauge(2260, 124, 175-10, pPlayer->at1ba, 65536);
+        else
+            viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2-30);
+    }
+    else if (gViewSize <= 2)
     {
         if (pPlayer->at1ba)
             TileHGauge(2260, 124, 175, pPlayer->at1ba, 65536);
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2);
     }
-    if (gViewSize == 1)
+    if (gViewSize == 2)
     {
         DrawStatSprite(2201, 34, 187, 16, nPalette, 256);
         if (pXSprite->health >= 16 || (gGameClock&16) || pXSprite->health == 0)
@@ -1169,8 +1267,31 @@ void UpdateStatusBar(int arg)
             DrawStatNumber("%3d", pPlayer->at33e[2]>>4, 2230, 255, 194, 0, 0, 512);
         }
         DrawPackItemInStatusBar(pPlayer, 286, 186, 302, 183, 512);
+
+        for (int i = 0; i < 6; i++)
+        {
+            int nTile = 2220+i;
+            int x, nStat = 0;
+            int y = 200-6;
+            if (i&1)
+            {
+                x = 320-(78+(i>>1)*10);
+                nStat |= 512;
+            }
+            else
+            {
+                x = 73+(i>>1)*10;
+                nStat |= 256;
+            }
+            if (pPlayer->at88[i+1])
+                DrawStatSprite(nTile, x, y, 0, 0, nStat);
+#if 0
+            else
+                DrawStatSprite(nTile, x, y, 40, 5, nStat);
+#endif
+        }
     }
-    else if (gViewSize > 1)
+    else if (gViewSize > 2)
     {
         viewDrawPack(pPlayer, 160, 200-tilesiz[2200].y);
         DrawStatMaskedSprite(2200, 160, 172, 16, nPalette);
@@ -1345,6 +1466,8 @@ void viewInit(void)
     }
     gViewMap.sub_25C38(0, 0, gZoom, 0, gFollowMap);
 
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+
     bLoadScreenCrcMatch = tileCRC(kLoadScreen) == kLoadScreenCRC;
 }
 
@@ -1358,8 +1481,8 @@ void viewResizeView(int size)
     yscale = divscale16(ydim, 200);
     xstep = divscale16(320, xdim);
     ystep = divscale16(200, ydim);
-    gViewSize = ClipRange(size, 0, 6);
-    if (gViewSize == 0 || gViewSize == 1)
+    gViewSize = ClipRange(size, 0, 7);
+    if (gViewSize <= 2)
     {
         gViewX0 = 0;
         gViewX1 = xdim-1;
@@ -1386,10 +1509,10 @@ void viewResizeView(int size)
         }
 
         int height = gViewY1-gViewY0;
-        gViewX0 += mulscale16(xdim*(gViewSize-2),4096);
-        gViewX1 -= mulscale16(xdim*(gViewSize-2),4096);
-        gViewY0 += mulscale16(height*(gViewSize-2),4096);
-        gViewY1 -= mulscale16(height*(gViewSize-2),4096);
+        gViewX0 += mulscale16(xdim*(gViewSize-3),4096);
+        gViewX1 -= mulscale16(xdim*(gViewSize-3),4096);
+        gViewY0 += mulscale16(height*(gViewSize-3),4096);
+        gViewY1 -= mulscale16(height*(gViewSize-3),4096);
         gViewX0S = divscale16(gViewX0, xscalecorrect);
         gViewY0S = divscale16(gViewY0, yscale);
         gViewX1S = divscale16(gViewX1, xscalecorrect);
@@ -1419,10 +1542,10 @@ void UpdateFrame(void)
 
 void viewDrawInterface(int arg)
 {
-    if (gViewMode == 3/* && gViewSize >= 2 && pcBackground != 0*/)
+    if (gViewMode == 3/* && gViewSize >= 3*/ && (pcBackground != 0 || videoGetRenderMode() >= REND_POLYMOST))
     {
         UpdateFrame();
-        //pcBackground--;
+        pcBackground--;
     }
     UpdateStatusBar(arg);
 }
@@ -2639,12 +2762,12 @@ void viewUpdateShake(void)
 
 int32_t r_maxfps = 60;
 int32_t r_maxfpsoffset = 0;
-uint64_t g_frameDelay = 17;
+double g_frameDelay = 0.0;
 
 int viewFPSLimit(void)
 {
-    static uint64_t nextPageTicks = 0;
-    static unsigned frameWaiting = 0;
+    static auto nextPageTicks = (double)timerGetTicksU64();
+    static unsigned frameWaiting  = 0;
 
     if (frameWaiting)
     {
@@ -2652,7 +2775,7 @@ int viewFPSLimit(void)
         videoNextPage();
     }
 
-    uint64_t const frameTicks = timerGetTicksU64();
+    auto const frameTicks = (double)timerGetTicksU64();
 
     if (!r_maxfps || frameTicks >= nextPageTicks)
     {
@@ -2801,7 +2924,7 @@ void viewDrawScreen(void)
                 {
                     nAng = 512-nAng;
                 }
-                renderSetAspect(mulscale16(vr, dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000)), yxaspect);
+                renderSetAspect(mulscale16(vr, dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)), yxaspect);
             }
             else
                 renderSetRollAngle(v78);
@@ -2985,17 +3108,17 @@ RORHACK:
             {
                 dassert(waloff[ TILTBUFFER ] != NULL);
                 renderRestoreTarget();
-                char vrc = 70;
+                int vrc = 64+4+2+1024;
                 if (vc)
                 {
-                    vrc = 103;
+                    vrc = 64+32+4+2+1+1024;
                 }
                 int nAng = v78 & 511;
                 if (nAng > 256)
                 {
                     nAng = 512 - nAng;
                 }
-                int nScale = dmulscale32(Cos(nAng), 256000, Sin(nAng), 160000)>>1;
+                int nScale = dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)>>1;
                 rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
             }
         }

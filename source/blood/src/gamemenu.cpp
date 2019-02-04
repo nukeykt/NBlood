@@ -2681,7 +2681,10 @@ bool CGameMenuItemYesNoQuit::Event(CGameMenuEvent &event)
             gGameMenuMgr.Pop();
         return false;
     case kMenuEventEnter:
-        Quit(NULL);
+        if (m_nRestart)
+            Restart(NULL);
+        else
+            Quit(NULL);
         return false;
     }
     return CGameMenuItem::Event(event);

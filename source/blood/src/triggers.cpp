@@ -1726,7 +1726,7 @@ void trTriggerSector(unsigned int nSector, XSECTOR *pXSector, int a3)
         if (pXSector->at16_4)
         {
             if (pXSector->at6_0)
-                evSend(nSector, 6, pXSector->at6_0, (COMMAND_ID)pXSector->ata_2);
+                evSend(nSector, 6, pXSector->at6_0, (COMMAND_ID)pXSector->at9_2);
         }
         else
         {
@@ -1762,7 +1762,7 @@ void trTriggerWall(unsigned int nWall, XWALL *pXWall, int a3)
         if (pXWall->atf_7)
         {
             if (pXWall->at6_0)
-                evSend(nWall, 0, pXWall->at6_0, (COMMAND_ID)pXWall->ata_2);
+                evSend(nWall, 0, pXWall->at6_0, (COMMAND_ID)pXWall->at9_2);
         }
         else
         {

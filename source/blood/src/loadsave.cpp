@@ -154,7 +154,8 @@ void LoadSave::LoadGame(char *pzFile)
     gGameClock = 0;
     gPaused = 0;
     gGameStarted = 1;
-    sndPlaySong(gGameOptions.zLevelSong, 1);
+    levelTryPlayMusic(gGameOptions.nEpisode ,gGameOptions.nLevel);
+    //sndPlaySong(gGameOptions.zLevelSong, 1);
 }
 
 void LoadSave::SaveGame(char *pzFile)
@@ -220,6 +221,7 @@ void MyLoadSave::Load(void)
     Read(&pSky->horizfrac, sizeof(pSky->horizfrac));
     Read(&pSky->yoffs, sizeof(pSky->yoffs));
     Read(&pSky->yscale, sizeof(pSky->yscale));
+    Read(&gVisibility, sizeof(gVisibility));
     Read(&g_visibility, sizeof(g_visibility));
     Read(&parallaxvisibility, sizeof(parallaxvisibility));
     Read(pSky->tileofs, sizeof(pSky->tileofs));
@@ -324,6 +326,7 @@ void MyLoadSave::Save(void)
     Write(&pSky->horizfrac, sizeof(pSky->horizfrac));
     Write(&pSky->yoffs, sizeof(pSky->yoffs));
     Write(&pSky->yscale, sizeof(pSky->yscale));
+    Write(&gVisibility, sizeof(gVisibility));
     Write(&g_visibility, sizeof(g_visibility));
     Write(&parallaxvisibility, sizeof(parallaxvisibility));
     Write(pSky->tileofs, sizeof(pSky->tileofs));

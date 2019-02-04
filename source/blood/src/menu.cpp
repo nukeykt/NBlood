@@ -568,7 +568,7 @@ CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 150, 180
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent);
 
 CGameMenuItemTitle itemOptionsPlayerTitle("PLAYER SETUP", 1, 160, 20, 2038);
-CGameMenuItemZEdit itemOptionsPlayerName("PLAYER NAME:", 3, 66, 60, 250, szPlayerName, MAXPLAYERNAME, 0, UpdatePlayerName, 0);
+CGameMenuItemZEdit itemOptionsPlayerName("PLAYER NAME:", 3, 66, 60, 180, szPlayerName, MAXPLAYERNAME, 0, UpdatePlayerName, 0);
 
 CGameMenu menuOptionsControlKeyboard;
 CGameMenu menuOptionsControlMouse;
@@ -1552,13 +1552,13 @@ void PreDrawVideoModeMenu(CGameMenuItem *pItem)
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem)
 {
     r_maxfps = nFrameLimitValues[pItem->m_nFocus];
-    g_frameDelay = (r_maxfps + r_maxfpsoffset) ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
 }
 
 void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem)
 {
     r_maxfpsoffset = pItem->nValue;
-    g_frameDelay = (r_maxfps + r_maxfpsoffset) ? (timerGetFreqU64() / (r_maxfps + r_maxfpsoffset)) : 0;
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
 }
 
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *)

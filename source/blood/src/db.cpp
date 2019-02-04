@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "crc32.h"
 
+#include "actor.h"
 #include "blood.h"
 #include "db.h"
 #include "iob.h"
@@ -354,6 +355,7 @@ unsigned short dbInsertXSprite(int nSprite)
         ThrowError("Out of free XSprites");
     }
     memset(&xsprite[nXSprite], 0, sizeof(XSPRITE));
+    memset(&gSpriteHit[nXSprite], 0, sizeof(SPRITEHIT));
     xsprite[nXSprite].reference = nSprite;
     qsprite[nSprite].extra = nXSprite;
     return nXSprite;

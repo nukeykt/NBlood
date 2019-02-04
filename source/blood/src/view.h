@@ -98,10 +98,13 @@ extern palette_t DefaultCrosshairColors;
 extern int32_t g_crosshairSum;
 extern int32_t r_maxfps;
 extern int32_t r_maxfpsoffset;
-extern uint64_t g_frameDelay;
+extern double g_frameDelay;
 extern float r_ambientlight, r_ambientlightrecip;
 extern int gLastPal;
 extern int32_t gShowFps, gFramePeriod;
+
+
+static inline double calcFrameDelay(int maxFPS) { return maxFPS ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize);
 void viewUpdatePages(void);
@@ -123,9 +126,9 @@ void RestoreInterpolations(void);
 void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat = 0);
 void viewTileSprite(int nTile, int nShade, int nPalette, int x1, int y1, int x2, int y2);
 void InitStatusBar(void);
-void DrawStatSprite(int nTile, int x, int y, int nShade = 0, int nPalette = 0, unsigned int nStat = 0);
-void DrawStatMaskedSprite(int nTile, int x, int y, int nShade = 0, int nPalette = 0, unsigned int nStat = 0);
-void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat = 0);
+void DrawStatSprite(int nTile, int x, int y, int nShade = 0, int nPalette = 0, unsigned int nStat = 0, int nScale = 65536);
+void DrawStatMaskedSprite(int nTile, int x, int y, int nShade = 0, int nPalette = 0, unsigned int nStat = 0, int nScale = 65536);
+void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, int nShade, int nPalette, unsigned int nStat = 0, int nScale = 65536);
 void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nStat = 0, int nScale = 65536);
 void viewDrawPack(PLAYER *pPlayer, int x, int y);
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat = 0);

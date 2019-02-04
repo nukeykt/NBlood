@@ -374,7 +374,7 @@ void CONFIG_SetDefaults(void)
     //ud.weaponscale            = 100;
     //ud.weaponsway             = 1;
     //ud.weaponswitch           = 3;  // new+empty
-    gViewSize = 1;
+    gViewSize = 2;
     gTurnSpeed = 92;
     gDetail = 4;
     gAutoRun = 0;
