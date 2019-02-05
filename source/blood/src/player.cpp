@@ -2093,4 +2093,9 @@ void PlayerLoadSave::Save(void)
     Write(&gPlayer, sizeof(gPlayer));
 }
 
-static PlayerLoadSave myLoadSave;
+static PlayerLoadSave *myLoadSave;
+
+void PlayerLoadSaveConstruct(void)
+{
+    myLoadSave = new PlayerLoadSave();
+}

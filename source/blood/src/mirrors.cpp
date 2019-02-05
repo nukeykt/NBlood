@@ -408,7 +408,7 @@ public:
     void Save(void);
 };
 
-static MirrorLoadSave myLoadSave;
+static MirrorLoadSave *myLoadSave;
 
 void MirrorLoadSave::Load(void)
 {
@@ -443,4 +443,9 @@ void MirrorLoadSave::Save(void)
     Write(&mirrorsector,sizeof(mirrorsector));
     Write(mirror, sizeof(mirror));
     Write(mirrorwall, sizeof(mirrorwall));
+}
+
+void MirrorLoadSaveConstruct(void)
+{
+    myLoadSave = new MirrorLoadSave();
 }

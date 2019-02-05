@@ -55,4 +55,4 @@ extern char *gSaveGamePic[10];
 
 void UpdateSavedInfo(int nSlot);
 void LoadSavedInfo(void);
-
+void LoadSaveSetup(void);

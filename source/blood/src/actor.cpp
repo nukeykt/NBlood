@@ -6232,4 +6232,9 @@ void ActorLoadSave::Save(void)
     Write(gPost, sizeof(gPost));
 }
 
-static ActorLoadSave myLoadSave;
+static ActorLoadSave *myLoadSave;
+
+void ActorLoadSaveConstruct(void)
+{
+    myLoadSave = new ActorLoadSave();
+}

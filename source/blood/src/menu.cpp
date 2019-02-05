@@ -1555,8 +1555,6 @@ void PreDrawVideoModeMenu(CGameMenuItem *pItem)
         pItem->bEnable = !!(gResolution[itemOptionsDisplayModeResolution.m_nFocus].flags & RES_FS);
     else if (pItem == &itemOptionsDisplayModeRenderer)
         pItem->bEnable = gResolution[itemOptionsDisplayModeResolution.m_nFocus].bppmax > 8;
-    else if (pItem == &itemOptionsDisplayModeFPSOffset)
-        pItem->bEnable = !!itemOptionsDisplayModeFrameLimit.m_nFocus;
 }
 
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem)

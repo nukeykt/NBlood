@@ -269,4 +269,9 @@ void EndGameLoadSave::Save(void)
 CEndGameMgr gEndGameMgr;
 CSecretMgr gSecretMgr;
 CKillMgr gKillMgr;
-static EndGameLoadSave myLoadSave;
+static EndGameLoadSave *myLoadSave;
+
+void EndGameLoadSaveConstruct(void)
+{
+    myLoadSave = new EndGameLoadSave();
+}

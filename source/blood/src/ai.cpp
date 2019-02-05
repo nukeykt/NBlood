@@ -1590,4 +1590,10 @@ void AILoadSave::Save(void)
     Write(gDudeSlope, sizeof(gDudeSlope));
 }
 
-static AILoadSave myLoadSave;
+static AILoadSave *myLoadSave;
+
+void AILoadSaveConstruct(void)
+{
+    myLoadSave = new AILoadSave();
+}
+

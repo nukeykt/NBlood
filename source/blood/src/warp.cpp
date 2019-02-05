@@ -277,4 +277,9 @@ void WarpLoadSave::Save()
     Write(gLowerLink, sizeof(gLowerLink));
 }
 
-static WarpLoadSave myLoadSave;
+static WarpLoadSave *myLoadSave;
+
+void WarpLoadSaveConstruct(void)
+{
+    myLoadSave = new WarpLoadSave();
+}

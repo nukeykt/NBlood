@@ -537,4 +537,9 @@ void SeqLoadSave::Save(void)
     Write(&activeCount, sizeof(activeCount));
 }
 
-static SeqLoadSave myLoadSave;
+static SeqLoadSave *myLoadSave;
+
+void SeqLoadSaveConstruct(void)
+{
+    myLoadSave = new SeqLoadSave();
+}

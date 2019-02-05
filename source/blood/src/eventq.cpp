@@ -419,4 +419,9 @@ void EventQLoadSave::Save()
     Write(bucketHead, sizeof(bucketHead));
 }
 
-static EventQLoadSave myLoadSave;
+static EventQLoadSave *myLoadSave;
+
+void EventQLoadSaveConstruct(void)
+{
+    myLoadSave = new EventQLoadSave();
+}

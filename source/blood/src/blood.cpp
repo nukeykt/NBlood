@@ -860,8 +860,6 @@ bool gRestartGame = false;
 void ProcessFrame(void)
 {
     char buffer[128];
-	if (gDemo.at0)
-		gDemo.Write(gFifoInput[gNetFifoTail&255]);
 	for (int i = connecthead; i >= 0; i = connectpoint2[i])
 	{
 		gPlayer[i].atc.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
@@ -919,6 +917,8 @@ void ProcessFrame(void)
 	{
 		if (gPaused || gEndGameMgr.at0 || (gGameOptions.nGameType == 0 && gGameMenuMgr.m_bActive))
 			return;
+        if (gDemo.at0)
+            gDemo.Write(gFifoInput[(gNetFifoTail-1)&255]);
 	}
 	for (int i = connecthead; i >= 0; i = connectpoint2[i])
 	{
@@ -1555,6 +1555,7 @@ int app_main(int argc, char const * const * argv)
     FireInit();
     initprintf("Initializing weapon animations\n");
     WeaponInit();
+    LoadSaveSetup();
     LoadSavedInfo();
     gDemo.LoadDemoInfo();
     sprintf(buffer, "There are %d demo(s) in the loop\n", gDemo.at59ef);

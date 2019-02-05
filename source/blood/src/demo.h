@@ -65,7 +65,6 @@ struct DEMOHEADER
     short nMyConnectIndex;
     short nConnectHead;
     short connectPoints[8];
-    GAMEOPTIONSLEGACY gameOptions;
 };
 
 #pragma pack(pop)
@@ -87,11 +86,13 @@ public:
     void ReadInput(int nCount);
     bool at0; // record
     bool at1; // playback
+    bool m_bLegacy;
     char at2;
     int at3;
     FILE *at7;
     int atb;
     DEMOHEADER atf;
+    GAMEOPTIONS m_gameOptions;
     GINPUT at1aa[kInputBufferSize];
     char at59aa[5][13];
     int at59eb;

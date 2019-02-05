@@ -763,4 +763,9 @@ void MessagesLoadSave::Save()
     Write(&CCheatMgr::m_bPlayerCheated, sizeof(CCheatMgr::m_bPlayerCheated));
 }
 
-static MessagesLoadSave myLoadSave;
+static MessagesLoadSave *myLoadSave;
+
+void MessagesLoadSaveConstruct(void)
+{
+    myLoadSave = new MessagesLoadSave();
+}

@@ -462,8 +462,8 @@ public:
     int nBitPos;
     int nSize;
     char *pBuffer;
-    BitWriter(char *_pBuffer, int _nSize, int _nBitPos) : pBuffer(_pBuffer), nBitPos(_nBitPos) { memset(pBuffer, 0, sizeof(nSize)); nSize -= nBitPos>>3; }
-    BitWriter(char *_pBuffer, int _nSize) : pBuffer(_pBuffer), nBitPos(0) { memset(pBuffer, 0, sizeof(nSize)); }
+    BitWriter(char *_pBuffer, int _nSize, int _nBitPos) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(_nBitPos) { memset(pBuffer, 0, nSize); nSize -= nBitPos>>3; }
+    BitWriter(char *_pBuffer, int _nSize) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(0) { memset(pBuffer, 0, nSize); }
     void writeBit(int bit)
     {
         if (nSize <= 0)

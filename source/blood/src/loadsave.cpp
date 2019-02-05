@@ -45,9 +45,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "view.h"
 
-// NUKE-TODO:
-#pragma init_seg(lib)
-
 GAMEOPTIONS gSaveGameOptions[10];
 char *gSaveGamePic[10];
 unsigned int gSavedOffset = 0;
@@ -190,17 +187,12 @@ void MyLoadSave::Load(void)
     psky_t *pSky = tileSetupSky(0);
     int id;
     Read(&id, sizeof(id));
-    if (id != 'DULB')
+    if (id != 'VSBN')
         ThrowError("Old saved game found");
     short version;
     Read(&version, sizeof(version));
-    if (version != BloodVersion)
+    if (version != BYTEVERSION)
         ThrowError("Incompatible version of saved game found!");
-    int release;
-    Read(&release, sizeof(release));
-    id = 4;
-    if (release != id)
-        ThrowError("Saved game is from another release of Blood");
     Read(&gGameOptions, sizeof(gGameOptions));
     Read(&numsectors, sizeof(numsectors));
     Read(&numwalls, sizeof(numwalls));
@@ -244,6 +236,7 @@ void MyLoadSave::Load(void)
     int nGameClock;
     Read(&nGameClock, sizeof(nGameClock));
     gGameClock = nGameClock;
+    Read(&gLevelTime, sizeof(gLevelTime));
     Read(&gPaused, sizeof(gPaused));
     Read(&gbAdultContent, sizeof(gbAdultContent));
     Read(baseWall, sizeof(baseWall[0])*numwalls);
@@ -298,12 +291,10 @@ void MyLoadSave::Save(void)
 {
     psky_t *pSky = tileSetupSky(0);
     int nNumSprites = 0;
-    int id = 'DULB';
+    int id = 'VSBN';
     Write(&id, sizeof(id));
-    short version = BloodVersion;
+    short version = BYTEVERSION;
     Write(&version, sizeof(version));
-    int release = 4;
-    Write(&release, sizeof(release));
     for (int nSprite = 0; nSprite < kMaxSprites; nSprite++)
     {
         if (sprite[nSprite].statnum < kMaxStatus && nSprite > nNumSprites)
@@ -348,6 +339,7 @@ void MyLoadSave::Save(void)
     Write(&gFrame, sizeof(gFrame));
     int nGameClock = gGameClock;
     Write(&nGameClock, sizeof(nGameClock));
+    Write(&gLevelTime, sizeof(gLevelTime));
     Write(&gPaused, sizeof(gPaused));
     Write(&gbAdultContent, sizeof(gbAdultContent));
     Write(baseWall, sizeof(baseWall[0])*numwalls);
@@ -412,7 +404,6 @@ void LoadSavedInfo(void)
             int vc, v8;
             short v4;
             vc = 0;
-            v8 = 0;
             v4 = word_27AA54;
             if (fread(&vc, 1, sizeof(vc), pFile) != sizeof(vc))
             {
@@ -420,22 +411,14 @@ void LoadSavedInfo(void)
                 nCount++;
                 continue;
             }
-            if (vc != 'DULB')
+            if (vc != 'VSBN')
             {
                 fclose(pFile);
                 nCount++;
                 continue;
             }
             fread(&v4, 1, sizeof(v4), pFile);
-            if (v4 != BloodVersion)
-            {
-                fclose(pFile);
-                nCount++;
-                continue;
-            }
-            fread(&v8, 1, sizeof(v8), pFile);
-            vc = 4;
-            if (v8 != vc)
+            if (v4 != BYTEVERSION)
             {
                 fclose(pFile);
                 nCount++;
@@ -449,60 +432,6 @@ void LoadSavedInfo(void)
         }
         Bclosedir(dirr);
     }
-    // PORT-TODO:
-#if 0
-    struct find_t find;
-    int nStatus = _dos_findfirst("GAME*.SAV", 0, &find);
-    int nCount = 0;
-    while (!nStatus && nCount < 10)
-    {
-        int hFile = open(find.name, 0x200);
-        if (hFile == -1)
-            ThrowError("File error #%d loading save file header.", errno);
-        int vc, v8;
-        short v4;
-        vc = 0;
-        v8 = 0;
-        v4 = word_27AA54;
-        if (read(hFile, &vc, sizeof(vd)) == -1)
-        {
-            close(hFile);
-            nCount++;
-            nStatus = _dos_findnext(&find);
-            continue;
-        }
-        if (vc != 'DULB')
-        {
-            close(hFile);
-            nCount++;
-            nStatus = _dos_findnext(&find);
-            continue;
-        }
-        read(hFile, &v4, sizeof(v4));
-        if (v4 != BloodVersion)
-        {
-            close(hFile);
-            nCount++;
-            nStatus = _dos_findnext(&find);
-            continue;
-        }
-        read(hFile, &v8, sizeof(v8));
-        vc = 4;
-        if (v8 != vc)
-        {
-            close(hFile);
-            nCount++;
-            nStatus = _dos_findnext(&find);
-            continue;
-        }
-        if (read(hFile, &gSaveGameOptions[nCount], sizeof(gSaveGameOptions[0])) == -1)
-            ThrowError("File error #%d reading save file.", errno);
-        strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
-        close(hFile);
-        nCount++;
-        nStatus = _dos_findnext(&find);
-    }
-#endif
 }
 
 void UpdateSavedInfo(int nSlot)
@@ -510,4 +439,38 @@ void UpdateSavedInfo(int nSlot)
     strcpy(strRestoreGameStrings[gSaveGameOptions[nSlot].nSaveGameSlot], gSaveGameOptions[nSlot].szUserGameName);
 }
 
-static MyLoadSave myLoadSave;
+static MyLoadSave *myLoadSave;
+
+
+void LoadSaveSetup(void)
+{
+    void ActorLoadSaveConstruct(void);
+    void AILoadSaveConstruct(void);
+    void EndGameLoadSaveConstruct(void);
+    void EventQLoadSaveConstruct(void);
+    void LevelsLoadSaveConstruct(void);
+    void MessagesLoadSaveConstruct(void);
+    void MirrorLoadSaveConstruct(void);
+    void PlayerLoadSaveConstruct(void);
+    void SeqLoadSaveConstruct(void);
+    void TriggersLoadSaveConstruct(void);
+    void ViewLoadSaveConstruct(void);
+    void WarpLoadSaveConstruct(void);
+    void WeaponLoadSaveConstruct(void);
+
+    myLoadSave = new MyLoadSave();
+
+    ActorLoadSaveConstruct();
+    AILoadSaveConstruct();
+    EndGameLoadSaveConstruct();
+    EventQLoadSaveConstruct();
+    LevelsLoadSaveConstruct();
+    MessagesLoadSaveConstruct();
+    MirrorLoadSaveConstruct();
+    PlayerLoadSaveConstruct();
+    SeqLoadSaveConstruct();
+    TriggersLoadSaveConstruct();
+    ViewLoadSaveConstruct();
+    WarpLoadSaveConstruct();
+    WeaponLoadSaveConstruct();
+}

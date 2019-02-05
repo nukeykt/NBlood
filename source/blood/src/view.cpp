@@ -3643,7 +3643,7 @@ public:
     void Save(void);
 };
 
-static ViewLoadSave myLoadSave;
+static ViewLoadSave *myLoadSave;
 
 static long messageTime;
 static char message[256];
@@ -3670,4 +3670,9 @@ void ViewLoadSave::Save(void)
     Write(&deliriumTilt, sizeof(deliriumTilt));
     Write(&deliriumTurn, sizeof(deliriumTurn));
     Write(&deliriumPitch, sizeof(deliriumPitch));
+}
+
+void ViewLoadSaveConstruct(void)
+{
+    myLoadSave = new ViewLoadSave();
 }

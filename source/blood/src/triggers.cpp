@@ -2256,4 +2256,9 @@ void TriggersLoadSave::Save()
     Write(basePath, sizeof(basePath));
 }
 
-static TriggersLoadSave myLoadSave;
+static TriggersLoadSave *myLoadSave;
+
+void TriggersLoadSaveConstruct(void)
+{
+    myLoadSave = new TriggersLoadSave();
+}

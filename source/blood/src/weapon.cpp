@@ -2458,4 +2458,10 @@ void WeaponLoadSave::Save()
 {
 }
 
-static WeaponLoadSave myLoadSave;
+static WeaponLoadSave *myLoadSave;
+
+void WeaponLoadSaveConstruct(void)
+{
+    myLoadSave = new WeaponLoadSave();
+}
+

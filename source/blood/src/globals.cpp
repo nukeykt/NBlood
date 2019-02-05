@@ -49,7 +49,7 @@ const char *GetVersionString(void)
         gVersionString = gVersionStringBuf;
         if (!gVersionString)
             return NULL;
-        sprintf(gVersionString, "%d.%02d", BloodVersion >> 8, BloodVersion & 0xff);
+        sprintf(gVersionString, "%d.%02d", BYTEVERSION >> 8, BYTEVERSION & 0xff);
     }
     return gVersionString;
 }

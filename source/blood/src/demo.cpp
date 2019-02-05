@@ -89,6 +89,7 @@ CDemo::CDemo()
     at59eb = 0;
     at2 = 0;
     memset(&atf, 0, sizeof(atf));
+    m_bLegacy = false;
 }
 
 CDemo::~CDemo()
@@ -103,11 +104,11 @@ CDemo::~CDemo()
         fclose(at7);
         at7 = NULL;
     }
+    m_bLegacy = false;
 }
 
 bool CDemo::Create(const char *pzFile)
 {
-    ThrowError("Demo recording is broken :P");
     char buffer[13] = "";
     char vc = 0;
     if (at0 || at1)
@@ -145,16 +146,17 @@ void CDemo::Write(GINPUT *pPlayerInputs)
         return;
     if (atb == 0)
     {
-        atf.signature = '\x1aMED';
-        atf.nVersion = BloodVersion;
+        atf.signature = '\x1aMDE';
+        atf.nVersion = BYTEVERSION;
         atf.nBuild = nBuild;
         atf.nInputCount = 0;
         atf.nNetPlayers = gNetPlayers;
         atf.nMyConnectIndex = myconnectindex;
         atf.nConnectHead = connecthead;
         memcpy(atf.connectPoints, connectpoint2, sizeof(atf.connectPoints));
-        memcpy(&atf.gameOptions, &gGameOptions, sizeof(gGameOptions));
+        memcpy(&m_gameOptions, &gGameOptions, sizeof(gGameOptions));
         fwrite(&atf, sizeof(DEMOHEADER), 1, at7);
+        fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, at7);
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
@@ -174,6 +176,7 @@ void CDemo::Close(void)
         atf.nInputCount = atb;
         fseek(at7, 0, SEEK_SET);
         fwrite(&atf, sizeof(DEMOHEADER), 1, at7);
+        fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, at7);
     }
     if (at7 != NULL)
     {
@@ -201,12 +204,23 @@ bool CDemo::SetupPlayback(const char *pzFile)
             return false;
     }
     fread(&atf, sizeof(DEMOHEADER), 1, at7);
-    if (atf.signature != '\x1aMED')
+    if (atf.signature != '\x1aMED' && atf.signature != '\x1aMDE')
         return 0;
-    if (BloodVersion != atf.nVersion && BloodVersion == 0x10b && atf.nVersion != 0x10a)
-        return 0;
-    if (nBuild != atf.nBuild)
-        return 0;
+    m_bLegacy = atf.signature == '\x1aMED';
+    if (m_bLegacy)
+    {
+        GAMEOPTIONSLEGACY gameOptions;
+        if (BloodVersion != atf.nVersion)
+            return 0;
+        fread(&gameOptions, sizeof(GAMEOPTIONSLEGACY), 1, at7);
+        ReadGameOptionsLegacy(m_gameOptions, gameOptions);
+    }
+    else
+    {
+        if (BYTEVERSION != atf.nVersion)
+            return 0;
+        fread(&m_gameOptions, sizeof(GAMEOPTIONS), 1, at7);
+    }
     at0 = 0;
     at1 = 1;
     return 1;
@@ -278,9 +292,10 @@ _DEMOPLAYBACK:
                 connecthead = atf.nConnectHead;
                 for (int i = 0; i < 8; i++)
                     connectpoint2[i] = atf.connectPoints[i];
+                memset(gNetFifoHead, 0, sizeof(gNetFifoHead));
+                gNetFifoTail = 0;
                 //memcpy(connectpoint2, atf.connectPoints, sizeof(atf.connectPoints));
-                GAMEOPTIONSLEGACY gGameOptionsLegacy;
-                memcpy(&gGameOptionsLegacy, &atf.gameOptions, sizeof(GAMEOPTIONSLEGACY));
+                memcpy(&gGameOptions, &m_gameOptions, sizeof(GAMEOPTIONS));
                 gSkill = gGameOptions.nDifficulty;
                 for (int i = 0; i < 8; i++)
                     playerInit(i, 0);
@@ -293,6 +308,8 @@ _DEMOPLAYBACK:
             }
             ready2send = 0;
             OSD_DispatchQueued();
+            if (!gDemo.at1)
+                break;
             ProcessKeys();
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
             {
@@ -319,7 +336,8 @@ _DEMOPLAYBACK:
                     }
                     else
                     {
-                        fseek(at7, sizeof(DEMOHEADER), SEEK_SET);
+                        int const nOffset = sizeof(DEMOHEADER)+(m_bLegacy ? sizeof(GAMEOPTIONSLEGACY) : sizeof(GAMEOPTIONS));
+                        fseek(at7, nOffset, SEEK_SET);
                         v4 = 0;
                     }
                 }
@@ -366,7 +384,8 @@ void CDemo::LoadDemoInfo(void)
                 ThrowError("File error #%d loading demo file header.", errno);
             fread(&atf, 1, sizeof(atf), pFile);
             fclose(pFile);
-            if (atf.signature == '\x1aMED' && (atf.nVersion == BloodVersion || BloodVersion != 0x10b || atf.nVersion == 0x10a) && nBuild == atf.nBuild)
+            if ((atf.signature == '\x1aMED' && atf.nVersion == BloodVersion)
+                || (atf.signature == '\x1aMDE' && atf.nVersion == BYTEVERSION))
             {
                 strcpy(at59aa[at59ef], dirent->name);
                 at59ef++;
@@ -374,25 +393,6 @@ void CDemo::LoadDemoInfo(void)
         }
         Bclosedir(dirr);
     }
-    // PORT-TODO:
-#if 0
-    struct find_t find;
-    int status = _dos_findfirst("BLOOD*.DEM", &find);
-    while (!status && at59ef < 5)
-    {
-        int hFile2 = open(find.name, 0x200);
-        if (hFile2 == -1)
-            ThrowError("File error #%d loading demo file header.", errno);
-        read(hFile2, &atf, sizeof(atf));
-        close(hFile2);
-        if (atf.signature == '\x1aMED' && (atf.nVersion == BloodVersion || BloodVersion != 0x10b || atf.nVersion == 0x10a) && nBuild == atf.nBuild)
-        {
-            strcpy(at59aa[at59ef], find.name);
-            at59ef++;
-        }
-        status = _dos_findnext(&find);
-    }
-#endif
 }
 
 void CDemo::NextDemo(void)
@@ -403,11 +403,11 @@ void CDemo::NextDemo(void)
     SetupPlayback(NULL);
 }
 
-const int nInputSize = 22;
+const int nInputSize = 17;
+const int nInputSizeLegacy = 22;
 
 void CDemo::FlushInput(int nCount)
 {
-    // TODO: Fix q16turn & q16mlook
     char pBuffer[nInputSize*kInputBufferSize];
     BitWriter bitWriter(pBuffer, sizeof(pBuffer));
     for (int i = 0; i < nCount; i++)
@@ -419,17 +419,15 @@ void CDemo::FlushInput(int nCount)
         bitWriter.writeBit(pInput->syncFlags.weaponChange);
         bitWriter.writeBit(pInput->syncFlags.mlookChange);
         bitWriter.writeBit(pInput->syncFlags.run);
-        bitWriter.skipBits(26);
-        bitWriter.write(pInput->forward>>8, 8);
-        bitWriter.write(fix16_to_int(pInput->q16turn<<2), 16);
-        bitWriter.write(pInput->strafe>>8, 8);
+        bitWriter.write(pInput->forward, 16);
+        bitWriter.write(pInput->q16turn, 32);
+        bitWriter.write(pInput->strafe, 16);
         bitWriter.writeBit(pInput->buttonFlags.jump);
         bitWriter.writeBit(pInput->buttonFlags.crouch);
         bitWriter.writeBit(pInput->buttonFlags.shoot);
         bitWriter.writeBit(pInput->buttonFlags.shoot2);
         bitWriter.writeBit(pInput->buttonFlags.lookUp);
         bitWriter.writeBit(pInput->buttonFlags.lookDown);
-        bitWriter.skipBits(26);
         bitWriter.writeBit(pInput->keyFlags.action);
         bitWriter.writeBit(pInput->keyFlags.jab);
         bitWriter.writeBit(pInput->keyFlags.prevItem);
@@ -445,67 +443,117 @@ void CDemo::FlushInput(int nCount)
         bitWriter.writeBit(pInput->keyFlags.pause);
         bitWriter.writeBit(pInput->keyFlags.quit);
         bitWriter.writeBit(pInput->keyFlags.restart);
-        bitWriter.skipBits(17);
         bitWriter.writeBit(pInput->useFlags.useBeastVision);
         bitWriter.writeBit(pInput->useFlags.useCrystalBall);
         bitWriter.writeBit(pInput->useFlags.useJumpBoots);
         bitWriter.writeBit(pInput->useFlags.useMedKit);
-        bitWriter.skipBits(28);
         bitWriter.write(pInput->newWeapon, 8);
-        bitWriter.write(fix16_to_int(pInput->q16turn<<2), 8);
+        bitWriter.write(pInput->q16mlook, 32);
+        bitWriter.skipBits(1);
     }
     fwrite(pBuffer, 1, nInputSize*nCount, at7);
 }
 
 void CDemo::ReadInput(int nCount)
 {
-    char pBuffer[nInputSize*kInputBufferSize];
-    fread(pBuffer, 1, nInputSize*nCount, at7);
-    BitReader bitReader(pBuffer, sizeof(pBuffer));
-    memset(at1aa, 0, nCount*sizeof(GINPUT));
-    for (int i = 0; i < nCount; i++)
+    if (m_bLegacy)
     {
-        GINPUT *pInput = &at1aa[i];
-        pInput->syncFlags.buttonChange = bitReader.readBit();
-        pInput->syncFlags.keyChange = bitReader.readBit();
-        pInput->syncFlags.useChange = bitReader.readBit();
-        pInput->syncFlags.weaponChange = bitReader.readBit();
-        pInput->syncFlags.mlookChange = bitReader.readBit();
-        pInput->syncFlags.run = bitReader.readBit();
-        bitReader.skipBits(26);
-        pInput->forward = bitReader.readSigned(8)<<8;
-        pInput->q16turn = fix16_from_int(bitReader.readSigned(16)>>2);
-        pInput->strafe = bitReader.readSigned(8)<<8;
-        pInput->buttonFlags.jump = bitReader.readBit();
-        pInput->buttonFlags.crouch = bitReader.readBit();
-        pInput->buttonFlags.shoot = bitReader.readBit();
-        pInput->buttonFlags.shoot2 = bitReader.readBit();
-        pInput->buttonFlags.lookUp = bitReader.readBit();
-        pInput->buttonFlags.lookDown = bitReader.readBit();
-        bitReader.skipBits(26);
-        pInput->keyFlags.action = bitReader.readBit();
-        pInput->keyFlags.jab = bitReader.readBit();
-        pInput->keyFlags.prevItem = bitReader.readBit();
-        pInput->keyFlags.nextItem = bitReader.readBit();
-        pInput->keyFlags.useItem = bitReader.readBit();
-        pInput->keyFlags.prevWeapon = bitReader.readBit();
-        pInput->keyFlags.nextWeapon = bitReader.readBit();
-        pInput->keyFlags.holsterWeapon = bitReader.readBit();
-        pInput->keyFlags.lookCenter = bitReader.readBit();
-        pInput->keyFlags.lookLeft = bitReader.readBit();
-        pInput->keyFlags.lookRight = bitReader.readBit();
-        pInput->keyFlags.spin180 = bitReader.readBit();
-        pInput->keyFlags.pause = bitReader.readBit();
-        pInput->keyFlags.quit = bitReader.readBit();
-        pInput->keyFlags.restart = bitReader.readBit();
-        bitReader.skipBits(17);
-        pInput->useFlags.useBeastVision = bitReader.readBit();
-        pInput->useFlags.useCrystalBall = bitReader.readBit();
-        pInput->useFlags.useJumpBoots = bitReader.readBit();
-        pInput->useFlags.useMedKit = bitReader.readBit();
-        bitReader.skipBits(28);
-        pInput->newWeapon = bitReader.readUnsigned(8);
-        int mlook = bitReader.readSigned(8);
-        pInput->q16mlook = fix16_from_int(mlook / 4);
+        char pBuffer[nInputSizeLegacy*kInputBufferSize];
+        fread(pBuffer, 1, nInputSizeLegacy*nCount, at7);
+        BitReader bitReader(pBuffer, sizeof(pBuffer));
+        memset(at1aa, 0, nCount * sizeof(GINPUT));
+        for (int i = 0; i < nCount; i++)
+        {
+            GINPUT *pInput = &at1aa[i];
+            pInput->syncFlags.buttonChange = bitReader.readBit();
+            pInput->syncFlags.keyChange = bitReader.readBit();
+            pInput->syncFlags.useChange = bitReader.readBit();
+            pInput->syncFlags.weaponChange = bitReader.readBit();
+            pInput->syncFlags.mlookChange = bitReader.readBit();
+            pInput->syncFlags.run = bitReader.readBit();
+            bitReader.skipBits(26);
+            pInput->forward = bitReader.readSigned(8) << 8;
+            pInput->q16turn = fix16_from_int(bitReader.readSigned(16) >> 2);
+            pInput->strafe = bitReader.readSigned(8) << 8;
+            pInput->buttonFlags.jump = bitReader.readBit();
+            pInput->buttonFlags.crouch = bitReader.readBit();
+            pInput->buttonFlags.shoot = bitReader.readBit();
+            pInput->buttonFlags.shoot2 = bitReader.readBit();
+            pInput->buttonFlags.lookUp = bitReader.readBit();
+            pInput->buttonFlags.lookDown = bitReader.readBit();
+            bitReader.skipBits(26);
+            pInput->keyFlags.action = bitReader.readBit();
+            pInput->keyFlags.jab = bitReader.readBit();
+            pInput->keyFlags.prevItem = bitReader.readBit();
+            pInput->keyFlags.nextItem = bitReader.readBit();
+            pInput->keyFlags.useItem = bitReader.readBit();
+            pInput->keyFlags.prevWeapon = bitReader.readBit();
+            pInput->keyFlags.nextWeapon = bitReader.readBit();
+            pInput->keyFlags.holsterWeapon = bitReader.readBit();
+            pInput->keyFlags.lookCenter = bitReader.readBit();
+            pInput->keyFlags.lookLeft = bitReader.readBit();
+            pInput->keyFlags.lookRight = bitReader.readBit();
+            pInput->keyFlags.spin180 = bitReader.readBit();
+            pInput->keyFlags.pause = bitReader.readBit();
+            pInput->keyFlags.quit = bitReader.readBit();
+            pInput->keyFlags.restart = bitReader.readBit();
+            bitReader.skipBits(17);
+            pInput->useFlags.useBeastVision = bitReader.readBit();
+            pInput->useFlags.useCrystalBall = bitReader.readBit();
+            pInput->useFlags.useJumpBoots = bitReader.readBit();
+            pInput->useFlags.useMedKit = bitReader.readBit();
+            bitReader.skipBits(28);
+            pInput->newWeapon = bitReader.readUnsigned(8);
+            int mlook = bitReader.readSigned(8);
+            pInput->q16mlook = fix16_from_int(mlook / 4);
+        }
+    }
+    else
+    {
+        char pBuffer[nInputSize*kInputBufferSize];
+        fread(pBuffer, 1, nInputSize*nCount, at7);
+        BitReader bitReader(pBuffer, sizeof(pBuffer));
+        memset(at1aa, 0, nCount * sizeof(GINPUT));
+        for (int i = 0; i < nCount; i++)
+        {
+            GINPUT *pInput = &at1aa[i];
+            pInput->syncFlags.buttonChange = bitReader.readBit();
+            pInput->syncFlags.keyChange = bitReader.readBit();
+            pInput->syncFlags.useChange = bitReader.readBit();
+            pInput->syncFlags.weaponChange = bitReader.readBit();
+            pInput->syncFlags.mlookChange = bitReader.readBit();
+            pInput->syncFlags.run = bitReader.readBit();
+            pInput->forward = bitReader.readSigned(16);
+            pInput->q16turn = bitReader.readSigned(32);
+            pInput->strafe = bitReader.readSigned(16);
+            pInput->buttonFlags.jump = bitReader.readBit();
+            pInput->buttonFlags.crouch = bitReader.readBit();
+            pInput->buttonFlags.shoot = bitReader.readBit();
+            pInput->buttonFlags.shoot2 = bitReader.readBit();
+            pInput->buttonFlags.lookUp = bitReader.readBit();
+            pInput->buttonFlags.lookDown = bitReader.readBit();
+            pInput->keyFlags.action = bitReader.readBit();
+            pInput->keyFlags.jab = bitReader.readBit();
+            pInput->keyFlags.prevItem = bitReader.readBit();
+            pInput->keyFlags.nextItem = bitReader.readBit();
+            pInput->keyFlags.useItem = bitReader.readBit();
+            pInput->keyFlags.prevWeapon = bitReader.readBit();
+            pInput->keyFlags.nextWeapon = bitReader.readBit();
+            pInput->keyFlags.holsterWeapon = bitReader.readBit();
+            pInput->keyFlags.lookCenter = bitReader.readBit();
+            pInput->keyFlags.lookLeft = bitReader.readBit();
+            pInput->keyFlags.lookRight = bitReader.readBit();
+            pInput->keyFlags.spin180 = bitReader.readBit();
+            pInput->keyFlags.pause = bitReader.readBit();
+            pInput->keyFlags.quit = bitReader.readBit();
+            pInput->keyFlags.restart = bitReader.readBit();
+            pInput->useFlags.useBeastVision = bitReader.readBit();
+            pInput->useFlags.useCrystalBall = bitReader.readBit();
+            pInput->useFlags.useJumpBoots = bitReader.readBit();
+            pInput->useFlags.useMedKit = bitReader.readBit();
+            pInput->newWeapon = bitReader.readUnsigned(8);
+            pInput->q16mlook = bitReader.readSigned(32);
+            bitReader.skipBits(1);
+        }
     }
 }

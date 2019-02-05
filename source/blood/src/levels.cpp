@@ -403,7 +403,7 @@ class LevelsLoadSave : public LoadSave
 };
 
 
-static LevelsLoadSave myLoadSave;
+static LevelsLoadSave *myLoadSave;
 
 void LevelsLoadSave::Load(void)
 {
@@ -418,3 +418,9 @@ void LevelsLoadSave::Save(void)
     Write(&gGameOptions, sizeof(gGameOptions));
     Write(&gGameStarted, sizeof(gGameStarted));
 }
+
+void LevelsLoadSaveConstruct(void)
+{
+    myLoadSave = new LevelsLoadSave();
+}
+
