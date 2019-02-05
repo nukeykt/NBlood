@@ -579,6 +579,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	wsrand(gameOptions->uMapCRC);
 	gKillMgr.Clear();
 	gSecretMgr.Clear();
+    gLevelTime = 0;
 	automapping = 1;
 	for (int i = 0; i < kMaxSprites; i++)
 	{
@@ -947,6 +948,7 @@ void ProcessFrame(void)
             gChokeCounter -= TICRATE;
         }
     }
+    gLevelTime++;
 	gFrame++;
 	gFrameClock += 4;
 	if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)

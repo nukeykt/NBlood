@@ -118,6 +118,7 @@ bool gFullMap;
 bool gMouseAim;
 int32_t gUpscaleFactor;
 int32_t gBrightness;
+int32_t gLevelStats;
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
@@ -341,7 +342,7 @@ void CONFIG_SetDefaults(void)
     //ud.drawweapon             = 1;
     //ud.hudontop               = 0;
     //ud.idplayers              = 1;
-    //ud.levelstats             = 0;
+    gLevelStats = 0;
     //ud.lockout                = 0;
     //ud.m_marker               = 1;
     //ud.maxautosaves           = 5;

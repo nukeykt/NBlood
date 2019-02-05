@@ -102,6 +102,7 @@ extern char BloodIniFile[];
 extern int gEpisodeCount;
 extern int gNextLevel;
 extern bool gGameStarted;
+extern int gLevelTime;
 
 void sub_26988(void);
 void sub_269D8(const char *pzIni);

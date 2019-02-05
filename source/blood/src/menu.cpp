@@ -377,6 +377,7 @@ const char *pzWeaponSwitchStrings[] = {
 };
 
 void SetAutoAim(CGameMenuItemZCycle *);
+void SetLevelStats(CGameMenuItemZBool *);
 void SetWeaponSwitch(CGameMenuItemZCycle *pItem);
 
 CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
@@ -391,10 +392,11 @@ CGameMenuItemChain itemOptionsGameChainParentalLock("PARENTAL LOCK", 3, 0, 120, 
 CGameMenuItemTitle itemOptionsDisplayTitle("DISPLAY SETUP", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0, &menuOptionsDisplayColor, -1, NULL, 0);
 CGameMenuItemChain itemOptionsDisplayMode("VIDEO MODE", 3, 66, 70, 180, 0, &menuOptionsDisplayMode, -1, SetupVideoModeMenu, 0);
-CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, &gAimReticle, SetCrosshair, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 90, 180, &gMessageState, SetMessages, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 100, 180, &r_usenewaspect, SetWidescreen, NULL, NULL);
-CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 110, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
+CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, gAimReticle, SetCrosshair, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 90, 180, gLevelStats, SetLevelStats, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 100, 180, gMessageState, SetMessages, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 110, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
+CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 120, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
 
 const char *pzRendererStrings[] = {
     "CLASSIC",
@@ -1092,12 +1094,15 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemOptionsDisplayColor, true);
     menuOptionsDisplay.Add(&itemOptionsDisplayMode, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolCrosshair, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayBoolLevelStats, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolWidescreen, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayPolymost, false);
     menuOptionsDisplay.Add(&itemBloodQAV, false);
-    //itemOptionsDisplayBoolCrosshair.at20 = gAimReticle;
-    //itemOptionsDisplayBoolMessages.at20 = gMessageState;
+    itemOptionsDisplayBoolCrosshair.at20 = gAimReticle;
+    itemOptionsDisplayBoolLevelStats.at20 = gLevelStats;
+    itemOptionsDisplayBoolMessages.at20 = gMessageState;
+    itemOptionsDisplayBoolWidescreen.at20 = r_usenewaspect;
 
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeTitle, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeResolution, true);
@@ -1403,6 +1408,11 @@ void SetAutoAim(CGameMenuItemZCycle *pItem)
         gProfile[myconnectindex].nAutoAim = gAutoAim;
         netBroadcastPlayerInfo(myconnectindex);
     }
+}
+
+void SetLevelStats(CGameMenuItemZBool *pItem)
+{
+    gLevelStats = pItem->at20;
 }
 
 void SetWeaponSwitch(CGameMenuItemZCycle *pItem)

@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "choke.h"
 #include "config.h"
 #include "db.h"
+#include "endgame.h"
 #include "gamemenu.h"
 #include "gameutil.h"
 #include "globals.h"
@@ -1102,6 +1103,32 @@ WEAPONICON gWeaponIcon[] = {
 
 int dword_14C508;
 
+void viewDrawStats(PLAYER *pPlayer, int x, int y)
+{
+    const int nFont = 3;
+    char buffer[128];
+    if (!gLevelStats)
+        return;
+
+    int nHeight;
+    viewGetFontInfo(nFont, NULL, NULL, &nHeight);
+    sprintf(buffer, "T:%d:%02d.%02d",
+        (gLevelTime/(kTicsPerSec*60)),
+        (gLevelTime/kTicsPerSec)%60,
+        ((gLevelTime%kTicsPerSec)*33)/10
+        );
+    viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
+    y += nHeight+1;
+    if (gGameOptions.nGameType == 0 || gGameOptions.nGameType == 2)
+        sprintf(buffer, "K:%d/%d", gKillMgr.at4, gKillMgr.at0);
+    else
+        sprintf(buffer, "K:%d", pPlayer->at2c6);
+    viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
+    y += nHeight+1;
+    sprintf(buffer, "S:%d/%d", gSecretMgr.at4+gSecretMgr.at8, gSecretMgr.at0);
+    viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
+}
+
 void viewDrawPack(PLAYER *pPlayer, int x, int y)
 {
     int packs[5];
@@ -1221,13 +1248,14 @@ void UpdateStatusBar(int arg)
         for (int i = 0; i < 6; i++)
         {
             if (pPlayer->at88[i+1])
-                DrawStatMaskedSprite(2552+i, 10+10*i, 170, 0, 0, 256, (int)(65536*0.25));
+                DrawStatMaskedSprite(2552+i, 260+10*i, 170, 0, 0, 512, (int)(65536*0.25));
         }
 
         if (pPlayer->at1ba)
             TileHGauge(2260, 124, 175-10, pPlayer->at1ba, 65536);
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2-30);
+        viewDrawStats(pPlayer, 2, 140);
     }
     else if (gViewSize <= 2)
     {
@@ -1290,6 +1318,7 @@ void UpdateStatusBar(int arg)
                 DrawStatSprite(nTile, x, y, 40, 5, nStat);
 #endif
         }
+        viewDrawStats(pPlayer, 2, 140);
     }
     else if (gViewSize > 2)
     {
@@ -1376,6 +1405,7 @@ void UpdateStatusBar(int arg)
         {
             TileHGauge(2260, 124, 175, pPlayer->at1ba, 65536);
         }
+        viewDrawStats(pPlayer, 2, 140);
     }
     if (gGameOptions.nGameType < 1) return;
 

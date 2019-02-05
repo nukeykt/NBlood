@@ -55,6 +55,8 @@ int gEpisodeCount;
 int gNextLevel;
 bool gGameStarted;
 
+int gLevelTime;
+
 char BloodIniFile[128] = "BLOOD.INI";
 IniFile *BloodINI;
 

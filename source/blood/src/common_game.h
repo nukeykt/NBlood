@@ -63,6 +63,8 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 #define kMaxVoxels MAXVOXELS
 
 #define kTicRate 120
+#define kTicsPerFrame 4
+#define kTicsPerSec (kTicRate/kTicsPerFrame)
 
 // NUKE-TODO:
 #define OSDTEXT_DEFAULT   "^00"

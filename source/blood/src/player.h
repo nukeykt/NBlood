@@ -148,6 +148,7 @@ struct PLAYER {
     int at37f; // quake2
     fix16_t q16ang;
     int angold;
+    int player_par;
 };
 
 struct POSTURE {
