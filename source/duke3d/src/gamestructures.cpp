@@ -393,8 +393,14 @@ const memberlabel_t PlayerLabels[]=
     { "posy",                  PLAYER_POSY,                  0, 0, -1 },
     { "posz",                  PLAYER_POSZ,                  0, 0, -1 },
     { "horiz",                 PLAYER_HORIZ,                 0, 0, -1 },
+    { "horizoff",              PLAYER_HORIZOFF,              0, 0, -1 },
     { "ohoriz",                PLAYER_OHORIZ,                0, 0, -1 },
     { "ohorizoff",             PLAYER_OHORIZOFF,             0, 0, -1 },
+    { "q16horiz",              PLAYER_Q16HORIZ,              0, 0, -1 },
+    { "q16horizoff",           PLAYER_Q16HORIZOFF,           0, 0, -1 },
+    { "oq16horiz",             PLAYER_OQ16HORIZ,             0, 0, -1 },
+    { "oq16horizoff",          PLAYER_OQ16HORIZOFF,          0, 0, -1 },
+
     { "invdisptime",           PLAYER_INVDISPTIME,           0, 0, -1 },
     { "bobposx",               PLAYER_BOBPOSX,               0, 0, -1 },
     { "bobposy",               PLAYER_BOBPOSY,               0, 0, -1 },
@@ -418,7 +424,10 @@ const memberlabel_t PlayerLabels[]=
     { "aim_mode",              PLAYER_AIM_MODE,              0, 0, -1 },
     { "ang",                   PLAYER_ANG,                   0, 0, -1 },
     { "oang",                  PLAYER_OANG,                  0, 0, -1 },
+    { "q16ang",                PLAYER_Q16ANG,                0, 0, -1 },
+    { "oq16ang",               PLAYER_OQ16ANG,               0, 0, -1 },
     { "angvel",                PLAYER_ANGVEL,                0, 0, -1 },
+    { "q16angvel",             PLAYER_Q16ANGVEL,             0, 0, -1 },
     { "cursectnum",            PLAYER_CURSECTNUM,            0, 0, -1 },
     { "look_ang",              PLAYER_LOOK_ANG,              0, 0, -1 },
     { "last_extra",            PLAYER_LAST_EXTRA,            0, 0, -1 },
@@ -430,7 +439,6 @@ const memberlabel_t PlayerLabels[]=
     { "curr_weapon",           PLAYER_CURR_WEAPON,           0, 0, -1 },
     { "last_weapon",           PLAYER_LAST_WEAPON,           0, 0, -1 },
     { "tipincs",               PLAYER_TIPINCS,               0, 0, -1 },
-    { "horizoff",              PLAYER_HORIZOFF,              0, 0, -1 },
     { "wantweaponfire",        PLAYER_WANTWEAPONFIRE,        0, 0, -1 },
     { "holoduke_amount",       PLAYER_HOLODUKE_AMOUNT,       0, 0, -1 },
     { "newowner",              PLAYER_NEWOWNER,              0, 0, -1 },
@@ -556,6 +564,14 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_OHORIZ:    labelNum = fix16_to_int(ps.oq16horiz);    break;
         case PLAYER_HORIZOFF:  labelNum = fix16_to_int(ps.q16horizoff);  break;
         case PLAYER_OHORIZOFF: labelNum = fix16_to_int(ps.oq16horizoff); break;
+
+        case PLAYER_Q16ANG:       labelNum = ps.q16ang;       break;
+        case PLAYER_OQ16ANG:      labelNum = ps.oq16ang;      break;
+        case PLAYER_Q16ANGVEL:    labelNum = ps.q16angvel;    break;
+        case PLAYER_Q16HORIZ:     labelNum = ps.q16horiz;     break;
+        case PLAYER_OQ16HORIZ:    labelNum = ps.oq16horiz;    break;
+        case PLAYER_Q16HORIZOFF:  labelNum = ps.q16horizoff;  break;
+        case PLAYER_OQ16HORIZOFF: labelNum = ps.oq16horizoff; break;
 
         case PLAYER_ACCESS_INCS:        labelNum = ps.access_incs;        break;
         case PLAYER_ACCESS_SPRITENUM:   labelNum = ps.access_spritenum;   break;
@@ -739,6 +755,14 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
         case PLAYER_OANG:      ps.oq16ang      = fix16_from_int(newValue); break;
         case PLAYER_ANGVEL:    ps.q16angvel    = fix16_from_int(newValue); break;
         case PLAYER_HORIZOFF:  ps.q16horizoff  = fix16_from_int(newValue); break;
+
+        case PLAYER_Q16HORIZ:     ps.q16horiz     = newValue; break;
+        case PLAYER_OQ16HORIZ:    ps.oq16horiz    = newValue; break;
+        case PLAYER_OQ16HORIZOFF: ps.oq16horizoff = newValue; break;
+        case PLAYER_Q16ANG:       ps.q16ang       = newValue; break;
+        case PLAYER_OQ16ANG:      ps.oq16ang      = newValue; break;
+        case PLAYER_Q16ANGVEL:    ps.q16angvel    = newValue; break;
+        case PLAYER_Q16HORIZOFF:  ps.q16horizoff  = newValue; break;
 
         case PLAYER_ACCESS_INCS:        ps.access_incs        = newValue; break;
         case PLAYER_ACCESS_SPRITENUM:   ps.access_spritenum   = newValue; break;
@@ -1320,6 +1344,8 @@ const memberlabel_t UserdefsLabels[]=
     { "return",                 USERDEFS_RETURN,                 LABEL_HASPARM2, MAX_RETURN_VALUES, -1 },
     { "userbyteversion",        USERDEFS_USERBYTEVERSION,        0, 0, -1 },
     { "autosave",               USERDEFS_AUTOSAVE,               0, 0, -1 },
+    { "draw_y",                 USERDEFS_DRAW_Y,                 0, 0, -1 },
+    { "draw_yxaspect",          USERDEFS_DRAW_YXASPECT,          0, 0, -1 },
 };
 
 int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
@@ -1507,6 +1533,8 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
             break;
         case USERDEFS_USERBYTEVERSION:        labelNum = ud.userbytever;                  break;
         case USERDEFS_AUTOSAVE:               labelNum = ud.autosave;                     break;
+        case USERDEFS_DRAW_Y:                 labelNum = rotatesprite_y_offset;           break;
+        case USERDEFS_DRAW_YXASPECT:          labelNum = rotatesprite_yxaspect;           break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -1706,6 +1734,8 @@ void __fastcall VM_SetUserdef(int const labelNum, int const lParm2, int32_t cons
             break;
         case USERDEFS_USERBYTEVERSION:              ud.userbytever                   = iSet; break;
         case USERDEFS_AUTOSAVE:                     ud.autosave                      = iSet; break;
+        case USERDEFS_DRAW_Y:                       rotatesprite_y_offset            = iSet; break;
+        case USERDEFS_DRAW_YXASPECT:                rotatesprite_yxaspect            = iSet; break;
     }
 }
 

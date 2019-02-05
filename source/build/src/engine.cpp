@@ -6401,6 +6401,8 @@ void dorotspr_handle_bit2(int32_t *sxptr, int32_t *syptr, int32_t *z, int32_t da
         int32_t zoomsc, sx=*sxptr, sy=*syptr;
         int32_t ouryxaspect = yxaspect, ourxyaspect = xyaspect;
 
+        sy += rotatesprite_y_offset;
+
         // screen center to s[xy], 320<<16 coords.
         const int32_t normxofs = sx-(320<<15), normyofs = sy-(200<<15);
 
@@ -6414,6 +6416,9 @@ void dorotspr_handle_bit2(int32_t *sxptr, int32_t *syptr, int32_t *z, int32_t da
             ouryxaspect = (12<<16)/10;
             ourxyaspect = (10<<16)/12;
         }
+
+        ouryxaspect = mulscale16(ouryxaspect, rotatesprite_yxaspect);
+        ourxyaspect = divscale16(ourxyaspect, rotatesprite_yxaspect);
 
         // nasty hacks go here
         if (!(dastat & RS_NOCLIP))
@@ -6436,6 +6441,7 @@ void dorotspr_handle_bit2(int32_t *sxptr, int32_t *syptr, int32_t *z, int32_t da
             sx = ((twice_midcx+xbord)<<15) + scaledxofs;
 
             zoomsc = xdimenscale;   //= scale(xdimen,yxaspect,320);
+            zoomsc = mulscale16(zoomsc, rotatesprite_yxaspect);
 
             if ((dastat & RS_ALIGN_MASK) == RS_ALIGN_MASK)
                 zoomsc = scale(zoomsc, ydim, oydim);
@@ -7730,6 +7736,9 @@ int32_t engineInit(void)
 
     xyaspect = -1;
 
+    rotatesprite_y_offset = 0;
+    rotatesprite_yxaspect = 65536;
+
     showinvisibility = 0;
 
     for (i=1; i<1024; i++)
@@ -8041,7 +8050,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
                     tileSetSize(tile.newtile, siz.x, siz.y);
 
                     tileLoad(tile.newtile);
-                    Bassert(waloff[tile.newtile]);
+                    // Bassert(waloff[tile.newtile]);
                 }
             }
         }
