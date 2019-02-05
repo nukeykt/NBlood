@@ -92,8 +92,8 @@ static void sub_6FFA0(int, int nXSprite)
     SPRITE *pTarget = &qsprite[pXSprite->target];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int x = pTarget->x;
-    int y = pTarget->y;
+    int x = pTarget->x-pSprite->x;
+    int y = pTarget->y-pSprite->y;
     int dz = pTarget->z-pSprite->z;
     x += Random2(1000);
     y += Random2(1000);
@@ -104,7 +104,7 @@ static void sub_6FFA0(int, int nXSprite)
     {
     case 221:
         dz += 8000;
-        if (pDudeInfo->at17*0.1 > nDist)
+        if (pDudeInfo->at17*0.1 < nDist)
         {
             if (Chance(0x8000))
                 sfxPlay3DSound(pSprite, 2474, -1, 0);
@@ -117,7 +117,7 @@ static void sub_6FFA0(int, int nXSprite)
         break;
     case 223:
         dz += 8000;
-        if (pDudeInfo->at17*0.1 > nDist)
+        if (pDudeInfo->at17*0.1 < nDist)
         {
             sfxPlay3DSound(pSprite, 2454, -1, 0);
             pMissile = actFireThing(pSprite, 0, -8000, dz/128-14500, 429, (nDist2<<23)/120);
