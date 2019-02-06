@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #include <stdlib.h>
 #include <string.h>
+#include "compat.h"
 #include "getopt.h"
 
 int margc;
@@ -58,7 +59,7 @@ int GetOptions(SWITCH *switches)
         if (!switches[i].name)
             return -3;
         int nLength = strlen(switches[i].name);
-        if (!strnicmp(pChar, switches[i].name, nLength))
+        if (!Bstrncasecmp(pChar, switches[i].name, nLength))
         {
             pChar += nLength;
             break;

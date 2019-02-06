@@ -355,8 +355,8 @@ void Resource::AddExternalResource(const char *name, const char *type, int id)
     kclose(fhandle);
     strcpy(name2, name);
     strcpy(type2, type);
-    strupr(name2);
-    strupr(type2);
+    Bstrupr(name2);
+    Bstrupr(type2);
     dassert(dict != NULL);
     DICTNODE **index = Probe(name2, type2);
     dassert(index != NULL);
@@ -460,8 +460,8 @@ DICTNODE *Resource::Lookup(const char *name, const char *type)
     AddExternalResource(name, type);
     strcpy(name2, name);
     strcpy(type2, type);
-    strupr(type2);
-    strupr(name2);
+    Bstrupr(type2);
+    Bstrupr(name2);
     return *Probe(name2, type2);
 }
 
@@ -471,7 +471,7 @@ DICTNODE *Resource::Lookup(unsigned long id, const char *type)
     dassert(type != NULL);
     //if (strlen(type) > 3) return NULL;
     strcpy(type2, type);
-    strupr(type2);
+    Bstrupr(type2);
     return *Probe(id, type2);
 }
 

@@ -1130,7 +1130,7 @@ void CGameMenuItemKeyList::Draw(void)
     bool bClick = false;
     for (int i = 0; i < nRows; i++, y += height, k++)
     {
-        BYTE key1, key2;
+        char key1, key2;
         key1 = KeyboardKeys[k][0];
         key2 = KeyboardKeys[k][1];
         const char *sKey1 = key1 == sc_Tilde ? "Tilde" : KB_ScanCodeToString(key1);
@@ -1205,7 +1205,7 @@ bool CGameMenuItemKeyList::Event(CGameMenuEvent &event)
         {
             if (KB_KeyWaiting())
                 KB_GetCh();
-            BYTE key1, key2;
+            char key1, key2;
             extern uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
             key1 = KeyboardKeys[nFocus][0];
             key2 = KeyboardKeys[nFocus][1];

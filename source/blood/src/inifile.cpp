@@ -221,7 +221,7 @@ bool IniFile::FindSection(const char *section)
             curNode = curNode->next;
             if (curNode == &head)
                 return false;
-        } while(stricmp(curNode->name, buffer) != 0);
+        } while(Bstrcasecmp(curNode->name, buffer) != 0);
     }
     return true;
 }
@@ -374,7 +374,7 @@ void IniFile::PutKeyInt(const char *section, const char *key, int value)
     char buffer[256];
 
     // convert int to string
-    itoa(value, buffer, 10); // sprintf(buffer,"%d",value);
+    sprintf(buffer,"%d",value);
 
     PutKeyString(section, key, buffer);
 }
@@ -394,7 +394,7 @@ void IniFile::PutKeyHex(const char *section, const char *key, int value)
     char buffer[256] = "0x";
 
     // convert int to string
-    itoa(value, &buffer[2], 16); // sprintf(buffer,"%d",value);
+    sprintf(buffer,"%x",value);
 
     PutKeyString(section, key, buffer);
 }

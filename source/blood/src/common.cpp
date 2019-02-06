@@ -312,18 +312,6 @@ static void G_AddSteamPaths(const char *basepath)
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/Duke Nukem 3D.app/drive_c/Program Files/Duke Nukem 3D", basepath);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
 #endif
-
-    // NAM (Steam)
-#if defined EDUKE32_OSX
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Nam/Nam.app/Contents/Resources/Nam.boxer/C.harddisk/NAM", basepath);
-#else
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Nam/NAM", basepath);
-#endif
-    addsearchpath_user(buf, SEARCHPATH_NAM);
-
-    // WWII GI (Steam)
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/World War II GI/WW2GI", basepath);
-    addsearchpath_user(buf, SEARCHPATH_WW2GI);
 }
 
 // A bare-bones "parser" for Valve's KeyValues VDF format.

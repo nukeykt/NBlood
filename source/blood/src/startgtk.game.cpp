@@ -21,14 +21,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 
 #include "build.h"
-#include "cmdline.h"
 #include "common.h"
 #include "common_game.h"
 #include "compat.h"
-#include "duke3d.h"
 #include "dynamicgtk.h"
-#include "game.h"
-#include "grpscan.h"
+#include "blood.h"
 #include "gtkpixdata.h"
 
 enum
@@ -101,7 +98,6 @@ static struct
 
 static struct
 {
-    grpfile_t const * grp;
     char *gamedir;
     ud_setup_t shared;
     int polymer;
@@ -219,6 +215,10 @@ static void on_startbutton_clicked(GtkButton *button, gpointer user_data)
 
 static void on_gamelist_selection_changed(GtkTreeSelection *selection, gpointer user_data)
 {
+#if 1
+    UNREFERENCED_PARAMETER(selection);
+    UNREFERENCED_PARAMETER(user_data);
+#else
     GtkTreeIter iter;
     GtkTreeModel *model;
     UNREFERENCED_PARAMETER(user_data);
@@ -229,6 +229,7 @@ static void on_gamelist_selection_changed(GtkTreeSelection *selection, gpointer 
         gtk_tree_model_get(model, &iter, 2, (gpointer)&fg, -1);
         settings.grp = fg;
     }
+#endif
 }
 
 static gboolean on_startwin_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
@@ -275,7 +276,7 @@ static unsigned char GetModsDirNames(GtkListStore *list)
 
     if ((homedir = Bgethomedir()))
     {
-        Bsnprintf(pdir, sizeof(pdir), "%s/" ".eduke32", homedir);
+        Bsnprintf(pdir, sizeof(pdir), "%s/" ".blood", homedir);
         dirs = klistpath(pdir, "*", CACHE1D_FIND_DIR);
         for (; dirs != NULL; dirs=dirs->next)
         {
@@ -419,6 +420,7 @@ static void PopulateForm(unsigned char pgs)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.alwaysshowcheck), settings.shared.forcesetup);
     }
 
+#if 0
     if ((pgs == ALL) || (pgs == POPULATE_GAME))
     {
         GtkListStore *list;
@@ -442,6 +444,7 @@ static void PopulateForm(unsigned char pgs)
             }
         }
     }
+#endif
 }
 
 static gint name_sorter(GtkTreeModel *model, GtkTreeIter *a, GtkTreeIter *b, gpointer user_data)
@@ -858,9 +861,9 @@ int32_t startwin_run(void)
 
     SetPage(TAB_CONFIG);
 
-    settings.shared = ud.setup;
-    settings.gamedir = g_modDir;
-    settings.grp = g_selectedGrp;
+    settings.shared = gSetup;
+    settings.gamedir = UserPath;
+    //settings.grp = g_selectedGrp;
 #ifdef POLYMER
     settings.polymer = (glrendmode == REND_POLYMER);
 #else
@@ -873,11 +876,11 @@ int32_t startwin_run(void)
     SetPage(TAB_MESSAGES);
     if (retval) // launch the game with these parameters
     {
-        ud.setup = settings.shared;
+        gSetup = settings.shared;
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
-        g_selectedGrp = settings.grp;
+        //g_selectedGrp = settings.grp;
 
-        Bstrcpy(g_modDir, (g_noSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
+        Bstrcpy(UserPath, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return retval;

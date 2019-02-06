@@ -54,7 +54,7 @@ void sub_5A944(char key)
 {
     for (int i = 0; i < NUMGAMEFUNCTIONS-1; i++)
     {
-        BYTE key1, key2;
+        char key1, key2;
         key1 = KeyboardKeys[i][0];
         key2 = KeyboardKeys[i][1];
         if (key1 == key || key2 == key)
@@ -549,7 +549,7 @@ bool CCheatMgr::Check(char *pzString)
 {
     char buffer[80];
     strcpy(buffer, pzString);
-    strupr(buffer);
+    Bstrupr(buffer);
     for (size_t i = 0; i < strlen(pzString); i++)
         buffer[i]++;
     for (int i = 0; i < 36; i++)

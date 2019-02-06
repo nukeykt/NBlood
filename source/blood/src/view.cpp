@@ -1450,7 +1450,7 @@ void UpdateStatusBar(int arg)
             sprintf(gTempStr, "%s", name);
         else
             sprintf(gTempStr, "%s [%d]", name, gProfile[p].skill);
-        strupr(gTempStr);
+        Bstrupr(gTempStr);
         viewDrawText(4, gTempStr, x+4, y+1, -128, 11+col, 0, 0);
         sprintf(gTempStr, "%2d", gPlayer[p].at2c6);
         viewDrawText(4, gTempStr, x+76, y+1, -128, 11+col, 2, 0);
