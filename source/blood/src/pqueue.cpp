@@ -44,10 +44,10 @@ void PriorityQueue::Upheap(void)
 void PriorityQueue::Downheap(unsigned int n)
 {
     queueItem item = queueItems[n];
-    while ((unsigned int)(fNodeCount/2) >= n)
+    while (fNodeCount/2 >= n)
     {
         unsigned int t = n*2;
-        if (t < (unsigned int)fNodeCount && queueItems[t].at0 > queueItems[t+1].at0)
+        if (t < fNodeCount && queueItems[t].at0 > queueItems[t+1].at0)
             t++;
         if (item.at0 <= queueItems[t].at0)
             break;

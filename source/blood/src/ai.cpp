@@ -73,8 +73,7 @@ int dword_138BB0[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
 
 bool sub_5BDA8(SPRITE *pSprite, int nSeq)
 {
-    // ???
-    if (pSprite->statnum == 6 && (pSprite->type >= kDudeBase || pSprite->type < kDudeMax))
+    if (pSprite->statnum == 6 && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
         DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
         if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq && seqGetStatus(3, pSprite->extra) >= 0)
@@ -130,7 +129,7 @@ bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
     if (!FindSector(x, y, z, &nSector))
         return false;
     int floorZ = getflorzofslope(nSector, x, y);
-    int ceilZ = getceilzofslope(nSector, x, y);
+    int UNUSED(ceilZ) = getceilzofslope(nSector, x, y);
     int nXSector = sector[nSector].extra;
     char vbl = 0; // Underwater
     char vbh = 0; // Warp
@@ -219,7 +218,6 @@ bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
 void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3)
 {
     int nSprite = pSprite->index;
-    int nXSprite = pSprite->extra;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     int vc = ((a3+1024-pSprite->ang)&2047)-1024;
     int nCos = Cos(pSprite->ang);
@@ -227,7 +225,7 @@ void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3)
     int dx = xvel[nSprite];
     int dy = yvel[nSprite];
     int t1 = dmulscale30(dx, nCos, dy, nSin);
-    int t2 = dmulscale30(dx, nSin, -dy, nCos);
+    int UNUSED(t2) = dmulscale30(dx, nSin, -dy, nCos);
     int vsi = ((t1*15)>>12) / 2;
     int v8 = 341;
     if (vc < 0)
@@ -908,7 +906,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
                 else if (sub_5BDA8(pSprite, 13) && (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2))
                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
             }
-            else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23 && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2))
+            else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 240;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -920,7 +918,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
             }
             break;
         case 245:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23 && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2))
+            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 239;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -964,7 +962,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
             }
             break;
         case 250:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23 && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2))
+            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 239;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -1296,7 +1294,7 @@ void sub_5F15C(SPRITE *pSprite, XSPRITE *pXSprite)
                     DUDEINFO *pDudeInfo = &dudeInfo[pSprite2->type-kDudeBase];
                     if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
                         continue;
-                    int nAngle = getangle(dx,dy);
+                    int UNUSED(nAngle) = getangle(dx,dy);
                     aiSetTarget(pXSprite, pSprite2->index);
                     aiActivateDude(pSprite, pXSprite);
                     return;

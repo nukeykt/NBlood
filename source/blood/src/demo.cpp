@@ -146,7 +146,7 @@ void CDemo::Write(GINPUT *pPlayerInputs)
         return;
     if (atb == 0)
     {
-        atf.signature = '\x1aMDE';
+        atf.signature = 0x1a4d4445; // '\x1aMDE';
         atf.nVersion = BYTEVERSION;
         atf.nBuild = nBuild;
         atf.nInputCount = 0;
@@ -204,9 +204,10 @@ bool CDemo::SetupPlayback(const char *pzFile)
             return false;
     }
     fread(&atf, sizeof(DEMOHEADER), 1, at7);
-    if (atf.signature != '\x1aMED' && atf.signature != '\x1aMDE')
+    // if (atf.signature != '\x1aMED' && atf.signature != '\x1aMDE')
+    if (atf.signature != 0x1a4d4544 && atf.signature != 0x1a4d4445)
         return 0;
-    m_bLegacy = atf.signature == '\x1aMED';
+    m_bLegacy = atf.signature == 0x1a4d4544;
     if (m_bLegacy)
     {
         GAMEOPTIONSLEGACY gameOptions;
@@ -241,8 +242,8 @@ void CDemo::ProcessKeys(void)
         char nKey;
         while ((nKey = keyGetScan()) != 0)
         {
-	        char alt = keystatus[0x38] | keystatus[0xb8];
-	        char ctrl = keystatus[0x1d] | keystatus[0x9d];
+	        char UNUSED(alt) = keystatus[0x38] | keystatus[0xb8];
+	        char UNUSED(ctrl) = keystatus[0x1d] | keystatus[0x9d];
             switch (nKey)
             {
             case 1:
@@ -260,6 +261,8 @@ void CDemo::ProcessKeys(void)
                 break;
             }
         }
+        break;
+    default:
         break;
     }
     }
@@ -375,7 +378,7 @@ void CDemo::LoadDemoInfo(void)
     dirr = Bopendir("./");
     if (dirr)
     {
-        while (dirent = Breaddir(dirr))
+        while ((dirent = Breaddir(dirr)) != NULL)
         {
             if (!Bwildmatch(dirent->name, "BLOOD*.DEM"))
                 continue;
@@ -384,8 +387,8 @@ void CDemo::LoadDemoInfo(void)
                 ThrowError("File error #%d loading demo file header.", errno);
             fread(&atf, 1, sizeof(atf), pFile);
             fclose(pFile);
-            if ((atf.signature == '\x1aMED' && atf.nVersion == BloodVersion)
-                || (atf.signature == '\x1aMDE' && atf.nVersion == BYTEVERSION))
+            if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
+                || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
             {
                 strcpy(at59aa[at59ef], dirent->name);
                 at59ef++;

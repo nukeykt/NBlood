@@ -136,8 +136,8 @@ const char *zDiffStrings[] =
 };
 
 char zUserMapName[16];
-char *zEpisodeNames[6];
-char *zLevelNames[6][16];
+const char *zEpisodeNames[6];
+const char *zLevelNames[6][16];
 
 static char MenuGameFuncs[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
 static char const *MenuGameFuncNone = "  -None-";
@@ -316,12 +316,12 @@ CGameMenuItemText itemSorry2Text2("Blood for three new episodes", 0, 160, 100, 1
 CGameMenuItemText itemSorry2Text3("plus eight BloodBath-only levels!", 0, 160, 110, 1);
 
 CGameMenuItemTitle unk_26E06C(" ONLINE ", 1, 160, 20, 2038);
-CGameMenuItem7EA1C unk_26E090("DWANGO", 1, 0, 45, 320, "matt", "DWANGO", 1, -1, NULL, NULL);
-CGameMenuItem7EA1C unk_26E0E8("RTIME", 1, 0, 65, 320, "matt", "RTIME", 1, -1, NULL, NULL);
-CGameMenuItem7EA1C unk_26E140("HEAT", 1, 0, 85, 320, "matt", "HEAT", 1, -1, NULL, NULL);
-CGameMenuItem7EA1C unk_26E198("KALI", 1, 0, 105, 320, "matt", "KALI", 1, -1, NULL, NULL);
-CGameMenuItem7EA1C unk_26E1F0("MPATH", 1, 0, 125, 320, "matt", "MPATH", 1, -1, NULL, NULL);
-CGameMenuItem7EA1C unk_26E248("TEN", 1, 0, 145, 320, "matt", "TEN", 1, -1, TenProcess, NULL);
+CGameMenuItem7EA1C unk_26E090("DWANGO", 1, 0, 45, 320, "matt", "DWANGO", 1, -1, NULL, 0);
+CGameMenuItem7EA1C unk_26E0E8("RTIME", 1, 0, 65, 320, "matt", "RTIME", 1, -1, NULL, 0);
+CGameMenuItem7EA1C unk_26E140("HEAT", 1, 0, 85, 320, "matt", "HEAT", 1, -1, NULL, 0);
+CGameMenuItem7EA1C unk_26E198("KALI", 1, 0, 105, 320, "matt", "KALI", 1, -1, NULL, 0);
+CGameMenuItem7EA1C unk_26E1F0("MPATH", 1, 0, 125, 320, "matt", "MPATH", 1, -1, NULL, 0);
+CGameMenuItem7EA1C unk_26E248("TEN", 1, 0, 145, 320, "matt", "TEN", 1, -1, TenProcess, 0);
 
 
 // static int32_t newresolution, newrendermode, newfullscreen, newvsync;
@@ -342,7 +342,7 @@ struct resolution_t {
 
 resolution_t gResolution[MAXVALIDMODES];
 int gResolutionNum;
-char *gResolutionName[MAXVALIDMODES];
+const char *gResolutionName[MAXVALIDMODES];
 
 CGameMenu menuOptions;
 CGameMenu menuOptionsGame;
@@ -1134,7 +1134,7 @@ void SetupOptionsMenu(void)
             ++gResolutionNum;
         }
     }
-    itemOptionsDisplayModeResolution.SetTextArray((const char**)gResolutionName, gResolutionNum, 0);
+    itemOptionsDisplayModeResolution.SetTextArray(gResolutionName, gResolutionNum, 0);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeRenderer, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFullscreen, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeVSync, false);
@@ -1376,6 +1376,7 @@ void SetSoundVol(CGameMenuItemSlider *pItem)
 
 void SetCDVol(CGameMenuItemSlider *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     // NUKE-TODO:
 }
 
@@ -1472,6 +1473,7 @@ void SetVideoModeOld(CGameMenuItemChain *pItem)
 
 void SetVideoMode(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     resolution_t p = { xres, yres, fullscreen, bpp, 0 };
     int32_t prend = videoGetRenderMode();
     int32_t pvsync = vsync;
@@ -1480,7 +1482,7 @@ void SetVideoMode(CGameMenuItemChain *pItem)
     resolution_t n = { gResolution[nResolution].xdim, gResolution[nResolution].ydim,
                        (gResolution[nResolution].flags & RES_FS) ? itemOptionsDisplayModeFullscreen.at20 : 0,
                        (nRendererValues[itemOptionsDisplayModeRenderer.m_nFocus] == REND_CLASSIC) ? 8 : gResolution[nResolution].bppmax, 0 };
-    int32_t nrend = nRendererValues[itemOptionsDisplayModeRenderer.m_nFocus];
+    int32_t UNUSED(nrend) = nRendererValues[itemOptionsDisplayModeRenderer.m_nFocus];
     int32_t nvsync = nVSyncValues[itemOptionsDisplayModeVSync.m_nFocus];
 
     if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
@@ -1513,6 +1515,7 @@ void SetWidescreen(CGameMenuItemZBool *pItem)
 
 void SetupVideoModeMenu(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     for (int i = 0; i < gResolutionNum; i++)
     {
         if (gSetup.xdim == gResolution[i].xdim && gSetup.ydim == gResolution[i].ydim)
@@ -1569,8 +1572,9 @@ void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem)
     g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
 }
 
-void UpdateVideoColorMenu(CGameMenuItemSliderFloat *)
+void UpdateVideoColorMenu(CGameMenuItemSliderFloat *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     g_videoGamma = itemOptionsDisplayColorGamma.fValue;
     g_videoContrast = itemOptionsDisplayColorContrast.fValue;
     g_videoBrightness = itemOptionsDisplayColorBrightness.fValue;
@@ -1588,8 +1592,9 @@ void PreDrawDisplayColor(CGameMenuItem *pItem)
         pItem->bEnable = gammabrightness;
 }
 
-void ResetVideoColor(CGameMenuItemChain *)
+void ResetVideoColor(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     g_videoGamma = DEFAULT_GAMMA;
     g_videoContrast = DEFAULT_CONTRAST;
     g_videoBrightness = DEFAULT_BRIGHTNESS;
@@ -1598,8 +1603,9 @@ void ResetVideoColor(CGameMenuItemChain *)
     videoSetPalette(gBrightness>>2, gLastPal, 0);
 }
 
-void SetupVideoPolymostMenu(CGameMenuItemChain *)
+void SetupVideoPolymostMenu(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     itemOptionsDisplayPolymostTextureMode.m_nFocus = 0;
     for (int i = 0; i < 2; i++)
     {
@@ -1750,21 +1756,22 @@ void UpdateMusicVolume(CGameMenuItemSlider *pItem)
 
 void UpdateSoundRate(CGameMenuItemZCycle *pItem)
 {
-
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 void UpdateNumVoices(CGameMenuItemSlider *pItem)
 {
-
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 void UpdateMusicDevice(CGameMenuItemZCycle *pItem)
 {
-
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 void SetSound(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     MixRate = nSoundRateValues[itemOptionsSoundSampleRate.m_nFocus];
     NumVoices = itemOptionsSoundNumVoices.nValue;
     MusicDevice = itemOptionsSoundMusicDevice.m_nFocus;
@@ -1780,11 +1787,12 @@ void SetSound(CGameMenuItemChain *pItem)
 
 void PreDrawSound(CGameMenuItem *pItem)
 {
-
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 void SetupOptionsSound(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     itemOptionsSoundSoundToggle.at20 = SoundToggle;
     itemOptionsSoundMusicToggle.at20 = MusicToggle;
     itemOptionsSound3DToggle.at20 = gDoppler;
@@ -1804,13 +1812,15 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)
 {
+    UNREFERENCED_PARAMETER(pItem);
     if (pEvent->at0 == kMenuEventEnter)
         netBroadcastPlayerInfo(myconnectindex);
 }
 
 void SetMouseFilterInput(CGameMenuItemZBool *pItem)
 {
-    CONTROL_SmoothMouse = SmoothInput = pItem->at20;
+    CONTROL_SmoothMouse = pItem->at20;
+    SmoothInput = pItem->at20;
 }
 
 void SetMouseAimMode(CGameMenuItemZBool *pItem)
@@ -1861,6 +1871,7 @@ void SetMouseDigitalAxis(CGameMenuItemZCycle *pItem)
 
 void SetupMouseMenu(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     static CGameMenuItemZCycle *pMouseDigitalAxis[4] = {
         &itemOptionsControlMouseDigitalLeft,
         &itemOptionsControlMouseDigitalRight,
@@ -1909,6 +1920,7 @@ void SetMouseButton(CGameMenuItemZCycle *pItem)
 
 void SetupMouseButtonMenu(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     for (int i = 0; i < MENUMOUSEFUNCTIONS; i++)
     {
         auto pItem = pItemOptionsControlMouseButton[i];
@@ -1950,14 +1962,17 @@ void SetupNetworkMenu(void)
 
 void SetupNetworkHostMenu(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 void SetupNetworkJoinMenu(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 void NetworkHostGame(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     sndStopSong();
     FX_StopAllSounds();
     gNetPlayers = itemNetworkHostPlayerNum.nValue;
@@ -1972,6 +1987,7 @@ void NetworkHostGame(CGameMenuItemChain *pItem)
 
 void NetworkJoinGame(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     sndStopSong();
     FX_StopAllSounds();
     strcpy(gNetAddress, zNetAddressBuffer);
@@ -1984,12 +2000,14 @@ void NetworkJoinGame(CGameMenuItemChain *pItem)
     gQuitGame = gRestartGame = true;
 }
 
-void SaveGameProcess(CGameMenuItemChain *)
+void SaveGameProcess(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
 }
 
-void TenProcess(CGameMenuItem7EA1C *)
+void TenProcess(CGameMenuItem7EA1C *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
 }
 
 short gQuickLoadSlot = -1;
@@ -2041,6 +2059,7 @@ void QuickSaveGame(void)
 
 void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 {
+    UNREFERENCED_PARAMETER(event);
     char strLoadGameName[15] = "";
     int nSlot = pItem->at28;
     if (gGameOptions.nGameType > 0)
@@ -2072,7 +2091,7 @@ void QuickLoadGame(void)
 void SetupLevelMenuItem(int nEpisode)
 {
     dassert(nEpisode >= 0 && nEpisode < gEpisodeCount);
-    itemNetStart3.SetTextArray((const char**)zLevelNames[nEpisode], gEpisodeInfo[nEpisode].nLevels, 0);
+    itemNetStart3.SetTextArray(zLevelNames[nEpisode], gEpisodeInfo[nEpisode].nLevels, 0);
 }
 
 void SetupNetLevels(CGameMenuItemZCycle *pItem)
@@ -2080,8 +2099,9 @@ void SetupNetLevels(CGameMenuItemZCycle *pItem)
     SetupLevelMenuItem(pItem->m_nFocus);
 }
 
-void StartNetGame(CGameMenuItemChain *)
+void StartNetGame(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     gPacketStartGame.gameType = itemNetStart1.m_nFocus+1;
     if (gPacketStartGame.gameType == 0)
         gPacketStartGame.gameType = 2;
@@ -2104,6 +2124,7 @@ void StartNetGame(CGameMenuItemChain *)
 
 void Restart(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     if (gGameOptions.nGameType == 0 || numplayers == 1)
     {
         gQuitGame = true;
@@ -2116,6 +2137,7 @@ void Restart(CGameMenuItemChain *pItem)
 
 void Quit(CGameMenuItemChain *pItem)
 {
+    UNREFERENCED_PARAMETER(pItem);
     if (gGameOptions.nGameType == 0 || numplayers == 1)
         gQuitGame = true;
     else

@@ -194,7 +194,6 @@ void CGameMenuMgr::Draw(void)
             uint8_t p = CROSSHAIR_PAL;
             uint32_t o = 2;
 
-            auto const oyxaspect = yxaspect;
             int32_t alpha = MOUSEALPHA; //CURSORALPHA;
 
             rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, 0, a, 0, p, o, alpha);
@@ -447,6 +446,10 @@ CGameMenuItem::CGameMenuItem()
     pMenu = NULL;
     bNoDraw = 0;
     pPreDrawCallback = NULL;
+}
+
+CGameMenuItem::~CGameMenuItem()
+{
 }
 
 bool CGameMenuItem::Event(CGameMenuEvent &event)
@@ -795,7 +798,7 @@ void CGameMenuItem7EA1C::Setup(void)
     int y = 40;
     for (int i = 0; i < 21; i++)
     {
-        sprintf(buffer[i], "Line%ld", i+1);
+        sprintf(buffer[i], "Line%d", i+1);
         if (!at34->KeyExists(at48, buffer[i]))
             break;
         const char *line = at34->GetKeyString(at48, buffer[i], NULL);
@@ -2262,7 +2265,7 @@ CGameMenuItemZCycleSelect::CGameMenuItemZCycleSelect(const char *pzText, int nFo
 
 void CGameMenuItemZCycleSelect::Draw(void)
 {
-    int width, height;
+    int height;
     int shade;
     gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
     int y = m_nY;

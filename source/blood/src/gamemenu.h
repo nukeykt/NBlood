@@ -108,6 +108,7 @@ public:
     unsigned int bEnable : 1;
     unsigned int bNoDraw : 1;
     CGameMenuItem();
+    virtual ~CGameMenuItem();
     virtual void Draw(void) = 0;
     virtual bool Event(CGameMenuEvent &);
     virtual bool MouseEvent(CGameMenuEvent &);

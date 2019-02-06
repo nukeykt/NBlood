@@ -92,7 +92,7 @@ static void PukeSeqCallback(int, int nXSprite)
     int height2 = (pDudeInfoT->atb*pTarget->yrepeat);
     int tx = pXSprite->at20_0-pSprite->x;
     int ty = pXSprite->at24_0-pSprite->y;
-    int nDist = approxDist(tx, ty);
+    int UNUSED(nDist) = approxDist(tx, ty);
     int nAngle = getangle(tx, ty);
     int dx = Cos(nAngle)>>16;
     int dy = Sin(nAngle)>>16;

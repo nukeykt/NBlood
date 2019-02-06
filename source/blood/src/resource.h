@@ -79,7 +79,7 @@ struct DICTNODE
     //char name[8];
     char *type;
     char *name;
-    int id;
+    unsigned long id;
 };
 
 class Resource

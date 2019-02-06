@@ -79,7 +79,7 @@ void LoadSave::Read(void *pData, int nSize)
 {
     dword_27AA38 += nSize;
     dassert(hFile != NULL);
-    if (fread(pData, 1, nSize, hFile) != nSize)
+    if (fread(pData, 1, nSize, hFile) != (size_t)nSize)
         ThrowError("File error #%d reading save file.", errno);
 }
 
@@ -88,7 +88,7 @@ void LoadSave::Write(void *pData, int nSize)
     dword_27AA38 += nSize;
     dword_27AA3C += nSize;
     dassert(hFile != NULL);
-    if (fwrite(pData, 1, nSize, hFile) != nSize)
+    if (fwrite(pData, 1, nSize, hFile) != (size_t)nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
 
@@ -187,7 +187,7 @@ void MyLoadSave::Load(void)
     psky_t *pSky = tileSetupSky(0);
     int id;
     Read(&id, sizeof(id));
-    if (id != 'VSBN')
+    if (id != 0x5653424e/*'VSBN'*/)
         ThrowError("Old saved game found");
     short version;
     Read(&version, sizeof(version));
@@ -291,7 +291,7 @@ void MyLoadSave::Save(void)
 {
     psky_t *pSky = tileSetupSky(0);
     int nNumSprites = 0;
-    int id = 'VSBN';
+    int id = 0x5653424e/*'VSBN'*/;
     Write(&id, sizeof(id));
     short version = BYTEVERSION;
     Write(&version, sizeof(version));
@@ -401,7 +401,7 @@ void LoadSavedInfo(void)
             FILE *pFile = fopen(dirent->name, "rb");
             if (!pFile)
                 ThrowError("File error #%d loading save file header.", errno);
-            int vc, v8;
+            int vc;
             short v4;
             vc = 0;
             v4 = word_27AA54;
@@ -411,7 +411,7 @@ void LoadSavedInfo(void)
                 nCount++;
                 continue;
             }
-            if (vc != 'VSBN')
+            if (vc != 0x5653424e/*'VSBN'*/)
             {
                 fclose(pFile);
                 nCount++;

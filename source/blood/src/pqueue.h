@@ -39,5 +39,5 @@ public:
         unsigned long at4; // data
     } queueItems[kPQueueSize+1];
 
-    int fNodeCount; // at2008
+    unsigned long fNodeCount; // at2008
 };

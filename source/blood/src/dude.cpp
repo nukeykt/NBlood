@@ -844,7 +844,7 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         800,
         1500,
         1200,
-        -128,
+        128,
         0,
         0,
         25600,

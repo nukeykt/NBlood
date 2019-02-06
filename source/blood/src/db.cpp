@@ -735,9 +735,9 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
     }
     MAPHEADER mapHeader;
     IOBuffer1.Read(&mapHeader,37/* sizeof(mapHeader)*/);
-    if (mapHeader.at16 != 0 && mapHeader.at16 != 'ttaM' && mapHeader.at16 != 'Matt')
+    if (mapHeader.at16 != 0 && mapHeader.at16 != 0x7474614d && mapHeader.at16 != 0x4d617474)
     {
-        dbCrypt((char*)&mapHeader, sizeof(mapHeader), 'ttaM');
+        dbCrypt((char*)&mapHeader, sizeof(mapHeader), 0x7474614d);
         byte_1A76C7 = 1;
     }
 
@@ -754,7 +754,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
     gSongId = mapHeader.at16;
     if (byte_1A76C8)
     {
-        if (mapHeader.at16 == 'ttaM' || mapHeader.at16 == 'Matt')
+        if (mapHeader.at16 == 0x7474614d || mapHeader.at16 == 0x4d617474)
         {
             byte_1A76C6 = 1;
         }
@@ -911,7 +911,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         IOBuffer1.Read(pWall, sizeof(WALL));
         if (byte_1A76C8)
         {
-            dbCrypt((char*)pWall, sizeof(WALL), (gMapRev*sizeof(SECTOR)) | 'ttaM');
+            dbCrypt((char*)pWall, sizeof(WALL), (gMapRev*sizeof(SECTOR)) | 0x7474614d);
         }
         if (qwall[i].extra > 0)
         {
@@ -975,7 +975,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         IOBuffer1.Read(pSprite, sizeof(SPRITE));
         if (byte_1A76C8)
         {
-            dbCrypt((char*)pSprite, sizeof(SPRITE), (gMapRev*sizeof(SPRITE)) | 'ttaM');
+            dbCrypt((char*)pSprite, sizeof(SPRITE), (gMapRev*sizeof(SPRITE)) | 0x7474614d);
         }
         InsertSpriteSect(i, qsprite[i].sectnum);
         InsertSpriteStat(i, qsprite[i].statnum);
@@ -1085,7 +1085,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
     PropagateMarkerReferences();
     if (byte_1A76C8)
     {
-        if (gSongId == 'ttaM' || gSongId == 'Matt')
+        if (gSongId == 0x7474614d || gSongId == 0x4d617474)
         {
             byte_1A76C6 = 1;
         }
@@ -1133,6 +1133,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
                     }
                 }
             }
+            fallthrough__;
         case 1:
             for (int i = 0; i < numsectors; i++)
             {
@@ -1143,6 +1144,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
                     pXSector->ate_6 >>= 1;
                 }
             }
+            fallthrough__;
         case 2:
             for (int i = 0; i < kMaxSprites; i++)
             {

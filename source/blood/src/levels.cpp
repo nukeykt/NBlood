@@ -76,14 +76,15 @@ void sub_269D8(const char *pzIni)
 
 void levelPlayIntroScene(int nEpisode)
 {
+    UNREFERENCED_PARAMETER(nEpisode);
     sndStopSong();
     sndKillAllSounds();
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
-    EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
     // NUKE-TODO
     /*
+    EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
     if (pEpisode->at9028)
         credPlaySmk(pEpisode->at8f08, pEpisode->at9028);
     else
@@ -229,7 +230,7 @@ void levelLoadDefaults(void)
     int i;
     for (i = 0; i < kMaxEpisodes; i++)
     {
-        sprintf(buffer, "Episode%ld", i+1);
+        sprintf(buffer, "Episode%d", i+1);
         if (!BloodINI->SectionExists(buffer))
             break;
         EPISODEINFO *pEpisodeInfo = &gEpisodeInfo[i];
@@ -255,7 +256,7 @@ void levelLoadDefaults(void)
         for (j = 0; j < kMaxLevels; j++)
         {
             LEVELINFO *pLevelInfo = &pEpisodeInfo->at28[j];
-            sprintf(buffer2, "Map%ld", j+1);
+            sprintf(buffer2, "Map%d", j+1);
             if (!BloodINI->KeyExists(buffer, buffer2))
                 break;
             const char *pMap = BloodINI->GetKeyString(buffer, buffer2, NULL);

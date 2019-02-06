@@ -78,6 +78,7 @@ const char *pzBaseFileName = "TILES000.ART"; //"TILES%03i.ART";
 
 int tileInit(char a1, const char *a2)
 {
+    UNREFERENCED_PARAMETER(a1);
     if (artLoaded)
         return 1;
     artLoadFiles(a2 ? a2 : pzBaseFileName, 96 << 20);

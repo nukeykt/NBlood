@@ -1421,6 +1421,7 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
 
 void DropVoodoo(int nTrigger, PLAYER *pPlayer)
 {
+    UNREFERENCED_PARAMETER(nTrigger);
     sfxPlay3DSound(pPlayer->pSprite, 455, 2, 0);
     SPRITE *pSprite = playerFireThing(pPlayer, 0, -4730, 432, 0xccccc);
     if (pSprite)
@@ -1482,6 +1483,7 @@ void FireTesla(int nTrigger, PLAYER *pPlayer)
 
 void AltFireTesla(int nTrigger, PLAYER *pPlayer)
 {
+    UNREFERENCED_PARAMETER(nTrigger);
     SPRITE *pSprite = pPlayer->pSprite;
     playerFireMissile(pPlayer, 0, pPlayer->at1be.dx, pPlayer->at1be.dy, pPlayer->at1be.dz, 302);
     UseAmmo(pPlayer, pPlayer->atc7, 35);
@@ -1511,6 +1513,7 @@ void FireNapalm(int nTrigger, PLAYER *pPlayer)
 
 void FireNapalm2(int nTrigger, PLAYER *pPlayer)
 {
+    UNREFERENCED_PARAMETER(nTrigger);
     SPRITE *pSprite = pPlayer->pSprite;
     playerFireMissile(pPlayer, -120, pPlayer->at1be.dx, pPlayer->at1be.dy, pPlayer->at1be.dz, 312);
     playerFireMissile(pPlayer, 120, pPlayer->at1be.dx, pPlayer->at1be.dy, pPlayer->at1be.dz, 312);
@@ -1521,7 +1524,8 @@ void FireNapalm2(int nTrigger, PLAYER *pPlayer)
 
 void AltFireNapalm(int nTrigger, PLAYER *pPlayer)
 {
-    char bAkimbo = powerupCheck(pPlayer, 17);
+    UNREFERENCED_PARAMETER(nTrigger);
+    char UNUSED(bAkimbo) = powerupCheck(pPlayer, 17);
     int nSpeed = mulscale16(0x8000, 0x177777)+0x66666;
     SPRITE *pMissile = playerFireThing(pPlayer, 0, -4730, 428, nSpeed);
     if (pMissile)
@@ -1561,6 +1565,7 @@ void FireLifeLeech(int nTrigger, PLAYER *pPlayer)
 
 void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
 {
+    UNREFERENCED_PARAMETER(nTrigger);
     sfxPlay3DSound(pPlayer->pSprite, 455, 2, 0);
     SPRITE *pMissile = playerFireThing(pPlayer, 0, -4730, 431, 0x19999);
     if (pMissile)
@@ -1595,6 +1600,7 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
 
 void FireBeast(int nTrigger, PLAYER * pPlayer)
 {
+    UNREFERENCED_PARAMETER(nTrigger);
     int r1 = Random2(2000);
     int r2 = Random2(2000);
     int r3 = Random2(2000);

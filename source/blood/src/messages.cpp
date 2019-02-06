@@ -457,7 +457,7 @@ void CPlayerMsg::ProcessKeys(void)
     char ch;
     if (key != 0)
     {
-        bool alt = keystatus[sc_LeftAlt] || keystatus[sc_RightAlt];
+        bool UNUSED(alt) = keystatus[sc_LeftAlt] || keystatus[sc_RightAlt];
         bool ctrl = keystatus[sc_LeftControl] || keystatus[sc_RightControl];
         bool shift = keystatus[sc_LeftShift] || keystatus[sc_RightShift];
         switch (key)
@@ -550,7 +550,7 @@ bool CCheatMgr::Check(char *pzString)
     char buffer[80];
     strcpy(buffer, pzString);
     strupr(buffer);
-    for (int i = 0; i < strlen(pzString); i++)
+    for (size_t i = 0; i < strlen(pzString); i++)
         buffer[i]++;
     for (int i = 0; i < 36; i++)
     {
@@ -732,6 +732,9 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         gMe->atcb[1] = 1;
         gMe->atbd = 0;
         gMe->atbe = 1;
+        break;
+    default:
+        break;
     }
     m_bPlayerCheated = true;
 }

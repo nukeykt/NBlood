@@ -28,10 +28,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 void *ResReadLine(char *buffer, unsigned long nBytes, void **pRes)
 {
-    int i;
+    unsigned long i;
     char ch;
     if (!pRes || !*pRes || *((char*)*pRes) == 0)
-        return false;
+        return NULL;
     for (i = 0; i < nBytes; i++)
     {
         ch = *((char*)*pRes);
@@ -82,7 +82,7 @@ bool FileLoad(const char *name, void *buffer, unsigned long size)
     if (!handle)
         return false;
 
-    int nread = fread(buffer, 1, size, handle);
+    unsigned long nread = fread(buffer, 1, size, handle);
     fclose(handle);
     return nread == size;
 }

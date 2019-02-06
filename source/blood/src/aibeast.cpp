@@ -437,7 +437,7 @@ static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
             if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
-                int floorZ = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
+                int UNUSED(floorZ) = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
                 if (nDist < 0x400 && klabs(nDeltaAngle) < 85)
                     aiNewState(pSprite, pXSprite, &beastSwimSlash);
                 else
@@ -467,7 +467,7 @@ static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
         return;
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (nDist <= 0x400 && Random(64) < 32)
         return;
@@ -490,7 +490,7 @@ static void sub_628A0(SPRITE *pSprite, XSPRITE *pXSprite)
         pSprite->ang = (pSprite->ang+256)&2047;
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Random(64) < 32 && nDist <= 0x400)
         return;
@@ -528,7 +528,7 @@ static void sub_62AE0(SPRITE *pSprite, XSPRITE *pXSprite)
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
     int dz = z2 - z;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Chance(0x600) && nDist <= 0x400)
         return;
@@ -564,7 +564,7 @@ static void sub_62D7C(SPRITE *pSprite, XSPRITE *pXSprite)
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
     int dz = (z2 - z)<<3;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Chance(0x4000) && nDist <= 0x400)
         return;

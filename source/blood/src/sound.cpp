@@ -217,6 +217,7 @@ bool sndIsSongPlaying(void)
 
 void sndFadeSong(int nTime)
 {
+    UNREFERENCED_PARAMETER(nTime);
     // NUKE-TODO:
     //if (MusicDevice == -1)
     //    return;
@@ -367,6 +368,9 @@ void sndKillSound(SAMPLE2D *pChannel)
 
 void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
 {
+    UNREFERENCED_PARAMETER(pzFile);
+    UNREFERENCED_PARAMETER(nVolume);
+    UNREFERENCED_PARAMETER(nChannel);
     // NUKE-TODO:
 #if 0
     if (FXDevice == -1)

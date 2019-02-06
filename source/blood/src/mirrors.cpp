@@ -172,7 +172,7 @@ void TranslateMirrorColors(int nShade, int nPalette)
     extern intptr_t frameplace;
     char *pFrame = (char*)frameplace;
     unsigned int nPixels = xdim*ydim;
-    for (int i = 0; i < nPixels; i++, pFrame++)
+    for (unsigned int i = 0; i < nPixels; i++, pFrame++)
     {
         *pFrame = pMap[*pFrame];
     }

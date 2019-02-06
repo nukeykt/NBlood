@@ -387,15 +387,15 @@ public:
     {
         x1 = _x1; y1 = _y1; x2 = _x2; y2 = _y2;
     }
-    bool const isValid(void) const
+    bool isValid(void) const
     {
         return x1 < x2 && y1 < y2;
     }
-    char const isEmpty(void) const
+    char isEmpty(void) const
     {
         return !(x1 < x2 && y1 < y2);
     }
-    char const operator!(void) const
+    bool operator!(void) const
     {
         return isEmpty();
     }
@@ -415,8 +415,8 @@ public:
     int nBitPos;
     int nSize;
     char *pBuffer;
-    BitReader(char *_pBuffer, int _nSize, int _nBitPos) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(_nBitPos) { nSize -= nBitPos>>3; }
-    BitReader(char *_pBuffer, int _nSize) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(0) {}
+    BitReader(char *_pBuffer, int _nSize, int _nBitPos) { pBuffer = _pBuffer; nSize = _nSize; nBitPos = _nBitPos; nSize -= nBitPos>>3; }
+    BitReader(char *_pBuffer, int _nSize) { pBuffer = _pBuffer; nSize = _nSize; nBitPos = 0; }
     int readBit()
     {
         if (nSize <= 0)
@@ -462,8 +462,8 @@ public:
     int nBitPos;
     int nSize;
     char *pBuffer;
-    BitWriter(char *_pBuffer, int _nSize, int _nBitPos) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(_nBitPos) { memset(pBuffer, 0, nSize); nSize -= nBitPos>>3; }
-    BitWriter(char *_pBuffer, int _nSize) : pBuffer(_pBuffer), nSize(_nSize), nBitPos(0) { memset(pBuffer, 0, nSize); }
+    BitWriter(char *_pBuffer, int _nSize, int _nBitPos) { pBuffer = _pBuffer; nSize = _nSize; nBitPos = _nBitPos; memset(pBuffer, 0, nSize); nSize -= nBitPos>>3; }
+    BitWriter(char *_pBuffer, int _nSize) { pBuffer = _pBuffer; nSize = _nSize; nBitPos = 0; memset(pBuffer, 0, nSize); }
     void writeBit(int bit)
     {
         if (nSize <= 0)

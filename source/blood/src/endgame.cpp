@@ -82,7 +82,7 @@ void CEndGameMgr::ProcessKeys(void)
         char ch = keyGetScan();
         if (!ch)
             return;
-        if (gGameOptions.nGameType >= 0 || numplayers > 1)
+        if (gGameOptions.nGameType > 0 || numplayers > 1)
             netWaitForEveryone(0);
         Finish();
     }

@@ -38,6 +38,7 @@ public:
     }
     LoadSave(int dummy)
     {
+        UNREFERENCED_PARAMETER(dummy);
         next = prev = this;
     }
     //~LoadSave() { }

@@ -170,8 +170,9 @@ void G_Polymer_UnInit(void)
     // NUKE-TODO:
 }
 
-void M32RunScript(const char UNUSED(*s))
+void M32RunScript(const char *s)
 {
+    UNREFERENCED_PARAMETER(s);
 }
 
 static const char *_module;
@@ -278,6 +279,7 @@ void PrecacheDude(SPRITE *pSprite)
 	case 209:
 		seqPrecacheId(pDudeInfo->seqStartID+6);
 		seqPrecacheId(pDudeInfo->seqStartID+6);
+        fallthrough__;
 	case 206:
 	case 207:
 		seqPrecacheId(pDudeInfo->seqStartID+6);
@@ -299,6 +301,7 @@ void PrecacheDude(SPRITE *pSprite)
 	case 227:
 		seqPrecacheId(pDudeInfo->seqStartID+6);
 		seqPrecacheId(pDudeInfo->seqStartID+7);
+        fallthrough__;
 	case 212:
 	case 218:
 	case 219:
@@ -312,8 +315,10 @@ void PrecacheDude(SPRITE *pSprite)
 	case 205:
         seqPrecacheId(pDudeInfo->seqStartID+12);
         seqPrecacheId(pDudeInfo->seqStartID+9);
+        fallthrough__;
 	case 244:
         seqPrecacheId(pDudeInfo->seqStartID+10);
+        fallthrough__;
 	case 203:
         seqPrecacheId(pDudeInfo->seqStartID+6);
         seqPrecacheId(pDudeInfo->seqStartID+7);
@@ -573,7 +578,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 		}
 	}
 	memset(xsprite,0,sizeof(xsprite));
-	memset(sprite,0,sizeof(sprite));
+	memset(sprite,0,kMaxSprites*sizeof(sprite));
 	drawLoadingScreen();
 	dbLoadMap(gameOptions->zLevelName,(long*)&startpos.x,(long*)&startpos.y,(long*)&startpos.z,&startang,&startsectnum,(unsigned long*)&gameOptions->uMapCRC);
 	wsrand(gameOptions->uMapCRC);
@@ -690,9 +695,7 @@ void StartNetworkLevel(void)
 
 void LocalKeys(void)
 {
-    char buffer[128];
 	static char name[16];
-	static int timer = 0;
 	char alt = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
 	char ctrl = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
 	char shift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
@@ -729,7 +732,7 @@ void LocalKeys(void)
 		}
 	}
 	char key;
-	if (key = keyGetScan())
+	if ((key = keyGetScan()) != 0)
 	{
 		if ((alt || shift) && gGameOptions.nGameType > 0 && key >= 0x3b && key <= 0x44)
 		{
@@ -1025,7 +1028,7 @@ SWITCH switches[] = {
     { "h", 40, 1 },
     { "mh", 41, 1 },
     { "j", 42, 1 },
-    { 0 }
+    { NULL, 0, 0 }
 };
 
 void PrintHelp(void)
@@ -1105,6 +1108,7 @@ void ParseOptions(void)
         {
         case -3:
             ThrowError("Invalid argument: %s", OptFull);
+            fallthrough__;
         case 29:
             if (OptArgc < 1)
                 ThrowError("Missing argument");
@@ -1634,6 +1638,8 @@ RESTART:
 		case INPUT_MODE_0:
 			LocalKeys();
 			break;
+        default:
+            break;
 		}
 		if (gQuitGame)
 			continue;
@@ -1710,6 +1716,8 @@ RESTART:
             case INPUT_MODE_3:
                 gEndGameMgr.ProcessKeys();
                 gEndGameMgr.Draw();
+                break;
+            default:
                 break;
             }
         }
@@ -2070,7 +2078,6 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
         case T_RFFDEFINEID:
         {
-            char *tokenPtr = pScript->ltextptr;
             char *resName = NULL;
             char *resType = NULL;
             char *rffName = NULL;

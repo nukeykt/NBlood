@@ -55,7 +55,7 @@ Resource::~Resource(void)
 {
     if (dict)
     {
-        for (int i = 0; i < count; i++)
+        for (unsigned long i = 0; i < count; i++)
         {
             if (dict[i].type)
                 Free(dict[i].type);
@@ -115,16 +115,16 @@ void Resource::Init(const char *filename)
                 DICTNODE_FILE *tdict = (DICTNODE_FILE*)Alloc(count*sizeof(DICTNODE_FILE));
                 int r = klseek(handle, header.offset, SEEK_SET);
                 dassert(r != -1);
-                if (kread(handle, tdict, count * sizeof(DICTNODE_FILE)) != count*sizeof(DICTNODE_FILE))
+                if ((uint32_t)kread(handle, tdict, count * sizeof(DICTNODE_FILE)) != count*sizeof(DICTNODE_FILE))
                 {
                     ThrowError("RFF dictionary corrupted");
                 }
                 if (crypt)
                 {
                     Crypt(tdict, count * sizeof(DICTNODE_FILE),
-                        header.offset + (header.version && 0xff) * header.offset);
+                        header.offset + (header.version & 0xff) * header.offset);
                 }
-                for (int i = 0; i < count; i++)
+                for (unsigned long i = 0; i < count; i++)
                 {
                     dict[i].offset = tdict[i].offset;
                     dict[i].size = tdict[i].size;
@@ -197,14 +197,14 @@ void Resource::Init(const char *filename)
 #endif
     }
 #endif
-    for (int i = 0; i < count; i++)
+    for (unsigned long i = 0; i < count; i++)
     {
         if (dict[i].flags & DICT_LOCK)
         {
             Lock(&dict[i]);
         }
     }
-    for (int i = 0; i < count; i++)
+    for (unsigned long i = 0; i < count; i++)
     {
         if (dict[i].flags & DICT_LOAD)
         {
@@ -230,7 +230,7 @@ void Resource::Flush(CACHENODE *h)
 
 void Resource::Purge(void)
 {
-    for (int i = 0; i < count; i++)
+    for (unsigned long i = 0; i < count; i++)
     {
         if (dict[i].ptr)
         {
@@ -247,8 +247,8 @@ DICTNODE **Resource::Probe(const char *fname, const char *type)
     strcpy(name, type);
     strcat(name, fname);
     dassert(dict != NULL);
-    int hash = Bcrc32(name, strlen(name), 0) & (buffSize - 1);
-    int i = hash;
+    unsigned long hash = Bcrc32(name, strlen(name), 0) & (buffSize - 1);
+    unsigned long i = hash;
     do
     {
         if (!indexName[i])
@@ -280,8 +280,8 @@ DICTNODE **Resource::Probe(unsigned long id, const char *type)
     strcpy(name.type, type);
     name.id = id;
     dassert(dict != NULL);
-    int hash = Bcrc32(&name, strlen(name.type)+sizeof(name.id), 0) & (buffSize - 1);
-    int i = hash;
+    unsigned long hash = Bcrc32(&name, strlen(name.type)+sizeof(name.id), 0) & (buffSize - 1);
+    unsigned long i = hash;
     do
     {
         if (!indexId[i])
@@ -310,7 +310,7 @@ void Resource::Reindex(void)
     }
     indexName = (DICTNODE **)Alloc(buffSize * sizeof(DICTNODE*));
     memset(indexName, 0, buffSize * sizeof(DICTNODE*));
-    for (int i = 0; i < count; i++)
+    for (unsigned long i = 0; i < count; i++)
     {
         DICTNODE **node = Probe(dict[i].name, dict[i].type);
         *node = &dict[i];
@@ -322,7 +322,7 @@ void Resource::Reindex(void)
     }
     indexId = (DICTNODE **)Alloc(buffSize * sizeof(DICTNODE*));
     memset(indexId, 0, buffSize * sizeof(DICTNODE*));
-    for (int i = 0; i < count; i++)
+    for (unsigned long i = 0; i < count; i++)
     {
         if (dict[i].flags & DICT_ID)
         {
@@ -419,7 +419,7 @@ void Resource::AddExternalResource(const char *name, const char *type, int id)
 void *Resource::Alloc(long nSize)
 {
     dassert(heap != NULL);
-    dassert(nSize != NULL);
+    dassert(nSize != 0);
     void *p = heap->Alloc(nSize);
     if (p)
     {
@@ -489,7 +489,7 @@ void Resource::Read(DICTNODE *n, void *p)
     {
         sprintf(filename, "%s.%s", n->name, n->type);
         int fhandle = kopen4loadfrommod(filename, 0);
-        if (fhandle == -1 || kread(fhandle, p, n->size) != n->size)
+        if (fhandle == -1 || (uint32_t)kread(fhandle, p, n->size) != n->size)
         {
             ThrowError("Error reading external resource (%i)", errno);
         }
@@ -502,7 +502,7 @@ void Resource::Read(DICTNODE *n, void *p)
         {
             ThrowError("Error seeking to resource!");
         }
-        if (kread(handle, p, n->size) != n->size)
+        if ((uint32_t)kread(handle, p, n->size) != n->size)
         {
             ThrowError("Error loading resource!");
         }
@@ -615,7 +615,7 @@ void Resource::RemoveMRU(CACHENODE *h)
 void Resource::FNAddFiles(fnlist_t * fnlist, const char *pattern)
 {
     char filename[BMAX_PATH];
-    for (int i = 0; i < count; i++)
+    for (unsigned long i = 0; i < count; i++)
     {
         DICTNODE *pNode = &dict[i];
         if (pNode->flags & DICT_EXTERNAL)

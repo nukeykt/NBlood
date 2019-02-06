@@ -48,7 +48,6 @@ static void thinkChase(SPRITE *, XSPRITE *);
 static void MoveForward(SPRITE *, XSPRITE *);
 static void MoveSwoop(SPRITE *, XSPRITE *);
 static void MoveAscend(SPRITE *pSprite, XSPRITE *pXSprite);
-static void MoveFly(SPRITE *, XSPRITE *);
 static void MoveToCeil(SPRITE *, XSPRITE *);
 
 static int nBiteClient = seqRegisterClient(BiteSeqCallback);
@@ -337,7 +336,7 @@ static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
         pSprite->ang = (pSprite->ang+256)&2047;
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (nDist <= 0x399)
         return;
@@ -368,7 +367,7 @@ static void MoveSwoop(SPRITE *pSprite, XSPRITE *pXSprite)
         return;
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Chance(0x8000) && nDist <= 0x399)
         return;
@@ -397,7 +396,7 @@ static void MoveAscend(SPRITE *pSprite, XSPRITE *pXSprite)
         return;
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
-    int nAngle = getangle(dx, dy);
+    int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Chance(0x4000) && nDist <= 0x399)
         return;

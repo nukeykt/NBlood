@@ -99,7 +99,6 @@ static int osdcmd_changelevel(osdcmdptr_t parm)
 
 static int osdcmd_map(osdcmdptr_t parm)
 {
-    int32_t i;
     char filename[BMAX_PATH];
 
     const int32_t wildcardp = parm->numparms==1 &&
@@ -301,8 +300,6 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
 
 static int osdcmd_give(osdcmdptr_t parm)
 {
-    int32_t i;
-
     if (numplayers != 1 || !gGameStarted || gMe->pXSprite->health == 0)
     {
         OSD_Printf("give: Cannot give while dead or not in a single-player game.\n");
@@ -408,6 +405,7 @@ static int osdcmd_restartsound(osdcmdptr_t UNUSED(parm))
 
 void onvideomodechange(int32_t newmode)
 {
+    UNREFERENCED_PARAMETER(newmode);
 #if 0
     uint8_t palid;
 
@@ -1083,7 +1081,7 @@ int32_t registerosdcommands(void)
 //#else
 //    OSD_RegisterFunction("lua", "lua \"Lua code...\": runs Lunatic code", osdcmd_lua);
 //#endif
-//    OSD_RegisterFunction("screenshot","screenshot [format]: takes a screenshot.", osdcmd_screenshot);
+    OSD_RegisterFunction("screenshot","screenshot [format]: takes a screenshot.", osdcmd_screenshot);
 //
 //    OSD_RegisterFunction("spawn","spawn <picnum> [palnum] [cstat] [ang] [x y z]: spawns a sprite with the given properties",osdcmd_spawn);
 

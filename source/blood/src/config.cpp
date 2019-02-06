@@ -1007,6 +1007,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     Bfflush(NULL);
 }
 
+#if 0
 static const char *CONFIG_GetMapEntryName(char m[], char const * const mapname)
 {
     strcpy(m, mapname);
@@ -1023,7 +1024,6 @@ static const char *CONFIG_GetMapEntryName(char m[], char const * const mapname)
     return p;
 }
 
-#if 0
 static void CONFIG_GetMD4EntryName(char m[], uint8_t const * const md4)
 {
     sprintf(m, "MD4_%08x%08x%08x%08x",

@@ -250,7 +250,6 @@ void sfxPlay3DSound(SPRITE *pSprite, int soundId, int a3, int a4)
         loopStart = -1;
     DisableInterrupts();
     char *pData = (char*)gSoundRes.Lock(hRes);
-    int vc = pBonkle->at4;
     if (loopStart >= 0)
     {
         if (gDoppler)

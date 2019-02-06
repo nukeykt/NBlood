@@ -627,7 +627,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2552,
-        -8,
+        (char)-8,
         0,
         32,
         32,
@@ -636,7 +636,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2553,
-        -8,
+        (char)-8,
         0,
         32,
         32,
@@ -645,7 +645,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2554,
-        -8,
+        (char)-8,
         0,
         32,
         32,
@@ -654,7 +654,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2555,
-        -8,
+        (char)-8,
         0,
         32,
         32,
@@ -663,7 +663,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2556,
-        -8,
+        (char)-8,
         0,
         32,
         32,
@@ -672,7 +672,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2557,
-        -8,
+        (char)-8,
         0,
         32,
         32,
@@ -681,7 +681,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         -1,
-        -8,
+        (char)-8,
         0,
         255,
         255,
@@ -690,7 +690,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         519,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -699,7 +699,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         822,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -708,7 +708,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2169,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -717,7 +717,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2433,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -726,7 +726,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         517,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -735,7 +735,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         783,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -744,7 +744,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         896,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -753,7 +753,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         825,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -762,7 +762,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         827,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -771,7 +771,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         828,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -780,7 +780,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         829,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -789,7 +789,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         830,
-        -8,
+        (char)-8,
         0,
         80,
         64,
@@ -798,7 +798,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         831,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -807,7 +807,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         863,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -816,7 +816,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         760,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -825,7 +825,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         836,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -834,7 +834,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         851,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -843,7 +843,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2428,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -852,7 +852,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         839,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -861,7 +861,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         768,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -870,7 +870,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         840,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -879,7 +879,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         841,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -888,7 +888,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         842,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -897,7 +897,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         843,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -906,7 +906,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         683,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -915,7 +915,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         521,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -924,7 +924,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         604,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -933,7 +933,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         520,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -942,7 +942,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         803,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -951,7 +951,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         518,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -960,7 +960,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         522,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -969,7 +969,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         523,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -978,7 +978,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         837,
-        -8,
+        (char)-8,
         0,
         80,
         64,
@@ -987,7 +987,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2628,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -996,7 +996,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2586,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -1005,7 +1005,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2578,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -1014,7 +1014,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2602,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -1023,7 +1023,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         2594,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -1032,7 +1032,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         753,
-        -8,
+        (char)-8,
         0,
         64,
         64,
@@ -1041,7 +1041,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         753,
-        -8,
+        (char)-8,
         7,
         64,
         64,
@@ -1050,7 +1050,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         3558,
-        -128,
+        (char)-128,
         0,
         64,
         64,
@@ -1059,7 +1059,7 @@ ITEMDATA gItemData[] = {
     {
         0,
         3558,
-        -128,
+        (char)-128,
         7,
         64,
         64,
@@ -1071,7 +1071,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         618,
-        -8,
+        (char)-8,
         0,
         40,
         40,
@@ -1082,7 +1082,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         589,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1093,7 +1093,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         589,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1104,7 +1104,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         809,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1115,7 +1115,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         811,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1126,7 +1126,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         810,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1137,7 +1137,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         820,
-        -8,
+        (char)-8,
         0,
         24,
         24,
@@ -1148,7 +1148,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         619,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1159,7 +1159,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         812,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1170,7 +1170,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         813,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1181,7 +1181,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         525,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1192,7 +1192,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         814,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1203,7 +1203,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         817,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1214,7 +1214,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         548,
-        -8,
+        (char)-8,
         0,
         24,
         24,
@@ -1225,7 +1225,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         0,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1236,7 +1236,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         0,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1247,7 +1247,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         816,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1258,7 +1258,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         818,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1269,7 +1269,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         819,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1280,7 +1280,7 @@ AMMOITEMDATA gAmmoItemData[] = {
     {
         0,
         801,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1305,7 +1305,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1316,7 +1316,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         559,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1327,7 +1327,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         558,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1338,7 +1338,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         524,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1349,7 +1349,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         525,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1360,7 +1360,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         539,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1371,7 +1371,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         526,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1382,7 +1382,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1393,7 +1393,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         618,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1404,7 +1404,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         589,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1415,7 +1415,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
     {
         0,
         800,
-        -8,
+        (char)-8,
         0,
         48,
         48,
@@ -1432,7 +1432,7 @@ MissileType missileInfo[] = {
         512,
         40,
         40,
-        -16,
+        (char)-16,
         16
     },
     {
@@ -1441,7 +1441,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         32
     },
     {
@@ -1450,7 +1450,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         32
     },
     {
@@ -1459,7 +1459,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         4
     },
     {
@@ -1468,7 +1468,7 @@ MissileType missileInfo[] = {
         0,
         24,
         24,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1477,7 +1477,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         32
     },
     {
@@ -1486,7 +1486,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1495,7 +1495,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -24,
+        (char)-24,
         32
     },
     {
@@ -1504,7 +1504,7 @@ MissileType missileInfo[] = {
         0,
         24,
         24,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1513,7 +1513,7 @@ MissileType missileInfo[] = {
         0,
         16,
         16,
-        -16,
+        (char)-16,
         16
     },
     {
@@ -1522,7 +1522,7 @@ MissileType missileInfo[] = {
         0,
         8,
         8,
-        0,
+        (char)0,
         16
     },
     {
@@ -1531,7 +1531,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1540,7 +1540,7 @@ MissileType missileInfo[] = {
         0,
         30,
         30,
-        -128,
+        (char)-128,
         24
     },
     {
@@ -1549,7 +1549,7 @@ MissileType missileInfo[] = {
         0,
         30,
         30,
-        -128,
+        (char)-128,
         24
     },
     {
@@ -1558,7 +1558,7 @@ MissileType missileInfo[] = {
         0,
         24,
         24,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1567,7 +1567,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1576,7 +1576,7 @@ MissileType missileInfo[] = {
         0,
         16,
         16,
-        -128,
+        (char)-128,
         16
     },
     {
@@ -1585,7 +1585,7 @@ MissileType missileInfo[] = {
         0,
         32,
         32,
-        -128,
+        (char)-128,
         16
     }
 };
@@ -1600,7 +1600,7 @@ THINGINFO thingInfo[] = {
         80,
         384,
         907,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1615,7 +1615,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         3444,
-        -16,
+        (char)-16,
         0,
         32,
         32,
@@ -1630,7 +1630,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         3457,
-        -16,
+        (char)-16,
         0,
         32,
         32,
@@ -1645,7 +1645,7 @@ THINGINFO thingInfo[] = {
         80,
         0,
         739,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1660,7 +1660,7 @@ THINGINFO thingInfo[] = {
         80,
         0,
         642,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1675,7 +1675,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         462,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1690,7 +1690,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         266,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1705,7 +1705,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         796,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1720,7 +1720,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         1127,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1735,7 +1735,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         1142,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1750,7 +1750,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         1069,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1765,7 +1765,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         483,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1780,7 +1780,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1795,7 +1795,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1810,7 +1810,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1825,7 +1825,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1840,7 +1840,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1855,7 +1855,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1870,7 +1870,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         3422,
-        -32,
+        (char)-32,
         0,
         32,
         32,
@@ -1885,7 +1885,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         3433,
-        -32,
+        (char)-32,
         0,
         32,
         32,
@@ -1900,7 +1900,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         3467,
-        -128,
+        (char)-128,
         0,
         32,
         32,
@@ -1915,7 +1915,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         1462,
-        0,
+        (char)0,
         0,
         32,
         32,
@@ -1930,7 +1930,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1945,7 +1945,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         1147,
-        0,
+        (char)0,
         10,
         0,
         0,
@@ -1960,7 +1960,7 @@ THINGINFO thingInfo[] = {
         0,
         0,
         1160,
-        0,
+        (char)0,
         2,
         0,
         0,
@@ -1975,7 +1975,7 @@ THINGINFO thingInfo[] = {
         0,
         257,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -1990,7 +1990,7 @@ THINGINFO thingInfo[] = {
         0,
         257,
         -1,
-        0,
+        (char)0,
         0,
         0,
         0,
@@ -2005,7 +2005,7 @@ THINGINFO thingInfo[] = {
         1280,
         257,
         3405,
-        0,
+        (char)0,
         0,
         40,
         40,
@@ -2020,7 +2020,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         -1,
-        -128,
+        (char)-128,
         0,
         32,
         32,
@@ -2035,7 +2035,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         -1,
-        -128,
+        (char)-128,
         0,
         32,
         32,
@@ -2050,7 +2050,7 @@ THINGINFO thingInfo[] = {
         1600,
         256,
         -1,
-        -128,
+        (char)-128,
         0,
         32,
         32,
@@ -2065,7 +2065,7 @@ THINGINFO thingInfo[] = {
         1600,
         257,
         800,
-        -128,
+        (char)-128,
         0,
         48,
         48,
@@ -2080,7 +2080,7 @@ THINGINFO thingInfo[] = {
         1600,
         0,
         2443,
-        -128,
+        (char)-128,
         0,
         16,
         16,
@@ -2481,6 +2481,8 @@ int actFloorBounceVector(long *x, long *y, long *z, int nSector, int a5)
 
 void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7, int a8, DAMAGE_TYPE a9, int a10, int a11, int a12, int a13)
 {
+    UNREFERENCED_PARAMETER(a12);
+    UNREFERENCED_PARAMETER(a13);
     char va0[(kMaxSectors+7)>>3];
     int nOwner = actSpriteIdToOwnerId(nSprite);
     gAffectedSectors[0] = 0;
@@ -2527,7 +2529,6 @@ void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7,
             SPRITE *pSprite2 = &qsprite[i];
             if (pSprite2->hitag&0x20)
                 continue;
-            int nSector2 = pSprite2->sectnum;
             if (!TestBitString(va0, pSprite2->sectnum))
                 continue;
             if (!CheckProximity(pSprite2, x, y, z, nSector, nDist))
@@ -2742,6 +2743,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
             return;
         }
         // no break
+        fallthrough__;
     case 251:
         if (a3 == DAMAGE_TYPE_1 && pXSprite->at17_6 == 0)
         {
@@ -2751,6 +2753,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
             return;
         }
         // no break
+        fallthrough__;
     case 245:
         if (a3 == DAMAGE_TYPE_1 && pXSprite->at17_6 == 0)
         {
@@ -4193,12 +4196,7 @@ void MoveDude(SPRITE *pSprite)
         if (pXSector && pXSector->at17_5 && (pPlayer || !pXSector->at37_7))
         {
             if (sector[nSector].lotag == 604)
-            {
-                if (pPlayer)
-                    pXSector->at4_0 = nSprite;
-                else
-                    pXSector->at4_0 = -1;
-            }
+                pXSector->at4_0 = pPlayer ? nSprite : -1;
             trTriggerSector(nSector, pXSector, 42);
         }
         nSector = pSprite->sectnum;
@@ -4606,7 +4604,7 @@ int MoveMissile(SPRITE *pSprite)
         if (pTarget->statnum == 6 && pXTarget && pXTarget->health > 0)
         {
             int nTargetAngle = getangle(-(pTarget->y-pSprite->y), pTarget->x-pSprite->x);
-            int nAngle = getangle(xvel[nSprite]>>12,yvel[nSprite]>>12);
+            int UNUSED(nAngle) = getangle(xvel[nSprite]>>12,yvel[nSprite]>>12);
             long vx = missileInfo[pSprite->type-300].at2;
             long vy = 0;
             RotatePoint(&vx, &vy, (nTargetAngle+1536)&2047, 0, 0);
@@ -5060,7 +5058,7 @@ void actProcessSprites(void)
                         {
                             int nObject = hit & 0x1fff;
                             dassert(nObject >= 0 && nObject < kMaxSprites);
-                            int nOwner = actSpriteOwnerToSpriteId(pSprite);
+                            int UNUSED(nOwner) = actSpriteOwnerToSpriteId(pSprite);
                             actExplodeSprite(pSprite);
                             break;
                         }
@@ -5164,9 +5162,9 @@ void actProcessSprites(void)
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             SPRITE *pSprite2 = gPlayer[p].pSprite;
-            int dx = (x - pSprite->x)>>4;
-            int dy = (y - pSprite->y)>>4;
-            int dz = (z - pSprite->z)>>8;
+            int dx = (x - pSprite2->x)>>4;
+            int dy = (y - pSprite2->y)>>4;
+            int dz = (z - pSprite2->z)>>8;
             int nDist = dx*dx+dy*dy+dz*dz+0x40000;
             int t = divscale16(pXSprite->at12_0, nDist);
             gPlayer[p].at35a += t;
@@ -6182,6 +6180,7 @@ void actPostProcess(void)
 
 void MakeSplash(SPRITE *pSprite, XSPRITE *pXSprite)
 {
+    UNREFERENCED_PARAMETER(pXSprite);
     pSprite->hitag &= ~2;
     int nXSprite = pSprite->extra;
     pSprite->z -= 4<<8;

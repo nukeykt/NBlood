@@ -660,6 +660,163 @@ ifeq ($(MIXERTYPE),SDL)
 endif
 
 
+#### Blood
+
+blood := blood
+
+blood_game_ldflags :=
+
+blood_game_stripflags :=
+
+blood_root := $(source)/$(blood)
+blood_src := $(blood_root)/src
+blood_rsrc := $(blood_root)/rsrc
+blood_obj := $(obj)/$(blood)
+
+blood_cflags := -I$(blood_src)
+
+blood_game_deps := blood_common_midi audiolib mact
+
+ifneq (0,$(NETCODE))
+    blood_game_deps += enet
+endif
+
+blood_game := nblood
+
+ifneq (,$(APPBASENAME))
+    blood_game := $(APPBASENAME)
+endif
+
+blood_game_proper := NBlood
+
+blood_game_objs := \
+	blood.cpp \
+	actor.cpp \
+	ai.cpp \
+	aibat.cpp \
+	aibeast.cpp \
+	aiboneel.cpp \
+	aiburn.cpp \
+	aicaleb.cpp \
+	aicerber.cpp \
+	aicult.cpp \
+	aigarg.cpp \
+	aighost.cpp \
+	aigilbst.cpp \
+	aihand.cpp \
+	aihound.cpp \
+	aiinnoc.cpp \
+	aipod.cpp \
+	airat.cpp \
+	aispid.cpp \
+	aitchern.cpp \
+	aizomba.cpp \
+	aizombf.cpp \
+	asound.cpp \
+	callback.cpp \
+	choke.cpp \
+	common.cpp \
+	config.cpp \
+	controls.cpp \
+	credits.cpp \
+	db.cpp \
+	demo.cpp \
+	dude.cpp \
+	endgame.cpp \
+	eventq.cpp \
+	fire.cpp \
+	fx.cpp \
+	gamemenu.cpp \
+	gameutil.cpp \
+	getopt.cpp \
+	gib.cpp \
+	globals.cpp \
+	inifile.cpp \
+	iob.cpp \
+	levels.cpp \
+	loadsave.cpp \
+	map2d.cpp \
+	menu.cpp \
+	messages.cpp \
+	mirrors.cpp \
+	misc.cpp \
+	network.cpp \
+	osdcmd.cpp \
+	player.cpp \
+	pqueue.cpp \
+	qav.cpp \
+	qheap.cpp \
+	replace.cpp \
+	resource.cpp \
+	screen.cpp \
+	sectorfx.cpp \
+	seq.cpp \
+	sfx.cpp \
+	sound.cpp \
+	tile.cpp \
+	trig.cpp \
+	triggers.cpp \
+	view.cpp \
+	warp.cpp \
+	weapon.cpp \
+
+blood_game_rsrc_objs :=
+blood_game_gen_objs :=
+
+blood_game_miscdeps :=
+blood_game_orderonlydeps :=
+
+ifeq ($(SUBPLATFORM),LINUX)
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+endif
+
+ifeq ($(PLATFORM),BSD)
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lexecinfo
+endif
+
+ifeq ($(PLATFORM),DARWIN)
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lm \
+            -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,OpenGL \
+            -Wl,-framework,CoreMIDI -Wl,-framework,AudioUnit \
+            -Wl,-framework,AudioToolbox -Wl,-framework,IOKit -Wl,-framework,AGL
+    ifneq (00,$(DARWIN9)$(DARWIN10))
+        LIBS += -Wl,-framework,QuickTime -lm
+    endif
+
+    ifeq ($(STARTUP_WINDOW),1)
+        blood_game_objs += GrpFile.game.mm GameListSource.game.mm startosx.game.mm
+    endif
+endif
+
+ifeq ($(PLATFORM),WINDOWS)
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+    blood_game_objs += winbits.cpp
+    blood_game_rsrc_objs += gameres.rc
+    ifeq ($(STARTUP_WINDOW),1)
+        blood_game_objs += startwin.game.cpp
+    endif
+    ifeq ($(MIXERTYPE),WIN)
+        LIBS += -ldsound
+        blood_common_midi_objs := music.cpp midi.cpp mpu401.cpp al_midi.cpp gmtimbre.cpp opl3.cpp
+    endif
+endif
+
+ifeq ($(PLATFORM),WII)
+    LIBS += -lvorbisidec
+endif
+
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
+    blood_game_objs += startgtk.game.cpp
+    blood_game_gen_objs += game_banner.c
+endif
+ifeq ($(RENDERTYPE),SDL)
+    blood_game_rsrc_objs += game_icon.c
+endif
+ifeq ($(MIXERTYPE),SDL)
+    blood_common_midi_objs := sdlmusic.cpp
+endif
+
+
 #### Shadow Warrior
 
 sw := sw
@@ -793,6 +950,7 @@ COMPILERFLAGS += -I$(engine_inc) -I$(mact_inc) -I$(audiolib_inc) -I$(enet_inc) -
 games := \
     kenbuild \
     duke3d \
+    blood \
     sw \
 
 libraries := \
@@ -835,7 +993,7 @@ endif
 
 #### Targets
 
-all: duke3d
+all: blood
 
 start:
 	$(BUILD_STARTED)
@@ -883,6 +1041,7 @@ $(foreach i,$(games),$(foreach j,$(roles),$(eval $(call BUILDRULE,$i,$j))))
 include $(lpeg_root)/Dependencies.mak
 include $(engine_root)/Dependencies.mak
 include $(duke3d_root)/Dependencies.mak
+include $(blood_root)/Dependencies.mak
 include $(sw_root)/Dependencies.mak
 
 

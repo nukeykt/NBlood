@@ -138,6 +138,8 @@ void credReset(void)
 
 void credPlaySmk(const char *pzSMK, int nWAV)
 {
+    UNREFERENCED_PARAMETER(pzSMK);
+    UNREFERENCED_PARAMETER(nWAV);
 #if 0
     CSMKPlayer smkPlayer;
     if (dword_148E14 >= 0)
@@ -155,6 +157,8 @@ void credPlaySmk(const char *pzSMK, int nWAV)
 
 void credPlaySmk(const char *pzSMK, const char *pzWAV)
 {
+    UNREFERENCED_PARAMETER(pzSMK);
+    UNREFERENCED_PARAMETER(pzWAV);
 #if 0
     CSMKPlayer smkPlayer;
     if (dword_148E14 >= 0)

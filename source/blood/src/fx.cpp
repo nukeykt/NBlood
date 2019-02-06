@@ -20,7 +20,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
-#pragma once
 
 #include "build.h"
 #include "common_game.h"
@@ -157,6 +156,8 @@ SPRITE * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned long
         case FX_35:
         case FX_36:
             return NULL;
+        default:
+            break;
         }
     }
     if (nFx < 0 || nFx >= kFXMax)
@@ -268,6 +269,7 @@ void CFX::fxProcess(void)
 
 void fxSpawnBlood(SPRITE *pSprite, int a2)
 {
+    UNREFERENCED_PARAMETER(a2);
     if (pSprite->sectnum < 0 || pSprite->sectnum >= numsectors)
         return;
     int nSector = pSprite->sectnum;
@@ -288,6 +290,7 @@ void fxSpawnBlood(SPRITE *pSprite, int a2)
 
 void sub_746D4(SPRITE *pSprite, int a2)
 {
+    UNREFERENCED_PARAMETER(a2);
     if (pSprite->sectnum < 0 || pSprite->sectnum >= numsectors)
         return;
     int nSector = pSprite->sectnum;

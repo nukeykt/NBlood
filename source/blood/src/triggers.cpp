@@ -337,6 +337,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         case 35:
             if (pXSprite->at1_6)
                 break;
+            fallthrough__;
         case 1:
         case 30:
         case 33:
@@ -544,6 +545,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     case 400:
         if (pSprite->hitag&16)
             return;
+        fallthrough__;
     case 418:
     case 419:
     case 420:
@@ -1046,7 +1048,7 @@ int GetHighestSprite(int nSector, int nStatus, int *a3)
 int GetCrushedSpriteExtents(unsigned int nSector, int *pzTop, int *pzBot)
 {
     dassert(pzTop != NULL && pzBot != NULL);
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     int vc = -1;
     SECTOR *pSector = &qsector[nSector];
     int vbp = pSector->ceilingz;
@@ -1071,7 +1073,7 @@ int GetCrushedSpriteExtents(unsigned int nSector, int *pzTop, int *pzBot)
 
 int VCrushBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     int nXSector = sector[nSector].extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1110,7 +1112,7 @@ int VCrushBusy(unsigned int nSector, unsigned int a2)
 
 int VSpriteBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     int nXSector = sector[nSector].extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1159,7 +1161,7 @@ int VSpriteBusy(unsigned int nSector, unsigned int a2)
 
 int VDoorBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     int nXSector = sector[nSector].extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1258,7 +1260,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
 
 int HDoorBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SECTOR *pSector = &qsector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
@@ -1286,7 +1288,7 @@ int HDoorBusy(unsigned int nSector, unsigned int a2)
 
 int RDoorBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SECTOR *pSector = &qsector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
@@ -1313,7 +1315,7 @@ int RDoorBusy(unsigned int nSector, unsigned int a2)
 
 int StepRotateBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SECTOR *pSector = &qsector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
@@ -1347,7 +1349,7 @@ int StepRotateBusy(unsigned int nSector, unsigned int a2)
 
 int GenSectorBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SECTOR *pSector = &qsector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
@@ -1366,7 +1368,7 @@ int GenSectorBusy(unsigned int nSector, unsigned int a2)
 
 int PathBusy(unsigned int nSector, unsigned int a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SECTOR *pSector = &qsector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
@@ -1460,7 +1462,7 @@ void TeleFrag(int nKiller, int nSector)
 
 void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     int nDest = pXSector->at2c_0;
     dassert(nDest < kMaxSprites);
     SPRITE *pDest = &qsprite[nDest];
@@ -1506,7 +1508,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
     int nSprite;
     SPRITE *pSprite;
     XSPRITE *pXSprite;
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SPRITE *pSprite2 = &qsprite[pXSector->at2c_0];
     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
     int nId = pXSprite2->at12_0;
@@ -1539,7 +1541,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 
 void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     SECTOR *pSector = &qsector[nSector];
     switch (a3.at2_0)
     {
@@ -1633,7 +1635,7 @@ void InitPath(unsigned int nSector, XSECTOR *pXSector)
     int nSprite;
     SPRITE *pSprite;
     XSPRITE *pXSprite;
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     int nId = pXSector->at4_0;
     for (nSprite = headspritestat[16]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
@@ -1709,7 +1711,6 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
 
 void LinkWall(int nWall, XWALL *pXWall, EVENT a3)
 {
-    WALL *pWall = &qwall[nWall];
     int nBusy = GetSourceBusy(a3);
     pXWall->at1_7 = nBusy;
     if ((pXWall->at1_7 & 0xffff) == 0)
@@ -1718,7 +1719,7 @@ void LinkWall(int nWall, XWALL *pXWall, EVENT a3)
 
 void trTriggerSector(unsigned int nSector, XSECTOR *pXSector, int a3)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     if (!pXSector->at35_0 && !pXSector->at16_6)
     {
         if (pXSector->at16_5)
@@ -1739,7 +1740,7 @@ void trTriggerSector(unsigned int nSector, XSECTOR *pXSector, int a3)
 
 void trMessageSector(unsigned int nSector, EVENT a2)
 {
-    dassert(nSector < numsectors);
+    dassert(nSector < (unsigned int)numsectors);
     dassert(sector[nSector].extra > 0 && sector[nSector].extra < kMaxXSectors);
     int nXSector = sector[nSector].extra;
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1754,7 +1755,7 @@ void trMessageSector(unsigned int nSector, EVENT a2)
 
 void trTriggerWall(unsigned int nWall, XWALL *pXWall, int a3)
 {
-    dassert(nWall < numwalls);
+    dassert(nWall < (unsigned int)numwalls);
     if (!pXWall->at13_2 && !pXWall->at10_1)
     {
         if (pXWall->at10_0)
@@ -1775,7 +1776,7 @@ void trTriggerWall(unsigned int nWall, XWALL *pXWall, int a3)
 
 void trMessageWall(unsigned int nWall, EVENT a2)
 {
-    dassert(nWall < numwalls);
+    dassert(nWall < (unsigned int)numwalls);
     dassert(wall[nWall].extra > 0 && wall[nWall].extra < kMaxXWalls);
     int nXWall = wall[nWall].extra;
     XWALL *pXWall = &xwall[nXWall];

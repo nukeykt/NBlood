@@ -136,6 +136,7 @@ bool bLoadScreenCrcMatch = false;
 
 void RotateYZ(int *pX, int *pY, int *pZ, int ang)
 {
+    UNREFERENCED_PARAMETER(pX);
 	int oY, oZ, angSin, angCos;
 	oY = *pY;
 	oZ = *pZ;
@@ -147,6 +148,7 @@ void RotateYZ(int *pX, int *pY, int *pZ, int ang)
 
 void RotateXZ(int *pX, int *pY, int *pZ, int ang)
 {
+    UNREFERENCED_PARAMETER(pY);
 	int oX, oZ, angSin, angCos;
 	oX = *pX;
 	oZ = *pZ;
@@ -158,6 +160,7 @@ void RotateXZ(int *pX, int *pY, int *pZ, int ang)
 
 void RotateXY(int *pX, int *pY, int *pZ, int ang)
 {
+    UNREFERENCED_PARAMETER(pZ);
 	int oX, oY, angSin, angCos;
 	oX = *pX;
 	oY = *pY;
@@ -755,6 +758,7 @@ void fakeMoveDude(SPRITE *pSprite)
 
 void fakeActAirDrag(SPRITE *pSprite, int num)
 {
+    UNREFERENCED_PARAMETER(pSprite);
     int xvec = 0;
     int yvec = 0;
     int nSector = predict.at68;
@@ -793,7 +797,7 @@ void fakeActProcessSprites(void)
         {
             dassert(nXSector > 0 && nXSector < kMaxXSectors);
             dassert(xsector[nXSector].reference == nSector);
-            XSECTOR *pXSector = &xsector[nXSector];
+            pXSector = &xsector[nXSector];
         }
 		if (pXSector)
 		{
@@ -1064,7 +1068,7 @@ struct AMMOICON {
 };
 
 AMMOICON gAmmoIcons[] = {
-    { -1, 0 },
+    { -1, 0, 0 },
     { 816, (int)(65536 * 0.5), 0 },
     { 619, (int)(65536 * 0.8), 0 },
     { 817, (int)(65536 * 0.7), 3 },
@@ -2422,17 +2426,14 @@ void CalcOtherPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsect
     pSprite->cstat &= ~256;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
     FindSector(*pX, *pY, *pZ, vsectnum);
-    short nHSprite, nHWall, nHSector;
-    int hX, hY, hZ;
+    short nHSector;
+    int hX, hY;
     vec3_t pos = {*pX, *pY, *pZ};
     hitdata_t hitdata;
     hitscan(&pos, *vsectnum, vX, vY, vZ, &hitdata, CLIPMASK1);
     nHSector = hitdata.sect;
-    nHWall = hitdata.wall;
-    nHSprite = hitdata.sprite;
     hX = hitdata.pos.x;
     hY = hitdata.pos.y;
-    hZ = hitdata.pos.z;
     int dX = hX-*pX;
     int dY = hY-*pY;
     if (klabs(vX)+klabs(vY) > klabs(dX)+klabs(dY))
@@ -2470,18 +2471,15 @@ void CalcPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, 
     pSprite->cstat &= ~256;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
     FindSector(*pX, *pY, *pZ, vsectnum);
-    short nHSprite, nHWall, nHSector;
-    int hX, hY, hZ;
+    short nHSector;
+    int hX, hY;
     hitscangoal.x = hitscangoal.y = 0x1fffffff;
     vec3_t pos = { *pX, *pY, *pZ };
     hitdata_t hitdata;
     hitscan(&pos, *vsectnum, vX, vY, vZ, &hitdata, CLIPMASK1);
     nHSector = hitdata.sect;
-    nHWall = hitdata.wall;
-    nHSprite = hitdata.sprite;
     hX = hitdata.pos.x;
     hY = hitdata.pos.y;
-    hZ = hitdata.pos.z;
     int dX = hX-*pX;
     int dY = hY-*pY;
     if (klabs(vX)+klabs(vY) > klabs(dX)+klabs(dY))
@@ -2720,7 +2718,7 @@ void viewUpdateDelirium(void)
     deliriumTurnO = deliriumTurn;
     deliriumPitchO = deliriumPitch;
 	int powerCount;
-	if (powerCount = powerupCheck(gView,28))
+	if ((powerCount = powerupCheck(gView,28)) != 0)
 	{
 		int tilt1 = 170, tilt2 = 170, pitch = 20;
         int timer = gFrameClock*4;
@@ -3136,7 +3134,7 @@ RORHACK:
         {
             if (videoGetRenderMode() == REND_CLASSIC)
             {
-                dassert(waloff[ TILTBUFFER ] != NULL);
+                dassert(waloff[ TILTBUFFER ] != 0);
                 renderRestoreTarget();
                 int vrc = 64+4+2+1024;
                 if (vc)
@@ -3161,12 +3159,12 @@ RORHACK:
         int nClipDist = gView->pSprite->clipdist<<2;
         long ve8, vec, vf0, vf4;
         GetZRange(gView->pSprite, &vf4, &vf0, &vec, &ve8, nClipDist, 0);
+#if 0
         int tmpSect = nSectnum;
         if ((vf0 & 0xe000) == 0x4000)
         {
             tmpSect = vf0 & (kMaxWalls-1);
         }
-#if 0
         int v8 = byte_1CE5C2 > 0 && (sector[tmpSect].ceilingstat&1);
         if (gWeather.at12d8 > 0 || v8)
         {

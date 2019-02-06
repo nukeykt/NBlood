@@ -28,7 +28,7 @@ struct DUDEINFO {
     short at2; // health
     unsigned short at4; // mass
     int at6; // unused?
-    char ata; // clipdist
+    unsigned char ata; // clipdist
     int atb;
     int atf;
     int at13; // target see range?

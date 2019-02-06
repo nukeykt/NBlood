@@ -80,7 +80,7 @@ struct TARGETTRACK {
 
 extern int dword_138BB0[5];
 extern DUDEEXTRA gDudeExtra[];
-int gDudeSlope[];
+extern int gDudeSlope[];
 
 bool sub_5BDA8(SPRITE *pSprite, int nSeq);
 void aiPlay3DSound(SPRITE *pSprite, int a2, AI_SFX_PRIORITY a3, int a4);

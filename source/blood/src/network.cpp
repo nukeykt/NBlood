@@ -135,6 +135,8 @@ void netServerDisconnect(void)
                 case ENET_EVENT_TYPE_DISCONNECT:
                     bDisconnectStatus = true;
                     break;
+                default:
+                    break;
                 }
             }
             if (!bDisconnectStatus)
@@ -156,6 +158,8 @@ void netClientDisconnect(void)
         {
         case ENET_EVENT_TYPE_DISCONNECT:
             bDisconnectStatus = true;
+            break;
+        default:
             break;
         }
     }
@@ -286,7 +290,6 @@ void netCheckSync(void)
         return;
     if (bOutOfSync)
         return;
-    char v4;
     while (1)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
@@ -588,6 +591,7 @@ void netBroadcastNewGame(void)
 
 void netBroadcastTaunt(int nPlayer, int nTaunt)
 {
+    UNREFERENCED_PARAMETER(nPlayer);
     if (numplayers > 1)
     {
         char *pPacket = packet;
@@ -1052,6 +1056,8 @@ void netInitialize(bool bConsole)
                     }
                     break;
                 }
+                default:
+                    break;
                 }
             }
             enet_host_service(gNetENetServer, NULL, 0);
@@ -1185,6 +1191,8 @@ void netInitialize(bool bConsole)
                     }
                     enet_packet_destroy(event.packet);
                     break;
+                default:
+                    break;
                 }
             }
         }
@@ -1291,6 +1299,8 @@ void netUpdate(void)
                     netPostEPacket(event.packet);
                     break;
                 }
+            default:
+                break;
             }
             enet_host_service(gNetENetServer, NULL, 0);
         }
@@ -1321,6 +1331,8 @@ void netUpdate(void)
                     netPostEPacket(event.packet);
                     break;
                 }
+            default:
+                break;
             }
             enet_host_service(gNetENetClient, NULL, 0);
         }

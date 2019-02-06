@@ -72,6 +72,8 @@ bool gFogMode = false;
 
 void gSetDacRange(int start, int end, RGB *pPal)
 {
+    UNREFERENCED_PARAMETER(start);
+    UNREFERENCED_PARAMETER(end);
     if (videoGetRenderMode() == REND_CLASSIC)
     {
         memcpy(palette, pPal, sizeof(palette));

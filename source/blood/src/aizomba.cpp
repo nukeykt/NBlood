@@ -82,7 +82,7 @@ static void HackSeqCallback(int, int nXSprite)
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
     int tx = pXSprite->at20_0-pSprite->x;
     int ty = pXSprite->at24_0-pSprite->y;
-    int nDist = approxDist(tx, ty);
+    int UNUSED(nDist) = approxDist(tx, ty);
     int nAngle = getangle(tx, ty);
     int height = (pSprite->yrepeat*pDudeInfo->atb)<<2;
     int height2 = (pTarget->yrepeat*pDudeInfoT->atb)<<2;
@@ -260,12 +260,14 @@ static void myThinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
 
 static void entryEZombie(SPRITE *pSprite, XSPRITE *pXSprite)
 {
+    UNREFERENCED_PARAMETER(pXSprite);
     pSprite->type = 203;
     pSprite->hitag |= 1;
 }
 
 static void entryAIdle(SPRITE *pSprite, XSPRITE *pXSprite)
 {
+    UNREFERENCED_PARAMETER(pSprite);
     pXSprite->target = -1;
 }
 

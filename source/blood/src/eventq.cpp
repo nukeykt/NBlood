@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class EventQueue : public PriorityQueue
 {
 public:
-    char IsNotEmpty(int nTime)
+    bool IsNotEmpty(unsigned long nTime)
     {
         return fNodeCount > 0 && nTime >= queueItems[1].at0;
     }
@@ -54,12 +54,12 @@ EventQueue eventQ;
 
 void EventQueue::Kill(int a1, int a2)
 {
-    EVENT evn = { a1, a2, 0, 0 };
+    EVENT evn = { (unsigned int)a1, (unsigned int)a2, 0, 0 };
     //evn.at0_0 = a1;
     //evn.at1_5 = a2;
 
     short vs = *(short*)&evn;
-    for (int i = 1; i <= fNodeCount;)
+    for (unsigned long i = 1; i <= fNodeCount;)
     {
         if ((short)queueItems[i].at4 == vs)
             Delete(i);
@@ -70,9 +70,9 @@ void EventQueue::Kill(int a1, int a2)
 
 void EventQueue::Kill(int a1, int a2, CALLBACK_ID a3)
 {
-    EVENT evn = { a1, a2, kCommandCallback, a3 };
-    int vc = *(int*)&evn;
-    for (int i = 1; i <= fNodeCount;)
+    EVENT evn = { (unsigned int)a1, (unsigned int)a2, kCommandCallback, (unsigned int)a3 };
+    unsigned long vc = *(unsigned long*)&evn;
+    for (unsigned long i = 1; i <= fNodeCount;)
     {
         if (queueItems[i].at4 == vc)
             Delete(i);
@@ -89,7 +89,7 @@ struct RXBUCKET
 
 RXBUCKET rxBucket[1024+1];
 
-int GetBucketChannel(RXBUCKET *pRX)
+int GetBucketChannel(const RXBUCKET *pRX)
 {
     switch (pRX->at1_5)
     {
@@ -123,7 +123,7 @@ int GetBucketChannel(RXBUCKET *pRX)
 
 int CompareChannels(const void *a, const void *b)
 {
-    return GetBucketChannel((RXBUCKET*)a)-GetBucketChannel((RXBUCKET*)b);
+    return GetBucketChannel((const RXBUCKET*)a)-GetBucketChannel((const RXBUCKET*)b);
 }
 
 unsigned short bucketHead[kMaxChannels+1];
