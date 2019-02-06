@@ -655,17 +655,12 @@ MAPHEADER2 byte_19AE44;
 
 unsigned long dbReadMapCRC(const char *pPath)
 {
-    //char path1[BMAX_PATH];
-    char path2[BMAX_PATH];
-    char node[BMAX_PATH], dir[BMAX_PATH], fname[BMAX_PATH], ext[BMAX_PATH];
     byte_1A76C7 = 0;
     byte_1A76C8 = 0;
-    _splitpath(pPath, node, dir, fname, ext);
-    _makepath(path2, NULL, NULL, fname, NULL);
-    DICTNODE *pNode = gSysRes.Lookup(path2, "MAP");
+    DICTNODE *pNode = gSysRes.Lookup(pPath, "MAP");
     if (!pNode)
     {
-        ThrowError("Error opening map file %s", path2);
+        ThrowError("Error opening map file %s", pPath);
     }
     char *pData = (char*)gSysRes.Lock(pNode);
     int nSize = pNode->size;
@@ -696,8 +691,6 @@ int gMapRev, gSongId, gSkyCount;
 
 void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, short *pSector, unsigned long *pCRC)
 {
-    char path2[BMAX_PATH];
-    char node[BMAX_PATH], dir[BMAX_PATH], fname[BMAX_PATH], ext[BMAX_PATH];
     int16_t tpskyoff[256];
     memset(show2dsector, 0, sizeof(show2dsector));
     memset(show2dwall, 0, sizeof(show2dwall));
@@ -705,12 +698,10 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
 #ifdef USE_OPENGL
     Polymost_prepare_loadboard();
 #endif
-    _splitpath(pPath, node, dir, fname, ext);
-    _makepath(path2, NULL, NULL, fname, NULL);
-    DICTNODE *pNode = gSysRes.Lookup(path2, "MAP");
+    DICTNODE *pNode = gSysRes.Lookup(pPath, "MAP");
     if (!pNode)
     {
-        ThrowError("Error opening map file %s", path2);
+        ThrowError("Error opening map file %s", pPath);
     }
     char *pData = (char*)gSysRes.Lock(pNode);
     int nSize = pNode->size;

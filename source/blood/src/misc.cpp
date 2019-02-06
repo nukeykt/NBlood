@@ -124,9 +124,18 @@ void wsrand(int seed)
 
 void ChangeExtension(char *pzFile, const char *pzExt)
 {
+#if 0
     char drive[BMAX_PATH];
     char dir[BMAX_PATH];
     char filename[BMAX_PATH];
     _splitpath(pzFile, drive, dir, filename, NULL);
     _makepath(pzFile, drive, dir, filename, pzExt);
+#else
+    char *pDot = strrchr(pzFile, '.');
+    if (!pDot)
+        pDot = pzFile + strlen(pzFile);
+    else
+        *pDot = 0;
+    strcat(pDot, pzExt);
+#endif
 }
