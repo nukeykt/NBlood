@@ -585,10 +585,10 @@ static void MoveSlow(SPRITE *pSprite, XSPRITE *pXSprite)
     switch (pSprite->type)
     {
     case 206:
-        yvel[nSprite] = 0x44444;
+        zvel[nSprite] = 0x44444;
         break;
     case 207:
-        yvel[nSprite] = 0x35555;
+        zvel[nSprite] = 0x35555;
         break;
     }
 }

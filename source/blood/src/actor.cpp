@@ -4766,8 +4766,6 @@ void actExplodeSprite(SPRITE *pSprite)
     case 314:
         v4 = 3;
         seqSpawn(5, 3, nXSprite, -1);
-        if (Chance(0x8000))
-            pSprite->cstat |= 4;
         sfxPlay3DSound(pSprite, 304, -1, 0);
         GibSprite(pSprite, GIBTYPE_5, NULL, NULL);
         break;
@@ -5691,9 +5689,9 @@ SPRITE* actFireMissile(SPRITE *pSprite, int a2, int a3, int a4, int a5, int a6, 
             seqSpawn(0, 3, nXSprite, -1);
         else
             seqSpawn(1, 3, nXSprite, -1);
-        xvel[nMissile] += xvel[nSprite]/2+Random2(0x11111);
-        yvel[nMissile] += yvel[nSprite]/2+Random2(0x11111);
-        zvel[nMissile] += zvel[nSprite]/2+Random2(0x11111);
+        xvel[nMissile] += xvel[nSprite]+Random2(0x11111);
+        yvel[nMissile] += yvel[nSprite]+Random2(0x11111);
+        zvel[nMissile] += zvel[nSprite]+Random2(0x11111);
         break;
     case 303:
         evPost(nMissile, 3, 30, CALLBACK_ID_2);
