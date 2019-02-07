@@ -502,7 +502,7 @@ void GibWall(int nWall, GIBTYPE nGibType, CGibVelocity *pVel)
     sfxPlay3DSound(cx, cy, cz, pGib->at10, nSector);
     for (int i = 0; i < pGib->at4; i++)
     {
-        GIBFX *pGibFX = pGib->at0;
+        GIBFX *pGibFX = &pGib->at0[i];
         dassert(pGibFX->chance > 0);
         GibFX(nWall, pGibFX, ceilZ, wx, wy, wz, pVel);
     }

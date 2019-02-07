@@ -74,9 +74,9 @@ static void HackSeqCallback(int, int nXSprite)
         return;
     SPRITE *pTarget = &qsprite[pXSprite->target];
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+    int height = (pDudeInfo->atb*pSprite->yrepeat);
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
-    int height2 = (pDudeInfoT->atb*pTarget->yrepeat)<<2;
+    int height2 = (pDudeInfoT->atb*pTarget->yrepeat);
     actFireVector(pSprite, 0, 0, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, height-height2, VECTOR_TYPE_11);
 }
 

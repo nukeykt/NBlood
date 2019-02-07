@@ -5611,13 +5611,13 @@ SPRITE* actFireMissile(SPRITE *pSprite, int a2, int a3, int a4, int a5, int a6, 
         if (hit == 3 || hit == 0)
         {
             v4 = 1;
-            x = gHitInfo.hitx-mulscale28(Cos(pSprite->ang), 16);
-            y = gHitInfo.hity-mulscale28(Sin(pSprite->ang), 16);
+            x = gHitInfo.hitx-mulscale30(Cos(pSprite->ang), 16);
+            y = gHitInfo.hity-mulscale30(Sin(pSprite->ang), 16);
         }
         else
         {
-            x = gHitInfo.hitx-mulscale28(pMissileInfo->atd<<1, Cos(pSprite->ang));
-            y = gHitInfo.hity-mulscale28(pMissileInfo->atd<<1, Sin(pSprite->ang));
+            x = gHitInfo.hitx-mulscale30(pMissileInfo->atd<<1, Cos(pSprite->ang));
+            y = gHitInfo.hity-mulscale30(pMissileInfo->atd<<1, Sin(pSprite->ang));
         }
     }
     SPRITE *pMissile = actSpawnSprite(pSprite->sectnum, x, y, z, 5, 1);
