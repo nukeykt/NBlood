@@ -201,10 +201,13 @@ static void thinkPonder(SPRITE *pSprite, XSPRITE *pXSprite)
             if (klabs(nDeltaAngle) <= pDudeInfo->at1b)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
-                if (nDist < 0x400 && klabs(nDeltaAngle) < 85)
+                if (nDist < 0x400)
                 {
-                    sfxPlay3DSound(pSprite, 1101, 1, 0);
-                    aiNewState(pSprite, pXSprite, &zombieAHack);
+                    if (klabs(nDeltaAngle) < 85)
+                    {
+                        sfxPlay3DSound(pSprite, 1101, 1, 0);
+                        aiNewState(pSprite, pXSprite, &zombieAHack);
+                    }
                     return;
                 }
             }

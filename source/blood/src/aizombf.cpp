@@ -105,7 +105,7 @@ static void ThrowSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     SPRITE *pSprite = &qsprite[nSprite];
-    actFireMissile(pSprite, 0, dudeInfo[pSprite->type-kDudeBase].atb, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 300);
+    actFireMissile(pSprite, 0, -dudeInfo[pSprite->type-kDudeBase].atb, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 300);
 }
 
 static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)

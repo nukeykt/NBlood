@@ -329,7 +329,7 @@ void PlayerBubble(int nSprite) // 10
             {
                 xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
                 yvel[pFX->index] = yvel[nSprite] + Random2(0x1aaaa);
-                zvel[pFX->index] = zvel[nSprite] - 0x1aaaa;
+                zvel[pFX->index] = zvel[nSprite] + Random2(0x1aaaa);
             }
         }
         evPost(nSprite, 3, 4, CALLBACK_ID_10);
@@ -353,7 +353,7 @@ void EnemyBubble(int nSprite) // 11
         {
             xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
             yvel[pFX->index] = yvel[nSprite] + Random2(0x1aaaa);
-            zvel[pFX->index] = zvel[nSprite] - 0x1aaaa;
+            zvel[pFX->index] = zvel[nSprite] + Random2(0x1aaaa);
         }
     }
     evPost(nSprite, 3, 4, CALLBACK_ID_11);
