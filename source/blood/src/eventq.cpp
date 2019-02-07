@@ -121,9 +121,161 @@ int GetBucketChannel(const RXBUCKET *pRX)
     return 0;
 }
 
+#if 0
 int CompareChannels(const void *a, const void *b)
 {
     return GetBucketChannel((const RXBUCKET*)a)-GetBucketChannel((const RXBUCKET*)b);
+}
+#else
+static int CompareChannels(RXBUCKET *a, RXBUCKET *b)
+{
+    return GetBucketChannel(a) - GetBucketChannel(b);
+}
+#endif
+
+static RXBUCKET *SortGetMiddle(RXBUCKET *a1, RXBUCKET *a2, RXBUCKET *a3)
+{
+    if (CompareChannels(a1, a2) > 0)
+    {
+        if (CompareChannels(a1, a3) > 0)
+        {
+            if (CompareChannels(a2, a3) > 0)
+                return a2;
+            return a3;
+        }
+        return a1;
+    }
+    else
+    {
+        if (CompareChannels(a1, a3) < 0)
+        {
+            if (CompareChannels(a2, a3) > 0)
+                return a3;
+            return a2;
+        }
+        return a1;
+    }
+}
+
+static void SortSwap(RXBUCKET *a, RXBUCKET *b)
+{
+    RXBUCKET t = *a;
+    *a = *b;
+    *b = t;
+}
+
+static void SortRXBucket(int nCount)
+{
+    RXBUCKET *v144[32];
+    int vc4[32];
+    int v14 = 0;
+    RXBUCKET *pArray = rxBucket;
+    while (true)
+    {
+        while (nCount > 1)
+        {
+            if (nCount < 16)
+            {
+                for (int nDist = 3; nDist > 0; nDist -= 2)
+                {
+                    for (RXBUCKET *pI = pArray+nDist; pI < pArray+nCount; pI += nDist)
+                    {
+                        for (RXBUCKET *pJ = pI; pJ > pArray && CompareChannels(pJ-nDist, pJ) > 0; pJ -= nDist)
+                        {
+                            SortSwap(pJ, pJ-nDist);
+                        }
+                    }
+                }
+                break;
+            }
+            RXBUCKET *v30, *vdi, *vsi;
+            vdi = pArray + nCount / 2;
+            if (nCount > 29)
+            {
+                v30 = pArray;
+                vsi = pArray + nCount-1;
+                if (nCount > 42)
+                {
+                    int v20 = nCount / 8;
+                    int v40 = v20*2;
+                    v30 = SortGetMiddle(v30, v30+v20, v30+v20*2);
+                    vdi = SortGetMiddle(vdi-v20, vdi, vdi+v20);
+                    vsi = SortGetMiddle(vsi-v20*2, vsi-v20, vsi);
+                }
+                vdi = SortGetMiddle(v30, vdi, vsi);
+            }
+            RXBUCKET v44 = *vdi;
+            RXBUCKET *vc = pArray;
+            RXBUCKET *v8 = pArray+nCount-1;
+            RXBUCKET *vbx = vc;
+            RXBUCKET *v4 = v8;
+            while (true)
+            {
+                while (vbx <= v4)
+                {
+                    int nCmp = CompareChannels(vbx, &v44);
+                    if (nCmp > 0)
+                        break;
+                    if (nCmp == 0)
+                    {
+                        SortSwap(vbx, vc);
+                        vc++;
+                    }
+                    vbx++;
+                }
+                while (vbx <= v4)
+                {
+                    int nCmp = CompareChannels(v4, &v44);
+                    if (nCmp < 0)
+                        break;
+                    if (nCmp == 0)
+                    {
+                        SortSwap(v4, v8);
+                        v8--;
+                    }
+                    v4--;
+                }
+                if (vbx > v4)
+                    break;
+                SortSwap(vbx, v4);
+                v4--;
+                vbx++;
+            }
+            RXBUCKET *v2c = pArray+nCount;
+            int vt = ClipHigh(vbx-vc, vc-pArray);
+            for (int i = 0; i < vt; i++)
+            {
+                SortSwap(&vbx[i-vt], &pArray[i]);
+            }
+            vt = ClipHigh(v8-v4, v2c-v8-1);
+            for (int i = 0; i < vt; i++)
+            {
+                SortSwap(&v2c[i-vt], &vbx[i]);
+            }
+            int vvsi = v8-v4;
+            int vvdi = vbx-vc;
+            if (vvsi >= vvdi)
+            {
+                vc4[v14] = vvsi;
+                v144[v14] = v2c-vvsi;
+                nCount = vvdi;
+                v14++;
+            }
+            else
+            {
+                vc4[v14] = vvdi;
+                v144[v14] = pArray;
+                nCount = vvsi;
+                pArray = v2c - vvsi;
+                v14++;
+            }
+        }
+        if (v14 == 0)
+            return;
+        v14--;
+        pArray = v144[v14];
+        nCount = vc4[v14];
+    }
 }
 
 unsigned short bucketHead[kMaxChannels+1];
@@ -174,8 +326,7 @@ void evInit(void)
             }
         }
     }
-    // TODO: Use Watcom's qsort algorithm
-    qsort(rxBucket, nCount, sizeof(RXBUCKET), CompareChannels);
+    SortRXBucket(nCount);
     int i, j = 0;
     for (i = 0; i < 1024; i++)
     {
