@@ -107,6 +107,8 @@ bool bNoDemo = false;
 bool bQuickStart = true;
 bool bNoAutoLoad = false;
 
+bool bVanilla = false;
+
 char gUserMapFilename[BMAX_PATH];
 char gPName[MAXPLAYERNAME];
 
@@ -577,6 +579,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 			gHealthTemp[i] = xsprite[gPlayer[i].pSprite->extra].health;
 		}
 	}
+    bVanilla = gDemo.at1 && gDemo.m_bLegacy;
+    blooddemohack = bVanilla;
 	memset(xsprite,0,sizeof(xsprite));
 	memset(sprite,0,kMaxSprites*sizeof(sprite));
 	drawLoadingScreen();
@@ -1514,8 +1518,6 @@ int app_main(int argc, char const * const * argv)
         changespritestat_replace = qchangespritestat;
         loadvoxel_replace = qloadvoxel;
         bloodhack = true;
-        // PORT-TODO:
-        blooddemohack = true;
     }
 
     initprintf("Initializing Build 3D engine\n");

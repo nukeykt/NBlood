@@ -1246,7 +1246,12 @@ void ProcessInput(PLAYER *pPlayer)
         }
         pPlayer->at1fe += 4;
         if (!bSeqStat)
-            pPlayer->q16horiz = mulscale16(0x8000-(Cos(ClipHigh(pPlayer->at1fe*8, 1024))>>15), F16(120));
+        {
+            if (bVanilla)
+                pPlayer->q16horiz = fix16_from_int(mulscale16(0x8000-(Cos(ClipHigh(pPlayer->at1fe*8, 1024))>>15), 120));
+            else
+                pPlayer->q16horiz = mulscale16(0x8000-(Cos(ClipHigh(pPlayer->at1fe*8, 1024))>>15), F16(120));
+        }
         if (pPlayer->atbd)
             pInput->newWeapon = pPlayer->atbd;
         if (pInput->keyFlags.action)
@@ -1468,12 +1473,24 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->q16look = fix16_max(pPlayer->q16look-F16(4), F16(-60));
     }
     pPlayer->q16look = fix16_clamp(pPlayer->q16look+pInput->q16mlook, F16(-60), F16(60));
-    if (pPlayer->q16look > 0)
-        pPlayer->q16horiz = mulscale30(F16(120), Sin(fix16_to_int(pPlayer->q16look<<3)));
-    else if (pPlayer->q16look < 0)
-        pPlayer->q16horiz = mulscale30(F16(180), Sin(fix16_to_int(pPlayer->q16look<<3)));
+    if (bVanilla)
+    {
+        if (pPlayer->q16look > 0)
+            pPlayer->q16horiz = fix16_from_int(mulscale30(120, Sin(fix16_to_int(pPlayer->q16look)<<3)));
+        else if (pPlayer->q16look < 0)
+            pPlayer->q16horiz = fix16_from_int(mulscale30(180, Sin(fix16_to_int(pPlayer->q16look)<<3)));
+        else
+            pPlayer->q16horiz = 0;
+    }
     else
-        pPlayer->q16horiz = 0;
+    {
+        if (pPlayer->q16look > 0)
+            pPlayer->q16horiz = mulscale30(F16(120), Sin(fix16_to_int(pPlayer->q16look<<3)));
+        else if (pPlayer->q16look < 0)
+            pPlayer->q16horiz = mulscale30(F16(180), Sin(fix16_to_int(pPlayer->q16look<<3)));
+        else
+            pPlayer->q16horiz = 0;
+    }
     int nSector = pSprite->sectnum;
     int florhit = gSpriteHit[pSprite->extra].florhit & 0xe000;
     char va;

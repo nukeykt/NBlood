@@ -342,6 +342,6 @@ void sub_74A18(SPRITE *pSprite, int z, int a3, int a4)
         int nAngle = pSprite->ang+Random2(56)+512;
         xvel[pShell->index] = mulscale30(nDist, Cos(nAngle));
         yvel[pShell->index] = mulscale30(nDist, Sin(nAngle));
-        zvel[pShell->index] = zvel[pSprite->index]-(0x20000+(Random2(40)<<18)/120);
+        zvel[pShell->index] = zvel[pSprite->index]-(0x20000+(Random2(20)<<18)/120);
     }
 }

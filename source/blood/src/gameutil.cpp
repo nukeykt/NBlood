@@ -200,14 +200,14 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
     nDist <<= 4;
     if (x1 < x2)
     {
-        if (x <= x1 - nDist && x >= x2 + nDist)
+        if (x <= x1 - nDist || x >= x2 + nDist)
         {
             return 0;
         }
     }
     else
     {
-        if (x <= x2 - nDist && x >= x1 + nDist)
+        if (x <= x2 - nDist || x >= x1 + nDist)
         {
             return 0;
         }
@@ -233,7 +233,6 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
                 {
                     return dist2 < nDist * nDist;
                 }
-                return 1;
             }
             else
             {
@@ -249,20 +248,20 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
                 {
                     return dist1 < nDist * nDist;
                 }
-                return 1;
             }
+            return 1;
         }
     }
     if (y1 < y2)
     {
-        if (y <= y1 - nDist && y >= y2 + nDist)
+        if (y <= y1 - nDist || y >= y2 + nDist)
         {
             return 0;
         }
     }
     else
     {
-        if (y <= y2 - nDist && y >= y1 + nDist)
+        if (y <= y2 - nDist || y >= y1 + nDist)
         {
             return 0;
         }
@@ -288,7 +287,6 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
                 {
                     return check2 < nDist * nDist;
                 }
-                return 1;
             }
             else
             {
@@ -304,7 +302,6 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
                 {
                     return check1 < nDist * nDist;
                 }
-                return 1;
             }
         }
     }
@@ -312,7 +309,7 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
     int dx = x2 - x1;
     int dy = y2 - y1;
     int px = x - x2;
-    int py = x - y2;
+    int py = y - y2;
     int side = px * dx + dy * py;
     if (side >= 0)
     {
@@ -877,27 +874,16 @@ int GetClosestSpriteSectors(int nSector, int x, int y, int nDist, short *pSector
             if (TestBitString(sectbits, nNextSector))
                 continue;
             SetBitString(sectbits, nNextSector);
-            if (CheckProximityWall(pWall->point2, x, y, nDist))
+            if (CheckProximityWall(wall[j].point2, x, y, nDist))
             {
                 if (pSectBit)
-                    pSectBit[nNextSector>>3] |= 1<<(nNextSector&7);
+                    SetBitString(pSectBit, nNextSector);
                 pSectors[n++] = nNextSector;
-            }
-            int dx = klabs(wall[pWall->point2].x - x)>>4;
-            int dy = klabs(wall[pWall->point2].y - y)>>4;
-            if (dx < nDist && dy < nDist)
-            {
-                if (approxDist(dx, dy) < nDist)
+                if (a8 && pWall->extra > 0)
                 {
-                    if (pSectBit)
-                        SetBitString(pSectBit, nNextSector);
-                    pSectors[n++] = nNextSector;
-                    if (a8 && pWall->extra > 0)
-                    {
-                        XWALL *pXWall = &xwall[pWall->extra];
-                        if (pXWall->at10_6 && !pXWall->at10_1 && !pXWall->at1_6)
-                            a8[m++] = j;
-                    }
+                    XWALL *pXWall = &xwall[pWall->extra];
+                    if (pXWall->at10_6 && !pXWall->at10_1 && !pXWall->at1_6)
+                        a8[m++] = j;
                 }
             }
         }
