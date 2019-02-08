@@ -5902,7 +5902,7 @@ void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VEC
         {
             int nWall = gHitInfo.hitwall;
             dassert(nWall >= 0 && nWall < kMaxWalls);
-            nSurf = surfType[wall[nWall].picnum];
+            nSurf = surfType[wall[nWall].overpicnum];
             int nXWall = wall[nWall].extra;
             if (nXWall > 0)
             {

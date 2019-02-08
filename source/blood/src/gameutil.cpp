@@ -236,7 +236,7 @@ bool CheckProximityWall(int nWall, int x, int y, int nDist)
             }
             else
             {
-                if (y <= y1 - nDist || y >= y2 + nDist)
+                if (y <= y2 - nDist || y >= y1 + nDist)
                 {
                     return 0;
                 }
