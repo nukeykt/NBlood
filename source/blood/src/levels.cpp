@@ -63,8 +63,10 @@ IniFile *BloodINI;
 
 void sub_26988(void)
 {
-    if (!SafeFileExists(BloodIniFile))
-        ThrowError("Initialization: %s does not exist\n           Please reinstall\n", BloodIniFile);
+    int fp = kopen4loadfrommod(BloodIniFile, 0);
+    if (fp < 0)
+        ThrowError("Initialization: %s does not exist", BloodIniFile);
+    kclose(fp);
     BloodINI = new IniFile(BloodIniFile);
 }
 
