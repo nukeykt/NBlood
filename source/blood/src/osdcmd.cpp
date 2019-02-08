@@ -658,7 +658,7 @@ static int osdcmd_unbind(osdcmdptr_t parm)
 
 static int osdcmd_screenshot(osdcmdptr_t parm)
 {
-    static const char *fn = "ss000000.png";
+    static const char *fn = "blud0000.png";
 
     if (parm->numparms == 1 && !Bstrcasecmp(parm->parms[0], "tga"))
         videoCaptureScreenTGA(fn, 0);

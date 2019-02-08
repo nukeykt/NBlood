@@ -27,7 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class LoadSave {
 public:
     static LoadSave head;
-    static FILE *hFile;
+    static FILE *hSFile;
+    static int hLFile;
     LoadSave *prev;
     LoadSave *next;
     LoadSave() {

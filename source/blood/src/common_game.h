@@ -101,6 +101,13 @@ void G_LoadGroupsInDir(const char *dirname);
 void G_DoAutoload(const char *dirname);
 extern void G_LoadGroups(int32_t autoload);
 
+#define G_ModDirSnprintf(buf, size, basename, ...)                                                                                          \
+    (((UserPath[0] != '/') ? Bsnprintf(buf, size, "%s/" basename, UserPath, ##__VA_ARGS__) : Bsnprintf(buf, size, basename, ##__VA_ARGS__)) \
+     >= ((int32_t)size) - 1)
+
+#define G_ModDirSnprintfLite(buf, size, basename) \
+    ((UserPath[0] != '/') ? Bsnprintf(buf, size, "%s/%s", UserPath, basename) : Bsnprintf(buf, size, basename))
+
 static inline void G_HandleAsync(void)
 {
     handleevents();

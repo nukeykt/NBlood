@@ -699,7 +699,6 @@ void StartNetworkLevel(void)
 
 void LocalKeys(void)
 {
-	static char name[16];
 	char alt = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
 	char ctrl = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
 	char shift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
@@ -845,18 +844,7 @@ void LocalKeys(void)
 		case 0x57:
 			break;
 		case 0x58:
-			if (name[0] == 0)
-			{
-				int i = 0;
-				do
-				{
-					sprintf(name,"SS%02d0000.PCX",i);
-					if (access(name, F_OK) == -1)
-						break;
-					i++;
-				} while (1);
-			}
-            videoCaptureScreen(name, 0);
+            videoCaptureScreen("blud0000.tga", 0);
 			break;
 		}
 	}

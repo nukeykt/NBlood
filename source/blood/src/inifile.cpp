@@ -122,11 +122,22 @@ void IniFile::LoadRes(void *res)
 
 void IniFile::Load()
 {
-    char buffer[256];
+    // char buffer[256];
 
     curNode = &head;
 
-    FILE *fp = fopen(fileName, "rt");
+    int fp = kopen4loadfrommod(fileName, 0);
+    if (fp >= 0)
+    {
+        int nSize = kfilelength(fp);
+        void *pBuffer = Xmalloc(nSize);
+        kread(fp, pBuffer, nSize);
+        LoadRes(pBuffer);
+        Bfree(pBuffer);
+    }
+    else
+        curNode->next = &head;
+#if 0
     if (fp)
     {
         while (fgets(buffer, sizeof(buffer), fp) != NULL)
@@ -191,6 +202,7 @@ void IniFile::Load()
     }
 
     curNode->next = &head;
+#endif
 }
 
 void IniFile::Save(void)

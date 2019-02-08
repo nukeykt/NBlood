@@ -85,23 +85,23 @@ int tileInit(char a1, const char *a2)
     for (int i = 0; i < kMaxTiles; i++)
         voxelIndex[i] = 0;
 
-    FILE *hFile = fopen("SURFACE.DAT", "rb");
+    int hFile = kopen4loadfrommod("SURFACE.DAT", 0);
     if (hFile != NULL)
     {
-        fread(surfType, 1, sizeof(surfType), hFile);
-        fclose(hFile);
+        kread(hFile, surfType, sizeof(surfType));
+        kclose(hFile);
     }
-    hFile = fopen("VOXEL.DAT", "rb");
+    hFile = kopen4loadfrommod("VOXEL.DAT", 0);
     if (hFile != NULL)
     {
-        fread(voxelIndex, 1, sizeof(voxelIndex), hFile);
-        fclose(hFile);
+        kread(hFile, voxelIndex, sizeof(voxelIndex));
+        kclose(hFile);
     }
-    hFile = fopen("SHADE.DAT", "rb");
+    hFile = kopen4loadfrommod("SHADE.DAT", 0);
     if (hFile != NULL)
     {
-        fread(tileShade, 1, sizeof(tileShade), hFile);
-        fclose(hFile);
+        kread(hFile, tileShade, sizeof(tileShade));
+        kclose(hFile);
     }
     for (int i = 0; i < kMaxTiles; i++)
     {

@@ -2015,16 +2015,16 @@ short gQuickSaveSlot = -1;
 
 void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 {
-    char strSaveGameName[15] = "";
+    char strSaveGameName[BMAX_PATH];
     int nSlot = pItem->at28;
     if (gGameOptions.nGameType > 0 || !gGameStarted)
         return;
-    if (event->at0 != 6 || strSaveGameName[0])
+    if (event->at0 != 6/* || strSaveGameName[0]*/)
     {
         gGameMenuMgr.Deactivate();
         return;
     }
-    sprintf(strSaveGameName, "GAME00%02d.SAV", nSlot);
+    G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
     sprintf(gGameOptions.szSaveGameName, strSaveGameName);
     gGameOptions.nSaveGameSlot = nSlot;
@@ -2037,15 +2037,15 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 
 void QuickSaveGame(void)
 {
-    char strSaveGameName[15] = "";
+    char strSaveGameName[BMAX_PATH];
     if (gGameOptions.nGameType > 0 || !gGameStarted)
         return;
-    if (strSaveGameName[0])
+    /*if (strSaveGameName[0])
     {
         gGameMenuMgr.Deactivate();
         return;
-    }
-    sprintf(strSaveGameName, "GAME00%02d.SAV", gQuickSaveSlot);
+    }*/
+    G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
     sprintf(gGameOptions.szSaveGameName, strSaveGameName);
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
@@ -2060,12 +2060,12 @@ void QuickSaveGame(void)
 void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 {
     UNREFERENCED_PARAMETER(event);
-    char strLoadGameName[15] = "";
+    char strLoadGameName[BMAX_PATH];
     int nSlot = pItem->at28;
     if (gGameOptions.nGameType > 0)
         return;
-    sprintf(strLoadGameName, "GAME00%02d.SAV", nSlot);
-    if (access(strLoadGameName, F_OK) == -1)
+    G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
+    if (!testkopen(strLoadGameName, 0))
         return;
     if (gDemo.at1)
         gDemo.Close();
@@ -2077,11 +2077,11 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
 
 void QuickLoadGame(void)
 {
-    char strLoadGameName[15] = "";
+    char strLoadGameName[BMAX_PATH];
     if (gGameOptions.nGameType > 0)
         return;
-    sprintf(strLoadGameName, "GAME00%02d.SAV", gQuickLoadSlot);
-    if (access(strLoadGameName, F_OK) == -1)
+    G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", gQuickLoadSlot);
+    if (!testkopen(strLoadGameName, 0))
         return;
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
     LoadSave::LoadGame(strLoadGameName);

@@ -291,7 +291,7 @@ void levelAddUserMap(const char *pzMap)
         nLevel = pEpisodeInfo->nLevels++;
     }
     LEVELINFO *pLevelInfo = &pEpisodeInfo->at28[nLevel];
-    ChangeExtension(buffer, ".MAP");
+    ChangeExtension(buffer, "");
     strncpy(pLevelInfo->at0, buffer, BMAX_PATH);
     levelLoadMapInfo(&UserINI, pLevelInfo, NULL);
     gGameOptions.nEpisode = nEpisode;

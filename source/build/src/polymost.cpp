@@ -3622,6 +3622,11 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
 {
     int const dir = (x0 < x1);
 
+    y0top -= DOMOST_OFFSET;
+    y1top -= DOMOST_OFFSET;
+    y0bot += DOMOST_OFFSET;
+    y1bot += DOMOST_OFFSET;
+
     if (dir) //clip dmost (floor)
     {
         y0 -= DOMOST_OFFSET;
@@ -7845,6 +7850,7 @@ int32_t polymost_printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t ba
     polymost_setFogEnabled(false);
     // We want to have readable text in wireframe mode, too:
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    lastglpolygonmode = 0;
 
     if (backcol >= 0)
     {

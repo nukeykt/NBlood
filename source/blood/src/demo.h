@@ -89,7 +89,8 @@ public:
     bool m_bLegacy;
     char at2;
     int at3;
-    FILE *at7;
+    int hPFile;
+    FILE *hRFile;
     int atb;
     DEMOHEADER atf;
     GAMEOPTIONS m_gameOptions;

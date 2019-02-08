@@ -55,7 +55,8 @@ unsigned int dword_27AA40 = 0;
 void *dword_27AA44 = NULL;
 
 LoadSave LoadSave::head(123);
-FILE *LoadSave::hFile = NULL;
+FILE *LoadSave::hSFile = NULL;
+int LoadSave::hLFile = -1;
 
 short word_27AA54 = 0;
 
@@ -78,17 +79,17 @@ void LoadSave::Load(void)
 void LoadSave::Read(void *pData, int nSize)
 {
     dword_27AA38 += nSize;
-    dassert(hFile != NULL);
-    if (fread(pData, 1, nSize, hFile) != (size_t)nSize)
-        ThrowError("File error #%d reading save file.", errno);
+    dassert(hLFile != -1);
+    if (kread(hLFile, pData, nSize) != nSize)
+        ThrowError("Error reading save file.");
 }
 
 void LoadSave::Write(void *pData, int nSize)
 {
     dword_27AA38 += nSize;
     dword_27AA3C += nSize;
-    dassert(hFile != NULL);
-    if (fwrite(pData, 1, nSize, hFile) != (size_t)nSize)
+    dassert(hSFile != NULL);
+    if (fwrite(pData, 1, nSize, hSFile) != (size_t)nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
 
@@ -104,17 +105,17 @@ void LoadSave::LoadGame(char *pzFile)
         memset(qsprite, 0, sizeof(SPRITE)*kMaxSprites);
         automapping = 1;
     }
-    hFile = fopen(pzFile, "rb");
-    if (!hFile)
-        ThrowError("File error #%d loading save file.", errno);
+    hLFile = kopen4load(pzFile, 0);
+    if (hLFile == -1)
+        ThrowError("Error loading save file.");
     LoadSave *rover = head.next;
     while (rover != &head)
     {
         rover->Load();
         rover = rover->next;
     }
-    fclose(hFile);
-    hFile = NULL;
+    kclose(hLFile);
+    hLFile = -1;
     if (!gGameStarted)
         scrLoadPLUs();
     InitSectorFX();
@@ -157,8 +158,8 @@ void LoadSave::LoadGame(char *pzFile)
 
 void LoadSave::SaveGame(char *pzFile)
 {
-    hFile = fopen(pzFile, "wb");
-    if (hFile == NULL)
+    hSFile = fopen(pzFile, "wb");
+    if (hSFile == NULL)
         ThrowError("File error #%d creating save file.", errno);
     dword_27AA38 = 0;
     dword_27AA40 = 0;
@@ -171,8 +172,8 @@ void LoadSave::SaveGame(char *pzFile)
         dword_27AA38 = 0;
         rover = rover->next;
     }
-    fclose(hFile);
-    hFile = NULL;
+    fclose(hSFile);
+    hSFile = NULL;
 }
 
 class MyLoadSave : public LoadSave
@@ -398,36 +399,36 @@ void LoadSavedInfo(void)
         {
             if (!Bwildmatch(dirent->name, "GAME*.SAV"))
                 continue;
-            FILE *pFile = fopen(dirent->name, "rb");
-            if (!pFile)
-                ThrowError("File error #%d loading save file header.", errno);
+            int hFile = kopen4loadfrommod(dirent->name, 0);
+            if (hFile == -1)
+                ThrowError("Error loading save file header.");
             int vc;
             short v4;
             vc = 0;
             v4 = word_27AA54;
-            if (fread(&vc, 1, sizeof(vc), pFile) != sizeof(vc))
+            if ((uint32_t)kread(hFile, &vc, sizeof(vc)) != sizeof(vc))
             {
-                fclose(pFile);
+                kclose(hFile);
                 nCount++;
                 continue;
             }
             if (vc != 0x5653424e/*'VSBN'*/)
             {
-                fclose(pFile);
+                kclose(hFile);
                 nCount++;
                 continue;
             }
-            fread(&v4, 1, sizeof(v4), pFile);
+            kread(hFile, &v4, sizeof(v4));
             if (v4 != BYTEVERSION)
             {
-                fclose(pFile);
+                kclose(hFile);
                 nCount++;
                 continue;
             }
-            if (fread(&gSaveGameOptions[nCount], 1, sizeof(gSaveGameOptions[0]), pFile) != sizeof(gSaveGameOptions[0]))
-                ThrowError("File error #%d reading save file.", errno);
+            if ((uint32_t)kread(hFile, &gSaveGameOptions[nCount], sizeof(gSaveGameOptions[0])) != sizeof(gSaveGameOptions[0]))
+                ThrowError("Error reading save file.");
             strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
-            fclose(pFile);
+            kclose(hFile);
             nCount++;
         }
         Bclosedir(dirr);

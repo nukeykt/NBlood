@@ -38,8 +38,8 @@ struct GAMEOPTIONS {
     char zLevelName[BMAX_PATH];
     char zLevelSong[BMAX_PATH];
     int nTrackNumber; //at12a;
-    char szSaveGameName[16];
-    char szUserGameName[16];
+    char szSaveGameName[BMAX_PATH];
+    char szUserGameName[BMAX_PATH];
     short nSaveGameSlot;
     int picEntry;
     unsigned int uMapCRC;

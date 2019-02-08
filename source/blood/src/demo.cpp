@@ -83,7 +83,8 @@ CDemo::CDemo()
     at0 = 0;
     at1 = 0;
     at3 = 0;
-    at7 = NULL;
+    hPFile = -1;
+    hRFile = NULL;
     atb = 0;
     at59ef = 0;
     at59eb = 0;
@@ -99,17 +100,22 @@ CDemo::~CDemo()
     at3 = 0;
     atb = 0;
     memset(&atf, 0, sizeof(atf));
-    if (at7 != NULL)
+    if (hPFile >= 0)
     {
-        fclose(at7);
-        at7 = NULL;
+        kclose(hPFile);
+        hPFile = NULL;
+    }
+    if (hRFile != NULL)
+    {
+        fclose(hRFile);
+        hRFile = NULL;
     }
     m_bLegacy = false;
 }
 
 bool CDemo::Create(const char *pzFile)
 {
-    char buffer[13] = "";
+    char buffer[BMAX_PATH];
     char vc = 0;
     if (at0 || at1)
         ThrowError("CDemo::Create called during demo record/playback process.");
@@ -117,21 +123,22 @@ bool CDemo::Create(const char *pzFile)
     {
         for (int i = 0; i < 8 && !vc; i++)
         {
-            sprintf(buffer, "BLOOD0%02d.DEM", i);
-            if (!access(buffer, F_OK))
+            G_ModDirSnprintf(buffer, BMAX_PATH, "blood0%02d.dem", i);
+            if (access(buffer, F_OK) != -1)
                 vc = 1;
         }
         if (vc == 1)
         {
-            at7 = fopen(buffer, "wb");
-            if (at7 == NULL)
+            hRFile = fopen(buffer, "wb");
+            if (hRFile == NULL)
                 return false;
         }
     }
     else
     {
-        at7 = fopen(pzFile, "wb");
-        if (at7 == NULL)
+        G_ModDirSnprintfLite(buffer, BMAX_PATH, pzFile);
+        hRFile = fopen(buffer, "wb");
+        if (hRFile == NULL)
             return false;
     }
     at0 = 1;
@@ -155,8 +162,8 @@ void CDemo::Write(GINPUT *pPlayerInputs)
         atf.nConnectHead = connecthead;
         memcpy(atf.connectPoints, connectpoint2, sizeof(atf.connectPoints));
         memcpy(&m_gameOptions, &gGameOptions, sizeof(gGameOptions));
-        fwrite(&atf, sizeof(DEMOHEADER), 1, at7);
-        fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, at7);
+        fwrite(&atf, sizeof(DEMOHEADER), 1, hRFile);
+        fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, hRFile);
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
@@ -174,14 +181,19 @@ void CDemo::Close(void)
         if (atb&(kInputBufferSize-1))
             FlushInput(atb&(kInputBufferSize-1));
         atf.nInputCount = atb;
-        fseek(at7, 0, SEEK_SET);
-        fwrite(&atf, sizeof(DEMOHEADER), 1, at7);
-        fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, at7);
+        fseek(hRFile, 0, SEEK_SET);
+        fwrite(&atf, sizeof(DEMOHEADER), 1, hRFile);
+        fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, hRFile);
     }
-    if (at7 != NULL)
+    if (hPFile >= 0)
     {
-        fclose(at7);
-        at7 = NULL;
+        kclose(hPFile);
+        hPFile = NULL;
+    }
+    if (hRFile != NULL)
+    {
+        fclose(hRFile);
+        hRFile = NULL;
     }
     at0 = 0;
     at1 = 0;
@@ -193,17 +205,17 @@ bool CDemo::SetupPlayback(const char *pzFile)
     at1 = 0;
     if (pzFile)
     {
-        at7 = fopen(pzFile, "rb");
-        if (at7 == NULL)
+        hPFile = kopen4loadfrommod(pzFile, 0);
+        if (hPFile == -1)
             return false;
     }
     else
     {
-        at7 = fopen(at59aa[at59eb], "rb");
-        if (at7 == NULL)
+        hPFile = kopen4loadfrommod(at59aa[at59eb], 0);
+        if (hPFile == -1)
             return false;
     }
-    fread(&atf, sizeof(DEMOHEADER), 1, at7);
+    kread(hPFile, &atf, sizeof(DEMOHEADER));
     // if (atf.signature != '\x1aMED' && atf.signature != '\x1aMDE')
     if (atf.signature != 0x1a4d4544 && atf.signature != 0x1a4d4445)
         return 0;
@@ -213,14 +225,14 @@ bool CDemo::SetupPlayback(const char *pzFile)
         GAMEOPTIONSLEGACY gameOptions;
         if (BloodVersion != atf.nVersion)
             return 0;
-        fread(&gameOptions, sizeof(GAMEOPTIONSLEGACY), 1, at7);
+        kread(hPFile, &gameOptions, sizeof(GAMEOPTIONSLEGACY));
         ReadGameOptionsLegacy(m_gameOptions, gameOptions);
     }
     else
     {
         if (BYTEVERSION != atf.nVersion)
             return 0;
-        fread(&m_gameOptions, sizeof(GAMEOPTIONS), 1, at7);
+        kread(hPFile, &m_gameOptions, sizeof(GAMEOPTIONS));
     }
     at0 = 0;
     at1 = 1;
@@ -340,7 +352,7 @@ _DEMOPLAYBACK:
                     else
                     {
                         int const nOffset = sizeof(DEMOHEADER)+(m_bLegacy ? sizeof(GAMEOPTIONSLEGACY) : sizeof(GAMEOPTIONS));
-                        fseek(at7, nOffset, SEEK_SET);
+                        klseek(hPFile, nOffset, SEEK_SET);
                         v4 = 0;
                     }
                 }
@@ -375,18 +387,18 @@ void CDemo::LoadDemoInfo(void)
     at59ef = 0;
     BDIR *dirr;
     struct Bdirent *dirent;
-    dirr = Bopendir("./");
+    dirr = Bopendir(UserPath);
     if (dirr)
     {
         while ((dirent = Breaddir(dirr)) != NULL)
         {
-            if (!Bwildmatch(dirent->name, "BLOOD*.DEM"))
+            if (!Bwildmatch(dirent->name, "blood*.dem"))
                 continue;
-            FILE *pFile = fopen(dirent->name, "rb");
-            if (!pFile)
-                ThrowError("File error #%d loading demo file header.", errno);
-            fread(&atf, 1, sizeof(atf), pFile);
-            fclose(pFile);
+            int hFile = kopen4loadfrommod(dirent->name, 0);
+            if (hFile == -1)
+                ThrowError("Error loading demo file header.");
+            kread(hFile, &atf, sizeof(atf));
+            kclose(hFile);
             if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
                 || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
             {
@@ -454,7 +466,7 @@ void CDemo::FlushInput(int nCount)
         bitWriter.write(pInput->q16mlook, 32);
         bitWriter.skipBits(1);
     }
-    fwrite(pBuffer, 1, nInputSize*nCount, at7);
+    fwrite(pBuffer, 1, nInputSize*nCount, hRFile);
 }
 
 void CDemo::ReadInput(int nCount)
@@ -462,7 +474,7 @@ void CDemo::ReadInput(int nCount)
     if (m_bLegacy)
     {
         char pBuffer[nInputSizeLegacy*kInputBufferSize];
-        fread(pBuffer, 1, nInputSizeLegacy*nCount, at7);
+        kread(hPFile, pBuffer, nInputSizeLegacy*nCount);
         BitReader bitReader(pBuffer, sizeof(pBuffer));
         memset(at1aa, 0, nCount * sizeof(GINPUT));
         for (int i = 0; i < nCount; i++)
@@ -514,7 +526,7 @@ void CDemo::ReadInput(int nCount)
     else
     {
         char pBuffer[nInputSize*kInputBufferSize];
-        fread(pBuffer, 1, nInputSize*nCount, at7);
+        kread(hPFile, pBuffer, nInputSize*nCount);
         BitReader bitReader(pBuffer, sizeof(pBuffer));
         memset(at1aa, 0, nCount * sizeof(GINPUT));
         for (int i = 0; i < nCount; i++)
