@@ -385,16 +385,13 @@ void CDemo::StopPlayback(void)
 void CDemo::LoadDemoInfo(void)
 {
     at59ef = 0;
-    BDIR *dirr;
-    struct Bdirent *dirent;
-    dirr = Bopendir(UserPath);
-    if (dirr)
+    CACHE1D_FIND_REC *pIterator = klistpath(UserPath, "blood*.dem", CACHE1D_FIND_FILE);
+
+    if (pIterator)
     {
-        while ((dirent = Breaddir(dirr)) != NULL)
+        while (pIterator != NULL)
         {
-            if (!Bwildmatch(dirent->name, "blood*.dem"))
-                continue;
-            int hFile = kopen4loadfrommod(dirent->name, 0);
+            int hFile = kopen4loadfrommod(pIterator->name, 0);
             if (hFile == -1)
                 ThrowError("Error loading demo file header.");
             kread(hFile, &atf, sizeof(atf));
@@ -402,11 +399,11 @@ void CDemo::LoadDemoInfo(void)
             if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
                 || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
             {
-                strcpy(at59aa[at59ef], dirent->name);
+                strcpy(at59aa[at59ef], pIterator->name);
                 at59ef++;
             }
+            pIterator = pIterator->next;
         }
-        Bclosedir(dirr);
     }
 }
 

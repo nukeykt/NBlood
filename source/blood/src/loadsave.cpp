@@ -389,17 +389,13 @@ void MyLoadSave::Save(void)
 
 void LoadSavedInfo(void)
 {
-    BDIR *dirr;
-    struct Bdirent *dirent;
-    dirr = Bopendir("./");
+    CACHE1D_FIND_REC *pIterator = klistpath("/", "game*.sav", CACHE1D_FIND_FILE);
     int nCount = 0;
-    if (dirr)
+    if (pIterator)
     {
-        while ((dirent = Breaddir(dirr)) && nCount < 10)
+        for (; pIterator != NULL && nCount < 10; pIterator = pIterator->next, nCount++)
         {
-            if (!Bwildmatch(dirent->name, "GAME*.SAV"))
-                continue;
-            int hFile = kopen4loadfrommod(dirent->name, 0);
+            int hFile = kopen4loadfrommod(pIterator->name, 0);
             if (hFile == -1)
                 ThrowError("Error loading save file header.");
             int vc;
@@ -409,29 +405,24 @@ void LoadSavedInfo(void)
             if ((uint32_t)kread(hFile, &vc, sizeof(vc)) != sizeof(vc))
             {
                 kclose(hFile);
-                nCount++;
                 continue;
             }
             if (vc != 0x5653424e/*'VSBN'*/)
             {
                 kclose(hFile);
-                nCount++;
                 continue;
             }
             kread(hFile, &v4, sizeof(v4));
             if (v4 != BYTEVERSION)
             {
                 kclose(hFile);
-                nCount++;
                 continue;
             }
             if ((uint32_t)kread(hFile, &gSaveGameOptions[nCount], sizeof(gSaveGameOptions[0])) != sizeof(gSaveGameOptions[0]))
                 ThrowError("Error reading save file.");
             strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
             kclose(hFile);
-            nCount++;
         }
-        Bclosedir(dirr);
     }
 }
 
