@@ -2794,9 +2794,9 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     else if (pSprite->type == 202)
     {
         int nRand = Random(100);
-        if (nRand < 10)
+        if (nRand <= 10)
             actDropObject(pSprite, 41);
-        else if (nRand < 50)
+        else if (nRand <= 50)
             actDropObject(pSprite, 67);
     }
     int nSeq;
