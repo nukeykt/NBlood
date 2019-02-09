@@ -508,7 +508,7 @@ void aiActivateDude(SPRITE *pSprite, XSPRITE *pXSprite)
     {
         DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
         XSECTOR *pXSector = NULL;
-        if (sprite[pSprite->sectnum].extra > 0)
+        if (sector[pSprite->sectnum].extra > 0)
             pXSector = &xsector[sector[pSprite->sectnum].extra];
         pDudeExtraE->at0 = 0;
         pDudeExtraE->at4 = 0;
@@ -901,7 +901,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
             {
                 if (!sub_5BDA8(pSprite, 14) && !pXSprite->at17_6)
                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                else if (sub_5BDA8(pSprite, 14 && !pXSprite->at17_6))
+                else if (sub_5BDA8(pSprite, 14) && !pXSprite->at17_6)
                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
                 else if (sub_5BDA8(pSprite, 13) && (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2))
                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);

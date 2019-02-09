@@ -1227,7 +1227,8 @@ int32_t clipmove(vec3_t *pos, int16_t *sectnum,
                     clipit[j].y2-clipit[j].y1, oyvect);
                 if ((tempint1^tempint2) < 0)
                 {
-                    updatesector(pos->x, pos->y, sectnum);
+                    if (!blooddemohack)
+                        updatesector(pos->x, pos->y, sectnum);
                     return retval;
                 }
             }

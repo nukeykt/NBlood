@@ -54,7 +54,7 @@ static int nBiteClient = seqRegisterClient(BiteSeqCallback);
 
 AISTATE eelIdle = { 0, -1, 0, NULL, NULL, thinkTarget, NULL };
 AISTATE eelFlyIdle = { 0, -1, 0, NULL, NULL, thinkTarget, NULL };
-AISTATE eelChase = { 0, -1, 0, NULL, MoveForward, thinkTarget, &eelIdle };
+AISTATE eelChase = { 0, -1, 0, NULL, MoveForward, thinkChase, &eelIdle };
 AISTATE eelPonder = { 0, -1, 0, NULL, NULL, thinkPonder, NULL };
 AISTATE eelGoto = { 0, -1, 600, NULL, NULL, thinkGoto, &eelIdle };
 AISTATE eelBite = { 7, nBiteClient, 60, NULL, NULL, NULL, &eelChase };

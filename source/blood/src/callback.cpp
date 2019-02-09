@@ -341,7 +341,7 @@ void EnemyBubble(int nSprite) // 11
     SPRITE *pSprite = &qsprite[nSprite];
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
-    for (int i = 0; i < klabs(zvel[nSprite]>>18); i++)
+    for (int i = 0; i < (klabs(zvel[nSprite])>>18); i++)
     {
         int nDist = (pSprite->xrepeat*(tilesiz[pSprite->picnum].x/2))>>2;
         int nAngle = Random(2048);

@@ -67,7 +67,7 @@ AISTATE gillBeastSwimBite = { 7, nGillBiteClient, 0, NULL, NULL, thinkSwimChase,
 AISTATE gillBeastSwimRecoil = { 5, -1, 0, NULL, NULL, NULL, &gillBeastSwimDodge };
 AISTATE gillBeast13A138 = { 10, -1, 120, NULL, sub_6CD74, thinkSwimChase, &gillBeastSwimChase };
 AISTATE gillBeast13A154 = { 10, -1, 0, NULL, sub_6D03C, thinkSwimChase, &gillBeastSwimChase };
-AISTATE gillBeast13A170 = { 10, -1, 120, NULL, sub_6CD74, aiMoveTurn, &gillBeastSwimChase };
+AISTATE gillBeast13A170 = { 10, -1, 120, NULL, NULL, aiMoveTurn, &gillBeastSwimChase };
 
 static void GillBiteSeqCallback(int, int nXSprite)
 {
