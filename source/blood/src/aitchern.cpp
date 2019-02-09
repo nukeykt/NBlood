@@ -73,7 +73,7 @@ static void sub_71A90(int, int nXSprite)
     if (pXTarget->at2c_0 == 0)
         evPost(nTarget, 3, 0, CALLBACK_ID_0);
     actBurnSprite(nOwner, pXTarget, 40);
-    if (Random(0x6000))
+    if (Chance(0x6000))
         aiNewState(pSprite, pXSprite, &tcherno13A9D4);
 }
 
@@ -218,7 +218,7 @@ static void sub_720AC(int, int nXSprite)
             }
         }
     }
-    actFireMissile(pSprite, 350, 0, aim.dx, aim.dy, aim.dz, 314);
+    actFireMissile(pSprite, 350, 0, aim.dx, aim.dy, -aim.dz, 314);
     actFireMissile(pSprite, -350, 0, ax, ay, az, 314);
 }
 
