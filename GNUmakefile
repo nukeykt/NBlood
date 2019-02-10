@@ -969,7 +969,7 @@ components := \
 
 roles := \
     game \
-    editor \
+#    editor \
 
 
 ifeq ($(PRETTY_OUTPUT),1)
