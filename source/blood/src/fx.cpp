@@ -305,9 +305,10 @@ void sub_746D4(SPRITE *pSprite, int a2)
         pSpawn = gFX.fxSpawn(FX_54, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pSpawn)
     {
+        pSpawn->ang = 1024;
         xvel[pSpawn->index] = Random2(0x6aaaa);
         yvel[pSpawn->index] = Random2(0x6aaaa);
-        zvel[pSpawn->index] = -Random2(0x10aaaa);
+        zvel[pSpawn->index] = -Random(0x10aaaa)-100;
         evPost(pSpawn->index, 3, 8, CALLBACK_ID_18);
     }
 }

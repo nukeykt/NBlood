@@ -1059,7 +1059,7 @@ int GetCrushedSpriteExtents(unsigned int nSector, int *pzTop, int *pzBot)
         {
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
-            if (top > vbp)
+            if (vbp > top)
             {
                 vbp = top;
                 *pzTop = top;
