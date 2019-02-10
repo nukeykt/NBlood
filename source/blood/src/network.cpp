@@ -958,7 +958,6 @@ void netInitialize(bool bConsole)
         netResetToSinglePlayer();
         return;
     }
-    gNetENetInit = true;
     if (gNetMode == NETWORK_SERVER)
     {
         memset(gNetPlayerPeer, 0, sizeof(gNetPlayerPeer));
@@ -1199,6 +1198,7 @@ void netInitialize(bool bConsole)
         enet_host_service(gNetENetClient, NULL, 0);
         initprintf("Successfully connected to server\n");
     }
+    gNetENetInit = true;
     gGameOptions.nGameType = 2;
 }
 
