@@ -197,7 +197,6 @@ static void SortRXBucket(int nCount)
                 if (nCount > 42)
                 {
                     int v20 = nCount / 8;
-                    int v40 = v20*2;
                     v30 = SortGetMiddle(v30, v30+v20, v30+v20*2);
                     vdi = SortGetMiddle(vdi-v20, vdi, vdi+v20);
                     vsi = SortGetMiddle(vsi-v20*2, vsi-v20, vsi);

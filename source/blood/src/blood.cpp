@@ -1367,6 +1367,14 @@ void ClockStrobe()
     gGameClock++;
 }
 
+#if defined(_WIN32) && defined(DEBUGGINGAIDS)
+// See FILENAME_CASE_CHECK in cache1d.c
+static int32_t check_filename_casing(void)
+{
+    return 1;
+}
+#endif
+
 int app_main(int argc, char const * const * argv)
 {
     char buffer[BMAX_PATH];

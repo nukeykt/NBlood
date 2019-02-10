@@ -895,12 +895,18 @@ voxmodel_t *voxload(const char *filnam)
     return vm;
 }
 
-voxmodel_t *loadkvxfrombuf(const char *buffer, int32_t length)
+voxmodel_t *loadkvxfrombuf(const char *kvxbuffer, int32_t length)
 {
     int32_t i, mip1leng;
 
+    if (!kvxbuffer)
+        return NULL;
+
+    char *buffer = (char*)Xmalloc(length);
     if (!buffer)
         return NULL;
+
+    Bmemcpy(buffer, kvxbuffer, length);
 
     int32_t *longptr = (int32_t*)buffer;
 
@@ -992,6 +998,7 @@ voxmodel_t *loadkvxfrombuf(const char *buffer, int32_t length)
     DO_FREE_AND_NULL(vcol);
     vnum = vmax = 0;
     DO_FREE_AND_NULL(vcolhashead);
+    Bfree(buffer);
 
     return vm;
 }

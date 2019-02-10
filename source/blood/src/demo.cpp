@@ -103,7 +103,7 @@ CDemo::~CDemo()
     if (hPFile >= 0)
     {
         kclose(hPFile);
-        hPFile = NULL;
+        hPFile = -1;
     }
     if (hRFile != NULL)
     {
@@ -188,7 +188,7 @@ void CDemo::Close(void)
     if (hPFile >= 0)
     {
         kclose(hPFile);
-        hPFile = NULL;
+        hPFile = -1;
     }
     if (hRFile != NULL)
     {

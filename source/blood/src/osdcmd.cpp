@@ -683,6 +683,7 @@ static int osdcmd_restorestate(osdcmdptr_t UNUSED(parm))
 }
 #endif
 
+#if 0
 #ifdef DEBUGGINGAIDS
 static int osdcmd_inittimer(osdcmdptr_t parm)
 {
@@ -697,6 +698,7 @@ static int osdcmd_inittimer(osdcmdptr_t parm)
     OSD_Printf("%s\n",parm->raw);
     return OSDCMD_OK;
 }
+#endif
 #endif
 
 static int osdcmd_cvar_set_game(osdcmdptr_t parm)

@@ -1642,7 +1642,8 @@ static void classicScanSector(int16_t startsectnum)
     if (startsectnum < 0)
         return;
 
-	if (automapping) show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
+	if (automapping)
+        show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
 
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;

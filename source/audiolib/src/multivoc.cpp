@@ -352,10 +352,10 @@ static void MV_ServiceVoc(void)
         {
             int32_t sl = *source++;
             int32_t sr = *source++;
-            *dest++ = clamp(*dest+sl*2,INT16_MIN, INT16_MAX);
-            //*(dest+(MV_RightChannelOffset>>1)) = clamp(*(dest+(MV_RightChannelOffset>>1))+sr,INT16_MIN, INT16_MAX);
-            //dest++;
-            *dest++ = clamp(*dest+sr*2,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest+sl*2,INT16_MIN, INT16_MAX);
+            dest++;
+            *dest = clamp(*dest+sr*2,INT16_MIN, INT16_MAX);
+            dest++;
         }
     }
 

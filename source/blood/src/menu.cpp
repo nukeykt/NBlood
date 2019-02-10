@@ -1938,7 +1938,7 @@ void SetupMouseButtonMenu(CGameMenuItemChain *pItem)
 
 void SetupNetworkMenu(void)
 {
-    sprintf(zNetPortBuffer, "%d", gNetPort, 10);
+    sprintf(zNetPortBuffer, "%d", gNetPort);
     if (strlen(gNetAddress) > 0)
         strncpy(zNetAddressBuffer, gNetAddress, sizeof(zNetAddressBuffer)-1);
 

@@ -188,7 +188,7 @@ void sfxPlay3DSound(SPRITE *pSprite, int soundId, int a3, int a4)
         return;
     int v14;
     v14 = mulscale16(pEffect->pitch, sndGetRate(pEffect->format));
-    BONKLE *pBonkle;
+    BONKLE *pBonkle = NULL;
     if (a3 >= 0)
     {
         int i;

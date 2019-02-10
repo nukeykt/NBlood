@@ -97,7 +97,7 @@ void sub_2541C(int x, int y, int z, short a)
             int nEndWall = nStartWall+sector[i].wallnum;
             WALL *pWall = &qwall[nStartWall];
             int nNWall = -1;
-            int x1, y1, x2, y2;
+            int x1, y1, x2 = 0, y2 = 0;
             for (int j = nStartWall; j < nEndWall; j++, pWall++)
             {
                 int nNextWall = pWall->nextwall;
