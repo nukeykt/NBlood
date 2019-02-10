@@ -2524,7 +2524,7 @@ void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7,
     }
     if (a10 & 4)
     {
-        for (int i = headspritestat[6]; i >= 0; i = nextspritestat[i])
+        for (int i = headspritestat[4]; i >= 0; i = nextspritestat[i])
         {
             SPRITE *pSprite2 = &qsprite[i];
             if (pSprite2->hitag&0x20)
