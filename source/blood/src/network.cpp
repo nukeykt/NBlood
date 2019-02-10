@@ -1269,6 +1269,7 @@ void netUpdate(void)
                 {
                     netDeinitialize();
                     netResetToSinglePlayer();
+                    return;
                 }
                 break;
             }

@@ -582,7 +582,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
     blooddemohack = bVanilla;
 	memset(xsprite,0,sizeof(xsprite));
-	memset(sprite,0,kMaxSprites*sizeof(sprite));
+	memset(sprite,0,kMaxSprites*sizeof(spritetype));
 	drawLoadingScreen();
 	dbLoadMap(gameOptions->zLevelName,(long*)&startpos.x,(long*)&startpos.y,(long*)&startpos.z,&startang,&startsectnum,(unsigned long*)&gameOptions->uMapCRC);
 	wsrand(gameOptions->uMapCRC);

@@ -1083,13 +1083,13 @@ int VCrushBusy(unsigned int nSector, unsigned int a2)
     else
         nWave = pXSector->at7_5;
     int dz1 = pXSector->at20_0 - pXSector->at1c_0;
-    int vc;
+    int vc = pXSector->at1c_0;
     if (dz1 != 0)
-        vc = pXSector->at1c_0 + mulscale16(dz1, GetWaveValue(a2, nWave));
+        vc += mulscale16(dz1, GetWaveValue(a2, nWave));
     int dz2 = pXSector->at28_0 - pXSector->at24_0;
-    int v10;
+    int v10 = pXSector->at24_0;
     if (dz2 != 0)
-        v10 = pXSector->at24_0 + mulscale16(dz2, GetWaveValue(a2, nWave));
+        v10 += mulscale16(dz2, GetWaveValue(a2, nWave));
     int v18;
     if (GetHighestSprite(nSector, 6, &v18) >= 0 && vc >= v18)
         return 1;
@@ -1506,7 +1506,7 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
 void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 {
     int nSprite;
-    SPRITE *pSprite;
+    SPRITE *pSprite = NULL;
     XSPRITE *pXSprite;
     dassert(nSector < (unsigned int)numsectors);
     SPRITE *pSprite2 = &qsprite[pXSector->at2c_0];

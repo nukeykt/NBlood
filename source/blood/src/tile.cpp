@@ -86,19 +86,19 @@ int tileInit(char a1, const char *a2)
         voxelIndex[i] = 0;
 
     int hFile = kopen4loadfrommod("SURFACE.DAT", 0);
-    if (hFile != NULL)
+    if (hFile != -1)
     {
         kread(hFile, surfType, sizeof(surfType));
         kclose(hFile);
     }
     hFile = kopen4loadfrommod("VOXEL.DAT", 0);
-    if (hFile != NULL)
+    if (hFile != -1)
     {
         kread(hFile, voxelIndex, sizeof(voxelIndex));
         kclose(hFile);
     }
     hFile = kopen4loadfrommod("SHADE.DAT", 0);
-    if (hFile != NULL)
+    if (hFile != -1)
     {
         kread(hFile, tileShade, sizeof(tileShade));
         kclose(hFile);
