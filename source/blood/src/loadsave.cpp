@@ -138,6 +138,8 @@ void LoadSave::LoadGame(char *pzFile)
     gCheckTail = 0;
     gBufferJitter = 0;
     bOutOfSync = 0;
+    for (int i = 0; i < gNetPlayers; i++)
+        playerSetRace(&gPlayer[i], gPlayer[i].at5f);
     viewSetMessage("");
     viewSetErrorMessage("");
     if (!gGameStarted)
