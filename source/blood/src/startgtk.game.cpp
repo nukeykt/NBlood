@@ -64,9 +64,6 @@ static struct
     GtkWidget *vmode3dlabel;
     GtkWidget *vmode3dcombo;
     GtkWidget *fullscreencheck;
-#ifdef POLYMER
-    GtkWidget *polymercheck;
-#endif
     GtkWidget *inputdevlabel;
     GtkWidget *inputdevcombo;
     GtkWidget *custommodlabel;
@@ -75,11 +72,6 @@ static struct
     GtkWidget *autoloadcheck;
     GtkWidget *alwaysshowcheck;
     GtkWidget *configtab;
-    GtkWidget *gamevlayout;
-    GtkWidget *gamelabel;
-    GtkWidget *gamescroll;
-    GtkWidget *gamelist;
-    GtkWidget *gametab;
     GtkWidget *messagesscroll;
     GtkWidget *messagestext;
     GtkWidget *messagestab;
@@ -130,28 +122,6 @@ static void on_fullscreencheck_toggled(GtkToggleButton *togglebutton, gpointer u
     settings.shared.fullscreen = gtk_toggle_button_get_active(togglebutton);
     PopulateForm(POPULATE_VIDEO);
 }
-
-#ifdef POLYMER
-static void on_polymercheck_toggled(GtkToggleButton *togglebutton, gpointer user_data)
-{
-    UNREFERENCED_PARAMETER(user_data);
-    if (gtk_toggle_button_get_active(togglebutton))
-    {
-        glrendmode = REND_POLYMER;
-        settings.polymer = TRUE;
-        if (settings.shared.bpp == 8)
-        {
-            settings.shared.bpp = 32;
-            PopulateForm(POPULATE_VIDEO);
-        }
-    }
-    else
-    {
-        glrendmode = REND_POLYMOST;
-        settings.polymer = FALSE;
-    }
-}
-#endif
 
 static void on_inputdevcombo_changed(GtkComboBox *combobox, gpointer user_data)
 {
@@ -211,25 +181,6 @@ static void on_startbutton_clicked(GtkButton *button, gpointer user_data)
     UNREFERENCED_PARAMETER(user_data);
     retval = 1;
     gtk_main_quit();
-}
-
-static void on_gamelist_selection_changed(GtkTreeSelection *selection, gpointer user_data)
-{
-#if 1
-    UNREFERENCED_PARAMETER(selection);
-    UNREFERENCED_PARAMETER(user_data);
-#else
-    GtkTreeIter iter;
-    GtkTreeModel *model;
-    UNREFERENCED_PARAMETER(user_data);
-
-    if (gtk_tree_selection_get_selected(selection, &model, &iter))
-    {
-        grpfile_t const *fg;
-        gtk_tree_model_get(model, &iter, 2, (gpointer)&fg, -1);
-        settings.grp = fg;
-    }
-#endif
 }
 
 static gboolean on_startwin_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
@@ -413,9 +364,6 @@ static void PopulateForm(unsigned char pgs)
 
         // populate check buttons
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.fullscreencheck), settings.shared.fullscreen);
-#ifdef POLYMER
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.polymercheck), settings.polymer);
-#endif
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.autoloadcheck), !settings.shared.noautoload);
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(stwidgets.alwaysshowcheck), settings.shared.forcesetup);
     }
@@ -445,22 +393,6 @@ static void PopulateForm(unsigned char pgs)
         }
     }
 #endif
-}
-
-static gint name_sorter(GtkTreeModel *model, GtkTreeIter *a, GtkTreeIter *b, gpointer user_data)
-{
-    gchar *as, *bs;
-    gint r;
-    UNREFERENCED_PARAMETER(user_data);
-    gtk_tree_model_get(model, a, 0, &as, -1);
-    gtk_tree_model_get(model, b, 0, &bs, -1);
-
-    r = g_utf8_collate(as,bs);
-
-    g_free(as);
-    g_free(bs);
-
-    return r;
 }
 
 static GtkWidget *create_window(void)
@@ -501,11 +433,7 @@ static GtkWidget *create_window(void)
     // 3D video mode LabelText
     stwidgets.vmode3dlabel = gtk_label_new_with_mnemonic("_Video mode:");
     gtk_misc_set_alignment(GTK_MISC(stwidgets.vmode3dlabel), 0.3, 0);
-#ifdef POLYMER
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dlabel, 0,1, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 0);
-#else
     gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dlabel, 0,1, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 7);
-#endif
 
     // 3D video mode combo
     {
@@ -520,29 +448,15 @@ static GtkWidget *create_window(void)
         gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.vmode3dcombo), cell, "text", 0, NULL);
     }
 
-#ifdef POLYMER
    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dcombo, 1,2, 0,1,
        (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)0, 4, 0);
-#else
-   gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.vmode3dcombo, 1,2, 0,1, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)0, 4, 7);
-#endif
 
     // Fullscreen checkbox
     stwidgets.displayvlayout = gtk_vbox_new(TRUE, 0);
-#ifdef POLYMER
     gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.displayvlayout, 2,3, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 0);
-#else
-    gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.displayvlayout, 2,3, 0,1, GTK_FILL, (GtkAttachOptions)0, 4, 7);
-#endif
 
     stwidgets.fullscreencheck = gtk_check_button_new_with_mnemonic("_Fullscreen");
     gtk_box_pack_start(GTK_BOX(stwidgets.displayvlayout), stwidgets.fullscreencheck, FALSE, FALSE, 0);
-
-#ifdef POLYMER
-    // Polymer checkbox
-    stwidgets.polymercheck = gtk_check_button_new_with_mnemonic("_Polymer");
-    gtk_box_pack_start(GTK_BOX(stwidgets.displayvlayout), stwidgets.polymercheck, FALSE, FALSE, 0);
-#endif
 
     // Input devices LabelText
     stwidgets.inputdevlabel = gtk_label_new_with_mnemonic("_Input devices:");
@@ -601,51 +515,6 @@ static GtkWidget *create_window(void)
     stwidgets.configtab = gtk_label_new("Configuration");
     gtk_notebook_set_tab_label(GTK_NOTEBOOK(stwidgets.tabs), gtk_notebook_get_nth_page(GTK_NOTEBOOK(stwidgets.tabs), 0), stwidgets.configtab);
 
-    // Game data layout
-    stwidgets.gamevlayout = gtk_vbox_new(FALSE, 0);
-    gtk_container_add(GTK_CONTAINER(stwidgets.tabs), stwidgets.gamevlayout);
-    gtk_container_set_border_width(GTK_CONTAINER(stwidgets.gamevlayout), 4);
-
-    // Game data field LabelText
-    stwidgets.gamelabel = gtk_label_new_with_mnemonic("_Game:");
-    gtk_box_pack_start(GTK_BOX(stwidgets.gamevlayout), stwidgets.gamelabel, FALSE, FALSE, 0);
-    gtk_misc_set_alignment(GTK_MISC(stwidgets.gamelabel), 0, 0.5);
-
-    // Game data scrollable area
-    stwidgets.gamescroll = gtk_scrolled_window_new(NULL, NULL);
-    gtk_box_pack_start(GTK_BOX(stwidgets.gamevlayout), stwidgets.gamescroll, TRUE, TRUE, 0);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(stwidgets.gamescroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(stwidgets.gamescroll), GTK_SHADOW_IN);
-
-    // Game data list
-    {
-        GtkListStore *list = gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER);
-        GtkCellRenderer *cell;
-        GtkTreeViewColumn *col;
-
-        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(list), 0, name_sorter, NULL, NULL);
-        gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(list), 0, GTK_SORT_ASCENDING);
-
-        stwidgets.gamelist = gtk_tree_view_new_with_model(GTK_TREE_MODEL(list));
-        g_object_unref(G_OBJECT(list));
-
-        cell = gtk_cell_renderer_text_new();
-        col = gtk_tree_view_column_new_with_attributes("Game", cell, "text", 0, NULL);
-        gtk_tree_view_column_set_expand(col, TRUE);
-        gtk_tree_view_append_column(GTK_TREE_VIEW(stwidgets.gamelist), col);
-        col = gtk_tree_view_column_new_with_attributes("GRP file", cell, "text", 1, NULL);
-        gtk_tree_view_column_set_min_width(col, 64);
-        gtk_tree_view_append_column(GTK_TREE_VIEW(stwidgets.gamelist), col);
-    }
-    gtk_container_add(GTK_CONTAINER(stwidgets.gamescroll), stwidgets.gamelist);
-
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(stwidgets.gamelist), FALSE);
-    gtk_tree_view_set_enable_search(GTK_TREE_VIEW(stwidgets.gamelist), FALSE);
-
-    // Game tab
-    stwidgets.gametab = gtk_label_new("Game");
-    gtk_notebook_set_tab_label(GTK_NOTEBOOK(stwidgets.tabs), gtk_notebook_get_nth_page(GTK_NOTEBOOK(stwidgets.tabs), 1), stwidgets.gametab);
-
     // Messages scrollable area
     stwidgets.messagesscroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER(stwidgets.tabs), stwidgets.messagesscroll);
@@ -662,7 +531,7 @@ static GtkWidget *create_window(void)
 
     // Messages tab
     stwidgets.messagestab = gtk_label_new("Messages");
-    gtk_notebook_set_tab_label(GTK_NOTEBOOK(stwidgets.tabs), gtk_notebook_get_nth_page(GTK_NOTEBOOK(stwidgets.tabs), 2), stwidgets.messagestab);
+    gtk_notebook_set_tab_label(GTK_NOTEBOOK(stwidgets.tabs), gtk_notebook_get_nth_page(GTK_NOTEBOOK(stwidgets.tabs), 1), stwidgets.messagestab);
 
     // Dialogue box buttons layout
     stwidgets.buttons = gtk_hbutton_box_new();
@@ -716,11 +585,6 @@ static GtkWidget *create_window(void)
     g_signal_connect((gpointer) stwidgets.fullscreencheck, "toggled",
                      G_CALLBACK(on_fullscreencheck_toggled),
                      NULL);
-#ifdef POLYMER
-    g_signal_connect((gpointer) stwidgets.polymercheck, "toggled",
-                     G_CALLBACK(on_polymercheck_toggled),
-                     NULL);
-#endif
     g_signal_connect((gpointer) stwidgets.inputdevcombo, "changed",
                      G_CALLBACK(on_inputdevcombo_changed),
                      NULL);
@@ -739,19 +603,11 @@ static GtkWidget *create_window(void)
     g_signal_connect((gpointer) stwidgets.startbutton, "clicked",
                      G_CALLBACK(on_startbutton_clicked),
                      NULL);
-    {
-        GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(stwidgets.gamelist));
-        gtk_tree_selection_set_mode(sel, GTK_SELECTION_SINGLE);
-        g_signal_connect((gpointer) sel, "changed",
-                         G_CALLBACK(on_gamelist_selection_changed),
-                         NULL);
-    }
 
     // Associate labels with their controls
     gtk_label_set_mnemonic_widget(GTK_LABEL(stwidgets.vmode3dlabel), stwidgets.vmode3dcombo);
     gtk_label_set_mnemonic_widget(GTK_LABEL(stwidgets.inputdevlabel), stwidgets.inputdevcombo);
     gtk_label_set_mnemonic_widget(GTK_LABEL(stwidgets.custommodlabel), stwidgets.custommodcombo);
-    gtk_label_set_mnemonic_widget(GTK_LABEL(stwidgets.gamelabel), stwidgets.gamelist);
 
     return stwidgets.startwin;
 }
@@ -864,11 +720,7 @@ int32_t startwin_run(void)
     settings.shared = gSetup;
     settings.gamedir = UserPath;
     //settings.grp = g_selectedGrp;
-#ifdef POLYMER
-    settings.polymer = (glrendmode == REND_POLYMER);
-#else
     settings.polymer = 0;
-#endif
     PopulateForm(ALL);
 
     gtk_main();

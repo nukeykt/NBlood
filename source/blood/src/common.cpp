@@ -294,6 +294,7 @@ static int G_ReadRegistryValue(char const * const SubKey, char const * const Val
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void G_AddSteamPaths(const char *basepath)
 {
+#if 0
     char buf[BMAX_PATH];
 
     // PORT-TODO:
@@ -311,6 +312,7 @@ static void G_AddSteamPaths(const char *basepath)
 #if defined EDUKE32_OSX
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/Duke Nukem 3D.app/drive_c/Program Files/Duke Nukem 3D", basepath);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
+#endif
 #endif
 }
 
@@ -514,9 +516,11 @@ void G_AddSearchPaths(void)
         Bsnprintf(buf, sizeof(buf), "%s/Steam/steamapps/libraryfolders.vdf", support[i]);
         G_ParseSteamKeyValuesForPaths(buf);
 
+#if 0
         // Duke Nukem 3D: Atomic Edition (GOG.com)
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
+#endif
     }
 
     for (i = 0; i < 2; i++)
@@ -541,13 +545,14 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
-    // PORT-TODO:
+#if 0
     // Duke Nukem 3D: Atomic Edition (GOG.com)
     bufsize = sizeof(buf);
     if (G_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
     {
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
+#endif
 #endif
 #endif
 }
