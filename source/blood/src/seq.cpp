@@ -89,7 +89,7 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
     int nSprite = xsprite[nXSprite].reference;
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pSprite->extra == nXSprite);
     if (pSprite->hitag & 2)
     {
@@ -152,7 +152,7 @@ void UpdateWall(int nXWall, SEQFRAME *pFrame)
     dassert(nXWall > 0 && nXWall < kMaxXWalls);
     int nWall = xwall[nXWall].reference;
     dassert(nWall >= 0 && nWall < kMaxWalls);
-    WALL *pWall = &qwall[nWall];
+    walltype *pWall = &wall[nWall];
     dassert(pWall->extra == nXWall);
     pWall->picnum = pFrame->tile;
     if (pFrame->at5_0)
@@ -180,10 +180,10 @@ void UpdateMasked(int nXWall, SEQFRAME *pFrame)
     dassert(nXWall > 0 && nXWall < kMaxXWalls);
     int nWall = xwall[nXWall].reference;
     dassert(nWall >= 0 && nWall < kMaxWalls);
-    WALL *pWall = &qwall[nWall];
+    walltype *pWall = &wall[nWall];
     dassert(pWall->extra == nXWall);
     dassert(pWall->nextwall >= 0);
-    WALL *pWallNext = &qwall[pWall->nextwall];
+    walltype *pWallNext = &wall[pWall->nextwall];
     pWall->overpicnum = pWallNext->overpicnum = pFrame->tile;
     if (pFrame->at5_0)
         pWall->pal = pWallNext->pal = pFrame->at5_0;
@@ -234,7 +234,7 @@ void UpdateFloor(int nXSector, SEQFRAME *pFrame)
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     int nSector = xsector[nXSector].reference;
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     dassert(pSector->extra == nXSector);
     pSector->floorpicnum = pFrame->tile;
     pSector->floorshade = pFrame->at4_0;
@@ -247,7 +247,7 @@ void UpdateCeiling(int nXSector, SEQFRAME *pFrame)
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     int nSector = xsector[nXSector].reference;
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     dassert(pSector->extra == nXSector);
     pSector->ceilingpicnum = pFrame->tile;
     pSector->ceilingshade = pFrame->at4_0;
@@ -272,7 +272,7 @@ void SEQINST::Update(ACTIVE *pActive)
     case 3:
         UpdateSprite(pActive->xindex, &pSequence->frames[frameIndex]);
         if (pSequence->frames[frameIndex].at6_1)
-            sfxPlay3DSound(&qsprite[xsprite[pActive->xindex].reference], pSequence->ata, -1, 0);
+            sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], pSequence->ata, -1, 0);
         break;
     case 4:
         UpdateMasked(pActive->xindex, &pSequence->frames[frameIndex]);

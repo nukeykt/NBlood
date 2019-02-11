@@ -41,7 +41,7 @@ public:
     CKillMgr();
     void SetCount(int);
     void sub_263E0(int);
-    void AddKill(SPRITE *pSprite);
+    void AddKill(spritetype *pSprite);
     void sub_2641C(void);
     void Clear(void);
     void Draw(void);

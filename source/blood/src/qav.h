@@ -72,7 +72,7 @@ struct QAV
     void Preload(void);
 
     void PlaySound(int nSound);
-    void PlaySound3D(SPRITE *pSprite, int nSound, int a3, int a4);
+    void PlaySound3D(spritetype *pSprite, int nSound, int a3, int a4);
 };
 
 #pragma pack(pop)

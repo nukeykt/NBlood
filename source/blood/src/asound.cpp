@@ -50,7 +50,7 @@ void ambProcess(void)
         return;
     for (int nSprite = headspritestat[12]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         int nXSprite = pSprite->extra;
         if (nXSprite > 0 && nXSprite < kMaxXSprites)
         {
@@ -109,7 +109,7 @@ void ambInit(void)
     memset(ambChannels, 0, sizeof(ambChannels));
     for (int nSprite = headspritestat[12]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         int nXSprite = pSprite->extra;
         if (nXSprite > 0 && nXSprite < kMaxXSprites)
         {

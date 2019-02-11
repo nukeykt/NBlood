@@ -179,7 +179,7 @@ extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
 extern short gAffectedXWalls[kMaxXWalls];
 
-inline void GetSpriteExtents(SPRITE *pSprite, int *top, int *bottom)
+inline void GetSpriteExtents(spritetype *pSprite, int *top, int *bottom)
 {
     *top = *bottom = pSprite->z;
     if ((pSprite->cstat & 0x30) != 0x20)
@@ -192,14 +192,14 @@ inline void GetSpriteExtents(SPRITE *pSprite, int *top, int *bottom)
 }
 
 
-inline bool IsPlayerSprite(SPRITE *pSprite)
+inline bool IsPlayerSprite(spritetype *pSprite)
 {
     if (pSprite->type >= kDudePlayer1 && pSprite->type <= kDudePlayer8)
         return 1;
     return 0;
 }
 
-inline bool IsDudeSprite(SPRITE *pSprite)
+inline bool IsDudeSprite(spritetype *pSprite)
 {
     if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
         return 1;
@@ -208,59 +208,59 @@ inline bool IsDudeSprite(SPRITE *pSprite)
 
 inline void actBurnSprite(int nSource, XSPRITE *pXSprite, int nTime)
 {
-    pXSprite->at2c_0 = ClipHigh(pXSprite->at2c_0 + nTime, qsprite[pXSprite->reference].type == 6 ? 2400 : 1200);
+    pXSprite->at2c_0 = ClipHigh(pXSprite->at2c_0 + nTime, sprite[pXSprite->reference].type == 6 ? 2400 : 1200);
     pXSprite->at2e_0 = nSource;
 }
 
-bool IsItemSprite(SPRITE *pSprite);
-bool IsWeaponSprite(SPRITE *pSprite);
-bool IsAmmoSprite(SPRITE *pSprite);
+bool IsItemSprite(spritetype *pSprite);
+bool IsWeaponSprite(spritetype *pSprite);
+bool IsAmmoSprite(spritetype *pSprite);
 bool IsUnderwaterSector(int nSector);
-int actSpriteOwnerToSpriteId(SPRITE *pSprite);
-void actPropagateSpriteOwner(SPRITE *pTarget, SPRITE *pSource);
+int actSpriteOwnerToSpriteId(spritetype *pSprite);
+void actPropagateSpriteOwner(spritetype *pTarget, spritetype *pSource);
 int actSpriteIdToOwnerId(int nSprite);
 int actOwnerIdToSpriteId(int nSprite);
 bool actTypeInSector(int nSector, int nType);
 void actAllocateSpares(void);
 void actInit(void);
-void ConcussSprite(int a1, SPRITE *pSprite, int x, int y, int z, int a6);
+void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6);
 int actWallBounceVector(long *x, long *y, int nWall, int a4);
 int actFloorBounceVector(long *x, long *y, long *z, int nSector, int a5);
 void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7, int a8, DAMAGE_TYPE a9, int a10, int a11, int a12, int a13);
-void sub_2AA94(SPRITE *pSprite, XSPRITE *pXSprite);
-SPRITE *actSpawnFloor(SPRITE *pSprite);
-SPRITE *actDropAmmo(SPRITE *pSprite, int nType);
-SPRITE *actDropWeapon(SPRITE *pSprite, int nType);
-SPRITE *actDropItem(SPRITE *pSprite, int nType);
-SPRITE *actDropKey(SPRITE *pSprite, int nType);
-SPRITE *actDropFlag(SPRITE *pSprite, int nType);
-SPRITE *actDropObject(SPRITE *pSprite, int nType);
+void sub_2AA94(spritetype *pSprite, XSPRITE *pXSprite);
+spritetype *actSpawnFloor(spritetype *pSprite);
+spritetype *actDropAmmo(spritetype *pSprite, int nType);
+spritetype *actDropWeapon(spritetype *pSprite, int nType);
+spritetype *actDropItem(spritetype *pSprite, int nType);
+spritetype *actDropKey(spritetype *pSprite, int nType);
+spritetype *actDropFlag(spritetype *pSprite, int nType);
+spritetype *actDropObject(spritetype *pSprite, int nType);
 bool actHealDude(XSPRITE *pXDude, int a2, int a3);
-void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4);
-int actDamageSprite(int nSource, SPRITE *pSprite, DAMAGE_TYPE a3, int a4);
-void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, SPRITE **a4, XSPRITE **a5, int *a6, WALL **a7, XWALL **a8, int *a9, SECTOR **a10, XSECTOR **a11);
-void actImpactMissile(SPRITE *pMissile, int a2);
-void actKickObject(SPRITE *pSprite1, SPRITE *pSprite2);
-void actTouchFloor(SPRITE *pSprite, int nSector);
-void ProcessTouchObjects(SPRITE *pSprite, int nXSprite);
-void actAirDrag(SPRITE *pSprite, int a2);
-int MoveThing(SPRITE *pSprite);
-void MoveDude(SPRITE *pSprite);
-int MoveMissile(SPRITE *pSprite);
-void actExplodeSprite(SPRITE *pSprite);
-void actActivateGibObject(SPRITE *pSprite, XSPRITE *pXSprite);
-bool IsUnderWater(SPRITE *pSprite);
+void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4);
+int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE a3, int a4);
+void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, spritetype **a4, XSPRITE **a5, int *a6, walltype **a7, XWALL **a8, int *a9, sectortype **a10, XSECTOR **a11);
+void actImpactMissile(spritetype *pMissile, int a2);
+void actKickObject(spritetype *pSprite1, spritetype *pSprite2);
+void actTouchFloor(spritetype *pSprite, int nSector);
+void ProcessTouchObjects(spritetype *pSprite, int nXSprite);
+void actAirDrag(spritetype *pSprite, int a2);
+int MoveThing(spritetype *pSprite);
+void MoveDude(spritetype *pSprite);
+int MoveMissile(spritetype *pSprite);
+void actExplodeSprite(spritetype *pSprite);
+void actActivateGibObject(spritetype *pSprite, XSPRITE *pXSprite);
+bool IsUnderWater(spritetype *pSprite);
 void actProcessSprites(void);
-SPRITE * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6);
-SPRITE *sub_36878(SPRITE *pSource, short nType, int a3, int a4);
-SPRITE * actSpawnSprite(SPRITE *pSource, int nStat);
-SPRITE * actSpawnThing(int nSector, int x, int y, int z, int nThingType);
-SPRITE * actFireThing(SPRITE *pSprite, int a2, int a3, int a4, int thingType, int a6);
-SPRITE* actFireMissile(SPRITE *pSprite, int a2, int a3, int a4, int a5, int a6, int nType);
-int actGetRespawnTime(SPRITE *pSprite);
-bool actCheckRespawn(SPRITE *pSprite);
+spritetype * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6);
+spritetype *sub_36878(spritetype *pSource, short nType, int a3, int a4);
+spritetype * actSpawnSprite(spritetype *pSource, int nStat);
+spritetype * actSpawnThing(int nSector, int x, int y, int z, int nThingType);
+spritetype * actFireThing(spritetype *pSprite, int a2, int a3, int a4, int thingType, int a6);
+spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, int a6, int nType);
+int actGetRespawnTime(spritetype *pSprite);
+bool actCheckRespawn(spritetype *pSprite);
 bool actCanSplatWall(int nWall);
-void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VECTOR_TYPE vectorType);
+void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6, VECTOR_TYPE vectorType);
 void actPostSprite(int nSprite, int nStatus);
 void actPostProcess(void);
-void MakeSplash(SPRITE *pSprite, XSPRITE *pXSprite);
+void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite);

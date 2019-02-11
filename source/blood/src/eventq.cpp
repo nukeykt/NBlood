@@ -410,7 +410,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
         case 97:
             for (int nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
             {
-                SPRITE *pSprite = &qsprite[nSprite];
+                spritetype *pSprite = &sprite[nSprite];
                 if (pSprite->hitag&32)
                     continue;
                 int nXSprite = pSprite->extra;
@@ -426,7 +426,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
         case 81:
             for (int nSprite = headspritestat[3]; nSprite >= 0; nSprite = nextspritestat[nSprite])
             {
-                SPRITE *pSprite = &qsprite[nSprite];
+                spritetype *pSprite = &sprite[nSprite];
                 if (pSprite->hitag&32)
                     continue;
                 int nXSprite = pSprite->extra;
@@ -455,7 +455,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
             case 3:
             {
                 int nSprite = rxBucket[i].at0_0;
-                SPRITE *pSprite = &qsprite[nSprite];
+                spritetype *pSprite = &sprite[nSprite];
                 if (pSprite->hitag&32)
                     continue;
                 int nXSprite = pSprite->extra;

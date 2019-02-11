@@ -210,7 +210,7 @@ void sub_557C4(int x, int y, int interpolation)
     int nViewSprites = spritesortcnt-1;
     for (int nTSprite = nViewSprites; nTSprite >= 0; nTSprite--)
     {
-        SPRITE *pTSprite = &qtsprite[nTSprite];
+        uspritetype *pTSprite = &tsprite[nTSprite];
         pTSprite->xrepeat = pTSprite->yrepeat = 0;
     }
     for (int i = mirrorcnt-1; i >= 0; i--)
@@ -224,7 +224,7 @@ void sub_557C4(int x, int y, int interpolation)
                 int nSector2 = mirror[i].at14;
                 for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
                 {
-                    SPRITE *pSprite = &qsprite[nSprite];
+                    spritetype *pSprite = &sprite[nSprite];
                     if (pSprite == gView->pSprite)
                         continue;
                     int top, bottom;
@@ -241,8 +241,8 @@ void sub_557C4(int x, int y, int interpolation)
                         int dx = mirror[j].at8;
                         int dy = mirror[j].atc;
                         int dz = mirror[j].at10;
-                        SPRITE *pTSprite = &qtsprite[spritesortcnt];
-                        memset(pTSprite, 0, sizeof(SPRITE));
+                        uspritetype *pTSprite = &tsprite[spritesortcnt];
+                        memset(pTSprite, 0, sizeof(uspritetype));
                         pTSprite->type = pSprite->type;
                         pTSprite->index = pSprite->index;
                         pTSprite->sectnum = nSector2;
@@ -275,7 +275,7 @@ void sub_557C4(int x, int y, int interpolation)
     }
     for (int nTSprite = spritesortcnt-1; nTSprite >= nViewSprites; nTSprite--)
     {
-        SPRITE *pTSprite = &qtsprite[nTSprite];
+        uspritetype *pTSprite = &tsprite[nTSprite];
         int nAnim = 0;
         switch (picanm[pTSprite->picnum].extra&7)
         {
@@ -327,7 +327,7 @@ void DrawMirrors(long x, long y, long z, fix16_t a, fix16_t horiz)
             {
                 int nWall = mirror[i].at4;
                 int nSector = sectorofwall(nWall);
-                WALL *pWall = &qwall[nWall];
+                walltype *pWall = &wall[nWall];
                 int nNextWall = pWall->nextwall;
                 int nNextSector = pWall->nextsector;
                 pWall->nextwall = mirrorwall[0];

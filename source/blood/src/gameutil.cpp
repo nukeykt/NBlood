@@ -82,7 +82,7 @@ bool FindSector(int nX, int nY, int nZ, int *nSector)
             return 1;
         }
     }
-    WALL *pWall = &qwall[sector[*nSector].wallptr];
+    walltype *pWall = &wall[sector[*nSector].wallptr];
     for (int i = sector[*nSector].wallnum; i > 0; i--, pWall++)
     {
         int nOSector = pWall->nextsector;
@@ -118,7 +118,7 @@ bool FindSector(int nX, int nY, int *nSector)
     {
         return 1;
     }
-    WALL *pWall = &qwall[sector[*nSector].wallptr];
+    walltype *pWall = &wall[sector[*nSector].wallptr];
     for (int i = sector[*nSector].wallnum; i > 0; i--, pWall++)
     {
         int nOSector = pWall->nextsector;
@@ -151,7 +151,7 @@ void CalcFrameRate(void)
     index = (index+1) & 63;
 }
 
-bool CheckProximity(SPRITE *pSprite, int nX, int nY, int nZ, int nSector, int nDist)
+bool CheckProximity(spritetype *pSprite, int nX, int nY, int nZ, int nSector, int nDist)
 {
     dassert(pSprite != NULL);
     int oX = klabs(nX-pSprite->x)>>4;
@@ -381,7 +381,7 @@ bool IntersectRay(long wx, long wy, long wdx, long wdy, long x1, long y1, long z
     return 1;
 }
 
-int HitScan(SPRITE *pSprite, int z, int dx, int dy, int dz, unsigned long nMask, int a8)
+int HitScan(spritetype *pSprite, int z, int dx, int dy, int dz, unsigned long nMask, int a8)
 {
     dassert(pSprite != NULL);
     dassert(dx != 0 || dy != 0);
@@ -432,7 +432,7 @@ int HitScan(SPRITE *pSprite, int z, int dx, int dy, int dz, unsigned long nMask,
     return -1;
 }
 
-int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int dz, int nRange, int ac)
+int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, int dz, int nRange, int ac)
 {
     int nNum = 256;
     dassert(pSprite != NULL);
@@ -473,7 +473,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
             return -1;
         if (gHitInfo.hitsprite >= 0)
         {
-            SPRITE *pOther = &qsprite[gHitInfo.hitsprite];
+            spritetype *pOther = &sprite[gHitInfo.hitsprite];
             if ((pOther->hitag & 8) && !(ac & 1))
                 return 3;
             if ((pOther->cstat & 0x30) != 0)
@@ -530,11 +530,11 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
         }
         if (gHitInfo.hitwall >= 0)
         {
-            WALL *pWall = &qwall[gHitInfo.hitwall];
+            walltype *pWall = &wall[gHitInfo.hitwall];
             if (pWall->nextsector == -1)
                 return 0;
-            SECTOR *pSector = &qsector[gHitInfo.hitsect];
-            SECTOR *pSectorNext = &qsector[pWall->nextsector];
+            sectortype *pSector = &sector[gHitInfo.hitsect];
+            sectortype *pSectorNext = &sector[pWall->nextsector];
             int nZCeil, nZFloor;
             getzsofslope(pWall->nextsector, gHitInfo.hitx, gHitInfo.hity, &nZCeil, &nZFloor);
             if (gHitInfo.hitz <= nZCeil)
@@ -669,7 +669,7 @@ int VectorScan(SPRITE *pSprite, int nOffset, int nZOffset, int dx, int dy, int d
     return -1;
 }
 
-void GetZRange(SPRITE *pSprite, long *ceilZ, long *ceilHit, long *floorZ, long *floorHit, int nDist, unsigned long nMask)
+void GetZRange(spritetype *pSprite, long *ceilZ, long *ceilHit, long *floorZ, long *floorHit, int nDist, unsigned long nMask)
 {
     dassert(pSprite != NULL);
     int bakCstat = pSprite->cstat;
@@ -819,7 +819,7 @@ int GetClosestSectors(int nSector, int x, int y, int nDist, short *pSectors, cha
         int nCurSector = pSectors[i];
         int nStartWall = sector[nCurSector].wallptr;
         int nEndWall = nStartWall + sector[nCurSector].wallnum;
-        WALL *pWall = &qwall[nStartWall];
+        walltype *pWall = &wall[nStartWall];
         for (int j = nStartWall; j < nEndWall; j++, pWall++)
         {
             int nNextSector = pWall->nextsector;
@@ -865,7 +865,7 @@ int GetClosestSpriteSectors(int nSector, int x, int y, int nDist, short *pSector
         int nCurSector = pSectors[i];
         int nStartWall = sector[nCurSector].wallptr;
         int nEndWall = nStartWall + sector[nCurSector].wallnum;
-        WALL *pWall = &qwall[nStartWall];
+        walltype *pWall = &wall[nStartWall];
         for (int j = nStartWall; j < nEndWall; j++, pWall++)
         {
             int nNextSector = pWall->nextsector;

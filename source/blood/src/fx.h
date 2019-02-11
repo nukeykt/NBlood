@@ -89,13 +89,13 @@ class CFX {
 public:
     void sub_73FB0(int);
     void sub_73FFC(int);
-    SPRITE * fxSpawn(FX_ID, int, int, int, int, unsigned long);
+    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned long);
     void fxProcess(void);
 };
 
-void fxSpawnBlood(SPRITE *pSprite, int a2);
-void sub_746D4(SPRITE *pSprite, int a2);
-void sub_74818(SPRITE *pSprite, int z, int a3, int a4);
-void sub_74A18(SPRITE *pSprite, int z, int a3, int a4);
+void fxSpawnBlood(spritetype *pSprite, int a2);
+void sub_746D4(spritetype *pSprite, int a2);
+void sub_74818(spritetype *pSprite, int z, int a3, int a4);
+void sub_74A18(spritetype *pSprite, int z, int a3, int a4);
 
 extern CFX gFX;

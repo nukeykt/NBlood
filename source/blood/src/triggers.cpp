@@ -77,7 +77,7 @@ char SetSpriteState(int nSprite, XSPRITE *pXSprite, int nState)
     pXSprite->at1_7 = nState<<16;
     pXSprite->at1_6 = nState;
     evKill(nSprite, 3);
-    if ((sprite[nSprite].hitag & 16) != 0 && qsprite[nSprite].type >= kDudeBase && qsprite[nSprite].type < kDudeMax)
+    if ((sprite[nSprite].hitag & 16) != 0 && sprite[nSprite].type >= kDudeBase && sprite[nSprite].type < kDudeMax)
     {
         pXSprite->atb_4 = 3;
         evPost(nSprite, 3, gGameOptions.nMonsterRespawnTime, CALLBACK_ID_9);
@@ -231,7 +231,7 @@ unsigned int GetSourceBusy(EVENT a1)
     return 0;
 }
 
-void sub_43CF8(SPRITE *pSprite, XSPRITE *pXSprite, EVENT a3)
+void sub_43CF8(spritetype *pSprite, XSPRITE *pXSprite, EVENT a3)
 {
     switch (a3.at2_0)
     {
@@ -262,7 +262,7 @@ void sub_43CF8(SPRITE *pSprite, XSPRITE *pXSprite, EVENT a3)
         {
             if (!pXSprite->at32_0)
             {
-                SPRITE *pTarget = &qsprite[nTarget];
+                spritetype *pTarget = &sprite[nTarget];
                 if (pTarget->statnum == 6 && !(pTarget->hitag&32) && pTarget->extra > 0 && pTarget->extra < kMaxXSprites)
                 {
                     int top, bottom;
@@ -291,7 +291,7 @@ void sub_43CF8(SPRITE *pSprite, XSPRITE *pXSprite, EVENT a3)
                             t2 = 120 / 10.0;
                         else
                             t2 = (3*120) / 10.0;
-                        SPRITE *pMissile = actFireMissile(pSprite, 0, z1, dx, dy, dz, nMissileType);
+                        spritetype *pMissile = actFireMissile(pSprite, 0, z1, dx, dy, dz, nMissileType);
                         if (pMissile)
                         {
                             pMissile->owner = pSprite->owner;
@@ -314,7 +314,7 @@ void ActivateGenerator(int);
 
 void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     switch (a3.at2_0)
     {
     case 6:
@@ -505,7 +505,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     case 18:
         if (gGameOptions.nMonsterSettings && pXSprite->at10_0 >= kDudeBase && pXSprite->at10_0 < kDudeMax)
         {
-            SPRITE *pSpawn = sub_36878(pSprite, pXSprite->at10_0, -1, 0);
+            spritetype *pSpawn = sub_36878(pSprite, pXSprite->at10_0, -1, 0);
             if (pSpawn)
             {
                 XSPRITE *pXSpawn = &xsprite[pSpawn->extra];
@@ -534,7 +534,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         SetSpriteState(nSprite, pXSprite, 1);
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            SPRITE *pPlayerSprite = gPlayer[p].pSprite;
+            spritetype *pPlayerSprite = gPlayer[p].pSprite;
             int dx = (pSprite->x - pPlayerSprite->x)>>4;
             int dy = (pSprite->y - pPlayerSprite->y)>>4;
             int dz = (pSprite->z - pPlayerSprite->z)>>8;
@@ -680,11 +680,11 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     }
 }
 
-void SetupGibWallState(WALL *pWall, XWALL *pXWall)
+void SetupGibWallState(walltype *pWall, XWALL *pXWall)
 {
-    WALL *pWall2 = NULL;
+    walltype *pWall2 = NULL;
     if (pWall->nextwall >= 0)
-        pWall2 = &qwall[pWall->nextwall];
+        pWall2 = &wall[pWall->nextwall];
     if (pXWall->at1_6)
     {
         pWall->cstat &= ~65;
@@ -712,7 +712,7 @@ void SetupGibWallState(WALL *pWall, XWALL *pXWall)
 
 void OperateWall(int nWall, XWALL *pXWall, EVENT a3)
 {
-    WALL *pWall = &qwall[nWall];
+    walltype *pWall = &wall[nWall];
     switch (a3.at2_0)
     {
     case 6:
@@ -772,7 +772,7 @@ void SectorStartSound(int nSector, int nState)
 {
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 0 && pSprite->type == 709)
         {
             int nXSprite = pSprite->extra;
@@ -796,7 +796,7 @@ void SectorEndSound(int nSector, int nState)
 {
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 0 && pSprite->type == 709)
         {
             int nXSprite = pSprite->extra;
@@ -820,7 +820,7 @@ void PathSound(int nSector, int nSound)
 {
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 0 && pSprite->type == 709)
             sfxPlay3DSound(pSprite, nSound, 0, 0);
     }
@@ -828,7 +828,7 @@ void PathSound(int nSector, int nSound)
 
 void DragPoint(int nWall, long x, long y)
 {
-    viewInterpolateWall(nWall, &qwall[nWall]);
+    viewInterpolateWall(nWall, &wall[nWall]);
     wall[nWall].x = x;
     wall[nWall].y = y;
 
@@ -839,7 +839,7 @@ void DragPoint(int nWall, long x, long y)
         if (wall[vb].nextwall >= 0)
         {
             vb = wall[wall[vb].nextwall].point2;
-            viewInterpolateWall(vb, &qwall[vb]);
+            viewInterpolateWall(vb, &wall[vb]);
             wall[vb].x = x;
             wall[vb].y = y;
         }
@@ -851,7 +851,7 @@ void DragPoint(int nWall, long x, long y)
                 if (wall[lastwall(vb)].nextwall >= 0)
                 {
                     vb = wall[lastwall(vb)].nextwall;
-                    viewInterpolateWall(vb, &qwall[vb]);
+                    viewInterpolateWall(vb, &wall[vb]);
                     wall[vb].x = x;
                     wall[vb].y = y;
                 }
@@ -932,7 +932,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
     }
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 10 || pSprite->statnum == 16)
             continue;
         x = baseSprite[nSprite].x;
@@ -963,7 +963,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
             if (!(pSprite->cstat&48) && floorZ <= bottom)
             {
                 if (v14)
-                    RotatePoint(&pSprite->x, &pSprite->y, v14, v20, v24);
+                    RotatePoint((long*)&pSprite->x, (long*)&pSprite->y, v14, v20, v24);
                 viewBackupSpriteLoc(nSprite, pSprite);
                 pSprite->ang = (pSprite->ang+v14)&2047;
                 pSprite->x += v28;
@@ -975,7 +975,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
 
 void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
 {
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     viewInterpolateSector(nSector, pSector);
     int dz = pXSector->at28_0-pXSector->at24_0;
     if (dz != 0)
@@ -985,7 +985,7 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
         velFloor[nSector] += (pSector->floorz-oldZ)<<8;
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             if (pSprite->statnum == 10 || pSprite->statnum == 16)
                 continue;
             int top, bottom;
@@ -1012,7 +1012,7 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
         velCeil[nSector] += (pSector->ceilingz-oldZ)<<8;
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             if (pSprite->statnum == 10 || pSprite->statnum == 16)
                 continue;
             if (pSprite->cstat&16384)
@@ -1032,7 +1032,7 @@ int GetHighestSprite(int nSector, int nStatus, int *a3)
     {
         if (sprite[nSprite].statnum == nStatus || nStatus == 1024)
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
             if (top-pSprite->z > *a3)
@@ -1050,11 +1050,11 @@ int GetCrushedSpriteExtents(unsigned int nSector, int *pzTop, int *pzBot)
     dassert(pzTop != NULL && pzBot != NULL);
     dassert(nSector < (unsigned int)numsectors);
     int vc = -1;
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int vbp = pSector->ceilingz;
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 6 || pSprite->statnum == 4)
         {
             int top, bottom;
@@ -1093,7 +1093,7 @@ int VCrushBusy(unsigned int nSector, unsigned int a2)
     int v18;
     if (GetHighestSprite(nSector, 6, &v18) >= 0 && vc >= v18)
         return 1;
-    viewInterpolateSector(nSector, &qsector[nSector]);
+    viewInterpolateSector(nSector, &sector[nSector]);
     if (dz1 != 0)
         sector[nSector].ceilingz = vc;
     if (dz2 != 0)
@@ -1126,7 +1126,7 @@ int VSpriteBusy(unsigned int nSector, unsigned int a2)
     {
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             if (pSprite->cstat&8192)
             {
                 viewBackupSpriteLoc(nSprite, pSprite);
@@ -1139,7 +1139,7 @@ int VSpriteBusy(unsigned int nSector, unsigned int a2)
     {
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             if (pSprite->cstat&16384)
             {
                 viewBackupSpriteLoc(nSprite, pSprite);
@@ -1174,7 +1174,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
     int nSprite = GetCrushedSpriteExtents(nSector,&top,&bottom);
     if (nSprite >= 0 && a2 > pXSector->at1_7)
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
         if (pXSector->at20_0 > pXSector->at1c_0 || pXSector->at28_0 < pXSector->at24_0)
@@ -1190,7 +1190,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                         nDamage = 500;
                     else
                         nDamage = pXSector->at4_0;
-                    actDamageSprite(nSprite, &qsprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                    actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
                 }
                 a2 = ClipRange(a2-(vbp/2)*4, 0, 65536);
             }
@@ -1201,14 +1201,14 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                     nDamage = 500;
                 else
                     nDamage = pXSector->at4_0;
-                actDamageSprite(nSprite, &qsprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
                 a2 = ClipRange(a2-(vbp/2)*4, 0, 65536);
             }
         }
     }
     else if (nSprite >= 0 && a2 < pXSector->at1_7)
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
         if (pXSector->at1c_0 > pXSector->at20_0 || pXSector->at24_0 < pXSector->at28_0)
@@ -1224,7 +1224,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                         nDamage = 500;
                     else
                         nDamage = pXSector->at4_0;
-                    actDamageSprite(nSprite, &qsprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                    actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
                 }
                 a2 = ClipRange(a2+(vbp/2)*4, 0, 65536);
             }
@@ -1235,7 +1235,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
                     nDamage = 500;
                 else
                     nDamage = pXSector->at4_0;
-                actDamageSprite(nSprite, &qsprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
+                actDamageSprite(nSprite, &sprite[nSprite], DAMAGE_TYPE_0, nDamage<<4);
                 a2 = ClipRange(a2+(vbp/2)*4, 0, 65536);
             }
         }
@@ -1261,7 +1261,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
 int HDoorBusy(unsigned int nSector, unsigned int a2)
 {
     dassert(nSector < (unsigned int)numsectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1270,8 +1270,8 @@ int HDoorBusy(unsigned int nSector, unsigned int a2)
         nWave = pXSector->at7_2;
     else
         nWave = pXSector->at7_5;
-    SPRITE *pSprite1 = &qsprite[pXSector->at2c_0];
-    SPRITE *pSprite2 = &qsprite[pXSector->at2e_0];
+    spritetype *pSprite1 = &sprite[pXSector->at2c_0];
+    spritetype *pSprite2 = &sprite[pXSector->at2e_0];
     TranslateSector(nSector, GetWaveValue(pXSector->at1_7, nWave), GetWaveValue(a2, nWave), pSprite1->x, pSprite1->y, pSprite1->x, pSprite1->y, pSprite1->ang, pSprite2->x, pSprite2->y, pSprite2->ang, pSector->lotag == 616);
     ZTranslateSector(nSector, pXSector, a2, nWave);
     pXSector->at1_7 = a2;
@@ -1289,7 +1289,7 @@ int HDoorBusy(unsigned int nSector, unsigned int a2)
 int RDoorBusy(unsigned int nSector, unsigned int a2)
 {
     dassert(nSector < (unsigned int)numsectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1298,7 +1298,7 @@ int RDoorBusy(unsigned int nSector, unsigned int a2)
         nWave = pXSector->at7_2;
     else
         nWave = pXSector->at7_5;
-    SPRITE *pSprite = &qsprite[pXSector->at2c_0];
+    spritetype *pSprite = &sprite[pXSector->at2c_0];
     TranslateSector(nSector, GetWaveValue(pXSector->at1_7, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, 0, pSprite->x, pSprite->y, pSprite->ang, pSector->lotag == 617);
     ZTranslateSector(nSector, pXSector, a2, nWave);
     pXSector->at1_7 = a2;
@@ -1316,11 +1316,11 @@ int RDoorBusy(unsigned int nSector, unsigned int a2)
 int StepRotateBusy(unsigned int nSector, unsigned int a2)
 {
     dassert(nSector < (unsigned int)numsectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
-    SPRITE *pSprite = &qsprite[pXSector->at2c_0];
+    spritetype *pSprite = &sprite[pXSector->at2c_0];
     int vbp;
     if (pXSector->at1_7 < a2)
     {
@@ -1350,7 +1350,7 @@ int StepRotateBusy(unsigned int nSector, unsigned int a2)
 int GenSectorBusy(unsigned int nSector, unsigned int a2)
 {
     dassert(nSector < (unsigned int)numsectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
@@ -1369,14 +1369,14 @@ int GenSectorBusy(unsigned int nSector, unsigned int a2)
 int PathBusy(unsigned int nSector, unsigned int a2)
 {
     dassert(nSector < (unsigned int)numsectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nXSector = pSector->extra;
     dassert(nXSector > 0 && nXSector < kMaxXSectors);
     XSECTOR *pXSector = &xsector[nXSector];
-    SPRITE *pSprite = &qsprite[basePath[nSector]];
-    SPRITE *pSprite1 = &qsprite[pXSector->at2c_0];
+    spritetype *pSprite = &sprite[basePath[nSector]];
+    spritetype *pSprite1 = &sprite[pXSector->at2c_0];
     XSPRITE *pXSprite1 = &xsprite[pSprite1->extra];
-    SPRITE *pSprite2 = &qsprite[pXSector->at2e_0];
+    spritetype *pSprite2 = &sprite[pXSector->at2e_0];
     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
     int nWave = pXSprite1->at7_6;
     TranslateSector(nSector, GetWaveValue(pXSector->at1_7, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite1->x, pSprite1->y, pSprite1->ang, pSprite2->x, pSprite2->y, pSprite2->ang, 1);
@@ -1452,7 +1452,7 @@ void TeleFrag(int nKiller, int nSector)
 {
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 6)
             actDamageSprite(nKiller, pSprite, DAMAGE_TYPE_3, 4000);
         else if (pSprite->statnum == 4)
@@ -1465,13 +1465,13 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
     dassert(nSector < (unsigned int)numsectors);
     int nDest = pXSector->at2c_0;
     dassert(nDest < kMaxSprites);
-    SPRITE *pDest = &qsprite[nDest];
+    spritetype *pDest = &sprite[nDest];
     dassert(pDest->statnum == kStatMarker);
     dassert(pDest->type == kMarkerWarpDest);
     dassert(pDest->sectnum >= 0 && pDest->sectnum < kMaxSectors);
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 6)
         {
             PLAYER *pPlayer;
@@ -1506,15 +1506,15 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
 void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 {
     int nSprite;
-    SPRITE *pSprite = NULL;
+    spritetype *pSprite = NULL;
     XSPRITE *pXSprite;
     dassert(nSector < (unsigned int)numsectors);
-    SPRITE *pSprite2 = &qsprite[pXSector->at2c_0];
+    spritetype *pSprite2 = &sprite[pXSector->at2c_0];
     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
     int nId = pXSprite2->at12_0;
     for (nSprite = headspritestat[16]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        pSprite = &qsprite[nSprite];
+        pSprite = &sprite[nSprite];
         if (pSprite->type == 15)
         {
             pXSprite = &xsprite[pSprite->extra];
@@ -1542,7 +1542,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 {
     dassert(nSector < (unsigned int)numsectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     switch (a3.at2_0)
     {
     case 6:
@@ -1633,13 +1633,13 @@ void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
 void InitPath(unsigned int nSector, XSECTOR *pXSector)
 {
     int nSprite;
-    SPRITE *pSprite;
+    spritetype *pSprite;
     XSPRITE *pXSprite;
     dassert(nSector < (unsigned int)numsectors);
     int nId = pXSector->at4_0;
     for (nSprite = headspritestat[16]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        pSprite = &qsprite[nSprite];
+        pSprite = &sprite[nSprite];
         if (pSprite->type == 15)
         {
             pXSprite = &xsprite[pSprite->extra];
@@ -1657,7 +1657,7 @@ void InitPath(unsigned int nSector, XSECTOR *pXSector)
 
 void LinkSector(int nSector, XSECTOR *pXSector, EVENT a3)
 {
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nBusy = GetSourceBusy(a3);
     switch (pSector->lotag)
     {
@@ -1685,7 +1685,7 @@ void LinkSector(int nSector, XSECTOR *pXSector, EVENT a3)
 
 void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nBusy = GetSourceBusy(a3);
     if (pSprite->type == 22)
     {
@@ -1826,9 +1826,9 @@ void trMessageSprite(unsigned int nSprite, EVENT a2)
 
 void ProcessMotion(void)
 {
-    SECTOR *pSector;
+    sectortype *pSector;
     int nSector;
-    for (pSector = qsector, nSector = 0; nSector < numsectors; nSector++, pSector++)
+    for (pSector = sector, nSector = 0; nSector < numsectors; nSector++, pSector++)
     {
         int nXSector = pSector->extra;
         if (nXSector <= 0)
@@ -1845,7 +1845,7 @@ void ProcessMotion(void)
             int vdi = mulscale30(Sin(pXSector->at38_0), pXSector->at39_3<<8);
             for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
             {
-                SPRITE *pSprite = &qsprite[nSprite];
+                spritetype *pSprite = &sprite[nSprite];
                 if (pSprite->cstat&24576)
                 {
                     viewBackupSpriteLoc(nSprite, pSprite);
@@ -1859,7 +1859,7 @@ void ProcessMotion(void)
                 pSector->floorz = baseFloor[nSector]+vdi;
                 for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
                 {
-                    SPRITE *pSprite = &qsprite[nSprite];
+                    spritetype *pSprite = &sprite[nSprite];
                     if (pSprite->hitag&2)
                         pSprite->hitag |= 4;
                     else
@@ -1881,7 +1881,7 @@ void ProcessMotion(void)
                 pSector->ceilingz = baseCeil[nSector]+vdi;
                 for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
                 {
-                    SPRITE *pSprite = &qsprite[nSprite];
+                    spritetype *pSprite = &sprite[nSprite];
                     int top, bottom;
                     GetSpriteExtents(pSprite, &top, &bottom);
                     if (top <= ceilZ && (pSprite->cstat&48) == 0)
@@ -1897,14 +1897,14 @@ void ProcessMotion(void)
 
 void AlignSlopes(void)
 {
-    SECTOR *pSector;
+    sectortype *pSector;
     int nSector;
-    for (pSector = qsector, nSector = 0; nSector < numsectors; nSector++, pSector++)
+    for (pSector = sector, nSector = 0; nSector < numsectors; nSector++, pSector++)
     {
         if (qsector_filler[nSector])
         {
-            WALL *pWall = &qwall[pSector->wallptr+qsector_filler[nSector]];
-            WALL *pWall2 = &qwall[pWall->point2];
+            walltype *pWall = &wall[pSector->wallptr+qsector_filler[nSector]];
+            walltype *pWall2 = &wall[pWall->point2];
             int nNextSector = pWall->nextsector;
             if (nNextSector >= 0)
             {
@@ -1971,10 +1971,10 @@ void trInit(void)
     {
         if (sprite[i].statnum < kStatFree)
         {
-            sprite[i].zvel = qsprite[i].type;
-            baseSprite[i].x = qsprite[i].x;
-            baseSprite[i].y = qsprite[i].y;
-            baseSprite[i].z = qsprite[i].z;
+            sprite[i].zvel = sprite[i].type;
+            baseSprite[i].x = sprite[i].x;
+            baseSprite[i].y = sprite[i].y;
+            baseSprite[i].z = sprite[i].z;
         }
         else
             sprite[i].zvel = -1;
@@ -1993,7 +1993,7 @@ void trInit(void)
     dassert((numsectors >= 0) && (numsectors < kMaxSectors));
     for (int i = 0; i < numsectors; i++)
     {
-        SECTOR *pSector = &qsector[i];
+        sectortype *pSector = &sector[i];
         baseFloor[i] = pSector->floorz;
         baseCeil[i] = pSector->ceilingz;
         int nXSector = pSector->extra;
@@ -2016,8 +2016,8 @@ void trInit(void)
             case 614:
             case 616:
             {
-                SPRITE *pSprite1 = &qsprite[pXSector->at2c_0];
-                SPRITE *pSprite2 = &qsprite[pXSector->at2e_0];
+                spritetype *pSprite1 = &sprite[pXSector->at2c_0];
+                spritetype *pSprite2 = &sprite[pXSector->at2e_0];
                 TranslateSector(i, 0, -65536, pSprite1->x, pSprite1->y, pSprite1->x, pSprite1->y, pSprite1->ang, pSprite2->x, pSprite2->y, pSprite2->ang, pSector->lotag == 616);
                 for (int j = 0; j < pSector->wallnum; j++)
                 {
@@ -2026,9 +2026,9 @@ void trInit(void)
                 }
                 for (int nSprite = headspritesect[i]; nSprite >= 0; nSprite = nextspritesect[nSprite])
                 {
-                    baseSprite[nSprite].x = qsprite[nSprite].x;
-                    baseSprite[nSprite].y = qsprite[nSprite].y;
-                    baseSprite[nSprite].z = qsprite[nSprite].z;
+                    baseSprite[nSprite].x = sprite[nSprite].x;
+                    baseSprite[nSprite].y = sprite[nSprite].y;
+                    baseSprite[nSprite].z = sprite[nSprite].z;
                 }
                 TranslateSector(i, 0, pXSector->at1_7, pSprite1->x, pSprite1->y, pSprite1->x, pSprite1->y, pSprite1->ang, pSprite2->x, pSprite2->y, pSprite2->ang, pSector->lotag == 616);
                 ZTranslateSector(i, pXSector, pXSector->at1_7, 1);
@@ -2037,7 +2037,7 @@ void trInit(void)
             case 615:
             case 617:
             {
-                SPRITE *pSprite1 = &qsprite[pXSector->at2c_0];
+                spritetype *pSprite1 = &sprite[pXSector->at2c_0];
                 TranslateSector(i, 0, -65536, pSprite1->x, pSprite1->y, pSprite1->x, pSprite1->y, 0, pSprite1->x, pSprite1->y, pSprite1->ang, pSector->lotag == 617);
                 for (int j = 0; j < pSector->wallnum; j++)
                 {
@@ -2046,9 +2046,9 @@ void trInit(void)
                 }
                 for (int nSprite = headspritesect[i]; nSprite >= 0; nSprite = nextspritesect[nSprite])
                 {
-                    baseSprite[nSprite].x = qsprite[nSprite].x;
-                    baseSprite[nSprite].y = qsprite[nSprite].y;
-                    baseSprite[nSprite].z = qsprite[nSprite].z;
+                    baseSprite[nSprite].x = sprite[nSprite].x;
+                    baseSprite[nSprite].y = sprite[nSprite].y;
+                    baseSprite[nSprite].z = sprite[nSprite].z;
                 }
                 TranslateSector(i, 0, pXSector->at1_7, pSprite1->x, pSprite1->y, pSprite1->x, pSprite1->y, 0, pSprite1->x, pSprite1->y, pSprite1->ang, pSector->lotag == 617);
                 ZTranslateSector(i, pXSector, pXSector->at1_7, 1);
@@ -2071,7 +2071,7 @@ void trInit(void)
             XSPRITE *pXSprite = &xsprite[nXSprite];
             if (pXSprite->at1_6)
                 pXSprite->at1_7 = 65536;
-            switch (qsprite[i].type)
+            switch (sprite[i].type)
             {
             case 23:
                 pXSprite->atd_1 = 1;
@@ -2125,12 +2125,12 @@ void trTextOver(int nId)
 void InitGenerator(int nSprite)
 {
     dassert(nSprite < kMaxSprites);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pSprite->statnum != kMaxStatus);
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0);
     XSPRITE *pXSprite = &xsprite[nXSprite];
-    switch (qsprite[nSprite].type)
+    switch (sprite[nSprite].type)
     {
     case 700:
         pSprite->cstat &= ~(32768+1);
@@ -2144,7 +2144,7 @@ void InitGenerator(int nSprite)
 void ActivateGenerator(int nSprite)
 {
     dassert(nSprite < kMaxSprites);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pSprite->statnum != kMaxStatus);
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0);
@@ -2203,7 +2203,7 @@ void FireballTrapSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (pSprite->cstat&32)
         actFireMissile(pSprite, 0, 0, 0, 0, (pSprite->cstat&8) ? 0x4000 : -0x4000, 305);
     else
@@ -2213,7 +2213,7 @@ void FireballTrapSeqCallback(int, int nXSprite)
 void MGunFireSeqCallback(int, int nXSprite)
 {
     int nSprite = xsprite[nXSprite].reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     XSPRITE *pXSprite = &xsprite[nXSprite];
     if (pXSprite->at12_0 > 0 || pXSprite->at10_0 == 0)
     {

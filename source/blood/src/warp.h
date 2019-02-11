@@ -30,5 +30,5 @@ struct ZONE {
 extern ZONE gStartZone[8];
 
 void warpInit(void);
-int CheckLink(SPRITE *pSprite);
+int CheckLink(spritetype *pSprite);
 int CheckLink(long *x, long *y, long *z, int *nSector);

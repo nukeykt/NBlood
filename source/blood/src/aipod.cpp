@@ -43,9 +43,9 @@ static void sub_6FF08(int, int);
 static void sub_6FF54(int, int);
 static void sub_6FFA0(int, int);
 static void sub_70284(int, int);
-static void sub_7034C(SPRITE *, XSPRITE *);
-static void sub_70380(SPRITE *, XSPRITE *);
-static void sub_704D8(SPRITE *, XSPRITE *);
+static void sub_7034C(spritetype *, XSPRITE *);
+static void sub_70380(spritetype *, XSPRITE *);
+static void sub_704D8(spritetype *, XSPRITE *);
 
 static int dword_279B34 = seqRegisterClient(sub_6FFA0);
 static int dword_279B38 = seqRegisterClient(sub_70284);
@@ -73,23 +73,23 @@ static void sub_6FF08(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    sfxPlay3DSound(&qsprite[nSprite], 2503, -1, 0);
+    sfxPlay3DSound(&sprite[nSprite], 2503, -1, 0);
 }
 
 static void sub_6FF54(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    sfxPlay3DSound(&qsprite[nSprite], 2500, -1, 0);
+    sfxPlay3DSound(&sprite[nSprite], 2500, -1, 0);
 }
 
 static void sub_6FFA0(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int x = pTarget->x-pSprite->x;
@@ -99,7 +99,7 @@ static void sub_6FFA0(int, int nXSprite)
     y += Random2(1000);
     int nDist = approxDist(x, y);
     int nDist2 = nDist / 540;
-    SPRITE *pMissile = NULL;
+    spritetype *pMissile = NULL;
     switch (pSprite->type)
     {
     case 221:
@@ -134,7 +134,7 @@ static void sub_70284(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     sfxPlay3DSound(pSprite, 2502, -1, 0);
     int nDist, nBurn;
     DAMAGE_TYPE dmgType;
@@ -155,13 +155,13 @@ static void sub_70284(int, int nXSprite)
     sub_2A620(nSprite, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, nDist, 1, 5*(1+gGameOptions.nDifficulty), dmgType, 2, nBurn, 0, 0);
 }
 
-static void sub_7034C(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_7034C(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void sub_70380(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_70380(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -187,7 +187,7 @@ static void sub_70380(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void sub_704D8(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_704D8(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -207,7 +207,7 @@ static void sub_704D8(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;

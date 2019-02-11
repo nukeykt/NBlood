@@ -45,9 +45,9 @@ static void ShotSeqCallback(int, int);
 static void ThrowSeqCallback(int, int);
 static void sub_68170(int, int);
 static void sub_68230(int, int);
-static void thinkSearch(SPRITE *, XSPRITE *);
-static void thinkGoto(SPRITE *, XSPRITE *);
-static void thinkChase(SPRITE *, XSPRITE *);
+static void thinkSearch(spritetype *, XSPRITE *);
+static void thinkGoto(spritetype *, XSPRITE *);
+static void thinkChase(spritetype *, XSPRITE *);
 
 static int nTommyClient = seqRegisterClient(TommySeqCallback);
 static int nTeslaClient = seqRegisterClient(TeslaSeqCallback);
@@ -99,7 +99,7 @@ static void TommySeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang) >> 16;
     int dy = Sin(pSprite->ang) >> 16;
     int dz = gDudeSlope[nXSprite];
@@ -114,7 +114,7 @@ static void TeslaSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (Chance(dword_138BB0[gGameOptions.nDifficulty]))
     {
         int dx = Cos(pSprite->ang) >> 16;
@@ -132,7 +132,7 @@ static void ShotSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang) >> 16;
     int dy = Sin(pSprite->ang) >> 16;
     int dz = gDudeSlope[nXSprite];
@@ -156,14 +156,14 @@ static void ThrowSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nMissile = 418;
     if (gGameOptions.nDifficulty > 2)
         nMissile = 419;
     char v4 = Chance(0x6000);
     sfxPlay3DSound(pSprite, 455, -1, 0);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     int dx = pTarget->x - pSprite->x;
     int dy = pTarget->y - pSprite->y;
@@ -172,7 +172,7 @@ static void ThrowSeqCallback(int, int nXSprite)
     int nDist2 = nDist / 540;
     if (nDist > 0x1e00)
         v4 = 0;
-    SPRITE *pMissile = actFireThing(pSprite, 0, 0, dz/128-14500, nMissile, (nDist2<<23)/120);
+    spritetype *pMissile = actFireThing(pSprite, 0, 0, dz/128-14500, nMissile, (nDist2<<23)/120);
     if (v4)
         xsprite[pMissile->extra].ate_0 = 1;
     else
@@ -183,12 +183,12 @@ static void sub_68170(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nMissile = 418;
     if (gGameOptions.nDifficulty > 2)
         nMissile = 419;
     sfxPlay3DSound(pSprite, 455, -1, 0);
-    SPRITE *pMissile = actFireThing(pSprite, 0, 0, gDudeSlope[nXSprite]-9460, nMissile, 0x133333);
+    spritetype *pMissile = actFireThing(pSprite, 0, 0, gDudeSlope[nXSprite]-9460, nMissile, 0x133333);
     evPost(pMissile->index, 3, 120*(2+Random(2)), COMMAND_ID_1);
 }
 
@@ -196,40 +196,40 @@ static void sub_68230(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nMissile = 418;
     if (gGameOptions.nDifficulty > 2)
         nMissile = 419;
     sfxPlay3DSound(pSprite, 455, -1, 0);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     int dx = pTarget->x - pSprite->x;
     int dy = pTarget->y - pSprite->y;
     int dz = pTarget->z - pSprite->z;
     int nDist = approxDist(dx, dy);
     int nDist2 = nDist / 540;
-    SPRITE *pMissile = actFireThing(pSprite, 0, 0, dz/128-14500, nMissile, (nDist2<<17)/120);
+    spritetype *pMissile = actFireThing(pSprite, 0, 0, dz/128-14500, nMissile, (nDist2<<17)/120);
     xsprite[pMissile->extra].ate_0 = 1;
 }
 
-static char TargetNearExplosion(SPRITE *pSprite)
+static char TargetNearExplosion(spritetype *pSprite)
 {
     for (short nSprite = headspritesect[pSprite->sectnum]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        if (qsprite[nSprite].type == 418 || qsprite[nSprite].statnum == 2)
+        if (sprite[nSprite].type == 418 || sprite[nSprite].statnum == 2)
             return 1;
     }
     return 0;
 }
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     sub_5F15C(pSprite, pXSprite);
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -254,7 +254,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -273,7 +273,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -340,7 +340,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
                                 aiNewState(pSprite, pXSprite, &cultistTThrow);
                             break;
                         default:
@@ -362,7 +362,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistTSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->at17_6 == 0)
                                     aiNewState(pSprite, pXSprite, &cultistTFire);
@@ -408,7 +408,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         default:
@@ -430,7 +430,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 201)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 201)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->at17_6 == 0)
                                     aiNewState(pSprite, pXSprite, &cultistSFire);
@@ -476,7 +476,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
                                 aiNewState(pSprite, pXSprite, &cultistTsThrow);
                             break;
                         default:
@@ -498,7 +498,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistTsSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 201)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 201)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->at17_6 == 0)
                                     aiNewState(pSprite, pXSprite, &cultistTsFire);
@@ -542,7 +542,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
                                 aiNewState(pSprite, pXSprite, &cultistDThrow);
                             break;
                         default:
@@ -563,7 +563,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
                                 aiNewState(pSprite, pXSprite, &cultist139A78);
                             break;
                         default:
@@ -588,7 +588,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->at17_6 != 1 && pXSprite->at17_6 != 2)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         default:
@@ -610,7 +610,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 201)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 201)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->at17_6 == 0)
                                     aiNewState(pSprite, pXSprite, &cultistSFire);

@@ -46,7 +46,7 @@ void sub_2541C(int x, int y, int z, short a)
             int nEndWall = nStartWall+sector[i].wallnum;
             int nZCeil = sector[i].ceilingz;
             int nZFloor = sector[i].floorz;
-            WALL *pWall = &qwall[nStartWall];
+            walltype *pWall = &wall[nStartWall];
             for (int j = nStartWall; j < nEndWall; j++, pWall++)
             {
                 int nNextWall = pWall->nextwall;
@@ -65,7 +65,7 @@ void sub_2541C(int x, int y, int z, short a)
                 int x1 = cx+dmulscale16(wx, nCos, -wy, nSin);
                 int cy = ydim<<11;
                 int y1 = cy+dmulscale16(wy, nCos2, wx, nSin2);
-                WALL *pWall2 = &qwall[pWall->point2];
+                walltype *pWall2 = &wall[pWall->point2];
                 wx = pWall2->x-x;
                 wy = pWall2->y-y;
                 int x2 = cx+dmulscale16(wx, nCos, -wy, nSin);
@@ -81,7 +81,7 @@ void sub_2541C(int x, int y, int z, short a)
         {
             for (int nSprite = headspritesect[i]; nSprite >= 0; nSprite = nextspritesect[nSprite])
             {
-                SPRITE *pSprite = &qsprite[nSprite];
+                spritetype *pSprite = &sprite[nSprite];
                 if (nSprite == nPSprite)
                     continue;
                 if (pSprite->cstat&32768)
@@ -95,7 +95,7 @@ void sub_2541C(int x, int y, int z, short a)
         {
             int nStartWall = sector[i].wallptr;
             int nEndWall = nStartWall+sector[i].wallnum;
-            WALL *pWall = &qwall[nStartWall];
+            walltype *pWall = &wall[nStartWall];
             int nNWall = -1;
             int x1, y1, x2 = 0, y2 = 0;
             for (int j = nStartWall; j < nEndWall; j++, pWall++)
@@ -118,7 +118,7 @@ void sub_2541C(int x, int y, int z, short a)
                     y1 = (ydim<<11)+dmulscale16(wy, nCos2, wx, nSin2);
                 }
                 nNWall = pWall->point2;
-                WALL *pWall2 = &qwall[nNWall];
+                walltype *pWall2 = &wall[nNWall];
                 int wx = pWall2->x-x;
                 int wy = pWall2->y-y;
                 x2 = (xdim<<11)+dmulscale16(wx, nCos, -wy, nSin);
@@ -134,7 +134,7 @@ void sub_2541C(int x, int y, int z, short a)
         if (gViewMap.bFollowMode || gView->at57 != i)
         {
             PLAYER *pPlayer = &gPlayer[i];
-            SPRITE *pSprite = pPlayer->pSprite;
+            spritetype *pSprite = pPlayer->pSprite;
             int px = pSprite->x-x;
             int py = pSprite->y-y;
             int pa = (pSprite->ang-a)&2047;
@@ -216,7 +216,7 @@ void CViewMap::sub_25C74(void)
         viewResizeView(viewSize);
 }
 
-void CViewMap::sub_25DB0(SPRITE *pSprite)
+void CViewMap::sub_25DB0(spritetype *pSprite)
 {
     nZoom = gZoom;
     if (bFollowMode)

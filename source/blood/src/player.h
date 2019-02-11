@@ -41,7 +41,7 @@ struct PACKINFO {
 };
 
 struct PLAYER {
-    SPRITE *pSprite;
+    spritetype *pSprite;
     XSPRITE *pXSprite;
     DUDEINFO *pDudeInfo;
     GINPUT atc;
@@ -211,21 +211,21 @@ void playerResetInertia(PLAYER *pPlayer);
 void playerStart(int nPlayer);
 void playerReset(PLAYER *pPlayer);
 void playerInit(int nPlayer, unsigned int a2);
-char sub_3A158(PLAYER *a1, SPRITE *a2);
-char PickupItem(PLAYER *pPlayer, SPRITE *pItem);
-char PickupAmmo(PLAYER *pPlayer, SPRITE *pAmmo);
-char PickupWeapon(PLAYER *pPlayer, SPRITE *pWeapon);
-void PickUp(PLAYER *pPlayer, SPRITE *pSprite);
+char sub_3A158(PLAYER *a1, spritetype *a2);
+char PickupItem(PLAYER *pPlayer, spritetype *pItem);
+char PickupAmmo(PLAYER *pPlayer, spritetype *pAmmo);
+char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon);
+void PickUp(PLAYER *pPlayer, spritetype *pSprite);
 void CheckPickUp(PLAYER *pPlayer);
 int ActionScan(PLAYER *pPlayer, int *a2, int *a3);
 void ProcessInput(PLAYER *pPlayer);
 void playerProcess(PLAYER *pPlayer);
-SPRITE *playerFireMissile(PLAYER *pPlayer, int a2, long a3, long a4, long a5, int a6);
-SPRITE *playerFireThing(PLAYER *pPlayer, int a2, int a3, int thingType, int a5);
+spritetype *playerFireMissile(PLAYER *pPlayer, int a2, long a3, long a4, long a5, int a6);
+spritetype *playerFireThing(PLAYER *pPlayer, int a2, int a3, int thingType, int a5);
 void playerFrag(PLAYER *pKiller, PLAYER *pVictim);
 void FragPlayer(PLAYER *pPlayer, int nSprite);
 int playerDamageArmor(PLAYER *pPlayer, DAMAGE_TYPE nType, int nDamage);
-SPRITE *sub_40A94(PLAYER *pPlayer, int a2);
+spritetype *sub_40A94(PLAYER *pPlayer, int a2);
 int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, int nDamage);
 int UseAmmo(PLAYER *pPlayer, int nAmmoType, int nDec);
 void sub_41250(PLAYER *pPlayer);

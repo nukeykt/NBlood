@@ -41,15 +41,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static void HackSeqCallback(int, int);
 static void StandSeqCallback(int, int);
-static void thinkSearch(SPRITE *, XSPRITE *);
-static void thinkGoto(SPRITE *, XSPRITE *);
-static void thinkChase(SPRITE *, XSPRITE *);
-static void thinkPonder(SPRITE *, XSPRITE *);
-static void myThinkTarget(SPRITE *, XSPRITE *);
-static void myThinkSearch(SPRITE *, XSPRITE *);
-static void entryEZombie(SPRITE *, XSPRITE *);
-static void entryAIdle(SPRITE *, XSPRITE *);
-static void entryEStand(SPRITE *, XSPRITE *);
+static void thinkSearch(spritetype *, XSPRITE *);
+static void thinkGoto(spritetype *, XSPRITE *);
+static void thinkChase(spritetype *, XSPRITE *);
+static void thinkPonder(spritetype *, XSPRITE *);
+static void myThinkTarget(spritetype *, XSPRITE *);
+static void myThinkSearch(spritetype *, XSPRITE *);
+static void entryEZombie(spritetype *, XSPRITE *);
+static void entryAIdle(spritetype *, XSPRITE *);
+static void entryEStand(spritetype *, XSPRITE *);
 
 static int nHackClient = seqRegisterClient(HackSeqCallback);
 static int nStandClient = seqRegisterClient(StandSeqCallback);
@@ -76,8 +76,8 @@ static void HackSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pTarget = &sprite[pXSprite->target];
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
     int tx = pXSprite->at20_0-pSprite->x;
@@ -97,16 +97,16 @@ static void StandSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    sfxPlay3DSound(&qsprite[nSprite], 1102, -1, 0);
+    sfxPlay3DSound(&sprite[nSprite], 1102, -1, 0);
 }
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     sub_5F15C(pSprite, pXSprite);
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -120,7 +120,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -130,7 +130,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -166,7 +166,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     pXSprite->target = -1;
 }
 
-static void thinkPonder(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkPonder(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -176,7 +176,7 @@ static void thinkPonder(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -217,7 +217,7 @@ static void thinkPonder(SPRITE *pSprite, XSPRITE *pXSprite)
     aiNewState(pSprite, pXSprite, &zombieAChase);
 }
 
-static void myThinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
+static void myThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -255,26 +255,26 @@ static void myThinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-static void myThinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void myThinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     myThinkTarget(pSprite, pXSprite);
 }
 
-static void entryEZombie(SPRITE *pSprite, XSPRITE *pXSprite)
+static void entryEZombie(spritetype *pSprite, XSPRITE *pXSprite)
 {
     UNREFERENCED_PARAMETER(pXSprite);
     pSprite->type = 203;
     pSprite->hitag |= 1;
 }
 
-static void entryAIdle(SPRITE *pSprite, XSPRITE *pXSprite)
+static void entryAIdle(spritetype *pSprite, XSPRITE *pXSprite)
 {
     UNREFERENCED_PARAMETER(pSprite);
     pXSprite->target = -1;
 }
 
-static void entryEStand(SPRITE *pSprite, XSPRITE *pXSprite)
+static void entryEStand(spritetype *pSprite, XSPRITE *pXSprite)
 {
     sfxPlay3DSound(pSprite, 1100, -1, 0);
     pSprite->ang = getangle(pXSprite->at20_0-pSprite->x, pXSprite->at24_0-pSprite->y);

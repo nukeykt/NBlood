@@ -102,7 +102,7 @@ void LoadSave::LoadGame(char *pzFile)
     if (!gGameStarted)
     {
         memset(xsprite, 0, sizeof(xsprite));
-        memset(qsprite, 0, sizeof(SPRITE)*kMaxSprites);
+        memset(sprite, 0, sizeof(spritetype)*kMaxSprites);
         automapping = 1;
     }
     hLFile = kopen4load(pzFile, 0);

@@ -41,10 +41,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 static void BiteSeqCallback(int, int);
 static void BurnSeqCallback(int, int);
 static void BurnSeqCallback2(int, int);
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite);
-static void thinkTarget(SPRITE *pSprite, XSPRITE *pXSprite);
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite);
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite);
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite);
+static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite);
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite);
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite);
 
 static int nBiteClient = seqRegisterClient(BiteSeqCallback);
 static int nBurnClient = seqRegisterClient(BurnSeqCallback);
@@ -74,12 +74,12 @@ static void BiteSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang)>>16;
     int dy = Sin(pSprite->ang)>>16;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int dz = pTarget->z-pSprite->z;
     actFireVector(pSprite, 350, -100, dx, dy, dz, VECTOR_TYPE_14);
     actFireVector(pSprite, -350, 0, dx, dy, dz, VECTOR_TYPE_14);
@@ -90,7 +90,7 @@ static void BurnSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int height = pDudeInfo->atb*pSprite->yrepeat;
@@ -106,7 +106,7 @@ static void BurnSeqCallback(int, int nXSprite)
     int nClosest = 0x7fffffff;
     for (short nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
     {
-        SPRITE *pSprite2 = &qsprite[nSprite2];
+        spritetype *pSprite2 = &sprite[nSprite2];
         if (pSprite == pSprite2 || !(pSprite2->hitag&8))
             continue;
         int x2 = pSprite2->x;
@@ -169,7 +169,7 @@ static void BurnSeqCallback2(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int height = pDudeInfo->atb*pSprite->yrepeat;
@@ -187,7 +187,7 @@ static void BurnSeqCallback2(int, int nXSprite)
     int nClosest = 0x7fffffff;
     for (short nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
     {
-        SPRITE *pSprite2 = &qsprite[nSprite2];
+        spritetype *pSprite2 = &sprite[nSprite2];
         if (pSprite == pSprite2 || !(pSprite2->hitag&8))
             continue;
         int x2 = pSprite2->x;
@@ -248,13 +248,13 @@ static void BurnSeqCallback2(int, int nXSprite)
     }
 }
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -310,7 +310,7 @@ static void thinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -334,7 +334,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -352,7 +352,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -429,7 +429,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                             aiNewState(pSprite, pXSprite, &cerberusBite);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 211)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 211)
                                 aiNewState(pSprite, pXSprite, &cerberusBite);
                             break;
                         case 0:
@@ -447,7 +447,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                             aiNewState(pSprite, pXSprite, &cerberus2Bite);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 211)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 211)
                                 aiNewState(pSprite, pXSprite, &cerberus2Bite);
                             break;
                         case 0:

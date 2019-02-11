@@ -79,17 +79,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
 
-// NUKE-TODO: make portable
-EDUKE32_STATIC_ASSERT(sizeof(SPRITE) == sizeof(spritetype));
-EDUKE32_STATIC_ASSERT(sizeof(SECTOR) == sizeof(sectortype));
-EDUKE32_STATIC_ASSERT(sizeof(WALL) == sizeof(walltype));
-
-
-SECTOR *qsector;
-SPRITE *qsprite, *qtsprite;
 char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
-WALL *qwall;
-//PICANM *qpicanm;
 
 ud_setup_t gSetup;
 char SetupFilename[BMAX_PATH] = SETUPFILENAME;
@@ -247,7 +237,7 @@ void QuitGame(void)
 
 int nPrecacheCount;
 
-void PrecacheDude(SPRITE *pSprite)
+void PrecacheDude(spritetype *pSprite)
 {
 	DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
 	seqPrecacheId(pDudeInfo->seqStartID);
@@ -332,7 +322,7 @@ void PrecacheDude(SPRITE *pSprite)
 	}
 }
 
-void PrecacheThing(SPRITE *pSprite)
+void PrecacheThing(spritetype *pSprite)
 {
 	switch (pSprite->type)
 	{
@@ -388,7 +378,7 @@ void PreloadTiles(void)
 	{
 		if (sprite[i].statnum < kMaxStatus)
 		{
-			SPRITE *pSprite = &qsprite[i];
+			spritetype *pSprite = &sprite[i];
 			switch (pSprite->statnum)
 			{
 			case 6:
@@ -592,7 +582,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	automapping = 1;
 	for (int i = 0; i < kMaxSprites; i++)
 	{
-		SPRITE *pSprite = &qsprite[i];
+		spritetype *pSprite = &sprite[i];
 		if (pSprite->statnum < kMaxStatus && pSprite->extra > 0)
 		{
 			XSPRITE *pXSprite = &xsprite[pSprite->extra];
@@ -1518,12 +1508,6 @@ int app_main(int argc, char const * const * argv)
 
     initprintf("Initializing Build 3D engine\n");
     scrInit();
-
-    qsprite = (SPRITE*)sprite;
-    qwall = (WALL*)wall;
-    qsector = (SECTOR*)sector;
-    //qpicanm = (PICANM*)picanm;
-    qtsprite = (SPRITE*)tsprite;
     
     initprintf("Loading tiles\n");
 	if (pUserTiles)

@@ -123,7 +123,8 @@ extern int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
 
 #pragma pack(push,1)
 
-struct SECTOR
+#if 0
+struct sectortype
 {
     short wallptr, wallnum;
     long ceilingz, floorz;
@@ -139,7 +140,7 @@ struct SECTOR
     short hitag, extra;
 };
 
-struct WALL
+struct walltype
 {
     long x, y;
     short point2, nextwall, nextsector;
@@ -150,7 +151,7 @@ struct WALL
     short lotag, hitag, extra;
 };
 
-struct SPRITE
+struct spritetype
 {
     long x, y, z;
     short cstat, picnum;
@@ -163,7 +164,6 @@ struct SPRITE
     short type, hitag, extra;
 };
 
-#if 0
 struct PICANM {
     unsigned int animframes : 5;
     unsigned int at0_5 : 1;
@@ -199,11 +199,7 @@ struct Aim {
 
 #pragma pack(pop)
 
-extern SECTOR *qsector;
-extern SPRITE *qsprite, *qtsprite;
 extern char qsprite_filler[], qsector_filler[];
-extern WALL *qwall;
-//extern PICANM *qpicanm;
 
 inline int ksgnf(float f)
 {

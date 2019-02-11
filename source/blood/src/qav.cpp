@@ -95,7 +95,7 @@ void QAV::Play(long start, long end, int nCallback, void *pData)
                 if (nSprite == -1)
                     PlaySound(pSound->sound);
                 else
-                    PlaySound3D(&qsprite[nSprite], pSound->sound, 16+pSound->at4, 6);
+                    PlaySound3D(&sprite[nSprite], pSound->sound, 16+pSound->at4, 6);
             }
             if (pFrame->nCallbackId > 0 && nCallback != -1)
             {

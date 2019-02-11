@@ -71,7 +71,7 @@ AISTATE genRecoil = { 5, -1, 20, NULL, NULL, NULL, NULL };
 
 int dword_138BB0[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
 
-bool sub_5BDA8(SPRITE *pSprite, int nSeq)
+bool sub_5BDA8(spritetype *pSprite, int nSeq)
 {
     if (pSprite->statnum == 6 && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
@@ -82,7 +82,7 @@ bool sub_5BDA8(SPRITE *pSprite, int nSeq)
     return false;
 }
 
-void aiPlay3DSound(SPRITE *pSprite, int a2, AI_SFX_PRIORITY a3, int a4)
+void aiPlay3DSound(spritetype *pSprite, int a2, AI_SFX_PRIORITY a3, int a4)
 {
     DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
     if (a3 == AI_SFX_PRIORITY_0)
@@ -96,7 +96,7 @@ void aiPlay3DSound(SPRITE *pSprite, int a2, AI_SFX_PRIORITY a3, int a4)
     }
 }
 
-void aiNewState(SPRITE *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
+void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
 {
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     pXSprite->at32_0 = pAIState->at8;
@@ -107,7 +107,7 @@ void aiNewState(SPRITE *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
         pAIState->atc(pSprite, pXSprite);
 }
 
-bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
+bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
 {
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -149,12 +149,12 @@ bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
     int nLower = gLowerLink[nSector];
     if (nUpper >= 0)
     {
-        if (qsprite[nUpper].type == 9 || qsprite[nUpper].type == 13)
+        if (sprite[nUpper].type == 9 || sprite[nUpper].type == 13)
             vbh = vdl = 1;
     }
     if (nLower >= 0)
     {
-        if (qsprite[nLower].type == 10 || qsprite[nLower].type == 14)
+        if (sprite[nLower].type == 10 || sprite[nLower].type == 14)
             vdl = 1;
     }
     switch (pSprite->type)
@@ -215,7 +215,7 @@ bool CanMove(SPRITE *pSprite, int a2, int nAngle, int nRange)
     return 1;
 }
 
-void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3)
+void aiChooseDirection(spritetype *pSprite, XSPRITE *pXSprite, int a3)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -258,7 +258,7 @@ void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3)
     }
 }
 
-void aiMoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
+void aiMoveForward(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -272,7 +272,7 @@ void aiMoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
     yvel[nSprite] += mulscale30(pDudeInfo->at38, Sin(pSprite->ang));
 }
 
-void aiMoveTurn(SPRITE *pSprite, XSPRITE *pXSprite)
+void aiMoveTurn(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -281,7 +281,7 @@ void aiMoveTurn(SPRITE *pSprite, XSPRITE *pXSprite)
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
 }
 
-void aiMoveDodge(SPRITE *pSprite, XSPRITE *pXSprite)
+void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -307,7 +307,7 @@ void aiMoveDodge(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-void aiActivateDude(SPRITE *pSprite, XSPRITE *pXSprite)
+void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     if (!pXSprite->at1_6)
@@ -852,10 +852,10 @@ void aiSetTarget(XSPRITE *pXSprite, int x, int y, int z)
 void aiSetTarget(XSPRITE *pXSprite, int nTarget)
 {
     dassert(nTarget >= 0 && nTarget < kMaxSprites);
-    SPRITE *pTarget = &qsprite[nTarget];
+    spritetype *pTarget = &sprite[nTarget];
     if (pTarget->type >= kDudeBase && pTarget->type < kDudeMax)
     {
-        if (actSpriteOwnerToSpriteId(&qsprite[pXSprite->reference]) != nTarget)
+        if (actSpriteOwnerToSpriteId(&sprite[pXSprite->reference]) != nTarget)
         {
             pXSprite->target = nTarget;
             DUDEINFO *pDudeInfo = &dudeInfo[pTarget->type-kDudeBase];
@@ -867,7 +867,7 @@ void aiSetTarget(XSPRITE *pXSprite, int nTarget)
 }
 
 
-int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE nDmgType, int nDamage)
+int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE nDmgType, int nDamage)
 {
     dassert(nSource < kMaxSprites);
     if (!pXSprite->health)
@@ -878,7 +878,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
     int nSprite = pXSprite->reference;
     if (nSource >= 0)
     {
-        SPRITE *pSource = &qsprite[nSource];
+        spritetype *pSource = &sprite[nSource];
         if (pSprite == pSource)
             return 0;
         if (pXSprite->target == -1 || (nSource != pXSprite->target && Chance(pSprite->type == pSource->type ? nDamage*pDudeInfo->at2f : nDamage*pDudeInfo->at2b)))
@@ -998,7 +998,7 @@ int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE 
     return nDamage;
 }
 
-void RecoilDude(SPRITE *pSprite, XSPRITE *pXSprite)
+void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
 {
     char v4 = Chance(0x8000);
     DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
@@ -1202,7 +1202,7 @@ void RecoilDude(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-void aiThinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
+void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -1241,7 +1241,7 @@ void aiThinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-void sub_5F15C(SPRITE *pSprite, XSPRITE *pXSprite)
+void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -1285,7 +1285,7 @@ void sub_5F15C(SPRITE *pSprite, XSPRITE *pXSprite)
             GetClosestSpriteSectors(pSprite->sectnum, pSprite->x, pSprite->y, 400, gAffectedSectors, va4, gAffectedXWalls);
             for (int nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
             {
-                SPRITE *pSprite2 = &qsprite[nSprite2];
+                spritetype *pSprite2 = &sprite[nSprite2];
                 int dx = pSprite2->x-pSprite->x;
                 int dy = pSprite2->y-pSprite->y;
                 int nDist = approxDist(dx, dy);
@@ -1308,7 +1308,7 @@ void aiProcessDudes(void)
 {
     for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag&32)
             continue;
         int nXSprite = pSprite->extra;
@@ -1343,11 +1343,11 @@ void aiInit(void)
 {
     for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        aiInitSprite(&qsprite[nSprite]);
+        aiInitSprite(&sprite[nSprite]);
     }
 }
 
-void aiInitSprite(SPRITE *pSprite)
+void aiInitSprite(spritetype *pSprite)
 {
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];

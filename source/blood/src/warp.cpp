@@ -44,7 +44,7 @@ void warpInit(void)
     {
         if (sprite[nSprite].statnum < kMaxStatus)
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             int nXSprite = pSprite->extra;
             if (nXSprite > 0)
             {
@@ -110,7 +110,7 @@ void warpInit(void)
         int nSprite = gUpperLink[i];
         if (nSprite >= 0)
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             int nXSprite = pSprite->extra;
             dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
             XSPRITE *pXSprite = &xsprite[nXSprite];
@@ -120,7 +120,7 @@ void warpInit(void)
                 int nSprite2 = gLowerLink[j];
                 if (nSprite2 >= 0)
                 {
-                    SPRITE *pSprite2 = &qsprite[nSprite2];
+                    spritetype *pSprite2 = &sprite[nSprite2];
                     int nXSprite = pSprite2->extra;
                     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
                     XSPRITE *pXSprite2 = &xsprite[nXSprite];
@@ -135,14 +135,14 @@ void warpInit(void)
     }
 }
 
-int CheckLink(SPRITE *pSprite)
+int CheckLink(spritetype *pSprite)
 {
     int nSector = pSprite->sectnum;
     int nUpper = gUpperLink[nSector];
     int nLower = gLowerLink[nSector];
     if (nUpper >= 0)
     {
-        SPRITE *pUpper = &qsprite[nUpper];
+        spritetype *pUpper = &sprite[nUpper];
         int z;
         if (pUpper->type == 7)
             z = pUpper->z;
@@ -152,7 +152,7 @@ int CheckLink(SPRITE *pSprite)
         {
             nLower = pUpper->owner;
             dassert(nLower >= 0 && nLower < kMaxSprites);
-            SPRITE *pLower = &qsprite[nLower];
+            spritetype *pLower = &sprite[nLower];
             dassert(pLower->sectnum >= 0 && pLower->sectnum < kMaxSectors);
             ChangeSpriteSect(pSprite->index, pLower->sectnum);
             pSprite->x += pLower->x-pUpper->x;
@@ -169,7 +169,7 @@ int CheckLink(SPRITE *pSprite)
     }
     if (nLower >= 0)
     {
-        SPRITE *pLower = &qsprite[nLower];
+        spritetype *pLower = &sprite[nLower];
         int z;
         if (pLower->type == 6)
             z = pLower->z;
@@ -179,7 +179,7 @@ int CheckLink(SPRITE *pSprite)
         {
             nUpper = pLower->owner;
             dassert(nUpper >= 0 && nUpper < kMaxSprites);
-            SPRITE *pUpper = &qsprite[nUpper];
+            spritetype *pUpper = &sprite[nUpper];
             dassert(pUpper->sectnum >= 0 && pUpper->sectnum < kMaxSectors);
             ChangeSpriteSect(pSprite->index, pUpper->sectnum);
             pSprite->x += pUpper->x-pLower->x;
@@ -203,7 +203,7 @@ int CheckLink(long *x, long *y, long *z, int *nSector)
     int nLower = gLowerLink[*nSector];
     if (nUpper >= 0)
     {
-        SPRITE *pUpper = &qsprite[nUpper];
+        spritetype *pUpper = &sprite[nUpper];
         int z1;
         if (pUpper->type == 7)
             z1 = pUpper->z;
@@ -213,7 +213,7 @@ int CheckLink(long *x, long *y, long *z, int *nSector)
         {
             nLower = pUpper->owner;
             dassert(nLower >= 0 && nLower < kMaxSprites);
-            SPRITE *pLower = &qsprite[nLower];
+            spritetype *pLower = &sprite[nLower];
             dassert(pLower->sectnum >= 0 && pLower->sectnum < kMaxSectors);
             *nSector = pLower->sectnum;
             *x += pLower->x-pUpper->x;
@@ -229,7 +229,7 @@ int CheckLink(long *x, long *y, long *z, int *nSector)
     }
     if (nLower >= 0)
     {
-        SPRITE *pLower = &qsprite[nLower];
+        spritetype *pLower = &sprite[nLower];
         int z1;
         if (pLower->type == 6)
             z1 = pLower->z;
@@ -239,7 +239,7 @@ int CheckLink(long *x, long *y, long *z, int *nSector)
         {
             nUpper = pLower->owner;
             dassert(nUpper >= 0 && nUpper < kMaxSprites);
-            SPRITE *pUpper = &qsprite[nUpper];
+            spritetype *pUpper = &sprite[nUpper];
             dassert(pUpper->sectnum >= 0 && pUpper->sectnum < kMaxSectors);
             *nSector = pUpper->sectnum;
             *x += pUpper->x-pLower->x;

@@ -264,7 +264,7 @@ void CalcGameChecksum(void)
         gChecksum[1] ^= sum;
         pBuffer = (int*)gPlayer[p].pSprite;
         sum = 0;
-        length = sizeof(SPRITE)/4;
+        length = sizeof(spritetype)/4;
         while (length--)
         {
             sum += *pBuffer++;

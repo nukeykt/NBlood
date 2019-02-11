@@ -2216,17 +2216,17 @@ POSTPONE gPost[kMaxSprites];
 
 static char buffer[120];
 
-bool IsItemSprite(SPRITE *pSprite)
+bool IsItemSprite(spritetype *pSprite)
 {
     return pSprite->type >= 100 && pSprite->type < 149;
 }
 
-bool IsWeaponSprite(SPRITE *pSprite)
+bool IsWeaponSprite(spritetype *pSprite)
 {
     return pSprite->type >= 40 && pSprite->type < 51;
 }
 
-bool IsAmmoSprite(SPRITE *pSprite)
+bool IsAmmoSprite(spritetype *pSprite)
 {
     return pSprite->type >= 60 && pSprite->type < 81;
 }
@@ -2239,7 +2239,7 @@ bool IsUnderwaterSector(int nSector)
     return 0;
 }
 
-int actSpriteOwnerToSpriteId(SPRITE *pSprite)
+int actSpriteOwnerToSpriteId(spritetype *pSprite)
 {
     dassert(pSprite != NULL);
     if (pSprite->owner == -1)
@@ -2250,7 +2250,7 @@ int actSpriteOwnerToSpriteId(SPRITE *pSprite)
     return nSprite;
 }
 
-void actPropagateSpriteOwner(SPRITE *pTarget, SPRITE *pSource)
+void actPropagateSpriteOwner(spritetype *pTarget, spritetype *pSource)
 {
     dassert(pTarget != NULL && pSource != NULL);
     if (IsPlayerSprite(pSource))
@@ -2264,7 +2264,7 @@ int actSpriteIdToOwnerId(int nSprite)
     if (nSprite == -1)
         return -1;
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (IsPlayerSprite(pSprite))
         nSprite = (pSprite->type-kDudePlayer1) | 0x1000;
     return nSprite;
@@ -2283,7 +2283,7 @@ bool actTypeInSector(int nSector, int nType)
 {
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        if (qsprite[nSprite].index == nType)
+        if (sprite[nSprite].index == nType)
             return 1;
     }
     return 0;
@@ -2301,13 +2301,13 @@ void actInit(void)
 {
     for (int nSprite = headspritestat[3]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->type == 44)
             pSprite->type = 70;
     }
     for (int nSprite = headspritestat[11]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         int nXSprite = pSprite->extra;
         XSPRITE *pXSprite = NULL;
         if (nXSprite > 0 && nXSprite < kMaxXSprites)
@@ -2322,7 +2322,7 @@ void actInit(void)
     }
     for (int nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         int nXSprite = pSprite->extra;
         if (nXSprite <= 0 || nXSprite >= kMaxXSprites)
             ThrowError("WARNING: Sprite %d is on the wrong status list!\n", nSprite);
@@ -2362,7 +2362,7 @@ void actInit(void)
         gKillMgr.SetCount(0);
         while (headspritestat[6] >= 0)
         {
-            SPRITE *pSprite = &qsprite[headspritestat[6]];
+            spritetype *pSprite = &sprite[headspritestat[6]];
             int nXSprite = pSprite->extra;
             dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
             XSPRITE *pXSprite = &xsprite[nXSprite];
@@ -2378,7 +2378,7 @@ void actInit(void)
         memset(unk, 0, sizeof(unk));
         for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             if (pSprite->type < kDudeBase || pSprite->type >= kDudeMax)
                 ThrowError("Non-enemy sprite (%d) in the enemy sprite list.\n", nSprite);
             unk[pSprite->type-kDudeBase] = 1;
@@ -2389,7 +2389,7 @@ void actInit(void)
                 dudeInfo[i].at70[j] = mulscale8(DudeDifficulty[gGameOptions.nDifficulty], dudeInfo[i].at54[j]);
         for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
         {
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             int nXSprite = pSprite->extra;
             dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
             XSPRITE *pXSprite = &xsprite[nXSprite];
@@ -2408,7 +2408,7 @@ void actInit(void)
     }
 }
 
-void ConcussSprite(int a1, SPRITE *pSprite, int x, int y, int z, int a6)
+void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
 {
     dassert(pSprite != NULL);
     int dx = pSprite->x-x;
@@ -2462,8 +2462,8 @@ int actFloorBounceVector(long *x, long *y, long *z, int nSector, int a5)
         *z = -(*z-t2);
         return t2;
     }
-    WALL *pWall = &qwall[sector[nSector].wallptr];
-    WALL *pWall2 = &qwall[pWall->point2];
+    walltype *pWall = &wall[sector[nSector].wallptr];
+    walltype *pWall2 = &wall[pWall->point2];
     int angle = getangle(pWall2->x-pWall->x, pWall2->y-pWall->y)+512;
     int t2 = sector[nSector].floorheinum<<4;
     int t3 = approxDist(-0x10000, t2);
@@ -2495,7 +2495,7 @@ void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7,
         {
             if (i != nSprite || (a10 & 1))
             {
-                SPRITE *pSprite2 = &qsprite[i];
+                spritetype *pSprite2 = &sprite[i];
                 if (pSprite2->extra > 0 && pSprite2->extra < kMaxXSprites)
                 {
                     if (pSprite2->hitag & 0x20)
@@ -2526,7 +2526,7 @@ void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7,
     {
         for (int i = headspritestat[4]; i >= 0; i = nextspritestat[i])
         {
-            SPRITE *pSprite2 = &qsprite[i];
+            spritetype *pSprite2 = &sprite[i];
             if (pSprite2->hitag&0x20)
                 continue;
             if (!TestBitString(va0, pSprite2->sectnum))
@@ -2553,7 +2553,7 @@ void sub_2A620(int nSprite, int x, int y, int z, int nSector, int nDist, int a7,
     }
 }
 
-void sub_2AA94(SPRITE *pSprite, XSPRITE *pXSprite)
+void sub_2AA94(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = actOwnerIdToSpriteId(pSprite->owner);
     actPostSprite(pSprite->index, 0);
@@ -2577,7 +2577,7 @@ void sub_2AA94(SPRITE *pSprite, XSPRITE *pXSprite)
             int t1 = Random(0x33333)+0x33333;
             int t2 = Random2(0x71);
             pSprite->ang = (t2+v4+2048)&2047;
-            SPRITE *pSprite2 = actFireThing(pSprite, 0, 0, -0x93d0, 428, t1);
+            spritetype *pSprite2 = actFireThing(pSprite, 0, 0, -0x93d0, 428, t1);
             XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
             pSprite2->owner = pSprite->owner;
             seqSpawn(61, 3, pSprite2->extra, nNapalmClient);
@@ -2586,22 +2586,22 @@ void sub_2AA94(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-SPRITE *actSpawnFloor(SPRITE *pSprite)
+spritetype *actSpawnFloor(spritetype *pSprite)
 {
     short nSector = pSprite->sectnum;
     int x = pSprite->x;
     int y = pSprite->y;
     updatesector(x, y, &nSector);
     int zFloor = getflorzofslope(nSector, x, y);
-    SPRITE *pSprite2 = actSpawnSprite(nSector, x, y, zFloor, 3, 0);
+    spritetype *pSprite2 = actSpawnSprite(nSector, x, y, zFloor, 3, 0);
     if (pSprite2)
         pSprite2->cstat &= ~257;
     return pSprite2;
 }
 
-SPRITE *actDropAmmo(SPRITE *pSprite, int nType)
+spritetype *actDropAmmo(spritetype *pSprite, int nType)
 {
-    SPRITE *pSprite2 = NULL;
+    spritetype *pSprite2 = NULL;
     if (pSprite && pSprite->statnum < kMaxStatus && nType >= 60 && nType < 81)
     {
         pSprite2 = actSpawnFloor(pSprite);
@@ -2615,9 +2615,9 @@ SPRITE *actDropAmmo(SPRITE *pSprite, int nType)
     return pSprite2;
 }
 
-SPRITE *actDropWeapon(SPRITE *pSprite, int nType)
+spritetype *actDropWeapon(spritetype *pSprite, int nType)
 {
-    SPRITE *pSprite2 = NULL;
+    spritetype *pSprite2 = NULL;
     if (pSprite && pSprite->statnum < kMaxStatus && nType >= 40 && nType < 51)
     {
         pSprite2 = actSpawnFloor(pSprite);
@@ -2631,9 +2631,9 @@ SPRITE *actDropWeapon(SPRITE *pSprite, int nType)
     return pSprite2;
 }
 
-SPRITE *actDropItem(SPRITE *pSprite, int nType)
+spritetype *actDropItem(spritetype *pSprite, int nType)
 {
-    SPRITE *pSprite2 = NULL;
+    spritetype *pSprite2 = NULL;
     if (pSprite && pSprite->statnum < kMaxStatus && nType >= 100 && nType < 149)
     {
         pSprite2 = actSpawnFloor(pSprite);
@@ -2647,9 +2647,9 @@ SPRITE *actDropItem(SPRITE *pSprite, int nType)
     return pSprite2;
 }
 
-SPRITE *actDropKey(SPRITE *pSprite, int nType)
+spritetype *actDropKey(spritetype *pSprite, int nType)
 {
-    SPRITE *pSprite2 = NULL;
+    spritetype *pSprite2 = NULL;
     if (pSprite && pSprite->statnum < kMaxStatus && nType >= 100 && nType <= 106)
     {
         pSprite2 = actDropItem(pSprite, nType);
@@ -2665,9 +2665,9 @@ SPRITE *actDropKey(SPRITE *pSprite, int nType)
     return pSprite2;
 }
 
-SPRITE *actDropFlag(SPRITE *pSprite, int nType)
+spritetype *actDropFlag(spritetype *pSprite, int nType)
 {
-    SPRITE *pSprite2 = NULL;
+    spritetype *pSprite2 = NULL;
     if (pSprite && pSprite->statnum < kMaxStatus && (nType == 147 || nType == 148))
     {
         pSprite2 = actDropItem(pSprite, nType);
@@ -2679,9 +2679,9 @@ SPRITE *actDropFlag(SPRITE *pSprite, int nType)
     return pSprite2;
 }
 
-SPRITE *actDropObject(SPRITE *pSprite, int nType)
+spritetype *actDropObject(spritetype *pSprite, int nType)
 {
-    SPRITE *pSprite2 = NULL;
+    spritetype *pSprite2 = NULL;
     if (nType >= 100 && nType <= 106)
         pSprite2 = actDropKey(pSprite, nType);
     else if (nType == 147 || nType == 148)
@@ -2709,7 +2709,7 @@ bool actHealDude(XSPRITE *pXDude, int a2, int a3)
     a3 <<= 4;
     if (pXDude->health < a3)
     {
-        SPRITE *pSprite = &qsprite[pXDude->reference];
+        spritetype *pSprite = &sprite[pXDude->reference];
         if (IsPlayerSprite(pSprite))
             sfxPlay3DSound(pSprite->x, pSprite->y, pSprite->z, 780, pSprite->sectnum);
         pXDude->health = ClipHigh(pXDude->health+a2, a3);
@@ -2718,9 +2718,9 @@ bool actHealDude(XSPRITE *pXDude, int a2, int a3)
     return 0;
 }
 
-void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
+void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
 {
-    SPRITE *pSprite2 = &qsprite[a1];
+    spritetype *pSprite2 = &sprite[a1];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     int nType = pSprite->type-kDudeBase;
     int nXSprite = pSprite->extra;
@@ -3004,7 +3004,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     case 213:
         if (pSprite->owner != -1)
         {
-            SPRITE *pOwner = &qsprite[actSpriteOwnerToSpriteId(pSprite)];
+            spritetype *pOwner = &sprite[actSpriteOwnerToSpriteId(pSprite)];
             gDudeExtra[pOwner->extra].at6.u1.at4--;
         }
         if (Chance(0x4000) && nSeq == 3)
@@ -3016,7 +3016,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     case 214:
         if (pSprite->owner != -1)
         {
-            SPRITE *pOwner = &qsprite[actSpriteOwnerToSpriteId(pSprite)];
+            spritetype *pOwner = &sprite[actSpriteOwnerToSpriteId(pSprite)];
             gDudeExtra[pOwner->extra].at6.u1.at4--;
         }
         if (Chance(0x4000) && nSeq == 3)
@@ -3028,7 +3028,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     case 215:
         if (pSprite->owner != -1)
         {
-            SPRITE *pOwner = &qsprite[actSpriteOwnerToSpriteId(pSprite)];
+            spritetype *pOwner = &sprite[actSpriteOwnerToSpriteId(pSprite)];
             gDudeExtra[pOwner->extra].at6.u1.at4--;
         }
         if (Chance(0x4000) && nSeq == 3)
@@ -3160,7 +3160,7 @@ void actKillDude(int a1, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     actPostSprite(pSprite->index, 4);
 }
 
-int actDamageSprite(int nSource, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
+int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
 {
     dassert(nSource < kMaxSprites);
     if (pSprite->hitag&32)
@@ -3176,8 +3176,8 @@ int actDamageSprite(int nSource, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     if (nSource == -1)
         nSource = pSprite->index;
     PLAYER *pSourcePlayer = NULL;
-    if (IsPlayerSprite(&qsprite[nSource]))
-        pSourcePlayer = &gPlayer[qsprite[nSource].type-kDudePlayer1];
+    if (IsPlayerSprite(&sprite[nSource]))
+        pSourcePlayer = &gPlayer[sprite[nSource].type-kDudePlayer1];
     switch (pSprite->statnum)
     {
     case 6:
@@ -3237,7 +3237,7 @@ int actDamageSprite(int nSource, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
                 pXSprite->atf_7 = 0;
             }
             else if (!(pSprite->hitag&16))
-                actPropagateSpriteOwner(pSprite, &qsprite[nSource]);
+                actPropagateSpriteOwner(pSprite, &sprite[nSource]);
             trTriggerSprite(pSprite->index, pXSprite, 0);
             switch (pSprite->type)
             {
@@ -3295,17 +3295,17 @@ int actDamageSprite(int nSource, SPRITE *pSprite, DAMAGE_TYPE a3, int a4)
     return a4>>4;
 }
 
-void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, SPRITE **a4, XSPRITE **a5, int *a6, WALL **a7, XWALL **a8, int *a9, SECTOR **a10, XSECTOR **a11)
+void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, spritetype **a4, XSPRITE **a5, int *a6, walltype **a7, XWALL **a8, int *a9, sectortype **a10, XSECTOR **a11)
 {
     dassert(pHitInfo != NULL);
     int nSprite = -1;
-    SPRITE *pSprite = NULL;
+    spritetype *pSprite = NULL;
     XSPRITE *pXSprite = NULL;
     int nWall = -1;
-    WALL *pWall = NULL;
+    walltype *pWall = NULL;
     XWALL *pXWall = NULL;
     int nSector = -1;
-    SECTOR *pSector = NULL;
+    sectortype *pSector = NULL;
     XSECTOR *pXSector = NULL;
     switch (a1)
     {
@@ -3313,7 +3313,7 @@ void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, SPRITE **a4, XSPRITE *
     case 5:
         nSprite = pHitInfo->hitsprite;
         dassert(nSprite >= 0 && nSprite < kMaxSprites);
-        pSprite = &qsprite[nSprite];
+        pSprite = &sprite[nSprite];
         if (pSprite->extra > 0)
             pXSprite = &xsprite[pSprite->extra];
         break;
@@ -3321,7 +3321,7 @@ void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, SPRITE **a4, XSPRITE *
     case 4:
         nWall = pHitInfo->hitwall;
         dassert(nWall >= 0 && nWall < kMaxWalls);
-        pWall = &qwall[nWall];
+        pWall = &wall[nWall];
         if (pWall->extra > 0)
             pXWall = &xwall[pWall->extra];
         break;
@@ -3330,7 +3330,7 @@ void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, SPRITE **a4, XSPRITE *
     case 6:
         nSector = pHitInfo->hitsect;
         dassert(nSector >= 0 && nSector < kMaxSectors);
-        pSector = &qsector[nSector];
+        pSector = &sector[nSector];
         if (pSector->extra > 0)
             pXSector = &xsector[pSector->extra];
         break;
@@ -3355,19 +3355,19 @@ void actHitcodeToData(int a1, HITINFO *pHitInfo, int *a3, SPRITE **a4, XSPRITE *
         *a11 = pXSector;
 }
 
-void actImpactMissile(SPRITE *pMissile, int a2)
+void actImpactMissile(spritetype *pMissile, int a2)
 {
     int nXMissile = pMissile->extra;
     dassert(nXMissile > 0 && nXMissile < kMaxXSprites);
     XSPRITE *pXMissile = &xsprite[pMissile->extra];
     int nSpriteHit = -1;
-    SPRITE *pSpriteHit = NULL;
+    spritetype *pSpriteHit = NULL;
     XSPRITE *pXSpriteHit = NULL;
     int nWallHit = -1;
-    WALL *pWallHit = NULL;
+    walltype *pWallHit = NULL;
     XWALL *pXWallHit = NULL;
     int nSectorHit = -1;
-    SECTOR *pSectorHit = NULL;
+    sectortype *pSectorHit = NULL;
     XSECTOR *pXSectorHit = NULL;
     actHitcodeToData(a2, &gHitInfo, &nSpriteHit, &pSpriteHit, &pXSpriteHit, &nWallHit, &pWallHit, &pXWallHit, &nSectorHit, &pSectorHit, &pXSectorHit);
     THINGINFO *pThingInfo = NULL;
@@ -3414,7 +3414,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         sub_51340(pMissile, a2);
         if ((a2 == 0 || a2 == 4) && pWallHit)
         {
-            SPRITE *pFX = gFX.fxSpawn(FX_52, pMissile->sectnum, pMissile->x, pMissile->y, pMissile->z, 0);
+            spritetype *pFX = gFX.fxSpawn(FX_52, pMissile->sectnum, pMissile->x, pMissile->y, pMissile->z, 0);
             if (pFX)
                 pFX->ang = (GetWallAngle(nWallHit)+512)&2047;
         }
@@ -3519,7 +3519,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             if (pObject->extra > 0)
             {
                 XSPRITE *pXObject = &xsprite[pObject->extra];
@@ -3537,7 +3537,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             if (pObject->extra > 0)
             {
                 XSPRITE *pXObject = &xsprite[pObject->extra];
@@ -3558,7 +3558,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             if (pObject->extra > 0)
             {
                 XSPRITE *pXObject = &xsprite[pObject->extra];
@@ -3582,7 +3582,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             if (pObject->statnum == 6)
             {
                 int nOwner = actSpriteOwnerToSpriteId(pMissile);
@@ -3600,13 +3600,13 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             if (pObject->statnum == 6)
             {
                 int nOwner = actSpriteOwnerToSpriteId(pMissile);
                 int nDamage = (10+Random(10))<<4;
                 actDamageSprite(nOwner, pObject, DAMAGE_TYPE_5, nDamage);
-                SPRITE *pOwner = &qsprite[nOwner];
+                spritetype *pOwner = &sprite[nOwner];
                 XSPRITE *pXOwner = &xsprite[pOwner->extra];
                 int nType = pOwner->type-kDudeBase;
                 if (pXOwner->health > 0)
@@ -3625,7 +3625,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             int nOwner = actSpriteOwnerToSpriteId(pMissile);
             int nDamage = (15+Random(10))<<4;
             actDamageSprite(nOwner, pObject, DAMAGE_TYPE_6, nDamage);
@@ -3639,7 +3639,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
         {
             int nObject = gHitInfo.hitsprite;
             dassert(nObject >= 0 && nObject < kMaxSprites);
-            SPRITE *pObject = &qsprite[nObject];
+            spritetype *pObject = &sprite[nObject];
             int nOwner = actSpriteOwnerToSpriteId(pMissile);
             int nDamage = (10+Random(10))<<4;
             actDamageSprite(nOwner, pObject, DAMAGE_TYPE_0, nDamage);
@@ -3649,7 +3649,7 @@ void actImpactMissile(SPRITE *pMissile, int a2)
     pMissile->cstat &= ~257;
 }
 
-void actKickObject(SPRITE *pSprite1, SPRITE *pSprite2)
+void actKickObject(spritetype *pSprite1, spritetype *pSprite2)
 {
     int nSprite1 = pSprite1->index;
     int nSprite2 = pSprite2->index;
@@ -3660,11 +3660,11 @@ void actKickObject(SPRITE *pSprite1, SPRITE *pSprite2)
     pSprite2->hitag = 7;
 }
 
-void actTouchFloor(SPRITE *pSprite, int nSector)
+void actTouchFloor(spritetype *pSprite, int nSector)
 {
     dassert(pSprite != NULL);
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     XSECTOR *pXSector = NULL;
     if (pSector->extra > 0)
         pXSector = &xsector[pSector->extra];
@@ -3690,7 +3690,7 @@ void actTouchFloor(SPRITE *pSprite, int nSector)
     }
 }
 
-void ProcessTouchObjects(SPRITE *pSprite, int nXSprite)
+void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
 {
     int nSprite = pSprite->index;
     XSPRITE *pXSprite = &xsprite[nXSprite];
@@ -3706,7 +3706,7 @@ void ProcessTouchObjects(SPRITE *pSprite, int nXSprite)
     case 0xc000:
         if (sprite[nHitSprite].extra > 0)
         {
-            SPRITE *pSprite2 = &qsprite[nHitSprite];
+            spritetype *pSprite2 = &sprite[nHitSprite];
             XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
             if ((pSprite2->statnum == 4 || pSprite2->statnum == 6) && (xvel[nSprite] != 0 || yvel[nSprite] != 0 || zvel[nSprite] != 0))
             {
@@ -3754,7 +3754,7 @@ void ProcessTouchObjects(SPRITE *pSprite, int nXSprite)
     case 0xc000:
         if (sprite[nHitSprite].extra > 0)
         {
-            SPRITE *pSprite2 = &qsprite[nHitSprite];
+            spritetype *pSprite2 = &sprite[nHitSprite];
             //XSPRITE *pXSprite2 = &Xsprite[pSprite2->extra];
             switch (pSprite2->type)
             {
@@ -3789,7 +3789,7 @@ void ProcessTouchObjects(SPRITE *pSprite, int nXSprite)
     case 0xc000:
         if (sprite[nHitSprite].extra > 0)
         {
-            SPRITE *pSprite2 = &qsprite[nHitSprite];
+            spritetype *pSprite2 = &sprite[nHitSprite];
             XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
             switch (pSprite2->type)
             {
@@ -3867,13 +3867,13 @@ void ProcessTouchObjects(SPRITE *pSprite, int nXSprite)
     }
 }
 
-void actAirDrag(SPRITE *pSprite, int a2)
+void actAirDrag(spritetype *pSprite, int a2)
 {
     int vbp = 0;
     int v4 = 0;
     int nSector = pSprite->sectnum;
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     int nXSector = pSector->extra;
     if (nXSector > 0)
     {
@@ -3893,7 +3893,7 @@ void actAirDrag(SPRITE *pSprite, int a2)
     zvel[pSprite->index] -= mulscale16(zvel[pSprite->index], a2);
 }
 
-int MoveThing(SPRITE *pSprite)
+int MoveThing(spritetype *pSprite)
 {
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
@@ -3910,7 +3910,7 @@ int MoveThing(SPRITE *pSprite)
     {
         short bakCstat = pSprite->cstat;
         pSprite->cstat &= ~257;
-        v8 = gSpriteHit[nXSprite].hit = ClipMove(&pSprite->x, &pSprite->y, &pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, pSprite->clipdist<<2, (pSprite->z-top)/4, (bottom-pSprite->z)/4, CLIPMASK0);
+        v8 = gSpriteHit[nXSprite].hit = ClipMove((long*)&pSprite->x, (long*)&pSprite->y, (long*)&pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, pSprite->clipdist<<2, (pSprite->z-top)/4, (bottom-pSprite->z)/4, CLIPMASK0);
         pSprite->cstat = bakCstat;
         dassert(nSector >= 0);
         if (pSprite->sectnum != nSector)
@@ -3950,7 +3950,7 @@ int MoveThing(SPRITE *pSprite)
         zvel[nSprite] += 58254;
         if (pSprite->type == 427)
         {
-            SPRITE *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+            spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
             if (pFX)
             {
                 long v34 = (gFrameClock*3)&2047;
@@ -4072,7 +4072,7 @@ int MoveThing(SPRITE *pSprite)
     return v8;
 }
 
-void MoveDude(SPRITE *pSprite)
+void MoveDude(spritetype *pSprite)
 {
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
@@ -4102,7 +4102,7 @@ void MoveDude(SPRITE *pSprite)
         {
             short bakCstat = pSprite->cstat;
             pSprite->cstat &= ~257;
-            gSpriteHit[nXSprite].hit = ClipMove(&pSprite->x, &pSprite->y, &pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, wd, tz, bz, 0x13001);
+            gSpriteHit[nXSprite].hit = ClipMove((long*)&pSprite->x, (long*)&pSprite->y, (long*)&pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, wd, tz, bz, 0x13001);
             if (nSector == -1)
             {
                 nSector = pSprite->sectnum;
@@ -4112,7 +4112,7 @@ void MoveDude(SPRITE *pSprite)
             if (sector[nSector].lotag >= 612 && sector[nSector].lotag <= 617)
             {
                 short nSector2 = nSector;
-                if (pushmove_old((int32_t*)&pSprite->x, (int32_t*)&pSprite->y, (int32_t*)&pSprite->z, &nSector2, wd, tz, bz, CLIPMASK0) == -1)
+                if (pushmove_old(&pSprite->x, &pSprite->y, &pSprite->z, &nSector2, wd, tz, bz, CLIPMASK0) == -1)
                     actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, 1000 << 4);
                 if (nSector2 != -1)
                     nSector = nSector2;
@@ -4125,7 +4125,7 @@ void MoveDude(SPRITE *pSprite)
         case 0xc000:
         {
             int nHitSprite = gSpriteHit[nXSprite].hit&0x1fff;
-            SPRITE *pHitSprite = &qsprite[nHitSprite];
+            spritetype *pHitSprite = &sprite[nHitSprite];
             XSPRITE *pHitXSprite = NULL;
             // Should be pHitSprite here
             if (pSprite->extra > 0)
@@ -4147,7 +4147,7 @@ void MoveDude(SPRITE *pSprite)
         case 0x8000:
         {
             int nHitWall = gSpriteHit[nXSprite].hit&0x1fff;
-            WALL *pHitWall = &qwall[nHitWall];
+            walltype *pHitWall = &wall[nHitWall];
             XWALL *pHitXWall = NULL;
             if (pHitWall->extra > 0)
                 pHitXWall = &xwall[pHitWall->extra];
@@ -4155,7 +4155,7 @@ void MoveDude(SPRITE *pSprite)
                 trTriggerWall(nHitWall, pHitXWall, 50);
             if (pHitWall->nextsector != -1)
             {
-                SECTOR *pHitSector = &qsector[pHitWall->nextsector];
+                sectortype *pHitSector = &sector[pHitWall->nextsector];
                 XSECTOR *pHitXSector = NULL;
                 if (pHitSector->extra > 0)
                     pHitXSector = &xsector[pHitSector->extra];
@@ -4213,9 +4213,9 @@ void MoveDude(SPRITE *pSprite)
     }
     int nUpperLink = gUpperLink[nSector];
     int nLowerLink = gLowerLink[nSector];
-    if (nUpperLink >= 0 && (qsprite[nUpperLink].type == 9 || qsprite[nUpperLink].type == 13))
+    if (nUpperLink >= 0 && (sprite[nUpperLink].type == 9 || sprite[nUpperLink].type == 13))
         bDepth = 1;
-    if (nLowerLink >= 0 && (qsprite[nLowerLink].type == 10 || qsprite[nLowerLink].type == 14))
+    if (nLowerLink >= 0 && (sprite[nLowerLink].type == 10 || sprite[nLowerLink].type == 14))
         bDepth = 1;
     if (pPlayer)
         wd += 16;
@@ -4501,12 +4501,12 @@ void MoveDude(SPRITE *pSprite)
                 break;
             case 14:
             {
-                SPRITE *pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ, 0);
+                spritetype *pFX = gFX.fxSpawn(FX_10, pSprite->sectnum, pSprite->x, pSprite->y, floorZ, 0);
                 if (pFX)
                 {
                     for (int i = 0; i < 7; i++)
                     {
-                        SPRITE *pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z, 0);
+                        spritetype *pFX2 = gFX.fxSpawn(FX_14, pFX->sectnum, pFX->x, pFX->y, pFX->z, 0);
                         if (pFX2)
                         {
                             xvel[pFX2->index] = Random2(0x6aaaa);
@@ -4568,17 +4568,17 @@ void MoveDude(SPRITE *pSprite)
     }
 }
 
-int MoveMissile(SPRITE *pSprite)
+int MoveMissile(spritetype *pSprite)
 {
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int vdi = -1;
-    SPRITE *pOwner = NULL;
+    spritetype *pOwner = NULL;
     int bakCstat = 0;
     if (pSprite->owner >= 0)
     {
         int nOwner = actSpriteOwnerToSpriteId(pSprite);
-        pOwner = &qsprite[nOwner];
+        pOwner = &sprite[nOwner];
         if (IsDudeSprite(pOwner))
         {
             bakCstat = pOwner->cstat;
@@ -4595,7 +4595,7 @@ int MoveMissile(SPRITE *pSprite)
     int nSprite = pSprite->index;
     if (pXSprite->target != -1 && (xvel[nSprite] || yvel[nSprite] || zvel[nSprite]))
     {
-        SPRITE *pTarget = &qsprite[pXSprite->target];
+        spritetype *pTarget = &sprite[pXSprite->target];
         XSPRITE *pXTarget;
         if (pTarget->extra > 0)
             pXTarget = &xsprite[pTarget->extra];
@@ -4668,7 +4668,7 @@ int MoveMissile(SPRITE *pSprite)
         }
         if (vdi == 4)
         {
-            WALL *pWall = &qwall[gHitInfo.hitwall];
+            walltype *pWall = &wall[gHitInfo.hitwall];
             if (pWall->extra)
             {
                 XWALL *pXWall = &xwall[pWall->extra];
@@ -4734,7 +4734,7 @@ int MoveMissile(SPRITE *pSprite)
     return vdi;
 }
 
-void actExplodeSprite(SPRITE *pSprite)
+void actExplodeSprite(spritetype *pSprite)
 {
     int nXSprite = pSprite->extra;
     if (nXSprite <= 0 || nXSprite >= kMaxXSprites)
@@ -4797,7 +4797,7 @@ void actExplodeSprite(SPRITE *pSprite)
         break;
     case 400:
     {
-        SPRITE *pSprite2 = actSpawnSprite(pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0, 1);
+        spritetype *pSprite2 = actSpawnSprite(pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0, 1);
         pSprite2->owner = pSprite->owner;
         if (actCheckRespawn(pSprite))
         {
@@ -4849,7 +4849,7 @@ void actExplodeSprite(SPRITE *pSprite)
     xsprite[nXSprite].at14_0 = pExplodeInfo->at17;
 }
 
-void actActivateGibObject(SPRITE *pSprite, XSPRITE *pXSprite)
+void actActivateGibObject(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int vdx = ClipRange(pXSprite->at10_0, 0, 31);
     int vc = ClipRange(pXSprite->at12_0, 0, 31);
@@ -4870,7 +4870,7 @@ void actActivateGibObject(SPRITE *pSprite, XSPRITE *pXSprite)
         actPostSprite(pSprite->index, 1024);
 }
 
-bool IsUnderWater(SPRITE *pSprite)
+bool IsUnderWater(spritetype *pSprite)
 {
     int nSector = pSprite->sectnum;
     int nXSector = sector[nSector].extra;
@@ -4880,7 +4880,7 @@ bool IsUnderWater(SPRITE *pSprite)
     return 0;
 }
 
-void MakeSplash(SPRITE *pSprite, XSPRITE *pXSprite);
+void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite);
 
 void actProcessSprites(void)
 {
@@ -4888,7 +4888,7 @@ void actProcessSprites(void)
     int nNextSprite;
     for (nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag&32)
             continue;
         int nXSprite = pSprite->extra;
@@ -4911,7 +4911,7 @@ void actProcessSprites(void)
                 {
                     int v1b0 = 96;
                     nNextSprite = nextspritestat[nSprite2];
-                    SPRITE *pSprite2 = &qsprite[nSprite2];
+                    spritetype *pSprite2 = &sprite[nSprite2];
                     if (pSprite2->hitag&32)
                         continue;
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
@@ -4920,7 +4920,7 @@ void actProcessSprites(void)
                         if (pSprite->type == 431 && pXSprite->target == -1)
                         {
                             int nOwner = actOwnerIdToSpriteId(pSprite->owner);
-                            SPRITE *pOwner = &qsprite[nOwner];
+                            spritetype *pOwner = &sprite[nOwner];
                             PLAYER *pPlayer = &gPlayer[pOwner->type-kDudePlayer1];
                             PLAYER *pPlayer2 = NULL;
                             if (IsPlayerSprite(pSprite2))
@@ -4958,7 +4958,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         int nSector = pSprite->sectnum;
@@ -5033,7 +5033,7 @@ void actProcessSprites(void)
                             {
                                 int nObject = hit & 0x1fff;
                                 dassert(nObject >= 0 && nObject < kMaxSprites);
-                                SPRITE *pObject = &qsprite[nObject];
+                                spritetype *pObject = &sprite[nObject];
                                 actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, DAMAGE_TYPE_0, 12);
                             }
                             break;
@@ -5047,7 +5047,7 @@ void actProcessSprites(void)
                             {
                                 int nObject = hit & 0x1fff;
                                 dassert(nObject >= 0 && nObject < kMaxSprites);
-                                SPRITE *pObject = &qsprite[nObject];
+                                spritetype *pObject = &sprite[nObject];
                                 actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, DAMAGE_TYPE_0, 12);
                                 evPost(pSprite->index, 3, 0, CALLBACK_ID_19);
                             }
@@ -5068,7 +5068,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[5]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         viewBackupSpriteLoc(nSprite, pSprite);
@@ -5079,7 +5079,7 @@ void actProcessSprites(void)
     for (nSprite = headspritestat[2]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         char v24c[(kMaxSectors+7)>>3];
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         int nOwner = actSpriteOwnerToSpriteId(pSprite);
@@ -5106,7 +5106,7 @@ void actProcessSprites(void)
         }
         for (int nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
         {
-            SPRITE *pDude = &qsprite[nSprite2];
+            spritetype *pDude = &sprite[nSprite2];
             if (pDude->hitag & 32)
                 continue;
             if (TestBitString(v24c, pDude->sectnum))
@@ -5133,7 +5133,7 @@ void actProcessSprites(void)
         }
         for (int nSprite2 = headspritestat[4]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
         {
-            SPRITE *pThing = &qsprite[nSprite2];
+            spritetype *pThing = &sprite[nSprite2];
             if (pThing->hitag & 32)
                 continue;
             if (TestBitString(v24c, pThing->sectnum))
@@ -5159,7 +5159,7 @@ void actProcessSprites(void)
         }
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            SPRITE *pSprite2 = gPlayer[p].pSprite;
+            spritetype *pSprite2 = gPlayer[p].pSprite;
             int dx = (x - pSprite2->x)>>4;
             int dy = (y - pSprite2->y)>>4;
             int dz = (z - pSprite2->z)>>8;
@@ -5175,7 +5175,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[11]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         int nXSprite = pSprite->extra;
@@ -5197,7 +5197,7 @@ void actProcessSprites(void)
                 int dy = mulscale30(t, Sin(pSprite->ang));
                 for (int i = 0; i < 2; i++)
                 {
-                    SPRITE *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z, 0);
+                    spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z, 0);
                     if (pFX)
                     {
                         xvel[pFX->index] = dx + Random2(0x8888);
@@ -5217,7 +5217,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         int nXSprite = pSprite->extra;
@@ -5255,7 +5255,7 @@ void actProcessSprites(void)
                 for (int nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nNextSprite)
                 {
                     nNextSprite = nextspritestat[nSprite2];
-                    SPRITE *pSprite2 = &qsprite[nSprite2];
+                    spritetype *pSprite2 = &sprite[nSprite2];
                     if (pSprite2->hitag&32)
                         continue;
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
@@ -5310,7 +5310,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         int nXSprite = pSprite->extra;
@@ -5357,7 +5357,7 @@ void actProcessSprites(void)
     }
     for (nSprite = headspritestat[14]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->hitag & 32)
             continue;
         int nXSprite = pSprite->extra;
@@ -5367,7 +5367,7 @@ void actProcessSprites(void)
         dassert(nTarget >= 0);
         viewBackupSpriteLoc(nSprite, pSprite);
         dassert(nTarget < kMaxSprites);
-        SPRITE *pTarget = &qsprite[nTarget];
+        spritetype *pTarget = &sprite[nTarget];
         if (pTarget->statnum == kMaxStatus)
         {
             GibSprite(pSprite, GIBTYPE_17, NULL, NULL);
@@ -5394,7 +5394,7 @@ void actProcessSprites(void)
     gFX.fxProcess();
 }
 
-SPRITE * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6)
+spritetype * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6)
 {
     int nSprite = InsertSprite(nSector, nStat);
     if (nSprite >= 0)
@@ -5409,7 +5409,7 @@ SPRITE * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6)
     }
     vec3_t pos = { x, y, z };
     setsprite(nSprite, &pos);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     pSprite->type = 0;
     if (a6 && pSprite->extra == -1)
     {
@@ -5420,11 +5420,11 @@ SPRITE * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6)
     return pSprite;
 }
 
-SPRITE * actSpawnSprite(SPRITE *pSource, int nStat);
+spritetype * actSpawnSprite(spritetype *pSource, int nStat);
 
-SPRITE *sub_36878(SPRITE *pSource, short nType, int a3, int a4)
+spritetype *sub_36878(spritetype *pSource, short nType, int a3, int a4)
 {
-    SPRITE *pSprite2 = actSpawnSprite(pSource, 6);
+    spritetype *pSprite2 = actSpawnSprite(pSource, 6);
     if (!pSprite2)
         return NULL;
     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
@@ -5455,7 +5455,7 @@ SPRITE *sub_36878(SPRITE *pSource, short nType, int a3, int a4)
     return pSprite2;
 }
 
-SPRITE * actSpawnSprite(SPRITE *pSource, int nStat)
+spritetype * actSpawnSprite(spritetype *pSource, int nStat)
 {
     int nSprite = InsertSprite(pSource->sectnum, nStat);
     if (nSprite < 0)
@@ -5466,7 +5466,7 @@ SPRITE * actSpawnSprite(SPRITE *pSource, int nStat)
         ChangeSpriteSect(nSprite, pSource->sectnum);
         actPostSprite(nSprite, nStat);
     }
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     pSprite->x = pSource->x;
     pSprite->y = pSource->y;
     pSprite->z = pSource->z;
@@ -5480,10 +5480,10 @@ SPRITE * actSpawnSprite(SPRITE *pSource, int nStat)
     return pSprite;
 }
 
-SPRITE * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
+spritetype * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
 {
     dassert(nThingType >= kThingBase && nThingType < kThingMax);
-    SPRITE *pSprite = actSpawnSprite(nSector, x, y, z, 4, 1);
+    spritetype *pSprite = actSpawnSprite(nSector, x, y, z, 4, 1);
     int nType = nThingType-kThingBase;
     int nThing = pSprite->index;
     int nXThing = pSprite->extra;
@@ -5566,7 +5566,7 @@ SPRITE * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
     return pSprite;
 }
 
-SPRITE * actFireThing(SPRITE *pSprite, int a2, int a3, int a4, int thingType, int a6)
+spritetype * actFireThing(spritetype *pSprite, int a2, int a3, int a4, int thingType, int a6)
 {
     dassert(thingType >= kThingBase && thingType < kThingMax);
     int x = pSprite->x+mulscale30(a2, Cos(pSprite->ang+512));
@@ -5579,7 +5579,7 @@ SPRITE * actFireThing(SPRITE *pSprite, int a2, int a3, int a4, int thingType, in
         x = gHitInfo.hitx-mulscale28(pSprite->clipdist<<1, Cos(pSprite->ang));
         y = gHitInfo.hity-mulscale28(pSprite->clipdist<<1, Sin(pSprite->ang));
     }
-    SPRITE *pThing = actSpawnThing(pSprite->sectnum, x, y, z, thingType);
+    spritetype *pThing = actSpawnThing(pSprite->sectnum, x, y, z, thingType);
     actPropagateSpriteOwner(pThing, pSprite);
     pThing->ang = pSprite->ang;
     xvel[pThing->index] = mulscale30(a6, Cos(pThing->ang));
@@ -5591,7 +5591,7 @@ SPRITE * actFireThing(SPRITE *pSprite, int a2, int a3, int a4, int thingType, in
     return pThing;
 }
 
-SPRITE* actFireMissile(SPRITE *pSprite, int a2, int a3, int a4, int a5, int a6, int nType)
+spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, int a6, int nType)
 {
     dassert(nType >= kMissileBase && nType < kMissileMax);
     char v4 = 0;
@@ -5618,7 +5618,7 @@ SPRITE* actFireMissile(SPRITE *pSprite, int a2, int a3, int a4, int a5, int a6, 
             y = gHitInfo.hity-mulscale30(pMissileInfo->atd<<1, Sin(pSprite->ang));
         }
     }
-    SPRITE *pMissile = actSpawnSprite(pSprite->sectnum, x, y, z, 5, 1);
+    spritetype *pMissile = actSpawnSprite(pSprite->sectnum, x, y, z, 5, 1);
     int nMissile = pMissile->index;
     SetBitString(show2dsprite, nMissile);
     pMissile->type = nType;
@@ -5717,7 +5717,7 @@ SPRITE* actFireMissile(SPRITE *pSprite, int a2, int a3, int a4, int a5, int a6, 
     return pMissile;
 }
 
-int actGetRespawnTime(SPRITE *pSprite)
+int actGetRespawnTime(spritetype *pSprite)
 {
     int nXSprite = pSprite->extra;
     if (nXSprite <= 0)
@@ -5766,7 +5766,7 @@ int actGetRespawnTime(SPRITE *pSprite)
     return -1;
 }
 
-bool actCheckRespawn(SPRITE *pSprite)
+bool actCheckRespawn(spritetype *pSprite)
 {
     int nSprite = pSprite->index;
     int nXSprite = pSprite->extra;
@@ -5807,7 +5807,7 @@ bool actCheckRespawn(SPRITE *pSprite)
 bool actCanSplatWall(int nWall)
 {
     dassert(nWall >= 0 && nWall < kMaxWalls);
-    WALL *pWall = &qwall[nWall];
+    walltype *pWall = &wall[nWall];
     if (pWall->cstat & 16384)
         return 0;
     if (pWall->cstat & 32768)
@@ -5816,14 +5816,14 @@ bool actCanSplatWall(int nWall)
         return 0;
     if (pWall->nextsector != -1)
     {
-        SECTOR *pSector = &qsector[pWall->nextsector];
+        sectortype *pSector = &sector[pWall->nextsector];
         if (pSector->lotag >= 600 && pSector->lotag < 620)
             return 0;
     }
     return 1;
 }
 
-void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VECTOR_TYPE vectorType)
+void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6, VECTOR_TYPE vectorType)
 {
     int nShooter = pShooter->index;
     dassert(vectorType >= 0 && vectorType < kVectorMax);
@@ -5834,7 +5834,7 @@ void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VEC
     {
         int nSprite = gHitInfo.hitsprite;
         dassert(nSprite >= 0 && nSprite < kMaxSprites);
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (IsPlayerSprite(pSprite))
         {
             PLAYER *pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
@@ -5888,7 +5888,7 @@ void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VEC
                 dassert(nSurf < kSurfMax);
                 if (pVectorData->at1d[nSurf].at0 >= 0)
                 {
-                    SPRITE *pFX = gFX.fxSpawn(pVectorData->at1d[nSurf].at0, nSector, x, y, z, 0);
+                    spritetype *pFX = gFX.fxSpawn(pVectorData->at1d[nSurf].at0, nSector, x, y, z, 0);
                     if (pFX)
                     {
                         pFX->ang = (GetWallAngle(nWall)+512)&2047;
@@ -5917,7 +5917,7 @@ void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VEC
             int nSprite = gHitInfo.hitsprite;
             nSurf = surfType[sprite[nSprite].picnum];
             dassert(nSprite >= 0 && nSprite < kMaxSprites);
-            SPRITE *pSprite = &qsprite[nSprite];
+            spritetype *pSprite = &sprite[nSprite];
             x -= mulscale(a4, 112, 14);
             y -= mulscale(a5, 112, 14);
             z -= mulscale(a6, 112<<4, 14);
@@ -5988,7 +5988,7 @@ void actFireVector(SPRITE *pShooter, int a2, int a3, int a4, int a5, int a6, VEC
                                 VECTORDATA *pVectorData = &gVectorData[19];
                                 FX_ID t2 = pVectorData->at1d[nSurf].at1;
                                 FX_ID t3 = pVectorData->at1d[nSurf].at2;
-                                SPRITE *pFX = NULL;
+                                spritetype *pFX = NULL;
                                 if (t2 > -1 && (t3 == -1 || Chance(0x4000)))
                                     pFX = gFX.fxSpawn(t2, nSector, x, y, z, 0);
                                 else if(t3 > -1)
@@ -6024,8 +6024,8 @@ void FireballSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_11, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_11, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6039,8 +6039,8 @@ void NapalmSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_12, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_12, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6054,8 +6054,8 @@ void sub_3888C(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6069,8 +6069,8 @@ void sub_38938(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_33, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_33, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         int nFX = pFX->index;
@@ -6084,7 +6084,7 @@ void TreeToGibCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     pSprite->type = 417;
     pXSprite->at1_6 = 1;
     pXSprite->at10_0 = 15;
@@ -6099,7 +6099,7 @@ void DudeToGibCallback1(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     pSprite->type = 426;
     pXSprite->at10_0 = 8;
     pXSprite->at12_0 = 0;
@@ -6117,7 +6117,7 @@ void DudeToGibCallback2(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     pSprite->type = 426;
     pXSprite->at10_0 = 3;
     pXSprite->at12_0 = 0;
@@ -6160,7 +6160,7 @@ void actPostProcess(void)
     {
         POSTPONE *pPost = &gPost[i];
         int nSprite = pPost->at0;
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         pSprite->hitag &= ~32;
         int nStatus = pPost->at2;
         if (nStatus == kStatFree)
@@ -6176,7 +6176,7 @@ void actPostProcess(void)
     gPostCount = 0;
 }
 
-void MakeSplash(SPRITE *pSprite, XSPRITE *pXSprite)
+void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite)
 {
     UNREFERENCED_PARAMETER(pXSprite);
     pSprite->hitag &= ~2;

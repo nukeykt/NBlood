@@ -42,10 +42,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 static void sub_71A90(int, int);
 static void sub_71BD4(int, int);
 static void sub_720AC(int, int);
-static void sub_72580(SPRITE *, XSPRITE *);
-static void sub_725A4(SPRITE *, XSPRITE *);
-static void sub_72850(SPRITE *, XSPRITE *);
-static void sub_72934(SPRITE *, XSPRITE *);
+static void sub_72580(spritetype *, XSPRITE *);
+static void sub_725A4(spritetype *, XSPRITE *);
+static void sub_72850(spritetype *, XSPRITE *);
+static void sub_72934(spritetype *, XSPRITE *);
 
 static int dword_279B54 = seqRegisterClient(sub_71BD4);
 static int dword_279B58 = seqRegisterClient(sub_720AC);
@@ -65,8 +65,8 @@ static void sub_71A90(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int nTarget = pTarget->index;
     int nOwner = actSpriteIdToOwnerId(nSprite);
@@ -81,7 +81,7 @@ static void sub_71BD4(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int height = pSprite->yrepeat*pDudeInfo->atb;
@@ -97,7 +97,7 @@ static void sub_71BD4(int, int nXSprite)
     int nClosest = 0x7fffffff;
     for (short nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
     {
-        SPRITE *pSprite2 = &qsprite[nSprite2];
+        spritetype *pSprite2 = &sprite[nSprite2];
         if (pSprite == pSprite2 || !(pSprite2->hitag&8))
             continue;
         int x2 = pSprite2->x;
@@ -152,7 +152,7 @@ static void sub_720AC(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int height = pSprite->yrepeat*pDudeInfo->atb;
@@ -171,7 +171,7 @@ static void sub_720AC(int, int nXSprite)
     az = 0;
     for (short nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
     {
-        SPRITE *pSprite2 = &qsprite[nSprite2];
+        spritetype *pSprite2 = &sprite[nSprite2];
         if (pSprite == pSprite2 || !(pSprite2->hitag&8))
             continue;
         int x2 = pSprite2->x;
@@ -222,13 +222,13 @@ static void sub_720AC(int, int nXSprite)
     actFireMissile(pSprite, -350, 0, ax, ay, az, 314);
 }
 
-static void sub_72580(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_72580(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void sub_725A4(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -281,7 +281,7 @@ static void sub_725A4(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-static void sub_72850(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_72850(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -295,7 +295,7 @@ static void sub_72850(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void sub_72934(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_72934(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -305,7 +305,7 @@ static void sub_72934(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;

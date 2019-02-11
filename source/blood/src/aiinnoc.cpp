@@ -39,9 +39,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sfx.h"
 #include "trig.h"
 
-static void thinkSearch(SPRITE *, XSPRITE *);
-static void thinkGoto(SPRITE *, XSPRITE *);
-static void thinkChase(SPRITE *, XSPRITE *);
+static void thinkSearch(spritetype *, XSPRITE *);
+static void thinkGoto(spritetype *, XSPRITE *);
+static void thinkChase(spritetype *, XSPRITE *);
 
 AISTATE innocentIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
 AISTATE innocentSearch = { 6, -1, 1800, NULL, aiMoveForward, thinkSearch, &innocentIdle };
@@ -50,13 +50,13 @@ AISTATE innocentRecoil = { 5, -1, 0, NULL, NULL, NULL, &innocentChase };
 AISTATE innocentTeslaRecoil = { 4, -1, 0, NULL, NULL, NULL, &innocentChase };
 AISTATE innocentGoto = { 6, -1, 600, NULL, aiMoveForward, thinkGoto, &innocentChase };
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -70,7 +70,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -80,7 +80,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;

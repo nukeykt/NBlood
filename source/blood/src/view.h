@@ -114,8 +114,8 @@ void viewUpdatePrediction(GINPUT *pInput);
 void sub_158B4(PLAYER *pPlayer);
 void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput);
 void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput);
-void fakeMoveDude(SPRITE *pSprite);
-void fakeActAirDrag(SPRITE *pSprite, int num);
+void fakeMoveDude(spritetype *pSprite);
+void fakeActAirDrag(spritetype *pSprite, int num);
 void fakeActProcessSprites(void);
 void viewCorrectPrediction(void);
 void viewBackupView(int nPlayer);
@@ -137,11 +137,11 @@ void viewInit(void);
 void viewResizeView(int size);
 void UpdateFrame(void);
 void viewDrawInterface(int arg);
-SPRITE *viewInsertTSprite(int nSector, int nStatnum, SPRITE *pSprite);
-SPRITE *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect);
+uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite);
+uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect);
 void viewProcessSprites(int cX, int cY, int cZ);
-void CalcOtherPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, int zm);
-void CalcPosition(SPRITE *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, int zm);
+void CalcOtherPosition(spritetype *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, int zm);
+void CalcPosition(spritetype *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, int zm);
 void viewSetMessage(const char *pMessage);
 void viewDisplayMessage(void);
 void viewSetErrorMessage(const char *pMessage);
@@ -159,7 +159,7 @@ void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
 void viewPrintFPS(void);
 
 
-inline void viewInterpolateSector(int nSector, SECTOR *pSector)
+inline void viewInterpolateSector(int nSector, sectortype *pSector)
 {
     if (!TestBitString(gInterpolateSector, nSector))
     {
@@ -170,7 +170,7 @@ inline void viewInterpolateSector(int nSector, SECTOR *pSector)
     }
 }
 
-inline void viewInterpolateWall(int nWall, WALL *pWall)
+inline void viewInterpolateWall(int nWall, walltype *pWall)
 {
     if (!TestBitString(gInterpolateWall, nWall))
     {
@@ -180,7 +180,7 @@ inline void viewInterpolateWall(int nWall, WALL *pWall)
     }
 }
 
-inline void viewBackupSpriteLoc(int nSprite, SPRITE *pSprite)
+inline void viewBackupSpriteLoc(int nSprite, spritetype *pSprite)
 {
     if (!TestBitString(gInterpolateSprite, nSprite))
     {

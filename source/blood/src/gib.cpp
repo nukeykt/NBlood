@@ -259,9 +259,9 @@ GIBLIST gibList[] = {
 
 void gibCalcWallArea(int a1, int &a2, int &a3, int &a4, int &a5, int &a6, int &a7, int &a8)
 {
-    WALL *pWall = &qwall[a1];
-    a2 = (pWall->x+qwall[pWall->point2].x)>>1;
-    a3 = (pWall->y+qwall[pWall->point2].y)>>1;
+    walltype *pWall = &wall[a1];
+    a2 = (pWall->x+wall[pWall->point2].x)>>1;
+    a3 = (pWall->y+wall[pWall->point2].y)>>1;
     int nSector = sectorofwall(a1);
     int32_t ceilZ, floorZ;
     getzsofslope(nSector, a2, a3, &ceilZ, &floorZ);
@@ -270,8 +270,8 @@ void gibCalcWallArea(int a1, int &a2, int &a3, int &a4, int &a5, int &a6, int &a
     ceilZ = ClipLow(ceilZ, ceilZ2);
     floorZ = ClipHigh(floorZ, floorZ2);
     a7 = floorZ-ceilZ;
-    a5 = qwall[pWall->point2].x-pWall->x;
-    a6 = qwall[pWall->point2].y-pWall->y;
+    a5 = wall[pWall->point2].x-pWall->x;
+    a6 = wall[pWall->point2].y-pWall->y;
     a8 = (a7>>8)*approxDist(a5>>4, a6>>4);
     a4 = (ceilZ+floorZ)>>1;
 }
@@ -288,7 +288,7 @@ int ChanceToCount(int a1, int a2)
     return vb;
 }
 
-void GibFX(SPRITE *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *pVel)
+void GibFX(spritetype *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *pVel)
 {
     int nSector = pSprite->sectnum;
     if (gbAdultContent && gGameOptions.nGameType == 0 && pGFX->at0 == FX_13)
@@ -312,7 +312,7 @@ void GibFX(SPRITE *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *pVel)
             gPos.y = pSprite->y+mulscale30(pSprite->clipdist<<2, Sin(nAngle));
             gPos.z = bottom-Random(bottom-top);
         }
-        SPRITE *pFX = gFX.fxSpawn(pGFX->at0, nSector, gPos.x, gPos.y, gPos.z, 0);
+        spritetype *pFX = gFX.fxSpawn(pGFX->at0, nSector, gPos.x, gPos.y, gPos.z, 0);
         if (pFX)
         {
             if (pGFX->at1 < 0)
@@ -355,7 +355,7 @@ void GibFX(SPRITE *pSprite, GIBFX *pGFX, CGibPosition *pPos, CGibVelocity *pVel)
     }
 }
 
-void GibThing(SPRITE *pSprite, GIBTHING *pGThing, CGibPosition *pPos, CGibVelocity *pVel)
+void GibThing(spritetype *pSprite, GIBTHING *pGThing, CGibPosition *pPos, CGibVelocity *pVel)
 {
     if (gbAdultContent && gGameOptions.nGameType <= 0)
         switch (pGThing->at0)
@@ -388,7 +388,7 @@ void GibThing(SPRITE *pSprite, GIBTHING *pGThing, CGibPosition *pPos, CGibVeloci
         getzsofslope(nSector, x, y, &ceilZ, &floorZ);
         int dz1 = floorZ-z;
         int dz2 = z-ceilZ;
-        SPRITE *pGib = actSpawnThing(nSector, x, y, z, pGThing->at0);
+        spritetype *pGib = actSpawnThing(nSector, x, y, z, pGThing->at0);
         dassert(pGib != NULL);
         if (pGThing->at4 > -1)
             pGib->picnum = pGThing->at4;
@@ -426,7 +426,7 @@ void GibThing(SPRITE *pSprite, GIBTHING *pGThing, CGibPosition *pPos, CGibVeloci
     }
 }
 
-void GibSprite(SPRITE *pSprite, GIBTYPE nGibType, CGibPosition *pPos, CGibVelocity *pVel)
+void GibSprite(spritetype *pSprite, GIBTYPE nGibType, CGibPosition *pPos, CGibVelocity *pVel)
 {
     dassert(pSprite != NULL);
     dassert(nGibType >= 0 && nGibType < kGibMax);
@@ -450,7 +450,7 @@ void GibSprite(SPRITE *pSprite, GIBTYPE nGibType, CGibPosition *pPos, CGibVeloci
 void GibFX(int nWall, GIBFX * pGFX, int a3, int a4, int a5, int a6, CGibVelocity * pVel)
 {
     dassert(nWall >= 0 && nWall < numwalls);
-    WALL *pWall = &qwall[nWall];
+    walltype *pWall = &wall[nWall];
     int nCount = ChanceToCount(pGFX->chance, pGFX->at9);
     int nSector = sectorofwall(nWall);
     for (int i = 0; i < nCount; i++)
@@ -458,7 +458,7 @@ void GibFX(int nWall, GIBFX * pGFX, int a3, int a4, int a5, int a6, CGibVelocity
         int r1 = Random(a6);
         int r2 = Random(a5);
         int r3 = Random(a4);
-        SPRITE *pGib = gFX.fxSpawn(pGFX->at0, nSector, pWall->x+r3, pWall->y+r2, a3+r1, 0);
+        spritetype *pGib = gFX.fxSpawn(pGFX->at0, nSector, pWall->x+r3, pWall->y+r2, a3+r1, 0);
         if (pGib)
         {
             if (pGFX->at1 < 0)
@@ -484,7 +484,7 @@ void GibWall(int nWall, GIBTYPE nGibType, CGibVelocity *pVel)
     dassert(nWall >= 0 && nWall < numwalls);
     dassert(nGibType >= 0 && nGibType < kGibMax);
     int cx, cy, cz, wx, wy, wz;
-    WALL *pWall = &qwall[nWall];
+    walltype *pWall = &wall[nWall];
     cx = (pWall->x+wall[pWall->point2].x)>>1;
     cy = (pWall->y+wall[pWall->point2].y)>>1;
     int nSector = sectorofwall(nWall);

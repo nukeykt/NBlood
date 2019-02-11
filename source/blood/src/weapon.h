@@ -32,4 +32,4 @@ void WeaponRaise(PLAYER *pPlayer);
 void WeaponLower(PLAYER *pPlayer);
 char WeaponUpgrade(PLAYER *pPlayer, char newWeapon);
 void WeaponProcess(PLAYER *pPlayer);
-void sub_51340(SPRITE *pMissile, int a2);
+void sub_51340(spritetype *pMissile, int a2);

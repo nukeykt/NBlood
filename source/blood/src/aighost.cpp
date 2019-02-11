@@ -42,16 +42,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 static void SlashSeqCallback(int, int);
 static void ThrowSeqCallback(int, int);
 static void BlastSeqCallback(int, int);
-static void thinkTarget(SPRITE *, XSPRITE *);
-static void thinkSearch(SPRITE *, XSPRITE *);
-static void thinkGoto(SPRITE *, XSPRITE *);
-static void MoveDodgeUp(SPRITE *, XSPRITE *);
-static void MoveDodgeDown(SPRITE *, XSPRITE *);
-static void thinkChase(SPRITE *, XSPRITE *);
-static void MoveForward(SPRITE *, XSPRITE *);
-static void MoveSlow(SPRITE *, XSPRITE *);
-static void MoveSwoop(SPRITE *, XSPRITE *);
-static void MoveFly(SPRITE *, XSPRITE *);
+static void thinkTarget(spritetype *, XSPRITE *);
+static void thinkSearch(spritetype *, XSPRITE *);
+static void thinkGoto(spritetype *, XSPRITE *);
+static void MoveDodgeUp(spritetype *, XSPRITE *);
+static void MoveDodgeDown(spritetype *, XSPRITE *);
+static void thinkChase(spritetype *, XSPRITE *);
+static void MoveForward(spritetype *, XSPRITE *);
+static void MoveSlow(spritetype *, XSPRITE *);
+static void MoveSwoop(spritetype *, XSPRITE *);
+static void MoveFly(spritetype *, XSPRITE *);
 
 static int nSlashClient = seqRegisterClient(SlashSeqCallback);
 static int nThrowClient = seqRegisterClient(ThrowSeqCallback);
@@ -80,8 +80,8 @@ static void SlashSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pTarget = &sprite[pXSprite->target];
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
     int height = (pSprite->yrepeat*pDudeInfo->atb)<<2;
@@ -103,16 +103,16 @@ static void ThrowSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    actFireThing(&qsprite[nSprite], 0, 0, gDudeSlope[nXSprite]-7500, 421, 0xeeeee);
+    actFireThing(&sprite[nSprite], 0, 0, gDudeSlope[nXSprite]-7500, 421, 0xeeeee);
 }
 
 static void BlastSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     wrand(); // ???
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int height = (pSprite->yrepeat*dudeInfo[pSprite->type-kDudeBase].atb) << 2;
     int dx = pXSprite->at20_0-pSprite->x;
     int dy = pXSprite->at24_0-pSprite->y;
@@ -129,7 +129,7 @@ static void BlastSeqCallback(int, int nXSprite)
     int nClosest = 0x7fffffff;
     for (short nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
     {
-        SPRITE *pSprite2 = &qsprite[nSprite2];
+        spritetype *pSprite2 = &sprite[nSprite2];
         if (pSprite == pSprite2 || !(pSprite2->hitag&8))
             continue;
         int x2 = pSprite2->x;
@@ -193,7 +193,7 @@ static void BlastSeqCallback(int, int nXSprite)
     }
 }
 
-static void thinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -245,13 +245,13 @@ static void thinkTarget(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -265,7 +265,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void MoveDodgeUp(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -289,7 +289,7 @@ static void MoveDodgeUp(SPRITE *pSprite, XSPRITE *pXSprite)
     zvel[nSprite] = -0x1d555;
 }
 
-static void MoveDodgeDown(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveDodgeDown(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -315,7 +315,7 @@ static void MoveDodgeDown(SPRITE *pSprite, XSPRITE *pXSprite)
     zvel[nSprite] = 0x44444;
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -325,7 +325,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -370,7 +370,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 210)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 210)
                                 aiNewState(pSprite, pXSprite, &ghostBlast);
                             break;
                         default:
@@ -390,7 +390,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type && qsprite[gHitInfo.hitsprite].type != 210)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 210)
                                 aiNewState(pSprite, pXSprite, &ghostSlash);
                             break;
                         default:
@@ -421,7 +421,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     pXSprite->target = -1;
 }
 
-static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -454,7 +454,7 @@ static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
     yvel[nSprite] = dmulscale30(t1, nSin, -t2, nCos);
 }
 
-static void MoveSlow(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveSlow(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -492,7 +492,7 @@ static void MoveSlow(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-static void MoveSwoop(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveSwoop(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -529,7 +529,7 @@ static void MoveSwoop(SPRITE *pSprite, XSPRITE *pXSprite)
     }
 }
 
-static void MoveFly(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveFly(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);

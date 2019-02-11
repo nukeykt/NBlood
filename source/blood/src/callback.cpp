@@ -46,8 +46,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 void sub_74C20(int nSprite) // 7
 {
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_15, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_15, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x10000);
@@ -59,8 +59,8 @@ void sub_74C20(int nSprite) // 7
 
 void sub_74D04(int nSprite) // 15
 {
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_49, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_49, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -72,7 +72,7 @@ void sub_74D04(int nSprite) // 15
 
 void FinishHim(int nSprite) // 13
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
     if (playerSeqPlaying(&gPlayer[pSprite->type-kDudePlayer1], 16) && pXSprite->target == gMe->at5b)
@@ -81,7 +81,7 @@ void FinishHim(int nSprite) // 13
 
 void FlameLick(int nSprite) // 0
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int top, bottom;
@@ -95,7 +95,7 @@ void FlameLick(int nSprite) // 0
         int x = pSprite->x + dx;
         int y = pSprite->y + dy;
         int z = bottom-Random(bottom-top);
-        SPRITE *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z, 0);
+        spritetype *pFX = gFX.fxSpawn(FX_32, pSprite->sectnum, x, y, z, 0);
         if (pFX)
         {
             xvel[pFX->index] = xvel[nSprite] + Random2(-dx);
@@ -109,7 +109,7 @@ void FlameLick(int nSprite) // 0
 
 void Remove(int nSprite) // 1
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     evKill(nSprite, 3);
     if (pSprite->extra > 0)
         seqKill(3, pSprite->extra);
@@ -120,12 +120,12 @@ void Remove(int nSprite) // 1
 void FlareBurst(int nSprite) // 2
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nAngle = getangle(xvel[nSprite], yvel[nSprite]);
     int nRadius = 0x55555;
     for (int i = 0; i < 8; i++)
     {
-        SPRITE *pSpawn = actSpawnSprite(pSprite, 5);
+        spritetype *pSpawn = actSpawnSprite(pSprite, 5);
         pSpawn->picnum = 2424;
         pSpawn->shade = -128;
         pSpawn->xrepeat = pSpawn->yrepeat = 32;
@@ -152,8 +152,8 @@ void FlareBurst(int nSprite) // 2
 
 void FlareSpark(int nSprite) // 3
 {
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -165,8 +165,8 @@ void FlareSpark(int nSprite) // 3
 
 void FlareSparkLite(int nSprite) // 4
 {
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_28, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -179,13 +179,13 @@ void FlareSparkLite(int nSprite) // 4
 void ZombieSpurt(int nSprite) // 5
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
-    SPRITE *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, top, 0);
+    spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, top, 0);
     if (pFX)
     {
         xvel[pFX->index] = xvel[nSprite] + Random2(0x11111);
@@ -207,8 +207,8 @@ void ZombieSpurt(int nSprite) // 5
 
 void BloodSpurt(int nSprite) // 6
 {
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pFX)
     {
         pFX->ang = 0;
@@ -221,14 +221,14 @@ void BloodSpurt(int nSprite) // 6
 
 void DynPuff(int nSprite) // 8
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (zvel[nSprite])
     {
         int nDist = (pSprite->xrepeat*(tilesiz[pSprite->picnum].x/2))>>2;
         int x = pSprite->x + mulscale30(nDist, Cos(pSprite->ang-512));
         int y = pSprite->y + mulscale30(nDist, Sin(pSprite->ang-512));
         int z = pSprite->z;
-        SPRITE *pFX = gFX.fxSpawn(FX_7, pSprite->sectnum, x, y, z, 0);
+        spritetype *pFX = gFX.fxSpawn(FX_7, pSprite->sectnum, x, y, z, 0);
         if (pFX)
         {
             xvel[pFX->index] = xvel[nSprite];
@@ -241,7 +241,7 @@ void DynPuff(int nSprite) // 8
 
 void Respawn(int nSprite) // 9
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
     XSPRITE *pXSprite = &xsprite[nXSprite];
@@ -308,7 +308,7 @@ void Respawn(int nSprite) // 9
 
 void PlayerBubble(int nSprite) // 10
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (IsPlayerSprite(pSprite))
     {
         PLAYER *pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
@@ -324,7 +324,7 @@ void PlayerBubble(int nSprite) // 10
             int x = pSprite->x + mulscale30(nDist, Cos(nAngle));
             int y = pSprite->y + mulscale30(nDist, Sin(nAngle));
             int z = bottom-Random(bottom-top);
-            SPRITE *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z, 0);
+            spritetype *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z, 0);
             if (pFX)
             {
                 xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -338,7 +338,7 @@ void PlayerBubble(int nSprite) // 10
 
 void EnemyBubble(int nSprite) // 11
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
     for (int i = 0; i < (klabs(zvel[nSprite])>>18); i++)
@@ -348,7 +348,7 @@ void EnemyBubble(int nSprite) // 11
         int x = pSprite->x + mulscale30(nDist, Cos(nAngle));
         int y = pSprite->y + mulscale30(nDist, Sin(nAngle));
         int z = bottom-Random(bottom-top);
-        SPRITE *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z, 0);
+        spritetype *pFX = gFX.fxSpawn((FX_ID)(FX_23+Random(3)), pSprite->sectnum, x, y, z, 0);
         if (pFX)
         {
             xvel[pFX->index] = xvel[nSprite] + Random2(0x1aaaa);
@@ -362,7 +362,7 @@ void EnemyBubble(int nSprite) // 11
 void CounterCheck(int nSector) // 12
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    SECTOR *pSector = &qsector[nSector];
+    sectortype *pSector = &sector[nSector];
     if (pSector->lotag != 619)
         return;
     int nXSprite = pSector->extra;
@@ -376,7 +376,7 @@ void CounterCheck(int nSector) // 12
             int nCount = 0;
             for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
             {
-                if (qsprite[nSprite].type == nType)
+                if (sprite[nSprite].type == nType)
                     nCount++;
             }
             if (nCount >= nType)
@@ -392,7 +392,7 @@ void CounterCheck(int nSector) // 12
 
 void sub_76140(int nSprite) // 14
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     long ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist, CLIPMASK0);
     int top, bottom;
@@ -411,14 +411,14 @@ void sub_76140(int nSprite) // 14
     }
     if (Chance(0x5000))
     {
-        SPRITE *pFX = gFX.fxSpawn(FX_36, pSprite->sectnum, x, y, floorZ-64, 0);
+        spritetype *pFX = gFX.fxSpawn(FX_36, pSprite->sectnum, x, y, floorZ-64, 0);
         if (pFX)
             pFX->ang = nAngle;
     }
     gFX.sub_73FFC(nSprite);
 }
 
-void sub_7632C(SPRITE *pSprite)
+void sub_7632C(spritetype *pSprite)
 {
     xvel[pSprite->index] = yvel[pSprite->index] = zvel[pSprite->index] = 0;
     if (pSprite->extra > 0)
@@ -446,7 +446,7 @@ int dword_13B338[] = { 610, 612 };
 
 void sub_763BC(int nSprite) // 16
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     long ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist, CLIPMASK0);
     int top, bottom;
@@ -478,10 +478,10 @@ void sub_763BC(int nSprite) // 16
 
 void sub_765B8(int nSprite) // 17
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (pSprite->owner >= 0 && pSprite->owner < kMaxSprites)
     {
-        SPRITE *pOwner = &qsprite[pSprite->owner];
+        spritetype *pOwner = &sprite[pSprite->owner];
         XSPRITE *pXOwner = &xsprite[pOwner->extra];
         switch (pSprite->type)
         {
@@ -502,7 +502,7 @@ void sub_765B8(int nSprite) // 17
 
 void sub_766B8(int nSprite) // 19
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     long ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist, CLIPMASK0);
     int top, bottom;
@@ -518,7 +518,7 @@ void sub_766B8(int nSprite) // 19
         dassert(nChannel < 32);
         sfxPlay3DSound(pSprite, 385, nChannel, 1);
     }
-    SPRITE *pFX = NULL;
+    spritetype *pFX = NULL;
     if (pSprite->type == 53 || pSprite->type == 430)
     {
         if (Chance(0x500) || pSprite->type == 430)
@@ -537,8 +537,8 @@ void sub_766B8(int nSprite) // 19
 
 void sub_768E8(int nSprite) // 18
 {
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pFX;
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pFX;
     if (pSprite->type == 53)
         pFX = gFX.fxSpawn(FX_53, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     else
@@ -555,12 +555,12 @@ void sub_768E8(int nSprite) // 18
 
 void sub_769B4(int nSprite) // 19
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (pSprite->statnum == 4 && pSprite->type == 431 && !(pSprite->hitag&32))
         xsprite[pSprite->extra].at32_0 = 0;
 }
 
-void sub_76A08(SPRITE *pSprite, SPRITE *pSprite2, PLAYER *pPlayer)
+void sub_76A08(spritetype *pSprite, spritetype *pSprite2, PLAYER *pPlayer)
 {
     int top, bottom;
     int nSprite = pSprite->index;
@@ -582,14 +582,14 @@ void sub_76A08(SPRITE *pSprite, SPRITE *pSprite2, PLAYER *pPlayer)
 
 void sub_76B78(int nSprite)
 {
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int nOwner = actSpriteOwnerToSpriteId(pSprite);
     if (nOwner < 0 || nOwner >= kMaxSprites)
     {
         evPost(nSprite, 3, 0, CALLBACK_ID_1);
         return;
     }
-    SPRITE *pOwner = &qsprite[nOwner];
+    spritetype *pOwner = &sprite[nOwner];
     PLAYER *pPlayer;
     if (IsPlayerSprite(pOwner))
         pPlayer = &gPlayer[pOwner->type-kDudePlayer1];
@@ -616,7 +616,7 @@ void sub_76B78(int nSprite)
             nNextSprite = nextspritestat[nSprite2];
             if (nOwner == nSprite2)
                 continue;
-            SPRITE *pSprite2 = &qsprite[nSprite2];
+            spritetype *pSprite2 = &sprite[nSprite2];
             int nXSprite2 = pSprite2->extra;
             if (nXSprite2 > 0 && nXSprite2 < kMaxXSprites)
             {

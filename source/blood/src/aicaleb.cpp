@@ -39,14 +39,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 
 static void SeqAttackCallback(int, int);
-static void thinkSearch(SPRITE *, XSPRITE *);
-static void thinkGoto(SPRITE *, XSPRITE *);
-static void thinkChase(SPRITE *, XSPRITE *);
-static void thinkSwimGoto(SPRITE *, XSPRITE *);
-static void thinkSwimChase(SPRITE *, XSPRITE *);
-static void sub_65D04(SPRITE *, XSPRITE *);
-static void sub_65F44(SPRITE *, XSPRITE *);
-static void sub_661E0(SPRITE *, XSPRITE *);
+static void thinkSearch(spritetype *, XSPRITE *);
+static void thinkGoto(spritetype *, XSPRITE *);
+static void thinkChase(spritetype *, XSPRITE *);
+static void thinkSwimGoto(spritetype *, XSPRITE *);
+static void thinkSwimChase(spritetype *, XSPRITE *);
+static void sub_65D04(spritetype *, XSPRITE *);
+static void sub_65F44(spritetype *, XSPRITE *);
+static void sub_661E0(spritetype *, XSPRITE *);
 
 static int nAttackClient = seqRegisterClient(SeqAttackCallback);
 
@@ -72,7 +72,7 @@ AISTATE tinycaleb139698 = { 8, -1, 120, NULL, aiMoveTurn, NULL, &tinycalebSwimCh
 static void SeqAttackCallback(int, int nXSprite)
 {
     int nSprite = xsprite[nXSprite].reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang)>>16;
     int dy = Cos(pSprite->ang)>>16;
     int dz = gDudeSlope[nXSprite];
@@ -94,13 +94,13 @@ static void SeqAttackCallback(int, int nXSprite)
         sfxPlay3DSound(pSprite, 1002, -1, 0);
 }
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -125,7 +125,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -144,7 +144,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -210,7 +210,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                             aiNewState(pSprite, pXSprite, &tinycalebAttack);
                         break;
                     case 3:
-                        if (pSprite->type != qsprite[gHitInfo.hitsprite].type)
+                        if (pSprite->type != sprite[gHitInfo.hitsprite].type)
                         {
                             if (pXSector && pXSector->at13_4)
                                 aiNewState(pSprite, pXSprite, &tinycalebSwimAttack);
@@ -253,7 +253,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     pXSprite->target = -1;
 }
 
-static void thinkSwimGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSwimGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -267,7 +267,7 @@ static void thinkSwimGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSwimChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -277,7 +277,7 @@ static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -317,7 +317,7 @@ static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
     pXSprite->target = -1;
 }
 
-static void sub_65D04(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_65D04(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -350,12 +350,12 @@ static void sub_65D04(SPRITE *pSprite, XSPRITE *pXSprite)
     yvel[nSprite] = dmulscale30(t1, nSin, -t2, nCos);
 }
 
-static void sub_65F44(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_65F44(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
     int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
@@ -386,12 +386,12 @@ static void sub_65F44(SPRITE *pSprite, XSPRITE *pXSprite)
     zvel[nSprite] = -dz;
 }
 
-static void sub_661E0(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_661E0(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
     int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;

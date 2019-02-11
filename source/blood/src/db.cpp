@@ -158,13 +158,13 @@ void InsertSpriteSect(int nSprite, int nSector)
         nextspritesect[nSprite] = -1;
         headspritesect[nSector] = nSprite;
     }
-    qsprite[nSprite].sectnum = nSector;
+    sprite[nSprite].sectnum = nSector;
 }
 
 void RemoveSpriteSect(int nSprite)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    int nSector = qsprite[nSprite].sectnum;
+    int nSector = sprite[nSprite].sectnum;
     dassert(nSector >= 0 && nSector < kMaxSectors);
     int nOther = nextspritesect[nSprite];
     if (nOther < 0)
@@ -180,7 +180,7 @@ void RemoveSpriteSect(int nSprite)
     {
         headspritesect[nSector] = nextspritesect[nSprite];
     }
-    qsprite[nSprite].sectnum = -1;
+    sprite[nSprite].sectnum = -1;
 }
 
 void InsertSpriteStat(int nSprite, int nStat)
@@ -201,14 +201,14 @@ void InsertSpriteStat(int nSprite, int nStat)
         nextspritestat[nSprite] = -1;
         headspritestat[nStat] = nSprite;
     }
-    qsprite[nSprite].statnum = nStat;
+    sprite[nSprite].statnum = nStat;
     gStatCount[nStat]++;
 }
 
 void RemoveSpriteStat(int nSprite)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    int nStat = qsprite[nSprite].statnum;
+    int nStat = sprite[nSprite].statnum;
     dassert(nStat >= 0 && nStat <= kMaxStatus);
     int nOther = nextspritestat[nSprite];
     if (nOther < 0)
@@ -224,7 +224,7 @@ void RemoveSpriteStat(int nSprite)
     {
         headspritestat[nStat] = nextspritestat[nSprite];
     }
-    qsprite[nSprite].statnum = -1;
+    sprite[nSprite].statnum = -1;
     gStatCount[nStat]--;
 }
 
@@ -240,8 +240,8 @@ void qinitspritelists(void) // Replace
     }
     for (short i = 0; i < kMaxSprites; i++)
     {
-        qsprite[i].sectnum = -1;
-        qsprite[i].index = -1;
+        sprite[i].sectnum = -1;
+        sprite[i].index = -1;
         InsertSpriteStat(i, kMaxStatus);
     }
     memset(gStatCount, 0, sizeof(gStatCount));
@@ -256,8 +256,8 @@ int InsertSprite(int nSector, int nStat)
         return nSprite;
     }
     RemoveSpriteStat(nSprite);
-    SPRITE *pSprite = &qsprite[nSprite];
-    memset(&qsprite[nSprite], 0, sizeof(SPRITE));
+    spritetype *pSprite = &sprite[nSprite];
+    memset(&sprite[nSprite], 0, sizeof(spritetype));
     InsertSpriteStat(nSprite, nStat);
     InsertSpriteSect(nSprite, nSector);
     pSprite->cstat = 128;
@@ -278,13 +278,13 @@ int qinsertsprite(short nSector, short nStat) // Replace
 
 int DeleteSprite(int nSprite)
 {
-    if (qsprite[nSprite].extra > 0)
+    if (sprite[nSprite].extra > 0)
     {
-        dbDeleteXSprite(qsprite[nSprite].extra);
+        dbDeleteXSprite(sprite[nSprite].extra);
     }
-    dassert(qsprite[nSprite].statnum >= 0 && qsprite[nSprite].statnum < kMaxStatus);
+    dassert(sprite[nSprite].statnum >= 0 && sprite[nSprite].statnum < kMaxStatus);
     RemoveSpriteStat(nSprite);
-    dassert(qsprite[nSprite].sectnum >= 0 && qsprite[nSprite].sectnum < kMaxSectors);
+    dassert(sprite[nSprite].sectnum >= 0 && sprite[nSprite].sectnum < kMaxSectors);
     RemoveSpriteSect(nSprite);
     InsertSpriteStat(nSprite, kMaxStatus);
 
@@ -300,7 +300,7 @@ int ChangeSpriteSect(int nSprite, int nSector)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    dassert(qsprite[nSprite].sectnum >= 0 && qsprite[nSprite].sectnum < kMaxSectors);
+    dassert(sprite[nSprite].sectnum >= 0 && sprite[nSprite].sectnum < kMaxSectors);
     RemoveSpriteSect(nSprite);
     InsertSpriteSect(nSprite, nSector);
     return 0;
@@ -315,8 +315,8 @@ int ChangeSpriteStat(int nSprite, int nStatus)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
     dassert(nStatus >= 0 && nStatus < kMaxStatus);
-    dassert(qsprite[nSprite].statnum >= 0 && qsprite[nSprite].statnum < kMaxStatus);
-    dassert(qsprite[nSprite].sectnum >= 0 && qsprite[nSprite].sectnum < kMaxSectors);
+    dassert(sprite[nSprite].statnum >= 0 && sprite[nSprite].statnum < kMaxStatus);
+    dassert(sprite[nSprite].sectnum >= 0 && sprite[nSprite].sectnum < kMaxSectors);
     RemoveSpriteStat(nSprite);
     InsertSpriteStat(nSprite, nStatus);
     return 0;
@@ -358,16 +358,16 @@ unsigned short dbInsertXSprite(int nSprite)
     if (!bVanilla)
         memset(&gSpriteHit[nXSprite], 0, sizeof(SPRITEHIT));
     xsprite[nXSprite].reference = nSprite;
-    qsprite[nSprite].extra = nXSprite;
+    sprite[nSprite].extra = nXSprite;
     return nXSprite;
 }
 
 void dbDeleteXSprite(int nXSprite)
 {
     dassert(xsprite[nXSprite].reference >= 0);
-    dassert(qsprite[xsprite[nXSprite].reference].extra == nXSprite);
+    dassert(sprite[xsprite[nXSprite].reference].extra == nXSprite);
     InsertFree(nextXSprite, nXSprite);
-    qsprite[xsprite[nXSprite].reference].extra = -1;
+    sprite[xsprite[nXSprite].reference].extra = -1;
     xsprite[nXSprite].reference = -1;
 }
 
@@ -381,7 +381,7 @@ unsigned short dbInsertXWall(int nWall)
     }
     memset(&xwall[nXWall], 0, sizeof(XWALL));
     xwall[nXWall].reference = nWall;
-    qwall[nWall].extra = nXWall;
+    wall[nWall].extra = nXWall;
     return nXWall;
 }
 
@@ -389,7 +389,7 @@ void dbDeleteXWall(int nXWall)
 {
     dassert(xwall[nXWall].reference >= 0);
     InsertFree(nextXWall, nXWall);
-    qwall[xwall[nXWall].reference].extra = -1;
+    wall[xwall[nXWall].reference].extra = -1;
     xwall[nXWall].reference = -1;
 }
 
@@ -403,7 +403,7 @@ unsigned short dbInsertXSector(int nSector)
     }
     memset(&xsector[nXSector], 0, sizeof(XSECTOR));
     xsector[nXSector].reference = nSector;
-    qsector[nSector].extra = nXSector;
+    sector[nSector].extra = nXSector;
     return nXSector;
 }
 
@@ -411,7 +411,7 @@ void dbDeleteXSector(int nXSector)
 {
     dassert(xsector[nXSector].reference >= 0);
     InsertFree(nextXSector, nXSector);
-    qsector[xsector[nXSector].reference].extra = -1;
+    sector[xsector[nXSector].reference].extra = -1;
     xsector[nXSector].reference = -1;
 }
 
@@ -419,12 +419,12 @@ void dbXSpriteClean(void)
 {
     for (int i = 0; i < kMaxSprites; i++)
     {
-        int nXSprite = qsprite[i].extra;
+        int nXSprite = sprite[i].extra;
         if (nXSprite == 0)
         {
-            qsprite[i].extra = -1;
+            sprite[i].extra = -1;
         }
-        if (qsprite[i].statnum < kMaxStatus && nXSprite > 0)
+        if (sprite[i].statnum < kMaxStatus && nXSprite > 0)
         {
             dassert(nXSprite < kMaxXSprites);
             if (xsprite[nXSprite].reference != i)
@@ -441,7 +441,7 @@ void dbXSpriteClean(void)
         if (nSprite >= 0)
         {
             dassert(nSprite < kMaxSprites);
-            if (qsprite[nSprite].statnum >= kMaxStatus || qsprite[nSprite].extra != i)
+            if (sprite[nSprite].statnum >= kMaxStatus || sprite[nSprite].extra != i)
             {
                 InsertFree(nextXSprite, i);
                 xsprite[i].reference = -1;
@@ -454,17 +454,17 @@ void dbXWallClean(void)
 {
     for (int i = 0; i < numwalls; i++)
     {
-        int nXWall = qwall[i].extra;
+        int nXWall = wall[i].extra;
         if (nXWall == 0)
         {
-            qwall[i].extra = -1;
+            wall[i].extra = -1;
         }
         if (nXWall > 0)
         {
             dassert(nXWall < kMaxXWalls);
             if (xwall[nXWall].reference == -1)
             {
-                qwall[i].extra = -1;
+                wall[i].extra = -1;
             }
             else
             {
@@ -474,7 +474,7 @@ void dbXWallClean(void)
     }
     for (int i = 0; i < numwalls; i++)
     {
-        int nXWall = qwall[i].extra;
+        int nXWall = wall[i].extra;
         if (nXWall > 0)
         {
             dassert(nXWall < kMaxXWalls);
@@ -492,7 +492,7 @@ void dbXWallClean(void)
         if (nWall >= 0)
         {
             dassert(nWall < kMaxWalls);
-            if (nWall >= numwalls || qwall[nWall].extra != i)
+            if (nWall >= numwalls || wall[nWall].extra != i)
             {
                 InsertFree(nextXWall, i);
                 xwall[i].reference = -1;
@@ -505,17 +505,17 @@ void dbXSectorClean(void)
 {
     for (int i = 0; i < numsectors; i++)
     {
-        int nXSector = qsector[i].extra;
+        int nXSector = sector[i].extra;
         if (nXSector == 0)
         {
-            qsector[i].extra = -1;
+            sector[i].extra = -1;
         }
         if (nXSector > 0)
         {
             dassert(nXSector < kMaxXSectors);
             if (xsector[nXSector].reference == -1)
             {
-                qsector[i].extra = -1;
+                sector[i].extra = -1;
             }
             else
             {
@@ -525,7 +525,7 @@ void dbXSectorClean(void)
     }
     for (int i = 0; i < numsectors; i++)
     {
-        int nXSector = qsector[i].extra;
+        int nXSector = sector[i].extra;
         if (nXSector > 0)
         {
             dassert(nXSector < kMaxXSectors);
@@ -543,7 +543,7 @@ void dbXSectorClean(void)
         if (nSector >= 0)
         {
             dassert(nSector < kMaxSectors);
-            if (nSector >= numsectors || qsector[nSector].extra != i)
+            if (nSector >= numsectors || sector[nSector].extra != i)
             {
                 InsertFree(nextXSector, i);
                 xsector[i].reference = -1;
@@ -572,7 +572,7 @@ void dbInit(void)
     initspritelists();
     for (int i = 0; i < kMaxSprites; i++)
     {
-        qsprite[i].cstat = 128;
+        sprite[i].cstat = 128;
     }
 }
 
@@ -582,14 +582,14 @@ void PropagateMarkerReferences(void)
     while (nSprite != -1)
     {
         int nNextSprite = nextspritestat[nSprite];
-        switch (qsprite[nSprite].type)
+        switch (sprite[nSprite].type)
         {
         case 8:
         {
-            int nOwner = qsprite[nSprite].owner;
+            int nOwner = sprite[nSprite].owner;
             if (nOwner >= 0 && nOwner < numsectors)
             {
-                int nXSector = qsector[nOwner].extra;
+                int nXSector = sector[nOwner].extra;
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2c_0 = nSprite;
@@ -601,10 +601,10 @@ void PropagateMarkerReferences(void)
         }
         case 3:
         {
-            int nOwner = qsprite[nSprite].owner;
+            int nOwner = sprite[nSprite].owner;
             if (nOwner >= 0 && nOwner < numsectors)
             {
-                int nXSector = qsector[nOwner].extra;
+                int nXSector = sector[nOwner].extra;
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2c_0 = nSprite;
@@ -616,10 +616,10 @@ void PropagateMarkerReferences(void)
         }
         case 4:
         {
-            int nOwner = qsprite[nSprite].owner;
+            int nOwner = sprite[nSprite].owner;
             if (nOwner >= 0 && nOwner < numsectors)
             {
-                int nXSector = qsector[nOwner].extra;
+                int nXSector = sector[nOwner].extra;
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2e_0 = nSprite;
@@ -631,10 +631,10 @@ void PropagateMarkerReferences(void)
         }
         case 5:
         {
-            int nOwner = qsprite[nSprite].owner;
+            int nOwner = sprite[nSprite].owner;
             if (nOwner >= 0 && nOwner < numsectors)
             {
-                int nXSector = qsector[nOwner].extra;
+                int nXSector = sector[nOwner].extra;
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2e_0 = nSprite;
@@ -789,15 +789,15 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
     }
     for (int i = 0; i < numsectors; i++)
     {
-        SECTOR *pSector = &qsector[i];
-        IOBuffer1.Read(pSector, sizeof(SECTOR));
+        sectortype *pSector = &sector[i];
+        IOBuffer1.Read(pSector, sizeof(sectortype));
         if (byte_1A76C8)
         {
-            dbCrypt((char*)pSector, sizeof(SECTOR), gMapRev*sizeof(SECTOR));
+            dbCrypt((char*)pSector, sizeof(sectortype), gMapRev*sizeof(sectortype));
         }
-        qsector_filler[i] = pSector->filler;
-        pSector->filler = 0;
-        if (qsector[i].extra > 0)
+        qsector_filler[i] = pSector->fogpal;
+        pSector->fogpal = 0;
+        if (sector[i].extra > 0)
         {
             const int nXSectorSize = 60;
             char pBuffer[nXSectorSize];
@@ -893,19 +893,19 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             pXSector->at3b_5 = bitReader.readUnsigned(1);
             pXSector->at3b_6 = bitReader.readUnsigned(1);
             pXSector->at3b_7 = bitReader.readUnsigned(1);
-            xsector[qsector[i].extra].reference = i;
-            xsector[qsector[i].extra].at1_7 = xsector[qsector[i].extra].at1_6<<16;
+            xsector[sector[i].extra].reference = i;
+            xsector[sector[i].extra].at1_7 = xsector[sector[i].extra].at1_6<<16;
         }
     }
     for (int i = 0; i < numwalls; i++)
     {
-        WALL *pWall = &qwall[i];
-        IOBuffer1.Read(pWall, sizeof(WALL));
+        walltype *pWall = &wall[i];
+        IOBuffer1.Read(pWall, sizeof(walltype));
         if (byte_1A76C8)
         {
-            dbCrypt((char*)pWall, sizeof(WALL), (gMapRev*sizeof(SECTOR)) | 0x7474614d);
+            dbCrypt((char*)pWall, sizeof(walltype), (gMapRev*sizeof(sectortype)) | 0x7474614d);
         }
-        if (qwall[i].extra > 0)
+        if (wall[i].extra > 0)
         {
             const int nXWallSize = 24;
             char pBuffer[nXWallSize];
@@ -955,26 +955,26 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             pXWall->at13_3 = bitReader.readUnsigned(1);
             pXWall->at13_4 = bitReader.readUnsigned(4);
             pXWall->at14_0 = bitReader.readUnsigned(32);
-            xwall[qwall[i].extra].reference = i;
-            xwall[qwall[i].extra].at1_7 = xwall[qwall[i].extra].at1_6 << 16;
+            xwall[wall[i].extra].reference = i;
+            xwall[wall[i].extra].at1_7 = xwall[wall[i].extra].at1_6 << 16;
         }
     }
     initspritelists();
     for (int i = 0; i < mapHeader.at23; i++)
     {
         RemoveSpriteStat(i);
-        SPRITE *pSprite = &qsprite[i];
-        IOBuffer1.Read(pSprite, sizeof(SPRITE));
+        spritetype *pSprite = &sprite[i];
+        IOBuffer1.Read(pSprite, sizeof(spritetype));
         if (byte_1A76C8)
         {
-            dbCrypt((char*)pSprite, sizeof(SPRITE), (gMapRev*sizeof(SPRITE)) | 0x7474614d);
+            dbCrypt((char*)pSprite, sizeof(spritetype), (gMapRev*sizeof(spritetype)) | 0x7474614d);
         }
-        InsertSpriteSect(i, qsprite[i].sectnum);
-        InsertSpriteStat(i, qsprite[i].statnum);
-        qsprite[i].index = i;
-        qsprite_filler[i] = pSprite->filler;
-        pSprite->filler = 0;
-        if (qsprite[i].extra > 0)
+        InsertSpriteSect(i, sprite[i].sectnum);
+        InsertSpriteStat(i, sprite[i].statnum);
+        sprite[i].index = i;
+        qsprite_filler[i] = pSprite->blend;
+        pSprite->blend = 0;
+        if (sprite[i].extra > 0)
         {
             const int nXSpriteSize = 56;
             char pBuffer[nXSpriteSize];
@@ -1054,16 +1054,16 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             pXSprite->at32_0 = bitReader.readUnsigned(16);
             pXSprite->at34 = NULL;
             bitReader.skipBits(32);
-            xsprite[qsprite[i].extra].reference = i;
-            xsprite[qsprite[i].extra].at1_7 = xsprite[qsprite[i].extra].at1_6 << 16;
+            xsprite[sprite[i].extra].reference = i;
+            xsprite[sprite[i].extra].at1_7 = xsprite[sprite[i].extra].at1_6 << 16;
             if (!byte_1A76C8)
             {
-                xsprite[qsprite[i].extra].atb_7 |= xsprite[qsprite[i].extra].atf_5;
+                xsprite[sprite[i].extra].atb_7 |= xsprite[sprite[i].extra].atf_5;
             }
         }
-        if ((qsprite[i].cstat & 0x30) == 0x30)
+        if ((sprite[i].cstat & 0x30) == 0x30)
         {
-            qsprite[i].cstat &= ~0x30;
+            sprite[i].cstat &= ~0x30;
         }
     }
     unsigned long nCRC;
@@ -1105,7 +1105,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         case 0:
             for (int i = 0; i < numsectors; i++)
             {
-                SECTOR *pSector = &qsector[i];
+                sectortype *pSector = &sector[i];
                 if (pSector->extra > 0)
                 {
                     XSECTOR *pXSector = &xsector[pSector->extra];
@@ -1129,7 +1129,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
         case 1:
             for (int i = 0; i < numsectors; i++)
             {
-                SECTOR *pSector = &qsector[i];
+                sectortype *pSector = &sector[i];
                 if (pSector->extra > 0)
                 {
                     XSECTOR *pXSector = &xsector[pSector->extra];

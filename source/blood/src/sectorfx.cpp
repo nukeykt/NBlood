@@ -264,7 +264,7 @@ void DoSectorPanning(void)
         XSECTOR *pXSector = &xsector[nXSector];
         int nSector = pXSector->reference;
         dassert(nSector >= 0 && nSector < kMaxSectors);
-        SECTOR *pSector = &qsector[nSector];
+        sectortype *pSector = &sector[nSector];
         dassert(pSector->extra == nXSector);
         if (pXSector->at13_0 || pXSector->at1_7)
         {

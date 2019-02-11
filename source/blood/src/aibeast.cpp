@@ -40,16 +40,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static void SlashSeqCallback(int, int);
 static void StompSeqCallback(int, int);
-static void MorphToBeast(SPRITE *, XSPRITE *);
-static void thinkSearch(SPRITE *, XSPRITE *);
-static void thinkGoto(SPRITE *, XSPRITE *);
-static void thinkChase(SPRITE *, XSPRITE *);
-static void thinkSwimGoto(SPRITE *, XSPRITE *);
-static void thinkSwimChase(SPRITE *, XSPRITE *);
-static void MoveForward(SPRITE *, XSPRITE *);
-static void sub_628A0(SPRITE *, XSPRITE *);
-static void sub_62AE0(SPRITE *, XSPRITE *);
-static void sub_62D7C(SPRITE *, XSPRITE *);
+static void MorphToBeast(spritetype *, XSPRITE *);
+static void thinkSearch(spritetype *, XSPRITE *);
+static void thinkGoto(spritetype *, XSPRITE *);
+static void thinkChase(spritetype *, XSPRITE *);
+static void thinkSwimGoto(spritetype *, XSPRITE *);
+static void thinkSwimChase(spritetype *, XSPRITE *);
+static void MoveForward(spritetype *, XSPRITE *);
+static void sub_628A0(spritetype *, XSPRITE *);
+static void sub_62AE0(spritetype *, XSPRITE *);
+static void sub_62D7C(spritetype *, XSPRITE *);
 
 static int nSlashClient = seqRegisterClient(SlashSeqCallback);
 static int nStompClient = seqRegisterClient(StompSeqCallback);
@@ -80,8 +80,8 @@ static void SlashSeqCallback(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pSprite = &sprite[nSprite];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int dx = Cos(pSprite->ang)>>16;
     int dy = Sin(pSprite->ang)>>16;
     // Correct ?
@@ -99,7 +99,7 @@ static void StompSeqCallback(int, int nXSprite)
     char vb8[(kMaxSectors+7)>>3];
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang)>>16;
     int dy = Sin(pSprite->ang)>>16;
     int x = pSprite->x;
@@ -126,7 +126,7 @@ static void StompSeqCallback(int, int nXSprite)
     {
         if (nSprite != nSprite2 || v4)
         {
-            SPRITE *pSprite2 = &qsprite[nSprite2];
+            spritetype *pSprite2 = &sprite[nSprite2];
             if (pSprite2->extra > 0 && pSprite2->extra < kMaxXSprites)
             {
                 if (pSprite2->type == 251)
@@ -160,7 +160,7 @@ static void StompSeqCallback(int, int nXSprite)
     }
     for (int nSprite2 = headspritestat[4]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
     {
-        SPRITE *pSprite2 = &qsprite[nSprite2];
+        spritetype *pSprite2 = &sprite[nSprite2];
         if (pSprite2->hitag&32)
             continue;
         if (TestBitString(vb8, pSprite2->sectnum) && CheckProximity(pSprite2, x, y, z, nSector, vc))
@@ -187,19 +187,19 @@ static void StompSeqCallback(int, int nXSprite)
     sfxPlay3DSound(pSprite, 9015+Random(2), -1, 0);
 }
 
-static void MorphToBeast(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MorphToBeast(spritetype *pSprite, XSPRITE *pXSprite)
 {
     actHealDude(pXSprite, dudeInfo[51].at2, dudeInfo[51].at2);
     pSprite->type = 251;
 }
 
-static void thinkSearch(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -224,7 +224,7 @@ static void thinkGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -243,7 +243,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -307,7 +307,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &beastStomp);
                             break;
                         case 3:
-                            if (pSprite->type != qsprite[gHitInfo.hitsprite].type)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type)
                             {
                                 if (!pXSector || !pXSector->at13_4)
                                     aiNewState(pSprite, pXSprite, &beastStomp);
@@ -345,7 +345,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
                             aiNewState(pSprite, pXSprite, &beastSlash);
                         break;
                     case 3:
-                        if (pSprite->type != qsprite[gHitInfo.hitsprite].type)
+                        if (pSprite->type != sprite[gHitInfo.hitsprite].type)
                         {
                             if (pXSector && pXSector->at13_4)
                                 aiNewState(pSprite, pXSprite, &beastSwimSlash);
@@ -386,7 +386,7 @@ static void thinkChase(SPRITE *pSprite, XSPRITE *pXSprite)
     pXSprite->target = -1;
 }
 
-static void thinkSwimGoto(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSwimGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
@@ -400,7 +400,7 @@ static void thinkSwimGoto(SPRITE *pSprite, XSPRITE *pXSprite)
     aiThinkTarget(pSprite, pXSprite);
 }
 
-static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
+static void thinkSwimChase(spritetype *pSprite, XSPRITE *pXSprite)
 {
     if (pXSprite->target == -1)
     {
@@ -410,7 +410,7 @@ static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
     int dy = pTarget->y-pSprite->y;
@@ -455,7 +455,7 @@ static void thinkSwimChase(SPRITE *pSprite, XSPRITE *pXSprite)
     pXSprite->target = -1;
 }
 
-static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
+static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -475,7 +475,7 @@ static void MoveForward(SPRITE *pSprite, XSPRITE *pXSprite)
     yvel[nSprite] += mulscale30(pDudeInfo->at38, Sin(pSprite->ang));
 }
 
-static void sub_628A0(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_628A0(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
@@ -508,12 +508,12 @@ static void sub_628A0(SPRITE *pSprite, XSPRITE *pXSprite)
     yvel[nSprite] = dmulscale30(t1, nSin, -t2, nCos);
 }
 
-static void sub_62AE0(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_62AE0(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
     int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
@@ -544,12 +544,12 @@ static void sub_62AE0(SPRITE *pSprite, XSPRITE *pXSprite)
     zvel[nSprite] = -dz;
 }
 
-static void sub_62D7C(SPRITE *pSprite, XSPRITE *pXSprite)
+static void sub_62D7C(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    SPRITE *pTarget = &qsprite[pXSprite->target];
+    spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
     int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;

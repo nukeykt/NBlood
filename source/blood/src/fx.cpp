@@ -129,14 +129,14 @@ void CFX::sub_73FFC(int nSprite)
 {
     if (nSprite < 0 || nSprite >= kMaxSprites)
         return;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     if (pSprite->extra > 0)
         seqKill(3, pSprite->extra);
     if (pSprite->statnum != kStatFree)
         actPostSprite(nSprite, kStatFree);
 }
 
-SPRITE * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned long a6)
+spritetype * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned long a6)
 {
     if (nSector < 0 || nSector >= numsectors)
         return NULL;
@@ -172,7 +172,7 @@ SPRITE * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned long
             return NULL;
         sub_73FB0(nSprite);
     }
-    SPRITE *pSprite = actSpawnSprite(nSector, x, y, z, 1, 0);
+    spritetype *pSprite = actSpawnSprite(nSector, x, y, z, 1, 0);
     pSprite->type = nFx;
     pSprite->picnum = pFX->at12;
     pSprite->cstat |= pFX->at16;
@@ -203,7 +203,7 @@ void CFX::fxProcess(void)
 {
     for (int nSprite = headspritestat[1]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         viewBackupSpriteLoc(nSprite, pSprite);
         short nSector = pSprite->sectnum;
         dassert(nSector >= 0 && nSector < kMaxSectors);
@@ -267,7 +267,7 @@ void CFX::fxProcess(void)
     }
 }
 
-void fxSpawnBlood(SPRITE *pSprite, int a2)
+void fxSpawnBlood(spritetype *pSprite, int a2)
 {
     UNREFERENCED_PARAMETER(a2);
     if (pSprite->sectnum < 0 || pSprite->sectnum >= numsectors)
@@ -277,7 +277,7 @@ void fxSpawnBlood(SPRITE *pSprite, int a2)
         return;
     if (gbAdultContent && gGameOptions.nGameType <= 0)
         return;
-    SPRITE *pBlood = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
+    spritetype *pBlood = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     if (pBlood)
     {
         pBlood->ang = 1024;
@@ -288,7 +288,7 @@ void fxSpawnBlood(SPRITE *pSprite, int a2)
     }
 }
 
-void sub_746D4(SPRITE *pSprite, int a2)
+void sub_746D4(spritetype *pSprite, int a2)
 {
     UNREFERENCED_PARAMETER(a2);
     if (pSprite->sectnum < 0 || pSprite->sectnum >= numsectors)
@@ -298,7 +298,7 @@ void sub_746D4(SPRITE *pSprite, int a2)
         return;
     if (gbAdultContent && gGameOptions.nGameType <= 0)
         return;
-    SPRITE *pSpawn;
+    spritetype *pSpawn;
     if (pSprite->type == 221)
         pSpawn = gFX.fxSpawn(FX_53, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
     else
@@ -313,13 +313,13 @@ void sub_746D4(SPRITE *pSprite, int a2)
     }
 }
 
-void sub_74818(SPRITE *pSprite, int z, int a3, int a4)
+void sub_74818(spritetype *pSprite, int z, int a3, int a4)
 {
     int x = pSprite->x+mulscale28(pSprite->clipdist-4, Cos(pSprite->ang));
     int y = pSprite->y+mulscale28(pSprite->clipdist-4, Sin(pSprite->ang));
     x += mulscale30(a3, Cos(pSprite->ang+512));
     y += mulscale30(a3, Sin(pSprite->ang+512));
-    SPRITE *pShell = gFX.fxSpawn((FX_ID)(FX_37+Random(3)), pSprite->sectnum, x, y, z, 0);
+    spritetype *pShell = gFX.fxSpawn((FX_ID)(FX_37+Random(3)), pSprite->sectnum, x, y, z, 0);
     if (pShell)
     {
         int nDist = (a4<<18)/120+Random2(((a4/4)<<18)/120);
@@ -330,13 +330,13 @@ void sub_74818(SPRITE *pSprite, int z, int a3, int a4)
     }
 }
 
-void sub_74A18(SPRITE *pSprite, int z, int a3, int a4)
+void sub_74A18(spritetype *pSprite, int z, int a3, int a4)
 {
     int x = pSprite->x+mulscale28(pSprite->clipdist-4, Cos(pSprite->ang));
     int y = pSprite->y+mulscale28(pSprite->clipdist-4, Sin(pSprite->ang));
     x += mulscale30(a3, Cos(pSprite->ang+512));
     y += mulscale30(a3, Sin(pSprite->ang+512));
-    SPRITE *pShell = gFX.fxSpawn((FX_ID)(FX_40+Random(3)), pSprite->sectnum, x, y, z, 0);
+    spritetype *pShell = gFX.fxSpawn((FX_ID)(FX_40+Random(3)), pSprite->sectnum, x, y, z, 0);
     if (pShell)
     {
         int nDist = (a4<<18)/120+Random2(((a4/4)<<18)/120);

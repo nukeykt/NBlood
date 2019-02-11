@@ -655,7 +655,7 @@ void playerStart(int nPlayer)
     else
         nStartZone = nPlayer;
     ZONE *pStartZone = &gStartZone[nStartZone];
-    SPRITE *pSprite = actSpawnSprite(pStartZone->sectnum, pStartZone->x, pStartZone->y, pStartZone->z, 6, 1);
+    spritetype *pSprite = actSpawnSprite(pStartZone->sectnum, pStartZone->x, pStartZone->y, pStartZone->z, 6, 1);
     dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
     pPlayer->pSprite = pSprite;
@@ -822,24 +822,24 @@ void playerInit(int nPlayer, unsigned int a2)
         playerReset(pPlayer);
 }
 
-char sub_3A158(PLAYER *a1, SPRITE *a2)
+char sub_3A158(PLAYER *a1, spritetype *a2)
 {
     for (int nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         if (a2 && a2->index == nSprite)
             continue;
-        SPRITE *pSprite = &qsprite[nSprite];
+        spritetype *pSprite = &sprite[nSprite];
         if (pSprite->type == 431 && actOwnerIdToSpriteId(pSprite->owner) == a1->at5b)
             return 1;
     }
     return 0;
 }
 
-char PickupItem(PLAYER *pPlayer, SPRITE *pItem)
+char PickupItem(PLAYER *pPlayer, spritetype *pItem)
 {
     char buffer[80];
     int pickupSnd = 775;
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     XSPRITE *pXSprite = pPlayer->pXSprite;
     int nType = pItem->type - 100;
     switch (pItem->type)
@@ -1026,7 +1026,7 @@ char PickupItem(PLAYER *pPlayer, SPRITE *pItem)
     return 1;
 }
 
-char PickupAmmo(PLAYER *pPlayer, SPRITE *pAmmo)
+char PickupAmmo(PLAYER *pPlayer, spritetype *pAmmo)
 {
     AMMOITEMDATA *pAmmoItemData = &gAmmoItemData[pAmmo->type-60];
     int nAmmoType = pAmmoItemData->ata;
@@ -1039,7 +1039,7 @@ char PickupAmmo(PLAYER *pPlayer, SPRITE *pAmmo)
     return 1;
 }
 
-char PickupWeapon(PLAYER *pPlayer, SPRITE *pWeapon)
+char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon)
 {
     WEAPONITEMDATA *pWeaponItemData = &gWeaponItemData[pWeapon->type-40];
     int nWeaponType = pWeaponItemData->at8;
@@ -1071,7 +1071,7 @@ char PickupWeapon(PLAYER *pPlayer, SPRITE *pWeapon)
     return 1;
 }
 
-void PickUp(PLAYER *pPlayer, SPRITE *pSprite)
+void PickUp(PLAYER *pPlayer, spritetype *pSprite)
 {
     char buffer[80];
     int nType = pSprite->type;
@@ -1109,7 +1109,7 @@ void PickUp(PLAYER *pPlayer, SPRITE *pSprite)
 
 void CheckPickUp(PLAYER *pPlayer)
 {
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     int x = pSprite->x;
     int y = pSprite->y;
     int z = pSprite->z;
@@ -1117,7 +1117,7 @@ void CheckPickUp(PLAYER *pPlayer)
     int nNextSprite;
     for (int nSprite = headspritestat[3]; nSprite >= 0; nSprite = nNextSprite)
     {
-        SPRITE *pItem = &qsprite[nSprite];
+        spritetype *pItem = &sprite[nSprite];
         nNextSprite = nextspritestat[nSprite];
         if (pItem->hitag&32)
             continue;
@@ -1150,7 +1150,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
 {
     *a2 = 0;
     *a3 = 0;
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     int x = Cos(pSprite->ang)>>16;
     int y = Sin(pSprite->ang)>>16;
     int z = pPlayer->at83;
@@ -1165,7 +1165,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
             *a3 = sprite[*a2].extra;
             if (*a3 > 0 && sprite[*a2].statnum == 4)
             {
-                SPRITE *pSprite = &qsprite[*a2];
+                spritetype *pSprite = &sprite[*a2];
                 XSPRITE *pXSprite = &xsprite[*a3];
                 if (pSprite->type == 431)
                 {
@@ -1179,7 +1179,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
                 return 3;
             if (sprite[*a2].statnum == 6)
             {
-                SPRITE *pSprite = &qsprite[*a2];
+                spritetype *pSprite = &sprite[*a2];
                 XSPRITE *pXSprite = &xsprite[*a3];
                 int nMass = dudeInfo[pSprite->type-kDudeBase].at4;
                 if (nMass)
@@ -1225,7 +1225,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
 
 void ProcessInput(PLAYER *pPlayer)
 {
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     XSPRITE *pXSprite = pPlayer->pXSprite;
     int nSprite = pPlayer->at5b;
     POSTURE *pPosture = &gPosture[pPlayer->at5f][pPlayer->at2f];
@@ -1444,7 +1444,7 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->at372 = ClipLow(pPlayer->at372-4*(6-gGameOptions.nDifficulty), 0);
         if (pPlayer->at372 <= 0 && pPlayer->at376)
         {
-            SPRITE *pSprite2 = sub_36878(pPlayer->pSprite, 212, pPlayer->pSprite->clipdist<<1, 0);
+            spritetype *pSprite2 = sub_36878(pPlayer->pSprite, 212, pPlayer->pSprite->clipdist<<1, 0);
             pSprite2->ang = (pPlayer->pSprite->ang+1024)&2047;
             int nSprite = pPlayer->pSprite->index;
             int x = Cos(pPlayer->pSprite->ang)>>16;
@@ -1572,7 +1572,7 @@ void ProcessInput(PLAYER *pPlayer)
 
 void playerProcess(PLAYER *pPlayer)
 {
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     int nSprite = pPlayer->at5b;
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = pPlayer->pXSprite;
@@ -1586,7 +1586,7 @@ void playerProcess(PLAYER *pPlayer)
     if (!gNoClip)
     {
         short nSector = pSprite->sectnum;
-        if (pushmove_old((int32_t*)&pSprite->x, (int32_t*)&pSprite->y, (int32_t*)&pSprite->z, &nSector, dw, dzt, dzb, CLIPMASK0) == -1)
+        if (pushmove_old(&pSprite->x, &pSprite->y, &pSprite->z, &nSector, dw, dzt, dzb, CLIPMASK0) == -1)
             actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, 500<<4);
         if (pSprite->sectnum != nSector)
         {
@@ -1665,7 +1665,7 @@ void playerProcess(PLAYER *pPlayer)
         pPlayer->at87 = 1;
         int nSector = pSprite->sectnum;
         int nLink = gLowerLink[nSector];
-        if (nLink > 0 && (qsprite[nLink].type == 14 || qsprite[nLink].type == 10))
+        if (nLink > 0 && (sprite[nLink].type == 14 || sprite[nLink].type == 10))
         {
             if (getceilzofslope(nSector, pSprite->x, pSprite->y) > pPlayer->at67)
                 pPlayer->at87 = 0;
@@ -1696,12 +1696,12 @@ void playerProcess(PLAYER *pPlayer)
     }
 }
 
-SPRITE *playerFireMissile(PLAYER *pPlayer, int a2, long a3, long a4, long a5, int a6)
+spritetype *playerFireMissile(PLAYER *pPlayer, int a2, long a3, long a4, long a5, int a6)
 {
     return actFireMissile(pPlayer->pSprite, a2, pPlayer->at6f-pPlayer->pSprite->z, a3, a4, a5, a6);
 }
 
-SPRITE * playerFireThing(PLAYER *pPlayer, int a2, int a3, int thingType, int a5)
+spritetype * playerFireThing(PLAYER *pPlayer, int a2, int a3, int thingType, int a5)
 {
     dassert(thingType >= kThingBase && thingType < kThingMax);
     return actFireThing(pPlayer->pSprite, a2, pPlayer->at6f-pPlayer->pSprite->z, pPlayer->at83+a3, thingType, a5);
@@ -1765,9 +1765,9 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
 
 void FragPlayer(PLAYER *pPlayer, int nSprite)
 {
-    SPRITE *pSprite = NULL;
+    spritetype *pSprite = NULL;
     if (nSprite >= 0)
-        pSprite = &qsprite[nSprite];
+        pSprite = &sprite[nSprite];
     if (pSprite && IsPlayerSprite(pSprite))
     {
         PLAYER *pKiller = &gPlayer[pSprite->type-kDudePlayer1];
@@ -1812,10 +1812,10 @@ int playerDamageArmor(PLAYER *pPlayer, DAMAGE_TYPE nType, int nDamage)
     return nDamage;
 }
 
-SPRITE *sub_40A94(PLAYER *pPlayer, int a2)
+spritetype *sub_40A94(PLAYER *pPlayer, int a2)
 {
     char buffer[80];
-    SPRITE *pSprite = NULL;
+    spritetype *pSprite = NULL;
     switch (a2)
     {
     case 147:
@@ -1849,7 +1849,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
     nDamage = playerDamageArmor(pPlayer, nDamageType, nDamage);
     pPlayer->at366 = ClipHigh(pPlayer->at366+(nDamage>>3), 600);
 
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     XSPRITE *pXSprite = pPlayer->pXSprite;
     int nXSprite = pSprite->extra;
     int nXSector = sector[pSprite->sectnum].extra;
@@ -2032,7 +2032,7 @@ void playerLandingSound(PLAYER *pPlayer)
         604,
         603
     };
-    SPRITE *pSprite = pPlayer->pSprite;
+    spritetype *pSprite = pPlayer->pSprite;
     SPRITEHIT *pHit = &gSpriteHit[pSprite->extra];
     if (pHit->florhit)
     {
@@ -2047,7 +2047,7 @@ void PlayerSurvive(int, int nXSprite)
     char buffer[80];
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
-    SPRITE *pSprite = &qsprite[nSprite];
+    spritetype *pSprite = &sprite[nSprite];
     actHealDude(pXSprite, 1, 2);
     if (gGameOptions.nGameType > 0 && numplayers > 1)
     {
@@ -2096,7 +2096,7 @@ void PlayerLoadSave::Load(void)
     Read(&gPlayer, sizeof(gPlayer));
     for (int i = 0; i < gNetPlayers; i++)
     {
-        gPlayer[i].pSprite = &qsprite[gPlayer[i].at5b];
+        gPlayer[i].pSprite = &sprite[gPlayer[i].at5b];
         gPlayer[i].pXSprite = &xsprite[gPlayer[i].pSprite->extra];
         gPlayer[i].pDudeInfo = &dudeInfo[gPlayer[i].pSprite->type-kDudeBase];
     }

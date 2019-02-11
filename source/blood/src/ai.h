@@ -31,9 +31,9 @@ struct AISTATE {
     int at0; // seq
     int at4; // seq callback
     int at8;
-    void(*atc)(SPRITE *, XSPRITE *);
-    void(*at10)(SPRITE *, XSPRITE *);
-    void(*at14)(SPRITE *, XSPRITE *);
+    void(*atc)(spritetype *, XSPRITE *);
+    void(*at10)(spritetype *, XSPRITE *);
+    void(*at14)(spritetype *, XSPRITE *);
     AISTATE *at18; // next state ?
 };
 
@@ -82,19 +82,19 @@ extern int dword_138BB0[5];
 extern DUDEEXTRA gDudeExtra[];
 extern int gDudeSlope[];
 
-bool sub_5BDA8(SPRITE *pSprite, int nSeq);
-void aiPlay3DSound(SPRITE *pSprite, int a2, AI_SFX_PRIORITY a3, int a4);
-void aiNewState(SPRITE *pSprite, XSPRITE *pXSprite, AISTATE *pAIState);
-void aiChooseDirection(SPRITE *pSprite, XSPRITE *pXSprite, int a3);
-void aiMoveForward(SPRITE *pSprite, XSPRITE *pXSprite);
-void aiMoveTurn(SPRITE *pSprite, XSPRITE *pXSprite);
-void aiMoveDodge(SPRITE *pSprite, XSPRITE *pXSprite);
-void aiActivateDude(SPRITE *pSprite, XSPRITE *pXSprite);
+bool sub_5BDA8(spritetype *pSprite, int nSeq);
+void aiPlay3DSound(spritetype *pSprite, int a2, AI_SFX_PRIORITY a3, int a4);
+void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState);
+void aiChooseDirection(spritetype *pSprite, XSPRITE *pXSprite, int a3);
+void aiMoveForward(spritetype *pSprite, XSPRITE *pXSprite);
+void aiMoveTurn(spritetype *pSprite, XSPRITE *pXSprite);
+void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite);
+void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite);
 void aiSetTarget(XSPRITE *pXSprite, int x, int y, int z);
 void aiSetTarget(XSPRITE *pXSprite, int nTarget);
-int aiDamageSprite(SPRITE *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE nDmgType, int nDamage);
-void aiThinkTarget(SPRITE *pSprite, XSPRITE *pXSprite);
-void sub_5F15C(SPRITE *pSprite, XSPRITE *pXSprite);
+int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_TYPE nDmgType, int nDamage);
+void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite);
+void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite);
 void aiProcessDudes(void);
 void aiInit(void);
-void aiInitSprite(SPRITE *pSprite);
+void aiInitSprite(spritetype *pSprite);

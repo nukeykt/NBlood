@@ -45,7 +45,7 @@ struct BONKLE
     int at4;
     DICTNODE *at8;
     int atc;
-    SPRITE *at10;
+    spritetype *at10;
     int at14;
     int at18;
     int at1c;
@@ -167,7 +167,7 @@ void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
     }
 }
 
-void sfxPlay3DSound(SPRITE *pSprite, int soundId, int a3, int a4)
+void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
 {
     if (!SoundToggle)
         return;
@@ -280,7 +280,7 @@ void sfxPlay3DSound(SPRITE *pSprite, int soundId, int a3, int a4)
     RestoreInterrupts();
 }
 
-void sfxKill3DSound(SPRITE *pSprite, int a2, int a3)
+void sfxKill3DSound(spritetype *pSprite, int a2, int a3)
 {
     if (!pSprite)
         return;
