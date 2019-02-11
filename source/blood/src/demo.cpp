@@ -386,26 +386,27 @@ void CDemo::StopPlayback(void)
 void CDemo::LoadDemoInfo(void)
 {
     at59ef = 0;
-    CACHE1D_FIND_REC *pIterator = klistpath(UserPath, "blood*.dem", CACHE1D_FIND_FILE);
-
-    if (pIterator)
+    const int opsm = pathsearchmode;
+    pathsearchmode = 0;
+    auto pList = klistpath("/", "blood*.dem", CACHE1D_FIND_FILE);
+    auto pIterator = pList;
+    while (pIterator != NULL)
     {
-        while (pIterator != NULL)
+        int hFile = kopen4loadfrommod(pIterator->name, 0);
+        if (hFile == -1)
+            ThrowError("Error loading demo file header.");
+        kread(hFile, &atf, sizeof(atf));
+        kclose(hFile);
+        if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
+            || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
         {
-            int hFile = kopen4loadfrommod(pIterator->name, 0);
-            if (hFile == -1)
-                ThrowError("Error loading demo file header.");
-            kread(hFile, &atf, sizeof(atf));
-            kclose(hFile);
-            if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
-                || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
-            {
-                strcpy(at59aa[at59ef], pIterator->name);
-                at59ef++;
-            }
-            pIterator = pIterator->next;
+            strcpy(at59aa[at59ef], pIterator->name);
+            at59ef++;
         }
+        pIterator = pIterator->next;
     }
+    klistfree(pList);
+    pathsearchmode = opsm;
 }
 
 void CDemo::NextDemo(void)

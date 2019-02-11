@@ -389,41 +389,39 @@ void MyLoadSave::Save(void)
 
 void LoadSavedInfo(void)
 {
-    CACHE1D_FIND_REC *pIterator = klistpath("/", "game*.sav", CACHE1D_FIND_FILE);
+    auto pList = klistpath("./", "game*.sav", CACHE1D_FIND_FILE);
     int nCount = 0;
-    if (pIterator)
+    for (auto pIterator = pList; pIterator != NULL && nCount < 10; pIterator = pIterator->next, nCount++)
     {
-        for (; pIterator != NULL && nCount < 10; pIterator = pIterator->next, nCount++)
+        int hFile = kopen4loadfrommod(pIterator->name, 0);
+        if (hFile == -1)
+            ThrowError("Error loading save file header.");
+        int vc;
+        short v4;
+        vc = 0;
+        v4 = word_27AA54;
+        if ((uint32_t)kread(hFile, &vc, sizeof(vc)) != sizeof(vc))
         {
-            int hFile = kopen4loadfrommod(pIterator->name, 0);
-            if (hFile == -1)
-                ThrowError("Error loading save file header.");
-            int vc;
-            short v4;
-            vc = 0;
-            v4 = word_27AA54;
-            if ((uint32_t)kread(hFile, &vc, sizeof(vc)) != sizeof(vc))
-            {
-                kclose(hFile);
-                continue;
-            }
-            if (vc != 0x5653424e/*'VSBN'*/)
-            {
-                kclose(hFile);
-                continue;
-            }
-            kread(hFile, &v4, sizeof(v4));
-            if (v4 != BYTEVERSION)
-            {
-                kclose(hFile);
-                continue;
-            }
-            if ((uint32_t)kread(hFile, &gSaveGameOptions[nCount], sizeof(gSaveGameOptions[0])) != sizeof(gSaveGameOptions[0]))
-                ThrowError("Error reading save file.");
-            strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
             kclose(hFile);
+            continue;
         }
+        if (vc != 0x5653424e/*'VSBN'*/)
+        {
+            kclose(hFile);
+            continue;
+        }
+        kread(hFile, &v4, sizeof(v4));
+        if (v4 != BYTEVERSION)
+        {
+            kclose(hFile);
+            continue;
+        }
+        if ((uint32_t)kread(hFile, &gSaveGameOptions[nCount], sizeof(gSaveGameOptions[0])) != sizeof(gSaveGameOptions[0]))
+            ThrowError("Error reading save file.");
+        strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
+        kclose(hFile);
     }
+    klistfree(pList);
 }
 
 void UpdateSavedInfo(int nSlot)

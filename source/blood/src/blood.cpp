@@ -1404,12 +1404,12 @@ int app_main(int argc, char const * const * argv)
     initprintf(APPNAME " %s\n", s_buildRev);
     PrintBuildInfo();
 
-    if (!g_useCwd)
-        G_AddSearchPaths();
-
     memcpy(&gGameOptions, &gSingleGameOptions, sizeof(GAMEOPTIONS));
     ParseOptions();
     G_ExtInit();
+
+    if (!g_useCwd)
+        G_AddSearchPaths();
 
     // used with binds for fast function lookup
     hash_init(&h_gamefuncs);

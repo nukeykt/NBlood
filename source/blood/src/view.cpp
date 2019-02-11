@@ -637,14 +637,15 @@ void fakeMoveDude(spritetype *pSprite)
     if (predict.at64)
         predict.at58 += predict.at64 >> 8;
 
-    spritetype pTempSprite = *pSprite;
-    pTempSprite.x = predict.at50;
-    pTempSprite.y = predict.at54;
-    pTempSprite.z = predict.at58;
-    pTempSprite.sectnum = predict.at68;
+    spritetype pSpriteBak = *pSprite;
+    spritetype *pTempSprite = pSprite;
+    pTempSprite->x = predict.at50;
+    pTempSprite->y = predict.at54;
+    pTempSprite->z = predict.at58;
+    pTempSprite->sectnum = predict.at68;
     int ceilZ, ceilHit, floorZ, floorHit;
-    GetZRange(&pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, 0x10001);
-    GetSpriteExtents(&pTempSprite, &top, &bottom);
+    GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, 0x10001);
+    GetSpriteExtents(pTempSprite, &top, &bottom);
     if (predict.at73 & 2)
     {
         int vc = 58254;
@@ -678,12 +679,12 @@ void fakeMoveDude(spritetype *pSprite)
             predict.at64 += vc;
         }
     }
-    GetSpriteExtents(&pTempSprite, &top, &bottom);
+    GetSpriteExtents(pTempSprite, &top, &bottom);
     if (bottom >= floorZ)
     {
         int floorZ2 = floorZ;
         int floorHit2 = floorHit;
-        GetZRange(&pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, 0x13001);
+        GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, 0x13001);
         if (bottom <= floorZ && predict.at58-floorZ2 < bz)
         {
             floorZ = floorZ2;
@@ -726,8 +727,8 @@ void fakeMoveDude(spritetype *pSprite)
     else
         predict.at75.ceilhit = 0;
 
-    GetSpriteExtents(&pTempSprite, &top, &bottom);
-
+    GetSpriteExtents(pTempSprite, &top, &bottom);
+    *pSprite = pSpriteBak;
     predict.at6a = ClipLow(floorZ-bottom, 0)>>8;
     if (predict.at5c || predict.at60)
     {
@@ -2654,6 +2655,9 @@ void UpdateDacs(int nPalette, bool bNoTint)
             nGreen -= gView->at36e>>5;
             nBlue -= gView->at36e>>6;
         }
+        nRed = ClipRange(nRed, -255, 255);
+        nGreen = ClipRange(nGreen, -255, 255);
+        nBlue = ClipRange(nBlue, -255, 255);
 
         videoSetPalette(0, nPalette, 2);
         videoTintBlood(nRed, nGreen, nBlue);
