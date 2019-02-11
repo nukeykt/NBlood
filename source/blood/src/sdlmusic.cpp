@@ -37,6 +37,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "sdlayer.h"
 #include "music.h"
+#include "al_midi.h"
+#include "oplmidi.h"
 
 #if !defined _WIN32 && !defined(GEKKO)
 //# define FORK_EXEC_MIDI 1
@@ -59,7 +61,11 @@ static char const *external_midi_tempfn = "/tmp/" APPBASENAME "-music.mid";
 
 static int32_t external_midi = 0;
 
+int32_t MUSIC_SoundDevice = MIDIDEVICE_NONE;
 int32_t MUSIC_ErrorCode = MUSIC_Ok;
+
+static OPLMusic::midifuncs MUSIC_MidiFunctions;
+#define MUSIC_SetErrorCode(status) MUSIC_ErrorCode = (status);
 
 static char warningMessage[80];
 static char errorMessage[80];
@@ -101,6 +107,11 @@ const char *MUSIC_ErrorString(int32_t ErrorNumber)
 
 int32_t MUSIC_Init(int32_t SoundCard, int32_t Address)
 {
+    MUSIC_SoundDevice = SoundCard;
+    if (SoundCard == MIDIDEVICE_OPL)
+    {
+        return OPLMusic::MUSIC_InitMidi(SoundCard, &MUSIC_MidiFunctions, Address);
+    }
 #ifdef __ANDROID__
     music_initialized = 1;
     return MUSIC_Ok;
@@ -245,6 +256,12 @@ fallback:
 
 int32_t MUSIC_Shutdown(void)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::MIDI_StopSong();
+
+        return MUSIC_Ok;  
+    }
     // TODO - make sure this is being called from the menu -- SA
 #if !defined FORK_EXEC_MIDI
     if (external_midi)
@@ -262,12 +279,21 @@ int32_t MUSIC_Shutdown(void)
 
 void MUSIC_SetMaxFMMidiChannel(int32_t channel)
 {
-    UNREFERENCED_PARAMETER(channel);
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::AL_SetMaxMidiChannel(channel);
+    }
+    // UNREFERENCED_PARAMETER(channel);
 } // MUSIC_SetMaxFMMidiChannel
 
 
 void MUSIC_SetVolume(int32_t volume)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::MIDI_SetVolume(min(max(0, volume), 255));
+        return;
+    }
     volume = max(0, volume);
     volume = min(volume, 255);
 
@@ -277,18 +303,32 @@ void MUSIC_SetVolume(int32_t volume)
 
 int32_t MUSIC_GetVolume(void)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        return OPLMusic::MIDI_GetVolume();
+    }
     return (Mix_VolumeMusic(-1) << 1);  // convert 0-128 to 0-255.
 } // MUSIC_GetVolume
 
 
 void MUSIC_SetLoopFlag(int32_t loopflag)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::MIDI_SetLoopFlag(loopflag);
+        return;
+    }
     music_loopflag = loopflag;
 } // MUSIC_SetLoopFlag
 
 
 void MUSIC_Continue(void)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::MIDI_ContinueSong();
+        return;
+    }
     if (Mix_PausedMusic())
         Mix_ResumeMusic();
 } // MUSIC_Continue
@@ -296,11 +336,22 @@ void MUSIC_Continue(void)
 
 void MUSIC_Pause(void)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::MIDI_PauseSong();
+        return;
+    }
     Mix_PauseMusic();
 } // MUSIC_Pause
 
 int32_t MUSIC_StopSong(void)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        OPLMusic::MIDI_StopSong();
+        MUSIC_SetErrorCode(MUSIC_Ok);
+        return MUSIC_Ok;
+    }
 #if defined FORK_EXEC_MIDI
     if (external_midi)
     {
@@ -410,6 +461,18 @@ static void sigchld_handler(int signo)
 // void MUSIC_PlayMusic(char *_filename)
 int32_t MUSIC_PlaySong(char *song, int32_t songsize, int32_t loopflag)
 {
+    if (MUSIC_SoundDevice == MIDIDEVICE_OPL)
+    {
+        MUSIC_SetErrorCode(MUSIC_Ok)
+
+        if (OPLMusic::MIDI_PlaySong(song, loopflag) != OPLMusic::MIDI_Ok)
+        {
+            MUSIC_SetErrorCode(MUSIC_MidiError);
+            return MUSIC_Warning;
+        }
+
+        return MUSIC_Ok;
+    }
     if (external_midi)
     {
         FILE *fp;

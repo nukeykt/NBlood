@@ -184,5 +184,6 @@ $(blood_obj)/al_midi.$o: $(blood_src)/al_midi.cpp $(engine_inc)/compat.h $(blood
 $(blood_obj)/gmtimbre.$o: $(blood_src)/gmtimbre.cpp
 $(blood_obj)/opl3.$o: $(blood_src)/opl3.cpp
 $(blood_obj)/midi.$o: $(blood_src)/midi.cpp $(blood_src)/_midi.h $(blood_src)/midi.h $(blood_src)/al_midi.h $(audiolib_inc)/music.h
+$(blood_obj)/oplmidi.$o: $(blood_src)/oplmidi.cpp $(blood_src)/_oplmidi.h $(blood_src)/oplmidi.h $(blood_src)/al_midi.h $(audiolib_inc)/music.h
 $(blood_obj)/mpu401.$o: $(blood_src)/mpu401.cpp $(blood_src)/mpu401.h $(audiolib_inc)/music.h
 $(blood_obj)/music.$o: $(blood_src)/music.cpp $(blood_src)/midi.h $(blood_src)/mpu401.h $(blood_src)/al_midi.h $(audiolib_inc)/music.h

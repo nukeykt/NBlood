@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef __MIDI_H
 #define __MIDI_H
 
+namespace OPLMusic {
+
 enum MIDI_Errors
    {
    MIDI_Warning = -2,
@@ -85,5 +87,8 @@ void MIDI_LoadTimbres( void );
 void MIDI_MusicMix( char *buffer, int length );
 void MIDI_UpdateMusic(void);
 void MIDI_SetDivision( int32_t division );
+int32_t MUSIC_InitMidi(int32_t card, midifuncs *Funcs, int32_t Address);
+
+}
 
 #endif

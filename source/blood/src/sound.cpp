@@ -473,11 +473,9 @@ void InitMusicDevice(void)
     int nStatus = MUSIC_Init(MusicDevice, 0);
     if (nStatus != 0)
         ThrowError(MUSIC_ErrorString(nStatus));
-#ifdef _WIN32
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
     if (hTmb)
         OPLMusic::AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
-#endif
     MUSIC_SetVolume(MusicVolume);
 }
 
