@@ -79,12 +79,12 @@ struct VIEW {
 	int at44;
 	int at48; // posture
 	int at4c; // spin
-	long at50; // x
-	long at54; // y
-	long at58; // z
-	long at5c; //xvel
-	long at60; //yvel
-	long at64; //zvel
+	int at50; // x
+	int at54; // y
+	int at58; // z
+	int at5c; //xvel
+	int at60; //yvel
+	int at64; //zvel
 	short at68; // sectnum
 	unsigned int at6a; // floordist
 	char at6e; // look center
@@ -109,7 +109,7 @@ struct INTERPOLATE {
 
 int pcBackground;
 int gViewMode = 3;
-long gViewSize = 2;
+int gViewSize = 2;
 
 VIEW predict, predictOld;
 
@@ -128,7 +128,7 @@ int gViewX0, gViewY0, gViewX1, gViewY1;
 int gViewX0S, gViewY0S, gViewX1S, gViewY1S;
 int xscale, xscalecorrect, yscale, xstep, ystep;
 
-long gScreenTilt;
+int gScreenTilt;
 
 CGameMessageMgr gGameMessageMgr;
 
@@ -642,7 +642,7 @@ void fakeMoveDude(spritetype *pSprite)
     pTempSprite.y = predict.at54;
     pTempSprite.z = predict.at58;
     pTempSprite.sectnum = predict.at68;
-    long ceilZ, ceilHit, floorZ, floorHit;
+    int ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(&pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, 0x10001);
     GetSpriteExtents(&pTempSprite, &top, &bottom);
     if (predict.at73 & 2)
@@ -694,7 +694,7 @@ void fakeMoveDude(spritetype *pSprite)
     {
         predict.at75.florhit = floorHit;
         predict.at58 += floorZ-bottom;
-        long var44 = predict.at64-velFloor[predict.at68];
+        int var44 = predict.at64-velFloor[predict.at68];
         if (var44 > 0)
         {
             actFloorBounceVector(&predict.at5c, &predict.at60, &var44, predict.at68, 0);
@@ -1964,8 +1964,8 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     pTSprite->cstat &= ~4;
                     break;
                 }
-                long dX = cX - pTSprite->x;
-                long dY = cY - pTSprite->y;
+                int dX = cX - pTSprite->x;
+                int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
                 nAnim = GetOctant(dX, dY);
                 if (nAnim <= 4)
@@ -1986,8 +1986,8 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     pTSprite->cstat &= ~4;
                     break;
                 }
-                long dX = cX - pTSprite->x;
-                long dY = cY - pTSprite->y;
+                int dX = cX - pTSprite->x;
+                int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
                 nAnim = GetOctant(dX, dY);
                 break;
@@ -2380,8 +2380,8 @@ void viewProcessSprites(int cX, int cY, int cZ)
         {
             case 1:
             {
-                long dX = cX - pTSprite->x;
-                long dY = cY - pTSprite->y;
+                int dX = cX - pTSprite->x;
+                int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
                 nAnim = GetOctant(dX, dY);
                 if (nAnim <= 4)
@@ -2397,8 +2397,8 @@ void viewProcessSprites(int cX, int cY, int cZ)
             }
             case 2:
             {
-                long dX = cX - pTSprite->x;
-                long dY = cY - pTSprite->y;
+                int dX = cX - pTSprite->x;
+                int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
                 nAnim = GetOctant(dX, dY);
                 break;
@@ -2412,12 +2412,12 @@ void viewProcessSprites(int cX, int cY, int cZ)
     }
 }
 
-long othercameradist = 1280;
-long cameradist = -1;
-long othercameraclock;
-long cameraclock;
+int othercameradist = 1280;
+int cameradist = -1;
+int othercameraclock;
+int cameraclock;
 
-void CalcOtherPosition(spritetype *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, fix16_t zm)
+void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, fix16_t zm)
 {
     int vX = mulscale30(-Cos(nAng), 1280);
     int vY = mulscale30(-Sin(nAng), 1280);
@@ -2462,7 +2462,7 @@ void CalcOtherPosition(spritetype *pSprite, long *pX, long *pY, long *pZ, int *v
     pSprite->cstat = bakCstat;
 }
 
-void CalcPosition(spritetype *pSprite, long *pX, long *pY, long *pZ, int *vsectnum, int nAng, fix16_t zm)
+void CalcPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, fix16_t zm)
 {
     int vX = mulscale30(-Cos(nAng), 1280);
     int vY = mulscale30(-Sin(nAng), 1280);
@@ -2705,7 +2705,7 @@ bool gPrediction = true;
 
 char otherMirrorGotpic[2];
 char bakMirrorGotpic[2];
-// long gVisibility;
+// int gVisibility;
 
 int deliriumTilt, deliriumTurn, deliriumPitch;
 int gScreenTiltO, deliriumTurnO, deliriumPitchO;
@@ -2928,9 +2928,9 @@ void viewDrawScreen(void)
         }
         else
         {
-            CalcPosition(gView->pSprite, (long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum, fix16_to_int(cA), q16horiz);
+            CalcPosition(gView->pSprite, (int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum, fix16_to_int(cA), q16horiz);
         }
-        CheckLink((long*)&cX, (long*)&cY, (long*)&cZ, &nSectnum);
+        CheckLink((int*)&cX, (int*)&cY, (int*)&cZ, &nSectnum);
         int v78 = interpolateang(gScreenTiltO, gScreenTilt, gInterpolate);
         char v14 = 0;
         char v10 = 0;
@@ -2978,12 +2978,12 @@ void viewDrawScreen(void)
             }
             renderSetTarget(4079, 128, 128);
             renderSetAspect(65536, 78643);
-            long vd8 = pOther->pSprite->x;
-            long vd4 = pOther->pSprite->y;
-            long vd0 = pOther->at67;
+            int vd8 = pOther->pSprite->x;
+            int vd4 = pOther->pSprite->y;
+            int vd0 = pOther->at67;
             int vcc = pOther->pSprite->sectnum;
-            long v50 = pOther->pSprite->ang;
-            long v54 = 0;
+            int v50 = pOther->pSprite->ang;
+            int v54 = 0;
             if (pOther->at35a)
             {
                 int nValue = ClipHigh(pOther->at35a*8, 2000);
@@ -3157,7 +3157,7 @@ RORHACK:
             renderSetAspect(viewingRange, yxAspect);
         }
         int nClipDist = gView->pSprite->clipdist<<2;
-        long ve8, vec, vf0, vf4;
+        int ve8, vec, vf0, vf4;
         GetZRange(gView->pSprite, &vf4, &vf0, &vec, &ve8, nClipDist, 0);
 #if 0
         int tmpSect = nSectnum;
@@ -3643,7 +3643,7 @@ public:
 
 static ViewLoadSave *myLoadSave;
 
-static long messageTime;
+static int messageTime;
 static char message[256];
 
 void ViewLoadSave::Load(void)

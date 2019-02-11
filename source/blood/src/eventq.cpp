@@ -37,13 +37,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class EventQueue : public PriorityQueue
 {
 public:
-    bool IsNotEmpty(unsigned long nTime)
+    bool IsNotEmpty(unsigned int nTime)
     {
         return fNodeCount > 0 && nTime >= queueItems[1].at0;
     }
     EVENT ERemove(void)
     {
-        unsigned long node = Remove();
+        unsigned int node = Remove();
         return *(EVENT*)&node;
     }
     void Kill(int, int);
@@ -59,7 +59,7 @@ void EventQueue::Kill(int a1, int a2)
     //evn.at1_5 = a2;
 
     short vs = *(short*)&evn;
-    for (unsigned long i = 1; i <= fNodeCount;)
+    for (unsigned int i = 1; i <= fNodeCount;)
     {
         if ((short)queueItems[i].at4 == vs)
             Delete(i);
@@ -71,8 +71,8 @@ void EventQueue::Kill(int a1, int a2)
 void EventQueue::Kill(int a1, int a2, CALLBACK_ID a3)
 {
     EVENT evn = { (unsigned int)a1, (unsigned int)a2, kCommandCallback, (unsigned int)a3 };
-    unsigned long vc = *(unsigned long*)&evn;
-    for (unsigned long i = 1; i <= fNodeCount;)
+    unsigned int vc = *(unsigned int*)&evn;
+    for (unsigned int i = 1; i <= fNodeCount;)
     {
         if (queueItems[i].at4 == vc)
             Delete(i);
@@ -472,7 +472,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
     }
 }
 
-void evPost(int nIndex, int nType, unsigned long nDelta, COMMAND_ID command)
+void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command)
 {
     dassert(command != kCommandCallback);
     if (command == COMMAND_ID_2)
@@ -484,20 +484,20 @@ void evPost(int nIndex, int nType, unsigned long nDelta, COMMAND_ID command)
     evn.at1_5 = nType;
     evn.at2_0 = command;
     // Inlined?
-    eventQ.Insert(gFrameClock+nDelta, *(unsigned long*)&evn);
+    eventQ.Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
 }
 
-void evPost(int nIndex, int nType, unsigned long nDelta, CALLBACK_ID a4)
+void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID a4)
 {
     EVENT evn;
     evn.at0_0 = nIndex;
     evn.at1_5 = nType;
     evn.at2_0 = kCommandCallback;
     evn.funcID = a4;
-    eventQ.Insert(gFrameClock+nDelta, *(unsigned long*)&evn);
+    eventQ.Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
 }
 
-void evProcess(unsigned long nTime)
+void evProcess(unsigned int nTime)
 {
 #if 0
     while (1)

@@ -419,13 +419,13 @@ void UpdateAimVector(PLAYER * pPlayer)
     }
     Aim aim2;
     aim2 = aim;
-    RotateVector((long*)&aim2.dx, (long*)&aim2.dy, -pPSprite->ang);
+    RotateVector((int*)&aim2.dx, (int*)&aim2.dy, -pPSprite->ang);
     aim2.dz -= pPlayer->at83;
     pPlayer->at1ca.dx = interpolate(pPlayer->at1ca.dx, aim2.dx, pWeaponTrack->at0);
     pPlayer->at1ca.dy = interpolate(pPlayer->at1ca.dy, aim2.dy, pWeaponTrack->at0);
     pPlayer->at1ca.dz = interpolate(pPlayer->at1ca.dz, aim2.dz, pWeaponTrack->at4);
     pPlayer->at1be = pPlayer->at1ca;
-    RotateVector((long*)&pPlayer->at1be.dx, (long*)&pPlayer->at1be.dy, pPSprite->ang);
+    RotateVector((int*)&pPlayer->at1be.dx, (int*)&pPlayer->at1be.dy, pPSprite->ang);
     pPlayer->at1be.dz += pPlayer->at83;
     pPlayer->at1d6 = nTarget;
 }

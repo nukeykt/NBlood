@@ -67,8 +67,8 @@ struct QAV
     //SPRITE *pSprite; // 1c
     char pad3[4]; // 20
     FRAMEINFO frames[1]; // 24
-    void Draw(long ticks, int stat, int shade, int palnum);
-    void Play(long, long, int, void *);
+    void Draw(int ticks, int stat, int shade, int palnum);
+    void Play(int, int, int, void *);
     void Preload(void);
 
     void PlaySound(int nSound);

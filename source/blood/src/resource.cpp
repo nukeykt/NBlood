@@ -55,7 +55,7 @@ Resource::~Resource(void)
 {
     if (dict)
     {
-        for (unsigned long i = 0; i < count; i++)
+        for (unsigned int i = 0; i < count; i++)
         {
             if (dict[i].type)
                 Free(dict[i].type);
@@ -124,7 +124,7 @@ void Resource::Init(const char *filename)
                     Crypt(tdict, count * sizeof(DICTNODE_FILE),
                         header.offset + (header.version & 0xff) * header.offset);
                 }
-                for (unsigned long i = 0; i < count; i++)
+                for (unsigned int i = 0; i < count; i++)
                 {
                     dict[i].offset = tdict[i].offset;
                     dict[i].size = tdict[i].size;
@@ -197,14 +197,14 @@ void Resource::Init(const char *filename)
 #endif
     }
 #endif
-    for (unsigned long i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         if (dict[i].flags & DICT_LOCK)
         {
             Lock(&dict[i]);
         }
     }
-    for (unsigned long i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         if (dict[i].flags & DICT_LOAD)
         {
@@ -230,7 +230,7 @@ void Resource::Flush(CACHENODE *h)
 
 void Resource::Purge(void)
 {
-    for (unsigned long i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         if (dict[i].ptr)
         {
@@ -247,8 +247,8 @@ DICTNODE **Resource::Probe(const char *fname, const char *type)
     strcpy(name, type);
     strcat(name, fname);
     dassert(dict != NULL);
-    unsigned long hash = Bcrc32(name, strlen(name), 0) & (buffSize - 1);
-    unsigned long i = hash;
+    unsigned int hash = Bcrc32(name, strlen(name), 0) & (buffSize - 1);
+    unsigned int i = hash;
     do
     {
         if (!indexName[i])
@@ -269,7 +269,7 @@ DICTNODE **Resource::Probe(const char *fname, const char *type)
     return NULL;
 }
 
-DICTNODE **Resource::Probe(unsigned long id, const char *type)
+DICTNODE **Resource::Probe(unsigned int id, const char *type)
 {
     struct {
         int id;
@@ -280,8 +280,8 @@ DICTNODE **Resource::Probe(unsigned long id, const char *type)
     strcpy(name.type, type);
     name.id = id;
     dassert(dict != NULL);
-    unsigned long hash = Bcrc32(&name, strlen(name.type)+sizeof(name.id), 0) & (buffSize - 1);
-    unsigned long i = hash;
+    unsigned int hash = Bcrc32(&name, strlen(name.type)+sizeof(name.id), 0) & (buffSize - 1);
+    unsigned int i = hash;
     do
     {
         if (!indexId[i])
@@ -310,7 +310,7 @@ void Resource::Reindex(void)
     }
     indexName = (DICTNODE **)Alloc(buffSize * sizeof(DICTNODE*));
     memset(indexName, 0, buffSize * sizeof(DICTNODE*));
-    for (unsigned long i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         DICTNODE **node = Probe(dict[i].name, dict[i].type);
         *node = &dict[i];
@@ -322,7 +322,7 @@ void Resource::Reindex(void)
     }
     indexId = (DICTNODE **)Alloc(buffSize * sizeof(DICTNODE*));
     memset(indexId, 0, buffSize * sizeof(DICTNODE*));
-    for (unsigned long i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         if (dict[i].flags & DICT_ID)
         {
@@ -416,7 +416,7 @@ void Resource::AddExternalResource(const char *name, const char *type, int id)
     }
 }
 
-void *Resource::Alloc(long nSize)
+void *Resource::Alloc(int nSize)
 {
     dassert(heap != NULL);
     dassert(nSize != 0);
@@ -429,7 +429,7 @@ void *Resource::Alloc(long nSize)
     {
         dassert(node->lockCount == 0);
         dassert(node->ptr != NULL);
-        long nFree = heap->Free(node->ptr);
+        int nFree = heap->Free(node->ptr);
         node->ptr = NULL;
         RemoveMRU(node);
         if (nSize <= nFree)
@@ -465,7 +465,7 @@ DICTNODE *Resource::Lookup(const char *name, const char *type)
     return *Probe(name2, type2);
 }
 
-DICTNODE *Resource::Lookup(unsigned long id, const char *type)
+DICTNODE *Resource::Lookup(unsigned int id, const char *type)
 {
     char type2[BMAX_PATH];
     dassert(type != NULL);
@@ -597,7 +597,7 @@ void Resource::Unlock(DICTNODE *h)
     }
 }
 
-void Resource::Crypt(void *p, long length, unsigned short key)
+void Resource::Crypt(void *p, int length, unsigned short key)
 {
     char *cp = (char*)p;
     for (int i = 0; i < length; i++, key++)
@@ -615,7 +615,7 @@ void Resource::RemoveMRU(CACHENODE *h)
 void Resource::FNAddFiles(fnlist_t * fnlist, const char *pattern)
 {
     char filename[BMAX_PATH];
-    for (unsigned long i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         DICTNODE *pNode = &dict[i];
         if (pNode->flags & DICT_EXTERNAL)

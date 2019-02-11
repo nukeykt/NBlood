@@ -35,10 +35,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 POINT2D baseWall[kMaxWalls];
 POINT3D baseSprite[kMaxSprites];
-long baseFloor[kMaxSectors];
-long baseCeil[kMaxSectors];
-long velFloor[kMaxSectors];
-long velCeil[kMaxSectors];
+int baseFloor[kMaxSectors];
+int baseCeil[kMaxSectors];
+int velFloor[kMaxSectors];
+int velCeil[kMaxSectors];
 short gUpperLink[kMaxSectors];
 short gLowerLink[kMaxSectors];
 HITINFO gHitInfo;
@@ -141,8 +141,8 @@ bool FindSector(int nX, int nY, int *nSector)
 
 void CalcFrameRate(void)
 {
-    static long ticks[64];
-    static long index;
+    static int ticks[64];
+    static int index;
     if (ticks[index] != gFrameClock)
     {
         gFrameRate = (120*64)/(gFrameClock-ticks[index]);
@@ -348,7 +348,7 @@ void GetWallNormal(int nWall, int *pX, int *pY)
     *pY = divscale16(dY, nLength);
 }
 
-bool IntersectRay(long wx, long wy, long wdx, long wdy, long x1, long y1, long z1, long x2, long y2, long z2, long *ix, long *iy, long *iz)
+bool IntersectRay(int wx, int wy, int wdx, int wdy, int x1, int y1, int z1, int x2, int y2, int z2, int *ix, int *iy, int *iz)
 {
     int dX = x1 - x2;
     int dY = y1 - y2;
@@ -381,7 +381,7 @@ bool IntersectRay(long wx, long wy, long wdx, long wdy, long x1, long y1, long z
     return 1;
 }
 
-int HitScan(spritetype *pSprite, int z, int dx, int dy, int dz, unsigned long nMask, int a8)
+int HitScan(spritetype *pSprite, int z, int dx, int dy, int dz, unsigned int nMask, int a8)
 {
     dassert(pSprite != NULL);
     dassert(dx != 0 || dy != 0);
@@ -669,7 +669,7 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
     return -1;
 }
 
-void GetZRange(spritetype *pSprite, long *ceilZ, long *ceilHit, long *floorZ, long *floorHit, int nDist, unsigned long nMask)
+void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *floorHit, int nDist, unsigned int nMask)
 {
     dassert(pSprite != NULL);
     int bakCstat = pSprite->cstat;
@@ -714,7 +714,7 @@ void GetZRange(spritetype *pSprite, long *ceilZ, long *ceilHit, long *floorZ, lo
     pSprite->cstat = bakCstat;
 }
 
-void GetZRangeAtXYZ(long x, long y, long z, int nSector, long *ceilZ, long *ceilHit, long *floorZ, long *floorHit, int nDist, unsigned long nMask)
+void GetZRangeAtXYZ(int x, int y, int z, int nSector, int *ceilZ, int *ceilHit, int *floorZ, int *floorHit, int nDist, unsigned int nMask)
 {
     int32_t nTemp1, nTemp2;
     getzrange_old(x, y, z, nSector, (int32_t*)ceilZ, (int32_t*)ceilHit, (int32_t*)floorZ, (int32_t*)floorHit, nDist, nMask);
@@ -782,7 +782,7 @@ int GetDistToLine(int x1, int y1, int x2, int y2, int x3, int y3)
     return approxDist(t1-x1, t2-y1);
 }
 
-unsigned int ClipMove(long *x, long *y, long *z, int *nSector, long xv, long yv, int wd, int cd, int fd, unsigned long nMask)
+unsigned int ClipMove(int *x, int *y, int *z, int *nSector, int xv, int yv, int wd, int cd, int fd, unsigned int nMask)
 {
     int bakX = *x;
     int bakY = *y;

@@ -281,8 +281,8 @@ void sub_557C4(int x, int y, int interpolation)
         {
         case 1:
         {
-            long dX = x - pTSprite->x;
-            long dY = y - pTSprite->y;
+            int dX = x - pTSprite->x;
+            int dY = y - pTSprite->y;
             RotateVector(&dX, &dY, 128 - pTSprite->ang);
             nAnim = GetOctant(dX, dY);
             if (nAnim <= 4)
@@ -298,8 +298,8 @@ void sub_557C4(int x, int y, int interpolation)
         }
         case 2:
         {
-            long dX = x - pTSprite->x;
-            long dY = y - pTSprite->y;
+            int dX = x - pTSprite->x;
+            int dY = y - pTSprite->y;
             RotateVector(&dX, &dY, 128 - pTSprite->ang);
             nAnim = GetOctant(dX, dY);
             break;
@@ -313,7 +313,7 @@ void sub_557C4(int x, int y, int interpolation)
     }
 }
 
-void DrawMirrors(long x, long y, long z, fix16_t a, fix16_t horiz)
+void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
 {
     for (int i = mirrorcnt - 1; i >= 0; i--)
     {

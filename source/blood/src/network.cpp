@@ -47,8 +47,8 @@ GINPUT gFifoInput[256][8];
 int myMinLag[8];
 int otherMinLag = 0;
 int myMaxLag = 0;
-unsigned long gChecksum[4];
-unsigned long gCheckFifo[256][8][4];
+unsigned int gChecksum[4];
+unsigned int gCheckFifo[256][8][4];
 int gCheckHead[8];
 int gSendCheckTail = 0;
 int gCheckTail = 0;
@@ -812,7 +812,7 @@ void netGetInput(void)
             PutPacketDWord(pPacket, gInput.q16mlook);
         while (gSendCheckTail != gCheckHead[myconnectindex])
         {
-            unsigned long *checkSum = gCheckFifo[gSendCheckTail&255][myconnectindex];
+            unsigned int *checkSum = gCheckFifo[gSendCheckTail&255][myconnectindex];
             PutPacketBuffer(pPacket, checkSum, 16);
             gSendCheckTail++;
         }

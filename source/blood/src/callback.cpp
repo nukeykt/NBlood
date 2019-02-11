@@ -133,9 +133,9 @@ void FlareBurst(int nSprite) // 2
         pSpawn->clipdist = 2;
         pSpawn->owner = pSprite->owner;
         int nAngle2 = (i<<11)/8;
-        long dx = 0;
-        long dy = mulscale30r(nRadius, Sin(nAngle2));
-        long dz = mulscale30r(nRadius, -Cos(nAngle2));
+        int dx = 0;
+        int dy = mulscale30r(nRadius, Sin(nAngle2));
+        int dz = mulscale30r(nRadius, -Cos(nAngle2));
         if (i&1)
         {
             dy >>= 1;
@@ -393,7 +393,7 @@ void CounterCheck(int nSector) // 12
 void sub_76140(int nSprite) // 14
 {
     spritetype *pSprite = &sprite[nSprite];
-    long ceilZ, ceilHit, floorZ, floorHit;
+    int ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist, CLIPMASK0);
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -447,15 +447,15 @@ int dword_13B338[] = { 610, 612 };
 void sub_763BC(int nSprite) // 16
 {
     spritetype *pSprite = &sprite[nSprite];
-    long ceilZ, ceilHit, floorZ, floorHit;
+    int ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist, CLIPMASK0);
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
     pSprite->z += floorZ-bottom;
-    long zv = zvel[nSprite]-velFloor[pSprite->sectnum];
+    int zv = zvel[nSprite]-velFloor[pSprite->sectnum];
     if (zv > 0)
     {
-        actFloorBounceVector((long*)&xvel[nSprite], (long*)&yvel[nSprite], &zv, pSprite->sectnum, 0x9000);
+        actFloorBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], &zv, pSprite->sectnum, 0x9000);
         zvel[nSprite] = zv;
         if (velFloor[pSprite->sectnum] == 0 && klabs(zvel[nSprite]) < 0x20000)
         {
@@ -503,7 +503,7 @@ void sub_765B8(int nSprite) // 17
 void sub_766B8(int nSprite) // 19
 {
     spritetype *pSprite = &sprite[nSprite];
-    long ceilZ, ceilHit, floorZ, floorHit;
+    int ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist, CLIPMASK0);
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);

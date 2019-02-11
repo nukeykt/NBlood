@@ -1696,7 +1696,7 @@ void playerProcess(PLAYER *pPlayer)
     }
 }
 
-spritetype *playerFireMissile(PLAYER *pPlayer, int a2, long a3, long a4, long a5, int a6)
+spritetype *playerFireMissile(PLAYER *pPlayer, int a2, int a3, int a4, int a5, int a6)
 {
     return actFireMissile(pPlayer->pSprite, a2, pPlayer->at6f-pPlayer->pSprite->z, a3, a4, a5, a6);
 }

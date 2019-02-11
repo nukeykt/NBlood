@@ -55,10 +55,10 @@ void CheckFenceposts(HEAPNODE *n)
     }
 }
 
-QHeap::QHeap(long heapSize)
+QHeap::QHeap(int heapSize)
 {
     dassert(heapSize > 0);
-    long reserve = 0x20000;
+    int reserve = 0x20000;
     size = heapSize;
     void *p = malloc(reserve);
     while (size > 0 && (heapPtr = malloc(size)) == NULL)
@@ -138,7 +138,7 @@ void QHeap::Debug(void)
 #endif
 }
 
-void *QHeap::Alloc(long blockSize)
+void *QHeap::Alloc(int blockSize)
 {
     dassert(blockSize > 0);
     dassert(heapPtr != NULL);
@@ -179,7 +179,7 @@ void *QHeap::Alloc(long blockSize)
     return NULL;
 }
 
-long QHeap::Free(void *p)
+int QHeap::Free(void *p)
 {
     if (!p)
     {

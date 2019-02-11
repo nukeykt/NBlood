@@ -136,7 +136,7 @@ void CFX::sub_73FFC(int nSprite)
         actPostSprite(nSprite, kStatFree);
 }
 
-spritetype * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned long a6)
+spritetype * CFX::fxSpawn(FX_ID nFx, int nSector, int x, int y, int z, unsigned int a6)
 {
     if (nSector < 0 || nSector >= numsectors)
         return NULL;

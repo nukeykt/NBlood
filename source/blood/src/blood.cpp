@@ -574,7 +574,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
 	memset(xsprite,0,sizeof(xsprite));
 	memset(sprite,0,kMaxSprites*sizeof(spritetype));
 	drawLoadingScreen();
-	dbLoadMap(gameOptions->zLevelName,(long*)&startpos.x,(long*)&startpos.y,(long*)&startpos.z,&startang,&startsectnum,(unsigned long*)&gameOptions->uMapCRC);
+	dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC);
 	wsrand(gameOptions->uMapCRC);
 	gKillMgr.Clear();
 	gSecretMgr.Clear();

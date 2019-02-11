@@ -197,7 +197,7 @@ int CheckLink(spritetype *pSprite)
     return 0;
 }
 
-int CheckLink(long *x, long *y, long *z, int *nSector)
+int CheckLink(int *x, int *y, int *z, int *nSector)
 {
     int nUpper = gUpperLink[*nSector];
     int nLower = gLowerLink[*nSector];

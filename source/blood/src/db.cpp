@@ -39,7 +39,7 @@ XWALL xwall[kMaxXWalls];
 
 int xvel[kMaxSprites], yvel[kMaxSprites], zvel[kMaxSprites];
 
-long gVisibility;
+int gVisibility;
 
 const char *gItemText[] = {
     "Skull Key",
@@ -654,7 +654,7 @@ bool byte_1A76C6, byte_1A76C7, byte_1A76C8;
 
 MAPHEADER2 byte_19AE44;
 
-unsigned long dbReadMapCRC(const char *pPath)
+unsigned int dbReadMapCRC(const char *pPath)
 {
     byte_1A76C7 = 0;
     byte_1A76C8 = 0;
@@ -682,7 +682,7 @@ unsigned long dbReadMapCRC(const char *pPath)
     {
         ThrowError("Map file is wrong version");
     }
-    unsigned long nCRC = *(unsigned long*)(pData+nSize-4);
+    unsigned int nCRC = *(unsigned int*)(pData+nSize-4);
     gSysRes.Unlock(pNode);
     return nCRC;
 }
@@ -690,7 +690,7 @@ unsigned long dbReadMapCRC(const char *pPath)
 int gMapRev, gSongId, gSkyCount;
 //char byte_19AE44[128];
 
-void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, short *pSector, unsigned long *pCRC)
+void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short *pSector, unsigned int *pCRC)
 {
     int16_t tpskyoff[256];
     memset(show2dsector, 0, sizeof(show2dsector));
@@ -1066,7 +1066,7 @@ void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, s
             sprite[i].cstat &= ~0x30;
         }
     }
-    unsigned long nCRC;
+    unsigned int nCRC;
     IOBuffer1.Read(&nCRC, 4);
     if (Bcrc32(pData, nSize-4, 0) != nCRC)
     {

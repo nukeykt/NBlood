@@ -826,7 +826,7 @@ void PathSound(int nSector, int nSound)
     }
 }
 
-void DragPoint(int nWall, long x, long y)
+void DragPoint(int nWall, int x, int y)
 {
     viewInterpolateWall(nWall, &wall[nWall]);
     wall[nWall].x = x;
@@ -887,7 +887,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
             x = baseWall[nWall].x;
             y = baseWall[nWall].y;
             if (vbp)
-                RotatePoint((long*)&x, (long*)&y, vbp, a4, a5);
+                RotatePoint((int*)&x, (int*)&y, vbp, a4, a5);
             DragPoint(nWall, x+vc-a4, y+v8-a5);
         }
     }
@@ -901,14 +901,14 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
             if (wall[nWall].cstat&16384)
             {
                 if (vbp)
-                    RotatePoint((long*)&x, (long*)&y, vbp, a4, a5);
+                    RotatePoint((int*)&x, (int*)&y, vbp, a4, a5);
                 DragPoint(nWall, x+vc-a4, y+v8-a5);
                 if ((wall[v10].cstat&49152) == 0)
                 {
                     x = baseWall[v10].x;
                     y = baseWall[v10].y;
                     if (vbp)
-                        RotatePoint((long*)&x, (long*)&y, vbp, a4, a5);
+                        RotatePoint((int*)&x, (int*)&y, vbp, a4, a5);
                     DragPoint(v10, x+vc-a4, y+v8-a5);
                 }
                 continue;
@@ -916,14 +916,14 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
             if (wall[nWall].cstat&32768)
             {
                 if (vbp)
-                    RotatePoint((long*)&x, (long*)&y, -vbp, a4, a5);
+                    RotatePoint((int*)&x, (int*)&y, -vbp, a4, a5);
                 DragPoint(nWall, x-(vc-a4), y-(v8-a5));
                 if ((wall[v10].cstat&49152) == 0)
                 {
                     x = baseWall[v10].x;
                     y = baseWall[v10].y;
                     if (vbp)
-                        RotatePoint((long*)&x, (long*)&y, -vbp, a4, a5);
+                        RotatePoint((int*)&x, (int*)&y, -vbp, a4, a5);
                     DragPoint(v10, x-(vc-a4), y-(v8-a5));
                 }
                 continue;
@@ -940,7 +940,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
         if (sprite[nSprite].cstat&8192)
         {
             if (vbp)
-                RotatePoint((long*)&x, (long*)&y, vbp, a4, a5);
+                RotatePoint((int*)&x, (int*)&y, vbp, a4, a5);
             viewBackupSpriteLoc(nSprite, pSprite);
             pSprite->ang = (pSprite->ang+v14)&2047;
             pSprite->x = x+vc-a4;
@@ -949,7 +949,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
         else if (sprite[nSprite].cstat&16384)
         {
             if (vbp)
-                RotatePoint((long*)&x, (long*)&y, -vbp, a4, a5);
+                RotatePoint((int*)&x, (int*)&y, -vbp, a4, a5);
             viewBackupSpriteLoc(nSprite, pSprite);
             pSprite->ang = (pSprite->ang-v14)&2047;
             pSprite->x = x-(vc-a4);
@@ -963,7 +963,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
             if (!(pSprite->cstat&48) && floorZ <= bottom)
             {
                 if (v14)
-                    RotatePoint((long*)&pSprite->x, (long*)&pSprite->y, v14, v20, v24);
+                    RotatePoint((int*)&pSprite->x, (int*)&pSprite->y, v14, v20, v24);
                 viewBackupSpriteLoc(nSprite, pSprite);
                 pSprite->ang = (pSprite->ang+v14)&2047;
                 pSprite->x += v28;

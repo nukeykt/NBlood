@@ -89,7 +89,7 @@ class CFX {
 public:
     void sub_73FB0(int);
     void sub_73FFC(int);
-    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned long);
+    spritetype * fxSpawn(FX_ID, int, int, int, int, unsigned int);
     void fxProcess(void);
 };
 

@@ -31,4 +31,4 @@ extern ZONE gStartZone[8];
 
 void warpInit(void);
 int CheckLink(spritetype *pSprite);
-int CheckLink(long *x, long *y, long *z, int *nSector);
+int CheckLink(int *x, int *y, int *z, int *nSector);

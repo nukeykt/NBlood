@@ -2442,7 +2442,7 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
     actDamageSprite(a1, pSprite, DAMAGE_TYPE_3, a6);
 }
 
-int actWallBounceVector(long *x, long *y, int nWall, int a4)
+int actWallBounceVector(int *x, int *y, int nWall, int a4)
 {
     int wx, wy;
     GetWallNormal(nWall, &wx, &wy);
@@ -2453,7 +2453,7 @@ int actWallBounceVector(long *x, long *y, int nWall, int a4)
     return mulscale16r(t, 0x10000-a4);
 }
 
-int actFloorBounceVector(long *x, long *y, long *z, int nSector, int a5)
+int actFloorBounceVector(int *x, int *y, int *z, int nSector, int a5)
 {
     int t = 0x10000-a5;
     if (sector[nSector].floorheinum == 0)
@@ -3910,7 +3910,7 @@ int MoveThing(spritetype *pSprite)
     {
         short bakCstat = pSprite->cstat;
         pSprite->cstat &= ~257;
-        v8 = gSpriteHit[nXSprite].hit = ClipMove((long*)&pSprite->x, (long*)&pSprite->y, (long*)&pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, pSprite->clipdist<<2, (pSprite->z-top)/4, (bottom-pSprite->z)/4, CLIPMASK0);
+        v8 = gSpriteHit[nXSprite].hit = ClipMove((int*)&pSprite->x, (int*)&pSprite->y, (int*)&pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, pSprite->clipdist<<2, (pSprite->z-top)/4, (bottom-pSprite->z)/4, CLIPMASK0);
         pSprite->cstat = bakCstat;
         dassert(nSector >= 0);
         if (pSprite->sectnum != nSector)
@@ -3921,7 +3921,7 @@ int MoveThing(spritetype *pSprite)
         if ((gSpriteHit[nXSprite].hit&0xe000) == 0x8000)
         {
             int nHitWall = gSpriteHit[nXSprite].hit&0x1fff;
-            actWallBounceVector((long*)&xvel[nSprite], (long*)&yvel[nSprite], nHitWall, pThingInfo->at7);
+            actWallBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], nHitWall, pThingInfo->at7);
             switch (pSprite->type)
             {
             case 427:
@@ -3941,7 +3941,7 @@ int MoveThing(spritetype *pSprite)
     }
     if (zvel[nSprite])
         pSprite->z += zvel[nSprite]>>8;
-    long ceilZ, ceilHit, floorZ, floorHit;
+    int ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, CLIPMASK0);
     GetSpriteExtents(pSprite, &top, &bottom);
     if ((pSprite->hitag & 2) && bottom < floorZ)
@@ -3953,12 +3953,12 @@ int MoveThing(spritetype *pSprite)
             spritetype *pFX = gFX.fxSpawn(FX_27, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
             if (pFX)
             {
-                long v34 = (gFrameClock*3)&2047;
-                long v30 = (gFrameClock*5)&2047;
-                long vbx = (gFrameClock*11)&2047;
-                long v2c = 0x44444;
-                long v28 = 0;
-                long v24 = 0;
+                int v34 = (gFrameClock*3)&2047;
+                int v30 = (gFrameClock*5)&2047;
+                int vbx = (gFrameClock*11)&2047;
+                int v2c = 0x44444;
+                int v28 = 0;
+                int v24 = 0;
                 RotateVector(&v2c,&v28,vbx);
                 RotateVector(&v2c,&v24,v30);
                 RotateVector(&v28,&v24,v34);
@@ -3980,7 +3980,7 @@ int MoveThing(spritetype *pSprite)
         if (v20 > 0)
         {
             pSprite->hitag |= 4;
-            int vax = actFloorBounceVector((long*)&xvel[nSprite], (long*)&yvel[nSprite], (long*)&v20, pSprite->sectnum, pThingInfo->at7);
+            int vax = actFloorBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], (int*)&v20, pSprite->sectnum, pThingInfo->at7);
             int nDamage = mulscale(vax, vax, 30)-pThingInfo->atb;
             if (nDamage > 0)
                 actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, nDamage);
@@ -4102,7 +4102,7 @@ void MoveDude(spritetype *pSprite)
         {
             short bakCstat = pSprite->cstat;
             pSprite->cstat &= ~257;
-            gSpriteHit[nXSprite].hit = ClipMove((long*)&pSprite->x, (long*)&pSprite->y, (long*)&pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, wd, tz, bz, 0x13001);
+            gSpriteHit[nXSprite].hit = ClipMove((int*)&pSprite->x, (int*)&pSprite->y, (int*)&pSprite->z, &nSector, xvel[nSprite]>>12, yvel[nSprite]>>12, wd, tz, bz, 0x13001);
             if (nSector == -1)
             {
                 nSector = pSprite->sectnum;
@@ -4166,7 +4166,7 @@ void MoveDude(spritetype *pSprite)
                     // ???
                 }
             }
-            actWallBounceVector((long*)&xvel[nSprite], (long*)&yvel[nSprite], nHitWall, 0);
+            actWallBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], nHitWall, 0);
             break;
         }
         }
@@ -4221,7 +4221,7 @@ void MoveDude(spritetype *pSprite)
         wd += 16;
     if (zvel[nSprite])
         pSprite->z += zvel[nSprite]>>8;
-    long ceilZ, ceilHit, floorZ, floorHit;
+    int ceilZ, ceilHit, floorZ, floorHit;
     GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, 0x13001);
     GetSpriteExtents(pSprite, &top, &bottom);
     if (pSprite->hitag & 2)
@@ -4473,7 +4473,7 @@ void MoveDude(spritetype *pSprite)
         int v30 = zvel[nSprite]-velFloor[pSprite->sectnum];
         if (v30 > 0)
         {
-            int vax = actFloorBounceVector((long*)&xvel[nSprite], (long*)&yvel[nSprite], (long*)&v30, pSprite->sectnum, 0);
+            int vax = actFloorBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], (int*)&v30, pSprite->sectnum, 0);
             int nDamage = mulscale(vax, vax, 30);
             if (pPlayer)
             {
@@ -4605,8 +4605,8 @@ int MoveMissile(spritetype *pSprite)
         {
             int nTargetAngle = getangle(-(pTarget->y-pSprite->y), pTarget->x-pSprite->x);
             int UNUSED(nAngle) = getangle(xvel[nSprite]>>12,yvel[nSprite]>>12);
-            long vx = missileInfo[pSprite->type-300].at2;
-            long vy = 0;
+            int vx = missileInfo[pSprite->type-300].at2;
+            int vy = 0;
             RotatePoint(&vx, &vy, (nTargetAngle+1536)&2047, 0, 0);
             xvel[nSprite] = vx;
             yvel[nSprite] = vy;
@@ -4629,9 +4629,9 @@ int MoveMissile(spritetype *pSprite)
     int i = 1;
     while (1)
     {
-        long x = pSprite->x;
-        long y = pSprite->y;
-        long z = pSprite->z;
+        int x = pSprite->x;
+        int y = pSprite->y;
+        int z = pSprite->z;
         int nSector2 = pSprite->sectnum;
         clipmoveboxtracenum = 1;
         int vdx = ClipMove(&x, &y, &z, &nSector2, vx, vy, pSprite->clipdist<<2, (z-top)/4, (bottom-z)/4, CLIPMASK0);
@@ -4696,7 +4696,7 @@ int MoveMissile(spritetype *pSprite)
             updatesector(x, y, &nSector);
             nSector2 = nSector;
         }
-        long ceilZ, ceilHit, floorZ, floorHit;
+        int ceilZ, ceilHit, floorZ, floorHit;
         GetZRangeAtXYZ(x, y, z, nSector2, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, CLIPMASK0);
         GetSpriteExtents(pSprite, &top, &bottom);
         top += vz;

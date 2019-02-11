@@ -127,7 +127,7 @@ extern int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
 struct sectortype
 {
     short wallptr, wallnum;
-    long ceilingz, floorz;
+    int ceilingz, floorz;
     unsigned short ceilingstat, floorstat;
     short ceilingpicnum, ceilingheinum;
     signed char ceilingshade;
@@ -142,7 +142,7 @@ struct sectortype
 
 struct walltype
 {
-    long x, y;
+    int x, y;
     short point2, nextwall, nextsector;
     unsigned short cstat;
     short picnum, overpicnum;
@@ -153,7 +153,7 @@ struct walltype
 
 struct spritetype
 {
-    long x, y, z;
+    int x, y, z;
     short cstat, picnum;
     signed char shade;
     char pal, clipdist, filler;

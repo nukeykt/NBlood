@@ -220,7 +220,7 @@ void CheckPickUp(PLAYER *pPlayer);
 int ActionScan(PLAYER *pPlayer, int *a2, int *a3);
 void ProcessInput(PLAYER *pPlayer);
 void playerProcess(PLAYER *pPlayer);
-spritetype *playerFireMissile(PLAYER *pPlayer, int a2, long a3, long a4, long a5, int a6);
+spritetype *playerFireMissile(PLAYER *pPlayer, int a2, int a3, int a4, int a5, int a6);
 spritetype *playerFireThing(PLAYER *pPlayer, int a2, int a3, int thingType, int a5);
 void playerFrag(PLAYER *pKiller, PLAYER *pVictim);
 void FragPlayer(PLAYER *pPlayer, int nSprite);

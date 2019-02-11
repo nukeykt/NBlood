@@ -149,7 +149,7 @@ void sub_2541C(int x, int y, int z, short a)
             if (i == gView->at57 || gGameOptions.nGameType == 1)
             {
                 int nTile = pSprite->picnum;
-                long ceilZ, ceilHit, floorZ, floorHit;
+                int ceilZ, ceilHit, floorZ, floorHit;
                 GetZRange(pSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, (pSprite->clipdist<<2)+16, 0x13001);
                 int nTop, nBottom;
                 GetSpriteExtents(pSprite, &nTop, &nBottom);
