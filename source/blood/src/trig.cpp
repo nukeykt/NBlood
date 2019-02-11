@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "resource.h"
 #include "trig.h"
 
-long costable[2048];
+int costable[2048];
 
 int OctantTable[8] = { 5, 6, 2, 1, 4, 7, 3, 0 };
 
@@ -36,7 +36,7 @@ int GetOctant(int x, int y)
     return OctantTable[7-(x<0)-(y<0)*2-(vc<0)*4];
 }
 
-void RotateVector(long *dx, long *dy, int nAngle)
+void RotateVector(int *dx, int *dy, int nAngle)
 {
     int ox = *dx;
     int oy = *dy;
@@ -44,10 +44,10 @@ void RotateVector(long *dx, long *dy, int nAngle)
     *dy = dmulscale30r(ox, Sin(nAngle), oy, Cos(nAngle));
 }
 
-void RotatePoint(long *x, long *y, int nAngle, int ox, int oy)
+void RotatePoint(int *x, int *y, int nAngle, int ox, int oy)
 {
-    long dx = *x-ox;
-    long dy = *y-oy;
+    int dx = *x-ox;
+    int dy = *y-oy;
     *x = ox+dmulscale30r(dx, Cos(nAngle), -dy, Sin(nAngle));
     *y = oy+dmulscale30r(dx, Sin(nAngle), dy, Cos(nAngle));
 }

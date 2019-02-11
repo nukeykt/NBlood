@@ -1544,8 +1544,7 @@ int app_main(int argc, char const * const * argv)
     LoadSaveSetup();
     LoadSavedInfo();
     gDemo.LoadDemoInfo();
-    sprintf(buffer, "There are %d demo(s) in the loop\n", gDemo.at59ef);
-    initprintf(buffer);
+    initprintf("There are %d demo(s) in the loop\n", gDemo.at59ef);
     initprintf("Loading control setup\n");
     ctrlInit();
     timerInit(120);

@@ -22,12 +22,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 
-extern long gFrameClock;
+extern int gFrameClock;
 extern int gFrameTicks;
 extern int gFrame;
-extern long volatile gGameClock;
+extern int volatile gGameClock;
 extern int gFrameRate;
-extern long gGamma;
+extern int gGamma;
 extern int gSaveGameNum;
 
 

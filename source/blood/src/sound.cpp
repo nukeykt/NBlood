@@ -293,7 +293,7 @@ void sndStartSample(const char *pzSound, int nVolume, int nChannel)
     pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(1), 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
 }
 
-void sndStartSample(unsigned long nSound, int nVolume, int nChannel, bool bLoop)
+void sndStartSample(unsigned int nSound, int nVolume, int nChannel, bool bLoop)
 {
     if (!SoundToggle)
         return;
@@ -337,7 +337,7 @@ void sndStartSample(unsigned long nSound, int nVolume, int nChannel, bool bLoop)
     }
 }
 
-void sndStartWavID(unsigned long nSound, int nVolume, int nChannel)
+void sndStartWavID(unsigned int nSound, int nVolume, int nChannel)
 {
     if (!SoundToggle)
         return;

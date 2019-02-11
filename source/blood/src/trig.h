@@ -24,19 +24,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "resource.h"
 
-extern long costable[2048];
+extern int costable[2048];
 
 int GetOctant(int x, int y);
-void RotateVector(long *dx, long *dy, int nAngle);
-void RotatePoint(long *x, long *y, int nAngle, int ox, int oy);
+void RotateVector(int *dx, int *dy, int nAngle);
+void RotatePoint(int *x, int *y, int nAngle, int ox, int oy);
 void trigInit(Resource &Res);
 
-inline long Sin(int ang)
+inline int Sin(int ang)
 {
     return costable[(ang - 512) & 2047];
 }
 
-inline long Cos(int ang)
+inline int Cos(int ang)
 {
     return costable[ang & 2047];
 }

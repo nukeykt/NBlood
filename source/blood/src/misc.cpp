@@ -26,9 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "misc.h"
 
-void *ResReadLine(char *buffer, unsigned long nBytes, void **pRes)
+void *ResReadLine(char *buffer, unsigned int nBytes, void **pRes)
 {
-    unsigned long i;
+    unsigned int i;
     char ch;
     if (!pRes || !*pRes || *((char*)*pRes) == 0)
         return NULL;
@@ -64,17 +64,17 @@ void *ResReadLine(char *buffer, unsigned long nBytes, void **pRes)
     return *pRes;
 }
 
-bool FileRead(FILE *handle, void *buffer, unsigned long size)
+bool FileRead(FILE *handle, void *buffer, unsigned int size)
 {
     return fread(buffer, 1, size, handle) == size;
 }
 
-bool FileWrite(FILE *handle, void *buffer, unsigned long size)
+bool FileWrite(FILE *handle, void *buffer, unsigned int size)
 {
     return fwrite(buffer, 1, size, handle) == size;
 }
 
-bool FileLoad(const char *name, void *buffer, unsigned long size)
+bool FileLoad(const char *name, void *buffer, unsigned int size)
 {
     dassert(buffer != NULL);
 
@@ -82,7 +82,7 @@ bool FileLoad(const char *name, void *buffer, unsigned long size)
     if (!handle)
         return false;
 
-    unsigned long nread = fread(buffer, 1, size, handle);
+    unsigned int nread = fread(buffer, 1, size, handle);
     fclose(handle);
     return nread == size;
 }
@@ -98,9 +98,9 @@ int FileLength(FILE *handle)
     return nLength;
 }
 
-unsigned long randSeed = 1;
+unsigned int randSeed = 1;
 
-unsigned long qrand(void)
+unsigned int qrand(void)
 {
     if (randSeed&0x80000000)
         randSeed = ((randSeed<<1)^0x20000004)|0x1;
@@ -109,7 +109,7 @@ unsigned long qrand(void)
     return randSeed&0x7fff;
 }
 
-long wRandSeed = 1;
+int wRandSeed = 1;
 
 int wrand(void)
 {

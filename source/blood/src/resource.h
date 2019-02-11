@@ -39,16 +39,16 @@ struct RFFHeader
     char sign[4];
     short version;
     short pad1;
-    unsigned long offset;
-    unsigned long filenum;
+    unsigned int offset;
+    unsigned int filenum;
     int pad2[4];
 };
 
 struct DICTNODE_FILE
 {
     char unused1[16];
-    unsigned long offset;
-    unsigned long size;
+    unsigned int offset;
+    unsigned int size;
     char unused2[8];
     char flags;
     char type[3];
@@ -72,14 +72,14 @@ struct DICTNODE
     CACHENODE *prev;
     CACHENODE *next;
     int lockCount;
-    unsigned long offset;
-    unsigned long size;
+    unsigned int offset;
+    unsigned int size;
     char flags;
     //char type[3];
     //char name[8];
     char *type;
     char *name;
-    unsigned long id;
+    unsigned int id;
 };
 
 class Resource
@@ -92,21 +92,21 @@ public:
     static void Flush(CACHENODE *h);
     void Purge(void);
     DICTNODE **Probe(const char *fname, const char *type);
-    DICTNODE **Probe(unsigned long id, const char *type);
+    DICTNODE **Probe(unsigned int id, const char *type);
     void Reindex(void);
     void Grow(void);
     void AddExternalResource(const char *name, const char *type, int id = -1);
-    static void *Alloc(long nSize);
+    static void *Alloc(int nSize);
     static void Free(void *p);
     DICTNODE *Lookup(const char *name, const char *type);
-    DICTNODE *Lookup(unsigned long id, const char *type);
+    DICTNODE *Lookup(unsigned int id, const char *type);
     void Read(DICTNODE *n);
     void Read(DICTNODE *n, void *p);
     void *Load(DICTNODE *h);
     void *Load(DICTNODE *h, void *p);
     void *Lock(DICTNODE *h);
     void Unlock(DICTNODE *h);
-    void Crypt(void *p, long length, unsigned short key);
+    void Crypt(void *p, int length, unsigned short key);
     static void RemoveMRU(CACHENODE *h);
     int Size(DICTNODE*h) { return h->size; }
     void FNAddFiles(fnlist_t *fnlist, const char *pattern);
@@ -114,8 +114,8 @@ public:
     DICTNODE *dict;
     DICTNODE **indexName;
     DICTNODE **indexId;
-    unsigned long buffSize;
-    unsigned long count;
+    unsigned int buffSize;
+    unsigned int count;
     //FILE *handle;
     int handle;
     bool crypt;

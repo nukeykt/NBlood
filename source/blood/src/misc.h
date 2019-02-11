@@ -21,12 +21,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #pragma once
-void *ResReadLine(char *buffer, unsigned long nBytes, void **pRes);
-bool FileRead(FILE *, void *, unsigned long);
-bool FileWrite(FILE *, void *, unsigned long);
-bool FileLoad(const char *, void *, unsigned long);
+void *ResReadLine(char *buffer, unsigned int nBytes, void **pRes);
+bool FileRead(FILE *, void *, unsigned int);
+bool FileWrite(FILE *, void *, unsigned int);
+bool FileLoad(const char *, void *, unsigned int);
 int FileLength(FILE *);
-unsigned long qrand(void);
+unsigned int qrand(void);
 int wrand(void);
 void wsrand(int);
 void ChangeExtension(char *pzFile, const char *pzExt);

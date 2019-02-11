@@ -53,8 +53,8 @@ struct EVENT {
 void evInit(void);
 char evGetSourceState(int nType, int nIndex);
 void evSend(int nIndex, int nType, int rxId, COMMAND_ID command);
-void evPost(int nIndex, int nType, unsigned long nDelta, COMMAND_ID command);
-void evPost(int nIndex, int nType, unsigned long nDelta, CALLBACK_ID a4);
-void evProcess(unsigned long nTime);
+void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command);
+void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID a4);
+void evProcess(unsigned int nTime);
 void evKill(int a1, int a2);
 void evKill(int a1, int a2, CALLBACK_ID a3);

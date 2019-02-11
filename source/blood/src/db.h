@@ -249,7 +249,7 @@ extern XWALL xwall[kMaxXWalls];
 
 extern int xvel[kMaxSprites], yvel[kMaxSprites], zvel[kMaxSprites];
 
-extern long gVisibility;
+extern int gVisibility;
 extern int gMapRev, gSongId, gSkyCount;
 extern const char *gItemText[];
 extern const char *gAmmoText[];
@@ -285,5 +285,5 @@ void dbXWallClean(void);
 void dbXSectorClean(void);
 void dbInit(void);
 void PropagateMarkerReferences(void);
-unsigned long dbReadMapCRC(const char *pPath);
-void dbLoadMap(const char *pPath, long *pX, long *pY, long *pZ, short *pAngle, short *pSector, unsigned long *pCRC);
+unsigned int dbReadMapCRC(const char *pPath);
+void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short *pSector, unsigned int *pCRC);

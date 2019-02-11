@@ -61,7 +61,7 @@ void DrawFrame(int x, int y, TILE_FRAME *pTile, int stat, int shade, int palnum)
                  windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
 }
 
-void QAV::Draw(long ticks, int stat, int shade, int palnum)
+void QAV::Draw(int ticks, int stat, int shade, int palnum)
 {
     dassert(ticksPerFrame > 0);
     int nFrame = ticks / ticksPerFrame;
@@ -74,7 +74,7 @@ void QAV::Draw(long ticks, int stat, int shade, int palnum)
     }
 }
 
-void QAV::Play(long start, long end, int nCallback, void *pData)
+void QAV::Play(int start, int end, int nCallback, void *pData)
 {
     dassert(ticksPerFrame > 0);
     int frame;

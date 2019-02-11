@@ -64,7 +64,7 @@ void PriorityQueue::Delete(unsigned int k)
     Downheap(k);
 }
 
-void PriorityQueue::Insert(unsigned long a1, unsigned long a2)
+void PriorityQueue::Insert(unsigned int a1, unsigned int a2)
 {
     dassert(fNodeCount < kPQueueSize);
     fNodeCount++;
@@ -73,9 +73,9 @@ void PriorityQueue::Insert(unsigned long a1, unsigned long a2)
     Upheap();
 }
 
-unsigned long PriorityQueue::Remove(void)
+unsigned int PriorityQueue::Remove(void)
 {
-    unsigned long data = queueItems[1].at4;
+    unsigned int data = queueItems[1].at4;
     queueItems[1] = queueItems[fNodeCount--];
     Downheap(1);
     return data;

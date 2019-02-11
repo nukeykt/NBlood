@@ -25,12 +25,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "blood.h"
 
-long gFrameClock;
+int gFrameClock;
 int gFrameTicks;
 int gFrame;
-long volatile gGameClock;
+int volatile gGameClock;
 int gFrameRate;
-long gGamma;
+int gGamma;
 int gSaveGameNum;
 
 bool gQuitGame;

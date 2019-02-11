@@ -395,7 +395,7 @@ int IniFile::GetKeyInt(const char *section, const char *key, int defaultValue)
 {
     if (FindSection(section) && FindKey(key))
     {
-        // convert string to long int
+        // convert string to int int
         return strtol(_13, NULL, 0);
     }
     return defaultValue;

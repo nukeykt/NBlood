@@ -35,13 +35,13 @@ struct HEAPNODE
 class QHeap
 {
 public:
-    QHeap(long heapSize);
+    QHeap(int heapSize);
     ~QHeap(void);
 
     void Check(void);
     void Debug(void);
-    void *Alloc(long);
-    long Free(void *p);
+    void *Alloc(int);
+    int Free(void *p);
 
     void *heapPtr;
     HEAPNODE heap;
