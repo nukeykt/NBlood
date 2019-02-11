@@ -813,7 +813,7 @@ ifeq ($(RENDERTYPE),SDL)
     blood_game_rsrc_objs += game_icon.c
 endif
 ifeq ($(MIXERTYPE),SDL)
-    blood_common_midi_objs := sdlmusic.cpp
+    blood_common_midi_objs := sdlmusic.cpp oplmidi.cpp al_midi.cpp gmtimbre.cpp opl3.cpp
 endif
 
 
