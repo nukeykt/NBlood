@@ -154,7 +154,7 @@ static void PopulateForm(int32_t pgs)
         }
 
         Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), ((settings.shared.fullscreen) ? BST_CHECKED : BST_UNCHECKED));
-        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCPOLYMER), ((settings.polymer) ? BST_CHECKED : BST_UNCHECKED));
+        //Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCPOLYMER), ((settings.polymer) ? BST_CHECKED : BST_UNCHECKED));
 
         (void)ComboBox_ResetContent(hwnd);
 
@@ -235,11 +235,11 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
             settings.shared.fullscreen = !settings.shared.fullscreen;
             PopulateForm(POPULATE_VIDEO);
             return TRUE;
-        case IDCPOLYMER:
-            settings.polymer = !settings.polymer;
-            if (settings.shared.bpp == 8) settings.shared.bpp = 32;
-            PopulateForm(POPULATE_VIDEO);
-            return TRUE;
+        //case IDCPOLYMER:
+        //    settings.polymer = !settings.polymer;
+        //    if (settings.shared.bpp == 8) settings.shared.bpp = 32;
+        //    PopulateForm(POPULATE_VIDEO);
+        //    return TRUE;
         case IDCVMODE:
             if (HIWORD(wParam) == CBN_SELCHANGE)
             {
@@ -311,17 +311,17 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
                 }
             }
             return TRUE;
-        case IDCDATA:
-        {
-            if (HIWORD(wParam) != LBN_SELCHANGE) break;
-            intptr_t i = ListBox_GetCurSel((HWND)lParam);
-            if (i != CB_ERR) i = ListBox_GetItemData((HWND)lParam, i);
-            if (i != CB_ERR)
-            {
-                settings.grp = (grpfile_t const *)i;
-            }
-            return TRUE;
-        }
+        //case IDCDATA:
+        //{
+        //    if (HIWORD(wParam) != LBN_SELCHANGE) break;
+        //    intptr_t i = ListBox_GetCurSel((HWND)lParam);
+        //    if (i != CB_ERR) i = ListBox_GetItemData((HWND)lParam, i);
+        //    if (i != CB_ERR)
+        //    {
+        //        settings.grp = (grpfile_t const *)i;
+        //    }
+        //    return TRUE;
+        //}
         default:
             break;
         }
@@ -349,11 +349,11 @@ static void EnableConfig(bool n)
 {
     //EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_CANCEL), n);
     EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_START), n);
-    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCDATA), n);
+    //EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCDATA), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCGAMEDIR), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCINPUT), n);
-    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCPOLYMER), n);
+    //EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCPOLYMER), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCVMODE), n);
 }
 
@@ -481,10 +481,10 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
             SendMessage(pages[TAB_MESSAGES], EM_SETRECTNP,0,(LPARAM)&r);
 
             // Set a tab stop in the game data listbox
-            {
-                DWORD tabs[1] = { 150 };
-                (void)ListBox_SetTabStops(GetDlgItem(pages[TAB_CONFIG], IDCDATA), 1, tabs);
-            }
+            //{
+            //    DWORD tabs[1] = { 150 };
+            //    (void)ListBox_SetTabStops(GetDlgItem(pages[TAB_CONFIG], IDCDATA), 1, tabs);
+            //}
 
             SetFocus(GetDlgItem(hwndDlg, WIN_STARTWIN_START));
             SetWindowText(hwndDlg, apptitle);

@@ -9,10 +9,10 @@
   <assemblyIdentity
       version="1.0.0.0"
       processorArchitecture="*"
-      name="EDuke32"
+      name="NBlood"
       type="win32"
 />
-  <description>EDuke32</description>
+  <description>NBlood</description>
   <dependency>
     <dependentAssembly>
       <assemblyIdentity
