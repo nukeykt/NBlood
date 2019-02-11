@@ -181,12 +181,6 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
         if (vbl)
             return true;
         break;
-    case 217:
-        if (vdh)
-            return false;
-        if (!xsector[nXSector].at13_4 && !xsector[nXSector].at13_5 && floorZ-bottom > 0x2000)
-            return false;
-        break;
     case 204:
     case 213:
     case 214:
@@ -205,10 +199,11 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
         break;
     case 203:
     case 210:
+    case 217:
     default:
         if (vdh)
             return false;
-        if (!xsector[nXSector].at13_4 && !xsector[nXSector].at13_5 && floorZ - bottom > 0x2000)
+        if ((nXSector < 0 || (!xsector[nXSector].at13_4 && !xsector[nXSector].at13_5)) && floorZ - bottom > 0x2000)
             return false;
         break;
     }
