@@ -1608,7 +1608,7 @@ void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
             break;
         default:
             if (pXSector->ata_4 || pXSector->at18_2)
-                OperateDoor(nSector, pXSector, a3, BUSYID_4);
+                OperateDoor(nSector, pXSector, a3, BUSYID_6);
             else
             {
                 switch (a3.at2_0)

@@ -785,7 +785,7 @@ void LocalKeys(void)
 		case 0x3e:
             keyFlushScans();
 			if (!gGameMenuMgr.m_bActive)
-				gGameMenuMgr.Push(&menuSounds,-1);
+				gGameMenuMgr.Push(&menuOptionsSound,-1);
 			return;
 		case 0x3f:
             keyFlushScans();
