@@ -112,6 +112,7 @@ static inline void G_HandleAsync(void)
 {
     handleevents();
     netGetPackets();
+    faketimerhandler();
 }
 
 #if defined HAVE_FLAC || defined HAVE_VORBIS
