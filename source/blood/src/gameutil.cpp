@@ -404,6 +404,7 @@ int HitScan(spritetype *pSprite, int z, int dx, int dy, int dz, unsigned int nMa
     }
     vec3_t pos = { x, y, z };
     hitdata_t hitData;
+    hitData.pos.z = gHitInfo.hitz;
     hitscan(&pos, nSector, dx, dy, dz << 4, &hitData, nMask);
     gHitInfo.hitsect = hitData.sect;
     gHitInfo.hitwall = hitData.wall;
@@ -456,6 +457,7 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
     }
     vec3_t pos = { x1, y1, z1 };
     hitdata_t hitData;
+    hitData.pos.z = gHitInfo.hitz;
     hitscan(&pos, nSector, dx, dy, dz << 4, &hitData, CLIPMASK1);
     gHitInfo.hitsect = hitData.sect;
     gHitInfo.hitwall = hitData.wall;
@@ -517,6 +519,7 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
             y1 = gHitInfo.hity;
             z1 = gHitInfo.hitz;
             pos = { x1, y1, z1 };
+            hitData.pos.z = gHitInfo.hitz;
             hitscan(&pos, pOther->sectnum,
                 dx, dy, dz << 4, &hitData, CLIPMASK1);
             gHitInfo.hitsect = hitData.sect;
@@ -603,6 +606,7 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
                 y1 = gHitInfo.hity;
                 z1 = gHitInfo.hitz;
                 pos = { x1, y1, z1 };
+                hitData.pos.z = gHitInfo.hitz;
                 hitscan(&pos, pWall->nextsector,
                     dx, dy, dz << 4, &hitData, CLIPMASK1);
                 gHitInfo.hitsect = hitData.sect;
@@ -632,6 +636,7 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
                 y1 = gHitInfo.hity + sprite[nLink].y - sprite[nSprite].y;
                 z1 = gHitInfo.hitz + sprite[nLink].z - sprite[nSprite].z;
                 pos = { x1, y1, z1 };
+                hitData.pos.z = gHitInfo.hitz;
                 hitscan(&pos, sprite[nLink].sectnum, dx, dy, dz<<4, &hitData, CLIPMASK1);
                 gHitInfo.hitsect = hitData.sect;
                 gHitInfo.hitwall = hitData.wall;
@@ -654,6 +659,7 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
                 y1 = gHitInfo.hity + sprite[nLink].y - sprite[nSprite].y;
                 z1 = gHitInfo.hitz + sprite[nLink].z - sprite[nSprite].z;
                 pos = { x1, y1, z1 };
+                hitData.pos.z = gHitInfo.hitz;
                 hitscan(&pos, sprite[nLink].sectnum, dx, dy, dz<<4, &hitData, CLIPMASK1);
                 gHitInfo.hitsect = hitData.sect;
                 gHitInfo.hitwall = hitData.wall;
