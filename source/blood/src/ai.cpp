@@ -683,8 +683,13 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         }
         break;
     case 212:
-        aiPlay3DSound(pSprite, 1900, AI_SFX_PRIORITY_1, -1);
-        aiNewState(pSprite, pXSprite, &handChase);
+        if (pXSprite->target == -1)
+            aiNewState(pSprite, pXSprite, &handSearch);
+        else
+        {
+            aiPlay3DSound(pSprite, 1900, AI_SFX_PRIORITY_1, -1);
+            aiNewState(pSprite, pXSprite, &handChase);
+        }
         break;
     case 220:
         if (pXSprite->target == -1)

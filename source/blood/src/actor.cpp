@@ -3681,7 +3681,7 @@ void actTouchFloor(spritetype *pSprite, int nSector)
             nDamage = ClipRange(pXSector->at4_0, 0, 1000);
         else
             nDamage = 1000;
-        actDamageSprite(pSprite->index, pSprite, nDamageType, nDamage);
+        actDamageSprite(pSprite->index, pSprite, nDamageType, scale(4, nDamage, 120));
     }
     if (tileGetSurfType(nSector+0x4000) == 14)
     {

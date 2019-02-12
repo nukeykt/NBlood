@@ -74,7 +74,7 @@ static void HandJumpSeqCallback(int, int nXSprite)
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
     aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
-    sub_5F15C(pSprite, pXSprite);
+    aiThinkTarget(pSprite, pXSprite);
 }
 
 static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
