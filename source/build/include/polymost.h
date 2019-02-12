@@ -150,7 +150,7 @@ static FORCE_INLINE int polymost_is_npotmode(void)
 #ifdef NEW_MAP_FORMAT
         g_loadedMapVersion < 10 &&
 #endif
-        r_npotwallmode;
+        r_npotwallmode == 1;
 }
 
 static inline float polymost_invsqrt_approximation(float x)
