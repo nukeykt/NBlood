@@ -1975,6 +1975,7 @@ void NetworkHostGame(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     sndStopSong();
     FX_StopAllSounds();
+    UpdateDacs(0, true);
     gNetPlayers = itemNetworkHostPlayerNum.nValue;
     gNetPort = strtoul(zNetPortBuffer, NULL, 10);
     if (!gNetPort)
@@ -1990,6 +1991,7 @@ void NetworkJoinGame(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     sndStopSong();
     FX_StopAllSounds();
+    UpdateDacs(0, true);
     strcpy(gNetAddress, zNetAddressBuffer);
     gNetPort = strtoul(zNetPortBuffer, NULL, 10);
     if (!gNetPort)

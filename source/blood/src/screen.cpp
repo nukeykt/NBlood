@@ -70,6 +70,11 @@ static int curGamma;
 int gGammaLevels;
 bool gFogMode = false;
 
+void scrResetPalette(void)
+{
+    paletteSetColorTable(0, (uint8_t*)palTable[0]);
+}
+
 void gSetDacRange(int start, int end, RGB *pPal)
 {
     UNREFERENCED_PARAMETER(start);

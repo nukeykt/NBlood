@@ -39,6 +39,7 @@ extern RGB curDAC[256];
 extern RGB baseDAC[256];
 extern int gGammaLevels;
 extern bool gFogMode;
+void scrResetPalette(void);
 void gSetDacRange(int start, int end, RGB *pPal);
 void scrLoadPLUs(void);
 void scrLoadPalette(void);

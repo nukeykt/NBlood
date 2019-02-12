@@ -3403,6 +3403,7 @@ void viewLoadingScreenUpdate(const char *pzText4, int nPercent)
 
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3)
 {
+    UpdateDacs(0, true);
     nLoadingScreenTile = nTile;
     if (pText)
         strncpy(pzLoadingScreenText1, pText, 256);

@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "messages.h"
 #include "network.h"
 #include "osdcmds.h"
+#include "screen.h"
 #include "sound.h"
 #include "sfx.h"
 #include "view.h"
@@ -437,7 +438,9 @@ void onvideomodechange(int32_t newmode)
     g_restorePalette = -1;
     g_crosshairSum = -1;
 #endif
-    videoSetPalette(gBrightness>>2, gLastPal, 0);
+    if (newmode)
+        scrResetPalette();
+    UpdateDacs(gLastPal, false);
     g_crosshairSum = -1;
 }
 
