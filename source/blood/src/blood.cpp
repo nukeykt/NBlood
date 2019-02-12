@@ -938,7 +938,15 @@ void ProcessFrame(void)
 	gFrameClock += 4;
 	if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
 	{
-		ready2send = 0;
+        ready2send = 0;
+        if (gPacketMode == PACKETMODE_1 && myconnectindex == connecthead)
+        {
+            while (gNetFifoMasterTail < gNetFifoTail)
+            {
+                G_HandleAsync();
+                netMasterUpdate();
+            }
+        }
 		if (gDemo.at0)
 			gDemo.Close();
 		sndFadeSong(4000);

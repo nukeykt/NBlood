@@ -145,6 +145,7 @@ void netBroadcastMyLogoff(bool bRestart);
 void netInitialize(bool bConsole);
 void netBroadcastPlayerInfo(int nPlayer);
 void netCheckSync(void);
+void netMasterUpdate(void);
 void netGetInput(void);
 void netPlayerQuit(int nPlayer);
 void netUpdate(void);
