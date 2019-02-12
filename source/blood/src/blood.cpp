@@ -939,7 +939,7 @@ void ProcessFrame(void)
 	if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
 	{
         ready2send = 0;
-        if (gPacketMode == PACKETMODE_1 && myconnectindex == connecthead)
+        if (gNetPlayers > 1 && gNetMode == NETWORK_SERVER && gPacketMode == PACKETMODE_1 && myconnectindex == connecthead)
         {
             while (gNetFifoMasterTail < gNetFifoTail)
             {
