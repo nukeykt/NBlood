@@ -1441,7 +1441,7 @@ void aiInitSprite(spritetype *pSprite)
         DUDEEXTRA_at6_u2 *pDudeExtraE = &gDudeExtra[nXSprite].at6.u2;
         pDudeExtraE->at4 = 0;
         pDudeExtraE->at0 = 0;
-        aiNewState(pSprite, pXSprite, &gargoyleFIdle);
+        aiNewState(pSprite, pXSprite, &cerberusIdle);
         break;
     }
     case 211:

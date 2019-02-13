@@ -5246,7 +5246,8 @@ void actProcessSprites(void)
                 {
                     pXSprite->health = dudeInfo[28].at2<<4;
                     pSprite->type = 228;
-                    aiSetTarget(pXSprite, pXSprite->target);
+                    if (pXSprite->target != -1)
+                        aiSetTarget(pXSprite, pXSprite->target);
                     aiActivateDude(pSprite, pXSprite);
                 }
             }
