@@ -299,6 +299,26 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     return OSDCMD_OK;
 }
 
+static int osdcmd_crosshaircolor(osdcmdptr_t parm)
+{
+    if (parm->numparms != 3)
+    {
+        OSD_Printf("crosshaircolor: r:%d g:%d b:%d\n",CrosshairColors.r,CrosshairColors.g,CrosshairColors.b);
+        return OSDCMD_SHOWHELP;
+    }
+
+    uint8_t const r = Batol(parm->parms[0]);
+    uint8_t const g = Batol(parm->parms[1]);
+    uint8_t const b = Batol(parm->parms[2]);
+
+    viewSetCrosshairColor(r,g,b);
+
+    if (!OSD_ParsingScript())
+        OSD_Printf("%s\n", parm->raw);
+
+    return OSDCMD_OK;
+}
+
 static int osdcmd_give(osdcmdptr_t parm)
 {
     if (numplayers != 1 || !gGameStarted || gMe->pXSprite->health == 0)
@@ -1017,7 +1037,7 @@ int32_t registerosdcommands(void)
 //    OSD_RegisterFunction("addpath","addpath <path>: adds path to game filesystem", osdcmd_addpath);
     OSD_RegisterFunction("bind",R"(bind <key> <string>: associates a keypress with a string of console input. Type "bind showkeys" for a list of keys and "listsymbols" for a list of valid console commands.)", osdcmd_bind);
 //    OSD_RegisterFunction("cmenu","cmenu <#>: jumps to menu", osdcmd_cmenu);
-//    OSD_RegisterFunction("crosshaircolor","crosshaircolor: changes the crosshair color", osdcmd_crosshaircolor);
+    OSD_RegisterFunction("crosshaircolor","crosshaircolor: changes the crosshair color", osdcmd_crosshaircolor);
 //
 //#if !defined NETCODE_DISABLE
 //    OSD_RegisterFunction("connect","connect: connects to a multiplayer game", osdcmd_connect);
