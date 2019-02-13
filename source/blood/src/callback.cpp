@@ -379,7 +379,7 @@ void CounterCheck(int nSector) // 12
                 if (sprite[nSprite].type == nType)
                     nCount++;
             }
-            if (nCount >= nType)
+            if (nCount >= nReq)
             {
                 pXSector->atc_0 = 0;
                 trTriggerSector(nSector, pXSector, 1);
