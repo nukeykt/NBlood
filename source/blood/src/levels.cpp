@@ -275,8 +275,8 @@ void levelLoadDefaults(void)
 void levelAddUserMap(const char *pzMap)
 {
     char buffer[BMAX_PATH];
-    strcpy(buffer, UserPath);
-    strcat(buffer, pzMap);
+    //strcpy(buffer, UserPath);
+    strncpy(buffer, pzMap, BMAX_PATH);
     ChangeExtension(buffer, ".DEF");
 
     IniFile UserINI(buffer);
