@@ -679,7 +679,7 @@ void playerStart(int nPlayer)
     pXSprite->at2c_0 = 0;
     pXSprite->at2e_0 = -1;
     pPlayer->pXSprite->health = pDudeInfo->at2<<4;
-    pPlayer->pSprite->cstat &= ~32768;
+    pPlayer->pSprite->cstat &= (unsigned short)~32768;
     pPlayer->at63 = 0;
     pPlayer->q16horiz = 0;
     pPlayer->q16slopehoriz = 0;

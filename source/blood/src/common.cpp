@@ -280,6 +280,7 @@ static int G_ReadRegistryValue(char const * const SubKey, char const * const Val
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void G_AddSteamPaths(const char *basepath)
 {
+    UNREFERENCED_PARAMETER(basepath);
 #if 0
     char buf[BMAX_PATH];
 

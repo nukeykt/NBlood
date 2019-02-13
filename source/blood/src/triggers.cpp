@@ -391,7 +391,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             break;
         case 1:
             pXSprite->at1_6 = 1;
-            pSprite->cstat &= ~32768;
+            pSprite->cstat &= (unsigned short)~32768;
             pSprite->cstat |= 1;
             break;
         case 3:
@@ -558,7 +558,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             SetSpriteState(nSprite, pXSprite, 1);
             break;
         default:
-            pSprite->cstat &= ~32768;
+            pSprite->cstat &= (unsigned short)~32768;
             actExplodeSprite(pSprite);
             break;
         }
@@ -2133,7 +2133,7 @@ void InitGenerator(int nSprite)
     switch (sprite[nSprite].type)
     {
     case 700:
-        pSprite->cstat &= ~(32768+1);
+        pSprite->cstat &= (unsigned short)~(32768+1);
         pSprite->cstat |= 32768;
         break;
     }

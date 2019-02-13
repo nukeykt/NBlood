@@ -124,7 +124,7 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     if (pFrame->at6_2)
         pSprite->cstat |= 32768;
     else
-        pSprite->cstat &= ~32768;
+        pSprite->cstat &= (unsigned short)~32768;
     if (pFrame->at6_0)
         pSprite->cstat |= 4096;
     else

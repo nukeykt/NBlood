@@ -105,7 +105,7 @@ extern void G_LoadGroups(int32_t autoload);
      >= ((int32_t)size) - 1)
 
 #define G_ModDirSnprintfLite(buf, size, basename) \
-    ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, basename))
+    ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, "%s", basename))
 
 static inline void G_HandleAsync(void)
 {

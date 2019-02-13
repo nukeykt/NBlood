@@ -3184,7 +3184,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     {
         if (pSprite->type < kDudeBase || pSprite->type >= kDudeMax)
         {
-            sprintf(buffer, "Bad Dude Failed: initial=%d type=%d %s\n", pSprite->zvel, pSprite->type, (pSprite->hitag&16) ? "RESPAWN" : "NORMAL");
+            sprintf(buffer, "Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->zvel, (int)pSprite->type, (int)(pSprite->hitag&16) ? "RESPAWN" : "NORMAL");
             ThrowError(buffer);
         }
         dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);

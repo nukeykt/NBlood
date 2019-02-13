@@ -114,6 +114,7 @@ static void on_vmode3dcombo_changed(GtkComboBox *combobox, gpointer user_data)
     gtk_tree_model_get(data, &iter, 1, &val, -1);
     settings.shared.xdim = validmode[val].xdim;
     settings.shared.ydim = validmode[val].ydim;
+    settings.shared.bpp = validmode[val].bpp;
 }
 
 static void on_fullscreencheck_toggled(GtkToggleButton *togglebutton, gpointer user_data)
@@ -718,7 +719,7 @@ int32_t startwin_run(void)
     SetPage(TAB_CONFIG);
 
     settings.shared = gSetup;
-    settings.gamedir = UserPath;
+    settings.gamedir = g_modDir;
     //settings.grp = g_selectedGrp;
     settings.polymer = 0;
     PopulateForm(ALL);
@@ -732,7 +733,7 @@ int32_t startwin_run(void)
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
         //g_selectedGrp = settings.grp;
 
-        Bstrcpy(UserPath, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
+        Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return retval;

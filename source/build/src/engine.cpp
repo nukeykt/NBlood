@@ -1640,10 +1640,14 @@ static inline int findUnusedTile(void)
 static void classicScanSector(int16_t startsectnum)
 {
     if (startsectnum < 0)
+    {
         return;
+    }
 
 	if (automapping)
+    {
         show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
+    }
 
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;
@@ -11251,7 +11255,7 @@ void neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange,
 //  1: don't reset walbitmap[] (the bitmap of already dragged vertices)
 //  2: In the editor, do wall[].cstat |= (1<<14) also for the lastwall().
 void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
-#if 0
+#ifdef YAX_ENABLE
 {
     int32_t i, numyaxwalls=0;
     static int16_t yaxwalls[MAXWALLS];

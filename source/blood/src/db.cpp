@@ -1098,7 +1098,7 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
     if (videoGetRenderMode() == REND_POLYMER)
         polymer_loadboard();
 
-    if ((header.version & 0xff00) == 0x603)
+    if ((header.version & 0xff00) == 0x600)
     {
         switch (header.version&0xff)
         {

@@ -294,7 +294,7 @@ void Respawn(int nSprite) // 9
         if (pSprite->type == 400)
         {
             pSprite->cstat |= 257;
-            pSprite->cstat &= ~32768;
+            pSprite->cstat &= (unsigned short)~32768;
         }
         gFX.fxSpawn(FX_29, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
         sfxPlay3DSound(pSprite, 350, -1, 0);
