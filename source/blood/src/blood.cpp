@@ -148,8 +148,6 @@ enum gametokens
     T_RFFDEFINEID,
 };
 
-extern int32_t MAXCACHE1DSIZE;
-
 int blood_globalflags;
 
 void app_crashhandler(void)
@@ -1308,7 +1306,7 @@ void ParseOptions(void)
         case 36:
             if (OptArgc < 1)
                 ThrowError("Missing argument");
-            Bstrncpyz(UserPath, OptArgv[0], sizeof(UserPath));
+            Bstrncpyz(g_modDir, OptArgv[0], sizeof(g_modDir));
             G_AddPath(OptArgv[0]);
             break;
         case 37:
@@ -1347,8 +1345,8 @@ void ParseOptions(void)
         char zDir[BMAX_PATH];
         char zFName[BMAX_PATH];
         _splitpath(gUserMapFilename, zNode, zDir, zFName, NULL);
-        strcpy(UserPath, zNode);
-        strcat(UserPath, zDir);
+        strcpy(g_modDir, zNode);
+        strcat(g_modDir, zDir);
         strcpy(gUserMapFilename, zFName);
     }
 #endif

@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 
 #include "blood.h"
+#include "config.h"
 #include "resource.h"
 
 void qloadvoxel(int32_t nVoxel)
@@ -81,7 +82,7 @@ int tileInit(char a1, const char *a2)
     UNREFERENCED_PARAMETER(a1);
     if (artLoaded)
         return 1;
-    artLoadFiles(a2 ? a2 : pzBaseFileName, 96 << 20);
+    artLoadFiles(a2 ? a2 : pzBaseFileName, MAXCACHE1DSIZE);
     for (int i = 0; i < kMaxTiles; i++)
         voxelIndex[i] = 0;
 

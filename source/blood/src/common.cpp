@@ -71,20 +71,6 @@ const char *G_DefFile(void)
 }
 
 static char g_rootDir[BMAX_PATH];
-char UserPath[BMAX_PATH] = "/";
-int kopen4loadfrommod(const char *fileName, char searchfirst)
-{
-    int kFile = -1;
-
-    if (UserPath[0] != '/' || UserPath[1] != 0)
-    {
-        static char staticFileName[BMAX_PATH];
-        Bsnprintf(staticFileName, sizeof(staticFileName), "%s/%s", UserPath, fileName);
-        kFile = kopen4load(staticFileName, searchfirst);
-    }
-
-    return (kFile < 0) ? kopen4load(fileName, searchfirst) : kFile;
-}
 
 int g_useCwd;
 int32_t g_groupFileHandle;
@@ -183,11 +169,11 @@ static int32_t G_TryLoadingGrp(char const * const grpfile)
 
 void G_LoadGroups(int32_t autoload)
 {
-    if (UserPath[0] != '/')
+    if (g_modDir[0] != '/')
     {
         char cwd[BMAX_PATH];
 
-        Bstrcat(g_rootDir, UserPath);
+        Bstrcat(g_rootDir, g_modDir);
         addsearchpath(g_rootDir);
         //        addsearchpath(mod_dir);
 
@@ -195,7 +181,7 @@ void G_LoadGroups(int32_t autoload)
 
         if (getcwd(cwd, BMAX_PATH))
         {
-            Bsnprintf(path, sizeof(path), "%s/%s", cwd, UserPath);
+            Bsnprintf(path, sizeof(path), "%s/%s", cwd, g_modDir);
             if (!Bstrcmp(g_rootDir, path))
             {
                 if (addsearchpath(path) == -2)
@@ -205,7 +191,7 @@ void G_LoadGroups(int32_t autoload)
         }
 
 #ifdef USE_OPENGL
-        Bsnprintf(path, sizeof(path), "%s/%s", UserPath, TEXCACHEFILE);
+        Bsnprintf(path, sizeof(path), "%s/%s", g_modDir, TEXCACHEFILE);
         Bstrcpy(TEXCACHEFILE, path);
 #endif
     }
@@ -220,8 +206,8 @@ void G_LoadGroups(int32_t autoload)
         //    G_DoAutoload(grpfile);
     }
 
-    if (UserPath[0] != '/')
-        G_LoadGroupsInDir(UserPath);
+    if (g_modDir[0] != '/')
+        G_LoadGroupsInDir(g_modDir);
 
     if (g_defNamePtr == NULL)
     {

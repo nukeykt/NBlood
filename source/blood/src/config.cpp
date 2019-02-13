@@ -720,17 +720,17 @@ int CONFIG_ReadSetup(void)
     if (cachesize > MAXCACHE1DSIZE)
         MAXCACHE1DSIZE = cachesize;
 
-    if (gNoSetup == 0 && UserPath[0] == '/')
+    if (gNoSetup == 0 && g_modDir[0] == '/')
     {
         struct Bstat st;
-        SCRIPT_GetString(scripthandle, "Setup","ModDir",&UserPath[0]);
+        SCRIPT_GetString(scripthandle, "Setup","ModDir",&g_modDir[0]);
 
-        if (Bstat(UserPath, &st))
+        if (Bstat(g_modDir, &st))
         {
             if ((st.st_mode & S_IFDIR) != S_IFDIR)
             {
                 initprintf("Invalid mod dir in cfg!\n");
-                Bsprintf(UserPath,"/");
+                Bsprintf(g_modDir,"/");
             }
         }
     }
@@ -856,7 +856,7 @@ void CONFIG_WriteSetup(uint32_t flags)
 
 #ifdef STARTUP_SETUP_WINDOW
     if (gNoSetup == 0)
-        SCRIPT_PutString(scripthandle, "Setup", "ModDir", &UserPath[0]);
+        SCRIPT_PutString(scripthandle, "Setup", "ModDir", &g_modDir[0]);
 #endif
     // exit early after only updating the values that can be changed from the startup window
     if (flags & 1)

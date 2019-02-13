@@ -38,10 +38,12 @@ int32_t		findfrompath(const char *fn, char **where);
 int32_t     openfrompath(const char *fn, int32_t flags, int32_t mode);
 BFILE  *fopenfrompath(const char *fn, const char *mode);
 
+extern char g_modDir[BMAX_PATH];
 extern int32_t numgroupfiles;
 int initgroupfile(const char *filename);
 void	uninitgroupfile(void);
 int32_t	kopen4load(const char *filename, char searchfirst);	// searchfirst: 0 = anywhere, 1 = first group, 2 = any group
+int32_t	kopen4loadfrommod(const char *filename, char searchfirst);
 int32_t	kread(int32_t handle, void *buffer, int32_t leng);
 #define kread_and_test(handle, buffer, leng) EDUKE32_PREDICT_FALSE(kread((handle), (buffer), (leng)) != (leng))
 int32_t	klseek(int32_t handle, int32_t offset, int32_t whence);

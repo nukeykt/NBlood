@@ -142,7 +142,7 @@ void artSetupMapArt(const char *filename)
     mapartfnXXofs = Bstrlen(mapartfilename) - 6;
 
     // Check for first per-map ART file: if that one doesn't exist, don't load any.
-    int32_t fil = kopen4load(artGetIndexedFileName(MAXARTFILES_BASE), 0);
+    int32_t fil = kopen4loadfrommod(artGetIndexedFileName(MAXARTFILES_BASE), 0);
 
     if (fil == -1)
     {
@@ -478,7 +478,7 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
     const int32_t permap = (tilefilei >= MAXARTFILES_BASE);  // is it a per-map ART file?
     int32_t fil;
 
-    if ((fil = kopen4load(fn, 0)) != -1)
+    if ((fil = kopen4loadfrommod(fn, 0)) != -1)
     {
         artheader_t local;
         int const headerval = artReadHeader(fil, fn, &local);
@@ -673,7 +673,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
 
         char const *fn = artGetIndexedFileName(tfn);
 
-        artfil = kopen4load(fn, 0);
+        artfil = kopen4loadfrommod(fn, 0);
 
         if (artfil == -1)
         {

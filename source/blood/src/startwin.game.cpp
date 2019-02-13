@@ -677,7 +677,7 @@ int32_t startwin_run(void)
     settings.shared = gSetup;
     // NUKE-TODO:
     //settings.grp = g_selectedGrp;
-    settings.gamedir = UserPath;
+    settings.gamedir = g_modDir;
 
     PopulateForm(-1);
 
@@ -711,7 +711,7 @@ int32_t startwin_run(void)
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
         // NUKE-TODO:
         //g_selectedGrp = settings.grp;
-        Bstrcpy(UserPath, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
+        Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return done;

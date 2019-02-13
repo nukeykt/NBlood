@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 #include "build.h"
+#include "cache1d.h"
 #include "common.h"
 #include "pragmas.h"
 #include "misc.h"
@@ -88,9 +89,7 @@ enum searchpathtypes_t {
 extern char *g_grpNamePtr;
 
 extern int loaddefinitions_game(const char *fn, int32_t preload);
-extern char UserPath[BMAX_PATH];
 
-int kopen4loadfrommod(const char *fileName, char searchfirst);
 extern void G_AddSearchPaths(void);
 extern void G_CleanupSearchPaths(void);
 
@@ -102,11 +101,11 @@ void G_DoAutoload(const char *dirname);
 extern void G_LoadGroups(int32_t autoload);
 
 #define G_ModDirSnprintf(buf, size, basename, ...)                                                                                          \
-    (((UserPath[0] != '/') ? Bsnprintf(buf, size, "%s/" basename, UserPath, ##__VA_ARGS__) : Bsnprintf(buf, size, basename, ##__VA_ARGS__)) \
+    (((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/" basename, g_modDir, ##__VA_ARGS__) : Bsnprintf(buf, size, basename, ##__VA_ARGS__)) \
      >= ((int32_t)size) - 1)
 
 #define G_ModDirSnprintfLite(buf, size, basename) \
-    ((UserPath[0] != '/') ? Bsnprintf(buf, size, "%s/%s", UserPath, basename) : Bsnprintf(buf, size, basename))
+    ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, basename))
 
 static inline void G_HandleAsync(void)
 {
