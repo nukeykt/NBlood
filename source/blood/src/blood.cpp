@@ -1484,7 +1484,8 @@ int app_main(int argc, char const * const * argv)
     OSD_Exec(buffer);
     OSD_Exec("autoexec.cfg");
 
-    CONFIG_SetDefaultKeys(keydefaults, true);
+    // Not neccessary ?
+    // CONFIG_SetDefaultKeys(keydefaults, true);
 
     system_getcvars();
 
