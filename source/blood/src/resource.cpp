@@ -80,7 +80,7 @@ void Resource::Init(const char *filename)
 
     if (filename)
     {
-        handle = kopen4load(filename, 0);
+        handle = kopen4loadfrommod(filename, 0);
         if (handle != -1)
         {
             int nFileLength = kfilelength(handle);
