@@ -232,6 +232,7 @@ void credPlaySmk(const char *pzSMK, const char *pzWAV, int nWav)
         if (ctrlCheckAllInput())
             break;
 
+        videoClearScreen(0);
         Smacker_GetPalette(hSMK, palette);
         paletteSetColorTable(kSMKPal, palette);
         videoSetPalette(gBrightness >> 2, kSMKPal, 0);
