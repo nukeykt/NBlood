@@ -212,10 +212,11 @@ void credPlaySmk(const char *pzSMK, const char *pzWAV, int nWav)
     else
     {
         int nHandleWAV = credKOpen4Load(pzWAV);
-        if (nHandleWAV == -1)
-            return;
-        kclose(nHandleWAV);
-        sndStartWavDisk(pzWAV, FXVolume);
+        if (nHandleWAV != -1)
+        {
+            kclose(nHandleWAV);
+            sndStartWavDisk(pzWAV, FXVolume);
+        }
     }
 
     UpdateDacs(0, true);
