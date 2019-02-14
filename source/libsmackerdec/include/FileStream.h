@@ -21,8 +21,7 @@
 #define _SmackerFileStream_h_
 
 #include <string>
-#include <iostream>
-#include <fstream>
+#include "cache1d.h"
 #include <stdint.h>
 
 namespace SmackerCommon {
@@ -58,7 +57,7 @@ class FileStream
 		bool Is_Eos();
 
 	private:
-		std::ifstream file;
+		int file;
 };
 
 } // close namespace SmackerCommon

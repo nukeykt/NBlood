@@ -368,33 +368,29 @@ void sndKillSound(SAMPLE2D *pChannel)
 
 void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
 {
-    UNREFERENCED_PARAMETER(pzFile);
-    UNREFERENCED_PARAMETER(nVolume);
-    UNREFERENCED_PARAMETER(nChannel);
-    // NUKE-TODO:
-#if 0
-    if (FXDevice == -1)
-        return;
     dassert(nChannel >= -1 && nChannel < kMaxChannels);
     SAMPLE2D *pChannel;
     if (nChannel == -1)
         pChannel = FindChannel();
     else
         pChannel = &Channel[nChannel];
-    if (pChannel->bAutoAim > 0)
+    if (pChannel->at0 > 0)
         sndKillSound(pChannel);
-    struct find_t dosFind;
-    if (_dos_findfirst(pzFile, NULL, &dosFind) != 0)
+    int hFile = kopen4loadfrommod(pzFile, 0);
+    if (hFile == -1)
         return;
-    char *pData = gSoundRes.Alloc(dosFind.size);
+    int nLength = kfilelength(hFile);
+    char *pData = (char*)gSoundRes.Alloc(nLength);
     if (!pData)
+    {
+        kclose(hFile);
         return;
-    if (!FileLoad(pzFile, pData, dosFind.size))
-        return;
+    }
+    kread(hFile, pData, kfilelength(hFile));
+    kclose(hFile);
     pChannel->at5 = (DICTNODE*)pData;
     pChannel->at4 |= 2;
-    pChannel->bAutoAim = FX_PlayWAV(pData, 0, nVolume, nVolume, nVolume, nVolume, &pChannel->bAutoAim);
-#endif
+    pChannel->at0 = FX_Play(pData, nLength, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
 }
 
 void sndKillAllSounds(void)

@@ -22,10 +22,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #include "build.h"
 #include "compat.h"
+#include "SmackerDecoder.h"
+#include "fx_man.h"
 #include "keyboard.h"
 #include "common_game.h"
 #include "blood.h"
+#include "config.h"
+#include "controls.h"
 #include "globals.h"
+#include "resource.h"
 #include "screen.h"
 #include "sound.h"
 
@@ -136,29 +141,27 @@ void credReset(void)
     DoUnFade(1);
 }
 
-void credPlaySmk(const char *pzSMK, int nWAV)
+int credKOpen4Load(const char *&pzFile)
 {
-    UNREFERENCED_PARAMETER(pzSMK);
-    UNREFERENCED_PARAMETER(nWAV);
-#if 0
-    CSMKPlayer smkPlayer;
-    if (dword_148E14 >= 0)
+    int nHandle = kopen4loadfrommod(pzFile, 0);
+    if (nHandle == -1)
     {
-        if (toupper(*pzSMK) == 'A'+dword_148E14)
+        // Hack
+        int nLen = strlen(pzFile);
+        if (nLen >= 3 && isalpha(pzFile[0]) && pzFile[1] == ':' && pzFile[2] == '\\')
         {
-            if (Redbook.sub_82258() == 0 || Redbook.sub_82258() > 20)
-                return;
+            pzFile += 3;
+            nHandle = kopen4loadfrommod(pzFile, 0);
         }
-        Redbook.sub_82554();
     }
-    smkPlayer.PlaySMKWithWAV(pzSMK, nWAV);
-#endif
+    return nHandle;
 }
 
-void credPlaySmk(const char *pzSMK, const char *pzWAV)
+#define kSMKPal 5
+#define kSMKTile (MAXTILES-1)
+
+void credPlaySmk(const char *pzSMK, const char *pzWAV, int nWav)
 {
-    UNREFERENCED_PARAMETER(pzSMK);
-    UNREFERENCED_PARAMETER(pzWAV);
 #if 0
     CSMKPlayer smkPlayer;
     if (dword_148E14 >= 0)
@@ -172,4 +175,80 @@ void credPlaySmk(const char *pzSMK, const char *pzWAV)
     }
     smkPlayer.sub_82E6C(pzSMK, pzWAV);
 #endif
+    int nHandleSMK = credKOpen4Load(pzSMK);
+    if (nHandleSMK == -1)
+        return;
+    kclose(nHandleSMK);
+    SmackerHandle hSMK = Smacker_Open(pzSMK);
+    uint32_t nWidth, nHeight;
+    Smacker_GetFrameSize(hSMK, nWidth, nHeight);
+    uint8_t palette[768];
+    uint8_t *pFrame = (uint8_t*)Xmalloc(nWidth*nHeight);
+    waloff[kSMKTile] = (intptr_t)pFrame;
+    tilesiz[kSMKTile].y = nWidth;
+    tilesiz[kSMKTile].x = nHeight;
+    if (!pFrame)
+    {
+        Smacker_Close(hSMK);
+        return;
+    }
+    int nFrameRate = Smacker_GetFrameRate(hSMK);
+    int nFrames = Smacker_GetNumFrames(hSMK);
+
+    Smacker_GetPalette(hSMK, palette);
+    paletteSetColorTable(kSMKPal, palette);
+    videoSetPalette(gBrightness>>2, kSMKPal, 8+2);
+
+    int nScale;
+
+    if ((nWidth / (nHeight * 1.2f)) > (1.f * xdim / ydim))
+        nScale = divscale16(320 * xdim * 3, nWidth * ydim * 4);
+    else
+        nScale = divscale16(200, nHeight);
+
+    if (nWav)
+        sndStartWavID(nWav, FXVolume);
+    else
+    {
+        int nHandleWAV = credKOpen4Load(pzWAV);
+        if (nHandleWAV == -1)
+            return;
+        kclose(nHandleWAV);
+        sndStartWavDisk(pzWAV, FXVolume);
+    }
+
+    timerUpdate();
+    int32_t nStartTime = totalclock;
+
+    ctrlClearAllInput();
+    
+    int nFrame = 0;
+    do
+    {
+        G_HandleAsync();
+        if (scale(totalclock-nStartTime, nFrameRate, kTicRate) < nFrame)
+            continue;
+
+        if (ctrlCheckAllInput())
+            break;
+
+        Smacker_GetPalette(hSMK, palette);
+        paletteSetColorTable(kSMKPal, palette);
+        videoSetPalette(gBrightness >> 2, kSMKPal, 0);
+        tileInvalidate(kSMKTile, 0, 1 << 4);  // JBF 20031228
+        Smacker_GetFrame(hSMK, pFrame);
+        Smacker_GetNextFrame(hSMK);
+        rotatesprite_fs(160<<16, 100<<16, nScale, 512, kSMKTile, 0, 0, 2|4|8|64);
+
+        videoNextPage();
+
+        ctrlClearAllInput();
+        nFrame++;
+    } while(nFrame < nFrames);
+
+    Smacker_Close(hSMK);
+    ctrlClearAllInput();
+    FX_StopAllSounds();
+    videoSetPalette(gBrightness >> 2, 0, 8+2);
+    Bfree(pFrame);
 }

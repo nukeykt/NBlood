@@ -23,6 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "baselayer.h"
 #include "keyboard.h"
+#include "mouse.h"
+#include "joystick.h"
 #include "control.h"
 #include "function.h"
 #include "common_game.h"
@@ -34,6 +36,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "map2d.h"
 #include "view.h"
 
+
+int32_t ctrlCheckAllInput(void)
+{
+    return (
+        KB_KeyWaiting() ||
+        MOUSE_GetButtons() ||
+        JOYSTICK_GetButtons()
+        );
+}
+
+void ctrlClearAllInput(void)
+{
+    KB_FlushKeyboardQueue();
+    KB_ClearKeysDown();
+    MOUSE_ClearAllButtons();
+    JOYSTICK_ClearAllButtons();
+}
 
 GINPUT gInput;
 bool bSilentAim = false;

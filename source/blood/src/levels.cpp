@@ -78,20 +78,14 @@ void sub_269D8(const char *pzIni)
 
 void levelPlayIntroScene(int nEpisode)
 {
-    UNREFERENCED_PARAMETER(nEpisode);
+    gGameOptions.uGameFlags &= ~4;
     sndStopSong();
     sndKillAllSounds();
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
-    // NUKE-TODO
-    /*
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
-    if (pEpisode->at9028)
-        credPlaySmk(pEpisode->at8f08, pEpisode->at9028);
-    else
-        credPlaySmk(pEpisode->at8f08, pEpisode->at9030);
-    */
+    credPlaySmk(pEpisode->at8f08, pEpisode->at9030, pEpisode->at9028);
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
@@ -100,16 +94,14 @@ void levelPlayIntroScene(int nEpisode)
 
 void levelPlayEndScene(int nEpisode)
 {
+    gGameOptions.uGameFlags &= ~8;
     sndStopSong();
     sndKillAllSounds();
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
-    if (pEpisode->at902c)
-        credPlaySmk(pEpisode->at8f98, pEpisode->at902c);
-    else
-        credPlaySmk(pEpisode->at8f98, pEpisode->at90c0);
+    credPlaySmk(pEpisode->at8f98, pEpisode->at90c0, pEpisode->at902c);
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
@@ -238,13 +230,13 @@ void levelLoadDefaults(void)
         EPISODEINFO *pEpisodeInfo = &gEpisodeInfo[i];
         strncpy(pEpisodeInfo->at0, BloodINI->GetKeyString(buffer, "Title", buffer), 31);
         strncpy(pEpisodeInfo->at8f08, BloodINI->GetKeyString(buffer, "CutSceneA", ""), BMAX_PATH);
-        pEpisodeInfo->at9028 = BloodINI->GetKeyInt(buffer, "CurWavA", -1);
+        pEpisodeInfo->at9028 = BloodINI->GetKeyInt(buffer, "CutWavA", -1);
         if (pEpisodeInfo->at9028 == 0)
             strncpy(pEpisodeInfo->at9030, BloodINI->GetKeyString(buffer, "CutWavA", ""), BMAX_PATH);
         else
             pEpisodeInfo->at9030[0] = 0;
         strncpy(pEpisodeInfo->at8f98, BloodINI->GetKeyString(buffer, "CutSceneB", ""), BMAX_PATH);
-        pEpisodeInfo->at902c = BloodINI->GetKeyInt(buffer, "CurWavB", -1);
+        pEpisodeInfo->at902c = BloodINI->GetKeyInt(buffer, "CutWavB", -1);
         if (pEpisodeInfo->at902c == 0)
             strncpy(pEpisodeInfo->at90c0, BloodINI->GetKeyString(buffer, "CutWavB", ""), BMAX_PATH);
         else

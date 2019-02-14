@@ -105,6 +105,8 @@ extern GINPUT gInput;
 extern bool bSilentAim;
 extern bool gMouseAim;
 
+int32_t ctrlCheckAllInput(void);
+void ctrlClearAllInput(void);
 void ctrlInit();
 void ctrlGetInput();
 

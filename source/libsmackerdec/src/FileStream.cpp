@@ -24,8 +24,8 @@ namespace SmackerCommon {
 
 bool FileStream::Open(const std::string &fileName)
 {
-	file.open(fileName.c_str(), std::ifstream::in | std::ifstream::binary);
-	if (!file.is_open())
+    file = kopen4loadfrommod(fileName.c_str(), 0);
+	if (file == -1)
 	{
 		// log error
 		return false;
@@ -36,83 +36,72 @@ bool FileStream::Open(const std::string &fileName)
 
 bool FileStream::Is_Open()
 {
-	return file.is_open();
+	return file != -1;
 }
 
 void FileStream::Close()
 {
-	file.close();
+    kclose(file);
+    file = -1;
 }
 
 int32_t FileStream::ReadBytes(uint8_t *data, uint32_t nBytes)
 {
-	file.read(reinterpret_cast<char*>(data), nBytes);
+    int32_t nCount = kread(file, data, static_cast<int32_t>(nBytes));
 
-	if (file.eof()) {
-		return 0;
-	}
-	else if (file.fail()) {
-		return 0;
-	}
-	else if (file.bad()) {
-		return 0;
-	}
+    if (nCount != nBytes)
+        return 0;
 
-	return static_cast<int32_t>(file.gcount());
+	return nCount;
 }
 
 uint32_t FileStream::ReadUint32LE()
 {
 	uint32_t value;
-	file.read(reinterpret_cast<char*>(&value), 4);
+	kread(file, &value, 4);
 	return value;
 }
 
 uint32_t FileStream::ReadUint32BE()
 {
 	uint32_t value;
-	file.read(reinterpret_cast<char*>(&value), 4);
+    kread(file, &value, 4);
 	return _byteswap_ulong(value);
 }
 
 uint16_t FileStream::ReadUint16LE()
 {
 	uint16_t value;
-	file.read(reinterpret_cast<char*>(&value), 2);
+    kread(file, &value, 2);
 	return value;
 }
 
 uint16_t FileStream::ReadUint16BE()
 {
 	uint16_t value;
-	file.read(reinterpret_cast<char*>(&value), 2);
+    kread(file, &value, 2);
 	return _byteswap_ushort(value);
 }
 
 uint8_t FileStream::ReadByte()
 {
 	uint8_t value;
-	file.read(reinterpret_cast<char*>(&value), 1);
+    kread(file, &value, 1);
 	return value;
 }
 
 bool FileStream::Seek(int32_t offset, SeekDirection direction)
 {
+    int32_t nStatus;
 	if (kSeekStart == direction) {
-		file.seekg(offset, std::ios::beg);
+        nStatus = klseek(file, offset, SEEK_SET);
 	}
 	else if (kSeekCurrent == direction) {
-		file.seekg(offset, std::ios::cur);
+        nStatus = klseek(file, offset, SEEK_CUR);
 	}
 
 	// TODO - end seek
-
-	if (file.bad())
-	{
-		// todo
-		return false;
-	}
-	if (file.fail())
+	if (nStatus < 0)
 	{
 		// todo
 		return false;
@@ -128,12 +117,13 @@ bool FileStream::Skip(int32_t offset)
 
 bool FileStream::Is_Eos()
 {
-	return file.eof();
+    // TODO:
+    return false;
 }
 
 int32_t FileStream::GetPosition()
 {
-	return static_cast<int32_t>(file.tellg());
+    return ktell(file);
 }
 
 } // close namespace SmackerCommon
