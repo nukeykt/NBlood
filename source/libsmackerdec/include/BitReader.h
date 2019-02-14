@@ -44,8 +44,7 @@ class BitReader
 
 		SmackerCommon::FileStream *file;
 
-		uint8_t cache;
-		uint32_t nCachedBits;
+		uint8_t *cache;
 
 		void FillCache();
 };

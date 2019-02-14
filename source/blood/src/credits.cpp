@@ -237,13 +237,13 @@ void credPlaySmk(const char *pzSMK, const char *pzWAV, int nWav)
         videoSetPalette(gBrightness >> 2, kSMKPal, 0);
         tileInvalidate(kSMKTile, 0, 1 << 4);  // JBF 20031228
         Smacker_GetFrame(hSMK, pFrame);
-        Smacker_GetNextFrame(hSMK);
         rotatesprite_fs(160<<16, 100<<16, nScale, 512, kSMKTile, 0, 0, 2|4|8|64);
 
         videoNextPage();
 
         ctrlClearAllInput();
         nFrame++;
+        Smacker_GetNextFrame(hSMK);
     } while(nFrame < nFrames);
 
     Smacker_Close(hSMK);

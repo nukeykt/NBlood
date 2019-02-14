@@ -26,30 +26,20 @@ BitReader::BitReader(SmackerCommon::FileStream &file, uint32_t size)
 {
 	this->file = &file;
 	this->totalSize = size;
-	this->nCachedBits = 0;
 	this->currentOffset = 0;
 	this->bytesRead = 0;
 
-	FillCache();
+    this->cache = (uint8_t*)Xmalloc(size);
+    file.ReadBytes(this->cache, size);
 }
 
 BitReader::~BitReader()
 {
-//	file->Skip(totalSize - (currentOffset/8));
+    Bfree(this->cache);
 }
 
 void BitReader::FillCache()
 {
-	if (bytesRead < totalSize)
-	{
-		this->cache = this->file->ReadByte();
-		nCachedBits = 8;
-		bytesRead++;
-	}
-	else
-	{
-		assert(0);
-	}
 }
 
 uint32_t BitReader::GetSize()
@@ -59,22 +49,13 @@ uint32_t BitReader::GetSize()
 
 uint32_t BitReader::GetPosition()
 {
-	return currentOffset + (8 - nCachedBits);
+	return currentOffset;
 }
 
 uint32_t BitReader::GetBit()
 {
-	if (nCachedBits == 0)
-	{
-		FillCache();
-		currentOffset += 8;
-	}
-
-	uint32_t ret = cache & 1;
-
-	cache >>= 1;
-	nCachedBits--;
-
+	uint32_t ret = (cache[currentOffset>>3]>>(currentOffset&7))&1;
+    currentOffset++;
 	return ret;
 }
 
