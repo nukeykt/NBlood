@@ -37,7 +37,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 POINT2D earL, earR, earL0, earR0; // Ear position
 VECTOR2D earVL, earVR; // Ear velocity ?
 int lPhase, rPhase, lVol, rVol, lPitch, rPitch;
-int dowrd_20E12C;
 
 struct BONKLE
 {
@@ -110,8 +109,8 @@ void Calc3DValues(BONKLE *pBonkle)
     rPitch = scale(pBonkle->at18, dmulscale30r(cosVal, earVR.dx, sinVal, earVR.dy) + 5853, v8 + 5853);
 
     int phaseMin = ClipHigh(phaseLeft, phaseRight);
-    lPhase = phaseLeft - phaseMin;
-    rPhase = phaseRight - phaseMin;
+    lPhase = phaseRight - phaseMin;
+    rPhase = phaseLeft - phaseMin;
 }
 
 void sfxPlay3DSound(int x, int y, int z, int soundId, int nSector)
