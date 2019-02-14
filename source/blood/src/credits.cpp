@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "resource.h"
 #include "screen.h"
 #include "sound.h"
+#include "view.h"
 
 char exitCredits = 0;
 
@@ -216,6 +217,8 @@ void credPlaySmk(const char *pzSMK, const char *pzWAV, int nWav)
         kclose(nHandleWAV);
         sndStartWavDisk(pzWAV, FXVolume);
     }
+
+    UpdateDacs(0, true);
 
     timerUpdate();
     int32_t nStartTime = totalclock;
