@@ -135,6 +135,24 @@ ifeq ($(RENDERTYPE),WIN)
     glad_objs += glad_wgl.c
 endif
 
+#### libsmackerdec
+
+libsmackerdec := libsmackerdec
+
+libsmackerdec_objs := \
+    BitReader.cpp \
+    FileStream.cpp \
+    HuffmanVLC.cpp \
+    LogError.cpp \
+    SmackerDecoder.cpp \
+
+libsmackerdec_root := $(source)/$(libsmackerdec)
+libsmackerdec_src := $(libsmackerdec_root)/src
+libsmackerdec_inc := $(libsmackerdec_root)/include
+libsmackerdec_obj := $(obj)/$(libsmackerdec)
+
+libsmackerdec_cflags :=
+
 
 ##### Component Definitions
 
@@ -675,7 +693,7 @@ blood_obj := $(obj)/$(blood)
 
 blood_cflags := -I$(blood_src)
 
-blood_game_deps := blood_common_midi audiolib mact
+blood_game_deps := blood_common_midi audiolib mact libsmackerdec
 
 ifneq (0,$(NETCODE))
     blood_game_deps += enet
@@ -942,7 +960,7 @@ endif
 
 #### Final setup
 
-COMPILERFLAGS += -I$(engine_inc) -I$(mact_inc) -I$(audiolib_inc) -I$(enet_inc) -I$(glad_inc)
+COMPILERFLAGS += -I$(engine_inc) -I$(mact_inc) -I$(audiolib_inc) -I$(enet_inc) -I$(glad_inc) -I$(libsmackerdec_inc)
 
 
 ##### Recipes
@@ -961,6 +979,7 @@ libraries := \
     libxmplite \
     lpeg \
     glad \
+    libsmackerdec \
 
 components := \
     $(games) \
