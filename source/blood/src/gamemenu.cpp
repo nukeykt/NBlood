@@ -1857,6 +1857,9 @@ void CGameMenuItemZEdit::Draw(void)
 bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
 {
     static char buffer[256];
+    // Hack
+    if (event.at2 == sc_kpad_2 || event.at2 == sc_kpad_4 || event.at2 == sc_kpad_6 || event.at2 == sc_kpad_8)
+        event.at0 = kMenuEventKey;
     switch (event.at0)
     {
     case kMenuEventEscape:
@@ -1894,13 +1897,17 @@ bool CGameMenuItemZEdit::Event(CGameMenuEvent &event)
     case kMenuEventSpace:
     {
         char key;
-        key = g_keyAsciiTable[event.at2];
-        if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
-            key = Btoupper(key);
-        if (at30 && (isalnum(key) || ispunct(key) || isspace(key)))
+        if (event.at2 < 128)
         {
-            AddChar(key);
-            return false;
+            if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
+                key = g_keyAsciiTableShift[event.at2];
+            else
+                key = g_keyAsciiTable[event.at2];
+            if (at30 && (isalnum(key) || ispunct(key) || isspace(key)))
+            {
+                AddChar(key);
+                return false;
+            }
         }
         return CGameMenuItem::Event(event);
     }
@@ -2036,6 +2043,9 @@ void CGameMenuItemZEditBitmap::Draw(void)
 bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
 {
     static char buffer[256];
+    // Hack
+    if (event.at2 == sc_kpad_2 || event.at2 == sc_kpad_4 || event.at2 == sc_kpad_6 || event.at2 == sc_kpad_8)
+        event.at0 = kMenuEventKey;
     switch (event.at0)
     {
     case kMenuEventEscape:
@@ -2079,13 +2089,17 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
     case kMenuEventSpace:
     {
         char key;
-        key = g_keyAsciiTable[event.at2];
-        if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
-            key = Btoupper(key);
-        if (at34 && (isalnum(key) || ispunct(key) || isspace(key)))
+        if (event.at2 < 128)
         {
-            AddChar(key);
-            return false;
+            if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
+                key = g_keyAsciiTableShift[event.at2];
+            else
+                key = g_keyAsciiTable[event.at2];
+            if (at30 && (isalnum(key) || ispunct(key) || isspace(key)))
+            {
+                AddChar(key);
+                return false;
+            }
         }
         return CGameMenuItem::Event(event);
     }
