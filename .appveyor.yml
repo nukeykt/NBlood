@@ -1,0 +1,20 @@
+branches:
+  except:
+    - /^travis.*$/
+
+clone_depth: 5
+
+image: Visual Studio 2017
+
+platform:
+  - Win32
+  - x64
+
+configuration:
+  - Debug
+  - Release
+
+build:
+  project: platform/Windows/eduke32.sln
+  parallel: true
+  verbosity: minimal
