@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 int gFrameClock;
 int gFrameTicks;
 int gFrame;
-int volatile gGameClock, gGameClockOld;
+int volatile gGameClock;
 int gFrameRate;
 int gGamma;
 int gSaveGameNum;

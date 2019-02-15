@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern int gFrameClock;
 extern int gFrameTicks;
 extern int gFrame;
-extern int volatile gGameClock, gGameClockOld;
+extern int volatile gGameClock;
 extern int gFrameRate;
 extern int gGamma;
 extern int gSaveGameNum;
