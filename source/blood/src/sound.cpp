@@ -450,7 +450,10 @@ void InitSoundDevice(void)
     int nStatus;
     nStatus = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (nStatus != 0)
-        ThrowError(FX_ErrorString(nStatus));
+    {
+        initprintf("InitSoundDevice: %s\n", FX_ErrorString(nStatus));
+        return;
+    }
     if (ReverseStereo == 1)
         FX_SetReverseStereo(!FX_GetReverseStereo());
     FX_SetVolume(FXVolume);
@@ -468,7 +471,10 @@ void InitMusicDevice(void)
 {
     int nStatus = MUSIC_Init(MusicDevice, 0);
     if (nStatus != 0)
-        ThrowError(MUSIC_ErrorString(nStatus));
+    {
+        initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
+        return;
+    }
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
     if (hTmb)
         OPLMusic::AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
