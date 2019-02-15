@@ -47,40 +47,42 @@ void FileStream::Close()
 
 int32_t FileStream::ReadBytes(uint8_t *data, uint32_t nBytes)
 {
-    int32_t nCount = kread(file, data, static_cast<int32_t>(nBytes));
+	uint32_t nCount = (uint32_t)kread(file, data, static_cast<int32_t>(nBytes));
 
-    if (nCount != nBytes)
-        return 0;
+	if (nCount != nBytes)
+	{
+		return 0;
+	}
 
-	return nCount;
+	return (int32_t)nCount;
 }
 
 uint32_t FileStream::ReadUint32LE()
 {
 	uint32_t value;
 	kread(file, &value, 4);
-	return value;
+	return B_LITTLE32(value);
 }
 
 uint32_t FileStream::ReadUint32BE()
 {
 	uint32_t value;
     kread(file, &value, 4);
-	return _byteswap_ulong(value);
+	return B_BIG32(value);
 }
 
 uint16_t FileStream::ReadUint16LE()
 {
 	uint16_t value;
     kread(file, &value, 2);
-	return value;
+	return B_LITTLE16(value);
 }
 
 uint16_t FileStream::ReadUint16BE()
 {
 	uint16_t value;
     kread(file, &value, 2);
-	return _byteswap_ushort(value);
+	return B_BIG16(value);
 }
 
 uint8_t FileStream::ReadByte()
@@ -92,7 +94,7 @@ uint8_t FileStream::ReadByte()
 
 bool FileStream::Seek(int32_t offset, SeekDirection direction)
 {
-    int32_t nStatus;
+    int32_t nStatus = -1;
 	if (kSeekStart == direction) {
         nStatus = klseek(file, offset, SEEK_SET);
 	}

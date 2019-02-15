@@ -124,7 +124,7 @@ class SmackerDecoder
 
 	private:
 		SmackerCommon::FileStream file;
-		uint32_t signature;
+		char signature[4];
 
 		// video related members
 		uint32_t nFrames;

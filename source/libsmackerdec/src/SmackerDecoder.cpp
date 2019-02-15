@@ -48,6 +48,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <string.h>
+#include "compat.h"
 
 std::vector<class SmackerDecoder*> classInstances;
 
@@ -94,6 +95,7 @@ void Smacker_Close(SmackerHandle &handle)
 
 uint32_t Smacker_GetNumAudioTracks(SmackerHandle &handle)
 {
+	UNREFERENCED_PARAMETER(handle);
 	// TODO: fixme
 	return 1;
 }
@@ -234,8 +236,8 @@ const int kFlagRingFrame = 0x01;
 const int kTreeBits = 9;
 const int kSMKnode = 0x80000000;
 
-const int kSMK2iD = 'SMK2';
-const int kSMK4iD = 'SMK4';
+const char *kSMK2iD = "SMK2";
+const char *kSMK4iD = "SMK4";
 
 
 /**
@@ -304,15 +306,15 @@ bool SmackerDecoder::Open(const std::string &fileName)
 	}
 
 	// check the file signature
-	signature = file.ReadUint32BE();
-	if ((signature != kSMK2iD)
-		&& (signature != kSMK4iD))
+	file.ReadBytes((uint8_t*)signature, 4);
+	if (memcmp(signature, kSMK2iD, 4) != 0
+		&& memcmp(signature, kSMK4iD, 4) != 0)
 	{
 		SmackerCommon::LogError("Unknown Smacker signature");
 		return false;
 	}
 
-	if (kSMK4iD == signature) {
+	if (!memcmp(signature, kSMK4iD, 4)) {
 		isVer4 = true;
 	}
 
@@ -408,7 +410,7 @@ bool SmackerDecoder::Open(const std::string &fileName)
 	// determine max buffer sizes for audio tracks
 	file.Seek(nextPos, SmackerCommon::FileStream::kSeekStart);
 
-	uint32_t frameSize = frameSizes[0] & (~3);
+	uint32_t UNUSED(frameSize) = frameSizes[0] & (~3);
 	uint8_t frameFlag  = frameFlags[0];
 
 	// skip over palette
@@ -544,7 +546,7 @@ int SmackerDecoder::DecodeHeaderTree(SmackerCommon::BitReader &bits, std::vector
 	int escapes[3];
 	DBCtx ctx;
 
-	if (size >= UINT_MAX>>4)
+	if ((uint32_t)size >= UINT_MAX>>4)
 	{
 		SmackerCommon::LogError("Size too large");
 		return -1;
@@ -585,7 +587,7 @@ int SmackerDecoder::DecodeHeaderTree(SmackerCommon::BitReader &bits, std::vector
 	{
 		DecodeTree(bits, &tmp2, 0, 0);
 
-		uint32_t end = bits.GetPosition();
+		uint32_t UNUSED(end) = bits.GetPosition();
 
 		bits.SkipBits(1);
 
@@ -806,7 +808,7 @@ int SmackerDecoder::DecodeFrame(uint32_t frameSize)
 
 	stride = frameWidth;
 
-	uint32_t fileStart = file.GetPosition();
+	uint32_t UNUSED(fileStart) = file.GetPosition();
 
 	SmackerCommon::BitReader bits(file, frameSize);
 

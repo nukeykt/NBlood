@@ -22,6 +22,7 @@
 
 #include <string>
 #include "cache1d.h"
+#include "compat.h"
 #include <stdint.h>
 
 namespace SmackerCommon {
