@@ -1261,7 +1261,7 @@ void ProcessInput(PLAYER *pPlayer)
                 if (pPlayer->at1fe > 360)
                     seqSpawn(pPlayer->pDudeInfo->seqStartID+14, 3, pPlayer->pSprite->extra, nPlayerSurviveClient);
             }
-            else if (seqGetStatus(3, pPlayer->pSprite->extra))
+            else if (seqGetStatus(3, pPlayer->pSprite->extra) < 0)
             {
                 if (pPlayer->pSprite)
                     pPlayer->pSprite->type = 426;
