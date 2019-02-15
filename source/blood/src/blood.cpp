@@ -1657,7 +1657,7 @@ RESTART:
 					break;
 				faketimerhandler();
 				ProcessFrame();
-                faketimerhandler();
+                timerUpdate();
                 gameUpdate = true;
 			}
             if (gameUpdate)
