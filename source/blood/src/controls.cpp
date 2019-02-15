@@ -75,6 +75,7 @@ void ctrlInit(void)
 
     CONTROL_JoystickEnabled = (gSetup.usejoystick && CONTROL_JoyPresent);
     CONTROL_MouseEnabled = (gSetup.usemouse && CONTROL_MousePresent);
+    CONTROL_SmoothMouse = SmoothInput;
 
     // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
     for (int i = 0; i < joystick.numAxes; i++)

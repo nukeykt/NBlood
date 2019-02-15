@@ -462,6 +462,9 @@ void CPlayerMsg::ProcessKeys(void)
         bool shift = keystatus[sc_LeftShift] || keystatus[sc_RightShift];
         switch (key)
         {
+        case sc_Escape:
+            Term();
+            break;
         case sc_F1:
         case sc_F2:
         case sc_F3:
@@ -491,12 +494,11 @@ void CPlayerMsg::ProcessKeys(void)
                 Send();
             break;
         default:
-            ch = g_keyAsciiTable[key];
-            if (ch)
+            if (key < 128)
             {
-                if (shift)
-                    ch = toupper(ch);
-                AddChar(ch);
+                ch =  shift ? g_keyAsciiTableShift[key] : g_keyAsciiTable[key];
+                if (ch)
+                    AddChar(ch);
             }
             break;
         }
