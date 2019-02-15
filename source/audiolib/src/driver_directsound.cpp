@@ -51,6 +51,8 @@ enum {
     DSErr_CreateMutex
 };
 
+#define BUFFERPORTIONS 8
+
 static int32_t ErrorCode = DSErr_Ok;
 static int32_t Initialised = 0;
 static int32_t Playing = 0;
@@ -65,7 +67,7 @@ static void ( *MixCallBack )( void ) = NULL;
 static LPDIRECTSOUND lpds = NULL;
 static LPDIRECTSOUNDBUFFER lpdsbprimary = NULL, lpdsbsec = NULL;
 static LPDIRECTSOUNDNOTIFY lpdsnotify = NULL;
-static DSBPOSITIONNOTIFY notifyPositions[3] = { { 0,0 }, { 0,0 }, { 0,0 } };
+static DSBPOSITIONNOTIFY notifyPositions[BUFFERPORTIONS+1];// = { { 0,0 }, { 0,0 }, { 0,0 } };
 static HANDLE mixThread = NULL;
 static HANDLE mutex = NULL;
 
@@ -150,34 +152,39 @@ static void FillBuffer(int32_t bufnum)
 static DWORD WINAPI fillDataThread(LPVOID lpParameter)
 {
     DWORD waitret, waitret2;
-    HANDLE handles[] = { handles[0] = notifyPositions[0].hEventNotify,
+    HANDLE handles[BUFFERPORTIONS+1];/* = { handles[0] = notifyPositions[0].hEventNotify,
                          handles[1] = notifyPositions[1].hEventNotify,
-                         handles[2] = notifyPositions[2].hEventNotify };
+                         handles[2] = notifyPositions[2].hEventNotify };*/
+    for (int i = 0; i < BUFFERPORTIONS+1; i++)
+        handles[i] = notifyPositions[i].hEventNotify;
 
     UNREFERENCED_PARAMETER(lpParameter);
 
     do {
-        waitret = WaitForMultipleObjects(3, handles, FALSE, INFINITE);
-        switch (waitret) {
-            case WAIT_OBJECT_0:
-            case WAIT_OBJECT_0+1:
-                waitret2 = WaitForSingleObject(mutex, INFINITE);
-                if (waitret2 == WAIT_OBJECT_0) {
-                    FillBuffer(WAIT_OBJECT_0 + 1 - waitret);
-                    ReleaseMutex(mutex);
-                } else {
-                    if (MV_Printf)
-                        MV_Printf( "DirectSound fillDataThread: wfso err %d\n", (int32_t) waitret2);
-                }
-                break;
-            case WAIT_OBJECT_0+2:
-//                initprintf( "DirectSound fillDataThread: exiting\n");
-                ExitThread(0);
-                break;
-            default:
+        waitret = WaitForMultipleObjects(BUFFERPORTIONS, handles, FALSE, INFINITE);
+        if (waitret >= WAIT_OBJECT_0 && waitret < waitret + BUFFERPORTIONS)
+        {
+            waitret2 = WaitForSingleObject(mutex, INFINITE);
+            if (waitret2 == WAIT_OBJECT_0) {
+                FillBuffer((waitret+BUFFERPORTIONS-1-WAIT_OBJECT_0)%BUFFERPORTIONS);
+                ReleaseMutex(mutex);
+            } else {
                 if (MV_Printf)
-                    MV_Printf( "DirectSound fillDataThread: wfmo err %d\n", (int32_t) waitret);
-                break;
+                    MV_Printf( "DirectSound fillDataThread: wfso err %d\n", (int32_t) waitret2);
+            }
+        }
+        else
+        {
+            switch (waitret) {
+                case WAIT_OBJECT_0+BUFFERPORTIONS:
+    //                initprintf( "DirectSound fillDataThread: exiting\n");
+                    ExitThread(0);
+                    break;
+                default:
+                    if (MV_Printf)
+                        MV_Printf( "DirectSound fillDataThread: wfmo err %d\n", (int32_t) waitret);
+                    break;
+            }
         }
     } while (1);
 
@@ -279,16 +286,15 @@ static void TeardownDSound(HRESULT err)
     }
 
     if (lpdsnotify)   IDirectSoundNotify_Release(lpdsnotify);
-    if (notifyPositions[0].hEventNotify) CloseHandle(notifyPositions[0].hEventNotify);
-    if (notifyPositions[1].hEventNotify) CloseHandle(notifyPositions[1].hEventNotify);
-    if (notifyPositions[2].hEventNotify) CloseHandle(notifyPositions[2].hEventNotify);
+    for (int i = 0; i < BUFFERPORTIONS+1; i++)
+    {
+        if (notifyPositions[i].hEventNotify) CloseHandle(notifyPositions[i].hEventNotify);
+        notifyPositions[i].hEventNotify = 0;
+    }
     if (mutex) CloseHandle(mutex);
     if (lpdsbsec)     IDirectSoundBuffer_Release(lpdsbsec);
     if (lpdsbprimary) IDirectSoundBuffer_Release(lpdsbprimary);
     if (lpds)         IDirectSound_Release(lpds);
-    notifyPositions[0].hEventNotify =
-    notifyPositions[1].hEventNotify =
-    notifyPositions[2].hEventNotify = 0;
     mutex = NULL;
     lpdsnotify = NULL;
     lpdsbsec = NULL;
@@ -352,7 +358,7 @@ int32_t DirectSoundDrv_PCM_Init(int32_t *mixrate, int32_t *numchannels, void * i
                       DSBCAPS_CTRLPOSITIONNOTIFY |
                       DSBCAPS_GETCURRENTPOSITION2 |
                       DSBCAPS_STICKYFOCUS ;
-    bufdesc.dwBufferBytes = wfex.nBlockAlign * 2560 * 2;
+    bufdesc.dwBufferBytes = wfex.nBlockAlign * 2048 * 2;
     bufdesc.lpwfxFormat = &wfex;
 
     err = IDirectSound_CreateSoundBuffer(lpds, &bufdesc, &lpdsbsec, 0);
@@ -370,21 +376,22 @@ int32_t DirectSoundDrv_PCM_Init(int32_t *mixrate, int32_t *numchannels, void * i
         return DSErr_Error;
     }
 
-    notifyPositions[0].dwOffset = 0;
-    notifyPositions[0].hEventNotify = CreateEvent(NULL, FALSE, FALSE, NULL);
-    notifyPositions[1].dwOffset = bufdesc.dwBufferBytes / 2;
-    notifyPositions[1].hEventNotify = CreateEvent(NULL, FALSE, FALSE, NULL);
-    notifyPositions[2].dwOffset = DSBPN_OFFSETSTOP;
-    notifyPositions[2].hEventNotify = CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (!notifyPositions[0].hEventNotify ||
-        !notifyPositions[1].hEventNotify ||
-        !notifyPositions[2].hEventNotify) {
-        TeardownDSound(DS_OK);
-        ErrorCode = DSErr_NotifyEvents;
-        return DSErr_Error;
+    for (int i = 0; i < BUFFERPORTIONS; i++)
+    {
+        notifyPositions[i].dwOffset = (bufdesc.dwBufferBytes/BUFFERPORTIONS)*i;
+        notifyPositions[i].hEventNotify = CreateEvent(NULL, FALSE, FALSE, NULL);
+        if (!notifyPositions[i].hEventNotify)
+        {
+            TeardownDSound(DS_OK);
+            ErrorCode = DSErr_NotifyEvents;
+            return DSErr_Error;
+        }
     }
 
-    err = IDirectSoundNotify_SetNotificationPositions(lpdsnotify, 3, notifyPositions);
+    notifyPositions[BUFFERPORTIONS].dwOffset = DSBPN_OFFSETSTOP;
+    notifyPositions[BUFFERPORTIONS].hEventNotify = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+    err = IDirectSoundNotify_SetNotificationPositions(lpdsnotify, BUFFERPORTIONS+1, notifyPositions);
     if (FAILED( err )) {
         TeardownDSound(err);
         ErrorCode = DSErr_SetNotificationPositions;
