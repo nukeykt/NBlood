@@ -1657,6 +1657,7 @@ RESTART:
 					break;
 				faketimerhandler();
 				ProcessFrame();
+                faketimerhandler();
                 gameUpdate = true;
 			}
             if (gameUpdate)
@@ -1674,7 +1675,7 @@ RESTART:
                 if (bDraw)
                 {
                     viewDrawScreen();
-                    g_gameUpdateAndDrawTime = timerGetTicks() - gameUpdateStartTime;
+                    g_gameUpdateAndDrawTime = timerGetHiTicks() - gameUpdateStartTime;
                 }
 			}
 		}

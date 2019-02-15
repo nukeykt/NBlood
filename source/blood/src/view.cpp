@@ -2830,6 +2830,7 @@ void viewDrawScreen(void)
     int nPalette = 0;
     static int lastUpdate;
 
+    faketimerhandler();
     int delta = ClipLow(gGameClock - lastUpdate, 0);
     lastUpdate = gGameClock;
     if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
