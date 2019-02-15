@@ -1882,7 +1882,7 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     case VIEW_EFFECT_12:
     {
         dassert(pTSprite->type >= kDudePlayer1 && pTSprite->type <= kDudePlayer8);
-        PLAYER *pPlayer = &gPlayer[pTSprite->extra-kDudePlayer1];
+        PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
         if (gWeaponIcon[pPlayer->atbd].nTile < 0) break;
         uspritetype *pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
         int top, bottom;
