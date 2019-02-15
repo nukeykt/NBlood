@@ -2835,7 +2835,7 @@ void viewDrawScreen(void)
     lastUpdate = gGameClock;
     if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
     {
-        gInterpolate = divscale16(gGameClock-gNetFifoClock+4, 4);
+        gInterpolate = divscale16(gGameClock-gGameClockOld, 4);
     }
     if (gInterpolate < 0 || gInterpolate > 65536)
     {
@@ -2904,6 +2904,7 @@ void viewDrawScreen(void)
                 v48 = interpolate(pView->at18, v48, gInterpolate);
             }
         }
+        viewUpdateShake();
         q16horiz += fix16_from_int(shakeHoriz);
         cA += fix16_from_int(shakeAngle);
         cX += shakeX;

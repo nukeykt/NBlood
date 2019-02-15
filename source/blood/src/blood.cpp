@@ -1647,8 +1647,10 @@ RESTART:
 			}
 			if (numplayers == 1)
 				gBufferJitter = 0;
+            faketimerhandler();
 			while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
 			{
+                gGameClockOld = gNetFifoClock-4;
 				int i;
 				for (i = connecthead; i >= 0; i = connectpoint2[i])
 					if (gNetFifoHead[i] == gNetFifoTail)
