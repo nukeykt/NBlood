@@ -49,7 +49,7 @@ const char *GetVersionString(void)
         gVersionString = gVersionStringBuf;
         if (!gVersionString)
             return NULL;
-        sprintf(gVersionString, "%d.%02d", BYTEVERSION / 100, BYTEVERSION % 100);
+        sprintf(gVersionString, "%d.%02d", EXEVERSION / 100, EXEVERSION % 100);
     }
     return gVersionString;
 }

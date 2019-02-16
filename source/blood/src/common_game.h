@@ -38,7 +38,8 @@ extern int g_useCwd;
 #define APPBASENAME "nblood"
 #endif
 
-#define BYTEVERSION 100
+#define BYTEVERSION 101
+#define EXEVERSION 100
 
 void _SetErrorLoc(const char *pzFile, int nLine);
 void _ThrowError(const char *pzFormat, ...);
