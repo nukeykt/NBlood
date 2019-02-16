@@ -911,6 +911,12 @@ voxmodel_t *loadkvxfrombuf(const char *kvxbuffer, int32_t length)
     int32_t *longptr = (int32_t*)buffer;
 
     mip1leng = *longptr++; mip1leng = B_LITTLE32(mip1leng);
+    if (mip1leng > length - 4)
+    {
+        // Invalid KVX file
+        Bfree(buffer);
+        return NULL;
+    }
     memcpy(&voxsiz, longptr, sizeof(vec3_t));
     longptr += 3;
 #if B_BIG_ENDIAN != 0
