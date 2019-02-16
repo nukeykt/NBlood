@@ -5894,11 +5894,11 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     //   |   /
     // fsy1/
 
-    vec2f_t dpxy[4] = { { x0, csy[1] }, { x1, csy[3] }, { x1, fsy[3] }, { x0, fsy[1] } };
+    vec2f_t dpxy[8] = { { x0, csy[1] }, { x1, csy[3] }, { x1, fsy[3] }, { x0, fsy[1] } };
 
     //Clip to (x0,csy[0])-(x1,csy[2])
 
-    vec2f_t dp2[4];
+    vec2f_t dp2[8];
 
     int n2 = 0;
     t1 = -((dpxy[0].x - x0) * (csy[2] - csy[0]) - (dpxy[0].y - csy[0]) * (x1 - x0));
