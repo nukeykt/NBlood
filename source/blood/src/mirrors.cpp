@@ -125,7 +125,7 @@ void InitMirrors(void)
             int nLink2 = sprite[nLink].owner & 0xfff;
             int j = sprite[nLink2].sectnum;
             if (sector[j].ceilingpicnum != 504)
-                ThrowError("Lower link sector %d doesn',27h,'t have mirror picnum\n", j);
+                ThrowError("Lower link sector %d doesn't have mirror picnum\n", j);
             mirror[mirrorcnt].at0 = 2;
             mirror[mirrorcnt].at8 = sprite[nLink2].x-sprite[nLink].x;
             mirror[mirrorcnt].atc = sprite[nLink2].y-sprite[nLink].y;

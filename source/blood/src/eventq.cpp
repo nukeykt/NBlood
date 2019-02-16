@@ -87,7 +87,7 @@ struct RXBUCKET
     unsigned int at1_5 : 3;
 };
 
-RXBUCKET rxBucket[1024+1];
+RXBUCKET rxBucket[kMaxChannels+1];
 
 int GetBucketChannel(const RXBUCKET *pRX)
 {
@@ -277,7 +277,7 @@ static void SortRXBucket(int nCount)
     }
 }
 
-unsigned short bucketHead[kMaxChannels+1];
+unsigned short bucketHead[1024+1];
 
 void evInit(void)
 {
