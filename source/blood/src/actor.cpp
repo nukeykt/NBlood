@@ -5953,7 +5953,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             }
             if (pSprite->statnum == 6)
             {
-                int t = dudeInfo[pSprite->type-kDudeBase].at4;
+                int t = pSprite->type == 426 ? 0 : dudeInfo[pSprite->type-kDudeBase].at4;
                 if (t > 0 && pVectorData->at5)
                 {
                     int t2 = divscale(pVectorData->at5, t, 8);
