@@ -301,9 +301,6 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PreprocessorDefinitions);POLYMER=1</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="eduke32.exe.manifest" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
