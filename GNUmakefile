@@ -802,7 +802,7 @@ ifeq ($(PLATFORM),DARWIN)
     endif
 
     ifeq ($(STARTUP_WINDOW),1)
-        blood_game_objs += GrpFile.game.mm GameListSource.game.mm startosx.game.mm
+        blood_game_objs += startosx.game.mm
     endif
 endif
 
