@@ -678,7 +678,7 @@ int app_main(int argc, char const * const * argv)
     timerInit(TIMERINTSPERSECOND);
     timerSetCallback(keytimerstuff);
 
-    artLoadFiles("tiles000.art", g_maxCacheSize);
+    artLoadFiles("tiles%03i.art", g_maxCacheSize);
 
     Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");
     initcrc();

@@ -1520,7 +1520,7 @@ int app_main(int argc, char const * const * argv)
 	if (pUserTiles)
 	{
 		strcpy(buffer,pUserTiles);
-		strcat(buffer,"000.ART");
+		strcat(buffer,"%03i.ART");
 		if (!tileInit(0,buffer))
 			ThrowError("User specified ART files not found");
 	}
