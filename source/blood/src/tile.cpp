@@ -116,7 +116,9 @@ int tileInit(char a1, const char *a2)
         if (!hVox)
             continue;
         char *pVox = (char*)gSysRes.Load(hVox);
+#ifdef USE_OPENGL
         voxmodels[i] = loadkvxfrombuf(pVox, hVox->size);
+#endif
     }
     artLoaded = 1;
 

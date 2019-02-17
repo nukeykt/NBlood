@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #pragma once
+#include "baselayer.h"
 #include "build.h"
 #include "cache1d.h"
 #include "common.h"

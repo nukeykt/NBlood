@@ -108,11 +108,14 @@ void scrLoadPLUs(void)
             ThrowError("Incorrect PLU size");
         palookup[PLU[i].id] = (char*)gSysRes.Lock(pPlu);
     }
+#ifdef USE_OPENGL
     palookupfog[1].r = 255;
     palookupfog[1].g = 255;
     palookupfog[1].b = 255;
+#endif
 }
 
+#ifdef USE_OPENGL
 glblend_t const bloodglblend =
 {
     {
@@ -120,6 +123,7 @@ glblend_t const bloodglblend =
         { 2.f/3.f, BLENDFACTOR_SRC_ALPHA, BLENDFACTOR_ONE_MINUS_SRC_ALPHA, 0 },
     },
 };
+#endif
 
 void scrLoadPalette(void)
 {
@@ -204,7 +208,9 @@ void scrSetDac(void)
 void scrInit(void)
 {
     initprintf("Initializing engine\n");
+#ifdef USE_OPENGL
     glrendmode = REND_POLYMOST;
+#endif
     engineInit();
     curPalette = 0;
     curGamma = 0;

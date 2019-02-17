@@ -58,7 +58,9 @@ int32_t paletteSetLookupTable(int32_t palnum, const uint8_t *shtab);
 void paletteFreeLookupTable(int32_t palnum);
 void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags);
 void videoFadePalette(uint8_t r, uint8_t g, uint8_t b, uint8_t offset);
+#ifdef USE_OPENGL
 void videoTintBlood(int32_t r, int32_t g, int32_t b);
+#endif
 
 extern int32_t realmaxshade;
 extern float frealmaxshade;

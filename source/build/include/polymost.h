@@ -6,6 +6,7 @@
 #include "baselayer.h"  // glinfo
 #include "glad/glad.h"
 #include "hightile.h"
+#include "mdsprite.h"
 
 #ifdef __cplusplus
 extern "C" {

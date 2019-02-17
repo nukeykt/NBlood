@@ -92,7 +92,9 @@ static struct
 {
     char *gamedir;
     ud_setup_t shared;
+#ifdef POLYMER
     int polymer;
+#endif
 } settings;
 
 static int32_t retval = -1, mode = TAB_MESSAGES;
@@ -721,7 +723,9 @@ int32_t startwin_run(void)
     settings.shared = gSetup;
     settings.gamedir = g_modDir;
     //settings.grp = g_selectedGrp;
+#ifdef POLYMER
     settings.polymer = 0;
+#endif
     PopulateForm(ALL);
 
     gtk_main();
@@ -730,7 +734,9 @@ int32_t startwin_run(void)
     if (retval) // launch the game with these parameters
     {
         gSetup = settings.shared;
+#ifdef POLYMER
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
+#endif
         //g_selectedGrp = settings.grp;
 
         Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");

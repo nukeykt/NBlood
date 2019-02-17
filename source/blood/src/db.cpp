@@ -21,7 +21,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #include "build.h"
+#ifdef POLYMER
 #include "polymer.h"
+#endif
 #include "compat.h"
 #include "common_game.h"
 #include "crc32.h"
@@ -1095,8 +1097,10 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
         ThrowError("Corrupted Shareware Map file");
     }
 
+#ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER)
         polymer_loadboard();
+#endif
 
     if ((header.version & 0xff00) == 0x600)
     {

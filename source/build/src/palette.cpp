@@ -882,9 +882,11 @@ void videoFadePalette(uint8_t r, uint8_t g, uint8_t b, uint8_t offset)
     g_lastpalettesum = lastpalettesum = newpalettesum;
 }
 
+#ifdef USE_OPENGL
 void videoTintBlood(int32_t r, int32_t g, int32_t b)
 {
     tint_blood_r = r;
     tint_blood_g = g;
     tint_blood_b = b;
 }
+#endif

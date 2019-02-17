@@ -130,7 +130,7 @@ void IniFile::Load()
     if (fp >= 0)
     {
         int nSize = kfilelength(fp);
-        void *pBuffer = Xmalloc(nSize);
+        void *pBuffer = Xcalloc(1, nSize + 1);
         kread(fp, pBuffer, nSize);
         LoadRes(pBuffer);
         Bfree(pBuffer);

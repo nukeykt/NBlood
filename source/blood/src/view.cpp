@@ -1960,11 +1960,13 @@ void viewProcessSprites(int cX, int cY, int cZ)
                 break;
             case 1:
             {
+#ifdef USE_OPENGL
                 if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                 {
                     pTSprite->cstat &= ~4;
                     break;
                 }
+#endif
                 int dX = cX - pTSprite->x;
                 int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
@@ -1982,11 +1984,13 @@ void viewProcessSprites(int cX, int cY, int cZ)
             }
             case 2:
             {
+#ifdef USE_OPENGL
                 if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                 {
                     pTSprite->cstat &= ~4;
                     break;
                 }
+#endif
                 int dX = cX - pTSprite->x;
                 int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
@@ -2012,8 +2016,10 @@ void viewProcessSprites(int cX, int cY, int cZ)
             case 6:
             case 7:
             {
+#ifdef USE_OPENGL
                 if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                     break;
+#endif
                 // Can be overridden by def script
                 if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1)
                 {
@@ -2591,6 +2597,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
         oldPalette = nPalette;
     }
 
+#ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
         gLastPal = 0;
@@ -2663,6 +2670,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
         videoTintBlood(nRed, nGreen, nBlue);
     }
     else
+#endif
     {
         gLastPal = nPalette;
         if (bNoTint)
@@ -2942,7 +2950,9 @@ void viewDrawScreen(void)
         char v10 = 0;
         char vc = powerupCheck(gView, 28) > 0;
         char v4 = powerupCheck(gView, 21) > 0;
+#ifdef USE_OPENGL
         renderSetRollAngle(0);
+#endif
         if (v78 || vc)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
@@ -2960,8 +2970,10 @@ void viewDrawScreen(void)
                 }
                 renderSetAspect(mulscale16(vr, dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)), yxaspect);
             }
+#ifdef USE_OPENGL
             else
                 renderSetRollAngle(v78);
+#endif
         }
         else if (v4 && gNetPlayers > 1)
         {
@@ -3344,7 +3356,11 @@ char pzLoadingScreenText1[256], pzLoadingScreenText2[256], pzLoadingScreenText3[
 void viewLoadingScreenWide(void)
 {
     videoClearScreen(0);
+#ifdef USE_OPENGL
     if ((blood_globalflags&BLOOD_FORCE_WIDELOADSCREEN) || (bLoadScreenCrcMatch && !(usehightile && h_xsize[kLoadScreen])))
+#else
+    if ((blood_globalflags&BLOOD_FORCE_WIDELOADSCREEN) || bLoadScreenCrcMatch)
+#endif
     {
         if (yxaspect >= 65536)
         {
