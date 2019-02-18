@@ -629,7 +629,7 @@ void fakeMoveDude(spritetype *pSprite)
     int nLowerLink = gLowerLink[nSector];
     if (nUpperLink >= 0 && (sprite[nUpperLink].type == 9 || sprite[nUpperLink].type == 13))
         bDepth = 1;
-    if (nLowerLink >= 0 && (sprite[nLowerLink].type == 10 || sprite[nUpperLink].type == 14))
+    if (nLowerLink >= 0 && (sprite[nLowerLink].type == 10 || sprite[nLowerLink].type == 14))
         bDepth = 1;
     if (pPlayer)
         wd += 16;
