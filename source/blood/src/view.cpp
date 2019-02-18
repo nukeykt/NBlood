@@ -2021,7 +2021,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     break;
 #endif
                 // Can be overridden by def script
-                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1)
+                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1 && voxelIndex[pTSprite->picnum] != -1)
                 {
                     if ((pTSprite->hitag&16) == 0)
                     {
