@@ -176,11 +176,15 @@ void credPlaySmk(const char *pzSMK, const char *pzWAV, int nWav)
     }
     smkPlayer.sub_82E6C(pzSMK, pzWAV);
 #endif
+    if (Bstrlen(pzSMK) == 0)
+        return;
     int nHandleSMK = credKOpen4Load(pzSMK);
     if (nHandleSMK == -1)
         return;
     kclose(nHandleSMK);
     SmackerHandle hSMK = Smacker_Open(pzSMK);
+    if (!hSMK.isValid)
+        return;
     uint32_t nWidth, nHeight;
     Smacker_GetFrameSize(hSMK, nWidth, nHeight);
     uint8_t palette[768];
