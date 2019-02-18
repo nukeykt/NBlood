@@ -24,6 +24,10 @@ apps/
 *.cfg
 textures
 
+/platform/Windows/Win32
+/platform/Windows/x64
+*.exp
+*.lib
 *.manifest
 /*.map
 /platform/Windows/*.map
@@ -45,6 +49,8 @@ perl.exe.stackdump
 
 xcuserdata/
 project.xcworkspace/
+DerivedData/
+*.xcscheme
 *.dSYM/
 
 .DS_Store
