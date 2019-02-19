@@ -1639,8 +1639,7 @@ RESTART:
         {
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
-            if (numplayers > 1)
-                G_HandleAsync();
+            G_HandleAsync();
             while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
             {
                 viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
@@ -1664,6 +1663,7 @@ RESTART:
                     timerUpdate();
                     gameUpdate = true;
                 }
+                timerUpdate();
             }
             if (gameUpdate)
             {
