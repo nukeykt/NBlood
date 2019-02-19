@@ -100,6 +100,7 @@ extern int32_t gUpscaleFactor;
 extern int32_t gBrightness;
 extern int32_t gLevelStats;
 extern int32_t MAXCACHE1DSIZE;
+extern int32_t gFov;
 
 int  CONFIG_ReadSetup(void);
 void CONFIG_WriteSetup(uint32_t flags);

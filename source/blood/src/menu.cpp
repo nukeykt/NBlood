@@ -70,6 +70,7 @@ void SetupLevelMenuItem(int);
 void SetupVideoModeMenu(CGameMenuItemChain *);
 void SetVideoMode(CGameMenuItemChain *);
 void SetWidescreen(CGameMenuItemZBool *);
+void SetFOV(CGameMenuItemSlider *);
 void UpdateVideoModeMenuFrameLimit(CGameMenuItemZCycle *pItem);
 void UpdateVideoModeMenuFPSOffset(CGameMenuItemSlider *pItem);
 void UpdateVideoColorMenu(CGameMenuItemSliderFloat *);
@@ -400,8 +401,9 @@ CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180,
 CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 90, 180, gLevelStats, SetLevelStats, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 100, 180, gMessageState, SetMessages, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 110, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
+CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 120, 180, &gFov, 75, 120, 5, SetFOV, -1, -1, kMenuSliderValue);
 #ifdef USE_OPENGL
-CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 120, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
+CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 130, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
 #endif
 
 const char *pzRendererStrings[] = {
@@ -1107,6 +1109,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolLevelStats, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolWidescreen, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayFOV, false);
 #ifdef USE_OPENGL
     menuOptionsDisplay.Add(&itemOptionsDisplayPolymost, false);
 #endif
@@ -1529,6 +1532,11 @@ void SetVideoMode(CGameMenuItemChain *pItem)
 void SetWidescreen(CGameMenuItemZBool *pItem)
 {
     r_usenewaspect = pItem->at20;
+}
+
+void SetFOV(CGameMenuItemSlider *pItem)
+{
+    gFov = pItem->nValue;
 }
 
 void SetupVideoModeMenu(CGameMenuItemChain *pItem)

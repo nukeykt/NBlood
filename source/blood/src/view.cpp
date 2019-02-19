@@ -2867,6 +2867,7 @@ void viewDrawScreen(void)
             newaspect_enable = 1;
             videoSetCorrectedAspect();
         }
+        renderSetAspect(Blrintf(float(viewingrange) * tanf(gFov * (PI/360.f))), yxaspect);
         int cX = gView->pSprite->x;
         int cY = gView->pSprite->y;
         int cZ = gView->at67;
@@ -3242,11 +3243,12 @@ RORHACK:
         if (v4 && gNetPlayers > 1)
         {
             DoLensEffect();
+            viewingRange = viewingrange;
+            yxAspect = yxaspect;
             renderSetAspect(65536, 54613);
             rotatesprite(280<<16, 35<<16, 53248, 512, 4077, v10, v14, 512+6, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(280<<16, 35<<16, 53248, 0, 1683, v10, 0, 512+35, gViewX0, gViewY0, gViewX1, gViewY1);
-            //renderSetAspect(65536, divscale16(xdim*200, ydim*320));
-            videoSetCorrectedAspect();
+            renderSetAspect(viewingRange, yxAspect);
         }
         if (powerupCheck(gView, 14) > 0)
         {
