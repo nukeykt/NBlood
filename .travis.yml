@@ -16,7 +16,6 @@ addons:
       - libvpx-dev
       - libglu1-mesa-dev
       - libgtk2.0-dev
-      - libluajit-5.1-dev
 
 matrix:
   include:
@@ -31,7 +30,7 @@ matrix:
 
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-      brew install sdl2_mixer flac libvpx luajit;
+      brew install sdl2_mixer flac libvpx;
     fi
 
 script:
