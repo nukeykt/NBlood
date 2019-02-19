@@ -118,7 +118,7 @@ bool gFullMap;
 int32_t gUpscaleFactor;
 int32_t gBrightness;
 int32_t gLevelStats;
-int gFov;
+int32_t gFov;
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
