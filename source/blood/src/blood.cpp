@@ -237,118 +237,118 @@ int nPrecacheCount;
 
 void PrecacheDude(spritetype *pSprite)
 {
-	DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-	seqPrecacheId(pDudeInfo->seqStartID);
-	seqPrecacheId(pDudeInfo->seqStartID+5);
-	seqPrecacheId(pDudeInfo->seqStartID+1);
-	seqPrecacheId(pDudeInfo->seqStartID+2);
-	switch (pSprite->type)
-	{
-	case 201:
-	case 202:
-	case 247:
-	case 248:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+7);
-		seqPrecacheId(pDudeInfo->seqStartID+8);
-		seqPrecacheId(pDudeInfo->seqStartID+9);
-		seqPrecacheId(pDudeInfo->seqStartID+13);
-		seqPrecacheId(pDudeInfo->seqStartID+14);
-		seqPrecacheId(pDudeInfo->seqStartID+15);
-		break;
-	case 204:
-	case 217:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+7);
-		seqPrecacheId(pDudeInfo->seqStartID+8);
-		seqPrecacheId(pDudeInfo->seqStartID+9);
-		seqPrecacheId(pDudeInfo->seqStartID+10);
-		seqPrecacheId(pDudeInfo->seqStartID+11);
-		break;
-	case 208:
-	case 209:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-        fallthrough__;
-	case 206:
-	case 207:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+7);
-		seqPrecacheId(pDudeInfo->seqStartID+8);
-		seqPrecacheId(pDudeInfo->seqStartID+9);
-		break;
-	case 210:
-	case 211:
-	case 213:
-	case 214:
-	case 215:
-	case 216:
-	case 229:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+7);
-		seqPrecacheId(pDudeInfo->seqStartID+8);
-		break;
-	case 227:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+7);
-        fallthrough__;
-	case 212:
-	case 218:
-	case 219:
-	case 220:
-		seqPrecacheId(pDudeInfo->seqStartID+6);
-		seqPrecacheId(pDudeInfo->seqStartID+7);
-		break;
-	case 249:
+    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
+    seqPrecacheId(pDudeInfo->seqStartID);
+    seqPrecacheId(pDudeInfo->seqStartID+5);
+    seqPrecacheId(pDudeInfo->seqStartID+1);
+    seqPrecacheId(pDudeInfo->seqStartID+2);
+    switch (pSprite->type)
+    {
+    case 201:
+    case 202:
+    case 247:
+    case 248:
         seqPrecacheId(pDudeInfo->seqStartID+6);
-		break;
-	case 205:
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        seqPrecacheId(pDudeInfo->seqStartID+9);
+        seqPrecacheId(pDudeInfo->seqStartID+13);
+        seqPrecacheId(pDudeInfo->seqStartID+14);
+        seqPrecacheId(pDudeInfo->seqStartID+15);
+        break;
+    case 204:
+    case 217:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        seqPrecacheId(pDudeInfo->seqStartID+9);
+        seqPrecacheId(pDudeInfo->seqStartID+10);
+        seqPrecacheId(pDudeInfo->seqStartID+11);
+        break;
+    case 208:
+    case 209:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        fallthrough__;
+    case 206:
+    case 207:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        seqPrecacheId(pDudeInfo->seqStartID+9);
+        break;
+    case 210:
+    case 211:
+    case 213:
+    case 214:
+    case 215:
+    case 216:
+    case 229:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        seqPrecacheId(pDudeInfo->seqStartID+8);
+        break;
+    case 227:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        fallthrough__;
+    case 212:
+    case 218:
+    case 219:
+    case 220:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        seqPrecacheId(pDudeInfo->seqStartID+7);
+        break;
+    case 249:
+        seqPrecacheId(pDudeInfo->seqStartID+6);
+        break;
+    case 205:
         seqPrecacheId(pDudeInfo->seqStartID+12);
         seqPrecacheId(pDudeInfo->seqStartID+9);
         fallthrough__;
-	case 244:
+    case 244:
         seqPrecacheId(pDudeInfo->seqStartID+10);
         fallthrough__;
-	case 203:
+    case 203:
         seqPrecacheId(pDudeInfo->seqStartID+6);
         seqPrecacheId(pDudeInfo->seqStartID+7);
         seqPrecacheId(pDudeInfo->seqStartID+8);
         seqPrecacheId(pDudeInfo->seqStartID+11);
         seqPrecacheId(pDudeInfo->seqStartID+13);
         seqPrecacheId(pDudeInfo->seqStartID+14);
-		break;
-	}
+        break;
+    }
 }
 
 void PrecacheThing(spritetype *pSprite)
 {
-	switch (pSprite->type)
-	{
-	case 406:
-	case 407:
+    switch (pSprite->type)
+    {
+    case 406:
+    case 407:
         seqPrecacheId(12);
-		break;
-	case 410:
+        break;
+    case 410:
         seqPrecacheId(15);
-		break;
-	case 411:
+        break;
+    case 411:
         seqPrecacheId(21);
-		break;
-	case 412:
+        break;
+    case 412:
         seqPrecacheId(25);
         seqPrecacheId(26);
-		break;
-	case 413:
+        break;
+    case 413:
         seqPrecacheId(38);
         seqPrecacheId(40);
         seqPrecacheId(28);
-		break;
-	case 416:
-		break;
-	default:
-		tilePreloadTile(pSprite->picnum);
-		break;
-	}
+        break;
+    case 416:
+        break;
+    default:
+        tilePreloadTile(pSprite->picnum);
+        break;
+    }
     seqPrecacheId(3);
     seqPrecacheId(4);
     seqPrecacheId(5);
@@ -357,59 +357,59 @@ void PrecacheThing(spritetype *pSprite)
 
 void PreloadTiles(void)
 {
-	int skyTile = -1;
-	memset(gotpic,0,sizeof(gotpic));
-	for (int i = 0; i < numsectors; i++)
-	{
-		tilePrecacheTile(sector[i].floorpicnum, 0);
-		tilePrecacheTile(sector[i].ceilingpicnum, 0);
-		if ((sector[i].ceilingstat&1) != 0 && skyTile == -1)
-			skyTile = sector[i].ceilingpicnum;
-	}
-	for (int i = 0; i < numwalls; i++)
-	{
-		tilePrecacheTile(wall[i].picnum, 0);
-		if (wall[i].overpicnum >= 0)
-			tilePrecacheTile(wall[i].overpicnum, 0);
-	}
-	for (int i = 0; i < kMaxSprites; i++)
-	{
-		if (sprite[i].statnum < kMaxStatus)
-		{
-			spritetype *pSprite = &sprite[i];
-			switch (pSprite->statnum)
-			{
-			case 6:
-				PrecacheDude(pSprite);
-				break;
-			case 4:
-				PrecacheThing(pSprite);
-				break;
-			default:
-				tilePrecacheTile(pSprite->picnum);
-				break;
-			}
-		}
-	}
-	if (numplayers > 1)
-	{
-		seqPrecacheId(dudeInfo[31].seqStartID+6);
-		seqPrecacheId(dudeInfo[31].seqStartID+7);
-		seqPrecacheId(dudeInfo[31].seqStartID+8);
-		seqPrecacheId(dudeInfo[31].seqStartID+9);
-		seqPrecacheId(dudeInfo[31].seqStartID+10);
-		seqPrecacheId(dudeInfo[31].seqStartID+14);
-		seqPrecacheId(dudeInfo[31].seqStartID+15);
-		seqPrecacheId(dudeInfo[31].seqStartID+12);
-		seqPrecacheId(dudeInfo[31].seqStartID+16);
-		seqPrecacheId(dudeInfo[31].seqStartID+17);
-		seqPrecacheId(dudeInfo[31].seqStartID+18);
-	}
-	if (skyTile > -1 && skyTile < kMaxTiles)
-	{
-		for (int i = 1; i < gSkyCount; i++)
-			tilePrecacheTile(skyTile+i, 0);
-	}
+    int skyTile = -1;
+    memset(gotpic,0,sizeof(gotpic));
+    for (int i = 0; i < numsectors; i++)
+    {
+        tilePrecacheTile(sector[i].floorpicnum, 0);
+        tilePrecacheTile(sector[i].ceilingpicnum, 0);
+        if ((sector[i].ceilingstat&1) != 0 && skyTile == -1)
+            skyTile = sector[i].ceilingpicnum;
+    }
+    for (int i = 0; i < numwalls; i++)
+    {
+        tilePrecacheTile(wall[i].picnum, 0);
+        if (wall[i].overpicnum >= 0)
+            tilePrecacheTile(wall[i].overpicnum, 0);
+    }
+    for (int i = 0; i < kMaxSprites; i++)
+    {
+        if (sprite[i].statnum < kMaxStatus)
+        {
+            spritetype *pSprite = &sprite[i];
+            switch (pSprite->statnum)
+            {
+            case 6:
+                PrecacheDude(pSprite);
+                break;
+            case 4:
+                PrecacheThing(pSprite);
+                break;
+            default:
+                tilePrecacheTile(pSprite->picnum);
+                break;
+            }
+        }
+    }
+    if (numplayers > 1)
+    {
+        seqPrecacheId(dudeInfo[31].seqStartID+6);
+        seqPrecacheId(dudeInfo[31].seqStartID+7);
+        seqPrecacheId(dudeInfo[31].seqStartID+8);
+        seqPrecacheId(dudeInfo[31].seqStartID+9);
+        seqPrecacheId(dudeInfo[31].seqStartID+10);
+        seqPrecacheId(dudeInfo[31].seqStartID+14);
+        seqPrecacheId(dudeInfo[31].seqStartID+15);
+        seqPrecacheId(dudeInfo[31].seqStartID+12);
+        seqPrecacheId(dudeInfo[31].seqStartID+16);
+        seqPrecacheId(dudeInfo[31].seqStartID+17);
+        seqPrecacheId(dudeInfo[31].seqStartID+18);
+    }
+    if (skyTile > -1 && skyTile < kMaxTiles)
+    {
+        for (int i = 1; i < gSkyCount; i++)
+            tilePrecacheTile(skyTile+i, 0);
+    }
     G_HandleAsync();
 }
 
@@ -464,7 +464,7 @@ void PreloadCache(void)
     if (gDemo.at1)
         return;
     sndPlaySpecialMusicOrNothing(MUS_LOADING);
-	PreloadTiles();
+    PreloadTiles();
     int clock = totalclock;
     int cnt = 0;
     int percentDisplayed = -1;
@@ -507,17 +507,17 @@ void PreloadCache(void)
             }
         }
     }
-	memset(gotpic,0,sizeof(gotpic));
+    memset(gotpic,0,sizeof(gotpic));
 }
 
 void EndLevel(void)
 {
-	gViewPos = VIEWPOS_0;
-	gGameMessageMgr.Clear();
-	sndKillAllSounds();
-	sfxKillAllSounds();
-	ambKillAll();
-	seqKillAll();
+    gViewPos = VIEWPOS_0;
+    gGameMessageMgr.Clear();
+    sndKillAllSounds();
+    sfxKillAllSounds();
+    ambKillAll();
+    seqKillAll();
 }
 
 PLAYER gPlayerTemp[kMaxPlayers];
@@ -528,314 +528,314 @@ int16_t startang, startsectnum;
 
 void StartLevel(GAMEOPTIONS *gameOptions)
 {
-	EndLevel();
-	gStartNewGame = 0;
-	ready2send = 0;
-	if (gDemo.at0 && gGameStarted)
-		gDemo.Close();
-	netWaitForEveryone(0);
-	if (gGameOptions.nGameType == 0)
-	{
-		if (!(gGameOptions.uGameFlags&1))
-			levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
-		if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
-			&& gEpisodeInfo[gGameOptions.nEpisode].at8f08)
-			gGameOptions.uGameFlags |= 4;
-		if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
-			levelPlayIntroScene(gGameOptions.nEpisode);
-	}
-	else if (gGameOptions.nGameType > 0 && !(gGameOptions.uGameFlags&1))
-	{
-		gGameOptions.nEpisode = gPacketStartGame.episodeId;
-		gGameOptions.nLevel = gPacketStartGame.levelId;
-		gGameOptions.nGameType = gPacketStartGame.gameType;
-		gGameOptions.nDifficulty = gPacketStartGame.difficulty;
-		gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
-		gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
-		gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
-		gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
-		if (gPacketStartGame.userMap)
-			levelAddUserMap(gPacketStartGame.userMapName);
-		else
-			levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
-	}
-	if (gameOptions->uGameFlags&1)
-	{
-		for (int i = connecthead; i >= 0; i = connectpoint2[i])
-		{
-			memcpy(&gPlayerTemp[i],&gPlayer[i],sizeof(PLAYER));
-			gHealthTemp[i] = xsprite[gPlayer[i].pSprite->extra].health;
-		}
-	}
+    EndLevel();
+    gStartNewGame = 0;
+    ready2send = 0;
+    if (gDemo.at0 && gGameStarted)
+        gDemo.Close();
+    netWaitForEveryone(0);
+    if (gGameOptions.nGameType == 0)
+    {
+        if (!(gGameOptions.uGameFlags&1))
+            levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+        if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
+            && gEpisodeInfo[gGameOptions.nEpisode].at8f08)
+            gGameOptions.uGameFlags |= 4;
+        if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
+            levelPlayIntroScene(gGameOptions.nEpisode);
+    }
+    else if (gGameOptions.nGameType > 0 && !(gGameOptions.uGameFlags&1))
+    {
+        gGameOptions.nEpisode = gPacketStartGame.episodeId;
+        gGameOptions.nLevel = gPacketStartGame.levelId;
+        gGameOptions.nGameType = gPacketStartGame.gameType;
+        gGameOptions.nDifficulty = gPacketStartGame.difficulty;
+        gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
+        gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
+        gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
+        gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
+        if (gPacketStartGame.userMap)
+            levelAddUserMap(gPacketStartGame.userMapName);
+        else
+            levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+    }
+    if (gameOptions->uGameFlags&1)
+    {
+        for (int i = connecthead; i >= 0; i = connectpoint2[i])
+        {
+            memcpy(&gPlayerTemp[i],&gPlayer[i],sizeof(PLAYER));
+            gHealthTemp[i] = xsprite[gPlayer[i].pSprite->extra].health;
+        }
+    }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
     blooddemohack = bVanilla;
-	memset(xsprite,0,sizeof(xsprite));
-	memset(sprite,0,kMaxSprites*sizeof(spritetype));
-	drawLoadingScreen();
-	dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC);
-	wsrand(gameOptions->uMapCRC);
-	gKillMgr.Clear();
-	gSecretMgr.Clear();
+    memset(xsprite,0,sizeof(xsprite));
+    memset(sprite,0,kMaxSprites*sizeof(spritetype));
+    drawLoadingScreen();
+    dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC);
+    wsrand(gameOptions->uMapCRC);
+    gKillMgr.Clear();
+    gSecretMgr.Clear();
     gLevelTime = 0;
-	automapping = 1;
-	for (int i = 0; i < kMaxSprites; i++)
-	{
-		spritetype *pSprite = &sprite[i];
-		if (pSprite->statnum < kMaxStatus && pSprite->extra > 0)
-		{
-			XSPRITE *pXSprite = &xsprite[pSprite->extra];
-			if ((pXSprite->ate_7&(1<<gameOptions->nDifficulty))
-			|| (pXSprite->atf_4 && gameOptions->nGameType == 0)
-			|| (pXSprite->atf_5 && gameOptions->nGameType == 2)
-			|| (pXSprite->atb_7 && gameOptions->nGameType == 3)
-			|| (pXSprite->atf_6 && gameOptions->nGameType == 1))
-				DeleteSprite(i);
-		}
-	}
-	scrLoadPLUs();
-	startpos.z = getflorzofslope(startsectnum,startpos.x,startpos.y);
-	for (int i = 0; i < kMaxPlayers; i++)
-	{
-		gStartZone[i].x = startpos.x;
-		gStartZone[i].y = startpos.y;
-		gStartZone[i].z = startpos.z;
-		gStartZone[i].sectnum = startsectnum;
-		gStartZone[i].ang = startang;
-	}
-	InitSectorFX();
-	warpInit();
-	actInit();
-	evInit();
-	for (int i = connecthead; i >= 0; i = connectpoint2[i])
-	{
-		if (!(gameOptions->uGameFlags&1))
-		{
-			if (numplayers == 1)
-			{
-				gProfile[i].skill = gSkill;
-				gProfile[i].nAutoAim = gAutoAim;
+    automapping = 1;
+    for (int i = 0; i < kMaxSprites; i++)
+    {
+        spritetype *pSprite = &sprite[i];
+        if (pSprite->statnum < kMaxStatus && pSprite->extra > 0)
+        {
+            XSPRITE *pXSprite = &xsprite[pSprite->extra];
+            if ((pXSprite->ate_7&(1<<gameOptions->nDifficulty))
+            || (pXSprite->atf_4 && gameOptions->nGameType == 0)
+            || (pXSprite->atf_5 && gameOptions->nGameType == 2)
+            || (pXSprite->atb_7 && gameOptions->nGameType == 3)
+            || (pXSprite->atf_6 && gameOptions->nGameType == 1))
+                DeleteSprite(i);
+        }
+    }
+    scrLoadPLUs();
+    startpos.z = getflorzofslope(startsectnum,startpos.x,startpos.y);
+    for (int i = 0; i < kMaxPlayers; i++)
+    {
+        gStartZone[i].x = startpos.x;
+        gStartZone[i].y = startpos.y;
+        gStartZone[i].z = startpos.z;
+        gStartZone[i].sectnum = startsectnum;
+        gStartZone[i].ang = startang;
+    }
+    InitSectorFX();
+    warpInit();
+    actInit();
+    evInit();
+    for (int i = connecthead; i >= 0; i = connectpoint2[i])
+    {
+        if (!(gameOptions->uGameFlags&1))
+        {
+            if (numplayers == 1)
+            {
+                gProfile[i].skill = gSkill;
+                gProfile[i].nAutoAim = gAutoAim;
                 gProfile[i].nWeaponSwitch = gWeaponSwitch;
-			}
-			playerInit(i,0);
-		}
-		playerStart(i);
-	}
-	if (gameOptions->uGameFlags&1)
-	{
-		for (int i = connecthead; i >= 0; i = connectpoint2[i])
-		{
-			PLAYER *pPlayer = &gPlayer[i];
-			pPlayer->pXSprite->health &= 0xf000;
-			pPlayer->pXSprite->health |= gHealthTemp[i];
-			pPlayer->at26 = gPlayerTemp[i].at26;
-			pPlayer->atbd = gPlayerTemp[i].atbd;
-			pPlayer->atc3 = gPlayerTemp[i].atc3;
-			pPlayer->atc7 = gPlayerTemp[i].atc7;
-			pPlayer->at2a = gPlayerTemp[i].at2a;
-			pPlayer->at1b1 = gPlayerTemp[i].at1b1;
-			pPlayer->atbf = gPlayerTemp[i].atbf;
-			pPlayer->atbe = gPlayerTemp[i].atbe;
-		}
-	}
-	gameOptions->uGameFlags &= ~3;
-	scrSetDac();
-	PreloadCache();
-	InitMirrors();
-	gFrameClock = 0;
-	trInit();
-	ambInit();
-	sub_79760();
-	gCacheMiss = 0;
-	gFrame = 0;
+            }
+            playerInit(i,0);
+        }
+        playerStart(i);
+    }
+    if (gameOptions->uGameFlags&1)
+    {
+        for (int i = connecthead; i >= 0; i = connectpoint2[i])
+        {
+            PLAYER *pPlayer = &gPlayer[i];
+            pPlayer->pXSprite->health &= 0xf000;
+            pPlayer->pXSprite->health |= gHealthTemp[i];
+            pPlayer->at26 = gPlayerTemp[i].at26;
+            pPlayer->atbd = gPlayerTemp[i].atbd;
+            pPlayer->atc3 = gPlayerTemp[i].atc3;
+            pPlayer->atc7 = gPlayerTemp[i].atc7;
+            pPlayer->at2a = gPlayerTemp[i].at2a;
+            pPlayer->at1b1 = gPlayerTemp[i].at1b1;
+            pPlayer->atbf = gPlayerTemp[i].atbf;
+            pPlayer->atbe = gPlayerTemp[i].atbe;
+        }
+    }
+    gameOptions->uGameFlags &= ~3;
+    scrSetDac();
+    PreloadCache();
+    InitMirrors();
+    gFrameClock = 0;
+    trInit();
+    ambInit();
+    sub_79760();
+    gCacheMiss = 0;
+    gFrame = 0;
     gChokeCounter = 0;
-	if (!gDemo.at1)
-		gGameMenuMgr.Deactivate();
+    if (!gDemo.at1)
+        gGameMenuMgr.Deactivate();
     levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
-	// viewSetMessage("");
-	viewSetErrorMessage("");
-	viewResizeView(gViewSize);
-	if (gGameOptions.nGameType == 3)
-		gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
-	netWaitForEveryone(0);
-	gGameClock = 0;
-	gPaused = 0;
-	gGameStarted = 1;
-	ready2send = 1;
+    // viewSetMessage("");
+    viewSetErrorMessage("");
+    viewResizeView(gViewSize);
+    if (gGameOptions.nGameType == 3)
+        gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
+    netWaitForEveryone(0);
+    gGameClock = 0;
+    gPaused = 0;
+    gGameStarted = 1;
+    ready2send = 1;
 }
 
 void StartNetworkLevel(void)
 {
-	if (gDemo.at0)
-		gDemo.Close();
-	if (!(gGameOptions.uGameFlags&1))
-	{
-		gGameOptions.nEpisode = gPacketStartGame.episodeId;
-		gGameOptions.nLevel = gPacketStartGame.levelId;
-		gGameOptions.nGameType = gPacketStartGame.gameType;
-		gGameOptions.nDifficulty = gPacketStartGame.difficulty;
-		gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
-		gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
-		gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
-		gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
-		if (gPacketStartGame.userMap)
-			levelAddUserMap(gPacketStartGame.userMapName);
-		else
-			levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
-	}
-	StartLevel(&gGameOptions);
+    if (gDemo.at0)
+        gDemo.Close();
+    if (!(gGameOptions.uGameFlags&1))
+    {
+        gGameOptions.nEpisode = gPacketStartGame.episodeId;
+        gGameOptions.nLevel = gPacketStartGame.levelId;
+        gGameOptions.nGameType = gPacketStartGame.gameType;
+        gGameOptions.nDifficulty = gPacketStartGame.difficulty;
+        gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
+        gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
+        gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
+        gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
+        if (gPacketStartGame.userMap)
+            levelAddUserMap(gPacketStartGame.userMapName);
+        else
+            levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+    }
+    StartLevel(&gGameOptions);
 }
 
 void LocalKeys(void)
 {
-	char alt = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
-	char ctrl = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
-	char shift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
-	if (BUTTON(gamefunc_See_Chase_View) && !alt && !shift)
-	{
-		CONTROL_ClearButton(gamefunc_See_Chase_View);
-		if (gViewPos > VIEWPOS_0)
-			gViewPos = VIEWPOS_0;
-		else
-			gViewPos = VIEWPOS_1;
-	}
-	if (BUTTON(gamefunc_See_Coop_View))
-	{
-		CONTROL_ClearButton(gamefunc_See_Coop_View);
-		if (gGameOptions.nGameType == 1)
-		{
-			gViewIndex = connectpoint2[gViewIndex];
-			if (gViewIndex == -1)
-				gViewIndex = connecthead;
-			gView = &gPlayer[gViewIndex];
-		}
-		else if (gGameOptions.nGameType == 3)
-		{
-			int oldViewIndex = gViewIndex;
-			do
-			{
-				gViewIndex = connectpoint2[gViewIndex];
-				if (gViewIndex == -1)
-					gViewIndex = connecthead;
-				if (oldViewIndex == gViewIndex || gMe->at2ea == gPlayer[gViewIndex].at2ea)
-					break;
-			} while (oldViewIndex != gViewIndex);
-			gView = &gPlayer[gViewIndex];
-		}
-	}
-	char key;
-	if ((key = keyGetScan()) != 0)
-	{
-		if ((alt || shift) && gGameOptions.nGameType > 0 && key >= 0x3b && key <= 0x44)
-		{
-			char fk = key - 0x3b;
-			if (alt)
-			{
-				netBroadcastTaunt(myconnectindex, fk);
-			}
-			else
-			{
-				gPlayerMsg.Set(CommbatMacro[fk]);
-				gPlayerMsg.Send();
-			}
-			keyFlushScans();
-			keystatus[key] = 0;
-			CONTROL_ClearButton(41);
-			return;
-		}
-		switch (key)
-		{
+    char alt = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
+    char ctrl = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
+    char shift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
+    if (BUTTON(gamefunc_See_Chase_View) && !alt && !shift)
+    {
+        CONTROL_ClearButton(gamefunc_See_Chase_View);
+        if (gViewPos > VIEWPOS_0)
+            gViewPos = VIEWPOS_0;
+        else
+            gViewPos = VIEWPOS_1;
+    }
+    if (BUTTON(gamefunc_See_Coop_View))
+    {
+        CONTROL_ClearButton(gamefunc_See_Coop_View);
+        if (gGameOptions.nGameType == 1)
+        {
+            gViewIndex = connectpoint2[gViewIndex];
+            if (gViewIndex == -1)
+                gViewIndex = connecthead;
+            gView = &gPlayer[gViewIndex];
+        }
+        else if (gGameOptions.nGameType == 3)
+        {
+            int oldViewIndex = gViewIndex;
+            do
+            {
+                gViewIndex = connectpoint2[gViewIndex];
+                if (gViewIndex == -1)
+                    gViewIndex = connecthead;
+                if (oldViewIndex == gViewIndex || gMe->at2ea == gPlayer[gViewIndex].at2ea)
+                    break;
+            } while (oldViewIndex != gViewIndex);
+            gView = &gPlayer[gViewIndex];
+        }
+    }
+    char key;
+    if ((key = keyGetScan()) != 0)
+    {
+        if ((alt || shift) && gGameOptions.nGameType > 0 && key >= 0x3b && key <= 0x44)
+        {
+            char fk = key - 0x3b;
+            if (alt)
+            {
+                netBroadcastTaunt(myconnectindex, fk);
+            }
+            else
+            {
+                gPlayerMsg.Set(CommbatMacro[fk]);
+                gPlayerMsg.Send();
+            }
+            keyFlushScans();
+            keystatus[key] = 0;
+            CONTROL_ClearButton(41);
+            return;
+        }
+        switch (key)
+        {
         case 0x53:
-		case 0xd3:
-			if (ctrl && alt)
-			{
-				gQuitGame = 1;
-				return;
-			}
-			break;
-		case 0x01:
+        case 0xd3:
+            if (ctrl && alt)
+            {
+                gQuitGame = 1;
+                return;
+            }
+            break;
+        case 0x01:
             keyFlushScans();
-			if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
-			{
-				if (!gGameMenuMgr.m_bActive)
-					gGameMenuMgr.Push(&menuMainWithSave,-1);
-			}
-			else
-			{
-				if (!gGameMenuMgr.m_bActive)
-					gGameMenuMgr.Push(&menuMain,-1);
-			}
-			return;
-		case 0x3b:
+            if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMainWithSave,-1);
+            }
+            else
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMain,-1);
+            }
+            return;
+        case 0x3b:
             keyFlushScans();
-			if (gGameOptions.nGameType == 0)
-				gGameMenuMgr.Push(&menuOrder,-1);
-			break;
-		case 0x3c:
+            if (gGameOptions.nGameType == 0)
+                gGameMenuMgr.Push(&menuOrder,-1);
+            break;
+        case 0x3c:
             keyFlushScans();
-			if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
-				gGameMenuMgr.Push(&menuSaveGame,-1);
-			break;
-		case 0x3d:
+            if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+                gGameMenuMgr.Push(&menuSaveGame,-1);
+            break;
+        case 0x3d:
             keyFlushScans();
-			if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
-				gGameMenuMgr.Push(&menuLoadGame,-1);
-			break;
-		case 0x3e:
+            if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+                gGameMenuMgr.Push(&menuLoadGame,-1);
+            break;
+        case 0x3e:
             keyFlushScans();
-			if (!gGameMenuMgr.m_bActive)
-				gGameMenuMgr.Push(&menuOptionsSound,-1);
-			return;
-		case 0x3f:
+            if (!gGameMenuMgr.m_bActive)
+                gGameMenuMgr.Push(&menuOptionsSound,-1);
+            return;
+        case 0x3f:
             keyFlushScans();
-			if (!gGameMenuMgr.m_bActive)
-				gGameMenuMgr.Push(&menuOptions,-1);
-			return;
-		case 0x40:
+            if (!gGameMenuMgr.m_bActive)
+                gGameMenuMgr.Push(&menuOptions,-1);
+            return;
+        case 0x40:
             keyFlushScans();
-			if (gGameStarted && !gGameMenuMgr.m_bActive && gPlayer[myconnectindex].pXSprite->health != 0)
-			{
-				if (gQuickSaveSlot != -1)
-				{
-					QuickSaveGame();
-					return;
-				}
-				gGameMenuMgr.Push(&menuSaveGame,-1);
-			}
-			break;
-		case 0x42:
+            if (gGameStarted && !gGameMenuMgr.m_bActive && gPlayer[myconnectindex].pXSprite->health != 0)
+            {
+                if (gQuickSaveSlot != -1)
+                {
+                    QuickSaveGame();
+                    return;
+                }
+                gGameMenuMgr.Push(&menuSaveGame,-1);
+            }
+            break;
+        case 0x42:
             keyFlushScans();
-			gGameMenuMgr.Push(&menuOptions,-1);
-			break;
-		case 0x43:
+            gGameMenuMgr.Push(&menuOptions,-1);
+            break;
+        case 0x43:
             keyFlushScans();
-			if (!gGameMenuMgr.m_bActive)
-			{
-				if (gQuickLoadSlot != -1)
-				{
-					QuickLoadGame();
-					return;
-				}
-				if (gQuickLoadSlot == -1 && gQuickSaveSlot != -1)
-				{
-					gQuickLoadSlot = gQuickSaveSlot;
-					QuickLoadGame();
-					return;
-				}
-				gGameMenuMgr.Push(&menuLoadGame,-1);
-			}
-			break;
-		case 0x44:
+            if (!gGameMenuMgr.m_bActive)
+            {
+                if (gQuickLoadSlot != -1)
+                {
+                    QuickLoadGame();
+                    return;
+                }
+                if (gQuickLoadSlot == -1 && gQuickSaveSlot != -1)
+                {
+                    gQuickLoadSlot = gQuickSaveSlot;
+                    QuickLoadGame();
+                    return;
+                }
+                gGameMenuMgr.Push(&menuLoadGame,-1);
+            }
+            break;
+        case 0x44:
             keyFlushScans();
-			if (!gGameMenuMgr.m_bActive)
-				gGameMenuMgr.Push(&menuQuit,-1);
-			break;
-		case 0x57:
-			break;
-		case 0x58:
+            if (!gGameMenuMgr.m_bActive)
+                gGameMenuMgr.Push(&menuQuit,-1);
+            break;
+        case 0x57:
+            break;
+        case 0x58:
             videoCaptureScreen("blud0000.tga", 0);
-			break;
-		}
-	}
+            break;
+        }
+    }
 }
 
 bool gRestartGame = false;
@@ -843,29 +843,29 @@ bool gRestartGame = false;
 void ProcessFrame(void)
 {
     char buffer[128];
-	for (int i = connecthead; i >= 0; i = connectpoint2[i])
-	{
-		gPlayer[i].atc.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
-		gPlayer[i].atc.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
-		gPlayer[i].atc.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
-		if (gFifoInput[gNetFifoTail&255][i].newWeapon)
-			gPlayer[i].atc.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
-		gPlayer[i].atc.forward = gFifoInput[gNetFifoTail&255][i].forward;
-		gPlayer[i].atc.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
-		gPlayer[i].atc.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
-		gPlayer[i].atc.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
-	}
-	gNetFifoTail++;
-	if (!(gFrame&((gSyncRate<<3)-1)))
-	{
-		CalcGameChecksum();
-		memcpy(gCheckFifo[gCheckHead[myconnectindex]&255][myconnectindex], gChecksum, sizeof(gChecksum));
-		gCheckHead[myconnectindex]++;
-	}
-	for (int i = connecthead; i >= 0; i = connectpoint2[i])
-	{
-		if (gPlayer[i].atc.keyFlags.quit)
-		{
+    for (int i = connecthead; i >= 0; i = connectpoint2[i])
+    {
+        gPlayer[i].atc.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
+        gPlayer[i].atc.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
+        gPlayer[i].atc.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
+        if (gFifoInput[gNetFifoTail&255][i].newWeapon)
+            gPlayer[i].atc.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
+        gPlayer[i].atc.forward = gFifoInput[gNetFifoTail&255][i].forward;
+        gPlayer[i].atc.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
+        gPlayer[i].atc.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
+        gPlayer[i].atc.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
+    }
+    gNetFifoTail++;
+    if (!(gFrame&((gSyncRate<<3)-1)))
+    {
+        CalcGameChecksum();
+        memcpy(gCheckFifo[gCheckHead[myconnectindex]&255][myconnectindex], gChecksum, sizeof(gChecksum));
+        gCheckHead[myconnectindex]++;
+    }
+    for (int i = connecthead; i >= 0; i = connectpoint2[i])
+    {
+        if (gPlayer[i].atc.keyFlags.quit)
+        {
             gPlayer[i].atc.keyFlags.quit = 0;
             netBroadcastPlayerLogoff(i);
             if (i == myconnectindex)
@@ -877,49 +877,49 @@ void ProcessFrame(void)
                 netResetToSinglePlayer();
                 return;
             }
-		}
-		if (gPlayer[i].atc.keyFlags.restart)
-		{
+        }
+        if (gPlayer[i].atc.keyFlags.restart)
+        {
             gPlayer[i].atc.keyFlags.restart = 0;
-			levelRestart();
-			return;
-		}
-		if (gPlayer[i].atc.keyFlags.pause)
-		{
+            levelRestart();
+            return;
+        }
+        if (gPlayer[i].atc.keyFlags.pause)
+        {
             gPlayer[i].atc.keyFlags.pause = 0;
-			gPaused = !gPaused;
-			if (gPaused && gGameOptions.nGameType > 0 && numplayers > 1)
-			{
-				sprintf(buffer,"%s paused the game",gProfile[i].name);
-				viewSetMessage(buffer);
-			}
-		}
-	}
-	viewClearInterpolations();
-	if (!gDemo.at1)
-	{
-		if (gPaused || gEndGameMgr.at0 || (gGameOptions.nGameType == 0 && gGameMenuMgr.m_bActive))
-			return;
+            gPaused = !gPaused;
+            if (gPaused && gGameOptions.nGameType > 0 && numplayers > 1)
+            {
+                sprintf(buffer,"%s paused the game",gProfile[i].name);
+                viewSetMessage(buffer);
+            }
+        }
+    }
+    viewClearInterpolations();
+    if (!gDemo.at1)
+    {
+        if (gPaused || gEndGameMgr.at0 || (gGameOptions.nGameType == 0 && gGameMenuMgr.m_bActive))
+            return;
         if (gDemo.at0)
             gDemo.Write(gFifoInput[(gNetFifoTail-1)&255]);
-	}
-	for (int i = connecthead; i >= 0; i = connectpoint2[i])
-	{
-		viewBackupView(i);
-		playerProcess(&gPlayer[i]);
-	}
-	trProcessBusy();
-	evProcess(gFrameClock);
-	seqProcess(4);
-	DoSectorPanning();
-	actProcessSprites();
-	actPostProcess();
-	viewCorrectPrediction();
-	sndProcess();
-	ambProcess();
+    }
+    for (int i = connecthead; i >= 0; i = connectpoint2[i])
+    {
+        viewBackupView(i);
+        playerProcess(&gPlayer[i]);
+    }
+    trProcessBusy();
+    evProcess(gFrameClock);
+    seqProcess(4);
+    DoSectorPanning();
+    actProcessSprites();
+    actPostProcess();
+    viewCorrectPrediction();
+    sndProcess();
+    ambProcess();
     viewUpdateDelirium();
     viewUpdateShake();
-	sfxUpdate3DSounds();
+    sfxUpdate3DSounds();
     if (gMe->at376 == 1)
     {
 #define CHOKERATE 8
@@ -932,10 +932,10 @@ void ProcessFrame(void)
         }
     }
     gLevelTime++;
-	gFrame++;
-	gFrameClock += 4;
-	if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
-	{
+    gFrame++;
+    gFrameClock += 4;
+    if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
+    {
         ready2send = 0;
         if (gNetPlayers > 1 && gNetMode == NETWORK_SERVER && gPacketMode == PACKETMODE_1 && myconnectindex == connecthead)
         {
@@ -945,29 +945,29 @@ void ProcessFrame(void)
                 netMasterUpdate();
             }
         }
-		if (gDemo.at0)
-			gDemo.Close();
-		sndFadeSong(4000);
-		seqKillAll();
-		if (gGameOptions.uGameFlags&2)
-		{
-			if (gGameOptions.nGameType == 0)
-			{
-				if (gGameOptions.uGameFlags&8)
-					levelPlayEndScene(gGameOptions.nEpisode);
-				gGameMenuMgr.Deactivate();
-				gGameMenuMgr.Push(&menuCredits,-1);
-			}
-			gGameOptions.uGameFlags &= ~3;
-			gRestartGame = 1;
-			gQuitGame = 1;
-		}
-		else
-		{
-			gEndGameMgr.Setup();
-			viewResizeView(gViewSize);
-		}
-	}
+        if (gDemo.at0)
+            gDemo.Close();
+        sndFadeSong(4000);
+        seqKillAll();
+        if (gGameOptions.uGameFlags&2)
+        {
+            if (gGameOptions.nGameType == 0)
+            {
+                if (gGameOptions.uGameFlags&8)
+                    levelPlayEndScene(gGameOptions.nEpisode);
+                gGameMenuMgr.Deactivate();
+                gGameMenuMgr.Push(&menuCredits,-1);
+            }
+            gGameOptions.uGameFlags &= ~3;
+            gRestartGame = 1;
+            gQuitGame = 1;
+        }
+        else
+        {
+            gEndGameMgr.Setup();
+            viewResizeView(gViewSize);
+        }
+    }
 }
 
 SWITCH switches[] = {
@@ -1517,18 +1517,18 @@ int app_main(int argc, char const * const * argv)
     scrInit();
     
     initprintf("Loading tiles\n");
-	if (pUserTiles)
-	{
-		strcpy(buffer,pUserTiles);
-		strcat(buffer,"%03i.ART");
-		if (!tileInit(0,buffer))
-			ThrowError("User specified ART files not found");
-	}
-	else
-	{
-		if (!tileInit(0,NULL))
-			ThrowError("TILES###.ART files not found");
-	}
+    if (pUserTiles)
+    {
+        strcpy(buffer,pUserTiles);
+        strcat(buffer,"%03i.ART");
+        if (!tileInit(0,buffer))
+            ThrowError("User specified ART files not found");
+    }
+    else
+    {
+        if (!tileInit(0,NULL))
+            ThrowError("TILES###.ART files not found");
+    }
 
     levelLoadDefaults();
     const char *defsfile = G_DefFile();
@@ -1613,53 +1613,58 @@ RESTART:
     if (!bAddUserMap && !gGameStarted)
         gGameMenuMgr.Push(&menuMain, -1);
     ready2send = 1;
-	while (!gQuitGame)
-	{
+    while (!gQuitGame)
+    {
         netUpdate();
         CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
-		switch (gInputMode)
-		{
-		case INPUT_MODE_1:
-			if (gGameMenuMgr.m_bActive)
-				gGameMenuMgr.Process();
-			break;
-		case INPUT_MODE_0:
-			LocalKeys();
-			break;
+        switch (gInputMode)
+        {
+        case INPUT_MODE_1:
+            if (gGameMenuMgr.m_bActive)
+                gGameMenuMgr.Process();
+            break;
+        case INPUT_MODE_0:
+            LocalKeys();
+            break;
         default:
             break;
-		}
-		if (gQuitGame)
-			continue;
+        }
+        if (gQuitGame)
+            continue;
 
         OSD_DispatchQueued();
         
-        bool bDraw = viewFPSLimit() != 0;
-		if (gGameStarted)
-		{
+        bool bDraw;
+        if (gGameStarted)
+        {
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
-			if (numplayers > 1)
+            if (numplayers > 1)
                 G_HandleAsync();
-			while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
-			{
-				viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
-			}
-			if (numplayers == 1)
-				gBufferJitter = 0;
-			while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
-			{
-				int i;
-				for (i = connecthead; i >= 0; i = connectpoint2[i])
-					if (gNetFifoHead[i] == gNetFifoTail)
-						break;
-				if (i >= 0)
-					break;
-				faketimerhandler();
-				ProcessFrame();
-                timerUpdate();
-                gameUpdate = true;
-			}
+            while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
+            {
+                viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
+            }
+            if (numplayers == 1)
+                gBufferJitter = 0;
+            while (gGameClock >= gNetFifoClock && ready2send)
+            {
+                netGetInput();
+                gNetFifoClock += 4;
+                while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
+                {
+                    int i;
+                    for (i = connecthead; i >= 0; i = connectpoint2[i])
+                        if (gNetFifoHead[i] == gNetFifoTail)
+                            break;
+                    if (i >= 0)
+                        break;
+                    faketimerhandler();
+                    ProcessFrame();
+                    timerUpdate();
+                    gameUpdate = true;
+                }
+            }
             if (gameUpdate)
             {
                 g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
@@ -1667,29 +1672,31 @@ RESTART:
                     g_gameUpdateAvgTime = g_gameUpdateTime;
                 g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
             }
-			if (gQuitRequest && gQuitGame)
-				videoClearScreen(0);
-			else
-			{
-				netCheckSync();
+            bDraw = viewFPSLimit() != 0;
+            if (gQuitRequest && gQuitGame)
+                videoClearScreen(0);
+            else
+            {
+                netCheckSync();
                 if (bDraw)
                 {
                     viewDrawScreen();
                     g_gameUpdateAndDrawTime = timerGetHiTicks() - gameUpdateStartTime;
                 }
-			}
-		}
-		else
-		{
+            }
+        }
+        else
+        {
+            bDraw = viewFPSLimit() != 0;
             if (bDraw)
             {
                 videoClearScreen(0);
-			    rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
+                rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
             }
             G_HandleAsync();
-			if (gQuitRequest && !gQuitGame)
-				netBroadcastMyLogoff(gQuitRequest == 2);
-		}
+            if (gQuitRequest && !gQuitGame)
+                netBroadcastMyLogoff(gQuitRequest == 2);
+        }
         if (bDraw)
         {
             switch (gInputMode)
@@ -1710,20 +1717,20 @@ RESTART:
                 break;
             }
         }
-		//scrNextPage();
-		if (TestBitString(gotpic, 2342))
-		{
-			FireProcess();
+        //scrNextPage();
+        if (TestBitString(gotpic, 2342))
+        {
+            FireProcess();
             ClearBitString(gotpic, 2342);
-		}
-		//if (byte_148e29 && gStartNewGame)
-		//{
-		//	gStartNewGame = 0;
-		//	gQuitGame = 1;
-		//}
-		if (gStartNewGame)
-			StartLevel(&gGameOptions);
-	}
+        }
+        //if (byte_148e29 && gStartNewGame)
+        //{
+        //	gStartNewGame = 0;
+        //	gQuitGame = 1;
+        //}
+        if (gStartNewGame)
+            StartLevel(&gGameOptions);
+    }
     ready2send = 0;
     if (gDemo.at0)
         gDemo.Close();
@@ -1732,29 +1739,29 @@ RESTART:
         UpdateDacs(0, true);
         sndStopSong();
         FX_StopAllSounds();
-		gQuitGame = 0;
+        gQuitGame = 0;
         gQuitRequest = 0;
-		gRestartGame = 0;
-		gGameStarted = 0;
-		levelSetupOptions(0,0);
-		while (gGameMenuMgr.m_bActive)
-		{
-			gGameMenuMgr.Process();
+        gRestartGame = 0;
+        gGameStarted = 0;
+        levelSetupOptions(0,0);
+        while (gGameMenuMgr.m_bActive)
+        {
+            gGameMenuMgr.Process();
             G_HandleAsync();
             if (viewFPSLimit())
             {
                 videoClearScreen(0);
                 gGameMenuMgr.Draw();
             }
-		}
-		if (gGameOptions.nGameType != 0)
+        }
+        if (gGameOptions.nGameType != 0)
         {
-		    if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
-			    gDemo.NextDemo();
-		    videoSetViewableArea(0,0,xdim-1,ydim-1);
-		    if (!bQuickStart)
-			    credLogosDos();
-		    scrSetDac();
+            if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
+                gDemo.NextDemo();
+            videoSetViewableArea(0,0,xdim-1,ydim-1);
+            if (!bQuickStart)
+                credLogosDos();
+            scrSetDac();
         }
         goto RESTART;
     }
