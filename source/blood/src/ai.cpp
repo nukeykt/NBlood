@@ -67,7 +67,7 @@ int gDudeSlope[kMaxXSprites];
 DUDEEXTRA gDudeExtra[kMaxXSprites];
 
 AISTATE genIdle = { 0, -1, 0, NULL, NULL, NULL, NULL };
-AISTATE genRecoil = { 5, -1, 20, NULL, NULL, NULL, NULL };
+AISTATE genRecoil = { 5, -1, 20, NULL, NULL, NULL, &genIdle };
 
 int dword_138BB0[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
 

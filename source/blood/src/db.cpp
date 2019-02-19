@@ -580,10 +580,10 @@ void dbInit(void)
 
 void PropagateMarkerReferences(void)
 {
-    int nSprite = headspritestat[10];
-    while (nSprite != -1)
+    int nSprite, nNextSprite;
+    for (nSprite = headspritestat[10]; nSprite != -1; nSprite = nNextSprite)
     {
-        int nNextSprite = nextspritestat[nSprite];
+        nNextSprite = nextspritestat[nSprite];
         switch (sprite[nSprite].type)
         {
         case 8:
@@ -595,7 +595,6 @@ void PropagateMarkerReferences(void)
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2c_0 = nSprite;
-                    nSprite = nNextSprite;
                     continue;
                 }
             }
@@ -610,7 +609,6 @@ void PropagateMarkerReferences(void)
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2c_0 = nSprite;
-                    nSprite = nNextSprite;
                     continue;
                 }
             }
@@ -625,7 +623,6 @@ void PropagateMarkerReferences(void)
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
                     xsector[nXSector].at2e_0 = nSprite;
-                    nSprite = nNextSprite;
                     continue;
                 }
             }
@@ -639,8 +636,7 @@ void PropagateMarkerReferences(void)
                 int nXSector = sector[nOwner].extra;
                 if (nXSector > 0 && nXSector < kMaxXSectors)
                 {
-                    xsector[nXSector].at2e_0 = nSprite;
-                    nSprite = nNextSprite;
+                    xsector[nXSector].at2c_0 = nSprite;
                     continue;
                 }
             }
@@ -648,7 +644,6 @@ void PropagateMarkerReferences(void)
         }
         }
         DeleteSprite(nSprite);
-        nSprite = nNextSprite;
     }
 }
 
