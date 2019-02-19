@@ -4669,7 +4669,7 @@ int MoveMissile(spritetype *pSprite)
         if (vdi == 4)
         {
             walltype *pWall = &wall[gHitInfo.hitwall];
-            if (pWall->extra)
+            if (pWall->extra > 0)
             {
                 XWALL *pXWall = &xwall[pWall->extra];
                 if (pXWall->at10_6)

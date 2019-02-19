@@ -303,7 +303,8 @@ void MyLoadSave::Save(void)
         if (sprite[nSprite].statnum < kMaxStatus && nSprite > nNumSprites)
             nNumSprites = nSprite;
     }
-    nNumSprites += 2;
+    //nNumSprites += 2;
+    nNumSprites++;
     Write(&gGameOptions, sizeof(gGameOptions));
     Write(&numsectors, sizeof(numsectors));
     Write(&numwalls, sizeof(numwalls));
