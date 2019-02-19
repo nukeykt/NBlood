@@ -3862,7 +3862,7 @@ skip: ;
                     case 1:
                     case 2:
                     {
-                        vec2f_t dpxy[86] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx0, n0.y } };
+                        vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx0, n0.y } };
 
                         int n = 3;
                         polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
