@@ -35,6 +35,16 @@ extern char textfont[2048], smalltextfont[2048];
 int32_t rendmode=0;
 int32_t usemodels=1;
 int32_t usehightile=1;
+int32_t glsoftsprite = 0;
+
+struct smostwall_t {
+    char type;
+    int32_t wall;
+    float x[2], y[2], z[2];
+};
+
+static smostwall_t smost[MAXWALLSB];
+static int32_t smostwallcnt = -1;
 
 typedef struct { float x, cy[2], fy[2]; int32_t tag; int16_t n, p, ctag, ftag; } vsptyp;
 #define VSPMAX 2048 //<- careful!
@@ -3997,6 +4007,234 @@ skip: ;
 #endif
 }
 
+void polymost_dosmost(int const sm)
+{
+    float x0 = smost[sm].x[0];
+    float x1 = smost[sm].x[1];
+    float y0 = smost[sm].z[0];
+    float y1 = smost[sm].z[1];
+    int const dir = (x0 < x1);
+
+    if (dir) //clip dmost (floor)
+    {
+        y0 -= DOMOST_OFFSET;
+        y1 -= DOMOST_OFFSET;
+    }
+    else //clip umost (ceiling)
+    {
+        if (x0 == x1) return;
+        swapfloat(&x0, &x1);
+        swapfloat(&y0, &y1);
+        y0 += DOMOST_OFFSET;
+        y1 += DOMOST_OFFSET; //necessary?
+    }
+
+    vec2f_t dm0 = { x0, y0 };
+    vec2f_t dm1 = { x1, y1 };
+
+    float const slop = (dm1.y - dm0.y) / (dm1.x - dm0.x);
+
+    vec2f_t n0, n1;
+    float spx[4];
+    int32_t  spt[4];
+
+    for (bssize_t newi, i=vsp[0].n; i; i=newi)
+    {
+        newi = vsp[i].n; n0.x = vsp[i].x; n1.x = vsp[newi].x;
+
+        if ((dm0.x >= n1.x) || (n0.x >= dm1.x) || (vsp[i].ctag <= 0)) continue;
+
+        float const dx = n1.x-n0.x;
+        float const cy[2] = { vsp[i].cy[0], vsp[i].fy[0] },
+                    cv[2] = { vsp[i].cy[1]-cy[0], vsp[i].fy[1]-cy[1] };
+
+        int scnt = 0;
+
+        //Test if left edge requires split (dm0.x,dm0.y) (nx0,cy(0)),<dx,cv(0)>
+        if ((dm0.x > n0.x) && (dm0.x < n1.x))
+        {
+            float const t = (dm0.x-n0.x)*cv[dir] - (dm0.y-cy[dir])*dx;
+            if (((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
+                { spx[scnt] = dm0.x; spt[scnt] = -1; scnt++; }
+        }
+
+        //Test for intersection on umost (0) and dmost (1)
+
+        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[0]),
+                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[1]) };
+
+        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x) * cv[0]),
+                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x) * cv[1]) };
+
+        float const fnx[2] = { dm0.x + ((n[0] / d[0]) * (dm1.x - dm0.x)),
+                               dm0.x + ((n[1] / d[1]) * (dm1.x - dm0.x)) };
+
+        if ((Bfabsf(d[0]) > Bfabsf(n[0])) && (d[0] * n[0] >= 0.f) && (fnx[0] > n0.x) && (fnx[0] < n1.x))
+            spx[scnt] = fnx[0], spt[scnt++] = 0;
+
+        if ((Bfabsf(d[1]) > Bfabsf(n[1])) && (d[1] * n[1] >= 0.f) && (fnx[1] > n0.x) && (fnx[1] < n1.x))
+            spx[scnt] = fnx[1], spt[scnt++] = 1;
+
+        //Nice hack to avoid full sort later :)
+        if ((scnt >= 2) && (spx[scnt-1] < spx[scnt-2]))
+        {
+            swapfloat(&spx[scnt-1], &spx[scnt-2]);
+            swaplong(&spt[scnt-1], &spt[scnt-2]);
+        }
+
+        //Test if right edge requires split
+        if ((dm1.x > n0.x) && (dm1.x < n1.x))
+        {
+            float const t = (dm1.x-n0.x)*cv[dir] - (dm1.y-cy[dir])*dx;
+            if (((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
+                { spx[scnt] = dm1.x; spt[scnt] = -1; scnt++; }
+        }
+
+        vsp[i].tag = vsp[newi].tag = -1;
+
+        float const rdx = 1.f/dx;
+
+        for (bssize_t z=0, vcnt=0; z<=scnt; z++,i=vcnt)
+        {
+            float t;
+
+            if (z == scnt)
+                goto skip;
+
+            t = (spx[z]-n0.x)*rdx;
+            vcnt = vsinsaft(i);
+            vsp[i].cy[1] = t*cv[0] + cy[0];
+            vsp[i].fy[1] = t*cv[1] + cy[1];
+            vsp[vcnt].x = spx[z];
+            vsp[vcnt].cy[0] = vsp[i].cy[1];
+            vsp[vcnt].fy[0] = vsp[i].fy[1];
+            vsp[vcnt].tag = spt[z];
+
+skip: ;
+            int32_t const ni = vsp[i].n; if (!ni) continue; //this 'if' fixes many bugs!
+            float const dx0 = vsp[i].x; if (dm0.x > dx0) continue;
+            float const dx1 = vsp[ni].x; if (dm1.x < dx1) continue;
+            n0.y = (dx0-dm0.x)*slop + dm0.y;
+            n1.y = (dx1-dm0.x)*slop + dm0.y;
+
+            //      dx0           dx1
+            //       ~             ~
+            //----------------------------
+            //     t0+=0         t1+=0
+            //   vsp[i].cy[0]  vsp[i].cy[1]
+            //============================
+            //     t0+=1         t1+=3
+            //============================
+            //   vsp[i].fy[0]    vsp[i].fy[1]
+            //     t0+=2         t1+=6
+            //
+            //     ny0 ?         ny1 ?
+
+            int k = 4;
+
+            if ((vsp[i].tag == 0) || (n0.y <= vsp[i].cy[0]+DOMOST_OFFSET)) k--;
+            if ((vsp[i].tag == 1) || (n0.y >= vsp[i].fy[0]-DOMOST_OFFSET)) k++;
+            if ((vsp[ni].tag == 0) || (n1.y <= vsp[i].cy[1]+DOMOST_OFFSET)) k -= 3;
+            if ((vsp[ni].tag == 1) || (n1.y >= vsp[i].fy[1]-DOMOST_OFFSET)) k += 3;
+
+            if (!dir)
+            {
+                switch (k)
+                {
+                    case 4:
+                    case 5:
+                    case 7:
+                    {
+                        vsp[i].cy[0] = n0.y;
+                        vsp[i].cy[1] = n1.y;
+                        vsp[i].ctag = gtag;
+                    }
+                    break;
+                    case 1:
+                    case 2:
+                    {
+                        vsp[i].cy[0] = n0.y;
+                        vsp[i].ctag = gtag;
+                    }
+                    break;
+                    case 3:
+                    case 6:
+                    {
+                        vsp[i].cy[1] = n1.y;
+                        vsp[i].ctag = gtag;
+                    }
+                    break;
+                    case 8:
+                    {
+                        vsp[i].ctag = vsp[i].ftag = -1;
+                    }
+                    default: break;
+                }
+            }
+            else
+            {
+                switch (k)
+                {
+                case 4:
+                case 3:
+                case 1:
+                {
+                    vsp[i].fy[0] = n0.y;
+                    vsp[i].fy[1] = n1.y;
+                    vsp[i].ftag = gtag;
+                }
+                    break;
+                case 7:
+                case 6:
+                {
+                    vsp[i].fy[0] = n0.y;
+                    vsp[i].ftag = gtag;
+                }
+                    break;
+                case 5:
+                case 2:
+                {
+                    vsp[i].fy[1] = n1.y;
+                    vsp[i].ftag = gtag;
+                }
+                    break;
+                case 0:
+                {
+                    vsp[i].ctag = vsp[i].ftag = -1;
+                }
+                default:
+                    break;
+                }
+            }
+        }
+    }
+
+    gtag++;
+
+    //Combine neighboring vertical strips with matching collinear top&bottom edges
+    //This prevents x-splits from propagating through the entire scan
+#ifdef COMBINE_STRIPS
+    int i = vsp[0].n;
+
+    while (i)
+    {
+        if ((vsp[i].cy[0] >= vsp[i].fy[0]) && (vsp[i].cy[1] >= vsp[i].fy[1]))
+            vsp[i].ctag = vsp[i].ftag = -1;
+
+        int const ni = vsp[i].n;
+
+        if ((vsp[i].ctag == vsp[ni].ctag) && (vsp[i].ftag == vsp[ni].ftag) &&
+            ((vsp[i].cy[1] <= vsp[ni].cy[1]) || (vsp[i].fy[1] <= vsp[ni].fy[1])))
+        {
+            vsp[i].cy[1] = vsp[ni].cy[1];
+            vsp[i].fy[1] = vsp[ni].fy[1];
+            vsdel(ni);
+        }
+        else i = ni;
+    }
+#endif
+}
+
 #define POINT2(i) (wall[wall[i].point2])
 
 void polymost_editorfunc(void)
@@ -4537,7 +4775,7 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->floorxpanning; global_cf_ypanning = sec->floorypanning, global_cf_heinum = sec->floorheinum;
         global_getzofslope_func = &getflorzofslope;
 
-        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
+        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0 && !glsoftsprite)
         {
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
             ytex.d = 0;
@@ -4883,7 +5121,7 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->ceilingxpanning; global_cf_ypanning = sec->ceilingypanning, global_cf_heinum = sec->ceilingheinum;
         global_getzofslope_func = &getceilzofslope;
         
-        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
+        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0 && !glsoftsprite)
         {
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
             ytex.d = 0;
@@ -5234,72 +5472,121 @@ static void polymost_drawalls(int32_t const bunch)
             getzsofslope(nextsectnum,/*Blrintf(nx1)*/(int)n1.x,/*Blrintf(ny1)*/(int)n1.y,&cz,&fz);
             float const ocy1 = ((float)(cz-globalposz))*ryp1 + ghoriz;
             float const ofy1 = ((float)(fz-globalposz))*ryp1 + ghoriz;
+            getzsofslope(nextsectnum,globalposx,globalposy, &cz, &fz);
 
             if ((wal->cstat&48) == 16) maskwall[maskwallcnt++] = z;
 
-            if (((cy0 < ocy0) || (cy1 < ocy1)) && (!((sec->ceilingstat&sector[nextsectnum].ceilingstat)&1)))
+            if (!((sec->ceilingstat&sector[nextsectnum].ceilingstat)&1))
             {
-                globalpicnum = wal->picnum; globalshade = wal->shade; globalpal = (int32_t)((uint8_t)wal->pal);
-                globvis = globalvisibility;
-                if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
-                globalorientation = wal->cstat;
-                DO_TILE_ANIM(globalpicnum, wallnum+16384);
-
-                int i = (!(wal->cstat&4)) ? sector[nextsectnum].ceilingz : sec->ceilingz;
-
-                // over
-                calc_ypanning(i, ryp0, ryp1, x0, x1, wal->ypanning, wal->yrepeat, wal->cstat&4);
-
-                if (wal->cstat&8) //xflip
+                if ((cy0 < ocy0) || (cy1 < ocy1))
                 {
-                    float const t = (float)(wal->xrepeat*8 + wal->xpanning*2);
-                    xtex.u = xtex.d*t - xtex.u;
-                    ytex.u = ytex.d*t - ytex.u;
-                    otex.u = otex.d*t - otex.u;
+                    globalpicnum = wal->picnum; globalshade = wal->shade; globalpal = (int32_t)((uint8_t)wal->pal);
+                    globvis = globalvisibility;
+                    if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
+                    globalorientation = wal->cstat;
+                    DO_TILE_ANIM(globalpicnum, wallnum+16384);
+
+                    int i = (!(wal->cstat&4)) ? sector[nextsectnum].ceilingz : sec->ceilingz;
+
+                    // over
+                    calc_ypanning(i, ryp0, ryp1, x0, x1, wal->ypanning, wal->yrepeat, wal->cstat&4);
+
+                    if (wal->cstat&8) //xflip
+                    {
+                        float const t = (float)(wal->xrepeat*8 + wal->xpanning*2);
+                        xtex.u = xtex.d*t - xtex.u;
+                        ytex.u = ytex.d*t - ytex.u;
+                        otex.u = otex.d*t - otex.u;
+                    }
+                    if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
+
+                    calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+
+                    pow2xsplit = 1; polymost_domost(x1,ocy1,x0,ocy0,cy1,ocy1,cy0,ocy0);
+                    if (wal->cstat&8) { xtex.u = ogux; ytex.u = oguy; otex.u = oguo; }
                 }
-                if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
-
-                calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
-
-                pow2xsplit = 1; polymost_domost(x1,ocy1,x0,ocy0,cy1,ocy1,cy0,ocy0);
-                if (wal->cstat&8) { xtex.u = ogux; ytex.u = oguy; otex.u = oguo; }
+                if (ocy0 < cy0 || ocy1 < cy1 || globalposz < cz)
+                {
+                    smost[smostwallcnt].wall = z;
+                    smost[smostwallcnt].type = 1;
+                    smost[smostwallcnt].x[0] = x1;
+                    smost[smostwallcnt].x[1] = x0;
+                    smost[smostwallcnt].y[0] = p1.y;
+                    smost[smostwallcnt].y[1] = p0.y;
+                    smost[smostwallcnt].z[0] = cy1;
+                    smost[smostwallcnt].z[1] = cy0;
+                    smostwallcnt++;
+                    smost[smostwallcnt].wall = z;
+                    smost[smostwallcnt].type = 1;
+                    smost[smostwallcnt].x[0] = x1;
+                    smost[smostwallcnt].x[1] = x0;
+                    smost[smostwallcnt].y[0] = p1.y;
+                    smost[smostwallcnt].y[1] = p0.y;
+                    smost[smostwallcnt].z[0] = ocy1;
+                    smost[smostwallcnt].z[1] = ocy0;
+                    smostwallcnt++;
+                }
             }
-            if (((ofy0 < fy0) || (ofy1 < fy1)) && (!((sec->floorstat&sector[nextsectnum].floorstat)&1)))
+            if (!((sec->floorstat&sector[nextsectnum].floorstat)&1))
             {
-                uwalltype *nwal;
-
-                if (!(wal->cstat&2)) nwal = wal;
-                else
+                if ((ofy0 < fy0) || (ofy1 < fy1))
                 {
-                    nwal = (uwalltype *)&wall[wal->nextwall];
-                    otex.u += (float)(nwal->xpanning - wal->xpanning) * otex.d;
-                    xtex.u += (float)(nwal->xpanning - wal->xpanning) * xtex.d;
-                    ytex.u += (float)(nwal->xpanning - wal->xpanning) * ytex.d;
+                    uwalltype *nwal;
+
+                    if (!(wal->cstat&2)) nwal = wal;
+                    else
+                    {
+                        nwal = (uwalltype *)&wall[wal->nextwall];
+                        otex.u += (float)(nwal->xpanning - wal->xpanning) * otex.d;
+                        xtex.u += (float)(nwal->xpanning - wal->xpanning) * xtex.d;
+                        ytex.u += (float)(nwal->xpanning - wal->xpanning) * ytex.d;
+                    }
+                    globalpicnum = nwal->picnum; globalshade = nwal->shade; globalpal = (int32_t)((uint8_t)nwal->pal);
+                    globvis = globalvisibility;
+                    if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
+                    globalorientation = nwal->cstat;
+                    DO_TILE_ANIM(globalpicnum, wallnum+16384);
+
+                    int i = (!(nwal->cstat&4)) ? sector[nextsectnum].floorz : sec->ceilingz;
+
+                    // under
+                    calc_ypanning(i, ryp0, ryp1, x0, x1, nwal->ypanning, wal->yrepeat, !(nwal->cstat&4));
+
+                    if (wal->cstat&8) //xflip
+                    {
+                        float const t = (float)(wal->xrepeat*8 + nwal->xpanning*2);
+                        xtex.u = xtex.d*t - xtex.u;
+                        ytex.u = ytex.d*t - ytex.u;
+                        otex.u = otex.d*t - otex.u;
+                    }
+                    if (nwal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
+
+                    calc_and_apply_fog(nwal->picnum, fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
+
+                    pow2xsplit = 1; polymost_domost(x0,ofy0,x1,ofy1,ofy0,fy0,ofy1,fy1);
+                    if (wal->cstat&(2+8)) { otex.u = oguo; xtex.u = ogux; ytex.u = oguy; }
                 }
-                globalpicnum = nwal->picnum; globalshade = nwal->shade; globalpal = (int32_t)((uint8_t)nwal->pal);
-                globvis = globalvisibility;
-                if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
-                globalorientation = nwal->cstat;
-                DO_TILE_ANIM(globalpicnum, wallnum+16384);
-
-                int i = (!(nwal->cstat&4)) ? sector[nextsectnum].floorz : sec->ceilingz;
-
-                // under
-                calc_ypanning(i, ryp0, ryp1, x0, x1, nwal->ypanning, wal->yrepeat, !(nwal->cstat&4));
-
-                if (wal->cstat&8) //xflip
+                if (ofy0 > fy0 || ofy1 > fy1 || globalposz > fz)
                 {
-                    float const t = (float)(wal->xrepeat*8 + nwal->xpanning*2);
-                    xtex.u = xtex.d*t - xtex.u;
-                    ytex.u = ytex.d*t - ytex.u;
-                    otex.u = otex.d*t - otex.u;
+                    smost[smostwallcnt].wall = z;
+                    smost[smostwallcnt].type = 0;
+                    smost[smostwallcnt].x[0] = x0;
+                    smost[smostwallcnt].x[1] = x1;
+                    smost[smostwallcnt].y[0] = p0.y;
+                    smost[smostwallcnt].y[1] = p1.y;
+                    smost[smostwallcnt].z[0] = fy0;
+                    smost[smostwallcnt].z[1] = fy1;
+                    smostwallcnt++;
+                    smost[smostwallcnt].wall = z;
+                    smost[smostwallcnt].type = 0;
+                    smost[smostwallcnt].x[0] = x0;
+                    smost[smostwallcnt].x[1] = x1;
+                    smost[smostwallcnt].y[0] = p0.y;
+                    smost[smostwallcnt].y[1] = p1.y;
+                    smost[smostwallcnt].z[0] = ofy0;
+                    smost[smostwallcnt].z[1] = ofy1;
+                    smostwallcnt++;
                 }
-                if (nwal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
-
-                calc_and_apply_fog(nwal->picnum, fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
-
-                pow2xsplit = 1; polymost_domost(x0,ofy0,x1,ofy1,ofy0,fy0,ofy1,fy1);
-                if (wal->cstat&(2+8)) { otex.u = oguo; xtex.u = ogux; ytex.u = oguy; }
             }
         }
 
@@ -5347,6 +5634,15 @@ static void polymost_drawalls(int32_t const bunch)
                 calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
                 pow2xsplit = 1; polymost_domost(x0, cy0, x1, cy1, cy0, fy0, cy1, fy1);
             } while (0);
+            smost[smostwallcnt].wall = z;
+            smost[smostwallcnt].type = 0;
+            smost[smostwallcnt].x[0] = x0;
+            smost[smostwallcnt].x[1] = x1;
+            smost[smostwallcnt].y[0] = p0.y;
+            smost[smostwallcnt].y[1] = p1.y;
+            smost[smostwallcnt].z[0] = -1000000.f;
+            smost[smostwallcnt].z[1] = -1000000.f;
+            smostwallcnt++;
         }
 
         domostpolymethod = DAMETH_NOMASK;
@@ -5701,6 +5997,8 @@ void polymost_drawrooms()
     // MASKWALL_BAD_ACCESS
     // Fixes access of stale maskwall[maskwallcnt] (a "scan" index, in BUILD lingo):
     maskwallcnt = 0;
+
+    smostwallcnt = 0;
 
     // NOTE: globalcursectnum has been already adjusted in ADJUST_GLOBALCURSECTNUM.
     Bassert((unsigned)globalcursectnum < MAXSECTORS);
@@ -6438,11 +6736,263 @@ void polymost2_drawsprite(int32_t snum)
     tilesiz[globalpicnum] = oldsiz;
 }
 
+static int32_t polymost_drawsoftsprite(int32_t snum)
+{
+    uspritetype *const tspr = tspriteptr[snum];
+
+    if (EDUKE32_PREDICT_FALSE(bad_tspr(tspr)))
+        return 0;
+
+    const usectortype *sec;
+
+    int32_t spritenum = tspr->owner;
+
+    if ((tspr->cstat&CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_FACING)
+        return 0;
+
+    DO_TILE_ANIM(tspr->picnum, spritenum + 32768);
+
+    globalpicnum = tspr->picnum;
+    globalshade = tspr->shade;
+    globalpal = tspr->pal;
+    globalorientation = tspr->cstat;
+    globvis = globalvisibility;
+
+    if (sector[tspr->sectnum].visibility != 0)
+        globvis = mulscale4(globvis, (uint8_t)(sector[tspr->sectnum].visibility + 16));
+
+    vec2_t off = { 0, 0 };
+
+    if ((globalorientation & 48) != 48)  // only non-voxel sprites should do this
+    {
+        int const flag = usehightile && h_xsize[globalpicnum];
+        off.x = (int32_t)tspr->xoffset + (flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs);
+        off.y = (int32_t)tspr->yoffset + (flag ? h_yoffs[globalpicnum] : picanm[globalpicnum].yofs);
+    }
+
+    int32_t method = DAMETH_MASK | DAMETH_CLAMPED;
+
+    if (tspr->cstat & 2)
+        method = DAMETH_CLAMPED | ((tspr->cstat & 512) ? DAMETH_TRANS2 : DAMETH_TRANS1);
+
+    handle_blend(!!(tspr->cstat & 2), tspr->blend, !!(tspr->cstat & 512));
+
+    drawpoly_alpha = spriteext[spritenum].alpha;
+    drawpoly_blend = tspr->blend;
+
+    sec = (usectortype *)&sector[tspr->sectnum];
+
+    calc_and_apply_fog(tspr->picnum, fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
+
+    while (!(spriteext[spritenum].flags & SPREXT_NOTMD))
+    {
+        if (usemodels && tile2model[Ptile2tile(tspr->picnum, tspr->pal)].modelid >= 0 &&
+            tile2model[Ptile2tile(tspr->picnum, tspr->pal)].framenum >= 0)
+        {
+            if (polymost_mddraw(tspr)) return 1;
+            break;  // else, render as flat sprite
+        }
+
+        if (usevoxels && (tspr->cstat & 48) != 48 && tiletovox[tspr->picnum] >= 0 && voxmodels[tiletovox[tspr->picnum]])
+        {
+            if (polymost_voxdraw(voxmodels[tiletovox[tspr->picnum]], tspr)) return 1;
+            break;  // else, render as flat sprite
+        }
+
+        break;
+    }
+
+    vec2_t pos = *(vec2_t *)tspr;
+    vec2s_t const oldsiz = tilesiz[globalpicnum];
+    vec2_t tsiz = { oldsiz.x, oldsiz.y };
+
+    if (usehightile && h_xsize[globalpicnum])
+    {
+        tsiz.x = h_xsize[globalpicnum];
+        tsiz.y = h_ysize[globalpicnum];
+    }
+
+    if (tsiz.x <= 0 || tsiz.y <= 0)
+        return 1;
+
+    vec2f_t const ftsiz = { (float)tsiz.x, (float)tsiz.y };
+    // Project 3D to 2D
+    if (globalorientation & 4)
+        off.x = -off.x;
+    // NOTE: yoff not negated not for y flipping, unlike wall and floor
+    // aligned sprites.
+
+    int const ang = (getangle(tspr->x - globalposx, tspr->y - globalposy) + 1024) & 2047;
+
+    float const foffs = TSPR_OFFSET(tspr);
+
+    vec2f_t const offs = { (float) (sintable[(ang + 512) & 2047] >> 6) * foffs,
+        (float) (sintable[(ang) & 2047] >> 6) * foffs };
+
+    vec2f_t s0 = { (float)(tspr->x - globalposx) + offs.x,
+                    (float)(tspr->y - globalposy) + offs.y};
+
+    vec2f_t p0 = { s0.y * gcosang - s0.x * gsinang, s0.x * gcosang2 + s0.y * gsinang2 };
+
+    if (p0.y <= SCISDIST)
+        return 1;
+
+    float const ryp0 = 1.f / p0.y;
+    s0.x = ghalfx * p0.x * ryp0 + ghalfx;
+    s0.y = ((float) (tspr->z - globalposz)) * gyxscale * ryp0 + ghoriz;
+
+    float const f = ryp0 * fxdimen * (1.0f / 160.f);
+
+    vec2f_t ff = { ((float)tspr->xrepeat) * f,
+                    ((float)tspr->yrepeat) * f * ((float)yxaspect * (1.0f / 65536.f)) };
+
+    if (tsiz.x & 1)
+        s0.x += ff.x * 0.5f;
+    if (globalorientation & 128 && tsiz.y & 1)
+        s0.y += ff.y * 0.5f;
+
+    s0.x -= ff.x * (float) off.x;
+    s0.y -= ff.y * (float) off.y;
+
+    ff.x *= ftsiz.x;
+    ff.y *= ftsiz.y;
+
+    float px[4], py[4];
+    vec2f_t pxy[4];
+
+    float const x0 = s0.x - ff.x * 0.5f;
+    float const x1 = s0.x + ff.x * 0.5f;
+
+    px[0] = px[3] = x0;
+    px[1] = px[2] = x1;
+    if (!(globalorientation & 128))
+    {
+        py[0] = py[1] = s0.y - ff.y;
+        py[2] = py[3] = s0.y;
+    }
+    else
+    {
+        py[0] = py[1] = s0.y - ff.y * 0.5f;
+        py[2] = py[3] = s0.y + ff.y * 0.5f;
+    }
+
+    xtex.d = ytex.d = ytex.u = xtex.v = 0;
+    otex.d = ryp0 * gviewxrange;
+
+    if (!(globalorientation & 4))
+    {
+        xtex.u = ftsiz.x * otex.d / (px[1] - px[0] + .002f);
+        otex.u = -xtex.u * (px[0] - .001f);
+    }
+    else
+    {
+        xtex.u = ftsiz.x * otex.d / (px[0] - px[1] - .002f);
+        otex.u = -xtex.u * (px[1] + .001f);
+    }
+
+    if (!(globalorientation & 8))
+    {
+        ytex.v = ftsiz.y * otex.d / (py[3] - py[0] + .002f);
+        otex.v = -ytex.v * (py[0] - .001f);
+    }
+    else
+    {
+        ytex.v = ftsiz.y * otex.d / (py[0] - py[3] - .002f);
+        otex.v = -ytex.v * (py[3] + .001f);
+    }
+
+    // sprite panning
+    if (spriteext[spritenum].xpanning)
+    {
+        ytex.u -= ytex.d * ((float) (spriteext[spritenum].xpanning) * (1.0f / 255.f)) * ftsiz.x;
+        otex.u -= otex.d * ((float) (spriteext[spritenum].xpanning) * (1.0f / 255.f)) * ftsiz.x;
+        drawpoly_srepeat = 1;
+    }
+
+    if (spriteext[spritenum].ypanning)
+    {
+        ytex.v -= ytex.d * ((float) (spriteext[spritenum].ypanning) * (1.0f / 255.f)) * ftsiz.y;
+        otex.v -= otex.d * ((float) (spriteext[spritenum].ypanning) * (1.0f / 255.f)) * ftsiz.y;
+        drawpoly_trepeat = 1;
+    }
+
+    // Clip sprites to ceilings/floors when no parallaxing and not sloped
+    if (!(sector[tspr->sectnum].ceilingstat & 3))
+    {
+        s0.y = ((float) (sector[tspr->sectnum].ceilingz - globalposz)) * gyxscale * ryp0 + ghoriz;
+        if (py[0] < s0.y)
+            py[0] = py[1] = s0.y;
+    }
+
+    if (!(sector[tspr->sectnum].floorstat & 3))
+    {
+        s0.y = ((float) (sector[tspr->sectnum].floorz - globalposz)) * gyxscale * ryp0 + ghoriz;
+        if (py[2] > s0.y)
+            py[2] = py[3] = s0.y;
+    }
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+
+    polymost_initmosts(px, py, 4);
+
+    for (int i = smostwallcnt - 1; i >= 0; i--)
+    {
+        smostwall_t *smst = &smost[i];
+        float const minx = min(smst->x[0], smst->x[1]);
+        float const maxx = max(smst->x[0], smst->x[1]);
+        if (maxx < x0 || minx > x1) continue;
+        if (p0.y <= smst->y[0] && p0.y <= smst->y[1]) continue;
+        if (spritewallfront(tspr, thewall[smst->wall]) && (p0.y <= smst->y[0] || p0.y <= smst->y[1])) continue;
+        polymost_dosmost(i);
+    }
+
+    tilesiz[globalpicnum].x = tsiz.x;
+    tilesiz[globalpicnum].y = tsiz.y;
+    pow2xsplit = 0;
+
+    int i = vsp[0].n;
+
+    while (i)
+    {
+        int const ni = vsp[i].n;
+        if (ni == 0)
+            break;
+
+        if (vsp[i].ftag >= 0 && vsp[i].ctag >= 0)
+        {
+            pxy[0].x = pxy[3].x = vsp[i].x;
+            pxy[1].x = pxy[2].x = vsp[ni].x;
+            pxy[0].y = vsp[i].cy[0];
+            pxy[1].y = vsp[i].cy[1];
+            pxy[2].y = vsp[i].fy[1];
+            pxy[3].y = vsp[i].fy[0];
+            polymost_drawpoly(pxy, 4, method);
+        }
+        i = ni;
+    }
+
+    drawpoly_srepeat = 0;
+    drawpoly_trepeat = 0;
+
+    tilesiz[globalpicnum] = oldsiz;
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
+    return 1;
+}
+
 void polymost_drawsprite(int32_t snum)
 {
     if (r_enablepolymost2)
     {
         polymost2_drawsprite(snum);
+        return;
+    }
+
+    if (glsoftsprite && polymost_drawsoftsprite(snum))
+    {
         return;
     }
 
@@ -6658,7 +7208,14 @@ void polymost_drawsprite(int32_t snum)
             tilesiz[globalpicnum].x = tsiz.x;
             tilesiz[globalpicnum].y = tsiz.y;
             pow2xsplit = 0;
+
+            if (glsoftsprite)
+                glDepthMask(GL_FALSE);
+
             polymost_drawpoly(pxy, 4, method);
+
+            if (glsoftsprite)
+                glDepthMask(GL_TRUE);
 
             drawpoly_srepeat = 0;
             drawpoly_trepeat = 0;
@@ -6871,7 +7428,14 @@ void polymost_drawsprite(int32_t snum)
             tilesiz[globalpicnum].x = tsiz.x;
             tilesiz[globalpicnum].y = tsiz.y;
             pow2xsplit = 0;
+
+            if (glsoftsprite)
+                glDepthMask(GL_FALSE);
+
             polymost_drawpoly(pxy, 4, method);
+
+            if (glsoftsprite)
+                glDepthMask(GL_TRUE);
 
             drawpoly_srepeat = 0;
             drawpoly_trepeat = 0;
@@ -7045,7 +7609,13 @@ void polymost_drawsprite(int32_t snum)
                 tilesiz[globalpicnum].y = tsiz.y;
                 pow2xsplit = 0;
 
+                if (glsoftsprite)
+                    glDepthMask(GL_FALSE);
+
                 polymost_drawpoly(pxy, npoints, method);
+
+                if (glsoftsprite)
+                    glDepthMask(GL_TRUE);
 
                 drawpoly_srepeat = 0;
                 drawpoly_trepeat = 0;
@@ -8243,6 +8813,7 @@ void polymost_initosdfuncs(void)
         { "r_hightile","enable/disable hightile texture rendering",(void *) &usehightile, CVAR_BOOL, 0, 1 },
 
         { "r_preview_mouseaim", "toggles mouse aiming preview, use this to calibrate yxaspect in Polymost Mapster32", (void *) &preview_mouseaim, CVAR_BOOL, 0, 1 },
+        { "r_glsoftsprite", "enable software like flawed sprite rendering", (void *) &glsoftsprite, CVAR_BOOL, 0, 1 },
     };
 
     for (i=0; i<ARRAY_SIZE(cvars_polymost); i++)

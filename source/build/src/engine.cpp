@@ -2069,7 +2069,7 @@ int32_t wallfront(int32_t l1, int32_t l2)
 //
 // spritewallfront (internal)
 //
-static inline int32_t spritewallfront(const uspritetype *s, int32_t w)
+int32_t spritewallfront(const uspritetype *s, int32_t w)
 {
     const uwalltype *const wal = (uwalltype *)&wall[w];
     const uwalltype *wal2 = (uwalltype *)&wall[wal->point2];
@@ -8678,7 +8678,7 @@ killsprite:
         i--;
         if (tspriteptr[i] != NULL
 #ifdef USE_OPENGL
-            && (!(tspriteptr[i]->cstat & 1024) || videoGetRenderMode() != REND_POLYMOST)
+            && (!(tspriteptr[i]->cstat & 1024) || videoGetRenderMode() != REND_POLYMOST || glsoftsprite)
 #endif
            )
         {
