@@ -5523,6 +5523,8 @@ static void polymost_drawalls(int32_t const bunch)
                     while (i)
                     {
                         int ni = vsp[i].n;
+                        if (ni == 0)
+                            break;
                         if (vsp[ni].x > x0 && x1 > vsp[i].x)
                         {
                             smost[smostwallcnt].wall = z;
@@ -5593,6 +5595,8 @@ static void polymost_drawalls(int32_t const bunch)
                     while (i)
                     {
                         int ni = vsp[i].n;
+                        if (ni == 0)
+                            break;
                         if (vsp[ni].x > x0 && x1 > vsp[i].x)
                         {
                             smost[smostwallcnt].wall = z;
