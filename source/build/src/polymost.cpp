@@ -4011,8 +4011,9 @@ void polymost_dosmost(int const sm)
 {
     float x0 = smost[sm].x[0];
     float x1 = smost[sm].x[1];
-    float y0 = smost[sm].z[0];
-    float y1 = smost[sm].z[1];
+    int const oneway = smost[sm].type;
+    float y0 = oneway ? 0.f : smost[sm].z[0];
+    float y1 = oneway ? 0.f : smost[sm].z[1];
     int const dir = (x0 < x1);
 
     if (dir) //clip dmost (floor)
@@ -4054,39 +4055,42 @@ void polymost_dosmost(int const sm)
         if ((dm0.x > n0.x) && (dm0.x < n1.x))
         {
             float const t = (dm0.x-n0.x)*cv[dir] - (dm0.y-cy[dir])*dx;
-            if (((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
+            if (oneway || ((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
                 { spx[scnt] = dm0.x; spt[scnt] = -1; scnt++; }
         }
 
         //Test for intersection on umost (0) and dmost (1)
 
-        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[0]),
-                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[1]) };
-
-        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x) * cv[0]),
-                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x) * cv[1]) };
-
-        float const fnx[2] = { dm0.x + ((n[0] / d[0]) * (dm1.x - dm0.x)),
-                               dm0.x + ((n[1] / d[1]) * (dm1.x - dm0.x)) };
-
-        if ((Bfabsf(d[0]) > Bfabsf(n[0])) && (d[0] * n[0] >= 0.f) && (fnx[0] > n0.x) && (fnx[0] < n1.x))
-            spx[scnt] = fnx[0], spt[scnt++] = 0;
-
-        if ((Bfabsf(d[1]) > Bfabsf(n[1])) && (d[1] * n[1] >= 0.f) && (fnx[1] > n0.x) && (fnx[1] < n1.x))
-            spx[scnt] = fnx[1], spt[scnt++] = 1;
-
-        //Nice hack to avoid full sort later :)
-        if ((scnt >= 2) && (spx[scnt-1] < spx[scnt-2]))
+        if (!oneway)
         {
-            swapfloat(&spx[scnt-1], &spx[scnt-2]);
-            swaplong(&spt[scnt-1], &spt[scnt-2]);
+            float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[0]),
+                                 ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[1]) };
+
+            float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x) * cv[0]),
+                                 ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x) * cv[1]) };
+
+            float const fnx[2] = { dm0.x + ((n[0] / d[0]) * (dm1.x - dm0.x)),
+                                   dm0.x + ((n[1] / d[1]) * (dm1.x - dm0.x)) };
+
+            if ((Bfabsf(d[0]) > Bfabsf(n[0])) && (d[0] * n[0] >= 0.f) && (fnx[0] > n0.x) && (fnx[0] < n1.x))
+                spx[scnt] = fnx[0], spt[scnt++] = 0;
+
+            if ((Bfabsf(d[1]) > Bfabsf(n[1])) && (d[1] * n[1] >= 0.f) && (fnx[1] > n0.x) && (fnx[1] < n1.x))
+                spx[scnt] = fnx[1], spt[scnt++] = 1;
+
+            //Nice hack to avoid full sort later :)
+            if ((scnt >= 2) && (spx[scnt-1] < spx[scnt-2]))
+            {
+                swapfloat(&spx[scnt-1], &spx[scnt-2]);
+                swaplong(&spt[scnt-1], &spt[scnt-2]);
+            }
         }
 
         //Test if right edge requires split
         if ((dm1.x > n0.x) && (dm1.x < n1.x))
         {
             float const t = (dm1.x-n0.x)*cv[dir] - (dm1.y-cy[dir])*dx;
-            if (((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
+            if (oneway || ((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
                 { spx[scnt] = dm1.x; spt[scnt] = -1; scnt++; }
         }
 
@@ -4114,6 +4118,11 @@ skip: ;
             int32_t const ni = vsp[i].n; if (!ni) continue; //this 'if' fixes many bugs!
             float const dx0 = vsp[i].x; if (dm0.x > dx0) continue;
             float const dx1 = vsp[ni].x; if (dm1.x < dx1) continue;
+            if (oneway)
+            {
+                vsp[i].ctag = vsp[i].ftag = -1;
+                continue;
+            }
             n0.y = (dx0-dm0.x)*slop + dm0.y;
             n1.y = (dx1-dm0.x)*slop + dm0.y;
 
@@ -4737,6 +4746,8 @@ static void polymost_drawalls(int32_t const bunch)
         float const x0 = ghalfx*p0.x*ryp0 + ghalfx, x1 = ghalfx*p1.x*ryp1 + ghalfx;
 
         if (x1 <= x0) continue;
+
+        int32_t const startsmostwallcnt = smostwallcnt;
 
         ryp0 *= gyxscale; ryp1 *= gyxscale;
 
@@ -5529,11 +5540,11 @@ static void polymost_drawalls(int32_t const bunch)
                             {
                                 smost[smostwallcnt].z[0] = vsp[i].cy[1];
                                 smost[smostwallcnt].z[1] = vsp[i].cy[0];
+                                smost[smostwallcnt].type = 0;
                             }
                             else
                             {
-                                smost[smostwallcnt].z[0] = 100000.f;
-                                smost[smostwallcnt].z[1] = 100000.f;
+                                smost[smostwallcnt].type = 1;
                             }
                             smostwallcnt++;
                         }
@@ -5604,11 +5615,11 @@ static void polymost_drawalls(int32_t const bunch)
                             {
                                 smost[smostwallcnt].z[0] = vsp[i].fy[0];
                                 smost[smostwallcnt].z[1] = vsp[i].fy[1];
+                                smost[smostwallcnt].type = 0;
                             }
                             else
                             {
-                                smost[smostwallcnt].z[0] = -100000.f;
-                                smost[smostwallcnt].z[1] = -100000.f;
+                                smost[smostwallcnt].type = 1;
                             }
                             smostwallcnt++;
                         }
@@ -5662,8 +5673,21 @@ static void polymost_drawalls(int32_t const bunch)
                 calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
                 pow2xsplit = 1; polymost_domost(x0, cy0, x1, cy1, cy0, fy0, cy1, fy1);
             } while (0);
-            const float slop = (p1.y-p0.y)/(x1-x0);
+            smost[smostwallcnt].wall = z;
+            smost[smostwallcnt].x[0] = x0;
+            smost[smostwallcnt].x[1] = x1;
+            smost[smostwallcnt].y[0] = p0.y;
+            smost[smostwallcnt].y[1] = p1.y;
+            smost[smostwallcnt].type = 1;
+            smostwallcnt++;
+        }
+
+        domostpolymethod = DAMETH_NOMASK;
+
+        if (nextsectnum >= 0)
+        {
             int i = vsp[0].n;
+            int found = 0;
             while (i)
             {
                 int ni = vsp[i].n;
@@ -5672,26 +5696,31 @@ static void polymost_drawalls(int32_t const bunch)
                     i = ni;
                     continue;
                 }
-                if (vsp[i].x <= vsp[ni].x)
+                if (vsp[i].x <= vsp[ni].x && vsp[i].ctag >= 0 && vsp[i].ftag >= 0)
                 {
-                    smost[smostwallcnt].wall = z;
-                    smost[smostwallcnt].x[0] = min(vsp[ni].x, x1);
-                    smost[smostwallcnt].x[1] = max(vsp[i].x, x0);
-                    smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
-                    smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
-                    smost[smostwallcnt].z[0] = 100000.f;
-                    smost[smostwallcnt].z[1] = 100000.f;
-                    smostwallcnt++;
+                    found = 1;
+                    break;
                 }
                 i = ni;
             }
+            if (found)
+            {
+                if ((!(gotsector[nextsectnum>>3]&pow2char[nextsectnum&7])) && testvisiblemost(x0,x1))
+                    polymost_scansector(nextsectnum);
+            }
+            else
+            {
+                //If can't see sector beyond, then cancel smost array and just store wall!
+                smostwallcnt = startsmostwallcnt;
+                smost[smostwallcnt].wall = z;
+                smost[smostwallcnt].x[0] = x0;
+                smost[smostwallcnt].x[1] = x1;
+                smost[smostwallcnt].y[0] = p0.y;
+                smost[smostwallcnt].y[1] = p1.y;
+                smost[smostwallcnt].type = 1;
+                smostwallcnt++;
+            }
         }
-
-        domostpolymethod = DAMETH_NOMASK;
-
-        if (nextsectnum >= 0)
-            if ((!(gotsector[nextsectnum>>3]&pow2char[nextsectnum&7])) && testvisiblemost(x0,x1))
-                polymost_scansector(nextsectnum);
     }
 }
 
