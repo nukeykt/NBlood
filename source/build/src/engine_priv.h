@@ -264,6 +264,7 @@ extern void get_floorspr_points(uspritetype const * spr, int32_t px, int32_t py,
 
 // int32_t wallmost(int16_t *mostbuf, int32_t w, int32_t sectnum, char dastat);
 int32_t wallfront(int32_t l1, int32_t l2);
+int32_t spritewallfront(const uspritetype *s, int32_t w);
 
 void set_globalang(fix16_t ang);
 
