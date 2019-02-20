@@ -8523,7 +8523,7 @@ killsprite:
                     if (tspriteptr[k]->x == tspriteptr[l]->x &&
                         tspriteptr[k]->y == tspriteptr[l]->y &&
                         (tspriteptr[k]->cstat & 48) == (tspriteptr[l]->cstat & 48) &&
-                        tspriteptr[k]->owner < tspriteptr[l]->owner)
+                        (bloodhack ? tspriteptr[k]->statnum < tspriteptr[l]->statnum : tspriteptr[k]->owner < tspriteptr[l]->owner))
                     {
                         swapptr(&tspriteptr[k], &tspriteptr[l]);
                         vec3_t tv3 = spritesxyz[k];
