@@ -5507,24 +5507,38 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (ocy0 < cy0 || ocy1 < cy1 || globalposz < cz)
                 {
-                    smost[smostwallcnt].wall = z;
-                    smost[smostwallcnt].type = 1;
-                    smost[smostwallcnt].x[0] = x1;
-                    smost[smostwallcnt].x[1] = x0;
-                    smost[smostwallcnt].y[0] = p1.y;
-                    smost[smostwallcnt].y[1] = p0.y;
-                    smost[smostwallcnt].z[0] = cy1;
-                    smost[smostwallcnt].z[1] = cy0;
-                    smostwallcnt++;
-                    smost[smostwallcnt].wall = z;
-                    smost[smostwallcnt].type = 1;
-                    smost[smostwallcnt].x[0] = x1;
-                    smost[smostwallcnt].x[1] = x0;
-                    smost[smostwallcnt].y[0] = p1.y;
-                    smost[smostwallcnt].y[1] = p0.y;
-                    smost[smostwallcnt].z[0] = ocy1;
-                    smost[smostwallcnt].z[1] = ocy0;
-                    smostwallcnt++;
+                    const float slop = (p1.y-p0.y)/(x1-x0);
+                    int i = vsp[0].n;
+                    while (i)
+                    {
+                        int ni = vsp[i].n;
+                        if (vsp[ni].x < x0 || x1 < vsp[i].x)
+                        {
+                            i = ni;
+                            continue;
+                        }
+                        if (vsp[i].x <= vsp[ni].x)
+                        {
+                            smost[smostwallcnt].wall = z;
+                            smost[smostwallcnt].x[0] = min(vsp[ni].x, x1);
+                            smost[smostwallcnt].x[1] = max(vsp[i].x, x0);
+                            smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
+                            smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
+                           
+                            if (vsp[i].ctag >= 0 && vsp[i].ftag >= 0)
+                            {
+                                smost[smostwallcnt].z[0] = vsp[i].cy[1];
+                                smost[smostwallcnt].z[1] = vsp[i].cy[0];
+                            }
+                            else
+                            {
+                                smost[smostwallcnt].z[0] = 100000.f;
+                                smost[smostwallcnt].z[1] = 100000.f;
+                            }
+                            smostwallcnt++;
+                        }
+                        i = ni;
+                    }
                 }
             }
             if (!((sec->floorstat&sector[nextsectnum].floorstat)&1))
@@ -5568,24 +5582,38 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (ofy0 > fy0 || ofy1 > fy1 || globalposz > fz)
                 {
-                    smost[smostwallcnt].wall = z;
-                    smost[smostwallcnt].type = 0;
-                    smost[smostwallcnt].x[0] = x0;
-                    smost[smostwallcnt].x[1] = x1;
-                    smost[smostwallcnt].y[0] = p0.y;
-                    smost[smostwallcnt].y[1] = p1.y;
-                    smost[smostwallcnt].z[0] = fy0;
-                    smost[smostwallcnt].z[1] = fy1;
-                    smostwallcnt++;
-                    smost[smostwallcnt].wall = z;
-                    smost[smostwallcnt].type = 0;
-                    smost[smostwallcnt].x[0] = x0;
-                    smost[smostwallcnt].x[1] = x1;
-                    smost[smostwallcnt].y[0] = p0.y;
-                    smost[smostwallcnt].y[1] = p1.y;
-                    smost[smostwallcnt].z[0] = ofy0;
-                    smost[smostwallcnt].z[1] = ofy1;
-                    smostwallcnt++;
+                    const float slop = (p1.y-p0.y)/(x1-x0);
+                    int i = vsp[0].n;
+                    while (i)
+                    {
+                        int ni = vsp[i].n;
+                        if (vsp[ni].x < x0 || x1 < vsp[i].x)
+                        {
+                            i = ni;
+                            continue;
+                        }
+                        if (vsp[i].x <= vsp[ni].x)
+                        {
+                            smost[smostwallcnt].wall = z;
+                            smost[smostwallcnt].x[0] = max(vsp[i].x, x0);
+                            smost[smostwallcnt].x[1] = min(vsp[ni].x, x1);
+                            smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
+                            smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
+                           
+                            if (vsp[i].ctag >= 0 && vsp[i].ftag >= 0)
+                            {
+                                smost[smostwallcnt].z[0] = vsp[i].fy[0];
+                                smost[smostwallcnt].z[1] = vsp[i].fy[1];
+                            }
+                            else
+                            {
+                                smost[smostwallcnt].z[0] = -100000.f;
+                                smost[smostwallcnt].z[1] = -100000.f;
+                            }
+                            smostwallcnt++;
+                        }
+                        i = ni;
+                    }
                 }
             }
         }
@@ -5634,15 +5662,29 @@ static void polymost_drawalls(int32_t const bunch)
                 calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
                 pow2xsplit = 1; polymost_domost(x0, cy0, x1, cy1, cy0, fy0, cy1, fy1);
             } while (0);
-            smost[smostwallcnt].wall = z;
-            smost[smostwallcnt].type = 0;
-            smost[smostwallcnt].x[0] = x0;
-            smost[smostwallcnt].x[1] = x1;
-            smost[smostwallcnt].y[0] = p0.y;
-            smost[smostwallcnt].y[1] = p1.y;
-            smost[smostwallcnt].z[0] = -1000000.f;
-            smost[smostwallcnt].z[1] = -1000000.f;
-            smostwallcnt++;
+            const float slop = (p1.y-p0.y)/(x1-x0);
+            int i = vsp[0].n;
+            while (i)
+            {
+                int ni = vsp[i].n;
+                if (vsp[ni].x < x0 || x1 < vsp[i].x)
+                {
+                    i = ni;
+                    continue;
+                }
+                if (vsp[i].x <= vsp[ni].x)
+                {
+                    smost[smostwallcnt].wall = z;
+                    smost[smostwallcnt].x[0] = min(vsp[ni].x, x1);
+                    smost[smostwallcnt].x[1] = max(vsp[i].x, x0);
+                    smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
+                    smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
+                    smost[smostwallcnt].z[0] = 100000.f;
+                    smost[smostwallcnt].z[1] = 100000.f;
+                    smostwallcnt++;
+                }
+                i = ni;
+            }
         }
 
         domostpolymethod = DAMETH_NOMASK;
