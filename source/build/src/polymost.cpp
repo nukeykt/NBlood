@@ -5535,8 +5535,9 @@ static void polymost_drawalls(int32_t const bunch)
                            
                             if (vsp[i].ctag >= 0)
                             {
-                                smost[smostwallcnt].z[0] = vsp[i].cy[1];
-                                smost[smostwallcnt].z[1] = vsp[i].cy[0];
+                                const float slop2 = (vsp[i].cy[1]-vsp[i].cy[0])/(vsp[ni].x-vsp[i].x);
+                                smost[smostwallcnt].z[0] = vsp[i].cy[0]+slop2*(smost[smostwallcnt].x[0]-vsp[i].x);
+                                smost[smostwallcnt].z[1] = vsp[i].cy[0]+slop2*(smost[smostwallcnt].x[1]-vsp[i].x);
                                 smost[smostwallcnt].type = 0;
                             }
                             else
@@ -5607,8 +5608,9 @@ static void polymost_drawalls(int32_t const bunch)
                            
                             if (vsp[i].ctag >= 0)
                             {
-                                smost[smostwallcnt].z[0] = vsp[i].fy[0];
-                                smost[smostwallcnt].z[1] = vsp[i].fy[1];
+                                const float slop2 = (vsp[i].fy[1]-vsp[i].fy[0])/(vsp[ni].x-vsp[i].x);
+                                smost[smostwallcnt].z[0] = vsp[i].fy[0]+slop2*(smost[smostwallcnt].x[0]-vsp[i].x);
+                                smost[smostwallcnt].z[1] = vsp[i].fy[0]+slop2*(smost[smostwallcnt].x[1]-vsp[i].x);
                                 smost[smostwallcnt].type = 0;
                             }
                             else
