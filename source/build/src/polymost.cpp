@@ -5523,12 +5523,7 @@ static void polymost_drawalls(int32_t const bunch)
                     while (i)
                     {
                         int ni = vsp[i].n;
-                        if (vsp[ni].x < x0 || x1 < vsp[i].x)
-                        {
-                            i = ni;
-                            continue;
-                        }
-                        if (vsp[i].x <= vsp[ni].x)
+                        if (vsp[ni].x > x0 && x1 > vsp[i].x)
                         {
                             smost[smostwallcnt].wall = z;
                             smost[smostwallcnt].x[0] = min(vsp[ni].x, x1);
@@ -5536,7 +5531,7 @@ static void polymost_drawalls(int32_t const bunch)
                             smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
                             smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
                            
-                            if (vsp[i].ctag >= 0 && vsp[i].ftag >= 0)
+                            if (vsp[i].ctag >= 0)
                             {
                                 smost[smostwallcnt].z[0] = vsp[i].cy[1];
                                 smost[smostwallcnt].z[1] = vsp[i].cy[0];
@@ -5598,12 +5593,7 @@ static void polymost_drawalls(int32_t const bunch)
                     while (i)
                     {
                         int ni = vsp[i].n;
-                        if (vsp[ni].x < x0 || x1 < vsp[i].x)
-                        {
-                            i = ni;
-                            continue;
-                        }
-                        if (vsp[i].x <= vsp[ni].x)
+                        if (vsp[ni].x > x0 && x1 > vsp[i].x)
                         {
                             smost[smostwallcnt].wall = z;
                             smost[smostwallcnt].x[0] = max(vsp[i].x, x0);
@@ -5611,7 +5601,7 @@ static void polymost_drawalls(int32_t const bunch)
                             smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
                             smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
                            
-                            if (vsp[i].ctag >= 0 && vsp[i].ftag >= 0)
+                            if (vsp[i].ctag >= 0)
                             {
                                 smost[smostwallcnt].z[0] = vsp[i].fy[0];
                                 smost[smostwallcnt].z[1] = vsp[i].fy[1];
@@ -5686,26 +5676,9 @@ static void polymost_drawalls(int32_t const bunch)
 
         if (nextsectnum >= 0)
         {
-            int i = vsp[0].n;
-            int found = 0;
-            while (i)
+            if (testvisiblemost(x0, x1))
             {
-                int ni = vsp[i].n;
-                if (vsp[ni].x < x0 || x1 < vsp[i].x)
-                {
-                    i = ni;
-                    continue;
-                }
-                if (vsp[i].x <= vsp[ni].x && vsp[i].ctag >= 0 && vsp[i].ftag >= 0)
-                {
-                    found = 1;
-                    break;
-                }
-                i = ni;
-            }
-            if (found)
-            {
-                if ((!(gotsector[nextsectnum>>3]&pow2char[nextsectnum&7])) && testvisiblemost(x0,x1))
+                if ((!(gotsector[nextsectnum>>3]&pow2char[nextsectnum&7])))
                     polymost_scansector(nextsectnum);
             }
             else
@@ -7030,7 +7003,7 @@ static int32_t polymost_drawsoftsprite(int32_t snum)
         if (ni == 0)
             break;
 
-        if (vsp[i].ftag >= 0 && vsp[i].ctag >= 0)
+        if (vsp[i].ctag >= 0)
         {
             pxy[0].x = pxy[3].x = vsp[i].x;
             pxy[1].x = pxy[2].x = vsp[ni].x;
