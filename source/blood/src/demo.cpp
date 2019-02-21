@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fire.h"
 #include "gamemenu.h"
 #include "globals.h"
+#include "levels.h"
 #include "menu.h"
 #include "messages.h"
 #include "misc.h"
@@ -133,7 +134,7 @@ bool CDemo::Create(const char *pzFile)
     {
         for (int i = 0; i < 8 && !vc; i++)
         {
-            G_ModDirSnprintf(buffer, BMAX_PATH, "blood0%02d.dem", i);
+            G_ModDirSnprintf(buffer, BMAX_PATH, "%s0%02d.dem", BloodIniPre, i);
             if (access(buffer, F_OK) != -1)
                 vc = 1;
         }
@@ -401,7 +402,9 @@ void CDemo::LoadDemoInfo(void)
     const int opsm = pathsearchmode;
     at59ef = 0;
     pathsearchmode = 0;
-    auto pList = klistpath("/", "blood*.dem", CACHE1D_FIND_FILE);
+    char zFN[BMAX_PATH];
+    Bsnprintf(zFN, BMAX_PATH, "%s*.dem", BloodIniPre);
+    auto pList = klistpath("/", zFN, CACHE1D_FIND_FILE);
     auto pIterator = pList;
     while (pIterator != NULL)
     {

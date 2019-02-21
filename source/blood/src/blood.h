@@ -50,6 +50,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kNoTile -1
 
+struct INIDESCRIPTION {
+    const char *pzName;
+    const char *pzFilename;
+    const char **pzArts;
+    int nArts;
+};
+
+struct INICHAIN {
+    INICHAIN *pNext;
+    char zName[BMAX_PATH];
+    INIDESCRIPTION *pDescription;
+};
+
+extern INICHAIN *pINIChain;
+extern INICHAIN const*pINISelected;
+
 typedef struct {
     int32_t usejoystick;
     int32_t usemouse;
@@ -86,3 +102,4 @@ void QuitGame(void);
 void PreloadCache(void);
 void StartLevel(GAMEOPTIONS *gameOptions);
 void ProcessFrame(void);
+void ScanINIFiles(void);

@@ -58,21 +58,27 @@ bool gGameStarted;
 int gLevelTime;
 
 char BloodIniFile[BMAX_PATH] = "BLOOD.INI";
+char BloodIniPre[BMAX_PATH];
+bool bINIOverride = false;
 IniFile *BloodINI;
 
 
-void sub_26988(void)
+void levelInitINI(const char *pzIni)
 {
-    int fp = kopen4loadfrommod(BloodIniFile, 0);
+    int fp = kopen4loadfrommod(pzIni, 0);
     if (fp < 0)
-        ThrowError("Initialization: %s does not exist", BloodIniFile);
+        ThrowError("Initialization: %s does not exist", pzIni);
     kclose(fp);
-    BloodINI = new IniFile(BloodIniFile);
+    BloodINI = new IniFile(pzIni);
+    Bstrncpy(BloodIniFile, pzIni, BMAX_PATH);
+    Bstrncpy(BloodIniPre, pzIni, BMAX_PATH);
+    ChangeExtension(BloodIniPre, "");
 }
 
 
-void sub_269D8(const char *pzIni)
+void levelOverrideINI(const char *pzIni)
 {
+    bINIOverride = true;
     strcpy(BloodIniFile, pzIni);
 }
 
@@ -218,7 +224,7 @@ void levelLoadDefaults(void)
 {
     char buffer[64];
     char buffer2[16];
-    sub_26988();
+    levelInitINI(pINISelected->zName);
     memset(gEpisodeInfo, 0, sizeof(gEpisodeInfo));
     strncpy(gEpisodeInfo[MUS_INTRO/kMaxLevels].at28[MUS_INTRO%kMaxLevels].atd0, "PESTIS", BMAX_PATH);
     int i;

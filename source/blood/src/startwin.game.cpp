@@ -55,7 +55,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static struct
 {
-    struct grpfile_t const * grp;
+    INICHAIN const * ini;
     char *gamedir;
     ud_setup_t shared;
     int polymer;
@@ -207,21 +207,22 @@ static void PopulateForm(int32_t pgs)
         }
     }
 
-#if 0
     if (pgs & POPULATE_GAME)
     {
         HWND hwnd = GetDlgItem(pages[TAB_CONFIG], IDCDATA);
 
-        for (auto fg = foundgrps; fg; fg=fg->next)
+        for (auto fg = pINIChain; fg; fg=fg->pNext)
         {
-            Bsprintf(buf, "%s\t%s", fg->type->name, fg->filename);
+            if (fg->pDescription)
+                Bsprintf(buf, "%s\t%s", fg->pDescription->pzName, fg->zName);
+            else
+                Bsprintf(buf, "%s", fg->zName);
             int const j = ListBox_AddString(hwnd, buf);
             (void)ListBox_SetItemData(hwnd, j, (LPARAM)fg);
-            if (settings.grp == fg)
+            if (settings.ini == fg)
                 (void)ListBox_SetCurSel(hwnd, j);
         }
     }
-#endif
 }
 
 static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -311,17 +312,17 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
                 }
             }
             return TRUE;
-        //case IDCDATA:
-        //{
-        //    if (HIWORD(wParam) != LBN_SELCHANGE) break;
-        //    intptr_t i = ListBox_GetCurSel((HWND)lParam);
-        //    if (i != CB_ERR) i = ListBox_GetItemData((HWND)lParam, i);
-        //    if (i != CB_ERR)
-        //    {
-        //        settings.grp = (grpfile_t const *)i;
-        //    }
-        //    return TRUE;
-        //}
+        case IDCDATA:
+        {
+            if (HIWORD(wParam) != LBN_SELCHANGE) break;
+            intptr_t i = ListBox_GetCurSel((HWND)lParam);
+            if (i != CB_ERR) i = ListBox_GetItemData((HWND)lParam, i);
+            if (i != CB_ERR)
+            {
+                settings.ini = (INICHAIN const *)i;
+            }
+            return TRUE;
+        }
         default:
             break;
         }
@@ -349,7 +350,7 @@ static void EnableConfig(bool n)
 {
     //EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_CANCEL), n);
     EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_START), n);
-    //EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCDATA), n);
+    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCDATA), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCGAMEDIR), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCINPUT), n);
@@ -481,10 +482,10 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
             SendMessage(pages[TAB_MESSAGES], EM_SETRECTNP,0,(LPARAM)&r);
 
             // Set a tab stop in the game data listbox
-            //{
-            //    DWORD tabs[1] = { 150 };
-            //    (void)ListBox_SetTabStops(GetDlgItem(pages[TAB_CONFIG], IDCDATA), 1, tabs);
-            //}
+            {
+                DWORD tabs[1] = { 150 };
+                (void)ListBox_SetTabStops(GetDlgItem(pages[TAB_CONFIG], IDCDATA), 1, tabs);
+            }
 
             SetFocus(GetDlgItem(hwndDlg, WIN_STARTWIN_START));
             SetWindowText(hwndDlg, apptitle);
@@ -675,8 +676,7 @@ int32_t startwin_run(void)
 #endif
 
     settings.shared = gSetup;
-    // NUKE-TODO:
-    //settings.grp = g_selectedGrp;
+    settings.ini = pINISelected;
     settings.gamedir = g_modDir;
 
     PopulateForm(-1);
@@ -709,8 +709,7 @@ int32_t startwin_run(void)
     {
         gSetup = settings.shared;
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
-        // NUKE-TODO:
-        //g_selectedGrp = settings.grp;
+        pINISelected = settings.ini;
         Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 

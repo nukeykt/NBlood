@@ -532,14 +532,12 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
-#if 0
-    // Duke Nukem 3D: Atomic Edition (GOG.com)
+    // Blood: One Unit Whole Blood (GOG.com)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
+    if (G_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGONEUNITONEBLOOD", "PATH", buf, &bufsize))
     {
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
-#endif
 #endif
 #endif
 }

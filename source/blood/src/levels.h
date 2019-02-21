@@ -99,13 +99,15 @@ extern GAMEOPTIONS gSingleGameOptions;
 extern GAMEOPTIONS gGameOptions;
 extern int gSkill;
 extern char BloodIniFile[];
+extern char BloodIniPre[];
+extern bool bINIOverride;
 extern int gEpisodeCount;
 extern int gNextLevel;
 extern bool gGameStarted;
 extern int gLevelTime;
 
-void sub_26988(void);
-void sub_269D8(const char *pzIni);
+void levelInitINI(const char *pzIni);
+void levelOverrideINI(const char *pzIni);
 void levelPlayIntroScene(int nEpisode);
 void levelPlayEndScene(int nEpisode);
 void levelClearSecrets(void);
