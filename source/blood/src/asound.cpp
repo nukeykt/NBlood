@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "resource.h"
 #include "sound.h"
 
+#define kMaxAmbChannel 64
+
 struct AMB_CHANNEL
 {
     int at0;
@@ -41,7 +43,7 @@ struct AMB_CHANNEL
     int at18;
 };
 
-AMB_CHANNEL ambChannels[16];
+AMB_CHANNEL ambChannels[kMaxAmbChannel];
 int nAmbChannels = 0;
 
 void ambProcess(void)
@@ -51,6 +53,8 @@ void ambProcess(void)
     for (int nSprite = headspritestat[12]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
+        if (pSprite->owner < 0 || pSprite->owner >= kMaxAmbChannel)
+            continue;
         int nXSprite = pSprite->extra;
         if (nXSprite > 0 && nXSprite < kMaxXSprites)
         {
@@ -123,8 +127,11 @@ void ambInit(void)
                         break;
                 if (i == nAmbChannels)
                 {
-                    if (i >= 16)
+                    if (i >= kMaxAmbChannel)
+                    {
+                        pSprite->owner = -1;
                         continue;
+                    }
                     int nSFX = pXSprite->at14_0;
                     DICTNODE *pSFXNode = gSoundRes.Lookup(nSFX, "SFX");
                     if (!pSFXNode)
