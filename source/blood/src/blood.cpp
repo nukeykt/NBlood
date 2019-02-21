@@ -2379,6 +2379,8 @@ bool LoadArtFile(const char *pzFile)
         tileDelete(i);
     artReadManifest(hFile, &artheader);
     artPreloadFile(hFile, &artheader);
+    for (int i = artheader.tilestart; i <= artheader.tileend; i++)
+        tileUpdatePicSiz(i);
     kclose(hFile);
     return true;
 }
