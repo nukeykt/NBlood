@@ -1532,6 +1532,8 @@ int app_main(int argc, char const * const * argv)
             ThrowError("TILES###.ART files not found");
     }
 
+    LoadExtraArts();
+
     levelLoadDefaults();
     const char *defsfile = G_DefFile();
     uint32_t stime = timerGetTicks();
@@ -2354,5 +2356,39 @@ void ScanINIFiles(void)
             pINISelected = pIter;
             break;
         }
+    }
+}
+
+bool LoadArtFile(const char *pzFile)
+{
+    int hFile = kopen4loadfrommod(pzFile, 0);
+    if (hFile == -1)
+    {
+        initprintf("Can't open extra art file:\"%s\"\n", pzFile);
+        return false;
+    }
+    artheader_t artheader;
+    int nStatus = artReadHeader(hFile, pzFile, &artheader);
+    if (nStatus != 0)
+    {
+        kclose(hFile);
+        initprintf("Error reading extra art file:\"%s\"\n", pzFile);
+        return false;
+    }
+    for (int i = artheader.tilestart; i <= artheader.tileend; i++)
+        tileDelete(i);
+    artReadManifest(hFile, &artheader);
+    artPreloadFile(hFile, &artheader);
+    kclose(hFile);
+    return true;
+}
+
+void LoadExtraArts(void)
+{
+    if (!pINISelected->pDescription)
+        return;
+    for (int i = 0; i < pINISelected->pDescription->nArts; i++)
+    {
+        LoadArtFile(pINISelected->pDescription->pzArts[i]);
     }
 }
