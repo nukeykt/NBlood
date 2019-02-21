@@ -5518,7 +5518,6 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (ocy0 < cy0 || ocy1 < cy1 || globalposz < cz)
                 {
-                    const float slop = (p1.y-p0.y)/(x1-x0);
                     int i = vsp[0].n;
                     while (i)
                     {
@@ -5530,8 +5529,8 @@ static void polymost_drawalls(int32_t const bunch)
                             smost[smostwallcnt].wall = z;
                             smost[smostwallcnt].x[0] = min(vsp[ni].x, x1);
                             smost[smostwallcnt].x[1] = max(vsp[i].x, x0);
-                            smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
-                            smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
+                            smost[smostwallcnt].y[0] = p1.y;
+                            smost[smostwallcnt].y[1] = p0.y;
                            
                             if (vsp[i].ctag >= 0)
                             {
@@ -5591,7 +5590,6 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (ofy0 > fy0 || ofy1 > fy1 || globalposz > fz)
                 {
-                    const float slop = (p1.y-p0.y)/(x1-x0);
                     int i = vsp[0].n;
                     while (i)
                     {
@@ -5603,8 +5601,8 @@ static void polymost_drawalls(int32_t const bunch)
                             smost[smostwallcnt].wall = z;
                             smost[smostwallcnt].x[0] = max(vsp[i].x, x0);
                             smost[smostwallcnt].x[1] = min(vsp[ni].x, x1);
-                            smost[smostwallcnt].y[0] = p0.y+slop*(smost[smostwallcnt].x[0]-x0);
-                            smost[smostwallcnt].y[1] = p0.y+slop*(smost[smostwallcnt].x[1]-x0);
+                            smost[smostwallcnt].y[0] = p0.y;
+                            smost[smostwallcnt].y[1] = p1.y;
                            
                             if (vsp[i].ctag >= 0)
                             {
