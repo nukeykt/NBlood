@@ -114,7 +114,7 @@ CDemo::~CDemo()
     auto pNextDemo = pFirstDemo;
     for (auto pDemo = pFirstDemo; pDemo != NULL; pDemo = pNextDemo)
     {
-        pNextDemo = pFirstDemo->pNext;
+        pNextDemo = pDemo->pNext;
         delete pDemo;
     }
     pFirstDemo = NULL;
