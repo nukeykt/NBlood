@@ -1440,7 +1440,7 @@ void OperateDoor(unsigned int nSector, XSECTOR *pXSector, EVENT a3, BUSYID a4)
 
 char SectorContainsDudes(int nSector)
 {
-    for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         if (sprite[nSprite].statnum == 6)
             return 1;
@@ -1450,7 +1450,7 @@ char SectorContainsDudes(int nSector)
 
 void TeleFrag(int nKiller, int nSector)
 {
-    for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
         if (pSprite->statnum == 6)
