@@ -3447,7 +3447,6 @@ void actImpactMissile(spritetype *pMissile, int a2)
     case 317:
         sfxKill3DSound(pMissile, -1, -1);
         sfxPlay3DSound(pMissile->x, pMissile->y, pMissile->z, 306, pMissile->sectnum);
-        GibSprite(pMissile, GIBTYPE_6, NULL, NULL);
         if (a2 == 3 && pSpriteHit && (pThingInfo || pDudeInfo))
         {
             if (pDudeInfo)
