@@ -185,19 +185,21 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         return;
     char *pzSMK = Xstrdup(_pzSMK);
     char *pzWAV = Xstrdup(_pzWAV);
+    char *pzSMK_ = pzSMK;
+    char *pzWAV_ = pzWAV;
     int nHandleSMK = credKOpen4Load(pzSMK);
     if (nHandleSMK == -1)
     {
-        Bfree(pzSMK);
-        Bfree(pzWAV);
+        Bfree(pzSMK_);
+        Bfree(pzWAV_);
         return;
     }
     kclose(nHandleSMK);
     SmackerHandle hSMK = Smacker_Open(pzSMK);
     if (!hSMK.isValid)
     {
-        Bfree(pzSMK);
-        Bfree(pzWAV);
+        Bfree(pzSMK_);
+        Bfree(pzWAV_);
         return;
     }
     uint32_t nWidth, nHeight;
@@ -210,8 +212,8 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     if (!pFrame)
     {
         Smacker_Close(hSMK);
-        Bfree(pzSMK);
-        Bfree(pzWAV);
+        Bfree(pzSMK_);
+        Bfree(pzWAV_);
         return;
     }
     int nFrameRate = Smacker_GetFrameRate(hSMK);
@@ -277,6 +279,6 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     FX_StopAllSounds();
     videoSetPalette(gBrightness >> 2, 0, 8+2);
     Bfree(pFrame);
-    Bfree(pzSMK);
-    Bfree(pzWAV);
+    Bfree(pzSMK_);
+    Bfree(pzWAV_);
 }
