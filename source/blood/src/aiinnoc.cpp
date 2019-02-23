@@ -48,7 +48,7 @@ AISTATE innocentSearch = { 6, -1, 1800, NULL, aiMoveForward, thinkSearch, &innoc
 AISTATE innocentChase = { 6, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
 AISTATE innocentRecoil = { 5, -1, 0, NULL, NULL, NULL, &innocentChase };
 AISTATE innocentTeslaRecoil = { 4, -1, 0, NULL, NULL, NULL, &innocentChase };
-AISTATE innocentGoto = { 6, -1, 600, NULL, aiMoveForward, thinkGoto, &innocentChase };
+AISTATE innocentGoto = { 6, -1, 600, NULL, aiMoveForward, thinkGoto, &innocentIdle };
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
