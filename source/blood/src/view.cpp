@@ -2921,7 +2921,7 @@ void viewDrawScreen(void)
         cZ += shakeZ;
         v4c += shakeBobX;
         v48 += shakeBobY;
-        q16horiz += mulscale30(0x40000000-Cos(gView->at35e<<2), F16(30));
+        q16horiz += fix16_from_int(mulscale30(0x40000000-Cos(gView->at35e<<2), 30));
         if (gViewPos == 0)
         {
             if (gViewHBobbing)
