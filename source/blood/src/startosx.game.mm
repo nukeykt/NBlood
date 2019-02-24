@@ -28,6 +28,152 @@
 # define NSControlSizeSmall NSSmallControlSize
 #endif
 
+@interface GameEntry : NSObject
+{
+    NSString *namestring;
+    NSString *inifilestring;
+    INICHAIN const *fg;
+}
+
+- (id)initWithINICHAIN:(INICHAIN const *)inichain;
+- (void)dealloc;
+
+- (NSString *)name;
+- (NSString *)inifile;
+- (INICHAIN const *)entryptr;
+
+@end
+
+@implementation GameEntry
+
+- (id)initWithINICHAIN:(INICHAIN const *)inichain
+{
+    self = [super init];
+
+    if (self)
+    {
+        fg = inichain;
+
+        char const *const name = nullptr == fg->pDescription ? fg->zName : fg->pDescription->pzName;
+
+        namestring = [NSString stringWithCString:name encoding:NSUTF8StringEncoding];
+        [namestring retain];
+
+        inifilestring = [NSString stringWithCString:fg->zName encoding:NSUTF8StringEncoding];
+        [inifilestring retain];
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+    [namestring release];
+    [inifilestring release];
+    [super dealloc];
+}
+
+- (NSString *)name
+{
+    return namestring;
+}
+
+- (NSString *)inifile
+{
+    return inifilestring;
+}
+
+- (INICHAIN const *)entryptr
+{
+    return fg;
+}
+
+@end
+
+@interface GameListSource : NSObject <NSComboBoxDataSource>
+{
+    NSMutableArray *list;
+}
+
+- (id)init;
+- (void)dealloc;
+
+- (GameEntry *)entryAtIndex:(int)index;
+- (int)findIndexForINI:(NSString*)inifile;
+
+- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
+- (int)numberOfRowsInTableView:(NSTableView *)aTableView;
+
+@end
+
+@implementation GameListSource
+
+- (id)init
+{
+    self = [super init];
+
+    if (self)
+    {
+        list = [[NSMutableArray alloc] init];
+
+        for (auto fg = pINIChain; nullptr != fg; fg = fg->pNext)
+        {
+            [list addObject:[[GameEntry alloc] initWithINICHAIN:fg]];
+        }
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+    [list release];
+    [super dealloc];
+}
+
+- (GameEntry *)entryAtIndex:(int)index
+{
+    return [list objectAtIndex:index];
+}
+
+- (int)findIndexForINI:(NSString*)inifile
+{
+    for (NSUInteger i = 0, count = [list count]; i < count; ++i)
+    {
+        if ([[[list objectAtIndex:i] inifile] isEqual:inifile])
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+{
+    UNREFERENCED_PARAMETER(aTableView);
+    NSParameterAssert((NSUInteger)rowIndex < [list count]);
+
+    switch ([[aTableColumn identifier] intValue])
+    {
+        case 0:    // name column
+            return [[list objectAtIndex:rowIndex] name];
+        case 1:    // ini file column
+            return [[list objectAtIndex:rowIndex] inifile];
+        default:
+            return nil;
+    }
+}
+
+- (int)numberOfRowsInTableView:(NSTableView *)aTableView
+{
+    UNREFERENCED_PARAMETER(aTableView);
+
+    return [list count];
+}
+
+@end
+
 static NSRect NSRectChangeXY(NSRect const rect, CGFloat const x, CGFloat const y)
 {
     return NSMakeRect(x, y, rect.size.width, rect.size.height);
@@ -176,16 +322,19 @@ static void CreateApplicationMenus(void)
 
 static int retval = -1;
 
-static struct {
-    struct grpfile_t const * grp;
-    int fullscreen;
-    int xdim3d, ydim3d, bpp3d;
-    int forcesetup;
-} settings;
+static struct
+{
+    INICHAIN const * ini;
+    char *gamedir;
+    ud_setup_t shared;
+    int polymer;
+}
+settings;
 
 @interface StartupWindow : NSWindow <NSWindowDelegate>
 {
     NSMutableArray *modeslist3d;
+    GameListSource *gamelistsrc;
 
     NSButton *alwaysShowButton;
     NSButton *fullscreenButton;
@@ -416,6 +565,7 @@ static struct {
 
 - (void)dealloc
 {
+    [gamelistsrc release];
     [modeslist3d release];
     [super dealloc];
 }
@@ -427,9 +577,9 @@ static struct {
     int xdim = 0, ydim = 0, bpp = 0;
 
     if (firstTime) {
-        xdim = settings.xdim3d;
-        ydim = settings.ydim3d;
-        bpp  = settings.bpp3d;
+        xdim = settings.shared.xdim;
+        ydim = settings.shared.ydim;
+        bpp  = settings.shared.bpp;
     } else {
         mode3d = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
         if (mode3d >= 0) {
@@ -487,13 +637,19 @@ static struct {
 
     int mode = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
     if (mode >= 0) {
-        settings.xdim3d = validmode[mode].xdim;
-        settings.ydim3d = validmode[mode].ydim;
-        settings.bpp3d = validmode[mode].bpp;
-        settings.fullscreen = validmode[mode].fs;
+        settings.shared.xdim = validmode[mode].xdim;
+        settings.shared.ydim = validmode[mode].ydim;
+        settings.shared.bpp = validmode[mode].bpp;
+        settings.shared.fullscreen = validmode[mode].fs;
     }
 
-    settings.forcesetup = [alwaysShowButton state] == NSOnState;
+    int row = [[gameList documentView] selectedRow];
+    if (row >= 0)
+    {
+        settings.ini = [[gamelistsrc entryAtIndex:row] entryptr];
+    }
+
+    settings.shared.forcesetup = [alwaysShowButton state] == NSOnState;
 
     retval = 1;
 }
@@ -502,8 +658,8 @@ static struct {
 {
     videoGetModes();
 
-    [fullscreenButton setState: (settings.fullscreen ? NSOnState : NSOffState)];
-    [alwaysShowButton setState: (settings.forcesetup ? NSOnState : NSOffState)];
+    [fullscreenButton setState: (settings.shared.fullscreen ? NSOnState : NSOffState)];
+    [alwaysShowButton setState: (settings.shared.forcesetup ? NSOnState : NSOffState)];
     [self populateVideoModes:YES];
 
     // enable all the controls on the Configuration page
@@ -513,6 +669,24 @@ static struct {
     {
         if ([control respondsToSelector:@selector(setEnabled:)])
             [control setEnabled:true];
+    }
+
+    gamelistsrc = [[GameListSource alloc] init];
+    [[gameList documentView] setDataSource:gamelistsrc];
+    [[gameList documentView] deselectAll:nil];
+
+    if (settings.ini)
+    {
+        int row = [gamelistsrc findIndexForINI:[NSString stringWithUTF8String:settings.ini->zName]];
+        if (row >= 0)
+        {
+            [[gameList documentView] scrollRowToVisible:row];
+#if defined MAC_OS_X_VERSION_10_3 && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_3
+            [[gameList documentView] selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+#else
+            [[gameList documentView] selectRow:row byExtendingSelection:NO];
+#endif
+        }
     }
 
     [cancelButton setEnabled:true];
@@ -654,11 +828,9 @@ int startwin_run(void)
 {
     if (startwin == nil) return 0;
 
-    settings.fullscreen = gSetup.fullscreen;
-    settings.xdim3d = gSetup.xdim;
-    settings.ydim3d = gSetup.ydim;
-    settings.bpp3d = gSetup.bpp;
-    settings.forcesetup = gSetup.forcesetup;
+    settings.shared = gSetup;
+    settings.ini = pINISelected;
+    settings.gamedir = g_modDir;
 
     [startwin setupRunMode];
 
@@ -674,11 +846,10 @@ int startwin_run(void)
     [nsapp updateWindows];
 
     if (retval) {
-        gSetup.fullscreen = settings.fullscreen;
-        gSetup.xdim = settings.xdim3d;
-        gSetup.ydim = settings.ydim3d;
-        gSetup.bpp = settings.bpp3d;
-        gSetup.forcesetup = settings.forcesetup;
+        gSetup = settings.shared;
+        glrendmode = settings.polymer ? REND_POLYMER : REND_POLYMOST;
+        pINISelected = settings.ini;
+        Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
     return retval;
