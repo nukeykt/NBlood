@@ -28,12 +28,19 @@ matrix:
     - os: osx
       osx_image: xcode10.1
 
-before_install:
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-      brew install sdl2_mixer flac libvpx;
-    fi
+    - os: osx
+      osx_image: xcode10.1
+      env:
+        - USE_XCODE=1
 
 script:
+  - if [[ -n "$USE_XCODE" ]]; then
+      cd platform/Apple;
+      for config in Debug Release; do set -o pipefail && xcodebuild -configuration $config | xcpretty; done;
+      exit;
+    elif [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+      brew install sdl2_mixer flac libvpx;
+    fi
   - make --jobs=2 --keep-going
 
 notifications:
