@@ -1,0 +1,14 @@
+/depsbuild/
+/.idea/
+/bin/
+/share/
+*.la
+*.pc
+*vorbisenc.*
+libyasm*
+SDL_test*
+SDL_opengl*
+SDL_egl*
+libSDL2_test.a
+libSDL2main.a
+sdl2-config*
