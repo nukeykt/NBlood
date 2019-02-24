@@ -11,7 +11,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string>2.0, Copyright EDuke32 Team</string>
 	<key>CFBundleIconFile</key>
-	<string>eduke32.icns</string>
+	<string>nblood.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
