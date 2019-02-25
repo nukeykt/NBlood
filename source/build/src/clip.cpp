@@ -1204,11 +1204,10 @@ int32_t clipmove(vec3_t *pos, int16_t *sectnum,
             const int32_t lx = clipit[hitwall].x2-clipit[hitwall].x1;
             const int32_t ly = clipit[hitwall].y2-clipit[hitwall].y1;
             const uint64_t tempull = (int64_t) lx*(int64_t) lx + (int64_t) ly*(int64_t) ly;
+            tempint2 = (int32_t) tempull;
 
-            if (tempull > 0 && tempull < INT32_MAX)
+            if (blooddemohack ? tempint2 > 0 : (tempull > 0 && tempull < INT32_MAX))
             {
-                tempint2 = (int32_t) tempull;
-
                 tempint1 = (goalx-intx)*lx + (goaly-inty)*ly;
 
                 if ((klabs(tempint1)>>11) < tempint2)

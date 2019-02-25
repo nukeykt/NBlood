@@ -4947,7 +4947,7 @@ void actProcessSprites(void)
                                     continue;
                             }
                             if (pSprite->owner == -1)
-                                actPropagateSpriteOwner(pSprite2, pSprite);
+                                actPropagateSpriteOwner(pSprite, pSprite2);
                             trTriggerSprite(nSprite, pXSprite, 35);
                         }
                     }
