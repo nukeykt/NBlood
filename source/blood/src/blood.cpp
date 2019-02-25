@@ -568,7 +568,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    blooddemohack = bVanilla;
+    blooddemohack = 1;//bVanilla;
     memset(xsprite,0,sizeof(xsprite));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
     drawLoadingScreen();
