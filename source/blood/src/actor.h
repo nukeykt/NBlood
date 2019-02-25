@@ -208,7 +208,7 @@ inline bool IsDudeSprite(spritetype *pSprite)
 
 inline void actBurnSprite(int nSource, XSPRITE *pXSprite, int nTime)
 {
-    pXSprite->at2c_0 = ClipHigh(pXSprite->at2c_0 + nTime, sprite[pXSprite->reference].type == 6 ? 2400 : 1200);
+    pXSprite->at2c_0 = ClipHigh(pXSprite->at2c_0 + nTime, sprite[pXSprite->reference].statnum == 6 ? 2400 : 1200);
     pXSprite->at2e_0 = nSource;
 }
 
