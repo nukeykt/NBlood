@@ -4924,7 +4924,7 @@ void actProcessSprites(void)
                             PLAYER *pPlayer2 = NULL;
                             if (IsPlayerSprite(pSprite2))
                                 pPlayer2 = &gPlayer[pSprite2->type-kDudePlayer1];
-                            if (nSprite2 == nOwner || pSprite2->picnum == 205 || pSprite2->picnum == 220 || pSprite2->picnum == 219)
+                            if (nSprite2 == nOwner || pSprite2->type == 205 || pSprite2->type == 220 || pSprite2->type == 219)
                                 continue;
                             if (gGameOptions.nGameType == 3 && pPlayer2 && pPlayer->at2ea == pPlayer2->at2ea)
                                 continue;
@@ -5618,8 +5618,8 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
         }
         else
         {
-            x = gHitInfo.hitx-mulscale30(pMissileInfo->atd<<1, Cos(pSprite->ang));
-            y = gHitInfo.hity-mulscale30(pMissileInfo->atd<<1, Sin(pSprite->ang));
+            x = gHitInfo.hitx-mulscale28(pMissileInfo->atd<<1, Cos(pSprite->ang));
+            y = gHitInfo.hity-mulscale28(pMissileInfo->atd<<1, Sin(pSprite->ang));
         }
     }
     spritetype *pMissile = actSpawnSprite(pSprite->sectnum, x, y, z, 5, 1);
