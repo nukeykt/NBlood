@@ -192,7 +192,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
-                if (nDist < 0x399 && klabs(nDeltaAngle) < 85)
+                if (nDist < 0x333 && klabs(nDeltaAngle) < 85)
                 {
                     switch (pSprite->type)
                     {
