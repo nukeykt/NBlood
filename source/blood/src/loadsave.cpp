@@ -154,6 +154,7 @@ void LoadSave::LoadGame(char *pzFile)
     gGameClock = 0;
     gPaused = 0;
     gGameStarted = 1;
+    bVanilla = false;
     levelTryPlayMusic(gGameOptions.nEpisode ,gGameOptions.nLevel);
     //sndPlaySong(gGameOptions.zLevelSong, 1);
 }
