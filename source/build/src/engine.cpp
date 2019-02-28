@@ -3200,7 +3200,7 @@ static void nonpow2_mhline(intptr_t bufplc, uint32_t bx, int32_t cntup16, uint32
 
     const char *const A_C_RESTRICT buf = (char *)bufplc;
     const char *const A_C_RESTRICT pal = (char *)asm3;
-    
+
     const uint32_t xmul = globalxspan;
     const uint32_t ymul = globalyspan;
     const uint32_t yspan = globalyspan;

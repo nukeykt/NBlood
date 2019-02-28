@@ -820,6 +820,10 @@ typedef struct {
 EDUKE32_STATIC_ASSERT(sizeof(vec3f_t) == sizeof(float) * 3);
 
 typedef struct {
+    double x, y;
+} vec2d_t;
+
+typedef struct {
     union { double x; double d; };
     union { double y; double u; };
     union { double z; double v; };

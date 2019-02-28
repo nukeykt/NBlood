@@ -41,7 +41,7 @@ typedef struct { float x, cy[2], fy[2]; int32_t tag; int16_t n, p, ctag, ftag; }
 static vsptyp vsp[VSPMAX];
 static int32_t gtag;
 
-static float dxb1[MAXWALLSB], dxb2[MAXWALLSB];
+static double dxb1[MAXWALLSB], dxb2[MAXWALLSB];
 
 #define SCISDIST 1.0f  //1.0: Close plane clipping distance
 
@@ -5360,14 +5360,14 @@ static void polymost_drawalls(int32_t const bunch)
 static int32_t polymost_bunchfront(const int32_t b1, const int32_t b2)
 {
     int b1f = bunchfirst[b1];
-    const float x2b2 = dxb2[bunchlast[b2]];
-    const float x1b1 = dxb1[b1f];
+    const double x2b2 = dxb2[bunchlast[b2]];
+    const double x1b1 = dxb1[b1f];
 
     if (x1b1 >= x2b2)
         return -1;
 
     int b2f = bunchfirst[b2];
-    const float x1b2 = dxb1[b2f];
+    const double x1b2 = dxb1[b2f];
 
     if (x1b2 >= dxb2[bunchlast[b1]])
         return -1;
@@ -5420,7 +5420,7 @@ void polymost_scansector(int32_t sectnum)
 
         int scanfirst = numscans;
 
-        vec2f_t p2 = { 0, 0 };
+        vec2d_t p2 = { 0, 0 };
 
         uwalltype *wal;
         int z;
@@ -5429,12 +5429,12 @@ void polymost_scansector(int32_t sectnum)
         {
             uwalltype const *const wal2 = (uwalltype *)&wall[wal->point2];
 
-            vec2f_t const fp1 = { (float)(wal->x - globalposx), (float)(wal->y - globalposy) };
-            vec2f_t const fp2 = { (float)(wal2->x - globalposx), (float)(wal2->y - globalposy) };
+            vec2d_t const fp1 = { (double)(wal->x - globalposx), (double)(wal->y - globalposy) };
+            vec2d_t const fp2 = { (double)(wal2->x - globalposx), (double)(wal2->y - globalposy) };
 
             int const nextsectnum = wal->nextsector; //Scan close sectors
 
-            vec2f_t p1;
+            vec2d_t p1;
 
             if (nextsectnum >= 0 && !(wal->cstat&32) && sectorbordercnt < ARRAY_SSIZE(sectorborder))
 #ifdef YAX_ENABLE
@@ -5442,11 +5442,11 @@ void polymost_scansector(int32_t sectnum)
 #endif
             if ((gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
             {
-                float const d = fp1.x*fp2.y - fp2.x*fp1.y;
+                double const d = fp1.x*fp2.y - fp2.x*fp1.y;
                 p1.x = fp2.x-fp1.x;
                 p1.y = fp2.y-fp1.y;
 
-                if (d*d <= (p1.x*p1.x + p1.y*p1.y) * (SCISDIST*SCISDIST*260.f))
+                if (d*d <= (p1.x*p1.x + p1.y*p1.y) * (SCISDIST*SCISDIST*260.))
                 {
                     sectorborder[sectorbordercnt++] = nextsectnum;
                     gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
@@ -5455,19 +5455,19 @@ void polymost_scansector(int32_t sectnum)
 
             if ((z == startwall) || (wall[z-1].point2 != z))
             {
-                p1.x = ((fp1.y * fcosglobalang) - (fp1.x * fsinglobalang)) * (1.0f/64.f);
-                p1.y = ((fp1.x * (float)cosviewingrangeglobalang) + (fp1.y * (float)sinviewingrangeglobalang)) * (1.0f/64.f);
+                p1.x = ((fp1.y * fcosglobalang) - (fp1.x * fsinglobalang)) * (1.0/64.);
+                p1.y = ((fp1.x * (double)cosviewingrangeglobalang) + (fp1.y * (double)sinviewingrangeglobalang)) * (1.0/64.);
             }
             else { p1 = p2; }
 
-            p2.x = ((fp2.y * fcosglobalang) - (fp2.x * fsinglobalang)) * (1.0f/64.f);
-            p2.y = ((fp2.x * (float) cosviewingrangeglobalang) + (fp2.y * (float) sinviewingrangeglobalang)) * (1.0f/64.f);
+            p2.x = ((fp2.y * fcosglobalang) - (fp2.x * fsinglobalang)) * (1.0/64.);
+            p2.y = ((fp2.x * (double) cosviewingrangeglobalang) + (fp2.y * (double) sinviewingrangeglobalang)) * (1.0/64.);
 
             //if wall is facing you...
             if ((p1.y >= SCISDIST || p2.y >= SCISDIST) && (p1.x*p2.y < p2.x*p1.y))
             {
-                dxb1[numscans] = (p1.y >= SCISDIST) ? (p1.x*ghalfx/p1.y + ghalfx) : -1e32f;
-                dxb2[numscans] = (p2.y >= SCISDIST) ? (p2.x*ghalfx/p2.y + ghalfx) : 1e32f;
+                dxb1[numscans] = (p1.y >= SCISDIST) ? (p1.x*ghalfx/p1.y + ghalfx) : -1e32;
+                dxb2[numscans] = (p2.y >= SCISDIST) ? (p2.x*ghalfx/p2.y + ghalfx) : 1e32;
 
                 if (dxb1[numscans] < dxb2[numscans])
                 {
