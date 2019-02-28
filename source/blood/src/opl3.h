@@ -19,6 +19,20 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+//
+//  Nuked OPL3 emulator.
+//  Thanks:
+//      MAME Development Team(Jarek Burczynski, Tatsuyuki Satoh):
+//          Feedback and Rhythm part calculation information.
+//      forums.submarine.org.uk(carbon14, opl3):
+//          Tremolo and phase generator calculation information.
+//      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
+//          OPL2 ROMs.
+//      siliconpr0n.org(John McMaster, digshadow):
+//          YMF262 and VRC VII decaps and die shots.
+//
+// version: 1.8
+//
 
 #ifndef OPL_OPL3_H
 #define OPL_OPL3_H
