@@ -162,7 +162,7 @@ static DWORD WINAPI fillDataThread(LPVOID lpParameter)
 
     do {
         waitret = WaitForMultipleObjects(BUFFERPORTIONS, handles, FALSE, INFINITE);
-        if (waitret >= WAIT_OBJECT_0 && waitret < waitret + BUFFERPORTIONS)
+        if (waitret >= WAIT_OBJECT_0 && waitret < WAIT_OBJECT_0+BUFFERPORTIONS)
         {
             waitret2 = WaitForSingleObject(mutex, INFINITE);
             if (waitret2 == WAIT_OBJECT_0) {
