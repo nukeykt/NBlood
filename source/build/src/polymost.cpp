@@ -40,6 +40,7 @@ typedef struct { float x, cy[2], fy[2]; int32_t tag; int16_t n, p, ctag, ftag; }
 #define VSPMAX 2048 //<- careful!
 static vsptyp vsp[VSPMAX];
 static int32_t gtag;
+static float xbl, xbr;
 
 static double dxb1[MAXWALLSB], dxb2[MAXWALLSB];
 
@@ -3735,6 +3736,10 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         y1 += DOMOST_OFFSET; //necessary?
     }
 
+    // Test if poly is out of screen
+    if (x1 < xbl || x0 > xbr)
+        return;
+
     vec2f_t const dm0 = { x0, y0 };
     vec2f_t const dm1 = { x1, y1 };
 
@@ -5526,6 +5531,7 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
 
     int32_t vcnt = 1; //0 is dummy solid node
 
+    xbl = px[imin];
     vsp[vcnt].x = px[imin];
     vsp[vcnt].cy[0] = vsp[vcnt].fy[0] = py[imin];
     vcnt++;
@@ -5573,6 +5579,8 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
             j--; if (j < 0) j = n-1;
         }
     } while (i != j);
+
+    xbr = px[i];
 
     if (px[i] > vsp[vcnt-1].x)
     {
