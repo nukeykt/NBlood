@@ -2291,7 +2291,7 @@ const char *pzCrypticArts[] = {
 };
 
 INIDESCRIPTION gINIDescription[] = {
-    { "BLOOD: One Unit Whole Blood", "BLOOD.INI", NULL },
+    { "BLOOD: One Unit Whole Blood", "BLOOD.INI", NULL, 0 },
     { "Cryptic passage", "CRYPTIC.INI", pzCrypticArts, ARRAY_SSIZE(pzCrypticArts) },
 };
 

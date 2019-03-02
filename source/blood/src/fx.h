@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 
 enum FX_ID {
+    FX_NONE = -1,
     FX_0 = 0,
     FX_1,
     FX_2,
