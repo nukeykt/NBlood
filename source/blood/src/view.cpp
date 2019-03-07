@@ -1607,6 +1607,12 @@ uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite)
         pTSprite->owner = pSprite->owner;
         pTSprite->ang = pSprite->ang;
     }
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        int nAngle = getangle(pTSprite->x-gView->pSprite->x, pTSprite->y-gView->pSprite->y);
+        pTSprite->x += Cos(nAngle)>>25;
+        pTSprite->y += Sin(nAngle)>>25;
+    }
     return &tsprite[nTSprite];
 }
 
@@ -1814,12 +1820,6 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         int height = tilesiz[pNSprite->picnum].y;
         int center = height/2+picanm[pNSprite->picnum].yofs;
         pNSprite->z -= (pNSprite->yrepeat<<2)*(height-center);
-        if (videoGetRenderMode() >= REND_POLYMOST)
-        {
-            int nAngle = getangle(pNSprite->x-gView->pSprite->x, pNSprite->y-gView->pSprite->y);
-            pNSprite->x += Cos(nAngle)>>25;
-            pNSprite->y += Sin(nAngle)>>25;
-        }
         break;
     }
     case VIEW_EFFECT_1:
