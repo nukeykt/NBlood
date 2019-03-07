@@ -3171,10 +3171,8 @@ RORHACK:
         }
 
         if (r_usenewaspect)
-        {
             newaspect_enable = 0;
-            renderSetAspect(viewingRange, yxAspect);
-        }
+        renderSetAspect(viewingRange, yxAspect);
         int nClipDist = gView->pSprite->clipdist<<2;
         int ve8, vec, vf0, vf4;
         GetZRange(gView->pSprite, &vf4, &vf0, &vec, &ve8, nClipDist, 0);
