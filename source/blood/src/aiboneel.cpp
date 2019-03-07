@@ -83,6 +83,18 @@ static void BiteSeqCallback(int, int nXSprite)
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
     int height = (pSprite->yrepeat*pDudeInfo->atb)<<2;
     int height2 = (pTarget->yrepeat*pDudeInfoT->atb)<<2;
+    /*
+     * workaround for 
+     * pXSprite->target >= 0 && pXSprite->target < kMaxSprites in file NBlood/source/blood/src/aiboneel.cpp at line 86
+     * The value of pXSprite->target is -1. 
+     * copied from lines 177:181
+     * resolves this case, but may cause other issues? 
+     */
+    if (pXSprite->target == -1)
+    {
+        aiNewState(pSprite, pXSprite, &eelSearch);
+        return;
+    }
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     actFireVector(pSprite, 0, 0, dx, dy, height2-height, VECTOR_TYPE_7);
 }
