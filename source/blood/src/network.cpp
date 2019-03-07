@@ -564,13 +564,13 @@ void netBroadcastMyLogoff(bool bRestart)
 
 void netBroadcastPlayerInfo(int nPlayer)
 {
-    if (numplayers < 2)
-        return;
     PROFILE *pProfile = &gProfile[nPlayer];
     strcpy(pProfile->name, szPlayerName);
     pProfile->skill = gSkill;
     pProfile->nAutoAim = gAutoAim;
     pProfile->nWeaponSwitch = gWeaponSwitch;
+    if (numplayers < 2)
+        return;
     char *pPacket = packet;
     PutPacketByte(pPacket, 251);
     PutPacketBuffer(pPacket, pProfile, sizeof(PROFILE));

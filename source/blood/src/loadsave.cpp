@@ -23,10 +23,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include "build.h"
 #include "compat.h"
+#include "mmulti.h"
 #include "common_game.h"
-#ifdef WITHKPLIB
-#include "kplib.h"
-#endif
 #include "config.h"
 #include "ai.h"
 #include "asound.h"
@@ -156,6 +154,7 @@ void LoadSave::LoadGame(char *pzFile)
     gGameStarted = 1;
     bVanilla = false;
     levelTryPlayMusic(gGameOptions.nEpisode ,gGameOptions.nLevel);
+    netBroadcastPlayerInfo(myconnectindex);
     //sndPlaySong(gGameOptions.zLevelSong, 1);
 }
 
