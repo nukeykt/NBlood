@@ -1177,7 +1177,7 @@ void polymost_glinit()
              \n\
              color.rgb = mix(v_color.rgb*color.rgb, color.rgb, fullbright);\n\
              \n\
-             float fogEnabled = mix(u_fogEnabled, 0.0, u_usePalette);\n\
+             float fogEnabled = mix(u_fogEnabled, c_zero, u_usePalette);\n\
              fullbright = max(c_one-fogEnabled, fullbright);\n\
              float fogFactor = clamp((gl_Fog.end-gl_FogFragCoord)*gl_Fog.scale, fullbright, c_one);\n\
              //float fogFactor = clamp(gl_FogFragCoord, fullbright, c_one);\n\
@@ -1207,6 +1207,8 @@ void polymost_glinit()
          uniform vec2 u_palswapSize;\n\
          \n\
          uniform float u_shade;\n\
+         uniform float u_numShades;\n\
+         uniform float u_visFactor;\n\
          uniform float u_fogEnabled;\n\
          \n\
          uniform float u_useColorOnly;\n\
@@ -1245,7 +1247,8 @@ void polymost_glinit()
              texCoord = clamp(u_texturePosSize.zw*texCoord, u_halfTexelSize, u_texturePosSize.zw-u_halfTexelSize);\n\
              vec4 color = texture2D(s_texture, u_texturePosSize.xy+texCoord);\n\
              \n\
-             float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, u_shade)).r;\n\
+             float shade = clamp(floor(u_shade+u_visFactor*v_distance), c_zero, u_numShades-c_one)/u_numShades;\n\
+             float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, shade)).r;\n\
              colorIndex = c_basepalOffset + c_basepalScale*colorIndex;\n\
              vec4 palettedColor = texture2D(s_palette, vec2(colorIndex, c_zero));\n\
              float fullbright = u_usePalette*palettedColor.a;\n\
@@ -1265,7 +1268,8 @@ void polymost_glinit()
              \n\
              color.rgb = mix(v_color.rgb*color.rgb, color.rgb, fullbright);\n\
              \n\
-             fullbright = max(c_one-u_fogEnabled, fullbright);\n\
+             float fogEnabled = mix(u_fogEnabled, c_zero, u_usePalette);\n\
+             fullbright = max(c_one-fogEnabled, fullbright);\n\
              float fogFactor = clamp((gl_Fog.end-gl_FogFragCoord)*gl_Fog.scale, fullbright, c_one);\n\
              //float fogFactor = clamp(gl_FogFragCoord, fullbright, c_one);\n\
              color.rgb = mix(gl_Fog.color.rgb, color.rgb, fogFactor);\n\
