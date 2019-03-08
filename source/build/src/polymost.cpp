@@ -727,7 +727,7 @@ static void polymost_setVisibility(float visibility)
 {
     if (currentShaderProgramID == polymost1CurrentShaderProgramID)
     {
-        polymost1VisFactor = visibility;
+        polymost1VisFactor = visibility*fviewingrange*(1.f/(64.f*65536.f));
         glUniform1f(polymost1VisFactorLoc, polymost1VisFactor);
     }
 }
@@ -4649,6 +4649,10 @@ static void polymost_drawalls(int32_t const bunch)
         globvis = (sector[sectnum].visibility != 0) ?
                   mulscale4(globalcisibility, (uint8_t)(sector[sectnum].visibility + 16)) :
                   globalcisibility;
+        globvis2 = (sector[sectnum].visibility != 0) ?
+                  mulscale4(globalcisibility2, (uint8_t)(sector[sectnum].visibility + 16)) :
+                  globalcisibility2;
+        polymost_setVisibility(globvis2);
 
         DO_TILE_ANIM(globalpicnum, sectnum);
 
@@ -4683,6 +4687,9 @@ static void polymost_drawalls(int32_t const bunch)
             //Parallaxing sky... hacked for Ken's mountain texture
             calc_and_apply_fog_factor(sec->floorpicnum, sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
 
+            // TODO: How does visibility affects sky?
+            globvis2 = 0;
+            polymost_setVisibility(globvis2);
             //Use clamping for tiled sky textures
             //(don't wrap around edges if the sky use multiple panels)
             for (bssize_t i=(1<<dapskybits)-1; i>0; i--)
@@ -4995,6 +5002,10 @@ static void polymost_drawalls(int32_t const bunch)
         globvis = (sector[sectnum].visibility != 0) ?
                   mulscale4(globalcisibility, (uint8_t)(sector[sectnum].visibility + 16)) :
                   globalcisibility;
+        globvis2 = (sector[sectnum].visibility != 0) ?
+                  mulscale4(globalcisibility2, (uint8_t)(sector[sectnum].visibility + 16)) :
+                  globalcisibility2;
+        polymost_setVisibility(globvis2);
 
         DO_TILE_ANIM(globalpicnum, sectnum);
 
@@ -5029,6 +5040,9 @@ static void polymost_drawalls(int32_t const bunch)
             //Parallaxing sky... hacked for Ken's mountain texture
             calc_and_apply_fog_factor(sec->ceilingpicnum, sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
 
+            // TODO: How does visibility affects sky?
+            globvis2 = 0;
+            polymost_setVisibility(globvis2);
             //Use clamping for tiled sky textures
             //(don't wrap around edges if the sky use multiple panels)
             for (bssize_t i=(1<<dapskybits)-1; i>0; i--)
@@ -5365,6 +5379,9 @@ static void polymost_drawalls(int32_t const bunch)
                 globalpicnum = wal->picnum; globalshade = wal->shade; globalpal = (int32_t)((uint8_t)wal->pal);
                 globvis = globalvisibility;
                 if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
+                globvis2 = globalvisibility2;
+                if (sector[sectnum].visibility != 0) globvis2 = mulscale4(globvis2, (uint8_t)(sector[sectnum].visibility+16));
+                polymost_setVisibility(globvis2);
                 globalorientation = wal->cstat;
                 DO_TILE_ANIM(globalpicnum, wallnum+16384);
 
@@ -5402,6 +5419,9 @@ static void polymost_drawalls(int32_t const bunch)
                 globalpicnum = nwal->picnum; globalshade = nwal->shade; globalpal = (int32_t)((uint8_t)nwal->pal);
                 globvis = globalvisibility;
                 if (sector[sectnum].visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sector[sectnum].visibility+16));
+                globvis2 = globalvisibility2;
+                if (sector[sectnum].visibility != 0) globvis2 = mulscale4(globvis2, (uint8_t)(sector[sectnum].visibility+16));
+                polymost_setVisibility(globvis2);
                 globalorientation = nwal->cstat;
                 DO_TILE_ANIM(globalpicnum, wallnum+16384);
 
@@ -5446,6 +5466,10 @@ static void polymost_drawalls(int32_t const bunch)
                 globvis = (sector[sectnum].visibility != 0) ?
                           mulscale4(globalvisibility, (uint8_t)(sector[sectnum].visibility + 16)) :
                           globalvisibility;
+                globvis2 = (sector[sectnum].visibility != 0) ?
+                          mulscale4(globalvisibility2, (uint8_t)(sector[sectnum].visibility + 16)) :
+                          globalvisibility2;
+                polymost_setVisibility(globvis2);
                 globalorientation = wal->cstat;
                 DO_TILE_ANIM(globalpicnum, wallnum+16384);
 
@@ -5911,7 +5935,12 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     globalorientation = (int32_t)wal->cstat;
     DO_TILE_ANIM(globalpicnum, (int16_t)thewall[z]+16384);
 
+    globvis = globalvisibility;
     globvis = (sector[sectnum].visibility != 0) ? mulscale4(globvis, (uint8_t)(sector[sectnum].visibility + 16)) : globalvisibility;
+
+    globvis2 = globalvisibility2;
+    globvis2 = (sector[sectnum].visibility != 0) ? mulscale4(globvis2, (uint8_t)(sector[sectnum].visibility + 16)) : globalvisibility2;
+    polymost_setVisibility(globvis2);
 
     globalshade = (int32_t)wal->shade;
     globalpal = (int32_t)((uint8_t)wal->pal);
@@ -6596,6 +6625,11 @@ void polymost_drawsprite(int32_t snum)
 
     if (sector[tspr->sectnum].visibility != 0)
         globvis = mulscale4(globvis, (uint8_t)(sector[tspr->sectnum].visibility + 16));
+
+    globvis2 = globalvisibility2;
+    if (sector[tspr->sectnum].visibility != 0)
+        globvis2 = mulscale4(globvis2, (uint8_t)(sector[tspr->sectnum].visibility + 16));
+    polymost_setVisibility(globvis2);
 
     vec2_t off = { 0, 0 };
 
