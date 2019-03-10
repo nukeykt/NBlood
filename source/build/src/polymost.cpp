@@ -3061,6 +3061,7 @@ static void polymost_updaterotmat(void)
             0.f, 0.f, 1.f, 0.f,
             0.f, 0.f, 0.f, 1.f,
         };
+#if !SOFTROTMAT
         //Up/down rotation
         float udmatrix[16] = {
             1.f, 0.f, 0.f, 0.f,
@@ -3077,6 +3078,7 @@ static void polymost_updaterotmat(void)
         };
         multiplyMatrix4f(matrix, udmatrix);
         multiplyMatrix4f(matrix, tiltmatrix);
+#endif
         Bmemcpy(polymost1RotMatrix, matrix, sizeof(matrix));
         glUniformMatrix4fv(polymost1RotMatrixLoc, 1, false, polymost1RotMatrix);
     }
@@ -3838,6 +3840,9 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         y0 += DOMOST_OFFSET;
         y1 += DOMOST_OFFSET; //necessary?
     }
+
+    x0 -= DOMOST_OFFSET;
+    x1 += DOMOST_OFFSET;
 
     // Test if poly is out of screen
     if (x1 < xbl || x0 > xbr)
@@ -4690,10 +4695,13 @@ static void polymost_drawalls(int32_t const bunch)
         {
             //Parallaxing sky... hacked for Ken's mountain texture
             calc_and_apply_fog_factor(sec->floorpicnum, sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
+            
+            globvis2 = globalpisibility;
+            if (sec->visibility != 0)
+                globvis2 = mulscale4(globvis2, (uint8_t)(sec->visibility + 16));
+            float viscale = xdimscale*fxdimen*(.0000001f/256.f);
+            polymost_setVisibility(globvis2*viscale);
 
-            // TODO: How does visibility affects sky?
-            globvis2 = 0;
-            polymost_setVisibility(globvis2);
             //Use clamping for tiled sky textures
             //(don't wrap around edges if the sky use multiple panels)
             for (bssize_t i=(1<<dapskybits)-1; i>0; i--)
@@ -5044,9 +5052,12 @@ static void polymost_drawalls(int32_t const bunch)
             //Parallaxing sky... hacked for Ken's mountain texture
             calc_and_apply_fog_factor(sec->ceilingpicnum, sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
 
-            // TODO: How does visibility affects sky?
-            globvis2 = 0;
-            polymost_setVisibility(globvis2);
+            globvis2 = globalpisibility;
+            if (sec->visibility != 0)
+                globvis2 = mulscale4(globvis2, (uint8_t)(sec->visibility + 16));
+            float viscale = xdimscale*fxdimen*(.0000001f/256.f);
+            polymost_setVisibility(globvis2*viscale);
+
             //Use clamping for tiled sky textures
             //(don't wrap around edges if the sky use multiple panels)
             for (bssize_t i=(1<<dapskybits)-1; i>0; i--)
