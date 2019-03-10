@@ -361,6 +361,8 @@ void Resource::AddExternalResource(const char *name, const char *type, int id)
     DICTNODE **index = Probe(name2, type2);
     dassert(index != NULL);
     DICTNODE *node = *index;
+    if (node && (node->flags & DICT_EXTERNAL))
+        return;
     if (!node)
     {
         if (2 * count >= buffSize)
