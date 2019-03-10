@@ -7069,6 +7069,11 @@ void polymost_drawsprite(int32_t snum)
         break;
 
         case 2:  // Floor sprite
+            globvis2 = globalhisibility2;
+            if (sector[tspr->sectnum].visibility != 0)
+                globvis2 = mulscale4(globvis2, (uint8_t)(sector[tspr->sectnum].visibility + 16));
+            polymost_setVisibility(globvis2);
+
             if ((globalorientation & 64) != 0 && (globalposz > tspr->z) == (!(globalorientation & 8)))
                 goto _drawsprite_return;
             else
@@ -7511,6 +7516,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     glPushMatrix();
 
     globvis = 0;
+    globvis2 = 0;
+    polymost_setVisibility(globvis2);
 
     int32_t const ogpicnum = globalpicnum;
     globalpicnum = picnum;
@@ -7907,6 +7914,9 @@ static void tessectrap(const float *px, const float *py, const int32_t *point2, 
 
 void polymost_fillpolygon(int32_t npoints)
 {
+    globvis2 = 0;
+    polymost_setVisibility(globvis2);
+
     globalx1 = mulscale16(globalx1,xyaspect);
     globaly2 = mulscale16(globaly2,xyaspect);
     xtex.u = ((float)asm1) * (1.f / 4294967296.f);
