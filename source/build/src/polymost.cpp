@@ -84,7 +84,7 @@ static GLuint drawpolyVertsID = 0;
 static GLint drawpolyVertsOffset = 0;
 static int32_t drawpolyVertsSubBufferIndex = 0;
 static GLsync drawpolyVertsSync[3] = { 0 };
-static float defaultDrawpolyVertsArray[MAX_DRAWPOLY_VERTS*8];
+static float defaultDrawpolyVertsArray[MAX_DRAWPOLY_VERTS*5];
 static float* drawpolyVerts = defaultDrawpolyVertsArray;
 
 struct glfiltermodes glfiltermodes[NUMGLFILTERMODES] =
