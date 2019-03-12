@@ -644,6 +644,7 @@ void Resource::PrecacheSounds(void)
         if ((!strcmp(pNode->type, "RAW") || !strcmp(pNode->type, "SFX")) && !pNode->ptr)
         {
             Load(pNode);
+            G_HandleAsync();
         }
     }
 }
