@@ -23,7 +23,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "mmulti.h"
 #include "pragmas.h"
+#ifndef NETCODE_DISABLE
 #include "enet/enet.h"
+#endif
 #include "compat.h"
 #include "config.h"
 #include "controls.h"
@@ -85,7 +87,7 @@ struct28E3B0 byte_28E3B0;
 
 PKT_STARTGAME gPacketStartGame;
 
-
+#ifndef NETCODE_DISABLE
 ENetAddress gNetENetAddress;
 ENetHost *gNetENetServer;
 ENetHost *gNetENetClient;
@@ -167,6 +169,7 @@ void netClientDisconnect(void)
         enet_peer_reset(gNetENetPeer);
     gNetENetPeer = NULL;
 }
+#endif
 
 void netResetToSinglePlayer(void)
 {
@@ -180,6 +183,7 @@ void netResetToSinglePlayer(void)
 
 void netSendPacket(int nDest, char *pBuffer, int nSize)
 {
+#ifndef NETCODE_DISABLE
     if (gNetMode == NETWORK_NONE)
         return;
     netUpdate();
@@ -220,6 +224,7 @@ void netSendPacket(int nDest, char *pBuffer, int nSize)
     }
 
     netUpdate();
+#endif
 }
 
 void netSendPacketAll(char *pBuffer, int nSize)
@@ -323,6 +328,7 @@ void netCheckSync(void)
 
 short netGetPacket(short *pSource, char *pMessage)
 {
+#ifndef NETCODE_DISABLE
     if (gNetMode == NETWORK_NONE)
         return 0;
     netUpdate();
@@ -339,6 +345,7 @@ short netGetPacket(short *pSource, char *pMessage)
         return nSize;
     }
     netUpdate();
+#endif
     return 0;
 }
 
@@ -948,13 +955,14 @@ void netGetInput(void)
 
 void netInitialize(bool bConsole)
 {
-    char buffer[128];
     netDeinitialize();
     memset(gPlayerReady, 0, sizeof(gPlayerReady));
+    sub_79760();
+#ifndef NETCODE_DISABLE
+    char buffer[128];
     gNetENetServer = gNetENetClient = NULL;
     //gNetServerPacketHead = gNetServerPacketTail = 0;
     gNetPacketHead = gNetPacketTail = 0;
-    sub_79760();
     if (gNetMode == NETWORK_NONE)
     {
         netResetToSinglePlayer();
@@ -1208,10 +1216,12 @@ void netInitialize(bool bConsole)
     }
     gNetENetInit = true;
     gGameOptions.nGameType = 2;
+#endif
 }
 
 void netDeinitialize(void)
 {
+#ifndef NETCODE_DISABLE
     if (!gNetENetInit)
         return;
     gNetENetInit = false;
@@ -1230,8 +1240,10 @@ void netDeinitialize(void)
         enet_deinitialize();
     }
     gNetENetServer = gNetENetClient = NULL;
+#endif
 }
 
+#ifndef NETCODE_DISABLE
 void netPostEPacket(ENetPacket *pEPacket)
 {
     //static int number;
@@ -1239,9 +1251,11 @@ void netPostEPacket(ENetPacket *pEPacket)
     gNetPacketFifo[gNetPacketHead] = pEPacket;
     gNetPacketHead = (gNetPacketHead+1)%kENetFifoSize;
 }
+#endif
 
 void netUpdate(void)
 {
+#ifndef NETCODE_DISABLE
     ENetEvent event;
     if (gNetMode == NETWORK_NONE)
         return;
@@ -1347,11 +1361,13 @@ void netUpdate(void)
         }
         enet_host_service(gNetENetClient, NULL, 0);
     }
+#endif
 }
 
 void faketimerhandler(void)
 {
     timerUpdate();
+#ifndef NETCODE_DISABLE
     if (gNetMode != NETWORK_NONE && gNetENetInit)
         netUpdate();
 #if 0
@@ -1360,6 +1376,7 @@ void faketimerhandler(void)
         gNetFifoClock += 4;
         netGetInput();
     }
+#endif
 #endif
     //if (gNetMode != NETWORK_NONE && gNetENetInit)
     //    enet_host_service(gNetMode == NETWORK_SERVER ? gNetENetServer : gNetENetClient, NULL, 0);
@@ -1397,7 +1414,9 @@ void netPlayerQuit(int nPlayer)
             if (connectpoint2[p] == nPlayer)
                 connectpoint2[p] = connectpoint2[nPlayer];
         }
+#ifndef NETCODE_DISABLE
         gNetPlayerPeer[nPlayer] = NULL;
+#endif
     }
     gNetPlayers--;
     numplayers = ClipLow(numplayers-1, 1);
