@@ -3376,10 +3376,12 @@ static void tslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int3
         int const i = (sloptable[(bz>>6)+8192]); bz += bzinc;
         uint32_t u = bx + xtou*i;
         uint32_t v = by + ytov*i;
-        uint8_t ch = *(uint8_t *)(slopalptr[0] + buf[((u>>(32-logx))<<logy)+(v>>(32-logy))]);
-
+        uint8_t ch = buf[((u>>(32-logx))<<logy)+(v>>(32-logy))];
         if (ch != 255)
-            *p = trans[transmode ? *p|(pal[ch]<<8) : (*p<<8)|pal[ch]];
+        {
+            ch = *(uint8_t *)(slopalptr[0] + ch);
+            *p = trans[transmode ? *p|(ch<<8) : (*p<<8)|ch];
+        }
 
         slopalptr--;
         p += pinc;
@@ -3404,10 +3406,9 @@ static void mslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int3
         int const i = (sloptable[(bz>>6)+8192]); bz += bzinc;
         uint32_t u = bx + xtou*i;
         uint32_t v = by + ytov*i;
-        uint8_t ch = *(uint8_t *)(slopalptr[0] + buf[((u>>(32-logx))<<logy)+(v>>(32-logy))]);
-
+        uint8_t ch = buf[((u>>(32-logx))<<logy)+(v>>(32-logy))];
         if (ch != 255)
-            *p = pal[ch];
+            *p = *(uint8_t *)(slopalptr[0] + ch);
 
         slopalptr--;
         p += pinc;
