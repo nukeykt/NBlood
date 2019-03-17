@@ -2833,6 +2833,8 @@ float r_ambientlight = 1.0, r_ambientlightrecip = 1.0;
 
 int gLastPal = 0;
 
+int32_t g_frameRate;
+
 void viewDrawScreen(void)
 {
     int nPalette = 0;
@@ -2949,21 +2951,23 @@ void viewDrawScreen(void)
         int v78 = interpolateang(gScreenTiltO, gScreenTilt, gInterpolate);
         char v14 = 0;
         char v10 = 0;
-        char vc = powerupCheck(gView, 28) > 0;
+        bool bDelirium = powerupCheck(gView, 28) > 0;
+        static bool bDeliriumOld = false;
         char v4 = powerupCheck(gView, 21) > 0;
 #ifdef USE_OPENGL
         renderSetRollAngle(0);
 #endif
-        if (v78 || vc)
+        if (v78 || bDelirium)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
             {
                 int vr = viewingrange;
-                if (!waloff[4078])
+                walock[TILTBUFFER] = 255;
+                if (!waloff[TILTBUFFER])
                 {
-                    tileAllocTile(4078, 640, 640, 0, 0);
+                    tileAllocTile(TILTBUFFER, 640, 640, 0, 0);
                 }
-                renderSetTarget(4078, 640, 640);
+                renderSetTarget(TILTBUFFER, 640, 640);
                 int nAng = v78&511;
                 if (nAng > 256)
                 {
@@ -3064,7 +3068,7 @@ RORHACKOTHER:
             othercameraclock = gGameClock;
         }
 
-        if (!vc)
+        if (!bDelirium)
         {
             deliriumTilt = 0;
             deliriumTurn = 0;
@@ -3149,14 +3153,14 @@ RORHACK:
         renderDrawMasks();
         gView->pSprite->cstat = bakCstat;
 
-        if (v78 || vc)
+        if (v78 || bDelirium)
         {
             if (videoGetRenderMode() == REND_CLASSIC)
             {
                 dassert(waloff[ TILTBUFFER ] != 0);
                 renderRestoreTarget();
                 int vrc = 64+4+2+1024;
-                if (vc)
+                if (bDelirium)
                 {
                     vrc = 64+32+4+2+1+1024;
                 }
@@ -3168,7 +3172,28 @@ RORHACK:
                 int nScale = dmulscale32(Cos(nAng), 262144, Sin(nAng), 163840)>>1;
                 rotatesprite(160<<16, 100<<16, nScale, v78+512, TILTBUFFER, 0, 0, vrc, gViewX0, gViewY0, gViewX1, gViewY1);
             }
+#ifdef USE_OPENGL
+            else
+            {
+                if (videoGetRenderMode() == REND_POLYMOST)
+                {
+                    if (!bDeliriumOld)
+                    {
+                        glAccum(GL_LOAD, 1.f);
+                    }
+                    else
+                    {
+                        const float fBlur = pow(1.f/3.f, 30.f/g_frameRate);
+                        glAccum(GL_MULT, fBlur);
+                        glAccum(GL_ACCUM, 1.f-fBlur);
+                        glAccum(GL_RETURN, 1.f);
+                    }
+                }
+            }
+#endif
         }
+
+        bDeliriumOld = bDelirium;
 
         if (r_usenewaspect)
             newaspect_enable = 0;
@@ -3537,7 +3562,7 @@ void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
 
 #define FPS_COLOR(x) ((x) ? COLOR_RED : COLOR_WHITE)
 
-int32_t gShowFps, gFramePeriod, g_frameRate;
+int32_t gShowFps, gFramePeriod;
 
 void viewPrintFPS(void)
 {
