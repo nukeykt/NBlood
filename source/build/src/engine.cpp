@@ -9971,8 +9971,11 @@ static void videoAllocateBuffers(void)
 }
 
 #ifdef USE_OPENGL
+void (*PolymostProcessVoxels_Callback)(void) = NULL;
 static void PolymostProcessVoxels(void)
 {
+    if (PolymostProcessVoxels_Callback)
+        PolymostProcessVoxels_Callback();
     if (!g_haveVoxels)
         return;
 

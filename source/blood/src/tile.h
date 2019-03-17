@@ -51,6 +51,9 @@ extern short voxelIndex[kMaxTiles];
 void qloadvoxel(int32_t nVoxel);
 void CalcPicsiz(int a1, int a2, int a3);
 int tileInit(char a1, const char *a2);
+#ifdef USE_OPENGL
+void tileProcessGLVoxels(void);
+#endif
 char * tileLoadTile(int nTile);
 char * tileAllocTile(int nTile, int x, int y, int ox, int oy);
 void tilePreloadTile(int nTile);

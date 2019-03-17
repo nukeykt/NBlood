@@ -1544,6 +1544,9 @@ extern int32_t(*deletesprite_replace)(int16_t spritenum);
 extern int32_t(*changespritesect_replace)(int16_t spritenum, int16_t newsectnum);
 extern int32_t(*changespritestat_replace)(int16_t spritenum, int16_t newstatnum);
 extern void(*loadvoxel_replace)(int32_t voxel);
+#ifdef USE_OPENGL
+extern void(*PolymostProcessVoxels_Callback)(void);
+#endif
 
 extern int32_t automapping;
 extern int32_t bloodhack;

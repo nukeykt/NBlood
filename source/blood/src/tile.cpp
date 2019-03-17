@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "blood.h"
 #include "config.h"
 #include "resource.h"
+#include "tile.h"
 
 void qloadvoxel(int32_t nVoxel)
 {
@@ -110,20 +111,30 @@ int tileInit(char a1, const char *a2)
             SetBitString((char*)voxreserve, voxelIndex[i]);
     }
 
+    artLoaded = 1;
+
+    PolymostProcessVoxels_Callback = tileProcessGLVoxels;
+
+    return 1;
+}
+
+#ifdef USE_OPENGL
+void tileProcessGLVoxels(void)
+{
+    static bool voxInit = false;
+    if (voxInit)
+        return;
+    voxInit = true;
     for (int i = 0; i < kMaxVoxels; i++)
     {
         DICTNODE *hVox = gSysRes.Lookup(i, "KVX");
         if (!hVox)
             continue;
         char *pVox = (char*)gSysRes.Load(hVox);
-#ifdef USE_OPENGL
         voxmodels[i] = loadkvxfrombuf(pVox, hVox->size);
-#endif
     }
-    artLoaded = 1;
-
-    return 1;
 }
+#endif
 
 char * tileLoadTile(int nTile)
 {

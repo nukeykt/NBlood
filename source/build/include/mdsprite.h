@@ -200,7 +200,6 @@ typedef struct
     vec3_t siz;
     vec3f_t piv;
     int32_t is8bit;
-    int32_t vboalloc;
     GLuint vbo, vboindex;
 } voxmodel_t;
 

@@ -367,6 +367,52 @@ static FORCE_INLINE int isair(int32_t i)
     return !(vbit[i>>5] & (1<<SHIFTMOD32(i)));
 }
 
+#ifdef USE_GLEXT
+static void voxvboalloc(voxmodel_t *vm)
+{
+    const float phack[2] = { 0, 1.f / 256.f };
+    glGenBuffers(1, &vm->vbo);
+    glGenBuffers(1, &vm->vboindex);
+    GLfloat *vertex = (GLfloat *)Xmalloc(sizeof(GLfloat) * 5 * 4 * vm->qcnt);
+    GLuint *index = (GLuint *)Xmalloc(sizeof(GLuint) * 3 * 2 * vm->qcnt);
+    const float ru = 1.f / ((float)vm->mytexx);
+    const float rv = 1.f / ((float)vm->mytexy);
+    for (bssize_t i = 0; i < vm->qcnt; i++)
+    {
+        const vert_t *const vptr = &vm->quad[i].v[0];
+
+        const int32_t xx = vptr[0].x + vptr[2].x;
+        const int32_t yy = vptr[0].y + vptr[2].y;
+        const int32_t zz = vptr[0].z + vptr[2].z;
+
+        for (bssize_t j=0; j<4; j++)
+        {
+            vertex[(i*4+j)*5+0] = ((float)vptr[j].x) - phack[xx>vptr[j].x*2] + phack[xx<vptr[j].x*2];
+            vertex[(i*4+j)*5+1] = ((float)vptr[j].y) - phack[yy>vptr[j].y*2] + phack[yy<vptr[j].y*2];
+            vertex[(i*4+j)*5+2] = ((float)vptr[j].z) - phack[zz>vptr[j].z*2] + phack[zz<vptr[j].z*2];
+
+            vertex[(i*4+j)*5+3] = ((float)vptr[j].u)*ru;
+            vertex[(i*4+j)*5+4] = ((float)vptr[j].v)*rv;
+        }
+        index[(i*2+0)*3+0] = i*4+0;
+        index[(i*2+0)*3+1] = i*4+1;
+        index[(i*2+0)*3+2] = i*4+2;
+
+        index[(i*2+1)*3+0] = i*4+0;
+        index[(i*2+1)*3+1] = i*4+2;
+        index[(i*2+1)*3+2] = i*4+3;
+    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->vboindex);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * vm->qcnt, index, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, vm->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vertex, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    Bfree(vertex);
+    Bfree(index);
+}
+#endif
+
 static voxmodel_t *vox2poly()
 {
     int32_t i, j;
@@ -580,6 +626,11 @@ skindidntfit:
     }
 
     Bfree(shp); Bfree(zbit); Bfree(bx0);
+
+#ifdef USE_GLEXT
+    if (r_vbos)
+        voxvboalloc(gvox);
+#endif
 
     return gvox;
 }
@@ -857,7 +908,7 @@ void voxfree(voxmodel_t *m)
     DO_FREE_AND_NULL(m->texid);
 
 #ifdef USE_GLEXT
-    if (m->vboalloc)
+    if (r_vbos)
     {
         glDeleteBuffers(1, &m->vbo);
         glDeleteBuffers(1, &m->vboindex);
@@ -1029,54 +1080,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     if ((tspr->cstat&48)==32)
         return 0;
 
-    const float phack[2] = { 0, 1.f / 256.f };
-
-#ifdef USE_GLEXT
-    if (r_vbos && !m->vboalloc)
-    {
-        glGenBuffers(1, &m->vbo);
-        glGenBuffers(1, &m->vboindex);
-        GLfloat *vertex = (GLfloat *)Xmalloc(sizeof(GLfloat) * 5 * 4 * m->qcnt);
-        GLuint *index = (GLuint *)Xmalloc(sizeof(GLuint) * 3 * 2 * m->qcnt);
-        const float ru = 1.f / ((float)m->mytexx);
-        const float rv = 1.f / ((float)m->mytexy);
-        for (bssize_t i = 0; i < m->qcnt; i++)
-        {
-            const vert_t *const vptr = &m->quad[i].v[0];
-
-            const int32_t xx = vptr[0].x + vptr[2].x;
-            const int32_t yy = vptr[0].y + vptr[2].y;
-            const int32_t zz = vptr[0].z + vptr[2].z;
-
-            for (bssize_t j=0; j<4; j++)
-            {
-                vertex[(i*4+j)*5+0] = ((float)vptr[j].x) - phack[xx>vptr[j].x*2] + phack[xx<vptr[j].x*2];
-                vertex[(i*4+j)*5+1] = ((float)vptr[j].y) - phack[yy>vptr[j].y*2] + phack[yy<vptr[j].y*2];
-                vertex[(i*4+j)*5+2] = ((float)vptr[j].z) - phack[zz>vptr[j].z*2] + phack[zz<vptr[j].z*2];
-
-                vertex[(i*4+j)*5+3] = ((float)vptr[j].u)*ru;
-                vertex[(i*4+j)*5+4] = ((float)vptr[j].v)*rv;
-            }
-            index[(i*2+0)*3+0] = i*4+0;
-            index[(i*2+0)*3+1] = i*4+1;
-            index[(i*2+0)*3+2] = i*4+2;
-
-            index[(i*2+1)*3+0] = i*4+0;
-            index[(i*2+1)*3+1] = i*4+2;
-            index[(i*2+1)*3+2] = i*4+3;
-        }
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->vboindex);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * m->qcnt, index, GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * m->qcnt, vertex, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        Bfree(vertex);
-        Bfree(index);
-        m->vboalloc = 1;
-    }
-#endif
-
     //updateanimation((md2model *)m,tspr);
 
     vec3f_t m0 = { m->scale, m->scale, m->scale };
@@ -1179,6 +1182,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     uhack[0] = ru*.125; uhack[1] = -uhack[0];
     vhack[0] = rv*.125; vhack[1] = -vhack[0];
 #endif
+    const float phack[2] = { 0, 1.f / 256.f };
 
     if (!m->texid[globalpal])
         m->texid[globalpal] = gloadtex(m->mytex, m->mytexx, m->mytexy, m->is8bit, globalpal);
