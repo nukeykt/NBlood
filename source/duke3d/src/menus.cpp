@@ -555,15 +555,9 @@ static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &M
 
 
 #ifdef USE_OPENGL
-static int32_t MEOSV_PaletteEmulation[] = { 0, r_usetileshades };
-static MenuOptionSet_t MEOS_PaletteEmulation = MAKE_MENUOPTIONSET( MEOSN_OffOn, MEOSV_PaletteEmulation, 0x3 );
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
-#  ifdef EDUKE32_SIMPLE_MENU
-static MenuOption_t MEO_DISPLAYSETUP_PALETTEEMULATION = MAKE_MENUOPTION(&MF_Redfont, &MEOS_PaletteEmulation, &r_usetileshades);
-static MenuEntry_t ME_DISPLAYSETUP_PALETTEEMULATION = MAKE_MENUENTRY("Palette emulation:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_PALETTEEMULATION, Option);
-#  endif
-
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
+#ifdef TEXFILTER_MENU_OPTIONS
 static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER, MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
@@ -575,6 +569,7 @@ static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 0, 1, 2, 4, 8, 16, };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ANISOTROPY, MEOSV_DISPLAYSETUP_ANISOTROPY, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ANISOTROPY, &glanisotropy);
 static MenuEntry_t ME_DISPLAYSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
+#endif
 # endif
 
 # ifdef EDUKE32_ANDROID_MENU
@@ -741,20 +736,20 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
     &ME_DISPLAYSETUP_FOV,
 #endif
 #ifndef EDUKE32_STANDALONE
+# ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
+# endif
 #endif
 #ifdef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_HIDEDPAD,
     &ME_DISPLAYSETUP_TOUCHALPHA,
 #else
 # ifndef EDUKE32_STANDALONE
+#  ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_ANISOTROPY,
-# endif
-# ifdef EDUKE32_SIMPLE_MENU
-#  ifndef EDUKE32_STANDALONE
-    &ME_DISPLAYSETUP_PALETTEEMULATION,
 #  endif
-# else
+# endif
+# ifndef EDUKE32_SIMPLE_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST,
 # endif
 #endif
@@ -768,8 +763,10 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL_POLYMER[] = {
     &ME_DISPLAYSETUP_VIDEOSETUP,
     &ME_DISPLAYSETUP_FOV,
 #endif
+#ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
     &ME_DISPLAYSETUP_ANISOTROPY,
+#endif
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMER,
 #endif
@@ -1034,8 +1031,6 @@ static MenuEntry_t ME_RENDERERSETUP_GLOWTEX = MAKE_MENUENTRY("Glow textures:", &
 # endif
 static MenuOption_t MEO_RENDERERSETUP_MODELS = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_NoYes, &usemodels );
 static MenuEntry_t ME_RENDERERSETUP_MODELS = MAKE_MENUENTRY( "3D models:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_MODELS, Option );
-static MenuOption_t MEO_RENDERERSETUP_PALETTEEMULATION = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_PaletteEmulation, &r_usetileshades);
-static MenuEntry_t ME_RENDERERSETUP_PALETTEEMULATION = MAKE_MENUENTRY("Palette emulation:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_PALETTEEMULATION, Option);
 #endif
 
 #ifdef POLYMER
@@ -1053,9 +1048,6 @@ static MenuEntry_t ME_POLYMER_SHADOWS = MAKE_MENUENTRY("Dynamic shadows:", &MF_B
 static MenuRangeInt32_t MEO_POLYMER_SHADOWCOUNT = MAKE_MENURANGE(&pr_shadowcount, &MF_Bluefont, 1, 10, 1, 10, 1);
 static MenuEntry_t ME_POLYMER_SHADOWCOUNT = MAKE_MENUENTRY("Shadows per surface:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_SHADOWCOUNT, RangeInt32);
 
-static MenuOption_t MEO_POLYMER_PALETTEEMULATION = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_NoYes, &pr_artmapping);
-static MenuEntry_t ME_POLYMER_PALETTEEMULATION = MAKE_MENUENTRY("Palette emulation:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_PALETTEEMULATION, Option);
-
 #endif
 
 #ifdef USE_OPENGL
@@ -1072,7 +1064,6 @@ static MenuEntry_t *MEL_RENDERERSETUP_POLYMOST[] = {
 # endif
     &ME_Space4_Bluefont,
     &ME_RENDERERSETUP_MODELS,
-    &ME_RENDERERSETUP_PALETTEEMULATION,
 };
 
 #ifdef POLYMER
@@ -1086,7 +1077,6 @@ static MenuEntry_t *MEL_RENDERERSETUP_POLYMER [] = {
 # ifdef USE_GLEXT
     &ME_RENDERERSETUP_DETAILTEX,
     &ME_RENDERERSETUP_GLOWTEX,
-    &ME_POLYMER_PALETTEEMULATION,
 # endif
     &ME_Space4_Bluefont,
     &ME_RENDERERSETUP_MODELS,
@@ -1949,14 +1939,12 @@ static void Menu_Pre(MenuID_t cm)
                  -1;
 
 #ifndef EDUKE32_STANDALONE
+#ifdef TEXFILTER_MENU_OPTIONS
         if (videoGetRenderMode() != REND_CLASSIC)
         {
             //POGOTODO: allow setting anisotropy again while r_useindexedcolortextures is set when support is added down the line
-            // don't allow setting anisotropy or changing palette emulation while in POLYMOST and r_useindexedcolortextures is enabled
+            // don't allow setting anisotropy while in POLYMOST and r_useindexedcolortextures is enabled
             MenuEntry_DisableOnCondition(&ME_DISPLAYSETUP_ANISOTROPY, videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
-#ifdef EDUKE32_SIMPLE_MENU
-            MenuEntry_DisableOnCondition(&ME_DISPLAYSETUP_PALETTEEMULATION, videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
-#endif
 
             for (i = (int32_t) ARRAY_SIZE(MEOSV_DISPLAYSETUP_ANISOTROPY) - 1; i >= 0; --i)
             {
@@ -1967,6 +1955,7 @@ static void Menu_Pre(MenuID_t cm)
                 }
             }
         }
+#endif
 #endif
         break;
 
@@ -1981,8 +1970,6 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
         MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
 # endif
-        // don't allow changing palette emulation while in POLYMOST and r_useindexedcolortextures is enabled
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_PALETTEEMULATION, videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
         break;
 #endif
 
@@ -3285,8 +3272,10 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
     }
 #ifdef USE_OPENGL
 #ifndef EDUKE32_STANDALONE
+#ifdef TEXFILTER_MENU_OPTIONS
     else if (entry == &ME_DISPLAYSETUP_ANISOTROPY || entry == &ME_DISPLAYSETUP_TEXFILTER)
         gltexapplyprops();
+#endif
 #endif
     else if (entry == &ME_RENDERERSETUP_TEXQUALITY)
     {
