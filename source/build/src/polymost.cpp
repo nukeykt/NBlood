@@ -8567,6 +8567,7 @@ int32_t polymost_printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t ba
     polymost_setFogEnabled(false);
     // We want to have readable text in wireframe mode, too:
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    lastglpolygonmode = 0;
 
     if (backcol >= 0)
     {
