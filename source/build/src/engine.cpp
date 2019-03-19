@@ -3349,7 +3349,6 @@ static inline void setupslopevlin_alsotrans(int32_t logylogx, intptr_t bufplc, i
 static void tslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int32_t bx, int32_t by)
 {
     const char *const A_C_RESTRICT buf = ggbuf;
-    const char *const A_C_RESTRICT pal = ggpal;
     const char *const A_C_RESTRICT trans = paletteGetBlendTable(0);
     const int32_t bzinc = (asm1>>3), pinc = ggpinc;
 
@@ -3381,7 +3380,6 @@ static void tslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int3
 static void mslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int32_t bx, int32_t by)
 {
     const char *const A_C_RESTRICT buf = ggbuf;
-    const char *const A_C_RESTRICT pal = ggpal;
     const int32_t bzinc = (asm1>>3), pinc = ggpinc;
 
     const uint32_t xtou = globalx3, ytov = globaly3;

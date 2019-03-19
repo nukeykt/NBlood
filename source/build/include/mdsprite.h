@@ -200,6 +200,7 @@ typedef struct
     vec3_t siz;
     vec3f_t piv;
     int32_t is8bit;
+    GLuint vbo, vboindex;
 } voxmodel_t;
 
 EXTERN mdmodel_t **models;
