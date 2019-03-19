@@ -687,6 +687,9 @@ int app_main(int argc, char const * const * argv)
 
     const char *defsfile = G_DefFile();
 
+    if (testkopen("editor.def", 0))
+        G_AddDefModule("editor.def");
+
     if (!loaddefinitionsfile(defsfile))
         initprintf("Definitions file \"%s\" loaded.\n",defsfile);
 
