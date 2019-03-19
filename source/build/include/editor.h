@@ -382,6 +382,7 @@ int32_t select_sprite_tag(int32_t spritenum);
 
 extern int32_t m32_2d3dmode, m32_2d3dsize;
 extern vec2_t m32_2d3d;
+extern int32_t m32_3dundo;
 
 #define XSIZE_2D3D (xdim2d / m32_2d3dsize)
 #define YSIZE_2D3D (ydim2d / m32_2d3dsize)

@@ -195,6 +195,8 @@ int32_t m32_2d3dmode = 0;
 int32_t m32_2d3dsize = 4;
 vec2_t m32_2d3d = { 0xffff, 4 };
 
+int32_t m32_3dundo = 1;
+
 typedef struct
 {
     int16_t numsectors, numwalls, numsprites;

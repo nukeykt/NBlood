@@ -241,6 +241,9 @@ int32_t loadsetup(const char *fn)
     if (readconfig(fp, "2d3d_y", val, VL) > 0)
         m32_2d3d.y = clamp(atoi_safe(val), 0, 0xffff);
 
+    if (readconfig(fp, "3dundo", val, VL) > 0)
+        m32_3dundo = !!atoi_safe(val);
+
     if (readconfig(fp, "autogray", val, VL) > 0)
         autogray = !!atoi_safe(val);
 //    if (readconfig(fp, "showinnergray", val, VL) > 0)
@@ -520,6 +523,9 @@ int32_t writesetup(const char *fn)
              "2d3d_x = %d\n"
              "2d3d_y = %d\n"
              "\n"
+             "; Enable undo in 3d mode\n"
+             "3dundo = %d\n"
+             "\n"
              "; Point and line highlight/selection distances\n"
              "pointhighlightdist = %d\n"
              "linehighlightdist = %d\n"
@@ -639,6 +645,7 @@ int32_t writesetup(const char *fn)
              corruptcheck_heinum, fixmaponsave_sprites, keeptexturestretch,
              showheightindicators,showambiencesounds,pathsearchmode,
              m32_2d3dmode,m32_2d3dsize,m32_2d3d.x, m32_2d3d.y,
+             m32_3dundo,
              pointhighlightdist, linehighlightdist,
              autogray, //showinnergray,
              graphicsmode,

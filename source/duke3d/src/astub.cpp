@@ -10763,22 +10763,29 @@ static void Keys2d3d(void)
 
         if (PRESSED_KEYSC(Z)) // CTRL+Z
         {
-            if (eitherSHIFT)
+            if (!in3dmode() || m32_3dundo)
             {
-                if (map_undoredo(1)) message("Nothing to redo!");
-                else message("Redo: restored revision %d", map_revision-1);
-            }
-            else
-            {
-                if (map_undoredo(0)) message("Nothing to undo!");
-                else message("Undo: restored revision %d", map_revision-1);
-            }
+                if (eitherSHIFT)
+                {
+                    if (map_undoredo(1))
+                        message("Nothing to redo!");
+                    else
+                        message("Redo: restored revision %d", map_revision - 1);
+                }
+                else
+                {
+                    if (map_undoredo(0))
+                        message("Nothing to undo!");
+                    else
+                        message("Undo: restored revision %d", map_revision - 1);
+                }
 
-            updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
+                updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
 
-            // kick the user back to 2d mode if the sector they were in was deleted by the undo/redo operation
-            if (cursectnum == -1 && (in3dmode() && !m32_is2d3dmode()))
-                keystatus[buildkeys[BK_MODE2D_3D]] = 1;
+                // kick the user back to 2d mode if the sector they were in was deleted by the undo/redo operation
+                if (cursectnum == -1 && (in3dmode() && !m32_is2d3dmode()))
+                    keystatus[buildkeys[BK_MODE2D_3D]] = 1;
+            }
         }
 
         if (keystatus[KEYSC_S]) // S
