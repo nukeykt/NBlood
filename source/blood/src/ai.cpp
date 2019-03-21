@@ -245,10 +245,10 @@ void aiChooseDirection(spritetype *pSprite, XSPRITE *pXSprite, int a3)
         pXSprite->at17_3 = 1;
     else
         pXSprite->at17_3 = -1;
-    if (!CanMove(pSprite, pXSprite->target, pSprite->ang+(pXSprite->at17_3<<9), 512))
+    if (!CanMove(pSprite, pXSprite->target, pSprite->ang+pXSprite->at17_3*512, 512))
     {
         pXSprite->at17_3 = -pXSprite->at17_3;
-        if (!CanMove(pSprite, pXSprite->target, pSprite->ang+(pXSprite->at17_3<<9), 512))
+        if (!CanMove(pSprite, pXSprite->target, pSprite->ang+pXSprite->at17_3*512, 512))
             pXSprite->at17_3 = 0;
     }
 }

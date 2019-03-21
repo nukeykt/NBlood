@@ -64,7 +64,7 @@ class CPlayerMsg
 public:
     int at0;
     char at4[41];
-    CPlayerMsg() { at4[0] = 0; }
+    CPlayerMsg() { at0 = 0; at4[0] = 0; }
     void Clear(void);
     void Term(void);
     void Draw(void);

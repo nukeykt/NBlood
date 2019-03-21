@@ -2425,7 +2425,7 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
         else if (pSprite->type >= 400 && pSprite->type < 433)
             mass = thingInfo[pSprite->type-400].at2;
         else
-            ThrowError("Unexpected type in ConcussSprite(): Sprite: %d  Type: %d  Stat: %d", pSprite->index, pSprite->type, pSprite->statnum);
+            ThrowError("Unexpected type in ConcussSprite(): Sprite: %d  Type: %d  Stat: %d", (int)pSprite->index, (int)pSprite->type, (int)pSprite->statnum);
         int size = (tilesiz[pSprite->picnum].x*pSprite->xrepeat*tilesiz[pSprite->picnum].y*pSprite->yrepeat)>>1;
         dassert(mass > 0);
 

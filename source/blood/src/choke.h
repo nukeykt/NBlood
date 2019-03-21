@@ -35,6 +35,8 @@ public:
         at0 = NULL;
         at4 = NULL;
         at8 = NULL;
+        atc = 0;
+        at10 = 0;
         at1c = NULL;
         at14 = 0;
         at18 = 0;
