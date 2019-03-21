@@ -4115,8 +4115,7 @@ skip: ;
 
         int const ni = vsp[i].n;
 
-        if ((vsp[i].ctag == vsp[ni].ctag) && (vsp[i].ftag == vsp[ni].ftag) &&
-            ((vsp[i].cy[1] <= vsp[ni].cy[1]) || (vsp[i].fy[1] <= vsp[ni].fy[1])))
+        if ((vsp[i].ctag == vsp[ni].ctag) && (vsp[i].ftag == vsp[ni].ftag))
         {
             vsp[i].cy[1] = vsp[ni].cy[1];
             vsp[i].fy[1] = vsp[ni].fy[1];
