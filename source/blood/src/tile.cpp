@@ -113,7 +113,9 @@ int tileInit(char a1, const char *a2)
 
     artLoaded = 1;
 
+    #ifdef USE_OPENGL
     PolymostProcessVoxels_Callback = tileProcessGLVoxels;
+    #endif
 
     return 1;
 }
