@@ -4697,10 +4697,8 @@ static void polymost_drawalls(int32_t const bunch)
         }
         else if (!(globalorientation&1))
         {
-            if (globalposz <= sec->floorz || (sec->floorstat&3) == 2)
-#ifdef YAX_ENABLE
-            if (globalposz <= sec->floorz || yax_getbunch(sectnum, YAX_FLOOR) < 0 || yax_getnextwall(wallnum, YAX_FLOOR) >= 0)
-#endif
+            int32_t fz = getflorzofslope(sectnum, globalposx, globalposy);
+            if (globalposz <= fz)
                 polymost_internal_nonparallaxed(n0, n1, ryp0, ryp1, x0, x1, fy0, fy1, sectnum | MAXSECTORS);
         }
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].floorstat&1)))
@@ -5053,10 +5051,8 @@ static void polymost_drawalls(int32_t const bunch)
         }
         else if (!(globalorientation&1))
         {
-            if (globalposz >= sec->ceilingz || (sec->ceilingstat&3) == 2)
-#ifdef YAX_ENABLE
-            if (globalposz >= sec->ceilingz || yax_getbunch(sectnum, YAX_CEILING) < 0 || yax_getnextwall(wallnum, YAX_CEILING) >= 0)
-#endif
+            int32_t cz = getceilzofslope(sectnum, globalposx, globalposy);
+            if (globalposz >= cz)
                 polymost_internal_nonparallaxed(n0, n1, ryp0, ryp1, x0, x1, cy0, cy1, sectnum);
         }
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].ceilingstat&1)))
