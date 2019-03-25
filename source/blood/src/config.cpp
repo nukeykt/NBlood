@@ -119,6 +119,7 @@ int32_t gUpscaleFactor;
 int32_t gBrightness;
 int32_t gLevelStats;
 int32_t gFov;
+int32_t gCenterHoriz;
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
@@ -376,6 +377,7 @@ void CONFIG_SetDefaults(void)
     //ud.weaponsway             = 1;
     //ud.weaponswitch           = 3;  // new+empty
     gFov = 90;
+    gCenterHoriz = 0;
     gViewSize = 2;
     gTurnSpeed = 92;
     gDetail = 4;

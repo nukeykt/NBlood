@@ -88,6 +88,7 @@ extern uint8_t alphahackarray[MAXTILES];
 extern int32_t r_usenewshading;
 extern int32_t r_usetileshades;
 extern int32_t r_npotwallmode;
+extern int32_t polymostcenterhoriz;
 
 extern int16_t globalpicnum;
 

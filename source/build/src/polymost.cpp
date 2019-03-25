@@ -56,9 +56,11 @@ int32_t r_pogoDebug = 0;
 int32_t r_usenewshading = 4;
 int32_t r_usetileshades = 2;
 int32_t r_npotwallmode = 2;
+int32_t polymostcenterhoriz = 100;
 
 static float gviewxrange;
 static float ghoriz;
+static float ghorizcorrect;
 float gxyaspect;
 float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x;
 float gcosang, gsinang, gcosang2, gsinang2;
@@ -379,7 +381,7 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect;
+float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glhorizcorrect;
 
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
@@ -1581,7 +1583,7 @@ static void resizeglcheck(void)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale))
+    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glhorizcorrect != ghorizcorrect))
     {
         const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
         float ratio = get_projhack_ratio();
@@ -1607,7 +1609,7 @@ static void resizeglcheck(void)
         gloyxscale = gyxscale;
 
         m[0][0] = 1.f;
-        m[1][1] = fxdimen/(fydimen*ratio);
+        m[1][1] = fxdimen/(fydimen*ratio); m[2][1] = 2.f*ghorizcorrect/(fydimen*ratio);
         m[2][2] = (farclip+nearclip)/(farclip-nearclip); m[2][3] = 1.f;
         m[3][2] =-(2.f*farclip*nearclip)/(farclip-nearclip);
         glLoadMatrixf(&m[0][0]);
@@ -5791,13 +5793,14 @@ void polymost_drawrooms()
     ghalfx = (float)(xdimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
+    ghorizcorrect = fix16_to_float((100-polymostcenterhoriz)*divscale16(xdimenscale, viewingrange));
 
     gvisibility = ((float)globalvisibility)*FOGSCALE;
 
     resizeglcheck();
 
     //global cos/sin height angle
-    float r = (float)(ydimen>>1) - ghoriz;
+    float r = (float)(ydimen>>1) - (ghoriz + ghorizcorrect);
     gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
     gchang = Bsqrtf(1.f-gshang*gshang);
     ghoriz = (float)(ydimen>>1);
@@ -5816,10 +5819,10 @@ void polymost_drawrooms()
         gstang = -gstang;
 
     //Generate viewport trapezoid (for handling screen up/down)
-    vec3f_t p[4] = {  { 0-1,                                  0-1,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2), 0 },
-                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2), 0 } };
+    vec3f_t p[4] = {  { 0-1,                                  0-1+ghorizcorrect,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghorizcorrect,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 },
+                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 } };
 
     for (bssize_t i=0; i<4; i++)
     {

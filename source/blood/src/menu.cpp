@@ -51,6 +51,7 @@ void SetSoundVol(CGameMenuItemSlider *);
 void SetCDVol(CGameMenuItemSlider *);
 void SetDoppler(CGameMenuItemZBool *);
 void SetCrosshair(CGameMenuItemZBool *);
+void SetCenterHoriz(CGameMenuItemZBool *);
 void SetShowWeapons(CGameMenuItemZBool *);
 void SetSlopeTilting(CGameMenuItemZBool *);
 void SetViewBobbing(CGameMenuItemZBool *);
@@ -398,12 +399,13 @@ CGameMenuItemTitle itemOptionsDisplayTitle("DISPLAY SETUP", 1, 160, 20, 2038);
 CGameMenuItemChain itemOptionsDisplayColor("COLOR CORRECTION", 3, 66, 60, 180, 0, &menuOptionsDisplayColor, -1, NULL, 0);
 CGameMenuItemChain itemOptionsDisplayMode("VIDEO MODE", 3, 66, 70, 180, 0, &menuOptionsDisplayMode, -1, SetupVideoModeMenu, 0);
 CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, gAimReticle, SetCrosshair, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 90, 180, gLevelStats, SetLevelStats, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 100, 180, gMessageState, SetMessages, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 110, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
-CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 120, 180, &gFov, 75, 120, 5, SetFOV, -1, -1, kMenuSliderValue);
+CGameMenuItemZBool itemOptionsDisplayBoolCenterHoriz("CENTER HORIZON LINE:", 3, 66, 90, 180, gCenterHoriz, SetCenterHoriz, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 100, 180, gLevelStats, SetLevelStats, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 110, 180, gMessageState, SetMessages, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 120, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
+CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 130, 180, &gFov, 75, 130, 5, SetFOV, -1, -1, kMenuSliderValue);
 #ifdef USE_OPENGL
-CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 130, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
+CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 140, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
 #endif
 
 const char *pzRendererStrings[] = {
@@ -1106,6 +1108,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemOptionsDisplayColor, true);
     menuOptionsDisplay.Add(&itemOptionsDisplayMode, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolCrosshair, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayBoolCenterHoriz, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolLevelStats, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolWidescreen, false);
@@ -1115,6 +1118,7 @@ void SetupOptionsMenu(void)
 #endif
     menuOptionsDisplay.Add(&itemBloodQAV, false);
     itemOptionsDisplayBoolCrosshair.at20 = gAimReticle;
+    itemOptionsDisplayBoolCenterHoriz.at20 = gCenterHoriz;
     itemOptionsDisplayBoolLevelStats.at20 = gLevelStats;
     itemOptionsDisplayBoolMessages.at20 = gMessageState;
     itemOptionsDisplayBoolWidescreen.at20 = r_usenewaspect;
@@ -1342,6 +1346,11 @@ void SetDoppler(CGameMenuItemZBool *pItem)
 void SetCrosshair(CGameMenuItemZBool *pItem)
 {
     gAimReticle = pItem->at20;
+}
+
+void SetCenterHoriz(CGameMenuItemZBool *pItem)
+{
+    gCenterHoriz = pItem->at20;
 }
 
 void ResetKeys(CGameMenuItemChain *)
