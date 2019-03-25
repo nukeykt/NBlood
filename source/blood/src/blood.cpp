@@ -2296,25 +2296,28 @@ INIDESCRIPTION gINIDescription[] = {
     { "Cryptic passage", "CRYPTIC.INI", pzCrypticArts, ARRAY_SSIZE(pzCrypticArts) },
 };
 
-bool AddINIFile(const char *pzFile)
+bool AddINIFile(const char *pzFile, bool bForce = false)
 {
     char *pzFN;
     struct Bstat st;
-    if (findfrompath(pzFile, &pzFN)) return false; // failed to resolve the filename
-    if (Bstat(pzFN, &st))
-    {
-        Bfree(pzFN);
-        return false;
-    } // failed to stat the file
-    Bfree(pzFN);
     static INICHAIN *pINIIter = NULL;
-    IniFile *pTempIni = new IniFile(pzFile);
-    if (!pTempIni->FindSection("Episode1"))
+    if (!bForce)
     {
+        if (findfrompath(pzFile, &pzFN)) return false; // failed to resolve the filename
+        if (Bstat(pzFN, &st))
+        {
+            Bfree(pzFN);
+            return false;
+        } // failed to stat the file
+        Bfree(pzFN);
+        IniFile *pTempIni = new IniFile(pzFile);
+        if (!pTempIni->FindSection("Episode1"))
+        {
+            delete pTempIni;
+            return false;
+        }
         delete pTempIni;
-        return false;
     }
-    delete pTempIni;
     if (!pINIChain)
         pINIIter = pINIChain = new INICHAIN;
     else
@@ -2339,9 +2342,9 @@ void ScanINIFiles(void)
     CACHE1D_FIND_REC *pINIList = klistpath("/", "*.ini", CACHE1D_FIND_FILE);
     pINIChain = NULL;
 
-    if (bINIOverride)
+    if (bINIOverride || !pINIList)
     {
-        AddINIFile(BloodIniFile);
+        AddINIFile(BloodIniFile, true);
     }
 
     for (auto pIter = pINIList; pIter; pIter = pIter->next)
