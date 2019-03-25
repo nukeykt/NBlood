@@ -217,6 +217,11 @@ EXTERN int32_t mdpause;
 EXTERN int32_t nextmodelid;
 EXTERN voxmodel_t *voxmodels[MAXVOXELS];
 
+#ifdef USE_GLEXT
+void voxvboalloc(voxmodel_t *vm);
+void voxvbofree(voxmodel_t *vm);
+#endif
+
 void voxfree(voxmodel_t *m);
 voxmodel_t *voxload(const char *filnam);
 voxmodel_t *loadkvxfrombuf(const char *buffer, int32_t length);
