@@ -659,7 +659,7 @@ void polymost_setTexturePosSize(vec4f_t const &texturePosSize)
     }
 }
 
-static inline void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize)
+void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize)
 {
     if (currentShaderProgramID == polymost1CurrentShaderProgramID)
     {
@@ -725,7 +725,7 @@ static void polymost_setShade(int32_t shade)
     }
 }
 
-static void polymost_setVisibility(float visibility)
+void polymost_setVisibility(float visibility)
 {
     if (currentShaderProgramID == polymost1CurrentShaderProgramID)
     {
@@ -2990,7 +2990,7 @@ static void polymost2_drawVBO(GLenum mode,
     //polymost_resetVertexPointers();
 }
 
-static void polymost_updatePalette()
+void polymost_updatePalette()
 {
     if (videoGetRenderMode() != REND_POLYMOST)
     {

@@ -191,7 +191,7 @@ typedef struct
     int32_t mdnum; //VOX=1, MD2=2, MD3=3. NOTE: must be first in structure!
     int32_t shadeoff;
     float scale, bscale, zadd;
-    uint32_t *texid;    // skins for palettes
+    uint32_t *texid, texid8bit;    // skins for palettes
     int32_t flags;
 
     //VOX specific stuff:
