@@ -457,7 +457,7 @@ void ctrlGetInput(void)
     else
         turn = fix16_clamp(turn + fix16_div(fix16_from_int(info.dyaw), F16(64)), F16(-1024)>>2, F16(1024)>>2);
 
-    strafe = ClipRange(strafe+(info.dx<<5), -2048, 2048);
+    strafe = ClipRange(strafe-(info.dx<<5), -2048, 2048);
 
 #if 0
     if (info.dz < 0)
