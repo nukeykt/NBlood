@@ -48,6 +48,8 @@ void polymost_resetVertexPointers(void);
 void polymost_disableProgram(void);
 void polymost_resetProgram(void);
 void polymost_setTexturePosSize(vec4f_t const &texturePosSize);
+void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize);
+void polymost_setVisibility(float visibility);
 void polymost_setFogEnabled(char fogEnabled);
 void polymost_useColorOnly(char useColorOnly);
 void polymost_usePaletteIndexing(char usePaletteIndexing);
@@ -55,6 +57,7 @@ void polymost_useDetailMapping(char useDetailMapping);
 void polymost_useGlowMapping(char useGlowMapping);
 void polymost_activeTexture(GLenum texture);
 void polymost_bindTexture(GLenum target, uint32_t textureID);
+void polymost_updatePalette(void);
 void useShaderProgram(uint32_t shaderID);
 
 //POGOTODO: these wrappers won't be needed down the line -- remove them once proper draw call organization is finished

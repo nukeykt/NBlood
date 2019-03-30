@@ -643,7 +643,7 @@ void polymost_setTexturePosSize(vec4f_t const &texturePosSize)
     glUniform4f(polymost1TexturePosSizeLoc, polymost1TexturePosSize.x, polymost1TexturePosSize.y, polymost1TexturePosSize.z, polymost1TexturePosSize.w);
 }
 
-static inline void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize)
+void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize)
 {
     if (currentShaderProgramID != polymost1CurrentShaderProgramID || (halfTexelSize.x == polymost1HalfTexelSize.x && halfTexelSize.y == polymost1HalfTexelSize.y))
         return;
@@ -707,7 +707,7 @@ static void polymost_setShade(int32_t shade)
     }
 }
 
-static void polymost_setVisibility(float visibility)
+void polymost_setVisibility(float visibility)
 {
     if (currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
@@ -2958,7 +2958,7 @@ static void polymost2_drawVBO(GLenum mode,
     //polymost_resetVertexPointers();
 }
 
-static void polymost_updatePalette()
+void polymost_updatePalette()
 {
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
