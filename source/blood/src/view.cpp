@@ -1479,6 +1479,12 @@ void viewInit(void)
     dassert(gSysRes.Size(hLens) == kLensSize * kLensSize * sizeof(int));
 
     lensTable = (int*)gSysRes.Lock(hLens);
+#if B_BIG_ENDIAN == 1
+    for (int i = 0; i < kLensSize*kLensSize; i++)
+    {
+        lensTable[i] = B_LITTLE32(lensTable[i]);
+    }
+#endif
     char *data = tileAllocTile(4077, kLensSize, kLensSize, 0, 0);
     memset(data, 255, kLensSize*kLensSize);
     gGameMessageMgr.SetState(gMessageState);

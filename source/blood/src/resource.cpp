@@ -36,6 +36,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "qheap.h"
 #include "resource.h"
 
+#if B_BIG_ENDIAN == 1
+#include "qav.h"
+#include "seq.h"
+#include "sound.h"
+#endif
+
 CACHENODE Resource::purgeHead = { NULL, &purgeHead, &purgeHead, 0 };
 
 QHeap *Resource::heap;
@@ -90,6 +96,11 @@ void Resource::Init(const char *filename)
             {
                 ThrowError("RFF header corrupted");
             }
+#if B_BIG_ENDIAN == 1
+            header.version = B_LITTLE16(header.version);
+            header.offset = B_LITTLE32(header.offset);
+            header.filenum = B_LITTLE32(header.filenum);
+#endif
             switch (header.version & 0xff00)
             {
             case 0x200:
@@ -126,8 +137,8 @@ void Resource::Init(const char *filename)
                 }
                 for (unsigned int i = 0; i < count; i++)
                 {
-                    dict[i].offset = tdict[i].offset;
-                    dict[i].size = tdict[i].size;
+                    dict[i].offset = B_LITTLE32(tdict[i].offset);
+                    dict[i].size = B_LITTLE32(tdict[i].size);
                     dict[i].flags = tdict[i].flags;
                     int nTypeLength = strnlen(tdict[i].type, 3);
                     int nNameLength = strnlen(tdict[i].name, 8);
@@ -137,7 +148,7 @@ void Resource::Init(const char *filename)
                     strncpy(dict[i].name, tdict[i].name, 8);
                     dict[i].type[nTypeLength] = 0;
                     dict[i].name[nNameLength] = 0;
-                    dict[i].id = tdict[i].id;
+                    dict[i].id = B_LITTLE32(tdict[i].id);
                 }
                 Free(tdict);
             }
@@ -521,6 +532,78 @@ void Resource::Read(DICTNODE *n, void *p)
             }
             Crypt(n->ptr, size, 0);
         }
+#if B_BIG_ENDIAN == 1
+        if (!Bstrcmp(n->type, "QAV"))
+        {
+            QAV *qav = (QAV*)p;
+            qav->nFrames = B_LITTLE32(qav->nFrames);
+            qav->ticksPerFrame = B_LITTLE32(qav->ticksPerFrame);
+            qav->at10 = B_LITTLE32(qav->at10);
+            qav->x = B_LITTLE32(qav->x);
+            qav->y = B_LITTLE32(qav->y);
+            qav->nSprite = B_LITTLE32(qav->nSprite);
+            for (int i = 0; i < qav->nFrames; i++)
+            {
+                FRAMEINFO *pFrame = &qav->frames[i];
+                SOUNDINFO *pSound = &pFrame->sound;
+                pFrame->nCallbackId = B_LITTLE32(pFrame->nCallbackId);
+                pSound->sound = B_LITTLE32(pSound->sound);
+                for (int j = 0; j < 8; j++)
+                {
+                    TILE_FRAME *pTile = &pFrame->tiles[j];
+                    pTile->picnum = B_LITTLE32(pTile->picnum);
+                    pTile->x = B_LITTLE32(pTile->x);
+                    pTile->y = B_LITTLE32(pTile->y);
+                    pTile->z = B_LITTLE32(pTile->z);
+                    pTile->stat = B_LITTLE32(pTile->stat);
+                    pTile->angle = B_LITTLE16(pTile->angle);
+                }
+            }
+        }
+        else if (!Bstrcmp(n->type, "SEQ"))
+        {
+            Seq *pSeq = (Seq*)p;
+            pSeq->version = B_LITTLE16(pSeq->version);
+            pSeq->nFrames = B_LITTLE16(pSeq->nFrames);
+            pSeq->at8 = B_LITTLE16(pSeq->at8);
+            pSeq->ata = B_LITTLE16(pSeq->ata);
+            pSeq->atc = B_LITTLE32(pSeq->atc);
+            for (int i = 0; i < pSeq->nFrames; i++)
+            {
+                SEQFRAME *pFrame = &pSeq->frames[i];
+                BitReader bitReader((char *)pFrame, sizeof(SEQFRAME));
+                SEQFRAME swapFrame;
+                swapFrame.tile = bitReader.readUnsigned(12);
+                swapFrame.at1_4 = bitReader.readBit();
+                swapFrame.at1_5 = bitReader.readBit();
+                swapFrame.at1_6 = bitReader.readBit();
+                swapFrame.at1_7 = bitReader.readBit();
+                swapFrame.at2_0 = bitReader.readUnsigned(8);
+                swapFrame.at3_0 = bitReader.readUnsigned(8);
+                swapFrame.at4_0 = bitReader.readSigned(8);
+                swapFrame.at5_0 = bitReader.readUnsigned(5);
+                swapFrame.at5_5 = bitReader.readBit();
+                swapFrame.at5_6 = bitReader.readBit();
+                swapFrame.at5_7 = bitReader.readBit();
+                swapFrame.at6_0 = bitReader.readBit();
+                swapFrame.at6_1 = bitReader.readBit();
+                swapFrame.at6_2 = bitReader.readBit();
+                swapFrame.at6_3 = bitReader.readBit();
+                swapFrame.at6_4 = bitReader.readBit();
+                swapFrame.pad = bitReader.readUnsigned(11);
+                *pFrame = swapFrame;
+            }
+        }
+        else if (!Bstrcmp(n->type, "SFX"))
+        {
+            SFX *pSFX = (SFX*)p;
+            pSFX->relVol = B_LITTLE32(pSFX->relVol);
+            pSFX->pitch = B_LITTLE32(pSFX->pitch);
+            pSFX->pitchRange = B_LITTLE32(pSFX->pitchRange);
+            pSFX->format = B_LITTLE32(pSFX->format);
+            pSFX->loopStart = B_LITTLE32(pSFX->loopStart);
+        }
+#endif
     }
 }
 

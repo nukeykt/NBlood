@@ -61,7 +61,11 @@ void EventQueue::Kill(int a1, int a2)
     short vs = *(short*)&evn;
     for (unsigned int i = 1; i <= fNodeCount;)
     {
+#if B_BIG_ENDIAN == 1
+        if (!memcmp(&queueItems[i].at4, &evn, 2))
+#else
         if ((short)queueItems[i].at4 == vs)
+#endif
             Delete(i);
         else
             i++;
