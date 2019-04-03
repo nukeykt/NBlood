@@ -229,6 +229,18 @@ bool CDemo::SetupPlayback(const char *pzFile)
             return false;
     }
     kread(hPFile, &atf, sizeof(DEMOHEADER));
+#if B_BIG_ENDIAN == 1
+    atf.signature = B_LITTLE32(atf.signature);
+    atf.nVersion = B_LITTLE16(atf.nVersion);
+    atf.nBuild = B_LITTLE32(atf.nBuild);
+    atf.nInputCount = B_LITTLE32(atf.nInputCount);
+    atf.nNetPlayers = B_LITTLE32(atf.nNetPlayers);
+    atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
+    atf.nConnectHead = B_LITTLE16(atf.nConnectHead);
+    atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
+    for (int i = 0; i < 8; i++)
+        atf.connectPoints[i] = B_LITTLE16(atf.connectPoints[i]);
+#endif
     // if (atf.signature != '\x1aMED' && atf.signature != '\x1aMDE')
     if (atf.signature != 0x1a4d4544 && atf.signature != 0x1a4d4445)
         return 0;
@@ -247,6 +259,20 @@ bool CDemo::SetupPlayback(const char *pzFile)
             return 0;
         kread(hPFile, &m_gameOptions, sizeof(GAMEOPTIONS));
     }
+#if B_BIG_ENDIAN == 1
+    m_gameOptions.nEpisode = B_LITTLE32(m_gameOptions.nEpisode);
+    m_gameOptions.nLevel = B_LITTLE32(m_gameOptions.nLevel);
+    m_gameOptions.nTrackNumber = B_LITTLE32(m_gameOptions.nTrackNumber);
+    m_gameOptions.nSaveGameSlot = B_LITTLE16(m_gameOptions.nSaveGameSlot);
+    m_gameOptions.picEntry = B_LITTLE32(m_gameOptions.picEntry);
+    m_gameOptions.uMapCRC = B_LITTLE32(m_gameOptions.uMapCRC);
+    m_gameOptions.uGameFlags = B_LITTLE32(m_gameOptions.uGameFlags);
+    m_gameOptions.uNetGameFlags = B_LITTLE32(m_gameOptions.uNetGameFlags);
+    m_gameOptions.nMonsterRespawnTime = B_LITTLE32(m_gameOptions.nMonsterRespawnTime);
+    m_gameOptions.nWeaponRespawnTime = B_LITTLE32(m_gameOptions.nWeaponRespawnTime);
+    m_gameOptions.nItemRespawnTime = B_LITTLE32(m_gameOptions.nItemRespawnTime);
+    m_gameOptions.nSpecialRespawnTime = B_LITTLE32(m_gameOptions.nSpecialRespawnTime);
+#endif
     at0 = 0;
     at1 = 1;
     return 1;
@@ -413,6 +439,10 @@ void CDemo::LoadDemoInfo(void)
             ThrowError("Error loading demo file header.");
         kread(hFile, &atf, sizeof(atf));
         kclose(hFile);
+#if B_BIG_ENDIAN == 1
+        atf.signature = B_LITTLE32(atf.signature);
+        atf.nVersion = B_LITTLE16(atf.nVersion);
+#endif
         if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
             || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
         {

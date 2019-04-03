@@ -664,6 +664,9 @@ unsigned int dbReadMapCRC(const char *pPath)
     int nSize = pNode->size;
     MAPSIGNATURE header;
     IOBuffer(nSize, pData).Read(&header, 6);
+#if B_BIG_ENDIAN == 1
+    header.version = B_LITTLE16(header.version);
+#endif
     if (memcmp(header.signature, "BLM\x1a", 4))
     {
         ThrowError("Map file corrupted");
@@ -706,6 +709,9 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
     MAPSIGNATURE header;
     IOBuffer IOBuffer1 = IOBuffer(nSize, pData);
     IOBuffer1.Read(&header, 6);
+#if B_BIG_ENDIAN == 1
+    header.version = B_LITTLE16(header.version);
+#endif
     if (memcmp(header.signature, "BLM\x1a", 4))
     {
         ThrowError("Map file corrupted");
@@ -729,6 +735,20 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
         dbCrypt((char*)&mapHeader, sizeof(mapHeader), 0x7474614d);
         byte_1A76C7 = 1;
     }
+#if B_BIG_ENDIAN == 1
+    mapHeader.at0 = B_LITTLE32(mapHeader.at0);
+    mapHeader.at4 = B_LITTLE32(mapHeader.at4);
+    mapHeader.at8 = B_LITTLE32(mapHeader.at8);
+    mapHeader.atc = B_LITTLE16(mapHeader.atc);
+    mapHeader.ate = B_LITTLE16(mapHeader.ate);
+    mapHeader.at10 = B_LITTLE16(mapHeader.at10);
+    mapHeader.at12 = B_LITTLE32(mapHeader.at12);
+    mapHeader.at16 = B_LITTLE32(mapHeader.at16);
+    mapHeader.at1b = B_LITTLE32(mapHeader.at1b);
+    mapHeader.at1f = B_LITTLE16(mapHeader.at1f);
+    mapHeader.at21 = B_LITTLE16(mapHeader.at21);
+    mapHeader.at23 = B_LITTLE16(mapHeader.at23);
+#endif
 
     psky_t *pSky = tileSetupSky(0);
     pSky->horizfrac = 65536;
@@ -769,6 +789,11 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
     {
         IOBuffer1.Read(&byte_19AE44, 128);
         dbCrypt((char*)&byte_19AE44, 128, numwalls);
+#if B_BIG_ENDIAN == 1
+        byte_19AE44.at40 = B_LITTLE32(byte_19AE44.at40);
+        byte_19AE44.at44 = B_LITTLE32(byte_19AE44.at44);
+        byte_19AE44.at48 = B_LITTLE32(byte_19AE44.at48);
+#endif
     }
     else
     {
@@ -782,7 +807,7 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
     }
     for (int i = 0; i < ClipHigh(gSkyCount, MAXPSKYTILES); i++)
     {
-        pSky->tileofs[i] = tpskyoff[i];
+        pSky->tileofs[i] = B_LITTLE16(tpskyoff[i]);
     }
     for (int i = 0; i < numsectors; i++)
     {
@@ -792,6 +817,21 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
         {
             dbCrypt((char*)pSector, sizeof(sectortype), gMapRev*sizeof(sectortype));
         }
+#if B_BIG_ENDIAN == 1
+        pSector->wallptr = B_LITTLE16(pSector->wallptr);
+        pSector->wallnum = B_LITTLE16(pSector->wallnum);
+        pSector->ceilingz = B_LITTLE32(pSector->ceilingz);
+        pSector->floorz = B_LITTLE32(pSector->floorz);
+        pSector->ceilingstat = B_LITTLE16(pSector->ceilingstat);
+        pSector->floorstat = B_LITTLE16(pSector->floorstat);
+        pSector->ceilingpicnum = B_LITTLE16(pSector->ceilingpicnum);
+        pSector->ceilingheinum = B_LITTLE16(pSector->ceilingheinum);
+        pSector->floorpicnum = B_LITTLE16(pSector->floorpicnum);
+        pSector->floorheinum = B_LITTLE16(pSector->floorheinum);
+        pSector->lotag = B_LITTLE16(pSector->lotag);
+        pSector->hitag = B_LITTLE16(pSector->hitag);
+        pSector->extra = B_LITTLE16(pSector->extra);
+#endif
         qsector_filler[i] = pSector->fogpal;
         pSector->fogpal = 0;
         if (sector[i].extra > 0)
@@ -902,6 +942,19 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
         {
             dbCrypt((char*)pWall, sizeof(walltype), (gMapRev*sizeof(sectortype)) | 0x7474614d);
         }
+#if B_BIG_ENDIAN == 1
+        pWall->x = B_LITTLE32(pWall->x);
+        pWall->y = B_LITTLE32(pWall->y);
+        pWall->point2 = B_LITTLE16(pWall->point2);
+        pWall->nextwall = B_LITTLE16(pWall->nextwall);
+        pWall->nextsector = B_LITTLE16(pWall->nextsector);
+        pWall->cstat = B_LITTLE16(pWall->cstat);
+        pWall->picnum = B_LITTLE16(pWall->picnum);
+        pWall->overpicnum = B_LITTLE16(pWall->overpicnum);
+        pWall->lotag = B_LITTLE16(pWall->lotag);
+        pWall->hitag = B_LITTLE16(pWall->hitag);
+        pWall->extra = B_LITTLE16(pWall->extra);
+#endif
         if (wall[i].extra > 0)
         {
             const int nXWallSize = 24;
@@ -966,6 +1019,23 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
         {
             dbCrypt((char*)pSprite, sizeof(spritetype), (gMapRev*sizeof(spritetype)) | 0x7474614d);
         }
+#if B_BIG_ENDIAN == 1
+        pSprite->x = B_LITTLE32(pSprite->x);
+        pSprite->y = B_LITTLE32(pSprite->y);
+        pSprite->z = B_LITTLE32(pSprite->z);
+        pSprite->cstat = B_LITTLE16(pSprite->cstat);
+        pSprite->picnum = B_LITTLE16(pSprite->picnum);
+        pSprite->sectnum = B_LITTLE16(pSprite->sectnum);
+        pSprite->statnum = B_LITTLE16(pSprite->statnum);
+        pSprite->ang = B_LITTLE16(pSprite->ang);
+        pSprite->owner = B_LITTLE16(pSprite->owner);
+        pSprite->xvel = B_LITTLE16(pSprite->xvel);
+        pSprite->yvel = B_LITTLE16(pSprite->yvel);
+        pSprite->zvel = B_LITTLE16(pSprite->zvel);
+        pSprite->lotag = B_LITTLE16(pSprite->lotag);
+        pSprite->hitag = B_LITTLE16(pSprite->hitag);
+        pSprite->extra = B_LITTLE16(pSprite->extra);
+#endif
         InsertSpriteSect(i, sprite[i].sectnum);
         InsertSpriteStat(i, sprite[i].statnum);
         sprite[i].index = i;
@@ -1065,6 +1135,9 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
     }
     unsigned int nCRC;
     IOBuffer1.Read(&nCRC, 4);
+#if B_BIG_ENDIAN == 1
+    nCRC = B_LITTLE32(nCRC);
+#endif
     if (Bcrc32(pData, nSize-4, 0) != nCRC)
     {
         ThrowError("Map File does not match CRC");

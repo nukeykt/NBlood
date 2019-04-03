@@ -60,6 +60,12 @@ void trigInit(Resource &Res)
     if (pTable->size != 2048)
         ThrowError("Cosine table incorrect size");
     memcpy(costable, Res.Load(pTable), pTable->size);
+#if B_BIG_ENDIAN == 1
+    for (int i = 0; i < 512; i++)
+    {
+        costable[i] = B_LITTLE32(costable[i]);
+    }
+#endif
     costable[512] = 0;
     for (int i = 513; i <= 1024; i++)
     {
