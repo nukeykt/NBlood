@@ -5848,7 +5848,7 @@ end_after_dragging:
                             vec.z = sprite[daspr].z;
                             if (setspritez(daspr, &vec) == -1 && osec>=0)
                             {
-                                updatesectorbreadth(dax, day, &nsec);
+                                updatesector(dax, day, &nsec);
 
                                 if (nsec >= 0)
                                 {

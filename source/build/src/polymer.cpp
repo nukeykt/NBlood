@@ -1145,7 +1145,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     glGetFloatv(GL_MODELVIEW_MATRIX, rootmodelviewmatrix);
 
     cursectnum = dacursectnum;
-    updatesectorbreadth(daposx, daposy, &cursectnum);
+    updatesector(daposx, daposy, &cursectnum);
 
     if (cursectnum >= 0 && cursectnum < numsectors)
         dacursectnum = cursectnum;
