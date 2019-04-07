@@ -9934,6 +9934,14 @@ static void videoAllocateBuffers(void)
 #ifdef USE_OPENGL
 static void PolymostProcessVoxels(void)
 {
+# ifdef USE_GLEXT
+    for (bssize_t i = 0; i < MAXVOXELS; i++)
+    {
+        if (voxmodels[i])
+            voxvboalloc(voxmodels[i]);
+    }
+# endif
+
     if (!g_haveVoxels)
         return;
 
@@ -9951,6 +9959,17 @@ static void PolymostProcessVoxels(void)
             DO_FREE_AND_NULL(voxfilenames[i]);
         }
     }
+}
+
+static void PolymostFreeVBOs(void)
+{
+# ifdef USE_GLEXT
+    for (bssize_t i = 0; i < MAXVOXELS; i++)
+    {
+        if (voxmodels[i])
+            voxvbofree(voxmodels[i]);
+    }
+# endif
 }
 #endif
 
@@ -9987,6 +10006,9 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     j = bpp;
 
     g_lastpalettesum = 0;
+#ifdef USE_OPENGL
+    PolymostFreeVBOs();
+#endif
     if (videoSetMode(daupscaledxdim,daupscaledydim,dabpp,davidoption) < 0) return -1;
 
     // Workaround possible bugs in the GL driver

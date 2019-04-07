@@ -400,7 +400,7 @@ static FORCE_INLINE int isair(int32_t i)
 }
 
 #ifdef USE_GLEXT
-static void voxvboalloc(voxmodel_t *vm)
+void voxvboalloc(voxmodel_t *vm)
 {
     const float phack[2] = { 0, 1.f / 256.f };
     glGenBuffers(1, &vm->vbo);
@@ -442,6 +442,12 @@ static void voxvboalloc(voxmodel_t *vm)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     Bfree(vertex);
     Bfree(index);
+}
+
+void voxvbofree(voxmodel_t *vm)
+{
+    glDeleteBuffers(1, &vm->vbo);
+    glDeleteBuffers(1, &vm->vboindex);
 }
 #endif
 
@@ -941,10 +947,7 @@ void voxfree(voxmodel_t *m)
 
 #ifdef USE_GLEXT
     if (r_vbos)
-    {
-        glDeleteBuffers(1, &m->vbo);
-        glDeleteBuffers(1, &m->vboindex);
-    }
+        voxvbofree(m);
 #endif
 
     Bfree(m);

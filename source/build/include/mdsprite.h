@@ -217,6 +217,11 @@ EXTERN int32_t mdpause;
 EXTERN int32_t nextmodelid;
 EXTERN voxmodel_t *voxmodels[MAXVOXELS];
 
+#ifdef USE_GLEXT
+void voxvboalloc(voxmodel_t *vm);
+void voxvbofree(voxmodel_t *vm);
+#endif
+
 void voxfree(voxmodel_t *m);
 voxmodel_t *voxload(const char *filnam);
 int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr);
