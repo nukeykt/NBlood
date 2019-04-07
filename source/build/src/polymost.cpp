@@ -5836,6 +5836,11 @@ void polymost_drawrooms()
         p[i].z = o2.z*gchang - o2.y*gshang;
     }
 
+#if !SOFTROTMAT
+    if (inpreparemirror)
+        gstang = -gstang;
+#endif
+
     //Clip to SCISDIST plane
     int n = 0;
 
