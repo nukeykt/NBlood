@@ -3188,7 +3188,7 @@ RORHACK:
 #ifdef USE_OPENGL
             else
             {
-                if (videoGetRenderMode() == REND_POLYMOST)
+                if (videoGetRenderMode() == REND_POLYMOST && gDeliriumBlur)
                 {
                     if (!bDeliriumOld)
                     {
@@ -3206,7 +3206,7 @@ RORHACK:
 #endif
         }
 
-        bDeliriumOld = bDelirium;
+        bDeliriumOld = bDelirium && gDeliriumBlur;
 
         if (r_usenewaspect)
             newaspect_enable = 0;
