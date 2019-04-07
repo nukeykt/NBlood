@@ -1384,6 +1384,15 @@ void editinput(void)
         if (keystatus[sc_S])  //S (insert sprite) (3D)
         {
             hitdata_t hit;
+            vec2_t osearch = {searchx, searchy};
+            vec2_t bdim = {xdim, ydim};
+            if (m32_is2d3dmode())
+            {
+                xdim = XSIZE_2D3D;
+                ydim = YSIZE_2D3D;
+                searchx -= m32_2d3d.x;
+                searchy -= m32_2d3d.y;
+            }
 
             vec2_t da = { 16384, divscale14(searchx-(xdim>>1), xdim>>1) };
 
@@ -1441,6 +1450,10 @@ void editinput(void)
                 }
             }
 
+            xdim = bdim.x;
+            ydim = bdim.y;
+            searchx = osearch.x;
+            searchy = osearch.y;
             keystatus[sc_S] = 0;
         }
 
