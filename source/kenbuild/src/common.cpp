@@ -29,17 +29,17 @@ const char *G_DefFile(void)
 void Ken_InitMultiPsky(void)
 {
     // default
-    psky_t * const defaultsky = E_DefinePsky(DEFAULTPSKY);
+    psky_t * const defaultsky = tileSetupSky(DEFAULTPSKY);
     defaultsky->lognumtiles = 1;
     defaultsky->horizfrac = 65536;
 
     // DAYSKY
-    psky_t * const daysky = E_DefinePsky(DAYSKY);
+    psky_t * const daysky = tileSetupSky(DAYSKY);
     daysky->lognumtiles = 1;
     daysky->horizfrac = 65536;
 
     // NIGHTSKY
-    psky_t * const nightsky = E_DefinePsky(NIGHTSKY);
+    psky_t * const nightsky = tileSetupSky(NIGHTSKY);
     nightsky->lognumtiles = 3;
     nightsky->horizfrac = 65536;
 }

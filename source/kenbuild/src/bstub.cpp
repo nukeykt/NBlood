@@ -137,9 +137,9 @@ int32_t ExtPostStartupWindow(void)
     //copy the right code!
     for (i=0; i<256; i++)
         tempbuf[i] = ((i+32)&255);  //remap colors for screwy palette sectors
-    makepalookup(16,tempbuf,0,0,0,1);
+    paletteMakeLookupTable(16,tempbuf,0,0,0,1);
 
-    if (initengine())
+    if (engineInit())
     {
         initprintf("There was a problem initializing the engine.\n");
         return -1;
@@ -155,7 +155,7 @@ int32_t ExtPostStartupWindow(void)
 
 void ExtPostInit(void)
 {
-    fillemptylookups();
+    palettePostLoadLookups();
 }
 
 void ExtUnInit(void)
@@ -176,7 +176,7 @@ void ExtPreCheckKeys(void)
         //cycle through all vesa modes, then screen-buffer mode
         if (keystatus[0x2a]|keystatus[0x36])
         {
-            setgamemode(!fullscreen, xdim, ydim, bpp);
+            videoSetGameMode(!fullscreen, xdim, ydim, bpp, upscalefactor);
         }
         else
         {
@@ -201,7 +201,7 @@ void ExtPreCheckKeys(void)
                 j++;
                 if (j==validmodecnt) j=k;
             }
-            setgamemode(fullscreen,validmode[j].xdim,validmode[j].ydim,bpp);
+            videoSetGameMode(fullscreen, validmode[j].xdim, validmode[j].ydim, bpp, upscalefactor);
         }
     }
 
@@ -244,8 +244,8 @@ void ExtPreCheckKeys(void)
         dy = (ydim + (ydim >> 3) + (ydim >> 4) + (ydim >> 6)) & (~7);
         i = scale(320,ydim,xdim);
 
-        if (waloff[4094] == 0) allocache(&waloff[4094],/*240L*384L*/ dx*dy,&walock[4094]);
-        setviewtotile(4094,/*240L,384L*/ dy,dx);
+        if (waloff[4094] == 0) cacheAllocateBlock(&waloff[4094],/*240L*384L*/ dx*dy,&walock[4094]);
+        renderSetTarget(4094,/*240L,384L*/ dy,dx);
 
         cosang = sintable[(hang+512)&2047];
         sinang = sintable[hang&2047];
@@ -260,7 +260,7 @@ void ExtPreCheckKeys(void)
 
         daviewingrange = divscale30(xdim>>1, mindx-16);
         daaspect = scale(daviewingrange,scale(320,tilesiz[4094].x,tilesiz[4094].y),horizval2+6-horizval1);
-        setaspect(daviewingrange,scale(daaspect,ydim*320,xdim*i));
+        renderSetAspect(daviewingrange,scale(daaspect,ydim*320,xdim*i));
         horiz = 100-divscale15(horizval1+horizval2,daviewingrange);
     }
 #endif
@@ -332,13 +332,13 @@ void ExtCheckKeys(void)
         if (hang != 0)
         {
             bufplc = waloff[4094]+(mulscale16(horiz-100,xdimenscale)+(tilesiz[4094].x>>1))*tilesiz[4094].y;
-            setviewback();
+            renderRestoreTarget();
             cosang = sintable[(hang+512)&2047];
             sinang = sintable[hang&2047];
             dx = dmulscale1(xdim,cosang,ydim,sinang);
             dy = dmulscale1(-ydim,cosang,xdim,sinang);
 
-            begindrawing();
+            videoBeginDrawing();
             tsizy = tilesiz[4094].y;
             tsizyup15 = (tsizy<<15);
             dx = mulscale14(dx,daviewingrange);
@@ -356,26 +356,26 @@ void ExtCheckKeys(void)
 
             Bsprintf(tempbuf,"%d",(hang*180)>>10);
             printext256(0L,8L,31,-1,tempbuf,1);
-            enddrawing();
+            videoEndDrawing();
         }
 #endif
-        if (keystatus[0xa]) setaspect(viewingrange+(viewingrange>>8),yxaspect+(yxaspect>>8));
-        if (keystatus[0xb]) setaspect(viewingrange-(viewingrange>>8),yxaspect-(yxaspect>>8));
-        if (keystatus[0xc]) setaspect(viewingrange,yxaspect-(yxaspect>>8));
-        if (keystatus[0xd]) setaspect(viewingrange,yxaspect+(yxaspect>>8));
-        //if (keystatus[0x38]) setrollangle(rollangle+=((keystatus[0x2a]|keystatus[0x36])*6+2));
-        //if (keystatus[0xb8]) setrollangle(rollangle-=((keystatus[0x2a]|keystatus[0x36])*6+2));
-        //if (keystatus[0x1d]|keystatus[0x9d]) setrollangle(rollangle=0);
+        if (keystatus[0xa]) renderSetAspect(viewingrange+(viewingrange>>8),yxaspect+(yxaspect>>8));
+        if (keystatus[0xb]) renderSetAspect(viewingrange-(viewingrange>>8),yxaspect-(yxaspect>>8));
+        if (keystatus[0xc]) renderSetAspect(viewingrange,yxaspect-(yxaspect>>8));
+        if (keystatus[0xd]) renderSetAspect(viewingrange,yxaspect+(yxaspect>>8));
+        //if (keystatus[0x38]) renderSetRollAngle(rollangle+=((keystatus[0x2a]|keystatus[0x36])*6+2));
+        //if (keystatus[0xb8]) renderSetRollAngle(rollangle-=((keystatus[0x2a]|keystatus[0x36])*6+2));
+        //if (keystatus[0x1d]|keystatus[0x9d]) renderSetRollAngle(rollangle=0);
 
-        begindrawing();
+        videoBeginDrawing();
 
         i = frameval[framecnt&(AVERAGEFRAMES-1)];
-        j = frameval[framecnt&(AVERAGEFRAMES-1)] = getticks(); framecnt++;
+        j = frameval[framecnt&(AVERAGEFRAMES-1)] = timerGetTicks(); framecnt++;
         if (i != j) averagefps = (averagefps*3 + (AVERAGEFRAMES*1000)/(j-i))>>2;
         Bsprintf((char *)tempbuf,"%d",averagefps);
         printext256(0L,0L,31,-1,(char *)tempbuf,1);
 
-        enddrawing();
+        videoEndDrawing();
         editinput();
     }
     else
@@ -464,8 +464,8 @@ const char *ExtGetSpriteCaption(short spritenum)
 //  name
 //  fontsize 0=8*8, 1=3*5
 
-//drawline16 parameters:
-// drawline16(int x1, int y1, int x2, int y2, char col)
+//editorDraw2dLine parameters:
+// editorDraw2dLine(int x1, int y1, int x2, int y2, char col)
 //  x1, x2  0-639
 //  y1, y2  0-143  (status bar is 144 high, origin is top-left of STATUS BAR)
 //  col     0-15
@@ -478,7 +478,7 @@ void ExtShowSectorData(short sectnum)   //F5
     }
     else
     {
-        begindrawing();
+        videoBeginDrawing();
         clearmidstatbar16();             //Clear middle of status bar
 
         Bsprintf((char *)tempbuf,"Sector %d",sectnum);
@@ -488,13 +488,13 @@ void ExtShowSectorData(short sectnum)   //F5
         printext16(8,ydim16+56,11,-1,"3*5 font: ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789",1);
 
         i=ydim16; ydim16=ydim;
-        drawline16(320,i+68,344,i+80,4);       //Draw house
-        drawline16(344,i+80,344,i+116,4);
-        drawline16(344,i+116,296,i+116,4);
-        drawline16(296,i+116,296,i+80,4);
-        drawline16(296,i+80,320,i+68,4);
+        editorDraw2dLine(320,i+68,344,i+80,4);       //Draw house
+        editorDraw2dLine(344,i+80,344,i+116,4);
+        editorDraw2dLine(344,i+116,296,i+116,4);
+        editorDraw2dLine(296,i+116,296,i+80,4);
+        editorDraw2dLine(296,i+80,320,i+68,4);
         ydim16=i;
-        enddrawing();
+        videoEndDrawing();
     }
 }
 
@@ -505,12 +505,12 @@ void ExtShowWallData(short wallnum)       //F6
     }
     else
     {
-        begindrawing();
+        videoBeginDrawing();
         clearmidstatbar16();             //Clear middle of status bar
 
         Bsprintf((char *)tempbuf,"Wall %d",wallnum);
         printext16(8,ydim16+32,11,-1,(char *)tempbuf,0);
-        enddrawing();
+        videoEndDrawing();
     }
 }
 
@@ -521,12 +521,12 @@ void ExtShowSpriteData(short spritenum)   //F6
     }
     else
     {
-        begindrawing();
+        videoBeginDrawing();
         clearmidstatbar16();             //Clear middle of status bar
 
         Bsprintf((char *)tempbuf,"Sprite %d",spritenum);
         printext16(8,ydim16+32,11,-1,(char *)tempbuf,0);
-        enddrawing();
+        videoEndDrawing();
     }
 }
 
@@ -594,7 +594,7 @@ void ExtEditSpriteData(short spritenum)   //F8
 
 void faketimerhandler(void)
 {
-    sampletimer();
+    timerUpdate();
 }
 
 void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }

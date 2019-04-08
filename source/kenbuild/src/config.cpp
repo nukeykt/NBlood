@@ -120,7 +120,7 @@ int Ken_loadsetup(const char *fn)
     if (readconfig(fp, "music", val, VL) > 0) { if (Batoi(val) != 0) option[2] = 1; else option[2] = 0; }
     if (readconfig(fp, "mouse", val, VL) > 0) { if (Batoi(val) != 0) option[3] = 1; else option[3] = 0; }
     if (readconfig(fp, "bpp", val, VL) > 0) bppgame = Batoi(val);
-    if (readconfig(fp, "renderer", val, VL) > 0) { i = Batoi(val); setrendermode(i); }
+    if (readconfig(fp, "renderer", val, VL) > 0) { i = Batoi(val); videoSetRenderMode(i); }
     if (readconfig(fp, "brightness", val, VL) > 0) brightness = min(max(Batoi(val),0),15);
 
 #ifdef RENDERTYPEWIN

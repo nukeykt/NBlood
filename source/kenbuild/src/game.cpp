@@ -364,8 +364,8 @@ int osdcmd_restartvid(const osdfuncparm_t *parm)
 {
     UNREFERENCED_PARAMETER(parm);
 
-    resetvideomode();
-    if (setgamemode(fullscreen,xdim,ydim,bpp))
+    videoResetMode();
+    if (videoSetGameMode(fullscreen, xdim, ydim, bpp, upscalefactor))
         buildputs("restartvid: Reset failed...\n");
 
     return OSDCMD_OK;
@@ -396,7 +396,7 @@ static int osdcmd_vidmode(const osdfuncparm_t *parm)
         break;
     }
 
-    if (setgamemode(newfullscreen,newx,newy,newbpp))
+    if (videoSetGameMode(newfullscreen, newx, newy, newbpp, upscalefactor))
         buildputs("vidmode: Mode change failed!\n");
     screensize = xdim+1;
     return OSDCMD_OK;
@@ -437,9 +437,9 @@ static void Ken_UninitAll(void)
     sendlogoff();         //Signing off
     musicoff();
     uninitmultiplayers();
-    uninittimer();
+    timerUninit();
     uninitinput();
-    uninitengine();
+    engineUnInit();
     uninitsb();
     uninitgroupfile();
 }
@@ -521,7 +521,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     Ken_writesetup(setupfilename);
 
     initgroupfile(G_GrpFile());
-    if (initengine())
+    if (engineInit())
     {
         Ken_FatalEngineError();
         return -1;
@@ -530,8 +530,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
     Ken_InitMultiPsky();
 
     initinput();
-    if (option[3] != 0) initmouse();
-    inittimer(TIMERINTSPERSECOND);
+    if (option[3] != 0) mouseInit();
+    timerInit(TIMERINTSPERSECOND);
 
     //initmultiplayers(argc-netparm,&argv[netparm],option[4],option[5],0);
     if (initmultiplayersparms(argc-netparm,&argv[netparm]))
@@ -549,14 +549,14 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
     option[4] = (numplayers >= 2);
 
-    loadpics("tiles000.art",1048576);                      //Load artwork
+    artLoadFiles("tiles000.art",1048576);                      //Load artwork
     if (!qloadkvx(nextvoxid,"voxel000.kvx"))
         tiletovox[PLAYER] = nextvoxid++;
     if (!qloadkvx(nextvoxid,"voxel001.kvx"))
         tiletovox[BROWNMONSTER] = nextvoxid++;
     if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
 
-    if (E_PostInit())
+    if (enginePostInit())
     {
         Ken_UninitAll();
         Ken_FatalEngineError();
@@ -564,33 +564,33 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     //Here's an example of TRUE ornamented walls
-    //The allocatepermanenttile should be called right after loadpics
+    //The tileCreate should be called right after artLoadFiles
     //Since it resets the tile cache for each call.
-    if (allocatepermanenttile(SLIME,128,128) == 0)    //If enough memory
+    if (tileCreate(SLIME,128,128) == 0)    //If enough memory
     {
         buildputs("Not enough memory for slime!\n");
         exit(0);
     }
-    if (allocatepermanenttile(MAXTILES-1,64,64) != 0)    //If enough memory
+    if (tileCreate(MAXTILES-1,64,64) != 0)    //If enough memory
     {
         //My face with an explosion written over it
-        copytilepiece(KENPICTURE,0,0,64,64,MAXTILES-1,0,0);
-        copytilepiece(EXPLOSION,0,0,64,64,MAXTILES-1,0,0);
+        tileCopySection(KENPICTURE,0,0,64,64,MAXTILES-1,0,0);
+        tileCopySection(EXPLOSION,0,0,64,64,MAXTILES-1,0,0);
     }
 
     initlava();
 
     for (j=0; j<256; j++)
         tempbuf[j] = ((j+32)&255);  //remap colors for screwy palette sectors
-    makepalookup(16,tempbuf,0,0,0,1);
+    paletteMakeLookupTable(16,tempbuf,0,0,0,1);
 
     for (j=0; j<256; j++) tempbuf[j] = j;
-    makepalookup(17,tempbuf,96,96,96,1);
+    paletteMakeLookupTable(17,tempbuf,96,96,96,1);
 
     for (j=0; j<256; j++) tempbuf[j] = j; //(j&31)+32;
-    makepalookup(18,tempbuf,32,32,192,1);
+    paletteMakeLookupTable(18,tempbuf,32,32,192,1);
 
-    fillemptylookups();
+    palettePostLoadLookups();
 
     prepareboard(boardfilename);                   //Load board
 
@@ -618,7 +618,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         {
             sprintf(tempbuf,"%ld of %ld players in...",numplayers,waitplayers);
             printext256(68L,84L,31,0,tempbuf,0);
-            nextpage();
+            videoNextPage();
 
             if (getpacket(&other,packbuf) > 0)
                 if (packbuf[0] == 255)
@@ -1167,13 +1167,13 @@ void prepareboard(char *daboardfilename)
     locselectedgun = 0;
     locselectedgun2 = 0;
 
-    if (loadboard(daboardfilename,0,&pos[0],&ang[0],&cursectnum[0]) == -1)
+    if (engineLoadBoard(daboardfilename,0,&pos[0],&ang[0],&cursectnum[0]) == -1)
     {
         musicoff();
         uninitmultiplayers();
-        uninittimer();
+        timerUninit();
         uninitinput();
-        uninitengine();
+        engineUnInit();
         uninitsb();
         uninitgroupfile();
         printf("Board not found\n");
@@ -1192,7 +1192,7 @@ void prepareboard(char *daboardfilename)
         if (strlen(tempfn) <= BMAX_PATH-4)
         {
             strcat(tempfn,".mhk");
-            loadmaphack(tempfn);
+            engineLoadMHK(tempfn);
         }
     }
 
@@ -1603,7 +1603,7 @@ void prepareboard(char *daboardfilename)
     dax2 = dax+screensize-1;
     day = (((ydim-32)-scale(screensize,ydim-32,xdim))>>1);
     day2 = day + scale(screensize,ydim-32,xdim)-1;
-    setview(dax,day,dax2,day2);
+    videoSetViewableArea(dax,day,dax2,day2);
 
     startofdynamicinterpolations = numinterpolations;
 
@@ -1966,7 +1966,7 @@ void analyzesprites(int dax, int day)
     vec3_t *ospr;
     uspritetype *tspr;
 
-    //This function is called between drawrooms() and drawmasks()
+    //This function is called between drawrooms() and renderDrawMasks()
     //It has a list of possible sprites that may be drawn on this frame
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
@@ -3685,7 +3685,8 @@ void drawscreen(short snum, int dasmoothratio)
     vec3_t cpos;
     int choriz, czoom, tposx, tposy;
     int tiltlock, *intptr, ovisibility, oparallaxvisibility;
-    short cang, tang, csect;
+    short cang, csect;
+    fix16_t tang;
     char ch, *ptr, *ptr2, *ptr3, *ptr4;
     uspritetype *tspr;
 
@@ -3729,7 +3730,7 @@ void drawscreen(short snum, int dasmoothratio)
             {
                 screensize = xdim;
 
-                flushperms();
+                renderFlushPerms();
 
                 rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
                 i = ((xdim-320)>>1);
@@ -3746,7 +3747,7 @@ void drawscreen(short snum, int dasmoothratio)
             x2 = x1+screensize-1;
             y1 = (((ydim-32)-scale(screensize,ydim-32,xdim))>>1);
             y2 = y1 + scale(screensize,ydim-32,xdim)-1;
-            setview(x1,y1,x2,y2);
+            videoSetViewableArea(x1,y1,x2,y2);
 
             // (ox1,oy1)⁄ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒø
             //          ≥  (x1,y1)        ≥
@@ -3778,7 +3779,7 @@ void drawscreen(short snum, int dasmoothratio)
                 y1 = (((ydim-32)-scale(screensize,ydim-32,xdim))>>1);
                 y2 = y1 + scale(screensize,ydim-32,xdim)-1;
             }
-            setview(x1,y1,x2,y2);
+            videoSetViewableArea(x1,y1,x2,y2);
         }
         screensizeflag = loc.bits;
     }
@@ -3840,32 +3841,32 @@ void drawscreen(short snum, int dasmoothratio)
                     {
                         switch (j)
                         {
-                        case 0: setview(0,0,(xdim>>1)-1,(ydim>>1)-1); break;
-                        case 1: setview((xdim>>1),0,xdim-1,(ydim>>1)-1); break;
-                        case 2: setview(0,(ydim>>1),(xdim>>1)-1,ydim-1); break;
-                        case 3: setview((xdim>>1),(ydim>>1),xdim-1,ydim-1); break;
+                        case 0: videoSetViewableArea(0,0,(xdim>>1)-1,(ydim>>1)-1); break;
+                        case 1: videoSetViewableArea((xdim>>1),0,xdim-1,(ydim>>1)-1); break;
+                        case 2: videoSetViewableArea(0,(ydim>>1),(xdim>>1)-1,ydim-1); break;
+                        case 3: videoSetViewableArea((xdim>>1),(ydim>>1),xdim-1,ydim-1); break;
                         }
                     }
                     else
                     {
                         switch (j)
                         {
-                        case 0: setview(0,0,(xdim>>2)-1,(ydim>>2)-1); break;
-                        case 1: setview(xdim>>2,0,(xdim>>1)-1,(ydim>>2)-1); break;
-                        case 2: setview(xdim>>1,0,xdim-(xdim>>2)-1,(ydim>>2)-1); break;
-                        case 3: setview(xdim-(xdim>>2),0,xdim-1,(ydim>>2)-1); break;
-                        case 4: setview(0,ydim>>2,(xdim>>2)-1,(ydim>>1)-1); break;
-                        case 5: setview(xdim>>2,ydim>>2,(xdim>>1)-1,(ydim>>1)-1); break;
-                        case 6: setview(xdim>>1,ydim>>2,xdim-(xdim>>2)-1,(ydim>>1)-1); break;
-                        case 7: setview(xdim-(xdim>>2),ydim>>2,xdim-1,(ydim>>1)-1); break;
-                        case 8: setview(0,ydim>>1,(xdim>>2)-1,ydim-(ydim>>2)-1); break;
-                        case 9: setview(xdim>>2,ydim>>1,(xdim>>1)-1,ydim-(ydim>>2)-1); break;
-                        case 10: setview(xdim>>1,ydim>>1,xdim-(xdim>>2)-1,ydim-(ydim>>2)-1); break;
-                        case 11: setview(xdim-(xdim>>2),ydim>>1,xdim-1,ydim-(ydim>>2)-1); break;
-                        case 12: setview(0,ydim-(ydim>>2),(xdim>>2)-1,ydim-1); break;
-                        case 13: setview(xdim>>2,ydim-(ydim>>2),(xdim>>1)-1,ydim-1); break;
-                        case 14: setview(xdim>>1,ydim-(ydim>>2),xdim-(xdim>>2)-1,ydim-1); break;
-                        case 15: setview(xdim-(xdim>>2),ydim-(ydim>>2),xdim-1,ydim-1); break;
+                        case 0: videoSetViewableArea(0,0,(xdim>>2)-1,(ydim>>2)-1); break;
+                        case 1: videoSetViewableArea(xdim>>2,0,(xdim>>1)-1,(ydim>>2)-1); break;
+                        case 2: videoSetViewableArea(xdim>>1,0,xdim-(xdim>>2)-1,(ydim>>2)-1); break;
+                        case 3: videoSetViewableArea(xdim-(xdim>>2),0,xdim-1,(ydim>>2)-1); break;
+                        case 4: videoSetViewableArea(0,ydim>>2,(xdim>>2)-1,(ydim>>1)-1); break;
+                        case 5: videoSetViewableArea(xdim>>2,ydim>>2,(xdim>>1)-1,(ydim>>1)-1); break;
+                        case 6: videoSetViewableArea(xdim>>1,ydim>>2,xdim-(xdim>>2)-1,(ydim>>1)-1); break;
+                        case 7: videoSetViewableArea(xdim-(xdim>>2),ydim>>2,xdim-1,(ydim>>1)-1); break;
+                        case 8: videoSetViewableArea(0,ydim>>1,(xdim>>2)-1,ydim-(ydim>>2)-1); break;
+                        case 9: videoSetViewableArea(xdim>>2,ydim>>1,(xdim>>1)-1,ydim-(ydim>>2)-1); break;
+                        case 10: videoSetViewableArea(xdim>>1,ydim>>1,xdim-(xdim>>2)-1,ydim-(ydim>>2)-1); break;
+                        case 11: videoSetViewableArea(xdim-(xdim>>2),ydim>>1,xdim-1,ydim-(ydim>>2)-1); break;
+                        case 12: videoSetViewableArea(0,ydim-(ydim>>2),(xdim>>2)-1,ydim-1); break;
+                        case 13: videoSetViewableArea(xdim>>2,ydim-(ydim>>2),(xdim>>1)-1,ydim-1); break;
+                        case 14: videoSetViewableArea(xdim>>1,ydim-(ydim>>2),xdim-(xdim>>2)-1,ydim-1); break;
+                        case 15: videoSetViewableArea(xdim-(xdim>>2),ydim-(ydim>>2),xdim-1,ydim-1); break;
                         }
                     }
 
@@ -3883,7 +3884,7 @@ void drawscreen(short snum, int dasmoothratio)
                         sprite[playersprite[i]].cstat &= (uint16_t) ~0x8000;
                         analyzesprites(pos[i].x,pos[i].y);
                     }
-                    drawmasks();
+                    renderDrawMasks();
                     if ((numgrabbers[i] > 0) || (nummissiles[i] > 0) || (numbombs[i] > 0))
                         rotatesprite(160<<16,184L<<16,65536,0,GUNONBOTTOM,sector[cursectnum[i]].floorshade,0,2,windowxy1.x,windowxy1.y,windowxy2.x,windowxy2.y);
 
@@ -3904,18 +3905,18 @@ void drawscreen(short snum, int dasmoothratio)
         else
         {
             //Init for screen rotation
-            if (getrendermode() == 0)     // JBF 20031220
+            if (videoGetRenderMode() == 0)     // JBF 20031220
             {
                 tiltlock = screentilt;
                 if ((tiltlock) || (detailmode))
                 {
                     walock[TILE_TILT] = 255;
                     if (waloff[TILE_TILT] == 0)
-                        allocache(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
+                        cacheAllocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
                     if ((tiltlock&1023) == 0)
-                        setviewtotile(TILE_TILT,200L>>detailmode,320L>>detailmode);
+                        renderSetTarget(TILE_TILT,200L>>detailmode,320L>>detailmode);
                     else
-                        setviewtotile(TILE_TILT,320L>>detailmode,320L>>detailmode);
+                        renderSetTarget(TILE_TILT,320L>>detailmode,320L>>detailmode);
                     if ((tiltlock&1023) == 512)
                     {
                         //Block off unscreen section of 90¯ tilted screen
@@ -3929,14 +3930,14 @@ void drawscreen(short snum, int dasmoothratio)
 
                     i = (tiltlock&511); if (i > 256) i = 512-i;
                     i = sintable[i+512]*8 + sintable[i]*5L;
-                    setaspect(i>>1,yxaspect);
+                    renderSetAspect(i>>1,yxaspect);
                 }
             }
             else
             {
                 tiltlock = screentilt;
                 // Ken loves to interpolate
-                setrollangle(oscreentilt + mulscale16(((screentilt-oscreentilt+1024)&2047)-1024,smoothratio));
+                renderSetRollAngle(oscreentilt + mulscale16(((screentilt-oscreentilt+1024)&2047)-1024,smoothratio));
             }
 
             if ((gotpic[FLOORMIRROR>>3]&(1<<(FLOORMIRROR&7))) > 0)
@@ -3958,13 +3959,13 @@ void drawscreen(short snum, int dasmoothratio)
                 //drawrooms(cpos.x,cpos.y,cpos.z,cang,choriz,j+MAXSECTORS); //SOS
                 sprite[playersprite[snum]].cstat &= (uint16_t) ~0x8000;
                 analyzesprites(cpos.x,cpos.y);
-                drawmasks();
+                renderDrawMasks();
 
                 //Temp horizon
-                if (getrendermode() == 0)
+                if (videoGetRenderMode() == 0)
                 {
                     l = scale(choriz-100,windowxy2.x-windowxy1.x,320)+((windowxy1.y+windowxy2.y)>>1);
-                    begindrawing();   //{{{
+                    videoBeginDrawing();   //{{{
                     for (y1=windowxy1.y,y2=windowxy2.y; y1<y2; y1++,y2--)
                     {
                         ptr = (char *)(frameplace+ylookup[y1]);
@@ -3995,7 +3996,7 @@ void drawscreen(short snum, int dasmoothratio)
                         for (x1=ox1; x1<=ox2; x1++)
                         { ch = ptr[x1]; ptr[x1] = ptr3[ptr2[x1]]; ptr2[x1] = ptr4[ch]; }
                     }
-                    enddrawing(); //}}}
+                    videoEndDrawing(); //}}}
                 }
                 gotpic[FLOORMIRROR>>3] &= ~(1<<(FLOORMIRROR&7));
             }
@@ -4019,9 +4020,9 @@ void drawscreen(short snum, int dasmoothratio)
 
                         //Prepare drawrooms for drawing mirror and calculate reflected
                         //position into tposx, tposy, and tang (tpos.z == cpos.z)
-                        //Must call preparemirror before drawrooms and
-                        //          completemirror after drawrooms
-                        preparemirror(cpos.x,cpos.y,/*cpos.z,*/ cang, /*choriz,*/
+                        //Must call renderPrepareMirror before drawrooms and
+                        //          renderCompleteMirror after drawrooms
+                        renderPrepareMirror(cpos.x,cpos.y,/*cpos.z,*/ fix16_from_int(cang), /*choriz,*/
                                       mirrorwall[i],/*mirrorsector[i],*/ &tposx,&tposy,&tang);
 
                         ovisibility = g_visibility;
@@ -4030,17 +4031,17 @@ void drawscreen(short snum, int dasmoothratio)
                         parallaxvisibility <<= 1;
                         ptr = palookup[0]; palookup[0] = palookup[17]; palookup[17] = ptr;
 
-                        drawrooms(tposx,tposy,cpos.z,tang,choriz,mirrorsector[i]|MAXSECTORS);
+                        drawrooms(tposx,tposy,cpos.z,fix16_to_int(tang),choriz,mirrorsector[i]|MAXSECTORS);
                         for (j=0,tspr=&tsprite[0]; j<spritesortcnt; j++,tspr++)
                             if ((tspr->cstat&48) == 0) tspr->cstat |= 4;
                         analyzesprites(tposx,tposy);
-                        drawmasks();
+                        renderDrawMasks();
 
                         ptr = palookup[0]; palookup[0] = palookup[17]; palookup[17] = ptr;
                         g_visibility = ovisibility;
                         parallaxvisibility = oparallaxvisibility;
 
-                        completemirror();   //Reverse screen x-wise in this function
+                        renderCompleteMirror();   //Reverse screen x-wise in this function
 
                         break;
                     }
@@ -4049,14 +4050,14 @@ void drawscreen(short snum, int dasmoothratio)
             drawrooms(cpos.x,cpos.y,cpos.z,cang,choriz,csect);
             sprite[playersprite[snum]].cstat &= (uint16_t) ~0x8000;
             analyzesprites(cpos.x,cpos.y);
-            drawmasks();
+            renderDrawMasks();
 
             //Finish for screen rotation
-            if (getrendermode() == 0)        // JBF 20031220
+            if (videoGetRenderMode() == 0)        // JBF 20031220
             {
                 if ((tiltlock) || (detailmode))
                 {
-                    setviewback();
+                    renderRestoreTarget();
                     i = (tiltlock&511); if (i > 256) i = 512-i;
                     i = sintable[i+512]*8 + sintable[i]*5L;
                     if (detailmode == 0) i >>= 1;
@@ -4109,7 +4110,7 @@ void drawscreen(short snum, int dasmoothratio)
         if (waloff[SLIME] != 0)
         {
             movelava((char *)waloff[SLIME]);
-            invalidatetile(SLIME,0,1);   // JBF 20031228
+            tileInvalidate(SLIME,0,1);   // JBF 20031228
         }
     }
 
@@ -4122,8 +4123,8 @@ void drawscreen(short snum, int dasmoothratio)
         i = scale(czoom,screensize,320);
         if (dimensionmode[snum] == 2)
         {
-            clearview(0L);  //Clear screen to specified color
-            drawmapview(cpos.x,cpos.y,i,cang);
+            videoClearViewableArea(0L);  //Clear screen to specified color
+            renderDrawMapView(cpos.x,cpos.y,i,cang);
         }
         drawoverheadmap(cpos.x,cpos.y,i,cang);
     }
@@ -4198,7 +4199,7 @@ void drawscreen(short snum, int dasmoothratio)
 //         printext256(0L,j,31,-1,tempbuf,1); j += 6;
 //      }
 
-    nextpage();   // send completed frame to display
+    videoNextPage();   // send completed frame to display
 
     while (totalclock >= ototalclock+(TIMERINTSPERSECOND/MOVESPERSECOND))
         faketimerhandler();
@@ -4207,12 +4208,12 @@ void drawscreen(short snum, int dasmoothratio)
     {
         keystatus[0x3f] = 0;
         detailmode ^= 1;
-        //setrendermode(3);
+        //videoSetRenderMode(3);
     }
     if (keystatus[0x58])   //F12
     {
         keystatus[0x58] = 0;
-        screencapture("captxxxx.tga",keystatus[0x2a]|keystatus[0x36]);
+        videoCaptureScreen("captxxxx.tga",keystatus[0x2a]|keystatus[0x36]);
     }
     if (keystatus[0x3e])  //F4 - screen re-size
     {
@@ -4220,7 +4221,7 @@ void drawscreen(short snum, int dasmoothratio)
 
         if (keystatus[0x2a]|keystatus[0x36])
         {
-            setgamemode(!fullscreen, xdim, ydim, bpp);
+            videoSetGameMode(!fullscreen, xdim, ydim, bpp, upscalefactor);
         }
         else
         {
@@ -4245,7 +4246,7 @@ void drawscreen(short snum, int dasmoothratio)
                 j++;
                 if (j==validmodecnt) j=k;
             }
-            setgamemode(fullscreen,validmode[j].xdim,validmode[j].ydim,bpp);
+            videoSetGameMode(fullscreen, validmode[j].xdim, validmode[j].ydim, bpp, upscalefactor);
         }
         screensize = xdim+1;
 
@@ -4258,7 +4259,7 @@ void drawscreen(short snum, int dasmoothratio)
         keystatus[0x57] = 0;
         brightness++;
         if (brightness > 8) brightness = 0;
-        setbrightness(brightness,0,0);
+        videoSetPalette(brightness,0,0);
     }
 
     if (option[4] == 0)           //Single player only keys
@@ -4275,7 +4276,7 @@ void drawscreen(short snum, int dasmoothratio)
 
                 initplayersprite(numplayers);
 
-                clearallviews(0L);  //Clear screen to specified color
+                videoClearScreen(0L);  //Clear screen to specified color
 
                 numplayers++;
             }
@@ -4297,7 +4298,7 @@ void drawscreen(short snum, int dasmoothratio)
                 if (numplayers < 2)
                     setup3dscreen();
                 else
-                    clearallviews(0L);  //Clear screen to specified color
+                    videoClearScreen(0L);  //Clear screen to specified color
             }
         }
         if (keystatus[0x46])   //Scroll Lock
@@ -4636,7 +4637,7 @@ void getinput(void)
     loc.svel = min(max(svel,-128+8),127-8);
     loc.avel = min(max(avel,-128+16),127-16);
 
-    getmousevalues(&mousx,&mousy,&bstatus);
+    mouseGetValues(&mousx,&mousy,&bstatus);
     loc.avel = min(max(loc.avel+(mousx<<3),-128),127);
     loc.fvel = min(max(loc.fvel-(mousy<<3),-128),127);
 
@@ -4697,13 +4698,13 @@ void getinput(void)
         {
             keystatus[keys[18]] = 0;
             typemode = 1;
-            bflushchars();
-            keyfifoplc = keyfifoend;      //Reset keyboard fifo
+            keyFlushChars();
+            // g_keyFIFOpos = g_keyFIFOend;      //Reset keyboard fifo
         }
     }
     else
     {
-        while ((ch = bgetchar()))
+        while ((ch = keyGetChar()))
         {
             if (ch == 8)   //Backspace
             {
@@ -4763,7 +4764,7 @@ void initplayersprite(short snum)
     case 7: for (i=0; i<32; i++) tempbuf[i+192] = i+192; break;
     default: for (i=0; i<256; i++) tempbuf[i] = i; break;
     }
-    makepalookup(snum,tempbuf,0,0,0,1);
+    paletteMakeLookupTable(snum,tempbuf,0,0,0,1);
 }
 
 void playback(void)
@@ -4787,7 +4788,7 @@ void playback(void)
 
         while (totalclock >= lockclock+TICSPERFRAME)
         {
-            sampletimer();
+            timerUpdate();
             if (i >= reccnt)
             {
                 prepareboard(boardfilename);
@@ -4825,9 +4826,9 @@ void playback(void)
 
     musicoff();
     uninitmultiplayers();
-    uninittimer();
+    timerUninit();
     uninitinput();
-    uninitengine();
+    engineUnInit();
     uninitsb();
     uninitgroupfile();
     exit(0);
@@ -4837,16 +4838,16 @@ void setup3dscreen(void)
 {
     int i, dax, day, dax2, day2;
 
-    i = setgamemode(fullscreen,xdimgame,ydimgame,bppgame);
+    i = videoSetGameMode(fullscreen, xdimgame, ydimgame, bppgame, upscalefactor);
     if (i < 0)
     {
         printf("Error setting video mode.\n");
         sendlogoff();
         musicoff();
         uninitmultiplayers();
-        uninittimer();
+        timerUninit();
         uninitinput();
-        uninitengine();
+        engineUnInit();
         uninitsb();
         uninitgroupfile();
         exit(0);
@@ -4871,10 +4872,10 @@ void setup3dscreen(void)
         dax2 = dax+screensize-1;
         day = (((ydim-32)-scale(screensize,ydim-32,xdim))>>1);
         day2 = day + scale(screensize,ydim-32,xdim)-1;
-        setview(dax,day,dax2,day2);
+        videoSetViewableArea(dax,day,dax2,day2);
     }
 
-    flushperms();
+    renderFlushPerms();
 
     if (screensize < xdim)
         drawtilebackground(/*0L,0L,*/ BACKGROUND,8,0L,0L,xdim-1L,ydim-1L,0);     //Draw background
@@ -5660,7 +5661,7 @@ void faketimerhandler(void)
     short other /*, packbufleng*/;
     int i, j, k, l;
 
-    sampletimer();
+    timerUpdate();
     if ((totalclock < ototalclock+(TIMERINTSPERSECOND/MOVESPERSECOND)) || (ready2send == 0)) return;
     ototalclock += (TIMERINTSPERSECOND/MOVESPERSECOND);
 
@@ -5971,7 +5972,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
             x2 = dmulscale16(ox,xvect,-oy,yvect)+(xdim<<11);
             y2 = dmulscale16(oy,xvect2,ox,yvect2)+(ydim<<11);
 
-            drawline256(x1,y1,x2,y2,col);
+            renderDrawLine(x1,y1,x2,y2,col);
         }
     }
 
@@ -6026,11 +6027,11 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                         x3 = mulscale16(x2,yxaspect);
                         y3 = mulscale16(y2,yxaspect);
 
-                        drawline256(x1-x2+(xdim<<11),y1-y3+(ydim<<11),
+                        renderDrawLine(x1-x2+(xdim<<11),y1-y3+(ydim<<11),
                                     x1+x2+(xdim<<11),y1+y3+(ydim<<11),col);
-                        drawline256(x1-y2+(xdim<<11),y1+x3+(ydim<<11),
+                        renderDrawLine(x1-y2+(xdim<<11),y1+x3+(ydim<<11),
                                     x1+x2+(xdim<<11),y1+y3+(ydim<<11),col);
-                        drawline256(x1+y2+(xdim<<11),y1-x3+(ydim<<11),
+                        renderDrawLine(x1+y2+(xdim<<11),y1-x3+(ydim<<11),
                                     x1+x2+(xdim<<11),y1+y3+(ydim<<11),col);
                     }
                     else
@@ -6062,7 +6063,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                     x2 = dmulscale16(ox,xvect,-oy,yvect);
                     y2 = dmulscale16(oy,xvect2,ox,yvect2);
 
-                    drawline256(x1+(xdim<<11),y1+(ydim<<11),
+                    renderDrawLine(x1+(xdim<<11),y1+(ydim<<11),
                                 x2+(xdim<<11),y2+(ydim<<11),col);
 
                     break;
@@ -6106,16 +6107,16 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                         x4 = dmulscale16(ox,xvect,-oy,yvect);
                         y4 = dmulscale16(oy,xvect2,ox,yvect2);
 
-                        drawline256(x1+(xdim<<11),y1+(ydim<<11),
+                        renderDrawLine(x1+(xdim<<11),y1+(ydim<<11),
                                     x2+(xdim<<11),y2+(ydim<<11),col);
 
-                        drawline256(x2+(xdim<<11),y2+(ydim<<11),
+                        renderDrawLine(x2+(xdim<<11),y2+(ydim<<11),
                                     x3+(xdim<<11),y3+(ydim<<11),col);
 
-                        drawline256(x3+(xdim<<11),y3+(ydim<<11),
+                        renderDrawLine(x3+(xdim<<11),y3+(ydim<<11),
                                     x4+(xdim<<11),y4+(ydim<<11),col);
 
-                        drawline256(x4+(xdim<<11),y4+(ydim<<11),
+                        renderDrawLine(x4+(xdim<<11),y4+(ydim<<11),
                                     x1+(xdim<<11),y1+(ydim<<11),col);
 
                     }
@@ -6153,7 +6154,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
             x2 = dmulscale16(ox,xvect,-oy,yvect)+(xdim<<11);
             y2 = dmulscale16(oy,xvect2,ox,yvect2)+(ydim<<11);
 
-            drawline256(x1,y1,x2,y2,24);
+            renderDrawLine(x1,y1,x2,y2,24);
         }
     }
 }
@@ -6253,7 +6254,7 @@ void waitforeverybody()
                 printext256((xdim>>1)-(26<<2),(ydim>>1)+i*8,95,0,(char *)tempbuf,0);
             }
         }
-        nextpage();
+        videoNextPage();
 
 
         if (quitevent || keystatus[1])
@@ -6261,9 +6262,9 @@ void waitforeverybody()
             sendlogoff();         //Signing off
             musicoff();
             uninitmultiplayers();
-            uninittimer();
+            timerUninit();
             uninitinput();
-            uninitengine();
+            engineUnInit();
             uninitsb();
             uninitgroupfile();
             exit(0);
@@ -6296,9 +6297,9 @@ void searchmap(short startsector)
     tempshort[0] = startsector;
     show2dsector[startsector>>3] |= (1<<(startsector&7));
     dapic = sector[startsector].ceilingpicnum;
-    if (waloff[dapic] == 0) loadtile(dapic);
+    if (waloff[dapic] == 0) tileLoad(dapic);
     dapic = sector[startsector].floorpicnum;
-    if (waloff[dapic] == 0) loadtile(dapic);
+    if (waloff[dapic] == 0) tileLoad(dapic);
     for (splc=0,send=1; splc<send; splc++)
     {
         dasect = tempshort[splc];
@@ -6308,9 +6309,9 @@ void searchmap(short startsector)
         {
             show2dwall[i>>3] |= (1<<(i&7));
             dapic = wall[i].picnum;
-            if (waloff[dapic] == 0) loadtile(dapic);
+            if (waloff[dapic] == 0) tileLoad(dapic);
             dapic = wall[i].overpicnum;
-            if (((dapic&0xfffff000) == 0) && (waloff[dapic] == 0)) loadtile(dapic);
+            if (((dapic&0xfffff000) == 0) && (waloff[dapic] == 0)) tileLoad(dapic);
 
             j = wal->nextsector;
             if ((j >= 0) && ((show2dsector[j>>3]&(1<<(j&7))) == 0))
@@ -6318,9 +6319,9 @@ void searchmap(short startsector)
                 show2dsector[j>>3] |= (1<<(j&7));
 
                 dapic = sector[j].ceilingpicnum;
-                if (waloff[dapic] == 0) loadtile(dapic);
+                if (waloff[dapic] == 0) tileLoad(dapic);
                 dapic = sector[j].floorpicnum;
-                if (waloff[dapic] == 0) loadtile(dapic);
+                if (waloff[dapic] == 0) tileLoad(dapic);
 
                 tempshort[send++] = (short)j;
             }
@@ -6330,7 +6331,7 @@ void searchmap(short startsector)
         {
             show2dsprite[i>>3] |= (1<<(i&7));
             dapic = sprite[i].picnum;
-            if (waloff[dapic] == 0) loadtile(dapic);
+            if (waloff[dapic] == 0) tileLoad(dapic);
         }
     }
 }
