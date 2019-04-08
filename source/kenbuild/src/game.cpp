@@ -459,15 +459,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     OSD_SetLogFile("ekenbuild.log");
 
-    OSD_SetFunctions(
-        NULL, NULL, NULL, NULL, NULL,
-        COMMON_clearbackground,
-        BGetTime,
-        NULL
-        );
-
-    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO: Add error and red palookup IDs.
-
     initprintf("%s %s\n", AppProperName, s_buildRev);
     PrintBuildInfo();
 
@@ -562,6 +553,15 @@ int32_t app_main(int32_t argc, char const * const * argv)
         Ken_FatalEngineError();
         return -1;
     }
+
+    OSD_SetFunctions(
+        NULL, NULL, NULL, NULL, NULL,
+        COMMON_clearbackground,
+        BGetTime,
+        NULL
+        );
+
+    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO: Add error and red palookup IDs.
 
     //Here's an example of TRUE ornamented walls
     //The tileCreate should be called right after artLoadFiles
@@ -1314,8 +1314,12 @@ void prepareboard(char *daboardfilename)
                 setinterpolation(&sector[dasector].floorz);
                 setinterpolation(&wall[j].x);
                 setinterpolation(&wall[j].y);
-                setinterpolation(&wall[wall[j].nextwall].x);
-                setinterpolation(&wall[wall[j].nextwall].y);
+                auto const nextwall = wall[j].nextwall;
+                if ((unsigned)nextwall < MAXWALLS)
+                {
+                    setinterpolation(&wall[nextwall].x);
+                    setinterpolation(&wall[nextwall].y);
+                }
             }
 
             dragx1[dragsectorcnt] += (wall[sector[i].wallptr].x-dax);
