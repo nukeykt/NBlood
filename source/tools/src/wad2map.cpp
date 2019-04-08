@@ -313,7 +313,7 @@ void parsescript(void)
         Bprintf("Could not find %s\n",scriptname);
         exit(0);
     }
-    filpos = 0; fileng = Bfilelength(filhandle);
+    filpos = 0; fileng = filelength(filhandle);
     while (readline() != 0)
     {
         i = 0; j = 0; lasti = 0;
