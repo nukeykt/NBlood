@@ -9027,6 +9027,10 @@ static int32_t deletesector(int16_t sucksect)
         if (wall[i].nextwall >= startwall)
             wall[i].nextsector--;
 
+    // cursectnum will exceed numsectors when the arrow position is inside the last sector in the map and that sector is removed
+    if (cursectnum > numsectors)
+        cursectnum = -1;
+
     return 0;
 }
 
