@@ -455,7 +455,7 @@ void ctrlGetInput(void)
     if (BUTTON(gamefunc_Strafe))
         strafe = ClipRange(strafe - info.dyaw, -2048, 2048);
     else
-        turn = fix16_clamp(turn + fix16_div(fix16_from_int(info.dyaw), F16(64)), F16(-1024)>>2, F16(1024)>>2);
+        turn = fix16_clamp(turn + fix16_div(fix16_from_int(info.dyaw), F16(32)), F16(-1024)>>2, F16(1024)>>2);
 
     strafe = ClipRange(strafe-(info.dx<<5), -2048, 2048);
 
@@ -465,7 +465,7 @@ void ctrlGetInput(void)
     else
         gInput.mlook = ClipRange(info.dz>>7, -127, 127);
 #endif
-    gInput.q16mlook = fix16_clamp(fix16_div(fix16_from_int(info.dpitch), F16(512)), F16(-127)>>2, F16(127)>>2);
+    gInput.q16mlook = fix16_clamp(fix16_div(fix16_from_int(info.dpitch), F16(256)), F16(-127)>>2, F16(127)>>2);
     if (!gMouseAimingFlipped)
         gInput.q16mlook = -gInput.q16mlook;
     forward = ClipRange(forward - info.dz, -2048, 2048);
