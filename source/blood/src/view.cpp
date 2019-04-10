@@ -397,6 +397,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
             predict.at48 = 2;
         break;
     }
+#if 0
     if (predict.at6e && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookDown)
     {
         if (predict.at20 < 0)
@@ -421,6 +422,29 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         predict.at24 = mulscale30(F16(180), Sin(fix16_to_int(predict.at20<<3)));
     else
         predict.at24 = 0;
+#endif
+    CONSTEXPR int upAngle = 289;
+    CONSTEXPR int downAngle = -347;
+    CONSTEXPR double lookStepUp = 4.0*upAngle/60.0;
+    CONSTEXPR double lookStepDown = -4.0*downAngle/60.0;
+    if (predict.at6e && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookDown)
+    {
+        if (predict.at20 < 0)
+            predict.at20 = fix16_min(predict.at20+F16(lookStepDown), F16(0));
+        if (predict.at20 > 0)
+            predict.at20 = fix16_max(predict.at20-F16(lookStepUp), F16(0));
+        if (predict.at20 == 0)
+            predict.at6e = 0;
+    }
+    else
+    {
+        if (pInput->buttonFlags.lookUp)
+            predict.at20 = fix16_min(predict.at20+F16(lookStepUp), F16(upAngle));
+        if (pInput->buttonFlags.lookDown)
+            predict.at20 = fix16_max(predict.at20-F16(lookStepDown), F16(downAngle));
+    }
+    predict.at20 = fix16_clamp(predict.at20+(pInput->q16mlook<<3), F16(downAngle), F16(upAngle));
+    predict.at24 = fix16_from_float(100.f*tanf(fix16_to_float(predict.at20)*fPI/1024.f));
 
     int nSector = predict.at68;
     int florhit = predict.at75.florhit & 0xe000;

@@ -1484,10 +1484,10 @@ void ProcessInput(PLAYER *pPlayer)
     }
     else
     {
-        constexpr int upAngle = 289;
-        constexpr int downAngle = -347;
-        constexpr double lookStepUp = 4.0*upAngle/60.0;
-        constexpr double lookStepDown = -4.0*downAngle/60.0;
+        CONSTEXPR int upAngle = 289;
+        CONSTEXPR int downAngle = -347;
+        CONSTEXPR double lookStepUp = 4.0*upAngle/60.0;
+        CONSTEXPR double lookStepDown = -4.0*downAngle/60.0;
         if (pInput->keyFlags.lookCenter && !pInput->buttonFlags.lookUp && !pInput->buttonFlags.lookDown)
         {
             if (pPlayer->q16look < 0)
