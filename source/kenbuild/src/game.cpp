@@ -5806,7 +5806,7 @@ void faketimerhandler(void)
 void getpackets(void)
 {
     int i, j, k, l;
-    int other, packbufleng, movecnt;
+    int other = 0, packbufleng, movecnt;
 
     if (option[4] == 0) return;
 
