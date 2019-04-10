@@ -136,9 +136,7 @@ static int screentilt = 0, oscreentilt = 0;
 static int fvel, svel, avel;
 static int fvel2, svel2, avel2;
 
-#define NUMOPTIONS 8
-#define NUMGAMEKEYS 19
-char option[NUMOPTIONS] = {0,0,0,0,0,0,1,0};
+unsigned char option[NUMOPTIONS] = {0,0,0,0,0,0,1,0};
 unsigned char keys[NUMGAMEKEYS] =
 {
     0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,

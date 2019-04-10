@@ -6,6 +6,8 @@
 #include "editor.h"
 #include "osd.h"
 
+#include "game.h"
+
 #ifdef RENDERTYPEWIN
 #include "winlayer.h"
 #endif
@@ -81,10 +83,6 @@ static int readconfig(BFILE *fp, const char *key, char *value, unsigned len)
     }
 }
 
-extern short brightness;
-extern int fullscreen;
-extern unsigned char option[8];
-extern unsigned char keys[NUMBUILDKEYS];
 double msens;
 
 /*
