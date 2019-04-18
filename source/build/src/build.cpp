@@ -181,7 +181,7 @@ static int32_t tempxyar[MAXWALLS][2];
 
 static int32_t mousx, mousy;
 int16_t prefixtiles[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-uint8_t hlsectorbitmap[MAXSECTORS>>3];  // show2dsector is already taken...
+uint8_t hlsectorbitmap[(MAXSECTORS+7)>>3];  // show2dsector is already taken...
 static int32_t minhlsectorfloorz, numhlsecwalls;
 int32_t searchlock = 0;
 
@@ -189,7 +189,7 @@ int32_t searchlock = 0;
 //  - hl_all_bunch_sectors_p
 //  - AlignWalls
 //  - trace_loop
-static uint8_t visited[MAXWALLS>>3];
+static uint8_t visited[(MAXWALLS+7)>>3];
 
 int32_t m32_2d3dmode = 0;
 int32_t m32_2d3dsize = 4;
@@ -2485,7 +2485,7 @@ static void updatesprite1(int16_t i)
 
 #ifdef YAX_ENABLE
 // highlighted OR grayed-out sectors:
-static uint8_t hlorgraysectbitmap[MAXSECTORS>>3];
+static uint8_t hlorgraysectbitmap[(MAXSECTORS+7)>>3];
 static int32_t ask_above_or_below(void);
 #else
 # define hlorgraysectbitmap hlsectorbitmap
@@ -2682,7 +2682,7 @@ void reset_highlight(void)  // walls and sprites
 #ifdef YAX_ENABLE
 static int32_t collnumsects[2];
 static int16_t collsectlist[2][MAXSECTORS];
-static uint8_t collsectbitmap[2][MAXSECTORS>>3];
+static uint8_t collsectbitmap[2][(MAXSECTORS+7)>>3];
 
 static void collect_sectors1(int16_t *sectlist, uint8_t *sectbitmap, int32_t *numsectptr,
                              int16_t startsec, int32_t alsoyaxnext, int32_t alsoonw)
@@ -5308,7 +5308,7 @@ end_yax: ;
                     // didmakered: 'bad'!
                     int32_t didmakered = (highlightsectorcnt<0) || eitherCTRL, hadouterpoint=0;
 #ifdef YAX_ENABLE
-                    for (i=0; i<MAXSECTORS>>3; i++)
+                    for (i=0; i<(MAXSECTORS+7)>>3; i++)
                         hlorgraysectbitmap[i] = hlsectorbitmap[i]|graysectbitmap[i];
 #endif
                     for (i=0; i<highlightsectorcnt; i++)
@@ -6332,7 +6332,7 @@ end_point_dragging:
                     if (onwisvalid())
                     {
                         static int16_t ocollsectlist[MAXSECTORS];
-                        static uint8_t tcollbitmap[MAXSECTORS>>3];
+                        static uint8_t tcollbitmap[(MAXSECTORS+7)>>3];
                         int16_t ocollnumsects=collnumsects[movestat], tmpsect;
 
                         Bmemcpy(ocollsectlist, collsectlist[movestat], ocollnumsects*sizeof(int16_t));
