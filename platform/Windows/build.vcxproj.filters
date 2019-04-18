@@ -185,9 +185,6 @@
     <ClCompile Include="..\..\source\build\src\common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\build\src\vfs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\build\src\fix16.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
