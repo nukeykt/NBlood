@@ -53,12 +53,6 @@
     <ClCompile Include="..\..\source\build\src\engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\build\src\fix16.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\build\src\fix16_str.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\build\src\glbuild.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -192,6 +186,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\vfs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\build\src\fix16.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\build\src\fix16_str.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
