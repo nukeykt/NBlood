@@ -4800,7 +4800,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
 {
     int const have_floor = sectnum & MAXSECTORS;
     sectnum &= ~MAXSECTORS;
-    usectortype const * const sec = (usectortype *)&sector[sectnum];
+    auto const sec = (usectorptr_t)&sector[sectnum];
 
     // comments from floor code:
             //(singlobalang/-16384*(sx-ghalfx) + 0*(sy-ghoriz) + (cosviewingrangeglobalang/16384)*ghalfx)*d + globalposx    = u*16
@@ -5068,7 +5068,7 @@ static void polymost_drawalls(int32_t const bunch)
     drawpoly_blend = 0;
 
     int32_t const sectnum = thesector[bunchfirst[bunch]];
-    usectortype const * const sec = (usectortype *)&sector[sectnum];
+    auto const sec = (usectorptr_t)&sector[sectnum];
     float const fglobalang = fix16_to_float(qglobalang);
 
     //DRAW WALLS SECTION!
@@ -5076,10 +5076,10 @@ static void polymost_drawalls(int32_t const bunch)
     {
         int32_t const wallnum = thewall[z];
 
-        auto const wal = (uwalltype *)&wall[wallnum];
-        auto const wal2 = (uwalltype *)&wall[wal->point2];
+        auto const wal = (uwallptr_t)&wall[wallnum];
+        auto const wal2 = (uwallptr_t)&wall[wal->point2];
         int32_t const nextsectnum = wal->nextsector;
-        auto const nextsec = nextsectnum>=0 ? (usectortype *)&sector[nextsectnum] : NULL;
+        auto const nextsec = nextsectnum>=0 ? (usectorptr_t)&sector[nextsectnum] : NULL;
 
         //Offset&Rotate 3D coordinates to screen 3D space
         vec2f_t walpos = { (float)(wal->x-globalposx), (float)(wal->y-globalposy) };
@@ -5972,12 +5972,12 @@ static void polymost_drawalls(int32_t const bunch)
             }
             if (((ofy0 < fy0) || (ofy1 < fy1)) && (!((sec->floorstat&sector[nextsectnum].floorstat)&1)))
             {
-                uwalltype *nwal;
+                uwallptr_t nwal;
 
                 if (!(wal->cstat&2)) nwal = wal;
                 else
                 {
-                    nwal = (uwalltype *)&wall[wal->nextwall];
+                    nwal = (uwallptr_t)&wall[wal->nextwall];
                     otex.u += (float)(nwal->xpanning - wal->xpanning) * otex.d;
                     xtex.u += (float)(nwal->xpanning - wal->xpanning) * xtex.d;
                     ytex.u += (float)(nwal->xpanning - wal->xpanning) * ytex.d;
@@ -6126,7 +6126,7 @@ void polymost_scansector(int32_t sectnum)
 #endif
         for (bssize_t z=headspritesect[sectnum]; z>=0; z=nextspritesect[z])
         {
-            uspritetype const * const spr = (uspritetype *)&sprite[z];
+            auto const spr = (uspriteptr_t)&sprite[z];
 
             if ((spr->cstat & 0x8000 && !showinvisibility) || spr->xrepeat == 0 || spr->yrepeat == 0)
                 continue;
@@ -6152,12 +6152,12 @@ void polymost_scansector(int32_t sectnum)
 
         vec2d_t p2 = { 0, 0 };
 
-        uwalltype *wal;
+        uwallptr_t wal;
         int z;
 
-        for (z=startwall,wal=(uwalltype *)&wall[z]; z<endwall; z++,wal++)
+        for (z=startwall,wal=(uwallptr_t)&wall[z]; z<endwall; z++,wal++)
         {
-            uwalltype const *const wal2 = (uwalltype *)&wall[wal->point2];
+            auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
             vec2d_t const fp1 = { double(wal->x - globalposx), double(wal->y - globalposy) };
             vec2d_t const fp2 = { double(wal2->x - globalposx), double(wal2->y - globalposy) };
@@ -6547,16 +6547,16 @@ void polymost_drawrooms()
 void polymost_drawmaskwall(int32_t damaskwallcnt)
 {
     int const z = maskwall[damaskwallcnt];
-    auto const wal = (uwalltype *)&wall[thewall[z]];
-    auto const wal2 = (uwalltype *)&wall[wal->point2];
+    auto const wal = (uwallptr_t)&wall[thewall[z]];
+    auto const wal2 = (uwallptr_t)&wall[wal->point2];
     int32_t const sectnum = thesector[z];
-    auto const sec = (usectortype *)&sector[sectnum];
+    auto const sec = (usectorptr_t)&sector[sectnum];
 
 //    if (wal->nextsector < 0) return;
     // Without MASKWALL_BAD_ACCESS fix:
     // wal->nextsector is -1, WGR2 SVN Lochwood Hollow (Til' Death L1)  (or trueror1.map)
 
-    auto const nsec = (usectortype *)&sector[wal->nextsector];
+    auto const nsec = (usectorptr_t)&sector[wal->nextsector];
 
     globalpicnum = wal->overpicnum;
     if ((uint32_t)globalpicnum >= MAXTILES)
@@ -6770,10 +6770,10 @@ void Polymost_prepare_loadboard(void)
     Bmemset(wsprinfo, 0, sizeof(wsprinfo));
 }
 
-static inline int32_t polymost_findwall(uspritetype const * const tspr, vec2_t const * const tsiz, int32_t * rd)
+static inline int32_t polymost_findwall(uspriteptr_t const tspr, vec2_t const * const tsiz, int32_t * rd)
 {
     int32_t dist = 4, closest = -1;
-    usectortype const * const sect = (usectortype  * )&sector[tspr->sectnum];
+    auto const sect = (usectortype  * )&sector[tspr->sectnum];
     vec2_t n;
 
     for (bssize_t i=sect->wallptr; i<sect->wallptr + sect->wallnum; i++)
@@ -6841,12 +6841,12 @@ int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
 
 void polymost2_drawsprite(int32_t snum)
 {
-    uspritetype *const tspr = tspriteptr[snum];
+    auto const tspr = tspriteptr[snum];
 
     if (EDUKE32_PREDICT_FALSE(bad_tspr(tspr)))
         return;
 
-    const usectortype *sec;
+    usectorptr_t sec;
 
     int32_t spritenum = tspr->owner;
 
@@ -6880,7 +6880,7 @@ void polymost2_drawsprite(int32_t snum)
     drawpoly_alpha = spriteext[spritenum].alpha;
     drawpoly_blend = tspr->blend;
 
-    sec = (usectortype *)&sector[tspr->sectnum];
+    sec = (usectorptr_t)&sector[tspr->sectnum];
 
     polymost2_calc_fog(fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
 
@@ -7231,12 +7231,12 @@ void polymost_drawsprite(int32_t snum)
         return;
     }
 
-    uspritetype *const tspr = tspriteptr[snum];
+    auto const tspr = tspriteptr[snum];
 
     if (EDUKE32_PREDICT_FALSE(bad_tspr(tspr)))
         return;
 
-    const usectortype *sec;
+    usectorptr_t sec;
 
     int32_t spritenum = tspr->owner;
 
@@ -7275,7 +7275,7 @@ void polymost_drawsprite(int32_t snum)
     drawpoly_alpha = spriteext[spritenum].alpha;
     drawpoly_blend = tspr->blend;
 
-    sec = (usectortype *)&sector[tspr->sectnum];
+    sec = (usectorptr_t)&sector[tspr->sectnum];
 
     if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
         || (usemodels && md_tilehasmodel(globalpicnum, globalpal) >= 0))

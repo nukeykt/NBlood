@@ -1790,7 +1790,7 @@ static int32_t backup_highlighted_map(mapinfofull_t *mapinfo)
                 if (obn >= 0 && nbn < 0)
                 {
                     // A bunch was discarded.
-                    usectortype *const sec = &mapinfo->sector[i];
+                    auto const sec = &mapinfo->sector[i];
 # if !defined NEW_MAP_FORMAT
                     uint16_t *const cs = j==YAX_CEILING ? &sec->ceilingstat : &sec->floorstat;
                     uint8_t *const xp = j==YAX_CEILING ? &sec->ceilingxpanning : &sec->floorxpanning;
@@ -1972,7 +1972,7 @@ static int32_t restore_highlighted_map(mapinfofull_t *mapinfo, int32_t forreal)
     // insert sprites
     for (i=0; i<mapinfo->numsprites; i++)
     {
-        const uspritetype *srcspr = &mapinfo->sprite[i];
+        uspriteptr_t srcspr = &mapinfo->sprite[i];
         int32_t sect = onumsectors + srcspr->sectnum;
 
         j = insertsprite(sect, srcspr->statnum);
@@ -2381,7 +2381,7 @@ static void copy_some_wall_members(int16_t dst, int16_t src, int32_t reset_some)
 {
     static uwalltype nullwall;
     walltype * const dstwal = &wall[dst];
-    const uwalltype *srcwal = src >= 0 ? (uwalltype *)&wall[src] : &nullwall;
+    auto const srcwal = src >= 0 ? (uwallptr_t)&wall[src] : &nullwall;
 
     memset(&nullwall, 0, sizeof(nullwall));
     nullwall.yrepeat = 8;
@@ -2769,8 +2769,8 @@ static int32_t sectors_components(int16_t hlsectcnt, const int16_t *hlsector, in
 
 static int cmpgeomwal1(const void *w1, const void *w2)
 {
-    uwalltype const * const wal1 = (uwalltype *)&wall[B_UNBUF16(w1)];
-    uwalltype const * const wal2 = (uwalltype *)&wall[B_UNBUF16(w2)];
+    auto const wal1 = (uwallptr_t)&wall[B_UNBUF16(w1)];
+    auto const wal2 = (uwallptr_t)&wall[B_UNBUF16(w2)];
 
     if (wal1->x == wal2->x)
         return wal1->y - wal2->y;
@@ -3328,7 +3328,7 @@ static void drawspritelabel(int i)
         return;
 
     // KEEPINSYNC drawscreen_drawsprite()
-    uspritetype const * s = (uspritetype *)&sprite[i];
+    uspriteptr_t s = (uspriteptr_t)&sprite[i];
     uint8_t const spritecol = spritecol2d[s->picnum][(s->cstat&1)];
     int col = spritecol ? editorcolors[spritecol] : editorGet2dSpriteColor(i);
     int const blocking = s->cstat & 1;
@@ -6142,7 +6142,7 @@ end_point_dragging:
 
                 int32_t numouterwalls[2] = {0,0}, numowals;
                 static int16_t outerwall[2][MAXWALLS];
-                const uwalltype *wal0, *wal1, *wal0p2, *wal1p2;
+                uwallptr_t wal0, wal1, wal0p2, wal1p2;
 
                 // join sector ceilings/floors to a new bunch
                 if (numyaxbunches==YAX_MAXBUNCHES)
@@ -6236,11 +6236,11 @@ end_point_dragging:
 
                 for (k=0; k<numowals; k++)
                 {
-                    wal0 = (uwalltype *)&wall[outerwall[0][k]];
-                    wal1 = (uwalltype *)&wall[outerwall[1][k]];
+                    wal0 = (uwallptr_t)&wall[outerwall[0][k]];
+                    wal1 = (uwallptr_t)&wall[outerwall[1][k]];
 
-                    wal0p2 = (uwalltype *)&wall[wal0->point2];
-                    wal1p2 = (uwalltype *)&wall[wal1->point2];
+                    wal0p2 = (uwallptr_t)&wall[wal0->point2];
+                    wal1p2 = (uwallptr_t)&wall[wal1->point2];
 
                     if (k==0)
                     {
