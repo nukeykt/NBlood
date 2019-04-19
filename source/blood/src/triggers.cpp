@@ -949,7 +949,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
         else if (sprite[nSprite].cstat&16384)
         {
             if (vbp)
-                RotatePoint((int*)&x, (int*)&y, -vbp, a4, a5);
+                RotatePoint((int*)&x, (int*)&y, -vbp, a4, a4);
             viewBackupSpriteLoc(nSprite, pSprite);
             pSprite->ang = (pSprite->ang-v14)&2047;
             pSprite->x = x-(vc-a4);
