@@ -1153,7 +1153,7 @@ void polymost_glinit()
              \n\
              color.a *= v_color.a;\n\
              \n\
-             gl_FragColor = color;\n\
+             gl_FragData[0] = color;\n\
          }\n";
     const char* const POLYMOST1_EXTENDED_FRAGMENT_SHADER_CODE =
         "#version 110\n\
@@ -1247,7 +1247,7 @@ void polymost_glinit()
              \n\
              color.a *= v_color.a;\n\
              \n\
-             gl_FragColor = color;\n\
+             gl_FragData[0] = color;\n\
          }\n";
 
     polymost1BasicShaderProgramID = glCreateProgram();
