@@ -281,9 +281,4 @@
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="eduke32.exe.manifest">
-      <Filter>Resource Files</Filter>
-    </Manifest>
-  </ItemGroup>
 </Project>
