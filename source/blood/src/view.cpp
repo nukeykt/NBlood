@@ -256,7 +256,7 @@ void viewInitializePrediction(void)
 	predict.at5c = xvel[gMe->pSprite->index];
 	predict.at60 = yvel[gMe->pSprite->index];
 	predict.at64 = zvel[gMe->pSprite->index];
-	predict.at6a = gMe->pXSprite->at30_0;
+	predict.at6a = gMe->pXSprite->height;
 	predict.at48 = gMe->at2f;
 	predict.at4c = gMe->at316;
 	predict.at6e = gMe->atc.keyFlags.lookCenter;
@@ -534,7 +534,7 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
 	}
 	else
 	{
-		if (pXSprite->at30_0 < 256)
+		if (pXSprite->height < 256)
 		{
 			predict.at4 = (predict.at4+(pPosture->atc[predict.at70]*4))&2047;
 			predict.at14 = (predict.at14+(pPosture->atc[predict.at70]*4)/2)&2047;
@@ -644,9 +644,9 @@ void fakeMoveDude(spritetype *pSprite)
     if (nXSector > 0)
     {
         XSECTOR *pXSector = &xsector[nXSector];
-        if (pXSector->at13_4)
+        if (pXSector->Underwater)
             bUnderwater = 1;
-        if (pXSector->at13_5)
+        if (pXSector->Depth)
             bDepth = 1;
     }
     int nUpperLink = gUpperLink[nSector];
@@ -767,7 +767,7 @@ void fakeMoveDude(spritetype *pSprite)
             }
         }
         int nXSector = sector[pSprite->sectnum].extra;
-        if (nXSector > 0 && xsector[nXSector].at13_4)
+        if (nXSector > 0 && xsector[nXSector].Underwater)
             return;
         if (predict.at6a >= 0x100)
             return;
@@ -794,13 +794,13 @@ void fakeActAirDrag(spritetype *pSprite, int num)
     {
         dassert(nXSector < kMaxXSectors);
         XSECTOR *pXSector = &xsector[nXSector];
-        if (pXSector->at35_1 && (pXSector->at37_6 || pXSector->at1_7))
+        if (pXSector->windVel && (pXSector->windAlways || pXSector->busy))
         {
-            int vel = pXSector->at35_1<<12;
-            if (!pXSector->at37_6 && pXSector->at1_7)
-                vel = mulscale16(vel, pXSector->at1_7);
-            xvec = mulscale30(vel, Cos(pXSector->at36_3));
-            yvec = mulscale30(vel, Sin(pXSector->at36_3));
+            int vel = pXSector->windVel<<12;
+            if (!pXSector->windAlways && pXSector->busy)
+                vel = mulscale16(vel, pXSector->busy);
+            xvec = mulscale30(vel, Cos(pXSector->windAng));
+            yvec = mulscale30(vel, Sin(pXSector->windAng));
         }
     }
     predict.at5c += mulscale16(xvec-predict.at5c, num);
@@ -832,13 +832,13 @@ void fakeActProcessSprites(void)
 			bottom += predict.at58 - pSprite->z;
 			if (getflorzofslope(nSector, predict.at50, predict.at54) < bottom)
 			{
-				int angle = pXSector->at15_0;
+				int angle = pXSector->panAngle;
                 int speed = 0;
-				if (pXSector->at13_0 || pXSector->at1_6 || pXSector->at1_7)
+				if (pXSector->panAlways || pXSector->state || pXSector->busy)
 				{
-					speed = pXSector->at14_0 << 9;
-					if (!pXSector->at13_0 && pXSector->at1_7)
-						speed = mulscale16(speed, pXSector->at1_7);
+					speed = pXSector->panVel << 9;
+					if (!pXSector->panAlways && pXSector->busy)
+						speed = mulscale16(speed, pXSector->busy);
 				}
 				if (sector[nSector].floorstat&64)
 					angle = (GetWallAngle(sector[nSector].wallptr)+512)&2047;
@@ -846,7 +846,7 @@ void fakeActProcessSprites(void)
 				predict.at60 += mulscale30(speed,Sin(angle));
 			}
 		}
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             fakeActAirDrag(pSprite, 5376);
         else
             fakeActAirDrag(pSprite, 128);
@@ -1977,13 +1977,13 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     {
                     case 20:
                     case 21:
-                        if (xsprite[nXSprite].at1_6)
+                        if (xsprite[nXSprite].state)
                         {
                             nAnim = 1;
                         }
                         break;
                     case 22:
-                        nAnim = xsprite[nXSprite].at10_0;
+                        nAnim = xsprite[nXSprite].data1;
                         break;
                     }
                 }
@@ -2107,7 +2107,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             pTSprite->xrepeat = 48;
             pTSprite->yrepeat = 48;
             pTSprite->shade = -128;
-            pTSprite->picnum = 2272 + 2*pTXSprite->atb_4;
+            pTSprite->picnum = 2272 + 2*pTXSprite->respawnPending;
             pTSprite->cstat &= ~514;
             if (((IsItemSprite((spritetype *)pTSprite) || IsAmmoSprite((spritetype *)pTSprite)) && gGameOptions.nItemSettings == 2)
                 || (IsWeaponSprite((spritetype *)pTSprite) && gGameOptions.nWeaponSettings == 3))
@@ -2120,7 +2120,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             }
         }
         if (spritesortcnt >= kMaxViewSprites) continue;
-        if (pTXSprite && pTXSprite->at2c_0 > 0)
+        if (pTXSprite && pTXSprite->burnTime > 0)
         {
             pTSprite->shade = ClipRange(pTSprite->shade-16-QRandom(8), -128, 127);
         }
@@ -2145,7 +2145,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             case 32:
                 if (pTXSprite)
                 {
-                    if (pTXSprite->at1_6 > 0)
+                    if (pTXSprite->state > 0)
                     {
                         pTSprite->shade = -128;
                         viewAddEffect(nTSprite, VIEW_EFFECT_11);
@@ -2164,7 +2164,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             case 30:
                 if (pTXSprite)
                 {
-                    if (pTXSprite->at1_6 > 0)
+                    if (pTXSprite->state > 0)
                     {
                         pTSprite->picnum++;
                         viewAddEffect(nTSprite, VIEW_EFFECT_4);
@@ -2194,7 +2194,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             switch (pTSprite->type)
             {
             case 145:
-                if (pTXSprite && pTXSprite->at1_6 > 0 && gGameOptions.nGameType == 3)
+                if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == 3)
                 {
                     uspritetype *pNTSprite = viewAddEffect(nTSprite, VIEW_EFFECT_17);
                     if (pNTSprite)
@@ -2202,7 +2202,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
                 }
                 break;
             case 146:
-                if (pTXSprite && pTXSprite->at1_6 > 0 && gGameOptions.nGameType == 3)
+                if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == 3)
                 {
                     uspritetype *pNTSprite = viewAddEffect(nTSprite, VIEW_EFFECT_17);
                     if (pNTSprite)
@@ -2274,7 +2274,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
         }
         case 6:
         {
-            if (pTSprite->type == 212 && pTXSprite->at34 == &hand13A3B4)
+            if (pTSprite->type == 212 && pTXSprite->aiState == &hand13A3B4)
             {
                 spritetype *pTTarget = &sprite[pTXSprite->target];
                 dassert(pTXSprite != NULL && pTTarget != NULL);
@@ -2363,12 +2363,12 @@ void viewProcessSprites(int cX, int cY, int cZ)
         {
             if (pTSprite->type == 454)
             {
-                if (pTXSprite->at1_6)
+                if (pTXSprite->state)
                 {
-                    if (pTXSprite->at10_0)
+                    if (pTXSprite->data1)
                     {
                         pTSprite->picnum = 772;
-                        if (pTXSprite->at12_0)
+                        if (pTXSprite->data2)
                         {
                             viewAddEffect(nTSprite, VIEW_EFFECT_9);
                         }
@@ -2376,7 +2376,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
                 }
                 else
                 {
-                    if (pTXSprite->at10_0)
+                    if (pTXSprite->data1)
                     {
                         pTSprite->picnum = 773;
                     }
@@ -3121,7 +3121,7 @@ RORHACKOTHER:
             XSPRITE *pXSprite = &xsprite[nXSprite];
             if (TestBitString(gotsector, pSprite->sectnum))
             {
-                unk += pXSprite->at14_0*32;
+                unk += pXSprite->data3*32;
             }
             nSprite = nextspritestat[nSprite];
         }
@@ -3279,9 +3279,9 @@ RORHACK:
             }
             WeaponDraw(gView, nShade, cX, cY, nPalette);
         }
-        if (gViewPos == 0 && gView->pXSprite->at2c_0 > 60)
+        if (gViewPos == 0 && gView->pXSprite->burnTime > 60)
         {
-            viewBurnTime(gView->pXSprite->at2c_0);
+            viewBurnTime(gView->pXSprite->burnTime);
         }
         if (packItemActive(gView, 1))
         {
@@ -3322,11 +3322,11 @@ RORHACK:
         {
             if (gView->at87)
             {
-                if (gView->pXSprite->at17_6 == 1)
+                if (gView->pXSprite->palette == 1)
                 {
                     nPalette = 1;
                 }
-                else if (gView->pXSprite->at17_6 == 2)
+                else if (gView->pXSprite->palette == 2)
                 {
                     nPalette = 3;
                 }

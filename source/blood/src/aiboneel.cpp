@@ -109,7 +109,7 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
     else if (pDudeExtraE->at4 >= 10 && pDudeExtraE->at8)
     {
         pDudeExtraE->at4 = 0;
-        pXSprite->at16_0 += 256;
+        pXSprite->goalAng += 256;
         POINT3D *pTarget = &baseSprite[pSprite->index];
         aiSetTarget(pXSprite, pTarget->x, pTarget->y, pTarget->z);
         aiNewState(pSprite, pXSprite, &eelTurn);
@@ -155,7 +155,7 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
+    aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
     thinkTarget(pSprite, pXSprite);
 }
 
@@ -163,8 +163,8 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
@@ -232,7 +232,7 @@ static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nCos = Cos(pSprite->ang);
@@ -241,7 +241,7 @@ static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
     int dy = yvel[nSprite];
     int t1 = dmulscale30(dx, nCos, dy, nSin);
     int t2 = dmulscale30(dx, nSin, -dy, nCos);
-    if (pXSprite->at17_3 > 0)
+    if (pXSprite->dodgeDir > 0)
         t2 += pDudeInfo->at3c;
     else
         t2 -= pDudeInfo->at3c;
@@ -256,10 +256,10 @@ static void MoveDodgeDown(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    if (pXSprite->at17_3 == 0)
+    if (pXSprite->dodgeDir == 0)
         return;
     int nCos = Cos(pSprite->ang);
     int nSin = Sin(pSprite->ang);
@@ -267,7 +267,7 @@ static void MoveDodgeDown(spritetype *pSprite, XSPRITE *pXSprite)
     int dy = yvel[nSprite];
     int t1 = dmulscale30(dx, nCos, dy, nSin);
     int t2 = dmulscale30(dx, nSin, -dy, nCos);
-    if (pXSprite->at17_3 > 0)
+    if (pXSprite->dodgeDir > 0)
         t2 += pDudeInfo->at3c;
     else
         t2 -= pDudeInfo->at3c;
@@ -338,7 +338,7 @@ static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = (pDudeInfo->at38-(((4-gGameOptions.nDifficulty)<<26)/120)/120)<<2;
@@ -346,8 +346,8 @@ static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     if (pXSprite->target == -1)
         pSprite->ang = (pSprite->ang+256)&2047;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (nDist <= 0x399)
@@ -371,14 +371,14 @@ static void MoveSwoop(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = (pDudeInfo->at38-(((4-gGameOptions.nDifficulty)<<26)/120)/120)<<2;
     if (klabs(nAng) > 341)
         return;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Chance(0x8000) && nDist <= 0x399)
@@ -400,14 +400,14 @@ static void MoveAscend(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = (pDudeInfo->at38-(((4-gGameOptions.nDifficulty)<<26)/120)/120)<<2;
     if (klabs(nAng) > 341)
         return;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Chance(0x4000) && nDist <= 0x399)
@@ -430,7 +430,7 @@ void MoveToCeil(spritetype *pSprite, XSPRITE *pXSprite)
     int y = pSprite->y;
     int z = pSprite->z;
     int nSector = pSprite->sectnum;
-    if (z - pXSprite->at28_0 < 0x1000)
+    if (z - pXSprite->targetZ < 0x1000)
     {
         DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
         pDudeExtraE->at8 = 0;

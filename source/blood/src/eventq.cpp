@@ -102,21 +102,21 @@ int GetBucketChannel(const RXBUCKET *pRX)
         int nIndex = pRX->at0_0;
         int nXIndex = sector[nIndex].extra;
         dassert(nXIndex > 0);
-        return xsector[nXIndex].at8_0;
+        return xsector[nXIndex].rxID;
     }
     case 0:
     {
         int nIndex = pRX->at0_0;
         int nXIndex = wall[nIndex].extra;
         dassert(nXIndex > 0);
-        return xwall[nXIndex].at8_0;
+        return xwall[nXIndex].rxID;
     }
     case 3:
     {
         int nIndex = pRX->at0_0;
         int nXIndex = sprite[nIndex].extra;
         dassert(nXIndex > 0);
-        return xsprite[nXIndex].at5_2;
+        return xsprite[nXIndex].rxID;
     }
     default:
         ThrowError("Unexpected rxBucket type %d, index %d", pRX->at1_5, pRX->at0_0);
@@ -292,7 +292,7 @@ void evInit(void)
         int nXSector = sector[i].extra;
         if (nXSector >= kMaxXSectors)
             ThrowError("Invalid xsector reference in sector %d", i);
-        if (nXSector > 0 && xsector[nXSector].at8_0 > 0)
+        if (nXSector > 0 && xsector[nXSector].rxID > 0)
         {
             dassert(nCount < kMaxChannels);
             rxBucket[nCount].at1_5 = 6;
@@ -305,7 +305,7 @@ void evInit(void)
         int nXWall = wall[i].extra;
         if (nXWall >= kMaxXWalls)
             ThrowError("Invalid xwall reference in wall %d", i);
-        if (nXWall > 0 && xwall[nXWall].at8_0 > 0)
+        if (nXWall > 0 && xwall[nXWall].rxID > 0)
         {
             dassert(nCount < kMaxChannels);
             rxBucket[nCount].at1_5 = 0;
@@ -320,7 +320,7 @@ void evInit(void)
             int nXSprite = sprite[i].extra;
             if (nXSprite >= kMaxXSprites)
                 ThrowError("Invalid xsprite reference in sprite %d", i);
-            if (nXSprite > 0 && xsprite[nXSprite].at5_2 > 0)
+            if (nXSprite > 0 && xsprite[nXSprite].rxID > 0)
             {
                 dassert(nCount < kMaxChannels);
                 rxBucket[nCount].at1_5 = 3;
@@ -348,19 +348,19 @@ char evGetSourceState(int nType, int nIndex)
     {
         int nXIndex = sector[nIndex].extra;
         dassert(nXIndex > 0 && nXIndex < kMaxXSectors);
-        return xsector[nXIndex].at1_6;
+        return xsector[nXIndex].state;
     }
     case 0:
     {
         int nXIndex = wall[nIndex].extra;
         dassert(nXIndex > 0 && nXIndex < kMaxXWalls);
-        return xwall[nXIndex].at1_6;
+        return xwall[nXIndex].state;
     }
     case 3:
     {
         int nXIndex = sprite[nIndex].extra;
         dassert(nXIndex > 0 && nXIndex < kMaxXSprites);
-        return xsprite[nXIndex].at1_6;
+        return xsprite[nXIndex].state;
     }
     }
     return 0;
@@ -421,7 +421,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
                 if (nXSprite > 0)
                 {
                     XSPRITE *pXSprite = &xsprite[nXSprite];
-                    if (pXSprite->at5_2 == rxId)
+                    if (pXSprite->rxID == rxId)
                         trMessageSprite(nSprite, evn);
                 }
             }
@@ -437,7 +437,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
                 if (nXSprite > 0)
                 {
                     XSPRITE *pXSprite = &xsprite[nXSprite];
-                    if (pXSprite->at5_2 == rxId)
+                    if (pXSprite->rxID == rxId)
                         trMessageSprite(nSprite, evn);
                 }
             }
@@ -466,7 +466,7 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
                 if (nXSprite > 0)
                 {
                     XSPRITE *pXSprite = &xsprite[nXSprite];
-                    if (pXSprite->at5_2 > 0)
+                    if (pXSprite->rxID > 0)
                         trMessageSprite(nSprite, evn);
                 }
                 break;

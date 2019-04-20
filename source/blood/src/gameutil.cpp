@@ -690,7 +690,7 @@ void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *
         if (sector[nSector].extra > 0)
         {
             XSECTOR *pXSector = &xsector[sector[nSector].extra];
-            *floorZ += pXSector->at13_5 << 10;
+            *floorZ += pXSector->Depth << 10;
         }
         if (gUpperLink[nSector] >= 0)
         {
@@ -732,7 +732,7 @@ void GetZRangeAtXYZ(int x, int y, int z, int nSector, int *ceilZ, int *ceilHit, 
         if (sector[nSector].extra > 0)
         {
             XSECTOR *pXSector = &xsector[sector[nSector].extra];
-            *floorZ += pXSector->at13_5 << 10;
+            *floorZ += pXSector->Depth << 10;
         }
         if (gUpperLink[nSector] >= 0)
         {
@@ -888,7 +888,7 @@ int GetClosestSpriteSectors(int nSector, int x, int y, int nDist, short *pSector
                 if (a8 && pWall->extra > 0)
                 {
                     XWALL *pXWall = &xwall[pWall->extra];
-                    if (pXWall->at10_6 && !pXWall->at10_1 && !pXWall->at1_6)
+                    if (pXWall->triggerVector && !pXWall->isTriggered && !pXWall->state)
                         a8[m++] = j;
                 }
             }

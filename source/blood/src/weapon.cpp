@@ -912,7 +912,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
             pPlayer->at26 = 42;
         break;
     case 10:
-        if (pXSprite->at30_0 < 256 && klabs(pPlayer->at4f) > 768)
+        if (pXSprite->height < 256 && klabs(pPlayer->at4f) > 768)
             pPlayer->at26 = 102;
         else
             pPlayer->at26 = 101;
@@ -991,7 +991,7 @@ void ThrowCan(int, PLAYER *pPlayer)
         evPost(pSprite->index, 3, pPlayer->at1b2, COMMAND_ID_1);
         int nXSprite = pSprite->extra;
         XSPRITE *pXSprite = &xsprite[nXSprite];
-        pXSprite->ate_0 = 1;
+        pXSprite->Impact = 1;
         UseAmmo(pPlayer, 6, gAmmoItemData[0].at8);
         pPlayer->at1ba = 0;
     }
@@ -1028,7 +1028,7 @@ void ThrowBundle(int, PLAYER *pPlayer)
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
     if (pPlayer->at1b2 < 0)
-        pXSprite->ate_0 = 1;
+        pXSprite->Impact = 1;
     else
         evPost(pSprite->index, 3, pPlayer->at1b2, COMMAND_ID_1);
     UseAmmo(pPlayer, 5, 1);
@@ -1078,7 +1078,7 @@ void ThrowRemote(int, PLAYER *pPlayer)
     spritetype *pSprite = playerFireThing(pPlayer, 0, -9460, 402, nSpeed);
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
-    pXSprite->at5_2 = 90+(pPlayer->pSprite->type-kDudePlayer1);
+    pXSprite->rxID = 90+(pPlayer->pSprite->type-kDudePlayer1);
     UseAmmo(pPlayer, 11, 1);
     pPlayer->at1ba = 0;
 }
@@ -1088,7 +1088,7 @@ void DropRemote(int, PLAYER *pPlayer)
     spritetype *pSprite = playerFireThing(pPlayer, 0, 0, 402, 0);
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = &xsprite[nXSprite];
-    pXSprite->at5_2 = 90+(pPlayer->pSprite->type-kDudePlayer1);
+    pXSprite->rxID = 90+(pPlayer->pSprite->type-kDudePlayer1);
     UseAmmo(pPlayer, 11, 1);
 }
 
@@ -1428,7 +1428,7 @@ void DropVoodoo(int nTrigger, PLAYER *pPlayer)
     {
         int nXSprite = pSprite->extra;
         XSPRITE *pXSprite = &xsprite[nXSprite];
-        pXSprite->at10_0 = pPlayer->at181[9];
+        pXSprite->data1 = pPlayer->at181[9];
         evPost(pSprite->index, 3, 90, CALLBACK_ID_21);
         UseAmmo(pPlayer, 6, gAmmoItemData[0].at8);
         UseAmmo(pPlayer, 9, pPlayer->at181[9]);
@@ -1531,8 +1531,8 @@ void AltFireNapalm(int nTrigger, PLAYER *pPlayer)
     if (pMissile)
     {
         XSPRITE *pXSprite = &xsprite[pMissile->extra];
-        pXSprite->at18_2 = ClipHigh(pPlayer->at181[4], 12);
-        UseAmmo(pPlayer, 4, pXSprite->at18_2);
+        pXSprite->data4 = ClipHigh(pPlayer->at181[4], 12);
+        UseAmmo(pPlayer, 4, pXSprite->data4);
         seqSpawn(22, 3, pMissile->extra, -1);
         actBurnSprite(actSpriteIdToOwnerId(pPlayer->pSprite->index), pXSprite, 600);
         evPost(pMissile->index, 3, 0, CALLBACK_ID_0);
@@ -1572,11 +1572,11 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
     {
         pMissile->cstat |= 4096;
         XSPRITE *pXSprite = &xsprite[pMissile->extra];
-        pXSprite->atd_6 = 1;
-        pXSprite->ate_4 = 1;
-        pXSprite->atf_7 = 1;
-        pXSprite->at18_2 = ClipHigh(pPlayer->at181[4], 12);
-        pXSprite->at32_0 = 1;
+        pXSprite->Push = 1;
+        pXSprite->Proximity = 1;
+        pXSprite->DudeLockout = 1;
+        pXSprite->data4 = ClipHigh(pPlayer->at181[4], 12);
+        pXSprite->stateTimer = 1;
         evPost(pMissile->index, 3, 120, CALLBACK_ID_20);
         if (gGameOptions.nGameType <= 1)
         {
@@ -1586,12 +1586,12 @@ void AltFireLifeLeech(int nTrigger, PLAYER *pPlayer)
                 actDamageSprite(pPlayer->at5b, pPlayer->pSprite, DAMAGE_TYPE_5, ((25-nAmmo)<<4));
                 nAmmo = 25;
             }
-            pXSprite->at14_0 = nAmmo;
+            pXSprite->data3 = nAmmo;
             UseAmmo(pPlayer, 8, nAmmo);
         }
         else
         {
-            pXSprite->at14_0 = pPlayer->at181[8];
+            pXSprite->data3 = pPlayer->at181[8];
             pPlayer->at181[8] = 0;
         }
         pPlayer->atcb[9] = 0;
@@ -2438,7 +2438,7 @@ void sub_51340(spritetype *pMissile, int a2)
         if (TestBitString(va4, pSprite->sectnum) && CheckProximity(pSprite, x, y, z, nSector, nDist))
         {
             XSPRITE *pXSprite = &xsprite[pSprite->extra];
-            if (!pXSprite->at17_5)
+            if (!pXSprite->locked)
             {
                 int dx = pMissile->x-pSprite->x;
                 int dy = pMissile->y-pSprite->y;

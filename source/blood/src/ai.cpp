@@ -99,8 +99,8 @@ void aiPlay3DSound(spritetype *pSprite, int a2, AI_SFX_PRIORITY a3, int a4)
 void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
 {
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    pXSprite->at32_0 = pAIState->at8;
-    pXSprite->at34 = pAIState;
+    pXSprite->stateTimer = pAIState->at8;
+    pXSprite->aiState = pAIState;
     if (pAIState->at0 >= 0 && gSysRes.Lookup(pDudeInfo->seqStartID+pAIState->at0, "SEQ"))
         seqSpawn(pDudeInfo->seqStartID+pAIState->at0, 3, pSprite->extra, pAIState->at4);
     if (pAIState->atc)
@@ -138,9 +138,9 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     if (nXSector > 0)
     {
         XSECTOR *pXSector = &xsector[nXSector];
-        if (pXSector->at13_4)
+        if (pXSector->Underwater)
             vbl = 1;
-        if (pXSector->at13_5)
+        if (pXSector->Depth)
             vdl = 1;
         if (sector[nSector].lotag == 618 || pXSector->at33_1 > 0)
             vdh = 1;
@@ -203,7 +203,7 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     default:
         if (vdh)
             return false;
-        if ((nXSector < 0 || (!xsector[nXSector].at13_4 && !xsector[nXSector].at13_5)) && floorZ - bottom > 0x2000)
+        if ((nXSector < 0 || (!xsector[nXSector].Underwater && !xsector[nXSector].Depth)) && floorZ - bottom > 0x2000)
             return false;
         break;
     }
@@ -226,30 +226,30 @@ void aiChooseDirection(spritetype *pSprite, XSPRITE *pXSprite, int a3)
     if (vc < 0)
         v8 = -341;
     if (CanMove(pSprite, pXSprite->target, pSprite->ang+vc, vsi))
-        pXSprite->at16_0 = pSprite->ang+vc;
+        pXSprite->goalAng = pSprite->ang+vc;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang+vc/2, vsi))
-        pXSprite->at16_0 = pSprite->ang+vc/2;
+        pXSprite->goalAng = pSprite->ang+vc/2;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang-vc/2, vsi))
-        pXSprite->at16_0 = pSprite->ang-vc/2;
+        pXSprite->goalAng = pSprite->ang-vc/2;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang+v8, vsi))
-        pXSprite->at16_0 = pSprite->ang+v8;
+        pXSprite->goalAng = pSprite->ang+v8;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang, vsi))
-        pXSprite->at16_0 = pSprite->ang;
+        pXSprite->goalAng = pSprite->ang;
     else if (CanMove(pSprite, pXSprite->target, pSprite->ang-v8, vsi))
-        pXSprite->at16_0 = pSprite->ang-v8;
+        pXSprite->goalAng = pSprite->ang-v8;
     else if (pSprite->hitag&2)
-        pXSprite->at16_0 = pSprite->ang+341;
+        pXSprite->goalAng = pSprite->ang+341;
     else // Weird..
-        pXSprite->at16_0 = pSprite->ang+341;
+        pXSprite->goalAng = pSprite->ang+341;
     if (Chance(0x8000))
-        pXSprite->at17_3 = 1;
+        pXSprite->dodgeDir = 1;
     else
-        pXSprite->at17_3 = -1;
-    if (!CanMove(pSprite, pXSprite->target, pSprite->ang+pXSprite->at17_3*512, 512))
+        pXSprite->dodgeDir = -1;
+    if (!CanMove(pSprite, pXSprite->target, pSprite->ang+pXSprite->dodgeDir*512, 512))
     {
-        pXSprite->at17_3 = -pXSprite->at17_3;
-        if (!CanMove(pSprite, pXSprite->target, pSprite->ang+pXSprite->at17_3*512, 512))
-            pXSprite->at17_3 = 0;
+        pXSprite->dodgeDir = -pXSprite->dodgeDir;
+        if (!CanMove(pSprite, pXSprite->target, pSprite->ang+pXSprite->dodgeDir*512, 512))
+            pXSprite->dodgeDir = 0;
     }
 }
 
@@ -258,7 +258,7 @@ void aiMoveForward(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     if (klabs(nAng) > 341)
@@ -271,7 +271,7 @@ void aiMoveTurn(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
 }
@@ -281,10 +281,10 @@ void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    if (pXSprite->at17_3)
+    if (pXSprite->dodgeDir)
     {
         int nCos = Cos(pSprite->ang);
         int nSin = Sin(pSprite->ang);
@@ -292,7 +292,7 @@ void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite)
         int dy = yvel[nSprite];
         int t1 = dmulscale30(dx, nCos, dy, nSin);
         int t2 = dmulscale30(dx, nSin, -dy, nCos);
-        if (pXSprite->at17_3 > 0)
+        if (pXSprite->dodgeDir > 0)
             t2 += pDudeInfo->at3c;
         else
             t2 -= pDudeInfo->at3c;
@@ -305,10 +305,10 @@ void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite)
 void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    if (!pXSprite->at1_6)
+    if (!pXSprite->state)
     {
-        aiChooseDirection(pSprite, pXSprite, getangle(pXSprite->at20_0-pSprite->x, pXSprite->at24_0-pSprite->y));
-        pXSprite->at1_6 = 1;
+        aiChooseDirection(pSprite, pXSprite, getangle(pXSprite->targetX-pSprite->x, pXSprite->targetY-pSprite->y));
+        pXSprite->state = 1;
     }
     switch (pSprite->type)
     {
@@ -338,7 +338,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         pDudeExtraE->at0 = 0;
         if (pXSprite->target == -1)
         {
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &cultistSearch);
@@ -365,7 +365,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
                 else
                     aiPlay3DSound(pSprite, 1003+Random(4), AI_SFX_PRIORITY_1, -1);
             }
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 if (pSprite->type == 201)
@@ -389,7 +389,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         pSprite->type = 201;
         if (pXSprite->target == -1)
         {
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &cultistSearch);
@@ -406,7 +406,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         {
             if (Chance(0x8000))
                 aiPlay3DSound(pSprite, 4008+Random(5), AI_SFX_PRIORITY_1, -1);
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &cultistProneChase);
@@ -427,7 +427,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         pSprite->type = 202;
         if (pXSprite->target == -1)
         {
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &cultistSearch);
@@ -444,7 +444,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         {
             if (Chance(0x8000))
                 aiPlay3DSound(pSprite, 1003+Random(4), AI_SFX_PRIORITY_1, -1);
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &cultistProneChase);
@@ -510,7 +510,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         pDudeExtraE->at8 = 1;
         if (pXSprite->target == -1)
         {
-            if (pXSector && pXSector->at13_4)
+            if (pXSector && pXSector->Underwater)
                 aiNewState(pSprite, pXSprite, &gillBeastSwimSearch);
             else
                 aiNewState(pSprite, pXSprite, &gillBeastSearch);
@@ -521,7 +521,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
                 aiPlay3DSound(pSprite, 1701, AI_SFX_PRIORITY_1, -1);
             else
                 aiPlay3DSound(pSprite, 1700, AI_SFX_PRIORITY_1, -1);
-            if (pXSector && pXSector->at13_4)
+            if (pXSector && pXSector->Underwater)
                 aiNewState(pSprite, pXSprite, &gillBeastSwimChase);
             else
                 aiNewState(pSprite, pXSprite, &gillBeastChase);
@@ -563,7 +563,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         DUDEEXTRA_at6_u2 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u2;
         pDudeExtraE->at4 = 1;
         pDudeExtraE->at0 = 0;
-        if (pXSprite->at34 == &zombieEIdle)
+        if (pXSprite->aiState == &zombieEIdle)
             aiNewState(pSprite, pXSprite, &zombieEUp);
         break;
     }
@@ -572,7 +572,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         DUDEEXTRA_at6_u2 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u2;
         pDudeExtraE->at4 = 1;
         pDudeExtraE->at0 = 0;
-        if (pXSprite->at34 == &zombieSIdle)
+        if (pXSprite->aiState == &zombieSIdle)
             aiNewState(pSprite, pXSprite, &zombie13AC2C);
         break;
     }
@@ -755,7 +755,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         pDudeExtraE->at0 = 0;
         if (pXSprite->target == -1)
         {
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &tinycalebSearch);
@@ -768,7 +768,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         }
         else
         {
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &tinycalebChase);
@@ -788,7 +788,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         pDudeExtraE->at0 = 0;
         if (pXSprite->target == -1)
         {
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &beastSearch);
@@ -802,7 +802,7 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         else
         {
             aiPlay3DSound(pSprite, 9009+Random(2), AI_SFX_PRIORITY_1, -1);
-            switch (pXSprite->at17_6)
+            switch (pXSprite->palette)
             {
             case 0:
                 aiNewState(pSprite, pXSprite, &beastChase);
@@ -844,9 +844,9 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
 void aiSetTarget(XSPRITE *pXSprite, int x, int y, int z)
 {
     pXSprite->target = -1;
-    pXSprite->at20_0 = x;
-    pXSprite->at24_0 = y;
-    pXSprite->at28_0 = z;
+    pXSprite->targetX = x;
+    pXSprite->targetY = y;
+    pXSprite->targetZ = z;
 }
 
 void aiSetTarget(XSPRITE *pXSprite, int nTarget)
@@ -859,9 +859,9 @@ void aiSetTarget(XSPRITE *pXSprite, int nTarget)
         {
             pXSprite->target = nTarget;
             DUDEINFO *pDudeInfo = &dudeInfo[pTarget->type-kDudeBase];
-            pXSprite->at20_0 = pTarget->x;
-            pXSprite->at24_0 = pTarget->y;
-            pXSprite->at28_0 = pTarget->z-((pDudeInfo->atb*pTarget->yrepeat)<<2);
+            pXSprite->targetX = pTarget->x;
+            pXSprite->targetY = pTarget->y;
+            pXSprite->targetZ = pTarget->z-((pDudeInfo->atb*pTarget->yrepeat)<<2);
         }
     }
 }
@@ -899,11 +899,11 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         case 248:
             if (nDmgType != DAMAGE_TYPE_1)
             {
-                if (!sub_5BDA8(pSprite, 14) && !pXSprite->at17_6)
+                if (!sub_5BDA8(pSprite, 14) && !pXSprite->palette)
                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                else if (sub_5BDA8(pSprite, 14) && !pXSprite->at17_6)
+                else if (sub_5BDA8(pSprite, 14) && !pXSprite->palette)
                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
-                else if (sub_5BDA8(pSprite, 13) && (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2))
+                else if (sub_5BDA8(pSprite, 13) && (pXSprite->palette == 1 || pXSprite->palette == 2))
                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
             }
             else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
@@ -934,16 +934,16 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 aiPlay3DSound(pSprite, 1031+Random(2), AI_SFX_PRIORITY_2, -1);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock+360;
             }
-            if (Chance(0x600) && (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2))
+            if (Chance(0x600) && (pXSprite->palette == 1 || pXSprite->palette == 2))
             {
                 pSprite->type = 201;
-                pXSprite->at2c_0 = 0;
+                pXSprite->burnTime = 0;
                 aiNewState(pSprite, pXSprite, &cultistSwimGoto);
             }
-            else if (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2)
+            else if (pXSprite->palette == 1 || pXSprite->palette == 2)
             {
                 pSprite->type = 202;
-                pXSprite->at2c_0 = 0;
+                pXSprite->burnTime = 0;
                 aiNewState(pSprite, pXSprite, &cultistSwimGoto);
             }
             break;
@@ -1016,14 +1016,14 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
                 aiPlay3DSound(pSprite, 4013+Random(2), AI_SFX_PRIORITY_2, -1);
             else
                 aiPlay3DSound(pSprite, 1013+Random(2), AI_SFX_PRIORITY_2, -1);
-            if (!v4 && pXSprite->at17_6 == 0)
+            if (!v4 && pXSprite->palette == 0)
             {
                 if (pDudeExtra->at4)
                     aiNewState(pSprite, pXSprite, &cultistTeslaRecoil);
                 else
                     aiNewState(pSprite, pXSprite, &cultistRecoil);
             }
-            else if (v4 && pXSprite->at17_6 == 0)
+            else if (v4 && pXSprite->palette == 0)
             {
                 if (pDudeExtra->at4)
                     aiNewState(pSprite, pXSprite, &cultistTeslaRecoil);
@@ -1032,7 +1032,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
                 else
                     aiNewState(pSprite, pXSprite, &cultistRecoil);
             }
-            else if (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2)
+            else if (pXSprite->palette == 1 || pXSprite->palette == 2)
                 aiNewState(pSprite, pXSprite, &cultistSwimRecoil);
             else
             {
@@ -1055,9 +1055,9 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
         case 203:
         case 205:
             aiPlay3DSound(pSprite, 1106, AI_SFX_PRIORITY_2, -1);
-            if (pDudeExtra->at4 && pXSprite->at14_0 > pDudeInfo->at2/3)
+            if (pDudeExtra->at4 && pXSprite->data3 > pDudeInfo->at2/3)
                 aiNewState(pSprite, pXSprite, &zombieATeslaRecoil);
-            else if (pXSprite->at14_0 > pDudeInfo->at2/3)
+            else if (pXSprite->data3 > pDudeInfo->at2/3)
                 aiNewState(pSprite, pXSprite, &zombieARecoil2);
             else
                 aiNewState(pSprite, pXSprite, &zombieARecoil);
@@ -1077,7 +1077,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
             break;
         case 227:
             aiPlay3DSound(pSprite, 2302+Random(2), AI_SFX_PRIORITY_2, -1);
-            if (pDudeExtra->at4 && pXSprite->at14_0 > pDudeInfo->at2/3)
+            if (pDudeExtra->at4 && pXSprite->data3 > pDudeInfo->at2/3)
                 aiNewState(pSprite, pXSprite, &cerberusTeslaRecoil);
             else
                 aiNewState(pSprite, pXSprite, &cerberusRecoil);
@@ -1119,7 +1119,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
             if (sector[pSprite->sectnum].extra > 0)
                 pXSector = &xsector[sector[pSprite->sectnum].extra];
             aiPlay3DSound(pSprite, 1702, AI_SFX_PRIORITY_2, -1);
-            if (pXSector && pXSector->at13_4)
+            if (pXSector && pXSector->Underwater)
                 aiNewState(pSprite, pXSprite, &gillBeastSwimRecoil);
             else
                 aiNewState(pSprite, pXSprite, &gillBeastRecoil);
@@ -1150,14 +1150,14 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
                 aiNewState(pSprite, pXSprite, &innocentRecoil);
             break;
         case 250:
-            if (pXSprite->at17_6 == 0)
+            if (pXSprite->palette == 0)
             {
                 if (pDudeExtra->at4)
                     aiNewState(pSprite, pXSprite, &tinycalebTeslaRecoil);
                 else
                     aiNewState(pSprite, pXSprite, &tinycalebRecoil);
             }
-            else if (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2)
+            else if (pXSprite->palette == 1 || pXSprite->palette == 2)
                 aiNewState(pSprite, pXSprite, &tinycalebSwimRecoil);
             else
             {
@@ -1169,14 +1169,14 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
             break;
         case 251:
             aiPlay3DSound(pSprite, 9004+Random(2), AI_SFX_PRIORITY_2, -1);
-            if (pXSprite->at17_6 == 0)
+            if (pXSprite->palette == 0)
             {
                 if (pDudeExtra->at4)
                     aiNewState(pSprite, pXSprite, &beastTeslaRecoil);
                 else
                     aiNewState(pSprite, pXSprite, &beastRecoil);
             }
-            else if (pXSprite->at17_6 == 1 || pXSprite->at17_6 == 2)
+            else if (pXSprite->palette == 1 || pXSprite->palette == 2)
                 aiNewState(pSprite, pXSprite, &beastSwimRecoil);
             else
             {
@@ -1277,7 +1277,7 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
                 return;
             }
         }
-        if (pXSprite->at1_6)
+        if (pXSprite->state)
         {
             char va4[(kMaxSectors+7)>>3];
             gAffectedSectors[0] = 0;
@@ -1318,21 +1318,21 @@ void aiProcessDudes(void)
             continue;
         if (pXSprite->health == 0)
             continue;
-        pXSprite->at32_0 = ClipLow(pXSprite->at32_0-4, 0);
-        if (pXSprite->at34->at10)
-            pXSprite->at34->at10(pSprite, pXSprite);
-        if (pXSprite->at34->at14 && (gFrame&3) == (nSprite&3))
-            pXSprite->at34->at14(pSprite, pXSprite);
-        if (pXSprite->at32_0 == 0 && pXSprite->at34->at18)
+        pXSprite->stateTimer = ClipLow(pXSprite->stateTimer-4, 0);
+        if (pXSprite->aiState->at10)
+            pXSprite->aiState->at10(pSprite, pXSprite);
+        if (pXSprite->aiState->at14 && (gFrame&3) == (nSprite&3))
+            pXSprite->aiState->at14(pSprite, pXSprite);
+        if (pXSprite->stateTimer == 0 && pXSprite->aiState->at18)
         {
-            if (pXSprite->at34->at8 > 0)
-                aiNewState(pSprite, pXSprite, pXSprite->at34->at18);
+            if (pXSprite->aiState->at8 > 0)
+                aiNewState(pSprite, pXSprite, pXSprite->aiState->at18);
             else if (seqGetStatus(3, nXSprite) < 0)
-                aiNewState(pSprite, pXSprite, pXSprite->at34->at18);
+                aiNewState(pSprite, pXSprite, pXSprite->aiState->at18);
         }
         if (pXSprite->health > 0 && ((pDudeInfo->at27<<4) <= cumulDamage[nXSprite]))
         {
-            pXSprite->at14_0 = cumulDamage[nXSprite];
+            pXSprite->data3 = cumulDamage[nXSprite];
             RecoilDude(pSprite, pXSprite);
         }
     }
@@ -1475,7 +1475,7 @@ void aiInitSprite(spritetype *pSprite)
         break;
     }
     case 217:
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &gillBeastIdle);
         else
             aiNewState(pSprite, pXSprite, &gillBeastIdle);
@@ -1536,7 +1536,7 @@ void aiInitSprite(spritetype *pSprite)
         break;
     }
     aiSetTarget(pXSprite, 0, 0, 0);
-    pXSprite->at32_0 = 0;
+    pXSprite->stateTimer = 0;
     switch (pSprite->type)
     {
     case 213:
@@ -1555,7 +1555,7 @@ void aiInitSprite(spritetype *pSprite)
         pSprite->hitag |= 9;
         break;
     case 217:
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             pSprite->hitag |= 9;
         else
             pSprite->hitag = 15;

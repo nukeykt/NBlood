@@ -59,7 +59,7 @@ void ambProcess(void)
         if (nXSprite > 0 && nXSprite < kMaxXSprites)
         {
             XSPRITE *pXSprite = &xsprite[nXSprite];
-            if (pXSprite->at1_6)
+            if (pXSprite->state)
             {
                 int dx = pSprite->x-gMe->pSprite->x;
                 int dy = pSprite->y-gMe->pSprite->y;
@@ -68,8 +68,8 @@ void ambProcess(void)
                 dy >>= 4;
                 dz >>= 8;
                 int nDist = ksqrt(dx*dx+dy*dy+dz*dz);
-                int vs = mulscale16(pXSprite->at18_2, pXSprite->at1_7);
-                ambChannels[pSprite->owner].at4 += ClipRange(scale(nDist, pXSprite->at10_0, pXSprite->at12_0, vs, 0), 0, vs);
+                int vs = mulscale16(pXSprite->data4, pXSprite->busy);
+                ambChannels[pSprite->owner].at4 += ClipRange(scale(nDist, pXSprite->data1, pXSprite->data2, vs, 0), 0, vs);
             }
         }
     }
@@ -118,12 +118,12 @@ void ambInit(void)
         if (nXSprite > 0 && nXSprite < kMaxXSprites)
         {
             XSPRITE *pXSprite = &xsprite[nXSprite];
-            if (pXSprite->at10_0 < pXSprite->at12_0)
+            if (pXSprite->data1 < pXSprite->data2)
             {
                 int i;
                 AMB_CHANNEL *pChannel = ambChannels;
                 for (i = 0; i < nAmbChannels; i++, pChannel++)
-                    if (pXSprite->at14_0 == pChannel->at8)
+                    if (pXSprite->data3 == pChannel->at8)
                         break;
                 if (i == nAmbChannels)
                 {
@@ -132,7 +132,7 @@ void ambInit(void)
                         pSprite->owner = -1;
                         continue;
                     }
-                    int nSFX = pXSprite->at14_0;
+                    int nSFX = pXSprite->data3;
                     DICTNODE *pSFXNode = gSoundRes.Lookup(nSFX, "SFX");
                     if (!pSFXNode)
                         ThrowError("Missing sound #%d used in ambient sound generator %d\n", nSFX);

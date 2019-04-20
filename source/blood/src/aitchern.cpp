@@ -70,7 +70,7 @@ static void sub_71A90(int, int nXSprite)
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int nTarget = pTarget->index;
     int nOwner = actSpriteIdToOwnerId(nSprite);
-    if (pXTarget->at2c_0 == 0)
+    if (pXTarget->burnTime == 0)
         evPost(nTarget, 3, 0, CALLBACK_ID_0);
     actBurnSprite(nOwner, pXTarget, 40);
     if (Chance(0x6000))
@@ -224,7 +224,7 @@ static void sub_720AC(int, int nXSprite)
 
 static void sub_72580(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
+    aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
     aiThinkTarget(pSprite, pXSprite);
 }
 
@@ -237,7 +237,7 @@ static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
         pDudeExtraE->at0++;
     else if (pDudeExtraE->at0 >= 10 && pDudeExtraE->at4)
     {
-        pXSprite->at16_0 += 256;
+        pXSprite->goalAng += 256;
         POINT3D *pTarget = &baseSprite[pSprite->index];
         aiSetTarget(pXSprite, pTarget->x, pTarget->y, pTarget->z);
         aiNewState(pSprite, pXSprite, &tcherno13AA28);
@@ -285,8 +285,8 @@ static void sub_72850(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);

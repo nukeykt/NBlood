@@ -87,7 +87,7 @@ static void GillBiteSeqCallback(int, int nXSprite)
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
+    aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
     aiThinkTarget(pSprite, pXSprite);
 }
 
@@ -101,14 +101,14 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
         pXSector = &xsector[nXSector];
     else
         pXSector = NULL;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
     if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
     {
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &gillBeastSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &gillBeastSearch);
@@ -126,7 +126,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &gillBeastSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &gillBeastSearch);
@@ -148,7 +148,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &gillBeastSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &gillBeastSearch);
@@ -162,7 +162,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &gillBeastSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &gillBeastSearch);
@@ -192,7 +192,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     switch (hit)
                     {
                     case -1:
-                        if (pXSector && pXSector->at13_4)
+                        if (pXSector && pXSector->Underwater)
                             aiNewState(pSprite, pXSprite, &gillBeastSwimBite);
                         else
                             aiNewState(pSprite, pXSprite, &gillBeastBite);
@@ -200,21 +200,21 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     case 3:
                         if (pSprite->type != sprite[gHitInfo.hitsprite].type)
                         {
-                            if (pXSector && pXSector->at13_4)
+                            if (pXSector && pXSector->Underwater)
                                 aiNewState(pSprite, pXSprite, &gillBeastSwimBite);
                             else
                                 aiNewState(pSprite, pXSprite, &gillBeastBite);
                         }
                         else
                         {
-                            if (pXSector && pXSector->at13_4)
+                            if (pXSector && pXSector->Underwater)
                                 aiNewState(pSprite, pXSprite, &gillBeastSwimDodge);
                             else
                                 aiNewState(pSprite, pXSprite, &gillBeastDodge);
                         }
                         break;
                     default:
-                        if (pXSector && pXSector->at13_4)
+                        if (pXSector && pXSector->Underwater)
                             aiNewState(pSprite, pXSprite, &gillBeastSwimBite);
                         else
                             aiNewState(pSprite, pXSprite, &gillBeastBite);
@@ -232,7 +232,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         pXSector = &xsector[nXSector];
     else
         pXSector = NULL;
-    if (pXSector && pXSector->at13_4)
+    if (pXSector && pXSector->Underwater)
         aiNewState(pSprite, pXSprite, &gillBeastSwimGoto);
     else
         aiNewState(pSprite, pXSprite, &gillBeastGoto);
@@ -244,8 +244,8 @@ static void thinkSwimGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
@@ -314,7 +314,7 @@ static void sub_6CB00(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = (pDudeInfo->at38-(((4-gGameOptions.nDifficulty)<<27)/120)/120)<<2;
@@ -322,8 +322,8 @@ static void sub_6CB00(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     if (pXSprite->target == -1)
         pSprite->ang = (pSprite->ang+256)&2047;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Random(64) < 32 && nDist <= 0x400)
@@ -350,17 +350,17 @@ static void sub_6CD74(spritetype *pSprite, XSPRITE *pXSprite)
     spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = (pDudeInfo->at38-(((4-gGameOptions.nDifficulty)<<27)/120)/120)<<2;
     if (klabs(nAng) > 341)
     {
-        pXSprite->at16_0 = (pSprite->ang+512)&2047;
+        pXSprite->goalAng = (pSprite->ang+512)&2047;
         return;
     }
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int dz = z2 - z;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
@@ -386,7 +386,7 @@ static void sub_6D03C(spritetype *pSprite, XSPRITE *pXSprite)
     spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = (pDudeInfo->at38-(((4-gGameOptions.nDifficulty)<<27)/120)/120)<<2;
@@ -395,8 +395,8 @@ static void sub_6D03C(spritetype *pSprite, XSPRITE *pXSprite)
         pSprite->ang = (pSprite->ang+512)&2047;
         return;
     }
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int dz = (z2 - z)<<3;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
