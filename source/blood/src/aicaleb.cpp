@@ -96,7 +96,7 @@ static void SeqAttackCallback(int, int nXSprite)
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
+    aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
     aiThinkTarget(pSprite, pXSprite);
 }
 
@@ -110,14 +110,14 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
         pXSector = &xsector[nXSector];
     else
         pXSector = NULL;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
     if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
     {
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &tinycalebSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &tinycalebSearch);
@@ -135,7 +135,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &tinycalebSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &tinycalebSearch);
@@ -157,7 +157,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &tinycalebSwimSearch);
         else
         {
@@ -174,7 +174,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->at13_4)
+        if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &tinycalebSwimSearch);
         else
             aiNewState(pSprite, pXSprite, &tinycalebSearch);
@@ -204,7 +204,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     switch (hit)
                     {
                     case -1:
-                        if (pXSector && pXSector->at13_4)
+                        if (pXSector && pXSector->Underwater)
                             aiNewState(pSprite, pXSprite, &tinycalebSwimAttack);
                         else
                             aiNewState(pSprite, pXSprite, &tinycalebAttack);
@@ -212,21 +212,21 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     case 3:
                         if (pSprite->type != sprite[gHitInfo.hitsprite].type)
                         {
-                            if (pXSector && pXSector->at13_4)
+                            if (pXSector && pXSector->Underwater)
                                 aiNewState(pSprite, pXSprite, &tinycalebSwimAttack);
                             else
                                 aiNewState(pSprite, pXSprite, &tinycalebAttack);
                         }
                         else
                         {
-                            if (pXSector && pXSector->at13_4)
+                            if (pXSector && pXSector->Underwater)
                                 aiNewState(pSprite, pXSprite, &tinycalebSwimDodge);
                             else
                                 aiNewState(pSprite, pXSprite, &tinycalebDodge);
                         }
                         break;
                     default:
-                        if (pXSector && pXSector->at13_4)
+                        if (pXSector && pXSector->Underwater)
                             aiNewState(pSprite, pXSprite, &tinycalebSwimAttack);
                         else
                             aiNewState(pSprite, pXSprite, &tinycalebAttack);
@@ -244,7 +244,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         pXSector = &xsector[nXSector];
     else
         pXSector = NULL;
-    if (pXSector && pXSector->at13_4)
+    if (pXSector && pXSector->Underwater)
         aiNewState(pSprite, pXSprite, &tinycalebSwimGoto);
     else
         aiNewState(pSprite, pXSprite, &tinycalebGoto);
@@ -257,8 +257,8 @@ static void thinkSwimGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
@@ -322,7 +322,7 @@ static void sub_65D04(spritetype *pSprite, XSPRITE *pXSprite)
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = pDudeInfo->at38<<2;
@@ -330,8 +330,8 @@ static void sub_65D04(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     if (pXSprite->target == -1)
         pSprite->ang = (pSprite->ang+256)&2047;
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     if (Random(64) < 32 && nDist <= 0x400)
@@ -358,17 +358,17 @@ static void sub_65F44(spritetype *pSprite, XSPRITE *pXSprite)
     spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = pDudeInfo->at38<<2;
     if (klabs(nAng) > 341)
     {
-        pXSprite->at16_0 = (pSprite->ang+512)&2047;
+        pXSprite->goalAng = (pSprite->ang+512)&2047;
         return;
     }
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int dz = z2 - z;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
@@ -394,7 +394,7 @@ static void sub_661E0(spritetype *pSprite, XSPRITE *pXSprite)
     spritetype *pTarget = &sprite[pXSprite->target];
     int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
     int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
-    int nAng = ((pXSprite->at16_0+1024-pSprite->ang)&2047)-1024;
+    int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->at44<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nAccel = pDudeInfo->at38<<2;
@@ -403,8 +403,8 @@ static void sub_661E0(spritetype *pSprite, XSPRITE *pXSprite)
         pSprite->ang = (pSprite->ang+512)&2047;
         return;
     }
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int dz = (z2 - z)<<3;
     int UNUSED(nAngle) = getangle(dx, dy);
     int nDist = approxDist(dx, dy);

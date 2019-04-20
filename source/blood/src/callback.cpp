@@ -103,7 +103,7 @@ void FlameLick(int nSprite) // 0
             zvel[pFX->index] = zvel[nSprite] - Random(0x1aaaa);
         }
     }
-    if (pXSprite->at2c_0 > 0)
+    if (pXSprite->burnTime > 0)
         evPost(nSprite, 3, 5, CALLBACK_ID_0);
 }
 
@@ -192,16 +192,16 @@ void ZombieSpurt(int nSprite) // 5
         yvel[pFX->index] = yvel[nSprite] + Random2(0x11111);
         zvel[pFX->index] = zvel[nSprite] - 0x6aaaa;
     }
-    if (pXSprite->at10_0 > 0)
+    if (pXSprite->data1 > 0)
     {
         evPost(nSprite, 3, 4, CALLBACK_ID_5);
-        pXSprite->at10_0 -= 4;
+        pXSprite->data1 -= 4;
     }
-    else if (pXSprite->at12_0 > 0)
+    else if (pXSprite->data2 > 0)
     {
         evPost(nSprite, 3, 60, CALLBACK_ID_5);
-        pXSprite->at10_0 = 40;
-        pXSprite->at12_0--;
+        pXSprite->data1 = 40;
+        pXSprite->data2--;
     }
 }
 
@@ -249,19 +249,19 @@ void Respawn(int nSprite) // 9
         ThrowError("Sprite %d is not on Respawn or Thing list\n", nSprite);
     if (!(pSprite->hitag&16))
         ThrowError("Sprite %d does not have the respawn attribute\n", nSprite);
-    switch (pXSprite->atb_4)
+    switch (pXSprite->respawnPending)
     {
     case 1:
     {
         int nTime = mulscale16(actGetRespawnTime(pSprite), 0x4000);
-        pXSprite->atb_4 = 2;
+        pXSprite->respawnPending = 2;
         evPost(nSprite, 3, nTime, CALLBACK_ID_9);
         break;
     }
     case 2:
     {
         int nTime = mulscale16(actGetRespawnTime(pSprite), 0x2000);
-        pXSprite->atb_4 = 3;
+        pXSprite->respawnPending = 3;
         evPost(nSprite, 3, nTime, CALLBACK_ID_9);
         break;
     }
@@ -274,9 +274,9 @@ void Respawn(int nSprite) // 9
         pSprite->owner = -1;
         pSprite->hitag &= ~16;
         xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
-        pXSprite->atb_4 = 0;
-        pXSprite->at2c_0 = 0;
-        pXSprite->atd_2 = 0;
+        pXSprite->respawnPending = 0;
+        pXSprite->burnTime = 0;
+        pXSprite->isTriggered = 0;
         if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
         {
             int nType = pSprite->type-kDudeBase;
@@ -289,7 +289,7 @@ void Respawn(int nSprite) // 9
             if (gSysRes.Lookup(dudeInfo[nType].seqStartID, "SEQ"))
                 seqSpawn(dudeInfo[nType].seqStartID, 3, pSprite->extra, -1);
             aiInitSprite(pSprite);
-            pXSprite->atd_3 = 0;
+            pXSprite->key = 0;
         }
         if (pSprite->type == 400)
         {
@@ -301,7 +301,7 @@ void Respawn(int nSprite) // 9
         break;
     }
     default:
-        ThrowError("Unexpected respawnPending value = %d", pXSprite->atb_4);
+        ThrowError("Unexpected respawnPending value = %d", pXSprite->respawnPending);
         break;
     }
 }
@@ -370,7 +370,7 @@ void CounterCheck(int nSector) // 12
     {
         XSECTOR *pXSector = &xsector[nXSprite];
         int nReq = pXSector->atc_0;
-        int nType = pXSector->at4_0;
+        int nType = pXSector->data;
         if (nType && nReq)
         {
             int nCount = 0;
@@ -557,7 +557,7 @@ void sub_769B4(int nSprite) // 19
 {
     spritetype *pSprite = &sprite[nSprite];
     if (pSprite->statnum == 4 && pSprite->type == 431 && !(pSprite->hitag&32))
-        xsprite[pSprite->extra].at32_0 = 0;
+        xsprite[pSprite->extra].stateTimer = 0;
 }
 
 void sub_76A08(spritetype *pSprite, spritetype *pSprite2, PLAYER *pPlayer)
@@ -605,7 +605,7 @@ void sub_76B78(int nSprite)
     if (nXSprite > 0)
     {
         XSPRITE *pXSprite = &xsprite[nXSprite];
-        if (pXSprite->at10_0 == 0)
+        if (pXSprite->data1 == 0)
         {
             evPost(nSprite, 3, 0, CALLBACK_ID_1);
             return;
@@ -626,7 +626,7 @@ void sub_76B78(int nSprite)
                     pPlayer2 = &gPlayer[pSprite2->type-kDudePlayer1];
                 else
                     pPlayer2 = NULL;
-                if (pXSprite2->health > 0 && (pPlayer2 || pXSprite2->atd_3 == 0))
+                if (pXSprite2->health > 0 && (pPlayer2 || pXSprite2->key == 0))
                 {
                     if (pPlayer2)
                     {
@@ -639,8 +639,8 @@ void sub_76B78(int nSprite)
                             t += ((3200-pPlayer2->at33e[2])<<15)/3200;
                         if (Chance(t) || nNextSprite < 0)
                         {
-                            int nDmg = actDamageSprite(nOwner, pSprite2, DAMAGE_TYPE_5, pXSprite->at10_0<<4);
-                            pXSprite->at10_0 = ClipLow(pXSprite->at10_0-nDmg, 0);
+                            int nDmg = actDamageSprite(nOwner, pSprite2, DAMAGE_TYPE_5, pXSprite->data1<<4);
+                            pXSprite->data1 = ClipLow(pXSprite->data1-nDmg, 0);
                             sub_76A08(pSprite2, pSprite, pPlayer2);
                             evPost(nSprite, 3, 0, CALLBACK_ID_1);
                             return;
@@ -690,7 +690,7 @@ void sub_76B78(int nSprite)
                 }
             }
         }
-        pXSprite->at10_0 = ClipLow(pXSprite->at10_0-1, 0);
+        pXSprite->data1 = ClipLow(pXSprite->data1-1, 0);
         evPost(nSprite, 3, 0, CALLBACK_ID_1);
     }
 }

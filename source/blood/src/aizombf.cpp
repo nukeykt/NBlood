@@ -90,8 +90,8 @@ static void PukeSeqCallback(int, int nXSprite)
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
     int height = (pDudeInfo->atb*pSprite->yrepeat);
     int height2 = (pDudeInfoT->atb*pTarget->yrepeat);
-    int tx = pXSprite->at20_0-pSprite->x;
-    int ty = pXSprite->at24_0-pSprite->y;
+    int tx = pXSprite->targetX-pSprite->x;
+    int ty = pXSprite->targetY-pSprite->y;
     int UNUSED(nDist) = approxDist(tx, ty);
     int nAngle = getangle(tx, ty);
     int dx = Cos(nAngle)>>16;
@@ -110,7 +110,7 @@ static void ThrowSeqCallback(int, int nXSprite)
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    aiChooseDirection(pSprite, pXSprite, pXSprite->at16_0);
+    aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
     aiThinkTarget(pSprite, pXSprite);
 }
 
@@ -118,8 +118,8 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int dx = pXSprite->at20_0-pSprite->x;
-    int dy = pXSprite->at24_0-pSprite->y;
+    int dx = pXSprite->targetX-pSprite->x;
+    int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);

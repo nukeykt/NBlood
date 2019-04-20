@@ -52,9 +52,9 @@ void warpInit(void)
                 switch (pSprite->type)
                 {
                 case 1:
-                    if (gGameOptions.nGameType < 2 && pXSprite->at10_0 >= 0 && pXSprite->at10_0 < 8)
+                    if (gGameOptions.nGameType < 2 && pXSprite->data1 >= 0 && pXSprite->data1 < 8)
                     {
-                        ZONE *pZone = &gStartZone[pXSprite->at10_0];
+                        ZONE *pZone = &gStartZone[pXSprite->data1];
                         pZone->x = pSprite->x;
                         pZone->y = pSprite->y;
                         pZone->z = pSprite->z;
@@ -64,9 +64,9 @@ void warpInit(void)
                     DeleteSprite(nSprite);
                     break;
                 case 2:
-                    if (gGameOptions.nGameType >= 2 && pXSprite->at10_0 >= 0 && pXSprite->at10_0 < 8)
+                    if (gGameOptions.nGameType >= 2 && pXSprite->data1 >= 0 && pXSprite->data1 < 8)
                     {
-                        ZONE *pZone = &gStartZone[pXSprite->at10_0];
+                        ZONE *pZone = &gStartZone[pXSprite->data1];
                         pZone->x = pSprite->x;
                         pZone->y = pSprite->y;
                         pZone->z = pSprite->z;
@@ -114,7 +114,7 @@ void warpInit(void)
             int nXSprite = pSprite->extra;
             dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
             XSPRITE *pXSprite = &xsprite[nXSprite];
-            int nLink = pXSprite->at10_0;
+            int nLink = pXSprite->data1;
             for (int j = 0; j < kMaxSectors; j++)
             {
                 int nSprite2 = gLowerLink[j];
@@ -124,7 +124,7 @@ void warpInit(void)
                     int nXSprite = pSprite2->extra;
                     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
                     XSPRITE *pXSprite2 = &xsprite[nXSprite];
-                    if (pXSprite2->at10_0 == nLink)
+                    if (pXSprite2->data1 == nLink)
                     {
                         pSprite->owner = gLowerLink[j];
                         pSprite2->owner = gUpperLink[i];

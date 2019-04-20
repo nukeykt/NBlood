@@ -585,11 +585,11 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         if (pSprite->statnum < kMaxStatus && pSprite->extra > 0)
         {
             XSPRITE *pXSprite = &xsprite[pSprite->extra];
-            if ((pXSprite->ate_7&(1<<gameOptions->nDifficulty))
-            || (pXSprite->atf_4 && gameOptions->nGameType == 0)
-            || (pXSprite->atf_5 && gameOptions->nGameType == 2)
-            || (pXSprite->atb_7 && gameOptions->nGameType == 3)
-            || (pXSprite->atf_6 && gameOptions->nGameType == 1))
+            if ((pXSprite->lSkill&(1<<gameOptions->nDifficulty))
+            || (pXSprite->lS && gameOptions->nGameType == 0)
+            || (pXSprite->lB && gameOptions->nGameType == 2)
+            || (pXSprite->lT && gameOptions->nGameType == 3)
+            || (pXSprite->lC && gameOptions->nGameType == 1))
                 DeleteSprite(i);
         }
     }

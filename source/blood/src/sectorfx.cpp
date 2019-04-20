@@ -116,10 +116,10 @@ void DoSectorLighting(void)
         XSECTOR *pXSector = &xsector[nXSector];
         int nSector = pXSector->reference;
         dassert(sector[nSector].extra == nXSector);
-        if (pXSector->at12_0)
+        if (pXSector->shade)
         {
-            int v4 = pXSector->at12_0;
-            if (pXSector->at11_5)
+            int v4 = pXSector->shade;
+            if (pXSector->shadeFloor)
             {
                 sector[nSector].floorshade -= v4;
                 if (pXSector->at18_0)
@@ -129,7 +129,7 @@ void DoSectorLighting(void)
                     sector[nSector].floorpal = nTemp;
                 }
             }
-            if (pXSector->at11_6)
+            if (pXSector->shadeCeiling)
             {
                 sector[nSector].ceilingshade -= v4;
                 if (pXSector->at18_0)
@@ -139,7 +139,7 @@ void DoSectorLighting(void)
                     sector[nSector].ceilingpal = nTemp;
                 }
             }
-            if (pXSector->at11_7)
+            if (pXSector->shadeWalls)
             {
                 int nStartWall = sector[nSector].wallptr;
                 int nEndWall = nStartWall + sector[nSector].wallnum;
@@ -152,18 +152,18 @@ void DoSectorLighting(void)
                     }
                 }
             }
-            pXSector->at12_0 = 0;
+            pXSector->shade = 0;
         }
-        if (pXSector->at11_4 || pXSector->at1_7)
+        if (pXSector->shadeAlways || pXSector->busy)
         {
-            int t1 = pXSector->at11_0;
-            int t2 = pXSector->atd_6;
-            if (!pXSector->at11_4 && pXSector->at1_7)
+            int t1 = pXSector->wave;
+            int t2 = pXSector->amplitude;
+            if (!pXSector->shadeAlways && pXSector->busy)
             {
-                t2 = mulscale16(t2, pXSector->at1_7);
+                t2 = mulscale16(t2, pXSector->busy);
             }
-            int v4 = GetWaveValue(t1, pXSector->at10_0*8+pXSector->ate_6*gGameClock, t2);
-            if (pXSector->at11_5)
+            int v4 = GetWaveValue(t1, pXSector->phase*8+pXSector->freq*gGameClock, t2);
+            if (pXSector->shadeFloor)
             {
                 sector[nSector].floorshade = ClipRange(sector[nSector].floorshade+v4, -128, 127);
                 if (pXSector->at18_0 && v4 != 0)
@@ -173,7 +173,7 @@ void DoSectorLighting(void)
                     sector[nSector].floorpal = nTemp;
                 }
             }
-            if (pXSector->at11_6)
+            if (pXSector->shadeCeiling)
             {
                 sector[nSector].ceilingshade = ClipRange(sector[nSector].ceilingshade+v4, -128, 127);
                 if (pXSector->at18_0 && v4 != 0)
@@ -183,7 +183,7 @@ void DoSectorLighting(void)
                     sector[nSector].ceilingpal = nTemp;
                 }
             }
-            if (pXSector->at11_7)
+            if (pXSector->shadeWalls)
             {
                 int nStartWall = sector[nSector].wallptr;
                 int nEndWall = nStartWall + sector[nSector].wallnum;
@@ -196,7 +196,7 @@ void DoSectorLighting(void)
                     }
                 }
             }
-            pXSector->at12_0 = v4;
+            pXSector->shade = v4;
         }
     }
 }
@@ -209,10 +209,10 @@ void UndoSectorLighting(void)
         if (nXSprite > 0)
         {
             XSECTOR *pXSector = &xsector[i];
-            if (pXSector->at12_0)
+            if (pXSector->shade)
             {
-                int v4 = pXSector->at12_0;
-                if (pXSector->at11_5)
+                int v4 = pXSector->shade;
+                if (pXSector->shadeFloor)
                 {
                     sector[i].floorshade -= v4;
                     if (pXSector->at18_0)
@@ -222,7 +222,7 @@ void UndoSectorLighting(void)
                         sector[i].floorpal = nTemp;
                     }
                 }
-                if (pXSector->at11_6)
+                if (pXSector->shadeCeiling)
                 {
                     sector[i].ceilingshade -= v4;
                     if (pXSector->at18_0)
@@ -232,7 +232,7 @@ void UndoSectorLighting(void)
                         sector[i].ceilingpal = nTemp;
                     }
                 }
-                if (pXSector->at11_7)
+                if (pXSector->shadeWalls)
                 {
                     int nStartWall = sector[i].wallptr;
                     int nEndWall = nStartWall + sector[i].wallnum;
@@ -245,7 +245,7 @@ void UndoSectorLighting(void)
                         }
                     }
                 }
-                pXSector->at12_0 = 0;
+                pXSector->shade = 0;
             }
         }
     }
@@ -266,14 +266,14 @@ void DoSectorPanning(void)
         dassert(nSector >= 0 && nSector < kMaxSectors);
         sectortype *pSector = &sector[nSector];
         dassert(pSector->extra == nXSector);
-        if (pXSector->at13_0 || pXSector->at1_7)
+        if (pXSector->panAlways || pXSector->busy)
         {
-            int angle = pXSector->at15_0+1024;
-            int speed = pXSector->at14_0<<10;
-            if (!pXSector->at13_0 && (pXSector->at1_7&0xffff))
-                speed = mulscale16(speed, pXSector->at1_7);
+            int angle = pXSector->panAngle+1024;
+            int speed = pXSector->panVel<<10;
+            if (!pXSector->panAlways && (pXSector->busy&0xffff))
+                speed = mulscale16(speed, pXSector->busy);
 
-            if (pXSector->at13_1) // Floor
+            if (pXSector->panFloor) // Floor
             {
                 int nTile = pSector->floorpicnum;
                 int px = (pSector->floorxpanning<<8)+pXSector->at32_1;
@@ -289,7 +289,7 @@ void DoSectorPanning(void)
                 pXSector->at32_1 = px&255;
                 pXSector->at34_0 = py&255;
             }
-            if (pXSector->at13_2) // Ceiling
+            if (pXSector->panCeiling) // Ceiling
             {
                 int nTile = pSector->ceilingpicnum;
                 int px = (pSector->ceilingxpanning<<8)+pXSector->at30_1;
@@ -313,24 +313,24 @@ void DoSectorPanning(void)
         XWALL *pXWall = &xwall[nXWall];
         int nWall = pXWall->reference;
         dassert(wall[nWall].extra == nXWall);
-        if (pXWall->atd_6 || pXWall->at1_7)
+        if (pXWall->panAlways || pXWall->busy)
         {
-            int psx = pXWall->atd_7<<10;
-            int psy = pXWall->ate_7<<10;
-            if (!pXWall->atd_6 && (pXWall->at1_7 & 0xffff))
+            int psx = pXWall->panXVel<<10;
+            int psy = pXWall->panYVel<<10;
+            if (!pXWall->panAlways && (pXWall->busy & 0xffff))
             {
-                psx = mulscale16(psx, pXWall->at1_7);
-                psy = mulscale16(psy, pXWall->at1_7);
+                psx = mulscale16(psx, pXWall->busy);
+                psy = mulscale16(psy, pXWall->busy);
             }
             int nTile = wall[nWall].picnum;
-            int px = (wall[nWall].xpanning<<8)+pXWall->at11_2;
-            int py = (wall[nWall].ypanning<<8)+pXWall->at12_2;
+            int px = (wall[nWall].xpanning<<8)+pXWall->xpanFrac;
+            int py = (wall[nWall].ypanning<<8)+pXWall->ypanFrac;
             px += (psx<<2)>>((uint8_t)picsiz[nTile]&15);
             py += (psy<<2)>>((uint8_t)picsiz[nTile]/16);
             wall[nWall].xpanning = px>>8;
             wall[nWall].ypanning = py>>8;
-            pXWall->at11_2 = px&255;
-            pXWall->at12_2 = py&255;
+            pXWall->xpanFrac = px&255;
+            pXWall->ypanFrac = py&255;
         }
     }
 }
@@ -346,9 +346,9 @@ void InitSectorFX(void)
         if (nXSector > 0)
         {
             XSECTOR *pXSector = &xsector[nXSector];
-            if (pXSector->atd_6)
+            if (pXSector->amplitude)
                 shadeList[shadeCount++] = nXSector;
-            if (pXSector->at14_0)
+            if (pXSector->panVel)
                 panList[panCount++] = nXSector;
         }
     }
@@ -358,7 +358,7 @@ void InitSectorFX(void)
         if (nXWall > 0)
         {
             XWALL *pXWall = &xwall[nXWall];
-            if (pXWall->atd_7 || pXWall->ate_7)
+            if (pXWall->panXVel || pXWall->panYVel)
                 wallPanList[wallPanCount++] = nXWall;
         }
     }
