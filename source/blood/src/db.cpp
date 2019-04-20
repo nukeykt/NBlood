@@ -704,6 +704,7 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
     {
         ThrowError("Error opening map file %s", pPath);
     }
+    gSysRes.Flush((CACHENODE*)pNode);
     char *pData = (char*)gSysRes.Lock(pNode);
     int nSize = pNode->size;
     MAPSIGNATURE header;
