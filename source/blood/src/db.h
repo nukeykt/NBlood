@@ -31,10 +31,10 @@ struct AISTATE;
 
 struct XSPRITE {
     //int at0;
-	unsigned int atb_2 : 2; // unused	//
-	unsigned int atb_6 : 1; // unused	// let's use these to add more data 
-	unsigned int ate_5 : 2; // unused	// fields in the future? must be signed also
-	unsigned int at1a_2 : 6; // unused	//
+    unsigned int atb_2 : 2; // unused	//
+    unsigned int atb_6 : 1; // unused	// let's use these to add more data 
+    unsigned int ate_5 : 2; // unused	// fields in the future? must be signed also
+    unsigned int at1a_2 : 6; // unused	//
 
     signed   int reference : 14; // at0_0
     unsigned int state : 1;  // State 0
@@ -54,10 +54,10 @@ struct XSPRITE {
     unsigned int dropMsg : 8; // Drop Item
     unsigned int Decoupled : 1; // Decoupled
     unsigned int triggerOnce : 1; // 1-shot
-	unsigned int isTriggered : 1; // works in case if triggerOnce selected
+    unsigned int isTriggered : 1; // works in case if triggerOnce selected
 
     unsigned int key : 3; // Key
-	unsigned int wave : 2; // Wave
+    unsigned int wave : 2; // Wave
     unsigned int Push: 1; // Push
     unsigned int Vector : 1; // Vector
     unsigned int Impact : 1; // Impact
@@ -65,16 +65,16 @@ struct XSPRITE {
     unsigned int Touch : 1; // Touch
     unsigned int Sight : 1; // Sight
     unsigned int Proximity : 1; // Proximity
-	unsigned int lSkill : 5; // Launch 12345
+    unsigned int lSkill : 5; // Launch 12345
     unsigned int lS : 1; // Single
     unsigned int lB : 1; // Bloodbath
-	unsigned int lT : 1; // Launch Team
+    unsigned int lT : 1; // Launch Team
     unsigned int lC : 1; // Coop
     unsigned int DudeLockout : 1; // DudeLockout
     signed   int data1 : 16; // Data 1
     signed   int data2 : 16; // Data 2
     signed   int data3 : 16; // Data 3
-	unsigned int data4 : 16; // Data 4
+    unsigned int data4 : 16; // Data 4
     unsigned int locked : 1; // Locked
     unsigned int palette : 2; // palette
     unsigned int respawn : 2; // Respawn option
@@ -88,11 +88,11 @@ struct XSPRITE {
     signed   int targetX : 32; // target x
     signed   int targetY : 32; // target y
     signed   int targetZ : 32; // target z
-	unsigned int goalAng : 11; // Dude goal ang
-	signed   int dodgeDir : 2; // Dude dodge direction
-	unsigned int burnTime : 16;
-	signed   int burnSource : 16;
-	unsigned int height : 16;
+    unsigned int goalAng : 11; // Dude goal ang
+    signed   int dodgeDir : 2; // Dude dodge direction
+    unsigned int burnTime : 16;
+    signed   int burnSource : 16;
+    unsigned int height : 16;
     unsigned int stateTimer : 16; // ai timer
     AISTATE *aiState; // ai
 }; // 56(0x38) bytes
@@ -103,7 +103,7 @@ struct XSECTOR {
     unsigned int busy : 17;
     unsigned int data : 16; // Data
     unsigned int txID : 10; // TX ID
-	unsigned int rxID : 10; // RX ID
+    unsigned int rxID : 10; // RX ID
     unsigned int at7_2 : 3; // OFF->ON wave
     unsigned int at7_5 : 3; // ON->OFF wave
 
@@ -117,8 +117,8 @@ struct XSECTOR {
 
     unsigned int atf_6 : 1; // OFF->ON wait
     unsigned int atf_7 : 1; // ON->OFF wait
-	signed int amplitude : 8; // Lighting amplitude
-	unsigned int freq : 8; // Lighting freq
+    signed int amplitude : 8; // Lighting amplitude
+    unsigned int freq : 8; // Lighting freq
     unsigned int phase : 8; // Lighting phase
     unsigned int wave : 4; // Lighting wave
     unsigned int shadeAlways : 1; // Lighting shadeAlways
@@ -130,8 +130,8 @@ struct XSECTOR {
     unsigned int panFloor : 1; // Pan floor
     unsigned int panCeiling : 1; // Pan ceiling
     unsigned int Drag : 1; // Pan drag
-	unsigned int panVel : 8; // Motion speed
-	unsigned int panAngle : 11; // Motion angle
+    unsigned int panVel : 8; // Motion speed
+    unsigned int panAngle : 11; // Motion angle
     unsigned int Underwater : 1; // Underwater
     unsigned int Depth : 3; // Depth
     unsigned int at16_3 : 1;

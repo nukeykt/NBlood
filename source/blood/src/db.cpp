@@ -699,12 +699,21 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
 #ifdef USE_OPENGL
     Polymost_prepare_loadboard();
 #endif
+    {
+        char name2[BMAX_PATH];
+        Bstrncpy(name2, pPath, BMAX_PATH);
+        Bstrupr(name2);
+        DICTNODE* pNode = *gSysRes.Probe(name2, "MAP");
+        if (pNode && pNode->flags & DICT_EXTERNAL)
+        {
+            gSysRes.RemoveNode(pNode);
+        }
+    }
     DICTNODE *pNode = gSysRes.Lookup(pPath, "MAP");
     if (!pNode)
     {
         ThrowError("Error opening map file %s", pPath);
     }
-    gSysRes.Flush((CACHENODE*)pNode);
     char *pData = (char*)gSysRes.Lock(pNode);
     int nSize = pNode->size;
     MAPSIGNATURE header;
