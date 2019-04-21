@@ -731,3 +731,9 @@ void Resource::PrecacheSounds(void)
         }
     }
 }
+
+void Resource::RemoveNode(DICTNODE* pNode)
+{
+    *pNode = dict[--count];
+    Reindex();
+}
