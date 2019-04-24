@@ -110,8 +110,8 @@ struct XSECTOR {
     unsigned int command : 8; // Cmd 0
     unsigned int triggerOn : 1; // Send at ON
     unsigned int triggerOff : 1; // Send at OFF
-    unsigned int ata_4 : 12; // OFF->ON busyTime
-    unsigned int atc_0 : 12; // OFF->ON waitTime
+    unsigned int busyTimeA : 12; // OFF->ON busyTime
+    unsigned int waitTimeA : 12; // OFF->ON waitTime
     unsigned int atd_4 : 1;
     unsigned int interruptable : 1; // Interruptable
 
@@ -147,8 +147,8 @@ struct XSECTOR {
     unsigned int Wallpush : 1; // WallPush
     unsigned int at18_0 : 1; // Color Lights
     unsigned int at18_1 : 1;
-    unsigned int at18_2 : 12; // ON->OFF busyTime
-    unsigned int at19_6 : 12; // ON->OFF waitTime
+    unsigned int busyTimeB : 12; // ON->OFF busyTime
+    unsigned int waitTimeB : 12; // ON->OFF waitTime
     unsigned int at1b_2 : 1;
     unsigned int at1b_3 : 1;
     unsigned int at1b_4 : 4; // Ceil pal2

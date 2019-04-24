@@ -28,6 +28,9 @@ struct ZONE {
     short sectnum, ang;
 };
 extern ZONE gStartZone[8];
+extern ZONE gStartZoneTeam1[8];
+extern ZONE gStartZoneTeam2[8];
+extern bool gTeamsSpawnUsed;
 
 void warpInit(void);
 int CheckLink(spritetype *pSprite);

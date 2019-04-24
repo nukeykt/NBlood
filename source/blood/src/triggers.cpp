@@ -47,10 +47,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 int basePath[kMaxSectors];
 
 void FireballTrapSeqCallback(int, int);
+void UniMissileTrapSeqCallback(int, int);
 void MGunFireSeqCallback(int, int);
 void MGunOpenSeqCallback(int, int);
 
 int nFireballTrapClient = seqRegisterClient(FireballTrapSeqCallback);
+int nUniMissileTrapClient = seqRegisterClient(UniMissileTrapSeqCallback);
 int nMGunFireClient = seqRegisterClient(MGunFireSeqCallback);
 int nMGunOpenClient = seqRegisterClient(MGunOpenSeqCallback);
 
@@ -131,7 +133,7 @@ char SetSectorState(int nSector, XSECTOR *pXSector, int nState)
             pXSector->at1b_3 = 0;
         }
         else if (pXSector->atf_6)
-            evPost(nSector, 6, (pXSector->atc_0 * 120) / 10, COMMAND_ID_0);
+            evPost(nSector, 6, (pXSector->waitTimeA * 120) / 10, COMMAND_ID_0);
     }
     else
     {
@@ -143,7 +145,7 @@ char SetSectorState(int nSector, XSECTOR *pXSector, int nState)
             pXSector->at1b_3 = 0;
         }
         else if (pXSector->atf_7)
-            evPost(nSector, 6, (pXSector->at19_6 * 120) / 10, COMMAND_ID_1);
+            evPost(nSector, 6, (pXSector->waitTimeB * 120) / 10, COMMAND_ID_1);
     }
     return 1;
 }
@@ -480,6 +482,19 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             break;
         }
         break;
+    // By NoOne: add linking for path markers and stacks feature
+    case kMarkerLowWater:
+    case kMarkerUpWater:
+    case kMarkerUpGoo:
+    case kMarkerLowGoo:
+    case kMarkerUpLink:
+    case kMarkerLowLink:
+    case kMarkerUpStack:
+    case kMarkerLowStack:
+    case kMarkerPath:
+        if (pXSprite->command == 5 && pXSprite->txID != 0)
+            evSend(nSprite, 3, pXSprite->txID, COMMAND_ID_5);
+        break;
     case 22:
         switch (a3.at2_0)
         {
@@ -502,10 +517,23 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         else
             SetSpriteState(nSprite, pXSprite, 0);
         break;
+    case 40: // Random weapon
+    case 80: // Random ammo
+        DropRandomPickupObject(pSprite);
+        break;
     case 18:
         if (gGameOptions.nMonsterSettings && pXSprite->data1 >= kDudeBase && pXSprite->data1 < kDudeMax)
         {
-            spritetype *pSpawn = sub_36878(pSprite, pXSprite->data1, -1, 0);
+            
+            spritetype* pSpawn = NULL;
+            // By NoOne: add spawn random dude feature - works only if at least 2 data fields are not empty.
+            if (!isOriginalDemo()) {
+                if ((pSpawn = spawnRandomDude(pSprite)) == NULL)
+                    pSpawn = actSpawnDude(pSprite, pXSprite->data1, -1, 0);
+            } else {
+              pSpawn = actSpawnDude(pSprite, pXSprite->data1, -1, 0);
+            }
+
             if (pSpawn)
             {
                 XSPRITE *pXSpawn = &xsprite[pSpawn->extra];
@@ -933,8 +961,10 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 10 || pSprite->statnum == 16)
-            continue;
+        // By NoOne: allow to move markers by sector movements in game if hitag 1 is added in editor.
+        if (pSprite->statnum == 10 || pSprite->statnum == 16) {
+            if (pSprite->hitag != 0x0001) continue;
+        }
         x = baseSprite[nSprite].x;
         y = baseSprite[nSprite].y;
         if (sprite[nSprite].cstat&8192)
@@ -1167,9 +1197,9 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
     XSECTOR *pXSector = &xsector[nXSector];
     int vbp;
     if (pXSector->state)
-        vbp = 65536/ClipLow((120*pXSector->ata_4)/10, 1);
+        vbp = 65536/ClipLow((120*pXSector->busyTimeA)/10, 1);
     else
-        vbp = -65536/ClipLow((120*pXSector->at18_2)/10, 1);
+        vbp = -65536/ClipLow((120*pXSector->busyTimeB)/10, 1);
     int top, bottom;
     int nSprite = GetCrushedSpriteExtents(nSector,&top,&bottom);
     if (nSprite >= 0 && a2 > pXSector->busy)
@@ -1403,14 +1433,14 @@ void OperateDoor(unsigned int nSector, XSECTOR *pXSector, EVENT a3, BUSYID a4)
     case 0:
         if (pXSector->busy)
         {
-            AddBusy(nSector, a4, -65536/ClipLow((pXSector->at18_2*120)/10, 1));
+            AddBusy(nSector, a4, -65536/ClipLow((pXSector->busyTimeB*120)/10, 1));
             SectorStartSound(nSector, 1);
         }
         break;
     case 1:
         if (pXSector->busy != 0x10000)
         {
-            AddBusy(nSector, a4, 65536/ClipLow((pXSector->ata_4*120)/10, 1));
+            AddBusy(nSector, a4, 65536/ClipLow((pXSector->busyTimeA*120)/10, 1));
             SectorStartSound(nSector, 0);
         }
         break;
@@ -1428,9 +1458,9 @@ void OperateDoor(unsigned int nSector, XSECTOR *pXSector, EVENT a3, BUSYID a4)
             char t = !pXSector->state;
             int nDelta;
             if (t)
-                nDelta = 65536/ClipLow((pXSector->ata_4*120)/10, 1);
+                nDelta = 65536/ClipLow((pXSector->busyTimeA*120)/10, 1);
             else
-                nDelta = -65536/ClipLow((pXSector->at18_2*120)/10, 1);
+                nDelta = -65536/ClipLow((pXSector->busyTimeB*120)/10, 1);
             AddBusy(nSector, a4, nDelta);
             SectorStartSound(nSector, pXSector->state);
         }
@@ -1550,9 +1580,20 @@ void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
         break;
     case 7:
         pXSector->locked = 0;
+        // By NoOne: reset counter sector state and make it work again after unlock, so it can be used again.
+        // See callback.cpp for more info.
+        if (pSector->lotag == kSecCounter) {
+            pXSector->state = 0;
+            evPost(nSector, 6, 0, CALLBACK_ID_12);
+        }
         break;
     case 8:
         pXSector->locked ^= 1;
+        // same as above...
+        if (pSector->lotag == kSecCounter && pXSector->locked != 1) {
+            pXSector->state = 0;
+            evPost(nSector, 6, 0, CALLBACK_ID_12);
+        }
         break;
     case 9:
         pXSector->at1b_2 = 0;
@@ -1589,13 +1630,13 @@ void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
             case 1:
                 pXSector->state = 0;
                 pXSector->busy = 0;
-                AddBusy(nSector, BUSYID_5, 65536/ClipLow((120*pXSector->ata_4)/10, 1));
+                AddBusy(nSector, BUSYID_5, 65536/ClipLow((120*pXSector->busyTimeA)/10, 1));
                 SectorStartSound(nSector, 0);
                 break;
             case 0:
                 pXSector->state = 1;
                 pXSector->busy = 65536;
-                AddBusy(nSector, BUSYID_5, -65536/ClipLow((120*pXSector->at18_2)/10, 1));
+                AddBusy(nSector, BUSYID_5, -65536/ClipLow((120*pXSector->busyTimeB)/10, 1));
                 SectorStartSound(nSector, 1);
                 break;
             }
@@ -1607,7 +1648,7 @@ void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT a3)
             OperatePath(nSector, pXSector, a3);
             break;
         default:
-            if (pXSector->ata_4 || pXSector->at18_2)
+            if (pXSector->busyTimeA || pXSector->busyTimeB)
                 OperateDoor(nSector, pXSector, a3, BUSYID_6);
             else
             {
@@ -1675,6 +1716,16 @@ void LinkSector(int nSector, XSECTOR *pXSector, EVENT a3)
     case 617:
         RDoorBusy(nSector, nBusy);
         break;
+     /* By NoOne: add link support for counter sectors so they can change necessary type and count of types*/
+    case kSecCounter:
+    {
+        int nXIndex;
+        nXIndex = sector[a3.at0_0].extra;
+        XSECTOR* pXSector2 = &xsector[nXIndex];
+        pXSector->waitTimeA = pXSector2->waitTimeA;
+        pXSector->data = pXSector2->data;
+        break;
+    }
     default:
         pXSector->busy = nBusy;
         if ((pXSector->busy&0xffff) == 0)
@@ -1687,7 +1738,125 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
 {
     spritetype *pSprite = &sprite[nSprite];
     int nBusy = GetSourceBusy(a3);
-    if (pSprite->type == 22)
+    switch (pSprite->type)
+    {
+    
+    //By NoOne: these can be linked too now, so it's possible to change palette, underwater status and more...
+    case kMarkerLowWater:
+    case kMarkerUpWater:
+    case kMarkerUpGoo:
+    case kMarkerLowGoo:
+    case kMarkerUpLink:
+    case kMarkerLowLink:
+    case kMarkerUpStack:
+    case kMarkerLowStack:
+    {
+        if (a3.at1_5 != 3) break;
+        spritetype *pSprite2 = &sprite[a3.at0_0];
+        if (pSprite2->extra < 0) break;
+        XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
+
+        // Only lower to lower and upper to upper linking allowed.
+        switch (pSprite->type) {
+        case kMarkerLowWater:
+        case kMarkerLowLink:
+        case kMarkerLowStack:
+        case kMarkerLowGoo:
+            switch (pSprite2->type) {
+            case kMarkerLowWater:
+            case kMarkerLowLink:
+            case kMarkerLowStack:
+            case kMarkerLowGoo:
+                break;
+            default:
+                return;
+            }
+            break;
+
+        case kMarkerUpWater:
+        case kMarkerUpLink:
+        case kMarkerUpStack:
+        case kMarkerUpGoo:
+            switch (pSprite2->type) {
+            case kMarkerUpWater:
+            case kMarkerUpLink:
+            case kMarkerUpStack:
+            case kMarkerUpGoo:
+                break;
+            default:
+                return;
+            }
+            break;
+        }
+
+        // swap link location
+        /*short tmp1 = pXSprite2.data1;*/
+        /*pXSprite2.data1 = pXSprite.data1;*/
+        /*pXSprite.data1 = tmp1;*/
+
+        if (pXSprite->data2 < kMaxPAL && pXSprite2->data2 < kMaxPAL)
+        {
+            // swap palette
+            short tmp2 = pXSprite2->data2;
+            pXSprite2->data2 = pXSprite->data2;
+            pXSprite->data2 = tmp2;
+        }
+
+
+        // swap link type                       // swap link owners (sectors)
+        short tmp3 = pSprite2->type;			//short tmp7 = pSprite2.owner;
+        pSprite2->type = pSprite->type;			//pSprite2.owner = pSprite.owner;
+        pSprite->type = tmp3;					//pSprite.owner = tmp7;
+
+        // Deal with linked sectors
+        sectortype *pSector = &sector[pSprite->sectnum];
+        sectortype *pSector2 = &sector[pSprite2->sectnum];
+
+        // Check for underwater
+        XSECTOR *pXSector = NULL;	XSECTOR *pXSector2 = NULL;
+        if (pSector->extra > 0) pXSector = &xsector[pSector->extra];
+        if (pSector2->extra > 0) pXSector2 = &xsector[pSector2->extra];
+        if (pXSector != NULL && pXSector2 != NULL) {
+            bool tmp6 = pXSector->Underwater;
+            pXSector->Underwater = pXSector2->Underwater;
+            pXSector2->Underwater = tmp6;
+        }
+
+        // optionally swap floorpic
+        if (pXSprite2->data3 == 1) {
+            short tmp4 = pSector->floorpicnum;
+            pSector->floorpicnum = pSector2->floorpicnum;
+            pSector2->floorpicnum = tmp4;
+        }
+
+        // optionally swap ceilpic
+        if (pXSprite2->data4 == 1) {
+            short tmp5 = pSector->ceilingpicnum;
+            pSector->ceilingpicnum = pSector2->ceilingpicnum;
+            pSector2->ceilingpicnum = tmp5;
+        }
+    }
+    break;
+    // By NoOne: add a way to link between path markers, so path sectors can change their path on the fly.
+    case kMarkerPath:
+    {
+        // only path marker to path marker link allowed
+        if (a3.at1_5 == 3)
+        {
+            int nXSprite2 = sprite[a3.at0_0].extra;
+            // get master path marker data fields
+            pXSprite->data1 = xsprite[nXSprite2].data1;
+            pXSprite->data2 = xsprite[nXSprite2].data2;
+            pXSprite->data3 = xsprite[nXSprite2].data3; // include soundId(?)
+
+            // get master path marker busy and wait times
+            pXSprite->busyTime = xsprite[nXSprite2].busyTime;
+            pXSprite->waitTime = xsprite[nXSprite2].waitTime;
+
+        }
+    }
+    break;
+    case kSwitchCombo:
     {
         if (a3.at1_5 == 3)
         {
@@ -1701,11 +1870,14 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
                 SetSpriteState(nSprite, pXSprite, 0);
         }
     }
-    else
+    break;
+    default:
     {
         pXSprite->busy = nBusy;
-        if ((pXSprite->busy&0xffff) == 0)
-            SetSpriteState(nSprite, pXSprite, nBusy>>16);
+        if ((pXSprite->busy & 0xffff) == 0)
+            SetSpriteState(nSprite, pXSprite, nBusy >> 16);
+    }
+    break;
     }
 }
 
@@ -2005,8 +2177,9 @@ void trInit(void)
                 pXSector->busy = 65536;
             switch (pSector->lotag)
             {
-            case 619:
-                pXSector->triggerOnce = 1;
+            case kSecCounter:
+                //By NoOne: no need to trigger once it, instead lock so it can be unlocked and used again.
+                //pXSector->triggerOnce = 1;
                 evPost(i, 6, 0, CALLBACK_ID_12);
                 break;
             case 600:
@@ -2166,8 +2339,12 @@ void ActivateGenerator(int nSprite)
         break;
     }
     case 708:
-        sfxPlay3DSound(pSprite, pXSprite->data2, -1, 0);
+    {
+        // By NoOne: allow custom pitch for sounds in SFX gen.
+        long pitch = pXSprite->data4 << 1; if (pitch < 2000) pitch = 0;
+        sfxPlay3DSoundCP(pSprite, pXSprite->data2, -1, 0, pitch);
         break;
+    }
     case 703:
         switch (pXSprite->data2)
         {
@@ -2179,6 +2356,21 @@ void ActivateGenerator(int nSprite)
             break;
         case 2:
             seqSpawn(36, 3, nXSprite, nFireballTrapClient);
+            break;
+        }
+        break;
+    // By NoOne: EctoSkull gen can now fire any missile
+    case 704:
+        switch (pXSprite->data2)
+        {
+        case 0:
+            UniMissileTrapSeqCallback(3, nXSprite);
+            break;
+        case 1:
+            seqSpawn(35, 3, nXSprite, nUniMissileTrapClient);
+            break;
+        case 2:
+            seqSpawn(36, 3, nXSprite, nUniMissileTrapClient);
             break;
         }
         break;
@@ -2208,6 +2400,37 @@ void FireballTrapSeqCallback(int, int nXSprite)
         actFireMissile(pSprite, 0, 0, 0, 0, (pSprite->cstat&8) ? 0x4000 : -0x4000, 305);
     else
         actFireMissile(pSprite, 0, 0, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 305);
+}
+
+// By NoOne: Callback for trap that can fire any missile specified in data3
+void UniMissileTrapSeqCallback(int, int nXIndex)
+{
+    XSPRITE *pXSprite = &xsprite[nXIndex];
+    int nSprite = pXSprite->reference;
+    spritetype *pSprite = &sprite[nSprite];
+
+    int dx, dy, dz;
+    int nMissile = 307;
+    if (pXSprite->data3 >= kMissileBase && pXSprite->data3 < kMissileMax)
+        nMissile = pXSprite->data3;
+    else
+        return;
+
+    if ((pSprite->cstat & kSprFloor) != 0)		// floor sprite
+    {
+        dx = dy = 0;
+        if ((pSprite->cstat & kSprFlipY) != 0)	// face down floor sprite
+            dz = 1 << 14;
+        else									// face up floor sprite
+            dz = -1 << 14;
+    }
+    else										// wall sprite or face sprite
+    {
+        dx = Cos(pSprite->ang) >> 16;
+        dy = Sin(pSprite->ang) >> 16;
+        dz = 0;
+    }
+    actFireMissile(pSprite, 0, 0, dx, dy, dz, nMissile);
 }
 
 void MGunFireSeqCallback(int, int nXSprite)

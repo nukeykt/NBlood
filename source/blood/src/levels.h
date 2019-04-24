@@ -126,6 +126,10 @@ void levelLoadDefaults(void);
 void levelAddUserMap(const char *pzMap);
 void levelGetNextLevels(int nEpisode, int nLevel, int *pnEndingA, int *pnEndingB);
 void levelEndLevel(int arg);
+
+// By NoOne: custom level selection via numbered command which sent to TX ID 6.
+void levelEndLevelCustom(int nLevel);
+
 void levelRestart(void);
 int levelGetMusicIdx(const char *str);
 bool levelTryPlayMusic(int nEpisode, int nlevel, bool bSetLevelSong = false);

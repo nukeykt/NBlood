@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kDudeBase 200
 #define kDudePlayer1 231
 #define kDudePlayer8 238
-#define kDudeMax 254
+#define kDudeMax 260
 #define kMissileBase 300
 #define kMissileMax 318
 #define kThingBase 400
@@ -43,12 +43,95 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kStatMarker 10
 #define kStatFree 1024
 
-#define kMarkerWarpDest 8
-
 #define kLensSize 80
 #define kViewEffectMax 19
 
 #define kNoTile -1
+
+
+// defined by NoOne:
+// -------------------------------
+
+#define kMaxPAL 5
+
+// marker sprite types
+#define kMarkerSPStart 1
+#define kMarkerMPStart 2
+#define kMarkerOff 3
+#define kMarkerOn 4
+#define kMarkerAxis 5
+#define kMarkerLowLink 6
+#define kMarkerUpLink 7
+#define kMarkerWarpDest 8
+#define kMarkerUpWater 9
+#define kMarkerLowWater 10
+#define kMarkerUpStack 11
+#define kMarkerLowStack 12
+#define kMarkerUpGoo 13
+#define kMarkerLowGoo 14
+#define kMarkerPath 15
+
+// sprite cstat
+#define kSprBlock 0x0001
+#define kSprTrans 0x0002
+#define kSprFlipX 0x0004
+#define kSprFlipY 0x0008
+#define kSprFace 0x0000
+#define kSprWall 0x0010
+#define kSprFloor 0x0020
+#define kSprSpin 0x0030
+#define kSprRMask 0x0030
+#define kSprOneSided 0x0040
+#define kSprOriginAlign 0x0080
+#define kSprHitscan 0x0100
+#define kSprTransR 0x0200
+#define kSprPushable 0x1000
+#define kSprMoveMask 0x6000
+#define kSprMoveNone 0x0000
+#define kSprMoveForward 0x2000
+#define kSprMoveFloor 0x2000
+#define kSprMoveReverse 0x4000
+#define kSprMoveCeiling 0x4000
+#define kSprInvisible 0x8000
+
+// sprite attributes
+#define kHitagMovePhys 0x0001 // affected by movement physics
+#define kHitagGravityPhys 0x0002 // affected by gravity
+#define kHitagFalling 0x0004 // currently in z-motion
+#define kHitagAutoAim 0x0008
+#define kHitagRespawn 0x0010
+#define kHitagFree 0x0020
+#define kHitagSmoke 0x0100
+
+// sector types 
+#define kSecBase 600
+#define kSecZMotion kSectorBase
+#define kSecZSprite 602
+#define kSecWarp 603
+#define kSecTeleport 604
+#define kSecPath 612
+#define kSecRotateStep 613
+#define kSecSlideMarked 614
+#define kSecRotateMarked 615
+#define kSecSlide 616
+#define kSecRotate 617
+#define kSecDamage 618
+#define kSecCounter 619
+#define kSecMax 620
+
+// switch types
+#define kSwitchBase 20
+#define kSwitchToggle 20
+#define kSwitchOneWay 21
+#define kSwitchCombo 22
+#define kSwitchPadlock 23
+#define kSwitchMax 24
+
+// projectile types
+#define kProjectileEctoSkull 307
+
+#define kGDXChannelEndLevelCustom 6 // custom level end
+// -------------------------------
 
 struct INIDESCRIPTION {
     const char *pzName;
@@ -105,3 +188,5 @@ void ProcessFrame(void);
 void ScanINIFiles(void);
 bool LoadArtFile(const char *pzFile);
 void LoadExtraArts(void);
+bool isDemoRecords(void);
+bool isOriginalDemo();

@@ -48,6 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "warp.h"
 #include "weapon.h"
+#include "common_game.h"
 
 PROFILE gProfile[kMaxPlayers];
 
@@ -647,14 +648,40 @@ void playerResetInertia(PLAYER *pPlayer)
 
 void playerStart(int nPlayer)
 {
-    PLAYER *pPlayer = &gPlayer[nPlayer];
-    GINPUT *pInput = &pPlayer->atc;
-    int nStartZone;
-    if (gGameOptions.nGameType >= 2)
-        nStartZone = Random(8);
-    else
-        nStartZone = nPlayer;
-    ZONE *pStartZone = &gStartZone[nStartZone];
+    PLAYER* pPlayer = &gPlayer[nPlayer];
+    GINPUT* pInput = &pPlayer->atc;
+    ZONE* pStartZone = NULL;
+
+    // normal start position
+    if (gGameOptions.nGameType <= 1)
+        pStartZone = &gStartZone[nPlayer];
+    
+    // By NoOne: let's check if there is positions of teams is specified
+    // if no, pick position randomly, just like it works in vanilla.
+    else if (gGameOptions.nGameType == 3 && gTeamsSpawnUsed == true) {
+        int maxRetries = 5;
+        while (maxRetries-- > 0) {
+            if (pPlayer->at2ea == 0) pStartZone = &gStartZoneTeam1[Random(3)];
+            else pStartZone = &gStartZoneTeam2[Random(3)];
+
+            if (maxRetries != 0) {
+                // check if there is no spawned player in selected zone
+                for (int i = headspritesect[pStartZone->sectnum]; i >= 0; i = nextspritesect[i]) {
+                    spritetype* pSprite = &sprite[i];
+                    if (pStartZone->x == pSprite->x && pStartZone->y == pSprite->y && IsPlayerSprite(pSprite)) {
+                        pStartZone = NULL;
+                        break;
+                    }
+                }
+            }
+
+            if (pStartZone != NULL)
+                break;
+        }
+    } else {
+        pStartZone = &gStartZone[Random(8)];
+    }
+
     spritetype *pSprite = actSpawnSprite(pStartZone->sectnum, pStartZone->x, pStartZone->y, pStartZone->z, 6, 1);
     dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
@@ -1049,8 +1076,13 @@ char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon)
         if (pWeapon->type == 50 && gGameOptions.nGameType > 1 && sub_3A158(pPlayer, NULL))
             return 0;
         pPlayer->atcb[nWeaponType] = 1;
-        if (nAmmoType != -1)
-            pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType]+pWeaponItemData->atc, gAmmoInfo[nAmmoType].at0);
+        if (nAmmoType == -1) return 0;
+        // By NoOne: allow to set custom ammo count for weapon pickups
+        if (pWeapon->extra < 0 || xsprite[pWeapon->extra].data1 <= 0)
+            pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType] + pWeaponItemData->atc, gAmmoInfo[nAmmoType].at0);
+        else
+            pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType] + xsprite[pWeapon->extra].data1, gAmmoInfo[nAmmoType].at0);
+
         int nNewWeapon = WeaponUpgrade(pPlayer, nWeaponType);
         if (nNewWeapon != pPlayer->atbd)
         {
@@ -1075,23 +1107,25 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
 {
     char buffer[80];
     int nType = pSprite->type;
-    char vb = 0;
-    if (nType >= 100 && nType <= 149)
-    {
-        vb = PickupItem(pPlayer, pSprite);
-        sprintf(buffer, "Picked up %s", gItemText[nType-100]);
+    char pickedUp = 0;
+    if (nType != 40 && nType != 80) { // By NoOne: no pickup for random item generators.
+        if (nType >= 100 && nType <= 149)
+        {
+            pickedUp = PickupItem(pPlayer, pSprite);
+            sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
+        }
+        else if (nType >= 60 && nType < 81)
+        {
+            pickedUp = PickupAmmo(pPlayer, pSprite);
+            sprintf(buffer, "Picked up %s", gAmmoText[nType - 60]);
+        }
+        else if (nType >= 40 && nType < 51)
+        {
+            pickedUp = PickupWeapon(pPlayer, pSprite);
+            sprintf(buffer, "Picked up %s", gWeaponText[nType - 40]);
+        }
     }
-    else if (nType >= 60 && nType < 81)
-    {
-        vb = PickupAmmo(pPlayer, pSprite);
-        sprintf(buffer, "Picked up %s", gAmmoText[nType-60]);
-    }
-    else if (nType >= 40 && nType < 51)
-    {
-        vb = PickupWeapon(pPlayer, pSprite);
-        sprintf(buffer, "Picked up %s", gWeaponText[nType-40]);
-    }
-    if (vb)
+    if (pickedUp)
     {
         if (pSprite->extra > 0)
         {
@@ -1444,7 +1478,7 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->at372 = ClipLow(pPlayer->at372-4*(6-gGameOptions.nDifficulty), 0);
         if (pPlayer->at372 <= 0 && pPlayer->at376)
         {
-            spritetype *pSprite2 = sub_36878(pPlayer->pSprite, 212, pPlayer->pSprite->clipdist<<1, 0);
+            spritetype *pSprite2 = actSpawnDude(pPlayer->pSprite, 212, pPlayer->pSprite->clipdist<<1, 0);
             pSprite2->ang = (pPlayer->pSprite->ang+1024)&2047;
             int nSprite = pPlayer->pSprite->index;
             int x = Cos(pPlayer->pSprite->ang)>>16;

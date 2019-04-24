@@ -874,8 +874,8 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
             pXSector->command = bitReader.readUnsigned(8);
             pXSector->triggerOn = bitReader.readUnsigned(1);
             pXSector->triggerOff = bitReader.readUnsigned(1);
-            pXSector->ata_4 = bitReader.readUnsigned(12);
-            pXSector->atc_0 = bitReader.readUnsigned(12);
+            pXSector->busyTimeA = bitReader.readUnsigned(12);
+            pXSector->waitTimeA = bitReader.readUnsigned(12);
             pXSector->atd_4 = bitReader.readUnsigned(1);
             pXSector->interruptable = bitReader.readUnsigned(1);
             pXSector->amplitude = bitReader.readSigned(8);
@@ -910,8 +910,8 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
             pXSector->Wallpush = bitReader.readUnsigned(1);
             pXSector->at18_0 = bitReader.readUnsigned(1);
             pXSector->at18_1 = bitReader.readUnsigned(1);
-            pXSector->at18_2 = bitReader.readUnsigned(12);
-            pXSector->at19_6 = bitReader.readUnsigned(12);
+            pXSector->busyTimeB = bitReader.readUnsigned(12);
+            pXSector->waitTimeB = bitReader.readUnsigned(12);
             pXSector->at1b_2 = bitReader.readUnsigned(1);
             pXSector->at1b_3 = bitReader.readUnsigned(1);
             pXSector->at1b_4 = bitReader.readUnsigned(4);
@@ -1191,8 +1191,8 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
                 if (pSector->extra > 0)
                 {
                     XSECTOR *pXSector = &xsector[pSector->extra];
-                    pXSector->at18_2 = pXSector->ata_4;
-                    if (pXSector->ata_4 > 0)
+                    pXSector->busyTimeB = pXSector->busyTimeA;
+                    if (pXSector->busyTimeA > 0)
                     {
                         if (!pXSector->atd_4)
                         {
@@ -1200,8 +1200,8 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
                         }
                         else
                         {
-                            pXSector->at19_6 = pXSector->ata_4;
-                            pXSector->atc_0 = 0;
+                            pXSector->waitTimeB = pXSector->busyTimeA;
+                            pXSector->waitTimeA = 0;
                             pXSector->atf_7 = 1;
                         }
                     }

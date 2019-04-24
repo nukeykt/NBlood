@@ -279,6 +279,118 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
     RestoreInterrupts();
 }
 
+// By NoOne: same as previous, but allows to set custom pitch for sound. Used by SFX gen now.
+void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, long pitch)
+{
+    if (!SoundToggle || !pSprite || soundId < 0) return;
+    DICTNODE* hRes = gSoundRes.Lookup(soundId, "SFX");
+    if (!hRes) return;
+
+    SFX* pEffect = (SFX*)gSoundRes.Load(hRes);
+    hRes = gSoundRes.Lookup(pEffect->rawName, "RAW");
+    if (!hRes) return;
+    int size = hRes->size;
+    if (size <= 0) return;
+    
+    if (pitch <= 0) pitch = pEffect->pitch;
+    else pitch -= Random(pEffect->pitchRange);
+
+    int v14;
+    v14 = mulscale16(pitch, sndGetRate(pEffect->format));
+    
+    BONKLE * pBonkle = NULL;
+    if (a3 >= 0)
+    {
+        int i;
+        for (i = 0; i < nBonkles; i++)
+        {
+            pBonkle = BonkleCache[i];
+            if (pBonkle->at14 == a3 && (pBonkle->at10 == pSprite || (a4 & 1) != 0))
+            {
+                if ((a4 & 4) != 0 && pBonkle->at14 == a3)
+                    return;
+                if ((a4 & 2) != 0 && pBonkle->atc == soundId)
+                    return;
+                if (pBonkle->at0 > 0)
+                    FX_StopSound(pBonkle->at0);
+                if (pBonkle->at4 > 0)
+                    FX_StopSound(pBonkle->at4);
+                if (pBonkle->at8)
+                {
+                    gSoundRes.Unlock(pBonkle->at8);
+                    pBonkle->at8 = NULL;
+                }
+                break;
+            }
+        }
+        if (i == nBonkles)
+        {
+            if (nBonkles >= 256)
+                return;
+            pBonkle = BonkleCache[nBonkles++];
+        }
+        pBonkle->at10 = pSprite;
+        pBonkle->at14 = a3;
+    }
+    else
+    {
+        if (nBonkles >= 256)
+            return;
+        pBonkle = BonkleCache[nBonkles++];
+        pBonkle->at10 = NULL;
+    }
+    pBonkle->at20.x = pSprite->x;
+    pBonkle->at20.y = pSprite->y;
+    pBonkle->at20.z = pSprite->z;
+    pBonkle->at38 = pSprite->sectnum;
+    pBonkle->at2c = pBonkle->at20;
+    pBonkle->atc = soundId;
+    pBonkle->at8 = hRes;
+    pBonkle->at1c = pEffect->relVol;
+    pBonkle->at18 = v14;
+    Calc3DValues(pBonkle);
+    int priority = 1;
+    if (priority < lVol)
+        priority = lVol;
+    if (priority < rVol)
+        priority = rVol;
+    int loopStart = pEffect->loopStart;
+    int loopEnd = ClipLow(size - 1, 0);
+    if (a3 < 0)
+        loopStart = -1;
+    DisableInterrupts();
+    char* pData = (char*)gSoundRes.Lock(hRes);
+    if (loopStart >= 0)
+    {
+        if (gDoppler)
+        {
+            pBonkle->at0 = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, lPitch, 0, lVol, lVol, 0, priority, 1.f, (intptr_t)& pBonkle->at0);
+            pBonkle->at4 = FX_PlayLoopedRaw(pData + rPhase, size - rPhase, pData + loopStart, pData + loopEnd, rPitch, 0, rVol, 0, rVol, priority, 1.f, (intptr_t)& pBonkle->at4);
+        }
+        else
+        {
+            pBonkle->at0 = FX_PlayLoopedRaw(pData + lPhase, size - lPhase, pData + loopStart, pData + loopEnd, v14, 0, lVol, lVol, rVol, priority, 1.f, (intptr_t)& pBonkle->at0);
+            pBonkle->at4 = 0;
+        }
+    }
+    else
+    {
+        pData = (char*)gSoundRes.Lock(pBonkle->at8);
+        if (gDoppler)
+        {
+            pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, lPitch, 0, lVol, lVol, 0, priority, 1.f, (intptr_t)& pBonkle->at0);
+            pBonkle->at4 = FX_PlayRaw(pData + rPhase, size - rPhase, rPitch, 0, rVol, 0, rVol, priority, 1.f, (intptr_t)& pBonkle->at4);
+        }
+        else
+        {
+            pBonkle->at0 = FX_PlayRaw(pData + lPhase, size - lPhase, v14, 0, lVol, lVol, rVol, priority, 1.f, (intptr_t)& pBonkle->at0);
+            pBonkle->at4 = 0;
+        }
+    }
+    RestoreInterrupts();
+}
+
+
 void sfxKill3DSound(spritetype *pSprite, int a2, int a3)
 {
     if (!pSprite)
