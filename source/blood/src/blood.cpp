@@ -602,6 +602,21 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gStartZone[i].z = startpos.z;
         gStartZone[i].sectnum = startsectnum;
         gStartZone[i].ang = startang;
+
+        // By NoOne: Create spawn zones for players in teams mode.
+        if (i <= kMaxPlayers / 2) {
+            gStartZoneTeam1[i].x = startpos.x;
+            gStartZoneTeam1[i].y = startpos.y;
+            gStartZoneTeam1[i].z = startpos.z;
+            gStartZoneTeam1[i].sectnum = startsectnum;
+            gStartZoneTeam1[i].ang = startang;
+
+            gStartZoneTeam2[i].x = startpos.x;
+            gStartZoneTeam2[i].y = startpos.y;
+            gStartZoneTeam2[i].z = startpos.z;
+            gStartZoneTeam2[i].sectnum = startsectnum;
+            gStartZoneTeam2[i].ang = startang;
+        }
     }
     InitSectorFX();
     warpInit();
@@ -2397,4 +2412,12 @@ void LoadExtraArts(void)
     {
         LoadArtFile(pINISelected->pDescription->pzArts[i]);
     }
+}
+
+bool isDemoRecords(void) {
+    return gDemo.at1;
+}
+
+bool isOriginalDemo() {
+    return gDemo.m_bLegacy && gDemo.at0;
 }

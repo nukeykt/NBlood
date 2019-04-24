@@ -20,6 +20,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+
+#include <random>
+#include <iostream>
+
 #include "build.h"
 #include "pragmas.h"
 #include "mmulti.h"
@@ -2302,8 +2306,26 @@ void actInit(void)
     for (int nSprite = headspritestat[3]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->type == 44)
+        if (pSprite->type == 44) // Voodoo doll (ammo)
+            pSprite->type = 70; // Voodoo doll (weapon)
+
+        switch (pSprite->type) {
+        case 44:
             pSprite->type = 70;
+            break;
+        
+        // By NoOne: add Random pickup feature
+        case 40: // Random weapon
+        case 80: // Random ammo
+
+            // Make sprites invisible and non-blocking
+            pSprite->cstat &= ~kSprBlock;
+            pSprite->cstat |= kSprInvisible;
+
+            if (pSprite->extra > 0 && xsprite[pSprite->extra].state == 1)
+                trTriggerSprite(nSprite, &xsprite[pSprite->extra], COMMAND_ID_0);
+            break;
+        }
     }
     for (int nSprite = headspritestat[11]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
@@ -2399,7 +2421,12 @@ void actInit(void)
                 pSprite->cstat |= 4096+256+1;
                 pSprite->clipdist = dudeInfo[nType].ata;
                 xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
-                pXSprite->health = dudeInfo[nType].at2<<4;
+                
+                // By NoOne: add a way to set custom hp for every enemy - should work only if map just started and not loaded.
+                if (pXSprite->data4 <= 0)
+                    pXSprite->health = dudeInfo[nType].at2 << 4;
+                else
+                    pXSprite->health = pXSprite->data4;
             }
             if (gSysRes.Lookup(dudeInfo[nType].seqStartID, "SEQ"))
                 seqSpawn(dudeInfo[nType].seqStartID, 3, nXSprite);
@@ -4309,18 +4336,38 @@ void MoveDude(spritetype *pSprite)
                 }
             }
             break;
-        case 9:
-            pXSprite->palette = 1;
-            if (pPlayer)
-            {
+        // By NoOne: part of "change of global view palette for stacks" feature
+        case kMarkerUpWater:
+        case kMarkerUpGoo:
+        {
+            // look for palette in data2 of marker. If value <= 0, use default ones.
+            int gViewPal = 0;
+            int nUpperTMP = gUpperLink[nSector];
+            spritetype *pUpper = &sprite[nUpperTMP];
+            if (pUpper->extra >= 0) {
+                XSPRITE *pXUpper = &xsprite[pUpper->extra];
+                gViewPal = pXUpper->data2;
+            }
+            if (gViewPal <= 0) {
+                if (nLink == kMarkerUpWater)
+                    pXSprite->palette = 1;
+                else
+                    pXSprite->palette = 3;
+                // *Real* Goo palette ID is 3, previously it was 2.
+                // There is no control of it in view.cpp anymore
+            }
+            else {
+                pXSprite->palette = gViewPal;
+            }
+
+            if (pPlayer) {
                 pPlayer->at2f = 1;
                 pXSprite->burnTime = 0;
-                pPlayer->at302 = klabs(zvel[nSprite])>>12;
+                pPlayer->at302 = klabs(zvel[nSprite]) >> 12;
                 evPost(nSprite, 3, 0, CALLBACK_ID_10);
                 sfxPlay3DSound(pSprite, 720, -1, 0);
             }
-            else
-            {
+            else {
                 switch (pSprite->type)
                 {
                 case 201:
@@ -4375,12 +4422,13 @@ void MoveDude(spritetype *pSprite)
                 case 219:
                 case 220:
                 case 239:
-                    actKillDude(pSprite->index, pSprite, DAMAGE_TYPE_0, 1000<<4);
+                    actKillDude(pSprite->index, pSprite, DAMAGE_TYPE_0, 1000 << 4);
                     break;
                 }
             }
             break;
-        case 13:
+        }
+        /*case 13:
             pXSprite->palette = 2;
             if (pPlayer)
             {
@@ -4450,7 +4498,7 @@ void MoveDude(spritetype *pSprite)
                     break;
                 }
             }
-            break;
+            break;*/
         }
     }
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -4814,12 +4862,8 @@ void actExplodeSprite(spritetype *pSprite)
         pSprite = pSprite2;
         break;
     }
-    case 459:	// Hidden Exploder
+    case 459:	// By NoOne: allow to customize hidden exploder thing
 	{
-		/*nType = 1;
-		seqSpawn(4, 3, nXSprite, -1);
-		sfxPlay3DSound(pSprite, 304, -1, 0);*/
-
 		// Defaults for exploder
 		nType = 1; int nSnd = 304; int nSeq = 4;
 
@@ -4827,10 +4871,10 @@ void actExplodeSprite(spritetype *pSprite)
 		int tSnd = 0; int tSeq = 0;
 
 
-		XSPRITE pXSPrite = xsprite[nXSprite];
-		nType = pXSPrite.data1;  // Explosion type
-		tSeq = pXSPrite.data2; // SEQ id
-		tSnd = pXSPrite.data3; // Sound Id
+		XSPRITE *pXSPrite = &xsprite[nXSprite];
+		nType = pXSPrite->data1;  // Explosion type
+		tSeq = pXSPrite->data2; // SEQ id
+		tSnd = pXSPrite->data3; // Sound Id
 
 		if (nType <= 1 || nType > kExplodeMax) { nType = 1; nSeq = 4; nSnd = 304; }
 		else if (nType == 2) { nSeq = 4; nSnd = 305; }
@@ -4844,7 +4888,7 @@ void actExplodeSprite(spritetype *pSprite)
 		if (tSeq > 0) nSeq = tSeq;
 		if (tSnd > 0) nSnd = tSnd;
 
-		//if (kExist(pXSPrite.at12_0, seq)) // GDX method to check if file exist in RFF
+		//if (kExist(pXSPrite->data2, seq)) // GDX method to check if file exist in RFF
 		seqSpawn(nSeq, 3, nXSprite, -1);
 
 		sfxPlay3DSound(pSprite, nSnd, -1, 0);
@@ -5129,7 +5173,14 @@ void actProcessSprites(void)
         int nSector = pSprite->sectnum;
         gAffectedSectors[0] = -1;
         gAffectedXWalls[0] = -1;
-        GetClosestSpriteSectors(nSector, x, y, pExplodeInfo->at3, gAffectedSectors, v24c, gAffectedXWalls);
+        
+        // By NoOne: Allow to override explosion radius by data4 field of any sprite which have statnum 2 set in editor
+        // or of Hidden Exploder.
+        int radius = pXSprite->data4;
+        if (pXSprite->data4 <= 0)
+            radius = pExplodeInfo->at3;
+        
+        GetClosestSpriteSectors(nSector, x, y, radius, gAffectedSectors, v24c, gAffectedXWalls);
         for (int i = 0; i < kMaxXWalls; i++)
         {
             int nWall = gAffectedXWalls[i];
@@ -5145,7 +5196,7 @@ void actProcessSprites(void)
                 continue;
             if (TestBitString(v24c, pDude->sectnum))
             {
-                if (pXSprite->data1 && CheckProximity(pDude, x, y, z, nSector, pExplodeInfo->at3))
+                if (pXSprite->data1 && CheckProximity(pDude, x, y, z, nSector, radius))
                 {
                     if (pExplodeInfo->at1 && pXSprite->target == 0)
                     {
@@ -5172,7 +5223,7 @@ void actProcessSprites(void)
                 continue;
             if (TestBitString(v24c, pThing->sectnum))
             {
-                if (pXSprite->data1 && CheckProximity(pThing, x, y, z, nSector, pExplodeInfo->at3))
+                if (pXSprite->data1 && CheckProximity(pThing, x, y, z, nSector, radius))
                 {
                     XSPRITE *pXSprite2 = &xsprite[pThing->extra];
                     if (!pXSprite2->locked)
@@ -5201,10 +5252,16 @@ void actProcessSprites(void)
             int t = divscale16(pXSprite->data2, nDist);
             gPlayer[p].at35a += t;
         }
-        pXSprite->data1 = ClipLow(pXSprite->data1-4, 0);
-        pXSprite->data2 = ClipLow(pXSprite->data2-4, 0);
-        pXSprite->data3 = ClipLow(pXSprite->data3-4, 0);
-        if (!pXSprite->data1 && !pXSprite->data2 && !pXSprite->data3 && seqGetStatus(3, nXSprite) < 0)
+        
+        // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
+	    // via sprite statnum 2.
+        if (pSprite->hitag != 0x0001) {
+            pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
+            pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
+            pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
+        }
+
+        if (pXSprite->data1 == 0 && pXSprite->data2 == 0 && pXSprite->data3 == 0 && seqGetStatus(3, nXSprite) < 0)
             actPostSprite(nSprite, 1024);
     }
     for (nSprite = headspritestat[11]; nSprite >= 0; nSprite = nextspritestat[nSprite])
@@ -5457,11 +5514,11 @@ spritetype * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6
 
 spritetype * actSpawnSprite(spritetype *pSource, int nStat);
 
-spritetype *sub_36878(spritetype *pSource, short nType, int a3, int a4)
+spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
 {
+    XSPRITE* pXSource = &xsprite[pSource->extra];
     spritetype *pSprite2 = actSpawnSprite(pSource, 6);
-    if (!pSprite2)
-        return NULL;
+    if (!pSprite2) return NULL;
     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
     int angle = pSource->ang;
     int nDude = nType-kDudeBase;
@@ -5486,6 +5543,30 @@ spritetype *sub_36878(spritetype *pSource, short nType, int a3, int a4)
     pXSprite2->health = dudeInfo[nDude].at2<<4;
     if (gSysRes.Lookup(dudeInfo[nDude].seqStartID, "SEQ"))
         seqSpawn(dudeInfo[nDude].seqStartID, 3, pSprite2->extra, -1);
+    
+    // By NoOne: add a way to inherit some values of spawner by dude.
+    // This way designer can count enemies via switches and do many other interesting things.
+    if ((pSource->hitag & 0x0001) != 0) {
+        
+        //inherit pal?
+        if (pSprite2->pal <= 0) pSprite2->pal = pSource->pal;
+
+        // inherit spawn sprite trigger settings, so designer can count monsters.
+        pXSprite2->txID = pXSource->txID;
+        pXSprite2->command = pXSource->command;
+        pXSprite2->triggerOn = pXSource->triggerOn;
+        pXSprite2->triggerOff = pXSource->triggerOff;
+
+        // inherit drop items
+        pXSprite2->dropMsg = pXSource->dropMsg;
+
+        // inherit dude flags
+        pXSprite2->dudeDeaf = pXSource->dudeDeaf;
+        pXSprite2->dudeGuard = pXSource->dudeGuard;
+        pXSprite2->dudeAmbush = pXSource->dudeAmbush;
+        pXSprite2->dudeFlag4 = pXSource->dudeFlag4;
+    }
+
     aiInitSprite(pSprite2);
     return pSprite2;
 }
@@ -6270,3 +6351,115 @@ void ActorLoadSaveConstruct(void)
 {
     myLoadSave = new ActorLoadSave();
 }
+
+
+// By NoOne: The following functions required for random event features
+//-------------------------
+int GetDataVal(spritetype* pSprite, int data) {
+    if (pSprite->extra < 0) return -1;
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    int rData[4];
+
+    rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
+    rData[1] = pXSprite->data2; rData[3] = pXSprite->data4;
+
+    return rData[data];
+}
+
+
+std::default_random_engine rng;
+int my_random(int a, int b)
+{
+    std::uniform_int_distribution<int> dist_a_b(a, b);
+    return dist_a_b(rng);
+}
+
+// tries to get random data field of sprite
+int GetRandDataVal(spritetype* pSprite) {
+
+    if (pSprite->extra < 0) return -1;
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    int rData[4]; int random = 0;
+    int maxRetries = 10; int selected = -1; int a = 1;
+
+
+    rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
+    rData[1] = pXSprite->data2; rData[3] = pXSprite->data4;
+
+    // randomize only in case if at least 2 data fields are not empty
+    for (int i = 0; i <= 3; i++) {
+        if (rData[i] == 0) {
+            if (a++ > 2)
+                return selected;
+        }
+    }
+
+    // try randomize few times
+    while (maxRetries > 0) {
+             
+        // use true random only for single player mode
+        if (gGameOptions.nGameType == 0 && !isOriginalDemo() && !isDemoRecords()) {
+            rng.seed(std::random_device()());
+            random = my_random(0, 4);
+        // otherwise use Blood's default one. In the future it maybe possible to make
+        // host send info to clients about what was generated.
+        } else {
+            random = Random(3);
+        }
+
+       if (rData[random] > 0) {
+            selected = (int)rData[random];
+            break;
+       }
+
+        maxRetries--;
+    }
+
+    // if nothing, get first found data value from top
+    if (selected == -1) {
+        int r = 0;
+        while (r <= 3) {
+            if (rData[r] > 0) {
+                selected = rData[r];
+                break;
+            }
+
+            r++;
+        }
+    }
+
+    return selected;
+}
+
+// this function drops random item using random pickup generator(s)
+spritetype* DropRandomPickupObject(spritetype* pSprite) {
+    int selected = GetRandDataVal(pSprite); spritetype* pSprite2 = NULL;
+    if (selected > 0) {
+        spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
+        pSprite2 = actDropObject(pSprite, selected);
+
+        if ((pSource->hitag & 0x0001) != 0 && dbInsertXSprite(pSprite2->xvel) != -1) {
+            XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
+
+            // inherit spawn sprite trigger settings, so designer can send command when item picked up.
+            pXSprite2->txID = pXSource->txID;
+            pXSprite2->command = pXSource->command;
+            pXSprite2->triggerOn = pXSource->triggerOn;
+            pXSprite2->triggerOff = pXSource->triggerOff;
+
+            pXSprite2->Pickup = true;
+        }
+    }
+
+    return pSprite2;
+}
+
+// this functions spawns random dude using dudeSpawn
+spritetype* spawnRandomDude(spritetype* pSprite) {
+    int selected = GetRandDataVal(pSprite); spritetype* pSprite2 = NULL;
+    if (selected <= 0) return pSprite2;
+    pSprite2 = actSpawnDude(pSprite, selected, -1, 0);
+
+    return pSprite2;
+}
+//-------------------------

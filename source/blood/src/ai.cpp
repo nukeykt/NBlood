@@ -642,18 +642,20 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
         break;
     }
     case 208:
-        if (Chance(0x4000))
-            aiPlay3DSound(pSprite, 1401, AI_SFX_PRIORITY_1, -1);
-        else
-            aiPlay3DSound(pSprite, 1400, AI_SFX_PRIORITY_1, -1);
-        aiNewState(pSprite, pXSprite, &gargoyleFMorph);
-        break;
     case 209:
-        if (Chance(0x4000))
-            aiPlay3DSound(pSprite, 1401, AI_SFX_PRIORITY_1, -1);
-        else
-            aiPlay3DSound(pSprite, 1400, AI_SFX_PRIORITY_1, -1);
-        aiNewState(pSprite, pXSprite, &gargoyleSMorph);
+        // By NoOne: play gargoyle statue breaking animation if data1 = 1.
+        if (pXSprite->data1 == 1) {
+            if (pSprite->type == 208)
+                aiNewState(pSprite, pXSprite, &statueFBreakSEQ);
+            else
+                aiNewState(pSprite, pXSprite, &statueSBreakSEQ);
+        } else {
+            if (Chance(0x4000)) aiPlay3DSound(pSprite, 1401, AI_SFX_PRIORITY_1, -1);
+            else aiPlay3DSound(pSprite, 1400, AI_SFX_PRIORITY_1, -1);
+            
+            if (pSprite->type == 208) aiNewState(pSprite, pXSprite, &gargoyleFMorph);
+            else aiNewState(pSprite, pXSprite, &gargoyleSMorph);
+        }
         break;
     case 227:
         if (pXSprite->target == -1)
@@ -1564,6 +1566,19 @@ void aiInitSprite(spritetype *pSprite)
     case 244:
         pSprite->hitag = 7;
         break;
+    // By NoOne: Allow put pods and tentacles on ceilings if sprite is y-flipped.
+    case 221:
+    case 222:
+    case 223:
+    case 224:
+    case 225:
+    case 226:
+        if ((pSprite->cstat & kSprFlipY) != 0) {
+            if (pSprite->hitag != 0x0001) // don't add autoaim for player if hitag 1 specified in editor.
+                pSprite->hitag = kHitagAutoAim;
+            break;
+        }
+    // go default
     default:
         pSprite->hitag = 15;
         break;

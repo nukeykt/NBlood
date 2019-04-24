@@ -32,6 +32,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "warp.h"
 
 ZONE gStartZone[8];
+ZONE gStartZoneTeam1[8];
+ZONE gStartZoneTeam2[8];
+
+bool gTeamsSpawnUsed = false;
 
 void warpInit(void)
 {
@@ -40,6 +44,7 @@ void warpInit(void)
         gUpperLink[i] = -1;
         gLowerLink[i] = -1;
     }
+    int team1 = 0; int team2 = 0; // increment if team start positions specified.
     for (int nSprite = 0; nSprite < kMaxSprites; nSprite++)
     {
         if (sprite[nSprite].statnum < kMaxStatus)
@@ -64,16 +69,41 @@ void warpInit(void)
                     DeleteSprite(nSprite);
                     break;
                 case 2:
-                    if (gGameOptions.nGameType >= 2 && pXSprite->data1 >= 0 && pXSprite->data1 < 8)
-                    {
-                        ZONE *pZone = &gStartZone[pXSprite->data1];
-                        pZone->x = pSprite->x;
-                        pZone->y = pSprite->y;
-                        pZone->z = pSprite->z;
-                        pZone->sectnum = pSprite->sectnum;
-                        pZone->ang = pSprite->ang;
+                    if (pXSprite->data1 >= 0 && pXSprite->data2 < 8) {
+                        if (gGameOptions.nGameType >= 2)
+                        {
+                            // default if BB or teams without data2 specified
+                            ZONE* pZone = &gStartZone[pXSprite->data1];
+                            pZone->x = pSprite->x;
+                            pZone->y = pSprite->y;
+                            pZone->z = pSprite->z;
+                            pZone->sectnum = pSprite->sectnum;
+                            pZone->ang = pSprite->ang;
+                            
+                            // By NoOne: fill player spawn position according team of player in TEAMS mode.
+                            if (gGameOptions.nGameType == 3) {
+                                if (pXSprite->data2 == 1) {
+                                    pZone = &gStartZoneTeam1[team1];
+                                    pZone->x = pSprite->x;
+                                    pZone->y = pSprite->y;
+                                    pZone->z = pSprite->z;
+                                    pZone->sectnum = pSprite->sectnum;
+                                    pZone->ang = pSprite->ang;
+                                    team1++;
+
+                                } else if (pXSprite->data2 == 2) {
+                                    pZone = &gStartZoneTeam2[team1];
+                                    pZone->x = pSprite->x;
+                                    pZone->y = pSprite->y;
+                                    pZone->z = pSprite->z;
+                                    pZone->sectnum = pSprite->sectnum;
+                                    pZone->ang = pSprite->ang;
+                                    team2++;
+                                }
+                            }
+                        }
+                        DeleteSprite(nSprite);
                     }
-                    DeleteSprite(nSprite);
                     break;
                 case 7:
                     gUpperLink[pSprite->sectnum] = nSprite;
@@ -105,6 +135,13 @@ void warpInit(void)
             }
         }
     }
+    // check if there is enough start positions for teams, if any used
+    if (team1 > 0 || team2 > 0) {
+        gTeamsSpawnUsed = true;
+        //if (team1 < kMaxPlayers / 2 || team2 < kMaxPlayers / 2)
+           //_ShowMessageWindow("At least 4 spawn positions for each team is recommended.");
+    }
+
     for (int i = 0; i < kMaxSectors; i++)
     {
         int nSprite = gUpperLink[i];

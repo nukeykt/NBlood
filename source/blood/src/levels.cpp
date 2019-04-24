@@ -356,6 +356,23 @@ void levelEndLevel(int arg)
     }
 }
 
+// By NoOne: this function can be called via sending numbered command to TX kGDXChannelEndLevel
+// This allows to set custom next level instead of taking it from INI file.
+void levelEndLevelCustom(int nLevel) {
+
+    gGameOptions.uGameFlags |= 1;
+
+    if (nLevel >= 16  || nLevel < 0)
+    {
+
+        gGameOptions.uGameFlags |= 2;
+        gGameOptions.nLevel = 0;
+        return;
+    }
+
+    gNextLevel = nLevel;
+}
+
 void levelRestart(void)
 {
     levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);

@@ -363,13 +363,14 @@ void CounterCheck(int nSector) // 12
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
     sectortype *pSector = &sector[nSector];
-    if (pSector->lotag != 619)
-        return;
+    // By NoOne: edits for counter sector new features.
+    // remove check below, so every sector can be counter if command 12 (this callback) received.
+    //if (pSector->lotag != 619) return;
     int nXSprite = pSector->extra;
     if (nXSprite > 0)
     {
         XSECTOR *pXSector = &xsector[nXSprite];
-        int nReq = pXSector->atc_0;
+        int nReq = pXSector->waitTimeA;
         int nType = pXSector->data;
         if (nType && nReq)
         {
@@ -381,8 +382,10 @@ void CounterCheck(int nSector) // 12
             }
             if (nCount >= nReq)
             {
-                pXSector->atc_0 = 0;
+
+                //pXSector->waitTimeA = 0; //do not reset necessary objects counter to zero
                 trTriggerSector(nSector, pXSector, 1);
+                pXSector->locked = 1; //lock sector, so it can be opened again later
             }
             else
                 evPost(nSector, 6, 5, CALLBACK_ID_12);

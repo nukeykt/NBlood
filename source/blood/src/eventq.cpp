@@ -394,6 +394,10 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
         case 5:
             levelEndLevel(1);
             return;
+        // By NoOne: finished level and load custom level ¹ via numbered command.
+        case kGDXChannelEndLevelCustom:
+            levelEndLevelCustom(command - 64);
+            return;
         case 1:
             if (command < COMMAND_ID_64)
                 ThrowError("Invalid SetupSecret command by xobject %d(type %d)", nIndex, nType);

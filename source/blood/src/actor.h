@@ -252,7 +252,7 @@ void actActivateGibObject(spritetype *pSprite, XSPRITE *pXSprite);
 bool IsUnderWater(spritetype *pSprite);
 void actProcessSprites(void);
 spritetype * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6);
-spritetype *sub_36878(spritetype *pSource, short nType, int a3, int a4);
+spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4);
 spritetype * actSpawnSprite(spritetype *pSource, int nStat);
 spritetype * actSpawnThing(int nSector, int x, int y, int z, int nThingType);
 spritetype * actFireThing(spritetype *pSprite, int a2, int a3, int a4, int thingType, int a6);
@@ -264,3 +264,5 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
 void actPostSprite(int nSprite, int nStatus);
 void actPostProcess(void);
 void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite);
+spritetype* DropRandomPickupObject(spritetype* pSprite);
+spritetype* spawnRandomDude(spritetype* pSprite);
