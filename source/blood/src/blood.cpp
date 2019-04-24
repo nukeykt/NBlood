@@ -1370,12 +1370,6 @@ void ParseOptions(void)
 
 void ClockStrobe()
 {
-    if (handleevents() && quitevent)
-    {
-        KB_KeyDown[sc_Escape] = 1;
-        quitevent = 0;
-    }
-    MUSIC_Update();
     gGameClock++;
 }
 
@@ -1635,7 +1629,13 @@ RESTART:
     ready2send = 1;
     while (!gQuitGame)
     {
+        if (handleevents() && quitevent)
+        {
+            KB_KeyDown[sc_Escape] = 1;
+            quitevent = 0;
+        }
         netUpdate();
+        MUSIC_Update();
         CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
         switch (gInputMode)
         {

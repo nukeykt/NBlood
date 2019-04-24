@@ -28,9 +28,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "control.h"
 #include "osd.h"
 #include "mmulti.h"
-#ifdef WITHKPLIB
-#include "kplib.h"
-#endif
 
 #include "blood.h"
 #include "controls.h"
@@ -42,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "menu.h"
 #include "messages.h"
 #include "misc.h"
+#include "music.h"
 #include "network.h"
 #include "player.h"
 #include "screen.h"
@@ -335,6 +333,12 @@ void CDemo::Playback(void)
 _DEMOPLAYBACK:
     while (at1 && !gQuitGame)
     {
+        if (handleevents() && quitevent)
+        {
+            KB_KeyDown[sc_Escape] = 1;
+            quitevent = 0;
+        }
+        MUSIC_Update();
         while (gGameClock >= gNetFifoClock && !gQuitGame)
         {
             if (!v4)
