@@ -34,16 +34,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pqueue.h"
 #include "triggers.h"
 
-class EventQueue : public PriorityQueue
+class EventQueue
 {
 public:
+    EventQueue()
+    {
+        PQueue = NULL;
+    }
+    PriorityQueue* PQueue;
     bool IsNotEmpty(unsigned int nTime)
     {
-        return fNodeCount > 0 && nTime >= queueItems[1].at0;
+        return PQueue->Size() > 0 && nTime >= PQueue->LowestPriority();
     }
     EVENT ERemove(void)
     {
-        unsigned int node = Remove();
+        unsigned int node = PQueue->Remove();
         return *(EVENT*)&node;
     }
     void Kill(int, int);
@@ -59,30 +64,14 @@ void EventQueue::Kill(int a1, int a2)
     //evn.at1_5 = a2;
 
     short vs = *(short*)&evn;
-    for (unsigned int i = 1; i <= fNodeCount;)
-    {
-#if B_BIG_ENDIAN == 1
-        if (!memcmp(&queueItems[i].at4, &evn, 2))
-#else
-        if ((short)queueItems[i].at4 == vs)
-#endif
-            Delete(i);
-        else
-            i++;
-    }
+    PQueue->Kill([=](unsigned int nItem)->bool {return !memcmp(&nItem, &vs, 2); });
 }
 
 void EventQueue::Kill(int a1, int a2, CALLBACK_ID a3)
 {
     EVENT evn = { (unsigned int)a1, (unsigned int)a2, kCommandCallback, (unsigned int)a3 };
     unsigned int vc = *(unsigned int*)&evn;
-    for (unsigned int i = 1; i <= fNodeCount;)
-    {
-        if (queueItems[i].at4 == vc)
-            Delete(i);
-        else
-            i++;
-    }
+    PQueue->Kill([=](unsigned int nItem)->bool {return nItem == vc; });
 }
 
 struct RXBUCKET
@@ -285,7 +274,13 @@ unsigned short bucketHead[1024+1];
 
 void evInit(void)
 {
-    eventQ.fNodeCount = 0;
+    if (eventQ.PQueue)
+        delete eventQ.PQueue;
+    if (isOriginalDemo())
+        eventQ.PQueue = new VanillaPriorityQueue();
+    else
+        eventQ.PQueue = new StdPriorityQueue();
+    eventQ.PQueue->Clear();
     int nCount = 0;
     for (int i = 0; i < numsectors; i++)
     {
@@ -492,7 +487,7 @@ void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command)
     evn.at1_5 = nType;
     evn.at2_0 = command;
     // Inlined?
-    eventQ.Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
+    eventQ.PQueue->Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
 }
 
 void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID a4)
@@ -502,7 +497,7 @@ void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID a4)
     evn.at1_5 = nType;
     evn.at2_0 = kCommandCallback;
     evn.funcID = a4;
-    eventQ.Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
+    eventQ.PQueue->Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
 }
 
 void evProcess(unsigned int nTime)
