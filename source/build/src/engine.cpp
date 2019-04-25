@@ -8475,11 +8475,13 @@ void renderDrawMasks(void)
         int32_t back = i;
         for (; i >= 0; --i)
         {
+#ifdef USE_OPENGL
             if (polymost_spriteHasTranslucency(&tsprite[i]))
             {
                 tspriteptr[spritesortcnt] = &tsprite[i];
                 ++spritesortcnt;
             } else
+#endif
             {
                 tspriteptr[back] = &tsprite[i];
                 --back;
