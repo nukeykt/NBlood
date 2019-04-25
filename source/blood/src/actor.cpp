@@ -6370,6 +6370,7 @@ int GetDataVal(spritetype* pSprite, int data) {
 std::default_random_engine rng;
 int my_random(int a, int b)
 {
+
     std::uniform_int_distribution<int> dist_a_b(a, b);
     return dist_a_b(rng);
 }

@@ -2421,3 +2421,7 @@ bool isDemoRecords(void) {
 bool isOriginalDemo() {
     return gDemo.m_bLegacy && gDemo.at0;
 }
+
+bool fileExistsRFF(int id, const char *ext) {
+    return gSysRes.Lookup(id, ext);
+}

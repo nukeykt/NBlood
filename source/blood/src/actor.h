@@ -266,3 +266,6 @@ void actPostProcess(void);
 void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite);
 spritetype* DropRandomPickupObject(spritetype* pSprite);
 spritetype* spawnRandomDude(spritetype* pSprite);
+int GetDataVal(spritetype* pSprite, int data);
+int my_random(int a, int b);
+int GetRandDataVal(spritetype* pSprite);

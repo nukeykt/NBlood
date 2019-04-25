@@ -38,3 +38,5 @@ void trMessageSprite(unsigned int nSprite, EVENT a2);
 void trProcessBusy(void);
 void trInit(void);
 void trTextOver(int nId);
+void pastePropertiesInObj(int type, int nDest, EVENT event);
+void trDamageSprite(int type, int nDest, EVENT event);
