@@ -20,6 +20,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+#include <random>
+#include <iostream>
+
 #include "build.h"
 #include "compat.h"
 #include "mmulti.h"
@@ -352,6 +355,161 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     }
     switch (pSprite->type)
     {
+    
+    /* - Random Event Switch takes random data field and uses it as TX ID - */
+    /* - ranged TX ID is now supported also - */
+    case kGDXRandomTX:
+    {
+        std::default_random_engine rng;
+        bool range = false; int tx = 0;
+        
+        // set range of TX ID if data2 and data3 is empty.
+        if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 &&
+            pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
+
+            // data1 must be less than data4
+            if (pXSprite->data1 > pXSprite->data4) {
+                int tmp = pXSprite->data1;
+                pXSprite->data1 = (short)pXSprite->data4;
+                pXSprite->data4 = tmp;
+            }
+
+            range = true;
+        }
+
+        if (range == false) {
+            if ((tx = GetRandDataVal(pSprite)) > 0)
+                pXSprite->txID = (short)tx;
+        } else {
+            int total = pXSprite->data4 - pXSprite->data1;
+            int data1 = pXSprite->data1; int result = 0;
+
+            // use true random only for single player mode
+            if (gGameOptions.nGameType == 0 && !isOriginalDemo() && !isDemoRecords()) {
+                rng.seed(std::random_device()());
+                result = (int) my_random(pXSprite->data1, pXSprite->data4);
+            // otherwise use Blood's default one. In the future it maybe possible to make
+            // host send info to clients about what was generated.
+            } else {
+                result = Random(total) + data1;
+            }
+
+            pXSprite->txID = (short)result;
+        }
+
+        switch (a3.at2_0)
+        {
+        case COMMAND_ID_0:
+            SetSpriteState(nSprite, pXSprite, 0);
+            break;
+        case COMMAND_ID_1:
+            SetSpriteState(nSprite, pXSprite, 1);
+            break;
+        default:
+            SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+            break;
+        }
+
+        break;
+    }
+    /* - Sequential Switch takes values from data fields starting from data1 and uses it as TX ID - */
+    /* - ranged TX ID is now supported also - */
+    case kGDXSequentialTX:
+    {
+        bool range = false; int cnt = 0; int tx = 0;
+        // set range of TX ID if data2 and data3 is empty.
+        if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 &&
+            pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
+
+            // data1 must be less than data4
+            if (pXSprite->data1 > pXSprite->data4) {
+                int tmp = pXSprite->data1;
+                pXSprite->data1 = (short)pXSprite->data4;
+                pXSprite->data4 = tmp;
+            }
+
+            range = true;
+        }
+
+        if (range == false) {
+
+            // Make sure dropMsg is correct as we store current
+            // index of data field here.
+            if (pXSprite->dropMsg > 3)
+                pXSprite->dropMsg = 0;
+            else if (pXSprite->dropMsg < 0)
+                pXSprite->dropMsg = 3;
+
+        }
+        else {
+
+            // Make sure dropMsg is correct as we store current
+            // index of TX ID here.
+            if (pXSprite->dropMsg < pXSprite->data1)
+                pXSprite->dropMsg = pXSprite->data1;
+            else if (pXSprite->dropMsg > pXSprite->data4)
+                pXSprite->dropMsg = (short)pXSprite->data4;
+        }
+
+        switch (a3.at2_0) {
+        case COMMAND_ID_0:
+            if (range == false) {
+
+                while (cnt <= 1) {
+                    while (pXSprite->dropMsg >= 0) {
+
+                        if (--pXSprite->dropMsg < 0)
+                            pXSprite->dropMsg = 3;
+
+                        if ((tx = GetDataVal(pSprite, pXSprite->dropMsg)) > 0)
+                            break;
+                    }
+
+                    if (tx == 0) {
+                        pXSprite->dropMsg = 3;
+                        cnt++; continue;
+                    }
+
+                    break;
+                }
+
+            }
+            else {
+                if (--pXSprite->dropMsg < pXSprite->data1) pXSprite->dropMsg = (short)pXSprite->data4;
+                tx = pXSprite->dropMsg;
+            }
+            break;
+
+        default:
+            if (range == false) {
+                while (cnt <= 1) {
+                    while (pXSprite->dropMsg <= 3) {
+
+                        if (++pXSprite->dropMsg > 3) pXSprite->dropMsg = 0;
+                        if ((tx = GetDataVal(pSprite, pXSprite->dropMsg)) > 0)
+                            break;
+
+                    }
+
+                    if (tx == 0) {
+                        pXSprite->dropMsg = 0;
+                        cnt++; continue;
+                    }
+
+                    break;
+                }
+            }
+            else {
+                if (++pXSprite->dropMsg > pXSprite->data4) pXSprite->dropMsg = pXSprite->data1;
+                tx = pXSprite->dropMsg;
+            }
+            break;
+        }
+
+        pXSprite->txID = (short)tx;
+        SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+        break;
+    }
     case 413:
         if (pXSprite->health > 0)
         {
@@ -517,6 +675,26 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         else
             SetSpriteState(nSprite, pXSprite, 0);
         break;
+    case kGDXObjPropertiesChanger:
+    case kGDXObjPicnumChanger:
+    case kGDXObjSizeChanger:
+    case kGDXSectorFXChanger:
+    case kGDXObjDataChanger:
+        /*
+        By NoOne: works only if have link command, but sends new command.
+        Sending new command is *required*, because types above are universal
+        and can paste properties in different objects.
+        */
+        if (pXSprite->command == COMMAND_ID_5) {
+            evSend(nSprite, 3, pXSprite->txID, kGDXCommandPaste);
+
+            //SetSpriteState(nSprite, pXSprite, pXSprite.restState ^ 1);
+        }
+        break;
+    // this type damages sprite with given damageType
+    case kGDXSpriteDamager:
+        evSend(nSprite, 3, pXSprite->txID, kGDXCommandSpriteDamage);
+        break;
     case 40: // Random weapon
     case 80: // Random ammo
         DropRandomPickupObject(pSprite);
@@ -591,6 +769,29 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             break;
         }
         break;
+    case kGDXSeqSpawner:
+    case kGDXEffectSpawner:
+        switch (a3.at2_0)
+        {
+        case COMMAND_ID_0:
+            SetSpriteState(nSprite, pXSprite, 0);
+            break;
+        case COMMAND_ID_21:
+            ActivateGenerator(nSprite);
+            if (pXSprite->txID != 0)
+                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+            if (pXSprite->busyTime > 0)
+                evPost(nSprite, 3, (pXSprite->busyTime + Random2(pXSprite->data1)) * 120 / 10, COMMAND_ID_21);
+            break;
+        default:
+            if (pXSprite->state == 0) {
+                SetSpriteState(nSprite, pXSprite, 1);
+                evPost(nSprite, 3, 0, COMMAND_ID_21);
+            }
+            break;
+        }
+
+        break;
     case 402:
         if (pSprite->statnum == 8)
             break;
@@ -626,6 +827,30 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         break;
     case 431:
         sub_43CF8(pSprite, pXSprite, a3);
+        break;
+    case kGDXWindGenerator:
+        switch (a3.at2_0)
+        {
+        case COMMAND_ID_0:
+            SetSpriteState(nSprite, pXSprite, 0);
+            break;
+        case COMMAND_ID_21:
+            if (pXSprite->txID != 0)
+                evSend(nSprite, 3, pXSprite->txID, kGDXCommandPaste);
+            if (pXSprite->busyTime > 0)
+                if (pXSprite->txID != 0)
+                    evSend(nSprite, 3, pXSprite->txID, kGDXCommandPaste);
+            if (pXSprite->busyTime > 0)
+                evPost(nSprite, 3, pXSprite->busyTime, COMMAND_ID_21);
+            break;
+        default:
+            if (pXSprite->state == 0) {
+                SetSpriteState(nSprite, pXSprite, 1);
+                evPost(nSprite, 3, 0, COMMAND_ID_21);
+            }
+            break;
+        }
+
         break;
     case 700:
     case 701:
@@ -1920,6 +2145,8 @@ void trMessageSector(unsigned int nSector, EVENT a2)
     {
         if (a2.at2_0 == 5)
             LinkSector(nSector, pXSector, a2);
+        else if (a2.at2_0 == kGDXCommandPaste)
+            pastePropertiesInObj(6, nSector, a2);
         else
             OperateSector(nSector, pXSector, a2);
     }
@@ -1956,6 +2183,8 @@ void trMessageWall(unsigned int nWall, EVENT a2)
     {
         if (a2.at2_0 == 5)
             LinkWall(nWall, pXWall, a2);
+        else if (a2.at2_0 == kGDXCommandPaste)
+            pastePropertiesInObj(0, nWall, a2);
         else
             OperateWall(nWall, pXWall, a2);
     }
@@ -1991,8 +2220,200 @@ void trMessageSprite(unsigned int nSprite, EVENT a2)
     {
         if (a2.at2_0 == 5)
             LinkSprite(nSprite, pXSprite, a2);
+        else if (a2.at2_0 == kGDXCommandPaste)
+            pastePropertiesInObj(3, nSprite, a2);
+        else if (a2.at2_0 == kGDXCommandSpriteDamage)
+            trDamageSprite(3, nSprite, a2);
         else
             OperateSprite(nSprite, pXSprite, a2);
+    }
+}
+
+// By NoOne: this function damages sprite
+void trDamageSprite(int type, int nDest, EVENT event) {
+
+    /* - damages xsprite via TX ID	- */
+    /* - data1 = damage type		- */
+    /* - data4 = damage amount		- */
+
+    if (event.at1_5 == 3) {
+        spritetype* pSource = NULL; pSource = &sprite[event.at0_0];
+        XSPRITE* pXSource = &xsprite[pSource->extra];
+        XSPRITE pXSprite = xsprite[sprite[nDest].extra];
+        if (pXSprite.health > 0) {
+            if (pXSource->data4 < 1 || pXSource->data4 > 65535)
+                pXSource->data4 = 65535;
+
+            if (pXSource->data3 >= 7)
+                pXSource->data3 = (short)Random(6);
+
+            actDamageSprite(pSource->xvel, &sprite[nDest], (DAMAGE_TYPE)pXSource->data3, pXSource->data4);
+        }
+    }
+}
+
+bool valueIsBetween(int val, int min, int max) {
+    return (val > min && val < max);
+}
+// By NoOne: this function used by various new GDX types.
+void pastePropertiesInObj(int type, int nDest, EVENT event) {
+    spritetype* pSource = NULL; pSource = &sprite[event.at0_0];
+    if (pSource == NULL || event.at1_5 != 3) return;
+    XSPRITE* pXSource = &xsprite[pSource->extra];
+    if (pSource->type == kGDXWindGenerator) {
+
+        /* - Wind generator via TX or for current sector if TX ID not specified - */
+        /* - sprite.ang = sector wind direction									- */
+        /* - data1 = randomness settings										- */
+        /* - 		 0: no randomness											- */
+        /* - 		 1: randomize wind velocity in data2						- */
+        /* - 		 2: randomize current generator sprite angle				- */
+        /* - 		 3: randomize both wind velocity and sprite angle			- */
+        /* - data2 = wind velocity												- */
+        /* - data3 = enable panning according current wind speed and direction	- */
+        /* - data4 = pan floor and ceiling settings								- */
+        /* - 		 0: use sector pan settings									- */
+        /* - 		 1: pan only floor											- */
+        /* - 		 2: pan only ceiling										- */
+        /* - 		 3: pan both												- */
+
+        /* - hi-tag = 1: force windAlways and panAlways							- */
+
+        if (type != 6) return; XSECTOR* pXSector = &xsector[sector[nDest].extra];
+
+        if ((pSource->hitag & 0x0001) != 0) {
+            pXSector->panAlways = true;
+            pXSector->windAlways = true;
+        }
+
+        if (pXSource->data2 > 32767) pXSource->data2 = 32767;
+        if (pXSource->data1 == 1 || pXSource->data1 == 3)
+            pXSector->windVel = Random2(pXSource->data2);
+        else
+            pXSector->windVel = pXSource->data2;
+
+        if (pXSource->data1 == 2 || pXSource->data1 == 3) {
+            short ang = pSource->ang;
+            while (pSource->ang == ang) {
+                pSource->ang = (short) Random2(2048);
+            }
+        }
+
+        pXSector->windAng = pSource->ang;
+
+        if (pXSource->data3 == 1) {
+            pXSector->panAngle = (short) pXSector->windAng;
+            pXSector->panVel = (short) pXSector->windVel;
+        }
+
+        if (pXSource->data4 > 0) {
+            switch (pXSource->data4) {
+            case 1:
+                pXSector->panFloor = true;
+                pXSector->panCeiling = false;
+                break;
+            case 2:
+                pXSector->panFloor = false;
+                pXSector->panCeiling = true;
+                break;
+            case 3:
+                pXSector->panFloor = true;
+                pXSector->panCeiling = true;
+                break;
+            }
+        }
+
+    } else if (pSource->type == kGDXObjDataChanger) {
+
+        /* - Data field changer via TX - */
+        /* - data1 = sprite data1 / sector data / wall data	- */
+        /* - data2 = sprite data2	- */
+        /* - data3 = sprite data3	- */
+        /* - data4 = sprite data4	- */
+
+        switch (type) {
+            // for sectors
+            case 6:
+            {
+                XSECTOR* pXSector = &xsector[sector[nDest].extra];
+
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    pXSector->data = pXSource->data1;
+
+                break;
+            }
+            // for sprites
+            case 3:
+            {
+                XSPRITE* pXSprite = &xsprite[sprite[nDest].extra];
+
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    pXSprite->data1 = pXSource->data1;
+
+                if (valueIsBetween(pXSource->data2, -1, 32767))
+                    pXSprite->data2 = pXSource->data2;
+
+                if (valueIsBetween(pXSource->data3, -1, 32767))
+                    pXSprite->data3 = pXSource->data3;
+
+                if (valueIsBetween(pXSource->data4, -1, 65535))
+                    pXSprite->data4 = pXSource->data4;
+
+                break;
+            }
+            // for walls
+            case 0:
+            {
+                XWALL* pXWall = &xwall[wall[nDest].extra];
+
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    pXWall->data = pXSource->data1;
+
+                break;
+            }
+        }
+
+    } else if (pSource->type == kGDXSectorFXChanger) {
+
+        /* - FX Wave changer for sector via TX - */
+        /* - data1 = Wave 	- */
+        /* - data2 = Amplitude	- */
+        /* - data3 = Freq	- */
+        /* - data4 = Phase	- */
+
+        if (type == 6) {
+            XSECTOR* pXSector = &xsector[sector[nDest].extra];
+            if (valueIsBetween(pXSource->data1, -1, 32767))
+                pXSector->wave = pXSource->data1;
+
+            if (pXSource->data2 >= 0 || pXSource->data2 > 32767) {
+
+                if (pXSource->data2 > 127) pXSector->amplitude = 127;
+                else pXSector->amplitude = pXSource->data2;
+
+            }
+            else if (pXSource->data2 < -1) {
+
+                if (pXSource->data2 < -127) pXSector->amplitude = -127;
+                else pXSector->amplitude = pXSource->data2;
+
+            }
+
+            if (valueIsBetween(pXSource->data3, -1, 32767)) {
+                if (pXSource->data3 > 255) pXSector->freq = 255;
+                else pXSector->freq = pXSource->data3;
+            }
+
+            if (valueIsBetween(pXSource->data4, -1, 65535)) {
+                if (pXSource->data4 > 255) pXSector->phase = 255;
+                else pXSector->phase = (short)pXSource->data4;
+            }
+
+            if ((pSource->hitag & 0x0001) != 0)
+                pXSector->shadeAlways = true;
+
+        }
+
     }
 }
 
@@ -2249,6 +2670,10 @@ void trInit(void)
             case 23:
                 pXSprite->triggerOnce = 1;
                 break;
+            case kGDXSeqSpawner:
+            case kGDXDudeTargetChanger:
+            case kGDXEffectSpawner:
+            case kGDXWindGenerator:
             case 700:
             case 701:
             case 702:
@@ -2305,6 +2730,16 @@ void InitGenerator(int nSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     switch (sprite[nSprite].type)
     {
+    // By NoOne: intialize GDX generators
+    case kGDXDudeTargetChanger:
+        pSprite->cstat &= ~kSprBlock;
+        pSprite->cstat |= kSprInvisible;
+        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 10;
+        if (pXSprite->state != pXSprite->restState)
+            evPost(nSprite, 3, pXSprite->busyTime, COMMAND_ID_21); // using different time intervals here
+        return;
+    case kGDXSeqSpawner:
+    case kGDXEffectSpawner:
     case 700:
         pSprite->cstat &= (unsigned short)~(32768+1);
         pSprite->cstat |= 32768;
@@ -2324,6 +2759,51 @@ void ActivateGenerator(int nSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     switch (pSprite->type)
     {
+    
+    /* - By NoOne: SEQ Spawner takes data2 as SEQ ID and spawns it - */
+    case kGDXSeqSpawner:
+        if (fileExistsRFF(pXSprite->data2, "SEQ")) {
+            if (pXSprite->data3 > 0 && pXSprite->data2 > 0)
+                seqSpawn(pXSprite->data2, 3, pSprite->extra, pXSprite->data3); // spawn seq with callback
+            else if (pXSprite->data2 > 0)
+                seqSpawn(pXSprite->data2, 3, pSprite->extra, -1); // just spawn seq
+            if (pXSprite->data4 > 0)
+                sfxPlay3DSound(pSprite, pXSprite->data4, -1, 0);
+        }
+        break;
+    
+    /* - By NoOne: Effect Spawner can spawn any effect passed in data2 - */
+    case kGDXEffectSpawner:
+        if (pXSprite->data2 >= 0 && pXSprite->data2 <= kFXMax) {
+           int top, bottom; GetSpriteExtents(pSprite,&top,&bottom); int cnt = pXSprite->data4;
+            spritetype *pEffect = NULL; if (cnt > 32) cnt = 32;
+
+            while (cnt-- >= 0) {
+                if (cnt > 0) {
+
+                    int dx = Random3(250);
+                    int dy = Random3(150);
+
+                    pEffect = gFX.fxSpawn((FX_ID)pXSprite->data2, pSprite->sectnum, pSprite->x + dx, pSprite->y + dy, top, 0);
+
+                }
+                else {
+                    pEffect = gFX.fxSpawn((FX_ID)pXSprite->data2, pSprite->sectnum, pSprite->x, pSprite->y, top, 0);
+                }
+
+                if (pEffect != NULL) {
+                    if (pEffect->pal <= 0) pEffect->pal = pSprite->pal;
+                    if (pEffect->xrepeat <= 0) pEffect->xrepeat = pSprite->xrepeat;
+                    if (pEffect->yrepeat <= 0) pEffect->yrepeat = pSprite->yrepeat;
+                    if (pEffect->shade == 0) pEffect->shade = pSprite->shade;
+                }
+            }
+
+            if (pXSprite->data3 > 0)
+                sfxPlay3DSound(pSprite, pXSprite->data3, -1, 0);
+        }
+        break;
+
     case 701:
     {
         int top, bottom;

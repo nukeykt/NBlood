@@ -130,7 +130,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // projectile types
 #define kProjectileEctoSkull 307
 
-#define kGDXChannelEndLevelCustom 6 // custom level end
+// custom level end
+#define kGDXChannelEndLevelCustom 6
+
+// GDX types
+#define kGDXTypeBase 24
+#define kGDXCustomDudeSpawn 24
+#define kGDXRandomTX 25
+#define kGDXSequentialTX 26
+#define kGDXSeqSpawner 27
+#define kGDXObjPropertiesChanger 28
+#define kGDXObjPicnumChanger 29
+#define kGDXObjSizeChanger 31
+#define kGDXDudeTargetChanger 33
+#define kGDXSectorFXChanger 34
+#define kGDXObjDataChanger 35
+#define kGDXSpriteDamager 36
+// 37 free
+#define kGDXEffectSpawner 38
+#define kGDXWindGenerator 39
 // -------------------------------
 
 struct INIDESCRIPTION {
@@ -189,4 +207,5 @@ void ScanINIFiles(void);
 bool LoadArtFile(const char *pzFile);
 void LoadExtraArts(void);
 bool isDemoRecords(void);
-bool isOriginalDemo();
+bool isOriginalDemo(void);
+bool fileExistsRFF(int id, const char* ext);

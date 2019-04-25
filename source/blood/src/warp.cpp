@@ -92,7 +92,7 @@ void warpInit(void)
                                     team1++;
 
                                 } else if (pXSprite->data2 == 2) {
-                                    pZone = &gStartZoneTeam2[team1];
+                                    pZone = &gStartZoneTeam2[team2];
                                     pZone->x = pSprite->x;
                                     pZone->y = pSprite->y;
                                     pZone->z = pSprite->z;
