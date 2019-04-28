@@ -127,6 +127,7 @@ glblend_t const bloodglblend =
 
 void scrLoadPalette(void)
 {
+    paletteloaded = 0;
     initprintf("Loading palettes\n");
     for (int i = 0; i < 5; i++)
     {
@@ -138,13 +139,15 @@ void scrLoadPalette(void)
     }
     memcpy(palette, palTable[0], sizeof(palette));
     numshades = 64;
-    paletteloaded = 1;
+    paletteloaded |= PALETTE_MAIN;
     scrLoadPLUs();
+    paletteloaded |= PALETTE_SHADE;
     initprintf("Loading translucency table\n");
     DICTNODE *pTrans = gSysRes.Lookup("TRANS", "TLU");
     if (!pTrans)
         ThrowError("TRANS.TLU not found");
     blendtable[0] = (char*)gSysRes.Lock(pTrans);
+    paletteloaded |= PALETTE_TRANSLUC;
 
 #ifdef USE_OPENGL
     for (auto & x : glblend)
