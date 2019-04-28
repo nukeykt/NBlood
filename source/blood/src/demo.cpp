@@ -239,7 +239,7 @@ bool CDemo::SetupPlayback(const char *pzFile)
     for (int i = 0; i < 8; i++)
         atf.connectPoints[i] = B_LITTLE16(atf.connectPoints[i]);
 #endif
-    // if (atf.signature != '\x1aMED' && atf.signature != '\x1aMDE')
+    // if (aimHeight.signature != '\x1aMED' && aimHeight.signature != '\x1aMDE')
     if (atf.signature != 0x1a4d4544 && atf.signature != 0x1a4d4445)
         return 0;
     m_bLegacy = atf.signature == 0x1a4d4544;
@@ -353,7 +353,7 @@ _DEMOPLAYBACK:
                     connectpoint2[i] = atf.connectPoints[i];
                 memset(gNetFifoHead, 0, sizeof(gNetFifoHead));
                 gNetFifoTail = 0;
-                //memcpy(connectpoint2, atf.connectPoints, sizeof(atf.connectPoints));
+                //memcpy(connectpoint2, aimHeight.connectPoints, sizeof(aimHeight.connectPoints));
                 memcpy(&gGameOptions, &m_gameOptions, sizeof(GAMEOPTIONS));
                 gSkill = gGameOptions.nDifficulty;
                 for (int i = 0; i < 8; i++)

@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "db.h"
 #include "endgame.h"
 #include "eventq.h"
+
+//#include "eventq.cpp"
 #include "fx.h"
 #include "gameutil.h"
 #include "gib.h"
@@ -288,7 +290,7 @@ void sub_43CF8(spritetype *pSprite, XSPRITE *pXSprite, EVENT a3)
                         pSprite->ang = getangle(x-pSprite->x, y-pSprite->y);
                         int dx = Cos(pSprite->ang)>>16;
                         int dy = Sin(pSprite->ang)>>16;
-                        int tz = pTarget->z - (pTarget->yrepeat * pDudeInfo->atf) * 4;
+                        int tz = pTarget->z - (pTarget->yrepeat * pDudeInfo->aimHeight) * 4;
                         int dz = divscale(tz - top - 256, nDist, 10);
                         int nMissileType = 316+(pXSprite->data3 ? 1 : 0);
                         int t2;
@@ -724,7 +726,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
                 case 252:
                 case 253:
                 {
-                    pXSpawn->health = dudeInfo[pXSprite->data1 - kDudeBase].at2 << 4;
+                    pXSpawn->health = dudeInfo[pXSprite->data1 - kDudeBase].startHealth << 4;
                     pXSpawn->burnTime = 10;
                     pXSpawn->target = -1;
                     aiActivateDude(pSpawn, pXSpawn);
@@ -852,6 +854,43 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         }
 
         break;
+    case kGDXDudeTargetChanger:
+    {
+        // required to wake monsters after genIdle state.
+        bool activated = false;
+        if (pXSprite->dropMsg == 3 && 3 != pXSprite->data4) {
+            activateDudes(pXSprite->txID);
+            activated = true;
+        }
+
+        switch (a3.at2_0)
+        {
+        case COMMAND_ID_0:
+            if (pXSprite->data4 == 3 && activated == false)
+                activateDudes(pXSprite->txID);
+
+            SetSpriteState(nSprite, pXSprite, 0);
+            break;
+        case COMMAND_ID_21:
+            if (pXSprite->txID != 0)
+                evSend(nSprite, 3, pXSprite->txID, kGDXCommandPaste);
+            if (pXSprite->busyTime > 0)
+                if (pXSprite->txID != 0)
+                    evSend(nSprite, 3, pXSprite->txID, kGDXCommandPaste);
+            if (pXSprite->busyTime > 0)
+                evPost(nSprite, 3, pXSprite->busyTime, COMMAND_ID_21);
+            break;
+        default:
+            if (pXSprite->state == 0) {
+                SetSpriteState(nSprite, pXSprite, 1);
+                evPost(nSprite, 3, 0, COMMAND_ID_21);
+            }
+            break;
+        }
+
+        pXSprite->dropMsg = (short)pXSprite->data4;
+        break;
+    }
     case 700:
     case 701:
     case 702:
@@ -2414,8 +2453,739 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
         }
 
+    } else if (pSource->type == kGDXDudeTargetChanger) {
+
+        /* - Target changer for dudes via TX																		- */
+
+        /* - data1 = target dude data1 value (can be zero)															- */
+        /* 			 666: attack everyone, even if data1 id does not fit, except mates (if any)						- */
+        /* - data2 = 0: AI deathmatch mode																			- */
+        /*			 1: AI team deathmatch mode																		- */
+        /* - data3 = 0: do not force target to fight dude back and *do not* awake some inactive monsters in sight	- */
+        /* 			 1: force target to fight dude back	and *do not* awake some inactive monsters in sight			- */
+        /*			 2: force target to fight dude back	and awake some inactive monsters in sight					- */
+        /* - data4 = 0: do not ignore player(s) (even if enough targets in sight)									- */
+        /*			 1: try to ignore player(s) (while enough targets in sight)										- */
+        /*			 2: ignore player(s) (attack only when no targets in sight at all)								- */
+        /*			 3: go to idle state if no targets in sight and ignore player(s) always							- */
+        /*			 4: follow player(s) when no targets in sight, attack targets if any in sight					- */
+
+        if (type != 3 || !IsDudeSprite(&sprite[nDest]) || sprite[nDest].statnum != 6) return;
+        spritetype* pSprite = &sprite[nDest]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
+        spritetype* pTarget = NULL; XSPRITE* pXTarget = NULL; int receiveHp = 33 + Random(33);
+        DUDEINFO* pDudeInfo = &dudeInfo[pSprite->lotag - kDudeBase]; int matesPerEnemy = 1;
+
+        // dude is burning?
+        if (pXSprite->burnTime > 0 && pXSprite->burnSource >= 0 && pXSprite->burnSource < kMaxSprites) {
+            if (!IsBurningDude(pSprite)) {
+                spritetype* pBurnSource = &sprite[pXSprite->burnSource];
+                if (pBurnSource->extra >= 0) {
+                    if (pXSource->data2 == 1 && isMateOf(pXSprite, &xsprite[pBurnSource->extra])) {
+                        pXSprite->burnTime = 0;
+
+                        // heal dude a bit in case of friendly fire
+                        if (pXSprite->data4 > 0 && pXSprite->health < pXSprite->data4)
+                            actHealDude(pXSprite, receiveHp, pXSprite->data4);
+                        else if (pXSprite->health < pDudeInfo->startHealth)
+                            actHealDude(pXSprite, receiveHp, pDudeInfo->startHealth);
+                    }
+                    else if (xsprite[pBurnSource->extra].health <= 0) {
+                        pXSprite->burnTime = 0;
+                    }
+                }
+            }
+            else {
+                actKillDude(pSource->xvel, pSprite, (DAMAGE_TYPE)0, 65535);
+                return;
+            }
+        }
+
+        spritetype* pPlayer = targetIsPlayer(pXSprite);
+        // special handling for player(s) if target changer data4 > 2.
+        if (pPlayer != NULL) {
+            if (pXSource->data4 == 3) {
+                aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                aiSetGenIdleState(pSprite, pXSprite);
+                //if (pSprite->type == 254)
+                   //removeLeech(leechIsDropped(pSprite));
+            }
+            else if (pXSource->data4 == 4) {
+                aiSetTarget(pXSprite, pPlayer->x, pPlayer->y, pPlayer->z);
+                //if (pSprite->lotag == 254)
+                    //removeLeech(leechIsDropped(pSprite));
+            }
+        }
+
+        int maxAlarmDudes = 8 + Random(8);
+        if (pXSprite->target > -1 && sprite[pXSprite->target].extra > -1) {
+            pTarget = &sprite[pXSprite->target]; pXTarget = &xsprite[pTarget->extra];
+
+            if (unitCanFly(pSprite) && isMeleeUnit(pTarget) && !unitCanFly(pTarget))
+                pSprite->hitag |= 0x0002;
+            else if (unitCanFly(pSprite))
+                pSprite->hitag &= 0x0002;
+
+            if (!IsDudeSprite(pTarget) || pXTarget->health < 1 || !dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget)) {
+                aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+
+            // instantly kill annoying spiders, rats, hands etc if dude is big enough
+            } else if (isAnnoyingUnit(pTarget) && !isAnnoyingUnit(pSprite) && tilesiz[pSprite->picnum].y >= 60 &&
+                getTargetDist(pSprite, pDudeInfo, pTarget) < 2) {
+
+                actKillDude(pSource->xvel, pTarget, (DAMAGE_TYPE)0, 65535);
+                aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+
+            } else if (pXSource->data2 == 1 && isMateOf(pXSprite, pXTarget)) {
+                spritetype* pMate = pTarget; XSPRITE* pXMate = pXTarget;
+
+                // heal dude
+                if (pXSprite->data4 > 0 && pXSprite->health < pXSprite->data4)
+                    actHealDude(pXSprite, receiveHp, pXSprite->data4);
+                else if (pXSprite->health < pDudeInfo->startHealth)
+                    actHealDude(pXSprite, receiveHp, pDudeInfo->startHealth);
+
+                // heal mate
+                if (pXMate->data4 > 0 && pXMate->health < pXMate->data4)
+                    actHealDude(pXMate, receiveHp, pXMate->data4);
+                else {
+                    DUDEINFO* pTDudeInfo = &dudeInfo[pMate->type - kDudeBase];
+                    if (pXMate->health < pTDudeInfo->startHealth)
+                        actHealDude(pXMate, receiveHp, pTDudeInfo->startHealth);
+                }
+
+                if (pXMate->target > -1 && sprite[pXMate->target].extra >= 0) {
+                    pTarget = &sprite[pXMate->target];
+                    // force mate stop attack dude, if he does
+                    if (pXMate->target == pSprite->xvel) {
+                        aiSetTarget(pXMate, pMate->x, pMate->y, pMate->z);
+                    } else if (!isMateOf(pXSprite, &xsprite[pTarget->extra])) {
+                        // force dude to attack same target that mate have
+                        aiSetTarget(pXSprite, pTarget->xvel);
+                        return;
+
+                    } else {
+                        // force mate to stop attack another mate
+                        aiSetTarget(pXMate, pMate->x, pMate->y, pMate->z);
+                    }
+                }
+
+                // force dude stop attack mate, if target was not changed previously
+                if (pXSprite->target == pMate->xvel)
+                    aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+
+                // check if targets aims player then force this target to fight with dude
+            } else if (targetIsPlayer(pXTarget) != NULL) {
+                aiSetTarget(pXTarget, pSprite->xvel);
+            }
+
+            int mDist = 3; if (isMeleeUnit(pSprite)) mDist = 2;
+            //int mDist = 2;
+            if (pXSprite->target >= 0 && getTargetDist(pSprite, pDudeInfo, &sprite[pXSprite->target]) < mDist) {
+                //aiSetTarget(pXSprite,sprite[pXSprite.target].xvel);
+                return;
+            // lets try to look for target that fits better by distance
+            } else if ((gFrameClock & 256) != 0 && (pXSprite->target < 0 || getTargetDist(pSprite, pDudeInfo, pTarget) >= mDist)) {
+                pTarget = getTargetInRange(pSprite, 0, mDist, pXSource->data1, pXSource->data2);
+                if (pTarget != NULL) {
+                    pXTarget = &xsprite[pTarget->extra];
+
+                    // Make prev target not aim in dude
+                    if (pXSprite->target > -1) {
+                        spritetype* prvTarget = &sprite[pXSprite->target];
+                        aiSetTarget(&xsprite[prvTarget->extra], prvTarget->x, prvTarget->y, prvTarget->z);
+                        if (!isActive(pTarget->xvel))
+                            aiActivateDude(pTarget, pXTarget);
+                    }
+
+                    // Change target for dude
+                    aiSetTarget(pXSprite, pTarget->xvel);
+                    if (!isActive(pSprite->xvel))
+                        aiActivateDude(pSprite, pXSprite);
+
+                    // ...and change target of target to dude to force it fight
+                    if (pXSource->data3 > 0 && pXTarget->target != pSprite->xvel) {
+                        aiSetTarget(pXTarget, pSprite->xvel);
+                        if (!isActive(pTarget->xvel))
+                            aiActivateDude(pTarget, pXTarget);
+                    }
+                
+                    return;
+                }
+            }
+        }
+
+        if (pXSprite->target < 0 && (gFrameClock & 32) != 0) {
+            // try find first target that dude can see
+            for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+                pTarget = &sprite[nSprite]; pXTarget = &xsprite[pTarget->extra];
+
+                if (pXTarget->target == pSprite->xvel) {
+                    aiSetTarget(pXSprite, pTarget->xvel);
+                    return;
+                }
+
+                // skip non-dudes and players
+                if (!IsDudeSprite(pTarget) || (IsPlayerSprite(pTarget) && pXSource->data4 > 0))
+                    continue;
+                // avoid self aiming and those who dude can't see
+                else if (!dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget) || pSprite->xvel == pTarget->xvel) {
+                    continue;
+                // if Target Changer have data1 = 666, everyone can be target, except AI team mates.
+                } else if (pXSource->data1 != 666) {
+                    if (pXSource->data1 != pXTarget->data1)
+                        continue;
+                }
+
+                // don't attack immortal, burning dudes and mates
+                if (IsBurningDude(pTarget) || !IsKillableDude(pTarget, true) || (pXSource->data2 == 1 && isMateOf(pXSprite, pXTarget)))
+                    continue;
+
+                if (pXSource->data2 == 0 || (pXSource->data2 == 1 && !isMatesHaveSameTarget(pXSprite, pTarget, matesPerEnemy))) {
+
+                    // Change target for dude
+                    aiSetTarget(pXSprite, pTarget->xvel);
+                    if (!isActive(pSprite->xvel))
+                        aiActivateDude(pSprite, pXSprite);
+
+                    // ...and change target of target to dude to force it fight
+                    if (pXSource->data3 > 0 && pXTarget->target != pSprite->xvel) {
+                        aiSetTarget(pXTarget, pSprite->xvel);
+                        if (!isActive(pTarget->xvel))
+                            aiActivateDude(pTarget, pXTarget);
+
+                        if (pXSource->data3 == 2)
+                            disturbDudesInSight(pTarget, maxAlarmDudes);
+                    }
+                    return;
+                }
+                break;
+            }
+        }
+
+        // got no target - let's ask mates if they have targets
+        if (pXSprite->target < 0 && pXSource->data2 == 1 && (gFrameClock & 64) != 0) {
+            spritetype* pMateTarget = NULL;
+            if ((pMateTarget = getMateTargets(pXSprite)) != NULL && pMateTarget->extra > 0) {
+                XSPRITE* pXMateTarget = &xsprite[pMateTarget->extra];
+                if (dudeCanSeeTarget(pXSprite, pDudeInfo, pMateTarget)) {
+                    if (pXMateTarget->target < 0) {
+                        aiSetTarget(pXMateTarget, pSprite->xvel);
+                        if (!isActive(pMateTarget->xvel))
+                            aiActivateDude(pMateTarget, pXMateTarget);
+                    }
+
+                    aiSetTarget(pXSprite, pMateTarget->xvel);
+                    if (!isActive(pSprite->xvel))
+                        aiActivateDude(pSprite, pXSprite);
+                    return;
+
+                // try walk in mate direction in case if not see the target
+                } else if (pXMateTarget->target >= 0 && dudeCanSeeTarget(pXSprite, pDudeInfo, &sprite[pXMateTarget->target])) {
+                    spritetype* pMate = &sprite[pXMateTarget->target];
+                    pXSprite->target = pMateTarget->xvel;
+                    //pXSprite.target = -1;
+                    pXSprite->targetX = pMate->x;
+                    pXSprite->targetY = pMate->y;
+                    pXSprite->targetZ = pMate->z;
+                    if (!isActive(pSprite->xvel))
+                        aiActivateDude(pSprite, pXSprite);
+                    return;
+
+                // try just walk around
+                } else if ((gFrameClock & 72) != 0 && !isActive(pSprite->xvel)) {
+                    aiActivateDude(pSprite, pXSprite);
+                    return;
+                }
+            }
+        }
+    } else if (pSource->type == kGDXObjSizeChanger) {
+
+        /* - size and pan changer of sprite/wall/sector via TX ID 	- */
+        /* - data1 = sprite xrepeat / wall xrepeat / floor xpan 	- */
+        /* - data2 = sprite yrepeat / wall yrepeat / floor ypan 	- */
+        /* - data3 = sprite xoffset / wall xoffset / ceil xpan 		- */
+        /* - data3 = sprite yoffset / wall yoffset / ceil ypan 		- */
+
+        if (pXSource->data1 > 255) pXSource->data1 = 255;
+        if (pXSource->data2 > 255) pXSource->data2 = 255;
+        if (pXSource->data3 > 255) pXSource->data3 = 255;
+        if (valueIsBetween(pXSource->data4, 255, 65535))
+            pXSource->data4 = 255;
+
+        switch (type) {
+            // for sectors
+            case 6:
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    sector[nDest].floorxpanning = pXSource->data1;
+
+                if (valueIsBetween(pXSource->data2, -1, 32767))
+                    sector[nDest].floorypanning = pXSource->data2;
+
+                if (valueIsBetween(pXSource->data3, -1, 32767))
+                    sector[nDest].ceilingxpanning = pXSource->data3;
+
+                if (valueIsBetween(pXSource->data4, -1, 65535))
+                    sector[nDest].ceilingypanning = (short)pXSource->data4;
+                break;
+            // for sprites
+            case 3:
+
+                if (valueIsBetween(pXSource->data1, -1, 32767) &&
+                    valueIsBetween(pXSource->data2, -1, 32767) &&
+                    pXSource->data1 < 4 && pXSource->data2 < 4)
+                {
+
+                    sprite[nDest].xrepeat = 4;
+                    sprite[nDest].yrepeat = 4;
+                    sprite[nDest].cstat |= kSprInvisible;
+
+                }
+                else {
+
+                    if (valueIsBetween(pXSource->data1, -1, 32767)) {
+                        if (pXSource->data1 < 4)
+                            sprite[nDest].xrepeat = 4;
+                        else
+                            sprite[nDest].xrepeat = pXSource->data1;
+                    }
+
+                    if (valueIsBetween(pXSource->data2, -1, 32767)) {
+                        if (pXSource->data2 < 4)
+                            sprite[nDest].yrepeat = 4;
+                        else
+                            sprite[nDest].yrepeat = pXSource->data2;
+                    }
+                }
+
+                if (valueIsBetween(pXSource->data3, -1, 32767))
+                    sprite[nDest].xoffset = pXSource->data3;
+
+                if (valueIsBetween(pXSource->data4, -1, 65535))
+                    sprite[nDest].yoffset = (short)pXSource->data4;
+
+                break;
+            // for walls
+            case 0:
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    wall[nDest].xrepeat = pXSource->data1;
+
+                if (valueIsBetween(pXSource->data2, -1, 32767))
+                    wall[nDest].yrepeat = pXSource->data2;
+
+                if (valueIsBetween(pXSource->data3, -1, 32767))
+                    wall[nDest].xpanning = (short)pXSource->data3;
+
+                if (valueIsBetween(pXSource->data4, -1, 65535))
+                    wall[nDest].ypanning = (short)pXSource->data4;
+
+                break;
+        }
+
+    } else if (pSource->type == kGDXObjPicnumChanger) {
+
+        /* - picnum changer can change picnum of sprite/wall/sector via TX ID - */
+        /* - data1 = sprite pic / wall pic / sector floor pic 				 - */
+        /* - data3 = sprite pal / wall pal / sector floor pic				- */
+
+        switch (type) {
+            // for sectors
+            case 6:
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    sector[nDest].floorpicnum = pXSource->data1;
+
+                if (valueIsBetween(pXSource->data2, -1, 32767))
+                    sector[nDest].ceilingpicnum = pXSource->data2;
+
+                XSECTOR pXSector = xsector[sector[nDest].extra];
+                if (valueIsBetween(pXSource->data3, -1, 32767)) {
+                    sector[nDest].floorpal = pXSource->data3;
+                    if ((pSource->hitag & 0x0001) != 0)
+                        pXSector.floorpal = pXSource->data3;
+                }
+
+                if (valueIsBetween(pXSource->data4, -1, 65535)) {
+                    sector[nDest].ceilingpal = (short)pXSource->data4;
+                    if ((pSource->hitag & 0x0001) != 0)
+                        pXSector.ceilpal = (short)pXSource->data4;
+                }
+                break;
+            // for sprites
+            case 3:
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    sprite[nDest].picnum = pXSource->data1;
+
+                if (valueIsBetween(pXSource->data3, -1, 32767))
+                    sprite[nDest].pal = pXSource->data3;
+                break;
+            // for walls
+            case 0:
+                if (valueIsBetween(pXSource->data1, -1, 32767))
+                    wall[nDest].picnum = pXSource->data1;
+
+                if (valueIsBetween(pXSource->data2, -1, 32767))
+                    wall[nDest].overpicnum = pXSource->data2;
+
+                if (valueIsBetween(pXSource->data3, -1, 32767))
+                    wall[nDest].pal = pXSource->data3;
+                break;
+        }
+
+    } else if (pSource->type == kGDXObjPropertiesChanger) {
+
+        /* - properties changer can change various properties of sprite/wall/sector via TX ID 	- */
+        /* - data1 = sector underwater status													- */
+        /* - data2 = sector visibility 															- */
+        /* - data3 = sector ceiling cstat / sprite / wall hitag 								- */
+        /* - data4 = sector floor / sprite / wall cstat 										- */
+
+        switch (type) {
+            // for sectors
+        case 6:
+            XSECTOR pXSector = xsector[sector[nDest].extra];
+
+            if (valueIsBetween(pXSource->data1, -1, 32767)) {
+                if (pXSource->data1 == 1) pXSector.Underwater = true;
+                else pXSector.Underwater = false;
+            }
+
+            if (valueIsBetween(pXSource->data2, -1, 32767)) {
+                if (pXSource->data2 > 255) sector[nDest].visibility = 255;
+                else sector[nDest].visibility = pXSource->data2;
+            }
+
+            if (valueIsBetween(pXSource->data3, -1, 32767))
+                sector[nDest].ceilingstat = pXSource->data3;
+
+            if (valueIsBetween(pXSource->data4, -1, 65535))
+                sector[nDest].floorstat = (short)pXSource->data4;
+            break;
+            // for sprites
+        case 3:
+            if (valueIsBetween(pXSource->data3, -1, 32767))
+                sprite[nDest].hitag = pXSource->data3;
+
+            if (valueIsBetween(pXSource->data4, -1, 65535)) {
+                pXSource->data4 |= kSprOriginAlign;
+                sprite[nDest].cstat = (short)pXSource->data4;
+            }
+            break;
+            // for walls
+        case 0:
+            if (valueIsBetween(pXSource->data3, -1, 32767))
+                wall[nDest].hitag = pXSource->data3;
+
+            if (valueIsBetween(pXSource->data4, -1, 65535))
+                wall[nDest].cstat = (short)pXSource->data4;
+            break;
+        }
     }
 }
+// By NoOne: the following functions required for kGDXDudeTargetChanger
+//---------------------------------------
+spritetype* getTargetInRange(spritetype* pSprite, int minDist, int maxDist, short data, short teamMode) {
+    DUDEINFO pDudeInfo = dudeInfo[pSprite->type - kDudeBase];
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    spritetype* pTarget = NULL; XSPRITE* pXTarget = NULL;
+    spritetype* cTarget = NULL; XSPRITE* cXTarget = NULL;
+    for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+        pTarget = &sprite[nSprite];  pXTarget = &xsprite[pTarget->extra];
+        if (!dudeCanSeeTarget(pXSprite, &pDudeInfo, pTarget)) continue;
+
+        int dist = getTargetDist(pSprite, &pDudeInfo, pTarget);
+        if (dist < minDist || dist > maxDist) continue;
+        else if (pXSprite->target == pTarget->xvel) return pTarget;
+        else if (!IsDudeSprite(pTarget) || pTarget->xvel == pSprite->xvel || IsPlayerSprite(pTarget)) continue;
+        else if (IsBurningDude(pTarget) || IsKillableDude(pTarget, true)) continue;
+        else if (teamMode == 1 && isMateOf(pXSprite, pXTarget)) continue;
+        else if (data == 666 || pXTarget->data1 == data) {
+
+            if (pXSprite->target > 0) {
+                cTarget = &sprite[pXSprite->target];
+                cXTarget = &xsprite[cTarget->extra];
+                int fineDist1 = getFineTargetDist(pSprite, &pDudeInfo, cTarget);
+                int fineDist2 = getFineTargetDist(pSprite, &pDudeInfo, pTarget);
+                if (cXTarget->health < pXTarget->health && fineDist1 < fineDist2)
+                    continue;
+            }
+            return pTarget;
+        }
+    }
+
+    return NULL;
+}
+
+bool isMateOf(XSPRITE* pXDude, XSPRITE* pXSprite) {
+    return (pXDude->rxID == pXSprite->rxID);
+}
+
+spritetype* targetIsPlayer(XSPRITE* pXSprite) {
+
+    if (pXSprite->target >= 0) {
+        if (IsPlayerSprite(&sprite[pXSprite->target]))
+            return &sprite[pXSprite->target];
+    }
+
+    return NULL;
+}
+
+bool isTargetAimsDude(XSPRITE* pXTarget, spritetype* pDude) {
+    return (pXTarget->target == pDude->xvel);
+}
+
+spritetype* getMateTargets(XSPRITE* pXSprite) {
+    int rx = pXSprite->rxID; spritetype* pMate = NULL; XSPRITE* pXMate = NULL;
+    
+    // original code
+    for (int i = bucketHead[rx]; i < bucketHead[rx + 1]; i++) {
+        if (rxBucket[i].at1_5 == 3) {
+            pMate = &sprite[rxBucket[i].at0_0];
+            if (pMate->extra < 0 || pMate->xvel == sprite[pXSprite->reference].xvel || !IsDudeSprite(pMate))
+                continue;
+
+            pXMate = &xsprite[pMate->extra];
+            if (pXMate->target > -1) {
+                if (!IsPlayerSprite(&sprite[pXMate->target]))
+                    return &sprite[pXMate->target];
+            }
+
+        }
+    }
+
+    return NULL;
+}
+
+bool isMatesHaveSameTarget(XSPRITE* pXLeader, spritetype* pTarget, int allow) {
+    int rx = pXLeader->rxID; spritetype* pMate = NULL; XSPRITE* pXMate = NULL;
+
+    for (int i = bucketHead[rx]; i < bucketHead[rx + 1]; i++) {
+
+        if (rxBucket[i].at1_5 != 3)
+            continue;
+
+        pMate = &sprite[rxBucket[i].at0_0];
+        if (pMate->extra < 0 || pMate->xvel == sprite[pXLeader->reference].xvel || !IsDudeSprite(pMate))
+            continue;
+
+        pXMate = &xsprite[pMate->extra];
+        if (pXMate->target == pTarget->xvel && allow-- <= 0)
+            return true;
+    }
+
+    return false;
+
+}
+
+bool isActive(int nSprite) {
+    spritetype* pDude = &sprite[nSprite]; XSPRITE* pXDude = &xsprite[pDude->extra];
+    int stateType = pXDude->aiState->stateType;
+    switch (stateType) {
+        case kAiStateIdle:
+        case kAiStateGenIdle:
+        case kAiStateSearch:
+        case kAiStateMove:
+            return false;
+    }
+    return true;
+}
+
+bool dudeCanSeeTarget(XSPRITE* pXDude, DUDEINFO* pDudeInfo, spritetype* pTarget) {
+    spritetype* pDude = &sprite[pXDude->reference];
+    int dx = pTarget->x - pDude->x;
+    int dy = pTarget->y - pDude->y;
+
+    int dist = approxDist(dx, dy);
+
+    // check target
+    if (dist < pDudeInfo->seeDist) {
+        int eyeAboveZ = pDudeInfo->eyeHeight * pDude->yrepeat << 2;
+
+        // is there a line of sight to the target?
+        if (cansee(pDude->x, pDude->y, pDude->z, pDude->sectnum,
+            pTarget->x, pTarget->y, pTarget->z - eyeAboveZ, pTarget->sectnum)) {
+            int nAngle = getangle(dx, dy);
+            int losAngle = ((1024 + nAngle - pDude->ang) & 2047) - 1024; // 360 deg periphery here
+
+            // is the target visible?
+            if (klabs(losAngle) < 2048)
+                return true;
+        }
+    }
+
+    return false;
+
+}
+
+// this function required if monsters in genIdle ai state. It wakes up monsters
+// when kGDXDudeTargetChanger goes to off state, so they won't ignore the world.
+void activateDudes(int rx) {
+    for (int i = bucketHead[rx]; i < bucketHead[rx + 1]; i++) {
+        if (rxBucket[i].at1_5 != 3)
+            continue;
+
+        spritetype * pDude = &sprite[rxBucket[i].at0_0]; XSPRITE * pXDude = &xsprite[pDude->extra];
+        if (!IsDudeSprite(pDude)) continue;
+        if (pXDude->aiState->stateType == kAiStateGenIdle) {
+            aiSetTarget(pXDude, pDude->x, pDude->y, pDude->z);
+            aiActivateDude(pDude, pXDude);
+        }
+
+        if (unitCanFly(pDude))
+            pDude->hitag &= 0x0002;
+    }
+}
+
+void disturbDudesInSight(spritetype* pSprite, int max) {
+    spritetype* pDude = NULL; XSPRITE* pXDude = NULL;
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    DUDEINFO pDudeInfo = dudeInfo[pSprite->lotag - kDudeBase];
+    for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+        pDude = &sprite[nSprite];
+        if (pDude->xvel == pSprite->xvel || !IsDudeSprite(pDude) || pDude->extra < 0)
+            continue;
+        pXDude = &xsprite[pDude->extra];
+        if (dudeCanSeeTarget(pXSprite, &pDudeInfo, pDude)) {
+            if (pXDude->target != -1 || pXDude->rxID > 0)
+                continue;
+
+            aiSetTarget(pXDude, pDude->x, pDude->y, pDude->z);
+            aiActivateDude(pDude, pXDude);
+            if (max-- < 1)
+                break;
+        }
+    }
+}
+
+int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
+    int x = pTarget->x; int y = pTarget->y; //int z = pTarget.z;
+    int dx = x - pSprite->x; int dy = y - pSprite->y;
+
+    int dist = approxDist(dx, dy);
+    if (dist <= pDudeInfo->meleeDist) return 0;
+    if (dist >= pDudeInfo->seeDist) return 13;
+    if (dist <= pDudeInfo->seeDist / 12) return 1;
+    if (dist <= pDudeInfo->seeDist / 11) return 2;
+    if (dist <= pDudeInfo->seeDist / 10) return 3;
+    if (dist <= pDudeInfo->seeDist / 9) return 4;
+    if (dist <= pDudeInfo->seeDist / 8) return 5;
+    if (dist <= pDudeInfo->seeDist / 7) return 6;
+    if (dist <= pDudeInfo->seeDist / 6) return 7;
+    if (dist <= pDudeInfo->seeDist / 5) return 8;
+    if (dist <= pDudeInfo->seeDist / 4) return 9;
+    if (dist <= pDudeInfo->seeDist / 3) return 10;
+    if (dist <= pDudeInfo->seeDist / 2) return 11;
+    return 12;
+}
+
+int getFineTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
+    int x = pTarget->x; int y = pTarget->y;
+    int dx = x - pSprite->x; int dy = y - pSprite->y;
+
+    int dist = approxDist(dx, dy);
+    return dist;
+}
+
+bool IsBurningDude(spritetype* pSprite) {
+    if (pSprite == NULL) return false;
+    switch (pSprite->type) {
+    case 239: // burning dude
+    case 240: // cultist burning
+    case 241: // axe zombie burning
+    case 242: // fat zombie burning
+    case 252: // tiny caleb burning
+    case 253: // beast burning
+    //case kGDXGenDudeBurning:
+        return true;
+    }
+
+    return false;
+}
+
+bool IsKillableDude(spritetype* pSprite, bool locked) {
+    if (!IsDudeSprite(pSprite)) return false;
+    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->lotag - kDudeBase];
+
+    // Optionally check if dude is locked
+    if (locked && xsprite[pSprite->extra].locked == 1)
+        return false;
+
+
+    // Make sure damage shift is greater than 0;
+    int a = 0;
+    for (int i = 0; i <= 6; i++) {
+        a += pDudeInfo->startDamage[i];
+    }
+
+    if (a == 0) return false;
+    return true;
+}
+
+bool isAnnoyingUnit(spritetype* pDude) {
+    switch (pDude->lotag) {
+    case 212: // hand
+    case 213: // brown spider
+    case 214: // red spider
+    case 215: // black spider
+    case 216: // mother spider
+    case 218: // eel
+    case 219: // bat
+    case 220: // rat
+    case 222: // green tentacle
+    case 224: // fire tentacle
+    case 226: // mother tentacle
+    case 223: // green pod
+    case 225: // fire pod
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool unitCanFly(spritetype* pDude) {
+    switch (pDude->lotag) {
+    case 219: // bat
+    case 206: // gargoyle
+    case 207: // stone gargoyle
+    case 210: // phantasm
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool isMeleeUnit(spritetype* pDude) {
+    switch (pDude->lotag) {
+    case 203: // axe zombie
+    case 205: // earth zombie
+    case 206: // gargoyle
+    case 212: // hand
+    case 213: // brown spider
+    case 214: // red spider
+    case 215: // black spider
+    case 216: // mother spider
+    case 217: // gill beast
+    case 218: // eel
+    case 219: // bat
+    case 220: // rat
+    case 222: // green tentacle
+    case 224: // fire tentacle
+    case 226: // mother tentacle
+    case 244: // sleep zombie
+    case 245: // innocent
+    case 250: // tiny caleb
+    case 251: // beast
+        return true;
+    /*case kGDXDudeUniversalCultist:
+    {
+        int data1 = xsprite[pDude.extra].data1;
+        if ((data1 >= 6 && data1 < 19) || data1 == 22
+            || data1 == 304 || data1 == 308)
+            return true;
+    }*/
+    default:
+        return false;
+    }
+}
+//---------------------------------------
 
 void ProcessMotion(void)
 {
@@ -2734,7 +3504,7 @@ void InitGenerator(int nSprite)
     case kGDXDudeTargetChanger:
         pSprite->cstat &= ~kSprBlock;
         pSprite->cstat |= kSprInvisible;
-        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 10;
+        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 5;
         if (pXSprite->state != pXSprite->restState)
             evPost(nSprite, 3, pXSprite->busyTime, COMMAND_ID_21); // using different time intervals here
         return;

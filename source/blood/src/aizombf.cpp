@@ -50,16 +50,16 @@ static int nHackClient = seqRegisterClient(HackSeqCallback);
 static int nPukeClient = seqRegisterClient(PukeSeqCallback);
 static int nThrowClient = seqRegisterClient(ThrowSeqCallback);
 
-AISTATE zombieFIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE zombieFChase = { 8, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE zombieFGoto = { 8, -1, 600, NULL, aiMoveForward, thinkGoto, &zombieFIdle };
-AISTATE zombieFDodge = { 8, -1, 0, NULL, aiMoveDodge, thinkChase, &zombieFChase };
-AISTATE zombieFHack = { 6, nHackClient, 120, NULL, NULL, NULL, &zombieFChase };
-AISTATE zombieFPuke = { 9, nPukeClient, 120, NULL, NULL, NULL, &zombieFChase };
-AISTATE zombieFThrow = { 6, nThrowClient, 120, NULL, NULL, NULL, &zombieFChase };
-AISTATE zombieFSearch = { 8, -1, 1800, NULL, aiMoveForward, thinkSearch, &zombieFIdle };
-AISTATE zombieFRecoil = { 5, -1, 0, NULL, NULL, NULL, &zombieFChase };
-AISTATE zombieFTeslaRecoil = { 4, -1, 0, NULL, NULL, NULL, &zombieFChase };
+AISTATE zombieFIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE zombieFChase = { kAiStateChase, 8, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE zombieFGoto = { kAiStateMove, 8, -1, 600, NULL, aiMoveForward, thinkGoto, &zombieFIdle };
+AISTATE zombieFDodge = { kAiStateMove, 8, -1, 0, NULL, aiMoveDodge, thinkChase, &zombieFChase };
+AISTATE zombieFHack = { kAiStateChase, 6, nHackClient, 120, NULL, NULL, NULL, &zombieFChase };
+AISTATE zombieFPuke = { kAiStateChase, 9, nPukeClient, 120, NULL, NULL, NULL, &zombieFChase };
+AISTATE zombieFThrow = { kAiStateChase, 6, nThrowClient, 120, NULL, NULL, NULL, &zombieFChase };
+AISTATE zombieFSearch = { kAiStateSearch, 8, -1, 1800, NULL, aiMoveForward, thinkSearch, &zombieFIdle };
+AISTATE zombieFRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &zombieFChase };
+AISTATE zombieFTeslaRecoil = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &zombieFChase };
 
 static void HackSeqCallback(int, int nXSprite)
 {
@@ -74,9 +74,9 @@ static void HackSeqCallback(int, int nXSprite)
         return;
     spritetype *pTarget = &sprite[pXSprite->target];
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int height = (pDudeInfo->atb*pSprite->yrepeat);
+    int height = (pDudeInfo->eyeHeight*pSprite->yrepeat);
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
-    int height2 = (pDudeInfoT->atb*pTarget->yrepeat);
+    int height2 = (pDudeInfoT->eyeHeight*pTarget->yrepeat);
     actFireVector(pSprite, 0, 0, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, height-height2, VECTOR_TYPE_11);
 }
 
@@ -88,8 +88,8 @@ static void PukeSeqCallback(int, int nXSprite)
     spritetype *pTarget = &sprite[pXSprite->target];
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
-    int height = (pDudeInfo->atb*pSprite->yrepeat);
-    int height2 = (pDudeInfoT->atb*pTarget->yrepeat);
+    int height = (pDudeInfo->eyeHeight*pSprite->yrepeat);
+    int height2 = (pDudeInfoT->eyeHeight*pTarget->yrepeat);
     int tx = pXSprite->targetX-pSprite->x;
     int ty = pXSprite->targetY-pSprite->y;
     int UNUSED(nDist) = approxDist(tx, ty);
@@ -105,7 +105,7 @@ static void ThrowSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    actFireMissile(pSprite, 0, -dudeInfo[pSprite->type-kDudeBase].atb, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 300);
+    actFireMissile(pSprite, 0, -dudeInfo[pSprite->type-kDudeBase].eyeHeight, Cos(pSprite->ang)>>16, Sin(pSprite->ang)>>16, 0, 300);
 }
 
 static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
@@ -123,7 +123,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &zombieFSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -154,13 +154,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (nDist < 0x1400 && nDist > 0xe00 && klabs(nDeltaAngle) < 85)

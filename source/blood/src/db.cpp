@@ -908,13 +908,13 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
             pXSector->Enter = bitReader.readUnsigned(1);
             pXSector->Exit = bitReader.readUnsigned(1);
             pXSector->Wallpush = bitReader.readUnsigned(1);
-            pXSector->at18_0 = bitReader.readUnsigned(1);
+            pXSector->color = bitReader.readUnsigned(1);
             pXSector->at18_1 = bitReader.readUnsigned(1);
             pXSector->busyTimeB = bitReader.readUnsigned(12);
             pXSector->waitTimeB = bitReader.readUnsigned(12);
             pXSector->at1b_2 = bitReader.readUnsigned(1);
             pXSector->at1b_3 = bitReader.readUnsigned(1);
-            pXSector->at1b_4 = bitReader.readUnsigned(4);
+            pXSector->ceilpal = bitReader.readUnsigned(4);
             pXSector->at1c_0 = bitReader.readSigned(32);
             pXSector->at20_0 = bitReader.readSigned(32);
             pXSector->at24_0 = bitReader.readSigned(32);
@@ -926,7 +926,7 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
             pXSector->at31_1 = bitReader.readUnsigned(8);
             pXSector->at32_1 = bitReader.readUnsigned(8);
             pXSector->at33_1 = bitReader.readUnsigned(3);
-            pXSector->at33_4 = bitReader.readUnsigned(4);
+            pXSector->floorpal = bitReader.readUnsigned(4);
             pXSector->at34_0 = bitReader.readUnsigned(8);
             pXSector->locked = bitReader.readUnsigned(1);
             pXSector->windVel = bitReader.readUnsigned(10);

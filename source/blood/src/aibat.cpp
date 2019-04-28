@@ -51,24 +51,24 @@ static void MoveToCeil(spritetype *, XSPRITE *);
 
 static int nBiteClient = seqRegisterClient(BiteSeqCallback);
 
-AISTATE batIdle = { 0, -1, 0, NULL, NULL, thinkTarget, NULL };
-AISTATE batFlyIdle = { 6, -1, 0, NULL, NULL, thinkTarget, NULL };
-AISTATE batChase = { 6, -1, 0, NULL, MoveForward, thinkChase, &batFlyIdle };
-AISTATE batPonder = { 6, -1, 0, NULL, NULL, thinkPonder, NULL };
-AISTATE batGoto = { 6, -1, 600, NULL, MoveForward, thinkGoto, &batFlyIdle };
-AISTATE batBite = { 7, nBiteClient, 60, NULL, NULL, NULL, &batPonder };
-AISTATE batRecoil = { 5, -1, 0, NULL, NULL, NULL, &batChase };
-AISTATE batSearch = { 6, -1, 120, NULL, MoveForward, thinkSearch, &batFlyIdle };
-AISTATE batSwoop = { 6, -1, 60, NULL, MoveSwoop, thinkChase, &batChase };
-AISTATE batFly = { 6, -1, 0, NULL, MoveFly, thinkChase, &batChase };
-AISTATE batTurn = { 6, -1, 60, NULL, aiMoveTurn, NULL, &batChase };
-AISTATE batHide = { 6, -1, 0, NULL, MoveToCeil, MoveForward, NULL };
-AISTATE batDodgeUp = { 6, -1, 120, NULL, MoveDodgeUp, 0, &batChase };
-AISTATE batDodgeUpRight = { 6, -1, 90, NULL, MoveDodgeUp, 0, &batChase };
-AISTATE batDodgeUpLeft = { 6, -1, 90, NULL, MoveDodgeUp, 0, &batChase };
-AISTATE batDodgeDown = { 6, -1, 120, NULL, MoveDodgeDown, 0, &batChase };
-AISTATE batDodgeDownRight = { 6, -1, 90, NULL, MoveDodgeDown, 0, &batChase };
-AISTATE batDodgeDownLeft = { 6, -1, 90, NULL, MoveDodgeDown, 0, &batChase };
+AISTATE batIdle = {kAiStateIdle, 0, -1, 0, NULL, NULL, thinkTarget, NULL };
+AISTATE batFlyIdle = {kAiStateIdle, 6, -1, 0, NULL, NULL, thinkTarget, NULL };
+AISTATE batChase = {kAiStateChase, 6, -1, 0, NULL, MoveForward, thinkChase, &batFlyIdle };
+AISTATE batPonder = {kAiStateOther, 6, -1, 0, NULL, NULL, thinkPonder, NULL };
+AISTATE batGoto = {kAiStateMove, 6, -1, 600, NULL, MoveForward, thinkGoto, &batFlyIdle };
+AISTATE batBite = {kAiStateChase, 7, nBiteClient, 60, NULL, NULL, NULL, &batPonder };
+AISTATE batRecoil = {kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &batChase };
+AISTATE batSearch = {kAiStateSearch, 6, -1, 120, NULL, MoveForward, thinkSearch, &batFlyIdle };
+AISTATE batSwoop = {kAiStateOther, 6, -1, 60, NULL, MoveSwoop, thinkChase, &batChase };
+AISTATE batFly = { kAiStateMove, 6, -1, 0, NULL, MoveFly, thinkChase, &batChase };
+AISTATE batTurn = {kAiStateMove, 6, -1, 60, NULL, aiMoveTurn, NULL, &batChase };
+AISTATE batHide = {kAiStateOther, 6, -1, 0, NULL, MoveToCeil, MoveForward, NULL };
+AISTATE batDodgeUp = {kAiStateMove, 6, -1, 120, NULL, MoveDodgeUp, 0, &batChase };
+AISTATE batDodgeUpRight = {kAiStateMove, 6, -1, 90, NULL, MoveDodgeUp, 0, &batChase };
+AISTATE batDodgeUpLeft = {kAiStateMove, 6, -1, 90, NULL, MoveDodgeUp, 0, &batChase };
+AISTATE batDodgeDown = {kAiStateMove, 6, -1, 120, NULL, MoveDodgeDown, 0, &batChase };
+AISTATE batDodgeDownRight = {kAiStateMove, 6, -1, 90, NULL, MoveDodgeDown, 0, &batChase };
+AISTATE batDodgeDownLeft = {kAiStateMove, 6, -1, 90, NULL, MoveDodgeDown, 0, &batChase };
 
 static void BiteSeqCallback(int, int nXSprite)
 {
@@ -80,8 +80,8 @@ static void BiteSeqCallback(int, int nXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEINFO *pDudeInfoT = &dudeInfo[pTarget->type-kDudeBase];
-    int height = (pSprite->yrepeat*pDudeInfo->atb)<<2;
-    int height2 = (pTarget->yrepeat*pDudeInfoT->atb)<<2;
+    int height = (pSprite->yrepeat*pDudeInfo->eyeHeight)<<2;
+    int height2 = (pTarget->yrepeat*pDudeInfoT->eyeHeight)<<2;
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     actFireVector(pSprite, 0, 0, dx, dy, height2-height, VECTOR_TYPE_6);
 }
@@ -102,7 +102,7 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &batTurn);
         return;
     }
-    if (Chance(pDudeInfo->at33))
+    if (Chance(pDudeInfo->alertChance))
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -116,17 +116,17 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             int dx = x-pSprite->x;
             int dy = y-pSprite->y;
             int nDist = approxDist(dx, dy);
-            if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+            if (nDist > pDudeInfo->seeDist && nDist > pDudeInfo->hearDist)
                 continue;
-            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->atb*pSprite->yrepeat)<<2), pSprite->sectnum))
+            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->eyeHeight*pSprite->yrepeat)<<2), pSprite->sectnum))
                 continue;
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
             }
-            else if (nDist < pDudeInfo->at13)
+            else if (nDist < pDudeInfo->hearDist)
             {
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
@@ -153,7 +153,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &batSearch);
     thinkTarget(pSprite, pXSprite);
 }
@@ -179,11 +179,11 @@ static void thinkPonder(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
-        int height2 = (dudeInfo[pTarget->type-kDudeBase].atb*pTarget->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
+        int height2 = (dudeInfo[pTarget->type-kDudeBase].eyeHeight*pTarget->yrepeat)<<2;
         int top, bottom;
         GetSpriteExtents(pSprite, &top, &bottom);
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
@@ -218,7 +218,7 @@ static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     int nCos = Cos(pSprite->ang);
     int nSin = Sin(pSprite->ang);
@@ -227,9 +227,9 @@ static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
     int t1 = dmulscale30(dx, nCos, dy, nSin);
     int t2 = dmulscale30(dx, nSin, -dy, nCos);
     if (pXSprite->dodgeDir > 0)
-        t2 += pDudeInfo->at3c;
+        t2 += pDudeInfo->sideSpeed;
     else
-        t2 -= pDudeInfo->at3c;
+        t2 -= pDudeInfo->sideSpeed;
 
     xvel[nSprite] = dmulscale30(t1, nCos, t2, nSin);
     yvel[nSprite] = dmulscale30(t1, nSin, -t2, nCos);
@@ -242,7 +242,7 @@ static void MoveDodgeDown(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     if (pXSprite->dodgeDir == 0)
         return;
@@ -253,9 +253,9 @@ static void MoveDodgeDown(spritetype *pSprite, XSPRITE *pXSprite)
     int t1 = dmulscale30(dx, nCos, dy, nSin);
     int t2 = dmulscale30(dx, nSin, -dy, nCos);
     if (pXSprite->dodgeDir > 0)
-        t2 += pDudeInfo->at3c;
+        t2 += pDudeInfo->sideSpeed;
     else
-        t2 -= pDudeInfo->at3c;
+        t2 -= pDudeInfo->sideSpeed;
 
     xvel[nSprite] = dmulscale30(t1, nCos, t2, nSin);
     yvel[nSprite] = dmulscale30(t1, nSin, -t2, nCos);
@@ -288,17 +288,17 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         // Should be dudeInfo[pTarget->type-kDudeBase]
-        int height2 = (pDudeInfo->atb*pTarget->yrepeat)<<2;
+        int height2 = (pDudeInfo->eyeHeight*pTarget->yrepeat)<<2;
         int top, bottom;
         GetSpriteExtents(pSprite, &top, &bottom);
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 int floorZ = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
@@ -328,9 +328,9 @@ static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    int nAccel = pDudeInfo->at38<<2;
+    int nAccel = pDudeInfo->frontSpeed<<2;
     if (klabs(nAng) > 341)
         return;
     if (pXSprite->target == -1)
@@ -361,9 +361,9 @@ static void MoveSwoop(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    int nAccel = pDudeInfo->at38<<2;
+    int nAccel = pDudeInfo->frontSpeed<<2;
     if (klabs(nAng) > 341)
     {
         pXSprite->goalAng = (pSprite->ang+512)&2047;
@@ -393,9 +393,9 @@ static void MoveFly(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    int nAccel = pDudeInfo->at38<<2;
+    int nAccel = pDudeInfo->frontSpeed<<2;
     if (klabs(nAng) > 341)
     {
         pSprite->ang = (pSprite->ang+512)&2047;

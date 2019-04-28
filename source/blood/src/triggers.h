@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "blood.h"
 #include "db.h"
 #include "eventq.h"
+#include "dude.h"
 
 void trTriggerSector(unsigned int nSector, XSECTOR *pXSector, int a3);
 void trMessageSector(unsigned int nSector, EVENT a2);
@@ -38,5 +39,26 @@ void trMessageSprite(unsigned int nSprite, EVENT a2);
 void trProcessBusy(void);
 void trInit(void);
 void trTextOver(int nId);
+
+// By NoOne: functions required for new features
+// -------------------------------------------------------
 void pastePropertiesInObj(int type, int nDest, EVENT event);
 void trDamageSprite(int type, int nDest, EVENT event);
+spritetype* getTargetInRange(spritetype* pSprite, int minDist, int maxDist, short data, short teamMode);
+bool isMateOf(XSPRITE* pXDude, XSPRITE* pXSprite);
+spritetype* targetIsPlayer(XSPRITE* pXSprite);
+bool isTargetAimsDude(XSPRITE* pXTarget, spritetype* pDude);
+spritetype* getMateTargets(XSPRITE* pXSprite);
+bool isMatesHaveSameTarget(XSPRITE* pXLeader, spritetype* pTarget, int allow);
+bool isActive(int nSprite);
+bool dudeCanSeeTarget(XSPRITE* pXDude, DUDEINFO* pDudeInfo, spritetype* pTarget);
+void disturbDudesInSight(spritetype* pSprite, int max);
+int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget);
+int getFineTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget);
+bool IsBurningDude(spritetype* pSprite);
+bool IsKillableDude(spritetype* pSprite, bool locked);
+bool isAnnoyingUnit(spritetype* pDude);
+bool unitCanFly(spritetype* pDude);
+bool isMeleeUnit(spritetype* pDude);
+void activateDudes(int rx);
+// -------------------------------------------------------

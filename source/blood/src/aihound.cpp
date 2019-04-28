@@ -48,14 +48,14 @@ static void thinkChase(spritetype *, XSPRITE *);
 static int nBiteClient = seqRegisterClient(BiteSeqCallback);
 static int nBurnClient = seqRegisterClient(BurnSeqCallback);
 
-AISTATE houndIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE houndSearch = { 8, -1, 1800, NULL, aiMoveForward, thinkSearch, &houndIdle };
-AISTATE houndChase = { 8, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE houndRecoil = { 5, -1, 0, NULL, NULL, NULL, &houndSearch };
-AISTATE houndTeslaRecoil = { 4, -1, 0, NULL, NULL, NULL, &houndSearch };
-AISTATE houndGoto = { 8, -1, 600, NULL, aiMoveForward, thinkGoto, &houndIdle };
-AISTATE houndBite = { 6, nBiteClient, 60, NULL, NULL, NULL, &houndChase };
-AISTATE houndBurn = { 7, nBurnClient, 60, NULL, NULL, NULL, &houndChase };
+AISTATE houndIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE houndSearch = { kAiStateMove, 8, -1, 1800, NULL, aiMoveForward, thinkSearch, &houndIdle };
+AISTATE houndChase = { kAiStateChase, 8, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE houndRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &houndSearch };
+AISTATE houndTeslaRecoil = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &houndSearch };
+AISTATE houndGoto = { kAiStateMove, 8, -1, 600, NULL, aiMoveForward, thinkGoto, &houndIdle };
+AISTATE houndBite = { kAiStateChase, 6, nBiteClient, 60, NULL, NULL, NULL, &houndChase };
+AISTATE houndBurn = { kAiStateChase, 7, nBurnClient, 60, NULL, NULL, NULL, &houndChase };
 
 static void BiteSeqCallback(int, int nXSprite)
 {
@@ -64,10 +64,15 @@ static void BiteSeqCallback(int, int nXSprite)
     spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang)>>16;
     int dy = Sin(pSprite->ang)>>16;
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) 
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
-    if (IsPlayerSprite(pTarget))
+    if (IsPlayerSprite(pTarget) || !isOriginalDemo()) // allow to hit non-player targets if not a demo
         actFireVector(pSprite, 0, 0, dx, dy, pTarget->z-pSprite->z, VECTOR_TYPE_15);
 }
 
@@ -87,14 +92,17 @@ static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 
 static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &houndSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -106,9 +114,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &houndGoto);
         return;
     }
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
@@ -125,13 +137,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (nDist < 0xb00 && nDist > 0x500 && klabs(nDeltaAngle) < 85)

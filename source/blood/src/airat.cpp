@@ -46,13 +46,13 @@ static void thinkChase(spritetype *, XSPRITE *);
 
 static int nBiteClient = seqRegisterClient(BiteSeqCallback);
 
-AISTATE ratIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE ratSearch = { 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &ratIdle };
-AISTATE ratChase = { 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE ratDodge = { 7, -1, 0, NULL, NULL, NULL, &ratChase };
-AISTATE ratRecoil = { 7, -1, 0, NULL, NULL, NULL, &ratDodge };
-AISTATE ratGoto = { 7, -1, 600, NULL, aiMoveForward, thinkGoto, &ratIdle };
-AISTATE ratBite = { 6, nBiteClient, 120, NULL, NULL, NULL, &ratChase };
+AISTATE ratIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE ratSearch = { kAiStateSearch, 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &ratIdle };
+AISTATE ratChase = { kAiStateChase, 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE ratDodge = { kAiStateMove, 7, -1, 0, NULL, NULL, NULL, &ratChase };
+AISTATE ratRecoil = { kAiStateRecoil, 7, -1, 0, NULL, NULL, NULL, &ratDodge };
+AISTATE ratGoto = { kAiStateMove, 7, -1, 600, NULL, aiMoveForward, thinkGoto, &ratIdle };
+AISTATE ratBite = { kAiStateChase, 6, nBiteClient, 120, NULL, NULL, NULL, &ratChase };
 
 static void BiteSeqCallback(int, int nXSprite)
 {
@@ -83,7 +83,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &ratSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -114,13 +114,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (nDist < 0x399 && klabs(nDeltaAngle) < 85)

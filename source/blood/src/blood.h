@@ -51,7 +51,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // defined by NoOne:
 // -------------------------------
-
 #define kMaxPAL 5
 
 // marker sprite types
@@ -146,9 +145,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kGDXSectorFXChanger 34
 #define kGDXObjDataChanger 35
 #define kGDXSpriteDamager 36
-// 37 free
+// 37 reserved
 #define kGDXEffectSpawner 38
 #define kGDXWindGenerator 39
+
+// ai state types
+#define kAiStateOther -1
+#define kAiStateIdle 0
+#define kAiStateGenIdle 1
+#define kAiStateMove 2
+#define kAiStateSearch 3
+#define kAiStateChase 4
+#define kAiStateRecoil 5
+
 // -------------------------------
 
 struct INIDESCRIPTION {
@@ -198,6 +207,8 @@ extern double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 extern double g_gameUpdateAvgTime;
 extern int blood_globalflags;
 extern bool bVanilla;
+
+extern int gFrameClock;
 
 void QuitGame(void);
 void PreloadCache(void);

@@ -284,8 +284,8 @@ void Respawn(int nSprite) // 9
             pSprite->y = baseSprite[nSprite].y;
             pSprite->z = baseSprite[nSprite].z;
             pSprite->cstat |= 0x1101;
-            pSprite->clipdist = dudeInfo[nType].ata;
-            pXSprite->health = dudeInfo[nType].at2<<4;
+            pSprite->clipdist = dudeInfo[nType].clipdist;
+            pXSprite->health = dudeInfo[nType].startHealth<<4;
             if (gSysRes.Lookup(dudeInfo[nType].seqStartID, "SEQ"))
                 seqSpawn(dudeInfo[nType].seqStartID, 3, pSprite->extra, -1);
             aiInitSprite(pSprite);

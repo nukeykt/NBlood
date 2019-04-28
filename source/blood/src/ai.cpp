@@ -66,10 +66,14 @@ int cumulDamage[kMaxXSprites];
 int gDudeSlope[kMaxXSprites];
 DUDEEXTRA gDudeExtra[kMaxXSprites];
 
-AISTATE genIdle = { 0, -1, 0, NULL, NULL, NULL, NULL };
-AISTATE genRecoil = { 5, -1, 20, NULL, NULL, NULL, &genIdle };
+AISTATE genIdle = {kAiStateGenIdle, 0, -1, 0, NULL, NULL, NULL, NULL };
+AISTATE genRecoil = {kAiStateRecoil, 5, -1, 20, NULL, NULL, NULL, &genIdle };
 
 int dword_138BB0[5] = {0x2000, 0x4000, 0x8000, 0xa000, 0xe000};
+
+void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite) {
+    aiNewState(pSprite, pXSprite, &genIdle);
+}
 
 bool sub_5BDA8(spritetype *pSprite, int nSeq)
 {
@@ -259,12 +263,12 @@ void aiMoveForward(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     if (klabs(nAng) > 341)
         return;
-    xvel[nSprite] += mulscale30(pDudeInfo->at38, Cos(pSprite->ang));
-    yvel[nSprite] += mulscale30(pDudeInfo->at38, Sin(pSprite->ang));
+    xvel[nSprite] += mulscale30(pDudeInfo->frontSpeed, Cos(pSprite->ang));
+    yvel[nSprite] += mulscale30(pDudeInfo->frontSpeed, Sin(pSprite->ang));
 }
 
 void aiMoveTurn(spritetype *pSprite, XSPRITE *pXSprite)
@@ -272,7 +276,7 @@ void aiMoveTurn(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
 }
 
@@ -282,7 +286,7 @@ void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
     if (pXSprite->dodgeDir)
     {
@@ -293,9 +297,9 @@ void aiMoveDodge(spritetype *pSprite, XSPRITE *pXSprite)
         int t1 = dmulscale30(dx, nCos, dy, nSin);
         int t2 = dmulscale30(dx, nSin, -dy, nCos);
         if (pXSprite->dodgeDir > 0)
-            t2 += pDudeInfo->at3c;
+            t2 += pDudeInfo->sideSpeed;
         else
-            t2 -= pDudeInfo->at3c;
+            t2 -= pDudeInfo->sideSpeed;
 
         xvel[nSprite] = dmulscale30(t1, nCos, t2, nSin);
         yvel[nSprite] = dmulscale30(t1, nSin, -t2, nCos);
@@ -863,7 +867,7 @@ void aiSetTarget(XSPRITE *pXSprite, int nTarget)
             DUDEINFO *pDudeInfo = &dudeInfo[pTarget->type-kDudeBase];
             pXSprite->targetX = pTarget->x;
             pXSprite->targetY = pTarget->y;
-            pXSprite->targetZ = pTarget->z-((pDudeInfo->atb*pTarget->yrepeat)<<2);
+            pXSprite->targetZ = pTarget->z-((pDudeInfo->eyeHeight*pTarget->yrepeat)<<2);
         }
     }
 }
@@ -883,7 +887,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         spritetype *pSource = &sprite[nSource];
         if (pSprite == pSource)
             return 0;
-        if (pXSprite->target == -1 || (nSource != pXSprite->target && Chance(pSprite->type == pSource->type ? nDamage*pDudeInfo->at2f : nDamage*pDudeInfo->at2b)))
+        if (pXSprite->target == -1 || (nSource != pXSprite->target && Chance(pSprite->type == pSource->type ? nDamage*pDudeInfo->changeTargetKin : nDamage*pDudeInfo->changeTarget)))
         {
             aiSetTarget(pXSprite, nSource);
             aiActivateDude(pSprite, pXSprite);
@@ -908,25 +912,25 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 else if (sub_5BDA8(pSprite, 13) && (pXSprite->palette == 1 || pXSprite->palette == 2))
                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
             }
-            else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
+            else if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 240;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 aiPlay3DSound(pSprite, 1031+Random(2), AI_SFX_PRIORITY_2, -1);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock+360;
-                actHealDude(pXSprite, dudeInfo[40].at2, dudeInfo[40].at2);
+                actHealDude(pXSprite, dudeInfo[40].startHealth, dudeInfo[40].startHealth);
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
         case 245:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
+            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 239;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock+360;
-                actHealDude(pXSprite, dudeInfo[39].at2, dudeInfo[39].at2);
+                actHealDude(pXSprite, dudeInfo[39].startHealth, dudeInfo[39].startHealth);
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
@@ -953,45 +957,45 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             aiNewState(pSprite, pXSprite, &gargoyleFChase);
             break;
         case 204:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23)
+            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth)
             {
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 aiPlay3DSound(pSprite, 1202, AI_SFX_PRIORITY_2, -1);
                 pSprite->type = 242;
                 aiNewState(pSprite, pXSprite, &zombieFBurnGoto);
-                actHealDude(pXSprite, dudeInfo[42].at2, dudeInfo[42].at2);
+                actHealDude(pXSprite, dudeInfo[42].startHealth, dudeInfo[42].startHealth);
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
         case 250:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
+            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 239;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock+360;
-                actHealDude(pXSprite, dudeInfo[39].at2, dudeInfo[39].at2);
+                actHealDude(pXSprite, dudeInfo[39].startHealth, dudeInfo[39].startHealth);
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
         case 249:
-            if (pXSprite->health <= (unsigned int)pDudeInfo->at23)
+            if (pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth)
             {
                 pSprite->type = 251;
                 aiPlay3DSound(pSprite, 9008, AI_SFX_PRIORITY_1, -1);
                 aiNewState(pSprite, pXSprite, &beastMorphFromCultist);
-                actHealDude(pXSprite, dudeInfo[51].at2, dudeInfo[51].at2);
+                actHealDude(pXSprite, dudeInfo[51].startHealth, dudeInfo[51].startHealth);
             }
             break;
         case 203:
         case 205:
-            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->at23)
+            if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth)
             {
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 aiPlay3DSound(pSprite, 1106, AI_SFX_PRIORITY_2, -1);
                 pSprite->type = 241;
                 aiNewState(pSprite, pXSprite, &zombieABurnGoto);
-                actHealDude(pXSprite, dudeInfo[41].at2, dudeInfo[41].at2);
+                actHealDude(pXSprite, dudeInfo[41].startHealth, dudeInfo[41].startHealth);
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
@@ -1057,9 +1061,9 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
         case 203:
         case 205:
             aiPlay3DSound(pSprite, 1106, AI_SFX_PRIORITY_2, -1);
-            if (pDudeExtra->at4 && pXSprite->data3 > pDudeInfo->at2/3)
+            if (pDudeExtra->at4 && pXSprite->data3 > pDudeInfo->startHealth/3)
                 aiNewState(pSprite, pXSprite, &zombieATeslaRecoil);
-            else if (pXSprite->data3 > pDudeInfo->at2/3)
+            else if (pXSprite->data3 > pDudeInfo->startHealth/3)
                 aiNewState(pSprite, pXSprite, &zombieARecoil2);
             else
                 aiNewState(pSprite, pXSprite, &zombieARecoil);
@@ -1079,7 +1083,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
             break;
         case 227:
             aiPlay3DSound(pSprite, 2302+Random(2), AI_SFX_PRIORITY_2, -1);
-            if (pDudeExtra->at4 && pXSprite->data3 > pDudeInfo->at2/3)
+            if (pDudeExtra->at4 && pXSprite->data3 > pDudeInfo->startHealth/3)
                 aiNewState(pSprite, pXSprite, &cerberusTeslaRecoil);
             else
                 aiNewState(pSprite, pXSprite, &cerberusRecoil);
@@ -1208,7 +1212,7 @@ void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    if (Chance(pDudeInfo->at33))
+    if (Chance(pDudeInfo->alertChance))
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -1222,18 +1226,18 @@ void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             int dx = x-pSprite->x;
             int dy = y-pSprite->y;
             int nDist = approxDist(dx, dy);
-            if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+            if (nDist > pDudeInfo->seeDist && nDist > pDudeInfo->hearDist)
                 continue;
-            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->atb*pSprite->yrepeat)<<2), pSprite->sectnum))
+            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->eyeHeight*pSprite->yrepeat)<<2), pSprite->sectnum))
                 continue;
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
                 return;
             }
-            else if (nDist < pDudeInfo->at13)
+            else if (nDist < pDudeInfo->hearDist)
             {
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
@@ -1247,7 +1251,7 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    if (Chance(pDudeInfo->at33))
+    if (Chance(pDudeInfo->alertChance))
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -1261,18 +1265,18 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
             int dx = x-pSprite->x;
             int dy = y-pSprite->y;
             int nDist = approxDist(dx, dy);
-            if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+            if (nDist > pDudeInfo->seeDist && nDist > pDudeInfo->hearDist)
                 continue;
-            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->atb*pSprite->yrepeat)<<2), pSprite->sectnum))
+            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->eyeHeight*pSprite->yrepeat)<<2), pSprite->sectnum))
                 continue;
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
                 return;
             }
-            else if (nDist < pDudeInfo->at13)
+            else if (nDist < pDudeInfo->hearDist)
             {
                 aiSetTarget(pXSprite, x, y, z);
                 aiActivateDude(pSprite, pXSprite);
@@ -1294,7 +1298,7 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
                 if (pSprite2->type == 245)
                 {
                     DUDEINFO *pDudeInfo = &dudeInfo[pSprite2->type-kDudeBase];
-                    if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+                    if (nDist > pDudeInfo->seeDist && nDist > pDudeInfo->hearDist)
                         continue;
                     int UNUSED(nAngle) = getangle(dx,dy);
                     aiSetTarget(pXSprite, pSprite2->index);
@@ -1332,7 +1336,7 @@ void aiProcessDudes(void)
             else if (seqGetStatus(3, nXSprite) < 0)
                 aiNewState(pSprite, pXSprite, pXSprite->aiState->at18);
         }
-        if (pXSprite->health > 0 && ((pDudeInfo->at27<<4) <= cumulDamage[nXSprite]))
+        if (pXSprite->health > 0 && ((pDudeInfo->hinderDamage<<4) <= cumulDamage[nXSprite]))
         {
             pXSprite->data3 = cumulDamage[nXSprite];
             RecoilDude(pSprite, pXSprite);

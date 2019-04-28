@@ -46,13 +46,13 @@ static void thinkChase(spritetype *, XSPRITE *);
 
 static int nJumpClient = seqRegisterClient(HandJumpSeqCallback);
 
-AISTATE handIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE hand13A3B4 = { 0, -1, 0, NULL, NULL, NULL, NULL };
-AISTATE handSearch = { 6, -1, 600, NULL, aiMoveForward, thinkSearch, &handIdle };
-AISTATE handChase = { 6, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE handRecoil = { 5, -1, 0, NULL, NULL, NULL, &handSearch };
-AISTATE handGoto = { 6, -1, 1800, NULL, aiMoveForward, thinkGoto, &handIdle };
-AISTATE handJump = { 7, nJumpClient, 120, NULL, NULL, NULL, &handChase };
+AISTATE handIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE hand13A3B4 = { kAiStateOther, 0, -1, 0, NULL, NULL, NULL, NULL };
+AISTATE handSearch = { kAiStateMove, 6, -1, 600, NULL, aiMoveForward, thinkSearch, &handIdle };
+AISTATE handChase = { kAiStateChase, 6, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE handRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &handSearch };
+AISTATE handGoto = { kAiStateMove, 6, -1, 1800, NULL, aiMoveForward, thinkGoto, &handIdle };
+AISTATE handJump = { kAiStateChase, 7, nJumpClient, 120, NULL, NULL, NULL, &handChase };
 
 static void HandJumpSeqCallback(int, int nXSprite)
 {
@@ -86,7 +86,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &handSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -117,13 +117,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (nDist < 0x233 && klabs(nDeltaAngle) < 85 && gGameOptions.nGameType == 0)

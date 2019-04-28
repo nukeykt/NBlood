@@ -22,32 +22,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 #include "blood.h"
-
+// By NoOne: renamed dude struct
 struct DUDEINFO {
     short seqStartID; // seq
-    short at2; // health
-    unsigned short at4; // mass
+    short startHealth; // health
+    unsigned short mass; // mass
     int at6; // unused?
-    unsigned char ata; // clipdist
-    int atb;
-    int atf;
-    int at13; // target see range?
-    int at17; // target see range?
-    int at1b; // target see angle range
-    int at1f; // unused?
-    int at23; // burn health
-    int at27; // recoil damage
-    int at2b;
-    int at2f;
-    int at33;
-    char at37;
-    int at38; // acceleration
-    int at3c; // dodge
-    int at40; // unused?
-    int at44; // turn speed
-    int at48[3];
-    int at54[7]; // damage
-    int at70[7]; // real damage
+    unsigned char clipdist; // clipdist
+    int eyeHeight;
+    int aimHeight; // used by just Cerberus
+    int hearDist; // hear radius
+    int seeDist; // sight radius
+    int periphery; // periphery
+    int meleeDist; // unused?
+    int fleeHealth; // at which hp level enemy will turn in burning dude
+    int hinderDamage; // recoil damage
+    int changeTarget; // chance to change target when attacked someone else
+    int changeTargetKin; // chance to change target when attacked by same type
+    int alertChance;
+    char lockOut; // indicates if this dude can trigger something via trigger flags
+    int frontSpeed; // acceleration
+    int sideSpeed; // dodge
+    int backSpeed; // backward speed (unused)
+    int angSpeed; // turn speed
+    int nGibType[3]; // which gib used when explode dude
+    int startDamage[7]; // start damage shift
+    int at70[7]; // real damage? Hmm?
     int at8c; // unused ?
     int at90; // unused ?
 };
