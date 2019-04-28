@@ -50,25 +50,25 @@ static int nBiteClient = seqRegisterClient(BiteSeqCallback);
 static int nBurnClient = seqRegisterClient(BurnSeqCallback);
 static int nBurnClient2 = seqRegisterClient(BurnSeqCallback2);
 
-AISTATE cerberusIdle = { 0, -1, 0, NULL, NULL, thinkTarget, NULL };
-AISTATE cerberusSearch = { 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &cerberusIdle };
-AISTATE cerberusChase = { 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE cerberusRecoil = { 5, -1, 0, NULL, NULL, NULL, &cerberusSearch };
-AISTATE cerberusTeslaRecoil = { 4, -1, 0, NULL, NULL, NULL, &cerberusSearch };
-AISTATE cerberusGoto = { 7, -1, 600, NULL, aiMoveForward, thinkGoto, &cerberusIdle };
-AISTATE cerberusBite = { 6, nBiteClient, 60, NULL, NULL, NULL, &cerberusChase };
-AISTATE cerberusBurn = { 6, nBurnClient, 60, NULL, NULL, NULL, &cerberusChase };
-AISTATE cerberus3Burn = { 6, nBurnClient2, 60, NULL, NULL, NULL, &cerberusChase };
-AISTATE cerberus2Idle = { 0, -1, 0, NULL, NULL, thinkTarget, NULL };
-AISTATE cerberus2Search = { 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &cerberus2Idle };
-AISTATE cerberus2Chase = { 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE cerberus2Recoil = { 5, -1, 0, NULL, NULL, NULL, &cerberus2Search };
-AISTATE cerberus2Goto = { 7, -1, 600, NULL, aiMoveForward, thinkGoto, &cerberus2Idle };
-AISTATE cerberus2Bite = { 6, nBiteClient, 60, NULL, NULL, NULL, &cerberus2Chase };
-AISTATE cerberus2Burn = { 6, nBurnClient, 60, NULL, NULL, NULL, &cerberus2Chase };
-AISTATE cerberus4Burn = { 6, nBurnClient2, 60, NULL, NULL, NULL, &cerberus2Chase };
-AISTATE cerberus139890 = { 7, -1, 120, NULL, aiMoveTurn, NULL, &cerberusChase };
-AISTATE cerberus1398AC = { 7, -1, 120, NULL, aiMoveTurn, NULL, &cerberusChase };
+AISTATE cerberusIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, thinkTarget, NULL };
+AISTATE cerberusSearch = { kAiStateSearch, 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &cerberusIdle };
+AISTATE cerberusChase = { kAiStateChase, 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE cerberusRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &cerberusSearch };
+AISTATE cerberusTeslaRecoil = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &cerberusSearch };
+AISTATE cerberusGoto = { kAiStateMove, 7, -1, 600, NULL, aiMoveForward, thinkGoto, &cerberusIdle };
+AISTATE cerberusBite = { kAiStateChase, 6, nBiteClient, 60, NULL, NULL, NULL, &cerberusChase };
+AISTATE cerberusBurn = { kAiStateChase, 6, nBurnClient, 60, NULL, NULL, NULL, &cerberusChase };
+AISTATE cerberus3Burn = { kAiStateChase, 6, nBurnClient2, 60, NULL, NULL, NULL, &cerberusChase };
+AISTATE cerberus2Idle = { kAiStateIdle, 0, -1, 0, NULL, NULL, thinkTarget, NULL };
+AISTATE cerberus2Search = { kAiStateSearch, 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &cerberus2Idle };
+AISTATE cerberus2Chase = { kAiStateChase, 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE cerberus2Recoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &cerberus2Search };
+AISTATE cerberus2Goto = { kAiStateMove, 7, -1, 600, NULL, aiMoveForward, thinkGoto, &cerberus2Idle };
+AISTATE cerberus2Bite = { kAiStateChase, 6, nBiteClient, 60, NULL, NULL, NULL, &cerberus2Chase };
+AISTATE cerberus2Burn = { kAiStateChase, 6, nBurnClient, 60, NULL, NULL, NULL, &cerberus2Chase };
+AISTATE cerberus4Burn = { kAiStateChase, 6, nBurnClient2, 60, NULL, NULL, NULL, &cerberus2Chase };
+AISTATE cerberus139890 = { kAiStateOther, 7, -1, 120, NULL, aiMoveTurn, NULL, &cerberusChase };
+AISTATE cerberus1398AC = { kAiStateOther, 7, -1, 120, NULL, aiMoveTurn, NULL, &cerberusChase };
 
 static void BiteSeqCallback(int, int nXSprite)
 {
@@ -77,8 +77,12 @@ static void BiteSeqCallback(int, int nXSprite)
     spritetype *pSprite = &sprite[nSprite];
     int dx = Cos(pSprite->ang)>>16;
     int dy = Sin(pSprite->ang)>>16;
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     int dz = pTarget->z-pSprite->z;
     actFireVector(pSprite, 350, -100, dx, dy, dz, VECTOR_TYPE_14);
@@ -91,10 +95,11 @@ static void BurnSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int height = pDudeInfo->atb*pSprite->yrepeat;
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    int height = pDudeInfo->eyeHeight*pSprite->yrepeat;
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     int x = pSprite->x;
     int y = pSprite->y;
     int z = height; // ???
@@ -170,10 +175,12 @@ static void BurnSeqCallback2(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    int height = pDudeInfo->atb*pSprite->yrepeat;
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    int height = pDudeInfo->eyeHeight*pSprite->yrepeat;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     int x = pSprite->x;
     int y = pSprite->y;
     int z = height; // ???
@@ -222,7 +229,7 @@ static void BurnSeqCallback2(int, int nXSprite)
             if (klabs(nDeltaAngle) <= tt1.at8)
             {
                 DUDEINFO *pDudeInfo2 = &dudeInfo[pSprite2->type - kDudeBase];
-                int height = (pDudeInfo2->atf*pSprite2->yrepeat)<<2;
+                int height = (pDudeInfo2->aimHeight*pSprite2->yrepeat)<<2;
                 int tz = (z2-height)-z;
                 if (cansee(x, y, z, pSprite->sectnum, x2, y2, z2, pSprite2->sectnum))
                 {
@@ -272,7 +279,7 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             aiNewState(pSprite, pXSprite, &cerberus1398AC);
         return;
     }
-    if (Chance(pDudeInfo->at33))
+    if (Chance(pDudeInfo->alertChance))
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -286,18 +293,18 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             int dx = x-pSprite->x;
             int dy = y-pSprite->y;
             int nDist = approxDist(dx, dy);
-            if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+            if (nDist > pDudeInfo->seeDist && nDist > pDudeInfo->hearDist)
                 continue;
-            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->atb*pSprite->yrepeat)<<2), pSprite->sectnum))
+            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->eyeHeight*pSprite->yrepeat)<<2), pSprite->sectnum))
                 continue;
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 pDudeExtraE->at0 = 0;
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
             }
-            else if (nDist < pDudeInfo->at13)
+            else if (nDist < pDudeInfo->hearDist)
             {
                 pDudeExtraE->at0 = 0;
                 aiSetTarget(pXSprite, x, y, z);
@@ -319,7 +326,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
     {
         switch (pSprite->type)
         {
@@ -349,9 +356,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         }
         return;
     }
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
@@ -384,13 +395,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (nDist < 0x1b00 && nDist > 0xd00 && klabs(nDeltaAngle) < 85)

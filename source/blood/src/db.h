@@ -145,13 +145,13 @@ struct XSECTOR {
     unsigned int Enter : 1; // Enter
     unsigned int Exit : 1; // Exit
     unsigned int Wallpush : 1; // WallPush
-    unsigned int at18_0 : 1; // Color Lights
+    unsigned int color : 1; // Color Lights
     unsigned int at18_1 : 1;
     unsigned int busyTimeB : 12; // ON->OFF busyTime
     unsigned int waitTimeB : 12; // ON->OFF waitTime
     unsigned int at1b_2 : 1;
     unsigned int at1b_3 : 1;
-    unsigned int at1b_4 : 4; // Ceil pal2
+    unsigned int ceilpal : 4; // Ceil pal2
     signed int at1c_0 : 32;
     signed int at20_0 : 32;
     signed int at24_0 : 32;
@@ -163,7 +163,7 @@ struct XSECTOR {
     unsigned int at31_1 : 8; // Ceiling y panning frac
     unsigned int at32_1 : 8; // Floor x panning frac
     unsigned int at33_1 : 3; // DamageType
-    unsigned int at33_4 : 4; // Floor pal2
+    unsigned int floorpal : 4; // Floor pal2
     unsigned int at34_0 : 8; // Floor y panning frac
     unsigned int locked : 1; // Locked
     unsigned int windVel : 10; // Wind vel

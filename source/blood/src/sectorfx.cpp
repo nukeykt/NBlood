@@ -122,20 +122,20 @@ void DoSectorLighting(void)
             if (pXSector->shadeFloor)
             {
                 sector[nSector].floorshade -= v4;
-                if (pXSector->at18_0)
+                if (pXSector->color)
                 {
-                    int nTemp = pXSector->at33_4;
-                    pXSector->at33_4 = sector[nSector].floorpal;
+                    int nTemp = pXSector->floorpal;
+                    pXSector->floorpal = sector[nSector].floorpal;
                     sector[nSector].floorpal = nTemp;
                 }
             }
             if (pXSector->shadeCeiling)
             {
                 sector[nSector].ceilingshade -= v4;
-                if (pXSector->at18_0)
+                if (pXSector->color)
                 {
-                    int nTemp = pXSector->at1b_4;
-                    pXSector->at1b_4 = sector[nSector].ceilingpal;
+                    int nTemp = pXSector->ceilpal;
+                    pXSector->ceilpal = sector[nSector].ceilingpal;
                     sector[nSector].ceilingpal = nTemp;
                 }
             }
@@ -146,7 +146,7 @@ void DoSectorLighting(void)
                 for (int j = nStartWall; j < nEndWall; j++)
                 {
                     wall[j].shade -= v4;
-                    if (pXSector->at18_0)
+                    if (pXSector->color)
                     {
                         wall[j].pal = sector[nSector].floorpal;
                     }
@@ -166,20 +166,20 @@ void DoSectorLighting(void)
             if (pXSector->shadeFloor)
             {
                 sector[nSector].floorshade = ClipRange(sector[nSector].floorshade+v4, -128, 127);
-                if (pXSector->at18_0 && v4 != 0)
+                if (pXSector->color && v4 != 0)
                 {
-                    int nTemp = pXSector->at33_4;
-                    pXSector->at33_4 = sector[nSector].floorpal;
+                    int nTemp = pXSector->floorpal;
+                    pXSector->floorpal = sector[nSector].floorpal;
                     sector[nSector].floorpal = nTemp;
                 }
             }
             if (pXSector->shadeCeiling)
             {
                 sector[nSector].ceilingshade = ClipRange(sector[nSector].ceilingshade+v4, -128, 127);
-                if (pXSector->at18_0 && v4 != 0)
+                if (pXSector->color && v4 != 0)
                 {
-                    int nTemp = pXSector->at1b_4;
-                    pXSector->at1b_4 = sector[nSector].ceilingpal;
+                    int nTemp = pXSector->ceilpal;
+                    pXSector->ceilpal = sector[nSector].ceilingpal;
                     sector[nSector].ceilingpal = nTemp;
                 }
             }
@@ -190,7 +190,7 @@ void DoSectorLighting(void)
                 for (int j = nStartWall; j < nEndWall; j++)
                 {
                     wall[j].shade = ClipRange(wall[j].shade+v4, -128, 127);
-                    if (pXSector->at18_0 && v4 != 0)
+                    if (pXSector->color && v4 != 0)
                     {
                         wall[j].pal = sector[nSector].floorpal;
                     }
@@ -215,20 +215,20 @@ void UndoSectorLighting(void)
                 if (pXSector->shadeFloor)
                 {
                     sector[i].floorshade -= v4;
-                    if (pXSector->at18_0)
+                    if (pXSector->color)
                     {
-                        int nTemp = pXSector->at33_4;
-                        pXSector->at33_4 = sector[i].floorpal;
+                        int nTemp = pXSector->floorpal;
+                        pXSector->floorpal = sector[i].floorpal;
                         sector[i].floorpal = nTemp;
                     }
                 }
                 if (pXSector->shadeCeiling)
                 {
                     sector[i].ceilingshade -= v4;
-                    if (pXSector->at18_0)
+                    if (pXSector->color)
                     {
-                        int nTemp = pXSector->at1b_4;
-                        pXSector->at1b_4 = sector[i].ceilingpal;
+                        int nTemp = pXSector->ceilpal;
+                        pXSector->ceilpal = sector[i].ceilingpal;
                         sector[i].ceilingpal = nTemp;
                     }
                 }
@@ -239,7 +239,7 @@ void UndoSectorLighting(void)
                     for (int j = nStartWall; j < nEndWall; j++)
                     {
                         wall[j].shade -= v4;
-                        if (pXSector->at18_0)
+                        if (pXSector->color)
                         {
                             wall[j].pal = sector[i].floorpal;
                         }

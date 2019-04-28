@@ -74,11 +74,11 @@ void EventQueue::Kill(int a1, int a2, CALLBACK_ID a3)
     PQueue->Kill([=](unsigned int nItem)->bool {return nItem == vc; });
 }
 
-struct RXBUCKET
-{
-    unsigned int at0_0 : 13;
-    unsigned int at1_5 : 3;
-};
+//struct RXBUCKET
+//{
+//    unsigned int at0_0 : 13;
+//    unsigned int at1_5 : 3;
+//};
 
 RXBUCKET rxBucket[kMaxChannels+1];
 

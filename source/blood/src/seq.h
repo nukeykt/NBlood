@@ -64,7 +64,7 @@ struct ACTIVE
 struct SEQINST
 {
     DICTNODE *hSeq;
-    Seq *pSequence; // at4
+    Seq *pSequence; // mass
     int at8;
     int atc;
     short at10;

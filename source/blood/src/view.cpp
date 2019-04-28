@@ -2181,7 +2181,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
                 }
                 break;
             default:
-                if (pXSector && pXSector->at18_0)
+                if (pXSector && pXSector->color)
                 {
                     pTSprite->pal = pSector->floorpal;
                 }
@@ -2220,7 +2220,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
             default:
                 if (pTSprite->type >= 100 && pTSprite->type <= 106)
                     pTSprite->shade = -128;
-                if (pXSector && pXSector->at18_0)
+                if (pXSector && pXSector->color)
                 {
                     pTSprite->pal = pSector->floorpal;
                 }
@@ -2284,7 +2284,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     break;
                 }
             }
-            if (pXSector && pXSector->at18_0)
+            if (pXSector && pXSector->color)
             {
                 pTSprite->pal = pSector->floorpal;
             }
@@ -2390,7 +2390,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
         }
         case 4:
         {
-            if (pXSector && pXSector->at18_0)
+            if (pXSector && pXSector->color)
             {
                 pTSprite->pal = pSector->floorpal;
             }
@@ -3272,7 +3272,7 @@ RORHACK:
             {
                 sectortype *pSector = &sector[gView->pSprite->sectnum];
                 XSECTOR *pXSector = &xsector[pSector->extra];
-                if (pXSector->at18_0)
+                if (pXSector->color)
                 {
                     nPalette = pSector->floorpal;
                 }

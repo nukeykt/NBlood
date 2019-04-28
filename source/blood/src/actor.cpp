@@ -2408,7 +2408,7 @@ void actInit(void)
         gKillMgr.sub_2641C();
         for (int i = 0; i < kDudeMax-kDudeBase; i++)
             for (int j = 0; j < 7; j++)
-                dudeInfo[i].at70[j] = mulscale8(DudeDifficulty[gGameOptions.nDifficulty], dudeInfo[i].at54[j]);
+                dudeInfo[i].at70[j] = mulscale8(DudeDifficulty[gGameOptions.nDifficulty], dudeInfo[i].startDamage[j]);
         for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
         {
             spritetype *pSprite = &sprite[nSprite];
@@ -2419,12 +2419,12 @@ void actInit(void)
             if (!IsPlayerSprite(pSprite))
             {
                 pSprite->cstat |= 4096+256+1;
-                pSprite->clipdist = dudeInfo[nType].ata;
+                pSprite->clipdist = dudeInfo[nType].clipdist;
                 xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
                 
                 // By NoOne: add a way to set custom hp for every enemy - should work only if map just started and not loaded.
                 if (pXSprite->data4 <= 0)
-                    pXSprite->health = dudeInfo[nType].at2 << 4;
+                    pXSprite->health = dudeInfo[nType].startHealth << 4;
                 else
                     pXSprite->health = pXSprite->data4;
             }
@@ -2448,7 +2448,7 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
     {
         int mass = 0;
         if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
-            mass = dudeInfo[pSprite->type-kDudeBase].at4;
+            mass = dudeInfo[pSprite->type-kDudeBase].mass;
         else if (pSprite->type >= 400 && pSprite->type < 433)
             mass = thingInfo[pSprite->type-400].at2;
         else
@@ -2766,7 +2766,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         {
             pSprite->type = 240;
             aiNewState(pSprite, pXSprite, &cultistBurnGoto);
-            actHealDude(pXSprite, dudeInfo[40].at2, dudeInfo[40].at2);
+            actHealDude(pXSprite, dudeInfo[40].startHealth, dudeInfo[40].startHealth);
             return;
         }
         // no break
@@ -2776,7 +2776,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         {
             pSprite->type = 253;
             aiNewState(pSprite, pXSprite, &beastBurnGoto);
-            actHealDude(pXSprite, dudeInfo[53].at2, dudeInfo[53].at2);
+            actHealDude(pXSprite, dudeInfo[53].startHealth, dudeInfo[53].startHealth);
             return;
         }
         // no break
@@ -2786,7 +2786,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         {
             pSprite->type = 239;
             aiNewState(pSprite, pXSprite, &innocentBurnGoto);
-            actHealDude(pXSprite, dudeInfo[39].at2, dudeInfo[39].at2);
+            actHealDude(pXSprite, dudeInfo[39].startHealth, dudeInfo[39].startHealth);
             return;
         }
         break;
@@ -3176,8 +3176,8 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     {
         DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
         for (int i = 0; i < 3; i++)
-            if (pDudeInfo->at48[i] > -1)
-                GibSprite(pSprite, (GIBTYPE)pDudeInfo->at48[i], NULL, NULL);
+            if (pDudeInfo->nGibType[i] > -1)
+                GibSprite(pSprite, (GIBTYPE)pDudeInfo->nGibType[i], NULL, NULL);
         for (int i = 0; i < 4; i++)
             fxSpawnBlood(pSprite, a4);
     }
@@ -3636,7 +3636,7 @@ void actImpactMissile(spritetype *pMissile, int a2)
                 XSPRITE *pXOwner = &xsprite[pOwner->extra];
                 int nType = pOwner->type-kDudeBase;
                 if (pXOwner->health > 0)
-                    actHealDude(pXOwner, 10, dudeInfo[nType].at2);
+                    actHealDude(pXOwner, 10, dudeInfo[nType].startHealth);
             }
         }
         break;
@@ -4166,7 +4166,7 @@ void MoveDude(spritetype *pSprite)
             }
             if (pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
                 trTriggerSprite(nHitSprite, pHitXSprite, 33);
-            if (pDudeInfo->at37 && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
+            if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
                 trTriggerSprite(nHitSprite, pHitXSprite, 30);
             break;
         }
@@ -4177,7 +4177,7 @@ void MoveDude(spritetype *pSprite)
             XWALL *pHitXWall = NULL;
             if (pHitWall->extra > 0)
                 pHitXWall = &xwall[pHitWall->extra];
-            if (pDudeInfo->at37 && pHitXWall && pHitXWall->triggerPush && !pHitXWall->key && !pHitXWall->dudeLockout && !pHitXWall->state && !pHitXWall->busy && !pPlayer)
+            if (pDudeInfo->lockOut && pHitXWall && pHitXWall->triggerPush && !pHitXWall->key && !pHitXWall->dudeLockout && !pHitXWall->state && !pHitXWall->busy && !pPlayer)
                 trTriggerWall(nHitWall, pHitXWall, 50);
             if (pHitWall->nextsector != -1)
             {
@@ -4185,7 +4185,7 @@ void MoveDude(spritetype *pSprite)
                 XSECTOR *pHitXSector = NULL;
                 if (pHitSector->extra > 0)
                     pHitXSector = &xsector[pHitSector->extra];
-                if (pDudeInfo->at37 && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->at37_7 && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
+                if (pDudeInfo->lockOut && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->at37_7 && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
                     trTriggerSector(pHitWall->nextsector, pHitXSector, 40);
                 if (top < pHitSector->ceilingz || bottom > pHitSector->floorz)
                 {
@@ -4432,7 +4432,7 @@ void MoveDude(spritetype *pSprite)
             pXSprite->palette = 2;
             if (pPlayer)
             {
-                pPlayer->at2f = 1;
+                pPlayer->changeTargetKin = 1;
                 pXSprite->burnTime = 0;
                 pPlayer->at302 = klabs(zvel[nSprite])>>12;
                 evPost(nSprite, 3, 0, CALLBACK_ID_10);
@@ -5335,7 +5335,7 @@ void actProcessSprites(void)
             {
                 if (pXSprite->health <= 0 && seqGetStatus(3, nXSprite) < 0)
                 {
-                    pXSprite->health = dudeInfo[28].at2<<4;
+                    pXSprite->health = dudeInfo[28].startHealth<<4;
                     pSprite->type = 228;
                     if (pXSprite->target != -1)
                         aiSetTarget(pXSprite, pXSprite->target);
@@ -5539,8 +5539,8 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     vec3_t pos = { x, y, z };
     setsprite(pSprite2->index, &pos);
     pSprite2->cstat |= 0x1101;
-    pSprite2->clipdist = dudeInfo[nDude].ata;
-    pXSprite2->health = dudeInfo[nDude].at2<<4;
+    pSprite2->clipdist = dudeInfo[nDude].clipdist;
+    pXSprite2->health = dudeInfo[nDude].startHealth<<4;
     if (gSysRes.Lookup(dudeInfo[nDude].seqStartID, "SEQ"))
         seqSpawn(dudeInfo[nDude].seqStartID, 3, pSprite2->extra, -1);
     
@@ -6068,7 +6068,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             }
             if (pSprite->statnum == 6)
             {
-                int t = pSprite->type == 426 ? 0 : dudeInfo[pSprite->type-kDudeBase].at4;
+                int t = pSprite->type == 426 ? 0 : dudeInfo[pSprite->type-kDudeBase].mass;
                 if (t > 0 && pVectorData->at5)
                 {
                     int t2 = divscale(pVectorData->at5, t, 8);

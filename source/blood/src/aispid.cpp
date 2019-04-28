@@ -51,14 +51,14 @@ static int nBiteClient = seqRegisterClient(SpidBiteSeqCallback);
 static int nJumpClient = seqRegisterClient(SpidJumpSeqCallback);
 static int dword_279B50 = seqRegisterClient(sub_71370);
 
-AISTATE spidIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE spidChase = { 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE spidDodge = { 7, -1, 90, NULL, aiMoveDodge, NULL, &spidChase };
-AISTATE spidGoto = { 7, -1, 600, NULL, aiMoveForward, thinkGoto, &spidIdle };
-AISTATE spidSearch = { 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &spidIdle };
-AISTATE spidBite = { 6, nBiteClient, 60, NULL, NULL, NULL, &spidChase };
-AISTATE spidJump = { 8, nJumpClient, 60, NULL, aiMoveForward, NULL, &spidChase };
-AISTATE spid13A92C = { 0, dword_279B50, 60, NULL, NULL, NULL, &spidIdle };
+AISTATE spidIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE spidChase = { kAiStateChase, 7, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE spidDodge = { kAiStateMove, 7, -1, 90, NULL, aiMoveDodge, NULL, &spidChase };
+AISTATE spidGoto = { kAiStateMove, 7, -1, 600, NULL, aiMoveForward, thinkGoto, &spidIdle };
+AISTATE spidSearch = { kAiStateSearch, 7, -1, 1800, NULL, aiMoveForward, thinkSearch, &spidIdle };
+AISTATE spidBite = { kAiStateChase, 6, nBiteClient, 60, NULL, NULL, NULL, &spidChase };
+AISTATE spidJump = { kAiStateChase, 8, nJumpClient, 60, NULL, aiMoveForward, NULL, &spidChase };
+AISTATE spid13A92C = { kAiStateOther, 0, dword_279B50, 60, NULL, NULL, NULL, &spidIdle };
 
 static char sub_70D30(XSPRITE *pXDude, int a2, int a3)
 {
@@ -190,11 +190,11 @@ static void sub_71370(int, int nXSprite)
     spritetype *pSpawn = NULL;
     if (IsPlayerSprite(pTarget) && pDudeExtraE->at4 < 10)
     {
-        if (nDist < 0x1a00 && nDist > 0x1400 && klabs(pSprite->ang-nAngle) < pDudeInfo->at1b)
+        if (nDist < 0x1a00 && nDist > 0x1400 && klabs(pSprite->ang-nAngle) < pDudeInfo->periphery)
             pSpawn = actSpawnDude(pSprite, 214, pSprite->clipdist, 0);
-        else if (nDist < 0x1400 && nDist > 0xc00 && klabs(pSprite->ang-nAngle) < pDudeInfo->at1b)
+        else if (nDist < 0x1400 && nDist > 0xc00 && klabs(pSprite->ang-nAngle) < pDudeInfo->periphery)
             pSpawn = actSpawnDude(pSprite, 213, pSprite->clipdist, 0);
-        else if (nDist < 0xc00 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+        else if (nDist < 0xc00 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
             pSpawn = actSpawnDude(pSprite, 213, pSprite->clipdist, 0);
         if (pSpawn)
         {
@@ -220,7 +220,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &spidSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -251,13 +251,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 switch (pSprite->type)

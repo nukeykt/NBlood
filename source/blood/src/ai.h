@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "db.h"
 
 struct AISTATE {
+    int stateType; // By NoOne: current type of state. Basically required for kGDXDudeTargetChanger, but can be used for something else.
     int at0; // seq
     int at4; // seq callback
     int at8;
@@ -36,6 +37,7 @@ struct AISTATE {
     void(*at14)(spritetype *, XSPRITE *);
     AISTATE *at18; // next state ?
 };
+extern AISTATE aiState[];
 
 enum AI_SFX_PRIORITY {
     AI_SFX_PRIORITY_0 = 0,
@@ -98,3 +100,6 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite);
 void aiProcessDudes(void);
 void aiInit(void);
 void aiInitSprite(spritetype *pSprite);
+
+// By NoOne: this function required for kGDXDudeTargetChanger
+void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite);

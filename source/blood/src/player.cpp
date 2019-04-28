@@ -620,7 +620,7 @@ void playerSetRace(PLAYER *pPlayer, int nLifeMode)
     *pDudeInfo = gPlayerTemplate[nLifeMode];
     pPlayer->at5f = nLifeMode;
     for (int i = 0; i < 7; i++)
-        pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[pPlayer->at57].skill], pDudeInfo->at54[i]);
+        pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[pPlayer->at57].skill], pDudeInfo->startDamage[i]);
 }
 
 void playerSetGodMode(PLAYER *pPlayer, char bGodMode)
@@ -701,11 +701,11 @@ void playerStart(int nPlayer)
     pPlayer->angold = pSprite->ang = pStartZone->ang;
     pPlayer->q16ang = fix16_from_int(pSprite->ang);
     pSprite->type = kDudePlayer1+nPlayer;
-    pSprite->clipdist = pDudeInfo->ata;
+    pSprite->clipdist = pDudeInfo->clipdist;
     pSprite->hitag = 15;
     pXSprite->burnTime = 0;
     pXSprite->burnSource = -1;
-    pPlayer->pXSprite->health = pDudeInfo->at2<<4;
+    pPlayer->pXSprite->health = pDudeInfo->startHealth<<4;
     pPlayer->pSprite->cstat &= (unsigned short)~32768;
     pPlayer->at63 = 0;
     pPlayer->q16horiz = 0;
@@ -871,6 +871,11 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
     int nType = pItem->type - 100;
     switch (pItem->type)
     {
+    //case 129:
+        //dudeInfo[31].seqStartID = 13568;
+        //if (!powerupActivate(pPlayer, nType))
+            //return 0;
+        //return 1;
     case 145:
     case 146:
         if (gGameOptions.nGameType != 3)
@@ -1215,7 +1220,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
             {
                 spritetype *pSprite = &sprite[*a2];
                 XSPRITE *pXSprite = &xsprite[*a3];
-                int nMass = dudeInfo[pSprite->type-kDudeBase].at4;
+                int nMass = dudeInfo[pSprite->type-kDudeBase].mass;
                 if (nMass)
                 {
                     int t2 = divscale(0xccccc, nMass, 8);

@@ -50,24 +50,24 @@ static void sub_661E0(spritetype *, XSPRITE *);
 
 static int nAttackClient = seqRegisterClient(SeqAttackCallback);
 
-AISTATE tinycalebIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE tinycalebChase = { 6, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE tinycalebDodge = { 6, -1, 90, NULL, aiMoveDodge, NULL, &tinycalebChase };
-AISTATE tinycalebGoto = { 6, -1, 600, NULL, aiMoveForward, thinkGoto, &tinycalebIdle };
-AISTATE tinycalebAttack = { 0, nAttackClient, 120, NULL, NULL, NULL, &tinycalebChase };
-AISTATE tinycalebSearch = { 6, -1, 120, NULL, aiMoveForward, thinkSearch, &tinycalebIdle };
-AISTATE tinycalebRecoil = { 5, -1, 0, NULL, NULL, NULL, &tinycalebDodge };
-AISTATE tinycalebTeslaRecoil = { 4, -1, 0, NULL, NULL, NULL, &tinycalebDodge };
-AISTATE tinycalebSwimIdle = { 10, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE tinycalebSwimChase = { 8, -1, 0, NULL, sub_65D04, thinkSwimChase, NULL };
-AISTATE tinycalebSwimDodge = { 8, -1, 90, NULL, aiMoveDodge, NULL, &tinycalebSwimChase };
-AISTATE tinycalebSwimGoto = { 8, -1, 600, NULL, aiMoveForward, thinkSwimGoto, &tinycalebSwimIdle };
-AISTATE tinycalebSwimSearch = { 8, -1, 120, NULL, aiMoveForward, thinkSearch, &tinycalebSwimIdle };
-AISTATE tinycalebSwimAttack = { 10, nAttackClient, 0, NULL, NULL, NULL, &tinycalebSwimChase };
-AISTATE tinycalebSwimRecoil = { 5, -1, 0, NULL, NULL, NULL, &tinycalebSwimDodge };
-AISTATE tinycaleb139660 = { 8, -1, 120, NULL, sub_65F44, thinkSwimChase, &tinycalebSwimChase };
-AISTATE tinycaleb13967C = { 8, -1, 0, NULL, sub_661E0, thinkSwimChase, &tinycalebSwimChase };
-AISTATE tinycaleb139698 = { 8, -1, 120, NULL, aiMoveTurn, NULL, &tinycalebSwimChase };
+AISTATE tinycalebIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE tinycalebChase = { kAiStateChase, 6, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE tinycalebDodge = { kAiStateMove, 6, -1, 90, NULL, aiMoveDodge, NULL, &tinycalebChase };
+AISTATE tinycalebGoto = { kAiStateMove, 6, -1, 600, NULL, aiMoveForward, thinkGoto, &tinycalebIdle };
+AISTATE tinycalebAttack = { kAiStateChase, 0, nAttackClient, 120, NULL, NULL, NULL, &tinycalebChase };
+AISTATE tinycalebSearch = { kAiStateSearch, 6, -1, 120, NULL, aiMoveForward, thinkSearch, &tinycalebIdle };
+AISTATE tinycalebRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &tinycalebDodge };
+AISTATE tinycalebTeslaRecoil = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &tinycalebDodge };
+AISTATE tinycalebSwimIdle = { kAiStateIdle, 10, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE tinycalebSwimChase = { kAiStateChase, 8, -1, 0, NULL, sub_65D04, thinkSwimChase, NULL };
+AISTATE tinycalebSwimDodge = { kAiStateMove, 8, -1, 90, NULL, aiMoveDodge, NULL, &tinycalebSwimChase };
+AISTATE tinycalebSwimGoto = { kAiStateMove, 8, -1, 600, NULL, aiMoveForward, thinkSwimGoto, &tinycalebSwimIdle };
+AISTATE tinycalebSwimSearch = { kAiStateSearch, 8, -1, 120, NULL, aiMoveForward, thinkSearch, &tinycalebSwimIdle };
+AISTATE tinycalebSwimAttack = { kAiStateChase, 10, nAttackClient, 0, NULL, NULL, NULL, &tinycalebSwimChase };
+AISTATE tinycalebSwimRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &tinycalebSwimDodge };
+AISTATE tinycaleb139660 = { kAiStateOther, 8, -1, 120, NULL, sub_65F44, thinkSwimChase, &tinycalebSwimChase };
+AISTATE tinycaleb13967C = { kAiStateOther, 8, -1, 0, NULL, sub_661E0, thinkSwimChase, &tinycalebSwimChase };
+AISTATE tinycaleb139698 = { kAiStateOther, 8, -1, 120, NULL, aiMoveTurn, NULL, &tinycalebSwimChase };
 
 static void SeqAttackCallback(int, int nXSprite)
 {
@@ -115,7 +115,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
     {
         if (pXSector && pXSector->Underwater)
             aiNewState(pSprite, pXSprite, &tinycalebSwimSearch);
@@ -181,13 +181,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 int nXSprite = sprite[pXSprite->reference].extra;
@@ -262,7 +262,7 @@ static void thinkSwimGoto(spritetype *pSprite, XSPRITE *pXSprite)
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &tinycalebSwimSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -293,15 +293,15 @@ static void thinkSwimChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = pDudeInfo->atb+pSprite->z;
+        int height = pDudeInfo->eyeHeight+pSprite->z;
         int top, bottom;
         GetSpriteExtents(pSprite, &top, &bottom);
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 int UNUSED(floorZ) = getflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y);
@@ -323,9 +323,9 @@ static void sub_65D04(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    int nAccel = pDudeInfo->at38<<2;
+    int nAccel = pDudeInfo->frontSpeed<<2;
     if (klabs(nAng) > 341)
         return;
     if (pXSprite->target == -1)
@@ -356,12 +356,12 @@ static void sub_65F44(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     spritetype *pTarget = &sprite[pXSprite->target];
-    int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
-    int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
+    int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].eyeHeight;
+    int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].eyeHeight;
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    int nAccel = pDudeInfo->at38<<2;
+    int nAccel = pDudeInfo->frontSpeed<<2;
     if (klabs(nAng) > 341)
     {
         pXSprite->goalAng = (pSprite->ang+512)&2047;
@@ -392,12 +392,12 @@ static void sub_661E0(spritetype *pSprite, XSPRITE *pXSprite)
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     spritetype *pTarget = &sprite[pXSprite->target];
-    int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].atb;
-    int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].atb;
+    int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].eyeHeight;
+    int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].eyeHeight;
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
-    int nTurnRange = (pDudeInfo->at44<<2)>>4;
+    int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
-    int nAccel = pDudeInfo->at38<<2;
+    int nAccel = pDudeInfo->frontSpeed<<2;
     if (klabs(nAng) > 341)
     {
         pSprite->ang = (pSprite->ang+512)&2047;

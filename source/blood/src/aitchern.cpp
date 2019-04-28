@@ -51,15 +51,15 @@ static int dword_279B54 = seqRegisterClient(sub_71BD4);
 static int dword_279B58 = seqRegisterClient(sub_720AC);
 static int dword_279B5C = seqRegisterClient(sub_71A90);
 
-AISTATE tchernobogIdle = { 0, -1, 0, NULL, NULL, sub_725A4, NULL };
-AISTATE tchernobogSearch = { 8, -1, 1800, NULL, aiMoveForward, sub_72580, &tchernobogIdle };
-AISTATE tchernobogChase = { 8, -1, 0, NULL, aiMoveForward, sub_72934, NULL };
-AISTATE tchernobogRecoil = { 5, -1, 0, NULL, NULL, NULL, &tchernobogSearch };
-AISTATE tcherno13A9B8 = { 8, -1, 600, NULL, aiMoveForward, sub_72850, &tchernobogIdle };
-AISTATE tcherno13A9D4 = { 6, dword_279B54, 60, NULL, NULL, NULL, &tchernobogChase };
-AISTATE tcherno13A9F0 = { 6, dword_279B58, 60, NULL, NULL, NULL, &tchernobogChase };
-AISTATE tcherno13AA0C = { 7, dword_279B5C, 60, NULL, NULL, NULL, &tchernobogChase };
-AISTATE tcherno13AA28 = { 8, -1, 60, NULL, aiMoveTurn, NULL, &tchernobogChase };
+AISTATE tchernobogIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, sub_725A4, NULL };
+AISTATE tchernobogSearch = { kAiStateSearch, 8, -1, 1800, NULL, aiMoveForward, sub_72580, &tchernobogIdle };
+AISTATE tchernobogChase = { kAiStateChase, 8, -1, 0, NULL, aiMoveForward, sub_72934, NULL };
+AISTATE tchernobogRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &tchernobogSearch };
+AISTATE tcherno13A9B8 = { kAiStateMove, 8, -1, 600, NULL, aiMoveForward, sub_72850, &tchernobogIdle };
+AISTATE tcherno13A9D4 = { kAiStateMove, 6, dword_279B54, 60, NULL, NULL, NULL, &tchernobogChase };
+AISTATE tcherno13A9F0 = { kAiStateChase, 6, dword_279B58, 60, NULL, NULL, NULL, &tchernobogChase };
+AISTATE tcherno13AA0C = { kAiStateChase, 7, dword_279B5C, 60, NULL, NULL, NULL, &tchernobogChase };
+AISTATE tcherno13AA28 = { kAiStateChase, 8, -1, 60, NULL, aiMoveTurn, NULL, &tchernobogChase };
 
 static void sub_71A90(int, int nXSprite)
 {
@@ -82,10 +82,11 @@ static void sub_71BD4(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int height = pSprite->yrepeat*pDudeInfo->atb;
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    int height = pSprite->yrepeat*pDudeInfo->eyeHeight;
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     int x = pSprite->x;
     int y = pSprite->y;
     int z = height;
@@ -153,9 +154,11 @@ static void sub_720AC(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-    int height = pSprite->yrepeat*pDudeInfo->atb;
+    int height = pSprite->yrepeat*pDudeInfo->eyeHeight;
     int ax, ay, az;
     ax = Cos(pSprite->ang)>>16;
     ay = Sin(pSprite->ang)>>16;
@@ -230,7 +233,9 @@ static void sub_72580(spritetype *pSprite, XSPRITE *pXSprite)
 
 static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEEXTRA_at6_u2 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u2;
     if (pDudeExtraE->at4 && pDudeExtraE->at0 < 10)
@@ -243,7 +248,7 @@ static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &tcherno13AA28);
         return;
     }
-    if (Chance(pDudeInfo->at33))
+    if (Chance(pDudeInfo->alertChance))
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -257,18 +262,18 @@ static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
             int dx = x-pSprite->x;
             int dy = y-pSprite->y;
             int nDist = approxDist(dx, dy);
-            if (nDist > pDudeInfo->at17 && nDist > pDudeInfo->at13)
+            if (nDist > pDudeInfo->seeDist && nDist > pDudeInfo->hearDist)
                 continue;
-            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->atb*pSprite->yrepeat)<<2), pSprite->sectnum))
+            if (!cansee(x, y, z, nSector, pSprite->x, pSprite->y, pSprite->z-((pDudeInfo->eyeHeight*pSprite->yrepeat)<<2), pSprite->sectnum))
                 continue;
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 pDudeExtraE->at0 = 0;
                 aiSetTarget(pXSprite, pPlayer->at5b);
                 aiActivateDude(pSprite, pXSprite);
             }
-            else if (nDist < pDudeInfo->at13)
+            else if (nDist < pDudeInfo->hearDist)
             {
                 pDudeExtraE->at0 = 0;
                 aiSetTarget(pXSprite, x, y, z);
@@ -283,14 +288,16 @@ static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
 
 static void sub_72850(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
         aiNewState(pSprite, pXSprite, &tchernobogSearch);
     aiThinkTarget(pSprite, pXSprite);
 }
@@ -302,9 +309,13 @@ static void sub_72934(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &tcherno13A9B8);
         return;
     }
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
@@ -321,13 +332,13 @@ static void sub_72934(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (nDist < 0x1f00 && nDist > 0xd00 && klabs(nDeltaAngle) < 85)

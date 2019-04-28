@@ -359,7 +359,7 @@ void UpdateAimVector(PLAYER * pPlayer)
             if (nDist2 >= nClosest)
                 continue;
             DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
-            int center = (pSprite->yrepeat*pDudeInfo->atf)<<2;
+            int center = (pSprite->yrepeat*pDudeInfo->aimHeight)<<2;
             int dzCenter = (z2-center)-z;
             if (cansee(x, y, z, pPSprite->sectnum, x2, y2, z2, pSprite->sectnum))
             {

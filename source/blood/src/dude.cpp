@@ -56,32 +56,32 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         0
     },
     {
-        4096,
-        40,
-        70,
-        1200,
-        48,
-        41,
-        20,
-        10240,
-        51200,
-        512,
-        0,
-        10,
-        8,
-        256,
-        16,
-        32768,
-        1,
-        46603,
-        34952,
-        13981,
-        256,
-        15, -1, -1,
-        256, 256, 96, 256, 256, 256, 192,
-        0, 0, 0, 0, 0, 0, 0,
-        0,
-        0
+        4096, //seqStartId
+        40, // startHp
+        70, // mass
+        1200, // ???
+        48, // clipdist
+        41, // eye height
+        20, // aim height
+        10240, // hear dist
+        51200, // see dist
+        512, // periphery
+        0, // melee distance
+        10, // flee health
+        8, // hinder damage
+        256, // change target chance
+        16, // change target chance to same type
+        32768, // alert chance
+        1, // lockout
+        46603, // front speed
+        34952, // side speed
+        13981, // back speed
+        256, // ang speed
+        15, -1, -1, // gib type
+        256, 256, 96, 256, 256, 256, 192, // start damage
+        0, 0, 0, 0, 0, 0, 0, // real damage
+        0, // ???
+        0 // ???
     },
     {
         11520,

@@ -52,22 +52,22 @@ static int dword_279B38 = seqRegisterClient(sub_70284);
 static int dword_279B3C = seqRegisterClient(sub_6FF08);
 static int dword_279B40 = seqRegisterClient(sub_6FF54);
 
-AISTATE podIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE pod13A600 = { 7, -1, 3600, NULL, aiMoveTurn, sub_70380, &podSearch };
-AISTATE podSearch = { 0, -1, 3600, NULL, aiMoveTurn, sub_7034C, &podSearch };
-AISTATE pod13A638 = { 8, dword_279B34, 600, NULL, NULL, NULL, &podChase };
-AISTATE podRecoil = { 5, -1, 0, NULL, NULL, NULL, &podChase };
-AISTATE podChase = { 6, -1, 0, NULL, aiMoveTurn, sub_704D8, NULL };
-AISTATE tentacleIdle = { 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE tentacle13A6A8 = { 7, dword_279B3C, 0, NULL, NULL, NULL, &tentacle13A6C4 };
-AISTATE tentacle13A6C4 = { -1, -1, 0, NULL, NULL, NULL, &tentacleChase };
-AISTATE tentacle13A6E0 = { 8, dword_279B40, 0, NULL, NULL, NULL, &tentacle13A6FC };
-AISTATE tentacle13A6FC = { -1, -1, 0, NULL, NULL, NULL, &tentacleIdle };
-AISTATE tentacle13A718 = { 8, -1, 3600, NULL, aiMoveTurn, sub_70380, &tentacleSearch };
-AISTATE tentacleSearch = { 0, -1, 3600, NULL, aiMoveTurn, sub_7034C, NULL };
-AISTATE tentacle13A750 = { 6, dword_279B38, 120, NULL, NULL, NULL, &tentacleChase };
-AISTATE tentacleRecoil = { 5, -1, 0, NULL, NULL, NULL, &tentacleChase };
-AISTATE tentacleChase = { 6, -1, 0, NULL, aiMoveTurn, sub_704D8, NULL };
+AISTATE podIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE pod13A600 = { kAiStateMove, 7, -1, 3600, NULL, aiMoveTurn, sub_70380, &podSearch };
+AISTATE podSearch = { kAiStateSearch, 0, -1, 3600, NULL, aiMoveTurn, sub_7034C, &podSearch };
+AISTATE pod13A638 = { kAiStateChase, 8, dword_279B34, 600, NULL, NULL, NULL, &podChase };
+AISTATE podRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &podChase };
+AISTATE podChase = { kAiStateChase, 6, -1, 0, NULL, aiMoveTurn, sub_704D8, NULL };
+AISTATE tentacleIdle = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE tentacle13A6A8 = { kAiStateOther, 7, dword_279B3C, 0, NULL, NULL, NULL, &tentacle13A6C4 };
+AISTATE tentacle13A6C4 = { kAiStateOther, -1, -1, 0, NULL, NULL, NULL, &tentacleChase };
+AISTATE tentacle13A6E0 = { kAiStateOther, 8, dword_279B40, 0, NULL, NULL, NULL, &tentacle13A6FC };
+AISTATE tentacle13A6FC = { kAiStateOther, -1, -1, 0, NULL, NULL, NULL, &tentacleIdle };
+AISTATE tentacle13A718 = { kAiStateOther, 8, -1, 3600, NULL, aiMoveTurn, sub_70380, &tentacleSearch };
+AISTATE tentacleSearch = { kAiStateOther, 0, -1, 3600, NULL, aiMoveTurn, sub_7034C, NULL };
+AISTATE tentacle13A750 = { kAiStateOther, 6, dword_279B38, 120, NULL, NULL, NULL, &tentacleChase };
+AISTATE tentacleRecoil = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &tentacleChase };
+AISTATE tentacleChase = { kAiStateChase, 6, -1, 0, NULL, aiMoveTurn, sub_704D8, NULL };
 
 static void sub_6FF08(int, int nXSprite)
 {
@@ -88,9 +88,13 @@ static void sub_6FFA0(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int x = pTarget->x-pSprite->x;
     int y = pTarget->y-pSprite->y;
@@ -104,7 +108,7 @@ static void sub_6FFA0(int, int nXSprite)
     {
     case 221:
         dz += 8000;
-        if (pDudeInfo->at17*0.1 < nDist)
+        if (pDudeInfo->seeDist*0.1 < nDist)
         {
             if (Chance(0x8000))
                 sfxPlay3DSound(pSprite, 2474, -1, 0);
@@ -117,7 +121,7 @@ static void sub_6FFA0(int, int nXSprite)
         break;
     case 223:
         dz += 8000;
-        if (pDudeInfo->at17*0.1 < nDist)
+        if (pDudeInfo->seeDist*0.1 < nDist)
         {
             sfxPlay3DSound(pSprite, 2454, -1, 0);
             pMissile = actFireThing(pSprite, 0, -8000, dz/128-14500, 429, (nDist2<<23)/120);
@@ -163,14 +167,17 @@ static void sub_7034C(spritetype *pSprite, XSPRITE *pXSprite)
 
 static void sub_70380(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
     int nDist = approxDist(dx, dy);
     aiChooseDirection(pSprite, pXSprite, nAngle);
-    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->at1b)
+    if (nDist < 512 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery)
     {
         switch (pSprite->type)
         {
@@ -204,9 +211,13 @@ static void sub_704D8(spritetype *pSprite, XSPRITE *pXSprite)
         }
         return;
     }
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+        return;
+    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
@@ -228,13 +239,13 @@ static void sub_704D8(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     int nDist = approxDist(dx, dy);
-    if (nDist <= pDudeInfo->at17)
+    if (nDist <= pDudeInfo->seeDist)
     {
         int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
-        int height = (pDudeInfo->atb*pSprite->yrepeat)<<2;
+        int height = (pDudeInfo->eyeHeight*pSprite->yrepeat)<<2;
         if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pSprite->x, pSprite->y, pSprite->z - height, pSprite->sectnum))
         {
-            if (nDist < pDudeInfo->at17 && klabs(nDeltaAngle) <= pDudeInfo->at1b)
+            if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 aiSetTarget(pXSprite, pXSprite->target);
                 if (klabs(nDeltaAngle) < 85 && pTarget->type != 221 && pTarget->type != 223)

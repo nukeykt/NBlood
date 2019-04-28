@@ -84,8 +84,8 @@ struct THINGINFO
 struct AMMOITEMDATA
 {
     short at0;
-    short picnum; // at2
-    char shade; // at4
+    short picnum; // startHealth
+    char shade; // mass
     char at5;
     unsigned char xrepeat; // at6
     unsigned char yrepeat; // at7
@@ -97,8 +97,8 @@ struct AMMOITEMDATA
 struct WEAPONITEMDATA
 {
     short at0;
-    short picnum; // at2
-    char shade; // at4
+    short picnum; // startHealth
+    char shade; // mass
     char at5;
     unsigned char xrepeat; // at6
     unsigned char yrepeat; // at7
@@ -110,8 +110,8 @@ struct WEAPONITEMDATA
 struct ITEMDATA
 {
     short at0; // unused?
-    short picnum; // at2
-    char shade; // at4
+    short picnum; // startHealth
+    char shade; // mass
     char at5; // unused?
     unsigned char xrepeat; // at6
     unsigned char yrepeat; // at7
