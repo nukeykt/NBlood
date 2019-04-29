@@ -2415,11 +2415,11 @@ void LoadExtraArts(void)
 }
 
 bool isDemoRecords(void) {
-    return gDemo.at1;
+    return gDemo.at0;
 }
 
 bool isOriginalDemo() {
-    return gDemo.m_bLegacy && gDemo.at0;
+    return gDemo.m_bLegacy && gDemo.at1;
 }
 
 bool fileExistsRFF(int id, const char *ext) {
