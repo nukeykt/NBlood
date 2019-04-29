@@ -89,7 +89,7 @@ Resource gSysRes, gGuiRes;
 
 INPUT_MODE gInputMode;
 
-unsigned int nMaxAlloc = 0x2000000;
+unsigned int nMaxAlloc = 0x4000000;
 
 bool bCustomName = false;
 char bAddUserMap = false;
