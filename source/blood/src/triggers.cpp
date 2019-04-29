@@ -783,7 +783,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             if (pXSprite->txID != 0)
                 evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
             if (pXSprite->busyTime > 0)
-                evPost(nSprite, 3, (pXSprite->busyTime + Random2(pXSprite->data1)) * 120 / 10, COMMAND_ID_21);
+                evPost(nSprite, 3, ClipLow((int(pXSprite->busyTime) + Random2(pXSprite->data1)) * 120 / 10, 0), COMMAND_ID_21);
             break;
         default:
             if (pXSprite->state == 0) {
