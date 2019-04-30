@@ -5964,7 +5964,13 @@ static void renderFillPolygon(int32_t npoints)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {
-        polymost_fillpolygon(npoints);
+#ifdef POLYMER
+        if (videoGetRenderMode() == REND_POLYMER)
+            polymer_fillpolygon(npoints);
+        else
+#endif
+            polymost_fillpolygon(npoints);
+
         return;
     }
 #endif
@@ -12255,7 +12261,14 @@ void printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const
     else { fontptr = textfont; charxsiz = 8; }
 
 #ifdef USE_OPENGL
-    if (!polymost_printext256(xpos,ypos,col,backcol,name,fontsize)) return;
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+    {
+        if (!polymer_printtext256(xpos,ypos,col,backcol,name,fontsize)) return;
+    }
+    else
+#endif
+        if (!polymost_printtext256(xpos,ypos,col,backcol,name,fontsize)) return;
 # if 0
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {

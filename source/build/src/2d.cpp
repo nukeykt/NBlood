@@ -155,8 +155,6 @@ static void drawlinegl(int32_t x1, int32_t y1, int32_t x2, int32_t y2, palette_t
     {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-
-        glDisable(GL_TEXTURE_2D);
     }
 
     gloy1 = -1;
@@ -1428,8 +1426,6 @@ void polymostSet2dView(void)
     {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-
-        glDisable(GL_TEXTURE_2D);
     }
 
     gloy1 = -1;

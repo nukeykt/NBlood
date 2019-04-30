@@ -2745,7 +2745,6 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
 
     polymost_glreset();
 
-    glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH); //GL_FLAT
     glClearColor(0,0,0,0.5); //Black Background
     glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_NICEST); //Use FASTEST for ortho!

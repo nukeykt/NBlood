@@ -2359,7 +2359,6 @@ static void m32_showmouse(void)
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
         renderDisableFog();
-        glDisable(GL_TEXTURE_2D);
         polymost_useColorOnly(true);
     }
 #endif
@@ -3324,12 +3323,7 @@ static int32_t OnSelectTile(int32_t tileNum)
     keyFlushChars();
 
     polymostSet2dView();
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        glEnable(GL_TEXTURE_2D);
-    }
-#endif
+
     videoClearViewableArea(-1);
 
     //
@@ -3561,8 +3555,6 @@ static int32_t DrawTiles(int32_t iTopLeft, int32_t iSelected, int32_t nXTiles, i
 
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        glEnable(GL_TEXTURE_2D);
-
         if (lazyselector)
             glDrawBuffer(GL_FRONT_AND_BACK);
     }

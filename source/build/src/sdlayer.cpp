@@ -1298,7 +1298,6 @@ void sdlayer_setvideomode_opengl(void)
     glsurface_destroy();
     polymost_glreset();
 
-    glEnable(GL_TEXTURE_2D);
     glShadeModel(GL_SMOOTH);  // GL_FLAT
     glClearColor(0, 0, 0, 1.0);  // Black Background
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Use FASTEST for ortho!

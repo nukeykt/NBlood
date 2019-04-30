@@ -1064,8 +1064,6 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    glEnable(GL_TEXTURE_2D);
-
     float pc[4];
 
     pc[0] = pc[1] = pc[2] = ((float)numshades - min(max((globalshade * shadescale) + m->shadeoff, 0.f), (float)numshades)) / (float)numshades;

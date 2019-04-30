@@ -1537,7 +1537,6 @@ static void resizeglcheck(void)
     {
         glClearColor(1.0,1.0,1.0,0.0);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        glDisable(GL_TEXTURE_2D);
     }
 #else
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -1579,8 +1578,6 @@ static void resizeglcheck(void)
         glLoadIdentity();
 
         if (!nofog) polymost_setFogEnabled(true);
-
-        //glEnable(GL_TEXTURE_2D);
     }
 }
 
@@ -2750,7 +2747,6 @@ void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
 {
     glActiveTexture(texunits);
 
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -2764,7 +2760,6 @@ void polymost_setupglowtexture(const int32_t texunits, const int32_t tex)
 {
     glActiveTexture(texunits);
 
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -2892,7 +2887,7 @@ static void polymost2_drawVBO(GLenum mode,
         if (editstatus)
         {
             Bsprintf(ptempbuf, "pth==NULL! (bad pal?) pic=%d pal=%d", globalpicnum, globalpal);
-            polymost_printext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
+            polymost_printtext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
         }
         return;
     }
@@ -3210,7 +3205,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         if (editstatus)
         {
             Bsprintf(ptempbuf, "pth==NULL! (bad pal?) pic=%d pal=%d", globalpicnum, globalpal);
-            polymost_printext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
+            polymost_printtext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
         }
         return;
     }
@@ -3607,7 +3602,6 @@ do                                                                              
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
             glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
-            glDisable(GL_TEXTURE_2D);
 
             --texunits;
         }
@@ -6381,7 +6375,6 @@ void polymost_drawrooms()
     glClear(GL_DEPTH_BUFFER_BIT);
 
     glDisable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_ALWAYS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
@@ -8195,7 +8188,6 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
     glEnable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
 
 #if defined(POLYMER)
 # ifdef USE_GLEXT
@@ -8572,7 +8564,6 @@ void polymost_fillpolygon(int32_t npoints)
 
     if (gloy1 != -1) polymostSet2dView(); //disables blending, texturing, and depth testing
     glEnable(GL_ALPHA_TEST);
-    glEnable(GL_TEXTURE_2D);
     pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
 
     if (pth)
@@ -8674,7 +8665,6 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
     if (!pth || (pth->flags & PTH_HASALPHA))
     {
-        glDisable(GL_TEXTURE_2D);
         glBegin(GL_TRIANGLE_FAN);
         if (gammabrightness)
             glColor3f((float)curpalette[255].r*(1.0f/255.f),
@@ -8692,7 +8682,6 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     }
 
     glColor3f(1,1,1);
-    glEnable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
     glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0,              0); glVertex2f((float)tilex            ,(float)tiley);
@@ -8767,7 +8756,7 @@ static int32_t gen_font_glyph_tex(void)
     return 0;
 }
 
-int32_t polymost_printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
+int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
 {
     int const arbackcol = (unsigned)backcol < 256 ? backcol : 0;
 
@@ -8816,7 +8805,6 @@ int32_t polymost_printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t ba
         glEnd();
     }
 
-    glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glColor4ub(p.r,p.g,p.b,255);
 

@@ -352,6 +352,8 @@ void                polymer_setaspect(int32_t);
 void                polymer_glinit(void);
 void                polymer_resetlights(void);
 void                polymer_loadboard(void);
+int32_t             polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize);
+void                polymer_fillpolygon(int32_t npoints);
 void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t daang, int32_t dahoriz, int16_t dacursectnum);
 void                polymer_drawmasks(void);
 void                polymer_editorpick(void);
