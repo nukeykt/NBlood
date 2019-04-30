@@ -8653,9 +8653,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
             polymost_usePaletteIndexing(false);
     }
 
+    globalshade = 0;
     polymost_updatePalette();
 
     glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
 
     if (tilezoom)
     {
@@ -8663,26 +8665,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
         else ratio = dimen/scy;
     }
 
-    if (!pth || (pth->flags & PTH_HASALPHA))
-    {
-        glBegin(GL_TRIANGLE_FAN);
-        if (gammabrightness)
-            glColor3f((float)curpalette[255].r*(1.0f/255.f),
-                       (float)curpalette[255].g*(1.0f/255.f),
-                       (float)curpalette[255].b*(1.0f/255.f));
-        else
-            glColor3f((float)britable[curbrightness][ curpalette[255].r ] * (1.0f/255.f),
-                       (float)britable[curbrightness][ curpalette[255].g ] * (1.0f/255.f),
-                       (float)britable[curbrightness][ curpalette[255].b ] * (1.0f/255.f));
-        glVertex2f((float)tilex            ,(float)tiley);
-        glVertex2f((float)tilex+(scx*ratio),(float)tiley);
-        glVertex2f((float)tilex+(scx*ratio),(float)tiley+(scy*ratio));
-        glVertex2f((float)tilex            ,(float)tiley+(scy*ratio));
-        glEnd();
-    }
-
     glColor3f(1,1,1);
-    glDisable(GL_BLEND);
     glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0,              0); glVertex2f((float)tilex            ,(float)tiley);
     glTexCoord2f(xdimepad,       0); glVertex2f((float)tilex+(scx*ratio),(float)tiley);
