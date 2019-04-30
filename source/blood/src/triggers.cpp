@@ -2790,6 +2790,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         switch (type) {
             // for sectors
             case 6:
+            {
                 if (valueIsBetween(pXSource->data1, -1, 32767))
                     sector[nDest].floorpicnum = pXSource->data1;
 
@@ -2809,6 +2810,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                         pXSector.ceilpal = (short)pXSource->data4;
                 }
                 break;
+            }
             // for sprites
             case 3:
                 if (valueIsBetween(pXSource->data1, -1, 32767))
@@ -2841,6 +2843,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         switch (type) {
             // for sectors
         case 6:
+        {
             XSECTOR pXSector = xsector[sector[nDest].extra];
 
             if (valueIsBetween(pXSource->data1, -1, 32767)) {
@@ -2859,6 +2862,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             if (valueIsBetween(pXSource->data4, -1, 65535))
                 sector[nDest].floorstat = (short)pXSource->data4;
             break;
+        }
             // for sprites
         case 3:
             if (valueIsBetween(pXSource->data3, -1, 32767))
