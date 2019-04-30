@@ -22,6 +22,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #include "build.h"
 #include "compat.h"
+#ifdef POLYMER
+#include "polymer.h"
+#endif
 #include "common_game.h"
 #include "blood.h"
 #include "db.h"
@@ -46,10 +49,28 @@ typedef struct
 
 MIRROR mirror[16];
 
-#ifdef USE_OPENGL
-extern int r_rortexture;
-extern int r_rortexturerange;
-extern int r_rorphase;
+#ifdef POLYMER
+void PolymerRORCallback(int16_t sectnum, int16_t wallnum, int8_t rorstat, int16_t* msectnum, int32_t* gx, int32_t* gy, int32_t* gz)
+{
+    int nMirror;
+    switch (rorstat)
+    {
+    case 1:
+        nMirror = sector[sectnum].ceilingpicnum-4080;
+        *msectnum = mirror[nMirror].at4;
+        *gx += mirror[nMirror].at8;
+        *gy += mirror[nMirror].atc;
+        *gz += mirror[nMirror].at10;
+        break;
+    case 2:
+        nMirror = sector[sectnum].floorpicnum-4080;
+        *msectnum = mirror[nMirror].at4;
+        *gx += mirror[nMirror].at8;
+        *gy += mirror[nMirror].atc;
+        *gz += mirror[nMirror].at10;
+        break;
+    }
+}
 #endif
 
 void InitMirrors(void)
@@ -58,6 +79,10 @@ void InitMirrors(void)
 #ifdef USE_OPENGL
     r_rortexture = 4080;
     r_rortexturerange = 16;
+#ifdef  POLYMER
+    polymer_setrorcallback(PolymerRORCallback);
+#endif //  POLYMER
+
 #endif
     mirrorcnt = 0;
     tilesiz[504].x = 0;
@@ -316,6 +341,8 @@ void sub_557C4(int x, int y, int interpolation)
 
 void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
 {
+    if (videoGetRenderMode() == REND_POLYMER)
+        return;
     for (int i = mirrorcnt - 1; i >= 0; i--)
     {
         int nTile = 4080+i;

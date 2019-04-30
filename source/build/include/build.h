@@ -1367,6 +1367,10 @@ extern int32_t r_downsize;
 extern int32_t r_downsizevar;
 extern int32_t mdtims, omdtims;
 extern int32_t glrendmode;
+
+extern int32_t r_rortexture;
+extern int32_t r_rortexturerange;
+extern int32_t r_rorphase;
 #endif
 
 void hicinit(void);

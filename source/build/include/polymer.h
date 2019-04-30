@@ -328,6 +328,7 @@ typedef struct      s_prmirror {
     _prplane        *plane;
     int16_t         sectnum;
     int16_t         wallnum;
+    int8_t          rorstat;
 }                   _prmirror;
 
 typedef struct      s_prhighpalookup {
@@ -341,6 +342,8 @@ typedef struct      s_pranimatespritesinfo {
     animatespritesptr animatesprites;
     int32_t         x, y, a, smoothratio;
 }                   _pranimatespritesinfo;
+
+typedef void    (*rorcallback)(int16_t sectnum, int16_t wallnum, int8_t rorstat, int16_t *msectnum, int32_t *gx, int32_t *gy, int32_t *gz);
 
 // this one has to be provided by the application
 extern void G_Polymer_UnInit(void);
@@ -366,6 +369,7 @@ void                polymer_invalidatelights(void);
 void                polymer_texinvalidate(void);
 void                polymer_definehighpalookup(char basepalnum, char palnum, char *data);
 int32_t             polymer_havehighpalookup(int32_t basepalnum, int32_t palnum);
+void                polymer_setrorcallback(rorcallback callback);
 
 
 extern _prsprite    *prsprites[MAXSPRITES];

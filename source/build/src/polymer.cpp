@@ -740,6 +740,8 @@ static float    curskyangmul = 1;
 
 _pranimatespritesinfo asi;
 
+rorcallback     prorcallback;
+
 int32_t         polymersearching;
 
 int32_t         culledface;
@@ -1753,6 +1755,11 @@ int32_t             polymer_havehighpalookup(int32_t basepalnum, int32_t palnum)
     return (prhighpalookups[basepalnum][palnum].data != NULL);
 }
 
+void                polymer_setrorcallback(rorcallback callback)
+{
+    prorcallback = callback;
+}
+
 
 // CORE
 static void         polymer_displayrooms(const int16_t dacursectnum)
@@ -1775,11 +1782,13 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
     int16_t         localmaskwallcnt;
     _prmirror       mirrorlist[10];
     int             mirrorcount;
+    int16_t         mirrorsect;
     int16_t         *localsectormasks;
     int16_t         *localsectormaskcount;
     int32_t         gx, gy, gz, px, py, pz;
     GLdouble        plane[4];
     float           coeff;
+    float           pos[3];
 
     curmodelviewmatrix = localmodelviewmatrix;
     glGetFloatv(GL_MODELVIEW_MATRIX, localmodelviewmatrix);
@@ -1822,6 +1831,23 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         polymer_pokesector(sectorqueue[front]);
         polymer_drawsector(sectorqueue[front], FALSE);
         polymer_scansprites(sectorqueue[front], localtsprite, &localspritesortcnt);
+
+        if (!depth && sec->ceilingpicnum >= r_rortexture && sec->ceilingpicnum < r_rortexture+r_rortexturerange)
+        {
+            mirrorlist[mirrorcount].plane = &prsectors[sectorqueue[front]]->ceil;
+            mirrorlist[mirrorcount].sectnum = sectorqueue[front];
+            mirrorlist[mirrorcount].wallnum = -1;
+            mirrorlist[mirrorcount].rorstat = 1;
+            mirrorcount++;
+        }
+
+        if (!depth && sec->floorpicnum >= r_rortexture && sec->floorpicnum < r_rortexture+r_rortexturerange)
+        {
+            mirrorlist[mirrorcount].plane = &prsectors[sectorqueue[front]]->floor;
+            mirrorlist[mirrorcount].sectnum = sectorqueue[front];
+            mirrorlist[mirrorcount].rorstat = 2;
+            mirrorcount++;
+        }
 
         doquery = 0;
 
@@ -1874,6 +1900,17 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
                     mirrorlist[mirrorcount].plane = &prwalls[sec->wallptr + i]->mask;
                     mirrorlist[mirrorcount].sectnum = sectorqueue[front];
                     mirrorlist[mirrorcount].wallnum = sec->wallptr + i;
+                    mirrorlist[mirrorcount].rorstat = 0;
+                    mirrorcount++;
+                }
+
+                if (!depth && (overridematerial & prprogrambits[PR_BIT_MIRROR_MAP].bit) &&
+                     wall[sec->wallptr + i].picnum >= r_rortexture && wall[sec->wallptr + i].picnum < r_rortexture + r_rortexturerange)
+                {
+                    mirrorlist[mirrorcount].plane = &prwalls[sec->wallptr + i]->wall;
+                    mirrorlist[mirrorcount].sectnum = sectorqueue[front];
+                    mirrorlist[mirrorcount].wallnum = sec->wallptr + i;
+                    mirrorlist[mirrorcount].rorstat = 0;
                     mirrorcount++;
                 }
 
@@ -2049,11 +2086,15 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         plane[3] = mirrorlist[i].plane->plane[3];
 
         glClipPlane(GL_CLIP_PLANE0, plane);
-        polymer_inb4mirror(mirrorlist[i].plane->buffer, mirrorlist[i].plane->plane);
-        SWITCH_CULL_DIRECTION;
+
+        if (mirrorlist[i].rorstat == 0)
+        {
+            polymer_inb4mirror(mirrorlist[i].plane->buffer, mirrorlist[i].plane->plane);
+            SWITCH_CULL_DIRECTION;
+        }
         //glEnable(GL_CLIP_PLANE0);
 
-        if (mirrorlist[i].wallnum >= 0)
+        if (mirrorlist[i].rorstat == 0 && mirrorlist[i].wallnum >= 0)
             renderPrepareMirror(globalposx, globalposy, qglobalang,
                           mirrorlist[i].wallnum, &gx, &gy, &viewangle);
 
@@ -2061,31 +2102,62 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         gy = globalposy;
         gz = globalposz;
 
-        // map the player pos from build to polymer
-        px = globalposy;
-        py = -globalposz / 16;
-        pz = -globalposx;
+        if (mirrorlist[i].rorstat == 0)
+        {
+            // map the player pos from build to polymer
+            px = globalposy;
+            py = -globalposz / 16;
+            pz = -globalposx;
 
-        // calculate new player position on the other side of the mirror
-        // this way the basic build visibility shit can be used (wallvisible)
-        coeff = mirrorlist[i].plane->plane[0] * px +
-                mirrorlist[i].plane->plane[1] * py +
-                mirrorlist[i].plane->plane[2] * pz +
-                mirrorlist[i].plane->plane[3];
+            // calculate new player position on the other side of the mirror
+            // this way the basic build visibility shit can be used (wallvisible)
+            coeff = mirrorlist[i].plane->plane[0] * px +
+                    mirrorlist[i].plane->plane[1] * py +
+                    mirrorlist[i].plane->plane[2] * pz +
+                    mirrorlist[i].plane->plane[3];
 
-        coeff /= (float)(mirrorlist[i].plane->plane[0] * mirrorlist[i].plane->plane[0] +
-                         mirrorlist[i].plane->plane[1] * mirrorlist[i].plane->plane[1] +
-                         mirrorlist[i].plane->plane[2] * mirrorlist[i].plane->plane[2]);
+            coeff /= (float)(mirrorlist[i].plane->plane[0] * mirrorlist[i].plane->plane[0] +
+                             mirrorlist[i].plane->plane[1] * mirrorlist[i].plane->plane[1] +
+                             mirrorlist[i].plane->plane[2] * mirrorlist[i].plane->plane[2]);
 
-        px = (int32_t)(-coeff*mirrorlist[i].plane->plane[0]*2 + px);
-        py = (int32_t)(-coeff*mirrorlist[i].plane->plane[1]*2 + py);
-        pz = (int32_t)(-coeff*mirrorlist[i].plane->plane[2]*2 + pz);
+            px = (int32_t)(-coeff*mirrorlist[i].plane->plane[0]*2 + px);
+            py = (int32_t)(-coeff*mirrorlist[i].plane->plane[1]*2 + py);
+            pz = (int32_t)(-coeff*mirrorlist[i].plane->plane[2]*2 + pz);
 
-        // map back from polymer to build
-        set_globalpos(-pz, px, -py * 16);
+            // map back from polymer to build
+            set_globalpos(-pz, px, -py * 16);
+
+            mirrorsect = mirrorlist[i].sectnum;
+        }
+        else
+        {
+            // map the player pos from build to polymer
+            px = globalposx;
+            py = globalposy;
+            pz = globalposz;
+
+            mirrorsect = mirrorlist[i].sectnum;
+
+            if (prorcallback)
+                prorcallback(mirrorlist[i].sectnum, mirrorlist[i].wallnum, mirrorlist[i].rorstat, &mirrorsect, &px, &py, &pz);
+
+            pos[0] = (py-gy);
+            pos[1] = -(pz-gz)/16.f;
+            pos[2] = -(px-gx);
+
+            glTranslatef(-pos[0], -pos[1], -pos[2]);
+
+            glPushMatrix();
+            glLoadMatrixf(curskymodelviewmatrix);
+            glTranslatef(-pos[0], -pos[1], -pos[2]);
+            glGetFloatv(GL_MODELVIEW_MATRIX, curskymodelviewmatrix);
+            glPopMatrix();
+
+            set_globalpos(px, py, pz);
+        }
 
         mirrors[depth++] = mirrorlist[i];
-        polymer_displayrooms(mirrorlist[i].sectnum);
+        polymer_displayrooms(mirrorsect);
         depth--;
 
         cursectormasks = localsectormasks;
@@ -2094,7 +2166,8 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         set_globalpos(gx, gy, gz);
 
         glDisable(GL_CLIP_PLANE0);
-        SWITCH_CULL_DIRECTION;
+        if (mirrorlist[i].rorstat == 0)
+            SWITCH_CULL_DIRECTION;
         glMatrixMode(GL_MODELVIEW);
         glPopMatrix();
 

@@ -138,9 +138,9 @@ int32_t r_animsmoothing = 1;
 int32_t r_downsize = 0;
 int32_t r_downsizevar = -1;
 
-int r_rortexture = 0;
-int r_rortexturerange = 0;
-int r_rorphase = 0;
+int32_t r_rortexture = 0;
+int32_t r_rortexturerange = 0;
+int32_t r_rorphase = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
