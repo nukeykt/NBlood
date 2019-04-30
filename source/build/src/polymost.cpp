@@ -3342,26 +3342,13 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     static int32_t skyzbufferhack_pass = 0;
 
-    if (!waloff[globalpicnum])
-    {
-        glEnable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
-    }
-    else if (!(method & DAMETH_MASKPROPS) && fullbright_pass < 2)
-    {
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
-    }
-    else
+    if (method & DAMETH_MASKPROPS || fullbright_pass == 2)
     {
         float const al = alphahackarray[globalpicnum] != 0 ? alphahackarray[globalpicnum] * (1.f/255.f) :
                          (pth->hicr && pth->hicr->alphacut >= 0.f ? pth->hicr->alphacut : 0.f);
 
         glAlphaFunc(GL_GREATER, al);
         handle_blend((method & DAMETH_MASKPROPS) > DAMETH_MASK, drawpoly_blend, (method & DAMETH_MASKPROPS) == DAMETH_TRANS2);
-
-        glEnable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
     }
 
     float pc[4];
@@ -3637,8 +3624,6 @@ do                                                                              
         glMatrixMode(GL_MODELVIEW);
     }
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
 
@@ -3683,7 +3668,9 @@ do                                                                              
         vec3d_t const bxtex = xtex, bytex = ytex, botex = otex;
         xtex = xtex2, ytex = ytex2, otex = otex2;
         skyzbufferhack_pass++;
+        glColorMask(false, false, false, false);
         polymost_drawpoly(dpxy, n, DAMETH_MASK);
+        glColorMask(true, true, true, true);
         xtex = bxtex, ytex = bytex, otex = botex;
         skyzbufferhack_pass--;
     }
@@ -6599,6 +6586,12 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     if ((uint32_t)globalpicnum >= MAXTILES)
         globalpicnum = 0;
 
+    if (!waloff[globalpicnum])
+    {
+        glEnable(GL_BLEND);
+        glDisable(GL_ALPHA_TEST);
+    }
+
     globalorientation = (int32_t)wal->cstat;
     DO_TILE_ANIM(globalpicnum, (int16_t)thewall[z]+16384);
 
@@ -6789,6 +6782,13 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     polymost_updaterotmat();
     polymost_drawpoly(dpxy, n, method);
     polymost_identityrotmat();
+
+    if (!waloff[globalpicnum])
+    {
+        // restore this to normal
+        glDisable(GL_BLEND);
+        glEnable(GL_ALPHA_TEST);
+    }
 }
 
 typedef struct
@@ -8193,7 +8193,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     glLoadIdentity();
 
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
 
 #if defined(POLYMER)
@@ -8352,6 +8353,9 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
         pow2xsplit = 0; polymost_drawpoly(pxy, n,method);
         if (!nofog) polymost_setFogEnabled(true);
     }
+
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
 
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER)

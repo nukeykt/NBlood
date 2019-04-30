@@ -5831,9 +5831,6 @@ static void renderDrawSprite(int32_t snum)
 #ifdef USE_OPENGL
     case REND_POLYMOST:
         polymost_drawsprite(snum);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
-//        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
         return;
 # ifdef POLYMER
     case REND_POLYMER:
@@ -8556,6 +8553,9 @@ killsprite:
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
+        glDisable(GL_BLEND);
+        glEnable(GL_ALPHA_TEST);
+
         for (i = spritesortcnt; i < numSprites; ++i)
         {
             if (tspriteptr[i] != NULL)
@@ -8579,6 +8579,10 @@ killsprite:
             else
                 renderDrawMaskedWall(--maskwallcnt);
         }
+
+        glEnable(GL_BLEND);
+        glEnable(GL_ALPHA_TEST);
+        glDepthMask(GL_FALSE);
     }
 #endif
 
@@ -8714,10 +8718,6 @@ killsprite:
         renderDrawMaskedWall(maskwallcnt);
     }
 
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST)
-        glDepthMask(GL_FALSE);
-#endif
     while (spritesortcnt)
     {
         --spritesortcnt;
