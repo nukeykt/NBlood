@@ -4325,6 +4325,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
         }
 
         glColor4f(color[0], color[1], color[2], 1.0);
+        glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
         if (pr_vbos > 0)
         {
@@ -4335,6 +4336,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
             glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), &skyboxdata[3 + (4 * 5 * i)]);
         }
         glDrawArrays(GL_QUADS, 0, 4);
+        glDisable(GL_TEXTURE_2D);
 
         i++;
     }
