@@ -37,11 +37,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class EventQueue
 {
 public:
+    PriorityQueue* PQueue;
     EventQueue()
     {
         PQueue = NULL;
     }
-    PriorityQueue* PQueue;
     bool IsNotEmpty(unsigned int nTime)
     {
         return PQueue->Size() > 0 && nTime >= PQueue->LowestPriority();
@@ -560,14 +560,46 @@ public:
 
 void EventQLoadSave::Load()
 {
+    if (eventQ.PQueue)
+        delete eventQ.PQueue;
     Read(&eventQ, sizeof(eventQ));
+    if (isOriginalDemo())
+        eventQ.PQueue = new VanillaPriorityQueue();
+    else
+        eventQ.PQueue = new StdPriorityQueue();
+    int nEvents;
+    Read(&nEvents, sizeof(nEvents));
+    for (int i = 0; i < nEvents; i++)
+    {
+        EVENT event;
+        unsigned int eventtime;
+        Read(&eventtime, sizeof(eventtime));
+        Read(&event, sizeof(event));
+        eventQ.PQueue->Insert(eventtime, *(unsigned int*)&event);
+    }
     Read(rxBucket, sizeof(rxBucket));
     Read(bucketHead, sizeof(bucketHead));
 }
 
 void EventQLoadSave::Save()
 {
+    EVENT events[1024];
+    unsigned int eventstime[1024];
     Write(&eventQ, sizeof(eventQ));
+    int nEvents = eventQ.PQueue->Size();
+    Write(&nEvents, sizeof(nEvents));
+    for (int i = 0; i < nEvents; i++)
+    {
+        eventstime[i] = eventQ.PQueue->LowestPriority();
+        events[i] = eventQ.ERemove();
+        Write(&eventstime[i], sizeof(eventstime[i]));
+        Write(&events[i], sizeof(events[i]));
+    }
+    dassert(eventQ.PQueue->Size() == 0);
+    for (int i = 0; i < nEvents; i++)
+    {
+        eventQ.PQueue->Insert(eventstime[i], *(unsigned int*)&events[i]);
+    }
     Write(rxBucket, sizeof(rxBucket));
     Write(bucketHead, sizeof(bucketHead));
 }
