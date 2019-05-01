@@ -62,7 +62,7 @@ static float gviewxrange;
 static float ghoriz, ghoriz2;
 static float ghorizcorrect;
 float gxyaspect;
-float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x;
+float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x, ghalfy;
 float gcosang, gsinang, gcosang2, gsinang2;
 float gchang, gshang, gctang, gstang, gvisibility;
 float gtang = 0.f;
@@ -3614,7 +3614,7 @@ do                                                                              
 
                 //update verts
                 drawpolyVerts[(off+i)*5] = (o.x - ghalfx) * r * grhalfxdown10x;
-                drawpolyVerts[(off+i)*5+1] = (fydimen*0.5f - o.y) * r * grhalfxdown10;
+                drawpolyVerts[(off+i)*5+1] = (ghalfy - o.y) * r * grhalfxdown10;
                 drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
                 //update texcoords
@@ -3659,7 +3659,7 @@ do                                                                              
 
             //update verts
             drawpolyVerts[(off+i)*5] = (px[i] - ghalfx) * r * grhalfxdown10x;
-            drawpolyVerts[(off+i)*5+1] = (fydimen*0.5f - py[i]) * r * grhalfxdown10;
+            drawpolyVerts[(off+i)*5+1] = (ghalfy - py[i]) * r * grhalfxdown10;
             drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
             //update texcoords
@@ -5873,6 +5873,7 @@ void polymost_drawrooms()
     gcosang2 = gcosang * (fviewingrange * (1.0f/65536.f));
     gsinang2 = gsinang * (fviewingrange * (1.0f/65536.f));
     ghalfx = (float)(xdimen>>1);
+    ghalfy = (float)(ydimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
     ghorizcorrect = fix16_to_float((100-polymostcenterhoriz)*divscale16(xdimenscale, viewingrange));
@@ -7633,6 +7634,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalpal = (int32_t)((uint8_t)dapalnum);
     float const  oghalfx = ghalfx;
     ghalfx = fxdim * .5f;
+    float const  oghalfy = ghalfy;
+    ghalfy = fydim * .5f;
     float const  ogrhalfxdown10 = grhalfxdown10;
     grhalfxdown10 = 1.f / (ghalfx * 1024.f);
     float const  ogrhalfxdown10x = grhalfxdown10x;
@@ -7845,6 +7848,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalshade  = ogshade;
     globalpal    = ogpal;
     ghalfx       = oghalfx;
+    ghalfy       = oghalfy;
     grhalfxdown10 = ogrhalfxdown10;
     grhalfxdown10x = ogrhalfxdown10x;
     ghoriz       = oghoriz;
