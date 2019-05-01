@@ -59,7 +59,7 @@ int32_t r_npotwallmode = 2;
 int32_t polymostcenterhoriz = 100;
 
 static float gviewxrange;
-static float ghoriz;
+static float ghoriz, ghoriz2;
 static float ghorizcorrect;
 float gxyaspect;
 float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x;
@@ -141,6 +141,8 @@ int32_t r_downsizevar = -1;
 int32_t r_rortexture = 0;
 int32_t r_rortexturerange = 0;
 int32_t r_rorphase = 0;
+
+int32_t r_yshearing = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
@@ -384,7 +386,7 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glhorizcorrect;
+float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glhoriz2;
 
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
@@ -1561,7 +1563,7 @@ void calc_and_apply_fog_factor(int32_t tile, int32_t shade, int32_t vis, int32_t
 
 static float get_projhack_ratio(void)
 {
-    if (glprojectionhacks)
+    if (glprojectionhacks && !r_yshearing)
     {
         float const projhack_zoom = 1.4f *
         // adjust for the FOV, increasing the FOV reduces the zenith glitch
@@ -1609,7 +1611,7 @@ static void resizeglcheck(void)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glhorizcorrect != ghorizcorrect))
+    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glhoriz2 != ghoriz2))
     {
         const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
         float ratio = get_projhack_ratio();
@@ -1635,7 +1637,7 @@ static void resizeglcheck(void)
         gloyxscale = gyxscale;
 
         m[0][0] = 1.f;
-        m[1][1] = fxdimen/(fydimen*ratio); m[2][1] = 2.f*ghorizcorrect/(fydimen*ratio);
+        m[1][1] = fxdimen/(fydimen*ratio); m[2][1] = 2.f*ghoriz2/(fydimen*ratio);
         m[2][2] = (farclip+nearclip)/(farclip-nearclip); m[2][3] = 1.f;
         m[3][2] =-(2.f*farclip*nearclip)/(farclip-nearclip);
         glLoadMatrixf(&m[0][0]);
@@ -3651,7 +3653,7 @@ do                                                                              
 
             //update verts
             drawpolyVerts[(off+i)*5] = (px[i] - ghalfx) * r * grhalfxdown10x;
-            drawpolyVerts[(off+i)*5+1] = (ghoriz - py[i]) * r * grhalfxdown10;
+            drawpolyVerts[(off+i)*5+1] = (fydimen*(1.f/2.f) - py[i]) * r * grhalfxdown10;
             drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
             //update texcoords
@@ -5860,15 +5862,26 @@ void polymost_drawrooms()
 
     gvisibility = ((float)globalvisibility)*FOGSCALE;
 
+    //global cos/sin height angle
+    if (r_yshearing)
+    {
+        gshang = 0.f;
+        gchang = 1.f;
+        ghoriz2 = (float)(ydimen>>1)-ghoriz;
+        ghoriz = (float)(ydimen>>1);
+    }
+    else
+    {
+        float r = (float)(ydimen>>1) - (ghoriz + ghorizcorrect);
+        gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
+        gchang = Bsqrtf(1.f-gshang*gshang);
+        ghoriz = (float)(ydimen>>1);
+        ghoriz2 = ghorizcorrect;
+    }
+
     resizeglcheck();
 
     polymost_shadeInterpolate(r_shadeinterpolate);
-
-    //global cos/sin height angle
-    float r = (float)(ydimen>>1) - (ghoriz + ghorizcorrect);
-    gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
-    gchang = Bsqrtf(1.f-gshang*gshang);
-    ghoriz = (float)(ydimen>>1);
 
     //global cos/sin tilt angle
     gctang = cosf(gtang);
@@ -5884,10 +5897,10 @@ void polymost_drawrooms()
         gstang = -gstang;
 
     //Generate viewport trapezoid (for handling screen up/down)
-    vec3f_t p[4] = {  { 0-1,                                  0-1+ghorizcorrect,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghorizcorrect,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 },
-                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 } };
+    vec3f_t p[4] = {  { 0-1,                                  0-1+ghoriz2,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghoriz2,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghoriz2, 0 },
+                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghoriz2, 0 } };
 
     for (bssize_t i=0; i<4; i++)
     {
@@ -8479,6 +8492,7 @@ void polymost_initosdfuncs(void)
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
         { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_INT, 0, 1 },
         { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_INT, 0, 1 },
+        { "r_yshearing", "enable/disable y-shearing", (void*)&r_yshearing, CVAR_INT, 0, 1 },
 
 #ifdef POLYMER
         // polymer cvars
