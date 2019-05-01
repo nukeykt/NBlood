@@ -524,7 +524,6 @@ void UpdateTexCache(CGameMenuItemZCycle *pItem);
 void UpdateDetailTex(CGameMenuItemZBool *pItem);
 void UpdateGlowTex(CGameMenuItemZBool *pItem);
 void Update3DModels(CGameMenuItemZBool *pItem);
-void UpdatePaletteEmulation(CGameMenuItemZBool *pItem);
 void UpdateDeliriumBlur(CGameMenuItemZBool *pItem);
 #ifdef USE_OPENGL
 void PreDrawDisplayPolymost(CGameMenuItem *pItem);
@@ -538,8 +537,7 @@ CGameMenuItemZCycle itemOptionsDisplayPolymostTexCache("ON-DISK TEXTURE CACHE:",
 CGameMenuItemZBool itemOptionsDisplayPolymostDetailTex("DETAIL TEXTURES:", 3, 66, 120, 180, 0, UpdateDetailTex, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayPolymostGlowTex("GLOW TEXTURES:", 3, 66, 130, 180, 0, UpdateGlowTex, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayPolymost3DModels("3D MODELS:", 3, 66, 140, 180, 0, Update3DModels, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayPolymostPaletteEmulation("PALETTE EMULATION:", 3, 66, 150, 180, 0, UpdatePaletteEmulation, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayPolymostDeliriumBlur("DELIRIUM EFFECT BLUR:", 3, 66, 160, 180, 0, UpdateDeliriumBlur, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayPolymostDeliriumBlur("DELIRIUM EFFECT BLUR:", 3, 66, 150, 180, 0, UpdateDeliriumBlur, NULL, NULL);
 #endif
 
 void UpdateSoundToggle(CGameMenuItemZBool *pItem);
@@ -1185,16 +1183,15 @@ void SetupOptionsMenu(void)
 
 #ifdef USE_OPENGL
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTitle, false);
-    menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTextureMode, true);
-    menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostAnisotropy, false);
-    menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTrueColorTextures, false);
+    //menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTextureMode, true);
+    //menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostAnisotropy, false);
+    menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTrueColorTextures, true);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTexQuality, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostPreloadCache, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostTexCache, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostDetailTex, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostGlowTex, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymost3DModels, false);
-    menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostPaletteEmulation, false);
     menuOptionsDisplayPolymost.Add(&itemOptionsDisplayPolymostDeliriumBlur, false);
     menuOptionsDisplayPolymost.Add(&itemBloodQAV, false);
 
@@ -1203,7 +1200,6 @@ void SetupOptionsMenu(void)
     itemOptionsDisplayPolymostTexCache.pPreDrawCallback = PreDrawDisplayPolymost;
     itemOptionsDisplayPolymostDetailTex.pPreDrawCallback = PreDrawDisplayPolymost;
     itemOptionsDisplayPolymostGlowTex.pPreDrawCallback = PreDrawDisplayPolymost;
-    itemOptionsDisplayPolymostPaletteEmulation.pPreDrawCallback = PreDrawDisplayPolymost;
 #endif
 
     menuOptionsSound.Add(&itemOptionsSoundTitle, false);
@@ -1674,7 +1670,6 @@ void SetupVideoPolymostMenu(CGameMenuItemChain *pItem)
     itemOptionsDisplayPolymostDetailTex.at20 = r_detailmapping;
     itemOptionsDisplayPolymostGlowTex.at20 = r_glowmapping;
     itemOptionsDisplayPolymost3DModels.at20 = usemodels;
-    itemOptionsDisplayPolymostPaletteEmulation.at20 = r_usetileshades;
     itemOptionsDisplayPolymostDeliriumBlur.at20 = gDeliriumBlur;
 }
 
@@ -1738,11 +1733,6 @@ void Update3DModels(CGameMenuItemZBool *pItem)
     usemodels = pItem->at20;
 }
 
-void UpdatePaletteEmulation(CGameMenuItemZBool *pItem)
-{
-    r_usetileshades = pItem->at20;
-}
-
 void UpdateDeliriumBlur(CGameMenuItemZBool *pItem)
 {
     gDeliriumBlur = pItem->at20;
@@ -1760,8 +1750,6 @@ void PreDrawDisplayPolymost(CGameMenuItem *pItem)
         pItem->bEnable = usehightile;
     else if (pItem == &itemOptionsDisplayPolymostGlowTex)
         pItem->bEnable = usehightile;
-    else if (pItem == &itemOptionsDisplayPolymostPaletteEmulation)
-        pItem->bEnable = !(videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
 }
 #endif
 

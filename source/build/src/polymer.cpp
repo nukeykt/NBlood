@@ -932,9 +932,6 @@ void                polymer_glinit(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glViewport(windowxy1.x, ydim-(windowxy2.y+1),windowxy2.x-windowxy1.x+1, windowxy2.y-windowxy1.y+1);
 
-    // texturing
-    glEnable(GL_TEXTURE_2D);
-
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -1061,6 +1058,23 @@ void                polymer_loadboard(void)
     polymer_resetlights();
 
     if (pr_verbosity >= 1 && numsectors) OSD_Printf("PR : Board loaded.\n");
+}
+ 
+int32_t polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
+{
+    //POGOTODO: Polymer should implement this so it's no longer coupled with Polymost & reliant on the fixed-function pipeline
+    glEnable(GL_TEXTURE_2D);
+    int32_t returnVal = polymost_printtext256(xpos, ypos, col, backcol, name, fontsize);
+    glDisable(GL_TEXTURE_2D);
+    return returnVal;
+}
+ 
+void polymer_fillpolygon(int32_t npoints)
+{
+    //POGOTODO: Polymer should implement this so it's no longer coupled with Polymost & reliant on the fixed-function pipeline
+    glEnable(GL_TEXTURE_2D);
+    polymost_fillpolygon(npoints);
+    glDisable(GL_TEXTURE_2D);
 }
 
 // The parallaxed ART sky angle divisor corresponding to a horizfrac of 32768.
@@ -1478,7 +1492,7 @@ void                polymer_drawmaskwall(int32_t damaskwallcnt)
     if (searchit == 2) {
         polymer_drawsearchplane(&w->mask, oldcolor, 0x04, (GLubyte *)&maskwall[damaskwallcnt]);
     } else {
-        calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+        calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
         polymer_drawplane(&w->mask);
     }
 
@@ -1507,8 +1521,7 @@ void                polymer_drawsprite(int32_t snum)
     DO_TILE_ANIM(tspr->picnum, tspr->owner+32768);
 
     sec = (usectortype *)&sector[tspr->sectnum];
-    calc_and_apply_fog(tspr->picnum, fogshade(tspr->shade, tspr->pal), sec->visibility,
-                       get_floor_fogpal((usectortype *)&sector[tspr->sectnum]));
+    calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
 
     if (usemodels && tile2model[Ptile2tile(tspr->picnum,tspr->pal)].modelid >= 0 &&
         tile2model[Ptile2tile(tspr->picnum,tspr->pal)].framenum >= 0 &&
@@ -3078,8 +3091,8 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
             polymer_drawsearchplane(&s->floor, oldcolor, 0x02, (GLubyte *) &sectnum);
         }
         else {
-            calc_and_apply_fog(sec->floorpicnum, fogshade(sec->floorshade, sec->floorpal),
-                sec->visibility, get_floor_fogpal(sec));
+            calc_and_apply_fog(fogshade(sec->floorshade, sec->floorpal), sec->visibility,
+                get_floor_fogpal(sec));
             polymer_drawplane(&s->floor);
         }
     } else if (!domasks && cursectormaskcount && sec->floorstat & 384) {
@@ -3106,8 +3119,8 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
             polymer_drawsearchplane(&s->ceil, oldcolor, 0x01, (GLubyte *) &sectnum);
         }
         else {
-            calc_and_apply_fog(sec->ceilingpicnum, fogshade(sec->ceilingshade, sec->ceilingpal),
-                               sec->visibility, get_ceiling_fogpal(sec));
+            calc_and_apply_fog(fogshade(sec->ceilingshade, sec->ceilingpal), sec->visibility,
+                               get_ceiling_fogpal(sec));
             polymer_drawplane(&s->ceil);
         }
     } else if (!domasks && !queuedmask && cursectormaskcount &&
@@ -3639,8 +3652,8 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     if ((sec->ceilingstat & 1) && (wal->nextsector >= 0) &&
         (sector[wal->nextsector].ceilingstat & 1))
         parallaxedceiling = 1;
-
-    calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+    
+    calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
     if ((w->underover & 1) && (!parallaxedfloor || (searchit == 2)))
     {
@@ -4291,6 +4304,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         i++;
     }
 
+    glEnable(GL_TEXTURE_2D);
     i = 0;
     j = 8;  // In Polymer, an ART sky has always 8 sides...
     while (i < j)
@@ -4311,6 +4325,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
         i++;
     }
+    glDisable(GL_TEXTURE_2D);
 }
 
 static void         polymer_drawartskyquad(int32_t p1, int32_t p2, GLfloat height)
@@ -4383,6 +4398,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
         }
 
         glColor4f(color[0], color[1], color[2], 1.0);
+        glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, pth ? pth->glpic : 0);
         if (pr_vbos > 0)
         {
@@ -4393,6 +4409,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
             glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), &skyboxdata[3 + (4 * 5 * i)]);
         }
         glDrawArrays(GL_QUADS, 0, 4);
+        glDisable(GL_TEXTURE_2D);
 
         i++;
     }

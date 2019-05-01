@@ -56,7 +56,6 @@ void fullscreen_tint_gl(uint8_t r, uint8_t g, uint8_t b, uint8_t f)
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_ALPHA_TEST);
-    glDisable(GL_TEXTURE_2D);
     polymost_setFogEnabled(false);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -89,7 +88,6 @@ void fullscreen_tint_gl_blood(void)
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_ALPHA_TEST);
-    glDisable(GL_TEXTURE_2D);
     polymost_setFogEnabled(false);
 
     glBlendFunc(GL_ONE, GL_ONE);

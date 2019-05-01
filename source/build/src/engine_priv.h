@@ -236,7 +236,7 @@ extern int32_t searchx, searchy;
 extern int16_t searchsector, searchwall, searchstat;
 extern int16_t searchbottomwall, searchisbottom;
 
-extern char inpreparemirror;
+extern char inpreparemirror, mirrorrender;
 
 extern char picsiz[MAXTILES];
 extern int16_t sectorborder[256];
@@ -254,8 +254,8 @@ extern int32_t rxi[8], ryi[8];
 // For GL_EXP2 fog:
 #define FOGSCALE 0.0000768f
 
-void calc_and_apply_fog(int32_t tile, int32_t shade, int32_t vis, int32_t pal);
-void calc_and_apply_fog_factor(int32_t tile, int32_t shade, int32_t vis, int32_t pal, float factor);
+void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal);
+void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float factor);
 #endif
 
 extern void get_wallspr_points(uspritetype const * spr, int32_t *x1, int32_t *x2,
@@ -305,11 +305,12 @@ extern void polymost_scansector(int32_t sectnum);
 #endif
 int32_t renderAddTsprite(int16_t z, int16_t sectnum);
 #ifdef YAX_ENABLE
-extern int32_t g_nodraw, scansector_retfast;
+extern int32_t g_nodraw, scansector_retfast, scansector_collectsprites;
 extern int32_t yax_globallev, yax_globalbunch;
 extern int32_t yax_globalcf, yax_nomaskpass, yax_nomaskdidit;
 extern uint8_t haveymost[YAX_MAXBUNCHES>>3];
-extern uint8_t yax_gotsector[MAXSECTORS>>3];
+extern uint8_t yax_gotsector[(MAXSECTORS+7)>>3];
+extern int32_t yax_polymostclearzbuffer;
 
 static FORCE_INLINE int32_t yax_isislandwall(int32_t line, int32_t cf) { return (yax_vnextsec(line, cf) >= 0); }
 #endif
