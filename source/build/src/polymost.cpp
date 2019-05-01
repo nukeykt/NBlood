@@ -386,7 +386,7 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glhoriz2;
+float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glohorizcorrect, glotang;
 
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
@@ -1611,7 +1611,7 @@ static void resizeglcheck(void)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glhoriz2 != ghoriz2))
+    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glohoriz2 != ghoriz2) || (glohorizcorrect != ghorizcorrect) || (glotang != gtang))
     {
         const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
         float ratio = get_projhack_ratio();
@@ -1635,10 +1635,16 @@ static void resizeglcheck(void)
 
         gloxyaspect = gxyaspect;
         gloyxscale = gyxscale;
+        glohoriz2 = ghoriz2;
+        glohorizcorrect = ghorizcorrect;
+        glotang = gtang;
 
         m[0][0] = 1.f;
-        m[1][1] = fxdimen/(fydimen*ratio); m[2][1] = 2.f*ghoriz2/(fydimen*ratio);
-        m[2][2] = (farclip+nearclip)/(farclip-nearclip); m[2][3] = 1.f;
+        m[1][1] = fxdimen/(fydimen*ratio);
+        m[2][0] = 2.f*ghoriz2*gstang/fxdimen;
+        m[2][1] = 2.f*(ghoriz2*gctang+ghorizcorrect)/(fydimen*ratio);
+        m[2][2] = (farclip+nearclip)/(farclip-nearclip);
+        m[2][3] = 1.f;
         m[3][2] =-(2.f*farclip*nearclip)/(farclip-nearclip);
         glLoadMatrixf(&m[0][0]);
 
@@ -3608,7 +3614,7 @@ do                                                                              
 
                 //update verts
                 drawpolyVerts[(off+i)*5] = (o.x - ghalfx) * r * grhalfxdown10x;
-                drawpolyVerts[(off+i)*5+1] = (ghoriz - o.y) * r * grhalfxdown10;
+                drawpolyVerts[(off+i)*5+1] = (fydimen*0.5f - o.y) * r * grhalfxdown10;
                 drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
                 //update texcoords
@@ -3653,7 +3659,7 @@ do                                                                              
 
             //update verts
             drawpolyVerts[(off+i)*5] = (px[i] - ghalfx) * r * grhalfxdown10x;
-            drawpolyVerts[(off+i)*5+1] = (fydimen*(1.f/2.f) - py[i]) * r * grhalfxdown10;
+            drawpolyVerts[(off+i)*5+1] = (fydimen*0.5f - py[i]) * r * grhalfxdown10;
             drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
             //update texcoords
@@ -5878,17 +5884,16 @@ void polymost_drawrooms()
     {
         gshang = 0.f;
         gchang = 1.f;
-        ghoriz2 = (float)(ydimen>>1)-ghoriz;
-        ghoriz = (float)(ydimen>>1);
+        ghoriz2 = (float)(ydimen>>1)-ghoriz-ghorizcorrect;
     }
     else
     {
         float r = (float)(ydimen>>1) - (ghoriz + ghorizcorrect);
         gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
         gchang = Bsqrtf(1.f-gshang*gshang);
-        ghoriz = (float)(ydimen>>1);
-        ghoriz2 = ghorizcorrect;
+        ghoriz2 = 0.f;
     }
+    ghoriz = (float)(ydimen>>1);
 
     resizeglcheck();
 
@@ -5908,16 +5913,16 @@ void polymost_drawrooms()
         gstang = -gstang;
 
     //Generate viewport trapezoid (for handling screen up/down)
-    vec3f_t p[4] = {  { 0-1,                                  0-1+ghoriz2,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghoriz2,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghoriz2, 0 },
-                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghoriz2, 0 } };
+    vec3f_t p[4] = {  { 0-1,                                  0-1+ghorizcorrect,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghorizcorrect,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 },
+                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 } };
 
     for (bssize_t i=0; i<4; i++)
     {
         //Tilt rotation (backwards)
         vec2f_t const o = { p[i].x-ghalfx, p[i].y-ghoriz };
-        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang, ghalfx };
+        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, ghalfx };
 
         //Up/down rotation (backwards)
         p[i].x = o2.x;
