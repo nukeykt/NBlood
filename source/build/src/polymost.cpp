@@ -4744,8 +4744,8 @@ static void polymost_drawalls(int32_t const bunch)
 
         DO_TILE_ANIM(globalpicnum, sectnum);
 
-        int32_t dapskybits, dapyoffs, daptileyscale;
-        int8_t const * dapskyoff = getpsky(globalpicnum, NULL, &dapskybits, &dapyoffs, &daptileyscale);
+        int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
+        int8_t const * dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->floorshade, global_cf_pal = sec->floorpal; global_cf_z = sec->floorz;  // REFACT
@@ -4789,6 +4789,10 @@ static void polymost_drawalls(int32_t const bunch)
 
             if (!usehightile || !hicfindskybox(globalpicnum, globalpal))
             {
+                float const ghorizbak = ghoriz;
+                if (r_yshearing)
+                    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*(dapyscale-65536.f)*(1.f/65536.f)+float(ydimen>>1);
+
                 float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
                 float vv[2];
                 float t = (float)((1<<(picsiz[globalpicnum]&15))<<dapskybits);
@@ -4898,6 +4902,7 @@ static void polymost_drawalls(int32_t const bunch)
                     pow2xsplit = 0; polymost_domost(o.x,(o.x-x0)*r+fy0,fx,(fx-x0)*r+fy0); //flor
                 }
                 while (i >= 0);
+                ghoriz = ghorizbak;
             }
             else  //NOTE: code copied from ceiling code... lots of duplicated stuff :/
             {
@@ -5099,7 +5104,7 @@ static void polymost_drawalls(int32_t const bunch)
         DO_TILE_ANIM(globalpicnum, sectnum);
 
 
-        dapskyoff = getpsky(globalpicnum, NULL, &dapskybits, &dapyoffs, &daptileyscale);
+        dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->ceilingshade, global_cf_pal = sec->ceilingpal; global_cf_z = sec->ceilingz;  // REFACT
@@ -5143,6 +5148,10 @@ static void polymost_drawalls(int32_t const bunch)
 
             if (!usehightile || !hicfindskybox(globalpicnum, globalpal))
             {
+                float const ghorizbak = ghoriz;
+                if (r_yshearing)
+                    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*(dapyscale-65536.f)*(1.f/65536.f)+float(ydimen>>1);
+
                 float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
                 float vv[2];
                 float t = (float)((1<<(picsiz[globalpicnum]&15))<<dapskybits);
@@ -5252,6 +5261,8 @@ static void polymost_drawalls(int32_t const bunch)
                     pow2xsplit = 0; polymost_domost(fx,(fx-x0)*r+cy0,o.x,(o.x-x0)*r+cy0); //ceil
                 }
                 while (i >= 0);
+
+                ghoriz = ghorizbak;
             }
             else
             {
