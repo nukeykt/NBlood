@@ -51,7 +51,7 @@ struct XSPRITE {
 
     unsigned int respawnPending : 2; // respawnPending
 
-    unsigned int dropMsg : 8; // Drop Item
+    signed int dropMsg : 10; // Drop Item
     unsigned int Decoupled : 1; // Decoupled
     unsigned int triggerOnce : 1; // 1-shot
     unsigned int isTriggered : 1; // works in case if triggerOnce selected
@@ -76,7 +76,7 @@ struct XSPRITE {
     signed   int data3 : 16; // Data 3
     unsigned int data4 : 16; // Data 4
     unsigned int locked : 1; // Locked
-    unsigned int palette : 2; // palette
+    unsigned int medium : 2; // medium
     unsigned int respawn : 2; // Respawn option
     unsigned int lockMsg : 8; // Lock msg
     unsigned int health : 12; // 1c_0
@@ -95,7 +95,9 @@ struct XSPRITE {
     unsigned int height : 16;
     unsigned int stateTimer : 16; // ai timer
     AISTATE *aiState; // ai
-}; // 56(0x38) bytes
+    signed int txIndex : 10; // used by kGDXSequentialTX to keep current TX ID index
+    signed int cumulDamage : 16; // for dudes
+}; // 58
 
 struct XSECTOR {
     signed int reference : 14;

@@ -48,3 +48,9 @@ extern AISTATE tinycalebBurnChase;
 extern AISTATE tinycalebBurnGoto;
 extern AISTATE tinycalebBurnSearch;
 extern AISTATE tinycalebBurnAttack;
+extern AISTATE GDXGenDudeBurnIdle;
+extern AISTATE GDXGenDudeBurnChase;
+extern AISTATE GDXGenDudeBurnGoto;
+extern AISTATE GDXGenDudeBurnSearch;
+extern AISTATE GDXGenDudeBurnAttack;
+

@@ -912,7 +912,7 @@ extern "C" {
  *
  *    "0" or "default" - Use SDL's internal resampling (Default when not set - low quality, fast)
  *    "1" or "fast"    - Use fast, slightly higher quality resampling, if available
- *    "2" or "medium"  - Use medium quality resampling, if available
+ *    "2" or "palette"  - Use palette quality resampling, if available
  *    "3" or "best"    - Use high quality resampling, if available
  */
 #define SDL_HINT_AUDIO_RESAMPLING_MODE   "SDL_AUDIO_RESAMPLING_MODE"

@@ -61,6 +61,7 @@ enum VECTOR_TYPE {
     VECTOR_TYPE_19,
     VECTOR_TYPE_20,
     VECTOR_TYPE_21,
+    VECTOR_TYPE_22,
     kVectorMax,
 };
 
@@ -79,6 +80,7 @@ struct THINGINFO
     unsigned char at15; // xrepeat
     unsigned char at16; // yrepeat
     int at17[7]; // damage
+    int allowThrow; // By NoOne: indicates if kGDXCustomDude can throw it
 };
 
 struct AMMOITEMDATA
@@ -127,6 +129,7 @@ struct MissileType
     unsigned char atb; // yrepeat
     char atc; // shade
     unsigned char atd; // clipdist
+    int fireSound[2]; // By NoOne: predefined fire sounds. used by kGDXCustomDude, but can be used for something else.
 };
 
 struct EXPLOSION
@@ -153,12 +156,13 @@ struct VECTORDATA {
     DAMAGE_TYPE at0;
     int at1; // damage
     int at5;
-    int at9; // range
+    int maxDist; // range
     int atd;
     int at11; // burn
     int at15; // blood splats
     int at19; // blood splat chance
     VECTORDATA_at1d at1d[15];
+    int fireSound[2]; // By NoOne: predefined fire sounds. used by kGDXCustomDude, but can be used for something else.
 };
 
 struct SPRITEHIT {
@@ -171,7 +175,7 @@ extern ITEMDATA gItemData[];
 extern MissileType missileInfo[];
 extern EXPLOSION explodeInfo[];
 extern THINGINFO thingInfo[];
-extern VECTORDATA gVectorData[22];
+extern VECTORDATA gVectorData[];
 
 extern SPRITEHIT gSpriteHit[];
 
@@ -269,3 +273,5 @@ spritetype* spawnRandomDude(spritetype* pSprite);
 int GetDataVal(spritetype* pSprite, int data);
 int my_random(int a, int b);
 int GetRandDataVal(spritetype* pSprite);
+bool sfxPlayMissileSound(spritetype* pSprite, int missileId);
+bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);

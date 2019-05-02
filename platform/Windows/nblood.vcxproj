@@ -191,6 +191,7 @@
     <ClCompile Include="..\..\source\blood\src\airat.cpp" />
     <ClCompile Include="..\..\source\blood\src\aispid.cpp" />
     <ClCompile Include="..\..\source\blood\src\aitchern.cpp" />
+    <ClCompile Include="..\..\source\blood\src\AIUNICULT.cpp" />
     <ClCompile Include="..\..\source\blood\src\aizomba.cpp" />
     <ClCompile Include="..\..\source\blood\src\aizombf.cpp" />
     <ClCompile Include="..\..\source\blood\src\al_midi.cpp" />
@@ -301,6 +302,7 @@
     <ClInclude Include="..\..\source\blood\src\airat.h" />
     <ClInclude Include="..\..\source\blood\src\aispid.h" />
     <ClInclude Include="..\..\source\blood\src\aitchern.h" />
+    <ClInclude Include="..\..\source\blood\src\AIUNICULT.h" />
     <ClInclude Include="..\..\source\blood\src\aizomba.h" />
     <ClInclude Include="..\..\source\blood\src\aizombf.h" />
     <ClInclude Include="..\..\source\blood\src\al_midi.h" />

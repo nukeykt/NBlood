@@ -418,10 +418,9 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     /* - ranged TX ID is now supported also - */
     case kGDXSequentialTX:
     {
-        bool range = false; int cnt = 0; int tx = 0;
+        bool range = false; int cnt = 3; int tx = 0;
         // set range of TX ID if data2 and data3 is empty.
-        if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 &&
-            pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
+        if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 && pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
 
             // data1 must be less than data4
             if (pXSprite->data1 > pXSprite->data4) {
@@ -430,82 +429,57 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
                 pXSprite->data4 = tmp;
             }
 
+            // Make sure dropMsg is correct as we store current index of TX ID here.
+            if (pXSprite->dropMsg < pXSprite->data1) pXSprite->dropMsg = pXSprite->data1;
+            else if (pXSprite->dropMsg > pXSprite->data4) pXSprite->dropMsg = pXSprite->data4;
+
             range = true;
-        }
 
-        if (range == false) {
-
-            // Make sure dropMsg is correct as we store current
-            // index of data field here.
-            if (pXSprite->dropMsg > 3)
-                pXSprite->dropMsg = 0;
-            else if (pXSprite->dropMsg < 0)
-                pXSprite->dropMsg = 3;
-
-        }
-        else {
-
-            // Make sure dropMsg is correct as we store current
-            // index of TX ID here.
-            if (pXSprite->dropMsg < pXSprite->data1)
-                pXSprite->dropMsg = pXSprite->data1;
-            else if (pXSprite->dropMsg > pXSprite->data4)
-                pXSprite->dropMsg = (short)pXSprite->data4;
+        } else {
+            // Make sure dropMsg is correct as we store current index of data field here.
+            if (pXSprite->dropMsg > 3) pXSprite->dropMsg = 0;
+            else if (pXSprite->dropMsg < 0) pXSprite->dropMsg = 3;
         }
 
         switch (a3.at2_0) {
-        case COMMAND_ID_0:
-            if (range == false) {
-
-                while (cnt <= 1) {
-                    while (pXSprite->dropMsg >= 0) {
-
-                        if (--pXSprite->dropMsg < 0)
-                            pXSprite->dropMsg = 3;
-
-                        if ((tx = GetDataVal(pSprite, pXSprite->dropMsg)) > 0)
-                            break;
+            case COMMAND_ID_0:
+                if (range == false) {
+                    while (cnt-- >= 0) { // skip empty data fields
+                        pXSprite->dropMsg--;
+                        if (pXSprite->dropMsg < 0) pXSprite->dropMsg = 3;
+                        tx = GetDataVal(pSprite, pXSprite->dropMsg);
+                        if (tx < 0) ThrowError(" -- Current data index is negative");
+                        if (tx > 0) break;
+                        continue;
                     }
-
-                    if (tx == 0) {
-                        pXSprite->dropMsg = 3;
-                        cnt++; continue;
+                } else {
+                    pXSprite->dropMsg--;
+                    if (pXSprite->dropMsg < pXSprite->data1) {
+                        pXSprite->dropMsg = pXSprite->data4;
                     }
-
-                    break;
+                    tx = pXSprite->dropMsg;
                 }
+                break;
 
-            }
-            else {
-                if (--pXSprite->dropMsg < pXSprite->data1) pXSprite->dropMsg = (short)pXSprite->data4;
-                tx = pXSprite->dropMsg;
-            }
-            break;
-
-        default:
-            if (range == false) {
-                while (cnt <= 1) {
-                    while (pXSprite->dropMsg <= 3) {
-
-                        if (++pXSprite->dropMsg > 3) pXSprite->dropMsg = 0;
-                        if ((tx = GetDataVal(pSprite, pXSprite->dropMsg)) > 0)
-                            break;
-
+            default:
+                if (range == false) {
+                    while (cnt-- >= 0) { // skip empty data fields
+                        if (pXSprite->dropMsg > 3) pXSprite->dropMsg = 0;
+                        tx = GetDataVal(pSprite, pXSprite->dropMsg);
+                        if (tx < 0) ThrowError(" ++ Current data index is negative");
+                        pXSprite->dropMsg++;
+                        if (tx > 0) break;
+                        continue;
                     }
-
-                    if (tx == 0) {
-                        pXSprite->dropMsg = 0;
-                        cnt++; continue;
+                } else {
+                    tx = pXSprite->dropMsg;
+                    if (pXSprite->dropMsg >= pXSprite->data4) {
+                        pXSprite->dropMsg = pXSprite->data1;
+                        break;
                     }
-
-                    break;
+                    pXSprite->dropMsg++;
                 }
-            }
-            else {
-                if (++pXSprite->dropMsg > pXSprite->data4) pXSprite->dropMsg = pXSprite->data1;
-                tx = pXSprite->dropMsg;
-            }
-            break;
+                break;
         }
 
         pXSprite->txID = (short)tx;
@@ -783,7 +757,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             if (pXSprite->txID != 0)
                 evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
             if (pXSprite->busyTime > 0)
-                evPost(nSprite, 3, (pXSprite->busyTime + Random2(pXSprite->data1)) * 120 / 10, COMMAND_ID_21);
+                evPost(nSprite, 3, ClipLow((int(pXSprite->busyTime) + Random2(pXSprite->data1)) * 120 / 10, 0), COMMAND_ID_21);
             break;
         default:
             if (pXSprite->state == 0) {
@@ -806,6 +780,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         }
         break;
     case 401:
+    case kGDXThingTNTProx:
         if (pSprite->statnum == 8)
             break;
         switch (a3.at2_0)
@@ -2060,8 +2035,8 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
 
         if (pXSprite->data2 < kMaxPAL && pXSprite2->data2 < kMaxPAL)
         {
-            // swap palette
-            short tmp2 = pXSprite2->data2;
+            // swap medium
+            int tmp2 = pXSprite2->data2;
             pXSprite2->data2 = pXSprite->data2;
             pXSprite->data2 = tmp2;
         }
@@ -2839,13 +2814,14 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         /* - data4 = sector floor / sprite / wall cstat 										- */
 
         switch (type) {
-            // for sectors
+        // for sectors
         case 6:
-            XSECTOR pXSector = xsector[sector[nDest].extra];
+        {
+            XSECTOR* pXSector = &xsector[sector[nDest].extra];
 
             if (valueIsBetween(pXSource->data1, -1, 32767)) {
-                if (pXSource->data1 == 1) pXSector.Underwater = true;
-                else pXSector.Underwater = false;
+                if (pXSource->data1 == 1) pXSector->Underwater = 1;
+                else pXSector->Underwater = 0;
             }
 
             if (valueIsBetween(pXSource->data2, -1, 32767)) {
@@ -2857,16 +2833,17 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 sector[nDest].ceilingstat = pXSource->data3;
 
             if (valueIsBetween(pXSource->data4, -1, 65535))
-                sector[nDest].floorstat = (short)pXSource->data4;
+                sector[nDest].floorstat = pXSource->data4;
             break;
-            // for sprites
+        }
+        // for sprites
         case 3:
             if (valueIsBetween(pXSource->data3, -1, 32767))
                 sprite[nDest].hitag = pXSource->data3;
 
             if (valueIsBetween(pXSource->data4, -1, 65535)) {
                 pXSource->data4 |= kSprOriginAlign;
-                sprite[nDest].cstat = (short)pXSource->data4;
+                sprite[nDest].cstat = pXSource->data4;
             }
             break;
             // for walls
@@ -2875,7 +2852,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 wall[nDest].hitag = pXSource->data3;
 
             if (valueIsBetween(pXSource->data4, -1, 65535))
-                wall[nDest].cstat = (short)pXSource->data4;
+                wall[nDest].cstat = pXSource->data4;
             break;
         }
     }
@@ -3093,7 +3070,7 @@ bool IsBurningDude(spritetype* pSprite) {
     case 242: // fat zombie burning
     case 252: // tiny caleb burning
     case 253: // beast burning
-    //case kGDXGenDudeBurning:
+    case kGDXGenDudeBurning:
         return true;
     }
 
@@ -3174,13 +3151,12 @@ bool isMeleeUnit(spritetype* pDude) {
     case 250: // tiny caleb
     case 251: // beast
         return true;
-    /*case kGDXDudeUniversalCultist:
+    case kGDXDudeUniversalCultist:
     {
-        int data1 = xsprite[pDude.extra].data1;
-        if ((data1 >= 6 && data1 < 19) || data1 == 22
-            || data1 == 304 || data1 == 308)
+        int data1 = xsprite[pDude->extra].data1;
+        if ((data1 >= 6 && data1 < 19) || data1 == 22 || data1 == 304 || data1 == 308)
             return true;
-    }*/
+    }
     default:
         return false;
     }
@@ -3440,6 +3416,8 @@ void trInit(void)
             case 23:
                 pXSprite->triggerOnce = 1;
                 break;
+            case kGDXSequentialTX:
+                break;
             case kGDXSeqSpawner:
             case kGDXDudeTargetChanger:
             case kGDXEffectSpawner:
@@ -3456,6 +3434,7 @@ void trInit(void)
                 InitGenerator(i);
                 break;
             case 401:
+            case kGDXThingTNTProx:
                 pXSprite->Proximity = 1;
                 break;
             case 414:
