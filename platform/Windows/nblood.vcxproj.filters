@@ -246,7 +246,7 @@
     <ClCompile Include="..\..\source\blood\src\common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\blood\src\AIUNICULT.cpp">
+    <ClCompile Include="..\..\source\blood\src\aiunicult.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -493,7 +493,7 @@
     <ClInclude Include="..\..\source\blood\src\al_midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\blood\src\AIUNICULT.h">
+    <ClInclude Include="..\..\source\blood\src\aiunicult.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

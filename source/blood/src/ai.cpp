@@ -45,7 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aitchern.h"
 #include "aizomba.h"
 #include "aizombf.h"
-#include "AIUNICULT.h" // By NoOne: add custom dude
+#include "aiunicult.h" // By NoOne: add custom dude
 #include "blood.h"
 #include "db.h"
 #include "dude.h"
