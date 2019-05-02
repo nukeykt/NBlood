@@ -3321,15 +3321,15 @@ RORHACK:
         // See actor.cpp for more info
         } else if (gView->at87) {
 
-            nPalette = gView->pXSprite->palette;
+            nPalette = gView->pXSprite->medium;
             // can be removed now.
             /*if (gView->at87)
             {
-                if (gView->pXSprite->palette == 1)
+                if (gView->pXSprite->medium == 1)
                 {
                     nPalette = 1;
                 }
-                else if (gView->pXSprite->palette == 2)
+                else if (gView->pXSprite->medium == 2)
                 {
                     nPalette = 3;
                 }

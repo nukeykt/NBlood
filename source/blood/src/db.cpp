@@ -1111,7 +1111,7 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
             pXSprite->goalAng = bitReader.readUnsigned(11);
             pXSprite->dodgeDir = bitReader.readSigned(2);
             pXSprite->locked = bitReader.readUnsigned(1);
-            pXSprite->palette = bitReader.readUnsigned(2);
+            pXSprite->medium = bitReader.readUnsigned(2);
             pXSprite->respawn = bitReader.readUnsigned(2);
             pXSprite->data4 = bitReader.readUnsigned(16);
             pXSprite->at1a_2 = bitReader.readUnsigned(6);

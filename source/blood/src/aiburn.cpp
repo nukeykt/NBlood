@@ -76,6 +76,12 @@ AISTATE tinycalebBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, th
 AISTATE tinycalebBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &tinycalebBurnSearch };
 AISTATE tinycalebBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &tinycalebBurnChase };
 
+AISTATE GDXGenDudeBurnIdle = { kAiStateIdle, 3, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE GDXGenDudeBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE GDXGenDudeBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &GDXGenDudeBurnSearch };
+AISTATE GDXGenDudeBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &GDXGenDudeBurnSearch };
+AISTATE GDXGenDudeBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &GDXGenDudeBurnChase };
+
 static void BurnSeqCallback(int, int)
 {
 }
@@ -117,6 +123,9 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
         case 252:
             aiNewState(pSprite, pXSprite, &tinycalebBurnSearch);
             break;
+        case kGDXGenDudeBurning:
+            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
+            break;
         }
     }
     aiThinkTarget(pSprite, pXSprite);
@@ -145,6 +154,9 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             break;
         case 252:
             aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
+            break;
+        case kGDXGenDudeBurning:
+            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
             break;
         }
         return;
@@ -178,6 +190,9 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             break;
         case 252:
             aiNewState(pSprite, pXSprite, &tinycalebBurnSearch);
+            break;
+        case kGDXGenDudeBurning:
+            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
             break;
         }
         return;
@@ -214,6 +229,9 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     case 252:
                         aiNewState(pSprite, pXSprite, &tinycalebBurnAttack);
                         break;
+                    case kGDXGenDudeBurning:
+                        aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
+                        break;
                     }
                 }
                 return;
@@ -240,6 +258,9 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         break;
     case 252:
         aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
+        break;
+    case kGDXGenDudeBurning:
+        aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
         break;
     }
     pXSprite->target = -1;

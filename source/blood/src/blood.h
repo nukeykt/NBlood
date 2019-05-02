@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMissileBase 300
 #define kMissileMax 318
 #define kThingBase 400
-#define kThingMax 433
+#define kThingMax 435
 
 #define kMaxPowerUps 49
 
@@ -149,6 +149,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kGDXEffectSpawner 38
 #define kGDXWindGenerator 39
 
+#define kGDXThingTNTProx 433 // detects only players
+#define kGDXThingThrowableRock 434 // does small damage if hits target
+#define kGDXDudeUniversalCultist 254
+#define kGDXGenDudeBurning 255
+
 // ai state types
 #define kAiStateOther -1
 #define kAiStateIdle 0
@@ -157,6 +162,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kAiStateSearch 3
 #define kAiStateChase 4
 #define kAiStateRecoil 5
+
+
+#define kAng5 28
+#define kAng15 85
+#define kAng30 170
+#define kAng45 256
+#define kAng60 341
+#define kAng90 512
+#define kAng120 682
+#define kAng180 1024
+#define kAng360 2048
+
 
 // -------------------------------
 

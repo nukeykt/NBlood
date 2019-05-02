@@ -51,6 +51,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "aitchern.h"
 #include "aizomba.h"
 #include "aizombf.h"
+#include "AIUNICULT.H"
 #include "blood.h"
 #include "callback.h"
 #include "config.h"
@@ -75,6 +76,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "weapon.h"
 
 VECTORDATA gVectorData[] = {
+    // Tine
     {
         DAMAGE_TYPE_2,
         17,
@@ -99,7 +101,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        1207, 1207,
     },
+    // Shell
     {
         DAMAGE_TYPE_2,
         4,
@@ -124,7 +128,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        1001, 1001,
     },
+    // Bullet
     {
         DAMAGE_TYPE_2,
         7,
@@ -149,7 +155,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 513,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        4001, 4002,
     },
+    // Tommy AP
     {
         DAMAGE_TYPE_2,
         20,
@@ -174,7 +182,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 513,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        431, 431
     },
+    // Shell AP
     {
         DAMAGE_TYPE_2,
         6,
@@ -199,7 +209,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        1002, 1002,
     },
+    // Tommy regular
     {
         DAMAGE_TYPE_2,
         12,
@@ -224,7 +236,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 513,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        359, 359,
     },
+    // Bat bite
     {
         DAMAGE_TYPE_2,
         4,
@@ -249,7 +263,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        521, 521,
     },
+    // Eel bite
     {
         DAMAGE_TYPE_2,
         12,
@@ -274,6 +290,7 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        513, 513
     },
     {
         DAMAGE_TYPE_2,
@@ -300,6 +317,7 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
     },
+    // Gill bite
     {
         DAMAGE_TYPE_3,
         50,
@@ -324,7 +342,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        499, 499
     },
+    // Beast slash
     {
         DAMAGE_TYPE_2,
         18,
@@ -349,7 +369,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        9012, 9014
     },
+    // Axe
     {
         DAMAGE_TYPE_2,
         9,
@@ -374,7 +396,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        1101, 1101
     },
+    // Cleaver
     {
         DAMAGE_TYPE_2,
         20,
@@ -399,7 +423,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        1207, 1207
     },
+    // Phantasm slash
     {
         DAMAGE_TYPE_2,
         16,
@@ -424,7 +450,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
+        499, 495
     },
+    // Gargoyle Slash
     {
         DAMAGE_TYPE_2,
         19,
@@ -449,7 +477,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        495, 496
     },
+    // Cerberus bite
     {
         DAMAGE_TYPE_2,
         10,
@@ -474,7 +504,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        9013, 499
     },
+    // Hound bite
     {
         DAMAGE_TYPE_2,
         4,
@@ -499,7 +531,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        1307, 1308
     },
+    // Rat bite
     {
         DAMAGE_TYPE_2,
         8,
@@ -524,7 +558,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        499, 499
     },
+    // Spider bite
     {
         DAMAGE_TYPE_2,
         9,
@@ -549,7 +585,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        499, 499
     },
+    // Unk
     {
         (DAMAGE_TYPE)-1,
         0,
@@ -574,7 +612,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        499, 499
     },
+    // Tchernobog burn vector
     {
         DAMAGE_TYPE_1,
         2,
@@ -599,7 +639,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        351, 351
     },
+    // Vodoo 1.0 vector
     {
         DAMAGE_TYPE_5,
         25,
@@ -624,7 +666,35 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-    }
+        0,0
+    },
+    // 22 kVectorGenDudePunch
+    {
+    DAMAGE_TYPE_0, 
+        37, 
+        874762, 
+        620, 
+        0, 
+        0, 
+        0, 
+        0,
+        FX_NONE, FX_NONE, FX_NONE, -1,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        FX_NONE, FX_NONE, FX_NONE, 357,
+        //357, 499,
+    },
 };
 
 ITEMDATA gItemData[] = {
@@ -1430,6 +1500,7 @@ WEAPONITEMDATA gWeaponItemData[] = {
 };
 
 MissileType missileInfo[] = {
+    // Cleaver
     {
         2138,
         978670,
@@ -1437,8 +1508,10 @@ MissileType missileInfo[] = {
         40,
         40,
         (char)-16,
-        16
+        16,
+        1207, 1207
     },
+    // Regular flare
     {
         2424,
         3145728,
@@ -1446,8 +1519,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        32
+        32,
+        420, 420
     },
+    // Tesla alt
     {
         3056,
         2796202,
@@ -1455,8 +1530,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        32
+        32,
+        471, 471
     },
+    // Flare alt
     {
         2424,
         2446677,
@@ -1464,8 +1541,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        4
+        4,
+        421, 421
     },
+    // Spray flame
     {
         0,
         1118481,
@@ -1473,8 +1552,10 @@ MissileType missileInfo[] = {
         24,
         24,
         (char)-128,
-        16
+        16,
+        1309, 351
     },
+    // Fireball
     {
         0,
         1118481,
@@ -1482,8 +1563,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        32
+        32,
+        480, 480
     },
+    // Tesla regular
     {
         2130,
         2796202,
@@ -1491,8 +1574,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        16
+        16,
+        470, 470
     },
+    // EctoSkull
     {
         870,
         699050,
@@ -1500,8 +1585,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-24,
-        32
+        32,
+        489, 490
     },
+    // Hellhound flame
     {
         0,
         1118481,
@@ -1509,8 +1596,10 @@ MissileType missileInfo[] = {
         24,
         24,
         (char)-128,
-        16
+        16,
+        462, 351
     },
+    // Puke
     {
         0,
         838860,
@@ -1518,8 +1607,10 @@ MissileType missileInfo[] = {
         16,
         16,
         (char)-16,
-        16
+        16,
+        1203, 172
     },
+    // Reserved
     {
         0,
         838860,
@@ -1527,8 +1618,10 @@ MissileType missileInfo[] = {
         8,
         8,
         (char)0,
-        16
+        16,
+        0,0
     },
+    // Stone gargoyle projectile
     {
         3056,
         2097152,
@@ -1536,8 +1629,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        16
+        16,
+        1457, 249
     },
+    // Napalm launcher
     {
         0,
         2446677,
@@ -1545,8 +1640,10 @@ MissileType missileInfo[] = {
         30,
         30,
         (char)-128,
-        24
+        24,
+        480, 489
     },
+    // Cerberus fireball
     {
         0,
         2446677,
@@ -1554,8 +1651,10 @@ MissileType missileInfo[] = {
         30,
         30,
         (char)-128,
-        24
+        24,
+        480, 489
     },
+    // Tchernobog fireball
     {
         0,
         1398101,
@@ -1563,8 +1662,10 @@ MissileType missileInfo[] = {
         24,
         24,
         (char)-128,
-        16
+        16,
+        480, 489
     },
+    // Regular life leech
     {
         2446,
         2796202,
@@ -1572,8 +1673,10 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        16
+        16,
+        491, 491
     },
+    // Dropped life leech (enough ammo)
     {
         3056,
         2446677,
@@ -1581,8 +1684,10 @@ MissileType missileInfo[] = {
         16,
         16,
         (char)-128,
-        16
+        16,
+        520, 520
     },
+    // Dropped life leech (no ammo)
     {
         3056,
         1747626,
@@ -1590,11 +1695,13 @@ MissileType missileInfo[] = {
         32,
         32,
         (char)-128,
-        16
+        16,
+        520, 520
     }
 };
 
 THINGINFO thingInfo[] = {
+    //TNT Barrel
     {
         25,
         250,
@@ -1608,8 +1715,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 256, 128, 64, 0, 0, 128
+        256, 256, 128, 64, 0, 0, 128,
+        1
     },
+    // Armed Proxy Dynamite
     {
         5,
         5,
@@ -1623,8 +1732,10 @@ THINGINFO thingInfo[] = {
         0,
         32,
         32,
-        256, 256, 256, 64, 0, 0, 512
+        256, 256, 256, 64, 0, 0, 512,
+        1
     },
+    // Armed Remote Dynamite
     {
         5,
         5,
@@ -1638,8 +1749,10 @@ THINGINFO thingInfo[] = {
         0,
         32,
         32,
-        256, 256, 256, 64, 0, 0, 512
+        256, 256, 256, 64, 0, 0, 512,
+        1
     },
+    // Vase1
     {
         1,
         20,
@@ -1653,8 +1766,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 0, 256, 128, 0, 0, 0
+        256, 0, 256, 128, 0, 0, 0,
+        0
     },
+    // Vase2
     {
         1,
         150,
@@ -1668,8 +1783,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 256, 256, 128, 0, 0, 0
+        256, 256, 256, 128, 0, 0, 0,
+        0
     },
+    // Crate face
     {
         10,
         0,
@@ -1683,8 +1800,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 0, 0, 256, 0, 0, 0
+        0, 0, 0, 256, 0, 0, 0,
+        0
     },
+    // Glass window
     {
         1,
         0,
@@ -1698,8 +1817,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 0, 256, 256, 0, 0, 0
+        256, 0, 256, 256, 0, 0, 0,
+        0,
     },
+    // Flourescent Light
     {
         1,
         0,
@@ -1713,8 +1834,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 0, 256, 256, 0, 0, 512
+        256, 0, 256, 256, 0, 0, 512,
+        0,
     },
+    // Wall Crack
     {
         50,
         0,
@@ -1728,8 +1851,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 0, 0, 256, 0, 0, 0
+        0, 0, 0, 256, 0, 0, 0,
+        0,
     },
+    // Wood Beam
     {
         8,
         0,
@@ -1743,8 +1868,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 0, 256, 128, 0, 0, 0
+        256, 0, 256, 128, 0, 0, 0,
+        0,
     },
+    // Spider's Web
     {
         4,
         0,
@@ -1758,8 +1885,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 256, 64, 256, 0, 0, 128
+        256, 256, 64, 256, 0, 0, 128,
+        0,
     },
+    // Metal Grate
     {
         40,
         0,
@@ -1773,8 +1902,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        64, 0, 128, 256, 0, 0, 0
+        64, 0, 128, 256, 0, 0, 0,
+        0,
     },
+    // Flammable Tree
     {
         1,
         0,
@@ -1788,8 +1919,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 256, 0, 256, 0, 0, 128
+        0, 256, 0, 256, 0, 0, 128,
+        0,
     },
+    // MachineGun Trap
     {
         1000,
         0,
@@ -1803,8 +1936,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 0, 128, 256, 0, 0, 512
+        0, 0, 128, 256, 0, 0, 512,
+        0,
     },
+    // Falling Rock
     {
         0,
         15,
@@ -1818,8 +1953,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0,
+        0,
     },
+    // Kickable Pail
     {
         0,
         8,
@@ -1833,8 +1970,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0,
+        1,
     },
+    // Gib Object
     {
         10,
         2,
@@ -1848,8 +1987,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 0, 256, 256, 0, 0, 128
+        256, 0, 256, 256, 0, 0, 128,
+        0,
     },
+    // Explode Object
     {
         20,
         2,
@@ -1863,8 +2004,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        0, 0, 0, 256, 0, 0, 128
+        0, 0, 0, 256, 0, 0, 128,
+        0,
     },
+    // Armed stick Of TNT
     {
         5,
         14,
@@ -1878,8 +2021,10 @@ THINGINFO thingInfo[] = {
         0,
         32,
         32,
-        64, 256, 128, 64, 0, 0, 256
+        64, 256, 128, 64, 0, 0, 256,
+        1
     },
+    // Armed bundle Of TNT
     {
         5,
         14,
@@ -1893,8 +2038,10 @@ THINGINFO thingInfo[] = {
         0,
         32,
         32,
-        64, 256, 128, 64, 0, 0, 256
+        64, 256, 128, 64, 0, 0, 256,
+        1
     },
+    // Armed aerosol
     {
         5,
         14,
@@ -1908,8 +2055,10 @@ THINGINFO thingInfo[] = {
         0,
         32,
         32,
-        64, 256, 128, 64, 0, 0, 256
+        64, 256, 128, 64, 0, 0, 256,
+        1
     },
+    // Bone (Flesh Garg.)
     {
         5,
         6,
@@ -1923,8 +2072,10 @@ THINGINFO thingInfo[] = {
         0,
         32,
         32,
-        0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0,
+        1
     },
+    // Some alpha stuff
     {
         8,
         3,
@@ -1938,8 +2089,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        256, 0, 256, 256, 0, 0, 0
+        256, 0, 256, 256, 0, 0, 0,
+        0,
     },
+    // WaterDrip 
     {
         0,
         1,
@@ -1953,8 +2106,10 @@ THINGINFO thingInfo[] = {
         10,
         0,
         0,
-        0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0,
+        0
     },
+    // BloodDrip 
     {
         0,
         1,
@@ -1968,8 +2123,10 @@ THINGINFO thingInfo[] = {
         2,
         0,
         0,
-        0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0,
+        0,
     },
+    // Blood chucks1 
     {
         15,
         4,
@@ -1983,8 +2140,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        128, 64, 256, 256, 0, 0, 256
+        128, 64, 256, 256, 0, 0, 256,
+        0,
     },
+    // Blood chucks2
     {
         30,
         30,
@@ -1998,8 +2157,10 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0,
-        128, 64, 256, 256, 0, 0, 64
+        128, 64, 256, 256, 0, 0, 64,
+        0,
     },
+    // Axe Zombie Head 
     {
         60,
         5,
@@ -2013,8 +2174,10 @@ THINGINFO thingInfo[] = {
         0,
         40,
         40,
-        128, 64, 256, 256, 0, 0, 64
+        128, 64, 256, 256, 0, 0, 64,
+        1,
     },
+    // Napalm's Alt Fire explosion
     {
         80,
         30,
@@ -2023,13 +2186,15 @@ THINGINFO thingInfo[] = {
         57344,
         1600,
         256,
-        -1,
+        3281,
         (char)-128,
         0,
         32,
         32,
-        0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0,
+        1,
     },
+    // Fire Pod Explosion
     {
         80,
         30,
@@ -2038,13 +2203,15 @@ THINGINFO thingInfo[] = {
         57344,
         1600,
         256,
-        -1,
+        2020,
         (char)-128,
         0,
         32,
         32,
-        256, 0, 256, 256, 0, 0, 0
+        256, 0, 256, 256, 0, 0, 0,
+        1,
     },
+    // Green Pod Explosion
     {
         80,
         30,
@@ -2053,13 +2220,15 @@ THINGINFO thingInfo[] = {
         57344,
         1600,
         256,
-        -1,
+        1860,
         (char)-128,
         0,
         32,
         32,
-        256, 0, 256, 256, 0, 0, 0
+        256, 0, 256, 256, 0, 0, 0,
+        1,
     },
+    // Life Leech
     {
         150,
         30,
@@ -2073,8 +2242,10 @@ THINGINFO thingInfo[] = {
         0,
         48,
         48,
-        64, 64, 112, 64, 0, 96, 96
+        64, 64, 112, 64, 0, 96, 96,
+        1,
     },
+    // Voodoo Head
     {
         1,
         30,
@@ -2088,8 +2259,43 @@ THINGINFO thingInfo[] = {
         0,
         16,
         16,
-        0, 0, 0, 0, 0, 0, 0
-    }
+        0, 0, 0, 0, 0, 0, 0,
+        1,
+    },
+    // 433 - kGDXThingTNTProx
+    {
+        5,
+        5,
+        16,
+        3,
+        24576,
+        1600,
+        256,
+        3444,
+        (char)-16,
+        7,
+        32,
+        32,
+        256, 256, 256, 64, 0, 0, 512,
+        1
+    },
+    // 433 - kGDXThingThrowableRock
+    {
+        5,
+        6,
+        16,
+        3,
+        32768,
+        1600,
+        256,
+        1462,
+        (char)0,
+        0,
+        32,
+        32,
+        0, 0, 0, 0, 0, 0, 0,
+        1
+    },
 };
 
 EXPLOSION explodeInfo[] = {
@@ -2360,6 +2566,7 @@ void actInit(void)
         {
         case 401:
         case 413:
+        case kGDXThingTNTProx:
             pXSprite->state = 0;
             break;
         case 426:
@@ -2423,13 +2630,44 @@ void actInit(void)
                 xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
                 
                 // By NoOne: add a way to set custom hp for every enemy - should work only if map just started and not loaded.
-                if (pXSprite->data4 <= 0)
-                    pXSprite->health = dudeInfo[nType].startHealth << 4;
-                else
-                    pXSprite->health = pXSprite->data4;
+                if (pXSprite->data4 <= 0) pXSprite->health = dudeInfo[nType].startHealth << 4;
+                else pXSprite->health = pXSprite->data4;
             }
-            if (gSysRes.Lookup(dudeInfo[nType].seqStartID, "SEQ"))
-                seqSpawn(dudeInfo[nType].seqStartID, 3, nXSprite);
+
+            int seqStartId = dudeInfo[nType].seqStartID;
+            // By NoOne: store seqStartId in data2 field for custom dude
+            if (pSprite->type == kGDXDudeUniversalCultist) {
+                
+                if (pXSprite->data2 > 0) {
+                    seqStartId = pXSprite->data2;
+                    int seqEndId = pXSprite->data2 + 19;
+
+                    // check for full set of animations
+                    for (int i = seqStartId; i <= seqEndId; i++) {
+
+                        // exceptions
+                        switch (i - seqStartId) {
+                            case 11:
+                            case 12:
+                            case 18:
+                            case 19:
+                                continue;
+                        }
+
+                        if (!gSysRes.Lookup(i, "SEQ")) {
+                            //ThrowError("No SEQ file with ID " + i + " found for custom dude #" + pSprite->xvel + "!\nData2 (SEQ Base): " + pXSprite->data2 + "\nSwitching to default animation!");
+                            pXSprite->data2 = dudeInfo[nType].seqStartID;
+                            seqStartId = pXSprite->data2;
+                            break;
+                        }
+                    }
+
+                } else {
+                    pXSprite->data2 = seqStartId;
+                }
+            }
+            
+            if (gSysRes.Lookup(seqStartId, "SEQ")) seqSpawn(seqStartId, 3, nXSprite);
         }
         aiInit();
     }
@@ -2449,7 +2687,7 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
         int mass = 0;
         if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
             mass = dudeInfo[pSprite->type-kDudeBase].mass;
-        else if (pSprite->type >= 400 && pSprite->type < 433)
+        else if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
             mass = thingInfo[pSprite->type-400].at2;
         else
             ThrowError("Unexpected type in ConcussSprite(): Sprite: %d  Type: %d  Stat: %d", (int)pSprite->index, (int)pSprite->type, (int)pSprite->statnum);
@@ -2755,6 +2993,56 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
     switch (pSprite->type)
     {
+    case kGDXDudeUniversalCultist:
+    {
+        removeDudeStuff(pSprite);
+        XSPRITE* pXIncarnation = getNextIncarnation(pXSprite);
+        if (pXIncarnation == NULL) {
+            if (a3 == DAMAGE_TYPE_1) {
+                if (pXSprite->medium == 0) {
+                    pSprite->type = kGDXGenDudeBurning;
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
+                    actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
+                    if (pXSprite->burnTime <= 0) pXSprite->burnTime = 1200;
+                    gDudeExtra[pSprite->extra].at0 = gFrameClock + 360;
+                    return;
+                }
+                else a3 = DAMAGE_TYPE_0;
+            }
+        } else {
+            int seqId = pXSprite->data2 + 18;
+            if (!gSysRes.Lookup(seqId, "SEQ")) {
+                seqKill(3, nXSprite);
+                sfxPlayGDXGenDudeSound(pSprite, 10, pXSprite->data3);
+                spritetype* pEffect = gFX.fxSpawn((FX_ID)52, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, pSprite->ang);
+                if (pEffect != NULL) {
+                    pEffect->cstat = kSprFace;
+                    pEffect->pal = 6;
+                    pEffect->xrepeat = pSprite->xrepeat;
+                    pEffect->yrepeat = pSprite->yrepeat;
+                }
+                
+                GIBTYPE nGibType;
+                for (int i = 0; i < 3; i++) {
+                    if (Chance(0x3000)) nGibType = GIBTYPE_6;
+                    else if (Chance(0x2000)) nGibType = GIBTYPE_5;
+                    else nGibType = GIBTYPE_17;
+
+                    int top, bottom;
+                    GetSpriteExtents(pSprite, &top, &bottom);
+                    CGibPosition gibPos(pSprite->x, pSprite->y, top);
+                    CGibVelocity gibVel(xvel[pSprite->index] >> 1, yvel[pSprite->index] >> 1, -0xccccc);
+                    GibSprite(pSprite, nGibType, &gibPos, &gibVel);
+                }
+
+                return;
+            }
+            seqSpawn(seqId, 3, nXSprite, -1);
+            sfxPlayGDXGenDudeSound(pSprite, 10, pXSprite->data3);
+            return;
+        }
+
+    }
     case 227: // Cerberus
         seqSpawn(dudeInfo[nType].seqStartID+1, 3, nXSprite, -1);
         return;
@@ -2762,7 +3050,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     case 202:
     case 247:
     case 248:
-        if (a3 == DAMAGE_TYPE_1 && pXSprite->palette == 0)
+        if (a3 == DAMAGE_TYPE_1 && pXSprite->medium == 0)
         {
             pSprite->type = 240;
             aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -2772,7 +3060,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         // no break
         fallthrough__;
     case 251:
-        if (a3 == DAMAGE_TYPE_1 && pXSprite->palette == 0)
+        if (a3 == DAMAGE_TYPE_1 && pXSprite->medium == 0)
         {
             pSprite->type = 253;
             aiNewState(pSprite, pXSprite, &beastBurnGoto);
@@ -2782,7 +3070,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         // no break
         fallthrough__;
     case 245:
-        if (a3 == DAMAGE_TYPE_1 && pXSprite->palette == 0)
+        if (a3 == DAMAGE_TYPE_1 && pXSprite->medium == 0)
         {
             pSprite->type = 239;
             aiNewState(pSprite, pXSprite, &innocentBurnGoto);
@@ -2833,6 +3121,10 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         nSeq = 2;
         switch (pSprite->type)
         {
+        case kGDXDudeUniversalCultist:
+        case kGDXGenDudeBurning:
+            sfxPlayGDXGenDudeSound(pSprite, 4, pXSprite->data3);
+            break;
         case 201:
         case 202:
         case 230:
@@ -2951,6 +3243,40 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         else
             seqSpawn(dudeInfo[nType].seqStartID+15, 3, nXSprite, nDudeToGibClient2);
         break;
+    case kGDXDudeUniversalCultist:
+        sfxPlayGDXGenDudeSound(pSprite, 2, pXSprite->data3);
+        if (nSeq == 3)
+            seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+        else
+            seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
+
+        pXSprite->txID = 0; // to avoid second trigger.
+        break;
+    case kGDXGenDudeBurning:
+    {
+        sfxPlayGDXGenDudeSound(pSprite, 4, pXSprite->data3);
+        a3 = DAMAGE_TYPE_3;
+
+        if (Chance(0x4000)) {
+            int top, bottom;
+            GetSpriteExtents(pSprite, &top, &bottom);
+            CGibPosition gibPos(pSprite->x, pSprite->y, top);
+            CGibVelocity gibVel(xvel[pSprite->index] >> 1, yvel[pSprite->index] >> 1, -0xccccc);
+            GibSprite(pSprite, GIBTYPE_7, &gibPos, &gibVel);
+        }
+
+        int seqId = pXSprite->data2;
+        if (gSysRes.Lookup(seqId + 15, "SEQ") && gSysRes.Lookup(seqId + 16, "SEQ")) seqId += 14 + Random(2);
+        else if (gSysRes.Lookup(seqId + 15, "SEQ")) seqId +=15;
+        else if (gSysRes.Lookup(seqId + 16, "SEQ")) seqId +=16;
+        else { 
+            seqKill(3, nXSprite); 
+            break; 
+        }
+        
+        seqSpawn(seqId, 3, nXSprite, nDudeToGibClient1);
+        break;
+    }
     case 241:
         if (Chance(0x8000) && nSeq == 3)
             sfxPlay3DSound(pSprite, 1109, -1, 0);
@@ -3262,6 +3588,9 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
                 pXSprite->data4 = 0;
                 pXSprite->isTriggered = 0;
                 pXSprite->DudeLockout = 0;
+
+                if (pSprite->owner >= 0 && sprite[pSprite->owner].type == kGDXDudeUniversalCultist)
+                    sprite[pSprite->owner].owner = 32666; // By NoOne: indicates if custom dude had life leech.
             }
             else if (!(pSprite->hitag&16))
                 actPropagateSpriteOwner(pSprite, &sprite[nSource]);
@@ -4306,7 +4635,7 @@ void MoveDude(spritetype *pSprite)
             break;
         case 10:
         case 14:
-            pXSprite->palette = 0;
+            pXSprite->medium = 0;
             if (pPlayer)
             {
                 pPlayer->at2f = 0;
@@ -4341,24 +4670,23 @@ void MoveDude(spritetype *pSprite)
         case kMarkerUpGoo:
         {
             // look for palette in data2 of marker. If value <= 0, use default ones.
-            int gViewPal = 0;
-            int nUpperTMP = gUpperLink[nSector];
+            int gViewPal = 0; int nUpperTMP = gUpperLink[nSector];
             spritetype *pUpper = &sprite[nUpperTMP];
             if (pUpper->extra >= 0) {
                 XSPRITE *pXUpper = &xsprite[pUpper->extra];
                 gViewPal = pXUpper->data2;
             }
             if (gViewPal <= 0) {
-                if (nLink == kMarkerUpWater)
-                    pXSprite->palette = 1;
-                else
-                    pXSprite->palette = 3;
-                // *Real* Goo palette ID is 3, previously it was 2.
-                // There is no control of it in view.cpp anymore
-            }
-            else {
-                pXSprite->palette = gViewPal;
-            }
+                if (nLink == kMarkerUpWater) pXSprite->medium = 1;
+                else if (!pPlayer) pXSprite->medium = 2;
+                else pXSprite->medium = 3;
+                
+                // *Real* Goo palette ID is 3, but monsters think it's 2, so we need keep it like that just for them
+                // while player should have pal 3 to be set to actually see the goo pal. There is no control of it in view.cpp anymore
+            } 
+            else if (!pPlayer && gViewPal > 1) pXSprite->medium = 2; // Required for most of monsters to detect if they are underwater (weird!)
+            else pXSprite->medium = gViewPal; // Player can use any palette.
+            
 
             if (pPlayer) {
                 pPlayer->at2f = 1;
@@ -4378,7 +4706,12 @@ void MoveDude(spritetype *pSprite)
                     aiNewState(pSprite, pXSprite, &cultistSwimGoto);
                     break;
                 case 240:
-                    if (Chance(0xa00))
+                {
+                    // There is no difference between water and goo except following chance:
+                    bool chance = Chance(0xa00);
+                    if (nLink == kMarkerLowGoo) chance = Chance(0x400);
+
+                    if (chance)
                     {
                         pSprite->type = 201;
                         pXSprite->burnTime = 0;
@@ -4395,6 +4728,7 @@ void MoveDude(spritetype *pSprite)
                         aiNewState(pSprite, pXSprite, &cultistSwimGoto);
                     }
                     break;
+                }
                 case 203:
                     pXSprite->burnTime = 0;
                     evPost(nSprite, 3, 0, CALLBACK_ID_11);
@@ -4429,7 +4763,7 @@ void MoveDude(spritetype *pSprite)
             break;
         }
         /*case 13:
-            pXSprite->palette = 2;
+            pXSprite->medium = 2;
             if (pPlayer)
             {
                 pPlayer->changeTargetKin = 1;
@@ -4828,6 +5162,7 @@ void actExplodeSprite(spritetype *pSprite)
     case 401:
     case 402:
     case 419:
+    case kGDXThingTNTProx:
         nType = 1;
         if (gSpriteHit[nXSprite].florhit == 0)
             seqSpawn(4,3,nXSprite,-1);
@@ -5007,22 +5342,20 @@ void actProcessSprites(void)
                                 continue;
                             v1b0 = 512;
                         }
-                        if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, v1b0))
-                        {
-                            if (pSprite->type == 431)
-                            {
-                                if (Chance(0x4000) || nNextSprite < 0)
-                                {
-                                    if (pSprite2->cstat & 0x10001)
-                                        pXSprite->target = pSprite2->index;
-                                    else
-                                        continue;
-                                }
-                                else
-                                    continue;
+                        if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, v1b0)) {
+                            
+                            switch (pSprite->type) {
+                                case kGDXThingTNTProx:
+                                    if (!IsPlayerSprite(pSprite2)) continue;
+                                    pSprite->pal = 0;
+                                    break;
+                                case 431:
+                                    if (!Chance(0x4000) && nNextSprite >= 0) continue;
+                                    if (pSprite2->cstat & 0x10001) pXSprite->target = pSprite2->index;
+                                    else continue;
+                                    break;
                             }
-                            if (pSprite->owner == -1)
-                                actPropagateSpriteOwner(pSprite, pSprite2);
+                            if (pSprite->owner == -1) actPropagateSpriteOwner(pSprite, pSprite2);
                             trTriggerSprite(nSprite, pXSprite, 35);
                         }
                     }
@@ -5100,6 +5433,18 @@ void actProcessSprites(void)
                         case 423:
                         case 424:
                             MakeSplash(pSprite, pXSprite);
+                            break;
+                        case kGDXThingThrowableRock:
+                            seqSpawn(24, 3, nXSprite, -1);
+                            if ((hit & 0xe000) == 0xc000)
+                            {
+                                pSprite->xrepeat = 32;
+                                pSprite->yrepeat = 32;
+                                int nObject = hit & 0x1fff;
+                                dassert(nObject >= 0 && nObject < kMaxSprites);
+                                spritetype * pObject = &sprite[nObject];
+                                actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, DAMAGE_TYPE_0, pXSprite->data1);
+                            }
                             break;
                         case 421:
                             seqSpawn(24, 3, nXSprite, -1);
@@ -5300,7 +5645,7 @@ void actProcessSprites(void)
                 }
                 dy = Sin(pSprite->ang)>>16;
                 dx = Cos(pSprite->ang)>>16;
-                gVectorData[VECTOR_TYPE_20].at9 = pXSprite->data1<<9;
+                gVectorData[VECTOR_TYPE_20].maxDist = pXSprite->data1<<9;
                 actFireVector(pSprite, 0, 0, dx, dy, Random2(0x8888), VECTOR_TYPE_20);
             }
             break;
@@ -5331,6 +5676,54 @@ void actProcessSprites(void)
                     break;
                 }
             }
+
+            // By NoOne: handle incarnations of custom dude
+            if (pSprite->type == kGDXDudeUniversalCultist && pXSprite->health <= 0 && seqGetStatus(3, nXSprite) < 0) {
+                XSPRITE* pXIncarnation = getNextIncarnation(pXSprite);
+                if (pXIncarnation != NULL) {
+                    spritetype* pIncarnation = &sprite[pXIncarnation->reference];
+
+                    pSprite->type = pIncarnation->type;
+                    pSprite->pal = pIncarnation->pal;
+                    pSprite->shade = pIncarnation->shade;
+
+                    pXSprite->txID = pXIncarnation->txID;
+                    pXSprite->command = pXIncarnation->command;
+                    pXSprite->triggerOn = pXIncarnation->triggerOn;
+                    pXSprite->triggerOff = pXIncarnation->triggerOff;
+
+                    pXSprite->burnTime = 0;
+                    pXSprite->burnSource = -1;
+
+                    pXSprite->data1 = pXIncarnation->data1;
+                    pXSprite->data2 = pXIncarnation->data2;
+                    pXSprite->data3 = pXIncarnation->data3;
+                    pXSprite->data4 = pXIncarnation->data4;
+
+                    pXSprite->dudeGuard = pXIncarnation->dudeGuard;
+                    pXSprite->dudeDeaf = pXIncarnation->dudeDeaf;
+                    pXSprite->dudeAmbush = pXIncarnation->dudeAmbush;
+                    pXSprite->dudeFlag4 = pXIncarnation->dudeFlag4;
+
+                    pXSprite->busyTime = pXIncarnation->busyTime;
+                    aiInitSprite(pSprite);
+                    switch (pSprite->type) {
+                        case kGDXDudeUniversalCultist:
+                        case kGDXGenDudeBurning:
+                            if (pXSprite->data2 > 0) seqSpawn(pXSprite->data2, 3, nXSprite, -1);
+                            else seqSpawn(dudeInfo[pSprite->type - kDudeBase].seqStartID, 3, nXSprite, -1);
+                            break;
+                        default:
+                            seqSpawn(dudeInfo[pSprite->type - kDudeBase].seqStartID, 3, nXSprite, -1);
+                            break;
+                    }
+
+                    if (pXSprite->data4 > 0) pXSprite->health = pXSprite->data4;
+                    else pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
+                    aiActivateDude(pSprite, pXSprite);
+                }
+            }
+
             if (pSprite->type == 227)
             {
                 if (pXSprite->health <= 0 && seqGetStatus(3, nXSprite) < 0)
@@ -5944,7 +6337,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
     int nShooter = pShooter->index;
     dassert(vectorType >= 0 && vectorType < kVectorMax);
     VECTORDATA *pVectorData = &gVectorData[vectorType];
-    int nRange = pVectorData->at9;
+    int nRange = pVectorData->maxDist;
     int hit = VectorScan(pShooter, a2, a3, a4, a5, a6, nRange, 1);
     if (hit == 3)
     {
@@ -6085,7 +6478,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                 }
                 if (Chance(pVectorData->atd))
                 {
-                    int t = gVectorData[19].at9;
+                    int t = gVectorData[19].maxDist;
                     a4 += Random3(4000);
                     a5 += Random3(4000);
                     a6 += Random3(4000);
@@ -6355,8 +6748,8 @@ void ActorLoadSaveConstruct(void)
 
 // By NoOne: The following functions required for random event features
 //-------------------------
+
 int GetDataVal(spritetype* pSprite, int data) {
-    if (pSprite->extra < 0) return -1;
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
     int rData[4];
 
@@ -6455,12 +6848,34 @@ spritetype* DropRandomPickupObject(spritetype* pSprite) {
     return pSprite2;
 }
 
-// this functions spawns random dude using dudeSpawn
+// this function spawns random dude using dudeSpawn
 spritetype* spawnRandomDude(spritetype* pSprite) {
     int selected = GetRandDataVal(pSprite); spritetype* pSprite2 = NULL;
     if (selected <= 0) return pSprite2;
     pSprite2 = actSpawnDude(pSprite, selected, -1, 0);
 
     return pSprite2;
+}
+
+// this function plays sound predefined in missile info
+bool sfxPlayMissileSound(spritetype* pSprite, int missileId) {
+    MissileType* pMissType = &missileInfo[missileId - kMissileBase];
+    if (Chance(0x4000))
+        sfxPlay3DSound(pSprite, pMissType->fireSound[0], -1, 0);
+    else
+        sfxPlay3DSound(pSprite, pMissType->fireSound[1], -1, 0);
+
+    return true;
+}
+
+
+bool sfxPlayVectorSound(spritetype* pSprite, int vectorId) {
+    VECTORDATA* pVectorData = &gVectorData[vectorId];
+    if (Chance(0x4000))
+        sfxPlay3DSound(pSprite, pVectorData->fireSound[0], -1, 0);
+    else
+        sfxPlay3DSound(pSprite, pVectorData->fireSound[1], -1, 0);
+
+    return true;
 }
 //-------------------------
