@@ -16,6 +16,7 @@ ai_h=\
 	$(blood_src)/airat.h \
 	$(blood_src)/aispid.h \
 	$(blood_src)/aitchern.h \
+	$(blood_src)/AIUNICULT.h \
 	$(blood_src)/aizomba.h \
 	$(blood_src)/aizombf.h
 	
@@ -113,6 +114,7 @@ $(blood_obj)/aipod.$o: $(blood_src)/aipod.cpp $(common_h) $(ai_h)
 $(blood_obj)/airat.$o: $(blood_src)/airat.cpp $(common_h) $(ai_h)
 $(blood_obj)/aispid.$o: $(blood_src)/aispid.cpp $(common_h) $(ai_h)
 $(blood_obj)/aitchern.$o: $(blood_src)/aitchern.cpp $(common_h) $(ai_h)
+$(blood_obj)/AIUNICULT.$o: $(blood_src)/AIUNICULT.cpp $(common_h) $(ai_h)
 $(blood_obj)/aizomba.$o: $(blood_src)/aizomba.cpp $(common_h) $(ai_h)
 $(blood_obj)/aizombf.$o: $(blood_src)/aizombf.cpp $(common_h) $(ai_h)
 $(blood_obj)/asound.$o: $(blood_src)/asound.cpp $(common_h)
