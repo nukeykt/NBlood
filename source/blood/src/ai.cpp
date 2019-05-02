@@ -108,7 +108,7 @@ void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
     pXSprite->aiState = pAIState;
     int seqStartId = pDudeInfo->seqStartID;
 
-    if (pAIState->at0 > 0) {
+    if (pAIState->at0 >= 0) {
         // By NoOne: Custom dude uses data2 to keep it's seqStartId
         switch (pSprite->type) {
             case kGDXDudeUniversalCultist:
@@ -117,8 +117,8 @@ void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
                 break;
         }
         seqStartId += pAIState->at0;
-        if (!gSysRes.Lookup(seqStartId, "SEQ")) return;
-        seqSpawn(seqStartId, 3, pSprite->extra, pAIState->at4);
+        if (gSysRes.Lookup(seqStartId, "SEQ"))
+            seqSpawn(seqStartId, 3, pSprite->extra, pAIState->at4);
     }
     
     if (pAIState->atc) pAIState->atc(pSprite, pXSprite); // entry function
