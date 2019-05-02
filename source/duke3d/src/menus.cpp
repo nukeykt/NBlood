@@ -556,14 +556,7 @@ static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &M
 
 
 #ifdef USE_OPENGL
-static int32_t MEOSV_PaletteEmulation[] = { 0, r_usetileshades };
-static MenuOptionSet_t MEOS_PaletteEmulation = MAKE_MENUOPTIONSET( MEOSN_OffOn, MEOSV_PaletteEmulation, 0x3 );
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
-#  ifdef EDUKE32_SIMPLE_MENU
-static MenuOption_t MEO_DISPLAYSETUP_PALETTEEMULATION = MAKE_MENUOPTION(&MF_Redfont, &MEOS_PaletteEmulation, &r_usetileshades);
-static MenuEntry_t ME_DISPLAYSETUP_PALETTEEMULATION = MAKE_MENUENTRY("Palette emulation:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_PALETTEEMULATION, Option);
-#  endif
-
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
 static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
@@ -1035,8 +1028,6 @@ static MenuEntry_t ME_RENDERERSETUP_GLOWTEX = MAKE_MENUENTRY("Glow textures:", &
 # endif
 static MenuOption_t MEO_RENDERERSETUP_MODELS = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_NoYes, &usemodels );
 static MenuEntry_t ME_RENDERERSETUP_MODELS = MAKE_MENUENTRY( "3D models:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_MODELS, Option );
-static MenuOption_t MEO_RENDERERSETUP_PALETTEEMULATION = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_PaletteEmulation, &r_usetileshades);
-static MenuEntry_t ME_RENDERERSETUP_PALETTEEMULATION = MAKE_MENUENTRY("Palette emulation:", &MF_Bluefont, &MEF_SmallOptions, &MEO_RENDERERSETUP_PALETTEEMULATION, Option);
 #endif
 
 #ifdef POLYMER
@@ -1073,7 +1064,6 @@ static MenuEntry_t *MEL_RENDERERSETUP_POLYMOST[] = {
 # endif
     &ME_Space4_Bluefont,
     &ME_RENDERERSETUP_MODELS,
-    &ME_RENDERERSETUP_PALETTEEMULATION,
 };
 
 #ifdef POLYMER
@@ -1981,8 +1971,6 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
         MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
 # endif
-        // don't allow changing palette emulation while in POLYMOST and r_useindexedcolortextures is enabled
-        MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_PALETTEEMULATION, videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
         break;
 #endif
 

@@ -328,6 +328,7 @@ typedef struct      s_prmirror {
     _prplane        *plane;
     int16_t         sectnum;
     int16_t         wallnum;
+    int8_t          rorstat;
 }                   _prmirror;
 
 typedef struct      s_prhighpalookup {
@@ -342,6 +343,8 @@ typedef struct      s_pranimatespritesinfo {
     int32_t         x, y, a, smoothratio;
 }                   _pranimatespritesinfo;
 
+typedef void    (*rorcallback)(int16_t sectnum, int16_t wallnum, int8_t rorstat, int16_t *msectnum, int32_t *gx, int32_t *gy, int32_t *gz);
+
 // this one has to be provided by the application
 extern void G_Polymer_UnInit(void);
 
@@ -352,6 +355,8 @@ void                polymer_setaspect(int32_t);
 void                polymer_glinit(void);
 void                polymer_resetlights(void);
 void                polymer_loadboard(void);
+int32_t             polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize);
+void                polymer_fillpolygon(int32_t npoints);
 void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t daang, int32_t dahoriz, int16_t dacursectnum);
 void                polymer_drawmasks(void);
 void                polymer_editorpick(void);
@@ -366,6 +371,7 @@ void                polymer_invalidatelights(void);
 void                polymer_texinvalidate(void);
 void                polymer_definehighpalookup(char basepalnum, char palnum, char *data);
 int32_t             polymer_havehighpalookup(int32_t basepalnum, int32_t palnum);
+void                polymer_setrorcallback(rorcallback callback);
 
 
 extern _prsprite    *prsprites[MAXSPRITES];

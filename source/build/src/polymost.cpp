@@ -8,27 +8,13 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 
 #ifdef USE_OPENGL
 
-#include "compat.h"
 #include "build.h"
-#include "glad/glad.h"
-#include "mdsprite.h"
-#include "pragmas.h"
-#include "baselayer.h"
-#include "osd.h"
-#include "engine_priv.h"
-#include "hightile.h"
-#include "polymost.h"
-#include "polymer.h"
-#include "cache1d.h"
-#include "kplib.h"
-#include "texcache.h"
 #include "common.h"
-#include "palette.h"
+#include "engine_priv.h"
+#include "kplib.h"
+#include "mdsprite.h"
+#include "polymost.h"
 #include "tilepacker.h"
-
-#ifndef _WIN32
-extern int32_t filelength(int h); // kplib.c
-#endif
 
 extern char textfont[2048], smalltextfont[2048];
 
@@ -40,9 +26,18 @@ typedef struct { float x, cy[2], fy[2]; int32_t tag; int16_t n, p, ctag, ftag; }
 #define VSPMAX 2048 //<- careful!
 static vsptyp vsp[VSPMAX];
 static int32_t gtag;
-static float xbl, xbr;
+static float xbl, xbr, xbt, xbb;
+int32_t domost_rejectcount;
+#ifdef YAX_ENABLE
+typedef struct { float x, cy[2]; int32_t tag; int16_t n, p, ctag; } yax_vsptyp;
+static yax_vsptyp yax_vsp[YAX_MAXBUNCHES*2][VSPMAX];
+typedef struct { float x0, x1, cy[2], fy[2]; } yax_hole_t;
+static yax_hole_t yax_holecf[2][VSPMAX];
+static int32_t yax_holencf[2];
+static int32_t yax_drawcf = -1;
+#endif
 
-static double dxb1[MAXWALLSB], dxb2[MAXWALLSB];
+static float dxb1[MAXWALLSB], dxb2[MAXWALLSB];
 
 #define SCISDIST 1.0f  //1.0: Close plane clipping distance
 
@@ -54,15 +49,14 @@ int32_t shadescale_unbounded = 0;
 int32_t r_enablepolymost2 = 0;
 int32_t r_pogoDebug = 0;
 int32_t r_usenewshading = 4;
-int32_t r_usetileshades = 2;
 int32_t r_npotwallmode = 2;
 int32_t polymostcenterhoriz = 100;
 
 static float gviewxrange;
-static float ghoriz;
+static float ghoriz, ghoriz2;
 static float ghorizcorrect;
-float gxyaspect;
-float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x;
+double gxyaspect;
+float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x, ghalfy;
 float gcosang, gsinang, gcosang2, gsinang2;
 float gchang, gshang, gctang, gstang, gvisibility;
 float gtang = 0.f;
@@ -138,9 +132,11 @@ int32_t r_animsmoothing = 1;
 int32_t r_downsize = 0;
 int32_t r_downsizevar = -1;
 
-int r_rortexture = 0;
-int r_rortexturerange = 0;
-int r_rorphase = 0;
+int32_t r_rortexture = 0;
+int32_t r_rortexturerange = 0;
+int32_t r_rorphase = 0;
+
+int32_t r_yshearing = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
@@ -384,7 +380,7 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glhorizcorrect;
+float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glohorizcorrect, glotang;
 
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
@@ -578,32 +574,28 @@ void polymost_resetVertexPointers()
 
 void polymost_disableProgram()
 {
-    if (videoGetRenderMode() == REND_POLYMOST)
-    {
-        useShaderProgram(0);
-    }
+    if (videoGetRenderMode() != REND_POLYMOST)
+        return;
+
+    useShaderProgram(0);
 }
 
 void polymost_resetProgram()
 {
-    if (videoGetRenderMode() == REND_POLYMOST)
-    {
-        if (r_enablepolymost2)
-        {
-            useShaderProgram(polymost2BasicShaderProgramID);
-        }
-        else
-        {
-            useShaderProgram(polymost1CurrentShaderProgramID);
-        }
+    if (videoGetRenderMode() != REND_POLYMOST)
+        return;
 
-        // ensure that palswapTexture and paletteTexture[curbasepal] is bound
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, palswapTextureID);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
-        glActiveTexture(GL_TEXTURE0);
-    }
+    if (r_enablepolymost2)
+        useShaderProgram(polymost2BasicShaderProgramID);
+    else
+        useShaderProgram(polymost1CurrentShaderProgramID);
+
+    // ensure that palswapTexture and paletteTexture[curbasepal] is bound
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, palswapTextureID);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, paletteTextureIDs[curbasepal]);
+    glActiveTexture(GL_TEXTURE0);
 }
 
 static void polymost_setCurrentShaderProgram(uint32_t programID)
@@ -657,175 +649,156 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
 
 void polymost_setTexturePosSize(vec4f_t const &texturePosSize)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1TexturePosSize = texturePosSize;
-        glUniform4f(polymost1TexturePosSizeLoc, polymost1TexturePosSize.x, polymost1TexturePosSize.y, polymost1TexturePosSize.z, polymost1TexturePosSize.w);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+        return;
+
+    polymost1TexturePosSize = texturePosSize;
+    glUniform4f(polymost1TexturePosSizeLoc, polymost1TexturePosSize.x, polymost1TexturePosSize.y, polymost1TexturePosSize.z, polymost1TexturePosSize.w);
 }
 
 void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1HalfTexelSize = halfTexelSize;
-        glUniform2f(polymost1HalfTexelSizeLoc, polymost1HalfTexelSize.x, polymost1HalfTexelSize.y);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || (halfTexelSize.x == polymost1HalfTexelSize.x && halfTexelSize.y == polymost1HalfTexelSize.y))
+        return;
+
+    polymost1HalfTexelSize = halfTexelSize;
+    glUniform2f(polymost1HalfTexelSizeLoc, polymost1HalfTexelSize.x, polymost1HalfTexelSize.y);
 }
 
 static void polymost_setPalswap(uint32_t index)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        static uint32_t lastPalswapIndex = 0;
-        if (index == lastPalswapIndex)
-        {
-            return;
-        }
+    static uint32_t lastPalswapIndex;
 
-        lastPalswapIndex = index;
-        polymost1PalswapPos.x = index*polymost1PalswapSize.x;
-        polymost1PalswapPos.y = floorf(polymost1PalswapPos.x);
-        polymost1PalswapPos.x = polymost1PalswapPos.x - polymost1PalswapPos.y + (0.5f/PALSWAP_TEXTURE_SIZE);
-        polymost1PalswapPos.y = polymost1PalswapPos.y * polymost1PalswapSize.y + (0.5f/PALSWAP_TEXTURE_SIZE);
-        glUniform2f(polymost1PalswapPosLoc, polymost1PalswapPos.x, polymost1PalswapPos.y);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || index == lastPalswapIndex)
+        return;
+
+    lastPalswapIndex = index;
+    polymost1PalswapPos.x = index*polymost1PalswapSize.x;
+    polymost1PalswapPos.y = floorf(polymost1PalswapPos.x);
+    polymost1PalswapPos = { polymost1PalswapPos.x - polymost1PalswapPos.y + (0.5f/PALSWAP_TEXTURE_SIZE),
+                            polymost1PalswapPos.y * polymost1PalswapSize.y + (0.5f/PALSWAP_TEXTURE_SIZE) };
+    glUniform2f(polymost1PalswapPosLoc, polymost1PalswapPos.x, polymost1PalswapPos.y);
 }
 
 static void polymost_setPalswapSize(uint32_t width, uint32_t height)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1PalswapSize.x = width*(1.f/PALSWAP_TEXTURE_SIZE);
-        polymost1PalswapSize.y = height*(1.f/PALSWAP_TEXTURE_SIZE);
-        polymost1PalswapInnerSize.x = (width-1)*(1.f/PALSWAP_TEXTURE_SIZE);
-        polymost1PalswapInnerSize.y = (height-1)*(1.f/PALSWAP_TEXTURE_SIZE);
-        glUniform2f(polymost1PalswapSizeLoc, polymost1PalswapInnerSize.x, polymost1PalswapInnerSize.y);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+        return;
+
+    polymost1PalswapSize = { width*(1.f/PALSWAP_TEXTURE_SIZE),
+                             height*(1.f/PALSWAP_TEXTURE_SIZE) };
+
+    polymost1PalswapInnerSize = { (width-1)*(1.f/PALSWAP_TEXTURE_SIZE),
+                                  (height-1)*(1.f/PALSWAP_TEXTURE_SIZE) };
+
+    glUniform2f(polymost1PalswapSizeLoc, polymost1PalswapInnerSize.x, polymost1PalswapInnerSize.y);
 }
 
 static void polymost_setShade(int32_t shade)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        if (!r_usetileshades || (globalflags & GLOBAL_NO_GL_TILESHADES))
-            shade = 0;
-        else
-            shade = /*getpalookup(r_usetileshades == 1, */shade/*)*/;
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+        return;
 
-        static int32_t lastShade = 0;
-        static int32_t lastNumShades = 0;
-        if (shade != lastShade)
-        {
-            lastShade = shade;
-            polymost1Shade = shade;
-            glUniform1f(polymost1ShadeLoc, polymost1Shade);
-        }
-        if (numshades != lastNumShades)
-        {
-            lastNumShades = numshades;
-            polymost1NumShades = numshades;
-            glUniform1f(polymost1NumShadesLoc, polymost1NumShades);
-        }
+    if (globalflags & GLOBAL_NO_GL_TILESHADES)
+        shade = 0;
+
+    static int32_t lastShade;
+    static int32_t lastNumShades;
+
+    if (shade != lastShade)
+    {
+        lastShade = shade;
+        polymost1Shade = shade;
+        glUniform1f(polymost1ShadeLoc, polymost1Shade);
+    }
+
+    if (numshades != lastNumShades)
+    {
+        lastNumShades = numshades;
+        polymost1NumShades = numshades;
+        glUniform1f(polymost1NumShadesLoc, polymost1NumShades);
     }
 }
 
 void polymost_setVisibility(float visibility)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1VisFactor = visibility*fviewingrange*(1.f/(64.f*65536.f));
-        glUniform1f(polymost1VisFactorLoc, polymost1VisFactor);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID)
+        return;
+
+    polymost1VisFactor = visibility * fviewingrange * (1.f / (64.f * 65536.f));
+    glUniform1f(polymost1VisFactorLoc, polymost1VisFactor);
 }
 
 void polymost_setFogEnabled(char fogEnabled)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1FogEnabled = fogEnabled;
-        glUniform1f(polymost1FogEnabledLoc, polymost1FogEnabled);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || fogEnabled == polymost1FogEnabled)
+        return;
+
+    polymost1FogEnabled = fogEnabled;
+    glUniform1f(polymost1FogEnabledLoc, polymost1FogEnabled);
 }
 
 void polymost_useColorOnly(char useColorOnly)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1UseColorOnly = useColorOnly;
-        glUniform1f(polymost1UseColorOnlyLoc, polymost1UseColorOnly);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || useColorOnly == polymost1UseColorOnly)
+        return;
+
+    polymost1UseColorOnly = useColorOnly;
+    glUniform1f(polymost1UseColorOnlyLoc, polymost1UseColorOnly);
 }
 
 void polymost_usePaletteIndexing(char usePaletteIndexing)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1UsePalette = usePaletteIndexing;
-        glUniform1f(polymost1UsePaletteLoc, polymost1UsePalette);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || usePaletteIndexing == polymost1UsePalette)
+        return;
+
+    polymost1UsePalette = usePaletteIndexing;
+    glUniform1f(polymost1UsePaletteLoc, polymost1UsePalette);
 }
 
 void polymost_useDetailMapping(char useDetailMapping)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        if (useDetailMapping == polymost1UseDetailMapping)
-        {
-            return;
-        }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || useDetailMapping == polymost1UseDetailMapping)
+        return;
 
-        if (useDetailMapping &&
-            currentShaderProgramID != polymost1ExtendedShaderProgramID)
-        {
-            polymost_setCurrentShaderProgram(polymost1ExtendedShaderProgramID);
-        }
+    if (useDetailMapping)
+        polymost_setCurrentShaderProgram(polymost1ExtendedShaderProgramID);
 
-        polymost1UseDetailMapping = useDetailMapping;
-        glUniform1f(polymost1UseDetailMappingLoc, polymost1UseDetailMapping);
-    }
+    polymost1UseDetailMapping = useDetailMapping;
+    glUniform1f(polymost1UseDetailMappingLoc, polymost1UseDetailMapping);
 }
 
 void polymost_useGlowMapping(char useGlowMapping)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        if (useGlowMapping == polymost1UseGlowMapping)
-        {
-            return;
-        }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || useGlowMapping == polymost1UseGlowMapping)
+        return;
 
-        if (useGlowMapping &&
-            currentShaderProgramID != polymost1ExtendedShaderProgramID)
-        {
-            polymost_setCurrentShaderProgram(polymost1ExtendedShaderProgramID);
-        }
+    if (useGlowMapping)
+        polymost_setCurrentShaderProgram(polymost1ExtendedShaderProgramID);
 
-        polymost1UseGlowMapping = useGlowMapping;
-        glUniform1f(polymost1UseGlowMappingLoc, polymost1UseGlowMapping);
-    }
+    polymost1UseGlowMapping = useGlowMapping;
+    glUniform1f(polymost1UseGlowMappingLoc, polymost1UseGlowMapping);
 }
 
 void polymost_npotEmulation(char npotEmulation, float factor, float xOffset)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1NPOTEmulation = npotEmulation;
-        glUniform1f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation);
-        polymost1NPOTEmulationFactor = factor;
-        glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
-        polymost1NPOTEmulationXOffset = xOffset;
-        glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || npotEmulation == polymost1NPOTEmulation)
+        return;
+
+    polymost1NPOTEmulation = npotEmulation;
+    glUniform1f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation);
+    polymost1NPOTEmulationFactor = factor;
+    glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
+    polymost1NPOTEmulationXOffset = xOffset;
+    glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
 }
 
 void polymost_shadeInterpolate(int32_t shadeInterpolate)
 {
-    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
-    {
-        polymost1ShadeInterpolate = shadeInterpolate;
-        glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
-    }
+    if (currentShaderProgramID != polymost1CurrentShaderProgramID || shadeInterpolate == polymost1ShadeInterpolate)
+        return;
+    polymost1ShadeInterpolate = shadeInterpolate;
+    glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
 }
 
 void polymost_activeTexture(GLenum texture)
@@ -1400,14 +1373,8 @@ static void fogcalc_old(int32_t shade, int32_t vis)
 #define FULLVIS_BEGIN 2.9e30f
 #define FULLVIS_END 3.0e30f
 
-static inline void fogcalc(int32_t tile, int32_t shade, int32_t vis, int32_t pal)
+static inline void fogcalc(int32_t shade, int32_t vis, int32_t pal)
 {
-    if (shade > 0 && videoGetRenderMode() == REND_POLYMOST && r_usetileshades == 1 &&
-        !(globalflags & GLOBAL_NO_GL_TILESHADES) &&
-        (!usehightile || !hicfindsubst(tile, pal, hictinting[pal].f & HICTINT_ALWAYSUSEART)) &&
-        (!usemodels || md_tilehasmodel(tile, pal) < 0))
-        shade >>= 1;
-
     fogcol = fogtable[pal];
 
     if (r_usenewshading < 2)
@@ -1418,7 +1385,7 @@ static inline void fogcalc(int32_t tile, int32_t shade, int32_t vis, int32_t pal
 
     float combvis = (float) globalvisibility * (uint8_t) (vis+16);
 
-    if (combvis == 0)
+    if (combvis == 0.f)
     {
         if (r_usenewshading == 2 && shade > 0)
         {
@@ -1469,7 +1436,7 @@ void polymost2_calc_fog(int32_t shade, int32_t vis, int32_t pal)
         fogresult2 = -GL_FOG_MAX; // hide fog behind the camera
 }
 
-void calc_and_apply_fog(int32_t tile, int32_t shade, int32_t vis, int32_t pal)
+void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal)
 {
     if (nofog) return;
 
@@ -1498,7 +1465,7 @@ void calc_and_apply_fog(int32_t tile, int32_t shade, int32_t vis, int32_t pal)
         return;
     }
 
-    fogcalc(tile, shade, vis, pal);
+    fogcalc(shade, vis, pal);
     glFogfv(GL_FOG_COLOR, (GLfloat *)&fogcol);
 
     if (r_usenewshading < 2)
@@ -1510,7 +1477,7 @@ void calc_and_apply_fog(int32_t tile, int32_t shade, int32_t vis, int32_t pal)
     }
 }
 
-void calc_and_apply_fog_factor(int32_t tile, int32_t shade, int32_t vis, int32_t pal, float factor)
+void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float factor)
 {
     if (nofog) return;
 
@@ -1545,7 +1512,7 @@ void calc_and_apply_fog_factor(int32_t tile, int32_t shade, int32_t vis, int32_t
 
     // NOTE: for r_usenewshading >= 2, the fog beginning/ending distance results are
     // unused.
-    fogcalc(tile, shade, vis, pal);
+    fogcalc(shade, vis, pal);
     glFogfv(GL_FOG_COLOR, (GLfloat *)&fogcol);
 
     if (r_usenewshading < 2)
@@ -1561,7 +1528,7 @@ void calc_and_apply_fog_factor(int32_t tile, int32_t shade, int32_t vis, int32_t
 
 static float get_projhack_ratio(void)
 {
-    if (glprojectionhacks)
+    if (glprojectionhacks && !r_yshearing)
     {
         float const projhack_zoom = 1.4f *
         // adjust for the FOV, increasing the FOV reduces the zenith glitch
@@ -1603,13 +1570,12 @@ static void resizeglcheck(void)
     {
         glClearColor(1.0,1.0,1.0,0.0);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        glDisable(GL_TEXTURE_2D);
     }
 #else
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glhorizcorrect != ghorizcorrect))
+    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glohoriz2 != ghoriz2) || (glohorizcorrect != ghorizcorrect) || (glotang != gtang))
     {
         const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
         float ratio = get_projhack_ratio();
@@ -1628,24 +1594,28 @@ static void resizeglcheck(void)
         float m[4][4];
         Bmemset(m,0,sizeof(m));
 
-        float const nearclip = SCISDIST/(gxyaspect*gyxscale*1024.f);
+        float const nearclip = SCISDIST / (gxyaspect * gyxscale * 1024.f);
         float const farclip = 64.f;
 
         gloxyaspect = gxyaspect;
         gloyxscale = gyxscale;
+        glohoriz2 = ghoriz2;
+        glohorizcorrect = ghorizcorrect;
+        glotang = gtang;
 
         m[0][0] = 1.f;
-        m[1][1] = fxdimen/(fydimen*ratio); m[2][1] = 2.f*ghorizcorrect/(fydimen*ratio);
-        m[2][2] = (farclip+nearclip)/(farclip-nearclip); m[2][3] = 1.f;
-        m[3][2] =-(2.f*farclip*nearclip)/(farclip-nearclip);
+        m[1][1] = fxdimen / (fydimen * ratio);
+        m[2][0] = 2.f * ghoriz2 * gstang / fxdimen;
+        m[2][1] = 2.f * ghoriz2 * gctang / (fydimen * ratio);
+        m[2][2] = (farclip + nearclip) / (farclip - nearclip);
+        m[2][3] = 1.f;
+        m[3][2] = -(2.f * farclip * nearclip) / (farclip - nearclip);
         glLoadMatrixf(&m[0][0]);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
         if (!nofog) polymost_setFogEnabled(true);
-
-        //glEnable(GL_TEXTURE_2D);
     }
 }
 
@@ -1656,8 +1626,9 @@ static void fixtransparency(coltype *dapic, vec2_t dasiz, vec2_t dasiz2, int32_t
 
     vec2_t doxy = { dasiz2.x-1, dasiz2.y-1 };
 
-    if (dameth & DAMETH_CLAMPED) { doxy.x = min(doxy.x, dasiz.x); doxy.y = min(doxy.y, dasiz.y); }
-    else { dasiz = dasiz2; } //Make repeating textures duplicate top/left parts
+    if (dameth & DAMETH_CLAMPED)
+        doxy = { min(doxy.x, dasiz.x), min(doxy.y, dasiz.y) };
+    else  dasiz = dasiz2; //Make repeating textures duplicate top/left parts
 
     dasiz.x--; dasiz.y--; //Hacks for optimization inside loop
     int32_t const naxsiz2 = -dasiz2.x;
@@ -1709,7 +1680,16 @@ static int32_t const comprtexfmts_rgb[] = { GL_ETC1_RGB8_OES, 0 };
 static int32_t const comprtexfmts_rgba[] = { 0 };
 static int32_t const comprtexfmts_rgb_mask[] = { 0 };
 #else
-static int32_t const comprtexfmts_rgb[] = { GL_COMPRESSED_RGB8_ETC2, GL_ETC1_RGB8_OES, 0 };
+static int32_t const comprtexfmts_rgb[] =
+{
+#ifdef GL_COMPRESSED_RGB8_ETC2
+    GL_COMPRESSED_RGB8_ETC2,
+#endif
+#ifdef GL_ETC1_RGB8_OES
+    GL_ETC1_RGB8_OES,
+#endif
+    0
+    };
 // TODO: waiting on etcpak support for ETC2 with alpha
 static int32_t const comprtexfmts_rgba[] = { /*GL_COMPRESSED_RGBA8_ETC2_EAC,*/ 0 };
 static int32_t const comprtexfmts_rgb_mask[] = { /*GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,*/ 0 };
@@ -1734,16 +1714,21 @@ static ETCFunction_t Polymost_PickETCFunction(int32_t const comprtexfmt)
 {
     switch (comprtexfmt)
     {
+# ifdef GL_ETC1_RGB8_OES
         case GL_ETC1_RGB8_OES:
             return ProcessRGB;
+# endif
 
+# ifdef GL_COMPRESSED_RGB8_ETC2
         case GL_COMPRESSED_RGB8_ETC2:
             return ProcessRGB_ETC2;
+# endif
 
 # if 0
         case GL_COMPRESSED_RGBA8_ETC2_EAC:
-
+            fallthrough__;
         case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+            fallthrough__;
 # endif
 
         default:
@@ -1901,6 +1886,7 @@ void uploadtexture(int32_t doalloc, vec2_t siz, int32_t texfmt,
     else
         intexfmt = GL_RGBA8;
 #else
+    const int hasalpha  = !!(dameth & (DAMETH_HASALPHA|DAMETH_ONEBITALPHA));
     const int onebitalpha  = !!(dameth & DAMETH_ONEBITALPHA);
 
     int32_t const intexfmt = hasalpha ? (onebitalpha ? texfmt_rgb_mask : texfmt_rgba) : texfmt_rgb;
@@ -2515,8 +2501,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
     if (gotcache && !texcache_loadtile(&cachead, &doalloc, pth))
     {
-        tsiz.x = cachead.xdim;
-        tsiz.y = cachead.ydim;
+        tsiz = { cachead.xdim, cachead.ydim };
         hasalpha = !!(cachead.flags & CACHEAD_HASALPHA);
     }
     else
@@ -2543,8 +2528,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
             if (artCheckUnitFileHeader((uint8_t *)kpzbuf, picfillen))
                 return -1;
 
-            tsiz.x = B_LITTLE16(B_UNBUF16(&kpzbuf[16]));
-            tsiz.y = B_LITTLE16(B_UNBUF16(&kpzbuf[18]));
+            tsiz = { B_LITTLE16(B_UNBUF16(&kpzbuf[16])), B_LITTLE16(B_UNBUF16(&kpzbuf[18])) };
 
             if (tsiz.x == 0 || tsiz.y == 0)
                 return -1;
@@ -2735,15 +2719,9 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
     // precalculate scaling parameters for replacement
     if (facen > 0)
-    {
-        pth->scale.x = (float)tsiz.x * (1.0f/64.f);
-        pth->scale.y = (float)tsiz.y * (1.0f/64.f);
-    }
+        pth->scale = { (float)tsiz.x * (1.0f/64.f), (float)tsiz.y * (1.0f/64.f) };
     else
-    {
-        pth->scale.x = (float)tsiz.x / (float)tilesiz[dapic].x;
-        pth->scale.y = (float)tsiz.y / (float)tilesiz[dapic].y;
-    }
+        pth->scale = { (float)tsiz.x / (float)tilesiz[dapic].x, (float)tsiz.y / (float)tilesiz[dapic].y };
 
     polymost_setuptexture(dameth, (hicr->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : -1);
 
@@ -2807,7 +2785,6 @@ void polymost_setupdetailtexture(const int32_t texunits, const int32_t tex)
 {
     glActiveTexture(texunits);
 
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -2821,7 +2798,6 @@ void polymost_setupglowtexture(const int32_t texunits, const int32_t tex)
 {
     glActiveTexture(texunits);
 
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -2846,25 +2822,24 @@ static uint8_t drawpoly_blend = 0;
 static inline pthtyp *our_texcache_fetch(int32_t dameth)
 {
     if (r_usenewshading == 4)
-        return texcache_fetch(globalpicnum, globalpal, getpalookup((r_usetileshades == 1 && !(globalflags & GLOBAL_NO_GL_TILESHADES)), globalshade), dameth);
+        return texcache_fetch(globalpicnum, globalpal, getpalookup(!(globalflags & GLOBAL_NO_GL_TILESHADES), globalshade), dameth);
 
-    // r_usetileshades 1 is TX's method.
-    return texcache_fetch(globalpicnum, globalpal, getpalookup((r_usetileshades == 1 && !(globalflags & GLOBAL_NO_GL_TILESHADES)) ? globvis>>3 : 0, globalshade), dameth);
+    return texcache_fetch(globalpicnum, globalpal, getpalookup(!(globalflags & GLOBAL_NO_GL_TILESHADES) ? globvis>>3 : 0, globalshade), dameth);
 }
 
 int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall)
 {
     if (wall->cstat & CSTAT_WALL_TRANSLUCENT)
         return true;
- 
+
     //POGO: only hightiles may have translucency in their texture
     if (!usehightile)
         return false;
- 
+
     uint8_t pal = wall->pal;
     if (palookup[pal] == NULL)
         pal = 0;
- 
+
     pthtyp* pth = texcache_fetch(wall->picnum, pal, 0, DAMETH_MASK | DAMETH_WALL);
     return pth && (pth->flags & PTH_HASALPHA) && !(pth->flags & PTH_ONEBITALPHA);
 }
@@ -2874,15 +2849,15 @@ int32_t polymost_spriteHasTranslucency(uspritetype const * const tspr)
     if ((tspr->cstat & (CSTAT_SPRITE_TRANSLUCENT | CSTAT_SPRITE_RESERVED1)) ||
         spriteext[tspr->owner].alpha)
         return true;
- 
+
     //POGO: only hightiles may have translucency in their texture
     if (!usehightile)
         return false;
- 
+
     uint8_t pal = tspr->shade;
     if (palookup[pal] == NULL)
         pal = 0;
- 
+
     pthtyp* pth = texcache_fetch(tspr->picnum, pal, 0, DAMETH_MASK | DAMETH_CLAMPED);
     return pth && (pth->flags & PTH_HASALPHA) && !(pth->flags & PTH_ONEBITALPHA);
 }
@@ -2950,7 +2925,7 @@ static void polymost2_drawVBO(GLenum mode,
         if (editstatus)
         {
             Bsprintf(ptempbuf, "pth==NULL! (bad pal?) pic=%d pal=%d", globalpicnum, globalpal);
-            polymost_printext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
+            polymost_printtext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
         }
         return;
     }
@@ -3056,9 +3031,7 @@ static void polymost2_drawVBO(GLenum mode,
 void polymost_updatePalette()
 {
     if (videoGetRenderMode() != REND_POLYMOST)
-    {
         return;
-    }
 
     polymost_setPalswap(globalpal);
     polymost_setShade(globalshade);
@@ -3270,7 +3243,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         if (editstatus)
         {
             Bsprintf(ptempbuf, "pth==NULL! (bad pal?) pic=%d pal=%d", globalpicnum, globalpal);
-            polymost_printext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
+            polymost_printtext256(8,8, editorcolors[15],editorcolors[5], ptempbuf, 0);
         }
         return;
     }
@@ -3402,26 +3375,13 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     static int32_t skyzbufferhack_pass = 0;
 
-    if (!waloff[globalpicnum])
-    {
-        glEnable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
-    }
-    else if (!(method & DAMETH_MASKPROPS) && fullbright_pass < 2)
-    {
-        glDisable(GL_BLEND);
-        glDisable(GL_ALPHA_TEST);
-    }
-    else
+    if (method & DAMETH_MASKPROPS || fullbright_pass == 2)
     {
         float const al = alphahackarray[globalpicnum] != 0 ? alphahackarray[globalpicnum] * (1.f/255.f) :
                          (pth->hicr && pth->hicr->alphacut >= 0.f ? pth->hicr->alphacut : 0.f);
 
         glAlphaFunc(GL_GREATER, al);
         handle_blend((method & DAMETH_MASKPROPS) > DAMETH_MASK, drawpoly_blend, (method & DAMETH_MASKPROPS) == DAMETH_TRANS2);
-
-        glEnable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
     }
 
     float pc[4];
@@ -3434,7 +3394,6 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     {
         polytint_t const & tint = hictinting[globalpal];
         float shadeFactor = (pth->flags & PTH_INDEXED) &&
-                            r_usetileshades &&
                             !(globalflags & GLOBAL_NO_GL_TILESHADES) ? 1.f : getshadefactor(globalshade);
         pc[0] = (1.f-(tint.sr*(1.f/255.f)))*shadeFactor+(tint.sr*(1.f/255.f));
         pc[1] = (1.f-(tint.sg*(1.f/255.f)))*shadeFactor+(tint.sg*(1.f/255.f));
@@ -3464,7 +3423,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     globaltinting_apply(pc);
 
     if (skyzbufferhack_pass)
-        pc[3] = 0.01;
+        pc[3] = 0.01f;
 
     glColor4f(pc[0], pc[1], pc[2], pc[3]);
 
@@ -3606,7 +3565,7 @@ do                                                                              
 
                 //update verts
                 drawpolyVerts[(off+i)*5] = (o.x - ghalfx) * r * grhalfxdown10x;
-                drawpolyVerts[(off+i)*5+1] = (ghoriz - o.y) * r * grhalfxdown10;
+                drawpolyVerts[(off+i)*5+1] = (ghalfy - o.y) * r * grhalfxdown10;
                 drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
                 //update texcoords
@@ -3651,7 +3610,7 @@ do                                                                              
 
             //update verts
             drawpolyVerts[(off+i)*5] = (px[i] - ghalfx) * r * grhalfxdown10x;
-            drawpolyVerts[(off+i)*5+1] = (ghoriz - py[i]) * r * grhalfxdown10;
+            drawpolyVerts[(off+i)*5+1] = (ghalfy - py[i]) * r * grhalfxdown10;
             drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
             //update texcoords
@@ -3681,7 +3640,6 @@ do                                                                              
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
             glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
-            glDisable(GL_TEXTURE_2D);
 
             --texunits;
         }
@@ -3697,8 +3655,6 @@ do                                                                              
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
     }
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
@@ -3741,18 +3697,13 @@ do                                                                              
 
     if (skyzbufferhack && skyzbufferhack_pass == 0)
     {
-        vec3d_t bxtex, bytex, botex;
-        bxtex = xtex;
-        bytex = ytex;
-        botex = otex;
-        xtex = xtex2;
-        ytex = ytex2;
-        otex = otex2;
+        vec3d_t const bxtex = xtex, bytex = ytex, botex = otex;
+        xtex = xtex2, ytex = ytex2, otex = otex2;
         skyzbufferhack_pass++;
+        glColorMask(false, false, false, false);
         polymost_drawpoly(dpxy, n, DAMETH_MASK);
-        xtex = bxtex;
-        ytex = bytex;
-        otex = botex;
+        glColorMask(true, true, true, true);
+        xtex = bxtex, ytex = bytex, otex = botex;
         skyzbufferhack_pass--;
     }
 }
@@ -3774,6 +3725,23 @@ static inline void vsp_finalize_init(int32_t const vcnt)
     vsp[VSPMAX-1].n = vcnt; vsp[vcnt].p = VSPMAX-1;
 }
 
+#ifdef YAX_ENABLE
+static inline void yax_vsp_finalize_init(int32_t const yaxbunch, int32_t const vcnt)
+{
+    for (bssize_t i=0; i<vcnt; ++i)
+    {
+        yax_vsp[yaxbunch][i].cy[1] = yax_vsp[yaxbunch][i+1].cy[0]; yax_vsp[yaxbunch][i].ctag = i;
+        yax_vsp[yaxbunch][i].n = i+1; yax_vsp[yaxbunch][i].p = i-1;
+//        vsp[i].tag = -1;
+    }
+    yax_vsp[yaxbunch][vcnt-1].n = 0; yax_vsp[yaxbunch][0].p = vcnt-1;
+
+    //VSPMAX-1 is dummy empty node
+    for (bssize_t i=vcnt; i<VSPMAX; i++) { yax_vsp[yaxbunch][i].n = i+1; yax_vsp[yaxbunch][i].p = i-1; }
+    yax_vsp[yaxbunch][VSPMAX-1].n = vcnt; yax_vsp[yaxbunch][vcnt].p = VSPMAX-1;
+}
+#endif
+
 #define COMBINE_STRIPS
 
 #ifdef COMBINE_STRIPS
@@ -3792,6 +3760,23 @@ static inline void vsdel(int32_t const i)
     vsp[vsp[VSPMAX-1].n].p = i;
     vsp[VSPMAX-1].n = i;
 }
+# ifdef YAX_ENABLE
+static inline void yax_vsdel(int32_t const yaxbunch, int32_t const i)
+{
+    //Delete i
+    int const pi = yax_vsp[yaxbunch][i].p;
+    int const ni = yax_vsp[yaxbunch][i].n;
+
+    yax_vsp[yaxbunch][ni].p = pi;
+    yax_vsp[yaxbunch][pi].n = ni;
+
+    //Add i to empty list
+    yax_vsp[yaxbunch][i].n = yax_vsp[yaxbunch][VSPMAX - 1].n;
+    yax_vsp[yaxbunch][i].p = VSPMAX - 1;
+    yax_vsp[yaxbunch][yax_vsp[yaxbunch][VSPMAX - 1].n].p = i;
+    yax_vsp[yaxbunch][VSPMAX - 1].n = i;
+}
+# endif
 #endif
 
 static inline int32_t vsinsaft(int32_t const i)
@@ -3810,11 +3795,31 @@ static inline int32_t vsinsaft(int32_t const i)
     return r;
 }
 
+#ifdef YAX_ENABLE
+
+
+static inline int32_t yax_vsinsaft(int32_t const yaxbunch, int32_t const i)
+{
+    //i = next element from empty list
+    int32_t const r = yax_vsp[yaxbunch][VSPMAX - 1].n;
+    yax_vsp[yaxbunch][yax_vsp[yaxbunch][r].n].p = VSPMAX - 1;
+    yax_vsp[yaxbunch][VSPMAX - 1].n = yax_vsp[yaxbunch][r].n;
+
+    yax_vsp[yaxbunch][r] = yax_vsp[yaxbunch][i]; //copy i to r
+
+    //insert r after i
+    yax_vsp[yaxbunch][r].p = i; yax_vsp[yaxbunch][r].n = yax_vsp[yaxbunch][i].n;
+    yax_vsp[yaxbunch][yax_vsp[yaxbunch][i].n].p = r; yax_vsp[yaxbunch][i].n = r;
+
+    return r;
+}
+#endif
+
 static int32_t domostpolymethod = DAMETH_NOMASK;
 
 #define DOMOST_OFFSET .01f
 
-static void polymost_mostcliphack(vec2f_t *dpxy, int &n, float x0, float x1, float y0top, float y0bot, float y1top, float y1bot)
+static void polymost_clipmost(vec2f_t *dpxy, int &n, float x0, float x1, float y0top, float y0bot, float y1top, float y1bot)
 {
     if (y0bot < y0top || y1bot < y1top)
         return;
@@ -3843,8 +3848,8 @@ static void polymost_mostcliphack(vec2f_t *dpxy, int &n, float x0, float x1, flo
         if ((t0 >= 0) != (t1 >= 0) && (t0 <= 0) != (t1 <= 0))
         {
             float const r = t0 / (t0 - t1);
-            dp2[n2].x = (dpxy[j].x - dpxy[i].x) * r + dpxy[i].x;
-            dp2[n2].y = (dpxy[j].y - dpxy[i].y) * r + dpxy[i].y;
+            dp2[n2] = { (dpxy[j].x - dpxy[i].x) * r + dpxy[i].x,
+                        (dpxy[j].y - dpxy[i].y) * r + dpxy[i].y };
             n2++;
         }
     }
@@ -3873,8 +3878,8 @@ static void polymost_mostcliphack(vec2f_t *dpxy, int &n, float x0, float x1, flo
         if ((t0 >= 0) != (t1 >= 0) && (t0 <= 0) != (t1 <= 0))
         {
             float const r = t0 / (t0 - t1);
-            dpxy[n].x = (dp2[j].x - dp2[i].x) * r + dp2[i].x;
-            dpxy[n].y = (dp2[j].y - dp2[i].y) * r + dp2[i].y;
+            dpxy[n] = { (dp2[j].x - dp2[i].x) * r + dp2[i].x,
+                        (dp2[j].y - dp2[i].y) * r + dp2[i].y };
             n++;
         }
     }
@@ -3914,9 +3919,12 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
     x0 -= DOMOST_OFFSET;
     x1 += DOMOST_OFFSET;
 
-    // Test if poly is out of screen
+    // Test if span is outside screen bounds
     if (x1 < xbl || x0 > xbr)
+    {
+        domost_rejectcount++;
         return;
+    }
 
     vec2f_t dm0 = { x0, y0 };
     vec2f_t dm1 = { x1, y1 };
@@ -4049,56 +4057,96 @@ skip: ;
                     case 5:
                     case 7:
                     {
-                        vec2f_t dpxy[8] = {
-                            { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y }, { dx0, n0.y }
-                        };
+#ifdef YAX_ENABLE
+                        if (g_nodraw)
+                        {
+                            if (yax_drawcf != -1)
+                                yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, vsp[i].cy[0], vsp[i].cy[1], n0.y, n1.y };
+                        }
+                        else
+#endif
+                        {
+                            vec2f_t dpxy[8] = {
+                                { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y }, { dx0, n0.y }
+                            };
 
-                        int n = 4;
-                        polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            int n = 4;
+                            polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            polymost_drawpoly(dpxy, n, domostpolymethod);
+                        }
 
                         vsp[i].cy[0] = n0.y;
                         vsp[i].cy[1] = n1.y;
                         vsp[i].ctag = gtag;
-                        polymost_drawpoly(dpxy, n, domostpolymethod);
                     }
                     break;
                     case 1:
                     case 2:
                     {
-                        vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx0, n0.y } };
+#ifdef YAX_ENABLE
+                        if (g_nodraw)
+                        {
+                            if (yax_drawcf != -1)
+                                yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, vsp[i].cy[0], vsp[i].cy[1], n0.y, vsp[i].cy[1] };
+                        }
+                        else
+#endif
+                        {
+                            vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx0, n0.y } };
 
-                        int n = 3;
-                        polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            int n = 3;
+                            polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            polymost_drawpoly(dpxy, n, domostpolymethod);
+                        }
 
                         vsp[i].cy[0] = n0.y;
                         vsp[i].ctag = gtag;
-                        polymost_drawpoly(dpxy, n, domostpolymethod);
                     }
                     break;
                     case 3:
                     case 6:
                     {
-                        vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y } };
+#ifdef YAX_ENABLE
+                        if (g_nodraw)
+                        {
+                            if (yax_drawcf != -1)
+                                yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, vsp[i].cy[0], vsp[i].cy[1], vsp[i].cy[0], n1.y };
+                        }
+                        else
+#endif
+                        {
+                            vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, n1.y } };
 
-                        int n = 3;
-                        polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            int n = 3;
+                            polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            polymost_drawpoly(dpxy, n, domostpolymethod);
+                        }
 
                         vsp[i].cy[1] = n1.y;
                         vsp[i].ctag = gtag;
-                        polymost_drawpoly(dpxy, n, domostpolymethod);
                     }
                     break;
                     case 8:
                     {
-                        vec2f_t dpxy[8] = {
-                            { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] }
-                        };
+#ifdef YAX_ENABLE
+                        if (g_nodraw)
+                        {
+                            if (yax_drawcf != -1)
+                                yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, vsp[i].cy[0], vsp[i].cy[1], vsp[i].fy[0], vsp[i].fy[1] };
+                        }
+                        else
+#endif
+                        {
+                            vec2f_t dpxy[8] = {
+                                { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] }
+                            };
 
-                        int n = 4;
-                        polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            int n = 4;
+                            polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                            polymost_drawpoly(dpxy, n, domostpolymethod);
+                        }
 
                         vsp[i].ctag = vsp[i].ftag = -1;
-                        polymost_drawpoly(dpxy, n, domostpolymethod);
                     }
                     default: break;
                 }
@@ -4111,53 +4159,94 @@ skip: ;
                 case 3:
                 case 1:
                 {
-                    vec2f_t dpxy[8] = {
-                        { dx0, n0.y }, { dx1, n1.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] }
-                    };
+#ifdef YAX_ENABLE
+                    if (g_nodraw)
+                    {
+                        if (yax_drawcf != -1)
+                            yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, n0.y, n1.y, vsp[i].fy[0], vsp[i].fy[1] };
+                    }
+                    else
+#endif
+                    {
+                        vec2f_t dpxy[8] = {
+                            { dx0, n0.y }, { dx1, n1.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] }
+                        };
 
-                    int n = 4;
-                    polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        int n = 4;
+                        polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        polymost_drawpoly(dpxy, n, domostpolymethod);
+                    }
 
                     vsp[i].fy[0] = n0.y;
                     vsp[i].fy[1] = n1.y;
                     vsp[i].ftag = gtag;
-                    polymost_drawpoly(dpxy, n, domostpolymethod);
                 }
                     break;
                 case 7:
                 case 6:
                 {
-                    vec2f_t dpxy[8] = { { dx0, n0.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
+#ifdef YAX_ENABLE
+                    if (g_nodraw)
+                    {
+                        if (yax_drawcf != -1)
+                            yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, n0.y, vsp[i].fy[1], vsp[i].fy[0], vsp[i].fy[1] };
+                    }
+                    else
+#endif
+                    {
+                        vec2f_t dpxy[8] = { { dx0, n0.y }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
 
-                    int n = 3;
-                    polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        int n = 3;
+                        polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        polymost_drawpoly(dpxy, n, domostpolymethod);
+                    }
 
                     vsp[i].fy[0] = n0.y;
                     vsp[i].ftag = gtag;
-                    polymost_drawpoly(dpxy, n, domostpolymethod);
                 }
                     break;
                 case 5:
                 case 2:
                 {
-                    vec2f_t dpxy[8] = { { dx0, vsp[i].fy[0] }, { dx1, n1.y }, { dx1, vsp[i].fy[1] } };
+#ifdef YAX_ENABLE
+                    if (g_nodraw)
+                    {
+                        if (yax_drawcf != -1)
+                            yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, vsp[i].fy[0], n1.y, vsp[i].fy[0], vsp[i].fy[1] };
+                    }
+                    else
+#endif
+                    {
+                        vec2f_t dpxy[8] = { { dx0, vsp[i].fy[0] }, { dx1, n1.y }, { dx1, vsp[i].fy[1] } };
 
-                    int n = 3;
-                    polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        int n = 3;
+                        polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        polymost_drawpoly(dpxy, n, domostpolymethod);
+                    }
 
                     vsp[i].fy[1] = n1.y;
                     vsp[i].ftag = gtag;
-                    polymost_drawpoly(dpxy, n, domostpolymethod);
                 }
                     break;
                 case 0:
                 {
-                    vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
+#ifdef YAX_ENABLE
+                    if (g_nodraw)
+                    {
+                        if (yax_drawcf != -1)
+                            yax_holecf[yax_drawcf][yax_holencf[yax_drawcf]++] = { dx0, dx1, vsp[i].cy[0], vsp[i].cy[1], vsp[i].fy[0], vsp[i].fy[1] };
+                    }
+                    else
+#endif
+                    {
+                        vec2f_t dpxy[8] = { { dx0, vsp[i].cy[0] }, { dx1, vsp[i].cy[1] }, { dx1, vsp[i].fy[1] }, { dx0, vsp[i].fy[0] } };
 
-                    int n = 4;
-                    polymost_mostcliphack(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        int n = 4;
+                        polymost_clipmost(dpxy, n, x0, x1, y0top, y0bot, y1top, y1bot);
+                        polymost_drawpoly(dpxy, n, domostpolymethod);
+                    }
+
                     vsp[i].ctag = vsp[i].ftag = -1;
-                    polymost_drawpoly(dpxy, n, domostpolymethod);
                 }
                 default:
                     break;
@@ -4173,7 +4262,7 @@ skip: ;
 #ifdef COMBINE_STRIPS
     int i = vsp[0].n;
 
-    while (i)
+    do
     {
         if ((vsp[i].cy[0] >= vsp[i].fy[0]) && (vsp[i].cy[1] >= vsp[i].fy[1]))
             vsp[i].ctag = vsp[i].ftag = -1;
@@ -4188,24 +4277,401 @@ skip: ;
         }
         else i = ni;
     }
+    while (i);
 #endif
 }
 
-#define POINT2(i) (wall[wall[i].point2])
+#ifdef YAX_ENABLE
+static void yax_polymost_domost(const int yaxbunch, float x0, float y0, float x1, float y1)
+{
+    int const dir = (x0 < x1);
+
+    if (dir) //clip dmost (floor)
+    {
+        y0 -= DOMOST_OFFSET;
+        y1 -= DOMOST_OFFSET;
+    }
+    else //clip umost (ceiling)
+    {
+        if (x0 == x1) return;
+        swapfloat(&x0, &x1);
+        swapfloat(&y0, &y1);
+        y0 += DOMOST_OFFSET;
+        y1 += DOMOST_OFFSET; //necessary?
+    }
+
+    // Test if span is outside screen bounds
+    if (x1 < xbl || x0 > xbr)
+    {
+        domost_rejectcount++;
+        return;
+    }
+
+    vec2f_t dm0 = { x0, y0 };
+    vec2f_t dm1 = { x1, y1 };
+
+    float const slop = (dm1.y - dm0.y) / (dm1.x - dm0.x);
+
+    if (dm0.x < xbl)
+    {
+        dm0.y += slop*(xbl-dm0.x);
+        dm0.x = xbl;
+    }
+
+    if (dm1.x > xbr)
+    {
+        dm1.y += slop*(xbr-dm1.x);
+        dm1.x = xbr;
+    }
+
+    vec2f_t n0, n1;
+    float spx[4];
+    int32_t  spt[4];
+
+    for (bssize_t newi, i=yax_vsp[yaxbunch][0].n; i; i=newi)
+    {
+        newi = yax_vsp[yaxbunch][i].n; n0.x = yax_vsp[yaxbunch][i].x; n1.x = yax_vsp[yaxbunch][newi].x;
+
+        if ((dm0.x >= n1.x) || (n0.x >= dm1.x) || (yax_vsp[yaxbunch][i].ctag <= 0)) continue;
+
+        double const dx = double(n1.x)-double(n0.x);
+        double const cy = yax_vsp[yaxbunch][i].cy[0],
+                     cv = yax_vsp[yaxbunch][i].cy[1]-cy;
+
+        int scnt = 0;
+
+        //Test if left edge requires split (dm0.x,dm0.y) (nx0,cy(0)),<dx,cv(0)>
+        if ((dm0.x > n0.x) && (dm0.x < n1.x))
+        {
+            double const t = (dm0.x-n0.x)*cv - (dm0.y-cy)*dx;
+            if (((!dir) && (t <= 0.0)) || ((dir) && (t >= 0.0)))
+                { spx[scnt] = dm0.x; spt[scnt] = -1; scnt++; }
+        }
+
+        //Test for intersection on umost (0) and dmost (1)
+
+        double const d = ((double(dm0.y) - double(dm1.y)) * dx) - ((double(dm0.x) - double(dm1.x)) * cv);
+
+        double const n = ((double(dm0.y) - cy) * dx) - ((double(dm0.x) - double(n0.x)) * cv);
+
+        double const fnx = double(dm0.x) + ((n / d) * (double(dm1.x) - double(dm0.x)));
+
+        if ((fabs(d) > fabs(n)) && (d * n >= 0.0) && (fnx > n0.x) && (fnx < n1.x))
+            spx[scnt] = fnx, spt[scnt++] = 0;
+
+        //Nice hack to avoid full sort later :)
+        if ((scnt >= 2) && (spx[scnt-1] < spx[scnt-2]))
+        {
+            swapfloat(&spx[scnt-1], &spx[scnt-2]);
+            swaplong(&spt[scnt-1], &spt[scnt-2]);
+        }
+
+        //Test if right edge requires split
+        if ((dm1.x > n0.x) && (dm1.x < n1.x))
+        {
+            double const t = (double(dm1.x)- double(n0.x))*cv - (double(dm1.y)- double(cy))*dx;
+            if (((!dir) && (t <= 0.0)) || ((dir) && (t >= 0.0)))
+                { spx[scnt] = dm1.x; spt[scnt] = -1; scnt++; }
+        }
+
+        yax_vsp[yaxbunch][i].tag = yax_vsp[yaxbunch][newi].tag = -1;
+
+        float const rdx = 1.f/dx;
+
+        for (bssize_t z=0, vcnt=0; z<=scnt; z++,i=vcnt)
+        {
+            float t;
+
+            if (z == scnt)
+                goto skip;
+
+            t = (spx[z]-n0.x)*rdx;
+            vcnt = yax_vsinsaft(yaxbunch, i);
+            yax_vsp[yaxbunch][i].cy[1] = t*cv + cy;
+            yax_vsp[yaxbunch][vcnt].x = spx[z];
+            yax_vsp[yaxbunch][vcnt].cy[0] = yax_vsp[yaxbunch][i].cy[1];
+            yax_vsp[yaxbunch][vcnt].tag = spt[z];
+
+skip: ;
+            int32_t const ni = yax_vsp[yaxbunch][i].n; if (!ni) continue; //this 'if' fixes many bugs!
+            float const dx0 = yax_vsp[yaxbunch][i].x; if (dm0.x > dx0) continue;
+            float const dx1 = yax_vsp[yaxbunch][ni].x; if (dm1.x < dx1) continue;
+            n0.y = (dx0-dm0.x)*slop + dm0.y;
+            n1.y = (dx1-dm0.x)*slop + dm0.y;
+
+            //      dx0           dx1
+            //       ~             ~
+            //----------------------------
+            //     t0+=0         t1+=0
+            //   vsp[i].cy[0]  vsp[i].cy[1]
+            //============================
+            //     t0+=1         t1+=3
+            //============================
+            //   vsp[i].fy[0]    vsp[i].fy[1]
+            //     t0+=2         t1+=6
+            //
+            //     ny0 ?         ny1 ?
+
+            int k = 4;
+
+            if (!dir)
+            {
+                if ((yax_vsp[yaxbunch][i].tag == 0) || (n0.y <= yax_vsp[yaxbunch][i].cy[0]+DOMOST_OFFSET)) k--;
+                if ((yax_vsp[yaxbunch][ni].tag == 0) || (n1.y <= yax_vsp[yaxbunch][i].cy[1]+DOMOST_OFFSET)) k -= 3;
+                switch (k)
+                {
+                    case 4:
+                    {
+                        yax_vsp[yaxbunch][i].cy[0] = n0.y;
+                        yax_vsp[yaxbunch][i].cy[1] = n1.y;
+                        yax_vsp[yaxbunch][i].ctag = gtag;
+                    }
+                    break;
+                    case 1:
+                    case 2:
+                    {
+                        yax_vsp[yaxbunch][i].cy[0] = n0.y;
+                        yax_vsp[yaxbunch][i].ctag = gtag;
+                    }
+                    break;
+                    case 3:
+                    {
+                        yax_vsp[yaxbunch][i].cy[1] = n1.y;
+                        yax_vsp[yaxbunch][i].ctag = gtag;
+                    }
+                    break;
+                    default: break;
+                }
+            }
+            else
+            {
+                if ((yax_vsp[yaxbunch][i].tag == 0) || (n0.y >= yax_vsp[yaxbunch][i].cy[0]-DOMOST_OFFSET)) k++;
+                if ((yax_vsp[yaxbunch][ni].tag == 0) || (n1.y >= yax_vsp[yaxbunch][i].cy[1]-DOMOST_OFFSET)) k += 3;
+                switch (k)
+                {
+                case 4:
+                {
+                    yax_vsp[yaxbunch][i].cy[0] = n0.y;
+                    yax_vsp[yaxbunch][i].cy[1] = n1.y;
+                    yax_vsp[yaxbunch][i].ctag = gtag;
+                }
+                    break;
+                case 7:
+                case 6:
+                {
+                    yax_vsp[yaxbunch][i].cy[0] = n0.y;
+                    yax_vsp[yaxbunch][i].ctag = gtag;
+                }
+                    break;
+                case 5:
+                {
+                    yax_vsp[yaxbunch][i].cy[1] = n1.y;
+                    yax_vsp[yaxbunch][i].ctag = gtag;
+                }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+
+    gtag++;
+
+    //Combine neighboring vertical strips with matching collinear top&bottom edges
+    //This prevents x-splits from propagating through the entire scan
+#ifdef COMBINE_STRIPS
+    int i = yax_vsp[yaxbunch][0].n;
+
+    do
+    {
+        int const ni = yax_vsp[yaxbunch][i].n;
+
+        if ((yax_vsp[yaxbunch][i].ctag == yax_vsp[yaxbunch][ni].ctag))
+        {
+            yax_vsp[yaxbunch][i].cy[1] = yax_vsp[yaxbunch][ni].cy[1];
+            yax_vsdel(yaxbunch, ni);
+        }
+        else i = ni;
+    }
+    while (i);
+#endif
+}
+
+static int32_t should_clip_cfwall(float x0, float y0, float x1, float y1)
+{
+    int const dir = (x0 < x1);
+
+    if (dir && yax_globallev >= YAX_MAXDRAWS)
+        return 1;
+
+    if (!dir && yax_globallev <= YAX_MAXDRAWS)
+        return 1;
+
+    if (dir) //clip dmost (floor)
+    {
+        y0 -= DOMOST_OFFSET;
+        y1 -= DOMOST_OFFSET;
+    }
+    else //clip umost (ceiling)
+    {
+        if (x0 == x1) return 1;
+        swapfloat(&x0, &x1);
+        swapfloat(&y0, &y1);
+        y0 += DOMOST_OFFSET;
+        y1 += DOMOST_OFFSET; //necessary?
+    }
+
+    x0 -= DOMOST_OFFSET;
+    x1 += DOMOST_OFFSET;
+
+    // Test if span is outside screen bounds
+    if (x1 < xbl || x0 > xbr)
+        return 1;
+
+    vec2f_t dm0 = { x0, y0 };
+    vec2f_t dm1 = { x1, y1 };
+
+    float const slop = (dm1.y - dm0.y) / (dm1.x - dm0.x);
+
+    if (dm0.x < xbl)
+    {
+        dm0.y += slop*(xbl-dm0.x);
+        dm0.x = xbl;
+    }
+
+    if (dm1.x > xbr)
+    {
+        dm1.y += slop*(xbr-dm1.x);
+        dm1.x = xbr;
+    }
+
+    vec2f_t n0, n1;
+    float spx[6], spcy[6], spfy[6];
+    int32_t spt[6];
+
+    for (bssize_t newi, i=vsp[0].n; i; i=newi)
+    {
+        newi = vsp[i].n; n0.x = vsp[i].x; n1.x = vsp[newi].x;
+
+        if ((dm0.x >= n1.x) || (n0.x >= dm1.x) || (vsp[i].ctag <= 0)) continue;
+
+        float const dx = n1.x-n0.x;
+        float const cy[2] = { vsp[i].cy[0], vsp[i].fy[0] },
+                    cv[2] = { vsp[i].cy[1]-cy[0], vsp[i].fy[1]-cy[1] };
+
+        int scnt = 0;
+
+        spx[scnt] = n0.x; spt[scnt] = -1; scnt++;
+
+        //Test if left edge requires split (dm0.x,dm0.y) (nx0,cy(0)),<dx,cv(0)>
+        if ((dm0.x > n0.x) && (dm0.x < n1.x))
+        {
+            float const t = (dm0.x-n0.x)*cv[dir] - (dm0.y-cy[dir])*dx;
+            if (((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
+                { spx[scnt] = dm0.x; spt[scnt] = -1; scnt++; }
+        }
+
+        //Test for intersection on umost (0) and dmost (1)
+
+        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[0]),
+                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[1]) };
+
+        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x) * cv[0]),
+                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x) * cv[1]) };
+
+        float const fnx[2] = { dm0.x + ((n[0] / d[0]) * (dm1.x - dm0.x)),
+                               dm0.x + ((n[1] / d[1]) * (dm1.x - dm0.x)) };
+
+        if ((Bfabsf(d[0]) > Bfabsf(n[0])) && (d[0] * n[0] >= 0.f) && (fnx[0] > n0.x) && (fnx[0] < n1.x))
+            spx[scnt] = fnx[0], spt[scnt++] = 0;
+
+        if ((Bfabsf(d[1]) > Bfabsf(n[1])) && (d[1] * n[1] >= 0.f) && (fnx[1] > n0.x) && (fnx[1] < n1.x))
+            spx[scnt] = fnx[1], spt[scnt++] = 1;
+
+        //Nice hack to avoid full sort later :)
+        if ((scnt >= 2) && (spx[scnt-1] < spx[scnt-2]))
+        {
+            swapfloat(&spx[scnt-1], &spx[scnt-2]);
+            swaplong(&spx[scnt-1], &spx[scnt-2]);
+        }
+
+        //Test if right edge requires split
+        if ((dm1.x > n0.x) && (dm1.x < n1.x))
+        {
+            float const t = (dm1.x-n0.x)*cv[dir] - (dm1.y-cy[dir])*dx;
+            if (((!dir) && (t < 0.f)) || ((dir) && (t > 0.f)))
+                { spx[scnt] = dm1.x; spt[scnt] = -1; scnt++; }
+        }
+
+        spx[scnt] = n1.x; spt[scnt] = -1; scnt++;
+
+        float const rdx = 1.f/dx;
+        for (bssize_t z=0; z<scnt; z++)
+        {
+            float const t = (spx[z]-n0.x)*rdx;
+            spcy[z] = t*cv[0]+cy[0];
+            spfy[z] = t*cv[1]+cy[1];
+        }
+
+        for (bssize_t z=0; z<scnt-1; z++)
+        {
+            float const dx0 = spx[z];
+            float const dx1 = spx[z+1];
+            n0.y = (dx0-dm0.x)*slop + dm0.y;
+            n1.y = (dx1-dm0.x)*slop + dm0.y;
+
+            //      dx0           dx1
+            //       ~             ~
+            //----------------------------
+            //     t0+=0         t1+=0
+            //   vsp[i].cy[0]  vsp[i].cy[1]
+            //============================
+            //     t0+=1         t1+=3
+            //============================
+            //   vsp[i].fy[0]    vsp[i].fy[1]
+            //     t0+=2         t1+=6
+            //
+            //     ny0 ?         ny1 ?
+
+            int k = 4;
+            if (dir)
+            {
+                if ((spt[z] == 0) || (n0.y <= spcy[z]+DOMOST_OFFSET)) k--;
+                if ((spt[z+1] == 0) || (n1.y <= spcy[z+1]+DOMOST_OFFSET)) k -= 3;
+                if (k != 0)
+                    return 1;
+            }
+            else
+            {
+                if ((spt[z] == 1) || (n0.y >= spfy[z]-DOMOST_OFFSET)) k++;
+                if ((spt[z+1] == 1) || (n1.y >= spfy[z+1]-DOMOST_OFFSET)) k += 3;
+                if (k != 8)
+                    return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+#endif
+
 
 void polymost_editorfunc(void)
 {
     const float ratio = (r_usenewaspect ? (fxdim / fydim) / (320.f / 240.f) : 1.f)  * (1.f / get_projhack_ratio());
 
-    vec3f_t tvect = { (searchx - ghalfx) * ratio, (searchy - ghoriz) * ratio, ghalfx };
+    vec3f_t tvect = { (searchx - ghalfx) * ratio,
+                      (searchy - ghoriz) * ratio,
+                      ghalfx };
 
     //Tilt rotation
     vec3f_t o = { tvect.x * gctang + tvect.y * gstang, tvect.y * gctang - tvect.x * gstang, tvect.z };
 
     //Up/down rotation
-    tvect.x = o.z*gchang - o.y*gshang;
-    tvect.y = o.x;
-    tvect.z = o.y*gchang + o.z*gshang;
+    tvect = { o.z * gchang - o.y * gshang,
+              o.x,
+              o.y * gchang + o.z * gshang };
 
     //Standard Left/right rotation
     vec3_t v = { Blrintf(tvect.x * fcosglobalang - tvect.y * fsinglobalang),
@@ -4390,7 +4856,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
 {
     int const have_floor = sectnum & MAXSECTORS;
     sectnum &= ~MAXSECTORS;
-    usectortype const * const sec = (usectortype *)&sector[sectnum];
+    auto const sec = (usectorptr_t)&sector[sectnum];
 
     // comments from floor code:
             //(singlobalang/-16384*(sx-ghalfx) + 0*(sy-ghoriz) + (cosviewingrangeglobalang/16384)*ghalfx)*d + globalposx    = u*16
@@ -4403,8 +4869,9 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     {
         //relative alignment
         vec2_t const xy = { wall[wall[sec->wallptr].point2].x - wall[sec->wallptr].x,
-                        wall[wall[sec->wallptr].point2].y - wall[sec->wallptr].y };
+                            wall[wall[sec->wallptr].point2].y - wall[sec->wallptr].y };
         float r;
+
         if (globalorientation & 2)
         {
             int i = krecipasm(nsqrtasm(uhypsq(xy.x,xy.y)));
@@ -4415,7 +4882,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
             int i = nsqrtasm(uhypsq(xy.x,xy.y)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
             r = i * (1.f/1048576.f);
         }
-        
+
         vec2f_t const fxy = { xy.x*r, xy.y*r };
 
         ft[0] = ((float)(globalposx - wall[sec->wallptr].x)) * fxy.x + ((float)(globalposy - wall[sec->wallptr].y)) * fxy.y;
@@ -4493,15 +4960,15 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
 
         float const dxyr = polymost_invsqrt_approximation(dxy.x * dxy.x + dxy.y * dxy.y);
 
-        dxy.x *= dxyr*4096.f;
-        dxy.y *= dxyr*4096.f;
+        dxy.x *= dxyr * 4096.f;
+        dxy.y *= dxyr * 4096.f;
 
         vec2f_t const oxy = { n0.x + dxy.x, n0.y + dxy.y };
 
         float const ox2 = (oxy.y - fglobalposy) * gcosang - (oxy.x - fglobalposx) * gsinang;
         float oy2 = 1.f / ((oxy.x - fglobalposx) * gcosang2 + (oxy.y - fglobalposy) * gsinang2);
 
-        double const px[3] = { x0, x1, ghalfx * ox2 * oy2 + ghalfx };
+        double const px[3] = { x0, x1, (double)ghalfx * ox2 * oy2 + ghalfx };
 
         oy2 *= gyxscale;
 
@@ -4524,7 +4991,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
 
         py[0] = y0;
         py[1] = y1;
-        py[2] = (double)((float)(global_getzofslope_func(sectnum, (int)oxy.x, (int)oxy.y) - globalposz) * oy2 + ghoriz);
+        py[2] = double(global_getzofslope_func(sectnum, Blrintf(oxy.x), Blrintf(oxy.y)) - globalposz) * oy2 + ghoriz;
 
         vec3f_t oxyz[2] = { { (float)(py[1] - py[2]), (float)(py[2] - py[0]), (float)(py[0] - py[1]) },
                             { (float)(px[2] - px[1]), (float)(px[0] - px[2]), (float)(px[1] - px[0]) } };
@@ -4558,8 +5025,8 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     drawpoly_alpha = 0.f;
     drawpoly_blend = 0;
 
-    calc_and_apply_fog(globalpicnum, fogshade(global_cf_shade, global_cf_pal), sec->visibility,
-        POLYMOST_CHOOSE_FOG_PAL(global_cf_fogpal, global_cf_pal));
+    if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+        calc_and_apply_fog(fogshade(global_cf_shade, global_cf_pal), sec->visibility, POLYMOST_CHOOSE_FOG_PAL(global_cf_fogpal, global_cf_pal));
 
     if (have_floor)
     {
@@ -4585,7 +5052,7 @@ static void calc_ypanning(int32_t refposz, float ryp0, float ryp1,
 {
     float const t0 = ((float)(refposz-globalposz))*ryp0 + ghoriz;
     float const t1 = ((float)(refposz-globalposz))*ryp1 + ghoriz;
-    float t = ((xtex.d*x0 + otex.d) * (float)yrepeat) / ((x1-x0) * ryp0 * 2048.f);
+    float t = (float(xtex.d*x0 + otex.d) * (float)yrepeat) / ((x1-x0) * ryp0 * 2048.f);
     int i = (1<<(picsiz[globalpicnum]>>4));
     if (i < tilesiz[globalpicnum].y) i <<= 1;
 
@@ -4609,10 +5076,13 @@ static void calc_ypanning(int32_t refposz, float ryp0, float ryp1,
             ypan -= yoffs;
     }
 
-    float const fy = (float) (ypan * i) * (1.f/256.f);
-    xtex.v = (t0-t1)*t;
-    ytex.v = (x1-x0)*t;
-    otex.v = -xtex.v*x0 - ytex.v*t0 + fy*otex.d; xtex.v += fy*xtex.d; ytex.v += fy*ytex.d;
+    float const fy = (float)(ypan * i) * (1.f / 256.f);
+
+    xtex.v = double(t0 - t1) * t;
+    ytex.v = double(x1 - x0) * t;
+    otex.v = -xtex.v * x0 - ytex.v * t0 + fy * otex.d;
+    xtex.v += fy * xtex.d;
+    ytex.v += fy * ytex.d;
 }
 
 static inline int32_t testvisiblemost(float const x0, float const x1)
@@ -4630,12 +5100,12 @@ static inline int polymost_getclosestpointonwall(vec2_t const * const pos, int32
 {
     vec2_t const w = { wall[dawall].x, wall[dawall].y };
     vec2_t const d = { POINT2(dawall).x - w.x, POINT2(dawall).y - w.y };
-    int64_t i = d.x * (pos->x - w.x) + d.y * (pos->y - w.y);
+    int64_t i = d.x * ((int64_t)pos->x - w.x) + d.y * ((int64_t)pos->y - w.y);
 
     if (i < 0)
         return 1;
 
-    int64_t const j = d.x * d.x + d.y * d.y;
+    int64_t const j = (int64_t)d.x * d.x + (int64_t)d.y * d.y;
 
     if (i > j)
         return 1;
@@ -4654,7 +5124,7 @@ static void polymost_drawalls(int32_t const bunch)
     drawpoly_blend = 0;
 
     int32_t const sectnum = thesector[bunchfirst[bunch]];
-    usectortype const * const sec = (usectortype *)&sector[sectnum];
+    auto const sec = (usectorptr_t)&sector[sectnum];
     float const fglobalang = fix16_to_float(qglobalang);
 
     //DRAW WALLS SECTION!
@@ -4662,14 +5132,10 @@ static void polymost_drawalls(int32_t const bunch)
     {
         int32_t const wallnum = thewall[z];
 
-#ifdef YAX_ENABLE
-        if (yax_nomaskpass==1 && yax_isislandwall(wallnum, !yax_globalcf) && (yax_nomaskdidit=1))
-            continue;
-#endif
-
-        uwalltype * const wal = (uwalltype *)&wall[wallnum], *wal2 = (uwalltype *)&wall[wal->point2];
+        auto const wal = (uwallptr_t)&wall[wallnum];
+        auto const wal2 = (uwallptr_t)&wall[wal->point2];
         int32_t const nextsectnum = wal->nextsector;
-        usectortype * const nextsec = nextsectnum>=0 ? (usectortype *)&sector[nextsectnum] : NULL;
+        auto const nextsec = nextsectnum>=0 ? (usectorptr_t)&sector[nextsectnum] : NULL;
 
         //Offset&Rotate 3D coordinates to screen 3D space
         vec2f_t walpos = { (float)(wal->x-globalposx), (float)(wal->y-globalposy) };
@@ -4677,7 +5143,8 @@ static void polymost_drawalls(int32_t const bunch)
         vec2f_t p0 = { walpos.y * gcosang - walpos.x * gsinang, walpos.x * gcosang2 + walpos.y * gsinang2 };
         vec2f_t const op0 = p0;
 
-        walpos.x = (float)(wal2->x-globalposx); walpos.y = (float)(wal2->y-globalposy);
+        walpos = { (float)(wal2->x - globalposx),
+                   (float)(wal2->y - globalposy) };
 
         vec2f_t p1 = { walpos.y * gcosang - walpos.x * gsinang, walpos.x * gcosang2 + walpos.y * gsinang2 };
 
@@ -4689,18 +5156,29 @@ static void polymost_drawalls(int32_t const bunch)
         if (p0.y < SCISDIST)
         {
             if (p1.y < SCISDIST) continue;
-            t0 = (SCISDIST-p0.y)/(p1.y-p0.y); p0.x = (p1.x-p0.x)*t0+p0.x; p0.y = SCISDIST;
-            n0.x = (wal2->x-wal->x)*t0+wal->x;
-            n0.y = (wal2->y-wal->y)*t0+wal->y;
+            t0 = (SCISDIST-p0.y)/(p1.y-p0.y);
+            p0 = { (p1.x-p0.x)*t0+p0.x, SCISDIST };
+            n0 = { (wal2->x-wal->x)*t0+wal->x,
+                   (wal2->y-wal->y)*t0+wal->y };
         }
-        else { t0 = 0.f; n0.x = (float)wal->x; n0.y = (float)wal->y; }
+        else
+        {
+            t0 = 0.f;
+            n0 = { (float)wal->x, (float)wal->y };
+        }
+
         if (p1.y < SCISDIST)
         {
-            t1 = (SCISDIST-op0.y)/(p1.y-op0.y); p1.x = (p1.x-op0.x)*t1+op0.x; p1.y = SCISDIST;
-            n1.x = (wal2->x-wal->x)*t1+wal->x;
-            n1.y = (wal2->y-wal->y)*t1+wal->y;
+            t1 = (SCISDIST-op0.y)/(p1.y-op0.y);
+            p1 = { (p1.x-op0.x)*t1+op0.x, SCISDIST };
+            n1 = { (wal2->x-wal->x)*t1+wal->x,
+                   (wal2->y-wal->y)*t1+wal->y };
         }
-        else { t1 = 1.f; n1.x = (float)wal2->x; n1.y = (float)wal2->y; }
+        else
+        {
+            t1 = 1.f;
+            n1 = { (float)wal2->x, (float)wal2->y };
+        }
 
         float ryp0 = 1.f/p0.y, ryp1 = 1.f/p1.y;
 
@@ -4726,6 +5204,11 @@ static void polymost_drawalls(int32_t const bunch)
         xtex2.u = ytex2.u = otex2.u = 0;
         xtex2.v = ytex2.v = otex2.v = 0;
 
+#ifdef YAX_ENABLE
+        yax_holencf[YAX_FLOOR] = 0;
+        yax_drawcf = YAX_FLOOR;
+#endif
+
         // Floor
 
         globalpicnum = sec->floorpicnum;
@@ -4742,8 +5225,8 @@ static void polymost_drawalls(int32_t const bunch)
 
         DO_TILE_ANIM(globalpicnum, sectnum);
 
-        int32_t dapskybits, dapyoffs, daptileyscale;
-        int8_t const * dapskyoff = getpsky(globalpicnum, NULL, &dapskybits, &dapyoffs, &daptileyscale);
+        int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
+        int8_t const * dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->floorshade, global_cf_pal = sec->floorpal; global_cf_z = sec->floorz;  // REFACT
@@ -4769,8 +5252,9 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].floorstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            calc_and_apply_fog_factor(sec->floorpicnum, sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
-            
+            if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                calc_and_apply_fog_factor(sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
+
             globvis2 = globalpisibility;
             if (sec->visibility != 0)
                 globvis2 = mulscale4(globvis2, (uint8_t)(sec->visibility + 16));
@@ -4787,6 +5271,10 @@ static void polymost_drawalls(int32_t const bunch)
 
             if (!usehightile || !hicfindskybox(globalpicnum, globalpal))
             {
+                float const ghorizbak = ghoriz;
+                if (r_yshearing)
+                    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*(dapyscale-65536.f)*(1.f/65536.f)+float(ydimen>>1);
+
                 float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
                 float vv[2];
                 float t = (float)((1<<(picsiz[globalpicnum]&15))<<dapskybits);
@@ -4800,13 +5288,13 @@ static void polymost_drawalls(int32_t const bunch)
                     //Hack to draw black rectangle below sky when looking down...
                     xtex.d = xtex.u = xtex.v = 0;
 
-                    ytex.d = gxyaspect * (1.f / 262144.f);
+                    ytex.d = gxyaspect * (1.0 / 262144.0);
                     ytex.u = 0;
-                    ytex.v = (float)(tilesiz[globalpicnum].y - 1) * ytex.d;
+                    ytex.v = double(tilesiz[globalpicnum].y - 1) * ytex.d;
 
                     otex.d = -ghoriz * ytex.d;
                     otex.u = 0;
-                    otex.v = (float)(tilesiz[globalpicnum].y - 1) * otex.d;
+                    otex.v = double(tilesiz[globalpicnum].y - 1) * otex.d;
 
                     o.y = ((float)tilesiz[globalpicnum].y*dd-vv[0])/vv[1];
 
@@ -4874,8 +5362,8 @@ static void polymost_drawalls(int32_t const bunch)
                 xtex.d = xtex.v = 0;
                 ytex.d = ytex.u = 0;
                 otex.d = dd;
-                xtex.u = otex.d * (t * (float)((uint64_t)(xdimscale * yxaspect) * viewingrange)) *
-                         (1.f / (16384.f * 65536.f * 65536.f * 5.f * 1024.f));
+                xtex.u = otex.d * (t * double(((uint64_t)xdimscale * yxaspect) * viewingrange)) *
+                                  (1.0 / (16384.0 * 65536.0 * 65536.0 * 5.0 * 1024.0));
                 ytex.v = vv[1];
                 otex.v = r_parallaxskypanning ? vv[0] + dd*(float)sec->floorypanning*(float)i*(1.f/256.f) : vv[0];
 
@@ -4896,6 +5384,8 @@ static void polymost_drawalls(int32_t const bunch)
                     pow2xsplit = 0; polymost_domost(o.x,(o.x-x0)*r+fy0,fx,(fx-x0)*r+fy0); //flor
                 }
                 while (i >= 0);
+
+                ghoriz = ghorizbak;
             }
             else  //NOTE: code copied from ceiling code... lots of duplicated stuff :/
             {
@@ -4923,13 +5413,15 @@ static void polymost_drawalls(int32_t const bunch)
                     if (skyp0.y < SCISDIST)
                     {
                         if (skyp1.y < SCISDIST) continue;
-                        sky_t0 = (SCISDIST-skyp0.y)/(skyp1.y-skyp0.y); skyp0.x = (skyp1.x-skyp0.x)*sky_t0+skyp0.x; skyp0.y = SCISDIST;
+                        sky_t0 = (SCISDIST - skyp0.y) / (skyp1.y - skyp0.y);
+                        skyp0  = { (skyp1.x - skyp0.x) * sky_t0 + skyp0.x, SCISDIST };
                     }
                     else { sky_t0 = 0.f; }
 
                     if (skyp1.y < SCISDIST)
                     {
-                        sky_t1 = (SCISDIST-oskyp0.y)/(skyp1.y-oskyp0.y); skyp1.x = (skyp1.x-oskyp0.x)*sky_t1+oskyp0.x; skyp1.y = SCISDIST;
+                        sky_t1  = (SCISDIST - oskyp0.y) / (skyp1.y - oskyp0.y);
+                        skyp1 = { (skyp1.x - oskyp0.x) * sky_t1 + oskyp0.x, SCISDIST };
                     }
                     else { sky_t1 = 1.f; }
 
@@ -4983,7 +5475,7 @@ static void polymost_drawalls(int32_t const bunch)
                                           fsinglobalang * (1.f / 2147483648.f) };
 
                     xtex.d = 0;
-                    ytex.d = gxyaspect*(1.f/4194304.f);
+                    ytex.d = gxyaspect*(1.0/4194304.0);
                     otex.d = -ghoriz*ytex.d;
                     xtex.u = ft[3]*fviewingrange*(-1.0/65536.0);
                     xtex.v = ft[2]*fviewingrange*(-1.0/65536.0);
@@ -5017,11 +5509,11 @@ static void polymost_drawalls(int32_t const bunch)
 
                     //wall of skybox
                     drawingskybox = i+1; //i+1th texture/index i of skybox
-                    xtex.d = (sky_ryp0-sky_ryp1)*gxyaspect*(1.f/512.f) / (sky_ox0-sky_ox1);
+                    xtex.d = (sky_ryp0-sky_ryp1)*gxyaspect*(1.0/512.0) / (sky_ox0-sky_ox1);
                     ytex.d = 0;
-                    otex.d = sky_ryp0*gxyaspect*(1.f/512.f) - xtex.d*sky_ox0;
-                    xtex.u = (sky_t0*sky_ryp0 - sky_t1*sky_ryp1)*gxyaspect*(64.f/512.f) / (sky_ox0-sky_ox1);
-                    otex.u = sky_t0*sky_ryp0*gxyaspect*(64.f/512.f) - xtex.u*sky_ox0;
+                    otex.d = sky_ryp0*gxyaspect*(1.0/512.0) - xtex.d*sky_ox0;
+                    xtex.u = (sky_t0*sky_ryp0 - sky_t1*sky_ryp1)*gxyaspect*(64.0/512.0) / (sky_ox0-sky_ox1);
+                    otex.u = sky_t0*sky_ryp0*gxyaspect*(64.0/512.0) - xtex.u*sky_ox0;
                     ytex.u = 0;
                     sky_t0 = -8192.f*sky_ryp0 + ghoriz;
                     sky_t1 = -8192.f*sky_ryp1 + ghoriz;
@@ -5059,7 +5551,7 @@ static void polymost_drawalls(int32_t const bunch)
                                       fsinglobalang * (1.f / 2147483648.f) };
 
                 xtex.d = 0;
-                ytex.d = gxyaspect*(-1.f/4194304.f);
+                ytex.d = gxyaspect*(-1.0/4194304.0);
                 otex.d = -ghoriz*ytex.d;
                 xtex.u = ft[3]*fviewingrange*(-1.0/65536.0);
                 xtex.v = ft[2]*fviewingrange*(-1.0/65536.0);
@@ -5082,6 +5574,11 @@ static void polymost_drawalls(int32_t const bunch)
 
         // Ceiling
 
+#ifdef YAX_ENABLE
+        yax_holencf[YAX_CEILING] = 0;
+        yax_drawcf = YAX_CEILING;
+#endif
+
         globalpicnum = sec->ceilingpicnum;
         globalshade = sec->ceilingshade;
         globalpal = sec->ceilingpal;
@@ -5097,7 +5594,7 @@ static void polymost_drawalls(int32_t const bunch)
         DO_TILE_ANIM(globalpicnum, sectnum);
 
 
-        dapskyoff = getpsky(globalpicnum, NULL, &dapskybits, &dapyoffs, &daptileyscale);
+        dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->ceilingshade, global_cf_pal = sec->ceilingpal; global_cf_z = sec->ceilingz;  // REFACT
@@ -5123,7 +5620,8 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].ceilingstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            calc_and_apply_fog_factor(sec->ceilingpicnum, sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
+            if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                calc_and_apply_fog_factor(sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
 
             globvis2 = globalpisibility;
             if (sec->visibility != 0)
@@ -5141,6 +5639,10 @@ static void polymost_drawalls(int32_t const bunch)
 
             if (!usehightile || !hicfindskybox(globalpicnum, globalpal))
             {
+                float const ghorizbak = ghoriz;
+                if (r_yshearing)
+                    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*(dapyscale-65536.f)*(1.f/65536.f)+float(ydimen>>1);
+
                 float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
                 float vv[2];
                 float t = (float)((1<<(picsiz[globalpicnum]&15))<<dapskybits);
@@ -5188,7 +5690,7 @@ static void polymost_drawalls(int32_t const bunch)
                     //Hack to draw color rectangle above sky when looking up...
                     xtex.d = xtex.u = xtex.v = 0;
 
-                    ytex.d = gxyaspect * (1.f / -262144.f);
+                    ytex.d = gxyaspect * (1.0 / -262144.0);
                     ytex.u = 0;
                     ytex.v = 0;
 
@@ -5228,8 +5730,8 @@ static void polymost_drawalls(int32_t const bunch)
                 xtex.d = xtex.v = 0;
                 ytex.d = ytex.u = 0;
                 otex.d = dd;
-                xtex.u = otex.d * (t * (float)((uint64_t)(xdimscale * yxaspect) * viewingrange)) *
-                         (1.f / (16384.f * 65536.f * 65536.f * 5.f * 1024.f));
+                xtex.u = otex.d * (t * double(((uint64_t)xdimscale * yxaspect) * viewingrange)) *
+                                  (1.0 / (16384.0 * 65536.0 * 65536.0 * 5.0 * 1024.0));
                 ytex.v = vv[1];
                 otex.v = r_parallaxskypanning ? vv[0] + dd*(float)sec->ceilingypanning*(float)i*(1.f/256.f) : vv[0];
 
@@ -5250,6 +5752,8 @@ static void polymost_drawalls(int32_t const bunch)
                     pow2xsplit = 0; polymost_domost(fx,(fx-x0)*r+cy0,o.x,(o.x-x0)*r+cy0); //ceil
                 }
                 while (i >= 0);
+
+                ghoriz = ghorizbak;
             }
             else
             {
@@ -5277,13 +5781,15 @@ static void polymost_drawalls(int32_t const bunch)
                     if (skyp0.y < SCISDIST)
                     {
                         if (skyp1.y < SCISDIST) continue;
-                        sky_t0 = (SCISDIST-skyp0.y)/(skyp1.y-skyp0.y); skyp0.x = (skyp1.x-skyp0.x)*sky_t0+skyp0.x; skyp0.y = SCISDIST;
+                        sky_t0 = (SCISDIST - skyp0.y) / (skyp1.y - skyp0.y);
+                        skyp0  = { (skyp1.x - skyp0.x) * sky_t0 + skyp0.x, SCISDIST };
                     }
                     else { sky_t0 = 0.f; }
 
                     if (skyp1.y < SCISDIST)
                     {
-                        sky_t1 = (SCISDIST-oskyp0.y)/(skyp1.y-oskyp0.y); skyp1.x = (skyp1.x-oskyp0.x)*sky_t1+oskyp0.x; skyp1.y = SCISDIST;
+                        sky_t1 = (SCISDIST - oskyp0.y) / (skyp1.y - oskyp0.y);
+                        skyp1  = { (skyp1.x - oskyp0.x) * sky_t1 + oskyp0.x, SCISDIST };
                     }
                     else { sky_t1 = 1.f; }
 
@@ -5337,7 +5843,7 @@ static void polymost_drawalls(int32_t const bunch)
                                           fsinglobalang * (1.f / 2147483648.f) };
 
                     xtex.d = 0;
-                    ytex.d = gxyaspect*(-1.f/4194304.f);
+                    ytex.d = gxyaspect*(-1.0/4194304.0);
                     otex.d = -ghoriz*ytex.d;
                     xtex.u = ft[3]*fviewingrange*(-1.0/65536.0);
                     xtex.v = ft[2]*fviewingrange*(-1.0/65536.0);
@@ -5371,11 +5877,11 @@ static void polymost_drawalls(int32_t const bunch)
 
                     //wall of skybox
                     drawingskybox = i+1; //i+1th texture/index i of skybox
-                    xtex.d = (sky_ryp0-sky_ryp1)*gxyaspect*(1.f/512.f) / (sky_ox0-sky_ox1);
+                    xtex.d = (sky_ryp0-sky_ryp1)*gxyaspect*(1.0/512.0) / (sky_ox0-sky_ox1);
                     ytex.d = 0;
-                    otex.d = sky_ryp0*gxyaspect*(1.f/512.f) - xtex.d*sky_ox0;
-                    xtex.u = (sky_t0*sky_ryp0 - sky_t1*sky_ryp1)*gxyaspect*(64.f/512.f) / (sky_ox0-sky_ox1);
-                    otex.u = sky_t0*sky_ryp0*gxyaspect*(64.f/512.f) - xtex.u*sky_ox0;
+                    otex.d = sky_ryp0*gxyaspect*(1.0/512.0) - xtex.d*sky_ox0;
+                    xtex.u = (sky_t0*sky_ryp0 - sky_t1*sky_ryp1)*gxyaspect*(64.0/512.0) / (sky_ox0-sky_ox1);
+                    otex.u = sky_t0*sky_ryp0*gxyaspect*(64.0/512.0) - xtex.u*sky_ox0;
                     ytex.u = 0;
                     sky_t0 = -8192.f*sky_ryp0 + ghoriz;
                     sky_t1 = -8192.f*sky_ryp1 + ghoriz;
@@ -5413,7 +5919,7 @@ static void polymost_drawalls(int32_t const bunch)
                                       fsinglobalang * (1.f / 2147483648.f) };
 
                 xtex.d = 0;
-                ytex.d = gxyaspect*(1.f/4194304.f);
+                ytex.d = gxyaspect*(1.0/4194304.0);
                 otex.d = -ghoriz*ytex.d;
                 xtex.u = ft[3]*fviewingrange*(-1.0/65536.0);
                 xtex.v = ft[2]*fviewingrange*(-1.0/65536.0);
@@ -5434,14 +5940,66 @@ static void polymost_drawalls(int32_t const bunch)
                 polymost_setFogEnabled(true);
         }
 
+#ifdef YAX_ENABLE
+        if (g_nodraw)
+        {
+            int32_t baselevp, checkcf, i, j;
+            int16_t bn[2];
+# if 0
+            int32_t obunchchk = (1 && yax_globalbunch>=0 &&
+                                 haveymost[yax_globalbunch>>3]&(1<<(yax_globalbunch&7)));
+
+            // if (obunchchk)
+            const int32_t x2 = yax_globalbunch*xdimen;
+# endif
+            baselevp = (yax_globallev == YAX_MAXDRAWS);
+
+            yax_getbunches(sectnum, &bn[0], &bn[1]);
+            checkcf = (bn[0]>=0) + ((bn[1]>=0)<<1);
+            if (!baselevp)
+                checkcf &= (1<<yax_globalcf);
+
+            for (i=0; i<2; i++)
+                if (checkcf&(1<<i))
+                {
+                    if ((haveymost[bn[i]>>3]&(1<<(bn[i]&7)))==0)
+                    {
+                        // init yax *most arrays for that bunch
+                        haveymost[bn[i]>>3] |= (1<<(bn[i]&7));
+                        yax_vsp[bn[i]*2][1].x = xbl;
+                        yax_vsp[bn[i]*2][2].x = xbr;
+                        yax_vsp[bn[i]*2][1].cy[0] = xbb;
+                        yax_vsp[bn[i]*2][2].cy[0] = xbb;
+                        yax_vsp_finalize_init(bn[i]*2, 3);
+                        yax_vsp[bn[i]*2+1][1].x = xbl;
+                        yax_vsp[bn[i]*2+1][2].x = xbr;
+                        yax_vsp[bn[i]*2+1][1].cy[0] = xbt;
+                        yax_vsp[bn[i]*2+1][2].cy[0] = xbt;
+                        yax_vsp_finalize_init(bn[i]*2+1, 3);
+                    }
+
+                    for (j = 0; j < yax_holencf[i]; j++)
+                    {
+                        yax_hole_t *hole = &yax_holecf[i][j];
+                        yax_polymost_domost(bn[i]*2, hole->x0, hole->cy[0], hole->x1, hole->cy[1]);
+                        yax_polymost_domost(bn[i]*2+1, hole->x1, hole->fy[1], hole->x0, hole->fy[0]);
+                    }
+                }
+        }
+#endif
+
         // Wall
+
+#ifdef YAX_ENABLE
+        yax_drawcf = -1;
+#endif
 
         xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
         ytex.d = 0;
         otex.d = ryp0*gxyaspect - xtex.d*x0;
 
         xtex.u = (t0*ryp0 - t1*ryp1)*gxyaspect*(float)wal->xrepeat*8.f / (x0-x1);
-        otex.u = t0*ryp0*gxyaspect*(float)wal->xrepeat*8.f - xtex.u*x0;
+        otex.u = t0*ryp0*gxyaspect*wal->xrepeat*8.0 - xtex.u*x0;
         otex.u += (float)wal->xpanning*otex.d;
         xtex.u += (float)wal->xpanning*xtex.d;
         ytex.u = 0;
@@ -5451,6 +6009,9 @@ static void polymost_drawalls(int32_t const bunch)
         Bassert(domostpolymethod == DAMETH_NOMASK);
         domostpolymethod = DAMETH_WALL;
 
+#ifdef YAX_ENABLE
+        if (yax_nomaskpass==0 || !yax_isislandwall(wallnum, !yax_globalcf) || (yax_nomaskdidit=1, 0))
+#endif
         if (nextsectnum >= 0)
         {
             getzsofslope(nextsectnum,/*Blrintf(nx0)*/(int)n0.x,/*Blrintf(ny0)*/(int)n0.y,&cz,&fz);
@@ -5487,19 +6048,24 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+                if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                    calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
-                pow2xsplit = 1; polymost_domost(x1,ocy1,x0,ocy0,cy1,ocy1,cy0,ocy0);
+                pow2xsplit = 1;
+#ifdef YAX_ENABLE
+                if (should_clip_cfwall(x1,cy1,x0,cy0))
+#endif
+                polymost_domost(x1,ocy1,x0,ocy0,cy1,ocy1,cy0,ocy0);
                 if (wal->cstat&8) { xtex.u = ogux; ytex.u = oguy; otex.u = oguo; }
             }
             if (((ofy0 < fy0) || (ofy1 < fy1)) && (!((sec->floorstat&sector[nextsectnum].floorstat)&1)))
             {
-                uwalltype *nwal;
+                uwallptr_t nwal;
 
                 if (!(wal->cstat&2)) nwal = wal;
                 else
                 {
-                    nwal = (uwalltype *)&wall[wal->nextwall];
+                    nwal = (uwallptr_t)&wall[wal->nextwall];
                     otex.u += (float)(nwal->xpanning - wal->xpanning) * otex.d;
                     xtex.u += (float)(nwal->xpanning - wal->xpanning) * xtex.d;
                     ytex.u += (float)(nwal->xpanning - wal->xpanning) * ytex.d;
@@ -5527,9 +6093,14 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (nwal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                calc_and_apply_fog(nwal->picnum, fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
+                if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                    calc_and_apply_fog(fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
 
-                pow2xsplit = 1; polymost_domost(x0,ofy0,x1,ofy1,ofy0,fy0,ofy1,fy1);
+                pow2xsplit = 1;
+#ifdef YAX_ENABLE
+                if (should_clip_cfwall(x0,fy0,x1,fy1))
+#endif
+                polymost_domost(x0,ofy0,x1,ofy1,ofy0,fy0,ofy1,fy1);
                 if (wal->cstat&(2+8)) { otex.u = oguo; xtex.u = ogux; ytex.u = oguy; }
             }
         }
@@ -5579,8 +6150,19 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
-                pow2xsplit = 1; polymost_domost(x0, cy0, x1, cy1, cy0, fy0, cy1, fy1);
+                if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                    calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+
+                pow2xsplit = 1;
+
+#ifdef YAX_ENABLE
+                // TODO: slopes?
+
+                if (globalposz > sec->floorz && yax_isislandwall(wallnum, YAX_FLOOR))
+                    polymost_domost(x1, fy1, x0, fy0, cy1, fy1, cy0, fy0);
+                else
+#endif
+                    polymost_domost(x0, cy0, x1, cy1, cy0, fy0, cy1, fy1);
             } while (0);
         }
 
@@ -5595,25 +6177,25 @@ static void polymost_drawalls(int32_t const bunch)
 static int32_t polymost_bunchfront(const int32_t b1, const int32_t b2)
 {
     int b1f = bunchfirst[b1];
-    const double x2b2 = dxb2[bunchlast[b2]];
-    const double x1b1 = dxb1[b1f];
+    const float x2b2 = dxb2[bunchlast[b2]];
+    const float x1b1 = dxb1[b1f];
 
-    if (x1b1 >= x2b2)
+    if (nexttowardf(x1b1, x2b2) >= x2b2)
         return -1;
 
     int b2f = bunchfirst[b2];
-    const double x1b2 = dxb1[b2f];
+    const float x1b2 = dxb1[b2f];
 
-    if (x1b2 >= dxb2[bunchlast[b1]])
+    if (nexttowardf(x1b2, dxb2[bunchlast[b1]]) >= dxb2[bunchlast[b1]])
         return -1;
 
-    if (x1b1 >= x1b2)
+    if (nexttowardf(x1b1, x1b2) > x1b2)
     {
-        while (dxb2[b2f]<=x1b1) b2f=bunchp2[b2f];
+        while (nexttowardf(dxb2[b2f], x1b1) <= x1b1) b2f=bunchp2[b2f];
         return wallfront(b1f, b2f);
     }
 
-    while (dxb2[b1f]<=x1b2) b1f=bunchp2[b1f];
+    while (nexttowardf(dxb2[b1f], x1b2) <= x1b2) b1f=bunchp2[b1f];
     return wallfront(b1f, b2f);
 }
 
@@ -5629,9 +6211,12 @@ void polymost_scansector(int32_t sectnum)
     {
         sectnum = sectorborder[--sectorbordercnt];
 
+#ifdef YAX_ENABLE
+        if (scansector_collectsprites)
+#endif
         for (bssize_t z=headspritesect[sectnum]; z>=0; z=nextspritesect[z])
         {
-            uspritetype const * const spr = (uspritetype *)&sprite[z];
+            auto const spr = (uspriteptr_t)&sprite[z];
 
             if ((spr->cstat & 0x8000 && !showinvisibility) || spr->xrepeat == 0 || spr->yrepeat == 0)
                 continue;
@@ -5657,19 +6242,17 @@ void polymost_scansector(int32_t sectnum)
 
         vec2d_t p2 = { 0, 0 };
 
-        uwalltype *wal;
+        uwallptr_t wal;
         int z;
 
-        for (z=startwall,wal=(uwalltype *)&wall[z]; z<endwall; z++,wal++)
+        for (z=startwall,wal=(uwallptr_t)&wall[z]; z<endwall; z++,wal++)
         {
-            uwalltype const *const wal2 = (uwalltype *)&wall[wal->point2];
+            auto const wal2 = (uwallptr_t)&wall[wal->point2];
 
-            vec2d_t const fp1 = { (double)(wal->x - globalposx), (double)(wal->y - globalposy) };
-            vec2d_t const fp2 = { (double)(wal2->x - globalposx), (double)(wal2->y - globalposy) };
+            vec2d_t const fp1 = { double(wal->x - globalposx), double(wal->y - globalposy) };
+            vec2d_t const fp2 = { double(wal2->x - globalposx), double(wal2->y - globalposy) };
 
             int const nextsectnum = wal->nextsector; //Scan close sectors
-
-            vec2d_t p1;
 
             if (nextsectnum >= 0 && !(wal->cstat&32) && sectorbordercnt < ARRAY_SSIZE(sectorborder))
 #ifdef YAX_ENABLE
@@ -5678,33 +6261,42 @@ void polymost_scansector(int32_t sectnum)
             if ((gotsector[nextsectnum>>3]&pow2char[nextsectnum&7]) == 0)
             {
                 double const d = fp1.x*fp2.y - fp2.x*fp1.y;
-                p1.x = fp2.x-fp1.x;
-                p1.y = fp2.y-fp1.y;
+                vec2d_t const p1 = { fp2.x-fp1.x, fp2.y-fp1.y };
 
-                if (d*d <= (p1.x*p1.x + p1.y*p1.y) * (SCISDIST*SCISDIST*260.))
+                // this said (SCISDIST*SCISDIST*260.f), but SCISDIST is 1 and the significance of 260 isn't obvious to me
+                // is 260 fudged to solve a problem, and does the problem still apply to our version of the renderer?
+                if (d*d < (p1.x*p1.x + p1.y*p1.y) * 256.f)
                 {
                     sectorborder[sectorbordercnt++] = nextsectnum;
                     gotsector[nextsectnum>>3] |= pow2char[nextsectnum&7];
                 }
             }
 
+            vec2d_t p1;
+
             if ((z == startwall) || (wall[z-1].point2 != z))
             {
-                p1.x = ((fp1.y * fcosglobalang) - (fp1.x * fsinglobalang)) * (1.0/64.);
-                p1.y = ((fp1.x * (double)cosviewingrangeglobalang) + (fp1.y * (double)sinviewingrangeglobalang)) * (1.0/64.);
+                p1 = { (((fp1.y * fcosglobalang) - (fp1.x * fsinglobalang)) * (1.0/64.0)),
+                       (((fp1.x * cosviewingrangeglobalang) + (fp1.y * sinviewingrangeglobalang)) * (1.0/64.0)) };
             }
             else { p1 = p2; }
 
-            p2.x = ((fp2.y * fcosglobalang) - (fp2.x * fsinglobalang)) * (1.0/64.);
-            p2.y = ((fp2.x * (double) cosviewingrangeglobalang) + (fp2.y * (double) sinviewingrangeglobalang)) * (1.0/64.);
+            p2 = { (((fp2.y * fcosglobalang) - (fp2.x * fsinglobalang)) * (1.0/64.0)),
+                   (((fp2.x * cosviewingrangeglobalang) + (fp2.y * sinviewingrangeglobalang)) * (1.0/64.0)) };
+
+            if (numscans >= MAXWALLSB-1)
+            {
+                OSD_Printf("!!numscans\n");
+                return;
+            }
 
             //if wall is facing you...
-            if ((p1.y >= SCISDIST || p2.y >= SCISDIST) && (p1.x*p2.y < p2.x*p1.y))
+            if ((p1.y >= SCISDIST || p2.y >= SCISDIST) && (nexttoward(p1.x*p2.y, p2.x*p1.y) < p2.x*p1.y))
             {
-                dxb1[numscans] = (p1.y >= SCISDIST) ? (p1.x*ghalfx/p1.y + ghalfx) : -1e32;
-                dxb2[numscans] = (p2.y >= SCISDIST) ? (p2.x*ghalfx/p2.y + ghalfx) : 1e32;
+                dxb1[numscans] = (p1.y >= SCISDIST) ? float(p1.x*ghalfx/p1.y + ghalfx) : -1e32f;
+                dxb2[numscans] = (p2.y >= SCISDIST) ? float(p2.x*ghalfx/p2.y + ghalfx) : 1e32f;
 
-                if (dxb1[numscans] < dxb2[numscans])
+                if (nexttowardf(dxb1[numscans], dxb2[numscans]) < dxb2[numscans])
                 {
                     thesector[numscans] = sectnum;
                     thewall[numscans] = z;
@@ -5722,7 +6314,7 @@ void polymost_scansector(int32_t sectnum)
 
         for (bssize_t z=onumscans; z<numscans; z++)
         {
-            if ((wall[thewall[z]].point2 != thewall[bunchp2[z]]) || (dxb2[z] > dxb1[bunchp2[z]]))
+            if ((wall[thewall[z]].point2 != thewall[bunchp2[z]]) || (dxb2[z] > nexttowardf(dxb1[bunchp2[z]], dxb2[z])))
             {
                 bunchfirst[numbunches++] = bunchp2[z];
                 bunchp2[z] = -1;
@@ -5761,7 +6353,6 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
 
     int32_t vcnt = 1; //0 is dummy solid node
 
-    xbl = px[imin];
     vsp[vcnt].x = px[imin];
     vsp[vcnt].cy[0] = vsp[vcnt].fy[0] = py[imin];
     vcnt++;
@@ -5810,8 +6401,6 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
         }
     } while (i != j);
 
-    xbr = px[i];
-
     if (px[i] > vsp[vcnt-1].x)
     {
         vsp[vcnt].x = px[i];
@@ -5819,7 +6408,23 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
         vcnt++;
     }
 
+    domost_rejectcount = 0;
+
     vsp_finalize_init(vcnt);
+
+    xbl = px[0];
+    xbr = px[0];
+    xbt = py[0];
+    xbb = py[0];
+
+    for (bssize_t i=n-1; i>=1; i--)
+    {
+        if (xbl > px[i]) xbl = px[i];
+        if (xbr < px[i]) xbr = px[i];
+        if (xbt > py[i]) xbt = py[i];
+        if (xbb < py[i]) xbb = py[i];
+    }
+
     gtag = vcnt;
 }
 
@@ -5836,39 +6441,52 @@ void polymost_drawrooms()
     if (editstatus)
         glClear(GL_COLOR_BUFFER_BIT);
 
+#ifdef YAX_ENABLE
+    if (yax_polymostclearzbuffer)
+#endif
     glClear(GL_DEPTH_BUFFER_BIT);
 
     glDisable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
+    glDepthFunc(GL_ALWAYS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
 
     //Polymost supports true look up/down :) Here, we convert horizon to angle.
     //gchang&gshang are cos&sin of this angle (respectively)
     gyxscale = ((float)xdimenscale)*(1.0f/131072.f);
-    gxyaspect = ((float)xyaspect*fviewingrange)*(5.f/(65536.f*262144.f));
+    gxyaspect = ((double)xyaspect*fviewingrange)*(5.0/(65536.0*262144.0));
     gviewxrange = fviewingrange * fxdimen * (1.f/(32768.f*1024.f));
     gcosang = fcosglobalang*(1.0f/262144.f);
     gsinang = fsinglobalang*(1.0f/262144.f);
     gcosang2 = gcosang * (fviewingrange * (1.0f/65536.f));
     gsinang2 = gsinang * (fviewingrange * (1.0f/65536.f));
     ghalfx = (float)(xdimen>>1);
+    ghalfy = (float)(ydimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
     ghorizcorrect = fix16_to_float((100-polymostcenterhoriz)*divscale16(xdimenscale, viewingrange));
 
     gvisibility = ((float)globalvisibility)*FOGSCALE;
 
+    //global cos/sin height angle
+    if (r_yshearing)
+    {
+        gshang = 0.f;
+        gchang = 1.f;
+        ghoriz2 = (float)(ydimen>>1)-ghoriz-ghorizcorrect;
+    }
+    else
+    {
+        float r = (float)(ydimen>>1) - (ghoriz + ghorizcorrect);
+        gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
+        gchang = Bsqrtf(1.f-gshang*gshang);
+        ghoriz2 = 0.f;
+    }
+    ghoriz = (float)(ydimen>>1);
+
     resizeglcheck();
 
     polymost_shadeInterpolate(r_shadeinterpolate);
-
-    //global cos/sin height angle
-    float r = (float)(ydimen>>1) - (ghoriz + ghorizcorrect);
-    gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
-    gchang = Bsqrtf(1.f-gshang*gshang);
-    ghoriz = (float)(ydimen>>1);
 
     //global cos/sin tilt angle
     gctang = cosf(gtang);
@@ -5880,29 +6498,27 @@ void polymost_drawrooms()
         gctang = (gctang > 0.f) ? 1.f : -1.f;
     }
 
-    if (inpreparemirror)
+    if (mirrorrender)
         gstang = -gstang;
 
     //Generate viewport trapezoid (for handling screen up/down)
-    vec3f_t p[4] = {  { 0-1,                                  0-1+ghorizcorrect,                                  0 },
+    vec3f_t p[4] = {  { 0-1,                                        0-1+ghorizcorrect,                                  0 },
                       { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghorizcorrect,                                  0 },
                       { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 },
-                      { 0-1,                                  (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 } };
+                      { 0-1,                                        (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 } };
 
-    for (bssize_t i=0; i<4; i++)
+    for (auto & v : p)
     {
         //Tilt rotation (backwards)
-        vec2f_t const o = { p[i].x-ghalfx, p[i].y-ghoriz };
-        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang, ghalfx };
+        vec2f_t const o = { v.x-ghalfx, v.y-ghoriz };
+        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, ghalfx };
 
         //Up/down rotation (backwards)
-        p[i].x = o2.x;
-        p[i].y = o2.y*gchang + o2.z*gshang;
-        p[i].z = o2.z*gchang - o2.y*gshang;
+        v = { o2.x, o2.y * gchang + o2.z * gshang, o2.z * gchang - o2.y * gshang };
     }
 
 #if !SOFTROTMAT
-    if (inpreparemirror)
+    if (mirrorrender)
         gstang = -gstang;
 #endif
 
@@ -5921,15 +6537,13 @@ void polymost_drawrooms()
         if ((p[i].z >= SCISDIST) != (p[j].z >= SCISDIST))
         {
             float const r = (SCISDIST - p[i].z) / (p[j].z - p[i].z);
-            p2[n].x = (p[j].x - p[i].x) * r + p[i].x;
-            p2[n].y = (p[j].y - p[i].y) * r + p[i].y;
-            p2[n].z = SCISDIST; n++;
+            p2[n++] = { (p[j].x - p[i].x) * r + p[i].x, (p[j].y - p[i].y) * r + p[i].y, SCISDIST };
         }
     }
 
-    if (n < 3) { videoEndDrawing(); return; }
+    if (n < 3) { glDepthFunc(GL_LEQUAL); videoEndDrawing(); return; }
 
-    float sx[4], sy[4];
+    float sx[6], sy[6];
 
     for (bssize_t i = 0; i < n; i++)
     {
@@ -5939,6 +6553,31 @@ void polymost_drawrooms()
     }
 
     polymost_initmosts(sx, sy, n);
+
+#ifdef YAX_ENABLE
+    if (yax_globallev != YAX_MAXDRAWS)
+    {
+        int i, newi;
+        int32_t nodrawbak = g_nodraw;
+        g_nodraw = 1;
+        for (i = yax_vsp[yax_globalbunch*2][0].n; i; i=newi)
+        {
+            newi = yax_vsp[yax_globalbunch*2][i].n;
+            if (!newi)
+                break;
+            polymost_domost(yax_vsp[yax_globalbunch*2][newi].x, yax_vsp[yax_globalbunch*2][i].cy[1]-DOMOST_OFFSET, yax_vsp[yax_globalbunch*2][i].x, yax_vsp[yax_globalbunch*2][i].cy[0]-DOMOST_OFFSET);
+        }
+        for (i = yax_vsp[yax_globalbunch*2+1][0].n; i; i=newi)
+        {
+            newi = yax_vsp[yax_globalbunch*2+1][i].n;
+            if (!newi)
+                break;
+            polymost_domost(yax_vsp[yax_globalbunch*2+1][i].x, yax_vsp[yax_globalbunch*2+1][i].cy[0]+DOMOST_OFFSET, yax_vsp[yax_globalbunch*2+1][newi].x, yax_vsp[yax_globalbunch*2+1][i].cy[1]+DOMOST_OFFSET);
+        }
+        g_nodraw = nodrawbak;
+    }
+    //else if (!g_nodraw) { videoEndDrawing(); return; }
+#endif
 
     if (searchit == 2)
         polymost_editorfunc();
@@ -5957,9 +6596,11 @@ void polymost_drawrooms()
 
     grhalfxdown10x = grhalfxdown10;
 
+    if (mirrorrender)
+        grhalfxdown10x = -grhalfxdown10;
+
     if (inpreparemirror)
     {
-        grhalfxdown10x = -grhalfxdown10;
         inpreparemirror = 0;
 
         // see engine.c: INPREPAREMIRROR_NO_BUNCHES
@@ -6015,19 +6656,26 @@ void polymost_drawrooms()
 void polymost_drawmaskwall(int32_t damaskwallcnt)
 {
     int const z = maskwall[damaskwallcnt];
-    uwalltype const * const wal = (uwalltype *)&wall[thewall[z]], *wal2 = (uwalltype *)&wall[wal->point2];
+    auto const wal = (uwallptr_t)&wall[thewall[z]];
+    auto const wal2 = (uwallptr_t)&wall[wal->point2];
     int32_t const sectnum = thesector[z];
-    usectortype const * const sec = (usectortype *)&sector[sectnum];
+    auto const sec = (usectorptr_t)&sector[sectnum];
 
 //    if (wal->nextsector < 0) return;
     // Without MASKWALL_BAD_ACCESS fix:
     // wal->nextsector is -1, WGR2 SVN Lochwood Hollow (Til' Death L1)  (or trueror1.map)
 
-    usectortype const * const nsec = (usectortype *)&sector[wal->nextsector];
+    auto const nsec = (usectorptr_t)&sector[wal->nextsector];
 
     globalpicnum = wal->overpicnum;
     if ((uint32_t)globalpicnum >= MAXTILES)
         globalpicnum = 0;
+
+    if (!waloff[globalpicnum])
+    {
+        glEnable(GL_BLEND);
+        glDisable(GL_ALPHA_TEST);
+    }
 
     globalorientation = (int32_t)wal->cstat;
     DO_TILE_ANIM(globalpicnum, (int16_t)thewall[z]+16384);
@@ -6058,8 +6706,7 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     if (p0.y < SCISDIST)
     {
         t0 = (SCISDIST - p0.y) / (p1.y - p0.y);
-        p0.x = (p1.x - p0.x) * t0 + p0.x;
-        p0.y = SCISDIST;
+        p0 = { (p1.x - p0.x) * t0 + p0.x, SCISDIST };
     }
 
     float t1 = 1.f;
@@ -6067,8 +6714,7 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     if (p1.y < SCISDIST)
     {
         t1 = (SCISDIST - op0.y) / (p1.y - op0.y);
-        p1.x = (p1.x - op0.x) * t1 + op0.x;
-        p1.y = SCISDIST;
+        p1 = { (p1.x - op0.x) * t1 + op0.x, SCISDIST };
     }
 
     int32_t m0 = (int32_t)((wal2->x - wal->x) * t0 + wal->x);
@@ -6131,7 +6777,8 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     drawpoly_alpha = 0.f;
     drawpoly_blend = blend;
 
-    calc_and_apply_fog(wal->picnum, fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
+    if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+        calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
     float const csy[4] = { ((float)(cz[0] - globalposz)) * ryp0 + ghoriz,
                            ((float)(cz[1] - globalposz)) * ryp0 + ghoriz,
@@ -6182,9 +6829,7 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
         if ((t0 >= 0) != (t1 >= 0) && (t0 <= 0) != (t1 <= 0))
         {
             float const r = t0 / (t0 - t1);
-            dp2[n2].x = (dpxy[j].x - dpxy[i].x) * r + dpxy[i].x;
-            dp2[n2].y = (dpxy[j].y - dpxy[i].y) * r + dpxy[i].y;
-            n2++;
+            dp2[n2++] = { (dpxy[j].x - dpxy[i].x) * r + dpxy[i].x, (dpxy[j].y - dpxy[i].y) * r + dpxy[i].y };
         }
     }
 
@@ -6209,9 +6854,7 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
         if ((t0 >= 0) != (t1 >= 0) && (t0 <= 0) != (t1 <= 0))
         {
             float const r = t0 / (t0 - t1);
-            dpxy[n].x = (dp2[j].x - dp2[i].x) * r + dp2[i].x;
-            dpxy[n].y = (dp2[j].y - dp2[i].y) * r + dp2[i].y;
-            n++;
+            dpxy[n++] = { (dp2[j].x - dp2[i].x) * r + dp2[i].x, (dp2[j].y - dp2[i].y) * r + dp2[i].y };
         }
     }
 
@@ -6224,6 +6867,13 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     polymost_updaterotmat();
     polymost_drawpoly(dpxy, n, method);
     polymost_identityrotmat();
+
+    if (!waloff[globalpicnum])
+    {
+        // restore this to normal
+        glDisable(GL_BLEND);
+        glEnable(GL_ALPHA_TEST);
+    }
 }
 
 typedef struct
@@ -6242,10 +6892,10 @@ void Polymost_prepare_loadboard(void)
     Bmemset(wsprinfo, 0, sizeof(wsprinfo));
 }
 
-static inline int32_t polymost_findwall(uspritetype const * const tspr, vec2_t const * const tsiz, int32_t * rd)
+static inline int32_t polymost_findwall(uspriteptr_t const tspr, vec2_t const * const tsiz, int32_t * rd)
 {
     int32_t dist = 4, closest = -1;
-    usectortype const * const sect = (usectortype  * )&sector[tspr->sectnum];
+    auto const sect = (usectortype  * )&sector[tspr->sectnum];
     vec2_t n;
 
     for (bssize_t i=sect->wallptr; i<sect->wallptr + sect->wallnum; i++)
@@ -6313,12 +6963,12 @@ int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
 
 void polymost2_drawsprite(int32_t snum)
 {
-    uspritetype *const tspr = tspriteptr[snum];
+    auto const tspr = tspriteptr[snum];
 
     if (EDUKE32_PREDICT_FALSE(bad_tspr(tspr)))
         return;
 
-    const usectortype *sec;
+    usectorptr_t sec;
 
     int32_t spritenum = tspr->owner;
 
@@ -6352,7 +7002,7 @@ void polymost2_drawsprite(int32_t snum)
     drawpoly_alpha = spriteext[spritenum].alpha;
     drawpoly_blend = tspr->blend;
 
-    sec = (usectortype *)&sector[tspr->sectnum];
+    sec = (usectorptr_t)&sector[tspr->sectnum];
 
     polymost2_calc_fog(fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
 
@@ -6703,12 +7353,12 @@ void polymost_drawsprite(int32_t snum)
         return;
     }
 
-    uspritetype *const tspr = tspriteptr[snum];
+    auto const tspr = tspriteptr[snum];
 
     if (EDUKE32_PREDICT_FALSE(bad_tspr(tspr)))
         return;
 
-    const usectortype *sec;
+    usectorptr_t sec;
 
     int32_t spritenum = tspr->owner;
 
@@ -6733,8 +7383,8 @@ void polymost_drawsprite(int32_t snum)
     if ((globalorientation & 48) != 48)  // only non-voxel sprites should do this
     {
         int const flag = usehightile && h_xsize[globalpicnum];
-        off.x = (int32_t)tspr->xoffset + (flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs);
-        off.y = (int32_t)tspr->yoffset + (flag ? h_yoffs[globalpicnum] : picanm[globalpicnum].yofs);
+        off = { (int32_t)tspr->xoffset + (flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs),
+                (int32_t)tspr->yoffset + (flag ? h_yoffs[globalpicnum] : picanm[globalpicnum].yofs) };
     }
 
     int32_t method = DAMETH_MASK | DAMETH_CLAMPED;
@@ -6747,9 +7397,11 @@ void polymost_drawsprite(int32_t snum)
     drawpoly_alpha = spriteext[spritenum].alpha;
     drawpoly_blend = tspr->blend;
 
-    sec = (usectortype *)&sector[tspr->sectnum];
+    sec = (usectorptr_t)&sector[tspr->sectnum];
 
-    calc_and_apply_fog(tspr->picnum, fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
+    if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
+        || (usemodels && md_tilehasmodel(globalpicnum, globalpal) >= 0))
+        calc_and_apply_fog(fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
 
     while (!(spriteext[spritenum].flags & SPREXT_NOTMD))
     {
@@ -6792,10 +7444,7 @@ void polymost_drawsprite(int32_t snum)
     vec2_t tsiz = { oldsiz.x, oldsiz.y };
 
     if (usehightile && h_xsize[globalpicnum])
-    {
-        tsiz.x = h_xsize[globalpicnum];
-        tsiz.y = h_ysize[globalpicnum];
-    }
+        tsiz = { h_xsize[globalpicnum], h_ysize[globalpicnum] };
 
     if (tsiz.x <= 0 || tsiz.y <= 0)
         return;
@@ -6830,8 +7479,7 @@ void polymost_drawsprite(int32_t snum)
                 goto _drawsprite_return;
 
             float const ryp0 = 1.f / p0.y;
-            s0.x = ghalfx * p0.x * ryp0 + ghalfx;
-            s0.y = ((float) (tspr->z - globalposz)) * gyxscale * ryp0 + ghoriz;
+            s0 = { ghalfx * p0.x * ryp0 + ghalfx, ((float)(tspr->z - globalposz)) * gyxscale * ryp0 + ghoriz };
 
             float const f = ryp0 * fxdimen * (1.0f / 160.f);
 
@@ -6919,8 +7567,7 @@ void polymost_drawsprite(int32_t snum)
                     pxy[2].y = pxy[3].y = s0.y;
             }
 
-            tilesiz[globalpicnum].x = tsiz.x;
-            tilesiz[globalpicnum].y = tsiz.y;
+            tilesiz[globalpicnum] = { (int16_t)tsiz.x, (int16_t)tsiz.y };
             pow2xsplit = 0;
             polymost_drawpoly(pxy, 4, method);
 
@@ -7015,15 +7662,13 @@ void polymost_drawsprite(int32_t snum)
             if (p0.y < SCISDIST)
             {
                 t0 = (SCISDIST - p0.y) / (p1.y - p0.y);
-                p0.x = (p1.x - p0.x) * t0 + p0.x;
-                p0.y = SCISDIST;
+                p0 = { (p1.x - p0.x) * t0 + p0.x, SCISDIST };
             }
 
             if (p1.y < SCISDIST)
             {
                 t1 = (SCISDIST - op0.y) / (p1.y - op0.y);
-                p1.x = (p1.x - op0.x) * t1 + op0.x;
-                p1.y = SCISDIST;
+                p1 = { (p1.x - op0.x) * t1 + op0.x, SCISDIST };
             }
 
             f = 1.f / p0.y;
@@ -7132,8 +7777,7 @@ void polymost_drawsprite(int32_t snum)
 
             vec2f_t const pxy[4] = { { sx0, sc0 }, { sx1, sc1 }, { sx1, sf1 }, { sx0, sf0 } };
 
-            tilesiz[globalpicnum].x = tsiz.x;
-            tilesiz[globalpicnum].y = tsiz.y;
+            tilesiz[globalpicnum] = { (int16_t)tsiz.x, (int16_t)tsiz.y };
             pow2xsplit = 0;
             polymost_drawpoly(pxy, 4, method);
 
@@ -7193,8 +7837,7 @@ void polymost_drawsprite(int32_t snum)
                         s0.y -= c * p1.x;
                     }
 
-                    pxy[j].x = s0.y * gcosang - s0.x * gsinang;
-                    pxy[j].y = s0.x * gcosang2 + s0.y * gsinang2;
+                    pxy[j] = { s0.y * gcosang - s0.x * gsinang, s0.x * gcosang2 + s0.y * gsinang2 };
                 }
 
                 if (tspr->z < globalposz)  // if floor sprite is above you, reverse order of points
@@ -7242,8 +7885,7 @@ void polymost_drawsprite(int32_t snum)
                 for (bssize_t j = 0; j < npoints; j++)
                 {
                     float const ryp0 = 1.f / p2[j].y;
-                    pxy[j].x = ghalfx * p2[j].x * ryp0 + ghalfx;
-                    pxy[j].y = f * ryp0 + ghoriz;
+                    pxy[j] = { ghalfx * p2[j].x * ryp0 + ghalfx, f * ryp0 + ghoriz };
                 }
 
                 // gd? Copied from floor rendering code
@@ -7310,8 +7952,7 @@ void polymost_drawsprite(int32_t snum)
                     drawpoly_trepeat = 1;
                 }
 
-                tilesiz[globalpicnum].x = tsiz.x;
-                tilesiz[globalpicnum].y = tsiz.y;
+                tilesiz[globalpicnum] = { (int16_t)tsiz.x, (int16_t)tsiz.y };
                 pow2xsplit = 0;
 
                 polymost_drawpoly(pxy, npoints, method);
@@ -7372,7 +8013,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     float const ogstang = gstang; gstang = (float) sintable[a&2047]*d;
     int const ogshade  = globalshade;  globalshade  = dashade;
     int const ogpal    = globalpal;    globalpal    = (int32_t) ((uint8_t) dapalnum);
-    float const ogxyaspect = gxyaspect; gxyaspect = 1.f;
+    double const ogxyaspect = gxyaspect; gxyaspect = 1.f;
     int const oldviewingrange = viewingrange; viewingrange = 65536;
     float const oldfviewingrange = fviewingrange; fviewingrange = 65536.f;
 
@@ -7604,6 +8245,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalpal = (int32_t)((uint8_t)dapalnum);
     float const  oghalfx = ghalfx;
     ghalfx = fxdim * .5f;
+    float const  oghalfy = ghalfy;
+    ghalfy = fydim * .5f;
     float const  ogrhalfxdown10 = grhalfxdown10;
     grhalfxdown10 = 1.f / (ghalfx * 1024.f);
     float const  ogrhalfxdown10x = grhalfxdown10x;
@@ -7637,8 +8280,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     glLoadIdentity();
 
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_ALPHA_TEST);
-    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
 
 #if defined(POLYMER)
 # ifdef USE_GLEXT
@@ -7680,8 +8323,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
 
     if (!(dastat & RS_TOPLEFT))
     {
-        ofs.x = picanm[globalpicnum].xofs + (siz.x>>1);
-        ofs.y = picanm[globalpicnum].yofs + (siz.y>>1);
+        ofs = { int16_t(picanm[globalpicnum].xofs + (siz.x>>1)),
+                int16_t(picanm[globalpicnum].yofs + (siz.y>>1)) };
     }
 
     if (dastat & RS_YFLIP)
@@ -7712,15 +8355,15 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
                        { 0, 0 },
                        { cx - (float)siz.y * sinang2, cy + (float)siz.y * cosang } };
 
-    pxy[2].x = pxy[1].x + pxy[3].x - pxy[0].x;
-    pxy[2].y = pxy[1].y + pxy[3].y - pxy[0].y;
+    pxy[2]= { pxy[1].x + pxy[3].x - pxy[0].x,
+              pxy[1].y + pxy[3].y - pxy[0].y };
 
     // Round after calculating pxy[2] so that it is calculated correctly
     // Rounding pxy[0].x & pxy[0].y is unnecessary so long as pxy[0] can never have fractional values
     //pxy[0].x = roundf(pxy[0].x); pxy[0].y = roundf(pxy[0].y);
-    pxy[1].x = roundf(pxy[1].x); pxy[1].y = roundf(pxy[1].y);
-    pxy[2].x = roundf(pxy[2].x); pxy[2].y = roundf(pxy[2].y);
-    pxy[3].x = roundf(pxy[3].x); pxy[3].y = roundf(pxy[3].y);
+    pxy[1] = { roundf(pxy[1].x), roundf(pxy[1].y) };
+    pxy[2] = { roundf(pxy[2].x), roundf(pxy[2].y) };
+    pxy[3] = { roundf(pxy[3].x), roundf(pxy[3].y) };
 
     int32_t n = 4;
 
@@ -7797,6 +8440,9 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
         if (!nofog) polymost_setFogEnabled(true);
     }
 
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
+
 #ifdef POLYMER
     if (videoGetRenderMode() == REND_POLYMER)
     {
@@ -7816,6 +8462,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalshade  = ogshade;
     globalpal    = ogpal;
     ghalfx       = oghalfx;
+    ghalfy       = oghalfy;
     grhalfxdown10 = ogrhalfxdown10;
     grhalfxdown10x = ogrhalfxdown10x;
     ghoriz       = oghoriz;
@@ -8012,7 +8659,6 @@ void polymost_fillpolygon(int32_t npoints)
 
     if (gloy1 != -1) polymostSet2dView(); //disables blending, texturing, and depth testing
     glEnable(GL_ALPHA_TEST);
-    glEnable(GL_TEXTURE_2D);
     pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
 
     if (pth)
@@ -8023,8 +8669,7 @@ void polymost_fillpolygon(int32_t npoints)
             polymost_usePaletteIndexing(false);
     }
 
-    if (videoGetRenderMode() == REND_POLYMOST)
-        polymost_updatePalette();
+    polymost_updatePalette();
 
     float const f = getshadefactor(globalshade);
 
@@ -8103,10 +8748,11 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
             polymost_usePaletteIndexing(false);
     }
 
-    if (videoGetRenderMode() == REND_POLYMOST)
-        polymost_updatePalette();
+    globalshade = 0;
+    polymost_updatePalette();
 
     glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
 
     if (tilezoom)
     {
@@ -8114,28 +8760,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
         else ratio = dimen/scy;
     }
 
-    if (!pth || (pth->flags & PTH_HASALPHA))
-    {
-        glDisable(GL_TEXTURE_2D);
-        glBegin(GL_TRIANGLE_FAN);
-        if (gammabrightness)
-            glColor3f((float)curpalette[255].r*(1.0f/255.f),
-                       (float)curpalette[255].g*(1.0f/255.f),
-                       (float)curpalette[255].b*(1.0f/255.f));
-        else
-            glColor3f((float)britable[curbrightness][ curpalette[255].r ] * (1.0f/255.f),
-                       (float)britable[curbrightness][ curpalette[255].g ] * (1.0f/255.f),
-                       (float)britable[curbrightness][ curpalette[255].b ] * (1.0f/255.f));
-        glVertex2f((float)tilex            ,(float)tiley);
-        glVertex2f((float)tilex+(scx*ratio),(float)tiley);
-        glVertex2f((float)tilex+(scx*ratio),(float)tiley+(scy*ratio));
-        glVertex2f((float)tilex            ,(float)tiley+(scy*ratio));
-        glEnd();
-    }
-
     glColor3f(1,1,1);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
     glBegin(GL_TRIANGLE_FAN);
     glTexCoord2f(0,              0); glVertex2f((float)tilex            ,(float)tiley);
     glTexCoord2f(xdimepad,       0); glVertex2f((float)tilex+(scx*ratio),(float)tiley);
@@ -8209,7 +8834,7 @@ static int32_t gen_font_glyph_tex(void)
     return 0;
 }
 
-int32_t polymost_printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
+int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
 {
     int const arbackcol = (unsigned)backcol < 256 ? backcol : 0;
 
@@ -8258,7 +8883,6 @@ int32_t polymost_printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t ba
         glEnd();
     }
 
-    glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glColor4ub(p.r,p.g,p.b,255);
 
@@ -8462,7 +9086,7 @@ void polymost_initosdfuncs(void)
         { "r_anisotropy", "changes the OpenGL texture anisotropy setting", (void *) &glanisotropy, CVAR_INT|CVAR_FUNCPTR, 0, 16 },
         { "r_texturemaxsize","changes the maximum OpenGL texture size limit",(void *) &gltexmaxsize, CVAR_INT | CVAR_NOSAVE, 0, 4096 },
         { "r_texturemiplevel","changes the highest OpenGL mipmap level used",(void *) &gltexmiplevel, CVAR_INT, 0, 6 },
-        { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
+//        { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
         { "r_useindexedcolortextures", "enable/disable indexed color texture rendering", (void *) &r_useindexedcolortextures, CVAR_INT, 0, 1 },
 
         { "r_usenewshading",
@@ -8470,7 +9094,6 @@ void polymost_initosdfuncs(void)
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4
         },
 
-        { "r_usetileshades", "enable/disable Polymost tile shade textures", (void *) &r_usetileshades, CVAR_INT | CVAR_INVALIDATEART, 0, 2 },
 #ifdef USE_GLEXT
         { "r_vbocount","sets the number of Vertex Buffer Objects to use when drawing models",(void *) &r_vbocount, CVAR_INT, 1, 256 },
         { "r_persistentStreamBuffer","enable/disable persistent stream buffering (requires renderer restart)",(void *) &r_persistentStreamBuffer, CVAR_BOOL, 0, 1 },
@@ -8479,6 +9102,7 @@ void polymost_initosdfuncs(void)
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
         { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_INT, 0, 1 },
         { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_INT, 0, 1 },
+        { "r_yshearing", "enable/disable y-shearing", (void*)&r_yshearing, CVAR_INT, 0, 1 },
 
 #ifdef POLYMER
         // polymer cvars

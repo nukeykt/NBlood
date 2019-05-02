@@ -282,11 +282,12 @@ void yax_updategrays(int32_t posze)
 
 int32_t g_nodraw = 0;
 int32_t scansector_retfast = 0;
-static int32_t scansector_collectsprites = 1;
+int32_t scansector_collectsprites = 1;
 int32_t yax_globalcf = -1, yax_nomaskpass=0, yax_nomaskdidit;  // engine internal
 int32_t r_tror_nomaskpass = 1;  // cvar
 int32_t yax_globallev = YAX_MAXDRAWS;
 int32_t yax_globalbunch = -1;
+int32_t yax_polymostclearzbuffer = 1;
 
 // duplicated tsprites
 //  [i]:
@@ -1013,6 +1014,14 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t),
 #endif
     }
 
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() == REND_POLYMOST)
+    {
+        glClear(GL_DEPTH_BUFFER_BIT);
+        yax_polymostclearzbuffer = 0;
+    }
+#endif
+
     for (cf=0; cf<2; cf++)
     {
         yax_globalcf = cf;
@@ -1126,6 +1135,10 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t),
         }
         videoEndDrawing();
     }
+#endif
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() == REND_POLYMOST)
+        yax_polymostclearzbuffer = 1;
 #endif
 }
 
@@ -1450,7 +1463,7 @@ int16_t searchsector, searchwall, searchstat;     //search output
 //  When aiming at a 2-sided wall, 1 if aiming at the bottom part, 0 else
 int16_t searchbottomwall, searchisbottom;
 
-char inpreparemirror = 0;
+char inpreparemirror = 0, mirrorrender = 0;
 static int32_t mirrorsx1, mirrorsy1, mirrorsx2, mirrorsy2;
 
 static int32_t setviewcnt = 0; // interface layers use this now
@@ -5840,9 +5853,6 @@ static void renderDrawSprite(int32_t snum)
 #ifdef USE_OPENGL
     case REND_POLYMOST:
         polymost_drawsprite(snum);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
-//        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
         return;
 # ifdef POLYMER
     case REND_POLYMER:
@@ -5976,7 +5986,13 @@ static void renderFillPolygon(int32_t npoints)
 #ifdef USE_OPENGL
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {
-        polymost_fillpolygon(npoints);
+#ifdef POLYMER
+        if (videoGetRenderMode() == REND_POLYMER)
+            polymer_fillpolygon(npoints);
+        else
+#endif
+            polymost_fillpolygon(npoints);
+
         return;
     }
 #endif
@@ -8527,6 +8543,9 @@ killsprite:
                     tspriteptr[i] = tspriteptr[spritesortcnt];
                     spritesxyz[i].x = spritesxyz[spritesortcnt].x;
                     spritesxyz[i].y = spritesxyz[spritesortcnt].y;
+                    tspriteptr[spritesortcnt] = tspriteptr[numSprites];
+                    spritesxyz[spritesortcnt].x = spritesxyz[numSprites].x;
+                    spritesxyz[spritesortcnt].y = spritesxyz[numSprites].y;
                 }
                 continue;
             }
@@ -8608,6 +8627,9 @@ killsprite:
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
+        glDisable(GL_BLEND);
+        glEnable(GL_ALPHA_TEST);
+ 
         for (i = spritesortcnt; i < numSprites; ++i)
         {
             if (tspriteptr[i] != NULL)
@@ -8631,6 +8653,10 @@ killsprite:
             else
                 renderDrawMaskedWall(--maskwallcnt);
         }
+ 
+        glEnable(GL_BLEND);
+        glEnable(GL_ALPHA_TEST);
+        glDepthMask(GL_FALSE);
     }
 #endif
 
@@ -8766,10 +8792,6 @@ killsprite:
         renderDrawMaskedWall(maskwallcnt);
     }
 
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() == REND_POLYMOST)
-        glDepthMask(GL_FALSE);
-#endif
     while (spritesortcnt)
     {
         --spritesortcnt;
@@ -12925,6 +12947,7 @@ void squarerotatetile(int16_t tilenume)
 void renderPrepareMirror(int32_t dax, int32_t day, fix16_t daang, int16_t dawall,
                          int32_t *tposx, int32_t *tposy, fix16_t *tang)
 {
+    mirrorrender = 1;
     const int32_t x = wall[dawall].x, dx = wall[wall[dawall].point2].x-x;
     const int32_t y = wall[dawall].y, dy = wall[wall[dawall].point2].y-y;
 
@@ -12947,6 +12970,7 @@ static int16_t mirbakdasector;
 void renderPrepareMirrorOld(int32_t dax, int32_t day, int32_t daz, fix16_t daang, fix16_t dahoriz,
                             int16_t dawall, int16_t dasector, int32_t *tposx, int32_t *tposy, fix16_t *tang)
 {
+    mirrorrender = 1;
     const int32_t x = wall[dawall].x, dx = wall[wall[dawall].point2].x-x;
     const int32_t y = wall[dawall].y, dy = wall[wall[dawall].point2].y-y;
 
@@ -12986,6 +13010,7 @@ void renderPrepareMirrorOld(int32_t dax, int32_t day, int32_t daz, fix16_t daang
 //
 void renderCompleteMirror(void)
 {
+    mirrorrender = 0;
 #ifdef USE_OPENGL
     if (videoGetRenderMode() != REND_CLASSIC)
         return;
@@ -13040,6 +13065,7 @@ void renderCompleteMirror(void)
 
 void renderCompleteMirrorOld(void)
 {
+    mirrorrender = 0;
 #ifdef USE_OPENGL
     if (videoGetRenderMode() != REND_CLASSIC)
         return;
@@ -13566,7 +13592,14 @@ void printext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const
     else { fontptr = textfont; charxsiz = 8; }
 
 #ifdef USE_OPENGL
-    if (!polymost_printext256(xpos,ypos,col,backcol,name,fontsize)) return;
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+    {
+        if (!polymer_printtext256(xpos,ypos,col,backcol,name,fontsize)) return;
+    }
+    else
+#endif
+        if (!polymost_printtext256(xpos,ypos,col,backcol,name,fontsize)) return;
 # if 0
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {

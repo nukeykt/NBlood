@@ -58,14 +58,11 @@ void CheckFenceposts(HEAPNODE *n)
 QHeap::QHeap(int heapSize)
 {
     dassert(heapSize > 0);
-    int reserve = 0x20000;
     size = heapSize;
-    void *p = malloc(reserve);
     while (size > 0 && (heapPtr = malloc(size)) == NULL)
     {
         size -= 0x1000;
     }
-    free(p);
     if (!heapPtr)
     {
         ThrowError("Allocation failure\n");

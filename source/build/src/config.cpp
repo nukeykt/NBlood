@@ -399,7 +399,6 @@ int32_t writesetup(const char *fn)
              "r_texcompr = %d ;;\n"
              "r_shadescale = %g ;;\n"
              "r_usenewshading = %d ;;\n"
-             "r_usetileshades = %d ;;\n"
 # ifdef POLYMER
              "r_pr_artmapping = %d ;;\n"
 # endif
@@ -612,7 +611,7 @@ int32_t writesetup(const char *fn)
 #ifdef USE_OPENGL
              usemodels, usehightile, g_lazy_tileselector,
              glusetexcache, glusememcache, gltexfiltermode, glanisotropy,r_downsize,glusetexcompr,
-             shadescale, r_usenewshading, r_usetileshades,
+             shadescale, r_usenewshading,
 # ifdef POLYMER
              pr_artmapping,
 # endif

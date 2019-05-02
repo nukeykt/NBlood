@@ -89,7 +89,7 @@ Resource gSysRes, gGuiRes;
 
 INPUT_MODE gInputMode;
 
-unsigned int nMaxAlloc = 0x2000000;
+unsigned int nMaxAlloc = 0x4000000;
 
 bool bCustomName = false;
 char bAddUserMap = false;
@@ -1002,7 +1002,7 @@ SWITCH switches[] = {
     //{ "nocd", 11, 0 },
     //{ "8250", 12, 0 },
     { "ini", 13, 1 },
-    //{ "noaim", 14, 0 },
+    { "noaim", 14, 0 },
     { "f", 15, 1 },
     { "control", 16, 1 },
     { "vector", 17, 1 },
@@ -2415,11 +2415,11 @@ void LoadExtraArts(void)
 }
 
 bool isDemoRecords(void) {
-    return gDemo.at1;
+    return gDemo.at0;
 }
 
 bool isOriginalDemo() {
-    return gDemo.m_bLegacy && gDemo.at0;
+    return gDemo.m_bLegacy && gDemo.at1;
 }
 
 bool fileExistsRFF(int id, const char *ext) {

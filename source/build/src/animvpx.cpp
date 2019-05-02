@@ -457,7 +457,6 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
     glDisable(GL_CULL_FACE);
-    glEnable(GL_TEXTURE_2D);
 
 #ifdef USE_GLEXT
     glActiveTexture(GL_TEXTURE0);
