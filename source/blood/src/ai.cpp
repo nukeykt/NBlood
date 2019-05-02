@@ -1771,6 +1771,7 @@ void aiInitSprite(spritetype *pSprite)
                 pSprite->hitag = kHitagAutoAim;
             break;
         }
+        fallthrough__;
     // go default
     default:
         pSprite->hitag = 15;

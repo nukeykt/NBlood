@@ -52,6 +52,7 @@ MIRROR mirror[16];
 #ifdef POLYMER
 void PolymerRORCallback(int16_t sectnum, int16_t wallnum, int8_t rorstat, int16_t* msectnum, int32_t* gx, int32_t* gy, int32_t* gz)
 {
+    UNREFERENCED_PARAMETER(wallnum);
     int nMirror;
     switch (rorstat)
     {

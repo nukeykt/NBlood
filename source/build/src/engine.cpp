@@ -10988,7 +10988,7 @@ int hitscan_old(int32_t xs, int32_t ys, int32_t zs, short sectnum, int32_t vx, i
     usectortype *sec;
     uwalltype *wal, *wal2;
     uspritetype *spr;
-    int32_t z, zz, x1, y1, z1, x2, y2, z2, x3, y3, x4, y4, intx, inty, intz;
+    int32_t z, zz, x1, y1, z1, x2, y2, x3, y3, x4, y4, intx, inty, intz;
     int32_t topt, topu, bot, dist, offx, offy, cstat;
     int32_t i, j, k, l, tilenum, xoff, yoff, dax, day, daz, daz2;
     int32_t ang, cosang, sinang, xspan, yspan, xrepeat, yrepeat;

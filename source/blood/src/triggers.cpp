@@ -2245,6 +2245,7 @@ void trMessageSprite(unsigned int nSprite, EVENT a2)
 
 // By NoOne: this function damages sprite
 void trDamageSprite(int type, int nDest, EVENT event) {
+    UNREFERENCED_PARAMETER(type);
 
     /* - damages xsprite via TX ID	- */
     /* - data1 = damage type		- */
@@ -2255,7 +2256,7 @@ void trDamageSprite(int type, int nDest, EVENT event) {
         XSPRITE* pXSource = &xsprite[pSource->extra];
         XSPRITE pXSprite = xsprite[sprite[nDest].extra];
         if (pXSprite.health > 0) {
-            if (pXSource->data4 < 1 || pXSource->data4 > 65535)
+            if (pXSource->data4 == 0)
                 pXSource->data4 = 65535;
 
             if (pXSource->data3 >= 7)
@@ -2293,14 +2294,16 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
         /* - hi-tag = 1: force windAlways and panAlways							- */
 
-        if (type != 6) return; XSECTOR* pXSector = &xsector[sector[nDest].extra];
+        if (type != 6)
+            return;
+        
+        XSECTOR* pXSector = &xsector[sector[nDest].extra];
 
         if ((pSource->hitag & 0x0001) != 0) {
             pXSector->panAlways = true;
             pXSector->windAlways = true;
         }
 
-        if (pXSource->data2 > 32767) pXSource->data2 = 32767;
         if (pXSource->data1 == 1 || pXSource->data1 == 3)
             pXSector->windVel = Random2(pXSource->data2);
         else
@@ -2400,7 +2403,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             if (valueIsBetween(pXSource->data1, -1, 32767))
                 pXSector->wave = pXSource->data1;
 
-            if (pXSource->data2 >= 0 || pXSource->data2 > 32767) {
+            if (pXSource->data2 >= 0) {
 
                 if (pXSource->data2 > 127) pXSector->amplitude = 127;
                 else pXSector->amplitude = pXSource->data2;
@@ -2772,17 +2775,17 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 if (valueIsBetween(pXSource->data2, -1, 32767))
                     sector[nDest].ceilingpicnum = pXSource->data2;
 
-                XSECTOR pXSector = xsector[sector[nDest].extra];
+                XSECTOR *pXSector = &xsector[sector[nDest].extra];
                 if (valueIsBetween(pXSource->data3, -1, 32767)) {
                     sector[nDest].floorpal = pXSource->data3;
                     if ((pSource->hitag & 0x0001) != 0)
-                        pXSector.floorpal = pXSource->data3;
+                        pXSector->floorpal = pXSource->data3;
                 }
 
                 if (valueIsBetween(pXSource->data4, -1, 65535)) {
                     sector[nDest].ceilingpal = (short)pXSource->data4;
                     if ((pSource->hitag & 0x0001) != 0)
-                        pXSector.ceilpal = (short)pXSource->data4;
+                        pXSector->ceilpal = (short)pXSource->data4;
                 }
                 break;
             }
@@ -3056,6 +3059,7 @@ int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget)
 }
 
 int getFineTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
+    UNREFERENCED_PARAMETER(pDudeInfo);
     int x = pTarget->x; int y = pTarget->y;
     int dx = x - pSprite->x; int dy = y - pSprite->y;
 
@@ -3158,6 +3162,7 @@ bool isMeleeUnit(spritetype* pDude) {
         int data1 = xsprite[pDude->extra].data1;
         if ((data1 >= 6 && data1 < 19) || data1 == 22 || data1 == 304 || data1 == 308)
             return true;
+        return false;
     }
     default:
         return false;
@@ -3653,7 +3658,7 @@ void UniMissileTrapSeqCallback(int, int nXIndex)
         if ((pSprite->cstat & kSprFlipY) != 0)	// face down floor sprite
             dz = 1 << 14;
         else									// face up floor sprite
-            dz = -1 << 14;
+            dz = -(1 << 14);
     }
     else										// wall sprite or face sprite
     {

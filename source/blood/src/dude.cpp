@@ -1565,7 +1565,10 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         256,		// angSpeed
         //			    0,
         7,	-1, 18,		// nGibType
-        256, 256, 128, 256, 256, 256, 192
+        256, 256, 128, 256, 256, 256, 192,
+        0, 0, 0, 0, 0, 0, 0,
+        0,
+        0
     },
     //255 -  kGDXGenDudeBurning
     {
@@ -1593,7 +1596,10 @@ DUDEINFO dudeInfo[kDudeMax-kDudeBase] =
         384,			// angSpeed
         //              0,
         7,	-1, -1,		// nGibType
-        256, 256, 256, 256, 256, 256, 256
+        256, 256, 256, 256, 256, 256, 256,
+        0, 0, 0, 0, 0, 0, 0,
+        0,
+        0
     }
 };
 

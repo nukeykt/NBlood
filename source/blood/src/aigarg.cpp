@@ -90,6 +90,7 @@ AISTATE statueFBreakSEQ = { kAiStateOther, 5, -1, 0, entryFStatue, NULL, playSta
 AISTATE statueSBreakSEQ = { kAiStateOther, 5, -1, 0, entrySStatue, NULL, playStatueBreakSnd, &gargoyleSMorph2};
 
 static void playStatueBreakSnd(spritetype* pSprite, XSPRITE* pXSprite) {
+    UNREFERENCED_PARAMETER(pXSprite);
     aiPlay3DSound(pSprite, 313, AI_SFX_PRIORITY_1, -1);
 }
 

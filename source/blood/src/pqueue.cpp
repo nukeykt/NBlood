@@ -23,6 +23,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "pqueue.h"
 
+PriorityQueue::~PriorityQueue()
+{
+}
+
+VanillaPriorityQueue::~VanillaPriorityQueue()
+{
+}
+
 void VanillaPriorityQueue::Clear(void)
 {
     fNodeCount = 0;
@@ -97,6 +105,11 @@ void VanillaPriorityQueue::Kill(std::function<bool(unsigned int)> pMatch)
         else
             i++;
     }
+}
+
+StdPriorityQueue::~StdPriorityQueue()
+{
+    stdQueue.clear();
 }
 
 void StdPriorityQueue::Clear(void)

@@ -58,6 +58,7 @@ struct queueItem
 class PriorityQueue
 {
 public:
+    virtual ~PriorityQueue() = 0;
     virtual unsigned int Size(void) = 0;
     virtual void Clear(void) = 0;
     virtual void Insert(unsigned int, unsigned int) = 0;
@@ -71,7 +72,7 @@ class VanillaPriorityQueue : public PriorityQueue
 public:
     queueItem queueItems[kPQueueSize + 1];
     unsigned int fNodeCount; // at2008
-
+    ~VanillaPriorityQueue();
     unsigned int Size(void) { return fNodeCount; };
     void Clear(void);
     void Upheap(void);
@@ -87,6 +88,7 @@ class StdPriorityQueue : public PriorityQueue
 {
 public:
     std::multiset<queueItem> stdQueue;
+    ~StdPriorityQueue();
     unsigned int Size(void) { return stdQueue.size(); };
     void Clear(void);
     void Insert(unsigned int, unsigned int);

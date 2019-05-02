@@ -316,6 +316,7 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
+        0, 0
     },
     // Gill bite
     {
@@ -693,6 +694,7 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 357,
         FX_NONE, FX_NONE, FX_NONE, 357,
         FX_NONE, FX_NONE, FX_NONE, 357,
+        0, 0
         //357, 499,
     },
 };
@@ -3041,7 +3043,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
             sfxPlayGDXGenDudeSound(pSprite, 10, pXSprite->data3);
             return;
         }
-
+        break;
     }
     case 227: // Cerberus
         seqSpawn(dudeInfo[nType].seqStartID+1, 3, nXSprite, -1);
@@ -6832,8 +6834,11 @@ spritetype* DropRandomPickupObject(spritetype* pSprite) {
         spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
         pSprite2 = actDropObject(pSprite, selected);
 
-        if ((pSource->hitag & 0x0001) != 0 && dbInsertXSprite(pSprite2->xvel) != -1) {
-            XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
+        if ((pSource->hitag & 0x0001) != 0) {
+            int nXSprite2 = pSprite2->extra;
+            if (nXSprite2 == -1)
+                nXSprite2 = dbInsertXSprite(pSprite2->index);
+            XSPRITE *pXSprite2 = &xsprite[nXSprite2];
 
             // inherit spawn sprite trigger settings, so designer can send command when item picked up.
             pXSprite2->txID = pXSource->txID;
