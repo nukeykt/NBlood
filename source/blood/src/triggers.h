@@ -54,7 +54,7 @@ bool isActive(int nSprite);
 bool dudeCanSeeTarget(XSPRITE* pXDude, DUDEINFO* pDudeInfo, spritetype* pTarget);
 void disturbDudesInSight(spritetype* pSprite, int max);
 int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget);
-int getFineTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget);
+int getFineTargetDist(spritetype* pSprite, spritetype* pTarget);
 bool IsBurningDude(spritetype* pSprite);
 bool IsKillableDude(spritetype* pSprite, bool locked);
 bool isAnnoyingUnit(spritetype* pDude);

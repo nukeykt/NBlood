@@ -275,3 +275,4 @@ int my_random(int a, int b);
 int GetRandDataVal(spritetype* pSprite);
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId);
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);
+spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist);

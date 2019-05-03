@@ -56,7 +56,7 @@ static int nGDXGenDudePunch = seqRegisterClient(punchCallback);
 static int nGDXGenDudeThrow1 = seqRegisterClient(ThrowCallback1);
 static int nGDXGenDudeThrow2 = seqRegisterClient(ThrowCallback2);
 
-bool gGDXGenDudePunch = false;
+static bool gGDXGenDudePunch = false;
 
 //public static final int kSlopeThrow = -8192;
 AISTATE GDXGenDudeIdleL = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
@@ -89,13 +89,12 @@ AISTATE GDXGenDudeTurn = { kAiStateChase, 0, -1, 0, NULL, aiMoveTurn, thinkChase
 
 
 static void forcePunch(spritetype* pSprite, XSPRITE* pXSprite) {
-    UNREFERENCED_PARAMETER(pXSprite);
     // Required for those who don't have fire trigger in punch seq and for default animation
     if (gGDXGenDudePunch == false && seqGetStatus(3, pSprite->extra) == -1) {
         int nXSprite = pSprite->extra;
         punchCallback(0,nXSprite);
     }
-
+    
     gGDXGenDudePunch = false;
 }
 
@@ -106,7 +105,6 @@ static void punchCallback(int, int nXIndex){
         spritetype* pSprite = &sprite[nSprite];
 
         int nAngle = getangle(pXSprite->targetX - pSprite->x, pXSprite->targetY - pSprite->y);
-
         int nZOffset1 = dudeInfo[pSprite->type - kDudeBase].eyeHeight * pSprite->yrepeat << 2;
         int nZOffset2 = 0;
         if(pXSprite->target != -1) {
@@ -171,13 +169,12 @@ static void GDXCultistAttack1(int, int nXIndex) {
     }
 }
 
-
 static void ThrowCallback1(int, int nXIndex) {
     ThrowThing(nXIndex, true);
 }
 
 static void ThrowCallback2(int, int nXIndex) {
-    ThrowThing(nXIndex, false);
+    ThrowThing(nXIndex, true);
 }
 
 static void ThrowThing(int nXIndex, bool impact) {
@@ -206,7 +203,7 @@ static void ThrowThing(int nXIndex, bool impact) {
             int dy = pTarget->y - pSprite->y;
             int dz = pTarget->z - pSprite->z;
 
-            int dist = (int)approxDist(dx, dy);	int zThrow = 14500;
+            int dist = approxDist(dx, dy);	int zThrow = 14500;
             spritetype* pThing = NULL; spritetype* pLeech = NULL; XSPRITE* pXLeech = NULL;
             if (thingType == 431) {
                 if ((pLeech = leechIsDropped(pSprite)) != NULL) {
@@ -218,11 +215,10 @@ static void ThrowThing(int nXIndex, bool impact) {
                 zThrow = 5000;
             }
 
-            pThing = actFireThing(pSprite, 0, 0, (dz / 128) - zThrow, thingType, (int)divscale(dist / 540, 120, 23));
+            pThing = actFireThing(pSprite, 0, 0, (dz / 128) - zThrow, thingType, divscale(dist / 540, 120, 23));
             if (pThing == NULL) return;
 
-            if (pThinkInfo->at11 < 0 && pThing->type != kGDXThingThrowableRock)
-                pThing->picnum = 0;
+            if (pThinkInfo->at11 < 0 && pThing->type != kGDXThingThrowableRock) pThing->picnum = 0;
             pThing->owner = pSprite->xvel;
             switch (thingType) {
             case 428:
@@ -283,7 +279,7 @@ static void ThrowThing(int nXIndex, bool impact) {
             if (impact == true && dist <= 7680) xsprite[pThing->extra].Impact = true;
             else {
                 xsprite[pThing->extra].Impact = false;
-                evPost(pThing->xvel, 3, 120 * Random(2) + 120, CALLBACK_ID_1);
+                evPost(pThing->xvel, 3, 120 * Random(2) + 120, COMMAND_ID_1);
             }
             return;
         }
@@ -308,7 +304,7 @@ static void thinkGoto( spritetype* pSprite, XSPRITE* pXSprite )
     dy = pXSprite->targetY - pSprite->y;
 
     int nAngle = getangle(dx, dy);
-    dist = (int) approxDist(dx, dy);
+    dist = approxDist(dx, dy);
 
     aiChooseDirection(pSprite, pXSprite, nAngle);
 
@@ -385,11 +381,10 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
         }
     }
     
-    dist = (int) approxDist(dx, dy);
+    dist = approxDist(dx, dy);
     if ( dist <= pDudeInfo->seeDist ) {
         int nAngle = getangle(dx, dy);
         int losAngle = ((1024 + nAngle - pSprite->ang) & 2047) - 1024;
-        //int nDeltaAngle = ((getangle(dx, dy) + 1024 - pSprite->ang) & 2047) - 1024;
         int eyeAboveZ = (pDudeInfo->eyeHeight * pSprite->yrepeat) << 2;
         VECTORDATA* meleeVector = &gVectorData[22];
 
@@ -406,7 +401,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                     sfxPlayGDXGenDudeSound(pSprite,6,pXSprite->data3);
 
                 if(dist > 0)
-                    gDudeSlope[sprite[pXSprite->reference].extra] = (int) divscale(pTarget->z - pSprite->z, dist, 10);
+                    gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 10);
                     
                 spritetype* pLeech = NULL;
                 if (pXSprite->data1 >= kThingBase && pXSprite->data1 < kThingMax) {
@@ -429,7 +424,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                                     return;
                             }
 
-                        } else if (dist > 4072 && dist <= 9072 && !spriteIsUnderwater(pSprite,false) && pSprite->owner != 32666){
+                        } else if (dist > 4072 && dist <= 9072 && !spriteIsUnderwater(pSprite,false) && pSprite->owner != kMaxSprites){
                                 if (pXSprite->data1 != 431 && pXSprite->data1 != kGDXThingThrowableRock) {
                                     aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
                                 } else {
@@ -554,12 +549,10 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                                         aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
                                         return;
                                     }
-                                }
-                                else if (dist <= meleeVector->maxDist && Chance(0x7000)) {
+                                } else if (dist <= meleeVector->maxDist && Chance(0x7000)) {
                                     aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
                                     return;
-                                }
-                                else {
+                                } else {
                                     switch (state) {
                                     case 1:
                                         aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
@@ -641,7 +634,6 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                         aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
                     
                     if (dist < vdist && klabs(losAngle) < 35 /*&& klabs(losAngle) < kAngle5*/) {
-                        //ThrowError("zzzz");
                         if (vdist > 1512){
                             switch(state){
                                 case 1:
@@ -677,11 +669,10 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                         }
                     } else {
                             
-                        SEQINST* pSeqInst = GetInstance(3, pSprite->extra); Seq* pSeq = pSeqInst->pSequence;
-                        if (pSeq != NULL) {
-
-                            //int nSeq = 6; if (state < 3) nSeq = 8;
-                            //if (pSeq == pSEQs.get(xsprite[pSprite->extra].data2 + nSeq)){
+                        //SEQINST* pSeqInst = GetInstance(3, pSprite->extra); Seq* pSeq = pSeqInst->pSequence;
+                        //if (pSeq != NULL) {
+                            int nSeq = 6; if (state < 3) nSeq = 8;
+                            if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq) {
                                 switch(state){
                                     case 1:
                                         pXSprite->aiState->at18 = &GDXGenDudeChaseW;
@@ -996,44 +987,45 @@ void removeDudeStuff(spritetype* pSprite) {
             case 401:
             case 402:
             case 433:
-                if (sprite[nSprite].owner == pSprite->xvel) {
+                if (sprite[nSprite].owner == pSprite->xvel)
                     actPostSprite(nSprite, kStatFree);
-                }
                 continue;
             case 431:
-                if (sprite[nSprite].owner == pSprite->xvel)
-                    killDudeLeech(&sprite[nSprite]);
+                if (sprite[nSprite].owner == pSprite->xvel) killDudeLeech(&sprite[nSprite]);
                 continue;
         }
     }
 }
     
-void removeLeech(spritetype* pLeech) {
+void removeLeech(spritetype* pLeech, bool delSprite) {
     if (pLeech != NULL) {
         spritetype* pEffect = gFX.fxSpawn((FX_ID)52,pLeech->sectnum,pLeech->x,pLeech->y,pLeech->z,pLeech->ang);
-            
-        pEffect->cstat = kSprFace;
-        pEffect->pal = 6;
-        int repeat = 64 + Random(50);
-        pEffect->xrepeat = repeat;
-        pEffect->yrepeat = repeat;
+        if (pEffect != NULL) {
+            pEffect->cstat = kSprFace;
+            pEffect->pal = 6;
+            int repeat = 64 + Random(50);
+            pEffect->xrepeat = repeat;
+            pEffect->yrepeat = repeat;
+        }
         sfxPlay3DSoundCP(pLeech, 490, -1, 0,60000);
-        actPostSprite(pLeech->index, kStatFree);
+        if (delSprite)
+            actPostSprite(pLeech->index, kStatFree);
     }
 }
     
 void killDudeLeech(spritetype* pLeech) {
-    actDamageSprite(pLeech->owner,pLeech,(DAMAGE_TYPE)3,65535);
-    removeLeech(pLeech);				
-    sfxPlay3DSoundCP(pLeech, 522, -1, 0,60000);
+    if (pLeech != NULL) {
+        //removeLeech(pLeech, false);
+        actDamageSprite(pLeech->owner, pLeech, DAMAGE_TYPE_3, 65535);
+        sfxPlay3DSoundCP(pLeech, 522, -1, 0, 60000);
+    }
 }
     
 XSPRITE* getNextIncarnation(XSPRITE* pXSprite) {
-    int rx = pXSprite->txID;
-    if (rx > 0) {
-        for (short nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+    if (pXSprite->txID > 0) {
+        for (short nSprite = headspritestat[7]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
             if (!IsDudeSprite(&sprite[nSprite]) || sprite[nSprite].extra < 0) continue;
-            if (xsprite[sprite[nSprite].extra].rxID == rx && xsprite[sprite[nSprite].extra].health > 0)
+            if (xsprite[sprite[nSprite].extra].rxID == pXSprite->txID && xsprite[sprite[nSprite].extra].health > 0)
                 return &xsprite[sprite[nSprite].extra];
         }
     }

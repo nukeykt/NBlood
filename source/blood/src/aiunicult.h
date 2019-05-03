@@ -54,7 +54,7 @@ extern AISTATE GDXGenDudeTurn;
 
 XSPRITE* getNextIncarnation(XSPRITE* pXSprite);
 void killDudeLeech(spritetype* pLeech);
-void removeLeech(spritetype* pLeech);
+void removeLeech(spritetype* pLeech, bool delSprite = true);
 void removeDudeStuff(spritetype* pSprite);
 spritetype* leechIsDropped(spritetype* pSprite);
 bool spriteIsUnderwater(spritetype* pSprite, bool oldWay);

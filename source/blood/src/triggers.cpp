@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "endgame.h"
 #include "eventq.h"
 
-//#include "eventq.cpp"
+#include "aiunicult.h"
 #include "fx.h"
 #include "gameutil.h"
 #include "gib.h"
@@ -362,41 +362,33 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     /* - ranged TX ID is now supported also - */
     case kGDXRandomTX:
     {
-        std::default_random_engine rng;
-        bool range = false; int tx = 0;
-        
+        std::default_random_engine rng; int tx = 0;
         // set range of TX ID if data2 and data3 is empty.
-        if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 &&
-            pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
+        if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 && pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
 
             // data1 must be less than data4
             if (pXSprite->data1 > pXSprite->data4) {
                 int tmp = pXSprite->data1;
-                pXSprite->data1 = (short)pXSprite->data4;
+                pXSprite->data1 = pXSprite->data4;
                 pXSprite->data4 = tmp;
             }
-
-            range = true;
-        }
-
-        if (range == false) {
-            if ((tx = GetRandDataVal(pSprite)) > 0)
-                pXSprite->txID = (short)tx;
-        } else {
+            
             int total = pXSprite->data4 - pXSprite->data1;
             int data1 = pXSprite->data1; int result = 0;
 
             // use true random only for single player mode
             if (gGameOptions.nGameType == 0 && !isOriginalDemo() && !isDemoRecords()) {
                 rng.seed(std::random_device()());
-                result = (int) my_random(pXSprite->data1, pXSprite->data4);
+                pXSprite->txID = (int)my_random(pXSprite->data1, pXSprite->data4);
+            
             // otherwise use Blood's default one. In the future it maybe possible to make
             // host send info to clients about what was generated.
             } else {
-                result = Random(total) + data1;
+                pXSprite->txID = Random(total) + data1;
             }
 
-            pXSprite->txID = (short)result;
+        } else if ((tx = GetRandDataVal(pSprite)) > 0) { 
+            pXSprite->txID = tx; 
         }
 
         switch (a3.at2_0)
@@ -674,6 +666,10 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     case 40: // Random weapon
     case 80: // Random ammo
         DropRandomPickupObject(pSprite);
+        break;
+    case kGDXCustomDudeSpawn:
+        if (gGameOptions.nMonsterSettings && actSpawnCustomDude(pSprite, -1) != NULL)
+            gKillMgr.sub_263E0(1);
         break;
     case 18:
         if (gGameOptions.nMonsterSettings && pXSprite->data1 >= kDudeBase && pXSprite->data1 < kDudeMax)
@@ -2484,13 +2480,13 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             if (pXSource->data4 == 3) {
                 aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
                 aiSetGenIdleState(pSprite, pXSprite);
-                //if (pSprite->type == 254)
-                   //removeLeech(leechIsDropped(pSprite));
+                if (pSprite->type == 254)
+                   removeLeech(leechIsDropped(pSprite));
             }
             else if (pXSource->data4 == 4) {
                 aiSetTarget(pXSprite, pPlayer->x, pPlayer->y, pPlayer->z);
-                //if (pSprite->lotag == 254)
-                    //removeLeech(leechIsDropped(pSprite));
+                if (pSprite->lotag == 254)
+                    removeLeech(leechIsDropped(pSprite));
             }
         }
 
@@ -2559,7 +2555,6 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             int mDist = 3; if (isMeleeUnit(pSprite)) mDist = 2;
             //int mDist = 2;
             if (pXSprite->target >= 0 && getTargetDist(pSprite, pDudeInfo, &sprite[pXSprite->target]) < mDist) {
-                //aiSetTarget(pXSprite,sprite[pXSprite.target].xvel);
                 return;
             // lets try to look for target that fits better by distance
             } else if ((gFrameClock & 256) != 0 && (pXSprite->target < 0 || getTargetDist(pSprite, pDudeInfo, pTarget) >= mDist)) {
@@ -2865,28 +2860,25 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 // By NoOne: the following functions required for kGDXDudeTargetChanger
 //---------------------------------------
 spritetype* getTargetInRange(spritetype* pSprite, int minDist, int maxDist, short data, short teamMode) {
-    DUDEINFO pDudeInfo = dudeInfo[pSprite->type - kDudeBase];
-    XSPRITE* pXSprite = &xsprite[pSprite->extra];
-    spritetype* pTarget = NULL; XSPRITE* pXTarget = NULL;
-    spritetype* cTarget = NULL; XSPRITE* cXTarget = NULL;
+    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    spritetype* pTarget = NULL; XSPRITE* pXTarget = NULL; spritetype* cTarget = NULL;
     for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
         pTarget = &sprite[nSprite];  pXTarget = &xsprite[pTarget->extra];
-        if (!dudeCanSeeTarget(pXSprite, &pDudeInfo, pTarget)) continue;
+        if (!dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget)) continue;
 
-        int dist = getTargetDist(pSprite, &pDudeInfo, pTarget);
+        int dist = getTargetDist(pSprite, pDudeInfo, pTarget);
         if (dist < minDist || dist > maxDist) continue;
         else if (pXSprite->target == pTarget->xvel) return pTarget;
         else if (!IsDudeSprite(pTarget) || pTarget->xvel == pSprite->xvel || IsPlayerSprite(pTarget)) continue;
-        else if (IsBurningDude(pTarget) || IsKillableDude(pTarget, true)) continue;
-        else if (teamMode == 1 && isMateOf(pXSprite, pXTarget)) continue;
+        else if (IsBurningDude(pTarget) || !IsKillableDude(pTarget, true)) continue;
+        else if ((teamMode == 1 && isMateOf(pXSprite, pXTarget)) || isMatesHaveSameTarget(pXSprite,pTarget,1)) continue;
         else if (data == 666 || pXTarget->data1 == data) {
 
             if (pXSprite->target > 0) {
                 cTarget = &sprite[pXSprite->target];
-                cXTarget = &xsprite[cTarget->extra];
-                int fineDist1 = getFineTargetDist(pSprite, &pDudeInfo, cTarget);
-                int fineDist2 = getFineTargetDist(pSprite, &pDudeInfo, pTarget);
-                if (cXTarget->health < pXTarget->health && fineDist1 < fineDist2)
+                long fineDist1 = getFineTargetDist(pSprite, cTarget);
+                long fineDist2 = getFineTargetDist(pSprite, pTarget);
+                if (fineDist1 < fineDist2)
                     continue;
             }
             return pTarget;
@@ -2965,6 +2957,7 @@ bool isActive(int nSprite) {
         case kAiStateGenIdle:
         case kAiStateSearch:
         case kAiStateMove:
+        case kAiStateOther:
             return false;
     }
     return true;
@@ -2972,23 +2965,19 @@ bool isActive(int nSprite) {
 
 bool dudeCanSeeTarget(XSPRITE* pXDude, DUDEINFO* pDudeInfo, spritetype* pTarget) {
     spritetype* pDude = &sprite[pXDude->reference];
-    int dx = pTarget->x - pDude->x;
-    int dy = pTarget->y - pDude->y;
-
-    int dist = approxDist(dx, dy);
-
+    int dx = pTarget->x - pDude->x; int dy = pTarget->y - pDude->y;
+    
     // check target
-    if (dist < pDudeInfo->seeDist) {
+    if (approxDist(dx, dy) < pDudeInfo->seeDist) {
         int eyeAboveZ = pDudeInfo->eyeHeight * pDude->yrepeat << 2;
 
         // is there a line of sight to the target?
-        if (cansee(pDude->x, pDude->y, pDude->z, pDude->sectnum,
-            pTarget->x, pTarget->y, pTarget->z - eyeAboveZ, pTarget->sectnum)) {
-            int nAngle = getangle(dx, dy);
-            int losAngle = ((1024 + nAngle - pDude->ang) & 2047) - 1024; // 360 deg periphery here
+        if (cansee(pDude->x, pDude->y, pDude->z, pDude->sectnum, pTarget->x, pTarget->y, pTarget->z - eyeAboveZ, pTarget->sectnum)) {
+            /*int nAngle = getangle(dx, dy);
+            int losAngle = ((1024 + nAngle - pDude->ang) & 2047) - 1024;
 
             // is the target visible?
-            if (klabs(losAngle) < 2048)
+            if (klabs(losAngle) < 2048) // 360 deg periphery here*/
                 return true;
         }
     }
@@ -3007,25 +2996,21 @@ void activateDudes(int rx) {
         spritetype * pDude = &sprite[rxBucket[i].at0_0]; XSPRITE * pXDude = &xsprite[pDude->extra];
         if (!IsDudeSprite(pDude)) continue;
         if (pXDude->aiState->stateType == kAiStateGenIdle) {
-            aiSetTarget(pXDude, pDude->x, pDude->y, pDude->z);
-            aiActivateDude(pDude, pXDude);
+            aiInitSprite(pDude);
         }
-
-        if (unitCanFly(pDude))
-            pDude->hitag &= 0x0002;
     }
 }
 
 void disturbDudesInSight(spritetype* pSprite, int max) {
     spritetype* pDude = NULL; XSPRITE* pXDude = NULL;
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
-    DUDEINFO pDudeInfo = dudeInfo[pSprite->lotag - kDudeBase];
+    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->lotag - kDudeBase];
     for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
         pDude = &sprite[nSprite];
         if (pDude->xvel == pSprite->xvel || !IsDudeSprite(pDude) || pDude->extra < 0)
             continue;
         pXDude = &xsprite[pDude->extra];
-        if (dudeCanSeeTarget(pXSprite, &pDudeInfo, pDude)) {
+        if (dudeCanSeeTarget(pXSprite, pDudeInfo, pDude)) {
             if (pXDude->target != -1 || pXDude->rxID > 0)
                 continue;
 
@@ -3038,10 +3023,10 @@ void disturbDudesInSight(spritetype* pSprite, int max) {
 }
 
 int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
-    int x = pTarget->x; int y = pTarget->y; //int z = pTarget.z;
-    int dx = x - pSprite->x; int dy = y - pSprite->y;
+    long x = pTarget->x; long y = pTarget->y;
+    long dx = x - pSprite->x; long dy = y - pSprite->y;
 
-    int dist = approxDist(dx, dy);
+    long dist = approxDist(dx, dy);
     if (dist <= pDudeInfo->meleeDist) return 0;
     if (dist >= pDudeInfo->seeDist) return 13;
     if (dist <= pDudeInfo->seeDist / 12) return 1;
@@ -3058,8 +3043,7 @@ int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget)
     return 12;
 }
 
-int getFineTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
-    UNREFERENCED_PARAMETER(pDudeInfo);
+int getFineTargetDist(spritetype* pSprite, spritetype* pTarget) {
     int x = pTarget->x; int y = pTarget->y;
     int dx = x - pSprite->x; int dy = y - pSprite->y;
 
@@ -3490,15 +3474,15 @@ void InitGenerator(int nSprite)
     case kGDXDudeTargetChanger:
         pSprite->cstat &= ~kSprBlock;
         pSprite->cstat |= kSprInvisible;
-        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 5;
+        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 10;
         if (pXSprite->state != pXSprite->restState)
             evPost(nSprite, 3, pXSprite->busyTime, COMMAND_ID_21); // using different time intervals here
         return;
     case kGDXSeqSpawner:
     case kGDXEffectSpawner:
     case 700:
-        pSprite->cstat &= (unsigned short)~(32768+1);
-        pSprite->cstat |= 32768;
+        pSprite->cstat &= ~kSprBlock;
+        pSprite->cstat |= kSprInvisible;
         break;
     }
     if (pXSprite->state != pXSprite->restState && pXSprite->busyTime > 0)

@@ -3592,7 +3592,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
                 pXSprite->DudeLockout = 0;
 
                 if (pSprite->owner >= 0 && sprite[pSprite->owner].type == kGDXDudeUniversalCultist)
-                    sprite[pSprite->owner].owner = 32666; // By NoOne: indicates if custom dude had life leech.
+                    sprite[pSprite->owner].owner = kMaxSprites; // By NoOne: indicates if custom dude had life leech.
             }
             else if (!(pSprite->hitag&16))
                 actPropagateSpriteOwner(pSprite, &sprite[nSource]);
@@ -6849,8 +6849,9 @@ spritetype* spawnRandomDude(spritetype* pSprite) {
 
     return pSprite2;
 }
+//-------------------------
 
-// this function plays sound predefined in missile info
+// By NoOne: this function plays sound predefined in missile info
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId) {
     MissileType* pMissType = &missileInfo[missileId - kMissileBase];
     if (Chance(0x4000))
@@ -6861,7 +6862,7 @@ bool sfxPlayMissileSound(spritetype* pSprite, int missileId) {
     return true;
 }
 
-
+// By NoOne: this function plays sound predefined in vector info
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId) {
     VECTORDATA* pVectorData = &gVectorData[vectorId];
     if (Chance(0x4000))
@@ -6871,4 +6872,68 @@ bool sfxPlayVectorSound(spritetype* pSprite, int vectorId) {
 
     return true;
 }
-//-------------------------
+
+// By NoOne: this function allows to spawn new custom dude and inherit spawner settings,
+// so custom dude can have different weapons, hp and so on...
+spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
+
+    spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
+    spritetype* pDude = actSpawnSprite(pSprite,6); XSPRITE* pXDude = &xsprite[pDude->extra];
+
+    int x, y, z = pSprite->z, nAngle = pSprite->ang, nType = kGDXDudeUniversalCultist;
+
+    if (nDist > 0) {
+        x = pSprite->x + mulscale30r(Cos(nAngle), nDist);
+        y = pSprite->y + mulscale30r(Sin(nAngle), nDist);
+    }
+    else {
+        x = pSprite->x;
+        y = pSprite->y;
+    }
+
+    pDude->lotag = nType; pDude->ang = nAngle;
+    vec3_t pos = { x, y, z }; setsprite(pDude->index, &pos); 
+    pDude->cstat |= 0x1101; pDude->clipdist = dudeInfo[nType - kDudeBase].clipdist;
+
+    // inherit weapon and sound settings.
+    pXDude->data1 = pXSource->data1;
+    pXDude->data3 = pXSource->data3;
+
+    // inherit movement speed.
+    pXDude->busyTime = pXSource->busyTime;
+
+    // inherit custom hp settings
+    if (pXSource->data4 > 0) pXDude->health = pXSource->data4;
+    else pXDude->health = dudeInfo[nType - kDudeBase].startHealth << 4;
+
+    // inherit seq settings
+    int seqId = dudeInfo[nType - kDudeBase].seqStartID;
+    if (pXSource->data2 > 0) seqId = pXSource->data2;
+    pXDude->data2 = seqId;
+
+    if (gSysRes.Lookup(seqId,"SEQ"))
+        seqSpawn(seqId, 3, pDude->extra, -1);
+
+    if ((pSource->hitag & 0x0001) != 0) {
+        //inherit pal?
+        if (pDude->pal <= 0) pDude->pal = pSource->pal;
+
+        // inherit spawn sprite trigger settings, so designer can count monsters.
+        pXDude->txID = pXSource->txID;
+        pXDude->command = pXSource->command;
+        pXDude->triggerOn = pXSource->triggerOn;
+        pXDude->triggerOff = pXSource->triggerOff;
+
+        // inherit drop items
+        pXDude->dropMsg = pXSource->dropMsg;
+
+        // inherit dude flags
+        pXDude->dudeDeaf = pXSource->dudeDeaf;
+        pXDude->dudeGuard = pXSource->dudeGuard;
+        pXDude->dudeAmbush = pXSource->dudeAmbush;
+        pXDude->dudeFlag4 = pXSource->dudeFlag4;
+    }
+
+    aiInitSprite(pDude);
+    return pDude;
+}
