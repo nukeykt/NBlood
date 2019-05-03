@@ -5590,7 +5590,7 @@ void actProcessSprites(void)
         
         // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
 	    // via sprite statnum 2.
-        if (pSprite->hitag != 0x0001) {
+        if (!(pSprite->hitag & kHitagExtBit)) {
             pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
             pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
             pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
@@ -5929,7 +5929,7 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     
     // By NoOne: add a way to inherit some values of spawner by dude.
     // This way designer can count enemies via switches and do many other interesting things.
-    if ((pSource->hitag & 0x0001) != 0) {
+    if ((pSource->hitag & kHitagExtBit) != 0) {
         
         //inherit pal?
         if (pSprite2->pal <= 0) pSprite2->pal = pSource->pal;
@@ -6822,7 +6822,7 @@ spritetype* DropRandomPickupObject(spritetype* pSprite) {
         spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
         pSprite2 = actDropObject(pSprite, selected);
 
-        if ((pSource->hitag & 0x0001) != 0) {
+        if ((pSource->hitag & kHitagExtBit) != 0) {
             int nXSprite2 = pSprite2->extra;
             if (nXSprite2 == -1)
                 nXSprite2 = dbInsertXSprite(pSprite2->index);
