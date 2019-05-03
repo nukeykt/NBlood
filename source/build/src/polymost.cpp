@@ -4995,6 +4995,9 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
         if (globalposz > getflorzofslope(sectnum, globalposx, globalposy))
             domostpolymethod = DAMETH_BACKFACECULL; //Back-face culling
 
+        if (domostpolymethod & DAMETH_MASKPROPS)
+            glEnable(GL_BLEND);
+
         polymost_domost(x0, y0, x1, y1); //flor
     }
     else
@@ -5002,8 +5005,14 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
         if (globalposz < getceilzofslope(sectnum, globalposx, globalposy))
             domostpolymethod = DAMETH_BACKFACECULL; //Back-face culling
 
+        if (domostpolymethod & DAMETH_MASKPROPS)
+            glEnable(GL_BLEND);
+
         polymost_domost(x1, y1, x0, y0); //ceil
     }
+
+    if (domostpolymethod & DAMETH_MASKPROPS)
+        glDisable(GL_BLEND);
 
     domostpolymethod = DAMETH_NOMASK;
 }
