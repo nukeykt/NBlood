@@ -3317,13 +3317,12 @@ RORHACK:
         else if(powerupCheck(gView, 24) > 0)
         {
             nPalette = 1;
-        // By NoOne: part of "change of global view palette for stacks" feature
-        // See actor.cpp for more info
-        } else if (gView->at87) {
-
-            nPalette = gView->pXSprite->medium;
-            // can be removed now.
-            /*if (gView->at87)
+        }
+        else if (gView->at87)
+        {
+            if (gView->nWaterPal)
+                nPalette = gView->nWaterPal;
+            else
             {
                 if (gView->pXSprite->medium == 1)
                 {
@@ -3337,7 +3336,7 @@ RORHACK:
                 {
                     nPalette = 2;
                 }
-            }*/
+            }
         }
     }
     if (gViewMode == 4)

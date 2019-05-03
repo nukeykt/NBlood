@@ -149,6 +149,7 @@ struct PLAYER {
     fix16_t q16ang;
     int angold;
     int player_par;
+    int nWaterPal;
 };
 
 struct POSTURE {

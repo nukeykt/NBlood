@@ -769,6 +769,7 @@ void playerStart(int nPlayer)
     pPlayer->atc3 = 0;
     pPlayer->at26 = -1;
     pPlayer->at376 = 0;
+    pPlayer->nWaterPal = 0;
     for (int i = 0; i < kMaxPowerUps; i++)
         pPlayer->at202[i] = 0;
     if (pPlayer == gMe)

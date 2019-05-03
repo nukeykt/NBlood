@@ -4671,33 +4671,24 @@ void MoveDude(spritetype *pSprite)
         case kMarkerUpWater:
         case kMarkerUpGoo:
         {
-            // look for palette in data2 of marker. If value <= 0, use default ones.
-            int gViewPal = 0; int nUpperTMP = gUpperLink[nSector];
-            spritetype *pUpper = &sprite[nUpperTMP];
-            if (pUpper->extra >= 0) {
-                XSPRITE *pXUpper = &xsprite[pUpper->extra];
-                gViewPal = pXUpper->data2;
-            }
-            if (gViewPal <= 0) {
-                if (nLink == kMarkerUpWater) pXSprite->medium = 1;
-                else if (!pPlayer) pXSprite->medium = 2;
-                else pXSprite->medium = 3;
-                
-                // *Real* Goo palette ID is 3, but monsters think it's 2, so we need keep it like that just for them
-                // while player should have pal 3 to be set to actually see the goo pal. There is no control of it in view.cpp anymore
-            } 
-            else if (!pPlayer && gViewPal > 1) pXSprite->medium = 2; // Required for most of monsters to detect if they are underwater (weird!)
-            else pXSprite->medium = gViewPal; // Player can use any palette.
-            
+            pXSprite->medium = nLink == kMarkerUpGoo ? 2 : 1;
 
-            if (pPlayer) {
+            if (pPlayer)
+            {
+                // look for palette in data2 of marker. If value <= 0, use default ones.
+                pPlayer->nWaterPal = 0;
+                int nXUpper = sprite[gUpperLink[nSector]].extra;
+                if (nXUpper >= 0)
+                    pPlayer->nWaterPal = xsprite[nXUpper].data2;
+
                 pPlayer->at2f = 1;
                 pXSprite->burnTime = 0;
                 pPlayer->at302 = klabs(zvel[nSprite]) >> 12;
                 evPost(nSprite, 3, 0, CALLBACK_ID_10);
                 sfxPlay3DSound(pSprite, 720, -1, 0);
             }
-            else {
+            else
+            {
                 switch (pSprite->type)
                 {
                 case 201:
@@ -4710,10 +4701,7 @@ void MoveDude(spritetype *pSprite)
                 case 240:
                 {
                     // There is no difference between water and goo except following chance:
-                    bool chance = Chance(0xa00);
-                    if (nLink == kMarkerLowGoo) chance = Chance(0x400);
-
-                    if (chance)
+                    if (Chance(nLink == kMarkerUpGoo ? 0x400 : 0xa00))
                     {
                         pSprite->type = 201;
                         pXSprite->burnTime = 0;
