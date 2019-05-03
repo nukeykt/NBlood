@@ -4671,33 +4671,24 @@ void MoveDude(spritetype *pSprite)
         case kMarkerUpWater:
         case kMarkerUpGoo:
         {
-            // look for palette in data2 of marker. If value <= 0, use default ones.
-            int gViewPal = 0; int nUpperTMP = gUpperLink[nSector];
-            spritetype *pUpper = &sprite[nUpperTMP];
-            if (pUpper->extra >= 0) {
-                XSPRITE *pXUpper = &xsprite[pUpper->extra];
-                gViewPal = pXUpper->data2;
-            }
-            if (gViewPal <= 0) {
-                if (nLink == kMarkerUpWater) pXSprite->medium = 1;
-                else if (!pPlayer) pXSprite->medium = 2;
-                else pXSprite->medium = 3;
-                
-                // *Real* Goo palette ID is 3, but monsters think it's 2, so we need keep it like that just for them
-                // while player should have pal 3 to be set to actually see the goo pal. There is no control of it in view.cpp anymore
-            } 
-            else if (!pPlayer && gViewPal > 1) pXSprite->medium = 2; // Required for most of monsters to detect if they are underwater (weird!)
-            else pXSprite->medium = gViewPal; // Player can use any palette.
-            
+            pXSprite->medium = nLink == kMarkerUpGoo ? 2 : 1;
 
-            if (pPlayer) {
+            if (pPlayer)
+            {
+                // look for palette in data2 of marker. If value <= 0, use default ones.
+                pPlayer->nWaterPal = 0;
+                int nXUpper = sprite[gUpperLink[nSector]].extra;
+                if (nXUpper >= 0)
+                    pPlayer->nWaterPal = xsprite[nXUpper].data2;
+
                 pPlayer->at2f = 1;
                 pXSprite->burnTime = 0;
                 pPlayer->at302 = klabs(zvel[nSprite]) >> 12;
                 evPost(nSprite, 3, 0, CALLBACK_ID_10);
                 sfxPlay3DSound(pSprite, 720, -1, 0);
             }
-            else {
+            else
+            {
                 switch (pSprite->type)
                 {
                 case 201:
@@ -4710,10 +4701,7 @@ void MoveDude(spritetype *pSprite)
                 case 240:
                 {
                     // There is no difference between water and goo except following chance:
-                    bool chance = Chance(0xa00);
-                    if (nLink == kMarkerLowGoo) chance = Chance(0x400);
-
-                    if (chance)
+                    if (Chance(nLink == kMarkerUpGoo ? 0x400 : 0xa00))
                     {
                         pSprite->type = 201;
                         pXSprite->burnTime = 0;
@@ -5602,7 +5590,7 @@ void actProcessSprites(void)
         
         // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
 	    // via sprite statnum 2.
-        if (pSprite->hitag != 0x0001) {
+        if (!(pSprite->hitag & kHitagExtBit)) {
             pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
             pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
             pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
@@ -5941,7 +5929,7 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     
     // By NoOne: add a way to inherit some values of spawner by dude.
     // This way designer can count enemies via switches and do many other interesting things.
-    if ((pSource->hitag & 0x0001) != 0) {
+    if ((pSource->hitag & kHitagExtBit) != 0) {
         
         //inherit pal?
         if (pSprite2->pal <= 0) pSprite2->pal = pSource->pal;
@@ -6834,7 +6822,7 @@ spritetype* DropRandomPickupObject(spritetype* pSprite) {
         spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
         pSprite2 = actDropObject(pSprite, selected);
 
-        if ((pSource->hitag & 0x0001) != 0) {
+        if ((pSource->hitag & kHitagExtBit) != 0) {
             int nXSprite2 = pSprite2->extra;
             if (nXSprite2 == -1)
                 nXSprite2 = dbInsertXSprite(pSprite2->index);

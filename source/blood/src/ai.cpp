@@ -1767,7 +1767,7 @@ void aiInitSprite(spritetype *pSprite)
     case 225:
     case 226:
         if ((pSprite->cstat & kSprFlipY) != 0) {
-            if (pSprite->hitag != 0x0001) // don't add autoaim for player if hitag 1 specified in editor.
+            if (!(pSprite->hitag & kHitagExtBit)) // don't add autoaim for player if hitag 1 specified in editor.
                 pSprite->hitag = kHitagAutoAim;
             break;
         }

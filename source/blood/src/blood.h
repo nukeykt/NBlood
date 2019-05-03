@@ -101,6 +101,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kHitagRespawn 0x0010
 #define kHitagFree 0x0020
 #define kHitagSmoke 0x0100
+#define kHitagExtBit 0x8000 // NoOne's extension bit(Note: it's bit 0 in editor!)
 
 // sector types 
 #define kSecBase 600

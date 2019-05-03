@@ -1198,7 +1198,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
         spritetype *pSprite = &sprite[nSprite];
         // By NoOne: allow to move markers by sector movements in game if hitag 1 is added in editor.
         if (pSprite->statnum == 10 || pSprite->statnum == 16) {
-            if (pSprite->hitag != 0x0001) continue;
+            if (!(pSprite->hitag&kHitagExtBit)) continue;
         }
         x = baseSprite[nSprite].x;
         y = baseSprite[nSprite].y;
@@ -2295,7 +2295,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         
         XSECTOR* pXSector = &xsector[sector[nDest].extra];
 
-        if ((pSource->hitag & 0x0001) != 0) {
+        if ((pSource->hitag & kHitagExtBit) != 0) {
             pXSector->panAlways = true;
             pXSector->windAlways = true;
         }
@@ -2422,7 +2422,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 else pXSector->phase = (short)pXSource->data4;
             }
 
-            if ((pSource->hitag & 0x0001) != 0)
+            if ((pSource->hitag & kHitagExtBit) != 0)
                 pXSector->shadeAlways = true;
 
         }
@@ -2773,13 +2773,13 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 XSECTOR *pXSector = &xsector[sector[nDest].extra];
                 if (valueIsBetween(pXSource->data3, -1, 32767)) {
                     sector[nDest].floorpal = pXSource->data3;
-                    if ((pSource->hitag & 0x0001) != 0)
+                    if ((pSource->hitag & kHitagExtBit) != 0)
                         pXSector->floorpal = pXSource->data3;
                 }
 
                 if (valueIsBetween(pXSource->data4, -1, 65535)) {
                     sector[nDest].ceilingpal = (short)pXSource->data4;
-                    if ((pSource->hitag & 0x0001) != 0)
+                    if ((pSource->hitag & kHitagExtBit) != 0)
                         pXSector->ceilpal = (short)pXSource->data4;
                 }
                 break;
