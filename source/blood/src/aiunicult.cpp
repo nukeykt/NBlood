@@ -997,7 +997,7 @@ void removeDudeStuff(spritetype* pSprite) {
             case 402:
             case 433:
                 if (sprite[nSprite].owner == pSprite->xvel) {
-                    deletesprite(nSprite);
+                    actPostSprite(nSprite, kStatFree);
                 }
                 continue;
             case 431:
@@ -1018,7 +1018,7 @@ void removeLeech(spritetype* pLeech) {
         pEffect->xrepeat = repeat;
         pEffect->yrepeat = repeat;
         sfxPlay3DSoundCP(pLeech, 490, -1, 0,60000);
-        deletesprite(pLeech->xvel);
+        actPostSprite(pLeech->index, kStatFree);
     }
 }
     
