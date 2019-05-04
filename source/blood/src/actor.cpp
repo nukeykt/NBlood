@@ -4026,13 +4026,13 @@ void actTouchFloor(spritetype *pSprite, int nSector)
     if (pSector->extra > 0)
         pXSector = &xsector[pSector->extra];
 
-    if (pXSector && (pSector->lotag == 618 || pXSector->at33_1 > 0))
+    if (pXSector && (pSector->lotag == 618 || pXSector->damageType > 0))
     {
         DAMAGE_TYPE nDamageType;
         if (pSector->lotag == 618)
-            nDamageType = (DAMAGE_TYPE)ClipRange(pXSector->at33_1, DAMAGE_TYPE_0, DAMAGE_TYPE_6);
+            nDamageType = (DAMAGE_TYPE)ClipRange(pXSector->damageType, DAMAGE_TYPE_0, DAMAGE_TYPE_6);
         else
-            nDamageType = (DAMAGE_TYPE)ClipRange(pXSector->at33_1-1, DAMAGE_TYPE_0, DAMAGE_TYPE_6);
+            nDamageType = (DAMAGE_TYPE)ClipRange(pXSector->damageType-1, DAMAGE_TYPE_0, DAMAGE_TYPE_6);
         int nDamage;
         if (pXSector->data)
             nDamage = ClipRange(pXSector->data, 0, 1000);
@@ -5927,9 +5927,11 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     if (gSysRes.Lookup(dudeInfo[nDude].seqStartID, "SEQ"))
         seqSpawn(dudeInfo[nDude].seqStartID, 3, pSprite2->extra, -1);
     
-    // By NoOne: add a way to inherit some values of spawner by dude.
+    // By NoOne: add a way to inherit some values of spawner type 18 by dude.
     // This way designer can count enemies via switches and do many other interesting things.
-    if ((pSource->hitag & kHitagExtBit) != 0) {
+
+                                                // oops, forget to check for source type previously
+    if ((pSource->hitag & kHitagExtBit) != 0 && pSource->type == 18) {
         
         //inherit pal?
         if (pSprite2->pal <= 0) pSprite2->pal = pSource->pal;

@@ -123,7 +123,12 @@ void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
     
     if (pAIState->atc) pAIState->atc(pSprite, pXSprite); // entry function
 }
-
+bool dudeIsImmune(spritetype* pSprite, int dmgType) {
+    if (dmgType < 0 || dmgType > 6) return true;
+    else if (dudeInfo[pSprite->type - kDudeBase].startDamage[dmgType] == 0) return true;
+    else if (pSprite->extra >= 0 && xsprite[pSprite->extra].locked == 1) return true;  // if dude is locked, it immune to any dmg.
+    return false;
+}
 bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
 {
     int top, bottom;
@@ -148,31 +153,42 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     int floorZ = getflorzofslope(nSector, x, y);
     int UNUSED(ceilZ) = getceilzofslope(nSector, x, y);
     int nXSector = sector[nSector].extra;
-    char vbl = 0; // Underwater
-    char vbh = 0; // Warp
-    char vdl = 0; // Depth
-    char vdh = 0; // Damage
+    char Underwater = 0; char Water = 0; char Depth = 0; char Crusher = 0;
     if (nXSector > 0)
     {
         XSECTOR *pXSector = &xsector[nXSector];
         if (pXSector->Underwater)
-            vbl = 1;
+            Underwater = 1;
         if (pXSector->Depth)
-            vdl = 1;
-        if (sector[nSector].lotag == 618 || pXSector->at33_1 > 0)
-            vdh = 1;
+            Depth = 1;
+        if (sector[nSector].lotag == kSecDamage || pXSector->damageType > 0) {
+            // By NoOne: a quick fix for Cerberus spinning in E3M7-like maps, where damage sectors is used.
+            // It makes ignore danger if enemy immune to N damageType. As result Cerberus start acting like
+            // in Blood 1.0 so it can move normally to player. It's up to you for adding rest of enemies here as
+            // i don't think it will broke something in game.
+            switch (pSprite->type) {
+                case 227: // Cerberus
+                case 228: // 1 Head Cerberus
+                    if (isOriginalDemo() || !dudeIsImmune(pSprite, pXSector->damageType))
+                        Crusher = 1;
+                    break;
+                default:
+                    Crusher = 1;
+                    break;
+            }
+        }
     }
     int nUpper = gUpperLink[nSector];
     int nLower = gLowerLink[nSector];
     if (nUpper >= 0)
     {
-        if (sprite[nUpper].type == 9 || sprite[nUpper].type == 13)
-            vbh = vdl = 1;
+        if (sprite[nUpper].type == kMarkerUpWater || sprite[nUpper].type == kMarkerUpGoo)
+            Water = Depth = 1;
     }
     if (nLower >= 0)
     {
-        if (sprite[nLower].type == 10 || sprite[nLower].type == 14)
-            vdl = 1;
+        if (sprite[nLower].type == kMarkerLowWater || sprite[nLower].type == kMarkerLowGoo)
+            Depth = 1;
     }
     switch (pSprite->type)
     {
@@ -181,21 +197,21 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     case 219:
         if (pSprite->clipdist > nDist)
             return 0;
-        if (vdl)
+        if (Depth)
         {
             // Ouch...
-            if (vdl)
+            if (Depth)
                 return false;
-            if (vdh)
+            if (Crusher)
                 return false;
         }
         break;
     case 218:
-        if (vbh)
+        if (Water)
             return false;
-        if (!vbl)
+        if (!Underwater)
             return false;
-        if (vbl)
+        if (Underwater)
             return true;
         break;
     case 204:
@@ -207,9 +223,9 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     case 220:
     case 227:
     case 245:
-        if (vdh)
+        if (Crusher)
             return false;
-        if (vdl || vbl)
+        if (Depth || Underwater)
             return false;
         if (floorZ - bottom > 0x2000)
             return false;
@@ -218,7 +234,7 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     case 210:
     case 217:
     default:
-        if (vdh)
+        if (Crusher)
             return false;
         if ((nXSector < 0 || (!xsector[nXSector].Underwater && !xsector[nXSector].Depth)) && floorZ - bottom > 0x2000)
             return false;
