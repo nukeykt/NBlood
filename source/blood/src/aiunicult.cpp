@@ -668,24 +668,19 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                             }
                         }
                     } else {
-                            
-                        //SEQINST* pSeqInst = GetInstance(3, pSprite->extra); Seq* pSeq = pSeqInst->pSequence;
-                        //if (pSeq != NULL) {
-                            int nSeq = 6; if (state < 3) nSeq = 8;
-                            if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq) {
-                                switch(state){
-                                    case 1:
-                                        pXSprite->aiState->at18 = &GDXGenDudeChaseW;
-                                        break;
-                                    case 2:
-                                        pXSprite->aiState->at18 = &GDXGenDudeChaseD;
-                                        break;
-                                    default:
-                                        pXSprite->aiState->at18 = &GDXGenDudeChaseL;
-                                        break;
-                                }
-                            //}
-
+                        int nSeq = 6; if (state < 3) nSeq = 8;
+                        if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq) {
+                            switch(state){
+                                case 1:
+                                    pXSprite->aiState->at18 = &GDXGenDudeChaseW;
+                                    break;
+                                case 2:
+                                    pXSprite->aiState->at18 = &GDXGenDudeChaseD;
+                                    break;
+                                default:
+                                    pXSprite->aiState->at18 = &GDXGenDudeChaseL;
+                                    break;
+                            }
                         } else {
                             if(pXSprite->aiState == &GDXGenDudeChaseL || pXSprite->aiState == &GDXGenDudeChaseD ||
                             pXSprite->aiState == &GDXGenDudeChaseW || pXSprite->aiState == &GDXGenDudeFireL ||

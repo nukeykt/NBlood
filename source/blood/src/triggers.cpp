@@ -2469,7 +2469,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 }
             }
             else {
-                actKillDude(pSource->xvel, pSprite, (DAMAGE_TYPE)0, 65535);
+                actKillDude(pSource->xvel, pSprite, DAMAGE_TYPE_0, 65535);
                 return;
             }
         }
@@ -2557,7 +2557,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             if (pXSprite->target >= 0 && getTargetDist(pSprite, pDudeInfo, &sprite[pXSprite->target]) < mDist) {
                 return;
             // lets try to look for target that fits better by distance
-            } else if ((gFrameClock & 256) != 0 && (pXSprite->target < 0 || getTargetDist(pSprite, pDudeInfo, pTarget) >= mDist)) {
+            } else if ((gFrameClock & 128) != 0 && (pXSprite->target < 0 || getTargetDist(pSprite, pDudeInfo, pTarget) >= mDist)) {
                 pTarget = getTargetInRange(pSprite, 0, mDist, pXSource->data1, pXSource->data2);
                 if (pTarget != NULL) {
                     pXTarget = &xsprite[pTarget->extra];
@@ -3474,7 +3474,7 @@ void InitGenerator(int nSprite)
     case kGDXDudeTargetChanger:
         pSprite->cstat &= ~kSprBlock;
         pSprite->cstat |= kSprInvisible;
-        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 10;
+        if (pXSprite->busyTime <= 0) pXSprite->busyTime = 1;
         if (pXSprite->state != pXSprite->restState)
             evPost(nSprite, 3, pXSprite->busyTime, COMMAND_ID_21); // using different time intervals here
         return;

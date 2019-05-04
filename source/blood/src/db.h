@@ -164,7 +164,7 @@ struct XSECTOR {
     unsigned int at30_1 : 8; // Ceiling x panning frac
     unsigned int at31_1 : 8; // Ceiling y panning frac
     unsigned int at32_1 : 8; // Floor x panning frac
-    unsigned int at33_1 : 3; // DamageType
+    unsigned int damageType : 3; // DamageType
     unsigned int floorpal : 4; // Floor pal2
     unsigned int at34_0 : 8; // Floor y panning frac
     unsigned int locked : 1; // Locked
