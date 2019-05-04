@@ -60,6 +60,6 @@ spritetype* leechIsDropped(spritetype* pSprite);
 bool spriteIsUnderwater(spritetype* pSprite, bool oldWay);
 bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data);
 void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite);
-long getGenDudeMoveSpeed(spritetype* pSprite, int which, bool mul, bool shift);
+int getGenDudeMoveSpeed(spritetype* pSprite, int which, bool mul, bool shift);
 bool TargetNearThing(spritetype* pSprite, int thingType);
 int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite);

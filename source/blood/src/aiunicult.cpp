@@ -781,7 +781,7 @@ bool TargetNearThing(spritetype* pSprite, int thingType) {
 }
     
 ///// For gen dude
-long getGenDudeMoveSpeed(spritetype* pSprite,int which, bool mul, bool shift) {
+int getGenDudeMoveSpeed(spritetype* pSprite,int which, bool mul, bool shift) {
     DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
     int speed = -1; int step = 2500; int maxSpeed = 146603;
@@ -830,7 +830,7 @@ void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite ) {
     int sin = Sin(pSprite->ang);
     int cos = Cos(pSprite->ang);
 
-    long frontSpeed = getGenDudeMoveSpeed(pSprite,0,true,false);
+    int frontSpeed = getGenDudeMoveSpeed(pSprite,0,true,false);
     xvel[pSprite->xvel] += mulscale(cos, frontSpeed, 30);
     yvel[pSprite->xvel] += mulscale(sin, frontSpeed, 30);
 }

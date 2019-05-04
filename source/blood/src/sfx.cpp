@@ -280,7 +280,7 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
 }
 
 // By NoOne: same as previous, but allows to set custom pitch for sound. Used by SFX gen now.
-void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, long pitch)
+void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitch)
 {
     if (!SoundToggle || !pSprite || soundId < 0) return;
     DICTNODE* hRes = gSoundRes.Lookup(soundId, "SFX");

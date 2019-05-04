@@ -2876,8 +2876,8 @@ spritetype* getTargetInRange(spritetype* pSprite, int minDist, int maxDist, shor
 
             if (pXSprite->target > 0) {
                 cTarget = &sprite[pXSprite->target];
-                long fineDist1 = getFineTargetDist(pSprite, cTarget);
-                long fineDist2 = getFineTargetDist(pSprite, pTarget);
+                int fineDist1 = getFineTargetDist(pSprite, cTarget);
+                int fineDist2 = getFineTargetDist(pSprite, pTarget);
                 if (fineDist1 < fineDist2)
                     continue;
             }
@@ -3023,10 +3023,10 @@ void disturbDudesInSight(spritetype* pSprite, int max) {
 }
 
 int getTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget) {
-    long x = pTarget->x; long y = pTarget->y;
-    long dx = x - pSprite->x; long dy = y - pSprite->y;
+    int x = pTarget->x; int y = pTarget->y;
+    int dx = x - pSprite->x; int dy = y - pSprite->y;
 
-    long dist = approxDist(dx, dy);
+    int dist = approxDist(dx, dy);
     if (dist <= pDudeInfo->meleeDist) return 0;
     if (dist >= pDudeInfo->seeDist) return 13;
     if (dist <= pDudeInfo->seeDist / 12) return 1;
@@ -3561,7 +3561,7 @@ void ActivateGenerator(int nSprite)
     case 708:
     {
         // By NoOne: allow custom pitch for sounds in SFX gen.
-        long pitch = pXSprite->data4 << 1; if (pitch < 2000) pitch = 0;
+        int pitch = pXSprite->data4 << 1; if (pitch < 2000) pitch = 0;
         sfxPlay3DSoundCP(pSprite, pXSprite->data2, -1, 0, pitch);
         break;
     }
