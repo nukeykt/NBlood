@@ -421,55 +421,55 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
                 pXSprite->data4 = tmp;
             }
 
-            // Make sure dropMsg is correct as we store current index of TX ID here.
-            if (pXSprite->dropMsg < pXSprite->data1) pXSprite->dropMsg = pXSprite->data1;
-            else if (pXSprite->dropMsg > pXSprite->data4) pXSprite->dropMsg = pXSprite->data4;
+            // Make sure txIndex is correct as we store current index of TX ID here.
+            if (pXSprite->txIndex < pXSprite->data1) pXSprite->txIndex = pXSprite->data1;
+            else if (pXSprite->txIndex > pXSprite->data4) pXSprite->txIndex = pXSprite->data4;
 
             range = true;
 
         } else {
-            // Make sure dropMsg is correct as we store current index of data field here.
-            if (pXSprite->dropMsg > 3) pXSprite->dropMsg = 0;
-            else if (pXSprite->dropMsg < 0) pXSprite->dropMsg = 3;
+            // Make sure txIndex is correct as we store current index of data field here.
+            if (pXSprite->txIndex > 3) pXSprite->txIndex = 0;
+            else if (pXSprite->txIndex < 0) pXSprite->txIndex = 3;
         }
 
         switch (a3.at2_0) {
             case COMMAND_ID_0:
                 if (range == false) {
                     while (cnt-- >= 0) { // skip empty data fields
-                        pXSprite->dropMsg--;
-                        if (pXSprite->dropMsg < 0) pXSprite->dropMsg = 3;
-                        tx = GetDataVal(pSprite, pXSprite->dropMsg);
+                        pXSprite->txIndex--;
+                        if (pXSprite->txIndex < 0) pXSprite->txIndex = 3;
+                        tx = GetDataVal(pSprite, pXSprite->txIndex);
                         if (tx < 0) ThrowError(" -- Current data index is negative");
                         if (tx > 0) break;
                         continue;
                     }
                 } else {
-                    pXSprite->dropMsg--;
-                    if (pXSprite->dropMsg < pXSprite->data1) {
-                        pXSprite->dropMsg = pXSprite->data4;
+                    pXSprite->txIndex--;
+                    if (pXSprite->txIndex < pXSprite->data1) {
+                        pXSprite->txIndex = pXSprite->data4;
                     }
-                    tx = pXSprite->dropMsg;
+                    tx = pXSprite->txIndex;
                 }
                 break;
 
             default:
                 if (range == false) {
                     while (cnt-- >= 0) { // skip empty data fields
-                        if (pXSprite->dropMsg > 3) pXSprite->dropMsg = 0;
-                        tx = GetDataVal(pSprite, pXSprite->dropMsg);
+                        if (pXSprite->txIndex > 3) pXSprite->txIndex = 0;
+                        tx = GetDataVal(pSprite, pXSprite->txIndex);
                         if (tx < 0) ThrowError(" ++ Current data index is negative");
-                        pXSprite->dropMsg++;
+                        pXSprite->txIndex++;
                         if (tx > 0) break;
                         continue;
                     }
                 } else {
-                    tx = pXSprite->dropMsg;
-                    if (pXSprite->dropMsg >= pXSprite->data4) {
-                        pXSprite->dropMsg = pXSprite->data1;
+                    tx = pXSprite->txIndex;
+                    if (pXSprite->txIndex >= pXSprite->data4) {
+                        pXSprite->txIndex = pXSprite->data1;
                         break;
                     }
-                    pXSprite->dropMsg++;
+                    pXSprite->txIndex++;
                 }
                 break;
         }
@@ -2497,7 +2497,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             if (unitCanFly(pSprite) && isMeleeUnit(pTarget) && !unitCanFly(pTarget))
                 pSprite->hitag |= 0x0002;
             else if (unitCanFly(pSprite))
-                pSprite->hitag &= 0x0002;
+                pSprite->hitag &= ~0x0002;
 
             if (!IsDudeSprite(pTarget) || pXTarget->health < 1 || !dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget)) {
                 aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
