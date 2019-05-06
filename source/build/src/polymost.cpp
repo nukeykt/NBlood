@@ -6788,8 +6788,14 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     if (!waloff[globalpicnum])
     {
         // restore this to normal
-        glDisable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        if (polymost_maskWallHasTranslucency(wal))
+        {
+            glEnable(GL_ALPHA_TEST);
+        } else
+        {
+            glDisable(GL_BLEND);
+            glEnable(GL_ALPHA_TEST);
+        }
     }
 }
 
