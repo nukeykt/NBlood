@@ -3269,7 +3269,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
 
         int seqId = pXSprite->data2;
         bool dBurn1 = gSysRes.Lookup(seqId + 15, "SEQ"); bool dBurn2 = gSysRes.Lookup(seqId + 16, "SEQ");
-        if (dBurn1 && dBurn2) seqId += 15 + Random(1);
+        if (dBurn1 && dBurn2) seqId += 15 + Random(2);
         else if (dBurn1) seqId +=15;
         else if (dBurn2) seqId +=16;
         else { 
