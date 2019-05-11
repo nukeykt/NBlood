@@ -326,6 +326,7 @@
 		8AAC6D97221971430074B176 /* libxmp-lite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8AAC6D3E22196F510074B176 /* libxmp-lite.a */; };
 		8AAC6D99221972690074B176 /* nblood.pk3 in Resources */ = {isa = PBXBuildFile; fileRef = 8AAC6D98221972640074B176 /* nblood.pk3 */; };
 		8AAC6D9B2219A5760074B176 /* mapster32.icns in Resources */ = {isa = PBXBuildFile; fileRef = 8AAC6D9A2219A56D0074B176 /* mapster32.icns */; };
+		8ABD67772286C08100CDB214 /* aiunicult.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ABD67752286C05400CDB214 /* aiunicult.cpp */; };
 		8ADC7B1922181CF600709207 /* game.png in Resources */ = {isa = PBXBuildFile; fileRef = 8ADC7B1622181CE300709207 /* game.png */; };
 /* End PBXBuildFile section */
 
@@ -1059,6 +1060,8 @@
 		8AAC6D9A2219A56D0074B176 /* mapster32.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = mapster32.icns; path = bundles/Mapster32.app/Contents/Resources/mapster32.icns; sourceTree = "<group>"; };
 		8AAC6D9C2219A7FE0074B176 /* driver_directsound.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = driver_directsound.cpp; sourceTree = "<group>"; };
 		8AAC6D9D2219A7FE0074B176 /* driver_directsound.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = driver_directsound.h; sourceTree = "<group>"; };
+		8ABD67752286C05400CDB214 /* aiunicult.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aiunicult.cpp; path = ../../source/blood/src/aiunicult.cpp; sourceTree = "<group>"; };
+		8ABD67762286C05400CDB214 /* aiunicult.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aiunicult.h; path = ../../source/blood/src/aiunicult.h; sourceTree = "<group>"; };
 		8ADC7B1622181CE300709207 /* game.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = game.png; path = bundles/NBlood.app/Contents/Resources/game.png; sourceTree = "<group>"; };
 		8ADC7B1722181CEA00709207 /* nblood.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = nblood.icns; path = bundles/NBlood.app/Contents/Resources/nblood.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1758,6 +1761,8 @@
 				8A9E0ECE2216E8F0000327F4 /* aispid.h */,
 				8A9E0EA82216E8ED000327F4 /* aitchern.cpp */,
 				8A9E0EF52216E8F3000327F4 /* aitchern.h */,
+				8ABD67752286C05400CDB214 /* aiunicult.cpp */,
+				8ABD67762286C05400CDB214 /* aiunicult.h */,
 				8A9E0F102216E8F6000327F4 /* aizomba.cpp */,
 				8A9E0EB12216E8ED000327F4 /* aizomba.h */,
 				8A9E0ED92216E8F0000327F4 /* aizombf.cpp */,
@@ -2441,6 +2446,7 @@
 				8A9E0FA22216E966000327F4 /* airat.cpp in Sources */,
 				8A9E0FA32216E966000327F4 /* aispid.cpp in Sources */,
 				8A9E0FA42216E966000327F4 /* aitchern.cpp in Sources */,
+				8ABD67772286C08100CDB214 /* aiunicult.cpp in Sources */,
 				8A9E0FA52216E966000327F4 /* aizomba.cpp in Sources */,
 				8A9E0FA62216E966000327F4 /* aizombf.cpp in Sources */,
 				8A9E0FA72216E966000327F4 /* al_midi.cpp in Sources */,
