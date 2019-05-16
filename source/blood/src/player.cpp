@@ -1935,7 +1935,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
                 int top, bottom;
                 GetSpriteExtents(pSprite, &top, &bottom);
                 CGibPosition gibPos(pSprite->x, pSprite->y, top);
-                CGibVelocity gibVel(xvel[pSprite->index], yvel[pSprite->index], -0xccccc);
+                CGibVelocity gibVel(xvel[pSprite->index]>>1, yvel[pSprite->index]>>1, -0xccccc);
                 GibSprite(pSprite, GIBTYPE_27, &gibPos, &gibVel);
                 GibSprite(pSprite, GIBTYPE_7, NULL, NULL);
                 fxSpawnBlood(pSprite, nDamage<<4);
