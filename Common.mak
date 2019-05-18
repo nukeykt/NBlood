@@ -180,6 +180,11 @@ ifeq ($(PLATFORM),DARWIN)
     CXX := $(CROSS)clang++$(CROSS_SUFFIX)
 endif
 
+ifeq ($(PLATFORM),BSD)
+    CC := $(CROSS)clang
+    CXX := $(CROSS)clang++
+endif
+
 COBJC := $(CC) -x objective-c
 COBJCXX := $(CXX) -x objective-c++
 L_CC := $(CC)
@@ -827,6 +832,7 @@ else ifeq ($(PLATFORM),DARWIN)
         COMPILERFLAGS += -I/sw/include
     endif
 else ifeq ($(PLATFORM),BSD)
+    LIBDIRS += -L/usr/local/lib
     COMPILERFLAGS += -I/usr/local/include
 else ifeq ($(PLATFORM),WII)
     COMPILERFLAGS += -I$(PORTLIBS)/include -Iplatform/Wii/include
