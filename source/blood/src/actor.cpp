@@ -6762,26 +6762,38 @@ int my_random(int a, int b)
 }
 
 // tries to get random data field of sprite
-int GetRandDataVal(spritetype* pSprite) {
+int GetRandDataVal(int rData[], spritetype* pSprite) {
 
-    if (pSprite->extra < 0) return -1;
-    XSPRITE* pXSprite = &xsprite[pSprite->extra];
-    int rData[4]; int random = 0;
-    int maxRetries = 10; int selected = -1; int a = 1;
+    if (rData != NULL && pSprite != NULL) return -1;
+    else if (pSprite != NULL) {
 
+        if (pSprite->extra < 0)
+            return -1;
 
-    rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
-    rData[1] = pXSprite->data2; rData[3] = pXSprite->data4;
+        int rData[4]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
+        rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
+        rData[1] = pXSprite->data2; rData[3] = pXSprite->data4;
 
+    }
+    else if (rData == NULL) {
+        return -1;
+    }
+
+    int random = 0;
     // randomize only in case if at least 2 data fields are not empty
+    int a = 1; int b = -1;
     for (int i = 0; i <= 3; i++) {
         if (rData[i] == 0) {
             if (a++ > 2)
-                return selected;
+                return -1;
+        }
+        else if (b == -1) {
+            b++;
         }
     }
 
     // try randomize few times
+    int maxRetries = 10;
     while (maxRetries > 0) {
              
         // use true random only for single player mode
@@ -6794,34 +6806,28 @@ int GetRandDataVal(spritetype* pSprite) {
             random = Random(3);
         }
 
-       if (rData[random] > 0) {
-            selected = (int)rData[random];
-            break;
-       }
-
-        maxRetries--;
+       if (rData[random] > 0) return rData[random];
+       maxRetries--;
     }
 
     // if nothing, get first found data value from top
-    if (selected == -1) {
-        int r = 0;
-        while (r <= 3) {
-            if (rData[r] > 0) {
-                selected = rData[r];
-                break;
-            }
-
-            r++;
-        }
-    }
-
-    return selected;
+     return rData[b];
 }
 
 // this function drops random item using random pickup generator(s)
 spritetype* DropRandomPickupObject(spritetype* pSprite) {
-    int selected = GetRandDataVal(pSprite); spritetype* pSprite2 = NULL;
-    if (selected > 0) {
+    spritetype* pSprite2 = NULL;
+
+    int rData[4]; int selected = -1;
+    rData[0] = xsprite[pSprite->extra].data1; rData[2] = xsprite[pSprite->extra].data3;
+    rData[1] = xsprite[pSprite->extra].data2; rData[3] = xsprite[pSprite->extra].data4;
+
+    // randomize only in case if at least 2 data fields fits.
+    for (int i = 0; i <= 3; i++)
+        if (rData[i] < kWeaponItemBase || rData[i] >= kItemMax)
+            rData[i] = 0;
+
+    if ((selected = GetRandDataVal(rData,NULL)) > 0) {
         spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
         pSprite2 = actDropObject(pSprite, selected);
 
@@ -6846,9 +6852,21 @@ spritetype* DropRandomPickupObject(spritetype* pSprite) {
 
 // this function spawns random dude using dudeSpawn
 spritetype* spawnRandomDude(spritetype* pSprite) {
-    int selected = GetRandDataVal(pSprite); spritetype* pSprite2 = NULL;
-    if (selected <= 0) return pSprite2;
-    pSprite2 = actSpawnDude(pSprite, selected, -1, 0);
+    spritetype* pSprite2 = NULL;
+    
+    if (pSprite->extra >= 0) {
+        int rData[4]; int selected = -1;
+        rData[0] = xsprite[pSprite->extra].data1; rData[2] = xsprite[pSprite->extra].data3;
+        rData[1] = xsprite[pSprite->extra].data2; rData[3] = xsprite[pSprite->extra].data4;
+
+        // randomize only in case if at least 2 data fields fits.
+        for (int i = 0; i <= 3; i++)
+            if (rData[i] < kDudeBase || rData[i] >= kDudeMax)
+                rData[i] = 0;
+       
+        if ((selected = GetRandDataVal(rData,NULL)) > 0)
+           pSprite2 = actSpawnDude(pSprite, selected, -1, 0);
+    }
 
     return pSprite2;
 }
