@@ -387,7 +387,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
                 pXSprite->txID = Random(total) + data1;
             }
 
-        } else if ((tx = GetRandDataVal(pSprite)) > 0) { 
+        } else if ((tx = GetRandDataVal(NULL,pSprite)) > 0) { 
             pXSprite->txID = tx; 
         }
 

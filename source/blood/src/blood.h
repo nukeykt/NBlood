@@ -53,6 +53,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // -------------------------------
 #define kMaxPAL 5
 
+#define kWeaponItemBase 40
+#define kItemMax 149
+
 // marker sprite types
 #define kMarkerSPStart 1
 #define kMarkerMPStart 2
