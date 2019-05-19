@@ -10979,25 +10979,6 @@ int32_t lastwall(int16_t point)
     return point;
 }
 
-// breadth-first search helpers
-void bfirst_search_init(int16_t * const list, uint8_t * const bitmap, int32_t * const eltnumptr, int const maxelts, int const firstelt)
-{
-    Bmemset(bitmap, 0, (maxelts+7)>>3);
-
-    list[0] = firstelt;
-    bitmap_set(bitmap, firstelt);
-    *eltnumptr = 1;
-}
-
-void bfirst_search_try(int16_t * const list, uint8_t * const bitmap, int32_t * const eltnumptr, int const elt)
-{
-    if (elt >= 0 && bitmap_test(bitmap, elt)==0)
-    {
-        bitmap_set(bitmap, elt);
-        list[(*eltnumptr)++] = elt;
-    }
-}
-
 ////////// UPDATESECTOR* FAMILY OF FUNCTIONS //////////
 
 /* Different "is inside" predicates.
@@ -11093,7 +11074,7 @@ void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
 
         static int16_t sectlist[MAXSECTORS];
         static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
-        int32_t nsecs;
+        int16_t nsecs;
 
         bfirst_search_init(sectlist, sectbitmap, &nsecs, MAXSECTORS, initialsectnum);
 
@@ -11192,7 +11173,7 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
 
         static int16_t sectlist[MAXSECTORS];
         static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
-        int32_t nsecs;
+        int16_t nsecs;
 
         bfirst_search_init(sectlist, sectbitmap, &nsecs, MAXSECTORS, correctedsectnum);
 

@@ -2680,11 +2680,11 @@ void reset_highlight(void)  // walls and sprites
 }
 
 #ifdef YAX_ENABLE
-static int32_t collnumsects[2];
+static int16_t collnumsects[2];
 static int16_t collsectlist[2][MAXSECTORS];
 static uint8_t collsectbitmap[2][(MAXSECTORS+7)>>3];
 
-static void collect_sectors1(int16_t *sectlist, uint8_t *sectbitmap, int32_t *numsectptr,
+static void collect_sectors1(int16_t *sectlist, uint8_t *sectbitmap, int16_t *numsectptr,
                              int16_t startsec, int32_t alsoyaxnext, int32_t alsoonw)
 {
     int32_t j, startwall, endwall, sectcnt;
