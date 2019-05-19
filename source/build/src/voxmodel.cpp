@@ -434,12 +434,16 @@ void voxvboalloc(voxmodel_t *vm)
         index[(i*2+1)*3+1] = i*4+2;
         index[(i*2+1)*3+2] = i*4+3;
     }
+    GLint prevVBO = 0;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->vboindex);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * vm->qcnt, index, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevVBO);
+    prevVBO = 0;
     glBindBuffer(GL_ARRAY_BUFFER, vm->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vertex, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, prevVBO);
     Bfree(vertex);
     Bfree(index);
 }
