@@ -9036,33 +9036,31 @@ void polymost_initosdfuncs(void)
         { "r_parallaxskyclamping","enable/disable parallaxed floor/ceiling sky texture clamping", (void *) &r_parallaxskyclamping, CVAR_BOOL, 0, 1 },
         { "r_parallaxskypanning","enable/disable parallaxed floor/ceiling panning when drawing a parallaxing sky", (void *) &r_parallaxskypanning, CVAR_BOOL, 0, 1 },
         { "r_preview_mouseaim", "toggles mouse aiming preview, use this to calibrate yxaspect in Polymost Mapster32", (void *) &preview_mouseaim, CVAR_BOOL, 0, 1 },
+        { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_BOOL, 0, 1 },
+        { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_BOOL, 0, 1 },
         { "r_shadescale","multiplier for shading",(void *) &shadescale, CVAR_FLOAT, 0, 10 },
         { "r_shadescale_unbounded","enable/disable allowance of complete blackness",(void *) &shadescale_unbounded, CVAR_BOOL, 0, 1 },
         { "r_swapinterval","sets the GL swap interval (VSync)",(void *) &vsync, CVAR_INT|CVAR_FUNCPTR, -1, 1 },
         { "r_texcompr","enable/disable OpenGL texture compression: 0: off  1: hightile only  2: ART and hightile",(void *) &glusetexcompr, CVAR_INT, 0, 2 },
         { "r_texturemaxsize","changes the maximum OpenGL texture size limit",(void *) &gltexmaxsize, CVAR_INT | CVAR_NOSAVE, 0, 4096 },
         { "r_texturemiplevel","changes the highest OpenGL mipmap level used",(void *) &gltexmiplevel, CVAR_INT, 0, 6 },
-        { "r_useindexedcolortextures", "enable/disable indexed color texture rendering", (void *) &r_useindexedcolortextures, CVAR_INT, 0, 1 },
+        { "r_useindexedcolortextures", "enable/disable indexed color texture rendering", (void *) &r_useindexedcolortextures, CVAR_BOOL, 0, 1 },
         { "r_usenewshading", "visibility/fog code: 0: orig. Polymost   1: 07/2011   2: linear 12/2012   3: no neg. start 03/2014   4: base constant on shade table 11/2017",
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4 },
-
+        { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
 #ifdef USE_GLEXT
         { "r_vbocount","sets the number of Vertex Buffer Objects to use when drawing models",(void *) &r_vbocount, CVAR_INT, 1, 256 },
         { "r_persistentStreamBuffer","enable/disable persistent stream buffering (requires renderer restart)",(void *) &r_persistentStreamBuffer, CVAR_BOOL, 0, 1 },
         { "r_drawpolyVertsBufferLength","sets the size of the vertex buffer for polymost's streaming VBO rendering (requires renderer restart)",(void *) &r_drawpolyVertsBufferLength, CVAR_INT, MAX_DRAWPOLY_VERTS, 1000000 },
 #endif
-        { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
-        { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_INT, 0, 1 },
-        { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_INT, 0, 1 },
-
 #ifdef POLYMER
         { "r_pr_artmapping", "enable/disable art mapping", (void *) &pr_artmapping, CVAR_BOOL | CVAR_INVALIDATEART, 0, 1 },
         { "r_pr_ati_fboworkaround", "enable this to workaround an ATI driver bug that causes sprite shadows to be square - you need to restart the renderer for it to take effect", (void *) &pr_ati_fboworkaround, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
         { "r_pr_ati_nodepthoffset", "enable this to workaround an ATI driver bug that causes sprite drawing to freeze the game on Radeon X1x00 hardware - you need to restart the renderer for it to take effect", (void *) &pr_ati_nodepthoffset, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
-        { "r_pr_billboardingmode", "face sprite display method. 0: classic mode; 1: polymost mode", (void *) &pr_billboardingmode, CVAR_INT, 0, 1 },
+        { "r_pr_billboardingmode", "face sprite display method. 0: classic mode; 1: polymost mode", (void *) &pr_billboardingmode, CVAR_BOOL, 0, 1 },
         { "r_pr_buckets", "controls batching of primitives. 0: no batching. 1: buckets of materials.", (void *)&pr_buckets, CVAR_BOOL | CVAR_NOSAVE | CVAR_RESTARTVID, 0, 1 },
         { "r_pr_customaspect", "if non-zero, forces the 3D view aspect ratio", (void *) &pr_customaspect, CVAR_DOUBLE, 0, 3 },
-        { "r_pr_gpusmoothing", "toggles model animation interpolation", (void *)&pr_gpusmoothing, CVAR_INT, 0, 1 },
+        { "r_pr_gpusmoothing", "toggles model animation interpolation", (void *)&pr_gpusmoothing, CVAR_BOOL, 0, 1 },
         { "r_pr_highpalookups", "enable/disable highpalookups", (void *) &pr_highpalookups, CVAR_BOOL, 0, 1 },
         { "r_pr_hudangadd", "overriden HUD angadd; see r_pr_overridehud", (void *) &pr_hudangadd, CVAR_INT | CVAR_NOSAVE, -1024, 1024 },
         { "r_pr_hudfov", "overriden HUD fov; see r_pr_overridehud", (void *) &pr_hudfov, CVAR_INT | CVAR_NOSAVE, 0, 1023 },
@@ -9089,7 +9087,7 @@ void polymost_initosdfuncs(void)
         { "r_pr_specularpower", "overriden specular material power", (void *) &pr_specularpower, CVAR_FLOAT | CVAR_NOSAVE, -10, 1000 },
         { "r_pr_vbos", "contols Vertex Buffer Object usage. 0: no VBOs. 1: VBOs for map data. 2: VBOs for model data.", (void *) &pr_vbos, CVAR_INT | CVAR_RESTARTVID, 0, 2 },
         { "r_pr_verbosity", "verbosity level of the polymer renderer", (void *) &pr_verbosity, CVAR_INT, 0, 3 },
-        { "r_pr_wireframe", "toggles wireframe mode", (void *) &pr_wireframe, CVAR_INT | CVAR_NOSAVE, 0, 1 },
+        { "r_pr_wireframe", "toggles wireframe mode", (void *) &pr_wireframe, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
 #endif
     };
 
