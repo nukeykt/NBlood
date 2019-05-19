@@ -51,9 +51,9 @@ int32_t r_usenewshading = 4;
 int32_t r_npotwallmode = 2;
 
 static float gviewxrange;
-static float ghoriz;
+static float ghoriz, ghoriz2;
 double gxyaspect;
-float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x;
+float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x, ghalfy;
 float gcosang, gsinang, gcosang2, gsinang2;
 float gchang, gshang, gctang, gstang, gvisibility;
 float gtang = 0.f;
@@ -128,6 +128,8 @@ int32_t r_vbocount = 64;
 int32_t r_animsmoothing = 1;
 int32_t r_downsize = 0;
 int32_t r_downsizevar = -1;
+
+int32_t r_yshearing = 0;
 
 // used for fogcalc
 static float fogresult, fogresult2;
@@ -371,7 +373,7 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect;
+float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glotang;
 
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
@@ -1520,7 +1522,7 @@ void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float fa
 
 static float get_projhack_ratio(void)
 {
-    if (glprojectionhacks)
+    if (glprojectionhacks && !r_yshearing)
     {
         float const projhack_zoom = 1.4f *
         // adjust for the FOV, increasing the FOV reduces the zenith glitch
@@ -1567,7 +1569,7 @@ static void resizeglcheck(void)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale))
+    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glohoriz2 != ghoriz2) || (glotang != gtang))
     {
         const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
         float ratio = get_projhack_ratio();
@@ -1591,9 +1593,13 @@ static void resizeglcheck(void)
 
         gloxyaspect = gxyaspect;
         gloyxscale = gyxscale;
+        glohoriz2 = ghoriz2;
+        glotang = gtang;
 
         m[0][0] = 1.f;
         m[1][1] = fxdimen / (fydimen * ratio);
+        m[2][0] = 2.f * ghoriz2 * gstang / fxdimen;
+        m[2][1] = 2.f * ghoriz2 * gctang / (fydimen * ratio);
         m[2][2] = (farclip + nearclip) / (farclip - nearclip);
         m[2][3] = 1.f;
         m[3][2] = -(2.f * farclip * nearclip) / (farclip - nearclip);
@@ -3552,7 +3558,7 @@ do                                                                              
 
                 //update verts
                 drawpolyVerts[(off+i)*5] = (o.x - ghalfx) * r * grhalfxdown10x;
-                drawpolyVerts[(off+i)*5+1] = (ghoriz - o.y) * r * grhalfxdown10;
+                drawpolyVerts[(off+i)*5+1] = (ghalfy - o.y) * r * grhalfxdown10;
                 drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
                 //update texcoords
@@ -3597,7 +3603,7 @@ do                                                                              
 
             //update verts
             drawpolyVerts[(off+i)*5] = (px[i] - ghalfx) * r * grhalfxdown10x;
-            drawpolyVerts[(off+i)*5+1] = (ghoriz - py[i]) * r * grhalfxdown10;
+            drawpolyVerts[(off+i)*5+1] = (ghalfy - py[i]) * r * grhalfxdown10;
             drawpolyVerts[(off+i)*5+2] = r * (1.f / 1024.f);
 
             //update texcoords
@@ -5221,8 +5227,8 @@ static void polymost_drawalls(int32_t const bunch)
 
         DO_TILE_ANIM(globalpicnum, sectnum);
 
-        int32_t dapskybits, dapyoffs, daptileyscale;
-        int8_t const * dapskyoff = getpsky(globalpicnum, NULL, &dapskybits, &dapyoffs, &daptileyscale);
+        int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
+        int8_t const * dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->floorshade, global_cf_pal = sec->floorpal; global_cf_z = sec->floorz;  // REFACT
@@ -5257,6 +5263,10 @@ static void polymost_drawalls(int32_t const bunch)
 
             if (!usehightile || !hicfindskybox(globalpicnum, globalpal))
             {
+                float const ghorizbak = ghoriz;
+                if (r_yshearing)
+                    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*(dapyscale-65536.f)*(1.f/65536.f)+float(ydimen>>1);
+
                 float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
                 float vv[2];
                 float t = (float)((1<<(picsiz[globalpicnum]&15))<<dapskybits);
@@ -5366,6 +5376,8 @@ static void polymost_drawalls(int32_t const bunch)
                     pow2xsplit = 0; polymost_domost(o.x,(o.x-x0)*r+fy0,fx,(fx-x0)*r+fy0); //flor
                 }
                 while (i >= 0);
+
+                ghoriz = ghorizbak;
             }
             else  //NOTE: code copied from ceiling code... lots of duplicated stuff :/
             {
@@ -5574,7 +5586,7 @@ static void polymost_drawalls(int32_t const bunch)
         DO_TILE_ANIM(globalpicnum, sectnum);
 
 
-        dapskyoff = getpsky(globalpicnum, NULL, &dapskybits, &dapyoffs, &daptileyscale);
+        dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->ceilingshade, global_cf_pal = sec->ceilingpal; global_cf_z = sec->ceilingz;  // REFACT
@@ -5609,6 +5621,10 @@ static void polymost_drawalls(int32_t const bunch)
 
             if (!usehightile || !hicfindskybox(globalpicnum, globalpal))
             {
+                float const ghorizbak = ghoriz;
+                if (r_yshearing)
+                    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*(dapyscale-65536.f)*(1.f/65536.f)+float(ydimen>>1);
+
                 float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
                 float vv[2];
                 float t = (float)((1<<(picsiz[globalpicnum]&15))<<dapskybits);
@@ -5718,6 +5734,8 @@ static void polymost_drawalls(int32_t const bunch)
                     pow2xsplit = 0; polymost_domost(fx,(fx-x0)*r+cy0,o.x,(o.x-x0)*r+cy0); //ceil
                 }
                 while (i >= 0);
+
+                ghoriz = ghorizbak;
             }
             else
             {
@@ -6423,20 +6441,33 @@ void polymost_drawrooms()
     gcosang2 = gcosang * (fviewingrange * (1.0f/65536.f));
     gsinang2 = gsinang * (fviewingrange * (1.0f/65536.f));
     ghalfx = (float)(xdimen>>1);
+    ghalfy = (float)(ydimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
 
     gvisibility = ((float)globalvisibility)*FOGSCALE;
 
-    resizeglcheck();
 
     polymost_shadeInterpolate(r_shadeinterpolate);
 
     //global cos/sin height angle
-    float r = (float)(ydimen>>1) - ghoriz;
-    gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
-    gchang = Bsqrtf(1.f-gshang*gshang);
+    if (r_yshearing)
+    {
+        gshang  = 0.f;
+        gchang  = 1.f;
+        ghoriz2 = (float)(ydimen >> 1) - ghoriz;
+    }
+    else
+    {
+        float r = (float)(ydimen >> 1) - ghoriz;
+        gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx);
+        gchang  = Bsqrtf(1.f - gshang * gshang);
+        ghoriz2 = 0.f;
+    }
+
     ghoriz = (float)(ydimen>>1);
+
+    resizeglcheck();
 
     //global cos/sin tilt angle
     gctang = cosf(gtang);
@@ -6461,7 +6492,7 @@ void polymost_drawrooms()
     {
         //Tilt rotation (backwards)
         vec2f_t const o = { v.x-ghalfx, v.y-ghoriz };
-        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang, ghalfx };
+        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, ghalfx };
 
         //Up/down rotation (backwards)
         v = { o2.x, o2.y * gchang + o2.z * gshang, o2.z * gchang - o2.y * gshang };
@@ -8195,6 +8226,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalpal = (int32_t)((uint8_t)dapalnum);
     float const  oghalfx = ghalfx;
     ghalfx = fxdim * .5f;
+    float const  oghalfy = ghalfy;
+    ghalfy = fydim * .5f;
     float const  ogrhalfxdown10 = grhalfxdown10;
     grhalfxdown10 = 1.f / (ghalfx * 1024.f);
     float const  ogrhalfxdown10x = grhalfxdown10x;
@@ -8416,6 +8449,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     globalshade  = ogshade;
     globalpal    = ogpal;
     ghalfx       = oghalfx;
+    ghalfy       = oghalfy;
     grhalfxdown10 = ogrhalfxdown10;
     grhalfxdown10x = ogrhalfxdown10x;
     ghoriz       = oghoriz;
@@ -9048,6 +9082,7 @@ void polymost_initosdfuncs(void)
         { "r_usenewshading", "visibility/fog code: 0: orig. Polymost   1: 07/2011   2: linear 12/2012   3: no neg. start 03/2014   4: base constant on shade table 11/2017",
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4 },
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
+        { "r_yshearing", "enable/disable y-shearing", (void*) &r_yshearing, CVAR_BOOL, 0, 1 },
 #ifdef USE_GLEXT
         { "r_vbocount","sets the number of Vertex Buffer Objects to use when drawing models",(void *) &r_vbocount, CVAR_INT, 1, 256 },
         { "r_persistentStreamBuffer","enable/disable persistent stream buffering (requires renderer restart)",(void *) &r_persistentStreamBuffer, CVAR_BOOL, 0, 1 },
