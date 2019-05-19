@@ -7,6 +7,9 @@
     <Link>
       <AdditionalLibraryDirectories>.\lib\32\</AdditionalLibraryDirectories>
     </Link>
+    <ClCompile>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
