@@ -113,6 +113,7 @@ int32_t gltexmiplevel = 0;		// discards this many mipmap levels
 int32_t glprojectionhacks = 1;
 static GLuint polymosttext = 0;
 int32_t glrendmode = REND_POLYMOST;
+int32_t r_shadeinterpolate = 1;
 
 // This variable, and 'shadeforfullbrightpass' control the drawing of
 // fullbright tiles.  Also see 'fullbrightloadingpass'.
@@ -201,6 +202,8 @@ static float polymost1RotMatrix[16] = { 1.f, 0.f, 0.f, 0.f,
                                         0.f, 1.f, 0.f, 0.f,
                                         0.f, 0.f, 1.f, 0.f,
                                         0.f, 0.f, 0.f, 1.f };
+static GLint polymost1ShadeInterpolateLoc = -1;
+static float polymost1ShadeInterpolate = 1.f;
 
 static inline float float_trans(uint32_t maskprops, uint8_t blend)
 {
@@ -613,6 +616,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     polymost1NPOTEmulationFactorLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationFactor");
     polymost1NPOTEmulationXOffsetLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationXOffset");
     polymost1RotMatrixLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_rotMatrix");
+    polymost1ShadeInterpolateLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_shadeInterpolate");
 
     //set the uniforms to the current values
     glUniform4f(polymost1TexturePosSizeLoc, polymost1TexturePosSize.x, polymost1TexturePosSize.y, polymost1TexturePosSize.z, polymost1TexturePosSize.w);
@@ -631,6 +635,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
     glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
     glUniformMatrix4fv(polymost1RotMatrixLoc, 1, false, polymost1RotMatrix);
+    glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
 }
 
 void polymost_setTexturePosSize(vec4f_t const &texturePosSize)
@@ -777,6 +782,15 @@ void polymost_npotEmulation(char npotEmulation, float factor, float xOffset)
     glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
     polymost1NPOTEmulationXOffset = xOffset;
     glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
+}
+
+void polymost_shadeInterpolate(int32_t shadeInterpolate)
+{
+    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
+    {
+        polymost1ShadeInterpolate = shadeInterpolate;
+        glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
+    }
 }
 
 void polymost_activeTexture(GLenum texture)
@@ -1099,6 +1113,7 @@ void polymost_glinit()
          uniform float u_npotEmulation;\n\
          uniform float u_npotEmulationFactor;\n\
          uniform float u_npotEmulationXOffset;\n\
+         uniform float u_shadeInterpolate;\n\
          \n\
          varying vec4 v_color;\n\
          varying float v_distance;\n\
@@ -1127,10 +1142,15 @@ void polymost_glinit()
              texCoord = clamp(u_texturePosSize.zw*texCoord, u_halfTexelSize, u_texturePosSize.zw-u_halfTexelSize);\n\
              vec4 color = texture2D(s_texture, u_texturePosSize.xy+texCoord);\n\
              \n\
-             float shade = clamp(floor(u_shade+u_visFactor*v_distance), c_zero, u_numShades-c_one)/u_numShades;\n\
-             float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, shade)).r;\n\
+             float shade = clamp((u_shade+u_visFactor*v_distance), c_zero, u_numShades-c_one);\n\
+             float shadeFrac = mod(shade, c_one);\n\
+             float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, floor(shade)/u_numShades)).r;\n\
              colorIndex = c_basepalOffset + c_basepalScale*colorIndex;\n\
              vec4 palettedColor = texture2D(s_palette, vec2(colorIndex, c_zero));\n\
+             colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, (floor(shade)+c_one)/u_numShades)).r;\n\
+             colorIndex = c_basepalOffset + c_basepalScale*colorIndex;\n\
+             vec4 palettedColorNext = texture2D(s_palette, vec2(colorIndex, c_zero));\n\
+             palettedColor.rgb = mix(palettedColor.rgb, palettedColorNext.rgb, shadeFrac*u_shadeInterpolate);\n\
              float fullbright = mix(u_usePalette*palettedColor.a, c_zero, u_useColorOnly);\n\
              palettedColor.a = c_one-floor(color.r);\n\
              color = mix(color, palettedColor, u_usePalette);\n\
@@ -1183,6 +1203,7 @@ void polymost_glinit()
          uniform float u_npotEmulation;\n\
          uniform float u_npotEmulationFactor;\n\
          uniform float u_npotEmulationXOffset;\n\
+         uniform float u_shadeInterpolate;\n\
          \n\
          uniform float u_useDetailMapping;\n\
          uniform float u_useGlowMapping;\n\
@@ -1214,10 +1235,15 @@ void polymost_glinit()
              texCoord = clamp(u_texturePosSize.zw*texCoord, u_halfTexelSize, u_texturePosSize.zw-u_halfTexelSize);\n\
              vec4 color = texture2D(s_texture, u_texturePosSize.xy+texCoord);\n\
              \n\
-             float shade = clamp(floor(u_shade+u_visFactor*v_distance), c_zero, u_numShades-c_one)/u_numShades;\n\
-             float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, shade)).r;\n\
+             float shade = clamp((u_shade+u_visFactor*v_distance), c_zero, u_numShades-c_one);\n\
+             float shadeFrac = mod(shade, c_one);\n\
+             float colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, floor(shade)/u_numShades)).r;\n\
              colorIndex = c_basepalOffset + c_basepalScale*colorIndex;\n\
              vec4 palettedColor = texture2D(s_palette, vec2(colorIndex, c_zero));\n\
+             colorIndex = texture2D(s_palswap, u_palswapPos+u_palswapSize*vec2(color.r, (floor(shade)+c_one)/u_numShades)).r;\n\
+             colorIndex = c_basepalOffset + c_basepalScale*colorIndex;\n\
+             vec4 palettedColorNext = texture2D(s_palette, vec2(colorIndex, c_zero));\n\
+             palettedColor.rgb = mix(palettedColor.rgb, palettedColorNext.rgb, shadeFrac*u_shadeInterpolate);\n\
              float fullbright = mix(u_usePalette*palettedColor.a, c_zero, u_useColorOnly);\n\
              palettedColor.a = c_one-floor(color.r);\n\
              color = mix(color, palettedColor, u_usePalette);\n\
@@ -6404,6 +6430,8 @@ void polymost_drawrooms()
 
     resizeglcheck();
 
+    polymost_shadeInterpolate(r_shadeinterpolate);
+
     //global cos/sin height angle
     float r = (float)(ydimen>>1) - ghoriz;
     gshang = r/Bsqrtf(r*r+ghalfx*ghalfx);
@@ -9025,6 +9053,7 @@ void polymost_initosdfuncs(void)
 #endif
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
         { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_INT, 0, 1 },
+        { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_INT, 0, 1 },
 
 #ifdef POLYMER
         { "r_pr_artmapping", "enable/disable art mapping", (void *) &pr_artmapping, CVAR_BOOL | CVAR_INVALIDATEART, 0, 1 },
