@@ -6465,7 +6465,7 @@ void polymost_drawrooms()
 
     if (n < 3) { glDepthFunc(GL_LEQUAL); videoEndDrawing(); return; }
 
-    float sx[4], sy[4];
+    float sx[6], sy[6];
 
     for (bssize_t i = 0; i < n; i++)
     {
