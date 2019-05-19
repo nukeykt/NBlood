@@ -595,7 +595,7 @@ void texcache_writetex_fromdriver(char const * const cacheid, texcacheheader *he
 
     CLEAR_GL_ERRORS();
 
-    for (uint32_t level = 0, padx = 0, pady = 0; level == 0 || (padx > 1 || pady > 1); ++level)
+    for (int level = 0, padx = 0, pady = 0; level == 0 || (padx > 1 || pady > 1); ++level)
     {
         glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_COMPRESSED, &gi);
         WRITEX_FAIL_ON_ERROR();

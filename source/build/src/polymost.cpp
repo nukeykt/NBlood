@@ -926,7 +926,7 @@ void polymost_glinit()
     tilesheetHalfTexelSize = { 0.5f/tilesheetSize, 0.5f/tilesheetSize };
     vec2_t maxTexDimensions = { tilesheetSize, tilesheetSize };
     char allPacked = false;
-    static uint32_t numTilesheets = 0;
+    static int numTilesheets = 0;
     //POGO: only pack the tilesheets once
     if (numTilesheets == 0)
     {
@@ -944,7 +944,7 @@ void polymost_glinit()
             ++numTilesheets;
         } while (!allPacked && numTilesheets < MAXTILESHEETS);
     }
-    for (uint32_t i = 0; i < numTilesheets; ++i)
+    for (int i = 0; i < numTilesheets; ++i)
     {
         glGenTextures(1, tilesheetTexIDs+i);
         glBindTexture(GL_TEXTURE_2D, tilesheetTexIDs[i]);

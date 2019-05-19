@@ -316,7 +316,7 @@ char tilepacker_pack(uint32_t tilesheetID)
         return false;
     }
 
-    for (uint32_t numLeft = numRejected; numLeft > 0; --numLeft)
+    for (int numLeft = numRejected; numLeft > 0; --numLeft)
     {
         TreeNode *pNode = rejectQueue_remove();
         char success = kdtree_add(tilesheetID, pNode);
