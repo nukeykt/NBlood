@@ -55,7 +55,7 @@ void Seq::Preload(void)
     if ((version & 0xff00) != 0x300)
         ThrowError("Obsolete sequence version");
     for (int i = 0; i < nFrames; i++)
-        tilePreloadTile(frames[i].tile);
+        tilePreloadTile(seqGetTile(&frames[i]));
 }
 
 void Seq::Precache(void)
@@ -65,7 +65,7 @@ void Seq::Precache(void)
     if ((version & 0xff00) != 0x300)
         ThrowError("Obsolete sequence version");
     for (int i = 0; i < nFrames; i++)
-        tilePrecacheTile(frames[i].tile);
+        tilePrecacheTile(seqGetTile(&frames[i]));
 }
 
 void seqPrecacheId(int id)
@@ -93,11 +93,11 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     dassert(pSprite->extra == nXSprite);
     if (pSprite->hitag & 2)
     {
-        if (tilesiz[pSprite->picnum].y != tilesiz[pFrame->tile].y || picanm[pSprite->picnum].yofs != picanm[pFrame->tile].yofs
+        if (tilesiz[pSprite->picnum].y != tilesiz[seqGetTile(pFrame)].y || picanm[pSprite->picnum].yofs != picanm[seqGetTile(pFrame)].yofs
             || (pFrame->at3_0 && pFrame->at3_0 != pSprite->yrepeat))
             pSprite->hitag |= 4;
     }
-    pSprite->picnum = pFrame->tile;
+    pSprite->picnum = seqGetTile(pFrame);
     if (pFrame->at5_0)
         pSprite->pal = pFrame->at5_0;
     pSprite->shade = pFrame->at4_0;
@@ -154,7 +154,7 @@ void UpdateWall(int nXWall, SEQFRAME *pFrame)
     dassert(nWall >= 0 && nWall < kMaxWalls);
     walltype *pWall = &wall[nWall];
     dassert(pWall->extra == nXWall);
-    pWall->picnum = pFrame->tile;
+    pWall->picnum = seqGetTile(pFrame);
     if (pFrame->at5_0)
         pWall->pal = pFrame->at5_0;
     if (pFrame->at1_4)
@@ -184,7 +184,7 @@ void UpdateMasked(int nXWall, SEQFRAME *pFrame)
     dassert(pWall->extra == nXWall);
     dassert(pWall->nextwall >= 0);
     walltype *pWallNext = &wall[pWall->nextwall];
-    pWall->overpicnum = pWallNext->overpicnum = pFrame->tile;
+    pWall->overpicnum = pWallNext->overpicnum = seqGetTile(pFrame);
     if (pFrame->at5_0)
         pWall->pal = pWallNext->pal = pFrame->at5_0;
     if (pFrame->at1_4)
@@ -236,7 +236,7 @@ void UpdateFloor(int nXSector, SEQFRAME *pFrame)
     dassert(nSector >= 0 && nSector < kMaxSectors);
     sectortype *pSector = &sector[nSector];
     dassert(pSector->extra == nXSector);
-    pSector->floorpicnum = pFrame->tile;
+    pSector->floorpicnum = seqGetTile(pFrame);
     pSector->floorshade = pFrame->at4_0;
     if (pFrame->at5_0)
         pSector->floorpal = pFrame->at5_0;
@@ -249,7 +249,7 @@ void UpdateCeiling(int nXSector, SEQFRAME *pFrame)
     dassert(nSector >= 0 && nSector < kMaxSectors);
     sectortype *pSector = &sector[nSector];
     dassert(pSector->extra == nXSector);
-    pSector->ceilingpicnum = pFrame->tile;
+    pSector->ceilingpicnum = seqGetTile(pFrame);
     pSector->ceilingshade = pFrame->at4_0;
     if (pFrame->at5_0)
         pSector->ceilingpal = pFrame->at5_0;
@@ -342,6 +342,11 @@ void seqSpawn(int a1, int a2, int a3, int a4)
         ThrowError("Invalid sequence %d", a1);
     if ((pSeq->version & 0xff00) != 0x300)
         ThrowError("Sequence %d is obsolete version", a1);
+    if ((pSeq->version & 0xff) == 0x00)
+    {
+        for (int i = 0; i < pSeq->nFrames; i++)
+            pSeq->frames[i].tile2 = 0;
+    }
     pInst->at13 = 1;
     pInst->hSeq = hSeq;
     pInst->pSequence = pSeq;
