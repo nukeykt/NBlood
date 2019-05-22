@@ -236,7 +236,45 @@ void scrUnInit(void)
 void scrSetGameMode(int vidMode, int XRes, int YRes, int nBits)
 {
     videoResetMode();
-    videoSetGameMode(vidMode, XRes, YRes, nBits, 0);
+    //videoSetGameMode(vidMode, XRes, YRes, nBits, 0);
+    if (videoSetGameMode(vidMode, XRes, YRes, nBits, 0) < 0)
+    {
+        initprintf("Failure setting video mode %dx%dx%d %s! Trying next mode...\n", XRes, YRes,
+                    nBits, vidMode ? "fullscreen" : "windowed");
+
+        int resIdx = 0;
+
+        for (int i=0; i < validmodecnt; i++)
+        {
+            if (validmode[i].xdim == XRes && validmode[i].ydim == YRes)
+            {
+                resIdx = i;
+                break;
+            }
+        }
+
+        int const savedIdx = resIdx;
+        int bpp = nBits;
+
+        while (videoSetGameMode(0, validmode[resIdx].xdim, validmode[resIdx].ydim, bpp, 0) < 0)
+        {
+            initprintf("Failure setting video mode %dx%dx%d windowed! Trying next mode...\n",
+                        validmode[resIdx].xdim, validmode[resIdx].ydim, bpp);
+
+            if (++resIdx == validmodecnt)
+            {
+                if (bpp == 8)
+                    ThrowError("Fatal error: unable to set any video mode!");
+
+                resIdx = savedIdx;
+                bpp = 8;
+            }
+        }
+
+        gSetup.xdim = validmode[resIdx].xdim;
+        gSetup.ydim = validmode[resIdx].ydim;
+        gSetup.bpp  = bpp;
+    }
     videoClearViewableArea(0);
     scrNextPage();
     scrSetPalette(curPalette);

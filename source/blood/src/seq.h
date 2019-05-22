@@ -40,7 +40,8 @@ struct SEQFRAME {
     unsigned int at6_2 : 1; // invisible
     unsigned int at6_3 : 1; //
     unsigned int at6_4 : 1; //
-    unsigned int pad : 11;
+    unsigned int tile2 : 4;
+    unsigned int pad : 7;
 };
 
 struct Seq {
@@ -72,6 +73,11 @@ struct SEQINST
     char at13;
     void Update(ACTIVE *pActive);
 };
+
+inline int seqGetTile(SEQFRAME* pFrame)
+{
+    return pFrame->tile+(pFrame->tile2<<12);
+}
 
 int seqRegisterClient(void(*pClient)(int, int));
 void seqPrecacheId(int id);

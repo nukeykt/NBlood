@@ -105,7 +105,7 @@ void InitMirrors(void)
                 mirror[mirrorcnt].at14 = i;
                 mirror[mirrorcnt].at0 = 0;
                 wall[i].cstat |= 32;
-                int tmp = xwall[wall[i].extra].txID;
+                int tmp = xwall[wall[i].extra].data;
                 int j;
                 for (j = numwalls - 1; j >= 0; j--)
                 {
@@ -113,7 +113,7 @@ void InitMirrors(void)
                         continue;
                     if (wall[j].extra > 0 && wall[j].lotag == 501)
                     {
-                        if (tmp != xwall[wall[j].extra].txID)
+                        if (tmp != xwall[wall[j].extra].data)
                             continue;
                         wall[i].hitag = j;
                         wall[j].hitag = i;
