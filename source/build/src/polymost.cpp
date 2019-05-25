@@ -46,6 +46,7 @@ static float dxb1[MAXWALLSB], dxb2[MAXWALLSB];
 float shadescale = 1.0f;
 int32_t shadescale_unbounded = 0;
 
+int32_t r_polymostDebug = 0;
 int32_t r_enablepolymost2 = 0;
 int32_t r_usenewshading = 4;
 int32_t r_npotwallmode = 2;
@@ -243,6 +244,29 @@ int32_t drawingskybox = 0;
 int32_t hicprecaching = 0;
 
 hitdata_t polymost_hitdata;
+
+void polymost_outputGLDebugMessage(uint8_t severity, const char* format, ...)
+{
+    static char msg[8192];
+    va_list vArgs;
+
+    if (!glinfo.debugoutput ||
+        r_polymostDebug < severity)
+    {
+        return;
+    }
+
+    va_start(vArgs, format);
+    Bvsnprintf(msg, sizeof(msg), format, vArgs);
+    va_end(vArgs);
+
+    glDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB,
+                            GL_DEBUG_TYPE_OTHER_ARB,
+                            0,
+                            GL_DEBUG_SEVERITY_HIGH_ARB+severity-1,
+                            -1,
+                            msg);
+}
 
 #if 0
 static inline int32_t gltexmayhavealpha(int32_t dapicnum, int32_t dapalnum)
@@ -543,6 +567,8 @@ static void Polymost_DetermineTextureFormatSupport(void);
 // reset vertex pointers to polymost default
 void polymost_resetVertexPointers()
 {
+    polymost_outputGLDebugMessage(3, "polymost_resetVertexPointers()");
+
     glBindBuffer(GL_ARRAY_BUFFER, drawpolyVertsID);
 
     glVertexPointer(3, GL_FLOAT, 5*sizeof(float), 0);
@@ -570,6 +596,8 @@ void polymost_disableProgram()
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
 
+    polymost_outputGLDebugMessage(3, "polymost_disableProgram()");
+
     useShaderProgram(0);
 }
 
@@ -577,6 +605,8 @@ void polymost_resetProgram()
 {
     if (videoGetRenderMode() != REND_POLYMOST)
         return;
+
+    polymost_outputGLDebugMessage(3, "polymost_resetProgram()");
 
     if (r_enablepolymost2)
         useShaderProgram(polymost2BasicShaderProgramID);
@@ -593,6 +623,8 @@ void polymost_resetProgram()
 
 static void polymost_setCurrentShaderProgram(uint32_t programID)
 {
+    polymost_outputGLDebugMessage(3, "polymost_setCurrentShaderProgram(programID:%u)", programID);
+
     polymost1CurrentShaderProgramID = programID;
     useShaderProgram(programID);
 
@@ -3229,6 +3261,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     if (skyclamphack) method |= DAMETH_CLAMPED;
 
+    polymost_outputGLDebugMessage(3, "polymost_drawpoly(dpxy:%p, n:%d, method_:%X), method: %X", dpxy, n, method_, method);
+
     pthtyp *pth = our_texcache_fetch(method | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
 
     if (!pth)
@@ -3887,6 +3921,9 @@ static void polymost_clipmost(vec2f_t *dpxy, int &n, float x0, float x1, float y
 static void polymost_domost(float x0, float y0, float x1, float y1, float y0top = 0.f, float y0bot = -1.f, float y1top = 0.f, float y1bot = -1.f)
 {
     int const dir = (x0 < x1);
+
+    polymost_outputGLDebugMessage(3, "polymost_domost(x0:%f, y0:%f, x1:%f, y1:%f, y0top:%f, y0bot:%f, y1top:%f, y1bot:%f)",
+                                  x0, y0, x1, y1, y0top, y0bot, y1top, y1bot);
 
     y0top -= DOMOST_OFFSET;
     y1top -= DOMOST_OFFSET;
@@ -5128,6 +5165,8 @@ static void polymost_drawalls(int32_t const bunch)
     int32_t const sectnum = thesector[bunchfirst[bunch]];
     auto const sec = (usectorptr_t)&sector[sectnum];
     float const fglobalang = fix16_to_float(qglobalang);
+
+    polymost_outputGLDebugMessage(3, "polymost_drawalls(bunch:%d)", bunch);
 
     //DRAW WALLS SECTION!
     for (bssize_t z=bunchfirst[bunch]; z>=0; z=bunchp2[z])
@@ -6412,6 +6451,8 @@ void polymost_drawrooms()
 {
     if (videoGetRenderMode() == REND_CLASSIC) return;
 
+    polymost_outputGLDebugMessage(3, "polymost_drawrooms()");
+
     videoBeginDrawing();
     frameoffset = frameplace + windowxy1.y*bytesperline + windowxy1.x;
 
@@ -6641,6 +6682,8 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
     // wal->nextsector is -1, WGR2 SVN Lochwood Hollow (Til' Death L1)  (or trueror1.map)
 
     auto const nsec = (usectorptr_t)&sector[wal->nextsector];
+
+    polymost_outputGLDebugMessage(3, "polymost_drawmaskwall(damaskwallcnt:%d)", damaskwallcnt);
 
     globalpicnum = wal->overpicnum;
     if ((uint32_t)globalpicnum >= MAXTILES)
@@ -7343,6 +7386,8 @@ void polymost_drawsprite(int32_t snum)
 
     int32_t spritenum = tspr->owner;
 
+    polymost_outputGLDebugMessage(3, "polymost_drawsprite(snum:%d)", snum);
+
     DO_TILE_ANIM(tspr->picnum, spritenum + 32768);
 
     globalpicnum = tspr->picnum;
@@ -7988,6 +8033,9 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     if (!hud || hud->flags & HUDFLAG_HIDE)
         return;
 
+    polymost_outputGLDebugMessage(3, "polymost_dorotatespritemodel(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, uniqid:%d)",
+                                  sx, sy, z, a, picnum, dashade, dapalnum, dastat, daalpha, dablend, uniqid);
+
     float const ogchang = gchang; gchang = 1.f;
     float const ogshang = gshang; gshang = 0.f; d = (float) z*(1.0f/(65536.f*16384.f));
     float const ogctang = gctang; gctang = (float) sintable[(a+512)&2047]*d;
@@ -8209,6 +8257,9 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
         polymost_dorotatespritemodel(sx, sy, z, a, picnum, dashade, dapalnum, dastat, daalpha, dablend, uniqid);
         return;
     }
+
+    polymost_outputGLDebugMessage(3, "polymost_dorotatesprite(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, cx1:%d, cy1:%d, cx2:%d, cy2:%d, uniqid:%d)",
+                                  sx, sy, z, a, picnum, dashade, dapalnum, dastat, daalpha, dablend, cx1, cy1, cx2, cy2, uniqid);
 
     glViewport(0,0,xdim,ydim); glox1 = -1; //Force fullscreen (glox1=-1 forces it to restore)
     glMatrixMode(GL_PROJECTION);
@@ -8625,6 +8676,8 @@ static void tessectrap(const float *px, const float *py, const int32_t *point2, 
 
 void polymost_fillpolygon(int32_t npoints)
 {
+    polymost_outputGLDebugMessage(3, "polymost_fillpolygon(npoints:%d)", npoints);
+
     globvis2 = 0;
     polymost_setVisibility(globvis2);
 
@@ -8691,6 +8744,9 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
     if (videoGetRenderMode() < REND_POLYMOST || !in3dmode())
         return -1;
+
+    polymost_outputGLDebugMessage(3, "polymost_drawtilescreen(tilex:%d, tiley:%d, wallnum:%d, dimen:%d, tilezoom:%d, usehitile:%d, loadedhitile:%p)",
+                                  tilex, tiley, wallnum, dimen, tilezoom, usehitile, loadedhitile);
 
     if (!glinfo.texnpot)
     {
@@ -8824,6 +8880,9 @@ static int32_t gen_font_glyph_tex(void)
 int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
 {
     int const arbackcol = (unsigned)backcol < 256 ? backcol : 0;
+
+    polymost_outputGLDebugMessage(3, "polymost_printtext256(xpos:%d, ypos:%d, col:%hd, backcol:%hd, name:%p, fontsize:%hhu)",
+                                      xpos, ypos, col, backcol, name, fontsize);
 
     // FIXME?
     if (col < 0)
@@ -9049,6 +9108,7 @@ void polymost_initosdfuncs(void)
         { "r_pogoDebug","",(void *) &r_pogoDebug, CVAR_BOOL | CVAR_NOSAVE, 0, 1 },
         { "r_texfilter", "changes the texture filtering settings (may require restart)", (void *) &gltexfiltermode, CVAR_INT|CVAR_FUNCPTR, 0, 5 },
 #endif
+        { "r_polymostDebug","Set the verbosity of Polymost GL debug messages",(void *) &r_polymostDebug, CVAR_INT, 0, 3 },
 #ifdef USE_GLEXT
         { "r_detailmapping","enable/disable detail mapping",(void *) &r_detailmapping, CVAR_BOOL, 0, 1 },
         { "r_glowmapping","enable/disable glow mapping",(void *) &r_glowmapping, CVAR_BOOL, 0, 1 },
