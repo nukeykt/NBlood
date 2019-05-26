@@ -147,7 +147,7 @@ void tileProcessGLVoxels(void)
 
 char * tileLoadTile(int nTile)
 {
-    tileLoad(nTile);
+    if (!waloff[nTile]) tileLoad(nTile);
     return (char*)waloff[nTile];
 }
 
