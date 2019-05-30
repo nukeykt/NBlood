@@ -6763,15 +6763,15 @@ int my_random(int a, int b)
 
 // tries to get random data field of sprite
 int GetRandDataVal(int *rData, spritetype* pSprite) {
-	int temp[4];
+    int temp[4];
     if (rData != NULL && pSprite != NULL) return -1;
     else if (pSprite != NULL) {
 
         if (pSprite->extra < 0)
             return -1;
 
-		if (rData == NULL)
-			rData = temp;
+        if (rData == NULL)
+            rData = temp;
 
         XSPRITE* pXSprite = &xsprite[pSprite->extra];
         rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
