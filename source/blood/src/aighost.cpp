@@ -186,7 +186,7 @@ static void BlastSeqCallback(int, int nXSprite)
             }
         }
     }
-    if (IsPlayerSprite(pTarget) || !isOriginalDemo()) // By NoOne: allow fire missile in non-player targets if not a demo
+    if (IsPlayerSprite(pTarget) || !VanillaMode()) // By NoOne: allow fire missile in non-player targets if not a demo
     {
         sfxPlay3DSound(pSprite, 489, 0, 0);
         actFireMissile(pSprite, 0, 0, aim.dx, aim.dy, aim.dz, 307);

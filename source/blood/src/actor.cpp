@@ -6762,15 +6762,18 @@ int my_random(int a, int b)
 }
 
 // tries to get random data field of sprite
-int GetRandDataVal(int rData[], spritetype* pSprite) {
-
+int GetRandDataVal(int *rData, spritetype* pSprite) {
+	int temp[4];
     if (rData != NULL && pSprite != NULL) return -1;
     else if (pSprite != NULL) {
 
         if (pSprite->extra < 0)
             return -1;
 
-        int rData[4]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
+		if (rData == NULL)
+			rData = temp;
+
+        XSPRITE* pXSprite = &xsprite[pSprite->extra];
         rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
         rData[1] = pXSprite->data2; rData[3] = pXSprite->data4;
 
@@ -6797,7 +6800,7 @@ int GetRandDataVal(int rData[], spritetype* pSprite) {
     while (maxRetries > 0) {
              
         // use true random only for single player mode
-        if (gGameOptions.nGameType == 0 && !isOriginalDemo() && !isDemoRecords()) {
+        if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) {
             rng.seed(std::random_device()());
             random = my_random(0, 4);
         // otherwise use Blood's default one. In the future it maybe possible to make

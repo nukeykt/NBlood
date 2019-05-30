@@ -169,7 +169,7 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
             switch (pSprite->type) {
                 case 227: // Cerberus
                 case 228: // 1 Head Cerberus
-                    if (isOriginalDemo() || !dudeIsImmune(pSprite, pXSector->damageType))
+                    if (VanillaMode() || !dudeIsImmune(pSprite, pXSector->damageType))
                         Crusher = 1;
                     break;
                 default:

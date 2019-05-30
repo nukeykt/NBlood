@@ -276,7 +276,7 @@ void evInit(void)
 {
     if (eventQ.PQueue)
         delete eventQ.PQueue;
-    if (isOriginalDemo())
+    if (VanillaMode())
         eventQ.PQueue = new VanillaPriorityQueue();
     else
         eventQ.PQueue = new StdPriorityQueue();
@@ -563,7 +563,7 @@ void EventQLoadSave::Load()
     if (eventQ.PQueue)
         delete eventQ.PQueue;
     Read(&eventQ, sizeof(eventQ));
-    if (isOriginalDemo())
+    if (VanillaMode())
         eventQ.PQueue = new VanillaPriorityQueue();
     else
         eventQ.PQueue = new StdPriorityQueue();

@@ -238,6 +238,6 @@ void ProcessFrame(void);
 void ScanINIFiles(void);
 bool LoadArtFile(const char *pzFile);
 void LoadExtraArts(void);
-bool isDemoRecords(void);
-bool isOriginalDemo(void);
+bool DemoRecordStatus(void);
+bool VanillaMode(void);
 bool fileExistsRFF(int id, const char* ext);
