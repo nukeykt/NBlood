@@ -53,3 +53,4 @@ project.xcworkspace/
 *.dSYM/
 
 .DS_Store
+._*
