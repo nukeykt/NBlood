@@ -352,7 +352,7 @@ ifeq ($(MIXERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
         audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
     endif
-    audiolib_objs += driver_sdl.cpp sdlmusic.cpp
+    audiolib_objs += driver_sdl.cpp sdlmusic.cpp oplmidi.cpp
 endif
 
 ifneq (0,$(HAVE_XMP))
