@@ -7410,6 +7410,8 @@ static void G_Startup(void)
 
     G_CompileScripts();
 
+    blooddemohack = true;
+
     if (engineInit())
         G_FatalEngineError();
 
