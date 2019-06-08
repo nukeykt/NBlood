@@ -915,12 +915,12 @@ void S_Update(void)
     } while (++sndnum <= highest);
 }
 
-void S_Callback(uint32_t num)
+void S_Callback(intptr_t num)
 {
     if ((int32_t)num == MUSIC_ID)
         return;
 
-    dq[dnum & (DQSIZE - 1)] = num;
+    dq[dnum & (DQSIZE - 1)] = (uint32_t)num;
     dnum++;
 }
 

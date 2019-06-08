@@ -92,6 +92,9 @@ static void maxheap_bubbleDown(uint32_t nodeIndex)
 
 static void maxheap_buildHeap()
 {
+    // TODO:
+    if (heapNodes < 2)
+        return;
     for (int i = (heapNodes-2)/2; i >= 0; --i)
     {
         maxheap_bubbleDown(i);
