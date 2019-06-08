@@ -83,7 +83,7 @@ int32_t vote_map = -1, vote_episode = -1;
 
 int32_t g_Debug = 0;
 
-const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "REDNECK.RTS", "REDNECK.RTS" };
+const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "REDNECK.RTS", "REDNECK.RTS", "NAM.RTS", "NAPALM.RTS" };
 
 int32_t g_Shareware = 0;
 
@@ -122,6 +122,20 @@ const char *G_DefaultRtsFile(void)
 {
     if (DUKE)
         return defaultrtsfilename[GAME_DUKE];
+    else if (NAPALM)
+    {
+        if (!testkopen(defaultrtsfilename[GAME_NAPALM],0) && testkopen(defaultrtsfilename[GAME_NAM],0))
+            return defaultrtsfilename[GAME_NAM]; // NAM/NAPALM Sharing
+        else
+            return defaultrtsfilename[GAME_NAPALM];
+    }
+    else if (NAM)
+    {
+        if (!testkopen(defaultrtsfilename[GAME_NAM],0) && testkopen(defaultrtsfilename[GAME_NAPALM],0))
+            return defaultrtsfilename[GAME_NAPALM]; // NAM/NAPALM Sharing
+        else
+            return defaultrtsfilename[GAME_NAM];
+    }
     else if (RR)
         return defaultrtsfilename[GAME_RR];
 
@@ -2699,7 +2713,7 @@ rrbloodpool_fallthrough:
                 pSprite->y     = sprite[spriteNum].y + (sintable[shellAng & 2047] >> 7);
                 pSprite->shade = -8;
 
-                if (pSprite->yvel == 1)
+                if (NAM)
                 {
                     pSprite->ang  = shellAng + 512;
                     pSprite->xvel = 30;
