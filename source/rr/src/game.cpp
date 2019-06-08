@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "screens.h"
 #include "cmdline.h"
 #include "palette.h"
+#include "al_midi.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -7888,6 +7889,18 @@ int app_main(int argc, char const * const * argv)
     g_logFlushWindow = 0;
     G_LoadGroups(!g_noAutoLoad && !ud.setup.noautoload);
 //    flushlogwindow = 1;
+    
+    int32_t timbre = kopen4load("d3dtimbr.tmb", 0);
+    if (timbre != -1)
+    {
+        int32_t length = kfilelength(timbre);
+        uint8_t *tmb = (uint8_t*)Xmalloc(length);
+        kread(timbre, tmb, length);
+        OPLMusic::AL_RegisterTimbreBank(tmb);
+        //OPLMusic::AL_SetMaxMidiChannel(10);
+        Bfree(tmb);
+        kclose(timbre);
+    }
 
     if (!g_useCwd)
         G_CleanupSearchPaths();

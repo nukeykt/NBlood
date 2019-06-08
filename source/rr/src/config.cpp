@@ -226,6 +226,7 @@ void CONFIG_SetDefaults(void)
     ud.config.MouseDeadZone = 0;
     ud.config.MusicToggle = 1;
     ud.config.MusicVolume = 195;
+    ud.config.MusicDevice = 0;
     g_myAimMode = g_player[0].ps->aim_mode = 1;
     ud.config.NumBits = 16;
     ud.config.NumChannels = 2;
