@@ -215,7 +215,7 @@ enum INPUT_MODE {
     INPUT_MODE_3,
 };
 
-extern Resource gSysRes, gGuiRes;
+extern Resource gSysRes;
 extern INPUT_MODE gInputMode;
 extern ud_setup_t gSetup;
 extern char SetupFilename[BMAX_PATH];

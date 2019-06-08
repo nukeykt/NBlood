@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx.h"
 #include "getopt.h"
 #include "globals.h"
+#include "gui.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "menu.h"
@@ -85,7 +86,7 @@ ud_setup_t gSetup;
 char SetupFilename[BMAX_PATH] = SETUPFILENAME;
 int32_t gNoSetup = 0, gCommandSetup = 0;
 
-Resource gSysRes, gGuiRes;
+Resource gSysRes;
 
 INPUT_MODE gInputMode;
 
@@ -1527,6 +1528,9 @@ int app_main(int argc, char const * const * argv)
 
     initprintf("Initializing Build 3D engine\n");
     scrInit();
+
+    initprintf("Creating standard color lookups\n");
+    scrCreateStdColors();
     
     initprintf("Loading tiles\n");
     if (pUserTiles)

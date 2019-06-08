@@ -28,8 +28,44 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "blood.h"
 #include "config.h"
+#include "gfx.h"
 #include "resource.h"
 #include "screen.h"
+
+RGB StdPal[32] = {
+    { 0, 0, 0 },
+    { 0, 0, 170 },
+    { 0, 170, 170 },
+    { 0, 170, 170 },
+    { 170, 0, 0 },
+    { 170, 0, 170 },
+    { 170, 85, 0 },
+    { 170, 170, 170 },
+    { 85, 85, 85 },
+    { 85, 85, 255 },
+    { 85, 255, 85 },
+    { 85, 255, 255 },
+    { 255, 85, 85 },
+    { 255, 85, 255 },
+    { 255, 255, 85 },
+    { 255, 255, 255 },
+    { 241, 241, 241 },
+    { 226, 226, 226 },
+    { 211, 211, 211 },
+    { 196, 196, 196 },
+    { 181, 181, 181 },
+    { 166, 166, 166 },
+    { 151, 151, 151 },
+    { 136, 136, 136 },
+    { 120, 120, 120 },
+    { 105, 105, 105 },
+    { 90, 90, 90 },
+    { 75, 75, 75 },
+    { 60, 60, 60 },
+    { 45, 45, 45 },
+    { 30, 30, 30 },
+    { 15, 15, 15 }
+};
 
 LOADITEM PLU[15] = {
     { 0, "NORMAL" },
@@ -69,6 +105,33 @@ static int curPalette;
 static int curGamma;
 int gGammaLevels;
 bool gFogMode = false;
+char gStdColor[32];
+
+char scrFindClosestColor(int red, int green, int blue)
+{
+    int dist = 0x7fffffff;
+    int best;
+    for (int i = 0; i < 256; i++)
+    {
+        int sum = (palette[i*3+1]-green)*(palette[i*3+1]-green);
+        if (sum >= dist) continue;
+        sum += (palette[i*3+0]-red)*(palette[i*3+0]-red);
+        if (sum >= dist) continue;
+        sum += (palette[i*3+2]-blue)*(palette[i*3+2]-blue);
+        if (sum >= dist) continue;
+        best = i;
+        dist = sum;
+        if (sum == 0)
+            break;
+    }
+    return best;
+}
+
+void scrCreateStdColors(void)
+{
+    for (int i = 0; i < 32; i++)
+        gStdColor[i] = scrFindClosestColor(StdPal[i].red, StdPal[i].green, StdPal[i].blue);
+}
 
 void scrResetPalette(void)
 {
@@ -278,6 +341,7 @@ void scrSetGameMode(int vidMode, int XRes, int YRes, int nBits)
     videoClearViewableArea(0);
     scrNextPage();
     scrSetPalette(curPalette);
+    gfxSetClip(0, 0, xdim, ydim);
 }
 
 void scrNextPage(void)

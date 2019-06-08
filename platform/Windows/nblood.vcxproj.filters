@@ -249,6 +249,12 @@
     <ClCompile Include="..\..\source\blood\src\aiunicult.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\blood\rsrc\gameres.rc">
@@ -494,6 +500,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\blood\src\aiunicult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\blood\src\gfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\blood\src\gui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

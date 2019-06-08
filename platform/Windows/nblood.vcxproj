@@ -213,9 +213,11 @@
     <ClCompile Include="..\..\source\blood\src\gamemenu.cpp" />
     <ClCompile Include="..\..\source\blood\src\gameutil.cpp" />
     <ClCompile Include="..\..\source\blood\src\getopt.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gfx.cpp" />
     <ClCompile Include="..\..\source\blood\src\gib.cpp" />
     <ClCompile Include="..\..\source\blood\src\globals.cpp" />
     <ClCompile Include="..\..\source\blood\src\gmtimbre.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gui.cpp" />
     <ClCompile Include="..\..\source\blood\src\inifile.cpp" />
     <ClCompile Include="..\..\source\blood\src\iob.cpp" />
     <ClCompile Include="..\..\source\blood\src\levels.cpp" />
@@ -326,8 +328,10 @@
     <ClInclude Include="..\..\source\blood\src\gamemenu.h" />
     <ClInclude Include="..\..\source\blood\src\gameutil.h" />
     <ClInclude Include="..\..\source\blood\src\getopt.h" />
+    <ClInclude Include="..\..\source\blood\src\gfx.h" />
     <ClInclude Include="..\..\source\blood\src\gib.h" />
     <ClInclude Include="..\..\source\blood\src\globals.h" />
+    <ClInclude Include="..\..\source\blood\src\gui.h" />
     <ClInclude Include="..\..\source\blood\src\map2d.h" />
     <ClInclude Include="..\..\source\blood\src\menu.h" />
     <ClInclude Include="..\..\source\blood\src\messages.h" />

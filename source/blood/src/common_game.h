@@ -386,18 +386,18 @@ inline int approxDist(int dx, int dy)
 
 class Rect {
 public:
-    int x1, y1, x2, y2;
-    Rect(int _x1, int _y1, int _x2, int _y2)
+    int x0, y0, x1, y1;
+    Rect(int _x0, int _y0, int _x1, int _y1)
     {
-        x1 = _x1; y1 = _y1; x2 = _x2; y2 = _y2;
+        x0 = _x0; y0 = _y0; x1 = _x1; y1 = _y1;
     }
     bool isValid(void) const
     {
-        return x1 < x2 && y1 < y2;
+        return x0 < x1 && y0 < y1;
     }
     char isEmpty(void) const
     {
-        return !(x1 < x2 && y1 < y2);
+        return !isValid();
     }
     bool operator!(void) const
     {
@@ -406,11 +406,39 @@ public:
 
     Rect & operator&=(Rect &pOther)
     {
-        x1 = ClipLow(x1, pOther.x1);
-        y1 = ClipLow(y1, pOther.y1);
-        x2 = ClipHigh(x2, pOther.x2);
-        y2 = ClipHigh(y2, pOther.y2);
+        x0 = ClipLow(x0, pOther.x0);
+        y0 = ClipLow(y0, pOther.y0);
+        x1 = ClipHigh(x1, pOther.x1);
+        y1 = ClipHigh(y1, pOther.y1);
         return *this;
+    }
+
+    void offset(int dx, int dy)
+    {
+        x0 += dx;
+        y0 += dy;
+        x1 += dx;
+        y1 += dy;
+    }
+
+    int height()
+    {
+        return y1 - y0;
+    }
+
+    int width()
+    {
+        return x1 - x0;
+    }
+
+    bool inside(Rect& other)
+    {
+        return (x0 <= other.x0 && x1 >= other.x1 && y0 <= other.y0 && y1 >= other.y1);
+    }
+
+    bool inside(int x, int y)
+    {
+        return (x0 <= x && x1 > x && y0 <= y && y1 > y);
     }
 };
 
