@@ -329,6 +329,9 @@ audiolib_objs := \
     xa.cpp \
     xmp.cpp \
     driver_nosound.cpp \
+    al_midi.cpp \
+    gmtimbre.cpp \
+    opl3.cpp \
 
 audiolib_root := $(source)/$(audiolib)
 audiolib_src := $(audiolib_root)/src
@@ -341,7 +344,7 @@ audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
     ifeq ($(MIXERTYPE),WIN)
-        audiolib_objs += driver_directsound.cpp
+        audiolib_objs += driver_directsound.cpp music.cpp midi.cpp mpu401.cpp
     endif
 endif
 
@@ -349,7 +352,7 @@ ifeq ($(MIXERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
         audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
     endif
-    audiolib_objs += driver_sdl.cpp
+    audiolib_objs += driver_sdl.cpp sdlmusic.cpp
 endif
 
 ifneq (0,$(HAVE_XMP))
@@ -472,7 +475,7 @@ duke3d_cflags := -I$(duke3d_src)
 
 common_editor_deps := duke3d_common_editor engine_editor
 
-duke3d_game_deps := duke3d_common_midi audiolib mact
+duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
 
 ifneq (0,$(NETCODE))
@@ -656,7 +659,6 @@ ifeq ($(PLATFORM),WINDOWS)
     endif
     ifeq ($(MIXERTYPE),WIN)
         LIBS += -ldsound
-        duke3d_common_midi_objs := music.cpp midi.cpp mpu401.cpp
     endif
 endif
 
@@ -672,9 +674,6 @@ endif
 ifeq ($(RENDERTYPE),SDL)
     duke3d_game_rsrc_objs += game_icon.c
     duke3d_editor_rsrc_objs += build_icon.c
-endif
-ifeq ($(MIXERTYPE),SDL)
-    duke3d_common_midi_objs := sdlmusic.cpp
 endif
 
 
@@ -693,7 +692,7 @@ blood_obj := $(obj)/$(blood)
 
 blood_cflags := -I$(blood_src)
 
-blood_game_deps := blood_common_midi audiolib mact libsmackerdec
+blood_game_deps := audiolib mact libsmackerdec
 
 ifneq (0,$(NETCODE))
     blood_game_deps += enet
@@ -797,9 +796,6 @@ ifeq ($(PLATFORM),WINDOWS)
     ifeq ($(STARTUP_WINDOW),1)
         blood_game_objs += startwin.game.cpp
     endif
-    ifeq ($(MIXERTYPE),WIN)
-        blood_common_midi_objs := music.cpp midi.cpp mpu401.cpp al_midi.cpp gmtimbre.cpp opl3.cpp
-    endif
 endif
 
 ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
@@ -808,9 +804,6 @@ ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
 endif
 ifeq ($(RENDERTYPE),SDL)
     blood_game_rsrc_objs += game_icon.c
-endif
-ifeq ($(MIXERTYPE),SDL)
-    blood_common_midi_objs := sdlmusic.cpp oplmidi.cpp al_midi.cpp gmtimbre.cpp opl3.cpp
 endif
 
 #### Redneck Rampage
@@ -832,7 +825,7 @@ rr_cflags := -I$(rr_src)
 
 common_editor_deps := rr_common_editor engine_editor
 
-rr_game_deps := rr_common_midi audiolib mact
+rr_game_deps := audiolib mact
 rr_editor_deps := audiolib
 
 ifneq (0,$(NETCODE))
@@ -920,9 +913,6 @@ ifeq ($(PLATFORM),WINDOWS)
     ifeq ($(STARTUP_WINDOW),1)
         rr_game_objs += startwin.game.cpp
     endif
-    ifeq ($(MIXERTYPE),WIN)
-        rr_common_midi_objs := music.cpp midi.cpp mpu401.cpp
-    endif
 endif
 
 ifeq ($(PLATFORM),WII)
@@ -938,9 +928,6 @@ ifeq ($(RENDERTYPE),SDL)
     rr_game_rsrc_objs += game_icon.c
     rr_editor_rsrc_objs += build_icon.c
 endif
-ifeq ($(MIXERTYPE),SDL)
-    rr_common_midi_objs := sdlmusic.cpp
-endif
 
 #### Shadow Warrior
 
@@ -953,7 +940,7 @@ sw_obj := $(obj)/$(sw)
 
 sw_cflags := -I$(sw_src)
 
-sw_game_deps := duke3d_common_midi audiolib mact
+sw_game_deps := audiolib mact
 sw_editor_deps := audiolib
 
 sw_game := voidsw
