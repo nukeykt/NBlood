@@ -4579,9 +4579,19 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
             x2 = gxinc+gyinc; y2 = gyinc-gxinc; break;
         }
 
-        const char oand = pow2char[(xs<backx)+0] + pow2char[(ys<backy)+2];
-        const char oand16 = oand+16;
-        const char oand32 = oand+32;
+        char oand = pow2char[(xs<backx)+0] + pow2char[(ys<backy)+2];
+
+        if (cstat&4)
+            oand ^= 3;
+
+        char oand16 = oand+16;
+        char oand32 = oand+32;
+
+        if (cstat&8)
+        {
+            oand16 = oand+32;
+            oand32 = oand+16;
+        }
 
         int32_t dagxinc, dagyinc;
 
