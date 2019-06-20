@@ -2056,6 +2056,7 @@ void viewProcessSprites(int cX, int cY, int cZ)
                     if ((pTSprite->hitag&16) == 0)
                     {
                         pTSprite->cstat |= 48;
+                        pTSprite->cstat &= ~(4|8);
                         pTSprite->yoffset += picanm[pTSprite->picnum].yofs;
                         pTSprite->picnum = voxelIndex[pTSprite->picnum];
                         if (!voxoff[pTSprite->picnum])
