@@ -5868,10 +5868,7 @@ draw_as_face_sprite:
         }
 
         i = (int32_t)tspr->ang+1536;
-        if (cstat&4)
-            i -= spriteext[spritenum].angoff;
-        else
-            i += spriteext[spritenum].angoff;
+        i += spriteext[spritenum].angoff;
         classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,tspr->shade,tspr->pal,lwall,swall,cstat);
     }
 }

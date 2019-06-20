@@ -1125,11 +1125,12 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     if ((sprite[tspr->owner].cstat&48)==16)
     {
         f *= 1.25f;
-        a0.y -= tspr->xoffset*(1.f/64.f);
+        a0.y -= tspr->xoffset*sintable[(spriteext[tspr->owner].angoff+512)&2047]*(1.f/(64.f*16384.f));
+        a0.x += tspr->xoffset*sintable[spriteext[tspr->owner].angoff&2047]*(1.f/(64.f*16384.f));
     }
 
     if (globalorientation&8) { m0.z = -m0.z; a0.z = -a0.z; } //y-flipping
-    if (globalorientation&4) { m0.x = -m0.x; a0.y = -a0.y; } //x-flipping
+    if (globalorientation&4) { m0.x = -m0.x; a0.x = -a0.x; a0.y = -a0.y; } //x-flipping
 
     m0.x *= f; a0.x *= f; f = -f;
     m0.y *= f; a0.y *= f;
