@@ -1131,7 +1131,10 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     k0 = m->bscale / 64.f;
     f = (float) tspr->xrepeat * (256.f/320.f) * k0;
     if ((sprite[tspr->owner].cstat&48)==16)
+    {
         f *= 1.25f;
+        a0.y -= tspr->xoffset*(1.f/64.f);
+    }
 
     m0.x *= f; a0.x *= f; f = -f;
     m0.y *= f; a0.y *= f;

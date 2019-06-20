@@ -5781,6 +5781,15 @@ draw_as_face_sprite:
         off.y = /*picanm[sprite[tspr->owner].picnum].yofs +*/ tspr->yoffset;
         tspr->z -= mulscale14(off.y,nyrepeat);
 
+        if ((sprite[spritenum].cstat&CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
+        {
+            const int32_t xv = mulscale16(tspr->xrepeat*voxscale[vtilenum], sintable[(tspr->ang+2560+1536)&2047]);
+            const int32_t yv = mulscale16(tspr->xrepeat*voxscale[vtilenum], sintable[(tspr->ang+2048+1536)&2047]);
+
+            tspr->x -= mulscale16(xv, tspr->xoffset);
+            tspr->y -= mulscale16(yv, tspr->xoffset);
+        }
+
         globvis = globalvisibility;
         if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
 
@@ -7215,8 +7224,6 @@ static inline void calcbritable(void)
             britable[i][j] = (uint8_t) (powf((float)j, a) * b);
     }
 }
-
-#define BANG2RAD (fPI * (1.f/1024.f))
 
 static int32_t engineLoadTables(void)
 {

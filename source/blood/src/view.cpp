@@ -2075,9 +2075,12 @@ void viewProcessSprites(int cX, int cY, int cZ)
             nAnim--;
         }
 
-        if (usevoxels && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] != -1)
+        int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
+
+        if (usevoxels && videoGetRenderMode() != REND_POLYMER && tiletovox[nAnimTile] != -1)
         {
-            pTSprite->yoffset += picanm[pTSprite->picnum].yofs;
+            pTSprite->yoffset += picanm[nAnimTile].yofs;
+            pTSprite->xoffset += picanm[nAnimTile].xofs;
         }
 
         sectortype *pSector = &sector[pTSprite->sectnum];
