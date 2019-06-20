@@ -5779,12 +5779,12 @@ draw_as_face_sprite:
 
         if (!(cstat&128)) tspr->z -= mulscale22(B_LITTLE32(longptr[5]),nyrepeat);
         off.y = /*picanm[sprite[tspr->owner].picnum].yofs +*/ tspr->yoffset;
-        tspr->z -= mulscale14(off.y,nyrepeat);
+        tspr->z -= off.y * tspr->yrepeat << 2;
 
         if ((sprite[spritenum].cstat&CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
         {
-            const int32_t xv = mulscale16(tspr->xrepeat*voxscale[vtilenum], sintable[(tspr->ang+2560+1536)&2047]);
-            const int32_t yv = mulscale16(tspr->xrepeat*voxscale[vtilenum], sintable[(tspr->ang+2048+1536)&2047]);
+            const int32_t xv = tspr->xrepeat*sintable[(tspr->ang+2560+1536)&2047];
+            const int32_t yv = tspr->xrepeat*sintable[(tspr->ang+2048+1536)&2047];
 
             tspr->x -= mulscale16(xv, tspr->xoffset);
             tspr->y -= mulscale16(yv, tspr->xoffset);
