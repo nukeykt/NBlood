@@ -125,7 +125,3 @@ $(mact_obj)/control.$o: $(mact_src)/control.cpp $(mact_inc)/control.h $(mact_inc
 $(mact_obj)/keyboard.$o: $(mact_src)/keyboard.cpp $(mact_inc)/keyboard.h $(engine_inc)/compat.h $(engine_inc)/baselayer.h
 $(mact_obj)/joystick.$o: $(mact_src)/joystick.cpp $(mact_inc)/joystick.h $(engine_inc)/baselayer.h
 $(mact_obj)/scriplib.$o: $(mact_src)/scriplib.cpp $(mact_inc)/scriplib.h $(mact_src)/_scrplib.h $(engine_inc)/compat.h
-
-$(duke3d_obj)/midi.$o: $(duke3d_src)/midi.cpp $(duke3d_src)/_midi.h $(duke3d_src)/midi.h $(audiolib_inc)/music.h
-$(duke3d_obj)/mpu401.$o: $(duke3d_src)/mpu401.cpp $(duke3d_src)/mpu401.h $(audiolib_inc)/music.h
-$(duke3d_obj)/music.$o: $(duke3d_src)/music.cpp $(duke3d_src)/midi.h $(duke3d_src)/mpu401.h $(audiolib_inc)/music.h
