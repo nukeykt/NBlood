@@ -377,7 +377,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             int data1 = pXSprite->data1; int result = 0;
 
             // use true random only for single player mode
-            if (gGameOptions.nGameType == 0 && !isOriginalDemo() && !isDemoRecords()) {
+            if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) {
                 rng.seed(std::random_device()());
                 pXSprite->txID = (int)my_random(pXSprite->data1, pXSprite->data4);
             
@@ -677,7 +677,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             
             spritetype* pSpawn = NULL;
             // By NoOne: add spawn random dude feature - works only if at least 2 data fields are not empty.
-            if (!isOriginalDemo()) {
+            if (!VanillaMode()) {
                 if ((pSpawn = spawnRandomDude(pSprite)) == NULL)
                     pSpawn = actSpawnDude(pSprite, pXSprite->data1, -1, 0);
             } else {

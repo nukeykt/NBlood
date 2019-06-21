@@ -2414,11 +2414,11 @@ void LoadExtraArts(void)
     }
 }
 
-bool isDemoRecords(void) {
+bool DemoRecordStatus(void) {
     return gDemo.at0;
 }
 
-bool isOriginalDemo() {
+bool VanillaMode() {
     return gDemo.m_bLegacy && gDemo.at1;
 }
 

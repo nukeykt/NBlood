@@ -203,7 +203,7 @@ static void BlastSSeqCallback(int, int nXSprite)
             }
         }
     }
-    if (IsPlayerSprite(pTarget) || !isOriginalDemo()) // By NoOne: allow to fire missile in non-player targets
+    if (IsPlayerSprite(pTarget) || !VanillaMode()) // By NoOne: allow to fire missile in non-player targets
     {
         actFireMissile(pSprite, -120, 0, aim.dx, aim.dy, aim.dz, 311);
         actFireMissile(pSprite, 120, 0, aim.dx, aim.dy, aim.dz, 311);

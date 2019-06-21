@@ -59,15 +59,21 @@ int GetOptions(SWITCH *switches)
         if (!switches[i].name)
             return -3;
         int nLength = strlen(switches[i].name);
-        if (!Bstrncasecmp(pChar, switches[i].name, nLength))
+        if (!Bstrncasecmp(pChar, switches[i].name, nLength) && (pChar[nLength]=='=' || pChar[nLength]==0))
         {
             pChar += nLength;
+            if (*pChar=='=')
+            {
+                pChar++;
+            }
+            else
+            {
+                pChar = NULL;
+            }
             break;
         }
     }
     vd = switches[i].at4;
-    if (*pChar == 0)
-        pChar = NULL;
     OptArgc = 0;
     while (OptArgc < switches[i].at8)
     {
@@ -76,9 +82,9 @@ int GetOptions(SWITCH *switches)
             if (OptIndex >= margc)
                 break;
             pChar = margv[OptIndex++];
+            if (strchr(SwitchChars, *pChar) != 0)
+                break;
         }
-        if (strchr(SwitchChars, *pChar) != 0)
-            break;
         OptArgv[OptArgc++] = pChar;
         pChar = NULL;
     }
