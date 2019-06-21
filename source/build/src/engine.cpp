@@ -7383,7 +7383,7 @@ LISTFN_STATIC int32_t insertspritestat(int16_t statnum)
     // make back-link of the new freelist head point to nil
     if (headspritestat[MAXSTATUS] >= 0)
         prevspritestat[headspritestat[MAXSTATUS]] = -1;
-    else
+    else if (!blooddemohack)
         tailspritefree = -1;
 
     do_insertsprite_at_headofstat(blanktouse, statnum);
@@ -7452,15 +7452,20 @@ int32_t deletesprite(int16_t spritenum)
     sprite[spritenum].sectnum = MAXSECTORS;
 
     // insert at tail of status freelist
-    prevspritestat[spritenum] = tailspritefree;
-    nextspritestat[spritenum] = -1;
-    if (tailspritefree >= 0)
-        nextspritestat[tailspritefree] = spritenum;
+    if (blooddemohack)
+        do_insertsprite_at_headofstat(spritenum, MAXSTATUS);
     else
-        headspritestat[MAXSTATUS] = spritenum;
-    sprite[spritenum].statnum = MAXSTATUS;
+    {
+        prevspritestat[spritenum] = tailspritefree;
+        nextspritestat[spritenum] = -1;
+        if (tailspritefree >= 0)
+            nextspritestat[tailspritefree] = spritenum;
+        else
+            headspritestat[MAXSTATUS] = spritenum;
+        sprite[spritenum].statnum = MAXSTATUS;
 
-    tailspritefree = spritenum;
+        tailspritefree = spritenum;
+    }
     Numsprites--;
 
     return 0;
