@@ -29,6 +29,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma pack(push, 1)
 
+// by NoOne: add sound flags
+enum
+{
+    kFlagSoundKill = 0x01, // mute QAV sounds of same priority
+    kFlagSoundKillAll = 0x02, //  mute all QAV sounds
+
+};
+
 struct TILE_FRAME
 {
     int picnum;
@@ -44,8 +52,10 @@ struct TILE_FRAME
 struct SOUNDINFO
 {
     int sound;
-    unsigned char at4;
-    char pad[3];
+    unsigned char priority;
+    unsigned char sndFlags; // (by NoOne) Various sound flags
+    unsigned char sndRange; // (by NoOne) Random sound range
+    char reserved[1];
 };
 
 struct FRAMEINFO

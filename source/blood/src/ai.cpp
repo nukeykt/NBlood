@@ -1159,7 +1159,6 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
             {
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
                 aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
-                //pDudeExtra->at4 = 0;
                 return;
             }
 
