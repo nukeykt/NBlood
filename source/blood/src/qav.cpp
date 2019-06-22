@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "qav.h"
 #include "tile.h"
+#include "sfx.h"
+#include "sound.h"
 
 #define kMaxClients 64
 static void (*clientCallback[kMaxClients])(int, void *);
@@ -90,15 +92,32 @@ void QAV::Play(int start, int end, int nCallback, void *pData)
         {
             FRAMEINFO *pFrame = &frames[frame];
             SOUNDINFO *pSound = &pFrame->sound;
-            if (pSound->sound > 0)
-            {
-                if (nSprite == -1)
-                    PlaySound(pSound->sound);
-                else
-                    PlaySound3D(&sprite[nSprite], pSound->sound, 16+pSound->at4, 6);
+            
+            // by NoOne: handle Sound kill flags
+            if (pSound->sndFlags > 0 && pSound->sndFlags <= kFlagSoundKillAll) {
+                for (int i = 0; i < nFrames; i++) {
+                    FRAMEINFO* pFrame2 = &frames[i];
+                    SOUNDINFO* pSound2 = &pFrame2->sound;
+                    if (pSound2->sound != 0) {
+                        if (pSound->sndFlags != kFlagSoundKillAll && pSound2->priority != pSound->priority) continue;
+                        else if (nSprite >= 0) {
+                            // We need stop all sounds in a range
+                            for (int a = 0; a <= pSound2->sndRange; a++)
+                                sfxKill3DSound(&sprite[nSprite], -1, pSound2->sound + a);
+                        } else {
+                            sndKillAllSounds();
+                        }
+                    }
+                }
             }
-            if (pFrame->nCallbackId > 0 && nCallback != -1)
-            {
+
+            if (pSound->sound > 0) {
+                int sndRange = pSound->sndRange;
+                if (nSprite == -1) PlaySound(pSound->sound + Random((sndRange == 1) ? 2 : sndRange));
+                else PlaySound3D(&sprite[nSprite], pSound->sound + Random((sndRange == 1) ? 2 : sndRange), 16+pSound->priority, 6);
+            }
+            
+            if (pFrame->nCallbackId > 0 && nCallback != -1) {
                 clientCallback[nCallback](pFrame->nCallbackId, pData);
             }
         }

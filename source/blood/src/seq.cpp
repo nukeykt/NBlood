@@ -264,7 +264,7 @@ void SEQINST::Update(ACTIVE *pActive)
         UpdateWall(pActive->xindex, &pSequence->frames[frameIndex]);
         break;
     case 1:
-        UpdateCeiling(pActive->xindex, &pSequence->frames[frameIndex]);
+        UpdateCeiling(pActive->xindex , &pSequence->frames[frameIndex]);
         break;
     case 2:
         UpdateFloor(pActive->xindex, &pSequence->frames[frameIndex]);
@@ -272,7 +272,7 @@ void SEQINST::Update(ACTIVE *pActive)
     case 3:
         UpdateSprite(pActive->xindex, &pSequence->frames[frameIndex]);
         if (pSequence->frames[frameIndex].at6_1)
-            sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], pSequence->ata, -1, 0);
+            sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], pSequence->ata + Random(pSequence->frames[frameIndex].soundRange), -1, 0);
         break;
     case 4:
         UpdateMasked(pActive->xindex, &pSequence->frames[frameIndex]);
