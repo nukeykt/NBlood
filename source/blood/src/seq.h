@@ -41,7 +41,9 @@ struct SEQFRAME {
     unsigned int at6_3 : 1; //
     unsigned int at6_4 : 1; //
     unsigned int tile2 : 4;
-    unsigned int pad : 7;
+    unsigned soundRange : 4; // (by NoOne) random sound range relative to global SEQ sound
+    unsigned surfaceSound : 1; // (by NoOne) trigger surface sound when moving / touching
+    unsigned reserved : 2;
 };
 
 struct Seq {
