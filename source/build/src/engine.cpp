@@ -2188,7 +2188,7 @@ static inline void hline(int32_t xr, int32_t yp)
     asm1 = (inthi_t)mulscale6(globalx1, r);
     asm2 = (inthi_t)mulscale6(globaly2, r);
     int32_t const s = getpalookupsh(mulscale22(r,globvis));
-    
+
     hlineasm4(xr-xl,0,s,(uint32_t)mulscale6(globalx2,r)+globalypanning,(uint32_t)mulscale6(globaly1,r)+globalxpanning,
               ylookup[yp]+xr+frameoffset);
 }
@@ -2203,7 +2203,7 @@ static inline void slowhline(int32_t xr, int32_t yp)
     int32_t const r = horizlookup2[yp-globalhoriz+horizycent];
     asm1 = (inthi_t)mulscale6(globalx1, r);
     asm2 = (inthi_t)mulscale6(globaly2, r);
-    
+
     asm3 = (intptr_t)globalpalwritten + getpalookupsh(mulscale22(r,globvis));
     if (!(globalorientation&256))
     {
@@ -3401,7 +3401,7 @@ static void tslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int3
     }
     while (--cnt);
 }
- 
+
 // cnt iterations
 static void mslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int32_t bx, int32_t by)
 {
@@ -7192,14 +7192,14 @@ static void dosetaspect(void)
 
         no_radarang2 = 0;
         oviewingrange = viewingrange;
-        
+
         xinc = mulscale32(viewingrange*2560,xdimenrecip);
         x = (5120<<16)-mulscale1(xinc,xdimen);
 
         for (i=0; i<xdimen; i++)
         {
             j = (x&65535); k = (x>>16); x += xinc;
-            
+
             if (k < 0 || k >= (int32_t)ARRAY_SIZE(qradarang)-1)
             {
                 no_radarang2 = 1;
@@ -7284,7 +7284,7 @@ static int32_t engineLoadTables(void)
             radarang[i] = (int16_t)(atanf(((float)(640-i)-0.5f) * (1.f/160.f)) * (-64.f * (1.f/BANG2RAD)));
         for (i=0; i<640; i++)
             radarang[1279-i] = -radarang[i];
- 
+
         for (i=0; i<5120; i++)
             qradarang[i] = fix16_from_float(atanf(((float)(5120-i)-0.5f) * (1.f/1024.f)) * (-64.f * (1.f/BANG2RAD)));
         for (i=0; i<5120; i++)
@@ -8607,7 +8607,7 @@ killsprite:
         spritesxyz[i].y = yp;
     }
 
-    int32_t gap, ys;
+    int32_t gap, y, ys;
 
     gap = 1; while (gap < spritesortcnt) gap = (gap<<1)+1;
     for (gap>>=1; gap>0; gap>>=1)   //Sort sprite list
@@ -8623,17 +8623,17 @@ killsprite:
     ys = spritesxyz[0].y; i = 0;
     for (bssize_t j=1; j<=spritesortcnt; j++)
     {
-        if (j == spritesortcnt ||
-            spritesxyz[j].y == ys)
+        y = spritesxyz[j].y^(j == spritesortcnt);
+        if (y == ys)
             continue;
 
-        ys = spritesxyz[j].y;
+        ys = y;
 
         if (j > i+1)
         {
             for (bssize_t k=i; k<j; k++)
             {
-                const uspritetype *const s = tspriteptr[k];
+                const uspritetype *s = tspriteptr[k];
 
                 spritesxyz[k].z = s->z;
                 if ((s->cstat&48) != 32)
@@ -8683,14 +8683,14 @@ killsprite:
     {
         glDisable(GL_BLEND);
         glEnable(GL_ALPHA_TEST);
- 
+
         for (i = spritesortcnt; i < numSprites; ++i)
         {
             if (tspriteptr[i] != NULL)
             {
                 debugmask_add(i | 32768, tspriteptr[i]->owner);
                 renderDrawSprite(i);
-                
+
                 tspriteptr[i] = NULL;
             }
         }
@@ -8707,7 +8707,7 @@ killsprite:
             else
                 renderDrawMaskedWall(--maskwallcnt);
         }
- 
+
         glEnable(GL_BLEND);
         glEnable(GL_ALPHA_TEST);
         glDepthMask(GL_FALSE);
