@@ -325,18 +325,6 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
     return returnSprite;
 }
 
-int Proj_GetDamage(projectile_t const *pProj)
-{
-    Bassert(pProj);
-
-    int damage = pProj->extra;
-
-    if (pProj->extra_rand > 0)
-        damage += (krand2() % pProj->extra_rand);
-
-    return damage;
-}
-
 static void Proj_MaybeAddSpread(int doSpread, int32_t *zvel, int *shootAng, int zRange, int angRange)
 {
     if (doSpread)
@@ -1124,7 +1112,7 @@ growspark_rr:
                 else if (PN(spriteNum) == BOSS2)
                 {
                     vel += 128;
-                    startPos.z += 4 << 8;
+                    startPos.z += 24<<8;
                 }
 
                 Zvel = tabledivide32_noinline((g_player[otherSprite].ps->opos.z - startPos.z) * vel, safeldist(g_player[otherSprite].ps->i, pSprite));
@@ -7494,40 +7482,43 @@ check_enemy_sprite:
             }
         }
 
-        if ((trueFloorDist < PHEIGHT + ZOFFSET3) && (checkWalkSound == 1 || checkWalkSound == 3))
+        if ((trueFloorDist < PHEIGHT + ZOFFSET3))
         {
-            if (pPlayer->spritebridge == 0 && pPlayer->walking_snd_toggle == 0 && pPlayer->on_ground)
+            if (checkWalkSound == 1 || checkWalkSound == 3)
             {
-                switch (sectorLotag)
+                if (pPlayer->spritebridge == 0 && pPlayer->walking_snd_toggle == 0 && pPlayer->on_ground)
                 {
-                    case 0:
+                    switch (sectorLotag)
                     {
-                        int const walkPicnum = (lowZhit >= 0 && (lowZhit & 49152) == 49152)
-                                               ? TrackerCast(sprite[lowZhit & (MAXSPRITES - 1)].picnum)
-                                               : TrackerCast(sector[pPlayer->cursectnum].floorpicnum);
+                        case 0:
+                        {
+                            int const walkPicnum = (lowZhit >= 0 && (lowZhit & 49152) == 49152)
+                                                   ? TrackerCast(sprite[lowZhit & (MAXSPRITES - 1)].picnum)
+                                                   : TrackerCast(sector[pPlayer->cursectnum].floorpicnum);
 
-                        if (!RR)
-                            switch (DYNAMICTILEMAP(walkPicnum))
-                            {
-                                case PANNEL1__STATIC:
-                                case PANNEL2__STATIC:
-                                    A_PlaySound(DUKE_WALKINDUCTS, pPlayer->i);
-                                    pPlayer->walking_snd_toggle = 1;
-                                    break;
-                            }
-                    }
-                    break;
-
-                    case ST_1_ABOVE_WATER:
-                        if ((krand2() & 1) == 0 && (!RRRA || (!pPlayer->on_boat && !pPlayer->on_motorcycle && sector[pPlayer->cursectnum].lotag != 321)))
-                            A_PlaySound(DUKE_ONWATER, pPlayer->i);
-                        pPlayer->walking_snd_toggle = 1;
+                            if (!RR)
+                                switch (DYNAMICTILEMAP(walkPicnum))
+                                {
+                                    case PANNEL1__STATIC:
+                                    case PANNEL2__STATIC:
+                                        A_PlaySound(DUKE_WALKINDUCTS, pPlayer->i);
+                                        pPlayer->walking_snd_toggle = 1;
+                                        break;
+                                }
+                        }
                         break;
+
+                        case ST_1_ABOVE_WATER:
+                            if ((krand2() & 1) == 0 && (!RRRA || (!pPlayer->on_boat && !pPlayer->on_motorcycle && sector[pPlayer->cursectnum].lotag != 321)))
+                                A_PlaySound(DUKE_ONWATER, pPlayer->i);
+                            pPlayer->walking_snd_toggle = 1;
+                            break;
+                    }
                 }
             }
+            else if (pPlayer->walking_snd_toggle > 0)
+                pPlayer->walking_snd_toggle--;
         }
-        else if (pPlayer->walking_snd_toggle > 0)
-            pPlayer->walking_snd_toggle--;
 
         if (pPlayer->jetpack_on == 0 && pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400)
             velocityModifier <<= 1;
@@ -7537,7 +7528,7 @@ check_enemy_sprite:
 
         int playerSpeedReduction = 0;
         
-        if (!RRRA && ((pPlayer->on_ground && (TEST_SYNC_KEY(playerBits, SK_CROUCH)))
+        if (!RRRA && pPlayer->on_ground && (TEST_SYNC_KEY(playerBits, SK_CROUCH)
                   || (*weaponFrame > 10 && pPlayer->curr_weapon == KNEE_WEAPON)))
             playerSpeedReduction = 0x2000;
         else if (sectorLotag == ST_2_UNDERWATER)

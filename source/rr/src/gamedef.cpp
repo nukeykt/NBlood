@@ -371,8 +371,11 @@ static inline void C_SkipSpace(void)
         textptr++;
 }
 
+static int32_t g_gotComment = 0;
+
 static int32_t C_SkipComments(void)
 {
+    g_gotComment = 0;
     do
     {
         switch (*textptr)
@@ -393,6 +396,7 @@ static int32_t C_SkipComments(void)
                 if (!(g_errorCnt || g_warningCnt) && g_scriptDebug > 1)
                     initprintf("%s:%d: debug: got comment.\n",g_scriptFileName,g_lineNumber);
                 C_NextLine();
+                g_gotComment = 1;
                 continue;
             case '*': // beginning of a C style comment
                 if (!(g_errorCnt || g_warningCnt) && g_scriptDebug > 1)
@@ -420,6 +424,7 @@ static int32_t C_SkipComments(void)
                     initprintf("%s:%d: debug: got end of comment block.\n",g_scriptFileName,g_lineNumber);
 
                 textptr+=2;
+                g_gotComment = 1;
                 continue;
             default:
                 C_ReportError(-1);
@@ -1654,7 +1659,8 @@ static int32_t C_ParseCommand(int32_t loop)
 
                 g_scriptPtr++; //Leave a spot for the fail location
 
-                C_ParseCommand(0);
+                if (!g_gotComment)
+                    C_ParseCommand(0);
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
@@ -2479,9 +2485,6 @@ void C_ReportError(int32_t iError)
     case ERROR_CLOSEBRACKET:
         initprintf("%s:%d: error: found more `}' than `{' before `%s'.\n",g_scriptFileName,g_lineNumber,tempbuf);
         break;
-    case ERROR_EVENTONLY:
-        initprintf("%s:%d: error: keyword `%s' only available during events.\n",g_scriptFileName,g_lineNumber,tempbuf);
-        break;
     case ERROR_EXCEEDSMAXTILES:
         initprintf("%s:%d: error: `%s' value exceeds MAXTILES.  Maximum is %d.\n",g_scriptFileName,g_lineNumber,tempbuf,MAXTILES-1);
         break;
@@ -2494,71 +2497,17 @@ void C_ReportError(int32_t iError)
     case ERROR_ISAKEYWORD:
         initprintf("%s:%d: error: symbol `%s' is a keyword.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
         break;
-    case ERROR_NOENDSWITCH:
-        initprintf("%s:%d: error: did not find `endswitch' before `%s'.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case ERROR_NOTAGAMEDEF:
-        initprintf("%s:%d: error: symbol `%s' is not a definition.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case ERROR_NOTAGAMEVAR:
-        initprintf("%s:%d: error: symbol `%s' is not a variable.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case ERROR_NOTAGAMEARRAY:
-        initprintf("%s:%d: error: symbol `%s' is not an array.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case ERROR_GAMEARRAYBNC:
-        initprintf("%s:%d: error: malformed array index: expected ], found %c\n",g_scriptFileName,g_lineNumber,*textptr);
-        break;
-    case ERROR_GAMEARRAYBNO:
-        initprintf("%s:%d: error: malformed array index: expected [, found %c\n",g_scriptFileName,g_lineNumber,*textptr);
-        break;
-    case ERROR_INVALIDARRAYWRITE:
-        initprintf("%s:%d: error: arrays can only be written to using `setarray'.\n",g_scriptFileName,g_lineNumber);
-        break;
     case ERROR_OPENBRACKET:
         initprintf("%s:%d: error: found more `{' than `}' before `%s'.\n",g_scriptFileName,g_lineNumber,tempbuf);
         break;
     case ERROR_PARAMUNDEFINED:
         initprintf("%s:%d: error: parameter `%s' is undefined.\n",g_scriptFileName,g_lineNumber,tempbuf);
         break;
-    case ERROR_NOTAMEMBER:
-        initprintf("%s:%d: error: symbol `%s' is not a valid structure member.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
     case ERROR_SYNTAXERROR:
         initprintf("%s:%d: error: syntax error.\n",g_scriptFileName,g_lineNumber);
         break;
-    case ERROR_VARREADONLY:
-        initprintf("%s:%d: error: variable `%s' is read-only.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case ERROR_ARRAYREADONLY:
-        initprintf("%s:%d: error: array `%s' is read-only.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case ERROR_VARTYPEMISMATCH:
-        initprintf("%s:%d: error: variable `%s' is of the wrong type.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case WARNING_BADGAMEVAR:
-        initprintf("%s:%d: warning: variable `%s' should be either per-player OR per-actor, not both.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case WARNING_DUPLICATECASE:
-        initprintf("%s:%d: warning: duplicate case ignored.\n",g_scriptFileName,g_lineNumber);
-        break;
-    case WARNING_DUPLICATEDEFINITION:
-        initprintf("%s:%d: warning: duplicate definition `%s' ignored.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case WARNING_EVENTSYNC:
-        initprintf("%s:%d: warning: found `%s' within a local event.\n",g_scriptFileName,g_lineNumber,tempbuf);
-        break;
     case WARNING_LABELSONLY:
         initprintf("%s:%d: warning: expected a label, found a constant.\n",g_scriptFileName,g_lineNumber);
-        break;
-    case WARNING_NAMEMATCHESVAR:
-        initprintf("%s:%d: warning: symbol `%s' already used for variable.\n",g_scriptFileName,g_lineNumber,label+(g_labelCnt<<6));
-        break;
-    case WARNING_VARMASKSKEYWORD:
-        initprintf("%s:%d: warning: variable `%s' masks keyword.\n", g_scriptFileName, g_lineNumber, label+(g_labelCnt<<6));
-        break;
-    case WARNING_ARRAYMASKSKEYWORD:
-        initprintf("%s:%d: warning: array `%s' masks keyword.\n", g_scriptFileName, g_lineNumber, label+(g_labelCnt<<6));
         break;
     }
 }

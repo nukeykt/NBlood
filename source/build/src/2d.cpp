@@ -56,15 +56,16 @@ static void drawpixel_safe(void *s, char a)
 //
 void plotpixel(int32_t x, int32_t y, char col)
 {
-    // XXX: if we ever want the editor to work under GL ES, find a replacement for the raster functions
 #if defined USE_OPENGL && !defined EDUKE32_GLES
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {
         palette_t p = paletteGetColor(col);
-
-        glRasterPos4i(x, y, 0, 1);
-        glDrawPixels(1, 1, GL_RGB, GL_UNSIGNED_BYTE, &p);
-        glRasterPos4i(0, 0, 0, 1);
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(x,ydim-y+1,1,1);
+        glClearColor((float)p.r*(1.0f/255.0f),(float)p.g*(1.0f/255.0f),(float)p.b*(1.0f)/255.0f,1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.0f,0.0f,0.0f,1.0f); // XXX: there must be a better way
+        glDisable(GL_SCISSOR_TEST);
         return;
     }
 #endif
@@ -118,32 +119,32 @@ static void drawlinegl(int32_t x1, int32_t y1, int32_t x2, int32_t y2, palette_t
 {
     //        setpolymost2dview();	// JBF 20040205: more efficient setup
 
-    int const dx = x2 - x1;
-    int const dy = y2 - y1;
+    int const dx = x2-x1;
+    int const dy = y2-y1;
 
     if (dx >= 0)
     {
         if ((x1 >= wx2) || (x2 < wx1)) return;
-        if (x1 < wx1) y1 += scale(wx1 - x1, dy, dx), x1 = wx1;
-        if (x2 > wx2) y2 += scale(wx2 - x2, dy, dx), x2 = wx2;
+        if (x1 < wx1) y1 += scale(wx1-x1, dy, dx), x1 = wx1;
+        if (x2 > wx2) y2 += scale(wx2-x2, dy, dx), x2 = wx2;
     }
     else
     {
         if ((x2 >= wx2) || (x1 < wx1)) return;
-        if (x2 < wx1) y2 += scale(wx1 - x2, dy, dx), x2 = wx1;
-        if (x1 > wx2) y1 += scale(wx2 - x1, dy, dx), x1 = wx2;
+        if (x2 < wx1) y2 += scale(wx1-x2, dy, dx), x2 = wx1;
+        if (x1 > wx2) y1 += scale(wx2-x1, dy, dx), x1 = wx2;
     }
     if (dy >= 0)
     {
         if ((y1 >= wy2) || (y2 < wy1)) return;
-        if (y1 < wy1) x1 += scale(wy1 - y1, dx, dy), y1 = wy1;
-        if (y2 > wy2) x2 += scale(wy2 - y2, dx, dy), y2 = wy2;
+        if (y1 < wy1) x1 += scale(wy1-y1, dx, dy), y1 = wy1;
+        if (y2 > wy2) x2 += scale(wy2-y2, dx, dy), y2 = wy2;
     }
     else
     {
         if ((y2 >= wy2) || (y1 < wy1)) return;
-        if (y2 < wy1) x2 += scale(wy1 - y2, dx, dy), y2 = wy1;
-        if (y1 > wy2) x1 += scale(wy2 - y1, dx, dy), y1 = wy2;
+        if (y2 < wy1) x2 += scale(wy1-y2, dx, dy), y2 = wy1;
+        if (y1 > wy2) x1 += scale(wy2-y1, dx, dy), y1 = wy2;
     }
 
     glViewport(0, 0, xdim, ydim);
