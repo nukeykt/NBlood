@@ -894,7 +894,7 @@ void                polymer_uninit(void)
     {
         _prplanelist*   next = plpool->n;
 
-        Bfree(plpool);
+        Xfree(plpool);
         plpool = next;
         i++;
     }
@@ -2469,11 +2469,11 @@ static void         polymer_freeboard(void)
     {
         if (prsectors[i])
         {
-            Bfree(prsectors[i]->verts);
-            Bfree(prsectors[i]->floor.buffer);
-            Bfree(prsectors[i]->ceil.buffer);
-            Bfree(prsectors[i]->floor.indices);
-            Bfree(prsectors[i]->ceil.indices);
+            Xfree(prsectors[i]->verts);
+            Xfree(prsectors[i]->floor.buffer);
+            Xfree(prsectors[i]->ceil.buffer);
+            Xfree(prsectors[i]->floor.indices);
+            Xfree(prsectors[i]->ceil.indices);
             if (prsectors[i]->ceil.vbo) glDeleteBuffers(1, &prsectors[i]->ceil.vbo);
             if (prsectors[i]->ceil.ivbo) glDeleteBuffers(1, &prsectors[i]->ceil.ivbo);
             if (prsectors[i]->floor.vbo) glDeleteBuffers(1, &prsectors[i]->floor.vbo);
@@ -2490,11 +2490,11 @@ static void         polymer_freeboard(void)
     {
         if (prwalls[i])
         {
-            Bfree(prwalls[i]->bigportal);
-            Bfree(prwalls[i]->mask.buffer);
-            Bfree(prwalls[i]->over.buffer);
-            // Bfree(prwalls[i]->cap);
-            Bfree(prwalls[i]->wall.buffer);
+            Xfree(prwalls[i]->bigportal);
+            Xfree(prwalls[i]->mask.buffer);
+            Xfree(prwalls[i]->over.buffer);
+            // Xfree(prwalls[i]->cap);
+            Xfree(prwalls[i]->wall.buffer);
             if (prwalls[i]->wall.vbo) glDeleteBuffers(1, &prwalls[i]->wall.vbo);
             if (prwalls[i]->over.vbo) glDeleteBuffers(1, &prwalls[i]->over.vbo);
             if (prwalls[i]->mask.vbo) glDeleteBuffers(1, &prwalls[i]->mask.vbo);
@@ -2511,7 +2511,7 @@ static void         polymer_freeboard(void)
     {
         if (prsprites[i])
         {
-            Bfree(prsprites[i]->plane.buffer);
+            Xfree(prsprites[i]->plane.buffer);
             if (prsprites[i]->plane.vbo) glDeleteBuffers(1, &prsprites[i]->plane.vbo);
             DO_FREE_AND_NULL(prsprites[i]);
         }
@@ -4896,7 +4896,7 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glBindTexture(GL_TEXTURE_2D, 0);
-        Bfree(tempbuffer);
+        Xfree(tempbuffer);
     }
 
     if (!prbasepalmaps[curbasepal]) {

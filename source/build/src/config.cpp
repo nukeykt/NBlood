@@ -330,7 +330,7 @@ void writesettings(void) // save binds and aliases to <cfgname>_m32_settings.cfg
             OSD_Printf("Wrote m32_settings.cfg\n");
         else OSD_Printf("Wrote %s_m32_settings.cfg\n",ptr);
 
-        Bfree(ptr);
+        Xfree(ptr);
         return;
     }
 
@@ -338,7 +338,7 @@ void writesettings(void) // save binds and aliases to <cfgname>_m32_settings.cfg
         OSD_Printf("Error writing m32_settings.cfg: %s\n", strerror(errno));
     else OSD_Printf("Error writing %s_m32_settings.cfg: %s\n",ptr,strerror(errno));
 
-    Bfree(ptr);
+    Xfree(ptr);
 }
 
 int32_t writesetup(const char *fn)

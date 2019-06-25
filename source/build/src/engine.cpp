@@ -4380,7 +4380,7 @@ static void classicDrawBunches(int32_t bunch)
             Bmemcpy((char *)frameplace, bakframe, xdim*ydim);
             videoEndDrawing();  //}}}
 
-            Baligned_free(bakframe);
+            Xaligned_free(bakframe);
         }
 #endif
     }
@@ -7721,7 +7721,7 @@ int32_t enginePreInit(void)
 #else
         for (i = 0; i < (signed) ARRAY_SIZE(dynarray); i++)
         {
-            Baligned_free(*dynarray[i].ptr);
+            Xaligned_free(*dynarray[i].ptr);
             *dynarray[i].ptr = Xaligned_alloc(16, dynarray[i].size);
         }
 #endif
@@ -7880,16 +7880,16 @@ void engineUnInit(void)
         if (i==0 || palookup[i] != palookup[0])
         {
             // Take care of handling aliased ^^^ cases!
-            Baligned_free(palookup[i]);
+            Xaligned_free(palookup[i]);
         }
     Bmemset(palookup, 0, sizeof(palookup));
 
     for (bssize_t i=0; i<MAXBLENDTABS; i++)
-        Bfree(blendtable[i]);
+        Xfree(blendtable[i]);
     Bmemset(blendtable, 0, sizeof(blendtable));
 
     for (bssize_t i=1; i<MAXBASEPALS; i++)
-        Bfree(basepaltable[i]);
+        Xfree(basepaltable[i]);
     Bmemset(basepaltable, 0, sizeof(basepaltable));
     basepaltable[0] = palette;
 
@@ -7903,8 +7903,8 @@ void engineUnInit(void)
 
     for (bssize_t i = 0; i < num_usermaphacks; i++)
     {
-        Bfree(usermaphacks[i].mhkfile);
-        Bfree(usermaphacks[i].title);
+        Xfree(usermaphacks[i].mhkfile);
+        Xfree(usermaphacks[i].title);
     }
     DO_FREE_AND_NULL(usermaphacks);
     num_usermaphacks = 0;
@@ -9418,7 +9418,7 @@ skip_reading_mapbin:
     uint8_t *fullboard = (uint8_t*)Xmalloc(boardsize);
     kread(fil, fullboard, boardsize);
     md4once(fullboard, boardsize, g_loadedMapHack.md4);
-    Bfree(fullboard);
+    Xfree(fullboard);
 
     kclose(fil);
     // Done reading file.
@@ -9805,7 +9805,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
         }
 
         buildvfs_write(fil, tsect, sizeof(sectortypev7)*numsectors);
-        Bfree(tsect);
+        Xfree(tsect);
 
         ts = B_LITTLE16(numwalls);
         buildvfs_write(fil,&ts,2);
@@ -9848,7 +9848,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
         }
 
         buildvfs_write(fil, twall, sizeof(walltypev7)*numwalls);
-        Bfree(twall);
+        Xfree(twall);
 
         ts = B_LITTLE16(numsprites);    buildvfs_write(fil,&ts,2);
 
@@ -9882,7 +9882,7 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
             }
 
             buildvfs_write(fil, tspri, sizeof(spritetype)*numsprites);
-            Bfree(tspri);
+            Xfree(tspri);
         }
 
         buildvfs_close(fil);
@@ -9929,7 +9929,7 @@ static void videoAllocateBuffers(void)
 
     for (i = 0; i < (signed)ARRAY_SIZE(dynarray); i++)
     {
-        Baligned_free(*dynarray[i].ptr);
+        Xaligned_free(*dynarray[i].ptr);
 
         *dynarray[i].ptr = Xaligned_alloc(16, dynarray[i].size);
     }
@@ -10069,7 +10069,7 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     swallf = (float *) Xrealloc(swallf, xdim * sizeof(float));
 #endif
 
-    Bfree(lookups);
+    Xfree(lookups);
 
     j = ydim*4;  //Leave room for horizlookup&horizlookup2
     lookups = (int32_t *)Xmalloc(2*j*sizeof(lookups[0]));
@@ -10217,7 +10217,7 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
         voxmodels[voxindex] = NULL;
     }
 
-    Bfree(voxfilenames[voxindex]);
+    Xfree(voxfilenames[voxindex]);
     voxfilenames[voxindex] = Xstrdup(filename);
     g_haveVoxels = 1;
 #endif
@@ -12008,7 +12008,7 @@ void setfirstwall(int16_t sectnum, int16_t newfirstwall)
     }
 #endif
 
-    Bfree(tmpwall);
+    Xfree(tmpwall);
 }
 
 //

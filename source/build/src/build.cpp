@@ -1867,17 +1867,17 @@ static int32_t backup_highlighted_map(mapinfofull_t *mapinfo)
 
 static void mapinfofull_free(mapinfofull_t *mapinfo)
 {
-    Bfree(mapinfo->sector);
+    Xfree(mapinfo->sector);
 #ifdef YAX_ENABLE
     if (mapinfo->numyaxbunches > 0)
     {
-        Bfree(mapinfo->bunchnum);
-        Bfree(mapinfo->ynextwall);
+        Xfree(mapinfo->bunchnum);
+        Xfree(mapinfo->ynextwall);
     }
 #endif
-    Bfree(mapinfo->wall);
+    Xfree(mapinfo->wall);
     if (mapinfo->numsprites>0)
-        Bfree(mapinfo->sprite);
+        Xfree(mapinfo->sprite);
 }
 
 // restore map saved with backup_highlighted_map, also
@@ -2618,7 +2618,7 @@ static int32_t backup_drawn_walls(int32_t restore)
             if (newnumwalls <= numwalls)  // shouldn't happen
                 return 2;
 
-            Bfree(tmpwall);
+            Xfree(tmpwall);
             tmpwall = (uwalltype *)Xmalloc((newnumwalls-numwalls) * sizeof(walltype));
 
             ovh.bak_wallsdrawn = newnumwalls-numwalls;
@@ -5475,8 +5475,8 @@ end_yax: ;
                                                  (numwalls-begwalltomove)*sizeof(walltype));
                                         Bmemcpy(&wall[begwalltomove], tmpwall, n*sizeof(walltype));
 
-                                        Bfree(tmpwall);
-                                        Bfree(tmponw);
+                                        Xfree(tmpwall);
+                                        Xfree(tmponw);
                                     }
                                     numwalls = newnumwalls;
                                     newnumwalls = -1;
@@ -6460,7 +6460,7 @@ end_point_dragging:
                     }
                 }
 
-                Bfree(origframe);
+                Xfree(origframe);
             }
             else
             {
@@ -7820,7 +7820,7 @@ end_batch_insert_points:
                     printmessage16("Sector deleted.");
                 }
 
-                Bfree(origframe);
+                Xfree(origframe);
 
 #ifdef YAX_ENABLE
                 for (j=0; j<numsectors; j++)
@@ -11098,7 +11098,7 @@ void test_map(int32_t mode)
         mouseInit();
         clearkeys();
 
-        Bfree(fullparam);
+        Xfree(fullparam);
     }
     else
         printmessage16("Position must be in valid player space to test map!");

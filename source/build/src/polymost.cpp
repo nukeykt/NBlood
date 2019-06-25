@@ -527,11 +527,11 @@ void polymost_glreset()
                 if (pth->flags & PTH_HASFULLBRIGHT)
                 {
                     glDeleteTextures(1, &pth->ofb->glpic);
-                    Bfree(pth->ofb);
+                    Xfree(pth->ofb);
                 }
 
                 glDeleteTextures(1, &pth->glpic);
-                Bfree(pth);
+                Xfree(pth);
                 pth = next;
             }
 
@@ -1878,7 +1878,7 @@ static void Polymost_SendTexToDriver(int32_t const doalloc,
         else
             jwzgles_glCompressedTexSubImage2D(GL_TEXTURE_2D, level, 0,0, siz.x,siz.y, comprtexfmt, imageSize, comprpic);
 
-        Baligned_free(comprpic);
+        Xaligned_free(comprpic);
 
         return;
     }
@@ -2438,7 +2438,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
                       (npoty ? DAMETH_NPOTWALL : 0) |
                       (hasalpha ? (DAMETH_HASALPHA|DAMETH_ONEBITALPHA) : 0));
 
-        Bfree(pic);
+        Xfree(pic);
     }
 
     polymost_setuptexture(dameth, -1);
@@ -2600,7 +2600,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
             {
                 if (kprender(kpzbuf,picfillen,(intptr_t)pic,bytesperline,siz.x,siz.y))
                 {
-                    Bfree(pic);
+                    Xfree(pic);
                     return -2;
                 }
             }
@@ -2618,7 +2618,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                 }
                 else if (lastsize < siz.x*siz.y)
                 {
-                    Bfree(lastpic);
+                    Xfree(lastpic);
                     lastpic = (coltype *)Xmalloc(siz.x*siz.y*sizeof(coltype));
                 }
                 if (lastpic)
@@ -2739,7 +2739,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                       (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
                       (hasalpha ? DAMETH_HASALPHA : 0));
 
-        Bfree(pic);
+        Xfree(pic);
     }
 
     // precalculate scaling parameters for replacement
@@ -8862,7 +8862,7 @@ static int32_t gen_font_glyph_tex(void)
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,256,128,0,GL_RGBA,GL_UNSIGNED_BYTE,(GLvoid *)tbuf);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    Bfree(tbuf);
+    Xfree(tbuf);
 
     return 0;
 }

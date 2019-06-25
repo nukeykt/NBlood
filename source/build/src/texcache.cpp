@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 
 #define CLEAR_GL_ERRORS() while(glGetError() != GL_NO_ERROR) { }
-#define TEXCACHE_FREEBUFS() { Bfree(pic), Bfree(packbuf), Bfree(midbuf); }
+#define TEXCACHE_FREEBUFS() { Xfree(pic), Xfree(packbuf), Xfree(midbuf); }
 
 globaltexcache texcache;
 
@@ -195,7 +195,7 @@ pthtyp *texcache_fetch(int32_t dapicnum, int32_t dapalnum, int32_t dashade, int3
     if (tilestat == -2)  // bad filename
         hicclearsubst(dapicnum, dapalnum);
 
-    Bfree(pth);
+    Xfree(pth);
 
     return (drawingskybox || hicprecaching) ? NULL : texcache_tryart(dapicnum, dapalnum, dashade, dameth);
 }
@@ -656,7 +656,7 @@ void texcache_writetex_fromdriver(char const * const cacheid, texcacheheader *he
 failure:
     initprintf("ERROR: cache failure!\n");
     texcache.current->offset = 0;
-    Bfree(texcache.current->name);
+    Xfree(texcache.current->name);
     TEXCACHE_FREEBUFS();
 }
 
@@ -681,7 +681,7 @@ void texcache_postwritetex(char const * const cacheid, int32_t const offset)
     {
         t = texcache.current;
 
-        Bfree(t->name);
+        Xfree(t->name);
         t->name   = Xstrdup(cacheid);
         t->offset = offset;
         t->len    = Blseek(texcache.handle, 0, BSEEK_CUR) - t->offset;

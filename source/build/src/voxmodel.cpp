@@ -62,7 +62,7 @@ uint32_t gloadtex_indexed(const int32_t *picbuf, int32_t xsiz, int32_t ysiz)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ysiz, xsiz, 0, GL_RED, GL_UNSIGNED_BYTE, (char *) pic2);
 
-    Bfree(pic2);
+    Xfree(pic2);
 
     return rtexid;
 }
@@ -109,7 +109,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 4, xsiz, ysiz, 0, GL_RGBA, GL_UNSIGNED_BYTE, (char *) pic2);
 
-    Bfree(pic2);
+    Xfree(pic2);
 
     return rtexid;
 }
@@ -444,8 +444,8 @@ void voxvboalloc(voxmodel_t *vm)
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vertex, GL_STATIC_DRAW);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevVBO);
     glBindBuffer(GL_ARRAY_BUFFER, prevVBO);
-    Bfree(vertex);
-    Bfree(index);
+    Xfree(vertex);
+    Xfree(index);
 }
 
 void voxvbofree(voxmodel_t *vm)
@@ -623,7 +623,7 @@ skindidntfit:
                     i--;
                     if (i < 0) //Time-out! Very slow if this happens... but at least it still works :P
                     {
-                        Bfree(zbit);
+                        Xfree(zbit);
 
                         //Re-generate shp[].x/y (box sizes) from shcnt (now head indices) for next pass :/
                         j = 0;
@@ -667,7 +667,7 @@ skindidntfit:
         }
     }
 
-    Bfree(shp); Bfree(zbit); Bfree(bx0);
+    Xfree(shp); Xfree(zbit); Xfree(bx0);
 
 #ifdef USE_GLEXT
     if (r_vbos)
@@ -775,7 +775,7 @@ static int32_t loadvox(const char *filnam)
             }
         }
 
-    Bfree(tbuf);
+    Xfree(tbuf);
     kclose(fil);
 
     return 0;
@@ -860,8 +860,8 @@ static int32_t loadkvx(const char *filnam)
             }
         }
 
-    Bfree(tbuf);
-    Bfree(xyoffs);
+    Xfree(tbuf);
+    Xfree(xyoffs);
 
     return 0;
 }
@@ -934,7 +934,7 @@ static int32_t loadkv6(const char *filnam)
             }
         }
 
-    Bfree(ylen);
+    Xfree(ylen);
     kclose(fil);
 
     return 0;
@@ -954,7 +954,7 @@ void voxfree(voxmodel_t *m)
         voxvbofree(m);
 #endif
 
-    Bfree(m);
+    Xfree(m);
 }
 
 voxmodel_t *voxload(const char *filnam)
