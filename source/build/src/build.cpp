@@ -9144,6 +9144,8 @@ void fixrepeats(int16_t i)
     int32_t day = wall[i].yrepeat;
 
     wall[i].xrepeat = clamp(mulscale10(dist,day), 1, 255);
+
+    asksave = 1;
 }
 
 uint32_t getlenbyrep(int32_t len, int32_t repeat)
