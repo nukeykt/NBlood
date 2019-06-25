@@ -2676,7 +2676,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     if ((!s->flags.empty) && (!needfloor) &&
             (floorpicnum == s->floorpicnum_anim) &&
             (ceilingpicnum == s->ceilingpicnum_anim) &&
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
             (s->trackedrev == sectorchanged[sectnum]))
 #else
             !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, visibility) - offsetof(sectortype, ceilingstat)))
@@ -2776,7 +2776,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     s->ceilingxpanning = sec->ceilingxpanning;
     s->floorypanning = sec->floorypanning;
     s->ceilingypanning = sec->ceilingypanning;
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
     s->trackedrev = sectorchanged[sectnum];
 #endif
 
@@ -3204,7 +3204,7 @@ static void         polymer_updatewall(int16_t wallnum)
             (w->invalidid == invalid) &&
             (wallpicnum == w->picnum_anim) &&
             (walloverpicnum == w->overpicnum_anim) &&
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
             (w->trackedrev == wallchanged[wallnum]) &&
 #else
             !Bmemcmp(&wal->cstat, &w->cstat, NBYTES_WALL_CSTAT_THROUGH_YPANNING) &&
@@ -3227,7 +3227,7 @@ static void         polymer_updatewall(int16_t wallnum)
 
         w->picnum_anim = wallpicnum;
         w->overpicnum_anim = walloverpicnum;
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
         w->trackedrev = wallchanged[wallnum];
 #endif
         if (nwallnum >= 0 && nwallnum < numwalls)
