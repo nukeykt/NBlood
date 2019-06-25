@@ -4403,11 +4403,11 @@ void overheadeditor(void)
                 for (i=0; i<highlightsectorcnt; i++)
                 {
                     for (WALLS_OF_SECTOR(highlightsector[i], j))
-                        rotatepoint(da, *(vec2_t *)&wall[j], tsign&2047, (vec2_t *)&wall[j].x);
+                        rotatepoint(da, wall[j].pos, tsign&2047, &wall[j].pos);
 
                     for (j=headspritesect[highlightsector[i]]; j != -1; j=nextspritesect[j])
                     {
-                        rotatepoint(da, *(vec2_t *)&sprite[j], tsign&2047, (vec2_t *)&sprite[j].x);
+                        rotatepoint(da, sprite[j].pos_as_vec2, tsign&2047, &sprite[j].pos_as_vec2);
                         sprite[j].ang = (sprite[j].ang+tsign)&2047;
                     }
                 }
@@ -4985,8 +4985,7 @@ rotate_hlsect_out:
                     for (WALLS_OF_SECTOR(dstsect, k))
                     {
                         vec2_t pint;
-                        if (lineintersect2v((vec2_t *)&wall[i], (vec2_t *)&wall[j],
-                                                (vec2_t *)&wall[k], (vec2_t *)&POINT2(k), &pint))
+                        if (lineintersect2v(&wall[i].pos, &wall[j].pos, &wall[k].pos, &POINT2(k).pos, &pint))
                         {
                             message("Loop lines must not intersect any destination sector's walls");
                             goto end_yax;
@@ -7673,11 +7672,10 @@ end_space_handling:
 
                             vec2_t pint;
 
-                            if (!lineintersect2v((vec2_t *)&wall[j], (vec2_t *)&POINT2(j),
-                                                 &point[i], &point[i+1], &pint))
+                            if (!lineintersect2v(&wall[j].pos, &POINT2(j).pos, &point[i], &point[i + 1], &pint))
                                 continue;
 
-                            if (vec2eq(&pint, (vec2_t *)&wall[j]) || vec2eq(&pint, (vec2_t *)&POINT2(j)))
+                            if (vec2eq(&pint, &wall[j].pos) || vec2eq(&pint, &POINT2(j).pos))
                                 continue;
 
                             touchedwall[j>>3] |= (1<<(j&7));
