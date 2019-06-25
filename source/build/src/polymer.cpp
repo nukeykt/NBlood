@@ -1516,7 +1516,7 @@ void                polymer_drawsprite(int32_t snum)
     if ((tspr->cstat & 16384) && (!depth || mirrors[depth-1].plane))
         return;
 
-    DO_TILE_ANIM(tspr->picnum, tspr->owner+32768);
+    tileUpdatePicnum(&tspr->picnum, tspr->owner+32768);
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
     calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
@@ -1668,7 +1668,7 @@ int16_t             polymer_addlight(_prlight* light)
             int16_t     picnum = light->tilenum;
             pthtyp*     pth;
 
-            DO_TILE_ANIM(picnum, 0);
+            tileUpdatePicnum(&picnum, 0);
 
             if (!waloff[picnum])
                 tileLoad(picnum);
@@ -2669,9 +2669,9 @@ static int32_t      polymer_updatesector(int16_t sectnum)
         wallinvalidate = 1;
 
     floorpicnum = sec->floorpicnum;
-    DO_TILE_ANIM(floorpicnum, sectnum);
+    tileUpdatePicnum(&floorpicnum, sectnum);
     ceilingpicnum = sec->ceilingpicnum;
-    DO_TILE_ANIM(ceilingpicnum, sectnum);
+    tileUpdatePicnum(&ceilingpicnum, sectnum);
 
     if ((!s->flags.empty) && (!needfloor) &&
             (floorpicnum == s->floorpicnum_anim) &&
@@ -3186,16 +3186,16 @@ static void         polymer_updatewall(int16_t wallnum)
     }
 
     wallpicnum = wal->picnum;
-    DO_TILE_ANIM(wallpicnum, wallnum+16384);
+    tileUpdatePicnum(&wallpicnum, wallnum+16384);
 
     walloverpicnum = wal->overpicnum;
     if (walloverpicnum>=0)
-        DO_TILE_ANIM(walloverpicnum, wallnum+16384);
+        tileUpdatePicnum(&walloverpicnum, wallnum+16384);
 
     if (nwallnum >= 0 && nwallnum < numwalls)
     {
         nwallpicnum = wall[nwallnum].picnum;
-        DO_TILE_ANIM(nwallpicnum, wallnum+16384);
+        tileUpdatePicnum(&nwallpicnum, wallnum+16384);
     }
     else
         nwallpicnum = 0;
@@ -4198,7 +4198,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         if (picnum >= MAXTILES)
             picnum = MAXTILES-1;
 
-        DO_TILE_ANIM(picnum, 0);
+        tileUpdatePicnum(&picnum, 0);
         if (!waloff[picnum])
             tileLoad(picnum);
         pth = texcache_fetch(picnum, palnum, 0, DAMETH_NOMASK);
@@ -4292,7 +4292,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     if (pr_vbos > 0)
         glBindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
 
-    DO_TILE_ANIM(tilenum, 0);
+    tileUpdatePicnum(&tilenum, 0);
 
     i = 0;
     while (i < 6)
@@ -5787,7 +5787,7 @@ static void         polymer_updatelights(void)
                 int16_t     picnum = light->tilenum;
                 pthtyp*     pth;
 
-                DO_TILE_ANIM(picnum, 0);
+                tileUpdatePicnum(&picnum, 0);
 
                 if (!waloff[picnum])
                     tileLoad(picnum);

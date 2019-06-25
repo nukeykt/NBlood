@@ -5273,7 +5273,7 @@ static void polymost_drawalls(int32_t const bunch)
                   globalcisibility2;
         polymost_setVisibility(globvis2);
 
-        DO_TILE_ANIM(globalpicnum, sectnum);
+        tileUpdatePicnum(&globalpicnum, sectnum);
 
         int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
         int8_t const * dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
@@ -5631,7 +5631,7 @@ static void polymost_drawalls(int32_t const bunch)
                   globalcisibility2;
         polymost_setVisibility(globvis2);
 
-        DO_TILE_ANIM(globalpicnum, sectnum);
+        tileUpdatePicnum(&globalpicnum, sectnum);
 
 
         dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
@@ -6062,7 +6062,7 @@ static void polymost_drawalls(int32_t const bunch)
                 if (sector[sectnum].visibility != 0) globvis2 = mulscale4(globvis2, (uint8_t)(sector[sectnum].visibility+16));
                 polymost_setVisibility(globvis2);
                 globalorientation = wal->cstat;
-                DO_TILE_ANIM(globalpicnum, wallnum+16384);
+                tileUpdatePicnum(&globalpicnum, wallnum+16384);
 
                 int i = (!(wal->cstat&4)) ? sector[nextsectnum].ceilingz : sec->ceilingz;
 
@@ -6107,7 +6107,7 @@ static void polymost_drawalls(int32_t const bunch)
                 if (sector[sectnum].visibility != 0) globvis2 = mulscale4(globvis2, (uint8_t)(sector[sectnum].visibility+16));
                 polymost_setVisibility(globvis2);
                 globalorientation = nwal->cstat;
-                DO_TILE_ANIM(globalpicnum, wallnum+16384);
+                tileUpdatePicnum(&globalpicnum, wallnum+16384);
 
                 int i = (!(nwal->cstat&4)) ? sector[nextsectnum].floorz : sec->ceilingz;
 
@@ -6160,7 +6160,7 @@ static void polymost_drawalls(int32_t const bunch)
                           globalvisibility2;
                 polymost_setVisibility(globvis2);
                 globalorientation = wal->cstat;
-                DO_TILE_ANIM(globalpicnum, wallnum+16384);
+                tileUpdatePicnum(&globalpicnum, wallnum+16384);
 
                 int i;
                 int const nwcs4 = !(wal->cstat & 4);
@@ -6700,7 +6700,7 @@ void polymost_drawmaskwall(int32_t damaskwallcnt)
         globalpicnum = 0;
 
     globalorientation = (int32_t)wal->cstat;
-    DO_TILE_ANIM(globalpicnum, (int16_t)thewall[z]+16384);
+    tileUpdatePicnum(&globalpicnum, (int16_t)thewall[z]+16384);
 
     globvis = globalvisibility;
     globvis = (sector[sectnum].visibility != 0) ? mulscale4(globvis, (uint8_t)(sector[sectnum].visibility + 16)) : globalvisibility;
@@ -6987,7 +6987,7 @@ void polymost2_drawsprite(int32_t snum)
 
     int32_t spritenum = tspr->owner;
 
-    DO_TILE_ANIM(tspr->picnum, spritenum + 32768);
+    tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
 
     globalpicnum = tspr->picnum;
     globalshade = tspr->shade;
@@ -7379,7 +7379,7 @@ void polymost_drawsprite(int32_t snum)
 
     polymost_outputGLDebugMessage(3, "polymost_drawsprite(snum:%d)", snum);
 
-    DO_TILE_ANIM(tspr->picnum, spritenum + 32768);
+    tileUpdatePicnum(&tspr->picnum, spritenum + 32768);
 
     globalpicnum = tspr->picnum;
     globalshade = tspr->shade;

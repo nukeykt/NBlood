@@ -271,10 +271,6 @@ int32_t wallfront(int32_t l1, int32_t l2);
 void set_globalang(fix16_t const ang);
 
 int32_t animateoffs(int tilenum);
-#define DO_TILE_ANIM(Picnum, Fakevar) do { \
-        if (picanm[Picnum].sf&PICANM_ANIMTYPE_MASK) Picnum += animateoffs(Picnum); \
-        if ((((Fakevar) & 16384) == 16384) && (globalorientation & CSTAT_WALL_ROTATE_90) && rottile[Picnum].newtile != -1) Picnum = rottile[Picnum].newtile; \
-    } while (0)
 
 static FORCE_INLINE int32_t bad_tspr(tspriteptr_t tspr)
 {
@@ -397,13 +393,24 @@ static FORCE_INLINE const int8_t *getpsky(int32_t picnum, int32_t *dapyscale, in
 
 static FORCE_INLINE void set_globalpos(int32_t const x, int32_t const y, int32_t const z)
 {
-    globalposx  = x, fglobalposx = (float)x;
-    globalposy  = y, fglobalposy = (float)y;
-    globalposz  = z, fglobalposz = (float)z;
+    globalposx = x, fglobalposx = (float)x;
+    globalposy = y, fglobalposy = (float)y;
+    globalposz = z, fglobalposz = (float)z;
 }
 
 #ifdef __cplusplus
 }
 #endif
+
+template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tileptr, int const obj)
+{
+    auto &tile = *tileptr;
+
+    if (picanm[tile].sf & PICANM_ANIMTYPE_MASK)
+        tile += animateoffs(tile);
+
+    if (((obj & 16384) == 16384) && (globalorientation & CSTAT_WALL_ROTATE_90) && rottile[tile].newtile != -1)
+        tile = rottile[tile].newtile;
+}
 
 #endif	/* ENGINE_PRIV_H */
