@@ -11669,7 +11669,7 @@ void squarerotatetile(int16_t tilenume)
 //
 // preparemirror
 //
-void renderPrepareMirror(int32_t dax, int32_t day, fix16_t daang, int16_t dawall,
+void renderPrepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang, fix16_t dahoriz, int16_t dawall,
                          int32_t *tposx, int32_t *tposy, fix16_t *tang)
 {
     const int32_t x = wall[dawall].x, dx = wall[wall[dawall].point2].x-x;
@@ -11686,6 +11686,11 @@ void renderPrepareMirror(int32_t dax, int32_t day, fix16_t daang, int16_t dawall
     *tang  = (fix16_from_int(getangle(dx, dy) << 1) - daang) & 0x7FFFFFF;
 
     inpreparemirror = 1;
+
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() != REND_CLASSIC)
+        polymost_prepareMirror(dax, day, daz, daang, dahoriz, dawall);
+#endif
 }
 
 
@@ -11694,6 +11699,11 @@ void renderPrepareMirror(int32_t dax, int32_t day, fix16_t daang, int16_t dawall
 //
 void renderCompleteMirror(void)
 {
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() != REND_CLASSIC)
+        polymost_completeMirror();
+#endif
+
     // Don't try to complete a mirror if we haven't drawn the reflection for one
     if (!inpreparemirror) { return; }
     inpreparemirror = 0;

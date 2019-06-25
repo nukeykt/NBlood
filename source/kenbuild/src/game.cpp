@@ -4024,7 +4024,7 @@ void drawscreen(short snum, int dasmoothratio)
                         //position into tposx, tposy, and tang (tpos.z == cpos.z)
                         //Must call renderPrepareMirror before drawrooms and
                         //          renderCompleteMirror after drawrooms
-                        renderPrepareMirror(cpos.x,cpos.y,/*cpos.z,*/ fix16_from_int(cang), /*choriz,*/
+                        renderPrepareMirror(cpos.x,cpos.y,cpos.z,fix16_from_int(cang),choriz,
                                       mirrorwall[i],/*mirrorsector[i],*/ &tposx,&tposy,&tang);
 
                         ovisibility = g_visibility;

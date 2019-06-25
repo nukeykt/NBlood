@@ -2067,8 +2067,8 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         //glEnable(GL_CLIP_PLANE0);
 
         if (mirrorlist[i].wallnum >= 0)
-            renderPrepareMirror(globalposx, globalposy, qglobalang,
-                          mirrorlist[i].wallnum, &gx, &gy, &viewangle);
+            renderPrepareMirror(globalposx, globalposy, globalposz, qglobalang, qglobalhoriz,
+                                mirrorlist[i].wallnum, &gx, &gy, &viewangle);
 
         gx = globalposx;
         gy = globalposy;
