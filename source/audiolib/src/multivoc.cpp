@@ -206,7 +206,7 @@ static bool MV_Mix(VoiceNode *voice, int const buffer)
 void MV_PlayVoice(VoiceNode *voice)
 {
     DisableInterrupts();
-    LL_SortedInsertion(&VoiceList, voice, prev, next, VoiceNode, priority);
+    LL::SortedInsert(&VoiceList, voice, &VoiceNode::priority);
     RestoreInterrupts();
 }
 
@@ -239,8 +239,7 @@ static void MV_StopVoice(VoiceNode *voice)
 
     DisableInterrupts();
     // move the voice from the play list to the free list
-    LL_Remove(voice, next, prev);
-    LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
+    LL::Move(voice, &VoicePool);
     RestoreInterrupts();
 }
 
@@ -322,9 +321,7 @@ static void MV_ServiceVoc(void)
         if (!MV_Mix(voice, MV_MixPage))
         {
             MV_CleanupVoice(voice);
-
-            LL_Remove(voice, next, prev);
-            LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
+            LL::Move(voice, &VoicePool);
         }
     }
     while ((voice = next) != &VoiceList);
@@ -452,7 +449,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
     DisableInterrupts();
 
     // Check if we have any free voices
-    if (LL_Empty(&VoicePool, next, prev))
+    if (LL::Empty(&VoicePool))
     {
         // check if we have a higher priority than a voice that is playing.
         for (voice = node = VoiceList.next; node != &VoiceList; node = node->next)
@@ -464,7 +461,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
         if (priority >= voice->priority && voice != &VoiceList && voice->handle >= MV_MINVOICEHANDLE)
             MV_Kill(voice->handle);
 
-        if (LL_Empty(&VoicePool, next, prev))
+        if (LL::Empty(&VoicePool))
         {
             // No free voices
             RestoreInterrupts();
@@ -473,7 +470,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
     }
 
     voice = VoicePool.next;
-    LL_Remove(voice, next, prev);
+    LL::Remove(voice);
     RestoreInterrupts();
 
     int32_t vhan = MV_MINVOICEHANDLE;
@@ -493,7 +490,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
 int32_t MV_VoiceAvailable(int32_t priority)
 {
     // Check if we have any free voices
-    if (!LL_Empty(&VoicePool, next, prev))
+    if (!LL::Empty(&VoicePool))
         return TRUE;
 
     DisableInterrupts();
@@ -912,11 +909,11 @@ int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numc
 
     MV_MaxVoices = Voices;
 
-    LL_Reset((VoiceNode*) &VoiceList, next, prev);
-    LL_Reset((VoiceNode*) &VoicePool, next, prev);
+    LL::Reset((VoiceNode*) &VoiceList);
+    LL::Reset((VoiceNode*) &VoicePool);
 
     for (int index = 0; index < Voices; index++)
-        LL_Add((VoiceNode*) &VoicePool, &MV_Voices[ index ], next, prev);
+        LL::Insert(&VoicePool, &MV_Voices[index]);
 
     MV_SetReverseStereo(FALSE);
 
@@ -989,8 +986,8 @@ int32_t MV_Shutdown(void)
     // Free any voices we allocated
     ALIGNED_FREE_AND_NULL(MV_Voices);
 
-    LL_Reset((VoiceNode*) &VoiceList, next, prev);
-    LL_Reset((VoiceNode*) &VoicePool, next, prev);
+    LL::Reset((VoiceNode*) &VoiceList);
+    LL::Reset((VoiceNode*) &VoicePool);
 
     MV_MaxVoices = 1;
 
