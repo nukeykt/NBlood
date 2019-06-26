@@ -30,7 +30,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "levels.h"
 #include "loadsave.h"
 #include "sfx.h"
+#include "sound.h"
 #include "seq.h"
+#include "gameutil.h"
+#include "actor.h"
 #include "tile.h"
 
 #define kMaxClients 256
@@ -101,10 +104,20 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     if (pFrame->at5_0)
         pSprite->pal = pFrame->at5_0;
     pSprite->shade = pFrame->at4_0;
-    if (pFrame->at2_0)
-        pSprite->xrepeat = pFrame->at2_0;
-    if (pFrame->at3_0)
-        pSprite->yrepeat = pFrame->at3_0;
+    
+    int scale = xsprite[nXSprite].scale; // SEQ size scaling
+    if (pFrame->at2_0) {
+        if (scale < 0) pSprite->xrepeat = pFrame->at2_0 / abs(scale);
+        else if (scale > 0) pSprite->xrepeat = pFrame->at2_0 * scale;
+        else pSprite->xrepeat = pFrame->at2_0;
+    }
+
+    if (pFrame->at3_0) {
+        if (scale < 0) pSprite->yrepeat = pFrame->at3_0 / abs(scale);
+        else if (scale > 0) pSprite->yrepeat = pFrame->at3_0 * scale;
+        else pSprite->yrepeat = pFrame->at3_0;
+    }
+
     if (pFrame->at1_4)
         pSprite->cstat |= 2;
     else
@@ -269,11 +282,46 @@ void SEQINST::Update(ACTIVE *pActive)
     case 2:
         UpdateFloor(pActive->xindex, &pSequence->frames[frameIndex]);
         break;
-    case 3:
+    case 3: 
+    {
+
         UpdateSprite(pActive->xindex, &pSequence->frames[frameIndex]);
         if (pSequence->frames[frameIndex].at6_1)
             sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], pSequence->ata + Random(pSequence->frames[frameIndex].soundRange), -1, 0);
+
+        spritetype* pSprite = &sprite[xsprite[pActive->xindex].reference];
+        if (pSequence->frames[frameIndex].surfaceSound && zvel[pSprite->xvel] == 0 && xvel[pSprite->xvel] != 0) {
+
+            // by NoOne: add surfaceSound trigger feature
+            if (gUpperLink[pSprite->sectnum] >= 0) break; // don't play surface sound for stacked sectors
+            int surf = tileGetSurfType(pSprite->sectnum + 0x4000); if (!surf) break;
+            static int surfSfxMove[15][4] = {
+                /* {snd1, snd2, gameVolume, myVolume} */
+                {800,801,80,25},
+                {802,803,80,25},
+                {804,805,80,25},
+                {806,807,80,25},
+                {808,809,80,25},
+                {810,811,80,25},
+                {812,813,80,25},
+                {814,815,80,25},
+                {816,817,80,25},
+                {818,819,80,25},
+                {820,821,80,25},
+                {822,823,80,25},
+                {824,825,80,25},
+                {826,827,80,25},
+                {828,829,80,25},
+            };
+
+            int sndId = surfSfxMove[surf][Random(2)];
+            DICTNODE * hRes = gSoundRes.Lookup(sndId, "SFX"); SFX * pEffect = (SFX*)gSoundRes.Load(hRes);
+            sfxPlay3DSoundCP(pSprite, sndId, -1, 0, 0, (surfSfxMove[surf][2] != pEffect->relVol) ? pEffect->relVol : surfSfxMove[surf][3]);
+        }
+        
+
         break;
+    }
     case 4:
         UpdateMasked(pActive->xindex, &pSequence->frames[frameIndex]);
         break;

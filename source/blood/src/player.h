@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 enum LifeMode {
     kModeHuman = 0,
     kModeBeast,
+    kModeHumanShrink,
+    kModeHumanGrown,
 };
 
 struct PACKINFO {
@@ -179,7 +181,7 @@ struct AMMOINFO {
     signed char at4;
 };
 
-extern POSTURE gPosture[][3];
+extern POSTURE gPosture[4][3];
 
 extern PLAYER gPlayer[kMaxPlayers];
 extern PLAYER *gMe, *gView;
@@ -233,3 +235,9 @@ void sub_41250(PLAYER *pPlayer);
 void playerLandingSound(PLAYER *pPlayer);
 void PlayerSurvive(int, int nXSprite);
 void PlayerKeelsOver(int, int nXSprite);
+bool isGrown(spritetype* pSprite);
+bool isShrinked(spritetype* pSprite);
+bool shrinkPlayerSize(PLAYER* pPlayer, int divider);
+bool growPlayerSize(PLAYER* pPlayer, int multiplier);
+bool resetPlayerSize(PLAYER* pPlayer);
+void deactivateSizeShrooms(PLAYER* pPlayer);

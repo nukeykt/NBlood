@@ -35,12 +35,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMissileBase 300
 #define kMissileMax 318
 #define kThingBase 400
-#define kThingMax 435
+#define kThingMax 436
 
-#define kMaxPowerUps 49
+#define kMaxPowerUps 51
 
 #define kStatRespawn 8
 #define kStatMarker 10
+#define kStatGDXDudeTargetChanger 20
 #define kStatFree 1024
 
 #define kLensSize 80
@@ -54,7 +55,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxPAL 5
 
 #define kWeaponItemBase 40
-#define kItemMax 149
+#define kItemMax 151
 
 // marker sprite types
 #define kMarkerSPStart 1
@@ -149,14 +150,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kGDXSectorFXChanger 34
 #define kGDXObjDataChanger 35
 #define kGDXSpriteDamager 36
-// 37 reserved
+#define kGDXObjDataAccumulator 37
 #define kGDXEffectSpawner 38
 #define kGDXWindGenerator 39
 
 #define kGDXThingTNTProx 433 // detects only players
 #define kGDXThingThrowableRock 434 // does small damage if hits target
+#define kGDXThingCustomDudeLifeLeech 435 // the same as normal, except it aims in specified target
 #define kGDXDudeUniversalCultist 254
 #define kGDXGenDudeBurning 255
+
+#define kGDXItemMapLevel 150 // once picked up, draws whole minimap
 
 // ai state types
 #define kAiStateOther -1
