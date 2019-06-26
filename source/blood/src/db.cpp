@@ -1233,4 +1233,6 @@ void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, shor
             
         }
     }
+
+    yax_update(1);
 }
