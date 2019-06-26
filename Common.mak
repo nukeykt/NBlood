@@ -586,7 +586,7 @@ ifndef OPTOPT
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
-            OPTOPT += -mmmx -msse -msse2 -mfpmath=sse -malign-double
+            OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
         endif
     endif
     ifeq ($(PLATFORM),WII)
