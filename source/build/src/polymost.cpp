@@ -4804,6 +4804,30 @@ static int32_t should_clip_cfwall(float x0, float y0, float x1, float y1)
 
 #endif
 
+void polymost_editorfunc(void)
+{
+    const float ratio = r_usenewaspect ? (fxdim / fydim) / (320.f / 240.f) : 1.f;
+
+    vec3f_t tvect = { 1.f,
+                      (fsearchx-ghalfx)/ghalfx*ratio,
+                      ((fsearchy-ghoriz)*16.f*(240.f/320.f))/ghoriz };
+
+    //Standard Left/right rotation
+    vec3_t v = { Blrintf(tvect.x * fcosglobalang - tvect.y * fsinglobalang),
+                 Blrintf(tvect.x * fsinglobalang + tvect.y * fcosglobalang), Blrintf(tvect.z * 16384.f) };
+
+    vec3_t vect = { globalposx, globalposy, globalposz };
+
+    hitdata_t *hit = &polymost_hitdata;
+
+    hitallsprites = 1;
+
+    hitscan((const vec3_t *) &vect, globalcursectnum, //Start position
+        v.x, v.y, v.z, hit, 0xffff0030);
+
+    hitallsprites = 0;
+}
+
 
 // variables that are set to ceiling- or floor-members, depending
 // on which one is processed right now
@@ -6607,6 +6631,7 @@ void polymost_drawrooms()
         fsearchx = v.x * r + ghalfx;
         fsearchy = v.y * r + ghoriz;
         fsearchz = 0.f;
+        polymost_editorfunc();
     }
 
     polymost_updaterotmat();
