@@ -262,7 +262,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
 void actPostSprite(int nSprite, int nStatus);
 void actPostProcess(void);
 void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite);
-spritetype* DropRandomPickupObject(spritetype* pSprite);
+spritetype* DropRandomPickupObject(spritetype* pSprite, short prevItem);
 spritetype* spawnRandomDude(spritetype* pSprite);
 int GetDataVal(spritetype* pSprite, int data);
 int my_random(int a, int b);
@@ -270,3 +270,5 @@ int GetRandDataVal(int *rData, spritetype* pSprite);
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId);
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist);
+int getDudeMassBySpriteSize(spritetype* pSprite);
+bool ceilIsTooLow(spritetype* pSprite);

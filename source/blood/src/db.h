@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxXSectors 512
 
 #pragma pack(push, 1)
+
 struct AISTATE;
 
 struct XSPRITE {
@@ -79,7 +80,7 @@ struct XSPRITE {
     unsigned int medium : 2; // medium
     unsigned int respawn : 2; // Respawn option
     unsigned int lockMsg : 8; // Lock msg
-    unsigned int health : 12; // 1c_0
+    unsigned int health : 20; // 1c_0
     unsigned int dudeDeaf : 1; // dudeDeaf
     unsigned int dudeAmbush : 1; // dudeAmbush
     unsigned int dudeGuard : 1; // dudeGuard
@@ -97,7 +98,8 @@ struct XSPRITE {
     AISTATE *aiState; // ai
     signed int txIndex : 10; // used by kGDXSequentialTX to keep current TX ID index
     signed int cumulDamage : 16; // for dudes
-}; // 58
+    signed int scale; // used for scaling SEQ size on sprites
+};
 
 struct XSECTOR {
     signed int reference : 14;
@@ -168,7 +170,7 @@ struct XSECTOR {
     unsigned int floorpal : 4; // Floor pal2
     unsigned int at34_0 : 8; // Floor y panning frac
     unsigned int locked : 1; // Locked
-    unsigned int windVel : 10; // Wind vel
+    unsigned int windVel; // Wind vel (by NoOne: changed from 10 bit to use higher velocity values)
     unsigned int windAng : 11; // Wind ang
     unsigned int windAlways : 1; // Wind always
     unsigned int at37_7 : 1;

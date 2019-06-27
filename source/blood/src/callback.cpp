@@ -560,8 +560,14 @@ void sub_768E8(int nSprite) // 18
 void sub_769B4(int nSprite) // 19
 {
     spritetype *pSprite = &sprite[nSprite];
-    if (pSprite->statnum == 4 && pSprite->type == 431 && !(pSprite->hitag&32))
-        xsprite[pSprite->extra].stateTimer = 0;
+    if (pSprite->statnum == 4 && !(pSprite->hitag & 32)) {
+        switch (pSprite->lotag) {
+            case 431:
+            case kGDXThingCustomDudeLifeLeech:
+                xsprite[pSprite->extra].stateTimer = 0;
+                break;
+        }
+    }
 }
 
 void sub_76A08(spritetype *pSprite, spritetype *pSprite2, PLAYER *pPlayer)

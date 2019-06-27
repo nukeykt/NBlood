@@ -95,6 +95,8 @@ const char *gItemText[] = {
     "Red Team Base",
     "Blue Flag",
     "Red Flag",
+    "DUMMY",
+    "Level map",
 };
 
 const char *gAmmoText[] = {
@@ -134,6 +136,8 @@ const char *gWeaponText[] = {
     "Dynamite",
     "Life Leech",
 };
+
+
 
 void dbCrypt(char *pPtr, int nLength, int nKey)
 {

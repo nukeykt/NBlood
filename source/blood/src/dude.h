@@ -53,4 +53,4 @@ struct DUDEINFO {
 };
 
 extern DUDEINFO dudeInfo[kDudeMax-kDudeBase];
-extern DUDEINFO gPlayerTemplate[2];
+extern DUDEINFO gPlayerTemplate[4];

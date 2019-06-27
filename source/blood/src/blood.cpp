@@ -588,12 +588,16 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         if (pSprite->statnum < kMaxStatus && pSprite->extra > 0)
         {
             XSPRITE *pXSprite = &xsprite[pSprite->extra];
-            if ((pXSprite->lSkill&(1<<gameOptions->nDifficulty))
-            || (pXSprite->lS && gameOptions->nGameType == 0)
-            || (pXSprite->lB && gameOptions->nGameType == 2)
-            || (pXSprite->lT && gameOptions->nGameType == 3)
-            || (pXSprite->lC && gameOptions->nGameType == 1))
+            if ((pXSprite->lSkill & (1 << gameOptions->nDifficulty)) || (pXSprite->lS && gameOptions->nGameType == 0)
+                || (pXSprite->lB && gameOptions->nGameType == 2) || (pXSprite->lT && gameOptions->nGameType == 3)
+                || (pXSprite->lC && gameOptions->nGameType == 1)) {
+                
                 DeleteSprite(i);
+                continue;
+            }
+
+            if (sprite[i].lotag == kGDXDudeTargetChanger)
+                InsertSpriteStat(i, kStatGDXDudeTargetChanger);
         }
     }
     scrLoadPLUs();
