@@ -2407,8 +2407,6 @@ void TreeToGibCallback(int, int);
 void DudeToGibCallback1(int, int);
 void DudeToGibCallback2(int, int);
 
-SPRITEHIT gSpriteHit[kMaxXSprites];
-
 int nFireballClient = seqRegisterClient(FireballSeqCallback);
 int dword_2192D8 = seqRegisterClient(sub_38938);
 int nNapalmClient = seqRegisterClient(NapalmSeqCallback);

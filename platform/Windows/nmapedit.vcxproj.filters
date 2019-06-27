@@ -54,6 +54,48 @@
     <ClCompile Include="..\..\source\blood\src\m32vars.cpp">
       <Filter>Source Files\blood_editor</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\common.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\db.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gfx.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\globals.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gui.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\iob.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\qheap.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\replace.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\resource.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\screen.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\sectorfx.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\sound.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gameutil.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\getopt.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\build\include\startwin.editor.h">

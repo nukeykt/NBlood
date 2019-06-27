@@ -5,7 +5,6 @@
 #include "baselayer.h"
 #include "build.h"
 #include "common_game.h"
-#include "blood.h"
 #include "gfx.h"
 #include "globals.h"
 #include "gui.h"

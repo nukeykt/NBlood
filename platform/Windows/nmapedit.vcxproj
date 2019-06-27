@@ -193,11 +193,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\blood\src\common.cpp" />
+    <ClCompile Include="..\..\source\blood\src\db.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gameutil.cpp" />
+    <ClCompile Include="..\..\source\blood\src\getopt.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gfx.cpp" />
+    <ClCompile Include="..\..\source\blood\src\globals.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gui.cpp" />
+    <ClCompile Include="..\..\source\blood\src\iob.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32common.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32def.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32exec.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32structures.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32vars.cpp" />
+    <ClCompile Include="..\..\source\blood\src\qheap.cpp" />
+    <ClCompile Include="..\..\source\blood\src\replace.cpp" />
+    <ClCompile Include="..\..\source\blood\src\resource.cpp" />
+    <ClCompile Include="..\..\source\blood\src\screen.cpp" />
+    <ClCompile Include="..\..\source\blood\src\sectorfx.cpp" />
+    <ClCompile Include="..\..\source\blood\src\sound.cpp" />
     <ClCompile Include="..\..\source\build\src\build.cpp" />
     <ClCompile Include="..\..\source\build\src\config.cpp" />
     <ClCompile Include="..\..\source\build\src\startgtk.editor.cpp">

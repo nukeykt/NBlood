@@ -33,11 +33,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 //#include "osdfuncs.h"
 //#include "names.h"
-
+//
 //#include "grpscan.h"
 
 #include "common.h"
 #include "common_game.h"
+#include "screen.h"
 #include "mapster32.h"
 #include "keys.h"
 
@@ -48,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //#include "sounds_mapster32.h"
 #include "fx_man.h"
 
-//#include "macros.h"
+#include "macros.h"
 #include "lz4.h"
 #include "colmatch.h"
 #include "palette.h"
@@ -69,7 +70,7 @@ const char* AppTechnicalName = "nmapedit";
 #if defined(_WIN32)
 #define DEFAULT_GAME_EXEC "nblood.exe"
 #define DEFAULT_GAME_LOCAL_EXEC "nblood.exe"
-#elif defined(__APPLE__) // FIXME
+#elif defined(__APPLE__)
 #define DEFAULT_GAME_EXEC "EDuke32.app/Contents/MacOS/eduke32"
 #define DEFAULT_GAME_LOCAL_EXEC "EDuke32.app/Contents/MacOS/eduke32"
 #else
@@ -93,6 +94,10 @@ static int32_t spnoclip=1;
 
 static char const *default_tiles_cfg = "tiles.cfg";
 static int32_t pathsearchmode_oninit;
+
+#ifdef LUNATIC
+static L_State g_EmState;
+#endif
 
 //#pragma pack(push,1)
 //sound_t g_sounds[MAXSOUNDS];
@@ -226,7 +231,6 @@ static int32_t yax_checkslope(int16_t sectnum, int32_t othersectnum)
 static uint8_t tilemarked[(MAXTILES+7)>>3];
 
 #ifdef POLYMER
-#if 0
 static int16_t spritelightid[MAXSPRITES];
 _prlight *spritelightptr[MAXSPRITES];
 
@@ -286,11 +290,10 @@ static void DeletePolymerLights(void)
             spritelightptr[i] = NULL;
         }
 }
-#endif
 
 void G_Polymer_UnInit(void)
 {
-    //DeletePolymerLights();
+    DeletePolymerLights();
 }
 #endif
 
@@ -387,9 +390,9 @@ void ExtLoadMap(const char *mapname)
     getmessagetimeoff = 0;
 
     // Old-fashioned multi-psky handling setup.
-    //G_SetupGlobalPsky();
+    G_SetupGlobalPsky();
 
-    //parallaxtype = 0;
+    parallaxtype = 0;
 
     //////////
 #if M32_UNDO
@@ -410,6 +413,35 @@ void ExtSaveMap(const char *mapname)
 static uint64_t taglab_nolink_SEs = (1ull<<10)|(1ull<<27)|(1ull<<28)|(1ull<<29)|
     (1ull<<31)|(1ull<<32)|(1ull<<49)|(1ull<<50);
 
+//// Case lists of switch picnums. Pretty much CODEDUP from sector.c.
+
+// List of switches that function like dip (combination lock) switches.
+#define DIPSWITCH_LIKE_CASES \
+         DIPSWITCH: \
+    case TECHSWITCH: \
+    case ALIENSWITCH
+
+// List of access switches.
+#define ACCESS_SWITCH_CASES \
+         ACCESSSWITCH: \
+    case ACCESSSWITCH2
+
+// List of switches that don't fit the two preceding categories, and are not
+// the MULTISWITCH. 13 cases.
+#define REST_SWITCH_CASES \
+         DIPSWITCH2: \
+    case DIPSWITCH3: \
+    case FRANKENSTINESWITCH: \
+    case HANDSWITCH: \
+    case LIGHTSWITCH2: \
+    case LIGHTSWITCH: \
+    case LOCKSWITCH1: \
+    case POWERSWITCH1: \
+    case POWERSWITCH2: \
+    case PULLSWITCH: \
+    case SLOTDOOR: \
+    case SPACEDOORSWITCH: \
+    case SPACELIGHTSWITCH
 
 // Whether the individual tags have linking semantics. Based on
 //  http://infosuite.duke4.net/index.php?page=references_special_textures
@@ -425,98 +457,8 @@ static uint64_t taglab_nolink_SEs = (1ull<<10)|(1ull<<27)|(1ull<<28)|(1ull<<29)|
 // it will also 'say yes' if a particular tag is zero.
 int32_t taglab_linktags(int32_t spritep, int32_t num)
 {
-    int32_t picnum;
+    // NUKE-TODO: implement X-object RX/TX here
     int32_t l, link = 0;
-
-    if (spritep)
-        picnum = sprite[num].picnum;
-    else
-        picnum = wall[num].picnum;
-
-    if (spritep)
-    {
-        switch (picnum)
-        {
-        case SECTOREFFECTOR:
-            // SEs potentially link by their hitag
-            l = sprite[num].lotag;
-            if (l>=0 && l<=63 && (taglab_nolink_SEs&(1ull<<l)))
-                break;
-            link = 2;
-            break;
-
-            // various lotag-linkers
-            // NOTE: switch picnums are handled together with walls below.
-        case ACTIVATOR: case TOUCHPLATE: case ACTIVATORLOCKED: case MASTERSWITCH:
-        case RESPAWN:  // ---
-        case MULTISWITCH:  // *
-        case TARGET: case DUCK:
-        case REACTOR:
-        case CAMERA1:
-            link = 1;
-            break;
-
-            // various hitag-linkers
-        case VIEWSCREEN2: case VIEWSCREEN:
-        case CRACK1: case CRACK2: case CRACK3: case CRACK4: case FIREEXT:
-        case FEM1: case FEM2: case FEM3: case FEM4: case FEM5: case FEM6:
-        case FEM7: case FEM8: case FEM9: case FEM10: case PODFEM1: case NAKED1: //case STATUE: //?
-        case SEENINE: case OOZFILTER:
-        case CRANEPOLE: case CRANE:
-        case NATURALLIGHTNING:
-            link = 2;
-            break;
-        }
-    }
-    else  // walls
-    {
-#ifdef YAX_ENABLE
-        // XXX: only for non-VX map versions.
-        if (yax_getnextwall(num, YAX_CEILING) < 0)
-#endif
-        switch (picnum)
-        {
-        case TECHLIGHT2: case TECHLIGHT4: case WALLLIGHT4:
-        case WALLLIGHT3: case WALLLIGHT1: case WALLLIGHT2:
-        case BIGFORCE: case W_FORCEFIELD:
-            link = 1;
-            break;
-        }
-    }
-
-    if (!link)
-#ifdef YAX_ENABLE
-    if (spritep || yax_getnextwall(num, YAX_CEILING) < 0)
-#endif
-    {
-        // try a few that work both as sprites and as walls
-        switch (picnum)
-        {
-        case ACCESS_SWITCH_CASES:
-        case DIPSWITCH_LIKE_CASES:
-        case REST_SWITCH_CASES:
-        case DOORTILE5: case DOORTILE6: case DOORTILE1: case DOORTILE2: case DOORTILE3:
-        case DOORTILE4: case DOORTILE7: case DOORTILE8: case DOORTILE9: case DOORTILE10:
-        case DOORTILE22: case DOORTILE18: case DOORTILE19: case DOORTILE20:
-        case DOORTILE14: case DOORTILE16: case DOORTILE15: case DOORTILE21:
-        case DOORTILE17: case DOORTILE11: case DOORTILE12: case DOORTILE23:  // ---
-            link = 1;
-            break;
-        }
-
-        // handle 'on' positions of non-access switches
-        switch (picnum - 1)
-        {
-        case DIPSWITCH_LIKE_CASES:
-        case REST_SWITCH_CASES:
-            link = 1;
-            break;
-        }
-
-        // handle all positions of the multiswitch
-        if (picnum >= MULTISWITCH && picnum <= MULTISWITCH+3)
-            link = 1;
-    }
 
     g_iReturnVar = link;
     VM_OnEvent(EVENT_LINKTAGS, spritep?num:-1);
@@ -532,6 +474,7 @@ int32_t taglab_linktags(int32_t spritep, int32_t num)
 //  -1 (the return value i.e. no more tags left OR there are no tagged objects)
 int32_t taglab_getnextfreetag(int32_t *duetoptr)
 {
+    // NUKE-TODO: Use X-object RX/TX here
     int32_t i, nextfreetag=1;
     int32_t obj = -1;
 
@@ -541,20 +484,6 @@ int32_t taglab_getnextfreetag(int32_t *duetoptr)
 
         if (sprite[i].statnum == MAXSTATUS)
             continue;
-
-        if (sprite[i].picnum==MULTISWITCH)
-        {
-            // MULTISWITCH needs special care
-            int32_t endtag = sprite[i].lotag+3;
-
-            if (nextfreetag <= endtag)
-            {
-                nextfreetag = endtag+1;
-                obj = 32768 + i;
-            }
-
-            continue;
-        }
 
         tag = select_sprite_tag(i);
 
@@ -734,115 +663,115 @@ const char *ExtGetWallCaption(int16_t wallnum)
     return tempbuf;
 } //end
 
-const char *SectorEffectorTagText(int32_t lotag)
-{
-    static char tempbuf[64];
+//const char *SectorEffectorTagText(int32_t lotag)
+//{
+//    static char tempbuf[64];
+//
+//    static const char *tags[] =
+//    {
+//        "ROTATED SECTOR",                // 0
+//        "ROTATION PIVOT",
+//        "EARTHQUAKE",
+//        "RANDOM LIGHTS AFTER SHOT OUT",
+//        "RANDOM LIGHTS",
+//        "(UNKNOWN)",                     // 5
+//        "SUBWAY",
+//        "TRANSPORT",
+//        "RISING DOOR LIGHTS",
+//        "LOWERING DOOR LIGHTS",
+//        "DOOR CLOSE DELAY",              // 10
+//        "SWING DOOR PIVOT (ST 23)",
+//        "LIGHT SWITCH",
+//        "EXPLOSIVE",
+//        "SUBWAY CAR",
+//        "SLIDE DOOR (ST 25)",            // 15
+//        "ROTATE REACTOR SECTOR",
+//        "ELEVATOR TRANSPORT (ST 15)",
+//        "INCREMENTAL SECTOR RISE/FALL",
+//        "CEILING FALL ON EXPLOSION",
+//        "BRIDGE (ST 27)",                // 20
+//        "DROP FLOOR (ST 28)",
+//        "TEETH DOOR (ST 29)",
+//        "1-WAY TRANSPORT DESTINATION",
+//        "CONVEYOR BELT",
+//        "ENGINE",                        // 25
+//        "(UNKNOWN)",
+//        "DEMO CAMERA",
+//        "LIGHTNING (4890) CONTROLLER",
+//        "FLOAT",
+//        "2 WAY TRAIN (ST 31)",           // 30
+//        "FLOOR Z",
+//        "CEILING Z",
+//        "EARTHQUAKE DEBRIS",
+//    };
+//
+//    Bmemset(tempbuf,0,sizeof(tempbuf));
+//
+//    if (lotag>=0 && lotag<(int32_t)ARRAY_SIZE(tags))
+//        Bsprintf(tempbuf, "%s", tags[lotag]);
+//    else
+//        switch (lotag)
+//        {
+//        case 36:
+//            Bsprintf(tempbuf,"SHOOTER");
+//            break;
+//        case 49:
+//            Bsprintf(tempbuf,"POINT LIGHT");
+//            break;
+//        case 50:
+//            Bsprintf(tempbuf,"SPOTLIGHT");
+//            break;
+//        default:
+//            Bsprintf(tempbuf,"%d: (UNKNOWN)",lotag);
+//            break;
+//        }
+//
+//    return tempbuf;
+//}
 
-    static const char *tags[] =
-    {
-        "ROTATED SECTOR",                // 0
-        "ROTATION PIVOT",
-        "EARTHQUAKE",
-        "RANDOM LIGHTS AFTER SHOT OUT",
-        "RANDOM LIGHTS",
-        "(UNKNOWN)",                     // 5
-        "SUBWAY",
-        "TRANSPORT",
-        "RISING DOOR LIGHTS",
-        "LOWERING DOOR LIGHTS",
-        "DOOR CLOSE DELAY",              // 10
-        "SWING DOOR PIVOT (ST 23)",
-        "LIGHT SWITCH",
-        "EXPLOSIVE",
-        "SUBWAY CAR",
-        "SLIDE DOOR (ST 25)",            // 15
-        "ROTATE REACTOR SECTOR",
-        "ELEVATOR TRANSPORT (ST 15)",
-        "INCREMENTAL SECTOR RISE/FALL",
-        "CEILING FALL ON EXPLOSION",
-        "BRIDGE (ST 27)",                // 20
-        "DROP FLOOR (ST 28)",
-        "TEETH DOOR (ST 29)",
-        "1-WAY TRANSPORT DESTINATION",
-        "CONVEYOR BELT",
-        "ENGINE",                        // 25
-        "(UNKNOWN)",
-        "DEMO CAMERA",
-        "LIGHTNING (4890) CONTROLLER",
-        "FLOAT",
-        "2 WAY TRAIN (ST 31)",           // 30
-        "FLOOR Z",
-        "CEILING Z",
-        "EARTHQUAKE DEBRIS",
-    };
+//const char *MusicAndSFXTagText(int32_t lotag)
+//{
+//    static char tempbuf[16];
+//
+//    Bmemset(tempbuf, 0, sizeof(tempbuf));
+//
+//    if (g_numsounds <= 0)
+//        return tempbuf;
+//
+//    if (lotag>0 && lotag<999 && g_sounds[lotag].definedname)
+//        return g_sounds[lotag].definedname;
+//
+//    if (lotag>=1000 && lotag<2000)
+//        Bsprintf(tempbuf, "REVERB");
+//    return tempbuf;
+//}
 
-    Bmemset(tempbuf,0,sizeof(tempbuf));
-
-    if (lotag>=0 && lotag<(int32_t)ARRAY_SIZE(tags))
-        Bsprintf(tempbuf, "%s", tags[lotag]);
-    else
-        switch (lotag)
-        {
-        case 36:
-            Bsprintf(tempbuf,"SHOOTER");
-            break;
-        case 49:
-            Bsprintf(tempbuf,"POINT LIGHT");
-            break;
-        case 50:
-            Bsprintf(tempbuf,"SPOTLIGHT");
-            break;
-        default:
-            Bsprintf(tempbuf,"%d: (UNKNOWN)",lotag);
-            break;
-        }
-
-    return tempbuf;
-}
-
-const char *MusicAndSFXTagText(int32_t lotag)
-{
-    static char tempbuf[16];
-
-    Bmemset(tempbuf, 0, sizeof(tempbuf));
-
-    if (g_numsounds <= 0)
-        return tempbuf;
-
-    if (lotag>0 && lotag<999 && g_sounds[lotag].definedname)
-        return g_sounds[lotag].definedname;
-
-    if (lotag>=1000 && lotag<2000)
-        Bsprintf(tempbuf, "REVERB");
-    return tempbuf;
-}
-
-const char *SectorEffectorText(int32_t spritenum)
-{
-    static char tempbuf[64];
-
-    Bmemset(tempbuf, 0, sizeof(tempbuf));
-    Bmemset(lo, 0, sizeof(lo));
-
-    Bstrcpy(lo, SectorEffectorTagText(sprite[spritenum].lotag));
-    if (!lo[5]) // tags are 5 chars or less
-        SpriteName(spritenum, tempbuf);
-    else
-    {
-        if (cursprite == spritenum)
-            Bsnprintf(tempbuf, sizeof(tempbuf), "SE %d %s", TrackerCast(sprite[spritenum].lotag), lo);
-        else Bstrcpy(tempbuf, lo);
-    }
-
-    return tempbuf;
-}
+//const char *SectorEffectorText(int32_t spritenum)
+//{
+//    static char tempbuf[64];
+//
+//    Bmemset(tempbuf, 0, sizeof(tempbuf));
+//    Bmemset(lo, 0, sizeof(lo));
+//
+//    Bstrcpy(lo, SectorEffectorTagText(sprite[spritenum].lotag));
+//    if (!lo[5]) // tags are 5 chars or less
+//        SpriteName(spritenum, tempbuf);
+//    else
+//    {
+//        if (cursprite == spritenum)
+//            Bsnprintf(tempbuf, sizeof(tempbuf), "SE %d %s", TrackerCast(sprite[spritenum].lotag), lo);
+//        else Bstrcpy(tempbuf, lo);
+//    }
+//
+//    return tempbuf;
+//}
 
 const char *ExtGetSpriteCaption(int16_t spritenum)
 {
     static char tempbuf[1024];
     int32_t retfast = 0, lt;
 
-    if (!(onnames>=3 && onnames<=8) || (onnames==7 && sprite[spritenum].picnum!=SECTOREFFECTOR))
+    if (!(onnames>=3 && onnames<=8) || (onnames==7/* && sprite[spritenum].picnum!=SECTOREFFECTOR*/))
         retfast = 1;
     if (onnames==5 && !tileInGroup(tilegroupItems, sprite[spritenum].picnum))
         retfast = 1;
@@ -878,16 +807,16 @@ const char *ExtGetSpriteCaption(int16_t spritenum)
 
     taglab_handle1(lt&2, sprite[spritenum].hitag, histr);
 
-    if (sprite[spritenum].picnum==SECTOREFFECTOR)
-    {
-        if (onnames!=8)
-        {
-            Bmemset(tempbuf, 0, sizeof(tempbuf));
-            Bsprintf(lo,"%s",SectorEffectorText(spritenum));
-            Bsprintf(tempbuf,"%s, %s",lo, histr);
-        }
-    }
-    else
+    //if (sprite[spritenum].picnum==SECTOREFFECTOR)
+    //{
+    //    if (onnames!=8)
+    //    {
+    //        Bmemset(tempbuf, 0, sizeof(tempbuf));
+    //        Bsprintf(lo,"%s",SectorEffectorText(spritenum));
+    //        Bsprintf(tempbuf,"%s, %s",lo, histr);
+    //    }
+    //}
+    //else
     {
         Bmemset(tempbuf, 0, sizeof(tempbuf));
         taglab_handle1(lt&1, sprite[spritenum].lotag, lostr);
@@ -942,6 +871,8 @@ static void PrintNextTag(void)
 
 void ExtShowSectorData(int16_t sectnum)   //F5
 {
+    // NUKE-TODO: rewrite to show Blood stuff
+#if 0
     int32_t x,x2,y;
     int32_t i,yi;
     int32_t secrets=0;
@@ -1066,10 +997,13 @@ void ExtShowSectorData(int16_t sectnum)   //F5
     videoEndDrawing();  //}}}
 
     ydim += 8; // ^^^^^^ see above!
+#endif
 }
 
 void ExtShowWallData(int16_t wallnum)       //F6
 {
+    // NUKE-TODO: Rewrite to show Blood stuff
+#if 0
     int32_t i, runi, total=0, x, y, yi;
 
     UNREFERENCED_PARAMETER(wallnum);
@@ -1214,6 +1148,7 @@ void ExtShowWallData(int16_t wallnum)       //F6
 
         videoEndDrawing();  //}}}
     }
+#endif
 }
 
 // formerly Show2dText and Show3dText
@@ -1647,6 +1582,8 @@ ENDFOR1:
     overridepm16y = -1;
 }
 
+#if 0
+
 #define SOUND_NUMDISPLINES IHELP_NUMDISPLINES
 
 static int32_t compare_sounds_s(int16_t k1, int16_t k2)
@@ -2039,7 +1976,7 @@ static void M32_MoveFX(void)
         }
     }
 }
-
+#endif
 
 ///__ShowHelpText__
 
@@ -2048,205 +1985,6 @@ void ExtShowSpriteData(int16_t spritenum)   //F6
     UNREFERENCED_PARAMETER(spritenum);
     if (!in3dmode())
         ShowFileText("sehelp.hlp");
-}
-
-// Floor Over Floor (duke3d)
-
-// If standing in sector with SE42 or SE44
-// then draw viewing to SE41 and raise all =hi SE43 cielings.
-
-// If standing in sector with SE43 or SE45
-// then draw viewing to SE40 and lower all =hi SE42 floors.
-
-static int32_t fofsizex = -1;
-static int32_t fofsizey = -1;
-#if 0
-static void ResetFOFSize(void)
-{
-    if (fofsizex != -1) tilesizx[FOF] = fofsizex;
-    if (fofsizey != -1) tilesizy[FOF] = fofsizey;
-}
-#endif
-static void ExtSE40Draw(int32_t spnum,int32_t x,int32_t y,int32_t z,int16_t a,int16_t h)
-{
-    static int32_t tempsectorz[MAXSECTORS];
-    static int32_t tempsectorpicnum[MAXSECTORS];
-
-    int32_t j=0,k=0;
-    int32_t floor1=0,floor2=0,ok=0,fofmode=0,draw_both=0;
-    int32_t offx,offy,offz;
-
-    if (sprite[spnum].ang!=512) return;
-
-    // Things are a little different now, as we allow for masked transparent
-    // floors and ceilings. So the FOF textures is no longer required
-    //	if (!(gotpic[FOF>>3]&(1<<(FOF&7))))
-    //		return;
-    //	gotpic[FOF>>3] &= ~(1<<(FOF&7));
-
-    if (tilesiz[562].x)
-    {
-        fofsizex = tilesiz[562].x;
-        tilesiz[562].x = 0;
-    }
-    if (tilesiz[562].y)
-    {
-        fofsizey = tilesiz[562].y;
-        tilesiz[562].y = 0;
-    }
-
-    floor1=spnum;
-
-    if (sprite[spnum].lotag==42) fofmode=40;
-    if (sprite[spnum].lotag==43) fofmode=41;
-    if (sprite[spnum].lotag==44) fofmode=40;
-    if (sprite[spnum].lotag==45) fofmode=41;
-
-    // fofmode=sprite[spnum].lotag-2;
-
-    // sectnum=sprite[j].sectnum;
-    // sectnum=cursectnum;
-    ok++;
-
-    /*  recursive?
-    for(j=0;j<MAXSPRITES;j++)
-    {
-    if(
-    sprite[j].sectnum==sectnum &&
-    sprite[j].picnum==1 &&
-    sprite[j].lotag==110
-    ) { DrawFloorOverFloor(j); break;}
-    }
-    */
-
-    // if(ok==0) { Message("no fof",RED); return; }
-
-    for (j=0; j<MAXSPRITES; j++)
-    {
-        if (sprite[j].picnum==1 && sprite[j].lotag==fofmode && sprite[j].hitag==sprite[floor1].hitag)
-        {
-            floor1=j;
-            fofmode=sprite[j].lotag;
-            ok++;
-            break;
-        }
-    }
-    // if(ok==1) { Message("no floor1",RED); return; }
-
-    if (fofmode==40) k=41;
-    else k=40;
-
-    for (j=0; j<MAXSPRITES; j++)
-    {
-        if (sprite[j].picnum==1 && sprite[j].lotag==k && sprite[j].hitag==sprite[floor1].hitag)
-        {
-            floor2=j;
-            ok++;
-            break;
-        }
-    }
-
-//    i=floor1;
-    offx=sprite[floor2].x-sprite[floor1].x;
-    offy=sprite[floor2].y-sprite[floor1].y;
-    offz=0;
-
-    if (sprite[floor2].ang >= 1024)
-        offz = sprite[floor2].z;
-    else if (fofmode==41)
-        offz = SPRITESEC(floor2).floorz;
-    else
-        offz = SPRITESEC(floor2).ceilingz;
-
-    if (sprite[floor1].ang >= 1024)
-        offz -= sprite[floor1].z;
-    else if (fofmode==40)
-        offz -= SPRITESEC(floor1).floorz;
-    else
-        offz -= SPRITESEC(floor1).ceilingz;
-
-    // if(ok==2) { Message("no floor2",RED); return; }
-
-    for (j=0; j<MAXSPRITES; j++) // raise ceiling or floor
-    {
-        if (sprite[j].picnum==1 && sprite[j].lotag==k+2 && sprite[j].hitag==sprite[floor1].hitag)
-        {
-            if (k==40)
-            {
-                tempsectorz[sprite[j].sectnum] = SPRITESEC(j).floorz;
-                SPRITESEC(j).floorz += (((z-SPRITESEC(j).floorz)/32768)+1)*32768;
-                tempsectorpicnum[sprite[j].sectnum] = SPRITESEC(j).floorpicnum;
-                SPRITESEC(j).floorpicnum = 562;
-            }
-            else
-            {
-                tempsectorz[sprite[j].sectnum] = SPRITESEC(j).ceilingz;
-                SPRITESEC(j).ceilingz += (((z-SPRITESEC(j).ceilingz)/32768)-1)*32768;
-                tempsectorpicnum[sprite[j].sectnum] = SPRITESEC(j).ceilingpicnum;
-                SPRITESEC(j).ceilingpicnum = 562;
-            }
-            draw_both = 1;
-        }
-    }
-
-    drawrooms(x+offx,y+offy,z+offz,a,h,sprite[floor2].sectnum);
-    ExtAnalyzeSprites(0,0,0,0);
-    renderDrawMasks();
-    M32_ResetFakeRORTiles();
-
-    if (draw_both)
-    {
-        for (j=0; j<MAXSPRITES; j++) // restore ceiling or floor for the draw both sectors
-        {
-            if (sprite[j].picnum==SECTOREFFECTOR &&
-                    sprite[j].lotag==k+2 && sprite[j].hitag==sprite[floor1].hitag)
-            {
-                if (k==40)
-                {
-                    SPRITESEC(j).floorz = tempsectorz[sprite[j].sectnum];
-                    SPRITESEC(j).floorpicnum = tempsectorpicnum[sprite[j].sectnum];
-                }
-                else
-                {
-                    SPRITESEC(j).ceilingz = tempsectorz[sprite[j].sectnum];
-                    SPRITESEC(j).ceilingpicnum = tempsectorpicnum[sprite[j].sectnum];
-                }
-            }// end if
-        }// end for
-
-        // Now re-draw
-        drawrooms(x+offx,y+offy,z+offz,a,h,sprite[floor2].sectnum);
-        ExtAnalyzeSprites(0,0,0,0);
-        renderDrawMasks();
-        M32_ResetFakeRORTiles();
-    }
-
-} // end SE40
-
-static void SE40Code(int32_t x,int32_t y,int32_t z,int32_t a,int32_t h)
-{
-    int32_t i;
-
-    i = 0;
-    while (i<MAXSPRITES)
-    {
-        int32_t t = sprite[i].lotag;
-        switch (t)
-        {
-            //            case 40:
-            //            case 41:
-            //                ExtSE40Draw(i,x,y,z,a,h);
-            //                break;
-        case 42:
-        case 43:
-        case 44:
-        case 45:
-            if (cursectnum == sprite[i].sectnum)
-                ExtSE40Draw(i,x,y,z,a,h);
-            break;
-        }
-        i++;
-    }
 }
 
 void ExtEditSectorData(int16_t sectnum)    //F7
@@ -2508,7 +2246,8 @@ static int32_t m32gettile(int32_t idInitialTile)
     int32_t mark_lastk = -1;
 
     FX_StopAllSounds();
-    S_ClearSoundLocks();
+    // NUKE-TODO:
+    //S_ClearSoundLocks();
 
     pushDisableFog();
 
@@ -3936,7 +3675,9 @@ ENDFOR1:
     sp = &sprite[cursor];
     Bmemcpy(sp, &sprite[startspr], sizeof(spritetype));
     sp->yoffset = 0;
-    sp->picnum = SMALLFNTCURSOR;
+    // NUKE-TODO:
+    //sp->picnum = SMALLFNTCURSOR;
+    sp->picnum = 0;
     sp->xrepeat = clamp(sp->xrepeat/tilesiz[sp->picnum].x, 2, 255);
     sp->yrepeat = clamp((sp->yrepeat*tilesiz[sprite[startspr].picnum].y)/tilesiz[sp->picnum].y, 4, 255);
     sp->pal = 0;
@@ -4297,11 +4038,12 @@ static void Keys3d(void)
 
     /* start Mapster32 */
 
-    if (g_numsounds > 0 && AmbienceToggle)
-    {
-        M32_MoveFX();
-        S_Update();
-    }
+    // NUKE-TODO: Add some sound stuff here(asound.cpp?)
+    //if (g_numsounds > 0 && AmbienceToggle)
+    //{
+    //    M32_MoveFX();
+    //    S_Update();
+    //}
 
     if (usedcount && !helpon)
     {
@@ -4444,9 +4186,9 @@ static void Keys3d(void)
 
                 if (names[sprite[searchwall].picnum][0])
                 {
-                    if (sprite[searchwall].picnum==SECTOREFFECTOR)
-                        Bsprintf(lines[num++],"^%dSprite %d^%d %s", editorcolors[10], searchwall, whitecol, SectorEffectorText(searchwall));
-                    else
+                    //if (sprite[searchwall].picnum==SECTOREFFECTOR)
+                    //    Bsprintf(lines[num++],"^%dSprite %d^%d %s", editorcolors[10], searchwall, whitecol, SectorEffectorText(searchwall));
+                    //else
                         Bsprintf(lines[num++],"^%dSprite %d^%d %s", editorcolors[10], searchwall, whitecol, names[sprite[searchwall].picnum]);
                 }
                 else Bsprintf(lines[num++],"^%dSprite %d^%d", editorcolors[10], searchwall, whitecol);
@@ -4575,16 +4317,17 @@ static void Keys3d(void)
         message("Mouselook: %s",mlook?"enabled":"disabled");
     }
 
-    if (PRESSED_KEYSC(F4))
-    {
-        AmbienceToggle = !AmbienceToggle;
-        message("Ambience sounds: %s",AmbienceToggle?"enabled":"disabled");
-        if (!AmbienceToggle)
-        {
-            FX_StopAllSounds();
-            S_ClearSoundLocks();
-        }
-    }
+    // NUKE-TODO: Add sound stuff
+    //if (PRESSED_KEYSC(F4))
+    //{
+    //    AmbienceToggle = !AmbienceToggle;
+    //    message("Ambience sounds: %s",AmbienceToggle?"enabled":"disabled");
+    //    if (!AmbienceToggle)
+    //    {
+    //        FX_StopAllSounds();
+    //        S_ClearSoundLocks();
+    //    }
+    //}
 
     // PK
     if (PRESSED_KEYSC(F5))
@@ -4673,11 +4416,13 @@ static void Keys3d(void)
             deletesprite(searchwall);
 
             message("Sprite %d deleted",searchwall);
-            if (AmbienceToggle)
-            {
-                clearbit(g_ambiencePlaying, searchwall);
-                S_StopEnvSound(sprite[searchwall].lotag, searchwall);
-            }
+            
+            // NUKE-TODO: Sound stuff
+            //if (AmbienceToggle)
+            //{
+            //    clearbit(g_ambiencePlaying, searchwall);
+            //    S_StopEnvSound(sprite[searchwall].lotag, searchwall);
+            //}
             asksave = 1;
         }
     }
@@ -4739,10 +4484,11 @@ static void Keys3d(void)
 
     if (autospritehelp && helpon==0)
     {
-        if (AIMING_AT_SPRITE && sprite[searchwall].picnum==SECTOREFFECTOR)
-            ShowFileText("sehelp.hlp");
-        else if (AIMING_AT_CEILING_OR_FLOOR)
-            ShowFileText("sthelp.hlp");
+        // NUKE-TODO: Make hlp files
+        //if (AIMING_AT_SPRITE && sprite[searchwall].picnum==SECTOREFFECTOR)
+        //    ShowFileText("sehelp.hlp");
+        //else if (AIMING_AT_CEILING_OR_FLOOR)
+        //    ShowFileText("sthelp.hlp");
     }
 
     // [.] or [,]: Search & fix panning to the right or left (3D)
@@ -5614,9 +5360,13 @@ static void Keys3d(void)
 
     if (keystatus[buildkeys[BK_MODE2D_3D]])  // Enter
     {
-        SetGamePalette(BASEPAL);
+        //SetGamePalette(BASEPAL);
+        scrSetPalette(0);
+        if (videoGetRenderMode() >= REND_POLYMOST)
+            videoSetPalette(0, 0, 2);
         FX_StopAllSounds();
-        S_ClearSoundLocks();
+        // NUKE-TODO:
+        //S_ClearSoundLocks();
 
 #ifdef POLYMER
         DeletePolymerLights();
@@ -5731,25 +5481,26 @@ static void Keys3d(void)
         }
         else if (AIMING_AT_SPRITE)
         {
-            if (sprite[searchwall].picnum == SECTOREFFECTOR)
-            {
-                sprite[searchwall].lotag =
-                    _getnumber256("Sprite lotag: ", sprite[searchwall].lotag, BTAG_MAX, 0+j, &SectorEffectorTagText);
-            }
-            else if (sprite[searchwall].picnum == MUSICANDSFX)
-            {
-                int16_t oldtag = sprite[searchwall].lotag;
-
-                sprite[searchwall].lotag =
-                    _getnumber256("Sprite lotag: ", sprite[searchwall].lotag, BTAG_MAX, 0+j, &MusicAndSFXTagText);
-
-                if (testbit(g_ambiencePlaying, searchwall) && sprite[searchwall].lotag != oldtag)
-                {
-                    clearbit(g_ambiencePlaying, searchwall);
-                    S_StopEnvSound(oldtag, searchwall);
-                }
-            }
-            else
+            // NUKE-TODO:
+            //if (sprite[searchwall].picnum == SECTOREFFECTOR)
+            //{
+            //    sprite[searchwall].lotag =
+            //        _getnumber256("Sprite lotag: ", sprite[searchwall].lotag, BTAG_MAX, 0+j, &SectorEffectorTagText);
+            //}
+            //else if (sprite[searchwall].picnum == MUSICANDSFX)
+            //{
+            //    int16_t oldtag = sprite[searchwall].lotag;
+            //
+            //    sprite[searchwall].lotag =
+            //        _getnumber256("Sprite lotag: ", sprite[searchwall].lotag, BTAG_MAX, 0+j, &MusicAndSFXTagText);
+            //
+            //    if (testbit(g_ambiencePlaying, searchwall) && sprite[searchwall].lotag != oldtag)
+            //    {
+            //        clearbit(g_ambiencePlaying, searchwall);
+            //        S_StopEnvSound(oldtag, searchwall);
+            //    }
+            //}
+            //else
                 sprite[searchwall].lotag = getnumber256("Sprite lotag: ", sprite[searchwall].lotag, BTAG_MAX, 0+j);
         }
     }
@@ -7228,8 +6979,9 @@ static void Keys2d(void)
                 i = pointhighlight-16384;
                 showspritedata(i, 1);
 
-                if (sprite[i].picnum==SECTOREFFECTOR)
-                    _printmessage16("^10%s", SectorEffectorText(i));
+                // NUKE-TODO:
+                //if (sprite[i].picnum==SECTOREFFECTOR)
+                //    _printmessage16("^10%s", SectorEffectorText(i));
             }
             else if (linehighlight >= 0 && ((bstatus&1) || sectorofwall(linehighlight)==tcursectornum))
                 showwalldata(linehighlight, 1);
@@ -7387,8 +7139,9 @@ static void Keys2d(void)
                 j = taglab_linktags(1, i);
                 j = 4*(j&1);
                 Bsprintf(buffer,"Sprite (%d) Lo-tag: ", i);
-                sprite[i].lotag = _getnumber16(buffer, sprite[i].lotag, BTAG_MAX, 0+j, sprite[i].picnum==SECTOREFFECTOR ?
-                                               &SectorEffectorTagText : NULL);
+                // NUKE-TODO:
+                sprite[i].lotag = _getnumber16(buffer, sprite[i].lotag, BTAG_MAX, 0+j, /*sprite[i].picnum==SECTOREFFECTOR ?
+                                               &SectorEffectorTagText : */NULL);
             }
             else if (linehighlight >= 0)
             {
@@ -7426,11 +7179,12 @@ static void Keys2d(void)
             printmessage16("m32help.hlp invalid or not found!");
     }
 
-    if (PRESSED_KEYSC(F2))
-        if (g_numsounds > 0)
-        {
-            SoundDisplay();
-        }
+    // NUKE-TODO:
+    //if (PRESSED_KEYSC(F2))
+    //    if (g_numsounds > 0)
+    //    {
+    //        SoundDisplay();
+    //    }
 
     // F3: side view toggle (handled in build.c)
 
@@ -8122,6 +7876,8 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
     j = 0;
 
+    // NUKE-TODO: Use getopt here?
+
     while (i < argc)
     {
         c = argv[i];
@@ -8138,22 +7894,22 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 Bexit(0);
             }
 
-            if (!Bstrcasecmp(c+1,"addon"))
-            {
-                if (argc > i+1)
-                {
-                    g_addonNum = Batoi(argv[i+1]);
-
-                    if (!(g_addonNum > ADDON_NONE && g_addonNum < NUMADDONS))
-                        g_addonNum = ADDON_NONE;
-
-                    COPYARG(i);
-                    COPYARG(i+1);
-                    i++;
-                }
-                i++;
-                continue;
-            }
+            //if (!Bstrcasecmp(c+1,"addon"))
+            //{
+            //    if (argc > i+1)
+            //    {
+            //        g_addonNum = Batoi(argv[i+1]);
+            //
+            //        if (!(g_addonNum > ADDON_NONE && g_addonNum < NUMADDONS))
+            //            g_addonNum = ADDON_NONE;
+            //
+            //        COPYARG(i);
+            //        COPYARG(i+1);
+            //        i++;
+            //    }
+            //    i++;
+            //    continue;
+            //}
 
             if (!Bstrcasecmp(c+1, "g") || !Bstrcasecmp(c+1, "grp"))
             {
@@ -8211,49 +7967,49 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 i++;
                 continue;
             }
-            if (!Bstrcasecmp(c+1,"gamegrp"))
-            {
-                if (argc > i+1)
-                {
-                    clearGrpNamePtr();
-                    g_grpNamePtr = dup_filename(argv[i+1]);
-                    COPYARG(i);
-                    COPYARG(i+1);
-                    i++;
-                }
-                i++;
-                continue;
-            }
+            //if (!Bstrcasecmp(c+1,"gamegrp"))
+            //{
+            //    if (argc > i+1)
+            //    {
+            //        clearGrpNamePtr();
+            //        g_grpNamePtr = dup_filename(argv[i+1]);
+            //        COPYARG(i);
+            //        COPYARG(i+1);
+            //        i++;
+            //    }
+            //    i++;
+            //    continue;
+            //}
             if (!Bstrcasecmp(c+1,"namesfile"))
             {
                 g_namesFileName = argv[i+1];
                 i++;
                 continue;
             }
-            if (!Bstrcasecmp(c+1,"x"))
-            {
-                if (argc > i+1)
-                {
-                    G_AddCon(argv[i+1]);
-                    COPYARG(i);
-                    COPYARG(i+1);
-                    i++;
-                }
-                i++;
-                continue;
-            }
-            if (!Bstrcasecmp(c+1,"mx"))
-            {
-                if (argc > i+1)
-                {
-                    G_AddConModule(argv[i+1]);
-                    COPYARG(i);
-                    COPYARG(i+1);
-                    i++;
-                }
-                i++;
-                continue;
-            }
+            //if (!Bstrcasecmp(c+1,"x"))
+            //{
+            //    if (argc > i+1)
+            //    {
+            //        G_AddCon(argv[i+1]);
+            //        COPYARG(i);
+            //        COPYARG(i+1);
+            //        i++;
+            //    }
+            //    i++;
+            //    continue;
+            //}
+            //if (!Bstrcasecmp(c+1,"mx"))
+            //{
+            //    if (argc > i+1)
+            //    {
+            //        G_AddConModule(argv[i+1]);
+            //        COPYARG(i);
+            //        COPYARG(i+1);
+            //        i++;
+            //    }
+            //    i++;
+            //    continue;
+            //}
             if (!Bstrcasecmp(c+1,"h"))
             {
                 if (argc > i+1)
@@ -8310,27 +8066,27 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 i++;
                 continue;
             }
-            if (!Bstrcasecmp(c+1,"nam"))
-            {
-                g_gameType = GAMEFLAG_NAM;
-                COPYARG(i);
-                i++;
-                continue;
-            }
-            if (!Bstrcasecmp(c+1,"napalm"))
-            {
-                g_gameType = GAMEFLAG_NAM|GAMEFLAG_NAPALM;
-                COPYARG(i);
-                i++;
-                continue;
-            }
-            if (!Bstrcasecmp(c+1,"ww2gi"))
-            {
-                g_gameType = GAMEFLAG_WW2GI;
-                COPYARG(i);
-                i++;
-                continue;
-            }
+            //if (!Bstrcasecmp(c+1,"nam"))
+            //{
+            //    g_gameType = GAMEFLAG_NAM;
+            //    COPYARG(i);
+            //    i++;
+            //    continue;
+            //}
+            //if (!Bstrcasecmp(c+1,"napalm"))
+            //{
+            //    g_gameType = GAMEFLAG_NAM|GAMEFLAG_NAPALM;
+            //    COPYARG(i);
+            //    i++;
+            //    continue;
+            //}
+            //if (!Bstrcasecmp(c+1,"ww2gi"))
+            //{
+            //    g_gameType = GAMEFLAG_WW2GI;
+            //    COPYARG(i);
+            //    i++;
+            //    continue;
+            //}
             if (!Bstrcasecmp(c+1,"check"))
             {
                 initprintf("Map wall checking on save enabled\n");
@@ -8403,15 +8159,15 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 G_AddGroup(c);
                 COPYARG(i);
                 break;
-            case 'x':
-            case 'X':
-                c++;
-                if (*c)
-                {
-                    G_AddCon(c);
-                    COPYARG(i);
-                }
-                break;
+            //case 'x':
+            //case 'X':
+            //    c++;
+            //    if (*c)
+            //    {
+            //        G_AddCon(c);
+            //        COPYARG(i);
+            //    }
+            //    break;
             }
         }
         else
@@ -8436,12 +8192,12 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     G_AddDef(argv[i++]);
                     continue;
                 }
-                else if (!Bstrcasecmp(k,".con"))
-                {
-                    COPYARG(i);
-                    G_AddCon(argv[i++]);
-                    continue;
-                }
+                //else if (!Bstrcasecmp(k,".con"))
+                //{
+                //    COPYARG(i);
+                //    G_AddCon(argv[i++]);
+                //    continue;
+                //}
             }
         }
         i++;
@@ -9741,219 +9497,6 @@ static int32_t loadtilegroups(const char *fn)
     return 0;
 }
 
-/// vvv Parse CON files partially to get sound definitions
-static int32_t parseconsounds(scriptfile *script);
-
-static void parseconsounds_include(const char *fn, scriptfile *script, const char *cmdtokptr)
-{
-    scriptfile *included;
-
-    included = scriptfile_fromfile(fn);
-    if (!included)
-    {
-        if (!Bstrcasecmp(cmdtokptr,"null"))
-            initprintf("Warning: Failed including %s as module\n", fn);
-        else
-            initprintf("Warning: Failed including %s on line %s:%d\n",
-                       fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
-    }
-    else
-    {
-        parseconsounds(included);
-        scriptfile_close(included);
-/*
-        // why?
-        int32_t tmp = parseconsounds(included);
-        scriptfile_close(included);
-        if (tmp < 0) return tmp;
-*/
-    }
-}
-
-static int32_t parseconsounds(scriptfile *script)
-{
-    int32_t tokn;
-    char *cmdtokptr;
-    int32_t num_invalidsounds=0;
-
-    tokenlist cstokens[] =
-    {
-        { "include",         T_INCLUDE          },
-        { "#include",        T_INCLUDE          },
-        { "includedefault",  T_INCLUDEDEFAULT   },
-        { "#includedefault", T_INCLUDEDEFAULT   },
-        { "define",          T_DEFINE           },
-        { "#define",         T_DEFINE           },
-        { "definesound",     T_DEFINESOUND      },
-        { "gamestartup",     T_GAMESTARTUP      },
-    };
-
-    while (1)
-    {
-        tokn = getatoken(script,cstokens,ARRAY_SIZE(cstokens));
-        cmdtokptr = script->ltextptr;
-        switch (tokn)
-        {
-        case T_INCLUDE:
-        {
-            char *fn;
-            if (!scriptfile_getstring(script,&fn))
-                parseconsounds_include(fn, script, cmdtokptr);
-            break;
-        }
-        case T_INCLUDEDEFAULT:
-        {
-            parseconsounds_include(G_DefaultConFile(), script, cmdtokptr);
-            break;
-        }
-        case T_DEFINE:
-        {
-            char *name;
-            int32_t number;
-
-            if (scriptfile_getstring(script,&name)) break;
-            if (scriptfile_getsymbol(script,&number)) break;
-            if (scriptfile_addsymbolvalue(name,number) < 0)
-                initprintf("Warning: Symbol %s was NOT redefined to %d on line %s:%d\n",
-                           name,number,script->filename,scriptfile_getlinum(script,cmdtokptr));
-            break;
-        }
-        case T_GAMESTARTUP:
-        {
-            if (scriptfile_getsymbol(script, &g_visibility)) break;
-            break;
-        }
-        case T_DEFINESOUND:
-        {
-            char *definedname, *filename;
-            int32_t sndnum, ps, pe, pr, m, vo;
-            int32_t slen, duplicate=0;
-
-            if (scriptfile_getsymbol(script, &sndnum)) break;
-
-            definedname = Xstrdup(script->ltextptr);
-
-            if (sndnum < 0 || sndnum >= MAXSOUNDS)
-            {
-                initprintf("Warning: invalid sound definition %s (sound number < 0 or >= MAXSOUNDS) on line %s:%d\n",
-                           definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                Bfree(definedname);
-                num_invalidsounds++;
-                break;
-            }
-
-            if (scriptfile_getstring(script, &filename))
-            {
-                Bfree(definedname);
-                num_invalidsounds++;
-                break;
-            }
-
-            slen = Bstrlen(filename);
-            if (slen >= BMAX_PATH)
-            {
-                initprintf("Warning: invalid sound definition %s (filename too long) on line %s:%d\n",
-                           definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                Bfree(definedname);
-                num_invalidsounds++;
-                break;
-            }
-
-            if (g_sounds[sndnum].filename)
-            {
-                duplicate = 1;
-                Bfree(g_sounds[sndnum].filename);
-            }
-            g_sounds[sndnum].filename = (char *)Xcalloc(slen+1,sizeof(uint8_t));
-            // Hopefully noone does memcpy(..., g_sounds[].filename, BMAX_PATH)
-
-            Bmemcpy(g_sounds[sndnum].filename, filename, slen+1);
-
-            if (scriptfile_getnumber(script, &ps)) goto BAD;
-            if (scriptfile_getnumber(script, &pe)) goto BAD;
-            if (scriptfile_getnumber(script, &pr)) goto BAD;
-            if (scriptfile_getnumber(script, &m)) goto BAD;
-            if (ParentalLock && (m&8)) goto BAD;
-            if (scriptfile_getnumber(script, &vo)) goto BAD;
-            if (0)
-            {
-BAD:
-                Bfree(definedname);
-                DO_FREE_AND_NULL(g_sounds[sndnum].filename);
-                num_invalidsounds++;
-                break;
-            }
-
-            if (g_sounds[sndnum].definedname)
-            {
-                duplicate = 1;
-                Bfree(g_sounds[sndnum].definedname);
-            }
-            if (duplicate)
-                initprintf("warning: duplicate sound #%d, overwriting\n", sndnum);
-
-            g_sounds[sndnum].definedname = definedname;  // we want to keep it for display purposes
-            g_sounds[sndnum].ps = ps;
-            g_sounds[sndnum].pe = pe;
-            g_sounds[sndnum].pr = pr;
-            g_sounds[sndnum].m = m;
-            g_sounds[sndnum].vo = vo;
-            if (!duplicate)
-            {
-                g_sndnum[g_numsounds] = g_definedsndnum[g_numsounds] = sndnum;
-                g_numsounds++;
-                if (g_numsounds == MAXSOUNDS)
-                    goto END;
-            }
-            break;
-        }
-        case T_EOF:
-            goto END;
-        default:
-            break;
-        }
-    }
-END:
-    return g_numsounds;
-}
-
-static int32_t loadconsounds(const char *fn)
-{
-    scriptfile *script;
-    int32_t ret;
-
-    initprintf("Loading sounds from \"%s\"\n",fn);
-
-    script = scriptfile_fromfile(fn);
-    if (!script)
-    {
-        initprintf("Error loading sounds: file \"%s\" not found.\n", fn);
-        return -1;
-    }
-    ret = parseconsounds(script);
-
-    for (char * m : g_scriptModules)
-    {
-        parseconsounds_include(m, NULL, "null");
-        free(m);
-    }
-    g_scriptModules.clear();
-
-    if (ret < 0)
-        initprintf("There was an error parsing \"%s\".\n", fn);
-    else if (ret == 0)
-        initprintf("\"%s\" doesn't contain sound definitions. No sounds loaded.\n", fn);
-    else
-        initprintf("Loaded %d sound definitions.\n", ret);
-
-    if (g_visibility != 512)
-        initprintf("Global visibility: %d\n", g_visibility);
-
-    scriptfile_close(script);
-    scriptfile_clearsymbols();
-    return ret;
-}
-
 void ExtPreLoadMap(void)
 {
 }
@@ -10027,7 +9570,7 @@ int32_t ExtInit(void)
     // will hopefully be the same file
     pathsearchmode_oninit = pathsearchmode;
 
-    G_ScanGroups();
+    //G_ScanGroups();
 
     signal(SIGINT, m32script_interrupt_handler);
 
@@ -10041,19 +9584,21 @@ int32_t ExtPostStartupWindow(void)
     if (!g_useCwd)
         G_CleanupSearchPaths();
 
-    if (engineInit())
-    {
-        initprintf("There was a problem initializing the engine.\n");
-        return -1;
-    }
+    scrInit();
+    //if (engineInit())
+    //{
+    //    initprintf("There was a problem initializing the engine.\n");
+    //    return -1;
+    //}
 
-    G_LoadLookups();
+    // NUKE-TODO:
+    //G_LoadLookups();
 
     loadtilegroups(default_tiles_cfg);
 
     ReadHelpFile("m32help.hlp");
 
-    G_InitMultiPsky(CLOUDYOCEAN, MOONSKY1, BIGORBIT1, LA);
+    //G_InitMultiPsky(CLOUDYOCEAN, MOONSKY1, BIGORBIT1, LA);
 
 #ifdef LUNATIC
     if (Em_CreateState(&g_EmState) == 0)
@@ -10098,7 +9643,8 @@ void ExtUnInit(void)
     // setvmode(0x03);
     writesetup(setupfilename);
 
-    S_SoundShutdown();
+    // NUKE-TODO:
+    //S_SoundShutdown();
     uninitgroupfile();
 #if 0
     for (i = MAX_TILE_GROUPS-1; i >= 0; i--)
@@ -10119,6 +9665,8 @@ void ExtPreCheckKeys(void) // just before drawrooms
 
     if (in3dmode())
     {
+        // NUKE-TODO:
+#if 0
         if (shadepreview)
         {
             for (i=0; i<highlightsectorcnt; i++)
@@ -10286,6 +9834,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
         }
 
         if (floor_over_floor) SE40Code(pos.x,pos.y,pos.z,ang,horiz);
+#endif
         if (purpleon) videoClearViewableArea(255);
 
         return;
@@ -10310,6 +9859,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
             picnum = sprite[i].picnum;
             daang = flags = frames = shade = 0;
 
+#if 0
             switch (picnum)
             {
                 // 5-frame walk
@@ -10398,7 +9948,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
             default:
                 break;
             }
-
+#endif
             shade = (i+16384 == pointhighlight) ? 7 - (M32_THROB>>1) : sprite[i].shade;
 
             if (m32_sideview)
@@ -10434,8 +9984,8 @@ void ExtPreCheckKeys(void) // just before drawrooms
                 int32_t radius, col;
                 int32_t xp1, yp1;
 
-                if (sprite[i].picnum != MUSICANDSFX /*|| zoom < 256*/ || sprite[i].hitag < 1000)
-                    continue;
+                //if (sprite[i].picnum != MUSICANDSFX /*|| zoom < 256*/ || sprite[i].hitag < 1000)
+                //    continue;
 
                 if (showambiencesounds==1 && sprite[i].sectnum!=cursectnum)
                     continue;
@@ -10480,12 +10030,12 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr
         if ((nosprites==1||nosprites==3) && tspr->picnum<11)
             tspr->xrepeat=0;
 
-        if (nosprites==1||nosprites==3)
-            switch (tspr->picnum)
-            {
-            case SEENINE :
-                tspr->xrepeat=0;
-            }
+        //if (nosprites==1||nosprites==3)
+        //    switch (tspr->picnum)
+        //    {
+        //    case SEENINE :
+        //        tspr->xrepeat=0;
+        //    }
 
         if (showinvisibility && (tspr->cstat&32768))
         {
@@ -10534,6 +10084,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr
 
         switch (tspr->picnum)
         {
+#if 0
             // 5-frame walk
         case 1550 :             // Shark
             frames=5;
@@ -10630,6 +10181,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr
                     tspr->picnum -= 5;       //Hack, for actors
             }
             break;
+#endif
 
         default:
             break;
@@ -10654,14 +10206,15 @@ static void Keys2d3d(void)
     }
 #endif
 
-    if (cursectnum>=0 && sector[cursectnum].lotag==2)
-    {
-        if (sector[cursectnum].ceilingpicnum==FLOORSLIME)
-            SetGamePalette(SLIMEPAL);
-        else
-            SetGamePalette(WATERPAL);
-    }
-    else SetGamePalette(BASEPAL);
+    // NUKE-TODO:
+    //if (cursectnum>=0 && sector[cursectnum].lotag==2)
+    //{
+    //    if (sector[cursectnum].ceilingpicnum==FLOORSLIME)
+    //        SetGamePalette(SLIMEPAL);
+    //    else
+    //        SetGamePalette(WATERPAL);
+    //}
+    //else SetGamePalette(BASEPAL);
 
     if (keystatus[KEYSC_F10])
     {
@@ -10816,6 +10369,8 @@ void ExtCheckKeys(void)
     static int32_t soundinit = 0;
     static int32_t lastbstatus = 0;
 
+    // NUKE-TODO:
+#if 0
     if (!soundinit)
     {
         g_numsounds = 0;
@@ -10829,7 +10384,10 @@ void ExtCheckKeys(void)
         }
         soundinit = 1;
     }
+#endif
 
+    // NUKE-TODO:
+#if 0
     if (in3dmode() && shadepreview)
     {
         int32_t i = 0, ii;
@@ -10882,6 +10440,7 @@ void ExtCheckKeys(void)
 
         }
     }
+#endif
 
     lastbstatus = bstatus;
     bstatus = mouseReadButtons();

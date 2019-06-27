@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "m32script.h"
 #include "m32def.h"
 
-#include "sounds_mapster32.h"
+//#include "sounds_mapster32.h"
 
 #include "osd.h"
 #include "keys.h"
@@ -3105,23 +3105,23 @@ dodefault:
             continue;
 
 // *** sounds
-        case CON_IFSOUND:
-            insptr++;
-            {
-                int32_t j=Gv_GetVarX(*insptr);
-                if (S_InvalidSound(j))
-                {
-                    M32_ERROR("Invalid sound %d", j);
-                    insptr++;
-                    continue;
-                }
-                VM_DoConditional(S_CheckSoundPlaying(vm.spriteNum,j));
-            }
-            continue;
+        //case CON_IFSOUND:
+        //    insptr++;
+        //    {
+        //        int32_t j=Gv_GetVarX(*insptr);
+        //        if (S_InvalidSound(j))
+        //        {
+        //            M32_ERROR("Invalid sound %d", j);
+        //            insptr++;
+        //            continue;
+        //        }
+        //        VM_DoConditional(S_CheckSoundPlaying(vm.spriteNum,j));
+        //    }
+        //    continue;
 
-        case CON_IFNOSOUNDS:
-            VM_DoConditional(S_SoundsPlaying(vm.spriteNum) < 0);
-        continue;
+        //case CON_IFNOSOUNDS:
+        //    VM_DoConditional(S_SoundsPlaying(vm.spriteNum) < 0);
+        //continue;
 
         case CON_IFIN3DMODE:
             VM_DoConditional(in3dmode());
@@ -3141,59 +3141,59 @@ dodefault:
             VM_DoConditional(vm.miscflags&VMFLAG_MISC_INTERACTIVE);
             continue;
 
-        case CON_GETSOUNDFLAGS:
-            insptr++;
-            {
-                int32_t j=Gv_GetVarX(*insptr++), var=*insptr++;
-                if (S_InvalidSound(j))
-                {
-                    M32_ERROR("Invalid sound %d", j);
-                    insptr++;
-                    continue;
-                }
-
-                Gv_SetVarX(var, S_SoundFlags(j));
-            }
-            continue;
-
-        case CON_SOUNDVAR:
-        case CON_STOPSOUNDVAR:
-        case CON_SOUNDONCEVAR:
-        case CON_GLOBALSOUNDVAR:
-            insptr++;
-            {
-                int32_t j=Gv_GetVarX(*insptr++);
-
-                if (S_InvalidSound(j))
-                {
-                    M32_ERROR("Invalid sound %d", j);
-                    continue;
-                }
-
-                switch (tw)
-                {
-                case CON_SOUNDONCEVAR:
-                    if (!S_CheckSoundPlaying(vm.spriteNum,j))
-                        A_PlaySound((int16_t)j,vm.spriteNum);
-                    break;
-                case CON_GLOBALSOUNDVAR:
-                    A_PlaySound((int16_t)j,-1);
-                    break;
-                case CON_STOPSOUNDVAR:
-                    if (S_CheckSoundPlaying(vm.spriteNum,j))
-                        S_StopSound((int16_t)j);
-                    break;
-                case CON_SOUNDVAR:
-                    A_PlaySound((int16_t)j,vm.spriteNum);
-                    break;
-                }
-            }
-            continue;
-
-        case CON_STOPALLSOUNDS:
-            insptr++;
-            S_StopAllSounds();
-            continue;
+        //case CON_GETSOUNDFLAGS:
+        //    insptr++;
+        //    {
+        //        int32_t j=Gv_GetVarX(*insptr++), var=*insptr++;
+        //        if (S_InvalidSound(j))
+        //        {
+        //            M32_ERROR("Invalid sound %d", j);
+        //            insptr++;
+        //            continue;
+        //        }
+        //
+        //        Gv_SetVarX(var, S_SoundFlags(j));
+        //    }
+        //    continue;
+        //
+        //case CON_SOUNDVAR:
+        //case CON_STOPSOUNDVAR:
+        //case CON_SOUNDONCEVAR:
+        //case CON_GLOBALSOUNDVAR:
+        //    insptr++;
+        //    {
+        //        int32_t j=Gv_GetVarX(*insptr++);
+        //
+        //        if (S_InvalidSound(j))
+        //        {
+        //            M32_ERROR("Invalid sound %d", j);
+        //            continue;
+        //        }
+        //
+        //        switch (tw)
+        //        {
+        //        case CON_SOUNDONCEVAR:
+        //            if (!S_CheckSoundPlaying(vm.spriteNum,j))
+        //                A_PlaySound((int16_t)j,vm.spriteNum);
+        //            break;
+        //        case CON_GLOBALSOUNDVAR:
+        //            A_PlaySound((int16_t)j,-1);
+        //            break;
+        //        case CON_STOPSOUNDVAR:
+        //            if (S_CheckSoundPlaying(vm.spriteNum,j))
+        //                S_StopSound((int16_t)j);
+        //            break;
+        //        case CON_SOUNDVAR:
+        //            A_PlaySound((int16_t)j,vm.spriteNum);
+        //            break;
+        //        }
+        //    }
+        //    continue;
+        //
+        //case CON_STOPALLSOUNDS:
+        //    insptr++;
+        //    S_StopAllSounds();
+        //    continue;
 
         default:
             VM_ScriptInfo();
