@@ -7003,8 +7003,12 @@ spritetype* DropRandomPickupObject(spritetype* pSprite, short prevItem) {
         pSprite2 = actDropObject(pSprite, selected);
         pXSource->dropMsg = pSprite2->lotag; // store dropped item lotag in dropMsg
         
-        if ((pSource->hitag & 0x0001) != 0 && dbInsertXSprite(pSprite2->index) != -1) {
-            XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
+        if ((pSource->hitag & kHitagExtBit) != 0)
+        {
+            int nXSprite2 = pSprite2->extra;
+            if (nXSprite2 <= 0)
+                nXSprite2 = dbInsertXSprite(pSprite2->index);
+            XSPRITE *pXSprite2 = &xsprite[nXSprite2];
 
             // inherit spawn sprite trigger settings, so designer can send command when item picked up.
             pXSprite2->txID = pXSource->txID;
@@ -7104,7 +7108,7 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     if (gSysRes.Lookup(seqId,"SEQ"))
         seqSpawn(seqId, 3, pDude->extra, -1);
 
-    if ((pSource->hitag & 0x0001) != 0) {
+    if ((pSource->hitag & kHitagExtBit) != 0) {
         //inherit pal?
         if (pDude->pal <= 0) pDude->pal = pSource->pal;
 
