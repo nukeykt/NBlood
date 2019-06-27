@@ -279,8 +279,8 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
     RestoreInterrupts();
 }
 
-// By NoOne: same as previous, but allows to set custom pitch for sound. Used by SFX gen now.
-void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitch)
+// By NoOne: same as previous, but allows to set custom pitch for sound AND volume. Used by SFX gen now.
+void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitch, int volume)
 {
     if (!SoundToggle || !pSprite || soundId < 0) return;
     DICTNODE* hRes = gSoundRes.Lookup(soundId, "SFX");
@@ -346,7 +346,7 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
     pBonkle->at2c = pBonkle->at20;
     pBonkle->atc = soundId;
     pBonkle->at8 = hRes;
-    pBonkle->at1c = pEffect->relVol;
+    pBonkle->at1c = (volume <= 0) ? pEffect->relVol : volume;
     pBonkle->at18 = v14;
     Calc3DValues(pBonkle);
     int priority = 1;

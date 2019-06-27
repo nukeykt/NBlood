@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 #include "resource.h"
+
 struct SEQFRAME {
     unsigned int tile : 12;
     unsigned int at1_4 : 1; // transparent

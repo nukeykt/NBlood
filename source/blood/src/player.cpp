@@ -112,14 +112,18 @@ POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
     { 0, 0, 0, 0 },
     { 0, 0, 0, 0 },
     { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
+    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0 }, // dummy
+    { -1, 1, 1, 1 } // kGDXItemLevelMap
 };
 
 int Handicap[] = {
     144, 208, 256, 304, 368
 };
 
-POSTURE gPosture[2][3] = {
+POSTURE gPosture[4][3] = {
+    
+    // normal human
     {
         {
             0x4000,
@@ -167,6 +171,8 @@ POSTURE gPosture[2][3] = {
             0xb0
         },
     },
+
+    // normal beast
     {
         {
             0x4000,
@@ -213,7 +219,105 @@ POSTURE gPosture[2][3] = {
             -0x600,
             0xb0
         },
-    }
+    },
+
+    // shrink human
+    {
+        {
+            10384, 
+            12384, 
+            12384, 
+            14, 
+            17, 
+            24, 
+            16, 
+            32, 
+            80, 
+            5632, 
+            4608, 
+            3072, 
+            144
+        },
+        {
+            2108, 
+            2108, 
+            2108, 
+            14, 
+            17, 
+            24,
+            16, 
+            32, 
+            80, 
+            5120, 
+            4096, 
+            -1536, 
+            176
+        },
+        {
+            2192, 
+            3192, 
+            4192,
+            22, 
+            28, 
+            24, 
+            16,
+            16,
+            40, 
+            2048, 
+            1536, 
+            -1536,
+            176
+        },
+    },
+
+    // grown human
+    {
+        {
+            19384, 
+            15384, 
+            15384, 
+            14, 
+            17, 
+            24, 
+            16, 
+            32, 
+            80, 
+            5632, 
+            4608, 
+            3072, 
+            144
+        },
+        {
+            5608, 
+            5608, 
+            5608, 
+            14, 
+            17, 
+            24, 
+            16, 
+            32, 
+            80, 
+            5120, 
+            4096, 
+            -1536, 
+            176
+        },
+        {
+            11192, 
+            11192, 
+            11192,
+            22, 
+            28, 
+            24, 
+            16, 
+            16, 
+            40, 
+            2048, 
+            1536, 
+            -1536, 
+            176
+        },
+    },
 };
 
 AMMOINFO gAmmoInfo[] = {
@@ -325,6 +429,40 @@ int powerupCheck(PLAYER *pPlayer, int nPowerUp)
     return pPlayer->at202[nPowerUp];
 }
 
+bool isGrown(spritetype* pSprite) {
+    return (powerupCheck(&gPlayer[pSprite->type - kDudePlayer1], 29) > 0);
+}
+
+bool isShrinked(spritetype* pSprite) {
+    return (powerupCheck(&gPlayer[pSprite->type - kDudePlayer1], 30) > 0);
+}
+
+bool shrinkPlayerSize(PLAYER* pPlayer, int divider) {
+    pPlayer->pXSprite->scale = -divider;
+    playerSetRace(pPlayer, kModeHumanShrink);
+    return true;
+}
+
+bool growPlayerSize(PLAYER* pPlayer, int multiplier) {
+    pPlayer->pXSprite->scale = multiplier;
+    playerSetRace(pPlayer, kModeHumanGrown);
+    return true;
+}
+
+bool resetPlayerSize(PLAYER* pPlayer) {
+    playerSetRace(pPlayer, kModeHuman);
+    pPlayer->pXSprite->scale = 0;
+    return true;
+}
+
+void deactivateSizeShrooms(PLAYER* pPlayer) {
+    powerupDeactivate(pPlayer, 29);
+    pPlayer->at202[29] = 0;
+
+    powerupDeactivate(pPlayer, 30);
+    pPlayer->at202[30] = 0;
+}
+
 char powerupActivate(PLAYER *pPlayer, int nPowerUp)
 {
     if (powerupCheck(pPlayer, nPowerUp) > 0 && gPowerUpInfo[nPowerUp].at2)
@@ -336,6 +474,26 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         pPlayer->packInfo[nPack].at0 = 1;
     switch (nPowerUp+100)
     {
+    case kGDXItemMapLevel:
+        gFullMap = true;
+        break;
+    case 130:
+        if (isGrown(pPlayer->pSprite)) deactivateSizeShrooms(pPlayer);
+        else shrinkPlayerSize(pPlayer, 2);
+        break;
+    case 129:
+        if (isShrinked(pPlayer->pSprite)) deactivateSizeShrooms(pPlayer);
+        else {
+            growPlayerSize(pPlayer, 2);
+            if (powerupCheck(&gPlayer[pPlayer->pSprite->type - kDudePlayer1], 13) > 0) {
+                powerupDeactivate(pPlayer, 13);
+                pPlayer->at202[13] = 0;
+            }
+
+            if (ceilIsTooLow(pPlayer->pSprite))
+                actDamageSprite(pPlayer->pSprite->xvel, pPlayer->pSprite, DAMAGE_TYPE_3, 65535);
+        }
+        break;
     case 112:
     case 115:
         pPlayer->ata1[0]++;
@@ -375,6 +533,14 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         pPlayer->packInfo[nPack].at0 = 0;
     switch (nPowerUp+100)
     {
+    case 130:
+        resetPlayerSize(pPlayer);
+        if (ceilIsTooLow(pPlayer->pSprite))
+            actDamageSprite(pPlayer->pSprite->xvel, pPlayer->pSprite, DAMAGE_TYPE_3, 65535);
+        break;
+    case 129:
+        resetPlayerSize(pPlayer);
+        break;
     case 112:
     case 115:
         pPlayer->ata1[0]--;
@@ -615,10 +781,14 @@ char playerSeqPlaying(PLAYER * pPlayer, int nSeq)
 
 void playerSetRace(PLAYER *pPlayer, int nLifeMode)
 {
-    dassert(nLifeMode >= kModeHuman && nLifeMode <= kModeBeast);
+    dassert(nLifeMode >= kModeHuman && nLifeMode <= kModeHumanGrown);
     DUDEINFO *pDudeInfo = pPlayer->pDudeInfo;
     *pDudeInfo = gPlayerTemplate[nLifeMode];
     pPlayer->at5f = nLifeMode;
+    
+    // By NoOne: don't forget to change clipdist for grow and shrink modes
+    pPlayer->pSprite->clipdist = pDudeInfo->clipdist;
+    
     for (int i = 0; i < 7; i++)
         pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[pPlayer->at57].skill], pDudeInfo->startDamage[i]);
 }
@@ -877,6 +1047,20 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
         //if (!powerupActivate(pPlayer, nType))
             //return 0;
         //return 1;
+    case 113:
+        if (isGrown(pPlayer->pSprite)) return false;
+    case 130:
+    case 129:
+        switch (pItem->type) {
+        case 130:
+            if (isShrinked(pSprite)) return false;
+            break;
+        case 129:
+            if (isGrown(pSprite)) return false;
+            break;
+        }
+        powerupActivate(pPlayer, nType);
+        break;
     case 145:
     case 146:
         if (gGameOptions.nGameType != 3)
@@ -1039,10 +1223,16 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
     case 108:
     case 109:
     case 110:
-    case 111:
-        if (!actHealDude(pXSprite, gPowerUpInfo[nType].at3, gPowerUpInfo[nType].at7))
+    case 111: 
+    {
+        int addPower = gPowerUpInfo[nType].at3;
+        // by NoOne: allow custom amount for item
+        if (sprite[pItem->xvel].extra >= 0 && xsprite[sprite[pItem->xvel].extra].data1 > 0 && !VanillaMode() && !DemoRecordStatus())
+            addPower = xsprite[sprite[pItem->xvel].extra].data1;
+        if (!actHealDude(pXSprite, addPower, gPowerUpInfo[nType].at7))
             return 0;
         return 1;
+    }
     case 107:
     case 115:
     case 118:
@@ -1059,13 +1249,18 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
     return 1;
 }
 
-char PickupAmmo(PLAYER *pPlayer, spritetype *pAmmo)
+char PickupAmmo(PLAYER* pPlayer, spritetype* pAmmo)
 {
-    AMMOITEMDATA *pAmmoItemData = &gAmmoItemData[pAmmo->type-60];
+    AMMOITEMDATA* pAmmoItemData = &gAmmoItemData[pAmmo->type - 60];
     int nAmmoType = pAmmoItemData->ata;
-    if (pPlayer->at181[nAmmoType] >= gAmmoInfo[nAmmoType].at0)
-        return 0;
-    pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType]+pAmmoItemData->at8, gAmmoInfo[nAmmoType].at0);
+
+    if (pPlayer->at181[nAmmoType] >= gAmmoInfo[nAmmoType].at0) return 0;
+    else if (pAmmo->extra < 0 || xsprite[pAmmo->extra].data1 <= 0 || VanillaMode() || DemoRecordStatus())
+        pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType]+pAmmoItemData->at8, gAmmoInfo[nAmmoType].at0);
+    // by NoOne: allow custom amount for item
+    else
+        pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType] + xsprite[pAmmo->extra].data1, gAmmoInfo[nAmmoType].at0);
+
     if (pAmmoItemData->atb)
         pPlayer->atcb[pAmmoItemData->atb] = 1;
     sfxPlay3DSound(pPlayer->pSprite, 782, -1, 0);
@@ -1084,7 +1279,7 @@ char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon)
         pPlayer->atcb[nWeaponType] = 1;
         if (nAmmoType == -1) return 0;
         // By NoOne: allow to set custom ammo count for weapon pickups
-        if (pWeapon->extra < 0 || xsprite[pWeapon->extra].data1 <= 0)
+        if (pWeapon->extra < 0 || xsprite[pWeapon->extra].data1 <= 0 || VanillaMode() || DemoRecordStatus())
             pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType] + pWeaponItemData->atc, gAmmoInfo[nAmmoType].at0);
         else
             pPlayer->at181[nAmmoType] = ClipHigh(pPlayer->at181[nAmmoType] + xsprite[pWeapon->extra].data1, gAmmoInfo[nAmmoType].at0);
@@ -1114,21 +1309,27 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     char buffer[80];
     int nType = pSprite->type;
     char pickedUp = 0;
+    int customMsg = -1;
     if (nType != 40 && nType != 80) { // By NoOne: no pickup for random item generators.
+        
+        XSPRITE* pXSprite = (pSprite->extra >= 0) ? &xsprite[pSprite->extra] : NULL;
+        if (pXSprite != NULL && pXSprite->txID != 3 && pXSprite->lockMsg > 0) // by NoOne: allow custom INI message instead "Picked up"
+            customMsg = pXSprite->lockMsg;
+
         if (nType >= 100 && nType <= 149)
         {
             pickedUp = PickupItem(pPlayer, pSprite);
-            sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
+            if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
         }
         else if (nType >= 60 && nType < 81)
         {
             pickedUp = PickupAmmo(pPlayer, pSprite);
-            sprintf(buffer, "Picked up %s", gAmmoText[nType - 60]);
+            if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gAmmoText[nType - 60]);
         }
         else if (nType >= 40 && nType < 51)
         {
             pickedUp = PickupWeapon(pPlayer, pSprite);
-            sprintf(buffer, "Picked up %s", gWeaponText[nType - 40]);
+            if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gWeaponText[nType - 40]);
         }
     }
     if (pickedUp)
@@ -1143,7 +1344,8 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
             actPostSprite(pSprite->index, kStatFree);
         pPlayer->at377 = 30;
         if (pPlayer == gMe)
-            viewSetMessage(buffer);
+            if (customMsg > 0) trTextOver(customMsg - 1);
+            else viewSetMessage(buffer);
     }
 }
 
@@ -1415,8 +1617,15 @@ void ProcessInput(PLAYER *pPlayer)
                 zvel[nSprite] = -0x175555;
             else
                 zvel[nSprite] = -0xbaaaa;
+            
+
+            if (isShrinked(pPlayer->pSprite)) zvel[nSprite] -= -200000;
+            else if (isGrown(pPlayer->pSprite)) zvel[nSprite] += -250000;
+            
             pPlayer->at31c = 1;
         }
+
+
         if (pInput->buttonFlags.crouch)
             pPlayer->at2f = 2;
         break;
