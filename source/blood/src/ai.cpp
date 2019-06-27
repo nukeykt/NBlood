@@ -1059,60 +1059,45 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 if (pXSprite->health <= pDudeInfo->fleeHealth) {
                     if (getNextIncarnation(pXSprite) == NULL) {
                         removeDudeStuff(pSprite);
-
+                        
+                        if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1)
+                            doExplosion(pSprite, pXSprite->data1 - 459);
+                        
                         if (spriteIsUnderwater(pSprite, false)) {
                             pXSprite->health = 0;
                             break;
                         }
-                        if (pXSprite->burnTime <= 0) pXSprite->burnTime = 1200;
+                        
+                        if (pXSprite->burnTime <= 0) 
+                            pXSprite->burnTime = 1200;
 
-                        aiPlay3DSound(pSprite, 361, (AI_SFX_PRIORITY)0, -1);
-                        sfxPlayGDXGenDudeSound(pSprite, 3, pXSprite->data3);
-                        pSprite->type = kGDXGenDudeBurning;
-                        aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
-                        actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
-                        gDudeExtra[pSprite->extra].at0 = gFrameClock + 360;
-                        evKill(nSprite, 3, CALLBACK_ID_0);
+                        if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ"))
+                            && gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) {
+                            
+                            aiPlay3DSound(pSprite, 361, (AI_SFX_PRIORITY)0, -1);
+                            sfxPlayGDXGenDudeSound(pSprite, 3, pXSprite->data3);
+                            pSprite->type = kGDXGenDudeBurning;
+                            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
+                            actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
+                            gDudeExtra[pSprite->extra].at0 = gFrameClock + 360;
+                            evKill(nSprite, 3, CALLBACK_ID_0);
+
+                        }
+
                     } else {
                         actKillDude(nSource, pSprite, nDmgType, nDamage);
                     }
                 }
-            } else {
-
-                int meleeDist = 2048; int vdist = meleeDist; int chance2 = 0x0800;
-                if (pXSprite->data1 >= 0 && pXSprite->data1 < kVectorMax) {
-                    int vector = pXSprite->data1; if (vector <= 0) vector = 2;
-                    VECTORDATA* pVectorData = &gVectorData[vector];
-                    vdist = pVectorData->maxDist;
-
-                } else {
-
-                    switch (pXSprite->data1) {
-                    case 304:
-                    case 308:
-                        vdist = meleeDist * 2;
-                        break;
-                    default:
-                        vdist = 0;
-                        break;
+            } else if (pXSprite->aiState != &GDXGenDudeDodgeDmgD && pXSprite->aiState != &GDXGenDudeDodgeDmgL
+                 && pXSprite->aiState != &GDXGenDudeDodgeDmgW) {
+                    
+                if (Chance(getDodgeChance(pSprite))) {
+                    if (!spriteIsUnderwater(pSprite, false)) {
+                        if (!sub_5BDA8(pSprite, 14)) aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgL);
+                        else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgD);
                     }
-                }
-
-                if (vdist == meleeDist)
-                    chance2 = 0x0500;
-                else if (vdist == meleeDist * 2)
-                    chance2 = 0x0600;
-
-                if ((vdist <= 0 || vdist > meleeDist) || Chance(chance2)) {
-                    if (Chance(0x1000)) {
-                        if (!spriteIsUnderwater(pSprite, false)) {
-                            if (!sub_5BDA8(pSprite, 14))
-                                aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
-                            else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeD);
-                        }
-                        else if (sub_5BDA8(pSprite, 13) && spriteIsUnderwater(pSprite, false))
-                            aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
-                    }
+                    else if (sub_5BDA8(pSprite, 13) && spriteIsUnderwater(pSprite, false))
+                        aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgW);
                 }
             }
 
@@ -1155,49 +1140,30 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
         {
         case kGDXDudeUniversalCultist:
         {
-            if (!spriteIsUnderwater(pSprite, false) && pDudeExtra->at4)
+            int mass = getDudeMassBySpriteSize(pSprite); int chance3 = getRecoilChance(pSprite);
+            if ((mass < 155 && !spriteIsUnderwater(pSprite, false) && pDudeExtra->at4) || (mass > 155 && Chance(chance3)))
             {
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
                 aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
                 return;
             }
 
-            int meleeDist = 2048; int vdist = meleeDist; int chance2 = 0x3000;
-            if (pXSprite->data1 >= 0 && pXSprite->data1 < kVectorMax) {
-                int vector = pXSprite->data1; if (vector <= 0) vector = 2;
-                VECTORDATA* pVectorData = &gVectorData[vector];
-                vdist = pVectorData->maxDist;
+            if (pXSprite->aiState == &GDXGenDudeDodgeDmgW || pXSprite->aiState == &GDXGenDudeDodgeDmgD 
+                || pXSprite->aiState == &GDXGenDudeDodgeDmgL) {
+                
+                if (Chance(chance3)) sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
+                return;
 
             }
-            else {
 
-                switch (pXSprite->data1) {
-                case 304:
-                case 308:
-                    vdist = meleeDist * 2;
-                    break;
-                default:
-                    vdist = 0;
-                    break;
-                }
-            }
-
-            if (vdist == meleeDist)
-                chance2 = 0x2000;
-            else if (vdist == meleeDist * 2)
-                chance2 = 0x2500;
-
-            if ((vdist <= 0 || vdist > meleeDist) || Chance(chance2)) {
+            if ((!dudeIsMelee(pXSprite) && mass < 155) || Chance(chance3)) {
 
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
 
-                if (spriteIsUnderwater(pSprite, false))
-                    aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
-                else {
-                    if (!v4 || (v4 && gGameOptions.nDifficulty == 0))
-                        aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
-                    else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
-                }
+                if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
+                else if (!v4 || (v4 && gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
+
             }
 
             break;
@@ -1564,6 +1530,7 @@ void aiInitSprite(spritetype *pSprite)
         DUDEEXTRA_at6_u1* pDudeExtraE = &gDudeExtra[nXSprite].at6.u1;
         pDudeExtraE->at8 = 0;
         pDudeExtraE->at0 = 0;
+        pDudeExtraE->at4 = 0;
         aiNewState(pSprite, pXSprite, &GDXGenDudeIdleL);
         break;
     }

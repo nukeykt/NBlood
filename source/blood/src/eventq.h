@@ -26,8 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct RXBUCKET
 {
-    unsigned int at0_0 : 13;
-    unsigned int at1_5 : 3;
+    unsigned int index : 13;
+    unsigned int type : 3;
 };
 extern RXBUCKET rxBucket[];
 extern unsigned short bucketHead[];
@@ -52,9 +52,9 @@ enum COMMAND_ID {
 };
 
 struct EVENT {
-    unsigned int at0_0 : 13; // index
-    unsigned int at1_5 : 3; // type
-    unsigned int at2_0 : 8; // cmd
+    unsigned int index : 13; // index
+    unsigned int type : 3; // type
+    unsigned int cmd : 8; // cmd
     unsigned int funcID : 8; // callback
 }; // <= 4 bytes
 

@@ -56,7 +56,6 @@ public:
 };
 
 EventQueue eventQ;
-
 void EventQueue::Kill(int a1, int a2)
 {
     EVENT evn = { (unsigned int)a1, (unsigned int)a2, 0, 0 };
@@ -84,31 +83,31 @@ RXBUCKET rxBucket[kMaxChannels+1];
 
 int GetBucketChannel(const RXBUCKET *pRX)
 {
-    switch (pRX->at1_5)
+    switch (pRX->type)
     {
     case 6:
     {
-        int nIndex = pRX->at0_0;
+        int nIndex = pRX->index;
         int nXIndex = sector[nIndex].extra;
         dassert(nXIndex > 0);
         return xsector[nXIndex].rxID;
     }
     case 0:
     {
-        int nIndex = pRX->at0_0;
+        int nIndex = pRX->index;
         int nXIndex = wall[nIndex].extra;
         dassert(nXIndex > 0);
         return xwall[nXIndex].rxID;
     }
     case 3:
     {
-        int nIndex = pRX->at0_0;
+        int nIndex = pRX->index;
         int nXIndex = sprite[nIndex].extra;
         dassert(nXIndex > 0);
         return xsprite[nXIndex].rxID;
     }
     default:
-        ThrowError("Unexpected rxBucket type %d, index %d", pRX->at1_5, pRX->at0_0);
+        ThrowError("Unexpected rxBucket type %d, index %d", pRX->type, pRX->index);
         break;
     }
     return 0;
@@ -290,8 +289,8 @@ void evInit(void)
         if (nXSector > 0 && xsector[nXSector].rxID > 0)
         {
             dassert(nCount < kMaxChannels);
-            rxBucket[nCount].at1_5 = 6;
-            rxBucket[nCount].at0_0 = i;
+            rxBucket[nCount].type = 6;
+            rxBucket[nCount].index = i;
             nCount++;
         }
     }
@@ -303,8 +302,8 @@ void evInit(void)
         if (nXWall > 0 && xwall[nXWall].rxID > 0)
         {
             dassert(nCount < kMaxChannels);
-            rxBucket[nCount].at1_5 = 0;
-            rxBucket[nCount].at0_0 = i;
+            rxBucket[nCount].type = 0;
+            rxBucket[nCount].index = i;
             nCount++;
         }
     }
@@ -318,8 +317,8 @@ void evInit(void)
             if (nXSprite > 0 && xsprite[nXSprite].rxID > 0)
             {
                 dassert(nCount < kMaxChannels);
-                rxBucket[nCount].at1_5 = 3;
-                rxBucket[nCount].at0_0 = i;
+                rxBucket[nCount].type = 3;
+                rxBucket[nCount].index = i;
                 nCount++;
             }
         }
@@ -368,9 +367,9 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
     else if (command == COMMAND_ID_4)
         command = evGetSourceState(nType, nIndex) ? COMMAND_ID_0 : COMMAND_ID_1;
     EVENT evn;
-    evn.at0_0 = nIndex;
-    evn.at1_5 = nType;
-    evn.at2_0 = command;
+    evn.index = nIndex;
+    evn.type = nType;
+    evn.cmd = command;
     if (rxId > 0)
     {
         switch (rxId)
@@ -445,19 +444,19 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
     }
     for (int i = bucketHead[rxId]; i < bucketHead[rxId+1]; i++)
     {
-        if (evn.at1_5 != rxBucket[i].at1_5 || evn.at0_0 != rxBucket[i].at0_0)
+        if (evn.type != rxBucket[i].type || evn.index != rxBucket[i].index)
         {
-            switch (rxBucket[i].at1_5)
+            switch (rxBucket[i].type)
             {
             case 6:
-                trMessageSector(rxBucket[i].at0_0, evn);
+                trMessageSector(rxBucket[i].index, evn);
                 break;
             case 0:
-                trMessageWall(rxBucket[i].at0_0, evn);
+                trMessageWall(rxBucket[i].index, evn);
                 break;
             case 3:
             {
-                int nSprite = rxBucket[i].at0_0;
+                int nSprite = rxBucket[i].index;
                 spritetype *pSprite = &sprite[nSprite];
                 if (pSprite->hitag&32)
                     continue;
@@ -483,9 +482,9 @@ void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command)
     else if (command == COMMAND_ID_4)
         command = evGetSourceState(nType, nIndex) ? COMMAND_ID_0 : COMMAND_ID_1;
     EVENT evn;
-    evn.at0_0 = nIndex;
-    evn.at1_5 = nType;
-    evn.at2_0 = command;
+    evn.index = nIndex;
+    evn.type = nType;
+    evn.cmd = command;
     // Inlined?
     eventQ.PQueue->Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
 }
@@ -493,9 +492,9 @@ void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command)
 void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID a4)
 {
     EVENT evn;
-    evn.at0_0 = nIndex;
-    evn.at1_5 = nType;
-    evn.at2_0 = kCommandCallback;
+    evn.index = nIndex;
+    evn.type = nType;
+    evn.cmd = kCommandCallback;
     evn.funcID = a4;
     eventQ.PQueue->Insert(gFrameClock+nDelta, *(unsigned int*)&evn);
 }
@@ -517,24 +516,24 @@ void evProcess(unsigned int nTime)
     while(eventQ.IsNotEmpty(nTime))
     {
         EVENT event = eventQ.ERemove();
-        if (event.at2_0 == kCommandCallback)
+        if (event.cmd == kCommandCallback)
         {
             dassert(event.funcID < kCallbackMax);
             dassert(gCallback[event.funcID] != NULL);
-            gCallback[event.funcID](event.at0_0);
+            gCallback[event.funcID](event.index);
         }
         else
         {
-            switch (event.at1_5)
+            switch (event.type)
             {
             case 6:
-                trMessageSector(event.at0_0, event);
+                trMessageSector(event.index, event);
                 break;
             case 0:
-                trMessageWall(event.at0_0, event);
+                trMessageWall(event.index, event);
                 break;
             case 3:
-                trMessageSprite(event.at0_0, event);
+                trMessageSprite(event.index, event);
                 break;
             }
         }

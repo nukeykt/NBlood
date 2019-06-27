@@ -61,4 +61,13 @@ bool isAnnoyingUnit(spritetype* pDude);
 bool unitCanFly(spritetype* pDude);
 bool isMeleeUnit(spritetype* pDude);
 void activateDudes(int rx);
+bool affectedByTargetChg(XSPRITE* pXDude);
+int getDataFieldOfObject(int objType, int objIndex, int dataIndex);
+bool setDataValueOfObject(int objType, int objIndex, int dataIndex, int value);
+bool goalValueIsReached(XSPRITE* pXSprite);
+bool getDudesForTargetChg(XSPRITE* pXSprite);
+void stopWindOnSectors(XSPRITE* pXSource);
+void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector);
+void useEffectGen(XSPRITE* pXSource, spritetype* pSprite);
+void useSeqSpawnerGen(XSPRITE* pXSource, spritetype* pSprite);
 // -------------------------------------------------------
