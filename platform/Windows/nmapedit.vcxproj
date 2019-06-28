@@ -206,6 +206,7 @@
     <ClCompile Include="..\..\source\blood\src\m32exec.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32structures.cpp" />
     <ClCompile Include="..\..\source\blood\src\m32vars.cpp" />
+    <ClCompile Include="..\..\source\blood\src\misc.cpp" />
     <ClCompile Include="..\..\source\blood\src\qheap.cpp" />
     <ClCompile Include="..\..\source\blood\src\replace.cpp" />
     <ClCompile Include="..\..\source\blood\src\resource.cpp" />

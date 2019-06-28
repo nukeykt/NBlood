@@ -38,8 +38,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "common.h"
 #include "common_game.h"
+#include "db.h"
+#include "globals.h"
+#include "gui.h"
+#include "qheap.h"
+#include "replace.h"
+#include "resource.h"
 #include "screen.h"
+#include "sound.h"
 #include "tile.h"
+#include "trig.h"
 #include "mapster32.h"
 #include "keys.h"
 
@@ -8257,7 +8265,7 @@ static int osdcmd_quit(osdcmdptr_t UNUSED(parm))
     OSD_ShowDisplay(0);
 
     ExtUnInit();
-    engineUnInit();
+    scrUnInit();
 
     Bfflush(NULL);
 
@@ -9580,6 +9588,8 @@ int32_t ExtInit(void)
     return rv;
 }
 
+unsigned int nMaxAlloc = 0x4000000;
+
 int32_t ExtPostStartupWindow(void)
 {
     G_LoadGroups(!NoAutoLoad);
@@ -9587,7 +9597,22 @@ int32_t ExtPostStartupWindow(void)
     if (!g_useCwd)
         G_CleanupSearchPaths();
 
+    Resource::heap = new QHeap(nMaxAlloc);
+
+    // NUKE-TODO: Add ability to specify custom RFF files
+    gSysRes.Init("BLOOD.RFF");
+    gGuiRes.Init("GUI.RFF");
+    gSoundRes.Init("SOUNDS.RFF");
+
+    HookReplaceFunctions();
+
     scrInit();
+    trigInit(gSysRes);
+    scrCreateStdColors();
+    sndInit();
+    dbInit();
+
+    artLoadFiles("TILES%03i.ART", MAXCACHE1DSIZE);
     //if (engineInit())
     //{
     //    initprintf("There was a problem initializing the engine.\n");
@@ -9660,6 +9685,8 @@ void ExtUnInit(void)
 #endif
 
    // Duke_CommonCleanup();
+    memset(palookup, 0, sizeof(palookup));
+    memset(blendtable, 0, sizeof(blendtable));
 }
 
 void ExtPreCheckKeys(void) // just before drawrooms
