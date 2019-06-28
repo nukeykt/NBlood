@@ -11376,3 +11376,9 @@ static void GenericSpriteSearch(void)
 
     keystatus[KEYSC_ESC] = 0;
 }
+
+void QuitGame(void)
+{
+    // NUKE-TODO:
+    Bexit(0);
+}
