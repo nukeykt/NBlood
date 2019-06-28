@@ -96,6 +96,12 @@
     <ClCompile Include="..\..\source\blood\src\getopt.cpp">
       <Filter>Source Files\blood_editor</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\trig.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\tile.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\build\include\startwin.editor.h">

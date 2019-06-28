@@ -212,6 +212,8 @@
     <ClCompile Include="..\..\source\blood\src\screen.cpp" />
     <ClCompile Include="..\..\source\blood\src\sectorfx.cpp" />
     <ClCompile Include="..\..\source\blood\src\sound.cpp" />
+    <ClCompile Include="..\..\source\blood\src\tile.cpp" />
+    <ClCompile Include="..\..\source\blood\src\trig.cpp" />
     <ClCompile Include="..\..\source\build\src\build.cpp" />
     <ClCompile Include="..\..\source\build\src\config.cpp" />
     <ClCompile Include="..\..\source\build\src\startgtk.editor.cpp">

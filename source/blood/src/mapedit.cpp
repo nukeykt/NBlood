@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "common_game.h"
 #include "screen.h"
+#include "tile.h"
 #include "mapster32.h"
 #include "keys.h"
 
@@ -1582,6 +1583,8 @@ ENDFOR1:
     overridepm16y = -1;
 }
 
+int32_t AmbienceToggle = 1;
+int32_t ParentalLock = 0;
 #if 0
 
 #define SOUND_NUMDISPLINES IHELP_NUMDISPLINES
@@ -7946,7 +7949,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     int32_t sz = atoi_safe(argv[i+1]);
                     if (sz >= 16<<10 && sz <= 1024<<10)
                     {
-                        g_maxCacheSize = sz<<10;
+                        MAXCACHE1DSIZE = sz<<10;
                         initprintf("Cache size: %dkB\n",sz);
 
                         COPYARG(i);
@@ -9656,7 +9659,7 @@ void ExtUnInit(void)
     Bfree(helppage);
 #endif
 
-    Duke_CommonCleanup();
+   // Duke_CommonCleanup();
 }
 
 void ExtPreCheckKeys(void) // just before drawrooms
@@ -11375,6 +11378,10 @@ static void GenericSpriteSearch(void)
     videoShowFrame(1);
 
     keystatus[KEYSC_ESC] = 0;
+}
+
+void netGetPackets(void)
+{
 }
 
 void QuitGame(void)
