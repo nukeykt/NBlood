@@ -751,10 +751,10 @@ static int32_t check_spritelist_consistency()
 
         csc_i = i;
 
-        if ((statnum==MAXSTATUS) != (sectnum==MAXSECTORS))
-            return 2;  // violation of .statnum==MAXSTATUS iff .sectnum==MAXSECTORS
+        if ((statnum==MAXSTATUS) != (sectnum==-1))
+            return 2;  // violation of .statnum==MAXSTATUS iff .sectnum==-1
 
-        if ((unsigned)statnum > MAXSTATUS || (sectnum!=MAXSECTORS && (unsigned)sectnum > (unsigned)numsectors))
+        if ((unsigned)statnum > MAXSTATUS || (sectnum!=-1 && (unsigned)sectnum > (unsigned)numsectors))
             return 3;  // oob sectnum or statnum
 
         if (statnum != MAXSTATUS)

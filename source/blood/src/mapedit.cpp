@@ -7695,10 +7695,13 @@ static void InitCustomColors(void)
     int32_t i;
     palette_t *edcol;
 
-    /* blue */
-    vgapal16[9*4+0] = 252;
-    vgapal16[9*4+1] = 124;
-    vgapal16[9*4+2] = 28;
+    vgapal16[10*4+0] = 83;
+    vgapal16[10*4+1] = 139;
+    vgapal16[10*4+2] = 83;
+
+    vgapal16[13*4+0] = 51;
+    vgapal16[13*4+1] = 107;
+    vgapal16[13*4+2] = 227;
 
     /* orange */
     vgapal16[31*4+0] = 80; // blue
@@ -7731,9 +7734,9 @@ static void InitCustomColors(void)
     vgapal16[32*4+2] = 84;
 
     // grid color
-    vgapal16[25*4+0] = 64;
-    vgapal16[25*4+1] = 56;
-    vgapal16[25*4+2] = 56;
+    vgapal16[25*4+0] = 59;
+    vgapal16[25*4+1] = 59;
+    vgapal16[25*4+2] = 59;
 
     vgapal16[26*4+0] = 96;
     vgapal16[26*4+1] = 96;
@@ -7751,10 +7754,10 @@ static void InitCustomColors(void)
 
     for (i = 0; i<256; i++)
     {
-        if (editorcolors[i] == 0)
+        //if (editorcolors[i] == 0)
         {
             edcol = (palette_t *)&vgapal16[4*i];
-            editorcolors[i] = getclosestcol_lim(edcol->b,edcol->g,edcol->r, 239);
+            editorcolors[i] = getclosestcol_lim(edcol->b,edcol->g,edcol->r, 254);
         }
     }
 }
@@ -9651,13 +9654,13 @@ void ExtPostInit(void)
 {
     InitCustomColors();
 
-    if (!(duke3d_m32_globalflags & DUKE3D_NO_PALETTE_CHANGES))
-    {
-        // Make base shade table at shade 0 into the identity map.
-        // (In the shade table of Duke3D's PALETTE.DAT, palookup[0][239]==143.)
-        // This makes it possible to sensibly use Lunatic's engine.saveLookupDat().
-        palookup[0][239] = 239;
-    }
+    //if (!(duke3d_m32_globalflags & DUKE3D_NO_PALETTE_CHANGES))
+    //{
+    //    // Make base shade table at shade 0 into the identity map.
+    //    // (In the shade table of Duke3D's PALETTE.DAT, palookup[0][239]==143.)
+    //    // This makes it possible to sensibly use Lunatic's engine.saveLookupDat().
+    //    palookup[0][239] = 239;
+    //}
 
     if (!(duke3d_m32_globalflags & DUKE3D_NO_HARDCODED_FOGPALS))
         paletteSetupDefaultFog();
