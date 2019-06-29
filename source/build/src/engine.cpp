@@ -3493,24 +3493,23 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
     if (globalorientation&64)  //Relative alignment
     {
-        float dx, dy, fx, fy;
-        int x, y;
+        float dx, dy, x, y;
         dx = (wall[wal->point2].x-wal->x)*dasqr*(1.f/16384.f);
         dy = (wall[wal->point2].y-wal->y)*dasqr*(1.f/16384.f);
 
         fi = Bsqrtf(daslope*daslope+16777216.f);
 
-        fx = globalx; fy = globaly;
-        globalx = (fx*dx+fy*dy)*(1.f/65536.f);
-        globaly = (-fy*dx+fx*dy)*fi*(1.f/268435456.f);
+        x = globalx; y = globaly;
+        globalx = (x*dx+y*dy)*(1.f/65536.f);
+        globaly = (-y*dx+x*dy)*fi*(1.f/268435456.f);
 
-        x = (wal->x-globalposx)<<8; y = (wal->y-globalposy)<<8;
-        globalx1 = dmulscale16(-x,Blrintf(dx),-y,Blrintf(dy));
-        globaly1 = mulscale12(dmulscale16(-y,Blrintf(dx),x,Blrintf(dy)),fi);
+        x = (wal->x-globalposx)*256.f; y = (wal->y-globalposy)*256.f;
+        globalx1 = Blrintf((-x*dx-y*dy)*(1.f/65536.f));
+        globaly1 = Blrintf((-y*dx+x*dy)*fi*(1.f/268435456.f));
 
-        fx = globalx2; fy = globaly2;
-        globalx2 = (fx*dx+fy*dy)*(1.f/65536.f);
-        globaly2 = (-fy*dx+fx*dy)*fi*(1.f/268435456.f);
+        x = globalx2; y = globaly2;
+        globalx2 = (x*dx+y*dy)*(1.f/65536.f);
+        globaly2 = (-y*dx+x*dy)*fi*(1.f/268435456.f);
     }
     if (globalorientation&0x4)
     {
