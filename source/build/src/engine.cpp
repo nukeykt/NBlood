@@ -9504,6 +9504,7 @@ static void enginePrepareLoadBoard(int32_t fil, vec3_t *dapos, int16_t *daang, i
     Bmemset(show2dsector, 0, sizeof(show2dsector));
     Bmemset(show2dsprite, 0, sizeof(show2dsprite));
     Bmemset(show2dwall, 0, sizeof(show2dwall));
+    Bmemset(wallcstat14, 0, sizeof(wallcstat14));
 #ifdef STRUCT_TRACKERS_ENABLED
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));
     Bmemset(spritechanged, 0, sizeof(spritechanged));
@@ -12112,9 +12113,12 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
         for (w=0; w<numwalls; w++)
             if (walbitmap[w>>3] & (1<<(w&7)))
             {
-                wall[w].cstat |= (1<<14);
+                wallcstat14[w>>3] |= 1<<(w&7);
                 if (flags&2)
-                    wall[lastwall(w)].cstat |= (1<<14);
+                {
+                    int wn = lastwall(w);
+                    wallcstat14[wn>>3] |= 1<<(wn&7);
+                }
             }
     }
 }
@@ -12131,10 +12135,11 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
     if (editstatus)
     {
-        wall[pointhighlight].cstat |= (1<<14);
+        wallcstat14[pointhighlight>>3] |= 1<<(pointhighlight&7);
         if (linehighlight >= 0 && linehighlight < MAXWALLS)
-            wall[linehighlight].cstat |= (1<<14);
-        wall[lastwall(pointhighlight)].cstat |= (1<<14);
+            wallcstat14[linehighlight>>3] |= 1<<(linehighlight&7);
+        int wn = lastwall(pointhighlight);
+        wallcstat14[wn>>3] |= 1<<(wn&7);
     }
 
     do
@@ -12145,7 +12150,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             wall[tempshort].x = dax;
             wall[tempshort].y = day;
-            wall[tempshort].cstat |= (1<<14);
+            wallcstat14[tempshort>>3] |= 1<<(tempshort&7);
         }
         else
         {
@@ -12158,7 +12163,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
                     tempshort = wall[thelastwall].nextwall;
                     wall[tempshort].x = dax;
                     wall[tempshort].y = day;
-                    wall[tempshort].cstat |= (1<<14);
+                    wallcstat14[tempshort>>3] |= 1<<(tempshort&7);
                 }
                 else
                 {

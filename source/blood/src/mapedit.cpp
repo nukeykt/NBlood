@@ -401,7 +401,7 @@ void ExtLoadMap(const char *mapname)
     // Old-fashioned multi-psky handling setup.
     G_SetupGlobalPsky();
 
-    parallaxtype = 0;
+    //parallaxtype = 0;
 
     //////////
 #if M32_UNDO
@@ -626,10 +626,10 @@ const char *ExtGetWallCaption(int16_t wallnum)
 
     Bmemset(tempbuf,0,sizeof(tempbuf));
 
-    if (wall[wallnum].cstat & (1<<14))
+    if (wallcstat14[wallnum>>3]&(1<<(wallnum&7)))
     {
         Bsprintf(tempbuf,"%d", wallength(wallnum));
-        wall[wallnum].cstat &= ~(1<<14);
+        wallcstat14[wallnum>>3] &= ~(1<<(wallnum&7));
         return tempbuf;
     }
 
