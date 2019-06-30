@@ -534,6 +534,798 @@ static void taglab_handle1(int32_t linktagp, int32_t tagnum, char *buf)
 }
 ////////// end tag labeling system //////////
 
+////////// blood stuff //////////
+
+struct TextList {
+    short id;
+    const char* text;
+};
+
+TextList tOffOn[] = {
+    { 0, "Off" },
+    { 1, "On" },
+};
+
+TextList tSpriteType[] = {
+    { 0, "Decoration" },
+    { 1, "Player Start" },
+    { 2, "Bloodbath Start" },
+    { 3, "Off marker" },
+    { 4, "On marker" },
+    { 5, "Axis marker" },
+    { 6, "Lower link" },
+    { 7, "Upper link" },
+    { 8, "Teleport target" },
+    { 10, "Lower water" },
+    { 9, "Upper water" },
+    { 12, "Lower stack" },
+    { 11, "Upper stack" },
+    { 14, "Lower goo" },
+    { 13, "Upper goo" },
+    { 15, "Path marker" },
+    { 16, "Alignable Region" },
+    { 17, "Base Region" },
+    { 18, "Dude Spawn" },
+    { 19, "Earthquake" },
+    { 20, "Toggle switch" },
+    { 21, "1-Way switch" },
+    { 22, "Combination switch" },
+    { 23, "Padlock (1-shot)" },
+    { 30, "Torch" },
+    { 32, "Candle" },
+    { 40, gWeaponText[0] },
+    { 47, gWeaponText[7] },
+    { 43, gWeaponText[3] },
+    { 41, gWeaponText[1] },
+    { 42, gWeaponText[2] },
+    { 46, gWeaponText[6] },
+    { 49, gWeaponText[9] },
+    { 48, gWeaponText[8] },
+    { 45, gWeaponText[5] },
+    { 50, gWeaponText[10] },
+    { 44, gWeaponText[4] },
+    { 60, gAmmoText[0] },
+    { 62, gAmmoText[2] },
+    { 63, gAmmoText[3] },
+    { 64, gAmmoText[4] },
+    { 65, gAmmoText[5] },
+    { 67, gAmmoText[7] },
+    { 68, gAmmoText[8] },
+    { 69, gAmmoText[9] },
+    { 70, gAmmoText[10] },
+    { 72, gAmmoText[12] },
+    { 73, gAmmoText[13] },
+    { 76, gAmmoText[16] },
+    { 79, gAmmoText[19] },
+    { 66, gAmmoText[6] },
+    { 80, "Random Ammo" },
+    { 100, gItemText[0] },
+    { 101, gItemText[1] },
+    { 102, gItemText[2] },
+    { 103, gItemText[3] },
+    { 104, gItemText[4] },
+    { 105, gItemText[5] },
+    { 106, gItemText[6] },
+    { 107, gItemText[7] },
+    { 108, gItemText[8] },
+    { 109, gItemText[9] },
+    { 110, gItemText[10] },
+    { 111, gItemText[11] },
+    { 112, gItemText[12] },
+    { 113, gItemText[13] },
+    { 114, gItemText[14] },
+    { 115, gItemText[15] },
+    { 116, gItemText[16] },
+    { 117, gItemText[17] },
+    { 118, gItemText[18] },
+    { 119, gItemText[19] },
+    { 120, gItemText[20] },
+    { 121, gItemText[21] },
+    { 122, gItemText[22] },
+    { 123, gItemText[23] },
+    { 124, gItemText[24] },
+    { 125, gItemText[25] },
+    { 126, gItemText[26] },
+    { 127, gItemText[27] },
+    { 128, gItemText[28] },
+    { 129, gItemText[29] },
+    { 130, gItemText[30] },
+    { 131, gItemText[31] },
+    { 132, gItemText[32] },
+    { 133, gItemText[33] },
+    { 134, gItemText[34] },
+    { 135, gItemText[35] },
+    { 136, gItemText[36] },
+    { 137, gItemText[37] },
+    { 138, gItemText[38] },
+    { 139, gItemText[39] },
+    { 140, gItemText[40] },
+    { 141, gItemText[41] },
+    { 142, gItemText[42] },
+    { 143, gItemText[43] },
+    { 144, gItemText[44] },
+    { 145, gItemText[45] },
+    { 146, gItemText[46] },
+    { 201, "Cultist w/Tommy" },
+    { 202, "Cultist w/Shotgun" },
+    { 247, "Cultist w/Tesla" },
+    { 248, "Cultist w/Dynamite" },
+    { 249, "Beast Cultist" },
+    { 250, "Tiny Caleb" },
+    { 251, "Beast" },
+    { 203, "Axe Zombie" },
+    { 204, "Fat Zombie" },
+    { 205, "Earth Zombie" },
+    { 244, "Sleep Zombie" },
+    { 245, "Innocent" },
+    { 206, "Flesh Gargoyle" },
+    { 207, "Stone Gargoyle" },
+    { 208, "Flesh Statue" },
+    { 209, "Stone Statue" },
+    { 210, "Phantasm" },
+    { 211, "Hound" },
+    { 212, "Hand" },
+    { 213, "Brown Spider" },
+    { 214, "Red Spider" },
+    { 216, "Mother Spider" },
+    { 215, "Black Spider" },
+    { 217, "GillBeast" },
+    { 218, "Eel" },
+    { 219, "Bat" },
+    { 220, "Rat" },
+    { 221, "Green Pod" },
+    { 222, "Green Tentacle" },
+    { 223, "Fire Pod" },
+    { 224, "Fire Tentacle" },
+    { 227, "Cerberus" },
+    { 229, "Tchernobog" },
+    { 230, "TCultist prone" },
+    { 246, "SCultist prone" },
+    { 400, "TNT Barrel" },
+    { 401, "Armed Prox Bomb" },
+    { 402, "Armed Remote" },
+    { 403, "Blue Vase" },
+    { 404, "Brown Vase" },
+    { 405, "Crate Face" },
+    { 406, "Glass Window" },
+    { 407, "Fluorescent Light" },
+    { 408, "Wall Crack" },
+    { 409, "Wood Beam" },
+    { 410, "Spider's Web" },
+    { 411, "MetalGrate1" },
+    { 412, "FlammableTree" },
+    { 413, "Machine Gun" },
+    { 414, "Falling Rock" },
+    { 415, "Kickable Pail" },
+    { 416, "Gib Object" },
+    { 417, "Explode Object" },
+    { 427, "Zombie Head" },
+    { 450, "Spike Trap" },
+    { 451, "Rock Trap" },
+    { 452, "Flame Trap" },
+    { 454, "Saw Blade" },
+    { 455, "Electric Zap" },
+    { 456, "Switched Zap" },
+    { 457, "Pendulum" },
+    { 458, "Guillotine" },
+    { 459, "Hidden Exploder" },
+    { 700, "Trigger Gen" },
+    { 701, "WaterDrip Gen" },
+    { 702, "BloodDrip Gen" },
+    { 703, "Fireball Gen" },
+    { 704, "EctoSkull Gen" },
+    { 705, "Dart Gen" },
+    { 706, "Bubble Gen" },
+    { 707, "Multi-Bubble Gen" },
+    { 708, "SFX Gen" },
+    { 709, "Sector SFX" },
+    { 710, "Ambient SFX" },
+    { 711, "Player SFX" },
+};
+
+TextList tWallType[] = {
+    { 0, "Normal" },
+    { 20, "Toggle switch" },
+    { 21, "1-Way switch" },
+    { 500, "Wall Link" },
+    { 501, "Wall Stack (unsupp.)" },
+    { 511, "Gib Wall" },
+};
+
+TextList tSectType[] = {
+    { 0, "Normal" },
+    { 600, "Z Motion" },
+    { 602, "Z Motion SPRITE" },
+    { 603, "Warp" },
+    { 604, "Teleporter" },
+    { 614, "Slide Marked" },
+    { 615, "Rotate Marked" },
+    { 616, "Slide" },
+    { 617, "Rotate" },
+    { 613, "Step Rotate" },
+    { 612, "Path Sector" },
+    { 618, "Damage Sector" },
+    { 619, "Counter Sector" },
+};
+
+TextList tWaveForm[] = {
+    { 1, "Linear" },
+    { 0, "Sine" },
+    { 2, "SlowOff"},
+    { 3, "SlowOn"},
+};
+
+TextList tLighting[] = {
+    { 0, "None" },
+    { 1, "Square" },
+    { 2, "Saw" },
+    { 3, "Ramp up" },
+    { 4, "Ramp down" },
+    { 5, "Sine" },
+    { 6, "Flicker1" },
+    { 7, "Flicker2" },
+    { 8, "Flicker3" },
+    { 9, "Flicker4" },
+    { 10, "Strobe" },
+    { 11, "Search" },
+};
+
+TextList tCmd[] = {
+    { 0, "OFF" },
+    { 1, "ON" },
+    { 2, "State" },
+    { 3, "Toggle" },
+    { 4, "!State" },
+    { 5, "Link" },
+    { 6, "Lock" },
+    { 7, "Unlock" },
+    { 8, "Toggle Lock" },
+    { 9, "Stop OFF" },
+    { 10, "Stop ON" },
+    { 11, "Stop Next" },
+};
+
+TextList tRespawn[] = {
+    { 0, "Optional" },
+    { 1, "Never" },
+    { 2, "Always" },
+    { 3, "Permanent" },
+};
+
+const char* pzOffOn[2];
+const char* pzSpriteType[1024];
+const char* pzWallType[1024];
+const char* pzSectType[1024];
+const char* pzWaveForm[8];
+const char* pzLighting[20];
+const char* pzCmd[64];
+const char* pzNumber[192]; // UNUSED?
+const char* pzRespawn[4];
+char sNumberBuffer[192][4];
+
+void FillList(const char **a1, TextList *a2, int a3)
+{
+    for (int i = 0; i < a3; i++)
+    {
+        a1[a2[i].id] = a2[i].text;
+    }
+}
+
+void FillStringLists()
+{
+    FillList(pzOffOn, tOffOn, ARRAY_SIZE(tOffOn));
+    FillList(pzSpriteType, tSpriteType, ARRAY_SIZE(tSpriteType));
+    FillList(pzWallType, tWallType , ARRAY_SIZE(tWallType));
+    FillList(pzSectType, tSectType, ARRAY_SIZE(tSectType));
+    FillList(pzWaveForm, tWaveForm, ARRAY_SIZE(tWaveForm));
+    FillList(pzLighting, tLighting, ARRAY_SIZE(tLighting));
+    FillList(pzCmd, tCmd, ARRAY_SIZE(tCmd));
+    for (int i = 0; i < 192; i++)
+    {
+        sprintf(sNumberBuffer[i], "%d", i);
+        pzNumber[i] = sNumberBuffer[i];
+    }
+    FillList(pzRespawn, tRespawn, ARRAY_SIZE(tRespawn));
+}
+
+// NUKE-TODO: Implement pc speaker sound?
+void Beep() { }
+void BeepModify() { asksave = 1; /* Necessary? */ }
+
+char gTempBuf[256];
+
+enum CONTROL_TYPE
+{
+    CONTROL_TYPE_0 = 0, // LABEL
+    CONTROL_TYPE_1, // NUMBER
+    CONTROL_TYPE_2, // TOGGLEBUTTON
+    RADIOBUTTON, // 3 RADIOBUTTON
+    CONTROL_TYPE_4, // LIST
+    CONTROL_TYPE_5,
+    CONTROL_END = 255
+};
+
+struct CONTROL {
+    int at0;
+    int at4;
+    int at8; // tag?
+    CONTROL_TYPE type; // atc
+    const char* atd;
+    int at11; // minvalue
+    int at15; // maxvalue
+    const char** names; // at19
+    char (*at1d)(CONTROL* control, char key);
+    int at21; // value
+};
+
+char sub_1BE80(CONTROL* control, char a2);
+char sub_1BFD8(CONTROL* control, char a2);
+char sub_1BFF4(CONTROL* control, char a2);
+
+CONTROL controlXSprite[] = {
+    { 0, 0, 1, CONTROL_TYPE_4, "Type %4d: %-18.18s", 0, 1023, pzSpriteType, NULL, 0 },
+    { 0, 1, 2, CONTROL_TYPE_1, "RX ID: %4d", 0, 1023, NULL, sub_1BE80, 0 },
+    { 0, 2, 3, CONTROL_TYPE_1, "TX ID: %4d", 0, 1023, NULL, sub_1BE80, 0 },
+    { 0, 3, 4, CONTROL_TYPE_4, "State %1d: %-3.3s", 0, 1, pzOffOn, NULL, 0 },
+    { 0, 4, 5, CONTROL_TYPE_4, "Cmd: %3d: %-12.12s", 0, 255, pzCmd, NULL, 0 },
+    { 0, 5, 0, CONTROL_TYPE_0, "Send when:", 0, 0, NULL, NULL, 0 },
+    { 0, 6, 6, CONTROL_TYPE_2, "going ON:", 0, 0, NULL, NULL, 0 },
+    { 0, 7, 7, CONTROL_TYPE_2, "going OFF:", 0, 0, NULL, NULL, 0 },
+    { 0, 8, 8, CONTROL_TYPE_1, "busyTime = %4d", 0, 4095, NULL, NULL, 0 },
+    { 0, 9, 9, CONTROL_TYPE_1, "waitTime = %4d", 0, 4095, NULL, NULL, 0 },
+    { 0, 10, 10, CONTROL_TYPE_4, "restState %1d: %-3.3s", 0, 1, pzOffOn, NULL, 0 },
+    { 30, 0, 0, CONTROL_TYPE_0, "Trigger On:", 0, 0, NULL, NULL, 0 },
+    { 30, 1, 11, CONTROL_TYPE_2, "Push", 0, 0, NULL, NULL, 0 },
+    { 30, 2, 12, CONTROL_TYPE_2, "Vector", 0, 0, NULL, NULL, 0 },
+    { 30, 3, 13, CONTROL_TYPE_2, "Impact", 0, 0, NULL, NULL, 0 },
+    { 30, 4, 14, CONTROL_TYPE_2, "Pickup", 0, 0, NULL, NULL, 0 },
+    { 30, 5, 15, CONTROL_TYPE_2, "Touch", 0, 0, NULL, NULL, 0 },
+    { 30, 6, 16, CONTROL_TYPE_2, "Sight", 0, 0, NULL, NULL, 0 },
+    { 30, 7, 17, CONTROL_TYPE_2, "Proximity", 0, 0, NULL, NULL, 0 },
+    { 30, 8, 18, CONTROL_TYPE_2, "DudeLockout", 0, 0, NULL, NULL, 0 },
+    { 21, 9, 0, CONTROL_TYPE_0, "Launch 1 2 3 4 5 S B C T", 0, 0, NULL, NULL, 0 },
+    { 28, 10, 19, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 30, 10, 20, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 32, 10, 21, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 34, 10, 22, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 36, 10, 23, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 38, 10, 24, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 40, 10, 25, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 42, 10, 26, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 44, 10, 27, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 46, 0, 0, CONTROL_TYPE_0, "Trigger Flags:", 0, 0, NULL, NULL, 0 },
+    { 46, 1, 28, CONTROL_TYPE_2, "Decoupled", 0, 0, NULL, NULL, 0 },
+    { 46, 2, 29, CONTROL_TYPE_2, "1-shot", 0, 0, NULL, NULL, 0 },
+    { 46, 3, 30, CONTROL_TYPE_2, "Locked", 0, 0, NULL, NULL, 0 },
+    { 46, 4, 31, CONTROL_TYPE_2, "Interruptable", 0, 0, NULL, NULL, 0 },
+    { 46, 5, 32, CONTROL_TYPE_1, "Data1: %5d", 0, 65535, NULL, sub_1BFF4, 0 },
+    { 46, 6, 33, CONTROL_TYPE_1, "Data2: %5d", 0, 65535, NULL, sub_1BFF4, 0 },
+    { 46, 7, 34, CONTROL_TYPE_1, "Data3: %5d", 0, 65535, NULL, sub_1BFF4, 0 },
+    { 46, 8, 35, CONTROL_TYPE_1, "Data4: %5d", 0, 65535, NULL, sub_1BFF4, 0 },
+    { 46, 9, 36, CONTROL_TYPE_1, "Key: %1d", 0, 7, NULL, NULL, 0 },
+    { 46, 10, 37, CONTROL_TYPE_4, "Wave: %1d %-8.8s", 0, 7, pzWaveForm, NULL, 0 },
+    { 62, 0, 0, CONTROL_TYPE_0, "Respawn:", 0, 0, NULL, NULL, 0 },
+    { 62, 1, 38, CONTROL_TYPE_4, "When %1d: %-6.6s", 0, 3, pzRespawn, NULL, 0 },
+    { 62, 3, 0, CONTROL_TYPE_0, "Dude Flags:", 0, 0, NULL, NULL, 0 },
+    { 62, 4, 39, CONTROL_TYPE_2, "dudeDeaf", 0, 0, NULL, NULL, 0 },
+    { 62, 5, 40, CONTROL_TYPE_2, "dudeAmbush", 0, 0, NULL, NULL, 0 },
+    { 62, 6, 41, CONTROL_TYPE_2, "dudeGuard", 0, 0, NULL, NULL, 0 },
+    { 62, 7, 42, CONTROL_TYPE_2, "reserved", 0, 0, NULL, NULL, 0 },
+    { 62, 9, 43, CONTROL_TYPE_1, "Lock msg: %3d", 0, 255, NULL, NULL, 0 },
+    { 62, 10, 44, CONTROL_TYPE_1, "Drop item: %3d", 0, 255, NULL, NULL, 0 },
+    { 0, 0, 0, CONTROL_END, NULL, 0, 0, NULL, NULL, 0 },
+};
+
+CONTROL controlXWall[] = {
+    { 0, 0, 1, CONTROL_TYPE_4, "Type %4d: %-18.18s", 0, 1023, pzWallType, NULL, 0 },
+    { 0, 1, 2, CONTROL_TYPE_1, "RX ID: %4d", 0, 1023, NULL, sub_1BE80, 0 },
+    { 0, 2, 3, CONTROL_TYPE_1, "TX ID: %4d", 0, 1023, NULL, sub_1BE80, 0 },
+    { 0, 3, 4, CONTROL_TYPE_4, "State %1d: %-3.3s", 0, 1, pzOffOn, NULL, 0 },
+    { 0, 4, 5, CONTROL_TYPE_4, "Cmd: %3d: %-12.12s", 0, 255, pzCmd, NULL, 0 },
+    { 0, 5, 0, CONTROL_TYPE_0, "Send when:", 0, 0, NULL, NULL, 0 },
+    { 0, 6, 6, CONTROL_TYPE_2, "going ON:", 0, 0, NULL, NULL, 0 },
+    { 0, 7, 7, CONTROL_TYPE_2, "going OFF:", 0, 0, NULL, NULL, 0 },
+    { 0, 8, 8, CONTROL_TYPE_1, "busyTime = %4d", 0, 4095, NULL, NULL, 0 },
+    { 0, 9, 9, CONTROL_TYPE_1, "waitTime = %4d", 0, 4095, NULL, NULL, 0 },
+    { 0, 10, 10, CONTROL_TYPE_4, "restState %1d: %-3.3s", 0, 1, pzOffOn, NULL, 0 },
+    { 30, 0, 0, CONTROL_TYPE_0, "Trigger On:", 0, 0, NULL, NULL, 0 },
+    { 30, 1, 11, CONTROL_TYPE_2, "Push", 0, 0, NULL, NULL, 0 },
+    { 30, 2, 12, CONTROL_TYPE_2, "Vector", 0, 0, NULL, NULL, 0 },
+    { 30, 3, 13, CONTROL_TYPE_2, "Reserved", 0, 0, NULL, NULL, 0 },
+    { 30, 4, 14, CONTROL_TYPE_2, "DudeLockout", 0, 0, NULL, NULL, 0 },
+    { 46, 0, 0, CONTROL_TYPE_0, "Trigger Flags:", 0, 0, NULL, NULL, 0 },
+    { 46, 1, 15, CONTROL_TYPE_2, "Decoupled", 0, 0, NULL, NULL, 0 },
+    { 46, 2, 16, CONTROL_TYPE_2, "1-shot", 0, 0, NULL, NULL, 0 },
+    { 46, 3, 17, CONTROL_TYPE_2, "Locked", 0, 0, NULL, NULL, 0 },
+    { 46, 4, 18, CONTROL_TYPE_2, "Interruptable", 0, 0, NULL, NULL, 0 },
+    { 46, 6, 19, CONTROL_TYPE_1, "Data: %5d", 0, 65535, NULL, NULL, 0 },
+    { 46, 7, 20, CONTROL_TYPE_1, "Key: %1d", 0, 7, NULL, NULL, 0 },
+    { 46, 8, 21, CONTROL_TYPE_1, "panX = %4d", -128, 127, NULL, NULL, 0 },
+    { 46, 9, 22, CONTROL_TYPE_1, "panY = %4d", -128, 127, NULL, NULL, 0 },
+    { 46, 10, 23, CONTROL_TYPE_2, "panAlways", 0, 0, NULL, NULL, 0 },
+    { 0, 0, 0, CONTROL_END, NULL, 0, 0, NULL, NULL, 0 },
+};
+
+CONTROL controlXSector2[] = {
+    { 0, 0, 0, CONTROL_TYPE_0, "Lighting:", 0, 0, NULL, NULL, 0 },
+    { 0, 1, 1, CONTROL_TYPE_4, "Wave: %1d %-9.9s", 0, 15, pzLighting, NULL, 0 },
+    { 0, 2, 2, CONTROL_TYPE_1, "Amplitude: %+4d", -128, 127, NULL, NULL, 0 },
+    { 0, 3, 3, CONTROL_TYPE_1, "Freq:    %3d", 0, 255, NULL, NULL, 0 },
+    { 0, 4, 4, CONTROL_TYPE_1, "Phase:     %3d", 0, 255, NULL, NULL, 0 },
+    { 0, 5, 5, CONTROL_TYPE_2, "floor", 0, 0, NULL, NULL, 0 },
+    { 0, 6, 6, CONTROL_TYPE_2, "ceiling", 0, 0, NULL, NULL, 0 },
+    { 0, 7, 7, CONTROL_TYPE_2, "walls", 0, 0, NULL, NULL, 0 },
+    { 0, 8, 8, CONTROL_TYPE_2, "shadeAlways", 0, 0, NULL, NULL, 0 },
+    { 20, 0, 0, CONTROL_TYPE_0, "More Lighting:", 0, 0, NULL, NULL, 0 },
+    { 20, 1, 9, CONTROL_TYPE_2, "Color Lights", 0, 0, NULL, NULL, 0 },
+    { 20, 2, 10, CONTROL_TYPE_1, "ceil  pal2 = %3d", 0, 15, NULL, NULL, 0 },
+    { 20, 3, 11, CONTROL_TYPE_1, "floor pal2 = %3d", 0, 15, NULL, NULL, 0 },
+    { 40, 0, 0, CONTROL_TYPE_0, "Motion FX:", 0, 0, NULL, NULL, 0 },
+    { 40, 1, 12, CONTROL_TYPE_1, "Speed = %4d", 0, 255, NULL, NULL, 0 },
+    { 40, 2, 13, CONTROL_TYPE_1, "Angle = %4d", 0, 2047, NULL, NULL, 0 },
+    { 40, 3, 14, CONTROL_TYPE_2, "pan floor", 0, 0, NULL, NULL, 0 },
+    { 40, 4, 15, CONTROL_TYPE_2, "pan ceiling", 0, 0, NULL, NULL, 0 },
+    { 40, 5, 16, CONTROL_TYPE_2, "panAlways", 0, 0, NULL, NULL, 0 },
+    { 40, 6, 17, CONTROL_TYPE_2, "drag", 0, 0, NULL, NULL, 0 },
+    { 40, 8, 18, CONTROL_TYPE_1, "Wind vel: %4d", 0, 1023, NULL, NULL, 0 },
+    { 40, 9, 19, CONTROL_TYPE_1, "Wind ang: %4d", 0, 2047, NULL, NULL, 0 },
+    { 40, 10, 20, CONTROL_TYPE_2, "Wind always", 0, 0, NULL, NULL, 0 },
+    { 60, 0, 0, CONTROL_TYPE_0, "Continuous motion:", 0, 0, NULL, NULL, 0 },
+    { 60, 1, 21, CONTROL_TYPE_1, "Z range: %3d", 0, 31, NULL, NULL, 0 },
+    { 60, 2, 22, CONTROL_TYPE_1, "Theta: %-4d", 0, 2047, NULL, NULL, 0 },
+    { 60, 3, 23, CONTROL_TYPE_1, "Speed: %-4d", -2048, 2047, NULL, NULL, 0 },
+    { 60, 4, 24, CONTROL_TYPE_2, "always", 0, 0, NULL, NULL, 0 },
+    { 60, 5, 25, CONTROL_TYPE_2, "bob floor", 0, 0, NULL, NULL, 0 },
+    { 60, 6, 26, CONTROL_TYPE_2, "bob ceiling", 0, 0, NULL, NULL, 0 },
+    { 60, 7, 27, CONTROL_TYPE_2, "rotate", 0, 0, NULL, NULL, 0 },
+    { 60, 9, 28, CONTROL_TYPE_1, "DamageType: %1d", 0, 5, NULL, NULL, 0 },
+    { 0, 0, 0, CONTROL_END, NULL, 0, 0, NULL, NULL, 0 },
+};
+
+CONTROL controlXSector[] = {
+    { 0, 0, 1, CONTROL_TYPE_4, "Type %4d: %-16.16s", 0, 1023, pzSectType, NULL, 0 },
+    { 0, 1, 2, CONTROL_TYPE_1, "RX ID: %4d", 0, 1023, NULL, sub_1BE80, 0 },
+    { 0, 2, 3, CONTROL_TYPE_1, "TX ID: %4d", 0, 1023, NULL, sub_1BE80, 0 },
+    { 0, 3, 4, CONTROL_TYPE_4, "State %1d: %-3.3s", 0, 1, pzOffOn, NULL, 0 },
+    { 0, 4, 5, CONTROL_TYPE_4, "Cmd: %3d: %-12.12s", 0, 255, pzCmd, NULL, 0 },
+    { 0, 5, 0, CONTROL_TYPE_0, "Trigger Flags:", 0, 0, NULL, NULL, 0 },
+    { 0, 6, 6, CONTROL_TYPE_2, "Decoupled", 0, 0, NULL, NULL, 0 },
+    { 0, 7, 7, CONTROL_TYPE_2, "1-shot", 0, 0, NULL, NULL, 0 },
+    { 0, 8, 8, CONTROL_TYPE_2, "Locked", 0, 0, NULL, NULL, 0 },
+    { 0, 9, 9, CONTROL_TYPE_2, "Interruptable", 0, 0, NULL, NULL, 0 },
+    { 0, 10, 10, CONTROL_TYPE_2, "DudeLockout", 0, 0, NULL, NULL, 0 },
+    { 30, 0, 0, CONTROL_TYPE_0, "OFF->ON:", 0, 0, NULL, NULL, 0 },
+    { 30, 1, 11, CONTROL_TYPE_2, "send at ON", 0, 0, NULL, NULL, 0 },
+    { 30, 2, 12, CONTROL_TYPE_1, "busyTime = %3d", 0, 255, NULL, NULL, 0 },
+    { 30, 3, 13, CONTROL_TYPE_4, "wave: %1d %-8.8s", 0, 7, pzWaveForm, NULL, 0 },
+    { 30, 4, 14, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 32, 4, 15, CONTROL_TYPE_1, "waitTime = %3d", 0, 255, NULL, NULL, 0 },
+    { 30, 6, 0, CONTROL_TYPE_0, "ON->OFF:", 0, 0, NULL, NULL, 0 },
+    { 30, 7, 16, CONTROL_TYPE_2, "send at OFF", 0, 0, NULL, NULL, 0 },
+    { 30, 8, 17, CONTROL_TYPE_1, "busyTime = %3d", 0, 255, NULL, NULL, 0 },
+    { 30, 9, 18, CONTROL_TYPE_4, "wave: %1d %-8.8s", 0, 7, pzWaveForm, NULL, 0 },
+    { 30, 10, 19, CONTROL_TYPE_2, "", 0, 0, NULL, NULL, 0 },
+    { 32, 10, 20, CONTROL_TYPE_1, "waitTime = %3d", 0, 255, NULL, NULL, 0 },
+    { 48, 0, 0, CONTROL_TYPE_0, "Trigger On:", 0, 0, NULL, NULL, 0 },
+    { 48, 1, 21, CONTROL_TYPE_2, "Push", 0, 0, NULL, NULL, 0 },
+    { 48, 2, 22, CONTROL_TYPE_2, "Vector", 0, 0, NULL, NULL, 0 },
+    { 48, 3, 23, CONTROL_TYPE_2, "Reserved", 0, 0, NULL, NULL, 0 },
+    { 48, 4, 24, CONTROL_TYPE_2, "Enter", 0, 0, NULL, NULL, 0 },
+    { 48, 5, 25, CONTROL_TYPE_2, "Exit", 0, 0, NULL, NULL, 0 },
+    { 48, 6, 26, CONTROL_TYPE_2, "WallPush", 0, 0, NULL, NULL, 0 },
+    { 60, 0, 27, CONTROL_TYPE_1, "Data: %5d", 0, 65535, NULL, NULL, 0 },
+    { 60, 1, 28, CONTROL_TYPE_1, "Key: %1d", 0, 7, NULL, NULL, 0 },
+    { 60, 2, 29, CONTROL_TYPE_1, "Depth = %1d", 0, 7, NULL, NULL, 0 },
+    { 60, 3, 30, CONTROL_TYPE_2, "Underwater", 0, 0, NULL, NULL, 0 },
+    { 60, 4, 31, CONTROL_TYPE_2, "Crush", 0, 0, NULL, NULL, 0 },
+    { 60 ,10, 32, CONTROL_TYPE_5, "FX...", 0, 0, NULL, sub_1BFD8, 0 },
+    { 0, 0, 0, CONTROL_END, NULL, 0, 0, NULL, NULL, 0 },
+};
+
+void PrintText(int x, int y, short c, short bc, const char *pString)
+{
+    printext16(x*8+4, y*8+28, c, bc, pString, 0);
+}
+
+void ControlPrint(CONTROL* control, int a2)
+{
+    int vsi, vdi;
+    vsi = 11;
+    vdi = 8;
+    if (a2)
+    {
+        vsi = 14;
+        vdi = 0;
+    }
+    // Label?
+    if (control->at8 == 0)
+    {
+        vsi = 15;
+        vdi = 2;
+    }
+    switch (control->type)
+    {
+    case CONTROL_TYPE_0:
+    case CONTROL_TYPE_5:
+        PrintText(control->at0, control->at4, vsi, vdi, control->atd);
+        break;
+    case CONTROL_TYPE_1:
+        sprintf(gTempBuf, control->atd, control->at21);
+        PrintText(control->at0, control->at4, vsi, vdi, gTempBuf);
+        break;
+    case CONTROL_TYPE_4:
+        dassert(control->names != NULL);
+        sprintf(gTempBuf, control->atd, control->at21, control->names[control->at21]);
+        PrintText(control->at0, control->at4, vsi, vdi, gTempBuf);
+        break;
+    case CONTROL_TYPE_2:
+        sprintf(gTempBuf, "%c %s", 2 + (control->at21 != 0), control->atd);
+        PrintText(control->at0, control->at4, vsi, vdi, gTempBuf);
+        break;
+    case RADIOBUTTON:
+        sprintf(gTempBuf, "%c %s", 4 + (control->at21 != 0), control->atd);
+        PrintText(control->at0, control->at4, vsi, vdi, gTempBuf);
+        break;
+    }
+}
+
+void ControlPrintList(CONTROL* control)
+{
+    clearmidstatbar16();
+    while (control->type != CONTROL_END)
+    {
+        ControlPrint(control++, 0);
+    }
+}
+
+CONTROL *ControlFindTag(CONTROL* control, int tag)
+{
+    for (; control->type != CONTROL_END && control->at8 != tag; control++) {};
+
+    dassert(control->type != CONTROL_END);
+
+    if (control->type == RADIOBUTTON)
+    {
+        while (control->at21 == 0)
+        {
+            control++;
+            dassert(control->type != CONTROL_END);
+            dassert(control->type == RADIOBUTTON);
+        }
+    }
+    return control;
+}
+
+void ControlSet(CONTROL* control, int tag, int value)
+{
+    for (; control->type != CONTROL_END && control->at8 != tag; control++) {};
+
+    dassert(control->type != CONTROL_END);
+
+    control->at21 = value;
+}
+
+int ControlRead(CONTROL* control, int tag)
+{
+    for (; control->type != CONTROL_END && control->at8 != tag; control++) {};
+
+    dassert(control->type != CONTROL_END);
+
+    return control->at21;
+}
+
+void sub_1B988(CONTROL* control, int tag, int value)
+{
+    for (; control->type != CONTROL_END && control->at8 != tag; control++) {};
+
+    dassert(control->type != CONTROL_END);
+
+    // ???
+    while (control->type != CONTROL_END && control->at8 == tag)
+    {
+        control->at21 = value == 0;
+        value--;
+    }
+    dassert(value < 0);
+}
+
+int sub_1B9F4(CONTROL* control, int tag)
+{
+    int value = 0;
+    for (; control->type != CONTROL_END && control->at8 != tag; control++) {};
+
+    dassert(control->type != CONTROL_END);
+
+    // ???
+    while (control->type != CONTROL_END)
+    {
+        dassert(control->type == RADIOBUTTON);
+        if (control->at21 == 0)
+            break;
+        value++;
+    }
+
+    dassert(control->type != CONTROL_END);
+
+    return value;
+}
+
+char sub_1BE80(CONTROL* control, char a2) // Next tx/rx id
+{
+    char t[1024];
+    if (a2 == sc_F10)
+    {
+        memset(t, 0, sizeof(t));
+        int i;
+        for (i = 0; i < numsectors; i++)
+        {
+            int nXSector = sector[i].extra;
+            if (nXSector <= 0)
+                continue;
+            t[xsector[nXSector].txID] = 1;
+            t[xsector[nXSector].rxID] = 1;
+        }
+        for (i = 0; i < numwalls; i++)
+        {
+            int nXWall = wall[i].extra;
+            if (nXWall <= 0)
+                continue;
+            t[xwall[nXWall].txID] = 1;
+            t[xwall[nXWall].rxID] = 1;
+        }
+        for (i = 0; i < kMaxSprites; i++)
+        {
+            int nXSprite = sprite[i].extra;
+            if (nXSprite <= 0)
+                continue;
+            t[xsprite[nXSprite].txID] = 1;
+            t[xsprite[nXSprite].rxID] = 1;
+        }
+        for (i = 100; i < 1024; i++)
+        {
+            if (!t[i])
+                break;
+        }
+        control->at21 = 0;
+        return 0;
+    }
+    return a2;
+}
+
+char sub_1BFD8(CONTROL* control, char a2)
+{
+    if (a2 == sc_Return)
+    {
+        // NUKE-TODO:
+        //if (ControlKeys(controlXSector2))
+        //    return a2;
+        //return 0;
+    }
+    return a2;
+}
+
+char sub_1BFF4(CONTROL* control, char a2) // sound
+{
+    int i;
+    DICTNODE* hSnd;
+    switch (a2)
+    {
+    case sc_UpArrow:
+        for (i = control->at21+1; i < 65535; i++)
+        {
+            if (gSoundRes.Lookup(i, "SFX") != NULL)
+            {
+                control->at21 = i;
+                break;
+            }
+        }
+        if (i == 65535)
+            Beep();
+        return 0;
+    case sc_DownArrow:
+        for (i = control->at21-1; i > 0; i--)
+        {
+            if (gSoundRes.Lookup(i, "SFX") != NULL)
+            {
+                control->at21 = i;
+                break;
+            }
+        }
+        return 0;
+    case sc_F10:
+        hSnd = gSoundRes.Lookup(control->at21, "SFX");
+        if (hSnd != NULL)
+        {
+            SFX* pSfx = (SFX*)gSoundRes.Load(hSnd);
+            printmessage16(pSfx->rawName);
+            sndStartSample(control->at21, FXVolume, 0, 0);
+        }
+        return 0;
+    }
+    return a2;
+}
+
+void XSectorControlSet(int nSector)
+{
+    int nXSector = sector[nSector].extra;
+    dassert(nXSector > 0 && nXSector < kMaxXSectors);
+    XSECTOR* pXSector = &xsector[nXSector];
+    ControlSet(controlXSector, 1, sector[nSector].lotag); // type
+    ControlSet(controlXSector, 2, pXSector->rxID); // rx id
+    ControlSet(controlXSector, 3, pXSector->txID); // tx id
+    ControlSet(controlXSector, 4, pXSector->state); // state
+    ControlSet(controlXSector, 5, pXSector->command); // cmd
+    ControlSet(controlXSector, 6, pXSector->decoupled); // Decoupled
+    ControlSet(controlXSector, 7, pXSector->triggerOnce); // 1-shot
+    ControlSet(controlXSector, 8, pXSector->locked); // Locked
+    ControlSet(controlXSector, 9, pXSector->interruptable); // Interruptable
+    ControlSet(controlXSector, 10, pXSector->at37_7); // DudeLockout
+    ControlSet(controlXSector, 11, pXSector->triggerOn); // Send at ON
+    ControlSet(controlXSector, 12, pXSector->busyTimeA); // OFF->ON busyTime
+    ControlSet(controlXSector, 13, pXSector->at7_2); // OFF->ON wave
+    ControlSet(controlXSector, 14, pXSector->atf_6); // OFF->ON wait
+    ControlSet(controlXSector, 15, pXSector->waitTimeA); // OFF->ON waitTime
+    ControlSet(controlXSector, 16, pXSector->triggerOff); // Send at OFF
+    ControlSet(controlXSector, 17, pXSector->busyTimeB); // ON->OFF busyTime
+    ControlSet(controlXSector, 18, pXSector->at7_5); // ON->OFF wave
+    ControlSet(controlXSector, 19, pXSector->atf_7); // ON->OFF wait
+    ControlSet(controlXSector, 20, pXSector->waitTimeB); // ON->OFF waitTime
+    ControlSet(controlXSector, 21, pXSector->Push); // Push
+    ControlSet(controlXSector, 22, pXSector->Vector); // Vector
+    ControlSet(controlXSector, 23, pXSector->Reserved); // Reserved
+    ControlSet(controlXSector, 24, pXSector->Enter); // Enter
+    ControlSet(controlXSector, 25, pXSector->Exit); // Exit
+    ControlSet(controlXSector, 26, pXSector->Wallpush); // WallPush
+    ControlSet(controlXSector, 27, pXSector->data); // Data
+    ControlSet(controlXSector, 28, pXSector->Key); // Key
+    ControlSet(controlXSector, 29, pXSector->Depth); // Depth
+    ControlSet(controlXSector, 30, pXSector->Underwater); // Underwater
+    ControlSet(controlXSector, 31, pXSector->Crush); // Crush
+    ControlSet(controlXSector2, 1, pXSector->wave); // Lighting wave
+    ControlSet(controlXSector2, 2, pXSector->amplitude); // Lighting amplitude
+    ControlSet(controlXSector2, 3, pXSector->freq); // Lighting freq
+    ControlSet(controlXSector2, 4, pXSector->phase); // Lighting phase
+    ControlSet(controlXSector2, 5, pXSector->shadeFloor); // Lighting floor
+    ControlSet(controlXSector2, 6, pXSector->shadeCeiling); // Lighting ceiling
+    ControlSet(controlXSector2, 7, pXSector->shadeWalls); // Lighting walls
+    ControlSet(controlXSector2, 8, pXSector->shadeAlways); // Lighting shadeAlways
+    ControlSet(controlXSector2, 9, pXSector->color); // Color Lights
+    ControlSet(controlXSector2, 10, pXSector->ceilpal); // Ceil pal2
+    ControlSet(controlXSector2, 11, pXSector->floorpal); // floor pal2
+    ControlSet(controlXSector2, 12, pXSector->panVel); // Motion speed
+    ControlSet(controlXSector2, 13, pXSector->panAngle); // Motion angle
+    ControlSet(controlXSector2, 14, pXSector->panFloor); // Pan floor
+    ControlSet(controlXSector2, 15, pXSector->panCeiling); // Pan ceiling
+    ControlSet(controlXSector2, 16, pXSector->panAlways); // Pan always
+    ControlSet(controlXSector2, 17, pXSector->Drag); // Pan drag
+    ControlSet(controlXSector2, 18, pXSector->windVel); // Wind vel
+    ControlSet(controlXSector2, 19, pXSector->windAng); // Wind ang
+    ControlSet(controlXSector2, 20, pXSector->windAlways); // Wind always
+    ControlSet(controlXSector2, 21, pXSector->bobZRange); // Motion Z range
+    ControlSet(controlXSector2, 22, pXSector->bobTheta); // Motion Theta
+    ControlSet(controlXSector2, 23, pXSector->bobSpeed); // Motion speed
+    ControlSet(controlXSector2, 24, pXSector->bobAlways); // Motion always
+    ControlSet(controlXSector2, 25, pXSector->bobFloor); // Motion bob floor
+    ControlSet(controlXSector2, 26, pXSector->bobCeiling); // Motion bob ceiling
+    ControlSet(controlXSector2, 27, pXSector->bobRotate); // Motion rotate
+    ControlSet(controlXSector2, 28, pXSector->damageType); // DamageType
+}
+
+void ShowSectorData(int nSector)
+{
+    dassert(nSector >= 0 && nSector < kMaxSectors);
+    sprintf(gTempBuf, "Sector %d", nSector);
+    printmessage16(gTempBuf);
+    int nXSector = sector[nSector].extra;
+    if (nXSector > 0)
+    {
+        dassert(nXSector < kMaxXSectors);
+        XSectorControlSet(nSector);
+        ControlPrintList(controlXSector);
+    }
+    else
+        clearmidstatbar16();
+}
 
 static int32_t getTileGroup(const char *groupName)
 {
@@ -880,6 +1672,11 @@ static void PrintNextTag(void)
 
 void ExtShowSectorData(int16_t sectnum)   //F5
 {
+    if (eitherALT)
+    {
+    }
+    else
+        ShowSectorData(sectnum);
     // NUKE-TODO: rewrite to show Blood stuff
 #if 0
     int32_t x,x2,y;
@@ -9609,6 +10406,7 @@ int32_t ExtPostStartupWindow(void)
 
     HookReplaceFunctions();
 
+    FillStringLists();
     scrInit();
     trigInit(gSysRes);
     scrCreateStdColors();

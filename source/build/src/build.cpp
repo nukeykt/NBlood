@@ -4435,7 +4435,21 @@ rotate_hlsect_out:
 #if 1
         if (keystatus[sc_F5])  //F5
         {
-            CallExtShowSectorData(0);
+            if (bloodhack)
+            {
+                keystatus[sc_F5] = 0;
+
+                for (i=0; i<numsectors; i++)
+                    if (inside_editor_curpos(i) == 1)
+                    {
+                        YAX_SKIPSECTOR(i);
+
+                        CallExtShowSectorData(i);
+                        break;
+                    }
+            }
+            else
+                CallExtShowSectorData(0);
         }
         if (keystatus[sc_F6])  //F6
         {
