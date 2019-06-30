@@ -830,7 +830,7 @@ void FillStringLists()
 
 // NUKE-TODO: Implement pc speaker sound?
 void Beep() { }
-void BeepModify() { asksave = 1; /* Necessary? */ }
+void ModifyBeep() { asksave = 1; /* Necessary? */ }
 
 char gTempBuf[256];
 
@@ -1024,7 +1024,16 @@ CONTROL controlXSector[] = {
 
 void PrintText(int x, int y, short c, short bc, const char *pString)
 {
-    printext16(x*8+4, y*8+28, c, bc, pString, 0);
+    printext16(x*8+4, y*8+28+ydim-STATUS2DSIZ, editorcolors[c], editorcolors[bc], pString, 0);
+}
+
+void ClearMidStatBar(void)
+{
+    clearmidstatbar16();             //Clear middle of status bar
+
+    ydim -= 8;
+    drawgradient();
+    ydim += 8;
 }
 
 void ControlPrint(CONTROL* control, int a2)
@@ -1071,7 +1080,7 @@ void ControlPrint(CONTROL* control, int a2)
 
 void ControlPrintList(CONTROL* control)
 {
-    clearmidstatbar16();
+    ClearMidStatBar();
     while (control->type != CONTROL_END)
     {
         ControlPrint(control++, 0);
@@ -1150,6 +1159,191 @@ int sub_1B9F4(CONTROL* control, int tag)
     return value;
 }
 
+int ControlKeys(CONTROL* list)
+{
+    keyFlushScans();
+    ControlPrintList(list);
+    int tags = 0;
+    int tag = 1;
+    for (CONTROL* control = list; control->type != CONTROL_END; control++)
+    {
+        if (control->at8 > tags)
+            tags = control->at8;
+    }
+    CONTROL* control = ControlFindTag(list, tag);
+    while (true)
+    {
+        ControlPrint(control, 1);
+        //idle_waitevent();
+        if (handleevents())
+            quitevent = 0;
+
+        char key = keyGetScan();
+
+        if (key)
+        {
+            if (control->at1d)
+            {
+                key = control->at1d(control, key);
+                ControlPrintList(list);
+            }
+            switch (key)
+            {
+            case sc_Return:
+            case sc_kpad_Enter:
+                keystatus[key] = 0;
+                ModifyBeep();
+                return 1;
+            case sc_Escape:
+                keystatus[key] = 0;
+                return 0;
+            case sc_LeftArrow:
+                tag--;
+                if (tag == 0)
+                    tag = tags;
+                ControlPrint(control, 0);
+                control = ControlFindTag(list, tag);
+                break;
+            case sc_RightArrow:
+                tag++;
+                if (tag > tags)
+                    tag = 1;
+                ControlPrint(control, 0);
+                control = ControlFindTag(list, tag);
+                break;
+            case sc_Tab:
+                if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
+                {
+                    tag--;
+                    if (tag == 0)
+                        tag = tags;
+                    ControlPrint(control, 0);
+                    control = ControlFindTag(list, tag);
+                }
+                else
+                {
+                    tag++;
+                    if (tag > tags)
+                        tag = 1;
+                    ControlPrint(control, 0);
+                    control = ControlFindTag(list, tag);
+                }
+                break;
+            default:
+                switch (control->type)
+                {
+                case CONTROL_TYPE_1:
+                    switch (key)
+                    {
+                    case sc_BackSpace:
+                        control->at21 /= 10;
+                        break;
+                    case sc_UpArrow:
+                    case sc_kpad_Plus:
+                        control->at21++;
+                        break;
+                    case sc_DownArrow:
+                    case sc_kpad_Minus:
+                        control->at21--;
+                        break;
+                    case sc_PgUp:
+                        control->at21 = IncBy(control->at21, 10);
+                        break;
+                    case sc_PgDn:
+                        control->at21 = DecBy(control->at21, 10);
+                        break;
+                    default:
+                        key = key < 128 ? g_keyAsciiTable[key] : 0;
+                        if (key >= '0' && key <= '9')
+                            control->at21 = control->at21 * 10 + key - '0';
+                    }
+                    if (control->at21 > control->at15)
+                        control->at21 = control->at15;
+
+                    if (control->at21 < control->at11)
+                        control->at21 = control->at11;
+
+                    break;
+                case CONTROL_TYPE_2:
+                    switch (key)
+                    {
+                    case sc_Space:
+                        control->at21 = !control->at21;
+                        break;
+                    }
+                    break;
+                case RADIOBUTTON:
+                    ControlPrint(control, 0);
+                    switch (key)
+                    {
+                    case sc_UpArrow:
+                        control->at21 = 0;
+                        ControlPrint(control, 0);
+                        control--;
+                        if (control < list || control->at8 != tag)
+                            control--;
+                        control->at21 = 1;
+                        break;
+                    case sc_DownArrow:
+                        control->at21 = 0;
+                        ControlPrint(control, 0);
+                        control++;
+                        if (control->at8 != tag)
+                            control--;
+                        control->at21 = 1;
+                        break;
+                    }
+                    break;
+                case CONTROL_TYPE_4:
+                {
+                    int t = control->at21;
+                    switch (key)
+                    {
+                    case sc_UpArrow:
+                    case sc_kpad_Plus:
+                        do
+                        {
+                            t++;
+                        } while (t <= control->at15 && !control->names[t]);
+                        break;
+                    case sc_DownArrow:
+                    case sc_kpad_Minus:
+                        do
+                        {
+                            t--;
+                        } while (t >= control->at11 && !control->names[t]);
+                        break;
+                    case sc_PgUp:
+                        do
+                        {
+                            t = IncBy(t, 10);
+                        } while (t <= control->at15 && !control->names[t]);
+                        break;
+                    case sc_PgDn:
+                        do
+                        {
+                            t = DecBy(t, 10);
+                        } while (t >= control->at11 && !control->names[t]);
+                        break;
+                    default:
+                        key = key < 128 ? g_keyAsciiTable[key] : 0;
+                        if (key >= '0' && key <= '9')
+                            control->at21 = control->at21 * 10 + key - '0';
+                    }
+
+                    if (t >= control->at11 && t <= control->at15 && control->names[t])
+                        control->at21 = t;
+
+                    break;
+                }
+
+                }
+            }
+        }
+        videoShowFrame(1);
+    }
+}
+
 char sub_1BE80(CONTROL* control, char a2) // Next tx/rx id
 {
     char t[1024];
@@ -1196,10 +1390,9 @@ char sub_1BFD8(CONTROL* control, char a2)
 {
     if (a2 == sc_Return)
     {
-        // NUKE-TODO:
-        //if (ControlKeys(controlXSector2))
-        //    return a2;
-        //return 0;
+        if (ControlKeys(controlXSector2))
+            return a2;
+        return 0;
     }
     return a2;
 }
@@ -1311,7 +1504,73 @@ void XSectorControlSet(int nSector)
     ControlSet(controlXSector2, 28, pXSector->damageType); // DamageType
 }
 
-void ShowSectorData(int nSector)
+void XSectorControlRead(int nSector)
+{
+    int nXSector = sector[nSector].extra;
+    dassert(nXSector > 0 && nXSector < kMaxXSectors);
+    XSECTOR* pXSector = &xsector[nXSector];
+    sector[nSector].lotag = ControlRead(controlXSector, 1); // type
+    pXSector->txID = ControlRead(controlXSector, 2); // rx id
+    pXSector->rxID = ControlRead(controlXSector, 3); // tx id
+    pXSector->state = ControlRead(controlXSector, 4); // state
+    pXSector->command = ControlRead(controlXSector, 5); // cmd
+    pXSector->decoupled = ControlRead(controlXSector, 6); // Decoupled
+    pXSector->triggerOnce = ControlRead(controlXSector, 7); // 1-shot
+    pXSector->locked = ControlRead(controlXSector, 8); // Locked
+    pXSector->interruptable = ControlRead(controlXSector, 9); // Interruptable
+    pXSector->at37_7 = ControlRead(controlXSector, 10); // DudeLockout
+    pXSector->triggerOn = ControlRead(controlXSector, 11); // Send at ON
+    pXSector->busyTimeA = ControlRead(controlXSector, 12); // OFF->ON busyTime
+    pXSector->at7_2 = ControlRead(controlXSector, 13); // OFF->ON wave
+    pXSector->atf_6 = ControlRead(controlXSector, 14); // OFF->ON wait
+    pXSector->waitTimeA = ControlRead(controlXSector, 15); // OFF->ON waitTime
+    pXSector->triggerOff = ControlRead(controlXSector, 16); // Send at OFF
+    pXSector->busyTimeB = ControlRead(controlXSector, 17); // ON->OFF busyTime
+    pXSector->at7_5 = ControlRead(controlXSector, 18); // ON->OFF wave
+    pXSector->atf_7 = ControlRead(controlXSector, 19); // ON->OFF wait
+    pXSector->waitTimeB = ControlRead(controlXSector, 20); // ON->OFF waitTime
+    pXSector->Push = ControlRead(controlXSector, 21); // Push
+    pXSector->Vector = ControlRead(controlXSector, 22); // Vector
+    pXSector->Reserved = ControlRead(controlXSector, 23); // Reserved
+    pXSector->Enter = ControlRead(controlXSector, 24); // Enter
+    pXSector->Exit = ControlRead(controlXSector, 25); // Exit
+    pXSector->Wallpush = ControlRead(controlXSector, 26); // WallPush
+    pXSector->data = ControlRead(controlXSector, 27); // Data
+    pXSector->Key = ControlRead(controlXSector, 28); // Key
+    pXSector->Depth = ControlRead(controlXSector, 29); // Depth
+    pXSector->Underwater = ControlRead(controlXSector, 30); // Underwater
+    pXSector->Crush = ControlRead(controlXSector, 31); // Crush
+    pXSector->wave = ControlRead(controlXSector2, 1); // Lighting wave
+    pXSector->amplitude = ControlRead(controlXSector2, 2); // Lighting amplitude
+    pXSector->freq = ControlRead(controlXSector2, 3); // Lighting freq
+    pXSector->phase = ControlRead(controlXSector2, 4); // Lighting phase
+    pXSector->shadeFloor = ControlRead(controlXSector2, 5); // Lighting floor
+    pXSector->shadeCeiling = ControlRead(controlXSector2, 6); // Lighting ceiling
+    pXSector->shadeWalls = ControlRead(controlXSector2, 7); // Lighting walls
+    pXSector->shadeAlways = ControlRead(controlXSector2, 8); // Lighting shadeAlways
+    pXSector->color = ControlRead(controlXSector2, 9); // Color Lights
+    pXSector->ceilpal = ControlRead(controlXSector2, 10); // Ceil pal2
+    pXSector->floorpal = ControlRead(controlXSector2, 11); // floor pal2
+    pXSector->bobSpeed = ControlRead(controlXSector2, 12); // Motion speed
+    pXSector->panAngle = ControlRead(controlXSector2, 13); // Motion angle
+    pXSector->panFloor = ControlRead(controlXSector2, 14); // Pan floor
+    pXSector->panCeiling = ControlRead(controlXSector2, 15); // Pan ceiling
+    pXSector->panAlways = ControlRead(controlXSector2, 16); // Pan always
+    pXSector->Drag = ControlRead(controlXSector2, 17); // Pan drag
+    pXSector->windVel = ControlRead(controlXSector2, 18); // Wind vel
+    pXSector->windAng = ControlRead(controlXSector2, 19); // Wind ang
+    pXSector->windAlways = ControlRead(controlXSector2, 20); // Wind always
+    pXSector->bobZRange = ControlRead(controlXSector2, 21); // Motion Z range
+    pXSector->bobTheta = ControlRead(controlXSector2, 22); // Motion Theta
+    pXSector->bobSpeed = ControlRead(controlXSector2, 23); // Motion speed
+    pXSector->bobAlways = ControlRead(controlXSector2, 24); // Motion always
+    pXSector->bobFloor = ControlRead(controlXSector2, 25); // Motion bob floor
+    pXSector->bobCeiling = ControlRead(controlXSector2, 26); // Motion bob ceiling
+    pXSector->bobRotate = ControlRead(controlXSector2, 27); // Motion rotate
+    pXSector->damageType = ControlRead(controlXSector2, 28); // DamageType
+}
+
+int ShowSectorData(int nSector)
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
     sprintf(gTempBuf, "Sector %d", nSector);
@@ -1322,9 +1581,28 @@ void ShowSectorData(int nSector)
         dassert(nXSector < kMaxXSectors);
         XSectorControlSet(nSector);
         ControlPrintList(controlXSector);
+        return 1;
     }
     else
-        clearmidstatbar16();
+        ClearMidStatBar();
+    return 0;
+}
+
+void XEditSectorData(int nSector)
+{
+    dassert(nSector >= 0 && nSector < kMaxSectors);
+    //sub_1058C();
+    sprintf(gTempBuf, "Sector %d", nSector);
+    printmessage16(gTempBuf);
+    //sub_10DBC(nSector);
+    XSectorControlSet(nSector);
+    if (ControlKeys(controlXSector))
+        XSectorControlRead(nSector);
+    ShowSectorData(nSector);
+    //angvel = 0;
+    //svel = 0;
+    //vel = 0;
+    //sub_1058C();
 }
 
 static int32_t getTileGroup(const char *groupName)
@@ -1672,11 +1950,22 @@ static void PrintNextTag(void)
 
 void ExtShowSectorData(int16_t sectnum)   //F5
 {
-    if (eitherALT)
+    if (in3dmode())
+        return;
+
+    if (sectnum >= 0 && !eitherSHIFT)
     {
+        if (eitherALT)
+        {
+            XEditSectorData(sectnum);
+            return;
+        }
+        else
+        {
+            if (ShowSectorData(sectnum))
+                return;
+        }
     }
-    else
-        ShowSectorData(sectnum);
     // NUKE-TODO: rewrite to show Blood stuff
 #if 0
     int32_t x,x2,y;
@@ -1808,6 +2097,9 @@ void ExtShowSectorData(int16_t sectnum)   //F5
 
 void ExtShowWallData(int16_t wallnum)       //F6
 {
+    if (wallnum >= 0 && !eitherSHIFT)
+    {
+    }
     // NUKE-TODO: Rewrite to show Blood stuff
 #if 0
     int32_t i, runi, total=0, x, y, yi;
@@ -10388,6 +10680,24 @@ int32_t ExtInit(void)
     return rv;
 }
 
+void TextFontModify(void)
+{
+    extern char textfont[];
+    char CheckBox[2][8] = {
+        { 0xFF, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xFF },
+        { 0xFF, 0xC3, 0xA5, 0x99, 0x99, 0xA5, 0xC3, 0xFF }
+    };
+    char RadioButton[2][8] = {
+        { 0x3C, 0x42, 0x81, 0x81, 0x81, 0x81, 0x42, 0x3C },
+        { 0x3C, 0x42, 0x99, 0xBD, 0xBD, 0x99, 0x42, 0x3C }
+    };
+
+    Bmemcpy(&textfont[2*8], CheckBox[0], 8);
+    Bmemcpy(&textfont[3*8], CheckBox[1], 8);
+    Bmemcpy(&textfont[4*8], RadioButton[0], 8);
+    Bmemcpy(&textfont[5*8], RadioButton[1], 8);
+}
+
 unsigned int nMaxAlloc = 0x4000000;
 
 int32_t ExtPostStartupWindow(void)
@@ -10407,6 +10717,8 @@ int32_t ExtPostStartupWindow(void)
     HookReplaceFunctions();
 
     FillStringLists();
+    TextFontModify();
+
     scrInit();
     trigInit(gSysRes);
     scrCreateStdColors();

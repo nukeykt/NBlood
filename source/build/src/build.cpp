@@ -4435,21 +4435,21 @@ rotate_hlsect_out:
 #if 1
         if (keystatus[sc_F5])  //F5
         {
+            int found = 0;
             if (bloodhack)
             {
-                keystatus[sc_F5] = 0;
-
                 for (i=0; i<numsectors; i++)
                     if (inside_editor_curpos(i) == 1)
                     {
                         YAX_SKIPSECTOR(i);
 
                         CallExtShowSectorData(i);
+                        found = 1;
                         break;
                     }
             }
-            else
-                CallExtShowSectorData(0);
+            if (!found)
+                CallExtShowSectorData(-1);
         }
         if (keystatus[sc_F6])  //F6
         {
@@ -4458,7 +4458,7 @@ rotate_hlsect_out:
             else if (linehighlight >= 0)
                 CallExtShowWallData(linehighlight);
             else
-                CallExtShowWallData(0);
+                CallExtShowWallData(-1);
         }
         if (keystatus[sc_F7])  //F7
         {
