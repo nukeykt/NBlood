@@ -1174,13 +1174,13 @@ int ControlKeys(CONTROL* list)
     while (true)
     {
         ControlPrint(control, 1);
-        //idle_waitevent();
+        videoShowFrame(1);
+        idle_waitevent();
         if (handleevents())
             quitevent = 0;
 
-        char key = keyGetScan();
-
-        if (key)
+        char key;
+        while (key = keyGetScan())
         {
             if (control->at1d)
             {
@@ -1340,7 +1340,6 @@ int ControlKeys(CONTROL* list)
                 }
             }
         }
-        videoShowFrame(1);
     }
 }
 
