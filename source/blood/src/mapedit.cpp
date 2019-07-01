@@ -45,6 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "replace.h"
 #include "resource.h"
 #include "screen.h"
+#include "sectorfx.h"
 #include "sound.h"
 #include "tile.h"
 #include "trig.h"
@@ -828,6 +829,608 @@ void FillStringLists()
     FillList(pzRespawn, tRespawn, ARRAY_SIZE(tRespawn));
 }
 
+void sub_1058C()
+{
+    dbXSectorClean();
+    dbXWallClean();
+    dbXSpriteClean();
+    InitSectorFX();
+    for (int i = 0; i < numsectors; i++)
+    {
+        int nXSector = sector[i].extra;
+        if (nXSector > 0)
+        {
+            switch (sector[i].lotag)
+            {
+            case 604:
+            {
+                int nSprite = xsector[nXSector].at2c_0;
+                if (nSprite >= 0)
+                {
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 8)
+                        sprite[nSprite].owner = i;
+                    else
+                        xsector[nXSector].at2c_0 = -1;
+                }
+                break;
+            }
+            case 614:
+            case 616:
+            {
+                int nSprite = xsector[nXSector].at2c_0;
+                if (nSprite >= 0)
+                {
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 3)
+                        sprite[nSprite].owner = i;
+                    else
+                        xsector[nXSector].at2c_0 = -1;
+                }
+                nSprite = xsector[nXSector].at2e_0;
+                if (nSprite >= 0)
+                {
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 4)
+                        sprite[nSprite].owner = i;
+                    else
+                        xsector[nXSector].at2e_0 = -1;
+                }
+                break;
+            }
+            case 613:
+            case 615:
+            case 617:
+            {
+                int nSprite = xsector[nXSector].at2c_0;
+                if (nSprite >= 0)
+                {
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 5)
+                        sprite[nSprite].owner = i;
+                    else
+                        xsector[nXSector].at2c_0 = -1;
+                }
+                break;
+            }
+            }
+        }
+    }
+    for (int i = 0; i < numsectors; i++)
+    {
+        int nXSector = sector[i].extra;
+        if (nXSector > 0)
+        {
+            switch (sector[i].lotag)
+            {
+            case 604:
+            {
+                int nSprite = xsector[nXSector].at2c_0;
+                if (nSprite >= 0 && i != sprite[nSprite].owner)
+                {
+                    int vd = InsertSprite(sprite[nSprite].sectnum, 10);
+                    sprite[vd] = sprite[nSprite];
+                    sprite[vd].owner = i;
+                    xsector[nXSector].at2c_0 = vd;
+                }
+                if (xsector[nXSector].at2c_0 < 0)
+                {
+                    int vd = InsertSprite(i, 10);
+                    sprite[vd].x = wall[sector[i].wallptr].x;
+                    sprite[vd].y = wall[sector[i].wallptr].y;
+                    sprite[vd].owner = i;
+                    sprite[vd].type = 8;
+                    xsector[nXSector].at2c_0 = vd;
+                }
+                break;
+            }
+            case 614:
+            case 616:
+            {
+                int nSprite = xsector[nXSector].at2c_0;
+                if (nSprite >= 0 && i != sprite[nSprite].owner)
+                {
+                    int vd = InsertSprite(sprite[nSprite].sectnum, 10);
+                    sprite[vd] = sprite[nSprite];
+                    sprite[vd].owner = i;
+                    xsector[nXSector].at2c_0 = vd;
+                }
+                if (xsector[nXSector].at2c_0 < 0)
+                {
+                    int vd = InsertSprite(i, 10);
+                    sprite[vd].x = wall[sector[i].wallptr].x;
+                    sprite[vd].y = wall[sector[i].wallptr].y;
+                    sprite[vd].owner = i;
+                    sprite[vd].type = 3;
+                    xsector[nXSector].at2c_0 = vd;
+                }
+                nSprite = xsector[nXSector].at2e_0;
+                if (nSprite >= 0 && i != sprite[nSprite].owner)
+                {
+                    int vd = InsertSprite(sprite[nSprite].sectnum, 10);
+                    sprite[vd] = sprite[nSprite];
+                    sprite[vd].owner = i;
+                    xsector[nXSector].at2e_0 = vd;
+                }
+                if (xsector[nXSector].at2e_0 < 0)
+                {
+                    int vd = InsertSprite(i, 10);
+                    sprite[vd].x = wall[sector[i].wallptr].x;
+                    sprite[vd].y = wall[sector[i].wallptr].y;
+                    sprite[vd].owner = i;
+                    sprite[vd].type = 4;
+                    xsector[nXSector].at2e_0 = vd;
+                }
+                break;
+            }
+            case 613:
+            case 615:
+            case 617:
+            {
+                int nSprite = xsector[nXSector].at2c_0;
+                if (nSprite >= 0 && i != sprite[nSprite].owner)
+                {
+                    int vd = InsertSprite(sprite[nSprite].sectnum, 10);
+                    sprite[vd] = sprite[nSprite];
+                    sprite[vd].owner = i;
+                    xsector[nXSector].at2c_0 = vd;
+                }
+                if (xsector[nXSector].at2c_0 < 0)
+                {
+                    int vd = InsertSprite(i, 10);
+                    sprite[vd].x = wall[sector[i].wallptr].x;
+                    sprite[vd].y = wall[sector[i].wallptr].y;
+                    sprite[vd].owner = i;
+                    sprite[vd].type = 5;
+                    xsector[nXSector].at2c_0 = vd;
+                }
+                break;
+            }
+            default:
+                xsector[nXSector].at2c_0 = -1;
+                xsector[nXSector].at2e_0 = -1;
+                break;
+            }
+        }
+    }
+    int nNextSprite;
+    for (int nSprite = headspritestat[10]; nSprite != -1; nSprite = nNextSprite)
+    {
+        sprite[nSprite].extra = -1;
+        sprite[nSprite].cstat |= 0x8000;
+        sprite[nSprite].cstat &= ~0x101;
+        nNextSprite = nextspritestat[nSprite];
+        int nSector = sprite[nSprite].owner;
+        int nXSector = sector[nSector].extra;
+        if (nSector >= 0 && nSector < numsectors)
+        {
+            if (nXSector > 0 && nXSector < kMaxXSectors)
+            {
+                switch (sprite[nSprite].type)
+                {
+                case 4:
+                    sprite[nSprite].picnum = 3997;
+                    if (nSprite == xsector[nXSector].at2e_0)
+                        continue;
+                    break;
+                case 3:
+                case 5:
+                    sprite[nSprite].picnum = 3997;
+                case 8:
+                    if (nSprite == xsector[nXSector].at2c_0)
+                        continue;
+                    break;
+                }
+            }
+        }
+        DeleteSprite(nSprite);
+    }
+}
+
+int sub_10DBC(int nSector)
+{
+    dassert(nSector >= 0 && nSector < kMaxSectors);
+    int nXSector = sector[nSector].extra;
+    if (nXSector <= 0)
+        nXSector = dbInsertXSector(nSector);
+    return nXSector;
+}
+
+int sub_10E08(int nWall)
+{
+    dassert(nWall >= 0 && nWall < kMaxWalls);
+    int nXWall = wall[nWall].extra;
+    if (nXWall <= 0)
+        nXWall = dbInsertXWall(nWall);
+    return nXWall;
+}
+
+int sub_10E50(int nSprite)
+{
+    dassert(nSprite >= 0 && nSprite < kMaxSprites);
+    int nXSprite = sprite[nSprite].extra;
+    if (nXSprite <= 0)
+        nXSprite = dbInsertXSprite(nSprite);
+    return nXSprite;
+}
+
+struct StructCAF10 {
+    short at0;
+    short at2;
+    short at4;
+    short at6;
+    signed char at8;
+    short at9;
+};
+
+StructCAF10 stru_CAF10[] = {
+    { 1, -1, -1, -1, 0, 0 },
+    { 2, -1, -1, -1, 0, 5 },
+    { 6, 2331, 64, 64, 0, 0 },
+    { 7, 2332, 64, 64, 0, 0 },
+    { 10, 2331, 64, 64, 0, 0 },
+    { 9, 2332, 64, 64, 0, 0 },
+    { 12, 2331, 64, 64, 0, 0 },
+    { 11, 2332, 64, 64, 0, 0 },
+    { 14, 2331, 64, 64, 0, 0 },
+    { 13, 2332, 64, 64, 0, 0 },
+    { 15, 2319, 64, 64, 0, 0 },
+    { 18, 2077, 64, 64, 0, 0 },
+    { 19, 2072, 64, 64, 0, 0 },
+    { 20, -1, -1, -1, 1, -1 },
+    { 21, -1, -1, -1, 1, -1 },
+    { 22, -1, -1, -1, 1, -1 },
+    { 23, 948, -1, -1, 1, -1 },
+    { 30, 550, -1, -1, 1, -1 },
+    { 30, 572, -1, -1, 1, -1 },
+    { 30, 560, -1, -1, 1, -1 },
+    { 30, 564, -1, -1, 1, -1 },
+    { 30, 570, -1, -1, 1, -1 },
+    { 30, 554, -1, -1, 1, -1 },
+    { 32, 938, -1, -1, 1, -1 },
+    { 40, 832, 48, 48, 0, 0 },
+    { 43, 524, 48, 48, 0, 0 },
+    { 41, 559, 48, 48, 0, 0 },
+    { 42, 558, 48, 48, 0, 0 },
+    { 46, 526, 48, 48, 0, 0 },
+    { 45, 539, 48, 48, 0, 0 },
+    { 50, 800, 48, 48, 0, 0 },
+    { 60, 618, 40, 40, 1, 0 },
+    { 62, 589, 48, 48, 1, 0 },
+    { 63, 809, 48, 48, 1, 0 },
+    { 64, 811, 40, 40, 0, 0 },
+    { 65, 810, 40, 40, 0, 0 },
+    { 66, 820, 24, 24, 0, 0 },
+    { 67, 619, 48, 48, 0, 0 },
+    { 68, 812, 48, 48, 0, 0 },
+    { 69, 813, 48, 48, 0, 0 },
+    { 70, 525, 48, 48, 0, 0 },
+    { 72, 817, 48, 48, 0, 0 },
+    { 73, 548, 24, 24, 0, 0 },
+    { 76, 816, 48, 48, 0, 0 },
+    { 79, 801, 48, 48, 0, 0 },
+    { 80, 832, 40, 40, 0, 0 },
+    { 100, 2552, 32, 32, 0, 0 },
+    { 101, 2553, 32, 32, 0, 0 },
+    { 102, 2554, 32, 32, 0, 0 },
+    { 103, 2555, 32, 32, 0, 0 },
+    { 104, 2556, 32, 32, 0, 0 },
+    { 105, 2557, 32, 32, 0, 0 },
+    { 106, -1, -1, -1, 0, 0 },
+    { 107, 519, 48, 48, 0, 0 },
+    { 108, 822, 40, 40, 0, 0 },
+    { 109, 2169, 40, 40, 0, 0 },
+    { 110, 2433, 40, 40, 0, 0 },
+    { 113, 896, 40, 40, 0, 0 },
+    { 114, 825, 40, 40, 0, 0 },
+    { 115, 827, 40, 40, 0, 0 },
+    { 117, 829, 40, 40, 0, 0 },
+    { 118, 830, 80, 64, 0, 0 },
+    { 121, 760, 40, 40, 0, 0 },
+    { 124, 2428, 40, 40, 0, 0 },
+    { 125, 839, 40, 40, 0, 0 },
+    { 127, 840, 48, 48, 0, 0 },
+    { 128, 841, 48, 48, 0, 0 },
+    { 129, 842, 48, 48, 0, 0 },
+    { 130, 843, 48, 48, 0, 0 },
+    { 136, 518, 40, 40, 0, 0 },
+    { 137, 522, 40, 40, 0, 0 },
+    { 138, 523, 40, 40, 0, 0 },
+    { 140, 2628, 64, 64, 0, 0 },
+    { 141, 2586, 64, 64, 0, 0 },
+    { 142, 2578, 64, 64, 0, 0 },
+    { 143, 2602, 64, 64, 0, 0 },
+    { 144, 2594, 64, 64, 0, 0 },
+    { 144, 2594, 64, 64, 0, 0 },
+    { 145, -1, 64, 64, 1, 0 },
+    { 146, -1, 64, 64, 1, 0 },
+    { 200, 832, 64, 64, 1, 0 },
+    { 201, 2820, 40, 40, 1, 3 },
+    { 202, 2825, 40, 40, 1, 0 },
+    { 247, 2820, 40, 40, 1, 11 },
+    { 248, 2820, 40, 40, 1, 13 },
+    { 249, 2825, 48, 48, 1, 12 },
+    { 250, 3870, 16, 16, 1, 12 },
+    { 251, 2960, 48, 48, 1, 0 },
+    { 203, 1170, 40, 40, 1, 0 },
+    { 204, 1370, 48, 48, 1, 0 },
+    { 205, 3054, 40, 40, 1, 0 },
+    { 244, 1209, 40, 40, 1, 0 },
+    { 245, 3798, 40, 40, 1, 0 },
+    { 206, 1470, 40, 40, 1, 0 },
+    { 207, 1470, 40, 40, 1, 5 },
+    { 208, 1530, 40, 40, 1, 0 },
+    { 209, 1530, 40, 40, 1, 5 },
+    { 210, 3060, 40, 40, 1, 0 },
+    { 211, 1270, 40, 40, 1, 0 },
+    { 212, 1980, 32, 32, 1, 0 },
+    { 213, 1920, 16, 16, 1, 7 },
+    { 214, 1925, 24, 24, 1, 4 },
+    { 216, 1930, 40, 40, 1, 0 },
+    { 215, 1935, 32, 32, 1, 4 },
+    { 217, 1570, 48, 48, 1, 0 },
+    { 218, 1870, 32, 32, 1, 0 },
+    { 219, 1948, 32, 32, 1, 0 },
+    { 220, 1745, 24, 24, 1, 0 },
+    { 221, 1792, 32, 32, 1, 0 },
+    { 222, 1797, 32, 32, 1, 0 },
+    { 223, 1792, 48, 48, 1, 2 },
+    { 224, 1797, 48, 48, 1, 2 },
+    { 225, 1792, 64, 64, 1, 6 },
+    { 226, 1797, 64, 64, 1, 6 },
+    { 227, 2680, 64, 64, 1, 0 },
+    { 229, 3140, 64, 64, 1, 0 },
+    { 230, 3385, 40, 40, 1, 3 },
+    { 231, 2860, 40, 40, 1, 0 },
+    { 232, 2860, 40, 40, 1, 0 },
+    { 233, 2860, 40, 40, 1, 0 },
+    { 234, 2860, 40, 40, 1, 0 },
+    { 235, 2860, 40, 40, 1, 0 },
+    { 236, 2860, 40, 40, 1, 0 },
+    { 237, 2860, 40, 40, 1, 0 },
+    { 238, 2860, 40, 40, 1, 0 },
+    { 243, 2860, 40, 40, 1, 0 },
+    { 246, 3385, 40, 40, 1, 0 },
+    { 400, 907, 64, 64, 1, 0 },
+    { 401, 3444, 40, 40, 1, 0 },
+    { 402, 3457, 40, 40, 1, 0 },
+    { 403, 739, -1, -1, 1, 0 },
+    { 404, 642, -1, -1, 1, 0 },
+    { 405, 462, -1, -1, 1, 0 },
+    { 406, 266, -1, -1, 1, 0 },
+    { 407, 796, -1, -1, 1, 0 },
+    { 408, -1, -1, -1, 0, -1 },
+    { 409, 1142, -1, -1, 1, 0 },
+    { 410, 1069, -1, -1, 1, 0 },
+    { 411, 483, -1, -1, 1, -1 },
+    { 412, -1, -1, -1, 1, -1 },
+    { 413, -1, 64, 64, 0, 0 },
+    { 414, -1, -1, -1, 1, 0 },
+    { 415, -1, 48, 48, 1, 0 },
+    { 416, -1, -1, -1, -1, -1 },
+    { 417, -1, -1, -1, -1, -1 },
+    { 427, -1, 40, 40, 1, -1 },
+    { 450, 968, 64, 64, 0, 0 },
+    { 451, -1, 64, 64, 0, 0 },
+    { 452, 2183, -1, -1, 0, 0 },
+    { 454, 655, -1, -1, 0, 0 },
+    { 455, 1156, -1, -1, 0, 0 },
+    { 456, 1156, -1, -1, 0, 0 },
+    { 457, 1080, -1, -1, 0, 0 },
+    { 458, 835, -1, -1, 0, 0 },
+    { 459, 908, 4, -1, 0, 0 },
+    { 708, 2519, 64, 64, 0, 0 },
+    { 709, 2520, 64, 64, 0, 0 },
+    { 710, 2521, 64, 64, 0, 0 },
+    { 711, 2519, 64, 64, 0, 5 },
+};
+
+int gCorrectedSprites = 0;
+
+void sub_10EA0()
+{
+    for (int i = 0; i < kMaxSprites; i++)
+    {
+        spritetype* pSprite = &sprite[i];
+        if (pSprite->statnum < kMaxStatus)
+        {
+            if ((pSprite->cstat & 0x30) == 0x30)
+                pSprite->cstat &= ~0x30;
+            if (pSprite->statnum == 1)
+                continue;
+            int vbp, vdi;
+            vbp = vdi = -1;
+            if (pSprite->type)
+            {
+                if (!pzSpriteType[pSprite->type])
+                    pSprite->type = 0;
+            }
+            for (unsigned int j = 0; j < 159; j++)
+            {
+                if (stru_CAF10[j].at2 >= 0 && stru_CAF10[j].at2 == pSprite->picnum)
+                {
+                    vdi = j;
+                }
+            }
+            for (unsigned int j = 0; j < 159; j++)
+            {
+                if (stru_CAF10[j].at0 == pSprite->type)
+                {
+                    vbp = j;
+                }
+            }
+            int vbx = -1;
+            if (vdi >= 0)
+                vbx = vdi;
+            if (vbp >= 0)
+                vbx = vbp;
+            if (vdi >= 0 && pSprite->type == stru_CAF10[vdi].at0)
+                vbx = vdi;
+            if (vbx < 0)
+                continue;
+            int vdi2 = stru_CAF10[vbx].at0;
+            if (vdi2 == 1 || vdi2 == 2)
+            {
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 0);
+                int nXSprite = sub_10E50(i);
+                xsprite[nXSprite].data1 &= 0x07;
+                pSprite->picnum = 2522 + xsprite[nXSprite].data1;
+            }
+            else if (vdi2 == 18)
+            {
+                pSprite->cstat &= ~0x01;
+                pSprite->cstat |= 0x8000;
+                ChangeSpriteStat(i, 0);
+                sub_10E50(i);
+            }
+            else if (vdi2 == 19)
+            {
+                pSprite->cstat &= ~0x101;
+                pSprite->cstat |= 0x8000;
+                ChangeSpriteStat(i, 0);
+                sub_10E50(i);
+            }
+            else if (vdi2 == 7 || vdi2 == 6 || vdi2 == 9
+                || vdi2 == 10 || vdi2 == 13 || vdi2 == 14
+                || vdi2 == 11 || vdi2 == 12)
+            {
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 0);
+                sub_10E50(i);
+                pSprite->cstat &= ~0x08;
+            }
+            else if (vdi2 == 15)
+            {
+                ChangeSpriteStat(i, 16);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 20 && vdi2 < 24)
+            {
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 0);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 40 && vdi2 < 51)
+            {
+                if (pSprite->cstat & 0x30)
+                    continue;
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 3);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 60 && vdi2 < 81)
+            {
+                if (pSprite->cstat & 0x30)
+                    continue;
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 3);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 100 && vdi2 < 149)
+            {
+                if (pSprite->cstat & 0x30)
+                    continue;
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 3);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 200 && vdi2 < 254)
+            {
+                if (pSprite->cstat & 0x30)
+                    continue;
+                pSprite->cstat &= ~0x01;
+                ChangeSpriteStat(i, 6);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 400 && vdi2 < 433)
+            {
+                ChangeSpriteStat(i, 4);
+                sub_10E50(i);
+            }
+            else if (vdi2 >= 450 && vdi2 < 460)
+            {
+                ChangeSpriteStat(i, 11);
+                sub_10E50(i);
+            }
+            else if (vdi2 == 709)
+            {
+                pSprite->cstat &= ~0x101;
+                pSprite->cstat |= 0x8000;
+                pSprite->shade = -128;
+                ChangeSpriteStat(i, 0);
+            }
+            else if (vdi2 == 710)
+            {
+                pSprite->cstat &= ~0x101;
+                pSprite->cstat |= 0x8000;
+                pSprite->shade = -128;
+                ChangeSpriteStat(i, 12);
+            }
+            else if (vdi2 == 711)
+            {
+                pSprite->cstat &= ~0x101;
+                pSprite->cstat |= 0x8000;
+                pSprite->shade = -128;
+                ChangeSpriteStat(i, 0);
+            }
+            else
+            {
+                ChangeSpriteStat(i, 0);
+            }
+            pSprite->type = vdi2;
+            if (stru_CAF10[vbx].at2 >= 0)
+                pSprite->picnum = stru_CAF10[vbx].at2;
+            if (stru_CAF10[vbx].at4 >= 0)
+                pSprite->xoffset = stru_CAF10[vbx].at4;
+            if (stru_CAF10[vbx].at6 >= 0)
+                pSprite->xoffset = stru_CAF10[vbx].at6;
+
+            if (stru_CAF10[vbx].at8 == 0)
+                pSprite->cstat &= ~0x100;
+            else if (stru_CAF10[vbx].at8 > 0)
+                pSprite->cstat |= 0x100;
+            if (stru_CAF10[vbx].at9 >= 0)
+                pSprite->pal = stru_CAF10[vbx].at9;
+
+            if (pSprite->statnum == 4 || pSprite->statnum == 6)
+            {
+                int top, bottom;
+                GetSpriteExtents(pSprite, &top, &bottom);
+                if (!(sector[pSprite->sectnum].ceilingstat & 0x01))
+                {
+                    pSprite->z += ClipLow(sector[pSprite->sectnum].ceilingz - top, 0);
+                }
+                if (!(sector[pSprite->sectnum].floorstat & 0x01))
+                {
+                    pSprite->z += ClipHigh(sector[pSprite->sectnum].floorz - bottom, 0);
+                }
+            }
+        }
+    }
+    int vbx = gCorrectedSprites;
+    for (int i = 0; i < kMaxSprites; i++)
+    {
+        spritetype* pSprite = &sprite[i];
+        if ((pSprite->statnum == 4 && (pSprite->type < 400 || pSprite->type >= 433))
+           || (pSprite->statnum == 3 && (pSprite->type < 100 || pSprite->type >= 433) && (pSprite->type < 60 || pSprite->type >= 81) && (pSprite->type < 40 || pSprite->type >= 51))
+            || (pSprite->statnum == 6 && (pSprite->type < 200 || pSprite->type >= 254))
+             || pSprite->statnum == 1)
+        {
+            pSprite->statnum = 0; // Should we use ChangeSpriteStat here?
+            gCorrectedSprites++;
+        }
+    }
+    if (vbx != gCorrectedSprites)
+    {
+        char buffer[40];
+        sprintf(buffer, "Fixed %d sprites", gCorrectedSprites - vbx);
+        if (qsetmode == 200)
+        {
+            // NUKE-TODO:
+            //scrSetMessage(buffer);
+        }
+        else
+            printmessage16(buffer);
+    }
+}
+
 // NUKE-TODO: Implement pc speaker sound?
 void Beep() { }
 void ModifyBeep() { asksave = 1; /* Necessary? */ }
@@ -1437,6 +2040,168 @@ char sub_1BFF4(CONTROL* control, char a2) // sound
     return a2;
 }
 
+void XWallControlSet(int nWall)
+{
+    int nXWall = wall[nWall].extra;
+    dassert(nXWall > 0 && nXWall < kMaxXWalls);
+    XWALL* pXWall = &xwall[nXWall];
+    ControlSet(controlXWall, 1, wall[nWall].lotag); // type
+    ControlSet(controlXWall, 2, pXWall->rxID); // rx id
+    ControlSet(controlXWall, 3, pXWall->txID); // tx id
+    ControlSet(controlXWall, 4, pXWall->state); // state
+    ControlSet(controlXWall, 5, pXWall->command); // cmd
+    ControlSet(controlXWall, 6, pXWall->triggerOn); // going on
+    ControlSet(controlXWall, 7, pXWall->triggerOff); // going off
+    ControlSet(controlXWall, 8, pXWall->busyTime); // busyTime
+    ControlSet(controlXWall, 9, pXWall->waitTime); // waitTime
+    ControlSet(controlXWall, 10, pXWall->restState); // restState
+    ControlSet(controlXWall, 11, pXWall->triggerPush); // Push
+    ControlSet(controlXWall, 12, pXWall->triggerVector); // Vector
+    ControlSet(controlXWall, 13, pXWall->triggerReserved); // Reserved
+    ControlSet(controlXWall, 14, pXWall->dudeLockout); // DudeLockout
+    ControlSet(controlXWall, 15, pXWall->decoupled); // Decoupled
+    ControlSet(controlXWall, 16, pXWall->triggerOnce); // 1-Shot
+    ControlSet(controlXWall, 17, pXWall->locked); // Locked
+    ControlSet(controlXWall, 18, pXWall->interruptable); // Interruptable
+    ControlSet(controlXWall, 19, pXWall->data); // Data
+    ControlSet(controlXWall, 20, pXWall->key); // Key
+    ControlSet(controlXWall, 21, pXWall->panXVel); // panX
+    ControlSet(controlXWall, 22, pXWall->panYVel); // panY
+    ControlSet(controlXWall, 23, pXWall->panAlways); // panAlways
+}
+
+void XWallControlRead(int nWall)
+{
+    int nXWall = wall[nWall].extra;
+    dassert(nXWall > 0 && nXWall < kMaxXWalls);
+    XWALL* pXWall = &xwall[nXWall];
+    wall[nWall].lotag = ControlRead(controlXWall, 1); // type
+    pXWall->rxID = ControlRead(controlXWall, 2); // rx id
+    pXWall->txID = ControlRead(controlXWall, 3); // tx id
+    pXWall->state = ControlRead(controlXWall, 4); // state
+    pXWall->command = ControlRead(controlXWall, 5); // cmd
+    pXWall->triggerOn = ControlRead(controlXWall, 6); // going on
+    pXWall->triggerOff = ControlRead(controlXWall, 7); // going off
+    pXWall->busyTime = ControlRead(controlXWall, 8); // busyTime
+    pXWall->waitTime = ControlRead(controlXWall, 9); // waitTime
+    pXWall->restState = ControlRead(controlXWall, 10); // restState
+    pXWall->triggerPush = ControlRead(controlXWall, 11); // Push
+    pXWall->triggerVector = ControlRead(controlXWall, 12); // Vector
+    pXWall->triggerReserved = ControlRead(controlXWall, 13); // Reserved
+    pXWall->dudeLockout = ControlRead(controlXWall, 14); // DudeLockout
+    pXWall->decoupled = ControlRead(controlXWall, 15); // Decoupled
+    pXWall->triggerOnce = ControlRead(controlXWall, 16); // 1-Shot
+    pXWall->locked = ControlRead(controlXWall, 17); // Locked
+    pXWall->interruptable = ControlRead(controlXWall, 18); // Interruptable
+    pXWall->data = ControlRead(controlXWall, 19); // Data
+    pXWall->key = ControlRead(controlXWall, 20); // Key
+    pXWall->panXVel = ControlRead(controlXWall, 21); // panX
+    pXWall->panYVel = ControlRead(controlXWall, 22); // panY
+    pXWall->panAlways = ControlRead(controlXWall, 23); // panAlways
+}
+
+void XSpriteControlSet(int nSprite)
+{
+    int nXSprite = sprite[nSprite].extra;
+    dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
+    XSPRITE* pXSprite = &xsprite[nXSprite];
+    ControlSet(controlXSprite, 1, sprite[nSprite].type); // type
+    ControlSet(controlXSprite, 2, pXSprite->rxID); // rx id
+    ControlSet(controlXSprite, 3, pXSprite->txID); // tx id
+    ControlSet(controlXSprite, 4, pXSprite->state); // state
+    ControlSet(controlXSprite, 5, pXSprite->command); // cmd
+    ControlSet(controlXSprite, 6, pXSprite->triggerOn); // going on
+    ControlSet(controlXSprite, 7, pXSprite->triggerOff); // going off
+    ControlSet(controlXSprite, 8, pXSprite->busyTime); // busyTime
+    ControlSet(controlXSprite, 9, pXSprite->waitTime); // waitTime
+    ControlSet(controlXSprite, 10, pXSprite->restState); // restState
+    ControlSet(controlXSprite, 11, pXSprite->Push); // Push
+    ControlSet(controlXSprite, 12, pXSprite->Vector); // Vector
+    ControlSet(controlXSprite, 13, pXSprite->Impact); // Impact
+    ControlSet(controlXSprite, 14, pXSprite->Pickup); // Pickup
+    ControlSet(controlXSprite, 15, pXSprite->Touch); // Touch
+    ControlSet(controlXSprite, 16, pXSprite->Sight); // Sight
+    ControlSet(controlXSprite, 17, pXSprite->Proximity); // Proximity
+    ControlSet(controlXSprite, 18, pXSprite->DudeLockout); // DudeLockout
+    ControlSet(controlXSprite, 19, !((pXSprite->lSkill>>0)&1)); // Launch 1
+    ControlSet(controlXSprite, 20, !((pXSprite->lSkill>>1)&1)); // Launch 2
+    ControlSet(controlXSprite, 21, !((pXSprite->lSkill>>2)&1)); // Launch 3
+    ControlSet(controlXSprite, 22, !((pXSprite->lSkill>>3)&1)); // Launch 4
+    ControlSet(controlXSprite, 23, !((pXSprite->lSkill>>4)&1)); // Launch 5
+    ControlSet(controlXSprite, 24, !pXSprite->lS); // Launch S
+    ControlSet(controlXSprite, 25, !pXSprite->lB); // Launch B
+    ControlSet(controlXSprite, 26, !pXSprite->lC); // Launch C
+    ControlSet(controlXSprite, 27, !pXSprite->lT); // Launch T
+    ControlSet(controlXSprite, 28, pXSprite->Decoupled); // Decoupled
+    ControlSet(controlXSprite, 29, pXSprite->triggerOnce); // 1-shot
+    ControlSet(controlXSprite, 30, pXSprite->locked); // Locked
+    ControlSet(controlXSprite, 31, pXSprite->Interrutable); // Interruptable
+    ControlSet(controlXSprite, 32, pXSprite->data1); // Data 1
+    ControlSet(controlXSprite, 33, pXSprite->data2); // Data 2
+    ControlSet(controlXSprite, 34, pXSprite->data3); // Data 3
+    ControlSet(controlXSprite, 35, pXSprite->data4); // Data 4
+    ControlSet(controlXSprite, 36, pXSprite->key); // Key
+    ControlSet(controlXSprite, 37, pXSprite->wave); // Wave
+    ControlSet(controlXSprite, 38, pXSprite->respawn); // Respawn option
+    ControlSet(controlXSprite, 39, pXSprite->dudeDeaf); // dudeDeaf
+    ControlSet(controlXSprite, 40, pXSprite->dudeAmbush); // dudeAmbush
+    ControlSet(controlXSprite, 41, pXSprite->dudeGuard); // dudeGuard
+    ControlSet(controlXSprite, 42, pXSprite->dudeFlag4); // reserved
+    ControlSet(controlXSprite, 43, pXSprite->lockMsg); // Lock msg
+    ControlSet(controlXSprite, 44, pXSprite->dropMsg); // Drop item
+}
+
+void XSpriteControlRead(int nSprite)
+{
+    int nXSprite = sprite[nSprite].extra;
+    dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
+    XSPRITE* pXSprite = &xsprite[nXSprite];
+    sprite[nSprite].type = ControlRead(controlXSprite, 1); // type
+    pXSprite->rxID = ControlRead(controlXSprite, 2); // rx id
+    pXSprite->txID = ControlRead(controlXSprite, 3); // tx id
+    pXSprite->state = ControlRead(controlXSprite, 4); // state
+    pXSprite->command = ControlRead(controlXSprite, 5); // cmd
+    pXSprite->triggerOn = ControlRead(controlXSprite, 6); // going on
+    pXSprite->triggerOff = ControlRead(controlXSprite, 7); // going off
+    pXSprite->busyTime = ControlRead(controlXSprite, 8); // busyTime
+    pXSprite->waitTime = ControlRead(controlXSprite, 9); // waitTime
+    pXSprite->restState = ControlRead(controlXSprite, 10); // restState
+    pXSprite->Push = ControlRead(controlXSprite, 11); // Push
+    pXSprite->Vector = ControlRead(controlXSprite, 12); // Vector
+    pXSprite->Impact = ControlRead(controlXSprite, 13); // Impact
+    pXSprite->Pickup = ControlRead(controlXSprite, 14); // Pickup
+    pXSprite->Touch = ControlRead(controlXSprite, 15); // Touch
+    pXSprite->Sight = ControlRead(controlXSprite, 16); // Sight
+    pXSprite->Proximity = ControlRead(controlXSprite, 17); // Proximity
+    pXSprite->DudeLockout = ControlRead(controlXSprite, 18); // DudeLockout
+    pXSprite->lSkill = (!ControlRead(controlXSprite, 19) << 0) // Launch 12345
+                     | (!ControlRead(controlXSprite, 20) << 1)
+                     | (!ControlRead(controlXSprite, 21) << 2)
+                     | (!ControlRead(controlXSprite, 22) << 3)
+                     | (!ControlRead(controlXSprite, 23) << 4);
+    pXSprite->lS = !ControlRead(controlXSprite, 24); // Launch S
+    pXSprite->lB = !ControlRead(controlXSprite, 25); // Launch B
+    pXSprite->lC = !ControlRead(controlXSprite, 26); // Launch C
+    pXSprite->lT = !ControlRead(controlXSprite, 27); // Launch T
+    pXSprite->Decoupled = ControlRead(controlXSprite, 28); // Decoupled
+    pXSprite->triggerOnce = ControlRead(controlXSprite, 29); // 1-shot
+    pXSprite->locked = ControlRead(controlXSprite, 30); // Locked
+    pXSprite->Interrutable = ControlRead(controlXSprite, 31); // Interruptable
+    pXSprite->data1 = ControlRead(controlXSprite, 32); // Data 1
+    pXSprite->data2 = ControlRead(controlXSprite, 33); // Data 2
+    pXSprite->data3 = ControlRead(controlXSprite, 34); // Data 3
+    pXSprite->data4 = ControlRead(controlXSprite, 35); // Data 4
+    pXSprite->key = ControlRead(controlXSprite, 36); // Key
+    pXSprite->wave = ControlRead(controlXSprite, 37); // Wave
+    pXSprite->respawn = ControlRead(controlXSprite, 38); // Respawn option
+    pXSprite->dudeDeaf = ControlRead(controlXSprite, 39); // dudeDeaf
+    pXSprite->dudeAmbush = ControlRead(controlXSprite, 40); // dudeAmbush
+    pXSprite->dudeGuard = ControlRead(controlXSprite, 41); // dudeGuard
+    pXSprite->dudeFlag4 = ControlRead(controlXSprite, 42); // reserved
+    pXSprite->lockMsg = ControlRead(controlXSprite, 43); // Lock msg
+    pXSprite->dropMsg = ControlRead(controlXSprite, 44); // Drop item
+}
+
 void XSectorControlSet(int nSector)
 {
     int nXSector = sector[nSector].extra;
@@ -1590,10 +2355,10 @@ int ShowSectorData(int nSector)
 void XEditSectorData(int nSector)
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    //sub_1058C();
+    sub_1058C();
     sprintf(gTempBuf, "Sector %d", nSector);
     printmessage16(gTempBuf);
-    //sub_10DBC(nSector);
+    sub_10DBC(nSector);
     XSectorControlSet(nSector);
     if (ControlKeys(controlXSector))
         XSectorControlRead(nSector);
@@ -1601,7 +2366,83 @@ void XEditSectorData(int nSector)
     //angvel = 0;
     //svel = 0;
     //vel = 0;
-    //sub_1058C();
+    sub_1058C();
+}
+
+int ShowWallData(int nWall)
+{
+    dassert(nWall >= 0 && nWall < kMaxWalls);
+    int nLen = approxDist(wall[wall[nWall].point2].x-wall[nWall].x, wall[wall[nWall].point2].y-wall[nWall].y);
+    sprintf(gTempBuf, "Wall %d:  Length = %d", nWall, nLen);
+    printmessage16(gTempBuf);
+    int nXWall = wall[nWall].extra;
+    if (nXWall > 0)
+    {
+        XWallControlSet(nWall);
+        ControlPrintList(controlXWall);
+        return 1;
+    }
+    else
+        ClearMidStatBar();
+    return 0;
+}
+
+void XEditWallData(int nWall)
+{
+    dassert(nWall >= 0 && nWall < kMaxWalls);
+    sub_1058C();
+    sprintf(gTempBuf, "Wall %d", nWall);
+    printmessage16(gTempBuf);
+    sub_10E08(nWall);
+    XWallControlSet(nWall);
+    if (ControlKeys(controlXWall))
+        XWallControlRead(nWall);
+    ShowWallData(nWall);
+    //angvel = 0;
+    //svel = 0;
+    //vel = 0;
+    sub_1058C();
+}
+
+int ShowSpriteData(int nSprite)
+{
+    dassert(nSprite >= 0 && nSprite < kMaxSprites);
+    if (sprite[nSprite].extra > 0)
+    {
+        int nXSprite = sprite[nSprite].extra;
+        sprintf(gTempBuf, "Sprite %d  Extra %d XRef %d", nSprite, nXSprite, xsprite[nXSprite].reference);
+    }
+    else
+        sprintf(gTempBuf, "Sprite %d", nSprite);
+    int nXSprite = sprite[nSprite].extra;
+    if (nXSprite > 0)
+    {
+        dassert(nXSprite < kMaxXSprites);
+        XSpriteControlSet(nSprite);
+        ControlPrintList(controlXSprite);
+        return 1;
+    }
+    else
+        ClearMidStatBar();
+    return 0;
+}
+
+void XEditSpriteData(int nSprite)
+{
+    dassert(nSprite >= 0 && nSprite < kMaxSprites);
+    sub_1058C();
+    sprintf(gTempBuf, "Sprite %d", nSprite);
+    printmessage16(gTempBuf);
+    sub_10E50(nSprite);
+    XSpriteControlSet(nSprite);
+    if (ControlKeys(controlXSprite))
+        XSpriteControlRead(nSprite);
+    ShowSpriteData(nSprite);
+    //angvel = 0;
+    //svel = 0;
+    //vel = 0;
+    sub_1058C();
+    sub_10EA0();
 }
 
 static int32_t getTileGroup(const char *groupName)
@@ -2098,6 +2939,16 @@ void ExtShowWallData(int16_t wallnum)       //F6
 {
     if (wallnum >= 0 && !eitherSHIFT)
     {
+        if (eitherALT)
+        {
+            XEditWallData(wallnum);
+            return;
+        }
+        else
+        {
+            if (ShowWallData(wallnum))
+                return;
+        }
     }
     // NUKE-TODO: Rewrite to show Blood stuff
 #if 0
@@ -3081,9 +3932,13 @@ static void M32_MoveFX(void)
 
 void ExtShowSpriteData(int16_t spritenum)   //F6
 {
-    UNREFERENCED_PARAMETER(spritenum);
-    if (!in3dmode())
-        ShowFileText("sehelp.hlp");
+    if (spritenum >= 0)
+    {
+        if (eitherALT)
+            XEditSpriteData(spritenum);
+        else
+            ShowSpriteData(spritenum);
+    }
 }
 
 void ExtEditSectorData(int16_t sectnum)    //F7
