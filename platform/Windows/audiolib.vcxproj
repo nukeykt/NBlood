@@ -210,7 +210,12 @@
     <ClCompile Include="..\..\source\audiolib\src\multivoc.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\music.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\opl3.cpp" />
-    <ClCompile Include="..\..\source\audiolib\src\oplmidi.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\oplmidi.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\pitch.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\sdlmusic.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>

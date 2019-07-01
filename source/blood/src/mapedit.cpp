@@ -324,8 +324,8 @@ static const char *SpriteMode[]=
     "ALL",
     "ITEMS ONLY",
     "CURRENT SPRITE ONLY",
-    "ONLY SECTOREFFECTORS AND SECTORS",
-    "NO SECTOREFFECTORS OR SECTORS"
+    //"ONLY SECTOREFFECTORS AND SECTORS",
+    //"NO SECTOREFFECTORS OR SECTORS"
 };
 
 #define MAXSKILL 5
@@ -832,6 +832,13 @@ void FillStringLists()
 void sub_1058C()
 {
     dbXSectorClean();
+#ifdef YAX_ENABLE
+    for (int i = 0; i < numwalls; i++)
+    {
+        if (yax_hasnextwall(i))
+            wall[i].extra = -1;
+    }
+#endif
     dbXWallClean();
     dbXSpriteClean();
     InitSectorFX();
@@ -1681,9 +1688,12 @@ void ControlPrint(CONTROL* control, int a2)
     }
 }
 
+char pzControlMsg[256];
+
 void ControlPrintList(CONTROL* control)
 {
     ClearMidStatBar();
+    _printmessage16(pzControlMsg);
     while (control->type != CONTROL_END)
     {
         ControlPrint(control++, 0);
@@ -2032,7 +2042,7 @@ char sub_1BFF4(CONTROL* control, char a2) // sound
         if (hSnd != NULL)
         {
             SFX* pSfx = (SFX*)gSoundRes.Load(hSnd);
-            printmessage16(pSfx->rawName);
+            Bstrcpy(pzControlMsg, pSfx->rawName);
             sndStartSample(control->at21, FXVolume, 0, 0);
         }
         return 0;
@@ -2337,8 +2347,7 @@ void XSectorControlRead(int nSector)
 int ShowSectorData(int nSector)
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    sprintf(gTempBuf, "Sector %d", nSector);
-    printmessage16(gTempBuf);
+    sprintf(pzControlMsg, "^10Sector %d", nSector);
     int nXSector = sector[nSector].extra;
     if (nXSector > 0)
     {
@@ -2356,8 +2365,7 @@ void XEditSectorData(int nSector)
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
     sub_1058C();
-    sprintf(gTempBuf, "Sector %d", nSector);
-    printmessage16(gTempBuf);
+    sprintf(pzControlMsg, "^10Sector %d", nSector);
     sub_10DBC(nSector);
     XSectorControlSet(nSector);
     if (ControlKeys(controlXSector))
@@ -2372,9 +2380,12 @@ void XEditSectorData(int nSector)
 int ShowWallData(int nWall)
 {
     dassert(nWall >= 0 && nWall < kMaxWalls);
-    int nLen = approxDist(wall[wall[nWall].point2].x-wall[nWall].x, wall[wall[nWall].point2].y-wall[nWall].y);
-    sprintf(gTempBuf, "Wall %d:  Length = %d", nWall, nLen);
-    printmessage16(gTempBuf);
+    int nLen = wallength(nWall);
+    sprintf(pzControlMsg, "^10Wall %d:  Length = %d", nWall, nLen);
+#ifdef YAX_ENABLE
+    if (yax_hasnextwall(nWall))
+        return 0;
+#endif
     int nXWall = wall[nWall].extra;
     if (nXWall > 0)
     {
@@ -2391,8 +2402,11 @@ void XEditWallData(int nWall)
 {
     dassert(nWall >= 0 && nWall < kMaxWalls);
     sub_1058C();
-    sprintf(gTempBuf, "Wall %d", nWall);
-    printmessage16(gTempBuf);
+    sprintf(pzControlMsg, "^10Wall %d", nWall);
+#ifdef YAX_ENABLE
+    if (yax_hasnextwall(nWall))
+        return;
+#endif
     sub_10E08(nWall);
     XWallControlSet(nWall);
     if (ControlKeys(controlXWall))
@@ -2431,8 +2445,7 @@ void XEditSpriteData(int nSprite)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
     sub_1058C();
-    sprintf(gTempBuf, "Sprite %d", nSprite);
-    printmessage16(gTempBuf);
+    sprintf(pzControlMsg, "Sprite %d", nSprite);
     sub_10E50(nSprite);
     XSpriteControlSet(nSprite);
     if (ControlKeys(controlXSprite))
@@ -2510,36 +2523,61 @@ const char *ExtGetSectorType(int32_t lotag)
     return "";
 }
 
-const char *ExtGetSectorCaption(int16_t sectnum)
+const char *ExtGetSectorCaption(int16_t nSector)
 {
-    static char tempbuf[64];
+    char v100[256];
+    static char tempbuf[256];
+
+    dassert(nSector >= 0 && nSector < kMaxSectors);
 
     Bmemset(tempbuf, 0, sizeof(tempbuf));
 
     if (!in3dmode() && ((onnames!=1 && onnames!=4 && onnames!=7) || onnames==8))
         return tempbuf;
 
-    if (in3dmode() || (sector[sectnum].lotag|sector[sectnum].hitag))
+    int nXSector = sector[nSector].extra;
+    if (nXSector > 0)
     {
-        Bstrcpy(lo, ExtGetSectorType(sector[sectnum].lotag));
-        if (!in3dmode())
-            Bsnprintf(tempbuf, sizeof(tempbuf), "%hu,%hu %s", TrackerCast(sector[sectnum].hitag), TrackerCast(sector[sectnum].lotag), lo);
-        else
-            Bsnprintf(tempbuf, sizeof(tempbuf), "%hu %s", TrackerCast(sector[sectnum].lotag), lo);
+        if (xsector[nXSector].rxID > 0)
+            Bsprintf(tempbuf, "%i:", xsector[nXSector].rxID);
+
+        Bstrcat(tempbuf, pzSectType[sector[nSector].lotag]);
+
+        if (xsector[nXSector].txID > 0)
+        {
+            Bsprintf(v100, ":%i", xsector[nXSector].txID);
+            Bstrcat(tempbuf, v100);
+        }
+
+        if (xsector[nXSector].panVel)
+        {
+            Bsprintf(v100, " PAN(%i,%i)", xsector[nXSector].panAngle, xsector[nXSector].panVel);
+            Bstrcat(tempbuf, v100);
+        }
+
+        Bstrcat(tempbuf, " ");
+        Bstrcat(tempbuf, pzOffOn[xsector[nXSector].state]);
+    }
+    else if (sector[nSector].lotag || sector[nSector].hitag)
+    {
+        Bsprintf(tempbuf, "{%i:%i}", TrackerCast(sector[nSector].hitag), TrackerCast(sector[nSector].lotag));
     }
     return tempbuf;
 }
 
-const char *ExtGetWallCaption(int16_t wallnum)
+const char *ExtGetWallCaption(int16_t nWall)
 {
-    static char tempbuf[64];
+    char v100[256];
+    static char tempbuf[256];
+
+    dassert(nWall >= 0 && nWall < kMaxWalls);
 
     Bmemset(tempbuf,0,sizeof(tempbuf));
 
-    if (wallcstat14[wallnum>>3]&(1<<(wallnum&7)))
+    if (wallcstat14[nWall>>3]&(1<<(nWall&7)))
     {
-        Bsprintf(tempbuf,"%d", wallength(wallnum));
-        wallcstat14[wallnum>>3] &= ~(1<<(wallnum&7));
+        Bsprintf(tempbuf,"%d", wallength(nWall));
+        wallcstat14[nWall>>3] &= ~(1<<(nWall&7));
         return tempbuf;
     }
 
@@ -2549,34 +2587,45 @@ const char *ExtGetWallCaption(int16_t wallnum)
         return tempbuf;
     }
 
+#ifdef YAX_ENABLE__COMPAT
+    if (yax_hasnextwall(nWall))
+    {
+        tempbuf[0] = 0;
+        return tempbuf;
+    }
+#endif
+
     // HERE
 
-    if ((wall[wallnum].lotag|wall[wallnum].hitag) == 0)
-        tempbuf[0] = 0;
-    else
+    int nXWall = wall[nWall].extra;
+    if (nXWall > 0)
     {
-        int32_t lt = taglab_linktags(0, wallnum);
-        char histr[TAGLAB_MAX+16], lostr[TAGLAB_MAX+16];
-
-        lt &= ~(int)(wall[wallnum].lotag<=0);
-        lt &= ~(int)((wall[wallnum].hitag<=0)<<1);
-
-        taglab_handle1(lt&2, wall[wallnum].hitag, histr);
-
-#ifdef YAX_ENABLE__COMPAT
-        if (yax_getnextwall(wallnum, YAX_CEILING) >= 0)  // ceiling nextwall: lotag
+        if (xwall[nXWall].rxID > 0)
         {
-            if (wall[wallnum].hitag == 0)
-                tempbuf[0] = 0;
-            else
-                Bsprintf(tempbuf, "%s,*", histr);
+            Bsprintf(v100, "%i:", xwall[nXWall].rxID);
+            Bstrcat(tempbuf, v100);
         }
-        else
-#endif
+
+        Bstrcat(tempbuf, pzWallType[wall[nXWall].lotag]);
+
+        if (xwall[nXWall].txID > 0)
         {
-            taglab_handle1(lt&1, wall[wallnum].lotag, lostr);
-            Bsnprintf(tempbuf, sizeof(tempbuf), "%s,%s", histr, lostr);
+            Bsprintf(v100, ":%i", xwall[nXWall].txID);
+            Bstrcat(tempbuf, v100);
         }
+
+        if (xwall[nXWall].panXVel || xwall[nXWall].panYVel)
+        {
+            Bsprintf(v100, " PAN(%i,%i)", xwall[nXWall].panXVel, xwall[nXWall].panYVel);
+            Bstrcat(tempbuf, v100);
+        }
+
+        Bstrcat(tempbuf, " ");
+        Bstrcat(tempbuf, pzOffOn[xwall[nXWall].state]);
+    }
+    else if (wall[nWall].lotag || wall[nWall].hitag)
+    {
+        Bsprintf(tempbuf, "{%i:%i}", TrackerCast(wall[nWall].hitag), TrackerCast(wall[nWall].lotag));
     }
 
     return tempbuf;
@@ -2685,16 +2734,20 @@ const char *ExtGetWallCaption(int16_t wallnum)
 //    return tempbuf;
 //}
 
-const char *ExtGetSpriteCaption(int16_t spritenum)
+const char *ExtGetSpriteCaption(int16_t nSprite)
 {
+    char v100[256];
     static char tempbuf[1024];
+
+    dassert(nSprite >= 0 && nSprite < kMaxSprites);
+
     int32_t retfast = 0, lt;
 
-    if (!(onnames>=3 && onnames<=8) || (onnames==7/* && sprite[spritenum].picnum!=SECTOREFFECTOR*/))
+    if (!(onnames>=3 && onnames<=6))
         retfast = 1;
-    if (onnames==5 && !tileInGroup(tilegroupItems, sprite[spritenum].picnum))
+    if (onnames==5 && !(sprite[nSprite].type >= 40 && sprite[nSprite].type < 200))
         retfast = 1;
-    if (onnames==6 && sprite[spritenum].picnum != sprite[cursprite].picnum)
+    if (onnames==6 && sprite[nSprite].type != sprite[cursprite].type)
         retfast = 1;
 
     tempbuf[0] = 0;
@@ -2702,51 +2755,58 @@ const char *ExtGetSpriteCaption(int16_t spritenum)
     if (retfast)
         return tempbuf;
 
-    lt = taglab_linktags(1, spritenum);
-    lt &= ~(int)(sprite[spritenum].lotag<=0);
-    lt &= ~(int)((sprite[spritenum].hitag<=0)<<1);
-
-    if ((sprite[spritenum].lotag|sprite[spritenum].hitag) == 0)
+    spritetype *pSprite = &sprite[nSprite];
+    const char* pzType = pzSpriteType[pSprite->type];
+    if (pSprite->type != 0 && pSprite->statnum != 10 && pzType != NULL)
     {
-        Bmemset(tempbuf, 0, sizeof(tempbuf));
-        SpriteName(spritenum,lo);
-
-        if (lo[0]!=0)
+        int nXSprite = pSprite->extra;
+        if (nXSprite > 0)
         {
-            Bsprintf(tempbuf,"%s",lo);
+            XSPRITE* pXSprite = &xsprite[nXSprite];
+            switch (pSprite->type)
+            {
+            case 1:
+            case 2:
+            case 6:
+            case 7:
+            case 9:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 18:
+            case 19:
+                Bsprintf(tempbuf, "%s [%d]", pzType, pXSprite->data1);
+                return tempbuf;
+            }
+            if (pXSprite->rxID > 0)
+            {
+                Bsprintf(v100, "%i:", pXSprite->rxID);
+                Bstrcat(tempbuf, v100);
+            }
 
-            if (sprite[spritenum].pal==1)
-                Bstrcat(tempbuf," (MULTIPLAYER)");
+            Bstrcat(tempbuf, pzType);
+
+            if (pXSprite->txID > 0)
+            {
+                Bsprintf(v100, ":%i", pXSprite->txID);
+                Bstrcat(tempbuf, v100);
+            }
+
+            if (pSprite->type >= 20 && pSprite->type < 33)
+            {
+                Bstrcat(tempbuf, " ");
+                Bstrcat(tempbuf, pzOffOn[xsprite[nXSprite].state]);
+            }
+            return tempbuf;
         }
-
-        return tempbuf;
+        return pzType;
     }
-
-    char histr[TAGLAB_MAX+16], lostr[TAGLAB_MAX+16];
-
-    taglab_handle1(lt&2, sprite[spritenum].hitag, histr);
-
-    //if (sprite[spritenum].picnum==SECTOREFFECTOR)
-    //{
-    //    if (onnames!=8)
-    //    {
-    //        Bmemset(tempbuf, 0, sizeof(tempbuf));
-    //        Bsprintf(lo,"%s",SectorEffectorText(spritenum));
-    //        Bsprintf(tempbuf,"%s, %s",lo, histr);
-    //    }
-    //}
-    //else
+    else if (sprite[nSprite].lotag || sprite[nSprite].hitag)
     {
-        Bmemset(tempbuf, 0, sizeof(tempbuf));
-        taglab_handle1(lt&1, sprite[spritenum].lotag, lostr);
-        SpriteName(spritenum,lo);
-
-        if (sprite[spritenum].extra != -1)
-            Bsprintf(tempbuf,"%s,%s,%d %s", histr, lostr, TrackerCast(sprite[spritenum].extra), lo);
-        else
-            Bsprintf(tempbuf,"%s,%s %s", histr, lostr, lo);
+        Bsprintf(tempbuf, "{%i:%i}", TrackerCast(sprite[nSprite].hitag), TrackerCast(sprite[nSprite].lotag));
     }
-
     return tempbuf;
 
 } //end
