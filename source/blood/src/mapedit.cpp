@@ -9698,6 +9698,18 @@ static void InitCustomColors(void)
     int32_t i;
     palette_t *edcol;
 
+    vgapal16[2*4+0] = 19;
+    vgapal16[2*4+1] = 75;
+    vgapal16[2*4+2] = 19;
+
+    vgapal16[4*4+0] = 31;
+    vgapal16[4*4+1] = 31;
+    vgapal16[4*4+2] = 143;
+
+    vgapal16[5*4+0] = 111;
+    vgapal16[5*4+1] = 67;
+    vgapal16[5*4+2] = 59;
+
     vgapal16[10*4+0] = 83;
     vgapal16[10*4+1] = 139;
     vgapal16[10*4+2] = 83;

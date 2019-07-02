@@ -868,6 +868,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
     const walltype *const wal = &wall[i];
 
     int32_t j = wal->nextwall;
+    int32_t cstat = 0;
 #if 0
     if (editstatus == 0)
     {
@@ -886,17 +887,39 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
     if (grayp&1)
         col = editorcolors[8];
     else if (j < 0)
+    {
         col = (i == linehighlight) ? editorcolors[15] - M32_THROB : editorcolors[15];
+        cstat = wal->cstat;
+    }
     else
     {
         if ((unsigned) wal->nextwall < MAXWALLS && ((wal->cstat^wall[j].cstat)&1))
             col = editorcolors[2];
-        else if ((wal->cstat&1) != 0)
+        else if (bloodhack ? (wal->cstat&64) != 0 : (wal->cstat&1) != 0)
             col = editorcolors[5];
         else col = editorcolors[4];
 
+        cstat = wal->cstat;
+        if (i != linehighlight && (unsigned)wal->nextwall < MAXWALLS)
+        {
+            if (wal->nextwall == linehighlight)
+                cstat = wall[wal->nextwall].cstat;
+            else
+                cstat |= wall[wal->nextwall].cstat;
+        }
+
         if (i == linehighlight || (linehighlight >= 0 && i == wall[linehighlight].nextwall))
             col += M32_THROB>>2;
+    }
+
+    if (bloodhack && (cstat&0xc000))
+    {
+        if (cstat&0x8000)
+            col = editorcolors[10];
+        else if (cstat&0x4000)
+            col = editorcolors[9];
+        if (i == linehighlight || (linehighlight >= 0 && i == wall[linehighlight].nextwall))
+            col -= M32_THROB>>3;
     }
 
     int const p2 = wal->point2;
@@ -969,7 +992,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
         m32_wallscreenxy[i][1] = midydim16+y1;
     }
 
-    if (wal->cstat&64)  // if hitscan bit set
+    if (bloodhack ? cstat&1 : wal->cstat&64)  // if hitscan bit set
     {
         int32_t const one=(klabs(x2-x1) >= klabs(y2-y1)), no=!one;
 
