@@ -62,7 +62,7 @@ extern int16_t highlightsector[MAXSECTORS], highlightsectorcnt;
 extern int16_t highlight[MAXWALLS+MAXSPRITES];
 extern int16_t asksave;
 
-extern int16_t pointhighlight, linehighlight, highlightcnt;
+extern int16_t pointhighlight, linehighlight, sectorhighlight, highlightcnt;
 
 #define DEFAULT_SPRITE_CSTAT 0
 //extern int16_t defaultspritecstat;

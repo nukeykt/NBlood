@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #include "build.h"
+#include "editor.h"
 #ifdef POLYMER
 #include "polymer.h"
 #endif
@@ -1275,6 +1276,8 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 #ifdef YAX_ENABLE
     // NUKE-TODO: Should be updated for new map format only
     yax_update(0);
+    if (editstatus)
+        yax_updategrays(*pZ);
 #endif
 
     g_loadedMapVersion = 7;

@@ -2803,10 +2803,10 @@ const char *ExtGetSpriteCaption(int16_t nSprite)
         }
         return pzType;
     }
-    else if (sprite[nSprite].lotag || sprite[nSprite].hitag)
-    {
-        Bsprintf(tempbuf, "{%i:%i}", TrackerCast(sprite[nSprite].hitag), TrackerCast(sprite[nSprite].lotag));
-    }
+    //else if (sprite[nSprite].lotag || sprite[nSprite].hitag)
+    //{
+    //    Bsprintf(tempbuf, "{%i:%i}", TrackerCast(sprite[nSprite].hitag), TrackerCast(sprite[nSprite].lotag));
+    //}
     return tempbuf;
 
 } //end
@@ -12061,6 +12061,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
         }
     }
 
+#if 0
     if (showambiencesounds)
     {
         for (ii=0; ii<numsectors; ii++)
@@ -12093,6 +12094,84 @@ void ExtPreCheckKeys(void) // just before drawrooms
                 drawlinepat = 0xffffffff;
             }
     }
+#endif
+    if (zoom >= 256)
+        for (ii=0; ii<numsectors; ii++)
+            for (i=headspritesect[ii]; i>=0; i=nextspritesect[i])
+            {
+                int32_t radius1, radius2, col1, col2;
+                int32_t xp1, yp1, xp2, yp2;
+                int16_t const angofs = m32_sideview ? m32_sideang : 0;
+
+                editorGet2dScreenCoordinates(&xp1,&yp1, sprite[i].x-pos.x,sprite[i].y-pos.y, zoom);
+                if (m32_sideview)
+                    yp1 += getscreenvdisp(sprite[i].z-pos.z, zoom);
+
+                //if (sprite[i].picnum != MUSICANDSFX /*|| zoom < 256*/ || sprite[i].hitag < 1000)
+                //    continue;
+                if (sprite[i].statnum == 10 && sprite[i].type == 3)
+                {
+                    int nSector = sprite[i].owner;
+                    int nXSector = sector[nSector].extra;
+                    dassert(nXSector > 0 && nXSector < kMaxXSectors);
+                    int k = xsector[nXSector].at2e_0;
+                    editorGet2dScreenCoordinates(&xp2,&yp2, sprite[k].x-pos.x,sprite[k].y-pos.y, zoom);
+                    if (m32_sideview)
+                        yp2 += getscreenvdisp(sprite[k].z-pos.z, zoom);
+                    col2 = editorcolors[9];
+                    if (pointhighlight >= 16384 &&
+                        (i+16384 == pointhighlight ||
+                        (!m32_sideview && (sprite[i].x == sprite[pointhighlight-16384].x &&
+                            sprite[i].y == sprite[pointhighlight-16384].y))))
+                    {
+                        col2 -= M32_THROB>>2;
+                    }
+                    editorDraw2dLine(halfxdim16+xp1, midydim16+yp1, halfxdim16+xp2, midydim16+yp2, col2);
+        
+                    int ang = getangle(sprite[i].x-sprite[k].x, sprite[i].y-sprite[k].y);
+                    int dx = mulscale30(zoom/64, Cos(ang+angofs+170));
+                    int dy = mulscale30(zoom/64, Sin(ang+angofs+170));
+                    dy = scalescreeny(dy);
+                    editorDraw2dLine(halfxdim16+xp2, midydim16+yp2, halfxdim16+xp2+dx, midydim16+yp2+dy, col2);
+                    dx = mulscale30(zoom/64, Cos(ang+angofs-170));
+                    dy = mulscale30(zoom/64, Sin(ang+angofs-170));
+                    dy = scalescreeny(dy);
+                    editorDraw2dLine(halfxdim16+xp2, midydim16+yp2, halfxdim16+xp2+dx, midydim16+yp2+dy, col2);
+                }
+
+                if (showambiencesounds && sprite[i].statnum == 12)
+                {
+                    int nXSprite = sprite[i].extra;
+                    if (nXSprite > 0)
+                    {
+                        dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
+                        XSPRITE* pXSprite = &xsprite[nXSprite];
+                        if (showambiencesounds==1 && sprite[i].sectnum!=cursectnum)
+                            continue;
+
+                        //drawlinepat = 0xf0f0f0f0;
+
+                        col1 = editorcolors[14];
+                        col2 = editorcolors[6];
+                        if (i+16384 == pointhighlight)
+                        {
+                            radius1 = mulscale10(ClipLow(pXSprite->data1 - (M32_THROB<<2), 0), zoom);
+                            radius2 = mulscale10(ClipLow(pXSprite->data2 - (M32_THROB<<2), 0), zoom);
+                            col1 += M32_THROB>>2;
+                            col2 += M32_THROB>>2;
+                        }
+                        else
+                        {
+                            radius1 = mulscale10(pXSprite->data1, zoom);
+                            radius2 = mulscale10(pXSprite->data2, zoom);
+                        }
+
+                        editorDraw2dCircle(halfxdim16+xp1, midydim16+yp1, radius1, scalescreeny(16384), col1);
+                        editorDraw2dCircle(halfxdim16+xp1, midydim16+yp1, radius2, scalescreeny(16384), col2);
+                        //drawlinepat = 0xffffffff;
+                    }
+                }
+            }
 
     videoEndDrawing();  //}}}
 }

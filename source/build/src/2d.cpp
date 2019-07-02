@@ -1113,6 +1113,127 @@ int32_t editorGet2dSpriteColor(int32_t spr)
     return palookup[pal][tilecols[picnum]];
 }
 
+static void editorDraw2DBloodMarker(int x, int y, int col)
+{
+    editorDraw2dCircle(x, y, 4, 16384, col);
+    editorDraw2dLine(x-2, y-2, x+2, y+2, col);
+    editorDraw2dLine(x+2, y-2, x-2, y+2, col);
+#if 0
+    plotpixel(x-4, y-1, col);
+    plotpixel(x-4, y-0, col);
+    plotpixel(x-4, y+1, col);
+    
+    plotpixel(x-3, y-3, col);
+    plotpixel(x-3, y-2, col);
+    plotpixel(x-3, y+2, col);
+    plotpixel(x-3, y+3, col);
+    
+    plotpixel(x-2, y-3, col);
+    plotpixel(x-2, y-2, col);
+    plotpixel(x-2, y+2, col);
+    plotpixel(x-2, y+3, col);
+    
+    plotpixel(x-1, y-4, col);
+    plotpixel(x-1, y-1, col);
+    plotpixel(x-1, y+1, col);
+    plotpixel(x-1, y+4, col);
+    
+    plotpixel(x-0, y-4, col);
+    plotpixel(x-0, y-0, col);
+    plotpixel(x-0, y+4, col);
+    
+    plotpixel(x+1, y-4, col);
+    plotpixel(x+1, y-1, col);
+    plotpixel(x+1, y+1, col);
+    plotpixel(x+1, y+4, col);
+    
+    plotpixel(x+2, y-3, col);
+    plotpixel(x+2, y-2, col);
+    plotpixel(x+2, y+2, col);
+    plotpixel(x+2, y+3, col);
+    
+    plotpixel(x+3, y-3, col);
+    plotpixel(x+3, y-2, col);
+    plotpixel(x+3, y+2, col);
+    plotpixel(x+3, y+3, col);
+
+    plotpixel(x+4, y-1, col);
+    plotpixel(x+4, y-0, col);
+    plotpixel(x+4, y+1, col);
+#endif
+}
+
+static void editorDraw2dSpriteBloodMarker(int32_t j, int32_t posxe, int32_t posye, int32_t posze, int32_t zoome)
+{
+    int32_t x1, y1, x2, y2;
+    int col;
+
+    const spritetype *const spr = &sprite[j];
+
+    int16_t const angofs = m32_sideview ? m32_sideang : 0;
+    uint8_t const spritecol = sectorhighlight == spr->owner ? 15 : 14;
+
+    // KEEPINSYNC build.c: drawspritelabel()
+    if (spr->sectnum<0)
+        col = editorcolors[4];  // red
+    else
+        col = editorcolors[spritecol];
+
+    if (editstatus == 1)
+    {
+        if (pointhighlight >= 16384 &&
+            (j+16384 == pointhighlight ||
+            (!m32_sideview && (spr->x == sprite[pointhighlight-16384].x &&
+                spr->y == sprite[pointhighlight-16384].y))))
+        {
+            if (spritecol >= 8 && spritecol <= 15)
+                col -= bloodhack ? M32_THROB>>2 : M32_THROB>>1;
+            else
+                col += M32_THROB>>2;
+        }
+        else // if (highlightcnt > 0)
+        {
+            if (show2dsprite[j>>3]&pow2char[j&7])
+                col = editorcolors[14] - (M32_THROB>>1);
+        }
+    }
+
+    editorGet2dScreenCoordinates(&x1, &y1, spr->x-posxe, spr->y-posye, zoome);
+    //   tempint = ((midydim16+y1)*bytesperline)+(halfxdim16+x1)+frameplace;
+
+    if (m32_sideview)
+        y1 += getscreenvdisp(spr->z-posze, zoome);
+
+    int f = mulscale12(128, zoome);
+
+    if ((halfxdim16+x1 >= -f) && (halfxdim16+x1 < xdim+f) &&
+        (midydim16+y1 >= -f) && (midydim16+y1 < ydim16+f))
+    {
+        if (spr->statnum == 10)
+        {
+            switch (spr->type)
+            {
+            case 3:
+            case 4:
+                editorDraw2DBloodMarker(halfxdim16+x1, midydim16+y1, col);
+                break;
+
+            case 5:
+            case 6:
+                editorDraw2DBloodMarker(halfxdim16+x1, midydim16+y1, col);
+                x2 = mulscale11(sintable[(spr->ang+angofs+2560)&2047], zoome) / 768;
+                y2 = mulscale11(sintable[(spr->ang+angofs+2048)&2047], zoome) / 768;
+                y2 = scalescreeny(y2);
+
+                editorDraw2dLineMiddle(x1, y1, x1+x2, y1+y2, col);
+                break;
+            }
+        }
+        else
+            editorDraw2DBloodMarker(halfxdim16+x1, midydim16+y1, col);
+    }
+}
+
 static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t posze, int32_t zoome)
 {
     int32_t x1, y1, x2, y2;
@@ -1123,7 +1244,24 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
     int16_t const flooraligned = (spr->cstat&32), wallaligned = (spr->cstat&16);
 
     int16_t const angofs = m32_sideview ? m32_sideang : 0;
-    uint8_t const spritecol = spritecol2d[spr->picnum][blocking];
+    uint8_t spritecol = spritecol2d[spr->picnum][blocking];
+
+    if (bloodhack)
+    {
+        if (spr->statnum == 10 || spr->statnum == 12)
+        {
+            editorDraw2dSpriteBloodMarker(j, posxe, posye, posze, zoome);
+            return;
+        }
+        if (spr->cstat & 256)
+            spritecol = 5;
+        if (spr->cstat & 0x8000)
+            spritecol = 8;
+        if (spr->cstat & 0x2000)
+            spritecol = 9;
+        if (spr->cstat & 0x4000)
+            spritecol = 10;
+    }
 
     // KEEPINSYNC build.c: drawspritelabel()
     if (spr->sectnum<0)
