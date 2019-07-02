@@ -9702,6 +9702,10 @@ static void InitCustomColors(void)
     vgapal16[2*4+1] = 75;
     vgapal16[2*4+2] = 19;
 
+    vgapal16[3*4+0] = 215;
+    vgapal16[3*4+1] = 115;
+    vgapal16[3*4+2] = 43;
+
     vgapal16[4*4+0] = 31;
     vgapal16[4*4+1] = 31;
     vgapal16[4*4+2] = 143;
@@ -9710,13 +9714,25 @@ static void InitCustomColors(void)
     vgapal16[5*4+1] = 67;
     vgapal16[5*4+2] = 59;
 
+    vgapal16[9*4+0] = 227;
+    vgapal16[9*4+1] = 135;
+    vgapal16[9*4+2] = 51;
+
     vgapal16[10*4+0] = 83;
     vgapal16[10*4+1] = 139;
     vgapal16[10*4+2] = 83;
 
-    vgapal16[13*4+0] = 51;
-    vgapal16[13*4+1] = 107;
-    vgapal16[13*4+2] = 227;
+    vgapal16[12*4+0] = 95;
+    vgapal16[12*4+1] = 103;
+    vgapal16[12*4+2] = 187;
+
+    vgapal16[13*4+0] = 143;
+    vgapal16[13*4+1] = 91;
+    vgapal16[13*4+2] = 75;
+
+    //vgapal16[13*4+0] = 51;
+    //vgapal16[13*4+1] = 107;
+    //vgapal16[13*4+2] = 227;
 
     /* orange */
     vgapal16[31*4+0] = 80; // blue

@@ -1139,8 +1139,9 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
                 spr->y == sprite[pointhighlight-16384].y))))
         {
             if (spritecol >= 8 && spritecol <= 15)
-                col -= M32_THROB>>1;
-            else col += M32_THROB>>2;
+                col -= bloodhack ? M32_THROB>>2 : M32_THROB>>1;
+            else
+                col += M32_THROB>>2;
         }
         else // if (highlightcnt > 0)
         {
