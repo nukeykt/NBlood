@@ -72,3 +72,4 @@ void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT a3);
 int getDodgeChance(spritetype* pSprite);
 int getRecoilChance(spritetype* pSprite);
 bool dudeIsMelee(XSPRITE* pXSprite);
+void updateTargetOfSlaves(spritetype* pSprite);
