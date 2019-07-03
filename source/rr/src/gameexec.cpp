@@ -1094,14 +1094,14 @@ static int32_t VM_ResetPlayer(int const playerNum, int32_t vmFlags)
             CAMERACLOCK = totalclock;
         }
 
-        if (g_fakeMultiMode)
+        //if (g_fakeMultiMode)
             P_ResetPlayer(playerNum);
 #ifndef NETCODE_DISABLE
-        if (g_netServer)
-        {
-            P_ResetPlayer(playerNum);
-            Net_SpawnPlayer(playerNum);
-        }
+        //if (g_netServer)
+        //{
+        //    P_ResetPlayer(playerNum);
+        //    Net_SpawnPlayer(playerNum);
+        //}
 #endif
     }
 
