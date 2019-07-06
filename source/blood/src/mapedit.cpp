@@ -564,8 +564,8 @@ TextList tSpriteType[] = {
     { 14, "Lower goo" },
     { 13, "Upper goo" },
     { 15, "Path marker" },
-    { 16, "Alignable Region" },
-    { 17, "Base Region" },
+    //{ 16, "Alignable Region" },
+    //{ 17, "Base Region" },
     { 18, "Dude Spawn" },
     { 19, "Earthquake" },
     { 20, "Toggle switch" },
@@ -575,13 +575,13 @@ TextList tSpriteType[] = {
     { 30, "Torch" },
     { 32, "Candle" },
     { 40, gWeaponText[0] },
-    { 47, gWeaponText[7] },
+    //{ 47, gWeaponText[7] },
     { 43, gWeaponText[3] },
     { 41, gWeaponText[1] },
     { 42, gWeaponText[2] },
     { 46, gWeaponText[6] },
-    { 49, gWeaponText[9] },
-    { 48, gWeaponText[8] },
+    //{ 49, gWeaponText[9] },
+    //{ 48, gWeaponText[8] },
     { 45, gWeaponText[5] },
     { 50, gWeaponText[10] },
     { 44, gWeaponText[4] },
@@ -616,26 +616,26 @@ TextList tSpriteType[] = {
     { 113, gItemText[13] },
     { 114, gItemText[14] },
     { 115, gItemText[15] },
-    { 116, gItemText[16] },
+    //{ 116, gItemText[16] },
     { 117, gItemText[17] },
     { 118, gItemText[18] },
     { 119, gItemText[19] },
-    { 120, gItemText[20] },
+    //{ 120, gItemText[20] },
     { 121, gItemText[21] },
-    { 122, gItemText[22] },
+    //{ 122, gItemText[22] },
     { 123, gItemText[23] },
     { 124, gItemText[24] },
     { 125, gItemText[25] },
-    { 126, gItemText[26] },
+    //{ 126, gItemText[26] },
     { 127, gItemText[27] },
     { 128, gItemText[28] },
     { 129, gItemText[29] },
     { 130, gItemText[30] },
-    { 131, gItemText[31] },
-    { 132, gItemText[32] },
-    { 133, gItemText[33] },
-    { 134, gItemText[34] },
-    { 135, gItemText[35] },
+    //{ 131, gItemText[31] },
+    //{ 132, gItemText[32] },
+    //{ 133, gItemText[33] },
+    //{ 134, gItemText[34] },
+    //{ 135, gItemText[35] },
     { 136, gItemText[36] },
     { 137, gItemText[37] },
     { 138, gItemText[38] },
@@ -679,16 +679,17 @@ TextList tSpriteType[] = {
     { 223, "Fire Pod" },
     { 224, "Fire Tentacle" },
     { 227, "Cerberus" },
+    { 228, "Cerberus (1 Dead Head)" },
     { 229, "Tchernobog" },
     { 230, "TCultist prone" },
     { 246, "SCultist prone" },
     { 400, "TNT Barrel" },
     { 401, "Armed Prox Bomb" },
     { 402, "Armed Remote" },
-    { 403, "Blue Vase" },
-    { 404, "Brown Vase" },
+    //{ 403, "Blue Vase" },
+    //{ 404, "Brown Vase" },
     { 405, "Crate Face" },
-    { 406, "Glass Window" },
+    //{ 406, "Glass Window" },
     { 407, "Fluorescent Light" },
     { 408, "Wall Crack" },
     { 409, "Wood Beam" },
@@ -701,8 +702,8 @@ TextList tSpriteType[] = {
     { 416, "Gib Object" },
     { 417, "Explode Object" },
     { 427, "Zombie Head" },
-    { 450, "Spike Trap" },
-    { 451, "Rock Trap" },
+   // { 450, "Spike Trap" },
+   // { 451, "Rock Trap" },
     { 452, "Flame Trap" },
     { 454, "Saw Blade" },
     { 455, "Electric Zap" },
@@ -715,7 +716,7 @@ TextList tSpriteType[] = {
     { 702, "BloodDrip Gen" },
     { 703, "Fireball Gen" },
     { 704, "EctoSkull Gen" },
-    { 705, "Dart Gen" },
+    //{ 705, "Dart Gen" },
     { 706, "Bubble Gen" },
     { 707, "Multi-Bubble Gen" },
     { 708, "SFX Gen" },
@@ -729,7 +730,7 @@ TextList tWallType[] = {
     { 20, "Toggle switch" },
     { 21, "1-Way switch" },
     { 500, "Wall Link" },
-    { 501, "Wall Stack (unsupp.)" },
+    { 501, "Wall Stack" },
     { 511, "Gib Wall" },
 };
 
@@ -829,7 +830,7 @@ void FillStringLists()
     FillList(pzRespawn, tRespawn, ARRAY_SIZE(tRespawn));
 }
 
-void sub_1058C()
+void cleanUp()
 {
     dbXSectorClean();
 #ifdef YAX_ENABLE
@@ -1048,7 +1049,7 @@ int sub_10E08(int nWall)
     return nXWall;
 }
 
-int sub_10E50(int nSprite)
+int getXSprite(int nSprite)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
     int nXSprite = sprite[nSprite].extra;
@@ -1057,371 +1058,374 @@ int sub_10E50(int nSprite)
     return nXSprite;
 }
 
-struct StructCAF10 {
-    short at0;
-    short at2;
-    short at4;
-    short at6;
-    signed char at8;
-    short at9;
+struct ADJUST_DATA {
+    short nType;
+    short nTile;
+    short xr;
+    short yr;
+    signed char hitscan;
+    short nPlu;
 };
 
-StructCAF10 stru_CAF10[] = {
-    { 1, -1, -1, -1, 0, 0 },
-    { 2, -1, -1, -1, 0, 5 },
-    { 6, 2331, 64, 64, 0, 0 },
-    { 7, 2332, 64, 64, 0, 0 },
-    { 10, 2331, 64, 64, 0, 0 },
-    { 9, 2332, 64, 64, 0, 0 },
-    { 12, 2331, 64, 64, 0, 0 },
-    { 11, 2332, 64, 64, 0, 0 },
-    { 14, 2331, 64, 64, 0, 0 },
-    { 13, 2332, 64, 64, 0, 0 },
-    { 15, 2319, 64, 64, 0, 0 },
-    { 18, 2077, 64, 64, 0, 0 },
-    { 19, 2072, 64, 64, 0, 0 },
-    { 20, -1, -1, -1, 1, -1 },
-    { 21, -1, -1, -1, 1, -1 },
-    { 22, -1, -1, -1, 1, -1 },
-    { 23, 948, -1, -1, 1, -1 },
-    { 30, 550, -1, -1, 1, -1 },
-    { 30, 572, -1, -1, 1, -1 },
-    { 30, 560, -1, -1, 1, -1 },
-    { 30, 564, -1, -1, 1, -1 },
-    { 30, 570, -1, -1, 1, -1 },
-    { 30, 554, -1, -1, 1, -1 },
-    { 32, 938, -1, -1, 1, -1 },
-    { 40, 832, 48, 48, 0, 0 },
-    { 43, 524, 48, 48, 0, 0 },
-    { 41, 559, 48, 48, 0, 0 },
-    { 42, 558, 48, 48, 0, 0 },
-    { 46, 526, 48, 48, 0, 0 },
-    { 45, 539, 48, 48, 0, 0 },
-    { 50, 800, 48, 48, 0, 0 },
-    { 60, 618, 40, 40, 1, 0 },
-    { 62, 589, 48, 48, 1, 0 },
-    { 63, 809, 48, 48, 1, 0 },
-    { 64, 811, 40, 40, 0, 0 },
-    { 65, 810, 40, 40, 0, 0 },
-    { 66, 820, 24, 24, 0, 0 },
-    { 67, 619, 48, 48, 0, 0 },
-    { 68, 812, 48, 48, 0, 0 },
-    { 69, 813, 48, 48, 0, 0 },
-    { 70, 525, 48, 48, 0, 0 },
-    { 72, 817, 48, 48, 0, 0 },
-    { 73, 548, 24, 24, 0, 0 },
-    { 76, 816, 48, 48, 0, 0 },
-    { 79, 801, 48, 48, 0, 0 },
-    { 80, 832, 40, 40, 0, 0 },
-    { 100, 2552, 32, 32, 0, 0 },
-    { 101, 2553, 32, 32, 0, 0 },
-    { 102, 2554, 32, 32, 0, 0 },
-    { 103, 2555, 32, 32, 0, 0 },
-    { 104, 2556, 32, 32, 0, 0 },
-    { 105, 2557, 32, 32, 0, 0 },
-    { 106, -1, -1, -1, 0, 0 },
-    { 107, 519, 48, 48, 0, 0 },
-    { 108, 822, 40, 40, 0, 0 },
-    { 109, 2169, 40, 40, 0, 0 },
-    { 110, 2433, 40, 40, 0, 0 },
-    { 113, 896, 40, 40, 0, 0 },
-    { 114, 825, 40, 40, 0, 0 },
-    { 115, 827, 40, 40, 0, 0 },
-    { 117, 829, 40, 40, 0, 0 },
-    { 118, 830, 80, 64, 0, 0 },
-    { 121, 760, 40, 40, 0, 0 },
-    { 124, 2428, 40, 40, 0, 0 },
-    { 125, 839, 40, 40, 0, 0 },
-    { 127, 840, 48, 48, 0, 0 },
-    { 128, 841, 48, 48, 0, 0 },
-    { 129, 842, 48, 48, 0, 0 },
-    { 130, 843, 48, 48, 0, 0 },
-    { 136, 518, 40, 40, 0, 0 },
-    { 137, 522, 40, 40, 0, 0 },
-    { 138, 523, 40, 40, 0, 0 },
-    { 140, 2628, 64, 64, 0, 0 },
-    { 141, 2586, 64, 64, 0, 0 },
-    { 142, 2578, 64, 64, 0, 0 },
-    { 143, 2602, 64, 64, 0, 0 },
-    { 144, 2594, 64, 64, 0, 0 },
-    { 144, 2594, 64, 64, 0, 0 },
-    { 145, -1, 64, 64, 1, 0 },
-    { 146, -1, 64, 64, 1, 0 },
-    { 200, 832, 64, 64, 1, 0 },
-    { 201, 2820, 40, 40, 1, 3 },
-    { 202, 2825, 40, 40, 1, 0 },
-    { 247, 2820, 40, 40, 1, 11 },
-    { 248, 2820, 40, 40, 1, 13 },
-    { 249, 2825, 48, 48, 1, 12 },
-    { 250, 3870, 16, 16, 1, 12 },
-    { 251, 2960, 48, 48, 1, 0 },
-    { 203, 1170, 40, 40, 1, 0 },
-    { 204, 1370, 48, 48, 1, 0 },
-    { 205, 3054, 40, 40, 1, 0 },
-    { 244, 1209, 40, 40, 1, 0 },
-    { 245, 3798, 40, 40, 1, 0 },
-    { 206, 1470, 40, 40, 1, 0 },
-    { 207, 1470, 40, 40, 1, 5 },
-    { 208, 1530, 40, 40, 1, 0 },
-    { 209, 1530, 40, 40, 1, 5 },
-    { 210, 3060, 40, 40, 1, 0 },
-    { 211, 1270, 40, 40, 1, 0 },
-    { 212, 1980, 32, 32, 1, 0 },
-    { 213, 1920, 16, 16, 1, 7 },
-    { 214, 1925, 24, 24, 1, 4 },
-    { 216, 1930, 40, 40, 1, 0 },
-    { 215, 1935, 32, 32, 1, 4 },
-    { 217, 1570, 48, 48, 1, 0 },
-    { 218, 1870, 32, 32, 1, 0 },
-    { 219, 1948, 32, 32, 1, 0 },
-    { 220, 1745, 24, 24, 1, 0 },
-    { 221, 1792, 32, 32, 1, 0 },
-    { 222, 1797, 32, 32, 1, 0 },
-    { 223, 1792, 48, 48, 1, 2 },
-    { 224, 1797, 48, 48, 1, 2 },
-    { 225, 1792, 64, 64, 1, 6 },
-    { 226, 1797, 64, 64, 1, 6 },
-    { 227, 2680, 64, 64, 1, 0 },
-    { 229, 3140, 64, 64, 1, 0 },
-    { 230, 3385, 40, 40, 1, 3 },
-    { 231, 2860, 40, 40, 1, 0 },
-    { 232, 2860, 40, 40, 1, 0 },
-    { 233, 2860, 40, 40, 1, 0 },
-    { 234, 2860, 40, 40, 1, 0 },
-    { 235, 2860, 40, 40, 1, 0 },
-    { 236, 2860, 40, 40, 1, 0 },
-    { 237, 2860, 40, 40, 1, 0 },
-    { 238, 2860, 40, 40, 1, 0 },
-    { 243, 2860, 40, 40, 1, 0 },
-    { 246, 3385, 40, 40, 1, 0 },
-    { 400, 907, 64, 64, 1, 0 },
-    { 401, 3444, 40, 40, 1, 0 },
-    { 402, 3457, 40, 40, 1, 0 },
-    { 403, 739, -1, -1, 1, 0 },
-    { 404, 642, -1, -1, 1, 0 },
-    { 405, 462, -1, -1, 1, 0 },
-    { 406, 266, -1, -1, 1, 0 },
-    { 407, 796, -1, -1, 1, 0 },
-    { 408, -1, -1, -1, 0, -1 },
-    { 409, 1142, -1, -1, 1, 0 },
-    { 410, 1069, -1, -1, 1, 0 },
-    { 411, 483, -1, -1, 1, -1 },
-    { 412, -1, -1, -1, 1, -1 },
-    { 413, -1, 64, 64, 0, 0 },
-    { 414, -1, -1, -1, 1, 0 },
-    { 415, -1, 48, 48, 1, 0 },
-    { 416, -1, -1, -1, -1, -1 },
-    { 417, -1, -1, -1, -1, -1 },
-    { 427, -1, 40, 40, 1, -1 },
-    { 450, 968, 64, 64, 0, 0 },
-    { 451, -1, 64, 64, 0, 0 },
-    { 452, 2183, -1, -1, 0, 0 },
-    { 454, 655, -1, -1, 0, 0 },
-    { 455, 1156, -1, -1, 0, 0 },
-    { 456, 1156, -1, -1, 0, 0 },
-    { 457, 1080, -1, -1, 0, 0 },
-    { 458, 835, -1, -1, 0, 0 },
-    { 459, 908, 4, -1, 0, 0 },
-    { 708, 2519, 64, 64, 0, 0 },
-    { 709, 2520, 64, 64, 0, 0 },
-    { 710, 2521, 64, 64, 0, 0 },
-    { 711, 2519, 64, 64, 0, 5 },
+ADJUST_DATA gAdjustData[] = {
+    { 1, -1, 64, 64, 0, 0 },        // Single Player start
+    { 2, -1, 64, 64, 0, 5 },        // Multiplayer start
+    { 6, 2331, 80, 80, 0, 6 },      // Stacks and Links
+    { 7, 2332, 80, 80, 0, 6 },      // ...
+    { 10, 2331, 80, 80, 0, 0 },     // ...
+    { 9, 2332, 80, 80, 0, 0 },      // ...
+    { 12, 2331, 80, 80, 0, 0 },     // ...
+    { 11, 2332, 80, 80, 0, 2 },     // ...
+    { 14, 2331, 80, 80, 0, 0 },     // ...
+    { 13, 2332, 80, 80, 0, 5 },     // ...
+    { 15, 2319, 144, 144, 0, 1 },   // Path Marker
+    { 18, 2077, 48, 48, 0, -1 },    // DudeSpawn
+    { 19, 2072, 48, 48, 0, -1 },    // Earthquake
+    { 20, -1, -1, -1, 1, -1 },      // Switches
+    { 21, -1, -1, -1, 1, -1 },      // ...
+    { 22, -1, -1, -1, 1, -1 },      // ...
+    { 23, 948, -1, -1, 1, -1 },     // ...
+    { 30, 550, -1, -1, 1, -1 },     // Torches
+    { 30, 572, -1, -1, 1, -1 },     // ...
+    { 30, 560, -1, -1, 1, -1 },     // ...
+    { 30, 564, -1, -1, 1, -1 },     // ...
+    { 30, 570, -1, -1, 1, -1 },     // ...
+    { 30, 554, -1, -1, 1, -1 },     // ...
+    { 32, 938, -1, -1, 1, -1 },     // Candle
+    { 40, 832, 48, 48, 0, 0 },      // RANDOM
+    { 43, 524, 48, 48, 0, 0 },      // Flare Pistol
+    { 41, 559, 48, 48, 0, 0 },      // Sawed-off
+    { 42, 558, 48, 48, 0, 0 },      // Tommy Gun
+    { 46, 526, 48, 48, 0, 0 },      // Napalm Launcher
+    { 45, 539, 48, 48, 0, 0 },      // Tesla Cannon
+    { 50, 800, 48, 48, 0, 0 },      // Life Leech
+    { 60, 618, 40, 40, 1, 0 },      // Spray Can
+    { 62, 589, 48, 48, 1, 0 },      // Bundle of TNT
+    { 63, 809, 48, 48, 1, 0 },      // Case of TNT
+    { 64, 811, 40, 40, 0, 0 },      // Proximity Detonator
+    { 65, 810, 40, 40, 0, 0 },      // Remote Detonator
+    { 66, 820, 24, 24, 0, 0 },      // Trapped Soul
+    { 67, 619, 48, 48, 0, 0 },      // 4 shotgun shells
+    { 68, 812, 48, 48, 0, 0 },      // Box of shotgun shells
+    { 69, 813, 48, 48, 0, 0 },      // A few bullets
+    { 70, 525, 48, 48, 0, 0 },      // Voodoo doll
+    { 72, 817, 48, 48, 0, 0 },      // Full drum of bullets
+    { 73, 548, 24, 24, 0, 0 },      // Tesla Charge
+    { 76, 816, 48, 48, 0, 0 },      // Flares
+    { 79, 801, 48, 48, 0, 0 },      // Gasoline Can
+    { 100, 2552, 32, 32, 0, 0 },    // Skull Key
+    { 101, 2553, 32, 32, 0, 0 },    // Eye key
+    { 102, 2554, 32, 32, 0, 0 },    // Fire key
+    { 103, 2555, 32, 32, 0, 0 },    // Dagger key
+    { 104, 2556, 32, 32, 0, 0 },    // Spider key
+    { 105, 2557, 32, 32, 0, 0 },    // Moon  key
+    { 106, -1, -1, -1, 0, 0 },      // Key 7
+    { 107, 519, 48, 48, 0, 0 },     // Doctor's Bag
+    { 108, 822, 40, 40, 0, 0 },     // Medicine pouch
+    { 109, 2169, 40, 40, 0, 0 },    // Life essence
+    { 110, 2433, 40, 40, 0, 0 },    // Life Seed
+    { 113, 896, 40, 40, 0, 0 },     // Limited Invisibility
+    { 114, 825, 40, 40, 0, 0 },     // Invulnerability
+    { 115, 827, 40, 40, 0, 0 },     // Boots of jumping
+    { 117, 829, 40, 40, 0, 0 },     // Guns akimbo
+    { 118, 830, 80, 64, 0, 0 },     // Diving suit
+    { 121, 760, 40, 40, 0, 0 },     // Crystall ball
+    { 124, 2428, 40, 40, 0, 0 },    // Reflective shots
+    { 125, 839, 40, 40, 0, 0 },     // Beast vision
+    { 127, 840, 48, 48, 0, 0 },     // Rage shroom
+    { 128, 841, 48, 48, 0, 0 },     // Delirium shroom
+    { 129, 842, 48, 48, 0, 0 },     // Grow shroom
+    { 130, 843, 48, 48, 0, 0 },     // Shrink shroom
+    { 136, 518, 40, 40, 0, 0 },     // Tome
+    { 137, 522, 40, 40, 0, 0 },     // Black chest
+    { 138, 523, 40, 40, 0, 0 },     // Wooden chest
+    { 140, 2628, 64, 64, 0, 0 },    // Basic armor
+    { 141, 2586, 64, 64, 0, 0 },    // Body armor
+    { 142, 2578, 64, 64, 0, 0 },    // Fire armor
+    { 143, 2602, 64, 64, 0, 0 },    // Spirit armor
+    { 144, 2594, 64, 64, 0, 0 },    // Super armor
+    { 145, -1, 64, 64, 1, 0 },      // Blue team base
+    { 146, -1, 64, 64, 1, 0 },      // Red team base
+    { 201, 2820, 40, 40, 1, 3 },    // Cultist w/ tommy
+    { 202, 2825, 40, 40, 1, 0 },    // Cultist w/ shotgun
+    { 247, 2820, 40, 40, 1, 11 },   // Cultist w/ tesla
+    { 248, 2820, 40, 40, 1, 13 },   // Cultist w/ dynamite
+    { 249, 2825, 48, 48, 1, 12 },   // Beast cultist
+    { 250, 3870, 16, 16, 1, 12 },   // Tiny caleb
+    { 251, 2960, 48, 48, 1, 0 },    // The beast
+    { 203, 1170, 40, 40, 1, 0 },    // Axe zombie
+    { 204, 1370, 48, 48, 1, 0 },    // Fat zombie
+    { 205, 3054, 40, 40, 1, 0 },    // Axe zombie (earth)
+    { 244, 1209, 40, 40, 1, 0 },    // Axe zombie (sleep)
+    { 245, 3798, 40, 40, 1, 0 },    // Innocent
+    { 206, 1470, 40, 40, 1, 0 },    // Flesh Gargoyle
+    { 207, 1470, 40, 40, 1, 5 },    // Stone Gargoyle
+    { 208, 1530, 40, 40, 1, 0 },    // Flesh statue
+    { 209, 1530, 40, 40, 1, 5 },    // Stone statue
+    { 210, 3060, 40, 40, 1, 0 },    // Phantasm
+    { 211, 1270, 40, 40, 1, 0 },    // Hound
+    { 212, 1980, 32, 32, 1, 0 },    // Hand
+    { 213, 1920, 16, 16, 1, 7 },    // Brown spider
+    { 214, 1925, 24, 24, 1, 4 },    // Red spider
+    { 216, 1930, 40, 40, 1, 0 },    // Mother spider
+    { 215, 1935, 32, 32, 1, 4 },    // Black spider
+    { 217, 1570, 48, 48, 1, 0 },    // Gillbeast
+    { 218, 1870, 32, 32, 1, 0 },    // Eel
+    { 219, 1948, 32, 32, 1, 0 },    // Bat
+    { 220, 1745, 24, 24, 1, 0 },    // Rat
+    { 221, 1792, 32, 32, 1, 0 },    // Green pod
+    { 222, 1797, 32, 32, 1, 0 },    // Green tentacle
+    { 223, 1792, 48, 48, 1, 2 },    // Fire pod
+    { 224, 1797, 48, 48, 1, 2 },    // Fire tentacle
+    { 227, 2680, 64, 64, 1, -1 },   // Cerberus
+    { 229, 3140, -1, -1, 1, 0 },    // Tchernobog
+    { 230, 3385, 40, 40, 1, 3 },    // Cultist w/ Tommy (prone)
+    { 246, 3385, 40, 40, 1, 0 },    // Cultist w/ Shotgun (prone)
+    { 400, 907, 64, 64, 1, 0 },     // TNT Barrel
+    { 401, 3444, 40, 40, 1, 0 },    // Armed Prox Bomb
+    { 402, 3457, 40, 40, 1, 0 },    // Armed Remote
+    { 405, 462, -1, -1, 1, 0 },     // Crate face
+    { 407, 796, -1, -1, 1, -1 },    // Fluorescent Light
+    { 408, -1, -1, -1, 0, -1 },     // Wall Crack
+    { 409, 1142, -1, -1, 1, -1 },   // Wood beam
+    { 410, 1069, -1, -1, 1, -1 },   // Spider's Web
+    { 411, 483, -1, -1, 1, -1 },    // MetalGrate1
+    { 412, -1, -1, -1, 1, -1 },     // FlammableTree
+    { 413, -1, 64, 64, 0, -1 },     // Machine Gun
+    { 414, -1, -1, -1, 1, -1 },     // Falling Rock
+    { 415, -1, 48, 48, 1, -1 },     // Kickable Pail
+    { 416, -1, -1, -1, -1, -1 },    // Gib object
+    { 417, -1, -1, -1, -1, -1 },    // Explode object
+    { 427, -1, 40, 40, 1, -1 },     // Zombie head
+    { 452, 2183, -1, -1, 0, -1 },   // Flame Trap
+    { 454, 655, -1, -1, 1, -1 },    // Saw Blade
+    { 455, 1156, -1, -1, 0, -1 },   // Electric Zap
+    { 456, 1156, -1, -1, 0, -1 },   // Switched Zap
+    { 457, 1080, -1, -1, 1, -1 },   // Pendulum
+    { 458, 835, -1, -1, 1, -1 },    // Guillotine
+    { 459, 908, 4, -1, 0, -1 },     // Hidden Exploder
+    { 708, 2519, 40, 40, 0, 6 },    // SFX Gen
+    { 709, 2520, 32, 32, 0, 9 },    // Sector SFX
+    { 710, 2521, 40, 40, 0, 0 },    // Ambient sound
+    { 711, 2519, 40, 40, 0, 5 },    // Player SFX
+    
+    { 200, 821, 64, 64, 1, 0 },     // Random dude (NOT in text list)
+    { 243, 2860, 40, 40, 1, 0 },    // Unused cultist (NOT in text list)
+    { 225, 1792, 64, 64, 1, 6 },    // Mother pod (NOT in text list)
+    { 226, 1797, 64, 64, 1, 6 },    // Mother tentacle (NOT in text list)
+    { 231, 2860, 40, 40, 1, 0 },    // Players (NOT in text list)
+    { 232, 2860, 40, 40, 1, 0 },    // ...
+    { 233, 2860, 40, 40, 1, 0 },    // ...
+    { 234, 2860, 40, 40, 1, 0 },    // ...
+    { 235, 2860, 40, 40, 1, 0 },    // ...
+    { 236, 2860, 40, 40, 1, 0 },    // ...
+    { 237, 2860, 40, 40, 1, 0 },    // ...
+    { 238, 2860, 40, 40, 1, 0 },    // ...
+    { 144, 2594, 64, 64, 0, 0 },    // (Super Armor duplicate)
+    
+    { 8, 3193, 255, 255, 0, 9 },    // Teleport Target (ADDED)
+    { 111, 517, -1, -1, 0, -1 },    // Red potion (ADDED)
+    { 112, 783, 48, 48, 0, -1 },    // Feather fall (ADDED)
+    { 119, 831, 56, 56, 0, 0 },     // Gas mask (ADDED)
+    { 123, -1, -1, -1, 0, -1 },     // Doppleganger (ADDED, no pic)
+    { 139, 837, 76, 76, 0, 0 },     // Asbestos Armor (ADDED)
+    { 228, 2749, 64, 64, 1, -1 },   // 1 Head Cerberus (ADDED in text list)
+    { 701, 2028, 128, 128, 0, 10 }, // WaterDripGen (ADDED)
+    { 702, 2028, 128, 128, 0, 2 },  // BloodDripGen (ADDED)
+
+    { 450, 968, 64, 64, 0, -1 },    // Spike Trap (REMOVED from text list)
+    { 451, -1, 64, 64, 0, -1 },     // Rock Trap (REMOVED from text list)
+    { 406, 266, -1, -1, 1, 0 },     // Glass window (REMOVED from text list)
+    { 403, 739, -1, -1, 1, 0 },     // Blue vase (REMOVED from text list)
+    { 404, 642, -1, -1, 1, 0 },     // Brown vase (REMOVED from text list)
+    { 80, 832, 40, 40, 0, 0 },      // Random Ammo (REMOVED from text list)
 };
 
+
+
+
+// by NoOne: do changes in adjustSprites function
 int gCorrectedSprites = 0;
-
-void sub_10EA0()
+void adjustSprites()
 {
+    int vbx = gCorrectedSprites;
     for (int i = 0; i < kMaxSprites; i++)
     {
         spritetype* pSprite = &sprite[i];
         if (pSprite->statnum < kMaxStatus)
         {
-            if ((pSprite->cstat & 0x30) == 0x30)
-                pSprite->cstat &= ~0x30;
-            if (pSprite->statnum == 1)
-                continue;
-            int vbp, vdi;
-            vbp = vdi = -1;
-            if (pSprite->type)
-            {
-                if (!pzSpriteType[pSprite->type])
-                    pSprite->type = 0;
+            if ((pSprite->cstat & kSprRMask) == kSprSpin) pSprite->cstat &= ~kSprSpin;
+            if (pSprite->statnum == 1) continue;
+
+            // don't turn unnamed types in Decoration
+            //if (pSprite->type > 0 && !pzSpriteType[pSprite->type]) pSprite->type = 0;
+
+            // search by tile and type
+            int nType = -1, nTile = -1, adIndex = -1;
+            for (unsigned int j = 0; j < 168; j++) {
+
+                if (gAdjustData[j].nTile >= 0 && gAdjustData[j].nTile == pSprite->picnum) nTile = j;
+                if (gAdjustData[j].nType == pSprite->type) nType = j;
+            
             }
-            for (unsigned int j = 0; j < 159; j++)
-            {
-                if (stru_CAF10[j].at2 >= 0 && stru_CAF10[j].at2 == pSprite->picnum)
+
+            if (nTile >= 0 || (nTile >= 0 && pSprite->type == gAdjustData[nType].nType)) adIndex = nTile;
+            if (nType >= 0) adIndex = nType;
+            
+            // don't ignore sprite if nothing found, but give it proper statnum.
+            if (adIndex >= 0) {
+
+                // give sprite proper type and look
+                pSprite->type = gAdjustData[adIndex].nType;
+                if (gAdjustData[adIndex].nTile >= 0) pSprite->picnum = gAdjustData[adIndex].nTile;
+                if (gAdjustData[adIndex].xr >= 0) pSprite->xrepeat = gAdjustData[adIndex].xr;
+                if (gAdjustData[adIndex].yr >= 0) pSprite->yrepeat = gAdjustData[adIndex].yr;
+
+                if (gAdjustData[adIndex].hitscan == 0) pSprite->cstat &= ~kSprHitscan;
+                else if (gAdjustData[adIndex].hitscan > 0) pSprite->cstat |= kSprHitscan;
+                if (gAdjustData[adIndex].nPlu >= 0) pSprite->pal = gAdjustData[adIndex].nPlu;
+            } 
+            else  continue;  // ( removing "continue" makes weird crash for some reason )
+
+            int type = pSprite->type;
+            
+            // adjust unique types
+            switch (type) {
+                case kMarkerSPStart:
+                case kMarkerMPStart:
                 {
-                    vdi = j;
+                    pSprite->cstat &= ~kSprBlock;
+                    pSprite->shade = -128;
+                    int nXSprite = getXSprite(i);
+                    xsprite[nXSprite].data1 &= 0x07;
+                    pSprite->picnum = 2522 + xsprite[nXSprite].data1;
+                    ChangeSpriteStat(i, 0);
                 }
-            }
-            for (unsigned int j = 0; j < 159; j++)
-            {
-                if (stru_CAF10[j].at0 == pSprite->type)
+                break;
+                case kMarkerWarpDest:
+                    pSprite->cstat |= kSprWall;
+                    break;
+                case 18: // Dude spawn
+                case 19: // Earthquake
+                case kMarkerLowLink:
+                case kMarkerUpLink:
+                case kMarkerUpWater:
+                case kMarkerLowWater:
+                case kMarkerUpStack:
+                case kMarkerLowStack:
+                case kMarkerUpGoo:
+                case kMarkerLowGoo:
+                    pSprite->cstat &= ~kSprBlock | ~kSprFlipY;
+                    pSprite->cstat |= kSprInvisible;
+                    pSprite->shade = -128;
+                    ChangeSpriteStat(i, 0);
+                    getXSprite(i);
+                    break;
+                case kMarkerPath:
+                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
+                    pSprite->cstat |= kSprInvisible;
+                    pSprite->shade = 127;
+                    ChangeSpriteStat(i, 16);
+                    getXSprite(i);
+                    break;
+                case 30: // Torch
                 {
-                    vbp = j;
+                    int nXSprite = getXSprite(i);
+                    xsprite[nXSprite].state = 1;
                 }
+                break;
+                case 32: // Candle
+                {
+                    int nXSprite = getXSprite(i);
+                    if (pSprite->picnum == 938)
+                        xsprite[nXSprite].state = 1;
+                }
+                break;
+                case 228: // 1-Head Cerberus
+                {
+                    int nXSprite = getXSprite(i);
+                    if (xsprite[nXSprite].rxID <= 0) xsprite[nXSprite].rxID = 7;
+                    ChangeSpriteStat(i, 6);
+                }
+                break;
+                case 700: // Trigger Gen
+                case 701: // WaterDrip Gen
+                case 702: // BloodDrip Gen
+                case 708: // SFX Gen
+                case 709: // Sector SFX
+                case 711: // Player SFX
+                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
+                    pSprite->cstat |= kSprInvisible;
+                    pSprite->shade = -128;
+                    ChangeSpriteStat(i, 0);
+                    getXSprite(i);
+                    break;
+                case 710: // Ambient SFX
+                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
+                    pSprite->cstat |= kSprInvisible;
+                    pSprite->shade = -128;
+                    ChangeSpriteStat(i, 12);
+                    getXSprite(i);
+                    break;
+                default:
+                    switch (pSprite->statnum) { // count invalid sprites if any
+                    case 3:
+                        if (pSprite->type < kWeaponItemBase || pSprite->type >= kItemMax) gCorrectedSprites++;
+                        break;
+                    case 4:
+                        if (pSprite->type < kThingBase || pSprite->type >= kThingMax) gCorrectedSprites++;
+                        break;
+                    case 6:
+                        if (pSprite->type < kDudeBase || pSprite->type >= kDudeMax) gCorrectedSprites++;
+                        break;
+                    }
+                    ChangeSpriteStat(i, 0);
+                    break;
             }
-            int vbx = -1;
-            if (vdi >= 0)
-                vbx = vdi;
-            if (vbp >= 0)
-                vbx = vbp;
-            if (vdi >= 0 && pSprite->type == stru_CAF10[vdi].at0)
-                vbx = vdi;
-            if (vbx < 0)
-                continue;
-            int vdi2 = stru_CAF10[vbx].at0;
-            if (vdi2 == 1 || vdi2 == 2)
-            {
-                pSprite->cstat &= ~0x01;
+            
+            // adjust groups of types
+            int top, bottom;
+            if (type >= kSwitchBase && type < kSwitchMax) {
+                pSprite->cstat &= ~kSprBlock;
                 ChangeSpriteStat(i, 0);
-                int nXSprite = sub_10E50(i);
-                xsprite[nXSprite].data1 &= 0x07;
-                pSprite->picnum = 2522 + xsprite[nXSprite].data1;
+                getXSprite(i);
             }
-            else if (vdi2 == 18)
+            else if (type >= kWeaponItemBase && type < kItemMax)
             {
-                pSprite->cstat &= ~0x01;
-                pSprite->cstat |= 0x8000;
-                ChangeSpriteStat(i, 0);
-                sub_10E50(i);
-            }
-            else if (vdi2 == 19)
-            {
-                pSprite->cstat &= ~0x101;
-                pSprite->cstat |= 0x8000;
-                ChangeSpriteStat(i, 0);
-                sub_10E50(i);
-            }
-            else if (vdi2 == 7 || vdi2 == 6 || vdi2 == 9
-                || vdi2 == 10 || vdi2 == 13 || vdi2 == 14
-                || vdi2 == 11 || vdi2 == 12)
-            {
-                pSprite->cstat &= ~0x01;
-                ChangeSpriteStat(i, 0);
-                sub_10E50(i);
-                pSprite->cstat &= ~0x08;
-            }
-            else if (vdi2 == 15)
-            {
-                ChangeSpriteStat(i, 16);
-                sub_10E50(i);
-            }
-            else if (vdi2 >= 20 && vdi2 < 24)
-            {
-                pSprite->cstat &= ~0x01;
-                ChangeSpriteStat(i, 0);
-                sub_10E50(i);
-            }
-            else if (vdi2 >= 40 && vdi2 < 51)
-            {
-                if (pSprite->cstat & 0x30)
-                    continue;
-                pSprite->cstat &= ~0x01;
+                if (pSprite->cstat & kSprRMask) continue; // why?
+                pSprite->cstat &= ~kSprBlock;
                 ChangeSpriteStat(i, 3);
-                sub_10E50(i);
+                getXSprite(i);
             }
-            else if (vdi2 >= 60 && vdi2 < 81)
+            else if (type >= kDudeBase && type < kDudeMax)
             {
-                if (pSprite->cstat & 0x30)
-                    continue;
-                pSprite->cstat &= ~0x01;
-                ChangeSpriteStat(i, 3);
-                sub_10E50(i);
-            }
-            else if (vdi2 >= 100 && vdi2 < 149)
-            {
-                if (pSprite->cstat & 0x30)
-                    continue;
-                pSprite->cstat &= ~0x01;
-                ChangeSpriteStat(i, 3);
-                sub_10E50(i);
-            }
-            else if (vdi2 >= 200 && vdi2 < 254)
-            {
-                if (pSprite->cstat & 0x30)
-                    continue;
-                pSprite->cstat &= ~0x01;
+                if (pSprite->cstat & kSprRMask) continue; // why?
+                pSprite->cstat &= ~kSprBlock;
                 ChangeSpriteStat(i, 6);
-                sub_10E50(i);
+                getXSprite(i);
+
+                GetSpriteExtents(pSprite, &top, &bottom);
+                if (!(sector[pSprite->sectnum].ceilingstat & kSecCParallax))
+                    pSprite->z += ClipLow(sector[pSprite->sectnum].ceilingz - top, 0);
+                if (!(sector[pSprite->sectnum].floorstat & kSecCParallax))
+                    pSprite->z += ClipHigh(sector[pSprite->sectnum].floorz - bottom, 0);
             }
-            else if (vdi2 >= 400 && vdi2 < 433)
+            else if (type >= kThingBase && type < kThingMax)
             {
                 ChangeSpriteStat(i, 4);
-                sub_10E50(i);
+                getXSprite(i);
+
+                GetSpriteExtents(pSprite, &top, &bottom);
+                if (!(sector[pSprite->sectnum].ceilingstat & kSecCParallax))
+                    pSprite->z += ClipLow(sector[pSprite->sectnum].ceilingz - top, 0);
+                if (!(sector[pSprite->sectnum].floorstat & kSecCParallax))
+                    pSprite->z += ClipHigh(sector[pSprite->sectnum].floorz - bottom, 0);
             }
-            else if (vdi2 >= 450 && vdi2 < 460)
+            else if (type >= 450 && type < 460) // traps
             {
                 ChangeSpriteStat(i, 11);
-                sub_10E50(i);
+                getXSprite(i);
             }
-            else if (vdi2 == 709)
-            {
-                pSprite->cstat &= ~0x101;
-                pSprite->cstat |= 0x8000;
-                pSprite->shade = -128;
-                ChangeSpriteStat(i, 0);
-            }
-            else if (vdi2 == 710)
-            {
-                pSprite->cstat &= ~0x101;
-                pSprite->cstat |= 0x8000;
-                pSprite->shade = -128;
-                ChangeSpriteStat(i, 12);
-            }
-            else if (vdi2 == 711)
-            {
-                pSprite->cstat &= ~0x101;
-                pSprite->cstat |= 0x8000;
-                pSprite->shade = -128;
-                ChangeSpriteStat(i, 0);
-            }
-            else
-            {
-                ChangeSpriteStat(i, 0);
-            }
-            pSprite->type = vdi2;
-            if (stru_CAF10[vbx].at2 >= 0)
-                pSprite->picnum = stru_CAF10[vbx].at2;
-            if (stru_CAF10[vbx].at4 >= 0)
-                pSprite->xoffset = stru_CAF10[vbx].at4;
-            if (stru_CAF10[vbx].at6 >= 0)
-                pSprite->xoffset = stru_CAF10[vbx].at6;
-
-            if (stru_CAF10[vbx].at8 == 0)
-                pSprite->cstat &= ~0x100;
-            else if (stru_CAF10[vbx].at8 > 0)
-                pSprite->cstat |= 0x100;
-            if (stru_CAF10[vbx].at9 >= 0)
-                pSprite->pal = stru_CAF10[vbx].at9;
-
-            if (pSprite->statnum == 4 || pSprite->statnum == 6)
-            {
-                int top, bottom;
-                GetSpriteExtents(pSprite, &top, &bottom);
-                if (!(sector[pSprite->sectnum].ceilingstat & 0x01))
-                {
-                    pSprite->z += ClipLow(sector[pSprite->sectnum].ceilingz - top, 0);
-                }
-                if (!(sector[pSprite->sectnum].floorstat & 0x01))
-                {
-                    pSprite->z += ClipHigh(sector[pSprite->sectnum].floorz - bottom, 0);
-                }
-            }
-        }
-    }
-    int vbx = gCorrectedSprites;
-    for (int i = 0; i < kMaxSprites; i++)
-    {
-        spritetype* pSprite = &sprite[i];
-        if ((pSprite->statnum == 4 && (pSprite->type < 400 || pSprite->type >= 433))
-           || (pSprite->statnum == 3 && (pSprite->type < 100 || pSprite->type >= 433) && (pSprite->type < 60 || pSprite->type >= 81) && (pSprite->type < 40 || pSprite->type >= 51))
-            || (pSprite->statnum == 6 && (pSprite->type < 200 || pSprite->type >= 254))
-             || pSprite->statnum == 1)
-        {
-            pSprite->statnum = 0; // Should we use ChangeSpriteStat here?
-            gCorrectedSprites++;
         }
     }
     if (vbx != gCorrectedSprites)
@@ -2364,7 +2368,7 @@ int ShowSectorData(int nSector)
 void XEditSectorData(int nSector)
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    sub_1058C();
+    cleanUp();
     sprintf(pzControlMsg, "^10Sector %d", nSector);
     sub_10DBC(nSector);
     XSectorControlSet(nSector);
@@ -2374,7 +2378,7 @@ void XEditSectorData(int nSector)
     //angvel = 0;
     //svel = 0;
     //vel = 0;
-    sub_1058C();
+    cleanUp();
 }
 
 int ShowWallData(int nWall)
@@ -2401,7 +2405,7 @@ int ShowWallData(int nWall)
 void XEditWallData(int nWall)
 {
     dassert(nWall >= 0 && nWall < kMaxWalls);
-    sub_1058C();
+    cleanUp();
     sprintf(pzControlMsg, "^10Wall %d", nWall);
 #ifdef YAX_ENABLE
     if (yax_hasnextwall(nWall))
@@ -2415,7 +2419,7 @@ void XEditWallData(int nWall)
     //angvel = 0;
     //svel = 0;
     //vel = 0;
-    sub_1058C();
+    cleanUp();
 }
 
 int ShowSpriteData(int nSprite)
@@ -2444,9 +2448,9 @@ int ShowSpriteData(int nSprite)
 void XEditSpriteData(int nSprite)
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
-    sub_1058C();
+    cleanUp();
     sprintf(pzControlMsg, "Sprite %d", nSprite);
-    sub_10E50(nSprite);
+    getXSprite(nSprite);
     XSpriteControlSet(nSprite);
     if (ControlKeys(controlXSprite))
         XSpriteControlRead(nSprite);
@@ -2454,8 +2458,8 @@ void XEditSpriteData(int nSprite)
     //angvel = 0;
     //svel = 0;
     //vel = 0;
-    sub_1058C();
-    sub_10EA0();
+    cleanUp();
+    adjustSprites();
 }
 
 static int32_t getTileGroup(const char *groupName)
@@ -2734,20 +2738,20 @@ const char *ExtGetWallCaption(int16_t nWall)
 //    return tempbuf;
 //}
 
-const char *ExtGetSpriteCaption(int16_t nSprite)
+const char* ExtGetSpriteCaption(int16_t nSprite)
 {
-    char v100[256];
+    char caption[256];
     static char tempbuf[1024];
 
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
 
     int32_t retfast = 0, lt;
 
-    if (!(onnames>=3 && onnames<=6))
+    if (!(onnames >= 3 && onnames <= 6))
         retfast = 1;
-    if (onnames==5 && !(sprite[nSprite].type >= 40 && sprite[nSprite].type < 200))
+    if (onnames == 5 && !(sprite[nSprite].type >= 40 && sprite[nSprite].type < 200))
         retfast = 1;
-    if (onnames==6 && sprite[nSprite].type != sprite[cursprite].type)
+    if (onnames == 6 && sprite[nSprite].type != sprite[cursprite].type)
         retfast = 1;
 
     tempbuf[0] = 0;
@@ -2755,16 +2759,27 @@ const char *ExtGetSpriteCaption(int16_t nSprite)
     if (retfast)
         return tempbuf;
 
-    spritetype *pSprite = &sprite[nSprite];
+    spritetype * pSprite = &sprite[nSprite];
     const char* pzType = pzSpriteType[pSprite->type];
-    if (pSprite->type != 0 && pSprite->statnum != 10 && pzType != NULL)
+    
+    if (pzType == NULL) {
+        Bsprintf(tempbuf, ">>> %s_%d <<<", "UNNAMED_SPRITE_TYPE", pSprite->type);
+        return tempbuf;
+    }
+    else if (pSprite->statnum != 10)
     {
         int nXSprite = pSprite->extra;
-        if (nXSprite > 0)
+        if (nXSprite <= 0 && pSprite->type <= 0) return tempbuf;
+        else if (nXSprite > 0)
         {
             XSPRITE* pXSprite = &xsprite[nXSprite];
             switch (pSprite->type)
             {
+            case 3:
+            case 4:
+            case 5:
+            case 8:
+                return tempbuf;
             case 1:
             case 2:
             case 6:
@@ -2779,19 +2794,22 @@ const char *ExtGetSpriteCaption(int16_t nSprite)
             case 19:
                 Bsprintf(tempbuf, "%s [%d]", pzType, pXSprite->data1);
                 return tempbuf;
+            case 15: // Path Marker
+                Bsprintf(tempbuf, "%s [%d -> %d]", pzType, pXSprite->data1, pXSprite->data2);
+                return tempbuf;
             }
             if (pXSprite->rxID > 0)
             {
-                Bsprintf(v100, "%i:", pXSprite->rxID);
-                Bstrcat(tempbuf, v100);
+                Bsprintf(caption, "%i:", pXSprite->rxID);
+                Bstrcat(tempbuf, caption);
             }
 
             Bstrcat(tempbuf, pzType);
 
             if (pXSprite->txID > 0)
             {
-                Bsprintf(v100, ":%i", pXSprite->txID);
-                Bstrcat(tempbuf, v100);
+                Bsprintf(caption, ":%i", pXSprite->txID);
+                Bstrcat(tempbuf, caption);
             }
 
             if (pSprite->type >= 20 && pSprite->type < 33)
@@ -2803,6 +2821,7 @@ const char *ExtGetSpriteCaption(int16_t nSprite)
         }
         return pzType;
     }
+
     //else if (sprite[nSprite].lotag || sprite[nSprite].hitag)
     //{
     //    Bsprintf(tempbuf, "{%i:%i}", TrackerCast(sprite[nSprite].hitag), TrackerCast(sprite[nSprite].lotag));

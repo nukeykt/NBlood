@@ -520,6 +520,8 @@ void dbXWallClean(void)
 
 void dbXSectorClean(void)
 {
+
+
     for (int i = 0; i < numsectors; i++)
     {
         int nXSector = sector[i].extra;
