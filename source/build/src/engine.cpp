@@ -4704,7 +4704,7 @@ typedef zint_t voxint_t;
 static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int32_t dasprang,
                              int32_t daxscale, int32_t dayscale, int32_t daindex,
                              int8_t dashade, char dapal, const int32_t *daumost, const int32_t *dadmost,
-                             const int8_t cstat)
+                             const int8_t cstat, const int32_t clipcf, int32_t floorz, int32_t ceilingz)
 {
     int32_t i, j, k, x, y;
 
@@ -4789,6 +4789,10 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
         return;
 
     const int32_t syoff = divscale21(globalposz-dasprz,odayscale) + (dazsiz<<14);
+    floorz = min(floorz, dasprz+mulscale7(dazsiz,odayscale));
+    ceilingz = max(ceilingz, dasprz-mulscale7(dazsiz, odayscale));
+    const int32_t flooroff = divscale21(floorz-globalposz,odayscale);
+    const int32_t ceilingoff = divscale21(ceilingz-globalposz,odayscale);
     int32_t yoff = (klabs(gxinc)+klabs(gyinc))>>1;
     longptr = (int32_t *)davoxptr;
     int32_t xyvoxoffs = (daxsiz+1)<<2;
@@ -4939,6 +4943,19 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
                 // FIXME! AMCTC RC2/beta shotgun voxel
                 // (e.g. training map right after M16 shooting):
                 const int32_t l2 = distrecip[clamp((ny+yoff)>>14, 1, DISTRECIPSIZ-1)];
+                int32_t cz1 = 0, cz2 = INT32_MAX;
+
+                if (clipcf)
+                {
+                    if (ceilingoff < 0)
+                        cz1 = mulscale32(l1,ceilingoff) + globalhoriz;
+                    else
+                        cz1 = mulscale32(l2,ceilingoff) + globalhoriz;
+                    if (flooroff < 0)
+                        cz2 = mulscale32(l2,flooroff) + globalhoriz;
+                    else
+                        cz2 = mulscale32(l1,flooroff) + globalhoriz;
+                }
 
                 for (; voxptr<voxend; voxptr+=voxptr[1]+3)
                 {
@@ -4971,12 +4988,14 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
                     }
 
                     int32_t yplc, yinc=0;
-
+                    
+                    const int32_t um = max(daumost[lx], cz1);
+                    const int32_t dm = min(dadmost[lx], cz2);
                     if (voxptr[1] == 1)
                     {
                         yplc = 0; yinc = 0;
-                        if (z1 < daumost[lx])
-                            z1 = daumost[lx];
+                        if (z1 < um)
+                            z1 = um;
                     }
                     else
                     {
@@ -4985,7 +5004,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
                         else if (z2 > z1)
                             yinc = lowrecip[z2-z1]*voxptr[1]>>8;
 
-                        if (z1 < daumost[lx]) { yplc = yinc*(daumost[lx]-z1); z1 = daumost[lx]; }
+                        if (z1 < um) { yplc = yinc*(um-z1); z1 = um; }
                         else yplc = 0;
                         
                         if (cstat & 8)
@@ -4994,8 +5013,8 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
                             yplc = ((voxptr[1])<<16) - yplc + yinc;
                     }
 
-                    if (z2 > dadmost[lx])
-                        z2 = dadmost[lx];
+                    if (z2 > dm)
+                        z2 = dm;
                     z2 -= z1;
                     if (z2 <= 0)
                         continue;
@@ -6171,7 +6190,8 @@ draw_as_face_sprite:
 
         i = (int32_t)tspr->ang+1536;
         i += spriteext[spritenum].angoff;
-        classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,tspr->shade,tspr->pal,lwall,swall,cstat);
+        classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
+            tspr->shade,tspr->pal,lwall,swall,cstat,(tspr->cstat&48)!=48,sec->floorz,sec->ceilingz);
     }
 }
 
