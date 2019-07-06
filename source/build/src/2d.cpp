@@ -1076,7 +1076,19 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
 
 int32_t editorGet2dSpriteColor(int32_t spr)
 {
-    int const picnum = sprite[spr].picnum;
+    
+    switch (sprite[spr].type) {
+        case 1:
+            return editorcolors[10];
+        case 2:
+            return editorcolors[11];
+        
+            // enemies
+            // items
+            // emergency (stacks, gens, etc)
+    }
+    return editorcolors[3];
+    /*int const picnum = sprite[spr].picnum;
     int pal = sprite[spr].pal;
     int const tilecol = tilecols[picnum];
 
@@ -1110,7 +1122,7 @@ int32_t editorGet2dSpriteColor(int32_t spr)
 
     tilecols[picnum] = col - 4;
 
-    return palookup[pal][tilecols[picnum]];
+    return palookup[pal][tilecols[picnum]];*/
 }
 
 static void editorDraw2DBloodMarker(int x, int y, int col)
