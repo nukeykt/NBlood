@@ -6186,7 +6186,7 @@ draw_as_face_sprite:
         i = (int32_t)tspr->ang+1536;
         i += spriteext[spritenum].angoff;
 
-        const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : 0;
+        const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : INT32_MIN;
         const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
 
         classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
