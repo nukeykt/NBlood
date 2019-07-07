@@ -5190,7 +5190,7 @@ static void classicDrawSprite(int32_t snum)
 
     if ((cstat&48)==48)
         vtilenum = tilenum; // if the game wants voxels, it gets voxels
-    else if (usevoxels && tiletovox[tilenum] != -1 && spritenum != -1 && !(spriteext[spritenum].flags&SPREXT_NOTMD))
+    else if ((cstat & 48) != 32 && usevoxels && tiletovox[tilenum] != -1 && spritenum != -1 && !(spriteext[spritenum].flags&SPREXT_NOTMD))
     {
         vtilenum = tiletovox[tilenum];
         cstat |= 48;
@@ -6111,16 +6111,11 @@ draw_as_face_sprite:
         }
 
         if (!(cstat&128))
-        {
-            if (cstat&8)
-                tspr->z += mulscale22(B_LITTLE32(longptr[5]),nyrepeat);
-            else
-                tspr->z -= mulscale22(B_LITTLE32(longptr[5]),nyrepeat);
-        }
+            tspr->z -= mulscale22(B_LITTLE32(longptr[5]),nyrepeat);
         off.x = tspr->xoffset;
         off.y = /*picanm[sprite[tspr->owner].picnum].yofs +*/ tspr->yoffset;
         if (cstat & 4) off.x = -off.x;
-        if (cstat & 8) off.y = -off.y;
+        if ((cstat & 8) && (tspr->cstat&48) != 0) off.y = -off.y;
         tspr->z -= off.y * tspr->yrepeat << 2;
 
         if ((sprite[spritenum].cstat&CSTAT_SPRITE_ALIGNMENT) == CSTAT_SPRITE_ALIGNMENT_WALL)
@@ -6190,8 +6185,12 @@ draw_as_face_sprite:
 
         i = (int32_t)tspr->ang+1536;
         i += spriteext[spritenum].angoff;
+
+        const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : 0;
+        const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
+
         classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
-            tspr->shade,tspr->pal,lwall,swall,cstat,(tspr->cstat&48)!=48,sec->floorz,sec->ceilingz);
+            tspr->shade,tspr->pal,lwall,swall,cstat,(tspr->cstat&48)!=48,floorz,ceilingz);
     }
 }
 
