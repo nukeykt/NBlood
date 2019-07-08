@@ -5157,7 +5157,8 @@ static void classicDrawSprite(int32_t snum)
 
     int32_t cstat=tspr->cstat, tilenum;
 
-    DO_TILE_ANIM(tspr->picnum, spritenum+32768);
+    if ((cstat&48)!=48)
+        DO_TILE_ANIM(tspr->picnum, spritenum+32768);
 
     if (!(cstat&2) && alpha > 0.0f)
     {
