@@ -4749,7 +4749,6 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     dayscale = scale(dayscale, mulscale16(xdimenscale,viewingrangerecip), xdimen<<8);
 
     const int32_t daxscalerecip = divideu32_noinline(1<<30, daxscale);
-    const int32_t dayscalerecip = divideu32_noinline(1<<30, dayscale);
 
     int32_t *longptr = (int32_t *)davoxptr;
     const int32_t daxsiz = B_LITTLE32(longptr[0]), daysiz = B_LITTLE32(longptr[1]), dazsiz = B_LITTLE32(longptr[2]);
@@ -4770,8 +4769,8 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     x = (dasprx-globalposx) - dmulscale18(daxpivot,sprcosang, daypivot,-sprsinang);
     y = (daspry-globalposy) - dmulscale18(daypivot,sprcosang, daxpivot,sprsinang);
 
-    cosang = mulscale16(cosang, dayscalerecip);
-    sinang = mulscale16(sinang, dayscalerecip);
+    cosang <<= 2;
+    sinang <<= 2;
 
     const voxint_t gxstart = (voxint_t)y*cosang - (voxint_t)x*sinang;
     const voxint_t gystart = (voxint_t)x*cosang + (voxint_t)y*sinang;
@@ -4939,10 +4938,10 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
 
                 rx -= lx;
 
-                const int32_t l1 = distrecip[clamp((ny-yoff)>>14, 1, DISTRECIPSIZ-1)];
+                const int32_t l1 = mulscale12(distrecip[clamp((ny-yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale);
                 // FIXME! AMCTC RC2/beta shotgun voxel
                 // (e.g. training map right after M16 shooting):
-                const int32_t l2 = distrecip[clamp((ny+yoff)>>14, 1, DISTRECIPSIZ-1)];
+                const int32_t l2 = mulscale12(distrecip[clamp((ny+yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale);
                 int32_t cz1 = 0, cz2 = INT32_MAX;
 
                 if (clipcf)
