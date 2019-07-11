@@ -1992,13 +1992,11 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 break;
             case 1:
             {
-#ifdef USE_OPENGL
-                if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+                if (tilehasmodelorvoxel(pTSprite->picnum, pTSprite->pal) && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                 {
                     pTSprite->cstat &= ~4;
                     break;
                 }
-#endif
                 int dX = cX - pTSprite->x;
                 int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
@@ -2016,13 +2014,11 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             }
             case 2:
             {
-#ifdef USE_OPENGL
-                if (videoGetRenderMode() >= REND_POLYMOST && usemodels && md_tilehasmodel(pTSprite->picnum, pTSprite->pal) >= 0 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
+                if (tilehasmodelorvoxel(pTSprite->picnum, pTSprite->pal) && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                 {
                     pTSprite->cstat &= ~4;
                     break;
                 }
-#endif
                 int dX = cX - pTSprite->x;
                 int dY = cY - pTSprite->y;
                 RotateVector(&dX, &dY, 128-pTSprite->ang);
@@ -2078,12 +2074,15 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             nAnim--;
         }
 
-        int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
-
-        if (usevoxels && videoGetRenderMode() != REND_POLYMER && tiletovox[nAnimTile] != -1)
+        if ((pTSprite->cstat&48) != 48)
         {
-            pTSprite->yoffset += picanm[nAnimTile].yofs;
-            pTSprite->xoffset += picanm[nAnimTile].xofs;
+            int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
+
+            if (usevoxels && videoGetRenderMode() != REND_POLYMER && tiletovox[nAnimTile] != -1)
+            {
+                pTSprite->yoffset += picanm[nAnimTile].yofs;
+                pTSprite->xoffset += picanm[nAnimTile].xofs;
+            }
         }
 
         sectortype *pSector = &sector[pTSprite->sectnum];

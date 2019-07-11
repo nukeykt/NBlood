@@ -2514,22 +2514,24 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
             if ((data += pXSource->data2) >= pXSource->data4) {
                 switch (pSource->hitag) {
-                case 0:
-                case 1:
-                    if (data > pXSource->data4) data = pXSource->data4;
+                    case 0:
+                    case 1:
+                        if (data > pXSource->data4) data = pXSource->data4;
+                        break;
+                    case 2:
+                    {
+                        
+                        if (data > pXSource->data4) data = pXSource->data4;
+                        if (!goalValueIsReached(pXSource)) break;
+                        int tmp = pXSource->data4;
+                        pXSource->data4 = pXSource->data3;
+                        pXSource->data3 = tmp;
+                        
+                    }
                     break;
-                case 2:
-                {
-                    if (data > pXSource->data4) data = pXSource->data4;
-                    if (!goalValueIsReached(pXSource)) break;
-                    int tmp = pXSource->data4;
-                    pXSource->data4 = pXSource->data3;
-                    pXSource->data3 = (short)tmp;
-                    break;
-                }
-                case 3:
-                    if (data > pXSource->data4) data = pXSource->data3;
-                    break;
+                    case 3:
+                        if (data > pXSource->data4) data = pXSource->data3;
+                        break;
                 }
             }
 
@@ -2541,26 +2543,26 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
             if ((data -= pXSource->data2) <= pXSource->data4) {
                 switch (pSource->hitag) {
-                case 0:
-                case 1:
-                    if (data < pXSource->data4) data = pXSource->data4;
-                    break;
-                case 2:
-                {
-                    if (data < pXSource->data4) data = pXSource->data4;
-                    int tmp = pXSource->data4;
-                    pXSource->data4 = pXSource->data3;
-                    pXSource->data3 = (short)tmp;
-                    break;
-                }
-                case 3:
-                    if (data < pXSource->data4) data = pXSource->data3;
-                    break;
+                    case 0:
+                    case 1:
+                        if (data < pXSource->data4) data = pXSource->data4;
+                        break;
+                    case 2:
+                    {
+                        if (data < pXSource->data4) data = pXSource->data4;
+                        int tmp = pXSource->data4;
+                        pXSource->data4 = pXSource->data3;
+                        pXSource->data3 = tmp;
+                        break;
+                    }
+                    case 3:
+                        if (data < pXSource->data4) data = pXSource->data3;
+                        break;
                 }
             }
         }
         
-        setDataValueOfObject(type, nDest, pXSource->data1, (short)data);
+        setDataValueOfObject(type, nDest, pXSource->data1, data);
         return;
 
     } else if (pSource->type == kGDXWindGenerator) {
@@ -2753,9 +2755,8 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
             if (!IsDudeSprite(pTarget) || pXTarget->health < 1 || !dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget)) {
                 aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
-
-                // dude attack or attacked by target that does not fit by data id?
             }
+            // dude attack or attacked by target that does not fit by data id?
             else if (pXSource->data1 != 666 && pXTarget->data1 != pXSource->data1) {
                 if (affectedByTargetChg(pXTarget)) {
 
@@ -2832,8 +2833,8 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
             int mDist = 3; if (isMeleeUnit(pSprite)) mDist = 2;
             if (pXSprite->target >= 0 && getTargetDist(pSprite, pDudeInfo, &sprite[pXSprite->target]) < mDist) {
+                if (!isActive(pSprite->xvel)) aiActivateDude(pSprite, pXSprite);
                 return;
-                
             }
             // lets try to look for target that fits better by distance
             else if ((gFrameClock & 256) != 0 && (pXSprite->target < 0 || getTargetDist(pSprite, pDudeInfo, pTarget) >= mDist)) {
@@ -2876,19 +2877,11 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 }
 
                 // skip non-dudes and players
-                if (!IsDudeSprite(pTarget) || (IsPlayerSprite(pTarget) && pXSource->data4 > 0))
-                    continue;
-                // avoid self aiming and those who dude can't see
-                else if (!dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget) || pSprite->xvel == pTarget->xvel) {
-                    continue;
-                    
-                }
+                if (!IsDudeSprite(pTarget) || (IsPlayerSprite(pTarget) && pXSource->data4 > 0) || pTarget->owner == pSprite->xvel) continue;
+                // avoid self aiming, those who dude can't see, and those who dude own
+                else if (!dudeCanSeeTarget(pXSprite, pDudeInfo, pTarget) || pSprite->xvel == pTarget->xvel) continue;
                 // if Target Changer have data1 = 666, everyone can be target, except AI team mates.
-                else if (pXSource->data1 != 666) {
-                    if (pXSource->data1 != pXTarget->data1)
-                        continue;
-                }
-
+                else if (pXSource->data1 != 666 && pXSource->data1 != pXTarget->data1) continue;
                 // don't attack immortal, burning dudes and mates
                 if (IsBurningDude(pTarget) || !IsKillableDude(pTarget, true) || (pXSource->data2 == 1 && isMateOf(pXSprite, pXTarget)))
                     continue;
@@ -3174,7 +3167,7 @@ spritetype* getTargetInRange(spritetype* pSprite, int minDist, int maxDist, shor
         if (dist < minDist || dist > maxDist) continue;
         else if (pXSprite->target == pTarget->xvel) return pTarget;
         else if (!IsDudeSprite(pTarget) || pTarget->xvel == pSprite->xvel || IsPlayerSprite(pTarget)) continue;
-        else if (IsBurningDude(pTarget) || !IsKillableDude(pTarget, true)) continue;
+        else if (IsBurningDude(pTarget) || !IsKillableDude(pTarget, true) || pTarget->owner == pSprite->xvel) continue;
         else if ((teamMode == 1 && isMateOf(pXSprite, pXTarget)) || isMatesHaveSameTarget(pXSprite,pTarget,1)) continue;
         else if (data == 666 || pXTarget->data1 == data) {
 
@@ -3212,8 +3205,7 @@ bool isTargetAimsDude(XSPRITE* pXTarget, spritetype* pDude) {
 
 spritetype* getMateTargets(XSPRITE* pXSprite) {
     int rx = pXSprite->rxID; spritetype* pMate = NULL; XSPRITE* pXMate = NULL;
-    
-    // original code
+
     for (int i = bucketHead[rx]; i < bucketHead[rx + 1]; i++) {
         if (rxBucket[i].type == 3) {
             pMate = &sprite[rxBucket[i].index];
@@ -3347,25 +3339,25 @@ bool setDataValueOfObject(int objType, int objIndex, int dataIndex, int value) {
     case 3:
         switch (dataIndex) {
         case 1:
-            xsprite[sprite[objIndex].extra].data1 = (short)value;
+            xsprite[sprite[objIndex].extra].data1 = value;
             return true;
         case 2:
-            xsprite[sprite[objIndex].extra].data2 = (short)value;
+            xsprite[sprite[objIndex].extra].data2 = value;
             return true;
         case 3:
-            xsprite[sprite[objIndex].extra].data3 = (short)value;
+            xsprite[sprite[objIndex].extra].data3 = value;
             return true;
         case 4:
-            xsprite[sprite[objIndex].extra].data4 = (short)value;
+            xsprite[sprite[objIndex].extra].data4 = value;
             return true;
         default:
             return false;
         }
     case 0:
-        xsector[sector[objIndex].extra].data = (short)value;
+        xsector[sector[objIndex].extra].data = value;
         return true;
     case 6:
-        xwall[wall[objIndex].extra].data = (short)value;
+        xwall[wall[objIndex].extra].data = value;
         return true;
     default:
         return false;

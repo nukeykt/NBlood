@@ -84,13 +84,41 @@ G_EXTERN char pus,pub;
 G_EXTERN char ready2send;
 #define MAXPLAYERNAME 32
 G_EXTERN char szPlayerName[MAXPLAYERNAME];
-G_EXTERN char tempbuf[MAXSECTORS<<1],packbuf[PACKBUF_SIZE],buf[1024];
+G_EXTERN char tempbuf[MAXSECTORS<<1],buf[1024];
+G_EXTERN uint8_t packbuf[PACKBUF_SIZE];
 #define TYPEBUFSIZE 141
 G_EXTERN char typebuf[TYPEBUFSIZE];
 
 
 G_EXTERN input_t localInput;
 G_EXTERN input_t recsync[RECSYNCBUFSIZ];
+
+//G_EXTERN uint8_t syncstat, syncval[MAXPLAYERS][MOVEFIFOSIZ];
+//G_EXTERN int32_t syncvalhead[MAXPLAYERS], syncvaltail, syncvaltottail;
+
+G_EXTERN int32_t avgfvel, avgsvel, avgbits;
+G_EXTERN fix16_t avgavel, avghorz;
+G_EXTERN int8_t avgextbits;
+
+G_EXTERN int32_t movefifosendplc;
+G_EXTERN int32_t movefifoplc;
+
+G_EXTERN int32_t predictfifoplc;
+G_EXTERN vec3_t mypos, omypos, myvel;
+G_EXTERN fix16_t myhoriz, omyhoriz, myhorizoff, omyhorizoff, myang, omyang;
+G_EXTERN int16_t mycursectnum, myjumpingcounter;
+G_EXTERN uint8_t myjumpingtoggle, myonground, myhardlanding, myreturntocenter;
+G_EXTERN int16_t my_moto_speed;
+G_EXTERN uint8_t my_not_on_water, my_moto_on_ground;
+G_EXTERN uint8_t my_moto_do_bump, my_moto_bump_fast, my_moto_on_oil, my_moto_on_mud;
+G_EXTERN int16_t my_moto_bump, my_moto_bump_target, my_moto_turb;
+G_EXTERN int32_t my_stairs;
+
+G_EXTERN vec3_t myposbak[MOVEFIFOSIZ];
+G_EXTERN fix16_t myhorizbak[MOVEFIFOSIZ], myangbak[MOVEFIFOSIZ];
+G_EXTERN int32_t myminlag[MAXPLAYERS], mymaxlag, otherminlag, bufferjitter;
+
+G_EXTERN int32_t g_networkBroadcastMode, g_movesPerPacket;
 
 G_EXTERN int32_t g_animWallCnt;
 G_EXTERN int32_t g_animateCnt;
