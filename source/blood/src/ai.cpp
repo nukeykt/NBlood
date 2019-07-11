@@ -154,9 +154,10 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     int UNUSED(ceilZ) = getceilzofslope(nSector, x, y);
     int nXSector = sector[nSector].extra;
     char Underwater = 0; char Water = 0; char Depth = 0; char Crusher = 0;
+    XSECTOR* pXSector = NULL;
     if (nXSector > 0)
     {
-        XSECTOR *pXSector = &xsector[nXSector];
+        pXSector = &xsector[nXSector];
         if (pXSector->Underwater)
             Underwater = 1;
         if (pXSector->Depth)
@@ -233,6 +234,10 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     case 203:
     case 210:
     case 217:
+    case kGDXDudeUniversalCultist:
+    case kGDXGenDudeBurning:
+        if ((Crusher && !dudeIsImmune(pSprite, pXSector->damageType)) || xsprite[pSprite->extra].dudeGuard) return false;
+        return true;
     default:
         if (Crusher)
             return false;
@@ -1074,9 +1079,13 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                         if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ"))
                             && gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) {
                             
-                            aiPlay3DSound(pSprite, 361, (AI_SFX_PRIORITY)0, -1);
+                            aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                             sfxPlayGDXGenDudeSound(pSprite, 3, pXSprite->data3);
                             pSprite->type = kGDXGenDudeBurning;
+
+                            if (pXSprite->data2 == 11520) // don't inherit palette for burning if using default animation
+                                pSprite->pal = 0;
+
                             aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
                             actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
                             gDudeExtra[pSprite->extra].at0 = gFrameClock + 360;
@@ -1144,24 +1153,27 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
             if ((mass < 155 && !spriteIsUnderwater(pSprite, false) && pDudeExtra->at4) || (mass > 155 && Chance(chance3)))
             {
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
-                aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
+                
+                if (gSysRes.Lookup(pXSprite->data2 + 4, "SEQ")) aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
+                else if (!v4 || (v4 && gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                else if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
+                else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
+
                 return;
             }
 
             if (pXSprite->aiState == &GDXGenDudeDodgeDmgW || pXSprite->aiState == &GDXGenDudeDodgeDmgD 
                 || pXSprite->aiState == &GDXGenDudeDodgeDmgL) {
-                
-                if (Chance(chance3)) sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
-                return;
-
+                    if (Chance(chance3)) sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
+                    return;
             }
 
             if ((!dudeIsMelee(pXSprite) && mass < 155) || Chance(chance3)) {
 
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
 
-                if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
-                else if (!v4 || (v4 && gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                if (!v4 || (v4 && gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                else if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
                 else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
 
             }

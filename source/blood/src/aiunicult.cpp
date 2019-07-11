@@ -111,12 +111,12 @@ static void punchCallback(int, int nXIndex){
         spritetype* pSprite = &sprite[nSprite];
 
         int nAngle = getangle(pXSprite->targetX - pSprite->x, pXSprite->targetY - pSprite->y);
-        int nZOffset1 = dudeInfo[pSprite->type - kDudeBase].eyeHeight * pSprite->yrepeat << 2;
+        int nZOffset1 = dudeInfo[pSprite->type - kDudeBase].eyeHeight/* * pSprite->yrepeat << 2*/;
         int nZOffset2 = 0;
         if(pXSprite->target != -1) {
             spritetype* pTarget = &sprite[pXSprite->target];
             if(IsDudeSprite(pTarget))
-                nZOffset2 = dudeInfo[pTarget->type - kDudeBase].eyeHeight * pTarget->yrepeat << 2;
+                nZOffset2 = dudeInfo[pTarget->type - kDudeBase].eyeHeight/* * pTarget->yrepeat << 2*/;
 
             int dx = Cos(nAngle) >> 16;
             int dy = Sin(nAngle) >> 16;
@@ -125,7 +125,7 @@ static void punchCallback(int, int nXIndex){
             if (!sfxPlayGDXGenDudeSound(pSprite,9,pXSprite->data3))
                 sfxPlay3DSound(pSprite, 530, 1, 0);
                 
-            actFireVector(pSprite, 0, 0, dx, dy, dz,(VECTOR_TYPE)22);
+            actFireVector(pSprite, 0, 0, dx, dy, dz,VECTOR_TYPE_22);
         }
 
         gGDXGenDudePunch = true;
@@ -136,7 +136,7 @@ static void GDXCultistAttack1(int, int nXIndex) {
     int nSprite = pXSprite->reference;
     spritetype* pSprite = &sprite[nSprite];
     int dx, dy, dz; int weapon = pXSprite->data1;
-    if (weapon >= 0 && weapon < kVectorMax){
+    if (weapon >= 0 && weapon < kVectorMax) {
 
         int vector = pXSprite->data1;
         dx = Cos(pSprite->ang) >> 16;
@@ -159,26 +159,27 @@ static void GDXCultistAttack1(int, int nXIndex) {
             
     } else if (weapon >= kDudeBase && weapon < kDudeMax) {
 
-        spritetype* pSpawned = NULL; int dist = pSprite->clipdist * 2;
-        if ((pSpawned = actSpawnDude(pSprite, weapon, dist *= Random(4),0)) == NULL)
+        spritetype* pSpawned = NULL; int dist = pSprite->clipdist * 6;
+        if ((pSpawned = actSpawnDude(pSprite, weapon, dist, 0)) == NULL)
             return;
 
         gDudeExtra[pSprite->extra].at6.u1.at4++;
         pSpawned->owner = nSprite;
         pSpawned->x += dist + (Random3(dist));
-        pSpawned->z = pSprite->z;
-        pSpawned->y = pSprite->y;
+        //pSpawned->z = pSprite->z;
+        //pSpawned->y = pSprite->y;
         if (pSpawned->extra > -1) {
             xsprite[pSpawned->extra].target = pXSprite->target;
             if (pXSprite->target > -1)
                 aiActivateDude(pSpawned, &xsprite[pSpawned->extra]);
         }
         gKillMgr.sub_263E0(1);
-        spritetype* pEffect = gFX.fxSpawn((FX_ID)52, pSpawned->sectnum, pSpawned->x, pSpawned->y, pSpawned->z, pSpawned->ang);
-        if (pEffect != NULL) {
+        
+        if (!sfxPlayGDXGenDudeSound(pSprite, 7, pXSprite->data3))
+            sfxPlay3DSoundCP(pSprite, 379, 1, 0, 0x10000 - Random3(0x3000));
 
-            if (!sfxPlayGDXGenDudeSound(pSprite, 7, pXSprite->data3))
-                sfxPlay3DSoundCP(pSprite, 379, 1, 0, 0x10000 - Random3(0x3000));
+        /*spritetype* pEffect = gFX.fxSpawn((FX_ID)52, pSpawned->sectnum, pSpawned->x, pSpawned->y, pSpawned->z, pSpawned->ang);
+        if (pEffect != NULL) {
 
             pEffect->cstat = kSprOriginAlign | kSprFace;
             pEffect->shade = -127;
@@ -202,7 +203,7 @@ static void GDXCultistAttack1(int, int nXIndex) {
             int repeat = 64 + Random(50);
             pEffect->xrepeat = repeat;
             pEffect->yrepeat = repeat;
-        }
+        }*/
 
         if (Chance(0x3500)) {
             int state = checkAttackState(pSprite, pXSprite);
@@ -223,15 +224,16 @@ static void GDXCultistAttack1(int, int nXIndex) {
         dx = Cos(pSprite->ang) >> 16;
         dy = Sin(pSprite->ang) >> 16;
         dz = gDudeSlope[nXIndex];
+        //dz = 0;
 
         // dispersal modifiers here
         dx += Random3(3000 - 1000 * gGameOptions.nDifficulty);
         dy += Random3(3000 - 1000 * gGameOptions.nDifficulty);
         dz += Random3(1000 - 500 * gGameOptions.nDifficulty);
 
-        actFireMissile(pSprite, 0, 0, dx, dy, dz, pXSprite->data1);
+        actFireMissile(pSprite, 0, 0, dx, dy, dz, weapon);
         if (!sfxPlayGDXGenDudeSound(pSprite,7,pXSprite->data3))
-            sfxPlayMissileSound(pSprite,pXSprite->data1);
+            sfxPlayMissileSound(pSprite, weapon);
     }
 }
 
@@ -423,7 +425,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
 
     aiChooseDirection(pSprite, pXSprite, getangle(dx, dy));
 
-    if ( pXTarget == NULL || pXTarget->health == 0 )
+    if ( pXTarget == NULL || pXTarget->health <= 0 )
     {
         // target is dead
         if(spriteIsUnderwater(pSprite,false))
@@ -432,6 +434,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
             aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
             sfxPlayGDXGenDudeSound(pSprite,5,pXSprite->data3);
         }
+        
         return;
     }
 
@@ -463,12 +466,12 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
             if (dist < pDudeInfo->seeDist && klabs(losAngle) <= pDudeInfo->periphery) {
                 aiSetTarget(pXSprite, pXSprite->target);
                 
-                if ((gFrameClock & 64) == 0 &&
-                    Chance(0x1000) && !spriteIsUnderwater(pSprite,false))
+                if ((gFrameClock & 64) == 0 && Chance(0x1000) && !spriteIsUnderwater(pSprite,false))
                     sfxPlayGDXGenDudeSound(pSprite,6,pXSprite->data3);
 
-                if(dist > 0)
-                    gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 10);
+                if (dist <= 1500) gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 13);
+                else if (dist <= 3000) gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 11);
+                else if (dist > 0) gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 10);
                     
                 spritetype* pLeech = NULL;
                 if (pXSprite->data1 >= kThingBase && pXSprite->data1 < kThingMax) {
@@ -589,7 +592,17 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
 
                     } else if (pXSprite->data1 >= kDudeBase && pXSprite->data1 < kDudeMax && pXSprite->data1 != kGDXDudeUniversalCultist) {
 
-                            if (gDudeExtra[pSprite->extra].at6.u1.at4 <= /*gGameOptions.nDifficulty*/ 3 && dist > meleeVector->maxDist) {
+                            if (gDudeExtra[pSprite->extra].at6.u1.at4 > 0) {
+
+                                updateTargetOfSlaves(pSprite);
+
+                                if (pXSprite->target >= 0 && sprite[pXSprite->target].owner == pSprite->xvel) {
+                                    aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                                    return;
+                                }
+                            }
+
+                            if (gDudeExtra[pSprite->extra].at6.u1.at4 <= gGameOptions.nDifficulty && dist > meleeVector->maxDist) {
                                 vdist = (vdist / 2) + Random(vdist / 2);
                             }
                             else if (dist <= meleeVector->maxDist) {
@@ -628,19 +641,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                             {
                                 if (dist > mdist || pXSprite->locked == 1) break;
                                 int state = checkAttackState(pSprite, pXSprite);
-                                /*if (Chance(0x1000)) {
-                                    switch (state) {
-                                    case 1:
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
-                                        return;
-                                    case 2:
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeD);
-                                        return;
-                                    default:
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
-                                        return;
-                                    }
-                                } else */if (dist <= meleeVector->maxDist && Chance(0x7000)) {
+                                if (dist <= meleeVector->maxDist && Chance(0x7000)) {
                                     aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
                                     return;
                                 } else {
@@ -689,7 +690,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                             doExplosion(pSprite, nType)) {
 
                             pXSprite->health = 1;
-                            actDamageSprite(pSprite->xvel, pSprite, (DAMAGE_TYPE)3, 65535);
+                            actDamageSprite(pSprite->xvel, pSprite, DAMAGE_TYPE_3, 65535);
 
                             xvel[pSprite->xvel] = 0;
                             zvel[pSprite->xvel] = 0;
@@ -716,20 +717,22 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                                     aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
                                     break;
                             }
+
+                            pXSprite->target = -1;
+
                         } else if (dist <= meleeVector->maxDist && Chance(0x7000)) {
                             aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
                         } else {
                             switch (state){
                                 case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
-                                    break;
-                                case 2:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
+                                    aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
                                     break;
                                 default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                                    aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
                                     break;
                             }
+
+                            pXSprite->target = -1;
                         }
 
                         return;
@@ -1038,7 +1041,7 @@ bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data) {
 
     if (gotSnd) {
         switch (mode){
-            case 1:
+           // case 1:
             case 2:
             case 4:
             case 7:
@@ -1048,7 +1051,7 @@ bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data) {
                 sfxPlay3DSound(pSprite, sndId, -1, 0);
                 break;
             default:
-                aiPlay3DSound(pSprite, sndId, (AI_SFX_PRIORITY)2, -1);
+                aiPlay3DSound(pSprite, sndId, AI_SFX_PRIORITY_2, -1);
                 break;
         }
         return true;
@@ -1280,5 +1283,27 @@ bool doExplosion(spritetype* pSprite, int nType) {
     }
 
     return false;
+}
+
+
+void updateTargetOfSlaves(spritetype* pSprite) {
+    for (short nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+        if (sprite[nSprite].owner != pSprite->xvel || sprite[nSprite].extra < 0 || !IsDudeSprite(&sprite[nSprite])) continue;
+        else if (xsprite[pSprite->extra].target != xsprite[sprite[nSprite].extra].target
+            && IsDudeSprite(&sprite[xsprite[pSprite->extra].target])) {
+            aiSetTarget(&xsprite[sprite[nSprite].extra], xsprite[pSprite->extra].target);
+        }
+
+        if (xsprite[sprite[nSprite].extra].target >= 0) {
+            // don't attack mates
+            if (sprite[xsprite[sprite[nSprite].extra].target].owner == sprite[nSprite].owner)
+                aiSetTarget(&xsprite[sprite[nSprite].extra], pSprite->x, pSprite->y, pSprite->z);
+        }
+
+        if (!isActive(sprite[nSprite].xvel) && xsprite[sprite[nSprite].extra].target >= 0)
+            aiActivateDude(&sprite[nSprite], &xsprite[sprite[nSprite].extra]);
+    }
+
+    return;
 }
 //////////
