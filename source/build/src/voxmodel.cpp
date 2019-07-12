@@ -1115,6 +1115,9 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 #endif
     const float phack[2] = { 0, 1.f / 256.f };
 
+    char prevClamp = polymost_getClamp();
+    polymost_setClamp(false);
+
     if (m->is8bit && r_useindexedcolortextures)
     {
         if (!m->texid8bit)
@@ -1201,6 +1204,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
         glEnd();  // }}}
     }
 
+    polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
     polymost_resetVertexPointers();
 
