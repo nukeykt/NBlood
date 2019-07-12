@@ -2677,6 +2677,8 @@ void actInit(void)
 
                         // exceptions
                         switch (i - seqStartId) {
+                            case 3:
+                            case 4:
                             case 11:
                             case 12:
                             case 18:
@@ -3044,15 +3046,18 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
             }
 
             if (a3 == DAMAGE_TYPE_1) {
-                if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ"))
-                    && gSysRes.Lookup(pXSprite->data2 + 3, "SEQ") && pXSprite->medium == 0) {
-
+                if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) && pXSprite->medium == 0) {
+                    if (gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) {
                         pSprite->type = kGDXGenDudeBurning;
+                        if (pXSprite->data2 == 11520) // don't inherit palette for burning if using default animation
+                            pSprite->pal = 0;
+
                         aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
                         actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
                         if (pXSprite->burnTime <= 0) pXSprite->burnTime = 1200;
                         gDudeExtra[pSprite->extra].at0 = gFrameClock + 360;
                         return;
+                    }
 
                 } else {
                     pXSprite->burnTime = 0;
@@ -3297,13 +3302,18 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         break;
     case kGDXDudeUniversalCultist:
         sfxPlayGDXGenDudeSound(pSprite, 2, pXSprite->data3);
-        if (nSeq == 3)
-            seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-        else
+        if (nSeq == 3) {
+            if (gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) seqSpawn(3 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+
+        } else {
             seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
+        }
 
         pXSprite->txID = 0; // to avoid second trigger.
         break;
+
     case kGDXGenDudeBurning:
     {
         sfxPlayGDXGenDudeSound(pSprite, 4, pXSprite->data3);
@@ -3318,16 +3328,8 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         }
 
         int seqId = pXSprite->data2;
-        bool dBurn1 = gSysRes.Lookup(seqId + 15, "SEQ"); bool dBurn2 = gSysRes.Lookup(seqId + 16, "SEQ");
-        if (dBurn1 && dBurn2) seqId += 15 + Random(2);
-        else if (dBurn1) seqId +=15;
-        else if (dBurn2) seqId +=16;
-        else { 
-            seqKill(3, nXSprite); 
-            break; 
-        }
-        
-        seqSpawn(seqId, 3, nXSprite, nDudeToGibClient1);
+        if (gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) seqSpawn(seqId += 15 + Random(2), 3, nXSprite, nDudeToGibClient1);
+        else seqSpawn(seqId += 15, 3, nXSprite, nDudeToGibClient1);
         break;
     }
     case 241:
@@ -4156,7 +4158,12 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
 
                         int mass1 = dudeInfo[pSprite2->type - kDudeBase].mass;
                         int mass2 = dudeInfo[pSprite->type - kDudeBase].mass;
-                        
+                        switch (pSprite->type) {
+                            case kGDXDudeUniversalCultist:
+                            case kGDXGenDudeBurning:
+                                mass2 = getDudeMassBySpriteSize(pSprite);
+                                break;
+                        }
                         if (mass1 > mass2) {
                             int dmg = abs((mass1 - mass2) * (pSprite2->clipdist - pSprite->clipdist));
                             if (IsDudeSprite(pSprite2)) {
@@ -4183,6 +4190,9 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                                     else
                                         actDamageSprite(pSprite2->xvel, pSprite, DAMAGE_TYPE_0, dmg);
                                 }
+
+                                if (!IsPlayerSprite(pSprite) && pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
+                                    aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
                                 break;
 
                         }
@@ -4217,18 +4227,41 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             
             // by NoOne: add size shroom abilities
             if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite))) {
-                if (xvel[pSprite->xvel] != 0) {
-                    
+                if (xvel[pSprite->xvel] != 0 && IsDudeSprite(pSprite2)) {
                     int mass1 = dudeInfo[pSprite->type - kDudeBase].mass;
                     int mass2 = dudeInfo[pSprite2->type - kDudeBase].mass;
-                    
+                    switch (pSprite2->type) {
+                        case kGDXDudeUniversalCultist:
+                        case kGDXGenDudeBurning:
+                            mass2 = getDudeMassBySpriteSize(pSprite2);
+                            break;
+                    }
                     if (mass1 > mass2) {
                         actKickObject(pSprite, pSprite2);
                         sfxPlay3DSound(pSprite, 357, -1, 1);
                         int dmg = (mass1 - mass2) + abs(xvel[pSprite->xvel] >> 16);
-                        if (dmg > 0 && IsDudeSprite(pSprite2))
+                        if (dmg > 0)
                             actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? DAMAGE_TYPE_0 : DAMAGE_TYPE_2, dmg);
                     }
+                }
+            }
+
+            switch (pSprite->type) {
+                case kGDXDudeUniversalCultist:
+                case kGDXGenDudeBurning:
+                {
+                    if (IsDudeSprite(pSprite2) && !IsPlayerSprite(pSprite2)) {
+                        int mass1 = getDudeMassBySpriteSize(pSprite);
+                        int mass2 = getDudeMassBySpriteSize(pSprite2);
+
+                        if (mass1 > mass2) {
+                            if ((pXSprite->target == pSprite2->xvel && !dudeIsMelee(pXSprite) && Chance(0x0500)) || pXSprite->target != pSprite2->xvel) 
+                                actKickObject(pSprite, pSprite2);
+                            if (pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
+                                aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
+                        }
+                    }
+                    break;
                 }
             }
             
@@ -4273,7 +4306,12 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                 
                 int mass1 = dudeInfo[pSprite->type - kDudeBase].mass;
                 int mass2 = dudeInfo[pSprite2->type - kDudeBase].mass;
-
+                switch (pSprite2->type) {
+                    case kGDXDudeUniversalCultist:
+                    case kGDXGenDudeBurning:
+                        mass2 = getDudeMassBySpriteSize(pSprite2);
+                        break;
+                }
                 if (mass1 > mass2 && IsDudeSprite(pSprite2)) {
                     if ((IsPlayerSprite(pSprite2) && Chance(0x500)) || !IsPlayerSprite(pSprite2))
                         actKickObject(pSprite, pSprite2);
@@ -4283,6 +4321,25 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                         actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? DAMAGE_TYPE_0 : DAMAGE_TYPE_2, dmg);
                 }
             }
+
+            switch (pSprite->type) {
+                case kGDXDudeUniversalCultist:
+                case kGDXGenDudeBurning:
+                {
+                    if (IsDudeSprite(pSprite2) && !IsPlayerSprite(pSprite2)) {
+                        int mass1 = getDudeMassBySpriteSize(pSprite);
+                        int mass2 = getDudeMassBySpriteSize(pSprite2);
+
+                        if (mass1 > mass2) {
+                            if (Chance((pXSprite->target == pSprite2->xvel) ? 0x1000 : 0x2000)) actKickObject(pSprite, pSprite2);
+                            if (pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
+                                aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
+                        }
+                    }
+                    break;
+                }
+            }
+
             
             switch (pSprite2->type)
             {
