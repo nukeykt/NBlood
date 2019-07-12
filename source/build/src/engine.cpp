@@ -4797,8 +4797,8 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     }
 
     const int32_t syoff = divscale21(globalposz-dasprz,odayscale)+zoff;
-    floorz = min(floorz, dasprz+mulscale21(zoff,odayscale));
-    ceilingz = max(ceilingz, dasprz+mulscale21(-(dazsiz<<15)+zoff, odayscale));
+    floorz = min(floorz, dasprz+mulscale21(-zoff+(dazsiz<<15),odayscale));
+    ceilingz = max(ceilingz, dasprz+mulscale21(-zoff, odayscale));
     const int32_t flooroff = divscale21(floorz-globalposz,odayscale);
     const int32_t ceilingoff = divscale21(ceilingz-globalposz,odayscale);
     int32_t yoff = (klabs(gxinc)+klabs(gyinc))>>1;
