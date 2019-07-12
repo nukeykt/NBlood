@@ -395,4 +395,12 @@
   <ItemGroup>
     <MASM Include="..\..\source\build\src\a.masm" />
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\source\build\src\polymost1Frag.glsl">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\source\build\src\polymost1Vert.glsl">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
 </Project>
