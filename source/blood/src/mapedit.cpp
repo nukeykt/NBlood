@@ -11683,7 +11683,7 @@ int32_t ExtPostStartupWindow(void)
     scrInit();
     trigInit(gSysRes);
     scrCreateStdColors();
-    sndInit();
+    //sndInit();
     dbInit();
 
     artLoadFiles("TILES%03i.ART", MAXCACHE1DSIZE);
@@ -12565,6 +12565,16 @@ void ExtCheckKeys(void)
     gFrameTicks = gGameClock - gFrameClock;
     gFrameClock += gFrameTicks;
 
+    if (!soundinit)
+    {
+        SoundToggle = 1;
+        NumVoices = 32;
+        NumChannels = 2;
+        MixRate = 44100;
+        FXVolume = 255;
+        sndInit();
+        soundinit = 1;
+    }
     sndProcess();
 
     // NUKE-TODO:
