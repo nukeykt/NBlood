@@ -11683,7 +11683,7 @@ int32_t ExtPostStartupWindow(void)
     scrInit();
     trigInit(gSysRes);
     scrCreateStdColors();
-    sndInit();
+    //sndInit();
     dbInit();
 
     artLoadFiles("TILES%03i.ART", MAXCACHE1DSIZE);
@@ -11721,8 +11721,18 @@ int32_t ExtPostStartupWindow(void)
     return 0;
 }
 
+static void (*keytimerstuff)(void) = NULL;
+
+static void timerCallback()
+{
+    keytimerstuff();
+    gGameClock = totalclock;
+}
+
 void ExtPostInit(void)
 {
+    keytimerstuff = timerSetCallback(timerCallback);
+
     InitCustomColors();
 
     //if (!(duke3d_m32_globalflags & DUKE3D_NO_PALETTE_CHANGES))
@@ -12551,6 +12561,21 @@ void ExtCheckKeys(void)
 {
     static int32_t soundinit = 0;
     static int32_t lastbstatus = 0;
+
+    gFrameTicks = gGameClock - gFrameClock;
+    gFrameClock += gFrameTicks;
+
+    if (!soundinit)
+    {
+        SoundToggle = 1;
+        NumVoices = 32;
+        NumChannels = 2;
+        MixRate = 44100;
+        FXVolume = 255;
+        sndInit();
+        soundinit = 1;
+    }
+    sndProcess();
 
     // NUKE-TODO:
 #if 0

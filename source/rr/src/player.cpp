@@ -1121,8 +1121,8 @@ growspark_rr:
                     shootAng = pSprite->ang + (krand2() & 31) - 16;
             }
 
-            if (numplayers > 1 && g_netClient)
-                return -1;
+            //if (numplayers > 1 && g_netClient)
+            //    return -1;
 
             if (RRRA && projecTile == RRTILE1790)
             {
@@ -4475,8 +4475,8 @@ void P_FragPlayer(int playerNum)
     DukePlayer_t *const pPlayer = g_player[playerNum].ps;
     spritetype *const   pSprite = &sprite[pPlayer->i];
 
-    if (g_netClient) // [75] The server should not overwrite its own randomseed
-        randomseed = ticrandomseed;
+    //if (g_netClient) // [75] The server should not overwrite its own randomseed
+    //    randomseed = ticrandomseed;
 
     if (pSprite->pal != 1)
     {
@@ -4492,17 +4492,17 @@ void P_FragPlayer(int playerNum)
             pPlayer->dead_flag++;
 
 #ifndef NETCODE_DISABLE
-        if (g_netServer)
-        {
-            packbuf[0] = PACKET_FRAG;
-            packbuf[1] = playerNum;
-            packbuf[2] = pPlayer->frag_ps;
-            packbuf[3] = actor[pPlayer->i].picnum;
-            B_BUF32(&packbuf[4], ticrandomseed);
-            packbuf[8] = myconnectindex;
-
-            enet_host_broadcast(g_netServer, CHAN_GAMESTATE, enet_packet_create(packbuf, 9, ENET_PACKET_FLAG_RELIABLE));
-        }
+        //if (g_netServer)
+        //{
+        //    packbuf[0] = PACKET_FRAG;
+        //    packbuf[1] = playerNum;
+        //    packbuf[2] = pPlayer->frag_ps;
+        //    packbuf[3] = actor[pPlayer->i].picnum;
+        //    B_BUF32(&packbuf[4], ticrandomseed);
+        //    packbuf[8] = myconnectindex;
+        //
+        //    enet_host_broadcast(g_netServer, CHAN_GAMESTATE, enet_packet_create(packbuf, 9, ENET_PACKET_FLAG_RELIABLE));
+        //}
 #endif
     }
 
@@ -4877,7 +4877,7 @@ static void P_ProcessWeapon(int playerNum)
                     if (pPlayer->ammo_amount[RPG_WEAPON])
                         pPlayer->ammo_amount[RPG_WEAPON]--;
 
-                    if (numplayers < 2 || g_netServer)
+                    //if (numplayers < 2 || g_netServer)
                     {
                         int pipeBombZvel;
                         int pipeBombFwdVel;
@@ -5440,7 +5440,7 @@ static void P_ProcessWeapon(int playerNum)
                 {
                     pPlayer->ammo_amount[pPlayer->curr_weapon]--;
 
-                    if (numplayers < 2 || g_netServer)
+                    //if (numplayers < 2 || g_netServer)
                     {
                         int pipeBombZvel;
                         int pipeBombFwdVel;
@@ -5920,7 +5920,7 @@ static int P_DoFist(DukePlayer_t *pPlayer)
 }
 
 #ifdef YAX_ENABLE
-static void getzsofslope_player(int sectNum, int playerX, int playerY, int32_t *pCeilZ, int32_t *pFloorZ)
+void getzsofslope_player(int sectNum, int playerX, int playerY, int32_t *pCeilZ, int32_t *pFloorZ)
 {
     int didCeiling = 0;
 
@@ -6088,7 +6088,7 @@ static void P_Dead(int const playerNum, int const sectorLotag, int const floorZ,
     if (ud.recstat == 1 && (!g_netServer && ud.multimode < 2))
         G_CloseDemoWrite();
 
-    if ((numplayers < 2 || g_netServer) && pPlayer->dead_flag == 0)
+    if (/*(numplayers < 2 || g_netServer) && */pPlayer->dead_flag == 0)
         P_FragPlayer(playerNum);
 
     if (sectorLotag == ST_2_UNDERWATER)
@@ -7956,26 +7956,22 @@ HORIZONLY:;
         pPlayer->q16horiz += fix16_from_int(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         centerHoriz++;
     }
-
-    if (TEST_SYNC_KEY(playerBits, SK_LOOK_DOWN))
+    else if (TEST_SYNC_KEY(playerBits, SK_LOOK_DOWN))
     {
         pPlayer->return_to_center = 9;
         pPlayer->q16horiz -= fix16_from_int(12<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         centerHoriz++;
     }
-
-    if (TEST_SYNC_KEY(playerBits, SK_AIM_UP) && (!RRRA || !pPlayer->on_motorcycle))
+    else if (TEST_SYNC_KEY(playerBits, SK_AIM_UP) && (!RRRA || !pPlayer->on_motorcycle))
     {
         pPlayer->q16horiz += fix16_from_int(6<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         centerHoriz++;
     }
-
-    if (TEST_SYNC_KEY(playerBits, SK_AIM_DOWN) && (!RRRA || !pPlayer->on_motorcycle))
+    else if (TEST_SYNC_KEY(playerBits, SK_AIM_DOWN) && (!RRRA || !pPlayer->on_motorcycle))
     {
         pPlayer->q16horiz -= fix16_from_int(6<<(int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
         centerHoriz++;
     }
-
     if (RR && pPlayer->recoil && *weaponFrame == 0)
     {
         int delta = pPlayer->recoil >> 1;
@@ -7999,7 +7995,7 @@ HORIZONLY:;
         pPlayer->q16horiz -= fix16_from_int(pPlayer->hard_landing<<4);
     }
 
-    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz + g_player[playerNum].inputBits->q16horz, F16(HORIZ_MIN), F16(HORIZ_MAX));
+    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz + ((ud.recstat == 2 && g_demo_legacy && !pPlayer->aim_mode) ? 0 : g_player[playerNum].inputBits->q16horz), F16(HORIZ_MIN), F16(HORIZ_MAX));
 
     if (ud.recstat == 2 && g_demo_legacy) centerHoriz = !pPlayer->aim_mode;
 
@@ -8074,9 +8070,9 @@ HORIZONLY:;
                         break;
                     case APLAYER__STATIC:
                     {
-                        int playerNum = P_Get(pPlayer->actorsqu);
-                        P_QuickKill(g_player[playerNum].ps);
-                        g_player[playerNum].ps->frag_ps = playerNum;
+                        int playerSquished = P_Get(pPlayer->actorsqu);
+                        P_QuickKill(g_player[playerSquished].ps);
+                        g_player[playerSquished].ps->frag_ps = playerNum;
                         break;
                     }
                     default:
