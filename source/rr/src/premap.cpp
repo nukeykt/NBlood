@@ -2097,7 +2097,7 @@ static void resetpspritevars(char gameMode)
             s->xoffset = 0;
             s->clipdist = 64;
 
-//            if (j < g_mostConcurrentPlayers)
+            if (j < g_mostConcurrentPlayers)
             {
                 if ((gameMode&MODE_EOL) != MODE_EOL || g_player[j].ps->last_extra == 0)
                 {
@@ -2191,6 +2191,8 @@ void G_ResetTimers(uint8_t keepgtics)
 
 void G_ClearFIFO(void)
 {
+    Net_ClearFIFO();
+
     g_emuJumpTics = 0;
 
     clearbufbyte(&localInput, sizeof(input_t), 0L);
@@ -2341,7 +2343,7 @@ int G_EnterLevel(int gameMode)
     if ((gameMode & MODE_DEMO) == 0 && ud.recstat == 2)
         ud.recstat = 0;
 
-    if (g_networkMode != NET_DEDICATED_SERVER)
+    //if (g_networkMode != NET_DEDICATED_SERVER)
     {
         S_PauseSounds(false);
         FX_StopAllSounds();
@@ -2600,7 +2602,7 @@ int G_EnterLevel(int gameMode)
     G_DrawBackground();
     G_DrawRooms(myconnectindex,65536);
 
-    Net_WaitForServer();
+    Net_WaitForEverybody();
     return 0;
 }
 

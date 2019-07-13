@@ -1094,14 +1094,14 @@ static int32_t VM_ResetPlayer(int const playerNum, int32_t vmFlags)
             CAMERACLOCK = totalclock;
         }
 
-        if (g_fakeMultiMode)
+        //if (g_fakeMultiMode)
             P_ResetPlayer(playerNum);
 #ifndef NETCODE_DISABLE
-        if (g_netServer)
-        {
-            P_ResetPlayer(playerNum);
-            Net_SpawnPlayer(playerNum);
-        }
+        //if (g_netServer)
+        //{
+        //    P_ResetPlayer(playerNum);
+        //    Net_SpawnPlayer(playerNum);
+        //}
 #endif
     }
 
@@ -2628,8 +2628,8 @@ void A_Execute(int spriteNum, int playerNum, int playerDist)
     }
 */
 
-    if (g_netClient) // [75] The server should not overwrite its own randomseed
-        randomseed = ticrandomseed;
+    //if (g_netClient) // [75] The server should not overwrite its own randomseed
+    //    randomseed = ticrandomseed;
 
     if (EDUKE32_PREDICT_FALSE((unsigned)vm.pSprite->sectnum >= MAXSECTORS))
     {

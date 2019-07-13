@@ -185,7 +185,7 @@ void G_HandleSpecialKeys(void)
 
 //    CONTROL_ProcessBinds();
 
-    if (g_networkMode != NET_DEDICATED_SERVER && ALT_IS_PRESSED && KB_KeyPressed(sc_Enter))
+    if (/*g_networkMode != NET_DEDICATED_SERVER && */ALT_IS_PRESSED && KB_KeyPressed(sc_Enter))
     {
         if (videoSetGameMode(!ud.setup.fullscreen,ud.setup.xdim,ud.setup.ydim,ud.setup.bpp,ud.detail))
         {
@@ -229,11 +229,12 @@ void G_GameQuit(void)
     {
         g_gameQuit = 1;
         g_quitDeadline = totalclock+120;
-        g_netDisconnect = 1;
+        //g_netDisconnect = 1;
     }
 
     if ((totalclock > g_quitDeadline) && (g_gameQuit == 1))
-        G_GameExit("Timed out.");
+        g_netDisconnect = 1;
+        //G_GameExit("Timed out.");
 }
 
 
@@ -954,7 +955,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
     int yxAspect     = yxaspect;
     int viewingRange = viewingrange;
 
-    if (g_networkMode == NET_DEDICATED_SERVER) return;
+    //if (g_networkMode == NET_DEDICATED_SERVER) return;
 
     totalclocklock = totalclock;
 
@@ -1236,16 +1237,33 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (pPlayer->newowner < 0)
         {
-            vec3_t const camVect = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
-                                     pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
-                                     pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
+            if (playerNum == myconnectindex && numplayers > 1)
+            {
+                vec3_t const camVect = { omypos.x + mulscale16(mypos.x - omypos.x, smoothRatio),
+                                         omypos.y + mulscale16(mypos.y - omypos.y, smoothRatio),
+                                         omypos.z + mulscale16(mypos.z - omypos.z, smoothRatio) };
 
-            CAMERA(pos)      = camVect;
-            CAMERA(q16ang)   = pPlayer->oq16ang
-                             + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
-                             + fix16_from_int(pPlayer->look_ang);
-            CAMERA(q16horiz) = pPlayer->oq16horiz + pPlayer->oq16horizoff
-                             + mulscale16((pPlayer->q16horiz + pPlayer->q16horizoff - pPlayer->oq16horiz - pPlayer->oq16horizoff), smoothRatio);
+                CAMERA(pos)      = camVect;
+                CAMERA(q16ang)   = omyang
+                                 + mulscale16(((myang + F16(1024) - omyang) & 0x7FFFFFF) - F16(1024), smoothRatio)
+                                 + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16horiz) = omyhoriz + omyhorizoff
+                                 + mulscale16((myhoriz + myhorizoff - omyhoriz - omyhorizoff), smoothRatio);
+                CAMERA(sect)     = mycursectnum;
+            }
+            else
+            {
+                vec3_t const camVect = { pPlayer->opos.x + mulscale16(pPlayer->pos.x - pPlayer->opos.x, smoothRatio),
+                                         pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
+                                         pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
+
+                CAMERA(pos)      = camVect;
+                CAMERA(q16ang)   = pPlayer->oq16ang
+                                 + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
+                                 + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16horiz) = pPlayer->oq16horiz + pPlayer->oq16horizoff
+                                 + mulscale16((pPlayer->q16horiz + pPlayer->q16horizoff - pPlayer->oq16horiz - pPlayer->oq16horizoff), smoothRatio);
+            }
 
             if (ud.viewbob)
             {
@@ -1619,7 +1637,7 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
     if (RR && s_ow < 0)
         return 0;
 
-    int32_t i = Net_IsRelevantStat(s_ss) ? Net_InsertSprite(whatsect, s_ss) : insertsprite(whatsect, s_ss);
+    int32_t i = /*Net_IsRelevantStat(s_ss) ? Net_InsertSprite(whatsect, s_ss) : */insertsprite(whatsect, s_ss);
 
     if (EDUKE32_PREDICT_FALSE((unsigned)i >= MAXSPRITES))
     {
@@ -5226,6 +5244,15 @@ default_case1:
                 else
 #endif
                     t->cstat |= 2;
+                if (screenpeek == myconnectindex && numplayers >= 2)
+                {
+                    t->x = omypos.x+mulscale16(mypos.x-omypos.x,smoothratio);
+                    t->y = omypos.y+mulscale16(mypos.y-omypos.y,smoothratio);
+                    t->z = omypos.z+mulscale16(mypos.z-omypos.z,smoothratio)+(40<<8);
+                    t->ang = fix16_to_int(omyang+mulscale16((fix16_to_int(myang+F16(1024)-omyang)&2047)-1024,smoothratio));
+                    t->sectnum = mycursectnum;
+                }
+
             }
 
             if ((g_netServer || ud.multimode > 1) && (display_mirror || screenpeek != playerNum || pSprite->owner == -1))
@@ -7526,7 +7553,7 @@ static void G_Startup(void)
     }
 
     for (i=0; i<MAXPLAYERS; i++)
-        g_player[i].pingcnt = 0;
+        g_player[i].playerreadyflag = 0;
 
     if (quitevent)
     {
@@ -7682,7 +7709,7 @@ static int G_EndOfLevel(void)
         return 2;
     }
 
-    Net_WaitForServer();
+    Net_WaitForEverybody();
     return 1;
 }
 
@@ -7799,6 +7826,10 @@ int app_main(int argc, char const * const * argv)
 
     g_skillCnt = 4;
     ud.multimode = 1;
+
+    g_movesPerPacket = 1;
+    bufferjitter = 1;
+    initsynccrc();
 
     // This needs to happen before G_CheckCommandLine() because G_GameExit()
     // accesses g_player[0].
@@ -7949,7 +7980,7 @@ int app_main(int argc, char const * const * argv)
         initprintf("CON debugging activated (level %d).\n",g_scriptDebug);
 
 #ifndef NETCODE_DISABLE
-    if (g_networkMode == NET_SERVER || g_networkMode == NET_DEDICATED_SERVER)
+    if (g_networkMode == NET_SERVER/* || g_networkMode == NET_DEDICATED_SERVER*/)
     {
         ENetAddress address = { ENET_HOST_ANY, g_netPort };
         g_netServer = enet_host_create(&address, MAXPLAYERS, CHAN_MAX, 0, 0);
@@ -8062,7 +8093,7 @@ int app_main(int argc, char const * const * argv)
     OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
-    if (g_networkMode != NET_DEDICATED_SERVER)
+    //if (g_networkMode != NET_DEDICATED_SERVER)
     {
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
@@ -8110,7 +8141,7 @@ int app_main(int argc, char const * const * argv)
 
     system_getcvars();
 
-    if (g_networkMode != NET_DEDICATED_SERVER)
+    //if (g_networkMode != NET_DEDICATED_SERVER)
     {
         if (videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail) < 0)
         {
@@ -8164,7 +8195,7 @@ int app_main(int argc, char const * const * argv)
     for (bssize_t i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
         minitext_lowercase &= (int)tileLoad(i);
 
-    if (g_networkMode != NET_DEDICATED_SERVER)
+    //if (g_networkMode != NET_DEDICATED_SERVER)
     {
         Menu_Init();
     }
@@ -8205,7 +8236,7 @@ MAIN_LOOP_RESTART:
 
     Menu_Change(MENU_MAIN);
 
-    if (g_networkMode != NET_DEDICATED_SERVER)
+    //if (g_networkMode != NET_DEDICATED_SERVER)
     {
         G_GetCrosshairColor();
         G_SetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
@@ -8236,12 +8267,12 @@ MAIN_LOOP_RESTART:
 
             G_NewGame_EnterLevel();
 
-            Net_WaitForServer();
+            Net_WaitForEverybody();
         }
-        else if (g_networkMode != NET_DEDICATED_SERVER)
+        else// if (g_networkMode != NET_DEDICATED_SERVER)
             G_DisplayLogo();
 
-        if (g_networkMode != NET_DEDICATED_SERVER)
+        //if (g_networkMode != NET_DEDICATED_SERVER)
         {
             if (G_PlaybackDemo())
             {
@@ -8322,17 +8353,17 @@ MAIN_LOOP_RESTART:
         double const gameUpdateStartTime = timerGetHiTicks();
         if (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME)
         {
-            if (g_networkMode != NET_DEDICATED_SERVER)
-            {
-                if (RRRA && g_player[myconnectindex].ps->on_motorcycle)
-                    P_GetInputMotorcycle(myconnectindex);
-                else if (RRRA && g_player[myconnectindex].ps->on_boat)
-                    P_GetInputBoat(myconnectindex);
-                else
-                    P_GetInput(myconnectindex);
-            }
+            //if (g_networkMode != NET_DEDICATED_SERVER)
+            //{
+            //    if (RRRA && g_player[myconnectindex].ps->on_motorcycle)
+            //        P_GetInputMotorcycle(myconnectindex);
+            //    else if (RRRA && g_player[myconnectindex].ps->on_boat)
+            //        P_GetInputBoat(myconnectindex);
+            //    else
+            //        P_GetInput(myconnectindex);
+            //}
 
-            Bmemcpy(&inputfifo[0][myconnectindex], &localInput, sizeof(input_t));
+            //Bmemcpy(&inputfifo[0][myconnectindex], &localInput, sizeof(input_t));
 
             S_Update();
 
@@ -8341,6 +8372,7 @@ MAIN_LOOP_RESTART:
                 timerUpdate();
 
                 if (ready2send == 0) break;
+                Net_GetInput();
 
                 ototalclock += TICSPERFRAME;
 
@@ -8388,11 +8420,11 @@ MAIN_LOOP_RESTART:
             }
         }
 
-        if (g_networkMode == NET_DEDICATED_SERVER)
+        /*if (g_networkMode == NET_DEDICATED_SERVER)
         {
             idle();
         }
-        else if (G_FPSLimit() || g_saveRequested)
+        else */if (G_FPSLimit() || g_saveRequested)
         {
             int const smoothRatio
             = ((ud.show_help == 0 && (!g_netServer && ud.multimode < 2) && !(g_player[myconnectindex].ps->gm & MODE_MENU))
@@ -8440,9 +8472,26 @@ MAIN_LOOP_RESTART:
 
 GAME_STATIC GAME_INLINE int32_t G_MoveLoop()
 {
+    int i;
+
+    if (numplayers > 1)
+        while (predictfifoplc < g_player[myconnectindex].movefifoend) Net_DoPrediction();
+
     Net_GetPackets();
 
-    return G_DoMoveThings();
+    if (numplayers < 2) bufferjitter = 0;
+    while (g_player[myconnectindex].movefifoend-movefifoplc > bufferjitter)
+    {
+        for(TRAVERSE_CONNECT(i))
+        {
+            if (movefifoplc == g_player[i].movefifoend) break;
+        }
+        if (i >= 0) break;
+        if (G_DoMoveThings()) return 1;
+    }
+
+
+    return 0;
 }
 
 int G_DoMoveThings(void)
@@ -8521,11 +8570,13 @@ int G_DoMoveThings(void)
     // Moved lower so it is restored correctly by diffs:
 //    everyothertime++;
 
-    if (g_netClient) // [75] The server should not overwrite its own randomseed
-        randomseed = ticrandomseed;
+    //if (g_netClient) // [75] The server should not overwrite its own randomseed
+    //    randomseed = ticrandomseed;
 
     for (bssize_t TRAVERSE_CONNECT(i))
-        Bmemcpy(g_player[i].inputBits, &inputfifo[(g_netServer && myconnectindex == i)][i], sizeof(input_t));
+        Bmemcpy(g_player[i].inputBits, &inputfifo[movefifoplc&(MOVEFIFOSIZ-1)][i], sizeof(input_t));
+
+    movefifoplc++;
 
     G_UpdateInterpolations();
 
@@ -8544,6 +8595,8 @@ int G_DoMoveThings(void)
             g_player[i].playerquitflag = 0;
         }
     */
+
+    Net_GetSyncStat();
 
     g_moveThingsCount++;
 
@@ -8587,24 +8640,24 @@ int G_DoMoveThings(void)
     if (ud.pause_on == 0)
         G_MoveWorld();
 
-//    Net_CorrectPrediction();
+    Net_CorrectPrediction();
 
-    if (g_netServer)
-        Net_SendServerUpdates();
+    //if (g_netServer)
+    //    Net_SendServerUpdates();
 
     if ((everyothertime&1) == 0)
     {
         G_AnimateWalls();
         A_MoveCyclers();
 
-        if (g_netServer && (everyothertime % 10) == 0)
-        {
-            Net_SendMapUpdate();
-        }
+        //if (g_netServer && (everyothertime % 10) == 0)
+        //{
+        //    Net_SendMapUpdate();
+        //}
     }
 
-    if (g_netClient)   //Slave
-        Net_SendClientUpdate();
+    //if (g_netClient)   //Slave
+    //    Net_SendClientUpdate();
 
     if (RR && ud.recstat == 0 && ud.multimode < 2 && g_torchCnt)
         G_DoTorch();

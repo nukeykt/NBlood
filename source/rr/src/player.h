@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "inv.h"
 #include "namesdyn.h"
 #include "fix16.h"
+#include "net.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +34,7 @@ extern "C" {
 
 extern int32_t g_mostConcurrentPlayers;
 
-#define MOVEFIFOSIZ                 2
+#define MOVEFIFOSIZ                 256
 
 #define NAM_GRENADE_LIFETIME        120
 #define NAM_GRENADE_LIFETIME_VAR    30
@@ -212,15 +213,14 @@ typedef struct {
     DukePlayer_t *ps;
     input_t *inputBits;
 
-    int32_t netsynctime;
-    int16_t ping, filler;
+    int32_t movefifoend, syncvalhead, myminlag;
     int32_t pcolor, pteam;
     // NOTE: wchoice[HANDREMOTE_WEAPON .. MAX_WEAPONS-1] unused
     uint8_t frags[MAXPLAYERS], wchoice[MAX_WEAPONS];
 
-    char vote, gotvote, pingcnt, playerquitflag, ready;
+    char vote, gotvote, playerreadyflag, playerquitflag, connected;
     char user_name[32];
-    uint32_t revision;
+    char syncval[SYNCFIFOSIZ][MAXSYNCBYTES];
 } playerdata_t;
 #pragma pack(pop)
 
@@ -270,6 +270,9 @@ void    P_DisplayWeapon(void);
 void P_DropWeapon(int playerNum);
 int     P_FindOtherPlayer(int playerNum, int32_t *pDist);
 void    P_FragPlayer(int playerNum);
+#ifdef YAX_ENABLE
+void getzsofslope_player(int sectNum, int playerX, int playerY, int32_t *pCeilZ, int32_t *pFloorZ);
+#endif
 void    P_UpdatePosWhenViewingCam(DukePlayer_t *pPlayer);
 void    P_ProcessInput(int playerNum);
 void    P_QuickKill(DukePlayer_t *pPlayer);

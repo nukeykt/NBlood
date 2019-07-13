@@ -56,28 +56,67 @@ extern int16_t		  g_netStatnums[];
 
 enum netchan_t
 {
-    CHAN_MOVE,      // unreliable movement packets
+    CHAN_REROUTE,
+    CHAN_GAME,
+    //CHAN_MOVE,      // unreliable movement packets
     CHAN_GAMESTATE, // gamestate changes... frags, respawns, player names, etc
     CHAN_CHAT,      // chat and RTS
-    CHAN_MISC,      // whatever else
+    //CHAN_MISC,      // whatever else
     CHAN_MAX
+};
+
+enum ServicePacket_t
+{
+    SERVICEPACKET_TYPE_SENDTOID,
 };
 
 enum DukePacket_t
 {
-    PACKET_MASTER_TO_SLAVE,
-    PACKET_SLAVE_TO_MASTER,
+    PACKET_TYPE_MASTER_TO_SLAVE,
+    PACKET_TYPE_SLAVE_TO_MASTER,
+    PACKET_TYPE_BROADCAST,
+    SERVER_GENERATED_BROADCAST,
+    //PACKET_TYPE_VERSION,
+
+    /* don't change anything above this line */
+
+    //PACKET_TYPE_MESSAGE,
+    //
+    //PACKET_TYPE_NEW_GAME,
+    //PACKET_TYPE_RTS,
+    //PACKET_TYPE_MENU_LEVEL_QUIT,
+    //PACKET_TYPE_WEAPON_CHOICE,
+    //PACKET_TYPE_PLAYER_OPTIONS,
+    //PACKET_TYPE_PLAYER_NAME,
+    //PACKET_TYPE_INIT_SETTINGS,
+    //
+    //PACKET_TYPE_USER_MAP,
+    //
+    //PACKET_TYPE_MAP_VOTE,
+    //PACKET_TYPE_MAP_VOTE_INITIATE,
+    //PACKET_TYPE_MAP_VOTE_CANCEL,
+    //
+    //PACKET_TYPE_LOAD_GAME,
+    PACKET_TYPE_NULL_PACKET,
+    PACKET_TYPE_PLAYER_READY,
+    //PACKET_TYPE_FRAGLIMIT_CHANGED,
+    //PACKET_TYPE_EOL,
+    //PACKET_TYPE_QUIT = 255, // should match mmulti I think
+
+
+    //PACKET_MASTER_TO_SLAVE,
+    //PACKET_SLAVE_TO_MASTER,
 
     PACKET_NUM_PLAYERS,
     PACKET_PLAYER_INDEX,
     PACKET_PLAYER_DISCONNECTED,
-    PACKET_PLAYER_SPAWN,
-    PACKET_FRAG,
+    //PACKET_PLAYER_SPAWN,
+    //PACKET_FRAG,
     PACKET_ACK,
     PACKET_AUTH,
-    PACKET_PLAYER_PING,
-    PACKET_PLAYER_READY,
-    PACKET_MAP_STREAM,
+    //PACKET_PLAYER_PING,
+    //PACKET_PLAYER_READY,
+    //PACKET_MAP_STREAM,
 
     // any packet with an ID higher than PACKET_BROADCAST is rebroadcast by server
     // so hacked clients can't create fake server packets and get the server to
@@ -100,6 +139,7 @@ enum DukePacket_t
 enum netdisconnect_t
 {
     DISC_BAD_PASSWORD = 1,
+    DISC_GAME_STARTED,
     DISC_VERSION_MISMATCH,
     DISC_INVALID,
     DISC_SERVER_QUIT,
@@ -112,51 +152,25 @@ enum netmode_t
 {
     NET_CLIENT = 0,
     NET_SERVER,
-    NET_DEDICATED_CLIENT, // client on dedicated server
-    NET_DEDICATED_SERVER
+    //NET_DEDICATED_CLIENT, // client on dedicated server
+    //NET_DEDICATED_SERVER
 };
 
-#define NETMAXACTORS 1024
+#define MAXSYNCBYTES 16
+#define SYNCFIFOSIZ 1024
 
-#pragma pack(push,1)
-typedef struct
-{
+// TENSW: on really bad network connections, the sync FIFO queue can overflow if it is the
+// same size as the move fifo.
+#if MOVEFIFOSIZ >= SYNCFIFOSIZ
+#error "MOVEFIFOSIZ is greater than or equal to SYNCFIFOSIZ!"
+#endif
 
-    uint32_t numActors;
-    netactor_t actor[NETMAXACTORS];
+extern char syncstat[MAXSYNCBYTES];
+extern char g_szfirstSyncMsg[MAXSYNCBYTES][60];
 
-} netmapstate_t;
-
-typedef struct
-{
-
-    uint32_t numActors;
-    uint32_t numToDelete;
-    uint32_t fromRevision;
-    uint32_t toRevision;
-    char data[MAXSPRITES *sizeof(netactor_t)];
-
-} netmapdiff_t;
-
-extern netmapstate_t  *g_multiMapState[MAXPLAYERS];
-extern netmapstate_t  *g_multiMapRevisions[NET_REVISIONS];
-#pragma pack(pop)
-
-#pragma pack(push,1)
-typedef struct
-{
-    vec3_t pos;
-    vec3_t opos;
-    vec3_t vel;
-    int16_t ang;
-    int16_t horiz;
-    int16_t horizoff;
-    int16_t ping;
-    int16_t playerindex;
-    int16_t deadflag;
-    int16_t playerquitflag;
-} playerupdate_t;
-#pragma pack(pop)
+extern int g_numSyncBytes;
+extern int g_foundSyncError;
+extern int syncvaltail, syncvaltottail;
 
 #pragma pack(push,1)
 typedef struct
@@ -181,6 +195,20 @@ extern newgame_t pendingnewgame;
 
 #ifndef NETCODE_DISABLE
 
+// Sync
+void initsynccrc(void);
+char Net_PlayerSync(void);
+char Net_PlayerSync2(void);
+char Net_ActorSync(void);
+char Net_WeaponSync(void);
+char Net_MapSync(void);
+char Net_RandomSync(void);
+void Net_GetSyncStat(void);
+void Net_DisplaySyncMsg(void);
+void Net_AddSyncInfoToPacket(int* j);
+void Net_GetSyncInfoFromPacket(uint8_t* packbuf, int packbufleng, int* j, int otherconnectindex);
+
+
 // Connect/Disconnect
 void    Net_Connect(const char *srvaddr);
 void    Net_Disconnect(void);
@@ -188,8 +216,11 @@ void    Net_ReceiveDisconnect(ENetEvent *event);
 
 // Packet Handlers
 #endif
+void    Net_ClearFIFO(void);
+void    Net_GetInput(void);
 void    Net_GetPackets(void);
 #ifndef NETCODE_DISABLE
+void    Net_SendPacket(int32_t dest, uint8_t* pbuf, int32_t packbufleng);
 void    Net_HandleServerPackets(void);
 void    Net_HandleClientPackets(void);
 void    Net_ParseClientPacket(ENetEvent *event);
@@ -214,25 +245,25 @@ void    Net_ReceiveClientInfo(uint8_t *pbuf, int32_t packbufleng, int32_t fromse
 void    Net_SendUserMapName(void);
 void    Net_ReceiveUserMapName(uint8_t *pbuf, int32_t packbufleng);
 
-netmapstate_t *Net_GetRevision(uint8_t revision, uint8_t cancreate);
+//netmapstate_t *Net_GetRevision(uint8_t revision, uint8_t cancreate);
 
-void    Net_SendMapUpdate(void);
-void    Net_ReceiveMapUpdate(ENetEvent *event);
+//void    Net_SendMapUpdate(void);
+//void    Net_ReceiveMapUpdate(ENetEvent *event);
 
-void    Net_FillMapDiff(uint32_t fromRevision, uint32_t toRevision);
-void	Net_SaveMapState(netmapstate_t *save);
-void    Net_RestoreMapState();
+//void    Net_FillMapDiff(uint32_t fromRevision, uint32_t toRevision);
+//void	Net_SaveMapState(netmapstate_t *save);
+//void    Net_RestoreMapState();
 
-void    Net_CopyToNet(int32_t i, netactor_t *netactor);
-void    Net_CopyFromNet(int32_t i, netactor_t *netactor);
-int32_t Net_ActorsAreDifferent(netactor_t *actor1, netactor_t *actor2);
-int32_t Net_IsRelevantSprite(int32_t i);
-int32_t Net_IsRelevantStat(int32_t stat);
-int32_t Net_InsertSprite(int32_t sect, int32_t stat);
-void    Net_DeleteSprite(int32_t spritenum);
+//void    Net_CopyToNet(int32_t i, netactor_t *netactor);
+//void    Net_CopyFromNet(int32_t i, netactor_t *netactor);
+//int32_t Net_ActorsAreDifferent(netactor_t *actor1, netactor_t *actor2);
+//int32_t Net_IsRelevantSprite(int32_t i);
+//int32_t Net_IsRelevantStat(int32_t stat);
+//int32_t Net_InsertSprite(int32_t sect, int32_t stat);
+//void    Net_DeleteSprite(int32_t spritenum);
 
-void    Net_FillPlayerUpdate(playerupdate_t *update, int32_t player);
-void    Net_ExtractPlayerUpdate(playerupdate_t *update, int32_t type);
+//void    Net_FillPlayerUpdate(playerupdate_t *update, int32_t player);
+//void    Net_ExtractPlayerUpdate(playerupdate_t *update, int32_t type);
 
 void    Net_SendServerUpdates(void);
 void    Net_ReceiveServerUpdate(ENetEvent *event);
@@ -246,7 +277,7 @@ void    Net_ReceiveMessage(uint8_t *pbuf, int32_t packbufleng);
 void    Net_StartNewGame();
 void    Net_NotifyNewGame();
 void    Net_SendNewGame(int32_t frommenu, ENetPeer *peer);
-void    Net_ReceiveNewGame(ENetEvent *event);
+void    Net_ReceiveNewGame(ENetEvent* event);
 
 void    Net_FillNewGame(newgame_t *newgame, int32_t frommenu);
 void    Net_ExtractNewGame(newgame_t *newgame, int32_t menuonly);
@@ -264,9 +295,13 @@ void    Net_ReceiveMapVoteCancel(uint8_t *pbuf);
 //////////
 
 void    Net_ResetPrediction(void);
+void    Net_DoPrediction(void);
+void    Net_CorrectPrediction(void);
 void    Net_SpawnPlayer(int32_t player);
 void    Net_SyncPlayer(ENetEvent *event);
-void    Net_WaitForServer(void);
+void    Net_WaitForEverybody(void);
+void    Net_Update(void);
+void    Net_PostPacket(ENetPacket *packet);
 void    faketimerhandler(void);
 
 #else
@@ -341,6 +376,8 @@ void    faketimerhandler(void);
 //////////
 
 #define Net_ResetPrediction(...) ((void)0)
+#define Net_DoPrediction(...) ((void)0)
+#define Net_CorrectPrediction(...) ((void)0)
 #define Net_RestoreMapState(...) ((void)0)
 #define Net_SyncPlayer(...) ((void)0)
 #define Net_WaitForServer(...) ((void)0)
