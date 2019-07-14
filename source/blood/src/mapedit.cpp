@@ -11606,7 +11606,7 @@ int32_t ExtInit(void)
 //#endif
     Bmemcpy(buildkeys, default_buildkeys, NUMBUILDKEYS);   //Trick to make build use setup.dat keys
 
-    kensplayerheight = 40; //32
+    kensplayerheight = 55; //32
     zmode = 2;
     zlock = kensplayerheight<<8;
 
