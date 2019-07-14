@@ -11612,6 +11612,8 @@ int32_t ExtInit(void)
 
     showinvisibility = 1;
 
+    defaultspritecstat = CSTAT_SPRITE_YCENTER;
+
     getmessageleng = 0;
     getmessagetimeoff = 0;
 
