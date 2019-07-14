@@ -761,7 +761,6 @@ blood_game_objs := \
 	network.cpp \
 	osdcmd.cpp \
 	player.cpp \
-	pqueue.cpp \
 	qav.cpp \
 	qheap.cpp \
 	replace.cpp \
