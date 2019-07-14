@@ -713,7 +713,7 @@ void CXTracker::Draw(void)
                 v2.x = pSprite->x;
                 v2.y = pSprite->y;
                 v2.z = pSprite->z;
-                drawlinebetween(&v1, &v2, editorcolors[3]+(M32_THROB>>3), 0x33333333);
+                drawlinebetween(&v1, &v2, editorcolors[3]+(M32_THROB>>2), 0x33333333);
             }
         }
         for (int i = 0; i < numwalls; i++)
@@ -731,7 +731,7 @@ void CXTracker::Draw(void)
                 v2.x = pWall->x + dx;
                 v2.y = pWall->y + dy;
                 v2.z = getflorzofslope(sectorofwall(i), v2.x, v2.y);
-                drawlinebetween(&v1, &v2, editorcolors[4]+(M32_THROB>>3), 0x33333333);
+                drawlinebetween(&v1, &v2, editorcolors[4]+(M32_THROB>>2), 0x33333333);
             }
         }
         for (int i = 0; i < numsectors; i++)
@@ -747,7 +747,7 @@ void CXTracker::Draw(void)
                 v2.x = pWall->x;
                 v2.y = pWall->y;
                 v2.z = getflorzofslope(i, v2.x, v2.y);
-                drawlinebetween(&v1, &v2, editorcolors[6]+(M32_THROB>>3), 0x33333333);
+                drawlinebetween(&v1, &v2, editorcolors[6]+(M32_THROB>>2), 0x33333333);
             }
         }
     }
@@ -798,7 +798,7 @@ void CXTracker::Draw(void)
                 v2.x = pSprite->x;
                 v2.y = pSprite->y;
                 v2.z = pSprite->z;
-                drawlinebetween(&v1, &v2, editorcolors[11]-(M32_THROB>>3), 0x33333333);
+                drawlinebetween(&v1, &v2, editorcolors[11]-(M32_THROB>>2), 0x33333333);
             }
         }
         for (int i = 0; i < numwalls; i++)
@@ -816,7 +816,7 @@ void CXTracker::Draw(void)
                 v2.x = pWall->x + dx;
                 v2.y = pWall->y + dy;
                 v2.z = getflorzofslope(sectorofwall(i), v2.x, v2.y);
-                drawlinebetween(&v1, &v2, editorcolors[12]-(M32_THROB>>3), 0x33333333);
+                drawlinebetween(&v1, &v2, editorcolors[12]-(M32_THROB>>2), 0x33333333);
             }
         }
         for (int i = 0; i < numsectors; i++)
@@ -832,7 +832,7 @@ void CXTracker::Draw(void)
                 v2.x = pWall->x;
                 v2.y = pWall->y;
                 v2.z = getflorzofslope(i, v2.x, v2.y);
-                drawlinebetween(&v1, &v2, editorcolors[14]+(M32_THROB>>3), 0x33333333);
+                drawlinebetween(&v1, &v2, editorcolors[14]-(M32_THROB>>2), 0x33333333);
             }
         }
     }
@@ -4349,6 +4349,12 @@ void ExtEditSectorData(int16_t sectnum)    //F7
     if (in3dmode())
         return;
 
+    if (eitherCTRL)
+    {
+        gXTracker.TrackSector(sectnum, !eitherALT);
+        return;
+    }
+
     if (eitherALT)  //ALT
     {
         keystatus[KEYSC_F7] = 0;
@@ -4368,6 +4374,12 @@ void ExtEditWallData(int16_t wallnum)       //F8
 {
     if (in3dmode())
         return;
+
+    if (eitherCTRL)
+    {
+        gXTracker.TrackWall(wallnum, !eitherALT);
+        return;
+    }
 
     if (eitherALT)  //ALT
     {
@@ -4393,6 +4405,12 @@ void ExtEditSpriteData(int16_t spritenum)   //F8
 {
     if (in3dmode())
         return;
+
+    if (eitherCTRL)
+    {
+        gXTracker.TrackSprite(spritenum, !eitherALT);
+        return;
+    }
 
     if (eitherALT)  //ALT
         GenericSpriteSearch();
@@ -12448,7 +12466,9 @@ void ExtPreCheckKeys(void) // just before drawrooms
             }
     }
 #endif
+
     if (zoom >= 256)
+    {
         for (ii=0; ii<numsectors; ii++)
             for (i=headspritesect[ii]; i>=0; i=nextspritesect[i])
             {
@@ -12526,16 +12546,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
                 }
             }
 
-    if (keystatus[sc_LeftShift])
-    {
-        if (highlightcnt<=0)
-        {
-            if ((pointhighlight&16384))
-            {
-                int nSprite = pointhighlight&16383;
-                gXTracker.TrackSprite(nSprite, !eitherALT);
-            }
-        }
+        gXTracker.Draw();
     }
 
     videoEndDrawing();  //}}}
