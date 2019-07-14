@@ -1262,7 +1262,7 @@ void adjustSprites()
 
             // search by tile and type
             int nType = -1, nTile = -1, adIndex = -1;
-            for (unsigned int j = 0; j < 168; j++) {
+            for (int j = 0; j < ARRAY_SIZE(gAdjustData); j++) {
 
                 if (gAdjustData[j].nTile >= 0 && gAdjustData[j].nTile == pSprite->picnum) nTile = j;
                 if (gAdjustData[j].nType == pSprite->type) nType = j;
@@ -1285,7 +1285,6 @@ void adjustSprites()
                 else if (gAdjustData[adIndex].hitscan > 0) pSprite->cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
                 if (gAdjustData[adIndex].nPlu >= 0) pSprite->pal = gAdjustData[adIndex].nPlu;
             } 
-            else  continue;  // ( removing "continue" makes weird crash for some reason )
 
             int type = pSprite->type;
             
