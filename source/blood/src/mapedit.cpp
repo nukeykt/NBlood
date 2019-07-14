@@ -1254,7 +1254,7 @@ void adjustSprites()
         spritetype* pSprite = &sprite[i];
         if (pSprite->statnum < kMaxStatus)
         {
-            if ((pSprite->cstat & kSprRMask) == kSprSpin) pSprite->cstat &= ~kSprSpin;
+            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLAB) pSprite->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
             if (pSprite->statnum == 1) continue;
 
             // don't turn unnamed types in Decoration
@@ -1281,8 +1281,8 @@ void adjustSprites()
                 if (gAdjustData[adIndex].xr >= 0) pSprite->xrepeat = gAdjustData[adIndex].xr;
                 if (gAdjustData[adIndex].yr >= 0) pSprite->yrepeat = gAdjustData[adIndex].yr;
 
-                if (gAdjustData[adIndex].hitscan == 0) pSprite->cstat &= ~kSprHitscan;
-                else if (gAdjustData[adIndex].hitscan > 0) pSprite->cstat |= kSprHitscan;
+                if (gAdjustData[adIndex].hitscan == 0) pSprite->cstat &= ~CSTAT_SPRITE_BLOCK_HITSCAN;
+                else if (gAdjustData[adIndex].hitscan > 0) pSprite->cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
                 if (gAdjustData[adIndex].nPlu >= 0) pSprite->pal = gAdjustData[adIndex].nPlu;
             } 
             else  continue;  // ( removing "continue" makes weird crash for some reason )
@@ -1294,8 +1294,8 @@ void adjustSprites()
                 case kMarkerSPStart:
                 case kMarkerMPStart:
                 {
-                    pSprite->cstat &= ~kSprBlock;
-                    pSprite->shade = -128;
+                    pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
+                    pSprite->shade = -128; // Nuke: Needed?
                     int nXSprite = getXSprite(i);
                     xsprite[nXSprite].data1 &= 0x07;
                     pSprite->picnum = 2522 + xsprite[nXSprite].data1;
@@ -1303,7 +1303,7 @@ void adjustSprites()
                 }
                 break;
                 case kMarkerWarpDest:
-                    pSprite->cstat |= kSprWall;
+                    pSprite->cstat |= CSTAT_SPRITE_ALIGNMENT_WALL; // Nuke: Needed?
                     break;
                 case 18: // Dude spawn
                 case 19: // Earthquake
@@ -1315,54 +1315,54 @@ void adjustSprites()
                 case kMarkerLowStack:
                 case kMarkerUpGoo:
                 case kMarkerLowGoo:
-                    pSprite->cstat &= ~kSprBlock | ~kSprFlipY;
-                    pSprite->cstat |= kSprInvisible;
-                    pSprite->shade = -128;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_YFLIP); // Nuke: Y-Flip? weird.
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
+                    pSprite->shade = -128; // Nuke: Needed?
                     ChangeSpriteStat(i, 0);
                     getXSprite(i);
                     break;
                 case kMarkerPath:
-                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
-                    pSprite->cstat |= kSprInvisible;
-                    pSprite->shade = 127;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
+                    pSprite->shade = 127; // Nuke: Needed?
                     ChangeSpriteStat(i, 16);
                     getXSprite(i);
                     break;
-                case 30: // Torch
+                case 30: // Torch // Nuke: New?
                 {
                     int nXSprite = getXSprite(i);
                     xsprite[nXSprite].state = 1;
                 }
                 break;
-                case 32: // Candle
+                case 32: // Candle // Nuke: New?
                 {
                     int nXSprite = getXSprite(i);
                     if (pSprite->picnum == 938)
                         xsprite[nXSprite].state = 1;
                 }
                 break;
-                case 228: // 1-Head Cerberus
+                case 228: // 1-Head Cerberus // Nuke: New?
                 {
                     int nXSprite = getXSprite(i);
                     if (xsprite[nXSprite].rxID <= 0) xsprite[nXSprite].rxID = 7;
                     ChangeSpriteStat(i, 6);
                 }
                 break;
-                case 700: // Trigger Gen
-                case 701: // WaterDrip Gen
-                case 702: // BloodDrip Gen
-                case 708: // SFX Gen
-                case 709: // Sector SFX
+                case 700: // Trigger Gen // Nuke: New?
+                case 701: // WaterDrip Gen // Nuke: New?
+                case 702: // BloodDrip Gen // Nuke: New?
+                case 708: // SFX Gen // Nuke: New?
+                case 709: // Sector SFX // Nuke: New?
                 case 711: // Player SFX
-                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
-                    pSprite->cstat |= kSprInvisible;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     pSprite->shade = -128;
                     ChangeSpriteStat(i, 0);
                     getXSprite(i);
                     break;
                 case 710: // Ambient SFX
-                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
-                    pSprite->cstat |= kSprInvisible;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     pSprite->shade = -128;
                     ChangeSpriteStat(i, 12);
                     getXSprite(i);
@@ -1386,21 +1386,21 @@ void adjustSprites()
             // adjust groups of types
             int top, bottom;
             if (type >= kSwitchBase && type < kSwitchMax) {
-                pSprite->cstat &= ~kSprBlock;
+                pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
                 ChangeSpriteStat(i, 0);
                 getXSprite(i);
             }
             else if (type >= kWeaponItemBase && type < kItemMax)
             {
-                if (pSprite->cstat & kSprRMask) continue; // why?
-                pSprite->cstat &= ~kSprBlock;
+                if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_FACING) continue; // why?
+                pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
                 ChangeSpriteStat(i, 3);
                 getXSprite(i);
             }
             else if (type >= kDudeBase && type < kDudeMax)
             {
-                if (pSprite->cstat & kSprRMask) continue; // why?
-                pSprite->cstat &= ~kSprBlock;
+                if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_FACING) continue; // why?
+                pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
                 ChangeSpriteStat(i, 6);
                 getXSprite(i);
 
