@@ -747,8 +747,10 @@ blood_game_objs := \
 	gamemenu.cpp \
 	gameutil.cpp \
 	getopt.cpp \
+	gfx.cpp \
 	gib.cpp \
 	globals.cpp \
+	gui.cpp \
 	inifile.cpp \
 	iob.cpp \
 	levels.cpp \
