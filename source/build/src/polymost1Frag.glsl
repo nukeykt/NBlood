@@ -1,5 +1,5 @@
 #version 110
-#extension ARB_shader_texture_lod : enable
+#extension GL_ARB_shader_texture_lod : enable
 
 //include an additional space here so that we can programmatically search for and disable this preprocessor definition easily
  #define POLYMOST1_EXTENDED
