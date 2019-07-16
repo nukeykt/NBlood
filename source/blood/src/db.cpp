@@ -34,6 +34,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "db.h"
 #include "iob.h"
 
+#ifdef __linux__
+#include <linux/limits.h>
+#define _MAX_PATH PATH_MAX
+#endif
+
 unsigned short gStatCount[kMaxStatus + 1];
 
 XSPRITE xsprite[kMaxXSprites];
