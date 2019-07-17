@@ -34,11 +34,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "db.h"
 #include "iob.h"
 
-#ifdef __linux__
-#include <linux/limits.h>
-#define _MAX_PATH PATH_MAX
-#endif
-
 unsigned short gStatCount[kMaxStatus + 1];
 
 XSPRITE xsprite[kMaxXSprites];
@@ -1294,8 +1289,8 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 
 int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSector)
 {
-    char sMapExt[_MAX_PATH];
-    char sBakExt[_MAX_PATH];
+    char sMapExt[BMAX_PATH];
+    char sBakExt[BMAX_PATH];
     int16_t tpskyoff[256];
     int nSpriteNum;
     psky_t *pSky = tileSetupSky(0);
