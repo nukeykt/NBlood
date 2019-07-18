@@ -236,7 +236,7 @@ bool CanMove(spritetype *pSprite, int a2, int nAngle, int nRange)
     case 217:
     case kGDXDudeUniversalCultist:
     case kGDXGenDudeBurning:
-        if ((Crusher && !dudeIsImmune(pSprite, pXSector->damageType)) || xsprite[pSprite->extra].dudeGuard) return false;
+        if ((Crusher && !dudeIsImmune(pSprite, pXSector->damageType)) || ((Water || Underwater) && !canSwim(pSprite))) return false;
         return true;
     default:
         if (Crusher)
@@ -1097,13 +1097,14 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                         actKillDude(nSource, pSprite, nDmgType, nDamage);
                     }
                 }
-            } else if (pXSprite->aiState != &GDXGenDudeDodgeDmgD && pXSprite->aiState != &GDXGenDudeDodgeDmgL
-                 && pXSprite->aiState != &GDXGenDudeDodgeDmgW) {
+            } else if (!inDodge(pXSprite->aiState)) {
                     
                 if (Chance(getDodgeChance(pSprite))) {
                     if (!spriteIsUnderwater(pSprite, false)) {
-                        if (!sub_5BDA8(pSprite, 14)) aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgL);
-                        else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgD);
+                        if (!canDuck(pSprite) || !sub_5BDA8(pSprite, 14)) 
+                            aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgL);
+                        else 
+                            aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgD);
                     }
                     else if (sub_5BDA8(pSprite, 13) && spriteIsUnderwater(pSprite, false))
                         aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgW);
@@ -1155,25 +1156,24 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
                 
                 if (gSysRes.Lookup(pXSprite->data2 + 4, "SEQ")) aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
-                else if (!v4 || (v4 && gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
-                else if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
+                else if (canDuck(pSprite) && (!v4 || (v4 && gGameOptions.nDifficulty == 0))) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                else if (canSwim(pSprite) && spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
                 else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
 
                 return;
             }
 
-            if (pXSprite->aiState == &GDXGenDudeDodgeDmgW || pXSprite->aiState == &GDXGenDudeDodgeDmgD 
-                || pXSprite->aiState == &GDXGenDudeDodgeDmgL) {
-                    if (Chance(chance3)) sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
-                    return;
+            if (inDodge(pXSprite->aiState)) {
+                if (Chance(chance3)) sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
+                return;
             }
 
             if ((!dudeIsMelee(pXSprite) && mass < 155) || Chance(chance3)) {
 
                 sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
 
-                if (!v4 || (v4 && gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
-                else if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
+                if (canDuck(pSprite) && (!v4 || (v4 && gGameOptions.nDifficulty == 0))) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                else if (canSwim(pSprite) && spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
                 else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
 
             }

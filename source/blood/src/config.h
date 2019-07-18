@@ -90,6 +90,10 @@ extern int32_t gFov;
 extern int32_t gCenterHoriz;
 extern int32_t gDeliriumBlur;
 
+///////
+extern int gWeaponsV10x;
+//////
+
 int  CONFIG_ReadSetup(void);
 void CONFIG_WriteSetup(uint32_t flags);
 void CONFIG_SetDefaults(void);

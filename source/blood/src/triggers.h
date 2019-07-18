@@ -43,7 +43,6 @@ void trTextOver(int nId);
 // By NoOne: functions required for new features
 // -------------------------------------------------------
 void pastePropertiesInObj(int type, int nDest, EVENT event);
-void trDamageSprite(int type, int nDest, EVENT event);
 spritetype* getTargetInRange(spritetype* pSprite, int minDist, int maxDist, short data, short teamMode);
 bool isMateOf(XSPRITE* pXDude, XSPRITE* pXSprite);
 spritetype* targetIsPlayer(XSPRITE* pXSprite);
@@ -70,4 +69,5 @@ void stopWindOnSectors(XSPRITE* pXSource);
 void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector);
 void useEffectGen(XSPRITE* pXSource, spritetype* pSprite);
 void useSeqSpawnerGen(XSPRITE* pXSource, spritetype* pSprite);
+void useSpriteDamager(XSPRITE* pXSource, spritetype* pSprite);
 // -------------------------------------------------------

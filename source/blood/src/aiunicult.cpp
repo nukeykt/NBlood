@@ -60,7 +60,6 @@ static int nGDXGenDudeThrow2 = seqRegisterClient(ThrowCallback2);
 
 static bool gGDXGenDudePunch = false;
 
-//public static final int kSlopeThrow = -8192;
 AISTATE GDXGenDudeIdleL = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
 AISTATE GDXGenDudeIdleW = { kAiStateIdle, 13, -1, 0, NULL, NULL, aiThinkTarget, NULL };
 AISTATE GDXGenDudeSearchL = { kAiStateSearch, 9, -1, 600, NULL, aiGenDudeMoveForward, thinkSearch, &GDXGenDudeIdleL };
@@ -71,9 +70,9 @@ AISTATE GDXGenDudeDodgeL = { kAiStateMove, 9, -1, 90, NULL,	aiMoveDodge,	NULL, &
 AISTATE GDXGenDudeDodgeD = { kAiStateMove, 14, -1, 90, NULL, aiMoveDodge,	NULL, &GDXGenDudeChaseD };
 AISTATE GDXGenDudeDodgeW = { kAiStateMove, 13, -1, 90, NULL, aiMoveDodge,	NULL, &GDXGenDudeChaseW };
 // Dodge when get damage
-AISTATE GDXGenDudeDodgeDmgL = { kAiStateMove, 9, -1, 90, NULL,	aiMoveDodge,	NULL, &GDXGenDudeChaseL };
-AISTATE GDXGenDudeDodgeDmgD = { kAiStateMove, 14, -1, 90, NULL, aiMoveDodge,	NULL, &GDXGenDudeChaseD };
-AISTATE GDXGenDudeDodgeDmgW = { kAiStateMove, 13, -1, 90, NULL, aiMoveDodge,	NULL, &GDXGenDudeChaseW };
+AISTATE GDXGenDudeDodgeDmgL = { kAiStateMove, 9, -1, 60, NULL,	aiMoveDodge,	NULL, &GDXGenDudeChaseL };
+AISTATE GDXGenDudeDodgeDmgD = { kAiStateMove, 14, -1, 60, NULL, aiMoveDodge,	NULL, &GDXGenDudeChaseD };
+AISTATE GDXGenDudeDodgeDmgW = { kAiStateMove, 13, -1, 60, NULL, aiMoveDodge,	NULL, &GDXGenDudeChaseW };
 // ---------------------
 AISTATE GDXGenDudeChaseL = { kAiStateChase, 9, -1, 0, NULL,	aiGenDudeMoveForward, thinkChase, NULL };
 AISTATE GDXGenDudeChaseD = { kAiStateChase, 14, -1, 0, NULL,	aiGenDudeMoveForward, thinkChase, NULL };
@@ -81,19 +80,13 @@ AISTATE GDXGenDudeChaseW = { kAiStateChase, 13, -1, 0, NULL,	aiGenDudeMoveForwar
 AISTATE GDXGenDudeFireL = { kAiStateChase, 6, nGDXGenDudeAttack1, 0, NULL, aiMoveTurn, thinkChase, &GDXGenDudeFireL };
 AISTATE GDXGenDudeFireD = { kAiStateChase, 8, nGDXGenDudeAttack1, 0, NULL, aiMoveTurn, thinkChase, &GDXGenDudeFireD };
 AISTATE GDXGenDudeFireW = { kAiStateChase, 8, nGDXGenDudeAttack1, 0, NULL, aiMoveTurn, thinkChase, &GDXGenDudeFireW };
-AISTATE GDXGenDudeFire2L = { kAiStateChase, 6, nGDXGenDudeAttack1, 0, NULL, NULL, thinkChase, &GDXGenDudeFire2L };
-AISTATE GDXGenDudeFire2D = { kAiStateChase, 8, nGDXGenDudeAttack1, 0, NULL, aiMoveTurn, NULL, &GDXGenDudeFire2D };
-AISTATE GDXGenDudeFire2W = { kAiStateChase, 8, nGDXGenDudeAttack1, 0, NULL, aiMoveTurn, NULL, &GDXGenDudeFire2W };
 AISTATE GDXGenDudeRecoilL = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &GDXGenDudeChaseL };
 AISTATE GDXGenDudeRecoilD = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &GDXGenDudeChaseD };
 AISTATE GDXGenDudeRecoilW = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &GDXGenDudeChaseW };
 AISTATE GDXGenDudeThrow = { kAiStateChase, 7, nGDXGenDudeThrow1, 0, NULL, NULL, NULL, &GDXGenDudeChaseL };
 AISTATE GDXGenDudeThrow2 = { kAiStateChase, 7, nGDXGenDudeThrow2, 0, NULL, NULL, NULL, &GDXGenDudeChaseL };
 AISTATE GDXGenDudeRTesla = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &GDXGenDudeDodgeL };
-AISTATE GDXGenDudeProne = { kAiStateIdle, 13, -1, 0, NULL, NULL, aiThinkTarget, NULL };
 AISTATE GDXGenDudePunch = { kAiStateChase,10, nGDXGenDudePunch, 0, NULL, NULL, forcePunch, &GDXGenDudeChaseL };
-AISTATE GDXGenDudeTurn = { kAiStateChase, 0, -1, 0, NULL, aiMoveTurn, thinkChase, NULL };
-
 
 static void forcePunch(spritetype* pSprite, XSPRITE* pXSprite) {
     // Required for those who don't have fire trigger in punch seq and for default animation
@@ -206,7 +199,7 @@ static void GDXCultistAttack1(int, int nXIndex) {
             pEffect->yrepeat = repeat;
         }*/
 
-        if (Chance(0x3500)) {
+        if (Chance(0x5500)) {
             int state = checkAttackState(pSprite, pXSprite);
             switch (state) {
             case 1:
@@ -309,8 +302,8 @@ static void ThrowThing(int nXIndex, bool impact) {
                 pThing->yrepeat = 24 + Random(42);
                 pThing->cstat |= 0x0001;
 
-                if (Chance(0x3000)) pThing->cstat |= 0x0004;
-                if (Chance(0x3000)) pThing->cstat |= 0x0008;
+                if (Chance(0x5000)) pThing->cstat |= 0x0004;
+                if (Chance(0x5000)) pThing->cstat |= 0x0008;
 
                 if (pThing->xrepeat > 60) xsprite[pThing->extra].data1 = 43;
                 else if (pThing->xrepeat > 40) xsprite[pThing->extra].data1 = 33;
@@ -391,34 +384,17 @@ static void thinkGoto( spritetype* pSprite, XSPRITE* pXSprite )
 static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
 {
 
-
-    if (Chance(0x3000)) GDXGenDudeRecoilL.at18 = &GDXGenDudeDodgeD;
-    else GDXGenDudeRecoilL.at18 = &GDXGenDudeChaseL;
-
-    if (Chance(0x3000)) GDXGenDudeRecoilW.at18 = &GDXGenDudeDodgeW;
-    else GDXGenDudeRecoilW.at18 = &GDXGenDudeChaseW;
-
-    if (Chance(0x3000)) GDXGenDudeRecoilD.at18 = &GDXGenDudeDodgeL;
-    else GDXGenDudeRecoilD.at18 = &GDXGenDudeChaseL;
-
     if (pXSprite->target == -1) {
-        if(spriteIsUnderwater(pSprite,false))
-            aiNewState(pSprite, pXSprite, &GDXGenDudeGotoW);
-        else
-            aiNewState(pSprite, pXSprite, &GDXGenDudeGotoL);
+        if(spriteIsUnderwater(pSprite,false)) aiNewState(pSprite, pXSprite, &GDXGenDudeGotoW);
+        else aiNewState(pSprite, pXSprite, &GDXGenDudeGotoL);
         return;
-    }
-
-    int dx, dy, dist;
-
-
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    } dassert(pXSprite->target < kMaxSprites);
+    
+    
+    int dx, dy, dist; DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    
     spritetype* pTarget = &sprite[pXSprite->target];
-    XSPRITE* pXTarget = pTarget->extra > 0 ? &xsprite[pTarget->extra] : NULL;
-    if(!IsDudeSprite(pTarget))
-        pXTarget = NULL;
+    XSPRITE* pXTarget = (!IsDudeSprite(pTarget) || pTarget->extra < 0) ? NULL : &xsprite[pTarget->extra];
 
     // check target
     dx = pTarget->x - pSprite->x;
@@ -429,404 +405,307 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
     if ( pXTarget == NULL || pXTarget->health <= 0 )
     {
         // target is dead
-        if(spriteIsUnderwater(pSprite,false))
+        if(spriteIsUnderwater(pSprite,false)) 
             aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
         else {
             aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
             sfxPlayGDXGenDudeSound(pSprite,5,pXSprite->data3);
         }
-        
         return;
     }
 
-    if ( IsPlayerSprite( pTarget ) )
+    if (IsPlayerSprite(pTarget))
     {
         PLAYER* pPlayer = &gPlayer[ pTarget->type - kDudePlayer1 ];
-        if ( powerupCheck( pPlayer, 13 ) > 0 )
-        {
-            if(spriteIsUnderwater(pSprite,false))
-                aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
-            else
-                aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
+        if ( powerupCheck( pPlayer, 13 ) > 0 )  {
+            if(spriteIsUnderwater(pSprite,false)) aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
+            else aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
             return;
         }
     }
     
-    dist = approxDist(dx, dy);
-    if ( dist <= pDudeInfo->seeDist ) {
-        int nAngle = getangle(dx, dy);
-        int losAngle = ((1024 + nAngle - pSprite->ang) & 2047) - 1024;
-        int eyeAboveZ = (pDudeInfo->eyeHeight * pSprite->yrepeat) << 2;
-        VECTORDATA* meleeVector = &gVectorData[22];
+    dist = (int) approxDist(dx, dy); if (dist == 0) dist = 1;
+    int eyeAboveZ = pDudeInfo->eyeHeight * pSprite->yrepeat << 2;
+    if (dist > pDudeInfo->seeDist || !cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum,
+        pSprite->x, pSprite->y, pSprite->z - eyeAboveZ, pSprite->sectnum)) {
 
-        // is there a line of sight to the target?
-        if (cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum,
-            pSprite->x, pSprite->y, pSprite->z - eyeAboveZ, pSprite->sectnum)){
-            // is the target visible?
-            
-            if (dist < pDudeInfo->seeDist && klabs(losAngle) <= pDudeInfo->periphery) {
-                aiSetTarget(pXSprite, pXSprite->target);
-                
-                if ((gFrameClock & 64) == 0 && Chance(0x1000) && !spriteIsUnderwater(pSprite,false))
-                    sfxPlayGDXGenDudeSound(pSprite,6,pXSprite->data3);
+        if (spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeGotoW);
+        else aiNewState(pSprite, pXSprite, &GDXGenDudeGotoL);
+        pXSprite->target = -1;
+        return;
+    }
 
-                if (dist <= 1500) gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 13);
-                else if (dist <= 3000) gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 11);
-                else if (dist > 0) gDudeSlope[sprite[pXSprite->reference].extra] = divscale(pTarget->z - pSprite->z, dist, 10);
-                    
-                spritetype* pLeech = NULL;
-                if (pXSprite->data1 >= kThingBase && pXSprite->data1 < kThingMax) {
-                    if (pXSprite->data1 == 431) pXSprite->data1 = kGDXThingCustomDudeLifeLeech;
-                    if (klabs(losAngle) < kAng15) {
-                        if (dist < 12264 && dist > 7680 && !spriteIsUnderwater(pSprite,false) && pXSprite->data1 != kGDXThingCustomDudeLifeLeech){
-                            int pHit = HitScan(pSprite, pSprite->z, dx, dy, 0, 16777280, 0);
-                            switch(pHit){
-                                case 3:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeThrow);
-                                    return;
+    int nAngle = getangle(dx, dy);
+    int losAngle = ((kAng180 + nAngle - pSprite->ang) & 2047) - kAng180;
+    // is the target visible?
+    if (dist < pDudeInfo->seeDist && klabs(losAngle) <= pDudeInfo->periphery) {
 
-                                case 0:
-                                case 4:
-                                    return;
-                                case -1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeThrow);
-                                    return;
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeThrow);
-                                    return;
-                            }
+        if (pXSprite->target < 0) aiSetTarget(pXSprite, pXSprite->target);
+        if ((gFrameClock & 64) == 0 && Chance(0x3000) && !spriteIsUnderwater(pSprite, false))
+            sfxPlayGDXGenDudeSound(pSprite, 6, pXSprite->data3);
 
-                        } else if (dist > 4072 && dist <= 9072 && !spriteIsUnderwater(pSprite,false) && pSprite->owner != kMaxSprites){
-                                if (pXSprite->data1 != kGDXThingCustomDudeLifeLeech && pXSprite->data1 != kGDXThingThrowableRock) {
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
-                                } else {
-                                        
-                                    if (pXSprite->data1 == kGDXThingCustomDudeLifeLeech) {
-                                        if ((pLeech = leechIsDropped(pSprite)) == NULL){
-                                            aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
-                                            GDXGenDudeThrow2.at18 = &GDXGenDudeDodgeL;
-                                            return;
-                                        }
-                                            
-                                        XSPRITE* pXLeech = &xsprite[pLeech->extra];
-                                        int ldist = getTargetDist(pTarget,pDudeInfo,pLeech);
-                                        if (ldist > 3 || !cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum,
-                                                            pLeech->x, pLeech->y, pLeech->z, pLeech->sectnum) || pXLeech->target == -1) {
-                                                                    
-                                            aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
-                                            GDXGenDudeThrow2.at18 = &GDXGenDudeDodgeL;
-                                                
-                                        } else {
-                                            GDXGenDudeThrow2.at18 = &GDXGenDudeChaseL;
-                                            if (pXLeech->target != pXSprite->target) pXLeech->target = pXSprite->target;
-                                            if (dist > 5072 && Chance(0x3000)) {
-                                                if (Chance(0x2000))
-                                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
-                                                else
-                                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeD);
-                                            } else {
-                                                aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                                            }
-                                        }
-                                            
-                                    } else if (pXSprite->data1 == kGDXThingThrowableRock){
-                                        if (Chance(0x2000))
-                                            aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
-                                        else
-                                            sfxPlayGDXGenDudeSound(pSprite,0,pXSprite->data3);
-                                    } 
-                                }
+        gDudeSlope[sprite[pXSprite->reference].extra] = (int)divscale(pTarget->z - pSprite->z, dist, 10);
 
-                                return;
+        spritetype* pLeech = NULL;	VECTORDATA* meleeVector = &gVectorData[22];
+        if (pXSprite->data1 >= kThingBase && pXSprite->data1 < kThingMax) {
+            if (pXSprite->data1 == 431) pXSprite->data1 = kGDXThingCustomDudeLifeLeech;
+            if ((pLeech = leechIsDropped(pSprite)) != NULL && xsprite[pLeech->extra].target != pXSprite->target)
+                xsprite[pLeech->extra].target = pXSprite->target;
 
-                        } else if (dist <= meleeVector->maxDist) {
-                            if (spriteIsUnderwater(pSprite,false)) {
-                                if (Chance(0x7000))
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
-                                else
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
-
-                            } else {
-                                if (Chance(0x7000))
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
-                                else
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
-
-                            }
-                            return;
-
-                        } else {
-                            int state = checkAttackState(pSprite, pXSprite);
-                                
-                            if(state == 1) 
-                                aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
-                                
-                            if(state == 2) {
-                                if (Chance(0x3000))
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
-                                else
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                            }
-                                
-                            if(state == 3) 
-                                aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                                
-                            return;
-                        }
-                    }
-
-                } else {
-                    
-                    int defDist = 17920; int vdist = defDist;
-                    if (pXSprite->data1 > 0 && pXSprite->data1 < kVectorMax) {
-
-                        switch (pXSprite->data1) {
-                        case 19:
-                            pXSprite->data1 = 2;
-                            break;
-                        }
-
-                        VECTORDATA* pVectorData = &gVectorData[pXSprite->data1];
-                        vdist = pVectorData->maxDist;
-                        if (vdist <= 0 || vdist > defDist)
-                            vdist = defDist;
-
-                    } else if (pXSprite->data1 >= kDudeBase && pXSprite->data1 < kDudeMax && pXSprite->data1 != kGDXDudeUniversalCultist) {
-
-                            if (gDudeExtra[pSprite->extra].at6.u1.at4 > 0) {
-
-                                updateTargetOfSlaves(pSprite);
-
-                                if (pXSprite->target >= 0 && sprite[pXSprite->target].owner == pSprite->xvel) {
-                                    aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
-                                    return;
-                                }
-                            }
-
-                            if (gDudeExtra[pSprite->extra].at6.u1.at4 <= gGameOptions.nDifficulty && dist > meleeVector->maxDist) {
-                                vdist = (vdist / 2) + Random(vdist / 2);
-                            }
-                            else if (dist <= meleeVector->maxDist) {
-                                aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
-                                return;
-                            }
-                            else {
-                                int state = checkAttackState(pSprite, pXSprite);
-                                switch (state) {
-                                case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
-                                    return;
-                                case 2:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
-                                    return;
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                                    return;
-                                }
-                            }
-                    } else if (pXSprite->data1 >= kMissileBase && pXSprite->data1 < kMissileMax){
-                        // special handling for flame, explosive and life leech missiles
-                        int mdist = 2500;
-                        if (pXSprite->data1 != 303) mdist = 3000;
-                        switch(pXSprite->data1){
-                            case 315:
-                                // Pickup life leech if it was thrown previously
-                                if ((pLeech = leechIsDropped(pSprite)) != NULL)
-                                    removeLeech(pLeech);
-                                break;
-                            case 303:
-                            case 305:
-                            case 312:
-                            case 313:
-                            case 314:
-                            {
-                                if (dist > mdist || pXSprite->locked == 1) break;
-                                int state = checkAttackState(pSprite, pXSprite);
-                                if (dist <= meleeVector->maxDist && Chance(0x7000)) {
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
-                                    return;
-                                } else {
-                                    switch (state) {
-                                    case 1:
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
-                                        return;
-                                    case 2:
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
-                                        return;
-                                    default:
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                                        return;
-                                    }
-                                }
-                            }
-                            case 304:
-                            case 308:
-                            {
-                                if (spriteIsUnderwater(pSprite, false)) {
-                                    if (dist <= meleeVector->maxDist) {
-                                        if (Chance(0x4000)) {
-                                            aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
-                                        }
-                                        else {
-                                            aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
-                                        }
-                                    }
-                                    else {
-                                        aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
-                                    }
-                                    return;
-                                }
-
-                                vdist = 4200;
-                                if ((gFrameClock & 16) == 0)
-                                    vdist += Random(800);
-                                break;
-                            }
-                        }
-                    } else if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1) {
-
-                        int nType = pXSprite->data1 - 459; EXPLOSION* pExpl = &explodeInfo[nType];
-                        if (pExpl != NULL &&
-                            CheckProximity(pSprite, pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pExpl->at3 / 2) &&
-                            doExplosion(pSprite, nType)) {
-
-                            pXSprite->health = 1;
-                            actDamageSprite(pSprite->xvel, pSprite, DAMAGE_TYPE_3, 65535);
-
-                            xvel[pSprite->xvel] = 0;
-                            zvel[pSprite->xvel] = 0;
-                            yvel[pSprite->xvel] = 0;
-                        }
+            if (klabs(losAngle) < kAng15) {
+                if (dist < 12264 && dist > 7680 && !spriteIsUnderwater(pSprite, false) && pXSprite->data1 != kGDXThingCustomDudeLifeLeech) {
+                    int pHit = HitScan(pSprite, pSprite->z, dx, dy, 0, 16777280, 0);
+                    switch (pHit) {
+                    case 0:
+                    case 4:
                         return;
-
-                    } else {
-
-                        // Scared dude - no weapon. Still can punch you sometimes.
-                        int state = checkAttackState(pSprite, pXSprite);
-                        if (Chance(0x0500) && !spriteIsUnderwater(pSprite,false))
-                            sfxPlayGDXGenDudeSound(pSprite,6,pXSprite->data3);
-                            
-                        if (Chance(0x5000)){
-                            switch (state){
-                                case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
-                                    break;
-                                case 2:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeD);
-                                    break;
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
-                                    break;
-                            }
-
-                            pXSprite->target = -1;
-
-                        } else if (dist <= meleeVector->maxDist && Chance(0x7000)) {
-                            aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
-                        } else {
-                            switch (state){
-                                case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
-                                    break;
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
-                                    break;
-                            }
-
-                            pXSprite->target = -1;
-                        }
-
+                    default:
+                        aiNewState(pSprite, pXSprite, &GDXGenDudeThrow);
                         return;
-                    }
-
-                    int state = checkAttackState(pSprite, pXSprite);
-                    if (dist > vdist && pXSprite->aiState == &GDXGenDudeChaseD)
-                        aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                    
-                    if (dist < vdist && klabs(losAngle) < 35 /*&& klabs(losAngle) < kAngle5*/) {
-                        if (vdist > 1512){
-                            switch(state){
-                                case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeFireW);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFireW;
-                                    break;
-                                case 2:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeFireD);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFireD;
-                                    break;
-
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeFireL);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFireL;
-                                    break;
-                            }
-                        } else {
-                            switch(state){
-                                case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeFire2W);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFire2W;
-                                    break;
-                                case 2:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeFire2D);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFire2D;
-                                    break;
-
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeFire2L);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFire2L;
-                                    break;
-                            }
-                        }
-                    } else {
-                        int nSeq = 6; if (state < 3) nSeq = 8;
-                        if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq) {
-                            switch(state){
-                                case 1:
-                                    pXSprite->aiState->at18 = &GDXGenDudeChaseW;
-                                    break;
-                                case 2:
-                                    pXSprite->aiState->at18 = &GDXGenDudeChaseD;
-                                    break;
-                                default:
-                                    pXSprite->aiState->at18 = &GDXGenDudeChaseL;
-                                    break;
-                            }
-                        } else {
-                            if(pXSprite->aiState == &GDXGenDudeChaseL || pXSprite->aiState == &GDXGenDudeChaseD ||
-                            pXSprite->aiState == &GDXGenDudeChaseW || pXSprite->aiState == &GDXGenDudeFireL ||
-                            pXSprite->aiState == &GDXGenDudeFireD || pXSprite->aiState == &GDXGenDudeFireW)
-                                return;
-
-                            switch (state) {
-                                case 1:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFireW;
-                                    break;
-                                case 2:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFireD;
-                                    break;
-                                default:
-                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
-                                    pXSprite->aiState->at18 = &GDXGenDudeFireL;
-                                    break;
-                            }
-                        }
                     }
 
                 }
+                else if (dist > 4072 && dist <= 9072 && !spriteIsUnderwater(pSprite, false) && pSprite->owner != kMaxSprites) {
+                    switch (pXSprite->data1) {
+                        case kGDXThingCustomDudeLifeLeech:
+                        {
+                            if (pLeech == NULL) {
+                                aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
+                                GDXGenDudeThrow2.at18 = &GDXGenDudeDodgeL;
+                                return;
+                            }
+
+                            XSPRITE* pXLeech = &xsprite[pLeech->extra];
+                            int ldist = getTargetDist(pTarget, pDudeInfo, pLeech);
+                            //System.out.println("LDIST: "+ldist);
+                            if (ldist > 3 || !cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum,
+                                pLeech->x, pLeech->y, pLeech->z, pLeech->sectnum) || pXLeech->target == -1) {
+
+                                aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
+                                GDXGenDudeThrow2.at18 = &GDXGenDudeDodgeL;
+
+                            }
+                            else {
+                                GDXGenDudeThrow2.at18 = &GDXGenDudeChaseL;
+                                if (pXLeech->target != pXSprite->target) pXLeech->target = pXSprite->target;
+                                if (dist > 5072 && Chance(0x5000)) {
+                                    if (!canDuck(pSprite) || Chance(0x4000)) aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
+                                    else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeD);
+                                }
+                                else {
+                                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                                }
+                            }
+                        }
+                            return;
+                        case kGDXThingThrowableRock:
+                        {
+                            if (Chance(0x4000)) aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
+                            else sfxPlayGDXGenDudeSound(pSprite, 0, pXSprite->data3);
+                            return;
+                        }
+                        default:
+                            aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
+                            return;
+                    }
+
+                }
+                else if (dist <= meleeVector->maxDist) {
+
+                    if (spriteIsUnderwater(pSprite, false)) {
+                        if (Chance(0x9000)) aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
+                        else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
+
+                    }
+                    else if (Chance(0x9000)) aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
+                    else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
+                    return;
+
+                }
+                else {
+                    int state = checkAttackState(pSprite, pXSprite);
+                    if (state == 1) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
+                    else if (state == 2) {
+                        if (Chance(0x5000)) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
+                        else aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                    }
+                    else  aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                    return;
+                }
+            }
+
+        }
+        else {
+
+            int defDist = 17920; int vdist = defDist;
+
+            if (pXSprite->data1 > 0 && pXSprite->data1 < kVectorMax) {
+
+                switch (pXSprite->data1) {
+                case 19:
+                    pXSprite->data1 = 2;
+                    break;
+                }
+
+                VECTORDATA* pVectorData = &gVectorData[pXSprite->data1];
+                vdist = pVectorData->maxDist;
+                if (vdist <= 0 || vdist > defDist)
+                    vdist = defDist;
+
+            }
+            else if (pXSprite->data1 >= kDudeBase && pXSprite->data1 < kDudeMax) {
+
+                if (gDudeExtra[pSprite->extra].at6.u1.at4 > 0) {
+                    updateTargetOfSlaves(pSprite);
+                    if (pXSprite->target >= 0 && sprite[pXSprite->target].owner == pSprite->xvel) {
+                        aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                        return;
+                    }
+                }
+
+                int state = checkAttackState(pSprite, pXSprite);
+                if (gDudeExtra[pSprite->extra].at6.u1.at4 <= gGameOptions.nDifficulty && dist > meleeVector->maxDist) {
+                    vdist = (vdist / 2) + Random(vdist / 2);
+                }
+                else if (dist <= meleeVector->maxDist) {
+                    aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
+                    return;
+                }
+                else {
+
+                    if (state == 1) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
+                    else if (state == 2) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
+                    else aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                    return;
+                }
+
+
+
+            }
+            else if (pXSprite->data1 >= kMissileBase && pXSprite->data1 < kMissileMax) {
+                // special handling for flame, explosive and life leech missiles
+                int state = checkAttackState(pSprite, pXSprite);
+                int mdist = (pXSprite->data1 != 303) ? 3000 : 2500;
+                switch (pXSprite->data1) {
+                case 315:
+                    // pickup life leech if it was thrown previously
+                    if ((pLeech = leechIsDropped(pSprite)) != NULL) removeLeech(pLeech);
+                    break;
+                case 303:
+                case 305:
+                case 312:
+                case 313:
+                case 314:
+                    if (dist > mdist || pXSprite->locked == 1) break;
+                    else if (dist <= meleeVector->maxDist && Chance(0x9000))
+                        aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
+                    else if (state == 1) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
+                    else if (state == 2) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
+                    else aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                    return;
+
+
+                case 304:
+                case 308:
+                    if (spriteIsUnderwater(pSprite, false)) {
+                        if (dist > meleeVector->maxDist) aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
+                        else if (Chance(0x8000)) aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
+                        else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
+                        return;
+                    }
+
+                    vdist = 4200; if ((gFrameClock & 16) == 0) vdist += Random(800);
+                    break;
+                }
+
+            }
+            else if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1) {
+
+                int nType = pXSprite->data1 - 459; EXPLOSION* pExpl = &explodeInfo[nType];
+                if (pExpl != NULL && CheckProximity(pSprite, pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pExpl->at3 / 2)
+                    && doExplosion(pSprite, nType)) {
+
+                    pXSprite->health = 1;
+                    actDamageSprite(pSprite->xvel, pSprite, DAMAGE_TYPE_3, 65535);
+
+                    xvel[pSprite->xvel] = 0;
+                    zvel[pSprite->xvel] = 0;
+                    yvel[pSprite->xvel] = 0;
+
+                }
                 return;
+
+                // scared dude - no weapon. Still can punch you sometimes.	
+            }
+            else {
+
+                int state = checkAttackState(pSprite, pXSprite);
+                if (Chance(0x0500) && !spriteIsUnderwater(pSprite, false))
+                    sfxPlayGDXGenDudeSound(pSprite, 6, pXSprite->data3);
+
+                if (Chance(0x0200)) {
+                    if (dist <= meleeVector->maxDist) aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
+                    else if (state == 1) aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeW);
+                    else if (state == 2) aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeD);
+                    else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeL);
+                }
+                else if (state == 1) aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
+                else aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
+
+                aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                return;
+            }
+
+
+            if (dist > vdist && pXSprite->aiState == &GDXGenDudeChaseD)
+                aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+
+            int state = checkAttackState(pSprite, pXSprite);
+            if (dist < vdist && klabs(losAngle) < 32 /*&& klabs(losAngle) < kAngle5*/) {
+
+                switch (state) {
+                case 1:
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeFireW);
+                    pXSprite->aiState->at18 = &GDXGenDudeFireW;
+                    return;
+                case 2:
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeFireD);
+                    pXSprite->aiState->at18 = &GDXGenDudeFireD;
+                    return;
+                default:
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeFireL);
+                    pXSprite->aiState->at18 = &GDXGenDudeFireL;
+                    return;
+                }
+
+            }
+            else {
+                
+                if (seqGetID(3, pSprite->extra) == pXSprite->data2 + (state < 3) ? 8 : 6) {
+                    if (state == 1) pXSprite->aiState->at18 = &GDXGenDudeChaseW;
+                    else if (state == 2) pXSprite->aiState->at18 = &GDXGenDudeChaseD;
+                    else pXSprite->aiState->at18 = &GDXGenDudeChaseL;
+                }
+                else if (state == 1 && pXSprite->aiState != &GDXGenDudeChaseW && pXSprite->aiState != &GDXGenDudeFireW) {
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
+                    pXSprite->aiState->at18 = &GDXGenDudeFireW;
+
+                }
+                else if (state == 2 && pXSprite->aiState != &GDXGenDudeChaseD && pXSprite->aiState != &GDXGenDudeFireD) {
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseD);
+                    pXSprite->aiState->at18 = &GDXGenDudeFireD;
+
+                }
+                else if (pXSprite->aiState != &GDXGenDudeChaseL && pXSprite->aiState != &GDXGenDudeFireL) {
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
+                    pXSprite->aiState->at18 = &GDXGenDudeFireL;
+                }
+
             }
         }
     }
-
-    if(spriteIsUnderwater(pSprite,false)) {
-        aiNewState(pSprite, pXSprite, &GDXGenDudeGotoW);
-    } else {
-        aiNewState(pSprite, pXSprite, &GDXGenDudeGotoL);
-    }
-    pXSprite->target = -1;
 }
+
 
 int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite) {
     UNREFERENCED_PARAMETER(pXSprite);
@@ -1172,13 +1051,13 @@ bool dudeIsMelee(XSPRITE* pXSprite) {
 
 int getRecoilChance(spritetype* pSprite) {
     int mass = getDudeMassBySpriteSize(pSprite);
-    int cumulDmg = 0; int baseChance = 0x4000;
+    int cumulDmg = 0; int baseChance = 0x6000;
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += (pXSprite.burnTime / 2);
         cumulDmg = pXSprite.cumulDamage;
         if (dudeIsMelee(&pXSprite))
-            baseChance = 0x500;
+            baseChance = 0x700;
     }
 
     baseChance += cumulDmg;
@@ -1188,12 +1067,12 @@ int getRecoilChance(spritetype* pSprite) {
 }
 
 int getDodgeChance(spritetype* pSprite) {
-    int mass = getDudeMassBySpriteSize(pSprite); int baseChance = 0x1000;
+    int mass = getDudeMassBySpriteSize(pSprite); int baseChance = 0x3000;
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += pXSprite.burnTime;
         if (dudeIsMelee(&pXSprite))
-            baseChance = 0x200;
+            baseChance = 0x400;
     }
 
     int chance = ((baseChance / mass) << 7);
@@ -1306,5 +1185,26 @@ void updateTargetOfSlaves(spritetype* pSprite) {
     }
 
     return;
+}
+
+bool canSwim(spritetype* pSprite) {
+    return (gSysRes.Lookup(xsprite[pSprite->extra].data2 + 8, "SEQ") && gSysRes.Lookup(xsprite[pSprite->extra].data2 + 13, "SEQ")
+        && gSysRes.Lookup(xsprite[pSprite->extra].data2 + 17, "SEQ"));
+}
+
+
+bool canDuck(spritetype* pSprite) {
+    return (gSysRes.Lookup(xsprite[pSprite->extra].data2 + 8, "SEQ") && gSysRes.Lookup(xsprite[pSprite->extra].data2 + 14, "SEQ"));
+
+}
+
+bool CDCanMove(spritetype* pSprite) {
+    return (gSysRes.Lookup(xsprite[pSprite->extra].data2 + 9, "SEQ") && gSysRes.Lookup(xsprite[pSprite->extra].data2 + 13, "SEQ")
+        && gSysRes.Lookup(xsprite[pSprite->extra].data2 + 14, "SEQ"));
+
+}
+
+bool inDodge(AISTATE* aiState) {
+    return (aiState == &GDXGenDudeDodgeDmgW || aiState == &GDXGenDudeDodgeDmgL || aiState == &GDXGenDudeDodgeDmgD);
 }
 //////////

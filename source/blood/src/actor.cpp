@@ -2677,17 +2677,22 @@ void actInit(void)
 
                         // exceptions
                         switch (i - seqStartId) {
-                            case 3:
-                            case 4:
-                            case 11:
-                            case 12:
-                            case 18:
-                            case 19:
+                            case 3:		// burning dude
+                            case 4: 	// electrocution
+                            case 8:		// attack u/d
+                            case 11: 	// reserved
+                            case 12:	// reserved
+                            case 13:	// move u
+                            case 14: 	// move d
+                            case 16:	// burning death 2
+                            case 17:	// idle w
+                            case 18:	// transformation in another dude
+                            case 19:	// reserved
                                 continue;
                         }
 
                         if (!gSysRes.Lookup(i, "SEQ")) {
-                            //ThrowError("No SEQ file  found for custom dude!");
+                            //ThrowError("No SEQ file found for custom dude!");
                             pXSprite->data2 = dudeInfo[nType].seqStartID;
                             seqStartId = pXSprite->data2;
                             break;
@@ -3303,11 +3308,15 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     case kGDXDudeUniversalCultist:
         sfxPlayGDXGenDudeSound(pSprite, 2, pXSprite->data3);
         if (nSeq == 3) {
-            if (gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) seqSpawn(3 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            
+            bool seq15 = gSysRes.Lookup(pXSprite->data2 + 15, "SEQ"); bool seq16 = gSysRes.Lookup(pXSprite->data2 + 16, "SEQ");
+            if (seq15 && seq16) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (seq16) seqSpawn(16 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (seq15) seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (gSysRes.Lookup(pXSprite->data2 + nSeq, "SEQ")) seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else seqKill(3, nXSprite);
 
-        } else {
+         } else {
             seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
         }
 
@@ -3328,8 +3337,13 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         }
 
         int seqId = pXSprite->data2;
-        if (gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) seqSpawn(seqId += 15 + Random(2), 3, nXSprite, nDudeToGibClient1);
-        else seqSpawn(seqId += 15, 3, nXSprite, nDudeToGibClient1);
+        bool seq15 = gSysRes.Lookup(pXSprite->data2 + 15, "SEQ"); bool seq16 = gSysRes.Lookup(pXSprite->data2 + 16, "SEQ");
+        
+        if (seq15 && seq16) seqId += (15 + Random(2));
+        else if (seq16) seqId += 16;
+        else seqId += 15;
+        
+        seqSpawn(seqId, 3, nXSprite, nDudeToGibClient1);
         break;
     }
     case 241:
@@ -3819,9 +3833,18 @@ void actImpactMissile(spritetype *pMissile, int a2)
             int nOwner = actSpriteOwnerToSpriteId(pMissile);
             DAMAGE_TYPE rand1 = (DAMAGE_TYPE)Random(7);
             int rand2 = (7+Random(7))<<4;
-            actDamageSprite(nOwner, pSpriteHit, rand1, rand2);
+            int nDamage = actDamageSprite(nOwner, pSpriteHit, rand1, rand2);
             if ((pThingInfo && pThingInfo->at17[DAMAGE_TYPE_1] != 0) || (pDudeInfo && pDudeInfo->at70[DAMAGE_TYPE_1] != 0))
                 actBurnSprite(pMissile->owner, pXSpriteHit, 360);
+
+            // by NoOne: make Life Leech heal user, just like it was in 1.0x versions
+            if (gGameOptions.weaponsV10x && !VanillaMode() && !DemoRecordStatus() && pDudeInfo != NULL) {
+                spritetype* pSource = &sprite[nOwner];
+                XSPRITE* pXSource = (pSource->extra >= 0) ? &xsprite[pSource->extra] : NULL;
+
+                if (IsDudeSprite(pSource) && pXSource != NULL && pXSource->health != 0)
+                    actHealDude(pXSource, nDamage >> 2, dudeInfo[pSource->lotag - kDudeBase].startHealth);
+            }
         }
         if (pMissile->extra > 0)
         {
@@ -3916,6 +3939,12 @@ void actImpactMissile(spritetype *pMissile, int a2)
                         evPost(nSpriteHit, 3, 0, CALLBACK_ID_0);
                     actBurnSprite(pMissile->owner, pXSpriteHit, 480);
                     sub_2A620(nOwner, pMissile->x, pMissile->y, pMissile->z, pMissile->sectnum, 16, 20, 10, DAMAGE_TYPE_2, 6, 480, 0, 0);
+
+                    // by NoOne: allow additional bullet damage for Flare Gun
+                    if (gGameOptions.weaponsV10x && !VanillaMode() && !DemoRecordStatus()) {
+                        int nDamage = (20 + Random(10)) << 4;
+                        actDamageSprite(nOwner, pSpriteHit, DAMAGE_TYPE_2, nDamage);
+                    }
                 }
                 else
                 {
@@ -4943,6 +4972,10 @@ void MoveDude(spritetype *pSprite)
                 case 239:
                     actKillDude(pSprite->index, pSprite, DAMAGE_TYPE_0, 1000 << 4);
                     break;
+                case kGDXDudeUniversalCultist:
+                    evPost(nSprite, 3, 0, CALLBACK_ID_11);
+                    if (!canSwim(pSprite)) actKillDude(pSprite->index, pSprite, DAMAGE_TYPE_0, 1000 << 4);
+                    break;
                 }
             }
             break;
@@ -5501,15 +5534,26 @@ void actProcessSprites(void)
                                    // by NoOne: make Sight flag work and don't process sight flag for things which is locked or triggered
             if (pXSprite->Sight && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
                 for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
+                    spritetype* pPlayer = gPlayer[i].pSprite;
+                    if (cansee(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, pPlayer->x, pPlayer->y, pPlayer->z, pPlayer->sectnum)) {
+                        trTriggerSprite(nSprite, pXSprite, 34);
+                        break;
+                    }
+                }
+            }
+
+            // by NoOne: RESERVED FOR FUTURE AIM FLAG
+            /*if (pXSprite->Aim && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
+                for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
                     PLAYER* pPlayer = &gPlayer[i]; int z = pPlayer->at6f - pPlayer->pSprite->z;
                     int hitCode = VectorScan(pPlayer->pSprite, 0, z, pPlayer->at1be.dx, pPlayer->at1be.dy, pPlayer->at1be.dz, 512000, 1);
                     if (hitCode != 3 || gHitInfo.hitsprite != pSprite->xvel) continue;
                     trTriggerSprite(nSprite, pXSprite, 34);
                     pXSprite->locked = 1; // lock it once triggered, so it can be unlocked again
-              
+
                     break;
                 }
-            }
+            }*/
                                        // by NoOne: don't process locked or 1-shot things for proximity
             if (pXSprite->Proximity && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
                 if (pSprite->type == 431) pXSprite->target = -1;
@@ -5542,6 +5586,8 @@ void actProcessSprites(void)
                         }
                         if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, proxyDist)) {
                             
+                            // allow dudeLockout for proximity flag
+                            if (pXSprite->DudeLockout && !IsPlayerSprite(pSprite2)) continue;
                             switch (pSprite->type) {
                                 case kGDXThingTNTProx:
                                     if (!IsPlayerSprite(pSprite2)) continue;
@@ -7153,8 +7199,11 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     pXDude->busyTime = pXSource->busyTime;
 
     // inherit custom hp settings
-    if (pXSource->data4 > 0) pXDude->health = pXSource->data4;
-    else pXDude->health = dudeInfo[nType - kDudeBase].startHealth << 4;
+    if (pXSource->data4 <= 0) pXDude->health = dudeInfo[nType].startHealth << 4;
+    else {
+        long hp = pXSource->data4 << 4;
+        pXDude->health = (hp > 0) ? ((hp <= 65535) ? hp : 65535) : 1;
+    }
 
     // inherit seq settings
     int seqId = dudeInfo[nType - kDudeBase].seqStartID;
@@ -7167,7 +7216,10 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     if ((pSource->hitag & kHitagExtBit) != 0) {
         //inherit pal?
         if (pDude->pal <= 0) pDude->pal = pSource->pal;
-
+        
+        // inherit clipdist?
+        if (pSource->clipdist > 0) pDude->clipdist = pSource->clipdist;
+        
         // inherit spawn sprite trigger settings, so designer can count monsters.
         pXDude->txID = pXSource->txID;
         pXDude->command = pXSource->command;
@@ -7176,6 +7228,9 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
 
         // inherit drop items
         pXDude->dropMsg = pXSource->dropMsg;
+        
+        // inherit required key so it can be dropped
+        pXDude->key = pXSource->key;
 
         // inherit dude flags
         pXDude->dudeDeaf = pXSource->dudeDeaf;
