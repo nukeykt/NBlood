@@ -5536,7 +5536,7 @@ end_autoredwall:
 #ifdef YAX_ENABLE
                     // home: ceilings, end: floors
                     int32_t fb, bunchsel = keystatus[sc_End] ? 1 : (keystatus[sc_Home] ? 0 : -1);
-                    uint8_t bunchbitmap[YAX_MAXBUNCHES>>3];
+                    uint8_t bunchbitmap[(YAX_MAXBUNCHES+7)>>3];
                     Bmemset(bunchbitmap, 0, sizeof(bunchbitmap));
 #endif
                     if (!m32_sideview)
@@ -7755,7 +7755,7 @@ end_batch_insert_points:
 
 #ifdef YAX_ENABLE
             int16_t cb, fb;
-            uint8_t bunchbitmap[YAX_MAXBUNCHES>>3];
+            uint8_t bunchbitmap[(YAX_MAXBUNCHES+7)>>3];
             Bmemset(bunchbitmap, 0, sizeof(bunchbitmap));
 #endif
             keystatus[sc_Delete] = 0;
