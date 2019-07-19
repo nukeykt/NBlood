@@ -112,7 +112,7 @@ static int16_t oldmousebstatus = 0;
 char game_executable[BMAX_PATH] = {0};
 
 int32_t zlock = 0x7fffffff, zmode = 0, kensplayerheight = 32;
-//int16_t defaultspritecstat = 0;
+int16_t defaultspritecstat = 0;
 
 int16_t localartfreq[MAXTILES];
 int16_t localartlookup[MAXTILES], localartlookupnum;
@@ -2280,7 +2280,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
         return -1;
 
     sprite[i].x = dax, sprite[i].y = day;
-    sprite[i].cstat = DEFAULT_SPRITE_CSTAT;
+    sprite[i].cstat = defaultspritecstat;
     sprite[i].shade = 0;
     sprite[i].pal = 0;
     sprite[i].xrepeat = 64, sprite[i].yrepeat = 64;
@@ -3226,7 +3226,7 @@ int32_t select_sprite_tag(int32_t spritenum)
     return INT32_MIN;
 }
 
-static void drawlinebetween(const vec3_t *v1, const vec3_t *v2, int32_t col, uint32_t pat)
+void drawlinebetween(const vec3_t *v1, const vec3_t *v2, int32_t col, uint32_t pat)
 {
     // based on m32exec.c/drawline*
     const int32_t xofs=halfxdim16, yofs=midydim16;
@@ -3683,7 +3683,7 @@ void overheadeditor(void)
                 drawline16base(cx,cy, x1,j, -y1,+i, editorcolors[6]);
             }
 
-            if (keystatus[sc_LeftShift] && (pointhighlight&16384) && highlightcnt<=0)  // LShift
+            if (keystatus[sc_LeftShift] && (pointhighlight&16384) && highlightcnt<=0 && !bloodhack)  // LShift
             {
                 // draw lines to linking sprites
                 const int32_t refspritenum = pointhighlight&16383;

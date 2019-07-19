@@ -59,8 +59,10 @@ common_h=\
     $(blood_src)/gamedefs.h \
     $(blood_src)/gamemenu.h \
     $(blood_src)/getopt.h \
+    $(blood_src)/gfx.h \
     $(blood_src)/gib.h \
     $(blood_src)/globals.h \
+    $(blood_src)/gui.h \
     $(blood_src)/inifile.h \
     $(blood_src)/iob.h \
     $(blood_src)/levels.h \
@@ -130,8 +132,10 @@ $(blood_obj)/fx.$o: $(blood_src)/fx.cpp $(common_h)
 $(blood_obj)/gamemenu.$o: $(blood_src)/gamemenu.cpp $(common_h)
 $(blood_obj)/gameutil.$o: $(blood_src)/gameutil.cpp $(common_h)
 $(blood_obj)/getopt.$o: $(blood_src)/getopt.cpp $(common_h)
+$(blood_obj)/gfx.$o: $(blood_src)/gameutil.cpp $(common_h)
 $(blood_obj)/gib.$o: $(blood_src)/gib.cpp $(common_h)
 $(blood_obj)/globals.$o: $(blood_src)/globals.cpp $(common_h)
+$(blood_obj)/gui.$o: $(blood_src)/gameutil.cpp $(common_h)
 $(blood_obj)/inifile.$o: $(blood_src)/inifile.cpp $(common_h)
 $(blood_obj)/iob.$o: $(blood_src)/iob.cpp $(common_h)
 $(blood_obj)/levels.$o: $(blood_src)/levels.cpp $(common_h)
@@ -144,7 +148,6 @@ $(blood_obj)/misc.$o: $(blood_src)/misc.cpp $(common_h)
 $(blood_obj)/network.$o: $(blood_src)/network.cpp $(common_h)
 $(blood_obj)/osdcmd.$o: $(blood_src)/osdcmd.cpp $(common_h)
 $(blood_obj)/player.$o: $(blood_src)/player.cpp $(common_h)
-$(blood_obj)/pqueue.$o: $(blood_src)/pqueue.cpp $(common_h)
 $(blood_obj)/qav.$o: $(blood_src)/qav.cpp $(common_h)
 $(blood_obj)/qheap.$o: $(blood_src)/qheap.cpp $(common_h)
 $(blood_obj)/replace.$o: $(blood_src)/replace.cpp $(common_h)

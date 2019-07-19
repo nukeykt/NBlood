@@ -747,8 +747,10 @@ blood_game_objs := \
 	gamemenu.cpp \
 	gameutil.cpp \
 	getopt.cpp \
+	gfx.cpp \
 	gib.cpp \
 	globals.cpp \
+	gui.cpp \
 	inifile.cpp \
 	iob.cpp \
 	levels.cpp \
@@ -761,7 +763,6 @@ blood_game_objs := \
 	network.cpp \
 	osdcmd.cpp \
 	player.cpp \
-	pqueue.cpp \
 	qav.cpp \
 	qheap.cpp \
 	replace.cpp \

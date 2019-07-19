@@ -350,7 +350,7 @@ static const char *SPRDSPMODE[MAXNOSPRITES]=
 #define MAXHELP3D (signed)ARRAY_SIZE(Help3d)
 static const char *Help3d[]=
 {
-    "Mapster32 3D mode help",
+    "NMapedit 3D mode help",
     " ",
     " F2 = TOGGLE CLIPBOARD",
     " F3 = TOGGLE MOUSELOOK",
@@ -420,58 +420,57 @@ void ExtSaveMap(const char *mapname)
 
 #define TLCHAR "+"
 #define TLCHR(Cond) ((Cond)?TLCHAR:"")
-static uint64_t taglab_nolink_SEs = (1ull<<10)|(1ull<<27)|(1ull<<28)|(1ull<<29)|
-    (1ull<<31)|(1ull<<32)|(1ull<<49)|(1ull<<50);
 
-//// Case lists of switch picnums. Pretty much CODEDUP from sector.c.
-
-// List of switches that function like dip (combination lock) switches.
-#define DIPSWITCH_LIKE_CASES \
-         DIPSWITCH: \
-    case TECHSWITCH: \
-    case ALIENSWITCH
-
-// List of access switches.
-#define ACCESS_SWITCH_CASES \
-         ACCESSSWITCH: \
-    case ACCESSSWITCH2
-
-// List of switches that don't fit the two preceding categories, and are not
-// the MULTISWITCH. 13 cases.
-#define REST_SWITCH_CASES \
-         DIPSWITCH2: \
-    case DIPSWITCH3: \
-    case FRANKENSTINESWITCH: \
-    case HANDSWITCH: \
-    case LIGHTSWITCH2: \
-    case LIGHTSWITCH: \
-    case LOCKSWITCH1: \
-    case POWERSWITCH1: \
-    case POWERSWITCH2: \
-    case PULLSWITCH: \
-    case SLOTDOOR: \
-    case SPACEDOORSWITCH: \
-    case SPACELIGHTSWITCH
-
-// Whether the individual tags have linking semantics. Based on
-//  http://infosuite.duke4.net/index.php?page=references_special_textures
-// The return value is an OR of the following:
-//  1: lotag has linking semantics
-//  2: hitag
-//  4: extra
-//  8: xvel
-//  16: yvel
-//  32: zvel
-//  64: owner
-// This function is only supposed to say something about the potential of a tag:
-// it will also 'say yes' if a particular tag is zero.
-int32_t taglab_linktags(int32_t spritep, int32_t num)
+int32_t taglab_linktags(int32_t, int32_t)
 {
-    // NUKE-TODO: implement X-object RX/TX here
-    int32_t l, link = 0;
+    return 0;
+}
+
+// The return value is an OR of the following:
+//  1: rxID has linking semantics
+//  2: txID
+int32_t taglab_linkxtags(int32_t stat, int32_t num)
+{
+    // NUKE-TODO: Adjust link value depending on object type
+    int32_t link = 0;
+    switch (stat)
+    {
+    case 0:
+    case 4:
+    {
+        switch (wall[num].lotag)
+        {
+        default:
+            link = 1+2;
+            break;
+        }
+        break;
+    }
+    case 1:
+    case 2:
+    {
+        switch (sector[num].lotag)
+        {
+        default:
+            link = 1+2;
+            break;
+        }
+        break;
+    }
+    case 3:
+    {
+        switch (sprite[num].type)
+        {
+        default:
+            link = 1+2;
+            break;
+        }
+        break;
+    }
+    }
 
     g_iReturnVar = link;
-    VM_OnEvent(EVENT_LINKTAGS, spritep?num:-1);
+    VM_OnEvent(EVENT_LINKTAGS, stat==3?num:-1);
     link = g_iReturnVar;
 
     return link;
@@ -480,44 +479,60 @@ int32_t taglab_linktags(int32_t spritep, int32_t num)
 // <duetoptr>: if non-NULL, a value will be written denoting the object with
 // the currently greatest tag:
 //  32768 + spritenum, or
+//  16384 + sectnum, or
 //  wallnum, or
 //  -1 (the return value i.e. no more tags left OR there are no tagged objects)
 int32_t taglab_getnextfreetag(int32_t *duetoptr)
 {
-    // NUKE-TODO: Use X-object RX/TX here
-    int32_t i, nextfreetag=1;
+    int32_t i, nextfreetag=100;
     int32_t obj = -1;
 
     for (i=0; i<MAXSPRITES; i++)
     {
-        int32_t tag;
-
-        if (sprite[i].statnum == MAXSTATUS)
-            continue;
-
-        tag = select_sprite_tag(i);
-
-        if (tag != INT32_MIN && nextfreetag <= tag)
+        int nXSprite = sprite[i].extra;
+        if (nXSprite > 0)
         {
-            nextfreetag = tag+1;
-            obj = 32768 + i;
+            if (nextfreetag <= xsprite[nXSprite].rxID)
+            {
+                nextfreetag = xsprite[nXSprite].rxID+1;
+                obj = 32768 + i;
+            }
+            if (nextfreetag <= xsprite[nXSprite].txID)
+            {
+                nextfreetag = xsprite[nXSprite].txID+1;
+                obj = 32768 + i;
+            }
         }
     }
 
     for (i=0; i<numwalls; i++)
     {
-        int32_t lt = taglab_linktags(0, i);
+        int nXWall = wall[i].extra;
+        if (nXWall > 0)
+        {
+            if (nextfreetag <= xwall[nXWall].rxID)
+                nextfreetag = xwall[nXWall].rxID+1, obj = i;
+            if (nextfreetag <= xwall[nXWall].txID)
+                nextfreetag = xwall[nXWall].txID+1, obj = i;
+        }
+    }
 
-        if ((lt&1) && nextfreetag <= wall[i].lotag)
-            nextfreetag = wall[i].lotag+1, obj = i;
-        if ((lt&2) && nextfreetag <= wall[i].hitag)
-            nextfreetag = wall[i].hitag+1, obj = i;
+    for (i=0; i<numsectors; i++)
+    {
+        int nXSector = sector[i].extra;
+        if (nXSector > 0)
+        {
+            if (nextfreetag <= xsector[nXSector].rxID)
+                nextfreetag = xsector[nXSector].rxID+1, obj = 16384 + i;
+            if (nextfreetag <= xsector[nXSector].txID)
+                nextfreetag = xsector[nXSector].txID+1, obj = 16384 + i;
+        }
     }
 
     if (duetoptr != NULL)
         *duetoptr = obj;
 
-    if (nextfreetag < 32768)
+    if (nextfreetag < 1024)
         return nextfreetag;
 
     return 0;
@@ -536,6 +551,292 @@ static void taglab_handle1(int32_t linktagp, int32_t tagnum, char *buf)
 ////////// end tag labeling system //////////
 
 ////////// blood stuff //////////
+
+
+class CXTracker {
+public:
+    char m_type;
+    int m_nSector;
+    int m_nWall;
+    int m_nSprite;
+    sectortype *m_pSector;
+    walltype *m_pWall;
+    spritetype *m_pSprite;
+    XSECTOR *m_pXSector;
+    XWALL *m_pXWall;
+    XSPRITE *m_pXSprite;
+    CXTracker();
+    void TrackClear();
+    void TrackSector(int a1, char a2);
+    void TrackWall(int a1, char a2);
+    void TrackSprite(int a1, char a2);
+    void Draw(void);
+};
+
+CXTracker gXTracker;
+
+extern void drawlinebetween(const vec3_t *v1, const vec3_t *v2, int32_t col, uint32_t pat);
+
+CXTracker::CXTracker()
+{
+    //dprintf("CXTracker::CXTracker()\n");
+    TrackClear();
+}
+
+void CXTracker::TrackClear()
+{
+    //dprintf("CXTracker::TrackClear()\n");
+    m_type = 0;
+    m_nSector = m_nWall = m_nSprite = -1;
+    m_pSector = 0;
+    m_pWall = 0;
+    m_pSprite = 0;
+    m_pXSector = 0;
+    m_pXWall = 0;
+    m_pXSprite = 0;
+}
+
+void CXTracker::TrackSector(int nSector, char a2)
+{
+    //dprintf("CXTracker::TrackSector( %d, %s )\n", nSector, a2 ? "TRUE" : "FALSE");
+    TrackClear();
+    if (nSector < 0 || nSector >= kMaxSectors)
+        return;
+    //dprintf("sector is valid\n");
+    sectortype* pSector = &sector[nSector];
+    int nXSector = pSector->extra;
+    if (nXSector <= 0 || nXSector >= kMaxXSprites) // ???
+        return;
+    //dprintf("xsector is valid\n");
+    XSECTOR* pXSector = &xsector[nXSector];
+    if ((a2 && !pXSector->txID) || (!a2 && !pXSector->rxID))
+        return;
+    //dprintf("txID = %d,  rxID = %d\n", pXSector->at6_0, pXSector->at8_0);
+    m_nSector = nSector;
+    m_pSector = pSector;
+    m_pXSector = pXSector;
+    m_type = a2;
+}
+
+void CXTracker::TrackWall(int nWall, char a2)
+{
+    //dprintf("CXTracker::TrackWall( %d, %s )\n", nWall, a2 ? "TRUE" : "FALSE");
+    TrackClear();
+    if (nWall < 0 || nWall >= kMaxWalls)
+        return;
+    //dprintf("wall is valid\n");
+    walltype* pWall = &wall[nWall];
+    int nXWall = pWall->extra;
+    if (nXWall <= 0 || nXWall >= kMaxXSprites) // ???
+        return;
+    //dprintf("xwall is valid\n");
+    XWALL* pXWall = &xwall[nXWall];
+    if ((a2 && !pXWall->txID) || (!a2 && !pXWall->rxID))
+        return;
+    //dprintf("txID = %d,  rxID = %d\n", pXWall->at6_0, pXWall->at8_0);
+    m_nWall = nWall;
+    m_pWall = pWall;
+    m_pXWall = pXWall;
+    m_type = a2;
+}
+
+void CXTracker::TrackSprite(int nSprite, char a2)
+{
+    //dprintf("CXTracker::TrackSprite( %d, %s )\n", nWall, a2 ? "TRUE" : "FALSE");
+    TrackClear();
+    if (nSprite < 0 || nSprite >= kMaxSprites)
+        return;
+    //dprintf("sprite is valid\n");
+    spritetype* pSprite = &sprite[nSprite];
+    int nXSprite = pSprite->extra;
+    if (nXSprite <= 0 || nXSprite >= kMaxXSprites) // ???
+        return;
+    //dprintf("xsprite is valid\n");
+    XSPRITE* pXSprite = &xsprite[nXSprite];
+    if ((a2 && !pXSprite->txID) || (!a2 && !pXSprite->rxID))
+        return;
+    //dprintf("txID = %d,  rxID = %d\n", pXSprite->at4_0, pXSprite->at5_2);
+    m_nSprite = nSprite;
+    m_pSprite = pSprite;
+    m_pXSprite = pXSprite;
+    m_type = a2;
+}
+
+void CXTracker::Draw(void)
+{
+    int txId, rxId;
+    vec3_t v1, v2;
+    if (m_type)
+    {
+        if (m_pXSector)
+        {
+            txId = m_pXSector->txID;
+            walltype* pWall2 = &wall[m_pSector->wallptr];
+            v1.x = pWall2->x;
+            v1.y = pWall2->y;
+            v1.z = getflorzofslope(m_nSector, v1.x, v1.y);
+        }
+        else if (m_pXWall)
+        {
+            txId = m_pXWall->txID;
+            walltype* pWall2 = &wall[m_pWall->point2];
+            int dx = (pWall2->x-m_pWall->x)/2; 
+            int dy = (pWall2->y-m_pWall->y)/2; 
+            v1.x = m_pWall->x + dx;
+            v1.y = m_pWall->y + dy;
+            v1.z = getflorzofslope(sectorofwall(m_nWall), v1.x, v1.y);
+        }
+        else if (m_pXSprite)
+        {
+            txId = m_pXSprite->txID;
+            v1.x = m_pSprite->x;
+            v1.y = m_pSprite->y;
+            v1.z = m_pSprite->z;
+        }
+        else
+        {
+            return;
+        }
+        if (txId == 0)
+            return;
+        for (int i = 0; i < kMaxSprites; i++)
+        {
+            spritetype* pSprite = &sprite[i];
+            if (pSprite->statnum < 0 || pSprite->statnum >= kMaxStatus)
+                continue;
+            int nXSprite = pSprite->extra;
+            if (nXSprite <= 0)
+                continue;
+            XSPRITE* pXSprite = &xsprite[nXSprite];
+            if (pXSprite->rxID == txId)
+            {
+                v2.x = pSprite->x;
+                v2.y = pSprite->y;
+                v2.z = pSprite->z;
+                drawlinebetween(&v1, &v2, editorcolors[3]+(M32_THROB>>2), 0x33333333);
+            }
+        }
+        for (int i = 0; i < numwalls; i++)
+        {
+            walltype* pWall = &wall[i];
+            int nXWall = pWall->extra;
+            if (nXWall <= 0)
+                continue;
+            XWALL* pXWall = &xwall[nXWall];
+            if (pXWall->rxID == txId)
+            {
+                walltype* pWall2 = &wall[pWall->point2];
+                int dx = (pWall2->x-pWall->x)/2;
+                int dy = (pWall2->y-pWall->y)/2; 
+                v2.x = pWall->x + dx;
+                v2.y = pWall->y + dy;
+                v2.z = getflorzofslope(sectorofwall(i), v2.x, v2.y);
+                drawlinebetween(&v1, &v2, editorcolors[4]+(M32_THROB>>2), 0x33333333);
+            }
+        }
+        for (int i = 0; i < numsectors; i++)
+        {
+            sectortype* pSector = &sector[i];
+            int nXSector = pSector->extra;
+            if (nXSector <= 0)
+                continue;
+            XSECTOR* pXSector = &xsector[nXSector];
+            if (pXSector->rxID == txId)
+            {
+                walltype* pWall = &wall[pSector->wallptr];
+                v2.x = pWall->x;
+                v2.y = pWall->y;
+                v2.z = getflorzofslope(i, v2.x, v2.y);
+                drawlinebetween(&v1, &v2, editorcolors[6]+(M32_THROB>>2), 0x33333333);
+            }
+        }
+    }
+    else
+    {
+        if (m_pXSector)
+        {
+            rxId = m_pXSector->rxID;
+            walltype* pWall2 = &wall[m_pSector->wallptr];
+            v1.x = pWall2->x;
+            v1.y = pWall2->y;
+            v1.z = getflorzofslope(m_nSector, v1.x, v1.y);
+        }
+        else if (m_pXWall)
+        {
+            rxId = m_pXWall->rxID;
+            walltype* pWall2 = &wall[m_pWall->point2];
+            int dx = (pWall2->x-m_pWall->x)/2; 
+            int dy = (pWall2->y-m_pWall->y)/2; 
+            v1.x = m_pWall->x + dx;
+            v1.y = m_pWall->y + dy;
+            v1.z = getflorzofslope(sectorofwall(m_nWall), v1.x, v1.y);
+        }
+        else if (m_pXSprite)
+        {
+            rxId = m_pXSprite->rxID;
+            v1.x = m_pSprite->x;
+            v1.y = m_pSprite->y;
+            v1.z = m_pSprite->z;
+        }
+        else
+        {
+            return;
+        }
+        if (rxId == 0)
+            return;
+        for (int i = 0; i < kMaxSprites; i++)
+        {
+            spritetype* pSprite = &sprite[i];
+            if (pSprite->statnum < 0 || pSprite->statnum >= kMaxStatus)
+                continue;
+            int nXSprite = pSprite->extra;
+            if (nXSprite <= 0)
+                continue;
+            XSPRITE* pXSprite = &xsprite[nXSprite];
+            if (pXSprite->txID == rxId)
+            {
+                v2.x = pSprite->x;
+                v2.y = pSprite->y;
+                v2.z = pSprite->z;
+                drawlinebetween(&v1, &v2, editorcolors[11]-(M32_THROB>>2), 0x33333333);
+            }
+        }
+        for (int i = 0; i < numwalls; i++)
+        {
+            walltype* pWall = &wall[i];
+            int nXWall = pWall->extra;
+            if (nXWall <= 0)
+                continue;
+            XWALL* pXWall = &xwall[nXWall];
+            if (pXWall->txID == rxId)
+            {
+                walltype* pWall2 = &wall[pWall->point2];
+                int dx = (pWall2->x-pWall->x)/2;
+                int dy = (pWall2->y-pWall->y)/2; 
+                v2.x = pWall->x + dx;
+                v2.y = pWall->y + dy;
+                v2.z = getflorzofslope(sectorofwall(i), v2.x, v2.y);
+                drawlinebetween(&v1, &v2, editorcolors[12]-(M32_THROB>>2), 0x33333333);
+            }
+        }
+        for (int i = 0; i < numsectors; i++)
+        {
+            sectortype* pSector = &sector[i];
+            int nXSector = pSector->extra;
+            if (nXSector <= 0)
+                continue;
+            XSECTOR* pXSector = &xsector[nXSector];
+            if (pXSector->txID == rxId)
+            {
+                walltype* pWall = &wall[pSector->wallptr];
+                v2.x = pWall->x;
+                v2.y = pWall->y;
+                v2.z = getflorzofslope(i, v2.x, v2.y);
+                drawlinebetween(&v1, &v2, editorcolors[14]-(M32_THROB>>2), 0x33333333);
+            }
+        }
+    }
+}
 
 struct TextList {
     short id;
@@ -1254,7 +1555,7 @@ void adjustSprites()
         spritetype* pSprite = &sprite[i];
         if (pSprite->statnum < kMaxStatus)
         {
-            if ((pSprite->cstat & kSprRMask) == kSprSpin) pSprite->cstat &= ~kSprSpin;
+            if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLAB) pSprite->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
             if (pSprite->statnum == 1) continue;
 
             // don't turn unnamed types in Decoration
@@ -1262,7 +1563,7 @@ void adjustSprites()
 
             // search by tile and type
             int nType = -1, nTile = -1, adIndex = -1;
-            for (unsigned int j = 0; j < 168; j++) {
+            for (int j = 0; j < ARRAY_SIZE(gAdjustData); j++) {
 
                 if (gAdjustData[j].nTile >= 0 && gAdjustData[j].nTile == pSprite->picnum) nTile = j;
                 if (gAdjustData[j].nType == pSprite->type) nType = j;
@@ -1281,11 +1582,10 @@ void adjustSprites()
                 if (gAdjustData[adIndex].xr >= 0) pSprite->xrepeat = gAdjustData[adIndex].xr;
                 if (gAdjustData[adIndex].yr >= 0) pSprite->yrepeat = gAdjustData[adIndex].yr;
 
-                if (gAdjustData[adIndex].hitscan == 0) pSprite->cstat &= ~kSprHitscan;
-                else if (gAdjustData[adIndex].hitscan > 0) pSprite->cstat |= kSprHitscan;
+                if (gAdjustData[adIndex].hitscan == 0) pSprite->cstat &= ~CSTAT_SPRITE_BLOCK_HITSCAN;
+                else if (gAdjustData[adIndex].hitscan > 0) pSprite->cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
                 if (gAdjustData[adIndex].nPlu >= 0) pSprite->pal = gAdjustData[adIndex].nPlu;
             } 
-            else  continue;  // ( removing "continue" makes weird crash for some reason )
 
             int type = pSprite->type;
             
@@ -1294,8 +1594,8 @@ void adjustSprites()
                 case kMarkerSPStart:
                 case kMarkerMPStart:
                 {
-                    pSprite->cstat &= ~kSprBlock;
-                    pSprite->shade = -128;
+                    pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
+                    pSprite->shade = -128; // Nuke: Needed?
                     int nXSprite = getXSprite(i);
                     xsprite[nXSprite].data1 &= 0x07;
                     pSprite->picnum = 2522 + xsprite[nXSprite].data1;
@@ -1303,7 +1603,7 @@ void adjustSprites()
                 }
                 break;
                 case kMarkerWarpDest:
-                    pSprite->cstat |= kSprWall;
+                    pSprite->cstat |= CSTAT_SPRITE_ALIGNMENT_WALL; // Nuke: Needed?
                     break;
                 case 18: // Dude spawn
                 case 19: // Earthquake
@@ -1315,54 +1615,54 @@ void adjustSprites()
                 case kMarkerLowStack:
                 case kMarkerUpGoo:
                 case kMarkerLowGoo:
-                    pSprite->cstat &= ~kSprBlock | ~kSprFlipY;
-                    pSprite->cstat |= kSprInvisible;
-                    pSprite->shade = -128;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_YFLIP); // Nuke: Y-Flip? weird.
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
+                    pSprite->shade = -128; // Nuke: Needed?
                     ChangeSpriteStat(i, 0);
                     getXSprite(i);
                     break;
                 case kMarkerPath:
-                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
-                    pSprite->cstat |= kSprInvisible;
-                    pSprite->shade = 127;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
+                    pSprite->shade = 127; // Nuke: Needed?
                     ChangeSpriteStat(i, 16);
                     getXSprite(i);
                     break;
-                case 30: // Torch
+                case 30: // Torch // Nuke: New?
                 {
                     int nXSprite = getXSprite(i);
                     xsprite[nXSprite].state = 1;
                 }
                 break;
-                case 32: // Candle
+                case 32: // Candle // Nuke: New?
                 {
                     int nXSprite = getXSprite(i);
                     if (pSprite->picnum == 938)
                         xsprite[nXSprite].state = 1;
                 }
                 break;
-                case 228: // 1-Head Cerberus
+                case 228: // 1-Head Cerberus // Nuke: New?
                 {
                     int nXSprite = getXSprite(i);
                     if (xsprite[nXSprite].rxID <= 0) xsprite[nXSprite].rxID = 7;
                     ChangeSpriteStat(i, 6);
                 }
                 break;
-                case 700: // Trigger Gen
-                case 701: // WaterDrip Gen
-                case 702: // BloodDrip Gen
-                case 708: // SFX Gen
-                case 709: // Sector SFX
+                case 700: // Trigger Gen // Nuke: New?
+                case 701: // WaterDrip Gen // Nuke: New?
+                case 702: // BloodDrip Gen // Nuke: New?
+                case 708: // SFX Gen // Nuke: New?
+                case 709: // Sector SFX // Nuke: New?
                 case 711: // Player SFX
-                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
-                    pSprite->cstat |= kSprInvisible;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     pSprite->shade = -128;
                     ChangeSpriteStat(i, 0);
                     getXSprite(i);
                     break;
                 case 710: // Ambient SFX
-                    pSprite->cstat &= ~kSprBlock | ~kSprHitscan;
-                    pSprite->cstat |= kSprInvisible;
+                    pSprite->cstat &= ~(CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN);
+                    pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
                     pSprite->shade = -128;
                     ChangeSpriteStat(i, 12);
                     getXSprite(i);
@@ -1386,21 +1686,21 @@ void adjustSprites()
             // adjust groups of types
             int top, bottom;
             if (type >= kSwitchBase && type < kSwitchMax) {
-                pSprite->cstat &= ~kSprBlock;
+                pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
                 ChangeSpriteStat(i, 0);
                 getXSprite(i);
             }
             else if (type >= kWeaponItemBase && type < kItemMax)
             {
-                if (pSprite->cstat & kSprRMask) continue; // why?
-                pSprite->cstat &= ~kSprBlock;
+                if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_FACING) continue; // why?
+                pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
                 ChangeSpriteStat(i, 3);
                 getXSprite(i);
             }
             else if (type >= kDudeBase && type < kDudeMax)
             {
-                if (pSprite->cstat & kSprRMask) continue; // why?
-                pSprite->cstat &= ~kSprBlock;
+                if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_FACING) continue; // why?
+                pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
                 ChangeSpriteStat(i, 6);
                 getXSprite(i);
 
@@ -2542,14 +2842,22 @@ const char *ExtGetSectorCaption(int16_t nSector)
     int nXSector = sector[nSector].extra;
     if (nXSector > 0)
     {
-        if (xsector[nXSector].rxID > 0)
-            Bsprintf(tempbuf, "%i:", xsector[nXSector].rxID);
+        int32_t lt = taglab_linkxtags(1, nSector);
+        char rxstr[TAGLAB_MAX+16], txstr[TAGLAB_MAX+16];
+
+        lt &= ~(int)(xsector[nXSector].rxID<=0);
+        lt &= ~(int)((xsector[nXSector].txID<=0)<<1);
+
+        taglab_handle1(lt&1, xsector[nXSector].rxID, rxstr);
+        taglab_handle1(lt&2, xsector[nXSector].txID, txstr);
+        if (lt&1)
+            Bsprintf(tempbuf, "%s:", rxstr);
 
         Bstrcat(tempbuf, pzSectType[sector[nSector].lotag]);
 
-        if (xsector[nXSector].txID > 0)
+        if (lt&2)
         {
-            Bsprintf(v100, ":%i", xsector[nXSector].txID);
+            Bsprintf(v100, ":%s", txstr);
             Bstrcat(tempbuf, v100);
         }
 
@@ -2604,17 +2912,25 @@ const char *ExtGetWallCaption(int16_t nWall)
     int nXWall = wall[nWall].extra;
     if (nXWall > 0)
     {
-        if (xwall[nXWall].rxID > 0)
+        int32_t lt = taglab_linkxtags(0, nWall);
+        char rxstr[TAGLAB_MAX+16], txstr[TAGLAB_MAX+16];
+
+        lt &= ~(int)(xwall[nXWall].rxID<=0);
+        lt &= ~(int)((xwall[nXWall].txID<=0)<<1);
+
+        taglab_handle1(lt&1, xwall[nXWall].rxID, rxstr);
+        taglab_handle1(lt&2, xwall[nXWall].txID, txstr);
+        if (lt&1)
         {
-            Bsprintf(v100, "%i:", xwall[nXWall].rxID);
+            Bsprintf(v100, "%s:", rxstr);
             Bstrcat(tempbuf, v100);
         }
 
         Bstrcat(tempbuf, pzWallType[wall[nXWall].lotag]);
 
-        if (xwall[nXWall].txID > 0)
+        if (lt&2)
         {
-            Bsprintf(v100, ":%i", xwall[nXWall].txID);
+            Bsprintf(v100, ":%s", txstr);
             Bstrcat(tempbuf, v100);
         }
 
@@ -2798,17 +3114,25 @@ const char* ExtGetSpriteCaption(int16_t nSprite)
                 Bsprintf(tempbuf, "%s [%d -> %d]", pzType, pXSprite->data1, pXSprite->data2);
                 return tempbuf;
             }
-            if (pXSprite->rxID > 0)
+            int32_t lt = taglab_linkxtags(3, nSprite);
+            char rxstr[TAGLAB_MAX+16], txstr[TAGLAB_MAX+16];
+
+            lt &= ~(int)(xsprite[nXSprite].rxID<=0);
+            lt &= ~(int)((xsprite[nXSprite].txID<=0)<<1);
+
+            taglab_handle1(lt&1, xsprite[nXSprite].rxID, rxstr);
+            taglab_handle1(lt&2, xsprite[nXSprite].txID, txstr);
+            if (lt&1)
             {
-                Bsprintf(caption, "%i:", pXSprite->rxID);
+                Bsprintf(caption, "%s:", rxstr);
                 Bstrcat(tempbuf, caption);
             }
 
             Bstrcat(tempbuf, pzType);
 
-            if (pXSprite->txID > 0)
+            if (lt&2)
             {
-                Bsprintf(caption, ":%i", pXSprite->txID);
+                Bsprintf(caption, ":%s", txstr);
                 Bstrcat(tempbuf, caption);
             }
 
@@ -4025,6 +4349,12 @@ void ExtEditSectorData(int16_t sectnum)    //F7
     if (in3dmode())
         return;
 
+    if (eitherCTRL)
+    {
+        gXTracker.TrackSector(sectnum, !eitherALT);
+        return;
+    }
+
     if (eitherALT)  //ALT
     {
         keystatus[KEYSC_F7] = 0;
@@ -4044,6 +4374,12 @@ void ExtEditWallData(int16_t wallnum)       //F8
 {
     if (in3dmode())
         return;
+
+    if (eitherCTRL)
+    {
+        gXTracker.TrackWall(wallnum, !eitherALT);
+        return;
+    }
 
     if (eitherALT)  //ALT
     {
@@ -4069,6 +4405,12 @@ void ExtEditSpriteData(int16_t spritenum)   //F8
 {
     if (in3dmode())
         return;
+
+    if (eitherCTRL)
+    {
+        gXTracker.TrackSprite(spritenum, !eitherALT);
+        return;
+    }
 
     if (eitherALT)  //ALT
         GenericSpriteSearch();
@@ -6194,7 +6536,7 @@ static void Keys3d(void)
                 if (getmessageleng)
                     break;
 
-                Bsprintf(lines[num++],"^%dSector %d^%d %s, Lotag:%s", editorcolors[10], searchsector, whitecol, typestr[searchstat], ExtGetSectorCaption(searchsector));
+                Bsprintf(lines[num++],"^%dSector %d^%d %s, %s", editorcolors[10], searchsector, whitecol, typestr[searchstat], ExtGetSectorCaption(searchsector));
                 Bsprintf(lines[num++],"Height: %d, Visibility:%d", height2, TrackerCast(sector[searchsector].visibility));
                 break;
 
@@ -6626,16 +6968,9 @@ static void Keys3d(void)
     {
         if (ASSERT_AIMING)
         {
-#ifdef YAX_ENABLE__COMPAT
-            if (AIMING_AT_WALL_OR_MASK && yax_getnextwall(searchwall, YAX_FLOOR)>=0)
-                message("Can't change extra in protected wall");
-            else
-#endif
-            {
-                Bsprintf(tempbuf, "%s extra: ", Typestr_wss[searchstat]);
-                getnumberptr256(tempbuf, &AIMED(extra), sizeof(int16_t), BTAG_MAX, 1, NULL);
-                asksave = 1;
-            }
+            Bsprintf(tempbuf, "%s extra: ", Typestr_wss[searchstat]);
+            getnumberptr256(tempbuf, &AIMED(extra), sizeof(int16_t), BTAG_MAX, 1, NULL);
+            asksave = 1;
         }
     }
 
@@ -6741,9 +7076,15 @@ static void Keys3d(void)
                     j = taglab_linktags(AIMING_AT_SPRITE, searchwall);
                     j = 2*(j&2);
                 }
-
-                Bsprintf(tempbuf, "%s hitag: ", Typestr_wss[searchstat]);
-                getnumberptr256(tempbuf, &AIMED(hitag), sizeof(int16_t), BTAG_MAX, 0+j, NULL);
+#ifdef YAX_ENABLE__COMPAT
+                if (AIMING_AT_WALL_OR_MASK && yax_getnextwall(searchwall, YAX_FLOOR)>=0)
+                    message("Can't change hitag in protected wall");
+                else
+#endif
+                {
+                    Bsprintf(tempbuf, "%s hitag: ", Typestr_wss[searchstat]);
+                    getnumberptr256(tempbuf, &AIMED(hitag), sizeof(int16_t), BTAG_MAX, 0+j, NULL);
+                }
             }
         }
         else
@@ -9169,11 +9510,9 @@ static void Keys2d(void)
             if (pointhighlight >= 16384)
             {
                 i = pointhighlight-16384;
-                j = taglab_linktags(1, i);
-                j = 4*(j&1);
                 Bsprintf(buffer,"Sprite (%d) Lo-tag: ", i);
                 // NUKE-TODO:
-                sprite[i].lotag = _getnumber16(buffer, sprite[i].lotag, BTAG_MAX, 0+j, /*sprite[i].picnum==SECTOREFFECTOR ?
+                sprite[i].lotag = _getnumber16(buffer, sprite[i].lotag, BTAG_MAX, 0, /*sprite[i].picnum==SECTOREFFECTOR ?
                                                &SectorEffectorTagText : */NULL);
             }
             else if (linehighlight >= 0)
@@ -9485,7 +9824,7 @@ static void Keys2d(void)
                 printmessage16("Map has no corruptions, cannot cycle them.");
             }
         }
-        else if (keystatus[KEYSC_LSHIFT])
+        /*else if (keystatus[KEYSC_LSHIFT])
         {
             if (pointhighlight&16384)
             {
@@ -9526,7 +9865,7 @@ static void Keys2d(void)
             {
                 printmessage16("No sprite higlighted, cannot cycle linking sprites.");
             }
-        }
+        }*/
         else if (wallsprite==0)
         {
             SearchSectors(tsign);
@@ -9865,7 +10204,7 @@ int32_t ExtPreSaveMap(void)
 
 static void G_ShowParameterHelp(void)
 {
-    const char *s = "Usage: mapster32 [files] [options]\n\n"
+    const char *s = "Usage: nmapedit [files] [options]\n\n"
               "-g [file.grp], -grp [file.grp]\tLoad extra group file\n"
               "-h [file.def]\t\tLoad an alternate definitions file\n"
               "-x [game.con]\t\tLoad a custom CON script for getting sound definitions\n"
@@ -9886,7 +10225,7 @@ static void G_ShowParameterHelp(void)
               "-usecwd\t\t\tRead game data and configuration file from working directory\n"
               "\n-?, -help, --help\t\tDisplay this help message and exit"
               ;
-    Bsprintf(tempbuf, "Mapster32 %s", s_buildRev);
+    Bsprintf(tempbuf, "NMapedit %s", s_buildRev);
     wm_msgbox(tempbuf, "%s", s);
 }
 
@@ -10301,9 +10640,9 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 
     G_ExtPreInit(argc, argv);
 
-    OSD_SetLogFile("mapster32.log");
-    OSD_SetVersion("Mapster32",0,2);
-    initprintf("Mapster32 %s\n", s_buildRev);
+    OSD_SetLogFile("nmapedit.log");
+    OSD_SetVersion("NMapedit",0,2);
+    initprintf("NMapedit %s\n", s_buildRev);
     PrintBuildInfo();
 
     G_CheckCommandLine(argc,argv);
@@ -11607,16 +11946,19 @@ int32_t ExtInit(void)
 //#endif
     Bmemcpy(buildkeys, default_buildkeys, NUMBUILDKEYS);   //Trick to make build use setup.dat keys
 
-    kensplayerheight = 40; //32
+    kensplayerheight = 55; //32
     zmode = 2;
     zlock = kensplayerheight<<8;
 
     showinvisibility = 1;
 
+    defaultspritecstat = CSTAT_SPRITE_YCENTER;
+    g_visibility = 800;
+
     getmessageleng = 0;
     getmessagetimeoff = 0;
 
-    Bsprintf(apptitle, "Mapster32 %s", s_buildRev);
+    Bsprintf(apptitle, "NMapedit %s", s_buildRev);
     autosavetimer = totalclock+120*autosave;
 
     registerosdcommands();
@@ -12124,7 +12466,9 @@ void ExtPreCheckKeys(void) // just before drawrooms
             }
     }
 #endif
+
     if (zoom >= 256)
+    {
         for (ii=0; ii<numsectors; ii++)
             for (i=headspritesect[ii]; i>=0; i=nextspritesect[i])
             {
@@ -12201,6 +12545,9 @@ void ExtPreCheckKeys(void) // just before drawrooms
                     }
                 }
             }
+
+        gXTracker.Draw();
+    }
 
     videoEndDrawing();  //}}}
 }

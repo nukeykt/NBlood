@@ -322,7 +322,7 @@ void TitleBar::HandleEvent(GEVENT *event)
     }
 }
 
-Window::Window(int a1, int a2, int a3, int a4, const char* a5) : Panel(a1, a2, a3, a4, 1, 1, -1)
+Win::Win(int a1, int a2, int a3, int a4, const char* a5) : Panel(a1, a2, a3, a4, 1, 1, -1)
 {
     at62 = new TitleBar(3, 3, a3-6, 12, a5);
     at5e = new Container(3, 15, a3-6, a4-18);
@@ -571,7 +571,7 @@ void EditText::HandleEvent(GEVENT *event)
 EditNumber::EditNumber(int a1, int a2, int a3, int a4, int a5) : EditText(a1, a2, a3, a4, "")
 {
     at130 = a5;
-    itoa(a5, at24, 10);
+    snprintf(at24, 0x100, "%i", a5);
     at128 = at124 = strlen(at24);
 }
 
@@ -919,7 +919,7 @@ MODAL_RESULT ShowModal(Container* container)
 
 int GetNumberBox(const char* a1, int a2, int a3)
 {
-    Window window(0, 0, 168, 40, a1);
+    Win window(0, 0, 168, 40, a1);
     EditNumber* editnumber = new EditNumber(4, 4, 154, 16, a2);
 
     window.at5e->Insert(editnumber);
