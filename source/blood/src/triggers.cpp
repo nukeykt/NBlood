@@ -384,19 +384,25 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
                 pXSprite->data4 = tmp;
             }
             
-            int total = pXSprite->data4 - pXSprite->data1;
-            int data1 = pXSprite->data1; int result = 0;
+            int maxRetries = 10; int total = pXSprite->data4 - pXSprite->data1;
+            while (maxRetries > 0) {
+                    
+                // use true random only for single player mode
+                // otherwise use Blood's default one. In the future it maybe possible to make
+                // host send info to clients about what was generated.
 
-            // use true random only for single player mode
-            if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) {
-                rng.seed(std::random_device()());
-                pXSprite->txID = (int)my_random(pXSprite->data1, pXSprite->data4);
-            
-            // otherwise use Blood's default one. In the future it maybe possible to make
-            // host send info to clients about what was generated.
-            } else {
-                pXSprite->txID = Random(total) + data1;
+                if (gGameOptions.nGameType != 0 || VanillaMode() || DemoRecordStatus()) tx = Random(total) + pXSprite->data1;
+                else {
+                    rng.seed(std::random_device()());
+                    tx = (int)my_random(pXSprite->data1, pXSprite->data4);
+                }
+
+                if (tx != pXSprite->goalAng) break;
+                maxRetries--;
             }
+            
+            pXSprite->txID = tx;
+            pXSprite->goalAng = tx;
 
         } else if ((tx = GetRandDataVal(NULL,pSprite)) > 0) { 
             pXSprite->txID = tx; 
@@ -455,7 +461,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             else if (pXSprite->txIndex < 0) pXSprite->txIndex = 3;
 
             // force send command to all TX id specified in data
-            if (pSprite->hitag == 1) {
+            if (pSprite->hitag == kHitagExtBit) {
                 for (int i = 0; i <= 3; i++) {
                     if ((tx = GetDataVal(pSprite,i)) > 0)
                         evSend(nSprite, 3, i, (COMMAND_ID)pXSprite->command);
@@ -2960,22 +2966,9 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 break;
             // for sprites
             case 3:
-
-<<<<<<< HEAD
                 if (valueIsBetween(pXSource->data1, -1, 32767)) {
                     if (pXSource->data1 < 1) sprite[nDest].xrepeat = 0;
                     else sprite[nDest].xrepeat = pXSource->data1;
-=======
-                if (valueIsBetween(pXSource->data1, -1, 32767) &&
-                    valueIsBetween(pXSource->data2, -1, 32767) &&
-                    pXSource->data1 < 4 && pXSource->data2 < 4)
-                {
-
-                    sprite[nDest].xrepeat = 4;
-                    sprite[nDest].yrepeat = 4;
-                    sprite[nDest].cstat |= CSTAT_SPRITE_INVISIBLE;
-
->>>>>>> f7c401035690175c7e318924a1f8142d47fd724b
                 }
 
                 if (valueIsBetween(pXSource->data2, -1, 32767)) {

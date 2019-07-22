@@ -57,7 +57,7 @@ void removeLeech(spritetype* pLeech, bool delSprite = true);
 void removeDudeStuff(spritetype* pSprite);
 spritetype* leechIsDropped(spritetype* pSprite);
 bool spriteIsUnderwater(spritetype* pSprite, bool oldWay);
-bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data);
+bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode);
 void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite);
 int getGenDudeMoveSpeed(spritetype* pSprite, int which, bool mul, bool shift);
 bool TargetNearThing(spritetype* pSprite, int thingType);

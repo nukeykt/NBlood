@@ -26,22 +26,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pragmas.h"
 #include "mmulti.h"
 #include "common_game.h"
-
 #include "actor.h"
 #include "ai.h"
 #include "aiunicult.h"
 #include "blood.h"
 #include "db.h"
 #include "dude.h"
+
 #include "eventq.h"
 #include "globals.h"
 #include "levels.h"
 #include "player.h"
 #include "seq.h"
 #include "sfx.h"
+#include "sound.h"
 #include "trig.h"
 #include "triggers.h"
 #include "endgame.h"
+
+#define kDefaultAnimationBase 11520
 
 static void GDXCultistAttack1(int, int);
 static void punchCallback(int, int);
@@ -57,8 +60,6 @@ static int nGDXGenDudeAttack1 = seqRegisterClient(GDXCultistAttack1);
 static int nGDXGenDudePunch = seqRegisterClient(punchCallback);
 static int nGDXGenDudeThrow1 = seqRegisterClient(ThrowCallback1);
 static int nGDXGenDudeThrow2 = seqRegisterClient(ThrowCallback2);
-
-static bool gGDXGenDudePunch = false;
 
 AISTATE GDXGenDudeIdleL = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
 AISTATE GDXGenDudeIdleW = { kAiStateIdle, 13, -1, 0, NULL, NULL, aiThinkTarget, NULL };
@@ -85,45 +86,49 @@ AISTATE GDXGenDudeRecoilD = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &GDXGe
 AISTATE GDXGenDudeRecoilW = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &GDXGenDudeChaseW };
 AISTATE GDXGenDudeThrow = { kAiStateChase, 7, nGDXGenDudeThrow1, 0, NULL, NULL, NULL, &GDXGenDudeChaseL };
 AISTATE GDXGenDudeThrow2 = { kAiStateChase, 7, nGDXGenDudeThrow2, 0, NULL, NULL, NULL, &GDXGenDudeChaseL };
-AISTATE GDXGenDudeRTesla = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &GDXGenDudeDodgeL };
+AISTATE GDXGenDudeRTesla = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &GDXGenDudeDodgeDmgL };
 AISTATE GDXGenDudePunch = { kAiStateChase,10, nGDXGenDudePunch, 0, NULL, NULL, forcePunch, &GDXGenDudeChaseL };
 
 static void forcePunch(spritetype* pSprite, XSPRITE* pXSprite) {
-    // Required for those who don't have fire trigger in punch seq and for default animation
-    if (gGDXGenDudePunch == false && seqGetStatus(3, pSprite->extra) == -1) {
-        int nXSprite = pSprite->extra;
-        punchCallback(0,nXSprite);
-    }
     
-    gGDXGenDudePunch = false;
+    // Required for those who don't have fire trigger in punch seq and for default animation
+    if (pXSprite->data2 != kDefaultAnimationBase) {
+        Seq* pSeq = NULL; DICTNODE* hSeq = gSysRes.Lookup(pXSprite->data2 + 10, "SEQ");
+        if ((pSeq = (Seq*)gSysRes.Load(hSeq)) != NULL) {
+            for (int i = 0; i < pSeq->nFrames; i++)
+                if (pSeq->frames[i].at5_5) return;
+        }
+    }
+
+    if (seqGetStatus(3, pSprite->extra) == -1)
+        punchCallback(0,pSprite->extra);
+
 }
 
 
-static void punchCallback(int, int nXIndex){
-        XSPRITE* pXSprite = &xsprite[nXIndex];
+static void punchCallback(int, int nXIndex) {
+    XSPRITE* pXSprite = &xsprite[nXIndex];
+    if (pXSprite->target != -1) {
         int nSprite = pXSprite->reference;
         spritetype* pSprite = &sprite[nSprite];
 
-        int nAngle = getangle(pXSprite->targetX - pSprite->x, pXSprite->targetY - pSprite->y);
-        int nZOffset1 = dudeInfo[pSprite->type - kDudeBase].eyeHeight/* * pSprite->yrepeat << 2*/;
+        int nZOffset1 = dudeInfo[pSprite->type - kDudeBase].eyeHeight * pSprite->yrepeat << 2;
         int nZOffset2 = 0;
-        if(pXSprite->target != -1) {
-            spritetype* pTarget = &sprite[pXSprite->target];
-            if(IsDudeSprite(pTarget))
-                nZOffset2 = dudeInfo[pTarget->type - kDudeBase].eyeHeight/* * pTarget->yrepeat << 2*/;
+        
+        spritetype* pTarget = &sprite[pXSprite->target];
+        if(IsDudeSprite(pTarget))
+            nZOffset2 = dudeInfo[pTarget->type - kDudeBase].eyeHeight * pTarget->yrepeat << 2;
 
-            int dx = Cos(nAngle) >> 16;
-            int dy = Sin(nAngle) >> 16;
-            int dz = nZOffset1 - nZOffset2;
-                
-            if (!sfxPlayGDXGenDudeSound(pSprite,9,pXSprite->data3))
-                sfxPlay3DSound(pSprite, 530, 1, 0);
-                
-            actFireVector(pSprite, 0, 0, dx, dy, dz,VECTOR_TYPE_22);
-        }
+        int dx = Cos(pSprite->ang) >> 16;
+        int dy = Sin(pSprite->ang) >> 16;
+        int dz = nZOffset1 - nZOffset2;
 
-        gGDXGenDudePunch = true;
+        if (!sfxPlayGDXGenDudeSound(pSprite, 9))
+            sfxPlay3DSound(pSprite, 530, 1, 0);
+
+        actFireVector(pSprite, 0, 0, dx, dy, dz,VECTOR_TYPE_22);
     }
+}
 
 static void GDXCultistAttack1(int, int nXIndex) {
     XSPRITE* pXSprite = &xsprite[nXIndex];
@@ -131,7 +136,7 @@ static void GDXCultistAttack1(int, int nXIndex) {
     spritetype* pSprite = &sprite[nSprite];
     int dx, dy, dz; int weapon = pXSprite->data1;
     if (weapon >= 0 && weapon < kVectorMax) {
-
+        
         int vector = pXSprite->data1;
         dx = Cos(pSprite->ang) >> 16;
         dy = Sin(pSprite->ang) >> 16;
@@ -148,7 +153,7 @@ static void GDXCultistAttack1(int, int nXIndex) {
         }
 
         actFireVector(pSprite, 0, 0, dx, dy, dz,(VECTOR_TYPE)vector);
-        if (!sfxPlayGDXGenDudeSound(pSprite,7,pXSprite->data3))
+        if (!sfxPlayGDXGenDudeSound(pSprite,7))
             sfxPlayVectorSound(pSprite,vector);
             
     } else if (weapon >= kDudeBase && weapon < kDudeMax) {
@@ -160,8 +165,6 @@ static void GDXCultistAttack1(int, int nXIndex) {
         gDudeExtra[pSprite->extra].at6.u1.at4++;
         pSpawned->owner = nSprite;
         pSpawned->x += dist + (Random3(dist));
-        //pSpawned->z = pSprite->z;
-        //pSpawned->y = pSprite->y;
         if (pSpawned->extra > -1) {
             xsprite[pSpawned->extra].target = pXSprite->target;
             if (pXSprite->target > -1)
@@ -169,36 +172,9 @@ static void GDXCultistAttack1(int, int nXIndex) {
         }
         gKillMgr.sub_263E0(1);
         
-        if (!sfxPlayGDXGenDudeSound(pSprite, 7, pXSprite->data3))
+        if (!sfxPlayGDXGenDudeSound(pSprite, 7))
             sfxPlay3DSoundCP(pSprite, 379, 1, 0, 0x10000 - Random3(0x3000));
-
-        /*spritetype* pEffect = gFX.fxSpawn((FX_ID)52, pSpawned->sectnum, pSpawned->x, pSpawned->y, pSpawned->z, pSpawned->ang);
-        if (pEffect != NULL) {
-
-            pEffect->cstat = kSprOriginAlign | kSprFace;
-            pEffect->shade = -127;
-            switch (Random(3)) {
-            case 0:
-                pEffect->pal = 0;
-                break;
-            case 1:
-                pEffect->pal = 5;
-                break;
-            case 2:
-                pEffect->pal = 9;
-                break;
-            case 3:
-                pEffect->shade = 127;
-                pEffect->pal = 1;
-            default:
-                pEffect->pal = 6;
-                break;
-            }
-            int repeat = 64 + Random(50);
-            pEffect->xrepeat = repeat;
-            pEffect->yrepeat = repeat;
-        }*/
-
+        
         if (Chance(0x5500)) {
             int state = checkAttackState(pSprite, pXSprite);
             switch (state) {
@@ -213,12 +189,12 @@ static void GDXCultistAttack1(int, int nXIndex) {
                 break;
             }
         }
+
     } else if (weapon >= kMissileBase && weapon < kMissileMax) {
 
         dx = Cos(pSprite->ang) >> 16;
         dy = Sin(pSprite->ang) >> 16;
         dz = gDudeSlope[nXIndex];
-        //dz = 0;
 
         // dispersal modifiers here
         dx += Random3(3000 - 1000 * gGameOptions.nDifficulty);
@@ -226,7 +202,7 @@ static void GDXCultistAttack1(int, int nXIndex) {
         dz += Random3(1000 - 500 * gGameOptions.nDifficulty);
 
         actFireMissile(pSprite, 0, 0, dx, dy, dz, weapon);
-        if (!sfxPlayGDXGenDudeSound(pSprite,7,pXSprite->data3))
+        if (!sfxPlayGDXGenDudeSound(pSprite,7))
             sfxPlayMissileSound(pSprite, weapon);
     }
 }
@@ -258,7 +234,7 @@ static void ThrowThing(int nXIndex, bool impact) {
         THINGINFO* pThinkInfo = &thingInfo[thingType - kThingBase];
         if (pThinkInfo->allowThrow == 1) {
 
-            if (!sfxPlayGDXGenDudeSound(pSprite, 8, pXSprite->data3))
+            if (!sfxPlayGDXGenDudeSound(pSprite, 8))
                 sfxPlay3DSound(pSprite, 455, -1, 0);
 
             int dx = pTarget->x - pSprite->x;
@@ -409,7 +385,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
             aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
         else {
             aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
-            sfxPlayGDXGenDudeSound(pSprite,5,pXSprite->data3);
+            sfxPlayGDXGenDudeSound(pSprite,5);
         }
         return;
     }
@@ -417,7 +393,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
     if (IsPlayerSprite(pTarget))
     {
         PLAYER* pPlayer = &gPlayer[ pTarget->type - kDudePlayer1 ];
-        if ( powerupCheck( pPlayer, 13 ) > 0 )  {
+        if (powerupCheck( pPlayer, 13 ) > 0)  {
             if(spriteIsUnderwater(pSprite,false)) aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
             else aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
             return;
@@ -442,7 +418,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
 
         if (pXSprite->target < 0) aiSetTarget(pXSprite, pXSprite->target);
         if ((gFrameClock & 64) == 0 && Chance(0x3000) && !spriteIsUnderwater(pSprite, false))
-            sfxPlayGDXGenDudeSound(pSprite, 6, pXSprite->data3);
+            sfxPlayGDXGenDudeSound(pSprite, 6);
 
         gDudeSlope[sprite[pXSprite->reference].extra] = (int)divscale(pTarget->z - pSprite->z, dist, 10);
 
@@ -465,7 +441,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                     }
 
                 }
-                else if (dist > 4072 && dist <= 9072 && !spriteIsUnderwater(pSprite, false) && pSprite->owner != kMaxSprites) {
+                else if (dist > 4072 && dist <= 9072 && !spriteIsUnderwater(pSprite, false) && pSprite->owner != (kMaxSprites - 1)) {
                     switch (pXSprite->data1) {
                         case kGDXThingCustomDudeLifeLeech:
                         {
@@ -497,13 +473,11 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                                 }
                             }
                         }
-                            return;
+                        return;
                         case kGDXThingThrowableRock:
-                        {
                             if (Chance(0x4000)) aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
-                            else sfxPlayGDXGenDudeSound(pSprite, 0, pXSprite->data3);
+                            else sfxPlayGDXGenDudeSound(pSprite, 0);
                             return;
-                        }
                         default:
                             aiNewState(pSprite, pXSprite, &GDXGenDudeThrow2);
                             return;
@@ -641,7 +615,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
 
                 int state = checkAttackState(pSprite, pXSprite);
                 if (Chance(0x0500) && !spriteIsUnderwater(pSprite, false))
-                    sfxPlayGDXGenDudeSound(pSprite, 6, pXSprite->data3);
+                    sfxPlayGDXGenDudeSound(pSprite, 6);
 
                 if (Chance(0x0200)) {
                     if (dist <= meleeVector->maxDist) aiNewState(pSprite, pXSprite, &GDXGenDudePunch);
@@ -819,9 +793,8 @@ void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite ) {
     yvel[pSprite->xvel] += mulscale(sin, frontSpeed, 30);
 }
     
-bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data) {
-    int sndId = -1; int rand = 0; bool gotSnd = true;
-        
+bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode) {
+    int sndId = -1; int rand = 0; bool gotSnd = true; int data = xsprite[pSprite->extra].data3;
     switch (mode){
         // spot sound
         case 0:
@@ -900,7 +873,7 @@ bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data) {
         // Let's try to get random snd
         while(maxRetries-- > 0){
             int random = Random(rand);
-            if (gSysRes.Lookup(sndId + random, "SFX")){
+            if (gSoundRes.Lookup(sndId + random, "SFX")){
                 sndId = sndId + random;
                 gotSnd = true;
                 break;
@@ -911,14 +884,14 @@ bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode, int data) {
         if (gotSnd == false){
             int max = sndId + rand;
             while(sndId++ <= max){
-                if (gSysRes.Lookup(sndId, "SFX")) {
+                if (gSoundRes.Lookup(sndId, "SFX")) {
                     gotSnd = true;
                     break;
                 }
             }
         }
     }
-
+    
     if (gotSnd) {
         switch (mode){
            // case 1:
@@ -990,7 +963,7 @@ void removeLeech(spritetype* pLeech, bool delSprite) {
     if (pLeech != NULL) {
         spritetype* pEffect = gFX.fxSpawn((FX_ID)52,pLeech->sectnum,pLeech->x,pLeech->y,pLeech->z,pLeech->ang);
         if (pEffect != NULL) {
-            pEffect->cstat = CSTAT_SPRITE_ALIGNMENT_FLOOR;
+            pEffect->cstat = CSTAT_SPRITE_ALIGNMENT_FACING;
             pEffect->pal = 6;
             int repeat = 64 + Random(50);
             pEffect->xrepeat = repeat;
@@ -1049,9 +1022,13 @@ bool dudeIsMelee(XSPRITE* pXSprite) {
     return false;
 }
 
+int getBaseChanceModifier(int baseChance) {
+    return ((gGameOptions.nDifficulty > 0) ? baseChance - (0x0300 * gGameOptions.nDifficulty) : baseChance);
+}
+
 int getRecoilChance(spritetype* pSprite) {
     int mass = getDudeMassBySpriteSize(pSprite);
-    int cumulDmg = 0; int baseChance = 0x6000;
+    int cumulDmg = 0; int baseChance = getBaseChanceModifier(0x6000);
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += (pXSprite.burnTime / 2);
@@ -1067,7 +1044,7 @@ int getRecoilChance(spritetype* pSprite) {
 }
 
 int getDodgeChance(spritetype* pSprite) {
-    int mass = getDudeMassBySpriteSize(pSprite); int baseChance = 0x3000;
+    int mass = getDudeMassBySpriteSize(pSprite); int baseChance = getBaseChanceModifier(0x4000);
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += pXSprite.burnTime;
@@ -1138,7 +1115,7 @@ bool doExplosion(spritetype* pSprite, int nType) {
     pExplosion->yrepeat = pExpl->at0;
     pExplosion->xrepeat = pExpl->at0;
     pExplosion->lotag = nType;
-    pExplosion->cstat |= CSTAT_SPRITE_INVISIBLE | CSTAT_SPRITE_YCENTER;
+    pExplosion->cstat |= CSTAT_SPRITE_INVISIBLE | CSTAT_SPRITE_ALIGNMENT_SLAB;
     pExplosion->owner = pSprite->xvel;
 
     if (pExplosion->extra >= 0) {

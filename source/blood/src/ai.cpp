@@ -431,12 +431,12 @@ void aiActivateDude(spritetype *pSprite, XSPRITE *pXSprite)
             else {
                 aiNewState(pSprite, pXSprite, &GDXGenDudeSearchL);
                 if (Chance(0x4000))
-                    sfxPlayGDXGenDudeSound(pSprite, 0, pXSprite->data3);
+                    sfxPlayGDXGenDudeSound(pSprite, 0);
             }
         }
         else {
             if (Chance(0x4000))
-                sfxPlayGDXGenDudeSound(pSprite, 0, pXSprite->data3);
+                sfxPlayGDXGenDudeSound(pSprite, 0);
 
             if (spriteIsUnderwater(pSprite, false))
                 aiNewState(pSprite, pXSprite, &GDXGenDudeChaseW);
@@ -1047,7 +1047,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             break;
         case kGDXGenDudeBurning:
             if (Chance(0x2000) && gDudeExtra[pSprite->extra].at0 < gFrameClock) {
-                sfxPlayGDXGenDudeSound(pSprite, 3, pXSprite->data3);
+                sfxPlayGDXGenDudeSound(pSprite, 3);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock + 360;
             }
             if (pXSprite->burnTime == 0) pXSprite->burnTime = 2400;
@@ -1080,7 +1080,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                             && gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) {
                             
                             aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
-                            sfxPlayGDXGenDudeSound(pSprite, 3, pXSprite->data3);
+                            sfxPlayGDXGenDudeSound(pSprite, 3);
                             pSprite->type = kGDXGenDudeBurning;
 
                             if (pXSprite->data2 == 11520) // don't inherit palette for burning if using default animation
@@ -1101,10 +1101,11 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                     
                 if (Chance(getDodgeChance(pSprite))) {
                     if (!spriteIsUnderwater(pSprite, false)) {
-                        if (!canDuck(pSprite) || !sub_5BDA8(pSprite, 14)) 
-                            aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgL);
-                        else 
-                            aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgD);
+                        if (!canDuck(pSprite) || !sub_5BDA8(pSprite, 14))  aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgL);
+                        else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgD);
+
+                        if (Chance(0x0200))
+                            sfxPlayGDXGenDudeSound(pSprite, 1);
                     }
                     else if (sub_5BDA8(pSprite, 13) && spriteIsUnderwater(pSprite, false))
                         aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgW);
@@ -1150,29 +1151,31 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
         {
         case kGDXDudeUniversalCultist:
         {
-            int mass = getDudeMassBySpriteSize(pSprite); int chance3 = getRecoilChance(pSprite);
-            if ((mass < 155 && !spriteIsUnderwater(pSprite, false) && pDudeExtra->at4) || (mass > 155 && Chance(chance3)))
+            int mass = getDudeMassBySpriteSize(pSprite); int chance4 = getRecoilChance(pSprite);  bool chance3 = Chance(chance4);
+            if (pDudeExtra->at4 && (mass < 155 || (mass >= 155 && chance3)) && !spriteIsUnderwater(pSprite, false))
             {
-                sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
+                sfxPlayGDXGenDudeSound(pSprite, 1);
                 
-                if (gSysRes.Lookup(pXSprite->data2 + 4, "SEQ")) aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
-                else if (canDuck(pSprite) && (!v4 || (v4 && gGameOptions.nDifficulty == 0))) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                if (gSysRes.Lookup(pXSprite->data2 + 4, "SEQ")) {
+                    GDXGenDudeRTesla.at18 = (Chance(chance4 * 2) ? &GDXGenDudeDodgeL : &GDXGenDudeDodgeDmgL);
+                    aiNewState(pSprite, pXSprite, &GDXGenDudeRTesla);
+                }
+                else if (canDuck(pSprite) && (Chance(chance4) || gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
                 else if (canSwim(pSprite) && spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
                 else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
-
-                return;
+                break;
             }
 
             if (inDodge(pXSprite->aiState)) {
-                if (Chance(chance3)) sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
-                return;
+                sfxPlayGDXGenDudeSound(pSprite, 1);
+                break;
             }
 
-            if ((!dudeIsMelee(pXSprite) && mass < 155) || Chance(chance3)) {
+            if (chance3 || Chance(getRecoilChance(pSprite)) || (!dudeIsMelee(pXSprite) && mass < 155)) {
 
-                sfxPlayGDXGenDudeSound(pSprite, 1, pXSprite->data3);
+                sfxPlayGDXGenDudeSound(pSprite, 1);
 
-                if (canDuck(pSprite) && (!v4 || (v4 && gGameOptions.nDifficulty == 0))) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
+                if (canDuck(pSprite) && (Chance(chance4) || gGameOptions.nDifficulty == 0)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilD);
                 else if (canSwim(pSprite) && spriteIsUnderwater(pSprite, false)) aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilW);
                 else aiNewState(pSprite, pXSprite, &GDXGenDudeRecoilL);
 

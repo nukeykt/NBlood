@@ -3075,7 +3075,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
             int seqId = pXSprite->data2 + 18;
             if (!gSysRes.Lookup(seqId, "SEQ")) {
                 seqKill(3, nXSprite);
-                sfxPlayGDXGenDudeSound(pSprite, 10, pXSprite->data3);
+                sfxPlayGDXGenDudeSound(pSprite, 10);
                 spritetype* pEffect = gFX.fxSpawn((FX_ID)52, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, pSprite->ang);
                 if (pEffect != NULL) {
                     pEffect->cstat = CSTAT_SPRITE_ALIGNMENT_FACING;
@@ -3100,7 +3100,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
                 return;
             }
             seqSpawn(seqId, 3, nXSprite, -1);
-            sfxPlayGDXGenDudeSound(pSprite, 10, pXSprite->data3);
+            sfxPlayGDXGenDudeSound(pSprite, 10);
             return;
         }
         break;
@@ -3185,7 +3185,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         {
         case kGDXDudeUniversalCultist:
         case kGDXGenDudeBurning:
-            sfxPlayGDXGenDudeSound(pSprite, 4, pXSprite->data3);
+            sfxPlayGDXGenDudeSound(pSprite, 4);
             break;
         case 201:
         case 202:
@@ -3306,7 +3306,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
             seqSpawn(dudeInfo[nType].seqStartID+15, 3, nXSprite, nDudeToGibClient2);
         break;
     case kGDXDudeUniversalCultist:
-        sfxPlayGDXGenDudeSound(pSprite, 2, pXSprite->data3);
+        sfxPlayGDXGenDudeSound(pSprite, 2);
         if (nSeq == 3) {
             
             bool seq15 = gSysRes.Lookup(pXSprite->data2 + 15, "SEQ"); bool seq16 = gSysRes.Lookup(pXSprite->data2 + 16, "SEQ");
@@ -3325,7 +3325,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
 
     case kGDXGenDudeBurning:
     {
-        sfxPlayGDXGenDudeSound(pSprite, 4, pXSprite->data3);
+        sfxPlayGDXGenDudeSound(pSprite, 4);
         a3 = DAMAGE_TYPE_3;
 
         if (Chance(0x4000)) {
@@ -3568,8 +3568,8 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
         break;
     }
     
-                                    // kMaxSprites = custom dude had once life leech
-    if (pSprite->owner != -1 && pSprite->owner != kMaxSprites) {
+                                    // kMaxSprites - 1 = custom dude had once life leech
+    if (pSprite->owner != -1 && pSprite->owner != (kMaxSprites - 1)) {
         //int owner = actSpriteIdToOwnerId(pSprite->xvel);
         int owner = pSprite->owner;
         switch (sprite[owner].lotag) {
@@ -3674,7 +3674,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
                 pXSprite->DudeLockout = 0;
 
                 if (pSprite->owner >= 0 && sprite[pSprite->owner].type == kGDXDudeUniversalCultist)
-                    sprite[pSprite->owner].owner = kMaxSprites; // By NoOne: indicates if custom dude had life leech.
+                    sprite[pSprite->owner].owner = kMaxSprites -1; // By NoOne: indicates if custom dude had life leech.
             }
             else if (!(pSprite->hitag&16))
                 actPropagateSpriteOwner(pSprite, &sprite[nSource]);
@@ -7068,17 +7068,21 @@ int GetRandDataVal(int *rData, spritetype* pSprite) {
     while (maxRetries > 0) {
              
         // use true random only for single player mode
-        if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) {
-            rng.seed(std::random_device()());
-            random = my_random(0, 4);
         // otherwise use Blood's default one. In the future it maybe possible to make
         // host send info to clients about what was generated.
-        } else {
-            random = Random(3);
+
+        if (gGameOptions.nGameType != 0 || VanillaMode() || DemoRecordStatus()) random = Random(3);
+        else {
+            rng.seed(std::random_device()());
+            random = my_random(0, 4);
         }
 
-       if (rData[random] > 0) return rData[random];
-       maxRetries--;
+        if (rData[random] > 0 && (pSprite == NULL || random != xsprite[pSprite->extra].goalAng)) {
+            if (pSprite != NULL) xsprite[pSprite->extra].goalAng = random;
+            return rData[random];
+        }
+       
+        maxRetries--;
     }
 
     // if nothing, get first found data value from top
