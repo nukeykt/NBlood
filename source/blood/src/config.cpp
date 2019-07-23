@@ -111,6 +111,10 @@ int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
 
+//////////
+int gWeaponsV10x;
+/////////
+
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
     int32_t i;
@@ -684,6 +688,10 @@ int CONFIG_ReadSetup(void)
     if (scripthandle < 0)
         return -1;
 
+    ///////
+    SCRIPT_GetNumber(scripthandle, "Game Options", "WeaponsV10x", &gWeaponsV10x);
+    ///////
+
     char commmacro[] = "CommbatMacro# ";
 
     for (int i = 0; i < MAXRIDECULE; i++)
@@ -991,6 +999,10 @@ void CONFIG_WriteSetup(uint32_t flags)
         SCRIPT_PutString(scripthandle, "Comm Setup",commmacro,&CommbatMacro[dummy][0]);
     }
 
+    ///////
+    SCRIPT_PutNumber(scripthandle, "Game Options", "WeaponsV10x", gWeaponsV10x, FALSE, FALSE);
+    ///////
+    
     SCRIPT_Save(scripthandle, SetupFilename);
 
     if ((flags & 2) == 0)

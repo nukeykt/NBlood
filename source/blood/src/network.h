@@ -74,6 +74,7 @@ struct PKT_STARTGAME {
     char episodeId, levelId;
     int unk;
     char userMap, userMapName[13];
+    int weaponsV10x;
 };
 
 extern PKT_STARTGAME gPacketStartGame;

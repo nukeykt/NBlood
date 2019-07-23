@@ -144,12 +144,12 @@ public:
     int at124;
 };
 
-class Window : public Panel
+class Win : public Panel
 {
 public:
     Container* at5e;
     TitleBar* at62;
-    Window(int, int, int, int, const char*);
+    Win(int, int, int, int, const char*);
 };
 
 class Button : public Widget
