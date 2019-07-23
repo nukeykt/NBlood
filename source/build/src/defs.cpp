@@ -121,6 +121,7 @@ enum scripttoken_t
     T_SHADEFACTOR,
     T_RFFDEFINEID,
     T_IFCRC,
+    T_EXTRA,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -793,10 +794,11 @@ static int32_t defsparser(scriptfile *script)
             char *texturetokptr = script->ltextptr, *textureend, *fn = NULL;
             int32_t tile = -1;
             int32_t alphacut = 255, flags = 0;
-            int32_t havexoffset = 0, haveyoffset = 0;
+            int32_t havexoffset = 0, haveyoffset = 0, haveextra = 0;
             int32_t xoffset = 0, yoffset = 0;
             int32_t istexture = 0;
             int32_t tilecrc = 0, origcrc = 0;
+            int32_t extra = 0;
 
             static const tokenlist tilefromtexturetokens[] =
             {
@@ -811,6 +813,7 @@ static int32_t defsparser(scriptfile *script)
                 { "nofullbright",    T_NOFULLBRIGHT },
                 { "texture",         T_TEXTURE },
                 { "ifcrc",           T_IFCRC },
+                { "extra",           T_EXTRA },
             };
 
             if (scriptfile_getsymbol(script,&tile)) break;
@@ -849,6 +852,10 @@ static int32_t defsparser(scriptfile *script)
                 case T_TEXTURE:
                     istexture = 1;
                     break;
+                case T_EXTRA:
+                    haveextra = 1;
+                    scriptfile_getsymbol(script, &extra);
+                    break;
                 default:
                     break;
                 }
@@ -879,6 +886,8 @@ static int32_t defsparser(scriptfile *script)
                     picanm[tile].xofs = xoffset;
                 if (haveyoffset)
                     picanm[tile].yofs = yoffset;
+                if (haveextra)
+                    picanm[tile].extra = extra;
 
                 if (EDUKE32_PREDICT_FALSE(flags == 0 && !havexoffset && !haveyoffset))
                     initprintf("\nError: missing 'file name' for tilefromtexture definition near line %s:%d",
@@ -907,6 +916,9 @@ static int32_t defsparser(scriptfile *script)
                 picanm[tile].yofs = yoffset;
             else if (texstatus == 0)
                 picanm[tile].yofs = 0;
+
+            if (haveextra)
+                picanm[tile].extra = extra;
         }
         break;
         case T_COPYTILE:
