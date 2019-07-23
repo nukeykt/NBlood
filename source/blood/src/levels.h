@@ -54,6 +54,7 @@ struct GAMEOPTIONS {
     int nWeaponRespawnTime;
     int nItemRespawnTime;
     int nSpecialRespawnTime;
+    int weaponsV10x;
 };
 
 #pragma pack(pop)

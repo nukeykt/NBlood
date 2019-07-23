@@ -505,6 +505,10 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             gGameOptions.uGameFlags |= 4;
         if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
             levelPlayIntroScene(gGameOptions.nEpisode);
+
+        ///////
+        gGameOptions.weaponsV10x = gWeaponsV10x;
+        ///////
     }
     else if (gGameOptions.nGameType > 0 && !(gGameOptions.uGameFlags&1))
     {
@@ -520,6 +524,10 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+
+        ///////
+        gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
+        ///////
     }
     if (gameOptions->uGameFlags&1)
     {
@@ -662,6 +670,11 @@ void StartNetworkLevel(void)
         gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
+        
+        ///////
+        gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
+        ///////
+        
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
