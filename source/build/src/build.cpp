@@ -7,26 +7,24 @@
 // by the EDuke32 team (development@voidpoint.com)
 
 #include "build.h"
-#include "compat.h"
-#include "pragmas.h"
-#include "osd.h"
-#include "cache1d.h"
-#include "editor.h"
-#include "common.h"
-#include "colmatch.h"
-#include "palette.h"
-#include "scancodes.h"
-#include "baselayer.h"
-#include "renderlayer.h"
 
+#include "baselayer.h"
+#include "cache1d.h"
+#include "colmatch.h"
+#include "common.h"
+#include "compat.h"
+#include "editor.h"
+#include "m32script.h"
+#include "osd.h"
+#include "palette.h"
+#include "pragmas.h"
+#include "renderlayer.h"
+#include "scancodes.h"
 #include "vfs.h"
 
 #ifdef _WIN32
-# include "winbits.h"
+#include "winbits.h"
 #endif
-
-
-#include "m32script.h"
 
 char levelname[BMAX_PATH] = {0};
 
