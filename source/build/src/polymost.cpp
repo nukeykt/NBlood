@@ -25,7 +25,7 @@ int32_t usehightile=1;
 typedef struct { float x, cy[2], fy[2]; int32_t tag; int16_t n, p, ctag, ftag; } vsptyp;
 #define VSPMAX 2048 //<- careful!
 static vsptyp vsp[VSPMAX];
-static int32_t gtag;
+static int32_t gtag, viewportNodeCount;
 static float xbl, xbr, xbt, xbb;
 int32_t domost_rejectcount;
 #ifdef YAX_ENABLE
@@ -1628,7 +1628,7 @@ static void resizeglcheck(void)
         float m[4][4];
         Bmemset(m,0,sizeof(m));
 
-        float const nearclip = SCISDIST / (gxyaspect * gyxscale * 1024.f);
+        float const nearclip = 4.f / (gxyaspect * gyxscale * 1024.f);
         float const farclip = 64.f;
 
         gloxyaspect = gxyaspect;
@@ -3818,6 +3818,15 @@ static inline void yax_vsp_finalize_init(int32_t const yaxbunch, int32_t const v
 #define COMBINE_STRIPS
 
 #ifdef COMBINE_STRIPS
+
+#define MERGE_NODES(i, ni)            \
+    do                                \
+    {                                 \
+        vsp[i].cy[1] = vsp[ni].cy[1]; \
+        vsp[i].fy[1] = vsp[ni].fy[1]; \
+        vsdel(ni);                    \
+    } while (0);
+
 static inline void vsdel(int32_t const i)
 {
     //Delete i
@@ -4332,16 +4341,16 @@ skip: ;
 
     do
     {
-        if ((vsp[i].cy[0] >= vsp[i].fy[0]) && (vsp[i].cy[1] >= vsp[i].fy[1]))
+        if ((vsp[i].cy[0]+DOMOST_OFFSET*2 >= vsp[i].fy[0]) && (vsp[i].cy[1]+DOMOST_OFFSET*2 >= vsp[i].fy[1]))
             vsp[i].ctag = vsp[i].ftag = -1;
 
         int const ni = vsp[i].n;
 
-        if ((vsp[i].ctag == vsp[ni].ctag) && (vsp[i].ftag == vsp[ni].ftag))
+        //POGO: specially treat the viewport nodes so that we will never end up in a situation where we accidentally access the sentinel node
+        if (ni >= viewportNodeCount &&
+            (vsp[i].ctag == vsp[ni].ctag) && (vsp[i].ftag == vsp[ni].ftag))
         {
-            vsp[i].cy[1] = vsp[ni].cy[1];
-            vsp[i].fy[1] = vsp[ni].fy[1];
-            vsdel(ni);
+            MERGE_NODES(i, ni);
         }
         else i = ni;
     }
@@ -4755,7 +4764,7 @@ void polymost_editorfunc(void)
 static int32_t global_cf_z;
 static float global_cf_xpanning, global_cf_ypanning, global_cf_heinum;
 static int32_t global_cf_shade, global_cf_pal, global_cf_fogpal;
-static int32_t (*global_getzofslope_func)(int16_t, int32_t, int32_t);
+static float (*global_getzofslope_func)(usectorptr_t, float, float);
 
 static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, float ryp1, float x0, float x1,
                                             float y0, float y1, int32_t sectnum)
@@ -4897,7 +4906,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
 
         py[0] = y0;
         py[1] = y1;
-        py[2] = double(global_getzofslope_func(sectnum, Blrintf(oxy.x), Blrintf(oxy.y)) - globalposz) * oy2 + ghoriz;
+        py[2] = double(global_getzofslope_func((usectorptr_t)&sector[sectnum], oxy.x, oxy.y) - globalposz) * oy2 + ghoriz;
 
         vec3f_t oxyz[2] = { { (float)(py[1] - py[2]), (float)(py[2] - py[0]), (float)(py[0] - py[1]) },
                             { (float)(px[2] - px[1]), (float)(px[0] - px[2]), (float)(px[1] - px[0]) } };
@@ -5033,6 +5042,64 @@ static inline int polymost_getclosestpointonwall(vec2_t const * const pos, int32
     return 0;
 }
 
+float fgetceilzofslope(usectorptr_t sec, float dax, float day)
+{
+    if (!(sec->ceilingstat&2))
+        return float(sec->ceilingz);
+
+    auto const wal  = (uwallptr_t)&wall[sec->wallptr];
+    auto const wal2 = (uwallptr_t)&wall[wal->point2];
+
+    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
+
+    int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
+    if (i == 0) return sec->ceilingz;
+
+    float const j = (d.x*(day-w.y)-d.y*(dax-w.x))*(1.f/8.f);
+    return float(sec->ceilingz) + (sec->ceilingheinum*j)/i;
+}
+
+float fgetflorzofslope(usectorptr_t sec, float dax, float day)
+{
+    if (!(sec->floorstat&2))
+        return float(sec->floorz);
+
+    auto const wal  = (uwallptr_t)&wall[sec->wallptr];
+    auto const wal2 = (uwallptr_t)&wall[wal->point2];
+
+    vec2_t const w = *(vec2_t const *)wal;
+    vec2_t const d = { wal2->x - w.x, wal2->y - w.y };
+
+    int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
+    if (i == 0) return sec->floorz;
+
+    float const j = (d.x*(day-w.y)-d.y*(dax-w.x))*(1.f/8.f);
+    return float(sec->floorz) + (sec->floorheinum*j)/i;
+}
+
+void fgetzsofslope(usectorptr_t sec, float dax, float day, float* ceilz, float *florz)
+{
+    *ceilz = float(sec->ceilingz); *florz = float(sec->floorz);
+
+    if (((sec->ceilingstat|sec->floorstat)&2) != 2)
+        return;
+
+    auto const wal  = (uwallptr_t)&wall[sec->wallptr];
+    auto const wal2 = (uwallptr_t)&wall[wal->point2];
+
+    vec2_t const d = { wal2->x - wal->x, wal2->y - wal->y };
+
+    int const i = nsqrtasm(uhypsq(d.x,d.y))<<5;
+    if (i == 0) return;
+    
+    float const j = (d.x*(day-wal->y)-d.y*(dax-wal->x))*(1.f/8.f);
+    if (sec->ceilingstat&2)
+        *ceilz += (sec->ceilingheinum*j)/i;
+    if (sec->floorstat&2)
+        *florz += (sec->floorheinum*j)/i;
+}
+
 static void polymost_drawalls(int32_t const bunch)
 {
     drawpoly_alpha = 0.f;
@@ -5106,13 +5173,13 @@ static void polymost_drawalls(int32_t const bunch)
 
         ryp0 *= gyxscale; ryp1 *= gyxscale;
 
-        int32_t cz, fz;
+        float cz, fz;
 
-        getzsofslope(sectnum,/*Blrintf(nx0)*/(int)n0.x,/*Blrintf(ny0)*/(int)n0.y,&cz,&fz);
-        float const cy0 = ((float)(cz-globalposz))*ryp0 + ghoriz, fy0 = ((float)(fz-globalposz))*ryp0 + ghoriz;
+        fgetzsofslope((usectorptr_t)&sector[sectnum],n0.x,n0.y,&cz,&fz);
+        float const cy0 = (cz-globalposz)*ryp0 + ghoriz, fy0 = (fz-globalposz)*ryp0 + ghoriz;
 
-        getzsofslope(sectnum,/*Blrintf(nx1)*/(int)n1.x,/*Blrintf(ny1)*/(int)n1.y,&cz,&fz);
-        float const cy1 = ((float)(cz-globalposz))*ryp1 + ghoriz, fy1 = ((float)(fz-globalposz))*ryp1 + ghoriz;
+        fgetzsofslope((usectorptr_t)&sector[sectnum],n1.x,n1.y,&cz,&fz);
+        float const cy1 = (cz-globalposz)*ryp1 + ghoriz, fy1 = (fz-globalposz)*ryp1 + ghoriz;
 
         xtex2.d = (ryp0 - ryp1)*gxyaspect / (x0 - x1);
         ytex2.d = 0;
@@ -5160,7 +5227,7 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->floorshade, global_cf_pal = sec->floorpal; global_cf_z = sec->floorz;  // REFACT
         global_cf_xpanning = sec->floorxpanning; global_cf_ypanning = sec->floorypanning, global_cf_heinum = sec->floorheinum;
-        global_getzofslope_func = &getflorzofslope;
+        global_getzofslope_func = &fgetflorzofslope;
 
         if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
         {
@@ -5542,7 +5609,7 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_fogpal = sec->fogpal;
         global_cf_shade = sec->ceilingshade, global_cf_pal = sec->ceilingpal; global_cf_z = sec->ceilingz;  // REFACT
         global_cf_xpanning = sec->ceilingxpanning; global_cf_ypanning = sec->ceilingypanning, global_cf_heinum = sec->ceilingheinum;
-        global_getzofslope_func = &getceilzofslope;
+        global_getzofslope_func = &fgetceilzofslope;
 
         if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
         {
@@ -5959,12 +6026,12 @@ static void polymost_drawalls(int32_t const bunch)
 #endif
         if (nextsectnum >= 0)
         {
-            getzsofslope(nextsectnum,/*Blrintf(nx0)*/(int)n0.x,/*Blrintf(ny0)*/(int)n0.y,&cz,&fz);
-            float const ocy0 = ((float)(cz-globalposz))*ryp0 + ghoriz;
-            float const ofy0 = ((float)(fz-globalposz))*ryp0 + ghoriz;
-            getzsofslope(nextsectnum,/*Blrintf(nx1)*/(int)n1.x,/*Blrintf(ny1)*/(int)n1.y,&cz,&fz);
-            float const ocy1 = ((float)(cz-globalposz))*ryp1 + ghoriz;
-            float const ofy1 = ((float)(fz-globalposz))*ryp1 + ghoriz;
+            fgetzsofslope((usectorptr_t)&sector[nextsectnum],n0.x,n0.y,&cz,&fz);
+            float const ocy0 = (cz-globalposz)*ryp0 + ghoriz;
+            float const ofy0 = (fz-globalposz)*ryp0 + ghoriz;
+            fgetzsofslope((usectorptr_t)&sector[nextsectnum],n1.x,n1.y,&cz,&fz);
+            float const ocy1 = (cz-globalposz)*ryp1 + ghoriz;
+            float const ofy1 = (fz-globalposz)*ryp1 + ghoriz;
 
             if ((wal->cstat&48) == 16) maskwall[maskwallcnt++] = z;
 
@@ -6271,6 +6338,15 @@ void polymost_scansector(int32_t sectnum)
                 dxb1[numscans] = (p1.y >= SCISDIST) ? float(p1.x*ghalfx/p1.y + ghalfx) : -1e32f;
                 dxb2[numscans] = (p2.y >= SCISDIST) ? float(p2.x*ghalfx/p2.y + ghalfx) : 1e32f;
 
+                if (dxb1[numscans] < xbl)
+                    dxb1[numscans] = xbl;
+                else if (dxb1[numscans] > xbr)
+                    dxb1[numscans] = xbr;
+                if (dxb2[numscans] < xbl)
+                    dxb2[numscans] = xbl;
+                else if (dxb2[numscans] > xbr)
+                    dxb2[numscans] = xbr;
+
                 if (nexttowardf(dxb1[numscans], dxb2[numscans]) < dxb2[numscans])
                 {
                     thesector[numscans] = sectnum;
@@ -6401,6 +6477,7 @@ static void polymost_initmosts(const float * px, const float * py, int const n)
     }
 
     gtag = vcnt;
+    viewportNodeCount = vcnt;
 }
 
 void polymost_drawrooms()
@@ -6554,6 +6631,36 @@ void polymost_drawrooms()
             polymost_domost(yax_vsp[yax_globalbunch*2+1][i].x, yax_vsp[yax_globalbunch*2+1][i].cy[0]+DOMOST_OFFSET, yax_vsp[yax_globalbunch*2+1][newi].x, yax_vsp[yax_globalbunch*2+1][i].cy[1]+DOMOST_OFFSET);
         }
         g_nodraw = nodrawbak;
+        
+#ifdef COMBINE_STRIPS
+        i = vsp[0].n;
+
+        do
+        {
+            int const ni = vsp[i].n;
+
+            //POGO: specially treat the viewport nodes so that we will never end up in a situation where we accidentally access the sentinel node
+            if (ni >= viewportNodeCount)
+            {
+                if (Bfabsf(vsp[i].cy[1]-vsp[ni].cy[0]) < 0.1f && Bfabsf(vsp[i].fy[1]-vsp[ni].fy[0]) < 0.1f)
+                {
+                    float const dx = 1.f/(vsp[ni].x-vsp[i].x);
+                    float const dx2 = 1.f/(vsp[vsp[ni].n].x-vsp[i].x);
+                    float const cslop[2] = { vsp[i].cy[1]-vsp[i].cy[0], vsp[ni].cy[1]-vsp[i].cy[0] };
+                    float const fslop[2] = { vsp[i].fy[1]-vsp[i].fy[0], vsp[ni].fy[1]-vsp[i].fy[0] };
+
+                    if (Bfabsf(cslop[0]*dx-cslop[1]*dx2) < 0.001f && Bfabsf(fslop[0]*dx-fslop[1]*dx2) < 0.001f)
+                    {
+                        MERGE_NODES(i, ni);
+                        continue;
+                    }
+                }
+            }
+            i = ni;
+        }
+        while (i);
+#undef MERGE_NODES
+#endif
     }
     //else if (!g_nodraw) { videoEndDrawing(); return; }
 #endif
