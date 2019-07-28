@@ -1248,7 +1248,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             {
                 int32_t height, daz = spr->z+spriteheightofs(j, &height, 1);
 
-                if (pos->z > daz-height-flordist && pos->z < spr->z+ceildist)
+                if (pos->z > daz-height-flordist && pos->z < daz+ceildist)
                 {
                     vec2_t p2;
 
