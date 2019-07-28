@@ -6902,17 +6902,18 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
     ghalfy = (float)(ydimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
+    ghorizcorrect = fix16_to_float((100-polymostcenterhoriz)*divscale16(xdimenscale, viewingrange));
     gvisibility = ((float)globalvisibility)*FOGSCALE;
     resizeglcheck();
     if (r_yshearing)
     {
         gshang  = 0.f;
         gchang  = 1.f;
-        ghoriz2 = (float)(ydimen >> 1) - ghoriz;
+        ghoriz2 = (float)(ydimen >> 1) - (ghoriz+ghorizcorrect);
     }
     else
     {
-        float r = (float)(ydimen >> 1) - ghoriz;
+        float r = (float)(ydimen >> 1) - (ghoriz+ghorizcorrect);
         gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx);
         gchang  = Bsqrtf(1.f - gshang * gshang);
         ghoriz2 = 0.f;
