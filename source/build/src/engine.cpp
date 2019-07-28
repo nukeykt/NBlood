@@ -7534,7 +7534,7 @@ static void dosetaspect(void)
             radarang2[i] = ((qradarang[k]+j)>>6);
         }
 
-        if (xdimen != oxdimen && voxoff[0][0])
+        if (xdimen != oxdimen && (voxoff[0][0] || bloodhack))
         {
             if (distrecip == NULL)
                 distrecip = (uint32_t *)Xaligned_alloc(16, DISTRECIPSIZ * sizeof(uint32_t));
