@@ -7739,24 +7739,27 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    static auto nextPageTicks = (double)timerGetTicksU64();
-    static unsigned frameWaiting  = 0;
+    static double nextPageDelay = g_frameDelay;
+    static uint64_t lastFrameTicks = timerGetTicksU64() - (uint64_t) g_frameDelay;
+    int frameWaiting = 0;
 
-    if (frameWaiting)
+    uint64_t const frameTicks = timerGetTicksU64();
+    uint64_t elapsedTime = frameTicks-lastFrameTicks;
+
+    if (!r_maxfps || elapsedTime >= (uint64_t) nextPageDelay)
     {
-        frameWaiting--;
-        videoNextPage();
-    }
+        if (elapsedTime >= (uint64_t) (nextPageDelay + g_frameDelay))
+        {
+            //If we missed a frame, reset any cumulated remainder from rendering frames early
+            nextPageDelay = g_frameDelay;
+        }
+        else
+        {
+            nextPageDelay += g_frameDelay - elapsedTime;
+        }
 
-    auto const frameTicks = (double)timerGetTicksU64();
-
-    if (!r_maxfps || frameTicks >= nextPageTicks)
-    {
-        if (frameTicks >= nextPageTicks + g_frameDelay)
-            nextPageTicks = frameTicks;
-
-        nextPageTicks += g_frameDelay;
-        frameWaiting++;
+        lastFrameTicks = frameTicks;
+        ++frameWaiting;
     }
 
     return frameWaiting;
@@ -8438,6 +8441,7 @@ MAIN_LOOP_RESTART:
             if (videoGetRenderMode() >= REND_POLYMOST)
                 G_DrawBackground();
             G_DisplayRest(smoothRatio);
+            videoNextPage();
 
             if (gameUpdate)
             {
