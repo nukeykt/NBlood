@@ -80,7 +80,6 @@ void ResetMenuInput(void);
     )
 
 extern SWBOOL BorderAdjust;
-extern int FXDevice,MusicDevice;
 extern SWBOOL MultiPlayQuitFlag;
 
 // Make memcpy an intrinsic function for an easy frame rate boost
@@ -221,14 +220,15 @@ typedef enum
     btn_max
 } BTNType;
 
-typedef enum
+enum
 {
     mf_normal = BIT(0),
     mf_pushed = BIT(1),
     mf_selected = BIT(2),
     mf_disabled = BIT(3),
     mf_separated = BIT(4)
-} MenuFlags;
+};
+typedef int MenuFlags;
 
 #define MenuSelectFlags (mf_pushed | mf_selected | mf_disabled)
 #define MenuDrawFlags (ROTATE_SPRITE_SCREEN_CLIP)
@@ -244,6 +244,8 @@ typedef enum
     uc_setup, uc_draw, uc_touchup, uc_hit
 } UserCall;
 
+struct MenuGroup;
+
 typedef struct MENU_ITEM
 {
     MenuTag type;                       // What kind of item is this on the
@@ -252,8 +254,8 @@ typedef struct MENU_ITEM
     SLDRType slider;                    // Slider type, if any
     BTNType button;                     // Button state, if any
     unsigned char hotkey;               // First letter of item
-    char *text;                         // Text appearing in item, if any.
-    void *child;                        // Should be menugroup, used to spawn
+    const char *text;                   // Text appearing in item, if any.
+    MenuGroup *child;                        // Should be menugroup, used to spawn
     // sub-groups from items.
     int x, y;                          // x,y position on screen.
     short pic;                        // Startpic to use
@@ -265,10 +267,10 @@ typedef struct MENU_ITEM
     SWBOOL (*postprocess)(struct MENU_ITEM *); // Can do things on items select
 } MenuItem, *MenuItem_p;
 
-typedef struct
+typedef struct MenuGroup
 {
     int x, y;                          // Menu x,y position on screen.
-    char *text;
+    const char *text;
     MenuItem_p items;                   // Array of menu items for this menu.
     short titlepic;                   // Used to draw title on menu with.
     short cursorpic;                  // Pic used for menu cursor, 1st in
@@ -325,7 +327,7 @@ SWBOOL MNU_LoadClassicDefaults(void);
 #define DefLayer(key,text,child)    mt_layer,mf_normal,sldr_none,btn_none,key,text,child
 
 #define DefDisabled(key,text,child)    mt_layer,mf_disabled,sldr_none,btn_none,key,text,child
-#define DefNone mt_none,0,0,0,0,NULL,NULL,0,0,0,0,0,NULL,NULL,NULL
+#define DefNone mt_none,(MenuFlags)0,(SLDRType)0,(BTNType)0,0,NULL,NULL,0,0,0,0,0,NULL,NULL,NULL
 
 #define OPT_XS 30
 #define OPT_YS 30

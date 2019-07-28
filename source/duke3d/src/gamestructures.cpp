@@ -47,7 +47,7 @@ int32_t __fastcall VM_GetPalData(int const palNum, int32_t labelNum);
 #define LABEL_SETUP_UNMATCHED(struct, memb, name, idx)                                                              \
     {                                                                                                               \
         name, idx, sizeof(struct[0].memb) | (is_unsigned<decltype(struct[0].memb)>::value ? LABEL_UNSIGNED : 0), 0, \
-        offsetof(std::remove_pointer<decltype(&struct[0])>::type, memb)                                             \
+        offsetof(remove_pointer_t<decltype(&struct[0])>, memb)                                                      \
     }
 
 #define LABEL_SETUP(struct, memb, idx) LABEL_SETUP_UNMATCHED(struct, memb, #memb, idx)
@@ -68,14 +68,15 @@ const memberlabel_t SectorLabels[] = {
     LABEL_SETUP(sector, floorstat,       SECTOR_FLOORSTAT),
 
     LABEL_SETUP(sector, ceilingpicnum,   SECTOR_CEILINGPICNUM),
-    { "ceilingslope",                    SECTOR_CEILINGSLOPE, sizeof(sector[0].ceilingheinum), 0, offsetof(usectortype, ceilingheinum) },
+    LABEL_SETUP_UNMATCHED(sector, ceilingheinum, "ceilingslope", SECTOR_CEILINGSLOPE),
+
     LABEL_SETUP(sector, ceilingshade,    SECTOR_CEILINGSHADE),
     LABEL_SETUP(sector, ceilingpal,      SECTOR_CEILINGPAL),
     LABEL_SETUP(sector, ceilingxpanning, SECTOR_CEILINGXPANNING),
     LABEL_SETUP(sector, ceilingypanning, SECTOR_CEILINGYPANNING),
 
     LABEL_SETUP(sector, floorpicnum,     SECTOR_FLOORPICNUM),
-    { "floorslope",                      SECTOR_FLOORSLOPE, sizeof(sector[0].floorheinum), 0, offsetof(usectortype, floorheinum) },
+    LABEL_SETUP_UNMATCHED(sector, floorheinum,   "floorslope",   SECTOR_FLOORSLOPE),
     LABEL_SETUP(sector, floorshade,      SECTOR_FLOORSHADE),
     LABEL_SETUP(sector, floorpal,        SECTOR_FLOORPAL),
     LABEL_SETUP(sector, floorxpanning,   SECTOR_FLOORXPANNING),
@@ -104,7 +105,7 @@ int32_t __fastcall VM_GetSector(int const sectNum, int32_t labelNum)
         return -1;
     }
 
-    auto const &s = *(usectortype *)&sector[sectNum];
+    auto const &s = *(usectorptr_t)&sector[sectNum];
 
     switch (labelNum)
     {
@@ -542,6 +543,7 @@ const memberlabel_t PlayerLabels[]=
     { "frags",                 PLAYER_FRAGS,                 LABEL_HASPARM2, MAXPLAYERS, -1 },
     { "deaths",                PLAYER_DEATHS,                0, 0, -1 },
     { "last_used_weapon",      PLAYER_LAST_USED_WEAPON,      0, 0, -1 },
+    { "bsubweapon",            PLAYER_BSUBWEAPON,            LABEL_HASPARM2, MAX_WEAPONS, -1 },
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)
@@ -728,6 +730,8 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_FRAGS:
             labelNum = (playerNum == lParm2) ? ps.fraggedself : g_player[playerNum].frags[lParm2]; break;
         case PLAYER_DEATHS: labelNum = g_player[playerNum].frags[playerNum]; break;
+
+        case PLAYER_BSUBWEAPON: labelNum = (ps.subweapon & (1<<lParm2)) != 0; break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -941,6 +945,13 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
             break;
 
         case PLAYER_DEATHS: g_player[playerNum].frags[playerNum] = newValue; break;
+
+        case PLAYER_BSUBWEAPON:
+            if (newValue)
+                ps.subweapon |= (1 << lParm2);
+            else
+                ps.subweapon &= ~(1 << lParm2);
+            break;
     }
 }
 
@@ -1762,7 +1773,7 @@ int32_t __fastcall VM_GetPlayerInput(int const playerNum, int32_t labelNum)
         return -1;
     }
 
-    auto const &i = g_player[playerNum].inputBits;
+    auto const &i = g_player[playerNum].input;
 
     switch (labelNum)
     {
@@ -1793,7 +1804,7 @@ void __fastcall VM_SetPlayerInput(int const playerNum, int const labelNum, int32
         return;
     }
 
-    auto &i = g_player[playerNum].inputBits;
+    auto &i = g_player[playerNum].input;
 
     switch (labelNum)
     {

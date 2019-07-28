@@ -24,6 +24,8 @@ extern "C" {
 
 #include "lunatic.h"
 
+#include "vfs.h"
+
 
 ////////// HELPER FUNCTIONS //////////
 
@@ -61,14 +63,14 @@ void L_PushDebugTraceback(lua_State *L)
 
 static int32_t read_whole_file(const char *fn, char **retbufptr)
 {
-    int32_t fid, flen, i;
+    int32_t flen, i;
     char *buf;
 
     *retbufptr = NULL;
 
-    fid = kopen4load(fn, 0);  // TODO: g_loadFromGroupOnly, kopen4loadfrommod ?
+    buildvfs_kfd fid = kopen4load(fn, 0);  // TODO: g_loadFromGroupOnly, kopen4loadfrommod ?
 
-    if (fid < 0)
+    if (fid == buildvfs_kfd_invalid)
         return 1;
 
     flen = kfilelength(fid);
@@ -85,7 +87,7 @@ static int32_t read_whole_file(const char *fn, char **retbufptr)
 
     if (i != flen)
     {
-        Bfree(buf);
+        Xfree(buf);
         return 2;
     }
 
@@ -245,6 +247,6 @@ int L_RunOnce(L_State *estate, const char *fn)
         return i;
 
     int const retval = L_RunString(estate, buf, -1, fn);
-    Bfree(buf);
+    Xfree(buf);
     return retval;
 }

@@ -29,7 +29,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "game.h"
 #include "tags.h"
 #include "names2.h"
-#include "net.h"
+#include "network.h"
 #include "menus.h"
 
 SWBOOL SyncPrintMode = TRUE;
@@ -277,7 +277,7 @@ RandomSync(void)
 #define STAT_SKIP4_END      8
 */
 
-char *SyncNames[] =
+const char *SyncNames[] =
 {
     "RandomSync",
     "PlayerSync",
@@ -419,7 +419,7 @@ SyncStatMessage(void)
 
 
 void
-GetSyncInfoFromPacket(char *packbuf, int packbufleng, int *j, int otherconnectindex)
+GetSyncInfoFromPacket(uint8_t *packbuf, int packbufleng, int *j, int otherconnectindex)
 {
     int sb, i;
     extern int syncvaltail, syncvaltottail;

@@ -37,7 +37,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "weapon.h"
 #include "jtags.h"
 
-#include "net.h"
+#include "network.h"
 
 #include "break.h"
 #include "track.h"
@@ -162,10 +162,10 @@ WallSetup(void)
             wall[i].picnum = FAF_MIRROR_PIC+1;
 
         // get map min and max coordinates
-        x_min_bound = min(wp->x, x_min_bound);
-        y_min_bound = min(wp->y, y_min_bound);
-        x_max_bound = max(wp->x, x_max_bound);
-        y_max_bound = max(wp->y, y_max_bound);
+        x_min_bound = min(TrackerCast(wp->x), x_min_bound);
+        y_min_bound = min(TrackerCast(wp->y), y_min_bound);
+        x_max_bound = max(TrackerCast(wp->x), x_max_bound);
+        y_max_bound = max(TrackerCast(wp->y), y_max_bound);
 
         // this overwrites the lotag so it needs to be called LAST - its down there
         // SetupWallForBreak(wp);
@@ -3155,7 +3155,6 @@ void initlava(void)
 #if 0
     int x, y, z, r;
     int i;
-    extern char tempbuf[];
 
 //char lavabakpic[(LAVASIZ + 2) * (LAVASIZ + 2)], lavainc[LAVASIZ];
 //int lavanumdrops, lavanumframes;
@@ -3415,7 +3414,7 @@ DoSector(void)
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
 
-        if (sop->xmid == MAXLONG || sop->xmid == MAXSO)
+        if (sop->xmid == MAXLONG /*|| sop->xmid == MAXSO*/)
             continue;
 
 

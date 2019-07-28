@@ -191,7 +191,7 @@ static char spriteshades[MAXSPRITES];
 static char wallpals[MAXWALLS];
 static char sectorpals[MAXSECTORS][2];
 static char spritepals[MAXSPRITES];
-static uint8_t wallflag[MAXWALLS>>3];
+static uint8_t wallflag[(MAXWALLS+7)>>3];
 
 #ifdef YAX_ENABLE
 static uint8_t havebunch[YAX_MAXBUNCHES];
@@ -722,7 +722,7 @@ const char *ExtGetWallCaption(int16_t wallnum)
     static char tempbuf[64];
 
     Bmemset(tempbuf,0,sizeof(tempbuf));
-    
+
     if (wallcstat14[wallnum>>3]&(1<<(wallnum&7)))
     {
         Bsprintf(tempbuf,"%d", wallength(wallnum));
@@ -1746,7 +1746,7 @@ static int32_t sort_sounds(int32_t how)
     {
     case 'g':  // restore original order
         Bmemcpy(g_sndnum, g_definedsndnum, sizeof(int16_t)*n);
-        Bfree(dst);
+        Xfree(dst);
         return 0;
     case 's':
         compare_sounds = compare_sounds_s;
@@ -1773,7 +1773,7 @@ static int32_t sort_sounds(int32_t how)
         compare_sounds = compare_sounds_5;
         break;
     default:
-        Bfree(dst);
+        Xfree(dst);
         return -2;
     }
 
@@ -1815,7 +1815,7 @@ static int32_t sort_sounds(int32_t how)
     if (src != source)
         Bmemcpy(source, src, sizeof(int16_t) * n);
 
-    Bfree(dest);
+    Xfree(dest);
     return 0;
 }
 
@@ -1855,7 +1855,7 @@ static void SoundDisplay(void)
             if (PRESSED_KEYSC(G))    // goto specified sound#
             {
                 _printmessage16("                                                    ");
-                j = getnumber16("Goto sound#: ", 0, g_numsounds-1, 0);
+                j = getnumber16("Goto sound#: ", 0, MAXSOUNDS-1, 0);
                 for (i=0; i<g_numsounds; i++)
                     if (g_sndnum[i]==j)
                         break;
@@ -2007,7 +2007,7 @@ static void SoundDisplay(void)
 int32_t AmbienceToggle = 1;
 int32_t ParentalLock = 0;
 
-uint8_t g_ambiencePlaying[MAXSPRITES>>3];
+uint8_t g_ambiencePlaying[(MAXSPRITES+7)>>3];
 
 #define testbit(bitarray, i) (bitarray[(i)>>3] & (1<<((i)&7)))
 #define setbit(bitarray, i) bitarray[(i)>>3] |= (1<<((i)&7))
@@ -2359,7 +2359,6 @@ static void m32_showmouse(void)
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
         renderDisableFog();
-        glDisable(GL_TEXTURE_2D);
         polymost_useColorOnly(true);
     }
 #endif
@@ -3324,12 +3323,7 @@ static int32_t OnSelectTile(int32_t tileNum)
     keyFlushChars();
 
     polymostSet2dView();
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        glEnable(GL_TEXTURE_2D);
-    }
-#endif
+
     videoClearViewableArea(-1);
 
     //
@@ -3561,8 +3555,6 @@ static int32_t DrawTiles(int32_t iTopLeft, int32_t iSelected, int32_t nXTiles, i
 
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        glEnable(GL_TEXTURE_2D);
-
         if (lazyselector)
             glDrawBuffer(GL_FRONT_AND_BACK);
     }
@@ -4166,7 +4158,7 @@ ERROR_TOOMANYSPRITES:
     if (cursor < 0) message("Too many sprites in map!");
     else deletesprite(cursor);
 
-    Bfree(spritenums);
+    Xfree(spritenums);
 
     clearkeys();
 
@@ -4177,7 +4169,7 @@ static void mouseaction_movesprites(int32_t *sumxvect, int32_t *sumyvect, int32_
 {
     int32_t xvect,yvect, daxvect,dayvect, ii, spi;
     int32_t units, gridlock = (eitherCTRL && grid > 0 && grid < 9);
-    spritetype *sp = &sprite[searchwall];
+    auto const sp = &sprite[searchwall];
     int16_t tsect = sp->sectnum;
     vec3_t tvec = { sp->x, sp->y, sp->z };
 
@@ -6717,8 +6709,8 @@ static void Keys3d(void)
             static const char *addnstr[4] = {"", "+stat+panning", "+stat", "+stat + panning (some)"};
 
             static int16_t sectlist[MAXSECTORS];
-            static uint8_t sectbitmap[MAXSECTORS>>3];
-            int32_t sectcnt, sectnum;
+            static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
+            int16_t sectcnt, sectnum;
 
             i = searchsector;
             if (CEILINGFLOOR(i, stat)&1)
@@ -7060,7 +7052,7 @@ paste_ceiling_or_floor:
 // returns: whether sprite is out of grid
 static int32_t jump_to_sprite(int32_t spritenum)
 {
-    const spritetype *spr = &sprite[spritenum];
+    auto const spr = &sprite[spritenum];
 
     if (pos.x >= -editorgridextent && pos.x <= editorgridextent &&
             pos.y >= -editorgridextent && pos.y <= editorgridextent)
@@ -8482,7 +8474,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
         i++;
     }
 
-    Bfree(lengths);
+    Xfree(lengths);
 
     if (j > 0)
     {
@@ -8998,7 +8990,7 @@ static void SaveInHistory(const char *commandstr)
 
     if (dosave)
     {
-        Bfree(scripthist[scripthistend]);
+        Xfree(scripthist[scripthistend]);
         scripthist[scripthistend] = Xstrdup(commandstr);
         scripthistend++;
         scripthistend %= SCRIPTHISTSIZ;
@@ -9109,7 +9101,7 @@ static int osdcmd_do(osdcmdptr_t parm)
     if (g_numCompilerErrors)
     {
 //        g_scriptPtr = script + oscrofs;  // handled in C_Compile()
-        Bfree(tp);
+        Xfree(tp);
         return OSDCMD_OK;
     }
 
@@ -9720,8 +9712,8 @@ static int32_t loadtilegroups(const char *fn)
 
     for (i=0; i<tile_groups; i++)
     {
-        Bfree(s_TileGroups[i].pIds);
-        Bfree(s_TileGroups[i].szText);
+        Xfree(s_TileGroups[i].pIds);
+        Xfree(s_TileGroups[i].szText);
         Bmemcpy(&s_TileGroups[i], &blank, sizeof(blank));
     }
     tile_groups = 0;
@@ -9872,14 +9864,14 @@ static int32_t parseconsounds(scriptfile *script)
             {
                 initprintf("Warning: invalid sound definition %s (sound number < 0 or >= MAXSOUNDS) on line %s:%d\n",
                            definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                Bfree(definedname);
+                Xfree(definedname);
                 num_invalidsounds++;
                 break;
             }
 
             if (scriptfile_getstring(script, &filename))
             {
-                Bfree(definedname);
+                Xfree(definedname);
                 num_invalidsounds++;
                 break;
             }
@@ -9889,7 +9881,7 @@ static int32_t parseconsounds(scriptfile *script)
             {
                 initprintf("Warning: invalid sound definition %s (filename too long) on line %s:%d\n",
                            definedname, script->filename,scriptfile_getlinum(script,cmdtokptr));
-                Bfree(definedname);
+                Xfree(definedname);
                 num_invalidsounds++;
                 break;
             }
@@ -9897,7 +9889,7 @@ static int32_t parseconsounds(scriptfile *script)
             if (g_sounds[sndnum].filename)
             {
                 duplicate = 1;
-                Bfree(g_sounds[sndnum].filename);
+                Xfree(g_sounds[sndnum].filename);
             }
             g_sounds[sndnum].filename = (char *)Xcalloc(slen+1,sizeof(uint8_t));
             // Hopefully noone does memcpy(..., g_sounds[].filename, BMAX_PATH)
@@ -9913,7 +9905,7 @@ static int32_t parseconsounds(scriptfile *script)
             if (0)
             {
 BAD:
-                Bfree(definedname);
+                Xfree(definedname);
                 DO_FREE_AND_NULL(g_sounds[sndnum].filename);
                 num_invalidsounds++;
                 break;
@@ -9922,7 +9914,7 @@ BAD:
             if (g_sounds[sndnum].definedname)
             {
                 duplicate = 1;
-                Bfree(g_sounds[sndnum].definedname);
+                Xfree(g_sounds[sndnum].definedname);
             }
             if (duplicate)
                 initprintf("warning: duplicate sound #%d, overwriting\n", sndnum);
@@ -10055,7 +10047,7 @@ int32_t ExtInit(void)
             Bsprintf(tempbuf, "m32_settings.cfg");
         else Bsprintf(tempbuf,"%s_m32_settings.cfg",p);
         OSD_Exec(tempbuf);
-        Bfree(ptr);
+        Xfree(ptr);
     }
 
     // backup pathsearchmode so that a later open
@@ -10138,11 +10130,11 @@ void ExtUnInit(void)
 #if 0
     for (i = MAX_TILE_GROUPS-1; i >= 0; i--)
     {
-        Bfree(s_TileGroups[i].pIds);
-        Bfree(s_TileGroups[i].szText);
+        Xfree(s_TileGroups[i].pIds);
+        Xfree(s_TileGroups[i].szText);
     }
-    for (i = numhelppages-1; i >= 0; i--) Bfree(helppage[i]);
-    Bfree(helppage);
+    for (i = numhelppages-1; i >= 0; i--) Xfree(helppage[i]);
+    Xfree(helppage);
 #endif
 
     Duke_CommonCleanup();
@@ -10505,6 +10497,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
 
     UNREFERENCED_PARAMETER(ourx);
     UNREFERENCED_PARAMETER(oury);
+    UNREFERENCED_PARAMETER(ourz);
     UNREFERENCED_PARAMETER(oura);
     UNREFERENCED_PARAMETER(smoothr);
 
@@ -10635,9 +10628,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
             }
             //                else tspr->cstat&=32767;
 
-#ifdef USE_OPENGL
-            if (!usemodels || md_tilehasmodel(tspr->picnum,tspr->pal) < 0)
-#endif
+            if (!tilehasmodelorvoxel(tspr->picnum,tspr->pal))
             {
                 if (frames!=0)
                 {
@@ -10684,7 +10675,7 @@ static void Keys2d3d(void)
     {
         //        map_revision = 0;
         create_map_snapshot(); // initial map state
-        //        Bfree(mapstate->next);
+        //        Xfree(mapstate->next);
         //        mapstate = mapstate->prev;
     }
 #endif
@@ -10763,22 +10754,29 @@ static void Keys2d3d(void)
 
         if (PRESSED_KEYSC(Z)) // CTRL+Z
         {
-            if (eitherSHIFT)
+            if (!in3dmode() || m32_3dundo)
             {
-                if (map_undoredo(1)) message("Nothing to redo!");
-                else message("Redo: restored revision %d", map_revision-1);
-            }
-            else
-            {
-                if (map_undoredo(0)) message("Nothing to undo!");
-                else message("Undo: restored revision %d", map_revision-1);
-            }
+                if (eitherSHIFT)
+                {
+                    if (map_undoredo(1))
+                        message("Nothing to redo!");
+                    else
+                        message("Redo: restored revision %d", map_revision - 1);
+                }
+                else
+                {
+                    if (map_undoredo(0))
+                        message("Nothing to undo!");
+                    else
+                        message("Undo: restored revision %d", map_revision - 1);
+                }
 
-            updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
+                updatesectorz(pos.x, pos.y, pos.z, &cursectnum);
 
-            // kick the user back to 2d mode if the sector they were in was deleted by the undo/redo operation
-            if (cursectnum == -1 && (in3dmode() && !m32_is2d3dmode()))
-                keystatus[buildkeys[BK_MODE2D_3D]] = 1;
+                // kick the user back to 2d mode if the sector they were in was deleted by the undo/redo operation
+                if (cursectnum == -1 && (in3dmode() && !m32_is2d3dmode()))
+                    keystatus[buildkeys[BK_MODE2D_3D]] = 1;
+            }
         }
 
         if (keystatus[KEYSC_S]) // S

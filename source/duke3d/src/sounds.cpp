@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "renderlayer.h" // for win_gethwnd()
 #include <atomic>
 
+#include "vfs.h"
+
 #define DQSIZE 256
 
 int32_t g_numEnvSoundsPlaying, g_highestSoundIdx = 0;
@@ -197,8 +199,8 @@ static int S_PlayMusic(const char *fn)
     if (fn == NULL)
         return 1;
 
-    int32_t fp = S_OpenAudio(fn, 0, 1);
-    if (EDUKE32_PREDICT_FALSE(fp < 0))
+    buildvfs_kfd fp = S_OpenAudio(fn, 0, 1);
+    if (EDUKE32_PREDICT_FALSE(fp == buildvfs_kfd_invalid))
     {
         OSD_Printf(OSD_ERROR "S_PlayMusic(): error: can't open \"%s\" for playback!\n",fn);
         return 2;
@@ -437,9 +439,9 @@ int32_t S_LoadSound(int num)
 
     auto &snd = g_sounds[num];
 
-    int32_t fp = S_OpenAudio(snd.filename, g_loadFromGroupOnly, 0);
+    buildvfs_kfd fp = S_OpenAudio(snd.filename, g_loadFromGroupOnly, 0);
 
-    if (EDUKE32_PREDICT_FALSE(fp == -1))
+    if (EDUKE32_PREDICT_FALSE(fp == buildvfs_kfd_invalid))
     {
         OSD_Printf(OSDTEXT_RED "Sound %s(#%d) not found!\n", snd.filename, num);
         return 0;
@@ -622,7 +624,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         return -1;
     }
 
-    const DukePlayer_t *const pPlayer = g_player[myconnectindex].ps;
+    auto const pPlayer = g_player[myconnectindex].ps;
 
     if (((snd.m & SF_ADULT) && ud.lockout) || (unsigned)spriteNum >= MAXSPRITES || (pPlayer->gm & MODE_MENU) || !FX_VoiceAvailable(snd.pr)
         || (pPlayer->timebeforeexit > 0 && pPlayer->timebeforeexit <= GAMETICSPERSEC * 3))
@@ -722,12 +724,7 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         return -1;
     }
 
-    // XXX: why is 'right' 0?
-    // Ambient MUSICANDSFX always start playing using the 3D routines!
-    int const ambsfxp = S_IsAmbientSFX(spriteNum);
-    int const voice = (repeatp && !ambsfxp) ? FX_Play(snd.ptr, snd.siz, 0, -1, pitch, sndist >> 6, sndist >> 6, 0, snd.pr,
-                                                      snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot)
-                                            : FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
+    int const voice = FX_Play3D(snd.ptr, snd.siz, repeatp ? FX_LOOP : FX_ONESHOT, pitch, sndang >> 4, sndist >> 6,
                                                         snd.pr, snd.volume, (sndNum * MAXSOUNDINSTANCES) + sndSlot);
 
     if (voice <= FX_Ok)
@@ -874,9 +871,19 @@ void S_Update(void)
 
     if (ud.camerasprite == -1)
     {
-        c = &CAMERA(pos);
-        cs = CAMERA(sect);
-        ca = fix16_to_int(CAMERA(q16ang));
+        if (ud.overhead_on != 2)
+        {
+            c = &CAMERA(pos);
+            cs = CAMERA(sect);
+            ca = fix16_to_int(CAMERA(q16ang));
+        }
+        else
+        {
+            auto pPlayer = g_player[screenpeek].ps;
+            c = &pPlayer->pos;
+            cs = pPlayer->cursectnum;
+            ca = fix16_to_int(pPlayer->q16ang);
+        }
     }
     else
     {

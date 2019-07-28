@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "grpscan.h"
 #include "scriptfile.h"
 
+#include "vfs.h"
+
 #ifndef EDUKE32_STANDALONE
 static void process_vaca13(int32_t crcval);
 static void process_vacapp15(int32_t crcval);
@@ -232,7 +234,12 @@ static void LoadGameList(void)
     }
 #endif
 
-    CACHE1D_FIND_REC * const srch = klistpath("/", "*.grpinfo", CACHE1D_FIND_FILE);
+#ifdef USE_PHYSFS
+    auto const base = PHYSFS_getBaseDir();
+#else
+    static char const base[] = "/";
+#endif
+    CACHE1D_FIND_REC * const srch = klistpath(base, "*.grpinfo", CACHE1D_FIND_FILE);
 
     for (CACHE1D_FIND_REC *sidx = srch; sidx; sidx = sidx->next)
         LoadList(sidx->name);
@@ -244,13 +251,13 @@ static void FreeGameList(void)
 {
     while (listgrps)
     {
-        Bfree(listgrps->name);
-        Bfree(listgrps->scriptname);
-        Bfree(listgrps->defname);
-        Bfree(listgrps->rtsname);
+        Xfree(listgrps->name);
+        Xfree(listgrps->scriptname);
+        Xfree(listgrps->defname);
+        Xfree(listgrps->rtsname);
 
         grpinfo_t * const fg = listgrps->next;
-        Bfree(listgrps);
+        Xfree(listgrps);
         listgrps = fg;
     }
 }
@@ -305,7 +312,7 @@ static void FreeGroupsCache(void)
     while (grpcache)
     {
         struct grpcache * const fg = grpcache->next;
-        Bfree(grpcache);
+        Xfree(grpcache);
         grpcache = fg;
     }
 }
@@ -321,8 +328,8 @@ static void RemoveGroup(grpfile_t *igrp)
             else
                 prev->next = grp->next;
 
-            Bfree((char *)grp->filename);
-            Bfree(grp);
+            Xfree((char *)grp->filename);
+            Xfree(grp);
 
             return;
         }
@@ -344,6 +351,7 @@ grpfile_t * FindGroup(int32_t crcval)
     return NULL;
 }
 
+#ifndef USE_PHYSFS
 static grpinfo_t const * FindGrpInfo(int32_t crcval, int32_t size)
 {
     grpinfo_t *grpinfo;
@@ -380,10 +388,10 @@ static void ProcessGroups(CACHE1D_FIND_REC *srch)
             if (findfrompath(sidx->name, &fn)) continue; // failed to resolve the filename
             if (Bstat(fn, &st))
             {
-                Bfree(fn);
+                Xfree(fn);
                 continue;
             } // failed to stat the file
-            Bfree(fn);
+            Xfree(fn);
             if (fg->size == (int32_t)st.st_size && fg->mtime == (int32_t)st.st_mtime)
             {
                 grpinfo_t const * const grptype = FindGrpInfo(fg->crcval, fg->size);
@@ -445,11 +453,13 @@ static void ProcessGroups(CACHE1D_FIND_REC *srch)
         }
     }
 
-    Bfree(buf);
+    Xfree(buf);
 }
+#endif
 
 int32_t ScanGroups(void)
 {
+#ifndef USE_PHYSFS
     struct grpcache *fg, *fgg;
 
     initprintf("Searching for game data...\n");
@@ -491,18 +501,17 @@ int32_t ScanGroups(void)
     if (usedgrpcache)
     {
         int32_t i = 0;
-        FILE *fp;
-        fp = fopen(GRPCACHEFILE, "wt");
+        buildvfs_FILE fp = buildvfs_fopen_write(GRPCACHEFILE);
         if (fp)
         {
             for (fg = usedgrpcache; fg; fg=fgg)
             {
                 fgg = fg->next;
                 fprintf(fp, "\"%s\" %d %d %d\n", fg->name, fg->size, fg->mtime, fg->crcval);
-                Bfree(fg);
+                Xfree(fg);
                 i++;
             }
-            fclose(fp);
+            buildvfs_fclose(fp);
         }
 //        initprintf("Found %d recognized GRP %s.\n",i,i>1?"files":"file");
 
@@ -510,6 +519,7 @@ int32_t ScanGroups(void)
     }
 
     initprintf("Found no recognized game data!\n");
+#endif
 
     return 0;
 }
@@ -519,9 +529,9 @@ void FreeGroups(void)
 {
     while (foundgrps)
     {
-        Bfree((char *)foundgrps->filename);
+        Xfree((char *)foundgrps->filename);
         grpfile_t * const fg = foundgrps->next;
-        Bfree(foundgrps);
+        Xfree(foundgrps);
         foundgrps = fg;
     }
 

@@ -38,6 +38,8 @@
 # include "winbits.h"
 #endif
 
+#include "vfs.h"
+
 #if SDL_MAJOR_VERSION != 1
 static SDL_version linked;
 #endif
@@ -488,8 +490,17 @@ int main(int argc, char *argv[])
     }
     buildargv[buildargc] = NULL;
 
+#ifdef USE_PHYSFS
+    PHYSFS_init(buildargv[0]);
+    PHYSFS_setWriteDir(PHYSFS_getBaseDir());
+#endif
     r = app_main(buildargc, (const char **)buildargv);
 #else
+#ifdef USE_PHYSFS
+    int pfsi = PHYSFS_init(argv[0]);
+    assert(pfsi != 0);
+    PHYSFS_setWriteDir(PHYSFS_getUserDir());
+#endif
     r = app_main(argc, (char const * const *)argv);
 #endif
 
@@ -1371,6 +1382,8 @@ void sdlayer_setvideomode_opengl(void)
     glinfo.debugoutput = !!Bstrstr(glinfo.extensions, "GL_ARB_debug_output");
     glinfo.bufferstorage = !!Bstrstr(glinfo.extensions, "GL_ARB_buffer_storage");
     glinfo.sync = !!Bstrstr(glinfo.extensions, "GL_ARB_sync");
+    glinfo.depthclamp = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_clamp");
+    glinfo.clipcontrol = !!Bstrstr(glinfo.extensions, "GL_ARB_clip_control");
 
     if (Bstrstr(glinfo.extensions, "WGL_3DFX_gamma_control"))
     {
@@ -1570,7 +1583,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
               { SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
               { SDL_GL_MULTISAMPLESAMPLES, glmultisample },
 #endif
-              { SDL_GL_STENCIL_SIZE, 1 },
+              { SDL_GL_STENCIL_SIZE, 8 },
               { SDL_GL_ACCELERATED_VISUAL, 1 },
           };
 
@@ -1675,21 +1688,22 @@ void videoBeginDrawing(void)
 
     if (offscreenrendering) return;
 
+    if (inpreparemirror)
+    {
+        frameplace = (intptr_t)mirrorBuffer;
+    }
+    else
 #ifdef USE_OPENGL
     if (!nogl)
     {
         frameplace = (intptr_t)glsurface_getBuffer();
-        if (modechange)
-        {
-            bytesperline = xdim;
-            calc_ylookup(bytesperline, ydim);
-            modechange=0;
-        }
-        return;
     }
+    else
 #endif
+    {
+        frameplace = (intptr_t)softsurface_getBuffer();
+    }
 
-    frameplace = (intptr_t)softsurface_getBuffer();
     if (modechange)
     {
         bytesperline = xdim;
@@ -1752,14 +1766,14 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
-        static uint32_t lastSwapTime = 0;
         SDL_GL_SwapWindow(sdl_window);
         if (vsync)
         {
+            static uint32_t lastSwapTime = 0;
             // busy loop until we're ready to update again
             while (SDL_GetTicks()-lastSwapTime < currentVBlankInterval) {}
+            lastSwapTime = SDL_GetTicks();
         }
-        lastSwapTime = SDL_GetTicks();
         return;
     }
 #endif

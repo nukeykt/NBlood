@@ -17,6 +17,8 @@
 #include "common.h"
 #include "palette.h"
 
+#include "vfs.h"
+
 static int32_t curextra=MAXTILES;
 
 #define MIN_CACHETIME_PRINT 10
@@ -511,7 +513,7 @@ int32_t md_defineskin(int32_t modelid, const char *skinfn, int32_t palnum, int32
         if (!skl) m->skinmap = sk;
         else skl->next = sk;
     }
-    else Bfree(sk->fn);
+    else Xfree(sk->fn);
 
     sk->palette = (uint8_t)palnum;
     sk->flags = (uint8_t)flags;
@@ -696,8 +698,8 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
 
     *texidx = 0;
 
-    int32_t filh;
-    if ((filh = kopen4load(fn, 0)) < 0)
+    buildvfs_kfd filh;
+    if ((filh = kopen4load(fn, 0)) == buildvfs_kfd_invalid)
         return mdloadskin_notfound(skinfile, fn);
 
 
@@ -794,7 +796,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
             {
                 if (kprender(kpzbuf,picfillen,(intptr_t)pic,bytesperline,siz.x,siz.y))
                 {
-                    Bfree(pic);
+                    Xfree(pic);
                     return mdloadskin_failed(skinfile, fn);
                 }
             }
@@ -812,7 +814,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
                 }
                 else if (lastsize < siz.x*siz.y)
                 {
-                    Bfree(lastpic);
+                    Xfree(lastpic);
                     lastpic = (coltype *)Xmalloc(siz.x*siz.y*sizeof(coltype));
                 }
                 if (lastpic)
@@ -921,7 +923,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
                       (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
                       (hasalpha ? DAMETH_HASALPHA : 0));
 
-        Bfree(pic);
+        Xfree(pic);
     }
 
     if (!m->skinloaded)
@@ -1011,7 +1013,7 @@ int32_t mdloadskin(md2model_t *m, int32_t number, int32_t pal, int32_t surf)
 }
 
 //Note: even though it says md2model, it works for both md2model&md3model
-void updateanimation(md2model_t *m, const uspritetype *tspr, uint8_t lpal)
+void updateanimation(md2model_t *m, tspriteptr_t tspr, uint8_t lpal)
 {
     if (m->numframes < 2)
     {
@@ -1197,7 +1199,7 @@ static void mdloadvbos(md3model_t *m)
 #endif
 
 //--------------------------------------- MD2 LIBRARY BEGINS ---------------------------------------
-static md2model_t *md2load(int32_t fil, const char *filnam)
+static md2model_t *md2load(buildvfs_kfd fil, const char *filnam)
 {
     md2model_t *m;
     md3model_t *m3;
@@ -1225,7 +1227,7 @@ static md2model_t *md2load(int32_t fil, const char *filnam)
     head.ofseof = B_LITTLE32(head.ofseof);
 #endif
 
-    if ((head.id != IDP2_MAGIC) || (head.vers != 8)) { Bfree(m); return 0; } //"IDP2"
+    if ((head.id != IDP2_MAGIC) || (head.vers != 8)) { Xfree(m); return 0; } //"IDP2"
 
     ournumskins = head.numskins ? head.numskins : 1;
     ournumglcmds = head.numglcmds ? head.numglcmds : 1;
@@ -1243,22 +1245,22 @@ static md2model_t *md2load(int32_t fil, const char *filnam)
 
     klseek(fil,head.ofsframes,SEEK_SET);
     if (kread(fil,(char *)m->frames,m->numframes*m->framebytes) != m->numframes*m->framebytes)
-        { Bfree(m->uv); Bfree(m->tris); Bfree(m->glcmds); Bfree(m->frames); Bfree(m); return 0; }
+        { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
 
     if (m->numglcmds > 0)
     {
         klseek(fil,head.ofsglcmds,SEEK_SET);
         if (kread(fil,(char *)m->glcmds,m->numglcmds*sizeof(int32_t)) != (int32_t)(m->numglcmds*sizeof(int32_t)))
-            { Bfree(m->uv); Bfree(m->tris); Bfree(m->glcmds); Bfree(m->frames); Bfree(m); return 0; }
+            { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
     }
 
     klseek(fil,head.ofstris,SEEK_SET);
     if (kread(fil,(char *)m->tris,head.numtris*sizeof(md2tri_t)) != (int32_t)(head.numtris*sizeof(md2tri_t)))
-        { Bfree(m->uv); Bfree(m->tris); Bfree(m->glcmds); Bfree(m->frames); Bfree(m); return 0; }
+        { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
 
     klseek(fil,head.ofsuv,SEEK_SET);
     if (kread(fil,(char *)m->uv,head.numuv*sizeof(md2uv_t)) != (int32_t)(head.numuv*sizeof(md2uv_t)))
-        { Bfree(m->uv); Bfree(m->tris); Bfree(m->glcmds); Bfree(m->frames); Bfree(m); return 0; }
+        { Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
 
 #if B_BIG_ENDIAN != 0
     {
@@ -1308,7 +1310,7 @@ static md2model_t *md2load(int32_t fil, const char *filnam)
     {
         klseek(fil,head.ofsskins,SEEK_SET);
         if (kread(fil,m->skinfn,64*m->numskins) != 64*m->numskins)
-            { Bfree(m->glcmds); Bfree(m->frames); Bfree(m); return 0; }
+            { Xfree(m->glcmds); Xfree(m->frames); Xfree(m); return 0; }
     }
 
     m->texid = (GLuint *)Xcalloc(ournumskins, sizeof(GLuint) * HICTINT_MEMORY_COMBINATIONS);
@@ -1437,7 +1439,7 @@ static md2model_t *md2load(int32_t fil, const char *filnam)
     m3->vbos = NULL;
 
     // die MD2 ! DIE !
-    Bfree(m->texid); Bfree(m->skinfn); Bfree(m->basepath); Bfree(m->uv); Bfree(m->tris); Bfree(m->glcmds); Bfree(m->frames); Bfree(m);
+    Xfree(m->texid); Xfree(m->skinfn); Xfree(m->basepath); Xfree(m->uv); Xfree(m->tris); Xfree(m->glcmds); Xfree(m->frames); Xfree(m);
 
     return ((md2model_t *)m3);
 }
@@ -1482,7 +1484,7 @@ static inline void quicksort(uint16_t *indexes, float *depths, int32_t first, in
 
 //--------------------------------------- MD3 LIBRARY BEGINS ---------------------------------------
 
-static md3model_t *md3load(int32_t fil)
+static md3model_t *md3load(buildvfs_kfd fil)
 {
     int32_t i, surfi, ofsurf, offs[4], leng[4];
     int32_t maxtrispersurf;
@@ -1505,7 +1507,7 @@ static md3model_t *md3load(int32_t fil)
     m->head.eof = B_LITTLE32(m->head.eof);
 #endif
 
-    if ((m->head.id != IDP3_MAGIC) && (m->head.vers != 15)) { Bfree(m); return 0; } //"IDP3"
+    if ((m->head.id != IDP3_MAGIC) && (m->head.vers != 15)) { Xfree(m); return 0; } //"IDP3"
 
     m->numskins = m->head.numskins; //<- dead code?
     m->numframes = m->head.numframes;
@@ -2010,7 +2012,7 @@ int      md3postload_polymer(md3model_t *m)
 }
 
 
-void md3_vox_calcmat_common(const uspritetype *tspr, const vec3f_t *a0, float f, float mat[16])
+void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float mat[16])
 {
     float g;
     float k0, k1, k2, k3, k4, k5, k6, k7;
@@ -2098,7 +2100,7 @@ static void md3draw_handle_triangles(const md3surf_t *s, uint16_t *indexhandle,
 #endif
 }
 
-static int32_t polymost_md3draw(md3model_t *m, const uspritetype *tspr)
+static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
 {
     vec3f_t m0, m1, a0;
     md3xyzn_t *v0, *v1;
@@ -2111,6 +2113,8 @@ static int32_t polymost_md3draw(md3model_t *m, const uspritetype *tspr)
     const spriteext_t *const sext = &spriteext[((unsigned)owner < MAXSPRITES+MAXUNIQHUDID) ? owner : MAXSPRITES+MAXUNIQHUDID-1];
     const uint8_t lpal = ((unsigned)owner < MAXSPRITES) ? sprite[tspr->owner].pal : tspr->pal;
     const int32_t sizyrep = tilesiz[tspr->picnum].y*tspr->yrepeat;
+
+    polymost_outputGLDebugMessage(3, "polymost_md3draw(m:%p, tspr:%p)", m, tspr);
 
 #ifdef USE_GLEXT
     if (r_vbos && (m->vbos == NULL))
@@ -2207,10 +2211,10 @@ static int32_t polymost_md3draw(md3model_t *m, const uspritetype *tspr)
     if (tspr->extra&TSPR_EXTRA_MDHACK)
     {
 #ifdef __arm__ // GL ES has a glDepthRangef and the loss of precision is OK there
-        float f = (float) (tspr->owner + 1) * (FLT_EPSILON * 8.0);
+        float f = (float) (tspr->owner + 1) * (std::numeric_limits<float>::epsilon() * 8.0);
         if (f != 0.0) f *= 1.f/(float) (sepldist(globalposx - tspr->x, globalposy - tspr->y)>>5);
 #else
-        double f = (double) (tspr->owner + 1) * (FLT_EPSILON * 8.0);
+        double f = (double) (tspr->owner + 1) * (std::numeric_limits<double>::epsilon() * 8.0);
         if (f != 0.0) f *= 1.0/(double) (sepldist(globalposx - tspr->x, globalposy - tspr->y)>>5);
 //        glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
 #endif
@@ -2289,6 +2293,8 @@ static int32_t polymost_md3draw(md3model_t *m, const uspritetype *tspr)
     float const xpanning = (float)sext->xpanning * (1.f/256.f);
     float const ypanning = (float)sext->ypanning * (1.f/256.f);
 
+    char prevClamp = polymost_getClamp();
+    polymost_setClamp(false);
     polymost_usePaletteIndexing(false);
     polymost_setTexturePosSize({ 0.f, 0.f, 1.f, 1.f });
 
@@ -2592,6 +2598,7 @@ static int32_t polymost_md3draw(md3model_t *m, const uspritetype *tspr)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
     polymost_resetVertexPointers();
 
@@ -2609,13 +2616,13 @@ static void md3free(md3model_t *m)
     for (anim=m->animations; anim; anim=nanim)
     {
         nanim = anim->next;
-        Bfree(anim);
+        Xfree(anim);
     }
     for (sk=m->skinmap; sk; sk=nsk)
     {
         nsk = sk->next;
-        Bfree(sk->fn);
-        Bfree(sk);
+        Xfree(sk->fn);
+        Xfree(sk);
     }
 
     if (m->head.surfs)
@@ -2623,21 +2630,21 @@ static void md3free(md3model_t *m)
         for (bssize_t surfi=m->head.numsurfs-1; surfi>=0; surfi--)
         {
             md3surf_t *s = &m->head.surfs[surfi];
-            Bfree(s->tris);
-            Bfree(s->geometry);  // FREE_SURFS_GEOMETRY
+            Xfree(s->tris);
+            Xfree(s->geometry);  // FREE_SURFS_GEOMETRY
         }
-        Bfree(m->head.surfs);
+        Xfree(m->head.surfs);
     }
-    Bfree(m->head.tags);
-    Bfree(m->head.frames);
+    Xfree(m->head.tags);
+    Xfree(m->head.frames);
 
-    Bfree(m->texid);
+    Xfree(m->texid);
 
-    Bfree(m->muladdframes);
+    Xfree(m->muladdframes);
 
-    Bfree(m->indexes);
-    Bfree(m->vindexes);
-    Bfree(m->maxdepths);
+    Xfree(m->indexes);
+    Xfree(m->vindexes);
+    Xfree(m->maxdepths);
 
 #ifdef USE_GLEXT
     if (m->vbos)
@@ -2647,7 +2654,7 @@ static void md3free(md3model_t *m)
     }
 #endif
 
-    Bfree(m);
+    Xfree(m);
 }
 
 //---------------------------------------- MD3 LIBRARY ENDS ----------------------------------------
@@ -2656,15 +2663,14 @@ static void md3free(md3model_t *m)
 mdmodel_t *mdload(const char *filnam)
 {
     mdmodel_t *vm;
-    int32_t fil;
     int32_t i;
 
     vm = (mdmodel_t *)voxload(filnam);
     if (vm) return vm;
 
-    fil = kopen4load(filnam,0);
+    buildvfs_kfd fil = kopen4load(filnam,0);
 
-    if (fil < 0)
+    if (fil == buildvfs_kfd_invalid)
         return NULL;
 
     kread(fil,&i,4);
@@ -2740,7 +2746,7 @@ void md_allocvbos(void)
 }
 #endif
 
-int32_t polymost_mddraw(const uspritetype *tspr)
+int32_t polymost_mddraw(tspriteptr_t tspr)
 {
 #ifdef USE_GLEXT
     if (r_vbos && (r_vbocount > allocvbos))

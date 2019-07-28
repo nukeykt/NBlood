@@ -34,7 +34,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "lists.h"
 #include "game.h"
 #include "common_game.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 #include "vis.h"
 #include "text.h"
@@ -486,8 +486,8 @@ PlayerUpdateWeaponSummary(PLAYERp pp, short UpdateWeaponNum)
 #define WSUM_YOFF 6
 
     static short wsum_xoff[3] = {0,36,66};
-    static char *wsum_fmt1[3] = {"%d:", "%d:", "%d:"};
-    static char *wsum_fmt2[3] = {"%3d/%-3d", "%2d/%-2d", "%2d/%-2d"};
+    static const char *wsum_fmt1[3] = {"%d:", "%d:", "%d:"};
+    static const char *wsum_fmt2[3] = {"%3d/%-3d", "%2d/%-2d", "%2d/%-2d"};
     static short wsum_back_pic[3] = {2405, 2406, 2406};
 
     if (Prediction)
@@ -7206,7 +7206,7 @@ pSpawnSprite(PLAYERp pp, PANEL_STATEp state, uint8_t priority, int x, int y)
 
     ASSERT(pp);
 
-    psp = CallocMem(sizeof(PANEL_SPRITE), 1);
+    psp = (PANEL_SPRITEp)CallocMem(sizeof(PANEL_SPRITE), 1);
 
     PRODUCTION_ASSERT(psp);
 
@@ -7278,7 +7278,7 @@ pWeaponBob(PANEL_SPRITEp psp, short condition)
 
     bobvel = FindDistance2D(pp->xvect, pp->yvect) >> 15;
     bobvel = bobvel + DIV4(bobvel);
-    bobvel = min(bobvel, 128);
+    bobvel = min(bobvel, short(128));
 
     if (condition)
     {

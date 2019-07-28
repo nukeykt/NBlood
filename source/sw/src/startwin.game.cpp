@@ -80,14 +80,14 @@ static void PopulateForm(int pgs)
 
         hwnd = GetDlgItem(pages[TAB_CONFIG], IDCVMODE);
 
-        mode = checkvideomode(&settings.xdim, &settings.ydim, settings.bpp, settings.fullscreen, 1);
+        mode = videoCheckMode(&settings.xdim, &settings.ydim, settings.bpp, settings.fullscreen, 1);
         if (mode < 0)
         {
             int cd[] = { 32, 24, 16, 15, 8, 0 };
             for (i=0; cd[i]; ) { if (cd[i] >= settings.bpp) i++; else break; }
             for (; cd[i]; i++)
             {
-                mode = checkvideomode(&settings.xdim, &settings.ydim, cd[i], settings.fullscreen, 1);
+                mode = videoCheckMode(&settings.xdim, &settings.ydim, cd[i], settings.fullscreen, 1);
                 if (mode < 0) continue;
                 settings.bpp = cd[i];
                 break;
@@ -236,8 +236,12 @@ static INT_PTR CALLBACK GamePageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
         {
             int i;
             i = ListBox_GetCurSel((HWND)lParam);
-            if (i != CB_ERR) i = ListBox_GetItemData((HWND)lParam, i);
-            if (i != CB_ERR) strcpy(settings.selectedgrp, ((struct grpfile *)i)->name);
+            if (i != CB_ERR)
+            {
+                LRESULT j = ListBox_GetItemData((HWND)lParam, i);
+                if (j != CB_ERR)
+                    strcpy(settings.selectedgrp, ((struct grpfile const *)j)->name);
+            }
             return TRUE;
         }
         default: break;

@@ -16,6 +16,7 @@
 #include "baselayer.h"
 #include "compat.h"
 #include "build.h"
+#include "editor.h"
 
 #define TAB_CONFIG 0
 #define TAB_MESSAGES 1
@@ -71,14 +72,14 @@ static void PopulateForm(void)
     GtkComboBox *box3d;
     char buf[64];
 
-    mode3d = checkvideomode(&settings.xdim3d, &settings.ydim3d, settings.bpp3d, settings.fullscreen, 1);
+    mode3d = videoCheckMode(&settings.xdim3d, &settings.ydim3d, settings.bpp3d, settings.fullscreen, 1);
     if (mode3d < 0)
     {
         int i, cd[] = { 32, 24, 16, 15, 8, 0 };
         for (i=0; cd[i]; ) { if (cd[i] >= settings.bpp3d) i++; else break; }
         for (; cd[i]; i++)
         {
-            mode3d = checkvideomode(&settings.xdim3d, &settings.ydim3d, cd[i], settings.fullscreen, 1);
+            mode3d = videoCheckMode(&settings.xdim3d, &settings.ydim3d, cd[i], settings.fullscreen, 1);
             if (mode3d < 0) continue;
             settings.bpp3d = cd[i];
             break;
@@ -513,8 +514,6 @@ int startwin_idle(void *s)
     gtk_main_iteration_do(FALSE);
     return 0;
 }
-
-extern int xdimgame, ydimgame, bppgame, forcesetup;
 
 int startwin_run(void)
 {

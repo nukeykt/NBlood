@@ -48,7 +48,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #include "savedef.h"
 #include "menus.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 
 #include "weapon.h"
@@ -816,11 +816,8 @@ int TileRangeMem(int start)
 
 void CON_Cache(void)
 {
-    char incache[8192]; // 8192 so it can index maxwalls as well
+    char incache[MAXTILES]{};
     int i,j,tottiles,totsprites,totactors;
-
-
-    memset(incache,0,8192);
 
     // Calculate all level tiles, non-actor stuff
     for (i=0; i<numsectors; i++)
@@ -837,13 +834,13 @@ void CON_Cache(void)
     }
 
     tottiles = 0;
-    for (i=0; i<8192; i++)
+    for (i=0; i<MAXTILES; i++)
         if (incache[i] > 0)
             tottiles += tilesiz[i].x*tilesiz[i].y;
 
     //////////////////////////////////////////////
 
-    memset(incache,0,8192);
+    memset(incache, 0, sizeof(incache));
 
     // Sprites on the stat list get counted as cached, others don't
     for (i=0; i<MAXSPRITES; i++)
@@ -853,7 +850,7 @@ void CON_Cache(void)
     totsprites = 0;
     totactors = 0;
 
-    for (i=0; i<MAXSPRITES; i++)
+    for (i=0; i<MAXTILES; i++)
     {
         if (incache[i] > 0)
         {
@@ -1045,7 +1042,6 @@ void CON_SpriteDetail(void)
 {
     char base[80];
     int16_t op1=0;
-    SPRITEp sp;
     short i;
 
     // Format: showsprite [SpriteNum]
@@ -1057,7 +1053,7 @@ void CON_SpriteDetail(void)
     }
 
     if (!CheckValidSprite(op1)) return;
-    sp = &sprite[op1];
+    auto const sp = (uspritetype const *)&sprite[op1];
 
     CON_ConMessage("x = %d, y = %d, z = %d",sp->x,sp->y,sp->z);
     CON_ConMessage("cstat = %d, picnum = %d",sp->cstat,sp->picnum);
@@ -1130,7 +1126,6 @@ void CON_LoadSetup(void)
 {
     /*
     char base[80],command[80];
-    extern char setupfilename[64];
 
     // Format: showuser [SpriteNum]
     if (sscanf(MessageInputString,"%s %s",base,command) < 2)
@@ -1163,7 +1158,7 @@ void CON_LoadSetup(void)
     CON_ConMessage("JonoF: Maybe later");
 }
 
-char *damagename[] =
+const char *damagename[] =
 {
     "WPN_STAR","WPN_UZI",
     "WPN_SHOTGUN","WPN_MICRO",

@@ -42,8 +42,9 @@ void wsay(char const *dafilename, int dafreq, int volume1, int volume2)
     UNREFERENCED_PARAMETER(volume2);
 }
 
-void loadwaves(void)
+void loadwaves(const char *wavename)
 {
+    UNREFERENCED_PARAMETER(wavename);
 }
 
 void loadsong(char const *filename)

@@ -383,7 +383,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth)
                 else
                 {
                     //renderPrepareMirror(x,y, fix16_from_int(a),nWall,&cx,&cy,&ca);
-                    renderPrepareMirrorOld(x,y,z,a,horiz,nWall,mirrorsector,&cx,&cy,&ca);
+                    renderPrepareMirror(x,y,z,a,horiz,nWall,&cx,&cy,&ca);
                 }
 #ifdef POLYMER
                 if (videoGetRenderMode() == REND_POLYMER)
@@ -395,7 +395,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth)
                 viewProcessSprites(cx,cy,z,fix16_to_int(ca),smooth);
                 renderDrawMasks();
                 if (GetWallType(nWall) != 501)
-                    renderCompleteMirrorOld();
+                    renderCompleteMirror();
                 if (wall[nWall].pal != 0 || wall[nWall].shade != 0)
                     TranslateMirrorColors(wall[nWall].shade, wall[nWall].pal);
                 pWall->nextwall = nNextWall;

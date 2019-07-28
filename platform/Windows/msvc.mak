@@ -253,7 +253,7 @@ AUDIOLIB_OBJS=$(AUDIOLIB_OBJ)\drivers.$o \
 	$(AUDIOLIB_OBJ)\xmp.$o \
 	$(AUDIOLIB_OBJ)\driver_nosound.$o
 
-MACT_OBJS=$(MACT_OBJ)\file_lib.$o \
+MACT_OBJS= \
 	$(MACT_OBJ)\control.$o \
 	$(MACT_OBJ)\keyboard.$o \
 	$(MACT_OBJ)\joystick.$o \
@@ -277,7 +277,7 @@ DUKE3D_OBJS=$(DUKE3D_OBJ)\game.$o \
 	$(DUKE3D_OBJ)\input.$o \
 	$(DUKE3D_OBJ)\menus.$o \
 	$(DUKE3D_OBJ)\namesdyn.$o \
-    $(DUKE3D_OBJ)\net.$o \
+    $(DUKE3D_OBJ)\network.$o \
 	$(DUKE3D_OBJ)\player.$o \
 	$(DUKE3D_OBJ)\premap.$o \
 	$(DUKE3D_OBJ)\savegame.$o \

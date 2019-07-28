@@ -182,7 +182,7 @@ static bool MV_Mix(VoiceNode *voice, int const buffer)
 void MV_PlayVoice(VoiceNode *voice)
 {
     DisableInterrupts();
-    LL_SortedInsertion(&VoiceList, voice, prev, next, VoiceNode, priority);
+    LL::SortedInsert(&VoiceList, voice, &VoiceNode::priority);
     voice->LeftVolume = voice->LeftVolumeDest;
     voice->RightVolume = voice->RightVolumeDest;
     RestoreInterrupts();
@@ -217,8 +217,7 @@ static void MV_StopVoice(VoiceNode *voice)
 
     DisableInterrupts();
     // move the voice from the play list to the free list
-    LL_Remove(voice, next, prev);
-    LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
+    LL::Move(voice, &VoicePool);
     RestoreInterrupts();
 }
 
@@ -275,7 +274,7 @@ static void MV_ServiceVoc(void)
     //DisableInterrupts();
 
 
-    if (VoiceList.next != 0 && VoiceList.next != &VoiceList)
+    if (VoiceList.next && VoiceList.next != &VoiceList)
     {
         VoiceNode *voice = VoiceList.next;
 
@@ -298,30 +297,8 @@ static void MV_ServiceVoc(void)
             // Is this voice done?
             if (!MV_Mix(voice, MV_MixPage))
             {
-                //JBF: prevent a deadlock caused by MV_StopVoice grabbing the mutex again
-                //MV_StopVoice( voice );
-                LL_Remove(voice, next, prev);
-                LL_Add((VoiceNode*) &VoicePool, voice, next, prev);
-
-                switch (voice->wavetype)
-                {
-#ifdef HAVE_VORBIS
-                    case FMT_VORBIS: MV_ReleaseVorbisVoice(voice); break;
-#endif
-#ifdef HAVE_FLAC
-                    case FMT_FLAC: MV_ReleaseFLACVoice(voice); break;
-#endif
-                    case FMT_XA: MV_ReleaseXAVoice(voice); break;
-#ifdef HAVE_XMP
-                    case FMT_XMP: MV_ReleaseXMPVoice(voice); break;
-#endif
-                    default: break;
-                }
-
-                voice->handle = 0;
-
-                if (MV_CallBackFunc)
-                    MV_CallBackFunc(voice->callbackval);
+                MV_CleanupVoice(voice);
+                LL::Move(voice, &VoicePool);
             }
         }
         while ((voice = next) != &VoiceList);
@@ -338,9 +315,9 @@ static void MV_ServiceVoc(void)
         {
             int32_t sl = *source++;
             int32_t sr = *source++;
-            *dest = clamp(*dest+sl*2,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest+sl,INT16_MIN, INT16_MAX);
             dest++;
-            *dest = clamp(*dest+sr*2,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest+sr,INT16_MIN, INT16_MAX);
             dest++;
         }
     }
@@ -468,7 +445,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
     DisableInterrupts();
 
     // Check if we have any free voices
-    if (LL_Empty(&VoicePool, next, prev))
+    if (LL::Empty(&VoicePool))
     {
         // check if we have a higher priority than a voice that is playing.
         for (voice = node = VoiceList.next; node != &VoiceList; node = node->next)
@@ -480,7 +457,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
         if (priority >= voice->priority && voice != &VoiceList && voice->handle >= MV_MINVOICEHANDLE)
             MV_Kill(voice->handle);
 
-        if (LL_Empty(&VoicePool, next, prev))
+        if (LL::Empty(&VoicePool))
         {
             // No free voices
             RestoreInterrupts();
@@ -489,7 +466,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
     }
 
     voice = VoicePool.next;
-    LL_Remove(voice, next, prev);
+    LL::Remove(voice);
     RestoreInterrupts();
 
     int32_t vhan = MV_MINVOICEHANDLE;
@@ -509,7 +486,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
 int32_t MV_VoiceAvailable(int32_t priority)
 {
     // Check if we have any free voices
-    if (!LL_Empty(&VoicePool, next, prev))
+    if (!LL::Empty(&VoicePool))
         return TRUE;
 
     DisableInterrupts();
@@ -888,11 +865,11 @@ int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numc
 
     MV_MaxVoices = Voices;
 
-    LL_Reset((VoiceNode*) &VoiceList, next, prev);
-    LL_Reset((VoiceNode*) &VoicePool, next, prev);
+    LL::Reset((VoiceNode*) &VoiceList);
+    LL::Reset((VoiceNode*) &VoicePool);
 
     for (int index = 0; index < Voices; index++)
-        LL_Add((VoiceNode*) &VoicePool, &MV_Voices[ index ], next, prev);
+        LL::Insert(&VoicePool, &MV_Voices[index]);
 
     MV_SetReverseStereo(FALSE);
 
@@ -931,7 +908,6 @@ int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numc
     }
 
     MV_MusicBuffer = ptr;
-    ptr += MV_MIXBUFFERSIZE*sizeof(uint8_t)*2*2;
 
     // Calculate pan table
     MV_CalcPanTable();
@@ -969,8 +945,8 @@ int32_t MV_Shutdown(void)
     // Free any voices we allocated
     ALIGNED_FREE_AND_NULL(MV_Voices);
 
-    LL_Reset((VoiceNode*) &VoiceList, next, prev);
-    LL_Reset((VoiceNode*) &VoicePool, next, prev);
+    LL::Reset((VoiceNode*) &VoiceList);
+    LL::Reset((VoiceNode*) &VoicePool);
 
     MV_MaxVoices = 1;
 

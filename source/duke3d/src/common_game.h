@@ -10,6 +10,8 @@
 #include "collections.h"
 #include "grpscan.h"
 
+#include "vfs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,7 +33,7 @@ extern int g_useCwd;
 #define GAMEFLAG_ADDON      0x00000010
 #define GAMEFLAG_SHAREWARE  0x00000020
 #define GAMEFLAG_DUKEBETA   0x00000060 // includes 0x20 since it's a shareware beta
-#define GAMEFLAG_IONMAIDEN  0x00000080
+#define GAMEFLAG_FURY       0x00000080
 #define GAMEFLAG_STANDALONE 0x00000100
 #define GAMEFLAGMASK        0x000000FF // flags allowed from grpinfo
 
@@ -47,7 +49,7 @@ extern int     g_addonNum;
 #define NAM_WW2GI           (g_gameType & (GAMEFLAG_NAM|GAMEFLAG_WW2GI))
 #define SHAREWARE           (g_gameType & GAMEFLAG_SHAREWARE)
 #define DUKEBETA            ((g_gameType & GAMEFLAG_DUKEBETA) == GAMEFLAG_DUKEBETA)
-#define IONMAIDEN           (g_gameType & GAMEFLAG_IONMAIDEN)
+#define FURY                (g_gameType & GAMEFLAG_FURY)
 
 enum Games_t {
     GAME_DUKE = 0,
@@ -125,6 +127,8 @@ extern void G_SetupGlobalPsky(void);
 
 //////////
 
+extern char g_modDir[BMAX_PATH];
+extern buildvfs_kfd kopen4loadfrommod(const char *filename, char searchfirst);
 extern void G_AddSearchPaths(void);
 extern void G_CleanupSearchPaths(void);
 
@@ -148,7 +152,7 @@ extern void G_LoadLookups(void);
 
 #if defined HAVE_FLAC || defined HAVE_VORBIS
 # define FORMAT_UPGRADE_ELIGIBLE
-extern int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
+extern buildvfs_kfd S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
 #else
 # define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)
 #endif

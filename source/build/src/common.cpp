@@ -8,6 +8,8 @@
 
 #include "common.h"
 
+#include "vfs.h"
+
 void PrintBuildInfo(void)
 {
     buildprint(
@@ -64,7 +66,7 @@ char *g_defNamePtr = NULL;
 
 void clearDefNamePtr(void)
 {
-    Bfree(g_defNamePtr);
+    Xfree(g_defNamePtr);
     // g_defNamePtr assumed to be assigned to right after
 }
 
@@ -129,15 +131,18 @@ int32_t G_CheckCmdSwitch(int32_t argc, char const * const * argv, const char *st
 // returns: 1 if file could be opened, 0 else
 int32_t testkopen(const char *filename, char searchfirst)
 {
-    int32_t fd = kopen4load(filename, searchfirst);
-    if (fd >= 0)
+    buildvfs_kfd fd = kopen4load(filename, searchfirst);
+    if (fd != buildvfs_kfd_invalid)
         kclose(fd);
-    return (fd >= 0);
+    return (fd != buildvfs_kfd_invalid);
 }
 
 // checks from path and in ZIPs, returns 1 if NOT found
 int32_t check_file_exist(const char *fn)
 {
+#ifdef USE_PHYSFS
+    return !PHYSFS_exists(fn);
+#else
     int32_t opsm = pathsearchmode;
     char *tfn;
 
@@ -155,10 +160,11 @@ int32_t check_file_exist(const char *fn)
             return 1;
         }
     }
-    else Bfree(tfn);
+    else Xfree(tfn);
     pathsearchmode = opsm;
 
     return 0;
+#endif
 }
 
 

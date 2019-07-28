@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "osd.h"
 #include "savegame.h"
 
+#include "vfs.h"
+
 #define LINE_NUMBER (g_lineNumber << 12)
 
 int32_t g_scriptVersion = 13; // 13 = 1.3D-style CON files, 14 = 1.4/1.5 style CON files
@@ -73,7 +75,7 @@ static intptr_t g_scriptEventOffset;
 // First entry is 'default' code.
 static intptr_t *g_caseTablePtr;
 
-static bool C_ParseCommand(bool loop);
+static bool C_ParseCommand(bool loop = false);
 static void C_SetScriptSize(int32_t newsize);
 #endif
 
@@ -544,6 +546,8 @@ static tokenmap_t const vm_keywords[] =
     { "undefinevolume",         CON_UNDEFINEVOLUME },
     { "updatesector",           CON_UPDATESECTOR },
     { "updatesectorz",          CON_UPDATESECTORZ },
+    { "updatesectorneighbor",  CON_UPDATESECTORNEIGHBOR },
+    { "updatesectorneighborz", CON_UPDATESECTORNEIGHBORZ },
     { "useractor",              CON_USERACTOR },
     { "userquote",              CON_USERQUOTE },
     { "wackplayer",             CON_WACKPLAYER },
@@ -674,6 +678,7 @@ static const vec2_t varvartable[] =
     { CON_XORVARVAR,         CON_XORVAR },
 };
 
+#ifdef CON_DISCRETE_VAR_ACCESS
 static const vec2_t globalvartable[] =
 {
     { CON_IFVARA,         CON_IFVARA_GLOBAL },
@@ -775,24 +780,22 @@ static const vec2_t actorvartable[] =
     { CON_SUBVAR,         CON_SUBVAR_ACTOR },
     { CON_XORVAR,         CON_XORVAR_ACTOR },
 };
+#endif
 
 static inthashtable_t h_varvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(varvartable)) };
+#ifdef CON_DISCRETE_VAR_ACCESS
 static inthashtable_t h_globalvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(globalvartable)) };
 static inthashtable_t h_playervar = { NULL, INTHASH_SIZE(ARRAY_SIZE(playervartable)) };
 static inthashtable_t h_actorvar = { NULL, INTHASH_SIZE(ARRAY_SIZE(actorvartable)) };
+#endif
 
 static inthashtable_t *const inttables[] = {
     &h_varvar,
+#ifdef CON_DISCRETE_VAR_ACCESS
     &h_globalvar,
     &h_playervar,
     &h_actorvar,
-};
-
-static inthashtable_t *const inttables_free[] = {
-    &h_varvar,
-    &h_globalvar,
-    &h_playervar,
-    &h_actorvar,
+#endif
 };
 
 
@@ -966,6 +969,7 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_ENDLEVELSCREEN",
     "EVENT_EXITGAMESCREEN",
     "EVENT_EXITPROGRAMSCREEN",
+    "EVENT_ALTFIRE",
     "EVENT_ALTWEAPON",
     "EVENT_DISPLAYOVERHEADMAPPLAYER",
     "EVENT_MENUCURSORLEFT",
@@ -982,24 +986,22 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_DAMAGEFLOOR",
     "EVENT_DAMAGECEILING",
     "EVENT_DISPLAYROOMSCAMERATILE",
+    "EVENT_RESETGOTPICS",
 #ifdef LUNATIC
     "EVENT_ANIMATEALLSPRITES",
 #endif
 };
 
-char *bitptr; // pointer to bitmap of which bytecode positions contain pointers
+uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
 
-#define BITPTR_SET(x) (bitptr[(x)>>3] |= (1<<((x)&7)))
-#define BITPTR_CLEAR(x) (bitptr[(x)>>3] &= ~(1<<((x)&7)))
-#define BITPTR_IS_POINTER(x) (bitptr[(x)>>3] & (1<<((x) &7)))
+#define BITPTR_SET(x) bitmap_set(bitptr, x)
+#define BITPTR_CLEAR(x) bitmap_clear(bitptr, x)
+#define BITPTR_IS_POINTER(x) bitmap_test(bitptr, x)
 
 #if !defined LUNATIC
 hashtable_t h_arrays   = { MAXGAMEARRAYS >> 1, NULL };
 hashtable_t h_gamevars = { MAXGAMEVARS >> 1, NULL };
 hashtable_t h_labels   = { 11264 >> 1, NULL };
-
-// "magic" number for { and }, overrides line number in compiled code for later detection
-#define IFELSE_MAGIC 31337
 
 static void C_SetScriptSize(int32_t newsize)
 {
@@ -1022,7 +1024,7 @@ static void C_SetScriptSize(int32_t newsize)
     G_Util_PtrToIdx2(&g_tile[0].loadPtr, MAXTILES, sizeof(tiledata_t), apScript, P2I_FWD_NON0);
 
     auto newscript = (intptr_t *)Xrealloc(apScript, newsize * sizeof(intptr_t));
-    bitptr = (char *)Xrealloc(bitptr, (((newsize + 7) >> 3) + 1) * sizeof(uint8_t));
+    bitptr = (uint8_t *)Xrealloc(bitptr, (((newsize + 7) >> 3) + 1) * sizeof(uint8_t));
 
     if (newsize > g_scriptSize)
         Bmemset(&newscript[g_scriptSize], 0, (newsize - g_scriptSize) * sizeof(intptr_t));
@@ -1269,7 +1271,7 @@ static int C_GetNextKeyword(void) //Returns its code #
     if (EDUKE32_PREDICT_TRUE((i = hash_find(&h_keywords,tempbuf)) >= 0))
     {
         if (i == CON_LEFTBRACE || i == CON_RIGHTBRACE || i == CON_NULLOP)
-            scriptWriteValue(i | (IFELSE_MAGIC<<12));
+            scriptWriteValue(i | (VM_IFELSE_MAGIC<<12));
         else scriptWriteValue(i | LINE_NUMBER);
 
         textptr += l;
@@ -1669,7 +1671,7 @@ static int32_t C_GetNextValue(int32_t type)
             {
                 char *gl = C_GetLabelType(labeltype[i]);
                 initprintf("%s:%d: debug: %s label `%s'.\n",g_scriptFileName,g_lineNumber,gl,label+(i<<6));
-                Bfree(gl);
+                Xfree(gl);
             }
 
             scriptWriteValue(labelcode[i]);
@@ -1685,8 +1687,8 @@ static int32_t C_GetNextValue(int32_t type)
         C_ReportError(-1);
         initprintf("%s:%d: warning: expected %s, found %s.\n",g_scriptFileName,g_lineNumber,el,gl);
         g_warningCnt++;
-        Bfree(el);
-        Bfree(gl);
+        Xfree(el);
+        Xfree(gl);
         return -1;  // valid label name, but wrong type
     }
 
@@ -1792,6 +1794,7 @@ static int C_GetStructureIndexes(bool const labelsonly, hashtable_t const * cons
     return labelNum;
 }
 
+#ifdef CURRENTLY_UNUSED
 static FORCE_INLINE bool C_IntPow2(int32_t const v)
 {
     return ((v!=0) && (v&(v-1))==0);
@@ -1808,6 +1811,7 @@ static inline uint32_t C_Pow2IntLogBase2(int32_t const v)
 
     return r;
 }
+#endif
 
 static bool C_CheckMalformedBranch(intptr_t lastScriptPtr)
 {
@@ -1840,7 +1844,7 @@ static bool C_CheckEmptyBranch(int tw, intptr_t lastScriptPtr)
         return false;
     }
 
-    if ((*(g_scriptPtr) & VM_INSTMASK) != CON_NULLOP || *(g_scriptPtr)>>12 != IFELSE_MAGIC)
+    if ((*(g_scriptPtr) & VM_INSTMASK) != CON_NULLOP || *(g_scriptPtr)>>12 != VM_IFELSE_MAGIC)
         g_skipBranch = false;
 
     if (EDUKE32_PREDICT_FALSE(g_skipBranch))
@@ -1850,7 +1854,7 @@ static bool C_CheckEmptyBranch(int tw, intptr_t lastScriptPtr)
         g_scriptPtr = lastScriptPtr + apScript;
         initprintf("%s:%d: warning: empty `%s' branch\n",g_scriptFileName,g_lineNumber,
                    VM_GetKeywordForID(*(g_scriptPtr) & VM_INSTMASK));
-        scriptWriteAtOffset(CON_NULLOP | (IFELSE_MAGIC<<12), g_scriptPtr);
+        scriptWriteAtOffset(CON_NULLOP | (VM_IFELSE_MAGIC<<12), g_scriptPtr);
         return true;
     }
 
@@ -1867,7 +1871,7 @@ static int C_CountCaseStatements()
 
     g_numCases = 0;
     g_caseTablePtr = NULL;
-    C_ParseCommand(1);
+    C_ParseCommand(true);
 
     // since we processed the endswitch, we need to re-increment g_checkingSwitch
     g_checkingSwitch++;
@@ -1885,9 +1889,9 @@ static int C_CountCaseStatements()
 
 static void C_Include(const char *confile)
 {
-    int32_t const fp = kopen4loadfrommod(confile,g_loadFromGroupOnly);
+    buildvfs_kfd fp = kopen4loadfrommod(confile, g_loadFromGroupOnly);
 
-    if (EDUKE32_PREDICT_FALSE(fp < 0))
+    if (EDUKE32_PREDICT_FALSE(fp == buildvfs_kfd_invalid))
     {
         g_errorCnt++;
         initprintf("%s:%d: error: could not find file `%s'.\n",g_scriptFileName,g_lineNumber,confile);
@@ -1923,7 +1927,7 @@ static void C_Include(const char *confile)
     textptr = mptr;
 
     C_SkipComments();
-    C_ParseCommand(1);
+    C_ParseCommand(true);
 
     Bstrcpy(g_scriptFileName, parentScriptFileName);
 
@@ -1933,15 +1937,15 @@ static void C_Include(const char *confile)
 
     textptr = origtptr;
 
-    Bfree(mptr);
+    Xfree(mptr);
 }
 #endif  // !defined LUNATIC
 
 #ifdef _WIN32
 static void check_filename_case(const char *fn)
 {
-    int32_t fp;
-    if ((fp = kopen4loadfrommod(fn, g_loadFromGroupOnly)) >= 0)
+    buildvfs_kfd fp;
+    if ((fp = kopen4loadfrommod(fn, g_loadFromGroupOnly)) != buildvfs_kfd_invalid)
         kclose(fp);
 }
 #else
@@ -2014,9 +2018,12 @@ void C_DefineMusic(int volumeNum, int levelNum, const char *fileName)
     Bassert((unsigned)volumeNum < MAXVOLUMES+1);
     Bassert((unsigned)levelNum < MAXLEVELS);
 
+    if (strcmp(fileName, "/.") == 0)
+        return;
+
     map_t *const pMapInfo = &g_mapInfo[(MAXLEVELS*volumeNum)+levelNum];
 
-    Bfree(pMapInfo->musicfn);
+    Xfree(pMapInfo->musicfn);
     pMapInfo->musicfn = dup_filename(fileName);
     check_filename_case(pMapInfo->musicfn);
 }
@@ -2029,7 +2036,7 @@ void C_DefineSound(int32_t sndidx, const char *fn, int32_t args[5])
     {
         sound_t *const snd = &g_sounds[sndidx];
 
-        Bfree(snd->filename);
+        Xfree(snd->filename);
         snd->filename = dup_filename(fn);
         check_filename_case(snd->filename);
 
@@ -2076,11 +2083,11 @@ void C_DefineLevelName(int32_t vol, int32_t lev, const char *fn,
     {
         map_t *const map = &g_mapInfo[(MAXLEVELS*vol)+lev];
 
-        Bfree(map->filename);
+        Xfree(map->filename);
         map->filename = dup_filename(fn);
 
         // TODO: truncate to 32 chars?
-        Bfree(map->name);
+        Xfree(map->name);
         map->name = Xstrdup(levelname);
 
         map->partime = REALGAMETICSPERSEC * partime;
@@ -2377,28 +2384,16 @@ LUNATIC_EXTERN void C_SetCfgName(const char *cfgname)
 #ifdef POLYMER
     int const renderMode = glrendmode;
 #endif
-    struct Bstat st;
 
-    if (Bstat(g_modDir, &st) < 0)
+    if (!buildvfs_isdir(g_modDir))
     {
-        if (errno == ENOENT)     // path doesn't exist
+        if (buildvfs_mkdir(g_modDir, S_IRWXU) != 0)
         {
-            if (Bmkdir(g_modDir, S_IRWXU) < 0)
-            {
-                OSD_Printf("Failed to create directory \"%s\"!\n", g_modDir);
-                return;
-            }
-        }
-        else
-        {
-            // another type of failure
+            OSD_Printf("Failed to create directory \"%s\"!\n", g_modDir);
             return;
         }
-    }
-    else if ((st.st_mode & S_IFDIR) != S_IFDIR)
-    {
-        // directory isn't a directory
-        return;
+        else
+            OSD_Printf("Created configuration file directory %s\n", g_modDir);
     }
 
     // XXX: Back up 'cfgname' as it may be the global 'tempbuf'.
@@ -2451,6 +2446,7 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
 {
     int opcode = -1;
 
+#ifdef CON_DISCRETE_VAR_ACCESS
     if (ins[1] < MAXGAMEVARS)
     {
         switch (aGameVars[ins[1] & (MAXGAMEVARS - 1)].flags & (GAMEVAR_USER_MASK | GAMEVAR_PTR_MASK))
@@ -2458,16 +2454,15 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
             case 0:
                 opcode = inthash_find(&h_globalvar, *ins & VM_INSTMASK);
                 break;
-/*
             case GAMEVAR_PERACTOR:
                 opcode = inthash_find(&h_actorvar, *ins & VM_INSTMASK);
                 break;
             case GAMEVAR_PERPLAYER:
                 opcode = inthash_find(&h_playervar, *ins & VM_INSTMASK);
                 break;
-*/
         }
     }
+#endif
 
     if (opcode != -1)
     {
@@ -2481,7 +2476,7 @@ static void scriptUpdateOpcodeForVariableType(intptr_t *ins)
     }
 }
 
-static bool C_ParseCommand(bool loop)
+static bool C_ParseCommand(bool loop /*= false*/)
 {
     int32_t i, j=0, k=0, tw;
 
@@ -2561,7 +2556,7 @@ DO_DEFSTATE:
                 C_ReportError(-1);
                 initprintf("%s:%d: warning: expected state, found %s.\n", g_scriptFileName, g_lineNumber, gl);
                 g_warningCnt++;
-                Bfree(gl);
+                Xfree(gl);
                 scriptWriteAtOffset(CON_NULLOP, &g_scriptPtr[-1]); // get rid of the state, leaving a nullop to satisfy if conditions
                 continue;  // valid label name, but wrong type
             }
@@ -3322,9 +3317,9 @@ DO_DEFSTATE:
                         C_GetNextKeyword();
                         g_numBraces++;
 
-                        C_ParseCommand(1);
+                        C_ParseCommand(true);
                     }
-                    else C_ParseCommand(0);
+                    else C_ParseCommand();
 
                     g_scriptPtr = tempscrptr;
 
@@ -3343,7 +3338,7 @@ DO_DEFSTATE:
 
                 g_scriptPtr++; //Leave a spot for the fail location
 
-                C_ParseCommand(0);
+                C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
@@ -3573,6 +3568,11 @@ DO_DEFSTATE:
                 C_GetNextVarType((tw == CON_GETTSPR) ? GAMEVAR_READONLY : 0);
                 continue;
             }
+        case CON_ADDLOGVAR:
+            g_labelsOnly = 1;
+            C_GetNextVar();
+            g_labelsOnly = 0;
+            continue;
 
         case CON_COS:
         case CON_DIVR:
@@ -3589,7 +3589,6 @@ DO_DEFSTATE:
             C_GetNextVarType(GAMEVAR_READONLY);
             fallthrough__;
         case CON_ACTIVATECHEAT:
-        case CON_ADDLOGVAR:
         case CON_ANGOFF:
         case CON_CHECKACTIVATORMOTION:
         case CON_CHECKAVAILINVEN:
@@ -4133,6 +4132,7 @@ setvarvar:
         case CON_GETFLORZOFSLOPE:
         case CON_GETCEILZOFSLOPE:
         case CON_UPDATESECTORZ:
+        case CON_UPDATESECTORNEIGHBORZ:
             C_GetManyVars(3);
             C_GetNextVarType(GAMEVAR_READONLY);
             continue;
@@ -4377,7 +4377,7 @@ setvarvar:
                 auto const offset = g_scriptPtr - apScript;
                 g_scriptPtr++; // Leave a spot for the fail location
 
-                C_ParseCommand(0);
+                C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
@@ -4389,7 +4389,7 @@ setvarvar:
                 {
                     j = C_GetKeyword();
 
-                    if (j == CON_ELSE || j == CON_LEFTBRACE)
+                    if (j == CON_ELSE)
                         g_checkingIfElse++;
                 }
                 continue;
@@ -4430,7 +4430,7 @@ ifvar:
                 auto const offset = g_scriptPtr - apScript;
                 g_scriptPtr++; //Leave a spot for the fail location
 
-                C_ParseCommand(0);
+                C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
@@ -4442,7 +4442,7 @@ ifvar:
                 {
                     j = C_GetKeyword();
 
-                    if (j == CON_ELSE || j == CON_LEFTBRACE)
+                    if (j == CON_ELSE)
                         g_checkingIfElse++;
                 }
 
@@ -4470,7 +4470,7 @@ ifvar:
             intptr_t const offset = g_scriptPtr-apScript;
             g_scriptPtr++; //Leave a spot for the location to jump to after completion
 
-            C_ParseCommand(0);
+            C_ParseCommand();
 
             // write relative offset
             auto const tscrptr = (intptr_t *) apScript+offset;
@@ -4551,6 +4551,7 @@ ifvar:
 
         case CON_CANSEESPR:
         case CON_UPDATESECTOR:
+        case CON_UPDATESECTORNEIGHBOR:
         case CON_QSTRCMP:
             C_GetManyVars(2);
             C_GetNextVarType(GAMEVAR_READONLY);
@@ -4686,7 +4687,7 @@ ifvar:
                 }
 
                 g_numCases=0;
-                C_ParseCommand(1);
+                C_ParseCommand(true);
                 tempscrptr = (intptr_t *)(apScript+tempoffset);
 
                 //Bsprintf(g_szBuf,"SWITCHXX: '%.22s'",textptr);
@@ -4812,7 +4813,7 @@ repeatcase:
 
                 tempoffset = (unsigned)(tempscrptr-apScript);
 
-                while (C_ParseCommand(0) == 0)
+                while (C_ParseCommand() == 0)
                 {
                     j = C_GetKeyword();
 
@@ -4940,7 +4941,7 @@ repeatcase:
 
                 g_scriptPtr++; //Leave a spot for the fail location
 
-                C_ParseCommand(0);
+                C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
@@ -4950,7 +4951,7 @@ repeatcase:
 
                 j = C_GetKeyword();
 
-                if (j == CON_ELSE || j == CON_LEFTBRACE)
+                if (j == CON_ELSE)
                     g_checkingIfElse++;
 
                 continue;
@@ -4990,7 +4991,7 @@ repeatcase:
 
                 g_scriptPtr++; //Leave a spot for the fail location
 
-                C_ParseCommand(0);
+                C_ParseCommand();
 
                 if (C_CheckEmptyBranch(tw, lastScriptPtr))
                     continue;
@@ -5000,7 +5001,7 @@ repeatcase:
 
                 j = C_GetKeyword();
 
-                if (j == CON_ELSE || j == CON_LEFTBRACE)
+                if (j == CON_ELSE)
                     g_checkingIfElse++;
 
                 continue;
@@ -5014,17 +5015,17 @@ repeatcase:
             }
             g_numBraces++;
 
-            C_ParseCommand(1);
+            C_ParseCommand(true);
             continue;
 
         case CON_RIGHTBRACE:
             g_numBraces--;
 
-            if ((g_scriptPtr[-2]>>12) == (IFELSE_MAGIC) &&
+            if ((g_scriptPtr[-2]>>12) == (VM_IFELSE_MAGIC) &&
                 ((g_scriptPtr[-2] & VM_INSTMASK) == CON_LEFTBRACE)) // rewrite "{ }" into "nullop"
             {
                 //            initprintf("%s:%d: rewriting empty braces '{ }' as 'nullop' from right\n",g_szScriptFileName,g_lineNumber);
-                g_scriptPtr[-2] = CON_NULLOP | (IFELSE_MAGIC<<12);
+                g_scriptPtr[-2] = CON_NULLOP | (VM_IFELSE_MAGIC<<12);
                 g_scriptPtr -= 2;
 
                 if (C_GetKeyword() != CON_ELSE && (g_scriptPtr[-2] & VM_INSTMASK) != CON_ELSE)
@@ -5204,12 +5205,7 @@ repeatcase:
 
             i = 0;
 
-            {
-                hash_delete(&h_gamefuncs, gamefunctions[j]);
-                char *str = Bstrtolower(Xstrdup(gamefunctions[j]));
-                hash_delete(&h_gamefuncs, str);
-                Bfree(str);
-            }
+            hash_delete(&h_gamefuncs, gamefunctions[j]);
 
             while (*textptr != 0x0a && *textptr != 0x0d && *textptr != 0)
             {
@@ -5234,11 +5230,6 @@ repeatcase:
             }
             gamefunctions[j][i] = '\0';
             hash_add(&h_gamefuncs,gamefunctions[j],j,0);
-            {
-                char *str = Bstrtolower(Xstrdup(gamefunctions[j]));
-                hash_add(&h_gamefuncs,str,j,0);
-                Bfree(str);
-            }
 
             continue;
 
@@ -5257,12 +5248,7 @@ repeatcase:
                 continue;
             }
 
-            {
-                hash_delete(&h_gamefuncs, gamefunctions[j]);
-                char *str = Bstrtolower(Xstrdup(gamefunctions[j]));
-                hash_delete(&h_gamefuncs, str);
-                Bfree(str);
-            }
+            hash_delete(&h_gamefuncs, gamefunctions[j]);
 
             gamefunctions[j][0] = '\0';
 
@@ -5529,6 +5515,8 @@ repeatcase:
             {
                 initprintf("%s:%d: error: quote number exceeds limit of %d.\n",g_scriptFileName,g_lineNumber,MAXQUOTES);
                 g_errorCnt++;
+                scriptSkipLine();
+                continue;
             }
             else
             {
@@ -5658,6 +5646,12 @@ repeatcase:
                 g_errorCnt++;
                 k = MAXSOUNDS-1;
             }
+            else if (EDUKE32_PREDICT_FALSE(g_sounds[k].filename != NULL))
+            {
+                initprintf("%s:%d: warning: sound %d already defined (%s)\n",g_scriptFileName,g_lineNumber,k,g_sounds[k].filename);
+                g_warningCnt++;
+            }
+
             g_scriptPtr--;
             i = 0;
             C_SkipComments();
@@ -5972,6 +5966,9 @@ static void C_AddDefaultDefinitions(void)
 
     static tokenmap_t predefined[] =
     {
+        { "CLIPMASK0",         CLIPMASK0 },
+        { "CLIPMASK1",         CLIPMASK1 },
+
         { "GAMEARRAY_BOOLEAN", GAMEARRAY_BITMAP },
         { "GAMEARRAY_INT16",   GAMEARRAY_INT16 },
         { "GAMEARRAY_INT8",    GAMEARRAY_INT8 },
@@ -5984,6 +5981,7 @@ static void C_AddDefaultDefinitions(void)
         { "GAMEVAR_NORESET",   GAMEVAR_NORESET },
         { "GAMEVAR_PERACTOR",  GAMEVAR_PERACTOR },
         { "GAMEVAR_PERPLAYER", GAMEVAR_PERPLAYER },
+        { "GAMEVAR_SERIALIZE", GAMEVAR_SERIALIZE },
 
         { "MAX_WEAPONS",        MAX_WEAPONS },
         { "MAXSPRITES",         MAXSPRITES },
@@ -6022,24 +6020,26 @@ static void C_AddDefaultDefinitions(void)
         { "PROJ_XREPEAT",     PROJ_XREPEAT },
         { "PROJ_YREPEAT",     PROJ_YREPEAT },
 
-        { "SFLAG_BADGUY",         SFLAG_BADGUY },
-        { "SFLAG_DAMAGEEVENT",    SFLAG_DAMAGEEVENT },
-        { "SFLAG_GREENSLIMEFOOD", SFLAG_GREENSLIMEFOOD },
-        { "SFLAG_HURTSPAWNBLOOD", SFLAG_HURTSPAWNBLOOD },
-        { "SFLAG_NOCLIP",         SFLAG_NOCLIP },
-        { "SFLAG_NODAMAGEPUSH",   SFLAG_NODAMAGEPUSH },
-        { "SFLAG_NOEVENTS",       SFLAG_NOEVENTCODE },
-        { "SFLAG_NOLIGHT",        SFLAG_NOLIGHT },
-        { "SFLAG_NOPAL",          SFLAG_NOPAL },
-        { "SFLAG_NOSHADE",        SFLAG_NOSHADE },
-        { "SFLAG_NOTELEPORT",     SFLAG_NOTELEPORT },
-        { "SFLAG_NOWATERDIP",     SFLAG_NOWATERDIP },
-        { "SFLAG_NVG",            SFLAG_NVG },
-        { "SFLAG_REALCLIPDIST",   SFLAG_REALCLIPDIST },
-        { "SFLAG_SHADOW",         SFLAG_SHADOW },
-        { "SFLAG_SMOOTHMOVE",     SFLAG_SMOOTHMOVE },
-        { "SFLAG_USEACTIVATOR",   SFLAG_USEACTIVATOR },
-        { "SFLAG_WAKEUPBADGUYS",  SFLAG_WAKEUPBADGUYS },
+        { "SFLAG_BADGUY",          SFLAG_BADGUY },
+        { "SFLAG_DAMAGEEVENT",     SFLAG_DAMAGEEVENT },
+        { "SFLAG_GREENSLIMEFOOD",  SFLAG_GREENSLIMEFOOD },
+        { "SFLAG_HURTSPAWNBLOOD",  SFLAG_HURTSPAWNBLOOD },
+        { "SFLAG_NOCLIP",          SFLAG_NOCLIP },
+        { "SFLAG_NODAMAGEPUSH",    SFLAG_NODAMAGEPUSH },
+        { "SFLAG_NOEVENTS",        SFLAG_NOEVENTCODE },
+        { "SFLAG_NOLIGHT",         SFLAG_NOLIGHT },
+        { "SFLAG_NOPAL",           SFLAG_NOPAL },
+        { "SFLAG_NOSHADE",         SFLAG_NOSHADE },
+        { "SFLAG_NOTELEPORT",      SFLAG_NOTELEPORT },
+        { "SFLAG_NOWATERDIP",      SFLAG_NOWATERDIP },
+        { "SFLAG_NVG",             SFLAG_NVG },
+        { "SFLAG_REALCLIPDIST",    SFLAG_REALCLIPDIST },
+        { "SFLAG_SHADOW",          SFLAG_SHADOW },
+        { "SFLAG_SMOOTHMOVE",      SFLAG_SMOOTHMOVE },
+        { "SFLAG_USEACTIVATOR",    SFLAG_USEACTIVATOR },
+        { "SFLAG_WAKEUPBADGUYS",   SFLAG_WAKEUPBADGUYS },
+        { "SFLAG_NOWATERSECTOR",   SFLAG_NOWATERSECTOR },
+        { "SFLAG_QUEUEDFORDELETE", SFLAG_QUEUEDFORDELETE },
 
         { "STAT_ACTIVATOR",   STAT_ACTIVATOR },
         { "STAT_ACTOR",       STAT_ACTOR },
@@ -6180,6 +6180,7 @@ void scriptInitTables()
     for (auto &varvar : varvartable)
         inthash_add(&h_varvar, varvar.x, varvar.y, 0);
 
+#ifdef CON_DISCRETE_VAR_ACCESS
     for (auto &globalvar : globalvartable)
         inthash_add(&h_globalvar, globalvar.x, globalvar.y, 0);
 
@@ -6188,6 +6189,7 @@ void scriptInitTables()
 
     for (auto &actorvar : actorvartable)
         inthash_add(&h_actorvar, actorvar.x, actorvar.y, 0);
+#endif
 }
 
 void C_Compile(const char *fileName)
@@ -6207,9 +6209,9 @@ void C_Compile(const char *fileName)
     Gv_Init();
     C_InitProjectiles();
 
-    int const kFile = kopen4loadfrommod(fileName, g_loadFromGroupOnly);
+    buildvfs_kfd kFile = kopen4loadfrommod(fileName, g_loadFromGroupOnly);
 
-    if (kFile == -1) // JBF: was 0
+    if (kFile == buildvfs_kfd_invalid) // JBF: was 0
     {
         if (g_loadFromGroupOnly == 1 || numgroupfiles == 0)
         {
@@ -6250,10 +6252,10 @@ void C_Compile(const char *fileName)
     g_scriptcrc = Bcrc32(NULL, 0, 0L);
     g_scriptcrc = Bcrc32(textptr, kFileLen, g_scriptcrc);
 
-    Bfree(apScript);
+    Xfree(apScript);
 
     apScript = (intptr_t *)Xcalloc(1, g_scriptSize * sizeof(intptr_t));
-    bitptr   = (char *)Xcalloc(1, (((g_scriptSize + 7) >> 3) + 1) * sizeof(uint8_t));
+    bitptr   = (uint8_t *)Xcalloc(1, (((g_scriptSize + 7) >> 3) + 1) * sizeof(uint8_t));
 
     g_errorCnt   = 0;
     g_labelCnt   = 0;
@@ -6265,7 +6267,7 @@ void C_Compile(const char *fileName)
     Bstrcpy(g_scriptFileName, fileName);
 
     C_AddDefaultDefinitions();
-    C_ParseCommand(1);
+    C_ParseCommand(true);
 
     for (char * m : g_scriptModules)
     {
@@ -6320,10 +6322,8 @@ void C_Compile(const char *fileName)
     for (auto i : tables_free)
         hash_free(i);
 
-    inthash_free(&h_varvar);
-    inthash_free(&h_globalvar);
-    inthash_free(&h_playervar);
-    inthash_free(&h_actorvar);
+    for (auto i : inttables)
+        inthash_free(i);
 
     freehashnames();
     freesoundhashnames();

@@ -108,7 +108,7 @@ int G_CheckActivatorMotion(int lotag)
     {
         if (sprite[spriteNum].lotag == lotag)
         {
-            spritetype *const pSprite = &sprite[spriteNum];
+            auto const pSprite = &sprite[spriteNum];
 
             for (bssize_t j = g_animateCnt - 1; j >= 0; j--)
                 if (pSprite->sectnum == g_animateSect[j])
@@ -229,7 +229,7 @@ int __fastcall A_FindPlayer(const spritetype *pSprite, int32_t *dist)
 {
     if (!g_netServer && ud.multimode < 2)
     {
-        DukePlayer_t *const pPlayer = g_player[myconnectindex].ps;
+        auto const pPlayer = g_player[myconnectindex].ps;
 
         if (dist)
             *dist = A_FP_ManhattanDist(pPlayer, pSprite);
@@ -242,7 +242,7 @@ int __fastcall A_FindPlayer(const spritetype *pSprite, int32_t *dist)
 
     for (bssize_t TRAVERSE_CONNECT(j))
     {
-        DukePlayer_t *const pPlayer    = g_player[j].ps;
+        auto const pPlayer    = g_player[j].ps;
         int32_t             playerDist = A_FP_ManhattanDist(pPlayer, pSprite);
 
         if (playerDist < closestPlayerDist && sprite[pPlayer->i].extra > 0)
@@ -420,14 +420,14 @@ void G_AnimateCamSprite(int smoothRatio)
 
     if (totalclock >= T1(spriteNum) + ud.camera_time)
     {
-        DukePlayer_t const *const pPlayer = g_player[screenpeek].ps;
+        auto const pPlayer = g_player[screenpeek].ps;
 
         if (pPlayer->newowner >= 0)
             OW(spriteNum) = pPlayer->newowner;
 
         if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < VIEWSCREEN_ACTIVE_DISTANCE)
         {
-            int const viewscrShift = G_GetViewscreenSizeShift((const uspritetype *)&sprite[spriteNum]);
+            int const viewscrShift = G_GetViewscreenSizeShift((uspriteptr_t)&sprite[spriteNum]);
             int const viewscrTile  = TILE_VIEWSCR - viewscrShift;
 
             if (waloff[viewscrTile] == 0)
@@ -1010,7 +1010,7 @@ void G_OperateRespawns(int lotag)
 {
     for (bssize_t nextSprite, SPRITES_OF_STAT_SAFE(STAT_FX, spriteNum, nextSprite))
     {
-        spritetype * const pSprite = &sprite[spriteNum];
+        auto const pSprite = &sprite[spriteNum];
 
         if (pSprite->lotag == lotag && pSprite->picnum == RESPAWN)
         {
@@ -1039,7 +1039,7 @@ void G_OperateActivators(int lotag, int playerNum)
             sector[pCycler[0]].ceilingshade = pCycler[3];
             walltype *pWall                 = &wall[sector[pCycler[0]].wallptr];
 
-            for (bsize_t j = sector[pCycler[0]].wallnum; j > 0; j--, pWall++)
+            for (int j = sector[pCycler[0]].wallnum; j > 0; j--, pWall++)
                 pWall->shade = pCycler[3];
         }
     }
@@ -1214,7 +1214,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
 
         lotag         = sprite[wallOrSprite].lotag;
         hitag         = sprite[wallOrSprite].hitag;
-        davector      = *(vec3_t *)&sprite[wallOrSprite];
+        davector      = sprite[wallOrSprite].pos;
         nSwitchPicnum = sprite[wallOrSprite].picnum;
         nSwitchPal    = sprite[wallOrSprite].pal;
     }
@@ -1225,8 +1225,7 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
 
         lotag         = wall[wallOrSprite].lotag;
         hitag         = wall[wallOrSprite].hitag;
-        davector      = *(vec3_t *)&wall[wallOrSprite];
-        davector.z    = g_player[playerNum].ps->pos.z;
+        davector      = { wall[wallOrSprite].x, wall[wallOrSprite].y, g_player[playerNum].ps->pos.z };
         nSwitchPicnum = wall[wallOrSprite].picnum;
         nSwitchPal    = wall[wallOrSprite].pal;
     }
@@ -1806,7 +1805,7 @@ void Sect_DamageFloor_Internal(int const spriteNum, int const sectNum)
 
     // NOTE: pass RETURN in the dist argument, too.
     int const     RETURN_in = 131072 + sectNum;
-    /* int32_t const returnValue = */ VM_OnEventWithBoth(EVENT_DAMAGEHPLANE, -1, -1, RETURN_in, RETURN_in);
+    /* int32_t const returnValue = */ VM_OnEvent(EVENT_DAMAGEHPLANE, -1, -1, RETURN_in, RETURN_in);
 
 #if 0
     // No hard-coded floor damage effects.
@@ -1832,7 +1831,7 @@ void Sect_DamageCeiling_Internal(int const spriteNum, int const sectNum)
 
     // NOTE: pass RETURN in the dist argument, too.
     int const     RETURN_in = 65536 + sectNum;
-    int32_t const returnValue = VM_OnEventWithBoth(EVENT_DAMAGEHPLANE, -1, -1, RETURN_in, RETURN_in);
+    int32_t const returnValue = VM_OnEvent(EVENT_DAMAGEHPLANE, -1, -1, RETURN_in, RETURN_in);
 
     if (returnValue < 0)
         return;
@@ -1941,7 +1940,7 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
 
         for (bssize_t j=16; j>0; j--)
         {
-            spritetype * const pSprite = &sprite[spriteNum];
+            auto const pSprite = &sprite[spriteNum];
             RANDOMSCRAP(pSprite, spriteNum);
         }
 #endif
@@ -2289,7 +2288,7 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
         A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
         for (bssize_t j=16; j>0; j--)
         {
-            spritetype * const pSprite = &sprite[spriteNum];
+            auto const pSprite = &sprite[spriteNum];
             RANDOMSCRAP(pSprite, spriteNum);
         }
         A_DeleteSprite(spriteNum);
@@ -2345,7 +2344,7 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
                             SA(spriteNum)          = (sprite[dmgSrc].ang + 1024) & 2047;
                         sprite[spriteNum].xvel  = -(sprite[dmgSrc].extra << 2);
                         int16_t sectNum = SECT(spriteNum);
-                        pushmove((vec3_t *)&sprite[spriteNum], &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
+                        pushmove(&sprite[spriteNum].pos, &sectNum, 128L, (4L << 8), (4L << 8), CLIPMASK0);
                         if (sectNum != SECT(spriteNum) && (unsigned)sectNum < MAXSECTORS)
                             changespritesect(spriteNum, sectNum);
                     }
@@ -2378,7 +2377,7 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
 
             if (sprite[spriteNum].statnum == STAT_PLAYER)
             {
-                DukePlayer_t *ps = g_player[P_Get(spriteNum)].ps;
+                auto ps = g_player[P_Get(spriteNum)].ps;
 
                 if (ps->newowner >= 0)
                     G_ClearCameraView(ps);
@@ -2441,11 +2440,11 @@ static int P_CheckDetonatorSpecialCase(DukePlayer_t *const pPlayer, int weaponNu
 
 void P_HandleSharedKeys(int playerNum)
 {
-    DukePlayer_t *const pPlayer = g_player[playerNum].ps;
+    auto const pPlayer = g_player[playerNum].ps;
 
     if (pPlayer->cheat_phase == 1) return;
 
-    uint32_t playerBits = g_player[playerNum].inputBits->bits, weaponNum;
+    uint32_t playerBits = g_player[playerNum].input->bits, weaponNum;
 
     // 1<<0  =  jump
     // 1<<1  =  crouch
@@ -3004,7 +3003,7 @@ static void G_ClearCameras(DukePlayer_t *p)
 
 void P_CheckSectors(int playerNum)
 {
-    DukePlayer_t *const pPlayer = g_player[playerNum].ps;
+    auto const pPlayer = g_player[playerNum].ps;
 
     if (pPlayer->cursectnum > -1)
     {
@@ -3044,25 +3043,25 @@ void P_CheckSectors(int playerNum)
     if (pPlayer->gm &MODE_TYPE || sprite[pPlayer->i].extra <= 0)
         return;
 
-    if (TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_OPEN))
+    if (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN))
     {
         if (VM_OnEvent(EVENT_USE, pPlayer->i, playerNum) != 0)
-            g_player[playerNum].inputBits->bits &= ~BIT(SK_OPEN);
+            g_player[playerNum].input->bits &= ~BIT(SK_OPEN);
     }
 
-    if (ud.cashman && TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_OPEN))
+    if (ud.cashman && TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN))
         A_SpawnMultiple(pPlayer->i, MONEY, 2);
 
     if (pPlayer->newowner >= 0)
     {
-        if (klabs(g_player[playerNum].inputBits->svel) > 768 || klabs(g_player[playerNum].inputBits->fvel) > 768)
+        if (klabs(g_player[playerNum].input->svel) > 768 || klabs(g_player[playerNum].input->fvel) > 768)
         {
             G_ClearCameras(pPlayer);
             return;
         }
     }
 
-    if (!TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_OPEN) && !TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_ESCAPE))
+    if (!TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN) && !TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_ESCAPE))
         pPlayer->toggle_key_flag = 0;
     else if (!pPlayer->toggle_key_flag)
     {
@@ -3071,7 +3070,7 @@ void P_CheckSectors(int playerNum)
         int16_t nearSector, nearWall, nearSprite;
         int32_t nearDist;
 
-        if (TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_ESCAPE))
+        if (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_ESCAPE))
         {
             if (pPlayer->newowner >= 0)
                 G_ClearCameras(pPlayer);
@@ -3276,7 +3275,7 @@ void P_CheckSectors(int playerNum)
             }  // switch
         }
 
-        if (TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_OPEN) == 0)
+        if (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN) == 0)
             return;
 
         if (pPlayer->newowner >= 0)

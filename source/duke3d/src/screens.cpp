@@ -94,7 +94,7 @@ void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set)
 
 void G_GetCrosshairColor(void)
 {
-    if (IONMAIDEN)
+    if (FURY)
         return;
 
     if (DefaultCrosshairColors.f)
@@ -130,7 +130,7 @@ void G_GetCrosshairColor(void)
 
 void G_SetCrosshairColor(int32_t r, int32_t g, int32_t b)
 {
-    if (IONMAIDEN)
+    if (FURY)
         return;
 
     if (g_crosshairSum == r+(g<<8)+(b<<16))
@@ -322,7 +322,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     int32_t xvect, yvect, xvect2, yvect2;
     int16_t p;
     char col;
-    uwalltype *wal, *wal2;
+    uwallptr_t wal, wal2;
     spritetype *spr;
 
     int32_t tmpydim = (xdim*5)/8;
@@ -347,7 +347,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
         z1 = sector[i].ceilingz;
         z2 = sector[i].floorz;
 
-        for (j=startwall, wal=(uwalltype *)&wall[startwall]; j<endwall; j++, wal++)
+        for (j=startwall, wal=(uwallptr_t)&wall[startwall]; j<endwall; j++, wal++)
         {
             k = wal->nextwall;
             if (k < 0) continue;
@@ -364,7 +364,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             x1 = dmulscale16(ox, xvect, -oy, yvect)+(xdim<<11);
             y1 = dmulscale16(oy, xvect2, ox, yvect2)+(ydim<<11);
 
-            wal2 = (uwalltype *)&wall[wal->point2];
+            wal2 = (uwallptr_t)&wall[wal->point2];
             ox = wal2->x-cposx;
             oy = wal2->y-cposy;
             x2 = dmulscale16(ox, xvect, -oy, yvect)+(xdim<<11);
@@ -532,7 +532,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
         endwall = sector[i].wallptr + sector[i].wallnum;
 
         k = -1;
-        for (j=startwall, wal=(uwalltype *)&wall[startwall]; j<endwall; j++, wal++)
+        for (j=startwall, wal=(uwallptr_t)&wall[startwall]; j<endwall; j++, wal++)
         {
             if (wal->nextwall >= 0) continue;
 
@@ -553,7 +553,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             }
 
             k = wal->point2;
-            wal2 = (uwalltype *)&wall[k];
+            wal2 = (uwallptr_t)&wall[k];
             ox = wal2->x-cposx;
             oy = wal2->y-cposy;
             x2 = dmulscale16(ox, xvect, -oy, yvect)+(xdim<<11);
@@ -571,8 +571,8 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     {
         if (ud.scrollmode && p == screenpeek) continue;
 
-        DukePlayer_t const * const pPlayer = g_player[p].ps;
-        uspritetype const * const pSprite = (uspritetype const *)&sprite[pPlayer->i];
+        auto const pPlayer = g_player[p].ps;
+        auto const pSprite = (uspriteptr_t)&sprite[pPlayer->i];
 
         ox = pSprite->x - cposx;
         oy = pSprite->y - cposy;
@@ -624,7 +624,7 @@ static void G_PrintCoords(int32_t snum)
     const int32_t x = g_Debug ? 288 : 0;
     int32_t y = 0;
 
-    const DukePlayer_t *ps = g_player[snum].ps;
+    auto const ps = g_player[snum].ps;
     const int32_t sectnum = ps->cursectnum;
 
     if ((g_gametypeFlags[ud.coop] & GAMETYPE_FRAGBAR))
@@ -788,8 +788,8 @@ static void G_PrintFPS(void)
     static int32_t frameCount;
     static double cumulativeFrameDelay;
     static double lastFrameTime;
-    static float lastFPS, minFPS = FLT_MAX, maxFPS;
-    static double minGameUpdate = DBL_MAX, maxGameUpdate;
+    static float lastFPS, minFPS = std::numeric_limits<float>::max(), maxFPS;
+    static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
 
     double frameTime = timerGetHiTicks();
     double frameDelay = frameTime - lastFrameTime;
@@ -898,9 +898,9 @@ void G_DisplayRest(int32_t smoothratio)
     int32_t i, j;
     palaccum_t tint = PALACCUM_INITIALIZER;
 
-    DukePlayer_t *const pp = g_player[screenpeek].ps;
+    auto const pp = g_player[screenpeek].ps;
 #ifdef SPLITSCREEN_MOD_HACKS
-    DukePlayer_t *const pp2 = g_fakeMultiMode==2 ? g_player[1].ps : NULL;
+    auto const pp2 = g_fakeMultiMode==2 ? g_player[1].ps : NULL;
 #endif
     int32_t cposx, cposy, cang;
 
@@ -1205,7 +1205,7 @@ void G_DisplayRest(int32_t smoothratio)
             uint32_t crosshair_scale = divscale16(ud.crosshairscale, 100);
 
             auto const oyxaspect = yxaspect;
-            if (IONMAIDEN)
+            if (FURY)
             {
                 crosshairpos.x = scale(crosshairpos.x - (320<<15), ydim << 2, xdim * 3) + (320<<15);
                 crosshairpos.y = scale(crosshairpos.y - (200<<15), (ydim << 2) * 6, (xdim * 3) * 5) + (200<<15);
@@ -1217,7 +1217,7 @@ void G_DisplayRest(int32_t smoothratio)
 
             rotatesprite_win(crosshairpos.x, crosshairpos.y, crosshair_scale, 0, a, 0, crosshair_pal, crosshair_o);
 
-            if (IONMAIDEN)
+            if (FURY)
                 renderSetAspect(viewingrange, oyxaspect);
         }
     }
@@ -1236,7 +1236,7 @@ void G_DisplayRest(int32_t smoothratio)
             uint32_t pointer_scale = 65536;
 
             auto const oyxaspect = yxaspect;
-            if (IONMAIDEN)
+            if (FURY)
             {
                 pointerpos.x = scale(pointerpos.x - (320<<15), ydim << 2, xdim * 3) + (320<<15);
                 pointerpos.y = scale(pointerpos.y - (200<<15), (ydim << 2) * 6, (xdim * 3) * 5) + (200<<15);
@@ -1248,7 +1248,7 @@ void G_DisplayRest(int32_t smoothratio)
 
             rotatesprite_win(pointerpos.x, pointerpos.y, pointer_scale, 0, a, 0, pointer_pal, pointer_o);
 
-            if (IONMAIDEN)
+            if (FURY)
                 renderSetAspect(viewingrange, oyxaspect);
         }
     }
@@ -1271,7 +1271,7 @@ void G_DisplayRest(int32_t smoothratio)
     if (VM_HaveEvent(EVENT_DISPLAYREST))
     {
         int32_t vr=viewingrange, asp=yxaspect;
-        VM_OnEvent__(EVENT_DISPLAYREST, g_player[screenpeek].ps->i, screenpeek);
+        VM_ExecuteEvent(EVENT_DISPLAYREST, g_player[screenpeek].ps->i, screenpeek);
         renderSetAspect(vr, asp);
     }
 
@@ -1294,7 +1294,7 @@ void G_DisplayRest(int32_t smoothratio)
     // JBF 20040124: display level stats in screen corner
     if (ud.overhead_on != 2 && ud.levelstats && VM_OnEvent(EVENT_DISPLAYLEVELSTATS, g_player[screenpeek].ps->i, screenpeek) == 0)
     {
-        DukePlayer_t const * const myps = g_player[myconnectindex].ps;
+        auto const myps = g_player[myconnectindex].ps;
 
         i = 198<<16;
 
@@ -1532,15 +1532,15 @@ void gameDisplay3DRScreen()
 {
     if (!I_CheckAllInput() && g_noLogoAnim == 0)
     {
-        int32_t i;
+        buildvfs_kfd i;
         Net_GetPackets();
 
         i = kopen4loadfrommod("3dr.ivf", 0);
 
-        if (i == -1)
+        if (i == buildvfs_kfd_invalid)
             i = kopen4loadfrommod("3dr.anm", 0);
 
-        if (i != -1)
+        if (i != buildvfs_kfd_invalid)
         {
             kclose(i);
             Anim_Play("3dr.anm");
@@ -1572,6 +1572,7 @@ void gameDisplay3DRScreen()
                         P_SetGamePalette(g_player[myconnectindex].ps, g_player[myconnectindex].ps->palette, 0);
                         g_restorePalette = 0;
                     }
+                    videoNextPage();
                 }
             }
 
@@ -1676,6 +1677,9 @@ void gameDisplayTitleScreen(void)
                 P_SetGamePalette(g_player[myconnectindex].ps, g_player[myconnectindex].ps->palette, 0);
                 g_restorePalette = 0;
             }
+
+            videoNextPage();
+
 #ifdef LUNATIC
             if (g_elEventError)
                 break;
@@ -1882,6 +1886,7 @@ static void G_BonusCutscenes(void)
                                 rotatesprite_fs(breathe[t+3]<<16, breathe[t+4]<<16, 65536L, 0, breathe[t+2], 0, 0, 2+8+16+64+128+BGSTRETCH);
                             }
                     }
+                    videoNextPage();
                 }
 
                 G_HandleAsync();
@@ -2306,6 +2311,7 @@ void G_BonusScreen(int32_t bonusonly)
             {
                 videoClearScreen(0);
                 G_DisplayMPResultsScreen();
+                videoNextPage();
             }
 
             if (I_CheckAllInput())
@@ -2578,6 +2584,7 @@ void G_BonusScreen(int32_t bonusonly)
                 break;
 
             VM_OnEvent(EVENT_DISPLAYBONUSSCREEN, g_player[screenpeek].ps->i, screenpeek);
+            videoNextPage();
         }
     } while (1);
 }

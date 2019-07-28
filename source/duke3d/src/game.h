@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fix16.h"
 #include "gamedefs.h"
 #include "gamevars.h"
-#include "net.h"
+#include "network.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +114,12 @@ enum {
     STATUSBAR_NOFRAGBAR = 0x00000010,
     STATUSBAR_NOOVERLAY = 0x00000020,
     STATUSBAR_NOMODERN  = 0x00000040,
+};
+
+enum {
+    BENCHMARKMODE_OFF = 0x0,
+    BENCHMARKMODE_PERFORMANCE = 0x1,
+    BENCHMARKMODE_GENERATE_REFERENCE = 0x2,
 };
 
 void A_DeleteSprite(int spriteNum);
@@ -222,6 +228,8 @@ typedef struct {
 
     int8_t menutitle_pal, slidebar_palselected, slidebar_paldisabled;
 
+    int32_t last_stateless_level, last_stateless_volume; // strictly internal
+
     struct {
         int32_t AutoAim;
         int32_t ShowWeapons;
@@ -312,6 +320,7 @@ extern char ror_protectedsectors[MAXSECTORS];
 
 extern float r_ambientlight;
 
+extern int32_t g_BenchmarkMode;
 extern int32_t g_Debug;
 extern int32_t g_Shareware;
 #if !defined LUNATIC
@@ -341,7 +350,7 @@ extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 
 extern double g_frameDelay;
-static inline double calcFrameDelay(int maxFPS) { return maxFPS ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
+static inline double calcFrameDelay(int maxFPS) { return maxFPS > 0 ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -543,20 +552,26 @@ static inline int G_GetMusicIdx(const char *str)
     if (numMatches != 4 || Btoupper(b1) != 'E' || Btoupper(b2) != 'L')
         return -1;
 
-    if ((unsigned)--lev >= MAXLEVELS || (unsigned)--ep >= MAXVOLUMES)
+    if ((unsigned)--lev >= MAXLEVELS)
+        return -2;
+
+    if (ep == 0)
+        return (MAXVOLUMES * MAXLEVELS) + lev;
+
+    if ((unsigned)--ep >= MAXVOLUMES)
         return -2;
 
     return (ep * MAXLEVELS) + lev;
 }
 
-static inline int G_GetViewscreenSizeShift(const uspritetype *tspr)
+static inline int G_GetViewscreenSizeShift(uspriteptr_t const spr)
 {
 #if VIEWSCREENFACTOR == 0
-    UNREFERENCED_PARAMETER(tspr);
+    UNREFERENCED_PARAMETER(spr);
     return VIEWSCREENFACTOR;
 #else
     static const int mask = (1<<VIEWSCREENFACTOR)-1;
-    const int rem = (tspr->xrepeat & mask) | (tspr->yrepeat & mask);
+    const int rem = (spr->xrepeat & mask) | (spr->yrepeat & mask);
 
     for (int i=0; i < VIEWSCREENFACTOR; i++)
         if (rem & (1<<i))

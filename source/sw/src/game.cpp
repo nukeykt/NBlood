@@ -59,7 +59,7 @@ Things required to make savegames work:
 #include "weapon.h"
 #include "player.h"
 #include "lists.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 #include "fx_man.h"
 
@@ -93,6 +93,12 @@ Things required to make savegames work:
 #include "common_game.h"
 
 #include "crc32.h"
+
+const char* AppProperName = "VoidSW";
+const char* AppTechnicalName = "voidsw";
+
+#define SETUPFILENAME "voidsw.cfg"
+char setupfilename[BMAX_PATH] = SETUPFILENAME;
 
 #if DEBUG
 #define BETA 0
@@ -214,7 +220,7 @@ const GAME_SET gs_defaults =
     0, // Time Limit
     0, // Color
     0, // Parental Lock
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", // Password
+    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", // Password
     TRUE, // nuke
     TRUE, // voxels
     FALSE, // stats
@@ -255,7 +261,7 @@ extern int bufferjitter;
 
 SWBOOL CameraTestMode = FALSE;
 
-char ds[256];                           // debug string
+char ds[512];                           // debug string
 
 extern short NormalVisibility;
 
@@ -676,13 +682,13 @@ TerminateGame(void)
     //uninitkeys();
     KB_Shutdown();
 
-    uninitengine();
+    engineUnInit();
     TermSetup();
 
     //Terminate3DSounds();                // Kill the sounds linked list
     UnInitSound();
 
-    uninittimer();
+    timerUninit();
 
     if (CleanExit)
         DosScreen();
@@ -691,11 +697,11 @@ TerminateGame(void)
 }
 
 void
-LoadLevel(char *filename)
+LoadLevel(const char *filename)
 {
     int pos;
 
-    if (loadboard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
+    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
 #ifdef RENDERTYPEWIN
@@ -712,12 +718,12 @@ LoadLevel(char *filename)
 }
 
 void
-LoadImages(char *filename)
+LoadImages(const char *filename)
 {
     short ndx;
     FILE *fin;
 
-    if (loadpics(filename, 32*1048576) == -1)
+    if (artLoadFiles(filename, 32*1048576) == -1)
     {
         TerminateGame();
 #ifdef RENDERTYPEWIN
@@ -803,10 +809,10 @@ void Set_GameMode(void)
             uninitmultiplayers();
             //uninitkeys();
             KB_Shutdown();
-            uninitengine();
+            engineUnInit();
             TermSetup();
             UnInitSound();
-            uninittimer();
+            timerUninit();
             DosScreen();
             uninitgroupfile();
             exit(0);
@@ -830,10 +836,10 @@ void MultiSharewareCheck(void)
         uninitmultiplayers();
         //uninitkeys();
         KB_Shutdown();
-        uninitengine();
+        engineUnInit();
         TermSetup();
         UnInitSound();
-        uninittimer();
+        timerUninit();
         uninitgroupfile();
         exit(0);
     }
@@ -889,7 +895,8 @@ void AnimateCacheCursor(void)
 
 void COVERsetbrightness(int bright, unsigned char *pal)
 {
-    setbrightness(bright, pal, 0);
+    paletteSetColorTable(0, pal);
+    videoSetPalette(bright, 0, 0);
 }
 
 
@@ -915,7 +922,7 @@ InitGame(int32_t argc, char const * const * argv)
     DSPRINTF(ds,"InitGame...");
     MONO_PRINT(ds);
 
-    if (initengine())
+    if (engineInit())
         SW_FatalEngineError();
 
     //initgroupfile(G_GrpFile());  // JBF: moving this close to start of program to detect shareware
@@ -923,7 +930,7 @@ InitGame(int32_t argc, char const * const * argv)
 
     InitAutoNet();
 
-    inittimer(120);
+    timerInit(120);
 
     CON_InitConsole();  // Init console command list
 
@@ -1002,7 +1009,7 @@ InitGame(int32_t argc, char const * const * argv)
     //_outtext("\n\n\n\n\n\n\n\n");
     //AnimateCacheCursor();
     buildputs("Loading sound and graphics...\n");
-    LoadImages("tiles000.art");
+    LoadImages("tiles%03i.art");
 
     // Now free it up for later use
     /*
@@ -1036,7 +1043,7 @@ InitGame(int32_t argc, char const * const * argv)
         free(m);
     g_defModules.clear();
 
-    if (E_PostInit())
+    if (enginePostInit())
         SW_FatalEngineError();
 
     DemoModeMenuInit = TRUE;
@@ -1739,7 +1746,9 @@ LogoLevel(void)
     {
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
-        setbrightness(gs.Brightness, pal, 2);
+
+        paletteSetColorTable(1, pal);
+        videoSetPalette(gs.Brightness, 1, 2);
     }
     DSPRINTF(ds,"Just read in 3drealms.pal...");
     MONO_PRINT(ds);
@@ -1752,9 +1761,9 @@ LogoLevel(void)
     DSPRINTF(ds,"About to display 3drealms pic...");
     MONO_PRINT(ds);
 
-    clearview(0);
+    videoClearViewableArea(0L);
     rotatesprite(0, 0, RS_SCALE, 0, THREED_REALMS_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    nextpage();
+    videoNextPage();
     //FadeIn(0, 3);
 
     ResetKeys();
@@ -1780,10 +1789,11 @@ LogoLevel(void)
 
     palookup[0] = palook_bak;
 
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
     //SetPaletteToVESA(backup_pal);
-    setbrightness(gs.Brightness, &palette_data[0][0], 2);
+    paletteSetColorTable(0, &palette_data[0][0]);
+    videoSetPalette(gs.Brightness, 0, 2);
 
     // put up a blank screen while loading
 
@@ -1809,13 +1819,13 @@ CreditsLevel(void)
     // put up a blank screen while loading
 
     // get rid of all PERM sprites!
-    flushperms();
+    renderFlushPerms();
     save = gs.BorderNum;
     SetBorder(Player + myconnectindex,0);
     ClearStartMost();
     gs.BorderNum = save;
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
 
     // Lo Wang feel like singing!
     handle = PlaySound(DIGI_JG95012,&zero,&zero,&zero,v3df_none);
@@ -1854,7 +1864,7 @@ CreditsLevel(void)
 
         rotatesprite(0, 0, RS_SCALE, 0, curpic, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 
-        nextpage();
+        videoNextPage();
 
         if (timer > 8*120)
         {
@@ -1876,8 +1886,8 @@ CreditsLevel(void)
     }
 
     // put up a blank screen while loading
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
     ResetKeys();
     StopSong();
 }
@@ -1892,7 +1902,7 @@ SybexScreen(void)
         return;
 
     rotatesprite(0, 0, RS_SCALE, 0, 5261, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    nextpage();
+    videoNextPage();
 
     ResetKeys();
     while (!KeyPressed() && !quitevent) handleevents();
@@ -1987,8 +1997,8 @@ TitleLevel(void)
     //GetPaletteFromVESA(pal);
     //memcpy(backup_pal, pal, PAL_SIZE);
 
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
 
 //    if ((fin = kopen4load("title.pal", 0)) != -1)
 //        {
@@ -2006,7 +2016,7 @@ TitleLevel(void)
     ototalclock = 0;
 
     rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    nextpage();
+    videoNextPage();
     //FadeIn(0, 3);
 
     ResetKeys();
@@ -2031,7 +2041,7 @@ TitleLevel(void)
         //drawscreen as fast as you can
         rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 
-        nextpage();
+        videoNextPage();
 
         if (totalclock > 5*120 || KeyPressed())
         {
@@ -2055,22 +2065,22 @@ TitleLevel(void)
 
 void DrawMenuLevelScreen(void)
 {
-    flushperms();
-    clearview(0);
+    renderFlushPerms();
+    videoClearViewableArea(0L);
     rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 20, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 }
 
 void DrawStatScreen(void)
 {
-    flushperms();
-    clearview(0);
+    renderFlushPerms();
+    videoClearViewableArea(0L);
     rotatesprite(0, 0, RS_SCALE, 0, STAT_SCREEN_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 }
 
 void DrawLoadLevelScreen(void)
 {
-    flushperms();
-    clearview(0);
+    renderFlushPerms();
+    videoClearViewableArea(0L);
     rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 20, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 }
 
@@ -2116,7 +2126,7 @@ MenuLevel(void)
             MNU_DrawString(TEXT_TEST_COL(w), 180, ds, 1, 16);
         }
 
-        nextpage();
+        videoNextPage();
 
         waitforeverybody();
         FirstTimeIntoGame = TRUE;
@@ -2146,8 +2156,8 @@ MenuLevel(void)
     DemoMode = FALSE;
     DemoPlaying = FALSE;
 
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
 
     //FadeOut(0, 0);
     ready2send = 0;
@@ -2169,7 +2179,7 @@ MenuLevel(void)
         MNU_DrawString(TEXT_TEST_COL(w), 180, ds, 1, 16);
     }
 
-    nextpage();
+    videoNextPage();
     //FadeIn(0, 3);
 
     waitforeverybody();
@@ -2259,7 +2269,7 @@ MenuLevel(void)
         if (UsingMenus)
             MNU_DrawMenu();
 
-        nextpage();
+        videoNextPage();
     }
 
     BorderAdjust = TRUE;
@@ -2269,8 +2279,8 @@ MenuLevel(void)
     //ExitMenus();
     UsingMenus = FALSE;
     InMenuLevel = FALSE;
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
 }
 
 void
@@ -2328,7 +2338,7 @@ LoadingLevelScreen(char *level_name)
     MNU_MeasureString(ds, &w, &h);
     MNU_DrawString(TEXT_TEST_COL(w), 180, ds,1,16);
 
-    nextpage();
+    videoNextPage();
 }
 
 void
@@ -2502,8 +2512,8 @@ BonusScreen(PLAYERp pp)
 
     if (Level < 0) Level = 0;
 
-    clearview(0);
-    nextpage();
+    videoClearViewableArea(0L);
+    videoNextPage();
 
     KB_ClearKeysDown();
 
@@ -2518,10 +2528,10 @@ BonusScreen(PLAYERp pp)
     // special case code because I don't care any more!
     if (FinishAnim)
     {
-        flushperms();
+        renderFlushPerms();
         rotatesprite(0, 0, RS_SCALE, 0, 5120, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
         rotatesprite(158<<16, 86<<16, RS_SCALE, 0, State->Pic, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-        nextpage();
+        videoNextPage();
         FadeIn(0,0);
     }
 
@@ -2612,7 +2622,7 @@ BonusScreen(PLAYERp pp)
         MNU_MeasureString(ds, &w, &h);
         MNU_DrawString(TEXT_TEST_COL(w), 185, ds,1,19);
 
-        nextpage();
+        videoNextPage();
         ScreenCaptureKeys();
 
         if (State == State->NextState)
@@ -2712,7 +2722,7 @@ StatScreen(PLAYERp mpp)
         return;
     }
 
-    flushperms();
+    renderFlushPerms();
     DrawStatScreen();
 
     memset(death_total,0,sizeof(death_total));
@@ -2818,7 +2828,7 @@ StatScreen(PLAYERp mpp)
         y += STAT_OFF_Y;
     }
 
-    nextpage();
+    videoNextPage();
 
     if (KeyPressed())
     {
@@ -2905,13 +2915,13 @@ Control(int32_t argc, char const * const * argv)
 
 
 void
-_Assert(char *expr, char *strFile, unsigned uLine)
+_Assert(const char *expr, const char *strFile, unsigned uLine)
 {
     sprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
     MONO_PRINT(ds);
     TerminateGame();
 #if 1 //def RENDERTYPEWIN
-    wm_msgbox(apptitle, ds);
+    wm_msgbox(apptitle, "%s", ds);
 #else
     printf("Assertion failed: %s\n %s, line %u\n", expr, strFile, uLine);
 #endif
@@ -2920,7 +2930,7 @@ _Assert(char *expr, char *strFile, unsigned uLine)
 
 
 void
-_ErrMsg(char *strFile, unsigned uLine, char *format, ...)
+_ErrMsg(const char *strFile, unsigned uLine, const char *format, ...)
 {
     va_list arglist;
 
@@ -2936,7 +2946,7 @@ _ErrMsg(char *strFile, unsigned uLine, char *format, ...)
         va_start(arglist, format);
         Bvsnprintf(msg, sizeof(msg) - (p-msg), format, arglist);
         va_end(arglist);
-        wm_msgbox(apptitle, msg);
+        wm_msgbox(apptitle, "%s", msg);
     }
 #else
     printf("Error: %s, line %u\n", strFile, uLine);
@@ -2960,7 +2970,7 @@ dsprintf(char *str, char *format, ...)
 }
 
 void
-dsprintf_null(char *str, char *format, ...)
+dsprintf_null(char *str, const char *format, ...)
 {
     va_list arglist;
 }
@@ -3262,10 +3272,10 @@ void AlphaMessage(void)
 typedef struct
 {
     char    notshareware;
-    char    *arg_switch;
+    const char    *arg_switch;
     short   arg_match_len;
-    char    *arg_fmt;
-    char    *arg_descr;
+    const char    *arg_fmt;
+    const char    *arg_descr;
 } CLI_ARG;
 
 #if DEBUG
@@ -3468,8 +3478,10 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 #endif
 
+    OSD_SetLogFile(APPBASENAME ".log");
+
     {
-        char *supportdir = Bgetsupportdir(TRUE);
+        //char *supportdir = Bgetsupportdir(TRUE);
         char *appdir = Bgetappdir();
         char dirpath[BMAX_PATH+1];
 
@@ -3481,19 +3493,23 @@ int32_t app_main(int32_t argc, char const * const * argv)
         }
 
         // the global support files directory
+#if 0 // [JM] ifdef'd out for now. !CHECKME!
         if (supportdir)
         {
             Bsnprintf(dirpath, sizeof(dirpath), "%s/JFShadowWarrior", supportdir);
             addsearchpath(dirpath);
             free(supportdir);
         }
+#endif
     }
 
     // default behaviour is to write to the user profile directory, but
     // creating a 'user_profiles_disabled' file in the current working
     // directory where the game was launched makes the installation
     // "portable" by writing into the working directory
+#if 0 // [JM] ifdef'd out for now. !CHECKME!
     if (access("user_profiles_disabled", F_OK) == 0)
+#endif
     {
         char cwd[BMAX_PATH+1];
         if (getcwd(cwd, sizeof(cwd)))
@@ -3501,6 +3517,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             addsearchpath(cwd);
         }
     }
+#if 0 // [JM] ifdef'd out for now. !CHECKME!
     else
     {
         char *supportdir;
@@ -3535,6 +3552,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             free(supportdir);
         }
     }
+#endif
 
     OSD_SetLogFile("sw.log");
 
@@ -3550,7 +3568,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     wm_setapptitle("Shadow Warrior");
-    if (preinitengine())
+    if (enginePreInit())
     {
         wm_msgbox("Build Engine Initialisation Error",
                   "There was a problem initialising the Build engine: %s", engineerrstr);
@@ -3564,7 +3582,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     {
         if (quitevent || !startwin_run())
         {
-            uninitengine();
+            engineUnInit();
             exit(0);
         }
     }
@@ -3812,8 +3830,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
             if (strlen(arg) > 1)
                 Skill = atoi(&arg[1])-1;
 
-            Skill = max(Skill,0);
-            Skill = min(Skill,3);
+            Skill = max(Skill,short(0));
+            Skill = min(Skill,short(3));
         }
         else if (Bstrncasecmp(arg, "commbat", 7) == 0)
         {
@@ -4885,7 +4903,7 @@ void GetConInput(PLAYERp pp)
                 KB_ClearKeysDown();
                 KB_FlushKeyboardQueue();
                 CONTROL_ClearButton(gamefunc_Inventory);
-                CON_ConMessage(MessageInputString);
+                CON_ConMessage("%s", MessageInputString);
                 CON_ProcessUserCommand();     // Check to see if it's a cheat or command
 
                 conbot += 6;
@@ -5570,7 +5588,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
             x2 = mulscale16(ox, xvect) - mulscale16(oy, yvect);
             y2 = mulscale16(oy, xvect2) + mulscale16(ox, yvect2);
 
-            drawline256(x1 + (xdim << 11), y1 + (ydim << 11), x2 + (xdim << 11), y2 + (ydim << 11), col);
+            renderDrawLine(x1 + (xdim << 11), y1 + (ydim << 11), x2 + (xdim << 11), y2 + (ydim << 11), col);
         }
     }
 
@@ -5637,12 +5655,12 @@ SHOWSPRITE:
                             x3 = mulscale16(x2, yxaspect);
                             y3 = mulscale16(y2, yxaspect);
 
-                            drawline256(x1 - x2 + (xdim << 11), y1 - y3 + (ydim << 11),
-                                        x1 + x2 + (xdim << 11), y1 + y3 + (ydim << 11), col);
-                            drawline256(x1 - y2 + (xdim << 11), y1 + x3 + (ydim << 11),
-                                        x1 + x2 + (xdim << 11), y1 + y3 + (ydim << 11), col);
-                            drawline256(x1 + y2 + (xdim << 11), y1 - x3 + (ydim << 11),
-                                        x1 + x2 + (xdim << 11), y1 + y3 + (ydim << 11), col);
+                            renderDrawLine(x1 - x2 + (xdim << 11), y1 - y3 + (ydim << 11),
+                                           x1 + x2 + (xdim << 11), y1 + y3 + (ydim << 11), col);
+                            renderDrawLine(x1 - y2 + (xdim << 11), y1 + x3 + (ydim << 11),
+                                           x1 + x2 + (xdim << 11), y1 + y3 + (ydim << 11), col);
+                            renderDrawLine(x1 + y2 + (xdim << 11), y1 - x3 + (ydim << 11),
+                                           x1 + x2 + (xdim << 11), y1 + y3 + (ydim << 11), col);
                         }
                         else
                         {
@@ -5699,8 +5717,8 @@ SHOWSPRITE:
                     x2 = mulscale16(ox, xvect) - mulscale16(oy, yvect);
                     y2 = mulscale16(oy, xvect2) + mulscale16(ox, yvect2);
 
-                    drawline256(x1 + (xdim << 11), y1 + (ydim << 11),
-                                x2 + (xdim << 11), y2 + (ydim << 11), col);
+                    renderDrawLine(x1 + (xdim << 11), y1 + (ydim << 11),
+                                   x2 + (xdim << 11), y2 + (ydim << 11), col);
 
                     break;
                 case 32:    // Floor sprite
@@ -5757,17 +5775,17 @@ SHOWSPRITE:
                         x4 = mulscale16(ox, xvect) - mulscale16(oy, yvect);
                         y4 = mulscale16(oy, xvect2) + mulscale16(ox, yvect2);
 
-                        drawline256(x1 + (xdim << 11), y1 + (ydim << 11),
-                                    x2 + (xdim << 11), y2 + (ydim << 11), col);
+                        renderDrawLine(x1 + (xdim << 11), y1 + (ydim << 11),
+                                       x2 + (xdim << 11), y2 + (ydim << 11), col);
 
-                        drawline256(x2 + (xdim << 11), y2 + (ydim << 11),
-                                    x3 + (xdim << 11), y3 + (ydim << 11), col);
+                        renderDrawLine(x2 + (xdim << 11), y2 + (ydim << 11),
+                                       x3 + (xdim << 11), y3 + (ydim << 11), col);
 
-                        drawline256(x3 + (xdim << 11), y3 + (ydim << 11),
-                                    x4 + (xdim << 11), y4 + (ydim << 11), col);
+                        renderDrawLine(x3 + (xdim << 11), y3 + (ydim << 11),
+                                       x4 + (xdim << 11), y4 + (ydim << 11), col);
 
-                        drawline256(x4 + (xdim << 11), y4 + (ydim << 11),
-                                    x1 + (xdim << 11), y1 + (ydim << 11), col);
+                        renderDrawLine(x4 + (xdim << 11), y4 + (ydim << 11),
+                                       x1 + (xdim << 11), y1 + (ydim << 11), col);
 
                     }
                     break;
@@ -5804,7 +5822,7 @@ SHOWSPRITE:
             x2 = mulscale16(ox, xvect) - mulscale16(oy, yvect);
             y2 = mulscale16(oy, xvect2) + mulscale16(ox, yvect2);
 
-            drawline256(x1 + (xdim << 11), y1 + (ydim << 11), x2 + (xdim << 11), y2 + (ydim << 11), 24);
+            renderDrawLine(x1 + (xdim << 11), y1 + (ydim << 11), x2 + (xdim << 11), y2 + (ydim << 11), 24);
         }
     }
 
@@ -5935,6 +5953,22 @@ StdRandomRange(int range)
         value = range - 1;
 
     return value;
+}
+
+// [JM] Probably will need some doing over. !CHECKME!
+void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
+void G_Polymer_UnInit(void) { }
+void app_crashhandler(void) { }
+
+int osdcmd_restartvid(const osdfuncparm_t *parm)
+{
+    UNREFERENCED_PARAMETER(parm);
+
+    videoResetMode();
+    if (videoSetGameMode(fullscreen, xdim, ydim, bpp, upscalefactor))
+        buildputs("restartvid: Reset failed...\n");
+
+    return OSDCMD_OK;
 }
 
 #include "saveable.h"

@@ -4,6 +4,7 @@
 
 #include "compat.h"
 #include "build.h"
+#include "editor.h"
 
 #define NEED_WINDOWSX_H
 #define NEED_COMMCTRL_H
@@ -36,14 +37,14 @@ static void PopulateForm(void)
 
     hwnd3d = GetDlgItem(pages[TAB_CONFIG], IDC3DVMODE);
 
-    mode3d = checkvideomode(&settings.xdim3d, &settings.ydim3d, settings.bpp3d, settings.fullscreen, 1);
+    mode3d = videoCheckMode(&settings.xdim3d, &settings.ydim3d, settings.bpp3d, settings.fullscreen, 1);
     if (mode3d < 0)
     {
         int cd[] = { 32, 24, 16, 15, 8, 0 };
         for (i=0; cd[i]; ) { if (cd[i] >= settings.bpp3d) i++; else break; }
         for (; cd[i]; i++)
         {
-            mode3d = checkvideomode(&settings.xdim3d, &settings.ydim3d, cd[i], settings.fullscreen, 1);
+            mode3d = videoCheckMode(&settings.xdim3d, &settings.ydim3d, cd[i], settings.fullscreen, 1);
             if (mode3d < 0) continue;
             settings.bpp3d = cd[i];
             break;
@@ -401,8 +402,6 @@ int startwin_idle(void *v)
     if (IsDialogMessage(startupdlg, (MSG *)v)) return 1;
     return 0;
 }
-
-extern int xdimgame, ydimgame, bppgame, forcesetup;
 
 int startwin_run(void)
 {

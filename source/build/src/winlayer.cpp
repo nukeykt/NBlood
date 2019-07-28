@@ -410,7 +410,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     win_close();
 
-    Bfree(argvbuf);
+    Xfree(argvbuf);
 
     return r;
 }
@@ -1035,7 +1035,7 @@ static BOOL InitDirectInput(void)
         else if (result != DI_OK) initprintf("    Fetched controller capabilities with warning: %s\n",GetDInputError(result));
 
         joystick.numAxes    = (uint8_t)didc.dwAxes;
-        joystick.numButtons = min(32,(uint8_t)didc.dwButtons);
+        joystick.numButtons = min<uint8_t>(32,didc.dwButtons);
         joystick.numHats    = (uint8_t)didc.dwPOVs;
         initprintf("Controller has %d axes, %d buttons, and %d hat(s).\n",joystick.numAxes,joystick.numButtons,joystick.numHats);
 
@@ -1074,17 +1074,17 @@ static void UninitDirectInput(void)
 
     if (axisdefs)
     {
-        for (i=joystick.numAxes-1; i>=0; i--) Bfree(axisdefs[i].name);
+        for (i=joystick.numAxes-1; i>=0; i--) Xfree(axisdefs[i].name);
         DO_FREE_AND_NULL(axisdefs);
     }
     if (buttondefs)
     {
-        for (i=joystick.numButtons-1; i>=0; i--) Bfree(buttondefs[i].name);
+        for (i=joystick.numButtons-1; i>=0; i--) Xfree(buttondefs[i].name);
         DO_FREE_AND_NULL(buttondefs);
     }
     if (hatdefs)
     {
-        for (i=joystick.numHats-1; i>=0; i--) Bfree(hatdefs[i].name);
+        for (i=joystick.numHats-1; i>=0; i--) Xfree(hatdefs[i].name);
         DO_FREE_AND_NULL(hatdefs);
     }
 
@@ -1853,7 +1853,14 @@ void videoBeginDrawing(void)
 
     if (offscreenrendering) return;
 
-    frameplace = fullscreen ? (intptr_t)lpOffscreen : (intptr_t)lpPixels;
+    if (inpreparemirror)
+    {
+        frameplace = (intptr_t)mirrorBuffer;
+    }
+    else
+    {
+        frameplace = fullscreen ? (intptr_t)lpOffscreen : (intptr_t)lpPixels;
+    }
 
     if (!modechange) return;
 
@@ -2040,7 +2047,7 @@ int32_t videoUpdatePalette(int32_t start, int32_t num)
         }
 
         SetDIBColorTable(hDCSection, start, num, rgb);
-        Bfree(rgb);
+        Xfree(rgb);
     }
 
     return 0;
@@ -2135,7 +2142,7 @@ int32_t videoSetGamma(void)
         if (gamma != 1) val = pow(val, invgamma) / norm;
         val += bright * 128;
 
-        gammaTable.red[i] = gammaTable.green[i] = gammaTable.blue[i] = (WORD)max(0.f,(double)min(0xffff,val*256));
+        gammaTable.red[i] = gammaTable.green[i] = gammaTable.blue[i] = (uint16_t)max(0.f, min<float>(65535.f, val * 256.f));
     }
 
     return setgammaramp(&gammaTable);
@@ -2219,7 +2226,7 @@ static BOOL InitDirectDraw(void)
     }
 
     // get the pointer to DirectDrawEnumerate
-    aDirectDrawEnumerate = (HRESULT(WINAPI *)(LPDDENUMCALLBACK, LPVOID))GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
+    aDirectDrawEnumerate = (decltype(aDirectDrawEnumerate))GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
     if (!aDirectDrawEnumerate)
     {
         ShowErrorBox("Error fetching DirectDrawEnumerate()");
@@ -2232,7 +2239,7 @@ static BOOL InitDirectDraw(void)
     aDirectDrawEnumerate(InitDirectDraw_enum, NULL);
 
     // get the pointer to DirectDrawCreate
-    aDirectDrawCreate = (HRESULT(WINAPI *)(GUID *, LPDIRECTDRAW *, IUnknown *))GetProcAddress(hDDrawDLL, "DirectDrawCreate");
+    aDirectDrawCreate = (decltype(aDirectDrawCreate))GetProcAddress(hDDrawDLL, "DirectDrawCreate");
     if (!aDirectDrawCreate)
     {
         ShowErrorBox("Error fetching DirectDrawCreate()");
@@ -2617,8 +2624,8 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
         0,                             //Shift Bit Ignored
         0,                             //No Accumulation Buffer
         0,0,0,0,                       //Accumulation Bits Ignored
-        32,                            //16/24/32 Z-Buffer depth
-        1,                             //No Stencil Buffer
+        24,                            //16/24/32 Z-Buffer depth
+        8,                             //8-bit Stencil Buffer
         0,                             //No Auxiliary Buffer
         PFD_MAIN_PLANE,                //Main Drawing Layer
         0,                             //Reserved
@@ -2921,8 +2928,16 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
             {
                 glinfo.sync = 1;
             }
+            else if (!Bstrcmp((char *)p2, "GL_ARB_depth_clamp"))
+            {
+                glinfo.depthclamp = 1;
+            }
+            else if (!Bstrcmp((char *)p2, "GL_ARB_clipcontrol"))
+            {
+                glinfo.clipcontrol = 1;
+            }
         }
-        Bfree(p);
+        Xfree(p);
     }
     numpages = 2;	// KJS 20031225: tell rotatesprite that it's double buffered!
 

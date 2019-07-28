@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //#include "osd.h"
 #include "keys.h"
 
+#include "vfs.h"
+
 char        g_szScriptFileName[BMAX_PATH]   = "(none)";  // file we're currently compiling
 static char g_szCurrentBlockName[BMAX_PATH] = "(none)";
 static char g_szLastBlockName[BMAX_PATH]    = "NULL";
@@ -339,6 +341,8 @@ const char *keyw[] =
     "updatecursectnum",
     "updatesector",
     "updatesectorz",
+    "updatesectorneighbor",
+    "updatesectorneighborz",
     "getzrange",
     "clipmove",
     "lineintersect",
@@ -1468,7 +1472,7 @@ static int32_t C_GetNextValue(int32_t type)
 //            {
 //                gl = (char *)C_GetLabelType(labeltype[i]);
 //                initprintf("%s:%d: debug: accepted %s label `%s'.\n",g_szScriptFileName,g_lineNumber,gl,label+(i*MAXLABELLEN));
-//                Bfree(gl);
+//                Xfree(gl);
 //            }
 
             *(g_scriptPtr++) = thesign*labelval[i];
@@ -1484,8 +1488,8 @@ static int32_t C_GetNextValue(int32_t type)
         gl = C_GetLabelType(labeltype[i]);
         C_CUSTOMERROR("expected %s, found %s.", el, gl);
 //        initprintf("i=%d, %s!!! lt:%d t:%d\n", i, label+(i*MAXLABELLEN), labeltype[i], type);
-        Bfree(el);
-        Bfree(gl);
+        Xfree(el);
+        Xfree(gl);
 
         return -1;  // valid label name, but wrong type
     }
@@ -1736,10 +1740,10 @@ static int32_t C_ParseCommand(void)
             const char *origtptr;
             char *mptr;
             char parentScriptFileName[255];
-            int32_t fp;
+            buildvfs_kfd fp;
 
             fp = kopen4load(tempbuf, 0 /*g_loadFromGroupOnly*/);
-            if (fp < 0)
+            if (fp == buildvfs_kfd_invalid)
             {
                 g_numCompilerErrors++;
                 initprintf("%s:%d: error: could not find file `%s'.\n",g_szScriptFileName,g_lineNumber,tempbuf);
@@ -1777,7 +1781,7 @@ static int32_t C_ParseCommand(void)
 
             textptr = origtptr;
 
-            Bfree(mptr);
+            Xfree(mptr);
         }
         return 0;
 
@@ -3061,8 +3065,10 @@ repeatcase:
 
     case CON_UPDATESECTOR:
     case CON_UPDATESECTORZ:
+    case CON_UPDATESECTORNEIGHBOR:
+    case CON_UPDATESECTORNEIGHBORZ:
         C_GetManyVars(2);
-        if (tw==CON_UPDATESECTORZ)
+        if (tw==CON_UPDATESECTORZ || tw==CON_UPDATESECTORNEIGHBORZ)
             C_GetNextVar();
         C_GetNextVarType(GV_WRITABLE);
         break;
@@ -3664,7 +3670,8 @@ void C_Compile(const char *filenameortext, int32_t isfilename)
     char *mptr = NULL;
     static char firstime=1;
     int32_t i,j;
-    int32_t fs=0,fp=0;
+    int32_t fs=0;
+    buildvfs_kfd fp = buildvfs_kfd_invalid;
     int32_t startcompiletime;
     instype *oscriptPtr;
     int32_t ostateCount = g_stateCount;
@@ -3707,7 +3714,7 @@ void C_Compile(const char *filenameortext, int32_t isfilename)
         Bmemcpy(mptr, filenameortext, fs+1);
 
         fp = kopen4load(mptr, 0 /*g_loadFromGroupOnly*/);
-        if (fp == -1) // JBF: was 0
+        if (fp == buildvfs_kfd_invalid) // JBF: was 0
         {
             if (fs < 4 || Bmemcmp(&mptr[fs-4], ".m32", 4) != 0)
             {
@@ -3715,10 +3722,10 @@ void C_Compile(const char *filenameortext, int32_t isfilename)
                 fp = kopen4load(mptr, 0 /*g_loadFromGroupOnly*/);
             }
 
-            if (fp == -1)
+            if (fp == buildvfs_kfd_invalid)
             {
                 initprintf("M32 file `%s' not found.\n", mptr);
-                Bfree(mptr);
+                Xfree(mptr);
                 //g_loadFromGroupOnly = 1;
                 return;
             }
@@ -3728,7 +3735,7 @@ void C_Compile(const char *filenameortext, int32_t isfilename)
         initprintf(" \n");
         initprintf("--- Compiling: %s (%d bytes)\n",mptr,fs);
         Bstrcpy(g_szScriptFileName, mptr);   // JBF 20031130: Store currently compiling file name
-        Bfree(mptr);
+        Xfree(mptr);
     }
     else
     {
@@ -3776,7 +3783,7 @@ void C_Compile(const char *filenameortext, int32_t isfilename)
 
     //*script = g_scriptPtr-script;
 
-    Bfree(mptr);
+    Xfree(mptr);
 
     if (g_stateCount > ostateCount)
     {
@@ -4008,6 +4015,6 @@ void C_PrintErrorPosition()
 
         initprintf("%s\n", buf);
 
-        Bfree(buf);
+        Xfree(buf);
     }
 }

@@ -30,7 +30,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "settings.h"
 #include "mytypes.h"
 #include "scriplib.h"
-#include "file_lib.h"
 #include "gamedefs.h"
 #include "keyboard.h"
 #include "function.h"
@@ -45,6 +44,10 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #include "_functio.h"
 #include "_config.h"
+
+#if defined RENDERTYPESDL && defined SDL_TARGET && SDL_TARGET > 1
+# include "sdl_inc.h"
+#endif
 
 extern void ReadGameSetup(int32_t scripthandle);
 extern void WriteGameSetup(int32_t scripthandle);
@@ -94,8 +97,6 @@ int32_t ForceSetup = 1;
 
 extern char WangBangMacro[10][64];
 char  RTSName[MAXRTSNAMELENGTH];
-//static char setupfilename[64]={SETUPFILENAME};
-char setupfilename[64]= {SETUPFILENAME};
 static int32_t scripthandle = -1;
 
 
@@ -204,9 +205,28 @@ void CONFIG_SetDefaults(void)
     uint8_t k1,k2;
 
     ScreenMode = 1;
-    ScreenWidth = 640;
-    ScreenHeight = 480;
-    ScreenBPP = 8;
+
+#if defined RENDERTYPESDL && SDL_MAJOR_VERSION > 1
+    uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
+    if (inited == 0)
+        SDL_Init(SDL_INIT_VIDEO);
+    else if (!(inited & SDL_INIT_VIDEO))
+        SDL_InitSubSystem(SDL_INIT_VIDEO);
+
+    SDL_DisplayMode dm;
+    if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
+    {
+        ScreenWidth = dm.w;
+        ScreenHeight = dm.h;
+    }
+    else
+#endif
+    {
+        ScreenWidth = 1024;
+        ScreenHeight = 768;
+    }
+
+    ScreenBPP = 32;
     FXDevice = 0;
     MusicDevice = 0;
     NumVoices = 32;
@@ -242,7 +262,7 @@ void CONFIG_SetDefaults(void)
 
         MouseAnalogAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
     }
-    CONTROL_SetMouseSensitivity(gs.MouseSpeed);
+    CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Temporary !CHECKME!
 
     memset(JoystickButtons, -1, sizeof(JoystickButtons));
     memset(JoystickButtonsClicked, -1, sizeof(JoystickButtonsClicked));
@@ -253,7 +273,7 @@ void CONFIG_SetDefaults(void)
     }
 
     memset(JoystickDigitalAxes, -1, sizeof(JoystickDigitalAxes));
-    for (i=0; i < (int32_t)(sizeof(joystickanalogdefaults)/sizeof(char *)); i++)
+    for (i=0; i < MAXJOYAXES; i++)
     {
         JoystickAnalogScale[i] = 65536;
         JoystickAnalogDead[i] = 1024;
@@ -270,7 +290,7 @@ void CONFIG_SetDefaults(void)
 void SetDefaultKeyDefinitions(int style)
 {
     int numkeydefaults;
-    char **keydefaultset;
+    const char **keydefaultset;
     int i, f, k1, k2;
 
     if (style)
@@ -291,8 +311,10 @@ void SetDefaultKeyDefinitions(int style)
         if (f == -1) continue;
         k1 = KB_StringToScanCode(keydefaultset[3*i+1]);
         k2 = KB_StringToScanCode(keydefaultset[3*i+2]);
-
+// [JM] Needs to be rewritten, I think. !CHECKME!
+#if 0
         CONTROL_MapKey(i, k1, k2);
+#endif
 
         KeyboardKeys[f][0] = k1;
         KeyboardKeys[f][1] = k2;
@@ -302,7 +324,7 @@ void SetDefaultKeyDefinitions(int style)
 void SetMouseDefaults(int style)
 {
     int nummousedefaults;
-    char **mousedefaultset, **mouseclickeddefaultset;
+    const char **mousedefaultset, **mouseclickeddefaultset;
     int i;
 
     if (style)
@@ -387,8 +409,11 @@ void CONFIG_ReadKeys(int32_t scripthandle)
     {
         if (i == gamefunc_Show_Console)
             OSD_CaptureKey(KeyboardKeys[i][0]);
+#if 0
+        // [JM] Needs to be re-done. !CHECKME!
         else
             CONTROL_MapKey(i, KeyboardKeys[i][0], KeyboardKeys[i][1]);
+#endif
     }
 }
 
@@ -458,7 +483,7 @@ void CONFIG_SetupMouse(void)
         CONTROL_SetAnalogAxisScale(i, MouseAnalogScale[i], controldevice_mouse);
     }
 
-    CONTROL_SetMouseSensitivity(gs.MouseSpeed);
+    CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Temporary !CHECKME!
 }
 
 /*
@@ -531,8 +556,9 @@ void CONFIG_SetupJoystick(void)
         CONTROL_MapDigitalAxis(i, JoystickDigitalAxes[i][0], 0, controldevice_joystick);
         CONTROL_MapDigitalAxis(i, JoystickDigitalAxes[i][1], 1, controldevice_joystick);
         CONTROL_SetAnalogAxisScale(i, JoystickAnalogScale[i], controldevice_joystick);
-        CONTROL_SetJoyAxisDead(i, JoystickAnalogDead[i]);
-        CONTROL_SetJoyAxisSaturate(i, JoystickAnalogSaturate[i]);
+        //CONTROL_SetJoyAxisDead(i, JoystickAnalogDead[i]);
+        //CONTROL_SetJoyAxisSaturate(i, JoystickAnalogSaturate[i]);
+        joySetDeadZone(i, JoystickAnalogDead[i], JoystickAnalogSaturate[i]); // [JM] !CHECKME!
     }
 }
 
@@ -556,7 +582,7 @@ int32_t CONFIG_ReadSetup(void)
     CONTROL_ClearAssignments();
     CONFIG_SetDefaults();
 
-    if (SafeFileExists(setupfilename))
+    if (buildvfs_exists(setupfilename))
         scripthandle = SCRIPT_Load(setupfilename);
 
     if (scripthandle < 0) return -1;

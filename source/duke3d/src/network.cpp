@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "duke3d.h"
 #include "game.h"
 #include "gamedef.h"
-#include "net.h"
+#include "network.h"
 #include "premap.h"
 #include "savegame.h"
 #include "input.h"
@@ -38,6 +38,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "enet/enet.h"
 #include "lz4.h"
 #include "crc32.h"
+
+#include "vfs.h"
 
 // Data needed even if netcode is disabled
 ENetHost    *g_netServer     = NULL;
@@ -60,7 +62,7 @@ int32_t     g_networkMode       = NET_CLIENT;
 typedef TYPE_PUNNED int32_t NetChunk32;
 
 
-// Unfortunately faketimerhandler needs extra "help" because the Build Engine source doesn't include net.h.
+// Unfortunately faketimerhandler needs extra "help" because the Build Engine source doesn't include network.h.
 #ifdef NETCODE_DISABLE
 void faketimerhandler(void)
 {
@@ -84,7 +86,7 @@ void Net_GetPackets(void)
 {
     timerUpdate();
     MUSIC_Update();
-    S_Cleanup();
+    S_Update();
 
     G_HandleSpecialKeys();
 
@@ -199,7 +201,9 @@ static const uint32_t cInitialMapStateRevisionNumber = 0;
 static const uint32_t cStartingRevisionIndex = 1;
 
 static const int32_t cLocSprite_DeletedSpriteStat = MAXSTATUS;
+#ifdef CURRENTLY_UNUSED
 static const int32_t cNetSprite_DeletedSpriteStat = STAT_NETALLOC;
+#endif
 
 //[75]  When a client attempts to allocate a sprite during the game loop, which is not defined as a clientside sprite,
 //      the insert will go through, and the sprite will be put on this list.
@@ -241,7 +245,7 @@ typedef struct netField_s
 
 } netField_t;
 
-#define	SECTF(x) #x,(size_t)&((netSector_t*)0)->x
+#define	SECTF(x) #x,(int32_t)(size_t)&((netSector_t*)0)->x
 
 static netField_t SectorFields[] =
 {
@@ -280,7 +284,7 @@ static netField_t SectorFields[] =
 #undef SECTF
 
 
-#define	WALLF(x) #x,(size_t)&((netWall_t*)0)->x
+#define	WALLF(x) #x,(int32_t)(size_t)&((netWall_t*)0)->x
 
 static netField_t WallFields[] =
 {
@@ -311,7 +315,7 @@ static netField_t WallFields[] =
 #undef WALLF
 
 
-#define	ACTF(x) #x,(size_t)&((netactor_t*)0)->x
+#define	ACTF(x) #x,(int32_t)(size_t)&((netactor_t*)0)->x
 
 static netField_t ActorFields[] =
 {
@@ -441,6 +445,7 @@ static netField_t ActorFields[] =
 // max packet array size
 #define MAX_WORLDBUFFER WORLD_DATASIZE + WORLD_OVERHEADSIZE
 
+#ifdef CURRENTLY_UNUSED
 // Just so you can get an idea of how much memory the netcode needs...
 static const int64_t cWORLD_DataSize     = WORLD_DATASIZE;
 static const int64_t cWORLD_OverheadSize = WORLD_OVERHEADSIZE;
@@ -448,6 +453,7 @@ static const int64_t cWORLD_TotalSize    = MAX_WORLDBUFFER;
 
 // ...it's pretty big for now (!)
 static const int64_t SnapshotArraySize = sizeof(netmapstate_t) * NET_REVISIONS;
+#endif
 
 
 // both the client and server store their current revision number here,
@@ -1996,8 +2002,8 @@ static void Net_ReceiveUserMapName(uint8_t *pbuf, int32_t packbufleng)
     Bcorrectfilename(boardfilename, 0);
     if (boardfilename[0] != 0)
     {
-        int32_t i;
-        if ((i = kopen4loadfrommod(boardfilename, 0)) < 0)
+        buildvfs_kfd i;
+        if ((i = kopen4loadfrommod(boardfilename, 0)) == buildvfs_kfd_invalid)
         {
             Bmemset(boardfilename, 0, sizeof(boardfilename));
             Net_SendUserMapName();
@@ -2275,7 +2281,7 @@ static void Net_ReceiveServerUpdate(ENetEvent *event)
 
     ticrandomseed = serverupdate.seed;
 
-    for (uint32_t playerIndex = 0; playerIndex < serverupdate.numplayers; ++playerIndex)
+    for (int playerIndex = 0; playerIndex < serverupdate.numplayers; ++playerIndex)
     {
         Bmemcpy(&playerupdate, updatebuf, sizeof(serverplayerupdate_t));
         updatebuf += sizeof(serverplayerupdate_t);
@@ -2392,9 +2398,9 @@ static void Net_ReceiveNewPlayer(uint8_t *pbuf, int32_t packbufleng)
         {
             g_player[pbuf[4]].ps = (DukePlayer_t *)Xcalloc(1, sizeof(DukePlayer_t));
         }
-        if (!g_player[pbuf[4]].inputBits)
+        if (!g_player[pbuf[4]].input)
         {
-            g_player[pbuf[4]].inputBits = (input_t *)Xcalloc(1, sizeof(input_t));
+            g_player[pbuf[4]].input = (input_t *)Xcalloc(1, sizeof(input_t));
         }
     }
 
@@ -2673,7 +2679,7 @@ static void Net_ResetPlayerReady()
 #define IndexesOK (MAXWALLS < NetNumberOfIndexes) && (MAXSPRITES < NetNumberOfIndexes) && (MAXSECTORS < NetNumberOfIndexes)
 
 #if(!IndexesOK)
-#error "net.c: game arrays are now too big to send over the network, please update NETINDEX_BITS to be the right length to store a wall, sprite, and sector index"
+#error "network.cpp: game arrays are now too big to send over the network, please update NETINDEX_BITS to be the right length to store a wall, sprite, and sector index"
 #endif
 
 #define STRUCTINDEX_BITS 8 // hopefully no game structs ever have more than 255 fields....
@@ -4703,6 +4709,7 @@ void Net_WaitForServer(void)
         {
             display_betascreen();
             gametext_center_shade(170, "Waiting for server", 14);
+            videoNextPage();
         }
 
         // XXX: this looks like something that should be rate limited...
@@ -4772,7 +4779,7 @@ void Net_Connect(const char *srvaddr)
         if (enet_host_service(g_netClient, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
         {
             initprintf("Connection to %s:%d succeeded.\n", oursrvaddr, address.port);
-            Bfree(oursrvaddr);
+            Xfree(oursrvaddr);
             return;
         }
         else
@@ -4787,7 +4794,7 @@ void Net_Connect(const char *srvaddr)
     }
 
     // [75] note: it only gets here if there was an error
-    Bfree(oursrvaddr);
+    Xfree(oursrvaddr);
     Net_Disconnect();
 }
 

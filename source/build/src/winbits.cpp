@@ -113,7 +113,7 @@ static void win_printversion(void)
     }
 
     initprintf("Running on %s (build %lu.%lu.%lu)\n", str, osv.dwMajorVersion, osv.dwMinorVersion, osv.dwBuildNumber);
-    Bfree(str);
+    Xfree(str);
 }
 
 //
@@ -340,7 +340,7 @@ int32_t addsearchpath_ProgramFiles(const char *p)
             Bsprintf(buffer,"%s/%s",ProgramFiles[i],p);
             if (addsearchpath(buffer) == 0) // if any work, return success
                 returncode = 0;
-            Bfree(buffer);
+            Xfree(buffer);
         }
     }
 

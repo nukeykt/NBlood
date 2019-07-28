@@ -46,7 +46,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Fire",
    "Open",
    "Run",
-   "AutoRun",
+   "Alt_Fire",
    "Jump",
    "Crouch",
    "Look_Up",
@@ -110,10 +110,11 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
 #endif
    "Dpad_Select",
    "Dpad_Aiming",
-   "Alternate_Weapon",
+   "AutoRun",
    "Last_Used_Weapon",
    "Quick_Save",
    "Quick_Load",
+   "Alt_Weapon",
    };
 
 #ifdef __SETUP__
@@ -125,10 +126,10 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "Left", "Kpad4",
    "Right", "KPad6",
    "LAlt", "RAlt",
-   "", "RCtrl",
+   "RCtrl", "",
    "E", "",
    "LShift", "RShift",
-   "CapLck", "",
+   "", "",
    "Space", "/",
    "LCtrl", "C",
    "PgUp", "Kpad9",
@@ -176,10 +177,11 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "", "",
    "", "",
    "", "",
-   "", "",
-   "", "",
+   "CapLck", "",
+   "X", "",
    "F6", "",
    "F9", "",
+   "", "",
    };
 
 const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
@@ -192,7 +194,7 @@ const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "LCtrl", "RCtrl",
    "Space", "",
    "LShift", "RShift",
-   "CapLck", "",
+   "", "",
    "A", "/",
    "Z", "",
    "PgUp", "Kpad9",
@@ -240,16 +242,17 @@ const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "", "",
    "", "",
    "", "",
-   "", "",
+   "CapLck", "",
    "", "",
    "F6", "",
    "F9", "",
+   "", "",
    };
 
 static const char * mousedefaults[MAXMOUSEBUTTONS] =
    {
    "Fire",
-   "MedKit",
+   "Alt_Fire",
    "Jetpack",
    "",
    "Previous_Weapon",

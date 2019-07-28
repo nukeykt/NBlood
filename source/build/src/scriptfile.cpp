@@ -11,6 +11,8 @@
 #include "compat.h"
 #include "cache1d.h"
 
+#include "vfs.h"
+
 
 #define ISWS(x) ((x == ' ') || (x == '\t') || (x == '\r') || (x == '\n'))
 static inline void skipoverws(scriptfile *sf) { if ((sf->textptr < sf->eof) && (!sf->textptr[0])) sf->textptr++; }
@@ -299,8 +301,8 @@ void scriptfile_preparse(scriptfile *sf, char *tx, int32_t flen)
 
 scriptfile *scriptfile_fromfile(const char *fn)
 {
-    int32_t fp = kopen4load(fn, 0);
-    if (fp < 0) return nullptr;
+    buildvfs_kfd fp = kopen4load(fn, 0);
+    if (fp == buildvfs_kfd_invalid) return nullptr;
 
     uint32_t flen = kfilelength(fp);
     char *   tx   = (char *)Xmalloc(flen + 2);
@@ -339,10 +341,10 @@ scriptfile *scriptfile_fromstring(const char *string)
 void scriptfile_close(scriptfile *sf)
 {
     if (!sf) return;
-    Bfree(sf->lineoffs);
-    Bfree(sf->textbuf);
-    Bfree(sf->filename);
-    Bfree(sf);
+    Xfree(sf->lineoffs);
+    Xfree(sf->textbuf);
+    Xfree(sf->filename);
+    Xfree(sf);
 }
 
 int scriptfile_eof(scriptfile *sf)
