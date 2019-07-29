@@ -465,7 +465,7 @@ void ctrlGetInput(void)
     else
         gInput.mlook = ClipRange(info.dz>>7, -127, 127);
 #endif
-    gInput.q16mlook = fix16_clamp(fix16_div(fix16_from_int(info.dpitch), F16(256)), F16(-127)>>2, F16(127)>>2);
+    gInput.q16mlook = fix16_clamp(fix16_div(fix16_from_int(info.dpitch), F16(128)), F16(-127)>>2, F16(127)>>2);
     if (!gMouseAimingFlipped)
         gInput.q16mlook = -gInput.q16mlook;
     forward = ClipRange(forward - info.dz, -2048, 2048);

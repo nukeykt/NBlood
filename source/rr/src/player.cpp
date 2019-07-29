@@ -2824,7 +2824,7 @@ void P_GetInput(int playerNum)
     else
         staticInput.q16avel = fix16_div(fix16_from_int(info[0].dyaw), F16(32));
 
-    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(256));
+    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(128));
 
     if (ud.mouseflip) staticInput.q16horz = -staticInput.q16horz;
 
@@ -3106,7 +3106,7 @@ void P_GetInputMotorcycle(int playerNum)
 
     staticInput.q16avel = fix16_div(fix16_from_int(info[0].dyaw), F16(32));
 
-    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(256));
+    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(128));
 
     if (ud.mouseflip) staticInput.q16horz = -staticInput.q16horz;
 
@@ -3409,7 +3409,7 @@ void P_GetInputBoat(int playerNum)
 
     staticInput.q16avel = fix16_div(fix16_from_int(info[0].dyaw), F16(32));
 
-    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(256));
+    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(128));
 
     if (ud.mouseflip) staticInput.q16horz = -staticInput.q16horz;
 
