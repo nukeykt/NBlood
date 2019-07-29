@@ -942,6 +942,9 @@ static FORCE_INLINE int32_t videoGetRenderMode(void)
 #endif
 }
 
+extern int32_t bloodhack;
+extern int32_t blooddemohack;
+
 /*************************************************************************
 POSITION VARIABLES:
 
@@ -1626,8 +1629,6 @@ extern void(*PolymostProcessVoxels_Callback)(void);
 #endif
 
 extern int32_t automapping;
-extern int32_t bloodhack;
-extern int32_t blooddemohack;
 extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 extern int8_t voxreserve[(MAXVOXELS+7)>>3];
 
