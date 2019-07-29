@@ -789,6 +789,22 @@ static FORCE_INLINE void clipmove_tweak_pos(const vec3_t *pos, int32_t gx, int32
 static bool cliptestsector(int const dasect, int const nextsect, int32_t const flordist, int32_t const ceildist, vec2_t const &pos, int32_t const posz)
 {
     auto const sec2 = (usectorptr_t)&sector[nextsect];
+
+    if (blooddemohack)
+    {
+		int32_t daz = getflorzofslope(dasect, pos.x, pos.y);
+		int32_t daz2 = getflorzofslope(nextsect, pos.x, pos.y);
+
+		if (daz2 < daz-(1<<8) && (sec2->floorstat&1) == 0)
+			if (posz >= daz2-(flordist-1)) return 1;
+		daz = getceilzofslope(dasect, pos.x, pos.y);
+		daz2 = getceilzofslope(nextsect, pos.x, pos.y);
+		if (daz2 > daz+(1<<8) && (sec2->ceilingstat&1) == 0)
+			if (posz <= daz2+(ceildist-1)) return 1;
+
+        return 0;
+    }
+
     int32_t daz2 = sec2->floorz;
     int32_t dacz2 = sec2->ceilingz;
 
@@ -938,6 +954,12 @@ static int32_t get_floorspr_clipyou(int32_t x1, int32_t x2, int32_t x3, int32_t 
 
 static void clipupdatesector(vec2_t const &pos, int16_t * const sectnum, int const walldist)
 {
+    if (blooddemohack)
+    {
+        updatesector(pos.x, pos.y, sectnum);
+        return;
+    }
+
     if (inside_p(pos.x, pos.y, *sectnum))
         return;
 
@@ -1159,7 +1181,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 }
 
            // We're not interested in any sector reached by portal traversal that we're "inside" of.
-            if (!curspr && dasect != initialsectnum && inside(pos->x, pos->y, dasect) == 1)
+            if (!blooddemohack && !curspr && dasect != initialsectnum && inside(pos->x, pos->y, dasect) == 1)
             {
                 int k;
                 for (k=startwall; k<endwall; k++)
@@ -1184,7 +1206,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 v.x = walldist; if (d.y > 0) v.x = -v.x;
                 v.y = walldist; if (d.x < 0) v.y = -v.y;
 
-                if (d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
+                if (!blooddemohack && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
                     v.x >>= 1, v.y >>= 1;
 
                 addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.x, p2.y+v.y, objtype, false);
@@ -1342,31 +1364,47 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     do
     {
-        for (native_t i=clipnum-1;i>=0;--i)
-        {
-            if (!bitmap_test(clipignore, i) && clipinsideboxline(pos->x, pos->y, clipit[i].x1, clipit[i].y1, clipit[i].x2, clipit[i].y2, walldist))
+        if (!blooddemohack)
+            for (native_t i=clipnum-1;i>=0;--i)
             {
-                vec2_t const vec = pos->vec2;
-                keepaway(&pos->x, &pos->y, i);
-                if (inside(pos->x,pos->y, *sectnum) != 1)
-                    pos->vec2 = vec;
-                break;
+                if (!bitmap_test(clipignore, i) && clipinsideboxline(pos->x, pos->y, clipit[i].x1, clipit[i].y1, clipit[i].x2, clipit[i].y2, walldist))
+                {
+                    vec2_t const vec = pos->vec2;
+                    keepaway(&pos->x, &pos->y, i);
+                    if (inside(pos->x,pos->y, *sectnum) != 1)
+                        pos->vec2 = vec;
+                    break;
+                }
             }
-        }
 
         vec2_t vec = goal;
 
         if ((hitwall = cliptrace(pos->vec2, &vec)) >= 0)
         {
             vec2_t const  clipr  = { clipit[hitwall].x2 - clipit[hitwall].x1, clipit[hitwall].y2 - clipit[hitwall].y1 };
-            int64_t const templl = (int64_t)clipr.x * clipr.x + (int64_t)clipr.y * clipr.y;
-
-            if (templl > 0)
+            if (blooddemohack)
             {
-                int64_t const templl2 = (int64_t)(goal.x-vec.x)*clipr.x + (int64_t)(goal.y-vec.y)*clipr.y;
-                int32_t const i = ((llabs(templl2)>>11) < templl) ? divscale64(templl2, templl, 20) : 0;
+                int32_t const templl = clipr.x * clipr.x + clipr.y * clipr.y;
 
-                goal = { mulscale20(clipr.x, i)+vec.x, mulscale20(clipr.y, i)+vec.y };
+                if (templl > 0)
+                {
+                    int32_t const templl2 = (goal.x-vec.x)*clipr.x + (goal.y-vec.y)*clipr.y;
+                    int32_t const i = ((klabs(templl2)>>11) < templl) ? divscale20(templl2, templl) : 0;
+
+                    goal = { mulscale20(clipr.x, i)+vec.x, mulscale20(clipr.y, i)+vec.y };
+                }
+            }
+            else
+            {
+                int64_t const templl = (int64_t)clipr.x * clipr.x + (int64_t)clipr.y * clipr.y;
+
+                if (templl > 0)
+                {
+                    int64_t const templl2 = (int64_t)(goal.x-vec.x)*clipr.x + (int64_t)(goal.y-vec.y)*clipr.y;
+                    int32_t const i = ((llabs(templl2)>>11) < templl) ? divscale64(templl2, templl, 20) : 0;
+
+                    goal = { mulscale20(clipr.x, i)+vec.x, mulscale20(clipr.y, i)+vec.y };
+                }
             }
 
             int32_t const tempint = dmulscale6(clipr.x, move.x, clipr.y, move.y);
@@ -1376,7 +1414,11 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 j = hitwalls[i];
 
                 if ((tempint ^ dmulscale6(clipit[j].x2-clipit[j].x1, move.x, clipit[j].y2-clipit[j].y1, move.y)) < 0)
+                {
+                    if (blooddemohack == 1)
+                        updatesector(pos->x, pos->y, sectnum);
                     return clipReturn;
+                }
             }
 
             keepaway(&goal.x, &goal.y, hitwall);
@@ -1388,12 +1430,59 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             hitwalls[cnt] = hitwall;
         }
 
-        clipupdatesector(vec, sectnum, rad);
+        if (!blooddemohack)
+            clipupdatesector(vec, sectnum, rad);
 
         pos->x = vec.x;
         pos->y = vec.y;
         cnt--;
     } while ((xvect|yvect) != 0 && hitwall >= 0 && cnt > 0);
+
+    if (blooddemohack)
+    {
+        for (native_t j=0; j<clipsectnum; j++)
+            if (inside(pos->x, pos->y, clipsectorlist[j]) == 1)
+            {
+                *sectnum = clipsectorlist[j];
+                return clipReturn;
+            }
+
+        int32_t tempint2, tempint1 = INT32_MAX;
+        *sectnum = -1;
+        for (native_t j=numsectors-1; j>=0; j--)
+            if (inside(pos->x, pos->y, j) == 1)
+            {
+                if (sector[j].ceilingstat&2)
+                    tempint2 = getceilzofslope(j, pos->x, pos->y) - pos->z;
+                else
+                    tempint2 = sector[j].ceilingz - pos->z;
+
+                if (tempint2 > 0)
+                {
+                    if (tempint2 < tempint1)
+                    {
+                        *sectnum = j; tempint1 = tempint2;
+                    }
+                }
+                else
+                {
+                    if (sector[j].floorstat&2)
+                        tempint2 = pos->z - getflorzofslope(j, pos->x, pos->y);
+                    else
+                        tempint2 = pos->z - sector[j].floorz;
+
+                    if (tempint2 <= 0)
+                    {
+                        *sectnum = j;
+                        return clipReturn;
+                    }
+                    if (tempint2 < tempint1)
+                    {
+                        *sectnum = j; tempint1 = tempint2;
+                    }
+                }
+            }
+    }
 
     return clipReturn;
 }
@@ -1621,12 +1710,14 @@ restart_grand:
 
                 int32_t daz, daz2;
                 closest = { pos->x, pos->y };
-                getsectordist(closest, k, &closest);
+                if (!blooddemohack)
+                    getsectordist(closest, k, &closest);
                 getzsofslope(k,closest.x,closest.y,&daz,&daz2);
 
                 int32_t fz, cz;
                 closest = { pos->x, pos->y };
-                getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
+                if (!blooddemohack)
+                    getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
                 getzsofslope(sectq[clipinfo[curidx].qend],closest.x,closest.y,&cz,&fz);
 
                 const int hitwhat = (curspr-(uspritetype *)sprite)+49152;
@@ -1711,7 +1802,8 @@ restart_grand:
                 //It actually got here, through all the continue's!!!
                 int32_t daz, daz2;
                 closest = { pos->x, pos->y };
-                getsectordist(closest, k, &closest);
+                if (!blooddemohack)
+                    getsectordist(closest, k, &closest);
                 getzsofslope(k, closest.x,closest.y, &daz,&daz2);
 
 #ifdef HAVE_CLIPSHAPE_FEATURE
@@ -1720,7 +1812,8 @@ restart_grand:
                     int32_t fz,cz, hitwhat=(curspr-(uspritetype *)sprite)+49152;
 
                     closest = { pos->x, pos->y };
-                    getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
+                    if (!blooddemohack)
+                        getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
                     getzsofslope(sectq[clipinfo[curidx].qend],closest.x,closest.y,&cz,&fz);
 
                     if ((sec->ceilingstat&1)==0)
