@@ -3442,7 +3442,7 @@ static void mslopevlin(uint8_t *p, const intptr_t *slopalptr, bssize_t cnt, int3
 #define BITSOFPRECISION 3  //Don't forget to change this in A.ASM also!
 static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 {
-    int32_t i, j, l, globalx1, globaly1, y1, y2, daslope, daz;
+    int32_t i, j, l, globalx1, globaly1, y1, y2, daslope, daz, wxi, wyi;
     float fi, wx, wy, dasqr;
     float globalx, globaly, globalx2, globaly2, globalx3, globaly3, globalz, globalzd, globalzx;
     int32_t shoffs, m1, m2;
@@ -3480,11 +3480,11 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
 
     wal = (uwalltype *)&wall[sec->wallptr];
-    wx = wall[wal->point2].x - wal->x;
-    wy = wall[wal->point2].y - wal->y;
-    dasqr = 1073741824.f/nsqrtasm(Blrintf(wx*wx+wy*wy));
+    wxi = wall[wal->point2].x - wal->x;
+    wyi = wall[wal->point2].y - wal->y;
+    dasqr = 1073741824.f/nsqrtasm(uhypsq(wxi,wyi));
     fi = daslope*dasqr*(1.f/2097152.f);
-    wx *= fi; wy *= fi;
+    wx = wxi*fi; wy = wyi*fi;
 
     globalx = -float(singlobalang)*float(xdimenrecip)*(1.f/524288.f);
     globaly = float(cosglobalang)*float(xdimenrecip)*(1.f/524288.f);
