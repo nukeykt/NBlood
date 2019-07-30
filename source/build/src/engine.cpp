@@ -3482,7 +3482,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     wal = (uwalltype *)&wall[sec->wallptr];
     wx = wall[wal->point2].x - wal->x;
     wy = wall[wal->point2].y - wal->y;
-    dasqr = 1073741824.f/Bsqrtf(wx*wx+wy*wy);
+    dasqr = 1073741824.f/nsqrtasm(Blrintf(wx*wx+wy*wy));
     fi = daslope*dasqr*(1.f/2097152.f);
     wx *= fi; wy *= fi;
 
@@ -3503,7 +3503,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
         dx = (wall[wal->point2].x-wal->x)*dasqr*(1.f/16384.f);
         dy = (wall[wal->point2].y-wal->y)*dasqr*(1.f/16384.f);
 
-        fi = Bsqrtf(daslope*daslope+16777216.f);
+        fi = float(nsqrtasm(daslope*daslope+16777216));
 
         x = globalx; y = globaly;
         globalx = (x*dx+y*dy)*(1.f/65536.f);
