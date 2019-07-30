@@ -2642,15 +2642,17 @@ void actInit(void)
             int nType = pSprite->type-kDudeBase;
             if (!IsPlayerSprite(pSprite))
             {
-                pSprite->cstat |= 4096+256+1;
-                
                 // By NoOne: allow user clipdist for custom dude.
                 switch (pSprite->type) {
+                    case 225:  // by NoOne: FakeDude type
+                        break;
                     case kGDXDudeUniversalCultist:
                     case kGDXGenDudeBurning:
+                        pSprite->cstat |= 4096 + 256 + 1;
                         break;
                     default:
                         pSprite->clipdist = dudeInfo[nType].clipdist;
+                        pSprite->cstat |= 4096 + 256 + 1;
                         break;
                 }
 
@@ -2664,47 +2666,17 @@ void actInit(void)
                 }
             }
 
-            int seqStartId = dudeInfo[nType].seqStartID;
-            // By NoOne: store seqStartId in data2 field for custom dude
-            if (pSprite->type == kGDXDudeUniversalCultist) {
-                
-                if (pXSprite->data2 > 0) {
-                    seqStartId = pXSprite->data2;
-                    int seqEndId = pXSprite->data2 + 19;
-
-                    // check for full set of animations
-                    for (int i = seqStartId; i <= seqEndId; i++) {
-
-                        // exceptions
-                        switch (i - seqStartId) {
-                            case 3:		// burning dude
-                            case 4: 	// electrocution
-                            case 8:		// attack u/d
-                            case 11: 	// reserved
-                            case 12:	// reserved
-                            case 13:	// move u
-                            case 14: 	// move d
-                            case 16:	// burning death 2
-                            case 17:	// idle w
-                            case 18:	// transformation in another dude
-                            case 19:	// reserved
-                                continue;
-                        }
-
-                        if (!gSysRes.Lookup(i, "SEQ")) {
-                            //ThrowError("No SEQ file found for custom dude!");
-                            pXSprite->data2 = dudeInfo[nType].seqStartID;
-                            seqStartId = pXSprite->data2;
-                            break;
-                        }
-                    }
-
-                } else {
-                    pXSprite->data2 = seqStartId;
-                }
+            // by NoOne: Custom Dude stores it's SEQ in data2
+            switch (pSprite->type) {
+                case kGDXDudeUniversalCultist:
+                case kGDXGenDudeBurning:
+                    seqSpawn(getSeqStartId(pXSprite), 3, nXSprite);
+                    break;
+                default:
+                    int seqStartId = dudeInfo[nType].seqStartID;
+                    if (gSysRes.Lookup(seqStartId, "SEQ")) seqSpawn(seqStartId, 3, nXSprite);
+                    break;
             }
-            
-            if (gSysRes.Lookup(seqStartId, "SEQ")) seqSpawn(seqStartId, 3, nXSprite);
         }
         aiInit();
     }
@@ -5532,7 +5504,7 @@ void actProcessSprites(void)
             }
 
                                    // by NoOne: make Sight flag work and don't process sight flag for things which is locked or triggered
-            if (pXSprite->Sight && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
+            if (!VanillaMode() && pXSprite->Sight && pXSprite->locked != 1 && !pXSprite->isTriggered) {
                 for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
                     spritetype* pPlayer = gPlayer[i].pSprite;
                     if (cansee(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, pPlayer->x, pPlayer->y, pPlayer->z, pPlayer->sectnum)) {
@@ -5555,7 +5527,7 @@ void actProcessSprites(void)
                 }
             }*/
                                        // by NoOne: don't process locked or 1-shot things for proximity
-            if (pXSprite->Proximity && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
+            if (pXSprite->Proximity && (VanillaMode() || (pXSprite->locked != 1 && pXSprite->isTriggered != true))) {
                 if (pSprite->type == 431) pXSprite->target = -1;
                 for (int nSprite2 = headspritestat[6]; nSprite2 >= 0; nSprite2 = nNextSprite)
                 {
@@ -5566,6 +5538,11 @@ void actProcessSprites(void)
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
                     if ((unsigned int)pXSprite2->health > 0)
                     {
+                   
+                        // by NoOne: allow dudeLockout for proximity flag
+                        if (pSprite->type != 431 && pXSprite->DudeLockout && !IsPlayerSprite(pSprite2)) 
+                            continue;
+
                         int proxyDist = 96;
                         if (pSprite->type == kGDXThingCustomDudeLifeLeech) proxyDist = 512;
                         else if (pSprite->type == 431 && pXSprite->target == -1)
@@ -5585,9 +5562,7 @@ void actProcessSprites(void)
                             proxyDist = 512;
                         }
                         if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, proxyDist)) {
-                            
-                            // allow dudeLockout for proximity flag
-                            if (pXSprite->DudeLockout && !IsPlayerSprite(pSprite2)) continue;
+
                             switch (pSprite->type) {
                                 case kGDXThingTNTProx:
                                     if (!IsPlayerSprite(pSprite2)) continue;
@@ -5933,6 +5908,9 @@ void actProcessSprites(void)
                     pSprite->type = pIncarnation->type;
                     pSprite->pal = pIncarnation->pal;
                     pSprite->shade = pIncarnation->shade;
+                    pSprite->clipdist = pIncarnation->clipdist;
+                    pSprite->xrepeat = pIncarnation->xrepeat;
+                    pSprite->yrepeat = pIncarnation->yrepeat;
 
                     pXSprite->txID = pXIncarnation->txID;
                     pXSprite->command = pXIncarnation->command;
@@ -5957,16 +5935,19 @@ void actProcessSprites(void)
                     switch (pSprite->type) {
                         case kGDXDudeUniversalCultist:
                         case kGDXGenDudeBurning:
-                            if (pXSprite->data2 > 0) seqSpawn(pXSprite->data2, 3, nXSprite, -1);
-                            else seqSpawn(dudeInfo[pSprite->type - kDudeBase].seqStartID, 3, nXSprite, -1);
+                            seqSpawn(getSeqStartId(pXSprite), 3, nXSprite, -1);
                             break;
                         default:
                             seqSpawn(dudeInfo[pSprite->type - kDudeBase].seqStartID, 3, nXSprite, -1);
                             break;
                     }
+                    
+                    if (pXSprite->data4 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
+                    else {
+                        long hp = pXSprite->data4 << 4;
+                        pXSprite->health = (hp > 0) ? ((hp <= 65535) ? hp : 65535) : 1;
+                    }
 
-                    if (pXSprite->data4 > 0) pXSprite->health = pXSprite->data4;
-                    else pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
                     aiActivateDude(pSprite, pXSprite);
                 }
             }
@@ -7009,7 +6990,6 @@ void ActorLoadSaveConstruct(void)
 
 // By NoOne: The following functions required for random event features
 //-------------------------
-
 int GetDataVal(spritetype* pSprite, int data) {
     XSPRITE* pXSprite = &xsprite[pSprite->extra];
     int rData[4];
@@ -7077,15 +7057,11 @@ int GetRandDataVal(int *rData, spritetype* pSprite) {
             random = my_random(0, 4);
         }
 
-        if (rData[random] > 0 && (pSprite == NULL || random != xsprite[pSprite->extra].goalAng)) {
-            if (pSprite != NULL) xsprite[pSprite->extra].goalAng = random;
-            return rData[random];
-        }
-       
+        if (rData[random] > 0)   return rData[random];
         maxRetries--;
     }
 
-    // if nothing, get first found data value from top
+     // if nothing, get first found data value from top
      return rData[b];
 }
 
@@ -7103,26 +7079,32 @@ spritetype* DropRandomPickupObject(spritetype* pSprite, short prevItem) {
             rData[i] = 0;
 
     int maxRetries = 9;
-    while ((selected = GetRandDataVal(rData, NULL)) == prevItem) if (maxRetries <= 0) break;
+    while ((selected = GetRandDataVal(rData, NULL)) == prevItem) if (maxRetries-- <= 0) break;
     if (selected > 0) {
         spritetype* pSource = pSprite; XSPRITE* pXSource = &xsprite[pSource->extra];
         pSprite2 = actDropObject(pSprite, selected);
-        pXSource->dropMsg = pSprite2->lotag; // store dropped item lotag in dropMsg
-        
-        if ((pSource->hitag & kHitagExtBit) != 0)
-        {
-            int nXSprite2 = pSprite2->extra;
-            if (nXSprite2 <= 0)
-                nXSprite2 = dbInsertXSprite(pSprite2->index);
-            XSPRITE *pXSprite2 = &xsprite[nXSprite2];
+        if (pSprite2 != NULL) {
+            
+            pXSource->dropMsg = pSprite2->lotag; // store dropped item lotag in dropMsg
+            pSprite2->x = pSource->x;
+            pSprite2->y = pSource->y;
+            pSprite2->z = pSource->z;
 
-            // inherit spawn sprite trigger settings, so designer can send command when item picked up.
-            pXSprite2->txID = pXSource->txID;
-            pXSprite2->command = pXSource->command;
-            pXSprite2->triggerOn = pXSource->triggerOn;
-            pXSprite2->triggerOff = pXSource->triggerOff;
+            if ((pSource->hitag & kHitagExtBit) != 0)
+            {
+                int nXSprite2 = pSprite2->extra;
+                if (nXSprite2 <= 0)
+                    nXSprite2 = dbInsertXSprite(pSprite2->index);
+                XSPRITE * pXSprite2 = &xsprite[nXSprite2];
 
-            pXSprite2->Pickup = true;
+                // inherit spawn sprite trigger settings, so designer can send command when item picked up.
+                pXSprite2->txID = pXSource->txID;
+                pXSprite2->command = pXSource->command;
+                pXSprite2->triggerOn = pXSource->triggerOn;
+                pXSprite2->triggerOff = pXSource->triggerOff;
+
+                pXSprite2->Pickup = true;
+            }
         }
     }
 
@@ -7195,9 +7177,13 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     vec3_t pos = { x, y, z }; setsprite(pDude->index, &pos); 
     pDude->cstat |= 0x1101; pDude->clipdist = dudeInfo[nType - kDudeBase].clipdist;
 
-    // inherit weapon and sound settings.
+    // inherit weapon, seq and sound settings.
     pXDude->data1 = pXSource->data1;
+    pXDude->data2 = pXSource->data2;
     pXDude->data3 = pXSource->data3;
+
+    // spawn seq
+    seqSpawn(getSeqStartId(pXDude), 3, pDude->extra, -1);
 
     // inherit movement speed.
     pXDude->busyTime = pXSource->busyTime;
@@ -7208,14 +7194,6 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
         long hp = pXSource->data4 << 4;
         pXDude->health = (hp > 0) ? ((hp <= 65535) ? hp : 65535) : 1;
     }
-
-    // inherit seq settings
-    int seqId = dudeInfo[nType - kDudeBase].seqStartID;
-    if (pXSource->data2 > 0) seqId = pXSource->data2;
-    pXDude->data2 = seqId;
-
-    if (gSysRes.Lookup(seqId,"SEQ"))
-        seqSpawn(seqId, 3, pDude->extra, -1);
 
     if ((pSource->hitag & kHitagExtBit) != 0) {
         //inherit pal?
@@ -7283,9 +7261,7 @@ int getDudeMassBySpriteSize(spritetype* pSprite) {
         //if ((mass+=(x+y)) > 200) mass+=((mass - 200)*16);
     }
 
-    if (mass < minMass) return minMass;
-    else if (mass > 65000) return 65000;
-    return mass;
+    return ClipRange(mass, minMass, 65535);
 }
 
 
