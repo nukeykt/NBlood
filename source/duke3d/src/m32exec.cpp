@@ -290,7 +290,7 @@ static char *GetMaybeInlineQuote(int32_t quotei)
     }
     else
     {
-        quotei = Gv_GetVarX(quotei);
+        quotei = Gv_GetVar(quotei);
         do { X_ERROR_INVALIDQUOTE(quotei, apStrings) } while (0);
         if (vm.flags&VMFLAG_ERROR)
             return NULL;
@@ -395,7 +395,7 @@ skip_check:
                 // script offset to default case (null if none)
                 // For each case: value, ptr to code
                 //AddLog("Processing Switch...");
-                int32_t lValue=Gv_GetVarX(*insptr++), lEnd=*insptr++, lCases=*insptr++;
+                int32_t lValue=Gv_GetVar(*insptr++), lEnd=*insptr++, lCases=*insptr++;
                 instype *lpDefault=insptr++, *lpCases=insptr, *lCodeInsPtr;
                 int32_t bMatched=0, lCheckCase;
                 int32_t left,right;
@@ -455,14 +455,14 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, insptr-apScript);
+                Gv_SetVar(j, insptr-apScript);
             }
             continue;
 
         case CON_JUMP:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
                 if (j<0 || j>=(g_scriptPtr-apScript))
                 {
                     M32_ERROR("script index out of bounds (%d)",  j);
@@ -485,8 +485,8 @@ skip_check:
             insptr++;
             {
                 const int32_t j=*insptr++;
-                const int32_t index = Gv_GetVarX(*insptr++);
-                const int32_t value = Gv_GetVarX(*insptr++);
+                const int32_t index = Gv_GetVar(*insptr++);
+                const int32_t value = Gv_GetVar(*insptr++);
 
                 CheckArray(j);
 
@@ -512,7 +512,7 @@ skip_check:
                 if (CheckArray(j))
                     continue;
 
-                Gv_SetVarX(*insptr++, Gv_GetArraySize(j));
+                Gv_SetVar(*insptr++, Gv_GetArraySize(j));
             }
             continue;
 
@@ -520,7 +520,7 @@ skip_check:
             insptr++;
             {
                 const int32_t j=*insptr++;
-                const int32_t asize = Gv_GetVarX(*insptr++);
+                const int32_t asize = Gv_GetVar(*insptr++);
 
                 CheckArray(j);
 
@@ -544,10 +544,10 @@ skip_check:
             insptr++;
             {
                 const int32_t si=*insptr++;
-                int32_t sidx = Gv_GetVarX(*insptr++);
+                int32_t sidx = Gv_GetVar(*insptr++);
                 const int32_t di=*insptr++;
-                int32_t didx = Gv_GetVarX(*insptr++);
-                int32_t numelts = Gv_GetVarX(*insptr++);
+                int32_t didx = Gv_GetVar(*insptr++);
+                int32_t numelts = Gv_GetVar(*insptr++);
 
                 CheckArray(si);
                 CheckArray(di);
@@ -605,19 +605,19 @@ skip_check:
 // *** var & varvar ops
         case CON_RANDVAR:
             insptr++;
-            Gv_SetVarX(*insptr, mulscale16(krand(), *(insptr+1)+1));
+            Gv_SetVar(*insptr, mulscale16(krand(), *(insptr+1)+1));
             insptr += 2;
             continue;
 
         case CON_DISPLAYRANDVAR:
             insptr++;
-            Gv_SetVarX(*insptr, mulscale15(system_15bit_rand(), *(insptr+1)+1));
+            Gv_SetVar(*insptr, mulscale15(system_15bit_rand(), *(insptr+1)+1));
             insptr += 2;
             continue;
 
         case CON_SETVAR:
             insptr++;
-            Gv_SetVarX(*insptr, *(insptr+1));
+            Gv_SetVar(*insptr, *(insptr+1));
             insptr += 2;
             continue;
 
@@ -625,13 +625,13 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(*insptr++));
             }
             continue;
 
         case CON_MULVAR:
             insptr++;
-            Gv_SetVarX(*insptr, Gv_GetVarX(*insptr) * *(insptr+1));
+            Gv_SetVar(*insptr, Gv_GetVar(*insptr) * *(insptr+1));
             insptr += 2;
             continue;
 
@@ -643,7 +643,7 @@ skip_check:
                 insptr += 2;
                 continue;
             }
-            Gv_SetVarX(*insptr, Gv_GetVarX(*insptr) / *(insptr+1));
+            Gv_SetVar(*insptr, Gv_GetVar(*insptr) / *(insptr+1));
             insptr += 2;
             continue;
 
@@ -655,25 +655,25 @@ skip_check:
                 insptr += 2;
                 continue;
             }
-            Gv_SetVarX(*insptr,Gv_GetVarX(*insptr)%*(insptr+1));
+            Gv_SetVar(*insptr,Gv_GetVar(*insptr)%*(insptr+1));
             insptr += 2;
             continue;
 
         case CON_ANDVAR:
             insptr++;
-            Gv_SetVarX(*insptr,Gv_GetVarX(*insptr) & *(insptr+1));
+            Gv_SetVar(*insptr,Gv_GetVar(*insptr) & *(insptr+1));
             insptr += 2;
             continue;
 
         case CON_ORVAR:
             insptr++;
-            Gv_SetVarX(*insptr,Gv_GetVarX(*insptr) | *(insptr+1));
+            Gv_SetVar(*insptr,Gv_GetVar(*insptr) | *(insptr+1));
             insptr += 2;
             continue;
 
         case CON_XORVAR:
             insptr++;
-            Gv_SetVarX(*insptr,Gv_GetVarX(*insptr) ^ *(insptr+1));
+            Gv_SetVar(*insptr,Gv_GetVar(*insptr) ^ *(insptr+1));
             insptr += 2;
             continue;
 
@@ -681,7 +681,7 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j,mulscale16(krand(), Gv_GetVarX(*insptr++)+1));
+                Gv_SetVar(j,mulscale16(krand(), Gv_GetVar(*insptr++)+1));
             }
             continue;
 
@@ -689,7 +689,7 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j,mulscale15(system_15bit_rand(), Gv_GetVarX(*insptr++)+1));
+                Gv_SetVar(j,mulscale15(system_15bit_rand(), Gv_GetVar(*insptr++)+1));
             }
             continue;
 
@@ -697,7 +697,7 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j)*Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j)*Gv_GetVar(*insptr++));
             }
             continue;
 
@@ -705,14 +705,14 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                int32_t l2=Gv_GetVarX(*insptr++);
+                int32_t l2=Gv_GetVar(*insptr++);
 
                 if (l2==0)
                 {
                     M32_ERROR("Divide by zero.");
                     continue;
                 }
-                Gv_SetVarX(j, Gv_GetVarX(j)/l2);
+                Gv_SetVar(j, Gv_GetVar(j)/l2);
                 continue;
             }
 
@@ -720,7 +720,7 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                int32_t l2=Gv_GetVarX(*insptr++);
+                int32_t l2=Gv_GetVar(*insptr++);
 
                 if (l2==0)
                 {
@@ -728,7 +728,7 @@ skip_check:
                     continue;
                 }
 
-                Gv_SetVarX(j, Gv_GetVarX(j) % l2);
+                Gv_SetVar(j, Gv_GetVar(j) % l2);
                 continue;
             }
 
@@ -736,7 +736,7 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) & Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) & Gv_GetVar(*insptr++));
             }
             continue;
 
@@ -744,7 +744,7 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) ^ Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) ^ Gv_GetVar(*insptr++));
             }
             continue;
 
@@ -752,13 +752,13 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) | Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) | Gv_GetVar(*insptr++));
             }
             continue;
 
         case CON_SUBVAR:
             insptr++;
-            Gv_SetVarX(*insptr, Gv_GetVarX(*insptr) - *(insptr+1));
+            Gv_SetVar(*insptr, Gv_GetVar(*insptr) - *(insptr+1));
             insptr += 2;
             continue;
 
@@ -766,13 +766,13 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) - Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) - Gv_GetVar(*insptr++));
             }
             continue;
 
         case CON_ADDVAR:
             insptr++;
-            Gv_SetVarX(*insptr, Gv_GetVarX(*insptr) + *(insptr+1));
+            Gv_SetVar(*insptr, Gv_GetVar(*insptr) + *(insptr+1));
             insptr += 2;
             continue;
 
@@ -780,13 +780,13 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) + Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) + Gv_GetVar(*insptr++));
             }
             continue;
 
         case CON_SHIFTVARL:
             insptr++;
-            Gv_SetVarX(*insptr, Gv_GetVarX(*insptr) << *(insptr+1));
+            Gv_SetVar(*insptr, Gv_GetVar(*insptr) << *(insptr+1));
             insptr += 2;
             continue;
 
@@ -794,13 +794,13 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) << Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) << Gv_GetVar(*insptr++));
             }
             continue;
 
         case CON_SHIFTVARR:
             insptr++;
-            Gv_SetVarX(*insptr, Gv_GetVarX(*insptr) >> *(insptr+1));
+            Gv_SetVar(*insptr, Gv_GetVar(*insptr) >> *(insptr+1));
             insptr += 2;
             continue;
 
@@ -808,25 +808,25 @@ skip_check:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, Gv_GetVarX(j) >> Gv_GetVarX(*insptr++));
+                Gv_SetVar(j, Gv_GetVar(j) >> Gv_GetVar(*insptr++));
             }
             continue;
 
         case CON_SIN:
             insptr++;
-            Gv_SetVarX(*insptr, sintable[Gv_GetVarX(*(insptr+1))&2047]);
+            Gv_SetVar(*insptr, sintable[Gv_GetVar(*(insptr+1))&2047]);
             insptr += 2;
             continue;
 
         case CON_COS:
             insptr++;
-            Gv_SetVarX(*insptr, sintable[(Gv_GetVarX(*(insptr+1))+512)&2047]);
+            Gv_SetVar(*insptr, sintable[(Gv_GetVar(*(insptr+1))+512)&2047]);
             insptr += 2;
             continue;
 
         case CON_DISPLAYRAND:
             insptr++;
-            Gv_SetVarX(*insptr++, system_15bit_rand());
+            Gv_SetVar(*insptr++, system_15bit_rand());
             continue;
 
 // *** other math
@@ -835,11 +835,11 @@ skip_check:
             {
                 union { int32_t ival; float fval; };
 
-                ival=Gv_GetVarX(*insptr);
+                ival=Gv_GetVar(*insptr);
                 int32_t const scale=*(insptr+1);
 // rounding must absolutely be!
 //OSD_Printf("ftoi: bits:%8x, scale=%d, fval=%f, (int32_t)(fval*scale)=%d\n", bits, scale, fval, (int32_t)(fval*scale));
-                Gv_SetVarX(*insptr, (int32_t)Blrintf(fval * scale));
+                Gv_SetVar(*insptr, (int32_t)Blrintf(fval * scale));
             }
             insptr += 2;
             continue;
@@ -849,10 +849,10 @@ skip_check:
             {
                 union { int32_t ival; float fval; };
 
-                ival=Gv_GetVarX(*insptr);
+                ival=Gv_GetVar(*insptr);
                 int32_t const scale=*(insptr+1);
                 fval = (float)ival/(float)scale;
-                Gv_SetVarX(*insptr, ival);
+                Gv_SetVar(*insptr, ival);
             }
             insptr += 2;
             continue;
@@ -860,16 +860,16 @@ skip_check:
         case CON_CLAMP:
             insptr++;
             {
-                int32_t var=*insptr++, min=Gv_GetVarX(*insptr++), max=Gv_GetVarX(*insptr++);
-                int32_t val=Gv_GetVarX(var);
+                int32_t var=*insptr++, min=Gv_GetVar(*insptr++), max=Gv_GetVar(*insptr++);
+                int32_t val=Gv_GetVar(var);
 
-                if (val<min) Gv_SetVarX(var, min);
-                else if (val>max) Gv_SetVarX(var, max);
+                if (val<min) Gv_SetVar(var, min);
+                else if (val>max) Gv_SetVar(var, max);
             }
             continue;
 
         case CON_INV:
-            Gv_SetVarX(*(insptr+1), -Gv_GetVarX(*(insptr+1)));
+            Gv_SetVar(*(insptr+1), -Gv_GetVar(*(insptr+1)));
             insptr += 2;
             continue;
 
@@ -879,7 +879,7 @@ skip_check:
                 // syntax sqrt <invar> <outvar>
                 int32_t lInVarID=*insptr++, lOutVarID=*insptr++;
 
-                Gv_SetVarX(lOutVarID, ksqrt((uint32_t)Gv_GetVarX(lInVarID)));
+                Gv_SetVar(lOutVarID, ksqrt((uint32_t)Gv_GetVar(lInVarID)));
                 continue;
             }
 
@@ -887,7 +887,7 @@ skip_check:
         case CON_DIST:
             insptr++;
             {
-                int32_t distvar = *insptr++, xvar = Gv_GetVarX(*insptr++), yvar = Gv_GetVarX(*insptr++);
+                int32_t distvar = *insptr++, xvar = Gv_GetVar(*insptr++), yvar = Gv_GetVar(*insptr++);
 
                 if (xvar < 0 || xvar >= MAXSPRITES || sprite[xvar].statnum==MAXSTATUS)
                 {
@@ -900,9 +900,9 @@ skip_check:
                 if (vm.flags&VMFLAG_ERROR) continue;
 
                 if (tw==CON_DIST)
-                    Gv_SetVarX(distvar, dist(&sprite[xvar],&sprite[yvar]));
+                    Gv_SetVar(distvar, dist(&sprite[xvar],&sprite[yvar]));
                 else
-                    Gv_SetVarX(distvar, ldist(&sprite[xvar],&sprite[yvar]));
+                    Gv_SetVar(distvar, ldist(&sprite[xvar],&sprite[yvar]));
                 continue;
             }
 
@@ -910,10 +910,10 @@ skip_check:
             insptr++;
             {
                 int32_t angvar = *insptr++;
-                int32_t xvar = Gv_GetVarX(*insptr++);
-                int32_t yvar = Gv_GetVarX(*insptr++);
+                int32_t xvar = Gv_GetVar(*insptr++);
+                int32_t yvar = Gv_GetVar(*insptr++);
 
-                Gv_SetVarX(angvar, getangle(xvar,yvar));
+                Gv_SetVar(angvar, getangle(xvar,yvar));
                 continue;
             }
 
@@ -921,10 +921,10 @@ skip_check:
             insptr++;
             {
                 int32_t angvar = *insptr++;
-                int32_t xvar = Gv_GetVarX(*insptr++);
-                int32_t yvar = Gv_GetVarX(*insptr++);
+                int32_t xvar = Gv_GetVar(*insptr++);
+                int32_t yvar = Gv_GetVar(*insptr++);
 
-                Gv_SetVarX(angvar, G_GetAngleDelta(xvar,yvar));
+                Gv_SetVar(angvar, G_GetAngleDelta(xvar,yvar));
                 continue;
             }
 
@@ -932,7 +932,7 @@ skip_check:
         case CON_AH2XYZ:
             insptr++;
             {
-                int32_t ang=Gv_GetVarX(*insptr++), horiz=(tw==CON_A2XY)?100:Gv_GetVarX(*insptr++);
+                int32_t ang=Gv_GetVar(*insptr++), horiz=(tw==CON_A2XY)?100:Gv_GetVar(*insptr++);
                 int32_t xvar=*insptr++, yvar=*insptr++;
 
                 int32_t x = sintable[(ang+512)&2047];
@@ -953,11 +953,11 @@ skip_check:
                         z = divscale14(-horiz, veclen);
                     }
 
-                    Gv_SetVarX(zvar, z);
+                    Gv_SetVar(zvar, z);
                 }
 
-                Gv_SetVarX(xvar, x);
-                Gv_SetVarX(yvar, y);
+                Gv_SetVar(xvar, x);
+                Gv_SetVar(yvar, y);
 
                 continue;
             }
@@ -965,28 +965,28 @@ skip_check:
         case CON_MULSCALE:
             insptr++;
             {
-                int32_t var1 = *insptr++, var2 = Gv_GetVarX(*insptr++);
-                int32_t var3 = Gv_GetVarX(*insptr++), var4 = Gv_GetVarX(*insptr++);
+                int32_t var1 = *insptr++, var2 = Gv_GetVar(*insptr++);
+                int32_t var3 = Gv_GetVar(*insptr++), var4 = Gv_GetVar(*insptr++);
 
-                Gv_SetVarX(var1, mulscale(var2, var3, var4));
+                Gv_SetVar(var1, mulscale(var2, var3, var4));
                 continue;
             }
         case CON_DIVSCALE:
             insptr++;
             {
-                int32_t var1 = *insptr++, var2 = Gv_GetVarX(*insptr++);
-                int32_t var3 = Gv_GetVarX(*insptr++), var4 = Gv_GetVarX(*insptr++);
+                int32_t var1 = *insptr++, var2 = Gv_GetVar(*insptr++);
+                int32_t var3 = Gv_GetVar(*insptr++), var4 = Gv_GetVar(*insptr++);
 
-                Gv_SetVarX(var1, divscale(var2, var3, var4));
+                Gv_SetVar(var1, divscale(var2, var3, var4));
                 continue;
             }
         case CON_SCALEVAR:
             insptr++;
             {
-                int32_t var1 = *insptr++, var2 = Gv_GetVarX(*insptr++);
-                int32_t var3 = Gv_GetVarX(*insptr++), var4 = Gv_GetVarX(*insptr++);
+                int32_t var1 = *insptr++, var2 = Gv_GetVar(*insptr++);
+                int32_t var3 = Gv_GetVar(*insptr++), var4 = Gv_GetVar(*insptr++);
 
-                Gv_SetVarX(var1, scale(var2, var3, var4));
+                Gv_SetVar(var1, scale(var2, var3, var4));
                 continue;
             }
 
@@ -994,8 +994,8 @@ skip_check:
         case CON_IFVARVARAND:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j &= Gv_GetVarX(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
+                j &= Gv_GetVar(*insptr++);
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1004,8 +1004,8 @@ skip_check:
         case CON_IFVARVAROR:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j |= Gv_GetVarX(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
+                j |= Gv_GetVar(*insptr++);
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1014,8 +1014,8 @@ skip_check:
         case CON_IFVARVARXOR:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j ^= Gv_GetVarX(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
+                j ^= Gv_GetVar(*insptr++);
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1024,8 +1024,8 @@ skip_check:
         case CON_IFVARVAREITHER:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                int32_t l = Gv_GetVarX(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
+                int32_t l = Gv_GetVar(*insptr++);
                 insptr--;
                 VM_DoConditional(j || l);
             }
@@ -1034,8 +1034,8 @@ skip_check:
         case CON_IFVARVARBOTH:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                int32_t l = Gv_GetVarX(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
+                int32_t l = Gv_GetVar(*insptr++);
                 insptr--;
                 VM_DoConditional(j && l);
             }
@@ -1044,8 +1044,8 @@ skip_check:
         case CON_IFVARVARN:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = (j != Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = (j != Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1054,8 +1054,8 @@ skip_check:
         case CON_IFVARVARE:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = (j == Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = (j == Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1064,8 +1064,8 @@ skip_check:
         case CON_IFVARVARG:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = (j > Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = (j > Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1074,8 +1074,8 @@ skip_check:
         case CON_IFVARVARGE:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = (j >= Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = (j >= Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1084,8 +1084,8 @@ skip_check:
         case CON_IFVARVARL:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = (j < Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = (j < Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1094,8 +1094,8 @@ skip_check:
         case CON_IFVARVARLE:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = (j <= Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = (j <= Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1104,8 +1104,8 @@ skip_check:
         case CON_IFVARVARA:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = ((uint32_t)j > (uint32_t)Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = ((uint32_t)j > (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1114,8 +1114,8 @@ skip_check:
         case CON_IFVARVARAE:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = ((uint32_t)j >= (uint32_t)Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = ((uint32_t)j >= (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1124,8 +1124,8 @@ skip_check:
         case CON_IFVARVARB:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = ((uint32_t)j < (uint32_t)Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = ((uint32_t)j < (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1134,8 +1134,8 @@ skip_check:
         case CON_IFVARVARBE:
             insptr++;
             {
-                int32_t j = Gv_GetVarX(*insptr++);
-                j = ((uint32_t)j <= (uint32_t)Gv_GetVarX(*insptr++));
+                int32_t j = Gv_GetVar(*insptr++);
+                j = ((uint32_t)j <= (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1144,7 +1144,7 @@ skip_check:
         case CON_IFVARE:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j == *insptr);
             }
             continue;
@@ -1152,7 +1152,7 @@ skip_check:
         case CON_IFVARN:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j != *insptr);
             }
             continue;
@@ -1164,7 +1164,7 @@ skip_check:
             do
             {
                 insptr=savedinsptr;
-                j = (Gv_GetVarX(*(insptr-1)) != *insptr);
+                j = (Gv_GetVar(*(insptr-1)) != *insptr);
                 VM_DoConditional(j);
             }
             while (j && !vm.flags);
@@ -1179,7 +1179,7 @@ skip_check:
             do
             {
                 insptr=savedinsptr;
-                j = (Gv_GetVarX(*(insptr-1)) < *insptr);
+                j = (Gv_GetVar(*(insptr-1)) < *insptr);
                 VM_DoConditional(j);
             }
             while (j && !vm.flags);
@@ -1194,8 +1194,8 @@ skip_check:
             do
             {
                 insptr=savedinsptr;
-                j = Gv_GetVarX(*(insptr-1));
-                j = (j != Gv_GetVarX(*insptr++));
+                j = Gv_GetVar(*(insptr-1));
+                j = (j != Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1211,8 +1211,8 @@ skip_check:
             do
             {
                 insptr=savedinsptr;
-                j = Gv_GetVarX(*(insptr-1));
-                j = (j < Gv_GetVarX(*insptr++));
+                j = Gv_GetVar(*(insptr-1));
+                j = (j < Gv_GetVar(*insptr++));
                 insptr--;
                 VM_DoConditional(j);
             }
@@ -1224,7 +1224,7 @@ skip_check:
         case CON_COLLECTSECTORS:
             insptr++;
             {
-                const int32_t aridx=*insptr++, startsectnum=Gv_GetVarX(*insptr++);
+                const int32_t aridx=*insptr++, startsectnum=Gv_GetVar(*insptr++);
                 const int32_t numsectsVar=*insptr++, state=*insptr++;
 
                 if (CheckArray(aridx))
@@ -1235,14 +1235,14 @@ skip_check:
 
                 const int32_t o_g_st=vm.g_st, arsize = gar->size;
                 instype *const end=insptr;
-                int32_t sectcnt, numsects=0;
+                int16_t sectcnt, numsects=0;
 
                 // XXX: relies on -fno-strict-aliasing
                 int16_t *const sectlist = (int16_t *)gar->vals;  // actually an int32_t array
                 int32_t *const sectlist32 = (int32_t *)sectlist;
 
                 int32_t j, startwall, endwall, ns;
-                static uint8_t sectbitmap[MAXSECTORS>>3];
+                static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
 
                 X_ERROR_INVALIDSECT(startsectnum);
                 if (arsize < numsectors)
@@ -1273,7 +1273,7 @@ skip_check:
                 for (j=numsects-1; j>=0; j--)
                     sectlist32[j] = sectlist[j];
 
-                Gv_SetVarX(numsectsVar, numsects);
+                Gv_SetVar(numsectsVar, numsects);
                 g_iReturnVar = 0;
 
                 // restore some VM state
@@ -1285,7 +1285,7 @@ skip_check:
         case CON_SORT:
             insptr++;
             {
-                const int32_t aridx=*insptr++, count=Gv_GetVarX(*insptr++), state=*insptr++;
+                const int32_t aridx=*insptr++, count=Gv_GetVar(*insptr++), state=*insptr++;
                 const int32_t o_g_st = vm.g_st;
                 instype *const end = insptr;
 
@@ -1324,10 +1324,10 @@ skip_check:
             insptr++;
             {
                 const int32_t var = *insptr++, how = *insptr++;
-                const int32_t parm2 = how<=ITER_DRAWNSPRITES ? 0 : Gv_GetVarX(*insptr++);
+                const int32_t parm2 = how<=ITER_DRAWNSPRITES ? 0 : Gv_GetVar(*insptr++);
                 instype *const end = insptr + *insptr, *const beg = ++insptr;
                 const int32_t vm_i_bak = vm.spriteNum;
-                uspritetype *const vm_sp_bak = vm.pUSprite;
+                auto const vm_sp_bak = vm.pUSprite;
 
                 if (vm.flags&VMFLAG_ERROR)
                     continue;
@@ -1339,7 +1339,7 @@ skip_check:
                     {
                         if (sprite[jj].statnum == MAXSTATUS)
                             continue;
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         vm.spriteNum = jj;
                         vm.pSprite = &sprite[jj];
                         insptr = beg;
@@ -1349,7 +1349,7 @@ skip_check:
                 case ITER_ALLSECTORS:
                     for (bssize_t jj=0; jj<numsectors && !vm.flags; jj++)
                     {
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1357,7 +1357,7 @@ skip_check:
                 case ITER_ALLWALLS:
                     for (bssize_t jj=0; jj<numwalls && !vm.flags; jj++)
                     {
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1369,7 +1369,7 @@ skip_check:
                         if (!prlights[jj].flags.active)
                             continue;
 
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1385,7 +1385,7 @@ skip_check:
                         if (jj&0xc000)
                         {
                             jj &= (MAXSPRITES-1);
-                            Gv_SetVarX(var, jj);
+                            Gv_SetVar(var, jj);
                             vm.spriteNum = jj;
                             vm.pSprite = &sprite[jj];
                             insptr = beg;
@@ -1397,7 +1397,7 @@ skip_check:
                     for (bssize_t ii=0; ii<highlightsectorcnt && !vm.flags; ii++)
                     {
                         int jj=highlightsector[ii];
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1408,7 +1408,7 @@ skip_check:
                         int jj=highlight[ii];
                         if (jj&0xc000)
                             continue;
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1416,7 +1416,7 @@ skip_check:
                 case ITER_DRAWNSPRITES:
                 {
                     uspritetype lastSpriteBackup;
-                    uspritetype *const lastSpritePtr = (uspritetype *)&sprite[MAXSPRITES-1];
+                    auto const lastSpritePtr = (uspritetype *)&sprite[MAXSPRITES-1];
 
                     // Back up sprite MAXSPRITES-1.
                     Bmemcpy(&lastSpriteBackup, lastSpritePtr, sizeof(uspritetype));
@@ -1426,7 +1426,7 @@ skip_check:
                         vm.pUSprite = lastSpritePtr;
                         Bmemcpy(lastSpritePtr, &tsprite[ii], sizeof(uspritetype));
 
-                        Gv_SetVarX(var, ii);
+                        Gv_SetVar(var, ii);
                         insptr = beg;
                         VM_Execute(1);
 
@@ -1443,7 +1443,7 @@ skip_check:
                         goto badindex;
                     for (bssize_t jj=headspritesect[parm2]; jj>=0 && !vm.flags; jj=nextspritesect[jj])
                     {
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         vm.spriteNum = jj;
                         vm.pSprite = &sprite[jj];
                         insptr = beg;
@@ -1456,7 +1456,7 @@ skip_check:
                     for (bssize_t jj=sector[parm2].wallptr, endwall=jj+sector[parm2].wallnum-1;
                             jj<=endwall && !vm.flags; jj++)
                     {
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1468,7 +1468,7 @@ skip_check:
                         int jj = parm2;
                         do
                         {
-                            Gv_SetVarX(var, jj);
+                            Gv_SetVar(var, jj);
                             insptr = beg;
                             VM_Execute(1);
                             jj = wall[jj].point2;
@@ -1479,7 +1479,7 @@ skip_check:
                 case ITER_RANGE:
                     for (bssize_t jj=0; jj<parm2 && !vm.flags; jj++)
                     {
-                        Gv_SetVarX(var, jj);
+                        Gv_SetVar(var, jj);
                         insptr = beg;
                         VM_Execute(1);
                     }
@@ -1503,7 +1503,7 @@ badindex:
         case CON_IFVARAND:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j & *insptr);
             }
             continue;
@@ -1511,7 +1511,7 @@ badindex:
         case CON_IFVAROR:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j | *insptr);
             }
             continue;
@@ -1519,7 +1519,7 @@ badindex:
         case CON_IFVARXOR:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j ^ *insptr);
             }
             continue;
@@ -1527,7 +1527,7 @@ badindex:
         case CON_IFVAREITHER:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j || *insptr);
             }
             continue;
@@ -1535,7 +1535,7 @@ badindex:
         case CON_IFVARBOTH:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j && *insptr);
             }
             continue;
@@ -1543,7 +1543,7 @@ badindex:
         case CON_IFVARG:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j > *insptr);
             }
             continue;
@@ -1551,7 +1551,7 @@ badindex:
         case CON_IFVARGE:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j >= *insptr);
             }
             continue;
@@ -1559,7 +1559,7 @@ badindex:
         case CON_IFVARL:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j < *insptr);
             }
             continue;
@@ -1567,7 +1567,7 @@ badindex:
         case CON_IFVARLE:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional(j <= *insptr);
             }
             continue;
@@ -1575,7 +1575,7 @@ badindex:
         case CON_IFVARA:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional((uint32_t)j > (uint32_t)*insptr);
             }
             continue;
@@ -1583,7 +1583,7 @@ badindex:
         case CON_IFVARAE:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional((uint32_t)j >= (uint32_t)*insptr);
             }
             continue;
@@ -1591,7 +1591,7 @@ badindex:
         case CON_IFVARB:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional((uint32_t)j < (uint32_t)*insptr);
             }
             continue;
@@ -1599,13 +1599,13 @@ badindex:
         case CON_IFVARBE:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 VM_DoConditional((uint32_t)j <= (uint32_t)*insptr);
             }
             continue;
 
         case CON_IFRND:
-            VM_DoConditional(rnd(Gv_GetVarX(*(++insptr))));
+            VM_DoConditional(rnd(Gv_GetVar(*(++insptr))));
             continue;
 
         case CON_IFHITKEY:
@@ -1614,7 +1614,7 @@ badindex:
         case CON_SETKEY:
             insptr++;
             {
-                int32_t key=Gv_GetVarX(*insptr);
+                int32_t key=Gv_GetVar(*insptr);
                 if (key<0 || key >= (int32_t)ARRAY_SIZE(keystatus))
                 {
                     M32_ERROR("Invalid key %d!", key);
@@ -1652,13 +1652,13 @@ badindex:
         case CON_IFSPRITEPAL:
             insptr++;
             X_ERROR_INVALIDSP();
-            VM_DoConditional(vm.pSprite->pal == Gv_GetVarX(*insptr));
+            VM_DoConditional(vm.pSprite->pal == Gv_GetVar(*insptr));
             continue;
 
         case CON_IFHIGHLIGHTED:
             insptr++;
             {
-                int32_t id=*insptr++, index=Gv_GetVarX(*insptr);
+                int32_t id=*insptr++, index=Gv_GetVar(*insptr);
 
                 if (index<0 || (id==M32_SPRITE_VAR_ID && index>=MAXSPRITES) || (id==M32_WALL_VAR_ID && index>=numwalls))
                 {
@@ -1679,7 +1679,7 @@ badindex:
                 int32_t j;
                 X_ERROR_INVALIDSP();
                 j = klabs(G_GetAngleDelta(ang, vm.pSprite->ang));
-                VM_DoConditional(j <= Gv_GetVarX(*insptr));
+                VM_DoConditional(j <= Gv_GetVar(*insptr));
             }
             continue;
 
@@ -1733,13 +1733,13 @@ badindex:
         case CON_IFACTOR:
             insptr++;
             X_ERROR_INVALIDSP();
-            VM_DoConditional(vm.pSprite->picnum == Gv_GetVarX(*insptr));
+            VM_DoConditional(vm.pSprite->picnum == Gv_GetVar(*insptr));
             continue;
 
         case CON_IFINSIDE:
             insptr++;
             {
-                int32_t x=Gv_GetVarX(*insptr++), y=Gv_GetVarX(*insptr++), sectnum=Gv_GetVarX(*insptr++), res;
+                int32_t x=Gv_GetVar(*insptr++), y=Gv_GetVar(*insptr++), sectnum=Gv_GetVar(*insptr++), res;
 
                 res = inside(x, y, sectnum);
                 if (res == -1)
@@ -1761,7 +1761,7 @@ badindex:
             insptr++;
             {
                 X_ERROR_INVALIDSP();
-                VM_DoConditional(dist((spritetype *)&pos, vm.pSprite) < Gv_GetVarX(*insptr));
+                VM_DoConditional(dist((spritetype *)&pos, vm.pSprite) < Gv_GetVar(*insptr));
             }
             continue;
 
@@ -1769,7 +1769,7 @@ badindex:
             insptr++;
             {
                 X_ERROR_INVALIDSP();
-                VM_DoConditional(dist((spritetype *)&pos, vm.pSprite) > Gv_GetVarX(*insptr));
+                VM_DoConditional(dist((spritetype *)&pos, vm.pSprite) > Gv_GetVar(*insptr));
             }
             continue;
 // ^^^
@@ -1778,7 +1778,7 @@ badindex:
         case CON_INSERTSPRITE:
             insptr++;
             {
-                int32_t dasectnum = Gv_GetVarX(*insptr++), ret;
+                int32_t dasectnum = Gv_GetVar(*insptr++), ret;
 
                 X_ERROR_INVALIDSECT(dasectnum);
                 if (Numsprites >= MAXSPRITES)
@@ -1797,7 +1797,7 @@ badindex:
         case CON_TDUPSPRITE:
             insptr++;
             {
-                int32_t ospritenum = Gv_GetVarX(*insptr++), nspritenum;
+                int32_t ospritenum = Gv_GetVar(*insptr++), nspritenum;
 
                 if (ospritenum<0 || ospritenum>=MAXSPRITES || sprite[ospritenum].statnum==MAXSTATUS)
                 {
@@ -1840,7 +1840,7 @@ badindex:
         case CON_DELETESPRITE:
             insptr++;
             {
-                int32_t daspritenum = Gv_GetVarX(*insptr++), ret;
+                int32_t daspritenum = Gv_GetVar(*insptr++), ret;
 
                 X_ERROR_INVALIDSPRI(daspritenum);
                 ret = deletesprite(daspritenum);
@@ -1851,17 +1851,17 @@ badindex:
         case CON_GETSPRITELINKTYPE:
             insptr++;
             {
-                int32_t spritenum=Gv_GetVarX(*insptr++), resvar = *insptr++;
+                int32_t spritenum=Gv_GetVar(*insptr++), resvar = *insptr++;
 
                 X_ERROR_INVALIDSPRI(spritenum);
-                Gv_SetVarX(resvar, taglab_linktags(1, spritenum));
+                Gv_SetVar(resvar, taglab_linktags(1, spritenum));
             }
             continue;
 
         case CON_LASTWALL:
             insptr++;
             {
-                int32_t dapoint = Gv_GetVarX(*insptr++), resvar=*insptr++;
+                int32_t dapoint = Gv_GetVar(*insptr++), resvar=*insptr++;
 
                 if (dapoint<0 || dapoint>=numwalls)
                 {
@@ -1869,7 +1869,7 @@ badindex:
                     continue;
                 }
 
-                Gv_SetVarX(resvar, lastwall(dapoint));
+                Gv_SetVar(resvar, lastwall(dapoint));
             }
             continue;
 
@@ -1878,22 +1878,22 @@ badindex:
             {
                 vec3_t vect;
 
-                vect.x = Gv_GetVarX(*insptr++);
-                vect.y = Gv_GetVarX(*insptr++);
-                vect.z = Gv_GetVarX(*insptr++);
+                vect.x = Gv_GetVar(*insptr++);
+                vect.y = Gv_GetVar(*insptr++);
+                vect.z = Gv_GetVar(*insptr++);
 
                 {
-                    int32_t sectnum=Gv_GetVarX(*insptr++);
+                    int32_t sectnum=Gv_GetVar(*insptr++);
                     int32_t ceilzvar=*insptr++, ceilhitvar=*insptr++, florzvar=*insptr++, florhitvar=*insptr++;
-                    int32_t walldist=Gv_GetVarX(*insptr++), clipmask=Gv_GetVarX(*insptr++);
+                    int32_t walldist=Gv_GetVar(*insptr++), clipmask=Gv_GetVar(*insptr++);
                     int32_t ceilz, ceilhit, florz, florhit;
 
                     X_ERROR_INVALIDSECT(sectnum);
                     getzrange(&vect, sectnum, &ceilz, &ceilhit, &florz, &florhit, walldist, clipmask);
-                    Gv_SetVarX(ceilzvar, ceilz);
-                    Gv_SetVarX(ceilhitvar, ceilhit);
-                    Gv_SetVarX(florzvar, florz);
-                    Gv_SetVarX(florhitvar, florhit);
+                    Gv_SetVar(ceilzvar, ceilz);
+                    Gv_SetVar(ceilhitvar, ceilhit);
+                    Gv_SetVar(florzvar, florz);
+                    Gv_SetVar(florhitvar, florhit);
                 }
                 continue;
             }
@@ -1902,13 +1902,13 @@ badindex:
             insptr++;
             {
                 int32_t retvar=*insptr++;
-                int64_t dax=Gv_GetVarX(*insptr++), day=Gv_GetVarX(*insptr++);
+                int64_t dax=Gv_GetVar(*insptr++), day=Gv_GetVar(*insptr++);
                 int64_t hypsq = dax*dax + day*day;
 
                 if (hypsq > (int64_t)INT32_MAX)
-                    Gv_SetVarX(retvar, (int32_t)sqrt((double)hypsq));
+                    Gv_SetVar(retvar, (int32_t)sqrt((double)hypsq));
                 else
-                    Gv_SetVarX(retvar, ksqrt((uint32_t)hypsq));
+                    Gv_SetVar(retvar, ksqrt((uint32_t)hypsq));
 
                 continue;
             }
@@ -1917,9 +1917,9 @@ badindex:
         case CON_RAYINTERSECT:
             insptr++;
             {
-                int32_t x1=Gv_GetVarX(*insptr++), y1=Gv_GetVarX(*insptr++), z1=Gv_GetVarX(*insptr++);
-                int32_t x2=Gv_GetVarX(*insptr++), y2=Gv_GetVarX(*insptr++), z2=Gv_GetVarX(*insptr++);
-                int32_t x3=Gv_GetVarX(*insptr++), y3=Gv_GetVarX(*insptr++), x4=Gv_GetVarX(*insptr++), y4=Gv_GetVarX(*insptr++);
+                int32_t x1=Gv_GetVar(*insptr++), y1=Gv_GetVar(*insptr++), z1=Gv_GetVar(*insptr++);
+                int32_t x2=Gv_GetVar(*insptr++), y2=Gv_GetVar(*insptr++), z2=Gv_GetVar(*insptr++);
+                int32_t x3=Gv_GetVar(*insptr++), y3=Gv_GetVar(*insptr++), x4=Gv_GetVar(*insptr++), y4=Gv_GetVar(*insptr++);
                 int32_t intxvar=*insptr++, intyvar=*insptr++, intzvar=*insptr++, retvar=*insptr++;
                 int32_t intx, inty, intz, ret;
 
@@ -1928,12 +1928,12 @@ badindex:
                 else
                     ret = rayintersect(x1, y1, z1, x2, y2, z2, x3, y3, x4, y4, &intx, &inty, &intz);
 
-                Gv_SetVarX(retvar, ret);
+                Gv_SetVar(retvar, ret);
                 if (ret)
                 {
-                    Gv_SetVarX(intxvar, intx);
-                    Gv_SetVarX(intyvar, inty);
-                    Gv_SetVarX(intzvar, intz);
+                    Gv_SetVar(intxvar, intx);
+                    Gv_SetVar(intyvar, inty);
+                    Gv_SetVar(intzvar, intz);
                 }
 
                 continue;
@@ -1943,23 +1943,23 @@ badindex:
             insptr++;
             {
                 vec3_t vect;
-                int32_t retvar=*insptr++, xvar=*insptr++, yvar=*insptr++, z=Gv_GetVarX(*insptr++), sectnumvar=*insptr++;
-                int32_t xvect=Gv_GetVarX(*insptr++), yvect=Gv_GetVarX(*insptr++);
-                int32_t walldist=Gv_GetVarX(*insptr++), floordist=Gv_GetVarX(*insptr++), ceildist=Gv_GetVarX(*insptr++);
-                int32_t clipmask=Gv_GetVarX(*insptr++);
+                int32_t retvar=*insptr++, xvar=*insptr++, yvar=*insptr++, z=Gv_GetVar(*insptr++), sectnumvar=*insptr++;
+                int32_t xvect=Gv_GetVar(*insptr++), yvect=Gv_GetVar(*insptr++);
+                int32_t walldist=Gv_GetVar(*insptr++), floordist=Gv_GetVar(*insptr++), ceildist=Gv_GetVar(*insptr++);
+                int32_t clipmask=Gv_GetVar(*insptr++);
                 int16_t sectnum;
 
-                vect.x = Gv_GetVarX(xvar);
-                vect.y = Gv_GetVarX(yvar);
+                vect.x = Gv_GetVar(xvar);
+                vect.y = Gv_GetVar(yvar);
                 vect.z = z;
-                sectnum = Gv_GetVarX(sectnumvar);
+                sectnum = Gv_GetVar(sectnumvar);
 
                 X_ERROR_INVALIDSECT(sectnum);
 
-                Gv_SetVarX(retvar, clipmove(&vect, &sectnum, xvect, yvect, walldist, floordist, ceildist, clipmask));
-                Gv_SetVarX(sectnumvar, sectnum);
-                Gv_SetVarX(xvar, vect.x);
-                Gv_SetVarX(yvar, vect.y);
+                Gv_SetVar(retvar, clipmove(&vect, &sectnum, xvect, yvect, walldist, floordist, ceildist, clipmask));
+                Gv_SetVar(sectnumvar, sectnum);
+                Gv_SetVar(xvar, vect.x);
+                Gv_SetVar(yvar, vect.y);
 
                 continue;
             }
@@ -1970,24 +1970,24 @@ badindex:
                 vec3_t vect;
                 hitdata_t hit;
 
-                vect.x = Gv_GetVarX(*insptr++);
-                vect.y = Gv_GetVarX(*insptr++);
-                vect.z = Gv_GetVarX(*insptr++);
+                vect.x = Gv_GetVar(*insptr++);
+                vect.y = Gv_GetVar(*insptr++);
+                vect.z = Gv_GetVar(*insptr++);
 
                 {
-                    int32_t sectnum=Gv_GetVarX(*insptr++);
-                    int32_t vx=Gv_GetVarX(*insptr++), vy=Gv_GetVarX(*insptr++), vz=Gv_GetVarX(*insptr++);
+                    int32_t sectnum=Gv_GetVar(*insptr++);
+                    int32_t vx=Gv_GetVar(*insptr++), vy=Gv_GetVar(*insptr++), vz=Gv_GetVar(*insptr++);
                     int32_t hitsectvar=*insptr++, hitwallvar=*insptr++, hitspritevar=*insptr++;
-                    int32_t hitxvar=*insptr++, hityvar=*insptr++, hitzvar=*insptr++, cliptype=Gv_GetVarX(*insptr++);
+                    int32_t hitxvar=*insptr++, hityvar=*insptr++, hitzvar=*insptr++, cliptype=Gv_GetVar(*insptr++);
 
                     X_ERROR_INVALIDSECT(sectnum);
                     hitscan((const vec3_t *)&vect, sectnum, vx, vy, vz, &hit, cliptype);
-                    Gv_SetVarX(hitsectvar, hit.sect);
-                    Gv_SetVarX(hitwallvar, hit.wall);
-                    Gv_SetVarX(hitspritevar, hit.sprite);
-                    Gv_SetVarX(hitxvar, hit.pos.x);
-                    Gv_SetVarX(hityvar, hit.pos.y);
-                    Gv_SetVarX(hitzvar, hit.pos.z);
+                    Gv_SetVar(hitsectvar, hit.sect);
+                    Gv_SetVar(hitwallvar, hit.wall);
+                    Gv_SetVar(hitspritevar, hit.sprite);
+                    Gv_SetVar(hitxvar, hit.pos.x);
+                    Gv_SetVar(hityvar, hit.pos.y);
+                    Gv_SetVar(hitzvar, hit.pos.z);
                 }
                 continue;
             }
@@ -1995,31 +1995,31 @@ badindex:
         case CON_CANSEE:
             insptr++;
             {
-                int32_t x1=Gv_GetVarX(*insptr++), y1=Gv_GetVarX(*insptr++), z1=Gv_GetVarX(*insptr++);
-                int32_t sect1=Gv_GetVarX(*insptr++);
-                int32_t x2=Gv_GetVarX(*insptr++), y2=Gv_GetVarX(*insptr++), z2=Gv_GetVarX(*insptr++);
-                int32_t sect2=Gv_GetVarX(*insptr++), rvar=*insptr++;
+                int32_t x1=Gv_GetVar(*insptr++), y1=Gv_GetVar(*insptr++), z1=Gv_GetVar(*insptr++);
+                int32_t sect1=Gv_GetVar(*insptr++);
+                int32_t x2=Gv_GetVar(*insptr++), y2=Gv_GetVar(*insptr++), z2=Gv_GetVar(*insptr++);
+                int32_t sect2=Gv_GetVar(*insptr++), rvar=*insptr++;
 
                 X_ERROR_INVALIDSECT(sect1);
                 X_ERROR_INVALIDSECT(sect2);
 
-                Gv_SetVarX(rvar, cansee(x1,y1,z1,sect1,x2,y2,z2,sect2));
+                Gv_SetVar(rvar, cansee(x1,y1,z1,sect1,x2,y2,z2,sect2));
                 continue;
             }
 
         case CON_ROTATEPOINT:
             insptr++;
             {
-                vec2_t pivot = { Gv_GetVarX(*insptr), Gv_GetVarX(*(insptr+1)) };
-                vec2_t p = { Gv_GetVarX(*(insptr+2)), Gv_GetVarX(*(insptr+3)) };
+                vec2_t pivot = { Gv_GetVar(*insptr), Gv_GetVar(*(insptr+1)) };
+                vec2_t p = { Gv_GetVar(*(insptr+2)), Gv_GetVar(*(insptr+3)) };
                 insptr += 4;
-                int32_t daang=Gv_GetVarX(*insptr++);
+                int32_t daang=Gv_GetVar(*insptr++);
                 int32_t x2var=*insptr++, y2var=*insptr++;
                 vec2_t p2;
 
                 rotatepoint(pivot,p,daang,&p2);
-                Gv_SetVarX(x2var, p2.x);
-                Gv_SetVarX(y2var, p2.y);
+                Gv_SetVar(x2var, p2.x);
+                Gv_SetVar(y2var, p2.y);
                 continue;
             }
 
@@ -2034,10 +2034,10 @@ badindex:
                 //         int32_t neartagrange,    //Choose maximum distance to scan (scale: 1024=largest grid size)
                 //         char tagsearch)          //1-lotag only, 2-hitag only, 3-lotag&hitag
 
-                int32_t x=Gv_GetVarX(*insptr++), y=Gv_GetVarX(*insptr++), z=Gv_GetVarX(*insptr++);
-                int32_t sectnum=Gv_GetVarX(*insptr++), ang=Gv_GetVarX(*insptr++);
+                int32_t x=Gv_GetVar(*insptr++), y=Gv_GetVar(*insptr++), z=Gv_GetVar(*insptr++);
+                int32_t sectnum=Gv_GetVar(*insptr++), ang=Gv_GetVar(*insptr++);
                 int32_t neartagsectorvar=*insptr++, neartagwallvar=*insptr++, neartagspritevar=*insptr++, neartaghitdistvar=*insptr++;
-                int32_t neartagrange=Gv_GetVarX(*insptr++), tagsearch=Gv_GetVarX(*insptr++);
+                int32_t neartagrange=Gv_GetVar(*insptr++), tagsearch=Gv_GetVar(*insptr++);
 
                 int16_t neartagsector, neartagwall, neartagsprite;
                 int32_t neartaghitdist;
@@ -2046,22 +2046,22 @@ badindex:
                 neartag(x, y, z, sectnum, ang, &neartagsector, &neartagwall, &neartagsprite,
                         &neartaghitdist, neartagrange, tagsearch, NULL);
 
-                Gv_SetVarX(neartagsectorvar, neartagsector);
-                Gv_SetVarX(neartagwallvar, neartagwall);
-                Gv_SetVarX(neartagspritevar, neartagsprite);
-                Gv_SetVarX(neartaghitdistvar, neartaghitdist);
+                Gv_SetVar(neartagsectorvar, neartagsector);
+                Gv_SetVar(neartagwallvar, neartagwall);
+                Gv_SetVar(neartagspritevar, neartagsprite);
+                Gv_SetVar(neartaghitdistvar, neartaghitdist);
                 continue;
             }
 
         case CON_BSETSPRITE:  // was CON_SETSPRITE
             insptr++;
             {
-                int32_t spritenum = Gv_GetVarX(*insptr++);
+                int32_t spritenum = Gv_GetVar(*insptr++);
                 vec3_t davector;
 
-                davector.x = Gv_GetVarX(*insptr++);
-                davector.y = Gv_GetVarX(*insptr++);
-                davector.z = Gv_GetVarX(*insptr++);
+                davector.x = Gv_GetVar(*insptr++);
+                davector.y = Gv_GetVar(*insptr++);
+                davector.z = Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSPRI(spritenum);
                 setsprite(spritenum, &davector);
@@ -2072,14 +2072,14 @@ badindex:
         case CON_GETCEILZOFSLOPE:
             insptr++;
             {
-                int32_t sectnum = Gv_GetVarX(*insptr++), x = Gv_GetVarX(*insptr++), y = Gv_GetVarX(*insptr++);
+                int32_t sectnum = Gv_GetVar(*insptr++), x = Gv_GetVar(*insptr++), y = Gv_GetVar(*insptr++);
                 int32_t var=*insptr++;
 
                 X_ERROR_INVALIDSECT(sectnum);
                 if (tw == CON_GETFLORZOFSLOPE)
-                    Gv_SetVarX(var, getflorzofslope(sectnum,x,y));
+                    Gv_SetVar(var, getflorzofslope(sectnum,x,y));
                 else
-                    Gv_SetVarX(var, getceilzofslope(sectnum,x,y));
+                    Gv_SetVar(var, getceilzofslope(sectnum,x,y));
                 continue;
             }
 
@@ -2087,8 +2087,8 @@ badindex:
         case CON_ALIGNCEILSLOPE:
             insptr++;
             {
-                int32_t sectnum = Gv_GetVarX(*insptr++), x = Gv_GetVarX(*insptr++), y = Gv_GetVarX(*insptr++);
-                int32_t z=Gv_GetVarX(*insptr++);
+                int32_t sectnum = Gv_GetVar(*insptr++), x = Gv_GetVar(*insptr++), y = Gv_GetVar(*insptr++);
+                int32_t z=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSECT(sectnum);
                 if (tw == CON_ALIGNFLORSLOPE)
@@ -2102,7 +2102,7 @@ badindex:
         case CON_SETFIRSTWALL:
             insptr++;
             {
-                int32_t sect=Gv_GetVarX(*insptr++), wal=Gv_GetVarX(*insptr++);
+                int32_t sect=Gv_GetVar(*insptr++), wal=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSECT(sect);
                 setfirstwall(sect, wal);
@@ -2116,20 +2116,35 @@ badindex:
 
         case CON_UPDATESECTOR:
         case CON_UPDATESECTORZ:
+        case CON_UPDATESECTORNEIGHBOR:
+        case CON_UPDATESECTORNEIGHBORZ:
             insptr++;
             {
-                int32_t x=Gv_GetVarX(*insptr++), y=Gv_GetVarX(*insptr++);
-                int32_t z=(tw==CON_UPDATESECTORZ)?Gv_GetVarX(*insptr++):0;
+                int32_t x=Gv_GetVar(*insptr++), y=Gv_GetVar(*insptr++);
+                int32_t z=(tw==CON_UPDATESECTORZ || tw==CON_UPDATESECTORNEIGHBORZ)?Gv_GetVar(*insptr++):0;
                 int32_t var=*insptr++;
                 int16_t w;
 
                 X_ERROR_INVALIDCI();
                 w=sprite[vm.spriteNum].sectnum;
 
-                if (tw==CON_UPDATESECTOR) updatesector(x,y,&w);
-                else updatesectorz(x,y,z,&w);
+                switch (tw)
+                {
+                case CON_UPDATESECTORNEIGHBORZ:
+                    updatesectorneighborz(x,y,z,&w,getsectordist({x, y}, w));
+                    continue;
+                case CON_UPDATESECTORZ:
+                    updatesectorz(x,y,z,&w);
+                    continue;
+                case CON_UPDATESECTORNEIGHBOR:
+                    updatesectorneighbor(x,y,&w,getsectordist({x, y}, w));
+                    continue;
+                default:
+                    updatesector(x,y,&w);
+                    continue;
+                }
 
-                Gv_SetVarX(var, w);
+                Gv_SetVar(var, w);
                 continue;
             }
 
@@ -2137,13 +2152,13 @@ badindex:
             insptr++;
             {
                 int32_t i=*insptr++;
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
                 if (j < 0 || j > MAXSTATUS)
                 {
                     M32_ERROR("invalid status list %d", j);
                     continue;
                 }
-                Gv_SetVarX(i,headspritestat[j]);
+                Gv_SetVar(i,headspritestat[j]);
                 continue;
             }
 
@@ -2151,10 +2166,10 @@ badindex:
             insptr++;
             {
                 int32_t i=*insptr++;
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSPRI(j);
-                Gv_SetVarX(i,prevspritestat[j]);
+                Gv_SetVar(i,prevspritestat[j]);
                 continue;
             }
 
@@ -2162,10 +2177,10 @@ badindex:
             insptr++;
             {
                 int32_t i=*insptr++;
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSPRI(j);
-                Gv_SetVarX(i,nextspritestat[j]);
+                Gv_SetVar(i,nextspritestat[j]);
                 continue;
             }
 
@@ -2173,10 +2188,10 @@ badindex:
             insptr++;
             {
                 int32_t i=*insptr++;
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSECT(j);
-                Gv_SetVarX(i,headspritesect[j]);
+                Gv_SetVar(i,headspritesect[j]);
                 continue;
             }
 
@@ -2184,10 +2199,10 @@ badindex:
             insptr++;
             {
                 int32_t i=*insptr++;
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSPRI(j);
-                Gv_SetVarX(i,prevspritesect[j]);
+                Gv_SetVar(i,prevspritesect[j]);
                 continue;
             }
 
@@ -2195,17 +2210,17 @@ badindex:
             insptr++;
             {
                 int32_t i=*insptr++;
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSPRI(j);
-                Gv_SetVarX(i,nextspritesect[j]);
+                Gv_SetVar(i,nextspritesect[j]);
                 continue;
             }
 
         case CON_CANSEESPR:
             insptr++;
             {
-                int32_t lVar1 = Gv_GetVarX(*insptr++), lVar2 = Gv_GetVarX(*insptr++), res;
+                int32_t lVar1 = Gv_GetVar(*insptr++), lVar2 = Gv_GetVar(*insptr++), res;
 
                 if (lVar1<0 || lVar1>=MAXSPRITES || sprite[lVar1].statnum==MAXSTATUS)
                 {
@@ -2220,7 +2235,7 @@ badindex:
                 else res=cansee(sprite[lVar1].x,sprite[lVar1].y,sprite[lVar1].z,sprite[lVar1].sectnum,
                                     sprite[lVar2].x,sprite[lVar2].y,sprite[lVar2].z,sprite[lVar2].sectnum);
 
-                Gv_SetVarX(*insptr++, res);
+                Gv_SetVar(*insptr++, res);
                 continue;
             }
 
@@ -2228,8 +2243,8 @@ badindex:
         case CON_CHANGESPRITESECT:
             insptr++;
             {
-                int32_t i = Gv_GetVarX(*insptr++);
-                int32_t j = Gv_GetVarX(*insptr++);
+                int32_t i = Gv_GetVar(*insptr++);
+                int32_t j = Gv_GetVar(*insptr++);
 
                 X_ERROR_INVALIDSPRI(i);
                 if (j<0 || j >= (tw==CON_CHANGESPRITESTAT?MAXSTATUS:numsectors))
@@ -2254,7 +2269,7 @@ badindex:
         case CON_DRAGPOINT:
             insptr++;
             {
-                int32_t wallnum = Gv_GetVarX(*insptr++), newx = Gv_GetVarX(*insptr++), newy = Gv_GetVarX(*insptr++);
+                int32_t wallnum = Gv_GetVar(*insptr++), newx = Gv_GetVar(*insptr++), newy = Gv_GetVar(*insptr++);
 
                 if (wallnum<0 || wallnum>=numwalls)
                 {
@@ -2269,20 +2284,20 @@ badindex:
             insptr++;
             {
                 int32_t j = *insptr++;
-                Gv_SetVarX(j, sectorofwall(Gv_GetVarX(*insptr++)));
+                Gv_SetVar(j, sectorofwall(Gv_GetVar(*insptr++)));
             }
             continue;
 
         case CON_FIXREPEATS:
             insptr++;
-            fixrepeats(Gv_GetVarX(*insptr++));
+            fixrepeats(Gv_GetVar(*insptr++));
             continue;
 
         case CON_GETCLOSESTCOL:
             insptr++;
             {
-                int32_t r = Gv_GetVarX(*insptr++), g = Gv_GetVarX(*insptr++), b = Gv_GetVarX(*insptr++);
-                Gv_SetVarX(*insptr++, paletteGetClosestColor(r, g, b));
+                int32_t r = Gv_GetVar(*insptr++), g = Gv_GetVar(*insptr++), b = Gv_GetVar(*insptr++);
+                Gv_SetVar(*insptr++, paletteGetClosestColor(r, g, b));
                 continue;
             }
 
@@ -2300,7 +2315,7 @@ badindex:
         case CON_SETHIGHLIGHT:
             insptr++;
             {
-                int32_t what=Gv_GetVarX(*insptr++), index=Gv_GetVarX(*insptr++), doset = Gv_GetVarX(*insptr++);
+                int32_t what=Gv_GetVar(*insptr++), index=Gv_GetVar(*insptr++), doset = Gv_GetVar(*insptr++);
 
                 if (highlightsectorcnt >= 0)
                 {
@@ -2344,7 +2359,7 @@ badindex:
         case CON_SETHIGHLIGHTSECTOR:
             insptr++;
             {
-                int32_t index=Gv_GetVarX(*insptr++), doset = Gv_GetVarX(*insptr++);
+                int32_t index=Gv_GetVar(*insptr++), doset = Gv_GetVar(*insptr++);
 
                 if (highlightcnt >= 0)
                 {
@@ -2375,14 +2390,14 @@ badindex:
                 ti = localtime(&rawtime);
                 // initprintf("Time&date: %s\n",asctime (ti));
 
-                Gv_SetVarX(v1, ti->tm_sec);
-                Gv_SetVarX(v2, ti->tm_min);
-                Gv_SetVarX(v3, ti->tm_hour);
-                Gv_SetVarX(v4, ti->tm_mday);
-                Gv_SetVarX(v5, ti->tm_mon);
-                Gv_SetVarX(v6, ti->tm_year+1900);
-                Gv_SetVarX(v7, ti->tm_wday);
-                Gv_SetVarX(v8, ti->tm_yday);
+                Gv_SetVar(v1, ti->tm_sec);
+                Gv_SetVar(v2, ti->tm_min);
+                Gv_SetVar(v3, ti->tm_hour);
+                Gv_SetVar(v4, ti->tm_mday);
+                Gv_SetVar(v5, ti->tm_mon);
+                Gv_SetVar(v6, ti->tm_year+1900);
+                Gv_SetVar(v7, ti->tm_wday);
+                Gv_SetVar(v8, ti->tm_yday);
                 continue;
             }
 
@@ -2398,7 +2413,7 @@ badindex:
             insptr++;
             {
                 char buf[80] = "", buf2[80] = "";
-                int32_t code = (int32_t)*insptr, val = Gv_GetVarX(code);
+                int32_t code = (int32_t)*insptr, val = Gv_GetVar(code);
                 int32_t negate=code&M32_FLAG_NEGATE;
 
                 if (code & (0xFFFFFFFF-(MAXGAMEVARS-1)))
@@ -2506,8 +2521,8 @@ badindex:
                     continue;
 
                 {
-                    int32_t max=Gv_GetVarX(*insptr++);
-                    int32_t sign = (tw==CON_GETNUMBERFROMUSER) ? Gv_GetVarX(*insptr++) : (max<=0);
+                    int32_t max=Gv_GetVar(*insptr++);
+                    int32_t sign = (tw==CON_GETNUMBERFROMUSER) ? Gv_GetVar(*insptr++) : (max<=0);
                     char buf[64];  // buffers in getnumber* are 80 bytes long
 
                     Bstrncpyz(buf, quotetext, sizeof(buf));
@@ -2520,14 +2535,14 @@ badindex:
 //OSD_Printf("max:%d, sign:%d\n", max, sign);
                     if (tw==CON_GETNUMBERFROMUSER)
                     {
-                        Gv_SetVarX(var, in3dmode() ?
-                                   getnumber256(quotetext, Gv_GetVarX(var), max, sign) :
-                                   getnumber16(quotetext, Gv_GetVarX(var), max, sign));
+                        Gv_SetVar(var, in3dmode() ?
+                                   getnumber256(quotetext, Gv_GetVar(var), max, sign) :
+                                   getnumber16(quotetext, Gv_GetVar(var), max, sign));
                     }
                     else if (tw==CON_GETNUMBER16)
-                        Gv_SetVarX(var, getnumber16(quotetext, Gv_GetVarX(var), max, sign));
+                        Gv_SetVar(var, getnumber16(quotetext, Gv_GetVar(var), max, sign));
                     else
-                        Gv_SetVarX(var, getnumber256(quotetext, Gv_GetVarX(var), max, sign));
+                        Gv_SetVar(var, getnumber256(quotetext, Gv_GetVar(var), max, sign));
                 }
             }
             continue;
@@ -2548,12 +2563,12 @@ badindex:
                     continue;
 
                 {
-                    int32_t x=(tw>=CON_PRINTMESSAGE256)?Gv_GetVarX(*insptr++):0;
-                    int32_t y=(tw>=CON_PRINTMESSAGE256)?Gv_GetVarX(*insptr++):0;
+                    int32_t x=(tw>=CON_PRINTMESSAGE256)?Gv_GetVar(*insptr++):0;
+                    int32_t y=(tw>=CON_PRINTMESSAGE256)?Gv_GetVar(*insptr++):0;
 
-                    int32_t col=(tw>=CON_PRINTEXT256)?Gv_GetVarX(*insptr++):0;
-                    int32_t backcol=(tw>=CON_PRINTEXT256)?Gv_GetVarX(*insptr++):0;
-                    int32_t fontsize=(tw>=CON_PRINTEXT256)?Gv_GetVarX(*insptr++):0;
+                    int32_t col=(tw>=CON_PRINTEXT256)?Gv_GetVar(*insptr++):0;
+                    int32_t backcol=(tw>=CON_PRINTEXT256)?Gv_GetVar(*insptr++):0;
+                    int32_t fontsize=(tw>=CON_PRINTEXT256)?Gv_GetVar(*insptr++):0;
 
                     if (tw==CON_PRINT || tw==CON_ERRORINS)
                     {
@@ -2618,14 +2633,14 @@ badindex:
                 if (vm.flags&VMFLAG_ERROR)
                     continue;
 
-                Gv_SetVarX(i, Bstrlen(quotetext));
+                Gv_SetVar(i, Bstrlen(quotetext));
                 continue;
             }
 
         case CON_QSUBSTR:
             insptr++;
             {
-                int32_t q1 = Gv_GetVarX(*insptr++);
+                int32_t q1 = Gv_GetVar(*insptr++);
                 int32_t q2 = *insptr++;
                 const char *q2text = GetMaybeInlineQuote(q2);
                 if (vm.flags&VMFLAG_ERROR)
@@ -2634,8 +2649,8 @@ badindex:
                 X_ERROR_INVALIDQUOTE(q1, apStrings);
 
                 {
-                    int32_t st = Gv_GetVarX(*insptr++);
-                    int32_t ln = Gv_GetVarX(*insptr++);
+                    int32_t st = Gv_GetVar(*insptr++);
+                    int32_t ln = Gv_GetVar(*insptr++);
                     char *s1 = apStrings[q1];
                     const char *s2 = q2text;
 
@@ -2656,7 +2671,7 @@ badindex:
 ///        case CON_QGETSYSSTR:
             insptr++;
             {
-                int32_t i = Gv_GetVarX(*insptr++);
+                int32_t i = Gv_GetVar(*insptr++);
                 int32_t j = *insptr++;
 
                 const char *quotetext = GetMaybeInlineQuote(j);
@@ -2671,7 +2686,7 @@ badindex:
                     Bstrncat(apStrings[i], quotetext, (MAXQUOTELEN-1)-Bstrlen(apStrings[i]));
                     break;
                 case CON_QSTRNCAT:
-                    Bstrncat(apStrings[i], quotetext, Gv_GetVarX(*insptr++));
+                    Bstrncat(apStrings[i], quotetext, Gv_GetVar(*insptr++));
                     break;
                 case CON_QSTRCPY:
                     Bstrcpy(apStrings[i], quotetext);
@@ -2683,7 +2698,7 @@ badindex:
         case CON_QSPRINTF:
             insptr++;
             {
-                int32_t dq=Gv_GetVarX(*insptr++), sq=*insptr++;
+                int32_t dq=Gv_GetVar(*insptr++), sq=*insptr++;
                 const char *sourcetext = GetMaybeInlineQuote(sq);
                 if (vm.flags&VMFLAG_ERROR)
                     continue;
@@ -2696,7 +2711,7 @@ badindex:
                     char tmpbuf[MAXQUOTELEN<<1];
 
                     while (*insptr != -1 && numvals < 32)
-                        arg[numvals++] = Gv_GetVarX(*insptr++);
+                        arg[numvals++] = Gv_GetVar(*insptr++);
 
                     insptr++; // skip the NOP
 
@@ -2797,7 +2812,7 @@ dodefault:
                 // <type> <maxdist(varid)> <varid>
                 int32_t lType=*insptr++;
                 int32_t lMaxDist = (tw==CON_FINDNEARSPRITE || tw==CON_FINDNEARSPRITE3D)?
-                                   *insptr++ : Gv_GetVarX(*insptr++);
+                                   *insptr++ : Gv_GetVar(*insptr++);
                 int32_t lVarID=*insptr++;
                 int32_t lFound=-1, j, k = MAXSTATUS-1;
 
@@ -2837,7 +2852,7 @@ dodefault:
                         break;
                 }
                 while (k--);
-                Gv_SetVarX(lVarID, lFound);
+                Gv_SetVar(lVarID, lFound);
                 continue;
             }
 
@@ -2851,8 +2866,8 @@ dodefault:
                 // -1 for none found
                 // <type> <maxdist(varid)> <varid>
                 int32_t lType=*insptr++;
-                int32_t lMaxDist = (tw==CON_FINDNEARSPRITEZVAR) ? Gv_GetVarX(*insptr++) : *insptr++;
-                int32_t lMaxZDist = (tw==CON_FINDNEARSPRITEZVAR) ? Gv_GetVarX(*insptr++) : *insptr++;
+                int32_t lMaxDist = (tw==CON_FINDNEARSPRITEZVAR) ? Gv_GetVar(*insptr++) : *insptr++;
+                int32_t lMaxZDist = (tw==CON_FINDNEARSPRITEZVAR) ? Gv_GetVar(*insptr++) : *insptr++;
                 int32_t lVarID=*insptr++;
                 int32_t lFound=-1, lTemp, lTemp2, j, k=MAXSTATUS-1;
 
@@ -2884,7 +2899,7 @@ dodefault:
                         break;
                 }
                 while (k--);
-                Gv_SetVarX(lVarID, lFound);
+                Gv_SetVar(lVarID, lFound);
 
                 continue;
             }
@@ -2894,14 +2909,14 @@ dodefault:
             insptr++;
             {
                 int32_t j=*insptr++;
-                Gv_SetVarX(j, timerGetTicks());
+                Gv_SetVar(j, timerGetTicks());
             }
             continue;
 
         case CON_SETASPECT:
             insptr++;
             {
-                int32_t daxrange = Gv_GetVarX(*insptr++), dayxaspect = Gv_GetVarX(*insptr++);
+                int32_t daxrange = Gv_GetVar(*insptr++), dayxaspect = Gv_GetVar(*insptr++);
                 if (daxrange < (1<<12)) daxrange = (1<<12);
                 if (daxrange > (1<<20)) daxrange = (1<<20);
                 if (dayxaspect < (1<<12)) dayxaspect = (1<<12);
@@ -2916,7 +2931,7 @@ dodefault:
             int32_t newcurspritei;
 
             insptr++;
-            newcurspritei = Gv_GetVarX(*insptr++);
+            newcurspritei = Gv_GetVar(*insptr++);
             X_ERROR_INVALIDSPRI(newcurspritei);
             vm.spriteNum = newcurspritei;
             vm.pSprite = &sprite[vm.spriteNum];
@@ -2926,9 +2941,9 @@ dodefault:
         case CON_SIZEAT:
             insptr += 3;
             X_ERROR_INVALIDSP();
-            vm.pSprite->xrepeat = (uint8_t) Gv_GetVarX(*(insptr-2));
-            vm.pSprite->yrepeat = (uint8_t) Gv_GetVarX(*(insptr-1));
-#ifdef STRUCT_TRACKERS_ENABLED
+            vm.pSprite->xrepeat = (uint8_t) Gv_GetVar(*(insptr-2));
+            vm.pSprite->yrepeat = (uint8_t) Gv_GetVar(*(insptr-1));
+#ifdef USE_STRUCT_TRACKERS
             if (vm.spriteNum != -1) spritechanged[vm.spriteNum]++;
 #endif
             continue;
@@ -2937,7 +2952,7 @@ dodefault:
             insptr += 2;
             X_ERROR_INVALIDSP();
             vm.pSprite->cstat = (int16_t) *(insptr-1);
-#ifdef STRUCT_TRACKERS_ENABLED
+#ifdef USE_STRUCT_TRACKERS
             if (vm.spriteNum != -1) spritechanged[vm.spriteNum]++;
 #endif
             continue;
@@ -2945,8 +2960,8 @@ dodefault:
         case CON_CSTATOR:
             insptr += 2;
             X_ERROR_INVALIDSP();
-            vm.pSprite->cstat |= (int16_t) Gv_GetVarX(*(insptr-1));
-#ifdef STRUCT_TRACKERS_ENABLED
+            vm.pSprite->cstat |= (int16_t) Gv_GetVar(*(insptr-1));
+#ifdef USE_STRUCT_TRACKERS
             if (vm.spriteNum != -1) spritechanged[vm.spriteNum]++;
 #endif
             continue;
@@ -2954,8 +2969,8 @@ dodefault:
         case CON_CLIPDIST:
             insptr += 2;
             X_ERROR_INVALIDSP();
-            vm.pSprite->clipdist = (uint8_t) Gv_GetVarX(*(insptr-1));
-#ifdef STRUCT_TRACKERS_ENABLED
+            vm.pSprite->clipdist = (uint8_t) Gv_GetVar(*(insptr-1));
+#ifdef USE_STRUCT_TRACKERS
             if (vm.spriteNum != -1) spritechanged[vm.spriteNum]++;
 #endif
             continue;
@@ -2963,8 +2978,8 @@ dodefault:
         case CON_SPRITEPAL:
             insptr += 2;
             X_ERROR_INVALIDSP();
-            vm.pSprite->pal = Gv_GetVarX(*(insptr-1));
-#ifdef STRUCT_TRACKERS_ENABLED
+            vm.pSprite->pal = Gv_GetVar(*(insptr-1));
+#ifdef USE_STRUCT_TRACKERS
             if (vm.spriteNum != -1) spritechanged[vm.spriteNum]++;
 #endif
             continue;
@@ -2972,8 +2987,8 @@ dodefault:
         case CON_CACTOR:
             insptr += 2;
             X_ERROR_INVALIDSP();
-            vm.pSprite->picnum = Gv_GetVarX(*(insptr-1));
-#ifdef STRUCT_TRACKERS_ENABLED
+            vm.pSprite->picnum = Gv_GetVar(*(insptr-1));
+#ifdef USE_STRUCT_TRACKERS
             if (vm.spriteNum != -1) spritechanged[vm.spriteNum]++;
 #endif
             continue;
@@ -2981,37 +2996,37 @@ dodefault:
         case CON_SPGETLOTAG:
             insptr++;
             X_ERROR_INVALIDSP();
-            Gv_SetVarX(M32_LOTAG_VAR_ID, vm.pSprite->lotag);
+            Gv_SetVar(M32_LOTAG_VAR_ID, vm.pSprite->lotag);
             continue;
 
         case CON_SPGETHITAG:
             insptr++;
             X_ERROR_INVALIDSP();
-            Gv_SetVarX(M32_HITAG_VAR_ID, vm.pSprite->hitag);
+            Gv_SetVar(M32_HITAG_VAR_ID, vm.pSprite->hitag);
             continue;
 
         case CON_SECTGETLOTAG:
             insptr++;
             X_ERROR_INVALIDSP();
-            Gv_SetVarX(M32_LOTAG_VAR_ID, sector[vm.pSprite->sectnum].lotag);
+            Gv_SetVar(M32_LOTAG_VAR_ID, sector[vm.pSprite->sectnum].lotag);
             continue;
 
         case CON_SECTGETHITAG:
             insptr++;
             X_ERROR_INVALIDSP();
-            Gv_SetVarX(M32_HITAG_VAR_ID, sector[vm.pSprite->sectnum].hitag);
+            Gv_SetVar(M32_HITAG_VAR_ID, sector[vm.pSprite->sectnum].hitag);
             continue;
 
         case CON_GETTEXTUREFLOOR:
             insptr++;
             X_ERROR_INVALIDSP();
-            Gv_SetVarX(M32_TEXTURE_VAR_ID, sector[vm.pSprite->sectnum].floorpicnum);
+            Gv_SetVar(M32_TEXTURE_VAR_ID, sector[vm.pSprite->sectnum].floorpicnum);
             continue;
 
         case CON_GETTEXTURECEILING:
             insptr++;
             X_ERROR_INVALIDSP();
-            Gv_SetVarX(M32_TEXTURE_VAR_ID, sector[vm.pSprite->sectnum].ceilingpicnum);
+            Gv_SetVar(M32_TEXTURE_VAR_ID, sector[vm.pSprite->sectnum].ceilingpicnum);
             continue;
 // ^^^
         case CON_DRAWLINE16:
@@ -3019,11 +3034,11 @@ dodefault:
         case CON_DRAWLINE16Z:
             insptr++;
             {
-                int32_t x1=Gv_GetVarX(*insptr++), y1=Gv_GetVarX(*insptr++);
-                int32_t z1=tw==CON_DRAWLINE16Z?Gv_GetVarX(*insptr++):0;
-                int32_t x2=Gv_GetVarX(*insptr++), y2=Gv_GetVarX(*insptr++);
-                int32_t z2=tw==CON_DRAWLINE16Z?Gv_GetVarX(*insptr++):0;
-                int32_t col=Gv_GetVarX(*insptr++), odrawlinepat=drawlinepat;
+                int32_t x1=Gv_GetVar(*insptr++), y1=Gv_GetVar(*insptr++);
+                int32_t z1=tw==CON_DRAWLINE16Z?Gv_GetVar(*insptr++):0;
+                int32_t x2=Gv_GetVar(*insptr++), y2=Gv_GetVar(*insptr++);
+                int32_t z2=tw==CON_DRAWLINE16Z?Gv_GetVar(*insptr++):0;
+                int32_t col=Gv_GetVar(*insptr++), odrawlinepat=drawlinepat;
                 int32_t xofs=0, yofs=0;
 
                 if (tw==CON_DRAWLINE16B || tw==CON_DRAWLINE16Z)
@@ -3052,10 +3067,10 @@ dodefault:
         case CON_DRAWCIRCLE16Z:
             insptr++;
             {
-                int32_t x1=Gv_GetVarX(*insptr++), y1=Gv_GetVarX(*insptr++);
-                int32_t z1 = tw==CON_DRAWCIRCLE16Z ? Gv_GetVarX(*insptr++) : 0;
-                int32_t r=Gv_GetVarX(*insptr++);
-                int32_t col=Gv_GetVarX(*insptr++), odrawlinepat=drawlinepat;
+                int32_t x1=Gv_GetVar(*insptr++), y1=Gv_GetVar(*insptr++);
+                int32_t z1 = tw==CON_DRAWCIRCLE16Z ? Gv_GetVar(*insptr++) : 0;
+                int32_t r=Gv_GetVar(*insptr++);
+                int32_t col=Gv_GetVar(*insptr++), odrawlinepat=drawlinepat;
                 int32_t xofs=0, yofs=0, eccen=16384;
 
                 if (tw==CON_DRAWCIRCLE16B || tw==CON_DRAWCIRCLE16Z)
@@ -3080,12 +3095,12 @@ dodefault:
         case CON_ROTATESPRITE:
             insptr++;
             {
-                int32_t x=Gv_GetVarX(*insptr++),   y=Gv_GetVarX(*insptr++),           z=Gv_GetVarX(*insptr++);
-                int32_t a=Gv_GetVarX(*insptr++),   tilenum=Gv_GetVarX(*insptr++),     shade=Gv_GetVarX(*insptr++);
-                int32_t pal=Gv_GetVarX(*insptr++), orientation=Gv_GetVarX(*insptr++);
-                int32_t alpha = (tw == CON_ROTATESPRITEA) ? Gv_GetVarX(*insptr++) : 0;
-                int32_t x1=Gv_GetVarX(*insptr++),  y1=Gv_GetVarX(*insptr++);
-                int32_t x2=Gv_GetVarX(*insptr++),  y2=Gv_GetVarX(*insptr++);
+                int32_t x=Gv_GetVar(*insptr++),   y=Gv_GetVar(*insptr++),           z=Gv_GetVar(*insptr++);
+                int32_t a=Gv_GetVar(*insptr++),   tilenum=Gv_GetVar(*insptr++),     shade=Gv_GetVar(*insptr++);
+                int32_t pal=Gv_GetVar(*insptr++), orientation=Gv_GetVar(*insptr++);
+                int32_t alpha = (tw == CON_ROTATESPRITEA) ? Gv_GetVar(*insptr++) : 0;
+                int32_t x1=Gv_GetVar(*insptr++),  y1=Gv_GetVar(*insptr++);
+                int32_t x2=Gv_GetVar(*insptr++),  y2=Gv_GetVar(*insptr++);
 
                 if (tw != CON_ROTATESPRITE16 && !(orientation&ROTATESPRITE_FULL16))
                 {
@@ -3101,14 +3116,14 @@ dodefault:
 
         case CON_SETGAMEPALETTE:
             insptr++;
-            SetGamePalette(Gv_GetVarX(*insptr++));
+            SetGamePalette(Gv_GetVar(*insptr++));
             continue;
 
 // *** sounds
         case CON_IFSOUND:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr);
+                int32_t j=Gv_GetVar(*insptr);
                 if (S_InvalidSound(j))
                 {
                     M32_ERROR("Invalid sound %d", j);
@@ -3144,7 +3159,7 @@ dodefault:
         case CON_GETSOUNDFLAGS:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++), var=*insptr++;
+                int32_t j=Gv_GetVar(*insptr++), var=*insptr++;
                 if (S_InvalidSound(j))
                 {
                     M32_ERROR("Invalid sound %d", j);
@@ -3152,7 +3167,7 @@ dodefault:
                     continue;
                 }
 
-                Gv_SetVarX(var, S_SoundFlags(j));
+                Gv_SetVar(var, S_SoundFlags(j));
             }
             continue;
 
@@ -3162,7 +3177,7 @@ dodefault:
         case CON_GLOBALSOUNDVAR:
             insptr++;
             {
-                int32_t j=Gv_GetVarX(*insptr++);
+                int32_t j=Gv_GetVar(*insptr++);
 
                 if (S_InvalidSound(j))
                 {

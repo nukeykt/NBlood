@@ -668,10 +668,10 @@ int CONFIG_ReadSetup(void)
 
     if (scripthandle < 0)
     {
-        if (SafeFileExists(SetupFilename))  // JBF 20031211
+        if (buildvfs_exists(SetupFilename))  // JBF 20031211
             scripthandle = SCRIPT_Load(SetupFilename);
 #if !defined(EDUKE32_TOUCH_DEVICES) && !defined(EDUKE32_STANDALONE)
-        else if (SafeFileExists(SETUPFILENAME))
+        else if (buildvfs_exists(SETUPFILENAME))
         {
             int const i = wm_ynbox("Import Configuration Settings",
                                    "The configuration file \"%s\" was not found. "
@@ -688,6 +688,7 @@ int CONFIG_ReadSetup(void)
     if (scripthandle < 0)
         return -1;
 
+    // Nuke: make cvar
     ///////
     SCRIPT_GetNumber(scripthandle, "Game Options", "WeaponsV10x", &gWeaponsV10x);
     ///////

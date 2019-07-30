@@ -171,6 +171,7 @@ void Net_WaitForEverybody(void)
         {
             display_betascreen();
             gametext_center_shade(170, "Waiting for players", 14);
+            videoNextPage();
         };
 
         G_HandleAsync();

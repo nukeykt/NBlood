@@ -92,9 +92,6 @@ static void maxheap_bubbleDown(uint32_t nodeIndex)
 
 static void maxheap_buildHeap()
 {
-    // TODO:
-    if (heapNodes < 2)
-        return;
     for (int i = (heapNodes-2)/2; i >= 0; --i)
     {
         maxheap_bubbleDown(i);
@@ -319,7 +316,7 @@ char tilepacker_pack(uint32_t tilesheetID)
         return false;
     }
 
-    for (uint32_t numLeft = numRejected; numLeft > 0; --numLeft)
+    for (int numLeft = numRejected; numLeft > 0; --numLeft)
     {
         TreeNode *pNode = rejectQueue_remove();
         char success = kdtree_add(tilesheetID, pNode);

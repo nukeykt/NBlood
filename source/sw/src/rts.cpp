@@ -31,7 +31,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "baselayer.h"
 
 #include "mytypes.h"
-#include "file_lib.h"
 #include "_rts.h"
 #include "rts.h"
 #include "cache.h"
@@ -107,7 +106,7 @@ int32_t RTS_AddFile(char *filename)
     header.numlumps = B_LITTLE32(header.numlumps);
     header.infotableofs = B_LITTLE32(header.infotableofs);
     length = header.numlumps*sizeof(filelump_t);
-    fileinfo = fileinfoo = malloc(length);
+    fileinfo = fileinfoo = (filelump_t*)malloc(length);
     if (!fileinfo)
     {
         buildprintf("RTS file could not allocate header info\n");
@@ -120,7 +119,7 @@ int32_t RTS_AddFile(char *filename)
 //
 // Fill in lumpinfo
 //
-    lump_p = realloc(lumpinfo, (numlumps + header.numlumps)*sizeof(lumpinfo_t));
+    lump_p = (lumpinfo_t*)realloc(lumpinfo, (numlumps + header.numlumps)*sizeof(lumpinfo_t));
     if (!lump_p)
     {
         kclose(handle);
@@ -174,7 +173,7 @@ void RTS_Init(char *filename)
     // set up caching
     //
     length = (numlumps) * sizeof(*lumpcache);
-    lumpcache = Xmalloc(length);
+    lumpcache = (intptr_t*)Xmalloc(length);
     memset(lumpcache,0,length);
 }
 
@@ -302,7 +301,7 @@ void *RTS_GetSound(int32_t lump)
     if (lumpcache[lump] == (intptr_t)NULL)
     {
         lumplockbyte[lump] = CACHE_LOCK_START;
-        allocache(&lumpcache[lump],(int)RTS_SoundLength(lump-1),&lumplockbyte[lump]);
+        cacheAllocateBlock(&lumpcache[lump],(int)RTS_SoundLength(lump-1),&lumplockbyte[lump]);
         RTS_ReadLump(lump, lumpcache[lump]);
     }
     else

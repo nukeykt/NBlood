@@ -33,7 +33,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "ai.h"
 #include "player.h"
 #include "game.h"
-#include "net.h"
+#include "network.h"
 #include "sprite.h"
 #include "track.h"
 #include "weapon.h"
@@ -368,7 +368,7 @@ void QuickJumpSetup(short stat, short lotag, short type)
         //MONO_PRINT(ds);
 
         FreeMem(Track[ndx].TrackPoint);
-        Track[ndx].TrackPoint = CallocMem((4 * sizeof(TRACK_POINT)), 1);
+        Track[ndx].TrackPoint = (TRACK_POINTp)CallocMem((4 * sizeof(TRACK_POINT)), 1);
 
         tp = Track[ndx].TrackPoint;
         t = &Track[ndx];
@@ -431,7 +431,7 @@ void QuickScanSetup(short stat, short lotag, short type)
 
         // save space for 3 points
         FreeMem(Track[ndx].TrackPoint);
-        Track[ndx].TrackPoint = CallocMem((4 * sizeof(TRACK_POINT)), 1);
+        Track[ndx].TrackPoint = (TRACK_POINTp)CallocMem((4 * sizeof(TRACK_POINT)), 1);
 
         ASSERT(Track[ndx].TrackPoint != NULL);
 
@@ -491,7 +491,7 @@ void QuickExitSetup(short stat, short type)
 
         // save space for 3 points
         FreeMem(Track[ndx].TrackPoint);
-        Track[ndx].TrackPoint = CallocMem((4 * sizeof(TRACK_POINT)), 1);
+        Track[ndx].TrackPoint = (TRACK_POINTp)CallocMem((4 * sizeof(TRACK_POINT)), 1);
 
         ASSERT(Track[ndx].TrackPoint != NULL);
 
@@ -546,7 +546,7 @@ void QuickLadderSetup(short stat, short lotag, short type)
 
         // save space for 3 points
         FreeMem(Track[ndx].TrackPoint);
-        Track[ndx].TrackPoint = CallocMem((4 * sizeof(TRACK_POINT)), 1);
+        Track[ndx].TrackPoint = (TRACK_POINTp)CallocMem((4 * sizeof(TRACK_POINT)), 1);
 
         ASSERT(Track[ndx].TrackPoint != NULL);
 
@@ -603,7 +603,7 @@ TrackSetup(void)
         {
             // for some reason I need at least one record allocated
             // can't remember why at this point
-            Track[ndx].TrackPoint = CallocMem(sizeof(TRACK_POINT) * 1, 1);
+            Track[ndx].TrackPoint = (TRACK_POINTp)CallocMem(sizeof(TRACK_POINT) * 1, 1);
             continue;
         }
 
@@ -611,7 +611,7 @@ TrackSetup(void)
 
         // make the track array rather large.  I'll resize it to correct size
         // later.
-        Track[ndx].TrackPoint = CallocMem(sizeof(TRACK_POINT) * 500, 1);
+        Track[ndx].TrackPoint = (TRACK_POINTp)CallocMem(sizeof(TRACK_POINT) * 500, 1);
 
         ASSERT(Track[ndx].TrackPoint != NULL);
 
@@ -634,7 +634,7 @@ TrackSetup(void)
         if (t->NumPoints == 0)
         {
             int i, nexti;
-            SPRITEp sp = &sprite[headspritestat[STAT_TRACK+ndx]];
+            auto const sp = (uspritetype const *)&sprite[headspritestat[STAT_TRACK+ndx]];
             buildprintf("WARNING: Did not find first point of Track Number %d, x %d, y %d", ndx, sp->x, sp->y);
             for (i=headspritestat[STAT_TRACK+ndx]; i>=0; i=nexti)
             {
@@ -678,7 +678,7 @@ TrackSetup(void)
         }
 
         size = (Track[ndx].NumPoints + 1) * sizeof(TRACK_POINT);
-        New = CallocMem(size, 1);
+        New = (TRACK_POINTp)CallocMem(size, 1);
         memcpy(New, Track[ndx].TrackPoint, size);
         FreeMem(Track[ndx].TrackPoint);
         Track[ndx].TrackPoint = New;
@@ -2070,7 +2070,7 @@ DetectSectorObject(SECTORp sectph)
     // move all points to nx,ny
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == MAXLONG || sop->xmid == MAXSO)
+        if (sop->xmid == MAXLONG /*|| sop->xmid == MAXSO*/)
             continue;
 
         for (sectp = sop->sectp, j = 0; *sectp; sectp++, j++)
@@ -2098,7 +2098,7 @@ DetectSectorObjectByWall(WALLp wph)
     // move all points to nx,ny
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == MAXLONG || sop->xmid == MAXSO)
+        if (sop->xmid == MAXLONG /*|| sop->xmid == MAXSO*/)
             continue;
 
         for (sectp = sop->sectp, j = 0; *sectp; sectp++, j++)
@@ -2233,7 +2233,7 @@ void CallbackSOsink(ANIMp ap, void *data)
     char found = FALSE;
     int tgt_depth;
 
-    sop = data;
+    sop = (SECTOR_OBJECTp)data;
 
     for (i = 0; sop->sector[i] != -1; i++)
     {

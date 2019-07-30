@@ -150,7 +150,6 @@ void MV_SetPrintf(void (*function)(const char *fmt, ...));
 void MV_HookMusicRoutine(void (*callback)(char *buffer, int length));
 void MV_UnhookMusicRoutine(void);
 
-
 #ifdef __cplusplus
 }
 #endif

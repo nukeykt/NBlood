@@ -117,11 +117,13 @@ VIEW predictFifo[256];
 
 int gInterpolate;
 int nInterpolations;
-char gInterpolateSprite[512];
-char gInterpolateWall[1024];
-char gInterpolateSector[128];
+char gInterpolateSprite[(kMaxSprites+7)>>3];
+char gInterpolateWall[(kMaxWalls+7)>>3];
+char gInterpolateSector[(kMaxSectors+7)>>3];
 
-INTERPOLATE gInterpolation[4096];
+#define kMaxInterpolations 16384
+
+INTERPOLATE gInterpolation[kMaxInterpolations];
 
 int gViewXCenter, gViewYCenter;
 int gViewX0, gViewY0, gViewX1, gViewY1;
@@ -903,7 +905,7 @@ void viewClearInterpolations(void)
 
 void viewAddInterpolation(void *data, INTERPOLATE_TYPE type)
 {
-    if (nInterpolations == 4096)
+    if (nInterpolations == kMaxInterpolations)
         ThrowError("Too many interpolations");
     INTERPOLATE *pInterpolate = &gInterpolation[nInterpolations++];
     pInterpolate->pointer = data;
@@ -2832,24 +2834,27 @@ double g_frameDelay = 0.0;
 
 int viewFPSLimit(void)
 {
-    static auto nextPageTicks = (double)timerGetTicksU64();
-    static unsigned frameWaiting  = 0;
+    static double nextPageDelay = g_frameDelay;
+    static uint64_t lastFrameTicks = timerGetTicksU64() - (uint64_t) g_frameDelay;
+    int frameWaiting = 0;
 
-    if (frameWaiting)
+    uint64_t const frameTicks = timerGetTicksU64();
+    uint64_t elapsedTime = frameTicks-lastFrameTicks;
+
+    if (!r_maxfps || elapsedTime >= (uint64_t) nextPageDelay)
     {
-        frameWaiting--;
-        videoNextPage();
-    }
+        if (elapsedTime >= (uint64_t) (nextPageDelay + g_frameDelay))
+        {
+            //If we missed a frame, reset any cumulated remainder from rendering frames early
+            nextPageDelay = g_frameDelay;
+        }
+        else
+        {
+            nextPageDelay += g_frameDelay - elapsedTime;
+        }
 
-    auto const frameTicks = (double)timerGetTicksU64();
-
-    if (!r_maxfps || frameTicks >= nextPageTicks)
-    {
-        if (frameTicks >= nextPageTicks + g_frameDelay)
-            nextPageTicks = frameTicks;
-
-        nextPageTicks += g_frameDelay;
-        frameWaiting++;
+        lastFrameTicks = frameTicks;
+        ++frameWaiting;
     }
 
     return frameWaiting;
@@ -3502,7 +3507,6 @@ void viewLoadingScreenUpdate(const char *pzText4, int nPercent)
         TileHGauge(2260, 86, 110, nPercent, 100, 0, 131072);
 
     viewDrawText(3, "Please Wait", 160, 134, -128, 0, 1, 1);
-    scrNextPage();
 }
 
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3)

@@ -1374,11 +1374,7 @@ int LZ4_compress_fast_continue (LZ4_stream_t* LZ4_stream, const char* source, ch
     LZ4_stream_t_internal* streamPtr = &LZ4_stream->internal_donotuse;
     const BYTE* const dictEnd = streamPtr->dictionary + streamPtr->dictSize;
 
-#if LZ4_VERSION_NUMBER < 10900
     if (streamPtr->initCheck) return 0;   /* Uninitialized structure detected */
-#else
-    if (streamPtr->dirty) return 0;   /* Newer version make it clearer */
-#endif
     LZ4_renormDictT(streamPtr, inputSize);   /* avoid index overflow */
     if (acceleration < 1) acceleration = ACCELERATION_DEFAULT;
 

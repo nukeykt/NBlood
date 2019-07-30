@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "cache1d.h"
 #include "compat.h"
-#include "file_lib.h"
 #include "fx_man.h"
 #include "keyboard.h"
 #include "pragmas.h"
@@ -85,6 +84,7 @@ enum {
     MUS_INTRO = MUS_FIRST_SPECIAL,
     MUS_BRIEFING = MUS_FIRST_SPECIAL + 1,
     MUS_LOADING = MUS_FIRST_SPECIAL + 2,
+    MUS_USERMAP = MUS_FIRST_SPECIAL + 3,
 };
 
 ////////// TIMING CONSTANTS //////////
@@ -141,7 +141,7 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 #include "macros.h"
 #include "music.h"
 #include "namesdyn.h"
-#include "net.h"
+#include "network.h"
 #include "player.h"
 #include "quotes.h"
 #include "rts.h"

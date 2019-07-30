@@ -113,7 +113,7 @@ typedef struct {
     int32_t g_st;
     union {
         spritetype * pSprite;
-        uspritetype *pUSprite;
+        uspritetype const * pUSprite;
     };
     uint32_t flags;  // g_errorFlag, g_returnFlag;
 
@@ -475,6 +475,8 @@ enum ScriptKeywords_t
     CON_UPDATECURSECTNUM,
     CON_UPDATESECTOR,
     CON_UPDATESECTORZ,
+    CON_UPDATESECTORNEIGHBOR,
+    CON_UPDATESECTORNEIGHBORZ,
     CON_GETZRANGE,
     CON_CLIPMOVE,
     CON_LINEINTERSECT,

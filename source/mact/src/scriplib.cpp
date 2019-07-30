@@ -36,8 +36,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 
 #include "scriplib.h"
-#include "file_lib.h"
 #include "_scrplib.h"
+
+#include "vfs.h"
 
 static script_t *scriptfiles[MAXSCRIPTFILES];
 
@@ -76,15 +77,15 @@ void SCRIPT_Delete(int32_t scripthandle)
         {
             s = SCRIPT(scripthandle,apScript)->nextsection;
             SCRIPT_FreeSection(SCRIPT(scripthandle,apScript));
-            Bfree(SCRIPT(scripthandle,apScript));
+            Xfree(SCRIPT(scripthandle,apScript));
             SCRIPT(scripthandle,apScript) = s;
         }
 
         SCRIPT_FreeSection(SCRIPT(scripthandle, apScript));
-        Bfree(SCRIPT(scripthandle,apScript));
+        Xfree(SCRIPT(scripthandle,apScript));
     }
 
-    Bfree(SC(scripthandle));
+    Xfree(SC(scripthandle));
     SC(scripthandle) = 0;
 }
 
@@ -99,16 +100,16 @@ void SCRIPT_FreeSection(ScriptSectionType * section)
     {
         e = section->entries->nextentry;
 
-        Bfree(section->entries->name);
-        Bfree(section->entries->value);
-        Bfree(section->entries);
+        Xfree(section->entries->name);
+        Xfree(section->entries->value);
+        Xfree(section->entries);
         section->entries = e;
     }
 
-    Bfree(section->entries->name);
-    Bfree(section->entries->value);
-    Bfree(section->entries);
-    Bfree(section->name);
+    Xfree(section->entries->name);
+    Xfree(section->entries->value);
+    Xfree(section->entries);
+    Xfree(section->name);
 }
 
 #define AllocSection(s) \
@@ -219,7 +220,7 @@ void SCRIPT_AddEntry(int32_t scripthandle, const char * sectionname, const char 
         }
     }
 
-    Bfree(e->value);
+    Xfree(e->value);
     e->value = Xstrdup(entryvalue);
 }
 
@@ -445,26 +446,27 @@ void SCRIPT_Free(int32_t scripthandle)
 
 int32_t SCRIPT_Load(char const * filename)
 {
-    int32_t s,h,l;
+    int32_t s,l;
     char *b;
+    buildvfs_fd h;
 
-    h = SafeOpenRead(filename, filetype_binary);
-    l = SafeFileLength(h)+1;
+    h = buildvfs_open_read(filename);
+    l = (int32_t)buildvfs_length(h)+1;
     b = (char *)Xmalloc(l);
-    SafeRead(h,b,l-1);
+    buildvfs_read(h,b,l-1);
     b[l-1] = '\n';	// JBF 20040111: evil nasty hack to trick my evil nasty parser
-    SafeClose(h);
+    buildvfs_close(h);
 
     s = SCRIPT_Init(filename);
     if (s<0)
     {
-        Bfree(b);
+        Xfree(b);
         return -1;
     }
 
     SCRIPT_ParseBuffer(s,b,l);
 
-    Bfree(b);
+    Xfree(b);
 
     return s;
 }
@@ -473,22 +475,27 @@ void SCRIPT_Save(int32_t scripthandle, char const * filename)
 {
     char const *section, *entry, *value;
     int32_t sec, ent, numsect, nument;
-    FILE *fp;
+    buildvfs_FILE fp;
 
 
     if (!filename) return;
     if (!SC(scripthandle)) return;
 
-    fp = fopen(filename, "w");
+    fp = buildvfs_fopen_write_text(filename);
     if (!fp) return;
 
     numsect = SCRIPT_NumberSections(scripthandle);
     for (sec=0; sec<numsect; sec++)
     {
         section = SCRIPT_Section(scripthandle, sec);
-        if (sec>0) fprintf(fp, "\n");
+        if (sec>0)
+            buildvfs_fputc('\n', fp);
         if (section[0] != 0)
-            fprintf(fp, "[%s]\n", section);
+        {
+            buildvfs_fputc('[', fp);
+            buildvfs_fputstrptr(fp, section);
+            buildvfs_fputstr(fp, "]\n");
+        }
 
         nument = SCRIPT_NumberEntries(scripthandle,section);
         for (ent=0; ent<nument; ent++)
@@ -496,11 +503,14 @@ void SCRIPT_Save(int32_t scripthandle, char const * filename)
             entry = SCRIPT_Entry(scripthandle,section,ent);
             value = SCRIPT_GetRaw(scripthandle,section,entry);
 
-            fprintf(fp, "%s = %s\n", entry, value);
+            buildvfs_fputstrptr(fp, entry);
+            buildvfs_fputstr(fp, " = ");
+            buildvfs_fputstrptr(fp, value);
+            buildvfs_fputc('\n', fp);
         }
     }
 
-    fclose(fp);
+    buildvfs_fclose(fp);
 }
 
 int32_t SCRIPT_NumberSections(int32_t scripthandle)
@@ -801,7 +811,7 @@ void SCRIPT_PutString(int32_t scripthandle, char const *sectionname, char const 
     *p=0;
 
     SCRIPT_AddEntry(scripthandle, sectionname, entryname, raw);
-    Bfree(raw);
+    Xfree(raw);
 }
 
 void SCRIPT_PutDoubleString
@@ -854,7 +864,7 @@ void SCRIPT_PutDoubleString
     *p=0;
 
     SCRIPT_AddEntry(scripthandle, sectionname, entryname, raw);
-    Bfree(raw);
+    Xfree(raw);
 }
 
 void SCRIPT_PutNumber

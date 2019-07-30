@@ -7,24 +7,24 @@
 // by the EDuke32 team (development@voidpoint.com)
 
 #include "build.h"
-#include "compat.h"
-#include "pragmas.h"
-#include "osd.h"
-#include "cache1d.h"
-#include "editor.h"
-#include "common.h"
-#include "colmatch.h"
-#include "palette.h"
-#include "scancodes.h"
+
 #include "baselayer.h"
+#include "cache1d.h"
+#include "colmatch.h"
+#include "common.h"
+#include "compat.h"
+#include "editor.h"
+#include "m32script.h"
+#include "osd.h"
+#include "palette.h"
+#include "pragmas.h"
 #include "renderlayer.h"
+#include "scancodes.h"
+#include "vfs.h"
 
 #ifdef _WIN32
-# include "winbits.h"
+#include "winbits.h"
 #endif
-
-
-#include "m32script.h"
 
 char levelname[BMAX_PATH] = {0};
 
@@ -179,7 +179,7 @@ static int32_t tempxyar[MAXWALLS][2];
 
 static int32_t mousx, mousy;
 int16_t prefixtiles[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-uint8_t hlsectorbitmap[MAXSECTORS>>3];  // show2dsector is already taken...
+uint8_t hlsectorbitmap[(MAXSECTORS+7)>>3];  // show2dsector is already taken...
 static int32_t minhlsectorfloorz, numhlsecwalls;
 int32_t searchlock = 0;
 
@@ -187,11 +187,13 @@ int32_t searchlock = 0;
 //  - hl_all_bunch_sectors_p
 //  - AlignWalls
 //  - trace_loop
-static uint8_t visited[MAXWALLS>>3];
+static uint8_t visited[(MAXWALLS+7)>>3];
 
 int32_t m32_2d3dmode = 0;
 int32_t m32_2d3dsize = 4;
 vec2_t m32_2d3d = { 0xffff, 4 };
+
+int32_t m32_3dundo = 1;
 
 typedef struct
 {
@@ -646,7 +648,7 @@ int app_main(int argc, char const * const * argv)
         M32_OnShowOSD
     );
 
-    if (!getcwd(program_origcwd,BMAX_PATH))
+    if (!buildvfs_getcwd(program_origcwd,BMAX_PATH))
         program_origcwd[0] = '\0';
 
     Bstrncpy(game_executable, DefaultGameLocalExec, sizeof(game_executable));
@@ -685,6 +687,9 @@ int app_main(int argc, char const * const * argv)
     initcrc();
 
     const char *defsfile = G_DefFile();
+
+    if (testkopen("editor.def", 0))
+        G_AddDefModule("editor.def");
 
     if (!loaddefinitionsfile(defsfile))
         initprintf("Definitions file \"%s\" loaded.\n",defsfile);
@@ -1378,6 +1383,15 @@ void editinput(void)
         if (keystatus[sc_S])  //S (insert sprite) (3D)
         {
             hitdata_t hit;
+            vec2_t osearch = {searchx, searchy};
+            vec2_t bdim = {xdim, ydim};
+            if (m32_is2d3dmode())
+            {
+                xdim = XSIZE_2D3D;
+                ydim = YSIZE_2D3D;
+                searchx -= m32_2d3d.x;
+                searchy -= m32_2d3d.y;
+            }
 
             vec2_t da = { 16384, divscale14(searchx-(xdim>>1), xdim>>1) };
 
@@ -1435,6 +1449,10 @@ void editinput(void)
                 }
             }
 
+            xdim = bdim.x;
+            ydim = bdim.y;
+            searchx = osearch.x;
+            searchy = osearch.y;
             keystatus[sc_S] = 0;
         }
 
@@ -1771,7 +1789,7 @@ static int32_t backup_highlighted_map(mapinfofull_t *mapinfo)
                 if (obn >= 0 && nbn < 0)
                 {
                     // A bunch was discarded.
-                    usectortype *const sec = &mapinfo->sector[i];
+                    auto const sec = &mapinfo->sector[i];
 # if !defined NEW_MAP_FORMAT
                     uint16_t *const cs = j==YAX_CEILING ? &sec->ceilingstat : &sec->floorstat;
                     uint8_t *const xp = j==YAX_CEILING ? &sec->ceilingxpanning : &sec->floorxpanning;
@@ -1848,17 +1866,17 @@ static int32_t backup_highlighted_map(mapinfofull_t *mapinfo)
 
 static void mapinfofull_free(mapinfofull_t *mapinfo)
 {
-    Bfree(mapinfo->sector);
+    Xfree(mapinfo->sector);
 #ifdef YAX_ENABLE
     if (mapinfo->numyaxbunches > 0)
     {
-        Bfree(mapinfo->bunchnum);
-        Bfree(mapinfo->ynextwall);
+        Xfree(mapinfo->bunchnum);
+        Xfree(mapinfo->ynextwall);
     }
 #endif
-    Bfree(mapinfo->wall);
+    Xfree(mapinfo->wall);
     if (mapinfo->numsprites>0)
-        Bfree(mapinfo->sprite);
+        Xfree(mapinfo->sprite);
 }
 
 // restore map saved with backup_highlighted_map, also
@@ -1953,7 +1971,7 @@ static int32_t restore_highlighted_map(mapinfofull_t *mapinfo, int32_t forreal)
     // insert sprites
     for (i=0; i<mapinfo->numsprites; i++)
     {
-        const uspritetype *srcspr = &mapinfo->sprite[i];
+        uspriteptr_t srcspr = &mapinfo->sprite[i];
         int32_t sect = onumsectors + srcspr->sectnum;
 
         j = insertsprite(sect, srcspr->statnum);
@@ -2362,7 +2380,7 @@ static void copy_some_wall_members(int16_t dst, int16_t src, int32_t reset_some)
 {
     static uwalltype nullwall;
     walltype * const dstwal = &wall[dst];
-    const uwalltype *srcwal = src >= 0 ? (uwalltype *)&wall[src] : &nullwall;
+    auto const srcwal = src >= 0 ? (uwallptr_t)&wall[src] : &nullwall;
 
     memset(&nullwall, 0, sizeof(nullwall));
     nullwall.yrepeat = 8;
@@ -2466,7 +2484,7 @@ static void updatesprite1(int16_t i)
 
 #ifdef YAX_ENABLE
 // highlighted OR grayed-out sectors:
-static uint8_t hlorgraysectbitmap[MAXSECTORS>>3];
+static uint8_t hlorgraysectbitmap[(MAXSECTORS+7)>>3];
 static int32_t ask_above_or_below(void);
 #else
 # define hlorgraysectbitmap hlsectorbitmap
@@ -2599,7 +2617,7 @@ static int32_t backup_drawn_walls(int32_t restore)
             if (newnumwalls <= numwalls)  // shouldn't happen
                 return 2;
 
-            Bfree(tmpwall);
+            Xfree(tmpwall);
             tmpwall = (uwalltype *)Xmalloc((newnumwalls-numwalls) * sizeof(walltype));
 
             ovh.bak_wallsdrawn = newnumwalls-numwalls;
@@ -2661,11 +2679,11 @@ void reset_highlight(void)  // walls and sprites
 }
 
 #ifdef YAX_ENABLE
-static int32_t collnumsects[2];
+static int16_t collnumsects[2];
 static int16_t collsectlist[2][MAXSECTORS];
-static uint8_t collsectbitmap[2][MAXSECTORS>>3];
+static uint8_t collsectbitmap[2][(MAXSECTORS+7)>>3];
 
-static void collect_sectors1(int16_t *sectlist, uint8_t *sectbitmap, int32_t *numsectptr,
+static void collect_sectors1(int16_t *sectlist, uint8_t *sectbitmap, int16_t *numsectptr,
                              int16_t startsec, int32_t alsoyaxnext, int32_t alsoonw)
 {
     int32_t j, startwall, endwall, sectcnt;
@@ -2750,8 +2768,8 @@ static int32_t sectors_components(int16_t hlsectcnt, const int16_t *hlsector, in
 
 static int cmpgeomwal1(const void *w1, const void *w2)
 {
-    uwalltype const * const wal1 = (uwalltype *)&wall[B_UNBUF16(w1)];
-    uwalltype const * const wal2 = (uwalltype *)&wall[B_UNBUF16(w2)];
+    auto const wal1 = (uwallptr_t)&wall[B_UNBUF16(w1)];
+    auto const wal2 = (uwallptr_t)&wall[B_UNBUF16(w2)];
 
     if (wal1->x == wal2->x)
         return wal1->y - wal2->y;
@@ -3038,32 +3056,29 @@ void inflineintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
                       int32_t *intx, int32_t *inty, int32_t *sign12, int32_t *sign34)
 {
     //p1 to p2 is a line segment
-    int64_t topt, topu, t;
 
-    int64_t x21 = x2-x1;
-    int64_t x34 = x3-x4;
-    int64_t y21 = y2-y1;
-    int64_t y34 = y3-y4;
-    int64_t bot = x21*y34 - y21*x34;
+    int64_t const x21 = x2-x1;
+    int64_t const x34 = x3-x4;
+    int64_t const y21 = y2-y1;
+    int64_t const y34 = y3-y4;
+    int64_t const bot = x21*y34 - y21*x34;
 
     if (EDUKE32_PREDICT_FALSE(bot == 0))
     {
         *sign12 = *sign34 = 0;
         return;
     }
-    else
-    {
-        int64_t const x31 = x3 - x1;
-        int64_t const y31 = y3 - y1;
 
-        topt = x31 * y34 - y31 * x34;
-        topu = x21 * y31 - y21 * x31;
-    }
+    int64_t const x31 = x3-x1;
+    int64_t const y31 = y3-y1;
 
-    t = (topt * (1 << 24)) / bot;
+    int64_t const topt = x31*y34 - y31*x34;
+    int64_t const topu = x21*y31 - y21*x31;
 
-    *intx = x1 + ((x21 * t) >> 24);
-    *inty = y1 + ((y21 * t) >> 24);
+    int64_t const t = tabledivide64_noinline(topt*(1<<24), bot);
+
+    *intx = x1 + ((x21*t)>>24);
+    *inty = y1 + ((y21*t)>>24);
 
     *sign12 = topt < 0 ? -1 : 1;
     *sign34 = topu < 0 ? -1 : 1;
@@ -3309,7 +3324,7 @@ static void drawspritelabel(int i)
         return;
 
     // KEEPINSYNC drawscreen_drawsprite()
-    uspritetype const * s = (uspritetype *)&sprite[i];
+    uspriteptr_t s = (uspriteptr_t)&sprite[i];
     uint8_t const spritecol = spritecol2d[s->picnum][(s->cstat&1)];
     int col = spritecol ? editorcolors[spritecol] : editorGet2dSpriteColor(i);
     int const blocking = s->cstat & 1;
@@ -4390,11 +4405,11 @@ void overheadeditor(void)
                 for (i=0; i<highlightsectorcnt; i++)
                 {
                     for (WALLS_OF_SECTOR(highlightsector[i], j))
-                        rotatepoint(da, *(vec2_t *)&wall[j], tsign&2047, (vec2_t *)&wall[j].x);
+                        rotatepoint(da, wall[j].pos, tsign&2047, &wall[j].pos);
 
                     for (j=headspritesect[highlightsector[i]]; j != -1; j=nextspritesect[j])
                     {
-                        rotatepoint(da, *(vec2_t *)&sprite[j], tsign&2047, (vec2_t *)&sprite[j].x);
+                        rotatepoint(da, sprite[j].pos_as_vec2, tsign&2047, &sprite[j].pos_as_vec2);
                         sprite[j].ang = (sprite[j].ang+tsign)&2047;
                     }
                 }
@@ -4986,8 +5001,7 @@ rotate_hlsect_out:
                     for (WALLS_OF_SECTOR(dstsect, k))
                     {
                         vec2_t pint;
-                        if (lineintersect2v((vec2_t *)&wall[i], (vec2_t *)&wall[j],
-                                                (vec2_t *)&wall[k], (vec2_t *)&POINT2(k), &pint))
+                        if (lineintersect2v(&wall[i].pos, &wall[j].pos, &wall[k].pos, &POINT2(k).pos, &pint))
                         {
                             message("Loop lines must not intersect any destination sector's walls");
                             goto end_yax;
@@ -5309,7 +5323,7 @@ end_yax: ;
                     // didmakered: 'bad'!
                     int32_t didmakered = (highlightsectorcnt<0) || eitherCTRL, hadouterpoint=0;
 #ifdef YAX_ENABLE
-                    for (i=0; i<MAXSECTORS>>3; i++)
+                    for (i=0; i<(MAXSECTORS+7)>>3; i++)
                         hlorgraysectbitmap[i] = hlsectorbitmap[i]|graysectbitmap[i];
 #endif
                     for (i=0; i<highlightsectorcnt; i++)
@@ -5477,8 +5491,8 @@ end_yax: ;
                                                  (numwalls-begwalltomove)*sizeof(walltype));
                                         Bmemcpy(&wall[begwalltomove], tmpwall, n*sizeof(walltype));
 
-                                        Bfree(tmpwall);
-                                        Bfree(tmponw);
+                                        Xfree(tmpwall);
+                                        Xfree(tmponw);
                                     }
                                     numwalls = newnumwalls;
                                     newnumwalls = -1;
@@ -5538,7 +5552,7 @@ end_autoredwall:
 #ifdef YAX_ENABLE
                     // home: ceilings, end: floors
                     int32_t fb, bunchsel = keystatus[sc_End] ? 1 : (keystatus[sc_Home] ? 0 : -1);
-                    uint8_t bunchbitmap[YAX_MAXBUNCHES>>3];
+                    uint8_t bunchbitmap[(YAX_MAXBUNCHES+7)>>3];
                     Bmemset(bunchbitmap, 0, sizeof(bunchbitmap));
 #endif
                     if (!m32_sideview)
@@ -5863,7 +5877,7 @@ end_after_dragging:
                             vec.z = sprite[daspr].z;
                             if (setspritez(daspr, &vec) == -1 && osec>=0)
                             {
-                                updatesectorbreadth(dax, day, &nsec);
+                                updatesector(dax, day, &nsec);
 
                                 if (nsec >= 0)
                                 {
@@ -6144,7 +6158,7 @@ end_point_dragging:
 
                 int32_t numouterwalls[2] = {0,0}, numowals;
                 static int16_t outerwall[2][MAXWALLS];
-                const uwalltype *wal0, *wal1, *wal0p2, *wal1p2;
+                uwallptr_t wal0, wal1, wal0p2, wal1p2;
 
                 // join sector ceilings/floors to a new bunch
                 if (numyaxbunches==YAX_MAXBUNCHES)
@@ -6238,11 +6252,11 @@ end_point_dragging:
 
                 for (k=0; k<numowals; k++)
                 {
-                    wal0 = (uwalltype *)&wall[outerwall[0][k]];
-                    wal1 = (uwalltype *)&wall[outerwall[1][k]];
+                    wal0 = (uwallptr_t)&wall[outerwall[0][k]];
+                    wal1 = (uwallptr_t)&wall[outerwall[1][k]];
 
-                    wal0p2 = (uwalltype *)&wall[wal0->point2];
-                    wal1p2 = (uwalltype *)&wall[wal1->point2];
+                    wal0p2 = (uwallptr_t)&wall[wal0->point2];
+                    wal1p2 = (uwallptr_t)&wall[wal1->point2];
 
                     if (k==0)
                     {
@@ -6334,7 +6348,7 @@ end_point_dragging:
                     if (onwisvalid())
                     {
                         static int16_t ocollsectlist[MAXSECTORS];
-                        static uint8_t tcollbitmap[MAXSECTORS>>3];
+                        static uint8_t tcollbitmap[(MAXSECTORS+7)>>3];
                         int16_t ocollnumsects=collnumsects[movestat], tmpsect;
 
                         Bmemcpy(ocollsectlist, collsectlist[movestat], ocollnumsects*sizeof(int16_t));
@@ -6463,7 +6477,7 @@ end_point_dragging:
                     }
                 }
 
-                Bfree(origframe);
+                Xfree(origframe);
             }
             else
             {
@@ -7675,11 +7689,10 @@ end_space_handling:
 
                             vec2_t pint;
 
-                            if (!lineintersect2v((vec2_t *)&wall[j], (vec2_t *)&POINT2(j),
-                                                 &point[i], &point[i+1], &pint))
+                            if (!lineintersect2v(&wall[j].pos, &POINT2(j).pos, &point[i], &point[i + 1], &pint))
                                 continue;
 
-                            if (vec2eq(&pint, (vec2_t *)&wall[j]) || vec2eq(&pint, (vec2_t *)&POINT2(j)))
+                            if (vec2eq(&pint, &wall[j].pos) || vec2eq(&pint, &POINT2(j).pos))
                                 continue;
 
                             touchedwall[j>>3] |= (1<<(j&7));
@@ -7759,7 +7772,7 @@ end_batch_insert_points:
 
 #ifdef YAX_ENABLE
             int16_t cb, fb;
-            uint8_t bunchbitmap[YAX_MAXBUNCHES>>3];
+            uint8_t bunchbitmap[(YAX_MAXBUNCHES+7)>>3];
             Bmemset(bunchbitmap, 0, sizeof(bunchbitmap));
 #endif
             keystatus[sc_Delete] = 0;
@@ -7824,7 +7837,7 @@ end_batch_insert_points:
                     printmessage16("Sector deleted.");
                 }
 
-                Bfree(origframe);
+                Xfree(origframe);
 
 #ifdef YAX_ENABLE
                 for (j=0; j<numsectors; j++)
@@ -9029,6 +9042,10 @@ static int32_t deletesector(int16_t sucksect)
         if (wall[i].nextwall >= startwall)
             wall[i].nextsector--;
 
+    // cursectnum will exceed numsectors when the arrow position is inside the last sector in the map and that sector is removed
+    if (cursectnum > numsectors)
+        cursectnum = -1;
+
     return 0;
 }
 
@@ -9144,6 +9161,8 @@ void fixrepeats(int16_t i)
     int32_t day = wall[i].yrepeat;
 
     wall[i].xrepeat = clamp(mulscale10(dist,day), 1, 255);
+
+    asksave = 1;
 }
 
 uint32_t getlenbyrep(int32_t len, int32_t repeat)
@@ -11011,16 +11030,16 @@ void test_map(int32_t mode)
         char const *param = " -map " PLAYTEST_MAPNAME " -noinstancechecking";
         char current_cwd[BMAX_PATH];
         int32_t slen = 0;
-        BFILE *fp;
+        buildvfs_FILE fp;
 
-        if ((program_origcwd[0] == '\0') || !getcwd(current_cwd, BMAX_PATH))
+        if ((program_origcwd[0] == '\0') || !buildvfs_getcwd(current_cwd, BMAX_PATH))
             current_cwd[0] = '\0';
         else // Before we check if file exists, for the case there's no absolute path.
-            Bchdir(program_origcwd);
+            buildvfs_chdir(program_origcwd);
 
-        fp = fopen(game_executable, "rb"); // File exists?
+        fp = buildvfs_fopen_read(game_executable); // File exists?
         if (fp != NULL)
-            fclose(fp);
+            buildvfs_fclose(fp);
         else
         {
             char const * lastslash = (char const *)Bstrrchr(mapster32_fullpath, '/');
@@ -11039,7 +11058,7 @@ void test_map(int32_t mode)
         }
 
         if (current_cwd[0] != '\0') // Temporarily changing back,
-            Bchdir(current_cwd);     // after checking if file exists.
+            buildvfs_chdir(current_cwd);     // after checking if file exists.
 
         if (testplay_addparam)
             slen = Bstrlen(testplay_addparam);
@@ -11085,10 +11104,10 @@ void test_map(int32_t mode)
 #else
         if (current_cwd[0] != '\0')
         {
-            Bchdir(program_origcwd);
+            buildvfs_chdir(program_origcwd);
             if (system(fullparam))
                 message("Error launching the game!");
-            Bchdir(current_cwd);
+            buildvfs_chdir(current_cwd);
         }
         else system(fullparam);
 #endif
@@ -11096,7 +11115,7 @@ void test_map(int32_t mode)
         mouseInit();
         clearkeys();
 
-        Bfree(fullparam);
+        Xfree(fullparam);
     }
     else
         printmessage16("Position must be in valid player space to test map!");

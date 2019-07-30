@@ -167,7 +167,7 @@
 # define EXTERN_INLINE_HEADER extern __fastcall
 #endif
 
-#if defined __GNUC__ || __has_builtin(__builtin_expect)
+#if defined(__OPTIMIZE__) && (defined __GNUC__ || __has_builtin(__builtin_expect))
 #define EDUKE32_PREDICT_TRUE(x)       __builtin_expect(!!(x),1)
 #define EDUKE32_PREDICT_FALSE(x)     __builtin_expect(!!(x),0)
 #else
@@ -232,6 +232,16 @@
 #else
 # define ASMSYM(x) x
 #endif
+
+#if defined __cplusplus
+# define STATIC_CAST_OP(t) static_cast<t>
+# define REINTERPRET_CAST_OP(t) reinterpret_cast<t>
+#else
+# define STATIC_CAST_OP(t) (t)
+# define REINTERPRET_CAST_OP(t) (t)
+#endif
+#define STATIC_CAST(t, v) (STATIC_CAST_OP(t)(v))
+#define REINTERPRET_CAST(t, v) (REINTERPRET_CAST_OP(t)(v))
 
 #if defined __cplusplus && (__cplusplus >= 201103L || __has_feature(cxx_constexpr) || EDUKE32_MSVC_PREREQ(1900))
 # define HAVE_CONSTEXPR
@@ -395,21 +405,21 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 # define _USE_MATH_DEFINES
 #endif
 
-#if !defined _MSC_VER || defined __cplusplus
-# include <inttypes.h>
-# include <stdint.h>
-#else
-# include "msvc/inttypes.h" // from http://code.google.com/p/msinttypes/
-#endif
+#include <inttypes.h>
+#include <stdint.h>
 
 #include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
+#ifndef USE_PHYSFS
 #include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
+#if !(defined _WIN32 && defined __clang__)
 #include <float.h>
+#endif
 #include <math.h>
 
 #include <ctype.h>
@@ -419,10 +429,13 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 #include <assert.h>
 
 #ifdef __cplusplus
+# include <limits>
 # if CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1800)
 #  include <algorithm>
 #  include <functional>
 #  include <type_traits>
+// we need this because MSVC does not properly identify C++11 support
+#  define HAVE_CXX11_HEADERS
 # endif
 #endif
 
@@ -432,6 +445,7 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 # include <malloc.h>
 #endif
 
+#ifndef USE_PHYSFS
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -441,6 +455,7 @@ defined __x86_64__ || defined __amd64__ || defined _M_X64 || defined _M_IA64 || 
 # include <io.h>
 #else
 # include <unistd.h>
+#endif
 #endif
 
 
@@ -702,7 +717,7 @@ void eduke32_exit_return(int) ATTRIBUTE((noreturn));
 
 #ifdef __cplusplus
 
-# if CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1800)
+# ifdef HAVE_CXX11_HEADERS
 using std::is_integral;
 template <typename T>
 struct is_signed
@@ -721,7 +736,8 @@ using std::enable_if_t;
 using std::conditional_t;
 using std::make_signed_t;
 using std::make_unsigned_t;
-# elif CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1800)
+using std::remove_pointer_t;
+# elif defined HAVE_CXX11_HEADERS
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 template<bool B, class T, class F>
@@ -730,6 +746,13 @@ template <typename T>
 using make_signed_t = typename std::make_signed<T>::type;
 template <typename T>
 using make_unsigned_t = typename std::make_unsigned<T>::type;
+template <class T>
+using remove_pointer_t = typename std::remove_pointer<T>::type;
+# endif
+
+# ifdef HAVE_CXX11_HEADERS
+template <typename type, typename other_type_with_sign>
+using take_sign_t = conditional_t< is_signed<other_type_with_sign>::value, make_signed_t<type>, make_unsigned_t<type> >;
 # endif
 
 template <size_t size>
@@ -782,7 +805,7 @@ typedef size_t reg_t;
 typedef ssize_t sreg_t;
 #endif
 
-#if CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1800)
+#ifdef HAVE_CXX11_HEADERS
 using  native_t = typename integers_of_size<sizeof(reg_t)>::i;
 using unative_t = typename integers_of_size<sizeof(reg_t)>::u;
 #else
@@ -795,33 +818,50 @@ typedef struct MAY_ALIAS {
     int32_t x, y;
 } vec2_t;
 
-typedef struct {
+typedef struct MAY_ALIAS {
     int16_t x, y;
-} vec2s_t;
+} vec2_16_t;
+
+using vec2_16_t = vec2_16_t;
 
 typedef struct {
     uint32_t x, y;
 } vec2u_t;
-
-typedef struct MAY_ALIAS {
-    int32_t x, y, z;
-} vec3_t;
 
 typedef struct {
     float x, y;
 } vec2f_t;
 
 typedef struct {
-    union { float x; float d; };
-    union { float y; float u; };
-    union { float z; float v; };
+    double x, y;
+} vec2d_t;
+
+typedef struct MAY_ALIAS {
+    union {
+        struct { int32_t x, y, z; };
+        vec2_t  vec2;
+    };
+} vec3_t;
+
+typedef struct MAY_ALIAS {
+    union {
+        struct { int16_t x, y, z; };
+        vec2_16_t vec2;
+    };
+} vec3_16_t;
+
+typedef struct {
+    union {
+        struct {
+            union { float x, d; };
+            union { float y, u; };
+            union { float z, v; };
+        };
+        vec2f_t vec2;
+    };
 } vec3f_t;
 
 EDUKE32_STATIC_ASSERT(sizeof(vec3f_t) == sizeof(float) * 3);
-
-typedef struct {
-    double x, y;
-} vec2d_t;
 
 typedef struct {
     union { double x; double d; };
@@ -899,28 +939,23 @@ static FORCE_INLINE void *Baligned_alloc(const size_t alignment, const size_t si
 ////////// Pointer management //////////
 
 #define DO_FREE_AND_NULL(var) do { \
-    Bfree(var); (var) = NULL; \
+    Xfree(var); (var) = NULL; \
 } while (0)
 
 #define ALIGNED_FREE_AND_NULL(var) do { \
-    Baligned_free(var); (var) = NULL; \
-} while (0)
-
-#define MAYBE_FCLOSE_AND_NULL(fileptr) do { \
-    if (fileptr) { Bfclose(fileptr); fileptr=NULL; } \
+    Xaligned_free(var); (var) = NULL; \
 } while (0)
 
 
 ////////// Data serialization //////////
 
-static FORCE_INLINE CONSTEXPR uint16_t B_SWAP16(uint16_t value)
+static FORCE_INLINE CONSTEXPR uint16_t B_SWAP16_impl(uint16_t value)
 {
     return
         ((value & 0xFF00u) >> 8u) |
         ((value & 0x00FFu) << 8u);
 }
-
-static FORCE_INLINE CONSTEXPR uint32_t B_SWAP32(uint32_t value)
+static FORCE_INLINE CONSTEXPR uint32_t B_SWAP32_impl(uint32_t value)
 {
     return
         ((value & 0xFF000000u) >> 24u) |
@@ -928,8 +963,7 @@ static FORCE_INLINE CONSTEXPR uint32_t B_SWAP32(uint32_t value)
         ((value & 0x0000FF00u) <<  8u) |
         ((value & 0x000000FFu) << 24u);
 }
-
-static FORCE_INLINE CONSTEXPR uint64_t B_SWAP64(uint64_t value)
+static FORCE_INLINE CONSTEXPR uint64_t B_SWAP64_impl(uint64_t value)
 {
     return
       ((value & 0xFF00000000000000ULL) >> 56ULL) |
@@ -942,10 +976,48 @@ static FORCE_INLINE CONSTEXPR uint64_t B_SWAP64(uint64_t value)
       ((value & 0x00000000000000FFULL) << 56ULL);
 }
 
-// The purpose of these functions, as opposed to macros, is to prevent them from being used as lvalues.
+/* The purpose of B_PASS* as functions, as opposed to macros, is to prevent them from being used as lvalues. */
+#if CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1900)
+template <typename T>
+static FORCE_INLINE CONSTEXPR take_sign_t<int16_t, T> B_SWAP16(T x)
+{
+    return static_cast< take_sign_t<int16_t, T> >(B_SWAP16_impl(static_cast<uint16_t>(x)));
+}
+template <typename T>
+static FORCE_INLINE CONSTEXPR take_sign_t<int32_t, T> B_SWAP32(T x)
+{
+    return static_cast< take_sign_t<int32_t, T> >(B_SWAP32_impl(static_cast<uint32_t>(x)));
+}
+template <typename T>
+static FORCE_INLINE CONSTEXPR take_sign_t<int64_t, T> B_SWAP64(T x)
+{
+    return static_cast< take_sign_t<int64_t, T> >(B_SWAP64_impl(static_cast<uint64_t>(x)));
+}
+
+template <typename T>
+static FORCE_INLINE CONSTEXPR take_sign_t<int16_t, T> B_PASS16(T x)
+{
+    return static_cast< take_sign_t<int16_t, T> >(x);
+}
+template <typename T>
+static FORCE_INLINE CONSTEXPR take_sign_t<int32_t, T> B_PASS32(T x)
+{
+    return static_cast< take_sign_t<int32_t, T> >(x);
+}
+template <typename T>
+static FORCE_INLINE CONSTEXPR take_sign_t<int64_t, T> B_PASS64(T x)
+{
+    return static_cast< take_sign_t<int64_t, T> >(x);
+}
+#else
+#define B_SWAP16(x) B_SWAP16_impl(x)
+#define B_SWAP32(x) B_SWAP32_impl(x)
+#define B_SWAP64(x) B_SWAP64_impl(x)
+
 static FORCE_INLINE CONSTEXPR uint16_t B_PASS16(uint16_t const x) { return x; }
 static FORCE_INLINE CONSTEXPR uint32_t B_PASS32(uint32_t const x) { return x; }
 static FORCE_INLINE CONSTEXPR uint64_t B_PASS64(uint64_t const x) { return x; }
+#endif
 
 #if B_LITTLE_ENDIAN == 1
 # define B_LITTLE64(x) B_PASS64(x)
@@ -1053,7 +1125,7 @@ ABSTRACT_DECL float fclamp2(float in, float min, float max) { return in >= max ?
 ////////// Mathematical operations //////////
 
 #ifdef __cplusplus
-#if CXXSTD >= 2011 || EDUKE32_MSVC_PREREQ(1800)
+#ifdef HAVE_CXX11_HEADERS
 template <typename T>
 struct DivResult
 {
@@ -1089,8 +1161,34 @@ CONSTEXPR size_t logbasenegative(T n)
 
 #endif
 
+////////// Bitfield manipulation //////////
+
+static FORCE_INLINE void bitmap_set(uint8_t *const ptr, int const n) { ptr[n >> 3] |= 1 << (n & 7); }
+static FORCE_INLINE void bitmap_clear(uint8_t *const ptr, int const n) { ptr[n >> 3] &= ~(1 << (n & 7)); }
+static FORCE_INLINE CONSTEXPR char bitmap_test(uint8_t const *const ptr, int const n) { return ptr[n >> 3] & (1 << (n & 7)); }
 
 ////////// Utility functions //////////
+
+// breadth-first search helpers
+template <typename T>
+void bfirst_search_init(T *const list, uint8_t *const bitmap, T *const eltnumptr, int const maxelts, int const firstelt)
+{
+    Bmemset(bitmap, 0, (maxelts+7)>>3);
+
+    list[0] = firstelt;
+    bitmap_set(bitmap, firstelt);
+    *eltnumptr = 1;
+}
+
+template <typename T>
+void bfirst_search_try(T *const list, uint8_t *const bitmap, T *const eltnumptr, int const elt)
+{
+    if (!bitmap_test(bitmap, elt))
+    {
+        bitmap_set(bitmap, elt);
+        list[(*eltnumptr)++] = elt;
+    }
+}
 
 #if RAND_MAX == 32767
 static FORCE_INLINE uint16_t system_15bit_rand(void) { return (uint16_t)rand(); }
@@ -1119,7 +1217,6 @@ static inline void append_ext_UNSAFE(char *outbuf, const char *ext)
         Bstrcpy(p, ext);
 }
 
-
 /* Begin dependence on compat.o object. */
 
 
@@ -1128,6 +1225,7 @@ extern "C" {
 #endif
 
 
+#ifndef USE_PHYSFS
 ////////// Directory enumeration //////////
 
 struct Bdirent
@@ -1144,6 +1242,7 @@ typedef void BDIR;
 BDIR *Bopendir(const char *name);
 struct Bdirent *Breaddir(BDIR *dir);
 int32_t Bclosedir(BDIR *dir);
+#endif
 
 
 ////////// Paths //////////
@@ -1180,8 +1279,6 @@ char *Bstrupr(char *);
 
 ////////// Miscellaneous //////////
 
-int32_t Bfilelength(int32_t fd);
-
 uint32_t Bgetsysmemsize(void);
 
 
@@ -1196,19 +1293,19 @@ void *handle_memerr(void *);
 static FORCE_INLINE char *xstrdup(const char *s)
 {
     char *ptr = Bstrdup(s);
-    return (ptr == NULL) ? (char *)handle_memerr(ptr) : ptr;
+    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : (char *)handle_memerr(ptr);
 }
 
 static FORCE_INLINE void *xmalloc(const bsize_t size)
 {
     void *ptr = Bmalloc(size);
-    return (ptr == NULL) ? handle_memerr(ptr) : ptr;
+    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : handle_memerr(ptr);
 }
 
 static FORCE_INLINE void *xcalloc(const bsize_t nmemb, const bsize_t size)
 {
     void *ptr = Bcalloc(nmemb, size);
-    return (ptr == NULL) ? handle_memerr(ptr) : ptr;
+    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : handle_memerr(ptr);
 }
 
 static FORCE_INLINE void *xrealloc(void * const ptr, const bsize_t size)
@@ -1219,34 +1316,36 @@ static FORCE_INLINE void *xrealloc(void * const ptr, const bsize_t size)
     //  - ptr == NULL makes realloc() behave like malloc()
     //  - size == 0 make it behave like free() if ptr != NULL
     // Since we want to catch an out-of-mem in the first case, this leaves:
-    return (newptr == NULL && size != 0) ? handle_memerr(ptr) : newptr;
+    return (EDUKE32_PREDICT_TRUE(newptr != NULL || size == 0)) ? newptr: handle_memerr(ptr);
 }
+
+static FORCE_INLINE void xfree(void *const ptr) { Bfree(ptr); }
+
+static FORCE_INLINE void xaligned_free(void *const ptr) { Baligned_free(ptr); }
 
 #if !defined NO_ALIGNED_MALLOC
 static FORCE_INLINE void *xaligned_alloc(const bsize_t alignment, const bsize_t size)
 {
     void *ptr = Baligned_alloc(alignment, size);
-    return (ptr == NULL) ? handle_memerr(ptr) : ptr;
+    return (EDUKE32_PREDICT_TRUE(ptr != NULL)) ? ptr : handle_memerr(ptr);
 }
 #else
 # define xaligned_alloc(alignment, size) xmalloc(size)
 #endif
 
 #ifdef DEBUGGINGAIDS
-# define EDUKE32_PRE_XALLLOC xalloc_set_location(__LINE__, __FILE__, EDUKE32_FUNCTION)
-# define Xstrdup(s) (EDUKE32_PRE_XALLLOC, xstrdup(s))
-# define Xmalloc(size) (EDUKE32_PRE_XALLLOC, xmalloc(size))
-# define Xcalloc(nmemb, size) (EDUKE32_PRE_XALLLOC, xcalloc(nmemb, size))
-# define Xrealloc(ptr, size) (EDUKE32_PRE_XALLLOC, xrealloc(ptr, size))
-# define Xaligned_alloc(alignment, size) (EDUKE32_PRE_XALLLOC, xaligned_alloc(alignment, size))
+# define EDUKE32_PRE_XALLOC xalloc_set_location(__LINE__, __FILE__, EDUKE32_FUNCTION),
 #else
-# define Xstrdup xstrdup
-# define Xmalloc xmalloc
-# define Xcalloc xcalloc
-# define Xrealloc xrealloc
-# define Xaligned_alloc xaligned_alloc
+# define EDUKE32_PRE_XALLOC
 #endif
 
+#define Xstrdup(s)    (EDUKE32_PRE_XALLOC xstrdup(s))
+#define Xmalloc(size) (EDUKE32_PRE_XALLOC xmalloc(size))
+#define Xcalloc(nmemb, size) (EDUKE32_PRE_XALLOC xcalloc(nmemb, size))
+#define Xrealloc(ptr, size)  (EDUKE32_PRE_XALLOC xrealloc(ptr, size))
+#define Xaligned_alloc(alignment, size) (EDUKE32_PRE_XALLOC xaligned_alloc(alignment, size))
+#define Xfree(ptr) (EDUKE32_PRE_XALLOC xfree(ptr))
+#define Xaligned_free(ptr) (EDUKE32_PRE_XALLOC xaligned_free(ptr))
 #ifdef __cplusplus
 }
 #endif

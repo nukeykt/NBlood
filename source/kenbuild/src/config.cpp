@@ -6,10 +6,39 @@
 #include "editor.h"
 #include "osd.h"
 
+#include "game.h"
+
 #ifdef RENDERTYPEWIN
 #include "winlayer.h"
 #endif
 #include "baselayer.h"
+
+#if defined RENDERTYPESDL && defined SDL_TARGET && SDL_TARGET > 1
+# include "sdl_inc.h"
+#endif
+
+static void Ken_SetDefaults()
+{
+#if defined RENDERTYPESDL && SDL_MAJOR_VERSION > 1
+    uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
+    if (inited == 0)
+        SDL_Init(SDL_INIT_VIDEO);
+    else if (!(inited & SDL_INIT_VIDEO))
+        SDL_InitSubSystem(SDL_INIT_VIDEO);
+
+    SDL_DisplayMode dm;
+    if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
+    {
+        xdimgame = xdim2d = dm.w;
+        ydimgame = ydim2d = dm.h;
+    }
+    else
+#endif
+    {
+        xdimgame = xdim2d = 1024;
+        ydimgame = ydim2d = 768;
+    }
+}
 
 static int vesares[13][2] = {{320,200},{360,200},{320,240},{360,240},{320,400},
                              {360,400},{640,350},{640,400},{640,480},{800,600},
@@ -54,10 +83,6 @@ static int readconfig(BFILE *fp, const char *key, char *value, unsigned len)
     }
 }
 
-extern short brightness;
-extern int fullscreen;
-extern unsigned char option[8];
-extern unsigned char keys[NUMBUILDKEYS];
 double msens;
 
 /*
@@ -100,6 +125,8 @@ double msens;
 
 int Ken_loadsetup(const char *fn)
 {
+    Ken_SetDefaults();
+
     BFILE *fp;
 #define VL 32
     char val[VL];
@@ -116,11 +143,11 @@ int Ken_loadsetup(const char *fn)
     }
     if (readconfig(fp, "xdim", val, VL) > 0) xdimgame = xdim2d = Batoi(val);
     if (readconfig(fp, "ydim", val, VL) > 0) ydimgame = xdim2d = Batoi(val);
-    if (readconfig(fp, "samplerate", val, VL) > 0) option[7] = (Batoi(val) & 0x0f) << 4;
+    if (readconfig(fp, "samplerate", val, VL) > 0) option[7] = (option[7] & (~(0x0f<<4))) |(Batoi(val) & 0x0f) << 4;
     if (readconfig(fp, "music", val, VL) > 0) { if (Batoi(val) != 0) option[2] = 1; else option[2] = 0; }
     if (readconfig(fp, "mouse", val, VL) > 0) { if (Batoi(val) != 0) option[3] = 1; else option[3] = 0; }
     if (readconfig(fp, "bpp", val, VL) > 0) bppgame = Batoi(val);
-    if (readconfig(fp, "renderer", val, VL) > 0) { i = Batoi(val); setrendermode(i); }
+    if (readconfig(fp, "renderer", val, VL) > 0) { i = Batoi(val); videoSetRenderMode(i); }
     if (readconfig(fp, "brightness", val, VL) > 0) brightness = min(max(Batoi(val),0),15);
 
 #ifdef RENDERTYPEWIN

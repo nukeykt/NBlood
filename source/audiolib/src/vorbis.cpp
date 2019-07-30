@@ -78,21 +78,21 @@ static void MV_GetVorbisCommentLoops(VoiceNode *voice, vorbis_comment *vc)
             const size_t field = value - entry;
             value += 1;
 
-            for (size_t t = 0; t < loopStartTagCount && vc_loopstart == NULL; ++t)
+            for (int t = 0; t < loopStartTagCount && vc_loopstart == NULL; ++t)
             {
                 auto tag = loopStartTags[t];
                 if (field == Bstrlen(tag) && Bstrncasecmp(entry, tag, field) == 0)
                     vc_loopstart = value;
             }
 
-            for (size_t t = 0; t < loopEndTagCount && vc_loopend == NULL; ++t)
+            for (int t = 0; t < loopEndTagCount && vc_loopend == NULL; ++t)
             {
                 auto tag = loopEndTags[t];
                 if (field == Bstrlen(tag) && Bstrncasecmp(entry, tag, field) == 0)
                     vc_loopend = value;
             }
 
-            for (size_t t = 0; t < loopLengthTagCount && vc_looplength == NULL; ++t)
+            for (int t = 0; t < loopLengthTagCount && vc_looplength == NULL; ++t)
             {
                 auto tag = loopLengthTags[t];
                 if (field == Bstrlen(tag) && Bstrncasecmp(entry, tag, field) == 0)
@@ -141,14 +141,14 @@ static size_t read_vorbis(void *ptr, size_t size, size_t nmemb, void *datasource
     if (vorb->length == vorb->pos)
         return 0;
 
-    size_t nread = 0;
+    int32_t nread = 0;
 
     for (; nmemb > 0; nmemb--, nread++)
     {
-        size_t bytes = vorb->length - vorb->pos;
+        int32_t bytes = vorb->length - vorb->pos;
 
-        if (size < bytes)
-            bytes = size;
+        if ((signed)size < bytes)
+            bytes = (int32_t)size;
 
         memcpy(ptr, (uint8_t *)vorb->ptr + vorb->pos, bytes);
         vorb->pos += bytes;
@@ -301,12 +301,12 @@ static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
         vd->lastbitstream = bitstream;
     }
 
-    bytesread /= 2 * voice->channels;
+    uint32_t const samples = bytesread / ((voice->bits/8) * voice->channels);
 
     voice->position = 0;
     voice->sound = vd->block;
     voice->BlockLength = 0;
-    voice->length = bytesread << 16;  // ???: Should the literal 16 be voice->bits?
+    voice->length = samples << 16;
 
 #ifdef GEKKO
     // If libtremor had the three additional ov_read() parameters that libvorbis has,
@@ -368,7 +368,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
         return MV_Error;
     }
 
-    auto vd = (vorbis_data *)calloc(1, sizeof(vorbis_data));
+    auto vd = (vorbis_data *)Xcalloc(1, sizeof(vorbis_data));
 
     if (!vd)
     {
@@ -386,7 +386,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
 
     if (status < 0)
     {
-        free(vd);
+        Xfree(vd);
         MV_Printf("MV_PlayVorbis: err %d\n", status);
         MV_SetErrorCode(MV_InvalidFile);
         return MV_Error;
@@ -397,7 +397,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
     if (!vi)
     {
         ov_clear(&vd->vf);
-        free(vd);
+        Xfree(vd);
         MV_SetErrorCode(MV_InvalidFile);
         return MV_Error;
     }
@@ -405,7 +405,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
     if (vi->channels != 1 && vi->channels != 2)
     {
         ov_clear(&vd->vf);
-        free(vd);
+        Xfree(vd);
         MV_SetErrorCode(MV_InvalidFile);
         return MV_Error;
     }
@@ -416,7 +416,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
     if (voice == NULL)
     {
         ov_clear(&vd->vf);
-        free(vd);
+        Xfree(vd);
         MV_SetErrorCode(MV_NoVoices);
         return MV_Error;
     }
@@ -460,10 +460,11 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
 
     auto vd = (vorbis_data *)voice->rawdataptr;
 
-    ov_clear(&vd->vf);
-    free(vd);
-
     voice->rawdataptr = 0;
+    voice->length = 0;
+    voice->sound = nullptr;
+    ov_clear(&vd->vf);
+    Xfree(vd);
 }
 #else
 #include "_multivc.h"

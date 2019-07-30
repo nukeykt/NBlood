@@ -10,7 +10,7 @@
 #define TILEPACKER_H_
 
 #define MAXTILESHEETS 64
-#define MAXPACKEDTILES MAXTILES+1
+#define MAXPACKEDTILES (MAXTILES+1)
 
 typedef struct
 {

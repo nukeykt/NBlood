@@ -40,7 +40,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "mytypes.h"
 #include "control.h"
 #include "function.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 #include "player.h"
 #include "jtags.h"
@@ -53,11 +53,11 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "menus.h"
 #include "interp.h"
 #include "sector.h"
+#include "config.h"
 
 static int OverlapDraw = FALSE;
 extern SWBOOL QuitFlag, LocationInfo, ConPanel, SpriteInfo, PauseKeySet;
 extern SWBOOL Voxel;
-extern char tempbuf[];
 extern char buffer[];
 SWBOOL DrawScreen;
 extern short f_c;
@@ -272,12 +272,11 @@ DoShadowFindGroundPoint(uspritetype * sp)
             loz = DoShadowFindGroundPoint(sp);
             hsp->cstat = bak_cstat;
         }
+        break;
     }
 
     case HIT_SECTOR:
-    {
-        return loz;
-    }
+        break;
 
     default:
         ASSERT(TRUE == FALSE);
@@ -285,7 +284,6 @@ DoShadowFindGroundPoint(uspritetype * sp)
     }
 
     return loz;
-
 }
 
 #if 0
@@ -448,8 +446,8 @@ DoShadows(uspritetype * tsp, int viewz)
 
     xrepeat = max(xrepeat - ground_dist - view_dist, 4);
     yrepeat = max(yrepeat - ground_dist - view_dist, 4);
-    xrepeat = min(xrepeat, 255);
-    yrepeat = min(yrepeat, 255);
+    xrepeat = min(xrepeat, short(255));
+    yrepeat = min(yrepeat, short(255));
 
     New->xrepeat = xrepeat;
     New->yrepeat = yrepeat;
@@ -1388,8 +1386,8 @@ void PrintLocationInfo(PLAYERp pp)
         i = totalclock;
         if (i != frameval[framecnt])
         {
-            sprintf(tempbuf, "FPS: %d", ((120 * AVERAGEFRAMES) / (i - frameval[framecnt])) + f_c);
-            printext256(x, y, 1, -1, tempbuf, 1);
+            sprintf(buffer, "FPS: %d", ((120 * AVERAGEFRAMES) / (i - frameval[framecnt])) + f_c);
+            printext256(x, y, 1, -1, buffer, 1);
             frameval[framecnt] = i;
         }
 
@@ -1493,16 +1491,16 @@ void PrintSpriteInfo(PLAYERp pp)
         }
         if (SpriteInfo > 1)
         {
-            sprintf(buffer, "POSX:%d", sp->x);
+            sprintf(buffer, "POSX:%d", TrackerCast(sp->x));
             printext256(x, y, 1, -1, buffer, 1);
             y += Y_STEP;
-            sprintf(buffer, "POSY:%d", sp->y);
+            sprintf(buffer, "POSY:%d", TrackerCast(sp->y));
             printext256(x, y, 1, -1, buffer, 1);
             y += Y_STEP;
-            sprintf(buffer, "POSZ:%d", sp->z);
+            sprintf(buffer, "POSZ:%d", TrackerCast(sp->z));
             printext256(x, y, 1, -1, buffer, 1);
             y += Y_STEP;
-            sprintf(buffer, "ANG:%d", (int32_t) sp->ang);
+            sprintf(buffer, "ANG:%d", TrackerCast(sp->ang));
             printext256(x, y, 1, -1, buffer, 1);
             y += Y_STEP;
         }
@@ -1541,15 +1539,13 @@ void SpriteSortList2D(int tx, int ty)
 
 int COVERsetgamemode(int mode, int xdim, int ydim, int bpp)
 {
-    extern int ScreenHeight, ScreenWidth, ScreenMode, ScreenBPP;
-
-
     ScreenHeight = ydim;
     ScreenWidth  = xdim;
     ScreenMode   = mode;
     ScreenBPP    = bpp;
 
-    return (int)setgamemode(mode,xdim,ydim,bpp);
+    // [JM] Should I be using upscalefactor here, or some SW equivalent to Duke's ud.detail? !CHECKME!
+    return (int)videoSetGameMode(mode,xdim,ydim,bpp,upscalefactor);
 }
 
 void CheatResChange(void)
@@ -1678,7 +1674,7 @@ void ScreenCaptureKeys(void)
     {
         KEY_PRESSED(KEYSC_F12) = 0;
         PauseAction();
-        screencapture("swcpxxxx.tga", KEY_PRESSED(KEYSC_LSHIFT) | KEY_PRESSED(KEYSC_RSHIFT));
+        videoCaptureScreenTGA("swcpxxxx.tga", KEY_PRESSED(KEYSC_LSHIFT) | KEY_PRESSED(KEYSC_RSHIFT));
         ResumeAction();
         PutStringInfo(Player + myconnectindex, "Screen Captured");
     }
@@ -2266,13 +2262,13 @@ drawscreen(PLAYERp pp)
 
     if (HelpInputMode)
     {
-        flushperms();
+        renderFlushPerms();
         // note - could put Order Info Pages at the top like this also
 
         rotatesprite(0,0,65536L,0,HelpPagePic[HelpPage],0,0,
                      (ROTATE_SPRITE_CORNER|ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_NON_MASK|ROTATE_SPRITE_IGNORE_START_MOST),
                      0, 0, xdim-1, ydim-1);
-        nextpage();
+        videoNextPage();
 
         return;
     }
@@ -2293,7 +2289,7 @@ drawscreen(PLAYERp pp)
     }
 #endif
 
-    if (getrendermode() >= 3)
+    if (videoGetRenderMode() >= REND_POLYMOST)
         RedrawScreen = TRUE;
 
     DrawScreen = TRUE;
@@ -2304,7 +2300,7 @@ drawscreen(PLAYERp pp)
         RedrawCompass = TRUE;
         RedrawScreen = FALSE;
         // get rid of all PERM sprites!
-        flushperms();
+        renderFlushPerms();
         // get rid of all PANF_KILL_AFTER_SHOW sprites!
         pFlushPerms(pp);
         SetBorder(pp,gs.BorderNum);
@@ -2424,7 +2420,7 @@ drawscreen(PLAYERp pp)
     }
 
     if (FAF_DebugView)
-        clearview(255);
+        videoClearViewableArea(255L);
 
     OverlapDraw = TRUE;
     DrawOverlapRoom(tx, ty, tz, tang, thoriz, tsectnum);
@@ -2445,7 +2441,7 @@ drawscreen(PLAYERp pp)
 
     analyzesprites(tx, ty, tz, FALSE);
     post_analyzesprites();
-    drawmasks();
+    renderDrawMasks();
 
     UpdatePanel();
 
@@ -2503,8 +2499,8 @@ drawscreen(PLAYERp pp)
 
         if (dimensionmode == 6)
         {
-            clearview(0L);
-            drawmapview(tx, ty, zoom, tang);
+            videoClearViewableArea(0L);
+            renderDrawMapView(tx, ty, zoom, tang);
         }
 
         // Draw the line map on top of texture 2d map or just stand alone
@@ -2559,7 +2555,7 @@ drawscreen(PLAYERp pp)
     else
         SecretInfo(pp);
 
-    nextpage();
+    videoNextPage();
 
 #if SYNC_TEST
     SyncStatMessage();
@@ -2693,7 +2689,7 @@ ScreenLoadSaveSetup(PLAYERp pp)
     ScreenTileLock();
 
     if (!waloff[SAVE_SCREEN_TILE])
-        allocache((intptr_t*)&waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, &walock[SAVE_SCREEN_TILE]);
+        cacheAllocateBlock((intptr_t*)&waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, &walock[SAVE_SCREEN_TILE]);
 
     tilesiz[SAVE_SCREEN_TILE].x = SAVE_SCREEN_XSIZE;
     tilesiz[SAVE_SCREEN_TILE].x = SAVE_SCREEN_YSIZE;
@@ -2708,13 +2704,13 @@ ScreenSaveSetup(PLAYERp pp)
 
     ScreenLoadSaveSetup(Player + myconnectindex);
 
-    setviewtotile(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
+    renderSetTarget(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
 
     ScreenSavePic = TRUE;
     drawscreen(Player + myconnectindex);
     ScreenSavePic = FALSE;
 
-    setviewback();
+    renderRestoreTarget();
 
     return SAVE_SCREEN_TILE;
 }

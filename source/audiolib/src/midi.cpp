@@ -1022,8 +1022,8 @@ void MIDI_MusicMix(char *buffer, int length)
         }
         if (_MIDI_PlayRoutine >= 0) _MIDI_MixTimer += _MIDI_PlayRoutine;
         OPL3_GenerateResampled(&OPLMusic::chip, tempbuf);
-        *buffer16++ = tempbuf[0];
-        *buffer16++ = tempbuf[1];
+        *buffer16++ = clamp(tempbuf[0]<<1, INT16_MIN, INT16_MAX);
+        *buffer16++ = clamp(tempbuf[1]<<1, INT16_MIN, INT16_MAX);
     }
 }
 

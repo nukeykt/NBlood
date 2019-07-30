@@ -27,11 +27,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "menus.h"
 #include "savegame.h"
 
+#include "vfs.h"
+
 #ifdef LUNATIC
 # include "lunatic_game.h"
 #endif
 
-static uint8_t precachehightile[2][MAXTILES>>3];
+static uint8_t precachehightile[2][(MAXTILES+7)>>3];
 static int32_t g_precacheCount;
 
 
@@ -467,7 +469,6 @@ void G_CacheMapData(void)
 
     uint32_t const cacheStartTime = timerGetTicks();
 
-    cacheAllSounds();
     cacheFlaggedTiles();
 
     for (int i=0; i<numwalls; i++)
@@ -644,7 +645,7 @@ void P_MoveToRandomSpawnPoint(int playerNum)
 
     p.opos = p.pos = g_playerSpawnPoints[i].pos;
 
-    p.bobpos     = *(vec2_t *)&p.pos;
+    p.bobpos     = p.pos_as_vec2;
     p.cursectnum = g_playerSpawnPoints[i].sect;
     p.q16ang     = fix16_from_int(g_playerSpawnPoints[i].ang);
 
@@ -675,7 +676,7 @@ void P_ResetMultiPlayer(int playerNum)
     P_MoveToRandomSpawnPoint(playerNum);
 
     a.bpos = p.opos = p.pos;
-    p.bobpos = *(vec2_t *)&p.pos;
+    p.bobpos = p.pos_as_vec2;
 
     *(vec3_t *)&s = p.pos;
 
@@ -1280,7 +1281,7 @@ static void prelevel(int g)
     P_PrepForNewLevel(0, g);
     G_SetupGlobalPsky();
 
-    VM_OnEvent(EVENT_PRELEVEL, -1, -1);
+    VM_OnEvent(EVENT_PRELEVEL);
 
     int missedCloudSectors = 0;
 
@@ -1332,7 +1333,7 @@ static void prelevel(int g)
 #if !defined LUNATIC
         A_LoadActor(i);
 #endif
-        VM_OnEvent(EVENT_LOADACTOR, i, -1);
+        VM_OnEvent(EVENT_LOADACTOR, i);
 
         A_MaybeProcessEffector(i);
     }
@@ -1478,7 +1479,7 @@ static void G_CollectSpawnPoints(int gameMode)
         auto &s     = sprite[i];
         auto &spawn = g_playerSpawnPoints[g_playerSpawnCnt];
 
-        spawn.pos  = *(vec3_t *)&s.x;
+        spawn.pos  = s.pos;
         spawn.ang  = s.ang;
         spawn.sect = s.sectnum;
 
@@ -1553,8 +1554,8 @@ static void G_CollectSpawnPoints(int gameMode)
         p.frag_ps = pindex;
 
         actor[i].owner = p.i = i;
-        actor[i].bpos = p.opos = p.pos = *(vec3_t *)&s.x;
-        p.bobpos                       = *(vec2_t *)&s.x;
+        actor[i].bpos = p.opos = p.pos = s.pos;
+        p.bobpos = s.pos_as_vec2;
 
         p.oq16ang = p.q16ang = fix16_from_int(s.ang);
 
@@ -1676,13 +1677,13 @@ void G_ResetTimers(bool saveMoveCnt)
 
 void G_ClearFIFO(void)
 {
-    clearbufbyte(&localInput, sizeof(input_t), 0L);
-    clearbufbyte(&inputfifo, sizeof(input_t) * MOVEFIFOSIZ * MAXPLAYERS, 0L);
+    localInput = {};
+    Bmemset(&inputfifo, 0, sizeof(input_t) * MOVEFIFOSIZ * MAXPLAYERS);
 
     for (int p = 0; p < MAXPLAYERS; ++p)
     {
-        if (g_player[p].inputBits != NULL)
-            Bmemset(g_player[p].inputBits, 0, sizeof(input_t));
+        if (g_player[p].input != NULL)
+            Bmemset(g_player[p].input, 0, sizeof(input_t));
         g_player[p].vote = g_player[p].gotvote = 0;
     }
 }
@@ -1789,11 +1790,11 @@ void G_SetupFilenameBasedMusic(char *nameBuf, const char *fileName, int levelNum
 
     for (auto & ext : exts)
     {
-        int32_t kFile;
+        buildvfs_kfd kFile;
 
         Bmemcpy(p+1, ext, Bstrlen(ext) + 1);
 
-        if ((kFile = kopen4loadfrommod(nameBuf, 0)) != -1)
+        if ((kFile = kopen4loadfrommod(nameBuf, 0)) != buildvfs_kfd_invalid)
         {
             kclose(kFile);
             realloc_copy(&g_mapInfo[levelNum].musicfn, nameBuf);
@@ -1801,7 +1802,26 @@ void G_SetupFilenameBasedMusic(char *nameBuf, const char *fileName, int levelNum
         }
     }
 
-    realloc_copy(&g_mapInfo[levelNum].musicfn, "dethtoll.mid");
+    char const * usermapMusic = g_mapInfo[MUS_USERMAP].musicfn;
+    if (usermapMusic != nullptr)
+        realloc_copy(&g_mapInfo[levelNum].musicfn, usermapMusic);
+}
+
+static void G_CheckIfStateless()
+{
+    for (bssize_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
+    {
+        map_t *const pMapInfo = &g_mapInfo[i];
+        if (pMapInfo->savedstate != nullptr)
+        {
+            // buildprint("G_CheckIfStateless: no ", ud.volume_number, " ", ud.level_number, "\n");
+            return;
+        }
+    }
+
+    // buildprint("G_CheckIfStateless: yes ", ud.volume_number, " ", ud.level_number, "\n");
+    ud.last_stateless_volume = ud.volume_number;
+    ud.last_stateless_level = ud.level_number;
 }
 
 int G_EnterLevel(int gameMode)
@@ -2014,6 +2034,8 @@ int G_EnterLevel(int gameMode)
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
 
+    G_CheckIfStateless();
+
     for (int TRAVERSE_CONNECT(i))
     {
         if (!VM_OnEventWithReturn(EVENT_ENTERLEVEL, g_player[i].ps->i, i, 0))
@@ -2065,7 +2087,7 @@ void G_FreeMapState(int levelNum)
             ALIGNED_FREE_AND_NULL(board.savedstate->arrays[j]);
     }
 #else
-    Bfree(board.savedstate->savecode);
+    Xfree(board.savedstate->savecode);
 #endif
 
     ALIGNED_FREE_AND_NULL(board.savedstate);

@@ -144,24 +144,24 @@ static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnu
 }
 static void Menu_DrawCursorLeft(int32_t x, int32_t y, int32_t z)
 {
-    if (IONMAIDEN) return;
+    if (FURY) return;
     Menu_DrawCursorCommon(x, y, z, VM_OnEventWithReturn(EVENT_MENUCURSORLEFT, -1, myconnectindex, SPINNINGNUKEICON+((totalclock>>3)%7)));
 }
 static void Menu_DrawCursorRight(int32_t x, int32_t y, int32_t z)
 {
-    if (IONMAIDEN) return;
+    if (FURY) return;
     Menu_DrawCursorCommon(x, y, z, VM_OnEventWithReturn(EVENT_MENUCURSORRIGHT, -1, myconnectindex, SPINNINGNUKEICON+6-((6+(totalclock>>3))%7)));
 }
-static void Menu_DrawCursorTextTile(int32_t x, int32_t y, int32_t h, int32_t picnum, vec2s_t const & siz, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
+static void Menu_DrawCursorTextTile(int32_t x, int32_t y, int32_t h, int32_t picnum, vec2_16_t const & siz, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
     vec2_t const adjsiz = { (siz.x>>1)<<16, siz.y<<16 };
     Menu_DrawCursorCommon(x + scale(adjsiz.x, h, adjsiz.y), y, divscale16(h, adjsiz.y), picnum, ydim_upper, ydim_lower);
 }
 static void Menu_DrawCursorText(int32_t x, int32_t y, int32_t h, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
-    vec2s_t const & siz = tilesiz[SPINNINGNUKEICON];
+    vec2_16_t const & siz = tilesiz[SPINNINGNUKEICON];
 
-    if (IONMAIDEN || siz.x == 0)
+    if (FURY || siz.x == 0)
     {
         Menu_DrawCursorTextTile(x, y, h, SMALLFNTCURSOR, tilesiz[SMALLFNTCURSOR], ydim_upper, ydim_lower);
         return;
@@ -550,14 +550,14 @@ static MenuOption_t MEO_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUOPTION(&MF_Redfont, 
 static MenuEntry_t ME_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUENTRY( "Widescreen:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ASPECTRATIO, Option );
 #endif
 
-
-static MenuRangeInt32_t MEO_DISPLAYSETUP_FOV = MAKE_MENURANGE( &ud.fov, &MF_Redfont, 75, 120, 0, 10, 0 );
+static MenuRangeInt32_t MEO_DISPLAYSETUP_FOV = MAKE_MENURANGE( &ud.fov, &MF_Redfont, 70, 120, 0, 11, 1 );
 static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_FOV, RangeInt32 );
 
 
 #ifdef USE_OPENGL
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
+#ifdef TEXFILTER_MENU_OPTIONS
 static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER, MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
@@ -569,6 +569,7 @@ static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 0, 1, 2, 4, 8, 16, };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ANISOTROPY, MEOSV_DISPLAYSETUP_ANISOTROPY, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ANISOTROPY, &glanisotropy);
 static MenuEntry_t ME_DISPLAYSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
+#endif
 # endif
 
 # ifdef EDUKE32_ANDROID_MENU
@@ -735,20 +736,20 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
     &ME_DISPLAYSETUP_FOV,
 #endif
 #ifndef EDUKE32_STANDALONE
+# ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
+# endif
 #endif
 #ifdef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_HIDEDPAD,
     &ME_DISPLAYSETUP_TOUCHALPHA,
 #else
 # ifndef EDUKE32_STANDALONE
+#  ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_ANISOTROPY,
-# endif
-# ifdef EDUKE32_SIMPLE_MENU
-#  ifndef EDUKE32_STANDALONE
-    &ME_DISPLAYSETUP_PALETTEEMULATION,
 #  endif
-# else
+# endif
+# ifndef EDUKE32_SIMPLE_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST,
 # endif
 #endif
@@ -762,8 +763,10 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL_POLYMER[] = {
     &ME_DISPLAYSETUP_VIDEOSETUP,
     &ME_DISPLAYSETUP_FOV,
 #endif
+#ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
     &ME_DISPLAYSETUP_ANISOTROPY,
+#endif
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMER,
 #endif
@@ -1045,9 +1048,6 @@ static MenuEntry_t ME_POLYMER_SHADOWS = MAKE_MENUENTRY("Dynamic shadows:", &MF_B
 static MenuRangeInt32_t MEO_POLYMER_SHADOWCOUNT = MAKE_MENURANGE(&pr_shadowcount, &MF_Bluefont, 1, 10, 1, 10, 1);
 static MenuEntry_t ME_POLYMER_SHADOWCOUNT = MAKE_MENUENTRY("Shadows per surface:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_SHADOWCOUNT, RangeInt32);
 
-static MenuOption_t MEO_POLYMER_PALETTEEMULATION = MAKE_MENUOPTION(&MF_Bluefont, &MEOS_NoYes, &pr_artmapping);
-static MenuEntry_t ME_POLYMER_PALETTEEMULATION = MAKE_MENUENTRY("Palette emulation:", &MF_Bluefont, &MEF_SmallOptions, &MEO_POLYMER_PALETTEEMULATION, Option);
-
 #endif
 
 #ifdef USE_OPENGL
@@ -1077,7 +1077,6 @@ static MenuEntry_t *MEL_RENDERERSETUP_POLYMER [] = {
 # ifdef USE_GLEXT
     &ME_RENDERERSETUP_DETAILTEX,
     &ME_RENDERERSETUP_GLOWTEX,
-    &ME_POLYMER_PALETTEEMULATION,
 # endif
     &ME_Space4_Bluefont,
     &ME_RENDERERSETUP_MODELS,
@@ -1168,11 +1167,12 @@ static MenuEntry_t ME_SOUND_VOLUME_FX = MAKE_MENUENTRY( "Volume:", &MF_Redfont, 
 static MenuRangeInt32_t MEO_SOUND_VOLUME_MUSIC = MAKE_MENURANGE( &ud.config.MusicVolume, &MF_Redfont, 0, 255, 0, 33, 2 );
 static MenuEntry_t ME_SOUND_VOLUME_MUSIC = MAKE_MENUENTRY( "Music:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_VOLUME_MUSIC, RangeInt32 );
 
-static MenuOption_t MEO_SOUND_DUKETALK = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, NULL);
 #ifndef EDUKE32_STANDALONE
+static MenuOption_t MEO_SOUND_DUKETALK = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, NULL);
 static MenuEntry_t ME_SOUND_DUKETALK = MAKE_MENUENTRY( "Duke talk:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_DUKETALK, Option );
 #else
-static MenuEntry_t ME_SOUND_DUKETALK = MAKE_MENUENTRY("Player speech:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_DUKETALK, Option);
+static MenuOption_t MEO_SOUND_DUKETALK = MAKE_MENUOPTION(&MF_Redfont, &MEOS_YesNo, NULL);
+static MenuEntry_t ME_SOUND_DUKETALK = MAKE_MENUENTRY("Silent protagonist:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_DUKETALK, Option);
 #endif
 
 static char const *MEOSN_SOUND_SAMPLINGRATE[] = { "22050Hz", "44100Hz", "48000Hz", };
@@ -1216,7 +1216,7 @@ static MenuEntry_t *MEL_ADVSOUND[] = {
 
 
 static MenuOption_t MEO_SAVESETUP_AUTOSAVE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.autosave );
-static MenuEntry_t ME_SAVESETUP_AUTOSAVE = MAKE_MENUENTRY( "Autosaves:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SAVESETUP_AUTOSAVE, Option );
+static MenuEntry_t ME_SAVESETUP_AUTOSAVE = MAKE_MENUENTRY( "Checkpoints:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SAVESETUP_AUTOSAVE, Option );
 
 static MenuOption_t MEO_SAVESETUP_AUTOSAVEDELETION = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &ud.autosavedeletion );
 static MenuEntry_t ME_SAVESETUP_AUTOSAVEDELETION = MAKE_MENUENTRY( "Auto-Delete:", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SAVESETUP_AUTOSAVEDELETION, Option );
@@ -1818,7 +1818,7 @@ void Menu_Init(void)
         ME_SOUND_DUKETALK.name = "Grunt talk:";
 #endif
 
-    if (IONMAIDEN)
+    if (FURY)
     {
         MF_Redfont.between.x = 2<<16;
         MF_Redfont.cursorScale = 32768;
@@ -1884,7 +1884,7 @@ They are separate for purposes of organization.
 static void Menu_Pre(MenuID_t cm)
 {
     int32_t i;
-    DukePlayer_t *ps = g_player[myconnectindex].ps;
+    auto ps = g_player[myconnectindex].ps;
 
     switch (cm)
     {
@@ -1939,14 +1939,12 @@ static void Menu_Pre(MenuID_t cm)
                  -1;
 
 #ifndef EDUKE32_STANDALONE
+#ifdef TEXFILTER_MENU_OPTIONS
         if (videoGetRenderMode() != REND_CLASSIC)
         {
             //POGOTODO: allow setting anisotropy again while r_useindexedcolortextures is set when support is added down the line
-            // don't allow setting anisotropy or changing palette emulation while in POLYMOST and r_useindexedcolortextures is enabled
+            // don't allow setting anisotropy while in POLYMOST and r_useindexedcolortextures is enabled
             MenuEntry_DisableOnCondition(&ME_DISPLAYSETUP_ANISOTROPY, videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
-#ifdef EDUKE32_SIMPLE_MENU
-            MenuEntry_DisableOnCondition(&ME_DISPLAYSETUP_PALETTEEMULATION, videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures);
-#endif
 
             for (i = (int32_t) ARRAY_SIZE(MEOSV_DISPLAYSETUP_ANISOTROPY) - 1; i >= 0; --i)
             {
@@ -1957,6 +1955,7 @@ static void Menu_Pre(MenuID_t cm)
                 }
             }
         }
+#endif
 #endif
         break;
 
@@ -2105,6 +2104,14 @@ static void Menu_Pre(MenuID_t cm)
         break;
     }
 
+    case MENU_EPISODE:
+        ud.m_volume_number = M_EPISODE.currentEntry < g_volumeCnt ? M_EPISODE.currentEntry : -1;
+        break;
+
+    case MENU_SKILL:
+        ud.m_player_skill = M_SKILL.currentEntry+1;
+        break;
+
     default:
         break;
     }
@@ -2126,7 +2133,7 @@ static void Menu_PreDrawBackground(MenuID_t cm, const vec2_t origin)
 
     case MENU_LOAD:
     case MENU_SAVE:
-        if (IONMAIDEN)
+        if (FURY)
             break;
         fallthrough__;
     case MENU_CREDITS4:
@@ -2610,23 +2617,30 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         break;
 #endif
     case MENU_CREDITS4:   // JBF 20031220
-        l = 7;
+    {
+#define MENU_YOFFSET 40
+#define MENU_INCREMENT(x) (oy += ((x) << 16))  // maybe this should have been MENU_EXCREMENT instead
 
-        mgametextcenter(origin.x, origin.y + ((50-l)<<16), "Developers");
-        creditsminitext(origin.x + (160<<16), origin.y + ((50+10-l)<<16), "Richard \"TerminX\" Gobeille", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((50+7+10-l)<<16), "Evan \"Hendricks266\" Ramos", 8);
+        int32_t oy = origin.y;
 
-        mgametextcenter(origin.x, origin.y + ((80-l)<<16), "Retired developers");
-        creditsminitext(origin.x + (160<<16), origin.y + ((80+10-l)<<16), "Pierre-Loup \"Plagman\" Griffais", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((80+7+10-l)<<16), "Philipp \"Helixhorned\" Kutin", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(MENU_YOFFSET), "Developers");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Richard \"TerminX\" Gobeille", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Evan \"Hendricks266\" Ramos", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Alex \"pogokeen\" Dawson", 8);
 
-        mgametextcenter(origin.x, origin.y + ((130+7-l)<<16), "Special thanks to");
-        creditsminitext(origin.x + (160<<16), origin.y + ((130+7+10-l)<<16), "Jonathon \"JonoF\" Fowler", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Retired developers");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Pierre-Loup \"Plagman\" Griffais", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Philipp \"Helixhorned\" Kutin", 8);
 
-        mgametextcenter(origin.x, origin.y + ((150+7-l)<<16), "Uses BUILD Engine technology by");
-        creditsminitext(origin.x + (160<<16), origin.y + ((150+7+10-l)<<16), "Ken \"Awesoken\" Silverman", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Special thanks to");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Jonathon \"JonoF\" Fowler", 8);
 
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Uses BUILD Engine technology by");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Ken \"Awesoken\" Silverman", 8);
 
+#undef MENU_INCREMENT
+#undef MENU_YOFFSET
+    }
         break;
 
     case MENU_CREDITS5:
@@ -2646,7 +2660,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             };
             static const char *body[] =
             {
-                "Alex Dawson",       // "pogokeen" - Polymost2, renderer work, bugfixes
+                "Alexey Khokholov",  // Nuke.YKT - Polymost fixes
                 "Bioman",            // GTK work, APT repository and package upkeep
                 "Brandon Bergren",   // "Bdragon" - tiles.cfg
                 "Charlie Honig",     // "CONAN" - showview command
@@ -3110,7 +3124,7 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
 {
     int32_t x;
-    DukePlayer_t *ps = g_player[myconnectindex].ps;
+    auto ps = g_player[myconnectindex].ps;
 
     if (entry == &ME_GAMESETUP_DEMOREC)
     {
@@ -3266,8 +3280,10 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
     }
 #ifdef USE_OPENGL
 #ifndef EDUKE32_STANDALONE
+#ifdef TEXFILTER_MENU_OPTIONS
     else if (entry == &ME_DISPLAYSETUP_ANISOTROPY || entry == &ME_DISPLAYSETUP_TEXFILTER)
         gltexapplyprops();
+#endif
 #endif
     else if (entry == &ME_RENDERERSETUP_TEXQUALITY)
     {
@@ -3853,7 +3869,7 @@ int32_t Menu_Anim_SinInLeft(MenuAnimation_t *animdata)
 
 void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
 {
-    if (IONMAIDEN)
+    if (FURY)
     {
         m_animation.start  = 0;
         m_animation.length = 0;
@@ -3981,17 +3997,17 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     switch (m->menuID)
     {
     case MENU_MAIN:
-        if (IONMAIDEN)
+        if (FURY)
             ME_MAIN_LOADGAME.name = s_Continue;
         break;
 
     case MENU_MAIN_INGAME:
-        if (IONMAIDEN)
+        if (FURY)
             ME_MAIN_LOADGAME.name = s_LoadGame;
         break;
 
     case MENU_LOAD:
-        if (IONMAIDEN)
+        if (FURY)
             M_LOAD.title = (g_player[myconnectindex].ps->gm & MODE_GAME) ? s_LoadGame : s_Continue;
 
         Menu_LoadReadHeaders();
@@ -4151,7 +4167,7 @@ int Menu_Change(MenuID_t cm)
     else
         return 1;
 
-    if (IONMAIDEN)
+    if (FURY)
     {
         Menu_t * parent = m_currentMenu, * result = NULL;
 
@@ -4337,6 +4353,7 @@ void Menu_Close(uint8_t playerID)
 
         walock[TILE_SAVESHOT] = 199;
         G_UpdateScreenArea();
+        S_PauseSounds(false);
     }
 }
 
@@ -4384,7 +4401,7 @@ static void Menu_GetFmt(const MenuFont_t *font, uint8_t const status, int32_t *s
     if (status & MT_Disabled)
         *s += font->shade_disabled;
 
-    if (IONMAIDEN && status & MT_Selected)
+    if (FURY && status & MT_Selected)
         *z += (*z >> 4);
 }
 
@@ -6815,7 +6832,7 @@ void M_DisplayMenus(void)
 
     // need EVENT_DISPLAYMENUBACKGROUND here
 
-    if (!IONMAIDEN && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2) && backgroundOK)
+    if (!FURY && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2) && backgroundOK)
         videoFadeToBlack(1);
 
     if (Menu_UpdateScreenOK(g_currentMenu))
@@ -6862,7 +6879,7 @@ void M_DisplayMenus(void)
     }
 
     // hack; need EVENT_DISPLAYMENUBACKGROUND above
-    if (IONMAIDEN && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2 || m_parentMenu != NULL) && backgroundOK)
+    if (FURY && ((g_player[myconnectindex].ps->gm&MODE_GAME) || ud.recstat==2 || m_parentMenu != NULL) && backgroundOK)
         videoFadeToBlack(1);
 
     // Display the menu, with a transition animation if applicable.
@@ -6950,7 +6967,7 @@ void M_DisplayMenus(void)
 
             auto const oyxaspect = yxaspect;
             int32_t alpha;
-            if (IONMAIDEN)
+            if (FURY)
             {
                 renderSetAspect(viewingrange, 65536);
                 cursorpos.x = scale(cursorpos.x - (320<<15), ydim << 2, xdim * 3) + (320<<15);
@@ -6967,7 +6984,7 @@ void M_DisplayMenus(void)
 
             rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, 0, a, 0, p, o, alpha);
 
-            if (IONMAIDEN)
+            if (FURY)
                 renderSetAspect(viewingrange, oyxaspect);
         }
     }

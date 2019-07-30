@@ -456,6 +456,7 @@ void PreloadCache(void)
                 {
                     Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, nPrecacheCount);
                     viewLoadingScreenUpdate(tempbuf, percentDisplayed);
+                    videoNextPage();
                     timerUpdate();
 
                     if (totalclock - clock >= 1)
@@ -1704,6 +1705,7 @@ RESTART:
             default:
                 break;
             }
+            videoNextPage();
         }
         //scrNextPage();
         if (TestBitString(gotpic, 2342))

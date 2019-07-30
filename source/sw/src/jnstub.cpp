@@ -39,6 +39,28 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "common.h"
 #include "common_game.h"
 
+#include "colormap.h"
+
+
+const char* AppProperName = "Wangulator";
+const char* AppTechnicalName = "wangulator";
+
+#if defined(_WIN32)
+#define DEFAULT_GAME_EXEC "voidsw.exe"
+#define DEFAULT_GAME_LOCAL_EXEC "voidsw.exe"
+#else
+#define DEFAULT_GAME_EXEC "voidsw"
+#define DEFAULT_GAME_LOCAL_EXEC "./voidsw"
+#endif
+
+const char *DefaultGameExec = DEFAULT_GAME_EXEC;
+const char *DefaultGameLocalExec = DEFAULT_GAME_LOCAL_EXEC;
+
+#define SETUPFILENAME "wangulator.cfg"
+const char *defaultsetupfilename = SETUPFILENAME;
+char setupfilename[BMAX_PATH] = SETUPFILENAME;
+
+
 #define M_RED 102
 #define M_BLUE 198
 
@@ -84,7 +106,7 @@ short FindSpriteNum = 0;
 
 // My Function Prototypes
 void ContextHelp(short spritenum);
-void LoadKVXFromScript(char *filename);
+void LoadKVXFromScript(const char *filename);
 
 //void LogUserTime( SWBOOL bIsLoggingIn );
 
@@ -112,7 +134,7 @@ typedef struct
 
 STAG_INFO StagInfo[MAX_STAG_INFO];
 
-void PrintStatus(char *string, int num, char x, char y, char color);
+void PrintStatus(const char *string, int num, char x, char y, char color);
 
 #define NUMOPTIONS 8
 char option[NUMOPTIONS] = {0, 0, 0, 0, 0, 0, 1, 0};
@@ -159,7 +181,7 @@ void SectorMoveFloorZ(int);
 void SectorMoveCeilingZ(int);
 
 void BuildStagTable(void);
-void Message(char *string, char color);
+void Message(const char *string, char color);
 void ShowMessage(void);
 void ShadeMenu(void);
 void FindNextTag(void);
@@ -603,7 +625,6 @@ ResetKeyRange(uint8_t* kb, uint8_t* ke)
 void
 ExtInit(void)
 {
-    void InitPalette(void);
     int i, fil;
 
     initgroupfile(G_GrpFile());
@@ -647,7 +668,30 @@ ExtInit(void)
 
 #endif
 
-char *startwin_labeltext = "Starting Build Editor for Shadow Warrior...";
+const char *startwin_labeltext = "Starting Build Editor for Shadow Warrior...";
+
+const char *ExtGetVer(void)
+{
+    return s_buildRev;
+}
+
+void ExtSetupMapFilename(const char *mapname)
+{
+    UNREFERENCED_PARAMETER(mapname);
+}
+
+int32_t ExtPreInit(int32_t argc,char const * const * argv)
+{
+    UNREFERENCED_PARAMETER(argc);
+    UNREFERENCED_PARAMETER(argv);
+
+    OSD_SetLogFile("wangulator.log");
+    OSD_SetVersion(AppProperName,0,2);
+    initprintf("%s %s\n", AppProperName, s_buildRev);
+    PrintBuildInfo();
+
+    return 0;
+}
 
 int
 ExtInit(void)
@@ -681,7 +725,6 @@ ExtInit(void)
 #endif
 
 
-    void InitPalette(void);
     int i, fil;
 
     // Store user log in time
@@ -736,7 +779,6 @@ ExtInit(void)
             initprintf("Using \"%s\" as main GRP file\n", g_grpNamePtr);
         }
     }
-    initgroupfile(G_GrpFile());
     /*
         if ((fil = open("setup.dat", O_BINARY | O_RDWR, S_IREAD)) != -1)
             {
@@ -752,17 +794,6 @@ ExtInit(void)
     Bmemcpy((void *)buildkeys,(void *)default_buildkeys,NUMBUILDKEYS);       //Trick to make build use setup.dat keys
     if (option[4] > 0)
         option[4] = 0;
-    if (initengine())
-    {
-        wm_msgbox("Build Engine Initialisation Error",
-                  "There was a problem initialising the Build engine: %s", engineerrstr);
-        return -1;
-    }
-    initinput();
-    initmouse();
-
-    InitPalette();
-    SW_InitMultiPsky();
 
     kensplayerheight = 58;
     zmode = 0;
@@ -776,6 +807,23 @@ else
 }
 #endif
     return rv;
+}
+
+int32_t ExtPostStartupWindow(void)
+{
+    initgroupfile(G_GrpFile());
+
+    if (engineInit())
+    {
+        wm_msgbox("Build Engine Initialisation Error",
+                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        return -1;
+    }
+
+    InitPalette();
+    SW_InitMultiPsky();
+
+    return 0;
 }
 
 void ExtPostInit(void)
@@ -1125,6 +1173,7 @@ Keys3D(void)
                         sector[currsector].ceilingpicnum = temppicnum;
                 }
             }
+            break;
         case 2:
             searchpicnum = sector[searchsector].floorpicnum;
             if (highlightsectorcnt <= 0)
@@ -1360,7 +1409,7 @@ Keys3D(void)
 
 // Used to help print out the item status list
 void
-PrintStatus(char *string, int num, char x, char y, char color)
+PrintStatus(const char *string, int num, char x, char y, char color)
 {
     sprintf(tempbuf, "%s %d", string, num);
     printext16(x * 8, ydim16+y * 8, color, -1, tempbuf, 0);
@@ -1382,7 +1431,7 @@ static void sw_printmessage256(const char *text)
 static void sw_printmessage16(const char *text)
 {
     lastpm16time = totalclock;
-    _printmessage16(text);
+    _printmessage16("%s", text);
 }
 
 void
@@ -2255,8 +2304,8 @@ ExtGetSectorCaption(short sectnum)
     }
     else
     {
-        sprintf(tempbuf, "%d,%d", sector[sectnum].hitag,
-                sector[sectnum].lotag);
+        sprintf(tempbuf, "%d,%d", TrackerCast(sector[sectnum].hitag),
+                TrackerCast(sector[sectnum].lotag));
     }
     return tempbuf;
 }
@@ -2270,8 +2319,8 @@ ExtGetWallCaption(short wallnum)
     }
     else
     {
-        sprintf(tempbuf, "%d,%d", wall[wallnum].hitag,
-                wall[wallnum].lotag);
+        sprintf(tempbuf, "%d,%d", TrackerCast(wall[wallnum].hitag),
+                TrackerCast(wall[wallnum].lotag));
     }
     return tempbuf;
 }
@@ -2280,8 +2329,8 @@ const char *
 ExtGetSpriteCaption(short spritenum)
 {
     SPRITEp sp = &sprite[spritenum];
-    char *p = "";
-    char name[64];
+    const char *p = "";
+    char name[66];
     char tp[30];
     char multi_str[30] = "";
     int16_t data;
@@ -2664,7 +2713,7 @@ ExtGetSpriteCaption(short spritenum)
             //tempbuf[0] = NULL;
             sprintf(tempbuf, "S:%d", data);
         else
-            sprintf(tempbuf, "S:%d,%d,%d", data, sprite[spritenum].hitag, sprite[spritenum].lotag);
+            sprintf(tempbuf, "S:%d,%d,%d", data, TrackerCast(sprite[spritenum].hitag), TrackerCast(sprite[spritenum].lotag));
         break;
 
 
@@ -2679,7 +2728,7 @@ ExtGetSpriteCaption(short spritenum)
             sprintf(tempbuf, "S:%d,%s%s", data, p, multi_str);
         else
             // name and numbers - name only prints if not null string
-            sprintf(tempbuf, "%s%s%d,%d", p, multi_str, sprite[spritenum].hitag, sprite[spritenum].lotag);
+            sprintf(tempbuf, "%s%s%d,%d", p, multi_str, TrackerCast(sprite[spritenum].hitag), TrackerCast(sprite[spritenum].lotag));
 
         break;
 
@@ -2688,12 +2737,12 @@ ExtGetSpriteCaption(short spritenum)
             sprintf(tempbuf, "%s%s", p, multi_str);
         else
             sprintf(tempbuf, "%s%s%d,%d,%d,%d,%d,%d", p, multi_str,
-                    SPRITE_TAG1(spritenum),
-                    SPRITE_TAG2(spritenum),
-                    SPRITE_TAG3(spritenum),
-                    SPRITE_TAG4(spritenum),
-                    SPRITE_TAG5(spritenum),
-                    SPRITE_TAG6(spritenum));
+                    TrackerCast(SPRITE_TAG1(spritenum)),
+                    TrackerCast(SPRITE_TAG2(spritenum)),
+                    TrackerCast(SPRITE_TAG3(spritenum)),
+                    TrackerCast(SPRITE_TAG4(spritenum)),
+                    TrackerCast(SPRITE_TAG5(spritenum)),
+                    TrackerCast(SPRITE_TAG6(spritenum)));
         break;
 
     case CAPTION_ALL:
@@ -2704,12 +2753,12 @@ ExtGetSpriteCaption(short spritenum)
             sprintf(tempbuf, "%s%s", p, multi_str);
         else
             sprintf(tempbuf, "%s%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", p, multi_str,
-                    SPRITE_TAG1(spritenum),
-                    SPRITE_TAG2(spritenum),
-                    SPRITE_TAG3(spritenum),
-                    SPRITE_TAG4(spritenum),
-                    SPRITE_TAG5(spritenum),
-                    SPRITE_TAG6(spritenum),
+                    TrackerCast(SPRITE_TAG1(spritenum)),
+                    TrackerCast(SPRITE_TAG2(spritenum)),
+                    TrackerCast(SPRITE_TAG3(spritenum)),
+                    TrackerCast(SPRITE_TAG4(spritenum)),
+                    TrackerCast(SPRITE_TAG5(spritenum)),
+                    TrackerCast(SPRITE_TAG6(spritenum)),
                     SPRITE_TAG7(spritenum),
                     SPRITE_TAG8(spritenum),
                     SPRITE_TAG9(spritenum),
@@ -2769,13 +2818,13 @@ DrawClipBox(short spritenum)
 
 #define BOX_COLOR 3
     // upper
-    drawline16(x - radius, y - radius, x + radius, y - radius, BOX_COLOR);
+    editorDraw2dLine(x - radius, y - radius, x + radius, y - radius, BOX_COLOR);
     // lower
-    drawline16(x - radius, y + radius, x + radius, y + radius, BOX_COLOR);
+    editorDraw2dLine(x - radius, y + radius, x + radius, y + radius, BOX_COLOR);
     // left
-    drawline16(x - radius, y - radius, x - radius, y + radius, BOX_COLOR);
+    editorDraw2dLine(x - radius, y - radius, x - radius, y + radius, BOX_COLOR);
     // right
-    drawline16(x + radius, y - radius, x + radius, y + radius, BOX_COLOR);
+    editorDraw2dLine(x + radius, y - radius, x + radius, y + radius, BOX_COLOR);
 }
 
 void
@@ -2971,10 +3020,10 @@ ExtEditSectorData(short sectnum)        // F7
     sprintf(tempbuf, "PicNum = %d", FindPicNum);
     printext16(8, ydim16+32 + 16, 11, -1, tempbuf, 0);
 
-    sprintf(tempbuf, "HiTag = %d", sp->hitag);
+    sprintf(tempbuf, "HiTag = %d", TrackerCast(sp->hitag));
     printext16(8, ydim16+32 + 24, 11, -1, tempbuf, 0);
 
-    sprintf(tempbuf, "LowTag = %d", sp->lotag);
+    sprintf(tempbuf, "LowTag = %d", TrackerCast(sp->lotag));
     printext16(8, ydim16+32 + 32, 11, -1, tempbuf, 0);
 
     FindNextSprite(FindPicNum);
@@ -3017,7 +3066,7 @@ ExtEditSpriteData(short spritenum)      // F8
     printext16(8, ydim16+32 + 8, 11, -1, "(2)  Multi-Player Item Toggle", 0);
     printext16(8, ydim16+32 + 16, 11, -1, "(3)  Find Sprite", 0);
     printext16(8, ydim16+32 + 24, 11, -1, "(4)  Dbug Toggle (* Programming use only *) ", 0);
-    showframe(1);
+    videoShowFrame(1);
 
     while (KEY_PRESSED(KEYSC_F8)) handleevents();
 
@@ -3074,7 +3123,7 @@ DISPLAY:
                 printext16(8 + 240, ydim16+32 + 32, 11, -1, "TRUE", 0);
             else
                 printext16(8 + 240, ydim16+32 + 32, 11, -1, "FALSE", 0);
-            showframe(1);
+            videoShowFrame(1);
 
             // Disallow invalid settings
             if (!bFindPicNum && !bFindHiTag && !bFindLowTag)
@@ -3533,10 +3582,7 @@ ShowNextTag(void)
         return;
 
     printmessage16(" ");
-
-    sprintf(tempbuf, "Next tag = %d", siNextEndTag);
-    printmessage16(tempbuf);
-
+    printmessage16("Next tag = %d", siNextEndTag);
 }
 
 void
@@ -3619,7 +3665,7 @@ ShadeMenu(void)                         // F8
 
 void faketimerhandler(void)
 {
-    sampletimer();
+    timerUpdate();
 }
 
 //Just thought you might want my getnumber16 code
@@ -3668,7 +3714,7 @@ static unsigned short messagedelay = 0;
 static char messagebuf[1024];
 
 void
-Message(char *string, char color)
+Message(const char *string, char color)
 {
     sprintf(messagebuf, string, 0);
     messagedelay = 512;
@@ -3728,7 +3774,7 @@ dsprintf(char *str, char *format, ...)
 }
 
 void
-dsprintf_null(char *str, char *format, ...)
+dsprintf_null(char *str, const char *format, ...)
 {
     va_list arglist;
 }
@@ -3741,3 +3787,82 @@ BuildStagTable(void)
 #include "stag.h"
 #undef  MAKE_STAG_TABLE
 }
+
+#include "m32script.h"
+
+void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
+void G_Polymer_UnInit(void) { }
+void SetGamePalette(int32_t j) { UNREFERENCED_PARAMETER(j); }
+
+int32_t AmbienceToggle, MixRate, ParentalLock;
+
+int32_t taglab_linktags(int32_t spritep, int32_t num)
+{
+    int32_t link = 0;
+
+    g_iReturnVar = link;
+    VM_OnEvent(EVENT_LINKTAGS, spritep ? num : -1);
+    link = g_iReturnVar;
+
+    return link;
+}
+
+int32_t taglab_getnextfreetag(int32_t *duetoptr)
+{
+    int32_t i, nextfreetag=1;
+    int32_t obj = -1;
+
+    for (i=0; i<MAXSPRITES; i++)
+    {
+        int32_t tag;
+
+        if (sprite[i].statnum == MAXSTATUS)
+            continue;
+
+        tag = select_sprite_tag(i);
+
+        if (tag != INT32_MIN && nextfreetag <= tag)
+        {
+            nextfreetag = tag+1;
+            obj = 32768 + i;
+        }
+    }
+
+    for (i=0; i<numwalls; i++)
+    {
+        int32_t lt = taglab_linktags(0, i);
+
+        if ((lt&1) && nextfreetag <= wall[i].lotag)
+            nextfreetag = wall[i].lotag+1, obj = i;
+        if ((lt&2) && nextfreetag <= wall[i].hitag)
+            nextfreetag = wall[i].hitag+1, obj = i;
+    }
+
+    if (duetoptr != NULL)
+        *duetoptr = obj;
+
+    if (nextfreetag < 32768)
+        return nextfreetag;
+
+    return 0;
+}
+
+int32_t S_InvalidSound(int32_t num) {
+    UNREFERENCED_PARAMETER(num); return 1;
+};
+int32_t S_CheckSoundPlaying(int32_t i, int32_t num) {
+    UNREFERENCED_PARAMETER(i); UNREFERENCED_PARAMETER(num); return 0;
+};
+int32_t S_SoundsPlaying(int32_t i) {
+    UNREFERENCED_PARAMETER(i); return -1;
+}
+int32_t S_SoundFlags(int32_t num) {
+    UNREFERENCED_PARAMETER(num); return 0;
+};
+int32_t A_PlaySound(uint32_t num, int32_t i) {
+    UNREFERENCED_PARAMETER(num); UNREFERENCED_PARAMETER(i); return 0;
+};
+void S_StopSound(int32_t num) {
+    UNREFERENCED_PARAMETER(num);
+};
+void S_StopAllSounds(void) { }

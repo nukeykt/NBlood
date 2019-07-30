@@ -118,6 +118,8 @@ struct glinfo_t {
     char debugoutput;
     char bufferstorage;
     char sync;
+    char depthclamp;
+    char clipcontrol;
     char dumped;
 };
 

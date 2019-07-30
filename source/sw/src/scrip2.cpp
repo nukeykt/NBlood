@@ -70,7 +70,7 @@ SWBOOL    tokenready;                     // only TRUE if UnGetToken was just ca
 ==============
 */
 
-SWBOOL LoadScriptFile(char *filename)
+SWBOOL LoadScriptFile(const char *filename)
 {
     int size, readsize;
     int fp;
@@ -261,7 +261,7 @@ SWBOOL TokenAvailable(void)
 //              1804 1 shotgun.kvx
 //              etc....
 
-void LoadKVXFromScript(char *filename)
+void LoadKVXFromScript(const char *filename)
 {
     int lNumber=0,lTile=0; // lNumber is the voxel no. and lTile is the editart tile being
     // replaced.
@@ -328,7 +328,7 @@ void LoadKVXFromScript(char *filename)
 //          Ex. 1803 -1       -1 = No tile replacement
 //              1804 2000
 //              etc....
-void LoadPLockFromScript(char *filename)
+void LoadPLockFromScript(const char *filename)
 {
     int lNumber=0,lTile=0; // lNumber is the voxel no. and lTile is the editart tile being
     // replaced.
@@ -405,7 +405,7 @@ enum
 
 static const struct _tokset
 {
-    char *str;
+    const char *str;
     int tokn;
 } cm_tokens[] =
 {
@@ -546,7 +546,7 @@ static char *customweaponname[2][MAX_WEAPONS];  // weapon, ammo
 #define WM_AMMO   4
 static struct
 {
-    char *sym;
+    const char *sym;
     int dmgid;
     int editable;
 } weaponmap[] =
@@ -568,7 +568,7 @@ static struct
 };
 
 // FIXME: yes, we are leaking memory here at the end of the program by not freeing anything
-void LoadCustomInfoFromScript(char *filename)
+void LoadCustomInfoFromScript(const char *filename)
 {
     scriptfile *script;
     char *token;
@@ -604,7 +604,8 @@ void LoadCustomInfoFromScript(char *filename)
         case CM_MAP:
         {
             char *mapnumptr;
-            if (scriptfile_getnumber(script, &curmap)) break; mapnumptr = script->ltextptr;
+            if (scriptfile_getnumber(script, &curmap)) break;
+            mapnumptr = script->ltextptr;
             if (scriptfile_getbraces(script, &braceend)) break;
 
             // first map file in LevelInfo[] is bogus, last map file is NULL
@@ -628,7 +629,7 @@ void LoadCustomInfoFromScript(char *filename)
                     char *t;
                     if (scriptfile_getstring(script, &t)) break;
 
-                    Bfree(custommaps[curmap].LevelName);
+                    //Bfree(custommaps[curmap].LevelName);
                     custommaps[curmap].LevelName = strdup(t);
                     LevelInfo[curmap].LevelName = custommaps[curmap].LevelName;
                     break;
@@ -638,7 +639,7 @@ void LoadCustomInfoFromScript(char *filename)
                     char *t;
                     if (scriptfile_getstring(script, &t)) break;
 
-                    Bfree(custommaps[curmap].SongName);
+                    //Bfree(custommaps[curmap].SongName);
                     custommaps[curmap].SongName = strdup(t);
                     LevelInfo[curmap].SongName = custommaps[curmap].SongName;
                     break;
@@ -648,7 +649,7 @@ void LoadCustomInfoFromScript(char *filename)
                     char *t;
                     if (scriptfile_getstring(script, &t)) break;
 
-                    Bfree(custommaps[curmap].Description);
+                    //Bfree(custommaps[curmap].Description);
                     custommaps[curmap].Description = strdup(t);
                     LevelInfo[curmap].Description = custommaps[curmap].Description;
                     break;
@@ -660,7 +661,7 @@ void LoadCustomInfoFromScript(char *filename)
                     if (scriptfile_getnumber(script, &n)) break;
 
                     Bsnprintf(s, 10, "%d : %02d", n/60, n%60);
-                    Bfree(custommaps[curmap].BestTime);
+                    //Bfree(custommaps[curmap].BestTime);
                     custommaps[curmap].BestTime = strdup(s);
                     LevelInfo[curmap].BestTime = custommaps[curmap].BestTime;
                     break;
@@ -672,7 +673,7 @@ void LoadCustomInfoFromScript(char *filename)
                     if (scriptfile_getnumber(script, &n)) break;
 
                     Bsnprintf(s, 10, "%d : %02d", n/60, n%60);
-                    Bfree(custommaps[curmap].ParTime);
+                    //Bfree(custommaps[curmap].ParTime);
                     custommaps[curmap].ParTime = strdup(s);
                     LevelInfo[curmap].ParTime = custommaps[curmap].ParTime;
                     break;
@@ -696,7 +697,8 @@ void LoadCustomInfoFromScript(char *filename)
         case CM_EPISODE:
         {
             char *epnumptr;
-            if (scriptfile_getnumber(script, &curmap)) break; epnumptr = script->ltextptr;
+            if (scriptfile_getnumber(script, &curmap)) break;
+            epnumptr = script->ltextptr;
             if (scriptfile_getbraces(script, &braceend)) break;
 
             // first map file in LevelInfo[] is bogus, last map file is NULL
@@ -746,7 +748,8 @@ void LoadCustomInfoFromScript(char *filename)
         case CM_SKILL:
         {
             char *epnumptr;
-            if (scriptfile_getnumber(script, &curmap)) break; epnumptr = script->ltextptr;
+            if (scriptfile_getnumber(script, &curmap)) break;
+            epnumptr = script->ltextptr;
             if (scriptfile_getbraces(script, &braceend)) break;
 
             // first map file in LevelInfo[] is bogus, last map file is NULL
@@ -848,7 +851,8 @@ void LoadCustomInfoFromScript(char *filename)
             char *name = NULL;
             int amt = -1;
 
-            if (scriptfile_getsymbol(script, &in)) break; invnumptr = script->ltextptr;
+            if (scriptfile_getsymbol(script, &in)) break;
+            invnumptr = script->ltextptr;
             if (scriptfile_getbraces(script, &braceend)) break;
 
             if ((unsigned)--in >= (unsigned)InvDecl_TOTAL)
@@ -899,7 +903,8 @@ void LoadCustomInfoFromScript(char *filename)
             int maxammo = -1, damagemin = -1, damagemax = -1, pickup = -1, wpickup = -1;
             int in,id;
 
-            if (scriptfile_getsymbol(script, &in)) break; wpnnumptr = script->ltextptr;
+            if (scriptfile_getsymbol(script, &in)) break;
+            wpnnumptr = script->ltextptr;
             if (scriptfile_getbraces(script, &braceend)) break;
 
             if ((unsigned)--in >= (unsigned)SIZ(weaponmap))

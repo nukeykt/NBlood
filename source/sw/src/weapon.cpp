@@ -34,7 +34,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "common_game.h"
 #include "break.h"
 #include "quake.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 #include "vis.h"
 
@@ -4647,7 +4647,7 @@ WeaponMoveHit(short SpriteNum)
 
     case HIT_WALL:
     {
-        hitdata_t hitinfo = { { 0, 0, 0 }, -2, NORM_WALL(u->ret), -2 };
+        hitdata_t hitinfo = { { 0, 0, 0 }, -2, (int16_t)NORM_WALL(u->ret), -2 };
         WALLp wph = &wall[hitinfo.wall];
         SECTOR_OBJECTp sop;
 
@@ -7444,7 +7444,7 @@ DoDamage(short SpriteNum, short Weapon)
 
 #if 1
 // Select death text based on ID
-char *DeathString(short SpriteNum)
+const char *DeathString(short SpriteNum)
 {
     USERp ku = User[SpriteNum];
 
@@ -10948,12 +10948,10 @@ SpawnFireballFlames(int16_t SpriteNum, int16_t enemy)
 
 
 int
-SpawnBreakFlames(int16_t SpriteNum, int16_t enemy)
+SpawnBreakFlames(int16_t SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
-    SPRITEp ep = &sprite[enemy];
-    USERp eu = User[enemy];
     SPRITEp np;
     USERp nu;
     short New;

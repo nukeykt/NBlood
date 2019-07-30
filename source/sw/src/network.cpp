@@ -31,7 +31,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "game.h"
 #include "tags.h"
 #include "names2.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 #include "demo.h"
 
@@ -62,7 +62,7 @@ SYNC BUG NOTES:
 
 //#undef MAXSYNCBYTES
 //#define MAXSYNCBYTES 16
-uint8_t tempbuf[576], packbuf[576];
+static uint8_t tempbuf[576], packbuf[576];
 int PlayClock;
 extern SWBOOL PauseKeySet;
 extern char CommPlayerName[32];
@@ -111,7 +111,7 @@ SW_AVERAGE_PACKET AveragePacket;
 uint8_t syncstat[MAXSYNCBYTES];
 //int syncvalhead[MAX_SW_PLAYERS];
 int syncvaltail, syncvaltottail;
-void GetSyncInfoFromPacket(uint8_t* packbuf, int packbufleng, int *j, int otherconnectindex);
+void GetSyncInfoFromPacket(uint8_t *packbuf, int packbufleng, int *j, int otherconnectindex);
 
 // when you set totalclock to 0 also set this one
 int ototalclock;
@@ -434,7 +434,7 @@ ResumeAction(void)
 }
 
 void
-SW_SendMessage(short pnum, char *text)
+SW_SendMessage(short pnum, const char *text)
 {
     if (!CommEnabled)
         return;
@@ -951,7 +951,7 @@ faketimerhandler(void)
     }
 #endif
 
-    sampletimer();
+    timerUpdate();
     if ((totalclock < ototalclock + synctics))
         return;
 
@@ -1260,7 +1260,7 @@ getpackets(void)
     PLAYERp pp;
     SW_PACKET tempinput;
 
-    sampletimer();
+    timerUpdate();
 
     if (!CommEnabled)
         return;
@@ -1463,7 +1463,7 @@ getpackets(void)
         {
             PACKET_RTSp p;
 
-            p = (void *)&packbuf[0];
+            p = (PACKET_RTSp)packbuf;
 
             PlaySoundRTS(p->RTSnum);
 
@@ -1483,7 +1483,7 @@ getpackets(void)
             //level_number //volume_number //player_skill //monsters_off //respawn_monsters
             //respawn_items //respawn_inventory //coop //marker //friendlyfire //boardname
 
-            p = (void *)&packbuf[0];
+            p = (PACKET_NEW_GAMEp)packbuf;
 
             ready2send = 0;
 
@@ -1544,7 +1544,7 @@ getpackets(void)
             PACKET_VERSIONp p;
 
             pp = Player + otherconnectindex;
-            p = (void *)&packbuf[0];
+            p = (PACKET_VERSIONp)packbuf;
 
             //tenDbLprintf(gTenLog, 3, "rcv pid %d version %lx", (int) otherconnectindex, (int) p->Version);
             pp->PlayerVersion = p->Version;
@@ -1556,7 +1556,7 @@ getpackets(void)
             PACKET_OPTIONSp p;
 
             pp = Player + otherconnectindex;
-            p = (void *)&packbuf[0];
+            p = (PACKET_OPTIONSp)packbuf;
 
             // auto run
             if (p->AutoRun)
@@ -1579,7 +1579,7 @@ getpackets(void)
         {
             PACKET_NAME_CHANGEp p;
             pp = Player + otherconnectindex;
-            p = (void *)&packbuf[0];
+            p = (PACKET_NAME_CHANGEp)packbuf;
 
             // someone else has changed their name
 
