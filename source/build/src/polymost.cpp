@@ -3837,8 +3837,8 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         return;
     }
 
-    vec2f_t dm0 = { x0, y0 };
-    vec2f_t dm1 = { x1, y1 };
+    vec2f_t dm0 = { x0 - DOMOST_OFFSET, y0 };
+    vec2f_t dm1 = { x1 + DOMOST_OFFSET, y1 };
 
     float const slop = (dm1.y - dm0.y) / (dm1.x - dm0.x);
 
@@ -3893,11 +3893,11 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
 
         //Test for intersection on umost (0) and dmost (1)
 
-        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x - 2*DOMOST_OFFSET) * cv[0]),
-                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x - 2*DOMOST_OFFSET) * cv[1]) };
+        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[0]),
+                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[1]) };
 
-        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x - DOMOST_OFFSET) * cv[0]),
-                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x - DOMOST_OFFSET) * cv[1]) };
+        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x) * cv[0]),
+                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x) * cv[1]) };
 
         float const fnx[2] = { dm0.x + ((n[0] / d[0]) * (dm1.x - dm0.x)),
                                dm0.x + ((n[1] / d[1]) * (dm1.x - dm0.x)) };
