@@ -3854,9 +3854,6 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         dm1.x = xbr;
     }
 
-    dm0.x -= DOMOST_OFFSET;
-    dm1.x += DOMOST_OFFSET;
-
     drawpoly_alpha = 0.f;
     drawpoly_blend = 0;
 
@@ -3896,11 +3893,11 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
 
         //Test for intersection on umost (0) and dmost (1)
 
-        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[0]),
-                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x) * cv[1]) };
+        float const d[2] = { ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x - 2*DOMOST_OFFSET) * cv[0]),
+                             ((dm0.y - dm1.y) * dx) - ((dm0.x - dm1.x - 2*DOMOST_OFFSET) * cv[1]) };
 
-        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x) * cv[0]),
-                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x) * cv[1]) };
+        float const n[2] = { ((dm0.y - cy[0]) * dx) - ((dm0.x - n0.x - DOMOST_OFFSET) * cv[0]),
+                             ((dm0.y - cy[1]) * dx) - ((dm0.x - n0.x - DOMOST_OFFSET) * cv[1]) };
 
         float const fnx[2] = { dm0.x + ((n[0] / d[0]) * (dm1.x - dm0.x)),
                                dm0.x + ((n[1] / d[1]) * (dm1.x - dm0.x)) };
@@ -3929,14 +3926,6 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         vsp[i].tag = vsp[newi].tag = -1;
 
         float const rdx = 1.f/dx;
-
-        for (bssize_t i = 0; i < scnt; i++)
-        {
-            if (spx[i] < x0)
-                spx[i] = x0;
-            else if (spx[i] > x1)
-                spx[i] = x1;
-        }
 
         for (bssize_t z=0, vcnt=0; z<=scnt; z++,i=vcnt)
         {
