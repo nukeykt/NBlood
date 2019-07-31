@@ -72,3 +72,5 @@ bool canSwim(spritetype* pSprite);
 bool canDuck(spritetype* pSprite);
 bool CDCanMove(spritetype* pSprite);
 bool inDodge(AISTATE* aiState);
+bool inIdle(AISTATE* aiState);
+int getSeqStartId(XSPRITE* pXSprite);

@@ -348,7 +348,7 @@ static void thinkGoto( spritetype* pSprite, XSPRITE* pXSprite )
     aiChooseDirection(pSprite, pXSprite, nAngle);
 
     // if reached target, change to search mode
-    if ( /*dist < M2X(10.0)*/ dist < 5120 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery ) {
+    if (dist < 5120 && klabs(pSprite->ang - nAngle) < pDudeInfo->periphery ) {
         if(spriteIsUnderwater(pSprite,false))
             aiNewState(pSprite, pXSprite, &GDXGenDudeSearchW);
         else
@@ -1183,5 +1183,47 @@ bool CDCanMove(spritetype* pSprite) {
 
 bool inDodge(AISTATE* aiState) {
     return (aiState == &GDXGenDudeDodgeDmgW || aiState == &GDXGenDudeDodgeDmgL || aiState == &GDXGenDudeDodgeDmgD);
+}
+
+bool inIdle(AISTATE* aiState) {
+    return (aiState == &GDXGenDudeIdleW || aiState == &GDXGenDudeIdleL);
+}
+
+int getSeqStartId(XSPRITE* pXSprite) {
+    int seqStartId = dudeInfo[sprite[pXSprite->reference].type - kDudeBase].seqStartID;
+    // Store seqStartId in data2 field
+    if (pXSprite->data2 > 0) {
+        seqStartId = pXSprite->data2;
+        // check for full set of animations
+        for (int i = seqStartId; i <= seqStartId + 19; i++) {
+
+            // exceptions
+            switch (i - seqStartId) {
+            case 3:		// burning dude
+            case 4: 	// electrocution
+            case 8:		// attack u/d
+            case 11: 	// reserved
+            case 12:	// reserved
+            case 13:	// move u
+            case 14: 	// move d
+            case 16:	// burning death 2
+            case 17:	// idle w
+            case 18:	// transformation in another dude
+            case 19:	// reserved
+                continue;
+            }
+
+            if (!gSysRes.Lookup(i, "SEQ")) {
+                pXSprite->data2 = dudeInfo[sprite[pXSprite->reference].type - kDudeBase].seqStartID;
+                return pXSprite->data2;
+            }
+
+        }
+
+    }  else {
+        pXSprite->data2 = seqStartId;
+    }
+
+    return seqStartId;
 }
 //////////

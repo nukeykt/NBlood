@@ -1100,7 +1100,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 }
             } else if (!inDodge(pXSprite->aiState)) {
                     
-                if (Chance(getDodgeChance(pSprite))) {
+                if (Chance(getDodgeChance(pSprite)) || inIdle(pXSprite->aiState)) {
                     if (!spriteIsUnderwater(pSprite, false)) {
                         if (!canDuck(pSprite) || !sub_5BDA8(pSprite, 14))  aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgL);
                         else aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgD);
@@ -1108,7 +1108,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                         if (Chance(0x0200))
                             sfxPlayGDXGenDudeSound(pSprite, 1);
                     }
-                    else if (sub_5BDA8(pSprite, 13) && spriteIsUnderwater(pSprite, false))
+                    else if (sub_5BDA8(pSprite, 13))
                         aiNewState(pSprite, pXSprite, &GDXGenDudeDodgeDmgW);
                 }
             }
@@ -1153,7 +1153,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
         case kGDXDudeUniversalCultist:
         {
             int mass = getDudeMassBySpriteSize(pSprite); int chance4 = getRecoilChance(pSprite);  bool chance3 = Chance(chance4);
-            if (pDudeExtra->at4 && (mass < 155 || (mass >= 155 && chance3)) && !spriteIsUnderwater(pSprite, false))
+            if (pDudeExtra->at4 && (inIdle(pXSprite->aiState) || mass < 155 || (mass >= 155 && chance3)) && !spriteIsUnderwater(pSprite, false))
             {
                 sfxPlayGDXGenDudeSound(pSprite, 1);
                 
@@ -1172,7 +1172,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
                 break;
             }
 
-            if (chance3 || Chance(getRecoilChance(pSprite)) || (!dudeIsMelee(pXSprite) && mass < 155)) {
+            if (inIdle(pXSprite->aiState) || chance3 || Chance(getRecoilChance(pSprite)) || (!dudeIsMelee(pXSprite) && mass < 155)) {
 
                 sfxPlayGDXGenDudeSound(pSprite, 1);
 
@@ -1757,12 +1757,13 @@ void aiInitSprite(spritetype *pSprite)
     case 244:
         pSprite->hitag = 7;
         break;
+    case 225: // by NoOne: FakeDude type
+        break;
     // By NoOne: Allow put pods and tentacles on ceilings if sprite is y-flipped.
     case 221:
     case 222:
     case 223:
     case 224:
-    case 225:
     case 226:
         if ((pSprite->cstat & CSTAT_SPRITE_YFLIP) != 0) {
             if (!(pSprite->hitag & kHitagExtBit)) // don't add autoaim for player if hitag 1 specified in editor.
