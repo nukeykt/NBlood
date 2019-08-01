@@ -873,8 +873,6 @@ EXTERN char show2dsector[(MAXSECTORS+7)>>3];
 EXTERN char show2dwall[(MAXWALLS+7)>>3];
 EXTERN char show2dsprite[(MAXSPRITES+7)>>3];
 
-EXTERN char wallcstat14[(MAXWALLS+7)>>3];
-
 // In the editor, gotpic is only referenced from inline assembly;
 // the compiler needs that hint or building with LTO will discard it.
 #if !defined __clang__ && !defined NOASM
@@ -893,6 +891,8 @@ EXTERN char *faketiledata[MAXTILES];
 
 EXTERN char spritecol2d[MAXTILES][2];
 EXTERN uint8_t tilecols[MAXTILES];
+
+EXTERN char editwall[(MAXWALLS+7)>>3];
 
 extern uint8_t vgapal16[4*256];
 

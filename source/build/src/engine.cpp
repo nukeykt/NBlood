@@ -9545,7 +9545,7 @@ static void enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daa
     Bmemset(show2dsector, 0, sizeof(show2dsector));
     Bmemset(show2dsprite, 0, sizeof(show2dsprite));
     Bmemset(show2dwall, 0, sizeof(show2dwall));
-    Bmemset(wallcstat14, 0, sizeof(wallcstat14));
+    Bmemset(editwall, 0, sizeof(editwall));
 #ifdef USE_STRUCT_TRACKERS
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));
     Bmemset(spritechanged, 0, sizeof(spritechanged));
@@ -11391,11 +11391,11 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
         for (w=0; w<numwalls; w++)
             if (walbitmap[w>>3] & (1<<(w&7)))
             {
-                wallcstat14[w>>3] |= 1<<(w&7);
+                editwall[w>>3] |= 1<<(w&7);
                 if (flags&2)
                 {
                     int wn = lastwall(w);
-                    wallcstat14[wn>>3] |= 1<<(wn&7);
+                    editwall[wn>>3] |= 1<<(wn&7);
                 }
             }
     }
@@ -11413,11 +11413,11 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
     if (editstatus)
     {
-        wallcstat14[pointhighlight>>3] |= 1<<(pointhighlight&7);
+        editwall[pointhighlight>>3] |= 1<<(pointhighlight&7);
         if (linehighlight >= 0 && linehighlight < MAXWALLS)
-            wallcstat14[linehighlight>>3] |= 1<<(linehighlight&7);
+            editwall[linehighlight>>3] |= 1<<(linehighlight&7);
         int wn = lastwall(pointhighlight);
-        wallcstat14[wn>>3] |= 1<<(wn&7);
+        editwall[wn>>3] |= 1<<(wn&7);
     }
 
     do
@@ -11428,7 +11428,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             wall[tempshort].x = dax;
             wall[tempshort].y = day;
-            wallcstat14[tempshort>>3] |= 1<<(tempshort&7);
+            editwall[tempshort>>3] |= 1<<(tempshort&7);
         }
         else
         {
@@ -11441,7 +11441,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
                     tempshort = wall[thelastwall].nextwall;
                     wall[tempshort].x = dax;
                     wall[tempshort].y = day;
-                    wallcstat14[tempshort>>3] |= 1<<(tempshort&7);
+                    editwall[tempshort>>3] |= 1<<(tempshort&7);
                 }
                 else
                 {
