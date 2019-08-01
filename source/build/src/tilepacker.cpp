@@ -19,8 +19,8 @@ typedef struct TreeNode
 } TreeNode;
 
 // allocate all the memory we could ever need up front to avoid dynamic allocation
-#define NUM_NON_ROOT_NODES MAXPACKEDTILES*2
-#define NUM_NODES NUM_NON_ROOT_NODES+MAXTILESHEETS
+#define NUM_NON_ROOT_NODES (MAXPACKEDTILES*2)
+#define NUM_NODES (NUM_NON_ROOT_NODES+MAXTILESHEETS)
 TreeNode nodes[NUM_NODES];
 uint32_t heapNodes = 0;
 uint32_t nextTreeNodeIndex = NUM_NON_ROOT_NODES-1;
