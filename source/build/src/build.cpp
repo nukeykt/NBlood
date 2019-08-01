@@ -2803,7 +2803,7 @@ void SetFirstWall(int32_t sectnum, int32_t wallnum, int32_t alsoynw)
         int16_t cf;
 
         for (i=0; i<numwalls; i++)
-            wall[i].cstat &= ~(1<<14);
+            editwall[i>>3] &= ~(1<<(i&7));
 
         for (cf=0; cf<2; cf++)
         {
@@ -2816,14 +2816,14 @@ void SetFirstWall(int32_t sectnum, int32_t wallnum, int32_t alsoynw)
                 tempwall = yax_getnextwall(tempwall, cf);
                 if (tempwall < 0)
                     break;  // corrupt!
-                wall[tempwall].cstat |= (1<<14);
+                editwall[tempwall>>3] |= 1<<(tempwall&7);
             }
         }
 
         for (i=0; i<numsectors; i++)
             for (WALLS_OF_SECTOR(i, j))
             {
-                if (wall[j].cstat & (1<<14))
+                if (editwall[j>>3]&(1<<(j&7)))
                 {
                     setfirstwall(i, j);
                     k++;
@@ -2960,18 +2960,18 @@ static void M32_MarkPointInsertion(int32_t thewall)
 
     // round 1
     for (YAX_ITER_WALLS(thewall, i, tmpcf))
-        wall[i].cstat |= (1<<14);
+        editwall[i>>3] |= 1<<(i&7);
     if (nextw >= 0)
         for (YAX_ITER_WALLS(nextw, i, tmpcf))
-            wall[i].cstat |= (1<<14);
+                editwall[i>>3] |= 1<<(i&7);
     // round 2 (enough?)
     for (YAX_ITER_WALLS(thewall, i, tmpcf))
-        if (wall[i].nextwall >= 0 && (wall[wall[i].nextwall].cstat&(1<<14))==0)
-            wall[wall[i].nextwall].cstat |= (1<<14);
+        if (wall[i].nextwall >= 0 && (editwall[wall[i].nextwall>>3]&(1<<(wall[i].nextwall&7)))==0)
+            editwall[wall[i].nextwall>>3] |= 1<<(wall[i].nextwall&7);
     if (nextw >= 0)
         for (YAX_ITER_WALLS(nextw, i, tmpcf))
-            if (wall[i].nextwall >= 0 && (wall[wall[i].nextwall].cstat&(1<<14))==0)
-                wall[wall[i].nextwall].cstat |= (1<<14);
+            if (wall[i].nextwall >= 0 && (editwall[wall[i].nextwall>>3]&(1<<(wall[i].nextwall&7)))==0)
+                editwall[wall[i].nextwall>>3] |= 1<<(wall[i].nextwall&7);
 }
 #endif
 
@@ -2993,17 +2993,17 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
     {
         // yax'ed wall -- first find out which walls are affected
         for (i=0; i<numwalls; i++)
-            wall[i].cstat &= ~(1<<14);
+            editwall[i>>3] &= ~(1<<(i&7));
 
         M32_MarkPointInsertion(thewall);
 
         for (i=0; i < numwalls; i++)
-            if (wall[i].cstat&(1<<14))
+            if (editwall[i>>3]&(1<<(i&7)))
                 M32_MarkPointInsertion(i);
 
         j = 0;
         for (i=0; i<numwalls; i++)
-            j += !!(wall[i].cstat&(1<<14));
+            j += !!(editwall[i>>3]&(1<<(i&7)));
         if (max(numwalls,onewnumwalls)+j > MAXWALLS)
         {
             return 0;  // no points inserted, would exceed limits
@@ -3013,7 +3013,7 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
         m = 0;
         for (i=0; i<numwalls /* rises with ins. */; i++)
         {
-            if (wall[i].cstat&(1<<14))
+            if (editwall[i>>3]&(1<<(i&7)))
                 if (wall[i].nextwall<0 || i<wall[i].nextwall) // || !(NEXTWALL(i).cstat&(1<<14)) ??
                 {
                     m += insertpoint(i, dax,day, mapwallnum);
@@ -3022,9 +3022,9 @@ static int32_t M32_InsertPoint(int32_t thewall, int32_t dax, int32_t day, int16_
 
         for (i=0; i<numwalls; i++)
         {
-            if (wall[i].cstat&(1<<14))
+            if (editwall[i>>3]&(1<<(i&7)))
             {
-                wall[i].cstat &= ~(1<<14);
+                editwall[i>>3] &= ~(1<<(i&7));
                 k = yax_getnextwall(i+1, YAX_CEILING);
                 if (k >= 0)
                     yax_setnextwall(i+1, YAX_CEILING, k+1);
@@ -3367,7 +3367,7 @@ static void maybedeletewalls(int32_t dax, int32_t day)
         for (int i=numwalls-1; i>=0; i--)
         {
             if (runi==0)
-                wall[i].cstat &= ~(1<<14);
+                editwall[i>>3] &= ~(1<<(i&7));;
 
             if (wall[i].x == POINT2(i).x && wall[i].y == POINT2(i).y)
             {
@@ -3735,7 +3735,7 @@ void overheadeditor(void)
                 if (newnumwalls >= 0)
                 {
                     for (i=newnumwalls; i>=numwalls_bak; i--)
-                        wall[i].cstat |= (1<<14);
+                        editwall[i>>3] |= 1<<(i&7);;
                 }
 
                 i = numwalls-1;
@@ -3749,7 +3749,7 @@ void overheadeditor(void)
                     if (j>=0 && sector[j].wallptr > i)
                         j--;
 
-                    if (zoom < 768 && !(wal->cstat & (1<<14)))
+                    if (zoom < 768 && !(editwall[i>>3]&(1<<(i&7))))
                         continue;
 
                     YAX_SKIPWALL(i);
@@ -5184,7 +5184,7 @@ end_yax: ;
                         }
 
                         for (i=0; i<numwalls; i++)
-                            wall[i].cstat &= ~(1<<14);
+                            editwall[i>>3] &= ~(1<<(i&7));;
 
                         for (i=0; i<numwalls; i++)
                         {
@@ -5230,7 +5230,7 @@ end_yax: ;
                         if (!sub && (numgraysects > 0 || m32_sideview))
                         {
                             for (i=0; i<numwalls; i++)
-                                if (wall[i].cstat&(1<<14))
+                                if (editwall[i>>3]&(1<<(i&7)))
                                     show2dwall[i>>3] |= (1<<(i&7));
                         }
 
@@ -5272,7 +5272,7 @@ end_yax: ;
                         update_highlight();
 
                         for (i=0; i<numwalls; i++)
-                            wall[i].cstat &= ~(1<<14);
+                            editwall[i>>3] &= ~(1<<(i&7));
                     }
                 }
             }
@@ -5841,7 +5841,8 @@ end_after_dragging:
                             }
 
                             dragpoint(pointhighlight,dax,day,2);
-                            wall[lastwall(pointhighlight)].cstat |= (1<<14);
+                            int wn = lastwall(pointhighlight);
+                            editwall[wn>>3] |= (1<<(wn&7));
                         }
                         else if ((pointhighlight&0xc000) == 16384)
                         {
@@ -6693,7 +6694,7 @@ end_point_dragging:
 
 
                 for (i=0; i<numwalls; i++)
-                    wall[i].cstat &= ~(1<<14);
+                    editwall[i>>3] &= ~(1<<(i&7));
 
                 newnumwalls = numwalls;
 
@@ -6703,12 +6704,12 @@ end_point_dragging:
                     {
                         int32_t loopnum=MAXWALLS*2;
 
-                        if (wall[j].cstat & (1<<14))
+                        if (editwall[j>>3]&(1<<(j&7)))
                             continue;
 
                         if (wall[j].nextsector == joinsector[1-k])
                         {
-                            wall[j].cstat |= (1<<14);
+                            editwall[j>>3] |= 1<<(j&7);
                             continue;
                         }
 
@@ -6724,7 +6725,7 @@ end_point_dragging:
                                 newnumwalls = -1;
 
                                 for (i=0; i<numwalls; i++)
-                                    wall[i].cstat &= ~(1<<14);
+                                    editwall[i>>3] &= ~(1<<(i&7));
 
                                 goto end_join_sectors;
                             }
@@ -6736,7 +6737,7 @@ end_point_dragging:
                             wall[newnumwalls].point2 = newnumwalls+1;
                             newnumwalls++;
 
-                            wall[i].cstat |= (1<<14);
+                            editwall[i>>3] |= 1<<(i&7);
 
                             i = wall[i].point2;
                             if (wall[i].nextsector == joinsector[1-joink])
@@ -6747,7 +6748,7 @@ end_point_dragging:
 
                             loopnum--;
                         }
-                        while (loopnum>0 && ((wall[i].cstat & (1<<14))==0)
+                        while (loopnum>0 && ((editwall[i>>3]&(1<<(i&7)))==0)
                                    && (wall[i].nextsector != joinsector[1-joink]));
 
                         wall[newnumwalls-1].point2 = m;
@@ -8895,7 +8896,7 @@ static void do_insertpoint(int32_t w, int32_t dax, int32_t day, int32_t *mapwall
     movewalls(w+1, +1);
     Bmemcpy(&wall[w+1], &wall[w], sizeof(walltype));
 #ifdef YAX_ENABLE
-    wall[w+1].cstat &= ~(1<<14);
+    editwall[(w+1)>>3] &= ~(1<<((w+1)&7));
 #endif
     wall[w].point2 = w+1;
     wall[w+1].x = dax;
