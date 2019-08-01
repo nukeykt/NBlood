@@ -1516,14 +1516,17 @@ void                polymer_drawsprite(int32_t snum)
     if ((tspr->cstat & 16384) && (!depth || mirrors[depth-1].plane))
         return;
 
-    tileUpdatePicnum(&tspr->picnum, tspr->owner+32768);
+    int const spritenum = tspr->owner;
+    Bassert(spritenum < MAXSPRITES);
+
+    tileUpdatePicnum(&tspr->picnum, spritenum+32768);
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
     calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
 
     if (usemodels && tile2model[Ptile2tile(tspr->picnum,tspr->pal)].modelid >= 0 &&
         tile2model[Ptile2tile(tspr->picnum,tspr->pal)].framenum >= 0 &&
-        !(spriteext[tspr->owner].flags & SPREXT_NOTMD))
+        !(spriteext[spritenum].flags & SPREXT_NOTMD))
     {
         glEnable(GL_CULL_FACE);
         SWITCH_CULL_DIRECTION;
@@ -1539,12 +1542,12 @@ void                polymer_drawsprite(int32_t snum)
     // If not, change that to modify a temp position in updatesprite itself.
     // I don't think this flags are meant to change on the fly so it'd possibly
     // be safe to cache a plane that has them applied.
-    if (spriteext[tspr->owner].flags & SPREXT_AWAY1)
+    if (spriteext[spritenum].flags & SPREXT_AWAY1)
     {
         tspr->x += sintable[(tspr->ang + 512) & 2047] >> 13;
         tspr->y += sintable[tspr->ang & 2047] >> 13;
     }
-    else if (spriteext[tspr->owner].flags & SPREXT_AWAY2)
+    else if (spriteext[spritenum].flags & SPREXT_AWAY2)
     {
         tspr->x -= sintable[(tspr->ang + 512) & 2047] >> 13;
         tspr->y -= sintable[tspr->ang & 2047] >> 13;
@@ -1552,8 +1555,7 @@ void                polymer_drawsprite(int32_t snum)
 
     polymer_updatesprite(snum);
 
-    Bassert(tspr->owner < MAXSPRITES);
-    s = prsprites[tspr->owner];
+    s = prsprites[spritenum];
 
     if (s == NULL)
         return;
@@ -1602,6 +1604,9 @@ void                polymer_drawsprite(int32_t snum)
             curpriority++;
         }
     }
+
+    if (automapping == 1)
+        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
 
     if ((tspr->cstat & 64) && (tspr->cstat & SPR_ALIGN_MASK))
     {
@@ -2992,6 +2997,9 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Drawing sector %i...\n", sectnum);
 
+    if (automapping)
+        show2dsector[sectnum>>3] |= pow2char[sectnum&7];
+
     sec = (usectorptr_t)&sector[sectnum];
     s = prsectors[sectnum];
 
@@ -3630,6 +3638,9 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
 
     //    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     //}
+
+    if (automapping)
+        show2dwall[wallnum>>3] |= pow2char[wallnum&7];
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Finished drawing wall %i...\n", wallnum);
 }

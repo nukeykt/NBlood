@@ -1662,6 +1662,9 @@ static void classicScanSector(int16_t startsectnum)
     if (startsectnum < 0)
         return;
 
+    if (automapping)
+        show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
+
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;
 
@@ -6192,6 +6195,9 @@ draw_as_face_sprite:
         classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
             tspr->shade,tspr->pal,lwall,swall,tspr->cstat,(tspr->cstat&48)!=48,floorz,ceilingz);
     }
+
+    if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
+        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
 }
 
 static void renderDrawSprite(int32_t snum)
@@ -8597,6 +8603,12 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         }
 
         classicDrawBunches(closest);
+
+        if (automapping)
+        {
+            for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
+                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
+        }
 
         numbunches--;
         bunchfirst[closest] = bunchfirst[numbunches];
