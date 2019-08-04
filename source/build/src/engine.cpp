@@ -203,7 +203,6 @@ static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to dr
 
 int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
 
-int32_t automapping = 0;
 int32_t bloodhack = 0;
 int32_t blooddemohack = 0;
 

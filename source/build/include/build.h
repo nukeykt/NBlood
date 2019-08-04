@@ -1630,7 +1630,6 @@ extern int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, in
 extern void(*PolymostProcessVoxels_Callback)(void);
 #endif
 
-extern int32_t automapping;
 extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 extern int8_t voxreserve[(MAXVOXELS+7)>>3];
 
