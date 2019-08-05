@@ -2028,14 +2028,27 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
     if (waloff[dapic])
     {
         char tileIsPacked = tilepacker_getTile(dapic+1, &tile);
-        if (tileIsPacked &&
-            tile.rect.width == (uint32_t) tsizart.y &&
-            tile.rect.height == (uint32_t) tsizart.x)
+        if (tileIsPacked)
         {
-            pth->glpic = tilesheetTexIDs[tile.tilesheetID];
-            doalloc = false;
+            if (tile.rect.width == (uint32_t) tsizart.y &&
+                tile.rect.height == (uint32_t) tsizart.x)
+            {
+                if (pth->glpic != 0 &&
+                    pth->glpic != tilesheetTexIDs[tile.tilesheetID])
+                {
+                    //POGO: we have a separate texture for this tile, but we want to merge it back into the tilesheet
+                    glDeleteTextures(1, &pth->glpic);
+                }
+                pth->glpic = tilesheetTexIDs[tile.tilesheetID];
+                doalloc = false;
+            } else if (pth->glpic == tilesheetTexIDs[tile.tilesheetID])
+            {
+                //POGO: we're reloading an invalidated art tile that has changed dimensions and no longer fits into our original tilesheet
+                doalloc = true;
+            }
         }
-        else if (doalloc)
+
+        if (doalloc)
         {
             glGenTextures(1, (GLuint *)&pth->glpic);
         }
