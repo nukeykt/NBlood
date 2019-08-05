@@ -896,13 +896,13 @@ static void polymost_bindPth(pthtyp const * const pPth)
         //POGO: check the width and height to ensure that the tile hasn't been changed for a user tile that has different dimensions
         if (tileIsPacked &&
             (!waloff[pPth->picnum] ||
-             (tile.rect.width == (uint32_t) tilesiz[pPth->picnum].y &&
-              tile.rect.height == (uint32_t) tilesiz[pPth->picnum].x)))
+             (tile.rect.width >= (uint32_t) tilesiz[pPth->picnum].y &&
+              tile.rect.height >= (uint32_t) tilesiz[pPth->picnum].x)))
         {
             texturePosSize = { tile.rect.u/(float) tilesheetSize,
                                tile.rect.v/(float) tilesheetSize,
-                               tile.rect.width/(float) tilesheetSize,
-                               tile.rect.height/(float) tilesheetSize };
+                               tilesiz[pPth->picnum].y/(float) tilesheetSize,
+                               tilesiz[pPth->picnum].x/(float) tilesheetSize };
             halfTexelSize = tilesheetHalfTexelSize;
         }
     }
@@ -2030,8 +2030,8 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
         char tileIsPacked = tilepacker_getTile(dapic+1, &tile);
         if (tileIsPacked)
         {
-            if (tile.rect.width == (uint32_t) tsizart.y &&
-                tile.rect.height == (uint32_t) tsizart.x)
+            if (tile.rect.width >= (uint32_t) tsizart.y &&
+                tile.rect.height >= (uint32_t) tsizart.x)
             {
                 if (pth->glpic != 0 &&
                     pth->glpic != tilesheetTexIDs[tile.tilesheetID])
