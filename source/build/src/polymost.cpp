@@ -2069,6 +2069,15 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_mode);
             }
         }
+
+        if (!doalloc &&
+            !tileIsPacked &&
+            (siz.x > pth->siz.x ||
+             siz.y > pth->siz.y))
+        {
+            //POGO: grow our texture to hold the tile data
+            doalloc = true;
+        }
         uploadtextureindexed(doalloc, {(int32_t) tile.rect.u, (int32_t) tile.rect.v}, siz, waloff[dapic]);
     }
     else
@@ -2083,6 +2092,7 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
     pth->effects = 0;
     pth->flags = TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | (PTH_HASALPHA|PTH_ONEBITALPHA) | (npoty*PTH_NPOTWALL) | PTH_INDEXED;
     pth->hicr = NULL;
+    pth->siz = siz;
 }
 
 void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp *pth, int32_t doalloc)
@@ -2271,6 +2281,28 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
             npoty = 1;
         }
 
+        if (!doalloc)
+        {
+            vec2_t pthSiz2 = pth->siz;
+            if (!glinfo.texnpot)
+            {
+                for (pthSiz2.x = 1; pthSiz2.x < pth->siz.x; pthSiz2.x += pthSiz2.x) { }
+                for (pthSiz2.y = 1; pthSiz2.y < pth->siz.y; pthSiz2.y += pthSiz2.y) { }
+            }
+            else
+            {
+                if ((pthSiz2.x|pthSiz2.y) == 0)
+                    pthSiz2.x = pthSiz2.y = 1;
+                else
+                    pthSiz2 = pth->siz;
+            }
+            if (siz.x > pthSiz2.x ||
+                siz.y > pthSiz2.y)
+            {
+                //POGO: grow our texture to hold the tile data
+                doalloc = true;
+            }
+        }
         uploadtexture(doalloc, siz, GL_BGRA, pic, tsiz,
                       dameth | DAMETH_ARTIMMUNITY |
                       (dapic >= MAXUSERTILES ? (DAMETH_NOTEXCOMPRESS|DAMETH_NODOWNSIZE) : 0) | /* never process these short-lived tiles */
@@ -2289,6 +2321,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
     pth->effects = 0;
     pth->flags = TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | (hasalpha*(PTH_HASALPHA|PTH_ONEBITALPHA)) | (npoty*PTH_NPOTWALL);
     pth->hicr = NULL;
+    pth->siz = tsiz;
 
 #if defined USE_GLEXT && !defined EDUKE32_GLES
     if (!gotcache && glinfo.texcompr && glusetexcache && glusetexcompr == 2 && dapic < MAXUSERTILES)
@@ -2400,8 +2433,6 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
             isart = 1;
         }
-
-        pth->siz = tsiz;
 
         if (!glinfo.texnpot)
         {
@@ -2571,6 +2602,23 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
         int32_t const texfmt = glinfo.bgra ? GL_BGRA : GL_RGBA;
 
+        if (!doalloc)
+        {
+            vec2_t pthSiz2 = pth->siz;
+            if (!glinfo.texnpot)
+            {
+                for (pthSiz2.x=1; pthSiz2.x < pth->siz.x; pthSiz2.x+=pthSiz2.x) { }
+                for (pthSiz2.y=1; pthSiz2.y < pth->siz.y; pthSiz2.y+=pthSiz2.y) { }
+            }
+            else
+                pthSiz2 = tsiz;
+            if (siz.x > pthSiz2.x ||
+                siz.y > pthSiz2.y)
+            {
+                //POGO: grow our texture to hold the tile data
+                doalloc = true;
+            }
+        }
         uploadtexture(doalloc,siz,texfmt,pic,tsiz,
                       dameth | DAMETH_HI | DAMETH_NOFIX |
                       TO_DAMETH_NODOWNSIZE(hicr->flags) |
@@ -2602,6 +2650,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                  ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0);
     pth->skyface = facen;
     pth->hicr = hicr;
+    pth->siz = tsiz;
 
 #if defined USE_GLEXT && !defined EDUKE32_GLES
     if (!gotcache && glinfo.texcompr && glusetexcache && !(hicr->flags & HICR_NOTEXCOMPRESS) &&
