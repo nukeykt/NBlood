@@ -3961,7 +3961,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
                     targetang = clamp(targetang, -128, 128);
                     t->ang += targetang;
                 }
-                else
+                else if (!display_mirror)
                     t->cstat |= 2;
             }
 
