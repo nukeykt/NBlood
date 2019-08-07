@@ -4402,7 +4402,7 @@ void overheadeditor(void)
 
                     for (j=headspritesect[highlightsector[i]]; j != -1; j=nextspritesect[j])
                     {
-                        rotatepoint(da, sprite[j].pos_as_vec2, tsign&2047, &sprite[j].pos_as_vec2);
+                        rotatepoint(da, sprite[j].pos.vec2, tsign&2047, &sprite[j].pos.vec2);
                         sprite[j].ang = (sprite[j].ang+tsign)&2047;
                     }
                 }
