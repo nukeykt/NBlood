@@ -5642,9 +5642,6 @@ static void Keys3d(void)
     if (keystatus[buildkeys[BK_MODE2D_3D]])  // Enter
     {
         SetGamePalette(BASEPAL);
-        FX_StopAllSounds();
-        S_ClearSoundLocks();
-
 #ifdef POLYMER
         DeletePolymerLights();
 #endif
@@ -10949,6 +10946,9 @@ void ExtCheckKeys(void)
                 printmessage16("Corruption detected. See OSD for details.");
             corruptchecktimer = totalclock + 120*autocorruptcheck;
         }
+
+        FX_StopAllSounds();
+        S_ClearSoundLocks();
     }
 
     if (asksave == 1)
