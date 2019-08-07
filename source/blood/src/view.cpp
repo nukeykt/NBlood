@@ -1585,7 +1585,6 @@ void viewResizeView(int size)
     }
     videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
     gGameMessageMgr.SetCoordinates(gViewX0S + 1, gViewY0S + 1);
-    viewGetCrosshairColor();
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     viewUpdatePages();
 }
@@ -3503,88 +3502,56 @@ void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const c
 }
 
 palette_t CrosshairColors = { 255, 255, 255, 0 };
-palette_t DefaultCrosshairColors = { 0, 0, 0, 0 };
-int32_t g_crosshairSum = -1;
-
-void viewGetCrosshairColor(void)
-{
-    if (DefaultCrosshairColors.f)
-        return;
-
-    tileLoad(kCrosshairTile);
-
-    if (!waloff[kCrosshairTile])
-        return;
-
-    char const *ptr = (char const *)waloff[kCrosshairTile];
-
-    // find the brightest color in the original 8-bit tile
-    int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
-    int32_t bri = 0, j = 0, i;
-
-    dassert(ii > 0);
-
-    do
-    {
-        if (*ptr != 255)
-        {
-            i = curpalette[(int32_t)*ptr].r + curpalette[(int32_t)*ptr].g + curpalette[(int32_t)*ptr].b;
-            if (i > j) { j = i; bri = *ptr; }
-        }
-        ptr++;
-    } while (--ii);
-
-    Bmemcpy(&CrosshairColors, &curpalette[bri], sizeof(palette_t));
-    Bmemcpy(&DefaultCrosshairColors, &curpalette[bri], sizeof(palette_t));
-    DefaultCrosshairColors.f = 1; // this flag signifies that the color has been detected
-}
+bool g_isAlterDefaultCrosshair = false;
 
 void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
 {
-    if (g_crosshairSum == r + (g << 8) + (b << 16))
-        return;
+	if (!g_isAlterDefaultCrosshair)
+		return;
 
-    tileLoad(kCrosshairTile);
+	CrosshairColors.r = r;
+	CrosshairColors.g = g;
+	CrosshairColors.b = b;
 
-    if (!waloff[kCrosshairTile])
-        return;
+	tileLoad(kCrosshairTile);
 
-    if (!DefaultCrosshairColors.f)
-        viewGetCrosshairColor();
+	if (!waloff[kCrosshairTile])
+		return;
 
-    g_crosshairSum = r + (g << 8) + (b << 16);
-    CrosshairColors.r = r;
-    CrosshairColors.g = g;
-    CrosshairColors.b = b;
+	char *ptr = (char *)waloff[kCrosshairTile];
 
-    char *ptr = (char *)waloff[kCrosshairTile];
+	int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
 
-    int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
+	dassert(ii > 0);
 
-    dassert(ii > 0);
+	int32_t i = (videoGetRenderMode() == REND_CLASSIC)
+		? paletteGetClosestColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b)
+		: paletteGetClosestColor(255, 255, 255);  // use white in GL so we can tint it to the right color
 
-    int32_t i = (videoGetRenderMode() == REND_CLASSIC)
-        ? paletteGetClosestColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b)
-        : paletteGetClosestColor(255, 255, 255);  // use white in GL so we can tint it to the right color
+	do
+	{
+		if (*ptr != 255)
+			*ptr = i;
+		ptr++;
+	} while (--ii);
 
-    do
-    {
-        if (*ptr != 255)
-            *ptr = i;
-        ptr++;
-    } while (--ii);
-
-    paletteMakeLookupTable(CROSSHAIR_PAL, NULL, CrosshairColors.r, CrosshairColors.g, CrosshairColors.b, 1);
+	paletteMakeLookupTable(CROSSHAIR_PAL, NULL, CrosshairColors.r, CrosshairColors.g, CrosshairColors.b, 1);
 
 #ifdef USE_OPENGL
-    // XXX: this makes us also load all hightile textures tinted with the crosshair color!
-    polytint_t & crosshairtint = hictinting[CROSSHAIR_PAL];
-    crosshairtint.r = CrosshairColors.r;
-    crosshairtint.g = CrosshairColors.g;
-    crosshairtint.b = CrosshairColors.b;
-    crosshairtint.f = HICTINT_USEONART | HICTINT_GRAYSCALE;
+	// XXX: this makes us also load all hightile textures tinted with the crosshair color!
+	polytint_t & crosshairtint = hictinting[CROSSHAIR_PAL];
+	crosshairtint.r = CrosshairColors.r;
+	crosshairtint.g = CrosshairColors.g;
+	crosshairtint.b = CrosshairColors.b;
+	crosshairtint.f = HICTINT_USEONART | HICTINT_GRAYSCALE;
 #endif
-    tileInvalidate(kCrosshairTile, -1, -1);
+	tileInvalidate(kCrosshairTile, -1, -1);
+}
+
+void viewResetCrosshairToDefault(void)
+{
+	paletteFreeLookupTable(CROSSHAIR_PAL);
+	tileLoad(kCrosshairTile);
 }
 
 #define COLOR_RED redcol
