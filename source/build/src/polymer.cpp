@@ -1517,9 +1517,9 @@ void                polymer_drawsprite(int32_t snum)
         return;
 
     int const spritenum = tspr->owner;
-    Bassert(spritenum < MAXSPRITES);
+    Bassert(spritenum < MAXSPRITES+MAXUNIQHUDID);
 
-    tileUpdatePicnum(&tspr->picnum, spritenum+32768);
+    tileUpdatePicnum(&tspr->picnum, (unsigned)spritenum < MAXSPRITES ? spritenum+32768 : 0);
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
     calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
@@ -1555,6 +1555,7 @@ void                polymer_drawsprite(int32_t snum)
 
     polymer_updatesprite(snum);
 
+    Bassert(spritenum < MAXSPRITES);
     s = prsprites[spritenum];
 
     if (s == NULL)
