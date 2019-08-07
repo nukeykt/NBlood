@@ -3506,52 +3506,52 @@ bool g_isAlterDefaultCrosshair = false;
 
 void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
 {
-	if (!g_isAlterDefaultCrosshair)
-		return;
+    if (!g_isAlterDefaultCrosshair)
+        return;
 
-	CrosshairColors.r = r;
-	CrosshairColors.g = g;
-	CrosshairColors.b = b;
+    CrosshairColors.r = r;
+    CrosshairColors.g = g;
+    CrosshairColors.b = b;
 
-	tileLoad(kCrosshairTile);
+    tileLoad(kCrosshairTile);
 
-	if (!waloff[kCrosshairTile])
-		return;
+    if (!waloff[kCrosshairTile])
+        return;
 
-	char *ptr = (char *)waloff[kCrosshairTile];
+    char *ptr = (char *)waloff[kCrosshairTile];
 
-	int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
+    int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
 
-	dassert(ii > 0);
+    dassert(ii > 0);
 
-	int32_t i = (videoGetRenderMode() == REND_CLASSIC)
-		? paletteGetClosestColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b)
-		: paletteGetClosestColor(255, 255, 255);  // use white in GL so we can tint it to the right color
+    int32_t i = (videoGetRenderMode() == REND_CLASSIC)
+        ? paletteGetClosestColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b)
+        : paletteGetClosestColor(255, 255, 255);  // use white in GL so we can tint it to the right color
 
-	do
-	{
-		if (*ptr != 255)
-			*ptr = i;
-		ptr++;
-	} while (--ii);
+    do
+    {
+        if (*ptr != 255)
+            *ptr = i;
+        ptr++;
+    } while (--ii);
 
-	paletteMakeLookupTable(CROSSHAIR_PAL, NULL, CrosshairColors.r, CrosshairColors.g, CrosshairColors.b, 1);
+    paletteMakeLookupTable(CROSSHAIR_PAL, NULL, CrosshairColors.r, CrosshairColors.g, CrosshairColors.b, 1);
 
 #ifdef USE_OPENGL
-	// XXX: this makes us also load all hightile textures tinted with the crosshair color!
-	polytint_t & crosshairtint = hictinting[CROSSHAIR_PAL];
-	crosshairtint.r = CrosshairColors.r;
-	crosshairtint.g = CrosshairColors.g;
-	crosshairtint.b = CrosshairColors.b;
-	crosshairtint.f = HICTINT_USEONART | HICTINT_GRAYSCALE;
+    // XXX: this makes us also load all hightile textures tinted with the crosshair color!
+    polytint_t & crosshairtint = hictinting[CROSSHAIR_PAL];
+    crosshairtint.r = CrosshairColors.r;
+    crosshairtint.g = CrosshairColors.g;
+    crosshairtint.b = CrosshairColors.b;
+    crosshairtint.f = HICTINT_USEONART | HICTINT_GRAYSCALE;
 #endif
-	tileInvalidate(kCrosshairTile, -1, -1);
+    tileInvalidate(kCrosshairTile, -1, -1);
 }
 
 void viewResetCrosshairToDefault(void)
 {
-	paletteFreeLookupTable(CROSSHAIR_PAL);
-	tileLoad(kCrosshairTile);
+    paletteFreeLookupTable(CROSSHAIR_PAL);
+    tileLoad(kCrosshairTile);
 }
 
 #define COLOR_RED redcol

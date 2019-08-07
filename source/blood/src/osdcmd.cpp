@@ -311,7 +311,7 @@ static int osdcmd_crosshaircolor(osdcmdptr_t parm)
     uint8_t const g = Batol(parm->parms[1]);
     uint8_t const b = Batol(parm->parms[2]);
 
-	g_isAlterDefaultCrosshair = true;
+    g_isAlterDefaultCrosshair = true;
     viewSetCrosshairColor(r,g,b);
 
     if (!OSD_ParsingScript())
@@ -322,11 +322,11 @@ static int osdcmd_crosshaircolor(osdcmdptr_t parm)
 
 static int osdcmd_resetcrosshair(osdcmdptr_t UNUSED(parm))
 {
-	UNREFERENCED_CONST_PARAMETER(parm);
-	g_isAlterDefaultCrosshair = false;
-	viewResetCrosshairToDefault();
+    UNREFERENCED_CONST_PARAMETER(parm);
+    g_isAlterDefaultCrosshair = false;
+    viewResetCrosshairToDefault();
 
-	return OSDCMD_OK;
+    return OSDCMD_OK;
 }
 
 static int osdcmd_give(osdcmdptr_t parm)
@@ -1049,7 +1049,7 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("bind",R"(bind <key> <string>: associates a keypress with a string of console input. Type "bind showkeys" for a list of keys and "listsymbols" for a list of valid console commands.)", osdcmd_bind);
 //    OSD_RegisterFunction("cmenu","cmenu <#>: jumps to menu", osdcmd_cmenu);
     OSD_RegisterFunction("crosshaircolor","crosshaircolor: changes the crosshair color", osdcmd_crosshaircolor);
-	OSD_RegisterFunction("crosshairreset", "crosshairreset: restores the original crosshair", osdcmd_resetcrosshair);
+    OSD_RegisterFunction("crosshairreset", "crosshairreset: restores the original crosshair", osdcmd_resetcrosshair);
 //
 //#if !defined NETCODE_DISABLE
 //    OSD_RegisterFunction("connect","connect: connects to a multiplayer game", osdcmd_connect);
