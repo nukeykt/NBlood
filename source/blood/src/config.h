@@ -51,6 +51,7 @@ extern int32_t scripthandle;
 extern int32_t setupread;
 extern int32_t SoundToggle;
 extern int32_t MusicToggle;
+extern int32_t MusicRestartsOnLoadToggle;
 extern int32_t CDAudioToggle;
 extern int32_t FXVolume;
 extern int32_t MusicVolume;

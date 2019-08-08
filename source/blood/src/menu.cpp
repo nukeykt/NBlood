@@ -542,6 +542,7 @@ CGameMenuItemZBool itemOptionsDisplayPolymostDeliriumBlur("DELIRIUM EFFECT BLUR:
 
 void UpdateSoundToggle(CGameMenuItemZBool *pItem);
 void UpdateMusicToggle(CGameMenuItemZBool *pItem);
+void UpdateMusicRestartsOnLoadToggle(CGameMenuItemZBool* pItem);
 void Update3DToggle(CGameMenuItemZBool *pItem);
 void UpdateCDToggle(CGameMenuItemZBool *pItem);
 void UpdateSoundVolume(CGameMenuItemSlider *pItem);
@@ -569,8 +570,9 @@ const char *pzMusicDeviceStrings[] = {
 };
 
 CGameMenuItemTitle itemOptionsSoundTitle("SOUND SETUP", 1, 160, 20, 2038);
-CGameMenuItemZBool itemOptionsSoundSoundToggle("SOUND:", 3, 66, 60, 180, false, UpdateSoundToggle, NULL, NULL);
-CGameMenuItemZBool itemOptionsSoundMusicToggle("MUSIC:", 3, 66, 70, 180, false, UpdateMusicToggle, NULL, NULL);
+CGameMenuItemZBool itemOptionsSoundSoundToggle("SOUND:", 3, 66, 50, 180, false, UpdateSoundToggle, NULL, NULL);
+CGameMenuItemZBool itemOptionsSoundMusicToggle("MUSIC:", 3, 66, 60, 180, false, UpdateMusicToggle, NULL, NULL);
+CGameMenuItemZBool itemOptionsSoundMusicRestartsOnLoadToggle("MUSIC RESTARTS:", 3, 66, 70, 180, false, UpdateMusicRestartsOnLoadToggle, NULL, NULL);
 CGameMenuItemZBool itemOptionsSound3DToggle("3D AUDIO:", 3, 66, 80, 180, false, Update3DToggle, NULL, NULL);
 CGameMenuItemSlider itemOptionsSoundSoundVolume("SOUND VOLUME:", 3, 66, 90, 180, &FXVolume, 0, 256, 48, UpdateSoundVolume, -1, -1, kMenuSliderPercent);
 CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 100, 180, &MusicVolume, 0, 256, 48, UpdateMusicVolume, -1, -1, kMenuSliderPercent);
@@ -1205,6 +1207,7 @@ void SetupOptionsMenu(void)
     menuOptionsSound.Add(&itemOptionsSoundTitle, false);
     menuOptionsSound.Add(&itemOptionsSoundSoundToggle, true);
     menuOptionsSound.Add(&itemOptionsSoundMusicToggle, false);
+    menuOptionsSound.Add(&itemOptionsSoundMusicRestartsOnLoadToggle, false);
     menuOptionsSound.Add(&itemOptionsSound3DToggle, false);
     menuOptionsSound.Add(&itemOptionsSoundSoundVolume, false);
     menuOptionsSound.Add(&itemOptionsSoundMusicVolume, false);
@@ -1772,6 +1775,11 @@ void UpdateMusicToggle(CGameMenuItemZBool *pItem)
     }
 }
 
+void UpdateMusicRestartsOnLoadToggle(CGameMenuItemZBool* pItem)
+{
+    MusicRestartsOnLoadToggle = pItem->at20;
+}
+
 void Update3DToggle(CGameMenuItemZBool *pItem)
 {
     gDoppler = pItem->at20;
@@ -1835,6 +1843,7 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     itemOptionsSoundSoundToggle.at20 = SoundToggle;
     itemOptionsSoundMusicToggle.at20 = MusicToggle;
+    itemOptionsSoundMusicRestartsOnLoadToggle.at20 = MusicRestartsOnLoadToggle;
     itemOptionsSound3DToggle.at20 = gDoppler;
     itemOptionsSoundCDToggle.at20 = CDAudioToggle;
     itemOptionsSoundSampleRate.m_nFocus = 0;

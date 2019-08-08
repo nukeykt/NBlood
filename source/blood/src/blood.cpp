@@ -463,7 +463,8 @@ void PreloadCache(void)
     char tempbuf[128];
     if (gDemo.at1)
         return;
-    sndPlaySpecialMusicOrNothing(MUS_LOADING);
+    if (MusicRestartsOnLoadToggle)
+        sndPlaySpecialMusicOrNothing(MUS_LOADING);
     gSoundRes.PrecacheSounds();
     PreloadTiles();
     int clock = totalclock;
