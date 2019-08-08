@@ -58,9 +58,6 @@ int LoadSave::hLFile = -1;
 
 short word_27AA54 = 0;
 
-int prevLoadedEpisode = -1;
-int prevLoadedLevel = -1;
-
 void sub_76FD4(void)
 {
     if (!dword_27AA44)
@@ -94,7 +91,7 @@ void LoadSave::Write(void *pData, int nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
 
-void LoadSave::LoadGame(char *pzFile)
+void LoadSave::LoadGame(char *pzFile, bool demoWasPlayed)
 {
     sndKillAllSounds();
     sfxKillAllSounds();
@@ -157,10 +154,14 @@ void LoadSave::LoadGame(char *pzFile)
     gGameStarted = 1;
     bVanilla = false;
 
-    if (MusicRestartsOnLoadToggle || (prevLoadedEpisode != gGameOptions.nEpisode || prevLoadedLevel != gGameOptions.nLevel))
+    if (MusicRestartsOnLoadToggle
+        || demoWasPlayed
+        || (gMusicPrevLoadedEpisode != gGameOptions.nEpisode || gMusicPrevLoadedLevel != gGameOptions.nLevel))
+    {
         levelTryPlayMusic(gGameOptions.nEpisode, gGameOptions.nLevel);
-    prevLoadedEpisode = gGameOptions.nEpisode;
-    prevLoadedLevel = gGameOptions.nLevel;
+    }
+    gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
+    gMusicPrevLoadedLevel = gGameOptions.nLevel;
 
     netBroadcastPlayerInfo(myconnectindex);
     //sndPlaySong(gGameOptions.zLevelSong, 1);
@@ -184,9 +185,6 @@ void LoadSave::SaveGame(char *pzFile)
     }
     fclose(hSFile);
     hSFile = NULL;
-
-    prevLoadedEpisode = gGameOptions.nEpisode;
-    prevLoadedLevel = gGameOptions.nLevel;
 }
 
 class MyLoadSave : public LoadSave

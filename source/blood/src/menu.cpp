@@ -2118,10 +2118,11 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     if (!testkopen(strLoadGameName, 0))
         return;
+    bool demoWasPlayed = gDemo.at1;
     if (gDemo.at1)
         gDemo.Close();
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[nSlot]);
-    LoadSave::LoadGame(strLoadGameName);
+    LoadSave::LoadGame(strLoadGameName, demoWasPlayed);
     gGameMenuMgr.Deactivate();
     gQuickLoadSlot = nSlot;
 }
@@ -2135,7 +2136,8 @@ void QuickLoadGame(void)
     if (!testkopen(strLoadGameName, 0))
         return;
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
-    LoadSave::LoadGame(strLoadGameName);
+    bool demoWasPlayed = gDemo.at1;
+    LoadSave::LoadGame(strLoadGameName, demoWasPlayed);
     gGameMenuMgr.Deactivate();
 }
 
