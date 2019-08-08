@@ -54,3 +54,5 @@ DerivedData/
 *.dSYM/
 
 .DS_Store
+/texturecache
+/texturecache.index

@@ -94,8 +94,7 @@ extern int gViewXCenter, gViewYCenter;
 extern int gViewX0, gViewY0, gViewX1, gViewY1;
 extern int gViewX0S, gViewY0S, gViewX1S, gViewY1S;
 extern palette_t CrosshairColors;
-extern palette_t DefaultCrosshairColors;
-extern int32_t g_crosshairSum;
+extern bool g_isAlterDefaultCrosshair;
 extern int32_t r_maxfps;
 extern int32_t r_maxfpsoffset;
 extern double g_frameDelay;
@@ -154,8 +153,8 @@ void viewLoadingScreenUpdate(const char *pzText4 = NULL, int nPercent = -1);
 void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const char *pText3);
 void viewUpdateDelirium(void);
 void viewUpdateShake(void);
-void viewGetCrosshairColor(void);
 void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
+void viewResetCrosshairToDefault(void);
 void viewPrintFPS(void);
 
 
