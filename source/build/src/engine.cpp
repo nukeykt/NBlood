@@ -1487,7 +1487,11 @@ static int32_t bakrendmode;
 #endif
 static int32_t baktile;
 
+#ifdef APPNAME
+char apptitle[256] = APPNAME;
+#else
 char apptitle[256] = "Build Engine";
+#endif
 
 //
 // Internal Engine Functions
