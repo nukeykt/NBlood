@@ -2045,6 +2045,15 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
                 //POGO: we're reloading an invalidated art tile that has changed dimensions and no longer fits into our original tilesheet
                 doalloc = true;
             }
+        } else
+        {
+            Tile blankTile = {};
+            tilepacker_getTile(0, &blankTile);
+            if (pth->glpic == tilesheetTexIDs[blankTile.tilesheetID])
+            {
+                //POGO: we're reloading an invalidated art tile that had previously been added to the texcache while !waloff[dapic]
+                doalloc = true;
+            }
         }
 
         if (doalloc)
