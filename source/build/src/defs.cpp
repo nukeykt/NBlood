@@ -121,8 +121,9 @@ enum scripttoken_t
     T_DST_COLOR, T_ONE_MINUS_DST_COLOR,
     T_SHADERED, T_SHADEGREEN, T_SHADEBLUE,
     T_SHADEFACTOR,
-    T_RFFDEFINEID,
     T_IFCRC,
+    T_NEWGAMECHOICES,
+    T_RFFDEFINEID,
     T_EXTRA,
 };
 
@@ -406,7 +407,7 @@ static int32_t defsparser(scriptfile *script)
         { "undefpalookuprange", T_UNDEFPALOOKUPRANGE },
         { "undefblendtablerange", T_UNDEFBLENDTABLERANGE },
         { "shadefactor",     T_SHADEFACTOR      },
-
+        { "newgamechoices",  T_NEWGAMECHOICES   },
         { "rffdefineid",     T_RFFDEFINEID      },  // dummy
     };
 
@@ -3657,10 +3658,19 @@ static int32_t defsparser(scriptfile *script)
                 paletteloaded &= ~PALETTE_TRANSLUC;
         }
         break;
+        case T_NEWGAMECHOICES: // stub
+        {
+            char *blockend;
+            if (scriptfile_getbraces(script,&blockend))
+                break;
+            script->textptr = blockend;
+            break;
+        }
         case T_RFFDEFINEID:
         {
             char *dummy;
             int dummy2;
+
 
             if (scriptfile_getstring(script, &dummy))
                 break;
@@ -3671,9 +3681,7 @@ static int32_t defsparser(scriptfile *script)
             if (scriptfile_getstring(script, &dummy))
                 break;
         }
-        break;
-
-        default:
+        break;        default:
             initprintf("Unknown token.\n"); break;
         }
     }
