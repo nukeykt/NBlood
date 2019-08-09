@@ -237,7 +237,7 @@ static void MV_ServiceVoc(void)
         } while (length > 0);
     }
 
-    if (!VoiceList.next || VoiceList.next == &VoiceList)
+    if (VoiceList.next && VoiceList.next != &VoiceList)
     {
         VoiceNode *voice = VoiceList.next;
         VoiceNode *next;
