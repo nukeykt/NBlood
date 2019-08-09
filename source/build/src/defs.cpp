@@ -122,6 +122,7 @@ enum scripttoken_t
     T_SHADERED, T_SHADEGREEN, T_SHADEBLUE,
     T_SHADEFACTOR,
     T_IFCRC,
+    T_NEWGAMECHOICES,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -402,6 +403,7 @@ static int32_t defsparser(scriptfile *script)
         { "undefpalookuprange", T_UNDEFPALOOKUPRANGE },
         { "undefblendtablerange", T_UNDEFBLENDTABLERANGE },
         { "shadefactor",     T_SHADEFACTOR      },
+        { "newgamechoices",  T_NEWGAMECHOICES   },
     };
 
     while (1)
@@ -3634,6 +3636,15 @@ static int32_t defsparser(scriptfile *script)
                 paletteloaded &= ~PALETTE_TRANSLUC;
         }
         break;
+
+        case T_NEWGAMECHOICES: // stub
+        {
+            char *blockend;
+            if (scriptfile_getbraces(script,&blockend))
+                break;
+            script->textptr = blockend;
+            break;
+        }
 
         default:
             initprintf("Unknown token.\n"); break;
