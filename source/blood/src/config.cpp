@@ -70,6 +70,7 @@ int32_t scripthandle;
 int32_t setupread;
 int32_t SoundToggle;
 int32_t MusicToggle;
+int32_t MusicRestartsOnLoadToggle;
 int32_t CDAudioToggle;
 int32_t FXVolume;
 int32_t MusicVolume;
@@ -322,6 +323,7 @@ void CONFIG_SetDefaults(void)
     MouseBias       = 0;
     MouseDeadZone   = 0;
     MusicToggle     = 1;
+    MusicRestartsOnLoadToggle = 0;
     MusicVolume     = 195;
     NumBits         = 16;
     NumChannels     = 2;

@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ai.h"
 #include "asound.h"
 #include "blood.h"
+#include "demo.h"
 #include "globals.h"
 #include "db.h"
 #include "messages.h"
@@ -93,6 +94,10 @@ void LoadSave::Write(void *pData, int nSize)
 
 void LoadSave::LoadGame(char *pzFile)
 {
+    bool demoWasPlayed = gDemo.at1;
+    if (gDemo.at1)
+        gDemo.Close();
+
     sndKillAllSounds();
     sfxKillAllSounds();
     ambKillAll();
@@ -153,7 +158,16 @@ void LoadSave::LoadGame(char *pzFile)
     gPaused = 0;
     gGameStarted = 1;
     bVanilla = false;
-    levelTryPlayMusic(gGameOptions.nEpisode ,gGameOptions.nLevel);
+
+    if (MusicRestartsOnLoadToggle
+        || demoWasPlayed
+        || (gMusicPrevLoadedEpisode != gGameOptions.nEpisode || gMusicPrevLoadedLevel != gGameOptions.nLevel))
+    {
+        levelTryPlayMusic(gGameOptions.nEpisode, gGameOptions.nLevel);
+    }
+    gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
+    gMusicPrevLoadedLevel = gGameOptions.nLevel;
+
     netBroadcastPlayerInfo(myconnectindex);
     //sndPlaySong(gGameOptions.zLevelSong, 1);
 }

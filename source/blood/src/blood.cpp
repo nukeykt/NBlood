@@ -99,6 +99,9 @@ bool bNoAutoLoad = false;
 
 bool bVanilla = false;
 
+int gMusicPrevLoadedEpisode = -1;
+int gMusicPrevLoadedLevel = -1;
+
 char gUserMapFilename[BMAX_PATH];
 char gPName[MAXPLAYERNAME];
 
@@ -463,7 +466,8 @@ void PreloadCache(void)
     char tempbuf[128];
     if (gDemo.at1)
         return;
-    sndPlaySpecialMusicOrNothing(MUS_LOADING);
+    if (MusicRestartsOnLoadToggle)
+        sndTryPlaySpecialMusic(MUS_LOADING);
     gSoundRes.PrecacheSounds();
     PreloadTiles();
     int clock = totalclock;
@@ -532,6 +536,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     EndLevel();
     gStartNewGame = 0;
     ready2send = 0;
+    gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
+    gMusicPrevLoadedLevel = gGameOptions.nLevel;
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
