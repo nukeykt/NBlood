@@ -81,7 +81,7 @@ static inline void MV_Unlock(void)
     if (!--lockdepth)
         SoundDriver_Unlock();
     else if (lockdepth < 0 && MV_Printf)
-        MV_Printf("RestoreInterrupts(): lockdepth < 0!\n");
+        MV_Printf("MV_Unlock(): lockdepth < 0!\n");
 }
 
 extern void (*MV_Printf)(const char *fmt, ...);

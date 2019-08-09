@@ -186,8 +186,8 @@ static void MV_CleanupVoice(VoiceNode *voice)
 
 static void MV_StopVoice(VoiceNode *voice)
 {
-    MV_Lock();
     MV_CleanupVoice(voice);
+    MV_Lock();
     // move the voice from the play list to the free list
     LL::Move(voice, &VoicePool);
     MV_Unlock();
