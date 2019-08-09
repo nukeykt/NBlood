@@ -70,6 +70,7 @@ int32_t JoystickAnalogueSaturate[MAXJOYAXES];
 uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 int32_t scripthandle;
 int32_t setupread;
+int32_t MusicRestartsOnLoadToggle;
 int32_t configversion;
 int32_t CheckForUpdates;
 int32_t LastUpdateCheck;
@@ -315,6 +316,7 @@ void CONFIG_SetDefaults(void)
     MouseBias       = 0;
     MouseDeadZone   = 0;
     MusicToggle     = 1;
+    MusicRestartsOnLoadToggle = 0;
     MusicVolume     = 195;
     NumBits         = 16;
     NumChannels     = 2;
@@ -812,7 +814,7 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
 
         OSD_WriteAliases(fp);
 
-        if (g_crosshairSum != -1 && g_crosshairSum != DefaultCrosshairColors.r+(DefaultCrosshairColors.g<<8)+(DefaultCrosshairColors.b<<16))
+        if (g_isAlterDefaultCrosshair)
             Bfprintf(fp, "crosshaircolor %d %d %d\n", CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
 
         OSD_WriteCvars(fp);

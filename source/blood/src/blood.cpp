@@ -93,6 +93,9 @@ bool bNoDemo = false;
 bool bQuickStart = true;
 bool bNoAutoLoad = false;
 
+int gMusicPrevLoadedEpisode = -1;
+int gMusicPrevLoadedLevel = -1;
+
 char gUserMapFilename[BMAX_PATH];
 char gPName[MAXPLAYERNAME];
 
@@ -424,7 +427,8 @@ void PreloadCache(void)
     char tempbuf[128];
     if (gDemo.at1)
         return;
-    sndPlaySpecialMusicOrNothing(MUS_LOADING);
+    if (MusicRestartsOnLoadToggle)
+        sndTryPlaySpecialMusic(MUS_LOADING);
     gSoundRes.PrecacheSounds();
     PreloadTiles();
     int clock = totalclock;
@@ -494,6 +498,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     EndLevel();
     gStartNewGame = 0;
     ready2send = 0;
+    gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
+    gMusicPrevLoadedLevel = gGameOptions.nLevel;
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
@@ -1579,7 +1585,6 @@ RESTART:
     UpdateNetworkMenus();
     if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
         gDemo.SetupPlayback(NULL);
-    viewGetCrosshairColor();
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     gQuitGame = 0;
     gRestartGame = 0;

@@ -49,6 +49,7 @@ extern int32_t JoystickAnalogueSaturate[MAXJOYAXES];
 extern uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 extern int32_t scripthandle;
 extern int32_t setupread;
+extern int32_t MusicRestartsOnLoadToggle;
 extern int32_t configversion;
 extern int32_t CheckForUpdates;
 extern int32_t LastUpdateCheck;

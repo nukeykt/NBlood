@@ -2140,8 +2140,6 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     G_ModDirSnprintf(strLoadGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     if (!testkopen(strLoadGameName, 0))
         return;
-    if (gDemo.at1)
-        gDemo.Close();
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
