@@ -2691,7 +2691,7 @@ static int32_t defsparser(scriptfile *script)
 
             if (tile != DEFAULTPSKY && (unsigned)tile >= MAXUSERTILES)
             {
-                script->textptr = blockend;
+                script->textptr = blockend+1;
                 break;
             }
 
@@ -2779,7 +2779,7 @@ static int32_t defsparser(scriptfile *script)
             {
                 initprintf("Error: basepalette: Invalid basepal number on line %s:%d\n",
                            script->filename, scriptfile_getlinum(script,cmdtokptr));
-                script->textptr = blockend;
+                script->textptr = blockend+1;
                 break;
             }
 
@@ -2966,7 +2966,7 @@ static int32_t defsparser(scriptfile *script)
             {
                 initprintf("Error: palookup: Invalid pal number on line %s:%d\n",
                            script->filename, scriptfile_getlinum(script,cmdtokptr));
-                script->textptr = blockend;
+                script->textptr = blockend+1;
                 break;
             }
 
@@ -3273,7 +3273,7 @@ static int32_t defsparser(scriptfile *script)
             {
                 initprintf("Error: blendtable: Invalid blendtable number on line %s:%d\n",
                            script->filename, scriptfile_getlinum(script,cmdtokptr));
-                script->textptr = blockend;
+                script->textptr = blockend+1;
                 break;
             }
 
@@ -3642,7 +3642,7 @@ static int32_t defsparser(scriptfile *script)
             char *blockend;
             if (scriptfile_getbraces(script,&blockend))
                 break;
-            script->textptr = blockend;
+            script->textptr = blockend+1;
             break;
         }
 
