@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ai.h"
 #include "asound.h"
 #include "blood.h"
+#include "demo.h"
 #include "globals.h"
 #include "db.h"
 #include "messages.h"
@@ -91,8 +92,12 @@ void LoadSave::Write(void *pData, int nSize)
         ThrowError("File error #%d writing save file.", errno);
 }
 
-void LoadSave::LoadGame(char *pzFile, bool demoWasPlayed)
+void LoadSave::LoadGame(char *pzFile)
 {
+    bool demoWasPlayed = gDemo.at1;
+    if (gDemo.at1)
+        gDemo.Close();
+
     sndKillAllSounds();
     sfxKillAllSounds();
     ambKillAll();

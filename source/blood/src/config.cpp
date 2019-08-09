@@ -323,7 +323,7 @@ void CONFIG_SetDefaults(void)
     MouseBias       = 0;
     MouseDeadZone   = 0;
     MusicToggle     = 1;
-    MusicRestartsOnLoadToggle = 1;
+    MusicRestartsOnLoadToggle = 0;
     MusicVolume     = 195;
     NumBits         = 16;
     NumChannels     = 2;
