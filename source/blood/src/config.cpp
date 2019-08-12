@@ -119,6 +119,7 @@ bool gFullMap;
 int32_t gUpscaleFactor;
 int32_t gBrightness;
 int32_t gLevelStats;
+int32_t gPowerupDuration;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
@@ -347,6 +348,7 @@ void CONFIG_SetDefaults(void)
     //ud.hudontop               = 0;
     //ud.idplayers              = 1;
     gLevelStats = 0;
+    gPowerupDuration = 1;
     //ud.lockout                = 0;
     //ud.m_marker               = 1;
     //ud.maxautosaves           = 5;

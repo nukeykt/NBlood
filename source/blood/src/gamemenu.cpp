@@ -107,7 +107,10 @@ bool CGameMenuMgr::Push(CGameMenu *pMenu, int nItem)
         m_mouselastactivity = -M_MOUSETIMEOUT;
         m_mousewake_watchpoint = 0;
         mouseLockToWindow(0);
-        MoveMouseToCenter();
+        if (m_bFirstPush)
+            m_bFirstPush = false;
+        else
+            mouseMoveToCenter();
     }
     dassert(pMenu != NULL);
     if (nMenuPointer == 8)
@@ -122,16 +125,6 @@ bool CGameMenuMgr::Push(CGameMenu *pMenu, int nItem)
     m_menuchange_watchpoint = 1;
     m_mousecaught = 1;
     return true;
-}
-
-void CGameMenuMgr::MoveMouseToCenter()
-{
-    SDL_Window* window = SDL_GL_GetCurrentWindow();
-    SDL_GetWindowSize(window, &m_windowSize.x, &m_windowSize.y);
-    if (m_bFirstPush)
-        m_bFirstPush = false;
-    else
-        SDL_WarpMouseInWindow(window, m_windowSize.x / 2, m_windowSize.y / 2);
 }
 
 void CGameMenuMgr::Pop(void)
@@ -195,63 +188,22 @@ void CGameMenuMgr::Draw(void)
         m_mousewake_watchpoint = 0;
     }
 
-    vec2_t cursorpos = { (m_mousepos.x >> 16) + 9, (m_mousepos.y >> 16) + 18};
-
     // Display the mouse cursor, except on touch devices.
     if (MOUSEACTIVECONDITION && !m_bFirstPush)
     {
-        int16_t mousetile = 3522; // disembodied arm
+        int16_t mousetile = 1043; // red arrow
+        vec2_t cursorpos = { m_mousepos.x + (7 << 16), m_mousepos.y + (6 << 16) };
 
         if ((unsigned) mousetile < MAXTILES)
         {
             int32_t z = 65536;
             uint32_t stat = 2|8;
             int8_t alpha = MOUSEALPHA; //CURSORALPHA;
-            rotatesprite_fs_alpha(cursorpos.x << 16, cursorpos.y << 16, z, 0, mousetile, 0, NULL, stat, alpha);
+            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, -300, mousetile, 0, NULL, stat, alpha);
         }
     }
     else
         g_mouseClickState = MOUSE_IDLE;
-
-    DrawBloodDripFromCursor(cursorpos);
-}
-
-void CGameMenuMgr::DrawBloodDripFromCursor(const vec2_t& cursorpos)
-{
-    static int lastblooddripdraw = 0;
-    if (totalclock - lastblooddripdraw > 0)
-    {
-        const int16_t blooddriptile = 2028;
-        const int16_t roundblooddriptile = 2029;
-        const int cursorxoffset = 5;
-        const int cursoryoffset = 15;
-
-        static int distance = 0;
-        static int startx = cursorpos.x + cursorxoffset;
-        static int starty = cursorpos.y + cursoryoffset;
-        static bool showdrop = false;
-
-        int newdistance = distance < 35 ? distance < 30 ? 1 : 3 : 5;
-        int16_t actualblooddriptile = distance < 35 ? roundblooddriptile : blooddriptile;
-        int currenty = starty + distance + newdistance;
-
-        if (currenty < m_windowSize.y)
-        {
-            distance += newdistance;
-        }
-        else
-        {
-            showdrop = MOUSEACTIVECONDITION;
-            distance = 0;
-            startx = cursorpos.x + cursorxoffset;
-            starty = cursorpos.y + cursoryoffset;
-        }
-
-        if (showdrop)
-            rotatesprite_fs(startx << 16, currenty << 16, 65536, 0, actualblooddriptile, 0, NULL, 2);
-
-        lastblooddripdraw = totalclock;
-    }
 }
 
 void CGameMenuMgr::Clear(void)

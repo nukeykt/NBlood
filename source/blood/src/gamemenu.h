@@ -472,17 +472,14 @@ public:
     int32_t m_mousecaught;
     vec2_t m_prevmousepos, m_mousepos, m_mousedownpos;
     bool m_postPop;
-    vec2_t m_windowSize;
     CGameMenuMgr();
     ~CGameMenuMgr();
     void InitializeMenu(void);
     void DeInitializeMenu(void);
     bool Push(CGameMenu *pMenu, int data);
-    void MoveMouseToCenter();
     void Pop(void);
     void PostPop(void);
     void Draw(void);
-    void DrawBloodDripFromCursor(const vec2_t& cursorpos);
     void Clear(void);
     void Process(void);
     void Deactivate(void);

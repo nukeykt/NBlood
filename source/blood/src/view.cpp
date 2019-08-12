@@ -1190,6 +1190,9 @@ void sortPowerUps(POWERUPDISPLAY* powerups) {
 
 void viewDrawPowerUps(PLAYER* pPlayer)
 {
+    if (!gPowerupDuration)
+        return;
+
     const int nCloakOfInvisibility = 13;
     const int nReflectiveShots = 24;
     const int nDeathMask = 14; // invulnerability
