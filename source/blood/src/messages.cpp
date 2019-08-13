@@ -122,7 +122,12 @@ void SetWeapons(bool stat)
     if (stat)
         viewSetMessage("You have all weapons.");
     else
+    {
+        gMe->atcb[1] = 1;
+        gMe->atbd = 0;
+        gMe->atbe = 1;
         viewSetMessage("You have no weapons.");
+    }
 }
 
 void SetToys(bool stat)
@@ -532,7 +537,7 @@ CCheatMgr::CHEATINFO CCheatMgr::s_CheatInfo[] = {
     {"DIFFTFIFBE", kCheat19, 0 }, // CHEESEHEAD (100% diving suit)
     {"DPVTUFBV", kCheat33, 0 }, // COUSTEAU (200% health and diving suit)
     {"WPPSIFFT", kCheat24, 0 }, // VOORHEES (Death mask power-up)
-    {"MBSB!DSPGU", kCheat29, 0 }, // LARA CROFT (All weapons and infinite ammo. Displays the message "LARA RULES". Typing it the second time will lose all weapons and ammo.) //TODO: fix infinite loop
+    {"MBSB!DSPGU", kCheat29, 0 }, // LARA CROFT (All weapons and infinite ammo. Displays the message "LARA RULES". Typing it the second time will lose all weapons and ammo.)
     {"IPOHLPOH", kCheat30, 0 }, // HONGKONG (All weapons and infinite ammo)
     {"GSBOLFOTUFJO", kCheat18, 0 }, // FRANKENSTEIN (100% med-kit)
     {"TUFSOP", kCheat13, 0 }, // STERNO (Temporary blindness (same effect as getting bitten by green spider))
