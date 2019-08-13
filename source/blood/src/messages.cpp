@@ -529,8 +529,8 @@ CCheatMgr::CHEATINFO CCheatMgr::s_CheatInfo[] = {
     {"LFWPSLJBO", kCheat9, 0 }, // KEVORKIAN (Does a lot of physical damage to you (if you have 200HP and 200 fire armor then you can survive). Displays the message "KEVORKIAN APPROVES" )
     {"NDHFF", kCheat10, 0 }, // MCGEE (Sets you on fire. Displays the message "YOU'RE FIRED".)
     {"LSVFHFS", kCheat12, 0 }, // KRUEGER (200% health, but sets you on fire. Displays the message "FLAME RETARDANT")
-    {"DIFFTFIFBE", kCheat19, 0 }, // CHEESEHEAD (100% diving suit) // TODO: doesn't work properly
-    {"DPVTUFBV", kCheat33, 0 }, // COUSTEAU (200% health and diving suit) TODO: diving suit doesn't work properly
+    {"DIFFTFIFBE", kCheat19, 0 }, // CHEESEHEAD (100% diving suit)
+    {"DPVTUFBV", kCheat33, 0 }, // COUSTEAU (200% health and diving suit)
     {"WPPSIFFT", kCheat24, 0 }, // VOORHEES (Death mask power-up)
     {"MBSB!DSPGU", kCheat29, 0 }, // LARA CROFT (All weapons and infinite ammo. Displays the message "LARA RULES". Typing it the second time will lose all weapons and ammo) //TODO: fix infinite loop
     {"IPOHLPOH", kCheat30, 0 }, // HONGKONG (All weapons and infinite ammo)
@@ -676,6 +676,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         break;
     case kCheat19:
         gMe->packInfo[1].at1 = 100;
+        gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat20:
         ToggleWooMode();
@@ -723,6 +724,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat33:
         actHealDude(gMe->pXSprite,200,200);
         gMe->packInfo[1].at1 = 100;
+        gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat34:
         SetInfiniteAmmo(false);

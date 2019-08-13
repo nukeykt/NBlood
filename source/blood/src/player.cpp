@@ -55,14 +55,6 @@ PROFILE gProfile[kMaxPlayers];
 PLAYER gPlayer[kMaxPlayers];
 PLAYER *gMe, *gView;
 
-struct POWERUPINFO
-{
-    short at0;
-    char at2;
-    int at3;
-    int at7;
-};
-
 POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
     { -1, 1, 1, 1 },
     { -1, 1, 1, 1 },
