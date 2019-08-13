@@ -1557,7 +1557,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             int i;
 
             for (i=startwall, wal=(uwallptr_t)&wall[startwall]; i!=endwall; i+=dir, wal+=dir)
-                if (clipinsidebox((vec2_t *)vect, i, walldist-4) == 1)
+                if (clipinsidebox(&vect->vec2, i, walldist-4) == 1)
                 {
                     int j = 0;
                     if (wal->nextsector < 0 || wal->cstat&dawalclipmask) j = 1;
@@ -1595,10 +1595,10 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         {
                             vect->x = (vect->x) + dx; vect->y = (vect->y) + dy;
                             bad2--; if (bad2 == 0) break;
-                        } while (clipinsidebox((vec2_t *)vect, i, walldist-4) != 0);
+                        } while (clipinsidebox(&vect->vec2, i, walldist-4) != 0);
                         bad = -1;
                         k--; if (k <= 0) return bad;
-                        clipupdatesector(*(vec2_t *)vect, sectnum, walldist);
+                        clipupdatesector(vect->vec2, sectnum, walldist);
                         if (*sectnum < 0) return -1;
                     }
                     else if (bitmap_test(clipsectormap, wal->nextsector) == 0)
@@ -2220,7 +2220,7 @@ int32_t hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32
 #ifdef YAX_ENABLE
 restart_grand:
 #endif
-    *(vec2_t *)&hit->pos = hitscangoal;
+    hit->pos.vec2 = hitscangoal;
 
     clipsectorlist[0] = sectnum;
     tempshortcnt  = 0;
