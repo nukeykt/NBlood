@@ -100,6 +100,7 @@ extern hashtable_t h_gamefuncs;
 extern int32_t gUpscaleFactor;
 extern int32_t gBrightness;
 extern int32_t gLevelStats;
+extern int32_t gPowerupDuration;
 extern int32_t MAXCACHE1DSIZE;
 extern int32_t gFov;
 extern int32_t gCenterHoriz;

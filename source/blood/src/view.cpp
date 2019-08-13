@@ -1158,6 +1158,69 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
 
+#define kSBarNumberHealth 9220
+#define kSBarNumberAmmo 9230
+#define kSBarNumberInv 9240
+#define kSBarNumberArmor1 9250
+#define kSBarNumberArmor2 9260
+#define kSBarNumberArmor3 9270
+
+struct POWERUPDISPLAY
+{
+    int nTile;
+    float nScaleRatio;
+    int yOffset;
+    int remainingDuration;
+};
+
+void sortPowerUps(POWERUPDISPLAY* powerups) {
+    for (int i = 1; i < 5; i++)
+    {
+        for (int j = 0; j < 5-i; j++)
+        {
+            if (powerups[j].remainingDuration > powerups[j+1].remainingDuration)
+            {
+                POWERUPDISPLAY temp = powerups[j];
+                powerups[j] = powerups[j+1];
+                powerups[j+1] = temp;
+            }
+        }
+    }
+}
+
+void viewDrawPowerUps(PLAYER* pPlayer)
+{
+    if (!gPowerupDuration)
+        return;
+
+    const int nCloakOfInvisibility = 13;
+    const int nReflectiveShots = 24;
+    const int nDeathMask = 14; // invulnerability
+    const int nGunsAkimbo = 17;
+    const int nCloakOfShadow = 26; // does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
+
+    POWERUPDISPLAY powerups[5];
+    powerups[0] = { 896, 0.4, 0, pPlayer->at202[nCloakOfInvisibility] };
+    powerups[1] = { 2428, 0.4, 5, pPlayer->at202[nReflectiveShots] };
+    powerups[2] = { 825, 0.3, 9, pPlayer->at202[nDeathMask] };
+    powerups[3] = { 829, 0.3, 5, pPlayer->at202[nGunsAkimbo] };
+    powerups[4] = { 768, 0.4, 9, pPlayer->at202[nCloakOfShadow] };
+
+    sortPowerUps(powerups);
+
+    const int x = 15;
+    int y = 50;
+    for (int i = 0; i < 5; i++)
+    {
+        if (powerups[i].remainingDuration)
+        {
+            DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
+            DrawStatNumber("%d", powerups[i].remainingDuration / 100, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            y += 20;
+        }
+    }
+}
+
 void viewDrawPack(PLAYER *pPlayer, int x, int y)
 {
     int packs[5];
@@ -1198,13 +1261,6 @@ void viewDrawPack(PLAYER *pPlayer, int x, int y)
     }
     dword_14C508 = pPlayer->at31d;
 }
-
-#define kSBarNumberHealth 9220
-#define kSBarNumberAmmo 9230
-#define kSBarNumberInv 9240
-#define kSBarNumberArmor1 9250
-#define kSBarNumberArmor2 9260
-#define kSBarNumberArmor3 9270
 
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat)
 {
@@ -1285,6 +1341,7 @@ void UpdateStatusBar(int arg)
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2-30);
         viewDrawStats(pPlayer, 2, 140);
+        viewDrawPowerUps(pPlayer);
     }
     else if (gViewSize <= 2)
     {
@@ -1348,6 +1405,7 @@ void UpdateStatusBar(int arg)
 #endif
         }
         viewDrawStats(pPlayer, 2, 140);
+        viewDrawPowerUps(pPlayer);
     }
     else if (gViewSize > 2)
     {
@@ -1435,6 +1493,7 @@ void UpdateStatusBar(int arg)
             TileHGauge(2260, 124, 175, pPlayer->at1ba, 65536);
         }
         viewDrawStats(pPlayer, 2, 140);
+        viewDrawPowerUps(pPlayer);
     }
     if (gGameOptions.nGameType < 1) return;
 
