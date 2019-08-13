@@ -507,42 +507,42 @@ void CPlayerMsg::ProcessKeys(void)
 }
 
 CCheatMgr::CHEATINFO CCheatMgr::s_CheatInfo[] = {
-    {"NQLGB", kCheat5, 0 }, // MPKFA
-    {"DBQJONZBTT", kCheat6, 0 }, // CAPINMYASS
-    {"OPDBQJONZBTT", kCheat7, 0 }, // NOCAPINMYASS
-    {"J!XBOOB!CF!MJLF!LFWJO", kCheat7, 0 }, // I WANNA BE LIKE KEVIN
-    {"JEBIP", kCheat8, 0 }, // IDAHO
-    {"NPOUBOB", kCheat31, 0 }, // MONTANA
-    {"HSJTXPME", kCheat2, 0 }, // GRISWOLD
-    {"FENBSL", kCheat11, 0 }, // EDMARK
-    {"UFRVJMB", kCheat20, 0 }, // TEQUILA
-    {"CVO[", kCheat32, 0 }, // BUNZ
-    {"GVOLZ!TIPFT", kCheat21, 0 }, // FUNKY SHOES
-    {"HBUFLFFQFS", kCheat26, 0 },
-    {"LFZNBTUFS", kCheat22, 0 },
-    {"KPKP", kCheat25, 0 },
-    {"TBUDIFM", kCheat3, 0 },
-    {"TQPSL", kCheat15, 0 },
-    {"POFSJOH", kCheat23, 0 },
-    {"NBSJP", kCheat28, 1 },
-    {"DBMHPO", kCheat28, 1 },
-    {"LFWPSLJBO", kCheat9, 0 },
-    {"NDHFF", kCheat10, 0 },
-    {"LSVFHFS", kCheat12, 0 },
-    {"DIFFTFIFBE", kCheat19, 0 },
-    {"DPVTUFBV", kCheat33, 0 },
-    {"WPPSIFFT", kCheat24, 0 },
-    {"MBSB!DSPGU", kCheat29, 0 },
-    {"IPOHLPOH", kCheat30, 0 },
-    {"GSBOLFOTUFJO", kCheat18, 0 },
-    {"TUFSOP", kCheat13, 0 },
-    {"DMBSJDF", kCheat17, 0 },
-    {"GPSL!ZPV", kCheat34, 0 },
-    {"MJFCFSNBO", kCheat35, 0 },
-    {"FWB!HBMMJ", kCheat4, 0 },
-    {"SBUF", kCheat27, 0 },
-    {"HPPOJFT", kCheat16, 0 },
-    {"TQJFMCFSH", kCheat36, 1 },
+    {"NQLGB", kCheat5, 0 }, // MPKFA (Invincibility)
+    {"DBQJONZBTT", kCheat6, 0 }, // CAPINMYASS (Disable invincibility )
+    {"OPDBQJONZBTT", kCheat7, 0 }, // NOCAPINMYASS (Invincibility)
+    {"J!XBOOB!CF!MJLF!LFWJO", kCheat7, 0 }, // I WANNA BE LIKE KEVIN (Invincibility)
+    {"JEBIP", kCheat8, 0 }, // IDAHO (All weapons and full ammo)
+    {"NPOUBOB", kCheat31, 0 }, // MONTANA (All weapons, full ammo and all items)
+    {"HSJTXPME", kCheat2, 0 }, // GRISWOLD (Full armor (same effect as getting super armor))
+    {"FENBSL", kCheat11, 0 }, // EDMARK (Does a lot of fire damage to you (if you have 200HP and 200 fire armor then you can survive), displays the message "THOSE WERE THE DAYS")
+    {"UFRVJMB", kCheat20, 0 }, // TEQUILA (Guns akimbo power-up)
+    {"CVO[", kCheat32, 0 }, // BUNZ (All weapons, full ammo, and guns akimbo power-up)
+    {"GVOLZ!TIPFT", kCheat21, 0 }, // FUNKY SHOES (Gives jump boots item and activates it)
+    {"HBUFLFFQFS", kCheat26, 0 }, // GATEKEEPER (Sets the you cheated flag to true, at the end of the level you will see that you have cheated)
+    {"LFZNBTUFS", kCheat22, 0 }, // KEYMASTER (All keys)
+    {"KPKP", kCheat25, 0 }, // JOJO (Drunk mode (same effect as getting bitten by red spider))
+    {"TBUDIFM", kCheat3, 0 }, // SATCHEL (Full inventory)
+    {"TQPSL", kCheat15, 0 }, // SPORK (200% health (same effect as getting life seed))
+    {"POFSJOH", kCheat23, 0 }, // ONERING (Cloak of invisibility power-up)
+    {"NBSJP", kCheat28, 1 }, // MARIO (Warp to level E M, e.g.: MARIO 1 3 will take you to Phantom Express)
+    {"DBMHPO", kCheat28, 1 }, // CALGON (Jump to next level but instead it does nothing) // TODO: fix
+    {"LFWPSLJBO", kCheat9, 0 }, // KEVORKIAN (Does a lot of physical damage to you (if you have 200HP and 200 fire armor then you can survive). Displays the message "KEVORKIAN APPROVES" )
+    {"NDHFF", kCheat10, 0 }, // MCGEE (Sets you on fire. Displays the message "YOU'RE FIRED".)
+    {"LSVFHFS", kCheat12, 0 }, // KRUEGER (200% health, but sets you on fire. Displays the message "FLAME RETARDANT")
+    {"DIFFTFIFBE", kCheat19, 0 }, // CHEESEHEAD (100% diving suit) // TODO: doesn't work properly
+    {"DPVTUFBV", kCheat33, 0 }, // COUSTEAU (200% health and diving suit) TODO: diving suit doesn't work properly
+    {"WPPSIFFT", kCheat24, 0 }, // VOORHEES (Death mask power-up)
+    {"MBSB!DSPGU", kCheat29, 0 }, // LARA CROFT (All weapons and infinite ammo. Displays the message "LARA RULES". Typing it the second time will lose all weapons and ammo) //TODO: fix infinite loop
+    {"IPOHLPOH", kCheat30, 0 }, // HONGKONG (All weapons and infinite ammo)
+    {"GSBOLFOTUFJO", kCheat18, 0 }, // FRANKENSTEIN (100% med-kit)
+    {"TUFSOP", kCheat13, 0 }, // STERNO (Temporary blindness (same effect as getting bitten by green spider))
+    {"DMBSJDF", kCheat17, 0 }, // CLARICE (should give 100% body armor, 100% fire armor, 100% spirit armor but instead it does nothing) // TODO: fix?
+    {"GPSL!ZPV", kCheat34, 0 }, // FORK YOU (Drunk mode, 1HP, no armor, no weapons, no ammo, no items, no keys, no map, guns akimbo power-up)
+    {"MJFCFSNBO", kCheat35, 0 }, // LIEBERMAN (Sets the you cheated flag to true, at the end of the level you will see that you have cheated)
+    {"FWB!HBMMJ", kCheat4, 0 }, // EVA GALLI (Disable/enable clipping (grant the ability to walk through walls))
+    {"SBUF", kCheat27, 0 }, // RATE (Display frame rate (doesn't count as a cheat))
+    {"HPPOJFT", kCheat16, 0 }, // GOONIES (Enable full map. Displays the message "YOU HAVE THE MAP".)
+    {"TQJFMCFSH", kCheat36, 1 }, // SPIELBERG (Disables all cheats. If number values corresponding to a level and episode number are entered after the cheat word (i.e. "spielberg 1 3" for Phantom Express), you will be spawned to said level and the game will begin recording a demo from your actions.)
 };
 
 bool CCheatMgr::m_bPlayerCheated = false;
