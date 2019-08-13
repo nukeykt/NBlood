@@ -2471,7 +2471,7 @@ static int32_t do_while_copyloop1(int16_t startwall, int16_t endwall,
 
 static void updatesprite1(int16_t i)
 {
-    setsprite(i, (vec3_t *)&sprite[i]);
+    setsprite(i, &sprite[i].pos);
 
     if (sprite[i].sectnum>=0)
     {
@@ -3702,8 +3702,7 @@ void overheadeditor(void)
                     for (i=0; i<numsectors; i++)
                         for (SPRITES_OF_SECT(i, j))
                             if (reftag==select_sprite_tag(j))
-                                drawlinebetween((vec3_t *)&sprite[refspritenum], (vec3_t *)&sprite[j],
-                                                editorcolors[12], 0x33333333);
+                                drawlinebetween(&sprite[refspritenum].pos, &sprite[j].pos, editorcolors[12], 0x33333333);
                 }
             }
 
@@ -5850,7 +5849,7 @@ end_after_dragging:
                             int16_t osec=sprite[daspr].sectnum, nsec=osec;
                             vec3_t vec, ovec;
 
-                            Bmemcpy(&ovec, (vec3_t *)&sprite[daspr], sizeof(vec3_t));
+                            Bmemcpy(&ovec, &sprite[daspr].pos, sizeof(vec3_t));
                             vec.x = dax;
                             vec.y = day;
                             vec.z = sprite[daspr].z;
