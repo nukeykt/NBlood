@@ -698,12 +698,15 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         break;
     case kCheat27: // show FPS, handled before (dead code), leave here for safety
         return;
-    case kCheat28:
+    case kCheat28: // mario
         if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
             LevelWarp(nEpisode, nLevel);
         break;
-    case kCheat37:
-        LevelWarp(gMusicPrevLoadedEpisode, nextLevel);
+    case kCheat37: // calgon
+        if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
+            LevelWarp(nEpisode, nLevel);
+        else
+            LevelWarp(gMusicPrevLoadedEpisode, nextLevel);
         break;
     case kCheat29:
         SetInfiniteAmmo(!gInfiniteAmmo);
