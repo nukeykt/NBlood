@@ -567,6 +567,9 @@ static MenuOption_t MEO_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUOPTION(&MF_Redfont, 
 static MenuEntry_t ME_DISPLAYSETUP_ASPECTRATIO = MAKE_MENUENTRY( "Widescreen:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ASPECTRATIO, Option );
 #endif
 
+static MenuOption_t MEO_DISPLAYSETUP_VOXELS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_OffOn, &usevoxels);
+static MenuEntry_t ME_DISPLAYSETUP_VOXELS = MAKE_MENUENTRY( "Voxels:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_VOXELS, Option );
+
 static MenuRangeInt32_t MEO_DISPLAYSETUP_FOV = MAKE_MENURANGE( &ud.fov, &MF_Redfont, 70, 120, 0, 11, 1 );
 static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_FOV, RangeInt32 );
 
@@ -740,6 +743,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP[] = {
 #ifndef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_VIDEOSETUP,
     &ME_DISPLAYSETUP_ASPECTRATIO,
+    &ME_DISPLAYSETUP_VOXELS,
     &ME_DISPLAYSETUP_FOV,
 #endif
     &ME_DISPLAYSETUP_UPSCALING,
@@ -752,6 +756,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
 #ifndef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_VIDEOSETUP,
     &ME_DISPLAYSETUP_ASPECTRATIO,
+    &ME_DISPLAYSETUP_VOXELS,
     &ME_DISPLAYSETUP_FOV,
 #endif
 #ifndef EDUKE32_STANDALONE
@@ -781,6 +786,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL_POLYMER[] = {
 #ifndef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_VIDEOSETUP,
     &ME_DISPLAYSETUP_FOV,
+    &ME_DISPLAYSETUP_VOXELS,
 #endif
 #ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
@@ -2029,8 +2035,9 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_GAMESETUP_DEMOREC, (ps->gm&MODE_GAME) && ud.m_recstat != 1);
         break;
 
-#ifdef USE_OPENGL
     case MENU_DISPLAYSETUP:
+        MenuEntry_HideOnCondition(&ME_DISPLAYSETUP_VOXELS, !g_haveVoxels);
+#ifdef USE_OPENGL
         if (videoGetRenderMode() == REND_CLASSIC)
             MenuMenu_ChangeEntryList(M_DISPLAYSETUP, MEL_DISPLAYSETUP);
 #ifdef POLYMER
@@ -2089,8 +2096,8 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_DETAILTEX, !usehightile);
         MenuEntry_DisableOnCondition(&ME_RENDERERSETUP_GLOWTEX, !usehightile);
 # endif
-        break;
 #endif
+        break;
 
     case MENU_VIDEOSETUP:
     {
