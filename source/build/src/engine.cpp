@@ -101,8 +101,9 @@ void (*loadvoxel_replace)(int32_t voxindex) = NULL;
 int16_t tiletovox[MAXTILES];
 int32_t usevoxels = 1;
 #ifdef USE_OPENGL
-static char *voxfilenames[MAXVOXELS], g_haveVoxels=0;  // for deferred voxel->model conversion
+static char *voxfilenames[MAXVOXELS];
 #endif
+char g_haveVoxels;
 //#define kloadvoxel loadvoxel
 
 int32_t novoxmips = 1;
@@ -10434,10 +10435,10 @@ static void PolymostProcessVoxels(void)
 # endif
     if (PolymostProcessVoxels_Callback)
         PolymostProcessVoxels_Callback();
-    if (!g_haveVoxels)
+    if (g_haveVoxels != 1)
         return;
 
-    g_haveVoxels = 0;
+    g_haveVoxels = 2;
 
     OSD_Printf("Generating voxel models for Polymost. This may take a while...\n");
     videoNextPage();
@@ -10692,8 +10693,9 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
 
     Xfree(voxfilenames[voxindex]);
     voxfilenames[voxindex] = Xstrdup(filename);
-    g_haveVoxels = 1;
 #endif
+
+    g_haveVoxels = 1;
 
     return 0;
 }
