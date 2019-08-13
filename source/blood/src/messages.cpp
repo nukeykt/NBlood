@@ -671,6 +671,11 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat16:
         SetMap(!gFullMap);
         break;
+    case kCheat17: // clarice
+        viewSetMessage("You have half armor.");
+        for (int i = 0; i < 3; i++)
+            gMe->at33e[i] = 1600;
+        break;
     case kCheat18:
         gMe->packInfo[0].at1 = 100;
         break;
