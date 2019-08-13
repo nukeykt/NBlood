@@ -525,7 +525,7 @@ CCheatMgr::CHEATINFO CCheatMgr::s_CheatInfo[] = {
     {"TQPSL", kCheat15, 0 }, // SPORK (200% health (same effect as getting life seed))
     {"POFSJOH", kCheat23, 0 }, // ONERING (Cloak of invisibility power-up)
     {"NBSJP", kCheat28, 1 }, // MARIO (Warp to level E M, e.g.: MARIO 1 3 will take you to Phantom Express)
-    {"DBMHPO", kCheat28, 1 }, // CALGON (Jump to next level but instead it does nothing) // TODO: fix
+    {"DBMHPO", kCheat37, 1 }, // CALGON (Jump to next level)
     {"LFWPSLJBO", kCheat9, 0 }, // KEVORKIAN (Does a lot of physical damage to you (if you have 200HP and 200 fire armor then you can survive). Displays the message "KEVORKIAN APPROVES" )
     {"NDHFF", kCheat10, 0 }, // MCGEE (Sets you on fire. Displays the message "YOU'RE FIRED".)
     {"LSVFHFS", kCheat12, 0 }, // KRUEGER (200% health, but sets you on fire. Displays the message "FLAME RETARDANT")
@@ -602,6 +602,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     if (gGameOptions.nGameType != 0)
         return;
     int nEpisode, nLevel;
+    int nextLevel = ClipRange(gMusicPrevLoadedLevel + 1, 0, gEpisodeInfo[gMusicPrevLoadedEpisode].nLevels - 1);
     switch (nCheatCode)
     {
     case kCheat36:
@@ -661,7 +662,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat13:
         gMe->at36a = 250;
         break;
-    case kCheat14:
+    case kCheat14: // quake (causing a little flicker), not used by any cheat code (dead code)
         gMe->at35a = 360;
         break;
     case kCheat15:
@@ -694,11 +695,14 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat25:
         ToggleDelirium();
         break;
-    case kCheat27:
+    case kCheat27: // show FPS, handled before (dead code), leave here for safety
         return;
     case kCheat28:
         if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
             LevelWarp(nEpisode, nLevel);
+        break;
+    case kCheat37:
+        LevelWarp(gMusicPrevLoadedEpisode, nextLevel);
         break;
     case kCheat29:
         SetInfiniteAmmo(!gInfiniteAmmo);
