@@ -46,6 +46,11 @@ texturecache
 *.vcxproj.user
 *.psess
 *.vsp
+/platform/Windows/Build/
+/platform/Windows/x64/
+/platform/Windows/Win32/
+*.exp
+*.lib
 perl.exe.stackdump
 
 xcuserdata/
