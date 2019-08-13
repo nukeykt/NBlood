@@ -1200,11 +1200,11 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     const int nCloakOfShadow = 26; // does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
 
     POWERUPDISPLAY powerups[5];
-    powerups[0] = { 896, 0.4, 0, pPlayer->at202[nCloakOfInvisibility] };
-    powerups[1] = { 2428, 0.4, 5, pPlayer->at202[nReflectiveShots] };
-    powerups[2] = { 825, 0.3, 9, pPlayer->at202[nDeathMask] };
-    powerups[3] = { 829, 0.3, 5, pPlayer->at202[nGunsAkimbo] };
-    powerups[4] = { 768, 0.4, 9, pPlayer->at202[nCloakOfShadow] };
+    powerups[0] = { 896, 0.4f, 0, pPlayer->at202[nCloakOfInvisibility] };
+    powerups[1] = { 2428, 0.4f, 5, pPlayer->at202[nReflectiveShots] };
+    powerups[2] = { 825, 0.3f, 9, pPlayer->at202[nDeathMask] };
+    powerups[3] = { 829, 0.3f, 5, pPlayer->at202[nGunsAkimbo] };
+    powerups[4] = { 768, 0.4f, 9, pPlayer->at202[nCloakOfShadow] };
 
     sortPowerUps(powerups);
 
