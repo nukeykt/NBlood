@@ -222,6 +222,7 @@ void mouseSetCallback(void (*callback)(int32_t,int32_t));
 void joySetCallback(void (*callback)(int32_t,int32_t));
 const char *keyGetName(int32_t num);
 const char *joyGetName(int32_t what, int32_t num); // what: 0=axis, 1=button, 2=hat
+void joyScanDevices(void);
 
 char keyGetChar(void);
 #define keyBufferWaiting() (g_keyAsciiPos != g_keyAsciiEnd)
