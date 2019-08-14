@@ -55,14 +55,6 @@ PROFILE gProfile[kMaxPlayers];
 PLAYER gPlayer[kMaxPlayers];
 PLAYER *gMe, *gView;
 
-struct POWERUPINFO
-{
-    short at0;
-    char at2;
-    int at3; // full value
-    int at7;
-};
-
 POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
     { -1, 1, 1, 1 },
     { -1, 1, 1, 1 },
@@ -495,18 +487,18 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         }
         break;
     case 112:
-    case 115:
+    case 115: // jump boots
         pPlayer->ata1[0]++;
         break;
-    case 124:
+    case 124: // reflective shots
         if (pPlayer == gMe && gGameOptions.nGameType == 0)
             sfxSetReverb2(1);
         break;
-    case 114:
+    case 114: // death mask
         for (int i = 0; i < 7; i++)
             pPlayer->ata1[i]++;
         break;
-    case 118:
+    case 118: // diving suit
         pPlayer->ata1[4]++;
         if (pPlayer == gMe && gGameOptions.nGameType == 0)
             sfxSetReverb(1);
@@ -517,7 +509,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
     case 139:
         pPlayer->ata1[1]++;
         break;
-    case 117:
+    case 117: // guns akimbo
         pPlayer->atc.newWeapon = pPlayer->atbd;
         WeaponRaise(pPlayer);
         break;
@@ -542,19 +534,19 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         resetPlayerSize(pPlayer);
         break;
     case 112:
-    case 115:
+    case 115: // jump boots
         pPlayer->ata1[0]--;
         break;
-    case 114:
+    case 114: // death mask
         for (int i = 0; i < 7; i++)
             pPlayer->ata1[i]--;
         break;
-    case 118:
+    case 118: // diving suit
         pPlayer->ata1[4]--;
         if (pPlayer == gMe)
             sfxSetReverb(0);
         break;
-    case 124:
+    case 124: // reflective shots
         if (pPlayer == gMe)
             sfxSetReverb(0);
         break;
@@ -564,7 +556,7 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
     case 139:
         pPlayer->ata1[1]--;
         break;
-    case 117:
+    case 117: // guns akimbo
         pPlayer->atc.newWeapon = pPlayer->atbd;
         WeaponRaise(pPlayer);
         break;

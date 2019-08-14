@@ -181,6 +181,14 @@ struct AMMOINFO {
     signed char at4;
 };
 
+struct POWERUPINFO
+{
+    short at0;
+    char at2;
+    int at3; // max value
+    int at7;
+};
+
 extern POSTURE gPosture[4][3];
 
 extern PLAYER gPlayer[kMaxPlayers];
@@ -191,6 +199,7 @@ extern PROFILE gProfile[kMaxPlayers];
 extern int dword_21EFB0[kMaxPlayers];
 extern int dword_21EFD0[kMaxPlayers];
 extern AMMOINFO gAmmoInfo[];
+extern POWERUPINFO gPowerUpInfo[kMaxPowerUps];
 
 int powerupCheck(PLAYER *pPlayer, int nPowerUp);
 char powerupActivate(PLAYER *pPlayer, int nPowerUp);
