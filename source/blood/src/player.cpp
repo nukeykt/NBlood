@@ -487,7 +487,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         }
         break;
     case 112:
-    case 115:
+    case 115: // jump boots
         pPlayer->ata1[0]++;
         break;
     case 124: // reflective shots
@@ -534,7 +534,7 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         resetPlayerSize(pPlayer);
         break;
     case 112:
-    case 115:
+    case 115: // jump boots
         pPlayer->ata1[0]--;
         break;
     case 114: // death mask

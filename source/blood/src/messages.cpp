@@ -213,11 +213,14 @@ void ToggleBoots(void)
     if (powerupCheck(gMe, 15))
     {
         viewSetMessage("You have no Jumping Boots.");
+        gMe->at202[15] = 0;
+        gMe->packInfo[4].at1 = 0;
         powerupDeactivate(gMe, 15);
     }
     else
     {
         viewSetMessage("You have the Jumping Boots.");
+        gMe->at202[15] = gPowerUpInfo[15].at3;
         powerupActivate(gMe, 15);
     }
 }
@@ -684,14 +687,14 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat18:
         gMe->packInfo[0].at1 = 100;
         break;
-    case kCheat19:
+    case kCheat19: // cheesehead
         gMe->packInfo[1].at1 = 100;
         gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat20:
         ToggleWooMode();
         break;
-    case kCheat21:
+    case kCheat21: // funky shoes
         ToggleBoots();
         break;
     case kCheat22:
@@ -734,7 +737,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetWeapons(true);
         SetWooMode(true);
         break;
-    case kCheat33:
+    case kCheat33: // cousteau
         actHealDude(gMe->pXSprite,200,200);
         gMe->packInfo[1].at1 = 100;
         gMe->at202[18] = gPowerUpInfo[18].at3;
