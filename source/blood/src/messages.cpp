@@ -610,7 +610,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     if (gGameOptions.nGameType != 0)
         return;
     int nEpisode, nLevel;
-    int nextLevel = ClipRange(gMusicPrevLoadedLevel + 1, 0, gEpisodeInfo[gMusicPrevLoadedEpisode].nLevels - 1);
+    int nextLevel = ClipRange(gGameOptions.nLevel + 1, 0, gEpisodeInfo[gGameOptions.nEpisode].nLevels - 1);
     switch (nCheatCode)
     {
     case kCheat36:
@@ -719,7 +719,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
             LevelWarp(nEpisode, nLevel);
         else
-            LevelWarp(gMusicPrevLoadedEpisode, nextLevel);
+            LevelWarp(gGameOptions.nEpisode, nextLevel);
         break;
     case kCheat29:
         SetInfiniteAmmo(!gInfiniteAmmo);
