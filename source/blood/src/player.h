@@ -38,8 +38,8 @@ enum LifeMode {
 };
 
 struct PACKINFO {
-    char at0;
-    int at1;
+    char at0; // is active (0/1)
+    int at1 = 0; // remaining percent
 };
 
 struct PLAYER {
@@ -109,7 +109,7 @@ struct PLAYER {
     int at1da;
     short at1de[16];
     int at1fe;
-    int at202[kMaxPowerUps];
+    int at202[kMaxPowerUps]; // [13]: cloak of invisibility, [14]: death mask (invulnerability), [15]: jump boots, [17]: guns akimbo, [18]: diving suit, [21]: crystal ball, [24]: reflective shots, [25]: beast vision, [26]: cloak of shadow
     int at2c6; // frags
     int at2ca[8];
     int at2ea;
@@ -128,8 +128,8 @@ struct PLAYER {
     char at31b; // Fall scream
     char at31c;
     int at31d; // pack timer
-    int at321; // pack id
-    PACKINFO packInfo[5]; // at325
+    int at321; // pack id 1: diving suit, 2: crystal ball, 3: beast vision 4: jump boots
+    PACKINFO packInfo[5]; // at325 [1]: diving suit, [2]: crystal ball, [3]: beast vision [4]: jump boots
     int at33e[3]; // armor
     //int at342;
     //int at346;
