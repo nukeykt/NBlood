@@ -55,14 +55,6 @@ PROFILE gProfile[kMaxPlayers];
 PLAYER gPlayer[kMaxPlayers];
 PLAYER *gMe, *gView;
 
-struct POWERUPINFO
-{
-    short at0;
-    char at2;
-    int at3;
-    int at7;
-};
-
 POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
     { -1, 1, 1, 1 },
     { -1, 1, 1, 1 },
@@ -77,20 +69,20 @@ POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
     { -1, 0, 100, 200 },
     { -1, 0, 2, 200 },
     { 783, 0, 3600, 432000 },
-    { -1, 0, 3600, 432000 },
-    { -1, 1, 3600, 432000 },
-    { 827, 0, 3600, 432000 },
+    { -1, 0, 3600, 432000 }, // 13: cloak of invisibility
+    { -1, 1, 3600, 432000 }, // 14: death mask (invulnerability)
+    { 827, 0, 3600, 432000 }, // 15: jump boots
     { 828, 0, 3600, 432000 },
-    { -1, 0, 3600, 1728000 },
+    { -1, 0, 3600, 1728000 }, // 17: guns akimbo
+    { -1, 0, 3600, 432000 }, // 18: diving suit
     { -1, 0, 3600, 432000 },
     { -1, 0, 3600, 432000 },
-    { -1, 0, 3600, 432000 },
-    { -1, 0, 3600, 432000 },
+    { -1, 0, 3600, 432000 }, // 21: crystal ball
     { -1, 0, 3600, 432000 },
     { 851, 0, 3600, 432000 },
-    { 2428, 0, 3600, 432000 },
-    { -1, 0, 3600, 432000 },
-    { -1, 0, 3600, 432000 },
+    { 2428, 0, 3600, 432000 }, // 24: reflective shots
+    { -1, 0, 3600, 432000 }, // 25: beast vision
+    { -1, 0, 3600, 432000 }, // 26: cloak of shadow
     { -1, 0, 3600, 432000 },
     { -1, 0, 900, 432000 },
     { -1, 0, 3600, 432000 },
@@ -495,18 +487,18 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         }
         break;
     case 112:
-    case 115:
+    case 115: // jump boots
         pPlayer->ata1[0]++;
         break;
-    case 124:
+    case 124: // reflective shots
         if (pPlayer == gMe && gGameOptions.nGameType == 0)
             sfxSetReverb2(1);
         break;
-    case 114:
+    case 114: // death mask
         for (int i = 0; i < 7; i++)
             pPlayer->ata1[i]++;
         break;
-    case 118:
+    case 118: // diving suit
         pPlayer->ata1[4]++;
         if (pPlayer == gMe && gGameOptions.nGameType == 0)
             sfxSetReverb(1);
@@ -517,7 +509,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
     case 139:
         pPlayer->ata1[1]++;
         break;
-    case 117:
+    case 117: // guns akimbo
         pPlayer->atc.newWeapon = pPlayer->atbd;
         WeaponRaise(pPlayer);
         break;
@@ -542,19 +534,19 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         resetPlayerSize(pPlayer);
         break;
     case 112:
-    case 115:
+    case 115: // jump boots
         pPlayer->ata1[0]--;
         break;
-    case 114:
+    case 114: // death mask
         for (int i = 0; i < 7; i++)
             pPlayer->ata1[i]--;
         break;
-    case 118:
+    case 118: // diving suit
         pPlayer->ata1[4]--;
         if (pPlayer == gMe)
             sfxSetReverb(0);
         break;
-    case 124:
+    case 124: // reflective shots
         if (pPlayer == gMe)
             sfxSetReverb(0);
         break;
@@ -564,7 +556,7 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
     case 139:
         pPlayer->ata1[1]--;
         break;
-    case 117:
+    case 117: // guns akimbo
         pPlayer->atc.newWeapon = pPlayer->atbd;
         WeaponRaise(pPlayer);
         break;
@@ -649,15 +641,20 @@ int packItemToPowerup(int nPack)
 
 int powerupToPackItem(int nPowerUp)
 {
+    const int jumpBoots = 15;
+    const int divingSuit = 18;
+    const int crystalBall = 21;
+    const int beastVision = 25;
+
     switch (nPowerUp)
     {
-    case 18:
+    case divingSuit:
         return 1;
-    case 21:
+    case crystalBall:
         return 2;
-    case 25:
+    case beastVision:
         return 3;
-    case 15:
+    case jumpBoots:
         return 4;
     }
     return -1;
@@ -816,6 +813,26 @@ void playerResetInertia(PLAYER *pPlayer)
     viewBackupView(pPlayer->at57);
 }
 
+void playerResetPowerUps(PLAYER* pPlayer)
+{
+    const int jumpBoots = 15;
+    const int divingSuit = 18;
+    const int crystalBall = 21;
+    const int beastVision = 25;
+
+    for (int i = 0; i < kMaxPowerUps; i++)
+    {
+        if (!VanillaMode()
+            && (i == jumpBoots
+                || i == divingSuit
+                || i == crystalBall
+                || i == beastVision))
+            continue;
+
+        pPlayer->at202[i] = 0;
+    }
+}
+
 void playerStart(int nPlayer)
 {
     PLAYER* pPlayer = &gPlayer[nPlayer];
@@ -940,8 +957,8 @@ void playerStart(int nPlayer)
     pPlayer->at26 = -1;
     pPlayer->at376 = 0;
     pPlayer->nWaterPal = 0;
-    for (int i = 0; i < kMaxPowerUps; i++)
-        pPlayer->at202[i] = 0;
+    playerResetPowerUps(pPlayer);
+
     if (pPlayer == gMe)
     {
         viewInitializePrediction();

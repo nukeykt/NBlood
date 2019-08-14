@@ -122,7 +122,16 @@ void SetWeapons(bool stat)
     if (stat)
         viewSetMessage("You have all weapons.");
     else
+    {
+        if (!VanillaMode())
+        {
+            // Keep the pitchfork to avoid freeze
+            gMe->atcb[1] = 1;
+            gMe->atbd = 0;
+            gMe->atbe = 1;
+        }
         viewSetMessage("You have no weapons.");
+    }
 }
 
 void SetToys(bool stat)
@@ -194,7 +203,11 @@ void SetWooMode(bool stat)
     else
     {
         if (powerupCheck(gMe, 17))
+        {
+            if (!VanillaMode())
+                gMe->at202[17] = 0;
             powerupDeactivate(gMe, 17);
+        }
     }
 }
 
@@ -208,11 +221,18 @@ void ToggleBoots(void)
     if (powerupCheck(gMe, 15))
     {
         viewSetMessage("You have no Jumping Boots.");
+        if (!VanillaMode())
+        {
+            gMe->at202[15] = 0;
+            gMe->packInfo[4].at1 = 0;
+        }
         powerupDeactivate(gMe, 15);
     }
     else
     {
         viewSetMessage("You have the Jumping Boots.");
+        if (!VanillaMode())
+            gMe->at202[15] = gPowerUpInfo[15].at3;
         powerupActivate(gMe, 15);
     }
 }
@@ -222,6 +242,8 @@ void ToggleInvisibility(void)
     if (powerupCheck(gMe, 13))
     {
         viewSetMessage("You are visible.");
+        if (!VanillaMode())
+            gMe->at202[13] = 0;
         powerupDeactivate(gMe, 13);
     }
     else
@@ -236,6 +258,8 @@ void ToggleInvulnerability(void)
     if (powerupCheck(gMe, 14))
     {
         viewSetMessage("You are vulnerable.");
+        if (!VanillaMode())
+            gMe->at202[14] = 0;
         powerupDeactivate(gMe, 14);
     }
     else
@@ -250,6 +274,8 @@ void ToggleDelirium(void)
     if (powerupCheck(gMe, 28))
     {
         viewSetMessage("You are not delirious.");
+        if (!VanillaMode())
+            gMe->at202[28] = 0;
         powerupDeactivate(gMe, 28);
     }
     else
@@ -507,42 +533,42 @@ void CPlayerMsg::ProcessKeys(void)
 }
 
 CCheatMgr::CHEATINFO CCheatMgr::s_CheatInfo[] = {
-    {"NQLGB", kCheat5, 0 }, // MPKFA
-    {"DBQJONZBTT", kCheat6, 0 }, // CAPINMYASS
-    {"OPDBQJONZBTT", kCheat7, 0 }, // NOCAPINMYASS
-    {"J!XBOOB!CF!MJLF!LFWJO", kCheat7, 0 }, // I WANNA BE LIKE KEVIN
-    {"JEBIP", kCheat8, 0 }, // IDAHO
-    {"NPOUBOB", kCheat31, 0 }, // MONTANA
-    {"HSJTXPME", kCheat2, 0 }, // GRISWOLD
-    {"FENBSL", kCheat11, 0 }, // EDMARK
-    {"UFRVJMB", kCheat20, 0 }, // TEQUILA
-    {"CVO[", kCheat32, 0 }, // BUNZ
-    {"GVOLZ!TIPFT", kCheat21, 0 }, // FUNKY SHOES
-    {"HBUFLFFQFS", kCheat26, 0 },
-    {"LFZNBTUFS", kCheat22, 0 },
-    {"KPKP", kCheat25, 0 },
-    {"TBUDIFM", kCheat3, 0 },
-    {"TQPSL", kCheat15, 0 },
-    {"POFSJOH", kCheat23, 0 },
-    {"NBSJP", kCheat28, 1 },
-    {"DBMHPO", kCheat28, 1 },
-    {"LFWPSLJBO", kCheat9, 0 },
-    {"NDHFF", kCheat10, 0 },
-    {"LSVFHFS", kCheat12, 0 },
-    {"DIFFTFIFBE", kCheat19, 0 },
-    {"DPVTUFBV", kCheat33, 0 },
-    {"WPPSIFFT", kCheat24, 0 },
-    {"MBSB!DSPGU", kCheat29, 0 },
-    {"IPOHLPOH", kCheat30, 0 },
-    {"GSBOLFOTUFJO", kCheat18, 0 },
-    {"TUFSOP", kCheat13, 0 },
-    {"DMBSJDF", kCheat17, 0 },
-    {"GPSL!ZPV", kCheat34, 0 },
-    {"MJFCFSNBO", kCheat35, 0 },
-    {"FWB!HBMMJ", kCheat4, 0 },
-    {"SBUF", kCheat27, 0 },
-    {"HPPOJFT", kCheat16, 0 },
-    {"TQJFMCFSH", kCheat36, 1 },
+    {"NQLGB", kCheat5, 0 }, // MPKFA (Invincibility)
+    {"DBQJONZBTT", kCheat6, 0 }, // CAPINMYASS (Disable invincibility )
+    {"OPDBQJONZBTT", kCheat7, 0 }, // NOCAPINMYASS (Invincibility)
+    {"J!XBOOB!CF!MJLF!LFWJO", kCheat7, 0 }, // I WANNA BE LIKE KEVIN (Invincibility)
+    {"JEBIP", kCheat8, 0 }, // IDAHO (All weapons and full ammo)
+    {"NPOUBOB", kCheat31, 0 }, // MONTANA (All weapons, full ammo and all items)
+    {"HSJTXPME", kCheat2, 0 }, // GRISWOLD (Full armor (same effect as getting super armor))
+    {"FENBSL", kCheat11, 0 }, // EDMARK (Does a lot of fire damage to you (if you have 200HP and 200 fire armor then you can survive). Displays the message "THOSE WERE THE DAYS".)
+    {"UFRVJMB", kCheat20, 0 }, // TEQUILA (Guns akimbo power-up)
+    {"CVO[", kCheat32, 0 }, // BUNZ (All weapons, full ammo, and guns akimbo power-up)
+    {"GVOLZ!TIPFT", kCheat21, 0 }, // FUNKY SHOES (Gives jump boots item and activates it)
+    {"HBUFLFFQFS", kCheat26, 0 }, // GATEKEEPER (Sets the you cheated flag to true, at the end of the level you will see that you have cheated)
+    {"LFZNBTUFS", kCheat22, 0 }, // KEYMASTER (All keys)
+    {"KPKP", kCheat25, 0 }, // JOJO (Drunk mode (same effect as getting bitten by red spider))
+    {"TBUDIFM", kCheat3, 0 }, // SATCHEL (Full inventory)
+    {"TQPSL", kCheat15, 0 }, // SPORK (200% health (same effect as getting life seed))
+    {"POFSJOH", kCheat23, 0 }, // ONERING (Cloak of invisibility power-up)
+    {"NBSJP", kCheat28, 1 }, // MARIO (Warp to level E M, e.g.: MARIO 1 3 will take you to Phantom Express)
+    {"DBMHPO", kCheat37, 1 }, // CALGON (Jumps to next level or can be used like MARIO with parameters)
+    {"LFWPSLJBO", kCheat9, 0 }, // KEVORKIAN (Does a lot of physical damage to you (if you have 200HP and 200 fire armor then you can survive). Displays the message "KEVORKIAN APPROVES".)
+    {"NDHFF", kCheat10, 0 }, // MCGEE (Sets you on fire. Displays the message "YOU'RE FIRED".)
+    {"LSVFHFS", kCheat12, 0 }, // KRUEGER (200% health, but sets you on fire. Displays the message "FLAME RETARDANT".)
+    {"DIFFTFIFBE", kCheat19, 0 }, // CHEESEHEAD (100% diving suit)
+    {"DPVTUFBV", kCheat33, 0 }, // COUSTEAU (200% health and diving suit)
+    {"WPPSIFFT", kCheat24, 0 }, // VOORHEES (Death mask power-up)
+    {"MBSB!DSPGU", kCheat29, 0 }, // LARA CROFT (All weapons and infinite ammo. Displays the message "LARA RULES". Typing it the second time will lose all weapons and ammo.)
+    {"IPOHLPOH", kCheat30, 0 }, // HONGKONG (All weapons and infinite ammo)
+    {"GSBOLFOTUFJO", kCheat18, 0 }, // FRANKENSTEIN (100% med-kit)
+    {"TUFSOP", kCheat13, 0 }, // STERNO (Temporary blindness (same effect as getting bitten by green spider))
+    {"DMBSJDF", kCheat17, 0 }, // CLARICE (Gives 100% body armor, 100% fire armor, 100% spirit armor)
+    {"GPSL!ZPV", kCheat34, 0 }, // FORK YOU (Drunk mode, 1HP, no armor, no weapons, no ammo, no items, no keys, no map, guns akimbo power-up)
+    {"MJFCFSNBO", kCheat35, 0 }, // LIEBERMAN (Sets the you cheated flag to true, at the end of the level you will see that you have cheated)
+    {"FWB!HBMMJ", kCheat4, 0 }, // EVA GALLI (Disable/enable clipping (grant the ability to walk through walls))
+    {"SBUF", kCheat27, 0 }, // RATE (Display frame rate (doesn't count as a cheat))
+    {"HPPOJFT", kCheat16, 0 }, // GOONIES (Enable full map. Displays the message "YOU HAVE THE MAP".)
+    {"TQJFMCFSH", kCheat36, 1 }, // SPIELBERG (Disables all cheats. If number values corresponding to a level and episode number are entered after the cheat word (i.e. "spielberg 1 3" for Phantom Express), you will be spawned to said level and the game will begin recording a demo from your actions.)
 };
 
 bool CCheatMgr::m_bPlayerCheated = false;
@@ -602,6 +628,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     if (gGameOptions.nGameType != 0)
         return;
     int nEpisode, nLevel;
+    int nextLevel = ClipRange(gGameOptions.nLevel + 1, 0, gEpisodeInfo[gGameOptions.nEpisode].nLevels - 1);
     switch (nCheatCode)
     {
     case kCheat36:
@@ -661,7 +688,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat13:
         gMe->at36a = 250;
         break;
-    case kCheat14:
+    case kCheat14: // quake (causing a little flicker), not used by any cheat code (dead code)
         gMe->at35a = 360;
         break;
     case kCheat15:
@@ -670,16 +697,26 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat16:
         SetMap(!gFullMap);
         break;
+    case kCheat17: // clarice
+        if (!VanillaMode())
+        {
+            viewSetMessage("You have half armor.");
+            for (int i = 0; i < 3; i++)
+                gMe->at33e[i] = 1600;
+        }
+        break;
     case kCheat18:
         gMe->packInfo[0].at1 = 100;
         break;
-    case kCheat19:
+    case kCheat19: // cheesehead
         gMe->packInfo[1].at1 = 100;
+        if (!VanillaMode())
+            gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat20:
         ToggleWooMode();
         break;
-    case kCheat21:
+    case kCheat21: // funky shoes
         ToggleBoots();
         break;
     case kCheat22:
@@ -694,11 +731,18 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat25:
         ToggleDelirium();
         break;
-    case kCheat27:
+    case kCheat27: // show FPS, handled before (dead code), leave here for safety
         return;
-    case kCheat28:
+    case kCheat28: // mario
         if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
             LevelWarp(nEpisode, nLevel);
+        break;
+    case kCheat37: // calgon
+        if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
+            LevelWarp(nEpisode, nLevel);
+        else
+            if (!VanillaMode())
+                LevelWarp(gGameOptions.nEpisode, nextLevel);
         break;
     case kCheat29:
         SetInfiniteAmmo(!gInfiniteAmmo);
@@ -716,9 +760,11 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetWeapons(true);
         SetWooMode(true);
         break;
-    case kCheat33:
+    case kCheat33: // cousteau
         actHealDude(gMe->pXSprite,200,200);
         gMe->packInfo[1].at1 = 100;
+        if (!VanillaMode())
+            gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat34:
         SetInfiniteAmmo(false);
