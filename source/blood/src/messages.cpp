@@ -123,9 +123,13 @@ void SetWeapons(bool stat)
         viewSetMessage("You have all weapons.");
     else
     {
-        gMe->atcb[1] = 1;
-        gMe->atbd = 0;
-        gMe->atbe = 1;
+        if (!VanillaMode())
+        {
+            // Keep the pitchfork to avoid freeze
+            gMe->atcb[1] = 1;
+            gMe->atbd = 0;
+            gMe->atbe = 1;
+        }
         viewSetMessage("You have no weapons.");
     }
 }
@@ -199,7 +203,11 @@ void SetWooMode(bool stat)
     else
     {
         if (powerupCheck(gMe, 17))
+        {
+            if (!VanillaMode())
+                gMe->at202[17] = 0;
             powerupDeactivate(gMe, 17);
+        }
     }
 }
 
@@ -213,14 +221,18 @@ void ToggleBoots(void)
     if (powerupCheck(gMe, 15))
     {
         viewSetMessage("You have no Jumping Boots.");
-        gMe->at202[15] = 0;
-        gMe->packInfo[4].at1 = 0;
+        if (!VanillaMode())
+        {
+            gMe->at202[15] = 0;
+            gMe->packInfo[4].at1 = 0;
+        }
         powerupDeactivate(gMe, 15);
     }
     else
     {
         viewSetMessage("You have the Jumping Boots.");
-        gMe->at202[15] = gPowerUpInfo[15].at3;
+        if (!VanillaMode())
+            gMe->at202[15] = gPowerUpInfo[15].at3;
         powerupActivate(gMe, 15);
     }
 }
@@ -230,7 +242,8 @@ void ToggleInvisibility(void)
     if (powerupCheck(gMe, 13))
     {
         viewSetMessage("You are visible.");
-        gMe->at202[13] = 0;
+        if (!VanillaMode())
+            gMe->at202[13] = 0;
         powerupDeactivate(gMe, 13);
     }
     else
@@ -245,7 +258,8 @@ void ToggleInvulnerability(void)
     if (powerupCheck(gMe, 14))
     {
         viewSetMessage("You are vulnerable.");
-        gMe->at202[14] = 0;
+        if (!VanillaMode())
+            gMe->at202[14] = 0;
         powerupDeactivate(gMe, 14);
     }
     else
@@ -260,7 +274,8 @@ void ToggleDelirium(void)
     if (powerupCheck(gMe, 28))
     {
         viewSetMessage("You are not delirious.");
-        gMe->at202[28] = 0;
+        if (!VanillaMode())
+            gMe->at202[28] = 0;
         powerupDeactivate(gMe, 28);
     }
     else
@@ -683,16 +698,20 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetMap(!gFullMap);
         break;
     case kCheat17: // clarice
-        viewSetMessage("You have half armor.");
-        for (int i = 0; i < 3; i++)
-            gMe->at33e[i] = 1600;
+        if (!VanillaMode())
+        {
+            viewSetMessage("You have half armor.");
+            for (int i = 0; i < 3; i++)
+                gMe->at33e[i] = 1600;
+        }
         break;
     case kCheat18:
         gMe->packInfo[0].at1 = 100;
         break;
     case kCheat19: // cheesehead
         gMe->packInfo[1].at1 = 100;
-        gMe->at202[18] = gPowerUpInfo[18].at3;
+        if (!VanillaMode())
+            gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat20:
         ToggleWooMode();
@@ -722,7 +741,8 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         if (parseArgs(pzArgs, &nEpisode, &nLevel) == 2)
             LevelWarp(nEpisode, nLevel);
         else
-            LevelWarp(gGameOptions.nEpisode, nextLevel);
+            if (!VanillaMode())
+                LevelWarp(gGameOptions.nEpisode, nextLevel);
         break;
     case kCheat29:
         SetInfiniteAmmo(!gInfiniteAmmo);
@@ -743,7 +763,8 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheat33: // cousteau
         actHealDude(gMe->pXSprite,200,200);
         gMe->packInfo[1].at1 = 100;
-        gMe->at202[18] = gPowerUpInfo[18].at3;
+        if (!VanillaMode())
+            gMe->at202[18] = gPowerUpInfo[18].at3;
         break;
     case kCheat34:
         SetInfiniteAmmo(false);
