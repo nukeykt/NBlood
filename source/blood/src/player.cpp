@@ -821,7 +821,7 @@ void playerResetInertia(PLAYER *pPlayer)
     viewBackupView(pPlayer->at57);
 }
 
-void playerResetPowerups(PLAYER* pPlayer)
+void playerResetPowerUps(PLAYER* pPlayer)
 {
     const int jumpBoots = 15;
     const int divingSuit = 18;
@@ -965,7 +965,7 @@ void playerStart(int nPlayer)
     pPlayer->at26 = -1;
     pPlayer->at376 = 0;
     pPlayer->nWaterPal = 0;
-    playerResetPowerups(pPlayer);
+    playerResetPowerUps(pPlayer);
 
     if (pPlayer == gMe)
     {
