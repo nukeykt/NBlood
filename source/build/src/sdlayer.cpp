@@ -907,6 +907,8 @@ static void LoadSDLControllerDB()
 }
 #endif
 
+static int numjoysticks;
+
 void joyScanDevices()
 {
     inputdevices &= ~4;
@@ -924,7 +926,8 @@ void joyScanDevices()
         joydev = nullptr;
     }
 
-    int numjoysticks = SDL_NumJoysticks();
+    numjoysticks = SDL_NumJoysticks();
+
     if (numjoysticks < 1)
     {
         buildputs("No game controllers found\n");
@@ -1036,9 +1039,16 @@ void joyScanDevices()
 //
 // initinput() -- init input system
 //
-int32_t initinput(void)
+int32_t initinput(void(*hotplugCallback)(void) /*= nullptr*/)
 {
     int32_t i;
+
+#if SDL_MAJOR_VERSION >= 2
+    if (hotplugCallback)
+        g_controllerHotplugCallback = hotplugCallback;
+#else
+    UNREFERENCED_PARAMETER(hotplugCallback);
+#endif
 
 #if defined EDUKE32_OSX
     // force OS X to operate in >1 button mouse mode so that LMB isn't adulterated
@@ -1079,7 +1089,6 @@ int32_t initinput(void)
 #if SDL_MAJOR_VERSION >= 2
         LoadSDLControllerDB();
 #endif
-
         joyScanDevices();
     }
 
@@ -2164,7 +2173,13 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             break;
 # endif
 #endif
-
+#if SDL_MAJOR_VERSION >= 2
+        case SDL_CONTROLLERDEVICEADDED:
+        case SDL_CONTROLLERDEVICEREMOVED:
+            if (g_controllerHotplugCallback && SDL_NumJoysticks() != numjoysticks)
+                g_controllerHotplugCallback();
+            break;
+#endif
         case SDL_JOYAXISMOTION:
 #if SDL_MAJOR_VERSION >= 2
             if (joystick.isGameController)

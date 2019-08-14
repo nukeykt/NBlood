@@ -679,7 +679,7 @@ int32_t handleevents(void)
 //
 // initinput() -- init input system
 //
-int32_t initinput(void)
+int32_t initinput(void(*hotplugCallback)(void) /*= NULL*/)
 {
     g_mouseEnabled=0;
     memset(keystatus, 0, sizeof(keystatus));
