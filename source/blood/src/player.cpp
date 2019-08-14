@@ -821,6 +821,26 @@ void playerResetInertia(PLAYER *pPlayer)
     viewBackupView(pPlayer->at57);
 }
 
+void playerResetPowerups(PLAYER* pPlayer)
+{
+    const int jumpBoots = 15;
+    const int divingSuit = 18;
+    const int crystalBall = 21;
+    const int beastVision = 25;
+
+    for (int i = 0; i < kMaxPowerUps; i++)
+    {
+        if (!VanillaMode()
+            && (i == jumpBoots
+                || i == divingSuit
+                || i == crystalBall
+                || i == beastVision))
+            continue;
+
+        pPlayer->at202[i] = 0;
+    }
+}
+
 void playerStart(int nPlayer)
 {
     PLAYER* pPlayer = &gPlayer[nPlayer];
@@ -945,13 +965,7 @@ void playerStart(int nPlayer)
     pPlayer->at26 = -1;
     pPlayer->at376 = 0;
     pPlayer->nWaterPal = 0;
-    for (int i = 0; i < kMaxPowerUps; i++)
-        pPlayer->at202[i] = 0;
-    // Put back inventory
-    pPlayer->at202[15] = (pPlayer->packInfo[4].at1 / 100.0) * gPowerUpInfo[15].at3; // jump boots
-    pPlayer->at202[18] = (pPlayer->packInfo[1].at1 / 100.0) * gPowerUpInfo[18].at3; // diving suit
-    pPlayer->at202[21] = (pPlayer->packInfo[2].at1 / 100.0) * gPowerUpInfo[21].at3; // crystal ball
-    pPlayer->at202[25] = (pPlayer->packInfo[3].at1 / 100.0) * gPowerUpInfo[25].at3; // beast vision
+    playerResetPowerups(pPlayer);
 
     if (pPlayer == gMe)
     {
