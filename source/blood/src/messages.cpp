@@ -230,6 +230,7 @@ void ToggleInvisibility(void)
     if (powerupCheck(gMe, 13))
     {
         viewSetMessage("You are visible.");
+        gMe->at202[13] = 0;
         powerupDeactivate(gMe, 13);
     }
     else
@@ -244,6 +245,7 @@ void ToggleInvulnerability(void)
     if (powerupCheck(gMe, 14))
     {
         viewSetMessage("You are vulnerable.");
+        gMe->at202[14] = 0;
         powerupDeactivate(gMe, 14);
     }
     else
@@ -258,6 +260,7 @@ void ToggleDelirium(void)
     if (powerupCheck(gMe, 28))
     {
         viewSetMessage("You are not delirious.");
+        gMe->at202[28] = 0;
         powerupDeactivate(gMe, 28);
     }
     else
