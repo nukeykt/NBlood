@@ -8504,6 +8504,8 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
 #endif
 
     G_ExtPreInit(argc, argv);
+    if (buildvfs_exists("m32_usecwd"))
+        g_useCwd = 1;
 
     OSD_SetLogFile("mapster32.log");
     OSD_SetVersion("Mapster32",0,2);
