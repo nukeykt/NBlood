@@ -4761,6 +4761,7 @@ void G_HandleLocalKeys(void)
                 {
                     const unsigned int maxi = VOLUMEALL ? MUS_FIRST_SPECIAL : 6;
 
+                    unsigned int const oldMusicIndex = g_musicIndex;
                     unsigned int MyMusicIndex = g_musicIndex;
                     do
                     {
@@ -4768,7 +4769,7 @@ void G_HandleLocalKeys(void)
                         if (MyMusicIndex >= maxi)
                             MyMusicIndex = 0;
                     }
-                    while (S_TryPlayLevelMusic(MyMusicIndex));
+                    while (S_TryPlayLevelMusic(MyMusicIndex) && MyMusicIndex != oldMusicIndex);
 
                     G_PrintCurrentMusic();
 
