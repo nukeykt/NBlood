@@ -91,9 +91,6 @@ char nogl=0;
 #endif
 static int32_t vsync_renderlayer;
 int32_t maxrefreshfreq=0;
-#if SDL_MAJOR_VERSION==2
-static double currentVBlankInterval;
-#endif
 
 // last gamma, contrast, brightness
 static float lastvidgcb[3];
@@ -1601,8 +1598,6 @@ void setrefreshrate(void)
 
     if (!newmode.refresh_rate)
         newmode.refresh_rate = 60;
-
-    currentVBlankInterval = timerGetFreqU64()/(double)newmode.refresh_rate;
 }
 
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
@@ -1867,12 +1862,7 @@ void videoShowFrame(int32_t w)
         SDL_GL_SwapWindow(sdl_window);
         if (vsync)
         {
-            static double lastSwapTime;
-            // busy loop until we're ready to update again
-            // sit on it and spin
-            double swapTime = timerGetTicksU64();
-            while ((double)timerGetTicksU64()-lastSwapTime < currentVBlankInterval) {}
-            lastSwapTime = swapTime;
+            glFinish();
         }
         return;
     }
