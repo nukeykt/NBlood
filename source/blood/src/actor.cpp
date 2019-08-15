@@ -5874,8 +5874,18 @@ void actProcessSprites(void)
                     actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, DAMAGE_TYPE_1, 8);
                     break;
                 default:
-                    pXSprite->burnTime = ClipLow(pXSprite->burnTime-4, 0);
-                    actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, DAMAGE_TYPE_1, 8);
+                    // Only allow burning under water in vanilla mode
+                    bool isVanillaMode = VanillaMode();
+                    bool isUnderWater = pXSprite->medium == 1 || pXSprite->medium == 2;
+                    if (isVanillaMode || !isUnderWater)
+                    {
+                        pXSprite->burnTime = ClipLow(pXSprite->burnTime - 4, 0);
+                        actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, DAMAGE_TYPE_1, 8);
+                    }
+                    if (!isVanillaMode && isUnderWater)
+                    {
+                        pXSprite->burnTime = 0;
+                    }
                     break;
                 }
             }

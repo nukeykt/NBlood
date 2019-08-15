@@ -212,6 +212,13 @@ inline bool IsDudeSprite(spritetype *pSprite)
 
 inline void actBurnSprite(int nSource, XSPRITE *pXSprite, int nTime)
 {
+    // Do not burn under water
+    if (!VanillaMode() && (pXSprite->medium == 1 || pXSprite->medium == 2))
+    {
+        pXSprite->burnTime = 0;
+        return;
+    }
+
     pXSprite->burnTime = ClipHigh(pXSprite->burnTime + nTime, sprite[pXSprite->reference].statnum == 6 ? 2400 : 1200);
     pXSprite->burnSource = nSource;
 }
