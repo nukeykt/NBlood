@@ -387,6 +387,7 @@ const char *pzWeaponSwitchStrings[] = {
 
 void SetAutoAim(CGameMenuItemZCycle *);
 void SetLevelStats(CGameMenuItemZBool *);
+void SetPowerupDuration(CGameMenuItemZBool *);
 void SetWeaponSwitch(CGameMenuItemZCycle *pItem);
 
 CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
@@ -409,11 +410,12 @@ CGameMenuItemChain itemOptionsDisplayMode("VIDEO MODE", 3, 66, 70, 180, 0, &menu
 CGameMenuItemZBool itemOptionsDisplayBoolCrosshair("CROSSHAIR:", 3, 66, 80, 180, gAimReticle, SetCrosshair, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolCenterHoriz("CENTER HORIZON LINE:", 3, 66, 90, 180, gCenterHoriz, SetCenterHoriz, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 100, 180, gLevelStats, SetLevelStats, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 110, 180, gMessageState, SetMessages, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 120, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
-CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 130, 180, &gFov, 75, 130, 5, SetFOV, -1, -1, kMenuSliderValue);
+CGameMenuItemZBool itemOptionsDisplayBoolPowerupDuration("POWERUP DURATION:", 3, 66, 110, 180, gPowerupDuration, SetPowerupDuration, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 120, 180, gMessageState, SetMessages, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 130, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
+CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 140, 180, &gFov, 75, 140, 5, SetFOV, -1, -1, kMenuSliderValue);
 #ifdef USE_OPENGL
-CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 140, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
+CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 150, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
 #endif
 
 const char *pzRendererStrings[] = {
@@ -1129,6 +1131,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolCrosshair, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolCenterHoriz, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolLevelStats, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayBoolPowerupDuration, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolWidescreen, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayFOV, false);
@@ -1139,6 +1142,7 @@ void SetupOptionsMenu(void)
     itemOptionsDisplayBoolCrosshair.at20 = gAimReticle;
     itemOptionsDisplayBoolCenterHoriz.at20 = gCenterHoriz;
     itemOptionsDisplayBoolLevelStats.at20 = gLevelStats;
+    itemOptionsDisplayBoolPowerupDuration.at20 = gPowerupDuration;
     itemOptionsDisplayBoolMessages.at20 = gMessageState;
     itemOptionsDisplayBoolWidescreen.at20 = r_usenewaspect;
 
@@ -1472,6 +1476,11 @@ void SetAutoAim(CGameMenuItemZCycle *pItem)
 void SetLevelStats(CGameMenuItemZBool *pItem)
 {
     gLevelStats = pItem->at20;
+}
+
+void SetPowerupDuration(CGameMenuItemZBool* pItem)
+{
+    gPowerupDuration = pItem->at20;
 }
 
 void SetWeaponSwitch(CGameMenuItemZCycle *pItem)

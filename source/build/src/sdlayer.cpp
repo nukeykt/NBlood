@@ -1159,6 +1159,12 @@ void mouseLockToWindow(char a)
     SDL_ShowCursor((osd && osd->flags & OSD_CAPTURE) ? SDL_ENABLE : SDL_DISABLE);
 }
 
+void mouseMoveToCenter(void)
+{
+    if (sdl_window)
+        SDL_WarpMouseInWindow(sdl_window, xdim / 2, ydim / 2);
+}
+
 //
 // setjoydeadzone() -- sets the dead and saturation zones for the joystick
 //
