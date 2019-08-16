@@ -28,6 +28,7 @@ extern char quitevent, appactive;
 extern char modechange;
 
 extern int32_t vsync;
+extern int32_t swapcomplete;
 
 extern void app_crashhandler(void);
 
