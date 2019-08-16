@@ -62,9 +62,9 @@ AISTATE zombieFBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, 
 AISTATE zombieFBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &zombieFBurnChase };
 
 AISTATE innocentBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE innocentBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &zombieFBurnSearch };
+AISTATE innocentBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &innocentBurnSearch };
 AISTATE innocentBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, NULL };
-AISTATE innocentBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &zombieFBurnChase };
+AISTATE innocentBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &innocentBurnChase };
 
 AISTATE beastBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
 AISTATE beastBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &beastBurnSearch };
