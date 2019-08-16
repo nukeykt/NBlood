@@ -18,6 +18,7 @@ extern "C"
 }
 #endif // _WIN32
 
+int32_t swapcomplete=0;
 
 // input
 char    inputdevices = 0;
