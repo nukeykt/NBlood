@@ -1214,8 +1214,13 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     {
         if (powerups[i].remainingDuration)
         {
-            DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
-            DrawStatNumber("%d", powerups[i].remainingDuration / 100, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            int remainingSeconds = powerups[i].remainingDuration / 100;
+            if (remainingSeconds > 5 || (gGameClock & 32))
+            {
+                DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
+            }
+
+            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
             y += 20;
         }
     }
