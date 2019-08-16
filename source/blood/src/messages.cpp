@@ -628,7 +628,6 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     if (gGameOptions.nGameType != 0)
         return;
     int nEpisode, nLevel;
-    int nextLevel = ClipRange(gGameOptions.nLevel + 1, 0, gEpisodeInfo[gGameOptions.nEpisode].nLevels - 1);
     switch (nCheatCode)
     {
     case kCheatSpielberg:
@@ -742,7 +741,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
             LevelWarp(nEpisode, nLevel);
         else
             if (!VanillaMode())
-                LevelWarp(gGameOptions.nEpisode, nextLevel);
+                levelEndLevel(0);
         break;
     case kCheatLaraCroft:
         SetInfiniteAmmo(!gInfiniteAmmo);
