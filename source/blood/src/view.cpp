@@ -1597,7 +1597,8 @@ void viewInit(void)
 
 void viewResizeView(int size)
 {
-    int xdimcorrect = scale(ydim, 4, 3);
+    double ratio = (double)xdim / ydim;
+    int xdimcorrect = ratio < 1.26 && ratio > 1.24 ? scale(ydim, 5, 4) : scale(ydim, 4, 3);
     gViewXCenter = xdim-xdim/2;
     gViewYCenter = ydim-ydim/2;
     xscale = divscale16(xdim, 320);
