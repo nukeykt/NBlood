@@ -1626,7 +1626,7 @@ void viewInit(void)
 
 void viewResizeView(int size)
 {
-    int xdimcorrect = scale(ydim, 4, 3);
+    int xdimcorrect = ClipHigh(scale(ydim, 4, 3), xdim);
     gViewXCenter = xdim-xdim/2;
     gViewYCenter = ydim-ydim/2;
     xscale = divscale16(xdim, 320);
