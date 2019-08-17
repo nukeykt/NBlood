@@ -133,8 +133,6 @@ int gScreenTilt;
 CGameMessageMgr gGameMessageMgr;
 
 bool bLoadScreenCrcMatch = false;
-int nLoadingScreenTile;
-char pzLoadingScreenText1[256], pzLoadingScreenText2[256], pzLoadingScreenText3[256];
 
 void RotateYZ(int *pX, int *pY, int *pZ, int ang)
 {
@@ -1246,7 +1244,7 @@ void viewDrawMapTitle(void)
 
     if (alpha != 255)
     {
-        viewDrawText(1, pzLoadingScreenText2, 160, 50, -128, 0, 1, 1, 0, alpha);
+        viewDrawText(1, levelGetTitle(), 160, 50, -128, 0, 1, 1, 0, alpha);
     }
 }
 
@@ -3503,6 +3501,9 @@ RORHACK:
     }
     UpdateDacs(nPalette);
 }
+
+int nLoadingScreenTile;
+char pzLoadingScreenText1[256], pzLoadingScreenText2[256], pzLoadingScreenText3[256];
 
 void viewLoadingScreenWide(void)
 {
