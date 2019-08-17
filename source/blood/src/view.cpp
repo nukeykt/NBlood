@@ -963,7 +963,7 @@ void RestoreInterpolations(void)
     }
 }
 
-void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat)
+void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat, uint8_t alpha)
 {
     if (nFont < 0 || nFont >= 5 || !pString) return;
     FONT *pFont = &gFont[nFont];
@@ -991,9 +991,9 @@ void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int 
         {
             if (shadow)
             {
-                rotatesprite((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
+                rotatesprite_fs_alpha((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, alpha);
             }
-            rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
+            rotatesprite_fs_alpha(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, alpha);
             x += tilesiz[nTile].x+pFont->space;
         }
         s++;
@@ -1223,6 +1223,28 @@ void viewDrawPowerUps(PLAYER* pPlayer)
             DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
             y += 20;
         }
+    }
+}
+
+void viewDrawMapTitle(void)
+{
+    if (!gShowMapTitle || gGameMenuMgr.m_bActive)
+        return;
+
+    int minutes = gLevelTime / (kTicsPerSec * 60);
+    int seconds = (gLevelTime / kTicsPerSec) % 60;
+    int millisecs = (gLevelTime % kTicsPerSec) * 33;
+    if (seconds > 3)
+        return;
+
+    const int noAlphaForSecs = 1;
+    uint8_t alpha = videoGetRenderMode() != REND_CLASSIC || numalphatabs >= 15 ?
+        seconds < noAlphaForSecs ? 0 : clamp(((seconds-noAlphaForSecs)*1000+millisecs)/4, 0, 255)
+        : 0;
+
+    if (alpha != 255)
+    {
+        viewDrawText(1, levelGetTitle(), 160, 50, -128, 0, 1, 1, 0, alpha);
     }
 }
 
@@ -1500,6 +1522,9 @@ void UpdateStatusBar(int arg)
         viewDrawStats(pPlayer, 2, 140);
         viewDrawPowerUps(pPlayer);
     }
+
+    viewDrawMapTitle();
+
     if (gGameOptions.nGameType < 1) return;
 
     if (gGameOptions.nGameType == 3)
