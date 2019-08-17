@@ -191,6 +191,7 @@ static tokenmap_t const vm_keywords[] =
     { "default",                CON_DEFAULT },
     { "define",                 CON_DEFINE },
     { "definecheat",            CON_DEFINECHEAT },
+    { "definecheatdescription", CON_DEFINECHEATDESCRIPTION },
     { "definegamefuncname",     CON_DEFINEGAMEFUNCNAME },
     { "definegametype",         CON_DEFINEGAMETYPE },
     { "definelevelname",        CON_DEFINELEVELNAME },
@@ -258,6 +259,7 @@ static tokenmap_t const vm_keywords[] =
     { "getclosestcol",          CON_GETCLOSESTCOL },
     { "getcurraddress",         CON_GETCURRADDRESS },
     { "getflorzofslope",        CON_GETFLORZOFSLOPE },
+    { "getgamefuncbind",        CON_GETGAMEFUNCBIND },
     { "getincangle",            CON_GETINCANGLE },
     { "getinput",               CON_GETINPUT },
     { "getkeyname",             CON_GETKEYNAME },
@@ -620,6 +622,7 @@ static tokenmap_t const vm_keywords[] =
     { "print",                  CON_QUOTE },
 
     { "dc",                     CON_DEFINECHEAT },
+    { "dcd",                    CON_DEFINECHEATDESCRIPTION },
     { "udc",                    CON_UNDEFINECHEAT },
     { "ck",                     CON_CHEATKEYS },
 
@@ -987,6 +990,8 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_DAMAGECEILING",
     "EVENT_DISPLAYROOMSCAMERATILE",
     "EVENT_RESETGOTPICS",
+    "EVENT_VALIDATESTART",
+    "EVENT_NEWGAMECUSTOM",
 #ifdef LUNATIC
     "EVENT_ANIMATEALLSPRITES",
 #endif
@@ -3669,6 +3674,7 @@ DO_DEFSTATE:
         case CON_STOPACTORSOUND:
         case CON_SWAPTRACKSLOT:
         case CON_ZSHOOT:
+        case CON_GETGAMEFUNCBIND:
             C_GetManyVars(2);
             continue;
 
@@ -5571,6 +5577,43 @@ repeatcase:
                 *(apXStrings[g_numXStrings]+i) = '\0';
                 scriptWriteValue(g_numXStrings++);
             }
+            continue;
+
+        case CON_DEFINECHEATDESCRIPTION:
+            g_scriptPtr--;
+
+            C_GetNextValue(LABEL_DEFINE);
+
+            k = g_scriptPtr[-1];
+
+            if (EDUKE32_PREDICT_FALSE((unsigned)k >= NUMCHEATS))
+            {
+                initprintf("%s:%d: error: cheat number exceeds limit of %d.\n",g_scriptFileName,g_lineNumber,NUMCHEATS);
+                g_errorCnt++;
+                scriptSkipLine();
+                continue;
+            }
+
+            g_scriptPtr--;
+
+            i = 0;
+
+            scriptSkipSpaces();
+
+            while (*textptr != 0x0a && *textptr != 0x0d && *textptr != 0)
+            {
+                *(CheatDescriptions[k]+i) = *textptr;
+                textptr++,i++;
+                if (EDUKE32_PREDICT_FALSE(i >= MAXCHEATDESC-1))
+                {
+                    initprintf("%s:%d: warning: truncating cheat text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXCHEATDESC-1);
+                    g_warningCnt++;
+                    scriptSkipLine();
+                    break;
+                }
+            }
+
+            *(CheatDescriptions[k]+i) = '\0';
             continue;
 
         case CON_CHEATKEYS:

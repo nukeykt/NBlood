@@ -158,8 +158,12 @@ static inline void VM_DummySprite(void)
 static FORCE_INLINE int32_t VM_EventInlineInternal__(int const &eventNum, int const &spriteNum, int const &playerNum,
                                                        int const playerDist = -1, int32_t returnValue = 0)
 {
-    vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0, &sprite[spriteNum],
-                                   &actor[spriteNum].t_data[0], g_player[playerNum].ps, &actor[spriteNum] };
+    vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0,
+                                   &sprite[spriteNum&(MAXSPRITES-1)],
+                                   &actor[spriteNum&(MAXSPRITES-1)].t_data[0],
+                                   g_player[playerNum&(MAXPLAYERS-1)].ps,
+                                   &actor[spriteNum&(MAXSPRITES-1)] };
+
     auto &globalReturn = aGameVars[g_returnVarID].global;
 
     struct
@@ -435,17 +439,8 @@ void A_Fall(int const spriteNum)
     else if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER || EDUKE32_PREDICT_FALSE(G_CheckForSpaceCeiling(pSprite->sectnum)))
         spriteGravity = g_spriteGravity/6;
 
-    if (pSprite->statnum == STAT_ACTOR || pSprite->statnum == STAT_PLAYER || pSprite->statnum == STAT_ZOMBIEACTOR
-        || pSprite->statnum == STAT_STANDABLE)
-    {
-        int32_t ceilhit, florhit;
-        VM_GetZRange(spriteNum, &ceilhit, &florhit, 127);
-    }
-    else
-    {
-        actor[spriteNum].ceilingz = sector[pSprite->sectnum].ceilingz;
-        actor[spriteNum].floorz   = sector[pSprite->sectnum].floorz;
-    }
+    int32_t ceilhit, florhit;
+    VM_GetZRange(spriteNum, &ceilhit, &florhit, A_GetClipdist(spriteNum, -1));
 
 #ifdef YAX_ENABLE
     int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);
@@ -599,7 +594,7 @@ static inline void VM_FacePlayer(int const shift)
 
 static int32_t VM_GetCeilZOfSlope(void)
 {
-    vec2_t const vect     = vm.pSprite->pos_as_vec2;
+    vec2_t const vect     = vm.pSprite->pos.vec2;
     int const    sectnum  = vm.pSprite->sectnum;
 
 #ifdef YAX_ENABLE
@@ -616,7 +611,7 @@ static int32_t VM_GetCeilZOfSlope(void)
 #ifndef EDUKE32_STANDALONE
 static int32_t VM_GetFlorZOfSlope(void)
 {
-    vec2_t const vect    = vm.pSprite->pos_as_vec2;
+    vec2_t const vect    = vm.pSprite->pos.vec2;
     int const    sectnum = vm.pSprite->sectnum;
 
 #ifdef YAX_ENABLE
@@ -649,9 +644,8 @@ GAMEEXEC_STATIC void VM_Move(void)
     {
         if (deadflag || (vm.pActor->bpos.x != vm.pSprite->x) || (vm.pActor->bpos.y != vm.pSprite->y))
         {
-            vm.pActor->bpos.x = vm.pSprite->x;
-            vm.pActor->bpos.y = vm.pSprite->y;
-            setsprite(vm.spriteNum, (vec3_t *)vm.pSprite);
+            vm.pActor->bpos.vec2 = vm.pSprite->pos.vec2;
+            setsprite(vm.spriteNum, &vm.pSprite->pos);
         }
         return;
     }
@@ -720,9 +714,9 @@ dead:
         int angDiff    = vm.pSprite->ang;
 
 #ifndef EDUKE32_STANDALONE
-        if (badguyp && vm.pSprite->picnum != ROTATEGUN)
+        if (badguyp && (FURY || vm.pSprite->picnum != ROTATEGUN))
         {
-            if ((vm.pSprite->picnum == DRONE || vm.pSprite->picnum == COMMANDER) && vm.pSprite->extra > 0)
+            if (!FURY && (vm.pSprite->picnum == DRONE || vm.pSprite->picnum == COMMANDER) && vm.pSprite->extra > 0)
             {
                 if (vm.pSprite->picnum == COMMANDER)
                 {
@@ -764,7 +758,7 @@ dead:
                     }
                 }
             }
-            else if (vm.pSprite->picnum != ORGANTIC)
+            else if ((FURY && badguyp) || vm.pSprite->picnum != ORGANTIC)
 #else
         if (badguyp)
         {
@@ -808,7 +802,7 @@ dead:
             }
             else
 #ifndef EDUKE32_STANDALONE
-                if (vm.pSprite->picnum != DRONE && vm.pSprite->picnum != SHARK && vm.pSprite->picnum != COMMANDER)
+                if (FURY || (vm.pSprite->picnum != DRONE && vm.pSprite->picnum != SHARK && vm.pSprite->picnum != COMMANDER))
 #endif
             {
                 if (vm.pPlayer->actorsqu == vm.spriteNum)
@@ -998,10 +992,9 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         spriteGravity = 0;
 
     if (!actor[spriteNum].cgg-- || (sector[pSprite->sectnum].floorstat&2))
-    {
-        A_GetZLimits(spriteNum);
         actor[spriteNum].cgg = 3;
-    }
+
+    A_GetZLimits(spriteNum);
 
     if (pSprite->z < actor[spriteNum].floorz-ZOFFSET)
     {
@@ -1031,7 +1024,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             // I'm guessing this DRONE check is from a beta version of the game
             // where they crashed into the ground when killed
 #ifndef EDUKE32_STANDALONE
-            if (!(pSprite->picnum == APLAYER && pSprite->extra > 0) && pSprite->pal != 1 && pSprite->picnum != DRONE)
+            if (!FURY && !(pSprite->picnum == APLAYER && pSprite->extra > 0) && pSprite->pal != 1 && pSprite->picnum != DRONE)
             {
                 A_DoGuts(spriteNum,JIBS6,15);
                 A_PlaySound(SQUISHED,spriteNum);
@@ -1054,7 +1047,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
         }
     }
 
-    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER)
+    if (sector[pSprite->sectnum].lotag == ST_1_ABOVE_WATER && actor[spriteNum].floorz == getcorrectflorzofslope(pSprite->sectnum, pSprite->x, pSprite->y))
     {
         pSprite->z = newZ + A_GetWaterZOffset(spriteNum);
         return;
@@ -1172,16 +1165,6 @@ int G_StartTrack(int const levelNum) { return G_StartTrackSlot(ud.volume_number,
 
 LUNATIC_EXTERN void G_ShowView(vec3_t vec, fix16_t a, fix16_t horiz, int sect, int ix1, int iy1, int ix2, int iy2, bool unbiasedp)
 {
-    if (g_screenCapture)
-        return;
-
-    //POGOTODO: check if this has anything to do with cameras not rendering the skybox properly
-    if (offscreenrendering)
-    {
-        videoClearViewableArea(0);
-        return;
-    }
-
     int x1 = min(ix1, ix2);
     int x2 = max(ix1, ix2);
     int y1 = min(iy1, iy2);
@@ -1252,7 +1235,7 @@ void Screen_Play(void)
 
         videoClearScreen(0);
 
-        if (VM_OnEventWithReturn(EVENT_SCREEN, g_player[screenpeek].ps->i, screenpeek, I_CheckAllInput()))
+        if (VM_OnEventWithReturn(EVENT_SCREEN, -1, myconnectindex, I_CheckAllInput()))
             running = false;
 
         videoNextPage();
@@ -3009,7 +2992,7 @@ badindex:
 // if holoduke is on, let them target holoduke first.
 //
 #ifndef EDUKE32_STANDALONE
-                if (vm.pPlayer->holoduke_on >= 0)
+                if (!FURY && vm.pPlayer->holoduke_on >= 0)
                 {
                     pSprite = (uspriteptr_t)&sprite[vm.pPlayer->holoduke_on];
                     tw = cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - (krand() & (ZOFFSET5 - 1)), vm.pSprite->sectnum, pSprite->x, pSprite->y,
@@ -3294,7 +3277,8 @@ badindex:
             vInstruction(CON_LOTSOFGLASS):
                 insptr++;
 #ifndef EDUKE32_STANDALONE
-                A_SpawnGlass(vm.spriteNum, *insptr++);
+                if (!FURY)
+                    A_SpawnGlass(vm.spriteNum, *insptr++);
 #else
                 insptr++;
 #endif
@@ -3304,9 +3288,12 @@ badindex:
                 insptr++;
                 {
 #ifndef EDUKE32_STANDALONE
-                    int const wallNum   = Gv_GetVar(*insptr++);
-                    int const numShards = Gv_GetVar(*insptr++);
-                    A_SpawnWallGlass(vm.spriteNum, wallNum, numShards);
+                    if (!FURY)
+                    {
+                        int const wallNum   = Gv_GetVar(*insptr++);
+                        int const numShards = Gv_GetVar(*insptr++);
+                        A_SpawnWallGlass(vm.spriteNum, wallNum, numShards);
+                    }
 #else
                     Gv_GetVar(*insptr++);
                     Gv_GetVar(*insptr++);
@@ -3318,9 +3305,12 @@ badindex:
                 insptr++;
                 {
 #ifndef EDUKE32_STANDALONE
-                    int const wallNum   = Gv_GetVar(*insptr++);
-                    int const numShards = Gv_GetVar(*insptr++);
-                    A_SpawnRandomGlass(vm.spriteNum, wallNum, numShards);
+                    if (!FURY)
+                    {
+                        int const wallNum   = Gv_GetVar(*insptr++);
+                        int const numShards = Gv_GetVar(*insptr++);
+                        A_SpawnRandomGlass(vm.spriteNum, wallNum, numShards);
+                    }
 #else
                     Gv_GetVar(*insptr++);
                     Gv_GetVar(*insptr++);
@@ -3332,9 +3322,12 @@ badindex:
                 insptr++;
                 {
 #ifndef EDUKE32_STANDALONE
-                    int const sectNum   = Gv_GetVar(*insptr++);
-                    int const numShards = Gv_GetVar(*insptr++);
-                    A_SpawnCeilingGlass(vm.spriteNum, sectNum, numShards);
+                    if (!FURY)
+                    {
+                        int const sectNum   = Gv_GetVar(*insptr++);
+                        int const numShards = Gv_GetVar(*insptr++);
+                        A_SpawnCeilingGlass(vm.spriteNum, sectNum, numShards);
+                    }
 #else
                     Gv_GetVar(*insptr++);
                     Gv_GetVar(*insptr++);
@@ -3370,7 +3363,7 @@ badindex:
                     int newHealth = sprite[vm.pPlayer->i].extra;
 
 #ifndef EDUKE32_STANDALONE
-                    if (vm.pSprite->picnum == ATOMICHEALTH)
+                    if (!FURY && vm.pSprite->picnum == ATOMICHEALTH)
                     {
                         if (newHealth > 0)
                             newHealth += *insptr;
@@ -3402,7 +3395,7 @@ badindex:
                         if (*insptr > 0)
                         {
 #ifndef EDUKE32_STANDALONE
-                            if ((newHealth - *insptr) < (vm.pPlayer->max_player_health >> 2) && newHealth >= (vm.pPlayer->max_player_health >> 2))
+                            if (!FURY && (newHealth - *insptr) < (vm.pPlayer->max_player_health >> 2) && newHealth >= (vm.pPlayer->max_player_health >> 2))
                                 A_PlaySound(DUKE_GOTHEALTHATLOW, vm.pPlayer->i);
 #endif
                             vm.pPlayer->last_extra = newHealth;
@@ -3677,6 +3670,59 @@ badindex:
                     dispatch();
                 }
 
+            vInstruction(CON_GETGAMEFUNCBIND):
+                insptr++;
+                {
+                    int const quoteIndex = Gv_GetVar(*insptr++);
+                    int const gameFunc   = Gv_GetVar(*insptr++);
+
+                    VM_ASSERT((unsigned)quoteIndex < MAXQUOTES && apStrings[quoteIndex], "invalid quote %d\n", quoteIndex);
+                    VM_ASSERT((unsigned)gameFunc < NUMGAMEFUNCTIONS, "invalid function %d\n", gameFunc);
+
+                    static char const s_KeyboardFormat[] = "[%s]";
+                    static char const s_JoystickFormat[] = "(%s)";
+                    static char const s_Unbound[] = "UNBOUND";
+
+                    if (CONTROL_LastSeenInput == LastSeenInput::Joystick)
+                    {
+                        char const * joyname = CONFIG_GetGameFuncOnJoystick(gameFunc);
+                        if (joyname != nullptr && joyname[0] != '\0')
+                        {
+                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, joyname);
+                            dispatch();
+                        }
+
+                        char const * keyname = CONFIG_GetGameFuncOnKeyboard(gameFunc);
+                        if (keyname != nullptr && keyname[0] != '\0')
+                        {
+                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, keyname);
+                            dispatch();
+                        }
+
+                        snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, s_Unbound);
+                    }
+                    else
+                    {
+                        char const * keyname = CONFIG_GetGameFuncOnKeyboard(gameFunc);
+                        if (keyname != nullptr && keyname[0] != '\0')
+                        {
+                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, keyname);
+                            dispatch();
+                        }
+
+                        char const * joyname = CONFIG_GetGameFuncOnJoystick(gameFunc);
+                        if (joyname != nullptr && joyname[0] != '\0')
+                        {
+                            snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_JoystickFormat, joyname);
+                            dispatch();
+                        }
+
+                        snprintf(apStrings[quoteIndex], MAXQUOTELEN, s_KeyboardFormat, s_Unbound);
+                    }
+
+                    dispatch();
+                }
+
             vInstruction(CON_QSUBSTR):
                 insptr++;
                 {
@@ -3771,6 +3817,12 @@ badindex:
                                 case STR_MAPNAME:
                                 case STR_MAPFILENAME:
                                 {
+                                    if (G_HaveUserMap())
+                                    {
+                                        snprintf(apStrings[q], MAXQUOTELEN, "%s", boardfilename);
+                                        break;
+                                    }
+
                                     int const levelNum = ud.volume_number * MAXLEVELS + ud.level_number;
                                     const char *pName;
 
@@ -3802,6 +3854,12 @@ badindex:
                                     break;
                                 case STR_GAMETYPE: Bstrcpy(apStrings[q], g_gametypeNames[ud.coop]); break;
                                 case STR_VOLUMENAME:
+                                    if (G_HaveUserMap())
+                                    {
+                                        apStrings[q][0] = '\0';
+                                        break;
+                                    }
+
                                     if (EDUKE32_PREDICT_FALSE((unsigned)ud.volume_number >= MAXVOLUMES))
                                     {
                                         CON_ERRPRINTF("invalid volume %d\n", ud.volume_number);
@@ -3813,7 +3871,7 @@ badindex:
                                 case STR_PARTIME:         Bstrcpy(apStrings[q], G_PrintParTime());      break;
                                 case STR_DESIGNERTIME:    Bstrcpy(apStrings[q], G_PrintDesignerTime()); break;
                                 case STR_BESTTIME:        Bstrcpy(apStrings[q], G_PrintBestTime());     break;
-                                case STR_USERMAPFILENAME: Bstrcpy(apStrings[q], boardfilename);         break;
+                                case STR_USERMAPFILENAME: snprintf(apStrings[q], MAXQUOTELEN, "%s", boardfilename); break;
                                 default: CON_ERRPRINTF("invalid string index %d or %d\n", q, j); abort_after_error();
                             }
                             break;
@@ -4791,21 +4849,24 @@ badindex:
                 insptr++;
                 {
 #ifndef EDUKE32_STANDALONE
-                    int debrisTile = *insptr++;
+                    if (!FURY)
+                    {
+                        int debrisTile = *insptr++;
 
-                    if ((unsigned)vm.pSprite->sectnum < MAXSECTORS)
-                        for (native_t cnt = (*insptr) - 1; cnt >= 0; cnt--)
-                        {
-                            int const tileOffset = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? 0 : (krand() % 3);
+                        if ((unsigned)vm.pSprite->sectnum < MAXSECTORS)
+                            for (native_t cnt = (*insptr) - 1; cnt >= 0; cnt--)
+                            {
+                                int const tileOffset = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? 0 : (krand() % 3);
 
-                            int const spriteNum = A_InsertSprite(vm.pSprite->sectnum, vm.pSprite->x + (krand() & 255) - 128,
-                                                                 vm.pSprite->y + (krand() & 255) - 128, vm.pSprite->z - (8 << 8) - (krand() & 8191),
-                                                                 debrisTile + tileOffset, vm.pSprite->shade, 32 + (krand() & 15), 32 + (krand() & 15),
-                                                                 krand() & 2047, (krand() & 127) + 32, -(krand() & 2047), vm.spriteNum, 5);
+                                int const spriteNum = A_InsertSprite(
+                                vm.pSprite->sectnum, vm.pSprite->x + (krand() & 255) - 128, vm.pSprite->y + (krand() & 255) - 128,
+                                vm.pSprite->z - (8 << 8) - (krand() & 8191), debrisTile + tileOffset, vm.pSprite->shade, 32 + (krand() & 15),
+                                32 + (krand() & 15), krand() & 2047, (krand() & 127) + 32, -(krand() & 2047), vm.spriteNum, 5);
 
-                            sprite[spriteNum].yvel = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? g_blimpSpawnItems[cnt % 14] : -1;
-                            sprite[spriteNum].pal  = vm.pSprite->pal;
-                        }
+                                sprite[spriteNum].yvel = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? g_blimpSpawnItems[cnt % 14] : -1;
+                                sprite[spriteNum].pal  = vm.pSprite->pal;
+                            }
+                    }
 #else
                     insptr++;
 #endif
@@ -4908,7 +4969,7 @@ badindex:
                 int const playerXVel = sprite[vm.pPlayer->i].xvel;
                 int const syncBits   = g_player[vm.playerNum].input->bits;
 
-                if (((moveFlags & pducking) && vm.pPlayer->on_ground && TEST_SYNC_KEY(syncBits, SK_CROUCH))
+                if (((moveFlags & pducking) && vm.pPlayer->on_ground && (TEST_SYNC_KEY(syncBits, SK_CROUCH) ^ vm.pPlayer->crouch_toggle))
                     || ((moveFlags & pfalling) && vm.pPlayer->jumping_counter == 0 && !vm.pPlayer->on_ground && vm.pPlayer->vel.z > 2048)
                     || ((moveFlags & pjumping) && vm.pPlayer->jumping_counter > 348)
                     || ((moveFlags & pstanding) && playerXVel >= 0 && playerXVel < 8)
@@ -4943,7 +5004,8 @@ badindex:
 
             vInstruction(CON_GUTS):
 #ifndef EDUKE32_STANDALONE
-                A_DoGuts(vm.spriteNum, insptr[1], insptr[2]);
+                if (!FURY)
+                    A_DoGuts(vm.spriteNum, insptr[1], insptr[2]);
 #endif
                 insptr += 3;
                 dispatch();
@@ -5545,8 +5607,8 @@ badindex:
                         case GAMEARRAY_UINT8: ((int8_t *)arr.pValues)[arrayIndex]    = newValue; break;
                         case GAMEARRAY_BITMAP:
                         {
-                            uint32_t const mask  = (1 << (arrayIndex & 7));
-                            uint8_t &value = ((uint8_t *)arr.pValues)[arrayIndex >> 3];
+                            uint32_t const mask  = pow2char[arrayIndex&7];
+                            uint8_t &value = ((uint8_t *)arr.pValues)[arrayIndex>>3];
                             value = (value & ~mask) | (-!!newValue & mask);
                             break;
                         }
@@ -6188,9 +6250,13 @@ badindex:
                     case PODFEM1__STATIC:
                     case NAKED1__STATIC:
                     case STATUE__STATIC:
-                        if (vm.pSprite->yvel)
-                            G_OperateRespawns(vm.pSprite->yvel);
-                        break;
+                        if (!FURY)
+                        {
+                            if (vm.pSprite->yvel)
+                                G_OperateRespawns(vm.pSprite->yvel);
+                            break;
+                        }
+                        fallthrough__;
 #endif
                     default:
                         if (vm.pSprite->hitag >= 0)
@@ -6502,7 +6568,6 @@ void G_SaveMapState(void)
 
     save->g_playerSpawnCnt = g_playerSpawnCnt;
     save->g_earthquakeTime = g_earthquakeTime;
-    save->lockclock        = lockclock;
     save->randomseed       = randomseed;
     save->g_globalRandom   = g_globalRandom;
 
@@ -6635,7 +6700,6 @@ void G_RestoreMapState(void)
 
         g_playerSpawnCnt = pSavedState->g_playerSpawnCnt;
         g_earthquakeTime = pSavedState->g_earthquakeTime;
-        lockclock = pSavedState->lockclock;
         randomseed = pSavedState->randomseed;
         g_globalRandom = pSavedState->g_globalRandom;
 

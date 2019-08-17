@@ -93,6 +93,9 @@ bool bNoDemo = false;
 bool bQuickStart = true;
 bool bNoAutoLoad = false;
 
+int gMusicPrevLoadedEpisode = -1;
+int gMusicPrevLoadedLevel = -1;
+
 char gUserMapFilename[BMAX_PATH];
 char gPName[MAXPLAYERNAME];
 
@@ -147,6 +150,12 @@ enum gametokens
     T_FORCENOFILTER,
     T_TEXTUREFILTER,
     T_RFFDEFINEID,
+    T_TILEFROMTEXTURE,
+    T_IFCRC,
+    T_SURFACE,
+    T_VOXEL,
+    T_VIEW,
+    T_SHADE,
 };
 
 int blood_globalflags;
@@ -424,7 +433,8 @@ void PreloadCache(void)
     char tempbuf[128];
     if (gDemo.at1)
         return;
-    sndPlaySpecialMusicOrNothing(MUS_LOADING);
+    if (MusicRestartsOnLoadToggle)
+        sndTryPlaySpecialMusic(MUS_LOADING);
     gSoundRes.PrecacheSounds();
     PreloadTiles();
     int clock = totalclock;
@@ -500,6 +510,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     EndLevel();
     gStartNewGame = 0;
     ready2send = 0;
+    gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
+    gMusicPrevLoadedLevel = gGameOptions.nLevel;
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
@@ -1587,6 +1599,10 @@ int app_main(int argc, char const * const * argv)
     LoadExtraArts();
 
     levelLoadDefaults();
+
+    loaddefinitionsfile(BLOODWIDESCREENDEF);
+    loaddefinitions_game(BLOODWIDESCREENDEF, FALSE);
+
     const char *defsfile = G_DefFile();
     uint32_t stime = timerGetTicks();
     if (!loaddefinitionsfile(defsfile))
@@ -1652,7 +1668,6 @@ RESTART:
     UpdateNetworkMenus();
     if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
         gDemo.SetupPlayback(NULL);
-    viewGetCrosshairColor();
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     gQuitGame = 0;
     gRestartGame = 0;
@@ -2016,6 +2031,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
         { "rffdefineid",     T_RFFDEFINEID      },
+        { "tilefromtexture", T_TILEFROMTEXTURE  },
     };
 
     static const tokenlist soundTokens[] =
@@ -2160,6 +2176,83 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     gSysRes.AddExternalResource(resName, resType, resID);
                 else if (!Bstrcasecmp(rffName, "SOUND"))
                     gSoundRes.AddExternalResource(resName, resType, resID);
+            }
+        }
+        break;
+
+        case T_TILEFROMTEXTURE:
+        {
+            char *texturetokptr = pScript->ltextptr, *textureend;
+            int32_t tile = -1;
+            int32_t havesurface = 0, havevox = 0, haveview = 0, haveshade = 0;
+            int32_t surface = 0, vox = 0, view = 0, shade = 0;
+            int32_t tilecrc = 0, origcrc = 0;
+
+            static const tokenlist tilefromtexturetokens[] =
+            {
+                { "surface", T_SURFACE },
+                { "voxel",   T_VOXEL },
+                { "ifcrc",   T_IFCRC },
+                { "view",    T_VIEW },
+                { "shade",   T_SHADE },
+            };
+
+            if (scriptfile_getsymbol(pScript,&tile)) break;
+            if (scriptfile_getbraces(pScript,&textureend)) break;
+            while (pScript->textptr < textureend)
+            {
+                int32_t token = getatoken(pScript,tilefromtexturetokens,ARRAY_SIZE(tilefromtexturetokens));
+                switch (token)
+                {
+                case T_IFCRC:
+                    scriptfile_getsymbol(pScript, &tilecrc);
+                    break;
+                case T_SURFACE:
+                    havesurface = 1;
+                    scriptfile_getsymbol(pScript, &surface);
+                    break;
+                case T_VOXEL:
+                    havevox = 1;
+                    scriptfile_getsymbol(pScript, &vox);
+                    break;
+                case T_VIEW:
+                    haveview = 1;
+                    scriptfile_getsymbol(pScript, &view);
+                    break;
+                case T_SHADE:
+                    haveshade = 1;
+                    scriptfile_getsymbol(pScript, &shade);
+                    break;
+                }
+            }
+
+            if (!firstPass)
+            {
+                if (EDUKE32_PREDICT_FALSE((unsigned)tile >= MAXUSERTILES))
+                {
+                    initprintf("Error: missing or invalid 'tile number' for texture definition near line %s:%d\n",
+                               pScript->filename, scriptfile_getlinum(pScript,texturetokptr));
+                    break;
+                }
+
+                if (tilecrc)
+                {
+                    origcrc = tileCRC(tile);
+                    if (origcrc != tilecrc)
+                    {
+                        //initprintf("CRC of tile %d doesn't match! CRC: %d, Expected: %d\n", tile, origcrc, tilecrc);
+                        break;
+                    }
+                }
+
+                if (havesurface)
+                    surfType[tile] = surface;
+                if (havevox)
+                    voxelIndex[tile] = vox;
+                if (haveshade)
+                    tileShade[tile] = shade;
+                if (haveview)
+                    picanm[tile].extra = view&7;
             }
         }
         break;

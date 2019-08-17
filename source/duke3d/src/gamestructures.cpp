@@ -544,6 +544,7 @@ const memberlabel_t PlayerLabels[]=
     { "deaths",                PLAYER_DEATHS,                0, 0, -1 },
     { "last_used_weapon",      PLAYER_LAST_USED_WEAPON,      0, 0, -1 },
     { "bsubweapon",            PLAYER_BSUBWEAPON,            LABEL_HASPARM2, MAX_WEAPONS, -1 },
+    { "crouch_toggle",         PLAYER_CROUCH_TOGGLE,         0, 0, -1 },
 };
 
 int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const lParm2)
@@ -592,6 +593,7 @@ int32_t __fastcall VM_GetPlayer(int const playerNum, int32_t labelNum, int const
         case PLAYER_CHEAT_PHASE:        labelNum = ps.cheat_phase;        break;
         case PLAYER_CLIPDIST:           labelNum = ps.clipdist;           break;
         case PLAYER_CRACK_TIME:         labelNum = ps.crack_time;         break;
+        case PLAYER_CROUCH_TOGGLE:      labelNum = ps.crouch_toggle;      break;
         case PLAYER_CURR_WEAPON:        labelNum = ps.curr_weapon;        break;
         case PLAYER_CURSECTNUM:         labelNum = ps.cursectnum;         break;
         case PLAYER_CUSTOMEXITSOUND:    labelNum = ps.customexitsound;    break;
@@ -785,6 +787,7 @@ void __fastcall VM_SetPlayer(int const playerNum, int const labelNum, int const 
         case PLAYER_CHEAT_PHASE:        ps.cheat_phase        = newValue; break;
         case PLAYER_CLIPDIST:           ps.clipdist           = newValue; break;
         case PLAYER_CRACK_TIME:         ps.crack_time         = newValue; break;
+        case PLAYER_CROUCH_TOGGLE:      ps.crouch_toggle      = newValue; break;
         case PLAYER_CURR_WEAPON:        ps.curr_weapon        = newValue; break;
         case PLAYER_CURSECTNUM:         ps.cursectnum         = newValue; break;
         case PLAYER_CUSTOMEXITSOUND:    ps.customexitsound    = newValue; break;
@@ -1358,6 +1361,9 @@ const memberlabel_t UserdefsLabels[]=
     { "draw_y",                 USERDEFS_DRAW_Y,                 0, 0, -1 },
     { "draw_yxaspect",          USERDEFS_DRAW_YXASPECT,          0, 0, -1 },
     { "fov",                    USERDEFS_FOV,                    0, 0, -1 },
+    { "newgamecustomopen",      USERDEFS_NEWGAMECUSTOMOPEN,      0, 0, -1 },
+    { "newgamecustomsubopen",   USERDEFS_NEWGAMECUSTOMSUBOPEN,   LABEL_HASPARM2, MAXMENUGAMEPLAYENTRIES, -1 },
+    { "gamepadactive",          USERDEFS_GAMEPADACTIVE,          0, 0, -1 },
 };
 
 int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
@@ -1548,6 +1554,7 @@ int32_t __fastcall VM_GetUserdef(int32_t labelNum, int const lParm2)
         case USERDEFS_DRAW_Y:                 labelNum = rotatesprite_y_offset;           break;
         case USERDEFS_DRAW_YXASPECT:          labelNum = rotatesprite_yxaspect;           break;
         case USERDEFS_FOV:                    labelNum = ud.fov;                          break;
+        case USERDEFS_GAMEPADACTIVE:          labelNum = (CONTROL_LastSeenInput == LastSeenInput::Joystick); break;
 
         default: EDUKE32_UNREACHABLE_SECTION(labelNum = -1; break);
     }
@@ -1750,6 +1757,16 @@ void __fastcall VM_SetUserdef(int const labelNum, int const lParm2, int32_t cons
         case USERDEFS_DRAW_Y:                       rotatesprite_y_offset            = iSet; break;
         case USERDEFS_DRAW_YXASPECT:                rotatesprite_yxaspect            = iSet; break;
         case USERDEFS_FOV:                          ud.fov                           = iSet; break;
+        case USERDEFS_NEWGAMECUSTOMOPEN:
+            for (unsigned int b = 0; b < MAXMENUGAMEPLAYENTRIES; ++b)
+                if (iSet & (1u<<b))
+                    ME_NEWGAMECUSTOMENTRIES[b].flags = 0;
+            break;
+        case USERDEFS_NEWGAMECUSTOMSUBOPEN:
+            for (unsigned int b = 0; b < MAXMENUGAMEPLAYENTRIES; ++b)
+                if (iSet & (1u<<b))
+                    ME_NEWGAMECUSTOMSUBENTRIES[lParm2][b].flags = 0;
+            break;
     }
 }
 

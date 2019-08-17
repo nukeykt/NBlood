@@ -62,6 +62,7 @@ float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x, ghalfy;
 float gcosang, gsinang, gcosang2, gsinang2;
 float gchang, gshang, gctang, gstang, gvisibility;
 float gtang = 0.f;
+float gvrcorrection = 1.f;
 
 static vec3d_t xtex, ytex, otex, xtex2, ytex2, otex2;
 
@@ -117,7 +118,7 @@ int32_t r_glowmapping = 1;
 
 int32_t gltexmaxsize = 0;      // 0 means autodetection on first run
 int32_t gltexmiplevel = 0;		// discards this many mipmap levels
-int32_t glprojectionhacks = 1;
+int32_t glprojectionhacks = 2;
 static GLuint polymosttext = 0;
 int32_t glrendmode = REND_POLYMOST;
 int32_t r_shadeinterpolate = 1;
@@ -417,7 +418,7 @@ float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glohorizco
 static int32_t gltexcacnum = -1;
 
 //in-place multiply m0=m0*m1
-static float* multiplyMatrix4f(float m0[4*4], const float m1[4*4])
+float* multiplyMatrix4f(float m0[4*4], const float m1[4*4])
 {
     float mR[4*4];
 
@@ -902,13 +903,13 @@ static void polymost_bindPth(pthtyp const * const pPth)
         //POGO: check the width and height to ensure that the tile hasn't been changed for a user tile that has different dimensions
         if (tileIsPacked &&
             (!waloff[pPth->picnum] ||
-             (tile.rect.width == (uint32_t) tilesiz[pPth->picnum].y &&
-              tile.rect.height == (uint32_t) tilesiz[pPth->picnum].x)))
+             (tile.rect.width >= (uint32_t) tilesiz[pPth->picnum].y &&
+              tile.rect.height >= (uint32_t) tilesiz[pPth->picnum].x)))
         {
             texturePosSize = { tile.rect.u/(float) tilesheetSize,
                                tile.rect.v/(float) tilesheetSize,
-                               tile.rect.width/(float) tilesheetSize,
-                               tile.rect.height/(float) tilesheetSize };
+                               tilesiz[pPth->picnum].y/(float) tilesheetSize,
+                               tilesiz[pPth->picnum].x/(float) tilesheetSize };
             halfTexelSize = tilesheetHalfTexelSize;
         }
     }
@@ -1387,20 +1388,18 @@ void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float fa
 
 static float get_projhack_ratio(void)
 {
-    if (glprojectionhacks && !r_yshearing)
+    if ((glprojectionhacks == 1) && !r_yshearing)
     {
-        float const projhack_zoom = 1.4f *
-        // adjust for the FOV, increasing the FOV reduces the zenith glitch
-        // don't apply if the zenith is cut from the viewing area
-        (65536.f / fviewingrange) *
-        (float)(windowxy2.y-windowxy1.y+1) /
-        (float)(windowxy2.x-windowxy1.x+1) *
-        (float)(xdim)/(float)(ydim);
-        if (projhack_zoom < 1.f)
+        // calculates the extend of the zenith glitch
+        float verticalfovtan = (fviewingrange * (windowxy2.y-windowxy1.y) * 5.f) / ((float)yxaspect * (windowxy2.x-windowxy1.x) * 4.f);
+        float verticalfov = atanf(verticalfovtan) * (2.f / fPI);
+        static constexpr float const maxhorizangle = 0.6361136f; // horiz of 199 in degrees
+        float zenglitch = verticalfov + maxhorizangle - 0.95f; // less than 1 because the zenith glitch extends a bit
+        if (zenglitch <= 0.f)
             return 1.f;
-        static constexpr float const maxcoshoriz = 0.540971179375801f; // 128/sqrt(128^2+199^2) = cos of an horiz diff of 199
-        float const factor = (projhack_zoom - 1.f) * (1.f / maxcoshoriz);
-        return 1.f + (factor * (1.f - Bfabsf(gchang)));
+        float const zenglitchtan = tanf((verticalfov - zenglitch) * (fPI / 2.f));
+        static constexpr float const maxcoshoriz = 0.54097117f; // 128/sqrt(128^2+199^2) = cos of an horiz diff of 199
+        return 1.f + (((verticalfovtan / zenglitchtan) - 1.f) * ((1.f - Bfabsf(gchang)) / maxcoshoriz ));
     }
 
     // No projection hacks (legacy or new-aspect)
@@ -2035,14 +2034,36 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
     if (waloff[dapic])
     {
         char tileIsPacked = tilepacker_getTile(dapic+1, &tile);
-        if (tileIsPacked &&
-            tile.rect.width == (uint32_t) tsizart.y &&
-            tile.rect.height == (uint32_t) tsizart.x)
+        if (tileIsPacked)
         {
-            pth->glpic = tilesheetTexIDs[tile.tilesheetID];
-            doalloc = false;
+            if (tile.rect.width >= (uint32_t) tsizart.y &&
+                tile.rect.height >= (uint32_t) tsizart.x)
+            {
+                if (pth->glpic != 0 &&
+                    pth->glpic != tilesheetTexIDs[tile.tilesheetID])
+                {
+                    //POGO: we have a separate texture for this tile, but we want to merge it back into the tilesheet
+                    glDeleteTextures(1, &pth->glpic);
+                }
+                pth->glpic = tilesheetTexIDs[tile.tilesheetID];
+                doalloc = false;
+            } else if (pth->glpic == tilesheetTexIDs[tile.tilesheetID])
+            {
+                //POGO: we're reloading an invalidated art tile that has changed dimensions and no longer fits into our original tilesheet
+                doalloc = true;
+            }
+        } else
+        {
+            Tile blankTile = {};
+            tilepacker_getTile(0, &blankTile);
+            if (pth->glpic == tilesheetTexIDs[blankTile.tilesheetID])
+            {
+                //POGO: we're reloading an invalidated art tile that had previously been added to the texcache while !waloff[dapic]
+                doalloc = true;
+            }
         }
-        else if (doalloc)
+
+        if (doalloc)
         {
             glGenTextures(1, (GLuint *)&pth->glpic);
         }
@@ -2063,6 +2084,15 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_mode);
             }
         }
+
+        if (!doalloc &&
+            !tileIsPacked &&
+            (siz.x > pth->siz.x ||
+             siz.y > pth->siz.y))
+        {
+            //POGO: grow our texture to hold the tile data
+            doalloc = true;
+        }
         uploadtextureindexed(doalloc, {(int32_t) tile.rect.u, (int32_t) tile.rect.v}, siz, waloff[dapic]);
     }
     else
@@ -2077,6 +2107,7 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
     pth->effects = 0;
     pth->flags = TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | (PTH_HASALPHA|PTH_ONEBITALPHA) | (npoty*PTH_NPOTWALL) | PTH_INDEXED;
     pth->hicr = NULL;
+    pth->siz = siz;
 }
 
 void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp *pth, int32_t doalloc)
@@ -2265,6 +2296,28 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
             npoty = 1;
         }
 
+        if (!doalloc)
+        {
+            vec2_t pthSiz2 = pth->siz;
+            if (!glinfo.texnpot)
+            {
+                for (pthSiz2.x = 1; pthSiz2.x < pth->siz.x; pthSiz2.x += pthSiz2.x) { }
+                for (pthSiz2.y = 1; pthSiz2.y < pth->siz.y; pthSiz2.y += pthSiz2.y) { }
+            }
+            else
+            {
+                if ((pthSiz2.x|pthSiz2.y) == 0)
+                    pthSiz2.x = pthSiz2.y = 1;
+                else
+                    pthSiz2 = pth->siz;
+            }
+            if (siz.x > pthSiz2.x ||
+                siz.y > pthSiz2.y)
+            {
+                //POGO: grow our texture to hold the tile data
+                doalloc = true;
+            }
+        }
         uploadtexture(doalloc, siz, GL_BGRA, pic, tsiz,
                       dameth | DAMETH_ARTIMMUNITY |
                       (dapic >= MAXUSERTILES ? (DAMETH_NOTEXCOMPRESS|DAMETH_NODOWNSIZE) : 0) | /* never process these short-lived tiles */
@@ -2283,6 +2336,7 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
     pth->effects = 0;
     pth->flags = TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | (hasalpha*(PTH_HASALPHA|PTH_ONEBITALPHA)) | (npoty*PTH_NPOTWALL);
     pth->hicr = NULL;
+    pth->siz = tsiz;
 
 #if defined USE_GLEXT && !defined EDUKE32_GLES
     if (!gotcache && glinfo.texcompr && glusetexcache && glusetexcompr == 2 && dapic < MAXUSERTILES)
@@ -2394,8 +2448,6 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
             isart = 1;
         }
-
-        pth->siz = tsiz;
 
         if (!glinfo.texnpot)
         {
@@ -2565,6 +2617,23 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
 
         int32_t const texfmt = glinfo.bgra ? GL_BGRA : GL_RGBA;
 
+        if (!doalloc)
+        {
+            vec2_t pthSiz2 = pth->siz;
+            if (!glinfo.texnpot)
+            {
+                for (pthSiz2.x=1; pthSiz2.x < pth->siz.x; pthSiz2.x+=pthSiz2.x) { }
+                for (pthSiz2.y=1; pthSiz2.y < pth->siz.y; pthSiz2.y+=pthSiz2.y) { }
+            }
+            else
+                pthSiz2 = tsiz;
+            if (siz.x > pthSiz2.x ||
+                siz.y > pthSiz2.y)
+            {
+                //POGO: grow our texture to hold the tile data
+                doalloc = true;
+            }
+        }
         uploadtexture(doalloc,siz,texfmt,pic,tsiz,
                       dameth | DAMETH_HI | DAMETH_NOFIX |
                       TO_DAMETH_NODOWNSIZE(hicr->flags) |
@@ -2596,6 +2665,7 @@ int32_t gloadtile_hi(int32_t dapic,int32_t dapalnum, int32_t facen, hicreplctyp 
                  ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0);
     pth->skyface = facen;
     pth->hicr = hicr;
+    pth->siz = tsiz;
 
 #if defined USE_GLEXT && !defined EDUKE32_GLES
     if (!gotcache && glinfo.texcompr && glusetexcache && !(hicr->flags & HICR_NOTEXCOMPRESS) &&
@@ -2967,8 +3037,8 @@ static void polymost_updaterotmat(void)
         //Up/down rotation
         float udmatrix[16] = {
             1.f, 0.f, 0.f, 0.f,
-            0.f, gchang, -gshang, 0.f,
-            0.f, gshang, gchang, 0.f,
+            0.f, gchang, -gshang*gvrcorrection, 0.f,
+            0.f, gshang/gvrcorrection, gchang, 0.f,
             0.f, 0.f, 0.f, 1.f,
         };
         // Tilt rotation
@@ -3078,8 +3148,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     int j = 0;
     float px[8], py[8], dd[8], uu[8], vv[8];
 #if SOFTROTMAT
-    float const ozgs = ghalfx * gshang,
-                ozgc = ghalfx * gchang;
+    float const ozgs = (ghalfx / gvrcorrection) * gshang,
+                ozgc = (ghalfx / gvrcorrection) * gchang;
 #endif
 
     for (bssize_t i=0; i<n; ++i)
@@ -3091,12 +3161,14 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
                               (dpxy[i].y - ghoriz) * gshang + ozgc };
 
         // Tilt rotation
-        float const r = ghalfx / orot.z;
+        float const r = (ghalfx / gvrcorrection) / orot.z;
 
         px[j] = ghalfx + (((orot.x * gctang) - (orot.y * gstang)) * r);
         py[j] = ghoriz + (((orot.x * gstang) + (orot.y * gctang)) * r);
 
         dd[j] = (dpxy[i].x * xtex.d + dpxy[i].y * ytex.d + otex.d) * r;
+        if (dd[j] <= 0.f) // invalid polygon
+            return;
         uu[j] = (dpxy[i].x * xtex.u + dpxy[i].y * ytex.u + otex.u) * r;
         vv[j] = (dpxy[i].x * xtex.v + dpxy[i].y * ytex.v + otex.v) * r;
 
@@ -3107,6 +3179,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         py[j] = dpxy[i].y;
 
         dd[j] = (dpxy[i].x * xtex.d + dpxy[i].y * ytex.d + otex.d);
+        if (dd[j] <= 0.f) // invalid polygon
+            return;
         uu[j] = (dpxy[i].x * xtex.u + dpxy[i].y * ytex.u + otex.u);
         vv[j] = (dpxy[i].x * xtex.v + dpxy[i].y * ytex.v + otex.v);
         j++;
@@ -3837,8 +3911,8 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         return;
     }
 
-    vec2f_t dm0 = { x0, y0 };
-    vec2f_t dm1 = { x1, y1 };
+    vec2f_t dm0 = { x0 - DOMOST_OFFSET, y0 };
+    vec2f_t dm1 = { x1 + DOMOST_OFFSET, y1 };
 
     float const slop = (dm1.y - dm0.y) / (dm1.x - dm0.x);
 
@@ -3853,9 +3927,6 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         dm1.y += slop*(xbr-dm1.x);
         dm1.x = xbr;
     }
-
-    dm0.x -= DOMOST_OFFSET;
-    dm1.x += DOMOST_OFFSET;
 
     drawpoly_alpha = 0.f;
     drawpoly_blend = 0;
@@ -3929,14 +4000,6 @@ static void polymost_domost(float x0, float y0, float x1, float y1, float y0top 
         vsp[i].tag = vsp[newi].tag = -1;
 
         float const rdx = 1.f/dx;
-
-        for (bssize_t i = 0; i < scnt; i++)
-        {
-            if (spx[i] < x0)
-                spx[i] = x0;
-            else if (spx[i] > x1)
-                spx[i] = x1;
-        }
 
         for (bssize_t z=0, vcnt=0; z<=scnt; z++,i=vcnt)
         {
@@ -5899,7 +5962,7 @@ static void polymost_drawalls(int32_t const bunch)
             int16_t bn[2];
 # if 0
             int32_t obunchchk = (1 && yax_globalbunch>=0 &&
-                                 haveymost[yax_globalbunch>>3]&(1<<(yax_globalbunch&7)));
+                                 haveymost[yax_globalbunch>>3]&pow2char[yax_globalbunch&7]);
 
             // if (obunchchk)
             const int32_t x2 = yax_globalbunch*xdimen;
@@ -5914,10 +5977,10 @@ static void polymost_drawalls(int32_t const bunch)
             for (i=0; i<2; i++)
                 if (checkcf&(1<<i))
                 {
-                    if ((haveymost[bn[i]>>3]&(1<<(bn[i]&7)))==0)
+                    if ((haveymost[bn[i]>>3]&pow2char[bn[i]&7])==0)
                     {
                         // init yax *most arrays for that bunch
-                        haveymost[bn[i]>>3] |= (1<<(bn[i]&7));
+                        haveymost[bn[i]>>3] |= pow2char[bn[i]&7];
                         yax_vsp[bn[i]*2][1].x = xbl;
                         yax_vsp[bn[i]*2][2].x = xbr;
                         yax_vsp[bn[i]*2][1].cy[0] = xbb;
@@ -6185,7 +6248,8 @@ void polymost_scansector(int32_t sectnum)
 {
     if (sectnum < 0) return;
 
-    if (automapping) show2dsector[sectnum>>3] |= pow2char[sectnum&7];
+    if (automapping)
+        show2dsector[sectnum>>3] |= pow2char[sectnum&7];
 
     sectorborder[0] = sectnum;
     int sectorbordercnt = 1;
@@ -6205,9 +6269,13 @@ void polymost_scansector(int32_t sectnum)
 
             vec2_t const s = { spr->x-globalposx, spr->y-globalposy };
 
-            if ((spr->cstat&48) || (usemodels && tile2model[spr->picnum].modelid>=0) || ((s.x * gcosang) + (s.y * gsinang) > 0))
+            if ((spr->cstat&48) ||
+                (usemodels && tile2model[spr->picnum].modelid>=0) ||
+                ((s.x * gcosang) + (s.y * gsinang) > 0))
             {
-                if ((spr->cstat&(64+48))!=(64+16) || dmulscale6(sintable[(spr->ang+512)&2047],-s.x, sintable[spr->ang&2047],-s.y) > 0)
+                if ((spr->cstat&(64+48))!=(64+16) ||
+                    (usevoxels && tiletovox[spr->picnum] >= 0 && voxmodels[tiletovox[spr->picnum]]) ||
+                    dmulscale6(sintable[(spr->ang+512)&2047],-s.x, sintable[spr->ang&2047],-s.y) > 0)
                     if (renderAddTsprite(z, sectnum))
                         break;
             }
@@ -6446,6 +6514,18 @@ void polymost_drawrooms()
     glDepthFunc(GL_ALWAYS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
 
+    gvrcorrection = viewingrange*(1.f/65536.f);
+    if (glprojectionhacks == 2)
+    {
+        // calculates the extend of the zenith glitch
+        float verticalfovtan = (fviewingrange * (windowxy2.y-windowxy1.y) * 5.f) / ((float)yxaspect * (windowxy2.x-windowxy1.x) * 4.f);
+        float verticalfov = atanf(verticalfovtan) * (2.f / fPI);
+        static constexpr float const maxhorizangle = 0.6361136f; // horiz of 199 in degrees
+        float zenglitch = verticalfov + maxhorizangle - 0.95f; // less than 1 because the zenith glitch extends a bit
+        if (zenglitch > 0.f)
+            gvrcorrection /= (zenglitch * 2.5f) + 1.f;
+    }
+
     //Polymost supports true look up/down :) Here, we convert horizon to angle.
     //gchang&gshang are cos&sin of this angle (respectively)
     gyxscale = ((float)xdimenscale)*(1.0f/131072.f);
@@ -6476,7 +6556,7 @@ void polymost_drawrooms()
     else
     {
         float r = (float)(ydimen >> 1) - (ghoriz + ghorizcorrect);
-        gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx);
+        gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx / (gvrcorrection * gvrcorrection));
         gchang  = Bsqrtf(1.f - gshang * gshang);
         ghoriz2 = 0.f;
     }
@@ -6484,6 +6564,7 @@ void polymost_drawrooms()
     ghoriz = (float)(ydimen>>1);
 
     resizeglcheck();
+    float const ratio = 1.f/get_projhack_ratio();
 
     //global cos/sin tilt angle
     gctang = cosf(gtang);
@@ -6507,8 +6588,8 @@ void polymost_drawrooms()
     for (auto & v : p)
     {
         //Tilt rotation (backwards)
-        vec2f_t const o = { v.x-ghalfx, v.y-ghoriz };
-        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, ghalfx };
+        vec2f_t const o = { (v.x-ghalfx)*ratio, (v.y-ghoriz)*ratio };
+        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, ghalfx / gvrcorrection };
 
         //Up/down rotation (backwards)
         v = { o2.x, o2.y * gchang + o2.z * gshang, o2.z * gchang - o2.y * gshang };
@@ -6544,7 +6625,7 @@ void polymost_drawrooms()
 
     for (bssize_t i = 0; i < n; i++)
     {
-        float const r = ghalfx / p2[i].z;
+        float const r = (ghalfx / gvrcorrection) / p2[i].z;
         sx[i] = p2[i].x * r + ghalfx;
         sy[i] = p2[i].y * r + ghoriz;
     }
@@ -6610,11 +6691,10 @@ void polymost_drawrooms()
 
     if (searchit >= 1)
     {
-        float ratio = 1.f/get_projhack_ratio();
         vec2f_t const o = { (searchx-ghalfx)*ratio, (searchy-ghoriz)*ratio };
-        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, ghalfx };
+        vec3f_t const o2 = { o.x*gctang + o.y*gstang, o.y*gctang - o.x*gstang + ghoriz2, (ghalfx / gvrcorrection) };
         vec3f_t const v = { o2.x, o2.y * gchang + o2.z * gshang, o2.z * gchang - o2.y * gshang };
-        float const r = ghalfx / v.z;
+        float const r = (ghalfx / gvrcorrection) / v.z;
         fsearchx = v.x * r + ghalfx;
         fsearchy = v.y * r + ghoriz;
         fsearchz = 0.f;
@@ -6675,8 +6755,8 @@ void polymost_drawrooms()
 
         if (automapping)
         {
-            for (int z = bunchfirst[closest]; z >= 0; z = bunchp2[z])
-                show2dwall[thewall[z] >> 3] |= pow2char[thewall[z] & 7];
+            for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
+                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
         }
 
         numbunches--;
@@ -6921,6 +7001,18 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
     polymost_outputGLDebugMessage(3, "polymost_prepareMirror(%u)", mirrorWall);
 
     //POGO: prepare necessary globals for drawing, as we intend to call this outside of drawrooms
+    gvrcorrection = viewingrange*(1.f/65536.f);
+    if (glprojectionhacks == 2)
+    {
+        // calculates the extend of the zenith glitch
+        float verticalfovtan = (fviewingrange * (windowxy2.y-windowxy1.y) * 5.f) / ((float)yxaspect * (windowxy2.x-windowxy1.x) * 4.f);
+        float verticalfov = atanf(verticalfovtan) * (2.f / fPI);
+        static constexpr float const maxhorizangle = 0.6361136f; // horiz of 199 in degrees
+        float zenglitch = verticalfov + maxhorizangle - 0.95f; // less than 1 because the zenith glitch extends a bit
+        if (zenglitch > 0.f)
+            gvrcorrection /= (zenglitch * 2.5f) + 1.f;
+    }
+
     set_globalpos(dax, day, daz);
     set_globalang(daang);
     globalhoriz = mulscale16(fix16_to_int(dahoriz)-100,divscale16(xdimenscale,viewingrange))+(ydimen>>1);
@@ -6948,7 +7040,7 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
     else
     {
         float r = (float)(ydimen >> 1) - (ghoriz+ghorizcorrect);
-        gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx);
+        gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx / (gvrcorrection * gvrcorrection));
         gchang  = Bsqrtf(1.f - gshang * gshang);
         ghoriz2 = 0.f;
     }
@@ -7148,7 +7240,7 @@ void polymost2_drawsprite(int32_t snum)
         return;
     }
 
-    vec2_t pos = tspr->pos_as_vec2;
+    vec2_t pos = tspr->pos.vec2;
 
     if (spriteext[spritenum].flags & SPREXT_AWAY1)
     {
@@ -7642,7 +7734,7 @@ void polymost_drawsprite(int32_t snum)
         break;
     }
 
-    vec2_t pos = tspr->pos_as_vec2;
+    vec2_t pos = tspr->pos.vec2;
 
     if (spriteext[spritenum].flags & SPREXT_AWAY1)
     {
@@ -8214,6 +8306,10 @@ void polymost_drawsprite(int32_t snum)
         case 3:  // Voxel sprite
             break;
     }
+
+    if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
+        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+
 _drawsprite_return:
     polymost_identityrotmat();
     tilesiz[globalpicnum] = oldsiz;
@@ -8267,6 +8363,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     double const ogxyaspect = gxyaspect; gxyaspect = 1.f;
     int const oldviewingrange = viewingrange; viewingrange = 65536;
     float const oldfviewingrange = fviewingrange; fviewingrange = 65536.f;
+    float const ogvrcorrection = gvrcorrection; gvrcorrection = 1.f;
 
     polymost_updaterotmat();
 
@@ -8458,6 +8555,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 # endif
     if (!nofog) polymost_setFogEnabled(true);
 
+    gvrcorrection = ogvrcorrection;
     viewingrange = oldviewingrange;
     fviewingrange = oldfviewingrange;
     gxyaspect = ogxyaspect;
@@ -8518,6 +8616,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     gctang = 1.f;
     float const  ogstang = gstang;
     gstang = 0.f;
+    float const  ogvrcorrection = gvrcorrection;
+    gvrcorrection = 1.f;
 
     polymost_updaterotmat();
 
@@ -8733,6 +8833,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     gshang = ogshang;
     gctang = ogctang;
     gstang = ogstang;
+    gvrcorrection = ogvrcorrection;
 
     polymost_identityrotmat();
 }
@@ -9004,7 +9105,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
     usehightile = usehitile && usehightile;
     pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
     if (usehightile)
-        loadedhitile[wallnum>>3] |= (1<<(wallnum&7));
+        loadedhitile[wallnum>>3] |= pow2char[wallnum&7];
     usehightile = ousehightile;
 
     if (pth)
@@ -9353,7 +9454,7 @@ void polymost_initosdfuncs(void)
           (void *) &r_npotwallmode, CVAR_INT | CVAR_NOSAVE, 0, 2 },
         { "r_parallaxskyclamping","enable/disable parallaxed floor/ceiling sky texture clamping", (void *) &r_parallaxskyclamping, CVAR_BOOL, 0, 1 },
         { "r_parallaxskypanning","enable/disable parallaxed floor/ceiling panning when drawing a parallaxing sky", (void *) &r_parallaxskypanning, CVAR_BOOL, 0, 1 },
-        { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_BOOL, 0, 1 },
+        { "r_projectionhack", "enable/disable projection hack", (void *) &glprojectionhacks, CVAR_INT, 0, 2 },
         { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_BOOL, 0, 1 },
         { "r_shadescale","multiplier for shading",(void *) &shadescale, CVAR_FLOAT, 0, 10 },
         { "r_shadescale_unbounded","enable/disable allowance of complete blackness",(void *) &shadescale_unbounded, CVAR_BOOL, 0, 1 },

@@ -1261,6 +1261,7 @@ static void Gv_AddSystemVars(void)
     Gv_NewVar("WORKSLIKE",             0,                                       GAMEVAR_SYSTEM | GAMEVAR_PERPLAYER | GAMEVAR_READONLY);
     Gv_NewVar("ZRANGE",                4,                                       GAMEVAR_SYSTEM | GAMEVAR_PERPLAYER);
 
+    Gv_NewVar("automapping",           (intptr_t)&automapping,                  GAMEVAR_SYSTEM | GAMEVAR_INT32PTR);
     Gv_NewVar("cameraang",             (intptr_t)&ud.cameraq16ang,              GAMEVAR_SYSTEM | GAMEVAR_Q16PTR);
     Gv_NewVar("cameraclock",           (intptr_t)&g_cameraClock,                GAMEVAR_SYSTEM | GAMEVAR_INT32PTR);
     Gv_NewVar("cameradist",            (intptr_t)&g_cameraDistance,             GAMEVAR_SYSTEM | GAMEVAR_INT32PTR);
@@ -1412,6 +1413,7 @@ void Gv_RefreshPointers(void)
     aGameVars[Gv_GetVarIndex("RESPAWN_MONSTERS")].global  = (intptr_t)&ud.respawn_monsters;
     aGameVars[Gv_GetVarIndex("VOLUME")].global            = (intptr_t)&ud.volume_number;
 
+    aGameVars[Gv_GetVarIndex("automapping")].global       = (intptr_t)&automapping;
     aGameVars[Gv_GetVarIndex("cameraang")].global         = (intptr_t)&ud.cameraq16ang;  // XXX FIXME
     aGameVars[Gv_GetVarIndex("cameraclock")].global       = (intptr_t)&g_cameraClock;
     aGameVars[Gv_GetVarIndex("cameradist")].global        = (intptr_t)&g_cameraDistance;

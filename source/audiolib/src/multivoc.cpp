@@ -88,104 +88,77 @@ int32_t MV_ErrorCode = MV_NotInstalled;
 float MV_GlobalVolume = 1.f;
 float MV_VolumeSmooth = 1.f;
 
-int32_t lockdepth = 0;
+int lockdepth = 0;
 
 static char *MV_MusicBuffer;
 static void (*MV_MusicCallback)(char *buffer, int length) = NULL;
 static int32_t MV_MixMusic = FALSE;
 
-const char *MV_ErrorString(int32_t ErrorNumber)
-{
-    switch (ErrorNumber)
-    {
-        case MV_Error:
-            return MV_ErrorString(MV_ErrorCode);
-        case MV_Ok:
-            return "Multivoc ok.";
-        case MV_NotInstalled:
-            return "Multivoc not installed.";
-        case MV_DriverError:
-            return SoundDriver_ErrorString(SoundDriver_GetError());
-        case MV_NoVoices:
-            return "No free voices available to Multivoc.";
-        case MV_NoMem:
-            return "Out of memory in Multivoc.";
-        case MV_VoiceNotFound:
-            return "No voice with matching handle found.";
-        case MV_InvalidFile:
-            return "Invalid file passed in to Multivoc.";
-        default:
-            return "Unknown Multivoc error code.";
-    }
-}
-
-static bool MV_Mix(VoiceNode *voice, int const buffer)
+static bool MV_Mix(VoiceNode * const voice, int const buffer)
 {
     if (voice->length == 0 && voice->GetSound(voice) != KeepPlaying)
         return false;
 
-    int32_t length = MV_MIXBUFFERSIZE;
-    uint32_t FixedPointBufferSize = voice->FixedPointBufferSize;
+    float const gv = MV_GlobalVolume;
+
+    if (voice->priority == FX_MUSIC_PRIORITY)
+        MV_GlobalVolume = 1.f;
+
+    int32_t        length = MV_MIXBUFFERSIZE;
+    uint32_t       bufsiz = voice->FixedPointBufferSize;
+    uint32_t const rate   = voice->RateScale;
 
     MV_MixDestination = MV_MixBuffer[buffer];
 
     // Add this voice to the mix
     do
     {
-        uint32_t const rate = voice->RateScale;
+        int32_t        mixlen   = length;
         uint32_t const position = voice->position;
-        int32_t voclength;
+        uint32_t const voclen   = voice->length;
 
         // Check if the last sample in this buffer would be
         // beyond the length of the sample block
-        if ((position + FixedPointBufferSize) >= voice->length)
+        if ((position + bufsiz) >= voclen)
         {
-            if (position >= voice->length)
+            if (position >= voclen)
             {
                 voice->GetSound(voice);
-                return true;
+                break;
             }
 
-            voclength = (voice->length - position + rate - voice->channels) / rate;
+            mixlen = (voclen - position + rate - voice->channels) / rate;
         }
-        else
-            voclength = length;
 
-        float const gv = MV_GlobalVolume;
+        voice->position = voice->mix(voice, mixlen);
+        length -= mixlen;
 
-        if (voice->priority == FX_MUSIC_PRIORITY)
-            MV_GlobalVolume = 1.f;
-
-        voice->position = voice->mix(voice, voclength);
-
-        MV_GlobalVolume = gv;
-
-        length -= voclength;
-
-        if (voice->position >= voice->length)
+        if (voice->position >= voclen)
         {
             // Get the next block of sound
             if (voice->GetSound(voice) == NoMoreData)
-                return false;
-
-            if (length > (voice->channels - 1))
             {
-                // Get the position of the last sample in the buffer
-                FixedPointBufferSize = voice->RateScale * (length - voice->channels);
+                MV_GlobalVolume = gv;
+                return false;
             }
+
+            // Get the position of the last sample in the buffer
+            if (length > (voice->channels - 1))
+                bufsiz = voice->RateScale * (length - voice->channels);
         }
     } while (length > 0);
 
+    MV_GlobalVolume = gv;
     return true;
 }
 
 void MV_PlayVoice(VoiceNode *voice)
 {
-    DisableInterrupts();
+    MV_Lock();
     LL::SortedInsert(&VoiceList, voice, &VoiceNode::priority);
     voice->LeftVolume = voice->LeftVolumeDest;
     voice->RightVolume = voice->RightVolumeDest;
-    RestoreInterrupts();
+    MV_Unlock();
 }
 
 static void MV_CleanupVoice(VoiceNode *voice)
@@ -214,11 +187,10 @@ static void MV_CleanupVoice(VoiceNode *voice)
 static void MV_StopVoice(VoiceNode *voice)
 {
     MV_CleanupVoice(voice);
-
-    DisableInterrupts();
+    MV_Lock();
     // move the voice from the play list to the free list
     LL::Move(voice, &VoicePool);
-    RestoreInterrupts();
+    MV_Unlock();
 }
 
 /*---------------------------------------------------------------------
@@ -231,15 +203,10 @@ static void MV_StopVoice(VoiceNode *voice)
 static void MV_ServiceVoc(void)
 {
     // Toggle which buffer we'll mix next
-    if (++MV_MixPage >= MV_NumberOfBuffers)
-        MV_MixPage -= MV_NumberOfBuffers;
+    ++MV_MixPage &= MV_NumberOfBuffers-1;
 
     if (MV_ReverbLevel == 0)
     {
-        // Initialize buffer
-        //Commented out so that the buffer is always cleared.
-        //This is so the guys at Echo Speech can mix into the
-        //buffer even when no sounds are playing.
         if (!MV_BufferEmpty[MV_MixPage])
         {
             Bmemset(MV_MixBuffer[MV_MixPage], 0, MV_BufferSize);
@@ -248,46 +215,36 @@ static void MV_ServiceVoc(void)
     }
     else
     {
-        char const *const end = MV_MixBuffer[0] + MV_BufferLength;
-        char *dest = MV_MixBuffer[MV_MixPage];
-        char const *source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
+        char const *const end    = MV_MixBuffer[0] + MV_BufferLength;
+        char *            dest   = MV_MixBuffer[MV_MixPage];
+        char const *      source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
 
         if (source < MV_MixBuffer[ 0 ])
             source += MV_BufferLength;
 
         int32_t length = MV_BufferSize;
 
-        while (length > 0)
+        do
         {
             int const count = (source + length > end) ? (end - source) : length;
 
-            MV_16BitReverb(source, dest, MV_ReverbVolume, count / 2);
+            MV_16BitReverb(source, dest, MV_ReverbVolume, count >> 1);
 
             // if we go through the loop again, it means that we've wrapped around the buffer
             source  = MV_MixBuffer[ 0 ];
             dest   += count;
             length -= count;
-        }
+        } while (length > 0);
     }
-
-    // Play any waiting voices
-    //DisableInterrupts();
-
 
     if (VoiceList.next && VoiceList.next != &VoiceList)
     {
         VoiceNode *voice = VoiceList.next;
-
-        int iter = 0;
-
         VoiceNode *next;
 
         do
         {
             next = voice->next;
-
-            if (++iter > MV_MaxVoices && MV_Printf)
-                MV_Printf("more iterations than voices! iter: %d\n",iter);
 
             if (voice->Paused)
                 continue;
@@ -321,8 +278,6 @@ static void MV_ServiceVoc(void)
             dest++;
         }
     }
-
-    //RestoreInterrupts();
 }
 
 static VoiceNode *MV_GetVoice(int32_t handle)
@@ -334,18 +289,18 @@ static VoiceNode *MV_GetVoice(int32_t handle)
         return NULL;
     }
 
-    DisableInterrupts();
+    MV_Lock();
 
     for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
     {
         if (handle == voice->handle)
         {
-            RestoreInterrupts();
+            MV_Unlock();
             return voice;
         }
     }
 
-    RestoreInterrupts();
+    MV_Unlock();
     MV_SetErrorCode(MV_VoiceNotFound);
     return NULL;
 }
@@ -363,12 +318,12 @@ VoiceNode *MV_BeginService(int32_t handle)
         return NULL;
     }
 
-    DisableInterrupts();
+    MV_Lock();
 
     return voice;
 }
 
-static inline void MV_EndService(void) { RestoreInterrupts(); }
+static inline void MV_EndService(void) { MV_Unlock(); }
 
 int32_t MV_VoicePlaying(int32_t handle)
 {
@@ -380,11 +335,11 @@ int32_t MV_KillAllVoices(void)
     if (!MV_Installed)
         return MV_Error;
 
-    DisableInterrupts();
+    MV_Lock();
 
     if (&VoiceList == VoiceList.next)
     {
-        RestoreInterrupts();
+        MV_Unlock();
         return MV_Ok;
     }
 
@@ -403,7 +358,7 @@ int32_t MV_KillAllVoices(void)
         voice = VoiceList.prev;
     }
 
-    RestoreInterrupts();
+    MV_Unlock();
 
     return MV_Ok;
 }
@@ -426,14 +381,14 @@ int32_t MV_VoicesPlaying(void)
     if (!MV_Installed)
         return 0;
 
-    DisableInterrupts();
+    MV_Lock();
 
     int NumVoices = 0;
 
     for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
         NumVoices++;
 
-    RestoreInterrupts();
+    MV_Unlock();
 
     return NumVoices;
 }
@@ -442,7 +397,7 @@ VoiceNode *MV_AllocVoice(int32_t priority)
 {
     VoiceNode   *voice, *node;
 
-    DisableInterrupts();
+    MV_Lock();
 
     // Check if we have any free voices
     if (LL::Empty(&VoicePool))
@@ -460,14 +415,14 @@ VoiceNode *MV_AllocVoice(int32_t priority)
         if (LL::Empty(&VoicePool))
         {
             // No free voices
-            RestoreInterrupts();
+            MV_Unlock();
             return NULL;
         }
     }
 
     voice = VoicePool.next;
     LL::Remove(voice);
-    RestoreInterrupts();
+    MV_Unlock();
 
     int32_t vhan = MV_MINVOICEHANDLE;
 
@@ -489,7 +444,7 @@ int32_t MV_VoiceAvailable(int32_t priority)
     if (!LL::Empty(&VoicePool))
         return TRUE;
 
-    DisableInterrupts();
+    MV_Lock();
 
     VoiceNode   *voice, *node;
 
@@ -502,11 +457,11 @@ int32_t MV_VoiceAvailable(int32_t priority)
 
     if ((voice == &VoiceList) || (priority < voice->priority))
     {
-        RestoreInterrupts();
+        MV_Unlock();
         return FALSE;
     }
 
-    RestoreInterrupts();
+    MV_Unlock();
     return TRUE;
 }
 
@@ -569,7 +524,7 @@ int32_t MV_SetFrequency(int32_t handle, int32_t frequency)
 
 void MV_SetVoiceMixMode(VoiceNode *voice)
 {
-    int32_t type = T_DEFAULT;
+    int type = T_DEFAULT;
 
     if (MV_Channels == 1)
         type |= T_MONO;
@@ -580,26 +535,12 @@ void MV_SetVoiceMixMode(VoiceNode *voice)
     if (voice->channels == 2)
         type |= T_STEREOSOURCE;
 
-    switch (type)
-    {
-        case T_16BITSOURCE | T_MONO: voice->mix = MV_Mix16BitMono16; break;
+    // stereo look-up table
+    static constexpr decltype(voice->mix) mixslut[]
+    = { MV_Mix16BitStereo,        MV_Mix16BitMono,        MV_Mix16BitStereo16,       MV_Mix16BitMono16,
+        MV_Mix16BitStereo8Stereo, MV_Mix16BitMono8Stereo, MV_Mix16BitStereo16Stereo, MV_Mix16BitMono16Stereo };
 
-        case T_MONO: voice->mix = MV_Mix16BitMono; break;
-
-        case T_16BITSOURCE: voice->mix = MV_Mix16BitStereo16; break;
-
-        case T_SIXTEENBIT_STEREO: voice->mix = MV_Mix16BitStereo; break;
-
-        case T_16BITSOURCE | T_STEREOSOURCE: voice->mix = MV_Mix16BitStereo16Stereo; break;
-
-        case T_16BITSOURCE | T_STEREOSOURCE | T_MONO: voice->mix = MV_Mix16BitMono16Stereo; break;
-
-        case T_STEREOSOURCE: voice->mix = MV_Mix16BitStereo8Stereo; break;
-
-        case T_STEREOSOURCE | T_MONO: voice->mix = MV_Mix16BitMono8Stereo; break;
-
-        default: voice->mix = NULL; break;
-    }
+    voice->mix = mixslut[type];
 }
 
 void MV_SetVoiceVolume(VoiceNode *voice, int32_t vol, int32_t left, int32_t right, float volume)
@@ -737,7 +678,6 @@ void MV_SetReverb(int32_t reverb)
 }
 
 int32_t MV_GetMaxReverbDelay(void) { return MV_MIXBUFFERSIZE * MV_NumberOfBuffers; }
-
 int32_t MV_GetReverbDelay(void) { return MV_ReverbDelay / MV_SampleSize; }
 
 void MV_SetReverbDelay(int32_t delay)
@@ -755,6 +695,7 @@ static int32_t MV_SetMixMode(int32_t numchannels)
 
     MV_BufferSize = MV_MIXBUFFERSIZE * MV_SampleSize;
     MV_NumberOfBuffers = MV_TOTALBUFFERSIZE / MV_BufferSize;
+    Bassert(isPow2(MV_NumberOfBuffers));
     MV_BufferLength = MV_TOTALBUFFERSIZE;
 
     MV_RightChannelOffset = MV_SampleSize >> 1;
@@ -786,7 +727,7 @@ static void MV_StopPlayback(void)
     SoundDriver_StopPlayback();
 
     // Make sure all callbacks are done.
-    DisableInterrupts();
+    MV_Lock();
 
     for (VoiceNode *voice = VoiceList.next, *next; voice != &VoiceList; voice = next)
     {
@@ -794,7 +735,7 @@ static void MV_StopPlayback(void)
         MV_StopVoice(voice);
     }
 
-    RestoreInterrupts();
+    MV_Unlock();
 }
 
 static void MV_CalcPanTable(void)
@@ -961,18 +902,18 @@ int32_t MV_Shutdown(void)
 
 void MV_HookMusicRoutine(void(*callback)(char *buffer, int length))
 {
-    DisableInterrupts();
+    MV_Lock();
     MV_MusicCallback = callback;
     MV_MixMusic = TRUE;
-    RestoreInterrupts();
+    MV_Unlock();
 }
 
 void MV_UnhookMusicRoutine(void)
 {
-    DisableInterrupts();
+    MV_Lock();
     MV_MusicCallback = NULL;
     MV_MixMusic = FALSE;
-    RestoreInterrupts();
+    MV_Unlock();
 }
 
 void MV_SetPrintf(void (*function)(const char *, ...)) { MV_Printf = function; }
@@ -980,3 +921,29 @@ void MV_SetPrintf(void (*function)(const char *, ...)) { MV_Printf = function; }
 const char *loopStartTags[loopStartTagCount] = { "LOOP_START", "LOOPSTART", "LOOP" };
 const char *loopEndTags[loopEndTagCount] = { "LOOP_END", "LOOPEND" };
 const char *loopLengthTags[loopLengthTagCount] = { "LOOP_LENGTH", "LOOPLENGTH" };
+
+const char *MV_ErrorString(int32_t ErrorNumber)
+{
+    switch (ErrorNumber)
+    {
+        case MV_Error:
+            return MV_ErrorString(MV_ErrorCode);
+        case MV_Ok:
+            return "Multivoc ok.";
+        case MV_NotInstalled:
+            return "Multivoc not installed.";
+        case MV_DriverError:
+            return SoundDriver_ErrorString(SoundDriver_GetError());
+        case MV_NoVoices:
+            return "No free voices available to Multivoc.";
+        case MV_NoMem:
+            return "Out of memory in Multivoc.";
+        case MV_VoiceNotFound:
+            return "No voice with matching handle found.";
+        case MV_InvalidFile:
+            return "Invalid file passed in to Multivoc.";
+        default:
+            return "Unknown Multivoc error code.";
+    }
+}
+

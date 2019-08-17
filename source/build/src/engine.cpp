@@ -101,8 +101,9 @@ void (*loadvoxel_replace)(int32_t voxindex) = NULL;
 int16_t tiletovox[MAXTILES];
 int32_t usevoxels = 1;
 #ifdef USE_OPENGL
-static char *voxfilenames[MAXVOXELS], g_haveVoxels=0;  // for deferred voxel->model conversion
+static char *voxfilenames[MAXVOXELS];
 #endif
+char g_haveVoxels;
 //#define kloadvoxel loadvoxel
 
 int32_t novoxmips = 1;
@@ -125,6 +126,13 @@ static int32_t ggxinc[MAXXSIZ+1], ggyinc[MAXXSIZ+1];
 static int32_t lowrecip[1024], nytooclose;
 static const int32_t nytoofar = DISTRECIPSIZ*16384ull - 1048576;
 static uint32_t *distrecip;
+#define DISTRECIPCACHESIZE 3
+static struct {
+    uint32_t *distrecip;
+    int32_t xdimen;
+    int32_t age;
+} distrecipcache[DISTRECIPCACHESIZE];
+static int32_t distrecipagecnt = 0;
 
 static int32_t *lookups = NULL;
 static int32_t beforedrawrooms = 1;
@@ -196,7 +204,6 @@ static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to dr
 
 int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
 
-int32_t automapping = 0;
 int32_t bloodhack = 0;
 int32_t blooddemohack = 0;
 
@@ -282,7 +289,7 @@ void yax_updategrays(int32_t posze)
         keep &= (sector[i].ceilingz >= editorzrange[0] && sector[i].floorz <= editorzrange[1]);
 
         if (!keep)  // outside bounds, gray out!
-            graysectbitmap[i>>3] |= (1<<(i&7));
+            graysectbitmap[i>>3] |= pow2char[i&7];
     }
 
 #ifdef YAX_ENABLE
@@ -290,18 +297,18 @@ void yax_updategrays(int32_t posze)
     {
         for (i=0; i<numsectors; i++)
             if (!(mingoodz <= sector[i].ceilingz && sector[i].floorz <= maxgoodz))
-                graysectbitmap[i>>3] |= (1<<(i&7));
+                graysectbitmap[i>>3] |= pow2char[i&7];
     }
 #endif
 
     numgraysects = 0;
     for (i=0; i<numsectors; i++)
     {
-        if (graysectbitmap[i>>3]&(1<<(i&7)))
+        if (graysectbitmap[i>>3]&pow2char[i&7])
         {
             numgraysects++;
             for (j=sector[i].wallptr; j<sector[i].wallptr+sector[i].wallnum; j++)
-                graywallbitmap[j>>3] |= (1<<(j&7));
+                graywallbitmap[j>>3] |= pow2char[j&7];
         }
     }
 }
@@ -520,14 +527,14 @@ void yax_update(int32_t resetstat)
         {
             yax_getbunches(i, &cb, &fb);
             if (cb>=0)
-                havebunch[cb>>3] |= (1<<(cb&7));
+                havebunch[cb>>3] |= pow2char[cb&7];
             if (fb>=0)
-                havebunch[fb>>3] |= (1<<(fb&7));
+                havebunch[fb>>3] |= pow2char[fb&7];
         }
 
         for (i=0; i<YAX_MAXBUNCHES; i++)
         {
-            if ((havebunch[i>>3]&(1<<(i&7)))==0)
+            if ((havebunch[i>>3]&pow2char[i&7])==0)
             {
                 bunchmap[i] = 255;
                 dasub++;
@@ -689,7 +696,7 @@ static void yax_scanbunches(int32_t bbeg, int32_t numhere, const uint8_t *lastgo
 /*
                 if ((w=yax_getnextwall(j,!yax_globalcf))>=0)
                     if ((ns=wall[w].nextsector)>=0)
-                        if ((lastgotsector[ns>>3]&(1<<(ns&7)))==0)
+                        if ((lastgotsector[ns>>3]&pow2char[ns&7])==0)
                             continue;
 */
                 walldist = yax_walldist(j);
@@ -912,13 +919,13 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 
             for (i=0; i<numsectors; i++)
             {
-                if (!(gotsector[i>>3]&(1<<(i&7))))
+                if (!(gotsector[i>>3]&pow2char[i&7]))
                     continue;
 
                 j = yax_getbunch(i, cf);
-                if (j >= 0 && !(havebunch[j>>3]&(1<<(j&7))))
+                if (j >= 0 && !(havebunch[j>>3]&pow2char[j&7]))
                 {
-                    if (videoGetRenderMode() == REND_CLASSIC && (haveymost[j>>3]&(1<<(j&7)))==0)
+                    if (videoGetRenderMode() == REND_CLASSIC && (haveymost[j>>3]&pow2char[j&7])==0)
                     {
                         yaxdebug("%s, l %d: skipped bunch %d (no *most)", cf?"v":"^", lev, j);
                         continue;
@@ -928,7 +935,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                             (cf==0 && globalposz >= sector[i].ceilingz) ||
                             (cf==1 && globalposz <= sector[i].floorz))
                     {
-                        havebunch[j>>3] |= (1<<(j&7));
+                        havebunch[j>>3] |= pow2char[j&7];
                         bunches[cf][bnchnum[cf]++] = j;
                         bnchend[lev][cf]++;
                         numhere++;
@@ -1481,7 +1488,11 @@ static int32_t bakrendmode;
 #endif
 static int32_t baktile;
 
+#ifdef APPNAME
+char apptitle[256] = APPNAME;
+#else
 char apptitle[256] = "Build Engine";
+#endif
 
 //
 // Internal Engine Functions
@@ -1659,14 +1670,10 @@ static inline int findUnusedTile(void)
 static void classicScanSector(int16_t startsectnum)
 {
     if (startsectnum < 0)
-    {
         return;
-    }
 
-	if (automapping)
-    {
+    if (automapping)
         show2dsector[startsectnum>>3] |= pow2char[startsectnum&7];
-    }
 
     sectorborder[0] = startsectnum;
     int32_t sectorbordercnt = 1;
@@ -1802,7 +1809,7 @@ void printscans(void)
 
     for (bssize_t s=0; s<numscans; s++)
     {
-        if (bunchp2[s] >= 0 && (didscan[s>>3] & (1<<(s&7)))==0)
+        if (bunchp2[s] >= 0 && (didscan[s>>3] & pow2char[s&7])==0)
         {
             printf("scan ");
 
@@ -1814,13 +1821,13 @@ void printscans(void)
 
                 printf("%s%d(%d) ", cond ? "!" : "", z, thewall[z]);
 
-                if (didscan[z>>3] & (1<<(z&7)))
+                if (didscan[z>>3] & pow2char[z&7])
                 {
                     printf("*");
                     break;
                 }
 
-                didscan[z>>3] |= (1<<(z&7));
+                didscan[z>>3] |= pow2char[z&7];
                 z = bunchp2[z];
             } while (z >= 0);
 
@@ -4240,7 +4247,7 @@ static void classicDrawBunches(int32_t bunch)
         int16_t bn[2];
 # if 0
         int32_t obunchchk = (1 && yax_globalbunch>=0 &&
-                             haveymost[yax_globalbunch>>3]&(1<<(yax_globalbunch&7)));
+                             haveymost[yax_globalbunch>>3]&pow2char[yax_globalbunch&7]);
 
         // if (obunchchk)
         const int32_t x2 = yax_globalbunch*xdimen;
@@ -4260,10 +4267,10 @@ static void classicDrawBunches(int32_t bunch)
         for (i=0; i<2; i++)
             if (checkcf&(1<<i))
             {
-                if ((haveymost[bn[i]>>3]&(1<<(bn[i]&7)))==0)
+                if ((haveymost[bn[i]>>3]&pow2char[bn[i]&7])==0)
                 {
                     // init yax *most arrays for that bunch
-                    haveymost[bn[i]>>3] |= (1<<(bn[i]&7));
+                    haveymost[bn[i]>>3] |= pow2char[bn[i]&7];
                     for (x=xdimen*bn[i]; x<xdimen*(bn[i]+1); x++)
                     {
                         yumost[x] = ydimen;
@@ -4302,7 +4309,7 @@ static void classicDrawBunches(int32_t bunch)
 #ifdef YAX_ENABLE
             // this is to prevent double-drawing of translucent masked ceilings
             if (r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->ceilingstat&256)==0 ||
-                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&(1<<(sectnum&7))))
+                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
 #endif
         {
             if ((sec->ceilingstat&3) == 2)
@@ -4317,7 +4324,7 @@ static void classicDrawBunches(int32_t bunch)
 #ifdef YAX_ENABLE
             // this is to prevent double-drawing of translucent masked floors
             if (r_tror_nomaskpass==0 || yax_globallev==YAX_MAXDRAWS || (sec->floorstat&256)==0 ||
-                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&(1<<(sectnum&7))))
+                yax_nomaskpass==1 || !(yax_gotsector[sectnum>>3]&pow2char[sectnum&7]))
 #endif
         {
             if ((sec->floorstat&3) == 2)
@@ -4712,7 +4719,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
                              int8_t dashade, char dapal, const int32_t *daumost, const int32_t *dadmost,
                              const int8_t cstat, const int32_t clipcf, int32_t floorz, int32_t ceilingz)
 {
-    int32_t i, j, k, x, y;
+    int32_t i, j, k, x, y, mip;
 
     int32_t cosang = cosglobalang;
     int32_t sinang = singlobalang;
@@ -4724,7 +4731,7 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     setupdrawslab(ylookup[1], FP_OFF(palookup[dapal])+j);
 
     j = 1310720;
-    j *= min(daxscale,dayscale); j >>= 6;  //New hacks (for sized-down voxels)
+    //j *= min(daxscale,dayscale); j >>= 6;  //New hacks (for sized-down voxels)
     for (k=0; k<MAXVOXMIPS; k++)
     {
         if (i < j) { i = k; break; }
@@ -4733,11 +4740,16 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
     if (k >= MAXVOXMIPS)
         i = MAXVOXMIPS-1;
 
+    mip = 0;
+
     if (novoxmips)
+    {
+        mip = i;
         i = 0;
+    }
 
     char *davoxptr = (char *)voxoff[daindex][i];
-    if (!davoxptr && i > 0) { davoxptr = (char *)voxoff[daindex][0]; i = 0; }
+    if (!davoxptr && i > 0) { davoxptr = (char *)voxoff[daindex][0]; mip = i; i = 0;}
     if (!davoxptr)
         return;
 
@@ -4777,6 +4789,9 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
 
     cosang <<= 2;
     sinang <<= 2;
+
+    cosang >>= mip;
+    sinang >>= mip;
 
     const voxint_t gxstart = (voxint_t)y*cosang - (voxint_t)x*sinang;
     const voxint_t gystart = (voxint_t)x*cosang + (voxint_t)y*sinang;
@@ -4953,10 +4968,10 @@ static void classicDrawVoxel(int32_t dasprx, int32_t daspry, int32_t dasprz, int
 
                 rx -= lx;
 
-                const int32_t l1 = mulscale12(distrecip[clamp((ny-yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale);
+                const int32_t l1 = mulscale(distrecip[clamp((ny-yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale, 12+mip);
                 // FIXME! AMCTC RC2/beta shotgun voxel
                 // (e.g. training map right after M16 shooting):
-                const int32_t l2 = mulscale12(distrecip[clamp((ny+yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale);
+                const int32_t l2 = mulscale(distrecip[clamp((ny+yoff)>>14, 1, DISTRECIPSIZ-1)], dayscale, 12+mip);
                 int32_t cz1 = 0, cz2 = INT32_MAX;
 
                 if (clipcf)
@@ -6201,6 +6216,9 @@ draw_as_face_sprite:
         classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
             tspr->shade,tspr->pal,lwall,swall,tspr->cstat,(tspr->cstat&48)!=48,floorz,ceilingz);
     }
+
+    if (automapping == 1 && (unsigned)spritenum < MAXSPRITES)
+        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
 }
 
 static void renderDrawSprite(int32_t snum)
@@ -7536,18 +7554,38 @@ static void dosetaspect(void)
 
         if (xdimen != oxdimen && (voxoff[0][0] || bloodhack))
         {
-            if (distrecip == NULL)
-                distrecip = (uint32_t *)Xaligned_alloc(16, DISTRECIPSIZ * sizeof(uint32_t));
-
-            if (xdimen < 1 << 11)
+            distrecip = NULL;
+            for (i = 0; i < DISTRECIPCACHESIZE; i++)
             {
-                for (i = 1; i < DISTRECIPSIZ; i++)
-                    distrecip[i] = tabledivide32(xdimen << 20, i);
+                if (distrecipcache[i].xdimen == xdimen)
+                    distrecip = distrecipcache[i].distrecip;
             }
-            else
+            if (distrecip == NULL)
             {
-                for (i = 1; i < DISTRECIPSIZ; i++)
-                    distrecip[i] = tabledivide64((uint64_t)xdimen << 20, i);
+                int32_t minAge = 0;
+                for (i = 1; i < DISTRECIPCACHESIZE; i++)
+                {
+                    if (distrecipcache[i].age < distrecipcache[minAge].age)
+                        minAge = i;
+                }
+                if (distrecipcache[minAge].distrecip == NULL)
+                    distrecipcache[minAge].distrecip = (uint32_t *)Xaligned_alloc(16, DISTRECIPSIZ * sizeof(uint32_t));
+
+                distrecipcache[minAge].age = ++distrecipagecnt;
+                distrecipcache[minAge].xdimen = xdimen;
+
+                distrecip = distrecipcache[minAge].distrecip;
+
+                if (xdimen < 1 << 11)
+                {
+                    for (i = 1; i < DISTRECIPSIZ; i++)
+                        distrecip[i] = tabledivide32(xdimen << 20, i);
+                }
+                else
+                {
+                    for (i = 1; i < DISTRECIPSIZ; i++)
+                        distrecip[i] = tabledivide64((uint64_t)xdimen << 20, i);
+                }
             }
 
             nytooclose = xdimen*2100;
@@ -8257,7 +8295,9 @@ void engineUnInit(void)
     Buninitart();
 
     DO_FREE_AND_NULL(lookups);
-    ALIGNED_FREE_AND_NULL(distrecip);
+    for (bssize_t i=0; i<DISTRECIPCACHESIZE; i++)
+        ALIGNED_FREE_AND_NULL(distrecipcache[i].distrecip);
+    Bmemset(distrecipcache, 0, sizeof(distrecipcache));
 
     paletteloaded = 0;
 
@@ -8650,8 +8690,8 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
 
         if (automapping)
         {
-            for (int z = bunchfirst[closest]; z >= 0; z = bunchp2[z])
-                show2dwall[thewall[z] >> 3] |= pow2char[thewall[z] & 7];
+            for (int z=bunchfirst[closest]; z>=0; z=bunchp2[z])
+                show2dwall[thewall[z]>>3] |= pow2char[thewall[z]&7];
         }
 
         numbunches--;
@@ -9508,7 +9548,7 @@ static void enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daa
     Bmemset(show2dsector, 0, sizeof(show2dsector));
     Bmemset(show2dsprite, 0, sizeof(show2dsprite));
     Bmemset(show2dwall, 0, sizeof(show2dwall));
-    Bmemset(wallcstat14, 0, sizeof(wallcstat14));
+    Bmemset(editwall, 0, sizeof(editwall));
 #ifdef USE_STRUCT_TRACKERS
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));
     Bmemset(spritechanged, 0, sizeof(spritechanged));
@@ -9839,9 +9879,9 @@ skip_reading_mapbin:
     kclose(fil);
     // Done reading file.
 
-    for (i=numsprites-1; i>=0; i--)
+    if (!have_maptext())
     {
-        if (!have_maptext())
+        for (i=numsprites-1; i>=0; i--)
         {
             sprite[i].x       = B_LITTLE32(sprite[i].x);
             sprite[i].y       = B_LITTLE32(sprite[i].y);
@@ -9858,9 +9898,14 @@ skip_reading_mapbin:
             sprite[i].lotag   = B_LITTLE16(sprite[i].lotag);
             sprite[i].hitag   = B_LITTLE16(sprite[i].hitag);
             sprite[i].extra   = B_LITTLE16(sprite[i].extra);
-        }
 
-        check_sprite(i);
+            check_sprite(i);
+        }
+    }
+    else
+    {
+        for (i=numsprites-1; i>=0; i--)
+            check_sprite(i);
     }
 
     // Back up the map version of the *loaded* map. Must be before yax_update().
@@ -10390,10 +10435,10 @@ static void PolymostProcessVoxels(void)
 # endif
     if (PolymostProcessVoxels_Callback)
         PolymostProcessVoxels_Callback();
-    if (!g_haveVoxels)
+    if (g_haveVoxels != 1)
         return;
 
-    g_haveVoxels = 0;
+    g_haveVoxels = 2;
 
     OSD_Printf("Generating voxel models for Polymost. This may take a while...\n");
     videoNextPage();
@@ -10648,8 +10693,9 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
 
     Xfree(voxfilenames[voxindex]);
     voxfilenames[voxindex] = Xstrdup(filename);
-    g_haveVoxels = 1;
 #endif
+
+    g_haveVoxels = 1;
 
     return 0;
 }
@@ -10847,7 +10893,7 @@ int32_t setsprite(int16_t spritenum, const vec3_t *newpos)
     int16_t tempsectnum = sprite[spritenum].sectnum;
 
     if ((void const *) newpos != (void *) &sprite[spritenum])
-        *(vec3_t *) &sprite[spritenum] = *newpos;
+        sprite[spritenum].pos = *newpos;
 
     updatesector(newpos->x,newpos->y,&tempsectnum);
 
@@ -10864,7 +10910,7 @@ int32_t setspritez(int16_t spritenum, const vec3_t *newpos)
     int16_t tempsectnum = sprite[spritenum].sectnum;
 
     if ((void const *)newpos != (void *)&sprite[spritenum])
-        *(vec3_t *) &sprite[spritenum] = *newpos;
+        sprite[spritenum].pos = *newpos;
 
     updatesectorz(newpos->x,newpos->y,newpos->z,&tempsectnum);
 
@@ -10950,7 +10996,7 @@ restart_grand:
 #ifdef YAX_ENABLE
     pendingsectnum = -1;
 #endif
-    sectbitmap[sect1>>3] |= (1<<(sect1&7));
+    sectbitmap[sect1>>3] |= pow2char[sect1&7];
     clipsectorlist[0] = sect1; danum = 1;
 
     for (dacnt=0; dacnt<danum; dacnt++)
@@ -11005,9 +11051,9 @@ restart_grand:
                             if (ns < 0)
                                 continue;
 
-                            if (!(sectbitmap[ns>>3] & (1<<(ns&7))) && pendingsectnum==-1)
+                            if (!(sectbitmap[ns>>3] & pow2char[ns&7]) && pendingsectnum==-1)
                             {
-                                sectbitmap[ns>>3] |= (1<<(ns&7));
+                                sectbitmap[ns>>3] |= pow2char[ns&7];
                                 pendingsectnum = ns;
                                 pendingvec.x = x;
                                 pendingvec.y = y;
@@ -11075,9 +11121,9 @@ restart_grand:
                 return 0;
 
 add_nextsector:
-            if (!(sectbitmap[nexts>>3] & (1<<(nexts&7))))
+            if (!(sectbitmap[nexts>>3] & pow2char[nexts&7]))
             {
-                sectbitmap[nexts>>3] |= (1<<(nexts&7));
+                sectbitmap[nexts>>3] |= pow2char[nexts&7];
                 clipsectorlist[danum++] = nexts;
             }
         }
@@ -11094,7 +11140,7 @@ add_nextsector:
 #endif
     }
 
-    if (sectbitmap[sect2>>3] & (1<<(sect2&7)))
+    if (sectbitmap[sect2>>3] & pow2char[sect2&7])
         return 1;
 
     return 0;
@@ -11251,7 +11297,7 @@ void neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange,
 
             if (((tagsearch&1) && spr->lotag) || ((tagsearch&2) && spr->hitag))
             {
-                if (try_facespr_intersect(spr, &sv, vx, vy, 0, &hitv, 1))
+                if (try_facespr_intersect(spr, sv, vx, vy, 0, &hitv, 1))
                 {
                     *neartagsprite = z;
                     *neartaghitdist = dmulscale14(hitv.x-xs, sintable[(ange+2560)&2047],
@@ -11296,13 +11342,13 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             wall[w].x = dax;
             wall[w].y = day;
-            walbitmap[w>>3] |= (1<<(w&7));
+            walbitmap[w>>3] |= pow2char[w&7];
 
             for (YAX_ITER_WALLS(w, j, tmpcf))
             {
-                if ((walbitmap[j>>3]&(1<<(j&7)))==0)
+                if ((walbitmap[j>>3]&pow2char[j&7])==0)
                 {
-                    walbitmap[j>>3] |= (1<<(j&7));
+                    walbitmap[j>>3] |= pow2char[j&7];
                     yaxwalls[numyaxwalls++] = j;
                 }
             }
@@ -11335,7 +11381,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
                     break;
             }
 
-            if ((walbitmap[w>>3] & (1<<(w&7))))
+            if ((walbitmap[w>>3] & pow2char[w&7]))
             {
                 if (clockwise)
                     break;
@@ -11352,13 +11398,13 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
         int32_t w;
         // TODO: extern a separate bitmap instead?
         for (w=0; w<numwalls; w++)
-            if (walbitmap[w>>3] & (1<<(w&7)))
+            if (walbitmap[w>>3] & pow2char[w&7])
             {
-                wallcstat14[w>>3] |= 1<<(w&7);
+                editwall[w>>3] |= 1<<(w&7);
                 if (flags&2)
                 {
                     int wn = lastwall(w);
-                    wallcstat14[wn>>3] |= 1<<(wn&7);
+                    editwall[wn>>3] |= 1<<(wn&7);
                 }
             }
     }
@@ -11376,11 +11422,11 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
     if (editstatus)
     {
-        wallcstat14[pointhighlight>>3] |= 1<<(pointhighlight&7);
+        editwall[pointhighlight>>3] |= 1<<(pointhighlight&7);
         if (linehighlight >= 0 && linehighlight < MAXWALLS)
-            wallcstat14[linehighlight>>3] |= 1<<(linehighlight&7);
+            editwall[linehighlight>>3] |= 1<<(linehighlight&7);
         int wn = lastwall(pointhighlight);
-        wallcstat14[wn>>3] |= 1<<(wn&7);
+        editwall[wn>>3] |= 1<<(wn&7);
     }
 
     do
@@ -11391,7 +11437,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
 
             wall[tempshort].x = dax;
             wall[tempshort].y = day;
-            wallcstat14[tempshort>>3] |= 1<<(tempshort&7);
+            editwall[tempshort>>3] |= 1<<(tempshort&7);
         }
         else
         {
@@ -11404,7 +11450,7 @@ void dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags)
                     tempshort = wall[thelastwall].nextwall;
                     wall[tempshort].x = dax;
                     wall[tempshort].y = day;
-                    wallcstat14[tempshort>>3] |= 1<<(tempshort&7);
+                    editwall[tempshort>>3] |= 1<<(tempshort&7);
                 }
                 else
                 {
@@ -11466,14 +11512,19 @@ static inline bool inside_z_p(int32_t const x, int32_t const y, int32_t const z,
     return (z >= cz && z <= fz && inside_p(x, y, sectnum));
 }
 
-int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out /*= nullptr*/)
+int32_t getwalldist(vec2_t const &in, int const wallnum)
 {
     vec2_t closest;
     getclosestpointonwall_internal(in, wallnum, &closest);
-    if (out)
-        *out = closest;
     return klabs(closest.x - in.x) + klabs(closest.y - in.y);
 }
+
+int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out)
+{
+    getclosestpointonwall_internal(in, wallnum, out);
+    return klabs(out->x - in.x) + klabs(out->y - in.y);
+}
+
 
 int32_t getsectordist(vec2_t const &in, int const sectnum, vec2_t * const out /*= nullptr*/)
 {
@@ -12138,10 +12189,13 @@ void renderSetTarget(int16_t tilenume, int32_t xsiz, int32_t ysiz)
 {
     if (setviewcnt >= MAXSETVIEW-1)
         return;
+    if (xsiz <= 0 ||
+        ysiz <= 0)
+        return;
 
     //DRAWROOMS TO TILE BACKUP&SET CODE
     tilesiz[tilenume].x = xsiz; tilesiz[tilenume].y = ysiz;
-    bakxsiz[setviewcnt] = xsiz; bakysiz[setviewcnt] = ysiz;
+    bakxsiz[setviewcnt] = xdim; bakysiz[setviewcnt] = ydim;
     bakframeplace[setviewcnt] = frameplace; frameplace = waloff[tilenume];
     bakwindowxy1[setviewcnt] = windowxy1;
     bakwindowxy2[setviewcnt] = windowxy2;
@@ -12163,6 +12217,8 @@ void renderSetTarget(int16_t tilenume, int32_t xsiz, int32_t ysiz)
     setviewcnt++;
 
     offscreenrendering = 1;
+    xdim = ysiz;
+    ydim = xsiz;
     videoSetViewableArea(0,0,ysiz-1,xsiz-1);
     renderSetAspect(65536,65536);
 
@@ -12187,14 +12243,16 @@ void renderRestoreTarget(void)
     }
 #endif
 
+    xdim = bakxsiz[setviewcnt];
+    ydim = bakysiz[setviewcnt];
     videoSetViewableArea(bakwindowxy1[setviewcnt].x,bakwindowxy1[setviewcnt].y,
             bakwindowxy2[setviewcnt].x,bakwindowxy2[setviewcnt].y);
     copybufbyte(&bakumost[windowxy1.x],&startumost[windowxy1.x],(windowxy2.x-windowxy1.x+1)*sizeof(startumost[0]));
     copybufbyte(&bakdmost[windowxy1.x],&startdmost[windowxy1.x],(windowxy2.x-windowxy1.x+1)*sizeof(startdmost[0]));
     frameplace = bakframeplace[setviewcnt];
 
-    calc_ylookup(bytesperline,
-                 (setviewcnt == 0) ? bakxsiz[0] : max(bakxsiz[setviewcnt - 1], bakxsiz[setviewcnt]));
+    calc_ylookup((setviewcnt == 0) ? bytesperline : bakxsiz[setviewcnt],
+                 bakysiz[setviewcnt]);
 
     modechange=1;
 }

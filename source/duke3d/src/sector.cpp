@@ -66,7 +66,7 @@ int A_CallSound(int sectNum, int spriteNum)
 
         if (T1(SFXsprite) == 0)
         {
-            if ((g_sounds[soundNum].m & SF_GLOBAL) == 0)
+            if ((g_sounds[soundNum].m & (SF_GLOBAL|SF_DTAG)) != SF_GLOBAL)
             {
                 if (soundNum)
                 {
@@ -377,7 +377,6 @@ int SetAnimation(int sectNum, int32_t *animPtr, int goalVal, int animVel)
 static void G_SetupCamTile(int spriteNum, int tileNum, int smoothRatio)
 {
     int const playerNum = screenpeek;
-    int const noDraw = VM_OnEventWithReturn(EVENT_DISPLAYROOMSCAMERATILE, spriteNum, playerNum, 0);
 
     vec3_t const camera     = G_GetCameraPosition(spriteNum, smoothRatio);
     int const    saveMirror = display_mirror;
@@ -385,8 +384,10 @@ static void G_SetupCamTile(int spriteNum, int tileNum, int smoothRatio)
     //if (waloff[wn] == 0) loadtile(wn);
     renderSetTarget(tileNum, tilesiz[tileNum].y, tilesiz[tileNum].x);
 
+    int const noDraw = VM_OnEventWithReturn(EVENT_DISPLAYROOMSCAMERATILE, spriteNum, playerNum, 0);
+
     if (noDraw == 1)
-        return;
+        goto finishTileSetup;
 #ifdef DEBUGGINGAIDS
     else if (EDUKE32_PREDICT_FALSE(noDraw != 0)) // event return values other than 0 and 1 are reserved
         OSD_Printf(OSD_ERROR "ERROR: EVENT_DISPLAYROOMSCAMERATILE return value must be 0 or 1, "
@@ -402,6 +403,7 @@ static void G_SetupCamTile(int spriteNum, int tileNum, int smoothRatio)
     display_mirror = saveMirror;
     renderDrawMasks();
 
+finishTileSetup:
     renderRestoreTarget();
     squarerotatetile(tileNum);
     tileInvalidate(tileNum, -1, 255);
@@ -433,7 +435,7 @@ void G_AnimateCamSprite(int smoothRatio)
             if (waloff[viewscrTile] == 0)
                 tileCreate(viewscrTile, tilesiz[PN(spriteNum)].x << viewscrShift, tilesiz[PN(spriteNum)].y << viewscrShift);
             else
-                walock[viewscrTile] = 255;
+                walock[viewscrTile] = 199;
 
             G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
 #ifdef POLYMER

@@ -115,6 +115,8 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Quick_Save",
    "Quick_Load",
    "Alt_Weapon",
+   "Third_Person_View",
+   "Crouch_Toggle",
    };
 
 #ifdef __SETUP__
@@ -182,6 +184,8 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "F6", "",
    "F9", "",
    "", "",
+   "F7", "",
+   "", "",
    };
 
 const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
@@ -247,6 +251,8 @@ const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "F6", "",
    "F9", "",
    "", "",
+   "F7", "",
+   "", "",
    };
 
 static const char * mousedefaults[MAXMOUSEBUTTONS] =
@@ -267,7 +273,7 @@ static const char * mouseclickeddefaults[MAXMOUSEBUTTONS] =
 
 static const char * mouseanalogdefaults[MAXMOUSEAXES] =
    {
-   "analog_turning",
+   "analog_strafing",
    "analog_moving",
    };
 
@@ -276,7 +282,7 @@ static const char * mousedigitaldefaults[MAXMOUSEDIGITAL] =
    {
    };
 
-#if defined(GEKKO)
+#if defined GEKKO
 static const char * joystickdefaults[MAXJOYBUTTONSANDHATS] =
    {
    "Open", // A
@@ -330,75 +336,6 @@ static const char * joystickanalogdefaults[MAXJOYAXES] =
 
 static const char * joystickdigitaldefaults[MAXJOYDIGITAL] =
    {
-   };
-#else
-static const char * joystickdefaults[MAXJOYBUTTONSANDHATS] =
-   {
-   "Fire",
-   "Strafe",
-   "Run",
-   "Open",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "Aim_Down",
-   "Look_Right",
-   "Aim_Up",
-   "Look_Left",
-   };
-
-
-static const char * joystickclickeddefaults[MAXJOYBUTTONSANDHATS] =
-   {
-   "",
-   "Inventory",
-   "Jump",
-   "Crouch",
-   };
-
-
-static const char * joystickanalogdefaults[MAXJOYAXES] =
-   {
-   "analog_turning",
-   "analog_moving",
-   "analog_strafing",
-   };
-
-
-static const char * joystickdigitaldefaults[MAXJOYDIGITAL] =
-   {
-   "",
-   "",
-   "",
-   "",
-   "",
-   "",
-   "Run",
    };
 #endif
 

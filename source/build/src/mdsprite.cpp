@@ -91,8 +91,6 @@ static mdmodel_t *mdload(const char *);
 static void mdfree(mdmodel_t *);
 int32_t globalnoeffect=0;
 
-extern int32_t timerticspersec;
-
 #ifdef USE_GLEXT
 void md_freevbos()
 {
@@ -406,13 +404,13 @@ int32_t md_thinoutmodel(int32_t modelid, uint8_t *usedframebitmap)
         }
 
         for (i=anm->startframe; i<anm->endframe; i++)
-            usedframebitmap[i>>3] |= (1<<(i&7));
+            usedframebitmap[i>>3] |= pow2char[i&7];
     }
 
     sub = 0;
     for (i=0; i<m->numframes; i++)
     {
-        if (!(usedframebitmap[i>>3]&(1<<(i&7))))
+        if (!(usedframebitmap[i>>3]&pow2char[i&7]))
         {
             sub++;
             otonframe[i] = -1;
@@ -1110,7 +1108,7 @@ void updateanimation(md2model_t *m, tspriteptr_t tspr, uint8_t lpal)
     fps = smooth->mdsmooth ? Blrintf((1.0f / ((float)tile2model[tile].smoothduration * (1.f / (float)UINT16_MAX))) * 66.f)
                                    : anim ? anim->fpssc : 1;
 
-    i = (mdtims - sprext->mdanimtims) * ((fps * timerticspersec) / 120);
+    i = (mdtims - sprext->mdanimtims) * ((fps * timerGetRate()) / 120);
 
     j = (smooth->mdsmooth || !anim) ? 65536 : ((anim->endframe + 1 - anim->startframe) << 16);
 
@@ -1118,7 +1116,7 @@ void updateanimation(md2model_t *m, tspriteptr_t tspr, uint8_t lpal)
     if (i < 0) { i = 0; sprext->mdanimtims = mdtims; }
     //compare with j*2 instead of j to ensure i stays > j-65536 for MDANIM_ONESHOT
     if (anim && (i >= j+j) && (fps) && !mdpause) //Keep mdanimtims close to mdtims to avoid the use of MOD
-        sprext->mdanimtims += j/((fps*timerticspersec)/120);
+        sprext->mdanimtims += j/((fps*timerGetRate())/120);
 
     k = i;
 
@@ -2019,8 +2017,8 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
 
     k0 = ((float)(tspr->x-globalposx))*f*(1.f/1024.f);
     k1 = ((float)(tspr->y-globalposy))*f*(1.f/1024.f);
-    f = gcosang2*gshang;
-    g = gsinang2*gshang;
+    f = gcosang2*gshang/gvrcorrection;
+    g = gsinang2*gshang/gvrcorrection;
     k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].angoff+1024)&2047] * (1.f/16384.f);
     k5 = (float)sintable[(tspr->ang+spriteext[tspr->owner].angoff+ 512)&2047] * (1.f/16384.f);
     k2 = k0*(1-k4)+k1*k5;
@@ -2030,7 +2028,7 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
     k6 = f*gctang + gsinang*gstang; k7 = g*gctang - gcosang*gstang;
     mat[1] = k4*k6 + k5*k7; mat[5] = gchang*gctang; mat[ 9] = k4*k7 - k5*k6; mat[13] = k2*k6 + k3*k7;
     k6 =           gcosang2*gchang; k7 =           gsinang2*gchang;
-    mat[2] = k4*k6 + k5*k7; mat[6] =-gshang;        mat[10] = k4*k7 - k5*k6; mat[14] = k2*k6 + k3*k7;
+    mat[2] = k4*k6 + k5*k7; mat[6] =-gshang*gvrcorrection; mat[10] = k4*k7 - k5*k6; mat[14] = k2*k6 + k3*k7;
 
     mat[12] = (mat[12] + a0->y*mat[0]) + (a0->z*mat[4] + a0->x*mat[ 8]);
     mat[13] = (mat[13] + a0->y*mat[1]) + (a0->z*mat[5] + a0->x*mat[ 9]);

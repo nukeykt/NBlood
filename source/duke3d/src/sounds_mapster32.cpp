@@ -343,7 +343,7 @@ int32_t A_PlaySound(uint32_t num, int32_t i)
         return 0;
     }
 
-    return S_PlaySound3D(num,i, (vec3_t *)&sprite[i]);
+    return S_PlaySound3D(num,i, &sprite[i].pos);
 }
 
 void S_StopSound(int32_t num)
@@ -461,7 +461,7 @@ void S_Callback(intptr_t num)
                 {
                     extern uint8_t g_ambiencePlaying[(MAXSPRITES+7)>>3];
 
-                    g_ambiencePlaying[i>>3] &= ~(1<<(i&7));
+                    g_ambiencePlaying[i>>3] &= ~pow2char[i&7];
 
                     if (j < k-1)
                     {

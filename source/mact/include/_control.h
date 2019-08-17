@@ -55,8 +55,8 @@ extern "C" {
 #define BUTTONUNDEFINED 0x7f
 #define KEYUNDEFINED    0x7f
 
-#define THRESHOLD        0x200
-#define MINTHRESHOLD     0x80
+#define THRESHOLD        (0x200 * 32767 / 10000)
+#define MINTHRESHOLD     (0x80 * 32767 / 10000)
 
 #define DEFAULTMOUSESENSITIVITY 4 // 0x7000+MINIMUMMOUSESENSITIVITY
 
@@ -171,7 +171,8 @@ typedef struct
 typedef struct
 {
     int32_t analog;
-    int32_t digital;
+    int8_t digital;
+    int8_t digitalClearedN, digitalClearedP;
 } controlaxistype;
 
 

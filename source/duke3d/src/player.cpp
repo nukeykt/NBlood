@@ -1158,10 +1158,10 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
                         int const spawnedSprite = A_Spawn(spriteNum, projecTile);
                         sprite[spawnedSprite].ang
                         = (getangle(hitwal->x - wall[hitwal->point2].x, hitwal->y - wall[hitwal->point2].y) + 1536) & 2047;
-                        *(vec3_t *)&sprite[spawnedSprite] = hitData.pos;
+                        sprite[spawnedSprite].pos = hitData.pos;
                         sprite[spawnedSprite].cstat |= (krand() & 4);
                         A_SetSprite(spawnedSprite, CLIPMASK0);
-                        setsprite(spawnedSprite, (vec3_t *)&sprite[spawnedSprite]);
+                        setsprite(spawnedSprite, &sprite[spawnedSprite].pos);
                         if (PN(spriteNum) == OOZFILTER || PN(spriteNum) == NEWBEAST)
                             sprite[spawnedSprite].pal = 6;
                     }
@@ -2916,15 +2916,10 @@ void P_GetInput(int const playerNum)
         }
     }
 
-    int32_t const aimMode = (g_myAimMode) ? (int32_t)analog_lookingupanddown : ud.config.MouseAnalogueAxes[1];
-
-    if (aimMode != mouseyaxismode)
-    {
-        CONTROL_MapAnalogAxis(1, aimMode, controldevice_mouse);
-        mouseyaxismode = aimMode;
-    }
-
     CONTROL_GetInput(&info);
+
+#if 0
+    // these don't seem to have an on switch
 
     if (ud.config.MouseDeadZone)
     {
@@ -2945,9 +2940,14 @@ void P_GetInput(int const playerNum)
             info.dpitch = tabledivide32_noinline(info.dpitch, ud.config.MouseBias);
         else info.dyaw = tabledivide32_noinline(info.dyaw, ud.config.MouseBias);
     }
+#endif
 
     // JBF: Run key behaviour is selectable
     int const playerRunning = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
+    int const turnAmount = playerRunning ? (NORMALTURN << 1) : NORMALTURN;
+    constexpr int const analogTurnAmount = (NORMALTURN << 1);
+    int const keyMove    = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
+    constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
 
     input_t input {};
 
@@ -2955,21 +2955,27 @@ void P_GetInput(int const playerNum)
     {
         static int strafeyaw;
 
-        input.svel = -(info.dyaw + strafeyaw) >> 3;
-        strafeyaw  = (info.dyaw + strafeyaw) % 8;
+        input.svel = -(info.mousex + strafeyaw) >> 3;
+        strafeyaw  = (info.mousex + strafeyaw) % 8;
+
+        input.svel -= info.dyaw * keyMove / analogExtent;
     }
     else
-        input.q16avel = fix16_div(fix16_from_int(info.dyaw), F16(32));
+    {
+        input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
+        input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
+    }
 
-    input.q16horz = fix16_div(fix16_from_int(info.dpitch), F16(64));
+    if (g_myAimMode)
+        input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
+    else
+        input.fvel = -(info.mousey >> 6);
 
     if (ud.mouseflip) input.q16horz = -input.q16horz;
 
-    input.svel -= info.dx;
-    input.fvel = -info.dz >> 6;
-
-    int const turnAmount = playerRunning ? (NORMALTURN << 1) : NORMALTURN;
-    int const keyMove    = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
+    input.q16horz -= fix16_from_int(info.dpitch) / analogExtent * analogTurnAmount;
+    input.svel -= info.dx * keyMove / analogExtent;
+    input.fvel -= info.dz * keyMove / analogExtent;
 
     if (BUTTON(gamefunc_Strafe))
     {
@@ -4095,7 +4101,7 @@ static void P_ProcessWeapon(int playerNum)
                     int pipeBombZvel;
                     int pipeBombFwdVel;
 
-                    if (pPlayer->on_ground && TEST_SYNC_KEY(playerBits, SK_CROUCH))
+                    if (pPlayer->on_ground && (TEST_SYNC_KEY(playerBits, SK_CROUCH) ^ pPlayer->crouch_toggle))
                     {
                         pipeBombFwdVel = 15;
                         pipeBombZvel   = (fix16_to_int(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100)) * 20);
@@ -4702,11 +4708,12 @@ void P_ProcessInput(int playerNum)
     {
         if (pPlayer->pos.z + stepHeight > actor[pPlayer->i].floorz - PMINHEIGHT)
             stepHeight -= (pPlayer->pos.z + stepHeight) - (actor[pPlayer->i].floorz - PMINHEIGHT);
-        else
+        else if (!pPlayer->on_ground)
             stepHeight -= (pPlayer->jumping_counter << 1) + (pPlayer->jumping_counter >> 1);
 
         stepHeight = max(stepHeight, 0);
     }
+    else stepHeight = 0;
 
     pPlayer->pos.z += stepHeight;
     getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ, &highZhit, &floorZ, &lowZhit, pPlayer->clipdist - GETZRANGECLIPDISTOFFSET, CLIPMASK0);
@@ -4788,7 +4795,7 @@ void P_ProcessInput(int playerNum)
         {
             // EDuke32 extension: xvel of 1 makes a sprite be never regarded as a bridge.
 
-            if ((sprite[spriteNum].xvel & 1) == 0)
+            if (sectorLotag != ST_2_UNDERWATER && (sprite[spriteNum].xvel & 1) == 0)
             {
                 sectorLotag             = 0;
                 pPlayer->footprintcount = 0;
@@ -5036,7 +5043,7 @@ void P_ProcessInput(int playerNum)
         if (pPlayer->pos.z < (floorZ-(floorZOffset<<8)))  //falling
         {
             // not jumping or crouching
-            if ((!TEST_SYNC_KEY(playerBits, SK_JUMP) && !TEST_SYNC_KEY(playerBits, SK_CROUCH)) && pPlayer->on_ground &&
+            if ((!TEST_SYNC_KEY(playerBits, SK_JUMP) && !(TEST_SYNC_KEY(playerBits, SK_CROUCH) ^ pPlayer->crouch_toggle)) && pPlayer->on_ground &&
                 (sector[pPlayer->cursectnum].floorstat & 2) && pPlayer->pos.z >= (floorZ - (floorZOffset << 8) - ZOFFSET2))
                 pPlayer->pos.z = floorZ - (floorZOffset << 8);
             else
@@ -5132,7 +5139,7 @@ void P_ProcessInput(int playerNum)
                 }
             }
 
-            if (TEST_SYNC_KEY(playerBits, SK_CROUCH))
+            if (TEST_SYNC_KEY(playerBits, SK_CROUCH) ^ pPlayer->crouch_toggle)
             {
                 // crouching
                 if (VM_OnEvent(EVENT_CROUCH,pPlayer->i,playerNum) == 0)
@@ -5334,7 +5341,7 @@ void P_ProcessInput(int playerNum)
 
         if (sectorLotag == ST_2_UNDERWATER)
             playerSpeedReduction = 0x1400;
-        else if (((pPlayer->on_ground && (TEST_SYNC_KEY(playerBits, SK_CROUCH)))
+        else if (((pPlayer->on_ground && (TEST_SYNC_KEY(playerBits, SK_CROUCH) ^ pPlayer->crouch_toggle))
                   || (*weaponFrame > 10 && PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) == KNEE_WEAPON)))
             playerSpeedReduction = 0x2000;
 
@@ -5424,7 +5431,7 @@ HORIZONLY:;
     if (pPlayer->cursectnum >= 0)
     {
         pPlayer->pos.z += PHEIGHT;
-        *(vec3_t *)&sprite[pPlayer->i] = pPlayer->pos;
+        sprite[pPlayer->i].pos = pPlayer->pos;
         pPlayer->pos.z -= PHEIGHT;
 
         changespritesect(pPlayer->i, pPlayer->cursectnum);
@@ -5640,7 +5647,7 @@ HORIZONLY:;
 #define SJSON_IMPLEMENT
 #include "sjson.h"
 
-int portableBackupSave(const char *path)
+int portableBackupSave(const char * path, const char * name, int volume, int level)
 {
     if (!FURY)
         return 0;
@@ -5652,18 +5659,19 @@ int portableBackupSave(const char *path)
         return 1;
     }
 
-    sjson_context* ctx = sjson_create_context(0, 0, NULL);
+    sjson_context * ctx = sjson_create_context(0, 0, NULL);
     if (!ctx)
     {
         buildprint("Could not create sjson_context\n");
         return 1;
     }
 
-    sjson_node* root = sjson_mkobject(ctx);
+    sjson_node * root = sjson_mkobject(ctx);
 
+    sjson_put_string(ctx, root, "name", name);
     // sjson_put_string(ctx, root, "map", currentboardfilename);
-    sjson_put_int(ctx, root, "volume", ud.last_stateless_volume);
-    sjson_put_int(ctx, root, "level", ud.last_stateless_level);
+    sjson_put_int(ctx, root, "volume", volume);
+    sjson_put_int(ctx, root, "level", level);
     sjson_put_int(ctx, root, "skill", ud.player_skill);
 
     {
@@ -5686,20 +5694,9 @@ int portableBackupSave(const char *path)
             for (int w = 0; w < MAX_WEAPONS; ++w)
                 sjson_append_element(gotweapon, sjson_mkbool(ctx, !!(ps->gotweapon & (1<<w))));
 
-            int ammo_amount[MAX_WEAPONS];
-            for (int w = 0; w < MAX_WEAPONS; ++w)
-                ammo_amount[w] = ps->ammo_amount[w];
-            sjson_put_ints(ctx, player, "ammo_amount", ammo_amount, MAX_WEAPONS);
-
-            int max_ammo_amount[MAX_WEAPONS];
-            for (int w = 0; w < MAX_WEAPONS; ++w)
-                max_ammo_amount[w] = ps->max_ammo_amount[w];
-            sjson_put_ints(ctx, player, "max_ammo_amount", max_ammo_amount, MAX_WEAPONS);
-
-            int inv_amount[GET_MAX];
-            for (int i = 0; i < GET_MAX; ++i)
-                inv_amount[i] = ps->inv_amount[i];
-            sjson_put_ints(ctx, player, "inv_amount", inv_amount, GET_MAX);
+            sjson_put_int16s(ctx, player, "ammo_amount", ps->ammo_amount, MAX_WEAPONS);
+            sjson_put_int16s(ctx, player, "max_ammo_amount", ps->max_ammo_amount, MAX_WEAPONS);
+            sjson_put_int16s(ctx, player, "inv_amount", ps->inv_amount, GET_MAX);
 
             sjson_put_int(ctx, player, "max_shield_amount", ps->max_shield_amount);
 
@@ -5751,7 +5748,7 @@ int portableBackupSave(const char *path)
         return 1;
     }
 
-    char* encoded = sjson_stringify(ctx, root, "  ");
+    char * encoded = sjson_stringify(ctx, root, "  ");
 
     buildvfs_FILE fil = buildvfs_fopen_write(fn);
     if (!fil)
@@ -5763,6 +5760,7 @@ int portableBackupSave(const char *path)
     buildvfs_fwrite(encoded, strlen(encoded), 1, fil);
     buildvfs_fclose(fil);
 
+    sjson_free_string(ctx, encoded);
     sjson_destroy_context(ctx);
 
     return 0;

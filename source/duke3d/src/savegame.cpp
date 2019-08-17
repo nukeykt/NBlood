@@ -160,11 +160,27 @@ static void ReadSaveGameHeaders_CACHE1D(CACHE1D_FIND_REC *f)
 
         menusave_t & msv = g_internalsaves[g_numinternalsaves];
 
+        msv.brief.isExt = 0;
+
         int32_t k = sv_loadheader(fil, 0, &h);
         if (k)
         {
             if (k < 0)
                 msv.isUnreadable = 1;
+            else
+            {
+                if (FURY)
+                {
+                    char extfn[BMAX_PATH];
+                    snprintf(extfn, ARRAY_SIZE(extfn), "%s.ext", fn);
+                    buildvfs_kfd extfil = kopen4loadfrommod(extfn, 0);
+                    if (extfil != buildvfs_kfd_invalid)
+                    {
+                        msv.brief.isExt = 1;
+                        kclose(extfil);
+                    }
+                }
+            }
             msv.isOldVer = 1;
         }
         else
@@ -309,6 +325,17 @@ int32_t G_LoadSaveHeaderNew(char const *fn, savehead_t *saveh)
             OSD_Printf("G_LoadSaveHeaderNew(): failed reading screenshot in \"%s\"\n", fn);
             goto corrupt;
         }
+
+#if 0
+        // debug code to dump the screenshot
+        char scrbuf[BMAX_PATH];
+        if (G_ModDirSnprintf(scrbuf, sizeof(scrbuf), "%s.raw", fn) == 0)
+        {
+            buildvfs_FILE scrfil = buildvfs_fopen_write(scrbuf);
+            buildvfs_fwrite((char *)waloff[TILE_LOADSHOT], 320, 200, scrfil);
+            buildvfs_fclose(scrfil);
+        }
+#endif
     }
     else
     {
@@ -330,9 +357,252 @@ static void sv_postudload();
 // hack
 static int different_user_map;
 
+#include "sjson.h"
+
 // XXX: keyboard input 'blocked' after load fail? (at least ESC?)
 int32_t G_LoadPlayer(savebrief_t & sv)
 {
+    if (sv.isExt)
+    {
+        int volume = -1;
+        int level = -1;
+        int skill = -1;
+
+        buildvfs_kfd const fil = kopen4loadfrommod(sv.path, 0);
+
+        if (fil != buildvfs_kfd_invalid)
+        {
+            savehead_t h;
+            int status = sv_loadheader(fil, 0, &h);
+            if (status >= 0)
+            {
+                volume = h.volnum;
+                level = h.levnum;
+                skill = h.skill;
+            }
+
+            kclose(fil);
+        }
+
+        char extfn[BMAX_PATH];
+        snprintf(extfn, ARRAY_SIZE(extfn), "%s.ext", sv.path);
+        buildvfs_kfd extfil = kopen4loadfrommod(extfn, 0);
+        if (extfil == buildvfs_kfd_invalid)
+        {
+            return -1;
+        }
+
+        int32_t len = kfilelength(extfil);
+        auto text = (char *)Xmalloc(len+1);
+        text[len] = '\0';
+
+        if (kread_and_test(extfil, text, len))
+        {
+            kclose(extfil);
+            Xfree(text);
+            return -1;
+        }
+
+        kclose(extfil);
+
+
+        sjson_context * ctx = sjson_create_context(0, 0, NULL);
+        sjson_node * root = sjson_decode(ctx, text);
+
+        Xfree(text);
+
+        if (volume == -1)
+            volume = sjson_get_int(root, "volume", volume);
+        if (level == -1)
+            level = sjson_get_int(root, "level", level);
+        if (skill == -1)
+            skill = sjson_get_int(root, "skill", skill);
+
+        if (volume == -1 || level == -1 || skill == -1)
+        {
+            sjson_destroy_context(ctx);
+            return -1;
+        }
+
+        sjson_node * players = sjson_find_member(root, "players");
+
+        int numplayers = sjson_child_count(players);
+
+        if (numplayers != ud.multimode)
+        {
+            P_DoQuote(QUOTE_SAVE_BAD_PLAYERS, g_player[myconnectindex].ps);
+
+            sjson_destroy_context(ctx);
+            return 1;
+        }
+
+
+        ud.returnvar[0] = level;
+        volume = VM_OnEventWithReturn(EVENT_VALIDATESTART, g_player[myconnectindex].ps->i, myconnectindex, volume);
+        level = ud.returnvar[0];
+
+
+        {
+            // CODEDUP from non-isExt branch, with simplifying assumptions
+
+            VM_OnEvent(EVENT_PRELOADGAME, g_player[screenpeek].ps->i, screenpeek);
+
+            ud.multimode = numplayers;
+
+            Net_WaitForServer();
+
+            FX_StopAllSounds();
+            S_ClearSoundLocks();
+
+            ud.m_volume_number = volume;
+            ud.m_level_number = level;
+            ud.m_player_skill = skill;
+
+            boardfilename[0] = '\0';
+
+            int const mapIdx = volume*MAXLEVELS + level;
+
+            if (boardfilename[0])
+                Bstrcpy(currentboardfilename, boardfilename);
+            else if (g_mapInfo[mapIdx].filename)
+                Bstrcpy(currentboardfilename, g_mapInfo[mapIdx].filename);
+
+            if (currentboardfilename[0])
+            {
+                artSetupMapArt(currentboardfilename);
+                append_ext_UNSAFE(currentboardfilename, ".mhk");
+                engineLoadMHK(currentboardfilename);
+            }
+
+            currentboardfilename[0] = '\0';
+
+            // G_NewGame_EnterLevel();
+        }
+
+        {
+            // CODEDUP from G_NewGame
+
+            auto & p0 = *g_player[0].ps;
+
+            ready2send = 0;
+
+            ud.from_bonus    = 0;
+            ud.last_level    = -1;
+            ud.level_number  = level;
+            ud.player_skill  = skill;
+            ud.secretlevel   = 0;
+            ud.skill_voice   = -1;
+            ud.volume_number = volume;
+
+            g_lastAutoSaveArbitraryID = -1;
+
+#ifdef EDUKE32_TOUCH_DEVICES
+            p0.zoom = 360;
+#else
+            p0.zoom = 768;
+#endif
+            p0.gm = 0;
+
+            Menu_Close(0);
+
+#if !defined LUNATIC
+            Gv_ResetVars();
+            Gv_InitWeaponPointers();
+            Gv_RefreshPointers();
+#endif
+            Gv_ResetSystemDefaults();
+
+            for (int i=0; i < (MAXVOLUMES*MAXLEVELS); i++)
+                G_FreeMapState(i);
+
+            if (ud.m_coop != 1)
+                p0.last_weapon = -1;
+
+            display_mirror = 0;
+        }
+
+        int p = 0;
+        for (sjson_node * player = sjson_first_child(players); player != nullptr; player = player->next)
+        {
+            playerdata_t * playerData = &g_player[p];
+            DukePlayer_t * ps = playerData->ps;
+            auto pSprite = &sprite[ps->i];
+
+            pSprite->extra = sjson_get_int(player, "extra", -1);
+            ps->max_player_health = sjson_get_int(player, "max_player_health", -1);
+
+            sjson_node * gotweapon = sjson_find_member(player, "gotweapon");
+            int w_end = min<int>(MAX_WEAPONS, sjson_child_count(gotweapon));
+            ps->gotweapon = 0;
+            for (int w = 0; w < w_end; ++w)
+            {
+                sjson_node * ele = sjson_find_element(gotweapon, w);
+                if (ele->tag == SJSON_BOOL && ele->bool_)
+                    ps->gotweapon |= 1<<w;
+            }
+
+            /* bool flag_ammo_amount = */ sjson_get_int16s(ps->ammo_amount, MAX_WEAPONS, player, "ammo_amount");
+            /* bool flag_max_ammo_amount = */ sjson_get_int16s(ps->max_ammo_amount, MAX_WEAPONS, player, "max_ammo_amount");
+            /* bool flag_inv_amount = */ sjson_get_int16s(ps->inv_amount, GET_MAX, player, "inv_amount");
+
+            ps->max_shield_amount = sjson_get_int(player, "max_shield_amount", -1);
+
+            ps->curr_weapon = sjson_get_int(player, "curr_weapon", -1);
+            ps->subweapon = sjson_get_int(player, "subweapon", -1);
+            ps->inven_icon = sjson_get_int(player, "inven_icon", -1);
+
+            sjson_node * vars = sjson_find_member(player, "vars");
+
+            for (int j=0; j<g_gameVarCount; j++)
+            {
+                gamevar_t & var = aGameVars[j];
+
+                if (!(var.flags & GAMEVAR_SERIALIZE))
+                    continue;
+
+                if ((var.flags & (GAMEVAR_PERPLAYER|GAMEVAR_PERACTOR)) != GAMEVAR_PERPLAYER)
+                    continue;
+
+                Gv_SetVar(j, sjson_get_int(vars, var.szLabel, var.defaultValue), ps->i, p);
+            }
+
+            ++p;
+        }
+
+        {
+            sjson_node * vars = sjson_find_member(root, "vars");
+
+            for (int j=0; j<g_gameVarCount; j++)
+            {
+                gamevar_t & var = aGameVars[j];
+
+                if (!(var.flags & GAMEVAR_SERIALIZE))
+                    continue;
+
+                if (var.flags & (GAMEVAR_PERPLAYER|GAMEVAR_PERACTOR))
+                    continue;
+
+                Gv_SetVar(j, sjson_get_int(vars, var.szLabel, var.defaultValue));
+            }
+        }
+
+        sjson_destroy_context(ctx);
+
+
+        if (G_EnterLevel(MODE_GAME|MODE_EOL))
+            G_BackToMenu();
+
+
+        // postloadplayer(1);
+
+        // sv_postudload();
+
+
+        VM_OnEvent(EVENT_LOADGAME, g_player[screenpeek].ps->i, screenpeek);
+
+        return 0;
+    }
+
     buildvfs_kfd const fil = kopen4loadfrommod(sv.path, 0);
 
     if (fil == buildvfs_kfd_invalid)
@@ -540,6 +810,8 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
         goto saveproblem;
     }
 
+    sv.isExt = 0;
+
     // temporary hack
     ud.user_map = G_HaveUserMap();
 
@@ -548,10 +820,9 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
         polymer_resetlights();
 #endif
 
-    VM_OnEvent(EVENT_SAVEGAME, g_player[screenpeek].ps->i, screenpeek);
+    VM_OnEvent(EVENT_SAVEGAME, g_player[myconnectindex].ps->i, myconnectindex);
 
-    extern int portableBackupSave(const char *);
-    portableBackupSave(sv.path);
+    portableBackupSave(sv.path, sv.name, ud.last_stateless_volume, ud.last_stateless_level);
 
     // SAVE!
     sv_saveandmakesnapshot(fil, sv.name, 0, 0, 0, 0, isAutoSave);
@@ -576,7 +847,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
     G_RestoreTimers();
     ototalclock = totalclock;
 
-    VM_OnEvent(EVENT_POSTSAVEGAME, g_player[screenpeek].ps->i, screenpeek);
+    VM_OnEvent(EVENT_POSTSAVEGAME, g_player[myconnectindex].ps->i, myconnectindex);
 
     return 0;
 
@@ -986,7 +1257,7 @@ static int32_t applydiff(const dataspec_t *spec, uint8_t **dumpvar, uint8_t **di
         if (cnt < 0) return 1;
 
         eltnum++;
-        if (((*diffvar+slen)[eltnum>>3] & (1<<(eltnum&7))) == 0)
+        if (((*diffvar+slen)[eltnum>>3] & pow2char[eltnum&7]) == 0)
         {
             dump += spec->size * cnt;
             continue;
@@ -1830,7 +2101,7 @@ static void sv_quotesave()
 static void sv_quoteload()
 {
     for (int i = 0; i < MAXQUOTES; i++)
-        if (savegame_quotedef[i>>3] & (1<<(i&7)))
+        if (savegame_quotedef[i>>3] & pow2char[i&7])
         {
             C_AllocQuote(i);
             Bmemcpy(apStrings[i], savegame_quotes[i], MAXQUOTELEN);
@@ -1870,7 +2141,7 @@ static void sv_preprojectileload()
 
     for (int i = 0; i < MAXTILES; i++)
     {
-        if (savegame_projectiles[i>>3] & (1<<(i&7)))
+        if (savegame_projectiles[i>>3] & pow2char[i&7])
             savegame_projectilecnt++;
     }
 
@@ -1882,7 +2153,7 @@ static void sv_postprojectileload()
 {
     for (int i = 0, cnt = 0; i < MAXTILES; i++)
     {
-        if (savegame_projectiles[i>>3] & (1<<(i&7)))
+        if (savegame_projectiles[i>>3] & pow2char[i&7])
         {
             C_AllocProjectile(i);
             Bmemcpy(g_tile[i].proj, &savegame_projectiledata[cnt++], sizeof(projectile_t));
@@ -2183,10 +2454,10 @@ static void postloadplayer(int32_t savegamep)
         S_ClearSoundLocks();
         G_CacheMapData();
 
-        if (boardfilename[0] != 0 && ud.level_number == 7 && ud.volume_number == 0 && ud.music_level == 7 && ud.music_episode == 0)
+        if (boardfilename[0] != 0 && ud.level_number == 7 && ud.volume_number == 0 && ud.music_level == USERMAPMUSICFAKELEVEL && ud.music_episode == USERMAPMUSICFAKEVOLUME)
         {
             char levname[BMAX_PATH];
-            G_SetupFilenameBasedMusic(levname, boardfilename, ud.level_number);
+            G_SetupFilenameBasedMusic(levname, boardfilename);
         }
 
         if (g_mapInfo[musicIdx].musicfn != NULL && (musicIdx != g_musicIndex || different_user_map))

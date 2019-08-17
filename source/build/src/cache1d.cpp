@@ -317,7 +317,7 @@ void cacheAgeEntries(void)
         {
              if ((((*cac[agecount].lock)-2)&255) < 198)
                 (*cac[agecount].lock)--;
-             else if (*cac[agecount].lock >= 200)
+             else if (*cac[agecount].lock == 255)
                  cnt++;
         }
 

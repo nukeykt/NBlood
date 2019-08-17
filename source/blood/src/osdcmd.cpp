@@ -312,10 +312,20 @@ static int osdcmd_crosshaircolor(osdcmdptr_t parm)
     uint8_t const g = Batol(parm->parms[1]);
     uint8_t const b = Batol(parm->parms[2]);
 
+    g_isAlterDefaultCrosshair = true;
     viewSetCrosshairColor(r,g,b);
 
     if (!OSD_ParsingScript())
         OSD_Printf("%s\n", parm->raw);
+
+    return OSDCMD_OK;
+}
+
+static int osdcmd_resetcrosshair(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+    g_isAlterDefaultCrosshair = false;
+    viewResetCrosshairToDefault();
 
     return OSDCMD_OK;
 }
@@ -457,12 +467,10 @@ void onvideomodechange(int32_t newmode)
 
     videoSetPalette(ud.brightness>>2, palid, 0);
     g_restorePalette = -1;
-    g_crosshairSum = -1;
 #endif
     if (newmode)
         scrResetPalette();
     UpdateDacs(gLastPal, false);
-    g_crosshairSum = -1;
 }
 
 static int osdcmd_button(osdcmdptr_t parm)
@@ -937,6 +945,7 @@ int32_t registerosdcommands(void)
 //        { "hud_scale","changes the hud scale", (void *)&ud.statusbarscale, CVAR_INT|CVAR_FUNCPTR, 36, 100 },
 //        { "hud_showmapname", "enable/disable map name display on load", (void *)&hud_showmapname, CVAR_BOOL, 0, 1 },
         { "hud_stats", "enable/disable level statistics display", (void *)&gLevelStats, CVAR_BOOL, 0, 1 },
+        { "hud_powerupduration", "enable/disable displaying the remaining seconds for power-ups", (void *)&gPowerupDuration, CVAR_BOOL, 0, 1 },
 //        { "hud_textscale", "sets multiplayer chat message size", (void *)&ud.textscale, CVAR_INT, 100, 400 },
 //        { "hud_weaponscale","changes the weapon scale", (void *)&ud.weaponscale, CVAR_INT, 10, 100 },
 //        { "hud_statusbarmode", "change overlay mode of status bar", (void *)&ud.statusbarmode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
@@ -962,6 +971,7 @@ int32_t registerosdcommands(void)
         { "in_mousesmoothing", "enable/disable mouse input smoothing", (void *)&SmoothInput, CVAR_BOOL, 0, 1 },
 //
         { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
+        { "mus_restartonload", "restart the music when loading a saved game with the same map or not", (void *)&MusicRestartsOnLoadToggle, CVAR_BOOL, 0, 1 },
         { "mus_volume", "controls music volume", (void *)&MusicVolume, CVAR_INT, 0, 255 },
         { "mus_device", "music device", (void *)&MusicDevice, CVAR_INT, 0, 1 },
         { "mus_redbook", "enables/disables redbook audio", (void *)&CDAudioToggle, CVAR_BOOL, 0, 1 },
@@ -1042,6 +1052,7 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("bind",R"(bind <key> <string>: associates a keypress with a string of console input. Type "bind showkeys" for a list of keys and "listsymbols" for a list of valid console commands.)", osdcmd_bind);
 //    OSD_RegisterFunction("cmenu","cmenu <#>: jumps to menu", osdcmd_cmenu);
     OSD_RegisterFunction("crosshaircolor","crosshaircolor: changes the crosshair color", osdcmd_crosshaircolor);
+    OSD_RegisterFunction("crosshairreset", "crosshairreset: restores the original crosshair", osdcmd_resetcrosshair);
 //
 //#if !defined NETCODE_DISABLE
 //    OSD_RegisterFunction("connect","connect: connects to a multiplayer game", osdcmd_connect);

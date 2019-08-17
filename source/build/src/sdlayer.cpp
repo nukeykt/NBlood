@@ -91,9 +91,6 @@ char nogl=0;
 #endif
 static int32_t vsync_renderlayer;
 int32_t maxrefreshfreq=0;
-#if SDL_MAJOR_VERSION==2
-static uint32_t currentVBlankInterval=0;
-#endif
 
 // last gamma, contrast, brightness
 static float lastvidgcb[3];
@@ -110,7 +107,7 @@ static SDL_Surface *loadappicon(void);
 static mutex_t m_initprintf;
 
 // Joystick dead and saturation zones
-uint16_t *joydead, *joysatur;
+uint16_t joydead[9], joysatur[9];
 
 #ifdef _WIN32
 # if SDL_MAJOR_VERSION != 1
@@ -776,6 +773,153 @@ void debugprintf(const char *f, ...)
 
 // static int32_t joyblast=0;
 static SDL_Joystick *joydev = NULL;
+#if SDL_MAJOR_VERSION >= 2
+static SDL_GameController *controller = NULL;
+
+static void LoadSDLControllerDB()
+{
+    buildvfs_kfd fh = kopen4load("gamecontrollerdb.txt", 0);
+    if (fh == buildvfs_kfd_invalid)
+        return;
+
+    int flen = kfilelength(fh);
+    if (flen <= 0)
+    {
+        kclose(fh);
+        return;
+    }
+
+    char * dbuf = (char *)malloc(flen + 1);
+    if (!dbuf)
+    {
+        kclose(fh);
+        return;
+    }
+
+    if (kread_and_test(fh, dbuf, flen))
+    {
+        free(dbuf);
+        kclose(fh);
+        return;
+    }
+
+    dbuf[flen] = '\0';
+    kclose(fh);
+
+    SDL_RWops * rwops = SDL_RWFromConstMem(dbuf, flen);
+    if (!rwops)
+    {
+        free(dbuf);
+        return;
+    }
+
+    int i = SDL_GameControllerAddMappingsFromRW(rwops, 0);
+    if (i == -1)
+        buildprintf("Failed loading game controller database: %s\n", SDL_GetError());
+    else
+        buildputs("Loaded game controller database\n");
+
+    SDL_free(rwops);
+    free(dbuf);
+}
+#endif
+
+void joyScanDevices()
+{
+    inputdevices &= ~4;
+
+    if (controller)
+    {
+        SDL_GameControllerClose(controller);
+        controller = nullptr;
+    }
+    if (joydev)
+    {
+        SDL_JoystickClose(joydev);
+        joydev = nullptr;
+    }
+
+    int numjoysticks = SDL_NumJoysticks();
+    if (numjoysticks < 1)
+    {
+        buildputs("No game controllers found\n");
+    }
+    else
+    {
+        buildputs("Game controllers:\n");
+        for (int i = 0; i < numjoysticks; i++)
+        {
+            const char * name;
+#if SDL_MAJOR_VERSION >= 2
+            if (SDL_IsGameController(i))
+                name = SDL_GameControllerNameForIndex(i);
+            else
+#endif
+                name = SDL_JoystickNameForIndex(i);
+
+            buildprintf("  %d. %s\n", i+1, name);
+        }
+
+#if SDL_MAJOR_VERSION >= 2
+        for (int i = 0; i < numjoysticks; i++)
+        {
+            if ((controller = SDL_GameControllerOpen(i)))
+            {
+                buildprintf("Using controller %s\n", SDL_GameControllerName(controller));
+
+                joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
+                joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
+                joystick.numHats    = 0;
+                joystick.isGameController = 1;
+
+                Xfree(joystick.pAxis);
+                joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
+                Xfree(joystick.pHat);
+                joystick.pHat = nullptr;
+
+                inputdevices |= 4;
+
+                return;
+            }
+        }
+#endif
+
+        for (int i = 0; i < numjoysticks; i++)
+        {
+            if ((joydev = SDL_JoystickOpen(i)))
+            {
+                buildprintf("Using joystick %s\n", SDL_JoystickName(joydev));
+
+                // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
+                joystick.numAxes = min(9, SDL_JoystickNumAxes(joydev));
+                joystick.numButtons = min(32, SDL_JoystickNumButtons(joydev));
+                joystick.numHats = min((36-joystick.numButtons)/4,SDL_JoystickNumHats(joydev));
+                joystick.isGameController = 0;
+
+                initprintf("Joystick %d has %d axes, %d buttons, and %d hat(s).\n", i+1, joystick.numAxes, joystick.numButtons, joystick.numHats);
+
+                Xfree(joystick.pAxis);
+                joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
+
+                Xfree(joystick.pHat);
+                if (joystick.numHats)
+                    joystick.pHat = (int32_t *)Xcalloc(joystick.numHats, sizeof(int32_t));
+                else
+                    joystick.pHat = nullptr;
+
+                for (int j = 0; j < joystick.numHats; j++)
+                    joystick.pHat[j] = -1; // center
+
+                SDL_JoystickEventState(SDL_ENABLE);
+                inputdevices |= 4;
+
+                return;
+            }
+        }
+
+        buildputs("No controllers are usable\n");
+    }
+}
 
 //
 // initinput() -- init input system
@@ -820,37 +964,17 @@ int32_t initinput(void)
         Bstrncpyz(g_keyNameTable[keytranslation[i]], SDL_GetKeyName(SDL_SCANCODE_TO_KEYCODE(i)), sizeof(g_keyNameTable[0]));
     }
 
+#if SDL_MAJOR_VERSION >= 2
+    if (!SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER))
+#else
     if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
+#endif
     {
-        i = SDL_NumJoysticks();
-        initprintf("%d joystick(s) found\n", i);
+#if SDL_MAJOR_VERSION >= 2
+        LoadSDLControllerDB();
+#endif
 
-        for (int32_t j = 0; j < i; j++)
-            initprintf("  %d. %s\n", j + 1, SDL_JoystickNameForIndex(j));
-
-        joydev = SDL_JoystickOpen(0);
-
-        if (joydev)
-        {
-            SDL_JoystickEventState(SDL_ENABLE);
-            inputdevices |= 4;
-
-            // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
-            joystick.numAxes = min(9, SDL_JoystickNumAxes(joydev));
-            joystick.numButtons = min(32, SDL_JoystickNumButtons(joydev));
-            joystick.numHats = min((36-joystick.numButtons)/4,SDL_JoystickNumHats(joydev));
-            initprintf("Joystick 1 has %d axes, %d buttons, and %d hat(s).\n", joystick.numAxes, joystick.numButtons, joystick.numHats);
-
-            joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
-
-            if (joystick.numHats)
-                joystick.pHat = (int32_t *)Xcalloc(joystick.numHats, sizeof(int32_t));
-
-            for (i = 0; i < joystick.numHats; i++) joystick.pHat[i] = -1;  // centre
-
-            joydead = (uint16_t *)Xcalloc(joystick.numAxes, sizeof(uint16_t));
-            joysatur = (uint16_t *)Xcalloc(joystick.numAxes, sizeof(uint16_t));
-        }
+        joyScanDevices();
     }
 
     return 0;
@@ -865,6 +989,14 @@ void uninitinput(void)
     Win_SetKeyboardLayoutUS(0);
 #endif
     mouseUninit();
+
+#if SDL_MAJOR_VERSION >= 2
+    if (controller)
+    {
+        SDL_GameControllerClose(controller);
+        controller = NULL;
+    }
+#endif
 
     if (joydev)
     {
@@ -883,12 +1015,67 @@ const char *joyGetName(int32_t what, int32_t num)
         case 0:  // axis
             if ((unsigned)num > (unsigned)joystick.numAxes)
                 return NULL;
+
+#if SDL_MAJOR_VERSION >= 2
+            if (controller)
+            {
+# if 0
+                // Use this if SDL's provided strings ever become user-friendly.
+                return SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)num);
+# else
+                static char const * axisStrings[] =
+                {
+                    "Left Stick X-Axis",
+                    "Left Stick Y-Axis",
+                    "Right Stick X-Axis",
+                    "Right Stick Y-Axis",
+                    "Left Trigger",
+                    "Right Trigger",
+                    NULL
+                };
+                return axisStrings[num];
+# endif
+            }
+#endif
+
             Bsprintf(tmp, "Axis %d", num);
             return (char *)tmp;
 
         case 1:  // button
             if ((unsigned)num > (unsigned)joystick.numButtons)
                 return NULL;
+
+#if SDL_MAJOR_VERSION >= 2
+            if (controller)
+            {
+# if 0
+                // See above.
+                return SDL_GameControllerGetStringForButton((SDL_GameControllerButton)num);
+# else
+                static char const * buttonStrings[] =
+                {
+                    "A",
+                    "B",
+                    "X",
+                    "Y",
+                    "Back",
+                    "Guide",
+                    "Start",
+                    "Left Stick",
+                    "Right Stick",
+                    "Left Shoulder",
+                    "Right Shoulder",
+                    "D-Pad Up",
+                    "D-Pad Down",
+                    "D-Pad Left",
+                    "D-Pad Right",
+                    NULL
+                };
+                return buttonStrings[num];
+# endif
+            }
+#endif
+
             Bsprintf(tmp, "Button %d", num);
             return (char *)tmp;
 
@@ -972,6 +1159,12 @@ void mouseLockToWindow(char a)
     SDL_ShowCursor((osd && osd->flags & OSD_CAPTURE) ? SDL_ENABLE : SDL_DISABLE);
 }
 
+void mouseMoveToCenter(void)
+{
+    if (sdl_window)
+        SDL_WarpMouseInWindow(sdl_window, xdim / 2, ydim / 2);
+}
+
 //
 // setjoydeadzone() -- sets the dead and saturation zones for the joystick
 //
@@ -1003,123 +1196,6 @@ void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
 //
 //
 
-static uint32_t timerfreq;
-static uint32_t timerlastsample;
-int32_t timerticspersec=0;
-static double msperu64tick = 0;
-static void(*usertimercallback)(void) = NULL;
-
-
-//
-// inittimer() -- initialize timer
-//
-int32_t timerInit(int32_t tickspersecond)
-{
-    if (timerfreq) return 0;	// already installed
-
-//    initprintf("Initializing timer\n");
-
-#if defined(_WIN32) && SDL_MAJOR_VERSION == 1
-    int32_t t = win_inittimer();
-    if (t < 0)
-        return t;
-#endif
-
-    timerfreq = 1000;
-    timerticspersec = tickspersecond;
-    timerlastsample = SDL_GetTicks() * timerticspersec / timerfreq;
-
-    usertimercallback = NULL;
-
-    msperu64tick = 1000.0 / (double)timerGetFreqU64();
-
-    return 0;
-}
-
-//
-// uninittimer() -- shut down timer
-//
-void timerUninit(void)
-{
-    timerfreq=0;
-#if defined(_WIN32) && SDL_MAJOR_VERSION==1
-    win_timerfreq=0;
-#endif
-    msperu64tick = 0;
-}
-
-//
-// sampletimer() -- update totalclock
-//
-void timerUpdate(void)
-{
-    if (!timerfreq) return;
-
-    int64_t i = SDL_GetTicks();
-    int32_t n = tabledivide64(i * timerticspersec, timerfreq) - timerlastsample;
-
-    if (n <= 0) return;
-
-    totalclock += n;
-    timerlastsample += n;
-
-    if (usertimercallback)
-        for (; n > 0; n--) usertimercallback();
-}
-
-#if defined LUNATIC
-//
-// getticks() -- returns the sdl ticks count
-//
-uint32_t timerGetTicks(void)
-{
-    return (uint32_t)SDL_GetTicks();
-}
-#endif
-
-// high-resolution timers for profiling
-
-#if SDL_MAJOR_VERSION != 1
-uint64_t timerGetTicksU64(void)
-{
-    return SDL_GetPerformanceCounter();
-}
-
-uint64_t timerGetFreqU64(void)
-{
-    return SDL_GetPerformanceFrequency();
-}
-#endif
-
-// Returns the time since an unspecified starting time in milliseconds.
-// (May be not monotonic for certain configurations.)
-ATTRIBUTE((flatten))
-double timerGetHiTicks(void)
-{
-    return (double)timerGetTicksU64() * msperu64tick;
-}
-
-//
-// gettimerfreq() -- returns the number of ticks per second the timer is configured to generate
-//
-int32_t timerGetFreq(void)
-{
-    return timerticspersec;
-}
-
-
-//
-// installusertimercallback() -- set up a callback function to be called when the timer is fired
-//
-void(*timerSetCallback(void(*callback)(void)))(void)
-{
-    void(*oldtimercallback)(void);
-
-    oldtimercallback = usertimercallback;
-    usertimercallback = callback;
-
-    return oldtimercallback;
-}
 
 
 
@@ -1140,8 +1216,8 @@ void(*timerSetCallback(void(*callback)(void)))(void)
 static int sortmodes(const void *a_, const void *b_)
 {
 
-    auto a = (const struct validmode_t *)a_;
-    auto b = (const struct validmode_t *)b_;
+    auto a = (const struct validmode_t *)b_;
+    auto b = (const struct validmode_t *)a_;
 
     int x;
 
@@ -1528,8 +1604,6 @@ void setrefreshrate(void)
 
     if (!newmode.refresh_rate)
         newmode.refresh_rate = 60;
-
-    currentVBlankInterval = 1000/newmode.refresh_rate;
 }
 
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
@@ -1554,7 +1628,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     SDL_DisplayMode desktopmode;
     SDL_GetDesktopDisplayMode(0, &desktopmode);
 
-    int const windowedMode = (desktopmode.w == x && desktopmode.h == y) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+    int const windowedMode = (desktopmode.w == x && desktopmode.h == y) ? SDL_WINDOW_BORDERLESS : 0;
 
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
@@ -1617,7 +1691,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
                 return -1;
             }
 
-            SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? SDL_WINDOW_FULLSCREEN : windowedMode));
+            // this is using the windowedMode variable to determine whether to pass SDL_WINDOW_FULLSCREEN or SDL_WINDOW_FULLSCREEN_DESKTOP
+            SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? windowedMode ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN : windowedMode));
             SDL_GL_SetSwapInterval(vsync_renderlayer);
 
             setrefreshrate();
@@ -1686,11 +1761,37 @@ void videoBeginDrawing(void)
     if (lockcount++ > 0)
         return;
 
-    if (offscreenrendering) return;
+    static intptr_t backupFrameplace = 0;
 
     if (inpreparemirror)
     {
+        //POGO: if we are offscreenrendering and we need to render a mirror
+        //      or we are rendering a mirror and we start offscreenrendering,
+        //      backup our offscreen target so we can restore it later
+        //      (but only allow one level deep,
+        //       i.e. no viewscreen showing a camera showing a mirror that reflects the same viewscreen and recursing)
+        if (offscreenrendering)
+        {
+            if (!backupFrameplace)
+                backupFrameplace = frameplace;
+            else if (frameplace != (intptr_t)mirrorBuffer &&
+                     frameplace != backupFrameplace)
+                return;
+        }
+
         frameplace = (intptr_t)mirrorBuffer;
+
+        if (offscreenrendering)
+            return;
+    }
+    else if (offscreenrendering)
+    {
+        if (backupFrameplace)
+        {
+            frameplace = backupFrameplace;
+            backupFrameplace = 0;
+        }
+        return;
     }
     else
 #ifdef USE_OPENGL
@@ -1769,10 +1870,7 @@ void videoShowFrame(int32_t w)
         SDL_GL_SwapWindow(sdl_window);
         if (vsync)
         {
-            static uint32_t lastSwapTime = 0;
-            // busy loop until we're ready to update again
-            while (SDL_GetTicks()-lastSwapTime < currentVBlankInterval) {}
-            lastSwapTime = SDL_GetTicks();
+            glFinish();
         }
         return;
     }
@@ -2036,16 +2134,23 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 #endif
 
         case SDL_JOYAXISMOTION:
+#if SDL_MAJOR_VERSION >= 2
+            if (joystick.isGameController)
+                break;
+            fallthrough__;
+        case SDL_CONTROLLERAXISMOTION:
+#endif
             if (appactive && ev->jaxis.axis < joystick.numAxes)
             {
-                joystick.pAxis[ev->jaxis.axis] = ev->jaxis.value * 10000 / 32767;
-                if ((joystick.pAxis[ev->jaxis.axis] < joydead[ev->jaxis.axis]) &&
-                    (joystick.pAxis[ev->jaxis.axis] > -joydead[ev->jaxis.axis]))
+                joystick.pAxis[ev->jaxis.axis] = ev->jaxis.value;
+                int32_t const scaledValue = ev->jaxis.value * 10000 / 32767;
+                if ((scaledValue < joydead[ev->jaxis.axis]) &&
+                    (scaledValue > -joydead[ev->jaxis.axis]))
                     joystick.pAxis[ev->jaxis.axis] = 0;
-                else if (joystick.pAxis[ev->jaxis.axis] >= joysatur[ev->jaxis.axis])
-                    joystick.pAxis[ev->jaxis.axis] = 10000;
-                else if (joystick.pAxis[ev->jaxis.axis] <= -joysatur[ev->jaxis.axis])
-                    joystick.pAxis[ev->jaxis.axis] = -10000;
+                else if (scaledValue >= joysatur[ev->jaxis.axis])
+                    joystick.pAxis[ev->jaxis.axis] = 32767;
+                else if (scaledValue <= -joysatur[ev->jaxis.axis])
+                    joystick.pAxis[ev->jaxis.axis] = -32767;
                 else
                     joystick.pAxis[ev->jaxis.axis] = joystick.pAxis[ev->jaxis.axis] * 10000 / joysatur[ev->jaxis.axis];
             }
@@ -2078,6 +2183,13 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 
         case SDL_JOYBUTTONDOWN:
         case SDL_JOYBUTTONUP:
+#if SDL_MAJOR_VERSION >= 2
+            if (joystick.isGameController)
+                break;
+            fallthrough__;
+        case SDL_CONTROLLERBUTTONDOWN:
+        case SDL_CONTROLLERBUTTONUP:
+#endif
             if (appactive && ev->jbutton.button < joystick.numButtons)
             {
                 if (ev->jbutton.state == SDL_PRESSED)

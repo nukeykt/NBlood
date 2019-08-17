@@ -63,6 +63,7 @@ void CMenuTextMgr::GetFontInfo(int nFont, const char *pString, int *pXSize, int 
 
 bool CGameMenuMgr::m_bInitialized = false;
 bool CGameMenuMgr::m_bActive = false;
+bool CGameMenuMgr::m_bFirstPush = true;
 
 CGameMenuMgr::CGameMenuMgr()
 {
@@ -107,6 +108,10 @@ bool CGameMenuMgr::Push(CGameMenu *pMenu, int nItem)
         m_mouselastactivity = -M_MOUSETIMEOUT;
         m_mousewake_watchpoint = 0;
         mouseLockToWindow(0);
+        if (m_bFirstPush)
+            m_bFirstPush = false;
+        else
+            mouseMoveToCenter();
     }
     dassert(pMenu != NULL);
     if (nMenuPointer == 8)
@@ -183,21 +188,19 @@ void CGameMenuMgr::Draw(void)
 
         m_mousewake_watchpoint = 0;
     }
+
     // Display the mouse cursor, except on touch devices.
-    if (MOUSEACTIVECONDITION)
+    if (MOUSEACTIVECONDITION && !m_bFirstPush)
     {
-        int32_t a = kCrosshairTile;
+        int16_t mousetile = 1043; // red arrow
+        vec2_t cursorpos = { m_mousepos.x + (7 << 16), m_mousepos.y + (6 << 16) };
 
-        if ((unsigned) a < MAXTILES)
+        if ((unsigned) mousetile < MAXTILES)
         {
-            vec2_t cursorpos = m_mousepos;
             int32_t z = 65536;
-            uint8_t p = CROSSHAIR_PAL;
-            uint32_t o = 2|8;
-
-            int32_t alpha = MOUSEALPHA; //CURSORALPHA;
-
-            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, 0, a, 0, p, o, alpha);
+            uint32_t stat = 2|8;
+            int8_t alpha = MOUSEALPHA; //CURSORALPHA;
+            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, -300, mousetile, 0, NULL, stat, alpha);
         }
     }
     else
@@ -243,10 +246,12 @@ void CGameMenuMgr::Process(void)
         case sc_UpArrow:
         case sc_kpad_8:
             event.at0 = kMenuEventUp;
+            gGameMenuMgr.m_mouselastactivity = -M_MOUSETIMEOUT;
             break;
         case sc_DownArrow:
         case sc_kpad_2:
             event.at0 = kMenuEventDown;
+            gGameMenuMgr.m_mouselastactivity = -M_MOUSETIMEOUT;
             break;
         case sc_Enter:
         case sc_kpad_Enter:

@@ -9,6 +9,7 @@
 
 #include "compat.h"
 #include "osd.h"
+#include "timer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,6 +197,7 @@ typedef struct
     int32_t  numAxes;
     int32_t  numButtons;
     int32_t  numHats;
+    int32_t  isGameController;
 } controllerinput_t;
 
 extern controllerinput_t joystick;
@@ -228,6 +230,7 @@ void mouseSetCallback(void (*callback)(int32_t,int32_t));
 void joySetCallback(void (*callback)(int32_t,int32_t));
 const char *keyGetName(int32_t num);
 const char *joyGetName(int32_t what, int32_t num); // what: 0=axis, 1=button, 2=hat
+void joyScanDevices(void);
 
 char keyGetScan(void);
 char keyGetChar(void);
@@ -252,6 +255,7 @@ void mouseUninit(void);
 int32_t mouseReadAbs(vec2_t *pResult, vec2_t const *pInput);
 void mouseGrabInput(bool grab);
 void mouseLockToWindow(char a);
+void mouseMoveToCenter(void);
 int32_t mouseReadButtons(void);
 void mouseReadPos(int32_t *x, int32_t *y);
 
@@ -259,21 +263,6 @@ void joyReadButtons(int32_t *pResult);
 void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
 void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);
 extern int32_t inputchecked;
-
-int32_t  timerInit(int32_t);
-void     timerUninit(void);
-void     timerUpdate(void);
-int32_t  timerGetFreq(void);
-uint64_t timerGetTicksU64(void);
-uint64_t timerGetFreqU64(void);
-double   timerGetHiTicks(void);
-void (*timerSetCallback(void (*callback)(void)))(void);
-
-#if defined RENDERTYPESDL && !defined LUNATIC
-static FORCE_INLINE uint32_t timerGetTicks(void) { return (uint32_t)SDL_GetTicks(); }
-#else
-uint32_t timerGetTicks(void);
-#endif
 
 int32_t wm_msgbox(const char *name, const char *fmt, ...) ATTRIBUTE((format(printf,2,3)));
 int32_t wm_ynbox(const char *name, const char *fmt, ...) ATTRIBUTE((format(printf,2,3)));

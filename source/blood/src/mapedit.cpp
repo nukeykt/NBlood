@@ -2886,10 +2886,10 @@ const char *ExtGetWallCaption(int16_t nWall)
 
     Bmemset(tempbuf,0,sizeof(tempbuf));
 
-    if (wallcstat14[nWall>>3]&(1<<(nWall&7)))
+    if (editwall[nWall>>3]&(1<<(nWall&7)))
     {
         Bsprintf(tempbuf,"%d", wallength(nWall));
-        wallcstat14[nWall>>3] &= ~(1<<(nWall&7));
+        editwall[nWall>>3] &= ~(1<<(nWall&7));
         return tempbuf;
     }
 

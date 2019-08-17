@@ -684,7 +684,7 @@ void editorSetup2dSideView(void)
         m32_sidesin = sintable[m32_sideelev&2047];
         m32_sidecos = sintable[(m32_sideelev+512)&2047];
 
-        rotatepoint(zerovec, *(vec2_t *) &m32_viewplane, -m32_sideang, (vec2_t *) &m32_viewplane);
+        rotatepoint(zerovec, m32_viewplane.vec2, -m32_sideang, &m32_viewplane.vec2);
         m32_viewplane.x = mulscale14(m32_viewplane.x, m32_sidecos);
         m32_viewplane.y = mulscale14(m32_viewplane.y, m32_sidecos);
         m32_viewplane.z = m32_sidesin>>5;
@@ -704,7 +704,7 @@ static void editorGet2dSideViewDistance(int16_t sw, int16_t sect)
         p = &v;
     }
     else
-        p = (vec3_t *) &sprite[sw-MAXWALLS];
+        p = &sprite[sw-MAXWALLS].pos;
 
     m32_sidedist[sw] = p->x*m32_viewplane.x + p->y*m32_viewplane.y + (p->z>>4)*m32_viewplane.z;
 }
@@ -1448,10 +1448,10 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
         for (i=0; i<numwalls; i++)
         {
             int32_t j = wall[i].nextwall;
-            if ((graywallbitmap[i>>3]&(1<<(i&7))) && (j < 0 || (graywallbitmap[j>>3]&(1<<(j&7)))))
-                graybitmap[i>>3] |= (1<<(i&7));
+            if ((graywallbitmap[i>>3]&pow2char[i&7]) && (j < 0 || (graywallbitmap[j>>3]&pow2char[j&7])))
+                graybitmap[i>>3] |= pow2char[i&7];
             else
-                graybitmap[i>>3] &= ~(1<<(i&7));
+                graybitmap[i>>3] &= ~pow2char[i&7];
         }
     }
 
@@ -1463,11 +1463,11 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
 #else
         if (alwaysshowgray)
             for (i=numwalls-1; i>=0; i--)
-                if (graybitmap[i>>3]&(1<<(i&7)))
+                if (graybitmap[i>>3]&pow2char[i&7])
                     editorDraw2dWall(i, posxe, posye, posze, zoome, 1+2);
 
         for (i=numwalls-1; i>=0; i--)
-            if ((graybitmap[i>>3]&(1<<(i&7)))==0)
+            if ((graybitmap[i>>3]&pow2char[i&7])==0)
                 editorDraw2dWall(i, posxe, posye, posze, zoome, 2);
 #endif
     }
@@ -1526,8 +1526,8 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
             int32_t j = m32_wallsprite[i];
             if (j<MAXWALLS)
             {
-                if (alwaysshowgray || !(graybitmap[j>>3]&(1<<(j&7))))
-                    editorDraw2dWall(j, posxe, posye, posze, zoome, !!(graybitmap[j>>3]&(1<<(j&7))));
+                if (alwaysshowgray || !(graybitmap[j>>3]&pow2char[j&7]))
+                    editorDraw2dWall(j, posxe, posye, posze, zoome, !!(graybitmap[j>>3]&pow2char[j&7]));
             }
             else
             {

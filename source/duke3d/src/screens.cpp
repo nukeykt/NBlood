@@ -54,7 +54,7 @@ static void G_HandleEventsWhileNoInput(void)
 {
     I_ClearAllInput();
 
-    while (!I_CheckAllInput())
+    while (!I_GeneralTrigger())
         G_HandleAsync();
 
     I_ClearAllInput();
@@ -67,7 +67,7 @@ static int32_t G_PlaySoundWhileNoInput(int32_t soundnum)
     while (S_CheckSoundPlaying(soundnum))
     {
         G_HandleAsync();
-        if (I_CheckAllInput())
+        if (I_GeneralTrigger())
         {
             I_ClearAllInput();
             return 1;
@@ -339,7 +339,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     //Draw red lines
     for (i=numsectors-1; i>=0; i--)
     {
-        if (!(show2dsector[i>>3]&(1<<(i&7)))) continue;
+        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
 
         startwall = sector[i].wallptr;
         endwall = sector[i].wallptr + sector[i].wallnum;
@@ -355,7 +355,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
             if (sector[wal->nextsector].ceilingz == z1 && sector[wal->nextsector].floorz == z2)
                     if (((wal->cstat|wall[wal->nextwall].cstat)&(16+32)) == 0) continue;
 
-            if (!(show2dsector[wal->nextsector>>3]&(1<<(wal->nextsector&7))))
+            if (!(show2dsector[wal->nextsector>>3]&pow2char[wal->nextsector&7]))
                 col = editorcolors[7];
             else continue;
 
@@ -378,9 +378,9 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
     //Draw sprites
     k = g_player[screenpeek].ps->i;
-    for (i=numsectors-1; i>=0; i--)
+    if (!FURY) for (i=numsectors-1; i>=0; i--)
     {
-        if (!(show2dsector[i>>3]&(1<<(i&7)))) continue;
+        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
         for (j=headspritesect[i]; j>=0; j=nextspritesect[j])
         {
             spr = &sprite[j];
@@ -526,7 +526,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     //Draw white lines
     for (i=numsectors-1; i>=0; i--)
     {
-        if (!(show2dsector[i>>3]&(1<<(i&7)))) continue;
+        if (!(show2dsector[i>>3]&pow2char[i&7])) continue;
 
         startwall = sector[i].wallptr;
         endwall = sector[i].wallptr + sector[i].wallnum;
@@ -1013,7 +1013,7 @@ void G_DisplayRest(int32_t smoothratio)
     {
         const walltype *wal = &wall[sector[i].wallptr];
 
-        show2dsector[i>>3] |= (1<<(i&7));
+        show2dsector[i>>3] |= pow2char[i&7];
         for (j=sector[i].wallnum; j>0; j--, wal++)
         {
             i = wal->nextsector;
@@ -1022,7 +1022,7 @@ void G_DisplayRest(int32_t smoothratio)
             if (wall[wal->nextwall].cstat&0x0071) continue;
             if (sector[i].lotag == 32767) continue;
             if (sector[i].ceilingz >= sector[i].floorz) continue;
-            show2dsector[i>>3] |= (1<<(i&7));
+            show2dsector[i>>3] |= pow2char[i&7];
         }
     }
 
@@ -1118,9 +1118,12 @@ void G_DisplayRest(int32_t smoothratio)
             if (textret == 0 && ud.overhead_on == 2)
             {
                 const int32_t a = (ud.screen_size > 0) ? 147 : 179;
-                if (!(G_GetLogoFlags() & LOGO_HIDEEPISODE) && !G_HaveUserMap())
+                char const * levelname = g_mapInfo[ud.volume_number*MAXLEVELS + ud.level_number].name;
+                if (G_HaveUserMap())
+                    levelname = boardfilename;
+                else if (!(G_GetLogoFlags() & LOGO_HIDEEPISODE))
                     minitext(5, a+6, g_volumeNames[ud.volume_number], 0, 2+8+16+256);
-                minitext(5, a+6+6, g_mapInfo[ud.volume_number*MAXLEVELS + ud.level_number].name, 0, 2+8+16+256);
+                minitext(5, a+6+6, levelname, 0, 2+8+16+256);
             }
         }
     }
@@ -1405,6 +1408,7 @@ void fadepal(int32_t r, int32_t g, int32_t b, int32_t start, int32_t end, int32_
 {
     if (ud.screenfade == 0)
       return;
+
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
         G_FadePalette(r, g, b, end);
@@ -1414,15 +1418,14 @@ void fadepal(int32_t r, int32_t g, int32_t b, int32_t start, int32_t end, int32_
     // (end-start)/step + 1 iterations
     do
     {
-        if (KB_KeyPressed(sc_Space))
+        if (I_GeneralTrigger())
         {
-            KB_ClearKeyDown(sc_Space);
+            I_ClearAllInput();
             videoFadePalette(r, g, b, end);  // have to set to end fade value if we break!
             return;
         }
 
         G_FadePalette(r, g, b, start);
-
         start += step;
     } while (start != end+step);
 }
@@ -1432,6 +1435,7 @@ static void fadepaltile(int32_t r, int32_t g, int32_t b, int32_t start, int32_t 
 {
     if (ud.screenfade == 0)
       return;
+
     // STEP must evenly divide END-START
     Bassert(klabs(end-start)%step == 0);
 
@@ -1440,18 +1444,15 @@ static void fadepaltile(int32_t r, int32_t g, int32_t b, int32_t start, int32_t 
     // (end-start)/step + 1 iterations
     do
     {
-#ifdef __ANDROID__ //Needed for N7 2013 to stop corruption while fading video
-        videoClearViewableArea(0);
-#endif
-        if (KB_KeyPressed(sc_Space))
+        if (I_GeneralTrigger())
         {
-            KB_ClearKeyDown(sc_Space);
+            I_ClearAllInput();
             videoFadePalette(r, g, b, end);  // have to set to end fade value if we break!
             return;
         }
+
         rotatesprite_fs(160<<16, 100<<16, 65536L, 0, tile, 0, 0, 2+8+64+BGSTRETCH);
         G_FadePalette(r, g, b, start);
-
         start += step;
     } while (start != end+step);
 }
@@ -1478,7 +1479,7 @@ void gameDisplayTENScreen()
     totalclock = 0;
     rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, TENSCREEN, 0, 0, 2 + 8 + 64 + BGSTRETCH);
     fadepaltile(0, 0, 0, 252, 0, -28, TENSCREEN);
-    while (!I_CheckAllInput() && totalclock < 2400)
+    while (!I_GeneralTrigger() && totalclock < 2400)
         G_HandleAsync();
 
     fadepaltile(0, 0, 0, 0, 252, 28, TENSCREEN);
@@ -1501,14 +1502,14 @@ void gameDisplaySharewareScreens()
     I_ClearAllInput();
     rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, 3291, 0, 0, 2 + 8 + 64 + BGSTRETCH);
     fadepaltile(0, 0, 0, 252, 0, -28, 3291);
-    while (!I_CheckAllInput())
+    while (!I_GeneralTrigger())
         G_HandleAsync();
 
     fadepaltile(0, 0, 0, 0, 252, 28, 3291);
     I_ClearAllInput();
     rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, 3290, 0, 0, 2 + 8 + 64 + BGSTRETCH);
     fadepaltile(0, 0, 0, 252, 0, -28, 3290);
-    while (!I_CheckAllInput())
+    while (!I_GeneralTrigger())
         G_HandleAsync();
 
 #ifdef __ANDROID__
@@ -1530,7 +1531,7 @@ void G_DisplayExtraScreens(void)
 
 void gameDisplay3DRScreen()
 {
-    if (!I_CheckAllInput() && g_noLogoAnim == 0)
+    if (!I_GeneralTrigger() && g_noLogoAnim == 0)
     {
         buildvfs_kfd i;
         Net_GetPackets();
@@ -1559,7 +1560,7 @@ void gameDisplay3DRScreen()
             fadepaltile(0, 0, 0, 252, 0, -28, DREALMS);
             totalclock = 0;
 
-            while (totalclock < (120 * 7) && !I_CheckAllInput())
+            while (totalclock < (120 * 7) && !I_GeneralTrigger())
             {
                 if (G_FPSLimit())
                 {
@@ -1600,7 +1601,7 @@ void gameDisplayTitleScreen(void)
 #ifndef EDUKE32_SIMPLE_MENU
     totalclock < (860 + 120) &&
 #endif
-    !I_CheckAllInput())
+    !I_GeneralTrigger())
     {
         if (G_FPSLimit())
         {
@@ -1721,7 +1722,7 @@ void G_DisplayLogo(void)
 #endif
             (logoflags & LOGO_PLAYANIM))
         {
-            if (!I_CheckAllInput() && g_noLogoAnim == 0)
+            if (!I_GeneralTrigger() && g_noLogoAnim == 0)
             {
                 Net_GetPackets();
                 Anim_Play("logo.anm");
@@ -1891,7 +1892,7 @@ static void G_BonusCutscenes(void)
 
                 G_HandleAsync();
 
-                if (I_CheckAllInput()) break;
+                if (I_GeneralTrigger()) break;
             } while (1);
 
             fadepal(0, 0, 0, 0, 252, 4);
@@ -2059,7 +2060,7 @@ static void G_BonusCutscenes(void)
 
         Anim_Play("RADLOGO.ANM");
 
-        if (ud.lockout == 0 && !I_CheckAllInput())
+        if (ud.lockout == 0 && !I_GeneralTrigger())
         {
             if (G_PlaySoundWhileNoInput(ENDSEQVOL3SND5)) goto ENDANM;
             if (G_PlaySoundWhileNoInput(ENDSEQVOL3SND6)) goto ENDANM;
@@ -2073,7 +2074,7 @@ static void G_BonusCutscenes(void)
         totalclock = 0;
         if (PLUTOPAK || (G_GetLogoFlags() & LOGO_NODUKETEAMPIC))
         {
-            while (totalclock < 120 && !I_CheckAllInput())
+            while (totalclock < 120 && !I_GeneralTrigger())
                 G_HandleAsync();
 
             I_ClearAllInput();

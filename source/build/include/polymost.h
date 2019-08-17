@@ -21,6 +21,7 @@ extern double gxyaspect;
 extern float grhalfxdown10x;
 extern float gcosang, gsinang, gcosang2, gsinang2;
 extern float gchang, gshang, gctang, gstang, gvisibility;
+extern float gvrcorrection;
 
 struct glfiltermodes {
     const char *name;
@@ -68,6 +69,8 @@ void polymost_activeTexture(GLenum texture);
 void polymost_bindTexture(GLenum target, uint32_t textureID);
 void polymost_updatePalette(void);
 void useShaderProgram(uint32_t shaderID);
+
+float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
 //POGOTODO: these wrappers won't be needed down the line -- remove them once proper draw call organization is finished
 #undef glActiveTexture

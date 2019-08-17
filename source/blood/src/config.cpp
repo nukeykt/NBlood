@@ -70,6 +70,7 @@ int32_t JoystickAnalogueSaturate[MAXJOYAXES];
 uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 int32_t scripthandle;
 int32_t setupread;
+int32_t MusicRestartsOnLoadToggle;
 int32_t configversion;
 int32_t CheckForUpdates;
 int32_t LastUpdateCheck;
@@ -107,6 +108,7 @@ bool gInfiniteAmmo;
 bool gFullMap;
 int32_t gUpscaleFactor;
 int32_t gLevelStats;
+int32_t gPowerupDuration;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
@@ -315,6 +317,7 @@ void CONFIG_SetDefaults(void)
     MouseBias       = 0;
     MouseDeadZone   = 0;
     MusicToggle     = 1;
+    MusicRestartsOnLoadToggle = 0;
     MusicVolume     = 195;
     NumBits         = 16;
     NumChannels     = 2;
@@ -338,6 +341,7 @@ void CONFIG_SetDefaults(void)
     //ud.hudontop               = 0;
     //ud.idplayers              = 1;
     gLevelStats = 0;
+    gPowerupDuration = 1;
     //ud.lockout                = 0;
     //ud.m_marker               = 1;
     //ud.maxautosaves           = 5;
@@ -812,7 +816,7 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
 
         OSD_WriteAliases(fp);
 
-        if (g_crosshairSum != -1 && g_crosshairSum != DefaultCrosshairColors.r+(DefaultCrosshairColors.g<<8)+(DefaultCrosshairColors.b<<16))
+        if (g_isAlterDefaultCrosshair)
             Bfprintf(fp, "crosshaircolor %d %d %d\n", CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
 
         OSD_WriteCvars(fp);

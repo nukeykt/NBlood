@@ -1150,6 +1150,10 @@ const char *joyGetName(int32_t what, int32_t num)
     }
 }
 
+void joyScanDevices()
+{
+}
+
 //
 // AcquireInputDevices() -- (un)acquires the input devices
 //
@@ -1364,132 +1368,6 @@ static const char *GetDInputError(HRESULT code)
         break;
     }
     return "Unknown error";
-}
-
-
-
-
-//-------------------------------------------------------------------------------------------------
-//  TIMER
-//=================================================================================================
-
-static int32_t timerlastsample=0;
-int32_t timerticspersec=0;
-static double msperu64tick = 0;
-static void (*usertimercallback)(void) = NULL;
-
-//  This timer stuff is all Ken's idea.
-
-//
-// installusertimercallback() -- set up a callback function to be called when the timer is fired
-//
-void (*timerSetCallback(void (*callback)(void)))(void)
-{
-    void (*oldtimercallback)(void);
-
-    oldtimercallback = usertimercallback;
-    usertimercallback = callback;
-
-    return oldtimercallback;
-}
-
-
-//
-// inittimer() -- initialize timer
-//
-int32_t timerInit(int32_t tickspersecond)
-{
-    int64_t t;
-
-    if (win_timerfreq) return 0;	// already installed
-
-    //    initprintf("Initializing timer\n");
-
-    t = win_inittimer();
-    if (t < 0)
-        return t;
-
-    timerticspersec = tickspersecond;
-    QueryPerformanceCounter((LARGE_INTEGER *)&t);
-    timerlastsample = (int32_t)(t*timerticspersec / win_timerfreq);
-
-    usertimercallback = NULL;
-
-    msperu64tick = 1000.0 / (double)timerGetFreqU64();
-
-    return 0;
-}
-
-//
-// uninittimer() -- shut down timer
-//
-void timerUninit(void)
-{
-    if (!win_timerfreq) return;
-
-    win_timerfreq=0;
-    timerticspersec = 0;
-
-    msperu64tick = 0;
-}
-
-//
-// sampletimer() -- update totalclock
-//
-void timerUpdate(void)
-{
-    int64_t i;
-    int32_t n;
-
-    if (!win_timerfreq) return;
-
-    QueryPerformanceCounter((LARGE_INTEGER *)&i);
-    n = (int32_t)((i*timerticspersec / win_timerfreq) - timerlastsample);
-
-    if (n <= 0) return;
-
-    totalclock += n;
-    timerlastsample += n;
-
-    if (usertimercallback) for (; n>0; n--) usertimercallback();
-}
-
-
-//
-// getticks() -- returns the windows ticks count
-//
-uint32_t timerGetTicks(void)
-{
-    int64_t i;
-    if (win_timerfreq == 0) return 0;
-    QueryPerformanceCounter((LARGE_INTEGER *)&i);
-    return (uint32_t)(i*longlong(1000)/win_timerfreq);
-}
-
-// high-resolution timers for profiling
-uint64_t timerGetTicksU64(void)
-{
-    return win_getu64ticks();
-}
-
-uint64_t timerGetFreqU64(void)
-{
-    return win_timerfreq;
-}
-
-// Returns the time since an unspecified starting time in milliseconds.
-ATTRIBUTE((flatten))
-double timerGetHiTicks(void)
-{
-    return (double)timerGetTicksU64() * msperu64tick;
-}
-
-//
-// gettimerfreq() -- returns the number of ticks per second the timer is configured to generate
-//
-int32_t timerGetFreq(void)
-{
-    return timerticspersec;
 }
 
 
@@ -1750,8 +1628,8 @@ static int sortmodes(const void *a_, const void *b_)
 {
     int32_t x;
 
-    const struct validmode_t *a = (const struct validmode_t *)a_;
-    const struct validmode_t *b = (const struct validmode_t *)b_;
+    const struct validmode_t *a = (const struct validmode_t *)b_;
+    const struct validmode_t *b = (const struct validmode_t *)a_;
 
     if ((x = a->fs   - b->fs)   != 0) return x;
     if ((x = a->bpp  - b->bpp)  != 0) return x;
@@ -1851,11 +1729,37 @@ void videoBeginDrawing(void)
     if (lockcount++ > 0)
         return;		// already locked
 
-    if (offscreenrendering) return;
+    static intptr_t backupFrameplace = 0;
 
     if (inpreparemirror)
     {
+        //POGO: if we are offscreenrendering and we need to render a mirror
+        //      or we are rendering a mirror and we start offscreenrendering,
+        //      backup our offscreen target so we can restore it later
+        //      (but only allow one level deep,
+        //       i.e. no viewscreen showing a camera showing a mirror that reflects the same viewscreen and recursing)
+        if (offscreenrendering)
+        {
+            if (!backupFrameplace)
+                backupFrameplace = frameplace;
+            else if (frameplace != (intptr_t)mirrorBuffer &&
+                     frameplace != backupFrameplace)
+                return;
+        }
+
         frameplace = (intptr_t)mirrorBuffer;
+
+        if (offscreenrendering)
+            return;
+    }
+    else if (offscreenrendering)
+    {
+        if (backupFrameplace)
+        {
+            frameplace = backupFrameplace;
+            backupFrameplace = 0;
+        }
+        return;
     }
     else
     {

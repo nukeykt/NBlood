@@ -125,7 +125,9 @@ void levelSetupOptions(int nEpisode, int nLevel);
 void levelLoadMapInfo(IniFile *pIni, LEVELINFO *pLevelInfo, const char *pzSection);
 void levelLoadDefaults(void);
 void levelAddUserMap(const char *pzMap);
+// EndingA is normal ending, EndingB is secret level
 void levelGetNextLevels(int nEpisode, int nLevel, int *pnEndingA, int *pnEndingB);
+// arg: 0 is normal exit, 1 is secret level
 void levelEndLevel(int arg);
 
 // By NoOne: custom level selection via numbered command which sent to TX ID 6.

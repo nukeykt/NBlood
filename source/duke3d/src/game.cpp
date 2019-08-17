@@ -94,7 +94,9 @@ int32_t g_BenchmarkMode = BENCHMARKMODE_OFF;
 
 int32_t g_Debug = 0;
 
-const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "NAM.RTS", "NAPALM.RTS", "WW2GI.RTS" };
+#ifndef EDUKE32_STANDALONE
+static const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "NAM.RTS", "NAPALM.RTS", "WW2GI.RTS" };
+#endif
 
 int32_t g_Shareware = 0;
 
@@ -131,6 +133,7 @@ void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); };  // needed for 
 
 const char *G_DefaultRtsFile(void)
 {
+#ifndef EDUKE32_STANDALONE
     if (DUKE)
         return defaultrtsfilename[GAME_DUKE];
     else if (WW2GI)
@@ -149,8 +152,9 @@ const char *G_DefaultRtsFile(void)
         else
             return defaultrtsfilename[GAME_NAM];
     }
+#endif
 
-    return defaultrtsfilename[0];
+    return "";
 }
 
 enum gametokens
@@ -183,6 +187,12 @@ enum gametokens
     T_FORCEFILTER,
     T_FORCENOFILTER,
     T_TEXTUREFILTER,
+    T_NEWGAMECHOICES,
+    T_CHOICE,
+    T_NAME,
+    T_LOCKED,
+    T_HIDDEN,
+    T_USERCONTENT,
 };
 
 void G_HandleSpecialKeys(void)
@@ -190,7 +200,7 @@ void G_HandleSpecialKeys(void)
     auto &myplayer = *g_player[myconnectindex].ps;
 
     // we need CONTROL_GetInput in order to pick up joystick button presses
-    if (CONTROL_Started && !(myplayer.gm & MODE_GAME))
+    if (CONTROL_Started && (!(myplayer.gm & MODE_GAME) || (myplayer.gm & MODE_MENU)))
     {
         ControlInfo noshareinfo;
         CONTROL_GetInput(&noshareinfo);
@@ -571,7 +581,7 @@ static void G_SE40(int32_t smoothratio)
 
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz, int32_t smoothratio)
 {
-    if ((gotpic[MIRROR>>3]&(1<<(MIRROR&7)))
+    if ((gotpic[MIRROR>>3]&pow2char[MIRROR&7])
 #ifdef POLYMER
         && (videoGetRenderMode() != REND_POLYMER)
 #endif
@@ -581,7 +591,7 @@ void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz
         {
             // NOTE: We can have g_mirrorCount==0 but gotpic'd MIRROR,
             // for example in LNGA2.
-            gotpic[MIRROR>>3] &= ~(1<<(MIRROR&7));
+            gotpic[MIRROR>>3] &= ~pow2char[MIRROR&7];
 
             //give scripts the chance to reset gotpics for effects that run in EVENT_DISPLAYROOMS
             //EVENT_RESETGOTPICS must be called after the last call to EVENT_DISPLAYROOMS in a frame, but before any engine-side renderDrawRoomsQ16
@@ -700,7 +710,7 @@ static void G_ClearGotMirror()
         // XXX: fix the sequence of setting/clearing this bit. Right now,
         // we always draw one frame without drawing the mirror, after which
         // the bit gets set and drawn subsequently.
-        gotpic[MIRROR>>3] &= ~(1<<(MIRROR&7));
+        gotpic[MIRROR>>3] &= ~pow2char[MIRROR&7];
     }
 }
 
@@ -765,7 +775,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
     VM_OnEvent(EVENT_DISPLAYSTART, pPlayer->i, playerNum);
 
-    if (ud.overhead_on == 2 || ud.show_help || (pPlayer->cursectnum == -1 && videoGetRenderMode() != REND_CLASSIC))
+    if ((ud.overhead_on == 2 && !automapping) || ud.show_help || (pPlayer->cursectnum == -1 && videoGetRenderMode() != REND_CLASSIC))
         return;
 
     if (r_usenewaspect)
@@ -1080,7 +1090,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
             dr_viewingrange = viewingrange;
             dr_yxaspect = yxaspect;
 #ifdef DEBUG_MIRRORS_ONLY
-            gotpic[MIRROR>>3] |= (1<<(MIRROR&7));
+            gotpic[MIRROR>>3] |= pow2char[MIRROR&7];
 #else
             yax_preparedrawrooms();
             renderDrawRoomsQ16(CAMERA(pos.x),CAMERA(pos.y),CAMERA(pos.z),CAMERA(q16ang),CAMERA(q16horiz),CAMERA(sect));
@@ -1154,7 +1164,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 tiltZoom >>= tiltcs;  // JBF 20030807
 
                 rotatesprite_win(160 << 16, 100 << 16, tiltZoom, tang + 512, TILE_TILT, 0, 0, 4 + 2 + 64 + 1024);
-                walock[TILE_TILT] = 199;
+                walock[TILE_TILT] = 1;
             }
         }
     }
@@ -1453,8 +1463,7 @@ int A_Spawn(int spriteNum, int tileNum)
 
         a.floorz   = sector[s.sectnum].floorz;
         a.ceilingz = sector[s.sectnum].ceilingz;
-
-        a.stayput = a.extra = -1;
+        a.stayput  = a.extra = -1;
 
 #ifdef POLYMER
         a.lightId = -1;
@@ -1506,6 +1515,7 @@ int A_Spawn(int spriteNum, int tileNum)
 
         if (!G_InitActor(newSprite, s.picnum, 0))
             T2(newSprite) = T5(newSprite) = 0;  // AC_MOVE_ID, AC_ACTION_ID
+        else A_GetZLimits(newSprite);
     }
 
     pSprite = &sprite[newSprite];
@@ -1631,7 +1641,7 @@ int A_Spawn(int spriteNum, int tileNum)
         case WATERSPLASH2__STATIC:
             if (spriteNum >= 0)
             {
-                setsprite(newSprite, (vec3_t *)&sprite[spriteNum]);
+                setsprite(newSprite, &sprite[spriteNum].pos);
                 pSprite->xrepeat = pSprite->yrepeat = 8+(krand()&7);
             }
             else pSprite->xrepeat = pSprite->yrepeat = 16+(krand()&15);
@@ -1932,7 +1942,7 @@ int A_Spawn(int spriteNum, int tileNum)
             pSprite->z = sector[sectNum].ceilingz+(48<<8);
             T5(newSprite) = tempwallptr;
 
-            g_origins[tempwallptr] = pSprite->pos_as_vec2;
+            g_origins[tempwallptr] = pSprite->pos.vec2;
             g_origins[tempwallptr+2].x = pSprite->z;
 
 
@@ -1951,11 +1961,11 @@ int A_Spawn(int spriteNum, int tileNum)
                         sprite[findSprite].xrepeat = 48;
                         sprite[findSprite].yrepeat = 128;
 
-                        g_origins[tempwallptr + 1] = sprite[findSprite].pos_as_vec2;
+                        g_origins[tempwallptr + 1] = sprite[findSprite].pos.vec2;
                         sprite[findSprite].pos     = pSprite->pos;
                         sprite[findSprite].shade   = pSprite->shade;
 
-                        setsprite(findSprite, (vec3_t *) &sprite[findSprite]);
+                        setsprite(findSprite, &sprite[findSprite].pos);
                         break;
                     }
                     findSprite = nextspritestat[findSprite];
@@ -3864,7 +3874,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
                 t->xrepeat += 10;
                 t->yrepeat += 9;
             }
-            else if (g_curViewscreen == i && display_mirror != 3 && waloff[viewscrTile] && walock[viewscrTile] > 200)
+            else if (g_curViewscreen == i && display_mirror != 3 && waloff[viewscrTile])
             {
                 // this exposes a sprite sorting issue which needs to be debugged further...
 #if 0
@@ -3957,7 +3967,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
                     targetang = clamp(targetang, -128, 128);
                     t->ang += targetang;
                 }
-                else
+                else if (!display_mirror)
                     t->cstat |= 2;
             }
 
@@ -4751,6 +4761,7 @@ void G_HandleLocalKeys(void)
                 {
                     const unsigned int maxi = VOLUMEALL ? MUS_FIRST_SPECIAL : 6;
 
+                    unsigned int const oldMusicIndex = g_musicIndex;
                     unsigned int MyMusicIndex = g_musicIndex;
                     do
                     {
@@ -4758,7 +4769,7 @@ void G_HandleLocalKeys(void)
                         if (MyMusicIndex >= maxi)
                             MyMusicIndex = 0;
                     }
-                    while (S_TryPlayLevelMusic(MyMusicIndex));
+                    while (S_TryPlayLevelMusic(MyMusicIndex) && MyMusicIndex != oldMusicIndex);
 
                     G_PrintCurrentMusic();
 
@@ -4951,9 +4962,9 @@ FAKE_F3:
             }
         }
 
-        if (KB_UnBoundKeyPressed(sc_F7))
+        if (BUTTON(gamefunc_Third_Person_View))
         {
-            KB_ClearKeyDown(sc_F7);
+            CONTROL_ClearButton(gamefunc_Third_Person_View);
 
             myplayer.over_shoulder_on = !myplayer.over_shoulder_on;
 
@@ -5050,6 +5061,12 @@ FAKE_F3:
         CONTROL_ClearButton(gamefunc_AutoRun);
         ud.auto_run = 1-ud.auto_run;
         P_DoQuote(QUOTE_RUN_MODE_OFF + ud.auto_run, &myplayer);
+    }
+
+    if (BUTTON(gamefunc_Crouch_Toggle))
+    {
+        CONTROL_ClearButton(gamefunc_Crouch_Toggle);
+        myplayer.crouch_toggle = !myplayer.crouch_toggle;
     }
 
     if (BUTTON(gamefunc_Map))
@@ -5288,6 +5305,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "animsounds",      T_ANIMSOUNDS       },
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
+        { "newgamechoices",  T_NEWGAMECHOICES   },
     };
 
     static const tokenlist soundTokens[] =
@@ -5310,6 +5328,25 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "forcefilter",   T_FORCEFILTER },
         { "forcenofilter", T_FORCENOFILTER },
         { "texturefilter", T_TEXTUREFILTER },
+    };
+
+    static const tokenlist newGameTokens[] =
+    {
+        { "choice",        T_CHOICE },
+    };
+    static const tokenlist newGameChoiceTokens[] =
+    {
+        { "name",          T_NAME },
+        { "locked",        T_LOCKED },
+        { "hidden",        T_HIDDEN },
+        { "choice",        T_CHOICE },
+        { "usercontent",   T_USERCONTENT },
+    };
+    static const tokenlist newGameSubchoiceTokens[] =
+    {
+        { "name",          T_NAME },
+        { "locked",        T_LOCKED },
+        { "hidden",        T_HIDDEN },
     };
 
     do
@@ -5467,7 +5504,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                 }
             }
             else
-                pScript->textptr = animEnd;
+                pScript->textptr = animEnd+1;
         }
         break;
         case T_ANIMSOUNDS:
@@ -5486,7 +5523,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
             if (firstPass)
             {
-                pScript->textptr = animSoundsEnd;
+                pScript->textptr = animSoundsEnd+1;
                 break;
             }
 
@@ -5554,6 +5591,130 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         }
         break;
         case T_GLOBALGAMEFLAGS: scriptfile_getnumber(pScript, &duke3d_globalflags); break;
+        case T_NEWGAMECHOICES:
+        {
+            char * newGameChoicesEnd;
+            if (scriptfile_getbraces(pScript,&newGameChoicesEnd))
+                break;
+            if (firstPass)
+            {
+                pScript->textptr = newGameChoicesEnd+1;
+                break;
+            }
+
+            while (pScript->textptr < newGameChoicesEnd)
+            {
+                switch (getatoken(pScript, newGameTokens, ARRAY_SIZE(newGameTokens)))
+                {
+                    case T_CHOICE:
+                    {
+                        char * choicePtr = pScript->ltextptr;
+                        char * choiceEnd;
+                        int32_t choiceID;
+                        if (scriptfile_getsymbol(pScript,&choiceID))
+                            break;
+                        if (scriptfile_getbraces(pScript,&choiceEnd))
+                            break;
+
+                        if ((unsigned)choiceID >= MAXMENUGAMEPLAYENTRIES)
+                        {
+                            initprintf("Error: Maximum choices exceeded near line %s:%d\n",
+                                pScript->filename, scriptfile_getlinum(pScript, choicePtr));
+                            pScript->textptr = choiceEnd+1;
+                        }
+
+                        MenuGameplayStemEntry & stem = g_MenuGameplayEntries[choiceID];
+                        stem = MenuGameplayStemEntry{};
+                        MenuGameplayEntry & entry = stem.entry;
+
+                        while (pScript->textptr < choiceEnd)
+                        {
+                            switch (getatoken(pScript, newGameChoiceTokens, ARRAY_SIZE(newGameChoiceTokens)))
+                            {
+                                case T_CHOICE:
+                                {
+                                    char * subChoicePtr = pScript->ltextptr;
+                                    char * subChoiceEnd;
+                                    int32_t subChoiceID;
+                                    if (scriptfile_getsymbol(pScript,&subChoiceID))
+                                        break;
+                                    if (scriptfile_getbraces(pScript,&subChoiceEnd))
+                                        break;
+
+                                    if ((unsigned)subChoiceID >= MAXMENUGAMEPLAYENTRIES)
+                                    {
+                                        initprintf("Error: Maximum subchoices exceeded near line %s:%d\n",
+                                            pScript->filename, scriptfile_getlinum(pScript, subChoicePtr));
+                                        pScript->textptr = subChoiceEnd+1;
+                                    }
+
+                                    MenuGameplayEntry & subentry = stem.subentries[subChoiceID];
+                                    subentry = MenuGameplayEntry{};
+
+                                    while (pScript->textptr < subChoiceEnd)
+                                    {
+                                        switch (getatoken(pScript, newGameSubchoiceTokens, ARRAY_SIZE(newGameSubchoiceTokens)))
+                                        {
+                                            case T_NAME:
+                                            {
+                                                char *name = NULL;
+                                                if (scriptfile_getstring(pScript, &name))
+                                                    break;
+
+                                                memset(subentry.name, 0, ARRAY_SIZE(subentry.name));
+                                                strncpy(subentry.name, name, ARRAY_SIZE(subentry.name)-1);
+                                                break;
+                                            }
+                                            case T_LOCKED:
+                                            {
+                                                subentry.flags |= MGE_Locked;
+                                                break;
+                                            }
+                                            case T_HIDDEN:
+                                            {
+                                                subentry.flags |= MGE_Hidden;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    break;
+                                }
+                                case T_NAME:
+                                {
+                                    char *name = NULL;
+                                    if (scriptfile_getstring(pScript, &name))
+                                        break;
+
+                                    memset(entry.name, 0, ARRAY_SIZE(entry.name));
+                                    strncpy(entry.name, name, ARRAY_SIZE(entry.name)-1);
+                                    break;
+                                }
+                                case T_LOCKED:
+                                {
+                                    entry.flags |= MGE_Locked;
+                                    break;
+                                }
+                                case T_HIDDEN:
+                                {
+                                    entry.flags |= MGE_Hidden;
+                                    break;
+                                }
+                                case T_USERCONTENT:
+                                {
+                                    entry.flags |= MGE_UserContent;
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            break;
+        }
         case T_EOF: return 0;
         default: break;
         }
@@ -5872,10 +6033,10 @@ static void G_HandleMemErr(int32_t lineNum, const char *fileName, const char *fu
 
 static void G_FatalEngineError(void)
 {
-    wm_msgbox("Build Engine Initialization Error",
-              "There was a problem initializing the Build engine: %s", engineerrstr);
+    wm_msgbox("Fatal Engine Initialization Error",
+              "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
     G_Cleanup();
-    ERRprintf("G_Startup: There was a problem initializing the Build engine: %s\n", engineerrstr);
+    ERRprintf("G_Startup: There was a problem initializing the engine: %s\n", engineerrstr);
     exit(6);
 }
 
@@ -6089,7 +6250,7 @@ static int G_EndOfLevel(void)
         // Clear potentially loaded per-map ART only after the bonus screens.
         artClearMapArt();
 
-        if (ud.eog)
+        if (ud.eog || G_HaveUserMap())
         {
             ud.eog = 0;
             if ((!g_netServer && ud.multimode < 2))
@@ -6177,30 +6338,26 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    static double nextPageDelay = g_frameDelay;
-    static uint64_t lastFrameTicks = timerGetTicksU64() - (uint64_t) g_frameDelay;
-    int frameWaiting = 0;
+    if (!r_maxfps)
+        return 1;
 
-    uint64_t const frameTicks = timerGetTicksU64();
-    uint64_t elapsedTime = frameTicks-lastFrameTicks;
+    static double nextPageDelay;
+    static double lastFrameTicks;
 
-    if (!r_maxfps || elapsedTime >= (uint64_t) nextPageDelay)
+    double const frameTicks  = timerGetTicksU64();
+    double const elapsedTime = frameTicks-lastFrameTicks;
+
+    if (elapsedTime >= nextPageDelay)
     {
-        if (elapsedTime >= (uint64_t) (nextPageDelay + g_frameDelay))
-        {
-            //If we missed a frame, reset any cumulated remainder from rendering frames early
-            nextPageDelay = g_frameDelay;
-        }
-        else
-        {
-            nextPageDelay += g_frameDelay - elapsedTime;
-        }
+        if (elapsedTime <= nextPageDelay+g_frameDelay)
+            nextPageDelay += g_frameDelay-elapsedTime;
 
         lastFrameTicks = frameTicks;
-        ++frameWaiting;
+
+        return 1;
     }
 
-    return frameWaiting;
+    return 0;
 }
 
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
@@ -6216,12 +6373,18 @@ int app_main(int argc, char const * const * argv)
 #endif
 
 #ifdef _WIN32
+#ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
     {
-        if (!wm_ynbox(APPNAME, "Another Build game is currently running. "
-                      "Do you wish to continue starting this copy?"))
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
             return 3;
     }
+#endif
 
     backgroundidle = 0;
 
@@ -6454,8 +6617,6 @@ int app_main(int argc, char const * const * argv)
         i = 1-i;
     }
 
-    if (quitevent) return 4;
-
     Anim_Init();
 
     const char *defsfile = G_DefFile();
@@ -6563,6 +6724,8 @@ int app_main(int argc, char const * const * argv)
     CONFIG_SetDefaultKeys(keydefaults, true);
 
     system_getcvars();
+
+    if (quitevent) return 4;
 
     if (g_networkMode != NET_DEDICATED_SERVER)
     {
@@ -7243,4 +7406,6 @@ static void G_SetupGameButtons(void)
     CONTROL_DefineFlag(gamefunc_Quick_Save, FALSE);
     CONTROL_DefineFlag(gamefunc_Quick_Load, FALSE);
     CONTROL_DefineFlag(gamefunc_Alt_Weapon,FALSE);
+    CONTROL_DefineFlag(gamefunc_Third_Person_View, FALSE);
+    CONTROL_DefineFlag(gamefunc_Crouch_Toggle, FALSE);
 }

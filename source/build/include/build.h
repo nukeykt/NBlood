@@ -222,8 +222,8 @@ static FORCE_INLINE CONSTEXPR int32_t yax_waltosecmask(int32_t const walclipmask
 void yax_preparedrawrooms(void);
 void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_t),
                    int16_t sectnum, int32_t didmirror, int32_t smoothr);
-# define YAX_SKIPSECTOR(i) if (graysectbitmap[(i)>>3]&(1<<((i)&7))) continue
-# define YAX_SKIPWALL(i) if (graywallbitmap[(i)>>3]&(1<<((i)&7))) continue
+# define YAX_SKIPSECTOR(i) if (graysectbitmap[(i)>>3]&pow2char[(i)&7]) continue
+# define YAX_SKIPWALL(i) if (graywallbitmap[(i)>>3]&pow2char[(i)&7]) continue
 #else
 # define yax_preparedrawrooms()
 # define yax_drawrooms(SpriteAnimFunc, sectnum, didmirror, smoothr)
@@ -525,6 +525,9 @@ static inline void inplace_vx_tweak_wall(walltypevx *vxwal, int32_t yaxp)
 
 #include "clip.h"
 
+int32_t getwalldist(vec2_t const &in, int const wallnum);
+int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -813,7 +816,6 @@ EXTERN char picsiz[MAXTILES];
 EXTERN char walock[MAXTILES];
 
 extern const char pow2char_[];
-static CONSTEXPR const char pow2char[8] = {1,2,4,8,16,32,64,128};
 static CONSTEXPR const int32_t pow2long[32] =
 {
     1, 2, 4, 8,
@@ -869,11 +871,10 @@ EXTERN int32_t windowpos, windowx, windowy;
     //   spritenum = 54;
     //   show2dsprite[spritenum>>3] &= ~(1<<(spritenum&7));
 
+EXTERN int automapping;
 EXTERN char show2dsector[(MAXSECTORS+7)>>3];
 EXTERN char show2dwall[(MAXWALLS+7)>>3];
 EXTERN char show2dsprite[(MAXSPRITES+7)>>3];
-
-EXTERN char wallcstat14[(MAXWALLS+7)>>3];
 
 // In the editor, gotpic is only referenced from inline assembly;
 // the compiler needs that hint or building with LTO will discard it.
@@ -894,6 +895,8 @@ EXTERN char *faketiledata[MAXTILES];
 EXTERN char spritecol2d[MAXTILES][2];
 EXTERN uint8_t tilecols[MAXTILES];
 
+EXTERN char editwall[(MAXWALLS+7)>>3];
+
 extern uint8_t vgapal16[4*256];
 
 extern uint32_t drawlinepat;
@@ -910,6 +913,7 @@ extern float debug1, debug2;
 
 extern int16_t tiletovox[MAXTILES];
 extern int32_t usevoxels, voxscale[MAXVOXELS];
+extern char g_haveVoxels;
 
 #ifdef USE_OPENGL
 extern int32_t usemodels, usehightile;
@@ -1175,9 +1179,9 @@ int32_t   cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1,
 int32_t   inside(int32_t x, int32_t y, int16_t sectnum);
 void   dragpoint(int16_t pointhighlight, int32_t dax, int32_t day, uint8_t flags);
 void   setfirstwall(int16_t sectnum, int16_t newfirstwall);
-int32_t try_facespr_intersect(uspriteptr_t const spr, const vec3_t *refpos,
+int32_t try_facespr_intersect(uspriteptr_t const spr, vec3_t const in,
                                      int32_t vx, int32_t vy, int32_t vz,
-                                     vec3_t *intp, int32_t strictly_smaller_than_p);
+                                     vec3_t * const intp, int32_t strictly_smaller_than_p);
 
 #define MAXUPDATESECTORDIST 1536
 #define INITIALUPDATESECTORDIST 256
@@ -1190,7 +1194,6 @@ void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, in
 
 int findwallbetweensectors(int sect1, int sect2);
 static FORCE_INLINE bool sectoradjacent(int sect1, int sect2) { return findwallbetweensectors(sect1, sect2) != -1; }
-int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out = nullptr);
 int32_t getsectordist(vec2_t const &in, int const sectnum, vec2_t * const out = nullptr);
 extern const int16_t *chsecptr_onextwall;
 int32_t checksectorpointer(int16_t i, int16_t sectnum);
@@ -1628,7 +1631,6 @@ extern int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, in
 extern void(*PolymostProcessVoxels_Callback)(void);
 #endif
 
-extern int32_t automapping;
 extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 extern int8_t voxreserve[(MAXVOXELS+7)>>3];
 

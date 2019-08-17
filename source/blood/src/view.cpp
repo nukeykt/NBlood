@@ -1160,6 +1160,69 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
 }
 
+#define kSBarNumberHealth 9220
+#define kSBarNumberAmmo 9230
+#define kSBarNumberInv 9240
+#define kSBarNumberArmor1 9250
+#define kSBarNumberArmor2 9260
+#define kSBarNumberArmor3 9270
+
+struct POWERUPDISPLAY
+{
+    int nTile;
+    float nScaleRatio;
+    int yOffset;
+    int remainingDuration;
+};
+
+void sortPowerUps(POWERUPDISPLAY* powerups) {
+    for (int i = 1; i < 5; i++)
+    {
+        for (int j = 0; j < 5-i; j++)
+        {
+            if (powerups[j].remainingDuration > powerups[j+1].remainingDuration)
+            {
+                POWERUPDISPLAY temp = powerups[j];
+                powerups[j] = powerups[j+1];
+                powerups[j+1] = temp;
+            }
+        }
+    }
+}
+
+void viewDrawPowerUps(PLAYER* pPlayer)
+{
+    if (!gPowerupDuration)
+        return;
+
+    const int nCloakOfInvisibility = 13;
+    const int nReflectiveShots = 24;
+    const int nDeathMask = 14; // invulnerability
+    const int nGunsAkimbo = 17;
+    const int nCloakOfShadow = 26; // does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
+
+    POWERUPDISPLAY powerups[5];
+    powerups[0] = { 896, 0.4f, 0, pPlayer->at202[nCloakOfInvisibility] };
+    powerups[1] = { 2428, 0.4f, 5, pPlayer->at202[nReflectiveShots] };
+    powerups[2] = { 825, 0.3f, 9, pPlayer->at202[nDeathMask] };
+    powerups[3] = { 829, 0.3f, 5, pPlayer->at202[nGunsAkimbo] };
+    powerups[4] = { 768, 0.4f, 9, pPlayer->at202[nCloakOfShadow] };
+
+    sortPowerUps(powerups);
+
+    const int x = 15;
+    int y = 50;
+    for (int i = 0; i < 5; i++)
+    {
+        if (powerups[i].remainingDuration)
+        {
+            DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
+            DrawStatNumber("%d", powerups[i].remainingDuration / 100, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            y += 20;
+        }
+    }
+}
+
 void viewDrawPack(PLAYER *pPlayer, int x, int y)
 {
     int packs[5];
@@ -1200,13 +1263,6 @@ void viewDrawPack(PLAYER *pPlayer, int x, int y)
     }
     dword_14C508 = pPlayer->at31d;
 }
-
-#define kSBarNumberHealth 9220
-#define kSBarNumberAmmo 9230
-#define kSBarNumberInv 9240
-#define kSBarNumberArmor1 9250
-#define kSBarNumberArmor2 9260
-#define kSBarNumberArmor3 9270
 
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat)
 {
@@ -1287,6 +1343,7 @@ void UpdateStatusBar(int arg)
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2-30);
         viewDrawStats(pPlayer, 2, 140);
+        viewDrawPowerUps(pPlayer);
     }
     else if (gViewSize <= 2)
     {
@@ -1350,6 +1407,7 @@ void UpdateStatusBar(int arg)
 #endif
         }
         viewDrawStats(pPlayer, 2, 140);
+        viewDrawPowerUps(pPlayer);
     }
     else if (gViewSize > 2)
     {
@@ -1437,6 +1495,7 @@ void UpdateStatusBar(int arg)
             TileHGauge(2260, 124, 175, pPlayer->at1ba, 65536);
         }
         viewDrawStats(pPlayer, 2, 140);
+        viewDrawPowerUps(pPlayer);
     }
     if (gGameOptions.nGameType < 1) return;
 
@@ -1587,7 +1646,6 @@ void viewResizeView(int size)
     }
     videoSetViewableArea(gViewX0, gViewY0, gViewX1, gViewY1);
     gGameMessageMgr.SetCoordinates(gViewX0S + 1, gViewY0S + 1);
-    viewGetCrosshairColor();
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
     viewUpdatePages();
 }
@@ -2834,30 +2892,26 @@ double g_frameDelay = 0.0;
 
 int viewFPSLimit(void)
 {
-    static double nextPageDelay = g_frameDelay;
-    static uint64_t lastFrameTicks = timerGetTicksU64() - (uint64_t) g_frameDelay;
-    int frameWaiting = 0;
+    if (!r_maxfps)
+        return 1;
 
-    uint64_t const frameTicks = timerGetTicksU64();
-    uint64_t elapsedTime = frameTicks-lastFrameTicks;
+    static double nextPageDelay;
+    static double lastFrameTicks;
 
-    if (!r_maxfps || elapsedTime >= (uint64_t) nextPageDelay)
+    double const frameTicks  = timerGetTicksU64();
+    double const elapsedTime = frameTicks-lastFrameTicks;
+
+    if (elapsedTime >= nextPageDelay)
     {
-        if (elapsedTime >= (uint64_t) (nextPageDelay + g_frameDelay))
-        {
-            //If we missed a frame, reset any cumulated remainder from rendering frames early
-            nextPageDelay = g_frameDelay;
-        }
-        else
-        {
-            nextPageDelay += g_frameDelay - elapsedTime;
-        }
+        if (elapsedTime <= nextPageDelay+g_frameDelay)
+            nextPageDelay += g_frameDelay-elapsedTime;
 
         lastFrameTicks = frameTicks;
-        ++frameWaiting;
+
+        return 1;
     }
 
-    return frameWaiting;
+    return 0;
 }
 
 float r_ambientlight = 1.0, r_ambientlightrecip = 1.0;
@@ -3529,59 +3583,21 @@ void viewLoadingScreen(int nTile, const char *pText, const char *pText2, const c
 }
 
 palette_t CrosshairColors = { 255, 255, 255, 0 };
-palette_t DefaultCrosshairColors = { 0, 0, 0, 0 };
-int32_t g_crosshairSum = -1;
-
-void viewGetCrosshairColor(void)
-{
-    if (DefaultCrosshairColors.f)
-        return;
-
-    tileLoad(kCrosshairTile);
-
-    if (!waloff[kCrosshairTile])
-        return;
-
-    char const *ptr = (char const *)waloff[kCrosshairTile];
-
-    // find the brightest color in the original 8-bit tile
-    int32_t ii = tilesiz[kCrosshairTile].x * tilesiz[kCrosshairTile].y;
-    int32_t bri = 0, j = 0, i;
-
-    dassert(ii > 0);
-
-    do
-    {
-        if (*ptr != 255)
-        {
-            i = curpalette[(int32_t)*ptr].r + curpalette[(int32_t)*ptr].g + curpalette[(int32_t)*ptr].b;
-            if (i > j) { j = i; bri = *ptr; }
-        }
-        ptr++;
-    } while (--ii);
-
-    Bmemcpy(&CrosshairColors, &curpalette[bri], sizeof(palette_t));
-    Bmemcpy(&DefaultCrosshairColors, &curpalette[bri], sizeof(palette_t));
-    DefaultCrosshairColors.f = 1; // this flag signifies that the color has been detected
-}
+bool g_isAlterDefaultCrosshair = false;
 
 void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
 {
-    if (g_crosshairSum == r + (g << 8) + (b << 16))
+    if (!g_isAlterDefaultCrosshair)
         return;
+
+    CrosshairColors.r = r;
+    CrosshairColors.g = g;
+    CrosshairColors.b = b;
 
     tileLoad(kCrosshairTile);
 
     if (!waloff[kCrosshairTile])
         return;
-
-    if (!DefaultCrosshairColors.f)
-        viewGetCrosshairColor();
-
-    g_crosshairSum = r + (g << 8) + (b << 16);
-    CrosshairColors.r = r;
-    CrosshairColors.g = g;
-    CrosshairColors.b = b;
 
     char *ptr = (char *)waloff[kCrosshairTile];
 
@@ -3611,6 +3627,12 @@ void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b)
     crosshairtint.f = HICTINT_USEONART | HICTINT_GRAYSCALE;
 #endif
     tileInvalidate(kCrosshairTile, -1, -1);
+}
+
+void viewResetCrosshairToDefault(void)
+{
+    paletteFreeLookupTable(CROSSHAIR_PAL);
+    tileLoad(kCrosshairTile);
 }
 
 #define COLOR_RED redcol

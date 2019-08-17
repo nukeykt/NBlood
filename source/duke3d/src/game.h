@@ -246,6 +246,7 @@ typedef struct {
         int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
         int32_t JoystickAnalogueAxes[MAXJOYAXES];
         int32_t JoystickAnalogueScale[MAXJOYAXES];
+        int32_t JoystickAnalogueInvert[MAXJOYAXES];
         int32_t JoystickAnalogueDead[MAXJOYAXES];
         int32_t JoystickAnalogueSaturate[MAXJOYAXES];
         uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
@@ -300,6 +301,9 @@ extern user_defs ud;
 extern const char *s_buildDate;
 
 extern char boardfilename[BMAX_PATH], currentboardfilename[BMAX_PATH];
+#define USERMAPMUSICFAKEVOLUME MAXVOLUMES
+#define USERMAPMUSICFAKELEVEL (MAXLEVELS-1)
+#define USERMAPMUSICFAKESLOT ((USERMAPMUSICFAKEVOLUME * MAXLEVELS) + USERMAPMUSICFAKELEVEL)
 
 static inline int G_HaveUserMap(void)
 {
@@ -311,7 +315,6 @@ static inline int Menu_HaveUserMap(void)
     return (boardfilename[0] != 0 && ud.m_level_number == 7 && ud.m_volume_number == 0);
 }
 
-extern const char *defaultrtsfilename[GAMECOUNT];
 extern const char *G_DefaultRtsFile(void);
 
 #ifdef LEGACY_ROR
@@ -350,7 +353,7 @@ extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 
 extern double g_frameDelay;
-static inline double calcFrameDelay(int maxFPS) { return maxFPS > 0 ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
+static inline double calcFrameDelay(int const maxFPS) { return maxFPS > 0 ? (timerGetFreqU64()/(double)maxFPS) : 0.0; }
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,

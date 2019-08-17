@@ -754,7 +754,7 @@ int32_t clipsprite_initindex(int32_t curidx, uspriteptr_t const curspr, int32_t 
 
 #endif
 
-static void addclipline(int32_t dax1, int32_t day1, int32_t dax2, int32_t day2, int16_t daoval, bool nofix)
+static void addclipline(int32_t dax1, int32_t day1, int32_t dax2, int32_t day2, int16_t daoval, int nofix)
 {
     if (EDUKE32_PREDICT_FALSE(clipnum >= MAXCLIPNUM))
     {
@@ -766,8 +766,8 @@ static void addclipline(int32_t dax1, int32_t day1, int32_t dax2, int32_t day2, 
     clipit[clipnum].x2 = dax2; clipit[clipnum].y2 = day2;
     clipobjectval[clipnum] = daoval;
 
-    uint32_t const mask = (1 << (clipnum & 7));
-    uint8_t &value = clipignore[clipnum >> 3];
+    uint32_t const mask = pow2char[clipnum&7];
+    uint8_t &value = clipignore[clipnum>>3];
     value = (value & ~mask) | (-nofix & mask);
 
     clipnum++;
@@ -808,7 +808,7 @@ static bool cliptestsector(int const dasect, int const nextsect, int32_t const f
     int32_t daz2 = sec2->floorz;
     int32_t dacz2 = sec2->ceilingz;
 
-    if (sec2->floorstat & 2)
+    if ((sec2->floorstat|sec2->ceilingstat) & 2)
         getcorrectzsofslope(nextsect, pos.x, pos.y, &dacz2, &daz2);
 
     if (daz2 <= dacz2)
@@ -818,15 +818,21 @@ static bool cliptestsector(int const dasect, int const nextsect, int32_t const f
     int32_t daz = sec->floorz;
     int32_t dacz = sec->ceilingz;
 
-    if (sec->floorstat & 2)
+    if ((sec->floorstat|sec->ceilingstat) & 2)
         getcorrectzsofslope(dasect, pos.x, pos.y, &dacz, &daz);
 
-    return (((sec2->floorstat&1) == 0 &&  // parallaxed floor curbs don't clip
-        posz >= daz2-(flordist-1) &&  // also account for desired z distance tolerance
-        daz2 < daz-(1<<8)) ||  // curbs less tall than 256 z units don't clip
-        ((sec2->ceilingstat&1) == 0 &&
-        posz <= dacz2+(ceildist-1) &&
-        dacz2 > dacz+(1<<8)));
+    int32_t const sec2height = daz2-dacz2;
+
+    return ((daz-dacz > sec2height &&       // clip if the current sector is taller and the next is too small
+            sec2height < (flordist+ceildist-(CLIPCURBHEIGHT<<1))) ||
+
+            ((sec2->floorstat&1) == 0 &&    // parallaxed floor curbs don't clip
+            posz >= daz2-(flordist-1) &&    // also account for desired z distance tolerance
+            daz2 < daz-CLIPCURBHEIGHT) ||   // curbs less tall than 256 z units don't clip
+
+            ((sec2->ceilingstat&1) == 0 && 
+            posz <= dacz2+(ceildist-1) &&
+            dacz2 > dacz+CLIPCURBHEIGHT));  // ceilings check the same conditions ^^^^^
 }
 
 int32_t clipmovex(vec3_t *pos, int16_t *sectnum,
@@ -1551,7 +1557,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
             int i;
 
             for (i=startwall, wal=(uwallptr_t)&wall[startwall]; i!=endwall; i+=dir, wal+=dir)
-                if (clipinsidebox((vec2_t *)vect, i, walldist-4) == 1)
+                if (clipinsidebox(&vect->vec2, i, walldist-4) == 1)
                 {
                     int j = 0;
                     if (wal->nextsector < 0 || wal->cstat&dawalclipmask) j = 1;
@@ -1589,10 +1595,10 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         {
                             vect->x = (vect->x) + dx; vect->y = (vect->y) + dy;
                             bad2--; if (bad2 == 0) break;
-                        } while (clipinsidebox((vec2_t *)vect, i, walldist-4) != 0);
+                        } while (clipinsidebox(&vect->vec2, i, walldist-4) != 0);
                         bad = -1;
                         k--; if (k <= 0) return bad;
-                        clipupdatesector(*(vec2_t *)vect, sectnum, walldist);
+                        clipupdatesector(vect->vec2, sectnum, walldist);
                         if (*sectnum < 0) return -1;
                     }
                     else if (bitmap_test(clipsectormap, wal->nextsector) == 0)
@@ -1864,7 +1870,7 @@ restart_grand:
                 if (clipsprite_try((uspriteptr_t)&sprite[j], xmin,ymin, xmax,ymax))
                     continue;
 #endif
-                vec2_t v1 = sprite[j].pos_as_vec2;
+                vec2_t v1 = sprite[j].pos.vec2;
 
                 switch (cstat & CSTAT_SPRITE_ALIGNMENT_MASK)
                 {
@@ -2051,51 +2057,43 @@ restart_grand:
 
 
 // intp: point of currently best (closest) intersection
-int32_t try_facespr_intersect(uspriteptr_t const spr, const vec3_t *refpos,
-                                     int32_t vx, int32_t vy, int32_t vz,
-                                     vec3_t *intp, int32_t strictly_smaller_than_p)
+int32_t try_facespr_intersect(uspriteptr_t const spr, vec3_t const in,
+                              int32_t vx, int32_t vy, int32_t vz,
+                              vec3_t * const intp, int32_t strictly_smaller_than_p)
 {
-    const int32_t x1=spr->x, y1=spr->y;
-    const int32_t xs=refpos->x, ys=refpos->y;
+    vec3_t const sprpos = spr->pos;
 
-    const int32_t topt = vx*(x1-xs) + vy*(y1-ys);
-    if (topt > 0)
-    {
-        const int32_t bot = vx*vx + vy*vy;
-        if (bot != 0)
-        {
-            int32_t i;
-            const int32_t intz = refpos->z + scale(vz,topt,bot);
-            const int32_t z1 = spr->z + spriteheightofsptr(spr, &i, 1);
+    int32_t const topt = vx * (sprpos.x - in.x) + vy * (sprpos.y - in.y);
 
-            if (intz >= z1-i && intz <= z1)
-            {
-                const int32_t topu = vx*(y1-ys) - vy*(x1-xs);
+    if (topt <= 0) return 0;
 
-                const int32_t offx = scale(vx,topu,bot);
-                const int32_t offy = scale(vy,topu,bot);
-                const int32_t dist = offx*offx + offy*offy;
+    int32_t const bot = vx * vx + vy * vy;
 
-                i = tilesiz[spr->picnum].x*spr->xrepeat;
-                if (dist <= mulscale7(i,i))
-                {
-                    const int32_t intx = xs + scale(vx,topt,bot);
-                    const int32_t inty = ys + scale(vy,topt,bot);
+    if (!bot) return 0;
 
-                    if (klabs(intx-xs)+klabs(inty-ys) + strictly_smaller_than_p
-                            <= klabs(intp->x-xs)+klabs(intp->y-ys))
-                    {
-                        intp->x = intx;
-                        intp->y = inty;
-                        intp->z = intz;
-                        return 1;
-                    }
-                }
-            }
-        }
-    }
+    vec3_t        newpos = { 0, 0, in.z + scale(vz, topt, bot) };
+    int32_t       siz;
+    int32_t const z1 = sprpos.z + spriteheightofsptr(spr, &siz, 1);
 
-    return 0;
+    if (newpos.z < z1 - siz || newpos.z > z1)
+        return 0;
+
+    int32_t const topu = vx * (sprpos.y - in.y) - vy * (sprpos.x - in.x);
+    vec2_t  const off  = { scale(vx, topu, bot), scale(vy, topu, bot) };
+    int32_t const dist = off.x * off.x + off.y * off.y;
+
+    siz = tilesiz[spr->picnum].x * spr->xrepeat;
+
+    if (dist > mulscale7(siz, siz)) return 0;
+
+    newpos.vec2 = { in.x + scale(vx, topt, bot), in.y + scale(vy, topt, bot) };
+
+    if (klabs(newpos.x - in.x) + klabs(newpos.y - in.y) + strictly_smaller_than_p >
+        klabs(intp->x - in.x) + klabs(intp->y - in.y))
+        return 0;
+
+    *intp = newpos;
+    return 1;
 }
 
 static inline void hit_set(hitdata_t *hit, int32_t sectnum, int32_t wallnum, int32_t spritenum,
@@ -2222,7 +2220,7 @@ int32_t hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32
 #ifdef YAX_ENABLE
 restart_grand:
 #endif
-    *(vec2_t *)&hit->pos = hitscangoal;
+    hit->pos.vec2 = hitscangoal;
 
     clipsectorlist[0] = sectnum;
     tempshortcnt  = 0;
@@ -2352,7 +2350,7 @@ restart_grand:
         for (z=headspritesect[dasector]; z>=0; z=nextspritesect[z])
         {
             auto const spr = (uspriteptr_t)&sprite[z];
-            const int32_t cstat = spr->cstat;
+            uint32_t const cstat = spr->cstat;
 #ifdef USE_OPENGL
             if (!hitallsprites)
 #endif
@@ -2363,7 +2361,7 @@ restart_grand:
             // try and see whether this sprite's picnum has sector-like clipping data
             i = pictoidx[spr->picnum];
             // handle sector-like floor sprites separately
-            while (i>=0 && (spr->cstat&32) != (clipmapinfo.sector[sectq[clipinfo[i].qbeg]].CM_CSTAT&32))
+            while (i>=0 && (cstat&32) != (clipmapinfo.sector[sectq[clipinfo[i].qbeg]].CM_CSTAT&32))
                 i = clipinfo[i].next;
             if (i>=0 && clipspritenum<MAXCLIPNUM)
             {
@@ -2376,7 +2374,7 @@ restart_grand:
             {
             case 0:
             {
-                if (try_facespr_intersect(spr, sv, vx, vy, vz, &hit->pos, 0))
+                if (try_facespr_intersect(spr, *sv, vx, vy, vz, &hit->pos, 0))
                 {
                     hit->sect = dasector;
                     hit->wall = -1;
