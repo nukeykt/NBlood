@@ -26,6 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxXWalls 512
 #define kMaxXSectors 512
 
+// by NoOne additional non-thing proximity and sight sprites 
+#define kMaxProximitySprites 128
+#define kMaxSightSprites 128
+#define kMaxBadSpecialSprites 3
+
 #pragma pack(push, 1)
 
 struct AISTATE;
@@ -207,7 +212,7 @@ struct XWALL {
     unsigned int key : 3; // Key 
     unsigned int triggerPush : 1; // Push
     unsigned int triggerVector : 1; // Vector
-    unsigned int triggerReserved : 1; // Reserved
+    unsigned int triggerTouch : 1; // by NoOne: renamed from Reserved to Touch as it works with Touch now.
     unsigned int at11_0 : 2; // unused
     unsigned int xpanFrac : 8; // x panning frac
     unsigned int ypanFrac : 8; // y panning frac

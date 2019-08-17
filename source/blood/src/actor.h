@@ -165,6 +165,15 @@ struct VECTORDATA {
     int fireSound[2]; // By NoOne: predefined fire sounds. used by kGDXCustomDude, but can be used for something else.
 };
 
+// by NoOne: sprite mass info for getDudeMassBySpriteSize();
+struct SPRITEMASS {
+    int seqId;
+    int mass;
+    short xrepeat;
+    short yrepeat;
+    short clipdist; // mass multiplier
+};
+
 extern AMMOITEMDATA gAmmoItemData[];
 extern WEAPONITEMDATA gWeaponItemData[];
 extern ITEMDATA gItemData[];
@@ -172,6 +181,8 @@ extern MissileType missileInfo[];
 extern EXPLOSION explodeInfo[];
 extern THINGINFO thingInfo[];
 extern VECTORDATA gVectorData[];
+extern SPRITEMASS gSpriteMass[];
+
 
 extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
@@ -260,3 +271,4 @@ bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist);
 int getDudeMassBySpriteSize(spritetype* pSprite);
 bool ceilIsTooLow(spritetype* pSprite);
+void actBuildMissile(spritetype* pMissile, int nXSprite, int nSprite);

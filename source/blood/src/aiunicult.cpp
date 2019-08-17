@@ -89,6 +89,20 @@ AISTATE GDXGenDudeThrow2 = { kAiStateChase, 7, nGDXGenDudeThrow2, 0, NULL, NULL,
 AISTATE GDXGenDudeRTesla = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &GDXGenDudeDodgeDmgL };
 AISTATE GDXGenDudePunch = { kAiStateChase,10, nGDXGenDudePunch, 0, NULL, NULL, forcePunch, &GDXGenDudeChaseL };
 
+GENDUDESND gCustomDudeSnd[] = {
+    { 1003, 2, 0, true   }, // spot sound
+    { 1013, 2, 2, true   }, // pain sound
+    { 1018, 2, 4, false  }, // death sound
+    { 1031, 2, 6, true   }, // burning state sound
+    { 1018, 2, 8, false  },	// explosive death or end of burning state sound
+    { 4021, 2, 10, true  },	// target of dude is dead
+    { 1005, 2, 12, true  },	// chase sound
+    { -1, 0, 14, false   },	// weapon attack
+    { -1, 0, 15, false   },	// throw attack
+    { -1, 0, 16, false   },	// melee attack
+    { 9008, 0, 17, false },	// transforming in other dude
+};
+
 static void forcePunch(spritetype* pSprite, XSPRITE* pXSprite) {
     
     // Required for those who don't have fire trigger in punch seq and for default animation
@@ -631,11 +645,11 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
             }
 
 
-            if (dist > vdist && pXSprite->aiState == &GDXGenDudeChaseD)
+            if (dist <= vdist && pXSprite->aiState == &GDXGenDudeChaseD)
                 aiNewState(pSprite, pXSprite, &GDXGenDudeChaseL);
 
             int state = checkAttackState(pSprite, pXSprite);
-            if (dist < vdist && klabs(losAngle) < 32 /*&& klabs(losAngle) < kAngle5*/) {
+            if (dist < vdist && /*klabs(losAngle) < 32*/ klabs(losAngle) < kAng5) {
 
                 switch (state) {
                 case 1:
@@ -794,123 +808,41 @@ void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite ) {
 }
     
 bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode) {
-    int sndId = -1; int rand = 0; bool gotSnd = true; int data = xsprite[pSprite->extra].data3;
-    switch (mode){
-        // spot sound
-        case 0:
-            rand = 2; sndId = 1003;
-            if (data > 0)
-                sndId = data;
-            break;
-        // pain sound
-        case 1:
-            rand = 2; sndId = 1013;
-            if (data > 0)
-                sndId = data + 2;
-            break;
-        // death sound
-        case 2:
-            rand = 2; sndId = 1018;
-            if (data > 0)
-                sndId = data + 4;
-            break;
-        // burning state sound
-        case 3:
-            rand = 2; sndId = 1031;
-            if (data > 0)
-                sndId = data + 6;
-            break;
-        // explosive death or end of burning state sound
-        case 4:
-            rand = 2; sndId = 1018;
-            if (data > 0)
-                sndId = data + 8;
-            break;
-        // target of dude is dead
-        case 5:
-            rand = 2; sndId = 4021;
-            if (data > 0)
-                sndId = data + 10;
-            break;
-        // roam sounds
-        case 6:
-            rand = 2; sndId = 1005;
-            if (data > 0)
-                sndId = data + 12;
-            break;
-        // weapon attack
-        case 7:
-            if (data > 0)
-                sndId = data + 14;
-            break;
-        // throw attack
-        case 8:
-            if (data > 0)
-                sndId = data + 15;
-            break;
-        // melee attack
-        case 9:
-            if (data > 0)
-                sndId = data + 16;
-            break;
-        // transforming in other dude
-        case 10:
-            sndId = 9008;
-            if (data > 0)
-                sndId = data + 17;
-            break;
-        default:
-            return false;
-            
-    }
-        
-        
+    
+    if (mode < 0 || mode >= kMaxGenDudeSndMode) return false;
+    GENDUDESND* sndInfo =& gCustomDudeSnd[mode]; bool gotSnd = false;
+    short sndStartId = xsprite[pSprite->extra].data3; int rand = sndInfo->randomRange;
+    int sndId = (sndStartId <= 0) ? sndInfo->defaultSndId : sndStartId + sndInfo->sndIdOffset;
+
     if (sndId < 0) return false;
-    else if (data <= 0) sndId = sndId + Random(rand);
+    else if (sndStartId <= 0) { sndId += Random(rand); gotSnd = true; }
     else {
-            
-        int maxRetries = 5; gotSnd = false;
+
         // Let's try to get random snd
-        while(maxRetries-- > 0){
+        int maxRetries = 5;
+        while (maxRetries-- > 0) {
             int random = Random(rand);
-            if (gSoundRes.Lookup(sndId + random, "SFX")){
-                sndId = sndId + random;
+            if (!gSoundRes.Lookup(sndId + random, "SFX")) continue;
+            sndId = sndId + random;
+            gotSnd = true;
+            break;
+        }
+
+        // If no success in getting random snd, get first existing one
+        if (gotSnd == false) {
+            while (sndId++ <= sndId + rand) {
+                if (!gSoundRes.Lookup(sndId, "SFX")) continue;
                 gotSnd = true;
                 break;
             }
         }
-            
-        // If no success in getting random snd, get first existing one
-        if (gotSnd == false){
-            int max = sndId + rand;
-            while(sndId++ <= max){
-                if (gSoundRes.Lookup(sndId, "SFX")) {
-                    gotSnd = true;
-                    break;
-                }
-            }
-        }
+
     }
-    
-    if (gotSnd) {
-        switch (mode){
-           // case 1:
-            case 2:
-            case 4:
-            case 7:
-            case 8:
-            case 9:
-            case 10:
-                sfxPlay3DSound(pSprite, sndId, -1, 0);
-                break;
-            default:
-                aiPlay3DSound(pSprite, sndId, AI_SFX_PRIORITY_2, -1);
-                break;
-        }
-        return true;
-    }
-        
-    return false;
+
+    if (gotSnd == false) return false;
+    else if (sndInfo->aiPlaySound) aiPlay3DSound(pSprite, sndId, AI_SFX_PRIORITY_2, -1);
+    else sfxPlay3DSound(pSprite, sndId, -1, 0);
+    return true;
 }
     
     
@@ -1004,19 +936,18 @@ bool dudeIsMelee(XSPRITE* pXSprite) {
         if (vdist > 0 && vdist <= meleeDist)
             return true;
 
-    }
-    else {
+    } else {
 
         if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1)
             return true;
 
-        switch (pXSprite->data1) {
-        case 304:
-        case 308:
-            return true;
-        default:
-            return false;
-        }
+        /*switch (pXSprite->data1) {
+            case 304:
+            case 308:
+                return true;
+            default:
+                return false;
+        }*/
     }
 
     return false;
@@ -1028,7 +959,7 @@ int getBaseChanceModifier(int baseChance) {
 
 int getRecoilChance(spritetype* pSprite) {
     int mass = getDudeMassBySpriteSize(pSprite);
-    int cumulDmg = 0; int baseChance = getBaseChanceModifier(0x6000);
+    int cumulDmg = 0; int baseChance = getBaseChanceModifier(0x8000);
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += (pXSprite.burnTime / 2);

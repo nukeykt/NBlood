@@ -4255,7 +4255,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                         int mass1 = getDudeMassBySpriteSize(pSprite);
                         int mass2 = getDudeMassBySpriteSize(pSprite2);
 
-                        if (mass1 > mass2) {
+                        if ((mass1 - mass2) >= mass2) {
                             if ((pXSprite->target == pSprite2->xvel && !dudeIsMelee(pXSprite) && Chance(0x0500)) || pXSprite->target != pSprite2->xvel) 
                                 actKickObject(pSprite, pSprite2);
                             if (pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
@@ -4331,8 +4331,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                         int mass1 = getDudeMassBySpriteSize(pSprite);
                         int mass2 = getDudeMassBySpriteSize(pSprite2);
 
-                        if (mass1 > mass2) {
-                            if (Chance((pXSprite->target == pSprite2->xvel) ? 0x1000 : 0x2000)) actKickObject(pSprite, pSprite2);
+                        if ((mass1 - mass2) >= mass2) {
+                            if (Chance((pXSprite->target == pSprite2->xvel) ? 0x0500 : 0x1000)) actKickObject(pSprite, pSprite2);
                             if (pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
                                 aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
                         }
@@ -4415,6 +4415,35 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             }
         }
         break;
+    }
+
+    // by NoOne: add more trigger statements for Touch flag
+    if (!VanillaMode()) {
+        
+        // Touch sprites
+        int nHSprite = -1;
+        if ((gSpriteHit[nXSprite].hit & 0xc000) == 0xc000)
+            nHSprite = gSpriteHit[nXSprite].hit & 0x3fff;
+        else if ((gSpriteHit[nXSprite].florhit & 0xc000) == 0xc000)
+            nHSprite = gSpriteHit[nXSprite].florhit & 0x3fff;
+        else if ((gSpriteHit[nXSprite].ceilhit & 0xc000) == 0xc000)
+            nHSprite = gSpriteHit[nXSprite].ceilhit & 0x3fff;
+
+        if (nHSprite >= 0 && sprite[nHSprite].extra >= 0) {
+            XSPRITE* pXHSprite = &xsprite[sprite[nHSprite].extra];
+            if (pXHSprite->Touch && !pXHSprite->isTriggered && (!pXHSprite->DudeLockout || IsPlayerSprite(pSprite)))
+                trTriggerSprite(nHSprite, pXHSprite, 33);
+        }
+
+        // Touch walls
+        int nHWall = -1;
+        if ((gSpriteHit[nXSprite].hit & 0xc000) == 0x8000) {
+            if ((nHWall = gSpriteHit[nXSprite].hit & 0x3fff) >= 0 && wall[nHWall].extra >= 0) {
+                XWALL* pXHWall = &xwall[wall[nHWall].extra];
+                if (pXHWall->triggerTouch && !pXHWall->isTriggered && (!pXHWall->dudeLockout || IsPlayerSprite(pSprite)))
+                    trTriggerWall(nHWall, pXHWall, 52);
+            }
+        }
     }
 }
 
@@ -5485,6 +5514,70 @@ void actProcessSprites(void)
 {
     int nSprite;
     int nNextSprite;
+    
+    if (!VanillaMode()) {
+
+        // by NoOne: process additional proximity sprites
+        if (gProxySpritesCount > 0) {
+            short badProxSprites = 0;
+            for (int i = 0; i < gProxySpritesCount; i++) {
+                if (sprite[gProxySpritesList[i]].extra < 0) continue;
+
+                XSPRITE * pXProxSpr = &xsprite[sprite[gProxySpritesList[i]].extra];
+                if (!pXProxSpr->Proximity || (!pXProxSpr->Interrutable && pXProxSpr->state != pXProxSpr->restState)  || pXProxSpr->locked == 1 
+                    || pXProxSpr->isTriggered) continue;  // don't process locked or triggered sprites
+
+                int x = sprite[gProxySpritesList[i]].x;	int y = sprite[gProxySpritesList[i]].y;
+                int z = sprite[gProxySpritesList[i]].z;	int index = sprite[gProxySpritesList[i]].xvel;
+                int sectnum = sprite[gProxySpritesList[i]].sectnum;
+
+                if (!pXProxSpr->DudeLockout) {
+
+                    for (int nAffected = headspritestat[6]; nAffected >= 0; nAffected = nextspritestat[nAffected]) {
+                        if ((sprite[nAffected].hitag & 32) || xsprite[sprite[nAffected].extra].health <= 0) continue;
+                        else if (CheckProximity(&sprite[nAffected], x, y, z, sectnum, 96)) {
+                            trTriggerSprite(index, pXProxSpr, 35);
+                            break;
+                        }
+                    }
+
+                } else {
+
+                    for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
+                        if (gPlayer[a].pXSprite->health > 0 && CheckProximity(gPlayer[a].pSprite, x, y, z, sectnum, 96)) {
+                            trTriggerSprite(index, pXProxSpr, 35);
+                            break;
+                        }
+                    }
+
+                }
+            }
+        }
+
+        // by NoOne: process sight sprites (for players only)
+        if (gSightSpritesCount > 0) {
+            for (int i = 0; i < gSightSpritesCount; i++) {
+                if (sprite[gSightSpritesList[i]].extra < 0) continue;
+
+                XSPRITE * pXSightSpr = &xsprite[sprite[gSightSpritesList[i]].extra];
+                if (!pXSightSpr->Sight || (!pXSightSpr->Interrutable && pXSightSpr->state != pXSightSpr->restState) || pXSightSpr->locked == 1 || 
+                    pXSightSpr->isTriggered) continue; // don't process locked or triggered sprites
+
+                int x = sprite[gSightSpritesList[i]].x;	int y = sprite[gSightSpritesList[i]].y;
+                int z = sprite[gSightSpritesList[i]].z;	int index = sprite[gSightSpritesList[i]].xvel;
+                int sectnum = sprite[gSightSpritesList[i]].sectnum;
+
+                for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
+                    spritetype* pPlaySprite = gPlayer[a].pSprite;
+                    if (gPlayer[a].pXSprite->health > 0 && cansee(x, y, z, sectnum, pPlaySprite->x, pPlaySprite->y, pPlaySprite->z, pPlaySprite->sectnum)) {
+                        trTriggerSprite(index, pXSightSpr, 34);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
     for (nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
@@ -5503,7 +5596,7 @@ void actProcessSprites(void)
                 actDamageSprite(actOwnerIdToSpriteId(pXSprite->burnSource), pSprite, DAMAGE_TYPE_1, 8);
             }
 
-                                   // by NoOne: make Sight flag work and don't process sight flag for things which is locked or triggered
+            /*                       // by NoOne: make Sight flag work and don't process sight flag for things which is locked or triggered
             if (!VanillaMode() && pXSprite->Sight && pXSprite->locked != 1 && !pXSprite->isTriggered) {
                 for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
                     spritetype* pPlayer = gPlayer[i].pSprite;
@@ -5514,8 +5607,8 @@ void actProcessSprites(void)
                 }
             }
 
-            // by NoOne: RESERVED FOR FUTURE AIM FLAG
-            /*if (pXSprite->Aim && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
+            // RESERVED FOR FUTURE AIM FLAG
+            if (pXSprite->Aim && pXSprite->locked != 1 && pXSprite->isTriggered != true) {
                 for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
                     PLAYER* pPlayer = &gPlayer[i]; int z = pPlayer->at6f - pPlayer->pSprite->z;
                     int hitCode = VectorScan(pPlayer->pSprite, 0, z, pPlayer->at1be.dx, pPlayer->at1be.dy, pPlayer->at1be.dz, 512000, 1);
@@ -6379,7 +6472,20 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
     dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
     xsprite[nXSprite].target = -1;
     evPost(nMissile, 3, 600, CALLBACK_ID_1);
-    switch (nType)
+   
+    actBuildMissile(pMissile, nXSprite, nSprite);
+    
+    if (v4)
+    {
+        actImpactMissile(pMissile, hit);
+        pMissile = NULL;
+    }
+    return pMissile;
+}
+
+void actBuildMissile(spritetype* pMissile, int nXSprite, int nSprite) {
+    int nMissile = pMissile->index;
+    switch (pMissile->type)
     {
     case 315:
         evPost(nMissile, 3, 0, CALLBACK_ID_0);
@@ -6410,9 +6516,9 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
         break;
     case 308:
         seqSpawn(27, 3, nXSprite, -1);
-        xvel[nMissile] += xvel[nSprite]/2+Random2(0x11111);
-        yvel[nMissile] += yvel[nSprite]/2+Random2(0x11111);
-        zvel[nMissile] += zvel[nSprite]/2+Random2(0x11111);
+        xvel[nMissile] += xvel[nSprite] / 2 + Random2(0x11111);
+        yvel[nMissile] += yvel[nSprite] / 2 + Random2(0x11111);
+        zvel[nMissile] += zvel[nSprite] / 2 + Random2(0x11111);
         break;
     case 313:
         seqSpawn(61, 3, nXSprite, dword_2192E0);
@@ -6420,18 +6526,18 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
         break;
     case 314:
         seqSpawn(23, 3, nXSprite, dword_2192D8);
-        xvel[nMissile] += xvel[nSprite]/2+Random2(0x11111);
-        yvel[nMissile] += yvel[nSprite]/2+Random2(0x11111);
-        zvel[nMissile] += zvel[nSprite]/2+Random2(0x11111);
+        xvel[nMissile] += xvel[nSprite] / 2 + Random2(0x11111);
+        yvel[nMissile] += yvel[nSprite] / 2 + Random2(0x11111);
+        zvel[nMissile] += zvel[nSprite] / 2 + Random2(0x11111);
         break;
     case 304:
         if (Chance(0x8000))
             seqSpawn(0, 3, nXSprite, -1);
         else
             seqSpawn(1, 3, nXSprite, -1);
-        xvel[nMissile] += xvel[nSprite]+Random2(0x11111);
-        yvel[nMissile] += yvel[nSprite]+Random2(0x11111);
-        zvel[nMissile] += zvel[nSprite]+Random2(0x11111);
+        xvel[nMissile] += xvel[nSprite] + Random2(0x11111);
+        yvel[nMissile] += yvel[nSprite] + Random2(0x11111);
+        zvel[nMissile] += zvel[nSprite] + Random2(0x11111);
         break;
     case 303:
         evPost(nMissile, 3, 30, CALLBACK_ID_2);
@@ -6449,12 +6555,6 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
         sfxPlay3DSound(pMissile, 252, 0, 0);
         break;
     }
-    if (v4)
-    {
-        actImpactMissile(pMissile, hit);
-        pMissile = NULL;
-    }
-    return pMissile;
 }
 
 int actGetRespawnTime(spritetype *pSprite)
@@ -6991,19 +7091,24 @@ void ActorLoadSaveConstruct(void)
 // By NoOne: The following functions required for random event features
 //-------------------------
 int GetDataVal(spritetype* pSprite, int data) {
-    XSPRITE* pXSprite = &xsprite[pSprite->extra];
-    int rData[4];
-
-    rData[0] = pXSprite->data1; rData[2] = pXSprite->data3;
-    rData[1] = pXSprite->data2; rData[3] = pXSprite->data4;
-
-    return rData[data];
+    if (pSprite->extra >= 0) {
+        switch (data) {
+        case 0:
+            return xsprite[pSprite->extra].data1;
+        case 1:
+            return xsprite[pSprite->extra].data2;
+        case 2:
+            return xsprite[pSprite->extra].data3;
+        case 3:
+            return xsprite[pSprite->extra].data4;
+        }
+    }
+    return -1;
 }
 
 
 std::default_random_engine rng;
-int my_random(int a, int b)
-{
+int my_random(int a, int b) {
 
     std::uniform_int_distribution<int> dist_a_b(a, b);
     return dist_a_b(rng);
@@ -7225,43 +7330,46 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     return pDude;
 }
 
+SPRITEMASS gSpriteMass[kMaxSprites];
 int getDudeMassBySpriteSize(spritetype* pSprite) {
-    int mass = 0; int minMass = 5;
-    if (IsDudeSprite(pSprite)) {
-        int picnum = pSprite->picnum; Seq* pSeq = NULL;
-        int seqStartId = dudeInfo[pSprite->lotag - kDudeBase].seqStartID;
-        switch (pSprite->lotag) {
-        case kGDXDudeUniversalCultist:
-        case kGDXGenDudeBurning:
-            seqStartId = xsprite[pSprite->extra].data2;
-            break;
-        }
+    
+    int minMass = 5;
+    if (!IsDudeSprite(pSprite)) return minMass;
 
-        
-        DICTNODE* hSeq = gSysRes.Lookup(seqStartId, "SEQ");
-        pSeq = (Seq*)gSysRes.Load(hSeq);
-        if (pSeq != NULL)
-            picnum = seqGetTile(&pSeq->frames[0]);
-
-        int clipDist = pSprite->clipdist;
-        if (clipDist <= 0)
-            clipDist = dudeInfo[pSprite->lotag - kDudeBase].clipdist;
-
-        int xrepeat = pSprite->xrepeat;
-        int x = tilesiz[picnum].x;
-        if (xrepeat > 64) x += ((xrepeat - 64) * 2);
-        else if (xrepeat < 64) x -= ((64 - xrepeat) * 2);
-
-        int yrepeat = pSprite->yrepeat;
-        int y = tilesiz[picnum].y;
-        if (yrepeat > 64) y += ((yrepeat - 64) * 2);
-        else if (yrepeat < 64) y -= ((64 - yrepeat) * 2);
-
-        mass = ((x + y) * clipDist) / 25;
-        //if ((mass+=(x+y)) > 200) mass+=((mass - 200)*16);
+    int seqStartId = dudeInfo[pSprite->lotag - kDudeBase].seqStartID;  Seq* pSeq = NULL;
+    switch (pSprite->lotag) {
+    case kGDXDudeUniversalCultist:
+    case kGDXGenDudeBurning:
+        seqStartId = xsprite[pSprite->extra].data2;
+        break;
     }
 
-    return ClipRange(mass, minMass, 65535);
+    SPRITEMASS* cachedMass = &gSpriteMass[pSprite->xvel];
+    if (seqStartId == cachedMass->seqId && pSprite->xrepeat == cachedMass->xrepeat &&
+        pSprite->yrepeat == cachedMass->yrepeat && pSprite->clipdist == cachedMass->clipdist)
+        return cachedMass->mass;
+
+    DICTNODE* hSeq = gSysRes.Lookup(seqStartId, "SEQ"); pSeq = (Seq*)gSysRes.Load(hSeq);
+    int picnum = (pSeq != NULL) ? seqGetTile(&pSeq->frames[0]) : pSprite->picnum;
+    int clipDist = (pSprite->clipdist <= 0) ? dudeInfo[pSprite->lotag - kDudeBase].clipdist : pSprite->clipdist;
+
+    short xrepeat = pSprite->xrepeat;
+    int x = tilesiz[picnum].x;
+    if (xrepeat > 64) x += ((xrepeat - 64) * 2);
+    else if (xrepeat < 64) x -= ((64 - xrepeat) * 2);
+
+    short yrepeat = pSprite->yrepeat;
+    int y = tilesiz[picnum].y;
+    if (yrepeat > 64) y += ((yrepeat - 64) * 2);
+    else if (yrepeat < 64) y -= ((64 - yrepeat) * 2);
+
+    int mass = ((x + y) * clipDist) / 25;
+
+    cachedMass->seqId = seqStartId;	cachedMass->xrepeat = xrepeat;
+    cachedMass->yrepeat = yrepeat;	cachedMass->mass = ClipRange(mass, minMass, 65535);
+    cachedMass->clipdist = clipDist;
+    
+    return cachedMass->mass;
 }
 
 

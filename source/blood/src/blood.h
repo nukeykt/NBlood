@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "levels.h"
 #include "resource.h"
+#include "db.h"
 
 struct INIDESCRIPTION {
     const char *pzName;
@@ -66,6 +67,11 @@ extern bool gSavingGame;
 extern bool gQuitGame;
 extern int gQuitRequest;
 extern int gCacheMiss;
+
+extern short gProxySpritesList[kMaxProximitySprites];
+extern short gSightSpritesList[kMaxSightSprites];
+extern short gProxySpritesCount;
+extern short gSightSpritesCount;
 
 void QuitGame(void);
 void PreloadCache(void);
