@@ -1231,8 +1231,7 @@ void viewDrawMapTitle(void)
     if (!gShowMapTitle || gGameMenuMgr.m_bActive)
         return;
 
-    int minutes = gLevelTime / (kTicsPerSec * 60);
-    int seconds = (gLevelTime / kTicsPerSec) % 60;
+    int seconds = (gLevelTime / kTicsPerSec);
     int millisecs = (gLevelTime % kTicsPerSec) * 33;
     if (seconds > 3)
         return;
