@@ -69,7 +69,7 @@ struct LEVELINFO
 {
     char at0[BMAX_PATH]; // Filename
     char at90[32]; // Title
-    char atb0[32]; // Author
+    char atb0[128]; // Author
     char atd0[BMAX_PATH]; // Song;
     int ate0; // SongId
     int ate4; // EndingA

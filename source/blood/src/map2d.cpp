@@ -195,6 +195,7 @@ void CViewMap::sub_25C74(void)
     videoClearScreen(0);
     renderDrawMapView(x,y,nZoom>>2,angle);
     sub_2541C(x,y,nZoom>>2,angle);
+
     char *pTitle = levelGetTitle();
     char *pFilename = levelGetFilename(gGameOptions.nEpisode, gGameOptions.nLevel);
     if (pTitle)
@@ -206,6 +207,38 @@ void CViewMap::sub_25C74(void)
         nViewY = gViewY1S-16;
     else
         nViewY = gViewY0S+1;
+    viewDrawText(3, pBuffer, gViewX1S, nViewY, -128, 0, 2, 0, 256);
+
+    char* pAuthor = levelGetAuthor();
+    if (pAuthor)
+    {
+        nViewY += 8;
+        sprintf(pBuffer, "AUTHOR: %s", pAuthor);
+        viewDrawText(3, pBuffer, gViewX1S, nViewY, -128, 0, 2, 0, 256);
+    }
+    
+    switch (gGameOptions.nDifficulty)
+    {
+    case 0:
+        sprintf(pBuffer, "DIFFICULTY: STILL KICKING");
+        break;
+    case 1:
+        sprintf(pBuffer, "DIFFICULTY: PINK ON THE INSIDE");
+        break;
+    case 2:
+        sprintf(pBuffer, "DIFFICULTY: LIGHTLY BROILED");
+        break;
+    case 3:
+        sprintf(pBuffer, "DIFFICULTY: WELL DONE");
+        break;
+    case 4:
+        sprintf(pBuffer, "DIFFICULTY: EXTRA CRISPY");
+        break;
+    default:
+        sprintf(pBuffer, "DIFFICULTY: %d", gGameOptions.nDifficulty);
+        break;
+    }
+    nViewY += 8;
     viewDrawText(3, pBuffer, gViewX1S, nViewY, -128, 0, 2, 0, 256);
 
     if (gViewMap.bFollowMode)

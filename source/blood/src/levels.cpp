@@ -204,7 +204,7 @@ void levelLoadMapInfo(IniFile *pIni, LEVELINFO *pLevelInfo, const char *pzSectio
 {
     char buffer[16];
     strncpy(pLevelInfo->at90, pIni->GetKeyString(pzSection, "Title", pLevelInfo->at0), 31);
-    strncpy(pLevelInfo->atb0, pIni->GetKeyString(pzSection, "Author", ""), 31);
+    strncpy(pLevelInfo->atb0, pIni->GetKeyString(pzSection, "Author", ""), 127);
     strncpy(pLevelInfo->atd0, pIni->GetKeyString(pzSection, "Song", ""), BMAX_PATH);
     pLevelInfo->ate0 = pIni->GetKeyInt(pzSection, "Track", -1);
     pLevelInfo->ate4 = pIni->GetKeyInt(pzSection, "EndingA", -1);
