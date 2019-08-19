@@ -551,6 +551,16 @@ void G_AddSearchPaths(void)
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         found = true;
     }
+
+    // Blood: Fresh Supply (GOG.com)
+    bufsize = sizeof(buf);
+    if (!found && G_ReadRegistryValue(R"(SOFTWARE\Wow6432Node\GOG.com\Games\1374469660)", "path", buf, &bufsize))
+    {
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        strncat(buf, R"(\addons\Cryptic Passage)", 23);
+        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        found = true;
+    }
 #endif
 #endif
 }
