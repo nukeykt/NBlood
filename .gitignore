@@ -59,3 +59,4 @@ DerivedData/
 /game*.sav
 /*.DEM
 /blud*.png
+/movie/*
