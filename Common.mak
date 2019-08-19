@@ -597,26 +597,25 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium3
+            OPTOPT := -march=pentium4
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
-            OPTOPT += -mmmx -msse -mfpmath=sse
+            OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
+
+            # Fix for older PCs than Pentium 4
+            ifeq ($(HOSTPLATFORM),LINUX)                
+                ifneq ($(shell $(CC) -march=native  -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
+                    OPTOPT := -march=native
+                endif
+            endif
+
         endif
     endif
     ifeq ($(PLATFORM),WII)
         OPTOPT := -mtune=750
     endif
-endif
-
-ifeq ($(PACKAGE_REPOSITORY),0)
-    COMMONFLAGS += -O$(OPTLEVEL) $(OPTOPT)
-endif
-
-ifneq (0,$(LTO))
-    COMPILERFLAGS += -DUSING_LTO
-    COMMONFLAGS += -flto
 endif
 
 
