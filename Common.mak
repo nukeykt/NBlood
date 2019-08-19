@@ -604,9 +604,9 @@ ifndef OPTOPT
             endif
             OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
 
-            # Fix for older PCs than Pentium 4
-            ifeq ($(HOSTPLATFORM),LINUX)                
-                ifneq ($(shell $(CC) -march=native  -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
+            # Fix for 32 bit CPUs on Linux without SSE2
+            ifeq ($(HOSTPLATFORM),LINUX)
+                ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
                     OPTOPT := -march=native
                 endif
             endif
@@ -616,6 +616,15 @@ ifndef OPTOPT
     ifeq ($(PLATFORM),WII)
         OPTOPT := -mtune=750
     endif
+endif
+
+ifeq ($(PACKAGE_REPOSITORY),0)
+    COMMONFLAGS += -O$(OPTLEVEL) $(OPTOPT)
+endif
+
+ifneq (0,$(LTO))
+    COMPILERFLAGS += -DUSING_LTO
+    COMMONFLAGS += -flto
 endif
 
 
