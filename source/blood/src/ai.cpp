@@ -1039,7 +1039,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
             {
                 pSprite->type = 239;
                 if (!VanillaMode())
-                    pXSprite->scale = -4; // need to change this to 64 later
+                    pXSprite->scale = 64;
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock+360;
