@@ -597,12 +597,20 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium3
+            OPTOPT := -march=pentium4
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
             OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
+
+            # Fix for 32 bit CPUs on Linux without SSE2
+            ifeq ($(HOSTPLATFORM),LINUX)
+                ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
+                    OPTOPT := -march=native
+                endif
+            endif
+
         endif
     endif
     ifeq ($(PLATFORM),WII)
