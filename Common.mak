@@ -605,7 +605,7 @@ ifndef OPTOPT
             OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
 
             # Fix for 32 bit CPUs on Linux without SSE2
-            ifeq ($(HOSTPLATFORM),LINUX)
+            ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
                 ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
                     OPTOPT := -march=native
                 endif

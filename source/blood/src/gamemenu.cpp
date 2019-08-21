@@ -200,7 +200,7 @@ void CGameMenuMgr::Draw(void)
             int32_t z = 65536;
             uint32_t stat = 2|8;
             int8_t alpha = MOUSEALPHA; //CURSORALPHA;
-            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, -300, mousetile, 0, NULL, stat, alpha);
+            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, -300, mousetile, 0, 0, stat, alpha);
         }
     }
     else
