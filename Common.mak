@@ -724,9 +724,7 @@ COMMONFLAGS += -fno-strict-aliasing -fno-threadsafe-statics $(F_JUMP_TABLES) $(F
 
 # This is needed, otherwise Cheogh will be brown on Linux
 ifneq ($(PLATFORM),WINDOWS)
-    ifeq ($(OPTLEVEL),2)
-        COMMONFLAGS += -fno-ipa-icf
-    endif
+    COMMONFLAGS += -fno-ipa-bit-cp -fno-ipa-cp -fno-ipa-icf -fno-ipa-vrp
 endif
 
 ##### Warnings
