@@ -454,7 +454,7 @@ else
     LTO := 1
 
     ifeq ($(PLATFORM),LINUX)
-        if (ifeq (0,$(CLANG))
+        ifeq (0,$(CLANG))
             # This needs to be 1, otherwise Cheogh's color would be brown instead of gray on Linux
             OPTLEVEL := 1
         endif
