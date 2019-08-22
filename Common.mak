@@ -450,7 +450,13 @@ ifeq ($(RELEASE),0)
 
     LTO := 0
 else
-    OPTLEVEL := 2
+    ifeq ($(PLATFORM),WINDOWS)
+        OPTLEVEL := 2
+    else
+        # This needs to be 1, otherwise Cheogh's color would be brown instead of gray on Linux
+        OPTLEVEL := 1
+    endif
+
     LTO := 1
 endif
 
@@ -722,12 +728,6 @@ endif
 
 COMMONFLAGS += -fno-strict-aliasing -fno-threadsafe-statics $(F_JUMP_TABLES) $(F_NO_STACK_PROTECTOR)
 
-# This is needed, otherwise Cheogh will be brown on Linux
-ifneq ($(PLATFORM),WINDOWS)
-    ifeq (0,$(CLANG)) # Sorry non-Windows Clang users, Cheogh will be brown for you (Clang doesn't know these flags)
-        COMMONFLAGS += -fno-ipa-bit-cp -fno-ipa-cp -fno-ipa-icf -fno-ipa-vrp
-    endif
-endif
 
 ##### Warnings
 
