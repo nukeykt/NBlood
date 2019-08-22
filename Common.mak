@@ -455,6 +455,10 @@ else
     else
         # This needs to be 1, otherwise Cheogh's color would be brown instead of gray on Linux
         OPTLEVEL := 1
+        ifneq (0,$(CLANG))
+            # This needs to be 0, otherwise Cheogh's color would be brown instead of gray on Linux if compiled with Clang
+            OPTLEVEL := 0
+        endif
     endif
 
     LTO := 1
