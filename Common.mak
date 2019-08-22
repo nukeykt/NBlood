@@ -450,18 +450,15 @@ ifeq ($(RELEASE),0)
 
     LTO := 0
 else
-    ifeq ($(PLATFORM),WINDOWS)
-        OPTLEVEL := 2
-    else
-        # This needs to be 1, otherwise Cheogh's color would be brown instead of gray on Linux
-        OPTLEVEL := 1
-        ifneq (0,$(CLANG))
-            # This needs to be 0, otherwise Cheogh's color would be brown instead of gray on Linux if compiled with Clang
-            OPTLEVEL := 0
+    OPTLEVEL := 2
+    LTO := 1
+
+    ifeq ($(PLATFORM),LINUX)
+        if (ifeq (0,$(CLANG))
+            # This needs to be 1, otherwise Cheogh's color would be brown instead of gray on Linux
+            OPTLEVEL := 1
         endif
     endif
-
-    LTO := 1
 endif
 
 ifneq (0,$(CLANG))
