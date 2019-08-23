@@ -18,6 +18,7 @@ Blood port based on EDuke32
 4. Launch NBlood
 
 ## Building NBlood
+If using GCC, use version 4.8.5, because newer versions causing crashes and unexpected behaviors (cinematics will crash on Windows, Cheogh will be brown on Linux, etc.)  
 See: https://wiki.eduke32.com/wiki/Main_Page
 
 ## Acknowledgments:

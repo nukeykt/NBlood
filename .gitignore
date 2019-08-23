@@ -59,3 +59,7 @@ project.xcworkspace/
 
 .DS_Store
 ._*
+/blud*.png
+/*.DEM
+/game*.sav
+/movie
