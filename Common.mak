@@ -452,6 +452,19 @@ ifeq ($(RELEASE),0)
 else
     OPTLEVEL := 2
     LTO := 1
+
+    # Fix Cheogh being brown instead of gray
+    ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
+        ifneq (0,$(CLANG))
+            ifeq (4,$(GCC_MAJOR))
+                ifneq (8,$(GCC_MINOR))
+                    OPTLEVEL := 1
+                endif
+            else
+                OPTLEVEL := 1
+            endif
+        endif
+    endif
 endif
 
 ifneq (0,$(CLANG))
