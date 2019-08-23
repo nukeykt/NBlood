@@ -455,7 +455,7 @@ else
 
     # Fix Cheogh being brown instead of gray
     ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
-        ifneq (0,$(CLANG))
+        ifeq (0,$(CLANG))
             ifeq (4,$(GCC_MAJOR))
                 ifneq (8,$(GCC_MINOR))
                     OPTLEVEL := 1
