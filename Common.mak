@@ -453,7 +453,7 @@ else
     OPTLEVEL := 2
     LTO := 1
 
-    # Fix Cheogh being brown instead of gray
+    # Fix palette rendering on Linux and BSD
     ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
         ifeq (0,$(CLANG))
             ifeq (4,$(GCC_MAJOR))
