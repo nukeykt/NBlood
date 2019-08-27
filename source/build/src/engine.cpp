@@ -203,7 +203,7 @@ int16_t editstatus = 0;
 static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to drawrooms)
 
 // adapted from build.c
-static void getclosestpointonwall_internal(vec2_t const &p, int32_t const dawall, vec2_t *const closest)
+static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
     vec2_t const w  = wall[dawall].pos;
     vec2_t const w2 = wall[wall[dawall].point2].pos;
@@ -11390,21 +11390,21 @@ static inline bool inside_z_p(int32_t const x, int32_t const y, int32_t const z,
     return (z >= cz && z <= fz && inside_p(x, y, sectnum));
 }
 
-int32_t getwalldist(vec2_t const &in, int const wallnum)
+int32_t getwalldist(vec2_t const in, int const wallnum)
 {
     vec2_t closest;
     getclosestpointonwall_internal(in, wallnum, &closest);
     return klabs(closest.x - in.x) + klabs(closest.y - in.y);
 }
 
-int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out)
+int32_t getwalldist(vec2_t const in, int const wallnum, vec2_t * const out)
 {
     getclosestpointonwall_internal(in, wallnum, out);
     return klabs(out->x - in.x) + klabs(out->y - in.y);
 }
 
 
-int32_t getsectordist(vec2_t const &in, int const sectnum, vec2_t * const out /*= nullptr*/)
+int32_t getsectordist(vec2_t const in, int const sectnum, vec2_t * const out /*= nullptr*/)
 {
     if (inside_p(in.x, in.y, sectnum))
     {
