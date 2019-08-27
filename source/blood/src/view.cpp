@@ -449,7 +449,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     predict.at24 = fix16_from_float(100.f*tanf(fix16_to_float(predict.at20)*fPI/1024.f));
 
     int nSector = predict.at68;
-    int florhit = predict.at75.florhit & 0xc000;
+    int florhit = predict.at75.florhit & 0xe000;
     char va;
     if (predict.at6a < 16 && (florhit == 0x4000 || florhit == 0))
         va = 1;
@@ -600,7 +600,7 @@ void fakeMoveDude(spritetype *pSprite)
         {
             short bakCstat = pSprite->cstat;
             pSprite->cstat &= ~257;
-            predict.at75.hit = ClipMove(&predict.at50, &predict.at54, &predict.at58, &nSector, predict.at5c >> 12, predict.at60 >> 12, wd, tz, bz, CLIPMASK0);
+            predict.at75.hit = ClipMove(&predict.at50, &predict.at54, &predict.at58, &nSector, predict.at5c >> 12, predict.at60 >> 12, wd, tz, bz, 0x13001);
             if (nSector == -1)
                 nSector = predict.at68;
                     
@@ -616,11 +616,11 @@ void fakeMoveDude(spritetype *pSprite)
 
             pSprite->cstat = bakCstat;
         }
-        switch (predict.at75.hit&0xc000)
+        switch (predict.at75.hit&0xe000)
         {
         case 0x8000:
         {
-            int nHitWall = predict.at75.hit&0x3fff;
+            int nHitWall = predict.at75.hit&0x1fff;
             walltype *pHitWall = &wall[nHitWall];
             if (pHitWall->nextsector != -1)
             {
@@ -710,7 +710,7 @@ void fakeMoveDude(spritetype *pSprite)
     {
         int floorZ2 = floorZ;
         int floorHit2 = floorHit;
-        GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, CLIPMASK0);
+        GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, 0x13001);
         if (bottom <= floorZ && predict.at58-floorZ2 < bz)
         {
             floorZ = floorZ2;
@@ -758,9 +758,9 @@ void fakeMoveDude(spritetype *pSprite)
     predict.at6a = ClipLow(floorZ-bottom, 0)>>8;
     if (predict.at5c || predict.at60)
     {
-        if ((floorHit & 0xc000) == 0xc000)
+        if ((floorHit & 0xe000) == 0xc000)
         {
-            int nHitSprite = floorHit & 0x3fff;
+            int nHitSprite = floorHit & 0x1fff;
             if ((sprite[nHitSprite].cstat & 0x30) == 0)
             {
                 predict.at5c += mulscale(4, predict.at50 - sprite[nHitSprite].x, 2);
@@ -3321,7 +3321,7 @@ RORHACK:
         GetZRange(gView->pSprite, &vf4, &vf0, &vec, &ve8, nClipDist, 0);
 #if 0
         int tmpSect = nSectnum;
-        if ((vf0 & 0xc000) == 0x4000)
+        if ((vf0 & 0xe000) == 0x4000)
         {
             tmpSect = vf0 & (kMaxWalls-1);
         }
