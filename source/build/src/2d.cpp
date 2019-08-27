@@ -912,7 +912,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
             col += M32_THROB>>2;
     }
 
-    if (bloodhack && (cstat&0xc000)) // should be 0xe000?
+    if (bloodhack && (cstat&0xc000))
     {
         if (cstat&0x8000)
             col = editorcolors[10];
