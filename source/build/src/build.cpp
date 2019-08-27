@@ -827,7 +827,7 @@ CANCEL:
         OSD_DispatchQueued();
 
         videoNextPage();
-        synctics = totalclock-lockclock;
+        synctics = (int32_t) totalclock-lockclock;
         lockclock += synctics;
 
         CallExtPreCheckKeys();
@@ -856,7 +856,7 @@ CANCEL:
             printext256(0,0,whitecol,0,"Are you sure you want to quit?",0);
 
             videoShowFrame(1);
-            synctics = totalclock-lockclock;
+            synctics = (int32_t) totalclock-lockclock;
             lockclock += synctics;
 
             while ((keystatus[sc_Escape]|keystatus[sc_Enter]|keystatus[sc_Space]|keystatus[sc_N]) == 0)
@@ -983,7 +983,7 @@ static void move_and_update(int32_t xvect, int32_t yvect, int32_t addshr)
     if (in3dmode())
     {
         silentmessage("x:%d y:%d z:%d ang:%d horiz:%d", pos.x, pos.y, pos.z, ang, horiz);
-        getmessagetimeoff = totalclock+30;
+        getmessagetimeoff = (int32_t) totalclock+30;
     }
 }
 
@@ -1017,7 +1017,7 @@ static void mainloop_move(void)
             if (in3dmode())
             {
                 silentmessage("x:%d y:%d z:%d ang:%d horiz:%d", pos.x, pos.y, pos.z, ang, horiz);
-                getmessagetimeoff = totalclock+30;
+                getmessagetimeoff = (int32_t) totalclock+30;
             }
         }
     }
@@ -1211,7 +1211,7 @@ void editinput(void)
             if (mousx || mousy)
             {
                 silentmessage("x:%d y:%d z:%d ang:%d horiz:%d", pos.x, pos.y, pos.z, ang, horiz);
-                getmessagetimeoff = totalclock+30;
+                getmessagetimeoff = (int32_t) totalclock+30;
             }
         }
         else if (unrealedlook==0 || (bstatus&(1|2|4))==0)
@@ -1370,7 +1370,7 @@ void editinput(void)
     if (pos.z != oposz && in3dmode())
     {
         silentmessage("x:%d y:%d z:%d ang:%d horiz:%d", pos.x, pos.y, pos.z, ang, horiz);
-        getmessagetimeoff = totalclock+30;
+        getmessagetimeoff = (int32_t) totalclock+30;
     }
 
     searchit = 2;
@@ -3482,7 +3482,7 @@ void overheadeditor(void)
     int32_t sectorhighlightx=0, sectorhighlighty=0;
     int16_t cursectorhighlight, sectorhighlightstat;
     int32_t prefixarg = 0, tsign;
-    int32_t resetsynctics = 0, lasttick=timerGetTicks(), waitdelay=totalclock, lastdraw=timerGetTicks();
+    int32_t resetsynctics = 0, lasttick=timerGetTicks(), waitdelay=(int32_t) totalclock, lastdraw=timerGetTicks();
     int32_t olen[2] = {0, 0}, dragwall[2] = {-1, -1};
     int16_t linehighlight2 = -1;
     vec2_t highlight1 = { 0, 0 }, highlight2 = { 0, 0 };
@@ -3557,7 +3557,7 @@ void overheadeditor(void)
                 resetsynctics = 1;
             }
         }
-        else waitdelay = totalclock + 6; // should be 50 ms
+        else waitdelay = (int32_t) totalclock + 6; // should be 50 ms
 
         lasttick = timerGetTicks();
 
@@ -3573,7 +3573,7 @@ void overheadeditor(void)
         if (resetsynctics)
         {
             resetsynctics = 0;
-            lockclock = totalclock;
+            lockclock = (int32_t) totalclock;
             synctics = 0;
         }
 
@@ -7961,7 +7961,7 @@ end_insert_points:
     nokeys:
 
         videoShowFrame(1);
-        synctics = totalclock-lockclock;
+        synctics = (int32_t) totalclock-lockclock;
         lockclock += synctics;
 
         if (keystatus[buildkeys[BK_MODE2D_3D]])
@@ -8177,7 +8177,7 @@ CANCEL:
                     while (bad == 0)
                     {
                         _printmessage16("%sSave as: ^011%s%s", corrupt>=4?"(map corrupt) ":"",
-                                        boardfilename, (totalclock&32)?"_":"");
+                                        boardfilename, ((int32_t) totalclock&32)?"_":"");
                         videoShowFrame(1);
 
                         if (handleevents())
@@ -9388,7 +9388,7 @@ int32_t _getnumber16(const char *namestart, int32_t num, int32_t maxnumber, char
 
         Bsprintf(buffer, "%s^011%d", ournamestart, danum);
         n = Bstrlen(buffer);  // maximum is 62+4+11 == 77
-        if (totalclock & 32)
+        if ((int32_t) totalclock & 32)
             Bstrcat(buffer,"_ ");
         // max strlen now 79
         _printmessage16("%s", buffer);
@@ -9475,7 +9475,7 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
 
         Bsprintf(buffer,"%s%d",ournamestart,danum);
         // max strlen now 66+11==77
-        if (totalclock & 32)
+        if ((int32_t) totalclock & 32)
             Bstrcat(buffer,"_ ");
         // max strlen now 79
         printmessage256(0, 0, buffer);
@@ -9502,7 +9502,7 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
 
     clearkeys();
 
-    lockclock = totalclock;  //Reset timing
+    lockclock = (int32_t) totalclock;  //Reset timing
 
     return oldnum;
 }
@@ -9576,7 +9576,7 @@ const char *getstring_simple(const char *querystr, const char *defaultstr, int32
         if (maxlen!=1)
         {
             // blink...
-            if (totalclock&32)
+            if ((int32_t) totalclock&32)
             {
                 buf[ei] = '_';
                 buf[ei+1] = 0;

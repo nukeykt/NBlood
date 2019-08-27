@@ -96,6 +96,7 @@ int32_t yres=-1;
 int32_t fullscreen=0;
 int32_t bpp=0;
 int32_t bytesperline=0;
+int32_t refreshfreq=-1;
 int32_t lockcount=0;
 int32_t glcolourdepth=32;
 static int32_t vsync_renderlayer;
@@ -2864,7 +2865,7 @@ static BOOL CreateAppWindow(int32_t modenum)
 {
     RECT rect;
     int32_t w, h, x, y, stylebits = 0, stylebitsex = 0;
-    int32_t width, height, fs, bitspp;
+    int32_t width, height, fs, bitspp, rfreq = -1;
 
     HRESULT result;
 
@@ -2881,6 +2882,7 @@ static BOOL CreateAppWindow(int32_t modenum)
         height = validmode[modenum].ydim;
         fs = validmode[modenum].fs;
         bitspp = validmode[modenum].bpp;
+        rfreq = validmode[modenum].extra;
     }
 
     if (width == xres && height == yres && fs == fullscreen && bitspp == bpp && !videomodereset) return FALSE;
@@ -3094,6 +3096,7 @@ static BOOL CreateAppWindow(int32_t modenum)
     xres = width;
     yres = height;
     bpp = bitspp;
+    refreshfreq = rfreq;
     fullscreen = fs;
     curvidmode = modenum;
 
