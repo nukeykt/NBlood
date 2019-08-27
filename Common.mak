@@ -802,6 +802,7 @@ CWARNS := -W -Wall \
     $(W_GCC_6) \
     $(W_GCC_7) \
     $(W_GCC_8) \
+    $(W_GCC_9) \
     $(W_CLANG) \
     #-Wstrict-prototypes \
     #-Waggregate-return \
