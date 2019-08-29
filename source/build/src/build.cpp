@@ -9089,12 +9089,22 @@ static int32_t movewalls(int32_t start, int32_t offs)
     if (offs < 0)  //Delete
     {
         for (i=start; i<numwalls+offs; i++)
+        {
             Bmemcpy(&wall[i], &wall[i-offs], sizeof(walltype));
+            int const editw = !!(editwall[(i-offs)>>3]&pow2char[(i-offs)&7]);
+            editwall[i>>3] &= ~pow2char[i&7];
+            editwall[i>>3] |= editw<<(i&7);
+        }
     }
     else if (offs > 0)  //Insert
     {
         for (i=numwalls+offs-1; i>=start+offs; i--)
+        {
             Bmemcpy(&wall[i], &wall[i-offs], sizeof(walltype));
+            int const editw = !!(editwall[(i-offs)>>3]&pow2char[(i-offs)&7]);
+            editwall[i>>3] &= ~pow2char[i&7];
+            editwall[i>>3] |= editw<<(i&7);
+        }
 
         if (ovh.bak_wallsdrawn > 0)
         {
