@@ -29,6 +29,7 @@ extern char modechange;
 
 extern int32_t vsync;
 extern int32_t swapcomplete;
+extern int32_t g_borderless;
 
 extern void app_crashhandler(void);
 
