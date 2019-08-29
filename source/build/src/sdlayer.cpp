@@ -1211,7 +1211,6 @@ void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
 //
 static int sortmodes(const void *a_, const void *b_)
 {
-
     auto a = (const struct validmode_t *)b_;
     auto b = (const struct validmode_t *)a_;
 
@@ -1232,6 +1231,7 @@ void videoGetModes(void)
 {
     int32_t i, maxx = 0, maxy = 0;
     SDL_DisplayMode dispmode;
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
 
     if (modeschecked || novideo)
         return;
@@ -1240,9 +1240,9 @@ void videoGetModes(void)
     //    initprintf("Detecting video modes:\n");
 
     // do fullscreen modes first
-    for (i = 0; i < SDL_GetNumDisplayModes(0); i++)
+    for (i = 0; i < SDL_GetNumDisplayModes(display); i++)
     {
-        SDL_GetDisplayMode(0, i, &dispmode);
+        SDL_GetDisplayMode(display, i, &dispmode);
 
         if (!SDL_CHECKMODE(dispmode.w, dispmode.h) ||
             (maxrefreshfreq && (dispmode.refresh_rate > maxrefreshfreq)))
@@ -1266,7 +1266,7 @@ void videoGetModes(void)
     // add windowed modes next
     // SDL sorts display modes largest to smallest, so we can just compare with mode 0
     // to make sure we aren't adding modes that are larger than the actual screen res
-    SDL_GetDisplayMode(0, 0, &dispmode);
+    SDL_GetDisplayMode(display, 0, &dispmode);
 
     for (i = 0; g_defaultVideoModes[i].x; i++)
     {
@@ -1584,13 +1584,15 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
 #if SDL_MAJOR_VERSION!=1
 void setrefreshrate(void)
 {
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+
     SDL_DisplayMode dispmode;
-    SDL_GetCurrentDisplayMode(0, &dispmode);
+    SDL_GetCurrentDisplayMode(display, &dispmode);
 
     dispmode.refresh_rate = maxrefreshfreq;
 
     SDL_DisplayMode newmode;
-    SDL_GetClosestDisplayMode(0, &dispmode, &newmode);
+    SDL_GetClosestDisplayMode(display, &dispmode, &newmode);
 
     char error = 0;
 
@@ -1626,11 +1628,13 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     initprintf("Setting video mode %dx%d (%d-bpp %s)\n", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
 
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+
     SDL_DisplayMode desktopmode;
-    SDL_GetDesktopDisplayMode(0, &desktopmode);
+    SDL_GetDesktopDisplayMode(display, &desktopmode);
 
     int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
-    int const borderless = (g_borderless == 1 || (g_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
+    int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
     {
@@ -1671,8 +1675,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
                to force the surface we WANT to be recreated instead of reused. */
 
 
-            sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED,
-                                          windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED, x, y,
+            sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                          windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
                                           SDL_WINDOW_OPENGL | borderless);
 
             if (sdl_window)
@@ -1705,8 +1709,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #endif  // defined USE_OPENGL
     {
         // init
-        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED,
-                                      windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED, x, y,
+        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                      windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
                                       borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
@@ -2448,12 +2452,18 @@ int32_t handleevents_pollsdl(void)
                         break;
 
                     case SDL_WINDOWEVENT_MOVED:
+                    {
                         if (windowpos)
                         {
                             windowx = ev.window.data1;
                             windowy = ev.window.data2;
                         }
+
+                        r_displayindex = SDL_GetWindowDisplayIndex(sdl_window);
+                        modeschecked = 0;
+                        videoGetModes();
                         break;
+                    }
                     case SDL_WINDOWEVENT_ENTER:
                         g_mouseInsideWindow = 1;
                         break;
@@ -2461,6 +2471,7 @@ int32_t handleevents_pollsdl(void)
                         g_mouseInsideWindow = 0;
                         break;
                 }
+
                 break;
 
             default:
