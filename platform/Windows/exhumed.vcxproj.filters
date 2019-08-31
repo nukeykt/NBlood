@@ -197,6 +197,15 @@
     <ClCompile Include="..\..\source\exhumed\src\osdcmds.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\startwin.game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\winbits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\rsrc\eduke32_icon.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\exhumed\src\cdaudio.h">
@@ -380,6 +389,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\osdcmds.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\startwin.game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

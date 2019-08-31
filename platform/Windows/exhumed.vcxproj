@@ -203,6 +203,7 @@
     <Manifest Include="exhumed.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\exhumed\rsrc\eduke32_icon.c" />
     <ClCompile Include="..\..\source\exhumed\src\aistuff.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\anims.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\anubis.cpp" />
@@ -253,6 +254,7 @@
     <ClCompile Include="..\..\source\exhumed\src\snake.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\sound.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\spider.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\startwin.game.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\status.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\stream.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\switch.cpp" />
@@ -262,6 +264,7 @@
     <ClCompile Include="..\..\source\exhumed\src\version.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\view.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\wasp.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\winbits.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\exhumed\src\aistuff.h" />
@@ -314,6 +317,7 @@
     <ClInclude Include="..\..\source\exhumed\src\snake.h" />
     <ClInclude Include="..\..\source\exhumed\src\sound.h" />
     <ClInclude Include="..\..\source\exhumed\src\spider.h" />
+    <ClInclude Include="..\..\source\exhumed\src\startwin.game.h" />
     <ClInclude Include="..\..\source\exhumed\src\status.h" />
     <ClInclude Include="..\..\source\exhumed\src\stream.h" />
     <ClInclude Include="..\..\source\exhumed\src\switch.h" />
