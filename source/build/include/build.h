@@ -943,6 +943,8 @@ static FORCE_INLINE int32_t videoGetRenderMode(void)
 #endif
 }
 
+EXTERN int32_t exhumedhack;
+
 /*************************************************************************
 POSITION VARIABLES:
 

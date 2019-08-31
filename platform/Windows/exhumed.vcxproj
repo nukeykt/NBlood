@@ -234,6 +234,7 @@
     <ClCompile Include="..\..\source\exhumed\src\mummy.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\network.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\object.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\osdcmds.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\paul.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\player.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\queen.cpp" />
@@ -294,6 +295,7 @@
     <ClInclude Include="..\..\source\exhumed\src\names.h" />
     <ClInclude Include="..\..\source\exhumed\src\network.h" />
     <ClInclude Include="..\..\source\exhumed\src\object.h" />
+    <ClInclude Include="..\..\source\exhumed\src\osdcmds.h" />
     <ClInclude Include="..\..\source\exhumed\src\paul.h" />
     <ClInclude Include="..\..\source\exhumed\src\player.h" />
     <ClInclude Include="..\..\source\exhumed\src\queen.h" />
