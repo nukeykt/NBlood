@@ -681,7 +681,7 @@ void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *
     int bakCstat = pSprite->cstat;
     int32_t nTemp1, nTemp2;
     pSprite->cstat &= ~257;
-    getzrange_old(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, (int32_t*)ceilZ, (int32_t*)ceilHit, (int32_t*)floorZ, (int32_t*)floorHit, nDist, nMask);
+    getzrange_old(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, (int32_t*)ceilZ, (int32_t*)ceilHit, (int32_t*)floorZ, (int32_t*)floorHit, nDist, CLIPMASK0);
     if (((*floorHit) & 0xc000) == 0x4000)
     {
         int nSector = (*floorHit) & 0x3fff;
@@ -698,7 +698,7 @@ void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *
             int nLink = sprite[nSprite].owner & 0xfff;
             getzrange_old(pSprite->x+sprite[nLink].x-sprite[nSprite].x, pSprite->y+sprite[nLink].y-sprite[nSprite].y,
                 pSprite->z+sprite[nLink].z-sprite[nSprite].z, sprite[nLink].sectnum, &nTemp1, &nTemp2, (int32_t*)floorZ, (int32_t*)floorHit,
-                nDist, nMask);
+                nDist, CLIPMASK0);
             *floorZ -= sprite[nLink].z - sprite[nSprite].z;
         }
     }
@@ -713,7 +713,7 @@ void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *
             int nLink = sprite[nSprite].owner & 0xfff;
             getzrange_old(pSprite->x+sprite[nLink].x-sprite[nSprite].x, pSprite->y+sprite[nLink].y-sprite[nSprite].y,
                 pSprite->z+sprite[nLink].z-sprite[nSprite].z, sprite[nLink].sectnum, (int32_t*)ceilZ, (int32_t*)ceilHit, &nTemp1, &nTemp2,
-                nDist, nMask);
+                nDist, CLIPMASK0);
             *ceilZ -= sprite[nLink].z - sprite[nSprite].z;
         }
     }

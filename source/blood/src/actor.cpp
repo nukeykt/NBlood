@@ -4663,7 +4663,7 @@ void MoveDude(spritetype *pSprite)
             if (sector[nSector].lotag >= 612 && sector[nSector].lotag <= 617)
             {
                 short nSector2 = nSector;
-                if (pushmove_old(&pSprite->x, &pSprite->y, &pSprite->z, &nSector2, wd, tz, bz, 0x13001) == -1)
+                if (pushmove_old(&pSprite->x, &pSprite->y, &pSprite->z, &nSector2, wd, tz, bz, CLIPMASK0) == -1)
                     actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, 1000 << 4);
                 if (nSector2 != -1)
                     nSector = nSector2;
