@@ -4575,7 +4575,7 @@ void G_HandleLocalKeys(void)
             }
             else
             {
-                G_SetStatusBarScale(ud.statusbarscale+4);
+                G_SetStatusBarScale(ud.statusbarscale+5);
             }
 
             G_UpdateScreenArea();
@@ -4601,7 +4601,7 @@ void G_HandleLocalKeys(void)
             }
             else
             {
-                G_SetStatusBarScale(ud.statusbarscale-4);
+                G_SetStatusBarScale(ud.statusbarscale-5);
             }
 
             G_UpdateScreenArea();
