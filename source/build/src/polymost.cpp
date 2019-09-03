@@ -5112,8 +5112,6 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
     flatskyrender = 0;
     vec2f_t xys[8];
 
-    polymost_setClamp(2);
-
     // Transform polygon to sky coordinates
     for (int i = 0; i < n; i++)
     {
@@ -5158,6 +5156,11 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
         if (xys[i].x > x1) x1 = xys[i].x;
     }
 
+    int const npot = (1<<(picsiz[globalpicnum]&15)) != tilesiz[globalpicnum].x;
+    int const xpanning = (r_parallaxskypanning?global_cf_xpanning:0);
+
+    polymost_setClamp((npot || xpanning != 0) ? 0 : 2);
+
     int picnumbak = globalpicnum;
     ti = globalpicnum;
     o.y = fviewingrange/(ghalfx*256.f); o.z = 1.f/o.y;
@@ -5168,7 +5171,14 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
     do
     {
         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+ti;
-        otex.u = otex.d*(t*((float)(fglobalang-(y<<(11-dapskybits)))) * (1.f/2048.f) + (float)((r_parallaxskypanning)?global_cf_xpanning:0)) - xtex.u*ghalfx;
+        if (npot)
+        {
+            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+            int tang = (y<<(11-dapskybits))&2047;
+            otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
+        }
+        else
+            otex.u = otex.d*(t*((float)(fglobalang-(y<<(11-dapskybits)))) * (1.f/2048.f) + xpanning) - xtex.u*ghalfx;
         y++;
         o.x = fx; fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
 
@@ -5453,6 +5463,7 @@ static void polymost_drawalls(int32_t const bunch)
                     skyclamphack = 0;
                     flatskyrender = 1;
                     globalshade += globvis2*xdimscale*fviewingrange*(1.f / (64.f * 65536.f * 256.f * 1024.f));
+                    polymost_setVisibility(0.f);
                     polymost_domost(x0,fy0,x1,fy1);
                     flatskyrender = 0;
                 }
@@ -5553,6 +5564,9 @@ static void polymost_drawalls(int32_t const bunch)
                     ytex.v = vv[1];
                     otex.v = r_parallaxskypanning ? vv[0] + dd*(float)sec->floorypanning*(float)i*(1.f/256.f) : vv[0];
 
+                    int const npot = (1<<(picsiz[globalpicnum]&15)) != tilesiz[globalpicnum].x;
+                    int const xpanning = (r_parallaxskypanning?sec->floorxpanning:0);
+
                     i = globalpicnum;
                     float const r = (fy1-fy0)/(x1-x0); //slope of line
                     o.y = fviewingrange/(ghalfx*256.f); o.z = 1.f/o.y;
@@ -5562,7 +5576,14 @@ static void polymost_drawalls(int32_t const bunch)
                     do
                     {
                         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+i;
-                        otex.u = otex.d*(t*((float)(fglobalang-(y<<(11-dapskybits)))) * (1.f/2048.f) + (float)((r_parallaxskypanning)?sec->floorxpanning:0)) - xtex.u*ghalfx;
+                        if (npot)
+                        {
+                            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+                            int tang = (y<<(11-dapskybits))&2047;
+                            otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
+                        }
+                        else
+                            otex.u = otex.d*(t*((float)(fglobalang-(y<<(11-dapskybits)))) * (1.f/2048.f) + xpanning) - xtex.u*ghalfx;
                         y++;
                         o.x = fx; fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
                         if (fx > x1) { fx = x1; i = -1; }
@@ -5937,6 +5958,9 @@ static void polymost_drawalls(int32_t const bunch)
                     ytex.v = vv[1];
                     otex.v = r_parallaxskypanning ? vv[0] + dd*(float)sec->ceilingypanning*(float)i*(1.f/256.f) : vv[0];
 
+                    int const npot = (1<<(picsiz[globalpicnum]&15)) != tilesiz[globalpicnum].x;
+                    int const xpanning = (r_parallaxskypanning?sec->ceilingxpanning:0);
+
                     i = globalpicnum;
                     float const r = (cy1-cy0)/(x1-x0); //slope of line
                     o.y = fviewingrange/(ghalfx*256.f); o.z = 1.f/o.y;
@@ -5946,7 +5970,14 @@ static void polymost_drawalls(int32_t const bunch)
                     do
                     {
                         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+i;
-                        otex.u = otex.d*(t*((float)(fglobalang-(y<<(11-dapskybits)))) * (1.f/2048.f) + (float)((r_parallaxskypanning)?sec->ceilingxpanning:0)) - xtex.u*ghalfx;
+                        if (npot)
+                        {
+                            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+                            int tang = (y<<(11-dapskybits))&2047;
+                            otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
+                        }
+                        else
+                            otex.u = otex.d*(t*((float)(fglobalang-(y<<(11-dapskybits)))) * (1.f/2048.f) + xpanning) - xtex.u*ghalfx;
                         y++;
                         o.x = fx; fx = (((float) (y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
                         if (fx > x1) { fx = x1; i = -1; }
