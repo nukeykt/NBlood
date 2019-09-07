@@ -23,11 +23,9 @@ apps/
 *.cache
 *.cfg
 textures
+texturecache
+*.index
 
-/platform/Windows/Win32
-/platform/Windows/x64
-*.exp
-*.lib
 *.manifest
 /*.map
 /platform/Windows/*.map
@@ -36,6 +34,9 @@ textures
 *.VC.db
 *.VC.opendb
 *.sym
+/*.grp
+/*.rts
+/*.art
 /*.con
 /platform/Windows/*.con
 *.memmap
@@ -45,18 +46,16 @@ textures
 *.vcxproj.user
 *.psess
 *.vsp
+/platform/Windows/Build/
+/platform/Windows/x64/
+/platform/Windows/Win32/
+*.exp
+*.lib
 perl.exe.stackdump
 
 xcuserdata/
 project.xcworkspace/
-DerivedData/
-*.xcscheme
 *.dSYM/
 
 .DS_Store
-/texturecache
-/texturecache.index
-/game*.sav
-/*.DEM
-/blud*.png
-/movie/*
+._*

@@ -31,8 +31,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "renderlayer.h"
 #include "function.h"
 #include "blood.h"
-#include "gamedefs.h"
 #include "config.h"
+#include "gamedefs.h"
+#include "globals.h"
+#include "screen.h"
+#include "sound.h"
+#include "tile.h"
 #include "view.h"
 
 #ifdef __ANDROID__
@@ -51,8 +55,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
-int32_t MAXCACHE1DSIZE = (96*1024*1024);
-
 int32_t MouseDeadZone, MouseBias;
 int32_t SmoothInput;
 int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
@@ -68,19 +70,7 @@ int32_t JoystickAnalogueSaturate[MAXJOYAXES];
 uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 int32_t scripthandle;
 int32_t setupread;
-int32_t SoundToggle;
-int32_t MusicToggle;
 int32_t MusicRestartsOnLoadToggle;
-int32_t CDAudioToggle;
-int32_t FXVolume;
-int32_t MusicVolume;
-int32_t CDVolume;
-int32_t NumVoices;
-int32_t NumChannels;
-int32_t NumBits;
-int32_t MixRate;
-int32_t ReverseStereo;
-int32_t MusicDevice;
 int32_t configversion;
 int32_t CheckForUpdates;
 int32_t LastUpdateCheck;
@@ -117,13 +107,16 @@ bool gNoClip;
 bool gInfiniteAmmo;
 bool gFullMap;
 int32_t gUpscaleFactor;
-int32_t gBrightness;
 int32_t gLevelStats;
 int32_t gPowerupDuration;
 int32_t gShowMapTitle;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
+
+//////////
+int gWeaponsV10x;
+/////////
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
@@ -681,10 +674,10 @@ int CONFIG_ReadSetup(void)
 
     if (scripthandle < 0)
     {
-        if (SafeFileExists(SetupFilename))  // JBF 20031211
+        if (buildvfs_exists(SetupFilename))  // JBF 20031211
             scripthandle = SCRIPT_Load(SetupFilename);
 #if !defined(EDUKE32_TOUCH_DEVICES) && !defined(EDUKE32_STANDALONE)
-        else if (SafeFileExists(SETUPFILENAME))
+        else if (buildvfs_exists(SETUPFILENAME))
         {
             int const i = wm_ynbox("Import Configuration Settings",
                                    "The configuration file \"%s\" was not found. "
@@ -700,6 +693,11 @@ int CONFIG_ReadSetup(void)
 
     if (scripthandle < 0)
         return -1;
+
+    // Nuke: make cvar
+    ///////
+    SCRIPT_GetNumber(scripthandle, "Game Options", "WeaponsV10x", &gWeaponsV10x);
+    ///////
 
     char commmacro[] = "CommbatMacro# ";
 
@@ -1008,6 +1006,10 @@ void CONFIG_WriteSetup(uint32_t flags)
         SCRIPT_PutString(scripthandle, "Comm Setup",commmacro,&CommbatMacro[dummy][0]);
     }
 
+    ///////
+    SCRIPT_PutNumber(scripthandle, "Game Options", "WeaponsV10x", gWeaponsV10x, FALSE, FALSE);
+    ///////
+    
     SCRIPT_Save(scripthandle, SetupFilename);
 
     if ((flags & 2) == 0)

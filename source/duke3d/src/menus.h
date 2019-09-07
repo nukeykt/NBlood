@@ -44,6 +44,8 @@ enum MenuIndex_t {
     MENU_MAIN_INGAME    = 50,
     MENU_EPISODE        = 100,
     MENU_USERMAP        = 101,
+    MENU_NEWGAMECUSTOM  = 102,
+    MENU_NEWGAMECUSTOMSUB = 103,
     MENU_SKILL          = 110,
     MENU_GAMESETUP      = 200,
     MENU_OPTIONS        = 202,
@@ -96,6 +98,12 @@ enum MenuIndex_t {
     MENU_NEWVERIFY      = 1500,
     MENU_SAVEVERIFY     = 2000,
     MENU_SAVEDELVERIFY  = 2100,
+    MENU_COLCORRRESETVERIFY = 2200,
+    MENU_KEYSRESETVERIFY = 2201,
+    MENU_KEYSCLASSICVERIFY = 2202,
+    MENU_JOYSTANDARDVERIFY = 2203,
+    MENU_JOYPROVERIFY   = 2204,
+    MENU_JOYCLEARVERIFY = 2205,
     MENU_ADULTPASSWORD  = 10001,
     MENU_RESETPLAYER    = 15000,
     MENU_BUYDUKE        = 20000,
@@ -413,6 +421,7 @@ typedef struct MenuFileSelect_t
     MenuFont_t *font[2];
 
     // traits
+    const char * startdir;
     const char *pattern;
     char *destination;
 
@@ -482,13 +491,41 @@ extern int32_t m_mousewake_watchpoint, m_menuchange_watchpoint;
 // alpha increments of 3 --> 255 / 3 = 85 --> round up to power of 2 --> 128 --> divide by 2 --> 64 alphatabs required
 // use 16 anyway :P
 # define MOUSEUSEALPHA (videoGetRenderMode() != REND_CLASSIC || numalphatabs >= 15)
-# define MOUSEALPHA (MOUSEUSEALPHA ? clamp((totalclock - m_mouselastactivity - 90)*3, 0, 255) : 0)
-# define CURSORALPHA (MOUSEUSEALPHA ? clamp((totalclock - m_mouselastactivity - 90)*2 + (255/3), (255/3), 255) : 255/3)
+# define MOUSEALPHA (MOUSEUSEALPHA ? clamp(((int32_t) totalclock - m_mouselastactivity - 90)*3, 0, 255) : 0)
+# define CURSORALPHA (MOUSEUSEALPHA ? clamp(((int32_t) totalclock - m_mouselastactivity - 90)*2 + (255/3), (255/3), 255) : 255/3)
 # define MOUSEACTIVECONDITION (totalclock - m_mouselastactivity < M_MOUSETIMEOUT)
 # define MOUSEACTIVECONDITIONAL(condition) (MOUSEACTIVECONDITION && (condition))
-# define MOUSEINACTIVECONDITIONAL(condition) (!MOUSEACTIVECONDITION && (condition))
+# define MOUSEINACTIVECONDITIONAL(condition) ((!(g_player[myconnectindex].ps->gm & MODE_MENU) || !MOUSEACTIVECONDITION) && (condition))
 # define MOUSEWATCHPOINTCONDITIONAL(condition) ((condition) || m_mousewake_watchpoint || m_menuchange_watchpoint == 3)
 #endif
+
+#define MAXMENUGAMEPLAYENTRIES 7
+
+enum MenuGameplayEntryFlags
+{
+    MGE_Locked = 1u<<0u,
+    MGE_Hidden = 1u<<1u,
+    MGE_UserContent = 1u<<2u,
+};
+
+typedef struct MenuGameplayEntry
+{
+    char name[64];
+    uint8_t flags;
+
+    bool isValid() const { return name[0] != '\0'; }
+} MenuGameplayEntry;
+
+typedef struct MenuGameplayStemEntry
+{
+    MenuGameplayEntry entry;
+    MenuGameplayEntry subentries[MAXMENUGAMEPLAYENTRIES];
+} MenuGameplayStemEntry;
+
+extern MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
+
+extern MenuEntry_t ME_NEWGAMECUSTOMENTRIES[MAXMENUGAMEPLAYENTRIES];
+extern MenuEntry_t ME_NEWGAMECUSTOMSUBENTRIES[MAXMENUGAMEPLAYENTRIES][MAXMENUGAMEPLAYENTRIES];
 
 #ifdef __cplusplus
 }

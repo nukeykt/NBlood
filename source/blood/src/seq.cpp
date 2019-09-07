@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "blood.h"
 #include "db.h"
 #include "eventq.h"
+#include "globals.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "sfx.h"
@@ -107,14 +108,12 @@ void UpdateSprite(int nXSprite, SEQFRAME *pFrame)
     
     int scale = xsprite[nXSprite].scale; // SEQ size scaling
     if (pFrame->at2_0) {
-        if (scale < 0) pSprite->xrepeat = pFrame->at2_0 / abs(scale);
-        else if (scale > 0) pSprite->xrepeat = pFrame->at2_0 * scale;
+        if (scale) pSprite->xrepeat = mulscale8(pFrame->at2_0, scale);
         else pSprite->xrepeat = pFrame->at2_0;
     }
 
     if (pFrame->at3_0) {
-        if (scale < 0) pSprite->yrepeat = pFrame->at3_0 / abs(scale);
-        else if (scale > 0) pSprite->yrepeat = pFrame->at3_0 * scale;
+        if (scale) pSprite->yrepeat = mulscale8(pFrame->at3_0, scale);
         else pSprite->yrepeat = pFrame->at3_0;
     }
 
@@ -286,11 +285,19 @@ void SEQINST::Update(ACTIVE *pActive)
     {
 
         UpdateSprite(pActive->xindex, &pSequence->frames[frameIndex]);
-        if (pSequence->frames[frameIndex].at6_1)
-            sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], pSequence->ata + Random(pSequence->frames[frameIndex].soundRange), -1, 0);
+        if (pSequence->frames[frameIndex].at6_1) {
+            
+            int sound = pSequence->ata;
+            
+            // by NoOne: add random sound range feature
+            if (!VanillaMode() && pSequence->frames[frameIndex].soundRange > 0)
+                sound += Random(((pSequence->frames[frameIndex].soundRange == 1) ? 2 : pSequence->frames[frameIndex].soundRange));
+            
+            sfxPlay3DSound(&sprite[xsprite[pActive->xindex].reference], sound, -1, 0);
+        }
 
         spritetype* pSprite = &sprite[xsprite[pActive->xindex].reference];
-        if (pSequence->frames[frameIndex].surfaceSound && zvel[pSprite->xvel] == 0 && xvel[pSprite->xvel] != 0) {
+        if (!VanillaMode() && pSequence->frames[frameIndex].surfaceSound && zvel[pSprite->xvel] == 0 && xvel[pSprite->xvel] != 0) {
 
             // by NoOne: add surfaceSound trigger feature
             if (gUpperLink[pSprite->sectnum] >= 0) break; // don't play surface sound for stacked sectors

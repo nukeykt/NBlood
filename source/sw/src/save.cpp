@@ -36,7 +36,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "lists.h"
 #include "interp.h"
 
-#include "net.h"
+#include "network.h"
 //#include "save.h"
 #include "savedef.h"
 #include "jsector.h"
@@ -171,7 +171,7 @@ int SaveSymDataInfo(MFILE_WRITE fil, void *ptr)
 
     return 0;
 }
-int SaveSymCodeInfo(MFILE_WRITE fil, void *ptr)
+static int SaveSymCodeInfo_raw(MFILE_WRITE fil, void *ptr)
 {
     savedcodesym sym;
 
@@ -191,6 +191,11 @@ int SaveSymCodeInfo(MFILE_WRITE fil, void *ptr)
     MWRITE(&sym, sizeof(sym), 1, fil);
 
     return 0;
+}
+template <typename T>
+static int SaveSymCodeInfo(MFILE_WRITE fil, T * ptr)
+{
+    return SaveSymCodeInfo_raw(fil, (void *)ptr);
 }
 
 int LoadSymDataInfo(MFILE_READ fil, void **ptr)
@@ -849,7 +854,7 @@ int LoadGame(short save_num)
             if (ndx == -1)
                 break;
 
-            psp = CallocMem(sizeof(PANEL_SPRITE), 1);
+            psp = (PANEL_SPRITEp)CallocMem(sizeof(PANEL_SPRITE), 1);
             ASSERT(psp);
 
             MREAD(psp, sizeof(PANEL_SPRITE),1,fil);
@@ -918,23 +923,23 @@ int LoadGame(short save_num)
 
         if (u->WallShade)
         {
-            u->WallShade = CallocMem(u->WallCount * sizeof(*u->WallShade), 1);
+            u->WallShade = (int8_t*)CallocMem(u->WallCount * sizeof(*u->WallShade), 1);
             MREAD(u->WallShade,sizeof(*u->WallShade)*u->WallCount,1,fil);
         }
 
         if (u->rotator)
         {
-            u->rotator = CallocMem(sizeof(*u->rotator), 1);
+            u->rotator = (ROTATORp)CallocMem(sizeof(*u->rotator), 1);
             MREAD(u->rotator,sizeof(*u->rotator),1,fil);
 
             if (u->rotator->origx)
             {
-                u->rotator->origx = CallocMem(u->rotator->num_walls * sizeof(*u->rotator->origx), 1);
+                u->rotator->origx = (int*)CallocMem(u->rotator->num_walls * sizeof(*u->rotator->origx), 1);
                 MREAD(u->rotator->origx,sizeof(*u->rotator->origx)*u->rotator->num_walls,1,fil);
             }
             if (u->rotator->origy)
             {
-                u->rotator->origy = CallocMem(u->rotator->num_walls * sizeof(*u->rotator->origy), 1);
+                u->rotator->origy = (int*)CallocMem(u->rotator->num_walls * sizeof(*u->rotator->origy), 1);
                 MREAD(u->rotator->origy,sizeof(*u->rotator->origy)*u->rotator->num_walls,1,fil);
             }
         }
@@ -1117,7 +1122,7 @@ int LoadGame(short save_num)
             if (ndx == -1)
                 break;
 
-            otp = CallocMem(sizeof(*otp), 1);
+            otp = (OrgTileP)CallocMem(sizeof(*otp), 1);
             ASSERT(otp);
 
             MREAD(otp, sizeof(*otp),1,fil);
@@ -1313,10 +1318,10 @@ ScreenLoad(MFILE_READ fin)
 {
     int num;
 
-    setviewtotile(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
+    renderSetTarget(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
 
     num = MREAD((void *)waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, 1, fin);
 
-    setviewback();
+    renderRestoreTarget();
 }
 

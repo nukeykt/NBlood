@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx.h"
 #include "getopt.h"
 #include "globals.h"
+#include "gui.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "menu.h"
@@ -79,13 +80,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
 
-char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
-
-ud_setup_t gSetup;
 char SetupFilename[BMAX_PATH] = SETUPFILENAME;
 int32_t gNoSetup = 0, gCommandSetup = 0;
-
-Resource gSysRes, gGuiRes;
 
 INPUT_MODE gInputMode;
 
@@ -96,8 +92,6 @@ char bAddUserMap = false;
 bool bNoDemo = false;
 bool bQuickStart = true;
 bool bNoAutoLoad = false;
-
-bool bVanilla = false;
 
 int gMusicPrevLoadedEpisode = -1;
 int gMusicPrevLoadedLevel = -1;
@@ -117,6 +111,13 @@ int gChokeCounter = 0;
 
 double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 double g_gameUpdateAvgTime = 0.001;
+
+int gSaveGameNum;
+bool gQuitGame;
+int gQuitRequest;
+bool gPaused;
+bool gSaveGameActive;
+int gCacheMiss;
 
 enum gametokens
 {
@@ -149,6 +150,12 @@ enum gametokens
     T_FORCENOFILTER,
     T_TEXTUREFILTER,
     T_RFFDEFINEID,
+    T_TILEFROMTEXTURE,
+    T_IFCRC,
+    T_SURFACE,
+    T_VOXEL,
+    T_VIEW,
+    T_SHADE,
 };
 
 int blood_globalflags;
@@ -166,43 +173,6 @@ void G_Polymer_UnInit(void)
 void M32RunScript(const char *s)
 {
     UNREFERENCED_PARAMETER(s);
-}
-
-static const char *_module;
-static int _line;
-
-void _SetErrorLoc(const char *pzFile, int nLine)
-{
-    _module = pzFile;
-    _line = nLine;
-}
-
-void _ThrowError(const char *pzFormat, ...)
-{
-    char buffer[256];
-    va_list args;
-    va_start(args, pzFormat);
-    vsprintf(buffer, pzFormat, args);
-    initprintf("%s(%i): %s\n", _module, _line, buffer);
-
-    char titlebuf[256];
-    Bsprintf(titlebuf, APPNAME " %s", s_buildRev);
-    wm_msgbox(titlebuf, "%s(%i): %s\n", _module, _line, buffer);
-
-    Bfflush(NULL);
-    QuitGame();
-}
-
-void __dassert(const char * pzExpr, const char * pzFile, int nLine)
-{
-    initprintf("Assertion failed: %s in file %s at line %i\n", pzExpr, pzFile, nLine);
-
-    char titlebuf[256];
-    Bsprintf(titlebuf, APPNAME " %s", s_buildRev);
-    wm_msgbox(titlebuf, "Assertion failed: %s in file %s at line %i\n", pzExpr, pzFile, nLine);
-
-    Bfflush(NULL);
-    exit(0);
 }
 
 void ShutDown(void)
@@ -235,8 +205,6 @@ void QuitGame(void)
     ShutDown();
     exit(0);
 }
-
-int nPrecacheCount;
 
 void PrecacheDude(spritetype *pSprite)
 {
@@ -416,7 +384,6 @@ void PreloadTiles(void)
     G_HandleAsync();
 }
 
-char precachehightile[2][(MAXTILES+7)>>3];
 #ifdef USE_OPENGL
 void PrecacheExtraTextureMaps(int nTile)
 {
@@ -470,7 +437,7 @@ void PreloadCache(void)
         sndTryPlaySpecialMusic(MUS_LOADING);
     gSoundRes.PrecacheSounds();
     PreloadTiles();
-    int clock = totalclock;
+    ClockTicks clock = totalclock;
     int cnt = 0;
     int percentDisplayed = -1;
 
@@ -499,6 +466,7 @@ void PreloadCache(void)
                 {
                     Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, nPrecacheCount);
                     viewLoadingScreenUpdate(tempbuf, percentDisplayed);
+                    videoNextPage();
                     timerUpdate();
 
                     if (totalclock - clock >= 1)
@@ -550,6 +518,10 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             gGameOptions.uGameFlags |= 4;
         if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
             levelPlayIntroScene(gGameOptions.nEpisode);
+
+        ///////
+        gGameOptions.weaponsV10x = gWeaponsV10x;
+        ///////
     }
     else if (gGameOptions.nGameType > 0 && !(gGameOptions.uGameFlags&1))
     {
@@ -565,6 +537,10 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+
+        ///////
+        gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
+        ///////
     }
     if (gameOptions->uGameFlags&1)
     {
@@ -575,11 +551,15 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    blooddemohack = 1;//bVanilla;
+    blooddemohack = 2;//bVanilla;
     memset(xsprite,0,sizeof(xsprite));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
     drawLoadingScreen();
-    dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC);
+    if (dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC))
+    {
+        gQuitGame = true;
+        return;
+    }
     wsrand(gameOptions->uMapCRC);
     gKillMgr.Clear();
     gSecretMgr.Clear();
@@ -685,7 +665,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (gGameOptions.nGameType == 3)
         gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
     netWaitForEveryone(0);
-    gGameClock = 0;
+    totalclock = 0;
     gPaused = 0;
     gGameStarted = 1;
     ready2send = 1;
@@ -705,6 +685,11 @@ void StartNetworkLevel(void)
         gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
+        
+        ///////
+        gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
+        ///////
+        
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
@@ -937,7 +922,7 @@ void ProcessFrame(void)
         playerProcess(&gPlayer[i]);
     }
     trProcessBusy();
-    evProcess(gFrameClock);
+    evProcess((int)gFrameClock);
     seqProcess(4);
     DoSectorPanning();
     actProcessSprites();
@@ -1382,7 +1367,7 @@ void ParseOptions(void)
 
 void ClockStrobe()
 {
-    gGameClock++;
+    //gGameClock++;
 }
 
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
@@ -1518,27 +1503,13 @@ int app_main(int argc, char const * const * argv)
     gGuiRes.Init("GUI.RFF");
     gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF");
 
-
-    { // Replace
-        void qinitspritelists();
-        int32_t qinsertsprite(int16_t nSector, int16_t nStat);
-        int32_t qdeletesprite(int16_t nSprite);
-        int32_t qchangespritesect(int16_t nSprite, int16_t nSector);
-        int32_t qchangespritestat(int16_t nSprite, int16_t nStatus);
-        animateoffs_replace = qanimateoffs;
-        paletteLoadFromDisk_replace = qloadpalette;
-        getpalookup_replace = qgetpalookup;
-        initspritelists_replace = qinitspritelists;
-        insertsprite_replace = qinsertsprite;
-        deletesprite_replace = qdeletesprite;
-        changespritesect_replace = qchangespritesect;
-        changespritestat_replace = qchangespritestat;
-        loadvoxel_replace = qloadvoxel;
-        bloodhack = true;
-    }
+    HookReplaceFunctions();
 
     initprintf("Initializing Build 3D engine\n");
     scrInit();
+
+    initprintf("Creating standard color lookups\n");
+    scrCreateStdColors();
     
     initprintf("Loading tiles\n");
     if (pUserTiles)
@@ -1557,6 +1528,10 @@ int app_main(int argc, char const * const * argv)
     LoadExtraArts();
 
     levelLoadDefaults();
+
+    loaddefinitionsfile(BLOODWIDESCREENDEF);
+    loaddefinitions_game(BLOODWIDESCREENDEF, FALSE);
+
     const char *defsfile = G_DefFile();
     uint32_t stime = timerGetTicks();
     if (!loaddefinitionsfile(defsfile))
@@ -1677,7 +1652,7 @@ RESTART:
             }
             if (numplayers == 1)
                 gBufferJitter = 0;
-            while (gGameClock >= gNetFifoClock && ready2send)
+            while (totalclock >= gNetFifoClock && ready2send)
             {
                 netGetInput();
                 gNetFifoClock += 4;
@@ -1747,6 +1722,7 @@ RESTART:
             default:
                 break;
             }
+            videoNextPage();
         }
         //scrNextPage();
         if (TestBitString(gotpic, 2342))
@@ -1783,6 +1759,7 @@ RESTART:
             {
                 videoClearScreen(0);
                 gGameMenuMgr.Draw();
+                videoNextPage();
             }
         }
         if (gGameOptions.nGameType != 0)
@@ -1984,6 +1961,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
         { "rffdefineid",     T_RFFDEFINEID      },
+        { "tilefromtexture", T_TILEFROMTEXTURE  },
     };
 
     static const tokenlist soundTokens[] =
@@ -2128,6 +2106,83 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     gSysRes.AddExternalResource(resName, resType, resID);
                 else if (!Bstrcasecmp(rffName, "SOUND"))
                     gSoundRes.AddExternalResource(resName, resType, resID);
+            }
+        }
+        break;
+
+        case T_TILEFROMTEXTURE:
+        {
+            char *texturetokptr = pScript->ltextptr, *textureend;
+            int32_t tile = -1;
+            int32_t havesurface = 0, havevox = 0, haveview = 0, haveshade = 0;
+            int32_t surface = 0, vox = 0, view = 0, shade = 0;
+            int32_t tilecrc = 0, origcrc = 0;
+
+            static const tokenlist tilefromtexturetokens[] =
+            {
+                { "surface", T_SURFACE },
+                { "voxel",   T_VOXEL },
+                { "ifcrc",   T_IFCRC },
+                { "view",    T_VIEW },
+                { "shade",   T_SHADE },
+            };
+
+            if (scriptfile_getsymbol(pScript,&tile)) break;
+            if (scriptfile_getbraces(pScript,&textureend)) break;
+            while (pScript->textptr < textureend)
+            {
+                int32_t token = getatoken(pScript,tilefromtexturetokens,ARRAY_SIZE(tilefromtexturetokens));
+                switch (token)
+                {
+                case T_IFCRC:
+                    scriptfile_getsymbol(pScript, &tilecrc);
+                    break;
+                case T_SURFACE:
+                    havesurface = 1;
+                    scriptfile_getsymbol(pScript, &surface);
+                    break;
+                case T_VOXEL:
+                    havevox = 1;
+                    scriptfile_getsymbol(pScript, &vox);
+                    break;
+                case T_VIEW:
+                    haveview = 1;
+                    scriptfile_getsymbol(pScript, &view);
+                    break;
+                case T_SHADE:
+                    haveshade = 1;
+                    scriptfile_getsymbol(pScript, &shade);
+                    break;
+                }
+            }
+
+            if (!firstPass)
+            {
+                if (EDUKE32_PREDICT_FALSE((unsigned)tile >= MAXUSERTILES))
+                {
+                    initprintf("Error: missing or invalid 'tile number' for texture definition near line %s:%d\n",
+                               pScript->filename, scriptfile_getlinum(pScript,texturetokptr));
+                    break;
+                }
+
+                if (tilecrc)
+                {
+                    origcrc = tileCRC(tile);
+                    if (origcrc != tilecrc)
+                    {
+                        //initprintf("CRC of tile %d doesn't match! CRC: %d, Expected: %d\n", tile, origcrc, tilecrc);
+                        break;
+                    }
+                }
+
+                if (havesurface)
+                    surfType[tile] = surface;
+                if (havevox)
+                    voxelIndex[tile] = vox;
+                if (haveshade)
+                    tileShade[tile] = shade;
+                if (haveview)
+                    picanm[tile].extra = view&7;
             }
         }
         break;
@@ -2435,4 +2490,27 @@ bool VanillaMode() {
 
 bool fileExistsRFF(int id, const char *ext) {
     return gSysRes.Lookup(id, ext);
+}
+
+int sndTryPlaySpecialMusic(int nMusic)
+{
+    int nEpisode = nMusic/kMaxLevels;
+    int nLevel = nMusic%kMaxLevels;
+    if (!sndPlaySong(gEpisodeInfo[nEpisode].at28[nLevel].atd0, true))
+    {
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        return 0;
+    }
+    return 1;
+}
+
+void sndPlaySpecialMusicOrNothing(int nMusic)
+{
+    int nEpisode = nMusic/kMaxLevels;
+    int nLevel = nMusic%kMaxLevels;
+    if (sndTryPlaySpecialMusic(nMusic))
+    {
+        sndStopSong();
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+    }
 }

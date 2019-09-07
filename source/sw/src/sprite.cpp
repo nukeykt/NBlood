@@ -34,7 +34,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "warp.h"
 #include "light.h"
 #include "break.h"
-#include "net.h"
+#include "network.h"
 
 #include "pal.h"
 
@@ -1043,7 +1043,7 @@ ActorTestSpawn(SPRITEp sp)
             default: c = "?"; break;
             }
             buildprintf("WARNING: skill-masked %s at %d,%d,%d not being killed because it "
-                        "activates something\n", c,sp->x,sp->y,sp->z);
+                        "activates something\n", c, TrackerCast(sp->x), TrackerCast(sp->y), TrackerCast(sp->z));
             return TRUE;
         }
 
@@ -2384,15 +2384,15 @@ SpriteSetup(void)
                     for (w = startwall, wallcount = 0; w <= endwall; w++)
                         wallcount++;
 
-                    u->rotator = CallocMem(sizeof(ROTATOR), 1);
+                    u->rotator = (ROTATORp)CallocMem(sizeof(ROTATOR), 1);
                     u->rotator->num_walls = wallcount;
                     u->rotator->open_dest = SP_TAG5(sp);
                     u->rotator->speed = SP_TAG7(sp);
                     u->rotator->vel = SP_TAG8(sp);
                     u->rotator->pos = 0; // closed
                     u->rotator->tgt = u->rotator->open_dest; // closed
-                    u->rotator->origx = CallocMem(sizeof(u->rotator->origx) * wallcount, 1);
-                    u->rotator->origy = CallocMem(sizeof(u->rotator->origy) * wallcount, 1);
+                    u->rotator->origx = (int*)CallocMem(sizeof(u->rotator->origx) * wallcount, 1);
+                    u->rotator->origy = (int*)CallocMem(sizeof(u->rotator->origy) * wallcount, 1);
 
                     u->rotator->orig_speed = u->rotator->speed;
 
@@ -2444,7 +2444,7 @@ SpriteSetup(void)
                     u->WaitTics = time*15; // 1/8 of a sec
                     u->Tics = 0;
 
-                    u->rotator = CallocMem(sizeof(ROTATOR), 1);
+                    u->rotator = (ROTATORp)CallocMem(sizeof(ROTATOR), 1);
                     u->rotator->open_dest = SP_TAG5(sp);
                     u->rotator->speed = SP_TAG7(sp);
                     u->rotator->vel = SP_TAG8(sp);
@@ -2598,7 +2598,7 @@ SpriteSetup(void)
 
                     User[SpriteNum] = u = SpawnUser(SpriteNum, 0, NULL);
                     u->WallCount = wallcount;
-                    wall_shade = u->WallShade = CallocMem(u->WallCount * sizeof(*u->WallShade), 1);
+                    wall_shade = u->WallShade = (int8_t*)CallocMem(u->WallCount * sizeof(*u->WallShade), 1);
 
                     // save off original wall shades
                     for (w = startwall, wallcount = 0; w <= endwall; w++)
@@ -2654,7 +2654,7 @@ SpriteSetup(void)
                     // make an wall_shade array and put it in User
                     User[SpriteNum] = u = SpawnUser(SpriteNum, 0, NULL);
                     u->WallCount = wallcount;
-                    wall_shade = u->WallShade = CallocMem(u->WallCount * sizeof(*u->WallShade), 1);
+                    wall_shade = u->WallShade = (int8_t*)CallocMem(u->WallCount * sizeof(*u->WallShade), 1);
 
                     // save off original wall shades
                     for (w = startwall, wallcount = 0; w <= endwall; w++)
@@ -2882,7 +2882,7 @@ SpriteSetup(void)
                         if (sprite[i].hitag == sp->hitag && sprite[i].lotag == sp->lotag)
                         {
                             TerminateGame();
-                            printf("Two VIEW_THRU_ tags with same match found on level\n1: x %d, y %d \n2: x %d, y %d", sp->x, sp->y, sprite[i].x, sprite[i].y);
+                            printf("Two VIEW_THRU_ tags with same match found on level\n1: x %d, y %d \n2: x %d, y %d", TrackerCast(sp->x), TrackerCast(sp->y), TrackerCast(sprite[i].x), TrackerCast(sprite[i].y));
                             exit(0);
                         }
                     }
@@ -5495,7 +5495,7 @@ void ChoosePlayerGetSound(PLAYERp pp)
 
 //#define MAX_FORTUNES 16
 // With PLOCK on, max = 11
-char *ReadFortune[MAX_FORTUNES] =
+const char *ReadFortune[MAX_FORTUNES] =
 {
     "You never going to score.",
     "26-31-43-82-16-29",
@@ -5551,7 +5551,7 @@ SWBOOL CanGetWeapon(PLAYERp pp, short SpriteNum, int WPN)
     return TRUE;
 }
 
-char *KeyMsg[MAX_KEYS] =
+const char *KeyMsg[MAX_KEYS] =
 {
     "Got the RED key!",
     "Got the BLUE key!",
@@ -5789,7 +5789,7 @@ KeyMain:
                         sprintf(ds,"Fortune Say: %s\n",ReadFortune[STD_RANDOM_RANGE(10)]);
                     else
                         sprintf(ds,"Fortune Say: %s\n",ReadFortune[STD_RANDOM_RANGE(MAX_FORTUNES)]);
-                    CON_Message(ds);
+                    CON_Message("%s", ds);
                 }
 
                 SetFadeAmt(pp,ITEMFLASHAMT,ITEMFLASHCLR);  // Flash blue on item pickup

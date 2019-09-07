@@ -16,6 +16,8 @@
 #include "kplib.h"
 #include "palette.h"
 
+#include "vfs.h"
+
 
 //For loading/conversion only
 static vec3_t voxsiz;
@@ -60,7 +62,7 @@ uint32_t gloadtex_indexed(const int32_t *picbuf, int32_t xsiz, int32_t ysiz)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ysiz, xsiz, 0, GL_RED, GL_UNSIGNED_BYTE, (char *) pic2);
 
-    Bfree(pic2);
+    Xfree(pic2);
 
     return rtexid;
 }
@@ -107,7 +109,7 @@ uint32_t gloadtex(const int32_t *picbuf, int32_t xsiz, int32_t ysiz, int32_t is8
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, 4, xsiz, ysiz, 0, GL_RGBA, GL_UNSIGNED_BYTE, (char *) pic2);
 
-    Bfree(pic2);
+    Xfree(pic2);
 
     return rtexid;
 }
@@ -116,7 +118,7 @@ static int32_t getvox(int32_t x, int32_t y, int32_t z)
 {
     z += x*yzsiz + y*voxsiz.z;
 
-    for (x=vcolhashead[(z*214013)&vcolhashsizm1]; x>=0; x=vcol[x].n)
+    for (x=vcolhashead[(z*214013LL)&vcolhashsizm1]; x>=0; x=vcol[x].n)
         if (vcol[x].p == z)
             return vcol[x].c;
 
@@ -133,7 +135,7 @@ static void putvox(int32_t x, int32_t y, int32_t z, int32_t col)
 
     z += x*yzsiz + y*voxsiz.z;
 
-    vcol[vnum].p = z; z = (z*214013)&vcolhashsizm1;
+    vcol[vnum].p = z; z = (z*214013LL)&vcolhashsizm1;
     vcol[vnum].c = col;
     vcol[vnum].n = vcolhashead[z]; vcolhashead[z] = vnum++;
 }
@@ -432,16 +434,18 @@ void voxvboalloc(voxmodel_t *vm)
         index[(i*2+1)*3+1] = i*4+2;
         index[(i*2+1)*3+2] = i*4+3;
     }
+    GLint prevVBO = 0;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vm->vboindex);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 3 * 2 * vm->qcnt, index, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    GLint prevVBO = 0;
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevVBO);
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevVBO);
+    prevVBO = 0;
     glBindBuffer(GL_ARRAY_BUFFER, vm->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 5 * 4 * vm->qcnt, vertex, GL_STATIC_DRAW);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevVBO);
     glBindBuffer(GL_ARRAY_BUFFER, prevVBO);
-    Bfree(vertex);
-    Bfree(index);
+    Xfree(vertex);
+    Xfree(index);
 }
 
 void voxvbofree(voxmodel_t *vm)
@@ -619,7 +623,7 @@ skindidntfit:
                     i--;
                     if (i < 0) //Time-out! Very slow if this happens... but at least it still works :P
                     {
-                        Bfree(zbit);
+                        Xfree(zbit);
 
                         //Re-generate shp[].x/y (box sizes) from shcnt (now head indices) for next pass :/
                         j = 0;
@@ -663,7 +667,7 @@ skindidntfit:
         }
     }
 
-    Bfree(shp); Bfree(zbit); Bfree(bx0);
+    Xfree(shp); Xfree(zbit); Xfree(bx0);
 
 #ifdef USE_GLEXT
     if (r_vbos)
@@ -688,7 +692,7 @@ static void alloc_vbit(void)
     memset(vbit, 0, i);
 }
 
-static void read_pal(int32_t fil, int32_t pal[256])
+static void read_pal(buildvfs_kfd fil, int32_t pal[256])
 {
     klseek(fil, -768, SEEK_END);
 
@@ -704,8 +708,8 @@ static void read_pal(int32_t fil, int32_t pal[256])
 
 static int32_t loadvox(const char *filnam)
 {
-    const int32_t fil = kopen4load(filnam, 0);
-    if (fil < 0)
+    const buildvfs_kfd fil = kopen4load(filnam, 0);
+    if (fil == buildvfs_kfd_invalid)
         return -1;
 
     kread(fil, &voxsiz, sizeof(vec3_t));
@@ -771,7 +775,7 @@ static int32_t loadvox(const char *filnam)
             }
         }
 
-    Bfree(tbuf);
+    Xfree(tbuf);
     kclose(fil);
 
     return 0;
@@ -781,8 +785,8 @@ static int32_t loadkvx(const char *filnam)
 {
     int32_t i, mip1leng;
 
-    const int32_t fil = kopen4load(filnam, 0);
-    if (fil < 0)
+    const buildvfs_kfd fil = kopen4load(filnam, 0);
+    if (fil == buildvfs_kfd_invalid)
         return -1;
 
     kread(fil, &mip1leng, 4); mip1leng = B_LITTLE32(mip1leng);
@@ -856,8 +860,8 @@ static int32_t loadkvx(const char *filnam)
             }
         }
 
-    Bfree(tbuf);
-    Bfree(xyoffs);
+    Xfree(tbuf);
+    Xfree(xyoffs);
 
     return 0;
 }
@@ -866,8 +870,8 @@ static int32_t loadkv6(const char *filnam)
 {
     int32_t i;
 
-    const int32_t fil = kopen4load(filnam, 0);
-    if (fil < 0)
+    const buildvfs_kfd fil = kopen4load(filnam, 0);
+    if (fil == buildvfs_kfd_invalid)
         return -1;
 
     kread(fil, &i, 4);
@@ -930,7 +934,7 @@ static int32_t loadkv6(const char *filnam)
             }
         }
 
-    Bfree(ylen);
+    Xfree(ylen);
     kclose(fil);
 
     return 0;
@@ -950,7 +954,7 @@ void voxfree(voxmodel_t *m)
         voxvbofree(m);
 #endif
 
-    Bfree(m);
+    Xfree(m);
 }
 
 voxmodel_t *voxload(const char *filnam)
@@ -1104,10 +1108,10 @@ voxmodel_t *loadkvxfrombuf(const char *kvxbuffer, int32_t length)
 }
 
 //Draw voxel model as perfect cubes
-int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
+int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 {
     // float clut[6] = {1.02,1.02,0.94,1.06,0.98,0.98};
-    float f, g, k0;
+    float f, g, k0, zoff;
 
     if ((intptr_t)m == (intptr_t)(-1)) // hackhackhack
         return 0;
@@ -1115,23 +1119,24 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     if ((tspr->cstat&48)==32)
         return 0;
 
+    polymost_outputGLDebugMessage(3, "polymost_voxdraw(m:%p, tspr:%p)", m, tspr);
+
     //updateanimation((md2model *)m,tspr);
 
     vec3f_t m0 = { m->scale, m->scale, m->scale };
-    vec3f_t a0 = { 0, 0, ((globalorientation&8) ? -m->zadd : m->zadd)*m->scale };
-
-    //if (globalorientation&8) //y-flipping
-    //{
-    //   m0.z = -m0.z; a0.z = -a0.z;
-    //      //Add height of 1st frame (use same frame to prevent animation bounce)
-    //   a0.z += m->zsiz*m->scale;
-    //}
-    //if (globalorientation&4) { m0.y = -m0.y; a0.y = -a0.y; } //x-flipping
+    vec3f_t a0 = { 0, 0, m->zadd*m->scale };
 
     k0 = m->bscale / 64.f;
     f = (float) tspr->xrepeat * (256.f/320.f) * k0;
     if ((sprite[tspr->owner].cstat&48)==16)
+    {
         f *= 1.25f;
+        a0.y -= tspr->xoffset*sintable[(spriteext[tspr->owner].angoff+512)&2047]*(1.f/(64.f*16384.f));
+        a0.x += tspr->xoffset*sintable[spriteext[tspr->owner].angoff&2047]*(1.f/(64.f*16384.f));
+    }
+
+    if (globalorientation&8) { m0.z = -m0.z; a0.z = -a0.z; } //y-flipping
+    if (globalorientation&4) { m0.x = -m0.x; a0.x = -a0.x; a0.y = -a0.y; } //x-flipping
 
     m0.x *= f; a0.x *= f; f = -f;
     m0.y *= f; a0.y *= f;
@@ -1139,15 +1144,26 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     m0.z *= f; a0.z *= f;
 
     k0 = (float) tspr->z;
-    k0 -= (tspr->yoffset*tspr->yrepeat)*4.f*m->bscale;
-    if (!(tspr->cstat&128)) k0 -= (m->piv.z*tspr->yrepeat)*4.f*m->bscale;
+    f = ((globalorientation&8) && (sprite[tspr->owner].cstat&48)!=0) ? -4.f : 4.f;
+    k0 -= (tspr->yoffset*tspr->yrepeat)*f*m->bscale;
+    zoff = m->siz.z*.5f;
+    if (!(tspr->cstat&128))
+        zoff += m->piv.z;
+    else if ((tspr->cstat&48) != 48)
+    {
+        zoff += m->piv.z;
+        zoff -= m->siz.z*.5f;
+    }
+    if ((globalorientation&8) && (sprite[tspr->owner].cstat&48)!=0) zoff = m->siz.z-zoff;
 
     f = (65536.f*512.f) / ((float)xdimen*viewingrange);
     g = 32.f / ((float)xdimen*gxyaspect);
 
+    int const shadowHack = !!(tspr->extra&TSPR_EXTRA_MDHACK);
+
     m0.y *= f; a0.y = (((float)(tspr->x-globalposx)) * (1.f/1024.f) + a0.y) * f;
     m0.x *=-f; a0.x = (((float)(tspr->y-globalposy)) * -(1.f/1024.f) + a0.x) * -f;
-    m0.z *= g; a0.z = (((float)(k0     -globalposz)) * -(1.f/16384.f) + a0.z) * g;
+    m0.z *= g; a0.z = (((float)(k0     -globalposz - shadowHack)) * -(1.f/16384.f) + a0.z) * g;
 
     float mat[16];
     md3_vox_calcmat_common(tspr, &a0, f, mat);
@@ -1161,15 +1177,15 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
         mat[12] = -mat[12];
     }
 
-    if (tspr->extra&TSPR_EXTRA_MDHACK)
+    if (shadowHack)
     {
-        glDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
+        glDepthFunc(GL_LEQUAL); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 0.9999);
     }
 
 //    glPushAttrib(GL_POLYGON_BIT);
 
-    if ((grhalfxdown10x >= 0) /*^ ((globalorientation&8) != 0) ^ ((globalorientation&4) != 0)*/)
+    if ((grhalfxdown10x >= 0) ^ ((globalorientation&8) != 0) ^ ((globalorientation&4) != 0))
         glFrontFace(GL_CW);
     else
         glFrontFace(GL_CCW);
@@ -1182,13 +1198,17 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     pc[0] = pc[1] = pc[2] = ((float)numshades - min(max((globalshade * shadescale) + m->shadeoff, 0.f), (float)numshades)) / (float)numshades;
     hictinting_apply(pc, globalpal);
 
-    pc[3] = (tspr->cstat&2) ? glblend[tspr->blend].def[!!(tspr->cstat&512)].alpha : 1.0f;
-    pc[3] *= 1.0f - spriteext[tspr->owner].alpha;
+    if (!shadowHack)
+    {
+        pc[3] = (tspr->cstat & 2) ? glblend[tspr->blend].def[!!(tspr->cstat & 512)].alpha : 1.0f;
+        pc[3] *= 1.0f - spriteext[tspr->owner].alpha;
 
-    handle_blend(!!(tspr->cstat & 2), tspr->blend, !!(tspr->cstat & 512));
+        handle_blend(!!(tspr->cstat & 2), tspr->blend, !!(tspr->cstat & 512));
 
-    if ((tspr->cstat&2) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
-        glEnable(GL_BLEND); //else glDisable(GL_BLEND);
+        if (!(tspr->cstat & 2) || spriteext[tspr->owner].alpha > 0.f || pc[3] < 1.0f)
+            glEnable(GL_BLEND);  // else glDisable(GL_BLEND);
+    }
+    else pc[3] = 1.f;
     //------------
 
     //transform to Build coords
@@ -1200,9 +1220,9 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     g = m0.y*f; mat[4] = omat[8]*g; mat[5] = omat[9]*g; mat[6] = omat[10]*g;
     g =-m0.z*f; mat[8] = omat[4]*g; mat[9] = omat[5]*g; mat[10] = omat[6]*g;
     //
-    mat[12] -= (m->piv.x*mat[0] + m->piv.y*mat[4] + m->siz.z*.5f*mat[8]);
-    mat[13] -= (m->piv.x*mat[1] + m->piv.y*mat[5] + m->siz.z*.5f*mat[9]);
-    mat[14] -= (m->piv.x*mat[2] + m->piv.y*mat[6] + m->siz.z*.5f*mat[10]);
+    mat[12] -= (m->piv.x*mat[0] + m->piv.y*mat[4] + zoff*mat[8]);
+    mat[13] -= (m->piv.x*mat[1] + m->piv.y*mat[5] + zoff*mat[9]);
+    mat[14] -= (m->piv.x*mat[2] + m->piv.y*mat[6] + zoff*mat[10]);
     //
     glMatrixMode(GL_MODELVIEW); //Let OpenGL (and perhaps hardware :) handle the matrix rotation
     mat[3] = mat[7] = mat[11] = 0.f; mat[15] = 1.f;
@@ -1216,6 +1236,9 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
     vhack[0] = rv*.125; vhack[1] = -vhack[0];
 #endif
     const float phack[2] = { 0, 1.f / 256.f };
+
+    char prevClamp = polymost_getClamp();
+    polymost_setClamp(0);
 
     if (m->is8bit && r_useindexedcolortextures)
     {
@@ -1303,13 +1326,14 @@ int32_t polymost_voxdraw(voxmodel_t *m, const uspritetype *tspr)
         glEnd();  // }}}
     }
 
+    polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
     polymost_resetVertexPointers();
 
     //------------
     glDisable(GL_CULL_FACE);
 //    glPopAttrib();
-    if (tspr->extra&TSPR_EXTRA_MDHACK)
+    if (shadowHack)
     {
         glDepthFunc(GL_LESS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 0.99999);

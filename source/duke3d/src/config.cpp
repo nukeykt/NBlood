@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "renderlayer.h"
 #include "cmdline.h"
 
+#include "vfs.h"
+
 #ifdef __ANDROID__
 # include "android.h"
 #endif
@@ -44,30 +46,17 @@ hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
 int32_t CONFIG_FunctionNameToNum(const char *func)
 {
-    int32_t i;
-
     if (!func)
         return -1;
 
-    i = hash_find(&h_gamefuncs,func);
-
-    if (i < 0)
-    {
-        char *str = Bstrtolower(Xstrdup(func));
-        i = hash_find(&h_gamefuncs,str);
-        Bfree(str);
-
-        return i;
-    }
-
-    return i;
+    return hash_findcase(&h_gamefuncs, func);
 }
 
 
-char *CONFIG_FunctionNumToName(int32_t func)
+static char const * CONFIG_FunctionNumToName(int32_t func)
 {
     if ((unsigned)func >= (unsigned)NUMGAMEFUNCTIONS)
-        return NULL;
+        return "";
     return gamefunctions[func];
 }
 
@@ -76,29 +65,20 @@ int32_t CONFIG_AnalogNameToNum(const char *func)
 {
     if (!func)
         return -1;
-
-    if (!Bstrcasecmp(func,"analog_turning"))
-    {
+    else if (!Bstrcasecmp(func, "analog_turning"))
         return analog_turning;
-    }
-    if (!Bstrcasecmp(func,"analog_strafing"))
-    {
+    else if (!Bstrcasecmp(func, "analog_strafing"))
         return analog_strafing;
-    }
-    if (!Bstrcasecmp(func,"analog_moving"))
-    {
+    else if (!Bstrcasecmp(func, "analog_moving"))
         return analog_moving;
-    }
-    if (!Bstrcasecmp(func,"analog_lookingupanddown"))
-    {
+    else if (!Bstrcasecmp(func, "analog_lookingupanddown"))
         return analog_lookingupanddown;
-    }
-
-    return -1;
+    else
+        return -1;
 }
 
 
-const char *CONFIG_AnalogNumToName(int32_t func)
+static char const * CONFIG_AnalogNumToName(int32_t func)
 {
     switch (func)
     {
@@ -112,7 +92,40 @@ const char *CONFIG_AnalogNumToName(int32_t func)
         return "analog_lookingupanddown";
     }
 
-    return NULL;
+    return "";
+}
+
+
+static void CONFIG_SetJoystickButtonFunction(int i, int j, int function)
+{
+    ud.config.JoystickFunctions[i][j] = function;
+    CONTROL_MapButton(function, i, j, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisScale(int i, int scale)
+{
+    ud.config.JoystickAnalogueScale[i] = scale;
+    CONTROL_SetAnalogAxisScale(i, scale, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
+{
+    ud.config.JoystickAnalogueInvert[i] = invert;
+    CONTROL_SetAnalogAxisInvert(i, invert, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
+{
+    ud.config.JoystickAnalogueDead[i] = dead;
+    ud.config.JoystickAnalogueSaturate[i] = saturate;
+    joySetDeadZone(i, dead, saturate);
+}
+static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
+{
+    ud.config.JoystickDigitalFunctions[i][j] = function;
+    CONTROL_MapDigitalAxis(i, function, j, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
+{
+    ud.config.JoystickAnalogueAxes[i] = function;
+    CONTROL_MapAnalogAxis(i, function, controldevice_joystick);
 }
 
 
@@ -226,11 +239,9 @@ void CONFIG_SetDefaults(void)
     ud.camera_time    = 4;
 #endif
 
-#ifdef GEKKO
+    // currently settings.cfg is only read after the startup window launches the game,
+    // and rereading binds might be fickle so just enable this
     ud.setup.usejoystick = 1;
-#else
-    ud.setup.usejoystick = 0;
-#endif
 
     g_myAimMode = 1;
     g_player[0].ps->aim_mode = 1;
@@ -360,6 +371,9 @@ void CONFIG_SetDefaults(void)
         CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
     }
 
+#if !defined GEKKO
+    CONFIG_SetGameControllerDefaultsStandard();
+#else
     for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
     {
         ud.config.JoystickFunctions[i][0] = CONFIG_FunctionNameToNum(joystickdefaults[i]);
@@ -371,9 +385,11 @@ void CONFIG_SetDefaults(void)
     for (int i=0; i<MAXJOYAXES; i++)
     {
         ud.config.JoystickAnalogueScale[i] = DEFAULTJOYSTICKANALOGUESCALE;
+        ud.config.JoystickAnalogueInvert[i] = 0;
         ud.config.JoystickAnalogueDead[i] = DEFAULTJOYSTICKANALOGUEDEAD;
         ud.config.JoystickAnalogueSaturate[i] = DEFAULTJOYSTICKANALOGUESATURATE;
         CONTROL_SetAnalogAxisScale(i, ud.config.JoystickAnalogueScale[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, 0, controldevice_joystick);
 
         ud.config.JoystickDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(joystickdigitaldefaults[i*2]);
         ud.config.JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(joystickdigitaldefaults[i*2+1]);
@@ -383,6 +399,7 @@ void CONFIG_SetDefaults(void)
         ud.config.JoystickAnalogueAxes[i] = CONFIG_AnalogNameToNum(joystickanalogdefaults[i]);
         CONTROL_MapAnalogAxis(i, ud.config.JoystickAnalogueAxes[i], controldevice_joystick);
     }
+#endif
 
     VM_OnEvent(EVENT_SETDEFAULTS, g_player[myconnectindex].ps->i, myconnectindex);
 }
@@ -404,7 +421,7 @@ void CONFIG_MapKey(int which, kb_scancode key1, kb_scancode oldkey1, kb_scancode
 
         int match = 0;
 
-        for (; sctokeylut[match].key; match++)
+        for (; match < ARRAY_SSIZE(sctokeylut); ++match)
         {
             if (keys[k] == sctokeylut[match].sc)
                 break;
@@ -463,20 +480,17 @@ void CONFIG_SetupMouse(void)
         Bsprintf(str,"MouseAnalogAxes%d",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            if (CONFIG_AnalogNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
-                ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
+            ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
 
         Bsprintf(str,"MouseDigitalAxes%d_0",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            if (CONFIG_FunctionNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
-                ud.config.MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
+            ud.config.MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
 
         Bsprintf(str,"MouseDigitalAxes%d_1",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            if (CONFIG_FunctionNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
-                ud.config.MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
+            ud.config.MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
 
         Bsprintf(str,"MouseAnalogScale%d",i);
         int32_t scale = ud.config.MouseAnalogueScale[i];
@@ -510,12 +524,12 @@ void CONFIG_SetupJoystick(void)
 
     for (i=0; i<MAXJOYBUTTONSANDHATS; i++)
     {
-        Bsprintf(str,"JoystickButton%d",i);
+        Bsprintf(str,"ControllerButton%d",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle,"Controls", str,temp))
             ud.config.JoystickFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
 
-        Bsprintf(str,"JoystickButtonClicked%d",i);
+        Bsprintf(str,"ControllerButtonClicked%d",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle,"Controls", str,temp))
             ud.config.JoystickFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
@@ -524,35 +538,37 @@ void CONFIG_SetupJoystick(void)
     // map over the axes
     for (i=0; i<MAXJOYAXES; i++)
     {
-        Bsprintf(str,"JoystickAnalogAxes%d",i);
+        Bsprintf(str,"ControllerAnalogAxes%d",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            if (CONFIG_AnalogNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
-                ud.config.JoystickAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
+            ud.config.JoystickAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
 
-        Bsprintf(str,"JoystickDigitalAxes%d_0",i);
+        Bsprintf(str,"ControllerDigitalAxes%d_0",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            if (CONFIG_FunctionNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
-                ud.config.JoystickDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
+            ud.config.JoystickDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
 
-        Bsprintf(str,"JoystickDigitalAxes%d_1",i);
+        Bsprintf(str,"ControllerDigitalAxes%d_1",i);
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            if (CONFIG_FunctionNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
-                ud.config.JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
+            ud.config.JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
 
-        Bsprintf(str,"JoystickAnalogScale%d",i);
+        Bsprintf(str,"ControllerAnalogScale%d",i);
         scale = ud.config.JoystickAnalogueScale[i];
         SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
         ud.config.JoystickAnalogueScale[i] = scale;
 
-        Bsprintf(str,"JoystickAnalogDead%d",i);
+        Bsprintf(str,"ControllerAnalogInvert%d",i);
+        scale = ud.config.JoystickAnalogueInvert[i];
+        SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
+        ud.config.JoystickAnalogueInvert[i] = scale;
+
+        Bsprintf(str,"ControllerAnalogDead%d",i);
         scale = ud.config.JoystickAnalogueDead[i];
         SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
         ud.config.JoystickAnalogueDead[i] = scale;
 
-        Bsprintf(str,"JoystickAnalogSaturate%d",i);
+        Bsprintf(str,"ControllerAnalogSaturate%d",i);
         scale = ud.config.JoystickAnalogueSaturate[i];
         SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
         ud.config.JoystickAnalogueSaturate[i] = scale;
@@ -569,9 +585,196 @@ void CONFIG_SetupJoystick(void)
         CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
         CONTROL_MapDigitalAxis(i, ud.config.JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
         CONTROL_SetAnalogAxisScale(i, ud.config.JoystickAnalogueScale[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, ud.config.JoystickAnalogueInvert[i], controldevice_joystick);
     }
 }
 
+struct GameControllerButtonSetting
+{
+    GameControllerButton button;
+    int function;
+
+    void apply() const
+    {
+        CONFIG_SetJoystickButtonFunction(button, 0, function);
+    }
+};
+struct GameControllerAnalogAxisSetting
+{
+    GameControllerAxis axis;
+    int function;
+
+    void apply() const
+    {
+        CONFIG_SetJoystickAnalogAxisFunction(axis, function);
+    }
+};
+struct GameControllerDigitalAxisSetting
+{
+    GameControllerAxis axis;
+    int polarity;
+    int function;
+
+    void apply() const
+    {
+        CONFIG_SetJoystickDigitalAxisFunction(axis, polarity, function);
+    }
+};
+
+static void CONFIG_SetGameControllerAxesModern()
+{
+    static GameControllerAnalogAxisSetting const analogAxes[] =
+    {
+        { GAMECONTROLLER_AXIS_LEFTX, analog_strafing },
+        { GAMECONTROLLER_AXIS_LEFTY, analog_moving },
+        { GAMECONTROLLER_AXIS_RIGHTX, analog_turning },
+        { GAMECONTROLLER_AXIS_RIGHTY, analog_lookingupanddown },
+    };
+
+    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTX, 32768+16384);
+    CONFIG_SetJoystickAnalogAxisScale(GAMECONTROLLER_AXIS_RIGHTY, 32768+16384);
+
+    for (auto const & analogAxis : analogAxes)
+        analogAxis.apply();
+}
+
+void CONFIG_SetGameControllerDefaultsStandard()
+{
+    CONFIG_SetGameControllerDefaultsClear();
+    CONFIG_SetGameControllerAxesModern();
+
+    static GameControllerButtonSetting const buttons[] =
+    {
+        { GAMECONTROLLER_BUTTON_A, gamefunc_Jump },
+        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
+        { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
+        { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
+        { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Quick_Kick },
+        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
+        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Jump },
+        { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
+        { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
+    };
+
+    static GameControllerButtonSetting const buttonsDuke[] =
+    {
+        { GAMECONTROLLER_BUTTON_X, gamefunc_Open },
+        { GAMECONTROLLER_BUTTON_Y, gamefunc_Inventory },
+        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
+        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
+    };
+
+    static GameControllerButtonSetting const buttonsFury[] =
+    {
+        { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
+        { GAMECONTROLLER_BUTTON_Y, gamefunc_Open },
+        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
+        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
+    };
+
+    static GameControllerDigitalAxisSetting const digitalAxes[] =
+    {
+        { GAMECONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Alt_Fire },
+        { GAMECONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
+    };
+
+    for (auto const & button : buttons)
+        button.apply();
+
+    if (FURY)
+    {
+        for (auto const & button : buttonsFury)
+            button.apply();
+    }
+    else
+    {
+        for (auto const & button : buttonsDuke)
+            button.apply();
+    }
+
+    for (auto const & digitalAxis : digitalAxes)
+        digitalAxis.apply();
+}
+
+void CONFIG_SetGameControllerDefaultsPro()
+{
+    CONFIG_SetGameControllerDefaultsClear();
+    CONFIG_SetGameControllerAxesModern();
+
+    static GameControllerButtonSetting const buttons[] =
+    {
+        { GAMECONTROLLER_BUTTON_A, gamefunc_Open },
+        { GAMECONTROLLER_BUTTON_B, gamefunc_Third_Person_View },
+        { GAMECONTROLLER_BUTTON_Y, gamefunc_Quick_Kick },
+        { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
+        { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
+        { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Crouch },
+        { GAMECONTROLLER_BUTTON_DPAD_UP, gamefunc_Previous_Weapon },
+        { GAMECONTROLLER_BUTTON_DPAD_DOWN, gamefunc_Next_Weapon },
+    };
+
+    static GameControllerButtonSetting const buttonsDuke[] =
+    {
+        { GAMECONTROLLER_BUTTON_X, gamefunc_Inventory },
+        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Previous_Weapon },
+        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Next_Weapon },
+        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_Inventory_Left },
+        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_Inventory_Right },
+    };
+
+    static GameControllerButtonSetting const buttonsFury[] =
+    {
+        { GAMECONTROLLER_BUTTON_X, gamefunc_Steroids }, // Reload
+        { GAMECONTROLLER_BUTTON_LEFTSHOULDER, gamefunc_Crouch },
+        { GAMECONTROLLER_BUTTON_RIGHTSHOULDER, gamefunc_Alt_Fire },
+        { GAMECONTROLLER_BUTTON_DPAD_LEFT, gamefunc_MedKit },
+        { GAMECONTROLLER_BUTTON_DPAD_RIGHT, gamefunc_NightVision }, // Radar
+    };
+
+    static GameControllerDigitalAxisSetting const digitalAxes[] =
+    {
+        { GAMECONTROLLER_AXIS_TRIGGERLEFT, 1, gamefunc_Jump },
+        { GAMECONTROLLER_AXIS_TRIGGERRIGHT, 1, gamefunc_Fire },
+    };
+
+    for (auto const & button : buttons)
+        button.apply();
+
+    if (FURY)
+    {
+        for (auto const & button : buttonsFury)
+            button.apply();
+    }
+    else
+    {
+        for (auto const & button : buttonsDuke)
+            button.apply();
+    }
+
+    for (auto const & digitalAxis : digitalAxes)
+        digitalAxis.apply();
+}
+
+void CONFIG_SetGameControllerDefaultsClear()
+{
+    for (int i=0; i<MAXJOYBUTTONSANDHATS; i++)
+    {
+        CONFIG_SetJoystickButtonFunction(i, 0, -1);
+        CONFIG_SetJoystickButtonFunction(i, 1, -1);
+    }
+
+    for (int i=0; i<MAXJOYAXES; i++)
+    {
+        CONFIG_SetJoystickAnalogAxisScale(i, DEFAULTJOYSTICKANALOGUESCALE);
+        CONFIG_SetJoystickAnalogAxisInvert(i, 0);
+        CONFIG_SetJoystickAnalogAxisDeadSaturate(i, DEFAULTJOYSTICKANALOGUEDEAD, DEFAULTJOYSTICKANALOGUESATURATE);
+
+        CONFIG_SetJoystickDigitalAxisFunction(i, 0, -1);
+        CONFIG_SetJoystickDigitalAxisFunction(i, 1, -1);
+
+        CONFIG_SetJoystickAnalogAxisFunction(i, -1);
+    }
+}
 
 int CONFIG_ReadSetup(void)
 {
@@ -585,10 +788,10 @@ int CONFIG_ReadSetup(void)
 
     if (ud.config.scripthandle < 0)
     {
-        if (SafeFileExists(g_setupFileName))  // JBF 20031211
+        if (buildvfs_exists(g_setupFileName))  // JBF 20031211
             ud.config.scripthandle = SCRIPT_Load(g_setupFileName);
 #if !defined(EDUKE32_TOUCH_DEVICES) && !defined(EDUKE32_STANDALONE)
-        else if (SafeFileExists(SETUPFILENAME))
+        else if (buildvfs_exists(SETUPFILENAME))
         {
             int const i = wm_ynbox("Import Configuration Settings",
                                    "The configuration file \"%s\" was not found. "
@@ -637,16 +840,12 @@ int CONFIG_ReadSetup(void)
 
     if (g_noSetup == 0 && g_modDir[0] == '/')
     {
-        struct Bstat st;
         SCRIPT_GetString(ud.config.scripthandle, "Setup","ModDir",&g_modDir[0]);
 
-        if (Bstat(g_modDir, &st))
+        if (!buildvfs_isdir(g_modDir))
         {
-            if ((st.st_mode & S_IFDIR) != S_IFDIR)
-            {
-                initprintf("Invalid mod dir in cfg!\n");
-                Bsprintf(g_modDir,"/");
-            }
+            initprintf("Invalid mod dir in cfg!\n");
+            Bsprintf(g_modDir,"/");
         }
     }
 
@@ -668,6 +867,7 @@ int CONFIG_ReadSetup(void)
 
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenBPP", &ud.setup.bpp);
+    SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenDisplay", &r_displayindex);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenHeight", &ud.setup.ydim);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenMode", &ud.setup.fullscreen);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenWidth", &ud.setup.xdim);
@@ -697,40 +897,60 @@ int CONFIG_ReadSetup(void)
 
 void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
 {
-    char *ptr = Xstrdup(g_setupFileName);
     char filename[BMAX_PATH];
 
     if (!Bstrcmp(g_setupFileName, SETUPFILENAME))
         Bsprintf(filename, "settings.cfg");
     else
-        Bsprintf(filename, "%s_settings.cfg", strtok(ptr, "."));
+        Bsprintf(filename, "%s_settings.cfg", strtok(g_setupFileName, "."));
 
-    BFILE *fp = Bfopen(filename, "wt");
+    buildvfs_FILE fp = buildvfs_fopen_write(filename);
 
     if (fp)
     {
-        Bfprintf(fp,"// this file is automatically generated by %s\n", AppProperName);
-        Bfprintf(fp,"unbindall\n");
+        buildvfs_fputstr(fp, "// this file is automatically generated by ");
+        buildvfs_fputstrptr(fp, AppProperName);
+        buildvfs_fputstr(fp,"\nunbindall\n");
 
         for (int i=0; i<MAXBOUNDKEYS+MAXMOUSEBUTTONS; i++)
         {
             if (CONTROL_KeyIsBound(i))
             {
-                Bfprintf(fp, "bind \"%s\"%s \"%s\"\n", CONTROL_KeyBinds[i].key,
-                                                       CONTROL_KeyBinds[i].repeat ? "" : " norepeat",
-                                                       CONTROL_KeyBinds[i].cmdstr);
+                buildvfs_fputstr(fp, "bind \"");
+                buildvfs_fputstrptr(fp, CONTROL_KeyBinds[i].key);
+                if (CONTROL_KeyBinds[i].repeat)
+                    buildvfs_fputstr(fp, "\" \"");
+                else
+                    buildvfs_fputstr(fp, "\" norepeat \"");
+                buildvfs_fputstrptr(fp, CONTROL_KeyBinds[i].cmdstr);
+                buildvfs_fputstr(fp, "\"\n");
+            }
+        }
+
+        for (int i=0; i<NUMGAMEFUNCTIONS; ++i)
+        {
+            char const * name = CONFIG_FunctionNumToName(i);
+            if (name && name[0] != '\0' && (ud.config.KeyboardKeys[i][0] == 0xff || !ud.config.KeyboardKeys[i][0]))
+            {
+                buildvfs_fputstr(fp, "unbound ");
+                buildvfs_fputstrptr(fp, name);
+                buildvfs_fputstr(fp, "\n");
             }
         }
 
         OSD_WriteAliases(fp);
 
         if (g_crosshairSum != -1 && g_crosshairSum != DefaultCrosshairColors.r+(DefaultCrosshairColors.g<<8)+(DefaultCrosshairColors.b<<16))
-            Bfprintf(fp, "crosshaircolor %d %d %d\n", CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
+        {
+            buildvfs_fputstr(fp, "crosshaircolor ");
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%d %d %d\n", CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
+            buildvfs_fputstrptr(fp, buf);
+        }
 
         OSD_WriteCvars(fp);
 
-        Bfclose(fp);
-        Bfree(ptr);
+        buildvfs_fclose(fp);
 
         OSD_Printf("Wrote %s\n", filename);
 
@@ -738,8 +958,6 @@ void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.
     }
 
     OSD_Printf("Error writing %s: %s\n", filename, strerror(errno));
-
-    Bfree(ptr);
 }
 
 void CONFIG_WriteSetup(uint32_t flags)
@@ -761,6 +979,7 @@ void CONFIG_WriteSetup(uint32_t flags)
 #endif
 
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenBPP", ud.setup.bpp, FALSE, FALSE);
+    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenDisplay", r_displayindex, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenHeight", ud.setup.ydim, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenMode", ud.setup.fullscreen, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenWidth", ud.setup.xdim, FALSE, FALSE);
@@ -835,11 +1054,8 @@ void CONFIG_WriteSetup(uint32_t flags)
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseDigitalFunctions[i][1]));
             }
 
-            if (ud.config.MouseAnalogueScale[i] != DEFAULTMOUSEANALOGUESCALE)
-            {
-                Bsprintf(buf, "MouseAnalogScale%d", i);
-                SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.MouseAnalogueScale[i], FALSE, FALSE);
-            }
+            Bsprintf(buf, "MouseAnalogScale%d", i);
+            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.MouseAnalogueScale[i], FALSE, FALSE);
         }
     }
 
@@ -849,13 +1065,13 @@ void CONFIG_WriteSetup(uint32_t flags)
         {
             if (CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][0]))
             {
-                Bsprintf(buf, "JoystickButton%d", dummy);
+                Bsprintf(buf, "ControllerButton%d", dummy);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][0]));
             }
 
             if (CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][1]))
             {
-                Bsprintf(buf, "JoystickButtonClicked%d", dummy);
+                Bsprintf(buf, "ControllerButtonClicked%d", dummy);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickFunctions[dummy][1]));
             }
         }
@@ -863,39 +1079,33 @@ void CONFIG_WriteSetup(uint32_t flags)
         {
             if (CONFIG_AnalogNumToName(ud.config.JoystickAnalogueAxes[dummy]))
             {
-                Bsprintf(buf, "JoystickAnalogAxes%d", dummy);
+                Bsprintf(buf, "ControllerAnalogAxes%d", dummy);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.JoystickAnalogueAxes[dummy]));
             }
 
             if (CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][0]))
             {
-                Bsprintf(buf, "JoystickDigitalAxes%d_0", dummy);
+                Bsprintf(buf, "ControllerDigitalAxes%d_0", dummy);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][0]));
             }
 
             if (CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]))
             {
-                Bsprintf(buf, "JoystickDigitalAxes%d_1", dummy);
+                Bsprintf(buf, "ControllerDigitalAxes%d_1", dummy);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.JoystickDigitalFunctions[dummy][1]));
             }
 
-            if (ud.config.JoystickAnalogueScale[dummy] != DEFAULTJOYSTICKANALOGUESCALE)
-            {
-                Bsprintf(buf, "JoystickAnalogScale%d", dummy);
-                SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueScale[dummy], FALSE, FALSE);
-            }
+            Bsprintf(buf, "ControllerAnalogScale%d", dummy);
+            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueScale[dummy], FALSE, FALSE);
 
-            if (ud.config.JoystickAnalogueDead[dummy] != DEFAULTJOYSTICKANALOGUEDEAD)
-            {
-                Bsprintf(buf, "JoystickAnalogDead%d", dummy);
-                SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueDead[dummy], FALSE, FALSE);
-            }
+            Bsprintf(buf, "ControllerAnalogInvert%d", dummy);
+            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueInvert[dummy], FALSE, FALSE);
 
-            if (ud.config.JoystickAnalogueSaturate[dummy] != DEFAULTJOYSTICKANALOGUESATURATE)
-            {
-                Bsprintf(buf, "JoystickAnalogSaturate%d", dummy);
-                SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueSaturate[dummy], FALSE, FALSE);
-            }
+            Bsprintf(buf, "ControllerAnalogDead%d", dummy);
+            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueDead[dummy], FALSE, FALSE);
+
+            Bsprintf(buf, "ControllerAnalogSaturate%d", dummy);
+            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.JoystickAnalogueSaturate[dummy], FALSE, FALSE);
         }
     }
 
@@ -919,6 +1129,42 @@ void CONFIG_WriteSetup(uint32_t flags)
     OSD_Printf("Wrote %s\n",g_setupFileName);
     CONFIG_WriteSettings();
     Bfflush(NULL);
+}
+
+char const * CONFIG_GetGameFuncOnKeyboard(int gameFunc)
+{
+    const char * string0 = KB_ScanCodeToString(ud.config.KeyboardKeys[gameFunc][0]);
+    return string0[0] == '\0' ? KB_ScanCodeToString(ud.config.KeyboardKeys[gameFunc][1]) : string0;
+}
+
+char const * CONFIG_GetGameFuncOnMouse(int gameFunc)
+{
+    for (int j = 0; j < 2; ++j)
+        for (int i = 0; i < joystick.numButtons; ++i)
+            if (ud.config.JoystickFunctions[i][j] == gameFunc)
+                return joyGetName(1, i);
+
+    for (int i = 0; i < joystick.numAxes; ++i)
+        for (int j = 0; j < 2; ++j)
+            if (ud.config.JoystickDigitalFunctions[i][j] == gameFunc)
+                return joyGetName(0, i);
+
+    return "";
+}
+
+char const * CONFIG_GetGameFuncOnJoystick(int gameFunc)
+{
+    for (int j = 0; j < 2; ++j)
+        for (int i = 0; i < joystick.numButtons; ++i)
+            if (ud.config.JoystickFunctions[i][j] == gameFunc)
+                return joyGetName(1, i);
+
+    for (int i = 0; i < joystick.numAxes; ++i)
+        for (int j = 0; j < 2; ++j)
+            if (ud.config.JoystickDigitalFunctions[i][j] == gameFunc)
+                return joyGetName(0, i);
+
+    return "";
 }
 
 static const char *CONFIG_GetMapEntryName(char m[], char const * const mapname)

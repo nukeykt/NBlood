@@ -208,7 +208,8 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 extern int16_t thesector[MAXWALLSB], thewall[MAXWALLSB];
 extern int16_t bunchfirst[MAXWALLSB], bunchlast[MAXWALLSB];
 extern int16_t maskwall[MAXWALLSB], maskwallcnt;
-extern uspritetype *tspriteptr[MAXSPRITESONSCREEN + 1];
+extern tspriteptr_t tspriteptr[MAXSPRITESONSCREEN + 1];
+extern uint8_t* mirrorBuffer;
 extern int32_t xdimen, xdimenrecip, halfxdimen, xdimenscale, xdimscale, ydimen;
 extern float fxdimen;
 extern intptr_t frameoffset;
@@ -236,7 +237,7 @@ extern int32_t searchx, searchy;
 extern int16_t searchsector, searchwall, searchstat;
 extern int16_t searchbottomwall, searchisbottom;
 
-extern char inpreparemirror, mirrorrender;
+extern char inpreparemirror;
 
 extern char picsiz[MAXTILES];
 extern int16_t sectorborder[256];
@@ -258,9 +259,9 @@ void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal);
 void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float factor);
 #endif
 
-extern void get_wallspr_points(uspritetype const * spr, int32_t *x1, int32_t *x2,
+extern void get_wallspr_points(uspriteptr_t spr, int32_t *x1, int32_t *x2,
     int32_t *y1, int32_t *y2);
-extern void get_floorspr_points(uspritetype const * spr, int32_t px, int32_t py,
+extern void get_floorspr_points(uspriteptr_t spr, int32_t px, int32_t py,
     int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
     int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4);
 
@@ -268,15 +269,11 @@ extern void get_floorspr_points(uspritetype const * spr, int32_t px, int32_t py,
 // int32_t wallmost(int16_t *mostbuf, int32_t w, int32_t sectnum, char dastat);
 int32_t wallfront(int32_t l1, int32_t l2);
 
-void set_globalang(fix16_t ang);
+void set_globalang(fix16_t const ang);
 
 int32_t animateoffs(int tilenum, int fakevar);
-#define DO_TILE_ANIM(Picnum, Fakevar) do { \
-        /*if (picanm[Picnum].sf&PICANM_ANIMTYPE_MASK) */Picnum += animateoffs(Picnum, Fakevar); \
-        if ((((Fakevar) & 16384) == 16384) && (globalorientation & CSTAT_WALL_ROTATE_90) && rottile[Picnum].newtile != -1) Picnum = rottile[Picnum].newtile; \
-    } while (0)
 
-static FORCE_INLINE int32_t bad_tspr(const uspritetype *tspr)
+static FORCE_INLINE int32_t bad_tspr(tspriteptr_t tspr)
 {
     // NOTE: tspr->owner >= MAXSPRITES (could be model) has to be handled by
     // caller.
@@ -308,7 +305,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum);
 extern int32_t g_nodraw, scansector_retfast, scansector_collectsprites;
 extern int32_t yax_globallev, yax_globalbunch;
 extern int32_t yax_globalcf, yax_nomaskpass, yax_nomaskdidit;
-extern uint8_t haveymost[YAX_MAXBUNCHES>>3];
+extern uint8_t haveymost[(YAX_MAXBUNCHES+7)>>3];
 extern uint8_t yax_gotsector[(MAXSECTORS+7)>>3];
 extern int32_t yax_polymostclearzbuffer;
 
@@ -399,13 +396,24 @@ static FORCE_INLINE const int8_t *getpsky(int32_t picnum, int32_t *dapyscale, in
 
 static FORCE_INLINE void set_globalpos(int32_t const x, int32_t const y, int32_t const z)
 {
-    globalposx  = x, fglobalposx = (float)x;
-    globalposy  = y, fglobalposy = (float)y;
-    globalposz  = z, fglobalposz = (float)z;
+    globalposx = x, fglobalposx = (float)x;
+    globalposy = y, fglobalposy = (float)y;
+    globalposz = z, fglobalposz = (float)z;
 }
 
 #ifdef __cplusplus
 }
 #endif
+
+template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tileptr, int const obj)
+{
+    auto &tile = *tileptr;
+
+    if (picanm[tile].sf & PICANM_ANIMTYPE_MASK)
+        tile += animateoffs(tile, obj);
+
+    if (((obj & 16384) == 16384) && (globalorientation & CSTAT_WALL_ROTATE_90) && rottile[tile].newtile != -1)
+        tile = rottile[tile].newtile;
+}
 
 #endif	/* ENGINE_PRIV_H */

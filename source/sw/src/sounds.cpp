@@ -41,12 +41,13 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "game.h"
 #include "sounds.h"
 #include "ai.h"
-#include "net.h"
+#include "network.h"
 
 #include "cache.h"
 #include "text.h"
 #include "rts.h"
 #include "menus.h"
+#include "config.h"
 
 #ifdef _WIN32
 #include "winlayer.h"
@@ -88,17 +89,17 @@ SWBOOL LoadSong(const char *track);
 
 #define NUM_SAMPLES 10
 
-char *BitNames[2] =
+const char *BitNames[2] =
 {
     "8-bit", "16-bit"
 };
 
-char *ChannelNames[2] =
+const char *ChannelNames[2] =
 {
     "Mono", "Stereo"
 };
 
-char *VoiceNames[8] =
+const char *VoiceNames[8] =
 {
     "1", "2", "3", "4", "5", "6", "7", "8"
 };
@@ -248,7 +249,7 @@ int PlayerYellVocs[] =
     DIGI_PLAYERYELL3
 };
 
-extern unsigned char lumplockbyte[];
+extern char lumplockbyte[];
 
 #if 0
 // DEBUG
@@ -393,8 +394,10 @@ ExternalSoundMod(void)
 
         for (vp = voc; vp < &voc[SIZ(voc)]; vp++)
         {
+#if 0
             if (!vp->name)
                 continue;
+#endif
 
             if (!Bstrcasecmp(name, vp->name))
             {
@@ -468,12 +471,12 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                 for (i = 0; i < ARRAY_SIZE(tracktypes); ++i)
                 {
                     waveformtrack[tracknamebaselen] = '\0';
-                    Bstrncat(waveformtrack, tracktypes[i], MAXWAVEFORMTRACKLENGTH);
+                    Bstrncat(waveformtrack, tracktypes[i], MAXWAVEFORMTRACKLENGTH - 1);
 
                     if (LoadSong(waveformtrack))
                     {
                         SongVoice = FX_Play(SongPtr, SongLength, 0, 0, 0,
-                                                      255, 255, 255, FX_MUSIC_PRIORITY, MUSIC_ID);
+                                                      255, 255, 255, FX_MUSIC_PRIORITY, 1.f, MUSIC_ID);
                         if (SongVoice > FX_Ok)
                         {
                             SongType = SongTypeWave;
@@ -509,7 +512,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
     else
     {
         SongVoice = FX_Play(SongPtr, SongLength, 0, 0, 0,
-                                      255, 255, 255, FX_MUSIC_PRIORITY, MUSIC_ID);
+                                      255, 255, 255, FX_MUSIC_PRIORITY, 1.f, MUSIC_ID);
         if (SongVoice > FX_Ok)
         {
             SongType = SongTypeWave;
@@ -618,7 +621,7 @@ SoundDist(int x, int y, int z, int basedist)
         for (i=0; i<decay; i++)
             decayshift *= 2;
 
-        if (labs(basedist/decayshift) >= retval)
+        if (fabs(double(basedist)/decayshift) >= retval)
             retval = 0;
         else
             retval *= decay;
@@ -662,7 +665,7 @@ SoundAngle(int x, int y)
     return delta_angle >> 6;
 }
 
-int _PlayerSound(char *file, int line, int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
+int _PlayerSound(const char *file, int line, int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
 //PlayerSound(int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
 {
     int handle;
@@ -752,7 +755,7 @@ SWBOOL CacheSound(int num, int type)
         if (!OpenSound(vp, &handle, &length))
         {
             sprintf(ds,"Could not open sound %s, num %d, priority %d\n",vp->name,num,vp->priority);
-            CON_ConMessage(ds);
+            CON_ConMessage("%s", ds);
             return FALSE;
         }
 
@@ -770,7 +773,7 @@ SWBOOL CacheSound(int num, int type)
             */
             vp->lock = CACHE_UNLOCK_MAX;
 
-            allocache((intptr_t*)&vp->data, length, &vp->lock);
+            cacheAllocateBlock((intptr_t*)&vp->data, length, &vp->lock);
 
 #if 0
             // DEBUG
@@ -1021,7 +1024,7 @@ PlaySound(int num, int *x, int *y, int *z, Voc3D_Flags flags)
         if (sound_dist < 255 || (flags & v3df_init))
         {
             voice = FX_Play((char *)vp->data, vp->datalen, 0, 0,
-                                      pitch, loopvol, loopvol, loopvol, priority, num);
+                                      pitch, loopvol, loopvol, loopvol, priority, 1.f, num); // [JM] Should probably utilize floating point volume. !CHECKME!
         }
         else
             voice = -1;
@@ -1031,13 +1034,13 @@ PlaySound(int num, int *x, int *y, int *z, Voc3D_Flags flags)
     //if(!flags & v3df_init)  // If not initing sound, play it
     if (tx==0 && ty==0 && tz==0)     // It's a non-inlevel sound
     {
-        voice = FX_Play((char *)vp->data, vp->datalen, -1, -1, pitch, 255, 255, 255, priority, num);
+        voice = FX_Play((char *)vp->data, vp->datalen, -1, -1, pitch, 255, 255, 255, priority, 1.f, num); // [JM] And here !CHECKME!
     }
     else     // It's a 3d sound
     {
         if (sound_dist < 255)
         {
-            voice = FX_Play3D((char *)vp->data, vp->datalen, FX_ONESHOT, pitch, angle, sound_dist, priority, num);
+            voice = FX_Play3D((char *)vp->data, vp->datalen, FX_ONESHOT, pitch, angle, sound_dist, priority, 1.f, num); // [JM] And here !CHECKME!
         }
         else
             voice = -1;
@@ -1076,7 +1079,7 @@ void PlaySoundRTS(int rts_num)
 
     ASSERT(rtsptr);
 
-    voice = FX_Play3D(rtsptr, RTS_SoundLength(rts_num - 1), FX_ONESHOT, 0, 0, 0, 255, -rts_num);
+    voice = FX_Play3D(rtsptr, RTS_SoundLength(rts_num - 1), FX_ONESHOT, 0, 0, 0, 255, 1.f, -rts_num); // [JM] Float volume here too I bet. !CHECKME!
 
     if (voice <= FX_Ok)
     {
@@ -2006,7 +2009,7 @@ DumpSounds(void)
         if (vp->owner >= 0)
         {
             SPRITEp sp = &sprite[vp->owner];
-            sprintf(ds,"sp->picnum=%d, sp->hitag=%d, sp->lotag=%d, sp->owner=%d\n",sp->picnum,sp->hitag,sp->lotag,sp->owner);
+            sprintf(ds,"sp->picnum=%d, sp->hitag=%d, sp->lotag=%d, sp->owner=%d\n",TrackerCast(sp->picnum), TrackerCast(sp->hitag), TrackerCast(sp->lotag), TrackerCast(sp->owner));
             DebugWriteString(ds);
         }
         vp = vp->next;

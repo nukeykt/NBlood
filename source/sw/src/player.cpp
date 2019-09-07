@@ -45,7 +45,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #include "savedef.h"
 #include "menus.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 #include "demo.h"
 #include "mclip.h"
@@ -138,7 +138,6 @@ char PlayerGravity = PLAYER_JUMP_GRAV;
 #endif
 
 int vel, svel, angvel;
-extern char tempbuf[];
 extern SWBOOL DebugOperate;
 
 //unsigned char synctics, lastsynctics;
@@ -1166,8 +1165,11 @@ GetDeltaAngle(short ang1, short ang2)
 TARGET_SORT TargetSort[MAX_TARGET_SORT];
 unsigned TargetSortCount;
 
-int CompareTarget(TARGET_SORTp tgt1, TARGET_SORTp tgt2)
+static int CompareTarget(void const * a, void const * b)
 {
+    auto tgt1 = (TARGET_SORT const *)a;
+    auto tgt2 = (TARGET_SORT const *)b;
+
     // will return a number less than 0 if tgt1 < tgt2
     return tgt2->weight - tgt1->weight;
 }
@@ -1294,7 +1296,7 @@ DoPickTarget(SPRITEp sp, uint32_t max_delta_ang, SWBOOL skip_targets)
     }
 
     if (TargetSortCount > 1)
-        qsort(&TargetSort,TargetSortCount,sizeof(TARGET_SORT),(int(*)(const void *,const void *))CompareTarget);
+        qsort(&TargetSort, TargetSortCount, sizeof(TARGET_SORT), CompareTarget);
 
     return TargetSort[0].sprite_num;
 }
@@ -5055,8 +5057,6 @@ DoPlayerWarpToSurface(PLAYERp pp)
 void
 DoPlayerDivePalette(PLAYERp pp)
 {
-    extern char DefaultPalette[];
-
     if (pp != Player + screenpeek) return;
 
     if ((pp->DeathType == PLAYER_DEATH_DROWN || TEST((Player+screenpeek)->Flags, PF_DIVING)) && !TEST(pp->Flags, PF_DIVING_IN_LAVA))
@@ -5070,10 +5070,10 @@ DoPlayerDivePalette(PLAYERp pp)
         {
             memcpy(pp->temp_pal, palette_data, sizeof(palette_data));
             memcpy(palookup[PALETTE_DEFAULT], DefaultPalette, 256 * 32);
-            if (getrendermode() < 3)
+            if (videoGetRenderMode() < REND_POLYMOST)
                 COVERsetbrightness(gs.Brightness, &palette_data[0][0]);
             else
-                setpalettefade(0,0,0,0);
+                videoFadePalette(0,0,0,0);
             pp->FadeAmt = 0;
         }
     }
@@ -5217,7 +5217,6 @@ DoPlayerStopDive(PLAYERp pp)
 {
     USERp u = User[pp->PlayerSprite];
     SPRITEp sp = &sprite[pp->PlayerSprite];
-    extern char DefaultPalette[];
 
     if (Prediction)
         return;
@@ -6374,7 +6373,7 @@ DoPlayerDeathFall(PLAYERp pp)
 }
 
 #define MAX_SUICIDE 11
-char *SuicideNote[MAX_SUICIDE] =
+const char *SuicideNote[MAX_SUICIDE] =
 {
     "decided to do the graveyard tour.",
     "had enough and checked out.",
@@ -6395,8 +6394,6 @@ char *KilledPlayerMessage(PLAYERp pp, PLAYERp killer)
     short rnd = STD_RANDOM_RANGE(MAX_KILL_NOTES);
     char *p1 = pp->PlayerName;
     char *p2 = killer->PlayerName;
-
-    extern char *DeathString(short SpriteNum);
 
     if (pp->HitBy == killer->PlayerSprite)
     {
@@ -6937,10 +6934,10 @@ void DoPlayerDeathCheckKeys(PLAYERp pp)
 
         if (pp == Player + screenpeek)
         {
-            if (getrendermode() < 3)
+            if (videoGetRenderMode() < REND_POLYMOST)
                 COVERsetbrightness(gs.Brightness,&palette_data[0][0]);
             else
-                setpalettefade(0,0,0,0);
+                videoFadePalette(0,0,0,0);
             //memcpy(&palette_data[0][0],&palette_data[0][0],768);
             memcpy(&pp->temp_pal[0],&palette_data[0][0],768);
         }

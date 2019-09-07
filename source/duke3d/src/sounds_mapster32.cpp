@@ -43,6 +43,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "common_game.h"
 
+#include "vfs.h"
+
 #define LOUDESTVOLUME 150
 #define MUSICANDSFX 5
 
@@ -128,8 +130,8 @@ int32_t S_LoadSound(uint32_t num)
         return 0;
     }
 
-    int32_t fp = S_OpenAudio(g_sounds[num].filename, 0, 0);
-    if (fp == -1)
+    buildvfs_kfd fp = S_OpenAudio(g_sounds[num].filename, 0, 0);
+    if (fp == buildvfs_kfd_invalid)
     {
         OSD_Printf(OSDTEXT_RED "Sound %s(#%d) not found!\n",g_sounds[num].filename,num);
         return 0;
@@ -341,7 +343,7 @@ int32_t A_PlaySound(uint32_t num, int32_t i)
         return 0;
     }
 
-    return S_PlaySound3D(num,i, (vec3_t *)&sprite[i]);
+    return S_PlaySound3D(num,i, &sprite[i].pos);
 }
 
 void S_StopSound(int32_t num)
@@ -457,9 +459,9 @@ void S_Callback(intptr_t num)
 
                 if (sprite[i].picnum == MUSICANDSFX && sector[sprite[i].sectnum].lotag < 3 && sprite[i].lotag < 999)
                 {
-                    extern uint8_t g_ambiencePlaying[MAXSPRITES>>3];
+                    extern uint8_t g_ambiencePlaying[(MAXSPRITES+7)>>3];
 
-                    g_ambiencePlaying[i>>3] &= ~(1<<(i&7));
+                    g_ambiencePlaying[i>>3] &= ~pow2char[i&7];
 
                     if (j < k-1)
                     {

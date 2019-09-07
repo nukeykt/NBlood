@@ -223,7 +223,7 @@ typedef struct netactor_s
         incval,
         delay;
 
-    int32_t 
+    int32_t
         actiontics;
 #endif
 
@@ -263,7 +263,7 @@ typedef struct netactor_s
 
     // note: lightId, lightcount, lightmaxrange are not synchronized between client and server
 
-    int32_t 
+    int32_t
         cgg;
 
 
@@ -393,6 +393,8 @@ enum sflags_t
     SFLAG_REALCLIPDIST     = 0x01000000,
     SFLAG_WAKEUPBADGUYS    = 0x02000000,
     SFLAG_DAMAGEEVENT      = 0x04000000,
+    SFLAG_NOWATERSECTOR    = 0x08000000,
+    SFLAG_QUEUEDFORDELETE  = 0x10000000,
 };
 
 // Custom projectiles "workslike" flags.
@@ -435,13 +437,14 @@ extern int32_t      ticrandomseed;
 extern projectile_t SpriteProjectile[MAXSPRITES];
 
 
-int  A_CheckNoSE7Water(uspritetype const *pSprite, int sectNum, int sectLotag, int32_t *pOther);
+int  A_CheckNoSE7Water(uspriteptr_t pSprite, int sectNum, int sectLotag, int32_t *pOther);
 int  A_CheckSwitchTile(int spriteNum);
 int A_IncurDamage(int spriteNum);
 void A_AddToDeleteQueue(int spriteNum);
 void A_DeleteSprite(int spriteNum);
 void A_DoGuts(int spriteNum, int tileNum, int spawnCnt);
 void A_DoGutsDir(int spriteNum, int tileNum, int spawnCnt);
+int A_GetClipdist(int spriteNum, int clipDist);
 void A_MoveCyclers(void);
 void A_MoveDummyPlayers(void);
 void A_MoveSector(int spriteNum);
@@ -499,8 +502,15 @@ ACTOR_INLINE int A_CheckEnemyTile(int const tileNum)
 
 ACTOR_INLINE int A_SetSprite(int const spriteNum, uint32_t cliptype)
 {
-    vec3_t davect = { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
+    vec3_t const davect = { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
                       (sprite[spriteNum].xvel * (sintable[sprite[spriteNum].ang & 2047])) >> 14, sprite[spriteNum].zvel };
+    return (A_MoveSprite(spriteNum, &davect, cliptype) == 0);
+}
+
+ACTOR_INLINE int A_SetSpriteNoZ(int const spriteNum, uint32_t cliptype)
+{
+    vec3_t const davect = { (sprite[spriteNum].xvel * (sintable[(sprite[spriteNum].ang + 512) & 2047])) >> 14,
+                      (sprite[spriteNum].xvel * (sintable[sprite[spriteNum].ang & 2047])) >> 14, 0 };
     return (A_MoveSprite(spriteNum, &davect, cliptype) == 0);
 }
 
@@ -527,7 +537,7 @@ EXTERN_INLINE int G_CheckForSpaceFloor(int const sectnum)
 
 EXTERN_INLINE int A_CheckEnemySprite(void const * const pSprite)
 {
-    return A_CheckEnemyTile(((uspritetype const *) pSprite)->picnum);
+    return A_CheckEnemyTile(((uspriteptr_t) pSprite)->picnum);
 }
 
 #endif

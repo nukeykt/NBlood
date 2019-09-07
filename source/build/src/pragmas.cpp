@@ -10,21 +10,21 @@
 #include "compat.h"
 #include "pragmas.h"
 
-libdivide_s64_t divtable64[DIVTABLESIZE];
-libdivide_s32_t divtable32[DIVTABLESIZE];
+libdivide::libdivide_s64_t divtable64[DIVTABLESIZE];
+libdivide::libdivide_s32_t divtable32[DIVTABLESIZE];
 
 void initdivtables(void)
 {
     for (int i = 1; i < DIVTABLESIZE; ++i)
     {
-        divtable64[i] = libdivide_s64_gen(i);
-        divtable32[i] = libdivide_s32_gen(i);
+        divtable64[i] = libdivide::libdivide_s64_gen(i);
+        divtable32[i] = libdivide::libdivide_s32_gen(i);
     }
 }
 
 uint32_t divideu32_noinline(uint32_t n, uint32_t d) { return divideu32(n, d); }
 int32_t tabledivide32_noinline(int32_t n, int32_t d) { return tabledivide32(n, d); }
-int64_t tabledivide64_noinline(int64_t n, int32_t d) { return tabledivide64(n, d); }
+int64_t tabledivide64_noinline(int64_t n, int64_t d) { return tabledivide64(n, d); }
 
 #if defined(__GNUC__) && defined(__i386__) && !defined(NOASM)	// NOASM
 

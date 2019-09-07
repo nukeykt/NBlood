@@ -47,7 +47,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 #include "savedef.h"
 #include "menus.h"
-#include "net.h"
+#include "network.h"
 #include "pal.h"
 
 #include "bots.h"
@@ -122,10 +122,11 @@ int gametext(int x,int y,char *t,char s,short dabits)
     return x;
 }
 
-int minigametext(int x,int y,char *t,char s,short dabits)
+int minigametext(int x,int y,const char *t,char s,short dabits)
 {
     short ac,newx;
-    char centre, *oldt;
+    char centre;
+    const char *oldt;
 
     centre = (x == (320>>1));
     newx = 0;
@@ -215,7 +216,7 @@ int quotebot, quotebotgoal;
 short user_quote_time[MAXUSERQUOTES];
 char user_quote[MAXUSERQUOTES][256];
 
-void adduserquote(char *daquote)
+void adduserquote(const char *daquote)
 {
     int i;
 
@@ -621,7 +622,7 @@ void computergetinput(int snum, SW_PACKET *syn)
         //Strafe attack
         if (fightdist)
         {
-            j = totalclock+snum*13468;
+            j = (int32_t) totalclock+snum*13468;
             i = sintable[(j<<6)&2047];
             i += sintable[((j+4245)<<5)&2047];
             i += sintable[((j+6745)<<4)&2047];
@@ -842,7 +843,7 @@ void computergetinput(int snum, SW_PACKET *syn)
         daang = getangle(x2-x1,y2-y1);
         if ((i&0xc000) == 32768)
             daang = getangle(wall[wall[i&(MAXWALLS-1)].point2].x-wall[i&(MAXWALLS-1)].x,wall[wall[i&(MAXWALLS-1)].point2].y-wall[i&(MAXWALLS-1)].y);
-        j = totalclock+snum*13468;
+        j = (int32_t) totalclock+snum*13468;
         i = sintable[(j<<6)&2047];
         i += sintable[((j+4245)<<5)&2047];
         i += sintable[((j+6745)<<4)&2047];

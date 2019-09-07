@@ -26,27 +26,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "blood.h"
 
 enum SurfaceType {
-    kSurf0 = 0,
-    kSurf1,
-    kSurf2,
-    kSurf3,
-    kSurf4,
-    kSurf5,
-    kSurf6,
-    kSurf7,
-    kSurf8,
-    kSurf9,
-    kSurf10,
-    kSurf11,
-    kSurf12,
-    kSurf13,
-    kSurf14,
+    kSurfNone = 0,
+    kSurfStone,
+    kSurfMetal,
+    kSurfWood,
+    kSurfFlesh,
+    kSurfWater,
+    kSurfDirt,
+    kSurfClay,
+    kSurfSnow,
+    kSurfIce,
+    kSurfLeaves,
+    kSurfCloth,
+    kSurfPlant,
+    kSurfGoo,
+    kSurfLava,
     kSurfMax
 };
 
 extern char surfType[kMaxTiles];
 extern signed char tileShade[kMaxTiles];
 extern short voxelIndex[kMaxTiles];
+
+extern int nPrecacheCount;
+extern char precachehightile[2][(MAXTILES+7)>>3];
+
+extern int32_t MAXCACHE1DSIZE;
 
 void qloadvoxel(int32_t nVoxel);
 void CalcPicsiz(int a1, int a2, int a3);

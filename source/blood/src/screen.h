@@ -33,12 +33,15 @@ struct RGB {
     char red, green, blue;
 };
 #pragma pack(pop)
+extern char gStdColor[32];
 
 extern bool DacInvalid;
 extern RGB curDAC[256];
 extern RGB baseDAC[256];
 extern int gGammaLevels;
 extern bool gFogMode;
+extern int32_t gBrightness;
+void scrCreateStdColors(void);
 void scrResetPalette(void);
 void gSetDacRange(int start, int end, RGB *pPal);
 void scrLoadPLUs(void);

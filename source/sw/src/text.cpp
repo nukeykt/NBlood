@@ -36,7 +36,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "text.h"
 #include "menus.h"
 
-#include "net.h"
+#include "network.h"
 
 #define PANEL_FONT_G 3636
 #define PANEL_FONT_Y 3646
@@ -46,7 +46,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #define PANEL_SM_FONT_Y 3613
 #define PANEL_SM_FONT_R 3625
 
-char *KeyDoorMessage[MAX_KEYS] =
+const char *KeyDoorMessage[MAX_KEYS] =
 {
     "You need a RED key for this door.",
     "You need a BLUE key for this door.",
@@ -171,7 +171,7 @@ PutStringTimer(PLAYERp pp, short x, short y, const char *string, short seconds)
     extern unsigned short xlatfont[];
     long kill_tics;
     short id, ac;
-    void *func;
+    PANEL_SPRITE_FUNCp func;
 
 
     offset = x;
@@ -461,7 +461,7 @@ void PutStringInfo(PLAYERp pp, const char *string)
     if (!gs.Messages)
         return;
 
-    CON_ConMessage(string); // Put it in the console too
+    CON_ConMessage("%s", string); // Put it in the console too
     PutStringInfoLine(pp, string);
 }
 

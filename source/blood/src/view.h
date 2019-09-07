@@ -21,7 +21,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 #pragma once
-
+#include "compat.h"
+#include "build.h"
 #include "palette.h"
 #include "common_game.h"
 #include "controls.h"
@@ -84,9 +85,9 @@ extern int gScreenTilt;
 extern int deliriumTilt, deliriumTurn, deliriumPitch;
 extern int gScreenTiltO, deliriumTurnO, deliriumPitchO;
 extern int gShowFrameRate;
-extern char gInterpolateSprite[512];
-extern char gInterpolateWall[1024];
-extern char gInterpolateSector[128];
+extern char gInterpolateSprite[];
+extern char gInterpolateWall[];
+extern char gInterpolateSector[];
 extern LOCATION gPrevSpriteLoc[kMaxSprites];
 extern int gViewSize;
 extern CGameMessageMgr gGameMessageMgr;
@@ -118,6 +119,7 @@ void fakeActAirDrag(spritetype *pSprite, int num);
 void fakeActProcessSprites(void);
 void viewCorrectPrediction(void);
 void viewBackupView(int nPlayer);
+void viewCorrectViewOffsets(int nPlayer, vec3_t const *oldpos);
 void viewClearInterpolations(void);
 void viewAddInterpolation(void *data, INTERPOLATE_TYPE type);
 void CalcInterpolations(void);
@@ -131,14 +133,14 @@ void DrawStatNumber(const char *pFormat, int nNumber, int nTile, int x, int y, i
 void TileHGauge(int nTile, int x, int y, int nMult, int nDiv, int nStat = 0, int nScale = 65536);
 void viewDrawPack(PLAYER *pPlayer, int x, int y);
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat = 0);
-void UpdateStatusBar(int arg);
+void UpdateStatusBar(ClockTicks arg);
 void viewInit(void);
 void viewResizeView(int size);
 void UpdateFrame(void);
-void viewDrawInterface(int arg);
+void viewDrawInterface(ClockTicks arg);
 uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite);
 uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect);
-void viewProcessSprites(int cX, int cY, int cZ);
+void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t smooth);
 void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, int zm);
 void CalcPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, int zm);
 void viewSetMessage(const char *pMessage);

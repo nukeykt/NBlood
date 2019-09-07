@@ -145,8 +145,8 @@ void CalcFrameRate(void)
     static int index;
     if (ticks[index] != gFrameClock)
     {
-        gFrameRate = (120*64)/(gFrameClock-ticks[index]);
-        ticks[index] = gFrameClock;
+        gFrameRate = (120*64)/((int)gFrameClock-ticks[index]);
+        ticks[index] = (int)gFrameClock;
     }
     index = (index+1) & 63;
 }
@@ -675,17 +675,17 @@ int VectorScan(spritetype *pSprite, int nOffset, int nZOffset, int dx, int dy, i
     return -1;
 }
 
-void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *floorHit, int nDist, unsigned int nMask)
+void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *floorHit, int nDist, unsigned int nMask, unsigned int nClipParallax)
 {
     dassert(pSprite != NULL);
     int bakCstat = pSprite->cstat;
     int32_t nTemp1, nTemp2;
     pSprite->cstat &= ~257;
     getzrange_old(pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, (int32_t*)ceilZ, (int32_t*)ceilHit, (int32_t*)floorZ, (int32_t*)floorHit, nDist, nMask);
-    if (((*floorHit) & 0xe000) == 0x4000)
+    if (((*floorHit) & 0xc000) == 0x4000)
     {
-        int nSector = (*floorHit) & 0x1fff;
-        if ((nMask & 0x2000) == 0 && (sector[nSector].floorstat & 1))
+        int nSector = (*floorHit) & 0x3fff;
+        if ((nClipParallax & PARALLAXCLIP_FLOOR) == 0 && (sector[nSector].floorstat & 1))
             *floorZ = 0x7fffffff;
         if (sector[nSector].extra > 0)
         {
@@ -702,10 +702,10 @@ void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *
             *floorZ -= sprite[nLink].z - sprite[nSprite].z;
         }
     }
-    if (((*ceilHit) & 0xe000) == 0x4000)
+    if (((*ceilHit) & 0xc000) == 0x4000)
     {
-        int nSector = (*ceilHit) & 0x1fff;
-        if ((nMask & 0x1000) == 0 && (sector[nSector].ceilingstat & 1))
+        int nSector = (*ceilHit) & 0x3fff;
+        if ((nClipParallax & PARALLAXCLIP_CEILING) == 0 && (sector[nSector].ceilingstat & 1))
             *ceilZ = 0x80000000;
         if (gLowerLink[nSector] >= 0)
         {
@@ -720,14 +720,14 @@ void GetZRange(spritetype *pSprite, int *ceilZ, int *ceilHit, int *floorZ, int *
     pSprite->cstat = bakCstat;
 }
 
-void GetZRangeAtXYZ(int x, int y, int z, int nSector, int *ceilZ, int *ceilHit, int *floorZ, int *floorHit, int nDist, unsigned int nMask)
+void GetZRangeAtXYZ(int x, int y, int z, int nSector, int *ceilZ, int *ceilHit, int *floorZ, int *floorHit, int nDist, unsigned int nMask, unsigned int nClipParallax)
 {
     int32_t nTemp1, nTemp2;
     getzrange_old(x, y, z, nSector, (int32_t*)ceilZ, (int32_t*)ceilHit, (int32_t*)floorZ, (int32_t*)floorHit, nDist, nMask);
-    if (((*floorHit) & 0xe000) == 0x4000)
+    if (((*floorHit) & 0xc000) == 0x4000)
     {
-        int nSector = (*floorHit) & 0x1fff;
-        if ((nMask & 0x2000) == 0 && (sector[nSector].floorstat & 1))
+        int nSector = (*floorHit) & 0x3fff;
+        if ((nClipParallax & PARALLAXCLIP_FLOOR) == 0 && (sector[nSector].floorstat & 1))
             *floorZ = 0x7fffffff;
         if (sector[nSector].extra > 0)
         {
@@ -744,10 +744,10 @@ void GetZRangeAtXYZ(int x, int y, int z, int nSector, int *ceilZ, int *ceilHit, 
             *floorZ -= sprite[nLink].z - sprite[nSprite].z;
         }
     }
-    if (((*ceilHit) & 0xe000) == 0x4000)
+    if (((*ceilHit) & 0xc000) == 0x4000)
     {
-        int nSector = (*ceilHit) & 0x1fff;
-        if ((nMask & 0x1000) == 0 && (sector[nSector].ceilingstat & 1))
+        int nSector = (*ceilHit) & 0x3fff;
+        if ((nClipParallax & PARALLAXCLIP_CEILING) == 0 && (sector[nSector].ceilingstat & 1))
             *ceilZ = 0x80000000;
         if (gLowerLink[nSector] >= 0)
         {

@@ -23,34 +23,30 @@
     <ProjectGuid>{0029C61B-B63D-4E61-99F2-F4E49AABFC47}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>audiolib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -189,6 +185,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\audiolib\src\al_midi.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\drivers.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\driver_directsound.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\driver_nosound.cpp" />
@@ -201,25 +198,50 @@
     <ClCompile Include="..\..\source\audiolib\src\flac.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\formats.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\fx_man.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\gmtimbre.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\midi.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\mix.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\mixst.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\mpu401.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\multivoc.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\music.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\opl3.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\oplmidi.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\pitch.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\sdlmusic.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\vorbis.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\xa.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\xmp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\audiolib\include\al_midi.h" />
     <ClInclude Include="..\..\source\audiolib\include\drivers.h" />
     <ClInclude Include="..\..\source\audiolib\include\fx_man.h" />
+    <ClInclude Include="..\..\source\audiolib\include\midi.h" />
+    <ClInclude Include="..\..\source\audiolib\include\mpu401.h" />
     <ClInclude Include="..\..\source\audiolib\include\multivoc.h" />
     <ClInclude Include="..\..\source\audiolib\include\music.h" />
+    <ClInclude Include="..\..\source\audiolib\include\opl3.h" />
+    <ClInclude Include="..\..\source\audiolib\include\oplmidi.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_directsound.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_nosound.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h" />
     <ClInclude Include="..\..\source\audiolib\src\linklist.h" />
     <ClInclude Include="..\..\source\audiolib\src\pitch.h" />
+    <ClInclude Include="..\..\source\audiolib\src\_al_midi.h" />
+    <ClInclude Include="..\..\source\audiolib\src\_midi.h" />
     <ClInclude Include="..\..\source\audiolib\src\_multivc.h" />
+    <ClInclude Include="..\..\source\audiolib\src\_oplmidi.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

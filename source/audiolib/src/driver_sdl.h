@@ -18,6 +18,10 @@
 
  */
 
+#ifndef driver_sdl_h__
+#define driver_sdl_h__
+
+#include "compat.h"
 
 int32_t SDLDrv_GetError(void);
 const char *SDLDrv_ErrorString( int32_t ErrorNumber );
@@ -28,3 +32,4 @@ int32_t SDLDrv_PCM_BeginPlayback(char *BufferStart, int32_t BufferSize,
 void SDLDrv_PCM_StopPlayback(void);
 void SDLDrv_PCM_Lock(void);
 void SDLDrv_PCM_Unlock(void);
+#endif // driver_sdl_h__

@@ -31,7 +31,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "lists.h"
 #include "game.h"
 #include "common_game.h"
-#include "net.h"
+#include "network.h"
 #include "text.h"
 
 #define BAR_HEIGHT 48
@@ -173,7 +173,7 @@ void ClearStartMost(void)
     for (i = 0; i < xdim; i++)
         startdmost[i] = ydim;
 
-    memset(startumost, 0, sizeof(startumost));
+    memset(startumost, 0, xdim * sizeof(int16_t));
 }
 
 void
@@ -417,7 +417,6 @@ void DrawPanelBorderSides(PLAYERp pp, short x, short y, short x2, short y2, shor
 static
 void BorderSetView(PLAYERp UNUSED(pp), int *Xdim, int *Ydim, int *ScreenSize)
 {
-    void setview(int scrx1, int scry1, int scrx2, int scry2);
     int x, x2, y, y2;
     BORDER_INFO *b;
 
@@ -442,7 +441,7 @@ void BorderSetView(PLAYERp UNUSED(pp), int *Xdim, int *Ydim, int *ScreenSize)
     }
 
     // global windowxy1, windowxy2 coords set here
-    setview(x, y, x2, y2);
+    videoSetViewableArea(x, y, x2, y2);
     SetCrosshair();
 }
 

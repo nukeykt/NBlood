@@ -18,6 +18,8 @@ extern "C"
 }
 #endif // _WIN32
 
+int32_t swapcomplete=0;
+int32_t g_borderless=2;
 
 // input
 char    inputdevices = 0;
@@ -220,7 +222,7 @@ void calc_ylookup(int32_t bpl, int32_t lastyidx)
 
     if (lastyidx > ylookupsiz)
     {
-        Baligned_free(ylookup);
+        Xaligned_free(ylookup);
 
         ylookup = (intptr_t *)Xaligned_alloc(16, lastyidx * sizeof(intptr_t));
         ylookupsiz = lastyidx;
@@ -285,6 +287,8 @@ struct glinfo_t glinfo =
     0,          // Debug Output
     0,          // Buffer storage
     0,          // Sync
+    0,          // Depth Clamp
+    0,          // Clip Control
     0,          // GL info dumped
 };
 
@@ -454,9 +458,12 @@ int32_t baselayer_init(void)
     static osdcvardata_t cvars_engine[] =
     {
         { "lz4compressionlevel","adjust LZ4 compression level used for savegames",(void *) &lz4CompressionLevel, CVAR_INT, 1, 32 },
+        { "r_borderless", "borderless windowed mode: 0: never  1: always  2: if resolution matches desktop", (void *) &r_borderless, CVAR_INT|CVAR_RESTARTVID, 0, 2 },
+        { "r_displayindex","index of output display",(void *)&r_displayindex, CVAR_INT|CVAR_RESTARTVID, 0, 10 },
         { "r_usenewaspect","enable/disable new screen aspect ratio determination code",(void *) &r_usenewaspect, CVAR_BOOL, 0, 1 },
         { "r_screenaspect","if using r_usenewaspect and in fullscreen, screen aspect ratio in the form XXYY, e.g. 1609 for 16:9",
           (void *) &r_screenxy, SCREENASPECT_CVAR_TYPE, 0, 9999 },
+        { "r_fpgrouscan","use floating-point numbers for slope rendering",(void *) &r_fpgrouscan, CVAR_BOOL, 0, 1 },
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
 #ifdef YAX_ENABLE

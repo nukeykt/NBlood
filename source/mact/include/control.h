@@ -108,6 +108,8 @@ typedef struct
    int32_t     dyaw;
    int32_t     dpitch;
    int32_t     droll;
+   int32_t     mousex;
+   int32_t     mousey;
    } ControlInfo;
 
 typedef enum
@@ -124,6 +126,44 @@ typedef enum
    controldevice_joystick
    } controldevice;
 
+enum GameControllerButton : int
+{
+    GAMECONTROLLER_BUTTON_INVALID = -1,
+    GAMECONTROLLER_BUTTON_A,
+    GAMECONTROLLER_BUTTON_B,
+    GAMECONTROLLER_BUTTON_X,
+    GAMECONTROLLER_BUTTON_Y,
+    GAMECONTROLLER_BUTTON_BACK,
+    GAMECONTROLLER_BUTTON_GUIDE,
+    GAMECONTROLLER_BUTTON_START,
+    GAMECONTROLLER_BUTTON_LEFTSTICK,
+    GAMECONTROLLER_BUTTON_RIGHTSTICK,
+    GAMECONTROLLER_BUTTON_LEFTSHOULDER,
+    GAMECONTROLLER_BUTTON_RIGHTSHOULDER,
+    GAMECONTROLLER_BUTTON_DPAD_UP,
+    GAMECONTROLLER_BUTTON_DPAD_DOWN,
+    GAMECONTROLLER_BUTTON_DPAD_LEFT,
+    GAMECONTROLLER_BUTTON_DPAD_RIGHT,
+    GAMECONTROLLER_BUTTON_MAX
+};
+
+enum GameControllerAxis : int
+{
+    GAMECONTROLLER_AXIS_INVALID = -1,
+    GAMECONTROLLER_AXIS_LEFTX,
+    GAMECONTROLLER_AXIS_LEFTY,
+    GAMECONTROLLER_AXIS_RIGHTX,
+    GAMECONTROLLER_AXIS_RIGHTY,
+    GAMECONTROLLER_AXIS_TRIGGERLEFT,
+    GAMECONTROLLER_AXIS_TRIGGERRIGHT,
+    GAMECONTROLLER_AXIS_MAX
+};
+
+enum class LastSeenInput : unsigned char
+{
+    Keyboard,
+    Joystick,
+};
 
 //***************************************************************************
 //
@@ -140,6 +180,8 @@ extern bool CONTROL_JoystickEnabled;
 extern uint64_t CONTROL_ButtonState;
 extern uint64_t CONTROL_ButtonHeldState;
 
+extern LastSeenInput CONTROL_LastSeenInput;
+
 
 //***************************************************************************
 //
@@ -155,6 +197,7 @@ void CONTROL_ClearAssignments( void );
 // void CONTROL_GetFunctionInput( void );
 void CONTROL_GetInput( ControlInfo *info );
 void CONTROL_ClearButton( int whichbutton );
+void CONTROL_ClearAllButtons( void );
 extern float CONTROL_MouseSensitivity;
 bool CONTROL_Startup(controltype which, int32_t ( *TimeFunction )( void ), int32_t ticspersecond);
 void CONTROL_Shutdown( void );
@@ -162,6 +205,14 @@ void CONTROL_Shutdown( void );
 void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog, controldevice device);
 void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t direction, controldevice device);
 void CONTROL_SetAnalogAxisScale(int32_t whichaxis, int32_t axisscale, controldevice device);
+void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert, controldevice device);
+
+void CONTROL_ScanForControllers(void);
+
+int32_t CONTROL_GetGameControllerDigitalAxisPos(int32_t axis);
+int32_t CONTROL_GetGameControllerDigitalAxisNeg(int32_t axis);
+void CONTROL_ClearGameControllerDigitalAxisPos(int32_t axis);
+void CONTROL_ClearGameControllerDigitalAxisNeg(int32_t axis);
 
 //void CONTROL_PrintKeyMap(void);
 //void CONTROL_PrintControlFlag(int32_t which);
@@ -199,6 +250,9 @@ static inline int CONTROL_KeyIsBound(int const key)
 }
 
 void CONTROL_ProcessBinds(void);
+
+#define CONTROL_GetUserInput(...)
+#define CONTROL_ClearUserInput(...)
 
 ////////////////////
 

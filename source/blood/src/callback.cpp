@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 #include "fx.h"
 #include "gameutil.h"
+#include "globals.h"
 #include "levels.h"
 #include "player.h"
 #include "seq.h"
@@ -145,7 +146,7 @@ void FlareBurst(int nSprite) // 2
         xvel[pSpawn->index] += dx;
         yvel[pSpawn->index] += dy;
         zvel[pSpawn->index] += dz;
-        evPost(pSpawn->index, 3, 960, CALLBACK_ID_3);
+        evPost(pSpawn->index, 3, 960, CALLBACK_ID_1);
     }
     evPost(nSprite, 3, 0, CALLBACK_ID_1);
 }

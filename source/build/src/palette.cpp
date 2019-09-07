@@ -16,6 +16,8 @@
 #include "a.h"
 #include "xxhash.h"
 
+#include "vfs.h"
+
 uint8_t *basepaltable[MAXBASEPALS] = { palette };
 uint8_t basepalreset=1;
 uint8_t curbasepal;
@@ -202,8 +204,8 @@ void paletteLoadFromDisk(void)
         return;
     }
 
-    int32_t fil;
-    if ((fil = kopen4load("palette.dat", 0)) == -1)
+    buildvfs_kfd fil;
+    if ((fil = kopen4load("palette.dat", 0)) == buildvfs_kfd_invalid)
         return;
 
 
@@ -324,7 +326,7 @@ void paletteLoadFromDisk(void)
             if (kread_and_test(fil, &blendnum, 1))
             {
                 initprintf("Warning: failed reading additional blending table index\n");
-                Bfree(tab);
+                Xfree(tab);
                 return kclose(fil);
             }
 
@@ -334,13 +336,13 @@ void paletteLoadFromDisk(void)
             if (kread_and_test(fil, tab, 256*256))
             {
                 initprintf("Warning: failed reading additional blending table\n");
-                Bfree(tab);
+                Xfree(tab);
                 return kclose(fil);
             }
 
             paletteSetBlendTable(blendnum, tab);
         }
-        Bfree(tab);
+        Xfree(tab);
 
         // Read log2 of count of alpha blending tables.
         uint8_t lognumalphatabs;
@@ -382,7 +384,7 @@ void palettePostLoadTables(void)
     for (size_t i = 0; i<16; i++)
     {
         palette_t *edcol = (palette_t *) &vgapal16[4*i];
-        editorcolors[i] = getclosestcol_lim(edcol->b, edcol->g, edcol->r, 239);
+        editorcolors[i] = getclosestcol_lim(edcol->b, edcol->g, edcol->r, bloodhack ? 254 : 239);
     }
 
     // Bmemset(PaletteIndexFullbrights, 0, sizeof(PaletteIndexFullbrights));
@@ -458,7 +460,7 @@ void paletteFixTranslucencyMask(void)
 //  - on success, 0
 //  - on error, -1 (didn't read enough data)
 //  - -2: error, we already wrote an error message ourselves
-int32_t paletteLoadLookupTable(int32_t fp)
+int32_t paletteLoadLookupTable(buildvfs_kfd fp)
 {
     uint8_t numlookups;
     char remapbuf[256];

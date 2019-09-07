@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 #include "fx.h"
 #include "gib.h"
+#include "globals.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "map2d.h"
@@ -430,13 +431,13 @@ bool isShrinked(spritetype* pSprite) {
 }
 
 bool shrinkPlayerSize(PLAYER* pPlayer, int divider) {
-    pPlayer->pXSprite->scale = -divider;
+    pPlayer->pXSprite->scale = 256/divider;
     playerSetRace(pPlayer, kModeHumanShrink);
     return true;
 }
 
 bool growPlayerSize(PLAYER* pPlayer, int multiplier) {
-    pPlayer->pXSprite->scale = multiplier;
+    pPlayer->pXSprite->scale = 256*multiplier;
     playerSetRace(pPlayer, kModeHumanGrown);
     return true;
 }
@@ -813,6 +814,13 @@ void playerResetInertia(PLAYER *pPlayer)
     viewBackupView(pPlayer->at57);
 }
 
+void playerCorrectInertia(PLAYER* pPlayer, vec3_t const *oldpos)
+{
+    pPlayer->at67 += pPlayer->pSprite->z-oldpos->z;
+    pPlayer->at6f += pPlayer->pSprite->z-oldpos->z;
+    viewCorrectViewOffsets(pPlayer->at57, oldpos);
+}
+
 void playerResetPowerUps(PLAYER* pPlayer)
 {
     const int jumpBoots = 15;
@@ -1018,7 +1026,7 @@ void playerReset(PLAYER *pPlayer)
 }
 
 int dword_21EFB0[8];
-int dword_21EFD0[8];
+ClockTicks dword_21EFD0[8];
 
 void playerInit(int nPlayer, unsigned int a2)
 {
@@ -1774,7 +1782,7 @@ void ProcessInput(PLAYER *pPlayer)
         pPlayer->q16horiz = fix16_from_float(100.f*tanf(fix16_to_float(pPlayer->q16look)*fPI/1024.f));
     }
     int nSector = pSprite->sectnum;
-    int florhit = gSpriteHit[pSprite->extra].florhit & 0xe000;
+    int florhit = gSpriteHit[pSprite->extra].florhit & 0xc000;
     char va;
     if (pXSprite->height < 16 && (florhit == 0x4000 || florhit == 0))
         va = 1;

@@ -29,6 +29,8 @@ bool CONTROL_JoystickEnabled = false;
 uint64_t CONTROL_ButtonState     = 0;
 uint64_t CONTROL_ButtonHeldState = 0;
 
+LastSeenInput CONTROL_LastSeenInput;
+
 float          CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
 static int32_t CONTROL_NumMouseButtons  = 0;
 static int32_t CONTROL_NumMouseAxes     = 0;
@@ -43,11 +45,13 @@ static controlaxismaptype CONTROL_MouseAxesMap[MAXMOUSEAXES];  // maps physical 
 static controlaxistype    CONTROL_MouseAxes[MAXMOUSEAXES];     // physical axes
 static controlaxistype    CONTROL_LastMouseAxes[MAXMOUSEAXES];
 static int32_t            CONTROL_MouseAxesScale[MAXMOUSEAXES];
+static int8_t             CONTROL_MouseAxesInvert[MAXMOUSEAXES];
 
 static controlaxismaptype CONTROL_JoyAxesMap[MAXJOYAXES];
 static controlaxistype    CONTROL_JoyAxes[MAXJOYAXES];
 static controlaxistype    CONTROL_LastJoyAxes[MAXJOYAXES];
 static int32_t            CONTROL_JoyAxesScale[MAXJOYAXES];
+static int8_t             CONTROL_JoyAxesInvert[MAXJOYAXES];
 
 static controlbuttontype CONTROL_MouseButtonMapping[MAXMOUSEBUTTONS];
 
@@ -75,7 +79,7 @@ bool CONTROL_BindsEnabled = 0;
 bool CONTROL_SmoothMouse  = 0;
 
 #define CONTROL_CheckRange(which) ((unsigned)which >= (unsigned)CONTROL_NUM_FLAGS)
-#define BIND(x, s, r, k) do { Bfree(x.cmdstr); x.cmdstr = s; x.repeat = r; x.key = k; } while (0)
+#define BIND(x, s, r, k) do { Xfree(x.cmdstr); x.cmdstr = s; x.repeat = r; x.key = k; } while (0)
 
 void CONTROL_ClearAllBinds(void)
 {
@@ -105,7 +109,7 @@ void CONTROL_FreeMouseBind(int i)
     BIND(CONTROL_KeyBinds[MAXBOUNDKEYS + i], NULL, 0, NULL);
 }
 
-static void CONTROL_GetMouseDelta(void)
+static void CONTROL_GetMouseDelta(ControlInfo * info)
 {
     vec2_t input;
     mouseReadPos(&input.x, &input.y);
@@ -119,8 +123,8 @@ static void CONTROL_GetMouseDelta(void)
         last = input;
     }
 
-    CONTROL_MouseAxes[0].analog = Blrintf(finput.x * 4.f * CONTROL_MouseSensitivity);
-    CONTROL_MouseAxes[1].analog = Blrintf(finput.y * 8.f * CONTROL_MouseSensitivity);
+    info->mousex = Blrintf(finput.x * 4.f * CONTROL_MouseSensitivity);
+    info->mousey = Blrintf(finput.y * 4.f * CONTROL_MouseSensitivity);
 }
 
 static int32_t CONTROL_GetTime(void)
@@ -292,7 +296,7 @@ void CONTROL_MapAnalogAxis(int whichaxis, int whichanalog, controldevice device)
 {
     controlaxismaptype *set;
 
-    if ((unsigned)whichanalog >= (unsigned)analog_maxtype)
+    if ((unsigned)whichanalog >= (unsigned)analog_maxtype && whichanalog != -1)
     {
         //Error("CONTROL_MapAnalogAxis: analog function %d out of valid range for %d analog functions.",
         //		whichanalog, analog_maxtype);
@@ -367,6 +371,42 @@ void CONTROL_SetAnalogAxisScale(int32_t whichaxis, int32_t axisscale, controldev
     set[whichaxis] = axisscale;
 }
 
+void CONTROL_SetAnalogAxisInvert(int32_t whichaxis, int32_t invert, controldevice device)
+{
+    int8_t * set;
+
+    switch (device)
+    {
+    case controldevice_mouse:
+        if ((unsigned) whichaxis >= (unsigned) MAXMOUSEAXES)
+        {
+            //Error("CONTROL_SetAnalogAxisInvert: axis %d out of valid range for %d mouse axes.",
+            //		whichaxis, MAXMOUSEAXES);
+            return;
+        }
+
+        set = CONTROL_MouseAxesInvert;
+        break;
+
+    case controldevice_joystick:
+        if ((unsigned) whichaxis >= (unsigned) MAXJOYAXES)
+        {
+            //Error("CONTROL_SetAnalogAxisInvert: axis %d out of valid range for %d joystick axes.",
+            //		whichaxis, MAXJOYAXES);
+            return;
+        }
+
+        set = CONTROL_JoyAxesInvert;
+        break;
+
+    default:
+        //Error("CONTROL_SetAnalogAxisInvert: invalid controller device type");
+        return;
+    }
+
+    set[whichaxis] = invert;
+}
+
 void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t direction, controldevice device)
 {
     controlaxismaptype *set;
@@ -420,12 +460,14 @@ void CONTROL_MapDigitalAxis(int32_t whichaxis, int32_t whichfunction, int32_t di
 void CONTROL_ClearAssignments(void)
 {
     memset(CONTROL_JoyAxes,             0,               sizeof(CONTROL_JoyAxes));
+    memset(CONTROL_JoyAxesInvert,       0,               sizeof(CONTROL_JoyAxesInvert));
     memset(CONTROL_JoyAxesMap,          AXISUNDEFINED,   sizeof(CONTROL_JoyAxesMap));
     memset(CONTROL_JoyButtonMapping,    BUTTONUNDEFINED, sizeof(CONTROL_JoyButtonMapping));
 //    memset(CONTROL_KeyMapping,          KEYUNDEFINED,    sizeof(CONTROL_KeyMapping));
     memset(CONTROL_LastJoyAxes,         0,               sizeof(CONTROL_LastJoyAxes));
     memset(CONTROL_LastMouseAxes,       0,               sizeof(CONTROL_LastMouseAxes));
     memset(CONTROL_MouseAxes,           0,               sizeof(CONTROL_MouseAxes));
+    memset(CONTROL_MouseAxesInvert,     0,               sizeof(CONTROL_MouseAxesInvert));
     memset(CONTROL_MouseAxesMap,        AXISUNDEFINED,   sizeof(CONTROL_MouseAxesMap));
     memset(CONTROL_MouseButtonMapping,  BUTTONUNDEFINED, sizeof(CONTROL_MouseButtonMapping));
 
@@ -436,7 +478,7 @@ void CONTROL_ClearAssignments(void)
         i = NORMALAXISSCALE;
 }
 
-static void DoGetDeviceButtons(
+static int DoGetDeviceButtons(
     int32_t buttons, int32_t tm,
     int32_t NumButtons,
     int32_t *DeviceButtonState,
@@ -447,6 +489,7 @@ static void DoGetDeviceButtons(
 )
 {
     int32_t i=NumButtons-1;
+    int retval = 0;
 
     for (; i>=0; i--)
     {
@@ -457,6 +500,8 @@ static void DoGetDeviceButtons(
 
         if (bs)
         {
+            retval = 1;
+
             if (ButtonClicked[i] == FALSE)
             {
                 ButtonClicked[i] = TRUE;
@@ -486,6 +531,8 @@ static void DoGetDeviceButtons(
 
         ButtonClicked[i] = FALSE;
     }
+
+    return retval;
 }
 
 static void CONTROL_GetDeviceButtons(void)
@@ -507,7 +554,7 @@ static void CONTROL_GetDeviceButtons(void)
 
     if (CONTROL_JoystickEnabled)
     {
-        DoGetDeviceButtons(
+        int retval = DoGetDeviceButtons(
             JOYSTICK_GetButtons(), t,
             CONTROL_NumJoyButtons,
             CONTROL_JoyButtonState,
@@ -516,10 +563,12 @@ static void CONTROL_GetDeviceButtons(void)
             CONTROL_JoyButtonClicked,
             CONTROL_JoyButtonClickedCount
         );
+        if (retval)
+            CONTROL_LastSeenInput = LastSeenInput::Joystick;
     }
 }
 
-static void CONTROL_DigitizeAxis(int axis, controldevice device)
+static int CONTROL_DigitizeAxis(int axis, controldevice device)
 {
     controlaxistype *set, *lastset;
 
@@ -535,42 +584,68 @@ static void CONTROL_DigitizeAxis(int axis, controldevice device)
         lastset = CONTROL_LastJoyAxes;
         break;
 
-    default: return;
+    default: return 0;
     }
+
+    set[axis].digitalClearedN = lastset[axis].digitalClearedN;
+    set[axis].digitalClearedP = lastset[axis].digitalClearedP;
 
     if (set[axis].analog > 0)
     {
+        set[axis].digitalClearedN = 0;
+
         if (set[axis].analog > THRESHOLD || (set[axis].analog > MINTHRESHOLD && lastset[axis].digital == 1))
             set[axis].digital = 1;
+        else
+            set[axis].digitalClearedP = 0;
+
+        return 1;
+    }
+    else if (set[axis].analog < 0)
+    {
+        set[axis].digitalClearedP = 0;
+
+        if (set[axis].analog < -THRESHOLD || (set[axis].analog < -MINTHRESHOLD && lastset[axis].digital == -1))
+            set[axis].digital = -1;
+        else
+            set[axis].digitalClearedN = 0;
+
+        return 1;
     }
     else
     {
-        if (set[axis].analog < -THRESHOLD || (set[axis].analog < -MINTHRESHOLD && lastset[axis].digital == -1))
-            set[axis].digital = -1;
+        set[axis].digitalClearedN = 0;
+        set[axis].digitalClearedP = 0;
     }
+
+    return 0;
 }
 
 static void CONTROL_ScaleAxis(int axis, controldevice device)
 {
     controlaxistype *set;
     int32_t *scale;
+    int8_t * invert;
 
     switch (device)
     {
     case controldevice_mouse:
         set = CONTROL_MouseAxes;
         scale = CONTROL_MouseAxesScale;
+        invert = CONTROL_MouseAxesInvert;
         break;
 
     case controldevice_joystick:
         set = CONTROL_JoyAxes;
         scale = CONTROL_JoyAxesScale;
+        invert = CONTROL_JoyAxesInvert;
         break;
 
     default: return;
     }
 
-    set[axis].analog = mulscale16(set[axis].analog, scale[axis]);
+    int const invertResult = !!invert[axis];
+    set[axis].analog = (mulscale16(set[axis].analog, scale[axis]) ^ -invertResult) + invertResult;
 }
 
 static void CONTROL_ApplyAxis(int axis, ControlInfo *info, controldevice device)
@@ -618,7 +693,7 @@ static void CONTROL_PollDevices(ControlInfo *info)
         Bmemcpy(CONTROL_LastMouseAxes, CONTROL_MouseAxes, sizeof(CONTROL_MouseAxes));
         memset(CONTROL_MouseAxes, 0, sizeof(CONTROL_MouseAxes));
 
-        CONTROL_GetMouseDelta();
+        CONTROL_GetMouseDelta(info);
         for (int i=MAXMOUSEAXES-1; i>=0; i--)
         {
             CONTROL_DigitizeAxis(i, controldevice_mouse);
@@ -637,7 +712,8 @@ static void CONTROL_PollDevices(ControlInfo *info)
         {
             CONTROL_JoyAxes[i].analog = joystick.pAxis[i];
 
-            CONTROL_DigitizeAxis(i, controldevice_joystick);
+            if (CONTROL_DigitizeAxis(i, controldevice_joystick))
+                CONTROL_LastSeenInput = LastSeenInput::Joystick;
             CONTROL_ScaleAxis(i, controldevice_joystick);
             LIMITCONTROL(&CONTROL_JoyAxes[i].analog);
             CONTROL_ApplyAxis(i, info, controldevice_joystick);
@@ -647,9 +723,10 @@ static void CONTROL_PollDevices(ControlInfo *info)
     CONTROL_GetDeviceButtons();
 }
 
-static void CONTROL_HandleAxisFunction(int32_t *p1, controlaxistype *axes, controlaxismaptype *axismap, int numAxes)
+static int CONTROL_HandleAxisFunction(int32_t *p1, controlaxistype *axes, controlaxismaptype *axismap, int numAxes)
 {
     int axis = numAxes - 1;
+    int retval = 0;
 
     do
     {
@@ -659,9 +736,14 @@ static void CONTROL_HandleAxisFunction(int32_t *p1, controlaxistype *axes, contr
         int const j = (axes[axis].digital < 0) ? axismap[axis].minmap : axismap[axis].maxmap;
 
         if (j != AXISUNDEFINED)
+        {
             p1[j] = 1;
+            retval = 1;
+        }
     }
     while (axis--);
+
+    return retval;
 }
 
 static void CONTROL_AxisFunctionState(int32_t *p1)
@@ -670,7 +752,10 @@ static void CONTROL_AxisFunctionState(int32_t *p1)
         CONTROL_HandleAxisFunction(p1, CONTROL_MouseAxes, CONTROL_MouseAxesMap, CONTROL_NumMouseAxes);
 
     if (CONTROL_NumJoyAxes)
-        CONTROL_HandleAxisFunction(p1, CONTROL_JoyAxes, CONTROL_JoyAxesMap, CONTROL_NumJoyAxes);
+    {
+        if (CONTROL_HandleAxisFunction(p1, CONTROL_JoyAxes, CONTROL_JoyAxesMap, CONTROL_NumJoyAxes))
+            CONTROL_LastSeenInput = LastSeenInput::Joystick;
+    }
 }
 
 static void CONTROL_ButtonFunctionState(int32_t *p1)
@@ -708,18 +793,30 @@ static void CONTROL_ButtonFunctionState(int32_t *p1)
     if (CONTROL_NumJoyButtons)
     {
         int i=CONTROL_NumJoyButtons-1, j;
+        int retval = 0;
 
         do
         {
             j = CONTROL_JoyButtonMapping[i].doubleclicked;
             if (j != KEYUNDEFINED)
-                p1[j] |= CONTROL_JoyButtonClickedState[i];
+            {
+                auto const state = CONTROL_JoyButtonClickedState[i];
+                p1[j] |= state;
+                retval |= state;
+            }
 
             j = CONTROL_JoyButtonMapping[i].singleclicked;
             if (j != KEYUNDEFINED)
-                p1[j] |= CONTROL_JoyButtonState[i];
+            {
+                auto const state = CONTROL_JoyButtonState[i];
+                p1[j] |= state;
+                retval |= state;
+            }
         }
         while (i--);
+
+        if (retval)
+            CONTROL_LastSeenInput = LastSeenInput::Joystick;
     }
 }
 
@@ -735,6 +832,45 @@ void CONTROL_ClearButton(int whichbutton)
     CONTROL_Flags[whichbutton].cleared = TRUE;
 }
 
+void CONTROL_ClearAllButtons(void)
+{
+    CONTROL_ButtonHeldState = 0;
+    CONTROL_ButtonState = 0;
+
+    for (auto & c : CONTROL_Flags)
+        c.cleared = TRUE;
+}
+
+int32_t CONTROL_GetGameControllerDigitalAxisPos(int32_t axis)
+{
+    if (!joystick.isGameController)
+        return 0;
+
+    return CONTROL_JoyAxes[axis].digital > 0 && !CONTROL_JoyAxes[axis].digitalClearedP;
+}
+int32_t CONTROL_GetGameControllerDigitalAxisNeg(int32_t axis)
+{
+    if (!joystick.isGameController)
+        return 0;
+
+    return CONTROL_JoyAxes[axis].digital < 0 && !CONTROL_JoyAxes[axis].digitalClearedN;
+}
+
+void CONTROL_ClearGameControllerDigitalAxisPos(int32_t axis)
+{
+    if (!joystick.isGameController)
+        return;
+
+    CONTROL_JoyAxes[axis].digitalClearedP = 1;
+}
+void CONTROL_ClearGameControllerDigitalAxisNeg(int32_t axis)
+{
+    if (!joystick.isGameController)
+        return;
+
+    CONTROL_JoyAxes[axis].digitalClearedN = 1;
+}
+
 void CONTROL_ProcessBinds(void)
 {
     if (!CONTROL_BindsEnabled)
@@ -746,10 +882,15 @@ void CONTROL_ProcessBinds(void)
     {
         if (CONTROL_KeyBinds[i].cmdstr)
         {
-            if (KB_KeyPressed(i) && (CONTROL_KeyBinds[i].repeat || (CONTROL_KeyBinds[i].laststate == 0)))
-                OSD_Dispatch(CONTROL_KeyBinds[i].cmdstr);
+            auto const keyPressed = KB_KeyPressed(i);
 
-            CONTROL_KeyBinds[i].laststate = KB_KeyPressed(i);
+            if (keyPressed && (CONTROL_KeyBinds[i].repeat || (CONTROL_KeyBinds[i].laststate == 0)))
+            {
+                CONTROL_LastSeenInput = LastSeenInput::Keyboard;
+                OSD_Dispatch(CONTROL_KeyBinds[i].cmdstr);
+            }
+
+            CONTROL_KeyBinds[i].laststate = keyPressed;
         }
     }
     while (i--);
@@ -787,6 +928,19 @@ void CONTROL_GetInput(ControlInfo *info)
     inputchecked = 1;
 }
 
+static void CONTROL_ResetJoystickValues()
+{
+    CONTROL_NumJoyAxes      = min(MAXJOYAXES, joystick.numAxes);
+    CONTROL_NumJoyButtons   = min(MAXJOYBUTTONS, joystick.numButtons + 4 * (joystick.numHats > 0));
+    CONTROL_JoystickEnabled = CONTROL_JoyPresent = !!((inputdevices & 4) >> 2);
+}
+
+void CONTROL_ScanForControllers()
+{
+    joyScanDevices();
+    CONTROL_ResetJoystickValues();
+}
+
 bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ticspersecond)
 {
     UNREFERENCED_PARAMETER(which);
@@ -811,9 +965,7 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     CONTROL_MousePresent    = Mouse_Init();
     CONTROL_MouseEnabled    = CONTROL_MousePresent;
 
-    CONTROL_NumJoyAxes      = min(MAXJOYAXES, joystick.numAxes);
-    CONTROL_NumJoyButtons   = min(MAXJOYBUTTONS, joystick.numButtons + 4 * (joystick.numHats > 0));
-    CONTROL_JoystickEnabled = CONTROL_JoyPresent = !!((inputdevices & 4) >> 2);
+    CONTROL_ResetJoystickValues();
 
 #ifdef GEKKO
     if (CONTROL_MousePresent)

@@ -32,7 +32,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "fx_man.h"
 #include "music.h"
 #include "scriplib.h"
-#include "file_lib.h"
 #include "gamedefs.h"
 #include "keyboard.h"
 
@@ -101,7 +100,7 @@ static int32_t timert;
 
 int32_t GetTime(void)
 {
-    return totalclock;
+    return (int32_t) totalclock;
     //return timert++;
 }
 
@@ -115,7 +114,7 @@ void InitSetup(void)
     //CONFIG_GetSetupFilename();
     //InitializeKeyDefList();
     //CONFIG_ReadSetup();
-    if (CONTROL_Startup(1, &GetTime, /*120*/ 140)) exit(1);
+    if (CONTROL_Startup(controltype_keyboardandmouse, &GetTime, /*120*/ 140)) exit(1);
     SetupGameButtons();
     CONFIG_SetupMouse();
     CONFIG_SetupJoystick();
@@ -155,7 +154,6 @@ void TermSetup(void)
 #include "fx_man.h"
 #include "music.h"
 #include "scriplib.h"
-#include "file_lib.h"
 #include "gamedefs.h"
 #include "keyboard.h"
 

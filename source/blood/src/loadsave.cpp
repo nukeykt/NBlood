@@ -127,6 +127,9 @@ void LoadSave::LoadGame(char *pzFile)
     if (!bVanilla && !gMe->packInfo[1].at0) // if diving suit is not active, turn off reverb sound effect
         sfxSetReverb(0);
     ambInit();
+#ifdef YAX_ENABLE
+    yax_update(numyaxbunches > 0 ? 2 : 1);
+#endif
     memset(myMinLag, 0, sizeof(myMinLag));
     otherMinLag = 0;
     myMaxLag = 0;
@@ -156,7 +159,7 @@ void LoadSave::LoadGame(char *pzFile)
     gFrame = 0;
     gCacheMiss = 0;
     gFrameRate = 0;
-    gGameClock = 0;
+    totalclock = 0;
     gPaused = 0;
     gGameStarted = 1;
     bVanilla = false;
@@ -252,9 +255,9 @@ void MyLoadSave::Load(void)
     Read(&gFrameClock, sizeof(gFrameClock));
     Read(&gFrameTicks, sizeof(gFrameTicks));
     Read(&gFrame, sizeof(gFrame));
-    int nGameClock;
-    Read(&nGameClock, sizeof(nGameClock));
-    gGameClock = nGameClock;
+    ClockTicks nGameClock;
+    Read(&totalclock, sizeof(totalclock));
+    totalclock = nGameClock;
     Read(&gLevelTime, sizeof(gLevelTime));
     Read(&gPaused, sizeof(gPaused));
     Read(&gbAdultContent, sizeof(gbAdultContent));
@@ -303,6 +306,9 @@ void MyLoadSave::Load(void)
     Read(&gMapRev, sizeof(gMapRev));
     Read(&gSongId, sizeof(gSkyCount));
     Read(&gFogMode, sizeof(gFogMode));
+#ifdef YAX_ENABLE
+    Read(&numyaxbunches, sizeof(numyaxbunches));
+#endif
     gCheatMgr.sub_5BCF4();
 }
 
@@ -357,7 +363,7 @@ void MyLoadSave::Save(void)
     Write(&gFrameClock, sizeof(gFrameClock));
     Write(&gFrameTicks, sizeof(gFrameTicks));
     Write(&gFrame, sizeof(gFrame));
-    int nGameClock = gGameClock;
+    ClockTicks nGameClock = totalclock;
     Write(&nGameClock, sizeof(nGameClock));
     Write(&gLevelTime, sizeof(gLevelTime));
     Write(&gPaused, sizeof(gPaused));
@@ -404,6 +410,9 @@ void MyLoadSave::Save(void)
     Write(&gMapRev, sizeof(gMapRev));
     Write(&gSongId, sizeof(gSkyCount));
     Write(&gFogMode, sizeof(gFogMode));
+#ifdef YAX_ENABLE
+    Write(&numyaxbunches, sizeof(numyaxbunches));
+#endif
 }
 
 void LoadSavedInfo(void)

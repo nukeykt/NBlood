@@ -6,7 +6,6 @@
 #include "baselayer.h"  // glinfo
 #include "glad/glad.h"
 #include "hightile.h"
-#include "mdsprite.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +21,7 @@ extern double gxyaspect;
 extern float grhalfxdown10x;
 extern float gcosang, gsinang, gcosang2, gsinang2;
 extern float gchang, gshang, gctang, gstang, gvisibility;
+extern float gvrcorrection;
 
 struct glfiltermodes {
     const char *name;
@@ -31,6 +31,8 @@ struct glfiltermodes {
 extern struct glfiltermodes glfiltermodes[NUMGLFILTERMODES];
 
 extern void Polymost_prepare_loadboard(void);
+
+void polymost_outputGLDebugMessage(uint8_t severity, const char* format, ...);
 
 //void phex(char v, char *s);
 void uploadtexture(int32_t doalloc, vec2_t siz, int32_t texfmt, coltype *pic, vec2_t tsiz, int32_t dameth);
@@ -44,6 +46,8 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
 void polymost_fillpolygon(int32_t npoints);
 void polymost_initosdfuncs(void);
 void polymost_drawrooms(void);
+void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang, fix16_t dahoriz, int16_t mirrorWall);
+void polymost_completeMirror();
 
 int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall);
 int32_t polymost_spriteHasTranslucency(uspritetype const * const tspr);
@@ -53,6 +57,8 @@ void polymost_disableProgram(void);
 void polymost_resetProgram(void);
 void polymost_setTexturePosSize(vec4f_t const &texturePosSize);
 void polymost_setHalfTexelSize(vec2f_t const &halfTexelSize);
+char polymost_getClamp();
+void polymost_setClamp(char clamp);
 void polymost_setVisibility(float visibility);
 void polymost_setFogEnabled(char fogEnabled);
 void polymost_useColorOnly(char useColorOnly);
@@ -63,6 +69,8 @@ void polymost_activeTexture(GLenum texture);
 void polymost_bindTexture(GLenum target, uint32_t textureID);
 void polymost_updatePalette(void);
 void useShaderProgram(uint32_t shaderID);
+
+float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
 //POGOTODO: these wrappers won't be needed down the line -- remove them once proper draw call organization is finished
 #undef glActiveTexture
@@ -84,7 +92,7 @@ enum {
 
 void gltexinvalidate(int32_t dapicnum, int32_t dapalnum, int32_t dameth);
 void gltexinvalidatetype(int32_t type);
-int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char* name, char fontsize);
+int32_t polymost_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize);
 
 extern float curpolygonoffset;
 

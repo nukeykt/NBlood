@@ -50,6 +50,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
 char *g_grpNamePtr = NULL;
 
+void clearGrpNamePtr(void)
+{
+    Bfree(g_grpNamePtr);
+    // g_grpNamePtr assumed to be assigned to right after
+}
+
 const char *G_DefaultGrpFile(void)
 {
     return "nblood.pk3";
@@ -68,6 +74,25 @@ const char *G_GrpFile(void)
 const char *G_DefFile(void)
 {
     return (g_defNamePtr == NULL) ? G_DefaultDefFile() : g_defNamePtr;
+}
+
+void G_SetupGlobalPsky(void)
+{
+    int skyIdx = 0;
+
+    // NOTE: Loop must be running backwards for the same behavior as the game
+    // (greatest sector index with matching parallaxed sky takes precedence).
+    for (bssize_t i = numsectors - 1; i >= 0; i--)
+    {
+        if (sector[i].ceilingstat & 1)
+        {
+            skyIdx = getpskyidx(sector[i].ceilingpicnum);
+            if (skyIdx > 0)
+                break;
+        }
+    }
+
+    g_pskyidx = skyIdx;
 }
 
 static char g_rootDir[BMAX_PATH];
@@ -220,6 +245,7 @@ void G_LoadGroups(int32_t autoload)
         }
     }
 
+    loaddefinitions_game(BLOODWIDESCREENDEF, TRUE);
     loaddefinitions_game(G_DefFile(), TRUE);
 
     struct strllist *s;
@@ -447,16 +473,16 @@ static char* KeyValues_FindKeyValue(char **vdfbuf, char * const vdfbufend, const
 
 static void G_ParseSteamKeyValuesForPaths(const char *vdf)
 {
-    int32_t fd = Bopen(vdf, BO_RDONLY);
-    int32_t size = Bfilelength(fd);
+    buildvfs_fd fd = buildvfs_open_read(vdf);
+    int32_t size = buildvfs_length(fd);
     char *vdfbufstart, *vdfbuf, *vdfbufend;
 
     if (size <= 0)
         return;
 
     vdfbufstart = vdfbuf = (char*)Xmalloc(size);
-    size = (int32_t)Bread(fd, vdfbuf, size);
-    Bclose(fd);
+    size = (int32_t)buildvfs_read(fd, vdfbuf, size);
+    buildvfs_close(fd);
     vdfbufend = vdfbuf + size;
 
     if (KeyValues_FindParentKey(&vdfbuf, vdfbufend, "LibraryFolders"))
@@ -467,7 +493,7 @@ static void G_ParseSteamKeyValuesForPaths(const char *vdf)
             G_AddSteamPaths(result);
     }
 
-    Bfree(vdfbufstart);
+    Xfree(vdfbufstart);
 }
 #endif
 #endif

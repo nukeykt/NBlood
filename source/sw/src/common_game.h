@@ -44,6 +44,10 @@ extern "C" {
 //
 //****************************************************************************
 
+#ifndef APPBASENAME
+#define APPBASENAME         "voidsw"
+#endif
+
 //
 // Color Defines
 //
@@ -63,8 +67,6 @@ extern "C" {
 //
 // Setup program defines
 //
-
-#define SETUPFILENAME "sw.cfg"
 
 #define SETUPPROGRAMNAME ("Shadow Warrior Setup")
 #define SETUPPROGRAMVERSION ("1.2")

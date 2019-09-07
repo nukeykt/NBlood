@@ -19,6 +19,8 @@
 // XXX: This breaks editors for games other than Duke. The OSD needs a way to specify colors in abstract instead of concatenating palswap escape sequences.
 #include "common_game.h"
 
+#include "vfs.h"
+
 //////////////////// Key stuff ////////////////////
 
 #define eitherALT   (keystatus[KEYSC_LALT] || keystatus[KEYSC_RALT])
@@ -77,7 +79,7 @@ static void message_common1(const char *tmpstr)
     Bstrncpyz(getmessage, tmpstr, sizeof(getmessage));
 
     getmessageleng = Bstrlen(getmessage);
-    getmessagetimeoff = totalclock + 120*2 + getmessageleng*(120/30);
+    getmessagetimeoff = (int32_t) totalclock + 120*2 + getmessageleng*(120/30);
 //    lastmessagetime = totalclock;
 }
 
@@ -140,7 +142,7 @@ void taglab_init()
 
 int32_t taglab_load(const char *filename, int32_t flags)
 {
-    int32_t fil, len, i;
+    int32_t len, i;
     char buf[BMAX_PATH], *dot, *filebuf;
 
     taglab_init();
@@ -160,7 +162,8 @@ int32_t taglab_load(const char *filename, int32_t flags)
     Bmemcpy(dot, ".maptags", 9);
     //
 
-    if ((fil = kopen4load(buf,flags)) == -1)
+    buildvfs_kfd fil;
+    if ((fil = kopen4load(buf,flags)) == buildvfs_kfd_invalid)
         return -1;
 
     len = kfilelength(fil);
@@ -216,14 +219,14 @@ nextline:
     }
 
     // ----
-    Bfree(filebuf);
+    Xfree(filebuf);
 
     return 0;
 }
 
 int32_t taglab_save(const char *mapname)
 {
-    int32_t fil, len, i;
+    int32_t len, i;
     char buf[BMAX_PATH], *dot;
     const char *label;
 
@@ -243,7 +246,8 @@ int32_t taglab_save(const char *mapname)
     Bmemcpy(dot, ".maptags", 9);
     //
 
-    if ((fil = Bopen(buf,BO_BINARY|BO_TRUNC|BO_CREAT|BO_WRONLY,BS_IREAD|BS_IWRITE)) == -1)
+    buildvfs_fd fil;
+    if ((fil = buildvfs_open_write(buf)) == buildvfs_fd_invalid)
     {
         initprintf("Couldn't open \"%s\" for writing: %s\n", buf, strerror(errno));
         return -1;
@@ -256,11 +260,11 @@ int32_t taglab_save(const char *mapname)
             continue;
 
         len = Bsprintf(buf, "%d %s" OURNEWL, i, label);
-        if (Bwrite(fil, buf, len)!=len)
+        if (buildvfs_write(fil, buf, len)!=len)
             break;
     }
 
-    Bclose(fil);
+    buildvfs_close(fil);
 
     return (i!=32768);
 }
@@ -395,11 +399,11 @@ static void free_self_and_successors(mapundo_t *mapst)
             {
                 (*refcnt)--;
                 if (*refcnt == 0)
-                    Bfree(refcnt);  // free the block!
+                    Xfree(refcnt);  // free the block!
             }
         }
 
-        Bfree(cur);
+        Xfree(cur);
 
         if (!prev)
             break;
@@ -477,8 +481,8 @@ void create_map_snapshot(void)
             if (!try_match_with_prev(2, Numsprites, temphash))
             {
                 int32_t i = 0;
-                spritetype *const tspri = (spritetype *)Xmalloc(Numsprites*sizeof(spritetype) + 4);
-                spritetype *spri = tspri;
+                auto const tspri = (spritetype *)Xmalloc(Numsprites*sizeof(spritetype) + 4);
+                auto spri = tspri;
 
                 for (bssize_t j=0; j<MAXSPRITES && i < Numsprites; j++)
                     if (sprite[j].statnum != MAXSTATUS)
@@ -488,7 +492,7 @@ void create_map_snapshot(void)
                     }
 
                 create_compressed_block(2, tspri, Numsprites*sizeof(spritetype), temphash);
-                Bfree(tspri);
+                Xfree(tspri);
             }
         }
 #undef XXH__
@@ -738,7 +742,7 @@ static int32_t csc_s, csc_i;
 static int32_t check_spritelist_consistency()
 {
     int32_t ournumsprites=0;
-    static uint8_t havesprite[MAXSPRITES>>3];
+    static uint8_t havesprite[(MAXSPRITES+7)>>3];
 
     csc_s = csc_i = -1;
 
@@ -783,10 +787,10 @@ static int32_t check_spritelist_consistency()
             if (i >= MAXSPRITES)
                 return 5;  // oob sprite index in list, or Numsprites inconsistent
 
-            if (havesprite[i>>3]&(1<<(i&7)))
+            if (havesprite[i>>3]&pow2char[i&7])
                 return 6;  // have a cycle in the list
 
-            havesprite[i>>3] |= (1<<(i&7));
+            havesprite[i>>3] |= pow2char[i&7];
 
             if (sprite[i].sectnum != s)
                 return 7;  // .sectnum inconsistent with list
@@ -801,7 +805,7 @@ static int32_t check_spritelist_consistency()
     {
         csc_i = i;
 
-        if (sprite[i].statnum!=MAXSTATUS && !(havesprite[i>>3]&(1<<(i&7))))
+        if (sprite[i].statnum!=MAXSTATUS && !(havesprite[i>>3]&pow2char[i&7]))
             return 9;  // have a sprite in the world not in sector list
     }
 
@@ -822,10 +826,10 @@ static int32_t check_spritelist_consistency()
 
             // have a cycle in the list, or status list inconsistent with
             // sector list (*)
-            if (!(havesprite[i>>3]&(1<<(i&7))))
+            if (!(havesprite[i>>3]&pow2char[i&7]))
                 return 11;
 
-            havesprite[i>>3] &= ~(1<<(i&7));
+            havesprite[i>>3] &= ~pow2char[i&7];
 
             if (sprite[i].statnum != s)
                 return 12;  // .statnum inconsistent with list
@@ -842,7 +846,7 @@ static int32_t check_spritelist_consistency()
 
         // Status list contains only a proper subset of the sprites in the
         // sector list.  Reverse case is handled by (*)
-        if (havesprite[i>>3]&(1<<(i&7)))
+        if (havesprite[i>>3]&pow2char[i&7])
             return 14;
     }
 
@@ -1177,7 +1181,7 @@ int32_t CheckMapCorruption(int32_t printfromlev, uint64_t tryfixing)
                 // Check for ".nextwall already referenced from wall ..."
                 if (!corruptcheck_noalreadyrefd && nw>=0 && nw<numwalls)
                 {
-                    if (seen_nextwalls[nw>>3]&(1<<(nw&7)))
+                    if (seen_nextwalls[nw>>3]&pow2char[nw&7])
                     {
                         const int32_t onumct = numcorruptthings;
 
@@ -1407,8 +1411,8 @@ too_many_errors:
 
     if (seen_nextwalls)
     {
-        Bfree(seen_nextwalls);
-        Bfree(lastnextwallsource);
+        Xfree(seen_nextwalls);
+        Xfree(lastnextwallsource);
     }
 
     corruptlevel = errlevel;
@@ -1737,7 +1741,7 @@ static void FuncMenu_Process(const StatusBarMenu *m, int32_t col, int32_t row)
         tmpscript[1+5+1+snlen] = 0;
 
         M32RunScript(tmpscript);
-        Bfree(tmpscript);
+        Xfree(tmpscript);
 
         if (vm.flags&VMFLAG_ERROR)
             printmessage16("There were errors while executing the menu function");

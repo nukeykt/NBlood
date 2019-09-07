@@ -2,9 +2,11 @@
 #include "pngwrite.h"
 #include "crc32.h"
 
+#include "vfs.h"
+
 pngwrite_t png;
 
-#define png_write_buf(p, size) Bfwrite(p, size, 1, png.file)
+#define png_write_buf(p, size) buildvfs_fwrite(p, size, 1, png.file)
 
 static FORCE_INLINE void png_write_uint32(uint32_t const in)
 {
@@ -32,7 +34,7 @@ static void png_write_chunk(uint32_t const size, char const *const type,
     crc = Bcrc32(chunk, chunk_size + 4, crc);
     png_write_uint32(crc);
 
-    Bfree(chunk);
+    Xfree(chunk);
 }
 
 void png_set_pal(uint8_t const * const data, int numentries)
@@ -57,14 +59,14 @@ void png_set_text(char const * const keyword, char const * const text)
     Bmemcpy(png.text + keylen + 1, text, textlen);
 }
 
-void png_write(FILE * const file, uint32_t const width, uint32_t const height,
+void png_write(buildvfs_FILE const file, int const width, int const height,
                uint8_t const type, uint8_t const * const data)
 {
     png.file = file;
 
     png_write_buf("\x89\x50\x4E\x47\x0D\x0A\x1A\x0A", 8);
 
-    png_ihdr_t const png_header = { B_BIG32(width), B_BIG32(height), 8, type, 0  };
+    png_ihdr_t const png_header = { B_BIG32((unsigned)width), B_BIG32((unsigned)height), 8, type, 0  };
     png_write_chunk(sizeof(png_ihdr_t), "IHDR", (uint8_t const *)&png_header, 0);
 
     if (png.text)
@@ -73,8 +75,8 @@ void png_write(FILE * const file, uint32_t const width, uint32_t const height,
         DO_FREE_AND_NULL(png.text);
     }
 
-    uint32_t const bytesPerPixel = (type == PNG_TRUECOLOR ? 3 : 1);
-    uint32_t const bytesPerLine  = width * bytesPerPixel;
+    int const bytesPerPixel = (type == PNG_TRUECOLOR ? 3 : 1);
+    int const bytesPerLine  = width * bytesPerPixel;
 
     if (png.pal_data)
     {
@@ -82,14 +84,14 @@ void png_write(FILE * const file, uint32_t const width, uint32_t const height,
         DO_FREE_AND_NULL(png.pal_data);
     }
 
-    unsigned const linesiz = height * bytesPerLine + height;
+    int const linesiz = height * bytesPerLine + height;
     uint8_t *lines = (uint8_t *) Xcalloc(1, linesiz);
 
-    for (unative_t i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
         Bmemcpy(lines + i * bytesPerLine + i + 1, data + i * bytesPerLine, bytesPerLine);
 
     png_write_chunk(linesiz, "IDAT", lines, CHUNK_COMPRESSED);
     png_write_chunk(0,       "IEND", NULL,  0);
 
-    Bfree(lines);
+    Xfree(lines);
 }

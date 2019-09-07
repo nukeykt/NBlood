@@ -39,12 +39,15 @@ extern int g_useCwd;
 #define APPBASENAME "nblood"
 #endif
 
+#define BLOODWIDESCREENDEF "blood_widescreen.def"
+
 #define BYTEVERSION 102
 #define EXEVERSION 101
 
 void _SetErrorLoc(const char *pzFile, int nLine);
 void _ThrowError(const char *pzFormat, ...);
 void __dassert(const char *pzExpr, const char *pzFile, int nLine);
+void QuitGame(void);
 
 #define ThrowError(...) \
 	{ \
@@ -54,9 +57,9 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 
 #define dassert(x) if (!(x)) __dassert(#x,__FILE__,__LINE__)
 
-#define kMaxSectors 1024
-#define kMaxWalls 8192
-#define kMaxSprites 4096
+#define kMaxSectors MAXSECTORS
+#define kMaxWalls MAXWALLS
+#define kMaxSprites MAXSPRITES
 
 #define kMaxTiles MAXTILES
 #define kMaxStatus MAXSTATUS
@@ -68,6 +71,157 @@ void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 #define kTicRate 120
 #define kTicsPerFrame 4
 #define kTicsPerSec (kTicRate/kTicsPerFrame)
+
+#define TILTBUFFER 4078
+
+#define kExplodeMax 8
+
+#define kDudeBase 200
+#define kDudePlayer1 231
+#define kDudePlayer8 238
+#define kDudeMax 260
+#define kMissileBase 300
+#define kMissileMax 318
+#define kThingBase 400
+#define kThingMax 436
+
+#define kMaxPowerUps 51
+
+#define kStatRespawn 8
+#define kStatMarker 10
+#define kStatGDXDudeTargetChanger 20
+#define kStatFree 1024
+
+#define kLensSize 80
+#define kViewEffectMax 19
+
+#define kNoTile -1
+
+
+// defined by NoOne:
+// -------------------------------
+#define kMaxPAL 5
+
+#define kItemBase 100
+#define kWeaponItemBase 40
+#define kItemMax 151
+
+// marker sprite types
+#define kMarkerSPStart 1
+#define kMarkerMPStart 2
+#define kMarkerOff 3
+#define kMarkerOn 4
+#define kMarkerAxis 5
+#define kMarkerLowLink 6
+#define kMarkerUpLink 7
+#define kMarkerWarpDest 8
+#define kMarkerUpWater 9
+#define kMarkerLowWater 10
+#define kMarkerUpStack 11
+#define kMarkerLowStack 12
+#define kMarkerUpGoo 13
+#define kMarkerLowGoo 14
+#define kMarkerPath 15
+
+
+// sprite attributes
+#define kHitagMovePhys 0x0001 // affected by movement physics
+#define kHitagGravityPhys 0x0002 // affected by gravity
+#define kHitagFalling 0x0004 // currently in z-motion
+#define kHitagAutoAim 0x0008
+#define kHitagRespawn 0x0010
+#define kHitagFree 0x0020
+#define kHitagSmoke 0x0100
+#define kHitagExtBit 0x8000 // NoOne's extension bit(Note: it's bit 0 in editor!)
+
+// sector types 
+#define kSecBase 600
+#define kSecZMotion kSectorBase
+#define kSecZSprite 602
+#define kSecWarp 603
+#define kSecTeleport 604
+#define kSecPath 612
+#define kSecRotateStep 613
+#define kSecSlideMarked 614
+#define kSecRotateMarked 615
+#define kSecSlide 616
+#define kSecRotate 617
+#define kSecDamage 618
+#define kSecCounter 619
+#define kSecMax 620
+
+// sector cstat
+#define kSecCParallax 0x01
+#define kSecCSloped 0x02
+#define kSecCSwapXY 0x04
+#define kSecCExpand 0x08
+#define kSecCFlipX 0x10
+#define kSecCFlipY 0x20
+#define kSecCFlipMask 0x34
+#define kSecCRelAlign 0x40
+#define kSecCFloorShade 0x8000
+
+// switch types
+#define kSwitchBase 20
+#define kSwitchToggle 20
+#define kSwitchOneWay 21
+#define kSwitchCombo 22
+#define kSwitchPadlock 23
+#define kSwitchMax 24
+
+// projectile types
+#define kProjectileEctoSkull 307
+
+// custom level end
+#define kGDXChannelEndLevelCustom 6
+
+// GDX types
+#define kGDXTypeBase 24
+#define kGDXCustomDudeSpawn 24
+#define kGDXRandomTX 25
+#define kGDXSequentialTX 26
+#define kGDXSeqSpawner 27
+#define kGDXObjPropertiesChanger 28
+#define kGDXObjPicnumChanger 29
+#define kGDXObjSizeChanger 31
+#define kGDXDudeTargetChanger 33
+#define kGDXSectorFXChanger 34
+#define kGDXObjDataChanger 35
+#define kGDXSpriteDamager 36
+#define kGDXObjDataAccumulator 37
+#define kGDXEffectSpawner 38
+#define kGDXWindGenerator 39
+
+#define kGDXThingTNTProx 433 // detects only players
+#define kGDXThingThrowableRock 434 // does small damage if hits target
+#define kGDXThingCustomDudeLifeLeech 435 // the same as normal, except it aims in specified target
+#define kGDXDudeUniversalCultist 254
+#define kGDXGenDudeBurning 255
+
+#define kGDXItemMapLevel 150 // once picked up, draws whole minimap
+
+// ai state types
+#define kAiStateOther -1
+#define kAiStateIdle 0
+#define kAiStateGenIdle 1
+#define kAiStateMove 2
+#define kAiStateSearch 3
+#define kAiStateChase 4
+#define kAiStateRecoil 5
+
+
+#define kAng5 28
+#define kAng15 85
+#define kAng30 170
+#define kAng45 256
+#define kAng60 341
+#define kAng90 512
+#define kAng120 682
+#define kAng180 1024
+#define kAng360 2048
+
+
+// -------------------------------
 
 // NUKE-TODO:
 #define OSDTEXT_DEFAULT   "^00"
@@ -101,6 +255,8 @@ extern void G_ExtInit(void);
 void G_LoadGroupsInDir(const char *dirname);
 void G_DoAutoload(const char *dirname);
 extern void G_LoadGroups(int32_t autoload);
+
+extern void G_SetupGlobalPsky(void);
 
 #define G_ModDirSnprintf(buf, size, basename, ...)                                                                                          \
     (((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/" basename, g_modDir, ##__VA_ARGS__) : Bsnprintf(buf, size, basename, ##__VA_ARGS__)) \
@@ -199,8 +355,6 @@ struct Aim {
 };
 
 #pragma pack(pop)
-
-extern char qsprite_filler[], qsector_filler[];
 
 inline int ksgnf(float f)
 {
@@ -386,18 +540,18 @@ inline int approxDist(int dx, int dy)
 
 class Rect {
 public:
-    int x1, y1, x2, y2;
-    Rect(int _x1, int _y1, int _x2, int _y2)
+    int x0, y0, x1, y1;
+    Rect(int _x0, int _y0, int _x1, int _y1)
     {
-        x1 = _x1; y1 = _y1; x2 = _x2; y2 = _y2;
+        x0 = _x0; y0 = _y0; x1 = _x1; y1 = _y1;
     }
     bool isValid(void) const
     {
-        return x1 < x2 && y1 < y2;
+        return x0 < x1 && y0 < y1;
     }
     char isEmpty(void) const
     {
-        return !(x1 < x2 && y1 < y2);
+        return !isValid();
     }
     bool operator!(void) const
     {
@@ -406,11 +560,39 @@ public:
 
     Rect & operator&=(Rect &pOther)
     {
-        x1 = ClipLow(x1, pOther.x1);
-        y1 = ClipLow(y1, pOther.y1);
-        x2 = ClipHigh(x2, pOther.x2);
-        y2 = ClipHigh(y2, pOther.y2);
+        x0 = ClipLow(x0, pOther.x0);
+        y0 = ClipLow(y0, pOther.y0);
+        x1 = ClipHigh(x1, pOther.x1);
+        y1 = ClipHigh(y1, pOther.y1);
         return *this;
+    }
+
+    void offset(int dx, int dy)
+    {
+        x0 += dx;
+        y0 += dy;
+        x1 += dx;
+        y1 += dy;
+    }
+
+    int height()
+    {
+        return y1 - y0;
+    }
+
+    int width()
+    {
+        return x1 - x0;
+    }
+
+    bool inside(Rect& other)
+    {
+        return (x0 <= other.x0 && x1 >= other.x1 && y0 <= other.y0 && y1 >= other.y1);
+    }
+
+    bool inside(int x, int y)
+    {
+        return (x0 <= x && x1 > x && y0 <= y && y1 > y);
     }
 };
 

@@ -173,52 +173,6 @@ static inline char grabmouse_low(char a)
 #endif
 }
 
-// high-resolution timers for profiling
-uint64_t timerGetTicksU64(void)
-{
-# if defined _WIN32
-    return win_getu64ticks();
-# elif defined __APPLE__
-    return mach_absolute_time();
-# elif _POSIX_TIMERS>0 && defined _POSIX_MONOTONIC_CLOCK
-    // This is SDL HG's SDL_GetPerformanceCounter() when clock_gettime() is
-    // available.
-    uint64_t ticks;
-    struct timespec now;
-
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    ticks = now.tv_sec;
-    ticks *= 1000000000;
-    ticks += now.tv_nsec;
-    return ticks;
-# elif defined GEKKO
-    return ticks_to_nanosecs(gettime());
-# else
-    // Blar. This pragma is unsupported on earlier GCC versions.
-    // At least we'll get a warning and a reference to this line...
-#  pragma message "Using low-resolution (1ms) timer for getu64ticks. Profiling will work badly."
-    return SDL_GetTicks();
-# endif
-}
-
-uint64_t timerGetFreqU64(void)
-{
-# if defined _WIN32
-    return win_timerfreq;
-# elif defined __APPLE__
-    static mach_timebase_info_data_t ti;
-    if (ti.denom == 0)
-        (void) mach_timebase_info(&ti);  // ti.numer/ti.denom: nsec/(m_a_t() tick)
-    return (1000000000LL*ti.denom)/ti.numer;
-# elif _POSIX_TIMERS>0 && defined _POSIX_MONOTONIC_CLOCK
-    return 1000000000;
-# elif defined GEKKO
-    return TB_NSPERSEC;
-# else
-    return 1000;
-# endif
-}
-
 void videoGetModes(void)
 {
     int32_t i, maxx = 0, maxy = 0;
@@ -364,7 +318,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             { SDL_GL_DOUBLEBUFFER, 1 },
             { SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
             { SDL_GL_MULTISAMPLESAMPLES, glmultisample },
-            { SDL_GL_STENCIL_SIZE, 1 },
+            { SDL_GL_STENCIL_SIZE, 8 },
             { SDL_GL_ACCELERATED_VISUAL, 1 },
             { SDL_GL_SWAP_CONTROL, vsync_renderlayer },
         };

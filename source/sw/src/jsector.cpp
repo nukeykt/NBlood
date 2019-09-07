@@ -402,8 +402,8 @@ JS_InitMirrors(void)
 
                     if (!Found_Cam)
                     {
-                        printf("Cound not find the camera view sprite for match %d\n",wall[i].hitag);
-                        printf("Map Coordinates: x = %d, y = %d\n",wall[i].x,wall[i].y);
+                        printf("Cound not find the camera view sprite for match %d\n",TrackerCast(wall[i].hitag));
+                        printf("Map Coordinates: x = %d, y = %d\n",TrackerCast(wall[i].x),TrackerCast(wall[i].y));
                         exit(0);
                     }
 
@@ -429,8 +429,8 @@ JS_InitMirrors(void)
                         if (!Found_Cam)
                         {
                             printf("Did not find drawtotile for camera number %d\n",mirrorcnt);
-                            printf("wall[%d].hitag == %d\n",i,wall[i].hitag);
-                            printf("Map Coordinates: x = %d, y = %d\n",wall[i].x,wall[i].y);
+                            printf("wall[%d].hitag == %d\n",i,TrackerCast(wall[i].hitag));
+                            printf("Map Coordinates: x = %d, y = %d\n", TrackerCast(wall[i].x), TrackerCast(wall[i].y));
                             exit(0);
                         }
                     }
@@ -488,21 +488,21 @@ void drawroomstotile(int daposx, int daposy, int daposz,
                      short daang, int dahoriz, short dacursectnum, short tilenume)
 {
     if (waloff[tilenume] == 0)
-        loadtile(tilenume);
+        tileLoad(tilenume);
 
     PRODUCTION_ASSERT(waloff[tilenume]);
 
-    setviewtotile(tilenume, tilesiz[tilenume].x, tilesiz[tilenume].y);
+    renderSetTarget(tilenume, tilesiz[tilenume].x, tilesiz[tilenume].y);
 
     drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum);
     analyzesprites(daposx, daposy, daposz, FALSE);
-    drawmasks();
+    renderDrawMasks();
 
-    setviewback();
+    renderRestoreTarget();
 
     squarerotatetile(tilenume);
 
-    invalidatetile(tilenume, -1, -1);
+    tileInvalidate(tilenume, -1, -1);
 }
 #else
 void
@@ -542,7 +542,7 @@ drawroomstotile(int daposx, int daposy, int daposz,
     // DRAWS TO TILE HERE
     drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum + MAXSECTORS);
     analyzesprites(daposx, daposy, daposz, FALSE);
-    drawmasks();
+    renderDrawMasks();
 
     setviewback();
 
@@ -647,7 +647,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, short tpang, int tphoriz)
     int tposx, tposy, thoriz;
     int tcx, tcy, tcz;                 // Camera
     int tiltlock, *longptr;
-    short tang;
+    fix16_t tang;
     char ch, *ptr, *ptr2, *ptr3, *ptr4;
     char tvisibility, palok;
 
@@ -657,7 +657,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, short tpang, int tphoriz)
 
     MirrorMoveSkip16 = (MirrorMoveSkip16 + 1) & 15;
 
-    camloopcnt += (totalclock - ototalclock);
+    camloopcnt += (int32_t) (totalclock - ototalclock);
     if (camloopcnt > (60 * 5))          // 5 seconds per player view
     {
         camloopcnt = 0;
@@ -781,7 +781,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, short tpang, int tphoriz)
                     // Show teleport destination
                     // NOTE: Adding MAXSECTORS lets you draw a room, even if
                     // you are outside of it!
-                    if (!mirror[cnt].mstate == m_viewon)
+                    if (mirror[cnt].mstate != m_viewon)
                     {
                         tilesiz[MIRROR].x = tilesiz[MIRROR].y = 0;
                         // Set TV camera sprite size to 0 to show mirror
@@ -791,7 +791,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, short tpang, int tphoriz)
                             tilesiz[mirror[cnt].campic].x = tilesiz[mirror[cnt].campic].y = 0;
                         drawrooms(dx, dy, dz, tpang, tphoriz, sp->sectnum + MAXSECTORS);
                         analyzesprites(dx, dy, dz, FALSE);
-                        drawmasks();
+                        renderDrawMasks();
                     }
                     else
                     {
@@ -889,15 +889,15 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, short tpang, int tphoriz)
                     // Must call preparemirror before drawrooms and
                     // completemirror after drawrooms
 
-                    preparemirror(tx, ty, /*tz,*/ tpang, /*tphoriz,*/
+                    renderPrepareMirror(tx, ty, tz, fix16_from_int(tpang), tphoriz,
                                   mirror[cnt].mirrorwall, /*mirror[cnt].mirrorsector,*/ &tposx, &tposy, &tang);
 
-                    drawrooms(tposx, tposy, tz, tang, tphoriz, mirror[cnt].mirrorsector + MAXSECTORS);
+                    drawrooms(tposx, tposy, tz, fix16_to_int(tang), tphoriz, mirror[cnt].mirrorsector + MAXSECTORS);
 
                     analyzesprites(tposx, tposy, tz, TRUE);
-                    drawmasks();
+                    renderDrawMasks();
 
-                    completemirror();   // Reverse screen x-wise in this
+                    renderCompleteMirror();   // Reverse screen x-wise in this
                     // function
                 }
 
@@ -1081,7 +1081,7 @@ JAnalyzeSprites(uspritetype * tspr)
     // Take care of autosizing
     DoAutoSize(tspr);
 
-    if (getrendermode() == 3 && md_tilehasmodel(tspr->picnum, 0) >= 0 && usemodels) return;
+    if (videoGetRenderMode() >= REND_POLYMOST && md_tilehasmodel(tspr->picnum, 0) >= 0 && usemodels) return;
 
     // Check for voxels
     //if (bVoxelsOn)
@@ -1151,7 +1151,7 @@ InitOrgTile(OrgTileListP thelist)
     OrgTileP tp;
 
 
-    tp = CallocMem(sizeof(OrgTile), 1);
+    tp = (OrgTileP)CallocMem(sizeof(OrgTile), 1);
 
     ASSERT(tp);
 
@@ -1233,16 +1233,16 @@ JS_PlockError(short wall_num, short t)
     switch (t)
     {
     case 1:
-        printf("wall %d, x %d, y %d, pic %d\n", wall_num, wall[wall_num].x, wall[wall_num].y, wall[wall_num].picnum);
+        printf("wall %d, x %d, y %d, pic %d\n", wall_num, TrackerCast(wall[wall_num].x), TrackerCast(wall[wall_num].y), TrackerCast(wall[wall_num].picnum));
         break;
     case 2:
-        printf("wall %d, x %d, y %d, OVERpic %d\n", wall_num, wall[wall_num].x, wall[wall_num].y, wall[wall_num].overpicnum);
+        printf("wall %d, x %d, y %d, OVERpic %d\n", wall_num, TrackerCast(wall[wall_num].x), TrackerCast(wall[wall_num].y), TrackerCast(wall[wall_num].overpicnum));
         break;
     case 3:
-        printf("sector %d, ceiling %d\n", wall_num, sector[wall_num].ceilingpicnum);
+        printf("sector %d, ceiling %d\n", wall_num, TrackerCast(sector[wall_num].ceilingpicnum));
         break;
     case 4:
-        printf("sector %d, floor %d\n", wall_num, sector[wall_num].floorpicnum);
+        printf("sector %d, floor %d\n", wall_num, TrackerCast(sector[wall_num].floorpicnum));
         break;
     }
     exit(0);

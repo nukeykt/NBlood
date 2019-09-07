@@ -62,10 +62,9 @@ extern int16_t highlightsector[MAXSECTORS], highlightsectorcnt;
 extern int16_t highlight[MAXWALLS+MAXSPRITES];
 extern int16_t asksave;
 
-extern int16_t pointhighlight, linehighlight, highlightcnt;
+extern int16_t pointhighlight, linehighlight, sectorhighlight, highlightcnt;
 
-#define DEFAULT_SPRITE_CSTAT 0
-//extern int16_t defaultspritecstat;
+extern int16_t defaultspritecstat;
 
 extern int32_t tempsectornum;
 extern int32_t temppicnum, tempcstat, templotag, temphitag, tempextra;
@@ -119,8 +118,8 @@ extern int32_t showheightindicators;
 extern int32_t showambiencesounds;
 
 extern int32_t numgraysects;
-extern uint8_t graysectbitmap[MAXSECTORS>>3];
-extern uint8_t graywallbitmap[MAXWALLS>>3];
+extern uint8_t graysectbitmap[(MAXSECTORS+7)>>3];
+extern uint8_t graywallbitmap[(MAXWALLS+7)>>3];
 extern int32_t autogray, showinnergray;
 
 extern void drawgradient(void);
@@ -199,7 +198,7 @@ extern int32_t ExtPostStartupWindow(void);
 extern void ExtPostInit(void);
 extern void ExtUnInit(void);
 extern void ExtPreCheckKeys(void);
-extern void ExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t);
+extern void ExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
 extern void ExtCheckKeys(void);
 extern void ExtPreLoadMap(void);
 extern void ExtSetupMapFilename(const char *mapname);
@@ -316,7 +315,7 @@ const char* getstring_simple(const char *querystr, const char *defaultstr, int32
 //int32_t snfillprintf(char *outbuf, size_t bufsiz, int32_t fill, const char *fmt, ...);
 void _printmessage16(const char *fmt, ...) ATTRIBUTE((format(printf,1,2)));
 
-#define printmessage16(fmt, ...) lastpm16time = totalclock, _printmessage16(fmt, ## __VA_ARGS__)
+#define printmessage16(fmt, ...) lastpm16time = (int32_t) totalclock, _printmessage16(fmt, ## __VA_ARGS__)
 
 extern char lastpm16buf[156];
 
@@ -355,7 +354,7 @@ void inflineintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
 
 void ovhscrcoords(int32_t x, int32_t y, int32_t *scrx, int32_t *scry);
 
-extern uint8_t hlsectorbitmap[MAXSECTORS>>3];
+extern uint8_t hlsectorbitmap[(MAXSECTORS+7)>>3];
 
 void test_map(int32_t mode);
 
@@ -382,6 +381,7 @@ int32_t select_sprite_tag(int32_t spritenum);
 
 extern int32_t m32_2d3dmode, m32_2d3dsize;
 extern vec2_t m32_2d3d;
+extern int32_t m32_3dundo;
 
 #define XSIZE_2D3D (xdim2d / m32_2d3dsize)
 #define YSIZE_2D3D (ydim2d / m32_2d3dsize)
@@ -401,8 +401,6 @@ static inline int32_t m32_is2d3dmode(void)
 
 extern int32_t editorGet2dSpriteColor(int32_t spr);
 
-#define NEXTWALL(i) (wall[wall[i].nextwall])
-#define POINT2(i) (wall[wall[i].point2])
 #define SPRITESEC(j) (sector[sprite[j].sectnum])
 
 #define SCRIPTHISTSIZ 32  // should be the same as OSD_HISTORYDEPTH for maximum win, should be a power of two
@@ -466,7 +464,7 @@ static FORCE_INLINE void inpclamp(int32_t *x, int32_t mi, int32_t ma)
 
 // Timed offset for Mapster32 color index cycling.
 // Range: 0 .. 16
-#define M32_THROB klabs(sintable[((totalclock << 4) & 2047)] >> 10)
+#define M32_THROB klabs(sintable[(((int32_t) totalclock << 4) & 2047)] >> 10)
 
 #ifdef __cplusplus
 }

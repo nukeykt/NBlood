@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # include "animvpx.h"
 #endif
 
+#include "vfs.h"
+
 // animsound_t.sound
 EDUKE32_STATIC_ASSERT(INT16_MAX >= MAXSOUNDS);
 
@@ -58,7 +60,7 @@ dukeanim_t *Anim_Find(const char *s)
             ptr = hash_findcase(&h_dukeanim, str);
         }
 
-        Bfree(str);
+        Xfree(str);
     }
 
     return (dukeanim_t *)(ptr == -1 ? NULL : (dukeanim_t *)ptr);
@@ -205,8 +207,8 @@ void Anim_Init(void)
         if (anm.numsounds)
         {
             anim->sounds = (animsound_t *)Xmalloc(anm.numsounds * sizeof(animsound_t));
-            size_t const numsounds = anm.numsounds;
-            for (size_t i = 0; i < numsounds; ++i)
+            int const numsounds = anm.numsounds;
+            for (int i = 0; i < numsounds; ++i)
             {
                 defaultanmsound const & src = anm.sounds[i];
                 animsound_t & dst = anim->sounds[i];
@@ -245,11 +247,11 @@ int32_t Anim_Play(const char *fn)
             break;
 
         dukeanim_t const * origanim = anim;
-        int32_t handle = -1;
+        buildvfs_kfd handle = buildvfs_kfd_invalid;
         if (!Bstrcmp(dot, ".ivf"))
         {
             handle = kopen4loadfrommod(fn, 0);
-            if (handle == -1)
+            if (handle == buildvfs_kfd_invalid)
                 break;
         }
         else
@@ -268,7 +270,7 @@ int32_t Anim_Play(const char *fn)
             vpxfndot[4] = '\0';
 
             handle = kopen4loadfrommod(vpxfn, 0);
-            if (handle == -1)
+            if (handle == buildvfs_kfd_invalid)
                 break;
 
             anim = Anim_Find(vpxfn);
@@ -393,7 +395,7 @@ int32_t Anim_Play(const char *fn)
             {
                 G_HandleAsync();
 
-                if (VM_OnEventWithReturn(EVENT_SKIPCUTSCENE, g_player[screenpeek].ps->i, screenpeek, I_CheckAllInput()))
+                if (VM_OnEventWithReturn(EVENT_SKIPCUTSCENE, g_player[screenpeek].ps->i, screenpeek, I_GeneralTrigger()))
                 {
                     running = 0;
                     break;
@@ -417,9 +419,9 @@ int32_t Anim_Play(const char *fn)
 #ifdef USE_OPENGL
     int32_t ogltexfiltermode = gltexfiltermode;
 #endif
-    int32_t handle = kopen4load(fn, 0);
+    buildvfs_kfd handle = kopen4load(fn, 0);
 
-    if (handle == -1)
+    if (handle == buildvfs_kfd_invalid)
         return 0;
 
     int32_t length = kfilelength(handle);
@@ -430,14 +432,10 @@ int32_t Anim_Play(const char *fn)
         goto end_anim;
     }
 
-    walock[TILE_ANIM] = 219;
-    anim->animlock = 1;
+    anim->animlock = 255;
 
     if (!anim->animbuf)
         cacheAllocateBlock((intptr_t *)&anim->animbuf, length + 1, &anim->animlock);
-
-    tilesiz[TILE_ANIM].x = 200;
-    tilesiz[TILE_ANIM].y = 320;
 
     kread(handle, anim->animbuf, length);
     kclose(handle);
@@ -497,10 +495,12 @@ int32_t Anim_Play(const char *fn)
 
         i = VM_OnEventWithReturn(EVENT_PRECUTSCENE, g_player[screenpeek].ps->i, screenpeek, i);
 
+        walock[TILE_ANIM] = 255;
         waloff[TILE_ANIM] = (intptr_t)ANIM_DrawFrame(i);
+        tileSetSize(TILE_ANIM, 200, 320);
         tileInvalidate(TILE_ANIM, 0, 1 << 4);  // JBF 20031228
 
-        if (VM_OnEventWithReturn(EVENT_SKIPCUTSCENE, g_player[screenpeek].ps->i, screenpeek, I_CheckAllInput()))
+        if (VM_OnEventWithReturn(EVENT_SKIPCUTSCENE, g_player[screenpeek].ps->i, screenpeek, I_GeneralTrigger()))
         {
             running = 0;
             goto end_anim_restore_gl;
@@ -512,7 +512,7 @@ int32_t Anim_Play(const char *fn)
             g_restorePalette = 0;
         }
 
-        frametime = totalclock;
+        frametime = (int32_t) totalclock;
 
         videoClearScreen(0);
 
@@ -570,8 +570,13 @@ end_anim_restore_gl:
 end_anim:
     I_ClearAllInput();
     ANIM_FreeAnim();
-    walock[TILE_ANIM] = 1;
-    anim->animlock = 0;
+
+    tileSetSize(TILE_ANIM, 0, 0);
+    walock[TILE_ANIM] = 0;
+    waloff[TILE_ANIM] = 0;
+
+    // this is the lock for anim->animbuf
+    anim->animlock = 1;
 
     return !running;
 }

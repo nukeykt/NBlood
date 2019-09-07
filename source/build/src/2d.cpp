@@ -56,15 +56,16 @@ static void drawpixel_safe(void *s, char a)
 //
 void plotpixel(int32_t x, int32_t y, char col)
 {
-    // XXX: if we ever want the editor to work under GL ES, find a replacement for the raster functions
 #if defined USE_OPENGL && !defined EDUKE32_GLES
     if (videoGetRenderMode() >= REND_POLYMOST && in3dmode())
     {
         palette_t p = paletteGetColor(col);
-
-        glRasterPos4i(x, y, 0, 1);
-        glDrawPixels(1, 1, GL_RGB, GL_UNSIGNED_BYTE, &p);
-        glRasterPos4i(0, 0, 0, 1);
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(x,ydim-y+1,1,1);
+        glClearColor((float)p.r*(1.0f/255.0f),(float)p.g*(1.0f/255.0f),(float)p.b*(1.0f)/255.0f,1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.0f,0.0f,0.0f,1.0f); // XXX: there must be a better way
+        glDisable(GL_SCISSOR_TEST);
         return;
     }
 #endif
@@ -118,32 +119,32 @@ static void drawlinegl(int32_t x1, int32_t y1, int32_t x2, int32_t y2, palette_t
 {
     //        setpolymost2dview();	// JBF 20040205: more efficient setup
 
-    int const dx = x2 - x1;
-    int const dy = y2 - y1;
+    int const dx = x2-x1;
+    int const dy = y2-y1;
 
     if (dx >= 0)
     {
         if ((x1 >= wx2) || (x2 < wx1)) return;
-        if (x1 < wx1) y1 += scale(wx1 - x1, dy, dx), x1 = wx1;
-        if (x2 > wx2) y2 += scale(wx2 - x2, dy, dx), x2 = wx2;
+        if (x1 < wx1) y1 += scale(wx1-x1, dy, dx), x1 = wx1;
+        if (x2 > wx2) y2 += scale(wx2-x2, dy, dx), x2 = wx2;
     }
     else
     {
         if ((x2 >= wx2) || (x1 < wx1)) return;
-        if (x2 < wx1) y2 += scale(wx1 - x2, dy, dx), x2 = wx1;
-        if (x1 > wx2) y1 += scale(wx2 - x1, dy, dx), x1 = wx2;
+        if (x2 < wx1) y2 += scale(wx1-x2, dy, dx), x2 = wx1;
+        if (x1 > wx2) y1 += scale(wx2-x1, dy, dx), x1 = wx2;
     }
     if (dy >= 0)
     {
         if ((y1 >= wy2) || (y2 < wy1)) return;
-        if (y1 < wy1) x1 += scale(wy1 - y1, dx, dy), y1 = wy1;
-        if (y2 > wy2) x2 += scale(wy2 - y2, dx, dy), y2 = wy2;
+        if (y1 < wy1) x1 += scale(wy1-y1, dx, dy), y1 = wy1;
+        if (y2 > wy2) x2 += scale(wy2-y2, dx, dy), y2 = wy2;
     }
     else
     {
         if ((y2 >= wy2) || (y1 < wy1)) return;
-        if (y2 < wy1) x2 += scale(wy1 - y2, dx, dy), y2 = wy1;
-        if (y1 > wy2) x1 += scale(wy2 - y1, dx, dy), y1 = wy2;
+        if (y2 < wy1) x2 += scale(wy1-y2, dx, dy), y2 = wy1;
+        if (y1 > wy2) x1 += scale(wy2-y1, dx, dy), y1 = wy2;
     }
 
     glViewport(0, 0, xdim, ydim);
@@ -683,7 +684,7 @@ void editorSetup2dSideView(void)
         m32_sidesin = sintable[m32_sideelev&2047];
         m32_sidecos = sintable[(m32_sideelev+512)&2047];
 
-        rotatepoint(zerovec, *(vec2_t *) &m32_viewplane, -m32_sideang, (vec2_t *) &m32_viewplane);
+        rotatepoint(zerovec, m32_viewplane.vec2, -m32_sideang, &m32_viewplane.vec2);
         m32_viewplane.x = mulscale14(m32_viewplane.x, m32_sidecos);
         m32_viewplane.y = mulscale14(m32_viewplane.y, m32_sidecos);
         m32_viewplane.z = m32_sidesin>>5;
@@ -703,7 +704,7 @@ static void editorGet2dSideViewDistance(int16_t sw, int16_t sect)
         p = &v;
     }
     else
-        p = (vec3_t *) &sprite[sw-MAXWALLS];
+        p = &sprite[sw-MAXWALLS].pos;
 
     m32_sidedist[sw] = p->x*m32_viewplane.x + p->y*m32_viewplane.y + (p->z>>4)*m32_viewplane.z;
 }
@@ -867,6 +868,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
     const walltype *const wal = &wall[i];
 
     int32_t j = wal->nextwall;
+    int32_t cstat = 0;
 #if 0
     if (editstatus == 0)
     {
@@ -885,17 +887,39 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
     if (grayp&1)
         col = editorcolors[8];
     else if (j < 0)
+    {
         col = (i == linehighlight) ? editorcolors[15] - M32_THROB : editorcolors[15];
+        cstat = wal->cstat;
+    }
     else
     {
         if ((unsigned) wal->nextwall < MAXWALLS && ((wal->cstat^wall[j].cstat)&1))
             col = editorcolors[2];
-        else if ((wal->cstat&1) != 0)
+        else if (bloodhack ? (wal->cstat&64) != 0 : (wal->cstat&1) != 0)
             col = editorcolors[5];
         else col = editorcolors[4];
 
+        cstat = wal->cstat;
+        if (i != linehighlight && (unsigned)wal->nextwall < MAXWALLS)
+        {
+            if (wal->nextwall == linehighlight)
+                cstat = wall[wal->nextwall].cstat;
+            else
+                cstat |= wall[wal->nextwall].cstat;
+        }
+
         if (i == linehighlight || (linehighlight >= 0 && i == wall[linehighlight].nextwall))
             col += M32_THROB>>2;
+    }
+
+    if (bloodhack && (cstat&0xc000))
+    {
+        if (cstat&0x8000)
+            col = editorcolors[10];
+        else if (cstat&0x4000)
+            col = editorcolors[9];
+        if (i == linehighlight || (linehighlight >= 0 && i == wall[linehighlight].nextwall))
+            col -= M32_THROB>>3;
     }
 
     int const p2 = wal->point2;
@@ -968,7 +992,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
         m32_wallscreenxy[i][1] = midydim16+y1;
     }
 
-    if (wal->cstat&64)  // if hitscan bit set
+    if (bloodhack ? cstat&1 : wal->cstat&64)  // if hitscan bit set
     {
         int32_t const one=(klabs(x2-x1) >= klabs(y2-y1)), no=!one;
 
@@ -1028,7 +1052,7 @@ static void editorDraw2dWall(int32_t i, int32_t posxe, int32_t posye, int32_t po
             {
                 col = editorcolors[15] - (M32_THROB>>1);
 
-                if (totalclock & 16)
+                if ((int32_t) totalclock & 16)
                     pointsize++;
             }
 
@@ -1089,17 +1113,155 @@ int32_t editorGet2dSpriteColor(int32_t spr)
     return palookup[pal][tilecols[picnum]];
 }
 
-static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t posze, int32_t zoome)
+static void editorDraw2DBloodMarker(int x, int y, int col)
+{
+    editorDraw2dCircle(x, y, 4, 16384, col);
+    editorDraw2dLine(x-2, y-2, x+2, y+2, col);
+    editorDraw2dLine(x+2, y-2, x-2, y+2, col);
+#if 0
+    plotpixel(x-4, y-1, col);
+    plotpixel(x-4, y-0, col);
+    plotpixel(x-4, y+1, col);
+    
+    plotpixel(x-3, y-3, col);
+    plotpixel(x-3, y-2, col);
+    plotpixel(x-3, y+2, col);
+    plotpixel(x-3, y+3, col);
+    
+    plotpixel(x-2, y-3, col);
+    plotpixel(x-2, y-2, col);
+    plotpixel(x-2, y+2, col);
+    plotpixel(x-2, y+3, col);
+    
+    plotpixel(x-1, y-4, col);
+    plotpixel(x-1, y-1, col);
+    plotpixel(x-1, y+1, col);
+    plotpixel(x-1, y+4, col);
+    
+    plotpixel(x-0, y-4, col);
+    plotpixel(x-0, y-0, col);
+    plotpixel(x-0, y+4, col);
+    
+    plotpixel(x+1, y-4, col);
+    plotpixel(x+1, y-1, col);
+    plotpixel(x+1, y+1, col);
+    plotpixel(x+1, y+4, col);
+    
+    plotpixel(x+2, y-3, col);
+    plotpixel(x+2, y-2, col);
+    plotpixel(x+2, y+2, col);
+    plotpixel(x+2, y+3, col);
+    
+    plotpixel(x+3, y-3, col);
+    plotpixel(x+3, y-2, col);
+    plotpixel(x+3, y+2, col);
+    plotpixel(x+3, y+3, col);
+
+    plotpixel(x+4, y-1, col);
+    plotpixel(x+4, y-0, col);
+    plotpixel(x+4, y+1, col);
+#endif
+}
+
+static void editorDraw2dSpriteBloodMarker(int32_t j, int32_t posxe, int32_t posye, int32_t posze, int32_t zoome)
 {
     int32_t x1, y1, x2, y2;
     int col;
 
     const spritetype *const spr = &sprite[j];
+
+    int16_t const angofs = m32_sideview ? m32_sideang : 0;
+    uint8_t const spritecol = sectorhighlight == spr->owner ? 15 : 14;
+
+    // KEEPINSYNC build.c: drawspritelabel()
+    if (spr->sectnum<0)
+        col = editorcolors[4];  // red
+    else
+        col = editorcolors[spritecol];
+
+    if (editstatus == 1)
+    {
+        if (pointhighlight >= 16384 &&
+            (j+16384 == pointhighlight ||
+            (!m32_sideview && (spr->x == sprite[pointhighlight-16384].x &&
+                spr->y == sprite[pointhighlight-16384].y))))
+        {
+            if (spritecol >= 8 && spritecol <= 15)
+                col -= bloodhack ? M32_THROB>>2 : M32_THROB>>1;
+            else
+                col += M32_THROB>>2;
+        }
+        else // if (highlightcnt > 0)
+        {
+            if (show2dsprite[j>>3]&pow2char[j&7])
+                col = editorcolors[14] - (M32_THROB>>1);
+        }
+    }
+
+    editorGet2dScreenCoordinates(&x1, &y1, spr->x-posxe, spr->y-posye, zoome);
+    //   tempint = ((midydim16+y1)*bytesperline)+(halfxdim16+x1)+frameplace;
+
+    if (m32_sideview)
+        y1 += getscreenvdisp(spr->z-posze, zoome);
+
+    int f = mulscale12(128, zoome);
+
+    if ((halfxdim16+x1 >= -f) && (halfxdim16+x1 < xdim+f) &&
+        (midydim16+y1 >= -f) && (midydim16+y1 < ydim16+f))
+    {
+        if (spr->statnum == 10)
+        {
+            switch (spr->type)
+            {
+            case 3:
+            case 4:
+                editorDraw2DBloodMarker(halfxdim16+x1, midydim16+y1, col);
+                break;
+
+            case 5:
+            case 6:
+                editorDraw2DBloodMarker(halfxdim16+x1, midydim16+y1, col);
+                x2 = mulscale11(sintable[(spr->ang+angofs+2560)&2047], zoome) / 768;
+                y2 = mulscale11(sintable[(spr->ang+angofs+2048)&2047], zoome) / 768;
+                y2 = scalescreeny(y2);
+
+                editorDraw2dLineMiddle(x1, y1, x1+x2, y1+y2, col);
+                break;
+            }
+        }
+        else
+            editorDraw2DBloodMarker(halfxdim16+x1, midydim16+y1, col);
+    }
+}
+
+static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t posze, int32_t zoome)
+{
+    int32_t x1, y1, x2, y2;
+    int col;
+
+    auto const spr = &sprite[j];
     int16_t const blocking = (spr->cstat&1), hitblocking = (spr->cstat&256);
     int16_t const flooraligned = (spr->cstat&32), wallaligned = (spr->cstat&16);
 
     int16_t const angofs = m32_sideview ? m32_sideang : 0;
-    uint8_t const spritecol = spritecol2d[spr->picnum][blocking];
+    uint8_t spritecol = spritecol2d[spr->picnum][blocking];
+
+    if (bloodhack)
+    {
+        if (spr->statnum == 10 || spr->statnum == 12)
+        {
+            editorDraw2dSpriteBloodMarker(j, posxe, posye, posze, zoome);
+            return;
+        }
+        if (spr->cstat & 256)
+            spritecol = 5;
+        if (spr->cstat & 0x8000)
+            spritecol = 8;
+        if (spr->cstat & 0x2000)
+            spritecol = 9;
+        if (spr->cstat & 0x4000)
+            spritecol = 10;
+    }
 
     // KEEPINSYNC build.c: drawspritelabel()
     if (spr->sectnum<0)
@@ -1115,8 +1277,9 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
                 spr->y == sprite[pointhighlight-16384].y))))
         {
             if (spritecol >= 8 && spritecol <= 15)
-                col -= M32_THROB>>1;
-            else col += M32_THROB>>2;
+                col -= bloodhack ? M32_THROB>>2 : M32_THROB>>1;
+            else
+                col += M32_THROB>>2;
         }
         else // if (highlightcnt > 0)
         {
@@ -1285,10 +1448,10 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
         for (i=0; i<numwalls; i++)
         {
             int32_t j = wall[i].nextwall;
-            if ((graywallbitmap[i>>3]&(1<<(i&7))) && (j < 0 || (graywallbitmap[j>>3]&(1<<(j&7)))))
-                graybitmap[i>>3] |= (1<<(i&7));
+            if ((graywallbitmap[i>>3]&pow2char[i&7]) && (j < 0 || (graywallbitmap[j>>3]&pow2char[j&7])))
+                graybitmap[i>>3] |= pow2char[i&7];
             else
-                graybitmap[i>>3] &= ~(1<<(i&7));
+                graybitmap[i>>3] &= ~pow2char[i&7];
         }
     }
 
@@ -1300,11 +1463,11 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
 #else
         if (alwaysshowgray)
             for (i=numwalls-1; i>=0; i--)
-                if (graybitmap[i>>3]&(1<<(i&7)))
+                if (graybitmap[i>>3]&pow2char[i&7])
                     editorDraw2dWall(i, posxe, posye, posze, zoome, 1+2);
 
         for (i=numwalls-1; i>=0; i--)
-            if ((graybitmap[i>>3]&(1<<(i&7)))==0)
+            if ((graybitmap[i>>3]&pow2char[i&7])==0)
                 editorDraw2dWall(i, posxe, posye, posze, zoome, 2);
 #endif
     }
@@ -1363,8 +1526,8 @@ void editorDraw2dScreen(const vec3_t *pos, int16_t cursectnum, int16_t ange, int
             int32_t j = m32_wallsprite[i];
             if (j<MAXWALLS)
             {
-                if (alwaysshowgray || !(graybitmap[j>>3]&(1<<(j&7))))
-                    editorDraw2dWall(j, posxe, posye, posze, zoome, !!(graybitmap[j>>3]&(1<<(j&7))));
+                if (alwaysshowgray || !(graybitmap[j>>3]&pow2char[j&7]))
+                    editorDraw2dWall(j, posxe, posye, posze, zoome, !!(graybitmap[j>>3]&pow2char[j&7]));
             }
             else
             {

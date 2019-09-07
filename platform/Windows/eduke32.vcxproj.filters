@@ -90,7 +90,7 @@
     <ClInclude Include="..\..\source\duke3d\src\gamevars.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\duke3d\src\net.h">
+    <ClInclude Include="..\..\source\duke3d\src\network.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\global.h">
@@ -130,12 +130,6 @@
       <Filter>Header Files\android</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\android.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\duke3d\src\mpu401.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\duke3d\src\_midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\cheats.h">
@@ -194,15 +188,6 @@
     <ClCompile Include="..\..\source\duke3d\src\menus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\midi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\mpu401.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\music.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\namesdyn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -224,9 +209,6 @@
     <ClCompile Include="..\..\source\duke3d\src\savegame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\sdlmusic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\sector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -245,7 +227,7 @@
     <ClCompile Include="..\..\source\duke3d\src\winbits.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\net.cpp">
+    <ClCompile Include="..\..\source\duke3d\src\network.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\demo.cpp">
@@ -280,5 +262,10 @@
     <ResourceCompile Include="..\..\source\duke3d\rsrc\gameres.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="eduke32.exe.manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>

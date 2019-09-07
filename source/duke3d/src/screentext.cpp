@@ -55,7 +55,7 @@ int32_t G_GetStringNumLines(const char *text, const char *end, const int32_t ite
 }
 // Note: Neither of these care about TEXT_LINEWRAP. This is intended.
 
-// This function requires you to Bfree() the returned char*.
+// This function requires you to Xfree() the returned char*.
 char* G_GetSubString(const char *text, const char *end, const int32_t iter, const int32_t length)
 {
     char *line = (char*) Xmalloc((length+1) * sizeof(char));
@@ -536,7 +536,7 @@ vec2_t G_ScreenText(const int32_t font,
 
                 linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY|TEXT_BACKWARDS), x1, y1, x2, y2).x;
 
-                Bfree(line);
+                Xfree(line);
             }
 
             if (f & TEXT_XJUSTIFY)
@@ -728,7 +728,7 @@ vec2_t G_ScreenText(const int32_t font,
 
                 int32_t linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY|TEXT_BACKWARDS), x1, y1, x2, y2).x;
 
-                Bfree(line);
+                Xfree(line);
 
                 if (f & TEXT_XJUSTIFY)
                 {
@@ -1049,7 +1049,7 @@ static FORCE_INLINE int32_t text_ypos(void)
 // both are passed on to gametext
 void G_PrintGameQuotes(int32_t snum)
 {
-    const DukePlayer_t *const ps = g_player[snum].ps;
+    auto const ps = g_player[snum].ps;
     const int32_t reserved_quote = (ps->ftq >= QUOTE_RESERVED && ps->ftq <= QUOTE_RESERVED3);
     // NOTE: QUOTE_RESERVED4 is not included.
 
@@ -1067,7 +1067,7 @@ void G_PrintGameQuotes(int32_t snum)
 
         if (EDUKE32_PREDICT_FALSE(apStrings[ps->ftq] == NULL))
         {
-            OSD_Printf(OSD_ERROR "%s %d null quote %d\n", __FILE__, __LINE__, ps->ftq);
+            OSD_Printf(OSD_ERROR "%s %d null quote %d\n", "screentext:", __LINE__, ps->ftq);
             break;
         }
 
@@ -1112,7 +1112,7 @@ void G_PrintGameQuotes(int32_t snum)
     if (k > 1 && !reserved_quote)
         y += k <= 8 ? (height * (k-1))>>3 : height;
 
-    for (size_t i = MAXUSERQUOTES-1; i < MAXUSERQUOTES; --i)
+    for (int i = 0; i < MAXUSERQUOTES; i++)
     {
         k = user_quote_time[i];
 
@@ -1141,7 +1141,7 @@ void P_DoQuote(int32_t q, DukePlayer_t *p)
 
     if (EDUKE32_PREDICT_FALSE(apStrings[q] == NULL))
     {
-        OSD_Printf(OSD_ERROR "%s %d null quote %d\n", __FILE__, __LINE__, q);
+        OSD_Printf(OSD_ERROR "%s %d null quote %d\n", "screentext:", __LINE__, q);
         return;
     }
 

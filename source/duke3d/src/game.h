@@ -32,7 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fix16.h"
 #include "gamedefs.h"
 #include "gamevars.h"
-#include "net.h"
+#include "mmulti.h"
+#include "network.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +115,12 @@ enum {
     STATUSBAR_NOFRAGBAR = 0x00000010,
     STATUSBAR_NOOVERLAY = 0x00000020,
     STATUSBAR_NOMODERN  = 0x00000040,
+};
+
+enum {
+    BENCHMARKMODE_OFF = 0x0,
+    BENCHMARKMODE_PERFORMANCE = 0x1,
+    BENCHMARKMODE_GENERATE_REFERENCE = 0x2,
 };
 
 void A_DeleteSprite(int spriteNum);
@@ -222,6 +229,8 @@ typedef struct {
 
     int8_t menutitle_pal, slidebar_palselected, slidebar_paldisabled;
 
+    int32_t last_stateless_level, last_stateless_volume; // strictly internal
+
     struct {
         int32_t AutoAim;
         int32_t ShowWeapons;
@@ -238,6 +247,7 @@ typedef struct {
         int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
         int32_t JoystickAnalogueAxes[MAXJOYAXES];
         int32_t JoystickAnalogueScale[MAXJOYAXES];
+        int32_t JoystickAnalogueInvert[MAXJOYAXES];
         int32_t JoystickAnalogueDead[MAXJOYAXES];
         int32_t JoystickAnalogueSaturate[MAXJOYAXES];
         uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
@@ -292,6 +302,9 @@ extern user_defs ud;
 extern const char *s_buildDate;
 
 extern char boardfilename[BMAX_PATH], currentboardfilename[BMAX_PATH];
+#define USERMAPMUSICFAKEVOLUME MAXVOLUMES
+#define USERMAPMUSICFAKELEVEL (MAXLEVELS-1)
+#define USERMAPMUSICFAKESLOT ((USERMAPMUSICFAKEVOLUME * MAXLEVELS) + USERMAPMUSICFAKELEVEL)
 
 static inline int G_HaveUserMap(void)
 {
@@ -303,7 +316,6 @@ static inline int Menu_HaveUserMap(void)
     return (boardfilename[0] != 0 && ud.m_level_number == 7 && ud.m_volume_number == 0);
 }
 
-extern const char *defaultrtsfilename[GAMECOUNT];
 extern const char *G_DefaultRtsFile(void);
 
 #ifdef LEGACY_ROR
@@ -312,6 +324,7 @@ extern char ror_protectedsectors[MAXSECTORS];
 
 extern float r_ambientlight;
 
+extern int32_t g_BenchmarkMode;
 extern int32_t g_Debug;
 extern int32_t g_Shareware;
 #if !defined LUNATIC
@@ -341,7 +354,7 @@ extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 
 extern double g_frameDelay;
-static inline double calcFrameDelay(int maxFPS) { return maxFPS ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
+static inline double calcFrameDelay(int const maxFPS) { return maxFPS > 0 ? (timerGetFreqU64()/(double)maxFPS) : 0.0; }
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -376,7 +389,7 @@ const char* G_PrintBestTime(void);
 void G_BonusScreen(int32_t bonusonly);
 //void G_CheatGetInv(void);
 void G_DisplayRest(int32_t smoothratio);
-void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothratio);
+void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothratio);
 void G_DrawBackground(void);
 void G_DrawFrags(void);
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t horiz, int32_t smoothratio);
@@ -436,9 +449,28 @@ static inline void G_HandleAsync(void)
     Net_GetPackets();
 }
 
-static inline int32_t calc_smoothratio(int32_t totalclk, int32_t ototalclk)
+static inline int32_t calc_smoothratio_demo(ClockTicks totalclk, ClockTicks ototalclk)
 {
-    return clamp((totalclk-ototalclk)*(65536/TICSPERFRAME), 0, 65536);
+    int32_t rfreq = (refreshfreq != -1 ? refreshfreq : 60);
+    uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*TICRATE);
+#if 0
+    //POGO: additional debug info for testing purposes
+    OSD_Printf("Elapsed frames: %" PRIu64 ", smoothratio: %" PRIu64 "\n", elapsedFrames, tabledivide64(65536*elapsedFrames*REALGAMETICSPERSEC, rfreq));
+#endif
+    return clamp(tabledivide64(65536*elapsedFrames*REALGAMETICSPERSEC, rfreq), 0, 65536);
+}
+
+static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk)
+{
+    if (!((ud.show_help == 0 && (!g_netServer && ud.multimode < 2) && ((g_player[myconnectindex].ps->gm & MODE_MENU) == 0)) ||
+          (g_netServer || ud.multimode > 1) ||
+          ud.recstat == 2) ||
+        ud.pause_on)
+    {
+        return 65536;
+    }
+
+    return calc_smoothratio_demo(totalclk, ototalclk);
 }
 
 // sector effector lotags
@@ -543,20 +575,26 @@ static inline int G_GetMusicIdx(const char *str)
     if (numMatches != 4 || Btoupper(b1) != 'E' || Btoupper(b2) != 'L')
         return -1;
 
-    if ((unsigned)--lev >= MAXLEVELS || (unsigned)--ep >= MAXVOLUMES)
+    if ((unsigned)--lev >= MAXLEVELS)
+        return -2;
+
+    if (ep == 0)
+        return (MAXVOLUMES * MAXLEVELS) + lev;
+
+    if ((unsigned)--ep >= MAXVOLUMES)
         return -2;
 
     return (ep * MAXLEVELS) + lev;
 }
 
-static inline int G_GetViewscreenSizeShift(const uspritetype *tspr)
+static inline int G_GetViewscreenSizeShift(uspriteptr_t const spr)
 {
 #if VIEWSCREENFACTOR == 0
-    UNREFERENCED_PARAMETER(tspr);
+    UNREFERENCED_PARAMETER(spr);
     return VIEWSCREENFACTOR;
 #else
     static const int mask = (1<<VIEWSCREENFACTOR)-1;
-    const int rem = (tspr->xrepeat & mask) | (tspr->yrepeat & mask);
+    const int rem = (spr->xrepeat & mask) | (spr->yrepeat & mask);
 
     for (int i=0; i < VIEWSCREENFACTOR; i++)
         if (rem & (1<<i))
@@ -588,7 +626,7 @@ EXTERN_INLINE_HEADER void SetIfGreater(int32_t *variable, int32_t potentialValue
 
 EXTERN_INLINE void G_SetStatusBarScale(int32_t sc)
 {
-    ud.statusbarscale = clamp(sc, 36, 100);
+    ud.statusbarscale = clamp(sc, 50, 100);
     G_UpdateScreenArea();
 }
 

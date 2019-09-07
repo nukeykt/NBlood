@@ -11,6 +11,8 @@ SYNTHESIS := 0
 override empty :=
 override space := $(empty) $(empty)
 override comma := ,
+override paren_open := (
+override paren_close := )
 
 
 ##### Detect platform
@@ -107,6 +109,7 @@ endif
 DONT_PRINT := > $(NULLSTREAM) 2>&1
 DONT_PRINT_STDERR := 2> $(NULLSTREAM)
 DONT_FAIL := ; exit 0
+ESCAPE=\\
 
 HAVE_SH := 1
 # when no sh.exe is found in PATH on Windows, no path is prepended to it
@@ -126,9 +129,16 @@ endef
 define RMDIR
     rm -rf $(filter-out / *,$1)
 endef
+define CAT
+    cat $1
+endef
+define RAW_ECHO
+    echo '$1'
+endef
 
 ifeq (0,$(HAVE_SH))
     DONT_FAIL := & rem
+    ESCAPE=^
 
     define LL
         dir $(subst /,\,$1)
@@ -141,6 +151,12 @@ ifeq (0,$(HAVE_SH))
     endef
     define RMDIR
         rmdir /s /q $(subst /,\,$(filter-out / *,$1)) $(DONT_PRINT_STDERR) $(DONT_FAIL)
+    endef
+    define CAT
+        type $(subst /,\,$1)
+    endef
+    define RAW_ECHO
+        echo $(subst ",$(ESCAPE)",$(subst $(paren_open),$(ESCAPE)$(paren_open),$(subst $(paren_close),$(ESCAPE)$(paren_close),$1)))
     endef
 
     # if, printf, exit, and ; are unavailable without sh
@@ -178,11 +194,6 @@ CXX := $(CROSS)g++$(CROSS_SUFFIX)
 ifeq ($(PLATFORM),DARWIN)
     CC := $(CROSS)clang$(CROSS_SUFFIX)
     CXX := $(CROSS)clang++$(CROSS_SUFFIX)
-endif
-
-ifeq ($(PLATFORM),BSD)
-    CC := $(CROSS)clang
-    CXX := $(CROSS)clang++
 endif
 
 COBJC := $(CC) -x objective-c
@@ -315,8 +326,8 @@ endif
 #  LTO - 1 := enable link-time optimization
 
 # Optional overrides for text
-APPNAME :=
-APPBASENAME :=
+APPNAME ?=
+APPBASENAME ?=
 
 # Build toggles
 RELEASE := 1
@@ -327,24 +338,30 @@ MEMMAP := 0
 CPLUSPLUS := 1
 
 # Feature toggles
-STANDALONE := 0
-NETCODE := 1
-STARTUP_WINDOW := 1
-SIMPLE_MENU := 0
-POLYMER := 1
+STANDALONE ?= 0
+NETCODE ?= 1
+STARTUP_WINDOW ?= 1
+SIMPLE_MENU ?= 0
+POLYMER ?= 1
 USE_OPENGL := 1
 LUNATIC := 0
 USE_LUAJIT_2_1 := 0
 
 # Library toggles
 HAVE_GTK2 := 1
-USE_LIBVPX := 1
+USE_LIBVPX ?= 1
 HAVE_VORBIS := 1
 HAVE_FLAC := 1
 HAVE_XMP := 1
 RENDERTYPE := SDL
 MIXERTYPE := SDL
 SDL_TARGET := 2
+USE_PHYSFS := 0
+
+ifneq (0,$(USE_PHYSFS))
+    # PhysFS requires this to be off
+    override CPLUSPLUS := 0
+endif
 
 # Debugging/Build options
 FORCEDEBUG := 0
@@ -513,10 +530,12 @@ ifeq ($(PLATFORM),WINDOWS)
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
+    LINKERFLAGS += -Wl,--enable-auto-import,--dynamicbase,--nxcompat
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
+    else
+        LINKERFLAGS += -Wl,--high-entropy-va
     endif
-    LINKERFLAGS += -Wl,--enable-auto-import
 
     LUAJIT_BCOPTS := -o windows
     ifeq (32,$(BITS))
@@ -580,13 +599,20 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium3
+            OPTOPT := -march=pentium-m
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
-            OPTOPT += -mmmx
-            # -msse2 -mfpmath=sse,387 -malign-double
+            OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
+
+            # Fix for 32 bit CPUs on Linux without SSE2
+            ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
+                ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
+                    OPTOPT := -march=native
+                endif
+            endif
+
         endif
     endif
     ifeq ($(PLATFORM),WII)
@@ -714,12 +740,33 @@ W_GCC_4_1 := -Wno-attributes
 W_GCC_4_2 := $(W_STRICT_OVERFLOW)
 W_GCC_4_4 := -Wno-unused-result
 W_GCC_4_5 := -Wlogical-op -Wcast-qual
+W_GCC_6 := -Wduplicated-cond -Wnull-dereference
+W_GCC_7 := -Wduplicated-branches
+W_GCC_8 := -Warray-bounds=2
+W_GCC_9 := -Wmultistatement-macros
 W_CLANG := -Wno-unused-value -Wno-parentheses -Wno-unknown-warning-option
 
 ifeq (0,$(CLANG))
     W_CLANG :=
 
+    ifneq (,$(filter 4 5 6 7 8,$(GCC_MAJOR)))
+        W_GCC_9 :=
+        ifneq (,$(filter 4 5 6 7,$(GCC_MAJOR)))
+            W_GCC_8 :=
+            ifneq (,$(filter 4 5 6,$(GCC_MAJOR)))
+                W_GCC_7 :=
+                ifneq (,$(filter 4 5,$(GCC_MAJOR)))
+                    W_GCC_6 :=
+                endif
+            endif     
+        endif
+    endif
+
     ifeq (0,$(GCC_PREREQ_4))
+        W_GCC_9 :=
+        W_GCC_8 :=
+        W_GCC_7 :=
+        W_GCC_6 :=
         W_GCC_4_5 :=
         W_GCC_4_4 :=
         ifeq (0,$(OPTLEVEL))
@@ -761,6 +808,10 @@ CWARNS := -W -Wall \
     $(W_GCC_4_2) \
     $(W_GCC_4_4) \
     $(W_GCC_4_5) \
+    $(W_GCC_6) \
+    $(W_GCC_7) \
+    $(W_GCC_8) \
+    $(W_GCC_9) \
     $(W_CLANG) \
     #-Wstrict-prototypes \
     #-Waggregate-return \
@@ -771,10 +822,10 @@ CWARNS := -W -Wall \
 ##### Features
 
 ifneq (,$(APPNAME))
-    COMPILERFLAGS += -DAPPNAME=\"$(APPNAME)\"
+    COMPILERFLAGS += "-DAPPNAME=\"$(APPNAME)\""
 endif
 ifneq (,$(APPBASENAME))
-    COMPILERFLAGS += -DAPPBASENAME=\"$(APPBASENAME)\"
+    COMPILERFLAGS += "-DAPPBASENAME=\"$(APPBASENAME)\""
 endif
 
 ifneq (0,$(NOASM))
@@ -832,7 +883,6 @@ else ifeq ($(PLATFORM),DARWIN)
         COMPILERFLAGS += -I/sw/include
     endif
 else ifeq ($(PLATFORM),BSD)
-    LIBDIRS += -L/usr/local/lib
     COMPILERFLAGS += -I/usr/local/include
 else ifeq ($(PLATFORM),WII)
     COMPILERFLAGS += -I$(PORTLIBS)/include -Iplatform/Wii/include
@@ -879,6 +929,10 @@ ifeq ($(RENDERTYPE),SDL)
         ifeq (0,$(RELEASE))
             COMPILERFLAGS += -DNOSDLPARACHUTE
         endif
+    endif
+
+    ifeq ($(PLATFORM), WINDOWS)
+        SDLCONFIG :=
     endif
 
     ifeq ($(PLATFORM),WII)
@@ -949,7 +1003,7 @@ ifeq ($(PLATFORM),WINDOWS)
     else ifeq ($(SDL_TARGET),1)
         LIBS += -ldxguid -lmingw32 -limm32 -lole32 -loleaut32 -lversion
     else
-        LIBS += -ldxguid_sdl -lmingw32 -limm32 -lole32 -loleaut32 -lversion
+        LIBS += -ldxguid_sdl -lmingw32 -limm32 -lole32 -loleaut32 -lversion -lsetupapi
     endif
     LIBS += -lcomctl32 -lwinmm $(L_SSP) -lwsock32 -lws2_32 -lshlwapi
     # -lshfolder

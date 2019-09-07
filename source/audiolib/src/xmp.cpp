@@ -51,9 +51,11 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 
     xmpd->time = mi.time;
 
+    uint32_t const samples = mi.buffer_size / (2 * (16/8)); // since 2-channel, 16-bit is hardcoded
+    // uint32_t const samples = mi.buffer_size / (voice->channels * (voice->bits / 8));
+
     voice->sound        = (char const *)mi.buffer;
-    voice->length       = mi.buffer_size << 14; // since 2-channel, 16-bit is hardcoded
-    // voice->length       = (mi.buffer_size << 16) / (voice->channels * (voice->bits >> 3));
+    voice->length       = samples << 16;
     voice->position     = 0;
     voice->BlockLength  = 0;
 
@@ -122,14 +124,14 @@ int32_t MV_PlayXMP(char *ptr, uint32_t length, int32_t loopstart, int32_t loopen
 
     if ((xmpd->context = xmp_create_context()) == NULL)
     {
-        free(xmpd);
+        Xfree(xmpd);
         MV_SetErrorCode(MV_InvalidFile);
         return MV_Error;
     }
 
     if ((retval = xmp_load_module_from_memory(xmpd->context, ptr, length)) != 0)
     {
-        free(xmpd);
+        Xfree(xmpd);
         MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", retval);
         MV_SetErrorCode(MV_InvalidFile);
         return MV_Error;
@@ -141,7 +143,7 @@ int32_t MV_PlayXMP(char *ptr, uint32_t length, int32_t loopstart, int32_t loopen
     {
         xmp_release_module(xmpd->context);
         xmp_free_context(xmpd->context);
-        free(xmpd);
+        Xfree(xmpd);
         MV_SetErrorCode(MV_NoVoices);
         return MV_Error;
     }
@@ -194,11 +196,13 @@ void MV_ReleaseXMPVoice(VoiceNode * voice)
         return;
 
     voice->rawdataptr = 0;
+    voice->length = 0;
+    voice->sound = nullptr;
 
     xmp_end_player(xmpd->context);
     xmp_release_module(xmpd->context);
     xmp_free_context(xmpd->context);
-    free(xmpd);
+    Xfree(xmpd);
 }
 
 #else

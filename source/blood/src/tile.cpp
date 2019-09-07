@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "blood.h"
 #include "config.h"
+#include "globals.h"
 #include "resource.h"
 #include "tile.h"
 
@@ -80,6 +81,8 @@ signed char tileShade[kMaxTiles];
 short voxelIndex[kMaxTiles];
 
 const char *pzBaseFileName = "TILES%03i.ART"; //"TILES%03i.ART";
+
+int32_t MAXCACHE1DSIZE = (96*1024*1024);
 
 int tileInit(char a1, const char *a2)
 {
@@ -207,8 +210,8 @@ void tilePreloadTile(int nTile)
     }
 }
 
-extern int nPrecacheCount;
-extern char precachehightile[2][(MAXTILES+7)>>3];
+int nPrecacheCount;
+char precachehightile[2][(MAXTILES+7)>>3];
 
 void tilePrecacheTile(int nTile, int nType)
 {
@@ -262,8 +265,8 @@ void tilePrecacheTile(int nTile, int nType)
 
 char tileGetSurfType(int hit)
 {
-    int n = hit &0x1fff;
-    switch (hit&0xe000)
+    int n = hit & 0x3fff;
+    switch (hit&0xc000)
     {
     case 0x4000:
         return surfType[sector[n].floorpicnum];

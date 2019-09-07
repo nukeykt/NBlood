@@ -24,7 +24,7 @@
     <RootNamespace>nblood</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
     <PlatformToolset>v142</PlatformToolset>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>nblood</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -34,6 +34,8 @@
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -194,7 +196,6 @@
     <ClCompile Include="..\..\source\blood\src\aiunicult.cpp" />
     <ClCompile Include="..\..\source\blood\src\aizomba.cpp" />
     <ClCompile Include="..\..\source\blood\src\aizombf.cpp" />
-    <ClCompile Include="..\..\source\blood\src\al_midi.cpp" />
     <ClCompile Include="..\..\source\blood\src\asound.cpp" />
     <ClCompile Include="..\..\source\blood\src\blood.cpp" />
     <ClCompile Include="..\..\source\blood\src\callback.cpp" />
@@ -213,9 +214,10 @@
     <ClCompile Include="..\..\source\blood\src\gamemenu.cpp" />
     <ClCompile Include="..\..\source\blood\src\gameutil.cpp" />
     <ClCompile Include="..\..\source\blood\src\getopt.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gfx.cpp" />
     <ClCompile Include="..\..\source\blood\src\gib.cpp" />
     <ClCompile Include="..\..\source\blood\src\globals.cpp" />
-    <ClCompile Include="..\..\source\blood\src\gmtimbre.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gui.cpp" />
     <ClCompile Include="..\..\source\blood\src\inifile.cpp" />
     <ClCompile Include="..\..\source\blood\src\iob.cpp" />
     <ClCompile Include="..\..\source\blood\src\levels.cpp" />
@@ -223,16 +225,11 @@
     <ClCompile Include="..\..\source\blood\src\map2d.cpp" />
     <ClCompile Include="..\..\source\blood\src\menu.cpp" />
     <ClCompile Include="..\..\source\blood\src\messages.cpp" />
-    <ClCompile Include="..\..\source\blood\src\midi.cpp" />
     <ClCompile Include="..\..\source\blood\src\mirrors.cpp" />
     <ClCompile Include="..\..\source\blood\src\misc.cpp" />
-    <ClCompile Include="..\..\source\blood\src\mpu401.cpp" />
-    <ClCompile Include="..\..\source\blood\src\music.cpp" />
     <ClCompile Include="..\..\source\blood\src\network.cpp" />
-    <ClCompile Include="..\..\source\blood\src\opl3.cpp" />
     <ClCompile Include="..\..\source\blood\src\osdcmd.cpp" />
     <ClCompile Include="..\..\source\blood\src\player.cpp" />
-    <ClCompile Include="..\..\source\blood\src\pqueue.cpp" />
     <ClCompile Include="..\..\source\blood\src\qav.cpp" />
     <ClCompile Include="..\..\source\blood\src\qheap.cpp" />
     <ClCompile Include="..\..\source\blood\src\replace.cpp" />
@@ -305,7 +302,6 @@
     <ClInclude Include="..\..\source\blood\src\aiunicult.h" />
     <ClInclude Include="..\..\source\blood\src\aizomba.h" />
     <ClInclude Include="..\..\source\blood\src\aizombf.h" />
-    <ClInclude Include="..\..\source\blood\src\al_midi.h" />
     <ClInclude Include="..\..\source\blood\src\asound.h" />
     <ClInclude Include="..\..\source\blood\src\blood.h" />
     <ClInclude Include="..\..\source\blood\src\callback.h" />
@@ -326,21 +322,20 @@
     <ClInclude Include="..\..\source\blood\src\gamemenu.h" />
     <ClInclude Include="..\..\source\blood\src\gameutil.h" />
     <ClInclude Include="..\..\source\blood\src\getopt.h" />
+    <ClInclude Include="..\..\source\blood\src\gfx.h" />
     <ClInclude Include="..\..\source\blood\src\gib.h" />
     <ClInclude Include="..\..\source\blood\src\globals.h" />
+    <ClInclude Include="..\..\source\blood\src\gui.h" />
     <ClInclude Include="..\..\source\blood\src\map2d.h" />
     <ClInclude Include="..\..\source\blood\src\menu.h" />
     <ClInclude Include="..\..\source\blood\src\messages.h" />
     <ClInclude Include="..\..\source\blood\src\mirrors.h" />
-    <ClInclude Include="..\..\source\blood\src\opl3.h" />
     <ClInclude Include="..\..\source\blood\src\warp.h" />
     <ClInclude Include="..\..\source\blood\src\inifile.h" />
     <ClInclude Include="..\..\source\blood\src\iob.h" />
     <ClInclude Include="..\..\source\blood\src\levels.h" />
     <ClInclude Include="..\..\source\blood\src\loadsave.h" />
-    <ClInclude Include="..\..\source\blood\src\midi.h" />
     <ClInclude Include="..\..\source\blood\src\misc.h" />
-    <ClInclude Include="..\..\source\blood\src\mpu401.h" />
     <ClInclude Include="..\..\source\blood\src\network.h" />
     <ClInclude Include="..\..\source\blood\src\osdcmds.h" />
     <ClInclude Include="..\..\source\blood\src\player.h" />
@@ -360,9 +355,7 @@
     <ClInclude Include="..\..\source\blood\src\triggers.h" />
     <ClInclude Include="..\..\source\blood\src\view.h" />
     <ClInclude Include="..\..\source\blood\src\weapon.h" />
-    <ClInclude Include="..\..\source\blood\src\_al_midi.h" />
     <ClInclude Include="..\..\source\blood\src\_functio.h" />
-    <ClInclude Include="..\..\source\blood\src\_midi.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

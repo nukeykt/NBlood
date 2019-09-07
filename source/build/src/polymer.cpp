@@ -896,7 +896,7 @@ void                polymer_uninit(void)
     {
         _prplanelist*   next = plpool->n;
 
-        Bfree(plpool);
+        Xfree(plpool);
         plpool = next;
         i++;
     }
@@ -911,8 +911,8 @@ void                polymer_setaspect(int32_t ang)
     float fang = (float)ang * atanf(fviewingrange*(1.f/65536.f)) * (4.f/fPI);
 
     // use horizontal fov instead of vertical
-    fang = atanf(tanf(fang * (PI / 2048.f)) * float(windowxy2.y - windowxy1.y + 1) / float(windowxy2.x - windowxy1.x + 1) *
-                      float(xdim) / float(ydim) * (3.f / 4.f)) * (2048.f / PI);
+    fang = atanf(tanf(fang * (fPI / 2048.f)) * float(windowxy2.y - windowxy1.y + 1) / float(windowxy2.x - windowxy1.x + 1) *
+                      float(xdim) / float(ydim) * (3.f / 4.f)) * (2048.f / fPI);
 
     if (pr_customaspect != 0.0f)
         aspect = pr_customaspect;
@@ -1059,7 +1059,7 @@ void                polymer_loadboard(void)
 
     if (pr_verbosity >= 1 && numsectors) OSD_Printf("PR : Board loaded.\n");
 }
- 
+
 int32_t polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t backcol, const char *name, char fontsize)
 {
     //POGOTODO: Polymer should implement this so it's no longer coupled with Polymost & reliant on the fixed-function pipeline
@@ -1068,7 +1068,7 @@ int32_t polymer_printtext256(int32_t xpos, int32_t ypos, int16_t col, int16_t ba
     glDisable(GL_TEXTURE_2D);
     return returnVal;
 }
- 
+
 void polymer_fillpolygon(int32_t npoints)
 {
     //POGOTODO: Polymer should implement this so it's no longer coupled with Polymost & reliant on the fixed-function pipeline
@@ -1101,7 +1101,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     gvisibility = ((float)globalvisibility)*FOGSCALE;
 
     ang = fix16_to_float(daang) * (360.f/2048.f);
-    horizang = -(float)atan2(fix16_to_float(dahoriz)-100.f, 128.f) * (180.f*(float)M_1_PI);
+    horizang = -(float)atan2f(fix16_to_float(dahoriz) - 100.f, 128.f) * (180.f * (float)M_1_PI);
     tiltang = (gtang * 90.0f);
 
     pos[0] = (float)daposy;
@@ -1161,7 +1161,7 @@ void polymer_drawrooms(int32_t daposx, int32_t daposy, int32_t daposz, fix16_t d
     glGetFloatv(GL_MODELVIEW_MATRIX, rootmodelviewmatrix);
 
     cursectnum = dacursectnum;
-    updatesectorbreadth(daposx, daposy, &cursectnum);
+    updatesector(daposx, daposy, &cursectnum);
 
     if (cursectnum >= 0 && cursectnum < numsectors)
         dacursectnum = cursectnum;
@@ -1476,14 +1476,14 @@ static void         polymer_drawsearchplane(_prplane *plane, GLubyte *oldcolor, 
 
 void                polymer_drawmaskwall(int32_t damaskwallcnt)
 {
-    usectortype     *sec;
+    usectorptr_t      sec;
     walltype        *wal;
     _prwall         *w;
     GLubyte         oldcolor[4];
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Masked wall %i...\n", damaskwallcnt);
 
-    sec = (usectortype *)&sector[sectorofwall(maskwall[damaskwallcnt])];
+    sec = (usectorptr_t)&sector[sectorofwall(maskwall[damaskwallcnt])];
     wal = &wall[maskwall[damaskwallcnt]];
     w = prwalls[maskwall[damaskwallcnt]];
 
@@ -1504,8 +1504,8 @@ void                polymer_drawsprite(int32_t snum)
     int32_t         i, j, cs;
     _prsprite       *s;
 
-    uspritetype      *const tspr = tspriteptr[snum];
-    const usectortype *sec;
+    auto const tspr = tspriteptr[snum];
+    usectorptr_t sec;
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Sprite %i...\n", snum);
 
@@ -1518,14 +1518,17 @@ void                polymer_drawsprite(int32_t snum)
     if ((tspr->cstat & 16384) && (!depth || mirrors[depth-1].plane))
         return;
 
-    DO_TILE_ANIM(tspr->picnum, tspr->owner+32768);
+    int const spritenum = tspr->owner;
+    Bassert(spritenum < MAXSPRITES+MAXUNIQHUDID);
 
-    sec = (usectortype *)&sector[tspr->sectnum];
+    tileUpdatePicnum(&tspr->picnum, (unsigned)spritenum < MAXSPRITES ? spritenum+32768 : 0);
+
+    sec = (usectorptr_t)&sector[tspr->sectnum];
     calc_and_apply_fog(fogshade(tspr->shade, tspr->pal), sec->visibility, get_floor_fogpal((usectorptr_t)&sector[tspr->sectnum]));
 
     if (usemodels && tile2model[Ptile2tile(tspr->picnum,tspr->pal)].modelid >= 0 &&
         tile2model[Ptile2tile(tspr->picnum,tspr->pal)].framenum >= 0 &&
-        !(spriteext[tspr->owner].flags & SPREXT_NOTMD))
+        !(spriteext[spritenum].flags & SPREXT_NOTMD))
     {
         glEnable(GL_CULL_FACE);
         SWITCH_CULL_DIRECTION;
@@ -1541,12 +1544,12 @@ void                polymer_drawsprite(int32_t snum)
     // If not, change that to modify a temp position in updatesprite itself.
     // I don't think this flags are meant to change on the fly so it'd possibly
     // be safe to cache a plane that has them applied.
-    if (spriteext[tspr->owner].flags & SPREXT_AWAY1)
+    if (spriteext[spritenum].flags & SPREXT_AWAY1)
     {
         tspr->x += sintable[(tspr->ang + 512) & 2047] >> 13;
         tspr->y += sintable[tspr->ang & 2047] >> 13;
     }
-    else if (spriteext[tspr->owner].flags & SPREXT_AWAY2)
+    else if (spriteext[spritenum].flags & SPREXT_AWAY2)
     {
         tspr->x -= sintable[(tspr->ang + 512) & 2047] >> 13;
         tspr->y -= sintable[tspr->ang & 2047] >> 13;
@@ -1554,8 +1557,8 @@ void                polymer_drawsprite(int32_t snum)
 
     polymer_updatesprite(snum);
 
-    Bassert(tspr->owner < MAXSPRITES);
-    s = prsprites[tspr->owner];
+    Bassert(spritenum < MAXSPRITES);
+    s = prsprites[spritenum];
 
     if (s == NULL)
         return;
@@ -1605,6 +1608,9 @@ void                polymer_drawsprite(int32_t snum)
         }
     }
 
+    if (automapping == 1)
+        show2dsprite[spritenum>>3] |= pow2char[spritenum&7];
+
     if ((tspr->cstat & 64) && (tspr->cstat & SPR_ALIGN_MASK))
     {
         if ((tspr->cstat & SPR_ALIGN_MASK)==SPR_FLOOR && (tspr->cstat & SPR_YFLIP))
@@ -1628,11 +1634,12 @@ void                polymer_drawsprite(int32_t snum)
     }
 }
 
-void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t a, int32_t smoothratio)
+void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t z, int32_t a, int32_t smoothratio)
 {
     asi.animatesprites = animatesprites;
     asi.x = x;
     asi.y = y;
+    asi.z = z;
     asi.a = a;
     asi.smoothratio = smoothratio;
 }
@@ -1670,7 +1677,7 @@ int16_t             polymer_addlight(_prlight* light)
             int16_t     picnum = light->tilenum;
             pthtyp*     pth;
 
-            DO_TILE_ANIM(picnum, 0);
+            tileUpdatePicnum(&picnum, 0);
 
             if (!waloff[picnum])
                 tileLoad(picnum);
@@ -1773,11 +1780,10 @@ void                polymer_setrorcallback(rorcallback callback)
     prorcallback = callback;
 }
 
-
 // CORE
 static void         polymer_displayrooms(const int16_t dacursectnum)
 {
-    usectortype      *sec;
+    usectorptr_t      sec;
     int32_t         i;
     int16_t         bunchnum;
     int16_t         ns;
@@ -1839,7 +1845,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
 
     while (front != back)
     {
-        sec = (usectortype *)&sector[sectorqueue[front]];
+        sec = (usectorptr_t)&sector[sectorqueue[front]];
 
         polymer_pokesector(sectorqueue[front]);
         polymer_drawsector(sectorqueue[front], FALSE);
@@ -2108,8 +2114,8 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
         //glEnable(GL_CLIP_PLANE0);
 
         if (mirrorlist[i].rorstat == 0 && mirrorlist[i].wallnum >= 0)
-            renderPrepareMirror(globalposx, globalposy, qglobalang,
-                          mirrorlist[i].wallnum, &gx, &gy, &viewangle);
+            renderPrepareMirror(globalposx, globalposy, globalposz, qglobalang, qglobalhoriz,
+                                mirrorlist[i].wallnum, &gx, &gy, &viewangle);
 
         gx = globalposx;
         gy = globalposy;
@@ -2530,7 +2536,7 @@ static inline void  polymer_inb4mirror(_prvert* buffer, const GLfloat* plane)
 static void         polymer_animatesprites(void)
 {
     if (asi.animatesprites)
-        asi.animatesprites(globalposx, globalposy, fix16_to_int(viewangle), asi.smoothratio);
+        asi.animatesprites(globalposx, globalposy, globalposz, fix16_to_int(viewangle), asi.smoothratio);
 }
 
 static void         polymer_freeboard(void)
@@ -2542,11 +2548,11 @@ static void         polymer_freeboard(void)
     {
         if (prsectors[i])
         {
-            Bfree(prsectors[i]->verts);
-            Bfree(prsectors[i]->floor.buffer);
-            Bfree(prsectors[i]->ceil.buffer);
-            Bfree(prsectors[i]->floor.indices);
-            Bfree(prsectors[i]->ceil.indices);
+            Xfree(prsectors[i]->verts);
+            Xfree(prsectors[i]->floor.buffer);
+            Xfree(prsectors[i]->ceil.buffer);
+            Xfree(prsectors[i]->floor.indices);
+            Xfree(prsectors[i]->ceil.indices);
             if (prsectors[i]->ceil.vbo) glDeleteBuffers(1, &prsectors[i]->ceil.vbo);
             if (prsectors[i]->ceil.ivbo) glDeleteBuffers(1, &prsectors[i]->ceil.ivbo);
             if (prsectors[i]->floor.vbo) glDeleteBuffers(1, &prsectors[i]->floor.vbo);
@@ -2563,11 +2569,11 @@ static void         polymer_freeboard(void)
     {
         if (prwalls[i])
         {
-            Bfree(prwalls[i]->bigportal);
-            Bfree(prwalls[i]->mask.buffer);
-            Bfree(prwalls[i]->over.buffer);
-            // Bfree(prwalls[i]->cap);
-            Bfree(prwalls[i]->wall.buffer);
+            Xfree(prwalls[i]->bigportal);
+            Xfree(prwalls[i]->mask.buffer);
+            Xfree(prwalls[i]->over.buffer);
+            // Xfree(prwalls[i]->cap);
+            Xfree(prwalls[i]->wall.buffer);
             if (prwalls[i]->wall.vbo) glDeleteBuffers(1, &prwalls[i]->wall.vbo);
             if (prwalls[i]->over.vbo) glDeleteBuffers(1, &prwalls[i]->over.vbo);
             if (prwalls[i]->mask.vbo) glDeleteBuffers(1, &prwalls[i]->mask.vbo);
@@ -2584,7 +2590,7 @@ static void         polymer_freeboard(void)
     {
         if (prsprites[i])
         {
-            Bfree(prsprites[i]->plane.buffer);
+            Xfree(prsprites[i]->plane.buffer);
             if (prsprites[i]->plane.vbo) glDeleteBuffers(1, &prsprites[i]->plane.vbo);
             DO_FREE_AND_NULL(prsprites[i]);
         }
@@ -2627,12 +2633,12 @@ static void         polymer_freeboard(void)
 // SECTORS
 static int32_t      polymer_initsector(int16_t sectnum)
 {
-    usectortype      *sec;
+    usectorptr_t sec;
     _prsector*      s;
 
     if (pr_verbosity >= 2) OSD_Printf("PR : Initializing sector %i...\n", sectnum);
 
-    sec = (usectortype *)&sector[sectnum];
+    sec = (usectorptr_t)&sector[sectnum];
     s = (_prsector *)Xcalloc(1, sizeof(_prsector));
 
     s->verts = (GLdouble *)Xcalloc(sec->wallnum, sizeof(GLdouble) * 3);
@@ -2666,7 +2672,7 @@ static int32_t      polymer_initsector(int16_t sectnum)
 static int32_t      polymer_updatesector(int16_t sectnum)
 {
     _prsector*      s;
-    usectortype      *sec;
+    usectorptr_t sec;
     walltype        *wal;
     int32_t         i, j;
     int32_t         ceilz, florz;
@@ -2680,7 +2686,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     if (pr_nullrender >= 3) return 0;
 
     s = prsectors[sectnum];
-    sec = (usectortype *)&sector[sectnum];
+    sec = (usectorptr_t)&sector[sectnum];
 
     secangcos = secangsin = 2;
 
@@ -2742,14 +2748,14 @@ static int32_t      polymer_updatesector(int16_t sectnum)
         wallinvalidate = 1;
 
     floorpicnum = sec->floorpicnum;
-    DO_TILE_ANIM(floorpicnum, sectnum);
+    tileUpdatePicnum(&floorpicnum, sectnum);
     ceilingpicnum = sec->ceilingpicnum;
-    DO_TILE_ANIM(ceilingpicnum, sectnum);
+    tileUpdatePicnum(&ceilingpicnum, sectnum);
 
     if ((!s->flags.empty) && (!needfloor) &&
             (floorpicnum == s->floorpicnum_anim) &&
             (ceilingpicnum == s->ceilingpicnum_anim) &&
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
             (s->trackedrev == sectorchanged[sectnum]))
 #else
             !Bmemcmp(&s->ceilingstat, &sec->ceilingstat, offsetof(sectortype, visibility) - offsetof(sectortype, ceilingstat)))
@@ -2849,7 +2855,7 @@ static int32_t      polymer_updatesector(int16_t sectnum)
     s->ceilingxpanning = sec->ceilingxpanning;
     s->floorypanning = sec->floorypanning;
     s->ceilingypanning = sec->ceilingypanning;
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
     s->trackedrev = sectorchanged[sectnum];
 #endif
 
@@ -2998,13 +3004,13 @@ static int32_t      polymer_buildfloor(int16_t sectnum)
 {
     // This function tesselates the floor/ceiling of a sector and stores the triangles in a display list.
     _prsector*      s;
-    usectortype     *sec;
+    usectorptr_t sec;
     intptr_t        i;
 
     if (pr_verbosity >= 2) OSD_Printf("PR : Tesselating floor of sector %i...\n", sectnum);
 
     s = prsectors[sectnum];
-    sec = (usectortype *)&sector[sectnum];
+    sec = (usectorptr_t)&sector[sectnum];
 
     if (s == NULL)
         return -1;
@@ -3057,7 +3063,7 @@ static int32_t      polymer_buildfloor(int16_t sectnum)
 
 static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
 {
-    usectortype     *sec;
+    usectorptr_t sec;
     _prsector*      s;
     GLubyte         oldcolor[4];
     int32_t         draw;
@@ -3065,7 +3071,10 @@ static void         polymer_drawsector(int16_t sectnum, int32_t domasks)
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Drawing sector %i...\n", sectnum);
 
-    sec = (usectortype *)&sector[sectnum];
+    if (automapping)
+        show2dsector[sectnum>>3] |= pow2char[sectnum&7];
+
+    sec = (usectorptr_t)&sector[sectnum];
     s = prsectors[sectnum];
 
     queuedmask = FALSE;
@@ -3259,16 +3268,16 @@ static void         polymer_updatewall(int16_t wallnum)
     }
 
     wallpicnum = wal->picnum;
-    DO_TILE_ANIM(wallpicnum, wallnum+16384);
+    tileUpdatePicnum(&wallpicnum, wallnum+16384);
 
     walloverpicnum = wal->overpicnum;
     if (walloverpicnum>=0)
-        DO_TILE_ANIM(walloverpicnum, wallnum+16384);
+        tileUpdatePicnum(&walloverpicnum, wallnum+16384);
 
     if (nwallnum >= 0 && nwallnum < numwalls)
     {
         nwallpicnum = wall[nwallnum].picnum;
-        DO_TILE_ANIM(nwallpicnum, wallnum+16384);
+        tileUpdatePicnum(&nwallpicnum, wallnum+16384);
     }
     else
         nwallpicnum = 0;
@@ -3277,7 +3286,7 @@ static void         polymer_updatewall(int16_t wallnum)
             (w->invalidid == invalid) &&
             (wallpicnum == w->picnum_anim) &&
             (walloverpicnum == w->overpicnum_anim) &&
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
             (w->trackedrev == wallchanged[wallnum]) &&
 #else
             !Bmemcmp(&wal->cstat, &w->cstat, NBYTES_WALL_CSTAT_THROUGH_YPANNING) &&
@@ -3300,7 +3309,7 @@ static void         polymer_updatewall(int16_t wallnum)
 
         w->picnum_anim = wallpicnum;
         w->overpicnum_anim = walloverpicnum;
-#ifndef UNTRACKED_STRUCTS
+#ifdef USE_STRUCT_TRACKERS
         w->trackedrev = wallchanged[wallnum];
 #endif
         if (nwallnum >= 0 && nwallnum < numwalls)
@@ -3633,7 +3642,7 @@ static void         polymer_updatewall(int16_t wallnum)
 
 static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
 {
-    usectortype     *sec;
+    usectorptr_t sec;
     walltype        *wal;
     _prwall         *w;
     GLubyte         oldcolor[4];
@@ -3641,7 +3650,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Drawing wall %i...\n", wallnum);
 
-    sec = (usectortype *)&sector[sectnum];
+    sec = (usectorptr_t)&sector[sectnum];
     wal = &wall[wallnum];
     w = prwalls[wallnum];
 
@@ -3652,7 +3661,7 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
     if ((sec->ceilingstat & 1) && (wal->nextsector >= 0) &&
         (sector[wal->nextsector].ceilingstat & 1))
         parallaxedceiling = 1;
-    
+
     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
     if ((w->underover & 1) && (!parallaxedfloor || (searchit == 2)))
@@ -3703,6 +3712,9 @@ static void         polymer_drawwall(int16_t sectnum, int16_t wallnum)
 
     //    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     //}
+
+    if (automapping)
+        show2dwall[wallnum>>3] |= pow2char[wallnum&7];
 
     if (pr_verbosity >= 3) OSD_Printf("PR : Finished drawing wall %i...\n", wallnum);
 }
@@ -3926,7 +3938,7 @@ void                polymer_updatesprite(int32_t snum)
 {
     int32_t         xsize, ysize, i, j;
     int32_t         tilexoff, tileyoff, xoff, yoff, centeryoff=0;
-    uspritetype      *tspr = tspriteptr[snum];
+    auto const      tspr = tspriteptr[snum];
     float           xratio, yratio, ang;
     float           spos[3];
     const _prvert   *inbuffer;
@@ -4271,7 +4283,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         if (picnum >= MAXTILES)
             picnum = MAXTILES-1;
 
-        DO_TILE_ANIM(picnum, 0);
+        tileUpdatePicnum(&picnum, 0);
         if (!waloff[picnum])
             tileLoad(picnum);
         pth = texcache_fetch(picnum, palnum, 0, DAMETH_NOMASK);
@@ -4365,7 +4377,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
     if (pr_vbos > 0)
         glBindBuffer(GL_ARRAY_BUFFER, skyboxdatavbo);
 
-    DO_TILE_ANIM(tilenum, 0);
+    tileUpdatePicnum(&tilenum, 0);
 
     i = 0;
     while (i < 6)
@@ -4969,7 +4981,7 @@ static void         polymer_setupartmap(int16_t tilenum, char pal)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glBindTexture(GL_TEXTURE_2D, 0);
-        Bfree(tempbuffer);
+        Xfree(tempbuffer);
     }
 
     if (!prbasepalmaps[curbasepal]) {
@@ -5860,7 +5872,7 @@ static void         polymer_updatelights(void)
                 int16_t     picnum = light->tilenum;
                 pthtyp*     pth;
 
-                DO_TILE_ANIM(picnum, 0);
+                tileUpdatePicnum(&picnum, 0);
 
                 if (!waloff[picnum])
                     tileLoad(picnum);

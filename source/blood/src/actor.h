@@ -165,10 +165,6 @@ struct VECTORDATA {
     int fireSound[2]; // By NoOne: predefined fire sounds. used by kGDXCustomDude, but can be used for something else.
 };
 
-struct SPRITEHIT {
-    int hit, ceilhit, florhit;
-};
-
 extern AMMOITEMDATA gAmmoItemData[];
 extern WEAPONITEMDATA gWeaponItemData[];
 extern ITEMDATA gItemData[];
@@ -177,23 +173,9 @@ extern EXPLOSION explodeInfo[];
 extern THINGINFO thingInfo[];
 extern VECTORDATA gVectorData[];
 
-extern SPRITEHIT gSpriteHit[];
-
 extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
 extern short gAffectedXWalls[kMaxXWalls];
-
-inline void GetSpriteExtents(spritetype *pSprite, int *top, int *bottom)
-{
-    *top = *bottom = pSprite->z;
-    if ((pSprite->cstat & 0x30) != 0x20)
-    {
-        int height = tilesiz[pSprite->picnum].y;
-        int center = height / 2 + picanm[pSprite->picnum].yofs;
-        *top -= (pSprite->yrepeat << 2)*center;
-        *bottom += (pSprite->yrepeat << 2)*(height - center);
-    }
-}
 
 
 inline bool IsPlayerSprite(spritetype *pSprite)

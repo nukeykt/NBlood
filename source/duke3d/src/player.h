@@ -41,6 +41,11 @@ extern int32_t g_mostConcurrentPlayers;
 #define HORIZ_MAX                   299
 #define AUTO_AIM_ANGLE              48
 #define PHEIGHT                     (38<<8)
+#define PCROUCHHEIGHT               ZOFFSET2
+#define PCROUCHINCREMENT            (2048+768)
+#define PMINHEIGHT                  (2048)
+
+#define PCRACKTIME                  777
 
 #define TRIPBOMB_TRIPWIRE       0x00000001
 #define TRIPBOMB_TIMER          0x00000002
@@ -121,7 +126,7 @@ typedef struct {
     uint32_t bits;
     int16_t fvel, svel;
     fix16_t q16avel, q16horz;
-    int8_t extbits;
+    uint8_t extbits;
 } input_t;
 
 #pragma pack(push,1)
@@ -133,7 +138,8 @@ typedef struct {
 // TODO: rearrange this if the opportunity arises!
 // KEEPINSYNC lunatic/_defs_game.lua
 typedef struct {
-    vec3_t pos, opos, vel, npos;
+    vec3_t pos, opos;
+    vec3_t vel, npos;
     vec2_t bobpos, fric;
 
     fix16_t q16horiz, q16horizoff, oq16horiz, oq16horizoff;
@@ -209,13 +215,15 @@ typedef struct {
     // anywhere (like with spritetype_t): g_player[i].ps->wa.idx == i.
     struct { int32_t idx; } wa;
 #endif
-    int8_t padding_[2];
+
+    int8_t crouch_toggle;
+    int8_t padding_[1];
 } DukePlayer_t;
 
 // KEEPINSYNC lunatic/_defs_game.lua
 typedef struct {
     DukePlayer_t *ps;
-    input_t *inputBits;
+    input_t *input;
 
     int32_t netsynctime;
     int16_t ping, filler;
@@ -223,8 +231,8 @@ typedef struct {
     // NOTE: wchoice[HANDREMOTE_WEAPON .. MAX_WEAPONS-1] unused
     uint8_t frags[MAXPLAYERS], wchoice[MAX_WEAPONS];
 
-    
-    char vote, gotvote, pingcnt, playerquitflag, 
+
+    char vote, gotvote, pingcnt, playerquitflag,
         ready; // currently unused. May be used later to indicate that a player has pressed use on intermission to indicate they are ready to go on to the next map
     char user_name[32];
     uint32_t revision;
@@ -392,10 +400,10 @@ static inline int P_GetP(const void *pSprite)
     // NOTE: In the no-netcode build, there's no point to pass player indices
     // at all since there is ever only one player. However, merely returning 0
     // would mean making this build less strict than the normal one.
-    Bassert(((const uspritetype *)pSprite)->yvel == 0);
+    Bassert(((uspriteptr_t)pSprite)->yvel == 0);
     return 0;
 #else
-    int playerNum = ((const uspritetype *)pSprite)->yvel;
+    int playerNum = ((uspriteptr_t)pSprite)->yvel;
     // [JM] Check against MAXPLAYERS as opposed to g_mostConcurrentPlayers
     //      to prevent CON for disconnected/fake players from executing as playernum 0.
     if ((unsigned)playerNum >= MAXPLAYERS)
@@ -405,10 +413,12 @@ static inline int P_GetP(const void *pSprite)
 }
 
 // Get the player index given an APLAYER sprite index.
-static inline int P_Get(int32_t spriteNum) { return P_GetP((const uspritetype *)&sprite[spriteNum]); }
+static inline int P_Get(int32_t spriteNum) { return P_GetP((uspriteptr_t)&sprite[spriteNum]); }
 
 #ifdef __cplusplus
 }
 #endif
+
+extern int portableBackupSave(const char *, const char *, int, int);
 
 #endif

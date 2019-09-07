@@ -39,8 +39,8 @@ char exitCredits = 0;
 
 char Wait(int nTicks)
 {
-    gGameClock = 0;
-    while (gGameClock < nTicks)
+    totalclock = 0;
+    while (totalclock < nTicks)
     {
         timerUpdate();
         char key = keyGetScan();
@@ -58,16 +58,16 @@ char DoFade(char r, char g, char b, int nTicks)
 {
     dassert(nTicks > 0);
     scrSetupFade(r, g, b);
-    gGameClock = gFrameClock = 0;
+    totalclock = gFrameClock = 0;
     do
     {
-        while (gGameClock < gFrameClock) { timerUpdate();};
+        while (totalclock < gFrameClock) { timerUpdate();};
         gFrameClock += 2;
         scrNextPage();
-        scrFadeAmount(divscale16(ClipHigh(gGameClock, nTicks), nTicks));
+        scrFadeAmount(divscale16(ClipHigh((int)totalclock, nTicks), nTicks));
         if (keyGetScan())
             return 0;
-    } while (gGameClock <= nTicks);
+    } while (totalclock <= nTicks);
     return 1;
 }
 
@@ -75,15 +75,15 @@ char DoUnFade(int nTicks)
 {
     dassert(nTicks > 0);
     scrSetupUnfade();
-    gGameClock = gFrameClock = 0;
+    totalclock = gFrameClock = 0;
     do
     {
-        while (gGameClock < gFrameClock) { timerUpdate(); };
+        while (totalclock < gFrameClock) { timerUpdate(); };
         scrNextPage();
-        scrFadeAmount(0x10000-divscale16(ClipHigh(gGameClock, nTicks), nTicks));
+        scrFadeAmount(0x10000-divscale16(ClipHigh((int)totalclock, nTicks), nTicks));
         if (keyGetScan())
             return 0;
-    } while (gGameClock <= nTicks);
+    } while (totalclock <= nTicks);
     return 1;
 }
 
@@ -168,6 +168,7 @@ int credKOpen4Load(char *&pzFile)
 
 void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
 {
+    return;
 #if 0
     CSMKPlayer smkPlayer;
     if (dword_148E14 >= 0)
@@ -245,7 +246,7 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     UpdateDacs(0, true);
 
     timerUpdate();
-    int32_t nStartTime = totalclock;
+    ClockTicks nStartTime = totalclock;
 
     ctrlClearAllInput();
     
@@ -253,7 +254,7 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     do
     {
         G_HandleAsync();
-        if (scale(totalclock-nStartTime, nFrameRate, kTicRate) < nFrame)
+        if (scale((int)(totalclock-nStartTime), nFrameRate, kTicRate) < nFrame)
             continue;
 
         if (ctrlCheckAllInput())

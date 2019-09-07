@@ -53,6 +53,9 @@ void SetDoppler(CGameMenuItemZBool *);
 void SetCrosshair(CGameMenuItemZBool *);
 void SetCenterHoriz(CGameMenuItemZBool *);
 void SetShowWeapons(CGameMenuItemZBool *);
+
+void SetWeaponsV10X(CGameMenuItemZBool*);
+
 void SetSlopeTilting(CGameMenuItemZBool *);
 void SetViewBobbing(CGameMenuItemZBool *);
 void SetViewSwaying(CGameMenuItemZBool *);
@@ -389,6 +392,11 @@ void SetShowMapTitle(CGameMenuItemZBool*);
 void SetWeaponSwitch(CGameMenuItemZCycle *pItem);
 
 CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
+
+///////////////
+CGameMenuItemZBool itemOptionsGameBoolWeaponsV10X("V1.0x WEAPONS BALANCE:", 3, 66, 130, 180, gWeaponsV10x, SetWeaponsV10X, NULL, NULL);
+///////////////////
+
 CGameMenuItemZBool itemOptionsGameBoolShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, gShowWeapon, SetShowWeapons, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolSlopeTilting("SLOPE TILTING:", 3, 66, 80, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolViewBobbing("VIEW BOBBING:", 3, 66, 90, 180, gViewVBobbing, SetViewBobbing, NULL, NULL);
@@ -1099,6 +1107,13 @@ void SetupOptionsMenu(void)
     menuOptionsGame.Add(&itemOptionsGameBoolViewSwaying, false);
     menuOptionsGame.Add(&itemOptionsGameBoolAutoAim, false);
     menuOptionsGame.Add(&itemOptionsGameWeaponSwitch, false);
+
+    //////////////////////
+    if (gGameOptions.nGameType == 0) {
+        menuOptionsGame.Add(&itemOptionsGameBoolWeaponsV10X, false);
+    }
+    /////////////////////
+
     //menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
     menuOptionsGame.Add(&itemBloodQAV, false);
     itemOptionsGameBoolShowWeapons.at20 = gShowWeapon;
@@ -1107,6 +1122,10 @@ void SetupOptionsMenu(void)
     itemOptionsGameBoolViewSwaying.at20 = gViewHBobbing;
     itemOptionsGameBoolAutoAim.m_nFocus = gAutoAim;
     itemOptionsGameWeaponSwitch.m_nFocus = (gWeaponSwitch&1) ? ((gWeaponSwitch&2) ? 1 : 2) : 0;
+
+    ///////
+    itemOptionsGameBoolWeaponsV10X.at20 = gWeaponsV10x;
+    ///////
 
     menuOptionsDisplay.Add(&itemOptionsDisplayTitle, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayColor, true);
@@ -1369,6 +1388,16 @@ void ResetKeysClassic(CGameMenuItemChain *)
 {
     CONFIG_SetDefaultKeys(oldkeydefaults);
 }
+
+////
+void SetWeaponsV10X(CGameMenuItemZBool* pItem)
+{
+    if (gGameOptions.nGameType == 0) {
+        gWeaponsV10x = pItem->at20;
+        gGameOptions.weaponsV10x = pItem->at20;
+    }
+}
+////
 
 void SetShowWeapons(CGameMenuItemZBool *pItem)
 {
@@ -2089,6 +2118,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
     gGameOptions.nSaveGameSlot = nSlot;
     viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
+    videoNextPage();
     gSaveGameNum = nSlot;
     LoadSave::SaveGame(strSaveGameName);
     gQuickSaveSlot = nSlot;
@@ -2110,6 +2140,7 @@ void QuickSaveGame(void)
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
     viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
+    videoNextPage();
     LoadSave::SaveGame(strSaveGameName);
     gGameOptions.picEntry = gSavedOffset;
     gSaveGameOptions[gQuickSaveSlot] = gGameOptions;
@@ -2128,6 +2159,7 @@ void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     if (!testkopen(strLoadGameName, 0))
         return;
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[nSlot]);
+    videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
     gGameMenuMgr.Deactivate();
     gQuickLoadSlot = nSlot;
@@ -2142,6 +2174,7 @@ void QuickLoadGame(void)
     if (!testkopen(strLoadGameName, 0))
         return;
     viewLoadingScreen(2518, "Loading", "Loading Saved Game", strRestoreGameStrings[gQuickLoadSlot]);
+    videoNextPage();
     LoadSave::LoadGame(strLoadGameName);
     gGameMenuMgr.Deactivate();
 }
@@ -2175,6 +2208,11 @@ void StartNetGame(CGameMenuItemChain *pItem)
     strncpy(gPacketStartGame.userMapName, itemNetStart9.at20, 13);
     gPacketStartGame.userMapName[12] = 0;
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
+
+    ////
+    gPacketStartGame.weaponsV10x = gWeaponsV10x;
+    ////
+
     netBroadcastNewGame();
     gStartNewGame = 1;
     gGameMenuMgr.Deactivate();

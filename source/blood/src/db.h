@@ -37,7 +37,7 @@ struct XSPRITE {
     unsigned int ate_5 : 2; // unused	// fields in the future? must be signed also
     unsigned int at1a_2 : 6; // unused	//
 
-    signed   int reference : 14; // at0_0
+    signed   int reference : 15; // at0_0
     unsigned int state : 1;  // State 0
     unsigned int busy : 17;
     unsigned int txID : 10; // TX ID
@@ -184,7 +184,7 @@ struct XSECTOR {
 }; // 60(0x3c) bytes
 
 struct XWALL {
-    signed int reference : 14;
+    signed int reference : 15;
     unsigned int state : 1; // State
     unsigned int busy : 17;
     signed int data : 16; // Data
@@ -246,6 +246,10 @@ struct MAPHEADER2 {
     char pad[52];
 };
 
+struct SPRITEHIT {
+    int hit, ceilhit, florhit;
+};
+
 #pragma pack(pop)
 
 extern unsigned short gStatCount[kMaxStatus + 1];;
@@ -256,6 +260,10 @@ extern MAPHEADER2 byte_19AE44;
 extern XSPRITE xsprite[kMaxXSprites];
 extern XSECTOR xsector[kMaxXSectors];
 extern XWALL xwall[kMaxXWalls];
+
+extern SPRITEHIT gSpriteHit[kMaxXSprites];
+
+extern char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
 
 extern int xvel[kMaxSprites], yvel[kMaxSprites], zvel[kMaxSprites];
 
@@ -268,6 +276,34 @@ extern const char *gWeaponText[];
 extern unsigned short nextXSprite[kMaxXSprites];
 extern unsigned short nextXWall[kMaxXWalls];
 extern unsigned short nextXSector[kMaxXSectors];
+
+#ifdef YAX_ENABLE
+static inline bool yax_hasnextwall(int nWall)
+{
+    return yax_getnextwall(nWall, YAX_CEILING) >= 0 || yax_getnextwall(nWall, YAX_FLOOR) >= 0;
+}
+#endif
+
+static inline int GetWallType(int nWall)
+{
+#ifdef YAX_ENABLE
+    if (yax_hasnextwall(nWall))
+        return 0;
+#endif
+    return wall[nWall].lotag;
+}
+
+inline void GetSpriteExtents(spritetype *pSprite, int *top, int *bottom)
+{
+    *top = *bottom = pSprite->z;
+    if ((pSprite->cstat & 0x30) != 0x20)
+    {
+        int height = tilesiz[pSprite->picnum].y;
+        int center = height / 2 + picanm[pSprite->picnum].yofs;
+        *top -= (pSprite->yrepeat << 2)*center;
+        *bottom += (pSprite->yrepeat << 2)*(height - center);
+    }
+}
 
 void InsertSpriteSect(int nSprite, int nSector);
 void RemoveSpriteSect(int nSprite);
@@ -296,4 +332,4 @@ void dbXSectorClean(void);
 void dbInit(void);
 void PropagateMarkerReferences(void);
 unsigned int dbReadMapCRC(const char *pPath);
-void dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short *pSector, unsigned int *pCRC);
+int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short *pSector, unsigned int *pCRC);

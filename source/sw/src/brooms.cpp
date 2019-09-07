@@ -39,11 +39,11 @@ extern int qsetmode;
 SWBOOL FindCeilingView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum);
 SWBOOL FindFloorView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum);
 short ViewSectorInScene(short cursectnum, short type, short level);
-void Message(char *string, char color);
+void Message(const char *string, char color);
 
 
 void
-_Assert(char *expr, char *strFile, unsigned uLine)
+_Assert(const char *expr, const char *strFile, unsigned uLine)
 {
     printf(ds, "Assertion failed: %s %s, line %u\n", expr, strFile, uLine);
     //DSPRINTF(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
@@ -198,7 +198,7 @@ SetupBuildFAF(void)
             {
                 if (sprite[i].hitag == sp->hitag && sprite[i].lotag == sp->lotag)
                 {
-                    sprintf(ds,"Two VIEW_THRU_ tags with same match found on level\n1: x %d, y %d \n2: x %d, y %d", sp->x, sp->y, sprite[i].x, sprite[i].y);
+                    sprintf(ds,"Two VIEW_THRU_ tags with same match found on level\n1: x %d, y %d \n2: x %d, y %d", TrackerCast(sp->x), TrackerCast(sp->y), TrackerCast(sprite[i].x), TrackerCast(sprite[i].y));
                     Message(ds,0);
                 }
             }
@@ -229,7 +229,7 @@ SetupBuildFAF(void)
             sector[sp->sectnum].ceilingpicnum = FAF_MIRROR_PIC;
             if (sector[sp->sectnum].floorz == sector[sp->sectnum].ceilingz)
             {
-                sprintf(ds, "Mirror used for non-connect area. Use tile 342. Sect %d, x %d, y %d\n", sp->sectnum, wall[sector[sp->sectnum].wallptr].x, wall[sector[sp->sectnum].wallptr].y);
+                sprintf(ds, "Mirror used for non-connect area. Use tile 342. Sect %d, x %d, y %d\n", TrackerCast(sp->sectnum), TrackerCast(wall[sector[sp->sectnum].wallptr].x), TrackerCast(wall[sector[sp->sectnum].wallptr].y));
                 Message(ds,0);
             }
         }
@@ -239,7 +239,7 @@ SetupBuildFAF(void)
             sector[sp->sectnum].floorpicnum = FAF_MIRROR_PIC;
             if (sector[sp->sectnum].floorz == sector[sp->sectnum].ceilingz)
             {
-                sprintf(ds, "Mirror used for non-connect area. Use tile 342. Sect %d, x %d, y %d\n", sp->sectnum, wall[sector[sp->sectnum].wallptr].x, wall[sector[sp->sectnum].wallptr].y);
+                sprintf(ds, "Mirror used for non-connect area. Use tile 342. Sect %d, x %d, y %d\n", TrackerCast(sp->sectnum), TrackerCast(wall[sector[sp->sectnum].wallptr].x), TrackerCast(wall[sector[sp->sectnum].wallptr].y));
                 Message(ds,0);
             }
         }
@@ -694,7 +694,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
         }
 
         drawrooms(tx, ty, tz, tang, thoriz, tsectnum);
-        drawmasks();
+        renderDrawMasks();
 
         // reset Z's
         for (i = 0; i < save.zcount; i++)
@@ -719,7 +719,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
             }
 
             drawrooms(tx, ty, tz, tang, thoriz, tsectnum);
-            drawmasks();
+            renderDrawMasks();
 
             // reset Z's
             for (i = 0; i < save.zcount; i++)

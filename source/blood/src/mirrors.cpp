@@ -99,7 +99,7 @@ void InitMirrors(void)
         int nTile = 4080+mirrorcnt;
         if (wall[i].overpicnum == 504)
         {
-            if (wall[i].extra > 0 && wall[i].lotag == 501)
+            if (wall[i].extra > 0 && GetWallType(i) == 501)
             {
                 wall[i].overpicnum = nTile;
                 mirror[mirrorcnt].at14 = i;
@@ -111,7 +111,7 @@ void InitMirrors(void)
                 {
                     if (j == i)
                         continue;
-                    if (wall[j].extra > 0 && wall[j].lotag == 501)
+                    if (wall[j].extra > 0 && GetWallType(i) == 501)
                     {
                         if (tmp != xwall[wall[j].extra].data)
                             continue;
@@ -179,7 +179,7 @@ void InitMirrors(void)
         wall[mirrorwall[i]].cstat = 0;
         wall[mirrorwall[i]].nextsector = -1;
         wall[mirrorwall[i]].nextwall = -1;
-        wall[mirrorwall[i]].point2 = numwalls;
+        wall[mirrorwall[i]].point2 = numwalls+i+1;
     }
     wall[mirrorwall[3]].point2 = mirrorwall[0];
     sector[mirrorsector].ceilingpicnum = 504;
@@ -340,7 +340,7 @@ void sub_557C4(int x, int y, int interpolation)
     }
 }
 
-void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
+void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz, int smooth)
 {
     if (videoGetRenderMode() == REND_POLYMER)
         return;
@@ -374,7 +374,7 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
                 sector[mirrorsector].floorz = sector[nSector].floorz;
                 sector[mirrorsector].ceilingz = sector[nSector].ceilingz;
                 int cx, cy, ca;
-                if (pWall->lotag == 501)
+                if (GetWallType(nWall) == 501)
                 {
                      cx = x - (wall[pWall->hitag].x-wall[pWall->point2].x);
                      cy = y - (wall[pWall->hitag].y-wall[pWall->point2].y);
@@ -383,13 +383,19 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
                 else
                 {
                     //renderPrepareMirror(x,y, fix16_from_int(a),nWall,&cx,&cy,&ca);
-                    renderPrepareMirrorOld(x,y,z,a,horiz,nWall,mirrorsector,&cx,&cy,&ca);
+                    renderPrepareMirror(x,y,z,a,horiz,nWall,&cx,&cy,&ca);
                 }
-                renderDrawRoomsQ16(cx, cy, z, ca,horiz,mirrorsector|MAXSECTORS);
-                viewProcessSprites(cx,cy,z);
+#ifdef POLYMER
+                if (videoGetRenderMode() == REND_POLYMER)
+                    polymer_setanimatesprites(viewProcessSprites, cx, cy, z, fix16_to_int(ca), smooth);
+#endif
+                yax_preparedrawrooms();
+                int32_t didmirror = renderDrawRoomsQ16(cx, cy, z, ca,horiz,mirrorsector|MAXSECTORS);
+                yax_drawrooms(viewProcessSprites, mirrorsector, didmirror, smooth);
+                viewProcessSprites(cx,cy,z,fix16_to_int(ca),smooth);
                 renderDrawMasks();
-                if (pWall->lotag != 501)
-                    renderCompleteMirrorOld();
+                if (GetWallType(nWall) != 501)
+                    renderCompleteMirror();
                 if (wall[nWall].pal != 0 || wall[nWall].shade != 0)
                     TranslateMirrorColors(wall[nWall].shade, wall[nWall].pal);
                 pWall->nextwall = nNextWall;
@@ -402,8 +408,14 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
                 r_rorphase = 1;
 #endif
                 int nSector = mirror[i].at4;
+#ifdef POLYMER
+                if (videoGetRenderMode() == REND_POLYMER)
+                    polymer_setanimatesprites(viewProcessSprites, x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, fix16_to_int(a), smooth);
+#endif
+                yax_preparedrawrooms();
                 renderDrawRoomsQ16(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
-                viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
+                yax_drawrooms(viewProcessSprites, nSector, 0, smooth);
+                viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, fix16_to_int(a), smooth);
                 short fstat = sector[nSector].floorstat;
                 sector[nSector].floorstat |= 1;
                 renderDrawMasks();
@@ -421,8 +433,14 @@ void DrawMirrors(int x, int y, int z, fix16_t a, fix16_t horiz)
                 r_rorphase = 1;
 #endif
                 int nSector = mirror[i].at4;
+#ifdef POLYMER
+                if (videoGetRenderMode() == REND_POLYMER)
+                    polymer_setanimatesprites(viewProcessSprites, x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, fix16_to_int(a), smooth);
+#endif
+                yax_preparedrawrooms();
                 renderDrawRoomsQ16(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, a, horiz, nSector|MAXSECTORS);
-                viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10);
+                yax_drawrooms(viewProcessSprites, nSector, 0, smooth);
+                viewProcessSprites(x+mirror[i].at8, y+mirror[i].atc, z+mirror[i].at10, fix16_to_int(a), smooth);
                 short cstat = sector[nSector].ceilingstat;
                 sector[nSector].ceilingstat |= 1;
                 renderDrawMasks();

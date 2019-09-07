@@ -2,6 +2,18 @@
 # EDuke32 Makefile for GNU Make
 #
 
+### Global Profiles
+ifeq ($(FURY),1)
+    APPNAME := Ion Fury
+    APPBASENAME := fury
+    STANDALONE := 1
+    POLYMER := 0
+    USE_LIBVPX := 0
+    NETCODE := 0
+    SIMPLE_MENU := 1
+endif
+
+### Platform and Toolchain Configuration
 include Common.mak
 
 ### File Extensions
@@ -87,6 +99,43 @@ lpeg_root := $(source)/$(lpeg)
 lpeg_src := $(lpeg_root)/src
 lpeg_inc := $(lpeg_root)/include
 lpeg_obj := $(obj)/$(lpeg)
+
+
+#### PhysicsFS
+
+physfs := physfs
+
+physfs_objs := \
+    physfs.c \
+    physfs_archiver_7z.c \
+    physfs_archiver_dir.c \
+    physfs_archiver_grp.c \
+    physfs_archiver_hog.c \
+    physfs_archiver_iso9660.c \
+    physfs_archiver_mvl.c \
+    physfs_archiver_qpak.c \
+    physfs_archiver_slb.c \
+    physfs_archiver_unpacked.c \
+    physfs_archiver_vdf.c \
+    physfs_archiver_wad.c \
+    physfs_archiver_zip.c \
+    physfs_byteorder.c \
+    physfs_unicode.c \
+
+ifeq ($(PLATFORM),APPLE)
+    physfs_objs += physfs_platform_apple.m
+else ifeq ($(PLATFORM),WINDOWS)
+    physfs_objs += physfs_platform_windows.c
+else
+    physfs_objs += physfs_platform_unix.c
+endif
+
+physfs_root := $(source)/$(physfs)
+physfs_src := $(physfs_root)/src
+physfs_inc := $(physfs_root)/include
+physfs_obj := $(obj)/$(physfs)
+
+physfs_cflags :=
 
 
 #### ENet
@@ -179,9 +228,14 @@ engine_cflags := -I$(engine_src)
 
 engine_deps :=
 
+ifneq (0,$(USE_PHYSFS))
+    engine_deps += physfs
+endif
+
 engine_objs := \
     rev.cpp \
     baselayer.cpp \
+    vfs.cpp \
     cache1d.cpp \
     klzw.cpp \
     common.cpp \
@@ -194,6 +248,8 @@ engine_objs := \
     2d.cpp \
     hash.cpp \
     palette.cpp \
+    polymost1Frag.glsl \
+    polymost1Vert.glsl \
     polymost.cpp \
     texcache.cpp \
     dxtfilter.cpp \
@@ -208,6 +264,7 @@ engine_objs := \
     softsurface.cpp \
     mmulti_null.cpp \
     mutex.cpp \
+    timer.cpp \
     xxhash.c \
     md4.cpp \
     colmatch.cpp \
@@ -217,8 +274,8 @@ engine_objs := \
     miniz.c \
     miniz_tinfl.c \
     miniz_tdef.c \
-    fix16.c \
-    fix16_str.c \
+    fix16.cpp \
+    fix16_str.cpp \
 
 engine_editor_objs := \
     build.cpp \
@@ -304,7 +361,6 @@ mact_inc := $(mact_root)/include
 mact_obj := $(obj)/$(mact)
 
 mact_objs := \
-    file_lib.cpp \
     control.cpp \
     keyboard.cpp \
     joystick.cpp \
@@ -329,6 +385,9 @@ audiolib_objs := \
     xa.cpp \
     xmp.cpp \
     driver_nosound.cpp \
+    al_midi.cpp \
+    gmtimbre.cpp \
+    opl3.cpp \
 
 audiolib_root := $(source)/$(audiolib)
 audiolib_src := $(audiolib_root)/src
@@ -341,7 +400,7 @@ audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
     ifeq ($(MIXERTYPE),WIN)
-        audiolib_objs += driver_directsound.cpp
+        audiolib_objs += driver_directsound.cpp music.cpp midi.cpp mpu401.cpp
     endif
 endif
 
@@ -349,7 +408,7 @@ ifeq ($(MIXERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
         audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
     endif
-    audiolib_objs += driver_sdl.cpp
+    audiolib_objs += driver_sdl.cpp sdlmusic.cpp oplmidi.cpp
 endif
 
 ifneq (0,$(HAVE_XMP))
@@ -413,12 +472,14 @@ kenbuild_cflags := -I$(kenbuild_src)
 kenbuild_game := ekenbuild
 kenbuild_editor := ekenbuild-editor
 
+kenbuild_game_deps := audiolib
+
 kenbuild_game_proper := EKenBuild
 kenbuild_editor_proper := EKenBuild Editor
 
 kenbuild_game_objs := \
     game.cpp \
-    sound_stub.cpp \
+    kdmeng.cpp \
     common.cpp \
     config.cpp \
 
@@ -468,11 +529,18 @@ duke3d_src := $(duke3d_root)/src
 duke3d_rsrc := $(duke3d_root)/rsrc
 duke3d_obj := $(obj)/$(duke3d)
 
+ifeq ($(FURY),1)
+    ifeq ($(PLATFORM),WINDOWS)
+        duke3d_rsrc := $(duke3d_root)/rsrc/fury
+    endif
+    duke3d_obj := $(obj)/fury
+endif
+
 duke3d_cflags := -I$(duke3d_src)
 
 common_editor_deps := duke3d_common_editor engine_editor
 
-duke3d_game_deps := duke3d_common_midi audiolib mact
+duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
 
 ifneq (0,$(NETCODE))
@@ -517,7 +585,7 @@ duke3d_game_objs := \
     input.cpp \
     menus.cpp \
     namesdyn.cpp \
-    net.cpp \
+    network.cpp \
     savegame.cpp \
     rts.cpp \
     osdfuncs.cpp \
@@ -656,7 +724,6 @@ ifeq ($(PLATFORM),WINDOWS)
     endif
     ifeq ($(MIXERTYPE),WIN)
         LIBS += -ldsound
-        duke3d_common_midi_objs := music.cpp midi.cpp mpu401.cpp
     endif
 endif
 
@@ -672,9 +739,6 @@ endif
 ifeq ($(RENDERTYPE),SDL)
     duke3d_game_rsrc_objs += game_icon.c
     duke3d_editor_rsrc_objs += build_icon.c
-endif
-ifeq ($(MIXERTYPE),SDL)
-    duke3d_common_midi_objs := sdlmusic.cpp
 endif
 
 
@@ -693,7 +757,7 @@ blood_obj := $(obj)/$(blood)
 
 blood_cflags := -I$(blood_src)
 
-blood_game_deps := blood_common_midi audiolib mact libsmackerdec
+blood_game_deps := audiolib mact libsmackerdec
 
 ifneq (0,$(NETCODE))
     blood_game_deps += enet
@@ -748,8 +812,10 @@ blood_game_objs := \
 	gamemenu.cpp \
 	gameutil.cpp \
 	getopt.cpp \
+	gfx.cpp \
 	gib.cpp \
 	globals.cpp \
+	gui.cpp \
 	inifile.cpp \
 	iob.cpp \
 	levels.cpp \
@@ -762,7 +828,6 @@ blood_game_objs := \
 	network.cpp \
 	osdcmd.cpp \
 	player.cpp \
-	pqueue.cpp \
 	qav.cpp \
 	qheap.cpp \
 	replace.cpp \
@@ -785,43 +850,18 @@ blood_game_gen_objs :=
 blood_game_miscdeps :=
 blood_game_orderonlydeps :=
 
-ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
-endif
-
-ifeq ($(PLATFORM),BSD)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lexecinfo
-endif
-
 ifeq ($(PLATFORM),DARWIN)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lm \
-            -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,OpenGL \
-            -Wl,-framework,CoreMIDI -Wl,-framework,AudioUnit \
-            -Wl,-framework,AudioToolbox -Wl,-framework,IOKit -Wl,-framework,AGL
-    ifneq (00,$(DARWIN9)$(DARWIN10))
-        LIBS += -Wl,-framework,QuickTime -lm
-    endif
-
     ifeq ($(STARTUP_WINDOW),1)
         blood_game_objs += startosx.game.mm
     endif
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
     blood_game_objs += winbits.cpp
     blood_game_rsrc_objs += gameres.rc
     ifeq ($(STARTUP_WINDOW),1)
         blood_game_objs += startwin.game.cpp
     endif
-    ifeq ($(MIXERTYPE),WIN)
-        LIBS += -ldsound
-        blood_common_midi_objs := music.cpp midi.cpp mpu401.cpp al_midi.cpp gmtimbre.cpp opl3.cpp
-    endif
-endif
-
-ifeq ($(PLATFORM),WII)
-    LIBS += -lvorbisidec
 endif
 
 ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
@@ -831,10 +871,129 @@ endif
 ifeq ($(RENDERTYPE),SDL)
     blood_game_rsrc_objs += game_icon.c
 endif
-ifeq ($(MIXERTYPE),SDL)
-    blood_common_midi_objs := sdlmusic.cpp oplmidi.cpp al_midi.cpp gmtimbre.cpp opl3.cpp
+
+#### Redneck Rampage
+
+rr := rr
+
+rr_game_ldflags :=
+rr_editor_ldflags :=
+
+rr_game_stripflags :=
+rr_editor_stripflags :=
+
+rr_root := $(source)/$(rr)
+rr_src := $(rr_root)/src
+rr_rsrc := $(rr_root)/rsrc
+rr_obj := $(obj)/$(rr)
+
+rr_cflags := -I$(rr_src)
+
+common_editor_deps := rr_common_editor engine_editor
+
+rr_game_deps := audiolib mact
+rr_editor_deps := audiolib
+
+ifneq (0,$(NETCODE))
+    rr_game_deps += enet
 endif
 
+ifneq (0,$(LUNATIC))
+    rr_game_deps += lunatic lunatic_game lpeg
+    rr_editor_deps += lunatic lunatic_editor lpeg
+endif
+
+rr_game := rednukem
+rr_editor := rrmapster32
+
+ifneq (,$(APPBASENAME))
+    rr_game := $(APPBASENAME)
+endif
+
+rr_game_proper := Rednukem
+rr_editor_proper := RRMapster32
+
+rr_common_editor_objs := \
+    m32common.cpp \
+    m32def.cpp \
+    m32exec.cpp \
+    m32vars.cpp \
+
+rr_game_objs := \
+    game.cpp \
+    global.cpp \
+    actors.cpp \
+    gamedef.cpp \
+    gameexec.cpp \
+    gamevars.cpp \
+    player.cpp \
+    premap.cpp \
+    sector.cpp \
+    anim.cpp \
+    common.cpp \
+    config.cpp \
+    demo.cpp \
+    input.cpp \
+    menus.cpp \
+    namesdyn.cpp \
+    net.cpp \
+    savegame.cpp \
+    rts.cpp \
+    osdfuncs.cpp \
+    osdcmds.cpp \
+    grpscan.cpp \
+    sounds.cpp \
+    soundsdyn.cpp \
+    cheats.cpp \
+    sbar.cpp \
+    screentext.cpp \
+    screens.cpp \
+    cmdline.cpp \
+
+rr_editor_objs := \
+    astub.cpp \
+    common.cpp \
+    grpscan.cpp \
+    sounds_mapster32.cpp \
+
+rr_game_rsrc_objs :=
+rr_editor_rsrc_objs :=
+rr_game_gen_objs :=
+rr_editor_gen_objs :=
+
+rr_game_miscdeps :=
+rr_editor_miscdeps :=
+rr_game_orderonlydeps :=
+rr_editor_orderonlydeps :=
+
+ifeq ($(PLATFORM),DARWIN)
+    ifeq ($(STARTUP_WINDOW),1)
+        rr_game_objs += GrpFile.game.mm GameListSource.game.mm startosx.game.mm
+    endif
+endif
+
+ifeq ($(PLATFORM),WINDOWS)
+    rr_game_objs += winbits.cpp
+    rr_game_rsrc_objs += gameres.rc
+    rr_editor_rsrc_objs += buildres.rc
+    ifeq ($(STARTUP_WINDOW),1)
+        rr_game_objs += startwin.game.cpp
+    endif
+endif
+
+ifeq ($(PLATFORM),WII)
+    LIBS += -lvorbisidec
+endif
+
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
+    rr_game_objs += startgtk.game.cpp
+    rr_game_gen_objs += game_banner.c
+    rr_editor_gen_objs += build_banner.c
+endif
+ifeq ($(RENDERTYPE),SDL)
+    rr_game_rsrc_objs += game_icon.c
+    rr_editor_rsrc_objs += build_icon.c
+endif
 
 #### Shadow Warrior
 
@@ -847,14 +1006,14 @@ sw_obj := $(obj)/$(sw)
 
 sw_cflags := -I$(sw_src)
 
-sw_game_deps := duke3d_common_midi audiolib mact
+sw_game_deps := audiolib mact
 sw_editor_deps := audiolib
 
 sw_game := voidsw
-sw_editor := voidsw-editor
+sw_editor := wangulator
 
 sw_game_proper := VoidSW
-sw_editor_proper := VoidSW Editor
+sw_editor_proper := Wangulator
 
 sw_game_objs := \
     actor.cpp \
@@ -893,7 +1052,7 @@ sw_game_objs := \
     menus.cpp \
     miscactr.cpp \
     morph.cpp \
-    net.cpp \
+    network.cpp \
     ninja.cpp \
     panel.cpp \
     player.cpp \
@@ -961,7 +1120,10 @@ endif
 
 #### Final setup
 
-COMPILERFLAGS += -I$(engine_inc) -I$(mact_inc) -I$(audiolib_inc) -I$(enet_inc) -I$(glad_inc) -I$(libsmackerdec_inc)
+COMPILERFLAGS += -I$(engine_inc) -I$(mact_inc) -I$(audiolib_inc) -I$(enet_inc) -I$(glad_inc) -I$(libsmackerdec_inc) -MP -MMD
+ifneq (0,$(USE_PHYSFS))
+    COMPILERFLAGS += -I$(physfs_inc) -DUSE_PHYSFS
+endif
 
 
 ##### Recipes
@@ -970,6 +1132,7 @@ games := \
     kenbuild \
     duke3d \
     blood \
+    rr \
     sw \
 
 libraries := \
@@ -981,6 +1144,10 @@ libraries := \
     lpeg \
     glad \
     libsmackerdec \
+
+ifneq (0,$(USE_PHYSFS))
+    libraries += physfs
+endif
 
 components := \
     $(games) \
@@ -1058,13 +1225,6 @@ endef
 $(foreach i,$(games),$(foreach j,$(roles),$(eval $(call BUILDRULE,$i,$j))))
 
 
-include $(lpeg_root)/Dependencies.mak
-include $(engine_root)/Dependencies.mak
-include $(duke3d_root)/Dependencies.mak
-include $(blood_root)/Dependencies.mak
-include $(sw_root)/Dependencies.mak
-
-
 #### Rules
 
 $(ebacktrace_dll): platform/Windows/src/backtrace.c
@@ -1113,6 +1273,8 @@ $(duke3d_obj)/lunatic_%.def: $(lunatic_src)/%.lds | $(duke3d_obj)
 
 define OBJECTRULES
 
+include $(wildcard $($1_obj)/*.d)
+
 $$($1_obj)/%.$$o: $$($1_src)/%.nasm | $$($1_obj)
 	$$(COMPILE_STATUS)
 	$$(RECIPE_IF) $$(AS) $$(ASFLAGS) $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
@@ -1137,9 +1299,18 @@ $$($1_obj)/%.$$o: $$($1_src)/%.mm | $$($1_obj)
 	$$(COMPILE_STATUS)
 	$$(RECIPE_IF) $$(COMPILER_OBJCXX) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
 
-$$($1_obj)/%.$$o: $$($1_obj)/%.c
+$$($1_obj)/%.$$o: $$($1_obj)/%.c | $$($1_obj)
 	$$(COMPILE_STATUS)
 	$$(RECIPE_IF) $$(COMPILER_C) $$($1_cflags) -c $$< -o $$@ $$(RECIPE_RESULT_COMPILE)
+
+$$($1_obj)/%.$$o: $$($1_src)/%.glsl | $$($1_obj)
+	@echo Creating $$($1_obj)/$$(<F).cpp from $$<
+	@$$(call RAW_ECHO,extern char const *$$(basename $$(<F));) > $$($1_obj)/$$(<F).cpp
+	@$$(call RAW_ECHO,char const *$$(basename $$(<F)) = R"shader$$(paren_open)) >> $$($1_obj)/$$(<F).cpp
+	@$$(call CAT,$$<) >> $$($1_obj)/$$(<F).cpp
+	@$$(call RAW_ECHO,$$(paren_close)shader";) >> $$($1_obj)/$$(<F).cpp
+	$$(COMPILE_STATUS)
+	$$(RECIPE_IF) $$(COMPILER_CXX) $$($1_cflags) -c $$($1_obj)/$$(<F).cpp -o $$@ $$(RECIPE_RESULT_COMPILE)
 
 ## Cosmetic stuff
 

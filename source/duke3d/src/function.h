@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern "C" {
 #endif
 
-#define NUMGAMEFUNCTIONS 60
+#define NUMGAMEFUNCTIONS 63
 #define MAXGAMEFUNCLEN 32
 
 extern char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN];
@@ -51,7 +51,7 @@ enum GameFunction_t
    gamefunc_Fire,
    gamefunc_Open,
    gamefunc_Run,
-   gamefunc_AutoRun,
+   gamefunc_Alt_Fire,
    gamefunc_Jump,
    gamefunc_Crouch,
    gamefunc_Look_Up,
@@ -99,10 +99,13 @@ enum GameFunction_t
    gamefunc_Show_DukeMatch_Scores,
    gamefunc_Dpad_Select,
    gamefunc_Dpad_Aiming,
-   gamefunc_Alt_Weapon,
+   gamefunc_AutoRun,
    gamefunc_Last_Weapon,
    gamefunc_Quick_Save,
    gamefunc_Quick_Load,
+   gamefunc_Alt_Weapon,
+   gamefunc_Third_Person_View,
+   gamefunc_Toggle_Crouch,
    };
 #ifdef __cplusplus
 }

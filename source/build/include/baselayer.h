@@ -9,6 +9,7 @@
 
 #include "compat.h"
 #include "osd.h"
+#include "timer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,9 @@ extern char quitevent, appactive;
 extern char modechange;
 
 extern int32_t vsync;
+extern int32_t swapcomplete;
+extern int32_t r_borderless;
+extern int32_t r_displayindex;
 
 extern void app_crashhandler(void);
 
@@ -40,9 +44,10 @@ extern int32_t startwin_run(void);
 
 // video
 extern int32_t r_usenewaspect, newaspect_enable;
+extern int32_t r_fpgrouscan;
 extern int32_t setaspect_new_use_dimen;
 extern uint32_t r_screenxy;
-extern int32_t xres, yres, bpp, fullscreen, bytesperline;
+extern int32_t xres, yres, bpp, fullscreen, bytesperline, refreshfreq;
 extern intptr_t frameplace;
 extern char offscreenrendering;
 extern int32_t nofog;
@@ -117,6 +122,8 @@ struct glinfo_t {
     char debugoutput;
     char bufferstorage;
     char sync;
+    char depthclamp;
+    char clipcontrol;
     char dumped;
 };
 
@@ -193,6 +200,7 @@ typedef struct
     int32_t  numAxes;
     int32_t  numButtons;
     int32_t  numHats;
+    int32_t  isGameController;
 } controllerinput_t;
 
 extern controllerinput_t joystick;
@@ -225,6 +233,7 @@ void mouseSetCallback(void (*callback)(int32_t,int32_t));
 void joySetCallback(void (*callback)(int32_t,int32_t));
 const char *keyGetName(int32_t num);
 const char *joyGetName(int32_t what, int32_t num); // what: 0=axis, 1=button, 2=hat
+void joyScanDevices(void);
 
 char keyGetScan(void);
 char keyGetChar(void);
@@ -257,21 +266,6 @@ void joyReadButtons(int32_t *pResult);
 void joySetDeadZone(int32_t axis, uint16_t dead, uint16_t satur);
 void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur);
 extern int32_t inputchecked;
-
-int32_t  timerInit(int32_t);
-void     timerUninit(void);
-void     timerUpdate(void);
-int32_t  timerGetFreq(void);
-uint64_t timerGetTicksU64(void);
-uint64_t timerGetFreqU64(void);
-double   timerGetHiTicks(void);
-void (*timerSetCallback(void (*callback)(void)))(void);
-
-#if defined RENDERTYPESDL && !defined LUNATIC
-static FORCE_INLINE uint32_t timerGetTicks(void) { return (uint32_t)SDL_GetTicks(); }
-#else
-uint32_t timerGetTicks(void);
-#endif
 
 int32_t wm_msgbox(const char *name, const char *fmt, ...) ATTRIBUTE((format(printf,2,3)));
 int32_t wm_ynbox(const char *name, const char *fmt, ...) ATTRIBUTE((format(printf,2,3)));
