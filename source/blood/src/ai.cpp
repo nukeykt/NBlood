@@ -991,7 +991,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
-        case 245:
+        case 245: // innocent
             if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 239;
@@ -1035,10 +1035,12 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                 evKill(nSprite, 3, CALLBACK_ID_0);
             }
             break;
-        case 250:
+        case 250: // tiny Caleb
             if (nDmgType == DAMAGE_TYPE_1 && pXSprite->health <= (unsigned int)pDudeInfo->fleeHealth/* && (pXSprite->at17_6 != 1 || pXSprite->at17_6 != 2)*/)
             {
                 pSprite->type = 239;
+                if (!VanillaMode())
+                    pXSprite->scale = 64
                 aiNewState(pSprite, pXSprite, &cultistBurnGoto);
                 aiPlay3DSound(pSprite, 361, AI_SFX_PRIORITY_0, -1);
                 gDudeExtra[pSprite->extra].at0 = gFrameClock+360;

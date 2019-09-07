@@ -649,6 +649,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     InitMirrors();
     gFrameClock = 0;
     trInit();
+    if (!bVanilla && !gMe->packInfo[1].at0) // if diving suit is not active, turn off reverb sound effect
+        sfxSetReverb(0);
     ambInit();
     sub_79760();
     gCacheMiss = 0;

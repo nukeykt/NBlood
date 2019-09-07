@@ -965,7 +965,7 @@ void RestoreInterpolations(void)
     }
 }
 
-void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat)
+void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat, uint8_t alpha)
 {
     if (nFont < 0 || nFont >= 5 || !pString) return;
     FONT *pFont = &gFont[nFont];
@@ -993,9 +993,9 @@ void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int 
         {
             if (shadow)
             {
-                rotatesprite((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
+                rotatesprite_fs_alpha((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, alpha);
             }
-            rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
+            rotatesprite_fs_alpha(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, alpha);
             x += tilesiz[nTile].x+pFont->space;
         }
         s++;
@@ -1216,10 +1216,36 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     {
         if (powerups[i].remainingDuration)
         {
-            DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
-            DrawStatNumber("%d", powerups[i].remainingDuration / 100, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            int remainingSeconds = powerups[i].remainingDuration / 100;
+            if (remainingSeconds > 5 || (gGameClock & 32))
+            {
+                DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
+            }
+
+            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
             y += 20;
         }
+    }
+}
+
+void viewDrawMapTitle(void)
+{
+    if (!gShowMapTitle || gGameMenuMgr.m_bActive)
+        return;
+
+    int seconds = (gLevelTime / kTicsPerSec);
+    int millisecs = (gLevelTime % kTicsPerSec) * 33;
+    if (seconds > 3)
+        return;
+
+    const int noAlphaForSecs = 1;
+    uint8_t alpha = videoGetRenderMode() != REND_CLASSIC || numalphatabs >= 15 ?
+        seconds < noAlphaForSecs ? 0 : clamp(((seconds-noAlphaForSecs)*1000+millisecs)/4, 0, 255)
+        : 0;
+
+    if (alpha != 255)
+    {
+        viewDrawText(1, levelGetTitle(), 160, 50, -128, 0, 1, 1, 0, alpha);
     }
 }
 
@@ -1497,6 +1523,9 @@ void UpdateStatusBar(int arg)
         viewDrawStats(pPlayer, 2, 140);
         viewDrawPowerUps(pPlayer);
     }
+
+    viewDrawMapTitle();
+
     if (gGameOptions.nGameType < 1) return;
 
     if (gGameOptions.nGameType == 3)
@@ -1599,7 +1628,7 @@ void viewInit(void)
 
 void viewResizeView(int size)
 {
-    int xdimcorrect = scale(ydim, 4, 3);
+    int xdimcorrect = ClipHigh(scale(ydim, 4, 3), xdim);
     gViewXCenter = xdim-xdim/2;
     gViewYCenter = ydim-ydim/2;
     xscale = divscale16(xdim, 320);

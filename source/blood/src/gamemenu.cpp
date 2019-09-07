@@ -167,7 +167,8 @@ void CGameMenuMgr::Draw(void)
     if (mousestatus && g_mouseClickState == MOUSE_PRESSED)
         m_mousedownpos = m_mousepos;
 
-    if (tilesiz[kCrosshairTile].x > 0 && mousestatus)
+    int16_t mousetile = 1043; // red arrow
+    if (tilesiz[mousetile].x > 0 && mousestatus)
     {
         if (!MOUSEACTIVECONDITION)
             m_mousewake_watchpoint = 1;
@@ -192,15 +193,15 @@ void CGameMenuMgr::Draw(void)
     // Display the mouse cursor, except on touch devices.
     if (MOUSEACTIVECONDITION && !m_bFirstPush)
     {
-        int16_t mousetile = 1043; // red arrow
         vec2_t cursorpos = { m_mousepos.x + (7 << 16), m_mousepos.y + (6 << 16) };
 
         if ((unsigned) mousetile < MAXTILES)
         {
-            int32_t z = 65536;
-            uint32_t stat = 2|8;
+            int32_t scale = 65536;
+            int16_t rotate = 768;
+            uint32_t stat = 2|4|8;
             int8_t alpha = MOUSEALPHA; //CURSORALPHA;
-            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, z, -300, mousetile, 0, 0, stat, alpha);
+            rotatesprite_fs_alpha(cursorpos.x, cursorpos.y, scale, rotate, mousetile, 0, 0, stat, alpha);
         }
     }
     else
