@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Header Files\MSVC">
-      <UniqueIdentifier>{4afb83fc-a68c-4ed0-9ff2-7def56e98cb6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\build\src\2d.cpp">
@@ -196,12 +193,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\source\build\include\msvc\inttypes.h">
-      <Filter>Header Files\MSVC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\build\include\msvc\stdint.h">
-      <Filter>Header Files\MSVC</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\build\include\a.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -398,6 +389,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\build\include\timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\clockticks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
