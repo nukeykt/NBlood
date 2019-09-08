@@ -47,12 +47,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 void makeMissileBlocking(int nSprite) // 23
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
+    if (sprite[nSprite].statnum != 5) return;
     sprite[nSprite].cstat |= CSTAT_SPRITE_BLOCK;
 }
 
 void UniMissileBurst(int nSprite) // 22
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
+    if (sprite[nSprite].statnum != 5) return;
     spritetype * pSprite = &sprite[nSprite];
     int nAngle = getangle(xvel[nSprite], yvel[nSprite]);
     int nRadius = 0x55555;

@@ -2371,7 +2371,7 @@ void XWallControlSet(int nWall)
     ControlSet(controlXWall, 10, pXWall->restState); // restState
     ControlSet(controlXWall, 11, pXWall->triggerPush); // Push
     ControlSet(controlXWall, 12, pXWall->triggerVector); // Vector
-    ControlSet(controlXWall, 13, pXWall->triggerReserved); // Reserved
+    ControlSet(controlXWall, 13, pXWall->triggerTouch); // Reserved
     ControlSet(controlXWall, 14, pXWall->dudeLockout); // DudeLockout
     ControlSet(controlXWall, 15, pXWall->decoupled); // Decoupled
     ControlSet(controlXWall, 16, pXWall->triggerOnce); // 1-Shot
@@ -2401,7 +2401,7 @@ void XWallControlRead(int nWall)
     pXWall->restState = ControlRead(controlXWall, 10); // restState
     pXWall->triggerPush = ControlRead(controlXWall, 11); // Push
     pXWall->triggerVector = ControlRead(controlXWall, 12); // Vector
-    pXWall->triggerReserved = ControlRead(controlXWall, 13); // Reserved
+    pXWall->triggerTouch = ControlRead(controlXWall, 13); // Reserved
     pXWall->dudeLockout = ControlRead(controlXWall, 14); // DudeLockout
     pXWall->decoupled = ControlRead(controlXWall, 15); // Decoupled
     pXWall->triggerOnce = ControlRead(controlXWall, 16); // 1-Shot

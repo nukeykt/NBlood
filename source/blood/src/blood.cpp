@@ -499,12 +499,6 @@ int gHealthTemp[kMaxPlayers];
 vec3_t startpos;
 int16_t startang, startsectnum;
 
-short gProxySpritesList[];
-short gProxySpritesCount;
-
-short gSightSpritesList[];
-short gSightSpritesCount;
-
 void StartLevel(GAMEOPTIONS *gameOptions)
 {
     EndLevel();
@@ -571,14 +565,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     gSecretMgr.Clear();
     gLevelTime = 0;
     automapping = 1;
-    
-    // by NoOne: fill arrays with negative values to avoid xvel 0 situation
-    for (int i = 0; i < kMaxSightSprites; i++) gSightSpritesList[i] = -1;
-    for (int i = 0; i < kMaxProximitySprites; i++) gProxySpritesList[i] = -1;
-
-    gProxySpritesCount = 0;
-    gSightSpritesCount = 0;
-
+  
     for (int i = 0; i < kMaxSprites; i++)
     {
         spritetype *pSprite = &sprite[i];
@@ -592,68 +579,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                 DeleteSprite(i);
                 continue;
             }
-
-            //if (!VanillaMode) { // by NoOne: for some reason this function does not work here properly
-                
-                // by NoOne: add statnum for faster dude searching
-                if (sprite[i].lotag == kGDXDudeTargetChanger)
-                    InsertSpriteStat(i, kStatGDXDudeTargetChanger);
-
-                // by NoOne: make Proximity and Sight flag work not just for dudes and things...
-                if (pXSprite->Proximity && gProxySpritesCount < kMaxProximitySprites) {
-                    switch (pSprite->statnum) {
-                    // exceptions
-                    case 4: // things already treated in their functions
-                    case 6: // enemies already treated in their functions
-                        if (pXSprite->Sight && pXSprite->DudeLockout) pXSprite->Proximity = false; // senseless to have sight and proximity
-                        break;
-                    case 1: // effects
-                    case 2: // explosions
-                    case 3: // items
-                    case 9: // purgeable sprites
-                    case 5: // missiles
-                    case 13: // ???
-                    case 14: // burning flares stuck
-                    case 7: // inactive enemies
-                    case kStatFree: // removed sprites
-                    case kStatMarker: // markers
-                    case 16: // path markers
-                        break;
-                    default:
-                        if (pXSprite->Sight && pXSprite->DudeLockout) {
-                            pXSprite->Proximity = false; // senseless to have sight and proximity together
-                        } else {
-                            gProxySpritesList[gProxySpritesCount++] = pSprite->xvel;
-                            //if (gProxySpritesCount == kMaxProximitySprites) {
-                                  // show warning msg instead of error
-                            //}
-                        }
-                        break;
-                    }
-                }
-
-                if (pXSprite->Sight && gSightSpritesCount < kMaxSightSprites) {
-                    switch (pSprite->statnum) {
-                    case 1: // effects
-                    case 2: // explosions
-                    case 3: // items
-                    case 9: // purgeable sprites
-                    case 5: // missiles
-                    case 13: // ???
-                    case 14: // burning flares stuck
-                    case 7: // inactive enemies
-                    case kStatFree: // removed sprites
-                    case kStatMarker: // markers
-                    case 16: // path markers
-                        break;
-                    default:
-                        gSightSpritesList[gSightSpritesCount++] = pSprite->xvel;
-                        //if (gSightSpritesCount == kMaxSightSprites)
-                           // show warning msg instead of error
-                        break;
-                    }
-                }
-            //}
         }
     }
     scrLoadPLUs();

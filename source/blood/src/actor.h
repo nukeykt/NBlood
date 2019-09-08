@@ -137,8 +137,8 @@ struct EXPLOSION
     unsigned char at0;
     char at1; // dmg
     char at2; // dmg rnd
-    int at3; // radius
-    int at7;
+    int radius; // radius
+    int dmgType;
     int atb;
     int atf;
     int at13;
@@ -168,10 +168,13 @@ struct VECTORDATA {
 // by NoOne: sprite mass info for getDudeMassBySpriteSize();
 struct SPRITEMASS {
     int seqId;
-    int mass;
+    short picnum; // mainly needs for moving debris
     short xrepeat;
     short yrepeat;
     short clipdist; // mass multiplier
+    int mass;
+    short airVel; // mainly needs for moving debris
+    int fraction; // mainly needs for moving debris
 };
 
 extern AMMOITEMDATA gAmmoItemData[];
@@ -181,8 +184,6 @@ extern MissileType missileInfo[];
 extern EXPLOSION explodeInfo[];
 extern THINGINFO thingInfo[];
 extern VECTORDATA gVectorData[];
-extern SPRITEMASS gSpriteMass[];
-
 
 extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
@@ -269,6 +270,19 @@ int GetRandDataVal(int *rData, spritetype* pSprite);
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId);
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist);
-int getDudeMassBySpriteSize(spritetype* pSprite);
+int getSpriteMassBySize(spritetype* pSprite);
+int getSpriteMassBySize(spritetype* pSprite);
 bool ceilIsTooLow(spritetype* pSprite);
 void actBuildMissile(spritetype* pMissile, int nXSprite, int nSprite);
+int isDebris(int nSprite);
+int debrisGetFreeIndex(void);
+void debrisMove(int listIndex);
+void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg);
+
+extern SPRITEMASS gSpriteMass[kMaxXSprites];
+extern short gProxySpritesList[kMaxSuperXSprites];
+extern short gSightSpritesList[kMaxSuperXSprites];
+extern short gPhysSpritesList[kMaxSuperXSprites];
+extern short gProxySpritesCount;
+extern short gSightSpritesCount;
+extern short gPhysSpritesCount;

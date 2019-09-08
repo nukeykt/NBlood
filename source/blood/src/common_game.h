@@ -123,16 +123,20 @@ void QuitGame(void);
 #define kMarkerLowGoo 14
 #define kMarkerPath 15
 
-
 // sprite attributes
-#define kHitagMovePhys 0x0001 // affected by movement physics
-#define kHitagGravityPhys 0x0002 // affected by gravity
-#define kHitagFalling 0x0004 // currently in z-motion
 #define kHitagAutoAim 0x0008
 #define kHitagRespawn 0x0010
 #define kHitagFree 0x0020
 #define kHitagSmoke 0x0100
 #define kHitagExtBit 0x8000 // NoOne's extension bit(Note: it's bit 0 in editor!)
+
+// sprite physics attributes
+#define kPhysMove 0x0001 // affected by movement physics
+#define kPhysGravity 0x0002 // affected by gravity
+#define kPhysFalling 0x0004 // currently in z-motion
+// additional physics attributes for debris sprites
+#define kPhysDebrisVector 0x0400 // *debris* can be affected by vector weapons
+#define kPhysDebrisExplode 0x0800 // *debris* can be affected by explosions
 
 // sector types 
 #define kSecBase 600
@@ -195,8 +199,8 @@ void QuitGame(void);
 #define kGDXThingTNTProx 433 // detects only players
 #define kGDXThingThrowableRock 434 // does small damage if hits target
 #define kGDXThingCustomDudeLifeLeech 435 // the same as normal, except it aims in specified target
-#define kGDXDudeUniversalCultist 254
-#define kGDXGenDudeBurning 255
+#define kCustomDude 254
+#define kCustomDudeBurning 255
 
 #define kGDXItemMapLevel 150 // once picked up, draws whole minimap
 

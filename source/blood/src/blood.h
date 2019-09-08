@@ -70,11 +70,6 @@ extern bool gQuitGame;
 extern int gQuitRequest;
 extern int gCacheMiss;
 
-extern short gProxySpritesList[kMaxProximitySprites];
-extern short gSightSpritesList[kMaxSightSprites];
-extern short gProxySpritesCount;
-extern short gSightSpritesCount;
-
 void QuitGame(void);
 void PreloadCache(void);
 void StartLevel(GAMEOPTIONS *gameOptions);

@@ -44,8 +44,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "triggers.h"
 #include "endgame.h"
 
-#define kDefaultAnimationBase 11520
-
 static void GDXCultistAttack1(int, int);
 static void punchCallback(int, int);
 static void ThrowCallback1(int, int);
@@ -610,7 +608,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
             else if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1) {
 
                 int nType = pXSprite->data1 - 459; EXPLOSION* pExpl = &explodeInfo[nType];
-                if (pExpl != NULL && CheckProximity(pSprite, pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pExpl->at3 / 2)
+                if (pExpl != NULL && CheckProximity(pSprite, pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pExpl->radius / 2)
                     && doExplosion(pSprite, nType)) {
 
                     pXSprite->health = 1;
@@ -811,7 +809,7 @@ bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode) {
     
     if (mode < 0 || mode >= kMaxGenDudeSndMode) return false;
     GENDUDESND* sndInfo =& gCustomDudeSnd[mode]; bool gotSnd = false;
-    short sndStartId = xsprite[pSprite->extra].data3; int rand = sndInfo->randomRange;
+    short sndStartId = xsprite[pSprite->extra].sysData1; int rand = sndInfo->randomRange;
     int sndId = (sndStartId <= 0) ? sndInfo->defaultSndId : sndStartId + sndInfo->sndIdOffset;
 
     if (sndId < 0) return false;
@@ -830,7 +828,8 @@ bool sfxPlayGDXGenDudeSound(spritetype* pSprite, int mode) {
 
         // If no success in getting random snd, get first existing one
         if (gotSnd == false) {
-            while (sndId++ <= sndId + rand) {
+            int maxSndId = sndId + rand;
+            while (sndId++ <= maxSndId) {
                 if (!gSoundRes.Lookup(sndId, "SFX")) continue;
                 gotSnd = true;
                 break;
@@ -877,7 +876,8 @@ void removeDudeStuff(spritetype* pSprite) {
         case 401:
         case 402:
         case 433:
-            deletesprite(nSprite);
+            sprite[nSprite].lotag = 0;
+            actPostSprite(sprite[nSprite].xvel, kStatFree);
             break;
         case kGDXThingCustomDudeLifeLeech:
             killDudeLeech(&sprite[nSprite]);
@@ -902,25 +902,32 @@ void removeLeech(spritetype* pLeech, bool delSprite) {
             pEffect->yrepeat = repeat;
         }
         sfxPlay3DSoundCP(pLeech, 490, -1, 0,60000);
-        if (delSprite)
+        if (delSprite) {
+            pLeech->type = 0;
             actPostSprite(pLeech->index, kStatFree);
+        }
     }
 }
     
 void killDudeLeech(spritetype* pLeech) {
     if (pLeech != NULL) {
-        //removeLeech(pLeech, false);
         actDamageSprite(pLeech->owner, pLeech, DAMAGE_TYPE_3, 65535);
         sfxPlay3DSoundCP(pLeech, 522, -1, 0, 60000);
     }
 }
     
 XSPRITE* getNextIncarnation(XSPRITE* pXSprite) {
-    if (pXSprite->txID > 0) {
-        for (short nSprite = headspritestat[7]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
-            if (!IsDudeSprite(&sprite[nSprite]) || sprite[nSprite].extra < 0) continue;
-            if (xsprite[sprite[nSprite].extra].rxID == pXSprite->txID && xsprite[sprite[nSprite].extra].health > 0)
-                return &xsprite[sprite[nSprite].extra];
+    if (pXSprite->txID <= 0) return NULL;
+    for (int i = bucketHead[pXSprite->txID]; i < bucketHead[pXSprite->txID + 1]; i++) {
+        if (rxBucket[i].type != 3 || rxBucket[i].index == sprite[pXSprite->reference].xvel)
+            continue;
+        else if (IsDudeSprite(&sprite[rxBucket[i].index])) {
+            switch (sprite[rxBucket[i].index].statnum) {
+                case 6:
+                case 7: // inactive (ambush) dudes
+                    if (xsprite[sprite[rxBucket[i].index].extra].health > 0)
+                        return &xsprite[sprite[rxBucket[i].index].extra];
+            }
         }
     }
     return NULL;
@@ -958,12 +965,12 @@ int getBaseChanceModifier(int baseChance) {
 }
 
 int getRecoilChance(spritetype* pSprite) {
-    int mass = getDudeMassBySpriteSize(pSprite);
+    int mass = getSpriteMassBySize(pSprite);
     int cumulDmg = 0; int baseChance = getBaseChanceModifier(0x8000);
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += (pXSprite.burnTime / 2);
-        cumulDmg = pXSprite.cumulDamage;
+        cumulDmg = pXSprite.data3;
         if (dudeIsMelee(&pXSprite))
             baseChance = 0x700;
     }
@@ -975,7 +982,7 @@ int getRecoilChance(spritetype* pSprite) {
 }
 
 int getDodgeChance(spritetype* pSprite) {
-    int mass = getDudeMassBySpriteSize(pSprite); int baseChance = getBaseChanceModifier(0x4000);
+    int mass = getSpriteMassBySize(pSprite); int baseChance = getBaseChanceModifier(0x4000);
     if (pSprite->extra >= 0) {
         XSPRITE pXSprite = xsprite[pSprite->extra];
         baseChance += pXSprite.burnTime;

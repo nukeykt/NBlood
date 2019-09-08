@@ -54,7 +54,7 @@ public:
 extern unsigned int gSavedOffset;
 extern GAMEOPTIONS gSaveGameOptions[];
 extern char *gSaveGamePic[10];
-
+extern bool gGameLoaded; // by NoOne: indicate if game was loaded from save file
 void UpdateSavedInfo(int nSlot);
 void LoadSavedInfo(void);
 void LoadSaveSetup(void);

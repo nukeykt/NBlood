@@ -26,10 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxXWalls 512
 #define kMaxXSectors 512
 
-// by NoOne additional non-thing proximity and sight sprites 
-#define kMaxProximitySprites 128
-#define kMaxSightSprites 128
-#define kMaxBadSpecialSprites 3
+// by NoOne additional non-thing proximity, sight and physics sprites 
+#define kMaxSuperXSprites 128
 
 #pragma pack(push, 1)
 
@@ -57,14 +55,14 @@ struct XSPRITE {
 
     unsigned int respawnPending : 2; // respawnPending
 
-    signed int dropMsg : 10; // Drop Item
+    signed int dropMsg : 8; // Drop Item
     unsigned int Decoupled : 1; // Decoupled
     unsigned int triggerOnce : 1; // 1-shot
     unsigned int isTriggered : 1; // works in case if triggerOnce selected
 
     unsigned int key : 3; // Key
     unsigned int wave : 2; // Wave
-    unsigned int Push: 1; // Push
+    unsigned int Push : 1; // Push
     unsigned int Vector : 1; // Vector
     unsigned int Impact : 1; // Impact
     unsigned int Pickup : 1; // Pickup
@@ -100,9 +98,9 @@ struct XSPRITE {
     signed   int burnSource : 16;
     unsigned int height : 16;
     unsigned int stateTimer : 16; // ai timer
-    AISTATE *aiState; // ai
-    signed int txIndex : 10; // used by kGDXSequentialTX to keep current TX ID index
-    signed int cumulDamage : 16; // for dudes
+    AISTATE* aiState; // ai
+    signed int sysData1 : 16; // used to keep here various system data, so user can't change it in map editor
+    unsigned int physAttr : 12; // currently used by additional physics sprites to keep it's attributes.
     signed int scale; // used for scaling SEQ size on sprites
 };
 

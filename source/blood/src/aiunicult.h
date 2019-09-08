@@ -26,6 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 
 #define kMaxGenDudeSndMode 11
+#define kIncarnationIndexBase 16000
+#define kDefaultAnimationBase 11520
+
 
 extern AISTATE GDXGenDudeIdleL;
 extern AISTATE GDXGenDudeIdleW;
