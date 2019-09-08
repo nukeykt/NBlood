@@ -1375,6 +1375,8 @@ enum cutsceneflags {
     CUTSCENE_TEXTUREFILTER = 4,
 };
 
+extern int32_t benchmarkScreenshot;
+
 #ifdef USE_OPENGL
 extern int32_t glanisotropy;
 extern int32_t glusetexcompr;
@@ -1392,8 +1394,6 @@ extern int32_t glprojectionhacks;
 extern int32_t gltexmaxsize;
 void gltexapplyprops (void);
 void texcache_invalidate(void);
-
-extern int32_t benchmarkScreenshot;
 
 # ifdef USE_GLEXT
 extern int32_t r_detailmapping;
@@ -1466,8 +1466,9 @@ static FORCE_INLINE int32_t md_tilehasmodel(int32_t const tilenume, int32_t cons
 }
 #endif  // defined USE_OPENGL
 
-static FORCE_INLINE bool tilehasmodelorvoxel(int const tilenume, int const pal)
+static FORCE_INLINE bool tilehasmodelorvoxel(int const tilenume, int pal)
 {
+    UNREFERENCED_PARAMETER(pal);
     return
 #ifdef USE_OPENGL
     (videoGetRenderMode() >= REND_POLYMOST && mdinited && usemodels && tile2model[Ptile2tile(tilenume, pal)].modelid != -1) ||
