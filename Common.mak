@@ -326,8 +326,8 @@ endif
 #  LTO - 1 := enable link-time optimization
 
 # Optional overrides for text
-APPNAME :=
-APPBASENAME :=
+APPNAME ?=
+APPBASENAME ?=
 
 # Build toggles
 RELEASE := 1
@@ -338,18 +338,18 @@ MEMMAP := 0
 CPLUSPLUS := 1
 
 # Feature toggles
-STANDALONE := 0
-NETCODE := 1
-STARTUP_WINDOW := 1
-SIMPLE_MENU := 0
-POLYMER := 1
+STANDALONE ?= 0
+NETCODE ?= 1
+STARTUP_WINDOW ?= 1
+SIMPLE_MENU ?= 0
+POLYMER ?= 1
 USE_OPENGL := 1
 LUNATIC := 0
 USE_LUAJIT_2_1 := 0
 
 # Library toggles
 HAVE_GTK2 := 1
-USE_LIBVPX := 1
+USE_LIBVPX ?= 1
 HAVE_VORBIS := 1
 HAVE_FLAC := 1
 HAVE_XMP := 1
@@ -530,10 +530,12 @@ ifeq ($(PLATFORM),WINDOWS)
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
+    LINKERFLAGS += -Wl,--enable-auto-import,--dynamicbase,--nxcompat
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
+    else
+        LINKERFLAGS += -Wl,--high-entropy-va
     endif
-    LINKERFLAGS += -Wl,--enable-auto-import
 
     LUAJIT_BCOPTS := -o windows
     ifeq (32,$(BITS))
@@ -597,12 +599,20 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium3
+            OPTOPT := -march=pentium-m
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
             OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
+
+            # Fix for 32 bit CPUs on Linux without SSE2
+            ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
+                ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
+                    OPTOPT := -march=native
+                endif
+            endif
+
         endif
     endif
     ifeq ($(PLATFORM),WII)
@@ -801,6 +811,7 @@ CWARNS := -W -Wall \
     $(W_GCC_6) \
     $(W_GCC_7) \
     $(W_GCC_8) \
+    $(W_GCC_9) \
     $(W_CLANG) \
     #-Wstrict-prototypes \
     #-Waggregate-return \
@@ -811,10 +822,10 @@ CWARNS := -W -Wall \
 ##### Features
 
 ifneq (,$(APPNAME))
-    COMPILERFLAGS += -DAPPNAME=\"$(APPNAME)\"
+    COMPILERFLAGS += "-DAPPNAME=\"$(APPNAME)\""
 endif
 ifneq (,$(APPBASENAME))
-    COMPILERFLAGS += -DAPPBASENAME=\"$(APPBASENAME)\"
+    COMPILERFLAGS += "-DAPPBASENAME=\"$(APPBASENAME)\""
 endif
 
 ifneq (0,$(NOASM))

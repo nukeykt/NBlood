@@ -3800,7 +3800,7 @@ static void IntegratedHelp(void)
 
                                 highlighthp = i;
                                 highlightline = j;
-                                lasthighlighttime = totalclock;
+                                lasthighlighttime = (int)totalclock;
                                 goto ENDFOR1;
                             }
                         }
@@ -4841,7 +4841,7 @@ static int32_t m32gettile(int32_t idInitialTile)
         }
 
         // These two lines are so obvious I don't need to comment them ...;-)
-        synctics = totalclock-lockclock;
+        synctics = (int)totalclock-lockclock;
         lockclock += synctics;
 
         // Zoom in / out using numeric key pad's / and * keys
@@ -5908,7 +5908,7 @@ static void getnumberptr256(const char *namestart, void *num, int32_t bytes, int
         ExtCheckKeys();
 
         Bsprintf(buffer,"%s%d",namestart,danum);
-        if (totalclock & 32) Bstrcat(buffer,"_ ");
+        if ((int)totalclock & 32) Bstrcat(buffer,"_ ");
         printmessage256(0, 0, buffer);
         if (func != NULL)
         {
@@ -5945,7 +5945,7 @@ static void getnumberptr256(const char *namestart, void *num, int32_t bytes, int
 
     clearkeys();
 
-    lockclock = totalclock;  //Reset timing
+    lockclock = (int)totalclock;  //Reset timing
 
     switch (bytes)
     {
@@ -6243,7 +6243,7 @@ ERROR_TOOMANYSPRITES:
 
     clearkeys();
 
-    lockclock = totalclock;  //Reset timing
+    lockclock = (int)totalclock;  //Reset timing
 }
 
 static void mouseaction_movesprites(int32_t *sumxvect, int32_t *sumyvect, int32_t yangofs, int32_t mousexory)
@@ -11031,7 +11031,7 @@ static int osdcmd_vars_pk(osdcmdptr_t parm)
             if (isdigit(parm->parms[0][0]))
             {
                 autocorruptcheck = clamp(atoi_safe(parm->parms[0]), 0, 3600);
-                corruptchecktimer = totalclock + 120*autocorruptcheck;
+                corruptchecktimer = (int)totalclock + 120*autocorruptcheck;
             }
 
             return OSDCMD_OK;
@@ -11951,7 +11951,7 @@ int32_t ExtInit(void)
     getmessagetimeoff = 0;
 
     Bsprintf(apptitle, "NMapedit %s", s_buildRev);
-    autosavetimer = totalclock+120*autosave;
+    autosavetimer = (int)totalclock+120*autosave;
 
     registerosdcommands();
 
@@ -12060,7 +12060,7 @@ static void (*keytimerstuff)(void) = NULL;
 static void timerCallback()
 {
     keytimerstuff();
-    gGameClock = totalclock;
+    //gGameClock = totalclock;
 }
 
 void ExtPostInit(void)
@@ -12854,7 +12854,7 @@ static void Keys2d3d(void)
                         {
                             message("Board saved to %s", levelname);
                             asksave = 0;
-                            lastsave=totalclock;
+                            lastsave=(int)totalclock;
                         }
                     }
                 }
@@ -12869,7 +12869,7 @@ static void Keys2d3d(void)
                 int32_t sposx=pos.x,sposy=pos.y,sposz=pos.z,sang=ang;
                 const char *f = GetSaveBoardFilename(levelname);
 
-                lastsave=totalclock;
+                lastsave=(int)totalclock;
                 //  			  sectorhighlightstat = -1;
                 //  			  newnumwalls = -1;
                 //  			  joinsector[0] = -1;
@@ -12897,7 +12897,7 @@ static void Keys2d3d(void)
     {
         if (!in3dmode())
             printmessage16("%s", getmessage);
-        if (totalclock > getmessagetimeoff)
+        if ((int)totalclock > getmessagetimeoff)
             getmessageleng = 0;
     }
 
@@ -12908,7 +12908,7 @@ void ExtCheckKeys(void)
     static int32_t soundinit = 0;
     static int32_t lastbstatus = 0;
 
-    gFrameTicks = gGameClock - gFrameClock;
+    gFrameTicks = totalclock - gFrameClock;
     gFrameClock += gFrameTicks;
 
     if (!soundinit)
@@ -13028,7 +13028,7 @@ void ExtCheckKeys(void)
         {
             if (CheckMapCorruption(3, 0)>=3)
                 printmessage16("Corruption detected. See OSD for details.");
-            corruptchecktimer = totalclock + 120*autocorruptcheck;
+            corruptchecktimer = (int)totalclock + 120*autocorruptcheck;
         }
     }
 
@@ -13076,7 +13076,7 @@ void ExtCheckKeys(void)
 
             asksave++;
         }
-        autosavetimer = totalclock+120*autosave;
+        autosavetimer = (int)totalclock+120*autosave;
     }
 
     if (PRESSED_KEYSC(F12))   //F12

@@ -121,7 +121,7 @@
     <ClCompile Include="..\..\source\sw\src\morph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\sw\src\net.cpp">
+    <ClCompile Include="..\..\source\sw\src\network.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\sw\src\ninja.cpp">

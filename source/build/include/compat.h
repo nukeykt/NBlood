@@ -1278,11 +1278,10 @@ char *Bstrlwr(char *);
 char *Bstrupr(char *);
 #endif
 
-
 ////////// Miscellaneous //////////
 
+int Bgetpagesize(void);
 uint32_t Bgetsysmemsize(void);
-
 
 ////////// PANICKING ALLOCATION WRAPPERS //////////
 
@@ -1375,6 +1374,7 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #define LIBDIVIDE_NOINLINE
 #include "fix16.h"
 #include "libdivide.h"
+#include "clockticks.hpp"
 
 /* End dependence on compat.o object. */
 

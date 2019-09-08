@@ -525,8 +525,8 @@ static inline void inplace_vx_tweak_wall(walltypevx *vxwal, int32_t yaxp)
 
 #include "clip.h"
 
-int32_t getwalldist(vec2_t const &in, int const wallnum);
-int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out);
+int32_t getwalldist(vec2_t const in, int const wallnum);
+int32_t getwalldist(vec2_t const in, int const wallnum, vec2_t * const out);
 
 #ifdef __cplusplus
 extern "C" {
@@ -723,8 +723,8 @@ EXTERN int16_t numsectors, numwalls;
 EXTERN int32_t display_mirror;
 // totalclocklock: the totalclock value that is backed up once on each
 // drawrooms() and is used for animateoffs().
-EXTERN int32_t totalclock, totalclocklock;
-static inline int32_t BGetTime(void) { return totalclock; }
+EXTERN ClockTicks totalclock, totalclocklock;
+static inline int32_t BGetTime(void) { return (int32_t) totalclock; }
 
 EXTERN int32_t numframes, randomseed;
 EXTERN int16_t sintable[2048];
@@ -1194,7 +1194,7 @@ void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, in
 
 int findwallbetweensectors(int sect1, int sect2);
 static FORCE_INLINE bool sectoradjacent(int sect1, int sect2) { return findwallbetweensectors(sect1, sect2) != -1; }
-int32_t getsectordist(vec2_t const &in, int const sectnum, vec2_t * const out = nullptr);
+int32_t getsectordist(vec2_t const in, int const sectnum, vec2_t * const out = nullptr);
 extern const int16_t *chsecptr_onextwall;
 int32_t checksectorpointer(int16_t i, int16_t sectnum);
 
@@ -1383,6 +1383,8 @@ enum cutsceneflags {
     CUTSCENE_TEXTUREFILTER = 4,
 };
 
+extern int32_t benchmarkScreenshot;
+
 #ifdef USE_OPENGL
 extern int32_t glanisotropy;
 extern int32_t glusetexcompr;
@@ -1400,8 +1402,6 @@ extern int32_t glprojectionhacks;
 extern int32_t gltexmaxsize;
 void gltexapplyprops (void);
 void texcache_invalidate(void);
-
-extern int32_t benchmarkScreenshot;
 
 # ifdef USE_GLEXT
 extern int32_t r_detailmapping;
@@ -1478,8 +1478,9 @@ static FORCE_INLINE int32_t md_tilehasmodel(int32_t const tilenume, int32_t cons
 }
 #endif  // defined USE_OPENGL
 
-static FORCE_INLINE bool tilehasmodelorvoxel(int const tilenume, int const pal)
+static FORCE_INLINE bool tilehasmodelorvoxel(int const tilenume, int pal)
 {
+    UNREFERENCED_PARAMETER(pal);
     return
 #ifdef USE_OPENGL
     (videoGetRenderMode() >= REND_POLYMOST && mdinited && usemodels && tile2model[Ptile2tile(tilenume, pal)].modelid != -1) ||

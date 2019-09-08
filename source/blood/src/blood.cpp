@@ -437,7 +437,7 @@ void PreloadCache(void)
         sndTryPlaySpecialMusic(MUS_LOADING);
     gSoundRes.PrecacheSounds();
     PreloadTiles();
-    int clock = totalclock;
+    ClockTicks clock = totalclock;
     int cnt = 0;
     int percentDisplayed = -1;
 
@@ -647,6 +647,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     InitMirrors();
     gFrameClock = 0;
     trInit();
+    if (!bVanilla && !gMe->packInfo[1].at0) // if diving suit is not active, turn off reverb sound effect
+        sfxSetReverb(0);
     ambInit();
     sub_79760();
     gCacheMiss = 0;
@@ -661,7 +663,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (gGameOptions.nGameType == 3)
         gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
     netWaitForEveryone(0);
-    gGameClock = 0;
+    totalclock = 0;
     gPaused = 0;
     gGameStarted = 1;
     ready2send = 1;
@@ -918,7 +920,7 @@ void ProcessFrame(void)
         playerProcess(&gPlayer[i]);
     }
     trProcessBusy();
-    evProcess(gFrameClock);
+    evProcess((int)gFrameClock);
     seqProcess(4);
     DoSectorPanning();
     actProcessSprites();
@@ -1363,7 +1365,7 @@ void ParseOptions(void)
 
 void ClockStrobe()
 {
-    gGameClock++;
+    //gGameClock++;
 }
 
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
@@ -1648,7 +1650,7 @@ RESTART:
             }
             if (numplayers == 1)
                 gBufferJitter = 0;
-            while (gGameClock >= gNetFifoClock && ready2send)
+            while (totalclock >= gNetFifoClock && ready2send)
             {
                 netGetInput();
                 gNetFifoClock += 4;
@@ -1755,6 +1757,7 @@ RESTART:
             {
                 videoClearScreen(0);
                 gGameMenuMgr.Draw();
+                videoNextPage();
             }
         }
         if (gGameOptions.nGameType != 0)

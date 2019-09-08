@@ -116,7 +116,7 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "Quick_Load",
    "Alt_Weapon",
    "Third_Person_View",
-   "Crouch_Toggle",
+   "Toggle_Crouch",
    };
 
 #ifdef __SETUP__
@@ -133,7 +133,7 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "LShift", "RShift",
    "", "",
    "Space", "/",
-   "LCtrl", "C",
+   "LCtrl", "",
    "PgUp", "Kpad9",
    "PgDn", "Kpad3",
    "Insert", "Kpad0",
@@ -185,7 +185,7 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "F9", "",
    "", "",
    "F7", "",
-   "", "",
+   "C", "",
    };
 
 const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
@@ -259,7 +259,7 @@ static const char * mousedefaults[MAXMOUSEBUTTONS] =
    {
    "Fire",
    "Alt_Fire",
-   "Jetpack",
+   "MedKit",
    "",
    "Previous_Weapon",
    "Next_Weapon",

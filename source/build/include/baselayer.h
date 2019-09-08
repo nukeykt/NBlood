@@ -26,8 +26,12 @@ extern int32_t g_maskDrawMode;
 
 extern char quitevent, appactive;
 extern char modechange;
+extern char nogl;
 
 extern int32_t vsync;
+extern int32_t swapcomplete;
+extern int32_t r_borderless;
+extern int32_t r_displayindex;
 
 extern void app_crashhandler(void);
 
@@ -44,7 +48,7 @@ extern int32_t r_usenewaspect, newaspect_enable;
 extern int32_t r_fpgrouscan;
 extern int32_t setaspect_new_use_dimen;
 extern uint32_t r_screenxy;
-extern int32_t xres, yres, bpp, fullscreen, bytesperline;
+extern int32_t xres, yres, bpp, fullscreen, bytesperline, refreshfreq;
 extern intptr_t frameplace;
 extern char offscreenrendering;
 extern int32_t nofog;

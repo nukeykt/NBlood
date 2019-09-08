@@ -897,8 +897,8 @@ static int osdcmd_bind(osdcmdptr_t parm)
 {
     if (parm->numparms==1 && !Bstrcasecmp(parm->parms[0],"showkeys"))
     {
-        for (int i=0; sctokeylut[i].key; i++)
-            OSD_Printf("%s\n",sctokeylut[i].key);
+        for (auto & s : sctokeylut)
+            OSD_Printf("%s\n", s.key);
         for (auto ConsoleButton : ConsoleButtons)
             OSD_Printf("%s\n",ConsoleButton);
         return OSDCMD_OK;
@@ -1064,7 +1064,7 @@ static int osdcmd_unbind(osdcmdptr_t parm)
     if (parm->numparms != 1)
         return OSDCMD_SHOWHELP;
 
-    for (auto ConsoleKey : sctokeylut)
+    for (auto & ConsoleKey : sctokeylut)
     {
         if (ConsoleKey.key && !Bstrcasecmp(parm->parms[0], ConsoleKey.key))
         {
@@ -1628,7 +1628,7 @@ int32_t registerosdcommands(void)
         { "demoplay_diffs","enable/disable application of diffs in demo playback",(void *)&demoplay_diffs, CVAR_BOOL, 0, 1 },
         { "demoplay_showsync","enable/disable display of sync status",(void *)&demoplay_showsync, CVAR_BOOL, 0, 1 },
 
-        { "fov", "change the field of view", (void *)&ud.fov, CVAR_INT|CVAR_FUNCPTR, 60, 120 },
+        { "fov", "change the field of view", (void *)&ud.fov, CVAR_INT, 60, 140 },
 
         { "hud_althud", "enable/disable alternate mini-hud", (void *)&ud.althud, CVAR_BOOL, 0, 1 },
         { "hud_custom", "change the custom hud", (void *)&ud.statusbarcustom, CVAR_INT, 0, ud.statusbarrange },
@@ -1640,7 +1640,7 @@ int32_t registerosdcommands(void)
         { "hud_shadows", "enable/disable althud shadows", (void *)&althud_shadows, CVAR_BOOL, 0, 1 },
         { "hud_flashing", "enable/disable althud flashing", (void *)&althud_flashing, CVAR_BOOL, 0, 1 },
         { "hud_glowingquotes", "enable/disable \"glowing\" quote text", (void *)&hud_glowingquotes, CVAR_BOOL, 0, 1 },
-        { "hud_scale","changes the hud scale", (void *)&ud.statusbarscale, CVAR_INT|CVAR_FUNCPTR, 36, 100 },
+        { "hud_scale","changes the hud scale", (void *)&ud.statusbarscale, CVAR_INT|CVAR_FUNCPTR, 50, 100 },
         { "hud_showmapname", "enable/disable map name display on load", (void *)&hud_showmapname, CVAR_BOOL, 0, 1 },
         { "hud_stats", "enable/disable level statistics display", (void *)&ud.levelstats, CVAR_BOOL, 0, 1 },
         { "hud_textscale", "sets multiplayer chat message size", (void *)&ud.textscale, CVAR_INT, 100, 400 },

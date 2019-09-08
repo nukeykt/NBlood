@@ -421,7 +421,7 @@ void CONFIG_MapKey(int which, kb_scancode key1, kb_scancode oldkey1, kb_scancode
 
         int match = 0;
 
-        for (; sctokeylut[match].key; match++)
+        for (; match < ARRAY_SSIZE(sctokeylut); ++match)
         {
             if (keys[k] == sctokeylut[match].sc)
                 break;
@@ -646,7 +646,7 @@ void CONFIG_SetGameControllerDefaultsStandard()
     static GameControllerButtonSetting const buttons[] =
     {
         { GAMECONTROLLER_BUTTON_A, gamefunc_Jump },
-        { GAMECONTROLLER_BUTTON_B, gamefunc_Crouch_Toggle },
+        { GAMECONTROLLER_BUTTON_B, gamefunc_Toggle_Crouch },
         { GAMECONTROLLER_BUTTON_BACK, gamefunc_Map },
         { GAMECONTROLLER_BUTTON_LEFTSTICK, gamefunc_Run },
         { GAMECONTROLLER_BUTTON_RIGHTSTICK, gamefunc_Quick_Kick },
@@ -867,6 +867,7 @@ int CONFIG_ReadSetup(void)
 
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenBPP", &ud.setup.bpp);
+    SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenDisplay", &r_displayindex);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenHeight", &ud.setup.ydim);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenMode", &ud.setup.fullscreen);
     SCRIPT_GetNumber(ud.config.scripthandle, "Screen Setup", "ScreenWidth", &ud.setup.xdim);
@@ -978,6 +979,7 @@ void CONFIG_WriteSetup(uint32_t flags)
 #endif
 
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenBPP", ud.setup.bpp, FALSE, FALSE);
+    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenDisplay", r_displayindex, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenHeight", ud.setup.ydim, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenMode", ud.setup.fullscreen, FALSE, FALSE);
     SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "ScreenWidth", ud.setup.xdim, FALSE, FALSE);

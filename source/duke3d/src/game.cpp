@@ -255,7 +255,7 @@ void G_GameQuit(void)
     if (g_gameQuit == 0)
     {
         g_gameQuit = 1;
-        g_quitDeadline = totalclock+120;
+        g_quitDeadline = (int32_t) totalclock+120;
         g_netDisconnect = 1;
     }
 
@@ -416,8 +416,8 @@ static int32_t G_DoThirdPerson(const DukePlayer_t *pp, vec3_t *vect, int16_t *vs
     vect->y += mulscale16(n.y,CAMERADIST);
     vect->z += mulscale16(n.z,CAMERADIST);
 
-    CAMERADIST = min(CAMERADIST+((totalclock-CAMERACLOCK)<<10),65536);
-    CAMERACLOCK = totalclock;
+    CAMERADIST = min(CAMERADIST+(((int32_t) totalclock-CAMERACLOCK)<<10),65536);
+    CAMERACLOCK = (int32_t) totalclock;
 
     updatesectorz(vect->x,vect->y,vect->z,vsectnum);
 
@@ -644,25 +644,22 @@ void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t q16horiz
             g_visibility = (j>>1) + (j>>2);
 
             //backup original camera position
-            int32_t origCamX = CAMERA(pos.x);
-            int32_t origCamY = CAMERA(pos.y);
-            int32_t origCamZ = CAMERA(pos.z);
-            fix16_t origCamq16ang = CAMERA(q16ang);
+            auto origCam = CAMERA(pos);
+            fix16_t origCamq16ang   = CAMERA(q16ang);
             fix16_t origCamq16horiz = CAMERA(q16horiz);
+
             //set the camera inside the mirror facing out
-            CAMERA(pos.x) = tposx;
-            CAMERA(pos.y) = tposy;
-            CAMERA(pos.z) = z;
-            CAMERA(q16ang) = tang;
+            CAMERA(pos)      = { tposx, tposy, z };
+            CAMERA(q16ang)   = tang;
             CAMERA(q16horiz) = q16horiz;
+
             display_mirror = 1;
             VM_OnEventWithReturn(EVENT_DISPLAYROOMS, g_player[0].ps->i, 0, 0);
             display_mirror = 0;
+
             //reset the camera position
-            CAMERA(pos.x) = origCamX;
-            CAMERA(pos.y) = origCamY;
-            CAMERA(pos.z) = origCamZ;
-            CAMERA(q16ang) = origCamq16ang;
+            CAMERA(pos)      = origCam;
+            CAMERA(q16ang)   = origCamq16ang;
             CAMERA(q16horiz) = origCamq16horiz;
 
             //give scripts the chance to reset gotpics for effects that run in EVENT_DISPLAYROOMS
@@ -784,10 +781,8 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         videoSetCorrectedAspect();
     }
 
-    if (ud.pause_on || pPlayer->on_crane > -1)
+    if (pPlayer->on_crane > -1)
         smoothRatio = 65536;
-    else
-        smoothRatio = calc_smoothratio(totalclock, ototalclock);
 
     int const playerVis = pPlayer->visibility;
     g_visibility        = (playerVis <= 0) ? 0 : (int32_t)(playerVis * (numplayers > 1 ? 1.f : r_ambientlightrecip));
@@ -806,7 +801,9 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         CAMERA(q16ang) = fix16_from_int(actor[ud.camerasprite].tempang
                                       + mulscale16(((pSprite->ang + 1024 - actor[ud.camerasprite].tempang) & 2047) - 1024, smoothRatio));
 
+#ifdef USE_OPENGL
         renderSetRollAngle(0);
+#endif
 
         int const noDraw = VM_OnEventWithReturn(EVENT_DISPLAYROOMSCAMERA, ud.camerasprite, playerNum, 0);
 
@@ -956,10 +953,12 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 #endif
                 pPlayer->orotscrnang = pPlayer->rotscrnang;
             }
+#ifdef USE_OPENGL
             else
             {
                 renderSetRollAngle(0);
             }
+#endif
         }
 
         if (pPlayer->newowner < 0)
@@ -1195,7 +1194,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
             }
 
             pPlayer->visibility += visinc;
-            lastvist = totalclock;
+            lastvist = (int32_t) totalclock;
         }
     }
 
@@ -1515,7 +1514,11 @@ int A_Spawn(int spriteNum, int tileNum)
 
         if (!G_InitActor(newSprite, s.picnum, 0))
             T2(newSprite) = T5(newSprite) = 0;  // AC_MOVE_ID, AC_ACTION_ID
-        else A_GetZLimits(newSprite);
+        else
+        {
+            A_GetZLimits(newSprite);
+            actor[newSprite].bpos = sprite[newSprite].pos;
+        }
     }
 
     pSprite = &sprite[newSprite];
@@ -3637,7 +3640,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
 
             if (t->lotag == SE_27_DEMO_CAM && ud.recstat == 1)
             {
-                t->picnum = 11+((totalclock>>3)&1);
+                t->picnum = 11+(((int) totalclock>>3)&1);
                 t->cstat |= 128;
             }
             else
@@ -3858,7 +3861,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
             t->z -= ZOFFSET6;
             break;
         case CRYSTALAMMO__STATIC:
-            t->shade = (sintable[(totalclock<<4)&2047]>>10);
+            t->shade = (sintable[((int32_t) totalclock<<4)&2047]>>10);
             continue;
 #endif
         case VIEWSCREEN__STATIC:
@@ -3901,10 +3904,10 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         }
 #ifndef EDUKE32_STANDALONE
         case SHRINKSPARK__STATIC:
-            t->picnum = SHRINKSPARK+((totalclock>>4)&3);
+            t->picnum = SHRINKSPARK+(((int32_t) totalclock>>4)&3);
             break;
         case GROWSPARK__STATIC:
-            t->picnum = GROWSPARK+((totalclock>>4)&3);
+            t->picnum = GROWSPARK+(((int32_t) totalclock>>4)&3);
             break;
         case RPG__STATIC:
             if (tilehasmodelorvoxel(t->picnum,t->pal) && !(spriteext[i].flags & SPREXT_NOTMD))
@@ -4576,7 +4579,7 @@ void G_HandleLocalKeys(void)
             }
             else
             {
-                G_SetStatusBarScale(ud.statusbarscale+4);
+                G_SetStatusBarScale(ud.statusbarscale+5);
             }
 
             G_UpdateScreenArea();
@@ -4602,7 +4605,7 @@ void G_HandleLocalKeys(void)
             }
             else
             {
-                G_SetStatusBarScale(ud.statusbarscale-4);
+                G_SetStatusBarScale(ud.statusbarscale-5);
             }
 
             G_UpdateScreenArea();
@@ -4969,7 +4972,7 @@ FAKE_F3:
             myplayer.over_shoulder_on = !myplayer.over_shoulder_on;
 
             CAMERADIST  = 0;
-            CAMERACLOCK = totalclock;
+            CAMERACLOCK = (int32_t) totalclock;
 
             P_DoQuote(QUOTE_VIEW_MODE_OFF + myplayer.over_shoulder_on, &myplayer);
         }
@@ -5034,7 +5037,7 @@ FAKE_F3:
 
         if (ud.overhead_on != 0)
         {
-            int const timerOffset = (totalclock - nonsharedtimer);
+            int const timerOffset = ((int) totalclock - nonsharedtimer);
             nonsharedtimer += timerOffset;
 
             if (BUTTON(gamefunc_Enlarge_Screen))
@@ -5061,12 +5064,6 @@ FAKE_F3:
         CONTROL_ClearButton(gamefunc_AutoRun);
         ud.auto_run = 1-ud.auto_run;
         P_DoQuote(QUOTE_RUN_MODE_OFF + ud.auto_run, &myplayer);
-    }
-
-    if (BUTTON(gamefunc_Crouch_Toggle))
-    {
-        CONTROL_ClearButton(gamefunc_Crouch_Toggle);
-        myplayer.crouch_toggle = !myplayer.crouch_toggle;
     }
 
     if (BUTTON(gamefunc_Map))
@@ -6341,16 +6338,17 @@ int G_FPSLimit(void)
     if (!r_maxfps)
         return 1;
 
-    static double nextPageDelay;
-    static double lastFrameTicks;
+    static double   nextPageDelay;
+    static uint64_t lastFrameTicks;
 
-    double const frameTicks  = timerGetTicksU64();
-    double const elapsedTime = frameTicks-lastFrameTicks;
+    uint64_t const frameTicks   = timerGetTicksU64();
+    uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
+    double const   dElapsedTime = elapsedTime;
 
-    if (elapsedTime >= nextPageDelay)
+    if (dElapsedTime >= floor(nextPageDelay))
     {
-        if (elapsedTime <= nextPageDelay+g_frameDelay)
-            nextPageDelay += g_frameDelay-elapsedTime;
+        if (dElapsedTime <= nextPageDelay+g_frameDelay)
+            nextPageDelay += g_frameDelay-dElapsedTime;
 
         lastFrameTicks = frameTicks;
 
@@ -6964,7 +6962,7 @@ MAIN_LOOP_RESTART:
 
                 ototalclock += TICSPERFRAME;
 
-                int const moveClock = totalclock;
+                int const moveClock = (int) totalclock;
 
                 if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1)) &&
                         (myplayer.gm & MODE_GAME))
@@ -7014,12 +7012,7 @@ MAIN_LOOP_RESTART:
         }
         else if (G_FPSLimit() || g_saveRequested)
         {
-            int const smoothRatio
-            = ((ud.show_help == 0 && (!g_netServer && ud.multimode < 2) && ((myplayer.gm & MODE_MENU) == 0))
-               || (g_netServer || ud.multimode > 1)
-               || ud.recstat == 2)
-              ? calc_smoothratio(totalclock, ototalclock)
-              : 65536;
+            int const smoothRatio = calc_smoothratio(totalclock, ototalclock);
 
             G_DrawRooms(screenpeek, smoothRatio);
             if (videoGetRenderMode() >= REND_POLYMOST)
@@ -7407,5 +7400,5 @@ static void G_SetupGameButtons(void)
     CONTROL_DefineFlag(gamefunc_Quick_Load, FALSE);
     CONTROL_DefineFlag(gamefunc_Alt_Weapon,FALSE);
     CONTROL_DefineFlag(gamefunc_Third_Person_View, FALSE);
-    CONTROL_DefineFlag(gamefunc_Crouch_Toggle, FALSE);
+    CONTROL_DefineFlag(gamefunc_Toggle_Crouch, FALSE);
 }

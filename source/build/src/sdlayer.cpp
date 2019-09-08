@@ -75,7 +75,7 @@ static SDL_Window *sdl_window=NULL;
 static SDL_GLContext sdl_context=NULL;
 #endif
 
-int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline;
+int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline, refreshfreq=-1;
 intptr_t frameplace=0;
 int32_t lockcount=0;
 char modechange=1;
@@ -91,7 +91,9 @@ char nogl=0;
 #endif
 static int32_t vsync_renderlayer;
 int32_t maxrefreshfreq=0;
-
+#if SDL_MAJOR_VERSION!=1
+static double currentVBlankInterval;
+#endif
 // last gamma, contrast, brightness
 static float lastvidgcb[3];
 
@@ -1215,7 +1217,6 @@ void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
 //
 static int sortmodes(const void *a_, const void *b_)
 {
-
     auto a = (const struct validmode_t *)b_;
     auto b = (const struct validmode_t *)a_;
 
@@ -1236,6 +1237,7 @@ void videoGetModes(void)
 {
     int32_t i, maxx = 0, maxy = 0;
     SDL_DisplayMode dispmode;
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
 
     if (modeschecked || novideo)
         return;
@@ -1244,9 +1246,9 @@ void videoGetModes(void)
     //    initprintf("Detecting video modes:\n");
 
     // do fullscreen modes first
-    for (i = 0; i < SDL_GetNumDisplayModes(0); i++)
+    for (i = 0; i < SDL_GetNumDisplayModes(display); i++)
     {
-        SDL_GetDisplayMode(0, i, &dispmode);
+        SDL_GetDisplayMode(display, i, &dispmode);
 
         if (!SDL_CHECKMODE(dispmode.w, dispmode.h) ||
             (maxrefreshfreq && (dispmode.refresh_rate > maxrefreshfreq)))
@@ -1270,7 +1272,7 @@ void videoGetModes(void)
     // add windowed modes next
     // SDL sorts display modes largest to smallest, so we can just compare with mode 0
     // to make sure we aren't adding modes that are larger than the actual screen res
-    SDL_GetDisplayMode(0, 0, &dispmode);
+    SDL_GetDisplayMode(display, 0, &dispmode);
 
     for (i = 0; g_defaultVideoModes[i].x; i++)
     {
@@ -1588,22 +1590,29 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
 #if SDL_MAJOR_VERSION!=1
 void setrefreshrate(void)
 {
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+
     SDL_DisplayMode dispmode;
-    SDL_GetCurrentDisplayMode(0, &dispmode);
+    SDL_GetCurrentDisplayMode(display, &dispmode);
 
     dispmode.refresh_rate = maxrefreshfreq;
 
     SDL_DisplayMode newmode;
-    SDL_GetClosestDisplayMode(0, &dispmode, &newmode);
+    SDL_GetClosestDisplayMode(display, &dispmode, &newmode);
+
+    char error = 0;
 
     if (dispmode.refresh_rate != newmode.refresh_rate)
     {
         initprintf("Refresh rate: %dHz\n", newmode.refresh_rate);
-        SDL_SetWindowDisplayMode(sdl_window, &newmode);
+        error = SDL_SetWindowDisplayMode(sdl_window, &newmode);
     }
 
     if (!newmode.refresh_rate)
         newmode.refresh_rate = 60;
+
+    refreshfreq = error ? -1 : newmode.refresh_rate;
+    currentVBlankInterval = timerGetFreqU64()/(double)newmode.refresh_rate;
 }
 
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
@@ -1625,11 +1634,13 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
     initprintf("Setting video mode %dx%d (%d-bpp %s)\n", x, y, c, ((fs & 1) ? "fullscreen" : "windowed"));
 
+    int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+
     SDL_DisplayMode desktopmode;
-    SDL_GetDesktopDisplayMode(0, &desktopmode);
+    SDL_GetDesktopDisplayMode(display, &desktopmode);
 
-    int const windowedMode = (desktopmode.w == x && desktopmode.h == y) ? SDL_WINDOW_BORDERLESS : 0;
-
+    int const matchedResolution = (desktopmode.w == x && desktopmode.h == y);
+    int const borderless = (r_borderless == 1 || (r_borderless == 2 && matchedResolution)) ? SDL_WINDOW_BORDERLESS : 0;
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
     {
@@ -1657,7 +1668,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
               { SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
               { SDL_GL_MULTISAMPLESAMPLES, glmultisample },
 #endif
-              { SDL_GL_STENCIL_SIZE, 8 },
+              { SDL_GL_STENCIL_SIZE, 1 },
               { SDL_GL_ACCELERATED_VISUAL, 1 },
           };
 
@@ -1668,9 +1679,11 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             /* HACK: changing SDL GL attribs only works before surface creation,
                so we have to create a new surface in a different format first
                to force the surface we WANT to be recreated instead of reused. */
-            sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED,
-                                          windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED, x, y,
-                                          SDL_WINDOW_OPENGL);
+
+
+            sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                          windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+                                          SDL_WINDOW_OPENGL | borderless);
 
             if (sdl_window)
                 sdl_context = SDL_GL_CreateContext(sdl_window);
@@ -1678,6 +1691,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
             if (!sdl_window || !sdl_context)
             {
                 initprintf("Unable to set video mode: %s failed: %s\n", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
+                nogl = 1;
                 destroy_window_resources();
                 return -1;
             }
@@ -1691,8 +1705,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
                 return -1;
             }
 
-            // this is using the windowedMode variable to determine whether to pass SDL_WINDOW_FULLSCREEN or SDL_WINDOW_FULLSCREEN_DESKTOP
-            SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? windowedMode ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN : windowedMode));
+            SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
             SDL_GL_SetSwapInterval(vsync_renderlayer);
 
             setrefreshrate();
@@ -1702,9 +1715,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #endif  // defined USE_OPENGL
     {
         // init
-        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED,
-                                      windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED, x, y,
-                                      0);
+        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                      windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+                                      borderless);
         if (!sdl_window)
             SDL2_VIDEO_ERR("SDL_CreateWindow");
 
@@ -1717,7 +1730,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
                 SDL2_VIDEO_ERR("SDL_GetWindowSurface");
         }
 
-        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? SDL_WINDOW_FULLSCREEN : windowedMode));
+        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
 
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
@@ -1868,9 +1881,24 @@ void videoShowFrame(int32_t w)
         }
 
         SDL_GL_SwapWindow(sdl_window);
+
         if (vsync)
         {
-            glFinish();
+            switch (swapcomplete)
+            {
+                case 1: glFinish(); break;
+                case 2:
+                {
+                    static uint64_t lastSwapTime;
+                    // busy loop until we're ready to update again
+                    // sit on it and spin
+                    uint64_t swapTime = timerGetTicksU64();
+                    while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval) { }
+                    lastSwapTime = swapTime;
+                }
+                break;
+                case 3: glFlush(); break;
+            }
         }
         return;
     }
@@ -2092,13 +2120,14 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
                     break;
 #endif
                 /* Thumb buttons. */
-#if SDL_MAJOR_VERSION==1 || !defined _WIN32
+#if SDL_MAJOR_VERSION==1
                 // NOTE: SDL1 does have SDL_BUTTON_X1, but that's not what is
-                // generated. Neither with SDL2 on Linux. (Other OSs: not tested.)
+                // generated. (Only tested on Linux and Windows.)
                 case 8: j = 3; break;
                 case 9: j = 6; break;
 #else
-                // On SDL2/Windows, everything is as it should be.
+                // On SDL2/Windows and SDL >= 2.0.?/Linux, everything is as it should be.
+                // If anyone cares about old versions of SDL2 on Linux, patches welcome.
                 case SDL_BUTTON_X1: j = 3; break;
                 case SDL_BUTTON_X2: j = 6; break;
 #endif
@@ -2430,12 +2459,18 @@ int32_t handleevents_pollsdl(void)
                         break;
 
                     case SDL_WINDOWEVENT_MOVED:
+                    {
                         if (windowpos)
                         {
                             windowx = ev.window.data1;
                             windowy = ev.window.data2;
                         }
+
+                        r_displayindex = SDL_GetWindowDisplayIndex(sdl_window);
+                        modeschecked = 0;
+                        videoGetModes();
                         break;
+                    }
                     case SDL_WINDOWEVENT_ENTER:
                         g_mouseInsideWindow = 1;
                         break;
@@ -2443,6 +2478,7 @@ int32_t handleevents_pollsdl(void)
                         g_mouseInsideWindow = 0;
                         break;
                 }
+
                 break;
 
             default:

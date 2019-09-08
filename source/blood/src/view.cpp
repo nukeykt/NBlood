@@ -607,7 +607,7 @@ void fakeMoveDude(spritetype *pSprite)
             if (sector[nSector].lotag >= 612 && sector[nSector].lotag <= 617)
             {
                 short nSector2 = nSector;
-                pushmove_old((int32_t*)&predict.at50, (int32_t*)&predict.at54, (int32_t*)&predict.at58, &nSector2, wd, tz, bz, 0x10001);
+                pushmove_old((int32_t*)&predict.at50, (int32_t*)&predict.at54, (int32_t*)&predict.at58, &nSector2, wd, tz, bz, CLIPMASK0);
                 if (nSector2 != -1)
                     nSector = nSector2;
             }
@@ -670,7 +670,7 @@ void fakeMoveDude(spritetype *pSprite)
     pTempSprite->z = predict.at58;
     pTempSprite->sectnum = predict.at68;
     int ceilZ, ceilHit, floorZ, floorHit;
-    GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, 0x10001);
+    GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, wd, CLIPMASK0);
     GetSpriteExtents(pTempSprite, &top, &bottom);
     if (predict.at73 & 2)
     {
@@ -710,7 +710,7 @@ void fakeMoveDude(spritetype *pSprite)
     {
         int floorZ2 = floorZ;
         int floorHit2 = floorHit;
-        GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, CLIPMASK0);
+        GetZRange(pTempSprite, &ceilZ, &ceilHit, &floorZ, &floorHit, pSprite->clipdist<<2, CLIPMASK0, PARALLAXCLIP_CEILING|PARALLAXCLIP_FLOOR);
         if (bottom <= floorZ && predict.at58-floorZ2 < bz)
         {
             floorZ = floorZ2;
@@ -895,6 +895,15 @@ void viewBackupView(int nPlayer)
     pView->at1c = pPlayer->at53;
 }
 
+void viewCorrectViewOffsets(int nPlayer, vec3_t const *oldpos)
+{
+    PLAYER *pPlayer = &gPlayer[nPlayer];
+    VIEW *pView = &gPrevView[nPlayer];
+    pView->at50 += pPlayer->pSprite->x-oldpos->x;
+    pView->at54 += pPlayer->pSprite->y-oldpos->y;
+    pView->at38 += pPlayer->pSprite->z-oldpos->z;
+}
+
 void viewClearInterpolations(void)
 {
     nInterpolations = 0;
@@ -965,7 +974,7 @@ void RestoreInterpolations(void)
     }
 }
 
-void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat)
+void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat, uint8_t alpha)
 {
     if (nFont < 0 || nFont >= 5 || !pString) return;
     FONT *pFont = &gFont[nFont];
@@ -993,9 +1002,9 @@ void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int 
         {
             if (shadow)
             {
-                rotatesprite((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
+                rotatesprite_fs_alpha((x+1)<<16, (y+1)<<16, 65536, 0, nTile, 127, nPalette, 26|nStat, alpha);
             }
-            rotatesprite(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, 0, 0, xdim-1, ydim-1);
+            rotatesprite_fs_alpha(x<<16, y<<16, 65536, 0, nTile, nShade, nPalette, 26|nStat, alpha);
             x += tilesiz[nTile].x+pFont->space;
         }
         s++;
@@ -1216,10 +1225,36 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     {
         if (powerups[i].remainingDuration)
         {
-            DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
-            DrawStatNumber("%d", powerups[i].remainingDuration / 100, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            int remainingSeconds = powerups[i].remainingDuration / 100;
+            if (remainingSeconds > 5 || ((int)totalclock & 32))
+            {
+                DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
+            }
+
+            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
             y += 20;
         }
+    }
+}
+
+void viewDrawMapTitle(void)
+{
+    if (!gShowMapTitle || gGameMenuMgr.m_bActive)
+        return;
+
+    int seconds = (gLevelTime / kTicsPerSec);
+    int millisecs = (gLevelTime % kTicsPerSec) * 33;
+    if (seconds > 3)
+        return;
+
+    const int noAlphaForSecs = 1;
+    uint8_t alpha = videoGetRenderMode() != REND_CLASSIC || numalphatabs >= 15 ?
+        seconds < noAlphaForSecs ? 0 : clamp(((seconds-noAlphaForSecs)*1000+millisecs)/4, 0, 255)
+        : 0;
+
+    if (alpha != 255)
+    {
+        viewDrawText(1, levelGetTitle(), 160, 50, -128, 0, 1, 1, 0, alpha);
     }
 }
 
@@ -1282,7 +1317,7 @@ void DrawPackItemInStatusBar2(PLAYER *pPlayer, int x, int y, int x2, int y2, int
 
 char gTempStr[128];
 
-void UpdateStatusBar(int arg)
+void UpdateStatusBar(ClockTicks arg)
 {
     PLAYER *pPlayer = gView;
     XSPRITE *pXSprite = pPlayer->pXSprite;
@@ -1355,7 +1390,7 @@ void UpdateStatusBar(int arg)
     if (gViewSize == 2)
     {
         DrawStatSprite(2201, 34, 187, 16, nPalette, 256);
-        if (pXSprite->health >= 16 || (gGameClock&16) || pXSprite->health == 0)
+        if (pXSprite->health >= 16 || ((int)totalclock&16) || pXSprite->health == 0)
         {
             DrawStatNumber("%3d", pXSprite->health>>4, 2190, 8, 183, 0, 0, 256);
         }
@@ -1414,7 +1449,7 @@ void UpdateStatusBar(int arg)
         viewDrawPack(pPlayer, 160, 200-tilesiz[2200].y);
         DrawStatMaskedSprite(2200, 160, 172, 16, nPalette);
         DrawPackItemInStatusBar(pPlayer, 265, 186, 260, 172);
-        if (pXSprite->health >= 16 || (gGameClock&16) || pXSprite->health == 0)
+        if (pXSprite->health >= 16 || ((int)totalclock&16) || pXSprite->health == 0)
         {
             DrawStatNumber("%3d", pXSprite->health>>4, 2190, 86, 183, 0, 0);
         }
@@ -1497,23 +1532,30 @@ void UpdateStatusBar(int arg)
         viewDrawStats(pPlayer, 2, 140);
         viewDrawPowerUps(pPlayer);
     }
+
+    viewDrawMapTitle();
+
     if (gGameOptions.nGameType < 1) return;
 
     if (gGameOptions.nGameType == 3)
     {
         int x = 1, y = 1;
-        if (dword_21EFD0[0] == 0 || (gGameClock & 8))
+        if (dword_21EFD0[0] == 0 || ((int)totalclock & 8))
         {
             viewDrawText(0, "BLUE", x, y, -128, 10, 0, 0, 256);
-            dword_21EFD0[0] = ClipLow(dword_21EFD0[0]-arg, 0);
+            dword_21EFD0[0] = dword_21EFD0[0]-arg;
+            if (dword_21EFD0[0] < 0)
+                dword_21EFD0[0] = 0;
             sprintf(gTempStr, "%-3d", dword_21EFB0[0]);
             viewDrawText(0, gTempStr, x, y+10, -128, 10, 0, 0, 256);
         }
         x = 319;
-        if (dword_21EFD0[1] == 0 || (gGameClock & 8))
+        if (dword_21EFD0[1] == 0 || ((int)totalclock & 8))
         {
             viewDrawText(0, "RED", x, y, -128, 7, 2, 0, 512);
-            dword_21EFD0[1] = ClipLow(dword_21EFD0[1]-arg, 0);
+            dword_21EFD0[1] = dword_21EFD0[1]-arg;
+            if (dword_21EFD0[1] < 0)
+                dword_21EFD0[1] = 0;
             sprintf(gTempStr, "%3d", dword_21EFB0[1]);
             viewDrawText(0, gTempStr, x, y+10, -128, 7, 2, 0, 512);
         }
@@ -1599,7 +1641,7 @@ void viewInit(void)
 
 void viewResizeView(int size)
 {
-    int xdimcorrect = scale(ydim, 4, 3);
+    int xdimcorrect = ClipHigh(scale(ydim, 4, 3), xdim);
     gViewXCenter = xdim-xdim/2;
     gViewYCenter = ydim-ydim/2;
     xscale = divscale16(xdim, 320);
@@ -1665,7 +1707,7 @@ void UpdateFrame(void)
     viewTileSprite(kBackTile, 10, 1, gViewX0-3, gViewY1+1, gViewX1+1, gViewY1+4);
 }
 
-void viewDrawInterface(int arg)
+void viewDrawInterface(ClockTicks arg)
 {
     if (gViewMode == 3/* && gViewSize >= 3*/ && (pcBackground != 0 || videoGetRenderMode() >= REND_POLYMOST))
     {
@@ -1721,7 +1763,7 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         for (int i = 0; i < 16; i++)
         {
             uspritetype *pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
-            int ang = (gFrameClock*2048)/120;
+            int ang = ((int)gFrameClock*2048)/120;
             int nRand1 = dword_172CE0[i][0];
             int nRand2 = dword_172CE0[i][1];
             int nRand3 = dword_172CE0[i][2];
@@ -2121,7 +2163,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                             qloadvoxel(pTSprite->picnum);
                         if ((picanm[nTile].extra&7) == 7)
                         {
-                            pTSprite->ang = (gGameClock<<3)&2047;
+                            pTSprite->ang = ((int)totalclock<<3)&2047;
                         }
                     }
                 }
@@ -2148,7 +2190,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         sectortype *pSector = &sector[pTSprite->sectnum];
         XSECTOR *pXSector;
         int nShade = pTSprite->shade;
-        if (pSector->extra)
+        if (pSector->extra > 0)
         {
             pXSector = &xsector[pSector->extra];
         }
@@ -2516,8 +2558,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
 
 int othercameradist = 1280;
 int cameradist = -1;
-int othercameraclock;
-int cameraclock;
+int othercameraclock, cameraclock;
 
 void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, fix16_t zm)
 {
@@ -2557,8 +2598,8 @@ void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsec
     *pX += mulscale16(vX, othercameradist);
     *pY += mulscale16(vY, othercameradist);
     *pZ += mulscale16(vZ, othercameradist);
-    othercameradist = ClipHigh(othercameradist+((gGameClock-othercameraclock)<<10), 65536);
-    othercameraclock = gGameClock;
+    othercameradist = ClipHigh(othercameradist+(((int)(totalclock-othercameraclock))<<10), 65536);
+    othercameraclock = (int)totalclock;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
     FindSector(*pX, *pY, *pZ, vsectnum);
     pSprite->cstat = bakCstat;
@@ -2603,8 +2644,8 @@ void CalcPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum,
     *pX += mulscale16(vX, cameradist);
     *pY += mulscale16(vY, cameradist);
     *pZ += mulscale16(vZ, cameradist);
-    cameradist = ClipHigh(cameradist+((gGameClock-cameraclock)<<10), 65536);
-    cameraclock = gGameClock;
+    cameradist = ClipHigh(cameradist+(((int)(totalclock-cameraclock))<<10), 65536);
+    cameraclock = (int)totalclock;
     dassert(*vsectnum >= 0 && *vsectnum < kMaxSectors);
     FindSector(*pX, *pY, *pZ, vsectnum);
     pSprite->cstat = bakCstat;
@@ -2819,7 +2860,7 @@ void viewUpdateDelirium(void)
 	if ((powerCount = powerupCheck(gView,28)) != 0)
 	{
 		int tilt1 = 170, tilt2 = 170, pitch = 20;
-        int timer = gFrameClock*4;
+        int timer = (int)gFrameClock*4;
 		if (powerCount < 512)
 		{
 			int powerScale = (powerCount<<16) / 512;
@@ -2923,7 +2964,7 @@ int32_t g_frameRate;
 void viewDrawScreen(void)
 {
     int nPalette = 0;
-    static int lastUpdate;
+    static ClockTicks lastUpdate;
     int defaultHoriz = gCenterHoriz ? 100 : 90;
 
 #ifdef USE_OPENGL
@@ -2931,11 +2972,13 @@ void viewDrawScreen(void)
 #endif
 
     timerUpdate();
-    int delta = ClipLow(gGameClock - lastUpdate, 0);
-    lastUpdate = gGameClock;
+    ClockTicks delta = totalclock - lastUpdate;
+    if (delta < 0)
+        delta = 0;
+    lastUpdate = totalclock;
     if (!gPaused && (!CGameMenuMgr::m_bActive || gGameOptions.nGameType != 0))
     {
-        gInterpolate = divscale16(gGameClock-gNetFifoClock+4, 4);
+        gInterpolate = ((totalclock-gNetFifoClock)+4).toScale16()/4;
     }
     if (gInterpolate < 0 || gInterpolate > 65536)
     {
@@ -3031,7 +3074,7 @@ void viewDrawScreen(void)
             }
             cZ += fix16_to_int(q16horiz*10);
             cameradist = -1;
-            cameraclock = gGameClock;
+            cameraclock = (int)totalclock;
         }
         else
         {
@@ -3083,7 +3126,7 @@ void viewDrawScreen(void)
         }
         else if (v4 && gNetPlayers > 1)
         {
-            int tmp = (gGameClock/240)%(gNetPlayers-1);
+            int tmp = ((int)totalclock/240)%(gNetPlayers-1);
             int i = connecthead;
             while (1)
             {
@@ -3139,31 +3182,27 @@ void viewDrawScreen(void)
             getzsofslope(vcc, vd8, vd4, &vc8, &vc4);
             if (vd0 >= vc4)
             {
-                vd0 = vc4-(8<<4);
+                vd0 = vc4-(gUpperLink[vcc] >= 0 ? 0 : (8<<8));
             }
             if (vd0 <= vc8)
             {
-                vd0 = vc8+(8<<4);
+                vd0 = vc8+(gLowerLink[vcc] >= 0 ? 0 : (8<<8));
             }
             v54 = ClipRange(v54, -200, 200);
-#if 0
 RORHACKOTHER:
             int ror_status[16];
             for (int i = 0; i < 16; i++)
                 ror_status[i] = TestBitString(gotpic, 4080 + i);
-#endif
             yax_preparedrawrooms();
-            DrawMirrors(vd8, vd4, vd0, fix16_from_int(v50), fix16_from_int(v54 + defaultHoriz), gInterpolate);
+            DrawMirrors(vd8, vd4, vd0, fix16_from_int(v50), fix16_from_int(v54 + defaultHoriz), gInterpolate, -1);
             drawrooms(vd8, vd4, vd0, v50, v54 + defaultHoriz, vcc);
             yax_drawrooms(viewProcessSprites, vcc, 0, gInterpolate);
-#if 0
             bool do_ror_hack = false;
             for (int i = 0; i < 16; i++)
-                if (!ror_status[i] && TestBitString(gotpic, 4080 + i))
+                if (ror_status[i] != TestBitString(gotpic, 4080 + i))
                     do_ror_hack = true;
             if (do_ror_hack)
                 goto RORHACKOTHER;
-#endif
             memcpy(otherMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, bakMirrorGotpic, 2);
             viewProcessSprites(vd8, vd4, vd0, v50, gInterpolate);
@@ -3172,7 +3211,7 @@ RORHACKOTHER:
         }
         else
         {
-            othercameraclock = gGameClock;
+            othercameraclock = (int)totalclock;
         }
 
         if (!bDelirium)
@@ -3219,21 +3258,19 @@ RORHACKOTHER:
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
         if (cZ >= vf8)
         {
-            cZ = vf8-(8<<8);
+            cZ = vf8-(gUpperLink[nSectnum] >= 0 ? 0 : (8<<8));
         }
         if (cZ <= vfc)
         {
-            cZ = vfc+(8<<8);
+            cZ = vfc+(gLowerLink[nSectnum] >= 0 ? 0 : (8<<8));
         }
         q16horiz = ClipRange(q16horiz, F16(-200), F16(200));
-#if 0
 RORHACK:
         int ror_status[16];
         for (int i = 0; i < 16; i++)
             ror_status[i] = TestBitString(gotpic, 4080+i);
-#endif
         fix16_t deliriumPitchI = interpolate(fix16_from_int(deliriumPitchO), fix16_from_int(deliriumPitch), gInterpolate);
-        DrawMirrors(cX, cY, cZ, cA, q16horiz + fix16_from_int(defaultHoriz) + deliriumPitchI, gInterpolate);
+        DrawMirrors(cX, cY, cZ, cA, q16horiz + fix16_from_int(defaultHoriz) + deliriumPitchI, gInterpolate, gViewIndex);
         int bakCstat = gView->pSprite->cstat;
         if (gViewPos == 0)
         {
@@ -3251,17 +3288,15 @@ RORHACK:
         renderDrawRoomsQ16(cX, cY, cZ, cA, q16horiz + fix16_from_int(defaultHoriz) + deliriumPitchI, nSectnum);
         yax_drawrooms(viewProcessSprites, nSectnum, 0, gInterpolate);
         viewProcessSprites(cX, cY, cZ, fix16_to_int(cA), gInterpolate);
-#if 0
         bool do_ror_hack = false;
         for (int i = 0; i < 16; i++)
-            if (!ror_status[i] && TestBitString(gotpic, 4080+i))
+            if (ror_status[i] != TestBitString(gotpic, 4080+i))
                 do_ror_hack = true;
         if (do_ror_hack)
         {
             gView->pSprite->cstat = bakCstat;
             goto RORHACK;
         }
-#endif
         sub_5571C(1);
         int nSpriteSortCnt = spritesortcnt;
         renderDrawMasks();

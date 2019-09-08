@@ -759,7 +759,7 @@ GEVENT_TYPE GetEvent(GEVENT* event)
     event->at6.mouse.atc = MouseY;
 
     static int oldbuttons;
-    static int clickTime[5], downTime[5];
+    static ClockTicks clickTime[5], downTime[5];
     int buttons = mouseReadButtons();
 
     int delta = buttons & ~oldbuttons;
@@ -842,9 +842,9 @@ MODAL_RESULT ShowModal(Container* container)
     container->at24 = 1;
     while (container->at24)
     {
-        gFrameTicks = gGameClock - gFrameClock;
+        gFrameTicks = totalclock - gFrameClock;
         gFrameClock += gFrameTicks;
-        UpdateBlinkClock(gFrameTicks);
+        UpdateBlinkClock((int)gFrameTicks);
         G_HandleAsync();
         MUSIC_Update();
         timerUpdate();

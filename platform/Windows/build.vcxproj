@@ -317,6 +317,7 @@
     <ClInclude Include="..\..\source\build\include\buildtypes.h" />
     <ClInclude Include="..\..\source\build\include\cache1d.h" />
     <ClInclude Include="..\..\source\build\include\clip.h" />
+    <ClInclude Include="..\..\source\build\include\clockticks.hpp" />
     <ClInclude Include="..\..\source\build\include\collections.h" />
     <ClInclude Include="..\..\source\build\include\colmatch.h" />
     <ClInclude Include="..\..\source\build\include\common.h" />
@@ -345,8 +346,6 @@
     <ClInclude Include="..\..\source\build\include\mdsprite.h" />
     <ClInclude Include="..\..\source\build\include\miniz.h" />
     <ClInclude Include="..\..\source\build\include\mmulti.h" />
-    <ClInclude Include="..\..\source\build\include\msvc\inttypes.h" />
-    <ClInclude Include="..\..\source\build\include\msvc\stdint.h" />
     <ClInclude Include="..\..\source\build\include\mutex.h" />
     <ClInclude Include="..\..\source\build\include\osd.h" />
     <ClInclude Include="..\..\source\build\include\osxbits.h" />

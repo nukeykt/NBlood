@@ -146,7 +146,8 @@ int32_t r_usenewaspect = 1, newaspect_enable=0;
 uint32_t r_screenxy = 0;
 
 int32_t r_fpgrouscan = 1;
-
+int32_t r_displayindex = 0;
+int32_t r_borderless = 2;
 int32_t globalflags;
 
 float g_videoGamma = DEFAULT_GAMMA;
@@ -208,7 +209,7 @@ int32_t bloodhack = 0;
 int32_t blooddemohack = 0;
 
 // adapted from build.c
-static void getclosestpointonwall_internal(vec2_t const &p, int32_t const dawall, vec2_t *const closest)
+static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
     vec2_t const w  = wall[dawall].pos;
     vec2_t const w2 = wall[wall[dawall].point2].pos;
@@ -952,7 +953,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                 qsort(&bunches[cf][bbeg], numhere, sizeof(int16_t), &yax_cmpbunches);
 
                 if (numhere > 1 && lev != YAX_MAXDRAWS-1)
-                    Bmemset(lgotsector, 0, (numsectors+7)>>3);
+                    Bmemset(lgotsector, 0, sizeof(lgotsector));
 
                 for (bnchcnt=bbeg; bnchcnt < bbeg+numhere; bnchcnt++)
                 {
@@ -2339,7 +2340,7 @@ int32_t animateoffs(int const tilenum, int fakevar)
     if (animnum <= 0)
         return 0;
 
-    int const i = totalclocklock >> (picanm[tilenum].sf & PICANM_ANIMSPEED_MASK);
+    int const i = (int) totalclocklock >> (picanm[tilenum].sf & PICANM_ANIMSPEED_MASK);
     int offs = 0;
 
     switch (picanm[tilenum].sf & PICANM_ANIMTYPE_MASK)
@@ -2648,7 +2649,7 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
                                  int32_t picnum, int32_t shade, int32_t stat,
                                  int32_t xpanning, int32_t ypanning, int32_t x1)
 {
-    int32_t i, j, ox, oy;
+    int32_t i;
 
     if (palookup[pal] != globalpalwritten)
     {
@@ -2683,21 +2684,17 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     }
     else
     {
-        j = sec->wallptr;
-        ox = wall[wall[j].point2].x - wall[j].x;
-        oy = wall[wall[j].point2].y - wall[j].y;
-        i = nsqrtasm(uhypsq(ox,oy)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
-        globalx1 = mulscale10(dmulscale10(ox,singlobalang,-oy,cosglobalang),i);
-        globaly1 = mulscale10(dmulscale10(ox,cosglobalang,oy,singlobalang),i);
+        vec2_t const xy = { wall[wall[sec->wallptr].point2].x - wall[sec->wallptr].x,
+                            wall[wall[sec->wallptr].point2].y - wall[sec->wallptr].y };
+        i = nsqrtasm(uhypsq(xy.x,xy.y)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
+        int const wcos = mulscale6(xy.x, i), wsin = mulscale6(xy.y, i);
+        globalx1 = dmulscale14(wcos,singlobalang,-wsin,cosglobalang);
+        globaly1 = dmulscale14(wcos,cosglobalang,wsin,singlobalang);
         globalx2 = -globalx1;
         globaly2 = -globaly1;
 
-        ox = ((wall[j].x-globalposx)<<6); oy = ((wall[j].y-globalposy)<<6);
-        i = dmulscale14(oy,cosglobalang,-ox,singlobalang);
-        j = dmulscale14(ox,cosglobalang,oy,singlobalang);
-        ox = i; oy = j;
-        globalxpanning = (coord_t)globalx1*ox - (coord_t)globaly1*oy;
-        globalypanning = (coord_t)globaly2*ox + (coord_t)globalx2*oy;
+        globalxpanning = (coord_t)((globalposx - wall[sec->wallptr].x)<<6) * wcos + (coord_t)((globalposy - wall[sec->wallptr].y)<<6) * wsin;
+        globalypanning = (coord_t)((globalposy - wall[sec->wallptr].y)<<6) * wcos - (coord_t)((globalposx - wall[sec->wallptr].x)<<6) * wsin;
     }
     globalx2 = mulscale16(globalx2,viewingrangerecip);
     globaly1 = mulscale16(globaly1,viewingrangerecip);
@@ -7643,7 +7640,7 @@ static int32_t engineLoadTables(void)
             radarang[1279-i] = -radarang[i];
 
         for (i=0; i<5120; i++)
-            qradarang[i] = fix16_from_float(atanf(((float)(5120-i)-0.5f) * (1.f/1024.f)) * (-64.f * (1.f/BANG2RAD)));
+            qradarang[i] = fix16_from_float(atanf(((float)(5120-i)-0.5f) * (1.f/1280.f)) * (-64.f * (1.f/BANG2RAD)));
         for (i=0; i<5120; i++)
             qradarang[10239-i] = -qradarang[i];
 
@@ -8490,7 +8487,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
     if ((xyaspect != oxyaspect) || (xdimen != oxdimen) || (viewingrange != oviewingrange))
         dosetaspect();
 
-    Bmemset(gotsector, 0, ((numsectors+7)>>3));
+    Bmemset(gotsector, 0, sizeof(gotsector));
 
     if (videoGetRenderMode() != REND_CLASSIC
 #ifdef YAX_ENABLE
@@ -8852,6 +8849,7 @@ void renderDrawMasks(void)
     int32_t i = spritesortcnt-1;
     int32_t numSprites = spritesortcnt;
 
+#ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
         spritesortcnt = 0;
@@ -8869,6 +8867,7 @@ void renderDrawMasks(void)
             }
         }
     } else
+#endif
     {
         for (; i >= 0; --i)
         {
@@ -8994,7 +8993,7 @@ killsprite:
     {
         glDisable(GL_BLEND);
         glEnable(GL_ALPHA_TEST);
-        polymost_setClamp(true);
+        polymost_setClamp(1+2);
 
         for (i = spritesortcnt; i < numSprites; ++i)
         {
@@ -9007,7 +9006,7 @@ killsprite:
             }
         }
 
-        polymost_setClamp(false);
+        polymost_setClamp(0);
         int32_t numMaskWalls = maskwallcnt;
         maskwallcnt = 0;
         for (i = 0; i < numMaskWalls; i++)
@@ -9074,7 +9073,7 @@ killsprite:
 
 #ifdef USE_OPENGL
         if (videoGetRenderMode() == REND_POLYMOST)
-            polymost_setClamp(true);
+            polymost_setClamp(1+2);
 #endif
 
         i = spritesortcnt;
@@ -9163,14 +9162,14 @@ killsprite:
         debugmask_add(maskwall[maskwallcnt], thewall[maskwall[maskwallcnt]]);
 #ifdef USE_OPENGL
         if (videoGetRenderMode() == REND_POLYMOST)
-            polymost_setClamp(false);
+            polymost_setClamp(0);
 #endif
         renderDrawMaskedWall(maskwallcnt);
     }
 
 #ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
-        polymost_setClamp(true);
+        polymost_setClamp(1+2);
 #endif
     while (spritesortcnt)
     {
@@ -9186,7 +9185,7 @@ killsprite:
     if (videoGetRenderMode() == REND_POLYMOST)
     {
         glDepthMask(GL_TRUE);
-        polymost_setClamp(false);
+        polymost_setClamp(0);
     }
 #endif
 
@@ -9243,7 +9242,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
 
     beforedrawrooms = 0;
 
-    Bmemset(gotsector, 0, (numsectors+7)>>3);
+    Bmemset(gotsector, 0, sizeof(gotsector));
 
     vec2_t const c1 = { (windowxy1.x<<12), (windowxy1.y<<12) };
     vec2_t const c2 = { ((windowxy2.x+1)<<12)-1, ((windowxy2.y+1)<<12)-1 };
@@ -9316,12 +9315,17 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
 
             //Collect floor sprites to draw
             for (i=headspritesect[s]; i>=0; i=nextspritesect[i])
-                if ((sprite[i].cstat&48) == 32)
+            {
+                if (sprite[i].cstat & 32768)
+                    continue;
+
+                if ((sprite[i].cstat & 48) == 32)
                 {
-                    if ((sprite[i].cstat&(64+8)) == (64+8)) continue;
+                    if ((sprite[i].cstat & (64 + 8)) == (64 + 8))
+                        continue;
                     tsprite[sortnum++].owner = i;
                 }
-
+            }
             gotsector[s>>3] |= pow2char[s&7];
 
             globalorientation = (int32_t)sec->floorstat;
@@ -10407,7 +10411,6 @@ static void videoAllocateBuffers(void)
     if (videoGetRenderMode() == REND_CLASSIC)
     {
 # ifdef USE_OPENGL
-        extern char nogl;
         if (!nogl)
         {
             glsurface_initialize({ xdim, ydim });
@@ -10476,8 +10479,6 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     int32_t j;
 
 #ifdef USE_OPENGL
-    extern char nogl;
-
     if (nogl) dabpp = 8;
 #endif
     daupscaledxdim = max(320, daupscaledxdim);
@@ -10986,7 +10987,7 @@ int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, in
 
     Bmemset(&pendingvec, 0, sizeof(vec3_t));  // compiler-happy
 #endif
-    Bmemset(sectbitmap, 0, (numsectors+7)>>3);
+    Bmemset(sectbitmap, 0, sizeof(sectbitmap));
 #ifdef YAX_ENABLE
 restart_grand:
 #endif
@@ -11512,21 +11513,21 @@ static inline bool inside_z_p(int32_t const x, int32_t const y, int32_t const z,
     return (z >= cz && z <= fz && inside_p(x, y, sectnum));
 }
 
-int32_t getwalldist(vec2_t const &in, int const wallnum)
+int32_t getwalldist(vec2_t const in, int const wallnum)
 {
     vec2_t closest;
     getclosestpointonwall_internal(in, wallnum, &closest);
     return klabs(closest.x - in.x) + klabs(closest.y - in.y);
 }
 
-int32_t getwalldist(vec2_t const &in, int const wallnum, vec2_t * const out)
+int32_t getwalldist(vec2_t const in, int const wallnum, vec2_t * const out)
 {
     getclosestpointonwall_internal(in, wallnum, out);
     return klabs(out->x - in.x) + klabs(out->y - in.y);
 }
 
 
-int32_t getsectordist(vec2_t const &in, int const sectnum, vec2_t * const out /*= nullptr*/)
+int32_t getsectordist(vec2_t const in, int const sectnum, vec2_t * const out /*= nullptr*/)
 {
     if (inside_p(in.x, in.y, sectnum))
     {

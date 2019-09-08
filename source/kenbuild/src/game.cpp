@@ -747,7 +747,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
                 domovethings();
             }
         }
-        i = (totalclock-gotlastpacketclock)*(65536/(TIMERINTSPERSECOND/MOVESPERSECOND));
+        i = ((int32_t) totalclock-gotlastpacketclock)*(65536/(TIMERINTSPERSECOND/MOVESPERSECOND));
 
         drawscreen(screenpeek,i);
     }
@@ -2360,6 +2360,8 @@ void tagcode(void)
         }
     }
 }
+
+static FORCE_INLINE int32_t sqr(int32_t a) { return a * a; }
 
 void statuslistcode(void)
 {
@@ -3984,8 +3986,8 @@ void drawscreen(short snum, int dasmoothratio)
                         ptr4 = palookup[18];
                         ptr4 += (min(klabs(y2-l)>>2,31)<<8);
 
-                        j = sintable[((y2+totalclock)<<6)&2047];
-                        j += sintable[((y2-totalclock)<<7)&2047];
+                        j = sintable[((y2+(int32_t) totalclock)<<6)&2047];
+                        j += sintable[((y2-(int32_t) totalclock)<<7)&2047];
                         j >>= 14;
 
                         //ptr2 += j;
@@ -4261,7 +4263,7 @@ void drawscreen(short snum, int dasmoothratio)
 
         Bsprintf(getmessage,"Video mode: %d x %d",xdim,ydim);
         getmessageleng = Bstrlen(getmessage);
-        getmessagetimeoff = totalclock+120*5;
+        getmessagetimeoff = (int32_t) totalclock+120*5;
     }
     if (keystatus[0x57])  //F11 - brightness
     {
@@ -4327,7 +4329,7 @@ void movethings(void)
 {
     int i;
 
-    gotlastpacketclock = totalclock;
+    gotlastpacketclock = (int32_t) totalclock;
     for (i=connecthead; i>=0; i=connectpoint2[i])
     {
         copybufbyte(&ffsync[i],&baksync[movefifoend[i]][i],sizeof(input));
@@ -4535,12 +4537,12 @@ void domovethings(void)
 
     if (cameradist >= 0)
     {
-        cameradist = min(cameradist+((totalclock-cameraclock)<<10),65536);
+        cameradist = min(cameradist+(((int32_t) totalclock-cameraclock)<<10),65536);
         if (keystatus[0x52])       //0
-            cameraang -= ((totalclock-cameraclock)<<(2+(keystatus[0x2a]|keystatus[0x36])));
+            cameraang -= (((int32_t) totalclock-cameraclock)<<(2+(keystatus[0x2a]|keystatus[0x36])));
         if (keystatus[0x53])       //.
-            cameraang += ((totalclock-cameraclock)<<(2+(keystatus[0x2a]|keystatus[0x36])));
-        cameraclock = totalclock;
+            cameraang += (((int32_t) totalclock-cameraclock)<<(2+(keystatus[0x2a]|keystatus[0x36])));
+        cameraclock = (int32_t) totalclock;
     }
 
     for (i=connecthead; i>=0; i=connectpoint2[i])
@@ -4816,7 +4818,7 @@ void playback(void)
             movethings(); domovethings();
             i++;
         }
-        drawscreen(screenpeek,(totalclock-gotlastpacketclock)*(65536/(TIMERINTSPERSECOND/MOVESPERSECOND)));
+        drawscreen(screenpeek,((int32_t) totalclock-gotlastpacketclock)*(65536/(TIMERINTSPERSECOND/MOVESPERSECOND)));
 
         if (keystatus[keys[15]])
         {
@@ -5273,7 +5275,7 @@ void checkmasterslaveswitch(void)
             else
                 Bsprintf(getmessage,"Player %d (Slave)",j);
             getmessageleng = Bstrlen(getmessage);
-            getmessagetimeoff = totalclock+120;
+            getmessagetimeoff = (int32_t) totalclock+120;
 
             return;
         }
@@ -5487,7 +5489,7 @@ int loadgame(void)
 
     Bstrcpy(getmessage,"Game loaded.");
     getmessageleng = Bstrlen(getmessage);
-    getmessagetimeoff = totalclock+360+(getmessageleng<<4);
+    getmessagetimeoff = (int32_t) totalclock+360+(getmessageleng<<4);
     return 0;
 }
 
@@ -5661,7 +5663,7 @@ int savegame(void)
 
     Bstrcpy(getmessage,"Game saved.");
     getmessageleng = Bstrlen(getmessage);
-    getmessagetimeoff = totalclock+360+(getmessageleng<<4);
+    getmessagetimeoff = (int32_t) totalclock+360+(getmessageleng<<4);
     return 0;
 }
 
@@ -5727,7 +5729,7 @@ void faketimerhandler(void)
                 j = k;
             }
 
-        gotlastpacketclock = totalclock;
+        gotlastpacketclock = (int32_t) totalclock;
         return;
     }
 
@@ -5868,7 +5870,7 @@ void getpackets(void)
         case 2:
             getmessageleng = packbufleng-1;
             for (j=getmessageleng-1; j>=0; j--) getmessage[j] = packbuf[j+1];
-            getmessagetimeoff = totalclock+360+(getmessageleng<<4);
+            getmessagetimeoff = (int32_t) totalclock+360+(getmessageleng<<4);
             wsay("getstuff.wav",8192L,63L,63L); //Added 12/2004
             break;
         case 3:

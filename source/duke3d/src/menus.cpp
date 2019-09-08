@@ -140,7 +140,7 @@ static void Menu_DrawTopBarCaption(const char *caption, const vec2_t origin)
 
 static FORCE_INLINE int32_t Menu_CursorShade(void)
 {
-    return VM_OnEventWithReturn(EVENT_MENUCURSORSHADE, -1, myconnectindex, 4-(sintable[(totalclock<<4)&2047]>>11));
+    return VM_OnEventWithReturn(EVENT_MENUCURSORSHADE, -1, myconnectindex, 4-(sintable[((int32_t) totalclock<<4)&2047]>>11));
 }
 static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnum, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
@@ -149,12 +149,12 @@ static void Menu_DrawCursorCommon(int32_t x, int32_t y, int32_t z, int32_t picnu
 static void Menu_DrawCursorLeft(int32_t x, int32_t y, int32_t z)
 {
     if (FURY) return;
-    Menu_DrawCursorCommon(x, y, z, VM_OnEventWithReturn(EVENT_MENUCURSORLEFT, -1, myconnectindex, SPINNINGNUKEICON+((totalclock>>3)%7)));
+    Menu_DrawCursorCommon(x, y, z, VM_OnEventWithReturn(EVENT_MENUCURSORLEFT, -1, myconnectindex, SPINNINGNUKEICON+(((int32_t) totalclock>>3)%7)));
 }
 static void Menu_DrawCursorRight(int32_t x, int32_t y, int32_t z)
 {
     if (FURY) return;
-    Menu_DrawCursorCommon(x, y, z, VM_OnEventWithReturn(EVENT_MENUCURSORRIGHT, -1, myconnectindex, SPINNINGNUKEICON+6-((6+(totalclock>>3))%7)));
+    Menu_DrawCursorCommon(x, y, z, VM_OnEventWithReturn(EVENT_MENUCURSORRIGHT, -1, myconnectindex, SPINNINGNUKEICON+6-((6+((int32_t) totalclock>>3))%7)));
 }
 static void Menu_DrawCursorTextTile(int32_t x, int32_t y, int32_t h, int32_t picnum, vec2_16_t const & siz, int32_t ydim_upper = 0, int32_t ydim_lower = ydim-1)
 {
@@ -171,7 +171,7 @@ static void Menu_DrawCursorText(int32_t x, int32_t y, int32_t h, int32_t ydim_up
         return;
     }
 
-    Menu_DrawCursorTextTile(x, y, h, SPINNINGNUKEICON+((totalclock>>3)%7), siz, ydim_upper, ydim_lower);
+    Menu_DrawCursorTextTile(x, y, h, SPINNINGNUKEICON+(((int32_t) totalclock>>3)%7), siz, ydim_upper, ydim_lower);
 }
 
 
@@ -307,8 +307,8 @@ MAKE_SPACER( Space8, 8<<16 ); // colcorr, redslide
 
 static MenuEntry_t ME_Space2_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space2, Spacer );
 static MenuEntry_t ME_Space4_Bluefont = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF_Null, &MEO_Space4, Spacer );
-#ifndef EDUKE32_SIMPLE_MENU
 static MenuEntry_t ME_Space4_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space4, Spacer );
+#ifndef EDUKE32_SIMPLE_MENU
 static MenuEntry_t ME_Space8_Bluefont = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF_Null, &MEO_Space8, Spacer );
 #endif
 static MenuEntry_t ME_Space6_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space6, Spacer );
@@ -425,7 +425,7 @@ static MenuEntry_t ME_GAMESETUP_AIM_AUTO = MAKE_MENUENTRY( "Auto aim:", &MF_Redf
 static MenuOption_t MEO_GAMESETUP_ALWAYS_RUN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &ud.auto_run);
 static MenuEntry_t ME_GAMESETUP_ALWAYS_RUN = MAKE_MENUENTRY( "Always run:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_ALWAYS_RUN, Option );
 
-static char const *MEOSN_GAMESETUP_WEAPSWITCH_PICKUP[] = { "Never", "If new", "By rating", };
+static char const *MEOSN_GAMESETUP_WEAPSWITCH_PICKUP[] = { "Never", "If new", /*"If favored",*/ };
 static MenuOptionSet_t MEOS_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUOPTIONSET( MEOSN_GAMESETUP_WEAPSWITCH_PICKUP, NULL, 0x2 );
 static MenuOption_t MEO_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUOPTION( &MF_Redfont, &MEOS_GAMESETUP_WEAPSWITCH_PICKUP, NULL );
 static MenuEntry_t ME_GAMESETUP_WEAPSWITCH_PICKUP = MAKE_MENUENTRY( "Equip pickups:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_WEAPSWITCH_PICKUP, Option );
@@ -492,7 +492,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHS
 MAKE_MENU_TOP_ENTRYLINK("Cheats", MEF_OptionsMenu, OPTIONS_CHEATS, MENU_CHEATS);
 #endif
 
-static int32_t newresolution, newrendermode, newfullscreen, newvsync;
+static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless;
 
 enum resflags_t {
     RES_FS  = 0x1,
@@ -530,15 +530,22 @@ static MenuOption_t MEO_VIDEOSETUP_RENDERER = MAKE_MENUOPTION( &MF_Redfont, &MEO
 static MenuEntry_t ME_VIDEOSETUP_RENDERER = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER, Option );
 #endif
 
-static MenuOption_t MEO_VIDEOSETUP_FULLSCREEN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &newfullscreen );
-static MenuEntry_t ME_VIDEOSETUP_FULLSCREEN = MAKE_MENUENTRY( "Fullscreen:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FULLSCREEN, Option );
+static MenuOption_t MEO_VIDEOSETUP_FULLSCREEN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &newfullscreen );
+static MenuEntry_t ME_VIDEOSETUP_FULLSCREEN = MAKE_MENUENTRY( "Windowed:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FULLSCREEN, Option );
 
+static char const *MEOSN_VIDEOSETUP_BORDERLESS [] = { "No", "Yes", "Auto", };
+static int32_t MEOSV_VIDEOSETUP_BORDERLESS [] = { 0, 1, 2, };
+static MenuOptionSet_t MEOS_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_BORDERLESS, MEOSV_VIDEOSETUP_BORDERLESS, 0x2);
+static MenuOption_t MEO_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_BORDERLESS, &newborderless);
+static MenuEntry_t ME_VIDEOSETUP_BORDERLESS = MAKE_MENUENTRY("Borderless:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_BORDERLESS, Option);
 
 static char const *MEOSN_VIDEOSETUP_VSYNC [] = { "Adaptive", "Off", "On", };
 static int32_t MEOSV_VIDEOSETUP_VSYNC [] = { -1, 0, 1, };
 static MenuOptionSet_t MEOS_VIDEOSETUP_VSYNC = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_VSYNC, MEOSV_VIDEOSETUP_VSYNC, 0x2);
 static MenuOption_t MEO_VIDEOSETUP_VSYNC = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_VSYNC, &newvsync);
 static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_VSYNC, Option);
+
+
 
 static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "None", "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
 static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { 0, 30, 60, 75, 100, 120, 144, 165, 240 };
@@ -633,7 +640,7 @@ static MenuOption_t MEO_SCREENSETUP_STATUSBARONTOP = MAKE_MENUOPTION(&MF_Redfont
 static MenuEntry_t ME_SCREENSETUP_STATUSBARONTOP = MAKE_MENUENTRY( "Status bar:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SCREENSETUP_STATUSBARONTOP, Option );
 #endif
 
-static MenuRangeInt32_t MEO_SCREENSETUP_SBARSIZE = MAKE_MENURANGE( &ud.statusbarscale, &MF_Redfont, 36, 100, 0, 17, 2 );
+static MenuRangeInt32_t MEO_SCREENSETUP_SBARSIZE = MAKE_MENURANGE( &ud.statusbarscale, &MF_Redfont, 50, 100, 0, 10, 2 );
 static MenuEntry_t ME_SCREENSETUP_SBARSIZE = MAKE_MENUENTRY( s_Scale, &MF_Redfont, &MEF_BigOptions_Apply, &MEO_SCREENSETUP_SBARSIZE, RangeInt32 );
 
 
@@ -739,10 +746,11 @@ static MenuEntry_t *MEL_VIDEOSETUP[] = {
     &ME_VIDEOSETUP_RENDERER,
 #endif
     &ME_VIDEOSETUP_FULLSCREEN,
+    &ME_VIDEOSETUP_BORDERLESS,
     &ME_VIDEOSETUP_VSYNC,
     &ME_VIDEOSETUP_FRAMELIMIT,
     &ME_VIDEOSETUP_FRAMELIMITOFFSET,
-    &ME_Space6_Redfont,
+    &ME_Space4_Redfont,
     &ME_VIDEOSETUP_APPLY,
 };
 static MenuEntry_t *MEL_DISPLAYSETUP[] = {
@@ -1960,34 +1968,6 @@ void Menu_Init(void)
     }
     M_JOYSTICKAXES.numEntries = joystick.numAxes;
 
-    // prepare video setup
-    for (i = 0; i < validmodecnt; ++i)
-    {
-        for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
-        {
-            if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
-            {
-                resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
-                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
-                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
-                if (validmode[i].bpp > resolution[j].bppmax)
-                    resolution[j].bppmax = validmode[i].bpp;
-                break;
-            }
-        }
-
-        if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
-        {
-            resolution[j].xdim = validmode[i].xdim;
-            resolution[j].ydim = validmode[i].ydim;
-            resolution[j].bppmax = validmode[i].bpp;
-            resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
-            Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
-            MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
-            ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
-        }
-    }
-
     // prepare sound setup
 #ifndef EDUKE32_STANDALONE
     if (WW2GI)
@@ -2164,6 +2144,39 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_VIDEOSETUP:
     {
+        Bmemset(resolution, 0, sizeof(resolution));
+        MEOS_VIDEOSETUP_RESOLUTION.numOptions = 0;
+
+        // prepare video setup
+        for (int i = 0; i < validmodecnt; ++i)
+        {
+            int j;
+
+            for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
+            {
+                if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
+                {
+                    resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
+                    Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+                    MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+                    if (validmode[i].bpp > resolution[j].bppmax)
+                        resolution[j].bppmax = validmode[i].bpp;
+                    break;
+                }
+            }
+
+            if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
+            {
+                resolution[j].xdim = validmode[i].xdim;
+                resolution[j].ydim = validmode[i].ydim;
+                resolution[j].bppmax = validmode[i].bpp;
+                resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
+                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+                ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
+            }
+        }
+
         const int32_t nr = newresolution;
 
         // don't allow setting fullscreen mode if it's not supported by the resolution
@@ -2172,10 +2185,10 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
              (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
               videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
-              && vsync == newvsync
+              && vsync == newvsync && r_borderless == newborderless
              )
              || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
-
+        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, !r_maxfps);
         break;
     }
@@ -2373,12 +2386,12 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         {
             rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((28+l)<<16), 65536L,0,INGAMEDUKETHREEDEE,0,0,10);
             if (PLUTOPAK)   // JBF 20030804
-                rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+100)<<16), origin.y + (36<<16), 65536L,0,PLUTOPAKSPRITE+2,(sintable[(totalclock<<4)&2047]>>11),0,2+8);
+                rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+100)<<16), origin.y + (36<<16), 65536L,0,PLUTOPAKSPRITE+2,(sintable[((int32_t) totalclock<<4)&2047]>>11),0,2+8);
         }
         break;
 
     case MENU_PLAYER:
-        rotatesprite_fs(origin.x + (260<<16), origin.y + ((24+(tilesiz[APLAYER].y>>1))<<16), 49152L,0,1441-((((4-(totalclock>>4)))&3)*5),0,entry == &ME_PLAYER_TEAM ? G_GetTeamPalette(ud.team) : ud.color,10);
+        rotatesprite_fs(origin.x + (260<<16), origin.y + ((24+(tilesiz[APLAYER].y>>1))<<16), 49152L,0,1441-((((4-((int32_t) totalclock>>4)))&3)*5),0,entry == &ME_PLAYER_TEAM ? G_GetTeamPalette(ud.team) : ud.color,10);
         break;
 
     case MENU_MACROS:
@@ -2430,14 +2443,19 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         break;
 
     case MENU_MOUSEADVANCED:
-    {
         for (auto & i : MEL_INTERNAL_MOUSEADVANCED_DAXES)
             if (entry == i)
             {
                 mgametextcenter(origin.x, origin.y + (162<<16), "Digital axes are not for mouse look\n"
                                                                 "or for aiming up and down");
+                break;
             }
-    }
+        break;
+
+    case MENU_VIDEOSETUP:
+        if (entry == &ME_VIDEOSETUP_VSYNC && *MEO_VIDEOSETUP_VSYNC.data)
+            mgametextcenter(origin.x, origin.y + (175<<16), "Try VSync in your graphics driver's\n"
+                                                            "control panel before this option.");
         break;
 
     case MENU_RESETPLAYER:
@@ -3268,15 +3286,21 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         resolution_t p = { xres, yres, fullscreen, bpp, 0 };
         int32_t prend = videoGetRenderMode();
         int32_t pvsync = vsync;
+        int pborderless = r_borderless;
 
         resolution_t n = { resolution[newresolution].xdim, resolution[newresolution].ydim,
                            (resolution[newresolution].flags & RES_FS) ? newfullscreen : 0,
                            (newrendermode == REND_CLASSIC) ? 8 : resolution[newresolution].bppmax, 0 };
-        int32_t nrend = newrendermode;
-        int32_t nvsync = newvsync;
+
+        if (r_borderless != newborderless)
+            videoResetMode();
+
+        r_borderless = newborderless;
 
         if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
         {
+            r_borderless = pborderless;
+
             if (videoSetGameMode(p.flags, p.xdim, p.ydim, p.bppmax, upscalefactor) < 0)
             {
                 videoSetRenderMode(prend);
@@ -3288,12 +3312,15 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
                 vsync = videoSetVsync(pvsync);
             }
         }
-        else onvideomodechange(n.bppmax > 8);
+        else
+        {
+            videoSetRenderMode(newrendermode);
+            vsync = videoSetVsync(newvsync);
+            onvideomodechange(n.bppmax > 8);
+        }
 
         g_restorePalette = -1;
         G_UpdateScreenArea();
-        videoSetRenderMode(nrend);
-        vsync = videoSetVsync(nvsync);
         ud.setup.fullscreen = fullscreen;
         ud.setup.xdim = xres;
         ud.setup.ydim = yres;
@@ -4123,19 +4150,19 @@ MenuAnimation_t m_animation;
 
 int32_t Menu_Anim_SinOutRight(MenuAnimation_t *animdata)
 {
-    return sintable[divscale10(totalclock - animdata->start, animdata->length) + 512] - 16384;
+    return sintable[divscale10((int32_t) totalclock - animdata->start, animdata->length) + 512] - 16384;
 }
 int32_t Menu_Anim_SinInRight(MenuAnimation_t *animdata)
 {
-    return sintable[divscale10(totalclock - animdata->start, animdata->length) + 512] + 16384;
+    return sintable[divscale10((int32_t) totalclock - animdata->start, animdata->length) + 512] + 16384;
 }
 int32_t Menu_Anim_SinOutLeft(MenuAnimation_t *animdata)
 {
-    return -sintable[divscale10(totalclock - animdata->start, animdata->length) + 512] + 16384;
+    return -sintable[divscale10((int32_t) totalclock - animdata->start, animdata->length) + 512] + 16384;
 }
 int32_t Menu_Anim_SinInLeft(MenuAnimation_t *animdata)
 {
-    return -sintable[divscale10(totalclock - animdata->start, animdata->length) + 512] - 16384;
+    return -sintable[divscale10((int32_t) totalclock - animdata->start, animdata->length) + 512] - 16384;
 }
 
 void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
@@ -4158,7 +4185,7 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
             {
                 m_animation.out    = Menu_Anim_SinOutRight;
                 m_animation.in     = Menu_Anim_SinInRight;
-                m_animation.start  = totalclock;
+                m_animation.start  = (int32_t) totalclock;
                 m_animation.length = 30;
 
                 m_animation.previous = previousMenu;
@@ -4175,7 +4202,7 @@ void Menu_AnimateChange(int32_t cm, MenuAnimationType_t animtype)
             {
                 m_animation.out    = Menu_Anim_SinOutLeft;
                 m_animation.in     = Menu_Anim_SinInLeft;
-                m_animation.start  = totalclock;
+                m_animation.start  = (int32_t) totalclock;
                 m_animation.length = 30;
 
                 m_animation.previous = previousMenu;
@@ -4619,7 +4646,7 @@ void Menu_Close(uint8_t playerID)
         {
             ready2send = 1;
             totalclock = ototalclock;
-            CAMERACLOCK = totalclock;
+            CAMERACLOCK = (int32_t) totalclock;
             CAMERADIST = 65536;
             m_animation.start = 0;
             m_animation.length = 0;
@@ -4627,7 +4654,7 @@ void Menu_Close(uint8_t playerID)
             // Reset next-viewscreen-redraw counter.
             // XXX: are there any other cases like that in need of handling?
             if (g_curViewscreen >= 0)
-                actor[g_curViewscreen].t_data[0] = totalclock;
+                actor[g_curViewscreen].t_data[0] = (int32_t) totalclock;
         }
 
         walock[TILE_SAVESHOT] = 1;
@@ -4673,7 +4700,7 @@ enum MenuTextFlags_t
 static void Menu_GetFmt(const MenuFont_t *font, uint8_t const status, int32_t *s, int32_t *z)
 {
     if (status & MT_Selected)
-        *s = VM_OnEventWithReturn(EVENT_MENUSHADESELECTED, -1, myconnectindex, sintable[(totalclock<<5)&2047]>>12);
+        *s = VM_OnEventWithReturn(EVENT_MENUSHADESELECTED, -1, myconnectindex, sintable[((int32_t) totalclock<<5)&2047]>>12);
     else
         *s = font->shade_deselected;
     // sum shade values
@@ -5656,7 +5683,7 @@ static void Menu_Run_MouseReturn(Menu_t *cm, const vec2_t origin)
     uint32_t const posx = tilesiz[SELECTDIR].y * SELECTDIR_z;
 
     rotatesprite_(origin.x + posx, 0, SELECTDIR_z, 512, SELECTDIR,
-                  Menu_RunInput_MouseReturn_status ? 4 - (sintable[(totalclock << 4) & 2047] >> 11) : 6, 0,
+                  Menu_RunInput_MouseReturn_status ? 4 - (sintable[((int32_t) totalclock << 4) & 2047] >> 11) : 6, 0,
                   2 | 8 | 16 | RS_ALIGN_L, MOUSEALPHA, 0, xdim_from_320_16(origin.x + x_widescreen_left()), 0,
                   xdim_from_320_16(origin.x + x_widescreen_left() + ((posx>>17)<<16)), ydim - 1);
 }
@@ -7249,7 +7276,7 @@ void M_DisplayMenus(void)
         if (MOUSEACTIVECONDITIONAL(mouseAdvanceClickState()) || m_mousepos.x != m_prevmousepos.x || m_mousepos.y != m_prevmousepos.y)
         {
             m_prevmousepos = m_mousepos;
-            m_mouselastactivity = totalclock;
+            m_mouselastactivity = (int32_t) totalclock;
         }
 #if !defined EDUKE32_TOUCH_DEVICES
         else
@@ -7316,7 +7343,7 @@ void M_DisplayMenus(void)
     if ((g_player[myconnectindex].ps->gm&MODE_MENU) != MODE_MENU)
     {
         G_UpdateScreenArea();
-        CAMERACLOCK = totalclock;
+        CAMERACLOCK = (int32_t) totalclock;
         CAMERADIST = 65536;
     }
 }

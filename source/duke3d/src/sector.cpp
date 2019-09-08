@@ -445,7 +445,7 @@ void G_AnimateCamSprite(int smoothRatio)
 #endif
         }
 
-        T1(spriteNum) = totalclock;
+        T1(spriteNum) = (int32_t) totalclock;
     }
 }
 
@@ -1018,9 +1018,13 @@ void G_OperateRespawns(int lotag)
         {
             if (!ud.monsters_off || !A_CheckEnemyTile(pSprite->hitag))
             {
-                int const j = A_Spawn(spriteNum, TRANSPORTERSTAR);
-                sprite[j].z -= ZOFFSET5;
-
+#ifndef EDUKE32_STANDALONE
+                if (!FURY)
+                {
+                    int const j = A_Spawn(spriteNum, TRANSPORTERSTAR);
+                    sprite[j].z -= ZOFFSET5;
+                }
+#endif
                 // Just a way to killit (see G_MoveFX(): RESPAWN__STATIC)
                 pSprite->extra = 66-12;
             }
@@ -1206,10 +1210,10 @@ int P_ActivateSwitch(int playerNum, int wallOrSprite, int switchType)
 
     if (switchType == SWITCH_SPRITE) // A wall sprite
     {
-        if (actor[wallOrSprite].lasttransport == (totalclock & UINT8_MAX))
+        if (actor[wallOrSprite].lasttransport == ((int32_t) totalclock & UINT8_MAX))
             return 0;
 
-        actor[wallOrSprite].lasttransport = (totalclock & UINT8_MAX);
+        actor[wallOrSprite].lasttransport = ((int32_t) totalclock & UINT8_MAX);
 
         if (sprite[wallOrSprite].lotag == 0)
             return 0;
@@ -1498,7 +1502,7 @@ static void G_BreakWall(int tileNum, int spriteNum, int wallNum)
 #endif
 }
 
-void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
+void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t &vPos, int weaponNum)
 {
     int16_t sectNum = -1;
     walltype *pWall = &wall[wallNum];
@@ -1552,7 +1556,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
     }
 
     if ((((pWall->cstat & 16) || pWall->overpicnum == BIGFORCE) && pWall->nextsector >= 0) &&
-        (sector[pWall->nextsector].floorz > vPos->z) &&
+        (sector[pWall->nextsector].floorz > vPos.z) &&
         (sector[pWall->nextsector].floorz != sector[pWall->nextsector].ceilingz))
     {
         int const switchPic = G_GetForcefieldPicnum(wallNum);
@@ -1577,7 +1581,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
                 fallthrough__;
             case BIGFORCE__STATIC:
             {
-                updatesector(vPos->x, vPos->y, &sectNum);
+                updatesector(vPos.x, vPos.y, &sectNum);
                 if (sectNum < 0)
                     return;
 
@@ -1592,7 +1596,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
                     yRepeat = 16 + sprite[spriteNum].yrepeat;
                 }
 
-                int const i = A_InsertSprite(sectNum, vPos->x, vPos->y, vPos->z, FORCERIPPLE, -127, xRepeat, yRepeat, 0,
+                int const i = A_InsertSprite(sectNum, vPos.x, vPos.y, vPos.z, FORCERIPPLE, -127, xRepeat, yRepeat, 0,
                                    0, 0, spriteNum, 5);
 
                 CS(i) |= 18 + 128;
@@ -1603,7 +1607,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
                 return;
 
             case GLASS__STATIC:
-                updatesector(vPos->x, vPos->y, &sectNum);
+                updatesector(vPos.x, vPos.y, &sectNum);
                 if (sectNum < 0)
                     return;
                 pWall->overpicnum = GLASS2;
@@ -1614,7 +1618,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
                     wall[pWall->nextwall].cstat = 0;
 
                 {
-                    int const i = A_InsertSprite(sectNum, vPos->x, vPos->y, vPos->z, SECTOREFFECTOR, 0, 0, 0,
+                    int const i = A_InsertSprite(sectNum, vPos.x, vPos.y, vPos.z, SECTOREFFECTOR, 0, 0, 0,
                         fix16_to_int(g_player[0].ps->q16ang), 0, 0, spriteNum, 3);
                     SLT(i) = 128;
                     T2(i)  = 5;
@@ -1624,7 +1628,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
                 return;
 
             case STAINGLASS1__STATIC:
-                updatesector(vPos->x, vPos->y, &sectNum);
+                updatesector(vPos.x, vPos.y, &sectNum);
                 if (sectNum < 0)
                     return;
                 A_SpawnRandomGlass(spriteNum, wallNum, 80);
@@ -1790,7 +1794,7 @@ void A_DamageWall_Internal(int spriteNum, int wallNum, const vec3_t *vPos, int w
     }
 }
 
-void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
+void A_DamageWall(int spriteNum, int wallNum, const vec3_t &vPos, int weaponNum)
 {
     ud.returnvar[0] = -1;
     A_DamageWall_Internal(spriteNum, wallNum, vPos, weaponNum);
@@ -2309,33 +2313,37 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
             if (A_CheckEnemySprite(&sprite[spriteNum]) == 1)
             {
 #ifndef EDUKE32_STANDALONE
-                if (sprite[dmgSrc].picnum == RPG)
-                    sprite[dmgSrc].extra <<= 1;
+                if (!FURY)
+                {
+                    if (sprite[dmgSrc].picnum == RPG)
+                        sprite[dmgSrc].extra <<= 1;
 
-                if ((PN(spriteNum) != DRONE) && (PN(spriteNum) != ROTATEGUN) && (PN(spriteNum) != COMMANDER) && (PN(spriteNum) < GREENSLIME || PN(spriteNum) > GREENSLIME+7))
-                    if (sprite[dmgSrc].picnum != FREEZEBLAST)
-                        if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY) || A_CheckSpriteFlags(spriteNum, SFLAG_HURTSPAWNBLOOD))
-                        {
-                            int const newSprite       = A_Spawn(dmgSrc, JIBS6);
-                            sprite[newSprite].z      += ZOFFSET6;
-                            if (sprite[dmgSrc].pal == 6)
-                                sprite[newSprite].pal = 6;
-                            sprite[newSprite].xvel    = 16;
-                            sprite[newSprite].xrepeat = sprite[newSprite].yrepeat = 24;
-                            sprite[newSprite].ang    += 32 - (krand() & 63);
-                        }
+                    if ((PN(spriteNum) != DRONE) && (PN(spriteNum) != ROTATEGUN) && (PN(spriteNum) != COMMANDER)
+                        && (PN(spriteNum) < GREENSLIME || PN(spriteNum) > GREENSLIME + 7))
+                        if (sprite[dmgSrc].picnum != FREEZEBLAST)
+                            if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY) || A_CheckSpriteFlags(spriteNum, SFLAG_HURTSPAWNBLOOD))
+                            {
+                                int const newSprite = A_Spawn(dmgSrc, JIBS6);
+                                sprite[newSprite].z += ZOFFSET6;
+                                if (sprite[dmgSrc].pal == 6)
+                                    sprite[newSprite].pal = 6;
+                                sprite[newSprite].xvel    = 16;
+                                sprite[newSprite].xrepeat = sprite[newSprite].yrepeat = 24;
+                                sprite[newSprite].ang += 32 - (krand() & 63);
+                            }
 
-                int const damageOwner = sprite[dmgSrc].owner;
+                    int const damageOwner = sprite[dmgSrc].owner;
 
-                if (damageOwner >= 0 && sprite[damageOwner].picnum == APLAYER && PN(spriteNum) != ROTATEGUN && PN(spriteNum) != DRONE)
-                    if (g_player[P_Get(damageOwner)].ps->curr_weapon == SHOTGUN_WEAPON)
-                        if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY) || A_CheckSpriteFlags(spriteNum, SFLAG_HURTSPAWNBLOOD))
-                        {
-                            A_Shoot(spriteNum, BLOODSPLAT3);
-                            A_Shoot(spriteNum, BLOODSPLAT1);
-                            A_Shoot(spriteNum, BLOODSPLAT2);
-                            A_Shoot(spriteNum, BLOODSPLAT4);
-                        }
+                    if (damageOwner >= 0 && sprite[damageOwner].picnum == APLAYER && PN(spriteNum) != ROTATEGUN && PN(spriteNum) != DRONE)
+                        if (g_player[P_Get(damageOwner)].ps->curr_weapon == SHOTGUN_WEAPON)
+                            if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY) || A_CheckSpriteFlags(spriteNum, SFLAG_HURTSPAWNBLOOD))
+                            {
+                                A_Shoot(spriteNum, BLOODSPLAT3);
+                                A_Shoot(spriteNum, BLOODSPLAT1);
+                                A_Shoot(spriteNum, BLOODSPLAT2);
+                                A_Shoot(spriteNum, BLOODSPLAT4);
+                            }
+                }
 #endif
 
                 if (!A_CheckSpriteFlags(spriteNum, SFLAG_NODAMAGEPUSH))
@@ -2357,15 +2365,16 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
                     changespritestat(spriteNum, STAT_ACTOR);
                     actor[spriteNum].timetosleep = SLEEPTIME;
                 }
-
-                if ((sprite[spriteNum].xrepeat < 24 || PN(spriteNum) == SHARK) && sprite[dmgSrc].picnum == SHRINKSPARK)
+#ifndef EDUKE32_STANDALONE
+                if (!FURY && (sprite[spriteNum].xrepeat < 24 || PN(spriteNum) == SHARK) && sprite[dmgSrc].picnum == SHRINKSPARK)
                     return;
+#endif
             }
 
             if (sprite[spriteNum].statnum != STAT_ZOMBIEACTOR)
             {
 #ifndef EDUKE32_STANDALONE
-                if (sprite[dmgSrc].picnum == FREEZEBLAST && ((PN(spriteNum) == APLAYER && sprite[spriteNum].pal == 1) || (g_freezerSelfDamage == 0 && sprite[dmgSrc].owner == spriteNum)))
+                if (!FURY && sprite[dmgSrc].picnum == FREEZEBLAST && ((PN(spriteNum) == APLAYER && sprite[spriteNum].pal == 1) || (g_freezerSelfDamage == 0 && sprite[dmgSrc].owner == spriteNum)))
                     return;
 #endif
                 actor[spriteNum].picnum = sprite[dmgSrc].picnum;
@@ -2384,9 +2393,10 @@ void A_DamageObject_Internal(int spriteNum, int const dmgSrc)
                 if (ps->newowner >= 0)
                     G_ClearCameraView(ps);
 
-                if (sprite[spriteNum].xrepeat < 24 && sprite[dmgSrc].picnum == SHRINKSPARK)
+#ifndef EDUKE32_STANDALONE
+                if (!FURY && sprite[spriteNum].xrepeat < 24 && sprite[dmgSrc].picnum == SHRINKSPARK)
                     return;
-
+#endif
                 if (sprite[actor[spriteNum].owner].picnum != APLAYER)
                     if (ud.player_skill >= 3)
                         sprite[dmgSrc].extra += (sprite[dmgSrc].extra>>1);

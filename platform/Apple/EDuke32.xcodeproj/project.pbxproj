@@ -80,7 +80,6 @@
 		0008E9F319F1AD9B0091588D /* input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9BE19F1AD9B0091588D /* input.cpp */; };
 		0008E9F419F1AD9B0091588D /* menus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9C219F1AD9B0091588D /* menus.cpp */; };
 		0008E9F519F1AD9B0091588D /* namesdyn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9C519F1AD9B0091588D /* namesdyn.cpp */; };
-		0008E9F619F1AD9B0091588D /* net.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9C719F1AD9B0091588D /* net.cpp */; };
 		0008E9F719F1AD9B0091588D /* osdcmds.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9C919F1AD9B0091588D /* osdcmds.cpp */; };
 		0008E9F819F1AD9B0091588D /* osdfuncs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9CB19F1AD9B0091588D /* osdfuncs.cpp */; };
 		0008E9F919F1AD9B0091588D /* player.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9CD19F1AD9B0091588D /* player.cpp */; };
@@ -88,7 +87,6 @@
 		0008E9FB19F1AD9B0091588D /* rev.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9D219F1AD9B0091588D /* rev.cpp */; };
 		0008E9FC19F1AD9B0091588D /* rts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9D319F1AD9B0091588D /* rts.cpp */; };
 		0008E9FD19F1AD9B0091588D /* savegame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9D519F1AD9B0091588D /* savegame.cpp */; };
-		0008E9FE19F1AD9B0091588D /* sdlmusic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9D719F1AD9B0091588D /* sdlmusic.cpp */; };
 		0008EA0019F1AD9B0091588D /* sector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9DA19F1AD9B0091588D /* sector.cpp */; };
 		0008EA0119F1AD9B0091588D /* sounds.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9DD19F1AD9B0091588D /* sounds.cpp */; };
 		0008EA0219F1AD9B0091588D /* soundsdyn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E9DF19F1AD9B0091588D /* soundsdyn.cpp */; };
@@ -168,9 +166,7 @@
 		8A9E0DAF2216CF50000327F4 /* softsurface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DA72216CF07000327F4 /* softsurface.cpp */; };
 		8A9E0DB02216CF5A000327F4 /* tilepacker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DA42216CF07000327F4 /* tilepacker.cpp */; };
 		8A9E0DB12216CF61000327F4 /* pngwrite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DA52216CF07000327F4 /* pngwrite.cpp */; };
-		8A9E0DB22216CF7E000327F4 /* fix16.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DAC2216CF07000327F4 /* fix16.c */; };
 		8A9E0DB32216CF85000327F4 /* klzw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DA82216CF07000327F4 /* klzw.cpp */; };
-		8A9E0DB42216CF9B000327F4 /* fix16_str.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0D9C2216CF06000327F4 /* fix16_str.c */; };
 		8A9E0DB52216CFAB000327F4 /* miniz.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DAB2216CF07000327F4 /* miniz.c */; };
 		8A9E0DB62216CFC7000327F4 /* miniz_tdef.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DA92216CF07000327F4 /* miniz_tdef.c */; };
 		8A9E0DB72216CFC7000327F4 /* miniz_tinfl.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0D992216CF06000327F4 /* miniz_tinfl.c */; };
@@ -185,7 +181,6 @@
 		8A9E0DCE2216D6F0000327F4 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A9E0DCA2216D5E1000327F4 /* CoreVideo.framework */; };
 		8A9E0DE22216D7A4000327F4 /* animlib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DDC2216D78C000327F4 /* animlib.cpp */; };
 		8A9E0DE32216D7A4000327F4 /* control.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DDD2216D78C000327F4 /* control.cpp */; };
-		8A9E0DE42216D7A4000327F4 /* file_lib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DDE2216D78C000327F4 /* file_lib.cpp */; };
 		8A9E0DE52216D7A4000327F4 /* joystick.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DDF2216D78C000327F4 /* joystick.cpp */; };
 		8A9E0DE62216D7A4000327F4 /* keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DE02216D78C000327F4 /* keyboard.cpp */; };
 		8A9E0DE72216D7A4000327F4 /* scriplib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0DE12216D78C000327F4 /* scriplib.cpp */; };
@@ -230,7 +225,6 @@
 		8A9E0FA42216E966000327F4 /* aitchern.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EA82216E8ED000327F4 /* aitchern.cpp */; };
 		8A9E0FA52216E966000327F4 /* aizomba.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F102216E8F6000327F4 /* aizomba.cpp */; };
 		8A9E0FA62216E966000327F4 /* aizombf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0ED92216E8F0000327F4 /* aizombf.cpp */; };
-		8A9E0FA72216E966000327F4 /* al_midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F362216E8FA000327F4 /* al_midi.cpp */; };
 		8A9E0FA82216E966000327F4 /* asound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F112216E8F6000327F4 /* asound.cpp */; };
 		8A9E0FA92216E966000327F4 /* blood.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F122216E8F6000327F4 /* blood.cpp */; };
 		8A9E0FAA2216E966000327F4 /* callback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F342216E8FA000327F4 /* callback.cpp */; };
@@ -251,7 +245,6 @@
 		8A9E0FB92216E967000327F4 /* getopt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F392216E8FA000327F4 /* getopt.cpp */; };
 		8A9E0FBA2216E967000327F4 /* gib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F1F2216E8F8000327F4 /* gib.cpp */; };
 		8A9E0FBB2216E967000327F4 /* globals.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EF82216E8F3000327F4 /* globals.cpp */; };
-		8A9E0FBC2216E967000327F4 /* gmtimbre.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EAD2216E8ED000327F4 /* gmtimbre.cpp */; };
 		8A9E0FBD2216E967000327F4 /* inifile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F072216E8F5000327F4 /* inifile.cpp */; };
 		8A9E0FBE2216E967000327F4 /* iob.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F312216E8FA000327F4 /* iob.cpp */; };
 		8A9E0FBF2216E967000327F4 /* levels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F252216E8F8000327F4 /* levels.cpp */; };
@@ -262,17 +255,13 @@
 		8A9E0FC52216E967000327F4 /* mirrors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0ED32216E8F0000327F4 /* mirrors.cpp */; };
 		8A9E0FC62216E967000327F4 /* misc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EC42216E8EF000327F4 /* misc.cpp */; };
 		8A9E0FC92216E967000327F4 /* network.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EAA2216E8ED000327F4 /* network.cpp */; };
-		8A9E0FCA2216E967000327F4 /* opl3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EB52216E8EE000327F4 /* opl3.cpp */; };
-		8A9E0FCB2216E967000327F4 /* oplmidi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F372216E8FA000327F4 /* oplmidi.cpp */; };
 		8A9E0FCC2216E967000327F4 /* osdcmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EE32216E8F1000327F4 /* osdcmd.cpp */; };
 		8A9E0FCD2216E967000327F4 /* player.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EF22216E8F3000327F4 /* player.cpp */; };
-		8A9E0FCE2216E967000327F4 /* pqueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F402216E8FB000327F4 /* pqueue.cpp */; };
 		8A9E0FCF2216E967000327F4 /* qav.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EAC2216E8ED000327F4 /* qav.cpp */; };
 		8A9E0FD02216E967000327F4 /* qheap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0ED72216E8F0000327F4 /* qheap.cpp */; };
 		8A9E0FD12216E967000327F4 /* replace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EE52216E8F1000327F4 /* replace.cpp */; };
 		8A9E0FD22216E967000327F4 /* resource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EC02216E8EE000327F4 /* resource.cpp */; };
 		8A9E0FD32216E967000327F4 /* screen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F212216E8F8000327F4 /* screen.cpp */; };
-		8A9E0FD42216E967000327F4 /* sdlmusic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F162216E8F7000327F4 /* sdlmusic.cpp */; };
 		8A9E0FD52216E967000327F4 /* sectorfx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0ED52216E8F0000327F4 /* sectorfx.cpp */; };
 		8A9E0FD62216E967000327F4 /* seq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0F1B2216E8F7000327F4 /* seq.cpp */; };
 		8A9E0FD72216E967000327F4 /* sfx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8A9E0EBC2216E8EE000327F4 /* sfx.cpp */; };
@@ -327,6 +316,20 @@
 		8AAC6D99221972690074B176 /* nblood.pk3 in Resources */ = {isa = PBXBuildFile; fileRef = 8AAC6D98221972640074B176 /* nblood.pk3 */; };
 		8AAC6D9B2219A5760074B176 /* mapster32.icns in Resources */ = {isa = PBXBuildFile; fileRef = 8AAC6D9A2219A56D0074B176 /* mapster32.icns */; };
 		8ABD67772286C08100CDB214 /* aiunicult.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ABD67752286C05400CDB214 /* aiunicult.cpp */; };
+		8ADA33652324E18B006F528A /* timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33622324E13B006F528A /* timer.cpp */; };
+		8ADA33662324E18B006F528A /* vfs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA335F2324E13B006F528A /* vfs.cpp */; };
+		8ADA336B2324E8AD006F528A /* polymost1Frag.glsl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33692324E88D006F528A /* polymost1Frag.glsl.cpp */; };
+		8ADA336C2324E8AD006F528A /* polymost1Vert.glsl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA336A2324E88D006F528A /* polymost1Vert.glsl.cpp */; };
+		8ADA336F2324EB10006F528A /* network.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA336E2324EAD1006F528A /* network.cpp */; };
+		8ADA33702324EB4C006F528A /* fix16_str.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33642324E13B006F528A /* fix16_str.cpp */; };
+		8ADA33712324EB4C006F528A /* fix16.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33632324E13B006F528A /* fix16.cpp */; };
+		8ADA33822324EC10006F528A /* al_midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA337F2324EBC9006F528A /* al_midi.cpp */; };
+		8ADA33852324EC28006F528A /* opl3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33802324EBC9006F528A /* opl3.cpp */; };
+		8ADA33872324EC2D006F528A /* oplmidi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33812324EBC9006F528A /* oplmidi.cpp */; };
+		8ADA33882324EC33006F528A /* sdlmusic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA337D2324EBC9006F528A /* sdlmusic.cpp */; };
+		8ADA33892324EFB6006F528A /* gmtimbre.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA337A2324EBC9006F528A /* gmtimbre.cpp */; };
+		8ADA33982324F069006F528A /* gfx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33922324F021006F528A /* gfx.cpp */; };
+		8ADA33992324F08E006F528A /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8ADA33932324F021006F528A /* gui.cpp */; };
 		8ADC7B1922181CF600709207 /* game.png in Resources */ = {isa = PBXBuildFile; fileRef = 8ADC7B1622181CE300709207 /* game.png */; };
 /* End PBXBuildFile section */
 
@@ -503,7 +506,6 @@
 		0008E6DC19F1AAFF0091588D /* flac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = flac.cpp; path = ../../source/audiolib/src/flac.cpp; sourceTree = SOURCE_ROOT; };
 		0008E6DD19F1AAFF0091588D /* formats.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = formats.cpp; path = ../../source/audiolib/src/formats.cpp; sourceTree = SOURCE_ROOT; };
 		0008E6DE19F1AAFF0091588D /* fx_man.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = fx_man.cpp; path = ../../source/audiolib/src/fx_man.cpp; sourceTree = SOURCE_ROOT; };
-		0008E6DF19F1AAFF0091588D /* linklist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = linklist.h; path = ../../source/audiolib/src/linklist.h; sourceTree = SOURCE_ROOT; };
 		0008E6E119F1AAFF0091588D /* mix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = mix.cpp; path = ../../source/audiolib/src/mix.cpp; sourceTree = SOURCE_ROOT; };
 		0008E6E219F1AAFF0091588D /* mixst.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = mixst.cpp; path = ../../source/audiolib/src/mixst.cpp; sourceTree = SOURCE_ROOT; };
 		0008E6E319F1AAFF0091588D /* multivoc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = multivoc.cpp; path = ../../source/audiolib/src/multivoc.cpp; sourceTree = SOURCE_ROOT; };
@@ -585,7 +587,6 @@
 		0008E91F19F1AC540091588D /* voxmodel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = voxmodel.cpp; path = ../../source/build/src/voxmodel.cpp; sourceTree = SOURCE_ROOT; };
 		0008E92219F1AC540091588D /* xxhash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xxhash.c; path = ../../source/build/src/xxhash.c; sourceTree = SOURCE_ROOT; };
 		0008E99919F1AD9B0091588D /* _functio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = _functio.h; path = ../../source/duke3d/src/_functio.h; sourceTree = SOURCE_ROOT; };
-		0008E99A19F1AD9B0091588D /* _midi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = _midi.h; path = ../../source/duke3d/src/_midi.h; sourceTree = SOURCE_ROOT; };
 		0008E99B19F1AD9B0091588D /* _rts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = _rts.h; path = ../../source/duke3d/src/_rts.h; sourceTree = SOURCE_ROOT; };
 		0008E99E19F1AD9B0091588D /* actors.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = actors.cpp; path = ../../source/duke3d/src/actors.cpp; sourceTree = SOURCE_ROOT; };
 		0008E99F19F1AD9B0091588D /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = actors.h; path = ../../source/duke3d/src/actors.h; sourceTree = SOURCE_ROOT; };
@@ -626,8 +627,6 @@
 		0008E9C419F1AD9B0091588D /* names.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = names.h; path = ../../source/duke3d/src/names.h; sourceTree = SOURCE_ROOT; };
 		0008E9C519F1AD9B0091588D /* namesdyn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = namesdyn.cpp; path = ../../source/duke3d/src/namesdyn.cpp; sourceTree = SOURCE_ROOT; };
 		0008E9C619F1AD9B0091588D /* namesdyn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = namesdyn.h; path = ../../source/duke3d/src/namesdyn.h; sourceTree = SOURCE_ROOT; };
-		0008E9C719F1AD9B0091588D /* net.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = net.cpp; path = ../../source/duke3d/src/net.cpp; sourceTree = SOURCE_ROOT; };
-		0008E9C819F1AD9B0091588D /* net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = net.h; path = ../../source/duke3d/src/net.h; sourceTree = SOURCE_ROOT; };
 		0008E9C919F1AD9B0091588D /* osdcmds.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = osdcmds.cpp; path = ../../source/duke3d/src/osdcmds.cpp; sourceTree = SOURCE_ROOT; };
 		0008E9CA19F1AD9B0091588D /* osdcmds.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = osdcmds.h; path = ../../source/duke3d/src/osdcmds.h; sourceTree = SOURCE_ROOT; };
 		0008E9CB19F1AD9B0091588D /* osdfuncs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = osdfuncs.cpp; path = ../../source/duke3d/src/osdfuncs.cpp; sourceTree = SOURCE_ROOT; };
@@ -642,7 +641,6 @@
 		0008E9D419F1AD9B0091588D /* rts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = rts.h; path = ../../source/duke3d/src/rts.h; sourceTree = SOURCE_ROOT; };
 		0008E9D519F1AD9B0091588D /* savegame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = savegame.cpp; path = ../../source/duke3d/src/savegame.cpp; sourceTree = SOURCE_ROOT; };
 		0008E9D619F1AD9B0091588D /* savegame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = savegame.h; path = ../../source/duke3d/src/savegame.h; sourceTree = SOURCE_ROOT; };
-		0008E9D719F1AD9B0091588D /* sdlmusic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = sdlmusic.cpp; path = ../../source/duke3d/src/sdlmusic.cpp; sourceTree = SOURCE_ROOT; };
 		0008E9DA19F1AD9B0091588D /* sector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = sector.cpp; path = ../../source/duke3d/src/sector.cpp; sourceTree = SOURCE_ROOT; };
 		0008E9DB19F1AD9B0091588D /* sector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = sector.h; path = ../../source/duke3d/src/sector.h; sourceTree = SOURCE_ROOT; };
 		0008E9DC19F1AD9B0091588D /* soundefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = soundefs.h; path = ../../source/duke3d/src/soundefs.h; sourceTree = SOURCE_ROOT; };
@@ -785,7 +783,6 @@
 		8A9E0D992216CF06000327F4 /* miniz_tinfl.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = miniz_tinfl.c; sourceTree = "<group>"; };
 		8A9E0D9A2216CF06000327F4 /* startgtk.editor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = startgtk.editor.cpp; sourceTree = "<group>"; };
 		8A9E0D9B2216CF06000327F4 /* glsurface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = glsurface.cpp; sourceTree = "<group>"; };
-		8A9E0D9C2216CF06000327F4 /* fix16_str.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fix16_str.c; sourceTree = "<group>"; };
 		8A9E0D9D2216CF06000327F4 /* winlayer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = winlayer.cpp; sourceTree = "<group>"; };
 		8A9E0D9E2216CF07000327F4 /* dynamicgtk.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = dynamicgtk.cpp; sourceTree = "<group>"; };
 		8A9E0D9F2216CF07000327F4 /* sdlayer12.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sdlayer12.cpp; sourceTree = "<group>"; };
@@ -801,7 +798,6 @@
 		8A9E0DA92216CF07000327F4 /* miniz_tdef.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = miniz_tdef.c; sourceTree = "<group>"; };
 		8A9E0DAA2216CF07000327F4 /* lunatic.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lunatic.cpp; sourceTree = "<group>"; };
 		8A9E0DAB2216CF07000327F4 /* miniz.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = miniz.c; sourceTree = "<group>"; };
-		8A9E0DAC2216CF07000327F4 /* fix16.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fix16.c; sourceTree = "<group>"; };
 		8A9E0DAD2216CF07000327F4 /* wiibits.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = wiibits.cpp; sourceTree = "<group>"; };
 		8A9E0DCA2216D5E1000327F4 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		8A9E0DD22216D78C000327F4 /* _control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _control.h; sourceTree = "<group>"; };
@@ -822,21 +818,17 @@
 		8A9E0EA42216E8ED000327F4 /* controls.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = controls.cpp; path = ../../source/blood/src/controls.cpp; sourceTree = "<group>"; };
 		8A9E0EA52216E8ED000327F4 /* map2d.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = map2d.cpp; path = ../../source/blood/src/map2d.cpp; sourceTree = "<group>"; };
 		8A9E0EA62216E8ED000327F4 /* eventq.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = eventq.cpp; path = ../../source/blood/src/eventq.cpp; sourceTree = "<group>"; };
-		8A9E0EA72216E8ED000327F4 /* _oplmidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = _oplmidi.h; path = ../../source/blood/src/_oplmidi.h; sourceTree = "<group>"; };
 		8A9E0EA82216E8ED000327F4 /* aitchern.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aitchern.cpp; path = ../../source/blood/src/aitchern.cpp; sourceTree = "<group>"; };
 		8A9E0EA92216E8ED000327F4 /* startosx.game.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = startosx.game.mm; path = ../../source/blood/src/startosx.game.mm; sourceTree = "<group>"; };
 		8A9E0EAA2216E8ED000327F4 /* network.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = network.cpp; path = ../../source/blood/src/network.cpp; sourceTree = "<group>"; };
 		8A9E0EAB2216E8ED000327F4 /* aiinnoc.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aiinnoc.cpp; path = ../../source/blood/src/aiinnoc.cpp; sourceTree = "<group>"; };
 		8A9E0EAC2216E8ED000327F4 /* qav.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = qav.cpp; path = ../../source/blood/src/qav.cpp; sourceTree = "<group>"; };
-		8A9E0EAD2216E8ED000327F4 /* gmtimbre.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = gmtimbre.cpp; path = ../../source/blood/src/gmtimbre.cpp; sourceTree = "<group>"; };
 		8A9E0EAE2216E8ED000327F4 /* common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = common.cpp; path = ../../source/blood/src/common.cpp; sourceTree = "<group>"; };
-		8A9E0EAF2216E8ED000327F4 /* midi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = midi.cpp; path = ../../source/blood/src/midi.cpp; sourceTree = "<group>"; };
 		8A9E0EB02216E8ED000327F4 /* gameutil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gameutil.h; path = ../../source/blood/src/gameutil.h; sourceTree = "<group>"; };
 		8A9E0EB12216E8ED000327F4 /* aizomba.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aizomba.h; path = ../../source/blood/src/aizomba.h; sourceTree = "<group>"; };
 		8A9E0EB22216E8ED000327F4 /* weapon.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = weapon.cpp; path = ../../source/blood/src/weapon.cpp; sourceTree = "<group>"; };
 		8A9E0EB32216E8ED000327F4 /* aicult.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aicult.cpp; path = ../../source/blood/src/aicult.cpp; sourceTree = "<group>"; };
 		8A9E0EB42216E8EE000327F4 /* messages.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = messages.h; path = ../../source/blood/src/messages.h; sourceTree = "<group>"; };
-		8A9E0EB52216E8EE000327F4 /* opl3.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = opl3.cpp; path = ../../source/blood/src/opl3.cpp; sourceTree = "<group>"; };
 		8A9E0EB62216E8EE000327F4 /* inifile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = inifile.h; path = ../../source/blood/src/inifile.h; sourceTree = "<group>"; };
 		8A9E0EB72216E8EE000327F4 /* sound.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = sound.h; path = ../../source/blood/src/sound.h; sourceTree = "<group>"; };
 		8A9E0EB82216E8EE000327F4 /* gamemenu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gamemenu.h; path = ../../source/blood/src/gamemenu.h; sourceTree = "<group>"; };
@@ -855,7 +847,6 @@
 		8A9E0EC52216E8EF000327F4 /* aiburn.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aiburn.cpp; path = ../../source/blood/src/aiburn.cpp; sourceTree = "<group>"; };
 		8A9E0EC62216E8EF000327F4 /* aiinnoc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aiinnoc.h; path = ../../source/blood/src/aiinnoc.h; sourceTree = "<group>"; };
 		8A9E0EC72216E8EF000327F4 /* dude.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = dude.cpp; path = ../../source/blood/src/dude.cpp; sourceTree = "<group>"; };
-		8A9E0EC82216E8EF000327F4 /* mpu401.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = mpu401.cpp; path = ../../source/blood/src/mpu401.cpp; sourceTree = "<group>"; };
 		8A9E0EC92216E8EF000327F4 /* endgame.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = endgame.cpp; path = ../../source/blood/src/endgame.cpp; sourceTree = "<group>"; };
 		8A9E0ECA2216E8EF000327F4 /* config.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = config.cpp; path = ../../source/blood/src/config.cpp; sourceTree = "<group>"; };
 		8A9E0ECB2216E8EF000327F4 /* aibeast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aibeast.h; path = ../../source/blood/src/aibeast.h; sourceTree = "<group>"; };
@@ -865,7 +856,6 @@
 		8A9E0ECF2216E8F0000327F4 /* aighost.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aighost.h; path = ../../source/blood/src/aighost.h; sourceTree = "<group>"; };
 		8A9E0ED02216E8F0000327F4 /* aiboneel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aiboneel.h; path = ../../source/blood/src/aiboneel.h; sourceTree = "<group>"; };
 		8A9E0ED12216E8F0000327F4 /* blood.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = blood.h; path = ../../source/blood/src/blood.h; sourceTree = "<group>"; };
-		8A9E0ED22216E8F0000327F4 /* midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = midi.h; path = ../../source/blood/src/midi.h; sourceTree = "<group>"; };
 		8A9E0ED32216E8F0000327F4 /* mirrors.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = mirrors.cpp; path = ../../source/blood/src/mirrors.cpp; sourceTree = "<group>"; };
 		8A9E0ED42216E8F0000327F4 /* network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = network.h; path = ../../source/blood/src/network.h; sourceTree = "<group>"; };
 		8A9E0ED52216E8F0000327F4 /* sectorfx.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = sectorfx.cpp; path = ../../source/blood/src/sectorfx.cpp; sourceTree = "<group>"; };
@@ -881,13 +871,11 @@
 		8A9E0EDF2216E8F1000327F4 /* aihand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aihand.h; path = ../../source/blood/src/aihand.h; sourceTree = "<group>"; };
 		8A9E0EE02216E8F1000327F4 /* aigilbst.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aigilbst.h; path = ../../source/blood/src/aigilbst.h; sourceTree = "<group>"; };
 		8A9E0EE12216E8F1000327F4 /* aizombf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aizombf.h; path = ../../source/blood/src/aizombf.h; sourceTree = "<group>"; };
-		8A9E0EE22216E8F1000327F4 /* opl3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = opl3.h; path = ../../source/blood/src/opl3.h; sourceTree = "<group>"; };
 		8A9E0EE32216E8F1000327F4 /* osdcmd.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = osdcmd.cpp; path = ../../source/blood/src/osdcmd.cpp; sourceTree = "<group>"; };
 		8A9E0EE42216E8F1000327F4 /* aipod.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aipod.cpp; path = ../../source/blood/src/aipod.cpp; sourceTree = "<group>"; };
 		8A9E0EE52216E8F1000327F4 /* replace.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = replace.cpp; path = ../../source/blood/src/replace.cpp; sourceTree = "<group>"; };
 		8A9E0EE62216E8F2000327F4 /* warp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = warp.cpp; path = ../../source/blood/src/warp.cpp; sourceTree = "<group>"; };
 		8A9E0EE72216E8F2000327F4 /* eventq.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = eventq.h; path = ../../source/blood/src/eventq.h; sourceTree = "<group>"; };
-		8A9E0EE82216E8F2000327F4 /* mpu401.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = mpu401.h; path = ../../source/blood/src/mpu401.h; sourceTree = "<group>"; };
 		8A9E0EE92216E8F2000327F4 /* messages.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = messages.cpp; path = ../../source/blood/src/messages.cpp; sourceTree = "<group>"; };
 		8A9E0EEA2216E8F2000327F4 /* view.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = view.h; path = ../../source/blood/src/view.h; sourceTree = "<group>"; };
 		8A9E0EEB2216E8F2000327F4 /* aipod.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aipod.h; path = ../../source/blood/src/aipod.h; sourceTree = "<group>"; };
@@ -914,7 +902,6 @@
 		8A9E0F002216E8F4000327F4 /* gamedefs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gamedefs.h; path = ../../source/blood/src/gamedefs.h; sourceTree = "<group>"; };
 		8A9E0F012216E8F4000327F4 /* replace.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = replace.h; path = ../../source/blood/src/replace.h; sourceTree = "<group>"; };
 		8A9E0F022216E8F4000327F4 /* map2d.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = map2d.h; path = ../../source/blood/src/map2d.h; sourceTree = "<group>"; };
-		8A9E0F032216E8F4000327F4 /* _al_midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = _al_midi.h; path = ../../source/blood/src/_al_midi.h; sourceTree = "<group>"; };
 		8A9E0F042216E8F4000327F4 /* credits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = credits.h; path = ../../source/blood/src/credits.h; sourceTree = "<group>"; };
 		8A9E0F052216E8F5000327F4 /* menu.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = menu.cpp; path = ../../source/blood/src/menu.cpp; sourceTree = "<group>"; };
 		8A9E0F062216E8F5000327F4 /* demo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = demo.h; path = ../../source/blood/src/demo.h; sourceTree = "<group>"; };
@@ -925,21 +912,17 @@
 		8A9E0F0B2216E8F5000327F4 /* aihound.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aihound.cpp; path = ../../source/blood/src/aihound.cpp; sourceTree = "<group>"; };
 		8A9E0F0C2216E8F5000327F4 /* ai.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ai.cpp; path = ../../source/blood/src/ai.cpp; sourceTree = "<group>"; };
 		8A9E0F0D2216E8F6000327F4 /* endgame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = endgame.h; path = ../../source/blood/src/endgame.h; sourceTree = "<group>"; };
-		8A9E0F0E2216E8F6000327F4 /* oplmidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = oplmidi.h; path = ../../source/blood/src/oplmidi.h; sourceTree = "<group>"; };
 		8A9E0F0F2216E8F6000327F4 /* levels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = levels.h; path = ../../source/blood/src/levels.h; sourceTree = "<group>"; };
 		8A9E0F102216E8F6000327F4 /* aizomba.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aizomba.cpp; path = ../../source/blood/src/aizomba.cpp; sourceTree = "<group>"; };
 		8A9E0F112216E8F6000327F4 /* asound.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = asound.cpp; path = ../../source/blood/src/asound.cpp; sourceTree = "<group>"; };
 		8A9E0F122216E8F6000327F4 /* blood.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = blood.cpp; path = ../../source/blood/src/blood.cpp; sourceTree = "<group>"; };
 		8A9E0F132216E8F6000327F4 /* airat.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = airat.cpp; path = ../../source/blood/src/airat.cpp; sourceTree = "<group>"; };
 		8A9E0F142216E8F7000327F4 /* choke.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = choke.h; path = ../../source/blood/src/choke.h; sourceTree = "<group>"; };
-		8A9E0F152216E8F7000327F4 /* music.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = music.cpp; path = ../../source/blood/src/music.cpp; sourceTree = "<group>"; };
-		8A9E0F162216E8F7000327F4 /* sdlmusic.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = sdlmusic.cpp; path = ../../source/blood/src/sdlmusic.cpp; sourceTree = "<group>"; };
 		8A9E0F172216E8F7000327F4 /* sectorfx.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = sectorfx.h; path = ../../source/blood/src/sectorfx.h; sourceTree = "<group>"; };
 		8A9E0F182216E8F7000327F4 /* tile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = tile.h; path = ../../source/blood/src/tile.h; sourceTree = "<group>"; };
 		8A9E0F192216E8F7000327F4 /* aicult.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aicult.h; path = ../../source/blood/src/aicult.h; sourceTree = "<group>"; };
 		8A9E0F1A2216E8F7000327F4 /* function.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = function.h; path = ../../source/blood/src/function.h; sourceTree = "<group>"; };
 		8A9E0F1B2216E8F7000327F4 /* seq.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = seq.cpp; path = ../../source/blood/src/seq.cpp; sourceTree = "<group>"; };
-		8A9E0F1C2216E8F7000327F4 /* al_midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = al_midi.h; path = ../../source/blood/src/al_midi.h; sourceTree = "<group>"; };
 		8A9E0F1D2216E8F8000327F4 /* gamemenu.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = gamemenu.cpp; path = ../../source/blood/src/gamemenu.cpp; sourceTree = "<group>"; };
 		8A9E0F1E2216E8F8000327F4 /* tile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = tile.cpp; path = ../../source/blood/src/tile.cpp; sourceTree = "<group>"; };
 		8A9E0F1F2216E8F8000327F4 /* gib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = gib.cpp; path = ../../source/blood/src/gib.cpp; sourceTree = "<group>"; };
@@ -958,15 +941,12 @@
 		8A9E0F2C2216E8F9000327F4 /* getopt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = getopt.h; path = ../../source/blood/src/getopt.h; sourceTree = "<group>"; };
 		8A9E0F2D2216E8F9000327F4 /* loadsave.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = loadsave.h; path = ../../source/blood/src/loadsave.h; sourceTree = "<group>"; };
 		8A9E0F2E2216E8F9000327F4 /* sound.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = sound.cpp; path = ../../source/blood/src/sound.cpp; sourceTree = "<group>"; };
-		8A9E0F2F2216E8F9000327F4 /* _midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = _midi.h; path = ../../source/blood/src/_midi.h; sourceTree = "<group>"; };
 		8A9E0F302216E8F9000327F4 /* resource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = resource.h; path = ../../source/blood/src/resource.h; sourceTree = "<group>"; };
 		8A9E0F312216E8FA000327F4 /* iob.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = iob.cpp; path = ../../source/blood/src/iob.cpp; sourceTree = "<group>"; };
 		8A9E0F322216E8FA000327F4 /* aicaleb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aicaleb.h; path = ../../source/blood/src/aicaleb.h; sourceTree = "<group>"; };
 		8A9E0F332216E8FA000327F4 /* iob.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iob.h; path = ../../source/blood/src/iob.h; sourceTree = "<group>"; };
 		8A9E0F342216E8FA000327F4 /* callback.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = callback.cpp; path = ../../source/blood/src/callback.cpp; sourceTree = "<group>"; };
 		8A9E0F352216E8FA000327F4 /* weapon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = weapon.h; path = ../../source/blood/src/weapon.h; sourceTree = "<group>"; };
-		8A9E0F362216E8FA000327F4 /* al_midi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = al_midi.cpp; path = ../../source/blood/src/al_midi.cpp; sourceTree = "<group>"; };
-		8A9E0F372216E8FA000327F4 /* oplmidi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = oplmidi.cpp; path = ../../source/blood/src/oplmidi.cpp; sourceTree = "<group>"; };
 		8A9E0F382216E8FA000327F4 /* player.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = player.h; path = ../../source/blood/src/player.h; sourceTree = "<group>"; };
 		8A9E0F392216E8FA000327F4 /* getopt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = getopt.cpp; path = ../../source/blood/src/getopt.cpp; sourceTree = "<group>"; };
 		8A9E0F3A2216E8FA000327F4 /* pqueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = pqueue.h; path = ../../source/blood/src/pqueue.h; sourceTree = "<group>"; };
@@ -975,7 +955,6 @@
 		8A9E0F3D2216E8FB000327F4 /* fx.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = fx.h; path = ../../source/blood/src/fx.h; sourceTree = "<group>"; };
 		8A9E0F3E2216E8FB000327F4 /* common_game.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = common_game.h; path = ../../source/blood/src/common_game.h; sourceTree = "<group>"; };
 		8A9E0F3F2216E8FB000327F4 /* trig.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = trig.cpp; path = ../../source/blood/src/trig.cpp; sourceTree = "<group>"; };
-		8A9E0F402216E8FB000327F4 /* pqueue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = pqueue.cpp; path = ../../source/blood/src/pqueue.cpp; sourceTree = "<group>"; };
 		8A9E0F412216E8FB000327F4 /* gib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gib.h; path = ../../source/blood/src/gib.h; sourceTree = "<group>"; };
 		8A9E0F422216E8FB000327F4 /* aihand.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aihand.cpp; path = ../../source/blood/src/aihand.cpp; sourceTree = "<group>"; };
 		8A9E0F432216E8FB000327F4 /* aighost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aighost.cpp; path = ../../source/blood/src/aighost.cpp; sourceTree = "<group>"; };
@@ -985,19 +964,14 @@
 		8A9E0FE32216E9E4000327F4 /* events_defs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = events_defs.h; path = ../../source/duke3d/src/events_defs.h; sourceTree = "<group>"; };
 		8A9E10412216E9E4000327F4 /* mdump.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = mdump.cpp; path = ../../source/duke3d/src/mdump.cpp; sourceTree = "<group>"; };
 		8A9E10422216E9E4000327F4 /* startgtk.game.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = startgtk.game.cpp; path = ../../source/duke3d/src/startgtk.game.cpp; sourceTree = "<group>"; };
-		8A9E10432216E9E4000327F4 /* midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = midi.h; path = ../../source/duke3d/src/midi.h; sourceTree = "<group>"; };
 		8A9E10442216E9E4000327F4 /* mapster32.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = mapster32.h; path = ../../source/duke3d/src/mapster32.h; sourceTree = "<group>"; };
 		8A9E10452216E9E4000327F4 /* startwin.game.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = startwin.game.cpp; path = ../../source/duke3d/src/startwin.game.cpp; sourceTree = "<group>"; };
 		8A9E10462216E9E4000327F4 /* startwin.game.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = startwin.game.h; path = ../../source/duke3d/src/startwin.game.h; sourceTree = "<group>"; };
 		8A9E10472216E9E4000327F4 /* winbits.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = winbits.cpp; path = ../../source/duke3d/src/winbits.cpp; sourceTree = "<group>"; };
-		8A9E10482216E9E4000327F4 /* mpu401.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = mpu401.cpp; path = ../../source/duke3d/src/mpu401.cpp; sourceTree = "<group>"; };
 		8A9E10492216E9E4000327F4 /* in_android.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = in_android.h; path = ../../source/duke3d/src/in_android.h; sourceTree = "<group>"; };
-		8A9E104A2216E9E4000327F4 /* mpu401.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = mpu401.h; path = ../../source/duke3d/src/mpu401.h; sourceTree = "<group>"; };
-		8A9E104B2216E9E4000327F4 /* midi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = midi.cpp; path = ../../source/duke3d/src/midi.cpp; sourceTree = "<group>"; };
 		8A9E104C2216E9E4000327F4 /* mdump.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = mdump.h; path = ../../source/duke3d/src/mdump.h; sourceTree = "<group>"; };
 		8A9E104D2216E9E4000327F4 /* android.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = android.h; path = ../../source/duke3d/src/android.h; sourceTree = "<group>"; };
 		8A9E104E2216E9E4000327F4 /* in_android.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = in_android.cpp; path = ../../source/duke3d/src/in_android.cpp; sourceTree = "<group>"; };
-		8A9E104F2216E9E4000327F4 /* music.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = music.cpp; path = ../../source/duke3d/src/music.cpp; sourceTree = "<group>"; };
 		8A9E10542216ED72000327F4 /* libglad.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libglad.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A9E10672216EE9E000327F4 /* BitReader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BitReader.h; sourceTree = "<group>"; };
 		8A9E10682216EE9E000327F4 /* FileStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileStream.h; sourceTree = "<group>"; };
@@ -1062,6 +1036,51 @@
 		8AAC6D9D2219A7FE0074B176 /* driver_directsound.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = driver_directsound.h; sourceTree = "<group>"; };
 		8ABD67752286C05400CDB214 /* aiunicult.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = aiunicult.cpp; path = ../../source/blood/src/aiunicult.cpp; sourceTree = "<group>"; };
 		8ABD67762286C05400CDB214 /* aiunicult.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = aiunicult.h; path = ../../source/blood/src/aiunicult.h; sourceTree = "<group>"; };
+		8ADA335A2324E0E7006F528A /* linklist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = linklist.h; sourceTree = "<group>"; };
+		8ADA335B2324E0E7006F528A /* vfs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vfs.h; sourceTree = "<group>"; };
+		8ADA335C2324E0E7006F528A /* clockticks.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = clockticks.hpp; sourceTree = "<group>"; };
+		8ADA335D2324E0E7006F528A /* sjson.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sjson.h; sourceTree = "<group>"; };
+		8ADA335E2324E0E7006F528A /* timer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = timer.h; sourceTree = "<group>"; };
+		8ADA335F2324E13B006F528A /* vfs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = vfs.cpp; sourceTree = "<group>"; };
+		8ADA33602324E13B006F528A /* polymost1Frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = polymost1Frag.glsl; sourceTree = "<group>"; };
+		8ADA33612324E13B006F528A /* polymost1Vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = polymost1Vert.glsl; sourceTree = "<group>"; };
+		8ADA33622324E13B006F528A /* timer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = timer.cpp; sourceTree = "<group>"; };
+		8ADA33632324E13B006F528A /* fix16.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fix16.cpp; sourceTree = "<group>"; };
+		8ADA33642324E13B006F528A /* fix16_str.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fix16_str.cpp; sourceTree = "<group>"; };
+		8ADA33692324E88D006F528A /* polymost1Frag.glsl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = polymost1Frag.glsl.cpp; path = shaders/polymost1Frag.glsl.cpp; sourceTree = SOURCE_ROOT; };
+		8ADA336A2324E88D006F528A /* polymost1Vert.glsl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = polymost1Vert.glsl.cpp; path = shaders/polymost1Vert.glsl.cpp; sourceTree = SOURCE_ROOT; };
+		8ADA336D2324EAD1006F528A /* network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = network.h; path = ../../source/duke3d/src/network.h; sourceTree = "<group>"; };
+		8ADA336E2324EAD1006F528A /* network.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = network.cpp; path = ../../source/duke3d/src/network.cpp; sourceTree = "<group>"; };
+		8ADA33722324EBA0006F528A /* mpu401.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mpu401.h; sourceTree = "<group>"; };
+		8ADA33732324EBA0006F528A /* oplmidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = oplmidi.h; sourceTree = "<group>"; };
+		8ADA33742324EBA0006F528A /* opl3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = opl3.h; sourceTree = "<group>"; };
+		8ADA33752324EBA0006F528A /* midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = midi.h; sourceTree = "<group>"; };
+		8ADA33762324EBA0006F528A /* al_midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = al_midi.h; sourceTree = "<group>"; };
+		8ADA33772324EBC8006F528A /* _midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _midi.h; sourceTree = "<group>"; };
+		8ADA33782324EBC9006F528A /* _al_midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _al_midi.h; sourceTree = "<group>"; };
+		8ADA33792324EBC9006F528A /* _oplmidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _oplmidi.h; sourceTree = "<group>"; };
+		8ADA337A2324EBC9006F528A /* gmtimbre.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gmtimbre.cpp; sourceTree = "<group>"; };
+		8ADA337B2324EBC9006F528A /* mpu401.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mpu401.cpp; sourceTree = "<group>"; };
+		8ADA337C2324EBC9006F528A /* music.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = music.cpp; sourceTree = "<group>"; };
+		8ADA337D2324EBC9006F528A /* sdlmusic.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sdlmusic.cpp; sourceTree = "<group>"; };
+		8ADA337E2324EBC9006F528A /* midi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = midi.cpp; sourceTree = "<group>"; };
+		8ADA337F2324EBC9006F528A /* al_midi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = al_midi.cpp; sourceTree = "<group>"; };
+		8ADA33802324EBC9006F528A /* opl3.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = opl3.cpp; sourceTree = "<group>"; };
+		8ADA33812324EBC9006F528A /* oplmidi.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = oplmidi.cpp; sourceTree = "<group>"; };
+		8ADA338A2324F020006F528A /* m32def.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = m32def.h; path = ../../source/blood/src/m32def.h; sourceTree = "<group>"; };
+		8ADA338B2324F020006F528A /* m32structures.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = m32structures.cpp; path = ../../source/blood/src/m32structures.cpp; sourceTree = "<group>"; };
+		8ADA338C2324F020006F528A /* m32vars.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = m32vars.cpp; path = ../../source/blood/src/m32vars.cpp; sourceTree = "<group>"; };
+		8ADA338D2324F021006F528A /* macros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = macros.h; path = ../../source/blood/src/macros.h; sourceTree = "<group>"; };
+		8ADA338E2324F021006F528A /* mapedit.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = mapedit.cpp; path = ../../source/blood/src/mapedit.cpp; sourceTree = "<group>"; };
+		8ADA338F2324F021006F528A /* keys.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = keys.h; path = ../../source/blood/src/keys.h; sourceTree = "<group>"; };
+		8ADA33902324F021006F528A /* gfx.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gfx.h; path = ../../source/blood/src/gfx.h; sourceTree = "<group>"; };
+		8ADA33912324F021006F528A /* gui.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gui.h; path = ../../source/blood/src/gui.h; sourceTree = "<group>"; };
+		8ADA33922324F021006F528A /* gfx.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = gfx.cpp; path = ../../source/blood/src/gfx.cpp; sourceTree = "<group>"; };
+		8ADA33932324F021006F528A /* gui.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = gui.cpp; path = ../../source/blood/src/gui.cpp; sourceTree = "<group>"; };
+		8ADA33942324F021006F528A /* m32common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = m32common.cpp; path = ../../source/blood/src/m32common.cpp; sourceTree = "<group>"; };
+		8ADA33952324F021006F528A /* mapster32.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = mapster32.h; path = ../../source/blood/src/mapster32.h; sourceTree = "<group>"; };
+		8ADA33962324F021006F528A /* m32def.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = m32def.cpp; path = ../../source/blood/src/m32def.cpp; sourceTree = "<group>"; };
+		8ADA33972324F021006F528A /* m32exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = m32exec.cpp; path = ../../source/blood/src/m32exec.cpp; sourceTree = "<group>"; };
 		8ADC7B1622181CE300709207 /* game.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = game.png; path = bundles/NBlood.app/Contents/Resources/game.png; sourceTree = "<group>"; };
 		8ADC7B1722181CEA00709207 /* nblood.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = nblood.icns; path = bundles/NBlood.app/Contents/Resources/nblood.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1220,7 +1239,6 @@
 			isa = PBXGroup;
 			children = (
 				0008E99919F1AD9B0091588D /* _functio.h */,
-				0008E99A19F1AD9B0091588D /* _midi.h */,
 				0008E99B19F1AD9B0091588D /* _rts.h */,
 				0008E99E19F1AD9B0091588D /* actors.cpp */,
 				0008E99F19F1AD9B0091588D /* actors.h */,
@@ -1280,16 +1298,11 @@
 				8A9E104C2216E9E4000327F4 /* mdump.h */,
 				0008E9C219F1AD9B0091588D /* menus.cpp */,
 				0008E9C319F1AD9B0091588D /* menus.h */,
-				8A9E104B2216E9E4000327F4 /* midi.cpp */,
-				8A9E10432216E9E4000327F4 /* midi.h */,
-				8A9E10482216E9E4000327F4 /* mpu401.cpp */,
-				8A9E104A2216E9E4000327F4 /* mpu401.h */,
-				8A9E104F2216E9E4000327F4 /* music.cpp */,
 				0008E9C419F1AD9B0091588D /* names.h */,
 				0008E9C519F1AD9B0091588D /* namesdyn.cpp */,
 				0008E9C619F1AD9B0091588D /* namesdyn.h */,
-				0008E9C719F1AD9B0091588D /* net.cpp */,
-				0008E9C819F1AD9B0091588D /* net.h */,
+				8ADA336E2324EAD1006F528A /* network.cpp */,
+				8ADA336D2324EAD1006F528A /* network.h */,
 				0008E9C919F1AD9B0091588D /* osdcmds.cpp */,
 				0008E9CA19F1AD9B0091588D /* osdcmds.h */,
 				0008E9CB19F1AD9B0091588D /* osdfuncs.cpp */,
@@ -1309,7 +1322,6 @@
 				20E16CE71C7022DE00EE8446 /* screens.h */,
 				20F7124B1C6C19E5006B68D0 /* screentext.cpp */,
 				20F7124C1C6C19E5006B68D0 /* screentext.h */,
-				0008E9D719F1AD9B0091588D /* sdlmusic.cpp */,
 				0008E9DA19F1AD9B0091588D /* sector.cpp */,
 				0008E9DB19F1AD9B0091588D /* sector.h */,
 				0008E9DC19F1AD9B0091588D /* soundefs.h */,
@@ -1359,10 +1371,15 @@
 		0008E6CE19F1AAFE0091588D /* include */ = {
 			isa = PBXGroup;
 			children = (
+				8ADA33762324EBA0006F528A /* al_midi.h */,
 				20CA2FA61BB2456E001231BF /* drivers.h */,
 				0008E6CF19F1AAFE0091588D /* fx_man.h */,
+				8ADA33752324EBA0006F528A /* midi.h */,
+				8ADA33722324EBA0006F528A /* mpu401.h */,
 				0008E6E419F1AAFF0091588D /* multivoc.h */,
 				0008E6D019F1AAFE0091588D /* music.h */,
+				8ADA33742324EBA0006F528A /* opl3.h */,
+				8ADA33732324EBA0006F528A /* oplmidi.h */,
 			);
 			name = include;
 			path = ../../source/audiolib/include;
@@ -1371,7 +1388,11 @@
 		0008E6D219F1AAFE0091588D /* src */ = {
 			isa = PBXGroup;
 			children = (
+				8ADA33782324EBC9006F528A /* _al_midi.h */,
+				8ADA33772324EBC8006F528A /* _midi.h */,
 				0008E6D319F1AAFE0091588D /* _multivc.h */,
+				8ADA33792324EBC9006F528A /* _oplmidi.h */,
+				8ADA337F2324EBC9006F528A /* al_midi.cpp */,
 				8AAC6D9C2219A7FE0074B176 /* driver_directsound.cpp */,
 				8AAC6D9D2219A7FE0074B176 /* driver_directsound.h */,
 				00970E4E19F2108600873EB9 /* driver_nosound.cpp */,
@@ -1382,12 +1403,18 @@
 				0008E6DC19F1AAFF0091588D /* flac.cpp */,
 				0008E6DD19F1AAFF0091588D /* formats.cpp */,
 				0008E6DE19F1AAFF0091588D /* fx_man.cpp */,
-				0008E6DF19F1AAFF0091588D /* linklist.h */,
+				8ADA337A2324EBC9006F528A /* gmtimbre.cpp */,
+				8ADA337E2324EBC9006F528A /* midi.cpp */,
 				0008E6E119F1AAFF0091588D /* mix.cpp */,
 				0008E6E219F1AAFF0091588D /* mixst.cpp */,
+				8ADA337B2324EBC9006F528A /* mpu401.cpp */,
 				0008E6E319F1AAFF0091588D /* multivoc.cpp */,
+				8ADA337C2324EBC9006F528A /* music.cpp */,
+				8ADA33802324EBC9006F528A /* opl3.cpp */,
+				8ADA33812324EBC9006F528A /* oplmidi.cpp */,
 				0008E6E519F1AAFF0091588D /* pitch.cpp */,
 				0008E6E619F1AAFF0091588D /* pitch.h */,
+				8ADA337D2324EBC9006F528A /* sdlmusic.cpp */,
 				0008E6E719F1AAFF0091588D /* vorbis.cpp */,
 				0008E6E819F1AAFF0091588D /* xa.cpp */,
 				20CEFB1A1E08A8CB0077879C /* xmp.cpp */,
@@ -1407,6 +1434,7 @@
 				20CEFB201E08A9130077879C /* buildtypes.h */,
 				0008E8A419F1AC530091588D /* cache1d.h */,
 				20CEFB231E08A91D0077879C /* clip.h */,
+				8ADA335C2324E0E7006F528A /* clockticks.hpp */,
 				8A9E0D662216C118000327F4 /* collections.h */,
 				20FD1D471C44E4BE00C2E553 /* colmatch.h */,
 				0008E8A519F1AC530091588D /* common.h */,
@@ -1434,6 +1462,7 @@
 				8A9E0D492216C115000327F4 /* klzw.h */,
 				0008E8B019F1AC530091588D /* kplib.h */,
 				2038AE951A8F122D0093B7B2 /* libdivide.h */,
+				8ADA335A2324E0E7006F528A /* linklist.h */,
 				8A9E0D522216C117000327F4 /* lunatic.h */,
 				0008E8B219F1AC530091588D /* lz4.h */,
 				0008E8B419F1AC530091588D /* m32script.h */,
@@ -1466,6 +1495,7 @@
 				0008E8CA19F1AC530091588D /* sdl_inc.h */,
 				0008E8CB19F1AC530091588D /* sdlappicon.h */,
 				0008E8CC19F1AC530091588D /* sdlayer.h */,
+				8ADA335D2324E0E7006F528A /* sjson.h */,
 				8A9E0D682216C118000327F4 /* softsurface.h */,
 				8A9E0D592216C117000327F4 /* startwin.editor.h */,
 				0008E8CF19F1AC530091588D /* texcache.h */,
@@ -1473,6 +1503,8 @@
 				0008E8D119F1AC530091588D /* tracker_operator.hpp */,
 				0008E8D219F1AC530091588D /* tracker_operators.hpp */,
 				0008E8D019F1AC530091588D /* tracker.hpp */,
+				8ADA335E2324E0E7006F528A /* timer.h */,
+				8ADA335B2324E0E7006F528A /* vfs.h */,
 				8A9E0D4A2216C116000327F4 /* wiibits.h */,
 				8A9E0D4C2216C116000327F4 /* winbits.h */,
 				8A9E0D5E2216C117000327F4 /* windows_inc.h */,
@@ -1509,8 +1541,8 @@
 				0008E8E719F1AC540091588D /* engine_oldmap.h */,
 				0008E8E819F1AC540091588D /* engine_priv.h */,
 				0008E8E619F1AC530091588D /* engine.cpp */,
-				8A9E0D9C2216CF06000327F4 /* fix16_str.c */,
-				8A9E0DAC2216CF07000327F4 /* fix16.c */,
+				8ADA33642324E13B006F528A /* fix16_str.cpp */,
+				8ADA33632324E13B006F528A /* fix16.cpp */,
 				0008E8E919F1AC540091588D /* glbuild.cpp */,
 				8A9E0D9B2216CF06000327F4 /* glsurface.cpp */,
 				8A9E0D962216CF06000327F4 /* gtkbits.cpp */,
@@ -1536,6 +1568,10 @@
 				8A9E0DA52216CF07000327F4 /* pngwrite.cpp */,
 				0008E8FA19F1AC540091588D /* polymer.cpp */,
 				0008E8FB19F1AC540091588D /* polymost.cpp */,
+				8ADA33602324E13B006F528A /* polymost1Frag.glsl */,
+				8ADA33692324E88D006F528A /* polymost1Frag.glsl.cpp */,
+				8ADA33612324E13B006F528A /* polymost1Vert.glsl */,
+				8ADA336A2324E88D006F528A /* polymost1Vert.glsl.cpp */,
 				0008E8FC19F1AC540091588D /* pragmas.cpp */,
 				8A9E0D972216CF06000327F4 /* rawinput.cpp */,
 				0008E9D219F1AD9B0091588D /* rev.cpp */,
@@ -1554,6 +1590,8 @@
 				0008E90719F1AC540091588D /* textfont.cpp */,
 				8A9E0DA42216CF07000327F4 /* tilepacker.cpp */,
 				2044C99B1E08A74100A8C543 /* tiles.cpp */,
+				8ADA33622324E13B006F528A /* timer.cpp */,
+				8ADA335F2324E13B006F528A /* vfs.cpp */,
 				0008E91F19F1AC540091588D /* voxmodel.cpp */,
 				8A9E0DAD2216CF07000327F4 /* wiibits.cpp */,
 				8A9E0DA32216CF07000327F4 /* winbits.cpp */,
@@ -1719,10 +1757,7 @@
 		8A9E0EA32216E8C9000327F4 /* NBlood */ = {
 			isa = PBXGroup;
 			children = (
-				8A9E0F032216E8F4000327F4 /* _al_midi.h */,
 				8A9E0F092216E8F5000327F4 /* _functio.h */,
-				8A9E0F2F2216E8F9000327F4 /* _midi.h */,
-				8A9E0EA72216E8ED000327F4 /* _oplmidi.h */,
 				8A9E0EF32216E8F3000327F4 /* actor.cpp */,
 				8A9E0EFF2216E8F4000327F4 /* actor.h */,
 				8A9E0F0C2216E8F5000327F4 /* ai.cpp */,
@@ -1767,8 +1802,6 @@
 				8A9E0EB12216E8ED000327F4 /* aizomba.h */,
 				8A9E0ED92216E8F0000327F4 /* aizombf.cpp */,
 				8A9E0EE12216E8F1000327F4 /* aizombf.h */,
-				8A9E0F362216E8FA000327F4 /* al_midi.cpp */,
-				8A9E0F1C2216E8F7000327F4 /* al_midi.h */,
 				8A9E0F112216E8F6000327F4 /* asound.cpp */,
 				8A9E0EDB2216E8F1000327F4 /* asound.h */,
 				8A9E0F122216E8F6000327F4 /* blood.cpp */,
@@ -1809,46 +1842,49 @@
 				8A9E0EB02216E8ED000327F4 /* gameutil.h */,
 				8A9E0F392216E8FA000327F4 /* getopt.cpp */,
 				8A9E0F2C2216E8F9000327F4 /* getopt.h */,
+				8ADA33922324F021006F528A /* gfx.cpp */,
+				8ADA33902324F021006F528A /* gfx.h */,
 				8A9E0F1F2216E8F8000327F4 /* gib.cpp */,
 				8A9E0F412216E8FB000327F4 /* gib.h */,
 				8A9E0EF82216E8F3000327F4 /* globals.cpp */,
 				8A9E0EDC2216E8F1000327F4 /* globals.h */,
-				8A9E0EAD2216E8ED000327F4 /* gmtimbre.cpp */,
+				8ADA33932324F021006F528A /* gui.cpp */,
+				8ADA33912324F021006F528A /* gui.h */,
 				8A9E0F072216E8F5000327F4 /* inifile.cpp */,
 				8A9E0EB62216E8EE000327F4 /* inifile.h */,
 				8A9E0F312216E8FA000327F4 /* iob.cpp */,
 				8A9E0F332216E8FA000327F4 /* iob.h */,
+				8ADA338F2324F021006F528A /* keys.h */,
 				8A9E0F252216E8F8000327F4 /* levels.cpp */,
 				8A9E0F0F2216E8F6000327F4 /* levels.h */,
 				8A9E0EBA2216E8EE000327F4 /* loadsave.cpp */,
 				8A9E0F2D2216E8F9000327F4 /* loadsave.h */,
+				8ADA33942324F021006F528A /* m32common.cpp */,
+				8ADA33962324F021006F528A /* m32def.cpp */,
+				8ADA338A2324F020006F528A /* m32def.h */,
+				8ADA33972324F021006F528A /* m32exec.cpp */,
+				8ADA338B2324F020006F528A /* m32structures.cpp */,
+				8ADA338C2324F020006F528A /* m32vars.cpp */,
+				8ADA338D2324F021006F528A /* macros.h */,
 				8A9E0EA52216E8ED000327F4 /* map2d.cpp */,
 				8A9E0F022216E8F4000327F4 /* map2d.h */,
+				8ADA338E2324F021006F528A /* mapedit.cpp */,
+				8ADA33952324F021006F528A /* mapster32.h */,
 				8A9E0F052216E8F5000327F4 /* menu.cpp */,
 				8A9E0EC22216E8EE000327F4 /* menu.h */,
 				8A9E0EE92216E8F2000327F4 /* messages.cpp */,
 				8A9E0EB42216E8EE000327F4 /* messages.h */,
-				8A9E0EAF2216E8ED000327F4 /* midi.cpp */,
-				8A9E0ED22216E8F0000327F4 /* midi.h */,
 				8A9E0ED32216E8F0000327F4 /* mirrors.cpp */,
 				8A9E0EB92216E8EE000327F4 /* mirrors.h */,
 				8A9E0EC42216E8EF000327F4 /* misc.cpp */,
 				8A9E0F202216E8F8000327F4 /* misc.h */,
-				8A9E0EC82216E8EF000327F4 /* mpu401.cpp */,
-				8A9E0EE82216E8F2000327F4 /* mpu401.h */,
-				8A9E0F152216E8F7000327F4 /* music.cpp */,
 				8AAC6D98221972640074B176 /* nblood.pk3 */,
 				8A9E0EAA2216E8ED000327F4 /* network.cpp */,
 				8A9E0ED42216E8F0000327F4 /* network.h */,
-				8A9E0EB52216E8EE000327F4 /* opl3.cpp */,
-				8A9E0EE22216E8F1000327F4 /* opl3.h */,
-				8A9E0F372216E8FA000327F4 /* oplmidi.cpp */,
-				8A9E0F0E2216E8F6000327F4 /* oplmidi.h */,
 				8A9E0EE32216E8F1000327F4 /* osdcmd.cpp */,
 				8A9E0F3C2216E8FB000327F4 /* osdcmds.h */,
 				8A9E0EF22216E8F3000327F4 /* player.cpp */,
 				8A9E0F382216E8FA000327F4 /* player.h */,
-				8A9E0F402216E8FB000327F4 /* pqueue.cpp */,
 				8A9E0F3A2216E8FA000327F4 /* pqueue.h */,
 				8A9E0EAC2216E8ED000327F4 /* qav.cpp */,
 				8A9E0EBB2216E8EE000327F4 /* qav.h */,
@@ -1860,7 +1896,6 @@
 				8A9E0F302216E8F9000327F4 /* resource.h */,
 				8A9E0F212216E8F8000327F4 /* screen.cpp */,
 				8A9E0F272216E8F9000327F4 /* screen.h */,
-				8A9E0F162216E8F7000327F4 /* sdlmusic.cpp */,
 				8A9E0ED52216E8F0000327F4 /* sectorfx.cpp */,
 				8A9E0F172216E8F7000327F4 /* sectorfx.h */,
 				8A9E0F1B2216E8F7000327F4 /* seq.cpp */,
@@ -2054,6 +2089,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0008E6B819F1A9260091588D /* Build configuration list for PBXNativeTarget "BUILD" */;
 			buildPhases = (
+				8ADA33672324E411006F528A /* Process polymost1Frag.glsl */,
+				8ADA33682324E7A2006F528A /* Process polymost1Vert.glsl */,
 				0008E6B319F1A9260091588D /* Sources */,
 			);
 			buildRules = (
@@ -2204,6 +2241,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -2258,6 +2296,49 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		8ADA33672324E411006F528A /* Process polymost1Frag.glsl */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				../../source/build/src/polymost1Frag.glsl,
+			);
+			name = "Process polymost1Frag.glsl";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				shaders/polymost1Frag.glsl.cpp,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#if [ ! -e shaders ]; then\n#    mkdir shaders\n#fi\n\n#echo 'char const* polymost1Frag = R^\"shader(' > shaders/polymost1Frag.glsl.cpp\n#cat ../../source/build/src/polymost1Frag.glsl >> shaders/polymost1Frag.glsl.cpp\n#echo ')shader^\";' >> shaders/polymost1Frag.glsl.cpp\n\n./process_shader.sh ../../source/build/src/polymost1Frag.glsl\n";
+		};
+		8ADA33682324E7A2006F528A /* Process polymost1Vert.glsl */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				../../source/build/src/polymost1Vert.glsl,
+			);
+			name = "Process polymost1Vert.glsl";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				shaders/polymost1Vert.glsl.cpp,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "./process_shader.sh ../../source/build/src/polymost1Vert.glsl\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		0008E64719F1A66E0091588D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -2282,7 +2363,7 @@
 				0008E9F319F1AD9B0091588D /* input.cpp in Sources */,
 				0008E9F419F1AD9B0091588D /* menus.cpp in Sources */,
 				0008E9F519F1AD9B0091588D /* namesdyn.cpp in Sources */,
-				0008E9F619F1AD9B0091588D /* net.cpp in Sources */,
+				8ADA336F2324EB10006F528A /* network.cpp in Sources */,
 				0008E9F719F1AD9B0091588D /* osdcmds.cpp in Sources */,
 				0008E9F819F1AD9B0091588D /* osdfuncs.cpp in Sources */,
 				0008E9F919F1AD9B0091588D /* player.cpp in Sources */,
@@ -2293,7 +2374,6 @@
 				20F712511C6C19F4006B68D0 /* sbar.cpp in Sources */,
 				20E16CE81C7022DE00EE8446 /* screens.cpp in Sources */,
 				20F7124D1C6C19E5006B68D0 /* screentext.cpp in Sources */,
-				0008E9FE19F1AD9B0091588D /* sdlmusic.cpp in Sources */,
 				0008EA0019F1AD9B0091588D /* sector.cpp in Sources */,
 				0008EA0219F1AD9B0091588D /* soundsdyn.cpp in Sources */,
 				0008EA0119F1AD9B0091588D /* sounds.cpp in Sources */,
@@ -2336,10 +2416,10 @@
 				0008E96019F1AC540091588D /* defs.cpp in Sources */,
 				0008E96119F1AC540091588D /* dxtfilter.cpp in Sources */,
 				0008E96319F1AC540091588D /* engine.cpp in Sources */,
+				8ADA33702324EB4C006F528A /* fix16_str.cpp in Sources */,
+				8ADA33712324EB4C006F528A /* fix16.cpp in Sources */,
 				0008E96619F1AC540091588D /* glbuild.cpp in Sources */,
 				8A9E0DAE2216CF41000327F4 /* glsurface.cpp in Sources */,
-				8A9E0DB22216CF7E000327F4 /* fix16.c in Sources */,
-				8A9E0DB42216CF9B000327F4 /* fix16_str.c in Sources */,
 				20CEFB181E08A8830077879C /* hash.cpp in Sources */,
 				0008E96819F1AC540091588D /* hightile.cpp in Sources */,
 				8A9E0DB32216CF85000327F4 /* klzw.cpp in Sources */,
@@ -2359,6 +2439,8 @@
 				8A9E0DB12216CF61000327F4 /* pngwrite.cpp in Sources */,
 				0008E97619F1AC540091588D /* polymer.cpp in Sources */,
 				0008E97719F1AC540091588D /* polymost.cpp in Sources */,
+				8ADA336B2324E8AD006F528A /* polymost1Frag.glsl.cpp in Sources */,
+				8ADA336C2324E8AD006F528A /* polymost1Vert.glsl.cpp in Sources */,
 				0008E97819F1AC540091588D /* pragmas.cpp in Sources */,
 				2044C9901E08A6BC00A8C543 /* screenshot.cpp in Sources */,
 				0008E97A19F1AC540091588D /* scriptfile.cpp in Sources */,
@@ -2369,6 +2451,8 @@
 				0008E98319F1AC540091588D /* textfont.cpp in Sources */,
 				8A9E0DB02216CF5A000327F4 /* tilepacker.cpp in Sources */,
 				2044C99C1E08A74100A8C543 /* tiles.cpp in Sources */,
+				8ADA33652324E18B006F528A /* timer.cpp in Sources */,
+				8ADA33662324E18B006F528A /* vfs.cpp in Sources */,
 				0008E99519F1AC540091588D /* voxmodel.cpp in Sources */,
 				0008E99819F1AC540091588D /* xxhash.c in Sources */,
 			);
@@ -2380,7 +2464,6 @@
 			files = (
 				8A9E0DE22216D7A4000327F4 /* animlib.cpp in Sources */,
 				8A9E0DE32216D7A4000327F4 /* control.cpp in Sources */,
-				8A9E0DE42216D7A4000327F4 /* file_lib.cpp in Sources */,
 				8A9E0DE52216D7A4000327F4 /* joystick.cpp in Sources */,
 				8A9E0DE62216D7A4000327F4 /* keyboard.cpp in Sources */,
 				8A9E0DE72216D7A4000327F4 /* scriplib.cpp in Sources */,
@@ -2391,16 +2474,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8ADA33822324EC10006F528A /* al_midi.cpp in Sources */,
 				00970E5019F2108600873EB9 /* driver_nosound.cpp in Sources */,
 				0008E6F119F1AAFF0091588D /* driver_sdl.cpp in Sources */,
 				0008E6F319F1AAFF0091588D /* drivers.cpp in Sources */,
 				0008E6F519F1AAFF0091588D /* flac.cpp in Sources */,
 				0008E6F619F1AAFF0091588D /* formats.cpp in Sources */,
 				0008E6F719F1AAFF0091588D /* fx_man.cpp in Sources */,
+				8ADA33892324EFB6006F528A /* gmtimbre.cpp in Sources */,
 				0008E6FA19F1AAFF0091588D /* mix.cpp in Sources */,
 				0008E6FB19F1AAFF0091588D /* mixst.cpp in Sources */,
 				0008E6FC19F1AAFF0091588D /* multivoc.cpp in Sources */,
+				8ADA33852324EC28006F528A /* opl3.cpp in Sources */,
+				8ADA33872324EC2D006F528A /* oplmidi.cpp in Sources */,
 				0008E6FE19F1AAFF0091588D /* pitch.cpp in Sources */,
+				8ADA33882324EC33006F528A /* sdlmusic.cpp in Sources */,
 				0008E70019F1AAFF0091588D /* vorbis.cpp in Sources */,
 				0008E70119F1AAFF0091588D /* xa.cpp in Sources */,
 				20CEFB1B1E08A8CB0077879C /* xmp.cpp in Sources */,
@@ -2449,7 +2537,6 @@
 				8ABD67772286C08100CDB214 /* aiunicult.cpp in Sources */,
 				8A9E0FA52216E966000327F4 /* aizomba.cpp in Sources */,
 				8A9E0FA62216E966000327F4 /* aizombf.cpp in Sources */,
-				8A9E0FA72216E966000327F4 /* al_midi.cpp in Sources */,
 				8A9E0FA82216E966000327F4 /* asound.cpp in Sources */,
 				8A9E0FA92216E966000327F4 /* blood.cpp in Sources */,
 				8A9E0FAA2216E966000327F4 /* callback.cpp in Sources */,
@@ -2468,9 +2555,10 @@
 				8A9E0FB72216E967000327F4 /* gamemenu.cpp in Sources */,
 				8A9E0FB82216E967000327F4 /* gameutil.cpp in Sources */,
 				8A9E0FB92216E967000327F4 /* getopt.cpp in Sources */,
+				8ADA33982324F069006F528A /* gfx.cpp in Sources */,
 				8A9E0FBA2216E967000327F4 /* gib.cpp in Sources */,
 				8A9E0FBB2216E967000327F4 /* globals.cpp in Sources */,
-				8A9E0FBC2216E967000327F4 /* gmtimbre.cpp in Sources */,
+				8ADA33992324F08E006F528A /* gui.cpp in Sources */,
 				8A9E0FBD2216E967000327F4 /* inifile.cpp in Sources */,
 				8A9E0FBE2216E967000327F4 /* iob.cpp in Sources */,
 				8A9E0FBF2216E967000327F4 /* levels.cpp in Sources */,
@@ -2481,18 +2569,14 @@
 				8A9E0FC52216E967000327F4 /* mirrors.cpp in Sources */,
 				8A9E0FC62216E967000327F4 /* misc.cpp in Sources */,
 				8A9E0FC92216E967000327F4 /* network.cpp in Sources */,
-				8A9E0FCA2216E967000327F4 /* opl3.cpp in Sources */,
-				8A9E0FCB2216E967000327F4 /* oplmidi.cpp in Sources */,
 				8A9E0FCC2216E967000327F4 /* osdcmd.cpp in Sources */,
 				8A9E0FCD2216E967000327F4 /* player.cpp in Sources */,
-				8A9E0FCE2216E967000327F4 /* pqueue.cpp in Sources */,
 				8A9E0FCF2216E967000327F4 /* qav.cpp in Sources */,
 				8A9E0FD02216E967000327F4 /* qheap.cpp in Sources */,
 				8A9E0FD12216E967000327F4 /* replace.cpp in Sources */,
 				8A9E0FD22216E967000327F4 /* resource.cpp in Sources */,
 				8A9E10852216F19C000327F4 /* rev.cpp in Sources */,
 				8A9E0FD32216E967000327F4 /* screen.cpp in Sources */,
-				8A9E0FD42216E967000327F4 /* sdlmusic.cpp in Sources */,
 				8A9E0FD52216E967000327F4 /* sectorfx.cpp in Sources */,
 				8A9E0FD62216E967000327F4 /* seq.cpp in Sources */,
 				8A9E0FD72216E967000327F4 /* sfx.cpp in Sources */,

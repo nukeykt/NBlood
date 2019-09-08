@@ -429,7 +429,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
     if (dist < pDudeInfo->seeDist && klabs(losAngle) <= pDudeInfo->periphery) {
 
         if (pXSprite->target < 0) aiSetTarget(pXSprite, pXSprite->target);
-        if ((gFrameClock & 64) == 0 && Chance(0x3000) && !spriteIsUnderwater(pSprite, false))
+        if (((int)gFrameClock & 64) == 0 && Chance(0x3000) && !spriteIsUnderwater(pSprite, false))
             sfxPlayGDXGenDudeSound(pSprite, 6);
 
         gDudeSlope[sprite[pXSprite->reference].extra] = (int)divscale(pTarget->z - pSprite->z, dist, 10);
@@ -600,7 +600,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite )
                         return;
                     }
 
-                    vdist = 4200; if ((gFrameClock & 16) == 0) vdist += Random(800);
+                    vdist = 4200; if (((int)gFrameClock & 16) == 0) vdist += Random(800);
                     break;
                 }
 
