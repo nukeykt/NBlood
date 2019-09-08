@@ -12,3 +12,5 @@ SDL_egl*
 libSDL2_test.a
 libSDL2main.a
 sdl2-config*
+/shaders/
+/DerivedData/
