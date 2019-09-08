@@ -2649,7 +2649,7 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
                                  int32_t picnum, int32_t shade, int32_t stat,
                                  int32_t xpanning, int32_t ypanning, int32_t x1)
 {
-    int32_t i, j, ox, oy;
+    int32_t i;
 
     if (palookup[pal] != globalpalwritten)
     {
@@ -2684,21 +2684,17 @@ static int32_t setup_globals_cf1(usectorptr_t sec, int32_t pal, int32_t zd,
     }
     else
     {
-        j = sec->wallptr;
-        ox = wall[wall[j].point2].x - wall[j].x;
-        oy = wall[wall[j].point2].y - wall[j].y;
-        i = nsqrtasm(uhypsq(ox,oy)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
-        globalx1 = mulscale10(dmulscale10(ox,singlobalang,-oy,cosglobalang),i);
-        globaly1 = mulscale10(dmulscale10(ox,cosglobalang,oy,singlobalang),i);
+        vec2_t const xy = { wall[wall[sec->wallptr].point2].x - wall[sec->wallptr].x,
+                            wall[wall[sec->wallptr].point2].y - wall[sec->wallptr].y };
+        i = nsqrtasm(uhypsq(xy.x,xy.y)); if (i == 0) i = 1024; else i = tabledivide32(1048576, i);
+        int const wcos = mulscale6(xy.x, i), wsin = mulscale6(xy.y, i);
+        globalx1 = dmulscale14(wcos,singlobalang,-wsin,cosglobalang);
+        globaly1 = dmulscale14(wcos,cosglobalang,wsin,singlobalang);
         globalx2 = -globalx1;
         globaly2 = -globaly1;
 
-        ox = ((wall[j].x-globalposx)<<6); oy = ((wall[j].y-globalposy)<<6);
-        i = dmulscale14(oy,cosglobalang,-ox,singlobalang);
-        j = dmulscale14(ox,cosglobalang,oy,singlobalang);
-        ox = i; oy = j;
-        globalxpanning = (coord_t)globalx1*ox - (coord_t)globaly1*oy;
-        globalypanning = (coord_t)globaly2*ox + (coord_t)globalx2*oy;
+        globalxpanning = (coord_t)((globalposx - wall[sec->wallptr].x)<<6) * wcos + (coord_t)((globalposy - wall[sec->wallptr].y)<<6) * wsin;
+        globalypanning = (coord_t)((globalposy - wall[sec->wallptr].y)<<6) * wcos - (coord_t)((globalposx - wall[sec->wallptr].x)<<6) * wsin;
     }
     globalx2 = mulscale16(globalx2,viewingrangerecip);
     globaly1 = mulscale16(globaly1,viewingrangerecip);
@@ -7644,7 +7640,7 @@ static int32_t engineLoadTables(void)
             radarang[1279-i] = -radarang[i];
 
         for (i=0; i<5120; i++)
-            qradarang[i] = fix16_from_float(atanf(((float)(5120-i)-0.5f) * (1.f/1024.f)) * (-64.f * (1.f/BANG2RAD)));
+            qradarang[i] = fix16_from_float(atanf(((float)(5120-i)-0.5f) * (1.f/1280.f)) * (-64.f * (1.f/BANG2RAD)));
         for (i=0; i<5120; i++)
             qradarang[10239-i] = -qradarang[i];
 
@@ -8853,6 +8849,7 @@ void renderDrawMasks(void)
     int32_t i = spritesortcnt-1;
     int32_t numSprites = spritesortcnt;
 
+#ifdef USE_OPENGL
     if (videoGetRenderMode() == REND_POLYMOST)
     {
         spritesortcnt = 0;
@@ -8870,6 +8867,7 @@ void renderDrawMasks(void)
             }
         }
     } else
+#endif
     {
         for (; i >= 0; --i)
         {
@@ -10413,7 +10411,6 @@ static void videoAllocateBuffers(void)
     if (videoGetRenderMode() == REND_CLASSIC)
     {
 # ifdef USE_OPENGL
-        extern char nogl;
         if (!nogl)
         {
             glsurface_initialize({ xdim, ydim });
@@ -10482,8 +10479,6 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     int32_t j;
 
 #ifdef USE_OPENGL
-    extern char nogl;
-
     if (nogl) dabpp = 8;
 #endif
     daupscaledxdim = max(320, daupscaledxdim);
