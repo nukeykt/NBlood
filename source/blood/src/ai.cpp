@@ -117,7 +117,7 @@ void aiNewState(spritetype *pSprite, XSPRITE *pXSprite, AISTATE *pAIState)
                 break;
         }
         seqStartId += pAIState->at0;
-        if (!VanillaMode() && 7 == pSprite->type-kDudeBase) // if Cheogh
+        if (!VanillaMode() && gCheoghBlueEyes && 7 == pSprite->type-kDudeBase) // if Cheogh
             pSprite->pal = 25 == pAIState->at4 ? 0 : 5; // if blasting then colorful else grayscale
         if (gSysRes.Lookup(seqStartId, "SEQ"))
             seqSpawn(seqStartId, 3, pSprite->extra, pAIState->at4);

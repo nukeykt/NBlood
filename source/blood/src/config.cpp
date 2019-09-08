@@ -113,6 +113,7 @@ int32_t gShowMapTitle;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
+int32_t gCheoghBlueEyes;
 
 //////////
 int gWeaponsV10x;
@@ -379,6 +380,7 @@ void CONFIG_SetDefaults(void)
     gFov = 90;
     gCenterHoriz = 0;
     gDeliriumBlur = 1;
+    gCheoghBlueEyes = 0;
     gViewSize = 2;
     gTurnSpeed = 92;
     gDetail = 4;

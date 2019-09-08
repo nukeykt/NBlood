@@ -92,6 +92,7 @@ extern int32_t gShowMapTitle;
 extern int32_t gFov;
 extern int32_t gCenterHoriz;
 extern int32_t gDeliriumBlur;
+extern int32_t gCheoghBlueEyes;
 
 ///////
 extern int gWeaponsV10x;
