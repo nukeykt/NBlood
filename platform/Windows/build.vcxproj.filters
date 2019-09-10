@@ -191,6 +191,9 @@
     <ClCompile Include="..\..\source\build\src\fix16_str.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\build\src\communityapi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\build\src\timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -389,6 +392,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\build\include\vfs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\communityapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\build\include\timer.h">
