@@ -25,6 +25,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ai.h"
 #include "eventq.h"
 
+#define kMaxGenDudeSndMode 11
+#define kIncarnationIndexBase 16000
+#define kDefaultAnimationBase 11520
+
+
 extern AISTATE GDXGenDudeIdleL;
 extern AISTATE GDXGenDudeIdleW;
 extern AISTATE GDXGenDudeSearchL;
@@ -50,6 +55,16 @@ extern AISTATE GDXGenDudeThrow;
 extern AISTATE GDXGenDudeThrow2;
 extern AISTATE GDXGenDudePunch;
 extern AISTATE GDXGenDudeRTesla;
+
+struct GENDUDESND
+{
+    int defaultSndId;
+    int randomRange;
+    int sndIdOffset;  // relative to data3
+    bool aiPlaySound; // false = sfxStart3DSound();
+};
+extern GENDUDESND gCustomDudeSnd[];
+
 
 XSPRITE* getNextIncarnation(XSPRITE* pXSprite);
 void killDudeLeech(spritetype* pLeech);

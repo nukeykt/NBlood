@@ -24,7 +24,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 extern int shadeCount;
-extern short shadeList[512];
+extern short shadeList[kMaxXSectors];
+extern int panCount;
+extern short panList[kMaxXSectors];
 
 void DoSectorLighting(void);
 void UndoSectorLighting(void);
