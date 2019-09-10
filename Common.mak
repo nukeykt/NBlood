@@ -530,7 +530,8 @@ ifeq ($(PLATFORM),WINDOWS)
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
-    LINKERFLAGS += -Wl,--enable-auto-import,--dynamicbase,--nxcompat
+    DYNAMICBASE := ,--dynamicbase
+    LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat$(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
     else
