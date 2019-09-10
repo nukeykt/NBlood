@@ -42,6 +42,8 @@ L_State g_engState;
 
 #include "vfs.h"
 
+#include "communityapi.h"
+
 //////////
 // Compilation switches for optional/extended engine features
 
@@ -8207,6 +8209,8 @@ int32_t enginePostInit(void)
 //
 void engineUnInit(void)
 {
+    communityapiShutdown();
+
 #ifdef USE_OPENGL
     polymost_glreset();
     hicinit();

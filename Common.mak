@@ -577,6 +577,9 @@ else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
     COMPILERFLAGS += -D__OPENDINGUX__
 else ifeq ($(PLATFORM),SKYOS)
     COMPILERFLAGS += -DUNDERSCORES
+else ifeq ($(SUBPLATFORM),LINUX)
+    # Locate .so files
+    LINKERFLAGS += -Wl,-rpath,'$$ORIGIN' -Wl,-z,origin
 endif
 ASFLAGS += -f $(ASFORMAT)
 

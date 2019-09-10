@@ -39,6 +39,7 @@
 #endif
 
 #include "vfs.h"
+#include "communityapi.h"
 
 #if SDL_MAJOR_VERSION != 1
 static SDL_version linked;
@@ -2508,6 +2509,8 @@ int32_t handleevents(void)
 
     inputchecked = 0;
     timerUpdate();
+
+    communityapiRunCallbacks();
 
 #ifndef _WIN32
     startwin_idle(NULL);

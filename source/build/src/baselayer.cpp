@@ -8,6 +8,7 @@
 #include "a.h"
 #include "polymost.h"
 #include "cache1d.h"
+#include "communityapi.h"
 
 // video
 #ifdef _WIN32
@@ -488,6 +489,8 @@ int32_t baselayer_init(void)
 #endif
 
     for (native_t i = 0; i < NUMKEYS; i++) g_keyRemapTable[i] = i;
+
+    communityapiInit();
 
     return 0;
 }

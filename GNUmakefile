@@ -184,6 +184,38 @@ ifeq ($(RENDERTYPE),WIN)
     glad_objs += glad_wgl.c
 endif
 
+#### Voidwrap
+
+voidwrap := voidwrap
+
+voidwrap_objs := \
+    voidwrap_steam.cpp
+
+voidwrap_root := $(source)/$(voidwrap)
+voidwrap_src := $(voidwrap_root)/src
+voidwrap_inc := $(voidwrap_root)/include
+voidwrap_obj := $(obj)/$(voidwrap)
+
+ifeq ($(IMPLICIT_ARCH),x86_64)
+    ifeq ($(PLATFORM),WINDOWS)
+        voidwrap_lib := voidwrap_steam_x64.dll
+        steamworks_lib := win64/steam_api64.dll
+    else
+        voidwrap_lib := libvoidwrap_steam.so.0
+        steamworks_lib := linux64/libsteam_api.so
+    endif
+else
+    ifeq ($(PLATFORM),WINDOWS)
+        voidwrap_lib := voidwrap_steam_x86.dll
+        steamworks_lib := steam_api.dll
+    else
+        voidwrap_lib := libvoidwrap_steam.so.0
+        steamworks_lib := linux32/libsteam_api.so
+    endif
+endif
+
+voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam
+
 
 ##### Component Definitions
 
@@ -259,6 +291,7 @@ engine_objs := \
     fix16.cpp \
     fix16_str.cpp \
     sjson.cpp \
+    communityapi.cpp \
 
 engine_editor_objs := \
     build.cpp \
@@ -849,7 +882,15 @@ endif
 
 #### Final setup
 
-COMPILERFLAGS += -I$(engine_inc) -I$(mact_inc) -I$(audiolib_inc) -I$(enet_inc) -I$(glad_inc) -MP -MMD
+COMPILERFLAGS += \
+    -I$(engine_inc) \
+    -I$(mact_inc) \
+    -I$(audiolib_inc) \
+    -I$(enet_inc) \
+    -I$(glad_inc) \
+    -I$(voidwrap_inc) \
+    -MP -MMD \
+
 ifneq (0,$(USE_PHYSFS))
     COMPILERFLAGS += -I$(physfs_inc) -DUSE_PHYSFS
 endif
@@ -870,6 +911,7 @@ libraries := \
     libxmplite \
     lpeg \
     glad \
+    voidwrap \
 
 ifneq (0,$(USE_PHYSFS))
     libraries += physfs
@@ -973,6 +1015,16 @@ getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -o $@ $^ $(LIBDIRS) $(LIBS) -ldinput $(RECIPE_RESULT_LINK)
 
+
+### Voidwrap
+
+$(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
+	$(LINK_STATUS)
+	$(RECIPE_IF) $(LINKER) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
+
+$(voidwrap_obj)/%.$o: $(voidwrap_src)/%.cpp | $(voidwrap_obj)
+	$(COMPILE_STATUS)
+	$(RECIPE_IF) $(COMPILER_CXX) $(voidwrap_cflags) -fPIC -c $< -o $@ $(RECIPE_RESULT_COMPILE)
 
 ### Lunatic
 
@@ -1093,6 +1145,7 @@ cleantools:
 clean: cleanduke3d cleantools
 	-$(call RMDIR,$(obj))
 	-$(call RM,$(ebacktrace_dll))
+	-$(call RM,$(voidwrap_lib))
 
 printtools:
 	echo "$(addsuffix $(EXESUFFIX),$(tools_targets))"
