@@ -30,6 +30,9 @@ texturecache
 /*.map
 /platform/Windows/*.map
 *.pdb
+*.iobj
+*.ipdb
+*.ilk
 .vs/
 *.VC.db
 *.VC.opendb
@@ -46,6 +49,8 @@ texturecache
 *.vcxproj.user
 *.psess
 *.vsp
+/platform/Windows/Debug/
+/platform/Windows/Release/
 /platform/Windows/Build/
 /platform/Windows/x64/
 /platform/Windows/Win32/
@@ -59,3 +64,4 @@ project.xcworkspace/
 
 .DS_Store
 ._*
+/source/voidwrap/sdk/
