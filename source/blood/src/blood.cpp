@@ -608,7 +608,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     }
     InitSectorFX();
     warpInit();
-    actInit();
+    actInit(false);
     evInit();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {

@@ -244,7 +244,7 @@ static void ThrowThing(int nXIndex, bool impact) {
     if (thingType >= kThingBase && thingType < kThingMax) {
 
         THINGINFO* pThinkInfo = &thingInfo[thingType - kThingBase];
-        if (pThinkInfo->allowThrow == 1) {
+        if (pThinkInfo->allowThrow) {
 
             if (!sfxPlayGDXGenDudeSound(pSprite, 8))
                 sfxPlay3DSound(pSprite, 455, -1, 0);

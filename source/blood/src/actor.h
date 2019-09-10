@@ -80,7 +80,7 @@ struct THINGINFO
     unsigned char at15; // xrepeat
     unsigned char at16; // yrepeat
     int at17[7]; // damage
-    int allowThrow; // By NoOne: indicates if kGDXCustomDude can throw it
+    bool allowThrow; // By NoOne: indicates if kCustomDude can throw it
 };
 
 struct AMMOITEMDATA
@@ -129,7 +129,7 @@ struct MissileType
     unsigned char atb; // yrepeat
     char atc; // shade
     unsigned char atd; // clipdist
-    int fireSound[2]; // By NoOne: predefined fire sounds. used by kGDXCustomDude, but can be used for something else.
+    int fireSound[2]; // By NoOne: predefined fire sounds. used by kCustomDude, but can be used for something else.
 };
 
 struct EXPLOSION
@@ -162,10 +162,10 @@ struct VECTORDATA {
     int at15; // blood splats
     int at19; // blood splat chance
     VECTORDATA_at1d at1d[15];
-    int fireSound[2]; // By NoOne: predefined fire sounds. used by kGDXCustomDude, but can be used for something else.
+    int fireSound[2]; // By NoOne: predefined fire sounds. used by kCustomDude, but can be used for something else.
 };
 
-// by NoOne: sprite mass info for getDudeMassBySpriteSize();
+// by NoOne: sprite mass info for getSpriteMassBySize();
 struct SPRITEMASS {
     int seqId;
     short picnum; // mainly needs for moving debris
@@ -220,7 +220,7 @@ int actSpriteIdToOwnerId(int nSprite);
 int actOwnerIdToSpriteId(int nSprite);
 bool actTypeInSector(int nSector, int nType);
 void actAllocateSpares(void);
-void actInit(void);
+void actInit(bool bSaveLoad);
 void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6);
 int actWallBounceVector(int *x, int *y, int nWall, int a4);
 int actFloorBounceVector(int *x, int *y, int *z, int nSector, int a5);
@@ -270,7 +270,6 @@ int GetRandDataVal(int *rData, spritetype* pSprite);
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId);
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist);
-int getSpriteMassBySize(spritetype* pSprite);
 int getSpriteMassBySize(spritetype* pSprite);
 bool ceilIsTooLow(spritetype* pSprite);
 void actBuildMissile(spritetype* pMissile, int nXSprite, int nSprite);

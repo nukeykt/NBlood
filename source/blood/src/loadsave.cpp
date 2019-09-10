@@ -44,8 +44,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "view.h"
 
-bool gGameLoaded = false;
-
 GAMEOPTIONS gSaveGameOptions[10];
 char *gSaveGamePic[10];
 unsigned int gSavedOffset = 0;
@@ -312,11 +310,6 @@ void MyLoadSave::Load(void)
     Read(&numyaxbunches, sizeof(numyaxbunches));
 #endif
     gCheatMgr.sub_5BCF4();
-
-
-    // by NoOne: indicate game was loaded from save file
-    gGameLoaded = true;
-
 
 }
 

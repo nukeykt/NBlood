@@ -2535,7 +2535,7 @@ short gSightSpritesCount; // current count
 short gPhysSpritesList[];  // by NoOne: list of additional sprites which can be affected by physics
 short gPhysSpritesCount; // current count
 
-void actInit(void) {
+void actInit(bool bSaveLoad) {
     
     // by NoOne: init code for all my stuff
     if (!VanillaMode()) {
@@ -2543,14 +2543,16 @@ void actInit(void) {
         // reset counters
         gProxySpritesCount = gSightSpritesCount = gPhysSpritesCount = 0;
 
-        for (int i = 0, super = 0; i < kMaxXSprites; i++, super++) {
-            
-            // fill arrays with negative values to avoid xvel 0 situation
-            if (super < kMaxSuperXSprites)
-                gSightSpritesList[i] = gProxySpritesList[i] = gPhysSpritesList[i] = -1;
+        // fill arrays with negative values to avoid xvel 0 situation
+        memset(gSightSpritesList, -1, sizeof(gSightSpritesList));
+        memset(gProxySpritesList, -1, sizeof(gProxySpritesList));
+        memset(gPhysSpritesList, -1, sizeof(gPhysSpritesList));
 
+        for (int i = 0; i < kMaxXSprites; i++) {
+
+            if (xsprite[i].reference < 0) continue;
             XSPRITE* pXSprite = &xsprite[i];  spritetype* pSprite = &sprite[pXSprite->reference];
-            
+
             switch (pSprite->lotag) {
                 // add statnum for faster dude searching
                 case kGDXDudeTargetChanger:
@@ -2568,7 +2570,7 @@ void actInit(void) {
             }
             
             // init after loading save file
-            if (gGameLoaded) {
+            if (bSaveLoad) {
 
                 // add in list of physics affected sprites
                 if (pXSprite->physAttr != 0) {
@@ -5636,7 +5638,6 @@ void actProcessSprites(void)
 
         // by NoOne: process additional proximity sprites
         if (gProxySpritesCount > 0) {
-            short badProxSprites = 0;
             for (int i = 0; i < gProxySpritesCount; i++) {
                 if (sprite[gProxySpritesList[i]].extra < 0) continue;
 
@@ -5712,8 +5713,6 @@ void actProcessSprites(void)
 
                 spritetype* pDebris = &sprite[gPhysSpritesList[i]];
                 XSECTOR* pXSector = (sector[pDebris->sectnum].extra >= 0) ? &xsector[sector[pDebris->sectnum].extra] : NULL;
-
-                if ((gFrameClock & 256) != 0) getSpriteMassBySize(pDebris); // get or refresh mass cache
 
                 viewBackupSpriteLoc(pDebris->xvel, pDebris);
                 int airVel = gSpriteMass[pDebris->xvel].airVel;
@@ -7099,6 +7098,9 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                         if (!xsprite[nXSprite].burnTime) evPost(nSprite, 3, 0, CALLBACK_ID_0);
                         actBurnSprite(actSpriteIdToOwnerId(nShooter), &xsprite[nXSprite], pVectorData->at11);
                     }
+
+                    if (pSprite->index >= kThingBase && pSprite->index < kThingMax)
+                        actPostSprite(pSprite->index, 4); // if it was a thing, return it's statnum back
                 }
             }
 
@@ -7312,7 +7314,7 @@ void ActorLoadSave::Load(void)
     Read(gAffectedXWalls, sizeof(gAffectedXWalls));
     Read(&gPostCount, sizeof(gPostCount));
     Read(gPost, sizeof(gPost));
-    actInit();
+    actInit(true);
 }
 
 void ActorLoadSave::Save(void)
@@ -7701,6 +7703,9 @@ void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg) {
                 zvel[pSprite->xvel] += mulscale16(t, dz);
             }
         }
+
+        if (pSprite->index >= kThingBase && pSprite->index < kThingMax)
+            actPostSprite(pSprite->index, 4); // if it was a thing, return it's statnum back
 
         actDamageSprite(nOwner, pSprite, DAMAGE_TYPE_3, dmg);
         return;
