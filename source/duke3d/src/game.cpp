@@ -6808,6 +6808,8 @@ int app_main(int argc, char const * const * argv)
 
     //    getpackets();
 
+    VM_OnEvent(EVENT_INITCOMPLETE);
+
 MAIN_LOOP_RESTART:
     totalclock = 0;
     ototalclock = 0;
