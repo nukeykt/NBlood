@@ -24,22 +24,20 @@ typedef void * VW_LIBHANDLE;
 
 // #define VWDEBUG
 
-// Callback types
-typedef void (*VW_CALLBACK_NOPARAM)(void);
-typedef void (*VW_CALLBACK_INT32)(int32_t);
-typedef void (*VW_CALLBACK_CHARPTR)(char const *);
-
-// Callback setup function types
-typedef void (*VW_SETCALLBACK_NOPARAM)(VW_CALLBACK_NOPARAM);
-typedef void (*VW_SETCALLBACK_INT32)(VW_CALLBACK_INT32);
-typedef void (*VW_SETCALLBACK_CHARPTR)(VW_CALLBACK_CHARPTR);
-
 // Function types
+typedef void (*VW_VOID)(void);
+typedef void (*VW_VOID_INT32)(int32_t);
+typedef void (*VW_VOID_CONSTCHARPTR)(char const *);
+typedef void (*VW_VOID_CONSTCHARPTR_INT32)(char const *, int32_t);
 typedef bool (*VW_BOOL)(void);
 #ifdef VWSCREENSHOT
 typedef bool (*VW_BOOL_SCREENSHOT)(char * filepath, int32_t width, int32_t height);
 #endif
-typedef void (*VW_VOID)(void);
 typedef int32_t (*VW_INT32)(void);
+
+// Callback setup function types
+typedef void (*VW_SETCALLBACK_VOID)(VW_VOID);
+typedef void (*VW_SETCALLBACK_VOID_INT32)(VW_VOID_INT32);
+typedef void (*VW_SETCALLBACK_VOID_CONSTCHARPTR)(VW_VOID_CONSTCHARPTR);
 
 #endif
