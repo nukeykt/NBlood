@@ -1041,7 +1041,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
             pXWall->key = bitReader.readUnsigned(3);
             pXWall->triggerPush = bitReader.readUnsigned(1);
             pXWall->triggerVector = bitReader.readUnsigned(1);
-            pXWall->triggerReserved = bitReader.readUnsigned(1);
+            pXWall->triggerTouch = bitReader.readUnsigned(1);
             pXWall->at11_0 = bitReader.readUnsigned(2);
             pXWall->xpanFrac = bitReader.readUnsigned(8);
             pXWall->ypanFrac = bitReader.readUnsigned(8);
@@ -1532,7 +1532,7 @@ int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSe
             bitWriter.write(pXWall->key, 3);
             bitWriter.write(pXWall->triggerPush, 1);
             bitWriter.write(pXWall->triggerVector, 1);
-            bitWriter.write(pXWall->triggerReserved, 1);
+            bitWriter.write(pXWall->triggerTouch, 1);
             bitWriter.write(pXWall->at11_0, 2);
             bitWriter.write(pXWall->xpanFrac, 8);
             bitWriter.write(pXWall->ypanFrac, 8);

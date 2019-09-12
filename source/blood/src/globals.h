@@ -47,3 +47,4 @@ extern bool bVanilla;
 
 extern Resource gSysRes;
 const char *GetVersionString(void);
+void showWarning(const char* pzFormat, ...);

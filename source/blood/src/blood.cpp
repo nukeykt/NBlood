@@ -565,6 +565,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     gSecretMgr.Clear();
     gLevelTime = 0;
     automapping = 1;
+  
     for (int i = 0; i < kMaxSprites; i++)
     {
         spritetype *pSprite = &sprite[i];
@@ -578,9 +579,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                 DeleteSprite(i);
                 continue;
             }
-
-            if (sprite[i].lotag == kGDXDudeTargetChanger)
-                InsertSpriteStat(i, kStatGDXDudeTargetChanger);
         }
     }
     scrLoadPLUs();
@@ -610,7 +608,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     }
     InitSectorFX();
     warpInit();
-    actInit();
+    actInit(false);
     evInit();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
