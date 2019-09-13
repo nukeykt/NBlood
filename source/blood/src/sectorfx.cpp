@@ -107,7 +107,9 @@ int GetWaveValue(int a, int b, int c)
 }
 
 int shadeCount = 0;
-short shadeList[512];
+short shadeList[kMaxXSectors];
+int panCount = 0;
+short panList[kMaxXSectors];
 
 void DoSectorLighting(void)
 {
@@ -252,8 +254,6 @@ void UndoSectorLighting(void)
     }
 }
 
-int panCount;
-short panList[kMaxXSectors];
 short wallPanList[kMaxXWalls];
 int wallPanCount;
 
