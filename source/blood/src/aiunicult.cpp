@@ -53,6 +53,7 @@ static void thinkSearch(spritetype*, XSPRITE*);
 static void thinkGoto(spritetype*, XSPRITE*);
 static void thinkChase(spritetype*, XSPRITE*);
 static void forcePunch(spritetype*, XSPRITE*);
+static void thinkTransform(spritetype*, XSPRITE*);
 
 static int nGDXGenDudeAttack1 = seqRegisterClient(GDXCultistAttack1);
 static int nGDXGenDudePunch = seqRegisterClient(punchCallback);
@@ -917,18 +918,17 @@ void killDudeLeech(spritetype* pLeech) {
 }
     
 XSPRITE* getNextIncarnation(XSPRITE* pXSprite) {
-    if (pXSprite->txID <= 0) return NULL;
     for (int i = bucketHead[pXSprite->txID]; i < bucketHead[pXSprite->txID + 1]; i++) {
-        if (rxBucket[i].type != 3 || rxBucket[i].index == sprite[pXSprite->reference].xvel)
+        if (rxBucket[i].type != 3 || rxBucket[i].index == pXSprite->reference)
             continue;
-        else if (IsDudeSprite(&sprite[rxBucket[i].index])) {
-            switch (sprite[rxBucket[i].index].statnum) {
-                case 6:
-                case 7: // inactive (ambush) dudes
-                    if (xsprite[sprite[rxBucket[i].index].extra].health > 0)
-                        return &xsprite[sprite[rxBucket[i].index].extra];
-            }
+        
+        switch (sprite[rxBucket[i].index].statnum) {
+            case 6:
+            case 7: // inactive (ambush) dudes
+                if (xsprite[sprite[rxBucket[i].index].extra].health > 0)
+                    return &xsprite[sprite[rxBucket[i].index].extra];
         }
+
     }
     return NULL;
 }
