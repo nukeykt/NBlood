@@ -3308,7 +3308,7 @@ ACTOR_STATIC void G_MoveTransports(void)
 
                         if (onFloor == 0 && klabs(SZ(spriteNum) - pPlayer->pos.z) < 6144)
                             if (!pPlayer->jetpack_on || TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_JUMP)
-                                || TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_CROUCH))
+                                || (TEST_SYNC_KEY(g_player[playerNum].inputBits->bits, SK_CROUCH) ^ pPlayer->crouch_toggle))
                             {
                                 pPlayer->pos.x += sprite[OW(spriteNum)].x - SX(spriteNum);
                                 pPlayer->pos.y += sprite[OW(spriteNum)].y - SY(spriteNum);
@@ -3503,7 +3503,7 @@ default_case:
                                             A_SetSprite(newSprite, CLIPMASK0);
                                         }
 
-                                        actor[sectSprite].lasttransport = (totalclock & UINT8_MAX);
+                                        actor[sectSprite].lasttransport = ((int32_t) totalclock & UINT8_MAX);
 
                                         if (sectLotag == ST_1_ABOVE_WATER || sectLotag == ST_2_UNDERWATER)
                                         {

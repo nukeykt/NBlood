@@ -1611,7 +1611,7 @@ void P_DisplayScuba(void)
 
             if (!(duke3d_globalflags & DUKE3D_NO_WIDESCREEN_PINNING))
             {
-                G_DrawTileScaled(320 - (tilesiz[SCUBAMASK].x >> 1) - 15, 200 - (tilesiz[SCUBAMASK].y >> 1) + (sintable[totalclock & 2047] >> 10),
+                G_DrawTileScaled(320 - (tilesiz[SCUBAMASK].x >> 1) - 15, 200 - (tilesiz[SCUBAMASK].y >> 1) + (sintable[(int32_t) totalclock & 2047] >> 10),
                                  SCUBAMASK, 0, 2 + 16 + DRAWEAP_CENTER+512, scubaPal,49152);
                 G_DrawTileScaled(320 - tilesiz[SCUBAMASK+4].x, 200 - tilesiz[SCUBAMASK+4].y, SCUBAMASK+4, 0, 2 + 16 + DRAWEAP_CENTER + 1024, scubaPal);
                 G_DrawTileScaled(tilesiz[SCUBAMASK+4].x, 200 - tilesiz[SCUBAMASK+4].y, SCUBAMASK+4, 0, 2 + 4 + 16 + DRAWEAP_CENTER + 1024, scubaPal);
@@ -1624,7 +1624,7 @@ void P_DisplayScuba(void)
             }
             else
             {
-                G_DrawTileScaled(320 - (tilesiz[SCUBAMASK].x >> 1) - 15, 200 - (tilesiz[SCUBAMASK].y >> 1) + (sintable[totalclock & 2047] >> 10),
+                G_DrawTileScaled(320 - (tilesiz[SCUBAMASK].x >> 1) - 15, 200 - (tilesiz[SCUBAMASK].y >> 1) + (sintable[(int32_t) totalclock & 2047] >> 10),
                                  SCUBAMASK, 0, 2 + 16 + DRAWEAP_CENTER, scubaPal,49152);
                 G_DrawTileScaled(320 - tilesiz[SCUBAMASK+4].x, 200 - tilesiz[SCUBAMASK+4].y, SCUBAMASK+4, 0, 2 + 16 + DRAWEAP_CENTER, scubaPal);
                 G_DrawTileScaled(tilesiz[SCUBAMASK+4].x, 200 - tilesiz[SCUBAMASK+4].y, SCUBAMASK+4, 0, 2 + 4 + 16 + DRAWEAP_CENTER, scubaPal);
@@ -2731,32 +2731,25 @@ enddisplayweapon:
 #define NORMALKEYMOVE 40
 #define MAXVEL       ((NORMALKEYMOVE*2)+10)
 #define MAXSVEL      ((NORMALKEYMOVE*2)+10)
-#define MAXANGVEL    255
-#define MAXHORIZ     127
+#define MAXANGVEL    1024
+#define MAXHORIZ     256
 
 int32_t g_myAimMode = 0, g_myAimStat = 0, g_oldAimStat = 0;
 int32_t mouseyaxismode = -1;
-int32_t g_emuJumpTics = 0;
 
 void P_GetInput(int playerNum)
 {
-    static ControlInfo info[2];
-    static int32_t     turnHeldTime     = 0;  // MED
-    static int32_t     lastControlInput = 0;  // MED
-    DukePlayer_t *     pPlayer          = g_player[playerNum].ps;
-    static input_t     staticInput;
-    static int32_t     dyaw;
+    auto const pPlayer = g_player[playerNum].ps;
+    ControlInfo info;
 
     if ((pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
     {
         if (!(pPlayer->gm&MODE_MENU))
-            CONTROL_GetInput(&info[0]);
+            CONTROL_GetInput(&info);
 
-        dyaw = 0;
         Bmemset(&localInput, 0, sizeof(input_t));
 
         localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
-        localInput.extbits = (g_player[playerNum].pteam != g_player[playerNum].ps->team) << 6;
         localInput.extbits |= (1 << 7);
 
         return;
@@ -2778,92 +2771,99 @@ void P_GetInput(int playerNum)
         }
     }
 
-    int32_t const aimMode = (g_myAimMode) ? (int32_t)analog_lookingupanddown : ud.config.MouseAnalogueAxes[1];
-
-    if (aimMode != mouseyaxismode)
-    {
-        CONTROL_MapAnalogAxis(1, aimMode, controldevice_mouse);
-        mouseyaxismode = aimMode;
-    }
-
-    CONTROL_GetInput(&info[0]);
+    CONTROL_GetInput(&info);
 
     if (ud.config.MouseDeadZone)
     {
-        if (info[0].dpitch > 0)
-            info[0].dpitch = (info[0].dpitch > ud.config.MouseDeadZone) ? info[0].dpitch - ud.config.MouseDeadZone : 0;
-        else if (info[0].dpitch < 0)
-            info[0].dpitch = (info[0].dpitch < -ud.config.MouseDeadZone) ? info[0].dpitch + ud.config.MouseDeadZone : 0;
+        if (info.mousey > 0)
+            info.mousey = max(info.mousey - ud.config.MouseDeadZone, 0);
+        else if (info.mousey < 0)
+            info.mousey = min(info.mousey + ud.config.MouseDeadZone, 0);
 
-        if (info[0].dyaw > 0)
-            info[0].dyaw = (info[0].dyaw > ud.config.MouseDeadZone) ? info[0].dyaw - ud.config.MouseDeadZone : 0;
-        else if (info[0].dyaw < 0)
-            info[0].dyaw = (info[0].dyaw < -ud.config.MouseDeadZone) ? info[0].dyaw + ud.config.MouseDeadZone : 0;
+        if (info.mousex > 0)
+            info.mousex = max(info.mousex - ud.config.MouseDeadZone, 0);
+        else if (info.mousex < 0)
+            info.mousex = min(info.mousex + ud.config.MouseDeadZone, 0);
     }
 
     if (ud.config.MouseBias)
     {
-        if (klabs(info[0].dyaw) > klabs(info[0].dpitch))
-            info[0].dpitch = tabledivide32_noinline(info[0].dpitch, ud.config.MouseBias);
-        else info[0].dyaw = tabledivide32_noinline(info[0].dyaw, ud.config.MouseBias);
+        if (klabs(info.mousex) > klabs(info.mousey))
+            info.mousey = tabledivide32_noinline(info.mousey, ud.config.MouseBias);
+        else
+            info.mousex = tabledivide32_noinline(info.mousex, ud.config.MouseBias);
     }
-
-    int const elapsedTics = totalclock-lastControlInput;
-    lastControlInput = totalclock;
 
     // JBF: Run key behaviour is selectable
     int const playerRunning = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
-
-    staticInput.svel = staticInput.fvel = staticInput.q16avel = staticInput.q16horz = 0;
-
-    if (BUTTON(gamefunc_Strafe))
-    {
-        staticInput.svel = -(info[0].dyaw + dyaw) >> 3;
-        dyaw = (info[0].dyaw + dyaw) % 8;
-    }
-    else
-        staticInput.q16avel = fix16_div(fix16_from_int(info[0].dyaw), F16(32));
-
-    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(128));
-
-    if (ud.mouseflip) staticInput.q16horz = -staticInput.q16horz;
-
-    staticInput.svel -= info[0].dx;
-    staticInput.fvel = -info[0].dz >> 6;
-
-    //     OSD_Printf("running: %d\n", running);
-
     int const turnAmount = playerRunning ? (NORMALTURN << 1) : NORMALTURN;
+    constexpr int const analogTurnAmount = (NORMALTURN << 1);
     int const keyMove    = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
+    constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
+
+    input_t input {};
 
     if (BUTTON(gamefunc_Strafe))
     {
-        if (BUTTON(gamefunc_Turn_Left) && !(g_player[playerNum].ps->movement_lock&4))
-            staticInput.svel -= -keyMove;
-        if (BUTTON(gamefunc_Turn_Right) && !(g_player[playerNum].ps->movement_lock&8))
-            staticInput.svel -= keyMove;
+        static int strafeyaw;
+
+        input.svel = -(info.mousex + strafeyaw) >> 3;
+        strafeyaw  = (info.mousex + strafeyaw) % 8;
+
+        input.svel -= info.dyaw * keyMove / analogExtent;
     }
     else
     {
+        input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
+        input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
+    }
+
+    if (g_myAimMode)
+        input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
+    else
+        input.fvel = -(info.mousey >> 6);
+
+    if (ud.mouseflip) input.q16horz = -input.q16horz;
+
+    input.q16horz -= fix16_from_int(info.dpitch) / analogExtent * analogTurnAmount;
+    input.svel -= info.dx * keyMove / analogExtent;
+    input.fvel -= info.dz * keyMove / analogExtent;
+
+    if (BUTTON(gamefunc_Strafe))
+    {
+        if (BUTTON(gamefunc_Turn_Left) && !(pPlayer->movement_lock&4))
+            input.svel -= -keyMove;
+
+        if (BUTTON(gamefunc_Turn_Right) && !(pPlayer->movement_lock&8))
+            input.svel -= keyMove;
+    }
+    else
+    {
+        static int32_t turnHeldTime   = 0;
+        static int32_t lastInputClock = 0;  // MED
+        int32_t const  elapsedTics    = (int32_t) totalclock - lastInputClock;
+
+        lastInputClock = (int32_t) totalclock;
+
         if (BUTTON(gamefunc_Turn_Left))
         {
             turnHeldTime += elapsedTics;
-            staticInput.q16avel -= fix16_from_int((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1));
+            input.q16avel -= fix16_from_int((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1));
         }
         else if (BUTTON(gamefunc_Turn_Right))
         {
             turnHeldTime += elapsedTics;
-            staticInput.q16avel += fix16_from_int((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1));
+            input.q16avel += fix16_from_int((turnHeldTime >= TURBOTURNTIME) ? (turnAmount << 1) : (PREAMBLETURN << 1));
         }
         else
             turnHeldTime=0;
     }
 
-    if (BUTTON(gamefunc_Strafe_Left) && !(g_player[playerNum].ps->movement_lock & 4))
-        staticInput.svel += keyMove;
+    if (BUTTON(gamefunc_Strafe_Left) && !(pPlayer->movement_lock & 4))
+        input.svel += keyMove;
 
-    if (BUTTON(gamefunc_Strafe_Right) && !(g_player[playerNum].ps->movement_lock & 8))
-        staticInput.svel += -keyMove;
+    if (BUTTON(gamefunc_Strafe_Right) && !(pPlayer->movement_lock & 8))
+        input.svel += -keyMove;
 
     if (RR)
     {
@@ -2878,45 +2878,46 @@ void P_GetInput(int playerNum)
             {
                 if (BUTTON(gamefunc_Move_Forward))
                 {
-                    staticInput.fvel += keyMove;
+                    input.fvel += keyMove;
                     if (pPlayer->drink_amt & 1)
-                        staticInput.svel += keyMove;
+                        input.svel += keyMove;
                     else
-                        staticInput.svel -= keyMove;
+                        input.svel -= keyMove;
                 }
 
                 if (BUTTON(gamefunc_Move_Backward))
                 {
-                    staticInput.fvel += -keyMove;
+                    input.fvel += -keyMove;
                     if (pPlayer->drink_amt & 1)
-                        staticInput.svel -= keyMove;
+                        input.svel -= keyMove;
                     else
-                        staticInput.svel += keyMove;
+                        input.svel += keyMove;
                 }
             }
             else
             {
                 if (BUTTON(gamefunc_Move_Forward))
-                    staticInput.fvel += keyMove;
+                    input.fvel += keyMove;
 
                 if (BUTTON(gamefunc_Move_Backward))
-                    staticInput.fvel += -keyMove;
+                    input.fvel += -keyMove;
             }
         }
     }
     else
     {
         if (BUTTON(gamefunc_Move_Forward) && !(g_player[playerNum].ps->movement_lock & 1))
-            staticInput.fvel += keyMove;
+            input.fvel += keyMove;
 
         if (BUTTON(gamefunc_Move_Backward) && !(g_player[playerNum].ps->movement_lock & 2))
-            staticInput.fvel += -keyMove;
+            input.fvel += -keyMove;
     }
 
-    staticInput.fvel = clamp(staticInput.fvel, -MAXVEL, MAXVEL);
-    staticInput.svel = clamp(staticInput.svel, -MAXSVEL, MAXSVEL);
-    staticInput.q16avel = fix16_clamp(staticInput.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
-    staticInput.q16horz = fix16_clamp(staticInput.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
+    input.fvel = clamp(input.fvel, -MAXVEL, MAXVEL);
+    input.svel = clamp(input.svel, -MAXSVEL, MAXSVEL);
+
+    input.q16avel = fix16_clamp(input.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
+    input.q16horz = fix16_clamp(input.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
 
     int weaponSelection;
 
@@ -2929,125 +2930,131 @@ void P_GetInput(int playerNum)
         }
     }
 
-    if (weaponSelection == gamefunc_Weapon_1-1)
-        weaponSelection = 0;
-
-    if (BUTTON(gamefunc_Previous_Weapon) || (BUTTON(gamefunc_Dpad_Select) && staticInput.fvel < 0))
-        weaponSelection = 11;
-
-    if (BUTTON(gamefunc_Next_Weapon) || (BUTTON(gamefunc_Dpad_Select) && staticInput.fvel > 0))
-        weaponSelection = 12;
-
-    if (BUTTON(gamefunc_Alt_Weapon))
-        weaponSelection = 13;
-
     if (BUTTON(gamefunc_Last_Weapon))
         weaponSelection = 14;
+    else if (BUTTON(gamefunc_Alt_Weapon))
+        weaponSelection = 13;
+    else if (BUTTON(gamefunc_Next_Weapon) || (BUTTON(gamefunc_Dpad_Select) && input.fvel > 0))
+        weaponSelection = 12;
+    else if (BUTTON(gamefunc_Previous_Weapon) || (BUTTON(gamefunc_Dpad_Select) && input.fvel < 0))
+        weaponSelection = 11;
+    else if (weaponSelection == gamefunc_Weapon_1-1)
+        weaponSelection = 0;
 
-    if (BUTTON(gamefunc_Jump) && pPlayer->on_ground)
-        g_emuJumpTics = 4;
+    localInput.bits = (weaponSelection << SK_WEAPON_BITS) | (BUTTON(gamefunc_Fire) << SK_FIRE);
+    localInput.bits |= (BUTTON(gamefunc_Open) << SK_OPEN);
 
-    localInput.bits = (g_emuJumpTics > 0 || BUTTON(gamefunc_Jump))<<SK_JUMP;
+    int const sectorLotag = pPlayer->cursectnum != -1 ? sector[pPlayer->cursectnum].lotag : 0;
+    int const crouchable = sectorLotag != 2 && (sectorLotag != 1 || pPlayer->spritebridge);
 
-    if (g_emuJumpTics > 0)
-        g_emuJumpTics--;
+    if (BUTTON(gamefunc_Toggle_Crouch))
+    {
+        pPlayer->crouch_toggle = !pPlayer->crouch_toggle && crouchable;
 
-    localInput.bits |= BUTTON(gamefunc_Crouch) << SK_CROUCH;
-    if (RR && TEST_SYNC_KEY(localInput.bits, SK_CROUCH))
-        localInput.bits &= ~(1<< SK_JUMP);
-    localInput.bits |= BUTTON(gamefunc_Fire) << SK_FIRE;
-    localInput.bits |= (BUTTON(gamefunc_Aim_Up) || (BUTTON(gamefunc_Dpad_Aiming) && staticInput.fvel > 0)) << SK_AIM_UP;
-    localInput.bits |= (BUTTON(gamefunc_Aim_Down) || (BUTTON(gamefunc_Dpad_Aiming) && staticInput.fvel < 0)) << SK_AIM_DOWN;
-    localInput.bits |= ((ud.runkey_mode) ? (ud.auto_run | BUTTON(gamefunc_Run)) : (BUTTON(gamefunc_Run) ^ ud.auto_run)) << SK_RUN;
-    localInput.bits |= BUTTON(gamefunc_Look_Left) << SK_LOOK_LEFT;
-    if (RR && pPlayer->drink_amt > 88)
-        localInput.bits |= 1 << SK_LOOK_LEFT;
-    localInput.bits |= BUTTON(gamefunc_Look_Right) << SK_LOOK_RIGHT;
-    localInput.bits |= weaponSelection << SK_WEAPON_BITS;
-    localInput.bits |= BUTTON(gamefunc_Steroids) << SK_STEROIDS;
-    localInput.bits |= BUTTON(gamefunc_Look_Up) << SK_LOOK_UP;
-    localInput.bits |= BUTTON(gamefunc_Look_Down) << SK_LOOK_DOWN;
-    if (RR && pPlayer->drink_amt > 99)
-        localInput.bits |= 1 << SK_LOOK_DOWN;
-    localInput.bits |= BUTTON(gamefunc_NightVision) << SK_NIGHTVISION;
-    localInput.bits |= BUTTON(gamefunc_MedKit) << SK_MEDKIT;
-    localInput.bits |= BUTTON(gamefunc_Center_View) << SK_CENTER_VIEW;
+        if (crouchable)
+            CONTROL_ClearButton(gamefunc_Toggle_Crouch);
+    }
+
+    if (BUTTON(gamefunc_Crouch) || BUTTON(gamefunc_Jump) || pPlayer->jetpack_on || (!crouchable && pPlayer->on_ground))
+        pPlayer->crouch_toggle = 0;
+
+    int const crouching = BUTTON(gamefunc_Crouch) || BUTTON(gamefunc_Toggle_Crouch) || pPlayer->crouch_toggle;
+
+    localInput.bits |= (BUTTON(gamefunc_Jump) << SK_JUMP) | (crouching << SK_CROUCH);
+
+    localInput.bits |= (BUTTON(gamefunc_Aim_Up) || (BUTTON(gamefunc_Dpad_Aiming) && input.fvel > 0)) << SK_AIM_UP;
+    localInput.bits |= (BUTTON(gamefunc_Aim_Down) || (BUTTON(gamefunc_Dpad_Aiming) && input.fvel < 0)) << SK_AIM_DOWN;
+    localInput.bits |= (BUTTON(gamefunc_Center_View) << SK_CENTER_VIEW);
+
+    localInput.bits |= (BUTTON(gamefunc_Look_Left) << SK_LOOK_LEFT) | (BUTTON(gamefunc_Look_Right) << SK_LOOK_RIGHT);
+    localInput.bits |= (BUTTON(gamefunc_Look_Up) << SK_LOOK_UP) | (BUTTON(gamefunc_Look_Down) << SK_LOOK_DOWN);
+
+    localInput.bits |= (playerRunning << SK_RUN);
+
+    localInput.bits |= (BUTTON(gamefunc_Inventory_Left) || (BUTTON(gamefunc_Dpad_Select) && (input.svel > 0 || input.q16avel < 0))) << SK_INV_LEFT;
+    localInput.bits |= (BUTTON(gamefunc_Inventory_Right) || (BUTTON(gamefunc_Dpad_Select) && (input.svel < 0 || input.q16avel > 0))) << SK_INV_RIGHT;
+    localInput.bits |= (BUTTON(gamefunc_Inventory) << SK_INVENTORY);
+
+    localInput.bits |= (BUTTON(gamefunc_Steroids) << SK_STEROIDS) | (BUTTON(gamefunc_NightVision) << SK_NIGHTVISION);
+    localInput.bits |= (BUTTON(gamefunc_MedKit) << SK_MEDKIT) | (BUTTON(gamefunc_Holo_Duke) << SK_HOLODUKE);
+    localInput.bits |= (BUTTON(gamefunc_Jetpack) << SK_JETPACK);
+
     localInput.bits |= BUTTON(gamefunc_Holster_Weapon) << SK_HOLSTER;
-    localInput.bits |= (BUTTON(gamefunc_Inventory_Left) ||
-                 (BUTTON(gamefunc_Dpad_Select) && (staticInput.svel > 0 || staticInput.q16avel < 0))) << SK_INV_LEFT;
-    localInput.bits |= KB_KeyPressed(sc_Pause) << SK_PAUSE;
     localInput.bits |= BUTTON(gamefunc_Quick_Kick) << SK_QUICK_KICK;
-    localInput.bits |= g_myAimMode << SK_AIMMODE;
-    localInput.bits |= BUTTON(gamefunc_Holo_Duke) << SK_HOLODUKE;
-    localInput.bits |= BUTTON(gamefunc_Jetpack) << SK_JETPACK;
-    localInput.bits |= (g_gameQuit << SK_GAMEQUIT);
-    localInput.bits |= (BUTTON(gamefunc_Inventory_Right) ||
-                 (BUTTON(gamefunc_Dpad_Select) && (staticInput.svel < 0 || staticInput.q16avel > 0))) << SK_INV_RIGHT;
     localInput.bits |= BUTTON(gamefunc_TurnAround) << SK_TURNAROUND;
-    localInput.bits |= BUTTON(gamefunc_Open) << SK_OPEN;
-    localInput.bits |= BUTTON(gamefunc_Inventory) << SK_INVENTORY;
+
+    localInput.bits |= (g_myAimMode << SK_AIMMODE);
+    localInput.bits |= (g_gameQuit << SK_GAMEQUIT);
+    localInput.bits |= KB_KeyPressed(sc_Pause) << SK_PAUSE;
     localInput.bits |= ((uint32_t)KB_KeyPressed(sc_Escape)) << SK_ESCAPE;
+
+    if (RR)
+    {
+        if (TEST_SYNC_KEY(localInput.bits, SK_CROUCH))
+            localInput.bits &= ~(1 << SK_JUMP);
+        if (pPlayer->drink_amt > 88)
+            localInput.bits |= 1 << SK_LOOK_LEFT;
+        if (pPlayer->drink_amt > 99)
+            localInput.bits |= 1 << SK_LOOK_DOWN;
+    }
 
     if (BUTTON(gamefunc_Dpad_Select))
     {
-        staticInput.fvel = 0;
-        staticInput.svel = 0;
-        staticInput.q16avel = 0;
+        input.fvel = 0;
+        input.svel = 0;
+        input.q16avel = 0;
     }
+    else if (BUTTON(gamefunc_Dpad_Aiming))
+        input.fvel = 0;
 
-    if (BUTTON(gamefunc_Dpad_Aiming))
-        staticInput.fvel = 0;
-
-    localInput.extbits = (BUTTON(gamefunc_Move_Forward) || (staticInput.fvel > 0));
-    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (staticInput.fvel < 0))<<1;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (staticInput.svel > 0))<<2;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (staticInput.svel < 0))<<3;
-
-    // used for changing team
-    localInput.extbits |= (g_player[playerNum].pteam != g_player[playerNum].ps->team)<<6;
+    localInput.extbits = (BUTTON(gamefunc_Move_Forward) || (input.fvel > 0));
+    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (input.fvel < 0)) << 1;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (input.svel > 0)) << 2;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (input.svel < 0)) << 3;
+    localInput.extbits |= BUTTON(gamefunc_Turn_Left)<<4;
+    localInput.extbits |= BUTTON(gamefunc_Turn_Right)<<5;
 
     if (ud.scrollmode && ud.overhead_on)
     {
-        ud.folfvel = staticInput.fvel;
-        ud.folavel = fix16_to_int(staticInput.q16avel);
-        localInput.fvel   = 0;
-        localInput.svel   = 0;
-        localInput.q16avel  = 0;
-        localInput.q16horz  = 0;
+        ud.folfvel = input.fvel;
+        ud.folavel = fix16_to_int(input.q16avel);
+
+        localInput.fvel = 0;
+        localInput.svel = 0;
+
+        localInput.q16avel = 0;
+        localInput.q16horz = 0;
+
         return;
     }
 
     int16_t const q16ang = fix16_to_int(pPlayer->q16ang);
 
-    localInput.fvel = mulscale9(staticInput.fvel, sintable[(q16ang + 2560) & 2047]) +
-                      mulscale9(staticInput.svel, sintable[(q16ang + 2048) & 2047]) +
+    localInput.fvel = mulscale9(input.fvel, sintable[(q16ang + 2560) & 2047]) +
+                      mulscale9(input.svel, sintable[(q16ang + 2048) & 2047]) +
                       pPlayer->fric.x;
 
-    localInput.svel = mulscale9(staticInput.fvel, sintable[(q16ang + 2048) & 2047]) +
-                      mulscale9(staticInput.svel, sintable[(q16ang + 1536) & 2047]) +
+    localInput.svel = mulscale9(input.fvel, sintable[(q16ang + 2048) & 2047]) +
+                      mulscale9(input.svel, sintable[(q16ang + 1536) & 2047]) +
                       pPlayer->fric.y;
 
-    localInput.q16avel = staticInput.q16avel;
-    localInput.q16horz = staticInput.q16horz;
+    localInput.q16avel = input.q16avel;
+    localInput.q16horz = input.q16horz;
 }
 
 void P_GetInputMotorcycle(int playerNum)
 {
-    static ControlInfo info[2];
-    static int32_t     turnHeldTime     = 0;  // MED
-    static int32_t     lastControlInput = 0;  // MED
-    DukePlayer_t *     pPlayer          = g_player[playerNum].ps;
-    static input_t     staticInput;
+    auto const pPlayer = g_player[playerNum].ps;
+    ControlInfo info;
 
     if ((pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
     {
         if (!(pPlayer->gm&MODE_MENU))
-            CONTROL_GetInput(&info[0]);
+            CONTROL_GetInput(&info);
 
         Bmemset(&localInput, 0, sizeof(input_t));
 
         localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
-        localInput.extbits = (g_player[playerNum].pteam != g_player[playerNum].ps->team) << 6;
         localInput.extbits |= (1 << 7);
 
         return;
@@ -3069,93 +3076,88 @@ void P_GetInputMotorcycle(int playerNum)
         }
     }
 
-    int32_t const aimMode = (g_myAimMode) ? (int32_t)analog_lookingupanddown : ud.config.MouseAnalogueAxes[1];
-
-    if (aimMode != mouseyaxismode)
-    {
-        CONTROL_MapAnalogAxis(1, aimMode, controldevice_mouse);
-        mouseyaxismode = aimMode;
-    }
-
-    CONTROL_GetInput(&info[0]);
+    CONTROL_GetInput(&info);
 
     if (ud.config.MouseDeadZone)
     {
-        if (info[0].dpitch > 0)
-            info[0].dpitch = (info[0].dpitch > ud.config.MouseDeadZone) ? info[0].dpitch - ud.config.MouseDeadZone : 0;
-        else if (info[0].dpitch < 0)
-            info[0].dpitch = (info[0].dpitch < -ud.config.MouseDeadZone) ? info[0].dpitch + ud.config.MouseDeadZone : 0;
+        if (info.mousey > 0)
+            info.mousey = max(info.mousey - ud.config.MouseDeadZone, 0);
+        else if (info.mousey < 0)
+            info.mousey = min(info.mousey + ud.config.MouseDeadZone, 0);
 
-        if (info[0].dyaw > 0)
-            info[0].dyaw = (info[0].dyaw > ud.config.MouseDeadZone) ? info[0].dyaw - ud.config.MouseDeadZone : 0;
-        else if (info[0].dyaw < 0)
-            info[0].dyaw = (info[0].dyaw < -ud.config.MouseDeadZone) ? info[0].dyaw + ud.config.MouseDeadZone : 0;
+        if (info.mousex > 0)
+            info.mousex = max(info.mousex - ud.config.MouseDeadZone, 0);
+        else if (info.mousex < 0)
+            info.mousex = min(info.mousex + ud.config.MouseDeadZone, 0);
     }
 
     if (ud.config.MouseBias)
     {
-        if (klabs(info[0].dyaw) > klabs(info[0].dpitch))
-            info[0].dpitch = tabledivide32_noinline(info[0].dpitch, ud.config.MouseBias);
-        else info[0].dyaw = tabledivide32_noinline(info[0].dyaw, ud.config.MouseBias);
+        if (klabs(info.mousex) > klabs(info.mousey))
+            info.mousey = tabledivide32_noinline(info.mousey, ud.config.MouseBias);
+        else
+            info.mousex = tabledivide32_noinline(info.mousex, ud.config.MouseBias);
     }
 
-    int const elapsedTics = totalclock-lastControlInput;
-    lastControlInput = totalclock;
+    // JBF: Run key behaviour is selectable
+    int const playerRunning = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
+    constexpr int const analogTurnAmount = (NORMALTURN << 1);
+    int const keyMove    = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
+    constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
 
-    staticInput.svel = staticInput.fvel = staticInput.q16avel = staticInput.q16horz = 0;
+    input_t input {};
 
-    staticInput.q16avel = fix16_div(fix16_from_int(info[0].dyaw), F16(32));
+    input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
+    input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
 
-    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(128));
+    input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
 
-    if (ud.mouseflip) staticInput.q16horz = -staticInput.q16horz;
+    if (ud.mouseflip) input.q16horz = -input.q16horz;
 
-    staticInput.svel -= info[0].dx;
-    staticInput.fvel = -info[0].dz >> 6;
+    input.q16horz -= fix16_from_int(info.dpitch) / analogExtent * analogTurnAmount;
+    input.svel -= info.dx * keyMove / analogExtent;
+    input.fvel -= info.dz * keyMove / analogExtent;
 
-    //     OSD_Printf("running: %d\n", running);
+    input.fvel = clamp(input.fvel, -MAXVEL, MAXVEL);
+    input.svel = clamp(input.svel, -MAXSVEL, MAXSVEL);
 
-    staticInput.fvel = clamp(staticInput.fvel, -MAXVEL, MAXVEL);
-    staticInput.svel = clamp(staticInput.svel, -MAXSVEL, MAXSVEL);
-    staticInput.q16avel = fix16_clamp(staticInput.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
-    staticInput.q16horz = fix16_clamp(staticInput.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
-    
+    input.q16avel = fix16_clamp(input.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
+    input.q16horz = fix16_clamp(input.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
+
+    pPlayer->crouch_toggle = 0;
 
     localInput.bits = BUTTON(gamefunc_Fire) << SK_FIRE;
     localInput.bits |= BUTTON(gamefunc_Steroids) << SK_STEROIDS;
     localInput.bits |= BUTTON(gamefunc_NightVision) << SK_NIGHTVISION;
     localInput.bits |= BUTTON(gamefunc_MedKit) << SK_MEDKIT;
     localInput.bits |= (BUTTON(gamefunc_Inventory_Left) ||
-                 (BUTTON(gamefunc_Dpad_Select) && (staticInput.svel > 0 || staticInput.q16avel < 0))) << SK_INV_LEFT;
+                 (BUTTON(gamefunc_Dpad_Select) && (input.svel > 0 || input.q16avel < 0))) << SK_INV_LEFT;
     localInput.bits |= KB_KeyPressed(sc_Pause) << SK_PAUSE;
     localInput.bits |= BUTTON(gamefunc_Holo_Duke) << SK_HOLODUKE;
     localInput.bits |= BUTTON(gamefunc_Jetpack) << SK_JETPACK;
     localInput.bits |= (g_gameQuit << SK_GAMEQUIT);
     localInput.bits |= (BUTTON(gamefunc_Inventory_Right) ||
-                 (BUTTON(gamefunc_Dpad_Select) && (staticInput.svel < 0 || staticInput.q16avel > 0))) << SK_INV_RIGHT;
+                 (BUTTON(gamefunc_Dpad_Select) && (input.svel < 0 || input.q16avel > 0))) << SK_INV_RIGHT;
     localInput.bits |= BUTTON(gamefunc_Open) << SK_OPEN;
     localInput.bits |= BUTTON(gamefunc_Inventory) << SK_INVENTORY;
     localInput.bits |= ((uint32_t)KB_KeyPressed(sc_Escape)) << SK_ESCAPE;
 
     if (BUTTON(gamefunc_Dpad_Select))
     {
-        staticInput.fvel = 0;
-        staticInput.svel = 0;
-        staticInput.q16avel = 0;
+        input.fvel = 0;
+        input.svel = 0;
+        input.q16avel = 0;
     }
 
     if (BUTTON(gamefunc_Dpad_Aiming))
-        staticInput.fvel = 0;
+        input.fvel = 0;
+    
+    localInput.extbits = (BUTTON(gamefunc_Move_Forward) || (input.fvel > 0));
+    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (input.fvel < 0)) << 1;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (input.svel > 0)) << 2;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (input.svel < 0)) << 3;
 
-    localInput.extbits = (BUTTON(gamefunc_Move_Forward) || (staticInput.fvel > 0));
-    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (staticInput.fvel < 0))<<1;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (staticInput.svel > 0))<<2;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (staticInput.svel < 0))<<3;
-
-    // used for changing team
-    localInput.extbits |= (g_player[playerNum].pteam != g_player[playerNum].ps->team)<<6;
-
-    int const turn = staticInput.q16avel / 32;
+    int const turn = input.q16avel / 32;
     int turnLeft = BUTTON(gamefunc_Turn_Left) || BUTTON(gamefunc_Strafe_Left);
     int turnRight = BUTTON(gamefunc_Turn_Right) || BUTTON(gamefunc_Strafe_Right);
     int avelScale = F16((turnLeft || turnRight) ? 1 : 0);
@@ -3168,7 +3170,7 @@ void P_GetInputMotorcycle(int playerNum)
             turnRight = 1;
     }
 
-    staticInput.svel = staticInput.fvel = staticInput.q16avel = staticInput.q16horz = 0;
+    input.svel = input.fvel = input.q16avel = input.q16horz = 0;
     
     if (!pPlayer->moto_underwater)
     {
@@ -3179,6 +3181,10 @@ void P_GetInputMotorcycle(int playerNum)
 
     localInput.bits |= turnLeft << SK_AIM_DOWN;
     localInput.bits |= turnRight << SK_LOOK_LEFT;
+
+    static int32_t turnHeldTime   = 0;
+    static int32_t lastInputClock = 0;  // MED
+    int32_t const  elapsedTics    = (int32_t) totalclock - lastInputClock;
 
     int const moveBack = BUTTON(gamefunc_Move_Backward) && pPlayer->moto_speed <= 0;
 
@@ -3210,16 +3216,16 @@ void P_GetInputMotorcycle(int playerNum)
                 if (moveBack)
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(20*2);
+                        input.q16avel += fix16_from_int(20*2);
                     else
-                        staticInput.q16avel += fix16_from_int(10*2);
+                        input.q16avel += fix16_from_int(10*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(20*2);
+                        input.q16avel -= fix16_from_int(20*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(10*2);
+                        input.q16avel -= fix16_from_int(10*2);
                 }
             }
             else
@@ -3227,16 +3233,16 @@ void P_GetInputMotorcycle(int playerNum)
                 if (moveBack)
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(10*2);
+                        input.q16avel += fix16_from_int(10*2);
                     else
-                        staticInput.q16avel += fix16_from_int(3*2);
+                        input.q16avel += fix16_from_int(3*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(10*2);
+                        input.q16avel -= fix16_from_int(10*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(3*2);
+                        input.q16avel -= fix16_from_int(3*2);
                 }
             }
         }
@@ -3251,16 +3257,16 @@ void P_GetInputMotorcycle(int playerNum)
                 if (moveBack)
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(20*2);
+                        input.q16avel -= fix16_from_int(20*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(10*2);
+                        input.q16avel -= fix16_from_int(10*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(20*2);
+                        input.q16avel += fix16_from_int(20*2);
                     else
-                        staticInput.q16avel += fix16_from_int(10*2);
+                        input.q16avel += fix16_from_int(10*2);
                 }
             }
             else
@@ -3268,16 +3274,16 @@ void P_GetInputMotorcycle(int playerNum)
                 if (moveBack)
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(10*2);
+                        input.q16avel -= fix16_from_int(10*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(3*2);
+                        input.q16avel -= fix16_from_int(3*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(10*2);
+                        input.q16avel += fix16_from_int(10*2);
                     else
-                        staticInput.q16avel += fix16_from_int(3*2);
+                        input.q16avel += fix16_from_int(3*2);
                 }
             }
         }
@@ -3295,19 +3301,19 @@ void P_GetInputMotorcycle(int playerNum)
     if (pPlayer->moto_underwater)
         pPlayer->moto_speed = 0;
 
-    staticInput.q16avel = fix16_mul(staticInput.q16avel, avelScale);
+    input.q16avel = fix16_mul(input.q16avel, avelScale);
 
-    staticInput.fvel += pPlayer->moto_speed;
+    input.fvel += pPlayer->moto_speed;
 
-    staticInput.fvel = clamp(staticInput.fvel, -15, 120);
-    staticInput.svel = clamp(staticInput.svel, -MAXSVEL, MAXSVEL);
-    staticInput.q16avel = fix16_clamp(staticInput.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
-    staticInput.q16horz = fix16_clamp(staticInput.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
+    input.fvel = clamp(input.fvel, -15, 120);
+    input.svel = clamp(input.svel, -MAXSVEL, MAXSVEL);
+    input.q16avel = fix16_clamp(input.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
+    input.q16horz = fix16_clamp(input.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
     
     if (ud.scrollmode && ud.overhead_on)
     {
-        ud.folfvel = staticInput.fvel;
-        ud.folavel = fix16_to_int(staticInput.q16avel);
+        ud.folfvel = input.fvel;
+        ud.folavel = fix16_to_int(input.q16avel);
         localInput.fvel   = 0;
         localInput.svel   = 0;
         localInput.q16avel  = 0;
@@ -3317,16 +3323,16 @@ void P_GetInputMotorcycle(int playerNum)
 
     int16_t const q16ang = fix16_to_int(pPlayer->q16ang);
 
-    localInput.fvel = mulscale9(staticInput.fvel, sintable[(q16ang + 2560) & 2047]) +
-                      mulscale9(staticInput.svel, sintable[(q16ang + 2048) & 2047]) +
+    localInput.fvel = mulscale9(input.fvel, sintable[(q16ang + 2560) & 2047]) +
+                      mulscale9(input.svel, sintable[(q16ang + 2048) & 2047]) +
                       pPlayer->fric.x;
 
-    localInput.svel = mulscale9(staticInput.fvel, sintable[(q16ang + 2048) & 2047]) +
-                      mulscale9(staticInput.svel, sintable[(q16ang + 1536) & 2047]) +
+    localInput.svel = mulscale9(input.fvel, sintable[(q16ang + 2048) & 2047]) +
+                      mulscale9(input.svel, sintable[(q16ang + 1536) & 2047]) +
                       pPlayer->fric.y;
 
-    localInput.q16avel = staticInput.q16avel;
-    localInput.q16horz = staticInput.q16horz;
+    localInput.q16avel = input.q16avel;
+    localInput.q16horz = input.q16horz;
 
     if (TEST_SYNC_KEY(localInput.bits, SK_JUMP))
     {
@@ -3336,21 +3342,17 @@ void P_GetInputMotorcycle(int playerNum)
 
 void P_GetInputBoat(int playerNum)
 {
-    static ControlInfo info[2];
-    static int32_t     turnHeldTime     = 0;  // MED
-    static int32_t     lastControlInput = 0;  // MED
-    DukePlayer_t *     pPlayer          = g_player[playerNum].ps;
-    static input_t     staticInput;
+    auto const pPlayer = g_player[playerNum].ps;
+    ControlInfo info;
 
     if ((pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
     {
         if (!(pPlayer->gm&MODE_MENU))
-            CONTROL_GetInput(&info[0]);
+            CONTROL_GetInput(&info);
 
         Bmemset(&localInput, 0, sizeof(input_t));
 
         localInput.bits    = (((int32_t)g_gameQuit) << SK_GAMEQUIT);
-        localInput.extbits = (g_player[playerNum].pteam != g_player[playerNum].ps->team) << 6;
         localInput.extbits |= (1 << 7);
 
         return;
@@ -3372,93 +3374,88 @@ void P_GetInputBoat(int playerNum)
         }
     }
 
-    int32_t const aimMode = (g_myAimMode) ? (int32_t)analog_lookingupanddown : ud.config.MouseAnalogueAxes[1];
-
-    if (aimMode != mouseyaxismode)
-    {
-        CONTROL_MapAnalogAxis(1, aimMode, controldevice_mouse);
-        mouseyaxismode = aimMode;
-    }
-
-    CONTROL_GetInput(&info[0]);
+    CONTROL_GetInput(&info);
 
     if (ud.config.MouseDeadZone)
     {
-        if (info[0].dpitch > 0)
-            info[0].dpitch = (info[0].dpitch > ud.config.MouseDeadZone) ? info[0].dpitch - ud.config.MouseDeadZone : 0;
-        else if (info[0].dpitch < 0)
-            info[0].dpitch = (info[0].dpitch < -ud.config.MouseDeadZone) ? info[0].dpitch + ud.config.MouseDeadZone : 0;
+        if (info.mousey > 0)
+            info.mousey = max(info.mousey - ud.config.MouseDeadZone, 0);
+        else if (info.mousey < 0)
+            info.mousey = min(info.mousey + ud.config.MouseDeadZone, 0);
 
-        if (info[0].dyaw > 0)
-            info[0].dyaw = (info[0].dyaw > ud.config.MouseDeadZone) ? info[0].dyaw - ud.config.MouseDeadZone : 0;
-        else if (info[0].dyaw < 0)
-            info[0].dyaw = (info[0].dyaw < -ud.config.MouseDeadZone) ? info[0].dyaw + ud.config.MouseDeadZone : 0;
+        if (info.mousex > 0)
+            info.mousex = max(info.mousex - ud.config.MouseDeadZone, 0);
+        else if (info.mousex < 0)
+            info.mousex = min(info.mousex + ud.config.MouseDeadZone, 0);
     }
 
     if (ud.config.MouseBias)
     {
-        if (klabs(info[0].dyaw) > klabs(info[0].dpitch))
-            info[0].dpitch = tabledivide32_noinline(info[0].dpitch, ud.config.MouseBias);
-        else info[0].dyaw = tabledivide32_noinline(info[0].dyaw, ud.config.MouseBias);
+        if (klabs(info.mousex) > klabs(info.mousey))
+            info.mousey = tabledivide32_noinline(info.mousey, ud.config.MouseBias);
+        else
+            info.mousex = tabledivide32_noinline(info.mousex, ud.config.MouseBias);
     }
 
-    int const elapsedTics = totalclock-lastControlInput;
-    lastControlInput = totalclock;
+    // JBF: Run key behaviour is selectable
+    int const playerRunning = (ud.runkey_mode) ? (BUTTON(gamefunc_Run) | ud.auto_run) : (ud.auto_run ^ BUTTON(gamefunc_Run));
+    constexpr int const analogTurnAmount = (NORMALTURN << 1);
+    int const keyMove    = playerRunning ? (NORMALKEYMOVE << 1) : NORMALKEYMOVE;
+    constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
 
-    staticInput.svel = staticInput.fvel = staticInput.q16avel = staticInput.q16horz = 0;
+    input_t input {};
 
-    staticInput.q16avel = fix16_div(fix16_from_int(info[0].dyaw), F16(32));
+    input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
+    input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
 
-    staticInput.q16horz = fix16_div(fix16_from_int(info[0].dpitch), F16(128));
+    input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
 
-    if (ud.mouseflip) staticInput.q16horz = -staticInput.q16horz;
+    if (ud.mouseflip) input.q16horz = -input.q16horz;
 
-    staticInput.svel -= info[0].dx;
-    staticInput.fvel = -info[0].dz >> 6;
+    input.q16horz -= fix16_from_int(info.dpitch) / analogExtent * analogTurnAmount;
+    input.svel -= info.dx * keyMove / analogExtent;
+    input.fvel -= info.dz * keyMove / analogExtent;
 
-    //     OSD_Printf("running: %d\n", running);
+    input.fvel = clamp(input.fvel, -MAXVEL, MAXVEL);
+    input.svel = clamp(input.svel, -MAXSVEL, MAXSVEL);
 
-    staticInput.fvel = clamp(staticInput.fvel, -MAXVEL, MAXVEL);
-    staticInput.svel = clamp(staticInput.svel, -MAXSVEL, MAXSVEL);
-    staticInput.q16avel = fix16_clamp(staticInput.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
-    staticInput.q16horz = fix16_clamp(staticInput.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
-    
+    input.q16avel = fix16_clamp(input.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
+    input.q16horz = fix16_clamp(input.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
+
+    pPlayer->crouch_toggle = 0;
 
     localInput.bits = BUTTON(gamefunc_Fire) << SK_FIRE;
     localInput.bits |= BUTTON(gamefunc_Steroids) << SK_STEROIDS;
     localInput.bits |= BUTTON(gamefunc_NightVision) << SK_NIGHTVISION;
     localInput.bits |= BUTTON(gamefunc_MedKit) << SK_MEDKIT;
     localInput.bits |= (BUTTON(gamefunc_Inventory_Left) ||
-                 (BUTTON(gamefunc_Dpad_Select) && (staticInput.svel > 0 || staticInput.q16avel < 0))) << SK_INV_LEFT;
+                 (BUTTON(gamefunc_Dpad_Select) && (input.svel > 0 || input.q16avel < 0))) << SK_INV_LEFT;
     localInput.bits |= KB_KeyPressed(sc_Pause) << SK_PAUSE;
     localInput.bits |= BUTTON(gamefunc_Holo_Duke) << SK_HOLODUKE;
     localInput.bits |= BUTTON(gamefunc_Jetpack) << SK_JETPACK;
     localInput.bits |= (g_gameQuit << SK_GAMEQUIT);
     localInput.bits |= (BUTTON(gamefunc_Inventory_Right) ||
-                 (BUTTON(gamefunc_Dpad_Select) && (staticInput.svel < 0 || staticInput.q16avel > 0))) << SK_INV_RIGHT;
+                 (BUTTON(gamefunc_Dpad_Select) && (input.svel < 0 || input.q16avel > 0))) << SK_INV_RIGHT;
     localInput.bits |= BUTTON(gamefunc_Open) << SK_OPEN;
     localInput.bits |= BUTTON(gamefunc_Inventory) << SK_INVENTORY;
     localInput.bits |= ((uint32_t)KB_KeyPressed(sc_Escape)) << SK_ESCAPE;
 
     if (BUTTON(gamefunc_Dpad_Select))
     {
-        staticInput.fvel = 0;
-        staticInput.svel = 0;
-        staticInput.q16avel = 0;
+        input.fvel = 0;
+        input.svel = 0;
+        input.q16avel = 0;
     }
 
     if (BUTTON(gamefunc_Dpad_Aiming))
-        staticInput.fvel = 0;
+        input.fvel = 0;
+    
+    localInput.extbits = (BUTTON(gamefunc_Move_Forward) || (input.fvel > 0));
+    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (input.fvel < 0)) << 1;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (input.svel > 0)) << 2;
+    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (input.svel < 0)) << 3;
 
-    localInput.extbits = (BUTTON(gamefunc_Move_Forward) || (staticInput.fvel > 0));
-    localInput.extbits |= (BUTTON(gamefunc_Move_Backward) || (staticInput.fvel < 0))<<1;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Left) || (staticInput.svel > 0))<<2;
-    localInput.extbits |= (BUTTON(gamefunc_Strafe_Right) || (staticInput.svel < 0))<<3;
-
-    // used for changing team
-    localInput.extbits |= (g_player[playerNum].pteam != g_player[playerNum].ps->team)<<6;
-
-    int const turn = staticInput.q16avel / 32;
+    int const turn = input.q16avel / 32;
     int turnLeft = BUTTON(gamefunc_Turn_Left) || BUTTON(gamefunc_Strafe_Left);
     int turnRight = BUTTON(gamefunc_Turn_Right) || BUTTON(gamefunc_Strafe_Right);
     int avelScale = F16((turnLeft || turnRight) ? 1 : 0);
@@ -3471,7 +3468,7 @@ void P_GetInputBoat(int playerNum)
             turnRight = 1;
     }
 
-    staticInput.svel = staticInput.fvel = staticInput.q16avel = staticInput.q16horz = 0;
+    input.svel = input.fvel = input.q16avel = input.q16horz = 0;
     
     localInput.bits |= (BUTTON(gamefunc_Move_Forward) || BUTTON(gamefunc_Strafe)) << SK_JUMP;
     localInput.bits |= BUTTON(gamefunc_Move_Backward) << SK_AIM_UP;
@@ -3479,6 +3476,10 @@ void P_GetInputBoat(int playerNum)
 
     localInput.bits |= turnLeft << SK_AIM_DOWN;
     localInput.bits |= turnRight << SK_LOOK_LEFT;
+
+    static int32_t turnHeldTime   = 0;
+    static int32_t lastInputClock = 0;  // MED
+    int32_t const  elapsedTics    = (int32_t) totalclock - lastInputClock;
 
     if (pPlayer->moto_speed != 0)
     {
@@ -3496,16 +3497,16 @@ void P_GetInputBoat(int playerNum)
                 if (pPlayer->not_on_water)
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(6*2);
+                        input.q16avel -= fix16_from_int(6*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(3*2);
+                        input.q16avel -= fix16_from_int(3*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(20*2);
+                        input.q16avel -= fix16_from_int(20*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(10*2);
+                        input.q16avel -= fix16_from_int(10*2);
                 }
             }
             else
@@ -3513,16 +3514,16 @@ void P_GetInputBoat(int playerNum)
                 if (pPlayer->not_on_water)
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(2*2);
+                        input.q16avel -= fix16_from_int(2*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(1*2);
+                        input.q16avel -= fix16_from_int(1*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel -= fix16_from_int(6*2);
+                        input.q16avel -= fix16_from_int(6*2);
                     else
-                        staticInput.q16avel -= fix16_from_int(3*2);
+                        input.q16avel -= fix16_from_int(3*2);
                 }
             }
         }
@@ -3540,16 +3541,16 @@ void P_GetInputBoat(int playerNum)
                 if (pPlayer->not_on_water)
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(6*2);
+                        input.q16avel += fix16_from_int(6*2);
                     else
-                        staticInput.q16avel += fix16_from_int(3*2);
+                        input.q16avel += fix16_from_int(3*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(20*2);
+                        input.q16avel += fix16_from_int(20*2);
                     else
-                        staticInput.q16avel += fix16_from_int(10*2);
+                        input.q16avel += fix16_from_int(10*2);
                 }
             }
             else
@@ -3557,16 +3558,16 @@ void P_GetInputBoat(int playerNum)
                 if (pPlayer->not_on_water)
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(2*2);
+                        input.q16avel += fix16_from_int(2*2);
                     else
-                        staticInput.q16avel += fix16_from_int(1*2);
+                        input.q16avel += fix16_from_int(1*2);
                 }
                 else
                 {
                     if (turn)
-                        staticInput.q16avel += fix16_from_int(6*2);
+                        input.q16avel += fix16_from_int(6*2);
                     else
-                        staticInput.q16avel += fix16_from_int(3*2);
+                        input.q16avel += fix16_from_int(3*2);
                 }
             }
         }
@@ -3590,19 +3591,19 @@ void P_GetInputBoat(int playerNum)
             pPlayer->tilt_status++;
     }
 
-    staticInput.fvel += pPlayer->moto_speed;
+    input.fvel += pPlayer->moto_speed;
 
-    staticInput.q16avel = fix16_mul(staticInput.q16avel, avelScale);
+    input.q16avel = fix16_mul(input.q16avel, avelScale);
 
-    staticInput.fvel = clamp(staticInput.fvel, -15, 120);
-    staticInput.svel = clamp(staticInput.svel, -MAXSVEL, MAXSVEL);
-    staticInput.q16avel = fix16_clamp(staticInput.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
-    staticInput.q16horz = fix16_clamp(staticInput.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
+    input.fvel = clamp(input.fvel, -15, 120);
+    input.svel = clamp(input.svel, -MAXSVEL, MAXSVEL);
+    input.q16avel = fix16_clamp(input.q16avel, F16(-MAXANGVEL), F16(MAXANGVEL));
+    input.q16horz = fix16_clamp(input.q16horz, F16(-MAXHORIZ), F16(MAXHORIZ));
     
     if (ud.scrollmode && ud.overhead_on)
     {
-        ud.folfvel = staticInput.fvel;
-        ud.folavel = fix16_to_int(staticInput.q16avel);
+        ud.folfvel = input.fvel;
+        ud.folavel = fix16_to_int(input.q16avel);
         localInput.fvel   = 0;
         localInput.svel   = 0;
         localInput.q16avel  = 0;
@@ -3612,16 +3613,16 @@ void P_GetInputBoat(int playerNum)
 
     int16_t const q16ang = fix16_to_int(pPlayer->q16ang);
 
-    localInput.fvel = mulscale9(staticInput.fvel, sintable[(q16ang + 2560) & 2047]) +
-                      mulscale9(staticInput.svel, sintable[(q16ang + 2048) & 2047]) +
+    localInput.fvel = mulscale9(input.fvel, sintable[(q16ang + 2560) & 2047]) +
+                      mulscale9(input.svel, sintable[(q16ang + 2048) & 2047]) +
                       pPlayer->fric.x;
 
-    localInput.svel = mulscale9(staticInput.fvel, sintable[(q16ang + 2048) & 2047]) +
-                      mulscale9(staticInput.svel, sintable[(q16ang + 1536) & 2047]) +
+    localInput.svel = mulscale9(input.fvel, sintable[(q16ang + 2048) & 2047]) +
+                      mulscale9(input.svel, sintable[(q16ang + 1536) & 2047]) +
                       pPlayer->fric.y;
 
-    localInput.q16avel = staticInput.q16avel;
-    localInput.q16horz = staticInput.q16horz;
+    localInput.q16avel = input.q16avel;
+    localInput.q16horz = input.q16horz;
 }
 
 void P_MadeNoise(int playerNum)
@@ -4943,7 +4944,7 @@ static void P_ProcessWeapon(int playerNum)
                     pPlayer->noise_radius = 8192;
                     P_MadeNoise(playerNum);
 
-                    lastvisinc = totalclock+32;
+                    lastvisinc = (int32_t) totalclock+32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                     if (sectorLotag != 857)
@@ -5013,7 +5014,7 @@ static void P_ProcessWeapon(int playerNum)
                     pPlayer->noise_radius = 8192;
                     P_MadeNoise(playerNum);
 
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                 }
@@ -5121,7 +5122,7 @@ static void P_ProcessWeapon(int playerNum)
                         A_Shoot(pPlayer->i, CHAINGUN);
                         pPlayer->noise_radius = 8192;
                         P_MadeNoise(playerNum);
-                        lastvisinc = totalclock + 32;
+                        lastvisinc = (int32_t) totalclock + 32;
                         pPlayer->visibility = 0;
                         flashColor = 255+(95<<8);
                         if (sectorLotag != 857)
@@ -5191,7 +5192,7 @@ static void P_ProcessWeapon(int playerNum)
                 {
                     pPlayer->visibility = 0;
                     flashColor = 255 + (95 << 8);
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     A_PlaySound(CHAINGUN_FIRE, pPlayer->i);
                     A_Shoot(pPlayer->i, SHOTSPARK1);
                     pPlayer->noise_radius = 16384;
@@ -5220,7 +5221,7 @@ static void P_ProcessWeapon(int playerNum)
                 {
                     pPlayer->visibility = 0;
                     flashColor = 255 + (95 << 8);
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     A_PlaySound(CHAINGUN_FIRE, pPlayer->i);
                     A_Shoot(pPlayer->i, CHAINGUN);
                     pPlayer->noise_radius = 16384;
@@ -5281,7 +5282,7 @@ static void P_ProcessWeapon(int playerNum)
                     pPlayer->ammo_amount[FREEZE_WEAPON]--;
                     pPlayer->visibility = 0;
                     flashColor = 72 + (88 << 8) + (140 << 16);
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     P_CheckWeapon(pPlayer);
                 }
                 else if ((*weaponFrame) == 12)
@@ -5391,7 +5392,7 @@ static void P_ProcessWeapon(int playerNum)
                     pPlayer->ammo_amount[RPG_WEAPON]--;
                     if (pPlayer->ammo_amount[HANDBOMB_WEAPON])
                         pPlayer->ammo_amount[HANDBOMB_WEAPON]--;
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                     A_Shoot(pPlayer->i, RPG);
@@ -5410,7 +5411,7 @@ static void P_ProcessWeapon(int playerNum)
                 if (++(*weaponFrame) == 4)
                 {
                     pPlayer->ammo_amount[CHICKEN_WEAPON]--;
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                     A_Shoot(pPlayer->i, RPG2);
@@ -5527,7 +5528,7 @@ static void P_ProcessWeapon(int playerNum)
                 {
                     A_Shoot(pPlayer->i, SHOTSPARK1);
                     A_PlaySound(PISTOL_FIRE, pPlayer->i);
-                    lastvisinc = totalclock+32;
+                    lastvisinc = (int32_t) totalclock+32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                 }
@@ -5579,7 +5580,7 @@ static void P_ProcessWeapon(int playerNum)
 
                     A_PlaySound(SHOTGUN_FIRE, pPlayer->i);
 
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                 }
@@ -5629,7 +5630,7 @@ static void P_ProcessWeapon(int playerNum)
 
                         A_PlaySound(CHAINGUN_FIRE, pPlayer->i);
                         A_Shoot(pPlayer->i, CHAINGUN);
-                        lastvisinc = totalclock + 32;
+                        lastvisinc = (int32_t) totalclock + 32;
                         pPlayer->visibility = 0;
                         flashColor = 255+(95<<8);
                         P_CheckWeapon(pPlayer);
@@ -5677,7 +5678,7 @@ static void P_ProcessWeapon(int playerNum)
 
                     pPlayer->visibility = 0;
                     flashColor = 216+(52<<8)+(20<<16);
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     P_CheckWeapon(pPlayer);
                 }
                 else if (!NAM)
@@ -5691,7 +5692,7 @@ static void P_ProcessWeapon(int playerNum)
 
                     pPlayer->visibility = 0;
                     flashColor = 216+(52<<8)+(20<<16);
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     P_CheckWeapon(pPlayer);
                     P_CheckWeapon(pPlayer);
                 }
@@ -5716,7 +5717,7 @@ static void P_ProcessWeapon(int playerNum)
                     {
                         pPlayer->visibility = 0;
                         flashColor = 176+(252<<8)+(120<<16);
-                        lastvisinc = totalclock + 32;
+                        lastvisinc = (int32_t) totalclock + 32;
                         P_CheckWeapon(pPlayer);
                     }
                 }
@@ -5725,7 +5726,7 @@ static void P_ProcessWeapon(int playerNum)
                     (*weaponFrame) = 0;
                     pPlayer->visibility = 0;
                     flashColor = 176+(252<<8)+(120<<16);
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     P_CheckWeapon(pPlayer);
                 }
                 else
@@ -5741,7 +5742,7 @@ static void P_ProcessWeapon(int playerNum)
                     {
                         pPlayer->visibility = 0;
                         flashColor = 255+(95<<8);
-                        lastvisinc = totalclock + 32;
+                        lastvisinc = (int32_t) totalclock + 32;
                         A_Shoot(pPlayer->i, RPG);
                         pPlayer->ammo_amount[DEVISTATOR_WEAPON]--;
                         P_CheckWeapon(pPlayer);
@@ -5761,7 +5762,7 @@ static void P_ProcessWeapon(int playerNum)
                         pPlayer->ammo_amount[FREEZE_WEAPON]--;
                         pPlayer->visibility = 0;
                         flashColor = 72+(88<<8)+(140<<16);
-                        lastvisinc = totalclock + 32;
+                        lastvisinc = (int32_t) totalclock + 32;
                         A_Shoot(pPlayer->i, FREEZEBLAST);
                         P_CheckWeapon(pPlayer);
                     }
@@ -5833,7 +5834,7 @@ static void P_ProcessWeapon(int playerNum)
                 if (++(*weaponFrame) == 4)
                 {
                     pPlayer->ammo_amount[RPG_WEAPON]--;
-                    lastvisinc = totalclock + 32;
+                    lastvisinc = (int32_t) totalclock + 32;
                     pPlayer->visibility = 0;
                     flashColor = 255+(95<<8);
                     A_Shoot(pPlayer->i, RPG);
@@ -7859,7 +7860,7 @@ HORIZONLY:;
                 {
                     sprite[spriteNum].pal = 0;
                     pPlayer->drug_mode = 5;
-                    pPlayer->drug_timer = totalclock;
+                    pPlayer->drug_timer = (int32_t) totalclock;
                     sprite[pPlayer->i].extra = pPlayer->max_player_health;
                 }
             }
