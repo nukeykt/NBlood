@@ -1065,7 +1065,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
         {
             if (nDmgType == DAMAGE_TYPE_1) {
                 if (pXSprite->health <= pDudeInfo->fleeHealth) {
-                    if (getNextIncarnation(pXSprite) == NULL) {
+                    if (pXSprite->txID <= 0 || getNextIncarnation(pXSprite) == NULL) {
                         removeDudeStuff(pSprite);
                         
                         if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1)
@@ -1086,7 +1086,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                             sfxPlayGDXGenDudeSound(pSprite, 3);
                             pSprite->type = kCustomDudeBurning;
 
-                            if (pXSprite->data2 == 11520) // don't inherit palette for burning if using default animation
+                            if (pXSprite->data2 == kDefaultAnimationBase) // don't inherit palette for burning if using default animation
                                 pSprite->pal = 0;
 
                             aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
@@ -1097,7 +1097,7 @@ int aiDamageSprite(spritetype *pSprite, XSPRITE *pXSprite, int nSource, DAMAGE_T
                         }
 
                     } else {
-                        actKillDude(nSource, pSprite, nDmgType, nDamage);
+                        actKillDude(nSource, pSprite, DAMAGE_TYPE_0, 65535);
                     }
                 }
             } else if (!inDodge(pXSprite->aiState)) {
