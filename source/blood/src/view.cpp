@@ -1242,15 +1242,11 @@ void viewDrawMapTitle(void)
     if (!gShowMapTitle || gGameMenuMgr.m_bActive)
         return;
 
-    int seconds = (gLevelTime / kTicsPerSec);
-    int millisecs = (gLevelTime % kTicsPerSec) * 33;
-    if (seconds > 3)
+    int const fadeStartTic = int(1.f*kTicsPerSec);
+    int const fadeEndTic = int(1.25f*kTicsPerSec);
+    if (gLevelTime > fadeEndTic)
         return;
-
-    const int noAlphaForSecs = 1;
-    uint8_t alpha = videoGetRenderMode() != REND_CLASSIC || numalphatabs >= 15 ?
-        seconds < noAlphaForSecs ? 0 : clamp(((seconds-noAlphaForSecs)*1000+millisecs)/4, 0, 255)
-        : 0;
+    uint8_t const alpha = clamp((gLevelTime-fadeStartTic)*255/(fadeEndTic-fadeStartTic), 0, 255);
 
     if (alpha != 255)
     {
@@ -2936,16 +2932,17 @@ int viewFPSLimit(void)
     if (!r_maxfps)
         return 1;
 
-    static double nextPageDelay;
-    static double lastFrameTicks;
+    static double   nextPageDelay;
+    static uint64_t lastFrameTicks;
 
-    double const frameTicks  = timerGetTicksU64();
-    double const elapsedTime = frameTicks-lastFrameTicks;
+    uint64_t const frameTicks   = timerGetTicksU64();
+    uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
+    double const   dElapsedTime = elapsedTime;
 
-    if (elapsedTime >= nextPageDelay)
+    if (dElapsedTime >= floor(nextPageDelay))
     {
-        if (elapsedTime <= nextPageDelay+g_frameDelay)
-            nextPageDelay += g_frameDelay-elapsedTime;
+        if (dElapsedTime <= nextPageDelay+g_frameDelay)
+            nextPageDelay += g_frameDelay-dElapsedTime;
 
         lastFrameTicks = frameTicks;
 

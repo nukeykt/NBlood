@@ -3109,13 +3109,10 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0);
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
-    switch (pSprite->type)
-    {
-    case kCustomDude:
-    {
-        removeDudeStuff(pSprite);
-        XSPRITE* pXIncarnation = getNextIncarnation(pXSprite);
-        if (pXIncarnation == NULL) {
+    switch (pSprite->type) {
+    case kCustomDude: {
+        removeDudeStuff(pSprite); XSPRITE* pXIncarnation = NULL;
+        if (pXSprite->txID > 0 && (pXIncarnation = getNextIncarnation(pXSprite)) == NULL) {
             
             if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1 &&
                 Chance(0x4000) && a3 != 5 && a3 != 4) {
@@ -3128,7 +3125,7 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
                 if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) && pXSprite->medium == 0) {
                     if (gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) {
                         pSprite->type = kCustomDudeBurning;
-                        if (pXSprite->data2 == 11520) // don't inherit palette for burning if using default animation
+                        if (pXSprite->data2 == kDefaultAnimationBase) // don't inherit palette for burning if using default animation
                             pSprite->pal = 0;
 
                         aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
@@ -3147,15 +3144,17 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
             
         } else {
             
+            pXSprite->locked = 1; // lock while transforming
+            
+            aiSetGenIdleState(pSprite, pXSprite); // set idle state
+            
             if (pXSprite->key > 0) // drop keys
                 actDropObject(pSprite, 100 + pXSprite->key - 1);
             
             if (pXSprite->dropMsg > 0) // drop items
                 actDropObject(pSprite, pXSprite->dropMsg);
             
-            pSprite->hitag &= ~0x1;
-            pXSprite->locked = 1; // lock while transforming
-            pXSprite->data1 = kIncarnationIndexBase + pXIncarnation->reference; // store incarnation index
+            pSprite->hitag &= ~kPhysMove; xvel[pSprite->index] = yvel[pSprite->index] = 0;
 
             int seqId = pXSprite->data2 + 18;
             if (!gSysRes.Lookup(seqId, "SEQ")) {
@@ -5715,7 +5714,7 @@ void actProcessSprites(void)
                 XSECTOR* pXSector = (sector[pDebris->sectnum].extra >= 0) ? &xsector[sector[pDebris->sectnum].extra] : NULL;
 
                 viewBackupSpriteLoc(pDebris->xvel, pDebris);
-                int airVel = gSpriteMass[pDebris->xvel].airVel;
+                int airVel = gSpriteMass[pDebris->extra].airVel;
                 if (pXSector != NULL) {
                     if (pXSector->Underwater) airVel <<= 6;
                     if (pXSector->panVel != 0) {
@@ -6165,16 +6164,11 @@ void actProcessSprites(void)
             }
 
             // By NoOne: handle incarnations of custom dude
-            if (pSprite->type == kCustomDude &&  pXSprite->data1 >= kIncarnationIndexBase && pXSprite->health <= 0 &&
-                seqGetStatus(3, nXSprite) < 0 && sprite[pXSprite->data1 - kIncarnationIndexBase].extra >= 0) {
-                if (IsDudeSprite(&sprite[pXSprite->data1 - kIncarnationIndexBase])) {
-                    pXSprite->key = pXSprite->dropMsg = 0;
-
-                    XSPRITE* pXIncarnation = &xsprite[sprite[pXSprite->data1 - kIncarnationIndexBase].extra];
+            if (pSprite->type == kCustomDude && pXSprite->txID > 0 && pXSprite->health <= 0 && seqGetStatus(3, nXSprite) < 0) {
+                XSPRITE* pXIncarnation = getNextIncarnation(pXSprite);
+                if (pXIncarnation != NULL) {
                     spritetype* pIncarnation = &sprite[pXIncarnation->reference];
-
-                    // unlock it
-                    pXSprite->locked = 0;
+                    pXSprite->key = pXSprite->dropMsg = pXSprite->locked = 0;
 
                     // save incarnation's going on and off options
                     bool triggerOn = pXIncarnation->triggerOn;
@@ -6206,10 +6200,11 @@ void actProcessSprites(void)
                     pXSprite->burnSource = -1;
 
                     pXSprite->data1 = pXIncarnation->data1;
-                    pXSprite->data2 = pXIncarnation->data2;
+                    short oldData2 = pXSprite->data2; pXSprite->data2 = pXIncarnation->data2; // seq new seqId and save old one.
                    
                     // if incarnation is active dude, it's sndStartId will be stored in sysData1, otherwise it will be data3
-                    pXSprite->sysData1 = (pIncarnation->statnum == 6) ? pXIncarnation->sysData1 : pXIncarnation->data3;
+                    if (pIncarnation->statnum == 6 && pIncarnation->type == kCustomDude) pXSprite->sysData1 = pXIncarnation->sysData1;
+                    else pXIncarnation->data3;
                     
                     pXSprite->data4 = pXIncarnation->data4;
 
@@ -6227,30 +6222,39 @@ void actProcessSprites(void)
                     // clear drop items of the incarnation
                     pXIncarnation->key = pXIncarnation->dropMsg = 0;
 
+                    // set hp
+                    if (pXSprite->data4 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
+                    else pXSprite->health = ClipRange(pXSprite->data4 << 4, 1, 65535); 
+                    
+                    int seqId = dudeInfo[pSprite->type - kDudeBase].seqStartID;
                     switch (pSprite->type) {
+                        case 225: // fake dude
+                        case 226: // fake dude
+                            break;
                         case kCustomDude:
                         case kCustomDudeBurning:
-                            seqSpawn(getSeqStartId(pXSprite), 3, nXSprite, -1);
-                            break;
-                        case 225: // fake dude
-                            break;
+                            seqId = getSeqStartId(pXSprite);
+                            if (seqId != oldData2)
+                                getSpriteMassBySize(pSprite); // create or refresh mass cache 
+                            fallthrough__; // go below
                         default:
-                            seqSpawn(dudeInfo[pSprite->type - kDudeBase].seqStartID, 3, nXSprite, -1);
+                            seqSpawn(seqId, 3, nXSprite, -1);
+                            
+                            // save target
+                            int target = pXSprite->target;
+
+                            // re-init sprite
+                            aiInitSprite(pSprite);
+
+                            // try to restore target
+                            if (target == -1) aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                            else aiSetTarget(pXSprite, target);
+
+                            // finally activate it
+                            aiActivateDude(pSprite, pXSprite);
+                            
                             break;
                     }
-
-                    if (pXSprite->data4 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
-                    else pXSprite->health = ClipRange(pXSprite->data4 << 4, 1, 65535);
-
-                    // save target
-                    int target = pXSprite->target;
-
-                    aiInitSprite(pSprite);
-
-                    if (target == -1 || sprite[target].extra < 0) aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
-                    else aiSetTarget(pXSprite, target);
-
-                    aiActivateDude(pSprite, pXSprite);
 
                     // remove the incarnation in case if non-locked
                     if (pXIncarnation->locked == 0) {
@@ -7089,7 +7093,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             if (gPhysSpritesCount > 0 && pVectorData->at5) {
                 int nIndex = isDebris(pSprite->index);
                 if (nIndex != -1 && (xsprite[pSprite->extra].physAttr & kPhysDebrisVector)) {
-                    int impulse = divscale(pVectorData->at5, ClipLow(gSpriteMass[pSprite->index].mass, 10), 6);
+                    int impulse = divscale(pVectorData->at5, ClipLow(gSpriteMass[pSprite->extra].mass, 10), 6);
                     xvel[nSprite] += mulscale16(a4, impulse);
                     yvel[nSprite] += mulscale16(a5, impulse);
                     zvel[nSprite] += mulscale16(a6, impulse);
@@ -7596,7 +7600,7 @@ int getSpriteMassBySize(spritetype* pSprite) {
 
     }
     
-    SPRITEMASS* cached = &gSpriteMass[pSprite->xvel];
+    SPRITEMASS* cached = &gSpriteMass[pSprite->extra];
     if (((seqId >= 0 && seqId == cached->seqId) || pSprite->picnum == cached->picnum) && pSprite->xrepeat == cached->xrepeat &&
         pSprite->yrepeat == cached->yrepeat && pSprite->clipdist == cached->clipdist) {
         return cached->mass;
@@ -7668,20 +7672,22 @@ int getSpriteMassBySize(spritetype* pSprite) {
 }
 
 int isDebris(int nSprite) {
-    //if (sprite[nSprite].extra >= 0) {
-        //if (xsprite[sprite[nSprite].extra].physAttr != 0)
-    //}
-    
+    if (sprite[nSprite].extra < 0 || xsprite[sprite[nSprite].extra].physAttr == 0) 
+        return -1;
+
     for (int i = 0; i < gPhysSpritesCount; i++) {
         if (gPhysSpritesList[i] != nSprite) continue;
         return i;
     }
+
     return -1;
 }
 
 int debrisGetFreeIndex(void) {
     for (int i = 0; i < kMaxSuperXSprites; i++) {
-        if (gPhysSpritesList[i] == -1) return i;
+        if (gPhysSpritesList[i] == -1 || sprite[gPhysSpritesList[i]].statnum == kStatFree) return i;
+        else if ((sprite[gPhysSpritesList[i]].hitag & kHitagFree) || sprite[gPhysSpritesList[i]].extra < 0) return i;
+        else if (xsprite[sprite[gPhysSpritesList[i]].extra].physAttr == 0) return i;
     }
 
     return -1;
@@ -7695,8 +7701,8 @@ void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg) {
 
         int size = (tilesiz[pSprite->picnum].x * pSprite->xrepeat * tilesiz[pSprite->picnum].y * pSprite->yrepeat) >> 1;
         if (xsprite[pSprite->extra].physAttr & kPhysDebrisExplode) {
-            if (gSpriteMass[pSprite->xvel].mass > 0) {
-                int t = scale(dmg, size, gSpriteMass[pSprite->xvel].mass);
+            if (gSpriteMass[pSprite->extra].mass > 0) {
+                int t = scale(dmg, size, gSpriteMass[pSprite->extra].mass);
 
                 xvel[pSprite->xvel] += mulscale16(t, dx);
                 yvel[pSprite->xvel] += mulscale16(t, dy);
@@ -7733,7 +7739,7 @@ void debrisMove(int listIndex) {
     int ceilDist = (pSprite->z - top) / 4;
     int clipDist = pSprite->clipdist << 2;
 
-    int tmpFraction = gSpriteMass[pSprite->xvel].fraction;
+    int tmpFraction = gSpriteMass[pSprite->extra].fraction;
     if (sector[nSector].extra >= 0 && xsector[sector[nSector].extra].Underwater)
         tmpFraction >>= 1;
 
@@ -7783,7 +7789,7 @@ void debrisMove(int listIndex) {
             switch (warp) {
             case kMarkerUpWater:
             case kMarkerUpGoo:
-                long pitch = (150000 - (gSpriteMass[pSprite->xvel].mass << 9)) + Random3(8192);
+                long pitch = (150000 - (gSpriteMass[pSprite->extra].mass << 9)) + Random3(8192);
                 sfxPlay3DSoundCP(pSprite, 720, -1, 0, pitch, 75 - Random(40));
 
                 if (Chance(0x8000))

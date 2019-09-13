@@ -195,6 +195,7 @@ void QuitGame(void);
 #define kGDXObjDataAccumulator 37
 #define kGDXEffectSpawner 38
 #define kGDXWindGenerator 39
+#define kModernConcussSprite 712
 
 #define kGDXThingTNTProx 433 // detects only players
 #define kGDXThingThrowableRock 434 // does small damage if hits target

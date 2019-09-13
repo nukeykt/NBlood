@@ -658,6 +658,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
     case kGDXObjSizeChanger:
     case kGDXSectorFXChanger:
     case kGDXObjDataChanger:
+    case kModernConcussSprite:
         modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
         break;
     case 20:
@@ -1187,6 +1188,19 @@ void stopWindOnSectors(XSPRITE* pXSource) {
         if ((pXSector->state == 1 && !pXSector->windAlways) || (sprite[pXSource->reference].hitag & kHitagExtBit))
             pXSector->windVel = 0;
     }
+}
+/// WIP ////////////////////////////////////////////////////////
+void useConcussSprite(XSPRITE* pXSource, spritetype* pSprite) {
+    spritetype* pSource = &sprite[pXSource->reference];
+    int nIndex = isDebris(pSprite->index);
+    //ThrowError("%d", gPhysSpritesList[nIndex]);
+    //int size = (tilesiz[pSprite->picnum].x * pSprite->xrepeat * tilesiz[pSprite->picnum].y * pSprite->yrepeat) >> 1;
+    //int t = scale(pXSource->data1, size, gSpriteMass[pSprite->extra].mass);
+    //xvel[pSprite->xvel] += mulscale16(t, pSprite->x);
+    //yvel[pSprite->xvel] += mulscale16(t, pSprite->y);
+    //zvel[pSprite->xvel] += mulscale16(t, pSprite->z);
+
+    //debrisConcuss(pXSource->reference, nIndex, pSprite->x - 100, pSprite->y - 100, pSprite->z - 100, pXSource->data1);
 }
 
 void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite) {
@@ -2798,10 +2812,18 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             return;
     }
 
-    if (pSource->type == kMarkerWarpDest) {
+    if (pSource->type == kModernConcussSprite) {
+        /* - Concussing any physics affected sprite with give strength - */
+        if (type != 3) return;
+        else if ((sprite[nDest].hitag & kPhysMove) || (sprite[nDest].hitag & kPhysGravity) || isDebris(nDest))
+            useConcussSprite(pXSource, &sprite[nDest]);
+        return;
+
+    } else if (pSource->type == kMarkerWarpDest) {
         /* - Allows teleport any sprite from any location to the source destination - */
         useTeleportTarget(pXSource, &sprite[nDest]);
         return;
+
     } else if (pSource->type == kGDXSpriteDamager) {
         /* - damages xsprite via TX ID	- */
         if (type != 3) return;
@@ -4359,12 +4381,12 @@ void ActivateGenerator(int nSprite)
             if (pDrop != NULL && isDebris(pSprite->xvel) != -1 && (pDrop->extra >= 0 || dbInsertXSprite(pDrop->xvel) > 0)) {
                 int nIndex = debrisGetFreeIndex();
                 if (nIndex >= 0) {
-                    pDrop->hitag |= 0x1 | 0x2; // must fall always
+                    xsprite[pDrop->extra].physAttr |= kPhysMove | kPhysGravity | kPhysFalling; // must fall always
                     pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
 
                     gPhysSpritesList[nIndex] = pDrop->xvel; 
                     if (nIndex >= gPhysSpritesCount) gPhysSpritesCount++;
-                    getSpriteMassBySize(pDrop); // create physics cache
+                    getSpriteMassBySize(pDrop); // create mass cache
                 }
             }
         }
