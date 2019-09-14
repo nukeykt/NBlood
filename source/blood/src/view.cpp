@@ -1231,7 +1231,7 @@ void viewDrawPowerUps(PLAYER* pPlayer)
                 DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
             }
 
-            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, remainingSeconds > 5 ? 0 : 2, 256, 65536 * 0.5);
             y += 20;
         }
     }
