@@ -1219,6 +1219,7 @@ void viewDrawPowerUps(PLAYER* pPlayer)
 
     sortPowerUps(powerups);
 
+    const int warningTime = 5;
     const int x = 15;
     int y = 50;
     for (int i = 0; i < 5; i++)
@@ -1226,12 +1227,12 @@ void viewDrawPowerUps(PLAYER* pPlayer)
         if (powerups[i].remainingDuration)
         {
             int remainingSeconds = powerups[i].remainingDuration / 100;
-            if (remainingSeconds > 5 || ((int)totalclock & 32))
+            if (remainingSeconds > warningTime || ((int)totalclock & 32))
             {
                 DrawStatMaskedSprite(powerups[i].nTile, x, y + powerups[i].yOffset, 0, 0, 256, (int)(65536 * powerups[i].nScaleRatio));
             }
 
-            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, 0, 256, 65536 * 0.5);
+            DrawStatNumber("%d", remainingSeconds, kSBarNumberInv, x + 15, y, 0, remainingSeconds > warningTime ? 0 : 2, 256, 65536 * 0.5);
             y += 20;
         }
     }
@@ -1242,8 +1243,8 @@ void viewDrawMapTitle(void)
     if (!gShowMapTitle || gGameMenuMgr.m_bActive)
         return;
 
-    int const fadeStartTic = int(1.f*kTicsPerSec);
-    int const fadeEndTic = int(1.25f*kTicsPerSec);
+    int const fadeStartTic = int((videoGetRenderMode() == REND_CLASSIC ? 1.25f : 1.f)*kTicsPerSec);
+    int const fadeEndTic = int(1.5f*kTicsPerSec);
     if (gLevelTime > fadeEndTic)
         return;
     uint8_t const alpha = clamp((gLevelTime-fadeStartTic)*255/(fadeEndTic-fadeStartTic), 0, 255);
