@@ -11993,7 +11993,9 @@ void TextFontModify(void)
     Bmemcpy(&textfont[5*8], RadioButton[1], 8);
 }
 
+#ifdef USE_QHEAP
 unsigned int nMaxAlloc = 0x4000000;
+#endif
 
 int32_t ExtPostStartupWindow(void)
 {
@@ -12002,7 +12004,9 @@ int32_t ExtPostStartupWindow(void)
     if (!g_useCwd)
         G_CleanupSearchPaths();
 
+#ifdef USE_QHEAP
     Resource::heap = new QHeap(nMaxAlloc);
+#endif
 
     // NUKE-TODO: Add ability to specify custom RFF files
     gSysRes.Init("BLOOD.RFF");
