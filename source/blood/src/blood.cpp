@@ -85,7 +85,9 @@ int32_t gNoSetup = 0, gCommandSetup = 0;
 
 INPUT_MODE gInputMode;
 
+#ifdef USE_QHEAP
 unsigned int nMaxAlloc = 0x4000000;
+#endif
 
 bool bCustomName = false;
 char bAddUserMap = false;
@@ -1017,7 +1019,9 @@ SWITCH switches[] = {
     { "art", 26, 1 },
     { "snd", 27, 1 },
     { "rff", 28, 1 },
+#ifdef USE_QHEAP
     { "maxalloc", 29, 1 },
+#endif
     { "server", 30, 1 },
     { "client", 31, 1 },
     { "noautoload", 32, 0 },
@@ -1118,12 +1122,14 @@ void ParseOptions(void)
             ThrowError("Invalid argument: %s", OptFull);
             fallthrough__;
         case 29:
+#ifdef USE_QHEAP
             if (OptArgc < 1)
                 ThrowError("Missing argument");
             nMaxAlloc = atoi(OptArgv[0]);
             if (!nMaxAlloc)
                 nMaxAlloc = 0x2000000;
             break;
+#endif
         case 0:
             PrintHelp();
             break;
@@ -1507,7 +1513,9 @@ int app_main(int argc, char const * const * argv)
 
     system_getcvars();
 
+#ifdef USE_QHEAP
     Resource::heap = new QHeap(nMaxAlloc);
+#endif
     gSysRes.Init(pUserRFF ? pUserRFF : "BLOOD.RFF");
     gGuiRes.Init("GUI.RFF");
     gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF");

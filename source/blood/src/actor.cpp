@@ -7610,8 +7610,14 @@ int getSpriteMassBySize(spritetype* pSprite) {
     short massDiv = 30;  short addMul = 2; short subMul = 2;
 
     if (seqId >= 0) {
-        DICTNODE* hSeq = gSysRes.Lookup(seqId, "SEQ"); pSeq = (Seq*)gSysRes.Load(hSeq);
-        int picnum = (pSeq != NULL) ? seqGetTile(&pSeq->frames[0]) : pSprite->picnum;
+        DICTNODE* hSeq = gSysRes.Lookup(seqId, "SEQ");
+        if (hSeq)
+        {
+            pSeq = (Seq*)gSysRes.Load(hSeq);
+            picnum = seqGetTile(&pSeq->frames[0]);
+        }
+        else
+            picnum = pSprite->picnum;
     }
 
     int clipDist = ClipRange(pSprite->clipdist, 1, 255);
