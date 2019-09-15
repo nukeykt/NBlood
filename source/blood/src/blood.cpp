@@ -1027,6 +1027,9 @@ SWITCH switches[] = {
     { "h", 40, 1 },
     { "mh", 41, 1 },
     { "j", 42, 1 },
+    { "c", 43, 1 },
+    { "conf", 43, 1 },
+    { "noconsole", 43, 0 },
     { NULL, 0, 0 }
 };
 
@@ -1346,6 +1349,8 @@ void ParseOptions(void)
             if (OptArgc < 1)
                 ThrowError("Missing argument");
             G_AddPath(OptArgv[0]);
+            break;
+        case 43: // conf, noconsole
             break;
         }
     }
