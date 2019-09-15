@@ -70,9 +70,6 @@ extern bool gQuitGame;
 extern int gQuitRequest;
 extern int gCacheMiss;
 
-extern bool gBlueFlagDropped;
-extern bool gRedFlagDropped;
-
 void QuitGame(void);
 void PreloadCache(void);
 void StartLevel(GAMEOPTIONS *gameOptions);

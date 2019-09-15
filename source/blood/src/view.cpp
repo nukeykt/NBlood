@@ -1361,15 +1361,16 @@ void viewDrawPlayerFlags(void)
         Bstrupr(gTempStr);
         viewDrawText(4, gTempStr, x + 4, y + 1, -128, 11 + col, 0, 0);
 
-        x += 74;
+        sprintf(gTempStr, "F");
+        x += 76;
         if (gPlayer[p].at90 & 2)
         {
-            DrawStatMaskedSprite(4134, x, y + 5, 0, 7, 0, 65536 * 0.5);
+            viewDrawText(4, gTempStr, x, y + 1, -128, 12, 2, 0);
             x -= 6;
         }
 
         if (gPlayer[p].at90 & 1)
-            DrawStatMaskedSprite(4134, x, y + 5, 0, 10, 0, 65536 * 0.5);
+            viewDrawText(4, gTempStr, x, y + 1, -128, 11, 2, 0);
     }
 }
 

@@ -119,9 +119,6 @@ bool gPaused;
 bool gSaveGameActive;
 int gCacheMiss;
 
-bool gBlueFlagDropped = false;
-bool gRedFlagDropped = false;
-
 enum gametokens
 {
     T_INCLUDE = 0,

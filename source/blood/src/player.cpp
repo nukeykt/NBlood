@@ -56,6 +56,9 @@ PROFILE gProfile[kMaxPlayers];
 PLAYER gPlayer[kMaxPlayers];
 PLAYER *gMe, *gView;
 
+bool gBlueFlagDropped = false;
+bool gRedFlagDropped = false;
+
 POWERUPINFO gPowerUpInfo[kMaxPowerUps] = {
     { -1, 1, 1, 1 },
     { -1, 1, 1, 1 },
@@ -1191,6 +1194,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
         evKill(pItem->index, 3, CALLBACK_ID_17);
         pPlayer->at90 |= 1;
         pPlayer->at91[0] = pItem->index;
+        gBlueFlagDropped = false;
         break;
     case 148:
         if (gGameOptions.nGameType != 3)
@@ -1198,6 +1202,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
         evKill(pItem->index, 3, CALLBACK_ID_17);
         pPlayer->at90 |= 2;
         pPlayer->at91[1] = pItem->index;
+        gRedFlagDropped = false;
         break;
     case 140:
     case 141:
@@ -1344,10 +1349,6 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     {
         pickedUp = PickupItem(pPlayer, pSprite);
         if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
-        if (147 == nType)
-            gBlueFlagDropped = false;
-        else if (148 == nType)
-            gRedFlagDropped = false;
     }
     else if (nType >= 60 && nType < 81)
     {
