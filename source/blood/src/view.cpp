@@ -1401,24 +1401,36 @@ void viewDrawCtfHud(void)
 {
     bool blueFlagTaken = false;
     bool redFlagTaken = false;
+    int blueFlagCarrierColor = 0;
+    int redFlagCarrierColor = 0;
     for (int i = 0, p = connecthead; p >= 0; i++, p = connectpoint2[p])
     {
         if ((gPlayer[p].at90 & 1) != 0)
+        {
             blueFlagTaken = true;
+            blueFlagCarrierColor = gPlayer[p].at2ea & 3;
+        }
         if ((gPlayer[p].at90 & 2) != 0)
+        {
             redFlagTaken = true;
+            redFlagCarrierColor = gPlayer[p].at2ea & 3;
+        }
     }
 
-    if (!(gMe->at90 & 1) || ((int)totalclock & 32))
-        DrawStatMaskedSprite(blueFlagTaken ? 3558 : 3559, 320, 75, 0, 10, 0, 65536 * 0.35);
+    bool meHaveBlueFlag = gMe->at90 & 1;
+    DrawStatMaskedSprite(meHaveBlueFlag ? 3558 : 3559, 320, 75, 0, 10, 0, 65536 * 0.35);
     if (gBlueFlagDropped)
         DrawStatMaskedSprite(2332, 305, 83, 0, 10, 0, 65536);
+    else if (blueFlagTaken)
+        DrawStatMaskedSprite(4097, 307, 77, 0, blueFlagCarrierColor ? 2 : 10, 0, 65536);
     DrawStatNumber("%d", dword_21EFB0[0], kSBarNumberInv, 290, 90, 0, 10, 0, 65536 * 0.75);
 
-    if (!(gMe->at90 & 2) || ((int)totalclock & 32))
-        DrawStatMaskedSprite(redFlagTaken ? 3558 : 3559, 320, 110, 0, 2, 0, 65536 * 0.35);
+    bool meHaveRedFlag = gMe->at90 & 2;
+    DrawStatMaskedSprite(meHaveRedFlag ? 3558 : 3559, 320, 110, 0, 2, 0, 65536 * 0.35);
     if (gRedFlagDropped)
         DrawStatMaskedSprite(2332, 305, 117, 0, 2, 0, 65536);
+    else if (redFlagTaken)
+        DrawStatMaskedSprite(4097, 307, 111, 0, redFlagCarrierColor ? 2 : 10, 0, 65536);
     DrawStatNumber("%d", dword_21EFB0[1], kSBarNumberInv, 290, 125, 0, 2, 0, 65536 * 0.75);
 }
 
