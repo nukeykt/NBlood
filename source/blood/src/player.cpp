@@ -1170,7 +1170,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem)
                         dword_21EFB0[pPlayer->at2ea] += 10;
                         dword_21EFD0[pPlayer->at2ea] += 240;
                         evSend(0, 0, 80, COMMAND_ID_1);
-                        sprintf(buffer, "%s captured Red Flag!", gProfile[pPlayer->at57].name);
+                        sprintf(buffer, "%s captured Blue Flag!", gProfile[pPlayer->at57].name);
                         sndStartSample(8000, 255, 2, 0);
                         viewSetMessage(buffer);
 #if 0
@@ -1344,6 +1344,10 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     {
         pickedUp = PickupItem(pPlayer, pSprite);
         if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
+        if (147 == nType)
+            gBlueFlagDropped = false;
+        else if (148 == nType)
+            gRedFlagDropped = false;
     }
     else if (nType >= 60 && nType < 81)
     {
@@ -2112,6 +2116,7 @@ spritetype *sub_40A94(PLAYER *pPlayer, int a2)
         pSprite = actDropObject(pPlayer->pSprite, 147);
         if (pSprite)
             pSprite->owner = pPlayer->at91[0];
+        gBlueFlagDropped = true;
         sprintf(buffer, "%s dropped Blue Flag", gProfile[pPlayer->at57].name);
         sndStartSample(8005, 255, 2, 0);
         viewSetMessage(buffer);
@@ -2121,6 +2126,7 @@ spritetype *sub_40A94(PLAYER *pPlayer, int a2)
         pSprite = actDropObject(pPlayer->pSprite, 148);
         if (pSprite)
             pSprite->owner = pPlayer->at91[1];
+        gRedFlagDropped = true;
         sprintf(buffer, "%s dropped Red Flag", gProfile[pPlayer->at57].name);
         sndStartSample(8004, 255, 2, 0);
         viewSetMessage(buffer);
