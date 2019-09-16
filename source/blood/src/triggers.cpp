@@ -470,7 +470,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             }
             
             // force send command to all TX id in a range
-            if (pSprite->hitag & kHitagExtBit) {
+            if (pSprite->hitag & kModernTypeFlag1) {
                 for (pXSprite->txID = pXSprite->data1; pXSprite->txID <= pXSprite->data4; pXSprite->txID++) {
                     if (pXSprite->txID > 0) 
                         evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
@@ -489,7 +489,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         } else {
 
             // force send command to all TX id specified in data
-            if (pSprite->hitag & kHitagExtBit) {
+            if (pSprite->hitag & kModernTypeFlag1) {
                 for (int i = 0; i <= 3; i++) {
                     if ((pXSprite->txID = GetDataVal(pSprite, i)) > 0)
                         evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
@@ -1185,7 +1185,7 @@ void stopWindOnSectors(XSPRITE* pXSource) {
     for (int i = bucketHead[pXSource->txID]; i < bucketHead[pXSource->txID + 1]; i++) {
         if (rxBucket[i].type != 6) continue;
         XSECTOR * pXSector = &xsector[sector[rxBucket[i].index].extra];
-        if ((pXSector->state == 1 && !pXSector->windAlways) || (sprite[pXSource->reference].hitag & kHitagExtBit))
+        if ((pXSector->state == 1 && !pXSector->windAlways) || (sprite[pXSource->reference].hitag & kModernTypeFlag1))
             pXSector->windVel = 0;
     }
 }
@@ -1231,7 +1231,7 @@ void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite) {
     pSprite->x = pSource->x; pSprite->y = pSource->y;
     pSprite->z += (sector[pSource->sectnum].floorz - sector[pSprite->sectnum].floorz);
 
-    if ((pSource->hitag & kHitagExtBit)) // force telefrag
+    if (pSource->hitag & kModernTypeFlag1) // force telefrag
         TeleFrag(pSprite->xvel, pSource->sectnum);
 
     changespritesect((short)pSprite->xvel, pSource->sectnum);
@@ -1297,8 +1297,7 @@ void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector) {
     
     spritetype* pSource = &sprite[pXSource->reference];
     XSECTOR* pXSector = NULL; bool forceWind = false; 
-    int nXSector = -1;
-
+    int nXSector = 0;
     if (pSector == NULL) {
         
         if (sector[pSource->sectnum].extra < 0) {
@@ -1358,12 +1357,18 @@ void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector) {
         pXSector->panVel = pXSector->windVel;
 
         // add to panList if panVel was set to 0 previously
-        if (oldPan == 0 && pXSector->panVel != 0) {
-            for (int i = panCount; i >= 0; i--) {
-                if (panList[i] == nXSector) break;
-                else if (i == 0) panList[panCount++] = nXSector;
+        if (oldPan == 0 && pXSector->panVel != 0 && panCount < kMaxXSprites) {
+
+            int i;
+            for (i = 0; i < panCount; i++) {
+                if (panList[i] != nXSector) continue;
+                break;
             }
+
+            if (i == panCount)
+                panList[panCount++] = nXSector;
         }
+
     }
 }
 
@@ -1742,7 +1747,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
         spritetype *pSprite = &sprite[nSprite];
         // By NoOne: allow to move markers by sector movements in game if hitag 1 is added in editor.
         if (pSprite->statnum == 10 || pSprite->statnum == 16) {
-            if (!(pSprite->hitag&kHitagExtBit)) continue;
+            if (!(pSprite->hitag & kModernTypeFlag1)) continue;
         }
         x = baseSprite[nSprite].x;
         y = baseSprite[nSprite].y;
@@ -2887,22 +2892,21 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             if ((data += pXSource->data4) >= pXSource->data3) {
 
                 switch (pSource->hitag) {
-                case 0:
-                case 1:
-                    if (data > pXSource->data3) data = pXSource->data3;
-                    break;
-                case 2:
-                {
-                    if (data > pXSource->data3) data = pXSource->data3;
-                    if (!goalValueIsReached(pXSource)) break;
-                    short tmp = pXSource->data3;
-                    pXSource->data3 = pXSource->data2;
-                    pXSource->data2 = tmp;
-                }
-                    break;
-                case 3:
-                    if (data > pXSource->data3) data = pXSource->data2;
-                    break;
+                    case kModernTypeFlag0:
+                    case kModernTypeFlag1:
+                        if (data > pXSource->data3) data = pXSource->data3;
+                        break;
+                    case kModernTypeFlag2: {
+                        if (data > pXSource->data3) data = pXSource->data3;
+                        if (!goalValueIsReached(pXSource)) break;
+                        short tmp = pXSource->data3;
+                        pXSource->data3 = pXSource->data2;
+                        pXSource->data2 = tmp;
+                    }
+                        break;
+                    case kModernTypeFlag3:
+                        if (data > pXSource->data3) data = pXSource->data2;
+                        break;
                 }
             }
 
@@ -2913,33 +2917,27 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
             if ((data -= pXSource->data4) <= pXSource->data3) {
                 switch (pSource->hitag) {
-                case 0:
-                case 1:
-                    if (data < pXSource->data3) data = pXSource->data3;
-                    break;
-                case 2:
-                {
-                    if (data < pXSource->data3) data = pXSource->data3;
-                    if (!goalValueIsReached(pXSource)) break;
-                    short tmp = pXSource->data3;
-                    pXSource->data3 = pXSource->data2;
-                    pXSource->data2 = tmp;
-                }
-                    break;
-                case 3:
-                    if (data < pXSource->data3) data = pXSource->data2;
-                    break;
+                    case kModernTypeFlag0:
+                    case kModernTypeFlag1:
+                        if (data < pXSource->data3) data = pXSource->data3;
+                        break;
+                    case kModernTypeFlag2: {
+                        if (data < pXSource->data3) data = pXSource->data3;
+                        if (!goalValueIsReached(pXSource)) break;
+                        short tmp = pXSource->data3;
+                        pXSource->data3 = pXSource->data2;
+                        pXSource->data2 = tmp;
+                    }
+                        break;
+                    case kModernTypeFlag3:
+                        if (data < pXSource->data3) data = pXSource->data2;
+                        break;
                 }
             }
         }
-
-        if (pXSource->data1 == 3 && type == 3 && sprite[nDest].type == kCustomDude) {
-            if (data != xsprite[sprite[nDest].extra].sysData1) xsprite[sprite[nDest].extra].sysData1 = data;
-            xsprite[sprite[nDest].extra].sysData1 = 0;
-        } else {
-            setDataValueOfObject(type, nDest, pXSource->data1, data);
-        }
-
+        
+        setDataValueOfObject(type, nDest, pXSource->data1, data);
+        
         return;
     
     } else if (pSource->type == kGDXObjDataChanger) {
@@ -2954,26 +2952,26 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
         switch (type) {
             case 6:
-                if ((pSource->hitag & 1) != 0 || (pXSource->data1 != -1 && pXSource->data1 != 32767))
+                if ((pSource->hitag & kModernTypeFlag1) || (pXSource->data1 != -1 && pXSource->data1 != 32767))
                     setDataValueOfObject(type, nDest, 1, pXSource->data1);
                 break;
 
             case 3:
-                if ((pSource->hitag & 1) != 0 || (pXSource->data1 != -1 && pXSource->data1 != 32767))
+                if ((pSource->hitag & kModernTypeFlag1) || (pXSource->data1 != -1 && pXSource->data1 != 32767))
                     setDataValueOfObject(type, nDest, 1, pXSource->data1);
 
-                if ((pSource->hitag & 1) != 0 || (pXSource->data2 != -1 && pXSource->data2 != 32767))
+                if ((pSource->hitag & kModernTypeFlag1) || (pXSource->data2 != -1 && pXSource->data2 != 32767))
                     setDataValueOfObject(type, nDest, 2, pXSource->data2);
 
-                if ((pSource->hitag & 1) != 0 || (pXSource->data3 != -1 && pXSource->data3 != 32767))
+                if ((pSource->hitag & kModernTypeFlag1) || (pXSource->data3 != -1 && pXSource->data3 != 32767))
                     setDataValueOfObject(type, nDest, 3, pXSource->data3);
 
-                if ((pSource->hitag & 1) != 0 || (pXSource->data4 != -1 && pXSource->data1 != 65535))
+                if ((pSource->hitag & kModernTypeFlag1) || (pXSource->data4 != -1 && pXSource->data1 != 65535))
                     setDataValueOfObject(type, nDest, 4, pXSource->data4);
                 break;
 
             case 0:
-                if ((pSource->hitag & 1) != 0 || (pXSource->data1 != -1 && pXSource->data1 != 32767))
+                if ((pSource->hitag & kModernTypeFlag1) || (pXSource->data1 != -1 && pXSource->data1 != 32767))
                     setDataValueOfObject(type, nDest, 1, pXSource->data1);
                 break;
         }
@@ -3003,15 +3001,21 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             pXSector->phase = (pXSource->data4 > 255) ? 255 : pXSource->data4;
 
         // force shadeAlways
-        if ((pSource->hitag & kHitagExtBit) != 0)
+        if (pSource->hitag & kModernTypeFlag1)
             pXSector->shadeAlways = true;
 
         // add to shadeList if amplitude was set to 0 previously
-        if (oldAmplitude == 0 && pXSector->amplitude != 0) {
-            for (int i = shadeCount; i >= 0; i--) {
-                if (shadeList[i] == sector[nDest].extra) break;
-                else if (i == 0) shadeList[shadeCount++] = sector[nDest].extra;
+        if (oldAmplitude == 0 && pXSector->amplitude != 0 && shadeCount < kMaxXSectors) {
+            
+            bool found = false;
+            for (int i = 0; i < shadeCount; i++) {
+                if (shadeList[i] != sector[nDest].extra) continue;
+                found = true; 
+                break;
             }
+
+            if (!found)
+                shadeList[shadeCount++] = sector[nDest].extra;
         }
 
     } else if (pSource->type == kGDXDudeTargetChanger) {
@@ -3359,13 +3363,13 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 XSECTOR *pXSector = &xsector[sector[nDest].extra];
                 if (valueIsBetween(pXSource->data3, -1, 32767)) {
                     sector[nDest].floorpal = pXSource->data3;
-                    if ((pSource->hitag & kHitagExtBit) != 0)
+                    if (pSource->hitag & kModernTypeFlag1)
                         pXSector->floorpal = pXSource->data3;
                 }
 
                 if (valueIsBetween(pXSource->data4, -1, 65535)) {
                     sector[nDest].ceilingpal = pXSource->data4;
-                    if ((pSource->hitag & kHitagExtBit) != 0)
+                    if (pSource->hitag & kModernTypeFlag1)
                         pXSector->ceilpal = pXSource->data4;
                 }
                 break;
@@ -3439,7 +3443,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 if ((old & kHitagRespawn) && !(pSprite->hitag & kHitagRespawn)) pSprite->hitag |= kHitagRespawn;
 
                 // prepare things for different (debris) physics.
-                if (pSprite->statnum == 4) thing2debris = true;
+                if (pSprite->statnum == 4 && debrisGetFreeIndex() >= 0) thing2debris = true;
                     
             }
 
@@ -3456,12 +3460,15 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
                         if (thing2debris) {
                             
-                            // converting thing to debris (there is no sense to set additional physics flags)
+                            // converting thing to debris
                             if ((pSprite->hitag & kPhysMove) != 0) flags |= kPhysMove;
                             else flags &= ~kPhysMove;
 
                             if ((pSprite->hitag & kPhysGravity) != 0) flags |= (kPhysGravity | kPhysFalling);
                             else flags &= ~(kPhysGravity | kPhysFalling);
+                            
+                            pSprite->hitag &= ~(kPhysMove | kPhysGravity | kPhysFalling);
+                            xvel[nDest] = yvel[nDest] = zvel[nDest] = 0;  pXSprite->restState = pXSprite->state;
 
                         } else {
 
@@ -4487,7 +4494,7 @@ void UniMissileTrapSeqCallback(int, int nXSprite)
     if (pMissile != NULL) {
 
         // inherit some properties of the generator
-        if (pSprite->hitag & kHitagExtBit) {
+        if (pSprite->hitag & kModernTypeFlag1) {
             
             pMissile->xrepeat = pSprite->xrepeat;
             pMissile->yrepeat = pSprite->yrepeat;
