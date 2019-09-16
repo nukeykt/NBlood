@@ -1965,7 +1965,11 @@ void uploadpalswap(int32_t palookupnum)
         OSD_Printf("Polymost: palswaps are too large for palswap tilesheet!\n");
         return;
     }
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 256*column, rowOffset, 256, numshades+1, GL_RED, GL_UNSIGNED_BYTE, palookup[palookupnum]);
+    //POGO: There was a reason why having an extra row of black pixels was necessary along the edge of the palswap (I believe it affected a particular IHV/GPU).
+    //      It may be worth investigating what this reason was again, but for now, make sure we properly initialize this row.
+    static char blackPixels256[256] = {0};
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 256*column, rowOffset+numshades, 256, 1, GL_RED, GL_UNSIGNED_BYTE, blackPixels256);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 256*column, rowOffset, 256, numshades, GL_RED, GL_UNSIGNED_BYTE, palookup[palookupnum]);
 }
 
 
