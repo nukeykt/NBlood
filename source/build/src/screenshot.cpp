@@ -5,6 +5,7 @@
 #include "pngwrite.h"
 
 #include "vfs.h"
+#include "communityapi.h"
 
 //
 // screencapture
@@ -42,6 +43,9 @@ static OutputFileCounter capturecounter;
 
 static void screencapture_end(char *fn, buildvfs_FILE * filptr)
 {
+#ifdef VWSCREENSHOT
+    communityapiSendScreenshot(fn);
+#endif
     buildvfs_fclose(*filptr);
     OSD_Printf("Saved screenshot to %s\n", fn);
     Xfree(fn);

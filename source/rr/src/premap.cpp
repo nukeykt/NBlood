@@ -596,7 +596,7 @@ void G_CacheMapData(void)
                 G_CacheSpriteNum(j);
     }
 
-    tc = totalclock;
+    tc = (int32_t) totalclock;
     j = 0;
 
     int lpc = -1;
@@ -675,14 +675,14 @@ void G_CacheMapData(void)
 
                 if (totalclock - tc >= 1)
                 {
-                    tc = totalclock;
+                    tc = (int32_t) totalclock;
                     lpc++;
                 }
 
 //                OSD_Printf("percentage %d lpc %d\n", percentage, lpc);
             }
 
-            tc = totalclock;
+            tc = (int32_t) totalclock;
         }
     }
 
@@ -2192,8 +2192,6 @@ void G_ResetTimers(uint8_t keepgtics)
 void G_ClearFIFO(void)
 {
     Net_ClearFIFO();
-
-    g_emuJumpTics = 0;
 
     clearbufbyte(&localInput, sizeof(input_t), 0L);
     clearbufbyte(&inputfifo, sizeof(input_t) * MOVEFIFOSIZ * MAXPLAYERS, 0L);

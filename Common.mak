@@ -530,7 +530,8 @@ ifeq ($(PLATFORM),WINDOWS)
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
-    LINKERFLAGS += -Wl,--enable-auto-import,--dynamicbase,--nxcompat
+    DYNAMICBASE := ,--dynamicbase
+    LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat$(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
     else
@@ -576,6 +577,9 @@ else ifeq ($(PLATFORM),$(filter $(PLATFORM),DINGOO GCW))
     COMPILERFLAGS += -D__OPENDINGUX__
 else ifeq ($(PLATFORM),SKYOS)
     COMPILERFLAGS += -DUNDERSCORES
+else ifeq ($(SUBPLATFORM),LINUX)
+    # Locate .so files
+    LINKERFLAGS += -Wl,-rpath,'$$ORIGIN' -Wl,-z,origin
 endif
 ASFLAGS += -f $(ASFORMAT)
 

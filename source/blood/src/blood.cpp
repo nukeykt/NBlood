@@ -85,7 +85,9 @@ int32_t gNoSetup = 0, gCommandSetup = 0;
 
 INPUT_MODE gInputMode;
 
+#ifdef USE_QHEAP
 unsigned int nMaxAlloc = 0x4000000;
+#endif
 
 bool bCustomName = false;
 char bAddUserMap = false;
@@ -433,9 +435,12 @@ void PreloadCache(void)
     char tempbuf[128];
     if (gDemo.at1)
         return;
+    gSysRes.PurgeCache();
+    gSoundRes.PurgeCache();
+    gSysRes.PrecacheSounds();
+    gSoundRes.PrecacheSounds();
     if (MusicRestartsOnLoadToggle)
         sndTryPlaySpecialMusic(MUS_LOADING);
-    gSoundRes.PrecacheSounds();
     PreloadTiles();
     ClockTicks clock = totalclock;
     int cnt = 0;
@@ -541,6 +546,9 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
         ///////
+
+        gBlueFlagDropped = false;
+        gRedFlagDropped = false;
     }
     if (gameOptions->uGameFlags&1)
     {
@@ -687,7 +695,10 @@ void StartNetworkLevel(void)
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
         ///////
-        
+
+        gBlueFlagDropped = false;
+        gRedFlagDropped = false;
+
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
@@ -1011,7 +1022,9 @@ SWITCH switches[] = {
     { "art", 26, 1 },
     { "snd", 27, 1 },
     { "rff", 28, 1 },
+#ifdef USE_QHEAP
     { "maxalloc", 29, 1 },
+#endif
     { "server", 30, 1 },
     { "client", 31, 1 },
     { "noautoload", 32, 0 },
@@ -1027,6 +1040,9 @@ SWITCH switches[] = {
     { "h", 40, 1 },
     { "mh", 41, 1 },
     { "j", 42, 1 },
+    { "c", 43, 1 },
+    { "conf", 43, 1 },
+    { "noconsole", 43, 0 },
     { NULL, 0, 0 }
 };
 
@@ -1109,12 +1125,14 @@ void ParseOptions(void)
             ThrowError("Invalid argument: %s", OptFull);
             fallthrough__;
         case 29:
+#ifdef USE_QHEAP
             if (OptArgc < 1)
                 ThrowError("Missing argument");
             nMaxAlloc = atoi(OptArgv[0]);
             if (!nMaxAlloc)
                 nMaxAlloc = 0x2000000;
             break;
+#endif
         case 0:
             PrintHelp();
             break;
@@ -1347,6 +1365,8 @@ void ParseOptions(void)
                 ThrowError("Missing argument");
             G_AddPath(OptArgv[0]);
             break;
+        case 43: // conf, noconsole
+            break;
         }
     }
 #if 0
@@ -1496,7 +1516,9 @@ int app_main(int argc, char const * const * argv)
 
     system_getcvars();
 
+#ifdef USE_QHEAP
     Resource::heap = new QHeap(nMaxAlloc);
+#endif
     gSysRes.Init(pUserRFF ? pUserRFF : "BLOOD.RFF");
     gGuiRes.Init("GUI.RFF");
     gSoundRes.Init(pUserSoundRFF ? pUserSoundRFF : "SOUNDS.RFF");
