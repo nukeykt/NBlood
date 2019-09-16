@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "osdcmds.h"
 #include "savegame.h"
 #include "scriplib.h"
+#include "communityapi.h"
 
 #ifdef LUNATIC
 # include "lunatic_game.h"
@@ -4833,6 +4834,29 @@ badindex:
                     Gv_SetVar(returnVar, sectNum);
                     dispatch();
                 }
+
+            vInstruction(CON_CAPIA):
+            {
+                insptr++;
+                int const nQuote = Gv_GetVar(*insptr++);
+
+                VM_ASSERT((unsigned)nQuote < MAXQUOTES && apStrings[nQuote], "invalid quote %d\n", nQuote);
+
+                communityapiUnlockAchievement(apStrings[nQuote]);
+                dispatch();
+            }
+
+            vInstruction(CON_CAPIS):
+            {
+                insptr++;
+                int const nQuote = Gv_GetVar(*insptr++);
+                int const value = Gv_GetVar(*insptr++);
+
+                VM_ASSERT((unsigned)nQuote < MAXQUOTES && apStrings[nQuote], "invalid quote %d\n", nQuote);
+
+                communityapiSetStat(apStrings[nQuote], value);
+                dispatch();
+            }
 
             vInstruction(CON_SPAWN):
                 insptr++;
