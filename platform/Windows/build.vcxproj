@@ -201,6 +201,7 @@
     <ClCompile Include="..\..\source\build\src\clip.cpp" />
     <ClCompile Include="..\..\source\build\src\colmatch.cpp" />
     <ClCompile Include="..\..\source\build\src\common.cpp" />
+    <ClCompile Include="..\..\source\build\src\communityapi.cpp" />
     <ClCompile Include="..\..\source\build\src\compat.cpp" />
     <ClCompile Include="..\..\source\build\src\crc32.cpp" />
     <ClCompile Include="..\..\source\build\src\defs.cpp" />
@@ -286,6 +287,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\source\build\src\sjson.cpp" />
     <ClCompile Include="..\..\source\build\src\smalltextfont.cpp" />
     <ClCompile Include="..\..\source\build\src\softsurface.cpp" />
     <ClCompile Include="..\..\source\build\src\texcache.cpp" />
@@ -321,6 +323,7 @@
     <ClInclude Include="..\..\source\build\include\collections.h" />
     <ClInclude Include="..\..\source\build\include\colmatch.h" />
     <ClInclude Include="..\..\source\build\include\common.h" />
+    <ClInclude Include="..\..\source\build\include\communityapi.h" />
     <ClInclude Include="..\..\source\build\include\compat.h" />
     <ClInclude Include="..\..\source\build\include\crc32.h" />
     <ClInclude Include="..\..\source\build\include\debugbreak.h" />

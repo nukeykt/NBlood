@@ -543,7 +543,7 @@ int32_t Anim_Play(const char *fn)
             g_restorePalette = 0;
         }
 
-        frametime = totalclock;
+        frametime = (int32_t) totalclock;
 
         videoClearScreen(0);
 
