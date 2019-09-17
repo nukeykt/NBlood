@@ -13,7 +13,7 @@
 # endif
 typedef HINSTANCE VW_LIBHANDLE;
 # define Voidwrap_LoadLibrary(lib) LoadLibrary((lib))
-# define Voidwrap_GetSymbol(lib_handle, symbol) GetProcAddress((lib_handle), (symbol))
+# define Voidwrap_GetSymbol(lib_handle, symbol) ((void(*)())GetProcAddress((lib_handle), (symbol)))
 #else
 # include <dlfcn.h>
 # define VOIDWRAP_API
