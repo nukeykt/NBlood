@@ -1470,6 +1470,9 @@ typedef struct
 
 # define EXTRATILES (MAXTILES/8)
 
+EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
+EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
+EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
 EXTERN int32_t mdinited;
 EXTERN tile2model_t tile2model[MAXTILES+EXTRATILES];
 
@@ -1632,9 +1635,6 @@ extern int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, in
 #ifdef USE_OPENGL
 extern void(*PolymostProcessVoxels_Callback)(void);
 #endif
-
-extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
-extern int8_t voxreserve[(MAXVOXELS+7)>>3];
 
 #ifdef __cplusplus
 }
