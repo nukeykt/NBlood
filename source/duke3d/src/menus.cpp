@@ -3780,7 +3780,10 @@ static void Menu_Verify(int32_t input)
 #ifdef EDUKE32_STANDALONE
     case MENU_RESETSTATSVERIFY:
         if (input)
+        {
             communityapiResetStats();
+            VM_OnEvent(EVENT_CAPIR);
+        }
         break;
 #endif
 
