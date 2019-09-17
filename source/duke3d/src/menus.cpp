@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 
 #include "cheats.h"
+#include "communityapi.h"
 #include "compat.h"
 #include "demo.h"
 #include "duke3d.h"
@@ -1287,11 +1288,18 @@ static MenuEntry_t ME_SAVESETUP_MAXAUTOSAVES = MAKE_MENUENTRY( "Limit:", &MF_Red
 
 static MenuEntry_t ME_SAVESETUP_CLEANUP = MAKE_MENUENTRY( "Clean Up Saves", &MF_Redfont, &MEF_BigOptionsRt, &MEO_NULL, Link );
 
+#ifdef EDUKE32_STANDALONE
+static MenuEntry_t ME_SAVESETUP_RESETSTATS = MAKE_MENUENTRY( "Reset Stats/Achievements", &MF_Redfont, &MEF_BigOptionsRt, &MEO_NULL, Link );
+#endif
+
 static MenuEntry_t *MEL_SAVESETUP[] = {
     &ME_SAVESETUP_AUTOSAVE,
     &ME_SAVESETUP_AUTOSAVEDELETION,
     &ME_SAVESETUP_MAXAUTOSAVES,
     &ME_SAVESETUP_CLEANUP,
+#ifdef EDUKE32_STANDALONE
+    &ME_SAVESETUP_RESETSTATS,
+#endif
 };
 
 
@@ -1480,6 +1488,7 @@ static MenuPanel_t M_CREDITS5 = { "About " APPNAME, MENU_CREDITS4, MA_Return, ME
 #define CURSOR_BOTTOMRIGHT { 304<<16, 186<<16, }
 
 static MenuVerify_t M_SAVECLEANVERIFY = { CURSOR_CENTER_3LINE, MENU_SAVESETUP, MA_None, };
+static MenuVerify_t M_RESETSTATSVERIFY = { CURSOR_CENTER_3LINE, MENU_SAVESETUP, MA_None, };
 static MenuVerify_t M_QUIT = { CURSOR_CENTER_2LINE, MENU_CLOSE, MA_None, };
 static MenuVerify_t M_QUITTOTITLE = { CURSOR_CENTER_2LINE, MENU_CLOSE, MA_None, };
 static MenuVerify_t M_LOADVERIFY = { CURSOR_CENTER_3LINE, MENU_CLOSE, MA_None, };
@@ -1563,6 +1572,7 @@ static Menu_t Menus[] = {
     { &M_ADVSOUND, MENU_ADVSOUND, MENU_SOUND, MA_Return, Menu },
     { &M_SAVESETUP, MENU_SAVESETUP, MENU_OPTIONS, MA_Return, Menu },
     { &M_SAVECLEANVERIFY, MENU_SAVECLEANVERIFY, MENU_SAVESETUP, MA_None, Verify },
+    { &M_RESETSTATSVERIFY, MENU_RESETSTATSVERIFY, MENU_SAVESETUP, MA_None, Verify },
 #ifdef EDUKE32_SIMPLE_MENU
     { &M_CHEATS, MENU_CHEATS, MENU_OPTIONS, MA_Return, Menu },
 #else
@@ -2209,6 +2219,9 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_SAVESETUP:
         MenuEntry_DisableOnCondition(&ME_SAVESETUP_MAXAUTOSAVES, !ud.autosavedeletion);
+#ifdef EDUKE32_STANDALONE
+        MenuEntry_DisableOnCondition(&ME_SAVESETUP_RESETSTATS, !communityapiEnabled());
+#endif
         break;
 
     case MENU_JOYSTICKSETUP:
@@ -2607,6 +2620,19 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         }
         else
             mgametextcenter(origin.x, origin.y + (90<<16), "No obsolete saves found!");
+
+        break;
+
+    case MENU_RESETSTATSVERIFY:
+        videoFadeToBlack(1);
+
+        if (communityapiEnabled())
+        {
+            Bsprintf(tempbuf, "Delete %s stats and achievement data?\nThis action cannot be undone!", communityApiGetPlatformName());
+            Menu_DrawVerifyPrompt(origin.x, origin.y, tempbuf, 2);
+        }
+        else
+            mgametextcenter(origin.x, origin.y + (90<<16), "No data found!");
 
         break;
 
@@ -3348,6 +3374,10 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         g_oldSaveCnt = G_CountOldSaves();
         Menu_Change(MENU_SAVECLEANVERIFY);
     }
+#ifdef EDUKE32_STANDALONE
+    else if (entry == &ME_SAVESETUP_RESETSTATS)
+        Menu_Change(MENU_RESETSTATSVERIFY);
+#endif
     else if (entry == &ME_NETHOST_LAUNCH)
     {
         // master does whatever it wants
@@ -3746,6 +3776,13 @@ static void Menu_Verify(int32_t input)
             G_DeleteOldSaves();
         }
         break;
+
+#ifdef EDUKE32_STANDALONE
+    case MENU_RESETSTATSVERIFY:
+        if (input)
+            communityapiResetStats();
+        break;
+#endif
 
     case MENU_RESETPLAYER:
         switch (input)
@@ -5741,6 +5778,7 @@ static void Menu_Recurse(MenuID_t cm, const vec2_t origin)
     switch (cm)
     {
     case MENU_SAVECLEANVERIFY:
+    case MENU_RESETSTATSVERIFY:
     case MENU_LOADVERIFY:
     case MENU_LOADDELVERIFY:
     case MENU_SAVEVERIFY:
