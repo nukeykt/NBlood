@@ -201,7 +201,7 @@ ifeq ($(IMPLICIT_ARCH),x86_64)
         voidwrap_lib := voidwrap_steam_x64.dll
         steamworks_lib := win64/steam_api64.dll
     else
-        voidwrap_lib := libvoidwrap_steam.so.0
+        voidwrap_lib := libvoidwrap_steam.so
         steamworks_lib := linux64/libsteam_api.so
     endif
 else
@@ -209,7 +209,7 @@ else
         voidwrap_lib := voidwrap_steam_x86.dll
         steamworks_lib := steam_api.dll
     else
-        voidwrap_lib := libvoidwrap_steam.so.0
+        voidwrap_lib := libvoidwrap_steam.so
         steamworks_lib := linux32/libsteam_api.so
     endif
 endif
