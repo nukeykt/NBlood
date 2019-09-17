@@ -128,15 +128,21 @@ void QuitGame(void);
 #define kHitagRespawn 0x0010
 #define kHitagFree 0x0020
 #define kHitagSmoke 0x0100
-#define kHitagExtBit 0x8000 // NoOne's extension bit(Note: it's bit 0 in editor!)
 
 // sprite physics attributes
 #define kPhysMove 0x0001 // affected by movement physics
 #define kPhysGravity 0x0002 // affected by gravity
 #define kPhysFalling 0x0004 // currently in z-motion
 // additional physics attributes for debris sprites
+#define kPhysDebrisFly 0x0008 // *debris* affected by negative gravity (fly instead of falling, DO NOT mess with kHitagAutoAim)
 #define kPhysDebrisVector 0x0400 // *debris* can be affected by vector weapons
 #define kPhysDebrisExplode 0x0800 // *debris* can be affected by explosions
+
+// *modern types only hitag*
+#define kModernTypeFlag0 0x0
+#define kModernTypeFlag1 0x1
+#define kModernTypeFlag2 0x2
+#define kModernTypeFlag3 0x3
 
 // sector types 
 #define kSecBase 600

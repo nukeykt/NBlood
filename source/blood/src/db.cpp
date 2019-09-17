@@ -1080,12 +1080,6 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         pSprite->hitag = B_LITTLE16(pSprite->hitag);
         pSprite->extra = B_LITTLE16(pSprite->extra);
 #endif
-        // NoOne's extension bit
-        if (pSprite->hitag&1)
-        {
-            pSprite->hitag &= ~1;
-            pSprite->hitag |= kHitagExtBit;
-        }
         InsertSpriteSect(i, sprite[i].sectnum);
         InsertSpriteStat(i, sprite[i].statnum);
         Numsprites++;
