@@ -65,3 +65,7 @@ project.xcworkspace/
 .DS_Store
 ._*
 /source/voidwrap/sdk/
+/autoload
+/movie
+/blud*.png
+/game*.sav
