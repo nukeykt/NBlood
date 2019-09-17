@@ -144,6 +144,23 @@ void communityapiRunCallbacks()
 #endif
 }
 
+bool communityapiEnabled()
+{
+#ifdef VW_ENABLED
+    return steamworks_enabled;
+#else
+    return false;
+#endif
+}
+
+char const *communityApiGetPlatformName()
+{
+#ifdef VW_ENABLED
+    return "Steam";
+#else
+    return NULL;
+#endif
+}
 
 void communityapiUnlockAchievement(char const * id)
 {
