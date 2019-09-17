@@ -56,6 +56,7 @@ public:
 
     void SetAchievement(char const * id);
     void SetStat(char const * id, int32_t value);
+    void ResetStats();
 
     STEAM_CALLBACK(SteamStatsAndAchievementsHandler, OnUserStatsReceived, UserStatsReceived_t);
     STEAM_CALLBACK(SteamStatsAndAchievementsHandler, OnUserStatsStored, UserStatsStored_t);
@@ -87,6 +88,16 @@ void SteamStatsAndAchievementsHandler::SetStat(char const * id, int32_t value)
         return;
 
     m_pSteamUserStats->SetStat(id, value);
+
+    m_bStoreStats = true;
+}
+
+void SteamStatsAndAchievementsHandler::ResetStats()
+{
+    if (nullptr == m_pSteamUserStats)
+        return;
+
+    m_pSteamUserStats->ResetAllStats(true);
 
     m_bStoreStats = true;
 }
@@ -167,6 +178,13 @@ VOIDWRAP_API void Voidwrap_Steam_SetStat(char const * id, int32_t value)
     StatsAndAchievementsHandler->SetStat(id, value);
 }
 
+VOIDWRAP_API void Voidwrap_Steam_ResetStats()
+{
+    if (nullptr == StatsAndAchievementsHandler)
+        return;
+
+    StatsAndAchievementsHandler->ResetStats();
+}
 
 #ifdef VWSCREENSHOT
 class SteamScreenshotHandler
