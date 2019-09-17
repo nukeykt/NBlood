@@ -29,6 +29,9 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 #ifndef mouse_h_
 #define mouse_h_
+
+#include "baselayer.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,7 +47,6 @@ extern "C" {
 #define RIGHT_MOUSE_PRESSED(button)     (((button)&RIGHT_MOUSE) != 0)
 #define MIDDLE_MOUSE_PRESSED(button)    (((button)&MIDDLE_MOUSE) != 0)
 
-#include "baselayer.h"
 
 static inline bool Mouse_Init(void)
 {

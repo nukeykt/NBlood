@@ -1232,6 +1232,7 @@ int32_t   getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day) ATTRIBU
 int32_t   getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day) ATTRIBUTE((nonnull(1)));
 void   getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day,
                        int32_t *ceilz, int32_t *florz) ATTRIBUTE((nonnull(1,4,5)));
+void yax_getzsofslope(int sectNum, int playerX, int playerY, int32_t* pCeilZ, int32_t* pFloorZ);
 
 static FORCE_INLINE int32_t getceilzofslope(int16_t sectnum, int32_t dax, int32_t day)
 {
@@ -1469,6 +1470,9 @@ typedef struct
 
 # define EXTRATILES (MAXTILES/8)
 
+EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
+EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
+EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
 EXTERN int32_t mdinited;
 EXTERN tile2model_t tile2model[MAXTILES+EXTRATILES];
 
@@ -1631,9 +1635,6 @@ extern int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, in
 #ifdef USE_OPENGL
 extern void(*PolymostProcessVoxels_Callback)(void);
 #endif
-
-extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
-extern int8_t voxreserve[(MAXVOXELS+7)>>3];
 
 #ifdef __cplusplus
 }

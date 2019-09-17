@@ -87,7 +87,7 @@ void communityapiInit()
 
     Voidwrap_Steam_UnlockAchievement = (VW_VOID_CONSTCHARPTR)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_UnlockAchievement");
     Voidwrap_Steam_SetStat = (VW_VOID_CONSTCHARPTR_INT32)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SetStat");
-
+    Voidwrap_Steam_ResetStats = (VW_VOID)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_ResetStats");
 #ifdef VWSCREENSHOT
     Voidwrap_Steam_SendScreenshot = (VW_BOOL_SCREENSHOT)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SendScreenshot");
     Voidwrap_Steam_SetCallback_ScreenshotRequested = (VW_SETCALLBACK_VOID)Voidwrap_GetSymbol(wrapper_handle, "Voidwrap_Steam_SetCallback_ScreenshotRequested");
@@ -144,6 +144,23 @@ void communityapiRunCallbacks()
 #endif
 }
 
+bool communityapiEnabled()
+{
+#ifdef VW_ENABLED
+    return steamworks_enabled;
+#else
+    return false;
+#endif
+}
+
+char const *communityApiGetPlatformName()
+{
+#ifdef VW_ENABLED
+    return "Steam";
+#else
+    return NULL;
+#endif
+}
 
 void communityapiUnlockAchievement(char const * id)
 {
@@ -171,6 +188,18 @@ void communityapiSetStat(char const * id, int32_t value)
 #endif
 }
 
+void communityapiResetStats()
+{
+#ifdef VW_ENABLED
+    if (!steamworks_enabled)
+        return;
+
+    if (nullptr == Voidwrap_Steam_ResetStats)
+        return;
+
+    Voidwrap_Steam_ResetStats();
+#endif
+}
 
 #ifdef VWSCREENSHOT
 void communityapiSendScreenshot(char * filename)

@@ -11,8 +11,12 @@ void communityapiInit(void);
 void communityapiShutdown(void);
 void communityapiRunCallbacks(void);
 
+bool communityapiEnabled(void);
+char const *communityApiGetPlatformName(void);
+
 void communityapiUnlockAchievement(char const * id);
 void communityapiSetStat(char const * id, int32_t value);
+void communityapiResetStats(void);
 
 #ifdef VWSCREENSHOT
 void communityapiSendScreenshot(char * filename);
