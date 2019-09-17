@@ -15,6 +15,7 @@ VOIDWRAP_API void Voidwrap_Steam_RunCallbacks(void);
 
 VOIDWRAP_API void Voidwrap_Steam_UnlockAchievement(char const * id);
 VOIDWRAP_API void Voidwrap_Steam_SetStat(char const * id, int32_t value);
+VOIDWRAP_API void Voidwrap_Steam_ResetStats(void);
 
 #ifdef VWDEBUG
 VOIDWRAP_API void Voidwrap_Steam_SetCallback_PrintDebug(VW_VOID_CONSTCHARPTR function);
@@ -41,8 +42,9 @@ VOIDWRAP_API int32_t Voidwrap_Steam_GetConnectedControllers(void);
 static VW_BOOL Voidwrap_Steam_Init;
 static VW_VOID Voidwrap_Steam_Shutdown;
 static VW_VOID Voidwrap_Steam_RunCallbacks;
+static VW_VOID Voidwrap_Steam_ResetStats;
 
-static VW_VOID_CONSTCHARPTR Voidwrap_Steam_UnlockAchievement;
+static VW_VOID_CONSTCHARPTR       Voidwrap_Steam_UnlockAchievement;
 static VW_VOID_CONSTCHARPTR_INT32 Voidwrap_Steam_SetStat;
 
 #ifdef VWDEBUG
