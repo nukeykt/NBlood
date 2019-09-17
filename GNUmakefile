@@ -214,7 +214,7 @@ else
     endif
 endif
 
-voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam
+voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam -fPIC -Wno-invalid-offsetof
 
 
 
@@ -1301,9 +1301,6 @@ $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
 
-$(voidwrap_obj)/%.$o: $(voidwrap_src)/%.cpp | $(voidwrap_obj)
-	$(COMPILE_STATUS)
-	$(RECIPE_IF) $(COMPILER_CXX) $(voidwrap_cflags) -fPIC -c $< -o $@ $(RECIPE_RESULT_COMPILE)
 
 ### Lunatic
 

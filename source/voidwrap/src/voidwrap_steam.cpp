@@ -31,6 +31,8 @@ static void PrintDebug(const char * fmt, ...)
 
 static void SteamAPIWarningMessageHook(int nSeverity, const char * pchDebugText)
 {
+    UNREFERENCED_PARAMETER(nSeverity);
+
     if (Callback_PrintDebug == nullptr)
     {
         return;
