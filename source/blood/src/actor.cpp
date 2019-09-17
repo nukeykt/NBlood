@@ -3111,8 +3111,8 @@ void actKillDude(int a1, spritetype *pSprite, DAMAGE_TYPE a3, int a4)
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
     switch (pSprite->type) {
     case kCustomDude: {
-        removeDudeStuff(pSprite); XSPRITE* pXIncarnation = NULL;
-        if (pXSprite->txID > 0 && (pXIncarnation = getNextIncarnation(pXSprite)) == NULL) {
+        removeDudeStuff(pSprite);
+        if (pXSprite->txID <= 0 || getNextIncarnation(pXSprite) == NULL) {
             
             if (pXSprite->data1 >= 459 && pXSprite->data1 < (459 + kExplodeMax) - 1 &&
                 Chance(0x4000) && a3 != 5 && a3 != 4) {
@@ -6086,7 +6086,7 @@ void actProcessSprites(void)
         
         // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
 	    // via sprite statnum 2.
-        if (!(pSprite->hitag & kHitagExtBit)) {
+        if (!(pSprite->hitag & kModernTypeFlag1)) {
             pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
             pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
             pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
@@ -6489,27 +6489,28 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     
     // By NoOne: add a way to inherit some values of spawner type 18 by dude.
     // This way designer can count enemies via switches and do many other interesting things.
+    if (pSource->hitag & kModernTypeFlag1) {
+        switch (pSource->type) { // allow inheriting only for selected source types
+            case 18:
+                //inherit pal?
+                if (pSprite2->pal <= 0) pSprite2->pal = pSource->pal;
 
-                                                // oops, forget to check for source type previously
-    if ((pSource->hitag & kHitagExtBit) != 0 && pSource->type == 18) {
-        
-        //inherit pal?
-        if (pSprite2->pal <= 0) pSprite2->pal = pSource->pal;
+                // inherit spawn sprite trigger settings, so designer can count monsters.
+                pXSprite2->txID = pXSource->txID;
+                pXSprite2->command = pXSource->command;
+                pXSprite2->triggerOn = pXSource->triggerOn;
+                pXSprite2->triggerOff = pXSource->triggerOff;
 
-        // inherit spawn sprite trigger settings, so designer can count monsters.
-        pXSprite2->txID = pXSource->txID;
-        pXSprite2->command = pXSource->command;
-        pXSprite2->triggerOn = pXSource->triggerOn;
-        pXSprite2->triggerOff = pXSource->triggerOff;
+                // inherit drop items
+                pXSprite2->dropMsg = pXSource->dropMsg;
 
-        // inherit drop items
-        pXSprite2->dropMsg = pXSource->dropMsg;
-
-        // inherit dude flags
-        pXSprite2->dudeDeaf = pXSource->dudeDeaf;
-        pXSprite2->dudeGuard = pXSource->dudeGuard;
-        pXSprite2->dudeAmbush = pXSource->dudeAmbush;
-        pXSprite2->dudeFlag4 = pXSource->dudeFlag4;
+                // inherit dude flags
+                pXSprite2->dudeDeaf = pXSource->dudeDeaf;
+                pXSprite2->dudeGuard = pXSource->dudeGuard;
+                pXSprite2->dudeAmbush = pXSource->dudeAmbush;
+                pXSprite2->dudeFlag4 = pXSource->dudeFlag4;
+                break;
+        }
     }
 
     aiInitSprite(pSprite2);
@@ -7445,7 +7446,7 @@ spritetype* DropRandomPickupObject(spritetype* pSprite, short prevItem) {
             pSprite2->y = pSource->y;
             pSprite2->z = pSource->z;
 
-            if ((pSource->hitag & kHitagExtBit) != 0 && (pXSource->txID > 0 || (pXSource->txID != 3 && pXSource->lockMsg > 0)) &&
+            if ((pSource->hitag & kModernTypeFlag1) && (pXSource->txID > 0 || (pXSource->txID != 3 && pXSource->lockMsg > 0)) &&
                 dbInsertXSprite(pSprite2->xvel) > 0) {
                 
                 XSPRITE * pXSprite2 = &xsprite[pSprite2->extra];
@@ -7550,28 +7551,31 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     if (pXSource->data4 <= 0) pXDude->health = dudeInfo[nType].startHealth << 4;
     else pXDude->health = ClipRange(pXSource->data4 << 4, 1, 65535);
 
-    if ((pSource->hitag & kHitagExtBit) != 0) {
-        //inherit pal?
-        if (pDude->pal <= 0) pDude->pal = pSource->pal;
-        
-        
-        // inherit spawn sprite trigger settings, so designer can count monsters.
-        pXDude->txID = pXSource->txID;
-        pXDude->command = pXSource->command;
-        pXDude->triggerOn = pXSource->triggerOn;
-        pXDude->triggerOff = pXSource->triggerOff;
+    if (pSource->hitag & kModernTypeFlag1) {
+        switch (pSource->type) {
+            case kGDXCustomDudeSpawn:
+            //inherit pal?
+            if (pDude->pal <= 0) pDude->pal = pSource->pal;
 
-        // inherit drop items
-        pXDude->dropMsg = pXSource->dropMsg;
-        
-        // inherit required key so it can be dropped
-        pXDude->key = pXSource->key;
+            // inherit spawn sprite trigger settings, so designer can count monsters.
+            pXDude->txID = pXSource->txID;
+            pXDude->command = pXSource->command;
+            pXDude->triggerOn = pXSource->triggerOn;
+            pXDude->triggerOff = pXSource->triggerOff;
 
-        // inherit dude flags
-        pXDude->dudeDeaf = pXSource->dudeDeaf;
-        pXDude->dudeGuard = pXSource->dudeGuard;
-        pXDude->dudeAmbush = pXSource->dudeAmbush;
-        pXDude->dudeFlag4 = pXSource->dudeFlag4;
+            // inherit drop items
+            pXDude->dropMsg = pXSource->dropMsg;
+
+            // inherit required key so it can be dropped
+            pXDude->key = pXSource->key;
+
+            // inherit dude flags
+            pXDude->dudeDeaf = pXSource->dudeDeaf;
+            pXDude->dudeGuard = pXSource->dudeGuard;
+            pXDude->dudeAmbush = pXSource->dudeAmbush;
+            pXDude->dudeFlag4 = pXSource->dudeFlag4;
+            break;
+        }
     }
 
     aiInitSprite(pDude);
@@ -7797,15 +7801,18 @@ void debrisMove(int listIndex) {
             case kMarkerUpGoo:
                 long pitch = (150000 - (gSpriteMass[pSprite->extra].mass << 9)) + Random3(8192);
                 sfxPlay3DSoundCP(pSprite, 720, -1, 0, pitch, 75 - Random(40));
-
-                if (Chance(0x8000))
-                    evPost(pSprite->xvel, 3, 0, CALLBACK_ID_11);
-
-                for (int i = 2; i <= 5; i++) {
-                    if (Chance(0x3000 * i))
+                
+                if (sector[pSprite->sectnum].extra < 0 || !xsector[sector[pSprite->sectnum].extra].Underwater)
+                    evKill(pSprite->xvel, 3, CALLBACK_ID_11);
+                else {
+                    if (Chance(0x8000))
                         evPost(pSprite->xvel, 3, 0, CALLBACK_ID_11);
-                }
 
+                    for (int i = 2; i <= 5; i++) {
+                        if (Chance(0x3000 * i))
+                            evPost(pSprite->xvel, 3, 0, CALLBACK_ID_11);
+                    }
+                }
                 break;
             }
         }
