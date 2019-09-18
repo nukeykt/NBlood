@@ -420,7 +420,9 @@ void CGameMessageMgr::Display(void)
                 q.pop();
             }
 
-            int shade = ClipHigh(messagesToDisplayCount * 8, 48);
+            SortMessages(messagesToDisplay, messagesToDisplayCount);
+
+            int shade = ClipHigh(messagesToDisplayCount*8, 48);
             int x = gViewMode == 3 ? gViewX0S : 0;
             int y = (gViewMode == 3 ? this->y : 0) + (int)at9;
             for (int i = 0; i < messagesToDisplayCount; i++)
@@ -431,11 +433,11 @@ void CGameMessageMgr::Display(void)
                 {
                     int height;
                     gMenuTextMgr.GetFontInfo(nFont, pMessage->text, &height, NULL);
-                    if (x + height > gViewX1S)
+                    if (x+height > gViewX1S)
                         viewUpdatePages();
                 }
                 y += fontHeight;
-                shade = ClipLow(shade - 64 / messagesToDisplayCount, -128);
+                shade = ClipLow(shade-64/messagesToDisplayCount, -128);
             }
         }
     }
