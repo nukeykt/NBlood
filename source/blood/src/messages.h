@@ -66,7 +66,8 @@ public:
     void SetMessageTime(int nTime);
     void SetMessageFlags(unsigned int nFlags);
 private:
-    void SortMessages(messageStruct** messages, int count);
+    void SortMessagesByPriority(messageStruct** messages, int count);
+    void SortMessagesByTime(messageStruct** messages, int count);
 };
 
 

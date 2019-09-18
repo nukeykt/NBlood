@@ -39,7 +39,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "network.h"
 #include "player.h"
 #include "view.h"
-#include <queue>
 
 CPlayerMsg gPlayerMsg;
 CCheatMgr gCheatMgr;
@@ -407,20 +406,16 @@ void CGameMessageMgr::Display(void)
                 }
             }
 
-            SortMessages(currentMessages, currentMessagesCount);
-            auto cmp = [](messageStruct* left, messageStruct* right) { return left->priority != right->priority ? left->priority < right->priority : left->lastTickWhenVisible < right->lastTickWhenVisible; };
-            std::priority_queue<messageStruct*, std::vector<messageStruct*>, decltype(cmp)> q(cmp);
-            for (int i = 0; i < currentMessagesCount; i++)
-                q.push(currentMessages[i]);
+            SortMessagesByPriority(currentMessages, currentMessagesCount);
 
             messageStruct* messagesToDisplay[kMessageLogSize];
             int messagesToDisplayCount = 0;
-            while (!q.empty() && messagesToDisplayCount < maxNumberOfMessagesToDisplay) {
-                messagesToDisplay[messagesToDisplayCount++] = q.top();
-                q.pop();
+            for (int i = 0; i < currentMessagesCount && messagesToDisplayCount < maxNumberOfMessagesToDisplay; i++)
+            {
+                messagesToDisplay[messagesToDisplayCount++] = currentMessages[i];
             }
 
-            SortMessages(messagesToDisplay, messagesToDisplayCount);
+            SortMessagesByTime(messagesToDisplay, messagesToDisplayCount);
 
             int shade = ClipHigh(messagesToDisplayCount*8, 48);
             int x = gViewMode == 3 ? gViewX0S : 0;
@@ -491,7 +486,22 @@ void CGameMessageMgr::SetMessageFlags(unsigned int nFlags)
     messageFlags = nFlags&0xf;
 }
 
-void CGameMessageMgr::SortMessages(messageStruct** messages, int count) {
+void CGameMessageMgr::SortMessagesByPriority(messageStruct** messages, int count) {
+    for (int i = 1; i < count; i++)
+    {
+        for (int j = 0; j < count - i; j++)
+        {
+            if (messages[j]->priority != messages[j + 1]->priority ? messages[j]->priority < messages[j + 1]->priority : messages[j]->lastTickWhenVisible < messages[j + 1]->lastTickWhenVisible)
+            {
+                messageStruct* temp = messages[j];
+                messages[j] = messages[j + 1];
+                messages[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void CGameMessageMgr::SortMessagesByTime(messageStruct** messages, int count) {
     for (int i = 1; i < count; i++)
     {
         for (int j = 0; j < count - i; j++)
