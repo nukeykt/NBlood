@@ -1373,8 +1373,10 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
             actPostSprite(pSprite->index, kStatFree);
         pPlayer->at377 = 30;
         if (pPlayer == gMe)
-            if (customMsg > 0) trTextOver(customMsg - 1);
-            else viewSetMessage(buffer);
+            if (customMsg > 0)
+                trTextOver(customMsg - 1);
+            else if (gPickupMessageState)
+                viewSetMessage(buffer);
     }
 }
 

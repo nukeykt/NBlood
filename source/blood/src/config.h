@@ -70,6 +70,7 @@ extern int32_t gRotateMap;
 extern int32_t gAimReticle;
 extern int32_t gSlopeTilting;
 extern int32_t gMessageState;
+extern int32_t gPickupMessageState;
 extern int32_t gMessageCount;
 extern int32_t gMessageTime;
 extern int32_t gMessageFont;

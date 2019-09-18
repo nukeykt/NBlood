@@ -92,6 +92,7 @@ int32_t gRotateMap;
 int32_t gAimReticle;
 int32_t gSlopeTilting;
 int32_t gMessageState;
+int32_t gPickupMessageState;
 int32_t gMessageCount;
 int32_t gMessageTime;
 int32_t gMessageFont;
@@ -392,6 +393,7 @@ void CONFIG_SetDefaults(void)
     gAimReticle = 0;
     gSlopeTilting = 0;
     gMessageState = 1;
+    gPickupMessageState = 1;
     gMessageCount = 4;
     gMessageTime = 5;
     gMessageFont = 0;

@@ -65,6 +65,7 @@ void SetTurnSpeed(CGameMenuItemSlider *);
 void ResetKeys(CGameMenuItemChain *);
 void ResetKeysClassic(CGameMenuItemChain *);
 void SetMessages(CGameMenuItemZBool *);
+void SetPickupMessages(CGameMenuItemZBool*);
 void LoadGame(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
 void SetupNetLevels(CGameMenuItemZCycle *);
 void StartNetGame(CGameMenuItemChain *);
@@ -414,10 +415,11 @@ CGameMenuItemZBool itemOptionsDisplayBoolLevelStats("LEVEL STATS:", 3, 66, 100, 
 CGameMenuItemZBool itemOptionsDisplayBoolPowerupDuration("POWERUP DURATION:", 3, 66, 110, 180, gPowerupDuration, SetPowerupDuration, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolShowMapTitle("MAP TITLE:", 3, 66, 120, 180, gShowMapTitle, SetShowMapTitle, NULL, NULL);
 CGameMenuItemZBool itemOptionsDisplayBoolMessages("MESSAGES:", 3, 66, 130, 180, gMessageState, SetMessages, NULL, NULL);
-CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 140, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
-CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 150, 180, &gFov, 75, 140, 5, SetFOV, -1, -1, kMenuSliderValue);
+CGameMenuItemZBool itemOptionsDisplayBoolPickupMessages("PICKUP MESSAGES:", 3, 66, 140, 180, gPickupMessageState, SetPickupMessages, NULL, NULL);
+CGameMenuItemZBool itemOptionsDisplayBoolWidescreen("WIDESCREEN:", 3, 66, 150, 180, r_usenewaspect, SetWidescreen, NULL, NULL);
+CGameMenuItemSlider itemOptionsDisplayFOV("FOV:", 3, 66, 160, 180, &gFov, 75, 140, 5, SetFOV, -1, -1, kMenuSliderValue);
 #ifdef USE_OPENGL
-CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 160, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
+CGameMenuItemChain itemOptionsDisplayPolymost("POLYMOST SETUP", 3, 66, 170, 180, 0, &menuOptionsDisplayPolymost, -1, SetupVideoPolymostMenu, 0);
 #endif
 
 const char *pzRendererStrings[] = {
@@ -1136,6 +1138,7 @@ void SetupOptionsMenu(void)
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolPowerupDuration, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolShowMapTitle, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolMessages, false);
+    menuOptionsDisplay.Add(&itemOptionsDisplayBoolPickupMessages, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayBoolWidescreen, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayFOV, false);
 #ifdef USE_OPENGL
@@ -1148,6 +1151,7 @@ void SetupOptionsMenu(void)
     itemOptionsDisplayBoolPowerupDuration.at20 = gPowerupDuration;
     itemOptionsDisplayBoolShowMapTitle.at20 = gShowMapTitle;
     itemOptionsDisplayBoolMessages.at20 = gMessageState;
+    itemOptionsDisplayBoolPickupMessages.at20 = gPickupMessageState;
     itemOptionsDisplayBoolWidescreen.at20 = r_usenewaspect;
 
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeTitle, false);
@@ -1452,9 +1456,14 @@ void SetMessages(CGameMenuItemZBool *pItem)
     gGameMessageMgr.SetState(gMessageState);
 }
 
+void SetPickupMessages(CGameMenuItemZBool* pItem)
+{
+    gPickupMessageState = pItem->at20;
+}
+
 void SetMouseSensitivity(CGameMenuItemSliderFloat *pItem)
 {
-	CONTROL_MouseSensitivity = pItem->fValue;
+    CONTROL_MouseSensitivity = pItem->fValue;
 }
 
 void SetMouseAimFlipped(CGameMenuItemZBool *pItem)
