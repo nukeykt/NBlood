@@ -26,32 +26,36 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "player.h"
 
+#define kMaxMessageCount 16
+#define kMaxMessageTextLength 81
+
 class CGameMessageMgr
 {
 public:
     struct messageStruct
     {
-        ClockTicks at0;
-        char at4[81];
+        ClockTicks lastTickWhenVisible;
+        char text[kMaxMessageTextLength];
         int pal;
+        int priority;
     };
-    char at0;
-    int at1;
-    int at5;
+    char state;
+    int x;
+    int y;
     ClockTicks at9;
     ClockTicks atd;
-    int at11;
-    int at15;
-    int at19;
-    int at1d;
-    char at21;
-    int at22;
-    int at26;
-    int at2a;
-    messageStruct at2e[16];
+    int nFont;
+    int fontHeight;
+    int maxNumberOfMessagesToDisplay;
+    int visibilityDurationInSecs;
+    char messageFlags;
+    int numberOfDisplayedMessages;
+    int messagesIndex;
+    int nextMessagesIndex;
+    messageStruct messages[kMaxMessageCount];
     CGameMessageMgr();
     void SetState(char state);
-    void Add(const char *pText, char a2, const int pal = 0);
+    void Add(const char *pText, char a2, const int pal = 0, const int priority = 0);
     void Display(void);
     void Clear();
     void SetMaxMessages(int nMessages);

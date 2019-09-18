@@ -306,83 +306,84 @@ void LevelWarpAndRecord(int nEpisode, int nLevel)
 
 CGameMessageMgr::CGameMessageMgr()
 {
-    at1 = 1;
-    at5 = 0;
+    x = 1;
+    y = 0;
     at9 = 0;
     atd = 0;
-    at11 = 0;
-    at15 = 8;
-    at19 = 4;
-    at1d = 5;
-    at21 = 15;
-    at22 = 0;
-    at2a = at26 = 0;
+    nFont = 0;
+    fontHeight = 8;
+    maxNumberOfMessagesToDisplay = 4;
+    visibilityDurationInSecs = 5;
+    messageFlags = 15;
+    numberOfDisplayedMessages = 0;
+    nextMessagesIndex = messagesIndex = 0;
 }
 
 void CGameMessageMgr::SetState(char state)
 {
-    if (at0 && !state)
+    if (this->state && !state)
     {
-        at0 = 0;
+        this->state = 0;
         Clear();
     }
-    else if (!at0 && state)
-        at0 = 1;
+    else if (!this->state && state)
+        this->state = 1;
 }
 
-void CGameMessageMgr::Add(const char *pText, char a2, const int pal)
+void CGameMessageMgr::Add(const char *pText, char a2, const int pal, const int priority)
 {
-    if (a2 && at21)
+    if (a2 && messageFlags)
     {
-        messageStruct *pMessage = &at2e[at2a];
-        strncpy(pMessage->at4, pText, 80);
-        pMessage->at4[80] = 0;
-        pMessage->at0 = gFrameClock + at1d*120;
+        messageStruct *pMessage = &messages[nextMessagesIndex];
+        strncpy(pMessage->text, pText, kMaxMessageTextLength-1);
+        pMessage->text[kMaxMessageTextLength-1] = 0;
+        pMessage->lastTickWhenVisible = gFrameClock + visibilityDurationInSecs*kTicRate;
         pMessage->pal = pal;
-        at2a = (at2a+1)%16;
-        at22++;
-        if (at22 > at19)
+        pMessage->priority = priority;
+        nextMessagesIndex = (nextMessagesIndex+1)%kMaxMessageCount;
+        numberOfDisplayedMessages++;
+        if (numberOfDisplayedMessages > maxNumberOfMessagesToDisplay)
         {
-            at26 = (at26+1)%16;
+            messagesIndex = (messagesIndex+1)%kMaxMessageCount;
             atd = 0;
-            at22 = at19;
-            at9 = at15;
+            numberOfDisplayedMessages = maxNumberOfMessagesToDisplay;
+            at9 = fontHeight;
         }
     }
 }
 
 void CGameMessageMgr::Display(void)
 {
-    if (at22 && at0 && gInputMode != INPUT_MODE_2)
+    if (numberOfDisplayedMessages && this->state && gInputMode != INPUT_MODE_2)
     {
-        int v10 = at22;
-        int v18 = at26;
-        int vc = ClipHigh(v10*8, 48);
-        int v14 = gViewMode == 3 ? gViewX0S : 0;
-        int v8 = (gViewMode == 3 ? at5 : 0) + (int)at9;
-        for (int i = 0; i < v10; i++)
+        int initialNrOfDisplayedMsgs = numberOfDisplayedMessages;
+        int initialMessagesIndex = messagesIndex;
+        int shade = ClipHigh(initialNrOfDisplayedMsgs*8, 48);
+        int x = gViewMode == 3 ? gViewX0S : 0;
+        int y = (gViewMode == 3 ? this->y : 0) + (int)at9;
+        for (int i = 0; i < initialNrOfDisplayedMsgs; i++)
         {
-            messageStruct *pMessage = &at2e[(v18+i)%16];
-            if (pMessage->at0 < gFrameClock)
+            messageStruct *pMessage = &messages[(initialMessagesIndex+i)%kMaxMessageCount];
+            if (pMessage->lastTickWhenVisible < gFrameClock)
             {
-                at26 = (at26+1)%16;
-                at22--;
+                messagesIndex = (messagesIndex+1)%16;
+                numberOfDisplayedMessages--;
                 continue;
             }
-            viewDrawText(at11, pMessage->at4, v14, v8, vc, pMessage->pal, 0, false, 256);
+            viewDrawText(nFont, pMessage->text, x, y, shade, pMessage->pal, 0, false, 256);
             if (gViewMode == 3)
             {
                 int height;
-                gMenuTextMgr.GetFontInfo(at11, pMessage->at4, &height, NULL);
-                if (v14+height > gViewX1S)
+                gMenuTextMgr.GetFontInfo(nFont, pMessage->text, &height, NULL);
+                if (x+height > gViewX1S)
                     viewUpdatePages();
             }
-            v8 += at15;
-            vc = ClipLow(vc-64/v10, -128);
+            y += fontHeight;
+            shade = ClipLow(shade-64/initialNrOfDisplayedMsgs, -128);
         }
         if (at9 != 0)
         {
-            at9 = at15*at9/120;
+            at9 = fontHeight*at9/kTicRate;
             atd += gFrameTicks;
         }
     }
@@ -390,34 +391,34 @@ void CGameMessageMgr::Display(void)
 
 void CGameMessageMgr::Clear(void)
 {
-    at26 = at2a = at22 = 0;
+    messagesIndex = nextMessagesIndex = numberOfDisplayedMessages = 0;
 }
 
 void CGameMessageMgr::SetMaxMessages(int nMessages)
 {
-    at19 = ClipRange(nMessages, 1, 16);
+    maxNumberOfMessagesToDisplay = ClipRange(nMessages, 1, 16);
 }
 
 void CGameMessageMgr::SetFont(int nFont)
 {
-    at11 = nFont;
-    at15 = gFont[nFont].ySize;
+    this->nFont = nFont;
+    fontHeight = gFont[nFont].ySize;
 }
 
 void CGameMessageMgr::SetCoordinates(int x, int y)
 {
-    at1 = ClipRange(x, 0, gViewX1S);
-    at5 = ClipRange(y, 0, gViewY1S);
+    this->x = ClipRange(x, 0, gViewX1S);
+    this->y = ClipRange(y, 0, gViewY1S);
 }
 
 void CGameMessageMgr::SetMessageTime(int nTime)
 {
-    at1d = ClipRange(nTime, 1, 8);
+    visibilityDurationInSecs = ClipRange(nTime, 1, 8);
 }
 
 void CGameMessageMgr::SetMessageFlags(unsigned int nFlags)
 {
-    at21 = nFlags&0xf;
+    messageFlags = nFlags&0xf;
 }
 
 void CPlayerMsg::Clear(void)

@@ -212,13 +212,14 @@ void CSecretMgr::Found(int nType)
         at8++;
     if (gGameOptions.nGameType == 0)
     {
+        int pal = VanillaMode() ? 0 : 2; // 2: light red
         switch (Random(2))
         {
         case 0:
-            viewSetMessage("A secret is revealed.");
+            viewSetMessage("A secret is revealed.", pal, 10);
             break;
         case 1:
-            viewSetMessage("You found a secret.");
+            viewSetMessage("You found a secret.", pal, 10);
             break;
         }
     }
