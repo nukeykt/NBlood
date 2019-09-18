@@ -53,7 +53,6 @@ public:
     int numberOfDisplayedMessages;
     int messagesIndex;
     int nextMessagesIndex;
-    bool messagesOverflowed;
     messageStruct messages[kMessageLogSize];
     CGameMessageMgr();
     void SetState(char state);
