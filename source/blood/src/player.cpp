@@ -1361,7 +1361,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
         if (pickedUp && customMsg == -1)
         {
             sprintf(buffer, "Picked up %s", gAmmoText[nType - 60]);
-            messagePriority = -20;
+            messagePriority = -10;
         }
     }
     else if (nType >= 40 && nType < 51)
@@ -1370,7 +1370,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
         if (pickedUp && customMsg == -1)
         {
             sprintf(buffer, "Picked up %s", gWeaponText[nType - 40]);
-            messagePriority = -19;
+            messagePriority = -10;
         }
     }
 

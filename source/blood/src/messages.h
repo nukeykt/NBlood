@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "player.h"
 
-#define kMaxMessageCount 16
+#define kMessageLogSize 128
 #define kMaxMessageTextLength 81
 
 class CGameMessageMgr
@@ -38,6 +38,7 @@ public:
         char text[kMaxMessageTextLength];
         int pal;
         int priority;
+        bool deleted = false;
     };
     char state;
     int x;
@@ -52,7 +53,8 @@ public:
     int numberOfDisplayedMessages;
     int messagesIndex;
     int nextMessagesIndex;
-    messageStruct messages[kMaxMessageCount];
+    bool messagesOverflowed;
+    messageStruct messages[kMessageLogSize];
     CGameMessageMgr();
     void SetState(char state);
     void Add(const char *pText, char a2, const int pal = 0, const int priority = 0);
@@ -63,6 +65,8 @@ public:
     void SetCoordinates(int x, int y);
     void SetMessageTime(int nTime);
     void SetMessageFlags(unsigned int nFlags);
+private:
+    void SortMessages(messageStruct** messages, int count);
 };
 
 

@@ -148,6 +148,8 @@ void LoadSave::LoadGame(char *pzFile)
     bOutOfSync = 0;
     for (int i = 0; i < gNetPlayers; i++)
         playerSetRace(&gPlayer[i], gPlayer[i].at5f);
+    if (!VanillaMode())
+        gGameMessageMgr.Clear();
     viewSetMessage("");
     viewSetErrorMessage("");
     if (!gGameStarted)
