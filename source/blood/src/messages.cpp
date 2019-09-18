@@ -307,7 +307,7 @@ void LevelWarpAndRecord(int nEpisode, int nLevel)
 
 CGameMessageMgr::CGameMessageMgr()
 {
-    if (!VanillaMode)
+    if (!VanillaMode())
         Clear();
     x = 1;
     y = 0;
@@ -408,7 +408,7 @@ void CGameMessageMgr::Display(void)
             }
 
             SortMessages(currentMessages, currentMessagesCount);
-            auto cmp = [](messageStruct* left, messageStruct* right) { return left->priority < right->priority; };
+            auto cmp = [](messageStruct* left, messageStruct* right) { return left->priority != right->priority ? left->priority < right->priority : left->lastTickWhenVisible < right->lastTickWhenVisible; };
             std::priority_queue<messageStruct*, std::vector<messageStruct*>, decltype(cmp)> q(cmp);
             for (int i = 0; i < currentMessagesCount; i++)
                 q.push(currentMessages[i]);

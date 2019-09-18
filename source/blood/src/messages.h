@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "player.h"
 
-#define kMessageLogSize 128
+#define kMessageLogSize 32
 #define kMaxMessageTextLength 81
 
 class CGameMessageMgr
