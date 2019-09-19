@@ -332,7 +332,7 @@ void CGameMessageMgr::SetState(char state)
         this->state = 1;
 }
 
-void CGameMessageMgr::Add(const char *pText, char a2, const int pal, const int priority)
+void CGameMessageMgr::Add(const char *pText, char a2, const int pal, const MESSAGE_PRIORITY priority)
 {
     if (a2 && messageFlags)
     {

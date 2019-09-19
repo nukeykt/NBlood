@@ -50,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 #include "view.h"
 #include "sectorfx.h"
+#include "messages.h"
 
 int basePath[kMaxSectors];
 
@@ -4306,7 +4307,7 @@ void trTextOver(int nId)
 {
     char *pzMessage = levelGetMessage(nId);
     if (pzMessage)
-        viewSetMessage(pzMessage, VanillaMode() ? 0 : 8, 20); // 8: gold
+        viewSetMessage(pzMessage, VanillaMode() ? 0 : 8, MESSAGE_PRIORITY_INI); // 8: gold
 }
 
 void InitGenerator(int nSprite)

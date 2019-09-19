@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "player.h"
 #include "sound.h"
 #include "view.h"
+#include "messages.h"
 
 CEndGameMgr::CEndGameMgr()
 {
@@ -212,14 +213,13 @@ void CSecretMgr::Found(int nType)
         at8++;
     if (gGameOptions.nGameType == 0)
     {
-        int pal = VanillaMode() ? 0 : 2; // 2: light red
         switch (Random(2))
         {
         case 0:
-            viewSetMessage("A secret is revealed.", pal, 10);
+            viewSetMessage("A secret is revealed.", 0, MESSAGE_PRIORITY_SECRET);
             break;
         case 1:
-            viewSetMessage("You found a secret.", pal, 10);
+            viewSetMessage("You found a secret.", 0, MESSAGE_PRIORITY_SECRET);
             break;
         }
     }

@@ -29,6 +29,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMessageLogSize 32
 #define kMaxMessageTextLength 81
 
+enum MESSAGE_PRIORITY {
+    MESSAGE_PRIORITY_PICKUP = -10,
+    MESSAGE_PRIORITY_NORMAL = 0,
+    MESSAGE_PRIORITY_SECRET = 10,
+    MESSAGE_PRIORITY_INI = 20
+};
+
 class CGameMessageMgr
 {
 public:
@@ -37,7 +44,7 @@ public:
         ClockTicks lastTickWhenVisible;
         char text[kMaxMessageTextLength];
         int pal;
-        int priority;
+        MESSAGE_PRIORITY priority;
         bool deleted = false;
     };
     char state;
@@ -56,7 +63,7 @@ public:
     messageStruct messages[kMessageLogSize];
     CGameMessageMgr();
     void SetState(char state);
-    void Add(const char *pText, char a2, const int pal = 0, const int priority = 0);
+    void Add(const char *pText, char a2, const int pal = 0, const MESSAGE_PRIORITY priority = MESSAGE_PRIORITY_NORMAL);
     void Display(void);
     void Clear();
     void SetMaxMessages(int nMessages);

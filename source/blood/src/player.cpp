@@ -50,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "warp.h"
 #include "weapon.h"
 #include "common_game.h"
+#include "messages.h"
 
 PROFILE gProfile[kMaxPlayers];
 
@@ -1339,7 +1340,6 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     char buffer[80];
     int nType = pSprite->type;
     char pickedUp = 0;
-    int messagePriority = 0;
     int customMsg = -1;
         
     XSPRITE* pXSprite = (pSprite->extra >= 0) ? &xsprite[pSprite->extra] : NULL;
@@ -1349,29 +1349,17 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     if (nType >= 100 && nType <= 149)
     {
         pickedUp = PickupItem(pPlayer, pSprite);
-        if (pickedUp && customMsg == -1)
-        {
-            sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
-            messagePriority = -10;
-        }
+        if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gItemText[nType - 100]);
     }
     else if (nType >= 60 && nType < 81)
     {
         pickedUp = PickupAmmo(pPlayer, pSprite);
-        if (pickedUp && customMsg == -1)
-        {
-            sprintf(buffer, "Picked up %s", gAmmoText[nType - 60]);
-            messagePriority = -10;
-        }
+        if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gAmmoText[nType - 60]);
     }
     else if (nType >= 40 && nType < 51)
     {
         pickedUp = PickupWeapon(pPlayer, pSprite);
-        if (pickedUp && customMsg == -1)
-        {
-            sprintf(buffer, "Picked up %s", gWeaponText[nType - 40]);
-            messagePriority = -10;
-        }
+        if (pickedUp && customMsg == -1) sprintf(buffer, "Picked up %s", gWeaponText[nType - 40]);
     }
 
     if (pickedUp)
@@ -1387,7 +1375,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
         pPlayer->at377 = 30;
         if (pPlayer == gMe)
             if (customMsg > 0) trTextOver(customMsg - 1);
-            else viewSetMessage(buffer, 0, messagePriority);
+            else viewSetMessage(buffer, 0, MESSAGE_PRIORITY_PICKUP);
     }
 }
 
