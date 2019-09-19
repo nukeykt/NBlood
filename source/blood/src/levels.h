@@ -55,6 +55,8 @@ struct GAMEOPTIONS {
     int nItemRespawnTime;
     int nSpecialRespawnTime;
     int weaponsV10x;
+    bool bFriendlyFire;
+    bool bKeepKeysOnRespawn;
 };
 
 #pragma pack(pop)
