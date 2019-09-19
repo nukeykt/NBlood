@@ -5,19 +5,13 @@
 #include "steam_api.h"
 #include "compat.h"
 
-static CSteamID SteamID;
-static uint64_t SteamID64;
 static uint64_t AppID;
-
-
 static VW_VOID_CONSTCHARPTR Callback_PrintDebug;
 
 static void PrintDebug(const char * fmt, ...)
 {
     if (Callback_PrintDebug == nullptr)
-    {
         return;
-    }
 
     static char tmpstr[8192];
     va_list va;
@@ -31,10 +25,10 @@ static void PrintDebug(const char * fmt, ...)
 
 static void SteamAPIWarningMessageHook(int nSeverity, const char * pchDebugText)
 {
+    UNREFERENCED_PARAMETER(nSeverity);
+
     if (Callback_PrintDebug == nullptr)
-    {
         return;
-    }
 
     Callback_PrintDebug(pchDebugText);
 }
@@ -98,63 +92,44 @@ void SteamStatsAndAchievementsHandler::ResetStats()
         return;
 
     m_pSteamUserStats->ResetAllStats(true);
-
-    m_bStoreStats = true;
+    m_bStatsValid     = false;
+    m_bRequestedStats = false;
 }
 
 void SteamStatsAndAchievementsHandler::OnUserStatsReceived(UserStatsReceived_t * pCallback)
 {
-    if (nullptr == m_pSteamUserStats)
-        return;
-
-    if (SteamID64 != pCallback->m_nGameID)
+    if (nullptr == m_pSteamUserStats || AppID != pCallback->m_nGameID)
         return;
 
     if (k_EResultOK == pCallback->m_eResult)
-    {
         m_bStatsValid = true;
-    }
     else
-    {
         PrintDebug("RequestStats - failed, %d\n", pCallback->m_eResult);
-    }
 }
 
 void SteamStatsAndAchievementsHandler::OnUserStatsStored(UserStatsStored_t * pCallback)
 {
-    if (SteamID64 != pCallback->m_nGameID)
+    if (AppID != pCallback->m_nGameID)
         return;
 
-    if (k_EResultOK == pCallback->m_eResult)
-    {
-    }
-    else if (k_EResultInvalidParam == pCallback->m_eResult)
-    {
+    if (k_EResultInvalidParam == pCallback->m_eResult)
         PrintDebug("StoreStats - some failed to validate\n");
-    }
     else
-    {
         PrintDebug("StoreStats - failed, %d\n", pCallback->m_eResult);
-    }
 }
 
 void SteamStatsAndAchievementsHandler::Process()
 {
-    if (!m_bRequestedStats)
-    {
-        if (nullptr == m_pSteamUserStats)
-        {
-            m_bRequestedStats = true;
-            return;
-        }
-
-        m_bRequestedStats = m_pSteamUserStats->RequestCurrentStats();
-    }
-
-    if (!m_bStatsValid)
+    if (nullptr == m_pSteamUserStats)
         return;
 
-    if (!m_bStoreStats)
+    if (!m_bRequestedStats)
+    {
+        m_bRequestedStats = m_pSteamUserStats->RequestCurrentStats();
+        return;
+    }
+
+    if (!m_bStatsValid || !m_bStoreStats)
         return;
 
     m_bStoreStats = !m_pSteamUserStats->StoreStats();
@@ -243,19 +218,6 @@ void SteamScreenshotHandler::screenshotReady(ScreenshotReady_t * pCallback)
 #endif
 
 
-#ifdef VWCONTROLLER
-static int32_t NumControllerHandles;
-static ControllerHandle_t * ControllerHandles;
-
-VOIDWRAP_API int32_t Voidwrap_Steam_GetConnectedControllers()
-{
-    SteamController()->RunFrame(); // poll for any queued controller events
-    NumControllerHandles = SteamController()->GetConnectedControllers(ControllerHandles);
-    return NumControllerHandles;
-}
-#endif
-
-
 VOIDWRAP_API bool Voidwrap_Steam_Init()
 {
     if (!SteamAPI_Init())
@@ -265,9 +227,7 @@ VOIDWRAP_API bool Voidwrap_Steam_Init()
     }
 
     SteamUtils()->SetWarningMessageHook(&SteamAPIWarningMessageHook);
-
-    SteamID = SteamUser()->GetSteamID();
-    SteamID64 = SteamID.ConvertToUint64();
+    SteamUtils()->SetOverlayNotificationPosition(k_EPositionTopRight);
     AppID = SteamUtils()->GetAppID();
 
 #if 0
@@ -281,11 +241,6 @@ VOIDWRAP_API bool Voidwrap_Steam_Init()
     SteamScreenshots()->HookScreenshots(true);
     if (SteamScreenshots()->IsScreenshotsHooked()) { PrintDebug("Screenshots hooked."); }
     ScreenHandler = new SteamScreenshotHandler();
-#endif
-
-#ifdef VWCONTROLLER
-    if (SteamController()->Init()) { PrintDebug("Controller API init succeeded."); }
-    ControllerHandles = new ControllerHandle_t[STEAM_CONTROLLER_MAX_COUNT];
 #endif
 
     SteamAPI_RunCallbacks();

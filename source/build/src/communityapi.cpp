@@ -24,7 +24,7 @@ static char const wrapper_lib[] = "voidwrap_steam_x64.dll";
 static char const wrapper_lib[] = "voidwrap_steam_x86.dll";
 # endif
 #else
-static char const wrapper_lib[] = "libvoidwrap_steam.so.0";
+static char const wrapper_lib[] = "libvoidwrap_steam.so";
 #endif
 
 #ifdef VWSCREENSHOT
