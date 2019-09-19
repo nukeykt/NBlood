@@ -75,6 +75,7 @@ int32_t MV_VoicesPlaying(void);
 int32_t MV_VoiceAvailable(int32_t priority);
 int32_t MV_SetPitch(int32_t handle, int32_t pitchoffset);
 int32_t MV_SetFrequency(int32_t handle, int32_t frequency);
+int32_t MV_GetFrequency(int32_t handle, int32_t *frequency);
 int32_t MV_PauseVoice(int32_t handle, int32_t pause);
 int32_t MV_EndLooping(int32_t handle);
 int32_t MV_SetPan(int32_t handle, int32_t vol, int32_t left, int32_t right);
