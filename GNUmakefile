@@ -832,6 +832,7 @@ blood_game_objs := \
 	aizomba.cpp \
 	aizombf.cpp \
 	asound.cpp \
+	barf.cpp \
 	callback.cpp \
 	choke.cpp \
 	common.cpp \
