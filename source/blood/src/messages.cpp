@@ -576,7 +576,7 @@ void CPlayerMsg::Send(void)
             char *myName = gProfile[myconnectindex].name;
             char szTemp[128];
             sprintf(szTemp, "%s: %s", myName, text);
-            viewSetMessage(szTemp, 10); // 10: dark blue;
+            viewSetMessage(szTemp, 10); // 10: dark blue
         }
         else
             viewSetMessage(text);
