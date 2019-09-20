@@ -3238,8 +3238,8 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         if (IsPlayerSprite(pKillerSprite))
         {
             PLAYER *pPlayer = &gPlayer[pKillerSprite->index-kDudePlayer1];
-                if (gGameOptions.nGameType == 1)
-                    pPlayer->at2c6++;
+            if (gGameOptions.nGameType == 1)
+                pPlayer->at2c6++;
         }
     }
     else
