@@ -214,7 +214,7 @@ else
     endif
 endif
 
-voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam -fPIC -Wno-invalid-offsetof
+voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam -fPIC -fvisibility=hidden -Wno-invalid-offsetof
 
 
 ##### Component Definitions
