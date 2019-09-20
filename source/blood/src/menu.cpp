@@ -844,6 +844,7 @@ void SetupMainMenu(void)
     {
         itemMain1.at24 = &menuNetStart;
         itemMain1.at28 = 2;
+        itemMain1.bEnable = VanillaMode() || gNetMode == NETWORK_SERVER;
     }
     else
     {
@@ -867,6 +868,7 @@ void SetupMainMenuWithSave(void)
     {
         itemMainSave1.at24 = &menuNetStart;
         itemMainSave1.at28 = 2;
+        itemMainSave1.bEnable = VanillaMode() || gNetMode == NETWORK_SERVER;
     }
     else
     {
@@ -1350,6 +1352,7 @@ void UpdateNetworkMenus(void)
     {
         itemMain1.at24 = &menuNetStart;
         itemMain1.at28 = 2;
+        itemMain1.bEnable = VanillaMode() || gNetMode == NETWORK_SERVER;
     }
     else
     {
@@ -1360,6 +1363,7 @@ void UpdateNetworkMenus(void)
     {
         itemMainSave1.at24 = &menuNetStart;
         itemMainSave1.at28 = 2;
+        itemMainSave1.bEnable = VanillaMode() || gNetMode == NETWORK_SERVER;
     }
     else
     {
