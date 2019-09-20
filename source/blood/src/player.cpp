@@ -2041,8 +2041,11 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
     }
     else
     {
-        pKiller->at2c6++;
-        pKiller->at2ca[nKiller]++;
+        if (VanillaMode() || gGameOptions.nGameType != 1)
+        {
+            pKiller->at2c6++;
+            pKiller->at2ca[nKiller]++;
+        }
         if (gGameOptions.nGameType == 3)
         {
             if (pKiller->at2ea == pVictim->at2ea)
