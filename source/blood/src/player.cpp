@@ -51,6 +51,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "weapon.h"
 #include "common_game.h"
 #include "messages.h"
+#include "teammate.h"
 
 PROFILE gProfile[kMaxPlayers];
 
@@ -2344,6 +2345,8 @@ void playerLandingSound(PLAYER *pPlayer)
     SPRITEHIT *pHit = &gSpriteHit[pSprite->extra];
     if (pHit->florhit)
     {
+        if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, &sprite[pHit->florhit & 0x3fff]))
+            return;
         char nSurf = tileGetSurfType(pHit->florhit);
         if (nSurf)
             sfxPlay3DSound(pSprite, surfaceSound[nSurf], -1, 0);

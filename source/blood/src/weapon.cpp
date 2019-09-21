@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "seq.h"
 #include "sfx.h"
 #include "sound.h"
+#include "teammate.h"
 #include "trig.h"
 #include "triggers.h"
 #include "view.h"
@@ -1336,6 +1337,8 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     }
     dassert(pPlayer->voodooTarget >= 0);
     spritetype *pTarget = &sprite[pPlayer->voodooTarget];
+    if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pTarget))
+        return;
     switch (nTrigger)
     {
     case 0:
@@ -1382,7 +1385,6 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
 
 void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
 {
-    
     if (nTrigger == 2) {
 
         // by NoOne: trying to simulate v1.0x voodoo here.
@@ -1395,7 +1397,8 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
                 {
                     int nTarget = pPlayer->at1de[i];
                     spritetype* pTarget = &sprite[nTarget];
-
+                    if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pTarget))
+                        continue;
                     int nDist = approxDist(pTarget->x - pPlayer->pSprite->x, pTarget->y - pPlayer->pSprite->y);
                     if (nDist > 0 && nDist < 51200)
                     {
@@ -1430,6 +1433,8 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
             {
                 int nTarget = pPlayer->at1de[i];
                 spritetype* pTarget = &sprite[nTarget];
+                if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pTarget))
+                    continue;
                 if (v4 > 0)
                     v4--;
                 int nDist = approxDist(pTarget->x - pPlayer->pSprite->x, pTarget->y - pPlayer->pSprite->y);
