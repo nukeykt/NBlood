@@ -186,7 +186,7 @@ static int16_t radarang[1280];
 static int32_t qradarang[10240], *radarang2;
 const char ATTRIBUTE((used)) pow2char_[8] = {1,2,4,8,16,32,64,128};
 
-uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[4096+256];
+uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[4096+256], ATTRIBUTE((used)) sqrtable_old[2048];
 
 char britable[16][256]; // JBF 20040207: full 8bit precision
 
@@ -7464,6 +7464,8 @@ static uint32_t msqrtasm(uint32_t c)
 static inline void initksqrt(void)
 {
     int32_t i, j, k;
+    uint32_t root, num;
+    int32_t temp;
 
     j = 1; k = 0;
     for (i=0; i<4096; i++)
@@ -7472,6 +7474,29 @@ static inline void initksqrt(void)
         sqrtable[i] = (uint16_t)(msqrtasm((i<<18)+131072)<<1);
         shlookup[i] = (k<<1)+((10-k)<<8);
         if (i < 256) shlookup[i+4096] = ((k+6)<<1)+((10-(k+6))<<8);
+    }
+
+    for(i=0;i<2048;i++)
+    {
+        root = 128;
+        num = i<<20;
+        do
+        {
+            temp = root;
+            root = (root+num/root)>>1;
+        } while((temp-root+1) > 2);
+        temp = root*root-num;
+        while (klabs(int32_t(temp-2*root+1)) < klabs(temp))
+        {
+            temp += -(2*root)+1;
+            root--;
+        }
+        while (klabs(int32_t(temp+2*root+1)) < klabs(temp))
+        {
+            temp += 2*root+1;
+            root++;
+        }
+        sqrtable_old[i] = root;
     }
 }
 
@@ -7725,7 +7750,7 @@ LISTFN_STATIC int32_t insertspritestat(int16_t statnum)
     // make back-link of the new freelist head point to nil
     if (headspritestat[MAXSTATUS] >= 0)
         prevspritestat[headspritestat[MAXSTATUS]] = -1;
-    else
+    else if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
         tailspritefree = -1;
 
     do_insertsprite_at_headofstat(blanktouse, statnum);
@@ -7788,15 +7813,20 @@ int32_t deletesprite(int16_t spritenum)
     sprite[spritenum].sectnum = MAXSECTORS;
 
     // insert at tail of status freelist
-    prevspritestat[spritenum] = tailspritefree;
-    nextspritestat[spritenum] = -1;
-    if (tailspritefree >= 0)
-        nextspritestat[tailspritefree] = spritenum;
+    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+        do_insertsprite_at_headofstat(spritenum, MAXSTATUS);
     else
-        headspritestat[MAXSTATUS] = spritenum;
-    sprite[spritenum].statnum = MAXSTATUS;
+    {
+        prevspritestat[spritenum] = tailspritefree;
+        nextspritestat[spritenum] = -1;
+        if (tailspritefree >= 0)
+            nextspritestat[tailspritefree] = spritenum;
+        else
+            headspritestat[MAXSTATUS] = spritenum;
+        sprite[spritenum].statnum = MAXSTATUS;
 
-    tailspritefree = spritenum;
+        tailspritefree = spritenum;
+    }
     Numsprites--;
 
     return 0;
@@ -7858,7 +7888,7 @@ int32_t lintersect(const int32_t originX, const int32_t originY, const int32_t o
 
     if (rayCrossLineVec == 0)
     {
-        if (originDiffCrossRay != 0)
+        if (originDiffCrossRay != 0 || enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
         {
             // line segments are parallel
             return 0;
@@ -7932,12 +7962,48 @@ int32_t lintersect(const int32_t originX, const int32_t originY, const int32_t o
 // rintersect (internal)
 //
 // returns: -1 if didn't intersect, coefficient (x3--x4 fraction)<<16 else
+int32_t rintersect_old(int32_t x1, int32_t y1, int32_t z1,
+                   int32_t vx, int32_t vy, int32_t vz,
+                   int32_t x3, int32_t y3, int32_t x4, int32_t y4,
+                   int32_t *intx, int32_t *inty, int32_t *intz)
+{
+    //p1 towards p2 is a ray
+
+    int32_t const x34=x3-x4, y34=y3-y4;
+    int32_t const x31=x3-x1, y31=y3-y1;
+
+    int32_t const bot  = vx*y34 - vy*x34;
+    int32_t const topt = x31*y34 - y31*x34;
+
+    if (bot == 0)
+        return -1;
+
+    int32_t const topu = vx*y31 - vy*x31;
+
+    if (bot > 0 && (topt < 0 || topu < 0 || topu >= bot))
+        return -1;
+    else if (bot < 0 && (topt > 0 || topu > 0 || topu <= bot))
+        return -1;
+
+    int32_t t = divscale16(topt, bot);
+    *intx = x1 + mulscale16(vx, t);
+    *inty = y1 + mulscale16(vy, t);
+    *intz = z1 + mulscale16(vz, t);
+
+    t = divscale16(topu, bot);
+
+    return t;
+}
+
 int32_t rintersect(int32_t x1, int32_t y1, int32_t z1,
                    int32_t vx, int32_t vy, int32_t vz,
                    int32_t x3, int32_t y3, int32_t x4, int32_t y4,
                    int32_t *intx, int32_t *inty, int32_t *intz)
 {
     //p1 towards p2 is a ray
+
+    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+        return rintersect_old(x1,y1,z1,vx,vy,vz,x3,y3,x4,y4,intx,inty,intz);
 
     int64_t const x34=x3-x4, y34=y3-y4;
     int64_t const x31=x3-x1, y31=y3-y1;
@@ -10648,8 +10714,45 @@ void vox_undefine(int32_t const tile)
 //
 // See http://fabiensanglard.net/duke3d/build_engine_internals.php,
 // "Inside details" for the idea behind the algorithm.
+int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
+{
+    if (sectnum >= 0 && sectnum < numsectors)
+    {
+        uint32_t cnt = 0;
+        auto wal       = (uwallptr_t)&wall[sector[sectnum].wallptr];
+        int  wallsleft = sector[sectnum].wallnum;
+
+        do
+        {
+            // Get the x and y components of the [tested point]-->[wall
+            // point{1,2}] vectors.
+            vec2_t v1 = { wal->x - x, wal->y - y };
+            auto const &wal2 = *(uwallptr_t)&wall[wal->point2];
+            vec2_t v2 = { wal2.x - x, wal2.y - y };
+
+            // If their signs differ[*], ...
+            //
+            // [*] where '-' corresponds to <0 and '+' corresponds to >=0.
+            // Equivalently, the branch is taken iff
+            //   y1 != y2 AND y_m <= y < y_M,
+            // where y_m := min(y1, y2) and y_M := max(y1, y2).
+            if ((v1.y^v2.y) < 0)
+                cnt ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+
+            wal++;
+        }
+        while (--wallsleft);
+
+        return cnt>>31;
+    }
+
+    return -1;
+}
+
 int32_t inside(int32_t x, int32_t y, int16_t sectnum)
 {
+    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+        return inside_old(x, y, sectnum);
     if ((unsigned)sectnum < (unsigned)numsectors)
     {
         uint32_t cnt1 = 0, cnt2 = 0;
@@ -11459,10 +11562,33 @@ int findwallbetweensectors(int sect1, int sect2)
 //
 void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
 {
-    int16_t sect = *sectnum;
-    updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-    if (sect != -1)
-        SET_AND_RETURN(*sectnum, sect);
+    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    {
+        if (inside_p(x, y, *sectnum))
+            return;
+
+        if ((unsigned)*sectnum < (unsigned)numsectors)
+        {
+            const uwalltype *wal = (uwalltype *)&wall[sector[*sectnum].wallptr];
+            int wallsleft = sector[*sectnum].wallnum;
+
+            do
+            {
+                int const next = wal->nextsector;
+                if (inside_p(x, y, next))
+                    SET_AND_RETURN(*sectnum, next);
+                wal++;
+            }
+            while (--wallsleft);
+        }
+    }
+    else
+    {
+        int16_t sect = *sectnum;
+        updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+        if (sect != -1)
+            SET_AND_RETURN(*sectnum, sect);
+    }
 
     // we need to support passing in a sectnum of -1, unfortunately
 
@@ -11506,10 +11632,62 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
 
 void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
 {
-    int16_t sect = *sectnum;
-    updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-    if (sect != -1)
-        SET_AND_RETURN(*sectnum, sect);
+    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    {
+        if ((uint32_t)(*sectnum) < 2*MAXSECTORS)
+        {
+            int32_t nofirstzcheck = 0;
+
+            if (*sectnum >= MAXSECTORS)
+            {
+                *sectnum -= MAXSECTORS;
+                nofirstzcheck = 1;
+            }
+
+            // this block used to be outside the "if" and caused crashes in Polymost Mapster32
+            int32_t cz, fz;
+            getzsofslope(*sectnum, x, y, &cz, &fz);
+
+#ifdef YAX_ENABLE
+            if (z < cz)
+            {
+                int const next = yax_getneighborsect(x, y, *sectnum, YAX_CEILING);
+                if (next >= 0 && z >= getceilzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+            }
+
+            if (z > fz)
+            {
+                int const next = yax_getneighborsect(x, y, *sectnum, YAX_FLOOR);
+                if (next >= 0 && z <= getflorzofslope(next, x, y))
+                    SET_AND_RETURN(*sectnum, next);
+            }
+#endif
+            if (nofirstzcheck || (z >= cz && z <= fz))
+                if (inside_p(x, y, *sectnum))
+                    return;
+
+            uwalltype const * wal = (uwalltype *)&wall[sector[*sectnum].wallptr];
+            int wallsleft = sector[*sectnum].wallnum;
+            do
+            {
+                // YAX: TODO: check neighboring sectors here too?
+                int const next = wal->nextsector;
+                if (next>=0 && inside_z_p(x,y,z, next))
+                    SET_AND_RETURN(*sectnum, next);
+
+                wal++;
+            }
+            while (--wallsleft);
+        }
+    }
+    else
+    {
+        int16_t sect = *sectnum;
+        updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+        if (sect != -1)
+            SET_AND_RETURN(*sectnum, sect);
+    }
 
     // we need to support passing in a sectnum of -1, unfortunately
     for (int i = numsectors - 1; i >= 0; --i)
@@ -12241,7 +12419,8 @@ int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     if (i == 0) return sec->ceilingz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    return sec->ceilingz + (scale(sec->ceilingheinum,j>>1,i)<<1);
+    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    return sec->ceilingz + (scale(sec->ceilingheinum,j>>shift,i)<<shift);
 }
 
 int32_t getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
@@ -12259,7 +12438,8 @@ int32_t getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     if (i == 0) return sec->floorz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    return sec->floorz + (scale(sec->floorheinum,j>>1,i)<<1);
+    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    return sec->floorz + (scale(sec->floorheinum,j>>shift,i)<<shift);
 }
 
 void getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day, int32_t *ceilz, int32_t *florz)
@@ -12278,10 +12458,11 @@ void getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day, int32_t *ceilz,
     if (i == 0) return;
 
     int const j = dmulscale3(d.x,day-wal->y, -d.y,dax-wal->x);
+    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
     if (sec->ceilingstat&2)
-        *ceilz += scale(sec->ceilingheinum,j>>1,i)<<1;
+        *ceilz += scale(sec->ceilingheinum,j>>shift,i)<<shift;
     if (sec->floorstat&2)
-        *florz += scale(sec->floorheinum,j>>1,i)<<1;
+        *florz += scale(sec->floorheinum,j>>shift,i)<<shift;
 }
 
 #ifdef YAX_ENABLE
