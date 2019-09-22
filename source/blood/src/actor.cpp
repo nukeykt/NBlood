@@ -68,7 +68,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "seq.h"
 #include "sfx.h"
 #include "sound.h"
-#include "teammate.h"
 #include "tile.h"
 #include "trig.h"
 #include "triggers.h"
