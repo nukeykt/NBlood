@@ -28,6 +28,7 @@ texturecache
 
 *.manifest
 /*.map
+/*.mhk
 /platform/Windows/*.map
 *.pdb
 *.iobj
@@ -40,7 +41,10 @@ texturecache
 /*.grp
 /*.rts
 /*.art
+/*.ar_
 /*.con
+/*.SMK
+/*.WAV
 /platform/Windows/*.con
 *.memmap
 *.sdf
@@ -69,3 +73,4 @@ project.xcworkspace/
 /movie
 /blud*.png
 /game*.sav
+/CRYPTIC.INI
