@@ -7453,7 +7453,7 @@ static void G_Startup(void)
 
     G_CompileScripts();
 
-    blooddemohack = 1;
+    enginecompatibility_mode = ENGINECOMPATIBILITY_19961112;
 
     if (engineInit())
         G_FatalEngineError();
