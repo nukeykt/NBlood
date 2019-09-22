@@ -33,6 +33,7 @@ enum DICTFLAGS {
     DICT_LOAD = 4,
     DICT_LOCK = 8,
     DICT_CRYPT = 16,
+    DICT_BUFFER = 32,
 };
 
 struct RFFHeader
@@ -77,6 +78,7 @@ struct DICTNODE : CACHENODE
     char *type;
     char *name;
     char *path;
+    char *buffer;
     unsigned int id;
 };
 
@@ -94,6 +96,7 @@ public:
     void Reindex(void);
     void Grow(void);
     void AddExternalResource(const char *name, const char *type, int id = 0, int flags = 0, const char* pzDirectory = NULL);
+    void AddFromBuffer(const char* name, const char* type, char *data, int size, int id = 0, int flags = 0);
     static void *Alloc(int nSize);
     static void Free(void *p);
     DICTNODE *Lookup(const char *name, const char *type);

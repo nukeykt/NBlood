@@ -57,7 +57,7 @@ struct define_t
 
 define_t gCmdDefines[kMaxCmdLineDefines];
 
-void sub_11DF0(char *pzScriptDir, char *fileName, char flags, int ID);
+void sub_11DF0(char *fileName, char flags, int ID);
 void sub_11C10(char *pzScriptDir, char *fileName, char flags, int ID);
 
 struct tag_t {
@@ -152,7 +152,7 @@ private:
     char _fileName[BMAX_PATH]; // [30]
 
 public:
-    void Open(const char *fileName);
+    int Open(const char *fileName);
     void Close();
     void Increment();
     void SkipBeyondValue(char value);
@@ -162,28 +162,33 @@ public:
     void UnsetMark();
 };
 
-void RFS::Open(const char *fileName)
+int RFS::Open(const char *fileName)
 {
     strcpy(_fileName, fileName);
 
-    int hFile = open(_fileName, O_BINARY);
-    if (hFile == -1) {
-        ThrowError("Error opening file %s", _fileName);
+    buildvfs_fd hFile = kopen4loadfrommod(fileName, 0);
+    if (hFile == buildvfs_fd_invalid) {
+        initprintf("BARF: Error opening file %s", _fileName);
+        return 1;
     }
 
     int fileSize = kfilelength(hFile);
     _ptr = (char*)Resource::Alloc(fileSize);
     if (_ptr == NULL) {
-        ThrowError("Not enough memory to read %s", _fileName);
+        initprintf("BARF: Not enough memory to read %s", _fileName);
+        kclose(hFile);
+        return 1;
     }
 
-    read(hFile, _ptr, fileSize);
-    close(hFile);
+    kread(hFile, _ptr, fileSize);
+    kclose(hFile);
 
     _curLine = 0;
     _pUnknown2 = _ptr;
     _curChar = '\n';
     _pEnd = &_ptr[fileSize - 1];
+
+    return 0;
 }
 
 void RFS::Close()
@@ -449,7 +454,7 @@ uint8_t RFS::GetNextTag()
     //	qAssert(1==0); // TODO - what to return here
 }
 
-void ParseScript(char *scriptFileName)
+void ParseScript(const char *scriptFileName)
 {
     char text[256];
     char char256_1[256];
@@ -458,12 +463,19 @@ void ParseScript(char *scriptFileName)
     char inp[BMAX_PATH];
     char zScriptDirectory[BMAX_PATH], zTemp1[BMAX_PATH], zTemp2[BMAX_PATH];
 
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
+
     SplitPath(scriptFileName, zScriptDirectory, zTemp1, zTemp2);
 
     RFS rfs;
 
     // AddExtension(name, ".RFS");
-    rfs.Open(scriptFileName);
+    if (rfs.Open(scriptFileName))
+    {
+        pathsearchmode = bakpathsearchmode;
+        return;
+    }
 
     gParseLevel = 0;
     dword_44CE0[0] = 0;
@@ -485,7 +497,7 @@ void ParseScript(char *scriptFileName)
             }
             case kTagEnd:
             {
-                parsing = true;
+                parsing = false;
                 break;
             }
             case kTagComment:
@@ -866,7 +878,7 @@ void ParseScript(char *scriptFileName)
                 else
                 {
                     if (dword_44CE0[gParseLevel] == 0) {
-                        sub_11DF0(zScriptDirectory, fileName, nFlags, ID);
+                        sub_11DF0(fileName, nFlags, ID);
                     }
                 }
                 break;
@@ -876,6 +888,7 @@ void ParseScript(char *scriptFileName)
 
     //CreateHeader();
     rfs.Close();
+    pathsearchmode = bakpathsearchmode;
 }
 
 void sub_11C10(char *pzScriptDir, char *fileName, char flags, int ID)
@@ -921,32 +934,18 @@ void sub_11C10(char *pzScriptDir, char *fileName, char flags, int ID)
     }
 }
 
-void sub_11DF0(char* pzScriptDir, char *filePath, char flags, int ID)
+void sub_11DF0(char *filePath, char flags, int ID)
 {
     char zDirectory[BMAX_PATH];
     char zFilename[BMAX_PATH];
     char zType[BMAX_PATH];
-    char zFilePath[BMAX_PATH];
     buildvfs_fd handle;
 
-    ConcatPath(pzScriptDir, filePath, zFilePath);
-
-    handle = kopen4loadfrommod(zFilePath, 0);
-    if (handle == buildvfs_fd_invalid)
-    {
-        Bstrcpy(zFilePath, filePath);
-        handle = kopen4loadfrommod(zFilePath, 0);
-        if (handle == buildvfs_fd_invalid)
-            return;
-    }
-
-    kclose(handle);
-
-    SplitPath(zFilePath, zDirectory, zFilename, zType);
+    SplitPath(filePath, zDirectory, zFilename, zType);
 
     if (!Bstrcasecmp(zType, "RAW") || !Bstrcasecmp(zType, "SFX") || !Bstrcasecmp(zType, "MID") || !Bstrcasecmp(zType, "TMB"))
-        gSoundRes.AddExternalResource(zFilename, zType, ID, flags, zFilePath);
+        gSoundRes.AddFromBuffer(zFilename, zType, buffer, nBytes, ID, flags);
     else
-        gSysRes.AddExternalResource(zFilename, zType, ID, flags, zFilePath);
+        gSysRes.AddFromBuffer(zFilename, zType, buffer, nBytes, ID, flags);
 }
 
