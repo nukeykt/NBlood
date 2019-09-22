@@ -10714,6 +10714,32 @@ void vox_undefine(int32_t const tile)
 //
 // See http://fabiensanglard.net/duke3d/build_engine_internals.php,
 // "Inside details" for the idea behind the algorithm.
+int32_t inside_ps(int32_t x, int32_t y, int16_t sectnum)
+{
+    if (sectnum >= 0 && sectnum < numsectors)
+    {
+        int32_t cnt = 0;
+        auto wal       = (uwallptr_t)&wall[sector[sectnum].wallptr];
+        int  wallsleft = sector[sectnum].wallnum;
+
+        do
+        {
+            vec2_t v1 = { wal->x - x, wal->y - y };
+            auto const &wal2 = *(uwallptr_t)&wall[wal->point2];
+            vec2_t v2 = { wal2.x - x, wal2.y - y };
+
+            if ((v1.y^v2.y) < 0)
+                cnt ^= (((v1.x^v2.x) < 0) ? (v1.x*v2.y<v2.x*v1.y)^(v1.y<v2.y) : (v1.x >= 0));
+
+            wal++;
+        }
+        while (--wallsleft);
+
+        return cnt;
+    }
+
+    return -1;
+}
 int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
 {
     if (sectnum >= 0 && sectnum < numsectors)
@@ -10751,8 +10777,15 @@ int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
 
 int32_t inside(int32_t x, int32_t y, int16_t sectnum)
 {
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    switch (enginecompatibility_mode)
+    {
+    case ENGINECOMPATIBILITY_NONE:
+        break;
+    case ENGINECOMPATIBILITY_19950829:
+        return inside_ps(x, y, sectnum);
+    default:
         return inside_old(x, y, sectnum);
+    }
     if ((unsigned)sectnum < (unsigned)numsectors)
     {
         uint32_t cnt1 = 0, cnt2 = 0;
@@ -10949,8 +10982,48 @@ int32_t nextsectorneighborz(int16_t sectnum, int32_t refz, int16_t topbottom, in
 //
 // cansee
 //
+int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t xe, int32_t ye, int32_t ze, int16_t sectnume)
+{
+    sectortype *sec, *nsec;
+    walltype *wal, *wal2;
+    int32_t intx, inty, intz, i, cnt, nextsector, dasectnum, dacnt, danum;
+
+    if ((xs == xe) && (ys == ye) && (sectnums == sectnume)) return 1;
+    
+    clipsectorlist[0] = sectnums; danum = 1;
+    for(dacnt=0;dacnt<danum;dacnt++)
+    {
+        dasectnum = clipsectorlist[dacnt]; sec = &sector[dasectnum];
+        
+        for(cnt=sec->wallnum,wal=&wall[sec->wallptr];cnt>0;cnt--,wal++)
+        {
+            wal2 = &wall[wal->point2];
+            if (lintersect(xs,ys,zs,xe,ye,ze,wal->x,wal->y,wal2->x,wal2->y,&intx,&inty,&intz) != 0)
+            {
+                nextsector = wal->nextsector; if (nextsector < 0) return 0;
+
+                if (intz <= sec->ceilingz) return 0;
+                if (intz >= sec->floorz) return 0;
+                nsec = &sector[nextsector];
+                if (intz <= nsec->ceilingz) return 0;
+                if (intz >= nsec->floorz) return 0;
+
+                for(i=danum-1;i>=0;i--)
+                    if (clipsectorlist[i] == nextsector) break;
+                if (i < 0) clipsectorlist[danum++] = nextsector;
+            }
+        }
+
+        if (clipsectorlist[dacnt] == sectnume)
+            return 1;
+    }
+    return 0;
+}
+
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, int32_t y2, int32_t z2, int16_t sect2)
 {
+    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+        return cansee_old(x1, y1, z2, sect1, x2, y2, z2, sect2);
     int32_t dacnt, danum;
     const int32_t x21 = x2-x1, y21 = y2-y1, z21 = z2-z1;
 
