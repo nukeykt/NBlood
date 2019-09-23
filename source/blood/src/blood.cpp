@@ -744,7 +744,53 @@ void LocalKeys(void)
     char alt = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
     char ctrl = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
     char shift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
-    if (BUTTON(gamefunc_See_Chase_View) && !alt && !shift)
+    char key;
+    if ((key = keyGetScan()) != 0)
+    {
+        if ((alt || shift) && gGameOptions.nGameType > 0 && key >= 0x3b && key <= 0x44) // F1-F10 plus alt or shift
+        {
+            char fk = key - 0x3b;
+            if (alt)
+            {
+                netBroadcastTaunt(myconnectindex, fk);
+            }
+            else
+            {
+                gPlayerMsg.Set(CommbatMacro[fk]);
+                gPlayerMsg.Send();
+            }
+            keyFlushScans();
+            keystatus[key] = 0;
+            CONTROL_ClearButton(41);
+            return;
+        }
+        switch (key)
+        {
+        case 0x53: // Delete
+        case 0xd3: // Keypad delete
+            if (ctrl && alt)
+            {
+                gQuitGame = 1;
+                return;
+            }
+            break;
+        case 0x01: // Esc
+            keyFlushScans();
+            if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMainWithSave, -1);
+            }
+            else
+            {
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuMain, -1);
+            }
+            return;
+        }
+    }
+
+    if (BUTTON(gamefunc_See_Chase_View))
     {
         CONTROL_ClearButton(gamefunc_See_Chase_View);
         if (gViewPos > VIEWPOS_0)
@@ -752,6 +798,7 @@ void LocalKeys(void)
         else
             gViewPos = VIEWPOS_1;
     }
+
     if (BUTTON(gamefunc_See_Coop_View))
     {
         CONTROL_ClearButton(gamefunc_See_Coop_View);
@@ -776,119 +823,80 @@ void LocalKeys(void)
             gView = &gPlayer[gViewIndex];
         }
     }
-    char key;
-    if ((key = keyGetScan()) != 0)
+
+    if (BUTTON(gamefunc_Help))
     {
-        if ((alt || shift) && gGameOptions.nGameType > 0 && key >= 0x3b && key <= 0x44)
+        CONTROL_ClearButton(gamefunc_Help);
+        if (gGameOptions.nGameType == 0)
+            gGameMenuMgr.Push(&menuOrder, -1);
+    }
+    else if (BUTTON(gamefunc_Save))
+    {
+        CONTROL_ClearButton(gamefunc_Save);
+        if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+            gGameMenuMgr.Push(&menuSaveGame, -1);
+    }
+    else if (BUTTON(gamefunc_Load))
+    {
+        CONTROL_ClearButton(gamefunc_Load);
+        if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+            gGameMenuMgr.Push(&menuLoadGame, -1);
+    }
+    else if (BUTTON(gamefunc_Sound_Options))
+    {
+        CONTROL_ClearButton(gamefunc_Sound_Options);
+        if (!gGameMenuMgr.m_bActive)
+            gGameMenuMgr.Push(&menuOptionsSound, -1);
+    }
+    else if (BUTTON(gamefunc_Options))
+    {
+        CONTROL_ClearButton(gamefunc_Options);
+        if (!gGameMenuMgr.m_bActive)
+            gGameMenuMgr.Push(&menuOptions, -1);
+        return;
+    }
+    else if (BUTTON(gamefunc_Quick_Save))
+    {
+        CONTROL_ClearButton(gamefunc_Quick_Save);
+        if (gGameStarted && !gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0 && gPlayer[myconnectindex].pXSprite->health != 0)
         {
-            char fk = key - 0x3b;
-            if (alt)
+            if (gQuickSaveSlot != -1)
             {
-                netBroadcastTaunt(myconnectindex, fk);
-            }
-            else
-            {
-                gPlayerMsg.Set(CommbatMacro[fk]);
-                gPlayerMsg.Send();
-            }
-            keyFlushScans();
-            keystatus[key] = 0;
-            CONTROL_ClearButton(41);
-            return;
-        }
-        switch (key)
-        {
-        case 0x53:
-        case 0xd3:
-            if (ctrl && alt)
-            {
-                gQuitGame = 1;
+                QuickSaveGame();
                 return;
             }
-            break;
-        case 0x01:
-            keyFlushScans();
-            if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
-            {
-                if (!gGameMenuMgr.m_bActive)
-                    gGameMenuMgr.Push(&menuMainWithSave,-1);
-            }
-            else
-            {
-                if (!gGameMenuMgr.m_bActive)
-                    gGameMenuMgr.Push(&menuMain,-1);
-            }
-            return;
-        case 0x3b:
-            keyFlushScans();
-            if (gGameOptions.nGameType == 0)
-                gGameMenuMgr.Push(&menuOrder,-1);
-            break;
-        case 0x3c:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
-                gGameMenuMgr.Push(&menuSaveGame,-1);
-            break;
-        case 0x3d:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
-                gGameMenuMgr.Push(&menuLoadGame,-1);
-            break;
-        case 0x3e:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuOptionsSound,-1);
-            return;
-        case 0x3f:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuOptions,-1);
-            return;
-        case 0x40:
-            keyFlushScans();
-            if (gGameStarted && !gGameMenuMgr.m_bActive && gPlayer[myconnectindex].pXSprite->health != 0)
-            {
-                if (gQuickSaveSlot != -1)
-                {
-                    QuickSaveGame();
-                    return;
-                }
-                gGameMenuMgr.Push(&menuSaveGame,-1);
-            }
-            break;
-        case 0x42:
-            keyFlushScans();
-            gGameMenuMgr.Push(&menuOptions,-1);
-            break;
-        case 0x43:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-            {
-                if (gQuickLoadSlot != -1)
-                {
-                    QuickLoadGame();
-                    return;
-                }
-                if (gQuickLoadSlot == -1 && gQuickSaveSlot != -1)
-                {
-                    gQuickLoadSlot = gQuickSaveSlot;
-                    QuickLoadGame();
-                    return;
-                }
-                gGameMenuMgr.Push(&menuLoadGame,-1);
-            }
-            break;
-        case 0x44:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuQuit,-1);
-            break;
-        case 0x57:
-            break;
-        case 0x58:
-            videoCaptureScreen("blud0000.tga", 0);
-            break;
+            gGameMenuMgr.Push(&menuSaveGame, -1);
         }
+    }
+    else if (BUTTON(gamefunc_Quick_Load))
+    {
+        CONTROL_ClearButton(gamefunc_Quick_Load);
+        if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+        {
+            if (gQuickLoadSlot != -1)
+            {
+                QuickLoadGame();
+                return;
+            }
+            if (gQuickLoadSlot == -1 && gQuickSaveSlot != -1)
+            {
+                gQuickLoadSlot = gQuickSaveSlot;
+                QuickLoadGame();
+                return;
+            }
+            gGameMenuMgr.Push(&menuLoadGame, -1);
+        }
+    }
+    else if (BUTTON(gamefunc_Quit))
+    {
+        CONTROL_ClearButton(gamefunc_Quit);
+        if (!gGameMenuMgr.m_bActive)
+            gGameMenuMgr.Push(&menuQuit, -1);
+    }
+    else if (BUTTON(gamefunc_Screenshot))
+    {
+        CONTROL_ClearButton(gamefunc_Screenshot);
+        videoCaptureScreen("bludxxxx.png", 0);
     }
 }
 

@@ -2065,20 +2065,18 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
         gSaveGameActive = true;
         return true;
     case kMenuEventEnter:
-        if (!at35)
+        if (!at35 || bScan)
         {
             if (at30)
                 at30(this, &event);
+            if (bScan)
+            {
+                bScan = 0;
+                gGameMenuMgr.m_bScanning = false;
+            }
             gSaveGameActive = false;
-            return false;
-        }
-        if (bScan)
-        {
-            if (at30)
-                at30(this, &event);
-            bScan = 0;
-            gGameMenuMgr.m_bScanning = false;
-            gSaveGameActive = false;
+            KB_ClearKeyDown(sc_Enter);
+            KB_ClearKeyDown(sc_kpad_Enter);
             return false;
         }
         strncpy(buffer, at20, at24);

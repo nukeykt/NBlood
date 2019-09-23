@@ -134,6 +134,15 @@ void ctrlInit(void)
     CONTROL_DefineFlag(gamefunc_MedKit, false);
     CONTROL_DefineFlag(gamefunc_ProximityBombs, false);
     CONTROL_DefineFlag(gamefunc_RemoteBombs, false);
+    CONTROL_DefineFlag(gamefunc_Help, false);
+    CONTROL_DefineFlag(gamefunc_Save, false);
+    CONTROL_DefineFlag(gamefunc_Load, false);
+    CONTROL_DefineFlag(gamefunc_Sound_Options, false);
+    CONTROL_DefineFlag(gamefunc_Options, false);
+    CONTROL_DefineFlag(gamefunc_Quick_Save, false);
+    CONTROL_DefineFlag(gamefunc_Quick_Load, false);
+    CONTROL_DefineFlag(gamefunc_Quit, false);
+    CONTROL_DefineFlag(gamefunc_Screenshot, false);
 }
 
 void ctrlTerm(void)

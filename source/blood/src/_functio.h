@@ -93,6 +93,15 @@ char gamefunctions[NUMGAMEFUNCTIONS][MAXGAMEFUNCLEN] =
    "MedKit",
    "ProximityBombs",
    "RemoteBombs",
+   "Help",
+   "Save",
+   "Load",
+   "Sound_Options",
+   "Options",
+   "Quick_Save",
+   "Quick_Load",
+   "Quit",
+   "Screenshot",
    "Show_Console",
    };
 
@@ -154,6 +163,15 @@ const char keydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "M", "",
    "P", "",
    "R", "",
+   "F1", "",
+   "F2", "",
+   "F3", "",
+   "F4", "",
+   "F5", "F8",
+   "F6", "",
+   "F9", "",
+   "F10", "",
+   "F12", "",
    "`", "",
    };
 
@@ -213,6 +231,15 @@ const char oldkeydefaults[NUMGAMEFUNCTIONS*2][MAXGAMEFUNCLEN] =
    "M", "",
    "P", "",
    "R", "",
+   "F1", "",
+   "F2", "",
+   "F3", "",
+   "F4", "",
+   "F5", "F8",
+   "F6", "",
+   "F9", "",
+   "F10", "",
+   "F12", "",
    "`", "",
    };
 
