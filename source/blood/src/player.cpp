@@ -496,7 +496,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         pPlayer->ata1[0]++;
         break;
     case 124: // reflective shots
-        if (pPlayer == gMe && VanillaMode() ? gGameOptions.nGameType == 0 : true)
+        if (pPlayer == gMe && gGameOptions.nGameType == 0)
             sfxSetReverb2(1);
         break;
     case 114: // death mask
@@ -505,7 +505,7 @@ char powerupActivate(PLAYER *pPlayer, int nPowerUp)
         break;
     case 118: // diving suit
         pPlayer->ata1[4]++;
-        if (pPlayer == gMe && VanillaMode() ? gGameOptions.nGameType == 0 : true)
+        if (pPlayer == gMe && gGameOptions.nGameType == 0)
             sfxSetReverb(1);
         break;
     case 119:
