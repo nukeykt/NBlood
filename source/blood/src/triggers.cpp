@@ -50,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 #include "view.h"
 #include "sectorfx.h"
+#include "messages.h"
 
 int basePath[kMaxSectors];
 
@@ -2882,7 +2883,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         /* - hitag: 2 = force swap min and max if goal value was reached								- */
         /* - hitag: 3 = force reset counter	                                           					- */
 
-        long data = getDataFieldOfObject(type, nDest, pXSource->data1);
+        int data = getDataFieldOfObject(type, nDest, pXSource->data1);
         if (data == -65535) return;
 
         if (pXSource->data2 < pXSource->data3) {
@@ -4346,7 +4347,7 @@ void trTextOver(int nId)
 {
     char *pzMessage = levelGetMessage(nId);
     if (pzMessage)
-        viewSetMessage(pzMessage);
+        viewSetMessage(pzMessage, VanillaMode() ? 0 : 8, MESSAGE_PRIORITY_INI); // 8: gold
 }
 
 void InitGenerator(int nSprite)
@@ -4547,7 +4548,7 @@ void UniMissileTrapSeqCallback(int, int nXSprite)
         // add velocity controlling
         if (pXSprite->data2 > 0) {
             
-            long velocity = pXSprite->data2 << 12; 
+            int velocity = pXSprite->data2 << 12;
             xvel[pMissile->xvel] = mulscale(velocity, dx, 14);
             yvel[pMissile->xvel] = mulscale(velocity, dy, 14);
             zvel[pMissile->xvel] = mulscale(velocity, dz, 14);

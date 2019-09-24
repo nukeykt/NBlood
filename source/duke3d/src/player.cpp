@@ -554,7 +554,9 @@ static int Proj_DoHitscan(int spriteNum, int32_t const cstatmask, const vec3_t *
 
     pSprite->cstat &= ~cstatmask;
     zvel = A_GetShootZvel(zvel);
-    hitscan(srcVect, pSprite->sectnum, sintable[(shootAng + 512) & 2047], sintable[shootAng & 2047], zvel << 6, hitData, CLIPMASK1);
+    int16_t sectnum = pSprite->sectnum;
+    updatesector(srcVect->x, srcVect->y, &sectnum);
+    hitscan(srcVect, sectnum, sintable[(shootAng + 512) & 2047], sintable[shootAng & 2047], zvel << 6, hitData, CLIPMASK1);
     pSprite->cstat |= cstatmask;
 
     return (hitData->sect < 0);
@@ -1571,8 +1573,8 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
 {
     Bassert(projecTile >= 0);
 
-    auto const   pSprite   = &sprite[spriteNum];
-    int const           playerNum = (pSprite->picnum == APLAYER) ? P_GetP(pSprite) : -1;
+    auto const pSprite   = &sprite[spriteNum];
+    int const  playerNum = (pSprite->picnum == APLAYER) ? P_GetP(pSprite) : -1;
     auto const pPlayer   = playerNum >= 0 ? g_player[playerNum].ps : NULL;
 
     if (forceZvel != SHOOT_HARDCODED_ZVEL)
@@ -1654,7 +1656,7 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
 static void P_DisplaySpit(void)
 {
     auto const pPlayer     = g_player[screenpeek].ps;
-    int const           loogCounter = pPlayer->loogcnt;
+    int const  loogCounter = pPlayer->loogcnt;
 
     if (loogCounter == 0)
         return;
@@ -4422,49 +4424,6 @@ static int P_DoFist(DukePlayer_t *pPlayer)
     return 0;
 }
 
-#ifdef YAX_ENABLE
-static void getzsofslope_player(int sectNum, int playerX, int playerY, int32_t *pCeilZ, int32_t *pFloorZ)
-{
-    int didCeiling = 0;
-
-    if ((sector[sectNum].ceilingstat & 512) == 0)
-    {
-        int const neighborSect = yax_getneighborsect(playerX, playerY, sectNum, YAX_CEILING);
-
-        if (neighborSect >= 0)
-        {
-            *pCeilZ    = getceilzofslope(neighborSect, playerX, playerY);
-            didCeiling = 1;
-        }
-    }
-
-    int didFloor   = 0;
-
-    if ((sector[sectNum].floorstat & 512) == 0)
-    {
-        int const neighborSect = yax_getneighborsect(playerX, playerY, sectNum, YAX_FLOOR);
-
-        if (neighborSect >= 0)
-        {
-            *pFloorZ = getflorzofslope(neighborSect, playerX, playerY);
-            didFloor = 1;
-        }
-    }
-
-    if (!didCeiling || !didFloor)
-    {
-        int32_t ceilingZ, floorZ;
-        getzsofslope(sectNum, playerX, playerY, &ceilingZ, &floorZ);
-
-        if (!didCeiling)
-            *pCeilZ = ceilingZ;
-
-        if (!didFloor)
-            *pFloorZ = floorZ;
-    }
-}
-#endif
-
 void P_UpdatePosWhenViewingCam(DukePlayer_t *pPlayer)
 {
     int const newOwner      = pPlayer->newowner;
@@ -4710,40 +4669,36 @@ void P_ProcessInput(int playerNum)
         pPlayer->cursectnum = 0;
     }
 
-    int sectorLotag = sector[pPlayer->cursectnum].lotag;
     // sectorLotag can be set to 0 later on, but the same block sets spritebridge to 1
-    int stepHeight = (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1) ? pPlayer->autostep_sbw : pPlayer->autostep;
+    int       sectorLotag     = sector[pPlayer->cursectnum].lotag;
+    int       getZRangeOffset = ((TEST_SYNC_KEY(playerBits, SK_CROUCH) || (sectorLotag == ST_1_ABOVE_WATER && pPlayer->spritebridge != 1))) ? pPlayer->autostep_sbw : pPlayer->autostep;
+    int const stepHeight      = getZRangeOffset;
+
+    // we want to take these into account for getzrange() but not for the clipmove() call below
+    if (!pPlayer->on_ground)
+        getZRangeOffset = pPlayer->autostep_sbw;
 
     int32_t floorZ, ceilZ, highZhit, lowZhit, dummy;
 
     if (sectorLotag != ST_2_UNDERWATER)
     {
-        if (pPlayer->pos.z + stepHeight > actor[pPlayer->i].floorz - PMINHEIGHT)
-            stepHeight -= (pPlayer->pos.z + stepHeight) - (actor[pPlayer->i].floorz - PMINHEIGHT);
-        else if (!pPlayer->on_ground)
-            stepHeight -= (pPlayer->jumping_counter << 1) + (pPlayer->jumping_counter >> 1);
-
-        stepHeight = max(stepHeight, 0);
+        if (pPlayer->pos.z + getZRangeOffset > actor[pPlayer->i].floorz - PMINHEIGHT)
+            getZRangeOffset -= klabs((pPlayer->pos.z + getZRangeOffset) - (actor[pPlayer->i].floorz - PMINHEIGHT));
+        else if (pPlayer->pos.z + getZRangeOffset < actor[pPlayer->i].ceilingz + PMINHEIGHT)
+            getZRangeOffset += klabs((actor[pPlayer->i].ceilingz + PMINHEIGHT) - (pPlayer->pos.z + getZRangeOffset));
     }
-    else stepHeight = 0;
 
-    pPlayer->pos.z += stepHeight;
+    pPlayer->pos.z += getZRangeOffset;
     getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ, &highZhit, &floorZ, &lowZhit, pPlayer->clipdist - GETZRANGECLIPDISTOFFSET, CLIPMASK0);
-    pPlayer->pos.z -= stepHeight;
-
-    int32_t ceilZ2 = ceilZ;
-    getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ, &highZhit, &dummy, &dummy, pPlayer->clipdist - GETZRANGECLIPDISTOFFSET, CSTAT_SPRITE_ALIGNMENT_FLOOR << 16);
-
-    if ((highZhit & 49152) == 49152 && (sprite[highZhit & (MAXSPRITES - 1)].cstat & CSTAT_SPRITE_BLOCK) != CSTAT_SPRITE_BLOCK)
-        ceilZ = ceilZ2;
+    pPlayer->pos.z -= getZRangeOffset;
 
     pPlayer->spritebridge = 0;
     pPlayer->sbs          = 0;
 
 #ifdef YAX_ENABLE
-    getzsofslope_player(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y, &pPlayer->truecz, &pPlayer->truefz);
+    yax_getzsofslope(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y, &pPlayer->truecz, &pPlayer->truefz);
 #else
-    getzsofslope(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y, &pPlayer->truecz, &pPlayer->truefz);
+    getcorrectzsofslope(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y, &pPlayer->truecz, &pPlayer->truefz);
 #endif
     int const trueFloorZ    = pPlayer->truefz;
     int const trueFloorDist = klabs(pPlayer->pos.z - trueFloorZ);
@@ -4933,6 +4888,7 @@ void P_ProcessInput(int playerNum)
     const uint8_t *const weaponFrame      = &pPlayer->kickback_pic;
     int                  floorZOffset     = 40;
     int const            playerShrunk     = (pSprite->yrepeat < 32);
+    vec3_t const         backupPos        = pPlayer->opos;
 
     if (pPlayer->on_crane >= 0)
         goto HORIZONLY;
@@ -5172,7 +5128,7 @@ void P_ProcessInput(int playerNum)
                 int32_t floorZ2, ceilZ2;
                 getzrange(&pPlayer->pos, pPlayer->cursectnum, &ceilZ2, &dummy, &floorZ2, &dummy, pPlayer->clipdist - GETZRANGECLIPDISTOFFSET, CLIPMASK0);
 
-                if ((floorZ2-ceilZ2) > (48<<8))
+                if (klabs(floorZ2-ceilZ2) > (48<<8))
                 {
                     if (VM_OnEvent(EVENT_JUMP,pPlayer->i,playerNum) == 0)
                     {
@@ -5373,9 +5329,10 @@ void P_ProcessInput(int playerNum)
     }
 
     // This makes the player view lower when shrunk. This needs to happen before clipmove().
+#ifndef EDUKE32_STANDALONE
     if (!FURY && pPlayer->jetpack_on == 0 && sectorLotag != ST_2_UNDERWATER && sectorLotag != ST_1_ABOVE_WATER && playerShrunk)
         pPlayer->pos.z += ZOFFSET5 - (sprite[pPlayer->i].yrepeat<<8);
-
+#endif
 HORIZONLY:;
     if (ud.noclip)
     {
@@ -5471,12 +5428,13 @@ HORIZONLY:;
 
     pPlayer->on_warping_sector = 0;
 
+    bool mashedPotato = 0;
+
     if (pPlayer->cursectnum >= 0 && ud.noclip == 0)
     {
-        int const  pushResult    = pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L << 8), (4L << 8), CLIPMASK0);
-        int const  furthestAngle = A_GetFurthestAngle(pPlayer->i, 32);
-        int const  angleDelta    = G_GetAngleDelta(fix16_to_int(pPlayer->q16ang), furthestAngle);
-        bool const squishPlayer  = pushResult < 0 && !angleDelta;
+RECHECK:
+        int const  pushResult = pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L<<8), (4L<<8), CLIPMASK0, !mashedPotato);
+        bool const squishPlayer = pushResult < 0;
 
         if (squishPlayer || klabs(actor[pPlayer->i].floorz-actor[pPlayer->i].ceilingz) < (48<<8))
         {
@@ -5486,9 +5444,16 @@ HORIZONLY:;
 
             if (squishPlayer)
             {
-                OSD_Printf(OSD_ERROR "%s: player killed by pushmove()!\n", EDUKE32_FUNCTION);
-                P_QuickKill(pPlayer);
-                return;
+                if (mashedPotato)
+                {
+                    OSD_Printf(OSD_ERROR "%s: player killed by pushmove()!\n", EDUKE32_FUNCTION);
+                    P_QuickKill(pPlayer);
+                    return;
+                }
+
+                mashedPotato = true;
+                pPlayer->pos = pPlayer->opos = backupPos;
+                goto RECHECK;
             }
         }
         else if (klabs(floorZ - ceilZ) < ZOFFSET5 && isanunderoperator(sector[pPlayer->cursectnum].lotag))

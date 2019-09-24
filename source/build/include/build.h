@@ -947,7 +947,14 @@ static FORCE_INLINE int32_t videoGetRenderMode(void)
 }
 
 extern int32_t bloodhack;
-extern int32_t blooddemohack;
+enum {
+    ENGINECOMPATIBILITY_NONE = 0,
+    ENGINECOMPATIBILITY_19950829, // Powerslave/Exhumed
+    ENGINECOMPATIBILITY_19960925, // Blood v1.21
+    ENGINECOMPATIBILITY_19961112, // Duke 3d v1.5, Redneck Rampage
+};
+
+EXTERN int32_t enginecompatibility_mode;
 
 /*************************************************************************
 POSITION VARIABLES:
@@ -1232,6 +1239,7 @@ int32_t   getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day) ATTRIBU
 int32_t   getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day) ATTRIBUTE((nonnull(1)));
 void   getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day,
                        int32_t *ceilz, int32_t *florz) ATTRIBUTE((nonnull(1,4,5)));
+void yax_getzsofslope(int sectNum, int playerX, int playerY, int32_t* pCeilZ, int32_t* pFloorZ);
 
 static FORCE_INLINE int32_t getceilzofslope(int16_t sectnum, int32_t dax, int32_t day)
 {
@@ -1469,6 +1477,9 @@ typedef struct
 
 # define EXTRATILES (MAXTILES/8)
 
+EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
+EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
+EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
 EXTERN int32_t mdinited;
 EXTERN tile2model_t tile2model[MAXTILES+EXTRATILES];
 
@@ -1557,9 +1568,9 @@ static FORCE_INLINE CONSTEXPR bool inside_p(int32_t const x, int32_t const y, in
         return;                    \
     } while (0)
 
-static inline int64_t maybe_truncate_to_int32(int64_t val)
+static inline int64_t compat_maybe_truncate_to_int32(int64_t val)
 {
-    return blooddemohack ? (int32_t)val : val;
+    return enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? (int32_t)val : val;
 }
 
 static inline int32_t clipmove_old(int32_t *x, int32_t *y, int32_t *z, int16_t *sectnum, int32_t xvect, int32_t yvect, int32_t walldist,
@@ -1631,9 +1642,6 @@ extern int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, in
 #ifdef USE_OPENGL
 extern void(*PolymostProcessVoxels_Callback)(void);
 #endif
-
-extern intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
-extern int8_t voxreserve[(MAXVOXELS+7)>>3];
 
 #ifdef __cplusplus
 }

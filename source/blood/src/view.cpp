@@ -1159,7 +1159,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
         );
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
     y += nHeight+1;
-    if (gGameOptions.nGameType == 0 || gGameOptions.nGameType == 2)
+    if (gGameOptions.nGameType != 3)
         sprintf(buffer, "K:%d/%d", gKillMgr.at4, gKillMgr.at0);
     else
         sprintf(buffer, "K:%d", pPlayer->at2c6);
@@ -1398,8 +1398,30 @@ void viewDrawCtfHudVanilla(ClockTicks arg)
     }
 }
 
-void viewDrawCtfHud(void)
+void flashTeamScore(ClockTicks arg, int team, bool show)
 {
+    dassert(0 == team || 1 == team); // 0: blue, 1: red
+
+    if (dword_21EFD0[team] == 0 || ((int)totalclock & 8))
+    {
+        dword_21EFD0[team] = dword_21EFD0[team] - arg;
+        if (dword_21EFD0[team] < 0)
+            dword_21EFD0[team] = 0;
+
+        if (show)
+            DrawStatNumber("%d", dword_21EFB0[team], kSBarNumberInv, 290, team ? 125 : 90, 0, team ? 2 : 10, 512, 65536 * 0.75);
+    }
+}
+
+void viewDrawCtfHud(ClockTicks arg)
+{
+    if (0 == gViewSize)
+    {
+        flashTeamScore(arg, 0, false);
+        flashTeamScore(arg, 1, false);
+        return;
+    }
+
     bool blueFlagTaken = false;
     bool redFlagTaken = false;
     int blueFlagCarrierColor = 0;
@@ -1419,20 +1441,20 @@ void viewDrawCtfHud(void)
     }
 
     bool meHaveBlueFlag = gMe->at90 & 1;
-    DrawStatMaskedSprite(meHaveBlueFlag ? 3558 : 3559, 320, 75, 0, 10, 0, 65536 * 0.35);
+    DrawStatMaskedSprite(meHaveBlueFlag ? 3558 : 3559, 320, 75, 0, 10, 512, 65536 * 0.35);
     if (gBlueFlagDropped)
-        DrawStatMaskedSprite(2332, 305, 83, 0, 10, 0, 65536);
+        DrawStatMaskedSprite(2332, 305, 83, 0, 10, 512, 65536);
     else if (blueFlagTaken)
-        DrawStatMaskedSprite(4097, 307, 77, 0, blueFlagCarrierColor ? 2 : 10, 0, 65536);
-    DrawStatNumber("%d", dword_21EFB0[0], kSBarNumberInv, 290, 90, 0, 10, 0, 65536 * 0.75);
+        DrawStatMaskedSprite(4097, 307, 77, 0, blueFlagCarrierColor ? 2 : 10, 512, 65536);
+    flashTeamScore(arg, 0, true);
 
     bool meHaveRedFlag = gMe->at90 & 2;
-    DrawStatMaskedSprite(meHaveRedFlag ? 3558 : 3559, 320, 110, 0, 2, 0, 65536 * 0.35);
+    DrawStatMaskedSprite(meHaveRedFlag ? 3558 : 3559, 320, 110, 0, 2, 512, 65536 * 0.35);
     if (gRedFlagDropped)
-        DrawStatMaskedSprite(2332, 305, 117, 0, 2, 0, 65536);
+        DrawStatMaskedSprite(2332, 305, 117, 0, 2, 512, 65536);
     else if (redFlagTaken)
-        DrawStatMaskedSprite(4097, 307, 111, 0, redFlagCarrierColor ? 2 : 10, 0, 65536);
-    DrawStatNumber("%d", dword_21EFB0[1], kSBarNumberInv, 290, 125, 0, 2, 0, 65536 * 0.75);
+        DrawStatMaskedSprite(4097, 307, 111, 0, redFlagCarrierColor ? 2 : 10, 512, 65536);
+    flashTeamScore(arg, 1, true);
 }
 
 void UpdateStatusBar(ClockTicks arg)
@@ -1663,7 +1685,7 @@ void UpdateStatusBar(ClockTicks arg)
         }
         else
         {
-            viewDrawCtfHud();
+            viewDrawCtfHud(arg);
             viewDrawPlayerFlags();
         }
     }
@@ -1744,7 +1766,7 @@ void viewResizeView(int size)
         gViewX1 = xdim-1;
         gViewY0 = 0;
         gViewY1 = ydim-1;
-        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType < 3)
+        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType <= 3)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
@@ -1759,7 +1781,7 @@ void viewResizeView(int size)
         gViewY0 = 0;
         gViewX1 = xdim-1;
         gViewY1 = ydim-1-(25*ydim)/200;
-        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType < 3)
+        if (gGameOptions.nGameType > 0 && gGameOptions.nGameType <= 3)
         {
             gViewY0 = (tilesiz[2229].y*ydim*((gNetPlayers+3)/4))/200;
         }
@@ -2774,10 +2796,10 @@ void viewBurnTime(int gScale)
     }
 }
 
-void viewSetMessage(const char *pMessage)
+void viewSetMessage(const char *pMessage, const int pal, const MESSAGE_PRIORITY priority)
 {
     OSD_Printf("%s\n", pMessage);
-    gGameMessageMgr.Add(pMessage, 15);
+    gGameMessageMgr.Add(pMessage, 15, pal, priority);
 }
 
 void viewDisplayMessage(void)

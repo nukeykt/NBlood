@@ -77,6 +77,8 @@ struct PKT_STARTGAME {
     int unk;
     char userMap, userMapName[13];
     int weaponsV10x;
+    bool bFriendlyFire;
+    bool bKeepKeysOnRespawn;
 };
 
 extern PKT_STARTGAME gPacketStartGame;

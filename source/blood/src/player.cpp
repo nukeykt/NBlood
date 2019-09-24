@@ -50,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "warp.h"
 #include "weapon.h"
 #include "common_game.h"
+#include "messages.h"
 
 PROFILE gProfile[kMaxPlayers];
 
@@ -348,10 +349,10 @@ ARMORDATA armorData[5] = {
 };
 
 void PlayerSurvive(int, int);
-void PlayerKeelsOver(int, int);
+void PlayerKneelsOver(int, int);
 
 int nPlayerSurviveClient = seqRegisterClient(PlayerSurvive);
-int nPlayerKeelClient = seqRegisterClient(PlayerKeelsOver);
+int nPlayerKneelClient = seqRegisterClient(PlayerKneelsOver);
 
 struct VICTORY {
     const char *at0;
@@ -547,11 +548,11 @@ void powerupDeactivate(PLAYER *pPlayer, int nPowerUp)
         break;
     case 118: // diving suit
         pPlayer->ata1[4]--;
-        if (pPlayer == gMe)
+        if (pPlayer == gMe && VanillaMode() ? true : pPlayer->at202[24] == 0)
             sfxSetReverb(0);
         break;
     case 124: // reflective shots
-        if (pPlayer == gMe)
+        if (pPlayer == gMe && VanillaMode() ? true : pPlayer->packInfo[1].at0 == 0)
             sfxSetReverb(0);
         break;
     case 119:
@@ -933,8 +934,9 @@ void playerStart(int nPlayer)
     pPlayer->at1ca.dz = 0;
     pPlayer->at1d6 = -1;
     pPlayer->at6b = pPlayer->at73;
-    for (int i = 0; i < 8; i++)
-        pPlayer->at88[i] = gGameOptions.nGameType >= 2;
+    if (!(gGameOptions.nGameType == 1 && gGameOptions.bKeepKeysOnRespawn))
+        for (int i = 0; i < 8; i++)
+            pPlayer->at88[i] = gGameOptions.nGameType >= 2;
     pPlayer->at90 = 0;
     for (int i = 0; i < 8; i++)
         pPlayer->at91[i] = -1;
@@ -1374,7 +1376,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
         pPlayer->at377 = 30;
         if (pPlayer == gMe)
             if (customMsg > 0) trTextOver(customMsg - 1);
-            else viewSetMessage(buffer);
+            else viewSetMessage(buffer, 0, MESSAGE_PRIORITY_PICKUP);
     }
 }
 
@@ -2020,8 +2022,11 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
     if (nKiller == nVictim)
     {
         pVictim->at2ee = -1;
-        pVictim->at2c6--;
-        pVictim->at2ca[nVictim]--;
+        if (VanillaMode() || gGameOptions.nGameType != 1)
+        {
+            pVictim->at2c6--;
+            pVictim->at2ca[nVictim]--;
+        }
         if (gGameOptions.nGameType == 3)
             dword_21EFB0[pVictim->at2ea]--;
         int nMessage = Random(5);
@@ -2032,11 +2037,18 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
             if (gGameOptions.nGameType > 0 && nSound >= 0)
                 sndStartSample(nSound, 255, 2, 0);
         }
+        else
+        {
+            sprintf(buffer, gSuicide[nMessage].at0, gProfile[nVictim].name);
+        }
     }
     else
     {
-        pKiller->at2c6++;
-        pKiller->at2ca[nKiller]++;
+        if (VanillaMode() || gGameOptions.nGameType != 1)
+        {
+            pKiller->at2c6++;
+            pKiller->at2ca[nKiller]++;
+        }
         if (gGameOptions.nGameType == 3)
         {
             if (pKiller->at2ea == pVictim->at2ea)
@@ -2151,7 +2163,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
     int nXSector = sector[pSprite->sectnum].extra;
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int nDeathSeqID = -1;
-    int v18 = -1;
+    int nKneelingPlayer = -1;
     int nSprite = pSprite->index;
     char va = playerSeqPlaying(pPlayer, 16);
     if (!pXSprite->health)
@@ -2246,7 +2258,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
                 DAMAGEINFO *pDamageInfo = &damageInfo[nDamageType];
                 sfxPlay3DSound(pSprite, pDamageInfo->at10[0], 0, 2);
                 nDeathSeqID = 16;
-                v18 = nPlayerKeelClient;
+                nKneelingPlayer = nPlayerKneelClient;
                 powerupActivate(pPlayer, 28);
                 pXSprite->target = nSource;
                 evPost(pSprite->index, 3, 15, CALLBACK_ID_13);
@@ -2276,7 +2288,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         trTriggerSprite(nSprite, pXSprite, 0);
     }
     dassert(gSysRes.Lookup(pDudeInfo->seqStartID + nDeathSeqID, "SEQ") != NULL);
-    seqSpawn(pDudeInfo->seqStartID+nDeathSeqID, 3, nXSprite, v18);
+    seqSpawn(pDudeInfo->seqStartID+nDeathSeqID, 3, nXSprite, nKneelingPlayer);
     return nDamage;
 }
 
@@ -2332,6 +2344,8 @@ void playerLandingSound(PLAYER *pPlayer)
     SPRITEHIT *pHit = &gSpriteHit[pSprite->extra];
     if (pHit->florhit)
     {
+        if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, &sprite[pHit->florhit & 0x3fff]))
+            return;
         char nSurf = tileGetSurfType(pHit->florhit);
         if (nSurf)
             sfxPlay3DSound(pSprite, surfaceSound[nSurf], -1, 0);
@@ -2363,7 +2377,7 @@ void PlayerSurvive(int, int nXSprite)
     }
 }
 
-void PlayerKeelsOver(int, int nXSprite)
+void PlayerKneelsOver(int, int nXSprite)
 {
     XSPRITE *pXSprite = &xsprite[nXSprite];
     for (int p = connecthead; p >= 0; p = connectpoint2[p])

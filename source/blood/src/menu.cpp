@@ -280,15 +280,18 @@ CGameMenuItemZEditBitmap itemLoadGame10(NULL, 3, 20, 150, 320, strRestoreGameStr
 CGameMenuItemBitmapLS itemLoadGamePic(NULL, 3, 0, 0, 2518);
 
 CGameMenuItemTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
-CGameMenuItemZCycle itemNetStart1("GAME", 1, 20, 35, 280, 0, 0, zNetGameTypes, 3, 0);
-CGameMenuItemZCycle itemNetStart2("EPISODE", 1, 20, 50, 280, 0, SetupNetLevels, NULL, 0, 0);
-CGameMenuItemZCycle itemNetStart3("LEVEL", 1, 20, 65, 280, 0, NULL, NULL, 0, 0);
-CGameMenuItemZCycle itemNetStart4("DIFFICULTY", 1, 20, 80, 280, 0, 0, zDiffStrings, 5, 0);
-CGameMenuItemZCycle itemNetStart5("MONSTERS", 1, 20, 95, 280, 0, 0, zMonsterStrings, 3, 0);
-CGameMenuItemZCycle itemNetStart6("WEAPONS", 1, 20, 110, 280, 0, 0, zWeaponStrings, 4, 0);
-CGameMenuItemZCycle itemNetStart7("ITEMS", 1, 20, 125, 280, 0, 0, zItemStrings, 3, 0);
-CGameMenuItemZEdit itemNetStart9("USER MAP:", 1, 20, 155, 280, zUserMapName, 13, 0, NULL, 0);
-CGameMenuItemChain itemNetStart10("START GAME", 1, 20, 170, 280, 0, 0, -1, StartNetGame, 0);
+CGameMenuItemZCycle itemNetStart1("GAME:", 3, 66, 60, 180, 0, 0, zNetGameTypes, 3, 0);
+CGameMenuItemZCycle itemNetStart2("EPISODE:", 3, 66, 70, 180, 0, SetupNetLevels, NULL, 0, 0);
+CGameMenuItemZCycle itemNetStart3("LEVEL:", 3, 66, 80, 180, 0, NULL, NULL, 0, 0);
+CGameMenuItemZCycle itemNetStart4("DIFFICULTY:", 3, 66, 90, 180, 0, 0, zDiffStrings, 5, 0);
+CGameMenuItemZCycle itemNetStart5("MONSTERS:", 3, 66, 100, 180, 0, 0, zMonsterStrings, 3, 0);
+CGameMenuItemZCycle itemNetStart6("WEAPONS:", 3, 66, 110, 180, 0, 0, zWeaponStrings, 4, 0);
+CGameMenuItemZCycle itemNetStart7("ITEMS:", 3, 66, 120, 180, 0, 0, zItemStrings, 3, 0);
+CGameMenuItemZBool itemNetStart8("FRIENDLY FIRE:", 3, 66, 130, 180, true, 0, NULL, NULL);
+CGameMenuItemZBool itemNetStart9("KEEP KEYS ON RESPAWN:", 3, 66, 140, 180, false, 0, NULL, NULL);
+CGameMenuItemZBool itemNetStart10("V1.0x WEAPONS BALANCE:", 3, 66, 150, 180, false, 0, NULL, NULL);
+CGameMenuItemZEdit itemNetStart11("USER MAP:", 3, 66, 160, 180, zUserMapName, 13, 0, NULL, 0);
+CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, StartNetGame, 0);
 
 CGameMenuItemText itemLoadingText("LOADING...", 1, 160, 100, 1);
 
@@ -757,7 +760,7 @@ void SetupOptionsOldMenu(void)
     boolSlopeTilting.at20 = gSlopeTilting;
     boolViewBobbing.at20 = gViewVBobbing;
     boolViewSwaying.at20 = gViewHBobbing;
-    boolMessages.at20 = gGameMessageMgr.at0;
+    boolMessages.at20 = gGameMessageMgr.state;
     menuOptionsOld.Add(&itemOptionsTitle, false);
     menuOptionsOld.Add(&itemOption1, true);
     menuOptionsOld.Add(&sliderDetail, false);
@@ -898,8 +901,11 @@ void SetupNetStartMenu(void)
     menuNetStart.Add(&itemNetStart5, false);
     menuNetStart.Add(&itemNetStart6, false);
     menuNetStart.Add(&itemNetStart7, false);
+    menuNetStart.Add(&itemNetStart8, false);
     menuNetStart.Add(&itemNetStart9, false);
     menuNetStart.Add(&itemNetStart10, false);
+    menuNetStart.Add(&itemNetStart11, false);
+    menuNetStart.Add(&itemNetStart12, false);
     itemNetStart1.SetTextIndex(1);
     itemNetStart4.SetTextIndex(2);
     itemNetStart5.SetTextIndex(0);
@@ -2203,15 +2209,16 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.weaponSettings = itemNetStart6.m_nFocus;
     gPacketStartGame.itemSettings = itemNetStart7.m_nFocus;
     gPacketStartGame.respawnSettings = 0;
+    gPacketStartGame.bFriendlyFire = itemNetStart8.at20;
+    gPacketStartGame.bKeepKeysOnRespawn = itemNetStart9.at20;
+    ////
+    gPacketStartGame.weaponsV10x = itemNetStart10.at20;
+    ////
     gPacketStartGame.unk = 0;
     gPacketStartGame.userMapName[0] = 0;
-    strncpy(gPacketStartGame.userMapName, itemNetStart9.at20, 13);
+    strncpy(gPacketStartGame.userMapName, itemNetStart11.at20, 13);
     gPacketStartGame.userMapName[12] = 0;
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
-
-    ////
-    gPacketStartGame.weaponsV10x = gWeaponsV10x;
-    ////
 
     netBroadcastNewGame();
     gStartNewGame = 1;

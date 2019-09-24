@@ -7411,7 +7411,8 @@ int32_t polymost_lintersect(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
 }
 
 #define TSPR_OFFSET_FACTOR .000008f
-#define TSPR_OFFSET(tspr) ((TSPR_OFFSET_FACTOR + ((tspr->owner != -1 ? tspr->owner & 63 : 1) * TSPR_OFFSET_FACTOR)) * (float)sepdist(globalposx - tspr->x, globalposy - tspr->y, globalposz - tspr->z) * 0.025f)
+#define TSPR_OFFSET_FIELD(tspr) (bloodhack ? tspr->statnum : tspr->owner)
+#define TSPR_OFFSET(tspr) ((TSPR_OFFSET_FACTOR + ((TSPR_OFFSET_FIELD(tspr) != -1 ? TSPR_OFFSET_FIELD(tspr) & 63 : 1) * TSPR_OFFSET_FACTOR)) * (float)sepdist(globalposx - tspr->x, globalposy - tspr->y, globalposz - tspr->z) * 0.025f)
 
 void polymost2_drawsprite(int32_t snum)
 {
@@ -7712,10 +7713,10 @@ void polymost2_drawsprite(int32_t snum)
 
         // unfortunately, offsetting by only 1 isn't enough on most Android devices
         if (tspr->z == sec->ceilingz || tspr->z == sec->ceilingz + 1)
-            tspr->z = sec->ceilingz + 2, orientationOffset.y += (tspr->owner & 31);
+            tspr->z = sec->ceilingz + 2, orientationOffset.y += (TSPR_OFFSET_FIELD(tspr) & 31);
 
         if (tspr->z == sec->floorz || tspr->z == sec->floorz - 1)
-            tspr->z = sec->floorz - 2, orientationOffset.y -= ((tspr->owner & 31));
+            tspr->z = sec->floorz - 2, orientationOffset.y -= ((TSPR_OFFSET_FIELD(tspr) & 31));
 
         angle = tspr->ang;
     }
@@ -8456,10 +8457,10 @@ void polymost_drawsprite(int32_t snum)
 
                 // unfortunately, offsetting by only 1 isn't enough on most Android devices
                 if (tspr->z == sec->ceilingz || tspr->z == sec->ceilingz + 1)
-                    tspr->z = sec->ceilingz + 2, fadjust = (tspr->owner & 31);
+                    tspr->z = sec->ceilingz + 2, fadjust = (TSPR_OFFSET_FIELD(tspr) & 31);
 
                 if (tspr->z == sec->floorz || tspr->z == sec->floorz - 1)
-                    tspr->z = sec->floorz - 2, fadjust = -((tspr->owner & 31));
+                    tspr->z = sec->floorz - 2, fadjust = -((TSPR_OFFSET_FIELD(tspr) & 31));
 
                 float f = (float)(tspr->z - globalposz + fadjust) * gyxscale;
 
@@ -8996,9 +8997,11 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     }
     while (nz);
 
+    n = 0;
+
     if (nn >= 3)
     {
-        n = nz = 0;
+        nz = 0;
         do
         {
             int32_t zz = nz+1; if (zz == nn) zz = 0;

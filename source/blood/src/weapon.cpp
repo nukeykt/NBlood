@@ -321,6 +321,8 @@ void UpdateAimVector(PLAYER * pPlayer)
             pSprite = &sprite[nSprite];
             if (pSprite == pPSprite)
                 continue;
+            if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pSprite))
+                continue;
             if (pSprite->hitag&32)
                 continue;
             if (!(pSprite->hitag&8))
@@ -375,6 +377,8 @@ void UpdateAimVector(PLAYER * pPlayer)
             for (nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
             {
                 pSprite = &sprite[nSprite];
+                if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pSprite))
+                    continue;
                 if (!(pSprite->hitag&8))
                     continue;
                 int x2 = pSprite->x;
@@ -1336,6 +1340,8 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
     }
     dassert(pPlayer->voodooTarget >= 0);
     spritetype *pTarget = &sprite[pPlayer->voodooTarget];
+    if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pTarget))
+        return;
     switch (nTrigger)
     {
     case 0:
@@ -1382,7 +1388,6 @@ void FireVoodoo(int nTrigger, PLAYER *pPlayer)
 
 void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
 {
-    
     if (nTrigger == 2) {
 
         // by NoOne: trying to simulate v1.0x voodoo here.
@@ -1395,7 +1400,8 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
                 {
                     int nTarget = pPlayer->at1de[i];
                     spritetype* pTarget = &sprite[nTarget];
-
+                    if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pTarget))
+                        continue;
                     int nDist = approxDist(pTarget->x - pPlayer->pSprite->x, pTarget->y - pPlayer->pSprite->y);
                     if (nDist > 0 && nDist < 51200)
                     {
@@ -1430,6 +1436,8 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
             {
                 int nTarget = pPlayer->at1de[i];
                 spritetype* pTarget = &sprite[nTarget];
+                if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pTarget))
+                    continue;
                 if (v4 > 0)
                     v4--;
                 int nDist = approxDist(pTarget->x - pPlayer->pSprite->x, pTarget->y - pPlayer->pSprite->y);

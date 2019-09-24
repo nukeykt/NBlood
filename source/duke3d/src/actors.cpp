@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # define ACTOR_STATIC static
 #endif
 
+uint8_t g_radiusDmgStatnums[(MAXSTATUS+7)>>3];
+
 #define DELETE_SPRITE_AND_CONTINUE(KX) do { A_DeleteSprite(KX); goto next_sprite; } while (0)
 
 int32_t otherp;
@@ -245,18 +247,6 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     uint8_t sectorMap[(MAXSECTORS+7)>>3];
     int16_t numSectors;
 
-    // TODO: stick this somewhere where we can call Gv_NewArray() on it with GAMEARRAY_BITMAP so scripts can control which statnums are hit
-    static uint8_t statMap[(MAXSTATUS+7)>>3];
-    static int statInit;
-
-    if (!statInit)
-    {
-        static int constexpr statnumList[] = { STAT_DEFAULT, STAT_ACTOR, STAT_STANDABLE, STAT_MISC, STAT_ZOMBIEACTOR, STAT_FALLER, STAT_PLAYER };
-        for (int i = 0; i < ARRAY_SSIZE(statnumList); ++i)
-            bitmap_set(statMap, statnumList[i]);
-        statInit = 1;
-    }
-
     bfirst_search_init(sectorList, sectorMap, &numSectors, MAXSECTORS, pSprite->sectnum);
 
 #ifndef EDUKE32_STANDALONE
@@ -268,36 +258,37 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     {
         int const   sectorNum  = sectorList[sectorCount++];
         auto const &listSector = sector[sectorNum];
+        vec2_t closest;
 
-        if (getsectordist(pSprite->pos.vec2, sectorNum) >= blastRadius)
+        if (getsectordist(pSprite->pos.vec2, sectorNum, &closest) >= blastRadius)
             continue;
 
         int const startWall = listSector.wallptr;
         int const endWall   = listSector.wallnum + startWall;
 
-        if (((listSector.ceilingz - pSprite->z) >> 8) < blastRadius)
+        int32_t floorZ, ceilZ;
+        getzsofslope(sectorNum, closest.x, closest.y, &ceilZ, &floorZ);
+
+        if (((ceilZ - pSprite->z) >> 8) < blastRadius)
             Sect_DamageCeiling_Internal(spriteNum, sectorNum);
 
-        if (((pSprite->z - listSector.floorz) >> 8) < blastRadius)
+        if (((pSprite->z - floorZ) >> 8) < blastRadius)
             Sect_DamageFloor_Internal(spriteNum, sectorNum);
 
         int w = startWall;
         
         for (auto pWall = (uwallptr_t)&wall[startWall]; w < endWall; ++w, ++pWall)
         {
-            vec2_t closest;
-
             if (getwalldist(pSprite->pos.vec2, w, &closest) >= blastRadius)
                 continue;
 
-            int const nextSector   = pWall->nextsector;
-            int const damageSector = (nextSector >= 0) ? wall[pWall->nextwall].nextsector : sectorNum;
-
             vec3_t const vect = { closest.x, closest.y, pSprite->z };
 
-            if (cansee(vect.x, vect.y, vect.z, damageSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
+            if (cansee(vect.x, vect.y, vect.z, sectorNum, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
             {
                 A_DamageWall_Internal(spriteNum, w, vect, pSprite->picnum);
+
+                int const nextSector = pWall->nextsector;
 
                 if (nextSector >= 0)
                     bfirst_search_try(sectorList, sectorMap, &numSectors, nextSector);
@@ -320,7 +311,7 @@ SKIPWALLCHECK:
             int const nextSprite = nextspritesect[damageSprite];
             auto      pDamage    = &sprite[damageSprite];
 
-            if (bitmap_test(statMap, pDamage->statnum))
+            if (bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
             {
                 int const spriteDist = dist(pSprite, pDamage);
 
@@ -440,7 +431,7 @@ int A_GetClipdist(int spriteNum, int clipDist)
     if (clipDist < 0)
     {
         auto const pSprite = &sprite[spriteNum];
-        int const         isEnemy = A_CheckEnemySprite(pSprite);
+        int const  isEnemy = A_CheckEnemySprite(pSprite);
 
         if (A_CheckSpriteFlags(spriteNum, SFLAG_REALCLIPDIST))
             clipDist = pSprite->clipdist << 2;
@@ -473,9 +464,9 @@ int A_GetClipdist(int spriteNum, int clipDist)
 
 int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const * const change, uint32_t clipType, int32_t clipDist)
 {
-    auto const pSprite = &sprite[spriteNum];
-    int const         isEnemy = A_CheckEnemySprite(pSprite);
-    vec2_t const      oldPos  = pSprite->pos.vec2;
+    auto const   pSprite = &sprite[spriteNum];
+    int const    isEnemy = A_CheckEnemySprite(pSprite);
+    vec2_t const oldPos  = pSprite->pos.vec2;
 
     // check to make sure the netcode didn't leave a deleted sprite in the sprite lists.
     Bassert(pSprite->sectnum < MAXSECTORS);
@@ -507,25 +498,16 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const * const change, uin
 
     int returnValue;
     int32_t diffZ;
-    spriteheightofs(spriteNum, &diffZ, 0);
-    int newZ = pSprite->z - diffZ;
+    spriteheightofs(spriteNum, &diffZ, 1);
 
-    pSprite->z -= diffZ >> 1;
-    switch (pSprite->statnum)
+    if (pSprite->statnum == STAT_PROJECTILE)
+        returnValue = clipmovex(&pSprite->pos, &newSectnum, change->x << 13, change->y << 13, clipDist, diffZ >> 3, diffZ >> 3, clipType, 1);
+    else
     {
-        default:
-        {
-            returnValue = clipmove(&pSprite->pos, &newSectnum, change->x << 13, change->y << 13, clipDist, ZOFFSET6, ZOFFSET6, clipType);
-            break;
-        }
-
-        case STAT_PROJECTILE:
-        {
-            returnValue = clipmovex(&pSprite->pos, &newSectnum, change->x << 13, change->y << 13, clipDist, diffZ >> 1, diffZ >> 1, clipType, 1);
-            break;
-        }
+        pSprite->z -= diffZ >> 1;
+        returnValue = clipmove(&pSprite->pos, &newSectnum, change->x << 13, change->y << 13, clipDist, ZOFFSET6, ZOFFSET6, clipType);
+        pSprite->z += diffZ >> 1;
     }
-    pSprite->z += diffZ >> 1;
 
     // Testing: For some reason the assert below this was tripping for clients
     EDUKE32_UNUSED int16_t   dbg_ClipMoveSectnum = newSectnum;
@@ -534,9 +516,10 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const * const change, uin
     {
         // Handle potential stayput condition (map-provided or hard-coded).
         if (newSectnum < 0 || ((actor[spriteNum].stayput >= 0 && actor[spriteNum].stayput != newSectnum)
+                || ((g_tile[pSprite->picnum].flags & SFLAG_NOWATERSECTOR) && sector[newSectnum].lotag == ST_1_ABOVE_WATER)
 #ifndef EDUKE32_STANDALONE
                 || (pSprite->picnum == BOSS2 && pSprite->pal == 0 && sector[newSectnum].lotag != ST_3)
-                || ((pSprite->picnum == BOSS1 || pSprite->picnum == BOSS2 || g_tile[pSprite->picnum].flags & SFLAG_NOWATERSECTOR) && sector[newSectnum].lotag == ST_1_ABOVE_WATER)
+                || ((pSprite->picnum == BOSS1 || pSprite->picnum == BOSS2) && sector[newSectnum].lotag == ST_1_ABOVE_WATER)
                 || (sector[oldSectnum].lotag != ST_1_ABOVE_WATER && sector[newSectnum].lotag == ST_1_ABOVE_WATER
                     && (pSprite->picnum == LIZMAN || (pSprite->picnum == LIZTROOP && pSprite->zvel == 0)))
 #endif
@@ -573,6 +556,7 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const * const change, uin
 
     Bassert(newSectnum == pSprite->sectnum);
 
+    int newZ = pSprite->z;
     int32_t ceilhit, florhit;
     int const doZUpdate = change->z ? A_CheckNeedZUpdate(spriteNum, change->z, &newZ, &ceilhit, &florhit) : 0;
 
@@ -3579,7 +3563,7 @@ ACTOR_STATIC void G_MoveTransports(void)
 
                             if (onFloor == 0 && klabs(SZ(spriteNum) - pPlayer->pos.z) < 6144)
                                 if (!pPlayer->jetpack_on || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
-                                    || (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH) ^ pPlayer->crouch_toggle))
+                                    || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH))
                                 {
                                     pPlayer->pos.x += sprite[OW(spriteNum)].x - SX(spriteNum);
                                     pPlayer->pos.y += sprite[OW(spriteNum)].y - SY(spriteNum);

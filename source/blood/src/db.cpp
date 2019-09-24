@@ -719,6 +719,10 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 #ifdef USE_OPENGL
     Polymost_prepare_loadboard();
 #endif
+
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
+
     {
         char name2[BMAX_PATH];
         Bstrncpy(name2, pPath, BMAX_PATH);
@@ -737,6 +741,9 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         ChangeExtension(name2, "");
         pNode = gSysRes.Lookup(name2, "MAP");
     }
+
+    pathsearchmode = bakpathsearchmode;
+
     if (!pNode)
     {
         initprintf("Error opening map file %s", pPath);
@@ -1618,7 +1625,7 @@ int dbSaveMap(const char *pPath, int nX, int nY, int nZ, short nAngle, short nSe
             }
         }
     }
-    unsigned long nCRC = Bcrc32(pData, nSize-4, 0);
+    unsigned int nCRC = Bcrc32(pData, nSize-4, 0);
     IOBuffer1.Write(&nCRC, 4);
     int nHandle = Bopen(sMapExt, BO_BINARY|BO_TRUNC|BO_CREAT|BO_WRONLY, BS_IREAD|BS_IWRITE);
     if (nHandle == -1)

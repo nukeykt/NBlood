@@ -498,6 +498,32 @@ void EndLevel(void)
     seqKillAll();
 }
 
+int G_TryMapHack(const char* mhkfile)
+{
+    int const failure = engineLoadMHK(mhkfile);
+
+    if (!failure)
+        initprintf("Loaded map hack file \"%s\"\n", mhkfile);
+
+    return failure;
+}
+
+void G_LoadMapHack(char* outbuf, const char* filename)
+{
+    if (filename != NULL)
+        Bstrcpy(outbuf, filename);
+
+    append_ext_UNSAFE(outbuf, ".mhk");
+
+    if (G_TryMapHack(outbuf) && usermaphacks != NULL)
+    {
+        auto pMapInfo = (usermaphack_t*)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
+            sizeof(usermaphack_t), compare_usermaphacks);
+        if (pMapInfo)
+            G_TryMapHack(pMapInfo->mhkfile);
+    }
+}
+
 PLAYER gPlayerTemp[kMaxPlayers];
 int gHealthTemp[kMaxPlayers];
 
@@ -538,6 +564,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
+        gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
+        gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
@@ -559,7 +587,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    blooddemohack = 2;//bVanilla;
+    enginecompatibility_mode = ENGINECOMPATIBILITY_19960925;//bVanilla;
     memset(xsprite,0,sizeof(xsprite));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
     drawLoadingScreen();
@@ -568,6 +596,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gQuitGame = true;
         return;
     }
+    char levelName[BMAX_PATH];
+    G_LoadMapHack(levelName, gameOptions->zLevelName);
     wsrand(gameOptions->uMapCRC);
     gKillMgr.Clear();
     gSecretMgr.Clear();
@@ -691,6 +721,8 @@ void StartNetworkLevel(void)
         gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
         gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
         gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
+        gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
+        gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
         
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
@@ -705,6 +737,40 @@ void StartNetworkLevel(void)
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
     }
     StartLevel(&gGameOptions);
+}
+
+int gDoQuickSave = 0;
+
+static void DoQuickLoad(void)
+{
+    if (!gGameMenuMgr.m_bActive)
+    {
+        if (gQuickLoadSlot != -1)
+        {
+            QuickLoadGame();
+            return;
+        }
+        if (gQuickLoadSlot == -1 && gQuickSaveSlot != -1)
+        {
+            gQuickLoadSlot = gQuickSaveSlot;
+            QuickLoadGame();
+            return;
+        }
+        gGameMenuMgr.Push(&menuLoadGame,-1);
+    }
+}
+
+static void DoQuickSave(void)
+{
+    if (gGameStarted && !gGameMenuMgr.m_bActive && gPlayer[myconnectindex].pXSprite->health != 0)
+    {
+        if (gQuickSaveSlot != -1)
+        {
+            QuickSaveGame();
+            return;
+        }
+        gGameMenuMgr.Push(&menuSaveGame,-1);
+    }
 }
 
 void LocalKeys(void)
@@ -744,12 +810,27 @@ void LocalKeys(void)
             gView = &gPlayer[gViewIndex];
         }
     }
+    if (gDoQuickSave)
+    {
+        keyFlushScans();
+        switch (gDoQuickSave)
+        {
+        case 1:
+            DoQuickSave();
+            break;
+        case 2:
+            DoQuickLoad();
+            break;
+        }
+        gDoQuickSave = 0;
+        return;
+    }
     char key;
     if ((key = keyGetScan()) != 0)
     {
-        if ((alt || shift) && gGameOptions.nGameType > 0 && key >= 0x3b && key <= 0x44)
+        if ((alt || shift) && gGameOptions.nGameType > 0 && key >= sc_F1 && key <= sc_F10)
         {
-            char fk = key - 0x3b;
+            char fk = key - sc_F1;
             if (alt)
             {
                 netBroadcastTaunt(myconnectindex, fk);
@@ -761,20 +842,20 @@ void LocalKeys(void)
             }
             keyFlushScans();
             keystatus[key] = 0;
-            CONTROL_ClearButton(41);
+            CONTROL_ClearButton(gamefunc_See_Chase_View);
             return;
         }
         switch (key)
         {
-        case 0x53:
-        case 0xd3:
+        case sc_kpad_Period:
+        case sc_Delete:
             if (ctrl && alt)
             {
                 gQuitGame = 1;
                 return;
             }
             break;
-        case 0x01:
+        case sc_Escape:
             keyFlushScans();
             if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
             {
@@ -787,73 +868,51 @@ void LocalKeys(void)
                     gGameMenuMgr.Push(&menuMain,-1);
             }
             return;
-        case 0x3b:
+        case sc_F1:
             keyFlushScans();
             if (gGameOptions.nGameType == 0)
                 gGameMenuMgr.Push(&menuOrder,-1);
             break;
-        case 0x3c:
+        case sc_F2:
             keyFlushScans();
             if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
                 gGameMenuMgr.Push(&menuSaveGame,-1);
             break;
-        case 0x3d:
+        case sc_F3:
             keyFlushScans();
             if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
                 gGameMenuMgr.Push(&menuLoadGame,-1);
             break;
-        case 0x3e:
+        case sc_F4:
             keyFlushScans();
             if (!gGameMenuMgr.m_bActive)
                 gGameMenuMgr.Push(&menuOptionsSound,-1);
             return;
-        case 0x3f:
+        case sc_F5:
             keyFlushScans();
             if (!gGameMenuMgr.m_bActive)
                 gGameMenuMgr.Push(&menuOptions,-1);
             return;
-        case 0x40:
+        case sc_F6:
             keyFlushScans();
-            if (gGameStarted && !gGameMenuMgr.m_bActive && gPlayer[myconnectindex].pXSprite->health != 0)
-            {
-                if (gQuickSaveSlot != -1)
-                {
-                    QuickSaveGame();
-                    return;
-                }
-                gGameMenuMgr.Push(&menuSaveGame,-1);
-            }
+            DoQuickSave();
             break;
-        case 0x42:
+        case sc_F8:
             keyFlushScans();
             gGameMenuMgr.Push(&menuOptions,-1);
             break;
-        case 0x43:
+        case sc_F9:
             keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-            {
-                if (gQuickLoadSlot != -1)
-                {
-                    QuickLoadGame();
-                    return;
-                }
-                if (gQuickLoadSlot == -1 && gQuickSaveSlot != -1)
-                {
-                    gQuickLoadSlot = gQuickSaveSlot;
-                    QuickLoadGame();
-                    return;
-                }
-                gGameMenuMgr.Push(&menuLoadGame,-1);
-            }
+            DoQuickLoad();
             break;
-        case 0x44:
+        case sc_F10:
             keyFlushScans();
             if (!gGameMenuMgr.m_bActive)
                 gGameMenuMgr.Push(&menuQuit,-1);
             break;
-        case 0x57:
+        case sc_F11:
             break;
-        case 0x58:
+        case sc_F12:
             videoCaptureScreen("blud0000.tga", 0);
             break;
         }

@@ -201,7 +201,7 @@ ifeq ($(IMPLICIT_ARCH),x86_64)
         voidwrap_lib := voidwrap_steam_x64.dll
         steamworks_lib := win64/steam_api64.dll
     else
-        voidwrap_lib := libvoidwrap_steam.so.0
+        voidwrap_lib := libvoidwrap_steam.so
         steamworks_lib := linux64/libsteam_api.so
     endif
 else
@@ -209,12 +209,12 @@ else
         voidwrap_lib := voidwrap_steam_x86.dll
         steamworks_lib := steam_api.dll
     else
-        voidwrap_lib := libvoidwrap_steam.so.0
+        voidwrap_lib := libvoidwrap_steam.so
         steamworks_lib := linux32/libsteam_api.so
     endif
 endif
 
-voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam
+voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam -fPIC -Wno-invalid-offsetof
 
 
 
@@ -832,6 +832,7 @@ blood_game_objs := \
 	aizomba.cpp \
 	aizombf.cpp \
 	asound.cpp \
+	barf.cpp \
 	callback.cpp \
 	choke.cpp \
 	common.cpp \
@@ -1300,9 +1301,6 @@ $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
 
-$(voidwrap_obj)/%.$o: $(voidwrap_src)/%.cpp | $(voidwrap_obj)
-	$(COMPILE_STATUS)
-	$(RECIPE_IF) $(COMPILER_CXX) $(voidwrap_cflags) -fPIC -c $< -o $@ $(RECIPE_RESULT_COMPILE)
 
 ### Lunatic
 

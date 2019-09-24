@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "controls.h"
 #include "db.h"
 #include "dude.h"
+#include "levels.h"
 
 enum LifeMode {
     kModeHuman = 0,
@@ -114,7 +115,7 @@ struct PLAYER {
     int at202[kMaxPowerUps]; // [13]: cloak of invisibility, [14]: death mask (invulnerability), [15]: jump boots, [17]: guns akimbo, [18]: diving suit, [21]: crystal ball, [24]: reflective shots, [25]: beast vision, [26]: cloak of shadow
     int at2c6; // frags
     int at2ca[8];
-    int at2ea;
+    int at2ea; // color (team)
     int at2ee; // killer
     int at2f2;
     int at2f6;
@@ -206,6 +207,35 @@ extern ClockTicks dword_21EFD0[kMaxPlayers];
 extern AMMOINFO gAmmoInfo[];
 extern POWERUPINFO gPowerUpInfo[kMaxPowerUps];
 
+inline bool IsTargetTeammate(PLAYER* pSourcePlayer, spritetype* pTargetSprite)
+{
+    if (pSourcePlayer == NULL)
+        return false;
+    if (!IsPlayerSprite(pTargetSprite))
+        return false;
+    if (gGameOptions.nGameType == 1 || gGameOptions.nGameType == 3)
+    {
+        PLAYER* pTargetPlayer = &gPlayer[pTargetSprite->type - kDudePlayer1];
+        if (pSourcePlayer != pTargetPlayer)
+        {
+            if (gGameOptions.nGameType == 1)
+                return true;
+            if (gGameOptions.nGameType == 3 && (pSourcePlayer->at2ea & 3) == (pTargetPlayer->at2ea & 3))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+inline bool IsTargetTeammate(spritetype* pSourceSprite, spritetype* pTargetSprite)
+{
+    if (!IsPlayerSprite(pSourceSprite))
+        return false;
+    PLAYER* pSourcePlayer = &gPlayer[pSourceSprite->type - kDudePlayer1];
+    return IsTargetTeammate(pSourcePlayer, pTargetSprite);
+}
+
 int powerupCheck(PLAYER *pPlayer, int nPowerUp);
 char powerupActivate(PLAYER *pPlayer, int nPowerUp);
 void powerupDeactivate(PLAYER *pPlayer, int nPowerUp);
@@ -249,7 +279,7 @@ int UseAmmo(PLAYER *pPlayer, int nAmmoType, int nDec);
 void sub_41250(PLAYER *pPlayer);
 void playerLandingSound(PLAYER *pPlayer);
 void PlayerSurvive(int, int nXSprite);
-void PlayerKeelsOver(int, int nXSprite);
+void PlayerKneelsOver(int, int nXSprite);
 bool isGrown(spritetype* pSprite);
 bool isShrinked(spritetype* pSprite);
 bool shrinkPlayerSize(PLAYER* pPlayer, int divider);
