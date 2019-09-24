@@ -6489,7 +6489,7 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     
     // By NoOne: add a way to inherit some values of spawner type 18 by dude.
     // This way designer can count enemies via switches and do many other interesting things.
-    if (pSource->hitag & kModernTypeFlag1) {
+    if ((pSource->hitag & kModernTypeFlag1)) {
         switch (pSource->type) { // allow inheriting only for selected source types
             case 18:
                 //inherit pal?
@@ -7104,8 +7104,9 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                         actBurnSprite(actSpriteIdToOwnerId(nShooter), &xsprite[nXSprite], pVectorData->at11);
                     }
 
-                    if (pSprite->index >= kThingBase && pSprite->index < kThingMax)
-                        actPostSprite(pSprite->index, 4); // if it was a thing, return it's statnum back
+                    if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
+                        changespritestat(pSprite->index, 4);
+                        //actPostSprite(pSprite->index, 4); // if it was a thing, return it's statnum back
                 }
             }
 
@@ -7614,10 +7615,6 @@ int getSpriteMassBySize(spritetype* pSprite) {
     short massDiv = 30;  short addMul = 2; short subMul = 2;
 
     if (seqId >= 0) {
-<<<<<<< HEAD
-        DICTNODE* hSeq = gSysRes.Lookup(seqId, "SEQ"); pSeq = (Seq*)gSysRes.Load(hSeq);
-        picnum = (pSeq != NULL) ? seqGetTile(&pSeq->frames[0]) : pSprite->picnum;
-=======
         DICTNODE* hSeq = gSysRes.Lookup(seqId, "SEQ");
         if (hSeq)
         {
@@ -7626,7 +7623,6 @@ int getSpriteMassBySize(spritetype* pSprite) {
         }
         else
             picnum = pSprite->picnum;
->>>>>>> d1450be19c4372c28830533f543f3f559dad3927
     }
 
     int clipDist = ClipRange(pSprite->clipdist, 1, 255);
@@ -7723,10 +7719,13 @@ void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg) {
                 yvel[pSprite->xvel] += mulscale16(t, dy);
                 zvel[pSprite->xvel] += mulscale16(t, dz);
             }
+
+
+            if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
+                //actPostSprite(pSprite->index, 4); // !!! (does not working here) if it was a thing, return it's statnum back
+                changespritestat(pSprite->index, 4);
         }
 
-        if (pSprite->index >= kThingBase && pSprite->index < kThingMax)
-            actPostSprite(pSprite->index, 4); // if it was a thing, return it's statnum back
 
         actDamageSprite(nOwner, pSprite, DAMAGE_TYPE_3, dmg);
         return;
@@ -7905,7 +7904,7 @@ void debrisMove(int listIndex) {
     if (moveHit != 0 && pXDebris->Impact && pXDebris->locked != 1 && !pXDebris->isTriggered) {
         if (!pXDebris->Interrutable && pXDebris->state != pXDebris->restState) return;
 
-        if (pSprite->lotag >= kThingBase && pSprite->lotag < kThingMax)
+        if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
             // if thing was turned in debris, change it's stat back so it will do on impact what it supposed to do...
             //actPostSprite(nSprite, 4); // !!!! not working here for some reason
             changespritestat(nSprite, 4);
