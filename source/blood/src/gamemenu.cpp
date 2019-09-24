@@ -2094,7 +2094,7 @@ bool CGameMenuItemZEditBitmap::Event(CGameMenuEvent &event)
     case kMenuEventSpace:
     {
         char key;
-        if (event.at2 < 128)
+        if (bScan && event.at2 < 128)
         {
             if (keystatus[sc_LeftShift] || keystatus[sc_RightShift])
                 key = g_keyAsciiTableShift[event.at2];
