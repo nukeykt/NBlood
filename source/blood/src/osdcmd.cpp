@@ -498,8 +498,8 @@ static int osdcmd_bind(osdcmdptr_t parm)
     char buffer[256];
     if (parm->numparms==1 && !Bstrcasecmp(parm->parms[0],"showkeys"))
     {
-        for (int i=0; sctokeylut[i].key; i++)
-            OSD_Printf("%s\n",sctokeylut[i].key);
+        for (auto KeyButton : sctokeylut)
+            OSD_Printf("%s\n", KeyButton.key);
         for (auto ConsoleButton : ConsoleButtons)
             OSD_Printf("%s\n",ConsoleButton);
         return OSDCMD_OK;
