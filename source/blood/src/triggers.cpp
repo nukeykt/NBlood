@@ -1148,9 +1148,6 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             if (SetSpriteState(nSprite, pXSprite, 1))
                 actActivateGibObject(pSprite, pXSprite);
             break;
-        //case 9:
-        //    SetSpriteState(nSprite, pXSprite, 1);
-        //    break;
         default:
             if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1))
                 actActivateGibObject(pSprite, pXSprite);
