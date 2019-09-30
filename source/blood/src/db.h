@@ -293,7 +293,7 @@ static inline int GetWallType(int nWall)
     if (yax_hasnextwall(nWall))
         return 0;
 #endif
-    return wall[nWall].lotag;
+    return wall[nWall].type;
 }
 
 inline void GetSpriteExtents(spritetype *pSprite, int *top, int *bottom)

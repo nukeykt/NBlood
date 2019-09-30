@@ -326,7 +326,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                 {
                 case 201:
                     if (nDist < 0x1e00 && nDist > 0xe00 && klabs(nDeltaAngle) < 85 && !TargetNearExplosion(pTarget)
-                        && (pTarget->hitag&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
@@ -394,7 +394,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case 202:
                     if (nDist < 0x2c00 && nDist > 0x1400 && !TargetNearExplosion(pTarget)
-                        && (pTarget->hitag&2) && gGameOptions.nDifficulty >= 2 && IsPlayerSprite(pTarget) && !gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty >= 2 && IsPlayerSprite(pTarget) && !gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
@@ -462,7 +462,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case 247:
                     if (nDist < 0x1e00 && nDist > 0xe00 && !TargetNearExplosion(pTarget)
-                        && (pTarget->hitag&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
@@ -530,7 +530,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case 248:
                     if (nDist < 0x2c00 && nDist > 0x1400 && klabs(nDeltaAngle) < 85
-                        && (pTarget->hitag&2) && IsPlayerSprite(pTarget))
+                        && (pTarget->flags&2) && IsPlayerSprite(pTarget))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
                         switch (hit)
@@ -551,7 +551,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         }
                     }
                     else if (nDist < 0x1400 && klabs(nDeltaAngle) < 85
-                        && (pTarget->hitag&2) && IsPlayerSprite(pTarget))
+                        && (pTarget->flags&2) && IsPlayerSprite(pTarget))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
                         switch (hit)
@@ -574,7 +574,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case 249:
                     if (nDist < 0x1e00 && nDist > 0xe00 && !TargetNearExplosion(pTarget)
-                        && (pTarget->hitag&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
