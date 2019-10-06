@@ -3245,7 +3245,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     else
     {
         if (gGameOptions.nGameType == 1 && IsPlayerSprite(pKillerSprite)
-            && pSprite->statnum == 6 && pSprite->type != 219 && pSprite->type != 220 && pSprite->type != 245 && pSprite->type != 239)
+            && pSprite->statnum == kStatDude && pSprite->type != 219 && pSprite->type != 220 && pSprite->type != 245 && pSprite->type != 239)
         {
             PLAYER *pKillerPlayer = &gPlayer[pKillerSprite->type-kDudePlayer1];
             pKillerPlayer->at2c6++;
@@ -3272,7 +3272,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         else if (nRand <= 50)
             actDropObject(pSprite, 67);
     }
-    int nSeq;
+    int nSeq; // 1: normal, 2: exploding, 3: burning
     switch (damageType)
     {
     case DAMAGE_TYPE_3:
@@ -6873,9 +6873,9 @@ bool actCheckRespawn(spritetype *pSprite)
             if (pXSprite->respawnPending == 1)
                 nRespawnTime = mulscale16(nRespawnTime, 0xa000);
             pSprite->owner = pSprite->statnum;
-            actPostSprite(pSprite->index, 8);
-            pSprite->flags |= 16;
-            if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
+            actPostSprite(pSprite->index, kStatRespawn);
+            pSprite->flags |= kHitagRespawn;
+            if (!IsDudeSprite(pSprite))
             {
                 pSprite->cstat &= ~257;
                 pSprite->x = baseSprite[nSprite].x;
@@ -7255,7 +7255,7 @@ void actPostSprite(int nSprite, int nStatus)
     dassert(gPostCount < kMaxSprites);
     dassert(nSprite < kMaxSprites && sprite[nSprite].statnum < kMaxStatus);
     dassert(nStatus >= 0 && nStatus <= kStatFree);
-    if (sprite[nSprite].flags&32)
+    if (sprite[nSprite].flags&kHitagFree)
     {
         for (n = 0; n < gPostCount; n++)
             if (gPost[n].at0 == nSprite)
@@ -7265,7 +7265,7 @@ void actPostSprite(int nSprite, int nStatus)
     else
     {
         n = gPostCount;
-        sprite[nSprite].flags |= 32;
+        sprite[nSprite].flags |= kHitagFree;
         gPostCount++;
     }
     gPost[n].at0 = nSprite;

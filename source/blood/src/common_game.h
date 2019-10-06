@@ -87,6 +87,7 @@ void QuitGame(void);
 
 #define kMaxPowerUps 51
 
+#define kStatDude 6
 #define kStatRespawn 8
 #define kStatMarker 10
 #define kStatGDXDudeTargetChanger 20

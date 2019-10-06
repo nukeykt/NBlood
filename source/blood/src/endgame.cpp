@@ -135,7 +135,7 @@ void CKillMgr::sub_263E0(int nCount)
 
 void CKillMgr::AddKill(spritetype *pSprite)
 {
-    if (pSprite->statnum == 6 && pSprite->type != 219 && pSprite->type != 220 && pSprite->type != 245 && pSprite->type != 239)
+    if (pSprite->statnum == kStatDude && pSprite->type != 219 && pSprite->type != 220 && pSprite->type != 245 && pSprite->type != 239)
         at4++;
 }
 

@@ -87,7 +87,7 @@ char SetSpriteState(int nSprite, XSPRITE* pXSprite, int nState)
     pXSprite->busy = nState << 16;
     pXSprite->state = nState;
     evKill(nSprite, 3);
-    if ((sprite[nSprite].flags & 16) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
+    if ((sprite[nSprite].flags & kHitagRespawn) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
     {
         pXSprite->respawnPending = 3;
         evPost(nSprite, 3, gGameOptions.nMonsterRespawnTime, CALLBACK_ID_9);
@@ -386,7 +386,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         }
         return;
     }
-    if (pSprite->statnum == 6 && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
+    if (pSprite->statnum == kStatDude && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
         switch (a3.cmd)
         {
