@@ -258,7 +258,7 @@ void sub_557C4(int x, int y, int interpolation)
                     GetSpriteExtents(pSprite, &top, &bottom);
                     int zCeil, zFloor;
                     getzsofslope(nSector, pSprite->x, pSprite->y, &zCeil, &zFloor);
-                    if (pSprite->statnum == 6 && (top < zCeil || bottom > zFloor))
+                    if (pSprite->statnum == kStatDude && (top < zCeil || bottom > zFloor))
                     {
                         int j = i;
                         if (mirror[i].at0 == 2)

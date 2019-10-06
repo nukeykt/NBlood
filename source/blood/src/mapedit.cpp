@@ -1156,7 +1156,7 @@ void cleanUp()
                 int nSprite = xsector[nXSector].at2c_0;
                 if (nSprite >= 0)
                 {
-                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 8)
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == kStatMarker && sprite[nSprite].type == 8)
                         sprite[nSprite].owner = i;
                     else
                         xsector[nXSector].at2c_0 = -1;
@@ -1169,7 +1169,7 @@ void cleanUp()
                 int nSprite = xsector[nXSector].at2c_0;
                 if (nSprite >= 0)
                 {
-                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 3)
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == kStatMarker && sprite[nSprite].type == 3)
                         sprite[nSprite].owner = i;
                     else
                         xsector[nXSector].at2c_0 = -1;
@@ -1177,7 +1177,7 @@ void cleanUp()
                 nSprite = xsector[nXSector].at2e_0;
                 if (nSprite >= 0)
                 {
-                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 4)
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == kStatMarker && sprite[nSprite].type == 4)
                         sprite[nSprite].owner = i;
                     else
                         xsector[nXSector].at2e_0 = -1;
@@ -1191,7 +1191,7 @@ void cleanUp()
                 int nSprite = xsector[nXSector].at2c_0;
                 if (nSprite >= 0)
                 {
-                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 5)
+                    if (nSprite < kMaxSprites && sprite[nSprite].statnum == kStatMarker && sprite[nSprite].type == 5)
                         sprite[nSprite].owner = i;
                     else
                         xsector[nXSector].at2c_0 = -1;
@@ -1556,7 +1556,7 @@ void adjustSprites()
         if (pSprite->statnum < kMaxStatus)
         {
             if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLAB) pSprite->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
-            if (pSprite->statnum == 1) continue;
+            if (pSprite->statnum == kStatEffect) continue;
 
             // don't turn unnamed types in Decoration
             //if (pSprite->type > 0 && !pzSpriteType[pSprite->type]) pSprite->type = 0;
@@ -3082,7 +3082,7 @@ const char* ExtGetSpriteCaption(int16_t nSprite)
         Bsprintf(tempbuf, ">>> %s_%d <<<", "UNNAMED_SPRITE_TYPE", pSprite->type);
         return tempbuf;
     }
-    else if (pSprite->statnum != 10)
+    else if (pSprite->statnum != kStatMarker)
     {
         int nXSprite = pSprite->extra;
         if (nXSprite <= 0 && pSprite->type <= 0) return tempbuf;
@@ -12478,7 +12478,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
 
                 //if (sprite[i].picnum != MUSICANDSFX /*|| zoom < 256*/ || sprite[i].hitag < 1000)
                 //    continue;
-                if (sprite[i].statnum == 10 && sprite[i].type == 3)
+                if (sprite[i].statnum == kStatMarker && sprite[i].type == 3)
                 {
                     int nSector = sprite[i].owner;
                     int nXSector = sector[nSector].extra;
@@ -12508,7 +12508,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
                     editorDraw2dLine(halfxdim16+xp2, midydim16+yp2, halfxdim16+xp2+dx, midydim16+yp2+dy, col2);
                 }
 
-                if (showambiencesounds && sprite[i].statnum == 12)
+                if (showambiencesounds && sprite[i].statnum == kStatAmbient)
                 {
                     int nXSprite = sprite[i].extra;
                     if (nXSprite > 0)

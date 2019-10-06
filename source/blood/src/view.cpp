@@ -813,7 +813,7 @@ void fakeActAirDrag(spritetype *pSprite, int num)
 void fakeActProcessSprites(void)
 {
 	spritetype *pSprite = gMe->pSprite;
-	if (pSprite->statnum == 6)
+	if (pSprite->statnum == kStatDude)
 	{
 		int nXSprite = pSprite->extra;
 		dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
@@ -1991,7 +1991,7 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->shade = -128;
         pNSprite->z = pTSprite->z;
         pNSprite->picnum = 908;
-        pNSprite->statnum = 0;
+        pNSprite->statnum = kStatDefault;
         pNSprite->xrepeat = pNSprite->yrepeat = (tilesiz[pTSprite->picnum].x*pTSprite->xrepeat)/64;
         break;
     }
@@ -2466,7 +2466,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 break;
             case 301:
             case 303:
-                if (pTSprite->statnum == 14)
+                if (pTSprite->statnum == kStatFlare)
                 {
                     dassert(pTXSprite != NULL);
                     if (pTXSprite->target == gView->at5b)

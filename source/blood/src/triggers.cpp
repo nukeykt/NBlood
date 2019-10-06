@@ -312,7 +312,7 @@ void sub_43CF8(spritetype *pSprite, XSPRITE *pXSprite, EVENT a3)
             if (!pXSprite->stateTimer)
             {
                 spritetype *pTarget = &sprite[nTarget];
-                if (pTarget->statnum == 6 && !(pTarget->flags&32) && pTarget->extra > 0 && pTarget->extra < kMaxXSprites)
+                if (pTarget->statnum == kStatDude && !(pTarget->flags&32) && pTarget->extra > 0 && pTarget->extra < kMaxXSprites)
                 {
                     int top, bottom;
                     GetSpriteExtents(pSprite, &top, &bottom);
@@ -875,7 +875,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
 
         break;
     case 402:
-        if (pSprite->statnum == 8)
+        if (pSprite->statnum == kStatRespawn)
             break;
         if (a3.cmd != 1)
             actExplodeSprite(pSprite);
@@ -887,7 +887,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
         break;
     case 401:
     case kGDXThingTNTProx:
-        if (pSprite->statnum == 8)
+        if (pSprite->statnum == kStatRespawn)
             break;
         switch (a3.cmd)
         {
@@ -1586,7 +1586,7 @@ void SectorStartSound(int nSector, int nState)
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 0 && pSprite->type == 709)
+        if (pSprite->statnum == kStatDefault && pSprite->type == 709)
         {
             int nXSprite = pSprite->extra;
             dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
@@ -1610,7 +1610,7 @@ void SectorEndSound(int nSector, int nState)
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 0 && pSprite->type == 709)
+        if (pSprite->statnum == kStatDefault && pSprite->type == 709)
         {
             int nXSprite = pSprite->extra;
             dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
@@ -1634,7 +1634,7 @@ void PathSound(int nSector, int nSound)
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 0 && pSprite->type == 709)
+        if (pSprite->statnum == kStatDefault && pSprite->type == 709)
             sfxPlay3DSound(pSprite, nSound, 0, 0);
     }
 }
@@ -1747,7 +1747,7 @@ void TranslateSector(int nSector, int a2, int a3, int a4, int a5, int a6, int a7
     {
         spritetype *pSprite = &sprite[nSprite];
         // By NoOne: allow to move markers by sector movements in game if flags 1 is added in editor.
-        if (pSprite->statnum == 10 || pSprite->statnum == 16) {
+        if (pSprite->statnum == kStatMarker || pSprite->statnum == kStatMarker2) {
             if (!(pSprite->flags & kModernTypeFlag1)) continue;
         }
         x = baseSprite[nSprite].x;
@@ -1801,7 +1801,7 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
             spritetype *pSprite = &sprite[nSprite];
-            if (pSprite->statnum == 10 || pSprite->statnum == 16)
+            if (pSprite->statnum == kStatMarker || pSprite->statnum == kStatMarker2)
                 continue;
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
@@ -1828,7 +1828,7 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
             spritetype *pSprite = &sprite[nSprite];
-            if (pSprite->statnum == 10 || pSprite->statnum == 16)
+            if (pSprite->statnum == kStatMarker || pSprite->statnum == kStatMarker2)
                 continue;
             if (pSprite->cstat&16384)
             {
@@ -1845,7 +1845,7 @@ int GetHighestSprite(int nSector, int nStatus, int *a3)
     int v8 = -1;
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        if (sprite[nSprite].statnum == nStatus || nStatus == 1024)
+        if (sprite[nSprite].statnum == nStatus || nStatus == kStatFree)
         {
             spritetype *pSprite = &sprite[nSprite];
             int top, bottom;
@@ -1870,7 +1870,7 @@ int GetCrushedSpriteExtents(unsigned int nSector, int *pzTop, int *pzBot)
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 6 || pSprite->statnum == 4)
+        if (pSprite->statnum == kStatDude || pSprite->statnum == kStatThing)
         {
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
@@ -2257,7 +2257,7 @@ char SectorContainsDudes(int nSector)
 {
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        if (sprite[nSprite].statnum == 6)
+        if (sprite[nSprite].statnum == kStatDude)
             return 1;
     }
     return 0;
@@ -2268,9 +2268,9 @@ void TeleFrag(int nKiller, int nSector)
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 6)
+        if (pSprite->statnum == kStatDude)
             actDamageSprite(nKiller, pSprite, DAMAGE_TYPE_3, 4000);
-        else if (pSprite->statnum == 4)
+        else if (pSprite->statnum == kStatThing)
             actDamageSprite(nKiller, pSprite, DAMAGE_TYPE_3, 4000);
     }
 }
@@ -2287,7 +2287,7 @@ void OperateTeleport(unsigned int nSector, XSECTOR *pXSector)
     for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
-        if (pSprite->statnum == 6)
+        if (pSprite->statnum == kStatDude)
         {
             PLAYER *pPlayer;
             char bPlayer = IsPlayerSprite(pSprite);
@@ -3036,7 +3036,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         /*			 3: go to idle state if no targets in sight and ignore player(s) always							- */
         /*			 4: follow player(s) when no targets in sight, attack targets if any in sight					- */
 
-        if (type != 3 || !IsDudeSprite(&sprite[nDest]) || sprite[nDest].statnum != 6) return;
+        if (type != 3 || !IsDudeSprite(&sprite[nDest]) || sprite[nDest].statnum != kStatDude) return;
         spritetype* pSprite = &sprite[nDest]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
         spritetype* pTarget = NULL; XSPRITE* pXTarget = NULL; int receiveHp = 33 + Random(33);
         DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase]; int matesPerEnemy = 1;
@@ -3444,7 +3444,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 if ((old & kHitagRespawn) && !(pSprite->flags & kHitagRespawn)) pSprite->flags |= kHitagRespawn;
 
                 // prepare things for different (debris) physics.
-                if (pSprite->statnum == 4 && debrisGetFreeIndex() >= 0) thing2debris = true;
+                if (pSprite->statnum == kStatThing && debrisGetFreeIndex() >= 0) thing2debris = true;
                     
             }
 
@@ -3534,7 +3534,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                                 pXSprite->physAttr = flags; // update physics attributes
 
                                 // allow things to became debris, so they use different physics...
-                                if (pSprite->statnum == 4) changespritestat(nDest, 0);
+                                if (pSprite->statnum == kStatThing) changespritestat(nDest, 0);
                                 //actPostSprite(nDest, 0); // !!!! not working here for some reason
 
                                 gPhysSpritesList[nIndex] = nDest;
@@ -3547,7 +3547,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                             pXSprite->physAttr = flags;
                             xvel[nDest] = yvel[nDest] = zvel[nDest] = 0;
                             if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
-                                changespritestat(nDest, 4);  // if it was a thing - restore statnum
+                                changespritestat(nDest, kStatThing);  // if it was a thing - restore statnum
                         }
 
                         break;

@@ -118,7 +118,7 @@ static void StompSeqCallback(int, int nXSprite)
     actHitcodeToData(hit, &gHitInfo, &v34, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     if (hit == 3 && v34 >= 0)
     {
-        if (sprite[v34].statnum == 6)
+        if (sprite[v34].statnum == kStatDude)
             v4 = 0;
     }
     vc <<= 4;

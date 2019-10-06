@@ -78,7 +78,7 @@ void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite) {
 
 bool sub_5BDA8(spritetype *pSprite, int nSeq)
 {
-    if (pSprite->statnum == 6 && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
+    if (pSprite->statnum == kStatDude && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
         DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
         if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq && seqGetStatus(3, pSprite->extra) >= 0)
@@ -1147,7 +1147,7 @@ void RecoilDude(spritetype *pSprite, XSPRITE *pXSprite)
 {
     char v4 = Chance(0x8000);
     DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
-    if (pSprite->statnum == 6 && (pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    if (pSprite->statnum == kStatDude && (pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
     {
         DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
         switch (pSprite->type)

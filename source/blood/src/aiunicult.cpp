@@ -719,7 +719,7 @@ int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite) {
 
 /*bool sub_5BDA8(spritetype* pSprite, int nSeq)
 {
-    if (pSprite->statnum == 6 && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
+    if (pSprite->statnum == kStatDude && pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
     {
         DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
         if (seqGetID(3, pSprite->extra) == pDudeInfo->seqStartID + nSeq && seqGetStatus(3, pSprite->extra) >= 0)
@@ -729,7 +729,7 @@ int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite) {
 }
 
 bool sub_57901(spritetype* pSprite, int nSeqID) {
-    if ( pSprite->statnum == 6 )
+    if ( pSprite->statnum == kStatDude )
     {
         if ( IsDudeSprite(pSprite) )
         {
@@ -745,7 +745,7 @@ bool TargetNearThing(spritetype* pSprite, int thingType) {
     for ( int nSprite = headspritesect[pSprite->sectnum]; nSprite >= 0; nSprite = nextspritesect[nSprite] )
     {
         // check for required things or explosions in the same sector as the target
-        if ( sprite[nSprite].type == thingType || sprite[nSprite].statnum == 2 )
+        if ( sprite[nSprite].type == thingType || sprite[nSprite].statnum == kStatExplosion)
             return true; // indicate danger
     }
     return false;
@@ -1004,7 +1004,7 @@ void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT a3)
     int nTarget = pXSprite->target;
     if (nTarget >= 0 && nTarget < kMaxSprites) {
         spritetype* pTarget = &sprite[nTarget];
-        if (pTarget->statnum == 6 && !(pTarget->flags & 32) && pTarget->extra > 0 && pTarget->extra < kMaxXSprites && !pXSprite->stateTimer)
+        if (pTarget->statnum == kStatDude && !(pTarget->flags & 32) && pTarget->extra > 0 && pTarget->extra < kMaxXSprites && !pXSprite->stateTimer)
         {
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);

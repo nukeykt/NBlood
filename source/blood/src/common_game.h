@@ -87,11 +87,25 @@ void QuitGame(void);
 
 #define kMaxPowerUps 51
 
-#define kStatDude 6
-#define kStatRespawn 8
-#define kStatMarker 10
-#define kStatGDXDudeTargetChanger 20
-#define kStatFree 1024
+#define kStatDefault = 0; // inactive items, like torches and stuff, but NOT dudes
+#define kStatEffect = 1; // non-damaging ricochets, splashes, etc.
+#define kStatExplosion = 2;
+#define kStatItem = 3; // items that can be picked up
+#define kStatThing = 4; // things that can be destroyed/moved
+#define kStatMissile = 5; // player/enemy missiles that do damage
+#define kStatDude = 6; // an active dude
+#define kStatInactive = 7; // an inactive dude
+#define kStatRespawn = 8;
+#define kStatPurge = 9; // use these for purgeable sprites
+#define kStatMarker = 10;
+#define kStatTraps = 11;
+#define kStatAmbient = 12; // sprites triggered by proximity
+#define kStatSpares = 13; // allocated invisible sprites
+#define kStatFlare = 14; // flares that are stuck in dudes
+#define kStatDebris = 15; // moving non-Thing debris
+#define kStatMarker2 = 16;
+#define kStatGDXDudeTargetChanger = 20; // target changer generator sprite
+#define kStatFree = 1024;
 
 #define kLensSize 80
 #define kViewEffectMax 19
