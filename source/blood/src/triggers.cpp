@@ -976,6 +976,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT a3)
             fallthrough__;
         case COMMAND_ID_21:
             if (pXSprite->txID <= 0 || !getDudesForTargetChg(pXSprite)) {
+                freeAllTargets(pXSprite);
                 evPost(nSprite, 3, 0, COMMAND_ID_0);
                 break;
             } else {
@@ -3036,15 +3037,28 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         /*			 3: go to idle state if no targets in sight and ignore player(s) always							- */
         /*			 4: follow player(s) when no targets in sight, attack targets if any in sight					- */
 
-        if (type != 3 || !IsDudeSprite(&sprite[nDest]) || sprite[nDest].statnum != 6) return;
+        if (type != 3) return;
+        else if (!IsDudeSprite(&sprite[nDest]) && sprite[nDest].statnum != 6 && xsprite[sprite[nDest].extra].data3 != 0) {
+            switch (sprite[nDest].type) { // can be dead dude turned in gib
+                // make current target and all other dudes not attack this dude anymore
+                case 425:
+                case 426:
+                    xsprite[sprite[nDest].extra].data3 = 0;
+                    freeTargets(nDest);
+                    return;
+                default:
+                    return;
+            }
+        }
+
         spritetype* pSprite = &sprite[nDest]; XSPRITE* pXSprite = &xsprite[pSprite->extra];
         spritetype* pTarget = NULL; XSPRITE* pXTarget = NULL; int receiveHp = 33 + Random(33);
         DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase]; int matesPerEnemy = 1;
 
         // dude is burning?
         if (pXSprite->burnTime > 0 && pXSprite->burnSource >= 0 && pXSprite->burnSource < kMaxSprites) {
-            if (!IsBurningDude(pSprite))
-            {
+            if (IsBurningDude(pSprite)) actKillDude(pSource->xvel, pSprite, DAMAGE_TYPE_0, 65535);
+            else {
                 spritetype* pBurnSource = &sprite[pXSprite->burnSource];
                 if (pBurnSource->extra >= 0) {
                     if (pXSource->data2 == 1 && isMateOf(pXSprite, &xsprite[pBurnSource->extra])) {
@@ -3061,10 +3075,12 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                     }
                 }
             }
-            else {
-                actKillDude(pSource->xvel, pSprite, DAMAGE_TYPE_0, 65535);
-                return;
-            }
+        }
+
+        // dude is dead?
+        if (pXSprite->health <= 0) {
+            pSprite->type = 426; actPostSprite(pSprite->xvel, 4); // turn it in gib
+            return;
         }
 
         spritetype* pPlayer = targetIsPlayer(pXSprite);
@@ -3408,9 +3424,9 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         /* - data4 = sector floor / sprite / wall cstat 										- */
         int old = -1;
         switch (type) {
+        
         // for sectors
-        case 6:
-        {
+        case 6: {
             XSECTOR* pXSector = &xsector[sector[nDest].extra];
 
             if (pXSource->data1 == 0) pXSector->Underwater = false;
@@ -3428,8 +3444,9 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
 
             if (valueIsBetween(pXSource->data4, -1, 65535))
                 sector[nDest].floorstat = pXSource->data4;
-            break;
         }
+        break;
+        
         // for sprites
         case 3: {
             
@@ -3577,10 +3594,10 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
             }
 
         }
-            break;
+        break;
+        
         // for walls
         case 0: {
-            
             walltype* pWall = &wall[nDest];
             if (valueIsBetween(pXSource->data3, -1, 32767))
                 pWall->hitag = pXSource->data3;
@@ -3606,9 +3623,9 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 }
 
             }
-
         }
-            break;
+        break;
+        
         }
     }
 }
@@ -3750,6 +3767,29 @@ void activateDudes(int rx) {
         if (!IsDudeSprite(pDude) || pXDude->aiState->stateType != kAiStateGenIdle) continue;
             aiInitSprite(pDude);
     }
+}
+
+
+// by NoOne: this function sets target to -1 for all dudes that hunting for nSprite
+void freeTargets(int nSprite) {
+    for (int nTarget = headspritestat[6]; nTarget >= 0; nTarget = nextspritestat[nTarget]) {
+        if (!IsDudeSprite(&sprite[nTarget]) || sprite[nTarget].extra < 0) continue;
+        else if (xsprite[sprite[nTarget].extra].target == nSprite)
+            aiSetTarget(&xsprite[sprite[nTarget].extra], sprite[nTarget].x, sprite[nTarget].y, sprite[nTarget].z);
+    }
+
+    return;
+}
+
+// by NoOne: this function sets target to -1 for all targets that hunting for dudes affected by selected kModernDudeTargetChanger
+void freeAllTargets(XSPRITE* pXSource) {
+    if (pXSource->txID <= 0) return;
+    for (int i = bucketHead[pXSource->txID]; i < bucketHead[pXSource->txID + 1]; i++) {
+        if (rxBucket[i].type == 3 && sprite[rxBucket[i].index].extra >= 0)
+            freeTargets(rxBucket[i].index);
+    }
+
+    return;
 }
 
 bool affectedByTargetChg(XSPRITE* pXDude) {
