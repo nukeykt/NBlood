@@ -6807,6 +6807,8 @@ int actGetRespawnTime(spritetype *pSprite)
     int nXSprite = pSprite->extra;
     if (nXSprite <= 0)
         return -1;
+    if (pSprite->type == 213 || pSprite->type == 214) // Do not respawn little spiders because they tend to crash the game if they respawn
+        return -1;
     XSPRITE *pXSprite = &xsprite[nXSprite];
     if (IsDudeSprite(pSprite) && !IsPlayerSprite(pSprite))
     {
