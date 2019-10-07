@@ -813,7 +813,7 @@ void fakeActAirDrag(spritetype *pSprite, int num)
 void fakeActProcessSprites(void)
 {
 	spritetype *pSprite = gMe->pSprite;
-	if (pSprite->statnum == 6)
+	if (pSprite->statnum == kStatDude)
 	{
 		int nXSprite = pSprite->extra;
 		dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
@@ -1991,7 +1991,7 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         pNSprite->shade = -128;
         pNSprite->z = pTSprite->z;
         pNSprite->picnum = 908;
-        pNSprite->statnum = 0;
+        pNSprite->statnum = kStatDecoration;
         pNSprite->xrepeat = pNSprite->yrepeat = (tilesiz[pTSprite->picnum].x*pTSprite->xrepeat)/64;
         break;
     }
@@ -2360,7 +2360,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         switch (pTSprite->statnum)
         {
-        case 0:
+        case kStatDecoration:
         {
             switch (pTSprite->type)
             {
@@ -2411,7 +2411,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             }
             break;
         }
-        case 3:
+        case kStatItem:
         {
             switch (pTSprite->type)
             {
@@ -2450,7 +2450,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             }
             break;
         }
-        case 5:
+        case kStatProjectile:
         {
             switch (pTSprite->type)
             {
@@ -2466,7 +2466,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 break;
             case 301:
             case 303:
-                if (pTSprite->statnum == 14)
+                if (pTSprite->statnum == kStatFlare)
                 {
                     dassert(pTXSprite != NULL);
                     if (pTXSprite->target == gView->at5b)
@@ -2494,7 +2494,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             }
             break;
         }
-        case 6:
+        case kStatDude:
         {
             if (pTSprite->type == 212 && pTXSprite->aiState == &hand13A3B4)
             {
@@ -2581,7 +2581,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             }
             break;
         }
-        case 11:
+        case kStatTraps:
         {
             if (pTSprite->type == 454)
             {
@@ -2610,7 +2610,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             }
             break;
         }
-        case 4:
+        case kStatThing:
         {
             if (pXSector && pXSector->color)
             {
@@ -2799,6 +2799,15 @@ void viewBurnTime(int gScale)
         rotatesprite(burnTable[i].nX<<16, burnTable[i].nY<<16, nScale, 0, nTile,
             0, burnTable[i].nPal, burnTable[i].nStat, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
+}
+
+// by NoOne: show warning msgs in game instead of throwing errors (in some cases)
+void viewSetSystemMessage(const char* pMessage, ...) {
+    char buffer[256]; va_list args; va_start(args, pMessage);
+    vsprintf(buffer, pMessage, args);
+
+    OSD_Printf("%s\n", buffer);
+    gGameMessageMgr.Add(buffer, 15, 7, MESSAGE_PRIORITY_SYSTEM);
 }
 
 void viewSetMessage(const char *pMessage, const int pal, const MESSAGE_PRIORITY priority)
@@ -3336,7 +3345,7 @@ RORHACKOTHER:
             deliriumTurn = 0;
             deliriumPitch = 0;
         }
-        int nSprite = headspritestat[2];
+        int nSprite = headspritestat[kStatExplosion];
         int unk = 0;
         while (nSprite >= 0)
         {
@@ -3350,7 +3359,7 @@ RORHACKOTHER:
             }
             nSprite = nextspritestat[nSprite];
         }
-        nSprite = headspritestat[5];
+        nSprite = headspritestat[kStatProjectile];
         while (nSprite >= 0)
         {
             spritetype *pSprite = &sprite[nSprite];
