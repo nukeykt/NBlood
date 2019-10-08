@@ -316,7 +316,7 @@ void UpdateAimVector(PLAYER * pPlayer)
     if (gProfile[pPlayer->at57].nAutoAim == 1 || (gProfile[pPlayer->at57].nAutoAim == 2 && !pWeaponTrack->bIsProjectile) || pPlayer->atbd == 10 || pPlayer->atbd == 9)
     {
         int nClosest = 0x7fffffff;
-        for (nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+        for (nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite])
         {
             pSprite = &sprite[nSprite];
             if (pSprite == pPSprite)
@@ -374,7 +374,7 @@ void UpdateAimVector(PLAYER * pPlayer)
         }
         if (pWeaponTrack->atc > 0)
         {
-            for (nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+            for (nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite])
             {
                 pSprite = &sprite[nSprite];
                 if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pPlayer, pSprite))
@@ -2247,7 +2247,7 @@ void WeaponProcess(PLAYER *pPlayer)
             {
             }
             pPlayer->voodooTarget = pPlayer->at1d6;
-            if (pPlayer->voodooTarget == -1 || sprite[pPlayer->voodooTarget].statnum != 6)
+            if (pPlayer->voodooTarget == -1 || sprite[pPlayer->voodooTarget].statnum != kStatDude)
                 i = 4;
             StartQAV(pPlayer,103+i, nClientFireVoodoo, 0);
             return;
@@ -2458,9 +2458,9 @@ void sub_51340(spritetype *pMissile, int a2)
     char v4 = 1;
     int v24 = -1;
     actHitcodeToData(a2, &gHitInfo, &v24, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (a2 == 3 && v24 >= 0 && sprite[v24].statnum == 6)
+    if (a2 == 3 && v24 >= 0 && sprite[v24].statnum == kStatDude)
         v4 = 0;
-    for (int nSprite = headspritestat[6]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         if (nSprite != nOwner || v4)
         {
@@ -2478,7 +2478,7 @@ void sub_51340(spritetype *pMissile, int a2)
             }
         }
     }
-    for (int nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
         if (pSprite->flags&32)
