@@ -50,7 +50,7 @@ void ambProcess(void)
 {
     if (!SoundToggle)
         return;
-    for (int nSprite = headspritestat[12]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritestat[kStatAmbience]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
         if (pSprite->owner < 0 || pSprite->owner >= kMaxAmbChannel)
@@ -111,7 +111,7 @@ void ambInit(void)
 {
     ambKillAll();
     memset(ambChannels, 0, sizeof(ambChannels));
-    for (int nSprite = headspritestat[12]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritestat[kStatAmbience]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         spritetype *pSprite = &sprite[nSprite];
         int nXSprite = pSprite->extra;

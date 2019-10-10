@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "globals.h"
 #include "db.h"
 #include "iob.h"
+#include "eventq.h"
 
 unsigned short gStatCount[kMaxStatus + 1];
 
@@ -47,7 +48,7 @@ int xvel[kMaxSprites], yvel[kMaxSprites], zvel[kMaxSprites];
 char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
 
 int gVisibility;
-
+bool gModernMap = false;
 const char *gItemText[] = {
     "Skull Key",
     "Eye Key",
@@ -235,7 +236,7 @@ void RemoveSpriteStat(int nSprite)
     {
         headspritestat[nStat] = nextspritestat[nSprite];
     }
-    sprite[nSprite].statnum = -1;
+    sprite[nSprite].statnum = kStatNothing;
     gStatCount[nStat]--;
 }
 
@@ -598,7 +599,7 @@ void dbInit(void)
 void PropagateMarkerReferences(void)
 {
     int nSprite, nNextSprite;
-    for (nSprite = headspritestat[10]; nSprite != -1; nSprite = nNextSprite)
+    for (nSprite = headspritestat[kStatMarker]; nSprite != -1; nSprite = nNextSprite)
     {
         nNextSprite = nextspritestat[nSprite];
         switch (sprite[nSprite].type)
@@ -670,14 +671,38 @@ MAPHEADER2 byte_19AE44;
 
 unsigned int dbReadMapCRC(const char *pPath)
 {
+    char name2[BMAX_PATH];
     byte_1A76C7 = 0;
     byte_1A76C8 = 0;
-    DICTNODE *pNode = gSysRes.Lookup(pPath, "MAP");
+
+    int const bakpathsearchmode = pathsearchmode;
+    pathsearchmode = 1;
+
+    Bstrncpy(name2, pPath, BMAX_PATH);
+    Bstrupr(name2);
+    DICTNODE* pNode = *gSysRes.Probe(name2, "MAP");
+    if (pNode && pNode->flags & DICT_EXTERNAL)
+    {
+        gSysRes.RemoveNode(pNode);
+    }
+    pNode = gSysRes.Lookup(pPath, "MAP");
     if (!pNode)
     {
-        ThrowError("Error opening map file %s", pPath);
+        char name2[BMAX_PATH];
+        Bstrncpy(name2, pPath, BMAX_PATH);
+        ChangeExtension(name2, "");
+        pNode = gSysRes.Lookup(name2, "MAP");
+    }
+
+    if (!pNode)
+    {
+        initprintf("Error opening map file %s", pPath);
+        pathsearchmode = bakpathsearchmode;
+        return -1;
     }
     char *pData = (char*)gSysRes.Lock(pNode);
+    pathsearchmode = bakpathsearchmode;
+
     int nSize = pNode->size;
     MAPSIGNATURE header;
     IOBuffer(nSize, pData).Read(&header, 6);
@@ -712,6 +737,7 @@ const int nXWallSize = 24;
 
 int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short *pSector, unsigned int *pCRC)
 {
+    char name2[BMAX_PATH];
     int16_t tpskyoff[256];
     memset(show2dsector, 0, sizeof(show2dsector));
     memset(show2dwall, 0, sizeof(show2dwall));
@@ -723,17 +749,15 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
     int const bakpathsearchmode = pathsearchmode;
     pathsearchmode = 1;
 
+    Bstrncpy(name2, pPath, BMAX_PATH);
+    Bstrupr(name2);
+    DICTNODE* pNode = *gSysRes.Probe(name2, "MAP");
+    if (pNode && pNode->flags & DICT_EXTERNAL)
     {
-        char name2[BMAX_PATH];
-        Bstrncpy(name2, pPath, BMAX_PATH);
-        Bstrupr(name2);
-        DICTNODE* pNode = *gSysRes.Probe(name2, "MAP");
-        if (pNode && pNode->flags & DICT_EXTERNAL)
-        {
-            gSysRes.RemoveNode(pNode);
-        }
+        gSysRes.RemoveNode(pNode);
     }
-    DICTNODE *pNode = gSysRes.Lookup(pPath, "MAP");
+
+    pNode = gSysRes.Lookup(pPath, "MAP");
     if (!pNode)
     {
         char name2[BMAX_PATH];
@@ -742,14 +766,14 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
         pNode = gSysRes.Lookup(name2, "MAP");
     }
 
-    pathsearchmode = bakpathsearchmode;
-
     if (!pNode)
     {
         initprintf("Error opening map file %s", pPath);
+        pathsearchmode = bakpathsearchmode;
         return -1;
     }
     char *pData = (char*)gSysRes.Lock(pNode);
+    pathsearchmode = bakpathsearchmode;
     int nSize = pNode->size;
     MAPSIGNATURE header;
     IOBuffer IOBuffer1 = IOBuffer(nSize, pData);
@@ -984,6 +1008,11 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
             pXSector->bobRotate = bitReader.readUnsigned(1);
             xsector[sector[i].extra].reference = i;
             xsector[sector[i].extra].busy = xsector[sector[i].extra].state<<16;
+
+            // by NoOne: indicate if the map requires modern features to work properly
+            // for maps wich created in different editors (include vanilla MAPEDIT) or in PMAPEDIT version below than BETA13
+            if (pXSector->rxID == kChannelMapExtended && pXSector->rxID == pXSector->txID && pXSector->command == kCommandMapExtend)
+                gModernMap = true;
         }
     }
     for (int i = 0; i < numwalls; i++)
@@ -1058,6 +1087,11 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
             pXWall->at14_0 = bitReader.readUnsigned(32);
             xwall[wall[i].extra].reference = i;
             xwall[wall[i].extra].busy = xwall[wall[i].extra].state << 16;
+
+            // by NoOne: indicate if the map requires modern features to work properly
+            // for maps wich created in different editors (include vanilla MAPEDIT) or in PMAPEDIT version below than BETA13
+            if (pXWall->rxID == kChannelMapExtended && pXWall->rxID == pXWall->txID && pXWall->command == kCommandMapExtend)
+                gModernMap = true;
         }
     }
     initspritelists();
@@ -1174,10 +1208,14 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
             bitReader.skipBits(32);
             xsprite[sprite[i].extra].reference = i;
             xsprite[sprite[i].extra].busy = xsprite[sprite[i].extra].state << 16;
-            if (!byte_1A76C8)
-            {
+            if (!byte_1A76C8) {
                 xsprite[sprite[i].extra].lT |= xsprite[sprite[i].extra].lB;
             }
+
+            // by NoOne: indicate if the map requires modern features to work properly
+            // for maps wich created in different editors (include vanilla MAPEDIT) or in PMAPEDIT version below than BETA13
+            if (pXSprite->rxID == kChannelMapExtended && pXSprite->rxID == pXSprite->txID && pXSprite->command == kCommandMapExtend)
+                gModernMap = true;
         }
         if ((sprite[i].cstat & 0x30) == 0x30)
         {

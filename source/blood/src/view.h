@@ -158,7 +158,7 @@ void viewUpdateShake(void);
 void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
 void viewResetCrosshairToDefault(void);
 void viewPrintFPS(void);
-
+void viewSetSystemMessage(const char* pMessage, ...);
 
 inline void viewInterpolateSector(int nSector, sectortype *pSector)
 {

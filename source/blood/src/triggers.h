@@ -60,6 +60,8 @@ bool isAnnoyingUnit(spritetype* pDude);
 bool unitCanFly(spritetype* pDude);
 bool isMeleeUnit(spritetype* pDude);
 void activateDudes(int rx);
+void freeTargets(int nSprite);
+void freeAllTargets(XSPRITE* pXSource);
 bool affectedByTargetChg(XSPRITE* pXDude);
 int getDataFieldOfObject(int objType, int objIndex, int dataIndex);
 bool setDataValueOfObject(int objType, int objIndex, int dataIndex, int value);
@@ -71,5 +73,8 @@ void useEffectGen(XSPRITE* pXSource, spritetype* pSprite);
 void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index);
 void useSpriteDamager(XSPRITE* pXSource, spritetype* pSprite);
 void useTeleportTarget(XSPRITE* pXSource, spritetype* pSprite);
+void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex);
 void TeleFrag(int nKiller, int nSector);
+bool valueIsBetween(int val, int min, int max);
+
 // -------------------------------------------------------

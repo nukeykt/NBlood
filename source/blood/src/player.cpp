@@ -1052,7 +1052,7 @@ void playerInit(int nPlayer, unsigned int a2)
 
 char sub_3A158(PLAYER *a1, spritetype *a2)
 {
-    for (int nSprite = headspritestat[4]; nSprite >= 0; nSprite = nextspritestat[nSprite])
+    for (int nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
         if (a2 && a2->index == nSprite)
             continue;
@@ -1388,7 +1388,7 @@ void CheckPickUp(PLAYER *pPlayer)
     int z = pSprite->z;
     int nSector = pSprite->sectnum;
     int nNextSprite;
-    for (int nSprite = headspritestat[3]; nSprite >= 0; nSprite = nNextSprite)
+    for (int nSprite = headspritestat[kStatItem]; nSprite >= 0; nSprite = nNextSprite)
     {
         spritetype *pItem = &sprite[nSprite];
         nNextSprite = nextspritestat[nSprite];
@@ -1436,7 +1436,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
         case 3:
             *a2 = gHitInfo.hitsprite;
             *a3 = sprite[*a2].extra;
-            if (*a3 > 0 && sprite[*a2].statnum == 4)
+            if (*a3 > 0 && sprite[*a2].statnum == kStatThing)
             {
                 spritetype *pSprite = &sprite[*a2];
                 XSPRITE *pXSprite = &xsprite[*a3];
@@ -1450,7 +1450,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
             }
             if (*a3 > 0 && xsprite[*a3].Push)
                 return 3;
-            if (sprite[*a2].statnum == 6)
+            if (sprite[*a2].statnum == kStatDude)
             {
                 spritetype *pSprite = &sprite[*a2];
                 XSPRITE *pXSprite = &xsprite[*a3];
@@ -1538,7 +1538,7 @@ void ProcessInput(PLAYER *pPlayer)
             {
                 if (pPlayer->pSprite)
                     pPlayer->pSprite->type = 426;
-                actPostSprite(pPlayer->at5b, 4);
+                actPostSprite(pPlayer->at5b, kStatThing);
                 seqSpawn(pPlayer->pDudeInfo->seqStartID+15, 3, pPlayer->pSprite->extra, -1);
                 playerReset(pPlayer);
                 if (gGameOptions.nGameType == 0 && numplayers == 1)

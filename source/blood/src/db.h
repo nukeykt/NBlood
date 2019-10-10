@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // by NoOne additional non-thing proximity, sight and physics sprites 
 #define kMaxSuperXSprites 128
 
+extern bool gModernMap;
+
 #pragma pack(push, 1)
 
 struct AISTATE;
