@@ -123,7 +123,7 @@ static void TeslaSeqCallback(int, int nXSprite)
         dx += Random3((5-gGameOptions.nDifficulty)*1000);
         dy += Random3((5-gGameOptions.nDifficulty)*1000);
         dz += Random3((5-gGameOptions.nDifficulty)*500);
-        actFireMissile(pSprite, 0, 0, dx, dy, dz, 306);
+        actFireMissile(pSprite, 0, 0, dx, dy, dz, kMissileTeslaRegular);
         sfxPlay3DSound(pSprite, 470, -1, 0);
     }
 }
@@ -157,9 +157,9 @@ static void ThrowSeqCallback(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    int nMissile = 418;
+    int nMissile = kThingArmedTNTStick;
     if (gGameOptions.nDifficulty > 2)
-        nMissile = 419;
+        nMissile = kThingArmedTNTBundle;
     char v4 = Chance(0x6000);
     sfxPlay3DSound(pSprite, 455, -1, 0);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
@@ -176,7 +176,7 @@ static void ThrowSeqCallback(int, int nXSprite)
     if (v4)
         xsprite[pMissile->extra].Impact = 1;
     else
-        evPost(pMissile->index, 3, 120*(1+Random(2)), COMMAND_ID_1);
+        evPost(pMissile->index, 3, 120*(1+Random(2)), kCmdOn);
 }
 
 static void sub_68170(int, int nXSprite)
@@ -184,12 +184,12 @@ static void sub_68170(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    int nMissile = 418;
+    int nMissile = kThingArmedTNTStick;
     if (gGameOptions.nDifficulty > 2)
-        nMissile = 419;
+        nMissile = kThingArmedTNTBundle;
     sfxPlay3DSound(pSprite, 455, -1, 0);
     spritetype *pMissile = actFireThing(pSprite, 0, 0, gDudeSlope[nXSprite]-9460, nMissile, 0x133333);
-    evPost(pMissile->index, 3, 120*(2+Random(2)), COMMAND_ID_1);
+    evPost(pMissile->index, 3, 120*(2+Random(2)), kCmdOn);
 }
 
 static void sub_68230(int, int nXSprite)
@@ -197,9 +197,9 @@ static void sub_68230(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    int nMissile = 418;
+    int nMissile = kThingArmedTNTStick;
     if (gGameOptions.nDifficulty > 2)
-        nMissile = 419;
+        nMissile = kThingArmedTNTBundle;
     sfxPlay3DSound(pSprite, 455, -1, 0);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
@@ -217,7 +217,7 @@ static char TargetNearExplosion(spritetype *pSprite)
 {
     for (short nSprite = headspritesect[pSprite->sectnum]; nSprite >= 0; nSprite = nextspritesect[nSprite])
     {
-        if (sprite[nSprite].type == 418 || sprite[nSprite].statnum == kStatExplosion)
+        if (sprite[nSprite].type == kThingArmedTNTStick || sprite[nSprite].statnum == kStatExplosion)
             return 1;
     }
     return 0;
@@ -284,7 +284,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         {
         case 0:
             aiNewState(pSprite, pXSprite, &cultistSearch);
-            if (pSprite->type == 201)
+            if (pSprite->type == kDudeCultistTommy)
                 aiPlay3DSound(pSprite, 4021+Random(4), AI_SFX_PRIORITY_1, -1);
             else
                 aiPlay3DSound(pSprite, 1021+Random(4), AI_SFX_PRIORITY_1, -1);
@@ -322,9 +322,8 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                 aiSetTarget(pXSprite, pXSprite->target);
                 int nXSprite = sprite[pXSprite->reference].extra;
                 gDudeSlope[nXSprite] = divscale(pTarget->z-pSprite->z, nDist, 10);
-                switch (pSprite->type)
-                {
-                case 201:
+                switch (pSprite->type) {
+                case kDudeCultistTommy:
                     if (nDist < 0x1e00 && nDist > 0xe00 && klabs(nDeltaAngle) < 85 && !TargetNearExplosion(pTarget)
                         && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
@@ -340,7 +339,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
                                 aiNewState(pSprite, pXSprite, &cultistTThrow);
                             break;
                         default:
@@ -362,7 +361,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistTSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
                                     aiNewState(pSprite, pXSprite, &cultistTFire);
@@ -392,7 +391,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         }
                     }
                     break;
-                case 202:
+                case kDudeCultistShotgun:
                     if (nDist < 0x2c00 && nDist > 0x1400 && !TargetNearExplosion(pTarget)
                         && (pTarget->flags&2) && gGameOptions.nDifficulty >= 2 && IsPlayerSprite(pTarget) && !gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
@@ -408,7 +407,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         default:
@@ -430,7 +429,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 201)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistTommy)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
                                     aiNewState(pSprite, pXSprite, &cultistSFire);
@@ -460,7 +459,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         }
                     }
                     break;
-                case 247:
+                case kDudeCultistTesla:
                     if (nDist < 0x1e00 && nDist > 0xe00 && !TargetNearExplosion(pTarget)
                         && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
@@ -476,7 +475,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
                                 aiNewState(pSprite, pXSprite, &cultistTsThrow);
                             break;
                         default:
@@ -498,7 +497,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistTsSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 201)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistTommy)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
                                     aiNewState(pSprite, pXSprite, &cultistTsFire);
@@ -528,7 +527,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         }
                     }
                     break;
-                case 248:
+                case kDudeCultistTNT:
                     if (nDist < 0x2c00 && nDist > 0x1400 && klabs(nDeltaAngle) < 85
                         && (pTarget->flags&2) && IsPlayerSprite(pTarget))
                     {
@@ -542,7 +541,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
                                 aiNewState(pSprite, pXSprite, &cultistDThrow);
                             break;
                         default:
@@ -563,7 +562,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
                                 aiNewState(pSprite, pXSprite, &cultist139A78);
                             break;
                         default:
@@ -572,7 +571,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         }
                     }
                     break;
-                case 249:
+                case kDudeCultistBeast:
                     if (nDist < 0x1e00 && nDist > 0xe00 && !TargetNearExplosion(pTarget)
                         && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
                         && Chance(0x8000))
@@ -588,7 +587,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 202 && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         default:
@@ -610,7 +609,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != 201)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistTommy)
                             {
                                 if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
                                     aiNewState(pSprite, pXSprite, &cultistSFire);

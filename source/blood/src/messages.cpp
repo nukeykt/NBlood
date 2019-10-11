@@ -783,7 +783,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
     case kCheatMcGee:
     {
         if (!gMe->pXSprite->burnTime)
-            evPost(gMe->at5b, 3, 0, CALLBACK_ID_0);
+            evPost(gMe->at5b, 3, 0, kCallbackFXFlameLick);
         actBurnSprite(actSpriteIdToOwnerId(gMe->at5b), gMe->pXSprite, 2400);
         viewSetMessage("You're fired!");
         break;
@@ -797,7 +797,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         actHealDude(gMe->pXSprite, 200, 200);
         gMe->at33e[1] = VanillaMode() ? 200 : 3200;
         if (!gMe->pXSprite->burnTime)
-            evPost(gMe->at5b, 3, 0, CALLBACK_ID_0);
+            evPost(gMe->at5b, 3, 0, kCallbackFXFlameLick);
         actBurnSprite(actSpriteIdToOwnerId(gMe->at5b), gMe->pXSprite, 2400);
         viewSetMessage("Flame retardant!");
         break;

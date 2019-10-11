@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "db.h"
 
 struct AISTATE {
-    int stateType; // By NoOne: current type of state. Basically required for kGDXDudeTargetChanger, but can be used for something else.
+    int stateType; // By NoOne: current type of state. Basically required for kModernDudeTargetChanger, but can be used for something else.
     int at0; // seq
     int at4; // seq callback
     int at8;
@@ -101,5 +101,5 @@ void aiProcessDudes(void);
 void aiInit(void);
 void aiInitSprite(spritetype *pSprite);
 
-// By NoOne: this function required for kGDXDudeTargetChanger
+// By NoOne: this function required for kModernDudeTargetChanger
 void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite);
