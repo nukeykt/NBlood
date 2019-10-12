@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gameutil.h"
 #include "actor.h"
 #include "tile.h"
+#include "view.h"
 
 #define kMaxClients 256
 #define kMaxSequences 1024
@@ -374,11 +375,14 @@ void UnlockInstance(SEQINST *pInst)
 void seqSpawn(int a1, int a2, int a3, int a4)
 {
     SEQINST *pInst = GetInstance(a2, a3);
-    if (!pInst)
-        return;
+    if (!pInst) return;
+    
     DICTNODE *hSeq = gSysRes.Lookup(a1, "SEQ");
-    if (!hSeq)
-        ThrowError("Missing sequence #%d", a1);
+    if (!hSeq) {
+        viewSetSystemMessage("Missing sequence #%d", a1);
+        return;
+    }
+
     int i = activeCount;
     if (pInst->at13)
     {
@@ -573,8 +577,10 @@ void SeqLoadSave::Load(void)
         {
             int nSeq = pInst->at8;
             DICTNODE *hSeq = gSysRes.Lookup(nSeq, "SEQ");
-            if (!hSeq)
-                ThrowError("Missing sequence #%d", nSeq);
+            if (!hSeq) {
+                viewSetSystemMessage("Missing sequence #%d", nSeq);
+                continue;
+            }
             Seq *pSeq = (Seq*)gSysRes.Lock(hSeq);
             if (memcmp(pSeq->signature, "SEQ\x1a", 4) != 0)
                 ThrowError("Invalid sequence %d", nSeq);
