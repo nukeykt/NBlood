@@ -1074,7 +1074,8 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
 
     switch (pItem->type) {
         case kItemShadowCloak:
-            if (isGrown(pPlayer->pSprite)) return false;
+            if (isGrown(pPlayer->pSprite) || !powerupActivate(pPlayer, nType)) return false;
+            break;
         case kItemShroomShrink:
         case kItemShroomGrow:
             if (gModernMap) {
@@ -1086,6 +1087,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         if (isGrown(pSprite)) return false;
                         break;
                 }
+
                 powerupActivate(pPlayer, nType);
             }
             break;
