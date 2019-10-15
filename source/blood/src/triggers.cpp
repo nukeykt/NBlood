@@ -88,7 +88,7 @@ char SetSpriteState(int nSprite, XSPRITE* pXSprite, int nState)
     pXSprite->busy = nState << 16;
     pXSprite->state = nState;
     evKill(nSprite, 3);
-    if ((sprite[nSprite].flags & 16) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
+    if ((sprite[nSprite].flags & kHitagRespawn) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
     {
         pXSprite->respawnPending = 3;
         evPost(nSprite, 3, gGameOptions.nMonsterRespawnTime, kCallbackRespawn);
@@ -113,7 +113,7 @@ char modernTypeSetSpriteState(int nSprite, XSPRITE *pXSprite, int nState)
     pXSprite->busy = nState<<16;
     pXSprite->state = nState;
     evKill(nSprite, 3);
-    if ((sprite[nSprite].flags & 16) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
+    if ((sprite[nSprite].flags & kHitagRespawn) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
     {
         pXSprite->respawnPending = 3;
         evPost(nSprite, 3, gGameOptions.nMonsterRespawnTime, kCallbackRespawn);
@@ -1048,7 +1048,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         }
         break;
     case kThingTNTBarrel:
-        if (pSprite->flags&16) return;
+        if (pSprite->flags&kHitagRespawn) return;
         fallthrough__;
     case kThingArmedTNTStick:
     case kThingArmedTNTBundle:
