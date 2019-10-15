@@ -3670,8 +3670,8 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
         case kStatDude: {
             if (!IsDudeSprite(pSprite))
                 return 0;
-                //ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & 16) ? "RESPAWN" : "NORMAL");
-
+                //ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & kHitagRespawn) ? "RESPAWN" : "NORMAL");
+          
             int nType = pSprite->type - kDudeBase; int nDamageFactor = dudeInfo[nType].at70[damageType];
         
             if (!nDamageFactor) return 0;
@@ -3715,7 +3715,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                         sprite[pSprite->owner].owner = kMaxSprites - 1; // By NoOne: indicates if custom dude had life leech.
                     break;
                 default:
-                    if (!(pSprite->flags & 16))
+                    if (!(pSprite->flags & kHitagRespawn))
                         actPropagateSpriteOwner(pSprite, &sprite[nSource]);
                     break;
             }
@@ -5552,7 +5552,7 @@ void actActivateGibObject(spritetype *pSprite, XSPRITE *pXSprite)
     if (v8 > 0)
         actDropObject(pSprite, v8);
 
-    if (!(pSprite->cstat&32768) && !(pSprite->flags&16))
+    if (!(pSprite->cstat&32768) && !(pSprite->flags&kHitagRespawn))
         actPostSprite(pSprite->index, kStatFree);
 }
 
@@ -5726,7 +5726,7 @@ void actProcessSprites(void)
                 if (gModernMap && (pXSprite->locked || pXSprite->isTriggered)) 
                     continue;
                 
-                //if (pSprite->type == kThingDroppedLifeLeech) pXSprite->target = -1; why?
+                if (pSprite->type == kThingDroppedLifeLeech) pXSprite->target = -1;
                 for (int nSprite2 = headspritestat[kStatDude]; nSprite2 >= 0; nSprite2 = nNextSprite)
                 {
                     
@@ -5743,7 +5743,7 @@ void actProcessSprites(void)
 
                         int proxyDist = 96;
                         if (pSprite->type == kModernThingEnemyLifeLeech) proxyDist = 512;
-                        else if (pSprite->type == kThingDroppedLifeLeech /*&& pXSprite->target == -1*/)  {
+                        else if (pSprite->type == kThingDroppedLifeLeech && pXSprite->target == -1)  {
                             int nOwner = actOwnerIdToSpriteId(pSprite->owner);
                             spritetype *pOwner = &sprite[nOwner];
                             PLAYER *pPlayer = &gPlayer[pOwner->type-kDudePlayer1];
@@ -6419,6 +6419,8 @@ spritetype * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6
         int nXSprite = dbInsertXSprite(nSprite);
         gSpriteHit[nXSprite].florhit = 0;
         gSpriteHit[nXSprite].ceilhit = 0;
+        if (!VanillaMode())
+            xsprite[nXSprite].target = -1;
     }
     return pSprite;
 }
@@ -6507,6 +6509,8 @@ spritetype * actSpawnSprite(spritetype *pSource, int nStat)
     int nXSprite = dbInsertXSprite(nSprite);
     gSpriteHit[nXSprite].florhit = 0;
     gSpriteHit[nXSprite].ceilhit = 0;
+    if (!VanillaMode())
+        xsprite[nXSprite].target = -1;
     return pSprite;
 }
 
@@ -6815,7 +6819,7 @@ bool actCheckRespawn(spritetype *pSprite)
                 nRespawnTime = mulscale16(nRespawnTime, 0xa000);
             pSprite->owner = pSprite->statnum;
             actPostSprite(pSprite->index, kStatRespawn);
-            pSprite->flags |= 16;
+            pSprite->flags |= kHitagRespawn;
             if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
             {
                 pSprite->cstat &= ~257;
