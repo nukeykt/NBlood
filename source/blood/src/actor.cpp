@@ -3669,7 +3669,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
     switch (pSprite->statnum) {
         case kStatDude: {
             if (!IsDudeSprite(pSprite))
-                ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & 16) ? "RESPAWN" : "NORMAL");
+                ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & kHitagRespawn) ? "RESPAWN" : "NORMAL");
 
             int nType = pSprite->type - kDudeBase; int nDamageFactor = dudeInfo[nType].at70[damageType];
         
@@ -3714,7 +3714,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                         sprite[pSprite->owner].owner = kMaxSprites - 1; // By NoOne: indicates if custom dude had life leech.
                     break;
                 default:
-                    if (!(pSprite->flags & 16))
+                    if (!(pSprite->flags & kHitagRespawn))
                         actPropagateSpriteOwner(pSprite, &sprite[nSource]);
                     break;
             }
@@ -5551,7 +5551,7 @@ void actActivateGibObject(spritetype *pSprite, XSPRITE *pXSprite)
     if (v8 > 0)
         actDropObject(pSprite, v8);
 
-    if (!(pSprite->cstat&32768) && !(pSprite->flags&16))
+    if (!(pSprite->cstat&32768) && !(pSprite->flags&kHitagRespawn))
         actPostSprite(pSprite->index, kStatFree);
 }
 
@@ -6814,7 +6814,7 @@ bool actCheckRespawn(spritetype *pSprite)
                 nRespawnTime = mulscale16(nRespawnTime, 0xa000);
             pSprite->owner = pSprite->statnum;
             actPostSprite(pSprite->index, kStatRespawn);
-            pSprite->flags |= 16;
+            pSprite->flags |= kHitagRespawn;
             if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
             {
                 pSprite->cstat &= ~257;
