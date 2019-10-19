@@ -1238,7 +1238,7 @@ void AL_SetPitchBend
 
    {
    int            pitchbend;
-   int32_t        TotalBend;
+   int        TotalBend;
    VOICE         *voice;
 
    // We only play channels 1 through 10
