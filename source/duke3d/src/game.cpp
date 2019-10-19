@@ -6347,12 +6347,13 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps)
+    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
         return 1;
 
     static double   nextPageDelay;
     static uint64_t lastFrameTicks;
 
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
     nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
 
     uint64_t const frameTicks   = timerGetTicksU64();
