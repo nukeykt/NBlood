@@ -20,8 +20,6 @@ int32_t backgroundidle = 1;
 
 char silentvideomodeswitch = 0;
 
-static char taskswitching = 1;
-
 static HANDLE instanceflag = NULL;
 
 static OSVERSIONINFOEX osv;
@@ -115,28 +113,6 @@ static void win_printversion(void)
 }
 
 //
-// win_allowtaskswitching() -- captures/releases alt+tab hotkeys
-//
-void win_allowtaskswitching(int32_t onf)
-{
-    if (onf == taskswitching) return;
-    taskswitching = onf;
-
-    if (onf)
-    {
-        UnregisterHotKey(0,0);
-        UnregisterHotKey(0,1);
-    }
-    else
-    {
-        RegisterHotKey(0,0,MOD_ALT,VK_TAB);
-        RegisterHotKey(0,1,MOD_ALT|MOD_SHIFT,VK_TAB);
-    }
-
-}
-
-
-//
 // win_checkinstance() -- looks for another instance of a Build app
 //
 int32_t win_checkinstance(void)
@@ -210,7 +186,7 @@ void win_setvideomode(int32_t c)
 
 void win_uninit(void)
 {
-    win_allowtaskswitching(1);
+    ;
 }
 
 void win_close(void)
