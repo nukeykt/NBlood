@@ -36,6 +36,7 @@
 # include <ogc/lwp_watchdog.h>
 #elif defined _WIN32
 # include "winbits.h"
+# include <timeapi.h>
 #endif
 
 #include "vfs.h"
@@ -2449,6 +2450,11 @@ int32_t handleevents_pollsdl(void)
 
                         if (backgroundidle)
                             SetPriorityClass(GetCurrentProcess(), appactive ? NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
+
+                        if (appactive)
+                            win_settimerresolution();
+                        else
+                            timeBeginPeriod(0);
 #endif
                         break;
 

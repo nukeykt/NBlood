@@ -1,14 +1,14 @@
 // Windows layer-independent code
 
-#include "compat.h"
-#include "build.h"
-#include "baselayer.h"
-#include "osd.h"
-#include "cache1d.h"
-
-
-
 #include "winbits.h"
+
+#include "baselayer.h"
+#include "build.h"
+#include "cache1d.h"
+#include "compat.h"
+#include "osd.h"
+
+#include "mmsystem.h"
 
 #ifdef BITNESS64
 # define EBACKTRACEDLL "ebacktrace1-64.dll"
@@ -25,6 +25,45 @@ static HANDLE instanceflag = NULL;
 static OSVERSIONINFOEX osv;
 
 static int32_t togglecomp = 0;
+
+typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
+typedef HRESULT(NTAPI* pQueryTimerResolution)(PULONG, PULONG, PULONG);
+
+// TODO: only do this stuff if we're running at higher than 60Hz refresh?
+void win_settimerresolution(void)
+{
+    HMODULE hntdll = GetModuleHandle("ntdll.dll");
+
+    if (hntdll != nullptr)
+    {
+        pQueryTimerResolution const NtQueryTimerResolution = (pQueryTimerResolution)(void(*))GetProcAddress(hntdll, "NtQueryTimerResolution");
+        pSetTimerResolution const   NtSetTimerResolution   = (pSetTimerResolution)(void(*))GetProcAddress(hntdll, "NtSetTimerResolution");
+
+        if (NtQueryTimerResolution != nullptr && NtSetTimerResolution != nullptr)
+        {
+            ULONG minRes, maxRes, actualRes;
+
+            NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
+            NtSetTimerResolution(maxRes, TRUE, &actualRes);
+
+#ifdef DEBUGGINGAIDS
+            initprintf("DEBUG: %.1fms timer resolution via NtSetTimerResolution()\n", actualRes / 10000.0);
+#endif
+            return;
+        }
+    }
+
+    TIMECAPS timeCaps;
+
+    if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == TIMERR_NOERROR)
+    {
+        unsigned const requested = min(max(timeCaps.wPeriodMin, 1u), timeCaps.wPeriodMax);
+        timeBeginPeriod(requested);
+#ifdef DEBUGGINGAIDS
+        initprintf("DEBUG: %ums timer resolution via timeBeginPeriod()\n", requested);
+#endif
+    }
+}
 
 FARPROC pwinever;
 
