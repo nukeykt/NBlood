@@ -11,6 +11,7 @@
 #include "baselayer.h"
 #include "build.h"
 
+static int bufferSize;
 static void* buffer;
 static GLuint bufferTexID;
 static vec2_t bufferRes;
@@ -62,8 +63,13 @@ bool glsurface_initialize(vec2_t bufferResolution)
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    bufferRes = bufferResolution;
-    buffer    = Xaligned_alloc(16, bufferRes.x * bufferRes.y);
+    bufferRes  = bufferResolution;
+    bufferSize = bufferRes.x * bufferRes.y;
+
+    zpl_virtual_memory vm = zpl_vm_alloc(0, bufferSize);
+
+    bufferSize = vm.size;
+    buffer     = vm.data;
 
     glGenBuffers(1, &quadVertsID);
     glBindBuffer(GL_ARRAY_BUFFER, quadVertsID);
@@ -165,7 +171,8 @@ void glsurface_destroy()
     if (!buffer)
         return;
 
-    ALIGNED_FREE_AND_NULL(buffer);
+    zpl_vm_free(zpl_vm(buffer, bufferSize));
+    buffer = nullptr;
 
     glDeleteBuffers(1, &quadVertsID);
     quadVertsID = 0;
