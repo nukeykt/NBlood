@@ -28,8 +28,6 @@
 
 char levelname[BMAX_PATH] = {0};
 
-#define TIMERINTSPERSECOND 120
-
 #define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctable[((((uint16_t)crc)>>8)&65535)^dat]))
 static int32_t crctable[256];
 static char kensig[64];
@@ -677,7 +675,7 @@ int app_main(int argc, char const * const * argv)
 
     mouseInit();
 
-    timerInit(TIMERINTSPERSECOND);
+    timerInit(CLOCKTICKSPERSECOND);
     timerSetCallback(keytimerstuff);
 
     artLoadFiles("tiles000.art", g_maxCacheSize);

@@ -421,7 +421,6 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
     if (!Bstrcasecmp(parm->name, "vid_gamma") || !Bstrcasecmp(parm->name, "vid_brightness") || !Bstrcasecmp(parm->name, "vid_contrast"))
     {
         videoSetPalette(GAMMA_CALC,0,0);
-
         return r;
     }
 

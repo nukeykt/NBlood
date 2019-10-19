@@ -121,6 +121,8 @@ enum rendmode_t {
 #define PR_LIGHT_PRIO_LOW       4
 #define PR_LIGHT_PRIO_LOW_GAME  5
 
+#define CLOCKTICKSPERSECOND 120
+
 // Convenient sprite iterators, must not be used if any sprites inside the loop
 // are potentially deleted or their sector changed...
 #define SPRITES_OF(Statnum, Iter)  Iter=headspritestat[Statnum]; Iter>=0; Iter=nextspritestat[Iter]

@@ -288,6 +288,10 @@
 # define EDUKE32_BSD
 #endif
 
+#if defined(__i386) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64)
+# define EDUKE32_PLATFORM_INTEL
+#endif
+
 #ifdef __APPLE__
 # include <TargetConditionals.h>
 # if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR

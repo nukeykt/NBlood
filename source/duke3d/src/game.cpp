@@ -6356,7 +6356,11 @@ int G_FPSLimit(void)
     g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
     nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
 
-    uint64_t const frameTicks   = timerGetTicksU64();
+    uint64_t const frameTicks = timerGetTicksU64();
+
+    if (lastFrameTicks > frameTicks)
+        lastFrameTicks = frameTicks;
+
     uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
     double const   dElapsedTime = elapsedTime;
 
