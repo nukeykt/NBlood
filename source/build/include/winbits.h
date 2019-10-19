@@ -22,7 +22,6 @@ extern int32_t win_checkinstance(void);
 extern void win_open(void);
 extern void win_init(void);
 extern void win_setvideomode(int32_t c);
-extern void win_uninit(void);
 extern void win_close(void);
 
 extern void Win_GetOriginalLayoutName(void);

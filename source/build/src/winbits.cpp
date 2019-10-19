@@ -180,7 +180,7 @@ static void ToggleDesktopComposition(BOOL compEnable)
 typedef void (*dllSetString)(const char*);
 
 //
-// win_open(), win_init(), win_setvideomode(), win_uninit(), win_close() -- shared code
+// win_open(), win_init(), win_setvideomode(), win_close() -- shared code
 //
 void win_open(void)
 {
@@ -221,11 +221,6 @@ void win_setvideomode(int32_t c)
 {
     if (togglecomp && osv.dwMajorVersion == 6 && osv.dwMinorVersion < 2)
         ToggleDesktopComposition(c < 16);
-}
-
-void win_uninit(void)
-{
-    ;
 }
 
 void win_close(void)
