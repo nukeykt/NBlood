@@ -604,9 +604,9 @@ int Bgetpagesize(void)
 typedef BOOL (WINAPI *aGlobalMemoryStatusExType)(LPMEMORYSTATUSEX);
 #endif
 
-uint32_t Bgetsysmemsize(void)
+size_t Bgetsysmemsize(void)
 {
-    uint32_t siz = UINT32_MAX;
+    size_t siz = UINT32_MAX;
 
 #ifdef _WIN32
     HMODULE lib = LoadLibrary("KERNEL32.DLL");
@@ -622,7 +622,7 @@ uint32_t Bgetsysmemsize(void)
             MEMORYSTATUSEX memst;
             memst.dwLength = sizeof(MEMORYSTATUSEX);
             if (aGlobalMemoryStatusEx(&memst))
-                siz = min<decltype(memst.ullTotalPhys)>(UINT32_MAX, memst.ullTotalPhys);
+                siz = min<decltype(memst.ullTotalPhys)>(SIZE_MAX, memst.ullTotalPhys);
         }
 
         if (!aGlobalMemoryStatusEx || siz == 0)
@@ -643,7 +643,7 @@ uint32_t Bgetsysmemsize(void)
     int64_t const scphyspages = sysconf(_SC_PHYS_PAGES);
 
     if (scpagesiz >= 0 && scphyspages >= 0)
-        siz = (uint32_t)min<uint64_t>(UINT32_MAX, scpagesiz * scphyspages);
+        siz = (uint32_t)min<uint64_t>(SIZE_MAX, scpagesiz * scphyspages);
 
     //initprintf("Bgetsysmemsize(): %d pages of %d bytes, %d bytes of system memory\n",
     //		scphyspages, scpagesiz, siz);

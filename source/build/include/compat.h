@@ -1285,7 +1285,7 @@ char *Bstrupr(char *);
 ////////// Miscellaneous //////////
 
 int Bgetpagesize(void);
-uint32_t Bgetsysmemsize(void);
+size_t Bgetsysmemsize(void);
 
 ////////// PANICKING ALLOCATION WRAPPERS //////////
 
