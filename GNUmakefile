@@ -267,6 +267,7 @@ engine_objs := \
     communityapi.cpp \
     cpuid.cpp \
     enet.cpp \
+    zpl.cpp \
 
 engine_editor_objs := \
     build.cpp \

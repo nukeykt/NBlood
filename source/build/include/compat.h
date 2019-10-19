@@ -1351,6 +1351,7 @@ static FORCE_INLINE void *xaligned_alloc(const bsize_t alignment, const bsize_t 
 #define Xaligned_alloc(alignment, size) (EDUKE32_PRE_XALLOC xaligned_alloc(alignment, size))
 #define Xfree(ptr) (EDUKE32_PRE_XALLOC xfree(ptr))
 #define Xaligned_free(ptr) (EDUKE32_PRE_XALLOC xaligned_free(ptr))
+
 #ifdef __cplusplus
 }
 #endif
@@ -1379,6 +1380,23 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #include "fix16.h"
 #include "libdivide.h"
 #include "clockticks.hpp"
+#include "debugbreak.h"
+
+#define ZPL_NO_WINDOWS_H
+#ifndef ZPL_DEF
+#define ZPL_DEF extern
+
+#ifndef zpl_inline
+#define zpl_inline
+#endif
+
+#endif
+#include "zpl.h"
+
+// stupid macro in ZPL..
+#ifdef cast
+# undef cast
+#endif
 
 /* End dependence on compat.o object. */
 
