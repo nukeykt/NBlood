@@ -149,6 +149,7 @@ typedef struct mapundo_
     // These exist temporarily as sector/wall/sprite data, but are compressed
     // most of the time.  +4 bytes refcount at the beginning.
     char *sws[3];  // sector, wall, sprite
+    int size[3];
 
     uintptr_t crc[3];
 
