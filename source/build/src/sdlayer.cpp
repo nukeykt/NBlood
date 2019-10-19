@@ -1615,7 +1615,6 @@ void setrefreshrate(void)
         newmode.refresh_rate = 60;
 
     refreshfreq = error ? -1 : newmode.refresh_rate;
-    currentVBlankInterval = timerGetFreqU64()/(double)newmode.refresh_rate;
 }
 
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
@@ -1881,26 +1880,27 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
-        SDL_GL_SwapWindow(sdl_window);
-
         if (vsync)
         {
             switch (swapcomplete)
             {
-                case 1: glFinish(); break;
+                case 1: glFlush(); break;
                 case 2:
                 {
                     static uint64_t lastSwapTime;
                     // busy loop until we're ready to update again
                     // sit on it and spin
+                    currentVBlankInterval = timerGetFreqU64()/(double)refreshfreq;
                     uint64_t swapTime = timerGetTicksU64();
-                    while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval) { }
+                    do { } while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval);
                     lastSwapTime = swapTime;
                 }
                 break;
-                case 3: glFlush(); break;
             }
         }
+
+        SDL_GL_SwapWindow(sdl_window);
+
         return;
     }
 #endif
