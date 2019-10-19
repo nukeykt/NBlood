@@ -139,34 +139,6 @@ physfs_obj := $(obj)/$(physfs)
 physfs_cflags :=
 
 
-#### ENet
-
-enet := enet
-
-enet_objs := \
-    callbacks.c \
-    host.c \
-    list.c \
-    packet.c \
-    peer.c \
-    protocol.c \
-    compress.c \
-
-enet_root := $(source)/$(enet)
-enet_src := $(enet_root)/src
-enet_inc := $(enet_root)/include
-enet_obj := $(obj)/$(enet)
-
-enet_cflags :=
-
-ifeq ($(PLATFORM),WINDOWS)
-    enet_objs += win32.c
-else
-    enet_objs += unix.c
-    enet_cflags += -DHAS_SOCKLEN_T
-endif
-
-
 #### glad
 
 glad := glad
@@ -314,6 +286,7 @@ engine_objs := \
     sjson.cpp \
     communityapi.cpp \
     cpuid.cpp \
+    enet.cpp \
 
 engine_editor_objs := \
     build.cpp \
@@ -580,10 +553,6 @@ common_editor_deps := duke3d_common_editor engine_editor
 
 duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
-
-ifneq (0,$(NETCODE))
-    duke3d_game_deps += enet
-endif
 
 ifneq (0,$(LUNATIC))
     duke3d_game_deps += lunatic lunatic_game lpeg
@@ -1163,7 +1132,6 @@ COMPILERFLAGS += \
     -I$(engine_inc) \
     -I$(mact_inc) \
     -I$(audiolib_inc) \
-    -I$(enet_inc) \
     -I$(glad_inc) \
     -I$(voidwrap_inc) \
     -I$(libsmackerdec_inc) \
@@ -1187,7 +1155,6 @@ libraries := \
     engine \
     audiolib \
     mact \
-    enet \
     libxmplite \
     lpeg \
     glad \
