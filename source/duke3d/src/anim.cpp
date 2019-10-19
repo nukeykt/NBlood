@@ -432,7 +432,7 @@ int32_t Anim_Play(const char *fn)
         goto end_anim;
     }
 
-    anim->animlock = 255;
+    anim->animlock = CACHE1D_ENTRY_PERMANENT;
 
     if (!anim->animbuf)
         cacheAllocateBlock((intptr_t *)&anim->animbuf, length + 1, &anim->animlock);
@@ -494,7 +494,7 @@ int32_t Anim_Play(const char *fn)
 
         i = VM_OnEventWithReturn(EVENT_PRECUTSCENE, g_player[screenpeek].ps->i, screenpeek, i);
 
-        walock[TILE_ANIM] = 255;
+        walock[TILE_ANIM] = CACHE1D_ENTRY_PERMANENT;
         waloff[TILE_ANIM] = (intptr_t)ANIM_DrawFrame(i);
         tileSetSize(TILE_ANIM, 200, 320);
         tileInvalidate(TILE_ANIM, 0, 1 << 4);  // JBF 20031228
@@ -575,7 +575,7 @@ end_anim:
     waloff[TILE_ANIM] = 0;
 
     // this is the lock for anim->animbuf
-    anim->animlock = 1;
+    anim->animlock = CACHE1D_ENTRY_FREE;
 
     return !running;
 }

@@ -4660,7 +4660,7 @@ void Menu_Close(uint8_t playerID)
                 actor[g_curViewscreen].t_data[0] = (int32_t) totalclock;
         }
 
-        walock[TILE_SAVESHOT] = 1;
+        walock[TILE_SAVESHOT] = CACHE1D_ENTRY_FREE;
         G_UpdateScreenArea();
         S_PauseSounds(false);
     }
@@ -7128,7 +7128,7 @@ void M_DisplayMenus(void)
 
     if ((g_player[myconnectindex].ps->gm&MODE_MENU) == 0)
     {
-        walock[TILE_LOADSHOT] = 1;
+        walock[TILE_LOADSHOT] = CACHE1D_ENTRY_FREE;
         return;
     }
 

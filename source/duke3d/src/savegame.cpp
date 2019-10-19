@@ -314,7 +314,7 @@ int32_t G_LoadSaveHeaderNew(char const *fn, savehead_t *saveh)
     if (kread(fil, &screenshotofs, 4) != 4)
         goto corrupt;
 
-    walock[TILE_LOADSHOT] = 255;
+    walock[TILE_LOADSHOT] = CACHE1D_ENTRY_PERMANENT;
     if (waloff[TILE_LOADSHOT] == 0)
         cacheAllocateBlock(&waloff[TILE_LOADSHOT], 320*200, &walock[TILE_LOADSHOT]);
     tilesiz[TILE_LOADSHOT].x = 200;
