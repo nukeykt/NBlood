@@ -1352,7 +1352,8 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
         G_DumpDebugInfo();
         OSD_Printf("Failed spawning pic %d spr from pic %d spr %d at x:%d,y:%d,z:%d,sect:%d\n",
                           s_pn,s_ow < 0 ? -1 : TrackerCast(sprite[s_ow].picnum),s_ow,s_x,s_y,s_z,whatsect);
-        G_GameExit("Too many sprites spawned.");
+        ERRprintf("Too many sprites spawned.");
+        fatal_exit("Too many sprites spawned.");
     }
 
 #ifdef DEBUGGINGAIDS
@@ -6031,21 +6032,22 @@ void G_PostCreateGameState(void)
 
 static void G_HandleMemErr(int32_t lineNum, const char *fileName, const char *funcName)
 {
-    static char msg[128];
-    Bsnprintf(msg, sizeof(msg), "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);
 #ifdef DEBUGGINGAIDS
-    Bassert(0);
+    debug_break();
 #endif
-    G_GameExit(msg);
+    Bsprintf(tempbuf, "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);
+    fatal_exit(tempbuf);
 }
 
-static void G_FatalEngineError(void)
+static void G_FatalEngineInitError(void)
 {
-    wm_msgbox("Fatal Engine Initialization Error",
-              "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
+#ifdef DEBUGGINGAIDS
+    debug_break();
+#endif
     G_Cleanup();
-    ERRprintf("G_Startup: There was a problem initializing the engine: %s\n", engineerrstr);
-    exit(6);
+    Bsprintf(tempbuf, "There was a problem initializing the engine: %s\n", engineerrstr);
+    ERRprintf("%s", tempbuf);
+    fatal_exit(tempbuf);
 }
 
 static void G_Startup(void)
@@ -6062,7 +6064,7 @@ static void G_Startup(void)
     G_CompileScripts();
 
     if (engineInit())
-        G_FatalEngineError();
+        G_FatalEngineInitError();
 
 #ifdef LUNATIC
     El_CreateGameState();
@@ -6528,12 +6530,7 @@ int app_main(int argc, char const * const * argv)
 #endif
 
     if (enginePreInit())
-    {
-        wm_msgbox("Build Engine Initialization Error",
-                  "There was a problem initializing the Build engine: %s", engineerrstr);
-        ERRprintf("app_main: There was a problem initializing the Build engine: %s\n", engineerrstr);
-        Bexit(2);
-    }
+        G_FatalEngineInitError();
 
     if (Bstrcmp(g_setupFileName, SETUPFILENAME))
         initprintf("Using config file \"%s\".\n",g_setupFileName);
@@ -6650,7 +6647,7 @@ int app_main(int argc, char const * const * argv)
     g_defModules.clear();
 
     if (enginePostInit())
-        G_FatalEngineError();
+        G_FatalEngineInitError();
 
     G_PostLoadPalette();
 
@@ -6698,9 +6695,8 @@ int app_main(int argc, char const * const * argv)
     {
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
-            ERRprintf("There was an error initializing the CONTROL system.\n");
             engineUnInit();
-            Bexit(5);
+            fatal_exit("There was an error initializing the CONTROL system.\n");
         }
 
         G_SetupGameButtons();

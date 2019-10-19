@@ -666,6 +666,13 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 # define Bexit exit
 #endif
 
+#ifdef _WIN32
+#define fatal_exit__(x) FatalAppExitA(0, x)
+#else
+#define fatal_exit__(x) do { wm_msgbox("Fatal Error", "%s", x); exit(EXIT_FAILURE); } while(0)
+#endif
+
+#define fatal_exit(status) do { initprintf("fatal_exit(%s) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); fatal_exit__(status); } while (0)
 
 ////////// Standard library monkey patching //////////
 

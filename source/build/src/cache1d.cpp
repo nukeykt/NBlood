@@ -272,6 +272,9 @@ void cacheAllocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlockptr)
     // it's better than the alternative of aborting the entire program
     while (cacheFindBlock(newbytes, &besto, &bestz) == 0x7fffffff)
     {
+        OSD_Printf("WARNING: request for %d byte block exhausted cache!\n"
+                   "Attempting to make it fit...\n",
+                   newbytes);
         cacheAgeEntries();
         if (!cnt--) reportandexit("CACHE SPACE ALL LOCKED UP!");
     }
@@ -380,8 +383,10 @@ static void reportandexit(const char *errormessage)
     initprintf("Cacnum = %d\n", cacnum);
     initprintf("Cache length sum = %d\n", j);
 #endif
-    initprintf("ERROR: %s\n", errormessage);
-    Bexit(1);
+
+    static char msg[128];
+    Bsnprintf(msg, sizeof(msg), "ERROR: %s\n", errormessage);
+    fatal_exit(msg);
 }
 
 #include <errno.h>
