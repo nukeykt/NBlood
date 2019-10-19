@@ -3008,7 +3008,7 @@ static void polymost_waitForSubBuffer(uint32_t subBufferIndex)
                 if (videoSetGameMode(fullscreen,xres,yres,bpp,upscalefactor))
                 {
                     OSD_Printf("polymost_waitForSubBuffer: Video reset failed.  Please ensure r_persistentStreamBuffer = 0 and try restarting the game.\n");
-                    Bexit(1);
+                    Bexit(EXIT_FAILURE);
                 }
                 return;
             }
