@@ -100,7 +100,7 @@ int32_t xdim2d = 640, ydim2d = 480, xdimgame = 640, ydimgame = 480, bppgame = 8;
 int32_t forcesetup = 1;
 
 #ifndef GEKKO
-int32_t g_maxCacheSize = 24<<20;
+int32_t g_maxCacheSize = 128<<20;
 #else
 int32_t g_maxCacheSize = 8<<20;
 #endif

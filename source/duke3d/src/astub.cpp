@@ -9270,6 +9270,7 @@ enum
     T_INCLUDE = 0,
     T_DEFINE = 1,
     T_LOADGRP,
+    T_CACHESIZE,
     T_TILEGROUP,
     T_TILE,
     T_TILERANGE,
@@ -9329,6 +9330,7 @@ static int32_t parsegroupfiles(scriptfile *script)
         { "includedefault",  T_INCLUDEDEFAULT },
         { "#includedefault", T_INCLUDEDEFAULT },
         { "loadgrp",         T_LOADGRP },
+        { "cachesize",       T_CACHESIZE },
         { "noautoload",      T_NOAUTOLOAD },
         { "globalgameflags", T_GLOBALGAMEFLAGS },
     };
@@ -9360,6 +9362,17 @@ static int32_t parsegroupfiles(scriptfile *script)
 
             }
             pathsearchmode = opathsearchmode;
+        }
+        break;
+        case T_CACHESIZE:
+        {
+            int32_t cacheSize;
+
+            if (scriptfile_getnumber(script, &cacheSize))
+                break;
+
+            if (cacheSize > 0)
+                g_maxCacheSize = cacheSize << 10;
         }
         break;
         case T_INCLUDE:
