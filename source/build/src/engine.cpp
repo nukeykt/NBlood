@@ -8152,7 +8152,7 @@ int32_t engineInit(void)
         for (j=0; j<MAXVOXMIPS; j++)
         {
             voxoff[i][j] = 0L;
-            voxlock[i][j] = 200;
+            voxlock[i][j] = CACHE1D_LOCKED_PERMANENTLY;
         }
     for (i=0; i<MAXTILES; i++)
         tiletovox[i] = -1;
@@ -10668,7 +10668,7 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
         kread(fil, &dasiz, 4); dasiz = B_LITTLE32(dasiz);
 
         //Must store filenames to use cacheing system :(
-        voxlock[voxindex][i] = 200;
+        voxlock[voxindex][i] = CACHE1D_LOCKED_PERMANENTLY;
         cacheAllocateBlock(&voxoff[voxindex][i], dasiz, &voxlock[voxindex][i]);
 
         char *ptr = (char *) voxoff[voxindex][i];
