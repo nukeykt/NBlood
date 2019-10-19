@@ -102,6 +102,7 @@ static void fillData(int chan, void *ptr, int remaining, void *udata)
     }
 
     mutex_unlock(&EffectFence);
+    zpl_yield_thread();
 }
 
 
