@@ -21,6 +21,7 @@ int32_t windowsCheckForUpdates(char *buffer);
 int     windowsCheckAlreadyRunning(void);
 void    windowsDwmEnableComposition(int compEnable);
 int     windowsGetCommandLine(char **argvbuf);
+LPTSTR  windowsGetErrorMessage(DWORD code);
 char *  windowsGetSystemKeyboardLayout(void);
 BOOL    windowsGetVersion(void);
 void    windowsHandleFocusChange(int const appactive);
@@ -30,5 +31,4 @@ void    windowsPlatformInit(void);
 int     windowsPreInit(void);
 void    windowsSetupTimer(int ntDllVoodoo);
 void    windowsSetKeyboardLayout(char const *layout);
-
 #endif // winbits_h__

@@ -168,6 +168,8 @@ static inline void buildvfs_fputstr(buildvfs_FILE fp, char const (&str)[N])
 extern "C" {
 #endif
 
+extern char toupperlookup[256];
+
 extern char *kpzbuf;
 extern int32_t kpzbufsiz;
 extern int32_t kpzbufload(const char *);

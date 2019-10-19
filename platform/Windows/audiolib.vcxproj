@@ -186,14 +186,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\audiolib\src\drivers.cpp" />
-    <ClCompile Include="..\..\source\audiolib\src\driver_directsound.cpp" />
-    <ClCompile Include="..\..\source\audiolib\src\driver_nosound.cpp" />
-    <ClCompile Include="..\..\source\audiolib\src\driver_sdl.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\driver_directsound.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\source\audiolib\src\driver_nosound.cpp" />
+    <ClCompile Include="..\..\source\audiolib\src\driver_sdl.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\flac.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\formats.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\fx_man.cpp" />

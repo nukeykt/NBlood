@@ -224,9 +224,6 @@
     <ClCompile Include="..\..\source\duke3d\src\savegame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\sdlmusic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\sector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -274,6 +271,9 @@
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\rsrc\eduke32_icon.c">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\duke3d\src\music_external.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
