@@ -100,16 +100,18 @@ int32_t kpzbufload(char const * const filnam)
 //           After calling uninitcache, it is still ok to call allocache
 //           without first calling initcache.
 
-#define MAXCACHEOBJECTS 16384
+#define CACHEINCREMENT 1024
+#define MEANCACHEBLOCKSIZE 24576
+int32_t cachemaxobjects;
 
 #if !defined DEBUG_ALLOCACHE_AS_MALLOC
-static int32_t cachesize = 0;
-static char zerochar = 0;
-static intptr_t cachestart = 0;
+static int32_t cachesize;
+static char zerochar;
+static intptr_t cachestart;
 static int32_t lockrecip[200];
 
-int32_t cacnum = 0;
-cactype cac[MAXCACHEOBJECTS];
+int32_t cacnum;
+cactype * cac = nullptr;
 #endif
 
 char toupperlookup[256] =
@@ -149,10 +151,17 @@ void cacheInitBuffer(intptr_t dacachestart, int32_t dacachesize)
     cachestart = ((uintptr_t)dacachestart+15)&~(uintptr_t)0xf;
     cachesize = (dacachesize-(((uintptr_t)(dacachestart))&0xf))&~(uintptr_t)0xf;
 
+    cachemaxobjects = max(cachesize / MEANCACHEBLOCKSIZE, 8192); 
+    cac = (cactype *) Xaligned_alloc(Bgetpagesize(), cachemaxobjects * sizeof(cactype));
+    Bmemset(cac, 0, cachemaxobjects * sizeof(cactype));
+
     cac[0].leng = cachesize;
     cac[0].lock = &zerochar;
     cacnum = 1;
 
+    #ifdef DEBUGGINGAIDS
+    initprintf("Cache object array initialized with \"%d\" entries. \n", cachemaxobjects);
+    #endif
     initprintf("Initialized %.1fM cache\n", (float)(dacachesize/1024.f/1024.f));
 #else
     UNREFERENCED_PARAMETER(dacachestart);
@@ -168,10 +177,25 @@ void cacheAllocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr)
     *newhandle = (intptr_t)Xmalloc(newbytes);
 }
 #else
+// Dynamic cache resizing -- increase cache array size when full
 static inline void inc_and_check_cacnum(void)
 {
-    if (EDUKE32_PREDICT_FALSE(++cacnum > MAXCACHEOBJECTS))
-        reportandexit("Too many objects in cache! (cacnum > MAXCACHEOBJECTS)");
+    if (++cacnum > cachemaxobjects)
+    {
+        auto new_cac = (cactype *)Xaligned_alloc(Bgetpagesize(), (cachemaxobjects + CACHEINCREMENT) * sizeof(cactype));
+
+        Bmemset(new_cac + cachemaxobjects, 0, CACHEINCREMENT * sizeof(cactype));
+        Bmemcpy(new_cac, cac, cachemaxobjects * sizeof(cactype));
+
+        Xaligned_free(cac);
+        cac = new_cac;
+
+#ifdef DEBUGGINGAIDS
+        initprintf("Cache increased from \'%d\' to \'%d\' entries. \n", cachemaxobjects, cachemaxobjects + CACHEINCREMENT);
+#endif
+
+        cachemaxobjects += CACHEINCREMENT;
+    }
 }
 
 int32_t cacheFindBlock(int32_t newbytes, int32_t *besto, int32_t *bestz)
@@ -309,7 +333,7 @@ void cacheAgeEntries(void)
     if (agecount >= cacnum)
         agecount = cacnum-1;
 
-    int cnt = min(MAXCACHEOBJECTS >> 5, cacnum-1);
+    int cnt = min(cachemaxobjects >> 4, cacnum-1);
 
     while(cnt--)
     {

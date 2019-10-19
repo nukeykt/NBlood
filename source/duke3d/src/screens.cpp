@@ -704,7 +704,7 @@ static void G_PrintCoords(int32_t snum)
 
 #if !defined DEBUG_ALLOCACHE_AS_MALLOC
 extern int32_t cacnum;
-extern cactype cac [];
+extern cactype *cac;
 #endif
 
 static void G_ShowCacheLocks(void)
