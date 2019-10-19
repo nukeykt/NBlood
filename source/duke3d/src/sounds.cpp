@@ -79,7 +79,7 @@ void S_SoundStartup(void)
         }
 
 #ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[i] = 199;
+        g_soundlocks[i] = CACHE1D_UNLOCKED;
 #endif
     }
 
@@ -399,7 +399,7 @@ void S_Cleanup(void)
         {
             int const rtsindex = klabs((int32_t)num);
 
-            if (rts_lumplockbyte[rtsindex] >= 200)
+            if (rts_lumplockbyte[rtsindex] >= CACHE1D_LOCKED)
                 --rts_lumplockbyte[rtsindex];
             continue;
         }
@@ -458,7 +458,7 @@ int32_t S_LoadSound(int num)
     }
 
     int32_t l = kfilelength(fp);
-    g_soundlocks[num] = CACHE1D_ENTRY_PERMANENT;
+    g_soundlocks[num] = CACHE1D_LOCKED_PERMANENTLY;
     snd.siz = l;
     cacheAllocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
     l = kread(fp, snd.ptr, l);
@@ -738,8 +738,8 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         S_StopEnvSound(sndNum, spriteNum);
 
 #ifdef CACHING_DOESNT_SUCK
-    if (++g_soundlocks[sndNum] < 200)
-        g_soundlocks[sndNum] = 200;
+    if (++g_soundlocks[sndNum] < CACHE1D_LOCKED)
+        g_soundlocks[sndNum] = CACHE1D_LOCKED;
 #endif
 
     int const sndSlot = S_GetSlot(sndNum);
@@ -803,8 +803,8 @@ int S_PlaySound(int num)
     int const pitch = S_GetPitch(num);
 
 #ifdef CACHING_DOESNT_SUCK
-    if (++g_soundlocks[num] < 200)
-        g_soundlocks[num] = 200;
+    if (++g_soundlocks[num] < CACHE1D_LOCKED)
+        g_soundlocks[num] = CACHE1D_LOCKED;
 #endif
 
     sndnum = S_GetSlot(num);
@@ -989,14 +989,14 @@ void S_ClearSoundLocks(void)
     int32_t const msp = g_highestSoundIdx;
 
     for (native_t i = 0; i < 11; ++i)
-        if (rts_lumplockbyte[i] >= 200)
-            rts_lumplockbyte[i] = 199;
+        if (rts_lumplockbyte[i] >= CACHE1D_LOCKED)
+            rts_lumplockbyte[i] = CACHE1D_UNLOCKED;
 
     int32_t const msp = g_highestSoundIdx;
 
     for (native_t i = 0; i <= msp; ++i)
-        if (g_soundlocks[i] >= 200)
-            g_soundlocks[i] = 199;
+        if (g_soundlocks[i] >= CACHE1D_LOCKED)
+            g_soundlocks[i] = CACHE1D_UNLOCKED;
 #endif
 }
 

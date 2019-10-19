@@ -435,7 +435,7 @@ void G_AnimateCamSprite(int smoothRatio)
             if (waloff[viewscrTile] == 0)
                 tileCreate(viewscrTile, tilesiz[PN(spriteNum)].x << viewscrShift, tilesiz[PN(spriteNum)].y << viewscrShift);
             else
-                walock[viewscrTile] = 199;
+                walock[viewscrTile] = CACHE1D_UNLOCKED;
 
             G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
 #ifdef POLYMER

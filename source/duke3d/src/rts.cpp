@@ -156,14 +156,14 @@ void *RTS_GetSound(int32_t lump)
 
     if (rts_lumpcache[lump] == NULL)
     {
-        rts_lumplockbyte[lump] = 200;
+        rts_lumplockbyte[lump] = CACHE1D_LOCKED;
         cacheAllocateBlock((intptr_t *)&rts_lumpcache[lump], RTS_SoundLength(lump-1), &rts_lumplockbyte[lump]);  // JBF 20030910: char * => int32_t *
         RTS_ReadLump(lump, rts_lumpcache[lump]);
     }
     else
     {
-        if (rts_lumplockbyte[lump] < 200)
-            rts_lumplockbyte[lump] = 200;
+        if (rts_lumplockbyte[lump] < CACHE1D_LOCKED)
+            rts_lumplockbyte[lump] = CACHE1D_LOCKED;
         else
             rts_lumplockbyte[lump]++;
     }
