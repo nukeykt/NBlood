@@ -140,7 +140,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &zombieASearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && (powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0 || powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 31) > 0))
+    if (IsPlayerSprite(pTarget) && (powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0 || powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpDeathMaskUseless) > 0))
     {
         aiNewState(pSprite, pXSprite, &zombieAGoto);
         return;
@@ -186,7 +186,7 @@ static void thinkPonder(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &zombieASearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && (powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0 || powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 31) > 0))
+    if (IsPlayerSprite(pTarget) && (powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0 || powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpDeathMaskUseless) > 0))
     {
         aiNewState(pSprite, pXSprite, &zombieAGoto);
         return;
@@ -225,7 +225,7 @@ static void myThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
     {
         PLAYER *pPlayer = &gPlayer[p];
         int nOwner = (pSprite->owner & 0x1000) ? (pSprite->owner&0xfff) : -1;
-        if (nOwner == pPlayer->at5b || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, 13) > 0)
+        if (nOwner == pPlayer->at5b || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
             continue;
         int x = pPlayer->pSprite->x;
         int y = pPlayer->pSprite->y;
