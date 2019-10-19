@@ -1460,16 +1460,6 @@ void sdlayer_setvideomode_opengl(void)
     glinfo.sync = !!Bstrstr(glinfo.extensions, "GL_ARB_sync");
     glinfo.depthclamp = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_clamp");
     glinfo.clipcontrol = !!Bstrstr(glinfo.extensions, "GL_ARB_clip_control");
-
-    if (Bstrstr(glinfo.extensions, "WGL_3DFX_gamma_control"))
-    {
-        static int32_t warnonce;
-        // 3dfx cards have issues with fog
-        nofog = 1;
-        if (!(warnonce & 1))
-            initprintf("3dfx card detected: OpenGL fog disabled\n");
-        warnonce |= 1;
-    }
 #else
     // don't bother checking because ETC2 et al. are not listed in extensions anyway
     glinfo.texcompr = 1; // !!Bstrstr(glinfo.extensions, "GL_OES_compressed_ETC1_RGB8_texture");
