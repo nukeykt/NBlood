@@ -718,7 +718,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
         {
             initprintf("Failed opening ART file \"%s\"!\n", fn);
             engineUnInit();
-            Bexit(11);
+            Bexit(EXIT_FAILURE);
         }
 
         artfilnum = tfn;
