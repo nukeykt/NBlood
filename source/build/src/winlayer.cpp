@@ -15,17 +15,15 @@
 #ifdef _MSC_VER
 # define NEED_CRTDBG_H
 #endif
-#include "windows_inc.h"
 
+#include "windows_inc.h"
+#include "build_cpuid.h"
 #include "winlayer.h"
 #include "rawinput.h"
 #include "mutex.h"
-
 #include "winbits.h"
 #include "engine_priv.h"
-
 #include "dxdidf.h"	// comment this out if c_dfDI* is being reported as multiply defined
-
 #include <signal.h>
 
 // undefine to restrict windowed resolutions to conventional sizes
@@ -282,14 +280,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
-    if (!CheckWinVersion() || hPrevInst)
-    {
-        MessageBox(0, "This application requires a newer Windows version to run.",
-                   apptitle, MB_OK|MB_ICONSTOP);
+    if (windowsPreInit())
         return -1;
-    }
-
-    win_open();
 
     hdc = GetDC(NULL);
     r = GetDeviceCaps(hdc, BITSPIXEL);
@@ -409,7 +401,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     startwin_close();
 
-    win_close();
+    windowsPlatformCleanup();
 
     Xfree(argvbuf);
 
@@ -492,7 +484,8 @@ int32_t initsystem(void)
     frameplace=0;
     lockcount=0;
 
-    win_init();
+    windowsPlatformInit();
+    sysReadCPUID();
 
 #ifdef USE_OPENGL
     if (loadwgl(getenv("BUILD_GLDRV")))
@@ -686,9 +679,6 @@ int32_t handleevents(void)
 //
 int32_t initinput(void)
 {
-    Win_GetOriginalLayoutName();
-    Win_SetKeyboardLayoutUS(1);
-
     g_mouseEnabled=0;
     memset(keystatus, 0, sizeof(keystatus));
 
@@ -709,8 +699,6 @@ int32_t initinput(void)
 //
 void uninitinput(void)
 {
-    Win_SetKeyboardLayoutUS(0);
-
     mouseUninit();
     UninitDirectInput();
 }
@@ -956,13 +944,13 @@ static BOOL InitDirectInput(void)
         hDInputDLL = LoadLibrary("DINPUT.DLL");
         if (!hDInputDLL)
         {
-            ShowErrorBox("Error loading DINPUT.DLL");
+            windowsShowError("Error loading DINPUT.DLL");
             return TRUE;
         }
     }
 
     aDirectInputCreateA = (HRESULT(WINAPI *)(HINSTANCE, DWORD, LPDIRECTINPUT7A *, LPUNKNOWN))GetProcAddress(hDInputDLL, "DirectInputCreateA");
-    if (!aDirectInputCreateA) ShowErrorBox("Error fetching DirectInputCreateA()");
+    if (!aDirectInputCreateA) windowsShowError("Error fetching DirectInputCreateA()");
 
     result = aDirectInputCreateA(hInstance, DIRECTINPUT_VERSION, &lpDI, NULL);
     if (FAILED(result)) { HorribleDInputDeath("DirectInputCreateA() failed", result); }
@@ -1003,7 +991,7 @@ static BOOL InitDirectInput(void)
     if (di_inputevt == NULL)
     {
         IDirectInputDevice7_Release(dev2);
-        ShowErrorBox("Couldn't create event object");
+        windowsShowError("Couldn't create event object");
         UninitDirectInput();
         return TRUE;
     }
@@ -1492,9 +1480,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         gammabrightness = 0;
     }
 
-    win_setvideomode(c);
+    windowsDwmEnableComposition(c == 8);
 
-    if (!silentvideomodeswitch)
+    if (!win_silentvideomodeswitch)
         initprintf("Setting video mode %dx%d (%d-bit %s)\n",
                    x,y,c, ((fs&1) ? "fullscreen" : "windowed"));
 
@@ -2124,7 +2112,7 @@ static BOOL InitDirectDraw(void)
         hDDrawDLL = LoadLibrary("DDRAW.DLL");
         if (!hDDrawDLL)
         {
-            ShowErrorBox("Error loading DDRAW.DLL");
+            windowsShowError("Error loading DDRAW.DLL");
             return TRUE;
         }
     }
@@ -2133,7 +2121,7 @@ static BOOL InitDirectDraw(void)
     aDirectDrawEnumerate = (decltype(aDirectDrawEnumerate))GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
     if (!aDirectDrawEnumerate)
     {
-        ShowErrorBox("Error fetching DirectDrawEnumerate()");
+        windowsShowError("Error fetching DirectDrawEnumerate()");
         UninitDirectDraw();
         return TRUE;
     }
@@ -2146,7 +2134,7 @@ static BOOL InitDirectDraw(void)
     aDirectDrawCreate = (decltype(aDirectDrawCreate))GetProcAddress(hDDrawDLL, "DirectDrawCreate");
     if (!aDirectDrawCreate)
     {
-        ShowErrorBox("Error fetching DirectDrawCreate()");
+        windowsShowError("Error fetching DirectDrawCreate()");
         UninitDirectDraw();
         return TRUE;
     }
@@ -2321,7 +2309,7 @@ static int32_t SetupDirectDraw(int32_t width, int32_t height)
     lpOffscreen = (char *)Xmalloc((width|1)*height);
     if (!lpOffscreen)
     {
-        ShowErrorBox("Failure allocating offscreen buffer");
+        windowsShowError("Failure allocating offscreen buffer");
         UninitDirectDraw();
         return TRUE;
     }
@@ -2400,7 +2388,7 @@ static int32_t SetupDIB(int32_t width, int32_t height)
         hDC = GetDC(hWindow);
         if (!hDC)
         {
-            ShowErrorBox("Error getting device context");
+            windowsShowError("Error getting device context");
             return TRUE;
         }
     }
@@ -2442,7 +2430,7 @@ static int32_t SetupDIB(int32_t width, int32_t height)
         ReleaseDC(hWindow, hDC);
         hDC = NULL;
 
-        ShowErrorBox("Error creating DIB section");
+        windowsShowError("Error creating DIB section");
         return TRUE;
     }
 
@@ -2455,7 +2443,7 @@ static int32_t SetupDIB(int32_t width, int32_t height)
         ReleaseDC(hWindow, hDC);
         hDC = NULL;
 
-        ShowErrorBox("Error creating compatible DC");
+        windowsShowError("Error creating compatible DC");
         return TRUE;
     }
 
@@ -2467,7 +2455,7 @@ static int32_t SetupDIB(int32_t width, int32_t height)
         DeleteDC(hDCSection);
         hDCSection = NULL;
 
-        ShowErrorBox("Error creating compatible DC");
+        windowsShowError("Error creating compatible DC");
         return TRUE;
     }
 
@@ -2552,7 +2540,7 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
                     NULL);
     if (!hGLWindow)
     {
-        ShowErrorBox("Error creating OpenGL child window.");
+        windowsShowError("Error creating OpenGL child window.");
         return TRUE;
     }
 
@@ -2560,7 +2548,7 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
     if (!hDC)
     {
         ReleaseOpenGL();
-        ShowErrorBox("Error getting device context");
+        windowsShowError("Error getting device context");
         return TRUE;
     }
 
@@ -2571,7 +2559,7 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
     if (!PixelFormat)
     {
         ReleaseOpenGL();
-        ShowErrorBox("Can't choose pixel format");
+        windowsShowError("Can't choose pixel format");
         return TRUE;
     }
 
@@ -2580,7 +2568,7 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
     if (!err)
     {
         ReleaseOpenGL();
-        ShowErrorBox("Can't set pixel format");
+        windowsShowError("Can't set pixel format");
         return TRUE;
     }
 
@@ -2589,14 +2577,14 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
     if (!hGLRC)
     {
         ReleaseOpenGL();
-        ShowErrorBox("Can't create GL RC");
+        windowsShowError("Can't create GL RC");
         return TRUE;
     }
 
     if (!wglMakeCurrent(hDC, hGLRC))
     {
         ReleaseOpenGL();
-        ShowErrorBox("Can't activate GL RC");
+        windowsShowError("Can't activate GL RC");
         return TRUE;
     }
 
@@ -2943,7 +2931,7 @@ static BOOL CreateAppWindow(int32_t modenum)
                       0);
         if (!hWindow)
         {
-            ShowErrorBox("Unable to create window");
+            windowsShowError("Unable to create window");
             return TRUE;
         }
 
@@ -3038,7 +3026,7 @@ static BOOL CreateAppWindow(int32_t modenum)
 
             if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
             {
-                ShowErrorBox("Video mode not supported");
+                windowsShowError("Video mode not supported");
                 return TRUE;
             }
 
@@ -3435,7 +3423,7 @@ static LRESULT CALLBACK WndProcCallback(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                     regrabmouse = 1;
                 }
                 realfs = fullscreen;
-                silentvideomodeswitch = 1;
+                win_silentvideomodeswitch = 1;
                 videoSetGameMode(!fullscreen,xres,yres,bpp,upscalefactor);
                 ShowWindow(hWindow, SW_MINIMIZE);
             }
@@ -3450,18 +3438,14 @@ static LRESULT CALLBACK WndProcCallback(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                 SetForegroundWindow(hWindow);
                 SetFocus(hWindow);
                 videoSetGameMode(realfs,xres,yres,bpp,upscalefactor);
-                silentvideomodeswitch = 0;
+                win_silentvideomodeswitch = 0;
                 realfs = 0;
             }
         }
 #endif
-
-        // Win_SetKeyboardLayoutUS(appactive);
-
-        if (backgroundidle)
-            SetPriorityClass(GetCurrentProcess(),
-                             appactive ? NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
-
+#ifdef _WIN32
+        windowsHandleFocusChange(appactive);
+#endif
         if (appactive)
         {
             SetForegroundWindow(hWindow);
@@ -3582,7 +3566,7 @@ static BOOL RegisterWindowClass(void)
                             GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
     if (!RegisterClassEx(&wcx))
     {
-        ShowErrorBox("Failed to register window class");
+        windowsShowError("Failed to register window class");
         return TRUE;
     }
 

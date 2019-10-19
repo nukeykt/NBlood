@@ -7,6 +7,7 @@
 #include "build.h"
 #include "cache1d.h"
 #include "compat.h"
+#include "build_cpuid.h"
 #include "engine_priv.h"
 #include "osd.h"
 #include "palette.h"
@@ -36,7 +37,6 @@
 # include <ogc/lwp_watchdog.h>
 #elif defined _WIN32
 # include "winbits.h"
-# include <timeapi.h>
 #endif
 
 #include "vfs.h"
@@ -481,13 +481,9 @@ int main(int argc, char *argv[])
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
 
-    win_open();
-
-    if (!CheckWinVersion())
-    {
-        MessageBox(0, "This application requires a newer Windows version to run.", apptitle, MB_OK | MB_ICONSTOP);
+    if (windowsPreInit())
         return -1;
-    }
+
 #elif defined(GEKKO)
     wii_open();
 #elif defined(HAVE_GTK2)
@@ -504,7 +500,7 @@ int main(int argc, char *argv[])
 
 #ifdef _WIN32
     char *argvbuf;
-    int32_t buildargc = win_buildargs(&argvbuf);
+    int buildargc = windowsGetCommandLine(&argvbuf);
     const char **buildargv = (const char **) Xmalloc(sizeof(char *)*(buildargc+1));
     char *wp = argvbuf;
 
@@ -532,7 +528,7 @@ int main(int argc, char *argv[])
     startwin_close();
 
 #ifdef _WIN32
-    win_close();
+    windowsPlatformCleanup();
 #elif defined(HAVE_GTK2)
     gtkbuild_exit(r);
 #endif
@@ -618,8 +614,10 @@ int32_t initsystem(void)
     mutex_init(&m_initprintf);
 
 #ifdef _WIN32
-    win_init();
+    windowsPlatformInit();
 #endif
+
+    sysReadCPUID();
 
     if (sdlayer_checkversion())
         return -1;
@@ -951,11 +949,6 @@ int32_t initinput(void)
 {
     int32_t i;
 
-#ifdef _WIN32
-    Win_GetOriginalLayoutName();
-    Win_SetKeyboardLayoutUS(1);
-#endif
-
 #if defined EDUKE32_OSX
     // force OS X to operate in >1 button mouse mode so that LMB isn't adulterated
     if (!getenv("SDL_HAS3BUTTONMOUSE"))
@@ -1008,9 +1001,6 @@ int32_t initinput(void)
 //
 void uninitinput(void)
 {
-#ifdef _WIN32
-    Win_SetKeyboardLayoutUS(0);
-#endif
     mouseUninit();
 
 #if SDL_MAJOR_VERSION >= 2
@@ -1656,7 +1646,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #endif
         if (nogl)
             return -1;
-
+# ifdef _WIN32
+        windowsDwmEnableComposition(false);
+# endif
         struct glattribs
         {
             SDL_GLattr attr;
@@ -2456,12 +2448,7 @@ int32_t handleevents_pollsdl(void)
                         if (g_mouseGrabbed && g_mouseEnabled)
                             grabmouse_low(appactive);
 #ifdef _WIN32
-                        // Win_SetKeyboardLayoutUS(appactive);
-
-                        if (backgroundidle)
-                            SetPriorityClass(GetCurrentProcess(), appactive ? NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
-
-                        win_settimerresolution(win_fastsched);
+                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
 #endif
                         break;
 
@@ -2479,10 +2466,11 @@ int32_t handleevents_pollsdl(void)
                         break;
                     }
                     case SDL_WINDOWEVENT_ENTER:
-                        g_mouseInsideWindow = 1;
-                        break;
                     case SDL_WINDOWEVENT_LEAVE:
-                        g_mouseInsideWindow = 0;
+                        g_mouseInsideWindow = (ev.window.event == SDL_WINDOWEVENT_ENTER);
+#ifdef _WIN32
+                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
+#endif
                         break;
                 }
 
