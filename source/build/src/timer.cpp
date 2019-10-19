@@ -200,18 +200,18 @@ int timerInit(int const tickspersecond)
         {
             double const calibrationEndTime = timerGetHiTicks() + 100.0;
             _mm_mfence();
-            auto time1 = __rdtsc();
+            auto const time1 = __rdtsc();
             do { } while (timerGetHiTicks() < calibrationEndTime);
             _mm_mfence();
-            auto time2 = __rdtsc();
+            auto const time2 = __rdtsc();
             _mm_mfence();
-            auto time3 = __rdtsc();
+            auto const time3 = __rdtsc() - time2;
 
-            tsc_freq = (time2 - time1 - (time3 - time2)) * 10;
+            tsc_freq = (time2 - time1 - time3) * 10;
         }
+        sysReadCPUID();
 #endif
         initDone = 1;
-        sysReadCPUID();
     }
 
     clockTicksPerSecond = tickspersecond;
