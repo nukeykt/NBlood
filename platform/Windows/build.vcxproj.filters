@@ -206,6 +206,9 @@
     <ClCompile Include="..\..\source\build\src\zpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\build\src\vfs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\build\include\a.h">
@@ -429,14 +432,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\..\source\build\src\a.masm" />
-  </ItemGroup>
-  <ItemGroup>
     <CustomBuild Include="..\..\source\build\src\polymost1Frag.glsl">
       <Filter>Source Files</Filter>
     </CustomBuild>
     <CustomBuild Include="..\..\source\build\src\polymost1Vert.glsl">
       <Filter>Source Files</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\source\build\src\a.masm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

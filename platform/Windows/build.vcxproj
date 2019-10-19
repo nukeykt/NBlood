@@ -297,6 +297,7 @@
     <ClCompile Include="..\..\source\build\src\tilepacker.cpp" />
     <ClCompile Include="..\..\source\build\src\tiles.cpp" />
     <ClCompile Include="..\..\source\build\src\timer.cpp" />
+    <ClCompile Include="..\..\source\build\src\vfs.cpp" />
     <ClCompile Include="..\..\source\build\src\voxmodel.cpp" />
     <ClCompile Include="..\..\source\build\src\wiibits.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
