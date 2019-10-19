@@ -412,6 +412,9 @@
     <ClInclude Include="..\..\source\build\include\cpuid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\build\include\windows_inc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\source\build\src\a.masm" />
