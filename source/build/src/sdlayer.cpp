@@ -576,10 +576,10 @@ int32_t sdlayer_checkversion(void)
                " (built against SDL version %d.%d.%d)\n",
                linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
 
-    if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL_REQUIREDVERSION)
+    if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL2_REQUIREDVERSION)
     {
         /*reject running under SDL versions older than what is stated in sdl_inc.h */
-        initprintf("You need at least v%d.%d.%d of SDL to run this game\n",SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z);
+        initprintf("You need at least v%d.%d.%d of SDL to run this game\n",SDL2_MIN_X,SDL2_MIN_Y,SDL2_MIN_Z);
         return -1;
     }
 
