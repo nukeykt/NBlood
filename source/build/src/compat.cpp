@@ -581,18 +581,10 @@ char *Bstrupr(char *s)
 
 int Bgetpagesize(void)
 {
-    static int pageSize = -1;
+    static zpl_isize pageSize = -1;
 
     if (pageSize == -1)
-    {
-#ifdef _WIN32
-        SYSTEM_INFO system_info;
-        GetSystemInfo(&system_info);
-        pageSize = system_info.dwPageSize;
-#else
-        pageSize = sysconf(_SC_PAGESIZE);
-#endif
-    }
+        zpl_virtual_memory_page_size(&pageSize);
 
     return (unsigned)pageSize < BMAXPAGESIZE ? pageSize : BMAXPAGESIZE;
 }
