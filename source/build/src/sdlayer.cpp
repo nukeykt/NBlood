@@ -314,7 +314,15 @@ void wm_setapptitle(const char *name)
 static inline char grabmouse_low(char a);
 
 #ifndef __ANDROID__
-static void attach_debugger_here(void) {}
+#ifdef DEBUGGINGAIDS
+#include "debugbreak.h"
+#endif
+static void attach_debugger_here(void)
+{
+#ifdef DEBUGGINGAIDS
+    debug_break();
+#endif
+}
 
 static void sighandler(int signum)
 {
