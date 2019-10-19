@@ -23,6 +23,7 @@
  */
 
 #include "compat.h"
+#include "cache1d.h"
 
 #ifdef HAVE_VORBIS
 
@@ -368,13 +369,22 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
         return MV_Error;
     }
 
-    auto vd = (vorbis_data *)Xcalloc(1, sizeof(vorbis_data));
+    VoiceNode *voice = MV_AllocVoice(priority);
 
-    if (!vd)
+    if (voice == NULL)
     {
-        MV_SetErrorCode(MV_InvalidFile);
+        MV_SetErrorCode(MV_NoVoices);
         return MV_Error;
     }
+
+    vorbis_data *vd;
+
+    voice->ptrlock = CACHE1D_ENTRY_PERMANENT;
+
+    if (voice->rawdataptr == nullptr || voice->wavetype != FMT_VORBIS)
+        cacheAllocateBlock((intptr_t *)&vd, sizeof(vorbis_data), &voice->ptrlock);
+    else
+        vd = (vorbis_data *)voice->rawdataptr;
 
     vd->ptr    = ptr;
     vd->pos    = 0;
@@ -383,41 +393,17 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
     vd->lastbitstream = -1;
 
     int32_t status = ov_open_callbacks((void *)vd, &vd->vf, 0, 0, vorbis_callbacks);
+    vorbis_info *vi;
 
-    if (status < 0)
+    if (status < 0 || ((vi = ov_info(&vd->vf, 0)) == nullptr) || vi->channels < 1 || vi->channels > 2)
     {
-        Xfree(vd);
-        MV_Printf("MV_PlayVorbis: err %d\n", status);
+        if (status == 0)
+            ov_clear(&vd->vf);
+        else
+            MV_Printf("MV_PlayVorbis: err %d\n", status);
+
+        voice->ptrlock = CACHE1D_ENTRY_FREE;
         MV_SetErrorCode(MV_InvalidFile);
-        return MV_Error;
-    }
-
-    vorbis_info *vi = ov_info(&vd->vf, 0);
-
-    if (!vi)
-    {
-        ov_clear(&vd->vf);
-        Xfree(vd);
-        MV_SetErrorCode(MV_InvalidFile);
-        return MV_Error;
-    }
-
-    if (vi->channels != 1 && vi->channels != 2)
-    {
-        ov_clear(&vd->vf);
-        Xfree(vd);
-        MV_SetErrorCode(MV_InvalidFile);
-        return MV_Error;
-    }
-
-    // Request a voice from the voice pool
-    VoiceNode *voice = MV_AllocVoice(priority);
-
-    if (voice == NULL)
-    {
-        ov_clear(&vd->vf);
-        Xfree(vd);
-        MV_SetErrorCode(MV_NoVoices);
         return MV_Error;
     }
 
@@ -460,11 +446,11 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
 
     auto vd = (vorbis_data *)voice->rawdataptr;
 
-    voice->rawdataptr = 0;
     voice->length = 0;
     voice->sound = nullptr;
+    voice->ptrlock = 199;
+
     ov_clear(&vd->vf);
-    Xfree(vd);
 }
 #else
 #include "_multivc.h"
