@@ -393,9 +393,7 @@ int sdlayer_mobilefilter(void *userdata, SDL_Event *event)
 
     UNREFERENCED_PARAMETER(userdata);
 }
-#endif
 
-#ifdef __ANDROID__
 # include <setjmp.h>
 static jmp_buf eduke32_exit_jmp_buf;
 static int eduke32_return_value;
@@ -407,6 +405,30 @@ void eduke32_exit_return(int retval)
     EDUKE32_UNREACHABLE_SECTION(return);
 }
 #endif
+
+void sdlayer_sethints()
+{
+#if defined _WIN32
+    // Thread naming interferes with debugging using MinGW-w64's GDB.
+#if defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
+    SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
+#endif
+#if defined SDL_HINT_XINPUT_ENABLED
+    if (!Bgetenv("EDUKE32_NO_XINPUT"))
+        SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+#endif
+#endif
+
+#if defined SDL_HINT_NO_SIGNAL_HANDLERS
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+#endif
+#if defined SDL_HINT_VIDEO_HIGHDPI_DISABLED
+    SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
+#endif
+#if defined SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
+    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
+#endif
+}
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
@@ -428,18 +450,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#if defined _WIN32
-    // Thread naming interferes with debugging using MinGW-w64's GDB.
-#if defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
-    SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
-#endif
-#if defined SDL_HINT_XINPUT_ENABLED
-    if (!Bgetenv("EDUKE32_NO_XINPUT"))
-        SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
-#endif
-#endif
-
-    int32_t r;
+    sdlayer_sethints();
 
 #ifdef USE_OPENGL
     char *argp;
@@ -508,14 +519,14 @@ int main(int argc, char *argv[])
     PHYSFS_init(buildargv[0]);
     PHYSFS_setWriteDir(PHYSFS_getBaseDir());
 #endif
-    r = app_main(buildargc, (const char **)buildargv);
+    int const r = app_main(buildargc, (const char **)buildargv);
 #else
 #ifdef USE_PHYSFS
     int pfsi = PHYSFS_init(argv[0]);
     assert(pfsi != 0);
     PHYSFS_setWriteDir(PHYSFS_getUserDir());
 #endif
-    r = app_main(argc, (char const * const *)argv);
+    int const r = app_main(argc, (char const * const *)argv);
 #endif
 
     startwin_close();
@@ -1728,13 +1739,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
         SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
-
-#if defined SDL_HINT_VIDEO_HIGHDPI_DISABLED
-    SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
-#endif
-#if defined SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
-    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
-#endif
 
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
