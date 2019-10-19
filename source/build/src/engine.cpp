@@ -8113,7 +8113,7 @@ int32_t enginePreInit(void)
 //
 int32_t engineInit(void)
 {
-    int32_t i, j;
+    int32_t i;
 
 #if !defined _WIN32 && defined DEBUGGINGAIDS && !defined GEKKO
     struct sigaction sigact, oldact;
@@ -8148,12 +8148,9 @@ int32_t engineInit(void)
     for (i=1; i<1024; i++)
         lowrecip[i] = ((1<<24)-1)/i;
 
-    for (i=0; i<MAXVOXELS; i++)
-        for (j=0; j<MAXVOXMIPS; j++)
-        {
-            voxoff[i][j] = 0L;
-            voxlock[i][j] = CACHE1D_LOCKED_PERMANENTLY;
-        }
+    Bmemset(voxoff, 0, sizeof(voxoff));
+    Bmemset(voxlock, 0, sizeof(voxlock));
+
     for (i=0; i<MAXTILES; i++)
         tiletovox[i] = -1;
     clearbuf(voxscale, sizeof(voxscale)>>2, 65536);
@@ -10635,7 +10632,7 @@ void videoNextPage(void)
     }
 
     faketimerhandler();
-    cacheAgeEntries();
+    g_cache.ageBlocks();
 
 #ifdef USE_OPENGL
     omdtims = mdtims;
@@ -10668,8 +10665,8 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
         kread(fil, &dasiz, 4); dasiz = B_LITTLE32(dasiz);
 
         //Must store filenames to use cacheing system :(
-        voxlock[voxindex][i] = CACHE1D_LOCKED_PERMANENTLY;
-        cacheAllocateBlock(&voxoff[voxindex][i], dasiz, &voxlock[voxindex][i]);
+        voxlock[voxindex][i] = CACHE1D_PERMANENT;
+        g_cache.allocateBlock(&voxoff[voxindex][i], dasiz, &voxlock[voxindex][i]);
 
         char *ptr = (char *) voxoff[voxindex][i];
         kread(fil, ptr, dasiz);

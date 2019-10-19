@@ -458,9 +458,9 @@ int32_t S_LoadSound(int num)
     }
 
     int32_t l = kfilelength(fp);
-    g_soundlocks[num] = CACHE1D_LOCKED_PERMANENTLY;
+    g_soundlocks[num] = CACHE1D_PERMANENT;
     snd.siz = l;
-    cacheAllocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
+    g_cache.allocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
     l = kread(fp, snd.ptr, l);
     kclose(fp);
 
