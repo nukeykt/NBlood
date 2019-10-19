@@ -120,9 +120,9 @@ int32_t cache1d_file_fromzip(buildvfs_kfd fil);
 
 typedef struct
 {
+    char *    lock;
     intptr_t *hand;
     int32_t   leng;
-    char *    lock;
 } cactype;
 
 enum {
