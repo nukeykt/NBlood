@@ -16,16 +16,24 @@ typedef struct
     char *    lock;
     intptr_t *hand;
     int32_t   leng;
-} cactype;
+} cacheitem_t;
 
-enum {
-    CACHE1D_ENTRY_FREE      = 1,
-    CACHE1D_ENTRY_PERMANENT = 255,
+enum cachelock_t: char
+{
+    CACHE1D_FREE               = 1,
+    CACHE1D_UNLOCKED           = 199,
+    CACHE1D_LOCKED             = 200,
+    CACHE1D_LOCKED_PERMANENTLY = 255,
 };
 
-void	cacheInitBuffer(intptr_t dacachestart, int32_t dacachesize);
-void	cacheAllocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr);
-void	cacheAgeEntries(void);
+extern int g_cacheNumEntries;
+extern cacheitem_t * g_cache;
+
+#if !defined DEBUG_ALLOCACHE_AS_MALLOC
+void cacheInitBuffer(intptr_t dacachestart, int32_t dacachesize);
+void cacheAllocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr);
+void cacheAgeEntries(void);
+#endif
 
 #endif // cache1d_h_
 

@@ -140,7 +140,7 @@ int32_t S_LoadSound(uint32_t num)
     int32_t l = kfilelength(fp);
     g_sounds[num].soundsiz = l;
 
-    g_sounds[num].lock = 200;
+    g_sounds[num].lock = CACHE1D_LOCKED;
 
     cacheAllocateBlock((intptr_t *)&g_sounds[num].ptr,l,(char *)&g_sounds[num].lock);
     kread(fp, g_sounds[num].ptr , l);
@@ -241,8 +241,8 @@ int32_t S_PlaySound3D(int32_t num, int32_t i, const vec3_t *pos)
     }
     else
     {
-        if (g_sounds[num].lock < 200)
-            g_sounds[num].lock = 200;
+        if (g_sounds[num].lock < CACHE1D_LOCKED)
+            g_sounds[num].lock = CACHE1D_LOCKED;
         else g_sounds[num].lock++;
     }
 
@@ -308,8 +308,8 @@ void S_PlaySound(int32_t num)
     }
     else
     {
-        if (g_sounds[num].lock < 200)
-            g_sounds[num].lock = 200;
+        if (g_sounds[num].lock < CACHE1D_LOCKED)
+            g_sounds[num].lock = CACHE1D_LOCKED;
         else g_sounds[num].lock++;
     }
 
@@ -484,8 +484,8 @@ void S_ClearSoundLocks(void)
     int32_t i;
 
     for (i=0; i<MAXSOUNDS; i++)
-        if (g_sounds[i].lock >= 200)
-            g_sounds[i].lock = 199;
+        if (g_sounds[i].lock >= CACHE1D_LOCKED)
+            g_sounds[i].lock = CACHE1D_UNLOCKED;
 }
 
 int32_t A_CheckSoundPlaying(int32_t i, int32_t num)
@@ -499,7 +499,7 @@ int32_t S_CheckSoundPlaying(int32_t i, int32_t num)
 {
     if (i == -1)
     {
-        if (g_sounds[num].lock >= 200)
+        if (g_sounds[num].lock >= CACHE1D_LOCKED)
             return 1;
         return 0;
     }

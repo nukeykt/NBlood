@@ -732,7 +732,7 @@ static void G_ReadGLFrame(void)
     static char lock;
     static palette_t *frame;
 
-    lock = CACHE1D_ENTRY_PERMANENT;
+    lock = CACHE1D_LOCKED_PERMANENTLY;
 
     if (frame == nullptr)
         cacheAllocateBlock((intptr_t *)&frame, xdim * ydim * sizeof(palette_t), &lock);
@@ -759,7 +759,7 @@ static void G_ReadGLFrame(void)
         }
     }
 
-    lock = CACHE1D_ENTRY_FREE;
+    lock = CACHE1D_FREE;
 }
 #endif
 
@@ -864,7 +864,8 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (g_screenCapture)
         {
-            walock[TILE_SAVESHOT] = 199;
+            walock[TILE_SAVESHOT] = CACHE1D_LOCKED_PERMANENTLY;
+
             if (waloff[TILE_SAVESHOT] == 0)
                 cacheAllocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
 
@@ -924,7 +925,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 const int32_t viewtilexsiz = (tang&1023) ? tiltcx : tiltcy;
                 const int32_t viewtileysiz = tiltcx;
 
-                walock[TILE_TILT] = CACHE1D_ENTRY_PERMANENT;
+                walock[TILE_TILT] = CACHE1D_LOCKED_PERMANENTLY;
                 if (waloff[TILE_TILT] == 0)
                     cacheAllocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
@@ -1125,14 +1126,12 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
             tileInvalidate(TILE_SAVESHOT, 0, 255);
 
             if (videoGetRenderMode() == REND_CLASSIC)
-            {
                 renderRestoreTarget();
-//                walock[TILE_SAVESHOT] = 1;
-            }
 #ifdef USE_OPENGL
             else
                 G_ReadGLFrame();
 #endif
+            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
         else if (screenTilting)
         {
@@ -1175,7 +1174,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 tiltZoom >>= tiltcs;  // JBF 20030807
 
                 rotatesprite_win(160 << 16, 100 << 16, tiltZoom, tang + 512, TILE_TILT, 0, 0, 4 + 2 + 64 + 1024);
-                walock[TILE_TILT] = CACHE1D_ENTRY_FREE;
+                walock[TILE_TILT] = CACHE1D_FREE;
             }
         }
     }
