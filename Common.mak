@@ -385,7 +385,7 @@ ifneq (100,$(RELEASE)$(PROFILER)$(ALLOCACHE_AS_MALLOC))
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    MIXERTYPE := WIN
+    MIXERTYPE := SDL
     ifneq ($(RENDERTYPE),SDL)
         ifeq ($(MIXERTYPE),SDL)
             override MIXERTYPE := WIN
@@ -951,17 +951,10 @@ ifeq ($(RENDERTYPE),SDL)
         ifeq ($(PLATFORM),DARWIN)
             APPLE_FRAMEWORKS := /Library/Frameworks
             LIBDIRS += -F$(APPLE_FRAMEWORKS)
-            ifeq ($(MIXERTYPE),SDL)
-                COMPILERFLAGS += -I$(APPLE_FRAMEWORKS)/$(SDLNAME)_mixer.framework/Headers
-                LIBS += -Wl,-framework,$(SDLNAME)_mixer
-            endif
             COMPILERFLAGS += -I$(APPLE_FRAMEWORKS)/$(SDLNAME).framework/Headers
             LIBS += -Wl,-framework,$(SDLNAME) -Wl,-rpath -Wl,"@loader_path/../Frameworks"
         endif
     else
-        ifeq ($(MIXERTYPE),SDL)
-            LIBS += -l$(SDLNAME)_mixer
-        endif
         ifneq ($(SDLCONFIG),)
             SDLCONFIG_CFLAGS := $(strip $(subst -Dmain=SDL_main,,$(shell $(SDLCONFIG) --cflags)))
             SDLCONFIG_LIBS := $(strip $(subst -mwindows,,$(shell $(SDLCONFIG) --libs)))
