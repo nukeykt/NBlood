@@ -421,7 +421,7 @@ void windowsHandleFocusChange(int const appactive)
     if (appactive)
     {
         if (win_priorityclass != -1)
-            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
+            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? BELOW_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
 
         windowsSetupTimer(win_systemtimermode);
         windowsSetKeyboardLayout(EDUKE32_KEYBOARD_LAYOUT);
@@ -429,7 +429,7 @@ void windowsHandleFocusChange(int const appactive)
     else
     {
         if (win_priorityclass != -1)
-            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS);
+            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
 
         windowsSetupTimer(0);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout());
