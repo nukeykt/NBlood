@@ -5177,7 +5177,7 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+ti;
         if (npot)
         {
-            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+            float fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
             int tang = (y<<(11-dapskybits))&2047;
             otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
         }
@@ -5582,7 +5582,7 @@ static void polymost_drawalls(int32_t const bunch)
                         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+i;
                         if (npot)
                         {
-                            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+                            float fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
                             int tang = (y<<(11-dapskybits))&2047;
                             otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
                         }
@@ -5976,7 +5976,7 @@ static void polymost_drawalls(int32_t const bunch)
                         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+i;
                         if (npot)
                         {
-                            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+                            float fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
                             int tang = (y<<(11-dapskybits))&2047;
                             otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
                         }
