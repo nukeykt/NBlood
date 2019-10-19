@@ -1731,6 +1731,8 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     }
 
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
+    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
+
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
     return 0;
