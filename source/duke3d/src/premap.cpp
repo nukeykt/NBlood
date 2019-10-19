@@ -524,6 +524,7 @@ void G_CacheMapData(void)
             // this just prevents the loading screen percentage bar from making large jumps
             while (percentDisplayed < percentComplete)
             {
+                gameHandleEvents();
                 Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, g_precacheCount);
                 G_DoLoadScreen(tempbuf, percentDisplayed);
 
