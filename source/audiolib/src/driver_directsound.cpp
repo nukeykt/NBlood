@@ -148,6 +148,7 @@ static DWORD WINAPI fillDataThread(LPVOID lpParameter)
             mutex_lock(&mutex);
             FillBuffer((waitret + MIXBUFFERPOSITIONS - 1 - WAIT_OBJECT_0) % MIXBUFFERPOSITIONS);
             mutex_unlock(&mutex);
+            zpl_yield_thread();
         }
         else
         {
