@@ -8073,7 +8073,10 @@ int32_t enginePreInit(void)
 {
     baselayer_init();
     initdivtables();
-    if (initsystem()) Bexit(9);
+
+    if (initsystem())
+        fatal_exit("Failure in initsystem()!\n");
+
     makeasmwriteable();
 
 #if !defined DEBUG_MAIN_ARRAYS

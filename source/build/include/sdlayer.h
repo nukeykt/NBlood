@@ -95,7 +95,7 @@ static inline void idle(int const msec = 1)
 #ifdef _WIN32
     Sleep(msec);
 #else
-    timespec const req = { 0, msec * 1000000 };
+    timespec req = { 0, msec * 1000000 };
     do { } while (nanosleep(&req, &req));
 #endif
 }

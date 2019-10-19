@@ -569,10 +569,12 @@ void M32_OnShowOSD(int shown)
 
 static void M32_FatalEngineError(void)
 {
-    wm_msgbox("Fatal Engine Initialization Error",
-              "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
-    ERRprintf("app_main: There was a problem initializing the engine: %s\n", engineerrstr);
-    exit(2);
+#ifdef DEBUGGINGAIDS
+    debug_break();
+#endif
+    Bsprintf(tempbuf, "There was a problem initializing the engine: %s\n", engineerrstr);
+    ERRprintf("%s", tempbuf);
+    fatal_exit(tempbuf);
 }
 
 int app_main(int argc, char const * const * argv)
