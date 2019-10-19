@@ -673,7 +673,7 @@ int32_t handleevents(void)
 
     if (!appactive || quitevent) rv = -1;
 
-    timerUpdate();
+    timerUpdateClock();
 
     return rv;
 }
