@@ -2471,21 +2471,12 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     break;
                 }
             }
-<<<<<<< HEAD
-            
+
             if (pXSector && pXSector->color) pTSprite->pal = pSector->floorpal;
             if (powerupCheck(gView, kPwUpBeastVision) > 0) pTSprite->shade = -128;
 
             if (IsPlayerSprite((spritetype *)pTSprite)) {
-=======
-            viewApplyDefaultPal(pTSprite, pSector);
-            if (powerupCheck(gView, 25) > 0)
-            {
-                pTSprite->shade = -128;
-            }
-            if (IsPlayerSprite((spritetype *)pTSprite))
-            {
->>>>>>> 1a8abf1b06dbe193178868b0168b60cac3043115
+                viewApplyDefaultPal(pTSprite, pSector);
                 PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
                 if (powerupCheck(pPlayer, kPwUpShadowCloak) && !powerupCheck(gView, kPwUpBeastVision)) {
                     pTSprite->cstat |= 2;

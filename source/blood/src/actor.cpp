@@ -3674,17 +3674,12 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
     
     switch (pSprite->statnum) {
         case kStatDude: {
-<<<<<<< HEAD
             if (!IsDudeSprite(pSprite)) {
                 consoleSysMsg("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & 16) ? "RESPAWN" : "NORMAL");
                 return damage >> 4;
                 //ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & 16) ? "RESPAWN" : "NORMAL");
             }
-=======
-            if (!IsDudeSprite(pSprite))
-                ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & kHitagRespawn) ? "RESPAWN" : "NORMAL");
 
->>>>>>> 1a8abf1b06dbe193178868b0168b60cac3043115
             int nType = pSprite->type - kDudeBase; int nDamageFactor = dudeInfo[nType].at70[damageType];
         
             if (!nDamageFactor) return 0;
