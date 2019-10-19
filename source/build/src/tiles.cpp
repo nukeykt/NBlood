@@ -600,10 +600,11 @@ int32_t artLoadFiles(const char *filename, int32_t askedsize)
         artReadIndexedFile(tilefilei);
 
     Bmemset(gotpic, 0, sizeof(gotpic));
-
     //cachesize = min((int32_t)((Bgetsysmemsize()/100)*60),max(artsize,askedsize));
     cachesize = (Bgetsysmemsize() <= (uint32_t)askedsize) ? (int32_t)((Bgetsysmemsize() / 100) * 60) : askedsize;
-    pic = Xaligned_alloc(Bgetpagesize(), cachesize);
+    zpl_virtual_memory vm = zpl_vm_alloc(0, cachesize);
+    pic = vm.data;
+    cachesize = vm.size;
     cacheInitBuffer((intptr_t) pic, cachesize);
 
     artUpdateManifest();
@@ -881,5 +882,5 @@ void Buninitart(void)
     if (artfil != buildvfs_kfd_invalid)
         kclose(artfil);
 
-    ALIGNED_FREE_AND_NULL(pic);
+    zpl_vm_free(zpl_vm(pic, cachesize));
 }
