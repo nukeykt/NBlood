@@ -283,9 +283,6 @@
     <ProjectReference Include="build.vcxproj">
       <Project>{dbecb851-5624-4fa8-9a9d-7169d0f12ff1}</Project>
     </ProjectReference>
-    <ProjectReference Include="enet.vcxproj">
-      <Project>{a68cc5e4-567a-44c8-94fe-c1de09aeeb40}</Project>
-    </ProjectReference>
     <ProjectReference Include="glad.vcxproj">
       <Project>{6ac1d997-8dae-4343-8dd8-da2a1ca63212}</Project>
     </ProjectReference>

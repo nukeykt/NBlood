@@ -213,6 +213,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\source\build\src\enet.cpp" />
     <ClCompile Include="..\..\source\build\src\engine.cpp" />
     <ClCompile Include="..\..\source\build\src\fix16.cpp" />
     <ClCompile Include="..\..\source\build\src\fix16_str.cpp" />
@@ -333,6 +334,7 @@
     <ClInclude Include="..\..\source\build\include\dxtfilter.h" />
     <ClInclude Include="..\..\source\build\include\dynamicgtk.h" />
     <ClInclude Include="..\..\source\build\include\editor.h" />
+    <ClInclude Include="..\..\source\build\include\enet.h" />
     <ClInclude Include="..\..\source\build\include\fix16.h" />
     <ClInclude Include="..\..\source\build\include\fix16.hpp" />
     <ClInclude Include="..\..\source\build\include\fix16_int64.h" />
