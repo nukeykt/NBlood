@@ -24,8 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define STEREO_DETUNE 5
 
-#define lobyte(num) ((unsigned int)*((char *)&(num)))
-#define hibyte(num) ((unsigned int)*(((char *)&(num)) + 1))
+#define lobyte(num) ((uint32_t)*((char *)&(num)))
+#define hibyte(num) ((uint32_t)*(((char *)&(num)) + 1))
 
 #define AL_MaxVolume             127
 #define AL_DefaultChannelVolume  90
@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define NUMADLIBVOICES 9
 #define NUMADLIBCHANNELS 16
 
-#define NOTE_ON 0x2000 /* Used to turn note on or toggle note */
+#define NOTE_ON  0x2000 /* Used to turn note on or toggle note */
 #define NOTE_OFF 0x0000
 
 #define MAX_VELOCITY 0x7f
@@ -81,15 +81,15 @@ typedef struct AdLibVoice
     struct AdLibVoice *next;
     struct AdLibVoice *prev;
 
-    unsigned int num;
-    unsigned int key;
-    unsigned int velocity;
-    unsigned int channel;
-    unsigned int pitchleft;
-    unsigned int pitchright;
-    int          timbre;
-    int          port;
-    unsigned int status;
+    uint32_t num;
+    uint32_t key;
+    uint32_t velocity;
+    uint32_t channel;
+    uint32_t pitchleft;
+    uint32_t pitchright;
+    int      timbre;
+    int      port;
+    uint32_t status;
 } AdLibVoice;
 
 typedef struct
@@ -100,19 +100,20 @@ typedef struct
 
 typedef struct
 {
-    AdLibVoiceList    Voices;
-    int          Timbre;
-    int          Pitchbend;
-    int          KeyOffset;
-    unsigned int KeyDetune;
-    unsigned int Volume;
-    unsigned int EffectiveVolume;
-    int          Pan;
-    int          Detune;
-    unsigned int RPN;
-    int16_t      PitchBendRange;
-    int16_t      PitchBendSemiTones;
-    int16_t      PitchBendHundreds;
+    AdLibVoiceList Voices;
+
+    int      Timbre;
+    int      Pitchbend;
+    int      KeyOffset;
+    uint32_t KeyDetune;
+    uint32_t Volume;
+    uint32_t EffectiveVolume;
+    int      Pan;
+    int      Detune;
+    uint32_t RPN;
+    int16_t  PitchBendRange;
+    int16_t  PitchBendSemiTones;
+    int16_t  PitchBendHundreds;
 } AdLibChannel;
 
 static int  AL_Init(int rate);
