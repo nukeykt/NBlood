@@ -732,10 +732,10 @@ static void G_ReadGLFrame(void)
     static char lock;
     static palette_t *frame;
 
-    lock = CACHE1D_LOCKED_PERMANENTLY;
+    lock = CACHE1D_PERMANENT;
 
     if (frame == nullptr)
-        cacheAllocateBlock((intptr_t *)&frame, xdim * ydim * sizeof(palette_t), &lock);
+        g_cache.allocateBlock((intptr_t *)&frame, xdim * ydim * sizeof(palette_t), &lock);
 
     char *const pic = (char *) waloff[TILE_SAVESHOT];
 
@@ -864,10 +864,10 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (g_screenCapture)
         {
-            walock[TILE_SAVESHOT] = CACHE1D_LOCKED_PERMANENTLY;
+            walock[TILE_SAVESHOT] = CACHE1D_PERMANENT;
 
             if (waloff[TILE_SAVESHOT] == 0)
-                cacheAllocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
+                g_cache.allocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
 
             if (videoGetRenderMode() == REND_CLASSIC)
                 renderSetTarget(TILE_SAVESHOT, 200, 320);
@@ -925,9 +925,9 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 const int32_t viewtilexsiz = (tang&1023) ? tiltcx : tiltcy;
                 const int32_t viewtileysiz = tiltcx;
 
-                walock[TILE_TILT] = CACHE1D_LOCKED_PERMANENTLY;
+                walock[TILE_TILT] = CACHE1D_PERMANENT;
                 if (waloff[TILE_TILT] == 0)
-                    cacheAllocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
+                    g_cache.allocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
                 renderSetTarget(TILE_TILT, viewtilexsiz, viewtileysiz);
 

@@ -607,7 +607,7 @@ int32_t artLoadFiles(const char *filename, int32_t askedsize)
     zpl_virtual_memory vm = zpl_vm_alloc(nullptr, g_vm_size);
     g_vm_data = vm.data;
     g_vm_size = vm.size;
-    cacheInitBuffer((intptr_t) g_vm_data, g_vm_size);
+    g_cache.initBuffer((intptr_t) g_vm_data, g_vm_size);
 
     artUpdateManifest();
 
@@ -634,7 +634,7 @@ bool tileLoad(int16_t tileNum)
     if (waloff[tileNum] == 0)
     {
         walock[tileNum] = CACHE1D_UNLOCKED;
-        cacheAllocateBlock(&waloff[tileNum], dasiz, &walock[tileNum]);
+        g_cache.allocateBlock(&waloff[tileNum], dasiz, &walock[tileNum]);
     }
 
     tileLoadData(tileNum, dasiz, (char *) waloff[tileNum]);
@@ -830,8 +830,8 @@ intptr_t tileCreate(int16_t tilenume, int32_t xsiz, int32_t ysiz)
 
     int const dasiz = xsiz*ysiz;
 
-    walock[tilenume] = CACHE1D_LOCKED_PERMANENTLY;
-    cacheAllocateBlock(&waloff[tilenume], dasiz, &walock[tilenume]);
+    walock[tilenume] = CACHE1D_PERMANENT;
+    g_cache.allocateBlock(&waloff[tilenume], dasiz, &walock[tilenume]);
 
     tileSetSize(tilenume, xsiz, ysiz);
     Bmemset(&picanm[tilenume], 0, sizeof(picanm_t));

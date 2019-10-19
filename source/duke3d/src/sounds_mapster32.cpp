@@ -142,7 +142,7 @@ int32_t S_LoadSound(uint32_t num)
 
     g_sounds[num].lock = CACHE1D_LOCKED;
 
-    cacheAllocateBlock((intptr_t *)&g_sounds[num].ptr,l,(char *)&g_sounds[num].lock);
+    g_cache.allocateBlock((intptr_t *)&g_sounds[num].ptr,l,(char *)&g_sounds[num].lock);
     kread(fp, g_sounds[num].ptr , l);
     kclose(fp);
     return 1;

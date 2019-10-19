@@ -377,14 +377,12 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
         return MV_Error;
     }
 
-    vorbis_data *vd;
-
-    voice->ptrlock = CACHE1D_LOCKED_PERMANENTLY;
+    voice->ptrlock = CACHE1D_PERMANENT;
 
     if (voice->rawdataptr == nullptr || voice->wavetype != FMT_VORBIS)
-        cacheAllocateBlock((intptr_t *)&vd, sizeof(vorbis_data), &voice->ptrlock);
-    else
-        vd = (vorbis_data *)voice->rawdataptr;
+        g_cache.allocateBlock((intptr_t *)&voice->rawdataptr, sizeof(vorbis_data), &voice->ptrlock);
+
+    vorbis_data *vd = (vorbis_data *)voice->rawdataptr;
 
     vd->ptr    = ptr;
     vd->pos    = 0;
