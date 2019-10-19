@@ -14,8 +14,6 @@
 using namespace std;
 using namespace chrono;
 
-EDUKE32_STATIC_ASSERT((steady_clock::period::den/steady_clock::period::num) >= 1000000000);
-
 static time_point<steady_clock> timerlastsample;
 static int timerticspersec;
 static void(*usertimercallback)(void) = NULL;
@@ -30,13 +28,15 @@ uint32_t timerGetTicks(void)
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 #endif
 }
-
-uint64_t timerGetTicksU64(void) { return steady_clock::now().time_since_epoch().count() * steady_clock::period::num; }
-uint64_t timerGetFreqU64(void)  { return steady_clock::period::den; }
-
 // Returns the time since an unspecified starting time in milliseconds (fractional).
 // (May be not monotonic for certain configurations.)
 double timerGetHiTicks(void) { return duration<double, nano>(steady_clock::now().time_since_epoch()).count() / 1000000.0; }
+
+EDUKE32_STATIC_ASSERT((high_resolution_clock::period::den/high_resolution_clock::period::num) >= 1000000000);
+EDUKE32_STATIC_ASSERT(steady_clock::is_steady);
+
+uint64_t timerGetTicksU64(void) { return high_resolution_clock::now().time_since_epoch().count() * high_resolution_clock::period::num; }
+uint64_t timerGetFreqU64(void)  { return high_resolution_clock::period::den; }
 
 int timerInit(int const tickspersecond)
 {
@@ -54,9 +54,9 @@ ATTRIBUTE((flatten)) void timerUpdate(void)
     auto elapsedTime = time - timerlastsample;
 
     uint64_t numerator = (elapsedTime.count() * (uint64_t) timerticspersec * steady_clock::period::num);
-    uint64_t freq = timerGetFreqU64();
+    uint64_t const freq = steady_clock::period::den;
     int n = tabledivide64(numerator, freq);
-    totalclock.setFraction(tabledivide64((numerator - n*timerGetFreqU64()) * 65536, freq));
+    totalclock.setFraction(tabledivide64((numerator - n*freq) * 65536, freq));
 
     if (n <= 0) return;
 
