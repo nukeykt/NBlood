@@ -4019,7 +4019,7 @@ static void Menu_TextFormSubmit(char *input)
     }
 }
 
-void klistbookends(CACHE1D_FIND_REC *start)
+void klistbookends(BUILDVFS_FIND_REC *start)
 {
     auto end = start;
 
@@ -5864,7 +5864,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
             {
                 if (object->findhigh[i])
                 {
-                    CACHE1D_FIND_REC *dir;
+                    BUILDVFS_FIND_REC *dir;
                     int32_t y = 0;
                     const int32_t y_upper = object->format[i]->pos.y;
                     const int32_t y_lower = klabs(object->format[i]->bottomcutoff);
@@ -5896,7 +5896,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
                         if (dir == object->findhigh[i] && object->currentList == i)
                             status |= MT_Selected;
 
-                        // pal = dir->source==CACHE1D_SOURCE_ZIP ? 8 : 2
+                        // pal = dir->source==BUILDVFS_SOURCE_ZIP ? 8 : 2
 
                         Menu_Run_AbbreviateNameIntoBuffer(dir->name, USERMAPENTRYLENGTH);
 
@@ -6629,7 +6629,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 int32_t i;
 
-                CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList];
+                BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgUp);
 
@@ -6652,7 +6652,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 int32_t i;
 
-                CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList];
+                BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgDn);
 
@@ -6706,7 +6706,7 @@ static void Menu_RunInput(Menu_t *cm)
                 ch = KB_GetCh();
                 if (ch > 0 && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')))
                 {
-                    CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList]->usera;
+                    BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList]->usera;
                     if (ch >= 'a')
                         ch -= ('a'-'A');
                     while (seeker)

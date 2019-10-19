@@ -103,7 +103,7 @@ void artClearMapArt(void)
     {
         if (tilefilenum[i] >= MAXARTFILES_BASE)
         {
-            // XXX: OK way to free it? Better: cache1d API. CACHE1D_FREE
+            // XXX: OK way to free it? Better: cache1d API. BUILDVFS_FREE
             walock[i] = CACHE1D_ENTRY_FREE;
             waloff[i] = 0;
         }
@@ -255,7 +255,7 @@ static void tileSoftDelete(int32_t const tile)
     tilesiz[tile].y = 0;
     picsiz[tile] = 0;
 
-    // CACHE1D_FREE
+    // BUILDVFS_FREE
     walock[tile] = CACHE1D_ENTRY_FREE;
     waloff[tile] = 0;
 
@@ -538,7 +538,7 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
                 }
             }
 
-            // Free existing tiles from the cache1d. CACHE1D_FREE
+            // Free existing tiles from the cache1d. BUILDVFS_FREE
             Bmemset(&waloff[local.tilestart], 0, local.numtiles*sizeof(intptr_t));
             Bmemset(&walock[local.tilestart], 1, local.numtiles*sizeof(walock[0]));
         }

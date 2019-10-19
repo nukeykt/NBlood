@@ -184,14 +184,14 @@ void fnlist_clearnames(fnlist_t *fnl)
 int32_t fnlist_getnames(fnlist_t *fnl, const char *dirname, const char *pattern,
                         int32_t dirflags, int32_t fileflags)
 {
-    CACHE1D_FIND_REC *r;
+    BUILDVFS_FIND_REC *r;
 
     fnlist_clearnames(fnl);
 
     if (dirflags != -1)
-        fnl->finddirs = klistpath(dirname, "*", CACHE1D_FIND_DIR|dirflags);
+        fnl->finddirs = klistpath(dirname, "*", BUILDVFS_FIND_DIR|dirflags);
     if (fileflags != -1)
-        fnl->findfiles = klistpath(dirname, pattern, CACHE1D_FIND_FILE|fileflags);
+        fnl->findfiles = klistpath(dirname, pattern, BUILDVFS_FIND_FILE|fileflags);
 
     for (r=fnl->finddirs; r; r=r->next)
         fnl->numdirs++;
