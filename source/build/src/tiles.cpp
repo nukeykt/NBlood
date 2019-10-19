@@ -37,6 +37,7 @@ static intptr_t *g_bakWaloff;
 static picanm_t *g_bakPicAnm;
 static char * g_bakFakeTile;
 static char ** g_bakFakeTileData;
+static rottile_t *g_bakRottile;
 // NOTE: picsiz[] is not backed up, but recalculated when necessary.
 
 //static int32_t artsize = 0;
@@ -117,6 +118,7 @@ void artClearMapArt(void)
     RESTORE_MAPART_ARRAY(waloff, g_bakWaloff);
     RESTORE_MAPART_ARRAY(picanm, g_bakPicAnm);
     RESTORE_MAPART_ARRAY(faketile, g_bakFakeTile);
+    RESTORE_MAPART_ARRAY(rottile, g_bakRottile);
 
     for (size_t i = 0; i < MAXUSERTILES; ++i)
     {
@@ -171,6 +173,7 @@ void artSetupMapArt(const char *filename)
     ALLOC_MAPART_ARRAY(picanm, g_bakPicAnm);
     ALLOC_MAPART_ARRAY(faketile, g_bakFakeTile);
     ALLOC_MAPART_ARRAY(faketiledata, g_bakFakeTileData);
+    ALLOC_MAPART_ARRAY(rottile, g_bakRottile);
 
     for (bssize_t i=MAXARTFILES_BASE; i<MAXARTFILES_TOTAL; i++)
     {
