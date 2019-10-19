@@ -1,14 +1,14 @@
-#include "compat.h"
-#include "osd.h"
-#include "build.h"
 #include "baselayer.h"
 
-#include "renderlayer.h"
-
 #include "a.h"
-#include "polymost.h"
+#include "build.h"
 #include "cache1d.h"
 #include "communityapi.h"
+#include "compat.h"
+#include "osd.h"
+#include "polymost.h"
+#include "renderlayer.h"
+#include "winbits.h"
 
 // video
 #ifdef _WIN32
@@ -432,6 +432,8 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
 int32_t baselayer_init(void)
 {
 #ifdef _WIN32
+    win_settimerresolution();
+
 // on Windows, don't save the "r_screenaspect" cvar because the physical screen size is
 // determined at startup
 # define SCREENASPECT_CVAR_TYPE (CVAR_UINT|CVAR_NOSAVE)
