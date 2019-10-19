@@ -784,14 +784,14 @@ static void LoadSDLControllerDB()
     if (fh == buildvfs_kfd_invalid)
         return;
 
-    int flen = kfilelength(fh);
+    int const flen = kfilelength(fh);
     if (flen <= 0)
     {
         kclose(fh);
         return;
     }
 
-    char * dbuf = (char *)malloc(flen + 1);
+    char * dbuf = (char *)Xaligned_alloc(16, flen + 1);
     if (!dbuf)
     {
         kclose(fh);
@@ -800,7 +800,7 @@ static void LoadSDLControllerDB()
 
     if (kread_and_test(fh, dbuf, flen))
     {
-        free(dbuf);
+        Xaligned_free(dbuf);
         kclose(fh);
         return;
     }
@@ -811,7 +811,7 @@ static void LoadSDLControllerDB()
     SDL_RWops * rwops = SDL_RWFromConstMem(dbuf, flen);
     if (!rwops)
     {
-        free(dbuf);
+        Xaligned_free(dbuf);
         return;
     }
 
@@ -822,7 +822,7 @@ static void LoadSDLControllerDB()
     else
         buildputs("Loaded game controller database\n");
 
-    free(dbuf);
+    Xaligned_free(dbuf);
 }
 #else
 static SDL_Joystick *joydev = NULL;
