@@ -344,7 +344,7 @@ static void sighandler(int signum)
         attach_debugger_here();
         app_crashhandler();
         uninitsystem();
-        Bexit(8);
+        Bexit(EXIT_FAILURE);
     }
 }
 #endif

@@ -662,7 +662,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(0);
+            Bexit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -779,7 +779,7 @@ int app_main(int argc, char const * const * argv)
             CallExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim2d,ydim2d);
-            Bexit(0);
+            Bexit(EXIT_SUCCESS);
         }
 
         system_getcvars();
@@ -802,7 +802,7 @@ int app_main(int argc, char const * const * argv)
             CallExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
-            Bexit(0);
+            Bexit(EXIT_SUCCESS);
         }
 
         system_getcvars();
@@ -7972,7 +7972,7 @@ end_insert_points:
         if ((j&0xffff) != 0xebf)
         {
         	printf("Don't screw with my name.\n");
-        	Bexit(0);
+        	Bexit(EXIT_SUCCESS);
         }*/
         //printext16(9L,336+9L,4,-1,kensig,0);
         //printext16(8L,336+8L,12,-1,kensig,0);
@@ -8310,7 +8310,7 @@ CANCEL:
 //                        clearfilenames();
                         engineUnInit();
 
-                        Bexit(0);
+                        Bexit(EXIT_SUCCESS);
                     }
 
                     // printmessage16("");
@@ -8345,7 +8345,7 @@ CANCEL:
         CallExtUnInit();
 //        clearfilenames();
         engineUnInit();
-        Bexit(1);
+        Bexit(EXIT_FAILURE);
     }
 
     videoSetPalette(GAMMA_CALC,0,0);
