@@ -20,12 +20,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#include "osdcmds.h"
+
 #include "cheats.h"
 #include "cmdline.h"
 #include "demo.h"  // g_firstDemoFile[]
 #include "duke3d.h"
 #include "menus.h"
-#include "osdcmds.h"
 #include "osdfuncs.h"
 #include "savegame.h"
 #include "sbar.h"
