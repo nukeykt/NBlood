@@ -14,7 +14,9 @@ extern int64_t win_timerfreq;
 
 extern char silentvideomodeswitch;
 
-extern void win_settimerresolution(void);
+extern int32_t win_fastsched;
+
+extern void win_settimerresolution(int ntDllVoodoo);
 extern BOOL CheckWinVersion(void);
 extern void win_allowtaskswitching(int32_t onf);
 extern int32_t win_checkinstance(void);

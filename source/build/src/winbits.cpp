@@ -16,56 +16,111 @@
 # define EBACKTRACEDLL "ebacktrace1.dll"
 #endif
 
-int32_t backgroundidle = 1;
+int32_t backgroundidle        = 1;
+char    silentvideomodeswitch = 0;
 
-char silentvideomodeswitch = 0;
+static HANDLE  instanceflag = NULL;
+static int32_t togglecomp   = 0;
 
-static HANDLE instanceflag = NULL;
+int32_t win_fastsched;
 
 static OSVERSIONINFOEX osv;
 
-static int32_t togglecomp = 0;
+FARPROC pwinever;
 
-typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
-typedef HRESULT(NTAPI* pQueryTimerResolution)(PULONG, PULONG, PULONG);
-
-// TODO: only do this stuff if we're running at higher than 60Hz refresh?
-void win_settimerresolution(void)
+void win_settimerresolution(int ntDllVoodoo)
 {
-    HMODULE hntdll = GetModuleHandle("ntdll.dll");
-
-    if (hntdll != nullptr)
-    {
-        pQueryTimerResolution const NtQueryTimerResolution = (pQueryTimerResolution)(void(*))GetProcAddress(hntdll, "NtQueryTimerResolution");
-        pSetTimerResolution const   NtSetTimerResolution   = (pSetTimerResolution)(void(*))GetProcAddress(hntdll, "NtSetTimerResolution");
-
-        if (NtQueryTimerResolution != nullptr && NtSetTimerResolution != nullptr)
-        {
-            ULONG minRes, maxRes, actualRes;
-
-            NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
-            NtSetTimerResolution(maxRes, TRUE, &actualRes);
-
-#ifdef DEBUGGINGAIDS
-            initprintf("DEBUG: %.1fms timer resolution via NtSetTimerResolution()\n", actualRes / 10000.0);
-#endif
-            return;
-        }
-    }
+    typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
+    typedef HRESULT(NTAPI* pQueryTimerResolution)(PULONG, PULONG, PULONG);
 
     TIMECAPS timeCaps;
 
-    if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == TIMERR_NOERROR)
-    {
-        unsigned const requested = min(max(timeCaps.wPeriodMin, 1u), timeCaps.wPeriodMax);
-        timeBeginPeriod(requested);
-#ifdef DEBUGGINGAIDS
-        initprintf("DEBUG: %ums timer resolution via timeBeginPeriod()\n", requested);
-#endif
-    }
-}
+    if (pwinever)
+        return;
 
-FARPROC pwinever;
+    if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
+    {
+#ifdef RENDERTYPESDL
+        int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
+#else
+        static constexpr int const onBattery = 0;
+#endif
+        static int   setPeriod;
+        static ULONG setTimerNT;
+        HMODULE      ntDllHandle = GetModuleHandle("ntdll.dll");
+
+        static pQueryTimerResolution NtQueryTimerResolution;
+        static pSetTimerResolution   NtSetTimerResolution;
+
+        if (ntDllVoodoo)
+        {
+            if (!onBattery)
+            {
+                if (ntDllHandle != nullptr)
+                {
+                    NtQueryTimerResolution = (pQueryTimerResolution)(void(*))GetProcAddress(ntDllHandle, "NtQueryTimerResolution");
+                    NtSetTimerResolution   = (pSetTimerResolution)(void(*))GetProcAddress(ntDllHandle, "NtSetTimerResolution");
+
+                    if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
+                    {
+                        OSD_Printf("ERROR: unable to locate NtQueryTimerResolution or NtSetTimerResolution symbols in ntdll.dll!\n");
+                        goto failsafe;
+                    }
+
+                    ULONG minRes, maxRes, actualRes;
+
+                    NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
+
+                    if (setTimerNT != 0)
+                    {
+                        if (setTimerNT == maxRes)
+                            return;
+
+                        NtSetTimerResolution(actualRes, FALSE, &actualRes);
+                    }
+
+                    setTimerNT = actualRes;
+                    setPeriod  = 0;
+
+                    NtSetTimerResolution(maxRes, TRUE, &actualRes);
+                    OSD_Printf("Low-latency scheduling mode enabled: set %.1fms timer resolution\n", actualRes / 10000.0);
+
+                    return;
+                }
+                else
+                    OSD_Printf("ERROR: couldn't load ntdll.dll!\n");
+            }
+            else 
+                OSD_Printf("Low-latency scheduling mode not supported on battery power!\n");
+        }
+        else if (setTimerNT != 0)
+        {
+            NtSetTimerResolution(setTimerNT, FALSE, &setTimerNT);
+            setTimerNT = 0;
+        }
+
+failsafe:
+        int const  requestedPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
+            
+        if (setPeriod != 0)
+        {
+            if (setPeriod == requestedPeriod)
+                return;
+
+            timeEndPeriod(requestedPeriod);
+        }
+
+        setPeriod  = requestedPeriod;
+        setTimerNT = 0;
+
+        timeBeginPeriod(requestedPeriod);
+        OSD_Printf("Initialized %ums system timer\n", requestedPeriod);
+
+        return;
+    }
+
+    OSD_Printf("ERROR: unable to configure system timer!\n");
+}
 
 //
 // CheckWinVersion() -- check to see what version of Windows we happen to be running under
@@ -163,7 +218,7 @@ int32_t win_checkinstance(void)
 
 static void ToggleDesktopComposition(BOOL compEnable)
 {
-    static HMODULE              hDWMApiDLL        = NULL;
+    static HMODULE hDWMApiDLL = NULL;
     static HRESULT(WINAPI *aDwmEnableComposition)(UINT);
 
     if (!hDWMApiDLL && (hDWMApiDLL = LoadLibrary("DWMAPI.DLL")))
@@ -202,6 +257,18 @@ void win_open(void)
     instanceflag = CreateSemaphore(NULL, 1,1, WindowClass);
 }
 
+static int osdcmd_win_fastsched(osdcmdptr_t parm)
+{
+    int const r = osdcmd_cvar_set(parm);
+
+    if (r != OSDCMD_OK)
+        return r;
+
+    win_settimerresolution(win_fastsched);
+
+    return OSDCMD_OK;
+}
+
 void win_init(void)
 {
     uint32_t i;
@@ -211,10 +278,24 @@ void win_init(void)
         { "r_togglecomposition","enable/disable toggle of desktop composition when initializing screen modes",(void *) &togglecomp, CVAR_BOOL, 0, 1 },
     };
 
+    static osdcvardata_t win_scheduler_cvar = { "win_fastsched",
+                                                "Windows process scheduler resolution:\n"
+                                                "   0: 1.0ms\n"
+                                                "   1: 0.5ms low-latency\n"
+#ifdef RENDERTYPESDL
+                                                "This option has no effect when running on battery power.\n",
+#else
+                                                ,
+#endif
+                                                (void *)&win_fastsched, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 };
+
+    OSD_RegisterCvar(&win_scheduler_cvar, osdcmd_win_fastsched);
+
     for (i=0; i<ARRAY_SIZE(cvars_win); i++)
         OSD_RegisterCvar(&cvars_win[i], osdcmd_cvar_set);
 
     win_printversion();
+    win_settimerresolution(win_fastsched);
 }
 
 void win_setvideomode(int32_t c)
