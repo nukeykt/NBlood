@@ -728,38 +728,38 @@ static void G_ReadGLFrame(void)
 {
     // Save OpenGL screenshot with Duke3D palette
     // NOTE: maybe need to move this to the engine...
-    palette_t *const frame = (palette_t *)Xcalloc(xdim * ydim, sizeof(palette_t));
+    
+    static char lock;
+    static palette_t *frame;
+
+    lock = CACHE1D_ENTRY_PERMANENT;
+
+    if (frame == nullptr)
+        cacheAllocateBlock((intptr_t *)&frame, xdim * ydim * sizeof(palette_t), &lock);
+
     char *const pic = (char *) waloff[TILE_SAVESHOT];
 
-    int32_t x, y;
-    const int32_t xf = divscale16(ydim*4/3, 320);
-    const int32_t yf = divscale16(ydim, 200);  // (ydim<<16)/200
+    int const xf = divscale16(ydim*4/3, 320);
+    int const yf = divscale16(ydim, 200);  // (ydim<<16)/200
 
-    tilesiz[TILE_SAVESHOT].x = 200;
-    tilesiz[TILE_SAVESHOT].y = 320;
-
-    if (!frame)
-    {
-        Bmemset(pic, 0, 320 * 200);
-        return;
-    }
+    tilesiz[TILE_SAVESHOT] = { 200, 320 };
 
     videoBeginDrawing();
     glReadPixels(0, 0, xdim, ydim, GL_RGBA, GL_UNSIGNED_BYTE, frame);
     videoEndDrawing();
 
-    for (y = 0; y < 200; y++)
+    for (int y = 0; y < 200; y++)
     {
         const int32_t base = mulscale16(200 - y - 1, yf)*xdim;
 
-        for (x = 0; x < 320; x++)
+        for (int x = 0; x < 320; x++)
         {
             const palette_t *pix = &frame[base + mulscale16(x, xf) + (xdim-(ydim*4/3))/2];
             pic[320 * y + x] = paletteGetClosestColor(pix->r, pix->g, pix->b);
         }
     }
 
-    Xfree(frame);
+    lock = CACHE1D_ENTRY_FREE;
 }
 #endif
 
