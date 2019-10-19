@@ -6912,7 +6912,7 @@ MAIN_LOOP_RESTART:
 
     do //main loop
     {
-        if (G_HandleAsync() && quitevent)
+        if (gameHandleEvents() && quitevent)
         {
             KB_KeyDown[sc_Escape] = 1;
             quitevent = 0;

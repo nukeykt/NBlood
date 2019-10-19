@@ -475,7 +475,7 @@ void cacheAllSounds(void)
         {
             j++;
             if ((j&7) == 0)
-                G_HandleAsync();
+                gameHandleEvents();
 
             S_LoadSound(i);
         }
