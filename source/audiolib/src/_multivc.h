@@ -172,6 +172,7 @@ typedef struct VoiceNode
     wavefmt_t wavetype;
     char bits;
     char channels;
+    char ptrlock;
 
     float volume;
 
