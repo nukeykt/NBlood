@@ -2530,7 +2530,7 @@ int32_t handleevents(void)
     rv = handleevents_pollsdl();
 
     inputchecked = 0;
-    timerUpdate();
+    timerUpdateClock();
 
     communityapiRunCallbacks();
 
