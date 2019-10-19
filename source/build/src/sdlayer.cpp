@@ -314,9 +314,6 @@ void wm_setapptitle(const char *name)
 static inline char grabmouse_low(char a);
 
 #ifndef __ANDROID__
-#ifdef DEBUGGINGAIDS
-#include "debugbreak.h"
-#endif
 static void attach_debugger_here(void)
 {
 #ifdef DEBUGGINGAIDS
