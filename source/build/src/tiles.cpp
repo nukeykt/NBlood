@@ -219,6 +219,7 @@ static void tileSetDataSafe(int32_t const tile, int32_t tsiz, char const * const
 
     if ((tsiz = LZ4_compress_default(buffer, newtile, tsiz, compressed_tsiz)) != -1)
     {
+        faketilesize[tile] = tsiz;
         faketiledata[tile] = (char *) Xrealloc(newtile, tsiz);
         faketile[tile>>3] |= pow2char[tile&7];
         tilefilenum[tile] = MAXARTFILES_TOTAL;
@@ -236,6 +237,7 @@ void tileSetData(int32_t const tile, int32_t tsiz, char const * const buffer)
 
     if ((tsiz = LZ4_compress_default(buffer, faketiledata[tile], tsiz, compressed_tsiz)) != -1)
     {
+        faketilesize[tile] = tsiz;
         faketiledata[tile] = (char *) Xrealloc(faketiledata[tile], tsiz);
         faketile[tile>>3] |= pow2char[tile&7];
         tilefilenum[tile] = MAXARTFILES_TOTAL;
@@ -698,7 +700,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
     if (faketile[tilenume>>3] & pow2char[tilenume&7])
     {
         if (faketiledata[tilenume] != NULL)
-            LZ4_decompress_fast(faketiledata[tilenume], buffer, dasiz);
+            LZ4_decompress_safe(faketiledata[tilenume], buffer, faketilesize[tilenume], dasiz);
 
         faketimerhandler();
         return;
