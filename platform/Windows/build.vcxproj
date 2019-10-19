@@ -379,6 +379,7 @@
     <ClInclude Include="..\..\source\build\include\tracker.hpp" />
     <ClInclude Include="..\..\source\build\include\vfs.h" />
     <ClInclude Include="..\..\source\build\include\winbits.h" />
+    <ClInclude Include="..\..\source\build\include\windows_inc.h" />
     <ClInclude Include="..\..\source\build\include\winlayer.h" />
     <ClInclude Include="..\..\source\build\include\xxh3.h" />
     <ClInclude Include="..\..\source\build\include\xxhash.h" />
