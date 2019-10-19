@@ -694,10 +694,6 @@ void uninitsystem(void)
 
     SDL_Quit();
 
-#ifdef _WIN32
-    win_uninit();
-#endif
-
 #ifdef USE_OPENGL
 # if SDL_MAJOR_VERSION!=1
     SDL_GL_UnloadLibrary();

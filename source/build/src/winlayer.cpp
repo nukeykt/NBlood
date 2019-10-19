@@ -541,8 +541,6 @@ void uninitsystem(void)
     uninitinput();
     timerUninit();
 
-    win_uninit();
-
 #ifdef USE_OPENGL
     //POGO: there is no equivalent to unloadgldriver() with GLAD's loader, but this shouldn't be a problem.
     //unloadgldriver();
