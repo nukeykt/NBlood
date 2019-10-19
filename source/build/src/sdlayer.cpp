@@ -638,7 +638,7 @@ int32_t initsystem(void)
 #ifdef POLYMER
         if (loadglulibrary(getenv("BUILD_GLULIB")))
         {
-            initprintf("Failed loading GLU.  GL modes will be unavailable. Error: %s\n", SDL_GetError());
+            initprintf("Failed loading GLU.  GL modes will be unavailable.\n");
             nogl = 1;
         }
 #endif
