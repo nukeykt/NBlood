@@ -474,11 +474,9 @@ int main(int argc, char *argv[])
 #elif defined(HAVE_GTK2)
     // Pre-initialize SDL video system in order to make sure XInitThreads() is called
     // before GTK starts talking to X11.
-    uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
-    if (inited == 0)
-        SDL_Init(SDL_INIT_VIDEO);
-    else if (!(inited & SDL_INIT_VIDEO))
+    if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
         SDL_InitSubSystem(SDL_INIT_VIDEO);
+
     gtkbuild_init(&argc, &argv);
 #endif
 
@@ -598,8 +596,6 @@ int32_t sdlayer_checkversion(void)
 //
 int32_t initsystem(void)
 {
-    const int sdlinitflags = SDL_INIT_VIDEO;
-
     mutex_init(&m_initprintf);
 
 #ifdef _WIN32
@@ -610,15 +606,13 @@ int32_t initsystem(void)
         return -1;
 
     int32_t err = 0;
-    uint32_t inited = SDL_WasInit(sdlinitflags);
-    if (inited == 0)
-        err = SDL_Init(sdlinitflags);
-    else if ((inited & sdlinitflags) != sdlinitflags)
-        err = SDL_InitSubSystem(sdlinitflags & ~inited);
+
+    if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
+        err = SDL_InitSubSystem(SDL_INIT_VIDEO);
 
     if (err)
     {
-        initprintf("Initialization failed! (%s)\nNon-interactive mode enabled\n", SDL_GetError());
+        initprintf("SDL initialization failed! (%s)\nNon-interactive mode enabled.  This is probably not what you want.\n", SDL_GetError());
         novideo = 1;
 #ifdef USE_OPENGL
         nogl = 1;
