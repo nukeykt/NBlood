@@ -33,7 +33,7 @@ tokenlist;
 
 typedef struct
 {
-    CACHE1D_FIND_REC *finddirs, *findfiles;
+    BUILDVFS_FIND_REC *finddirs, *findfiles;
     int32_t numdirs, numfiles;
 }
 fnlist_t;

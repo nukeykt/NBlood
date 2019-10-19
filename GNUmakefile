@@ -278,7 +278,7 @@ engine_tools_objs := \
     compat.cpp \
     pragmas.cpp \
     kplib.cpp \
-    cache1d.cpp \
+    vfs.cpp \
     klzw.cpp \
     crc32.cpp \
     colmatch.cpp \

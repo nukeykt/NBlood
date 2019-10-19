@@ -166,7 +166,7 @@ void B_SetBoardFileName(const char *fn)
 }
 
 static fnlist_t fnlist;
-static CACHE1D_FIND_REC *finddirshigh=NULL, *findfileshigh=NULL;
+static BUILDVFS_FIND_REC *finddirshigh=NULL, *findfileshigh=NULL;
 static int32_t currentlist=0;
 
 //static int32_t repeatcountx, repeatcounty;
@@ -9702,9 +9702,9 @@ const char *getstring_simple(const char *querystr, const char *defaultstr, int32
 
 static int32_t getfilenames(const char *path, const char *kind)
 {
-    const int32_t addflags = (!pathsearchmode && grponlymode ? CACHE1D_OPT_NOSTACK : 0);
+    const int32_t addflags = (!pathsearchmode && grponlymode ? BUILDVFS_OPT_NOSTACK : 0);
 
-    fnlist_getnames(&fnlist, path, kind, addflags|CACHE1D_FIND_DRIVE, addflags);
+    fnlist_getnames(&fnlist, path, kind, addflags|BUILDVFS_FIND_DRIVE, addflags);
 
     finddirshigh = fnlist.finddirs;
     findfileshigh = fnlist.findfiles;
@@ -9817,7 +9817,7 @@ static int32_t menuselect(void)
 
         if (finddirshigh)
         {
-            const CACHE1D_FIND_REC *dir = finddirshigh;
+            const BUILDVFS_FIND_REC *dir = finddirshigh;
 
             for (i=(listsize/2)-1; i>=0; i--)
             {
@@ -9826,7 +9826,7 @@ static int32_t menuselect(void)
             }
             for (i=0; ((i<listsize) && dir); i++, dir=dir->next)
             {
-                int32_t c = (dir->type == CACHE1D_FIND_DIR ? 2 : 3); //PK
+                int32_t c = (dir->type == BUILDVFS_FIND_DIR ? 2 : 3); //PK
                 Bmemset(buffer,0,sizeof(buffer));
                 Bstrncpy(buffer,dir->name,25);
                 if (Bstrlen(buffer) == 25)
@@ -9845,7 +9845,7 @@ static int32_t menuselect(void)
 
         if (findfileshigh)
         {
-            const CACHE1D_FIND_REC *dir = findfileshigh;
+            const BUILDVFS_FIND_REC *dir = findfileshigh;
 
             for (i=(listsize/2)-1; i>=0; i--)
             {
@@ -9895,7 +9895,7 @@ static int32_t menuselect(void)
 
             {
                 // JBF 20040208: seek to first name matching pressed character
-                CACHE1D_FIND_REC *seeker = currentlist ? fnlist.findfiles : fnlist.finddirs;
+                BUILDVFS_FIND_REC *seeker = currentlist ? fnlist.findfiles : fnlist.finddirs;
                 if (keystatus[sc_Home]||keystatus[sc_End]) // home/end
                 {
                     while (keystatus[sc_End] ? seeker->next : seeker->prev)
@@ -10025,7 +10025,7 @@ static int32_t menuselect(void)
         }
         else if (ch == 13 && currentlist == 0)
         {
-            if (finddirshigh->type == CACHE1D_FIND_DRIVE)
+            if (finddirshigh->type == BUILDVFS_FIND_DRIVE)
                 Bstrcpy(selectedboardfilename, finddirshigh->name);
             else
                 Bstrcat(selectedboardfilename, finddirshigh->name);
