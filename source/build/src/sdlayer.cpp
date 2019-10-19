@@ -644,6 +644,8 @@ int32_t initsystem(void)
 
     atexit(uninitsystem);
 
+    timerInit(CLOCKTICKSPERSECOND);
+
     frameplace = 0;
     lockcount = 0;
 
@@ -1902,6 +1904,8 @@ void videoShowFrame(int32_t w)
                     // sit on it and spin
                     currentVBlankInterval = timerGetFreqU64()/(double)refreshfreq;
                     uint64_t swapTime = timerGetTicksU64();
+                    if (lastSwapTime > swapTime)
+                        lastSwapTime = swapTime;
                     do { } while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval);
                     lastSwapTime = swapTime;
                 }

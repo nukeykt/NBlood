@@ -313,6 +313,7 @@ engine_objs := \
     fix16_str.cpp \
     sjson.cpp \
     communityapi.cpp \
+    cpuid.cpp \
 
 engine_editor_objs := \
     build.cpp \

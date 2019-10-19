@@ -203,6 +203,7 @@
     <ClCompile Include="..\..\source\build\src\common.cpp" />
     <ClCompile Include="..\..\source\build\src\communityapi.cpp" />
     <ClCompile Include="..\..\source\build\src\compat.cpp" />
+    <ClCompile Include="..\..\source\build\src\cpuid.cpp" />
     <ClCompile Include="..\..\source\build\src\crc32.cpp" />
     <ClCompile Include="..\..\source\build\src\defs.cpp" />
     <ClCompile Include="..\..\source\build\src\dxtfilter.cpp" />
@@ -325,6 +326,7 @@
     <ClInclude Include="..\..\source\build\include\common.h" />
     <ClInclude Include="..\..\source\build\include\communityapi.h" />
     <ClInclude Include="..\..\source\build\include\compat.h" />
+    <ClInclude Include="..\..\source\build\include\cpuid.h" />
     <ClInclude Include="..\..\source\build\include\crc32.h" />
     <ClInclude Include="..\..\source\build\include\debugbreak.h" />
     <ClInclude Include="..\..\source\build\include\dxdidf.h" />

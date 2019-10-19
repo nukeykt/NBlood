@@ -487,6 +487,8 @@ int32_t initsystem(void)
 
     atexit(uninitsystem);
 
+    timerInit(CLOCKTICKSPERSECOND);
+
     frameplace=0;
     lockcount=0;
 
