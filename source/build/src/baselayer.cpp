@@ -8,10 +8,10 @@
 #include "osd.h"
 #include "polymost.h"
 #include "renderlayer.h"
-#include "winbits.h"
 
 // video
 #ifdef _WIN32
+#include "winbits.h"
 extern "C"
 {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0x00000001;

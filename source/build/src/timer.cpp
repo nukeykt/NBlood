@@ -4,7 +4,7 @@
 
 #include "build.h"
 #include "compat.h"
-#include "cpuid.h"
+#include "build_cpuid.h"
 #include "renderlayer.h"
 
 #ifdef _WIN32
@@ -140,7 +140,7 @@ uint64_t timerGetFreqU64(void)
 
 static int osdcmd_sys_timer(osdcmdptr_t parm)
 {
-    static char constexpr const *s[] = { "auto", "QueryPerformanceCounter", "SDL", "std::chrono", "CPU TSC" };
+    static char constexpr const *s[] = { "auto", "QueryPerformanceCounter", "SDL", "std::chrono", "RDTSC instruction" };
     int const r = osdcmd_cvar_set(parm);
 
     if (r != OSDCMD_OK)
@@ -185,7 +185,7 @@ int timerInit(int const tickspersecond)
 #endif
                                                 "   3: std::chrono\n"
 #ifdef EDUKE32_PLATFORM_INTEL
-                                                "   4: CPU TSC\n",
+                                                "   4: RDTSC instruction\n",
 #endif
                                                 (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
 
@@ -209,7 +209,6 @@ int timerInit(int const tickspersecond)
 
             tsc_freq = (time2 - time1 - time3) * 10;
         }
-        sysReadCPUID();
 #endif
         initDone = 1;
     }
