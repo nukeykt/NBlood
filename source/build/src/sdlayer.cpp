@@ -2461,10 +2461,7 @@ int32_t handleevents_pollsdl(void)
                         if (backgroundidle)
                             SetPriorityClass(GetCurrentProcess(), appactive ? NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
 
-                        if (appactive)
-                            win_settimerresolution();
-                        else
-                            timeBeginPeriod(0);
+                        win_settimerresolution(win_fastsched);
 #endif
                         break;
 

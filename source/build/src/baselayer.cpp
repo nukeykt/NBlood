@@ -430,8 +430,6 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
 int32_t baselayer_init(void)
 {
 #ifdef _WIN32
-    win_settimerresolution();
-
 // on Windows, don't save the "r_screenaspect" cvar because the physical screen size is
 // determined at startup
 # define SCREENASPECT_CVAR_TYPE (CVAR_UINT|CVAR_NOSAVE)
