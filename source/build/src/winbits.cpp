@@ -344,7 +344,7 @@ void windowsPlatformCleanup(void)
 //
 // GetWindowsErrorMsg() -- gives a pointer to a static buffer containing the Windows error message
 //
-static LPTSTR windowsGetErrorMessage(DWORD code)
+LPTSTR windowsGetErrorMessage(DWORD code)
 {
     static TCHAR lpMsgBuf[1024];
 

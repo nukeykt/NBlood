@@ -733,6 +733,11 @@ ifeq ($(PLATFORM),WINDOWS)
     ifeq ($(MIXERTYPE),WIN)
         LIBS += -ldsound
     endif
+    duke3d_common_midi_objs := music.cpp midi.cpp mpu401.cpp
+else
+    ifeq ($(MIXERTYPE),SDL)
+        duke3d_common_midi_objs := music_external.cpp
+    endif
 endif
 
 ifeq ($(PLATFORM),WII)
