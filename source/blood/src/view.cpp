@@ -2147,6 +2147,16 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
 
 LOCATION gPrevSpriteLoc[kMaxSprites];
 
+static void viewApplyDefaultPal(uspritetype *pTSprite, sectortype const *pSector)
+{
+    int const nXSector = pSector->extra;
+    XSECTOR const *pXSector = nXSector >= 0 ? &xsector[nXSector] : NULL;
+    if (pXSector && pXSector->color && (VanillaMode() || pSector->floorpal != 0))
+    {
+        pTSprite->pal = pSector->floorpal;
+    }
+}
+
 void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t smooth)
 {
     UNREFERENCED_PARAMETER(cA);
@@ -2259,7 +2269,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 // Can be overridden by def script
                 if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1 && voxelIndex[pTSprite->picnum] != -1)
                 {
-                    if ((pTSprite->flags&16) == 0)
+                    if ((pTSprite->flags&kHitagRespawn) == 0)
                     {
                         pTSprite->cstat |= 48;
                         pTSprite->cstat &= ~(4|8);
@@ -2319,7 +2329,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         nShade += tileShade[pTSprite->picnum];
         pTSprite->shade = ClipRange(nShade, -128, 127);
-        if ((pTSprite->flags&16) && sprite[pTSprite->owner].owner == 3)
+        if ((pTSprite->flags&kHitagRespawn) && sprite[pTSprite->owner].owner == 3)
         {
             dassert(pTXSprite != NULL);
             pTSprite->xrepeat = 48;
@@ -2374,7 +2384,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     }
                     break;
                 default:
-                    if (pXSector && pXSector->color) pTSprite->pal = pSector->floorpal;
+                    viewApplyDefaultPal(pTSprite, pSector);
                     break;
             }
         }
@@ -2404,10 +2414,8 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 default:
                     if (pTSprite->type >= kItemKeySkull && pTSprite->type < kItemKeyMax)
                         pTSprite->shade = -128;
-                
-                    if (pXSector && pXSector->color) {
-                        pTSprite->pal = pSector->floorpal;
-                    }
+
+                    viewApplyDefaultPal(pTSprite, pSector);
                     break;
             }
         }
@@ -2463,11 +2471,21 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     break;
                 }
             }
+<<<<<<< HEAD
             
             if (pXSector && pXSector->color) pTSprite->pal = pSector->floorpal;
             if (powerupCheck(gView, kPwUpBeastVision) > 0) pTSprite->shade = -128;
 
             if (IsPlayerSprite((spritetype *)pTSprite)) {
+=======
+            viewApplyDefaultPal(pTSprite, pSector);
+            if (powerupCheck(gView, 25) > 0)
+            {
+                pTSprite->shade = -128;
+            }
+            if (IsPlayerSprite((spritetype *)pTSprite))
+            {
+>>>>>>> 1a8abf1b06dbe193178868b0168b60cac3043115
                 PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
                 if (powerupCheck(pPlayer, kPwUpShadowCloak) && !powerupCheck(gView, kPwUpBeastVision)) {
                     pTSprite->cstat |= 2;
@@ -2541,8 +2559,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             break;
         }
         case kStatThing: {
-            if (pXSector && pXSector->color)
-                pTSprite->pal = pSector->floorpal;
+            viewApplyDefaultPal(pTSprite, pSector);
 
             if (pTSprite->type < kThingBase || pTSprite->type >= kThingMax || !gSpriteHit[nXSprite].florhit) {
                 if ((pTSprite->flags & kPhysMove) && getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) >= cZ)

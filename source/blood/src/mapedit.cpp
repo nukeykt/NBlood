@@ -1153,34 +1153,34 @@ void cleanUp()
             {
             case 604:
             {
-                int nSprite = xsector[nXSector].at2c_0;
+                int nSprite = xsector[nXSector].marker0;
                 if (nSprite >= 0)
                 {
                     if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 8)
                         sprite[nSprite].owner = i;
                     else
-                        xsector[nXSector].at2c_0 = -1;
+                        xsector[nXSector].marker0 = -1;
                 }
                 break;
             }
             case 614:
             case 616:
             {
-                int nSprite = xsector[nXSector].at2c_0;
+                int nSprite = xsector[nXSector].marker0;
                 if (nSprite >= 0)
                 {
                     if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 3)
                         sprite[nSprite].owner = i;
                     else
-                        xsector[nXSector].at2c_0 = -1;
+                        xsector[nXSector].marker0 = -1;
                 }
-                nSprite = xsector[nXSector].at2e_0;
+                nSprite = xsector[nXSector].marker1;
                 if (nSprite >= 0)
                 {
                     if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 4)
                         sprite[nSprite].owner = i;
                     else
-                        xsector[nXSector].at2e_0 = -1;
+                        xsector[nXSector].marker1 = -1;
                 }
                 break;
             }
@@ -1188,13 +1188,13 @@ void cleanUp()
             case 615:
             case 617:
             {
-                int nSprite = xsector[nXSector].at2c_0;
+                int nSprite = xsector[nXSector].marker0;
                 if (nSprite >= 0)
                 {
                     if (nSprite < kMaxSprites && sprite[nSprite].statnum == 10 && sprite[nSprite].type == 5)
                         sprite[nSprite].owner = i;
                     else
-                        xsector[nXSector].at2c_0 = -1;
+                        xsector[nXSector].marker0 = -1;
                 }
                 break;
             }
@@ -1210,61 +1210,61 @@ void cleanUp()
             {
             case 604:
             {
-                int nSprite = xsector[nXSector].at2c_0;
+                int nSprite = xsector[nXSector].marker0;
                 if (nSprite >= 0 && i != sprite[nSprite].owner)
                 {
                     int vd = InsertSprite(sprite[nSprite].sectnum, 10);
                     sprite[vd] = sprite[nSprite];
                     sprite[vd].owner = i;
-                    xsector[nXSector].at2c_0 = vd;
+                    xsector[nXSector].marker0 = vd;
                 }
-                if (xsector[nXSector].at2c_0 < 0)
+                if (xsector[nXSector].marker0 < 0)
                 {
                     int vd = InsertSprite(i, 10);
                     sprite[vd].x = wall[sector[i].wallptr].x;
                     sprite[vd].y = wall[sector[i].wallptr].y;
                     sprite[vd].owner = i;
                     sprite[vd].type = 8;
-                    xsector[nXSector].at2c_0 = vd;
+                    xsector[nXSector].marker0 = vd;
                 }
                 break;
             }
             case 614:
             case 616:
             {
-                int nSprite = xsector[nXSector].at2c_0;
+                int nSprite = xsector[nXSector].marker0;
                 if (nSprite >= 0 && i != sprite[nSprite].owner)
                 {
                     int vd = InsertSprite(sprite[nSprite].sectnum, 10);
                     sprite[vd] = sprite[nSprite];
                     sprite[vd].owner = i;
-                    xsector[nXSector].at2c_0 = vd;
+                    xsector[nXSector].marker0 = vd;
                 }
-                if (xsector[nXSector].at2c_0 < 0)
+                if (xsector[nXSector].marker0 < 0)
                 {
                     int vd = InsertSprite(i, 10);
                     sprite[vd].x = wall[sector[i].wallptr].x;
                     sprite[vd].y = wall[sector[i].wallptr].y;
                     sprite[vd].owner = i;
                     sprite[vd].type = 3;
-                    xsector[nXSector].at2c_0 = vd;
+                    xsector[nXSector].marker0 = vd;
                 }
-                nSprite = xsector[nXSector].at2e_0;
+                nSprite = xsector[nXSector].marker1;
                 if (nSprite >= 0 && i != sprite[nSprite].owner)
                 {
                     int vd = InsertSprite(sprite[nSprite].sectnum, 10);
                     sprite[vd] = sprite[nSprite];
                     sprite[vd].owner = i;
-                    xsector[nXSector].at2e_0 = vd;
+                    xsector[nXSector].marker1 = vd;
                 }
-                if (xsector[nXSector].at2e_0 < 0)
+                if (xsector[nXSector].marker1 < 0)
                 {
                     int vd = InsertSprite(i, 10);
                     sprite[vd].x = wall[sector[i].wallptr].x;
                     sprite[vd].y = wall[sector[i].wallptr].y;
                     sprite[vd].owner = i;
                     sprite[vd].type = 4;
-                    xsector[nXSector].at2e_0 = vd;
+                    xsector[nXSector].marker1 = vd;
                 }
                 break;
             }
@@ -1272,28 +1272,28 @@ void cleanUp()
             case 615:
             case 617:
             {
-                int nSprite = xsector[nXSector].at2c_0;
+                int nSprite = xsector[nXSector].marker0;
                 if (nSprite >= 0 && i != sprite[nSprite].owner)
                 {
                     int vd = InsertSprite(sprite[nSprite].sectnum, 10);
                     sprite[vd] = sprite[nSprite];
                     sprite[vd].owner = i;
-                    xsector[nXSector].at2c_0 = vd;
+                    xsector[nXSector].marker0 = vd;
                 }
-                if (xsector[nXSector].at2c_0 < 0)
+                if (xsector[nXSector].marker0 < 0)
                 {
                     int vd = InsertSprite(i, 10);
                     sprite[vd].x = wall[sector[i].wallptr].x;
                     sprite[vd].y = wall[sector[i].wallptr].y;
                     sprite[vd].owner = i;
                     sprite[vd].type = 5;
-                    xsector[nXSector].at2c_0 = vd;
+                    xsector[nXSector].marker0 = vd;
                 }
                 break;
             }
             default:
-                xsector[nXSector].at2c_0 = -1;
-                xsector[nXSector].at2e_0 = -1;
+                xsector[nXSector].marker0 = -1;
+                xsector[nXSector].marker1 = -1;
                 break;
             }
         }
@@ -1315,14 +1315,14 @@ void cleanUp()
                 {
                 case 4:
                     sprite[nSprite].picnum = 3997;
-                    if (nSprite == xsector[nXSector].at2e_0)
+                    if (nSprite == xsector[nXSector].marker1)
                         continue;
                     break;
                 case 3:
                 case 5:
                     sprite[nSprite].picnum = 3997;
                 case 8:
-                    if (nSprite == xsector[nXSector].at2c_0)
+                    if (nSprite == xsector[nXSector].marker0)
                         continue;
                     break;
                 }
@@ -1670,7 +1670,7 @@ void adjustSprites()
                 default:
                     switch (pSprite->statnum) { // count invalid sprites if any
                     case 3:
-                        if (pSprite->type < kWeaponItemBase || pSprite->type >= kItemMax) gCorrectedSprites++;
+                        if (pSprite->type < kItemWeaponBase || pSprite->type >= kItemMax) gCorrectedSprites++;
                         break;
                     case 4:
                         if (pSprite->type < kThingBase || pSprite->type >= kThingMax) gCorrectedSprites++;
@@ -1690,7 +1690,7 @@ void adjustSprites()
                 ChangeSpriteStat(i, 0);
                 getXSprite(i);
             }
-            else if (type >= kWeaponItemBase && type < kItemMax)
+            else if (type >= kItemWeaponBase && type < kItemMax)
             {
                 if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) != CSTAT_SPRITE_ALIGNMENT_FACING) continue; // why?
                 pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
@@ -12483,7 +12483,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
                     int nSector = sprite[i].owner;
                     int nXSector = sector[nSector].extra;
                     dassert(nXSector > 0 && nXSector < kMaxXSectors);
-                    int k = xsector[nXSector].at2e_0;
+                    int k = xsector[nXSector].marker1;
                     editorGet2dScreenCoordinates(&xp2,&yp2, sprite[k].x-pos.x,sprite[k].y-pos.y, zoom);
                     if (m32_sideview)
                         yp2 += getscreenvdisp(sprite[k].z-pos.z, zoom);
