@@ -115,30 +115,6 @@ typedef struct
     int16_t      PitchBendHundreds;
 } AdLibChannel;
 
-typedef struct
-{
-    uint8_t SAVEK[2];
-    uint8_t Level[2];
-    uint8_t Env1[2];
-    uint8_t Env2[2];
-    uint8_t Wave[2];
-    uint8_t Feedback;
-    int8_t  Transpose;
-    int8_t  Velocity;
-} AdLibTimbre;
-
-extern AdLibTimbre ADLIB_TimbreBank[256];
-
-static void AL_ResetVoices(void);
-static void AL_CalcPitchInfo(void);
-static void AL_SetVoiceTimbre(int voice);
-static void AL_SetVoiceVolume(int voice);
-static int  AL_AllocVoice(void);
-static int  AL_GetVoice(int channel, int key);
-static void AL_SetVoicePitch(int voice);
-static void AL_SetChannelVolume(int channel, int volume);
-static void AL_SetChannelPan(int channel, int pan);
-static void AL_SetChannelDetune(int channel, int detune);
 static int  AL_Init(int rate);
 static void AL_NoteOff(int channel, int key, int velocity);
 static void AL_NoteOn(int channel, int key, int vel);

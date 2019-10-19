@@ -24,6 +24,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <inttypes.h>
 
+typedef struct
+{
+    uint8_t SAVEK[2];
+    uint8_t Level[2];
+    uint8_t Env1[2];
+    uint8_t Env2[2];
+    uint8_t Wave[2];
+    uint8_t Feedback;
+    int8_t  Transpose;
+    int8_t  Velocity;
+} AdLibTimbre;
+
+extern AdLibTimbre ADLIB_TimbreBank[256];
+
 opl3_chip *AL_GetChip(void);
 void AL_RegisterTimbreBank(uint8_t *timbres);
 
