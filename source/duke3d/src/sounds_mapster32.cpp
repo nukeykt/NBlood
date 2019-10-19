@@ -56,8 +56,6 @@ int32_t MixRate = 44100;
 
 int32_t g_numEnvSoundsPlaying;
 
-void MUSIC_Update(void) {}  // needed when linking
-
 void S_Callback(uint32_t);
 
 /*
@@ -77,7 +75,7 @@ int32_t S_SoundStartup(void)
     // TODO: read config
     int32_t FXVolume=220, /*NumVoices=32,*/ NumChannels=2, ReverseStereo=0;
 
-#ifdef MIXERTYPEWIN
+#ifdef _WIN32
     initdata = (void *) win_gethwnd(); // used for DirectSound
 #endif
 

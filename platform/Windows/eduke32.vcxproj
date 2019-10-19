@@ -188,7 +188,6 @@
     <ClInclude Include="..\..\source\duke3d\src\input.h" />
     <ClInclude Include="..\..\source\duke3d\src\inv.h" />
     <ClInclude Include="..\..\source\duke3d\src\menus.h" />
-    <ClInclude Include="..\..\source\duke3d\src\mpu401.h" />
     <ClInclude Include="..\..\source\duke3d\src\network.h" />
     <ClInclude Include="..\..\source\duke3d\src\player.h" />
     <ClInclude Include="..\..\source\duke3d\src\premap.h" />
@@ -244,15 +243,6 @@
     <ClCompile Include="..\..\source\duke3d\src\input.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\mdump.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\menus.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\midi.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\mpu401.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\music.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\music_external.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\namesdyn.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\network.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\osdcmds.cpp" />
