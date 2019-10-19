@@ -71,10 +71,10 @@
     <ClCompile Include="..\..\source\audiolib\src\music_external.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\mpu401.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\gmtimbre.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\gmtimbre.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\driver_adlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -133,10 +133,10 @@
     <ClInclude Include="..\..\source\audiolib\include\midifuncs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\mpu401.h">
+    <ClInclude Include="..\..\source\audiolib\include\opl3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\opl3.h">
+    <ClInclude Include="..\..\source\audiolib\src\driver_adlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

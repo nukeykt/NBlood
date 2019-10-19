@@ -29,15 +29,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "drivers.h"
 #include "midi.h"
-#include "mpu401.h"
 #include "multivoc.h"
 #include "sndcards.h"
 
 int MUSIC_ErrorCode = MUSIC_Ok;
 
 static midifuncs MUSIC_MidiFunctions;
-
-int MUSIC_InitMidi(int card, midifuncs *Funcs);
 
 #define MUSIC_SetErrorCode(status) MUSIC_ErrorCode = (status);
 
@@ -60,7 +57,13 @@ const char *MUSIC_ErrorString(int ErrorNumber)
 
 int MUSIC_Init(int SoundCard)
 {
-    if (SoundCard == ASS_AutoDetect) {
+    int detected = 0;
+
+    if (SoundCard == ASS_AutoDetect)
+    {
+redetect:
+        detected++;
+
 #if defined _WIN32
         SoundCard = ASS_WinMM;
 #elif RENDERTYPESDL
@@ -70,28 +73,41 @@ int MUSIC_Init(int SoundCard)
 #endif
     }
 
-    if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards) {
+    if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
+    {
+failed:
+        MV_Printf("failed!\n");
         MUSIC_ErrorCode = MUSIC_MidiError;
         return MUSIC_Error;
     }
 
     if (!SoundDriver_IsMIDISupported(SoundCard))
     {
-        MV_Printf("Couldn't init %s, falling back to no sound...\n", SoundDriver_GetName(SoundCard));
-        MUSIC_ErrorCode = MUSIC_MidiError;
-        return MUSIC_Error;
+        MV_Printf("Couldn't init %s\n", SoundDriver_GetName(SoundCard));
+
+        if (detected < 2)
+            goto redetect;
+
+        goto failed;
     }
 
-   ASS_MIDISoundDriver = SoundCard;
+    ASS_MIDISoundDriver = SoundCard;
 
-   int status = SoundDriver_MIDI_Init(&MUSIC_MidiFunctions);
-   if (status != MUSIC_Ok)
-   {
-       MUSIC_ErrorCode = MUSIC_MidiError;
-       return MUSIC_Error;
-   }
+    int status = SoundDriver_MIDI_Init(&MUSIC_MidiFunctions);
 
-    return MUSIC_InitMidi(SoundCard, &MUSIC_MidiFunctions);
+    if (status != MUSIC_Ok)
+    {
+        if (detected < 2)
+            goto redetect;
+
+        goto failed;
+    }
+
+    MV_Printf("successfully initialized %s!\n", SoundDriver_GetName(SoundCard));
+
+    MIDI_SetMidiFuncs(&MUSIC_MidiFunctions);
+
+    return MUSIC_Ok;
 }
 
 
@@ -136,40 +152,7 @@ int MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn /*= nu
 }
 
 
-int MUSIC_InitMidi(int card, midifuncs *Funcs)
-{
-    switch (card)
-    {
-    case ASS_MPU401:
-        Funcs->NoteOff = MPU_NoteOff;
-        Funcs->NoteOn = MPU_NoteOn;
-        Funcs->PolyAftertouch = MPU_PolyAftertouch;
-        Funcs->ControlChange = MPU_ControlChange;
-        Funcs->ProgramChange = MPU_ProgramChange;
-        Funcs->ChannelAftertouch = MPU_ChannelAftertouch;
-        Funcs->PitchBend = MPU_PitchBend;
-        break;
-
-    case ASS_OPL3:
-        Funcs->NoteOff = OPLMusic::AL_NoteOff;
-        Funcs->NoteOn = OPLMusic::AL_NoteOn;
-        Funcs->PolyAftertouch = NULL;
-        Funcs->ControlChange = OPLMusic::AL_ControlChange;
-        Funcs->ProgramChange = OPLMusic::AL_ProgramChange;
-        Funcs->ChannelAftertouch = NULL;
-        Funcs->PitchBend = OPLMusic::AL_SetPitchBend;
-        break;
-    }
-
-    MIDI_SetMidiFuncs(Funcs);
-
-    return MIDI_Ok;
-}
-
 void MUSIC_Update(void)
 {
-    if (ASS_MIDISoundDriver != ASS_MPU401)
-        return;
-
     MIDI_UpdateMusic();
 }

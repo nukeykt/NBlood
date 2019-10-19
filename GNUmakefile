@@ -366,6 +366,7 @@ audiolib := audiolib
 
 audiolib_objs := \
     al_midi.cpp \
+    driver_adlib.cpp \
     driver_nosound.cpp \
     drivers.cpp \
     flac.cpp \
@@ -375,7 +376,6 @@ audiolib_objs := \
     midi.cpp \
     mix.cpp \
     mixst.cpp \
-    mpu401.cpp \
     multivoc.cpp \
     music.cpp \
     opl3.cpp \
@@ -394,7 +394,7 @@ audiolib_cflags :=
 audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
-    audiolib_objs += driver_directsound.cpp driver_winmm.cpp
+    audiolib_objs += driver_directsound.cpp driver_winmm.cpp 
 endif
 
 ifeq ($(RENDERTYPE),SDL)
