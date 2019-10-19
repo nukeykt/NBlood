@@ -5,9 +5,9 @@
 
 cpuinfo_t cpu;
 
-#ifdef EDUKE32_PLATFORM_INTEL
+#if defined EDUKE32_PLATFORM_INTEL
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 # include <cpuid.h>
 #endif
 
@@ -18,7 +18,11 @@ void sysReadCPUID(void)
 {
     int32_t regs[4];
 
+#ifdef _WIN32
     __cpuid(regs, 0);
+#else
+    __cpuid(0, regs[0], regs[1], regs[2], regs[3]);
+#endif
 
     // CPUID returns things out of order...
     Bmemcpy(g_cpuVendorIDString,   regs+1, 4);
@@ -35,17 +39,31 @@ void sysReadCPUID(void)
         cpu.type = CPU_INTEL;
     else if (!Bstrcmp(g_cpuVendorIDString, "AuthenticAMD"))
         cpu.type = CPU_AMD;
-    else cpu.type = CPU_UNKNOWN;
+    else
+        cpu.type = CPU_UNKNOWN;
 
+#ifdef _WIN32
     __cpuid(regs, 0x80000000);
+#else
+    __cpuid(0x80000000, regs[0], regs[1], regs[2], regs[3]);
+#endif
+
     auto const subleaves = (unsigned)regs[0];
 
     if (subleaves >= 0x80000004)
     {
+#ifdef _WIN32
         __cpuid((int *)g_cpuBrandString,   0x80000002);
         __cpuid((int *)g_cpuBrandString+4, 0x80000003);
         __cpuid((int *)g_cpuBrandString+8, 0x80000004);
-
+#else
+        __cpuid(0x80000002, *(int *)&g_cpuBrandString[0], *(int *)&g_cpuBrandString[4],
+                            *(int *)&g_cpuBrandString[8], *(int *)&g_cpuBrandString[16]);
+        __cpuid(0x80000003, *(int *)&g_cpuBrandString[20], *(int *)&g_cpuBrandString[24],
+                            *(int *)&g_cpuBrandString[28], *(int *)&g_cpuBrandString[32]);
+        __cpuid(0x80000004, *(int *)&g_cpuBrandString[36], *(int *)&g_cpuBrandString[40],
+                            *(int *)&g_cpuBrandString[44], *(int *)&g_cpuBrandString[48]);
+#endif
         for (int i=ARRAY_SIZE(g_cpuBrandString)-1;i>=0;--i)
         {
             if (isalnum(g_cpuBrandString[i]))
@@ -59,7 +77,11 @@ void sysReadCPUID(void)
 
         if (subleaves >= 0x80000007)
         {
+#ifdef _WIN32
             __cpuid(regs, 0x80000007);
+#else
+            __cpuid(0x80000007, regs[0], regs[1], regs[2], regs[3]);
+#endif
             cpu.features.invariant_tsc = (regs[3] & (1 << 8)) != 0;
         }
     }

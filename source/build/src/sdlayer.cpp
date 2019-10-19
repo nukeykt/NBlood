@@ -613,7 +613,6 @@ int32_t initsystem(void)
 #ifdef _WIN32
     windowsPlatformInit();
 #endif
-
     sysReadCPUID();
 
     if (sdlayer_checkversion())
