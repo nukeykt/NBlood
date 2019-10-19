@@ -139,7 +139,11 @@ enum {
     CACHE1D_SOURCE_PATH = 2,	// + path stack depth
     CACHE1D_SOURCE_ZIP = 0x7ffffffe,
     CACHE1D_SOURCE_GRP = 0x7fffffff,
+
+    CACHE1D_ENTRY_FREE = 1,
+    CACHE1D_ENTRY_PERMANENT = 255,
 };
+
 typedef struct _CACHE1D_FIND_REC {
     char *name;
     int32_t type, source;

@@ -722,7 +722,7 @@ int app_main(int argc, char const * const * argv)
         char *newtile;
         int32_t sx=32, sy=32, col, j;
 
-        walock[i] = 255; // permanent tile
+        walock[i] = CACHE1D_ENTRY_PERMANENT;
         picsiz[i] = 5 + (5<<4);
         tilesiz[i].x = sx; tilesiz[i].y = sy;
         cacheAllocateBlock(&waloff[i], sx*sy, &walock[i]);

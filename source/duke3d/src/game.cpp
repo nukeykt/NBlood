@@ -924,7 +924,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 const int32_t viewtilexsiz = (tang&1023) ? tiltcx : tiltcy;
                 const int32_t viewtileysiz = tiltcx;
 
-                walock[TILE_TILT] = 255;
+                walock[TILE_TILT] = CACHE1D_ENTRY_PERMANENT;
                 if (waloff[TILE_TILT] == 0)
                     cacheAllocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
@@ -1175,7 +1175,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 tiltZoom >>= tiltcs;  // JBF 20030807
 
                 rotatesprite_win(160 << 16, 100 << 16, tiltZoom, tang + 512, TILE_TILT, 0, 0, 4 + 2 + 64 + 1024);
-                walock[TILE_TILT] = 1;
+                walock[TILE_TILT] = CACHE1D_ENTRY_FREE;
             }
         }
     }

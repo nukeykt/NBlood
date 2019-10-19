@@ -104,7 +104,7 @@ void artClearMapArt(void)
         if (tilefilenum[i] >= MAXARTFILES_BASE)
         {
             // XXX: OK way to free it? Better: cache1d API. CACHE1D_FREE
-            walock[i] = 1;
+            walock[i] = CACHE1D_ENTRY_FREE;
             waloff[i] = 0;
         }
     }
@@ -256,7 +256,7 @@ static void tileSoftDelete(int32_t const tile)
     picsiz[tile] = 0;
 
     // CACHE1D_FREE
-    walock[tile] = 1;
+    walock[tile] = CACHE1D_ENTRY_FREE;
     waloff[tile] = 0;
 
     faketile[tile>>3] &= ~pow2char[tile&7];
@@ -830,7 +830,7 @@ intptr_t tileCreate(int16_t tilenume, int32_t xsiz, int32_t ysiz)
 
     int const dasiz = xsiz*ysiz;
 
-    walock[tilenume] = 255;
+    walock[tilenume] = CACHE1D_ENTRY_PERMANENT;
     cacheAllocateBlock(&waloff[tilenume], dasiz, &walock[tilenume]);
 
     tileSetSize(tilenume, xsiz, ysiz);
