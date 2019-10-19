@@ -2454,7 +2454,8 @@ DETONATE:
                             sprite[spriteNum].yvel = 0;  // VIEWSCREEN_YVEL
                             T1(spriteNum)          = 0;
 
-                            for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++) walock[TILE_VIEWSCR - ii] = 199;
+                            for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
+                                walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
                         }
                     }
 

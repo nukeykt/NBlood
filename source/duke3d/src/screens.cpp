@@ -702,11 +702,6 @@ static void G_PrintCoords(int32_t snum)
 #endif
 }
 
-#if !defined DEBUG_ALLOCACHE_AS_MALLOC
-extern int32_t cacnum;
-extern cactype *cac;
-#endif
-
 static void G_ShowCacheLocks(void)
 {
     if (offscreenrendering)
@@ -715,14 +710,14 @@ static void G_ShowCacheLocks(void)
     int k = 0;
 
 #if !defined DEBUG_ALLOCACHE_AS_MALLOC
-    for (int i=cacnum-1; i>=0; i--)
+    for (int i=g_cacheNumEntries-1; i>=0; i--)
     {
-        if ((*cac[i].lock) != 200 && (*cac[i].lock) != 1)
+        if ((*g_cache[i].lock) != CACHE1D_LOCKED && (*g_cache[i].lock) != 1)
         {
             if (k >= ydim-12)
                 break;
 
-            Bsprintf(tempbuf, "Locked- %d: Leng:%d, Lock:%d", i, cac[i].leng, *cac[i].lock);
+            Bsprintf(tempbuf, "Locked- %d: Leng:%d, Lock:%d", i, g_cache[i].leng, *g_cache[i].lock);
             printext256(0L, k, COLOR_WHITE, -1, tempbuf, 1);
             k += 6;
         }
@@ -734,7 +729,7 @@ static void G_ShowCacheLocks(void)
 
     for (int i=10; i>=0; i--)
     {
-        if (rts_lumplockbyte[i] >= 200)
+        if (rts_lumplockbyte[i] >= CACHE1D_LOCKED)
         {
             if (k >= ydim-12)
                 break;

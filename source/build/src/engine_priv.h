@@ -330,9 +330,9 @@ static inline void setgotpic(int32_t a)
         push ebx
         mov eax, a
         mov ebx, eax
-        cmp byte ptr walock[eax], 200
+        cmp byte ptr walock[eax], CACHE1D_LOCKED
         jae skipit
-        mov byte ptr walock[eax], 199
+        mov byte ptr walock[eax], CACHE1D_UNLOCKED
 skipit:
         shr eax, 3
         and ebx, 7
@@ -350,9 +350,9 @@ skipit:
 ({ int32_t __a=(a); \
     __asm__ __volatile__ ( \
                    "movl %%eax, %%ebx\n\t" \
-                   "cmpb $200, " ASMSYM("walock") "(%%eax)\n\t" \
+                   "cmpb $CACHE1D_LOCKED, " ASMSYM("walock") "(%%eax)\n\t" \
                    "jae 0f\n\t" \
-                   "movb $199, " ASMSYM("walock") "(%%eax)\n\t" \
+                   "movb CACHE1D_UNLOCKED, " ASMSYM("walock") "(%%eax)\n\t" \
                    "0:\n\t" \
                    "shrl $3, %%eax\n\t" \
                    "andl $7, %%ebx\n\t" \
@@ -368,7 +368,7 @@ skipit:
 
 static FORCE_INLINE void setgotpic(int32_t tilenume)
 {
-    if (walock[tilenume] < 200) walock[tilenume] = 199;
+    if (walock[tilenume] < CACHE1D_LOCKED) walock[tilenume] = CACHE1D_UNLOCKED;
     gotpic[tilenume>>3] |= pow2char[tilenume&7];
 }
 

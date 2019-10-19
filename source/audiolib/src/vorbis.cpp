@@ -379,7 +379,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
 
     vorbis_data *vd;
 
-    voice->ptrlock = CACHE1D_ENTRY_PERMANENT;
+    voice->ptrlock = CACHE1D_LOCKED_PERMANENTLY;
 
     if (voice->rawdataptr == nullptr || voice->wavetype != FMT_VORBIS)
         cacheAllocateBlock((intptr_t *)&vd, sizeof(vorbis_data), &voice->ptrlock);
@@ -402,7 +402,7 @@ int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loo
         else
             MV_Printf("MV_PlayVorbis: err %d\n", status);
 
-        voice->ptrlock = CACHE1D_ENTRY_FREE;
+        voice->ptrlock = CACHE1D_FREE;
         MV_SetErrorCode(MV_InvalidFile);
         return MV_Error;
     }
@@ -448,7 +448,7 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
 
     voice->length = 0;
     voice->sound = nullptr;
-    voice->ptrlock = 199;
+    voice->ptrlock = CACHE1D_UNLOCKED;
 
     ov_clear(&vd->vf);
 }

@@ -10714,8 +10714,8 @@ void vox_undefine(int32_t const tile)
 
     for (ssize_t j = 0; j < MAXVOXMIPS; ++j)
     {
-        // BUILDVFS_FREE
-        voxlock[voxindex][j] = CACHE1D_ENTRY_FREE;
+        // CACHE1D_FREE
+        voxlock[voxindex][j] = CACHE1D_FREE;
         voxoff[voxindex][j] = 0;
     }
     voxscale[voxindex] = 65536;
