@@ -154,6 +154,7 @@ void Duke_CommonCleanup(void);
 
 #if defined HAVE_FLAC || defined HAVE_VORBIS
 # define FORMAT_UPGRADE_ELIGIBLE
+extern int g_maybeUpgradeSoundFormats;
 extern buildvfs_kfd S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
 #else
 # define S_OpenAudio(fn, searchfirst, ismusic) kopen4loadfrommod(fn, searchfirst)
