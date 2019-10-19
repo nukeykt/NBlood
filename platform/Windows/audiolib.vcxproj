@@ -185,7 +185,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\source\audiolib\src\al_midi.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\drivers.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\driver_adlib.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\driver_directsound.cpp">

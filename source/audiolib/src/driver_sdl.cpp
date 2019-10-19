@@ -103,7 +103,7 @@ int SDLDrv_GetError(void)
     return ErrorCode;
 }
 
-const char *SDLDrv_ErrorString( int ErrorNumber )
+const char *SDLDrv_ErrorString(int ErrorNumber)
 {
     const char *ErrorString;
 
@@ -178,7 +178,7 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 #if (SDL_MAJOR_VERSION == 1)
     err = !SDL_OpenAudio(&spec, &actual);
 #else
-    audio_dev = err = SDL_OpenAudioDevice(NULL, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+    audio_dev = err = SDL_OpenAudioDevice(nullptr, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 #endif
 
     if (err == 0) {
@@ -191,12 +191,25 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     SDL_AudioDriverName(drivername, sizeof(drivername));
     MV_Printf("SDL %s driver\n", drivername);
 #else
-    char *drivername = Xstrdup(SDL_GetCurrentAudioDriver());
+    auto drivername = Xstrdup(SDL_GetCurrentAudioDriver());
 
     for (int i=0;drivername[i] != 0;++i)
         drivername[i] = toupperlookup[drivername[i]];
 
-    MV_Printf("SDL %s driver on %s\n", drivername ? drivername : "(error)", SDL_GetAudioDeviceName(0, 0));
+    auto devname = Xstrdup(SDL_GetAudioDeviceName(0, 0));
+    auto pdevname = Bstrchr(devname, '(');
+
+    if (pdevname)
+    {
+        auto rt = Bstrchr(pdevname++, ')');
+        if (rt != nullptr) *rt = '\0';
+    }
+    else
+        pdevname = devname;
+
+    MV_Printf("SDL %s driver on %s\n", drivername, pdevname);
+
+    Xfree(devname);
     Xfree(drivername);
 #endif
 
