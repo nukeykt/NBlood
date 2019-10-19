@@ -3050,7 +3050,7 @@ void P_GetInput(int const playerNum)
     localInput.bits |= (BUTTON(gamefunc_Open) << SK_OPEN);
 
     int const sectorLotag = pPlayer->cursectnum != -1 ? sector[pPlayer->cursectnum].lotag : 0;
-    int const crouchable = sectorLotag != 2 && (sectorLotag != 1 || pPlayer->spritebridge);
+    int const crouchable = sectorLotag != 2 && (sectorLotag != 1 || pPlayer->spritebridge) && !pPlayer->jetpack_on;
 
     if (BUTTON(gamefunc_Toggle_Crouch))
     {
