@@ -271,7 +271,7 @@ static unsigned char GetModsDirNames(GtkListStore *list)
     char *homedir;
     char pdir[BMAX_PATH];
     unsigned char iternumb = 0;
-    CACHE1D_FIND_REC *dirs = NULL;
+    BUILDVFS_FIND_REC *dirs = NULL;
     GtkTreeIter iter;
 
     pathsearchmode = 1;
@@ -279,7 +279,7 @@ static unsigned char GetModsDirNames(GtkListStore *list)
     if ((homedir = Bgethomedir()))
     {
         Bsnprintf(pdir, sizeof(pdir), "%s/" ".eduke32", homedir);
-        dirs = klistpath(pdir, "*", CACHE1D_FIND_DIR);
+        dirs = klistpath(pdir, "*", BUILDVFS_FIND_DIR);
         for (; dirs != NULL; dirs=dirs->next)
         {
             if ((Bstrcmp(dirs->name, "autoload") == 0) ||

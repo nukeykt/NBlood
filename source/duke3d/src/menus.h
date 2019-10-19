@@ -427,7 +427,7 @@ typedef struct MenuFileSelect_t
     char *destination;
 
     // state
-    CACHE1D_FIND_REC *findhigh[2];
+    BUILDVFS_FIND_REC *findhigh[2];
     int32_t scrollPos[2];
 
     // appearance
