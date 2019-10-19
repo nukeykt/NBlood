@@ -6585,7 +6585,7 @@ int app_main(int argc, char const * const * argv)
 #ifndef NETCODE_DISABLE
     if (g_networkMode == NET_SERVER || g_networkMode == NET_DEDICATED_SERVER)
     {
-        ENetAddress address = { ENET_HOST_ANY, g_netPort };
+        ENetAddress address = { ENET_HOST_ANY, g_netPort, 0 };
         g_netServer = enet_host_create(&address, MAXPLAYERS, CHAN_MAX, 0, 0);
 
         if (g_netServer == NULL)

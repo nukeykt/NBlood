@@ -1636,6 +1636,7 @@ static void Net_Disconnect(void)
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
+            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
                 numplayers = g_mostConcurrentPlayers = ud.multimode = 1;
                 myconnectindex = screenpeek = 0;
                 G_BackToMenu();
@@ -1667,6 +1668,7 @@ static void Net_Disconnect(void)
             case ENET_EVENT_TYPE_NONE:
             case ENET_EVENT_TYPE_RECEIVE:
             case ENET_EVENT_TYPE_DISCONNECT:
+            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
                 if (event.packet)
                 {
                     enet_packet_destroy(event.packet);
