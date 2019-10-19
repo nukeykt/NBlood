@@ -365,7 +365,6 @@ mact_objs := \
 audiolib := audiolib
 
 audiolib_objs := \
-    al_midi.cpp \
     driver_adlib.cpp \
     driver_nosound.cpp \
     drivers.cpp \

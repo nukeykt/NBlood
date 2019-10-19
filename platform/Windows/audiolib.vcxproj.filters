@@ -59,9 +59,6 @@
     <ClCompile Include="..\..\source\audiolib\src\midi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\al_midi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\opl3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
