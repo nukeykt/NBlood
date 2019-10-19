@@ -377,9 +377,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     maybe_redirect_outputs();
 
 #ifdef USE_OPENGL
-    if ((argp = Bgetenv("BUILD_NOFOG")) != NULL)
+    if ((argp = Bgetenv("EDUKE32_NO_OPENGL_FOG")) != NULL)
         nofog = Batol(argp);
-    if (Bgetenv("BUILD_FORCEGL") != NULL)
+    if (Bgetenv("EDUKE32_NO_OPENGL_BLACKLIST") != NULL)
         forcegl = 1;
 #endif
 

@@ -503,7 +503,7 @@ void maybe_redirect_outputs(void)
     char *argp;
 
     // pipe standard outputs to files
-    if ((argp = Bgetenv("BUILD_LOGSTDOUT")) == NULL || Bstrcasecmp(argp, "TRUE"))
+    if ((argp = Bgetenv("EDUKE32_LOGSTDOUT")) == NULL || Bstrcasecmp(argp, "TRUE"))
         return;
 
     FILE *fp = freopen("stdout.txt", "w", stdout);
