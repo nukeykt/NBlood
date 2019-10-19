@@ -354,7 +354,6 @@ HAVE_VORBIS := 1
 HAVE_FLAC := 1
 HAVE_XMP := 1
 RENDERTYPE := SDL
-MIXERTYPE := SDL
 SDL_TARGET := 2
 USE_PHYSFS := 0
 
@@ -385,12 +384,6 @@ ifneq (100,$(RELEASE)$(PROFILER)$(ALLOCACHE_AS_MALLOC))
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    MIXERTYPE := SDL
-    ifneq ($(RENDERTYPE),SDL)
-        ifeq ($(MIXERTYPE),SDL)
-            override MIXERTYPE := WIN
-        endif
-    endif
     override HAVE_GTK2 := 0
 else ifeq ($(PLATFORM),DARWIN)
     HAVE_GTK2 := 0
@@ -838,7 +831,7 @@ ifneq (0,$(MEMMAP))
     endif
 endif
 
-COMPILERFLAGS += -DRENDERTYPE$(RENDERTYPE)=1 -DMIXERTYPE$(MIXERTYPE)=1
+COMPILERFLAGS += -DRENDERTYPE$(RENDERTYPE)=1
 
 ifeq (0,$(NETCODE))
     COMPILERFLAGS += -DNETCODE_DISABLE

@@ -377,6 +377,12 @@ audiolib_objs := \
     xa.cpp \
     xmp.cpp \
     driver_nosound.cpp \
+    music.cpp \
+    midi.cpp \
+    mpu401.cpp \
+    al_midi.cpp \
+    opl3.cpp \
+    gmtimbre.cpp \
 
 audiolib_root := $(source)/$(audiolib)
 audiolib_src := $(audiolib_root)/src
@@ -388,12 +394,10 @@ audiolib_cflags :=
 audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
-    ifeq ($(MIXERTYPE),WIN)
-        audiolib_objs += driver_directsound.cpp
-    endif
+    audiolib_objs += driver_directsound.cpp driver_winmm.cpp
 endif
 
-ifeq ($(MIXERTYPE),SDL)
+ifeq ($(RENDERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
         audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
     endif
@@ -527,7 +531,7 @@ duke3d_cflags := -I$(duke3d_src)
 
 common_editor_deps := duke3d_common_editor engine_editor
 
-duke3d_game_deps := duke3d_common_midi audiolib mact
+duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
 
 ifneq (0,$(LUNATIC))
@@ -698,20 +702,12 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -ldsound
     duke3d_game_objs += winbits.cpp
     duke3d_game_rsrc_objs += gameres.rc
     duke3d_editor_rsrc_objs += buildres.rc
     ifeq ($(STARTUP_WINDOW),1)
         duke3d_game_objs += startwin.game.cpp
-    endif
-    ifeq ($(MIXERTYPE),WIN)
-        LIBS += -ldsound
-    endif
-    duke3d_common_midi_objs := music.cpp midi.cpp mpu401.cpp
-else
-    ifeq ($(MIXERTYPE),SDL)
-        duke3d_common_midi_objs := music_external.cpp
     endif
 endif
 
@@ -741,7 +737,7 @@ sw_obj := $(obj)/$(sw)
 
 sw_cflags := -I$(sw_src)
 
-sw_game_deps := duke3d_common_midi audiolib mact
+sw_game_deps := audiolib mact
 sw_editor_deps := audiolib
 
 sw_game := voidsw

@@ -301,8 +301,8 @@ end_of_data:
     return NoMoreData;
 }
 
-int32_t MV_PlayWAV3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance,
-                     int32_t priority, float volume, uint32_t callbackval)
+int MV_PlayWAV3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance,
+                     int priority, float volume, uint32_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -322,8 +322,8 @@ int32_t MV_PlayWAV3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitcho
         MV_PanTable[ angle ][ vol ].left, MV_PanTable[ angle ][ vol ].right, priority, volume, callbackval);
 }
 
-int32_t MV_PlayWAV(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol,
-                   int32_t left, int32_t right, int32_t priority, float volume, uint32_t callbackval)
+int MV_PlayWAV(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
+                   int left, int right, int priority, float volume, uint32_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -366,7 +366,7 @@ int32_t MV_PlayWAV(char *ptr, uint32_t length, int32_t loopstart, int32_t loopen
     voice->channels    = format.nChannels;
     voice->GetSound    = MV_GetNextWAVBlock;
 
-    int32_t blocklen = data.size;
+    int blocklen = data.size;
 
     if (voice->bits == 16)
     {
@@ -403,8 +403,8 @@ int32_t MV_PlayWAV(char *ptr, uint32_t length, int32_t loopstart, int32_t loopen
     return voice->handle;
 }
 
-int32_t MV_PlayVOC3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle,
-                     int32_t distance, int32_t priority, float volume, uint32_t callbackval)
+int MV_PlayVOC3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle,
+                     int distance, int priority, float volume, uint32_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -424,8 +424,8 @@ int32_t MV_PlayVOC3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitcho
         MV_PanTable[ angle ][ vol ].left, MV_PanTable[ angle ][ vol ].right, priority, volume, callbackval);
 }
 
-int32_t MV_PlayVOC(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol,
-                   int32_t left, int32_t right, int32_t priority, float volume, uint32_t callbackval)
+int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
+                   int left, int right, int priority, float volume, uint32_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
