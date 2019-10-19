@@ -710,14 +710,16 @@ static void G_ShowCacheLocks(void)
     int k = 0;
 
 #if !defined DEBUG_ALLOCACHE_AS_MALLOC
-    for (int i=g_cacheNumEntries-1; i>=0; i--)
+    auto indexes = g_cache.getIndex();
+
+    for (int i=g_cache.numBlocks()-1; i>=0; i--)
     {
-        if ((*g_cache[i].lock) != CACHE1D_LOCKED && (*g_cache[i].lock) != 1)
+        if ((*indexes[i].lock) != CACHE1D_LOCKED && (*indexes[i].lock) != 1)
         {
             if (k >= ydim-12)
                 break;
 
-            Bsprintf(tempbuf, "Locked- %d: Leng:%d, Lock:%d", i, g_cache[i].leng, *g_cache[i].lock);
+            Bsprintf(tempbuf, "Locked- %d: Leng:%d, Lock:%d", i, indexes[i].leng, *indexes[i].lock);
             printext256(0L, k, COLOR_WHITE, -1, tempbuf, 1);
             k += 6;
         }
