@@ -195,6 +195,15 @@ enum gametokens
     T_USERCONTENT,
 };
 
+static void gameTimerHandler(void)
+{
+    S_Cleanup();
+    MUSIC_Update();
+
+    G_HandleSpecialKeys();
+}
+
+
 void G_HandleSpecialKeys(void)
 {
     auto &myplayer = *g_player[myconnectindex].ps;
@@ -6046,6 +6055,7 @@ static void G_Startup(void)
     set_memerr_handler(&G_HandleMemErr);
 
     timerInit(TICRATE);
+    timerSetCallback(gameTimerHandler);
 
     initcrc32table();
 
@@ -6902,13 +6912,11 @@ MAIN_LOOP_RESTART:
 
     do //main loop
     {
-        if (handleevents() && quitevent)
+        if (G_HandleAsync() && quitevent)
         {
             KB_KeyDown[sc_Escape] = 1;
             quitevent = 0;
         }
-
-        Net_GetPackets();
 
         // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
         CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
@@ -6940,11 +6948,7 @@ MAIN_LOOP_RESTART:
         }
         else
 #endif
-        {
-            S_Cleanup();
-            MUSIC_Update();
             G_HandleLocalKeys();
-        }
 
         OSD_DispatchQueued();
 
@@ -6960,8 +6964,6 @@ MAIN_LOOP_RESTART:
 
             do
             {
-                timerUpdate();
-
                 if (ready2send == 0) break;
 
                 ototalclock += TICSPERFRAME;
@@ -6972,6 +6974,8 @@ MAIN_LOOP_RESTART:
                         (myplayer.gm & MODE_GAME))
                 {
                     G_MoveLoop();
+                    S_Update();
+
 #ifdef __ANDROID__
                     inputfifo[0][myconnectindex].fvel = 0;
                     inputfifo[0][myconnectindex].svel = 0;
@@ -6979,8 +6983,6 @@ MAIN_LOOP_RESTART:
                     inputfifo[0][myconnectindex].horz = 0;
 #endif
                 }
-
-                timerUpdate();
 
                 if (totalclock - moveClock >= TICSPERFRAME)
                 {

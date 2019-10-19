@@ -11017,10 +11017,7 @@ void ExtCheckKeys(void)
 
 ////
 
-void faketimerhandler(void)
-{
-    timerUpdate();
-}
+void faketimerhandler(void) { ; }
 
 void SetGamePalette(int32_t palid)
 {
