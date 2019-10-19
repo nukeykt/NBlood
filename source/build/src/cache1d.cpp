@@ -6,22 +6,6 @@
 // by Jonathon Fowler (jf@jonof.id.au)
 // by the EDuke32 team (development@voidpoint.com)
 
-
-#ifdef _WIN32
-// for FILENAME_CASE_CHECK
-# define NEED_SHELLAPI_H
-# include "windows_inc.h"
-#endif
-
-#include "baselayer.h"
-#include "cache1d.h"
-#include "compat.h"
-#include "klzw.h"
-#include "lz4.h"
-#include "osd.h"
-#include "pragmas.h"
-#include "vfs.h"
-
 //   This module keeps track of a standard linear cacheing system.
 //   To use this module, here's all you need to do:
 //
@@ -43,11 +27,26 @@
 //                 the region can be removed or not.  If *lockptr = 0 then
 //                 the region is not locked else its locked.
 
-#define CACHEINCREMENT 1024
-#define MEANCACHEBLOCKSIZE 24576
-static int g_cacheMaxEntries;
+#ifdef _WIN32
+// for FILENAME_CASE_CHECK
+# define NEED_SHELLAPI_H
+# include "windows_inc.h"
+#endif
+
+#include "baselayer.h"
+#include "cache1d.h"
+#include "compat.h"
+#include "klzw.h"
+#include "lz4.h"
+#include "osd.h"
+#include "pragmas.h"
+#include "vfs.h"
 
 #if !defined DEBUG_ALLOCACHE_AS_MALLOC
+#define CACHEINCREMENT 1024
+#define MEANCACHEBLOCKSIZE 24576
+
+static int g_cacheMaxEntries;
 static int32_t g_cacheSize;
 static char zerochar;
 static intptr_t g_cacheBaseAddress;
@@ -55,15 +54,12 @@ static int32_t lockrecip[200];
 
 int g_cacheNumEntries;
 cacheitem_t * g_cache = nullptr;
-#endif
-
 
 static void reportandexit(const char *errormessage);
 
 
 void cacheInitBuffer(intptr_t dacachestart, int32_t dacachesize)
 {
-#ifndef DEBUG_ALLOCACHE_AS_MALLOC
     int32_t i;
 
     for (i=1; i<200; i++)
@@ -87,20 +83,8 @@ void cacheInitBuffer(intptr_t dacachestart, int32_t dacachesize)
     initprintf("Cache object array initialized with \"%d\" entries. \n", g_cacheMaxEntries);
 #endif
     initprintf("Initialized %.1fM cache\n", (float)(dacachesize/1024.f/1024.f));
-#else
-    UNREFERENCED_PARAMETER(dacachestart);
-    UNREFERENCED_PARAMETER(dacachesize);
-#endif
 }
 
-#ifdef DEBUG_ALLOCACHE_AS_MALLOC
-void cacheAllocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr)
-{
-    UNREFERENCED_PARAMETER(newlockptr);
-
-    *newhandle = (intptr_t)Xmalloc(newbytes);
-}
-#else
 // Dynamic cache resizing -- increase cache array size when full
 static inline void inc_and_check_cacnum(void)
 {
@@ -117,7 +101,6 @@ static inline void inc_and_check_cacnum(void)
 #ifdef DEBUGGINGAIDS
         initprintf("Cache increased from \'%d\' to \'%d\' entries. \n", g_cacheMaxEntries, g_cacheMaxEntries + CACHEINCREMENT);
 #endif
-
         g_cacheMaxEntries += CACHEINCREMENT;
     }
 }
@@ -250,11 +233,9 @@ void cacheAllocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlockptr)
     g_cache[bestz].leng = sucklen;
     g_cache[bestz].lock = &zerochar;
 }
-#endif
 
 void cacheAgeEntries(void)
 {
-#ifndef DEBUG_ALLOCACHE_AS_MALLOC
     static int agecount;
 
     if (agecount >= g_cacheNumEntries)
@@ -276,12 +257,10 @@ void cacheAgeEntries(void)
         if (--agecount < 0)
             agecount = g_cacheNumEntries-1;
     }
-#endif
 }
 
 static void reportandexit(const char *errormessage)
 {
-#ifndef DEBUG_ALLOCACHE_AS_MALLOC
     //setvmode(0x3);
     int32_t j = 0;
     for (native_t i = 0; i < g_cacheNumEntries; i++)
@@ -306,10 +285,30 @@ static void reportandexit(const char *errormessage)
     initprintf("Cachesize = %d\n", g_cacheSize);
     initprintf("Cacnum = %d\n", g_cacheNumEntries);
     initprintf("Cache length sum = %d\n", j);
-#endif
 
     static char msg[128];
     Bsnprintf(msg, sizeof(msg), "ERROR: %s\n", errormessage);
     fatal_exit(msg);
 }
+#else
+void cacheInitBuffer(intptr_t dacachestart, int32_t dacachesize)
+{
+    UNREFERENCED_PARAMETER(dacachestart);
+    UNREFERENCED_PARAMETER(dacachesize);
+}
 
+void cacheAllocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr)
+{
+    UNREFERENCED_PARAMETER(newlockptr);
+    *newhandle = (intptr_t)Xmalloc(newbytes);
+}
+
+void cacheAgeEntries(void) {}
+
+static void reportandexit(const char *errormessage)
+{
+    static char msg[128];
+    Bsnprintf(msg, sizeof(msg), "ERROR: %s\n", errormessage);
+    fatal_exit(msg);
+}
+#endif
