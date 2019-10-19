@@ -1,5 +1,6 @@
+#include "baselayer.h"
+#include "build_cpuid.h"
 #include "compat.h"
-#include "cpuid.h"
 #include "osd.h"
 
 cpuinfo_t cpu;
@@ -26,7 +27,7 @@ void sysReadCPUID(void)
     g_cpuVendorIDString[12] = '\0';
 
 #ifdef DEBUGGINGAIDS
-    OSD_Printf("CPUID Vendor ID: %s\n", g_cpuVendorIDString);
+    initprintf("CPUID Vendor ID: %s\n", g_cpuVendorIDString);
 #endif
     cpu.vendorIDString = g_cpuVendorIDString;
 
@@ -37,7 +38,7 @@ void sysReadCPUID(void)
     else cpu.type = CPU_UNKNOWN;
 
     __cpuid(regs, 0x80000000);
-    int const subleaves = regs[0];
+    auto const subleaves = (unsigned)regs[0];
 
     if (subleaves >= 0x80000004)
     {
@@ -53,7 +54,7 @@ void sysReadCPUID(void)
             g_cpuBrandString[i] = '\0';
         }
 
-        OSD_Printf("CPU: %s\n", g_cpuBrandString);
+        initprintf("CPU: %s\n", g_cpuBrandString);
         cpu.brandString = g_cpuBrandString;
 
         if (subleaves >= 0x80000007)

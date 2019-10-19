@@ -600,7 +600,7 @@ int app_main(int argc, char const * const * argv)
     if ((i = CallExtPreInit(argc,argv)) < 0) return -1;
 
 #ifdef _WIN32
-    backgroundidle = 1;
+    win_priorityclass = 1;
 #endif
 
     for (i=1; i<argc; i++)

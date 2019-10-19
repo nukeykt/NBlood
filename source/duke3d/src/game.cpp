@@ -6392,7 +6392,7 @@ int app_main(int argc, char const * const * argv)
 
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
-    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
 #ifdef EDUKE32_STANDALONE
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
@@ -6404,7 +6404,7 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
-    backgroundidle = 0;
+    win_priorityclass = 0;
 
 #ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
@@ -6497,7 +6497,7 @@ int app_main(int argc, char const * const * argv)
 
             ud.config.LastUpdateCheck = time(NULL);
 
-            if (G_GetVersionFromWebsite(tempbuf))
+            if (windowsCheckForUpdates(tempbuf))
             {
                 initprintf("Current version is %d",Batoi(tempbuf));
 

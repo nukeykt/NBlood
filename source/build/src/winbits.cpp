@@ -7,8 +7,10 @@
 #include "cache1d.h"
 #include "compat.h"
 #include "osd.h"
+#include "windows_inc.h"
 
-#include "mmsystem.h"
+#include <mmsystem.h>
+#include <winnls.h>
 
 #ifdef BITNESS64
 # define EBACKTRACEDLL "ebacktrace1-64.dll"
@@ -16,19 +18,19 @@
 # define EBACKTRACEDLL "ebacktrace1.dll"
 #endif
 
-int32_t backgroundidle        = 1;
-char    silentvideomodeswitch = 0;
+int32_t    win_priorityclass;
+char       win_silentvideomodeswitch;
+static int win_silentfocuschange;
 
-static HANDLE  instanceflag = NULL;
-static int32_t togglecomp   = 0;
-
-int32_t win_fastsched;
+static HANDLE  g_singleInstanceSemaphore = nullptr;
+static int32_t win_togglecomposition;
+static int32_t win_systemtimermode;
 
 static OSVERSIONINFOEX osv;
 
 FARPROC pwinever;
 
-void win_settimerresolution(int ntDllVoodoo)
+void windowsSetupTimer(int ntDllVoodoo)
 {
     typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
     typedef HRESULT(NTAPI* pQueryTimerResolution)(PULONG, PULONG, PULONG);
@@ -73,25 +75,27 @@ void win_settimerresolution(int ntDllVoodoo)
 
                     if (setTimerNT != 0)
                     {
-                        if (setTimerNT == maxRes)
+                        if (setTimerNT == actualRes)
                             return;
 
                         NtSetTimerResolution(actualRes, FALSE, &actualRes);
                     }
 
+                    NtSetTimerResolution(maxRes, TRUE, &actualRes);
+
                     setTimerNT = actualRes;
                     setPeriod  = 0;
 
-                    NtSetTimerResolution(maxRes, TRUE, &actualRes);
-                    OSD_Printf("Low-latency scheduling mode enabled: set %.1fms timer resolution\n", actualRes / 10000.0);
+                    if (!win_silentfocuschange)
+                        OSD_Printf("Low-latency system timer enabled: set %.1fms timer resolution\n", actualRes / 10000.0);
 
                     return;
                 }
                 else
                     OSD_Printf("ERROR: couldn't load ntdll.dll!\n");
             }
-            else 
-                OSD_Printf("Low-latency scheduling mode not supported on battery power!\n");
+            else if (!win_silentfocuschange)
+                OSD_Printf("Low-latency timer mode not supported on battery power!\n");
         }
         else if (setTimerNT != 0)
         {
@@ -100,7 +104,7 @@ void win_settimerresolution(int ntDllVoodoo)
         }
 
 failsafe:
-        int const  requestedPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
+        int const requestedPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
             
         if (setPeriod != 0)
         {
@@ -110,11 +114,13 @@ failsafe:
             timeEndPeriod(requestedPeriod);
         }
 
+        timeBeginPeriod(requestedPeriod);
+
         setPeriod  = requestedPeriod;
         setTimerNT = 0;
 
-        timeBeginPeriod(requestedPeriod);
-        OSD_Printf("Initialized %ums system timer\n", requestedPeriod);
+        if (!win_silentfocuschange)
+            OSD_Printf("Initialized %ums system timer\n", requestedPeriod);
 
         return;
     }
@@ -125,7 +131,7 @@ failsafe:
 //
 // CheckWinVersion() -- check to see what version of Windows we happen to be running under
 //
-BOOL CheckWinVersion(void)
+BOOL windowsGetVersion(void)
 {
     HMODULE hntdll = GetModuleHandle("ntdll.dll");
 
@@ -135,12 +141,16 @@ BOOL CheckWinVersion(void)
     ZeroMemory(&osv, sizeof(osv));
     osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-    if (!GetVersionEx((LPOSVERSIONINFOA)&osv)) return FALSE;
+    if (GetVersionEx((LPOSVERSIONINFOA)&osv)) return TRUE;
 
-    return TRUE;
+    osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+    if (GetVersionEx((LPOSVERSIONINFOA)&osv)) return TRUE;
+
+    return FALSE;
 }
 
-static void win_printversion(void)
+static void windowsPrintVersion(void)
 {
     const char *ver = "";
 
@@ -168,77 +178,76 @@ static void win_printversion(void)
                     break;
 
                 case 6:
-                    switch (osv.dwMinorVersion)
                     {
-                        case 0: ver = osv.wProductType == VER_NT_WORKSTATION ? "Vista" : "Server 2008"; break;
-                        case 1: ver = osv.wProductType == VER_NT_WORKSTATION ? "7" : "Server 2008 R2"; break;
-                        case 2: ver = osv.wProductType == VER_NT_WORKSTATION ? "8" : "Server 2012"; break;
-                        case 3: ver = osv.wProductType == VER_NT_WORKSTATION ? "8.1" : "Server 2012 R2"; break;
+                        static const char *client[] = { "Vista", "7", "8", "8.1" };
+                        static const char *server[] = { "Server 2008", "Server 2008 R2", "Server 2012", "Server 2012 R2" };
+                        ver = ((osv.wProductType == VER_NT_WORKSTATION) ? client : server)[osv.dwMinorVersion % ARRAY_SIZE(client)];
                     }
                     break;
 
                 case 10:
-                    switch (osv.dwMinorVersion)
+                    switch (osv.wProductType)
                     {
-                        case 0: ver = osv.wProductType == VER_NT_WORKSTATION ? "10" : "Server 2016"; break;
+                        case VER_NT_WORKSTATION: ver = "10"; break;
+                        default: ver = "Server"; break;
                     }
                     break;
             }
             break;
     }
 
-    char *str = (char *)Xcalloc(1, 256);
-    int l;
+    char *buf = (char *)Xcalloc(1, 256);
+    int len;
 
     if (pwinever)
-        l = Bsprintf(str, "Wine %s, identifying as Windows %s", (char *)pwinever(), ver);
+        len = Bsprintf(buf, "Wine %s, identifying as Windows %s", (char *)pwinever(), ver);
     else
-        l = Bsprintf(str, "Windows %s", ver);
+    {
+        len = Bsprintf(buf, "Windows %s", ver);
+
+        if (osv.dwPlatformId != VER_PLATFORM_WIN32_NT || osv.dwMajorVersion < 6)
+        {
+            Bstrcat(buf, " (UNSUPPORTED)");
+            len = Bstrlen(buf);
+        }
+    }
 
     // service packs
     if (osv.szCSDVersion[0])
     {
-        str[l] = 32;
-        Bstrcat(&str[l], osv.szCSDVersion);
+        buf[len] = 32;
+        Bstrcat(&buf[len], osv.szCSDVersion);
     }
 
-    initprintf("Running on %s (build %lu.%lu.%lu)\n", str, osv.dwMajorVersion, osv.dwMinorVersion, osv.dwBuildNumber);
-    Xfree(str);
+    initprintf("Running on %s (build %lu.%lu.%lu)\n", buf, osv.dwMajorVersion, osv.dwMinorVersion, osv.dwBuildNumber);
+    Xfree(buf);
 }
 
 //
 // win_checkinstance() -- looks for another instance of a Build app
 //
-int32_t win_checkinstance(void)
+int windowsCheckAlreadyRunning(void)
 {
-    if (!instanceflag) return 0;
-    return (WaitForSingleObject(instanceflag,0) == WAIT_TIMEOUT);
+    if (!g_singleInstanceSemaphore) return 1;
+    return (WaitForSingleObject(g_singleInstanceSemaphore,0) != WAIT_TIMEOUT);
 }
 
-
-static void ToggleDesktopComposition(BOOL compEnable)
-{
-    static HMODULE hDWMApiDLL = NULL;
-    static HRESULT(WINAPI *aDwmEnableComposition)(UINT);
-
-    if (!hDWMApiDLL && (hDWMApiDLL = LoadLibrary("DWMAPI.DLL")))
-        aDwmEnableComposition = (HRESULT(WINAPI *)(UINT))(void (*)(void))GetProcAddress(hDWMApiDLL, "DwmEnableComposition");
-
-    if (aDwmEnableComposition)
-    {
-        aDwmEnableComposition(compEnable);
-        if (!silentvideomodeswitch)
-            initprintf("%sabling desktop composition...\n", (compEnable) ? "En" : "Dis");
-    }
-}
 
 typedef void (*dllSetString)(const char*);
 
 //
 // win_open(), win_init(), win_setvideomode(), win_close() -- shared code
 //
-void win_open(void)
+int windowsPreInit(void)
 {
+    if (!windowsGetVersion())
+    {
+        windowsShowError("This version of Windows is not supported.");
+        return -1;
+    }
+
+    windowsGetSystemKeyboardLayout();
+
 #ifdef DEBUGGINGAIDS
     HMODULE ebacktrace = LoadLibraryA(EBACKTRACEDLL);
     if (ebacktrace)
@@ -254,120 +263,88 @@ void win_open(void)
     }
 #endif
 
-    instanceflag = CreateSemaphore(NULL, 1,1, WindowClass);
+    g_singleInstanceSemaphore = CreateSemaphore(NULL, 1,1, WindowClass);
+
+    return 0;
 }
 
-static int osdcmd_win_fastsched(osdcmdptr_t parm)
+static int osdcmd_win_systemtimermode(osdcmdptr_t parm)
 {
     int const r = osdcmd_cvar_set(parm);
 
     if (r != OSDCMD_OK)
         return r;
 
-    win_settimerresolution(win_fastsched);
+    windowsSetupTimer(win_systemtimermode);
 
     return OSDCMD_OK;
 }
 
-void win_init(void)
+void windowsPlatformInit(void)
 {
-    uint32_t i;
+    static osdcvardata_t cvars_win[] = {
+        { "win_togglecomposition", "disables Windows Vista/7 DWM composition", (void *)&win_togglecomposition, CVAR_BOOL, 0, 1 },
 
-    static osdcvardata_t cvars_win[] =
-    {
-        { "r_togglecomposition","enable/disable toggle of desktop composition when initializing screen modes",(void *) &togglecomp, CVAR_BOOL, 0, 1 },
+        { "win_priorityclass",
+          "Windows process priority class:\n"
+          "  -1: do not alter process priority\n"
+          "   0: HIGH when game has focus, NORMAL when interacting with other programs\n"
+          "   1: NORMAL when game has focus, IDLE when interacting with other programs\n",
+          (void *)&win_priorityclass, CVAR_INT, -1, 1 },
     };
 
-    static osdcvardata_t win_scheduler_cvar = { "win_fastsched",
-                                                "Windows process scheduler resolution:\n"
-                                                "   0: 1.0ms\n"
-                                                "   1: 0.5ms low-latency\n"
+    static osdcvardata_t win_timer_cvar = { "win_systemtimermode",
+                                            "Windows timer interrupt resolution:\n"
+                                            "   0: 1.0ms\n"
+                                            "   1: 0.5ms low-latency\n"
 #ifdef RENDERTYPESDL
-                                                "This option has no effect when running on battery power.\n",
+                                            "This option has no effect when running on battery power.\n",
 #else
-                                                ,
+                                            ,
 #endif
-                                                (void *)&win_fastsched, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 };
+                                            (void *)&win_systemtimermode, CVAR_BOOL, 0, 1 };
 
-    OSD_RegisterCvar(&win_scheduler_cvar, osdcmd_win_fastsched);
+    OSD_RegisterCvar(&win_timer_cvar, osdcmd_win_systemtimermode);
 
-    for (i=0; i<ARRAY_SIZE(cvars_win); i++)
+    for (int i=0; i<ARRAY_SSIZE(cvars_win); i++)
         OSD_RegisterCvar(&cvars_win[i], osdcmd_cvar_set);
 
-    win_printversion();
-    win_settimerresolution(win_fastsched);
+    windowsPrintVersion();
+    windowsSetupTimer(0);
 }
 
-void win_setvideomode(int32_t c)
+void windowsDwmEnableComposition(int const compEnable)
 {
-    if (togglecomp && osv.dwMajorVersion == 6 && osv.dwMinorVersion < 2)
-        ToggleDesktopComposition(c < 16);
-}
-
-void win_close(void)
-{
-    if (instanceflag) CloseHandle(instanceflag);
-}
-
-
-// Keyboard layout switching
-
-static void switchlayout(char const * layout)
-{
-    char layoutname[KL_NAMELENGTH];
-
-    GetKeyboardLayoutName(layoutname);
-
-    if (!Bstrcmp(layoutname, layout))
+    if (!win_togglecomposition || osv.dwMajorVersion != 6 || osv.dwMinorVersion >= 2)
         return;
 
-    initprintf("Switching keyboard layout from %s to %s\n", layoutname, layout);
-    LoadKeyboardLayout(layout, KLF_ACTIVATE|KLF_SETFORPROCESS|KLF_SUBSTITUTE_OK);
-}
+    static HMODULE hDWMApiDLL = NULL;
+    static HRESULT(WINAPI * aDwmEnableComposition)(UINT);
 
-static char OriginalLayoutName[KL_NAMELENGTH];
+    if (!hDWMApiDLL && (hDWMApiDLL = LoadLibrary("DWMAPI.DLL")))
+        aDwmEnableComposition = (HRESULT(WINAPI *)(UINT))(void (*)(void))GetProcAddress(hDWMApiDLL, "DwmEnableComposition");
 
-void Win_GetOriginalLayoutName(void)
-{
-    GetKeyboardLayoutName(OriginalLayoutName);
-}
-
-void Win_SetKeyboardLayoutUS(int const toggle)
-{
-    static int currentstate;
-
-    if (toggle != currentstate)
+    if (aDwmEnableComposition)
     {
-        if (toggle)
-        {
-            // 00000409 is "American English"
-            switchlayout("00000409");
-            currentstate = toggle;
-        }
-        else if (OriginalLayoutName[0])
-        {
-            switchlayout(OriginalLayoutName);
-            currentstate = toggle;
-        }
+        aDwmEnableComposition(compEnable);
+        if (!win_silentvideomodeswitch)
+            OSD_Printf("%sabling DWM desktop composition...\n", (compEnable) ? "En" : "Dis");
     }
 }
 
-
-//
-// ShowErrorBox() -- shows an error message box
-//
-void ShowErrorBox(const char *m)
+void windowsPlatformCleanup(void)
 {
-    TCHAR msg[1024];
+    if (g_singleInstanceSemaphore)
+        CloseHandle(g_singleInstanceSemaphore);
 
-    wsprintf(msg, "%s: %s", m, GetWindowsErrorMsg(GetLastError()));
-    MessageBox(0, msg, apptitle, MB_OK|MB_ICONSTOP);
+    windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout());
 }
+
 
 //
 // GetWindowsErrorMsg() -- gives a pointer to a static buffer containing the Windows error message
 //
-LPTSTR GetWindowsErrorMsg(DWORD code)
+static LPTSTR windowsGetErrorMessage(DWORD code)
 {
     static TCHAR lpMsgBuf[1024];
 
@@ -380,33 +357,105 @@ LPTSTR GetWindowsErrorMsg(DWORD code)
 }
 
 
+// Keyboard layout switching
+
+static char const * windowsDecodeKeyboardLayoutName(char const * keyboardLayout)
+{
+    int const   localeID = Bstrtol(keyboardLayout, NULL, 16);
+    static char localeName[16];
+
+    int const result = GetLocaleInfo(MAKELCID(localeID, SORT_DEFAULT), LOCALE_SNAME, localeName, ARRAY_SIZE(localeName));
+
+    if (!result)
+    {
+        OSD_Printf("Error decoding name for locale ID %d: %s\n", localeID, windowsGetErrorMessage(GetLastError()));
+        return keyboardLayout;
+    }
+
+    return localeName;
+}
+
+void windowsSetKeyboardLayout(char const * keyboardLayout)
+{
+    char layoutName[KL_NAMELENGTH];
+
+    GetKeyboardLayoutName(layoutName);
+
+    if (!Bstrcmp(layoutName, keyboardLayout))
+        return;
+
+    if (!win_silentfocuschange)
+    {
+        if (!Bstrcmp(keyboardLayout, windowsGetSystemKeyboardLayout()))
+            OSD_Printf("Restored %s keyboard layout\n", windowsDecodeKeyboardLayoutName(keyboardLayout));
+        else
+            OSD_Printf("Loaded %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layoutName));
+    }
+
+    LoadKeyboardLayout(keyboardLayout, KLF_ACTIVATE|KLF_SETFORPROCESS|KLF_SUBSTITUTE_OK);
+}
+
+
+char *windowsGetSystemKeyboardLayout(void)
+{
+    static char systemLayoutName[KL_NAMELENGTH];
+    static int layoutSaved;
+
+    if (!layoutSaved)
+    {
+        if (!GetKeyboardLayoutName(systemLayoutName))
+            OSD_Printf("Error determining system keyboard layout: %s\n", windowsGetErrorMessage(GetLastError()));
+
+        layoutSaved = true;
+    }
+
+    return systemLayoutName;
+}
+
+void windowsHandleFocusChange(int const appactive)
+{
+#ifndef DEBUGGINGAIDS
+    win_silentfocuschange = true;
+#endif
+
+    if (appactive)
+    {
+        if (win_priorityclass != -1)
+            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
+
+        windowsSetupTimer(win_systemtimermode);
+        windowsSetKeyboardLayout(EDUKE32_KEYBOARD_LAYOUT);
+    }
+    else
+    {
+        if (win_priorityclass != -1)
+            SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS);
+
+        windowsSetupTimer(0);
+        windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout());
+    }
+
+    win_silentfocuschange = false;
+}
+
+//
+// ShowErrorBox() -- shows an error message box
+//
+void windowsShowError(const char *m)
+{
+    TCHAR msg[1024];
+
+    wsprintf(msg, "%s: %s", m, windowsGetErrorMessage(GetLastError()));
+    MessageBox(0, msg, apptitle, MB_OK|MB_ICONSTOP);
+}
+
+
 //
 // Miscellaneous
 //
-
-int32_t addsearchpath_ProgramFiles(const char *p)
+int windowsGetCommandLine(char **argvbuf)
 {
-    int32_t returncode = -1, i;
-    const char *ProgramFiles[2] = { Bgetenv("ProgramFiles"), Bgetenv("ProgramFiles(x86)") };
-
-    for (i = 0; i < 2; ++i)
-    {
-        if (ProgramFiles[i])
-        {
-            char *buffer = (char*)Xmalloc((strlen(ProgramFiles[i])+1+strlen(p)+1)*sizeof(char));
-            Bsprintf(buffer,"%s/%s",ProgramFiles[i],p);
-            if (addsearchpath(buffer) == 0) // if any work, return success
-                returncode = 0;
-            Xfree(buffer);
-        }
-    }
-
-    return returncode;
-}
-
-int32_t win_buildargs(char **argvbuf)
-{
-    int32_t buildargc = 0;
+    int buildargc = 0;
 
     *argvbuf = Xstrdup(GetCommandLine());
 
@@ -469,7 +518,7 @@ int32_t win_buildargs(char **argvbuf)
 
 
 // Workaround for a bug in mingwrt-4.0.0 and up where a function named main() in misc/src/libcrt/gdtoa/qnan.c takes precedence over the proper one in src/libcrt/crt/main.c.
-#if (defined __MINGW32__ && EDUKE32_GCC_PREREQ(4,8)) || EDUKE32_CLANG_PREREQ(3,4)
+#if 0 && (defined __MINGW32__ && EDUKE32_GCC_PREREQ(4,8)) || EDUKE32_CLANG_PREREQ(3,4)
 # undef main
 # include "mingw_main.cpp"
 #endif
