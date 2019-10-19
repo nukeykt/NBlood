@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "duke3d.h"
 #include "demo.h"
-#include "enet/enet.h"
+#include "enet.h"
 
 #ifdef __ANDROID__
 #include "android.h"
