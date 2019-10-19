@@ -403,6 +403,9 @@
     <ClInclude Include="..\..\source\build\include\clockticks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\build\include\xxh3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\source\build\src\a.masm" />
