@@ -420,9 +420,15 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#if defined _WIN32 && defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
+#if defined _WIN32
     // Thread naming interferes with debugging using MinGW-w64's GDB.
+#if defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
     SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
+#endif
+#if defined SDL_HINT_XINPUT_ENABLED
+    if (!Bgetenv("EDUKE32_NO_XINPUT"))
+        SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+#endif
 #endif
 
     int32_t r;
@@ -430,11 +436,12 @@ int main(int argc, char *argv[])
 #ifdef USE_OPENGL
     char *argp;
 
-    if ((argp = Bgetenv("BUILD_NOFOG")) != NULL)
+    if ((argp = Bgetenv("EDUKE32_NO_OPENGL_FOG")) != NULL)
         nofog = Batol(argp);
 
-#ifndef _WIN32
-    setenv("__GL_THREADED_OPTIMIZATIONS", "1", 0);
+#ifdef __linux__
+    if (!Bgetenv("EDUKE32_NO_NVIDIA_THREADED_OPTIMIZATIONS"))
+        setenv("__GL_THREADED_OPTIMIZATIONS", "1", 0);
 #endif
 #endif
 
@@ -1730,8 +1737,12 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
 
+#if defined SDL_HINT_VIDEO_HIGHDPI_DISABLED
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
+#endif
+#if defined SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
+#endif
 
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
