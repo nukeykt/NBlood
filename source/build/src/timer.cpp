@@ -4,6 +4,11 @@
 #include "build.h"
 #include "compat.h"
 
+#ifdef _WIN32
+#include "winbits.h"
+#include <mmsystem.h>
+#endif
+
 #include <chrono>
 
 using namespace std;
@@ -15,12 +20,21 @@ static time_point<steady_clock> timerlastsample;
 static int timerticspersec;
 static void(*usertimercallback)(void) = NULL;
 
-int      timerGetRate(void)     { return timerticspersec; }
-uint32_t timerGetTicks(void)    { return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count(); }
+int timerGetRate(void) { return timerticspersec; }
+
+uint32_t timerGetTicks(void)
+{
+#ifdef _WIN32
+    return timeGetTime();
+#else
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+#endif
+}
+
 uint64_t timerGetTicksU64(void) { return steady_clock::now().time_since_epoch().count() * steady_clock::period::num; }
 uint64_t timerGetFreqU64(void)  { return steady_clock::period::den; }
 
-// Returns the time since an unspecified starting time in milliseconds.
+// Returns the time since an unspecified starting time in milliseconds (fractional).
 // (May be not monotonic for certain configurations.)
 double timerGetHiTicks(void) { return duration<double, nano>(steady_clock::now().time_since_epoch()).count() / 1000000.0; }
 
