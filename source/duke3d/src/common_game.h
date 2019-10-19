@@ -150,6 +150,8 @@ extern void G_LoadLookups(void);
 
 //////////
 
+void Duke_CommonCleanup(void);
+
 #if defined HAVE_FLAC || defined HAVE_VORBIS
 # define FORMAT_UPGRADE_ELIGIBLE
 extern buildvfs_kfd S_OpenAudio(const char *fn, char searchfirst, uint8_t ismusic);
