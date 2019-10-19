@@ -220,11 +220,23 @@
     <ClCompile Include="..\..\source\blood\src\globals.cpp" />
     <ClCompile Include="..\..\source\blood\src\gui.cpp" />
     <ClCompile Include="..\..\source\blood\src\inifile.cpp" />
+    <ClCompile Include="..\..\source\blood\src\input.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\blood\src\iob.cpp" />
     <ClCompile Include="..\..\source\blood\src\levels.cpp" />
     <ClCompile Include="..\..\source\blood\src\loadsave.cpp" />
     <ClCompile Include="..\..\source\blood\src\map2d.cpp" />
     <ClCompile Include="..\..\source\blood\src\menu.cpp" />
+    <ClCompile Include="..\..\source\blood\src\menus.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\blood\src\messages.cpp" />
     <ClCompile Include="..\..\source\blood\src\mirrors.cpp" />
     <ClCompile Include="..\..\source\blood\src\misc.cpp" />
@@ -236,6 +248,7 @@
     <ClCompile Include="..\..\source\blood\src\replace.cpp" />
     <ClCompile Include="..\..\source\blood\src\resource.cpp" />
     <ClCompile Include="..\..\source\blood\src\screen.cpp" />
+    <ClCompile Include="..\..\source\blood\src\screentext.cpp" />
     <ClCompile Include="..\..\source\blood\src\sectorfx.cpp" />
     <ClCompile Include="..\..\source\blood\src\seq.cpp" />
     <ClCompile Include="..\..\source\blood\src\sfx.cpp" />
@@ -328,10 +341,13 @@
     <ClInclude Include="..\..\source\blood\src\gib.h" />
     <ClInclude Include="..\..\source\blood\src\globals.h" />
     <ClInclude Include="..\..\source\blood\src\gui.h" />
+    <ClInclude Include="..\..\source\blood\src\input.h" />
     <ClInclude Include="..\..\source\blood\src\map2d.h" />
     <ClInclude Include="..\..\source\blood\src\menu.h" />
+    <ClInclude Include="..\..\source\blood\src\menus.h" />
     <ClInclude Include="..\..\source\blood\src\messages.h" />
     <ClInclude Include="..\..\source\blood\src\mirrors.h" />
+    <ClInclude Include="..\..\source\blood\src\screentext.h" />
     <ClInclude Include="..\..\source\blood\src\warp.h" />
     <ClInclude Include="..\..\source\blood\src\inifile.h" />
     <ClInclude Include="..\..\source\blood\src\iob.h" />

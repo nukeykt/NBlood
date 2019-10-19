@@ -280,13 +280,13 @@ void CDemo::ProcessKeys(void)
 {
     switch (gInputMode)
     {
-    case INPUT_MODE_1:
+    case kInputMenu:
         gGameMenuMgr.Process();
         break;
-    case INPUT_MODE_2:
+    case kInputMessage:
         gPlayerMsg.ProcessKeys();
         break;
-    case INPUT_MODE_0:
+    case kInputGame:
     {
         char nKey;
         while ((nKey = keyGetScan()) != 0)
@@ -312,7 +312,7 @@ void CDemo::ProcessKeys(void)
         }
         break;
     default:
-        gInputMode = INPUT_MODE_0;
+        gInputMode = kInputGame;
         break;
     }
     }
@@ -409,7 +409,7 @@ _DEMOPLAYBACK:
         if (viewFPSLimit())
         {
             viewDrawScreen();
-            if (gInputMode == INPUT_MODE_1 && CGameMenuMgr::m_bActive)
+            if (gInputMode == kInputMenu && CGameMenuMgr::m_bActive)
                 gGameMenuMgr.Draw();
             videoNextPage();
         }
