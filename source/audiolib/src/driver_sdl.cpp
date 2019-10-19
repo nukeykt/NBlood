@@ -44,16 +44,16 @@ enum {
    SDLErr_OpenAudio
 };
 
-static int32_t ErrorCode = SDLErr_Ok;
-static int32_t Initialised;
-static int32_t Playing;
+static int ErrorCode = SDLErr_Ok;
+static int Initialised;
+static int Playing;
 static uint32_t StartedSDL;
 
 static char *MixBuffer;
-static int32_t MixBufferSize;
-static int32_t MixBufferCount;
-static int32_t MixBufferCurrent;
-static int32_t MixBufferUsed;
+static int MixBufferSize;
+static int MixBufferCount;
+static int MixBufferCurrent;
+static int MixBufferUsed;
 static void (*MixCallBack)(void);
 
 #if (SDL_MAJOR_VERSION == 2)
@@ -62,6 +62,9 @@ static SDL_AudioDeviceID audio_dev;
 
 static void fillData(void * userdata, Uint8 * ptr, int remaining)
 {
+    if (!MixBuffer || !MixCallBack)
+      return;
+
     UNREFERENCED_PARAMETER(userdata);
 
     int len;
@@ -95,12 +98,12 @@ static void fillData(void * userdata, Uint8 * ptr, int remaining)
     }
 }
 
-int32_t SDLDrv_GetError(void)
+int SDLDrv_GetError(void)
 {
     return ErrorCode;
 }
 
-const char *SDLDrv_ErrorString( int32_t ErrorNumber )
+const char *SDLDrv_ErrorString( int ErrorNumber )
 {
     const char *ErrorString;
 
@@ -134,7 +137,7 @@ const char *SDLDrv_ErrorString( int32_t ErrorNumber )
     return ErrorString;
 }
 
-int32_t SDLDrv_PCM_Init(int32_t *mixrate, int32_t *numchannels, void * initdata)
+int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 {
     UNREFERENCED_PARAMETER(initdata);
 
@@ -243,8 +246,8 @@ void SDLDrv_PCM_Shutdown(void)
     Initialised = 0;
 }
 
-int32_t SDLDrv_PCM_BeginPlayback(char *BufferStart, int32_t BufferSize,
-                        int32_t NumDivisions, void ( *CallBackFunc )( void ) )
+int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
+                        int NumDivisions, void ( *CallBackFunc )( void ) )
 {
     if (!Initialised) {
         ErrorCode = SDLErr_Uninitialised;
