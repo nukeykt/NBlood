@@ -102,6 +102,8 @@ struct _opl3_channel {
     Bit8u alg;
     Bit8u ksv;
     Bit16u cha, chb;
+    Bit32s leftpan;
+    Bit32s rightpan;
     Bit8u ch_num;
 };
 
@@ -136,7 +138,7 @@ struct _opl3_chip {
     Bit8u rm_hh_bit8;
     Bit8u rm_tc_bit3;
     Bit8u rm_tc_bit5;
-    //OPL3L
+    Bit8u stereoext;
     Bit32s rateratio;
     Bit32s samplecnt;
     Bit16s oldsamples[2];
