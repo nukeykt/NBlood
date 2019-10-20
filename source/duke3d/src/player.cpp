@@ -4918,6 +4918,9 @@ void P_ProcessInput(int playerNum)
     pPlayer->opyoff  = pPlayer->pyoff;
     pPlayer->oq16ang = pPlayer->q16ang;
 
+    updatesector(pPlayer->pos.x, pPlayer->pos.y, &pPlayer->cursectnum);
+    pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L<<8), stepHeight, CLIPMASK0);
+
     if (pPlayer->one_eighty_count < 0)
     {
         pPlayer->one_eighty_count += 128;
@@ -5009,8 +5012,7 @@ void P_ProcessInput(int playerNum)
                 pPlayer->pos.z = floorZ - (floorZOffset << 8);
             else
             {
-                pPlayer->on_ground = 0;
-                pPlayer->vel.z    += (g_spriteGravity + 80);  // (TICSPERFRAME<<6);
+                pPlayer->vel.z += (g_spriteGravity + 80);  // (TICSPERFRAME<<6);
 
                 if (pPlayer->vel.z >= (4096 + 2048))
                     pPlayer->vel.z = (4096 + 2048);
@@ -5056,7 +5058,10 @@ void P_ProcessInput(int playerNum)
                             A_PlaySound(DUKE_LAND, pPlayer->i);
 #endif
                     }
+                    pPlayer->on_ground = 1;
                 }
+                else
+                    pPlayer->on_ground = 0;
             }
         }
         else
