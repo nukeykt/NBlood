@@ -48,6 +48,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "triggers.h"
 #include "view.h"
 
+#define kQAVEnd 125
+
 void FirePitchfork(int, PLAYER *pPlayer);
 void FireSpray(int, PLAYER *pPlayer);
 void ThrowCan(int, PLAYER *pPlayer);
@@ -115,8 +117,6 @@ int nClientFireBeast = qavRegisterClient((QAVTypeCast)FireBeast);
 int nClientAltFireLifeLeech = qavRegisterClient((QAVTypeCast)AltFireLifeLeech);
 int nClientDropVoodoo = qavRegisterClient((QAVTypeCast)DropVoodoo);
 int nClientAltFireNapalm = qavRegisterClient((QAVTypeCast)AltFireNapalm);
-
-#define kQAVEnd 125
 
 QAV *weaponQAV[kQAVEnd];
 
@@ -238,7 +238,7 @@ void WeaponDraw(PLAYER *pPlayer, int a2, int a3, int a4, int a5)
     pQAV->x = a3;
     pQAV->y = a4;
     int flags = 2;
-    int nInv = powerupCheck(pPlayer, 13);
+    int nInv = powerupCheck(pPlayer, kPwUpShadowCloak);
     if (nInv >= 120*8 || (nInv != 0 && ((int)totalclock&32)))
     {
         a2 = -128;
@@ -512,7 +512,7 @@ void WeaponRaise(PLAYER *pPlayer)
         }
         break;
     case 3: // sawed off
-        if (powerupCheck(pPlayer, 17))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns))
         {
             if (gInfiniteAmmo || pPlayer->at181[2] >= 4)
                 StartQAV(pPlayer, 59, -1, 0);
@@ -539,7 +539,7 @@ void WeaponRaise(PLAYER *pPlayer)
         }
         break;
     case 4: // tommy gun
-        if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 3, 2))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 3, 2))
         {
             pPlayer->atc3 = 1;
             StartQAV(pPlayer, 69, -1, 0);
@@ -558,7 +558,7 @@ void WeaponRaise(PLAYER *pPlayer)
         }
         break;
     case 2: // flaregun
-        if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 1, 2))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 1, 2))
         {
             StartQAV(pPlayer, 45, -1, 0);
             pPlayer->atc3 = 3;
@@ -573,7 +573,7 @@ void WeaponRaise(PLAYER *pPlayer)
         if (sub_4B2C8(pPlayer, 7, 1))
         {
             pPlayer->atc3 = 2;
-            if (powerupCheck(pPlayer, 17))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns))
                 StartQAV(pPlayer, 82, -1, 0);
             else
                 StartQAV(pPlayer, 74, -1, 0);
@@ -585,7 +585,7 @@ void WeaponRaise(PLAYER *pPlayer)
         }
         break;
     case 5: // napalm
-        if (powerupCheck(pPlayer, 17))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns))
         {
             StartQAV(pPlayer, 120, -1, 0);
             pPlayer->atc3 = 3;
@@ -702,19 +702,19 @@ void WeaponLower(PLAYER *pPlayer)
         }
         break;
     case 3:
-        if (powerupCheck(pPlayer, 17))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns))
             StartQAV(pPlayer, 63, -1, 0);
         else
             StartQAV(pPlayer, 58, -1, 0);
         break;
     case 4:
-        if (powerupCheck(pPlayer, 17) && pPlayer->atc3 == 1)
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && pPlayer->atc3 == 1)
             StartQAV(pPlayer, 72, -1, 0);
         else
             StartQAV(pPlayer, 68, -1, 0);
         break;
     case 2:
-        if (powerupCheck(pPlayer, 17) && pPlayer->atc3 == 3)
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && pPlayer->atc3 == 3)
             StartQAV(pPlayer, 49, -1, 0);
         else
             StartQAV(pPlayer, 44, -1, 0);
@@ -723,13 +723,13 @@ void WeaponLower(PLAYER *pPlayer)
         StartQAV(pPlayer, 109, -1, 0);
         break;
     case 8:
-        if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+        if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
             StartQAV(pPlayer, 88, -1, 0);
         else
             StartQAV(pPlayer, 81, -1, 0);
         break;
     case 5:
-        if (powerupCheck(pPlayer, 17))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns))
             StartQAV(pPlayer, 124, -1, 0);
         else
             StartQAV(pPlayer, 92, -1, 0);
@@ -860,7 +860,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
         switch (vb)
         {
         case 6:
-            if (powerupCheck(pPlayer, 17) && (gInfiniteAmmo || CheckAmmo(pPlayer, 2, 4)))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && (gInfiniteAmmo || CheckAmmo(pPlayer, 2, 4)))
                 pPlayer->atc3 = 7;
             else
                 pPlayer->atc3 = 1;
@@ -890,7 +890,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
         }
         break;
     case 4:
-        if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 3, 2))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 3, 2))
         {
             pPlayer->at26 = 70;
             pPlayer->atc3 = 1;
@@ -902,7 +902,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
         }
         break;
     case 2:
-        if (powerupCheck(pPlayer, 17))
+        if (powerupCheck(pPlayer, kPwUpTwoGuns))
         {
             if (vb == 3 && sub_4B2C8(pPlayer, 1, 2))
                 pPlayer->at26 = 46;
@@ -925,7 +925,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
         switch (vb)
         {
         case 2:
-            if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+            if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
                 pPlayer->at26 = 83;
             else
                 pPlayer->at26 = 75;
@@ -939,7 +939,7 @@ void WeaponUpdateState(PLAYER *pPlayer)
         switch (vb)
         {
         case 3:
-            if (powerupCheck(pPlayer, 17) && (gInfiniteAmmo || CheckAmmo(pPlayer,4, 4)))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && (gInfiniteAmmo || CheckAmmo(pPlayer,4, 4)))
                 pPlayer->at26 = 121;
             else
                 pPlayer->at26 = 90;
@@ -1245,7 +1245,7 @@ void AltFireSpread2(int nTrigger, PLAYER *pPlayer)
     int dx = Cos(angle)>>16;
     int dy = Sin(angle)>>16;
     sfxPlay3DSound(pPlayer->pSprite, 431, -1, 0);
-    if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 3, 2))
+    if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 3, 2))
     {
         int r1, r2, r3;
         r1 = Random3(300);
@@ -1414,8 +1414,8 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
                         if (IsPlayerSprite(pTarget))
                         {
                             PLAYER* pOtherPlayer = &gPlayer[pTarget->type - kDudePlayer1];
-                            if (!pOtherPlayer->at31a || !powerupCheck(pOtherPlayer, 14))
-                                powerupActivate(pOtherPlayer, 28);
+                            if (!pOtherPlayer->at31a || !powerupCheck(pOtherPlayer, kPwUpDeathMask))
+                                powerupActivate(pOtherPlayer, kPwUpDeliriumShroom);
                         }
                         fxSpawnBlood(pTarget, 0);
                     }
@@ -1452,8 +1452,8 @@ void AltFireVoodoo(int nTrigger, PLAYER *pPlayer)
                     if (IsPlayerSprite(pTarget))
                     {
                         PLAYER* pOtherPlayer = &gPlayer[pTarget->type - kDudePlayer1];
-                        if (!pOtherPlayer->at31a || !powerupCheck(pOtherPlayer, 14))
-                            powerupActivate(pOtherPlayer, 28);
+                        if (!pOtherPlayer->at31a || !powerupCheck(pOtherPlayer, kPwUpDeathMask))
+                            powerupActivate(pOtherPlayer, kPwUpDeliriumShroom);
                     }
                     fxSpawnBlood(pTarget, 0);
                 }
@@ -1570,8 +1570,8 @@ void FireNapalm2(int nTrigger, PLAYER *pPlayer)
 
 void AltFireNapalm(int nTrigger, PLAYER *pPlayer)
 {
-    UNREFERENCED_PARAMETER(nTrigger);
-    char UNUSED(bAkimbo) = powerupCheck(pPlayer, 17);
+    //UNREFERENCED_PARAMETER(nTrigger);
+    //char UNUSED(bAkimbo) = powerupCheck(pPlayer, kPwUpTwoGuns);
     int nSpeed = mulscale16(0x8000, 0x177777)+0x66666;
     spritetype *pMissile = playerFireThing(pPlayer, 0, -4730, kThingNapalmBall, nSpeed);
     if (pMissile)
@@ -1893,7 +1893,7 @@ char sub_4F484(PLAYER *pPlayer)
     {
     case 4:
         pPlayer->atc3 = 5;
-        if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+        if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
             StartQAV(pPlayer, 84, nClientFireTesla, 1);
         else
             StartQAV(pPlayer, 77, nClientFireTesla, 1);
@@ -1902,7 +1902,7 @@ char sub_4F484(PLAYER *pPlayer)
         if (!pPlayer->atc.buttonFlags.shoot)
         {
             pPlayer->atc3 = 2;
-            if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+            if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
                 StartQAV(pPlayer, 87, -1, 0);
             else
                 StartQAV(pPlayer, 80, -1, 0);
@@ -1911,7 +1911,7 @@ char sub_4F484(PLAYER *pPlayer)
         break;
     case 7:
         pPlayer->atc3 = 2;
-        if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+        if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
             StartQAV(pPlayer, 87, -1, 0);
         else
             StartQAV(pPlayer, 80, -1, 0);
@@ -2227,13 +2227,13 @@ void WeaponProcess(PLAYER *pPlayer)
             }
             break;
         case 4:
-            if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 3, 2))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 3, 2))
                 StartQAV(pPlayer, 71, nClientFireTommy, 1);
             else
                 StartQAV(pPlayer, 66, nClientFireTommy, 1);
             return;
         case 2:
-            if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 1, 2))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 1, 2))
                 StartQAV(pPlayer, 48, nClientFireFlare, 0);
             else
                 StartQAV(pPlayer, 43, nClientFireFlare, 0);
@@ -2257,13 +2257,13 @@ void WeaponProcess(PLAYER *pPlayer)
             {
             case 2:
                 pPlayer->atc3 = 4;
-                if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+                if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
                     StartQAV(pPlayer, 84, nClientFireTesla, 0);
                 else
                     StartQAV(pPlayer, 77, nClientFireTesla, 0);
                 return;
             case 5:
-                if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+                if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
                     StartQAV(pPlayer, 84, nClientFireTesla, 0);
                 else
                     StartQAV(pPlayer, 77, nClientFireTesla, 0);
@@ -2271,7 +2271,7 @@ void WeaponProcess(PLAYER *pPlayer)
             }
             break;
         case 5:
-            if (powerupCheck(pPlayer, 17))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns))
                 StartQAV(pPlayer, 122, nClientFireNapalm, 0);
             else
                 StartQAV(pPlayer, 91, nClientFireNapalm, 0);
@@ -2368,7 +2368,7 @@ void WeaponProcess(PLAYER *pPlayer)
             }
             break;
         case 4:
-            if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 3, 2))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 3, 2))
                 StartQAV(pPlayer, 73, nClientAltFireSpread2, 0);
             else
                 StartQAV(pPlayer, 67, nClientAltFireSpread2, 0);
@@ -2379,7 +2379,7 @@ void WeaponProcess(PLAYER *pPlayer)
             return;
 #if 0
         case 2:
-            if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 1, 2))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 1, 2))
                 StartQAV(pPlayer, 48, nClientFireFlare, 0);
             else
                 StartQAV(pPlayer, 43, nClientFireFlare, 0);
@@ -2388,21 +2388,21 @@ void WeaponProcess(PLAYER *pPlayer)
         case 8:
             if (sub_4B2C8(pPlayer, 7, 35))
             {
-                if (sub_4B2C8(pPlayer, 7, 70) && powerupCheck(pPlayer, 17))
+                if (sub_4B2C8(pPlayer, 7, 70) && powerupCheck(pPlayer, kPwUpTwoGuns))
                     StartQAV(pPlayer, 85, nClientFireTesla, 0);
                 else
                     StartQAV(pPlayer, 78, nClientFireTesla, 0);
             }
             else
             {
-                if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, 17))
+                if (sub_4B2C8(pPlayer, 7, 10) && powerupCheck(pPlayer, kPwUpTwoGuns))
                     StartQAV(pPlayer, 84, nClientFireTesla, 0);
                 else
                     StartQAV(pPlayer, 77, nClientFireTesla, 0);
             }
             return;
         case 5:
-            if (powerupCheck(pPlayer, 17))
+            if (powerupCheck(pPlayer, kPwUpTwoGuns))
                 // by NoOne: allow napalm launcher alt fire act like in v1.0x versions
                 if (gGameOptions.weaponsV10x && !VanillaMode() && !DemoRecordStatus()) StartQAV(pPlayer, 123, nClientFireNapalm2, 0);
                 else StartQAV(pPlayer, 122, nClientAltFireNapalm, 0);
@@ -2412,14 +2412,14 @@ void WeaponProcess(PLAYER *pPlayer)
         case 2:
             if (CheckAmmo(pPlayer, 1, 8))
             {
-                if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 1, 16))
+                if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 1, 16))
                     StartQAV(pPlayer, 48, nClientAltFireFlare, 0);
                 else
                     StartQAV(pPlayer, 43, nClientAltFireFlare, 0);
             }
             else
             {
-                if (powerupCheck(pPlayer, 17) && sub_4B2C8(pPlayer, 1, 2))
+                if (powerupCheck(pPlayer, kPwUpTwoGuns) && sub_4B2C8(pPlayer, 1, 2))
                     StartQAV(pPlayer, 48, nClientFireFlare, 0);
                 else
                     StartQAV(pPlayer, 43, nClientFireFlare, 0);

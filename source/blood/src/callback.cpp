@@ -252,7 +252,7 @@ void Respawn(int nSprite) // 9
             ChangeSpriteStat(nSprite, pSprite->owner);
             pSprite->type = pSprite->inittype;
             pSprite->owner = -1;
-            pSprite->flags &= ~16;
+            pSprite->flags &= ~kHitagRespawn;
             xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
             pXSprite->respawnPending = 0;
             pXSprite->burnTime = 0;
@@ -644,7 +644,7 @@ void DropVoodoo(int nSprite) // unused
                         if (gGameOptions.nGameType == 3 && pPlayer->at2ea == pPlayer2->at2ea)
                             continue;
                         int t = 0x8000/ClipLow(gNetPlayers-1, 1);
-                        if (!powerupCheck(pPlayer2, 14))
+                        if (!powerupCheck(pPlayer2, kPwUpDeathMask))
                             t += ((3200-pPlayer2->at33e[2])<<15)/3200;
                         if (Chance(t) || nNextSprite < 0)
                         {
