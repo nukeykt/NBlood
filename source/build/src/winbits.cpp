@@ -375,24 +375,27 @@ static char const * windowsDecodeKeyboardLayoutName(char const * keyboardLayout)
     return localeName;
 }
 
-void windowsSetKeyboardLayout(char const * keyboardLayout)
+void windowsSetKeyboardLayout(char const *layout, int focusChanged /*= 0*/)
 {
     char layoutName[KL_NAMELENGTH];
 
     GetKeyboardLayoutName(layoutName);
 
-    if (!Bstrcmp(layoutName, keyboardLayout))
+    if (!Bstrcmp(layoutName, layout))
         return;
 
-    if (!win_silentfocuschange)
+    //if (!win_silentfocuschange)
     {
-        if (!Bstrcmp(keyboardLayout, windowsGetSystemKeyboardLayout()))
-            OSD_Printf("Restored %s keyboard layout\n", windowsDecodeKeyboardLayoutName(keyboardLayout));
+        if (focusChanged)
+            OSD_Printf("Focus change: ");
+
+        if (!Bstrcmp(layout, windowsGetSystemKeyboardLayout()))
+            OSD_Printf("Restored %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
         else
-            OSD_Printf("Loaded %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layoutName));
+            OSD_Printf("Loaded %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
     }
 
-    LoadKeyboardLayout(keyboardLayout, KLF_ACTIVATE|KLF_SETFORPROCESS|KLF_SUBSTITUTE_OK);
+    LoadKeyboardLayout(layout, KLF_ACTIVATE|KLF_SETFORPROCESS|KLF_SUBSTITUTE_OK);
 }
 
 
@@ -424,7 +427,7 @@ void windowsHandleFocusChange(int const appactive)
             SetPriorityClass(GetCurrentProcess(), win_priorityclass ? BELOW_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
 
         windowsSetupTimer(win_systemtimermode);
-        windowsSetKeyboardLayout(EDUKE32_KEYBOARD_LAYOUT);
+        windowsSetKeyboardLayout(EDUKE32_KEYBOARD_LAYOUT, true);
     }
     else
     {
@@ -432,7 +435,7 @@ void windowsHandleFocusChange(int const appactive)
             SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
 
         windowsSetupTimer(0);
-        windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout());
+        windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout(), true);
     }
 
     win_silentfocuschange = false;
