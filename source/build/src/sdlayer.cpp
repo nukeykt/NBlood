@@ -524,9 +524,7 @@ int main(int argc, char *argv[])
 
     startwin_close();
 
-#ifdef _WIN32
-    windowsPlatformCleanup();
-#elif defined(HAVE_GTK2)
+#if defined(HAVE_GTK2)
     gtkbuild_exit(r);
 #endif
 
@@ -687,6 +685,10 @@ void uninitsystem(void)
         SDL_FreeSurface(appicon);
         appicon = NULL;
     }
+
+#ifdef _WIN32
+    windowsPlatformCleanup();
+#endif
 
     SDL_Quit();
 

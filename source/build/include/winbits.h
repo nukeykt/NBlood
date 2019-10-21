@@ -30,5 +30,5 @@ void    windowsPlatformCleanup(void);
 void    windowsPlatformInit(void);
 int     windowsPreInit(void);
 void    windowsSetupTimer(int ntDllVoodoo);
-void    windowsSetKeyboardLayout(char const *layout);
+void    windowsSetKeyboardLayout(char const *layout, int focusChanged = false);
 #endif // winbits_h__

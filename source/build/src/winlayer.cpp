@@ -389,8 +389,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
                MB_OK|MB_ICONINFORMATION);
 #endif
 
-    //    atexit(uninitsystem);
-
     startwin_open();
 
     r = app_main(_buildargc, _buildargv);
@@ -400,8 +398,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     if (r) Sleep(3000);
 
     startwin_close();
-
-    windowsPlatformCleanup();
 
     Xfree(argvbuf);
 
@@ -530,6 +526,8 @@ int32_t initsystem(void)
 void uninitsystem(void)
 {
     DestroyAppWindow();
+
+    windowsPlatformCleanup();
 
     startwin_close();
 
