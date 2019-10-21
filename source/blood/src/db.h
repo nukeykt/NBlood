@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 
-#define kMaxXSprites 2048
+#define kMaxXSprites 16834
 #define kMaxXWalls 512
 #define kMaxXSectors 512
 
@@ -36,7 +36,7 @@ extern bool gModernMap;
 struct AISTATE;
 
 struct XSPRITE {
-    //int at0;
+    //int isActive;
     unsigned int atb_2 : 2; // unused	//
     unsigned int atb_6 : 1; // unused	// let's use these to add more data 
     unsigned int ate_5 : 2; // unused	// fields in the future? must be signed also

@@ -1354,7 +1354,7 @@ void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             PLAYER *pPlayer = &gPlayer[p];
-            if (pSprite->owner == pPlayer->at5b || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
+            if (pSprite->owner == pPlayer->nSprite || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
                 continue;
             int x = pPlayer->pSprite->x;
             int y = pPlayer->pSprite->y;
@@ -1370,7 +1370,7 @@ void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
             if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
-                aiSetTarget(pXSprite, pPlayer->at5b);
+                aiSetTarget(pXSprite, pPlayer->nSprite);
                 aiActivateDude(pSprite, pXSprite);
                 return;
             }
@@ -1393,7 +1393,7 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             PLAYER *pPlayer = &gPlayer[p];
-            if (pSprite->owner == pPlayer->at5b || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
+            if (pSprite->owner == pPlayer->nSprite || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
                 continue;
             int x = pPlayer->pSprite->x;
             int y = pPlayer->pSprite->y;
@@ -1409,7 +1409,7 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
             int nDeltaAngle = ((getangle(dx,dy)+1024-pSprite->ang)&2047)-1024;
             if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
-                aiSetTarget(pXSprite, pPlayer->at5b);
+                aiSetTarget(pXSprite, pPlayer->nSprite);
                 aiActivateDude(pSprite, pXSprite);
                 return;
             }
