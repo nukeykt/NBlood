@@ -578,9 +578,18 @@ int nSoundRateValues[] = {
     48000
 };
 
+int nMusicDeviceValues[] = {
+    ASS_OPL3,
+#ifdef _WIN32
+    ASS_WinMM,
+#endif
+};
+
 const char *pzMusicDeviceStrings[] = {
+    "OPL3(SB/ADLIB)",
+#ifdef _WIN32
     "SYSTEM MIDI",
-    "OPL3(SB/ADLIB)"
+#endif
 };
 
 CGameMenuItemTitle itemOptionsSoundTitle("SOUND SETUP", 1, 160, 20, 2038);
@@ -1867,7 +1876,7 @@ void SetSound(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     MixRate = nSoundRateValues[itemOptionsSoundSampleRate.m_nFocus];
     NumVoices = itemOptionsSoundNumVoices.nValue;
-    MusicDevice = itemOptionsSoundMusicDevice.m_nFocus;
+    MusicDevice = nMusicDeviceValues[itemOptionsSoundMusicDevice.m_nFocus];
     sfxTerm();
     sndTerm();
 
@@ -1900,7 +1909,15 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
         }
     }
     itemOptionsSoundNumVoices.nValue = NumVoices;
-    itemOptionsSoundMusicDevice.m_nFocus = MusicDevice;
+    itemOptionsSoundMusicDevice.m_nFocus = 0;
+    for (int i = 0; i < 2; i++)
+    {
+        if (nMusicDeviceValues[i] == MusicDevice)
+        {
+            itemOptionsSoundMusicDevice.m_nFocus = i;
+            break;
+        }
+    }
 }
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)

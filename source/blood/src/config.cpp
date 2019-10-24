@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "build.h"
 #include "cache1d.h"
 #include "file_lib.h"
+#include "sndcards.h"
 #include "hash.h"
 #include "scriplib.h"
 #include "renderlayer.h"
@@ -328,7 +329,7 @@ void CONFIG_SetDefaults(void)
     SmoothInput     = 1;
     SoundToggle     = 1;
     CDAudioToggle = 0;
-    MusicDevice = 0;
+    MusicDevice = ASS_AutoDetect;
     //ud.config.VoiceToggle     = 5;  // bitfield, 1 = local, 2 = dummy, 4 = other players in DM
     useprecache     = 1;
     configversion          = 0;
