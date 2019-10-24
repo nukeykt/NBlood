@@ -1166,7 +1166,6 @@ void FlipStereo(void)
 void
 SoundStartup(void)
 {
-    int32_t status;
     void *initdata = 0;
 
     // if they chose None lets return
@@ -1184,10 +1183,10 @@ SoundStartup(void)
 
     buildprintf("Initializing sound... ");
 
-    status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
+    int status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n",FX_ErrorString(FX_Error));
+        buildprintf("Sound error: %s\n", FX_ErrorString(status));
         return;
     }
 
@@ -1211,8 +1210,6 @@ SoundStartup(void)
 void
 SoundShutdown(void)
 {
-    int32_t status;
-
     // if they chose None lets return
     if (FXDevice < 0)
     {
@@ -1222,10 +1219,10 @@ SoundShutdown(void)
     if (!FxInitialized)
         return;
 
-    status = FX_Shutdown();
+    int status = FX_Shutdown();
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n",FX_ErrorString(FX_Error));
+        buildprintf("Sound error: %s\n", FX_ErrorString(status));
     }
 }
 
@@ -1266,9 +1263,10 @@ void MusicStartup(void)
 
     buildprintf("Initializing MIDI driver... ");
 
-    if (MUSIC_Init(MusicDevice) != MUSIC_Ok && MUSIC_Init(0) != MUSIC_Ok && MUSIC_Init(1) != MUSIC_Ok)
+    int status;
+    if ((status = MUSIC_Init(MusicDevice)) != MUSIC_Ok && (status = MUSIC_Init(0)) != MUSIC_Ok && (status = MUSIC_Init(1)) != MUSIC_Ok)
     {
-        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_Error));
+        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
         gs.MusicOn = FALSE;
         return;
     }
@@ -1298,8 +1296,6 @@ void COVER_SetReverb(int amt)
 void
 MusicShutdown(void)
 {
-    int32_t status;
-
     // if they chose None lets return
     if (MusicDevice < 0)
         return;
@@ -1309,10 +1305,10 @@ MusicShutdown(void)
 
     StopSong();
 
-    status = MUSIC_Shutdown();
+    int status = MUSIC_Shutdown();
     if (status != MUSIC_Ok)
     {
-        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_Error));
+        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
     }
 }
 
