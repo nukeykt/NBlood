@@ -84,7 +84,7 @@ int32_t S_SoundStartup(void)
     status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
-        initprintf("Sound startup error: %s\n", FX_ErrorString(FX_Error));
+        initprintf("Sound startup error: %s\n", FX_ErrorString(status));
         return -2;
     }
 
@@ -107,14 +107,12 @@ int32_t S_SoundStartup(void)
 
 void S_SoundShutdown(void)
 {
-    int32_t status;
-
     if (!SM32_havesound)
         return;
 
-    status = FX_Shutdown();
+    int status = FX_Shutdown();
     if (status != FX_Ok)
-        initprintf("Sound shutdown error: %s\n", FX_ErrorString(FX_Error));
+        initprintf("Sound shutdown error: %s\n", FX_ErrorString(status));
 }
 
 int32_t S_LoadSound(uint32_t num)
