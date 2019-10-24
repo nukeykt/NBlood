@@ -3923,7 +3923,7 @@ void drawscreen(short snum, int dasmoothratio)
                 {
                     walock[TILE_TILT] = 255;
                     if (waloff[TILE_TILT] == 0)
-                        cacheAllocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
+                        g_cache.allocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
                     if ((tiltlock&1023) == 0)
                         renderSetTarget(TILE_TILT,200L>>detailmode,320L>>detailmode);
                     else
@@ -4799,7 +4799,7 @@ void playback(void)
 
         while (totalclock >= lockclock+TICSPERFRAME)
         {
-            timerUpdate();
+            timerUpdateClock();
             if (i >= reccnt)
             {
                 prepareboard(boardfilename);
@@ -5672,7 +5672,7 @@ void faketimerhandler(void)
     short other /*, packbufleng*/;
     int i, j, k, l;
 
-    timerUpdate();
+    timerUpdateClock();
     if ((totalclock < ototalclock+(TIMERINTSPERSECOND/MOVESPERSECOND)) || (ready2send == 0)) return;
     ototalclock += (TIMERINTSPERSECOND/MOVESPERSECOND);
 
