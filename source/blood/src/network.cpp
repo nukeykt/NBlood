@@ -1371,7 +1371,6 @@ void netUpdate(void)
 
 void faketimerhandler(void)
 {
-    timerUpdateClock();
 #ifndef NETCODE_DISABLE
     if (gNetMode != NETWORK_NONE && gNetENetInit)
         netUpdate();

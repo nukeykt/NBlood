@@ -1821,10 +1821,8 @@ RESTART:
                         break;
                     faketimerhandler();
                     ProcessFrame();
-                    timerUpdateClock();
                     gameUpdate = true;
                 }
-                timerUpdateClock();
             }
             if (gameUpdate)
             {

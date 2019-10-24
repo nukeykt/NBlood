@@ -847,7 +847,6 @@ MODAL_RESULT ShowModal(Container* container)
         UpdateBlinkClock((int)gFrameTicks);
         gameHandleEvents();
         MUSIC_Update();
-        timerUpdateClock();
 
         int nMouseX, nMouseY;
 
