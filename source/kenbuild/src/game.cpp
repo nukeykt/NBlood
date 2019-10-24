@@ -41,6 +41,10 @@ static int32_t setsprite_eyeheight(int16_t spritenum, const vec3_t *pos)
     return setsprite(spritenum, &eyepos);
 }
 
+int ksqr(int eax)
+{
+    return eax*eax;
+}
 
 // declared in sound.c
 void initsb(char,char,int,char,char,char,char);
@@ -143,8 +147,11 @@ unsigned char keys[NUMGAMEKEYS] =
     0x1e,0x2c,0xd1,0xc9,0x33,0x34,
     0x9c,0x1c,0xd,0xc,0xf
 };
+
+extern "C" {
 int xdimgame = 320, ydimgame = 200, bppgame = 8, xdim2d = 640, ydim2d = 480;    // JBF 20050318: config.c expects to find these
 int forcesetup = 1;
+}
 
 static int digihz[8] = {6000,8000,11025,16000,22050,32000,44100,48000};
 
@@ -2644,7 +2651,7 @@ void statuslistcode(void)
                     if (j != (sprite[i].owner & (MAXSPRITES - 1)))
                         if (cansee(sprite[i].x,sprite[i].y,sprite[i].z,sprite[i].sectnum,pos[j].x,pos[j].y,pos[j].z,cursectnum[j]))
                         {
-                            k = ksqrt(sqr(pos[j].x - sprite[i].x) + sqr(pos[j].y - sprite[i].y) + (sqr(pos[j].z - sprite[i].z) >> 8));
+                            k = ksqrt(ksqr(pos[j].x - sprite[i].x) + ksqr(pos[j].y - sprite[i].y) + (ksqr(pos[j].z - sprite[i].z) >> 8));
                             if (k < l)
                             {
                                 l = k;
@@ -2658,7 +2665,7 @@ void statuslistcode(void)
                     nextj = nextspritestat[j];
                     if (cansee(sprite[i].x,sprite[i].y,sprite[i].z,sprite[i].sectnum,sprite[j].x,sprite[j].y,sprite[j].z,sprite[j].sectnum))
                     {
-                        k = ksqrt(sqr(sprite[j].x - sprite[i].x) + sqr(sprite[j].y - sprite[i].y) + (sqr(sprite[j].z - sprite[i].z) >> 8));
+                        k = ksqrt(ksqr(sprite[j].x - sprite[i].x) + ksqr(sprite[j].y - sprite[i].y) + (ksqr(sprite[j].z - sprite[i].z) >> 8));
                         if (k < l)
                         {
                             l = k;
@@ -2673,7 +2680,7 @@ void statuslistcode(void)
                     nextj = nextspritestat[j];
                     if (cansee(sprite[i].x,sprite[i].y,sprite[i].z,sprite[i].sectnum,sprite[j].x,sprite[j].y,sprite[j].z,sprite[j].sectnum))
                     {
-                        k = ksqrt(sqr(sprite[j].x - sprite[i].x) + sqr(sprite[j].y - sprite[i].y) + (sqr(sprite[j].z - sprite[i].z) >> 8));
+                        k = ksqrt(ksqr(sprite[j].x - sprite[i].x) + ksqr(sprite[j].y - sprite[i].y) + (ksqr(sprite[j].z - sprite[i].z) >> 8));
                         if (k < l)
                         {
                             l = k;
