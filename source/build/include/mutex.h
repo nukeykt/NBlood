@@ -16,9 +16,9 @@ extern "C" {
 
 #ifdef RENDERTYPEWIN
 typedef HANDLE mutex_t;
+#elif SDL_MAJOR_VERSION == 1
+typedef SDL_mutex * mutex_t;
 #else
-/* PK: I don't like pointer typedefs, but SDL_CreateMutex() _returns_ one,
- *     so we're out of luck with our interface. */
 typedef SDL_SpinLock mutex_t;
 #endif
 
