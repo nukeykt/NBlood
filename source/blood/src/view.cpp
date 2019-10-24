@@ -2304,8 +2304,13 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
 
             int const nVoxel = tiletovox[pTSprite->picnum];
 
-            if (nVoxel != -1 && (voxrotate[nVoxel>>3]&pow2char[nVoxel&7]) != 0)
-                pTSprite->ang = (pTSprite->ang+((int)totalclock<<3))&2047;
+            if (nVoxel != 1)
+            {
+                if ((voxrotate[nVoxel>>3]&pow2char[nVoxel&7]) != 0)
+                    pTSprite->ang = (pTSprite->ang+((int)totalclock<<3))&2047;
+
+                pTSprite->ang = pTSprite->ang+voxrndangoff[nVoxel];
+            }
         }
 
         sectortype *pSector = &sector[pTSprite->sectnum];
