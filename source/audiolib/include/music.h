@@ -67,7 +67,7 @@ enum MIDI_Device
 
 extern const char *MUSIC_ErrorString(int ErrorNumber);
 
-int  MUSIC_Init(int SoundCard, int ForceEMIDI = -1);
+int  MUSIC_Init(int SoundCard);
 int  MUSIC_Shutdown(void);
 void MUSIC_SetVolume(int volume);
 int  MUSIC_GetVolume(void);
