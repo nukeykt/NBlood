@@ -79,6 +79,8 @@ int32_t S_SoundStartup(void)
     initdata = (void *) win_gethwnd(); // used for DirectSound
 #endif
 
+    initprintf("Initializing sound... ");
+
     status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status == FX_Ok)
     {
