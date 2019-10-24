@@ -2662,6 +2662,10 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
         // GL driver blacklist
 
         if (!Bstrcmp(glinfo.vendor,"Microsoft Corporation")) err = 1;
+#if 0
+        else if (!Bstrcmp(glinfo.vendor,"SiS")) err = 1;
+        else if (!Bstrcmp(glinfo.vendor,"3Dfx Interactive Inc.")) err = 1;
+#endif
 #ifdef POLYMER
         else if (!Bstrcmp(glinfo.vendor, "Intel"))
             pr_ati_fboworkaround = 1;
