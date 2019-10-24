@@ -1185,18 +1185,17 @@ SoundStartup(void)
     buildprintf("Initializing sound... ");
 
     status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
-    if (status == FX_Ok)
-    {
-        FxInitialized = TRUE;
-        FX_SetVolume(gs.SoundVolume);
-
-        if (gs.FlipStereo)
-            FX_SetReverseStereo(!FX_GetReverseStereo());
-    }
     if (status != FX_Ok)
     {
         buildprintf("Sound error: %s\n",FX_ErrorString(FX_Error));
+        return;
     }
+
+    FxInitialized = TRUE;
+    FX_SetVolume(gs.SoundVolume);
+
+    if (gs.FlipStereo)
+        FX_SetReverseStereo(!FX_GetReverseStereo());
 
     FX_SetCallBack(SoundCallBack);
 }
@@ -1267,16 +1266,15 @@ void MusicStartup(void)
 
     buildprintf("Initializing MIDI driver... ");
 
-    if (MUSIC_Init(MusicDevice) == MUSIC_Ok || MUSIC_Init(0) == MUSIC_Ok || MUSIC_Init(1) == MUSIC_Ok)
+    if (MUSIC_Init(MusicDevice) != MUSIC_Ok && MUSIC_Init(0) != MUSIC_Ok && MUSIC_Init(1) != MUSIC_Ok)
     {
-        MusicInitialized = TRUE;
-        MUSIC_SetVolume(gs.MusicVolume);
-    }
-    else
-    {
-        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_ErrorCode));
+        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_Error));
         gs.MusicOn = FALSE;
+        return;
     }
+
+    MusicInitialized = TRUE;
+    MUSIC_SetVolume(gs.MusicVolume);
 
 #if 0
     if (MusicInitialized)
@@ -1314,7 +1312,7 @@ MusicShutdown(void)
     status = MUSIC_Shutdown();
     if (status != MUSIC_Ok)
     {
-        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_ErrorCode));
+        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_Error));
     }
 }
 

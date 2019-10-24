@@ -82,17 +82,15 @@ int32_t S_SoundStartup(void)
     initprintf("Initializing sound... ");
 
     status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
-    if (status == FX_Ok)
-    {
-        FX_SetVolume(FXVolume);
-        FX_SetReverseStereo(ReverseStereo);
-        FX_SetCallBack(S_Callback);
-    }
-    else
+    if (status != FX_Ok)
     {
         initprintf("Sound startup error: %s\n", FX_ErrorString(FX_Error));
         return -2;
     }
+
+    FX_SetVolume(FXVolume);
+    FX_SetReverseStereo(ReverseStereo);
+    FX_SetCallBack(S_Callback);
 
     SM32_havesound = 1;
 
