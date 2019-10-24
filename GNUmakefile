@@ -420,7 +420,7 @@ ifeq ($(RENDERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
         audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
     endif
-    audiolib_objs += driver_sdl.cpp sdlmusic.cpp oplmidi.cpp
+    audiolib_objs += driver_sdl.cpp
 endif
 
 ifneq (0,$(HAVE_XMP))
@@ -492,8 +492,8 @@ kenbuild_editor_proper := EKenBuild Editor
 kenbuild_game_objs := \
     common.cpp \
     config.cpp \
-    game.cpp \
     kdmeng.cpp \
+    game.cpp \
 
 kenbuild_editor_objs := \
     bstub.cpp \

@@ -459,7 +459,7 @@ void DeinitSoundDevice(void)
 
 void InitMusicDevice(void)
 {
-    int nStatus = MUSIC_Init(MusicDevice, 0);
+    int nStatus = MUSIC_Init(MusicDevice);
     if (nStatus != 0)
     {
         initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
@@ -467,7 +467,7 @@ void InitMusicDevice(void)
     }
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
     if (hTmb)
-        OPLMusic::AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
+        AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
     MUSIC_SetVolume(MusicVolume);
 }
 

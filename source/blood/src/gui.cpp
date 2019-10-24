@@ -845,9 +845,9 @@ MODAL_RESULT ShowModal(Container* container)
         gFrameTicks = totalclock - gFrameClock;
         gFrameClock += gFrameTicks;
         UpdateBlinkClock((int)gFrameTicks);
-        G_HandleAsync();
+        gameHandleEvents();
         MUSIC_Update();
-        timerUpdate();
+        timerUpdateClock();
 
         int nMouseX, nMouseY;
 
