@@ -6782,8 +6782,8 @@ int app_main(int argc, char const * const * argv)
 
         g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, myplayer.palette, 0);
-        S_MusicStartup();
         S_SoundStartup();
+        S_MusicStartup();
     }
 
     // check if the minifont will support lowercase letters (3136-3161)
