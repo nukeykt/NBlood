@@ -3665,7 +3665,7 @@ ShadeMenu(void)                         // F8
 
 void faketimerhandler(void)
 {
-    timerUpdate();
+    timerUpdateClock();
 }
 
 //Just thought you might want my getnumber16 code

@@ -244,7 +244,7 @@ void ExtPreCheckKeys(void)
         dy = (ydim + (ydim >> 3) + (ydim >> 4) + (ydim >> 6)) & (~7);
         i = scale(320,ydim,xdim);
 
-        if (waloff[4094] == 0) cacheAllocateBlock(&waloff[4094],/*240L*384L*/ dx*dy,&walock[4094]);
+        if (waloff[4094] == 0) g_cache.allocateBlock(&waloff[4094],/*240L*384L*/ dx*dy,&walock[4094]);
         renderSetTarget(4094,/*240L,384L*/ dy,dx);
 
         cosang = sintable[(hang+512)&2047];
@@ -594,7 +594,7 @@ void ExtEditSpriteData(short spritenum)   //F8
 
 void faketimerhandler(void)
 {
-    timerUpdate();
+    timerUpdateClock();
 }
 
 void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
