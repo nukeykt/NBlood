@@ -150,7 +150,7 @@ static void StompSeqCallback(int, int nXSprite)
                             else
                                 nDamage = v1c + ((vc-nDist2)*v10)/vc;
                             if (IsPlayerSprite(pSprite2))
-                                gPlayer[pSprite2->type-kDudePlayer1].at37f += nDamage*4;
+                                gPlayer[pSprite2->type-kDudePlayer1].quakeEffect += nDamage*4;
                             actDamageSprite(nSprite, pSprite2, DAMAGE_TYPE_0, nDamage<<4);
                         }
                     }
@@ -179,7 +179,7 @@ static void StompSeqCallback(int, int nXSprite)
                 else
                     nDamage = v1c + ((vc-nDist2)*v10)/vc;
                 if (IsPlayerSprite(pSprite2))
-                    gPlayer[pSprite2->type-kDudePlayer1].at37f += nDamage*4;
+                    gPlayer[pSprite2->type-kDudePlayer1].quakeEffect += nDamage*4;
                 actDamageSprite(nSprite, pSprite2, DAMAGE_TYPE_0, nDamage<<4);
             }
         }
@@ -262,7 +262,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             aiNewState(pSprite, pXSprite, &beastSearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0)
+    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0)
     {
         XSECTOR *pXSector;
         int nXSector = sector[pSprite->sectnum].extra;
@@ -420,7 +420,7 @@ static void thinkSwimChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &beastSwimSearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0)
+    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0)
     {
         aiNewState(pSprite, pXSprite, &beastSwimSearch);
         return;

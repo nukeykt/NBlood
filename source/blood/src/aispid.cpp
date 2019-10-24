@@ -72,9 +72,9 @@ static char sub_70D30(XSPRITE *pXDude, int a2, int a3)
         if (IsPlayerSprite(pDude))
         {
             PLAYER *pPlayer = &gPlayer[pDude->type-kDudePlayer1];
-            if (a3 > pPlayer->at36a)
+            if (a3 > pPlayer->blindEffect)
             {
-                pPlayer->at36a = ClipHigh(pPlayer->at36a+a2, a3);
+                pPlayer->blindEffect = ClipHigh(pPlayer->blindEffect+a2, a3);
                 return 1;
             }
         }
@@ -105,8 +105,8 @@ static void SpidBiteSeqCallback(int, int nXSprite)
             switch (pSprite->type) {
                 case kDudeSpiderBrown:
                     actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_17);
-                    if (IsPlayerSprite(pTarget) && !pPlayer->at31a && powerupCheck(pPlayer, 14) <= 0 && Chance(0x4000))
-                        powerupActivate(pPlayer, 28);
+                    if (IsPlayerSprite(pTarget) && !pPlayer->godMode && powerupCheck(pPlayer, kPwUpDeathMask) <= 0 && Chance(0x4000))
+                        powerupActivate(pPlayer, kPwUpDeliriumShroom);
                     break;
                 case kDudeSpiderRed:
                     actFireVector(pSprite, 0, 0, dx, dy, dz, VECTOR_TYPE_17);
@@ -233,7 +233,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &spidSearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0)
+    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0)
     {
         aiNewState(pSprite, pXSprite, &spidSearch);
         return;

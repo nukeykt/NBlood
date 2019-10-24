@@ -65,7 +65,7 @@ void sub_5A944(char key)
 void SetGodMode(bool god)
 {
     playerSetGodMode(gMe, god);
-    if (gMe->at31a)
+    if (gMe->godMode)
         viewSetMessage("You are immortal.");
     else
         viewSetMessage("You are mortal.");
@@ -88,11 +88,11 @@ void packStuff(PLAYER *pPlayer)
 
 void packClear(PLAYER *pPlayer)
 {
-    pPlayer->at321 = 0;
+    pPlayer->packItemId = 0;
     for (int i = 0; i < 5; i++)
     {
-        pPlayer->packInfo[i].at0 = 0;
-        pPlayer->packInfo[i].at1 = 0;
+        pPlayer->packSlots[i].isActive = 0;
+        pPlayer->packSlots[i].curAmount = 0;
     }
 }
 
@@ -101,13 +101,13 @@ void SetAmmo(bool stat)
     if (stat)
     {
         for (int i = 0; i < 12; i++)
-            gMe->at181[i] = gAmmoInfo[i].at0;
+            gMe->ammCount[i] = gAmmoInfo[i].max;
         viewSetMessage("You have full ammo.");
     }
     else
     {
         for (int i = 0; i < 12; i++)
-            gMe->at181[i] = 0;
+            gMe->ammCount[i] = 0;
         viewSetMessage("You have no ammo.");
     }
 }
@@ -116,7 +116,7 @@ void SetWeapons(bool stat)
 {
     for (int i = 0; i < 14; i++)
     {
-        gMe->atcb[i] = stat;
+        gMe->hasWeapon[i] = stat;
     }
     SetAmmo(stat);
     if (stat)
@@ -126,9 +126,9 @@ void SetWeapons(bool stat)
         if (!VanillaMode())
         {
             // Keep the pitchfork to avoid freeze
-            gMe->atcb[1] = 1;
-            gMe->atbd = 0;
-            gMe->atbe = 1;
+            gMe->hasWeapon[1] = 1;
+            gMe->curWeapon = 0;
+            gMe->nextWeapon = 1;
         }
         viewSetMessage("You have no weapons.");
     }
@@ -162,13 +162,13 @@ void SetArmor(bool stat)
         nAmount = 0;
     }
     for (int i = 0; i < 3; i++)
-        gMe->at33e[i] = nAmount;
+        gMe->armor[i] = nAmount;
 }
 
 void SetKeys(bool stat)
 {
     for (int i = 1; i <= 6; i++)
-        gMe->at88[i] = stat;
+        gMe->hasKey[i] = stat;
     if (stat)
         viewSetMessage("You have all keys.");
     else
@@ -197,91 +197,91 @@ void SetWooMode(bool stat)
 {
     if (stat)
     {
-        if (!powerupCheck(gMe, 17))
-            powerupActivate(gMe, 17);
+        if (!powerupCheck(gMe, kPwUpTwoGuns))
+            powerupActivate(gMe, kPwUpTwoGuns);
     }
     else
     {
-        if (powerupCheck(gMe, 17))
+        if (powerupCheck(gMe, kPwUpTwoGuns))
         {
             if (!VanillaMode())
-                gMe->at202[17] = 0;
-            powerupDeactivate(gMe, 17);
+                gMe->pwUpTime[kPwUpTwoGuns] = 0;
+            powerupDeactivate(gMe, kPwUpTwoGuns);
         }
     }
 }
 
 void ToggleWooMode(void)
 {
-    SetWooMode(!(powerupCheck(gMe, 17) != 0));
+    SetWooMode(!(powerupCheck(gMe, kPwUpTwoGuns) != 0));
 }
 
 void ToggleBoots(void)
 {
-    if (powerupCheck(gMe, 15))
+    if (powerupCheck(gMe, kPwUpJumpBoots))
     {
         viewSetMessage("You have no Jumping Boots.");
         if (!VanillaMode())
         {
-            gMe->at202[15] = 0;
-            gMe->packInfo[4].at1 = 0;
+            gMe->pwUpTime[kPwUpJumpBoots] = 0;
+            gMe->packSlots[4].curAmount = 0;
         }
-        powerupDeactivate(gMe, 15);
+        powerupDeactivate(gMe, kPwUpJumpBoots);
     }
     else
     {
         viewSetMessage("You have the Jumping Boots.");
         if (!VanillaMode())
-            gMe->at202[15] = gPowerUpInfo[15].at3;
-        powerupActivate(gMe, 15);
+            gMe->pwUpTime[kPwUpJumpBoots] = gPowerUpInfo[kPwUpJumpBoots].bonusTime;
+        powerupActivate(gMe, kPwUpJumpBoots);
     }
 }
 
 void ToggleInvisibility(void)
 {
-    if (powerupCheck(gMe, 13))
+    if (powerupCheck(gMe, kPwUpShadowCloak))
     {
         viewSetMessage("You are visible.");
         if (!VanillaMode())
-            gMe->at202[13] = 0;
-        powerupDeactivate(gMe, 13);
+            gMe->pwUpTime[kPwUpShadowCloak] = 0;
+        powerupDeactivate(gMe, kPwUpShadowCloak);
     }
     else
     {
         viewSetMessage("You are invisible.");
-        powerupActivate(gMe, 13);
+        powerupActivate(gMe, kPwUpShadowCloak);
     }
 }
 
 void ToggleInvulnerability(void)
 {
-    if (powerupCheck(gMe, 14))
+    if (powerupCheck(gMe, kPwUpDeathMask))
     {
         viewSetMessage("You are vulnerable.");
         if (!VanillaMode())
-            gMe->at202[14] = 0;
-        powerupDeactivate(gMe, 14);
+            gMe->pwUpTime[kPwUpDeathMask] = 0;
+        powerupDeactivate(gMe, kPwUpDeathMask);
     }
     else
     {
         viewSetMessage("You are invulnerable.");
-        powerupActivate(gMe, 14);
+        powerupActivate(gMe, kPwUpDeathMask);
     }
 }
 
 void ToggleDelirium(void)
 {
-    if (powerupCheck(gMe, 28))
+    if (powerupCheck(gMe, kPwUpDeliriumShroom))
     {
         viewSetMessage("You are not delirious.");
         if (!VanillaMode())
-            gMe->at202[28] = 0;
-        powerupDeactivate(gMe, 28);
+            gMe->pwUpTime[kPwUpDeliriumShroom] = 0;
+        powerupDeactivate(gMe, kPwUpDeliriumShroom);
     }
     else
     {
         viewSetMessage("You are delirious.");
-        powerupActivate(gMe, 28);
+        powerupActivate(gMe, kPwUpDeliriumShroom);
     }
 }
 
@@ -765,7 +765,7 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetClipMode(!gNoClip);
         break;
     case kCheatMpkfa:
-        SetGodMode(!gMe->at31a);
+        SetGodMode(!gMe->godMode);
         break;
     case kCheatCapInMyAss:
         SetGodMode(false);
@@ -777,36 +777,36 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetWeapons(true);
         break;
     case kCheatKevorkian:
-        actDamageSprite(gMe->at5b, gMe->pSprite, DAMAGE_TYPE_2, 8000);
+        actDamageSprite(gMe->nSprite, gMe->pSprite, DAMAGE_TYPE_2, 8000);
         viewSetMessage("Kevorkian approves.");
         break;
     case kCheatMcGee:
     {
         if (!gMe->pXSprite->burnTime)
-            evPost(gMe->at5b, 3, 0, kCallbackFXFlameLick);
-        actBurnSprite(actSpriteIdToOwnerId(gMe->at5b), gMe->pXSprite, 2400);
+            evPost(gMe->nSprite, 3, 0, kCallbackFXFlameLick);
+        actBurnSprite(actSpriteIdToOwnerId(gMe->nSprite), gMe->pXSprite, 2400);
         viewSetMessage("You're fired!");
         break;
     }
     case kCheatEdmark:
-        actDamageSprite(gMe->at5b, gMe->pSprite, DAMAGE_TYPE_3, 8000);
+        actDamageSprite(gMe->nSprite, gMe->pSprite, DAMAGE_TYPE_3, 8000);
         viewSetMessage("Ahhh...those were the days.");
         break;
     case kCheatKrueger:
     {
         actHealDude(gMe->pXSprite, 200, 200);
-        gMe->at33e[1] = VanillaMode() ? 200 : 3200;
+        gMe->armor[1] = VanillaMode() ? 200 : 3200;
         if (!gMe->pXSprite->burnTime)
-            evPost(gMe->at5b, 3, 0, kCallbackFXFlameLick);
-        actBurnSprite(actSpriteIdToOwnerId(gMe->at5b), gMe->pXSprite, 2400);
+            evPost(gMe->nSprite, 3, 0, kCallbackFXFlameLick);
+        actBurnSprite(actSpriteIdToOwnerId(gMe->nSprite), gMe->pXSprite, 2400);
         viewSetMessage("Flame retardant!");
         break;
     }
     case kCheatSterno:
-        gMe->at36a = 250;
+        gMe->blindEffect = 250;
         break;
-    case kCheat14: // quake (causing a little flicker), not used by any cheat code (dead code)
-        gMe->at35a = 360;
+    case kCheat14: // quakeEffect (causing a little flickerEffect), not used by any cheat code (dead code)
+        gMe->flickerEffect = 360;
         break;
     case kCheatSpork:
         actHealDude(gMe->pXSprite, 200, 200);
@@ -819,16 +819,16 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         {
             viewSetMessage("You have half armor.");
             for (int i = 0; i < 3; i++)
-                gMe->at33e[i] = 1600;
+                gMe->armor[i] = 1600;
         }
         break;
     case kCheatFrankenstein:
-        gMe->packInfo[0].at1 = 100;
+        gMe->packSlots[0].curAmount = 100;
         break;
     case kCheatCheeseHead:
-        gMe->packInfo[1].at1 = 100;
+        gMe->packSlots[1].curAmount = 100;
         if (!VanillaMode())
-            gMe->at202[18] = gPowerUpInfo[18].at3;
+            gMe->pwUpTime[kPwUpDivingSuit] = gPowerUpInfo[kPwUpDivingSuit].bonusTime;
         break;
     case kCheatTequila:
         ToggleWooMode();
@@ -879,9 +879,9 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         break;
     case kCheatCousteau:
         actHealDude(gMe->pXSprite,200,200);
-        gMe->packInfo[1].at1 = 100;
+        gMe->packSlots[1].curAmount = 100;
         if (!VanillaMode())
-            gMe->at202[18] = gPowerUpInfo[18].at3;
+            gMe->pwUpTime[kPwUpDivingSuit] = gPowerUpInfo[kPwUpDivingSuit].bonusTime;
         break;
     case kCheatForkYou:
         SetInfiniteAmmo(false);
@@ -892,11 +892,11 @@ void CCheatMgr::Process(CCheatMgr::CHEATCODE nCheatCode, char* pzArgs)
         SetToys(false);
         SetKeys(false);
         SetWooMode(true);
-        powerupActivate(gMe, 28);
+        powerupActivate(gMe, kPwUpDeliriumShroom);
         gMe->pXSprite->health = 16;
-        gMe->atcb[1] = 1;
-        gMe->atbd = 0;
-        gMe->atbe = 1;
+        gMe->hasWeapon[1] = 1;
+        gMe->curWeapon = 0;
+        gMe->nextWeapon = 1;
         break;
     default:
         break;

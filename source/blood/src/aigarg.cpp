@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mmulti.h"
 #include "common_game.h"
 
+
 #include "actor.h"
 #include "ai.h"
 #include "aigarg.h"
@@ -220,9 +221,11 @@ static void ThrowSSeqCallback(int, int nXSprite)
 
 static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     DUDEEXTRA_at6_u1 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
     if (pDudeExtraE->at8 && pDudeExtraE->at4 < 10)
@@ -240,7 +243,7 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             PLAYER *pPlayer = &gPlayer[p];
-            if (pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, 13) > 0)
+            if (pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
                 continue;
             int x = pPlayer->pSprite->x;
             int y = pPlayer->pSprite->y;
@@ -257,7 +260,7 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
             if (nDist < pDudeInfo->seeDist && klabs(nDeltaAngle) <= pDudeInfo->periphery)
             {
                 pDudeExtraE->at4 = 0;
-                aiSetTarget(pXSprite, pPlayer->at5b);
+                aiSetTarget(pXSprite, pPlayer->nSprite);
                 aiActivateDude(pSprite, pXSprite);
             }
             else if (nDist < pDudeInfo->hearDist)
@@ -281,9 +284,11 @@ static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 
 static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
@@ -298,9 +303,11 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
@@ -324,9 +331,11 @@ static void MoveDodgeUp(spritetype *pSprite, XSPRITE *pXSprite)
 static void MoveDodgeDown(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
@@ -356,13 +365,17 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &gargoyleFGoto);
         return;
     }
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
-    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+    ///dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites)) {
+        consoleSysMsg("pXSprite->target >= 0 && pXSprite->target < kMaxSprites");
         return;
-    //dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
+    }
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
     int dx = pTarget->x-pSprite->x;
@@ -373,7 +386,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &gargoyleFSearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0)
+    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0)
     {
         aiNewState(pSprite, pXSprite, &gargoyleFSearch);
         return;
@@ -542,9 +555,11 @@ static void entrySStatue(spritetype *pSprite, XSPRITE *pXSprite)
 static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
@@ -577,9 +592,11 @@ static void MoveForward(spritetype *pSprite, XSPRITE *pXSprite)
 static void MoveSlow(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
@@ -619,9 +636,11 @@ static void MoveSlow(spritetype *pSprite, XSPRITE *pXSprite)
 static void MoveSwoop(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
@@ -660,9 +679,11 @@ static void MoveSwoop(spritetype *pSprite, XSPRITE *pXSprite)
 static void MoveFly(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
-    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax))
+    ///dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
-    //dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;

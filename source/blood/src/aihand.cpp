@@ -63,9 +63,9 @@ static void HandJumpSeqCallback(int, int nXSprite)
     if (IsPlayerSprite(pTarget))
     {
         PLAYER *pPlayer = &gPlayer[pTarget->type-kDudePlayer1];
-        if (!pPlayer->at376)
+        if (!pPlayer->hand)
         {
-            pPlayer->at376 = 1;
+            pPlayer->hand = 1;
             actPostSprite(pSprite->index, kStatFree);
         }
     }
@@ -111,7 +111,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &handSearch);
         return;
     }
-    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0)
+    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0)
     {
         aiNewState(pSprite, pXSprite, &handSearch);
         return;
