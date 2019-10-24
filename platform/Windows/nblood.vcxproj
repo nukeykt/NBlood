@@ -212,7 +212,12 @@
     <ClCompile Include="..\..\source\blood\src\eventq.cpp" />
     <ClCompile Include="..\..\source\blood\src\fire.cpp" />
     <ClCompile Include="..\..\source\blood\src\fx.cpp" />
-    <ClCompile Include="..\..\source\blood\src\gamemenu.cpp" />
+    <ClCompile Include="..\..\source\blood\src\gamemenu.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\blood\src\gameutil.cpp" />
     <ClCompile Include="..\..\source\blood\src\getopt.cpp" />
     <ClCompile Include="..\..\source\blood\src\gfx.cpp" />
@@ -221,21 +226,26 @@
     <ClCompile Include="..\..\source\blood\src\gui.cpp" />
     <ClCompile Include="..\..\source\blood\src\inifile.cpp" />
     <ClCompile Include="..\..\source\blood\src\input.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\blood\src\iob.cpp" />
     <ClCompile Include="..\..\source\blood\src\levels.cpp" />
     <ClCompile Include="..\..\source\blood\src\loadsave.cpp" />
     <ClCompile Include="..\..\source\blood\src\map2d.cpp" />
-    <ClCompile Include="..\..\source\blood\src\menu.cpp" />
-    <ClCompile Include="..\..\source\blood\src\menus.cpp">
+    <ClCompile Include="..\..\source\blood\src\menu.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\menus.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\blood\src\messages.cpp" />
     <ClCompile Include="..\..\source\blood\src\mirrors.cpp" />

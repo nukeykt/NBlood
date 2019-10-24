@@ -92,6 +92,9 @@ extern int32_t gShowMapTitle;
 extern int32_t gFov;
 extern int32_t gCenterHoriz;
 extern int32_t gDeliriumBlur;
+extern int32_t gAutosave;
+extern int32_t gAutosaveDeletion;
+extern int32_t gMaxAutosaves;
 
 ///////
 extern int gWeaponsV10x;

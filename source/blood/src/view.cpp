@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "config.h"
 #include "db.h"
 #include "endgame.h"
-#include "gamemenu.h"
+//#include "gamemenu.h"
 #include "gameutil.h"
 #include "globals.h"
 #include "levels.h"
@@ -1724,11 +1724,11 @@ void viewInit(void)
 {
     initprintf("Initializing status bar\n");
     InitStatusBar();
-    FontSet(0, 4096, 0);
-    FontSet(1, 4192, 1);
-    FontSet(2, 4288, 1);
-    FontSet(3, 4384, 1);
-    FontSet(4, 4480, 0);
+    FontSet(0, kFont0, 0);
+    FontSet(1, kFontBig, 1);
+    FontSet(2, kFont2, 1);
+    FontSet(3, kFontSmall, 1);
+    FontSet(4, kFont4, 0);
 
     DICTNODE *hLens = gSysRes.Lookup("LENS", "DAT");
     dassert(hLens != NULL);

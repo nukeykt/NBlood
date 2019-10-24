@@ -995,7 +995,7 @@ void netInitialize(bool bConsole)
         {
             char buffer[128];
             sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
-            viewLoadingScreen(2518, "Network Game", NULL, buffer);
+            viewLoadingScreen(kMenuScreen, "Network Game", NULL, buffer);
             videoNextPage();
         }
         while (numplayers < gNetPlayers)
@@ -1037,7 +1037,7 @@ void netInitialize(bool bConsole)
                     {
                         char buffer[128];
                         sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
-                        viewLoadingScreen(2518, "Network Game", NULL, buffer);
+                        viewLoadingScreen(kMenuScreen, "Network Game", NULL, buffer);
                         videoNextPage();
                     }
                     break;
@@ -1069,7 +1069,7 @@ void netInitialize(bool bConsole)
                     {
                         char buffer[128];
                         sprintf(buffer, "Waiting for players (%i\\%i)", numplayers, gNetPlayers);
-                        viewLoadingScreen(2518, "Network Game", NULL, buffer);
+                        viewLoadingScreen(kMenuScreen, "Network Game", NULL, buffer);
                         videoNextPage();
                     }
                     break;

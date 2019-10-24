@@ -49,6 +49,9 @@ enum INPUT_MODE {
     kInputEndGame,
 };
 
+#define MAXSAVEGAMENAMESTRUCT 32
+#define MAXSAVEGAMENAME (MAXSAVEGAMENAMESTRUCT-1)
+
 extern INPUT_MODE gInputMode;
 extern char SetupFilename[BMAX_PATH];
 extern int32_t gNoSetup;

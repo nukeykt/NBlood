@@ -113,6 +113,9 @@ int32_t gShowMapTitle;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
+int32_t gAutosave;
+int32_t gAutosaveDeletion;
+int32_t gMaxAutosaves;
 
 //////////
 int gWeaponsV10x;

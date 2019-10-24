@@ -73,6 +73,14 @@ void QuitGame(void);
 
 #define TILTBUFFER 4078
 
+#define kMenuBar 2038
+#define kMenuScreen 2518
+#define kFont0 4096 // Chat
+#define kFontBig 4192 // Big font
+#define kFont2 4288 // Unused
+#define kFontSmall 4384 // Small font
+#define kFont4 4480 // Unused
+
 #define kExplodeMax 8
 
 
