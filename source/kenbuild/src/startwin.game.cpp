@@ -4,6 +4,7 @@
 
 #include "compat.h"
 #include "build.h"
+#include "editor.h"
 
 #define NEED_WINDOWSX_H
 #define NEED_COMMCTRL_H
@@ -401,8 +402,6 @@ int startwin_idle(void *v)
     if (IsDialogMessage(startupdlg, (MSG *)v)) return 1;
     return 0;
 }
-
-extern int xdimgame, ydimgame, bppgame, forcesetup;
 
 int startwin_run(void)
 {

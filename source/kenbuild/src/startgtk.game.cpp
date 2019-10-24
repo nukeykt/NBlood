@@ -16,6 +16,7 @@
 #include "baselayer.h"
 #include "compat.h"
 #include "build.h"
+#include "editor.h"
 
 #define TAB_CONFIG 0
 #define TAB_MESSAGES 1
@@ -513,8 +514,6 @@ int startwin_idle(void *s)
     gtk_main_iteration_do(FALSE);
     return 0;
 }
-
-extern int xdimgame, ydimgame, bppgame, forcesetup;
 
 int startwin_run(void)
 {
