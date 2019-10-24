@@ -1182,6 +1182,8 @@ SoundStartup(void)
 
     //gs.FxOn = TRUE;
 
+    buildprintf("Initializing sound... ");
+
     status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status == FX_Ok)
     {
@@ -1262,6 +1264,8 @@ void MusicStartup(void)
         gs.MusicOn = FALSE;
         return;
     }
+
+    buildprintf("Initializing MIDI driver... ");
 
     if (MUSIC_Init(MusicDevice) == MUSIC_Ok || MUSIC_Init(0) == MUSIC_Ok || MUSIC_Init(1) == MUSIC_Ok)
     {
