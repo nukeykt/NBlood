@@ -10,6 +10,7 @@
 #include "pragmas.h"
 #include "build.h"
 
+static int bufferSize;
 static uint8_t* buffer;
 static vec2_t bufferRes;
 
@@ -60,9 +61,13 @@ bool softsurface_initialize(vec2_t bufferResolution,
 
     // allocate one continuous block of memory large enough to hold the buffer, the palette,
     // and the scanPosLookupTable while maintaining alignment for each
-    uint32_t bufferSize = roundUp<16>(bufferRes.x * bufferRes.y);
-    buffer = (uint8_t*) Xaligned_alloc(16, bufferSize + sizeof(uint16_t)*destBufferRes.x);
-    scanPosLookupTable = (uint16_t*) (buffer + bufferSize);
+    uint32_t newBufferSize = roundUp<16>(bufferRes.x * bufferRes.y);
+    zpl_virtual_memory vm = zpl_vm_alloc(0, newBufferSize + sizeof(uint16_t) * destBufferRes.x);
+
+    bufferSize = vm.size;
+    buffer     = (uint8_t *)vm.data;
+
+    scanPosLookupTable = (uint16_t *)(buffer + newBufferSize);
 
     // calculate the scanPosLookupTable for horizontal scaling
     uint32_t incr = recXScale16;
@@ -80,7 +85,9 @@ void softsurface_destroy()
     if (!buffer)
         return;
 
-    ALIGNED_FREE_AND_NULL(buffer);
+    zpl_vm_free(zpl_vm(buffer, bufferSize));
+    buffer = nullptr;
+
     scanPosLookupTable = 0;
 
     xScale16 = 0;

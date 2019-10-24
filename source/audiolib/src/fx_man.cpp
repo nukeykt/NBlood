@@ -20,15 +20,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "compat.h"
-#include "drivers.h"
-#include "multivoc.h"
 #include "fx_man.h"
 
-int32_t FX_ErrorCode = FX_Ok;
-int32_t FX_Installed = FALSE;
+#include "compat.h"
+#include "drivers.h"
+#include "driver_adlib.h"
+#include "midi.h"
+#include "multivoc.h"
+#include "osd.h"
 
-const char *FX_ErrorString(int32_t ErrorNumber)
+int FX_ErrorCode = FX_Ok;
+int FX_Installed;
+
+const char *FX_ErrorString(int const ErrorNumber)
 {
     const char *ErrorString;
 
@@ -44,23 +48,64 @@ const char *FX_ErrorString(int32_t ErrorNumber)
     return ErrorString;
 }
 
-int32_t FX_Init(int32_t numvoices, int32_t numchannels, unsigned mixrate, void *initdata)
+static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
+{
+    int32_t r = osdcmd_cvar_set(parm);
+
+    if (r != OSDCMD_OK) return r;
+
+    if (!Bstrcasecmp(parm->name, "mus_emidicard"))
+        MIDI_Restart();
+    else if (!Bstrcasecmp(parm->name, "mus_al_stereo"))
+        AL_SetStereo(AL_Stereo);
+
+    return r;
+}
+
+int FX_Init(int numvoices, int numchannels, int mixrate, void *initdata)
 {
     if (FX_Installed)
         FX_Shutdown();
+    else
+    {
+        static int init;
 
-#if defined MIXERTYPEWIN
-    int SoundCard = ASS_DirectSound;
-#elif defined MIXERTYPESDL
-    int SoundCard = ASS_SDL;
+        static osdcvardata_t cvars_audiolib[] = {
+            { "mus_emidicard", "force a specific EMIDI instrument set", (void *)&ASS_EMIDICard, CVAR_INT | CVAR_FUNCPTR, -1, 10 },
+            { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void *)&AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
+            { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void *)&AL_AdditiveMode, CVAR_BOOL, 0, 1 },
+        };
+
+        if (!init++)
+        {
+            for (auto &i : cvars_audiolib)
+                OSD_RegisterCvar(&i, (i.flags & CVAR_FUNCPTR) ? osdcmd_cvar_set_audiolib : osdcmd_cvar_set);
+        }
+    }
+
+    int SoundCard = ASS_AutoDetect;
+
+    if (SoundCard == ASS_AutoDetect)
+    {
+#if defined RENDERTYPESDL
+        SoundCard = ASS_SDL;
+#elif defined RENDERTYPEWIN
+        SoundCard = ASS_DirectSound;
 #else
-#warning No sound driver selected!
-    int SoundCard = ASS_NoSound;
+        SoundCard = ASS_NoSound;
 #endif
+    }
 
-    if (SoundDriver_IsSupported(SoundCard) == 0)
+    if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
+    {
+        FX_SetErrorCode(FX_InvalidCard);
+        return FX_Error;
+    }
+
+    if (SoundDriver_IsPCMSupported(SoundCard) == 0)
     {
         // unsupported cards fall back to no sound
+        MV_Printf("Couldn't init %s, falling back to no sound...\n", SoundDriver_GetName(SoundCard));
         SoundCard = ASS_NoSound;
     }
 
@@ -78,7 +123,7 @@ int32_t FX_Init(int32_t numvoices, int32_t numchannels, unsigned mixrate, void *
     return status;
 }
 
-int32_t FX_Shutdown(void)
+int FX_Shutdown(void)
 {
     if (!FX_Installed)
         return FX_Ok;
@@ -96,6 +141,11 @@ int32_t FX_Shutdown(void)
     return status;
 }
 
+int FX_GetDevice()
+{
+    return ASS_PCMSoundDriver;
+}
+
 static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
 {
     if (length < 12)
@@ -103,7 +153,7 @@ static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
 
     wavefmt_t fmt = FMT_UNKNOWN;
 
-    switch (B_LITTLE32(*(int32_t const *)ptr))
+    switch (B_LITTLE32(*(int const *)ptr))
     {
         case 'C' + ('r' << 8) + ('e' << 16) + ('a' << 24):  // Crea
             fmt = FMT_VOC;
@@ -112,7 +162,7 @@ static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
             fmt = FMT_VORBIS;
             break;
         case 'R' + ('I' << 8) + ('F' << 16) + ('F' << 24):  // RIFF
-            switch (B_LITTLE32(*(int32_t const *)(ptr + 8)))
+            switch (B_LITTLE32(*(int const *)(ptr + 8)))
             {
                 case 'C' + ('D' << 8) + ('X' << 16) + ('A' << 24):  // CDXA
                     fmt = FMT_XA;
@@ -134,11 +184,11 @@ static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
     return fmt;
 }
 
-int32_t FX_Play(char *ptr, uint32_t ptrlength, int32_t loopstart, int32_t loopend, int32_t pitchoffset,
-                          int32_t vol, int32_t left, int32_t right, int32_t priority, float volume, intptr_t callbackval)
+int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
+                          int vol, int left, int right, int priority, float volume, intptr_t callbackval)
 {
-    static int32_t(*const func[])(char *, uint32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, float, intptr_t) =
-    { NULL, NULL, MV_PlayVOC, MV_PlayWAV, MV_PlayVorbis, MV_PlayFLAC, MV_PlayXA, MV_PlayXMP };
+    static constexpr decltype(MV_PlayVOC) *func[] =
+    { nullptr, nullptr, MV_PlayVOC, MV_PlayWAV, MV_PlayVorbis, MV_PlayFLAC, MV_PlayXA, MV_PlayXMP };
 
     EDUKE32_STATIC_ASSERT(FMT_MAX == ARRAY_SIZE(func));
 
@@ -156,11 +206,11 @@ int32_t FX_Play(char *ptr, uint32_t ptrlength, int32_t loopstart, int32_t loopen
     return handle;
 }
 
-int32_t FX_Play3D(char *ptr, uint32_t ptrlength, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance,
-                      int32_t priority, float volume, intptr_t callbackval)
+int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle, int distance,
+                      int priority, float volume, intptr_t callbackval)
 {
-    static int32_t (*const func[])(char *, uint32_t, int32_t, int32_t, int32_t, int32_t, int32_t, float, intptr_t) =
-    { NULL, NULL, MV_PlayVOC3D, MV_PlayWAV3D, MV_PlayVorbis3D, MV_PlayFLAC3D, MV_PlayXA3D, MV_PlayXMP3D };
+    static constexpr decltype(MV_PlayVOC3D) *func[] =
+    { nullptr, nullptr, MV_PlayVOC3D, MV_PlayWAV3D, MV_PlayVorbis3D, MV_PlayFLAC3D, MV_PlayXA3D, MV_PlayXMP3D };
 
     EDUKE32_STATIC_ASSERT(FMT_MAX == ARRAY_SIZE(func));
 
@@ -178,8 +228,8 @@ int32_t FX_Play3D(char *ptr, uint32_t ptrlength, int32_t loophow, int32_t pitcho
     return handle;
 }
 
-int32_t FX_PlayRaw(char *ptr, uint32_t ptrlength, int32_t rate, int32_t pitchoffset, int32_t vol,
-    int32_t left, int32_t right, int32_t priority, float volume, intptr_t callbackval)
+int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol,
+    int left, int right, int priority, float volume, intptr_t callbackval)
 {
     int handle = MV_PlayRAW(ptr, ptrlength, rate, NULL, NULL, pitchoffset, vol, left, right, priority, volume, callbackval);
 
@@ -192,8 +242,8 @@ int32_t FX_PlayRaw(char *ptr, uint32_t ptrlength, int32_t rate, int32_t pitchoff
     return handle;
 }
 
-int32_t FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int32_t rate,
-    int32_t pitchoffset, int32_t vol, int32_t left, int32_t right, int32_t priority, float volume, intptr_t callbackval)
+int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int rate,
+    int pitchoffset, int vol, int left, int right, int priority, float volume, intptr_t callbackval)
 {
     int handle = MV_PlayRAW(ptr, ptrlength, rate, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval);
 
@@ -206,7 +256,7 @@ int32_t FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *l
     return handle;
 }
 
-int32_t FX_SetPrintf(void (*function)(const char *, ...))
+int FX_SetPrintf(void (*function)(const char *, ...))
 {
     MV_SetPrintf(function);
 

@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern "C" {
 #endif
 
-typedef enum
+typedef enum : char
 {
     FMT_UNKNOWN,
     FMT_RAW,
@@ -53,7 +53,7 @@ typedef enum
 
 #define MV_MINVOICEHANDLE 1
 
-extern int32_t MV_ErrorCode;
+extern int MV_ErrorCode;
 
 enum MV_Errors
 {
@@ -67,88 +67,74 @@ enum MV_Errors
     MV_InvalidFile,
 };
 
-extern int lockdepth;
 extern void (*MV_Printf)(const char *fmt, ...);
+extern int MV_Locked;
 
 static inline void MV_Lock(void)
 {
-    if (!lockdepth++)
-        SoundDriver_Lock();
+    if (!MV_Locked++)
+        SoundDriver_PCM_Lock();
 }
 
 static inline void MV_Unlock(void)
 {
-    if (!--lockdepth)
-        SoundDriver_Unlock();
-    else if (lockdepth < 0 && MV_Printf)
+    if (!--MV_Locked)
+        SoundDriver_PCM_Unlock();
+    else if (MV_Locked < 0)
         MV_Printf("MV_Unlock(): lockdepth < 0!\n");
 }
 
-extern void (*MV_Printf)(const char *fmt, ...);
-const char *MV_ErrorString(int32_t ErrorNumber);
-int32_t MV_VoicePlaying(int32_t handle);
-int32_t MV_KillAllVoices(void);
-int32_t MV_Kill(int32_t handle);
-int32_t MV_VoicesPlaying(void);
-int32_t MV_VoiceAvailable(int32_t priority);
-int32_t MV_SetPitch(int32_t handle, int32_t pitchoffset);
-int32_t MV_SetFrequency(int32_t handle, int32_t frequency);
-int32_t MV_PauseVoice(int32_t handle, int32_t pause);
-int32_t MV_EndLooping(int32_t handle);
-int32_t MV_SetPan(int32_t handle, int32_t vol, int32_t left, int32_t right);
-int32_t MV_Pan3D(int32_t handle, int32_t angle, int32_t distance);
-void MV_SetReverb(int32_t reverb);
-int32_t MV_GetMaxReverbDelay(void);
-int32_t MV_GetReverbDelay(void);
-void MV_SetReverbDelay(int32_t delay);
-// int32_t   MV_SetMixMode( int32_t numchannels, int32_t samplebits );
-// int32_t   MV_StartPlayback( void );
-// void  MV_StopPlayback( void );
-int32_t MV_PlayWAV3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority,
-                     float volume, intptr_t callbackval);
-int32_t MV_PlayWAV(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                   int32_t priority, float volume, intptr_t callbackval);
-int32_t MV_PlayVOC3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority,
-                     float volume, intptr_t callbackval);
-int32_t MV_PlayVOC(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                   int32_t priority, float volume, intptr_t callbackval);
-int32_t MV_PlayVorbis3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority,
-                        float volume, intptr_t callbackval);
-int32_t MV_PlayVorbis(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                      int32_t priority, float volume, intptr_t callbackval);
-int32_t MV_PlayFLAC3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority,
-                      float volume, intptr_t callbackval);
-int32_t MV_PlayFLAC(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                    int32_t priority, float volume, intptr_t callbackval);
-int32_t MV_PlayXA3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority, float volume,
-                    intptr_t callbackval);
-int32_t MV_PlayXA(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                  int32_t priority, float volume, intptr_t callbackval);
-int32_t MV_PlayXMP3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority,
-                     float volume, intptr_t callbackval);
-int32_t MV_PlayXMP(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                   int32_t priority, float volume, intptr_t callbackval);
-int32_t MV_PlayRAW(char *ptr, uint32_t length, int32_t rate, char *loopstart, char *loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                   int32_t priority, float volume, intptr_t callbackval);
+const char *MV_ErrorString(int ErrorNumber);
 
-int MV_IdentifyXMP(char const *ptr, uint32_t length);
+int  MV_VoicePlaying(int handle);
+int  MV_KillAllVoices(void);
+int  MV_Kill(int handle);
+int  MV_VoicesPlaying(void);
+int  MV_VoiceAvailable(int priority);
+int  MV_SetPitch(int handle, int pitchoffset);
+int  MV_SetFrequency(int handle, int frequency);
+int  MV_PauseVoice(int handle, int pause);
+int  MV_EndLooping(int handle);
+int  MV_SetPan(int handle, int vol, int left, int right);
+int  MV_Pan3D(int handle, int angle, int distance);
+void MV_SetReverb(int reverb);
+int  MV_GetMaxReverbDelay(void);
+int  MV_GetReverbDelay(void);
+void MV_SetReverbDelay(int delay);
 
-int32_t MV_GetPosition(int32_t handle, int32_t *position);
-int32_t MV_SetPosition(int32_t handle, int32_t position);
+int MV_PlayVOC3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance,
+                 int priority, float volume, intptr_t callbackval);
+int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
+               int left, int right, int priority, float volume, intptr_t callbackval);
 
-// void  MV_CreateVolumeTable( int32_t index, int32_t volume, int32_t MaxVolume );
-void MV_SetVolume(int32_t volume);
-int32_t MV_GetVolume(void);
+decltype(MV_PlayVOC3D) MV_PlayWAV3D;
+decltype(MV_PlayVOC)   MV_PlayWAV;
+decltype(MV_PlayVOC3D) MV_PlayVorbis3D;
+decltype(MV_PlayVOC)   MV_PlayVorbis;
+decltype(MV_PlayVOC3D) MV_PlayFLAC3D;
+decltype(MV_PlayVOC)   MV_PlayFLAC;
+decltype(MV_PlayVOC3D) MV_PlayXA3D;
+decltype(MV_PlayVOC)   MV_PlayXA;
+decltype(MV_PlayVOC3D) MV_PlayXMP3D;
+decltype(MV_PlayVOC)   MV_PlayXMP;
+
+int MV_PlayRAW(char *ptr, uint32_t length, int rate, char *loopstart, char *loopend, int pitchoffset, int vol,
+               int left, int right, int priority, float volume, intptr_t callbackval);
+
+int  MV_IdentifyXMP(char const *ptr, uint32_t length);
+int  MV_GetPosition(int handle, int *position);
+int  MV_SetPosition(int handle, int position);
+void MV_SetVolume(int volume);
+int  MV_GetVolume(void);
 void MV_SetCallBack(void (*function)(intptr_t));
-void MV_SetReverseStereo(int32_t setting);
-int32_t MV_GetReverseStereo(void);
-int32_t MV_Init(int32_t soundcard, int32_t MixRate, int32_t Voices, int32_t numchannels,
-                void *initdata);
-int32_t MV_Shutdown(void);
-void MV_SetPrintf(void (*function)(const char *fmt, ...));
-
-void MV_HookMusicRoutine(void (*callback)(char *buffer, int length));
+void MV_SetReverseStereo(int setting);
+int  MV_GetReverseStereo(void);
+int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata);
+int  MV_Shutdown(void);
+void MV_HookMusicRoutine(void (*callback)(void));
 void MV_UnhookMusicRoutine(void);
+
+static inline void MV_SetPrintf(void (*function)(const char *, ...)) { if (function) MV_Printf = function; }
 
 #ifdef __cplusplus
 }

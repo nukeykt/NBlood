@@ -31,12 +31,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //      siliconpr0n.org(John McMaster, digshadow):
 //          YMF262 and VRC VII decaps and die shots.
 //
-// version: 1.8
+// version: 1.8, with stereo extension
 //
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "opl3.h"
 
 #define RSM_FRAC    10
@@ -181,6 +183,9 @@ static const Bit8s ad_slot[0x20] = {
 static const Bit8u ch_slot[18] = {
     0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20, 24, 25, 26, 30, 31, 32
 };
+
+static Bit32s panpot_lut[256];
+static Bit8u panpot_lut_build = 0;
 
 //
 // Envelope generator
@@ -964,6 +969,20 @@ static void OPL3_ChannelWriteC0(opl3_channel *channel, Bit8u data)
     {
         channel->cha = channel->chb = (Bit16u)~0;
     }
+    if (!channel->chip->stereoext)
+    {
+        channel->leftpan = channel->cha << 16;
+        channel->rightpan = channel->chb << 16;
+    }
+}
+
+static void OPL3_ChannelWriteD0(opl3_channel* channel, Bit8u data)
+{
+    if (channel->chip->stereoext)
+    {
+        channel->leftpan = panpot_lut[data ^ 0xff];
+        channel->rightpan = panpot_lut[data];
+    }
 }
 
 static void OPL3_ChannelKeyOn(opl3_channel *channel)
@@ -1060,7 +1079,7 @@ void OPL3_Generate(opl3_chip *chip, Bit16s *buf)
 
     buf[1] = OPL3_ClipSample(chip->mixbuff[1]);
 
-    for (ii = 0; ii < 15; ii++)
+    for (ii = 0; ii < 36; ii++)
     {
         OPL3_SlotCalcFB(&chip->slot[ii]);
         OPL3_EnvelopeCalc(&chip->slot[ii]);
@@ -1076,26 +1095,10 @@ void OPL3_Generate(opl3_chip *chip, Bit16s *buf)
         {
             accm += *chip->channel[ii].out[jj];
         }
-        chip->mixbuff[0] += (Bit16s)(accm & chip->channel[ii].cha);
-    }
-
-    for (ii = 15; ii < 18; ii++)
-    {
-        OPL3_SlotCalcFB(&chip->slot[ii]);
-        OPL3_EnvelopeCalc(&chip->slot[ii]);
-        OPL3_PhaseGenerate(&chip->slot[ii]);
-        OPL3_SlotGenerate(&chip->slot[ii]);
+        chip->mixbuff[0] += (Bit16s)((accm * chip->channel[ii].leftpan) >> 16);
     }
 
     buf[0] = OPL3_ClipSample(chip->mixbuff[0]);
-
-    for (ii = 18; ii < 33; ii++)
-    {
-        OPL3_SlotCalcFB(&chip->slot[ii]);
-        OPL3_EnvelopeCalc(&chip->slot[ii]);
-        OPL3_PhaseGenerate(&chip->slot[ii]);
-        OPL3_SlotGenerate(&chip->slot[ii]);
-    }
 
     chip->mixbuff[1] = 0;
     for (ii = 0; ii < 18; ii++)
@@ -1105,15 +1108,7 @@ void OPL3_Generate(opl3_chip *chip, Bit16s *buf)
         {
             accm += *chip->channel[ii].out[jj];
         }
-        chip->mixbuff[1] += (Bit16s)(accm & chip->channel[ii].chb);
-    }
-
-    for (ii = 33; ii < 36; ii++)
-    {
-        OPL3_SlotCalcFB(&chip->slot[ii]);
-        OPL3_EnvelopeCalc(&chip->slot[ii]);
-        OPL3_PhaseGenerate(&chip->slot[ii]);
-        OPL3_SlotGenerate(&chip->slot[ii]);
+        chip->mixbuff[1] += (Bit16s)((accm * chip->channel[ii].rightpan) >> 16);
     }
 
     if ((chip->timer & 0x3f) == 0x3f)
@@ -1237,6 +1232,8 @@ void OPL3_Reset(opl3_chip *chip, Bit32u samplerate)
         chip->channel[channum].chtype = ch_2op;
         chip->channel[channum].cha = 0xffff;
         chip->channel[channum].chb = 0xffff;
+        chip->channel[channum].leftpan = 0x10000;
+        chip->channel[channum].rightpan = 0x10000;
         chip->channel[channum].ch_num = channum;
         OPL3_ChannelSetupAlg(&chip->channel[channum]);
     }
@@ -1244,6 +1241,15 @@ void OPL3_Reset(opl3_chip *chip, Bit32u samplerate)
     chip->rateratio = (samplerate << RSM_FRAC) / 49716;
     chip->tremoloshift = 4;
     chip->vibshift = 1;
+
+    if (!panpot_lut_build)
+    {
+        for (int i = 0; i < 256; i++)
+        {
+            panpot_lut[i] = (Bit32u)(sin(i * M_PI / 512.0) * 0x10000);
+        }
+        panpot_lut_build = 1;
+    }
 }
 
 void OPL3_WriteReg(opl3_chip *chip, Bit16u reg, Bit8u v)
@@ -1262,6 +1268,7 @@ void OPL3_WriteReg(opl3_chip *chip, Bit16u reg, Bit8u v)
                 break;
             case 0x05:
                 chip->newm = v & 0x01;
+                chip->stereoext = (v >> 1) & 0x01;
                 break;
             }
         }
@@ -1340,6 +1347,12 @@ void OPL3_WriteReg(opl3_chip *chip, Bit16u reg, Bit8u v)
         if ((regm & 0x0f) < 9)
         {
             OPL3_ChannelWriteC0(&chip->channel[9 * high + (regm & 0x0f)], v);
+        }
+        break;
+    case 0xd0:
+        if ((regm & 0x0f) < 9)
+        {
+            OPL3_ChannelWriteD0(&chip->channel[9 * high + (regm & 0x0f)], v);
         }
         break;
     }

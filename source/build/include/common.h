@@ -8,6 +8,7 @@
 #define EDUKE32_COMMON_H_
 
 #include "cache1d.h"
+#include "vfs.h"
 #include "compat.h"
 #include "pragmas.h"  // klabs
 #include "scriptfile.h"
@@ -33,7 +34,7 @@ tokenlist;
 
 typedef struct
 {
-    CACHE1D_FIND_REC *finddirs, *findfiles;
+    BUILDVFS_FIND_REC *finddirs, *findfiles;
     int32_t numdirs, numfiles;
 }
 fnlist_t;
@@ -146,8 +147,6 @@ void COMMON_clearbackground(int32_t numcols, int32_t numrows);
 #define EDUKE32_TMRDEF int32_t t[20], ti=0; const char *tmrstr=__func__; fprintf(stderr,"%s\n",tmrstr); t[ti++]=timerGetTicks();
 #define EDUKE32_TMRTIC t[ti++]=timerGetTicks()
 #define EDUKE32_TMRPRN do { int ii=0; fprintf(stderr,"%s: ",tmrstr); for (ii=1; ii<ti; ii++) fprintf(stderr,"%d ", t[ii]-t[ii-1]); fprintf(stderr,"\n"); } while (0)
-
-void Duke_CommonCleanup(void);
 
 #ifdef __cplusplus
 }

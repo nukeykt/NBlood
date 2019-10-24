@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "renderlayer.h"
 
-int32_t G_GetVersionFromWebsite(char *buffer)
+int32_t windowsCheckForUpdates(char *buffer)
 {
     static int32_t wsainitialized = 0;
     int32_t i=0, j=0, r=0;

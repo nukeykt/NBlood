@@ -3030,7 +3030,7 @@ void viewDrawScreen(void)
     polymostcenterhoriz = defaultHoriz;
 #endif
 
-    timerUpdate();
+    timerUpdateClock();
     ClockTicks delta = totalclock - lastUpdate;
     if (delta < 0)
         delta = 0;

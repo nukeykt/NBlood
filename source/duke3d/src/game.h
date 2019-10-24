@@ -256,6 +256,7 @@ typedef struct {
         // Sound variables
         //
         int32_t FXVolume;
+        int32_t MusicDevice;
         int32_t MusicVolume;
         int32_t SoundToggle;
         int32_t MusicToggle;
@@ -443,10 +444,10 @@ extern int G_StartRTS(int lumpNum, int localPlayer);
 
 extern void G_MaybeAllocPlayer(int32_t pnum);
 
-static inline void G_HandleAsync(void)
+static inline int32_t gameHandleEvents(void)
 {
-    handleevents();
     Net_GetPackets();
+    return handleevents();
 }
 
 static inline int32_t calc_smoothratio_demo(ClockTicks totalclk, ClockTicks ototalclk)

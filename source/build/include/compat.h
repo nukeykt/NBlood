@@ -288,6 +288,10 @@
 # define EDUKE32_BSD
 #endif
 
+#if defined(__i386) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64)
+# define EDUKE32_PLATFORM_INTEL
+#endif
+
 #ifdef __APPLE__
 # include <TargetConditionals.h>
 # if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
@@ -662,6 +666,13 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 # define Bexit exit
 #endif
 
+#ifdef _WIN32
+#define fatal_exit__(x) FatalAppExitA(0, x)
+#else
+#define fatal_exit__(x) do { wm_msgbox("Fatal Error", "%s", x); exit(EXIT_FAILURE); } while(0)
+#endif
+
+#define fatal_exit(status) do { initprintf("fatal_exit(%s) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); fatal_exit__(status); } while (0)
 
 ////////// Standard library monkey patching //////////
 
@@ -1281,7 +1292,7 @@ char *Bstrupr(char *);
 ////////// Miscellaneous //////////
 
 int Bgetpagesize(void);
-uint32_t Bgetsysmemsize(void);
+size_t Bgetsysmemsize(void);
 
 ////////// PANICKING ALLOCATION WRAPPERS //////////
 
@@ -1347,6 +1358,7 @@ static FORCE_INLINE void *xaligned_alloc(const bsize_t alignment, const bsize_t 
 #define Xaligned_alloc(alignment, size) (EDUKE32_PRE_XALLOC xaligned_alloc(alignment, size))
 #define Xfree(ptr) (EDUKE32_PRE_XALLOC xfree(ptr))
 #define Xaligned_free(ptr) (EDUKE32_PRE_XALLOC xaligned_free(ptr))
+
 #ifdef __cplusplus
 }
 #endif
@@ -1375,6 +1387,23 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #include "fix16.h"
 #include "libdivide.h"
 #include "clockticks.hpp"
+#include "debugbreak.h"
+
+#define ZPL_NO_WINDOWS_H
+#ifndef ZPL_DEF
+#define ZPL_DEF extern
+
+#ifndef zpl_inline
+#define zpl_inline
+#endif
+
+#endif
+#include "zpl.h"
+
+// stupid macro in ZPL..
+#ifdef cast
+# undef cast
+#endif
 
 /* End dependence on compat.o object. */
 

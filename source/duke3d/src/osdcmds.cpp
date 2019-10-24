@@ -20,12 +20,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#include "osdcmds.h"
+
 #include "cheats.h"
 #include "cmdline.h"
 #include "demo.h"  // g_firstDemoFile[]
 #include "duke3d.h"
 #include "menus.h"
-#include "osdcmds.h"
 #include "osdfuncs.h"
 #include "savegame.h"
 #include "sbar.h"
@@ -171,7 +172,7 @@ static int osdcmd_map(osdcmdptr_t parm)
 
     if (parm->numparms != 1 || wildcardp)
     {
-        CACHE1D_FIND_REC *r;
+        BUILDVFS_FIND_REC *r;
         fnlist_t fnlist = FNLIST_INITIALIZER;
         int32_t maxwidth = 0;
 
@@ -381,8 +382,8 @@ static int osdcmd_restartsound(osdcmdptr_t UNUSED(parm))
     S_SoundShutdown();
     S_MusicShutdown();
 
-    S_MusicStartup();
     S_SoundStartup();
+    S_MusicStartup();
 
     FX_StopAllSounds();
     S_ClearSoundLocks();
@@ -1273,13 +1274,13 @@ static int osdcmd_listplayers(osdcmdptr_t parm)
             continue;
 
         enet_address_get_host_ip(&currentPeer->address, ipaddr, sizeof(ipaddr));
-        initprintf("%x %s %s\n", currentPeer->address.host, ipaddr,
-                   g_player[(intptr_t)currentPeer->data].user_name);
+        initprintf("%s %s\n", ipaddr, g_player[(intptr_t)currentPeer->data].user_name);
     }
 
     return OSDCMD_OK;
 }
 
+#if 0
 static int osdcmd_kick(osdcmdptr_t parm)
 {
     ENetPeer *currentPeer;
@@ -1361,6 +1362,7 @@ static int osdcmd_kickban(osdcmdptr_t parm)
 
     return OSDCMD_OK;
 }
+#endif
 #endif
 
 static int osdcmd_purgesaves(osdcmdptr_t UNUSED(parm))
@@ -1665,6 +1667,7 @@ int32_t registerosdcommands(void)
         { "in_mousesmoothing", "enable/disable mouse input smoothing", (void *)&ud.config.SmoothInput, CVAR_BOOL, 0, 1 },
 
         { "mus_enabled", "enables/disables music", (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
+        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, ASS_NumSoundCards },
         { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },
 
         { "osdhightile", "enable/disable hires art replacements for console text", (void *)&osdhightile, CVAR_BOOL, 0, 1 },
@@ -1696,7 +1699,7 @@ int32_t registerosdcommands(void)
         { "snd_numvoices", "the number of concurrent sounds", (void *)&ud.config.NumVoices, CVAR_INT, 1, 128 },
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ud.config.ReverseStereo, CVAR_BOOL, 0, 1 },
         { "snd_speech", "enables/disables player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
-
+        { "snd_tryformats", "enables/disables automatic discovery of replacement sounds and music in .flac and .ogg formats", (void *)&g_maybeUpgradeSoundFormats, CVAR_BOOL, 0, 1 },
         { "team","change team in multiplayer", (void *)&ud.team, CVAR_INT|CVAR_MULTI, 0, 3 },
 
 #ifdef EDUKE32_TOUCH_DEVICES
@@ -1733,8 +1736,10 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("connect","connect: connects to a multiplayer game", osdcmd_connect);
     OSD_RegisterFunction("disconnect","disconnect: disconnects from the local multiplayer game", osdcmd_disconnect);
     OSD_RegisterFunction("dumpmapstates", "Dumps current snapshots to CL/Srv_MapStates.bin", osdcmd_dumpmapstate);
+#if 0
     OSD_RegisterFunction("kick","kick <id>: kicks a multiplayer client.  See listplayers.", osdcmd_kick);
     OSD_RegisterFunction("kickban","kickban <id>: kicks a multiplayer client and prevents them from reconnecting.  See listplayers.", osdcmd_kickban);
+#endif
     OSD_RegisterFunction("listplayers","listplayers: lists currently connected multiplayer clients", osdcmd_listplayers);
     OSD_RegisterFunction("name","name: change your multiplayer nickname", osdcmd_name);
     OSD_RegisterFunction("password","password: sets multiplayer game password", osdcmd_password);

@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "osd.h"
 #include "compat.h"
 #include "mmulti.h"
+#include "sndcards.h"
 #include "common_game.h"
 #include "config.h"
 #include "blood.h"
@@ -108,7 +109,7 @@ static int osdcmd_map(osdcmdptr_t parm)
 
     if (parm->numparms != 1 || wildcardp)
     {
-        CACHE1D_FIND_REC *r;
+        BUILDVFS_FIND_REC *r;
         fnlist_t fnlist = FNLIST_INITIALIZER;
         int32_t maxwidth = 0;
 
@@ -1006,7 +1007,7 @@ int32_t registerosdcommands(void)
         { "mus_enabled", "enables/disables music", (void *)&MusicToggle, CVAR_BOOL, 0, 1 },
         { "mus_restartonload", "restart the music when loading a saved game with the same map or not", (void *)&MusicRestartsOnLoadToggle, CVAR_BOOL, 0, 1 },
         { "mus_volume", "controls music volume", (void *)&MusicVolume, CVAR_INT, 0, 255 },
-        { "mus_device", "music device", (void *)&MusicDevice, CVAR_INT, 0, 1 },
+        { "mus_device", "music device", (void *)&MusicDevice, CVAR_INT, 0, ASS_NumSoundCards },
         { "mus_redbook", "enables/disables redbook audio", (void *)&CDAudioToggle, CVAR_BOOL, 0, 1 },
 //
 //        { "osdhightile", "enable/disable hires art replacements for console text", (void *)&osdhightile, CVAR_BOOL, 0, 1 },

@@ -123,6 +123,8 @@ enum rendmode_t {
 #define PR_LIGHT_PRIO_LOW       4
 #define PR_LIGHT_PRIO_LOW_GAME  5
 
+#define CLOCKTICKSPERSECOND 120
+
 // Convenient sprite iterators, must not be used if any sprites inside the loop
 // are potentially deleted or their sector changed...
 #define SPRITES_OF(Statnum, Iter)  Iter=headspritestat[Statnum]; Iter>=0; Iter=nextspritestat[Iter]
@@ -891,6 +893,7 @@ EXTERN char editorcolors[256];
 
 EXTERN char faketile[(MAXTILES+7)>>3];
 EXTERN char *faketiledata[MAXTILES];
+EXTERN int faketilesize[MAXTILES];
 
 EXTERN char spritecol2d[MAXTILES][2];
 EXTERN uint8_t tilecols[MAXTILES];
@@ -1458,6 +1461,10 @@ extern GrowArray<char *> g_defModules;
 extern GrowArray<char *> g_clipMapFiles;
 #endif
 
+EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
+EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
+EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
+
 #ifdef USE_OPENGL
 // TODO: dynamically allocate this
 
@@ -1477,9 +1484,6 @@ typedef struct
 
 # define EXTRATILES (MAXTILES/8)
 
-EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
-EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
-EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
 EXTERN int32_t mdinited;
 EXTERN tile2model_t tile2model[MAXTILES+EXTRATILES];
 

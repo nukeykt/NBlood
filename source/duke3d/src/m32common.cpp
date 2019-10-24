@@ -366,6 +366,7 @@ static void create_compressed_block(int32_t idx, const void *srcdata, uint32_t s
     // allocate
     int const compressed_size = LZ4_compressBound(size);
     mapstate->sws[idx] = (char *)Xmalloc(4 + compressed_size);
+    mapstate->size[idx] = size;
 
     // compress & realloc
     j = LZ4_compress_default((const char*)srcdata, mapstate->sws[idx]+4, size, compressed_size);
@@ -547,13 +548,13 @@ int32_t map_undoredo(int32_t dir)
     if (mapstate->num[0])
     {
         // restore sector[]
-        LZ4_decompress_fast(mapstate->sws[0]+4, (char*)sector, numsectors*sizeof(sectortype));
+        LZ4_decompress_safe(mapstate->sws[0]+4, (char*)sector, mapstate->size[0], MAXSECTORS*sizeof(sectortype));
 
         if (mapstate->num[1])  // restore wall[]
-            LZ4_decompress_fast(mapstate->sws[1]+4, (char*)wall, numwalls*sizeof(walltype));
+            LZ4_decompress_safe(mapstate->sws[1]+4, (char*)wall, mapstate->size[1], MAXWALLS*sizeof(walltype));
 
         if (mapstate->num[2])  // restore sprite[]
-            LZ4_decompress_fast(mapstate->sws[2]+4, (char*)sprite, (mapstate->num[2])*sizeof(spritetype));
+            LZ4_decompress_safe(mapstate->sws[2]+4, (char*)sprite, mapstate->size[2], MAXSPRITES*sizeof(spritetype));
     }
 
     // insert sprites

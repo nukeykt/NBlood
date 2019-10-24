@@ -1002,30 +1002,9 @@ static char MenuJoystickAxes[MAXJOYAXES][MAXJOYBUTTONSTRINGLENGTH];
 
 static MenuEntry_t *MEL_JOYSTICKAXES[MAXJOYAXES];
 
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_UP = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[1][0] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_UP = MAKE_MENUENTRY( "Digital Up", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_UP, Option );
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_DOWN = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[1][1] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_DOWN = MAKE_MENUENTRY( "Digital Down", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_DOWN, Option );
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_LEFT = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[0][0] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_LEFT = MAKE_MENUENTRY( "Digital Left", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_LEFT, Option );
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_RIGHT = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[0][1] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_RIGHT = MAKE_MENUENTRY( "Digital Right", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_RIGHT, Option );
-
 static MenuEntry_t *MEL_MOUSEADVANCED[] = {
     &ME_MOUSEADVANCED_SCALEX,
     &ME_MOUSEADVANCED_SCALEY,
-    &ME_Space8_Redfont,
-    &ME_MOUSEADVANCED_DAXES_UP,
-    &ME_MOUSEADVANCED_DAXES_DOWN,
-    &ME_MOUSEADVANCED_DAXES_LEFT,
-    &ME_MOUSEADVANCED_DAXES_RIGHT,
-};
-
-static MenuEntry_t *MEL_INTERNAL_MOUSEADVANCED_DAXES[] = {
-    &ME_MOUSEADVANCED_DAXES_UP,
-    &ME_MOUSEADVANCED_DAXES_DOWN,
-    &ME_MOUSEADVANCED_DAXES_LEFT,
-    &ME_MOUSEADVANCED_DAXES_RIGHT,
 };
 
 static const char *MenuJoystickHatDirections[] = { "Up", "Right", "Down", "Left", };
@@ -1215,7 +1194,7 @@ static MenuEntry_t ME_SAVE_NEW = MAKE_MENUENTRY( s_NewSaveGame, &MF_Minifont, &M
 static MenuEntry_t *ME_SAVE;
 static MenuEntry_t **MEL_SAVE;
 
-static int32_t soundrate, soundvoices;
+static int32_t soundrate, soundvoices, musicdevice;
 static MenuOption_t MEO_SOUND = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.SoundToggle );
 static MenuEntry_t ME_SOUND = MAKE_MENUENTRY( "Sound:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND, Option );
 
@@ -1245,9 +1224,26 @@ static MenuOption_t MEO_SOUND_SAMPLINGRATE = MAKE_MENUOPTION( &MF_Redfont, &MEOS
 static MenuEntry_t ME_SOUND_SAMPLINGRATE = MAKE_MENUENTRY( "Sample rate:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_SAMPLINGRATE, Option );
 
 #ifndef EDUKE32_SIMPLE_MENU
-static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 256, 0, 16, 1 );
+static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 128, 0, 8, 1 );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
 #endif
+
+static char const *MEOSN_SOUND_MIDIDRIVER[] = {
+    "OPL3",
+#ifdef _WIN32
+    "Windows",
+#endif
+};
+static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
+    ASS_OPL3,
+#ifdef _WIN32
+    ASS_WinMM,
+#endif
+};
+
+static MenuOptionSet_t MEOS_SOUND_MIDIDRIVER = MAKE_MENUOPTIONSET( MEOSN_SOUND_MIDIDRIVER, MEOSV_SOUND_MIDIDRIVER, 0x2 );
+static MenuOption_t MEO_SOUND_MIDIDRIVER = MAKE_MENUOPTION( &MF_Redfont, &MEOS_SOUND_MIDIDRIVER, &musicdevice );
+static MenuEntry_t ME_SOUND_MIDIDRIVER = MAKE_MENUENTRY( "MIDI driver:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_MIDIDRIVER, Option );
 
 static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
 
@@ -1274,6 +1270,7 @@ static MenuEntry_t *MEL_ADVSOUND[] = {
     &ME_SOUND_NUMVOICES,
     &ME_Space2_Redfont,
 #endif
+    &ME_SOUND_MIDIDRIVER,
     &ME_SOUND_RESTART,
 };
 
@@ -2214,7 +2211,8 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
 #endif
         MenuEntry_DisableOnCondition(&ME_SOUND_RESTART, soundrate == ud.config.MixRate &&
-                                                        soundvoices == ud.config.NumVoices);
+                                                        soundvoices == ud.config.NumVoices &&
+                                                        musicdevice == ud.config.MusicDevice);
         break;
 
     case MENU_SAVESETUP:
@@ -2453,16 +2451,6 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             if (ud.m_ffire) mminitext(origin.x + ((90+60)<<16), origin.y + ((90+8+8+8+8)<<16), "On", MF_Minifont.pal_deselected_right);
             else mminitext(origin.x + ((90+60)<<16), origin.y + ((90+8+8+8+8)<<16), "Off", MF_Minifont.pal_deselected_right);
         }
-        break;
-
-    case MENU_MOUSEADVANCED:
-        for (auto & i : MEL_INTERNAL_MOUSEADVANCED_DAXES)
-            if (entry == i)
-            {
-                mgametextcenter(origin.x, origin.y + (162<<16), "Digital axes are not for mouse look\n"
-                                                                "or for aiming up and down");
-                break;
-            }
         break;
 
     case MENU_VIDEOSETUP:
@@ -3356,12 +3344,13 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     {
         ud.config.MixRate = soundrate;
         ud.config.NumVoices = soundvoices;
+        ud.config.MusicDevice = musicdevice;
 
         S_SoundShutdown();
         S_MusicShutdown();
 
-        S_MusicStartup();
         S_SoundStartup();
+        S_MusicStartup();
 
         FX_StopAllSounds();
         S_ClearSoundLocks();
@@ -3520,13 +3509,6 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     case MENU_MOUSEBTNS:
         CONTROL_MapButton(newOption, MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0], MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][1], controldevice_mouse);
         CONTROL_FreeMouseBind(MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0]);
-        break;
-    case MENU_MOUSEADVANCED:
-    {
-        for (int i = 0; i < ARRAY_SSIZE(MEL_INTERNAL_MOUSEADVANCED_DAXES); i++)
-            if (entry == MEL_INTERNAL_MOUSEADVANCED_DAXES[i])
-                CONTROL_MapDigitalAxis(i>>1, newOption, i&1, controldevice_mouse);
-    }
         break;
     case MENU_JOYSTICKBTNS:
         CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry>>1, M_JOYSTICKBTNS.currentEntry&1, controldevice_joystick);
@@ -4057,7 +4039,7 @@ static void Menu_TextFormSubmit(char *input)
     }
 }
 
-void klistbookends(CACHE1D_FIND_REC *start)
+void klistbookends(BUILDVFS_FIND_REC *start)
 {
     auto end = start;
 
@@ -4408,11 +4390,13 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         newrendermode = videoGetRenderMode();
         newfullscreen = fullscreen;
         newvsync = vsync;
+        newborderless = r_borderless;
         break;
 
     case MENU_ADVSOUND:
         soundrate = ud.config.MixRate;
         soundvoices = ud.config.NumVoices;
+        musicdevice = ud.config.MusicDevice;
         break;
 
     default:
@@ -4697,7 +4681,7 @@ void Menu_Close(uint8_t playerID)
                 actor[g_curViewscreen].t_data[0] = (int32_t) totalclock;
         }
 
-        walock[TILE_SAVESHOT] = 1;
+        walock[TILE_SAVESHOT] = CACHE1D_FREE;
         G_UpdateScreenArea();
         S_PauseSounds(false);
     }
@@ -5901,7 +5885,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
             {
                 if (object->findhigh[i])
                 {
-                    CACHE1D_FIND_REC *dir;
+                    BUILDVFS_FIND_REC *dir;
                     int32_t y = 0;
                     const int32_t y_upper = object->format[i]->pos.y;
                     const int32_t y_lower = klabs(object->format[i]->bottomcutoff);
@@ -5933,7 +5917,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
                         if (dir == object->findhigh[i] && object->currentList == i)
                             status |= MT_Selected;
 
-                        // pal = dir->source==CACHE1D_SOURCE_ZIP ? 8 : 2
+                        // pal = dir->source==BUILDVFS_SOURCE_ZIP ? 8 : 2
 
                         Menu_Run_AbbreviateNameIntoBuffer(dir->name, USERMAPENTRYLENGTH);
 
@@ -6666,7 +6650,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 int32_t i;
 
-                CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList];
+                BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgUp);
 
@@ -6689,7 +6673,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 int32_t i;
 
-                CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList];
+                BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgDn);
 
@@ -6743,7 +6727,7 @@ static void Menu_RunInput(Menu_t *cm)
                 ch = KB_GetCh();
                 if (ch > 0 && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')))
                 {
-                    CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList]->usera;
+                    BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList]->usera;
                     if (ch >= 'a')
                         ch -= ('a'-'A');
                     while (seeker)
@@ -7165,7 +7149,7 @@ void M_DisplayMenus(void)
 
     if ((g_player[myconnectindex].ps->gm&MODE_MENU) == 0)
     {
-        walock[TILE_LOADSHOT] = 1;
+        walock[TILE_LOADSHOT] = CACHE1D_FREE;
         return;
     }
 

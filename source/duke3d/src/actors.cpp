@@ -2454,7 +2454,8 @@ DETONATE:
                             sprite[spriteNum].yvel = 0;  // VIEWSCREEN_YVEL
                             T1(spriteNum)          = 0;
 
-                            for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++) walock[TILE_VIEWSCR - ii] = 199;
+                            for (bssize_t ii = 0; ii < VIEWSCREENFACTOR; ii++)
+                                walock[TILE_VIEWSCR - ii] = CACHE1D_UNLOCKED;
                         }
                     }
 
@@ -6125,9 +6126,9 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                             g_playerSpawnPoints[playerNum].pos.y += x;
                         }
 
-                        if (pSprite->sectnum == sprite[pPlayer->i].sectnum
+                        if (pSprite->sectnum == pPlayer->cursectnum
 #ifdef YAX_ENABLE
-                                || (pData[9]>=0 && pData[9] == sprite[pPlayer->i].sectnum)
+                                || (pData[9]>=0 && pData[9] == pPlayer->cursectnum)
 #endif
                             )
                         {
@@ -6282,16 +6283,13 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 {
                     auto const pPlayer = g_player[playerNum].ps;
 
-                    if (sprite[pPlayer->i].sectnum == pSprite->sectnum)
+                    if (pPlayer->cursectnum == pSprite->sectnum)
                     {
                         pPlayer->pos.x += l;
                         pPlayer->pos.y += x;
 
                         if (g_netServer || numplayers > 1)
-                        {
-                            pPlayer->opos.x = pPlayer->pos.x;
-                            pPlayer->opos.y = pPlayer->pos.y;
-                        }
+                            pPlayer->opos.vec2 = pPlayer->pos.vec2;
 
                         pPlayer->bobpos.x += l;
                         pPlayer->bobpos.y += x;
@@ -6657,7 +6655,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 if ((pSector->lotag&0xff) != ST_27_STRETCH_BRIDGE)
                     for (bssize_t TRAVERSE_CONNECT(playerNum))
                         if (pSector->lotag != ST_30_ROTATE_RISE_BRIDGE && pSector->lotag != ST_31_TWO_WAY_TRAIN && pSector->lotag != 0
-                            && pSprite->sectnum == sprite[g_player[playerNum].ps->i].sectnum)
+                            && pSprite->sectnum == pPlayer->cursectnum)
                             j = 0;
 
                 if (j == 1)
@@ -7533,7 +7531,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             {
                 auto const pPlayer = g_player[p].ps;
 
-                if (pSprite->sectnum == sprite[pPlayer->i].sectnum && pPlayer->on_ground)
+                if (pSprite->sectnum == pPlayer->cursectnum && pPlayer->on_ground)
                 {
                     pPlayer->pos.x += l;
                     pPlayer->pos.y += x;
@@ -7546,16 +7544,10 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     pPlayer->bobpos.y += x;
 
                     if (g_netServer || numplayers > 1)
-                    {
-                        pPlayer->opos.x = pPlayer->pos.x;
-                        pPlayer->opos.y = pPlayer->pos.y;
-                    }
+                        pPlayer->opos.vec2 = pPlayer->pos.vec2;
 
                     if (sprite[pPlayer->i].extra <= 0)
-                    {
-                        sprite[pPlayer->i].x = pPlayer->pos.x;
-                        sprite[pPlayer->i].y = pPlayer->pos.y;
-                    }
+                        sprite[pPlayer->i].pos.vec2 = pPlayer->pos.vec2;
                 }
             }
 

@@ -8159,7 +8159,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
             if (!Bstrcasecmp(c+1,"?") || !Bstrcasecmp(c+1,"help") || !Bstrcasecmp(c+1,"-help"))
             {
                 G_ShowParameterHelp();
-                Bexit(0);
+                Bexit(EXIT_SUCCESS);
             }
 
             if (!Bstrcasecmp(c+1,"addon"))
@@ -8528,7 +8528,7 @@ static int osdcmd_quit(osdcmdptr_t UNUSED(parm))
 
     Bfflush(NULL);
 
-    Bexit(0);
+    Bexit(EXIT_SUCCESS);
 }
 
 static int osdcmd_editorgridextent(osdcmdptr_t parm)
@@ -9270,6 +9270,7 @@ enum
     T_INCLUDE = 0,
     T_DEFINE = 1,
     T_LOADGRP,
+    T_CACHESIZE,
     T_TILEGROUP,
     T_TILE,
     T_TILERANGE,
@@ -9329,6 +9330,7 @@ static int32_t parsegroupfiles(scriptfile *script)
         { "includedefault",  T_INCLUDEDEFAULT },
         { "#includedefault", T_INCLUDEDEFAULT },
         { "loadgrp",         T_LOADGRP },
+        { "cachesize",       T_CACHESIZE },
         { "noautoload",      T_NOAUTOLOAD },
         { "globalgameflags", T_GLOBALGAMEFLAGS },
     };
@@ -9360,6 +9362,17 @@ static int32_t parsegroupfiles(scriptfile *script)
 
             }
             pathsearchmode = opathsearchmode;
+        }
+        break;
+        case T_CACHESIZE:
+        {
+            int32_t cacheSize;
+
+            if (scriptfile_getnumber(script, &cacheSize))
+                break;
+
+            if (cacheSize > 0)
+                g_maxCacheSize = cacheSize << 10;
         }
         break;
         case T_INCLUDE:
@@ -11018,10 +11031,7 @@ void ExtCheckKeys(void)
 
 ////
 
-void faketimerhandler(void)
-{
-    timerUpdate();
-}
+void faketimerhandler(void) { ; }
 
 void SetGamePalette(int32_t palid)
 {

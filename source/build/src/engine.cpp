@@ -8168,7 +8168,10 @@ int32_t enginePreInit(void)
 {
     baselayer_init();
     initdivtables();
-    if (initsystem()) Bexit(9);
+
+    if (initsystem())
+        fatal_exit("Failure in initsystem()!\n");
+
     makeasmwriteable();
 
 #if !defined DEBUG_MAIN_ARRAYS
@@ -8205,7 +8208,7 @@ int32_t enginePreInit(void)
 //
 int32_t engineInit(void)
 {
-    int32_t i, j;
+    int32_t i;
 
 #if !defined _WIN32 && defined DEBUGGINGAIDS && !defined GEKKO
     struct sigaction sigact, oldact;
@@ -8240,12 +8243,9 @@ int32_t engineInit(void)
     for (i=1; i<1024; i++)
         lowrecip[i] = ((1<<24)-1)/i;
 
-    for (i=0; i<MAXVOXELS; i++)
-        for (j=0; j<MAXVOXMIPS; j++)
-        {
-            voxoff[i][j] = 0L;
-            voxlock[i][j] = 200;
-        }
+    Bmemset(voxoff, 0, sizeof(voxoff));
+    Bmemset(voxlock, 0, sizeof(voxlock));
+
     for (i=0; i<MAXTILES; i++)
         tiletovox[i] = -1;
     clearbuf(voxscale, sizeof(voxscale)>>2, 65536);
@@ -8621,7 +8621,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
 
     //if (smostwallcnt < 0)
     //  if (getkensmessagecrc(FP_OFF(kensmessage)) != 0x56c764d4)
-    //      { /* setvmode(0x3);*/ OSD_Printf("Nice try.\n"); Bexit(0); }
+    //      { /* setvmode(0x3);*/ OSD_Printf("Nice try.\n"); Bexit(EXIT_SUCCESS); }
 
     numhits = xdimen; numscans = 0; numbunches = 0;
     maskwallcnt = 0; smostwallcnt = 0; smostcnt = 0; spritesortcnt = 0;
@@ -10596,7 +10596,7 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     Bstrcpy(kensmessage,"!!!! BUILD engine&tools programmed by Ken Silverman of E.G. RI."
            "  (c) Copyright 1995 Ken Silverman.  Summary:  BUILD = Ken. !!!!");
     //  if (getkensmessagecrc(FP_OFF(kensmessage)) != 0x56c764d4)
-    //      { OSD_Printf("Nice try.\n"); Bexit(0); }
+    //      { OSD_Printf("Nice try.\n"); Bexit(EXIT_SUCCESS); }
 
     //if (checkvideomode(&daxdim, &daydim, dabpp, davidoption)<0) return -1;
 
@@ -10744,7 +10744,7 @@ void videoNextPage(void)
     }
 
     faketimerhandler();
-    cacheAgeEntries();
+    g_cache.ageBlocks();
 
 #ifdef USE_OPENGL
     omdtims = mdtims;
@@ -10777,8 +10777,8 @@ int32_t qloadkvx(int32_t voxindex, const char *filename)
         kread(fil, &dasiz, 4); dasiz = B_LITTLE32(dasiz);
 
         //Must store filenames to use cacheing system :(
-        voxlock[voxindex][i] = 200;
-        cacheAllocateBlock(&voxoff[voxindex][i], dasiz, &voxlock[voxindex][i]);
+        voxlock[voxindex][i] = CACHE1D_PERMANENT;
+        g_cache.allocateBlock(&voxoff[voxindex][i], dasiz, &voxlock[voxindex][i]);
 
         char *ptr = (char *) voxoff[voxindex][i];
         kread(fil, ptr, dasiz);
@@ -10824,7 +10824,7 @@ void vox_undefine(int32_t const tile)
     for (ssize_t j = 0; j < MAXVOXMIPS; ++j)
     {
         // CACHE1D_FREE
-        voxlock[voxindex][j] = 1;
+        voxlock[voxindex][j] = CACHE1D_FREE;
         voxoff[voxindex][j] = 0;
     }
     voxscale[voxindex] = 65536;
