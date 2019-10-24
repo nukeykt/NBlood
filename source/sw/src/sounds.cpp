@@ -773,7 +773,7 @@ SWBOOL CacheSound(int num, int type)
             */
             vp->lock = CACHE_UNLOCK_MAX;
 
-            cacheAllocateBlock((intptr_t*)&vp->data, length, &vp->lock);
+            g_cache.allocateBlock((intptr_t*)&vp->data, length, &vp->lock);
 
 #if 0
             // DEBUG
