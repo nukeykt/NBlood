@@ -8251,6 +8251,7 @@ int32_t engineInit(void)
     clearbuf(voxscale, sizeof(voxscale)>>2, 65536);
     clearbufbyte(voxrotate, sizeof(voxrotate), 0);
     clearbufbyte(voxrndangoff, sizeof(voxrndangoff), 0);
+    clearbufbyte(voxrndangoffval, sizeof(voxrndangoffval), -1);
 
     paletteloaded = 0;
 
@@ -10830,7 +10831,8 @@ void vox_undefine(int32_t const tile)
     }
     voxscale[voxindex] = 65536;
     voxrotate[voxindex>>3] &= ~pow2char[voxindex&7];
-    voxrndangoff[voxindex] = 0;
+    voxrndangoff[voxindex>>3] &= ~pow2char[voxindex&7];
+    voxrndangoffval[voxindex] = -1;
     tiletovox[tile] = -1;
 
     // TODO: nextvoxid

@@ -2309,7 +2309,13 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 if ((voxrotate[nVoxel>>3]&pow2char[nVoxel&7]) != 0)
                     pTSprite->ang = (pTSprite->ang+((int)totalclock<<3))&2047;
 
-                pTSprite->ang = pTSprite->ang+voxrndangoff[nVoxel];
+                if ((voxrndangoff[nVoxel>>3]&pow2char[nVoxel&7]) != 0)
+                {
+                    if (voxrndangoffval[pTSprite->owner] == -1)
+                        voxrndangoffval[pTSprite->owner] = QRandom(INT16_MAX);
+
+                    pTSprite->ang = voxrndangoffval[pTSprite->owner];
+                }
             }
         }
 

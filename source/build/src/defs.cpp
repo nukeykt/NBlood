@@ -1926,7 +1926,7 @@ static int32_t defsparser(scriptfile *script)
                     break;
 
                 case T_RANDOMANGOFF:
-                    voxrndangoff[lastvoxid] = rand() % 2048;
+                    voxrndangoff[lastvoxid>>3] |= pow2char[lastvoxid&7];
                     break;
                 }
             }
