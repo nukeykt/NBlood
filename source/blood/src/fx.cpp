@@ -322,7 +322,8 @@ void fxSpawnEjectingBrass(spritetype *pSprite, int z, int a3, int a4)
     spritetype *pBrass = gFX.fxSpawn((FX_ID)(FX_37+Random(3)), pSprite->sectnum, x, y, z, 0);
     if (pBrass)
     {
-        pBrass->ang = Random(INT16_MAX);
+        if (!VanillaMode())
+            pBrass->ang = Random(2047);
         int nDist = (a4<<18)/120+Random2(((a4/4)<<18)/120);
         int nAngle = pSprite->ang+Random2(56)+512;
         xvel[pBrass->index] = mulscale30(nDist, Cos(nAngle));
@@ -340,7 +341,8 @@ void fxSpawnEjectingShell(spritetype *pSprite, int z, int a3, int a4)
     spritetype *pShell = gFX.fxSpawn((FX_ID)(FX_40+Random(3)), pSprite->sectnum, x, y, z, 0);
     if (pShell)
     {
-        pShell->ang = Random(INT16_MAX);
+        if (!VanillaMode())
+            pShell->ang = Random(2047);
         int nDist = (a4<<18)/120+Random2(((a4/4)<<18)/120);
         int nAngle = pSprite->ang+Random2(56)+512;
         xvel[pShell->index] = mulscale30(nDist, Cos(nAngle));
