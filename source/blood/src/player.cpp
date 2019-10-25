@@ -431,6 +431,29 @@ DAMAGEINFO damageInfo[7] = {
     { 0, 0, 0, 0, 0, 0, 0 }
 };
 
+
+QAVSCENE gQavScene[kMaxPlayers];
+
+void playQavScene(PLAYER* pPlayer) {
+    dassert(pPlayer != NULL);
+    if (pPlayer->weaponQav == -1)
+        return;
+    QAV * pQAV = gQavScene[pPlayer->nPlayer].qavId;
+    pQAV->nSprite = pPlayer->pSprite->index;
+    int nTicks = pQAV->at10 - pPlayer->weaponTimer;
+    pQAV->Play(nTicks - 4, nTicks, pPlayer->qavCallback, pPlayer);
+}
+
+void startQavScene(PLAYER * pPlayer, int qavId, int a3, char a4) {
+    pPlayer->weaponQav = qavId;
+    pPlayer->weaponTimer = gQavScene[pPlayer->nPlayer].qavId->at10;
+    pPlayer->qavCallback = a3;
+    pPlayer->qavLoop = a4;
+    gQavScene[pPlayer->nPlayer].qavId->Preload();
+    playQavScene(pPlayer);
+    pPlayer->weaponTimer -= 4;
+}
+
 int powerupCheck(PLAYER *pPlayer, int nPowerUp)
 {
     dassert(pPlayer != NULL);
@@ -1033,9 +1056,9 @@ void playerReset(PLAYER *pPlayer)
     for (int i = 0; i < 12; i++)
     {
         if (gInfiniteAmmo)
-            pPlayer->ammCount[i] = gAmmoInfo[i].max;
+            pPlayer->ammoCount[i] = gAmmoInfo[i].max;
         else
-            pPlayer->ammCount[i] = 0;
+            pPlayer->ammoCount[i] = 0;
     }
     for (int i = 0; i < 3; i++)
         pPlayer->armor[i] = 0;
@@ -1122,7 +1145,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 1) == 0 && pXItem->state) {
                         pPlayer->hasFlag |= 1;
                         pPlayer->used2[0] = pItem->index;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOff);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOff, pPlayer->nSprite);
                         sprintf(buffer, "%s stole Blue Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8007, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1134,7 +1157,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 1) != 0 && !pXItem->state) {
                         pPlayer->hasFlag &= ~1;
                         pPlayer->used2[0] = -1;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOn);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOn, pPlayer->nSprite);
                         sprintf(buffer, "%s returned Blue Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8003, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1166,7 +1189,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 2) == 0 && pXItem->state) {
                         pPlayer->hasFlag |= 2;
                         pPlayer->used2[1] = pItem->index;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOff);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOff, pPlayer->nSprite);
                         sprintf(buffer, "%s stole Red Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8006, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1178,7 +1201,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     {
                         pPlayer->hasFlag &= ~2;
                         pPlayer->used2[1] = -1;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOn);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOn, pPlayer->nSprite);
                         sprintf(buffer, "%s returned Red Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8002, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1289,12 +1312,12 @@ char PickupAmmo(PLAYER* pPlayer, spritetype* pAmmo) {
     AMMOITEMDATA* pAmmoItemData = &gAmmoItemData[pAmmo->type - kItemAmmoBase];
     int nAmmoType = pAmmoItemData->type;
 
-    if (pPlayer->ammCount[nAmmoType] >= gAmmoInfo[nAmmoType].max) return 0;
+    if (pPlayer->ammoCount[nAmmoType] >= gAmmoInfo[nAmmoType].max) return 0;
     else if (!gModernMap || pAmmo->extra < 0 || xsprite[pAmmo->extra].data1 <= 0)
-        pPlayer->ammCount[nAmmoType] = ClipHigh(pPlayer->ammCount[nAmmoType]+pAmmoItemData->count, gAmmoInfo[nAmmoType].max);
+        pPlayer->ammoCount[nAmmoType] = ClipHigh(pPlayer->ammoCount[nAmmoType]+pAmmoItemData->count, gAmmoInfo[nAmmoType].max);
     // by NoOne: allow custom amount for item
     else
-        pPlayer->ammCount[nAmmoType] = ClipHigh(pPlayer->ammCount[nAmmoType] + xsprite[pAmmo->extra].data1, gAmmoInfo[nAmmoType].max);
+        pPlayer->ammoCount[nAmmoType] = ClipHigh(pPlayer->ammoCount[nAmmoType] + xsprite[pAmmo->extra].data1, gAmmoInfo[nAmmoType].max);
 
     if (pAmmoItemData->weaponType)  pPlayer->hasWeapon[pAmmoItemData->weaponType] = 1;
     sfxPlay3DSound(pPlayer->pSprite, 782, -1, 0);
@@ -1312,9 +1335,9 @@ char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon) {
         if (nAmmoType == -1) return 0;
         // By NoOne: allow to set custom ammo count for weapon pickups
         if (!gModernMap || pWeapon->extra < 0 || xsprite[pWeapon->extra].data1 <= 0)
-            pPlayer->ammCount[nAmmoType] = ClipHigh(pPlayer->ammCount[nAmmoType] + pWeaponItemData->count, gAmmoInfo[nAmmoType].max);
+            pPlayer->ammoCount[nAmmoType] = ClipHigh(pPlayer->ammoCount[nAmmoType] + pWeaponItemData->count, gAmmoInfo[nAmmoType].max);
         else
-            pPlayer->ammCount[nAmmoType] = ClipHigh(pPlayer->ammCount[nAmmoType] + xsprite[pWeapon->extra].data1, gAmmoInfo[nAmmoType].max);
+            pPlayer->ammoCount[nAmmoType] = ClipHigh(pPlayer->ammoCount[nAmmoType] + xsprite[pWeapon->extra].data1, gAmmoInfo[nAmmoType].max);
 
         int nNewWeapon = WeaponUpgrade(pPlayer, nWeaponType);
         if (nNewWeapon != pPlayer->curWeapon) {
@@ -1325,11 +1348,11 @@ char PickupWeapon(PLAYER *pPlayer, spritetype *pWeapon) {
         return 1;
     }
     
-    if (!actGetRespawnTime(pWeapon) || nAmmoType == -1 || pPlayer->ammCount[nAmmoType] >= gAmmoInfo[nAmmoType].max) return 0;    
+    if (!actGetRespawnTime(pWeapon) || nAmmoType == -1 || pPlayer->ammoCount[nAmmoType] >= gAmmoInfo[nAmmoType].max) return 0;    
     else if (!gModernMap || pWeapon->extra < 0 || xsprite[pWeapon->extra].data1 <= 0)
-        pPlayer->ammCount[nAmmoType] = ClipHigh(pPlayer->ammCount[nAmmoType]+pWeaponItemData->count, gAmmoInfo[nAmmoType].max);
+        pPlayer->ammoCount[nAmmoType] = ClipHigh(pPlayer->ammoCount[nAmmoType]+pWeaponItemData->count, gAmmoInfo[nAmmoType].max);
     else
-        pPlayer->ammCount[nAmmoType] = ClipHigh(pPlayer->ammCount[nAmmoType] + xsprite[pWeapon->extra].data1, gAmmoInfo[nAmmoType].max);
+        pPlayer->ammoCount[nAmmoType] = ClipHigh(pPlayer->ammoCount[nAmmoType] + xsprite[pWeapon->extra].data1, gAmmoInfo[nAmmoType].max);
 
     sfxPlay3DSound(pPlayer->pSprite, 777, -1, 0);
     return 1;
@@ -1365,7 +1388,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     else if (pSprite->extra > 0) {
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
         if (pXSprite->Pickup)
-            trTriggerSprite(pSprite->index, pXSprite, kCmdSpritePickup);
+            trTriggerSprite(pSprite->index, pXSprite, kCmdSpritePickup, pPlayer->nSprite);
     }
         
     if (!actCheckRespawn(pSprite)) 
@@ -1460,7 +1483,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
                     zvel[*a2] += mulscale16(z, t2);
                 }
                 if (pXSprite->Push && !pXSprite->state && !pXSprite->isTriggered)
-                    trTriggerSprite(*a2, pXSprite, kCmdSpritePush);
+                    trTriggerSprite(*a2, pXSprite, kCmdSpritePush, pPlayer->nSprite);
             }
             break;
         case 0:
@@ -1623,7 +1646,7 @@ void ProcessInput(PLAYER *pPlayer)
     pPlayer->q16ang = (pPlayer->q16ang+fix16_from_int(pSprite->ang-pPlayer->angold))&0x7ffffff;
     pPlayer->angold = pSprite->ang = fix16_to_int(pPlayer->q16ang);
     if (!pInput->buttonFlags.jump)
-        pPlayer->canJump = 0;
+        pPlayer->cantJump = 0;
 
     switch (pPlayer->posture)
     {
@@ -1638,7 +1661,7 @@ void ProcessInput(PLAYER *pPlayer)
             pPlayer->posture = 0;
         break;
     default:
-        if (!pPlayer->canJump && pInput->buttonFlags.jump && pXSprite->height == 0)
+        if (!pPlayer->cantJump && pInput->buttonFlags.jump && pXSprite->height == 0)
         {
             sfxPlay3DSound(pSprite, 700, 0, 0);
             if (packItemActive(pPlayer, 4))
@@ -1650,7 +1673,7 @@ void ProcessInput(PLAYER *pPlayer)
             if (isShrinked(pPlayer->pSprite)) zvel[nSprite] -= -200000;
             else if (isGrown(pPlayer->pSprite)) zvel[nSprite] += -250000;
             
-            pPlayer->canJump = 1;
+            pPlayer->cantJump = 1;
         }
 
 
@@ -1708,7 +1731,7 @@ void ProcessInput(PLAYER *pPlayer)
             if (pXSprite->locked && pPlayer == gMe && pXSprite->lockMsg)
                 trTextOver(pXSprite->lockMsg);
             if (!key || pPlayer->hasKey[key])
-                trTriggerSprite(a2, pXSprite, kCmdSpritePush);
+                trTriggerSprite(a2, pXSprite, kCmdSpritePush, pPlayer->nSprite);
             else if (pPlayer == gMe)
             {
                 viewSetMessage("That requires a key.");
@@ -2279,7 +2302,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
                 gPlayer[p].fraggerId = -1;
         }
         FragPlayer(pPlayer, nSource);
-        trTriggerSprite(nSprite, pXSprite, kCmdOff);
+        trTriggerSprite(nSprite, pXSprite, kCmdOff, nSource);
     }
     dassert(gSysRes.Lookup(pDudeInfo->seqStartID + nDeathSeqID, "SEQ") != NULL);
     seqSpawn(pDudeInfo->seqStartID+nDeathSeqID, 3, nXSprite, nKneelingPlayer);
@@ -2292,8 +2315,8 @@ int UseAmmo(PLAYER *pPlayer, int nAmmoType, int nDec)
         return 9999;
     if (nAmmoType == -1)
         return 9999;
-    pPlayer->ammCount[nAmmoType] = ClipLow(pPlayer->ammCount[nAmmoType]-nDec, 0);
-    return pPlayer->ammCount[nAmmoType];
+    pPlayer->ammoCount[nAmmoType] = ClipLow(pPlayer->ammoCount[nAmmoType]-nDec, 0);
+    return pPlayer->ammoCount[nAmmoType];
 }
 
 void sub_41250(PLAYER *pPlayer)

@@ -82,7 +82,7 @@ unsigned int GetWaveValue(unsigned int nPhase, int nType)
     return nPhase;
 }
 
-char SetSpriteState(int nSprite, XSPRITE* pXSprite, int nState)
+char SetSpriteState(int nSprite, XSPRITE* pXSprite, int nState, short causedBy)
 {
     if ((pXSprite->busy & 0xffff) == 0 && pXSprite->state == nState)
         return 0;
@@ -96,32 +96,31 @@ char SetSpriteState(int nSprite, XSPRITE* pXSprite, int nState)
         return 1;
     }
     if (pXSprite->restState != nState && pXSprite->waitTime > 0)
-        evPost(nSprite, 3, (pXSprite->waitTime * 120) / 10, pXSprite->restState ? kCmdOn : kCmdOff);
+        evPost(nSprite, 3, (pXSprite->waitTime * 120) / 10, pXSprite->restState ? kCmdOn : kCmdOff, causedBy);
     if (pXSprite->txID)
     {
         if (pXSprite->command != kCmdLink && pXSprite->triggerOn && pXSprite->state)
-            evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+            evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causedBy);
         if (pXSprite->command != kCmdLink && pXSprite->triggerOff && !pXSprite->state)
-            evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+            evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causedBy);
     }
     return 1;
 }
 
-char modernTypeSetSpriteState(int nSprite, XSPRITE *pXSprite, int nState)
+char modernTypeSetSpriteState(int nSprite, XSPRITE *pXSprite, int nState, short causedBy)
 {
-    if ((pXSprite->busy&0xffff) == 0 && pXSprite->state == nState)
-        return 0;
+    if ((pXSprite->busy&0xffff) == 0 && pXSprite->state == nState) return 0;
     pXSprite->busy = nState<<16;
     pXSprite->state = nState;
     evKill(nSprite, 3);
-    if ((sprite[nSprite].flags & kHitagRespawn) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax)
-    {
+    if ((sprite[nSprite].flags & kHitagRespawn) != 0 && sprite[nSprite].inittype >= kDudeBase && sprite[nSprite].inittype < kDudeMax) {
         pXSprite->respawnPending = 3;
-        evPost(nSprite, 3, gGameOptions.nMonsterRespawnTime, kCallbackRespawn);
+        evPost(nSprite, 3, gGameOptions.nMonsterRespawnTime, kCallbackRespawn, causedBy);
         return 1;
     }
+    
     if (pXSprite->restState != nState && pXSprite->waitTime > 0)
-        evPost(nSprite, 3, (pXSprite->waitTime*120) / 10, pXSprite->restState ? kCmdOn : kCmdOff);
+        evPost(nSprite, 3, (pXSprite->waitTime*120) / 10, pXSprite->restState ? kCmdOn : kCmdOff, causedBy);
 
     if (pXSprite->txID != 0 && ((pXSprite->triggerOn && pXSprite->state) || (pXSprite->triggerOff && !pXSprite->state))) {
 
@@ -130,15 +129,15 @@ char modernTypeSetSpriteState(int nSprite, XSPRITE *pXSprite, int nState)
         switch (pXSprite->command) {
             case kCmdLink:
             case kCmdModernUse:
-                evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // just send command to change properties
+                evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, causedBy); // just send command to change properties
                 return 1;
             case kCmdUnlock:
-                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // send normal command first
-                evSend(nSprite, 3, pXSprite->txID, kCmdModernUse);  // then send command to change properties
+                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causedBy); // send normal command first
+                evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, causedBy);  // then send command to change properties
                 return 1;
             default:
-                evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // send first command to change properties
-                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // then send normal command
+                evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, causedBy); // send first command to change properties
+                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causedBy); // then send normal command
                 return 1;
         }
 
@@ -181,7 +180,7 @@ char SetSectorState(int nSector, XSECTOR *pXSector, int nState)
             pXSector->stopOn = 0;
             pXSector->stopOff = 0;
         }
-        else if (pXSector->atf_6)
+        else if (pXSector->reTriggerA)
             evPost(nSector, 6, (pXSector->waitTimeA * 120) / 10, kCmdOff);
     }
     else
@@ -193,7 +192,7 @@ char SetSectorState(int nSector, XSECTOR *pXSector, int nState)
             pXSector->stopOn = 0;
             pXSector->stopOff = 0;
         }
-        else if (pXSector->atf_7)
+        else if (pXSector->reTriggerB)
             evPost(nSector, 6, (pXSector->waitTimeB * 120) / 10, kCmdOn);
     }
     return 1;
@@ -293,7 +292,7 @@ void LifeLeechOperate(spritetype *pSprite, XSPRITE *pXSprite, EVENT event)
             PLAYER *pPlayer = &gPlayer[nPlayer];
             if (pPlayer->pXSprite->health > 0)
             {
-                pPlayer->ammCount[8] = ClipHigh(pPlayer->ammCount[8]+pXSprite->data3, gAmmoInfo[8].max);
+                pPlayer->ammoCount[8] = ClipHigh(pPlayer->ammoCount[8]+pXSprite->data3, gAmmoInfo[8].max);
                 pPlayer->hasWeapon[9] = 1;
                 if (pPlayer->curWeapon != 9)
                 {
@@ -366,6 +365,9 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 {
     spritetype *pSprite = &sprite[nSprite];
     
+    if (pSprite->type != 706 && pSprite->type != 707 && pSprite->type != 37)
+        viewSetSystemMessage("SPRITE %d (TYPE %d), EVENT INITED BY: %d", nSprite, pSprite->type, event.causedBy);
+    
     if (gModernMap) {
         switch (event.cmd) {
             case kCmdUnlock:
@@ -407,7 +409,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 switch (pXSprite->command) {
                     case kCmdLink:
                         if (pXSprite->txID <= 0) return;
-                        evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+                        evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy);
                         return;
                 }
                 break; // go normal operate switch
@@ -451,7 +453,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
                 if (tx > 0) {
                     pXSprite->txID = tx;
-                    SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                    SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 }
             }
             return;
@@ -473,7 +475,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                     if (pSprite->flags & kModernTypeFlag1) {
                         for (pXSprite->txID = pXSprite->data1; pXSprite->txID <= pXSprite->data4; pXSprite->txID++) {
                             if (pXSprite->txID > 0)
-                                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+                                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy);
                         }
 
                         pXSprite->txID = pXSprite->sysData1 = 0;
@@ -492,7 +494,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                     if (pSprite->flags & kModernTypeFlag1) {
                         for (int i = 0; i <= 3; i++) {
                             if ((pXSprite->txID = GetDataVal(pSprite, i)) > 0)
-                                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+                                evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy);
                         }
 
                         pXSprite->txID = pXSprite->sysData1 = 0;
@@ -546,35 +548,40 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 }
 
                 pXSprite->txID = tx;
-                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
             }
             return;
             
             case kMarkerWarpDest:
                 if (pXSprite->txID <= 0) {
-                    if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1) == 1)
-                        useTeleportTarget(pXSprite, NULL);
+                    if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy) == 1)
+                        if (pXSprite->data1 > 0) useTeleportTarget(pXSprite, NULL);
+                        else if (pXSprite->data1 == 0 && event.causedBy >= 0)
+                            useTeleportTarget(pXSprite, &sprite[event.causedBy]);
                     return;
                 }
-                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 return;
             
             case kModernSpriteDamager:
                 if (pXSprite->txID <= 0) {
-                    if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1) == 1)
-                        useSpriteDamager(pXSprite, NULL);
+                    if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy) == 1) {
+                        if (pXSprite->data1 > 0) useSpriteDamager(pXSprite, NULL);
+                        else if (pXSprite->data1 == 0 && event.causedBy >= 0)
+                            useSpriteDamager(pXSprite, &sprite[event.causedBy]);
+                    }
                     return;
                 }
-                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 return;
 
             case kModernObjPropertiesChanger:
                 if (pXSprite->txID <= 0) {
-                    if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1) == 1)
+                    if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy) == 1)
                         usePropertiesChanger(pXSprite, -1, -1);
                     return;
                 }
-                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 return;
 
             case kModernObjPicnumChanger:
@@ -582,7 +589,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kModernSectorFXChanger:
             case kModernObjDataChanger:
             case kModernConcussSprite:
-                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 return;
             
             case kModernCustomDudeSpawn:
@@ -594,11 +601,11 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kModernEffectSpawner:
                 switch (event.cmd) {
                     case kCmdOff:
-                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0);
+                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                         break;
                     case kCmdOn:
                         evKill(nSprite, 3); // queue overflow protect
-                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1);
+                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                         fallthrough__;
                     case kCmdRepeat:
                         if (pXSprite->txID <= 0)
@@ -607,26 +614,26 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
                             switch (pXSprite->command) {
                                 case kCmdLink:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // just send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // just send command to change properties
                                     break;
                                 case kCmdUnlock:
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // send normal command first
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse);  // then send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // send normal command first
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy);  // then send command to change properties
                                     break;
                                 default:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // send first command to change properties
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // then send normal command
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // send first command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // then send normal command
                                     break;
                             }
 
                         }
 
                         if (pXSprite->busyTime > 0)
-                            evPost(nSprite, 3, ClipLow((int(pXSprite->busyTime) + Random2(pXSprite->data1)) * 120 / 10, 0), kCmdRepeat);
+                            evPost(nSprite, 3, ClipLow((int(pXSprite->busyTime) + Random2(pXSprite->data1)) * 120 / 10, 0), kCmdRepeat, event.causedBy);
                         break;
                     default:
-                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn);
-                        else evPost(nSprite, 3, 0, kCmdOff);
+                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                        else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                         break;
                 }
                 return;
@@ -635,11 +642,11 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 switch (event.cmd) {
                     case kCmdOff:
                         stopWindOnSectors(pXSprite);
-                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0);
+                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                         break;
                     case kCmdOn:
                         evKill(nSprite, 3); // queue overflow protect
-                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1);
+                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                         fallthrough__;
                     case kCmdRepeat:
                         if (pXSprite->txID <= 0) useSectorWindGen(pXSprite, NULL);
@@ -647,25 +654,25 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
                             switch (pXSprite->command) {
                                 case kCmdLink:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // just send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // just send command to change properties
                                     break;
                                 case kCmdUnlock:
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // send normal command first
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse);  // then send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // send normal command first
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy);  // then send command to change properties
                                     break;
                                 default:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // send first command to change properties
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // then send normal command
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // send first command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // then send normal command
                                     break;
                             }
 
                         }
 
-                        if (pXSprite->busyTime > 0)  evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat);
+                        if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, event.causedBy);
                         break;
                     default:
-                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn);
-                        else evPost(nSprite, 3, 0, kCmdOff);
+                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                        else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                         break;
                 }
                 return;
@@ -684,41 +691,41 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 switch (event.cmd) {
                     case kCmdOff:
                         if (pXSprite->data4 == 3 && activated == false) activateDudes(pXSprite->txID);
-                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0);
+                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                         break;
                     case kCmdOn:
                         evKill(nSprite, 3); // queue overflow protect
-                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1);
+                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                         fallthrough__;
                     case kCmdRepeat:
                         if (pXSprite->txID <= 0 || !getDudesForTargetChg(pXSprite)) {
                             freeAllTargets(pXSprite);
-                            evPost(nSprite, 3, 0, kCmdOff);
+                            evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                             break;
                         }
                         else {
 
                             switch (pXSprite->command) {
                                 case kCmdLink:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // just send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // just send command to change properties
                                     break;
                                 case kCmdUnlock:
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // send normal command first
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse);  // then send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // send normal command first
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy);  // then send command to change properties
                                     break;
                                 default:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // send first command to change properties
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // then send normal command
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // send first command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // then send normal command
                                     break;
                             }
 
                         }
 
-                        if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat);
+                        if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, event.causedBy);
                         break;
                     default:
-                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn);
-                        else evPost(nSprite, 3, 0, kCmdOff);
+                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                        else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                         break;
                     }
 
@@ -729,17 +736,17 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kModernObjDataAccumulator:
                 switch (event.cmd) {
                     case kCmdOff:
-                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0);
+                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                         break;
                     case kCmdOn:
                         evKill(nSprite, 3); // queue overflow protect
-                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1);
+                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                         fallthrough__;
                     case kCmdRepeat:
 
                         // force OFF after *all* TX objects reach the goal value
                         if (pSprite->flags == 0 && goalValueIsReached(pXSprite)) {
-                            evPost(nSprite, 3, 0, kCmdOff);
+                            evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                             break;
                         }
 
@@ -747,24 +754,24 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
                             switch (pXSprite->command) {
                                 case kCmdLink:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // just send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // just send command to change properties
                                     break;
                                 case kCmdUnlock:
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // send normal command first
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse);  // then send command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // send normal command first
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy);  // then send command to change properties
                                     break;
                                 default:
-                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse); // send first command to change properties
-                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command); // then send normal command
+                                    evSend(nSprite, 3, pXSprite->txID, kCmdModernUse, event.causedBy); // send first command to change properties
+                                    evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy); // then send normal command
                                     break;
                             }
 
-                            if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat);
+                            if (pXSprite->busyTime > 0) evPost(nSprite, 3, pXSprite->busyTime, kCmdRepeat, event.causedBy);
                         }
                         break;
                     default:
-                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn);
-                        else evPost(nSprite, 3, 0, kCmdOff);
+                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                        else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                         break;
                 }
                 return;
@@ -773,20 +780,20 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kModernRandom2:
                 switch (event.cmd) {
                     case kCmdOff:
-                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0);
+                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                         break;
                     case kCmdOn:
                         evKill(nSprite, 3); // queue overflow protect
-                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1);
+                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                         fallthrough__;
                     case kCmdRepeat:
                         ActivateGenerator(nSprite);
                         if (pXSprite->busyTime > 0)
-                            evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat);
+                            evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat, event.causedBy);
                         break;
                     default:
-                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn);
-                        else evPost(nSprite, 3, 0, kCmdOff);
+                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                        else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                         break;
                 }
                 return;
@@ -798,61 +805,81 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kGenModernMissileUniversal:
                 switch (event.cmd) {
                     case kCmdOff:
-                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0);
+                        if (pXSprite->state == 1) SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                         break;
                     case kCmdOn:
                         evKill(nSprite, 3); // queue overflow protect
-                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1);
+                        if (pXSprite->state == 0) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                         fallthrough__;
                     case kCmdRepeat:
                         ActivateGenerator(nSprite);
-                        if (pXSprite->txID) evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
-                        if (pXSprite->busyTime > 0) evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat);
+                        if (pXSprite->txID) evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy);
+                        if (pXSprite->busyTime > 0) evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat, event.causedBy);
                         break;
                     default:
-                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn);
-                        else evPost(nSprite, 3, 0, kCmdOff);
+                        if (pXSprite->state == 0) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                        else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                         break;
                 }
                 return;
             case kModernPlayerControl: // WIP
                 PLAYER* pPlayer = NULL;
-                if ((pPlayer = getPlayerById(pXSprite->data1)) == NULL) return;
+                if ((pPlayer = getPlayerById(pXSprite->data1)) == NULL || pPlayer->pXSprite->health <= 0) return;
                 else if (event.cmd < kCmdNumberic) { // play qav as weapon qav
                     switch (event.cmd) {
                         case kCmdOff:
-                            if (gQavPlayerIndex == nSprite) {
-                                pXSprite->sysData1 = 0;
-                                pPlayer->input.newWeapon = pPlayer->curWeapon = pXSprite->data4;
-                                gQavPlayerIndex = -1;
+                            if (gQavScene[pPlayer->nPlayer].index == nSprite) {
+                                viewSetSystemMessage("OFF %d", gQavScene[pPlayer->nPlayer].index);
+                                
+                                gQavScene[pPlayer->nPlayer].index = -1;
+                                gQavScene[pPlayer->nPlayer].qavId = NULL;
+                                pPlayer->weaponQav = -1;
+                                // restore weapon
+                                pPlayer->input.newWeapon = pPlayer->curWeapon = pXSprite->dropMsg;
                                 WeaponRaise(pPlayer);
+
                             }
                             break;
                         case kCmdOn: {
-                            if (gQavPlayerIndex == nSprite && !pXSprite->Interrutable) break;
+                            if (gQavScene[pPlayer->nPlayer].index == nSprite && !pXSprite->Interrutable) break;
                             QAV* pQav = NULL; DICTNODE* hQav = gSysRes.Lookup(pXSprite->data2, "QAV");
                             if (hQav) {
                                 
-                                pXSprite->data4 = pPlayer->curWeapon;
-                                if (gQavPlayerIndex > -1 && gQavPlayerIndex != nSprite && sprite[gQavPlayerIndex].extra >= 0) {
-                                    pXSprite->data4 = xsprite[sprite[gQavPlayerIndex].extra].data4;
-                                    xsprite[sprite[gQavPlayerIndex].extra].data4 = 0;
-                                }
+                                // save current weapon
+                                pXSprite->dropMsg = pPlayer->curWeapon;
 
-                                WeaponLower(pPlayer);
+                                short nIndex = gQavScene[pPlayer->nPlayer].index;
+                                if (nIndex > -1 && nIndex != nSprite && sprite[nIndex].extra >= 0)
+                                    pXSprite->dropMsg = xsprite[sprite[nIndex].extra].dropMsg;
+                                
+                                if (nIndex < 0) 
+                                    WeaponLower(pPlayer);
+                                
+                                pQav = (QAV*)gSysRes.Load(hQav);
+                                pXSprite->sysData1 = ClipLow((pQav->at10 * pXSprite->waitTime) / 4, 0); // how many times animation should be played
+                                gQavScene[pPlayer->nPlayer].index = nSprite;
+                                
+                                gQavScene[pPlayer->nPlayer].qavId = pQav;
+                                gQavScene[pPlayer->nPlayer].qavId->Preload();
 
-                                pQav = (QAV*)gSysRes.Load(hQav); weaponQAV[kFreeQAVEntry] = pQav;
-                                pXSprite->busyTime = ((((pQav->at10) / 12) * 120) / 10) - 12;
-                                //pXSprite->busyTime = (((pQav->nFrames * pQav->ticksPerFrame) / 12) * 120) / 10;
-                                pXSprite->sysData1 = pXSprite->waitTime; // how many times animation should be played
-                                gQavPlayerIndex = nSprite;
+                                pPlayer->weaponQav = pXSprite->data2;
+                                pPlayer->weaponTimer = gQavScene[pPlayer->nPlayer].qavId->at10;
+                                pPlayer->qavCallback = (pXSprite->data3 > 0) ? ClipRange(pXSprite->data3 - 1, 0, 32) : -1;
+                                pPlayer->qavLoop = false;
 
+                                //startQavScene(pPlayer, pXSprite->data2, -1, 0);
+                               
+
+                                //viewSetSystemMessage("QAV %d", pXSprite->data2);
+
+                            } else {
+                                viewSetSystemMessage("Failed to load QAV animation #%d", pXSprite->data2);
                             }
                             break;
                         }
                         default:
-                            if (gQavPlayerIndex != nSprite) evPost(nSprite, 3, 0, kCmdOn);
-                            else evPost(nSprite, 3, 0, kCmdOff);
+                            if (gQavScene[pPlayer->nPlayer].index != nSprite) evPost(nSprite, 3, 0, kCmdOn, event.causedBy);
+                            else evPost(nSprite, 3, 0, kCmdOff, event.causedBy);
                             break;
                     }
                 } else if (event.cmd < kCmdNumbericMax) {
@@ -913,6 +940,39 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                                 case 6: // visibility
                                     pPlayer->visibility = pXSprite->data3;
                                     break;
+                                case 7: // delirium
+                                    pPlayer->pwUpTime[kPwUpDeliriumShroom] = ClipHigh(pXSprite->data3 << 1, 432000);
+                                    if (pXSprite->data3 > 0) powerupActivate(pPlayer, kPwUpDeliriumShroom);
+                                    else powerupDeactivate(pPlayer, kPwUpDeliriumShroom);
+                                break;
+                            }
+                            break;
+                        case kCmdNumberic + 6: // erase player stuff...
+                            switch (pXSprite->data2) {
+                                case 0:
+                                case 1: {
+                                    // erase all weapons except pitchfork
+                                    WeaponLower(pPlayer);
+                                    
+                                    for (int i = 0; i < 14; i++) {
+                                        pPlayer->hasWeapon[i] = false;
+                                        // also erase ammo
+                                        if (i < 12 && pXSprite->data3 == 1)
+                                            pPlayer->ammoCount[i] = 0;
+                                    }
+
+                                    pPlayer->hasWeapon[1] = true; 
+                                    pPlayer->curWeapon = 0;
+                                    pPlayer->nextWeapon = 1;
+                                    
+                                    WeaponRaise(pPlayer);
+                                    break;
+                                }
+                                case 2:
+                                    // erase all armor
+                                    for (int i = 0; i < 3; i++)
+                                        pPlayer->armor[i] = 0;
+                                    break;
                             }
                             break;
                     }
@@ -925,7 +985,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         
         switch (event.cmd) {
             case kCmdOff:
-                SetSpriteState(nSprite, pXSprite, 0);
+                SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                 break;
             case kCmdSpriteProximity:
                 if (pXSprite->state) break;
@@ -933,7 +993,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kCmdOn:
             case kCmdSpritePush:
             case kCmdSpriteTouch:
-                if (!pXSprite->state) SetSpriteState(nSprite, pXSprite, 1);
+                if (!pXSprite->state) SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                 aiActivateDude(pSprite, pXSprite);
                 break;
         }
@@ -947,11 +1007,11 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         if (pXSprite->health <= 0) break; 
         switch (event.cmd) {
             case kCmdOff:
-                if (!SetSpriteState(nSprite, pXSprite, 0)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 0, event.causedBy)) break;
                 seqSpawn(40, 3, pSprite->extra, -1);
                 break;
             case kCmdOn:
-                if (!SetSpriteState(nSprite, pXSprite, 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 1, event.causedBy)) break;
                 seqSpawn(38, 3, pSprite->extra, nMGunOpenClient);
                 if (pXSprite->data1 > 0)
                     pXSprite->data2 = pXSprite->data1;
@@ -959,15 +1019,15 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         }
         break;
     case kThingFallingRock:
-        if (SetSpriteState(nSprite, pXSprite, 1))
+        if (SetSpriteState(nSprite, pXSprite, 1, event.causedBy))
             pSprite->flags |= 7;
         break;
     case kThingWallCrack:
-        if (SetSpriteState(nSprite, pXSprite, 0))
+        if (SetSpriteState(nSprite, pXSprite, 0, event.causedBy))
             actPostSprite(nSprite, kStatFree);
         break;
     case kThingCrateFace:
-        if (SetSpriteState(nSprite, pXSprite, 0))
+        if (SetSpriteState(nSprite, pXSprite, 0, event.causedBy))
             actPostSprite(nSprite, kStatFree);
         break;
     case kTrapZapSwitchable:
@@ -992,12 +1052,12 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kTrapFlame:
         switch (event.cmd) {
             case kCmdOff:
-                if (!SetSpriteState(nSprite, pXSprite, 0)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 0, event.causedBy)) break;
                 seqSpawn(40, 3, pSprite->extra, -1);
                 sfxKill3DSound(pSprite, 0, -1);
                 break;
             case kCmdOn:
-                if (SetSpriteState(nSprite, pXSprite, 1)) break;
+                if (SetSpriteState(nSprite, pXSprite, 1, event.causedBy)) break;
                 seqSpawn(38, 3, pSprite->extra, -1);
                 sfxPlay3DSound(pSprite, 441, 0, 0);
                 break;
@@ -1006,14 +1066,14 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kSwitchPadlock:
         switch (event.cmd) {
             case kCmdOff:
-                SetSpriteState(nSprite, pXSprite, 0);
+                SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                 break;
             case kCmdOn:
-                if (!SetSpriteState(nSprite, pXSprite, 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 1, event.causedBy)) break;
                 seqSpawn(37, 3, pSprite->extra, -1);
                 break;
             default:
-                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 if (pXSprite->state) seqSpawn(37, 3, pSprite->extra, -1);
                 break;
         }
@@ -1021,15 +1081,15 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kSwitchToggle:
         switch (event.cmd) {
             case kCmdOff:
-                if (!SetSpriteState(nSprite, pXSprite, 0)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 0, event.causedBy)) break;
                 sfxPlay3DSound(pSprite, pXSprite->data2, 0, 0);
                 break;
             case kCmdOn:
-                if (!SetSpriteState(nSprite, pXSprite, 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 1, event.causedBy)) break;
                 sfxPlay3DSound(pSprite, pXSprite->data1, 0, 0);
                 break;
             default:
-                if (!SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy)) break;
                 if (pXSprite->state) sfxPlay3DSound(pSprite, pXSprite->data1, 0, 0);
                 else sfxPlay3DSound(pSprite, pXSprite->data2, 0, 0);
                 break;
@@ -1038,15 +1098,15 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kSwitchOneWay:
         switch (event.cmd) {
             case kCmdOff:
-                if (!SetSpriteState(nSprite, pXSprite, 0)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 0, event.causedBy)) break;
                 sfxPlay3DSound(pSprite, pXSprite->data2, 0, 0);
                 break;
             case kCmdOn:
-                if (!SetSpriteState(nSprite, pXSprite, 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 1, event.causedBy)) break;
                 sfxPlay3DSound(pSprite, pXSprite->data1, 0, 0);
                 break;
             default:
-                if (!SetSpriteState(nSprite, pXSprite, pXSprite->restState ^ 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, pXSprite->restState ^ 1, event.causedBy)) break;
                 if (pXSprite->state) sfxPlay3DSound(pSprite, pXSprite->data1, 0, 0);
                 else sfxPlay3DSound(pSprite, pXSprite->data2, 0, 0);
                 break;
@@ -1069,12 +1129,12 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         sfxPlay3DSound(pSprite, pXSprite->data4, -1, 0);
         
         if (pXSprite->command == kCmdLink && pXSprite->txID > 0)
-            evSend(nSprite, 3, pXSprite->txID, kCmdLink);
+            evSend(nSprite, 3, pXSprite->txID, kCmdLink, event.causedBy);
 
         if (pXSprite->data1 == pXSprite->data2) 
-            SetSpriteState(nSprite, pXSprite, 1);
+            SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
         else 
-            SetSpriteState(nSprite, pXSprite, 0);
+            SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
 
         break;
     case kMarkerDudeSpawn:
@@ -1111,7 +1171,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kMarkerEarthQuake:
         pXSprite->triggerOn = 0;
         pXSprite->isTriggered = 1;
-        SetSpriteState(nSprite, pXSprite, 1);
+        SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
         for (int p = connecthead; p >= 0; p = connectpoint2[p]) {
             spritetype *pPlayerSprite = gPlayer[p].pSprite;
             int dx = (pSprite->x - pPlayerSprite->x)>>4;
@@ -1122,7 +1182,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         }
         break;
     case kThingTNTBarrel:
-        if (pSprite->flags&kHitagRespawn) return;
+        if (pSprite->flags & kHitagRespawn) return;
         fallthrough__;
     case kThingArmedTNTStick:
     case kThingArmedTNTBundle:
@@ -1132,7 +1192,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kTrapExploder:
         switch (event.cmd) {
             case kCmdOn:
-                SetSpriteState(nSprite, pXSprite, 1);
+                SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                 break;
             default:
                 pSprite->cstat &= (unsigned short)~CSTAT_SPRITE_INVISIBLE;
@@ -1148,7 +1208,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                     break;
                 default:
                     sfxPlay3DSound(pSprite, 454, 0, 0);
-                    evPost(nSprite, 3, 18, kCmdOff);
+                    evPost(nSprite, 3, 18, kCmdOff, event.causedBy);
                     break;
             }
         }
@@ -1161,7 +1221,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 case kCmdSpriteProximity:
                     if (pXSprite->state) break;
                     sfxPlay3DSound(pSprite, 452, 0, 0);
-                    evPost(nSprite, 3, 30, kCmdOff);
+                    evPost(nSprite, 3, 30, kCmdOff, event.causedBy);
                     pXSprite->state = 1;
                 case kCmdOn:
                     sfxPlay3DSound(pSprite, 451, 0, 0);
@@ -1187,20 +1247,20 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kGenSound:
         switch (event.cmd) {
             case kCmdOff:
-                SetSpriteState(nSprite, pXSprite, 0);
+                SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                 break;
             case kCmdRepeat:
                 if (pSprite->type != kGenTrigger) ActivateGenerator(nSprite);
-                if (pXSprite->txID) evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+                if (pXSprite->txID) evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, event.causedBy);
                 if (pXSprite->busyTime > 0) {
                     int nRand = Random2(pXSprite->data1);
-                    evPost(nSprite, 3, 120*(nRand+pXSprite->busyTime) / 10, kCmdRepeat);
+                    evPost(nSprite, 3, 120*(nRand+pXSprite->busyTime) / 10, kCmdRepeat, event.causedBy);
                 }
                 break;
             default:
                 if (!pXSprite->state) {
-                    SetSpriteState(nSprite, pXSprite, 1);
-                    evPost(nSprite, 3, 0, kCmdRepeat);
+                    SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
+                    evPost(nSprite, 3, 0, kCmdRepeat, event.causedBy);
                 }
                 break;
         }
@@ -1216,15 +1276,15 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     case kThingZombieHead:
         switch (event.cmd) {
             case kCmdOff:
-                if (!SetSpriteState(nSprite, pXSprite, 0)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 0, event.causedBy)) break;
                 actActivateGibObject(pSprite, pXSprite);
                 break;
             case kCmdOn:
-                if (!SetSpriteState(nSprite, pXSprite, 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, 1, event.causedBy)) break;
                 actActivateGibObject(pSprite, pXSprite);
                 break;
             default:
-                if (!SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1)) break;
+                if (!SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy)) break;
                 actActivateGibObject(pSprite, pXSprite);
                 break;
         }
@@ -1232,13 +1292,13 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
     default:
         switch (event.cmd) {
             case kCmdOff:
-                SetSpriteState(nSprite, pXSprite, 0);
+                SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
                 break;
             case kCmdOn:
-                SetSpriteState(nSprite, pXSprite, 1);
+                SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                 break;
             default:
-                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1);
+                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 break;
         }
         break;
@@ -1677,28 +1737,17 @@ void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector) {
 }
 
 void useSpriteDamager(XSPRITE* pXSource, spritetype* pSprite) {
-    int dmg = (pXSource->data4 == 0 || pXSource->data4 > 65534) ? 65535 : pXSource->data4;
-    int dmgType = (pXSource->data3 >= 7) ? Random(6) : ((pXSource->data3 < 0) ? 0 : pXSource->data3);
+    int dmgType = (pXSource->data3 >= 7) ? Random(6) : ClipRange(pXSource->data3, 0, 6);
+    int dmg = (pXSource->data4 == 0) ? 65535 : ClipRange(pXSource->data4, 1, 65535);
 
-    // just damage / heal TX ID sprite
-    if (pSprite != NULL) {
-        actDamageSprite(pSprite->xvel, pSprite, (DAMAGE_TYPE) dmgType, dmg);
-        return;
-
+    // just damage TX ID sprite
+    if (pSprite != NULL) actDamageSprite(pSprite->index, pSprite, (DAMAGE_TYPE) dmgType, dmg);
+    else if (pXSource->data1 > 0) {
         
-    } // or damage / heal player# specified in data2 (or all players if data2 is empty)
-    else if (pXSource->data2 > 0 && pXSource->data2 <= kMaxPlayers) {
+        PLAYER* pPlayer = getPlayerById(pXSource->data1);
+        if (pPlayer != NULL)
+            actDamageSprite(sprite[pXSource->reference].index, pPlayer->pSprite, (DAMAGE_TYPE)dmgType, dmg);
 
-        for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
-            if (pXSource->data1 < kMaxPlayers) // relative to connected players
-                if (pXSource->data1 != (i + 1))
-                    continue;
-            else if (pXSource->data1 < (kDudePlayer1 + kMaxPlayers)) // absolute type
-                if (pXSource->data1 >= kDudePlayer1 && (pXSource->data1 + (kDudePlayer1 - 1)) == gPlayer[i].pSprite->type)
-                    continue;
-            actDamageSprite(sprite[pXSource->reference].xvel, gPlayer[i].pSprite, (DAMAGE_TYPE) dmgType, dmg);
-            return;
-        }
     }
 }
 
@@ -2107,11 +2156,11 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
 {
     sectortype *pSector = &sector[nSector];
     viewInterpolateSector(nSector, pSector);
-    int dz = pXSector->at28_0-pXSector->at24_0;
+    int dz = pXSector->onFloorZ-pXSector->offFloorZ;
     if (dz != 0)
     {
         int oldZ = pSector->floorz;
-        baseFloor[nSector] = pSector->floorz = pXSector->at24_0 + mulscale16(dz, GetWaveValue(a3, a4));
+        baseFloor[nSector] = pSector->floorz = pXSector->offFloorZ + mulscale16(dz, GetWaveValue(a3, a4));
         velFloor[nSector] += (pSector->floorz-oldZ)<<8;
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
@@ -2134,11 +2183,11 @@ void ZTranslateSector(int nSector, XSECTOR *pXSector, int a3, int a4)
             }
         }
     }
-    dz = pXSector->at20_0-pXSector->at1c_0;
+    dz = pXSector->onCeilZ-pXSector->offCeilZ;
     if (dz != 0)
     {
         int oldZ = pSector->ceilingz;
-        baseCeil[nSector] = pSector->ceilingz = pXSector->at1c_0 + mulscale16(dz, GetWaveValue(a3, a4));
+        baseCeil[nSector] = pSector->ceilingz = pXSector->offCeilZ + mulscale16(dz, GetWaveValue(a3, a4));
         velCeil[nSector] += (pSector->ceilingz-oldZ)<<8;
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
         {
@@ -2209,15 +2258,15 @@ int VCrushBusy(unsigned int nSector, unsigned int a2)
     XSECTOR *pXSector = &xsector[nXSector];
     int nWave;
     if (pXSector->busy < a2)
-        nWave = pXSector->at7_2;
+        nWave = pXSector->busyWaveA;
     else
-        nWave = pXSector->at7_5;
-    int dz1 = pXSector->at20_0 - pXSector->at1c_0;
-    int vc = pXSector->at1c_0;
+        nWave = pXSector->busyWaveB;
+    int dz1 = pXSector->onCeilZ - pXSector->offCeilZ;
+    int vc = pXSector->offCeilZ;
     if (dz1 != 0)
         vc += mulscale16(dz1, GetWaveValue(a2, nWave));
-    int dz2 = pXSector->at28_0 - pXSector->at24_0;
-    int v10 = pXSector->at24_0;
+    int dz2 = pXSector->onFloorZ - pXSector->offFloorZ;
+    int v10 = pXSector->offFloorZ;
     if (dz2 != 0)
         v10 += mulscale16(dz2, GetWaveValue(a2, nWave));
     int v18;
@@ -2248,10 +2297,10 @@ int VSpriteBusy(unsigned int nSector, unsigned int a2)
     XSECTOR *pXSector = &xsector[nXSector];
     int nWave;
     if (pXSector->busy < a2)
-        nWave = pXSector->at7_2;
+        nWave = pXSector->busyWaveA;
     else
-        nWave = pXSector->at7_5;
-    int dz1 = pXSector->at28_0 - pXSector->at24_0;
+        nWave = pXSector->busyWaveB;
+    int dz1 = pXSector->onFloorZ - pXSector->offFloorZ;
     if (dz1 != 0)
     {
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
@@ -2264,7 +2313,7 @@ int VSpriteBusy(unsigned int nSector, unsigned int a2)
             }
         }
     }
-    int dz2 = pXSector->at20_0 - pXSector->at1c_0;
+    int dz2 = pXSector->onCeilZ - pXSector->offCeilZ;
     if (dz2 != 0)
     {
         for (int nSprite = headspritesect[nSector]; nSprite >= 0; nSprite = nextspritesect[nSprite])
@@ -2307,7 +2356,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
         spritetype *pSprite = &sprite[nSprite];
         dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
-        if (pXSector->at20_0 > pXSector->at1c_0 || pXSector->at28_0 < pXSector->at24_0)
+        if (pXSector->onCeilZ > pXSector->offCeilZ || pXSector->onFloorZ < pXSector->offFloorZ)
         {
             if (pXSector->interruptable)
             {
@@ -2341,7 +2390,7 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
         spritetype *pSprite = &sprite[nSprite];
         dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
-        if (pXSector->at1c_0 > pXSector->at20_0 || pXSector->at24_0 < pXSector->at28_0)
+        if (pXSector->offCeilZ > pXSector->onCeilZ || pXSector->offFloorZ < pXSector->onFloorZ)
         {
             if (pXSector->interruptable)
             {
@@ -2372,9 +2421,9 @@ int VDoorBusy(unsigned int nSector, unsigned int a2)
     }
     int nWave;
     if (pXSector->busy < a2)
-        nWave = pXSector->at7_2;
+        nWave = pXSector->busyWaveA;
     else
-        nWave = pXSector->at7_5;
+        nWave = pXSector->busyWaveB;
     ZTranslateSector(nSector, pXSector, a2, nWave);
     pXSector->busy = a2;
     if (pXSector->command == kCmdLink && pXSector->txID)
@@ -2397,9 +2446,9 @@ int HDoorBusy(unsigned int nSector, unsigned int a2)
     XSECTOR *pXSector = &xsector[nXSector];
     int nWave;
     if (pXSector->busy < a2)
-        nWave = pXSector->at7_2;
+        nWave = pXSector->busyWaveA;
     else
-        nWave = pXSector->at7_5;
+        nWave = pXSector->busyWaveB;
     spritetype *pSprite1 = &sprite[pXSector->marker0];
     spritetype *pSprite2 = &sprite[pXSector->marker1];
     TranslateSector(nSector, GetWaveValue(pXSector->busy, nWave), GetWaveValue(a2, nWave), pSprite1->x, pSprite1->y, pSprite1->x, pSprite1->y, pSprite1->ang, pSprite2->x, pSprite2->y, pSprite2->ang, pSector->type == kSectorSlide);
@@ -2425,9 +2474,9 @@ int RDoorBusy(unsigned int nSector, unsigned int a2)
     XSECTOR *pXSector = &xsector[nXSector];
     int nWave;
     if (pXSector->busy < a2)
-        nWave = pXSector->at7_2;
+        nWave = pXSector->busyWaveA;
     else
-        nWave = pXSector->at7_5;
+        nWave = pXSector->busyWaveB;
     spritetype *pSprite = &sprite[pXSector->marker0];
     TranslateSector(nSector, GetWaveValue(pXSector->busy, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, 0, pSprite->x, pSprite->y, pSprite->ang, pSector->type == kSectorRotate);
     ZTranslateSector(nSector, pXSector, a2, nWave);
@@ -2455,13 +2504,13 @@ int StepRotateBusy(unsigned int nSector, unsigned int a2)
     if (pXSector->busy < a2)
     {
         vbp = pXSector->data+pSprite->ang;
-        int nWave = pXSector->at7_2;
+        int nWave = pXSector->busyWaveA;
         TranslateSector(nSector, GetWaveValue(pXSector->busy, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, pXSector->data, pSprite->x, pSprite->y, vbp, 1);
     }
     else
     {
         vbp = pXSector->data-pSprite->ang;
-        int nWave = pXSector->at7_5;
+        int nWave = pXSector->busyWaveB;
         TranslateSector(nSector, GetWaveValue(pXSector->busy, nWave), GetWaveValue(a2, nWave), pSprite->x, pSprite->y, pSprite->x, pSprite->y, vbp, pSprite->x, pSprite->y, pXSector->data, 1);
     }
     pXSector->busy = a2;
@@ -2645,7 +2694,7 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT event)
 
     // by NoOne: trigger marker after it gets reached
     if (gModernMap && pXSprite2->state != 1)
-        trTriggerSprite(pSprite2->xvel, pXSprite2, kCmdOn);
+        trTriggerSprite(pSprite2->xvel, pXSprite2, kCmdOn, -1);
 
     if (nSprite < 0) {
         viewSetSystemMessage("Unable to find path marker with id #%d for path sector #%d", nId, nSector);
@@ -2655,8 +2704,8 @@ void OperatePath(unsigned int nSector, XSECTOR *pXSector, EVENT event)
     }
         
     pXSector->marker1 = nSprite;
-    pXSector->at24_0 = pSprite2->z;
-    pXSector->at28_0 = pSprite->z;
+    pXSector->offFloorZ = pSprite2->z;
+    pXSector->onFloorZ = pSprite->z;
     switch (event.cmd) {
         case kCmdOn:
             pXSector->state = 0;
@@ -2965,9 +3014,9 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT event) {
                 dassert(nXSprite2 > 0 && nXSprite2 < kMaxXSprites);
                 pXSprite->data1 = xsprite[nXSprite2].data1;
                 if (pXSprite->data1 == pXSprite->data2)
-                    SetSpriteState(nSprite, pXSprite, 1);
+                    SetSpriteState(nSprite, pXSprite, 1, event.causedBy);
                 else
-                    SetSpriteState(nSprite, pXSprite, 0);
+                    SetSpriteState(nSprite, pXSprite, 0, event.causedBy);
             }
         }
         break;
@@ -2975,7 +3024,7 @@ void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT event) {
         {
             pXSprite->busy = nBusy;
             if ((pXSprite->busy & 0xffff) == 0)
-                SetSpriteState(nSprite, pXSprite, nBusy >> 16);
+                SetSpriteState(nSprite, pXSprite, nBusy >> 16, event.causedBy);
         }
         break;
     }
@@ -3066,18 +3115,19 @@ void trMessageWall(unsigned int nWall, EVENT event) {
     }
 }
 
-void trTriggerSprite(unsigned int nSprite, XSPRITE *pXSprite, int command) {
+void trTriggerSprite(unsigned int nSprite, XSPRITE *pXSprite, int command, int causedBy) {
     if (!pXSprite->locked && !pXSprite->isTriggered) {
         
         if (pXSprite->triggerOnce)
             pXSprite->isTriggered = 1;
 
         if (pXSprite->Decoupled && pXSprite->txID > 0)
-           evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command);
+           evSend(nSprite, 3, pXSprite->txID, (COMMAND_ID)pXSprite->command, causedBy);
         
         else {
             EVENT event;
             event.cmd = command;
+            event.causedBy = causedBy;
             OperateSprite(nSprite, pXSprite, event);
         }
 
@@ -3950,9 +4000,9 @@ bool setDataValueOfObject(int objType, int objIndex, int dataIndex, int value) {
                 switch (sprite[objIndex].type) {
                     case kSwitchCombo:
                         if (xsprite[sprite[objIndex].extra].data1 == xsprite[sprite[objIndex].extra].data2) 
-                            SetSpriteState(objIndex, &xsprite[sprite[objIndex].extra], 1);
+                            SetSpriteState(objIndex, &xsprite[sprite[objIndex].extra], 1, -1);
                         else  
-                            SetSpriteState(objIndex, &xsprite[sprite[objIndex].extra], 0);
+                            SetSpriteState(objIndex, &xsprite[sprite[objIndex].extra], 0, -1);
                         break;
                 }
                 return true;
@@ -4425,21 +4475,23 @@ void trInit(void)
                 else sprite[i].flags &= ~7;
                 break;
             }
-            if (pXSprite->Vector)
-                sprite[i].cstat |= 256;
-            if (pXSprite->Push)
-                sprite[i].cstat |= 4096;
+            if (pXSprite->Vector) sprite[i].cstat |= CSTAT_SPRITE_BLOCK_HITSCAN;
+            if (pXSprite->Push) sprite[i].cstat |= 4096;
         }
     }
-    evSend(0, 0, 7, kCmdOn);
-    if (gGameOptions.nGameType == 1)
-        evSend(0, 0, 9, kCmdOn);
-    else if (gGameOptions.nGameType == 2)
-        evSend(0, 0, 8, kCmdOn);
-    else if (gGameOptions.nGameType == 3)
-    {
-        evSend(0, 0, 8, kCmdOn);
-        evSend(0, 0, 10, kCmdOn);
+    
+    evSend(0, 0, kChannelLevelStart, kCmdOn);
+    switch (gGameOptions.nGameType) {
+        case 1:
+            evSend(0, 0, kChannelLevelStartCoop, kCmdOn);
+            break;
+        case 2:
+            evSend(0, 0, kChannelLevelStartMatch, kCmdOn);
+            break;
+        case 3:
+            evSend(0, 0, kChannelLevelStartMatch, kCmdOn);
+            evSend(0, 0, kChannelLevelStartTeamsOnly, kCmdOn);
+            break;
     }
 }
 
@@ -4465,30 +4517,30 @@ void InitGenerator(int nSprite)
             pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
             pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
             if (pXSprite->state != pXSprite->restState)
-                evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat);
+                evPost(nSprite, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat, -1);
             return;
         case kModernDudeTargetChanger:
             pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
             pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
             if (pXSprite->busyTime <= 0) pXSprite->busyTime = 5;
             if (pXSprite->state != pXSprite->restState)
-                evPost(nSprite, 3, 0, kCmdRepeat);
+                evPost(nSprite, 3, 0, kCmdRepeat, -1);
             return;
         case kModernEffectSpawner:
         case kModernSeqSpawner:
             if (pXSprite->state != pXSprite->restState)
-                evPost(nSprite, 3, 0, kCmdRepeat);
+                evPost(nSprite, 3, 0, kCmdRepeat, -1);
             return;
         case kModernObjDataAccumulator:
             pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
             pSprite->cstat |= CSTAT_SPRITE_INVISIBLE;
             if (pXSprite->state != pXSprite->restState)
-                evPost(nSprite, 3, 0, kCmdRepeat);
+                evPost(nSprite, 3, 0, kCmdRepeat, -1);
             return;
         case kModernWindGenerator:
             pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
             if (pXSprite->state != pXSprite->restState)
-                evPost(nSprite, 3, 0, kCmdRepeat);
+                evPost(nSprite, 3, 0, kCmdRepeat, -1);
             return;
         case kGenTrigger:
             pSprite->cstat &= ~CSTAT_SPRITE_BLOCK;
@@ -4496,7 +4548,7 @@ void InitGenerator(int nSprite)
             break;
     }
     if (pXSprite->state != pXSprite->restState && pXSprite->busyTime > 0)
-        evPost(nSprite, 3, (120*(pXSprite->busyTime+Random2(pXSprite->data1)))/10, kCmdRepeat);
+        evPost(nSprite, 3, (120*(pXSprite->busyTime+Random2(pXSprite->data1)))/10, kCmdRepeat, -1);
 }
 
 void ActivateGenerator(int nSprite)
@@ -4658,7 +4710,7 @@ void MGunFireSeqCallback(int, int nXSprite)
         {
             pXSprite->data2--;
             if (pXSprite->data2 == 0)
-                evPost(nSprite, 3, 1, kCmdOff);
+                evPost(nSprite, 3, 1, kCmdOff, nSprite);
         }
         int dx = (Cos(pSprite->ang)>>16)+Random2(1000);
         int dy = (Sin(pSprite->ang)>>16)+Random2(1000);
