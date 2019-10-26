@@ -14,6 +14,10 @@
 
 #include <chrono>
 
+#if (defined RENDERTYPESDL) && (SDL_MAJOR_VERSION >= 2)
+#define HAVE_TIMER_SDL
+#endif
+
 using namespace std;
 using namespace chrono;
 
@@ -69,22 +73,22 @@ uint64_t timerGetTicksU64(void)
 {
     switch (sys_timer)
     {
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
         case TIMER_SDL:
             return SDL_GetPerformanceCounter();
-#elif !defined _WIN32 && !defined RENDERTYPESDL
+#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // RENDERTYPESDL
+#endif // HAVE_TIMER_SDL
         case TIMER_CHRONO:
             return high_resolution_clock::now().time_since_epoch().count() * high_resolution_clock::period::num;
 #ifdef _WIN32
-#if !defined RENDERTYPESDL
+#if !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // !RENDERTYPESDL
+#endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
             LARGE_INTEGER li;
             QueryPerformanceCounter(&li);
@@ -104,7 +108,7 @@ uint64_t timerGetFreqU64(void)
 {
     switch (sys_timer)
     {
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
         case TIMER_SDL:
@@ -114,17 +118,17 @@ uint64_t timerGetFreqU64(void)
                 freq = SDL_GetPerformanceFrequency();
             return freq;
         }
-#elif !defined _WIN32 && !defined RENDERTYPESDL
+#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // RENDERTYPESDL
+#endif // HAVE_TIMER_SDL
         case TIMER_CHRONO:
             return high_resolution_clock::period::den;
 #ifdef _WIN32
-#if !defined RENDERTYPESDL
+#if !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // !RENDERTYPESDL
+#endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
         {
             static LARGE_INTEGER li;
@@ -152,7 +156,7 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
     if (sys_timer == TIMER_QPC)
         sys_timer = TIMER_AUTO;
 #endif
-#ifndef RENDERTYPESDL
+#ifndef HAVE_TIMER_SDL
     if (sys_timer == TIMER_SDL)
         sys_timer = TIMER_AUTO;
 #endif
@@ -184,7 +188,7 @@ int timerInit(int const tickspersecond)
 #ifdef _WIN32
                                                 "   1: QueryPerformanceCounter\n"
 #endif
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
                                                 "   2: SDL timer\n"
 #endif
                                                 "   3: std::chrono\n"
@@ -195,7 +199,7 @@ int timerInit(int const tickspersecond)
 
         OSD_RegisterCvar(&sys_timer_cvar, osdcmd_sys_timer);
 
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
         SDL_InitSubSystem(SDL_INIT_TIMER);
 #endif
 
