@@ -44,6 +44,8 @@
 
 #if SDL_MAJOR_VERSION != 1
 static SDL_version linked;
+#else
+#define SDL_JoystickNameForIndex(x) SDL_JoystickName(x)
 #endif
 
 #if !defined STARTUP_SETUP_WINDOW
@@ -846,11 +848,13 @@ void joyScanDevices()
 {
     inputdevices &= ~4;
 
+#if SDL_MAJOR_VERSION >= 2
     if (controller)
     {
         SDL_GameControllerClose(controller);
         controller = nullptr;
     }
+#endif
     if (joydev)
     {
         SDL_JoystickClose(joydev);
@@ -906,7 +910,7 @@ void joyScanDevices()
         {
             if ((joydev = SDL_JoystickOpen(i)))
             {
-                buildprintf("Using joystick %s\n", SDL_JoystickName(joydev));
+                buildprintf("Using joystick %s\n", SDL_JoystickNameForIndex(i));
 
                 // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
                 joystick.numAxes = min(9, SDL_JoystickNumAxes(joydev));
@@ -962,7 +966,6 @@ int32_t initinput(void)
 
 #if SDL_MAJOR_VERSION == 1
 #define SDL_SCANCODE_TO_KEYCODE(x) (SDLKey)(x)
-#define SDL_JoystickNameForIndex(x) SDL_JoystickName(x)
 #define SDL_NUM_SCANCODES SDLK_LAST
     if (SDL_EnableKeyRepeat(250, 30))
         initprintf("Error enabling keyboard repeat.\n");
