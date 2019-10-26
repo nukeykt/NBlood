@@ -2425,9 +2425,9 @@ void DudeToGibCallback1(int, int);
 void DudeToGibCallback2(int, int);
 
 int nFireballClient = seqRegisterClient(FireballSeqCallback);
-int dword_2192D8 = seqRegisterClient(sub_38938);
+int dword_2192D8 = seqRegisterClient(sub_38938); // fireball smoke
 int nNapalmClient = seqRegisterClient(NapalmSeqCallback);
-int dword_2192E0 = seqRegisterClient(sub_3888C);
+int dword_2192E0 = seqRegisterClient(sub_3888C); // flame lick
 int nTreeToGibClient = seqRegisterClient(TreeToGibCallback);
 int nDudeToGibClient1 = seqRegisterClient(DudeToGibCallback1);
 int nDudeToGibClient2 = seqRegisterClient(DudeToGibCallback2);
@@ -2535,6 +2535,7 @@ short gSightSpritesCount; // current count
 short gPhysSpritesList[];  // by NoOne: list of additional sprites which can be affected by physics
 short gPhysSpritesCount; // current count
 
+
 short gQavPlayerIndex = -1; // by NoOne: index of sprite which currently activated to play qav
 
 void actInit(bool bSaveLoad) {
@@ -2546,7 +2547,10 @@ void actInit(bool bSaveLoad) {
         gProxySpritesCount = gSightSpritesCount = gPhysSpritesCount = 0;
 
         // reset qav player index
-        gQavPlayerIndex = -1;
+        for (int i = 0; i < kMaxPlayers; i++) {
+            gQavScene[i].index = -1;
+            gQavScene[i].qavId = NULL;
+        }
 
         // fill arrays with negative values to avoid xvel 0 situation
         memset(gSightSpritesList, -1, sizeof(gSightSpritesList));
@@ -3212,7 +3216,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             gPlayer[p].fraggerId = -1;
     }
     if (pSprite->type != kDudeCultistBeast)
-        trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+        trTriggerSprite(pSprite->index, pXSprite, kCmdOff, nKillerSprite);
 
     pSprite->flags |= 7;
     if (VanillaMode()) {
@@ -3728,7 +3732,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                     break;
             }
 
-            trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+            trTriggerSprite(pSprite->index, pXSprite, kCmdOff, nSource);
             
             switch (pSprite->type) {
                 case kThingObjectGib:
@@ -4346,8 +4350,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         break;
     }
     nHitSprite = pSpriteHit->florhit & 0x3fff;
-    switch (pSpriteHit->florhit&0xc000)
-    {
+    switch (pSpriteHit->florhit & 0xc000) {
     case 0x8000:
         break;
     case 0x4000:
@@ -4482,7 +4485,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         if (nHSprite >= 0 && sprite[nHSprite].extra >= 0) {
             XSPRITE* pXHSprite = &xsprite[sprite[nHSprite].extra];
             if (pXHSprite->Touch && !pXHSprite->isTriggered && (!pXHSprite->DudeLockout || IsPlayerSprite(pSprite)))
-                trTriggerSprite(nHSprite, pXHSprite, kCmdSpriteTouch);
+                trTriggerSprite(nHSprite, pXHSprite, kCmdSpriteTouch, nSprite);
         }
 
         // Touch walls
@@ -4774,13 +4777,13 @@ void MoveDude(spritetype *pSprite)
                 
                 // by NoOne: do not check state (so, things can work with touch too) and allow dudelockout
                 if ((gModernMap) && (!pHitXSprite->DudeLockout || IsPlayerSprite(pSprite)))
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
                 else if (!pHitXSprite->state) // or check like vanilla do
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
             } 
             
             if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
-                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush);
+                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush, nSprite);
 
             break;
         }
@@ -4799,7 +4802,7 @@ void MoveDude(spritetype *pSprite)
                 XSECTOR *pHitXSector = NULL;
                 if (pHitSector->extra > 0)
                     pHitXSector = &xsector[pHitSector->extra];
-                if (pDudeInfo->lockOut && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->at37_7 && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
+                if (pDudeInfo->lockOut && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->dudeLockout && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
                     trTriggerSector(pHitWall->nextsector, pHitXSector, kCmdSectorPush);
                 if (top < pHitSector->ceilingz || bottom > pHitSector->floorz)
                 {
@@ -4825,13 +4828,13 @@ void MoveDude(spritetype *pSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->Exit && (pPlayer || !pXSector->at37_7))
+        if (pXSector && pXSector->Exit && (pPlayer || !pXSector->dudeLockout))
             trTriggerSector(pSprite->sectnum, pXSector, kCmdSectorExit);
         ChangeSpriteSect(nSprite, nSector);
         
         nXSector = sector[nSector].extra;
         pXSector = (nXSector > 0) ? pXSector = &xsector[nXSector] : NULL;
-        if (pXSector && pXSector->Enter && (pPlayer || !pXSector->at37_7)) {
+        if (pXSector && pXSector->Enter && (pPlayer || !pXSector->dudeLockout)) {
 
             if (sector[nSector].type == kSectorTeleport)
                 pXSector->data = pPlayer ? nSprite : -1;
@@ -4929,9 +4932,9 @@ void MoveDude(spritetype *pSprite)
             if (pPlayer) {
                 pPlayer->posture = 0;
                 pPlayer->bubbleTime = 0;
-                if (!pPlayer->canJump && pPlayer->input.buttonFlags.jump) {
+                if (!pPlayer->cantJump && pPlayer->input.buttonFlags.jump) {
                     zvel[nSprite] = -0x6aaaa;
-                    pPlayer->canJump = 1;
+                    pPlayer->cantJump = 1;
                 }
                 sfxPlay3DSound(pSprite, 721, -1, 0);
             } else {
@@ -5602,7 +5605,7 @@ void actProcessSprites(void)
 
                         if ((sprite[nAffected].flags & 32) || xsprite[sprite[nAffected].extra].health <= 0) continue;
                         else if (CheckProximity(&sprite[nAffected], x, y, z, sectnum, 96)) {
-                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity);
+                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity, nAffected);
                             break;
                         }
                     }
@@ -5611,7 +5614,7 @@ void actProcessSprites(void)
 
                     for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
                         if (gPlayer[a].pXSprite->health > 0 && CheckProximity(gPlayer[a].pSprite, x, y, z, sectnum, 96)) {
-                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity);
+                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity, gPlayer[a].pSprite->index);
                             break;
                         }
                     }
@@ -5636,7 +5639,7 @@ void actProcessSprites(void)
                 for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
                     spritetype* pPlaySprite = gPlayer[a].pSprite;
                     if (gPlayer[a].pXSprite->health > 0 && cansee(x, y, z, sectnum, pPlaySprite->x, pPlaySprite->y, pPlaySprite->z, pPlaySprite->sectnum)) {
-                        trTriggerSprite(index, pXSightSpr, kCmdSpriteSight);
+                        trTriggerSprite(index, pXSightSpr, kCmdSpriteSight, pPlaySprite->index);
                         break;
                     }
                 }
@@ -5702,20 +5705,6 @@ void actProcessSprites(void)
 
                 debrisMove(i);
 
-            }
-        }
-
-        // process playing 3-rd side qavs for player(s)
-        if (gQavPlayerIndex > -1) {
-            if (sprite[gQavPlayerIndex].extra >= 0) {
-                XSPRITE* pXSprite = &xsprite[sprite[gQavPlayerIndex].extra]; PLAYER* pPlayer = getPlayerById(pXSprite->data1);
-                if (pPlayer->curWeapon != 0) pPlayer->curWeapon = 0;
-                if (((int)gFrameClock & pXSprite->busyTime) == 0) {
-                    if (pXSprite->waitTime <= 0 || pXSprite->sysData1-- > 0) StartQAV(pPlayer, kFreeQAVEntry);
-                    else evPost(gQavPlayerIndex, 3, 0, kCmdOff);
-                }
-            } else {
-                gQavPlayerIndex = -1;
             }
         }
     }
@@ -5798,7 +5787,7 @@ void actProcessSprites(void)
                                     break;
                             }
                             if (pSprite->owner == -1) actPropagateSpriteOwner(pSprite, pSprite2);
-                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
+                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity, pSprite2->index);
                         }
                     }
                 }
@@ -5874,9 +5863,8 @@ void actProcessSprites(void)
                     {
                         XSPRITE *pXSprite = &xsprite[nXSprite];
                         if (pXSprite->Impact)
-                            trTriggerSprite(nSprite, pXSprite, kCmdOff);
-                        switch (pSprite->type)
-                        {
+                            trTriggerSprite(nSprite, pXSprite, kCmdOff, -1);
+                        switch (pSprite->type) {
                         case kThingDripWater:
                         case kThingDripBlood:
                             MakeSplash(pSprite, pXSprite);
@@ -6163,7 +6151,7 @@ void actProcessSprites(void)
                     pXIncarnation->triggerOff = false;
 
                     // trigger dude death before transform
-                    trTriggerSprite(nSprite, pXSprite, kCmdOff);
+                    trTriggerSprite(nSprite, pXSprite, kCmdOff, pSprite->owner);
 
 
                     pSprite->type = pIncarnation->type;
@@ -6255,7 +6243,7 @@ void actProcessSprites(void)
                 } else {
                     
                     // just trigger dude death
-                    trTriggerSprite(nSprite, pXSprite, kCmdOff);
+                    trTriggerSprite(nSprite, pXSprite, kCmdOff, pSprite->owner);
 
                 }
             }
@@ -6281,12 +6269,9 @@ void actProcessSprites(void)
                     if (pSprite2->flags&32)
                         continue;
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
-                    if ((unsigned int)pXSprite2->health > 0 && IsPlayerSprite(pSprite2))
-                    {
+                    if ((unsigned int)pXSprite2->health > 0 && IsPlayerSprite(pSprite2)) {
                         if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, 128))
-                        {
-                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
-                        }
+                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity, pSprite2->index);
                     }
                 }
             }
@@ -6984,7 +6969,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             {
                 XSPRITE *pXSprite = &xsprite[nXSprite];
                 if (pXSprite->Vector)
-                    trTriggerSprite(nSprite, pXSprite, kCmdSpriteImpact);
+                    trTriggerSprite(nSprite, pXSprite, kCmdSpriteImpact, nShooter);
             }
             if (pSprite->statnum == kStatThing)
             {
@@ -7894,8 +7879,9 @@ void debrisMove(int listIndex) {
             //actPostSprite(nSprite, kStatThing); // !!!! not working here for some reason
             changespritestat(nSprite, kStatThing);
 
-        if (pXDebris->state == 1) trTriggerSprite(pSprite->xvel, pXDebris, kCmdOff);
-        else trTriggerSprite(pSprite->xvel, pXDebris, kCmdOn);
+        
+        if (pXDebris->state == 1) trTriggerSprite(pSprite->xvel, pXDebris, kCmdOff, -1);
+        else trTriggerSprite(pSprite->xvel, pXDebris, kCmdOn, -1);
     }
 }
 
