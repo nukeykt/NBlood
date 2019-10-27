@@ -291,27 +291,7 @@ void ctrlGetInput(void)
     if (BUTTON(gamefunc_Show_Opponents_Weapon))
     {
         CONTROL_ClearButton(gamefunc_Show_Opponents_Weapon);
-        switch (gShowWeapon)
-        {
-        case 0:
-        {
-            gShowWeapon = 1;
-            break;
-        }
-        case 1:
-        {
-            gShowWeapon = 2;
-            break;
-        }
-        case 2:
-        {
-            gShowWeapon = 0;
-            break;
-        }
-        default:
-            gShowWeapon = 0;
-            break;
-        }
+        gShowWeapon = (gShowWeapon+1)%3;
     }
 
     if (BUTTON(gamefunc_Jump))
