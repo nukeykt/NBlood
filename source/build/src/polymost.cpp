@@ -52,9 +52,11 @@ int32_t r_polymostDebug = 0;
 int32_t r_enablepolymost2 = 0;
 int32_t r_usenewshading = 4;
 int32_t r_npotwallmode = 2;
+int32_t polymostcenterhoriz = 100;
 
 static float gviewxrange;
 static float ghoriz, ghoriz2;
+static float ghorizcorrect;
 double gxyaspect;
 float gyxscale, ghalfx, grhalfxdown10, grhalfxdown10x, ghalfy;
 float gcosang, gsinang, gcosang2, gsinang2;
@@ -407,7 +409,7 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glotang;
+float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glohorizcorrect, glotang;
 
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
@@ -1431,7 +1433,7 @@ static void resizeglcheck(void)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glohoriz2 != ghoriz2) || (glotang != gtang))
+    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glohoriz2 != ghoriz2) || (glohorizcorrect != ghorizcorrect) || (glotang != gtang))
     {
         const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
         float ratio = get_projhack_ratio();
@@ -1450,18 +1452,19 @@ static void resizeglcheck(void)
         float m[4][4];
         Bmemset(m,0,sizeof(m));
 
-        float const nearclip = 4.0f / (gxyaspect * gyxscale * 1024.f);
+        float const nearclip = 4.f / (gxyaspect * gyxscale * 1024.f);
         float const farclip = 64.f;
 
         gloxyaspect = gxyaspect;
         gloyxscale = gyxscale;
         glohoriz2 = ghoriz2;
+        glohorizcorrect = ghorizcorrect;
         glotang = gtang;
 
         m[0][0] = 1.f;
         m[1][1] = fxdimen / (fydimen * ratio);
         m[2][0] = 2.f * ghoriz2 * gstang / fxdimen;
-        m[2][1] = 2.f * ghoriz2 * gctang / fydimen;
+        m[2][1] = 2.f * (ghoriz2 * gctang + ghorizcorrect) / fydimen;
         m[2][2] = (farclip + nearclip) / (farclip - nearclip);
         m[2][3] = 1.f;
         m[3][2] = -(2.f * farclip * nearclip) / (farclip - nearclip);
@@ -5132,7 +5135,7 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
     int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
     int8_t const * dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
 
-    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*dapyscale*(1.f/65536.f)+float(ydimen>>1);
+    ghoriz = (qglobalhoriz*(1.f/65536.f)-float(ydimen>>1))*dapyscale*(1.f/65536.f)+float(ydimen>>1)+ghorizcorrect;
 
     float const dd = fxdimen*.0000001f; //Adjust sky depth based on screen size!
     float vv[2];
@@ -5177,7 +5180,7 @@ static void polymost_flatskyrender(vec2f_t const* const dpxy, int32_t const n, i
         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+ti;
         if (npot)
         {
-            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+            float fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
             int tang = (y<<(11-dapskybits))&2047;
             otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
         }
@@ -5582,7 +5585,7 @@ static void polymost_drawalls(int32_t const bunch)
                         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+i;
                         if (npot)
                         {
-                            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+                            float fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
                             int tang = (y<<(11-dapskybits))&2047;
                             otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
                         }
@@ -5976,7 +5979,7 @@ static void polymost_drawalls(int32_t const bunch)
                         globalpicnum = dapskyoff[y&((1<<dapskybits)-1)]+i;
                         if (npot)
                         {
-                            fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
+                            float fx = ((float)((y<<(11-dapskybits))-fglobalang))*o.z+ghalfx;
                             int tang = (y<<(11-dapskybits))&2047;
                             otex.u = otex.d*(t*((float)(tang)) * (1.f/2048.f) + xpanning) - xtex.u*fx;
                         }
@@ -6764,6 +6767,7 @@ void polymost_drawrooms()
     ghalfy = (float)(ydimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
+    ghorizcorrect = fix16_to_float((100-polymostcenterhoriz)*divscale16(xdimenscale, viewingrange));
 
     gvisibility = ((float)globalvisibility)*FOGSCALE;
 
@@ -6775,11 +6779,11 @@ void polymost_drawrooms()
     {
         gshang  = 0.f;
         gchang  = 1.f;
-        ghoriz2 = (float)(ydimen >> 1) - ghoriz;
+        ghoriz2 = (float)(ydimen >> 1) - (ghoriz + ghorizcorrect);
     }
     else
     {
-        float r = (float)(ydimen >> 1) - ghoriz;
+        float r = (float)(ydimen >> 1) - (ghoriz + ghorizcorrect);
         gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx / (gvrcorrection * gvrcorrection));
         gchang  = Bsqrtf(1.f - gshang * gshang);
         ghoriz2 = 0.f;
@@ -6804,10 +6808,10 @@ void polymost_drawrooms()
         gstang = -gstang;
 
     //Generate viewport trapezoid (for handling screen up/down)
-    vec3f_t p[4] = {  { 0-1,                                        0-1,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1,                                  0 },
-                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2), 0 },
-                      { 0-1,                                        (float)(windowxy2.y + 1 - windowxy1.y + 2), 0 } };
+    vec3f_t p[4] = {  { 0-1,                                        0-1+ghorizcorrect,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), 0-1+ghorizcorrect,                                  0 },
+                      { (float)(windowxy2.x + 1 - windowxy1.x + 2), (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 },
+                      { 0-1,                                        (float)(windowxy2.y + 1 - windowxy1.y + 2)+ghorizcorrect, 0 } };
 
     for (auto & v : p)
     {
@@ -7252,17 +7256,18 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
     ghalfy = (float)(ydimen>>1);
     grhalfxdown10 = 1.f/(ghalfx*1024.f);
     ghoriz = fix16_to_float(qglobalhoriz);
+    ghorizcorrect = fix16_to_float((100-polymostcenterhoriz)*divscale16(xdimenscale, viewingrange));
     gvisibility = ((float)globalvisibility)*FOGSCALE;
     resizeglcheck();
     if (r_yshearing)
     {
         gshang  = 0.f;
         gchang  = 1.f;
-        ghoriz2 = (float)(ydimen >> 1) - ghoriz;
+        ghoriz2 = (float)(ydimen >> 1) - (ghoriz+ghorizcorrect);
     }
     else
     {
-        float r = (float)(ydimen >> 1) - ghoriz;
+        float r = (float)(ydimen >> 1) - (ghoriz+ghorizcorrect);
         gshang  = r / Bsqrtf(r * r + ghalfx * ghalfx / (gvrcorrection * gvrcorrection));
         gchang  = Bsqrtf(1.f - gshang * gshang);
         ghoriz2 = 0.f;
