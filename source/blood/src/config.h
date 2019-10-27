@@ -77,6 +77,7 @@ extern int32_t gMessageFont;
 extern int32_t gbAdultContent;
 extern char gzAdultPassword[9];
 extern int32_t gDoppler;
+extern int32_t gShowPlayerNames;
 extern int32_t gShowWeapon;
 extern int32_t gMouseSensitivity;
 extern int32_t gMouseAiming;
