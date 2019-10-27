@@ -6203,13 +6203,17 @@ draw_as_face_sprite:
             }
         }
 
+        x = tspr->x + spriteext[spritenum].offset.x;
+        y = tspr->y + spriteext[spritenum].offset.y;
+        z = tspr->z + spriteext[spritenum].offset.z;
+
         i = (int32_t)tspr->ang+1536;
         i += spriteext[spritenum].angoff;
 
         const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : INT32_MIN;
         const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;
 
-        classicDrawVoxel(tspr->x,tspr->y,tspr->z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
+        classicDrawVoxel(x,y,z,i,daxrepeat,(int32_t)tspr->yrepeat,vtilenum,
             tspr->shade,tspr->pal,lwall,swall,tspr->cstat,(tspr->cstat&48)!=48,floorz,ceilingz);
     }
 
