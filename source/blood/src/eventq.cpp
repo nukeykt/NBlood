@@ -67,13 +67,7 @@ void EventQueue::Kill(int a1, int a2, CALLBACK_ID a3)
     PQueue->Kill([=](EVENT nItem)->bool {return !memcmp(&nItem, &evn, sizeof(EVENT)); });
 }
 
-//struct RXBUCKET
-//{
-//    unsigned int at0_0 : 13;
-//    unsigned int at1_5 : 3;
-//};
-
-RXBUCKET rxBucket[kMaxChannels+1];
+RXBUCKET rxBucket[kChannelMax+1];
 
 int GetBucketChannel(const RXBUCKET *pRX)
 {
@@ -275,7 +269,7 @@ void evInit(void)
             ThrowError("Invalid xsector reference in sector %d", i);
         if (nXSector > 0 && xsector[nXSector].rxID > 0)
         {
-            dassert(nCount < kMaxChannels);
+            dassert(nCount < kChannelMax);
             rxBucket[nCount].type = 6;
             rxBucket[nCount].index = i;
             nCount++;
@@ -288,7 +282,7 @@ void evInit(void)
             ThrowError("Invalid xwall reference in wall %d", i);
         if (nXWall > 0 && xwall[nXWall].rxID > 0)
         {
-            dassert(nCount < kMaxChannels);
+            dassert(nCount < kChannelMax);
             rxBucket[nCount].type = 0;
             rxBucket[nCount].index = i;
             nCount++;
@@ -303,7 +297,7 @@ void evInit(void)
                 ThrowError("Invalid xsprite reference in sprite %d", i);
             if (nXSprite > 0 && xsprite[nXSprite].rxID > 0)
             {
-                dassert(nCount < kMaxChannels);
+                dassert(nCount < kChannelMax);
                 rxBucket[nCount].type = 3;
                 rxBucket[nCount].index = i;
                 nCount++;
@@ -347,9 +341,9 @@ char evGetSourceState(int nType, int nIndex)
     return 0;
 }
 
-void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
+void evSend(int nIndex, int nType, int rxId, COMMAND_ID command, short causedBy)
 {
-    EVENT event; event.index = nIndex; event.type = nType; event.cmd = command;
+    EVENT event; event.index = nIndex; event.type = nType; event.cmd = command; event.causedBy = causedBy;
     
     switch (command) {
         case kCmdState:
@@ -455,28 +449,25 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command)
     }
 }
 
-void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command)
-{
+void evPost(int nIndex, int nType, unsigned int nDelta, COMMAND_ID command, short causedBy) {
     dassert(command != kCmdCallback);
-    if (command == kCmdState)
-        command = evGetSourceState(nType, nIndex) ? kCmdOn : kCmdOff;
-    else if (command == kCmdNotState)
-        command = evGetSourceState(nType, nIndex) ? kCmdOff : kCmdOn;
+    if (command == kCmdState) command = evGetSourceState(nType, nIndex) ? kCmdOn : kCmdOff;
+    else if (command == kCmdNotState) command = evGetSourceState(nType, nIndex) ? kCmdOff : kCmdOn;
     EVENT evn = {};
     evn.index = nIndex;
     evn.type = nType;
     evn.cmd = command;
-    // Inlined?
+    evn.causedBy = causedBy;
     eventQ.PQueue->Insert((int)gFrameClock+nDelta, evn);
 }
 
-void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID a4)
-{
+void evPost(int nIndex, int nType, unsigned int nDelta, CALLBACK_ID callback, short causedBy) {
     EVENT evn = {};
     evn.index = nIndex;
     evn.type = nType;
     evn.cmd = kCmdCallback;
-    evn.funcID = a4;
+    evn.funcID = callback;
+    evn.causedBy = causedBy;
     eventQ.PQueue->Insert((int)gFrameClock+nDelta, evn);
 }
 

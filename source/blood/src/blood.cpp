@@ -633,6 +633,12 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                         break;
                 }
 
+                // very quick fix for floor sprites with Touch trigger flag if their Z is equals sector floorz / ceilgz
+                if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && pSprite->sectnum >= 0 && pSprite->extra >= 0 && xsprite[pSprite->extra].Touch) {
+                    if (pSprite->z == sector[pSprite->sectnum].floorz) pSprite->z--;
+                    else if (pSprite->z == sector[pSprite->sectnum].ceilingz) pSprite->z++;
+                }
+
             } else {
                 
                 switch (pSprite->type) {
@@ -1821,10 +1827,8 @@ RESTART:
                         break;
                     faketimerhandler();
                     ProcessFrame();
-                    timerUpdateClock();
                     gameUpdate = true;
                 }
-                timerUpdateClock();
             }
             if (gameUpdate)
             {

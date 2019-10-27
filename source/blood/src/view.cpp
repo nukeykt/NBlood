@@ -246,7 +246,7 @@ void viewInitializePrediction(void)
 	predict.at24 = gMe->q16horiz;
 	predict.at28 = gMe->q16slopehoriz;
 	predict.at2c = gMe->slope;
-	predict.at6f = gMe->canJump;
+	predict.at6f = gMe->cantJump;
 	predict.at70 = gMe->isRunning;
 	predict.at72 = gMe->isUnderwater;
 	predict.at71 = gMe->input.buttonFlags.jump;
@@ -1120,25 +1120,24 @@ AMMOICON gAmmoIcons[] = {
 
 struct WEAPONICON {
     short nTile;
-    char xRepeat;
-    char yRepeat;
+    char zOffset;
 };
 
 WEAPONICON gWeaponIcon[] = {
-    { -1, 0, 0 },
-    { -1, 0, 0 },
-    { 524, 32, 32 },
-    { 559, 32, 32 },
-    { 558, 32, 32 },
-    { 526, 32, 32 },
-    { 589, 32, 32 },
-    { 618, 32, 32 },
-    { 539, 32, 32 },
-    { 800, 32, 32 },
-    { 525, 32, 32 },
-    { 811, 32, 32 },
-    { 810, 32, 32 },
-    { -1, 0, 0 },
+    { -1, 0 },
+    { -1, 0 }, // 1: pitchfork
+    { 524, 6 }, // 2: flare gun
+    { 559, 6 }, // 3: shotgun
+    { 558, 8 }, // 4: tommy gun
+    { 526, 6 }, // 5: napalm launcher
+    { 589, 11 }, // 6: dynamite
+    { 618, 11 }, // 7: spray can
+    { 539, 6 }, // 8: tesla gun
+    { 800, 0 }, // 9: life leech
+    { 525, 11 }, // 10: voodoo doll
+    { 811, 11 }, // 11: proxy bomb
+    { 810, 11 }, // 12: remote bomb
+    { -1, 0 },
 };
 
 int dword_14C508;
@@ -1501,7 +1500,7 @@ void UpdateStatusBar(ClockTicks arg)
 
         if (pPlayer->curWeapon && pPlayer->weaponAmmo != -1)
         {
-            int num = pPlayer->ammCount[pPlayer->weaponAmmo];
+            int num = pPlayer->ammoCount[pPlayer->weaponAmmo];
             if (pPlayer->weaponAmmo == 6)
                 num /= 10;
             if ((unsigned int)gAmmoIcons[pPlayer->weaponAmmo].nTile < kMaxTiles)
@@ -1539,7 +1538,7 @@ void UpdateStatusBar(ClockTicks arg)
         }
         if (pPlayer->curWeapon && pPlayer->weaponAmmo != -1)
         {
-            int num = pPlayer->ammCount[pPlayer->weaponAmmo];
+            int num = pPlayer->ammoCount[pPlayer->weaponAmmo];
             if (pPlayer->weaponAmmo == 6)
                 num /= 10;
             DrawStatNumber("%3d", num, 2240, 42, 183, 0, 0, 256);
@@ -1598,7 +1597,7 @@ void UpdateStatusBar(ClockTicks arg)
         }
         if (pPlayer->curWeapon && pPlayer->weaponAmmo != -1)
         {
-            int num = pPlayer->ammCount[pPlayer->weaponAmmo];
+            int num = pPlayer->ammoCount[pPlayer->weaponAmmo];
             if (pPlayer->weaponAmmo == 6)
                 num /= 10;
             DrawStatNumber("%3d", num, 2240, 216, 183, 0, 0);
@@ -1607,7 +1606,7 @@ void UpdateStatusBar(ClockTicks arg)
         {
             int x = 135+((i-1)/3)*23;
             int y = 182+((i-1)%3)*6;
-            int num = pPlayer->ammCount[i];
+            int num = pPlayer->ammoCount[i];
             if (i == 6)
                 num /= 10;
             if (i == pPlayer->weaponAmmo)
@@ -1622,20 +1621,20 @@ void UpdateStatusBar(ClockTicks arg)
 
         if (pPlayer->weaponAmmo == 10)
         {
-            DrawStatNumber("%2d", pPlayer->ammCount[10], 2230, 291, 194, -128, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[10], 2230, 291, 194, -128, 10);
         }
         else
         {
-            DrawStatNumber("%2d", pPlayer->ammCount[10], 2230, 291, 194, 32, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[10], 2230, 291, 194, 32, 10);
         }
 
         if (pPlayer->weaponAmmo == 11)
         {
-            DrawStatNumber("%2d", pPlayer->ammCount[11], 2230, 309, 194, -128, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[11], 2230, 309, 194, -128, 10);
         }
         else
         {
-            DrawStatNumber("%2d", pPlayer->ammCount[11], 2230, 309, 194, 32, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[11], 2230, 309, 194, 32, 10);
         }
 
         if (pPlayer->armor[1])
@@ -2128,17 +2127,31 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     {
         dassert(pTSprite->type >= kDudePlayer1 && pTSprite->type <= kDudePlayer8);
         PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
-        if (gWeaponIcon[pPlayer->curWeapon].nTile < 0) break;
+        WEAPONICON weaponIcon = gWeaponIcon[pPlayer->curWeapon];
+        const int nTile = weaponIcon.nTile;
+        if (nTile < 0) break;
         uspritetype *pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
-        int top, bottom;
-        GetSpriteExtents((spritetype *)pTSprite, &top, &bottom);
         pNSprite->x = pTSprite->x;
         pNSprite->y = pTSprite->y;
         pNSprite->z = pTSprite->z-(32<<8);
-        pNSprite->picnum = gWeaponIcon[pPlayer->curWeapon].nTile;
+        pNSprite->picnum = nTile;
         pNSprite->shade = pTSprite->shade;
-        pNSprite->xrepeat = gWeaponIcon[pPlayer->curWeapon].xRepeat;
-        pNSprite->yrepeat = gWeaponIcon[pPlayer->curWeapon].yRepeat;
+        pNSprite->xrepeat = 32;
+        pNSprite->yrepeat = 32;
+        const int nVoxel = voxelIndex[nTile];
+        if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
+        {
+            pNSprite->cstat |= 48;
+            pNSprite->cstat &= ~8;
+            pNSprite->picnum = nVoxel;
+            pNSprite->z -= weaponIcon.zOffset<<8;
+            const int lifeLeech = 9;
+            if (pPlayer->curWeapon == lifeLeech)
+            {
+                pNSprite->x -=  mulscale30(128, Cos(pNSprite->ang));
+                pNSprite->y -= mulscale30(128, Sin(pNSprite->ang));
+            }
+        }
         break;
     }
     }
@@ -3029,8 +3042,7 @@ void viewDrawScreen(void)
 #ifdef USE_OPENGL
     polymostcenterhoriz = defaultHoriz;
 #endif
-
-    timerUpdateClock();
+    gameHandleEvents();
     ClockTicks delta = totalclock - lastUpdate;
     if (delta < 0)
         delta = 0;
