@@ -1259,10 +1259,10 @@ void viewDrawMapTitle(void)
 
 void viewDrawAimedPlayerName(void)
 {
-    if (!gShowPlayerNames || gMe->aim.dx == 0 || gMe->aim.dy == 0)
+    if (!gShowPlayerNames || (gView->aim.dx == 0 && gView->aim.dy == 0))
         return;
 
-    int hit = HitScan(gMe->pSprite, gMe->pSprite->z, gMe->aim.dx, gMe->aim.dy, gMe->aim.dz, CLIPMASK0, 512);
+    int hit = HitScan(gView->pSprite, gView->pSprite->z, gView->aim.dx, gView->aim.dy, gView->aim.dz, CLIPMASK0, 512);
     if (hit == 3)
     {
         spritetype* pSprite = &sprite[gHitInfo.hitsprite];
@@ -1694,11 +1694,7 @@ void UpdateStatusBar(ClockTicks arg)
         viewDrawPowerUps(pPlayer);
     }
 
-    viewDrawMapTitle();
-
     if (gGameOptions.nGameType < 1) return;
-
-    viewDrawAimedPlayerName();
 
     if (gGameOptions.nGameType == 3)
     {
@@ -3579,6 +3575,8 @@ RORHACK:
         printext256(fX-strlen(gTempStr)*4, fY, 31, -1, gTempStr, 1);
     }
 #endif
+    viewDrawMapTitle();
+    viewDrawAimedPlayerName();
     viewPrintFPS();
     if (gPaused)
     {
