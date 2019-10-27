@@ -1257,6 +1257,25 @@ void viewDrawMapTitle(void)
     }
 }
 
+void viewDrawAimedPlayerName(void)
+{
+    if (!gShowPlayerNames || gMe->aim.dx == 0 || gMe->aim.dy == 0)
+        return;
+
+    int hit = HitScan(gMe->pSprite, gMe->pSprite->z, gMe->aim.dx, gMe->aim.dy, gMe->aim.dz, CLIPMASK0, 512);
+    if (hit == 3)
+    {
+        spritetype* pSprite = &sprite[gHitInfo.hitsprite];
+        if (IsPlayerSprite(pSprite))
+        {
+            char nPlayer = pSprite->type-kDudePlayer1;
+            char* szName = gProfile[nPlayer].name;
+            int nPalette = (gPlayer[nPlayer].teamId&3)+11;
+            viewDrawText(4, szName, 160, 125, -128, nPalette, 1, 1);
+        }
+    }
+}
+
 void viewDrawPack(PLAYER *pPlayer, int x, int y)
 {
     int packs[5];
@@ -1678,6 +1697,8 @@ void UpdateStatusBar(ClockTicks arg)
     viewDrawMapTitle();
 
     if (gGameOptions.nGameType < 1) return;
+
+    viewDrawAimedPlayerName();
 
     if (gGameOptions.nGameType == 3)
     {
