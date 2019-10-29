@@ -586,6 +586,11 @@ int nSoundRateValues[] = {
     48000
 };
 
+char nMusicDevices = 1;
+#ifdef _WIN32
+    nMusicDevices = 2;
+#endif
+
 int nMusicDeviceValues[] = {
     ASS_OPL3,
 #ifdef _WIN32
@@ -609,7 +614,7 @@ CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 100, 180
 CGameMenuItemZCycle itemOptionsSoundSampleRate("SAMPLE RATE:", 3, 66, 110, 180, 0, UpdateSoundRate, pzSoundRateStrings, 3, 0);
 CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 256, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 130, 180, false, UpdateCDToggle, NULL, NULL);
-CGameMenuItemZCycle itemOptionsSoundMusicDevice("MUSIC DEVICE:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, 2, 0);
+CGameMenuItemZCycle itemOptionsSoundMusicDevice("MUSIC DEVICE:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, nMusicDevices, 0);
 CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 150, 180, 0, NULL, 0, SetSound, 0);
 
 
@@ -1925,7 +1930,7 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
     }
     itemOptionsSoundNumVoices.nValue = NumVoices;
     itemOptionsSoundMusicDevice.m_nFocus = 0;
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < nMusicDevices; i++)
     {
         if (nMusicDeviceValues[i] == MusicDevice)
         {
