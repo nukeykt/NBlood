@@ -106,24 +106,28 @@ extern int32_t polymostcenterhoriz;
 
 extern int16_t globalpicnum;
 
+extern float fogfactor[MAXPALOOKUPS];
+
 // Compare with polymer_eligible_for_artmap()
 static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_t const pal)
 {
     return !usehightile || !hicfindsubst(picnum, pal, hictinting[pal].f & HICTINT_ALWAYSUSEART);
 }
 
-static inline float getshadefactor(int32_t const shade)
+static inline float getshadefactor(int32_t const shade, int32_t const pal)
 {
     // 8-bit tiles, i.e. non-hightiles and non-models, don't get additional
     // glColor() shading with r_usetileshades!
     if (videoGetRenderMode() == REND_POLYMOST && !(globalflags & GLOBAL_NO_GL_TILESHADES) && eligible_for_tileshades(globalpicnum, globalpal))
         return 1.f;
 
+    float const fshade = fogfactor[pal] != 0.f ? shade / fogfactor[pal] : 0.f;
+
     if (r_usenewshading == 4)
-        return max(min(1.f - (shade * shadescale / frealmaxshade), 1.f), 0.f);
+        return max(min(1.f - (fshade * shadescale / frealmaxshade), 1.f), 0.f);
 
     float const shadebound = (float)((shadescale_unbounded || shade>=numshades) ? numshades : numshades-1);
-    float const scaled_shade = (float)shade*shadescale;
+    float const scaled_shade = fshade*shadescale;
     float const clamped_shade = min(max(scaled_shade, 0.f), shadebound);
 
     return ((float)(numshades-clamped_shade))/(float)numshades;

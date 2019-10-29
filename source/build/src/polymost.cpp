@@ -143,6 +143,7 @@ int32_t r_flatsky = 1;
 // used for fogcalc
 static float fogresult, fogresult2;
 coltypef fogcol, fogtable[MAXPALOOKUPS];
+float fogfactor[MAXPALOOKUPS];
 
 static uint32_t currentShaderProgramID = 0;
 static GLenum currentActiveTexture = 0;
@@ -521,6 +522,7 @@ void polymost_glreset()
         fogtable[i].g = palookupfog[i].g * (1.f/255.f);
         fogtable[i].b = palookupfog[i].b * (1.f/255.f);
         fogtable[i].a = 0;
+        fogfactor[i] = palookupfogfactor[i];
     }
 
     //Reset if this is -1 (meaning 1st texture call ever), or > 0 (textures in memory)
@@ -785,6 +787,9 @@ void polymost_setVisibility(float visibility)
 {
     if (currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
+
+    if (globalflags & GLOBAL_NO_GL_TILESHADES)
+        visibility = -16;
 
     float visFactor = visibility * fviewingrange * (1.f / (64.f * 65536.f));
     if (visFactor == polymost1VisFactor)
@@ -1238,13 +1243,21 @@ static inline void fogcalc(int32_t shade, int32_t vis, int32_t pal)
 
     if (r_usenewshading < 2)
     {
-        fogcalc_old(shade, vis);
+        if (fogfactor[pal] == 0.f)
+            fogresult = 0.001f;
+        else
+            fogcalc_old(shade, vis);
         return;
     }
 
     float combvis = (float) globalvisibility * (uint8_t) (vis+16);
 
-    if (combvis == 0.f)
+    if (fogfactor[pal] == 0.f)
+    {
+        fogresult = FULLVIS_BEGIN;
+        fogresult2 = FULLVIS_END;
+    }
+    else if (combvis == 0.f)
     {
         if (r_usenewshading == 2 && shade > 0)
         {
@@ -1304,10 +1317,12 @@ void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal)
         fogresult = 0.f;
         fogcol = fogtable[pal];
 
-        if (((uint8_t)(vis + 16)) > 0 && globalvisibility > 0)
+        if (((uint8_t)(vis + 16)) > 0 && globalvisibility > 0 && fogfactor[pal] > 0.f)
         {
             constexpr GLfloat glfogconstant = 262144.f;
             GLfloat fogrange = (frealmaxshade * glfogconstant) / (((uint8_t)(vis + 16)) * globalvisibility);
+
+            fogrange *= fogfactor[pal];
 
             fogresult = 0.f - (((min(shade, 0) - 0.5f) / frealmaxshade) * fogrange); // min() = subtract shades from fog
             fogresult2 = fogrange - (((shade - 0.5f) / frealmaxshade) * fogrange);
@@ -1326,6 +1341,7 @@ void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal)
     }
 
     fogcalc(shade, vis, pal);
+
     glFogfv(GL_FOG_COLOR, (GLfloat *)&fogcol);
 
     if (r_usenewshading < 2)
@@ -1350,6 +1366,8 @@ void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float fa
             GLfloat normalizedshade = (shade - 0.5f) / frealmaxshade;
             GLfloat fogrange = (((uint8_t)(vis + 16)) / (8.f * frealmaxshade)) + normalizedshade;
 
+            fogrange *= fogfactor[pal];
+
             // subtract shades from fog
             if (normalizedshade > 0.f && normalizedshade < 1.f)
                 fogrange = (fogrange - normalizedshade) / (1.f - normalizedshade);
@@ -1373,6 +1391,9 @@ void calc_and_apply_fog_factor(int32_t shade, int32_t vis, int32_t pal, float fa
     // NOTE: for r_usenewshading >= 2, the fog beginning/ending distance results are
     // unused.
     fogcalc(shade, vis, pal);
+    fogresult *= fogfactor[pal];
+    fogresult2 *= fogfactor[pal];
+
     glFogfv(GL_FOG_COLOR, (GLfloat *)&fogcol);
 
     if (r_usenewshading < 2)
@@ -2893,9 +2914,9 @@ static void polymost2_drawVBO(GLenum mode,
     float tint[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     polytint_t const & polytint = hictinting[globalpal];
     //POGOTODO: full bright pass uses its own globalshade...
-    tint[0] = (1.f-(polytint.sr*(1.f/255.f)))*getshadefactor(globalshade)+(polytint.sr*(1.f/255.f));
-    tint[1] = (1.f-(polytint.sg*(1.f/255.f)))*getshadefactor(globalshade)+(polytint.sg*(1.f/255.f));
-    tint[2] = (1.f-(polytint.sb*(1.f/255.f)))*getshadefactor(globalshade)+(polytint.sb*(1.f/255.f));
+    tint[0] = (1.f-(polytint.sr*(1.f/255.f)))*getshadefactor(globalshade, globalpal)+(polytint.sr*(1.f/255.f));
+    tint[1] = (1.f-(polytint.sg*(1.f/255.f)))*getshadefactor(globalshade, globalpal)+(polytint.sg*(1.f/255.f));
+    tint[2] = (1.f-(polytint.sb*(1.f/255.f)))*getshadefactor(globalshade, globalpal)+(polytint.sb*(1.f/255.f));
 
     // spriteext full alpha control
     float alpha = float_trans(dameth & DAMETH_MASKPROPS, drawpoly_blend) * (1.f - drawpoly_alpha);
@@ -3251,6 +3272,8 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         //POGOTODO: I could move this into bindPth
         if (!(pth->flags & PTH_INDEXED))
             polymost_usePaletteIndexing(false);
+        else if (!(globalflags & GLOBAL_NO_GL_TILESHADES))
+            polymost_setFogEnabled(false);
 
         if (drawpoly_srepeat)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
@@ -3373,7 +3396,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
     {
         polytint_t const & tint = hictinting[globalpal];
         float shadeFactor = (pth->flags & PTH_INDEXED) &&
-                            !(globalflags & GLOBAL_NO_GL_TILESHADES) ? 1.f : getshadefactor(globalshade);
+                            !(globalflags & GLOBAL_NO_GL_TILESHADES) ? 1.f : getshadefactor(globalshade, globalpal);
         pc[0] = (1.f-(tint.sr*(1.f/255.f)))*shadeFactor+(tint.sr*(1.f/255.f));
         pc[1] = (1.f-(tint.sg*(1.f/255.f)))*shadeFactor+(tint.sg*(1.f/255.f));
         pc[2] = (1.f-(tint.sb*(1.f/255.f)))*shadeFactor+(tint.sb*(1.f/255.f));
@@ -3648,6 +3671,8 @@ do                                                                              
         // restore palette usage if we were just rendering a non-indexed color texture
         polymost_usePaletteIndexing(true);
     }
+    else if (!nofog)
+        polymost_setFogEnabled(true);
 
     int const clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 
@@ -4954,7 +4979,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     drawpoly_alpha = 0.f;
     drawpoly_blend = 0;
 
-    if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+    if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
         calc_and_apply_fog(fogshade(global_cf_shade, global_cf_pal), sec->visibility, POLYMOST_CHOOSE_FOG_PAL(global_cf_fogpal, global_cf_pal));
 
     if (have_floor)
@@ -5444,7 +5469,7 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].floorstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+            if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                 calc_and_apply_fog_factor(sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
 
             globvis2 = globalpisibility;
@@ -5838,7 +5863,7 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].ceilingstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+            if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                 calc_and_apply_fog_factor(sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
 
             globvis2 = globalpisibility;
@@ -6299,7 +6324,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -6355,7 +6380,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (nwal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -6422,7 +6447,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -7118,7 +7143,7 @@ static void polymost_drawmaskwallinternal(int32_t wallIndex)
     drawpoly_alpha = 0.f;
     drawpoly_blend = blend;
 
-    if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+    if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
         calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
     float const csy[4] = { ((float)(cz[0] - globalposz)) * ryp0 + ghoriz,
@@ -7924,7 +7949,7 @@ void polymost_drawsprite(int32_t snum)
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
 
-    if ((usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
+    if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
         || (usemodels && md_tilehasmodel(globalpicnum, globalpal) >= 0))
         calc_and_apply_fog(fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
 
@@ -9277,7 +9302,7 @@ void polymost_fillpolygon(int32_t npoints)
 
     polymost_updatePalette();
 
-    float const f = getshadefactor(globalshade);
+    float const f = getshadefactor(globalshade, globalpal);
 
     uint8_t const maskprops = (globalorientation>>7)&DAMETH_MASKPROPS;
     handle_blend(maskprops > DAMETH_MASK, 0, maskprops == DAMETH_TRANS2);

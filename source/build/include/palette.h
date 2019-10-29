@@ -89,6 +89,7 @@ extern char britable[16][256];
 
 #ifdef USE_OPENGL
 extern palette_t palookupfog[MAXPALOOKUPS];
+extern float palookupfogfactor[MAXPALOOKUPS];
 
 static inline void bricolor(palette_t *wpptr, int32_t dacol)
 {
