@@ -586,9 +586,10 @@ int nSoundRateValues[] = {
     48000
 };
 
-char nMusicDevices = 1;
 #ifdef _WIN32
-    nMusicDevices = 2;
+    char nMusicDevices = 2;
+#else
+    char nMusicDevices = 1;
 #endif
 
 int nMusicDeviceValues[] = {
