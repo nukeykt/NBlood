@@ -52,8 +52,8 @@ void uninitsb(void);
 void setears(int,int,int,int);
 void wsayfollow(char const *,int,int,int *,int *,char);
 void wsay(char const *,int,int,int);
-void loadwaves(void);
-void loadsong(char const *);
+void loadwaves(char const *);
+int loadsong(char const *);
 void musicon(void);
 void musicoff(void);
 void refreshaudio(void);
@@ -140,7 +140,7 @@ static int screentilt = 0, oscreentilt = 0;
 static int fvel, svel, avel;
 static int fvel2, svel2, avel2;
 
-unsigned char option[NUMOPTIONS] = {0,0,0,0,0,0,1,0};
+unsigned char option[NUMOPTIONS] = {0,0,1,0,0,0,1,1+4+(6<<4)};
 unsigned char keys[NUMGAMEKEYS] =
 {
     0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,
