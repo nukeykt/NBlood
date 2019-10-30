@@ -227,7 +227,6 @@ static void SignalHandler(int32_t signum)
             setgammaramp(&sysgamma);
         gammabrightness = 0;
         app_crashhandler();
-        uninitsystem();
         if (stdout) fclose(stdout);
         break;
     default:
