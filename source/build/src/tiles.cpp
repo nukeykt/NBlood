@@ -604,7 +604,7 @@ int32_t artLoadFiles(const char *filename, int32_t askedsize)
     Bmemset(gotpic, 0, sizeof(gotpic));
     //cachesize = min((int32_t)((Bgetsysmemsize()/100)*60),max(artsize,askedsize));
     g_vm_size = (Bgetsysmemsize() <= (uint32_t)askedsize) ? (int32_t)((Bgetsysmemsize() / 100) * 60) : askedsize;
-    zpl_virtual_memory vm = zpl_vm_alloc(nullptr, g_vm_size);
+    zpl_virtual_memory vm = Xvm_alloc(nullptr, g_vm_size);
     g_vm_data = vm.data;
     g_vm_size = vm.size;
     g_cache.initBuffer((intptr_t) g_vm_data, g_vm_size);
@@ -884,5 +884,5 @@ void Buninitart(void)
     if (artfil != buildvfs_kfd_invalid)
         kclose(artfil);
 
-    zpl_vm_free(zpl_vm(g_vm_data, g_vm_size));
+    Xvm_free(zpl_vm(g_vm_data, g_vm_size));
 }

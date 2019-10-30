@@ -5,7 +5,7 @@
 
 cpuinfo_t cpu;
 
-#if defined EDUKE32_PLATFORM_INTEL
+#if defined EDUKE32_CPU_X86
 
 #ifndef _WIN32
 # include <cpuid.h>
@@ -14,7 +14,7 @@ cpuinfo_t cpu;
 static char g_cpuVendorIDString[16];
 static char g_cpuBrandString[64];
 
-void sysReadCPUID(void)
+void sysReadCPUID()
 {
     int32_t regs[4];
 
@@ -86,4 +86,8 @@ void sysReadCPUID(void)
         }
     }
 }
-#endif  // EDUKE32_PLATFORM_INTEL
+#else
+
+void sysReadCPUID() { }
+
+#endif  // EDUKE32_CPU_X86

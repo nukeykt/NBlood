@@ -1,18 +1,21 @@
 #pragma once
 
-#ifndef timer_h__
-#define timer_h__
+#ifndef timer_h_
+#define timer_h_
 
 #include "compat.h"
 
 // for compatibility
 #define timerUninit()
 
-auto constexpr TIMER_AUTO   = 0;
-auto constexpr TIMER_QPC    = 1;
-auto constexpr TIMER_SDL    = 2;
-auto constexpr TIMER_CHRONO = 3;
-auto constexpr TIMER_RDTSC  = 4;
+enum buildtimertype
+{
+    TIMER_AUTO   = 0,
+    TIMER_QPC    = 1,
+    TIMER_SDL    = 2,
+    TIMER_CHRONO = 3,
+    TIMER_RDTSC  = 4,
+};
 
 int      timerInit(int const tickspersecond);
 void     timerUpdateClock(void);
@@ -24,4 +27,4 @@ uint32_t timerGetTicks(void);
 
 void (*timerSetCallback(void (*callback)(void)))(void);
 
-#endif // timer_h__
+#endif /* timer_h_ */

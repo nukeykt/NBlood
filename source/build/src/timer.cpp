@@ -29,7 +29,7 @@ static time_point<steady_clock> clockLastSampleTime;
 static int clockTicksPerSecond;
 static void(*usertimercallback)(void) = nullptr;
 
-#ifdef EDUKE32_PLATFORM_INTEL
+#ifdef ZPL_HAVE_RDTSC
 static uint64_t tsc_freq;
 #endif
 
@@ -94,9 +94,9 @@ uint64_t timerGetTicksU64(void)
             QueryPerformanceCounter(&li);
             return li.QuadPart;
 #endif // _WIN32
-#ifndef ZPL_CPU_MIPS
+#ifdef ZPL_HAVE_RDTSC
         case TIMER_RDTSC:
-#ifdef EDUKE32_PLATFORM_INTEL
+#ifdef ZPL_HAVE_FENCES
             zpl_mfence();
 #endif
             return zpl_rdtsc();
@@ -137,7 +137,7 @@ uint64_t timerGetFreqU64(void)
             return li.QuadPart;
         }
 #endif // _WIN32
-#ifndef ZPL_CPU_MIPS
+#ifdef ZPL_HAVE_RDTSC
         case TIMER_RDTSC:
             return tsc_freq;
 #endif
@@ -161,7 +161,7 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
         sys_timer = TIMER_AUTO;
 #endif
 
-#if defined EDUKE32_PLATFORM_INTEL || defined ZPL_CPU_MIPS
+#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
     if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
     {
         sys_timer = TIMER_AUTO;
@@ -192,10 +192,10 @@ int timerInit(int const tickspersecond)
                                                 "   2: SDL timer\n"
 #endif
                                                 "   3: std::chrono\n"
-#ifndef ZPL_CPU_MIPS
-                                                "   4: RDTSC instruction\n",
+#ifdef ZPL_HAVE_RDTSC
+                                                "   4: RDTSC instruction\n"
 #endif
-                                                (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
+                                                , (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
 
         OSD_RegisterCvar(&sys_timer_cvar, osdcmd_sys_timer);
 
@@ -203,20 +203,20 @@ int timerInit(int const tickspersecond)
         SDL_InitSubSystem(SDL_INIT_TIMER);
 #endif
 
-#ifndef ZPL_CPU_MIPS
+#ifdef ZPL_HAVE_RDTSC
         if (tsc_freq == 0)
         {
             double const calibrationEndTime = timerGetHiTicks() + 100.0;
-#ifdef EDUKE32_PLATFORM_INTEL
+#ifdef ZPL_HAVE_FENCES
             zpl_mfence();
 #endif
             auto const time1 = zpl_rdtsc();
             do { } while (timerGetHiTicks() < calibrationEndTime);
-#ifdef EDUKE32_PLATFORM_INTEL
+#ifdef ZPL_HAVE_FENCES
             zpl_mfence();
 #endif
             auto const time2 = zpl_rdtsc();
-#ifdef EDUKE32_PLATFORM_INTEL
+#ifdef ZPL_HAVE_FENCES
             zpl_mfence();
 #endif
             auto const time3 = zpl_rdtsc() - time2;

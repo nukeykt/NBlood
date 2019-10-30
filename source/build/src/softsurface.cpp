@@ -62,7 +62,7 @@ bool softsurface_initialize(vec2_t bufferResolution,
     // allocate one continuous block of memory large enough to hold the buffer, the palette,
     // and the scanPosLookupTable while maintaining alignment for each
     uint32_t newBufferSize = roundUp<16>(bufferRes.x * bufferRes.y);
-    zpl_virtual_memory vm = zpl_vm_alloc(0, newBufferSize + sizeof(uint16_t) * destBufferRes.x);
+    zpl_virtual_memory vm = Xvm_alloc(0, newBufferSize + sizeof(uint16_t) * destBufferRes.x);
 
     bufferSize = vm.size;
     buffer     = (uint8_t *)vm.data;
@@ -85,7 +85,7 @@ void softsurface_destroy()
     if (!buffer)
         return;
 
-    zpl_vm_free(zpl_vm(buffer, bufferSize));
+    Xvm_free(zpl_vm(buffer, bufferSize));
     buffer = nullptr;
 
     scanPosLookupTable = 0;
