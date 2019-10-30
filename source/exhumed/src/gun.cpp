@@ -726,7 +726,7 @@ loc_flag:
 				// loc_27266:
 				case kWeaponSword:
 				{
-					nHeight += (92 - sPlayerInput[nPlayer].horizon) << 6;
+					nHeight += (92 - fix16_to_int(sPlayerInput[nPlayer].horizon)) << 6;
 
 					theZ += nHeight;
 
@@ -829,7 +829,7 @@ loc_flag:
 				}
 				case kWeaponPistol:
 				{
-					int var_50 = (sPlayerInput[nPlayer].horizon - 92) << 2;
+					int var_50 = (fix16_to_int(sPlayerInput[nPlayer].horizon) - 92) << 2;
 					nHeight -= var_50;
 
 					short thetargetthin = sPlayerInput[nPlayer].nTarget;
@@ -847,7 +847,7 @@ loc_flag:
 
 				case kWeaponGrenade:
 				{
-					ThrowGrenade(nPlayer, ebp, ebx, nHeight - 2560, sPlayerInput[nPlayer].horizon - 92);
+					ThrowGrenade(nPlayer, ebp, ebx, nHeight - 2560, fix16_to_int(sPlayerInput[nPlayer].horizon) - 92);
 					break;
 				}
 				case kWeaponStaff:
