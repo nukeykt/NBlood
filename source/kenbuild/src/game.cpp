@@ -444,8 +444,8 @@ static void Ken_UninitAll(void)
     uninitmultiplayers();
     timerUninit();
     uninitinput();
-    engineUnInit();
     uninitsb();
+    engineUnInit();
     uninitgroupfile();
 }
 
@@ -1178,8 +1178,8 @@ void prepareboard(char *daboardfilename)
         uninitmultiplayers();
         timerUninit();
         uninitinput();
-        engineUnInit();
         uninitsb();
+        engineUnInit();
         uninitgroupfile();
         printf("Board not found\n");
         exit(0);
@@ -4839,8 +4839,8 @@ void playback(void)
     uninitmultiplayers();
     timerUninit();
     uninitinput();
-    engineUnInit();
     uninitsb();
+    engineUnInit();
     uninitgroupfile();
     exit(0);
 }
@@ -4858,8 +4858,8 @@ void setup3dscreen(void)
         uninitmultiplayers();
         timerUninit();
         uninitinput();
-        engineUnInit();
         uninitsb();
+        engineUnInit();
         uninitgroupfile();
         exit(0);
     }
@@ -6275,8 +6275,8 @@ void waitforeverybody()
             uninitmultiplayers();
             timerUninit();
             uninitinput();
-            engineUnInit();
             uninitsb();
+            engineUnInit();
             uninitgroupfile();
             exit(0);
         }
