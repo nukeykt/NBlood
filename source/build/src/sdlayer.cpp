@@ -342,7 +342,6 @@ static void sighandler(int signum)
 #endif
         attach_debugger_here();
         app_crashhandler();
-        uninitsystem();
         Bexit(EXIT_FAILURE);
     }
 }

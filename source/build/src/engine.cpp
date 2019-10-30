@@ -8315,8 +8315,6 @@ void engineUnInit(void)
     DO_FREE_AND_NULL(kpzbuf);
     kpzbufsiz = 0;
 
-    uninitsystem();
-
     for (bssize_t i = 0; i < num_usermaphacks; i++)
     {
         Xfree(usermaphacks[i].mhkfile);
