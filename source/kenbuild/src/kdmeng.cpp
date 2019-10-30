@@ -18,7 +18,7 @@ int loadsong(char const *);
 void musicon(void);
 void musicoff(void);
 void refreshaudio(void) { };
-void preparesndbuf(char* sndbufchar, int sndsamples);
+void preparesndbuf();
 
 static mutex_t m_callback;
 
@@ -207,14 +207,18 @@ void fsin(int *eax)
     *eax = (int)sin((*eax)*M_PI*(1.0/1024.0))*16384.0;
 }
 
-//#pragma aux fsin =\
-//	"fldpi",\
-//	"fimul dword ptr [eax]",\
-//	"fmul dword ptr [oneshr10]",\
-//	"fsin",\
-//	"fmul dword ptr [oneshl14]",\
-//	"fistp dword ptr [eax]",\
-//	parm [eax]\
+#if 0
+
+#pragma aux fsin =\
+	"fldpi",\
+	"fimul dword ptr [eax]",\
+	"fmul dword ptr [oneshr10]",\
+	"fsin",\
+	"fmul dword ptr [oneshl14]",\
+	"fistp dword ptr [eax]",\
+	parm [eax]\
+
+#endif
 
 void calcvolookupmono(int *edi, int eax, int ebx)
 {
@@ -236,39 +240,43 @@ void calcvolookupstereo(int *edi, int eax, int ebx, int ecx, int edx)
     }
 }
 
-//#pragma aux calcvolookupmono =\
-//	"mov ecx, 64",\
-//	"lea edx, [eax+ebx]",\
-//	"add ebx, ebx",\
-//	"begit: mov dword ptr [edi], eax",\
-//	"mov dword ptr [edi+4], edx",\
-//	"add eax, ebx",\
-//	"add edx, ebx",\
-//	"mov dword ptr [edi+8], eax",\
-//	"mov dword ptr [edi+12], edx",\
-//	"add eax, ebx",\
-//	"add edx, ebx",\
-//	"add edi, 16",\
-//	"dec ecx",\
-//	"jnz begit",\
-//	parm [edi][eax][ebx]\
-//	modify [ecx edx]\
+#if 0
 
-//#pragma aux calcvolookupstereo =\
-//	"mov esi, 128",\
-//	"begit: mov dword ptr [edi], eax",\
-//	"mov dword ptr [edi+4], ecx",\
-//	"add eax, ebx",\
-//	"add ecx, edx",\
-//	"mov dword ptr [edi+8], eax",\
-//	"mov dword ptr [edi+12], ecx",\
-//	"add eax, ebx",\
-//	"add ecx, edx",\
-//	"add edi, 16",\
-//	"dec esi",\
-//	"jnz begit",\
-//	parm [edi][eax][ebx][ecx][edx]\
-//	modify [esi]\
+#pragma aux calcvolookupmono =\
+	"mov ecx, 64",\
+	"lea edx, [eax+ebx]",\
+	"add ebx, ebx",\
+	"begit: mov dword ptr [edi], eax",\
+	"mov dword ptr [edi+4], edx",\
+	"add eax, ebx",\
+	"add edx, ebx",\
+	"mov dword ptr [edi+8], eax",\
+	"mov dword ptr [edi+12], edx",\
+	"add eax, ebx",\
+	"add edx, ebx",\
+	"add edi, 16",\
+	"dec ecx",\
+	"jnz begit",\
+	parm [edi][eax][ebx]\
+	modify [ecx edx]\
+
+#pragma aux calcvolookupstereo =\
+	"mov esi, 128",\
+	"begit: mov dword ptr [edi], eax",\
+	"mov dword ptr [edi+4], ecx",\
+	"add eax, ebx",\
+	"add ecx, edx",\
+	"mov dword ptr [edi+8], eax",\
+	"mov dword ptr [edi+12], ecx",\
+	"add eax, ebx",\
+	"add ecx, edx",\
+	"add edi, 16",\
+	"dec esi",\
+	"jnz begit",\
+	parm [edi][eax][ebx][ecx][edx]\
+	modify [esi]\
+
+#endif
 
 void initsb(char dadigistat, char damusistat, int dasamplerate, char danumspeakers, char dabytespersample, char daintspersec, char daquality)
 {
@@ -279,7 +287,7 @@ void initsb(char dadigistat, char damusistat, int dasamplerate, char danumspeake
 
     if ((digistat == 0) && (musistat != 1))
         return;
-    
+
 #ifdef MIXERTYPEWIN
     void *initdata = (void *) win_gethwnd(); // used for DirectSound
 #else
@@ -311,7 +319,7 @@ void initsb(char dadigistat, char damusistat, int dasamplerate, char danumspeake
 
     bytespertic = (((samplerate/120)+1)&~1);
     sndsamplesleft = 0;
-    
+
     j = (((11025L*2093)/samplerate)<<13);
     for(i=1;i<76;i++)
     {
@@ -366,18 +374,13 @@ void uninitsb()
     if ((digistat == 0) && (musistat != 1))
         return;
 
-    FX_Shutdown();
-
     if (snd != 0) free(snd), snd = 0;
 }
 
-void startwave(int wavnum, int dafreq, int davolume1, int davolume2, int dafrqeff, int davoleff, int dapaneff)
+static void startwave_internal(int wavnum, int dafreq, int davolume1, int davolume2, int dafrqeff, int davoleff, int dapaneff)
 {
     int i, chanum;
 
-    if ((davolume1|davolume2) == 0) return;
-
-    mutex_lock(&m_callback);
     chanum = 0;
     for(i=NUMCHANNELS-1;i>0;i--)
         if (splc[i] > splc[chanum])
@@ -400,6 +403,14 @@ void startwave(int wavnum, int dafreq, int davolume1, int davolume2, int dafrqef
     voleff[chanum] = davoleff; voloff[chanum] = 0;
     paneff[chanum] = dapaneff; panoff[chanum] = 0;
     chanstat[chanum] = 0; sincoffs[chanum] = 0;
+}
+
+static inline void startwave(int wavnum, int dafreq, int davolume1, int davolume2, int dafrqeff, int davoleff, int dapaneff)
+{
+    if ((davolume1|davolume2) == 0) return;
+
+    mutex_lock(&m_callback);
+    startwave_internal(wavnum, dafreq, davolume1, davolume2, dafrqeff, davoleff, dapaneff);
     mutex_unlock(&m_callback);
 }
 
@@ -469,14 +480,16 @@ void wsayfollow(const char *dafilename, int dafreq, int davol, int *daxplc, int 
     mutex_unlock(&m_callback);
 }
 
-void preparesndbuf(char *sndbufchar, int sndsamples)
+void preparesndbuf()
 {
     int i, j, k, voloffs1, voloffs2, *stempptr;
     int *volptr;
     int daswave, dasinc;
     int ox, oy, x, y;
-    short *sndbuf = (short*)sndbufchar;
-    sndsamples /= 4;
+
+    auto routinebuf = MV_GetMusicRoutineBuffer();
+    auto sndbuf = (short *)routinebuf.buffer;
+    int32_t sndsamples = routinebuf.size / 4;
 
     mutex_lock(&m_callback);
     for (i=NUMCHANNELS-1;i>=0;i--)
@@ -516,7 +529,7 @@ void preparesndbuf(char *sndbufchar, int sndsamples)
                 calcvolookupstereo(&volookup[i<<9],-(voloffs1<<7),voloffs1,-(voloffs2<<7),voloffs2);
         }
 
-    
+
     int left = min(sndsamplesleft, sndsamples);
     if (left)
     {
@@ -543,7 +556,7 @@ void preparesndbuf(char *sndbufchar, int sndsamples)
                                     splc[i] = 0;
                 }
                 else                        //Note on
-                    startwave(j,k,ntvol1[notecnt],ntvol2[notecnt],ntfrqeff[notecnt],ntvoleff[notecnt],ntpaneff[notecnt]);
+                    startwave_internal(j,k,ntvol1[notecnt],ntvol2[notecnt],ntfrqeff[notecnt],ntvoleff[notecnt],ntpaneff[notecnt]);
 
                 notecnt++;
                 if (notecnt >= numnotes)
