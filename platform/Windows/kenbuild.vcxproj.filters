@@ -18,10 +18,10 @@
     <ClCompile Include="..\..\source\kenbuild\src\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\kenbuild\src\game.cpp">
+    <ClCompile Include="..\..\source\kenbuild\src\kdmeng.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\kenbuild\src\sound_stub.cpp">
+    <ClCompile Include="..\..\source\kenbuild\src\game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\kenbuild\src\startgtk.game.cpp">
