@@ -12,15 +12,8 @@
 #include "vfs.h"
 
 #ifdef _WIN32
-# define NEED_SHLWAPI_H
 # include "windows_inc.h"
 # include "winbits.h"
-# ifndef KEY_WOW64_64KEY
-#  define KEY_WOW64_64KEY 0x0100
-# endif
-# ifndef KEY_WOW64_32KEY
-#  define KEY_WOW64_32KEY 0x0200
-# endif
 #elif defined __APPLE__
 # include "osxbits.h"
 #endif
@@ -523,32 +516,6 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
-#if defined _WIN32 && !defined EDUKE32_STANDALONE
-static int G_ReadRegistryValue(char const * const SubKey, char const * const Value, char * const Output, DWORD * OutputSize)
-{
-    // KEY_WOW64_32KEY gets us around Wow6432Node on 64-bit builds
-    REGSAM const wow64keys[] = { KEY_WOW64_32KEY, KEY_WOW64_64KEY };
-
-    for (auto &wow64key : wow64keys)
-    {
-        HKEY hkey;
-        LONG keygood = RegOpenKeyEx(HKEY_LOCAL_MACHINE, NULL, 0, KEY_READ | wow64key, &hkey);
-
-        if (keygood != ERROR_SUCCESS)
-            continue;
-
-        LONG retval = SHGetValueA(hkey, SubKey, Value, NULL, Output, OutputSize);
-
-        RegCloseKey(hkey);
-
-        if (retval == ERROR_SUCCESS)
-            return 1;
-    }
-
-    return 0;
-}
-#endif
-
 static void G_LoadAddon(void)
 {
 #ifndef EDUKE32_STANDALONE
@@ -673,14 +640,14 @@ void G_AddSearchPaths(void)
 
     // Duke Nukem 3D: 20th Anniversary World Tour (Steam)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 434050)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 434050)", "InstallLocation", buf, &bufsize))
     {
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
     // Duke Nukem 3D: Megaton Edition (Steam)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 225140)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 225140)", "InstallLocation", buf, &bufsize))
     {
         char * const suffix = buf + bufsize - 1;
         DWORD const remaining = sizeof(buf) - bufsize;
@@ -697,7 +664,7 @@ void G_AddSearchPaths(void)
 
     // Duke Nukem 3D (3D Realms Anthology (Steam) / Kill-A-Ton Collection 2015)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 359850)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 359850)", "InstallLocation", buf, &bufsize))
     {
         char * const suffix = buf + bufsize - 1;
         DWORD const remaining = sizeof(buf) - bufsize;
@@ -708,14 +675,14 @@ void G_AddSearchPaths(void)
 
     // Duke Nukem 3D: Atomic Edition (GOG.com)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
+    if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGDUKE3D", "PATH", buf, &bufsize))
     {
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
     }
 
     // Duke Nukem 3D (3D Realms Anthology)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue("SOFTWARE\\3DRealms\\Duke Nukem 3D", NULL, buf, &bufsize))
+    if (Paths_ReadRegistryValue("SOFTWARE\\3DRealms\\Duke Nukem 3D", NULL, buf, &bufsize))
     {
         char * const suffix = buf + bufsize - 1;
         DWORD const remaining = sizeof(buf) - bufsize;
@@ -726,7 +693,7 @@ void G_AddSearchPaths(void)
 
     // 3D Realms Anthology
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue("SOFTWARE\\3DRealms\\Anthology", NULL, buf, &bufsize))
+    if (Paths_ReadRegistryValue("SOFTWARE\\3DRealms\\Anthology", NULL, buf, &bufsize))
     {
         char * const suffix = buf + bufsize - 1;
         DWORD const remaining = sizeof(buf) - bufsize;
@@ -737,7 +704,7 @@ void G_AddSearchPaths(void)
 
     // NAM (Steam)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 329650)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 329650)", "InstallLocation", buf, &bufsize))
     {
         char * const suffix = buf + bufsize - 1;
         DWORD const remaining = sizeof(buf) - bufsize;
@@ -748,7 +715,7 @@ void G_AddSearchPaths(void)
 
     // WWII GI (Steam)
     bufsize = sizeof(buf);
-    if (G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 376750)", "InstallLocation", buf, &bufsize))
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 376750)", "InstallLocation", buf, &bufsize))
     {
         char * const suffix = buf + bufsize - 1;
         DWORD const remaining = sizeof(buf) - bufsize;
