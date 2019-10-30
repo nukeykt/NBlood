@@ -680,7 +680,6 @@ TerminateGame(void)
     //uninitkeys();
     KB_Shutdown();
 
-    engineUnInit();
     TermSetup();
 
     //Terminate3DSounds();                // Kill the sounds linked list
@@ -690,6 +689,8 @@ TerminateGame(void)
 
     if (CleanExit)
         DosScreen();
+
+    engineUnInit();
 
     uninitgroupfile();
 }
@@ -807,7 +808,6 @@ void Set_GameMode(void)
             uninitmultiplayers();
             //uninitkeys();
             KB_Shutdown();
-            engineUnInit();
             TermSetup();
             UnInitSound();
             timerUninit();
@@ -834,10 +834,10 @@ void MultiSharewareCheck(void)
         uninitmultiplayers();
         //uninitkeys();
         KB_Shutdown();
-        engineUnInit();
         TermSetup();
         UnInitSound();
         timerUninit();
+        engineUnInit();
         uninitgroupfile();
         exit(0);
     }
