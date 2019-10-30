@@ -1170,7 +1170,7 @@ SoundStartup(void)
     void *initdata = 0;
 
     // if they chose None lets return
-    if (FXDevice < 0)
+    if (!FXToggle)
     {
         gs.FxOn = FALSE;
         return;
@@ -1212,7 +1212,7 @@ void
 SoundShutdown(void)
 {
     // if they chose None lets return
-    if (FXDevice < 0)
+    if (!FXToggle)
     {
         return;
     }
@@ -1239,7 +1239,7 @@ SoundShutdown(void)
 void MusicStartup(void)
 {
     // if they chose None lets return
-    if (MusicDevice < 0)
+    if (!MusicToggle)
     {
         gs.MusicOn = FALSE;
         return;
@@ -1297,7 +1297,7 @@ void
 MusicShutdown(void)
 {
     // if they chose None lets return
-    if (MusicDevice < 0)
+    if (!MusicToggle)
         return;
 
     if (!MusicInitialized)
