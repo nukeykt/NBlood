@@ -49,7 +49,6 @@ enum
 
 
 //// EXTERN DECLS
-extern struct strllist *CommandPaths, *CommandGrps;
 
 #ifdef __cplusplus
 extern "C" {
