@@ -682,8 +682,7 @@ void ExtSetupMapFilename(const char *mapname)
 
 int32_t ExtPreInit(int32_t argc,char const * const * argv)
 {
-    UNREFERENCED_PARAMETER(argc);
-    UNREFERENCED_PARAMETER(argv);
+    SW_ExtPreInit(argc, argv);
 
     OSD_SetLogFile("wangulator.log");
     OSD_SetVersion(AppProperName,0,2);
@@ -731,54 +730,9 @@ ExtInit(void)
     //LogUserTime(TRUE);              // Send true because user is logging
     // in.
 
-#ifdef _WIN32
-    if (!access("user_profiles_enabled", F_OK))
-#endif
-    {
-        char cwd[BMAX_PATH];
-        char *homedir;
-        int asperr;
 
-#if defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-        addsearchpath("/usr/share/games/jfsw");
-        addsearchpath("/usr/local/share/games/jfsw");
-#elif defined(__APPLE__)
-        addsearchpath("/Library/Application Support/JFShadowWarrior");
-#endif
-        if (getcwd(cwd,BMAX_PATH)) addsearchpath(cwd);
-        if ((homedir = Bgethomedir()))
-        {
-            Bsnprintf(cwd,sizeof(cwd),"%s/"
-#if defined(_WIN32)
-                      "JFShadowWarrior"
-#elif defined(__APPLE__)
-                      "Library/Application Support/JFShadowWarrior"
-#else
-                      ".jfsw"
-#endif
-                      ,homedir);
-            asperr = addsearchpath(cwd);
-            if (asperr == -2)
-            {
-                if (Bmkdir(cwd,S_IRWXU) == 0) asperr = addsearchpath(cwd);
-                else asperr = -1;
-            }
-            if (asperr == 0)
-                chdir(cwd);
-            free(homedir);
-        }
-    }
+    SW_ExtInit();
 
-    if (g_grpNamePtr == NULL)
-    {
-        const char *cp = getenv("SWGRP");
-        if (cp)
-        {
-            clearGrpNamePtr();
-            g_grpNamePtr = dup_filename(cp);
-            initprintf("Using \"%s\" as main GRP file\n", g_grpNamePtr);
-        }
-    }
     /*
         if ((fil = open("setup.dat", O_BINARY | O_RDWR, S_IREAD)) != -1)
             {
@@ -789,8 +743,9 @@ ExtInit(void)
             close(fil);
             }
         */
-    bpp = 8;
-    if (loadsetup("build.cfg") < 0) buildputs("Configuration file not found, using defaults.\n"), rv = 1;
+    bpp = 32;
+    if (loadsetup(SETUPFILENAME) < 0)
+        buildputs("Configuration file not found, using defaults.\n"), rv = 1;
     Bmemcpy((void *)buildkeys,(void *)default_buildkeys,NUMBUILDKEYS);       //Trick to make build use setup.dat keys
     if (option[4] > 0)
         option[4] = 0;
@@ -813,6 +768,9 @@ int32_t ExtPostStartupWindow(void)
 {
     initgroupfile(G_GrpFile());
 
+    if (!g_useCwd)
+        SW_CleanupSearchPaths();
+
     if (engineInit())
     {
         wm_msgbox("Build Engine Initialisation Error",
@@ -834,7 +792,7 @@ void
 ExtUnInit(void)
 {
     uninitgroupfile();
-    writesetup("build.cfg");
+    writesetup(SETUPFILENAME);
     // Store user log in time
     //LogUserTime(FALSE);                 // FALSE means user is logging out
     // now.
