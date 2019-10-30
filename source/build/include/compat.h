@@ -666,6 +666,7 @@ static FORCE_INLINE int32_t Blrintf(const float x)
 # define ERRprintf(fmt, ...) fprintf(stderr, fmt, ## __VA_ARGS__)
 #endif
 
+// Bexit is ONLY for errors!
 #ifdef DEBUGGINGAIDS
 # define Bexit(status) do { initprintf("exit(%d) at %s:%d in %s()\n", status, __FILE__, __LINE__, EDUKE32_FUNCTION); exit(status); } while (0)
 #else

@@ -8159,7 +8159,7 @@ static void G_CheckCommandLine(int32_t argc, char const * const * argv)
             if (!Bstrcasecmp(c+1,"?") || !Bstrcasecmp(c+1,"help") || !Bstrcasecmp(c+1,"-help"))
             {
                 G_ShowParameterHelp();
-                Bexit(EXIT_SUCCESS);
+                exit(EXIT_SUCCESS);
             }
 
             if (!Bstrcasecmp(c+1,"addon"))
@@ -8528,7 +8528,7 @@ static int osdcmd_quit(osdcmdptr_t UNUSED(parm))
 
     Bfflush(NULL);
 
-    Bexit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 static int osdcmd_editorgridextent(osdcmdptr_t parm)
