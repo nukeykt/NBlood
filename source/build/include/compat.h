@@ -288,10 +288,6 @@
 # define EDUKE32_BSD
 #endif
 
-#if defined(__i386) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64)
-# define EDUKE32_PLATFORM_INTEL
-#endif
-
 #ifdef __APPLE__
 # include <TargetConditionals.h>
 # if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
@@ -303,6 +299,16 @@
 
 
 ////////// Architecture detection //////////
+
+#if defined __arm__ || defined __aarch64__
+# define EDUKE32_CPU_ARM
+#elif defined __i386 || defined __i386__ || defined _M_IX86 || defined _M_X64 || defined __x86_64__
+# define EDUKE32_CPU_X86
+#elif defined _M_PPC || defined __powerpc__ || defined __powerpc64__
+# define EDUKE32_CPU_PPC
+#elif defined __MIPSEL__ || defined __mips_isa_rev
+# define EDUKE32_CPU_MIPS
+#endif
 
 #if defined _LP64 || defined __LP64__ || defined __64BIT__ || _ADDR64 || defined _WIN64 || defined __arch64__ ||       \
 __WORDSIZE == 64 || (defined __sparc && defined __sparcv9) || defined __x86_64 || defined __amd64 ||                   \
@@ -1331,10 +1337,6 @@ static FORCE_INLINE void *xrealloc(void * const ptr, const bsize_t size)
     return (EDUKE32_PREDICT_TRUE(newptr != NULL || size == 0)) ? newptr: handle_memerr(ptr);
 }
 
-static FORCE_INLINE void xfree(void *const ptr) { Bfree(ptr); }
-
-static FORCE_INLINE void xaligned_free(void *const ptr) { Baligned_free(ptr); }
-
 #if !defined NO_ALIGNED_MALLOC
 static FORCE_INLINE void *xaligned_alloc(const bsize_t alignment, const bsize_t size)
 {
@@ -1356,8 +1358,8 @@ static FORCE_INLINE void *xaligned_alloc(const bsize_t alignment, const bsize_t 
 #define Xcalloc(nmemb, size) (EDUKE32_PRE_XALLOC xcalloc(nmemb, size))
 #define Xrealloc(ptr, size)  (EDUKE32_PRE_XALLOC xrealloc(ptr, size))
 #define Xaligned_alloc(alignment, size) (EDUKE32_PRE_XALLOC xaligned_alloc(alignment, size))
-#define Xfree(ptr) (EDUKE32_PRE_XALLOC xfree(ptr))
-#define Xaligned_free(ptr) (EDUKE32_PRE_XALLOC xaligned_free(ptr))
+#define Xfree(ptr) (Bfree(ptr))
+#define Xaligned_free(ptr) (Baligned_free(ptr))
 
 #ifdef __cplusplus
 }
@@ -1389,21 +1391,7 @@ static inline void maybe_grow_buffer(char ** const buffer, int32_t * const buffe
 #include "clockticks.hpp"
 #include "debugbreak.h"
 
-#define ZPL_NO_WINDOWS_H
-#ifndef ZPL_DEF
-#define ZPL_DEF extern
-
-#ifndef zpl_inline
-#define zpl_inline
-#endif
-
-#endif
 #include "zpl.h"
-
-// stupid macro in ZPL..
-#ifdef cast
-# undef cast
-#endif
 
 /* End dependence on compat.o object. */
 
