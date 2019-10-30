@@ -664,7 +664,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(EXIT_SUCCESS);
+            exit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -8291,7 +8291,7 @@ CANCEL:
 //                        clearfilenames();
                         engineUnInit();
 
-                        Bexit(EXIT_SUCCESS);
+                        exit(EXIT_SUCCESS);
                     }
 
                     // printmessage16("");
