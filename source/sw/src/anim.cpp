@@ -46,6 +46,8 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "animlib.h"
 #include "anim.h"
 
+#include "common_game.h"
+
 #define MAX_ANMS 10
 anim_t *anm_ptr[MAX_ANMS];
 
@@ -260,12 +262,9 @@ unsigned char *LoadAnm(short anim_num)
 void
 playanm(short anim_num)
 {
-    unsigned char *animbuf, *palptr;
+    unsigned char *animbuf;
     int i, j, k, length = 0, numframes = 0;
     int32_t handle = -1;
-    unsigned char ANIMvesapal[4*256];
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
     UserInput uinfo = { FALSE, FALSE, dir_None };
 
     ANIMnum = anim_num;
@@ -292,23 +291,17 @@ playanm(short anim_num)
     DSPRINTF(ds,"PlayAnm - Palette Stuff");
     MONO_PRINT(ds);
 
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
     ANIM_LoadAnim(animbuf, length);
     ANIMnumframes = ANIM_NumFrames();
     numframes = ANIMnumframes;
-
-    palptr = ANIM_GetPalette();
 
     tilesiz[ANIM_TILE(ANIMnum)].x = 200;
     tilesiz[ANIM_TILE(ANIMnum)].y = 320;
 
     videoClearViewableArea(0L);
 
-    paletteSetColorTable(0, ANIMvesapal);
-    videoSetPalette(gs.Brightness,0,2);
+    paletteSetColorTable(ANIMPAL, ANIM_GetPalette());
+    videoSetPalette(gs.Brightness, ANIMPAL, 2);
     if (ANIMnum == 1)
     {
         // draw the first frame
@@ -377,10 +370,8 @@ ENDOFANIMLOOP:
 
     videoClearViewableArea(0L);
     videoNextPage();
-    palookup[0] = palook_bak;
 
-    paletteSetColorTable(0, (unsigned char *)palette_data);
-    videoSetPalette(gs.Brightness, 0, 2);
+    videoSetPalette(gs.Brightness, BASEPAL, 2);
 
     KB_FlushKeyboardQueue();
     KB_ClearKeysDown();

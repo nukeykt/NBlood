@@ -6387,7 +6387,7 @@ static void Keys3d(void)
         brightness &= 15;
 
         g_videoGamma = 1.0 + ((float)brightness / 10.0);
-        videoSetPalette(brightness, 0, 0);
+        videoSetPalette(brightness, BASEPAL, 0);
         message("Brightness: %d/16", brightness+1);
     }
 

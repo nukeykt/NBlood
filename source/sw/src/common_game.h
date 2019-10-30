@@ -154,6 +154,16 @@ enum searchpathtypes_t {
     SEARCHPATH_REMOVE = 1<<0,
 };
 
+
+typedef enum basepal_ {
+    BASEPAL = 0,
+    DREALMSPAL,
+    TITLEPAL,
+    TENPAL,
+    ANIMPAL,
+    BASEPALCOUNT
+} basepal_t;
+
 #ifdef __cplusplus
 };
 #endif

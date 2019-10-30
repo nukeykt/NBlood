@@ -894,8 +894,8 @@ void AnimateCacheCursor(void)
 
 void COVERsetbrightness(int bright, unsigned char *pal)
 {
-    paletteSetColorTable(0, pal);
-    videoSetPalette(bright, 0, 0);
+    paletteSetColorTable(BASEPAL, pal);
+    videoSetPalette(bright, BASEPAL, 0);
 }
 
 
@@ -1722,28 +1722,11 @@ LogoLevel(void)
 {
     char called;
     int fin;
-    unsigned char backup_pal[256*3];
     unsigned char pal[PAL_SIZE];
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
     UserInput uinfo = { FALSE, FALSE, dir_None };
-    int i;
 
 
     DSPRINTF(ds,"LogoLevel...");
-    MONO_PRINT(ds);
-
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
-    DSPRINTF(ds,"Created palookup...");
-    MONO_PRINT(ds);
-
-    //GetPaletteFromVESA(pal);
-    //memcpy(backup_pal, pal, PAL_SIZE);
-
-    DSPRINTF(ds,"Got Palette from VESA...");
     MONO_PRINT(ds);
 
     // PreCache Anim
@@ -1754,8 +1737,11 @@ LogoLevel(void)
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
 
-        paletteSetColorTable(1, pal);
-        videoSetPalette(gs.Brightness, 1, 2);
+        for (auto & c : pal)
+            c <<= 2;
+
+        paletteSetColorTable(DREALMSPAL, pal);
+        videoSetPalette(gs.Brightness, DREALMSPAL, 2);
     }
     DSPRINTF(ds,"Just read in 3drealms.pal...");
     MONO_PRINT(ds);
@@ -1794,13 +1780,9 @@ LogoLevel(void)
         }
     }
 
-    palookup[0] = palook_bak;
-
     videoClearViewableArea(0L);
     videoNextPage();
-    //SetPaletteToVESA(backup_pal);
-    paletteSetColorTable(0, &palette_data[0][0]);
-    videoSetPalette(gs.Brightness, 0, 2);
+    videoSetPalette(gs.Brightness, BASEPAL, 2);
 
     // put up a blank screen while loading
 
