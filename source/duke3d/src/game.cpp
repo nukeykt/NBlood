@@ -343,7 +343,7 @@ void G_GameExit(const char *msg)
 
     Bfflush(NULL);
 
-    Bexit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -6540,7 +6540,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(EXIT_SUCCESS);
+            exit(EXIT_SUCCESS);
         }
     }
 #endif
