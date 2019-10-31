@@ -218,6 +218,7 @@
     <ClCompile Include="..\..\source\exhumed\src\exscript.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\fish.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\grenade.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\grpscan.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\gun.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\init.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\input.cpp" />
@@ -281,6 +282,7 @@
     <ClInclude Include="..\..\source\exhumed\src\exscript.h" />
     <ClInclude Include="..\..\source\exhumed\src\fish.h" />
     <ClInclude Include="..\..\source\exhumed\src\grenade.h" />
+    <ClInclude Include="..\..\source\exhumed\src\grpscan.h" />
     <ClInclude Include="..\..\source\exhumed\src\gun.h" />
     <ClInclude Include="..\..\source\exhumed\src\init.h" />
     <ClInclude Include="..\..\source\exhumed\src\input.h" />

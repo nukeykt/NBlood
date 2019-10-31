@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "control.h"
 #include "exhumed.h"
 #include "config.h"
+#include "grpscan.h"
 #include "startwin.game.h"
 #include "windows_inc.h"
 
@@ -48,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static struct
 {
-    //struct grpfile_t const * grp;
+    struct grpfile_t const * grp;
     char *gamedir;
     ud_setup_t shared;
     int polymer;
@@ -204,14 +205,14 @@ static void PopulateForm(int32_t pgs)
     {
         HWND hwnd = GetDlgItem(pages[TAB_CONFIG], IDCDATA);
 
-        //for (auto fg = foundgrps; fg; fg=fg->next)
-        //{
-        //    Bsprintf(buf, "%s\t%s", fg->type->name, fg->filename);
-        //    int const j = ListBox_AddString(hwnd, buf);
-        //    (void)ListBox_SetItemData(hwnd, j, (LPARAM)fg);
-        //    if (settings.grp == fg)
-        //        (void)ListBox_SetCurSel(hwnd, j);
-        //}
+        for (auto fg = foundgrps; fg; fg=fg->next)
+        {
+            Bsprintf(buf, "%s\t%s", fg->type->name, fg->filename);
+            int const j = ListBox_AddString(hwnd, buf);
+            (void)ListBox_SetItemData(hwnd, j, (LPARAM)fg);
+            if (settings.grp == fg)
+                (void)ListBox_SetCurSel(hwnd, j);
+        }
     }
 }
 
@@ -309,7 +310,7 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
             if (i != CB_ERR) i = ListBox_GetItemData((HWND)lParam, i);
             if (i != CB_ERR)
             {
-                //settings.grp = (grpfile_t const *)i;
+                settings.grp = (grpfile_t const *)i;
             }
             return TRUE;
         }
@@ -666,7 +667,7 @@ int32_t startwin_run(void)
 #endif
 
     settings.shared = gSetup;
-    //settings.grp = g_selectedGrp;
+    settings.grp = g_selectedGrp;
     settings.gamedir = g_modDir;
 
     PopulateForm(-1);
@@ -698,9 +699,10 @@ int32_t startwin_run(void)
     if (done)
     {
         gSetup = settings.shared;
+#ifdef USE_OPENGL
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
-        // TODO:
-        //g_selectedGrp = settings.grp;
+#endif
+        g_selectedGrp = settings.grp;
         Bstrcpy(g_modDir, (g_noSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
 
