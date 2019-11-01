@@ -88,6 +88,8 @@ int frqtable[256];
 int samplediv, oldtimerfreq, chainbackcnt, chainbackstart;
 char *pcsndptr, pcsndlookup[256], bufferside;
 int samplecount, pcsndbufsiz, pcrealmodeint;
+
+#if 0
 static short kdmvect = 0x8;
 static unsigned short kdmpsel, kdmrseg, kdmroff;
 static unsigned int kdmpoff;
@@ -98,6 +100,7 @@ static char pcrealbuffer[KDMCODEBYTES] =        //See pckdm.asm
     0x50,0x53,0x51,0x52,0x32,0xC0,0xE6,0x42,0xB0,0x20,
     0xE6,0x20,0x5A,0x59,0x5B,0x58,0xCF,
 };
+#endif
 
 static int bytespertic, sndsamplesleft;
 
