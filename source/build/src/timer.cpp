@@ -13,6 +13,7 @@
 #endif
 
 #include <chrono>
+#include <atomic>
 
 #if (defined RENDERTYPESDL) && (SDL_MAJOR_VERSION >= 2)
 #define HAVE_TIMER_SDL
@@ -31,6 +32,33 @@ static void(*usertimercallback)(void) = nullptr;
 
 #ifdef ZPL_HAVE_RDTSC
 static uint64_t tsc_freq;
+
+static FORCE_INLINE uint64_t timerSampleRDTSC()
+{
+    // We need to serialize the instruction stream before executing RDTSC.
+#if defined __SSE2__
+    // On AMD, MFENCE serializes and LFENCE does not. On Intel, LFENCE serializes and MFENCE does not.
+    // https://stackoverflow.com/a/50332912
+    // MFENCE before LFENCE is preferable since we're using both.
+    // https://www.felixcloutier.com/x86/rdtsc
+    // https://hadibrais.wordpress.com/2018/05/14/the-significance-of-the-x86-lfence-instruction/
+    _mm_mfence();
+    _mm_lfence();
+
+    // Fallbacks on x86 without SSE2 use a LOCK prefix.
+    // The alternative is the CPUID instruction, but benchmarking would be desirable to pick the best choice.
+#elif defined __GNUC__
+    __sync_synchronize();
+#else
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+#endif
+
+    uint64_t const result = zpl_rdtsc();
+
+    // Some sources suggest serialization is also necessary or desirable after RDTSC. For now, don't.
+
+    return result;
+}
 #endif
 
 int timerGetClockRate(void) { return clockTicksPerSecond; }
@@ -96,10 +124,7 @@ uint64_t timerGetTicksU64(void)
 #endif // _WIN32
 #ifdef ZPL_HAVE_RDTSC
         case TIMER_RDTSC:
-#ifdef ZPL_HAVE_FENCES
-            zpl_mfence();
-#endif
-            return zpl_rdtsc();
+            return timerSampleRDTSC();
 #endif
     }
 }
@@ -207,19 +232,10 @@ int timerInit(int const tickspersecond)
         if (tsc_freq == 0)
         {
             double const calibrationEndTime = timerGetHiTicks() + 100.0;
-#ifdef ZPL_HAVE_FENCES
-            zpl_mfence();
-#endif
-            auto const time1 = zpl_rdtsc();
+            auto const time1 = timerSampleRDTSC();
             do { } while (timerGetHiTicks() < calibrationEndTime);
-#ifdef ZPL_HAVE_FENCES
-            zpl_mfence();
-#endif
-            auto const time2 = zpl_rdtsc();
-#ifdef ZPL_HAVE_FENCES
-            zpl_mfence();
-#endif
-            auto const time3 = zpl_rdtsc() - time2;
+            auto const time2 = timerSampleRDTSC();
+            auto const time3 = timerSampleRDTSC() - time2;
 
             tsc_freq = (time2 - time1 - time3) * 10;
         }

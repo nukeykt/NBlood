@@ -109,48 +109,6 @@ ZPL_DEF zpl_virtual_memory zpl_vm_alloc(void *addr, size_t size);
 ZPL_DEF zpl_b32 zpl_vm_free(zpl_virtual_memory vm);
 
 
-#if defined _WIN32 || defined __APPLE__ || defined EDUKE32_CPU_X86
-#define ZPL_HAVE_FENCES
-
-zpl_inline void zpl_mfence(void) {
-#if defined _WIN32
-    _ReadWriteBarrier();
-#elif defined __APPLE__
-    __sync_synchronize();
-#elif defined EDUKE32_CPU_X86
-    _mm_mfence();
-#else
-#error Unknown architecture
-#endif
-}
-
-zpl_inline void zpl_sfence(void) {
-#if defined _WIN32
-    _WriteBarrier();
-#elif defined __APPLE__
-    __asm__ volatile ("" : : : "memory");
-#elif defined EDUKE32_CPU_X86
-    _mm_sfence();
-#else
-#error Unknown architecture
-#endif
-}
-
-zpl_inline void zpl_lfence(void) {
-#if defined _WIN32
-    _ReadBarrier();
-#elif defined __APPLE__
-    __asm__ volatile ("" : : : "memory");
-#elif defined EDUKE32_CPU_X86
-    _mm_lfence();
-#else
-#error Unknown architecture
-#endif
-}
-
-#endif
-
-
 #if defined _MSC_VER && !defined __clang__
 #define ZPL_HAVE_RDTSC
 zpl_inline zpl_u64 zpl_rdtsc(void) { return __rdtsc( ); }
