@@ -112,16 +112,6 @@ ZPL_DEF zpl_b32 zpl_vm_free(zpl_virtual_memory vm);
 #if defined _WIN32 || defined __APPLE__ || defined EDUKE32_CPU_X86
 #define ZPL_HAVE_FENCES
 
-zpl_inline void zpl_yield_thread(void) {
-#if defined _WIN32 || defined EDUKE32_CPU_X86
-    _mm_pause();
-#elif defined __APPLE__
-    __asm__ volatile ("" : : : "memory");
-#else
-#error Unknown architecture
-#endif
-}
-
 zpl_inline void zpl_mfence(void) {
 #if defined _WIN32
     _ReadWriteBarrier();
