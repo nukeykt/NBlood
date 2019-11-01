@@ -90,7 +90,21 @@ int MV_ErrorCode = MV_NotInstalled;
 float MV_GlobalVolume = 1.f;
 float MV_VolumeSmooth = 1.f;
 
-int MV_Locked;
+static int MV_Locked;
+
+static inline void MV_Lock()
+{
+    if (!MV_Locked++)
+        SoundDriver_PCM_Lock();
+}
+
+static inline void MV_Unlock()
+{
+    if (!--MV_Locked)
+        SoundDriver_PCM_Unlock();
+    else if (MV_Locked < 0)
+        MV_Printf("MV_Unlock(): lockdepth < 0!\n");
+}
 
 char *MV_MusicBuffer;
 static void (*MV_MusicCallback)(void);
