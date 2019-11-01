@@ -91,7 +91,7 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\drivers.h">
+    <ClInclude Include="..\..\source\audiolib\src\drivers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\fx_man.h">
