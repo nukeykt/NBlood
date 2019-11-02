@@ -206,6 +206,9 @@
     <ClCompile Include="..\..\source\exhumed\rsrc\eduke32_icon.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\grpscan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\exhumed\src\cdaudio.h">
@@ -392,6 +395,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\startwin.game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\grpscan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
