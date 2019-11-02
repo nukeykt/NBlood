@@ -307,16 +307,15 @@ static int G_ReadRegistryValue(char const * const SubKey, char const * const Val
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void G_AddSteamPaths(const char *basepath)
 {
-    UNREFERENCED_PARAMETER(basepath);
     char buf[BMAX_PATH];
 
     // Blood: Fresh Supply
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Blood", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    addsearchpath(buf);
 
     // Blood: One Unit Whole Blood
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/One Unit Whole Blood", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    addsearchpath(buf);
 }
 
 // A bare-bones "parser" for Valve's KeyValues VDF format.
