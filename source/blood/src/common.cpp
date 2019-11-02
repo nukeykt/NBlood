@@ -308,26 +308,15 @@ static int G_ReadRegistryValue(char const * const SubKey, char const * const Val
 static void G_AddSteamPaths(const char *basepath)
 {
     UNREFERENCED_PARAMETER(basepath);
-#if 0
     char buf[BMAX_PATH];
 
-    // PORT-TODO:
-    // Duke Nukem 3D: Megaton Edition (Steam)
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot", basepath);
-    addsearchpath(buf);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/dc", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/nw", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/vacation", basepath);
+    // Blood: Fresh Supply
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Blood", basepath);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
 
-    // Duke Nukem 3D (3D Realms Anthology (Steam) / Kill-A-Ton Collection 2015)
-#if defined EDUKE32_OSX
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/Duke Nukem 3D.app/drive_c/Program Files/Duke Nukem 3D", basepath);
+    // Blood: One Unit Whole Blood
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/One Unit Whole Blood", basepath);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
-#endif
-#endif
 }
 
 // A bare-bones "parser" for Valve's KeyValues VDF format.
