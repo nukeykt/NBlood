@@ -230,6 +230,12 @@
     <ClCompile Include="..\..\source\exhumed\src\main.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\map.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\menu.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\menus.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\mono.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\move.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\movie.cpp" />
@@ -249,6 +255,7 @@
     <ClCompile Include="..\..\source\exhumed\src\runlist.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\save.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\scorp.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\screentext.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\sequence.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\serial.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\set.cpp" />
@@ -293,6 +300,7 @@
     <ClInclude Include="..\..\source\exhumed\src\lion.h" />
     <ClInclude Include="..\..\source\exhumed\src\map.h" />
     <ClInclude Include="..\..\source\exhumed\src\menu.h" />
+    <ClInclude Include="..\..\source\exhumed\src\menus.h" />
     <ClInclude Include="..\..\source\exhumed\src\mono.h" />
     <ClInclude Include="..\..\source\exhumed\src\move.h" />
     <ClInclude Include="..\..\source\exhumed\src\movie.h" />
@@ -313,6 +321,7 @@
     <ClInclude Include="..\..\source\exhumed\src\runlist.h" />
     <ClInclude Include="..\..\source\exhumed\src\save.h" />
     <ClInclude Include="..\..\source\exhumed\src\scorp.h" />
+    <ClInclude Include="..\..\source\exhumed\src\screentext.h" />
     <ClInclude Include="..\..\source\exhumed\src\sequence.h" />
     <ClInclude Include="..\..\source\exhumed\src\serial.h" />
     <ClInclude Include="..\..\source\exhumed\src\set.h" />
