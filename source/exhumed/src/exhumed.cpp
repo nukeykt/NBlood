@@ -430,6 +430,9 @@ const char *gString[] =
     "",
 };
 
+#define kFontPK3 "fonts.pk3"
+#define kFontDef "fonts.def"
+
 static char g_rootDir[BMAX_PATH];
 char g_modDir[BMAX_PATH] = "/";
 
@@ -2502,6 +2505,23 @@ int app_main(int argc, char const* const* argv)
 
     // temp - moving InstallEngine(); before FadeOut as we use nextpage() in FadeOut
     InstallEngine();
+
+    if (initgroupfile(kFontPK3) != -1)
+    {
+        if (loaddefinitionsfile(kFontDef) != 0)
+        {
+            initprintf("Couldn't load menu fonts.\n");
+        }
+    }
+
+    const char *defsfile = G_DefFile();
+    uint32_t stime = timerGetTicks();
+    if (!loaddefinitionsfile(defsfile))
+    {
+        uint32_t etime = timerGetTicks();
+        initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
+    }
+    loaddefinitions_game(defsfile, FALSE);
 
     if (enginePostInit())
         ShutDown();
