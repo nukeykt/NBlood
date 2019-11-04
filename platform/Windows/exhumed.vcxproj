@@ -213,6 +213,12 @@
     <ClCompile Include="..\..\source\exhumed\src\cdaudio.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\cdrom.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\config.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\dinput.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\enginesubs.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\exhumed.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\exscript.cpp" />
@@ -231,10 +237,10 @@
     <ClCompile Include="..\..\source\exhumed\src\map.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\menu.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\menus.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\mono.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\move.cpp" />
@@ -284,6 +290,7 @@
     <ClInclude Include="..\..\source\exhumed\src\cdaudio.h" />
     <ClInclude Include="..\..\source\exhumed\src\cdrom.h" />
     <ClInclude Include="..\..\source\exhumed\src\config.h" />
+    <ClInclude Include="..\..\source\exhumed\src\dinput.h" />
     <ClInclude Include="..\..\source\exhumed\src\engine.h" />
     <ClInclude Include="..\..\source\exhumed\src\exhumed.h" />
     <ClInclude Include="..\..\source\exhumed\src\exscript.h" />

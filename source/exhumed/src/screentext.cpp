@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "build.h"
 #include "exhumed.h"
+#include "sequence.h"
 #include "screentext.h"
 #include "menus.h"
 
@@ -80,6 +81,8 @@ int32_t G_GetStringTile(int32_t font, char *t, int32_t f)
 {
     if (f & TEXT_DIGITALNUMBER)
         return *t - '0' + font; // copied from digitalnumber
+    else if (f & TEXT_TILEFROMSEQ)
+        return seq_GetSeqPicnum(font, 0, *t - ' ');
     /*else if (f & (TEXT_BIGALPHANUM|TEXT_GRAYFONT))
     {
         int32_t offset = (f & TEXT_GRAYFONT) ? 26 : 0;

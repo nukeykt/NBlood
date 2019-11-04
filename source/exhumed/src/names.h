@@ -6147,4 +6147,6 @@
 #define kTile6142 6142
 #define kTile6143 6143
 
+#define kTileMenuFont 4096
+
 #endif
