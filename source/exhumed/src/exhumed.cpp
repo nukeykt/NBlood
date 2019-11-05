@@ -1991,7 +1991,7 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
     // {
     //     return 65536;
     // }
-    if (bRecord || bPlayback)
+    if (bRecord || bPlayback || nFreeze != 0)
         return 65536;
     int32_t rfreq = (refreshfreq != -1 ? refreshfreq : 60);
     uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*120);
@@ -3340,6 +3340,8 @@ void CopyTileToBitmap(short nSrcTile,  short nDestTile, int xPos, int yPos)
         // reset pDestB
         pDestB = pDest;
     }
+
+    tileInvalidate(nDestTile, -1, -1);
 }
 
 int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos)
@@ -3562,6 +3564,7 @@ void InitSpiritHead()
     nHeadTimeStart = (int)totalclock;
 
     memset(worktile, -1, sizeof(worktile));
+    tileInvalidate(kTileRamsesWorkTile, -1, -1);
 
     nPixelsToShow = 0;
 
@@ -3640,6 +3643,8 @@ int DoSpiritHead()
     static short word_964E6 = 0;
 
     nVertPan[0] += (nDestVertPan[0] - nVertPan[0]) / 4;
+
+    tileInvalidate(kTileRamsesWorkTile, -1, -1);
 
     if (nHeadStage < 2)
     {
