@@ -28,6 +28,8 @@ extern unsigned char cinemapal[];
 
 extern short SavePosition;
 
+extern int nPlasmaTile;
+
 int showmap(short nLevel, short nLevelNew, short nLevelBest);
 
 void ClearCinemaSeen();

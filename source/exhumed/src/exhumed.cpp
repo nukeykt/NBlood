@@ -52,6 +52,7 @@
 #include "record.h"
 #include "lighting.h"
 #include "grpscan.h"
+#include "menus.h"
 #include <string.h>
 #include <cstdio> // for printf
 #include <cstdlib>
@@ -2542,6 +2543,8 @@ int app_main(int argc, char const* const* argv)
     InitStatus();
     InitTimer();
 
+    Menu_Init();
+
     for (i = 0; i < kMaxPlayers; i++) {
         nPlayerLives[i] = kDefaultLives;
     }
@@ -2965,6 +2968,8 @@ LOOP3:
 // MENU2:
                 CONTROL_BindsEnabled = 0;
                 nMenu = menu_Menu(1);
+
+                tclocks = totalclock;
 
                 switch (nMenu)
                 {

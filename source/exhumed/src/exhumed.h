@@ -199,6 +199,7 @@ extern double g_frameDelay;
 
 static inline double calcFrameDelay(int const maxFPS) { return maxFPS > 0 ? (timerGetFreqU64()/(double)maxFPS) : 0.0; }
 
+int G_FPSLimit(void);
 
 // the point of this is to prevent re-running a function or calculation passed to potentialValue
 // without making a new variable under each individual circumstance

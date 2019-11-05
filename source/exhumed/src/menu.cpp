@@ -20,6 +20,7 @@
 #include "light.h"
 #include "cd.h"
 #include "cdaudio.h"
+#include "menus.h"
 #include <string>
 
 #include <assert.h>
@@ -286,7 +287,7 @@ int nPlasmaTile = kTile4092;
 #define kPlasmaWidth	320
 #define kPlasmaHeight	80
 
-void menu_DoPlasma()
+void menu_DoPlasmaTile()
 {
     if (waloff[kTile4092] == 0)
     {
@@ -349,7 +350,13 @@ void menu_DoPlasma()
         }
     }
 
-    videoClearScreen(overscanindex);
+    // flip between tile 4092 and 4093
+    if (nPlasmaTile == kTile4092) {
+        nPlasmaTile = kTile4093;
+    }
+    else if (nPlasmaTile == kTile4093) {
+        nPlasmaTile = kTile4092;
+    }
 
     uint8_t *r_ebx = (uint8_t*)waloff[nPlasmaTile] + 81;
     uint8_t *r_edx = (uint8_t*)waloff[nPlasmaTile ^ 1] + 81; // flip between value of 4092 and 4093 with xor
@@ -504,17 +511,16 @@ void menu_DoPlasma()
     }
 
     tileInvalidate(nPlasmaTile,-1,-1);
+}
+
+void menu_DoPlasma()
+{
+    menu_DoPlasmaTile();
+
+    videoClearScreen(overscanindex);
 
     overwritesprite(0,   0,  nPlasmaTile,  0, 2, kPalNormal);
     overwritesprite(160, 40, kExhumedLogo, 0, 3, kPalNormal);
-    
-    // flip between tile 4092 and 4093
-    if (nPlasmaTile == kTile4092) {
-        nPlasmaTile = kTile4093;
-    }
-    else if (nPlasmaTile == kTile4093) {
-        nPlasmaTile = kTile4092;
-    }
 
     // draw the fire urn/lamp thingies
     int dword_9AB5F = ((int)totalclock/16) & 3;
@@ -1466,7 +1472,7 @@ void menu_ResetZoom()
     PlayLocalSound(StaticSound[kSound62], 0);
 }
 
-int menu_Menu(int nVal)
+int menu_MenuOld(int nVal)
 {
     GrabPalette();
 
@@ -1738,6 +1744,36 @@ LABEL_21:
     }
 
     return 0;// todo
+}
+
+int menu_Menu(int ingame)
+{
+#if 1
+    return menu_MenuOld(ingame);
+#endif
+    mouseLockToWindow(0);
+    menu_DoPlasmaTile();
+    int clock = (int)totalclock;
+    while (1)
+    {
+        while (clock + 4 <= (int)totalclock)
+        {
+            clock += 4;
+            menu_DoPlasmaTile();
+        }
+        if (G_FPSLimit())
+        {
+            videoClearScreen(overscanindex);
+
+            M_DisplayMenus();
+
+            videoNextPage();
+        }
+        HandleAsync();
+    }
+    mouseLockToWindow(1);
+
+    return 0;
 }
 
 #define kMaxCinemaPals	16

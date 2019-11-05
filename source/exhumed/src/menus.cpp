@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "osdcmds.h"
 #include "screentext.h"
 #include "names.h"
+#include "menu.h"
 // #include "savegame.h"
 #include "xxhash.h"
 
@@ -222,10 +223,10 @@ MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
 //                                      emptychar x,y       between x,y         zoom                cursorLeft          cursorCenter        cursorScale         textflags
 //                                      tilenum             shade_deselected    shade_disabled      pal                 pal_selected        pal_deselected      pal_disabled
-MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 },           65536,              20<<16,             110<<16,            65536,              TEXT_UPPERCASE,
+MenuFont_t MF_Redfont =               { { 5<<16, 12<<16 },  { 1<<16, 0 },       65536,              20<<16,             110<<16,            65536,              TEXT_UPPERCASE,
                                         kTileMenuFont,      10,                 30,                 0,                  0,                  0,                  0,
                                         0,                  0,                  0 };
-MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           32768,              10<<16,             110<<16,            32768,              TEXT_UPPERCASE,
+MenuFont_t MF_Bluefont =              { { 5<<16, 12<<16 },  { 0, 0 },           32768,              10<<16,             110<<16,            32768,              TEXT_UPPERCASE,
                                         kTileMenuFont,      10,                 30,                 0,                  0,                  0,                  0,
                                         0,                  0,                  0 };
 MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   32768,              10<<16,             110<<16,            32768,              0,
@@ -233,7 +234,7 @@ MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   
                                         0,                  0,                  0 };
 
 
-static MenuMenuFormat_t MMF_Top_Main =             { {  MENU_MARGIN_CENTER<<16, 55<<16, }, -(170<<16) };
+static MenuMenuFormat_t MMF_Top_Main =             { {  MENU_MARGIN_CENTER<<16, 55<<16, },    170<<16 };
 static MenuMenuFormat_t MMF_Top_Episode =          { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustom =    { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustomSub = { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
@@ -255,7 +256,7 @@ static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
-static MenuEntryFormat_t MEF_MainMenu =         { 4<<16,      0,          0 };
+static MenuEntryFormat_t MEF_MainMenu =         { 10<<16,     0,          0 };
 static MenuEntryFormat_t MEF_OptionsMenu =      { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_LeftMenu =         { 7<<16,      0,    120<<16 };
 static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
@@ -2427,6 +2428,8 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         l += 4;
         fallthrough__;
     case MENU_MAIN:
+        rotatesprite_fs(origin.x, origin.y + (l<<16), 65536L, 0, nPlasmaTile, 0, 0, 10|16);
+        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((40+l)<<16), 65536L,0,kExhumedLogo,0,0,10);
         // if ((G_GetLogoFlags() & LOGO_NOGAMETITLE) == 0)
         // {
         //     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((28+l)<<16), 65536L,0,INGAMEDUKETHREEDEE,0,0,10);
