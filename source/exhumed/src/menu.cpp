@@ -283,12 +283,15 @@ void DoEnergyTile()
 
 //int TILE_4092 = kTile4092;
 int nPlasmaTile = kTile4092;
+int nLogoTile;
 
 #define kPlasmaWidth	320
 #define kPlasmaHeight	80
 
 void menu_DoPlasmaTile()
 {
+    if (!nLogoTile)
+        nLogoTile = EXHUMED ? kExhumedLogo : kPowerslaveLogo;
     if (waloff[kTile4092] == 0)
     {
         tileCreate(kTile4092, kPlasmaWidth, kPlasmaHeight);
@@ -298,22 +301,22 @@ void menu_DoPlasmaTile()
         waloff[kTile4093] = (intptr_t)plasmaBuffer;
         memset(plasmaBuffer, 96, sizeof(plasmaBuffer));
 
-        nSmokeLeft = 160 - tilesiz[kExhumedLogo].x / 2;
-        nSmokeRight = nSmokeLeft + tilesiz[kExhumedLogo].x;
+        nSmokeLeft = 160 - tilesiz[nLogoTile].x / 2;
+        nSmokeRight = nSmokeLeft + tilesiz[nLogoTile].x;
 
         tilesiz[kTile4093].x = kPlasmaWidth;
         tilesiz[kTile4093].y = kPlasmaHeight;
 
-        nSmokeTop    = 40 - tilesiz[kExhumedLogo].y / 2;
-        nSmokeBottom = nSmokeTop + tilesiz[kExhumedLogo].y - 1;
+        nSmokeTop    = 40 - tilesiz[nLogoTile].y / 2;
+        nSmokeBottom = nSmokeTop + tilesiz[nLogoTile].y - 1;
 
         //uint32_t t = time(0) << 16;
         //uint32_t t2 = time(0) | t;
-        nRandom = (int)totalclock;
+        nRandom = (int)totalclock ^ 0x12345678;
 
         for (int i = 0; i < 5; i++)
         {
-            int logoWidth = tilesiz[kExhumedLogo].x;
+            int logoWidth = tilesiz[nLogoTile].x;
 #if 1
             plasma_C[i] = (nSmokeLeft + rand() % logoWidth) << 16;
             plasma_B[i] = (menu_RandomLong2() % 327680) + 0x10000;
@@ -449,7 +452,7 @@ void menu_DoPlasmaTile()
         r_ebx += 2;
     }
 
-    tileLoad(kExhumedLogo);
+    tileLoad(nLogoTile);
 
     for (int j = 0; j < 5; j++)
     {
@@ -457,7 +460,7 @@ void menu_DoPlasmaTile()
         int pC = plasma_C[j];
         int badOffset =  (pC>>16) < nSmokeLeft || (pC>>16) >= nSmokeRight;
 
-        uint8_t *ptr3 = (uint8_t*)(waloff[kExhumedLogo] + ((pC >> 16) - nSmokeLeft) * tilesiz[kExhumedLogo].y);
+        uint8_t *ptr3 = (uint8_t*)(waloff[nLogoTile] + ((pC >> 16) - nSmokeLeft) * tilesiz[nLogoTile].y);
 
         plasma_C[j] += plasma_B[j];
 
@@ -492,7 +495,7 @@ void menu_DoPlasmaTile()
         {
             nSmokeOffset = nSmokeBottom;
 
-            ptr3 += tilesiz[kExhumedLogo].y - 1;
+            ptr3 += tilesiz[nLogoTile].y - 1;
 
             while (nSmokeOffset > nSmokeTop)
             {
@@ -520,7 +523,7 @@ void menu_DoPlasma()
     videoClearScreen(overscanindex);
 
     overwritesprite(0,   0,  nPlasmaTile,  0, 2, kPalNormal);
-    overwritesprite(160, 40, kExhumedLogo, 0, 3, kPalNormal);
+    overwritesprite(160, 40, nLogoTile, 0, 3, kPalNormal);
 
     // draw the fire urn/lamp thingies
     int dword_9AB5F = ((int)totalclock/16) & 3;

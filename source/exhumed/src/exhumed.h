@@ -3,6 +3,7 @@
 
 #include "compat.h"
 #include "cache1d.h"
+#include "grpscan.h"
 
 #define kTimerTicks		120
 
@@ -190,6 +191,11 @@ extern const char *gString[];
 extern short bNoSound;
 
 extern int bVanilla;
+
+extern int32_t g_gameType;
+
+#define POWERSLAVE  (g_gameType & GAMEFLAG_POWERSLAVE)
+#define EXHUMED     (g_gameType & GAMEFLAG_EXHUMED)
 
 extern int mouseaiming, aimmode, mouseflip;
 extern int runkey_mode, auto_run;

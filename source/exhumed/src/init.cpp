@@ -32,7 +32,7 @@ enum
     kTagRamses = 61,
 };
 
-int ototalclock = 0;
+ClockTicks ototalclock = 0;
 
 int initx, inity, initz;
 short inita, initsect;

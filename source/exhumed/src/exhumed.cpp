@@ -970,6 +970,26 @@ int loaddefinitions_game(const char *fileName, int32_t firstPass)
     return 0;
 }
 
+
+
+void G_UpdateAppTitle(void)
+{
+    char tempbuf[256];
+    if (g_gameNamePtr)
+    {
+#ifdef EDUKE32_STANDALONE
+        Bstrcpy(tempbuf, g_gameNamePtr);
+#else
+        Bsprintf(tempbuf, "%s - " APPNAME, g_gameNamePtr);
+#endif
+        wm_setapptitle(tempbuf);
+    }
+    else
+    {
+        wm_setapptitle(APPNAME);
+    }
+}
+
 ////////
 
 #define kSpiritX = 106;
@@ -1214,11 +1234,11 @@ void bail2dos(const char *fmt, ...)
 
 void faketimerhandler()
 {
-    if (((int)totalclock < ototalclock + 1) || bInMove)
+    if ((totalclock < ototalclock + 1) || bInMove)
         return;
-    ototalclock++;
+    ototalclock += 1;
 
-    if (!(ototalclock&3) && moveframes < 4)
+    if (!((int)ototalclock&3) && moveframes < 4)
         moveframes++;
 
     PlayerInterruptKeys();
@@ -2174,7 +2194,7 @@ int app_main(int argc, char const* const* argv)
 
     wm_setapptitle(APPNAME);
 
-    initprintf("Exhumed %s\n", s_buildRev);
+    initprintf(APPNAME" %s\n", s_buildRev);
     PrintBuildInfo();
 
     int i;
@@ -2395,6 +2415,8 @@ int app_main(int argc, char const* const* argv)
 
     G_LoadGroups(!g_noAutoLoad && !gSetup.noautoload);
 
+    G_UpdateAppTitle();
+
     // Decrypt strings code would normally be here
 #if 0
 
@@ -2460,7 +2482,7 @@ int app_main(int argc, char const* const* argv)
 
     initprintf("Initializing OSD...\n");
 
-    Bsprintf(tempbuf, "Exhumed %s", s_buildRev);
+    Bsprintf(tempbuf, APPNAME" %s", s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
     OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
@@ -2967,9 +2989,8 @@ LOOP3:
                 CONTROL_ClearButton(gamefunc_Escape);
 // MENU2:
                 CONTROL_BindsEnabled = 0;
+                bInMove = kTrue;
                 nMenu = menu_Menu(1);
-
-                tclocks = totalclock;
 
                 switch (nMenu)
                 {
@@ -2993,6 +3014,9 @@ LOOP3:
                         }
                         break;
                 }
+
+                totalclock = ototalclock = tclocks;
+                bInMove = kFalse;
                 CONTROL_BindsEnabled = 1;
                 RefreshStatus();
             }
@@ -3164,7 +3188,7 @@ void DoTitle()
 
     BlackOut();
 
-    overwritesprite(0, 0, kPublisherLogo, 0, 2, kPalNormal);
+    overwritesprite(0, 0, EXHUMED ? kTileBMGLogo : kTilePIELogo, 0, 2, kPalNormal);
     videoNextPage();
 
     FadeIn();

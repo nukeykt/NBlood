@@ -2429,7 +2429,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         fallthrough__;
     case MENU_MAIN:
         rotatesprite_fs(origin.x, origin.y + (l<<16), 65536L, 0, nPlasmaTile, 0, 0, 10|16);
-        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((40+l)<<16), 65536L,0,kExhumedLogo,0,0,10);
+        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((40+l)<<16), 65536L,0,nLogoTile,0,0,10);
         // if ((G_GetLogoFlags() & LOGO_NOGAMETITLE) == 0)
         // {
         //     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((28+l)<<16), 65536L,0,INGAMEDUKETHREEDEE,0,0,10);
