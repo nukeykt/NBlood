@@ -318,6 +318,56 @@ static void G_AddSteamPaths(const char *basepath)
     addsearchpath(buf);
 }
 
+static void ParseDesktopFile(const char *desktop)
+{
+    buildvfs_fd fd = buildvfs_open_read(desktop);
+    int32_t size = buildvfs_length(fd);
+    char *dskbufstart, *dskbuf, *dskbufend, *dskpath;
+
+    if (size <= 0)
+        return;
+
+    dskbufstart = dskbuf = (char*)Xmalloc(size);
+    size = (int32_t)buildvfs_read(fd, dskbuf, size);
+    buildvfs_close(fd);
+    dskbufend = dskbuf + size;
+
+    char buf[BMAX_PATH];
+
+    while (dskbuf < dskbufend)
+    {
+        if (Bstrncmp(dskbuf, "Path=", 5) == 0)
+        {
+            dskpath = dskbuf += 5;
+
+            while (*dskbuf++ != '\n') {}
+
+            Bsnprintf(buf, dskbuf - dskpath, dskpath);
+            Bstrcat(buf, "/data");
+
+            addsearchpath(buf);
+
+            break;
+        }
+        while (*dskbuf++ != '\n') {}
+    }
+
+    Xfree(dskbufstart);
+}
+
+
+static void G_AddGogPaths(const char *homepath)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s/.local/share/applications/gog_com-Blood_One_Unit_Whole_Blood_1.desktop", homepath);
+    ParseDesktopFile(buf);
+
+    Bsnprintf(buf, sizeof(buf), "%s/Desktop/gog_com-Blood_One_Unit_Whole_Blood_1.desktop", homepath);
+    ParseDesktopFile(buf);
+
+}
+
 // A bare-bones "parser" for Valve's KeyValues VDF format.
 // There is no guarantee this will function properly with ill-formed files.
 static void KeyValues_SkipWhitespace(char **vdfbuf, char * const vdfbufend)
@@ -499,6 +549,8 @@ void G_AddSearchPaths(void)
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
     G_ParseSteamKeyValuesForPaths(buf);
+
+    G_AddGogPaths(homepath);
 
     Bfree(homepath);
 
