@@ -22,12 +22,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 
-#define kMaxXSprites 16834
+#define kMaxXSprites 16384
 #define kMaxXWalls 512
 #define kMaxXSectors 512
 
 // by NoOne additional non-thing proximity, sight and physics sprites 
 #define kMaxSuperXSprites 128
+
+// by NoOne: functions to quckly check range of specifical arrays
+inline bool xsprRangeIsFine(int nXindex) {
+    return (nXindex >= 0 && nXindex < kMaxXSprites);
+}
+
+inline bool xsectRangeIsFine(int nXindex) {
+    return (nXindex >= 0 && nXindex < kMaxXSectors);
+}
+
+inline bool xwallRangeIsFine(int nXindex) {
+    return (nXindex >= 0 && nXindex < kMaxXWalls);
+}
 
 extern bool gModernMap;
 
@@ -56,7 +69,7 @@ struct XSPRITE {
 
     unsigned int respawnPending : 2;    // respawnPending
 
-    signed int dropMsg : 8;             // Drop Item
+    unsigned int dropMsg : 8;           // Drop Item
     unsigned int Decoupled : 1;         // Decoupled
     unsigned int triggerOnce : 1;       // 1-shot
     unsigned int isTriggered : 1;       // works in case if triggerOnce selected
@@ -102,7 +115,7 @@ struct XSPRITE {
     AISTATE* aiState;                   // ai
     signed int sysData1 : 16;           // used to keep here various system data, so user can't change it in map editor
     unsigned int physAttr : 12;         // currently used by additional physics sprites to keep it's attributes.
-    signed int scale;                   // used for scaling SEQ size on sprites
+    signed int scale;                  // used for scaling SEQ size on sprites
 };
 
 struct XSECTOR {
