@@ -612,7 +612,7 @@ void G_AddSearchPaths(void)
     // Duke Nukem 3D: Atomic Edition - GOG.com
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Duke Nukem 3D Atomic Edition", homepath);
     Duke_Add_GOG_Atomic_Linux(buf);
-    Paths_ParseXDGDesktopFilesFromGOG(buf, "Duke_Nukem_3D_Atomic_Edition", Duke_Add_GOG_Atomic_Linux);
+    Paths_ParseXDGDesktopFilesFromGOG(homepath, "Duke_Nukem_3D_Atomic_Edition", Duke_Add_GOG_Atomic_Linux);
 
     Xfree(homepath);
 
