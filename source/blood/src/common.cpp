@@ -101,6 +101,8 @@ static char g_rootDir[BMAX_PATH];
 int g_useCwd;
 int32_t g_groupFileHandle;
 
+static struct strllist *CommandPaths, *CommandGrps;
+
 void G_ExtPreInit(int32_t argc,char const * const * argv)
 {
     g_useCwd = G_CheckCmdSwitch(argc, argv, "-usecwd");
@@ -586,8 +588,6 @@ void G_CleanupSearchPaths(void)
 }
 
 //////////
-
-struct strllist *CommandPaths, *CommandGrps;
 
 void G_AddGroup(const char *buffer)
 {

@@ -92,13 +92,13 @@ float MV_VolumeSmooth = 1.f;
 
 static int MV_Locked;
 
-static inline void MV_Lock()
+void MV_Lock()
 {
     if (!MV_Locked++)
         SoundDriver_PCM_Lock();
 }
 
-static inline void MV_Unlock()
+void MV_Unlock()
 {
     if (!--MV_Locked)
         SoundDriver_PCM_Unlock();

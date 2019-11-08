@@ -70,6 +70,8 @@ extern void (*MV_Printf)(const char *fmt, ...);
 
 const char *MV_ErrorString(int ErrorNumber);
 
+void MV_Lock();
+void MV_Unlock();
 int  MV_VoicePlaying(int handle);
 int  MV_KillAllVoices(void);
 int  MV_Kill(int handle);
