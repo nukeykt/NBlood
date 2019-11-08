@@ -101,6 +101,8 @@ static char g_rootDir[BMAX_PATH];
 int g_useCwd;
 int32_t g_groupFileHandle;
 
+static struct strllist *CommandPaths, *CommandGrps;
+
 void G_ExtPreInit(int32_t argc,char const * const * argv)
 {
     g_useCwd = G_CheckCmdSwitch(argc, argv, "-usecwd");
@@ -307,27 +309,15 @@ static int G_ReadRegistryValue(char const * const SubKey, char const * const Val
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void G_AddSteamPaths(const char *basepath)
 {
-    UNREFERENCED_PARAMETER(basepath);
-#if 0
     char buf[BMAX_PATH];
 
-    // PORT-TODO:
-    // Duke Nukem 3D: Megaton Edition (Steam)
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot", basepath);
+    // Blood: Fresh Supply
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Blood", basepath);
     addsearchpath(buf);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/dc", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/nw", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/vacation", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
 
-    // Duke Nukem 3D (3D Realms Anthology (Steam) / Kill-A-Ton Collection 2015)
-#if defined EDUKE32_OSX
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/Duke Nukem 3D.app/drive_c/Program Files/Duke Nukem 3D", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-#endif
-#endif
+    // Blood: One Unit Whole Blood
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/One Unit Whole Blood", basepath);
+    addsearchpath(buf);
 }
 
 // A bare-bones "parser" for Valve's KeyValues VDF format.
@@ -599,8 +589,6 @@ void G_CleanupSearchPaths(void)
 
 //////////
 
-struct strllist *CommandPaths, *CommandGrps;
-
 void G_AddGroup(const char *buffer)
 {
     char buf[BMAX_PATH];
@@ -650,7 +638,7 @@ void G_LoadGroupsInDir(const char *dirname)
 
     for (auto & extension : extensions)
     {
-        CACHE1D_FIND_REC *rec;
+        BUILDVFS_FIND_REC *rec;
 
         fnlist_getnames(&fnlist, dirname, extension, -1, 0);
 

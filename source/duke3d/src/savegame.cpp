@@ -33,6 +33,7 @@ const char *g_failedVarname;
 #include "vfs.h"
 
 static OutputFileCounter savecounter;
+char previousboardfilename[BMAX_PATH];
 
 // For storing pointers in files.
 //  back_p==0: ptr -> "small int"
@@ -147,7 +148,7 @@ uint16_t g_nummenusaves;
 static menusave_t * g_internalsaves;
 static uint16_t g_numinternalsaves;
 
-static void ReadSaveGameHeaders_CACHE1D(CACHE1D_FIND_REC *f)
+static void ReadSaveGameHeaders_CACHE1D(BUILDVFS_FIND_REC *f)
 {
     savehead_t h;
 
@@ -202,7 +203,7 @@ static void ReadSaveGameHeaders_CACHE1D(CACHE1D_FIND_REC *f)
     }
 }
 
-static int countcache1dfind(CACHE1D_FIND_REC *f)
+static int countcache1dfind(BUILDVFS_FIND_REC *f)
 {
     int x = 0;
     for (; f != nullptr; f = f->next)
@@ -214,7 +215,7 @@ static void ReadSaveGameHeaders_Internal(void)
 {
     static char const DefaultPath[] = "/", SavePattern[] = "*.esv";
 
-    CACHE1D_FIND_REC *findfiles_default = klistpath(DefaultPath, SavePattern, CACHE1D_FIND_FILE);
+    BUILDVFS_FIND_REC *findfiles_default = klistpath(DefaultPath, SavePattern, BUILDVFS_FIND_FILE);
 
     // potentially overallocating but programmatically simple
     int const numfiles = countcache1dfind(findfiles_default);
@@ -313,9 +314,9 @@ int32_t G_LoadSaveHeaderNew(char const *fn, savehead_t *saveh)
     if (kread(fil, &screenshotofs, 4) != 4)
         goto corrupt;
 
-    walock[TILE_LOADSHOT] = 255;
+    walock[TILE_LOADSHOT] = CACHE1D_PERMANENT;
     if (waloff[TILE_LOADSHOT] == 0)
-        cacheAllocateBlock(&waloff[TILE_LOADSHOT], 320*200, &walock[TILE_LOADSHOT]);
+        g_cache.allocateBlock(&waloff[TILE_LOADSHOT], 320*200, &walock[TILE_LOADSHOT]);
     tilesiz[TILE_LOADSHOT].x = 200;
     tilesiz[TILE_LOADSHOT].y = 320;
     if (screenshotofs)
@@ -467,9 +468,13 @@ int32_t G_LoadPlayer(savebrief_t & sv)
             else if (g_mapInfo[mapIdx].filename)
                 Bstrcpy(currentboardfilename, g_mapInfo[mapIdx].filename);
 
+
             if (currentboardfilename[0])
             {
-                artSetupMapArt(currentboardfilename);
+                // only setup art if map differs from previous
+                if (!previousboardfilename[0] || previousboardfilename != currentboardfilename)
+                    artSetupMapArt(currentboardfilename);
+                Bstrcpy(previousboardfilename, currentboardfilename);
                 append_ext_UNSAFE(currentboardfilename, ".mhk");
                 engineLoadMHK(currentboardfilename);
             }
@@ -666,7 +671,10 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
     if (currentboardfilename[0])
     {
-        artSetupMapArt(currentboardfilename);
+        // only setup art if map differs from previous
+        if (!previousboardfilename[0] || Bstrcmp(previousboardfilename, currentboardfilename))
+            artSetupMapArt(currentboardfilename);
+        Bstrcpy(previousboardfilename, currentboardfilename);
         append_ext_UNSAFE(currentboardfilename, ".mhk");
         engineLoadMHK(currentboardfilename);
     }
@@ -707,8 +715,6 @@ static void G_SaveTimers(void)
 
 static void G_RestoreTimers(void)
 {
-    timerUpdate();
-
     totalclock     = g_timers.totalclock;
     totalclocklock = g_timers.totalclocklock;
     ototalclock    = g_timers.ototalclock;

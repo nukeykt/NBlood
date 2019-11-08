@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "savegame.h"
 #include "input.h"
 
-#include "enet/enet.h"
+#include "enet.h"
 #include "lz4.h"
 #include "crc32.h"
 
@@ -61,22 +61,9 @@ int32_t     g_networkMode       = NET_CLIENT;
 
 typedef TYPE_PUNNED int32_t NetChunk32;
 
+void faketimerhandler(void) { ; }
 
-// Unfortunately faketimerhandler needs extra "help" because the Build Engine source doesn't include network.h.
-#ifdef NETCODE_DISABLE
-void faketimerhandler(void)
-{
-    ;
-}
-#else
-void faketimerhandler(void)
-{
-    if (g_netServer == NULL && g_netClient == NULL)
-        return;
-
-    enet_host_service(g_netServer ? g_netServer : g_netClient, NULL, 0);
-}
-
+#ifndef NETCODE_DISABLE
 static void Net_Disconnect(void);
 static void Net_HandleClientPackets(void);
 static void Net_HandleServerPackets(void);
@@ -84,13 +71,10 @@ static void Net_HandleServerPackets(void);
 
 void Net_GetPackets(void)
 {
-    timerUpdate();
-    MUSIC_Update();
-    S_Update();
-
-    G_HandleSpecialKeys();
-
 #ifndef NETCODE_DISABLE
+    if (g_netServer == NULL && g_netClient == NULL)
+        return;
+
     if (g_netDisconnect)
     {
         Net_Disconnect();
@@ -102,14 +86,12 @@ void Net_GetPackets(void)
         return;
     }
 
+    enet_host_service(g_netServer ? g_netServer : g_netClient, NULL, 0);
+
     if (g_netServer)
-    {
         Net_HandleClientPackets();
-    }
     else if (g_netClient)
-    {
         Net_HandleServerPackets();
-    }
 #endif
 }
 
@@ -1654,6 +1636,7 @@ static void Net_Disconnect(void)
                 break;
 
             case ENET_EVENT_TYPE_DISCONNECT:
+            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
                 numplayers = g_mostConcurrentPlayers = ud.multimode = 1;
                 myconnectindex = screenpeek = 0;
                 G_BackToMenu();
@@ -1685,6 +1668,7 @@ static void Net_Disconnect(void)
             case ENET_EVENT_TYPE_NONE:
             case ENET_EVENT_TYPE_RECEIVE:
             case ENET_EVENT_TYPE_DISCONNECT:
+            case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
                 if (event.packet)
                 {
                     enet_packet_destroy(event.packet);
@@ -4443,7 +4427,7 @@ void Net_WaitForInitialSnapshot()
 {
     while (g_netMapRevisionNumber < cStartingRevisionIndex)
     {
-        G_HandleAsync();
+        gameHandleEvents();
     }
 }
 
@@ -4723,7 +4707,7 @@ void Net_WaitForServer(void)
         }
 
 
-        G_HandleAsync();
+        gameHandleEvents();
 
         if (g_player[0].pingcnt > serverReady)
         {

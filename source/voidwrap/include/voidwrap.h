@@ -16,7 +16,11 @@ typedef HINSTANCE VW_LIBHANDLE;
 # define Voidwrap_GetSymbol(lib_handle, symbol) ((void(*)())GetProcAddress((lib_handle), (symbol)))
 #else
 # include <dlfcn.h>
-# define VOIDWRAP_API
+# ifdef VOIDWRAP_ISEXPORTING
+#  define VOIDWRAP_API __attribute__ ((visibility("default"))) 
+# else
+#  define VOIDWRAP_API
+# endif
 typedef void * VW_LIBHANDLE;
 # define Voidwrap_LoadLibrary(lib) dlopen((lib), RTLD_NOW|RTLD_GLOBAL)
 # define Voidwrap_GetSymbol(lib_handle, symbol) dlsym((lib_handle), (symbol))

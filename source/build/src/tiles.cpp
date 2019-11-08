@@ -16,7 +16,7 @@
 
 #include "vfs.h"
 
-void *pic = NULL;
+static void *g_vm_data;
 
 // The tile file number (tilesXXX <- this) of each tile:
 // 0 <= . < MAXARTFILES_BASE: tile is in a "base" ART file
@@ -37,10 +37,11 @@ static intptr_t *g_bakWaloff;
 static picanm_t *g_bakPicAnm;
 static char * g_bakFakeTile;
 static char ** g_bakFakeTileData;
+static rottile_t *g_bakRottile;
 // NOTE: picsiz[] is not backed up, but recalculated when necessary.
 
 //static int32_t artsize = 0;
-static int32_t cachesize = 0;
+static int32_t g_vm_size = 0;
 
 static char artfilename[BMAX_PATH];
 static char artfilenameformat[BMAX_PATH];
@@ -103,7 +104,7 @@ void artClearMapArt(void)
         if (tilefilenum[i] >= MAXARTFILES_BASE)
         {
             // XXX: OK way to free it? Better: cache1d API. CACHE1D_FREE
-            walock[i] = 1;
+            walock[i] = CACHE1D_FREE;
             waloff[i] = 0;
         }
     }
@@ -117,6 +118,7 @@ void artClearMapArt(void)
     RESTORE_MAPART_ARRAY(waloff, g_bakWaloff);
     RESTORE_MAPART_ARRAY(picanm, g_bakPicAnm);
     RESTORE_MAPART_ARRAY(faketile, g_bakFakeTile);
+    RESTORE_MAPART_ARRAY(rottile, g_bakRottile);
 
     for (size_t i = 0; i < MAXUSERTILES; ++i)
     {
@@ -171,6 +173,7 @@ void artSetupMapArt(const char *filename)
     ALLOC_MAPART_ARRAY(picanm, g_bakPicAnm);
     ALLOC_MAPART_ARRAY(faketile, g_bakFakeTile);
     ALLOC_MAPART_ARRAY(faketiledata, g_bakFakeTileData);
+    ALLOC_MAPART_ARRAY(rottile, g_bakRottile);
 
     for (bssize_t i=MAXARTFILES_BASE; i<MAXARTFILES_TOTAL; i++)
     {
@@ -216,6 +219,7 @@ static void tileSetDataSafe(int32_t const tile, int32_t tsiz, char const * const
 
     if ((tsiz = LZ4_compress_default(buffer, newtile, tsiz, compressed_tsiz)) != -1)
     {
+        faketilesize[tile] = tsiz;
         faketiledata[tile] = (char *) Xrealloc(newtile, tsiz);
         faketile[tile>>3] |= pow2char[tile&7];
         tilefilenum[tile] = MAXARTFILES_TOTAL;
@@ -233,6 +237,7 @@ void tileSetData(int32_t const tile, int32_t tsiz, char const * const buffer)
 
     if ((tsiz = LZ4_compress_default(buffer, faketiledata[tile], tsiz, compressed_tsiz)) != -1)
     {
+        faketilesize[tile] = tsiz;
         faketiledata[tile] = (char *) Xrealloc(faketiledata[tile], tsiz);
         faketile[tile>>3] |= pow2char[tile&7];
         tilefilenum[tile] = MAXARTFILES_TOTAL;
@@ -251,7 +256,7 @@ static void tileSoftDelete(int32_t const tile)
     picsiz[tile] = 0;
 
     // CACHE1D_FREE
-    walock[tile] = 1;
+    walock[tile] = CACHE1D_FREE;
     waloff[tile] = 0;
 
     faketile[tile>>3] &= ~pow2char[tile&7];
@@ -522,7 +527,7 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
             {
                 // Tiles having dummytile replacements or those that are
                 // cache1d-locked can't be replaced.
-                if (faketile[i>>3] & pow2char[i&7] || walock[i] >= 200)
+                if (faketile[i>>3] & pow2char[i&7] || walock[i] >= CACHE1D_LOCKED)
                 {
                     initprintf("loadpics: per-map ART file \"%s\": "
                         "tile %d has dummytile or is locked\n", fn, i);
@@ -595,11 +600,12 @@ int32_t artLoadFiles(const char *filename, int32_t askedsize)
         artReadIndexedFile(tilefilei);
 
     Bmemset(gotpic, 0, sizeof(gotpic));
-
     //cachesize = min((int32_t)((Bgetsysmemsize()/100)*60),max(artsize,askedsize));
-    cachesize = (Bgetsysmemsize() <= (uint32_t)askedsize) ? (int32_t)((Bgetsysmemsize() / 100) * 60) : askedsize;
-    pic = Xaligned_alloc(Bgetpagesize(), cachesize);
-    cacheInitBuffer((intptr_t) pic, cachesize);
+    g_vm_size = (Bgetsysmemsize() <= (uint32_t)askedsize) ? (int32_t)((Bgetsysmemsize() / 100) * 60) : askedsize;
+    zpl_virtual_memory vm = Xvm_alloc(nullptr, g_vm_size);
+    g_vm_data = vm.data;
+    g_vm_size = vm.size;
+    g_cache.initBuffer((intptr_t) g_vm_data, g_vm_size);
 
     artUpdateManifest();
 
@@ -625,8 +631,8 @@ bool tileLoad(int16_t tileNum)
     // Allocate storage if necessary.
     if (waloff[tileNum] == 0)
     {
-        walock[tileNum] = 199;
-        cacheAllocateBlock(&waloff[tileNum], dasiz, &walock[tileNum]);
+        walock[tileNum] = CACHE1D_UNLOCKED;
+        g_cache.allocateBlock(&waloff[tileNum], dasiz, &walock[tileNum]);
     }
 
     tileLoadData(tileNum, dasiz, (char *) waloff[tileNum]);
@@ -692,7 +698,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
     if (faketile[tilenume>>3] & pow2char[tilenume&7])
     {
         if (faketiledata[tilenume] != NULL)
-            LZ4_decompress_fast(faketiledata[tilenume], buffer, dasiz);
+            LZ4_decompress_safe(faketiledata[tilenume], buffer, faketilesize[tilenume], dasiz);
 
         faketimerhandler();
         return;
@@ -712,7 +718,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
         {
             initprintf("Failed opening ART file \"%s\"!\n", fn);
             engineUnInit();
-            Bexit(11);
+            Bexit(EXIT_FAILURE);
         }
 
         artfilnum = tfn;
@@ -822,8 +828,8 @@ intptr_t tileCreate(int16_t tilenume, int32_t xsiz, int32_t ysiz)
 
     int const dasiz = xsiz*ysiz;
 
-    walock[tilenume] = 255;
-    cacheAllocateBlock(&waloff[tilenume], dasiz, &walock[tilenume]);
+    walock[tilenume] = CACHE1D_PERMANENT;
+    g_cache.allocateBlock(&waloff[tilenume], dasiz, &walock[tilenume]);
 
     tileSetSize(tilenume, xsiz, ysiz);
     Bmemset(&picanm[tilenume], 0, sizeof(picanm_t));
@@ -876,5 +882,5 @@ void Buninitart(void)
     if (artfil != buildvfs_kfd_invalid)
         kclose(artfil);
 
-    ALIGNED_FREE_AND_NULL(pic);
+    Xvm_free(zpl_vm(g_vm_data, g_vm_size));
 }

@@ -195,6 +195,15 @@ enum gametokens
     T_USERCONTENT,
 };
 
+static void gameTimerHandler(void)
+{
+    S_Cleanup();
+    MUSIC_Update();
+
+    G_HandleSpecialKeys();
+}
+
+
 void G_HandleSpecialKeys(void)
 {
     auto &myplayer = *g_player[myconnectindex].ps;
@@ -206,17 +215,18 @@ void G_HandleSpecialKeys(void)
         CONTROL_GetInput(&noshareinfo);
     }
 
-//    CONTROL_ProcessBinds();
-
     if (g_networkMode != NET_DEDICATED_SERVER && ALT_IS_PRESSED && KB_KeyPressed(sc_Enter))
     {
         if (videoSetGameMode(!ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail))
         {
-            OSD_Printf(OSD_ERROR "Failed setting fullscreen video mode.\n");
+            OSD_Printf(OSD_ERROR "Failed setting video mode!\n");
+
             if (videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail))
-                G_GameExit("Failed to recover from failure to set fullscreen video mode.\n");
+                G_GameExit("Fatal error: unable to recover from failure setting video mode!\n");
         }
-        else ud.setup.fullscreen = !ud.setup.fullscreen;
+        else
+            ud.setup.fullscreen = !ud.setup.fullscreen;
+
         KB_ClearKeyDown(sc_Enter);
         g_restorePalette = 1;
         G_UpdateScreenArea();
@@ -240,11 +250,13 @@ void G_HandleSpecialKeys(void)
     if ((myplayer.gm & MODE_GAME) != MODE_GAME)
         OSD_DispatchQueued();
 
+#ifdef DEBUGGINGAIDS
     if (g_quickExit == 0 && KB_KeyPressed(sc_LeftControl) && KB_KeyPressed(sc_LeftAlt) && KB_KeyPressed(sc_End))
     {
         g_quickExit = 1;
         G_GameExit("Quick Exit.");
     }
+#endif
 }
 
 void G_GameQuit(void)
@@ -331,7 +343,7 @@ void G_GameExit(const char *msg)
 
     Bfflush(NULL);
 
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -716,38 +728,38 @@ static void G_ReadGLFrame(void)
 {
     // Save OpenGL screenshot with Duke3D palette
     // NOTE: maybe need to move this to the engine...
-    palette_t *const frame = (palette_t *)Xcalloc(xdim * ydim, sizeof(palette_t));
+    
+    static char lock;
+    static palette_t *frame;
+
+    lock = CACHE1D_PERMANENT;
+
+    if (frame == nullptr)
+        g_cache.allocateBlock((intptr_t *)&frame, xdim * ydim * sizeof(palette_t), &lock);
+
     char *const pic = (char *) waloff[TILE_SAVESHOT];
 
-    int32_t x, y;
-    const int32_t xf = divscale16(ydim*4/3, 320);
-    const int32_t yf = divscale16(ydim, 200);  // (ydim<<16)/200
+    int const xf = divscale16(ydim*4/3, 320);
+    int const yf = divscale16(ydim, 200);  // (ydim<<16)/200
 
-    tilesiz[TILE_SAVESHOT].x = 200;
-    tilesiz[TILE_SAVESHOT].y = 320;
-
-    if (!frame)
-    {
-        Bmemset(pic, 0, 320 * 200);
-        return;
-    }
+    tilesiz[TILE_SAVESHOT] = { 200, 320 };
 
     videoBeginDrawing();
     glReadPixels(0, 0, xdim, ydim, GL_RGBA, GL_UNSIGNED_BYTE, frame);
     videoEndDrawing();
 
-    for (y = 0; y < 200; y++)
+    for (int y = 0; y < 200; y++)
     {
         const int32_t base = mulscale16(200 - y - 1, yf)*xdim;
 
-        for (x = 0; x < 320; x++)
+        for (int x = 0; x < 320; x++)
         {
             const palette_t *pix = &frame[base + mulscale16(x, xf) + (xdim-(ydim*4/3))/2];
             pic[320 * y + x] = paletteGetClosestColor(pix->r, pix->g, pix->b);
         }
     }
 
-    Xfree(frame);
+    lock = CACHE1D_FREE;
 }
 #endif
 
@@ -852,9 +864,10 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (g_screenCapture)
         {
-            walock[TILE_SAVESHOT] = 199;
+            walock[TILE_SAVESHOT] = CACHE1D_PERMANENT;
+
             if (waloff[TILE_SAVESHOT] == 0)
-                cacheAllocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
+                g_cache.allocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
 
             if (videoGetRenderMode() == REND_CLASSIC)
                 renderSetTarget(TILE_SAVESHOT, 200, 320);
@@ -912,9 +925,9 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 const int32_t viewtilexsiz = (tang&1023) ? tiltcx : tiltcy;
                 const int32_t viewtileysiz = tiltcx;
 
-                walock[TILE_TILT] = 255;
+                walock[TILE_TILT] = CACHE1D_PERMANENT;
                 if (waloff[TILE_TILT] == 0)
-                    cacheAllocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
+                    g_cache.allocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
                 renderSetTarget(TILE_TILT, viewtilexsiz, viewtileysiz);
 
@@ -1113,14 +1126,12 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
             tileInvalidate(TILE_SAVESHOT, 0, 255);
 
             if (videoGetRenderMode() == REND_CLASSIC)
-            {
                 renderRestoreTarget();
-//                walock[TILE_SAVESHOT] = 1;
-            }
 #ifdef USE_OPENGL
             else
                 G_ReadGLFrame();
 #endif
+            walock[TILE_SAVESHOT] = CACHE1D_UNLOCKED;
         }
         else if (screenTilting)
         {
@@ -1163,7 +1174,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 tiltZoom >>= tiltcs;  // JBF 20030807
 
                 rotatesprite_win(160 << 16, 100 << 16, tiltZoom, tang + 512, TILE_TILT, 0, 0, 4 + 2 + 64 + 1024);
-                walock[TILE_TILT] = 1;
+                walock[TILE_TILT] = CACHE1D_FREE;
             }
         }
     }
@@ -1340,7 +1351,8 @@ int32_t A_InsertSprite(int16_t whatsect,int32_t s_x,int32_t s_y,int32_t s_z,int1
         G_DumpDebugInfo();
         OSD_Printf("Failed spawning pic %d spr from pic %d spr %d at x:%d,y:%d,z:%d,sect:%d\n",
                           s_pn,s_ow < 0 ? -1 : TrackerCast(sprite[s_ow].picnum),s_ow,s_x,s_y,s_z,whatsect);
-        G_GameExit("Too many sprites spawned.");
+        ERRprintf("Too many sprites spawned.");
+        fatal_exit("Too many sprites spawned.");
     }
 
 #ifdef DEBUGGINGAIDS
@@ -6020,21 +6032,22 @@ void G_PostCreateGameState(void)
 
 static void G_HandleMemErr(int32_t lineNum, const char *fileName, const char *funcName)
 {
-    static char msg[128];
-    Bsnprintf(msg, sizeof(msg), "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);
 #ifdef DEBUGGINGAIDS
-    Bassert(0);
+    debug_break();
 #endif
-    G_GameExit(msg);
+    Bsprintf(tempbuf, "Out of memory in %s:%d (%s)\n", fileName, lineNum, funcName);
+    fatal_exit(tempbuf);
 }
 
-static void G_FatalEngineError(void)
+static void G_FatalEngineInitError(void)
 {
-    wm_msgbox("Fatal Engine Initialization Error",
-              "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
+#ifdef DEBUGGINGAIDS
+    debug_break();
+#endif
     G_Cleanup();
-    ERRprintf("G_Startup: There was a problem initializing the engine: %s\n", engineerrstr);
-    exit(6);
+    Bsprintf(tempbuf, "There was a problem initializing the engine: %s\n", engineerrstr);
+    ERRprintf("%s", tempbuf);
+    fatal_exit(tempbuf);
 }
 
 static void G_Startup(void)
@@ -6044,13 +6057,14 @@ static void G_Startup(void)
     set_memerr_handler(&G_HandleMemErr);
 
     timerInit(TICRATE);
+    timerSetCallback(gameTimerHandler);
 
     initcrc32table();
 
     G_CompileScripts();
 
     if (engineInit())
-        G_FatalEngineError();
+        G_FatalEngineInitError();
 
 #ifdef LUNATIC
     El_CreateGameState();
@@ -6335,17 +6349,24 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps)
+    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
         return 1;
 
     static double   nextPageDelay;
     static uint64_t lastFrameTicks;
 
-    uint64_t const frameTicks   = timerGetTicksU64();
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
+
+    uint64_t const frameTicks = timerGetTicksU64();
+
+    if (lastFrameTicks > frameTicks)
+        lastFrameTicks = frameTicks;
+
     uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
     double const   dElapsedTime = elapsedTime;
 
-    if (dElapsedTime >= floor(nextPageDelay))
+    if (dElapsedTime >= nextPageDelay)
     {
         if (dElapsedTime <= nextPageDelay+g_frameDelay)
             nextPageDelay += g_frameDelay-dElapsedTime;
@@ -6372,7 +6393,7 @@ int app_main(int argc, char const * const * argv)
 
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
-    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
 #ifdef EDUKE32_STANDALONE
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
@@ -6383,8 +6404,6 @@ int app_main(int argc, char const * const * argv)
             return 3;
     }
 #endif
-
-    backgroundidle = 0;
 
 #ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
@@ -6477,7 +6496,7 @@ int app_main(int argc, char const * const * argv)
 
             ud.config.LastUpdateCheck = time(NULL);
 
-            if (G_GetVersionFromWebsite(tempbuf))
+            if (windowsCheckForUpdates(tempbuf))
             {
                 initprintf("Current version is %d",Batoi(tempbuf));
 
@@ -6509,12 +6528,7 @@ int app_main(int argc, char const * const * argv)
 #endif
 
     if (enginePreInit())
-    {
-        wm_msgbox("Build Engine Initialization Error",
-                  "There was a problem initializing the Build engine: %s", engineerrstr);
-        ERRprintf("app_main: There was a problem initializing the Build engine: %s\n", engineerrstr);
-        Bexit(2);
-    }
+        G_FatalEngineInitError();
 
     if (Bstrcmp(g_setupFileName, SETUPFILENAME))
         initprintf("Using config file \"%s\".\n",g_setupFileName);
@@ -6527,7 +6541,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(0);
+            exit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -6566,7 +6580,7 @@ int app_main(int argc, char const * const * argv)
 #ifndef NETCODE_DISABLE
     if (g_networkMode == NET_SERVER || g_networkMode == NET_DEDICATED_SERVER)
     {
-        ENetAddress address = { ENET_HOST_ANY, g_netPort };
+        ENetAddress address = { ENET_HOST_ANY, g_netPort, 0 };
         g_netServer = enet_host_create(&address, MAXPLAYERS, CHAN_MAX, 0, 0);
 
         if (g_netServer == NULL)
@@ -6631,7 +6645,7 @@ int app_main(int argc, char const * const * argv)
     g_defModules.clear();
 
     if (enginePostInit())
-        G_FatalEngineError();
+        G_FatalEngineInitError();
 
     G_PostLoadPalette();
 
@@ -6679,9 +6693,8 @@ int app_main(int argc, char const * const * argv)
     {
         if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, TICRATE))
         {
-            ERRprintf("There was an error initializing the CONTROL system.\n");
             engineUnInit();
-            Bexit(5);
+            fatal_exit("There was an error initializing the CONTROL system.\n");
         }
 
         G_SetupGameButtons();
@@ -6725,7 +6738,7 @@ int app_main(int argc, char const * const * argv)
 
     if (quitevent) return 4;
 
-    if (g_networkMode != NET_DEDICATED_SERVER)
+    if (g_networkMode != NET_DEDICATED_SERVER && validmodecnt > 0)
     {
         if (videoSetGameMode(ud.setup.fullscreen, ud.setup.xdim, ud.setup.ydim, ud.setup.bpp, ud.detail) < 0)
         {
@@ -6751,7 +6764,7 @@ int app_main(int argc, char const * const * argv)
                 initprintf("Failure setting video mode %dx%dx%d windowed! Trying next mode...\n",
                            validmode[resIdx].xdim, validmode[resIdx].ydim, bpp);
 
-                if (++resIdx == validmodecnt)
+                if (++resIdx >= validmodecnt)
                 {
                     if (bpp == 8)
                         G_GameExit("Fatal error: unable to set any video mode!");
@@ -6768,8 +6781,8 @@ int app_main(int argc, char const * const * argv)
 
         g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, myplayer.palette, 0);
-        S_MusicStartup();
         S_SoundStartup();
+        S_MusicStartup();
     }
 
     // check if the minifont will support lowercase letters (3136-3161)
@@ -6900,13 +6913,11 @@ MAIN_LOOP_RESTART:
 
     do //main loop
     {
-        if (handleevents() && quitevent)
+        if (gameHandleEvents() && quitevent)
         {
             KB_KeyDown[sc_Escape] = 1;
             quitevent = 0;
         }
-
-        Net_GetPackets();
 
         // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
         CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
@@ -6938,63 +6949,70 @@ MAIN_LOOP_RESTART:
         }
         else
 #endif
-        {
-            S_Cleanup();
-            MUSIC_Update();
             G_HandleLocalKeys();
-        }
 
         OSD_DispatchQueued();
 
-        char gameUpdate = false;
-        double const gameUpdateStartTime = timerGetHiTicks();
+        static bool frameJustDrawn;
+        bool gameUpdate = false;
+        double gameUpdateStartTime = timerGetHiTicks();
+
         if (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && totalclock >= ototalclock+TICSPERFRAME)
         {
-            if (g_networkMode != NET_DEDICATED_SERVER)
+            do 
             {
-                P_GetInput(myconnectindex);
-                inputfifo[0][myconnectindex] = localInput;
-            }
-
-            do
-            {
-                timerUpdate();
-
-                if (ready2send == 0) break;
-
-                ototalclock += TICSPERFRAME;
-
-                int const moveClock = (int) totalclock;
-
-                if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1)) &&
-                        (myplayer.gm & MODE_GAME))
+                if (g_networkMode != NET_DEDICATED_SERVER)
                 {
-                    G_MoveLoop();
+                    if (!frameJustDrawn)
+                        break;
+
+                    frameJustDrawn = false;
+
+                    P_GetInput(myconnectindex);
+                    inputfifo[0][myconnectindex] = localInput;
+                }
+
+                do
+                {
+                    if (ready2send == 0)
+                        break;
+
+                    ototalclock += TICSPERFRAME;
+
+                    int const moveClock = (int)totalclock;
+
+                    if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1))
+                        && (myplayer.gm & MODE_GAME))
+                    {
+                        G_MoveLoop();
+                        S_Update();
+
 #ifdef __ANDROID__
-                    inputfifo[0][myconnectindex].fvel = 0;
-                    inputfifo[0][myconnectindex].svel = 0;
-                    inputfifo[0][myconnectindex].avel = 0;
-                    inputfifo[0][myconnectindex].horz = 0;
+                        inputfifo[0][myconnectindex].fvel = 0;
+                        inputfifo[0][myconnectindex].svel = 0;
+                        inputfifo[0][myconnectindex].avel = 0;
+                        inputfifo[0][myconnectindex].horz = 0;
 #endif
-                }
+                    }
 
-                timerUpdate();
+                    if (totalclock - moveClock >= (TICSPERFRAME>>1))
+                    {
+                        // computing a tic takes longer than half a tic, so we're slowing
+                        // the game down. rather than tightly spinning here, go draw
+                        // a frame since we're fucked anyway
+                        break;
+                    }
+                } while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && totalclock >= ototalclock + TICSPERFRAME);
 
-                if (totalclock - moveClock >= TICSPERFRAME)
-                {
-                    // computing a tic takes longer than a tic, so we're slowing
-                    // the game down. rather than tightly spinning here, go draw
-                    // a frame since we're fucked anyway
-                    break;
-                }
-            }
-            while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU|MODE_DEMO)) == 0) && totalclock >= ototalclock+TICSPERFRAME);
+                gameUpdate = true;
+                g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
 
-            gameUpdate = true;
-            g_gameUpdateTime = timerGetHiTicks()-gameUpdateStartTime;
-            if (g_gameUpdateAvgTime < 0.f)
-                g_gameUpdateAvgTime = g_gameUpdateTime;
-            g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
+                if (g_gameUpdateAvgTime <= 0.0)
+                    g_gameUpdateAvgTime = g_gameUpdateTime;
+
+                g_gameUpdateAvgTime
+                = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
+            } while (0);
         }
 
         G_DoCheats();
@@ -7023,9 +7041,9 @@ MAIN_LOOP_RESTART:
             videoNextPage();
 
             if (gameUpdate)
-            {
                 g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
-            }
+
+            frameJustDrawn = true;
         }
 
         // handle CON_SAVE and CON_SAVENN

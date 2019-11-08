@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mmulti.h"
 #include "pragmas.h"
 #ifndef NETCODE_DISABLE
-#include "enet/enet.h"
+#include "enet.h"
 #endif
 #include "compat.h"
 #include "config.h"
@@ -635,7 +635,7 @@ void netWaitForEveryone(char a1)
     {
         if (keystatus[sc_Escape] && a1)
             exit(0);
-        G_HandleAsync();
+        gameHandleEvents();
         faketimerhandler();
         for (p = connecthead; p >= 0; p = connectpoint2[p])
             if (gPlayerReady[p] < gPlayerReady[myconnectindex])
@@ -1371,7 +1371,6 @@ void netUpdate(void)
 
 void faketimerhandler(void)
 {
-    timerUpdate();
 #ifndef NETCODE_DISABLE
     if (gNetMode != NETWORK_NONE && gNetENetInit)
         netUpdate();

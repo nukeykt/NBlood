@@ -1121,25 +1121,24 @@ AMMOICON gAmmoIcons[] = {
 
 struct WEAPONICON {
     short nTile;
-    char xRepeat;
-    char yRepeat;
+    char zOffset;
 };
 
 WEAPONICON gWeaponIcon[] = {
-    { -1, 0, 0 },
-    { -1, 0, 0 },
-    { 524, 32, 32 },
-    { 559, 32, 32 },
-    { 558, 32, 32 },
-    { 526, 32, 32 },
-    { 589, 32, 32 },
-    { 618, 32, 32 },
-    { 539, 32, 32 },
-    { 800, 32, 32 },
-    { 525, 32, 32 },
-    { 811, 32, 32 },
-    { 810, 32, 32 },
-    { -1, 0, 0 },
+    { -1, 0 },
+    { -1, 0 }, // 1: pitchfork
+    { 524, 6 }, // 2: flare gun
+    { 559, 6 }, // 3: shotgun
+    { 558, 8 }, // 4: tommy gun
+    { 526, 6 }, // 5: napalm launcher
+    { 589, 11 }, // 6: dynamite
+    { 618, 11 }, // 7: spray can
+    { 539, 6 }, // 8: tesla gun
+    { 800, 0 }, // 9: life leech
+    { 525, 11 }, // 10: voodoo doll
+    { 811, 11 }, // 11: proxy bomb
+    { 810, 11 }, // 12: remote bomb
+    { -1, 0 },
 };
 
 int dword_14C508;
@@ -1256,6 +1255,25 @@ void viewDrawMapTitle(void)
     if (alpha != 255)
     {
         viewDrawText(1, levelGetTitle(), 160, 50, -128, 0, 1, 1, 0, alpha);
+    }
+}
+
+void viewDrawAimedPlayerName(void)
+{
+    if (!gShowPlayerNames || (gView->aim.dx == 0 && gView->aim.dy == 0))
+        return;
+
+    int hit = HitScan(gView->pSprite, gView->pSprite->z, gView->aim.dx, gView->aim.dy, gView->aim.dz, CLIPMASK0, 512);
+    if (hit == 3)
+    {
+        spritetype* pSprite = &sprite[gHitInfo.hitsprite];
+        if (IsPlayerSprite(pSprite))
+        {
+            char nPlayer = pSprite->type-kDudePlayer1;
+            char* szName = gProfile[nPlayer].name;
+            int nPalette = (gPlayer[nPlayer].teamId&3)+11;
+            viewDrawText(4, szName, 160, 125, -128, nPalette, 1, 1);
+        }
     }
 }
 
@@ -1677,8 +1695,6 @@ void UpdateStatusBar(ClockTicks arg)
         viewDrawPowerUps(pPlayer);
     }
 
-    viewDrawMapTitle();
-
     if (gGameOptions.nGameType < 1) return;
 
     if (gGameOptions.nGameType == 3)
@@ -1831,6 +1847,8 @@ void viewDrawInterface(ClockTicks arg)
     UpdateStatusBar(arg);
 }
 
+static fix16_t gCameraAng;
+
 uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite)
 {
     int nTSprite = spritesortcnt;
@@ -1855,9 +1873,8 @@ uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite)
     }
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        int nAngle = getangle(pTSprite->x-gView->pSprite->x, pTSprite->y-gView->pSprite->y);
-        pTSprite->x += Cos(nAngle)>>25;
-        pTSprite->y += Sin(nAngle)>>25;
+        pTSprite->x += Cos(gCameraAng)>>25;
+        pTSprite->y += Sin(gCameraAng)>>25;
     }
     return &tsprite[nTSprite];
 }
@@ -2129,17 +2146,31 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     {
         dassert(pTSprite->type >= kDudePlayer1 && pTSprite->type <= kDudePlayer8);
         PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
-        if (gWeaponIcon[pPlayer->curWeapon].nTile < 0) break;
+        WEAPONICON weaponIcon = gWeaponIcon[pPlayer->curWeapon];
+        const int nTile = weaponIcon.nTile;
+        if (nTile < 0) break;
         uspritetype *pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
-        int top, bottom;
-        GetSpriteExtents((spritetype *)pTSprite, &top, &bottom);
         pNSprite->x = pTSprite->x;
         pNSprite->y = pTSprite->y;
         pNSprite->z = pTSprite->z-(32<<8);
-        pNSprite->picnum = gWeaponIcon[pPlayer->curWeapon].nTile;
+        pNSprite->picnum = nTile;
         pNSprite->shade = pTSprite->shade;
-        pNSprite->xrepeat = gWeaponIcon[pPlayer->curWeapon].xRepeat;
-        pNSprite->yrepeat = gWeaponIcon[pPlayer->curWeapon].yRepeat;
+        pNSprite->xrepeat = 32;
+        pNSprite->yrepeat = 32;
+        const int nVoxel = voxelIndex[nTile];
+        if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
+        {
+            pNSprite->cstat |= 48;
+            pNSprite->cstat &= ~8;
+            pNSprite->picnum = nVoxel;
+            pNSprite->z -= weaponIcon.zOffset<<8;
+            const int lifeLeech = 9;
+            if (pPlayer->curWeapon == lifeLeech)
+            {
+                pNSprite->x -=  mulscale30(128, Cos(pNSprite->ang));
+                pNSprite->y -= mulscale30(128, Sin(pNSprite->ang));
+            }
+        }
         break;
     }
     }
@@ -2160,11 +2191,11 @@ static void viewApplyDefaultPal(uspritetype *pTSprite, sectortype const *pSector
 
 void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t smooth)
 {
-    UNREFERENCED_PARAMETER(cA);
     UNREFERENCED_PARAMETER(smooth);
     dassert(spritesortcnt <= kMaxViewSprites);
+    gCameraAng = cA;
     int nViewSprites = spritesortcnt;
-    for (int nTSprite = nViewSprites-1; nTSprite >= 0; nTSprite--)
+    for (int nTSprite = spritesortcnt-1; nTSprite >= 0; nTSprite--)
     {
         uspritetype *pTSprite = &tsprite[nTSprite];
         //int nXSprite = pTSprite->extra;
@@ -3030,8 +3061,7 @@ void viewDrawScreen(void)
 #ifdef USE_OPENGL
     polymostcenterhoriz = defaultHoriz;
 #endif
-
-    timerUpdate();
+    gameHandleEvents();
     ClockTicks delta = totalclock - lastUpdate;
     if (delta < 0)
         delta = 0;
@@ -3551,6 +3581,8 @@ RORHACK:
         printext256(fX-strlen(gTempStr)*4, fY, 31, -1, gTempStr, 1);
     }
 #endif
+    viewDrawMapTitle();
+    viewDrawAimedPlayerName();
     viewPrintFPS();
     if (gPaused)
     {

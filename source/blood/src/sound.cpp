@@ -221,7 +221,7 @@ void sndFadeSong(int nTime)
         nWaveMusicHandle = -1;
         bWaveMusic = false;
     }
-    MUSIC_SetVolume(0);
+    // MUSIC_SetVolume(0);
     MUSIC_StopSong();
 }
 
@@ -460,15 +460,20 @@ void DeinitSoundDevice(void)
 
 void InitMusicDevice(void)
 {
-    int nStatus = MUSIC_Init(MusicDevice, 0);
-    if (nStatus != 0)
+    int nStatus;
+    if ((nStatus = MUSIC_Init(MusicDevice)) == MUSIC_Ok)
+    {
+        if (MusicDevice == ASS_AutoDetect)
+            MusicDevice = MIDI_GetDevice();
+    }
+    else if ((nStatus = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
     {
         initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
         return;
     }
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
     if (hTmb)
-        OPLMusic::AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
+        AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
     MUSIC_SetVolume(MusicVolume);
 }
 

@@ -435,7 +435,7 @@ void G_AnimateCamSprite(int smoothRatio)
             if (waloff[viewscrTile] == 0)
                 tileCreate(viewscrTile, tilesiz[PN(spriteNum)].x << viewscrShift, tilesiz[PN(spriteNum)].y << viewscrShift);
             else
-                walock[viewscrTile] = 199;
+                walock[viewscrTile] = CACHE1D_UNLOCKED;
 
             G_SetupCamTile(OW(spriteNum), viewscrTile, smoothRatio);
 #ifdef POLYMER
@@ -542,10 +542,7 @@ int G_ActivateWarpElevators(int spriteNum, int warpDir)
     if (i == -1)
         return 1; // No find
 
-#ifndef EDUKE32_STANDALONE
-    if (!FURY)
-        A_PlaySound(warpDir ? ELEVATOR_ON : ELEVATOR_OFF, spriteNum);
-#endif
+    A_PlaySound(warpDir ? ELEVATOR_ON : ELEVATOR_OFF, spriteNum);
 
     for (SPRITES_OF(STAT_EFFECTOR, i))
         if (SLT(i) == SE_17_WARP_ELEVATOR && SHT(i) == sprite[spriteNum].hitag)
@@ -3160,8 +3157,10 @@ void P_CheckSectors(int playerNum)
             g_player[playerNum].input->bits &= ~BIT(SK_OPEN);
     }
 
-    if (ud.cashman && TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN))
+#ifndef EDUKE32_STANDALONE
+    if (!FURY && ud.cashman && TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_OPEN))
         A_SpawnMultiple(pPlayer->i, MONEY, 2);
+#endif
 
     if (pPlayer->newowner >= 0)
     {
@@ -3399,10 +3398,7 @@ void P_CheckSectors(int playerNum)
         {
             if (klabs(A_GetHitscanRange(pPlayer->i)) < 512)
             {
-#ifndef EDUKE32_STANDALONE
-                if (!FURY)
-                    A_PlaySound(((krand()&255) < 16) ? DUKE_SEARCH2 : DUKE_SEARCH, pPlayer->i);
-#endif
+                A_PlaySound(((krand()&255) < 16) ? DUKE_SEARCH2 : DUKE_SEARCH, pPlayer->i);
                 return;
             }
         }

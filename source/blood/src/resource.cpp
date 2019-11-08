@@ -771,7 +771,9 @@ void Resource::Read(DICTNODE *n, void *p)
                 swapFrame.at6_3 = bitReader.readBit();
                 swapFrame.at6_4 = bitReader.readBit();
                 swapFrame.tile2 = bitReader.readUnsigned(4);
-                swapFrame.pad = bitReader.readUnsigned(7);
+                swapFrame.soundRange = bitReader.readUnsigned(4);
+                swapFrame.surfaceSound = bitReader.readBit();
+                swapFrame.reserved = bitReader.readUnsigned(2);
                 *pFrame = swapFrame;
             }
         }
@@ -889,7 +891,7 @@ void Resource::FNAddFiles(fnlist_t * fnlist, const char *pattern)
         sprintf(filename, "%s.%s", pNode->name, pNode->type);
         if (!Bwildmatch(filename, pattern))
             continue;
-        switch (klistaddentry(&fnlist->findfiles, filename, CACHE1D_FIND_FILE, CACHE1D_SOURCE_GRP))
+        switch (klistaddentry(&fnlist->findfiles, filename, BUILDVFS_FIND_FILE, BUILDVFS_SOURCE_GRP))
         {
         case -1:
             return;
@@ -926,7 +928,7 @@ void Resource::PrecacheSounds(void)
         if ((!strcmp(pNode->type, "RAW") || !strcmp(pNode->type, "SFX")) && !pNode->ptr)
         {
             Load(pNode);
-            G_HandleAsync();
+            gameHandleEvents();
         }
     }
 }

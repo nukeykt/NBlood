@@ -53,28 +53,25 @@
     <ClCompile Include="..\..\source\audiolib\src\xmp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\sdlmusic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\al_midi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\gmtimbre.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\driver_winmm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\midi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\mpu401.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\opl3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\audiolib\src\music.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\opl3.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\music_external.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\oplmidi.cpp">
+    <ClCompile Include="..\..\source\audiolib\src\gmtimbre.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\audiolib\src\driver_adlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -94,7 +91,7 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\drivers.h">
+    <ClInclude Include="..\..\source\audiolib\src\drivers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\fx_man.h">
@@ -109,28 +106,34 @@
     <ClInclude Include="..\..\source\audiolib\include\music.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\src\_al_midi.h">
+    <ClInclude Include="..\..\source\audiolib\include\sndcards.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\src\_midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\src\_oplmidi.h">
+    <ClInclude Include="..\..\source\audiolib\src\driver_winmm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\src\midi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\src\midifuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\src\_al_midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\al_midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\midi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\mpu401.h">
+    <ClInclude Include="..\..\source\audiolib\include\midifuncs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\opl3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\include\oplmidi.h">
+    <ClInclude Include="..\..\source\audiolib\src\driver_adlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

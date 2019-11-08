@@ -4,13 +4,13 @@
 
 ### Global Profiles
 ifeq ($(FURY),1)
-    APPNAME := Ion Fury
     APPBASENAME := fury
-    STANDALONE := 1
-    POLYMER := 0
-    USE_LIBVPX := 0
+    APPNAME := Ion Fury
     NETCODE := 0
+    POLYMER := 0
     SIMPLE_MENU := 1
+    STANDALONE := 1
+    USE_LIBVPX := 0
 endif
 
 ### Platform and Toolchain Configuration
@@ -49,31 +49,32 @@ endef
 libxmplite := libxmp-lite
 
 libxmplite_objs := \
+    common.c \
     control.c \
     dataio.c \
     effects.c \
     filter.c \
     format.c \
     hio.c \
+    it_load.c \
+    itsex.c \
     lfo.c \
     load.c \
     load_helpers.c \
     memio.c \
-    mixer.c \
     mix_all.c \
+    mixer.c \
+    mod_load.c \
+    mtm_load.c \
     period.c \
     player.c \
     read_event.c \
+    s3m_load.c \
+    sample.c \
     scan.c \
     smix.c \
     virtual.c \
-    common.c \
-    itsex.c \
-    it_load.c \
-    mod_load.c \
-    mtm_load.c \
-    s3m_load.c \
-    sample.c \
+    win32.c \
     xm_load.c \
 
 libxmplite_root := $(source)/$(libxmplite)
@@ -138,34 +139,6 @@ physfs_obj := $(obj)/$(physfs)
 physfs_cflags :=
 
 
-#### ENet
-
-enet := enet
-
-enet_objs := \
-    callbacks.c \
-    host.c \
-    list.c \
-    packet.c \
-    peer.c \
-    protocol.c \
-    compress.c \
-
-enet_root := $(source)/$(enet)
-enet_src := $(enet_root)/src
-enet_inc := $(enet_root)/include
-enet_obj := $(obj)/$(enet)
-
-enet_cflags :=
-
-ifeq ($(PLATFORM),WINDOWS)
-    enet_objs += win32.c
-else
-    enet_objs += unix.c
-    enet_cflags += -DHAS_SOCKLEN_T
-endif
-
-
 #### glad
 
 glad := glad
@@ -214,7 +187,7 @@ else
     endif
 endif
 
-voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam -fPIC -Wno-invalid-offsetof
+voidwrap_cflags := -I$(voidwrap_root)/sdk/public/steam -fPIC -fvisibility=hidden -Wno-invalid-offsetof
 
 
 
@@ -267,51 +240,54 @@ ifneq (0,$(USE_PHYSFS))
 endif
 
 engine_objs := \
-    rev.cpp \
+    2d.cpp \
     baselayer.cpp \
-    vfs.cpp \
     cache1d.cpp \
-    klzw.cpp \
+    clip.cpp \
+    colmatch.cpp \
     common.cpp \
+    communityapi.cpp \
     compat.cpp \
+    cpuid.cpp \
     crc32.cpp \
     defs.cpp \
-    engine.cpp \
-    tiles.cpp \
-    clip.cpp \
-    2d.cpp \
-    hash.cpp \
-    palette.cpp \
-    polymost1Frag.glsl \
-    polymost1Vert.glsl \
-    polymost.cpp \
-    texcache.cpp \
     dxtfilter.cpp \
-    hightile.cpp \
-    textfont.cpp \
-    smalltextfont.cpp \
-    kplib.cpp \
-    lz4.c \
-    osd.cpp \
-    pragmas.cpp \
-    scriptfile.cpp \
-    softsurface.cpp \
-    mmulti_null.cpp \
-    mutex.cpp \
-    timer.cpp \
-    xxhash.c \
-    md4.cpp \
-    colmatch.cpp \
-    screenshot.cpp \
-    mhk.cpp \
-    pngwrite.cpp \
-    miniz.c \
-    miniz_tinfl.c \
-    miniz_tdef.c \
+    enet.cpp \
+    engine.cpp \
     fix16.cpp \
     fix16_str.cpp \
+    hash.cpp \
+    hightile.cpp \
+    klzw.cpp \
+    kplib.cpp \
+    lz4.c \
+    md4.cpp \
+    mhk.cpp \
+    miniz.c \
+    miniz_tdef.c \
+    miniz_tinfl.c \
+    mmulti_null.cpp \
+    mutex.cpp \
+    osd.cpp \
+    palette.cpp \
+    pngwrite.cpp \
+    polymost.cpp \
+    polymost1Frag.glsl \
+    polymost1Vert.glsl \
+    pragmas.cpp \
+    rev.cpp \
+    screenshot.cpp \
+    scriptfile.cpp \
     sjson.cpp \
-    communityapi.cpp \
+    smalltextfont.cpp \
+    softsurface.cpp \
+    texcache.cpp \
+    textfont.cpp \
+    tiles.cpp \
+    timer.cpp \
+    vfs.cpp \
+    xxhash.c \
+    zpl.cpp \
 
 engine_editor_objs := \
     build.cpp \
@@ -319,14 +295,14 @@ engine_editor_objs := \
     defs.cpp \
 
 engine_tools_objs := \
-    compat.cpp \
-    pragmas.cpp \
-    kplib.cpp \
-    cache1d.cpp \
-    klzw.cpp \
-    crc32.cpp \
     colmatch.cpp \
+    compat.cpp \
+    crc32.cpp \
+    klzw.cpp \
+    kplib.cpp \
     lz4.cpp \
+    pragmas.cpp \
+    vfs.cpp \
 
 ifeq (0,$(NOASM))
   engine_objs += a.nasm
@@ -397,11 +373,11 @@ mact_inc := $(mact_root)/include
 mact_obj := $(obj)/$(mact)
 
 mact_objs := \
-    control.cpp \
-    keyboard.cpp \
-    joystick.cpp \
-    scriplib.cpp \
     animlib.cpp \
+    control.cpp \
+    joystick.cpp \
+    keyboard.cpp \
+    scriplib.cpp \
 
 
 #### AudioLib
@@ -409,21 +385,23 @@ mact_objs := \
 audiolib := audiolib
 
 audiolib_objs := \
+    driver_adlib.cpp \
+    driver_nosound.cpp \
     drivers.cpp \
+    flac.cpp \
+    formats.cpp \
     fx_man.cpp \
-    multivoc.cpp \
+    gmtimbre.cpp \
+    midi.cpp \
     mix.cpp \
     mixst.cpp \
+    multivoc.cpp \
+    music.cpp \
+    opl3.cpp \
     pitch.cpp \
-    formats.cpp \
     vorbis.cpp \
-    flac.cpp \
     xa.cpp \
     xmp.cpp \
-    driver_nosound.cpp \
-    al_midi.cpp \
-    gmtimbre.cpp \
-    opl3.cpp \
 
 audiolib_root := $(source)/$(audiolib)
 audiolib_src := $(audiolib_root)/src
@@ -435,16 +413,14 @@ audiolib_cflags :=
 audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
-    ifeq ($(MIXERTYPE),WIN)
-        audiolib_objs += driver_directsound.cpp music.cpp midi.cpp mpu401.cpp
-    endif
+    audiolib_objs += driver_directsound.cpp driver_winmm.cpp 
 endif
 
-ifeq ($(MIXERTYPE),SDL)
+ifeq ($(RENDERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
         audiolib_cflags += `$(PKG_CONFIG) --cflags vorbis`
     endif
-    audiolib_objs += driver_sdl.cpp sdlmusic.cpp oplmidi.cpp
+    audiolib_objs += driver_sdl.cpp
 endif
 
 ifneq (0,$(HAVE_XMP))
@@ -469,22 +445,22 @@ tools_cflags := $(engine_cflags)
 tools_deps := engine_tools
 
 tools_targets := \
+    arttool \
+    bsuite \
+    cacheinfo \
+    generateicon \
+    givedepth \
+    ivfrate \
     kextract \
     kgroup \
+    kmd2tool \
+    map2stl \
+    md2tool \
+    mkpalette \
     transpal \
+    unpackssi \
     wad2art \
     wad2map \
-    kmd2tool \
-    md2tool \
-    generateicon \
-    cacheinfo \
-    arttool \
-    givedepth \
-    mkpalette \
-    unpackssi \
-    bsuite \
-    ivfrate \
-    map2stl \
 
 ifeq ($(PLATFORM),WINDOWS)
     tools_targets += enumdisplay getdxdidf
@@ -514,10 +490,10 @@ kenbuild_game_proper := EKenBuild
 kenbuild_editor_proper := EKenBuild Editor
 
 kenbuild_game_objs := \
-    game.cpp \
-    kdmeng.cpp \
     common.cpp \
     config.cpp \
+    kdmeng.cpp \
+    game.cpp \
 
 kenbuild_editor_objs := \
     bstub.cpp \
@@ -579,10 +555,6 @@ common_editor_deps := duke3d_common_editor engine_editor
 duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
 
-ifneq (0,$(NETCODE))
-    duke3d_game_deps += enet
-endif
-
 ifneq (0,$(LUNATIC))
     duke3d_game_deps += lunatic lunatic_game lpeg
     duke3d_editor_deps += lunatic lunatic_editor lpeg
@@ -605,35 +577,35 @@ duke3d_common_editor_objs := \
     m32vars.cpp \
 
 duke3d_game_objs := \
-    game.cpp \
-    global.cpp \
     actors.cpp \
-    gamedef.cpp \
-    gameexec.cpp \
-    gamevars.cpp \
-    player.cpp \
-    premap.cpp \
-    sector.cpp \
     anim.cpp \
+    cheats.cpp \
+    cmdline.cpp \
     common.cpp \
     config.cpp \
     demo.cpp \
+    game.cpp \
+    gamedef.cpp \
+    gameexec.cpp \
+    gamevars.cpp \
+    global.cpp \
+    grpscan.cpp \
     input.cpp \
     menus.cpp \
     namesdyn.cpp \
     network.cpp \
-    savegame.cpp \
-    rts.cpp \
-    osdfuncs.cpp \
     osdcmds.cpp \
-    grpscan.cpp \
+    osdfuncs.cpp \
+    player.cpp \
+    premap.cpp \
+    rts.cpp \
+    savegame.cpp \
+    sbar.cpp \
+    screens.cpp \
+    screentext.cpp \
+    sector.cpp \
     sounds.cpp \
     soundsdyn.cpp \
-    cheats.cpp \
-    sbar.cpp \
-    screentext.cpp \
-    screens.cpp \
-    cmdline.cpp \
 
 duke3d_editor_objs := \
     astub.cpp \
@@ -751,15 +723,12 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -ldsound
     duke3d_game_objs += winbits.cpp
     duke3d_game_rsrc_objs += gameres.rc
     duke3d_editor_rsrc_objs += buildres.rc
     ifeq ($(STARTUP_WINDOW),1)
         duke3d_game_objs += startwin.game.cpp
-    endif
-    ifeq ($(MIXERTYPE),WIN)
-        LIBS += -ldsound
     endif
 endif
 
@@ -1101,6 +1070,7 @@ sw_game_objs := \
     rotator.cpp \
     rts.cpp \
     save.cpp \
+    saveable.cpp \
     scrip2.cpp \
     sector.cpp \
     serp.cpp \
@@ -1123,16 +1093,15 @@ sw_game_objs := \
     weapon.cpp \
     zilla.cpp \
     zombie.cpp \
-    saveable.cpp \
 
 sw_editor_objs := \
-    jnstub.cpp \
-    brooms.cpp \
     bldscript.cpp \
-    jbhlp.cpp \
+    brooms.cpp \
     colormap.cpp \
-    grpscan.cpp \
     common.cpp \
+    grpscan.cpp \
+    jbhlp.cpp \
+    jnstub.cpp \
 
 sw_game_rsrc_objs :=
 sw_editor_rsrc_objs :=
@@ -1161,7 +1130,6 @@ COMPILERFLAGS += \
     -I$(engine_inc) \
     -I$(mact_inc) \
     -I$(audiolib_inc) \
-    -I$(enet_inc) \
     -I$(glad_inc) \
     -I$(voidwrap_inc) \
     -I$(libsmackerdec_inc) \
@@ -1175,20 +1143,19 @@ endif
 ##### Recipes
 
 games := \
-    kenbuild \
     duke3d \
+    kenbuild \
     blood \
     rr \
     sw \
 
 libraries := \
-    engine \
     audiolib \
-    mact \
-    enet \
+    engine \
+    glad \
     libxmplite \
     lpeg \
-    glad \
+    mact \
     voidwrap \
     libsmackerdec \
 
@@ -1210,16 +1177,16 @@ ifeq ($(PRETTY_OUTPUT),1)
 .SILENT:
 endif
 .PHONY: \
-    all \
-    start \
     $(addprefix clean,$(games) test utils tools) \
-    veryclean \
-    clean \
-    printutils \
-    printtools \
-    rev \
     $(engine_obj)/rev.$o \
+    all \
     clang-tools \
+    clean \
+    printtools \
+    printutils \
+    rev \
+    start \
+    veryclean \
 
 .SUFFIXES:
 .SECONDEXPANSION:
@@ -1431,9 +1398,9 @@ rev: $(engine_obj)/rev.$o
 
 ### Compatibility
 
+cleantest: cleankenbuild
+cleanutils: cleantools
+printutils: printtools
 test: kenbuild
 utils: tools
-printutils: printtools
 veryclean: clean
-cleanutils: cleantools
-cleantest: cleankenbuild

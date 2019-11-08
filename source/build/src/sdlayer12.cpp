@@ -58,6 +58,7 @@ int32_t sdlayer_checkversion(void)
 //
 int32_t initsystem(void)
 {
+    // TODO: Refactor the init sequence such that we don't need to duplicate this across both sdlayer objects.
 #if defined NOSDLPARACHUTE
     const int sdlinitflags = SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE;
 #else
@@ -67,8 +68,9 @@ int32_t initsystem(void)
     mutex_init(&m_initprintf);
 
 #ifdef _WIN32
-    win_init();
+    windowsPlatformInit();
 #endif
+    sysReadCPUID();
 
     if (sdlayer_checkversion())
         return -1;
@@ -300,15 +302,13 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
     {
-        int32_t i, j, multisamplecheck = (glmultisample > 0);
+        int32_t i, multisamplecheck = (glmultisample > 0);
 
         if (nogl)
             return -1;
-
 # ifdef _WIN32
-        win_setvideomode(c);
+        windowsDwmEnableComposition(false);
 # endif
-
         struct glattribs
         {
             SDL_GLattr attr;
@@ -486,13 +486,9 @@ int32_t handleevents_pollsdl(void)
                     appactive = ev.active.gain;
                     if (g_mouseGrabbed && g_mouseEnabled)
                         grabmouse_low(!!appactive);
-# ifdef _WIN32
-                    // Win_SetKeyboardLayoutUS(appactive);
-
-                    if (backgroundidle)
-                        SetPriorityClass(GetCurrentProcess(),
-                                         appactive ? NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
-# endif
+#ifdef _WIN32
+                    windowsHandleFocusChange(appactive);
+#endif
                     rv = -1;
 
                     if (ev.active.state & SDL_APPMOUSEFOCUS)

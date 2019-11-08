@@ -87,7 +87,6 @@ void Anim_Init(void)
 {
     hash_init(&h_dukeanim);
 
-
     struct defaultanmsound {
 #ifdef DYNSOUNDREMAP_ENABLE
         int32_t const & sound;
@@ -393,7 +392,7 @@ int32_t Anim_Play(const char *fn)
 
             do
             {
-                G_HandleAsync();
+                gameHandleEvents();
 
                 if (VM_OnEventWithReturn(EVENT_SKIPCUTSCENE, g_player[screenpeek].ps->i, screenpeek, I_GeneralTrigger()))
                 {
@@ -432,10 +431,10 @@ int32_t Anim_Play(const char *fn)
         goto end_anim;
     }
 
-    anim->animlock = 255;
+    anim->animlock = CACHE1D_PERMANENT;
 
     if (!anim->animbuf)
-        cacheAllocateBlock((intptr_t *)&anim->animbuf, length + 1, &anim->animlock);
+        g_cache.allocateBlock((intptr_t *)&anim->animbuf, length + 1, &anim->animlock);
 
     kread(handle, anim->animbuf, length);
     kclose(handle);
@@ -474,7 +473,6 @@ int32_t Anim_Play(const char *fn)
     gltexapplyprops();
 #endif
 
-    timerUpdate();
     ototalclock = totalclock;
 
     i = 1;
@@ -488,14 +486,14 @@ int32_t Anim_Play(const char *fn)
             goto end_anim_restore_gl;
         }
 
-        G_HandleAsync();
+        gameHandleEvents();
 
         if (totalclock < ototalclock - 1)
             continue;
 
         i = VM_OnEventWithReturn(EVENT_PRECUTSCENE, g_player[screenpeek].ps->i, screenpeek, i);
 
-        walock[TILE_ANIM] = 255;
+        walock[TILE_ANIM] = CACHE1D_PERMANENT;
         waloff[TILE_ANIM] = (intptr_t)ANIM_DrawFrame(i);
         tileSetSize(TILE_ANIM, 200, 320);
         tileInvalidate(TILE_ANIM, 0, 1 << 4);  // JBF 20031228
@@ -576,7 +574,7 @@ end_anim:
     waloff[TILE_ANIM] = 0;
 
     // this is the lock for anim->animbuf
-    anim->animlock = 1;
+    anim->animlock = CACHE1D_FREE;
 
     return !running;
 }

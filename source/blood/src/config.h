@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "function.h"
 #include "control.h"
 #include "_control.h"
+#include "gamedefs.h"
 #include "hash.h"
 
 #define MAXRIDECULE 10
@@ -76,6 +77,7 @@ extern int32_t gMessageFont;
 extern int32_t gbAdultContent;
 extern char gzAdultPassword[9];
 extern int32_t gDoppler;
+extern int32_t gShowPlayerNames;
 extern int32_t gShowWeapon;
 extern int32_t gMouseSensitivity;
 extern int32_t gMouseAiming;

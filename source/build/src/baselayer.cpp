@@ -1,17 +1,17 @@
-#include "compat.h"
-#include "osd.h"
-#include "build.h"
 #include "baselayer.h"
 
-#include "renderlayer.h"
-
 #include "a.h"
-#include "polymost.h"
+#include "build.h"
 #include "cache1d.h"
 #include "communityapi.h"
+#include "compat.h"
+#include "osd.h"
+#include "polymost.h"
+#include "renderlayer.h"
 
 // video
 #ifdef _WIN32
+#include "winbits.h"
 extern "C"
 {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0x00000001;
@@ -301,8 +301,7 @@ static int osdfunc_setrendermode(osdcmdptr_t parm)
     if (parm->numparms != 1)
         return OSDCMD_SHOWHELP;
 
-    char *p;
-    int32_t m = Bstrtol(parm->parms[0], &p, 10);
+    int32_t m = Bstrtol(parm->parms[0], NULL, 10);
 
     if (m != REND_CLASSIC && m != REND_POLYMOST && m != REND_POLYMER)
         return OSDCMD_SHOWHELP;
@@ -440,7 +439,6 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
     if (!Bstrcasecmp(parm->name, "vid_gamma") || !Bstrcasecmp(parm->name, "vid_brightness") || !Bstrcasecmp(parm->name, "vid_contrast"))
     {
         videoSetPalette(GAMMA_CALC,0,0);
-
         return r;
     }
 
@@ -519,7 +517,7 @@ void maybe_redirect_outputs(void)
     char *argp;
 
     // pipe standard outputs to files
-    if ((argp = Bgetenv("BUILD_LOGSTDOUT")) == NULL || Bstrcasecmp(argp, "TRUE"))
+    if ((argp = Bgetenv("EDUKE32_LOGSTDOUT")) == NULL || Bstrcasecmp(argp, "TRUE"))
         return;
 
     FILE *fp = freopen("stdout.txt", "w", stdout);

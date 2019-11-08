@@ -49,6 +49,8 @@ extern int32_t VesaBufferMode;
 extern int32_t ForceSetup;
 
 // sound externs
+extern int32_t FXToggle;
+extern int32_t MusicToggle;
 extern int32_t FXDevice; // Sound FX Card number
 extern int32_t MusicDevice; // Music Card number
 extern int32_t FXVolume; // FX Volume

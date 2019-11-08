@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "duke3d.h"
 #include "renderlayer.h" // for win_gethwnd()
+#include "al_midi.h"
 #include <atomic>
 
 #include "vfs.h"
@@ -53,7 +54,7 @@ static inline void S_SetProperties(assvoice_t *snd, int const owner, int const v
 
 void S_SoundStartup(void)
 {
-#ifdef MIXERTYPEWIN
+#ifdef _WIN32
     void *initdata = (void *) win_gethwnd(); // used for DirectSound
 #else
     void *initdata = NULL;
@@ -61,9 +62,10 @@ void S_SoundStartup(void)
 
     initprintf("Initializing sound... ");
 
-    if (FX_Init(ud.config.NumVoices, ud.config.NumChannels, ud.config.MixRate, initdata) != FX_Ok)
+    int status = FX_Init(ud.config.NumVoices, ud.config.NumChannels, ud.config.MixRate, initdata);
+    if (status != FX_Ok)
     {
-        initprintf("failed! %s\n", FX_ErrorString(FX_Error));
+        initprintf("failed! %s\n", FX_ErrorString(status));
         return;
     }
 
@@ -79,7 +81,7 @@ void S_SoundStartup(void)
         }
 
 #ifdef CACHING_DOESNT_SUCK
-        g_soundlocks[i] = 199;
+        g_soundlocks[i] = CACHE1D_UNLOCKED;
 #endif
     }
 
@@ -99,32 +101,56 @@ void S_SoundShutdown(void)
     if (MusicVoice >= 0)
         S_MusicShutdown();
 
-    if (FX_Shutdown() != FX_Ok)
+    int status = FX_Shutdown();
+    if (status != FX_Ok)
     {
-        Bsprintf(tempbuf, "S_SoundShutdown(): error: %s", FX_ErrorString(FX_Error));
+        Bsprintf(tempbuf, "S_SoundShutdown(): error: %s", FX_ErrorString(status));
         G_GameExit(tempbuf);
     }
 }
 
 void S_MusicStartup(void)
 {
-    initprintf("Initializing music...\n");
+    initprintf("Initializing MIDI driver... ");
 
-    if (MUSIC_Init(0, 0) == MUSIC_Ok || MUSIC_Init(1, 0) == MUSIC_Ok)
+    int status;
+    if ((status = MUSIC_Init(ud.config.MusicDevice)) == MUSIC_Ok)
     {
-        MUSIC_SetVolume(ud.config.MusicVolume);
+        if (ud.config.MusicDevice == ASS_AutoDetect)
+            ud.config.MusicDevice = MIDI_GetDevice();
+    }
+    else if ((status = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
+    {
+        ud.config.MusicDevice = MIDI_GetDevice();
+    }
+    else
+    {
+        initprintf("S_MusicStartup(): failed initializing: %s\n", MUSIC_ErrorString(status));
         return;
     }
 
-    initprintf("S_MusicStartup(): failed initializing\n");
+    MUSIC_SetVolume(ud.config.MusicVolume);
+
+    auto const fil = kopen4load("d3dtimbr.tmb", 0);
+
+    if (fil != buildvfs_kfd_invalid)
+    {
+        int l = kfilelength(fil);
+        auto tmb = (uint8_t *)Xmalloc(l);
+        kread(fil, tmb, l);
+        AL_RegisterTimbreBank(tmb);
+        Xfree(tmb);
+        kclose(fil);
+    }
 }
 
 void S_MusicShutdown(void)
 {
     S_StopMusic();
 
-    if (MUSIC_Shutdown() != MUSIC_Ok)
-        initprintf("%s\n", MUSIC_ErrorString(MUSIC_ErrorCode));
+    int status = MUSIC_Shutdown();
+    if (status != MUSIC_Ok)
+        initprintf("S_MusicShutdown(): %s\n", MUSIC_ErrorString(status));
 }
 
 void S_PauseMusic(bool paused)
@@ -239,7 +265,7 @@ static int S_PlayMusic(const char *fn)
 
     if (!Bmemcmp(MyMusicPtr, "MThd", 4))
     {
-        int32_t retval = MUSIC_PlaySong(MyMusicPtr, MyMusicSize, MUSIC_LoopSong);
+        int32_t retval = MUSIC_PlaySong(MyMusicPtr, MyMusicSize, MUSIC_LoopSong, fn);
 
         if (retval != MUSIC_Ok)
         {
@@ -399,7 +425,7 @@ void S_Cleanup(void)
         {
             int const rtsindex = klabs((int32_t)num);
 
-            if (rts_lumplockbyte[rtsindex] >= 200)
+            if (rts_lumplockbyte[rtsindex] >= CACHE1D_LOCKED)
                 --rts_lumplockbyte[rtsindex];
             continue;
         }
@@ -458,9 +484,9 @@ int32_t S_LoadSound(int num)
     }
 
     int32_t l = kfilelength(fp);
-    g_soundlocks[num] = 255;
+    g_soundlocks[num] = CACHE1D_PERMANENT;
     snd.siz = l;
-    cacheAllocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
+    g_cache.allocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
     l = kread(fp, snd.ptr, l);
     kclose(fp);
 
@@ -475,7 +501,7 @@ void cacheAllSounds(void)
         {
             j++;
             if ((j&7) == 0)
-                G_HandleAsync();
+                gameHandleEvents();
 
             S_LoadSound(i);
         }
@@ -738,8 +764,8 @@ int S_PlaySound3D(int num, int spriteNum, const vec3_t *pos)
         S_StopEnvSound(sndNum, spriteNum);
 
 #ifdef CACHING_DOESNT_SUCK
-    if (++g_soundlocks[sndNum] < 200)
-        g_soundlocks[sndNum] = 200;
+    if (++g_soundlocks[sndNum] < CACHE1D_LOCKED)
+        g_soundlocks[sndNum] = CACHE1D_LOCKED;
 #endif
 
     int const sndSlot = S_GetSlot(sndNum);
@@ -803,8 +829,8 @@ int S_PlaySound(int num)
     int const pitch = S_GetPitch(num);
 
 #ifdef CACHING_DOESNT_SUCK
-    if (++g_soundlocks[num] < 200)
-        g_soundlocks[num] = 200;
+    if (++g_soundlocks[num] < CACHE1D_LOCKED)
+        g_soundlocks[num] = CACHE1D_LOCKED;
 #endif
 
     sndnum = S_GetSlot(num);
@@ -989,14 +1015,14 @@ void S_ClearSoundLocks(void)
     int32_t const msp = g_highestSoundIdx;
 
     for (native_t i = 0; i < 11; ++i)
-        if (rts_lumplockbyte[i] >= 200)
-            rts_lumplockbyte[i] = 199;
+        if (rts_lumplockbyte[i] >= CACHE1D_LOCKED)
+            rts_lumplockbyte[i] = CACHE1D_UNLOCKED;
 
     int32_t const msp = g_highestSoundIdx;
 
     for (native_t i = 0; i <= msp; ++i)
-        if (g_soundlocks[i] >= 200)
-            g_soundlocks[i] = 199;
+        if (g_soundlocks[i] >= CACHE1D_LOCKED)
+            g_soundlocks[i] = CACHE1D_UNLOCKED;
 #endif
 }
 

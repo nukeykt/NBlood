@@ -39,8 +39,12 @@ Minimum required SDL versions:
 #define SDL_MIN_X	1
 #define SDL_MIN_Y	2
 #define SDL_MIN_Z	10
-
 #define SDL_REQUIREDVERSION	(SDL_VERSIONNUM(SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z))
+
+#define SDL2_MIN_X  2
+#define SDL2_MIN_Y  0
+#define SDL2_MIN_Z  5
+#define SDL2_REQUIREDVERSION (SDL_VERSIONNUM(SDL2_MIN_X,SDL2_MIN_Y,SDL2_MIN_Z))
 
 #define SDL_MIXER_MIN_X	1
 #define SDL_MIXER_MIN_Y	2
