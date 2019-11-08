@@ -477,3 +477,55 @@ void Paths_ParseSteamLibraryVDF(const char * fn, PathsParseFunc func)
 
     Xfree(bufstart);
 }
+
+void Paths_ParseXDGDesktopFile(const char * fn, PathsParseFunc func)
+{
+    buildvfs_fd const fd = buildvfs_open_read(fn);
+    if (fd == buildvfs_fd_invalid)
+        return;
+
+    int32_t size = buildvfs_length(fd);
+    if (size <= 0)
+        return;
+
+    auto const bufstart = (char *)Xmalloc(size+1);
+    char * buf = bufstart;
+    size = (int32_t)buildvfs_read(fd, buf, size);
+    buildvfs_close(fd);
+    char * const bufend = buf + size;
+    bufend[0] = '\0';
+
+    static char const s_PathEquals[] = "Path=";
+
+    while (buf < bufend)
+    {
+        if (Bstrncmp(buf, s_PathEquals, ARRAY_SIZE(s_PathEquals)-1) == 0)
+        {
+            const char * path = buf += ARRAY_SIZE(s_PathEquals)-1;
+
+            while (buf < bufend && *buf != '\n')
+                ++buf;
+            *buf = '\0';
+
+            func(path);
+
+            break;
+        }
+
+        while (buf < bufend && *buf++ != '\n') { }
+    }
+
+    Xfree(bufstart);
+}
+
+void Paths_ParseXDGDesktopFilesFromGOG(const char * homepath, const char * game, PathsParseFunc func)
+{
+    static char const * const locations[] = { ".local/share/applications", "Desktop" };
+    char buf[BMAX_PATH];
+
+    for (char const * location : locations)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/%s/gog_com-%s_1.desktop", homepath, location, game);
+        Paths_ParseXDGDesktopFile(buf, func);
+    }
+}

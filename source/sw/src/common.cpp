@@ -74,6 +74,45 @@ void SW_ExtPreInit(int32_t argc, char const * const * argv)
 }
 
 #ifndef EDUKE32_STANDALONE
+
+#if defined _WIN32 || defined __linux__ || defined EDUKE32_BSD
+static void SW_Add_GOG_SWCR(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    addsearchpath_user(path, SEARCHPATH_REMOVE);
+    Bsnprintf(buf, sizeof(buf), "%s/addons", path);
+    addsearchpath_user(buf, SEARCHPATH_REMOVE);
+    Bsnprintf(buf, sizeof(buf), "%s/music", path);
+    addsearchpath(buf);
+}
+static void SW_Add_GOG_SWCC(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    addsearchpath_user(path, SEARCHPATH_REMOVE);
+    Bsnprintf(buf, sizeof(buf), "%s/MUSIC", path);
+    addsearchpath(buf);
+}
+#endif
+
+#if defined __linux__ || defined EDUKE32_BSD
+static void SW_Add_GOG_SWCR_Linux(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s/game", path);
+    SW_Add_GOG_SWCR(buf);
+}
+static void SW_Add_GOG_SWCC_Linux(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s/data", path);
+    SW_Add_GOG_SWCC(buf);
+}
+#endif
+
 #ifndef EDUKE32_TOUCH_DEVICES
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void SW_AddSteamPaths(const char *basepath)
@@ -120,6 +159,16 @@ static void SW_AddSearchPaths()
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
     Paths_ParseSteamLibraryVDF(buf, SW_AddSteamPaths);
 
+    // Shadow Warrior Classic Redux - GOG.com
+    Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Shadow Warrior Classic Redux", homepath);
+    SW_Add_GOG_SWCR_Linux(buf);
+    Paths_ParseXDGDesktopFilesFromGOG(buf, "Shadow_Warrior_Classic_Redux", SW_Add_GOG_SWCR_Linux);
+
+    // Shadow Warrior Classic Complete - GOG.com
+    Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Shadow Warrior Classic Complete", homepath);
+    SW_Add_GOG_SWCC_Linux(buf);
+    Paths_ParseXDGDesktopFilesFromGOG(buf, "Shadow_Warrior_Classic_Complete", SW_Add_GOG_SWCC_Linux);
+
     Xfree(homepath);
 
     addsearchpath("/usr/share/games/jfsw");
@@ -141,18 +190,12 @@ static void SW_AddSearchPaths()
         Paths_ParseSteamLibraryVDF(buf, SW_AddSteamPaths);
 
         // Shadow Warrior Classic Complete - GOG.com
-        static char const s_SWC_GOG[] = "Shadow Warrior Complete/Shadow Warrior.app/Contents/Resources/Shadow Warrior.boxer/C swarrior_files.harddisk";
-        Bsnprintf(buf, sizeof(buf), "%s/%s", applications[i], s_SWC_GOG);
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
-        Bsnprintf(buf, sizeof(buf), "%s/%s/MUSIC", applications[i], s_SWC_GOG);
-        addsearchpath(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Complete/Shadow Warrior.app/Contents/Resources/Shadow Warrior.boxer/C swarrior_files.harddisk", applications[i]);
+        SW_Add_GOG_SWCC(buf);
 
         // Shadow Warrior Classic Redux - GOG.com
-        static char const s_SWCR_GOG[] = "Shadow Warrior Classic Redux/Shadow Warrior Classic Redux.app/Contents/Resources/gameroot";
-        Bsnprintf(buf, sizeof(buf), "%s/%s", applications[i], s_SWCR_GOG);
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
-        Bsnprintf(buf, sizeof(buf), "%s/%s/music", applications[i], s_SWCR_GOG);
-        addsearchpath(buf);
+        Bsnprintf(buf, sizeof(buf), "%s/Shadow Warrior Classic Redux/Shadow Warrior Classic Redux.app/Contents/Resources/gameroot", applications[i]);
+        SW_Add_GOG_SWCR(buf);
     }
 
     for (i = 0; i < 2; i++)
@@ -211,11 +254,18 @@ static void SW_AddSearchPaths()
         addsearchpath(buf);
     }
 
+    // Shadow Warrior Classic Redux - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1618073558)", "PATH", buf, &bufsize))
+    {
+        SW_Add_GOG_SWCR(buf);
+    }
+
     // Shadow Warrior Classic Complete - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGSHADOWARRIOR", "PATH", buf, &bufsize))
     {
-        addsearchpath(buf);
+        SW_Add_GOG_SWCC(buf);
     }
 
     // Shadow Warrior - 3D Realms Anthology
