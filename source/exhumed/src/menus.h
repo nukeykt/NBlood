@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "compat.h"
 #include "common.h"
+#include "names.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,6 +155,7 @@ typedef enum MenuEntryType_t
 {
     Dummy,
     Link,
+    MainMenuLink,
     Option,
     Custom2Col,
     RangeInt32,
@@ -327,6 +329,7 @@ enum MenuEntryFlags_t
     MEF_Disabled = 1<<0,
     MEF_LookDisabled = 1<<1,
     MEF_Hidden = 1<<2,
+    MEF_MainBG = 1<<3,
 };
 
 typedef struct MenuEntry_t
@@ -349,7 +352,7 @@ typedef struct MenuEntry_t
     int32_t getIndent() const { return mulscale16(format->indent, font->zoom); }
     int32_t getHeight() const
     {
-        return type == Spacer ? mulscale16(((MenuSpacer_t *)entry)->height, font->zoom) : font->get_yline();
+        return (flags & MEF_MainBG) ? tilesiz[kTileMenuItemBG].y<<16 : (type == Spacer ? mulscale16(((MenuSpacer_t *)entry)->height, font->zoom) : font->get_yline());
     }
 } MenuEntry_t;
 
@@ -477,6 +480,8 @@ void Menu_Init(void);
 void Menu_Open(uint8_t playerID);
 void Menu_Close(uint8_t playerID);
 void M_DisplayMenus(void);
+
+extern int32_t g_menuActive, g_menuReturn;
 
 extern MenuFont_t MF_Redfont, MF_Bluefont, MF_Minifont;
 

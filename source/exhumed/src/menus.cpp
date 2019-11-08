@@ -224,17 +224,17 @@ MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 //                                      emptychar x,y       between x,y         zoom                cursorLeft          cursorCenter        cursorScale         textflags
 //                                      tilenum             shade_deselected    shade_disabled      pal                 pal_selected        pal_deselected      pal_disabled
 MenuFont_t MF_Redfont =               { { 5<<16, 12<<16 },  { 1<<16, 0 },       65536,              20<<16,             110<<16,            65536,              TEXT_UPPERCASE,
-                                        kTileMenuFont,      10,                 30,                 0,                  0,                  0,                  0,
+                                        kTileMenuFont,      10,                 25,                 0,                  0,                  0,                  0,
                                         0,                  0,                  0 };
-MenuFont_t MF_Bluefont =              { { 5<<16, 12<<16 },  { 0, 0 },           32768,              10<<16,             110<<16,            32768,              TEXT_UPPERCASE,
-                                        kTileMenuFont,      10,                 30,                 0,                  0,                  0,                  0,
+MenuFont_t MF_Bluefont =              { { 5<<16, 12<<16 },  { 1<<16, 0 },       32768,              10<<16,             110<<16,            32768,              TEXT_UPPERCASE,
+                                        kTileMenuFont,      10,                 25,                 0,                  0,                  0,                  0,
                                         0,                  0,                  0 };
-MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   32768,              10<<16,             110<<16,            32768,              0,
-                                        -1,                 10,                 30,                 0,                  0,                  0,                  0,
+MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   32768,              10<<16,             110<<16,            32768,              TEXT_UPPERCASE|TEXT_TILEFROMSEQ,
+                                        kSeqFont2,          10,                 25,                 0,                  0,                  0,                  0,
                                         0,                  0,                  0 };
 
 
-static MenuMenuFormat_t MMF_Top_Main =             { {  MENU_MARGIN_CENTER<<16, 55<<16, },    170<<16 };
+static MenuMenuFormat_t MMF_Top_Main =             { {  MENU_MARGIN_CENTER<<16, 63<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_Top_Episode =          { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustom =    { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
 static MenuMenuFormat_t MMF_Top_NewGameCustomSub = { {  MENU_MARGIN_CENTER<<16, 48<<16, }, -(190<<16) };
@@ -256,7 +256,7 @@ static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
-static MenuEntryFormat_t MEF_MainMenu =         { 10<<16,     0,          0 };
+static MenuEntryFormat_t MEF_MainMenu =         { 1<<16,     0,          0 };
 static MenuEntryFormat_t MEF_OptionsMenu =      { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_LeftMenu =         { 7<<16,      0,    120<<16 };
 static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
@@ -1657,6 +1657,10 @@ static MenuID_t g_previousMenu;
         m.numEntries = ARRAY_SIZE(el);\
     } while (0)
 
+int32_t g_menuActive, g_menuReturn;
+
+static int32_t g_zoomStartClock;
+
 static void MenuEntry_DisableOnCondition(MenuEntry_t * const entry, const int32_t condition)
 {
     if (condition)
@@ -2070,6 +2074,9 @@ void Menu_Init(void)
 // #ifndef EDUKE32_SIMPLE_MENU
 //     MenuEntry_HideOnCondition(&ME_MAIN_CREDITS, G_GetLogoFlags() & LOGO_NOCREDITS);
 // #endif
+
+    for (i = 0; i < ARRAY_SIZE(MEL_MAIN); i++)
+        MEL_MAIN[i]->flags |= MEF_MainBG;
 }
 
 static void Menu_Run(Menu_t *cm, vec2_t origin);
@@ -2428,8 +2435,16 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         l += 4;
         fallthrough__;
     case MENU_MAIN:
+    {
         rotatesprite_fs(origin.x, origin.y + (l<<16), 65536L, 0, nPlasmaTile, 0, 0, 10|16);
         rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((40+l)<<16), 65536L,0,nLogoTile,0,0,10);
+
+        // disable animation
+        uint8_t animbak = picanm[kTile3512].sf;
+        picanm[kTile3512].sf = 0;
+        rotatesprite_fs((50<<16) + origin.x, (150<<16) + origin.y, 65536, 0, kTile3512 + (((int32_t)totalclock/16) & 3), 0, 0, 10);
+        rotatesprite_fs((270<<16) + origin.x, (150<<16) + origin.y, 65536, 0, kTile3512 + ((((int32_t)totalclock/16) + 2) & 3), 0, 0, 10);
+        picanm[kTile3512].sf = animbak;
         // if ((G_GetLogoFlags() & LOGO_NOGAMETITLE) == 0)
         // {
         //     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((28+l)<<16), 65536L,0,INGAMEDUKETHREEDEE,0,0,10);
@@ -2437,6 +2452,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         //         rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+100)<<16), origin.y + (36<<16), 65536L,0,PLUTOPAKSPRITE+2,(sintable[((int32_t) totalclock<<4)&2047]>>11),0,2+8);
         // }
         break;
+    }
 
     case MENU_PLAYER:
         // rotatesprite_fs(origin.x + (260<<16), origin.y + ((24+(tilesiz[APLAYER].y>>1))<<16), 49152L,0,1441-((((4-((int32_t) totalclock>>4)))&3)*5),0,entry == &ME_PLAYER_TEAM ? G_GetTeamPalette(ud.team) : ud.color,10);
@@ -4700,6 +4716,11 @@ void Menu_Open(uint8_t playerID)
 {
     // g_player[playerID].ps->gm |= MODE_MENU;
 
+    g_menuActive = 1;
+    g_menuReturn = 0;
+
+    g_zoomStartClock = (int32_t)totalclock;
+
     mouseReadAbs(&m_prevmousepos, &g_mouseAbs);
     m_mouselastactivity = -M_MOUSETIMEOUT;
 
@@ -4741,6 +4762,7 @@ void Menu_Close(uint8_t playerID)
     //     G_UpdateScreenArea();
     //     S_PauseSounds(false);
     // }
+    g_menuActive = 0;
     mouseLockToWindow(1);
 }
 
@@ -4782,7 +4804,7 @@ enum MenuTextFlags_t
 static void Menu_GetFmt(const MenuFont_t *font, uint8_t const status, int32_t *s, int32_t *z)
 {
     if (status & MT_Selected)
-        *s = /*VM_OnEventWithReturn(EVENT_MENUSHADESELECTED, -1, myconnectindex, */sintable[((int32_t) totalclock<<5)&2047]>>12/*)*/;
+        *s = /*VM_OnEventWithReturn(EVENT_MENUSHADESELECTED, -1, myconnectindex, */sintable[((int32_t) totalclock<<4)&2047]>>9/*)*/;
     else
         *s = font->shade_deselected;
     // sum shade values
@@ -4793,7 +4815,7 @@ static void Menu_GetFmt(const MenuFont_t *font, uint8_t const status, int32_t *s
     //     *z += (*z >> 4);
 }
 
-static vec2_t Menu_Text(int32_t x, int32_t y, const MenuFont_t *font, const char *t, uint8_t status, int32_t ydim_upper, int32_t ydim_lower)
+static vec2_t Menu_Text(int32_t x, int32_t y, int32_t zoom, const MenuFont_t *font, const char *t, uint8_t status, int32_t ydim_upper, int32_t ydim_lower)
 {
     int32_t s, p, ybetween = font->between.y;
     int32_t f = font->textflags;
@@ -4819,6 +4841,8 @@ static vec2_t Menu_Text(int32_t x, int32_t y, const MenuFont_t *font, const char
         p = (status & MT_RightSide) ? font->pal_deselected_right : font->pal_deselected;
 
     Menu_GetFmt(font, status, &s, &z);
+
+    z = mulscale16(z, zoom);
 
     return G_ScreenText(font->tilenum, x, y, z, 0, 0, t, s, p, 2|8|16|ROTATESPRITE_FULL16, 0, font->emptychar.x, font->emptychar.y, font->between.x, ybetween, f, 0, ydim_upper, xdim-1, ydim_lower);
 }
@@ -5065,10 +5089,18 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
             int32_t const height = entry->getHeight(); // max(textsize.y, entry->font->get_yline()); // bluefont Q ruins this
             status |= MT_YCenter;
             int32_t const y_internal = origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos;
+            int32_t const zoom = (entry->flags & MEF_MainBG) ? clamp((int32_t)totalclock - g_zoomStartClock, 1, 64) << 10 : 65536;
+
+            if (entry->flags & MEF_MainBG)
+            {
+                int32_t s, z = entry->font->cursorScale;
+                Menu_GetFmt(entry->font, status, &s, &z);
+                rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), y_internal, zoom, 0, kTileMenuItemBG, s, 0, 10);
+            }
 
             vec2_t textsize;
             if (dodraw)
-                textsize = Menu_Text(origin.x + x + indent, y_internal, entry->font, entry->name, status, ydim_upper, ydim_lower);
+                textsize = Menu_Text(origin.x + x + indent, y_internal, zoom, entry->font, entry->name, status, ydim_upper, ydim_lower);
 
             if (entry->format->width < 0)
                 status |= MT_XRight;
@@ -5084,6 +5116,12 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
             //         Menu_DrawCursorLeft(origin.x + x + indent - entry->font->cursorLeftPosition, y_internal, entry->font->cursorScale);
             // }
 
+            if (dodraw && (status & MT_Selected) && (entry->flags & MEF_MainBG) && state != 1)
+            {
+                rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16) - (79<<16), y_internal - (6<<16), 65536, 0, kMenuCursorTile, 0, 0, 10);
+                rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16) + (80<<16), y_internal - (6<<16), 65536, 1024, kMenuCursorTile, 0, 0, 10+4);
+            }
+
             if (entry->name != nullptr && entry->name[0] != '\0')
                 status |= MT_RightSide;
 
@@ -5092,9 +5130,15 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
             if (dodraw)
             {
-                const int32_t mousex = origin.x + indent + entry->format->width == 0 ? x - ((textsize.x>>17)<<16) : x;
-                const int32_t mousey = origin.y + y_upper + y - menu->scrollPos;
+                int32_t mousex = origin.x + indent + entry->format->width == 0 ? x - ((textsize.x>>17)<<16) : x;
+                int32_t mousey = origin.y + y_upper + y - menu->scrollPos;
                 int32_t mousewidth = entry->format->width == 0 ? textsize.x : klabs(entry->format->width);
+
+                if (entry->flags & MEF_MainBG)
+                {
+                    mousex = x - ((tilesiz[kTileMenuItemBG].x/2)<<16);
+                    mousewidth = tilesiz[kTileMenuItemBG].x<<16;
+                }
 
                 if (entry->name)
                     x += klabs(entry->format->width);
@@ -5150,7 +5194,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         int32_t optiontextx = origin.x + x;
                         const int32_t optiontexty = origin.y + y_upper + y - menu->scrollPos;
 
-                        const vec2_t optiontextsize = Menu_Text(optiontextx, optiontexty + ((height>>17)<<16), object->font,
+                        const vec2_t optiontextsize = Menu_Text(optiontextx, optiontexty + ((height>>17)<<16), 65536, object->font,
                             currentOption < 0 ? MenuCustom : currentOption < object->options->numOptions ? object->options->optionNames[currentOption] : NULL,
                             status, ydim_upper, ydim_lower);
 
@@ -5191,8 +5235,8 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         int32_t columnx[2] = { origin.x + x - ((status & MT_XRight) ? object->columnWidth : 0), origin.x + x + ((status & MT_XRight) ? 0 : object->columnWidth) };
                         const int32_t columny = origin.y + y_upper + y - menu->scrollPos;
 
-                        const vec2_t column0textsize = Menu_Text(columnx[0], columny + ((height>>17)<<16), object->font, object->key[*object->column[0]], menu->currentColumn == 0 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower);
-                        const vec2_t column1textsize = Menu_Text(columnx[1], columny + ((height>>17)<<16), object->font, object->key[*object->column[1]], menu->currentColumn == 1 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower);
+                        const vec2_t column0textsize = Menu_Text(columnx[0], columny + ((height>>17)<<16), 65536, object->font, object->key[*object->column[0]], menu->currentColumn == 0 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower);
+                        const vec2_t column1textsize = Menu_Text(columnx[1], columny + ((height>>17)<<16), 65536, object->font, object->key[*object->column[1]], menu->currentColumn == 1 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower);
 
                         if (entry->format->width > 0)
                             mousewidth += object->columnWidth + column1textsize.x;
@@ -5314,7 +5358,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     break;
                             }
 
-                            Menu_Text(origin.x + x - (4<<16), origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos, object->font, tempbuf, status, ydim_upper, ydim_lower);
+                            Menu_Text(origin.x + x - (4<<16), origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos, 65536, object->font, tempbuf, status, ydim_upper, ydim_lower);
                         }
 
                         if (MOUSEACTIVECONDITIONAL(state != 1 && cm == m_currentMenu && !Menu_MouseOutsideBounds(&m_mousepos, mousex, mousey, mousewidth, height)))
@@ -5413,7 +5457,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     break;
                             }
 
-                            Menu_Text(origin.x + x - (4<<16), origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos, object->font, tempbuf, status, ydim_upper, ydim_lower);
+                            Menu_Text(origin.x + x - (4<<16), origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos, 65536, object->font, tempbuf, status, ydim_upper, ydim_lower);
                         }
 
                         if (MOUSEACTIVECONDITIONAL(state != 1 && cm == m_currentMenu && !Menu_MouseOutsideBounds(&m_mousepos, mousex, mousey, mousewidth, height)))
@@ -5513,7 +5557,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     break;
                             }
 
-                            Menu_Text(origin.x + x - (4<<16), origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos, object->font, tempbuf, status, ydim_upper, ydim_lower);
+                            Menu_Text(origin.x + x - (4<<16), origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos, 65536, object->font, tempbuf, status, ydim_upper, ydim_lower);
                         }
 
                         if (MOUSEACTIVECONDITIONAL(state != 1 && cm == m_currentMenu && !Menu_MouseOutsideBounds(&m_mousepos, mousex, mousey, mousewidth, height)))
@@ -5569,14 +5613,14 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                         if (entry == currentry && object->editfield != NULL)
                         {
-                            dim = Menu_Text(origin.x + stringx, stringy, object->font, object->editfield, (status & ~MT_Disabled) | MT_Literal, ydim_upper, ydim_lower);
+                            dim = Menu_Text(origin.x + stringx, stringy, 65536, object->font, object->editfield, (status & ~MT_Disabled) | MT_Literal, ydim_upper, ydim_lower);
                             h = max(dim.y, entry->font->get_yline());
 
                             // Menu_DrawCursorText(origin.x + x + dim.x + (1<<16), stringy, h, ydim_upper, ydim_lower);
                         }
                         else
                         {
-                            dim = Menu_Text(origin.x + stringx, stringy, object->font, object->variable, status, ydim_upper, ydim_lower);
+                            dim = Menu_Text(origin.x + stringx, stringy, 65536, object->font, object->variable, status, ydim_upper, ydim_lower);
                             h = max(dim.y, entry->font->get_yline());
                         }
 
@@ -5696,7 +5740,7 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
 
         vec2_t textsize;
         if (dodraw)
-            textsize = Menu_Text(origin.x + x, y_internal, object->options->font, object->options->optionNames[e], status, ydim_upper, ydim_lower);
+            textsize = Menu_Text(origin.x + x, y_internal, 65536, object->options->font, object->options->optionNames[e], status, ydim_upper, ydim_lower);
 
         if (object->options->entryFormat->width < 0)
             status |= MT_XRight;
@@ -7391,7 +7435,7 @@ void M_DisplayMenus(void)
         if ((unsigned) a < MAXTILES)
         {
             vec2_t cursorpos = m_mousepos;
-            int32_t z = 65536;
+            int32_t z = 32768;
             uint8_t p = 0;
             uint32_t o = 2|8;
 

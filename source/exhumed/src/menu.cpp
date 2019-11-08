@@ -1751,13 +1751,13 @@ LABEL_21:
 
 int menu_Menu(int ingame)
 {
-#if 1
+#if 0
     return menu_MenuOld(ingame);
 #endif
-    mouseLockToWindow(0);
+    Menu_Open(0);
     menu_DoPlasmaTile();
     int clock = (int)totalclock;
-    while (1)
+    while (g_menuActive)
     {
         while (clock + 4 <= (int)totalclock)
         {
@@ -1774,9 +1774,9 @@ int menu_Menu(int ingame)
         }
         HandleAsync();
     }
-    mouseLockToWindow(1);
+    // Menu_Close(0);
 
-    return 0;
+    return g_menuReturn;
 }
 
 #define kMaxCinemaPals	16
