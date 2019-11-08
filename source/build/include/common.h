@@ -149,6 +149,8 @@ int Paths_ReadRegistryValue(char const * const SubKey, char const * const Value,
 
 using PathsParseFunc = void(*)(const char *);
 void Paths_ParseSteamLibraryVDF(const char * fn, PathsParseFunc func);
+void Paths_ParseXDGDesktopFile(const char * fn, PathsParseFunc func);
+void Paths_ParseXDGDesktopFilesFromGOG(const char * homepath, const char * game, PathsParseFunc func);
 
 #ifdef __cplusplus
 }

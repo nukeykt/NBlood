@@ -546,6 +546,17 @@ static void G_LoadAddon(void)
 
 #ifndef EDUKE32_STANDALONE
 #ifndef EDUKE32_TOUCH_DEVICES
+
+#if defined __linux__ || defined EDUKE32_BSD
+static void Duke_Add_GOG_Atomic_Linux(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s/data", path);
+    addsearchpath_user(buf, SEARCHPATH_REMOVE);
+}
+#endif
+
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
 static void Duke_AddSteamPaths(const char *basepath)
 {
@@ -597,6 +608,11 @@ void G_AddSearchPaths(void)
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
     Paths_ParseSteamLibraryVDF(buf, Duke_AddSteamPaths);
+
+    // Duke Nukem 3D: Atomic Edition - GOG.com
+    Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Duke Nukem 3D Atomic Edition", homepath);
+    Duke_Add_GOG_Atomic_Linux(buf);
+    Paths_ParseXDGDesktopFilesFromGOG(buf, "Duke_Nukem_3D_Atomic_Edition", Duke_Add_GOG_Atomic_Linux);
 
     Xfree(homepath);
 
