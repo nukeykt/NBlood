@@ -776,7 +776,7 @@ int loadsong(const char *_filename)
 
     if (musistat != 1) return(0);
     musicoff();
-    strupr(filename);
+    Bstrupr(filename);
     if (strstr(filename,".KDM") == 0) strcat(filename,".KDM");
     if ((fil = kopen4load(filename,0)) == -1)
     {
