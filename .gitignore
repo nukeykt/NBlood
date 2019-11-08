@@ -4,9 +4,9 @@ obj/
 eduke32
 mapster32
 voidsw
-voidsw-editor
-kenbuild
-kenbuild-editor
+wangulator
+ekenbuild
+ekenbuild-editor
 apps/
 *.exe
 /*.dll
