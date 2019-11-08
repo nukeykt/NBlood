@@ -162,12 +162,12 @@ static void SW_AddSearchPaths()
     // Shadow Warrior Classic Redux - GOG.com
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Shadow Warrior Classic Redux", homepath);
     SW_Add_GOG_SWCR_Linux(buf);
-    Paths_ParseXDGDesktopFilesFromGOG(buf, "Shadow_Warrior_Classic_Redux", SW_Add_GOG_SWCR_Linux);
+    Paths_ParseXDGDesktopFilesFromGOG(homepath, "Shadow_Warrior_Classic_Redux", SW_Add_GOG_SWCR_Linux);
 
     // Shadow Warrior Classic Complete - GOG.com
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Shadow Warrior Classic Complete", homepath);
     SW_Add_GOG_SWCC_Linux(buf);
-    Paths_ParseXDGDesktopFilesFromGOG(buf, "Shadow_Warrior_Classic_Complete", SW_Add_GOG_SWCC_Linux);
+    Paths_ParseXDGDesktopFilesFromGOG(homepath, "Shadow_Warrior_Classic_Complete", SW_Add_GOG_SWCC_Linux);
 
     Xfree(homepath);
 
