@@ -547,7 +547,7 @@ static void G_LoadAddon(void)
 #ifndef EDUKE32_STANDALONE
 #ifndef EDUKE32_TOUCH_DEVICES
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
-static void G_AddSteamPaths(const char *basepath)
+static void Duke_AddSteamPaths(const char *basepath)
 {
     char buf[BMAX_PATH];
 
@@ -593,10 +593,10 @@ void G_AddSearchPaths(void)
     char *homepath = Bgethomedir();
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
-    G_AddSteamPaths(buf);
+    Duke_AddSteamPaths(buf);
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
-    Paths_ParseSteamKeyValuesForPaths(buf, G_AddSteamPaths);
+    Paths_ParseSteamLibraryVDF(buf, Duke_AddSteamPaths);
 
     Xfree(homepath);
 
@@ -613,10 +613,10 @@ void G_AddSearchPaths(void)
     for (i = 0; i < 2; i++)
     {
         Bsnprintf(buf, sizeof(buf), "%s/Steam", support[i]);
-        G_AddSteamPaths(buf);
+        Duke_AddSteamPaths(buf);
 
         Bsnprintf(buf, sizeof(buf), "%s/Steam/steamapps/libraryfolders.vdf", support[i]);
-        Paths_ParseSteamKeyValuesForPaths(buf, G_AddSteamPaths);
+        Paths_ParseSteamLibraryVDF(buf, Duke_AddSteamPaths);
 
         // Duke Nukem 3D: Atomic Edition - GOG.com
         Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);

@@ -311,167 +311,169 @@ int Paths_ReadRegistryValue(char const * const SubKey, char const * const Value,
 
 // A bare-bones "parser" for Valve's KeyValues VDF format.
 // There is no guarantee this will function properly with ill-formed files.
-static void KeyValues_SkipWhitespace(char **vdfbuf, char * const vdfbufend)
+static void KeyValues_SkipWhitespace(char *& buf, char * const bufend)
 {
-    while (((*vdfbuf)[0] == ' ' || (*vdfbuf)[0] == '\n' || (*vdfbuf)[0] == '\r' || (*vdfbuf)[0] == '\t' || (*vdfbuf)[0] == '\0') && *vdfbuf < vdfbufend)
-        (*vdfbuf)++;
+    while (buf < bufend && (buf[0] == ' ' || buf[0] == '\n' || buf[0] == '\r' || buf[0] == '\t' || buf[0] == '\0'))
+        ++buf;
 
     // comments
-    if ((*vdfbuf) + 2 < vdfbufend && (*vdfbuf)[0] == '/' && (*vdfbuf)[1] == '/')
+    if (buf + 2 < bufend && buf[0] == '/' && buf[1] == '/')
     {
-        while ((*vdfbuf)[0] != '\n' && (*vdfbuf)[0] != '\r' && *vdfbuf < vdfbufend)
-            (*vdfbuf)++;
+        while (buf < bufend && buf[0] != '\n' && buf[0] != '\r')
+            ++buf;
 
-        KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+        KeyValues_SkipWhitespace(buf, bufend);
     }
 }
-static void KeyValues_SkipToEndOfQuotedToken(char **vdfbuf, char * const vdfbufend)
+static void KeyValues_SkipToEndOfQuotedToken(char *& buf, char * const bufend)
 {
-    (*vdfbuf)++;
-    while ((*vdfbuf)[0] != '\"' && (*vdfbuf)[-1] != '\\' && *vdfbuf < vdfbufend)
-        (*vdfbuf)++;
+    ++buf;
+    while (buf < bufend && buf[0] != '\"' && buf[-1] != '\\')
+        ++buf;
 }
-static void KeyValues_SkipToEndOfUnquotedToken(char **vdfbuf, char * const vdfbufend)
+static void KeyValues_SkipToEndOfUnquotedToken(char *& buf, char * const bufend)
 {
-    while ((*vdfbuf)[0] != ' ' && (*vdfbuf)[0] != '\n' && (*vdfbuf)[0] != '\r' && (*vdfbuf)[0] != '\t' && (*vdfbuf)[0] != '\0' && *vdfbuf < vdfbufend)
-        (*vdfbuf)++;
+    while (buf < bufend && buf[0] != ' ' && buf[0] != '\n' && buf[0] != '\r' && buf[0] != '\t' && buf[0] != '\0')
+        ++buf;
 }
-static void KeyValues_SkipNextWhatever(char **vdfbuf, char * const vdfbufend)
+static void KeyValues_SkipNextWhatever(char *& buf, char * const bufend)
 {
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+    KeyValues_SkipWhitespace(buf, bufend);
 
-    if (*vdfbuf == vdfbufend)
+    if (buf == bufend)
         return;
 
-    if ((*vdfbuf)[0] == '{')
+    if (buf[0] == '{')
     {
-        (*vdfbuf)++;
+        ++buf;
         do
-        {
-            KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-        }
-        while ((*vdfbuf)[0] != '}');
-        (*vdfbuf)++;
+            KeyValues_SkipNextWhatever(buf, bufend);
+        while (buf[0] != '}');
+        ++buf;
     }
-    else if ((*vdfbuf)[0] == '\"')
-        KeyValues_SkipToEndOfQuotedToken(vdfbuf, vdfbufend);
-    else if ((*vdfbuf)[0] != '}')
-        KeyValues_SkipToEndOfUnquotedToken(vdfbuf, vdfbufend);
+    else if (buf[0] == '\"')
+        KeyValues_SkipToEndOfQuotedToken(buf, bufend);
+    else if (buf[0] != '}')
+        KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
 
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+    KeyValues_SkipWhitespace(buf, bufend);
 }
-static char* KeyValues_NormalizeToken(char **vdfbuf, char * const vdfbufend)
+static char* KeyValues_NormalizeToken(char *& buf, char * const bufend)
 {
-    char *token = *vdfbuf;
+    char * token = buf;
 
-    if ((*vdfbuf)[0] == '\"' && *vdfbuf < vdfbufend)
+    if (buf < bufend && buf[0] == '\"')
     {
-        token++;
+        ++token;
 
-        KeyValues_SkipToEndOfQuotedToken(vdfbuf, vdfbufend);
-        (*vdfbuf)[0] = '\0';
+        KeyValues_SkipToEndOfQuotedToken(buf, bufend);
+        buf[0] = '\0';
 
         // account for escape sequences
-        char *writeseeker = token, *readseeker = token;
-        while (readseeker <= *vdfbuf)
+        const char * readseeker = token;
+        char * writeseeker = token;
+        while (readseeker <= buf)
         {
             if (readseeker[0] == '\\')
-                readseeker++;
+                ++readseeker;
 
             writeseeker[0] = readseeker[0];
 
-            writeseeker++;
-            readseeker++;
+            ++writeseeker;
+            ++readseeker;
         }
 
         return token;
     }
 
-    KeyValues_SkipToEndOfUnquotedToken(vdfbuf, vdfbufend);
-    (*vdfbuf)[0] = '\0';
+    KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
+    buf[0] = '\0';
 
     return token;
 }
-static void KeyValues_FindKey(char **vdfbuf, char * const vdfbufend, const char *token)
+static void KeyValues_FindKey(char *& buf, char * const bufend, const char * token)
 {
-    char *ParentKey = KeyValues_NormalizeToken(vdfbuf, vdfbufend);
+    char *ParentKey = KeyValues_NormalizeToken(buf, bufend);
     if (token != NULL) // pass in NULL to find the next key instead of a specific one
-        while (Bstrcmp(ParentKey, token) != 0 && *vdfbuf < vdfbufend)
+        while (buf < bufend && Bstrcmp(ParentKey, token) != 0)
         {
-            KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-            ParentKey = KeyValues_NormalizeToken(vdfbuf, vdfbufend);
+            KeyValues_SkipNextWhatever(buf, bufend);
+            ParentKey = KeyValues_NormalizeToken(buf, bufend);
         }
 
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+    KeyValues_SkipWhitespace(buf, bufend);
 }
-static int32_t KeyValues_FindParentKey(char **vdfbuf, char * const vdfbufend, const char *token)
+static int32_t KeyValues_FindParentKey(char *& buf, char * const bufend, const char * token)
 {
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+    KeyValues_SkipWhitespace(buf, bufend);
 
     // end of scope
-    if ((*vdfbuf)[0] == '}')
+    if (buf[0] == '}')
         return 0;
 
-    KeyValues_FindKey(vdfbuf, vdfbufend, token);
+    KeyValues_FindKey(buf, bufend, token);
 
     // ignore the wrong type
-    while ((*vdfbuf)[0] != '{' && *vdfbuf < vdfbufend)
+    while (buf < bufend && buf[0] != '{')
     {
-        KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-        KeyValues_FindKey(vdfbuf, vdfbufend, token);
+        KeyValues_SkipNextWhatever(buf, bufend);
+        KeyValues_FindKey(buf, bufend, token);
     }
 
-    if (*vdfbuf == vdfbufend)
+    if (buf == bufend)
         return 0;
 
     return 1;
 }
-static char* KeyValues_FindKeyValue(char **vdfbuf, char * const vdfbufend, const char *token)
+static char* KeyValues_FindKeyValue(char *& buf, char * const bufend, const char * token)
 {
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+    KeyValues_SkipWhitespace(buf, bufend);
 
     // end of scope
-    if ((*vdfbuf)[0] == '}')
+    if (buf[0] == '}')
         return NULL;
 
-    KeyValues_FindKey(vdfbuf, vdfbufend, token);
+    KeyValues_FindKey(buf, bufend, token);
 
     // ignore the wrong type
-    while ((*vdfbuf)[0] == '{' && *vdfbuf < vdfbufend)
+    while (buf < bufend && buf[0] == '{')
     {
-        KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-        KeyValues_FindKey(vdfbuf, vdfbufend, token);
+        KeyValues_SkipNextWhatever(buf, bufend);
+        KeyValues_FindKey(buf, bufend, token);
     }
 
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
+    KeyValues_SkipWhitespace(buf, bufend);
 
-    if (*vdfbuf == vdfbufend)
+    if (buf == bufend)
         return NULL;
 
-    return KeyValues_NormalizeToken(vdfbuf, vdfbufend);
+    return KeyValues_NormalizeToken(buf, bufend);
 }
 
-void Paths_ParseSteamKeyValuesForPaths(const char *vdf, SteamPathParseFunc func)
+void Paths_ParseSteamLibraryVDF(const char * fn, PathsParseFunc func)
 {
-    buildvfs_fd fd = buildvfs_open_read(vdf);
-    int32_t size = buildvfs_length(fd);
-    char *vdfbufstart, *vdfbuf, *vdfbufend;
+    buildvfs_fd const fd = buildvfs_open_read(fn);
+    if (fd == buildvfs_fd_invalid)
+        return;
 
+    int32_t size = buildvfs_length(fd);
     if (size <= 0)
         return;
 
-    vdfbufstart = vdfbuf = (char*)Xmalloc(size);
-    size = (int32_t)buildvfs_read(fd, vdfbuf, size);
+    auto const bufstart = (char *)Xmalloc(size+1);
+    char * buf = bufstart;
+    size = (int32_t)buildvfs_read(fd, buf, size);
     buildvfs_close(fd);
-    vdfbufend = vdfbuf + size;
+    char * const bufend = buf + size;
+    bufend[0] = '\0';
 
-    if (KeyValues_FindParentKey(&vdfbuf, vdfbufend, "LibraryFolders"))
+    if (KeyValues_FindParentKey(buf, bufend, "LibraryFolders"))
     {
         char *result;
-        vdfbuf++;
-        while ((result = KeyValues_FindKeyValue(&vdfbuf, vdfbufend, NULL)) != NULL)
+        ++buf;
+        while ((result = KeyValues_FindKeyValue(buf, bufend, NULL)) != NULL)
             func(result);
     }
 
-    Xfree(vdfbufstart);
+    Xfree(bufstart);
 }

@@ -118,7 +118,7 @@ static void SW_AddSearchPaths()
     SW_AddSteamPaths(buf);
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
-    Paths_ParseSteamKeyValuesForPaths(buf, SW_AddSteamPaths);
+    Paths_ParseSteamLibraryVDF(buf, SW_AddSteamPaths);
 
     Xfree(homepath);
 
@@ -138,7 +138,7 @@ static void SW_AddSearchPaths()
         SW_AddSteamPaths(buf);
 
         Bsnprintf(buf, sizeof(buf), "%s/Steam/steamapps/libraryfolders.vdf", support[i]);
-        Paths_ParseSteamKeyValuesForPaths(buf, SW_AddSteamPaths);
+        Paths_ParseSteamLibraryVDF(buf, SW_AddSteamPaths);
 
         // Shadow Warrior Classic Complete - GOG.com
         static char const s_SWC_GOG[] = "Shadow Warrior Complete/Shadow Warrior.app/Contents/Resources/Shadow Warrior.boxer/C swarrior_files.harddisk";
