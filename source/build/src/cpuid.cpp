@@ -7,7 +7,7 @@ cpuinfo_t cpu;
 
 #if defined EDUKE32_CPU_X86
 
-#ifndef _WIN32
+#ifndef _MSC_VER
 # include <cpuid.h>
 #endif
 
@@ -18,7 +18,7 @@ void sysReadCPUID()
 {
     int32_t regs[4];
 
-#ifdef _WIN32
+#ifdef _MSC_VER
     __cpuid(regs, 0);
 #else
     __cpuid(0, regs[0], regs[1], regs[2], regs[3]);
@@ -42,7 +42,7 @@ void sysReadCPUID()
     else
         cpu.type = CPU_UNKNOWN;
 
-#ifdef _WIN32
+#ifdef _MSC_VER
     __cpuid(regs, 0x80000000);
 #else
     __cpuid(0x80000000, regs[0], regs[1], regs[2], regs[3]);
@@ -52,7 +52,7 @@ void sysReadCPUID()
 
     if (subleaves >= 0x80000004)
     {
-#ifdef _WIN32
+#ifdef _MSC_VER
         __cpuid((int *)g_cpuBrandString,   0x80000002);
         __cpuid((int *)g_cpuBrandString+4, 0x80000003);
         __cpuid((int *)g_cpuBrandString+8, 0x80000004);
@@ -77,7 +77,7 @@ void sysReadCPUID()
 
         if (subleaves >= 0x80000007)
         {
-#ifdef _WIN32
+#ifdef _MSC_VER
             __cpuid(regs, 0x80000007);
 #else
             __cpuid(0x80000007, regs[0], regs[1], regs[2], regs[3]);
