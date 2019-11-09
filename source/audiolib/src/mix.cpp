@@ -24,7 +24,7 @@ template uint32_t MV_MixMono<uint8_t, int16_t>(struct VoiceNode * const voice, u
 template uint32_t MV_MixStereo<uint8_t, int16_t>(struct VoiceNode * const voice, uint32_t length);
 template uint32_t MV_MixMono<int16_t, int16_t>(struct VoiceNode * const voice, uint32_t length);
 template uint32_t MV_MixStereo<int16_t, int16_t>(struct VoiceNode * const voice, uint32_t length);
-template void MV_Reverb<int16_t>(char const *src, char * const dest, const float volume, int count);
+template void MV_Reverb<int16_t>(char const *src, char * const dest, const fix16_t volume, int count);
 
 /*
  length = count of samples to mix
@@ -42,7 +42,7 @@ uint32_t MV_MixMono(struct VoiceNode * const voice, uint32_t length)
 
     uint32_t       position = voice->position;
     uint32_t const rate     = voice->RateScale;
-    float const    volume   = voice->volume*MV_GlobalVolume;
+    fix16_t const  volume   = fix16_fast_trunc_mul(voice->volume, MV_GlobalVolume);
 
     do
     {
@@ -50,7 +50,7 @@ uint32_t MV_MixMono(struct VoiceNode * const voice, uint32_t length)
 
         position += rate;
 
-        *dest = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, volume*voice->LeftVolume), *dest);
+        *dest = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, fix16_fast_trunc_mul(volume, voice->LeftVolume)), *dest);
         dest++;
 
         voice->LeftVolume = SMOOTH_VOLUME(voice->LeftVolume, voice->LeftVolumeDest);
@@ -71,7 +71,7 @@ uint32_t MV_MixStereo(struct VoiceNode * const voice, uint32_t length)
 
     uint32_t       position = voice->position;
     uint32_t const rate     = voice->RateScale;
-    float const    volume   = voice->volume*MV_GlobalVolume;
+    fix16_t  const volume   = fix16_fast_trunc_mul(voice->volume, MV_GlobalVolume);
 
     do
     {
@@ -79,9 +79,9 @@ uint32_t MV_MixStereo(struct VoiceNode * const voice, uint32_t length)
 
         position += rate;
 
-        *dest = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, volume*voice->LeftVolume), *dest);
+        *dest = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, fix16_fast_trunc_mul(volume, voice->LeftVolume)), *dest);
         *(dest + (MV_RightChannelOffset / sizeof(*dest)))
-            = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, volume*voice->RightVolume), *(dest + (MV_RightChannelOffset / sizeof(*dest))));
+            = MIX_SAMPLES<D>(SCALE_SAMPLE(isample0, fix16_fast_trunc_mul(volume, voice->RightVolume)), *(dest + (MV_RightChannelOffset / sizeof(*dest))));
         dest += 2;
 
         voice->LeftVolume = SMOOTH_VOLUME(voice->LeftVolume, voice->LeftVolumeDest);
@@ -95,7 +95,7 @@ uint32_t MV_MixStereo(struct VoiceNode * const voice, uint32_t length)
 }
 
 template <typename T>
-void MV_Reverb(char const *src, char * const dest, const float volume, int count)
+void MV_Reverb(char const *src, char * const dest, const fix16_t volume, int count)
 {
     auto input  = (T const *)src;
     auto output = (T *)dest;

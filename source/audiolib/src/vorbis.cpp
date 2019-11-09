@@ -325,7 +325,7 @@ Begin playback of sound data at specified angle and distance
 from listener.
 ---------------------------------------------------------------------*/
 
-int MV_PlayVorbis3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, float volume, uint32_t callbackval)
+int MV_PlayVorbis3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, fix16_t volume, uint32_t callbackval)
 {
     if (!MV_Installed)
         return MV_SetErrorCode(MV_NotInstalled);
@@ -353,7 +353,7 @@ Begin playback of sound data with the given sound levels and
 priority.
 ---------------------------------------------------------------------*/
 
-int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, float volume, uint32_t callbackval)
+int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval)
 {
     UNREFERENCED_PARAMETER(loopend);
 
@@ -442,7 +442,7 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
 #include "_multivc.h"
 
 int MV_PlayVorbis(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
-    int vol, int left, int right, int priority, float volume, uint32_t callbackval)
+    int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval)
 {
     UNREFERENCED_PARAMETER(ptr);
     UNREFERENCED_PARAMETER(ptrlength);
@@ -461,7 +461,7 @@ int MV_PlayVorbis(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int
 }
 
 int MV_PlayVorbis3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-    int distance, int priority, float volume, uint32_t callbackval)
+    int distance, int priority, fix16_t volume, uint32_t callbackval)
 {
     UNREFERENCED_PARAMETER(ptr);
     UNREFERENCED_PARAMETER(ptrlength);

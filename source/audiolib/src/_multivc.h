@@ -52,12 +52,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define MIX_VOLUME(volume) ((max(0, min((volume), 255)) * (MV_MAXVOLUME + 1)) >> 8)
 
-extern float MV_GlobalVolume;
-extern float MV_VolumeSmooth;
+extern fix16_t MV_GlobalVolume;
+extern fix16_t MV_VolumeSmooth;
 
-static FORCE_INLINE float SMOOTH_VOLUME(float const volume, float const dest)
+static FORCE_INLINE fix16_t SMOOTH_VOLUME(fix16_t const volume, fix16_t const dest)
 {
-    return volume + (dest - volume) * MV_VolumeSmooth;
+    return volume + fix16_fast_trunc_mul(dest - volume, MV_VolumeSmooth);
 }
 
 template <typename T>
@@ -68,9 +68,9 @@ static inline conditional_t< is_signed<T>::value, make_unsigned_t<T>, make_signe
 }
 
 template <typename T>
-static inline enable_if_t<is_signed<T>::value, T> SCALE_SAMPLE(T src, float volume)
+static inline enable_if_t<is_signed<T>::value, T> SCALE_SAMPLE(T src, fix16_t volume)
 {
-    return (T)Blrintf((float)src * volume);
+    return (T)fix16_fast_trunc_mul_int_by_fix16(src, volume);
 }
 
 template <typename T>
@@ -160,8 +160,8 @@ typedef struct VoiceNode
 
     const char *sound;
 
-    float LeftVolume, LeftVolumeDest;
-    float RightVolume, RightVolumeDest;
+    fix16_t LeftVolume, LeftVolumeDest;
+    fix16_t RightVolume, RightVolumeDest;
 
     void *rawdataptr;
 
@@ -174,7 +174,7 @@ typedef struct VoiceNode
     char channels;
     char ptrlock;
 
-    float volume;
+    fix16_t volume;
 
     int      LoopCount;
     uint32_t LoopSize;
@@ -249,7 +249,7 @@ void MV_PlayVoice(VoiceNode *voice);
 VoiceNode *MV_AllocVoice(int priority);
 
 void MV_SetVoiceMixMode(VoiceNode *voice);
-void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, float volume);
+void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t volume);
 void MV_SetVoicePitch(VoiceNode *voice, uint32_t rate, int pitchoffset);
 
 int  MV_GetVorbisPosition(VoiceNode *voice);
@@ -269,7 +269,7 @@ void MV_ReleaseXMPVoice(VoiceNode *voice);
 // implemented in mix.c
 template <typename S, typename D> uint32_t MV_MixMono(struct VoiceNode * const voice, uint32_t length);
 template <typename S, typename D> uint32_t MV_MixStereo(struct VoiceNode * const voice, uint32_t length);
-template <typename T> void MV_Reverb(char const *src, char * const dest, const float volume, int count);
+template <typename T> void MV_Reverb(char const *src, char * const dest, const fix16_t volume, int count);
 
 // implemented in mixst.c
 template <typename S, typename D> uint32_t MV_MixMonoStereo(struct VoiceNode * const voice, uint32_t length);

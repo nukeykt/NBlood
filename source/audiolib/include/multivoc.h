@@ -87,9 +87,9 @@ int  MV_GetReverbDelay(void);
 void MV_SetReverbDelay(int delay);
 
 int MV_PlayVOC3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance,
-                 int priority, float volume, uint32_t callbackval);
+                 int priority, fix16_t volume, uint32_t callbackval);
 int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
-               int left, int right, int priority, float volume, uint32_t callbackval);
+               int left, int right, int priority, fix16_t volume, uint32_t callbackval);
 
 decltype(MV_PlayVOC3D) MV_PlayWAV3D;
 decltype(MV_PlayVOC)   MV_PlayWAV;

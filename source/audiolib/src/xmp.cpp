@@ -65,7 +65,7 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
     return KeepPlaying;
 }
 
-int MV_PlayXMP3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, float volume, uint32_t callbackval)
+int MV_PlayXMP3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, fix16_t volume, uint32_t callbackval)
 {
     int left;
     int right;
@@ -96,7 +96,7 @@ int MV_PlayXMP3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int a
     return status;
 }
 
-int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, float volume, uint32_t callbackval)
+int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval)
 {
     VoiceNode   *voice;
     xmp_data * xmpd = 0;
@@ -201,7 +201,7 @@ void MV_ReleaseXMPVoice(VoiceNode * voice)
 static char const NoXMP[] = "MV_PlayXMP: libxmp-lite support not included in this binary.\n";
 
 int MV_PlayXMP(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset, int vol,
-                   int left, int right, int priority, float volume, uint32_t callbackval)
+                   int left, int right, int priority, fix16_t volume, uint32_t callbackval)
 {
     UNREFERENCED_PARAMETER(ptr);
     UNREFERENCED_PARAMETER(ptrlength);
@@ -220,7 +220,7 @@ int MV_PlayXMP(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pi
 }
 
 int MV_PlayXMP3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-                     int distance, int priority, float volume, uint32_t callbackval)
+                     int distance, int priority, fix16_t volume, uint32_t callbackval)
 {
     UNREFERENCED_PARAMETER(ptr);
     UNREFERENCED_PARAMETER(ptrlength);

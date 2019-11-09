@@ -50,7 +50,7 @@ static VoiceNode *MV_GetVoice(int handle);
 
 static int MV_ReverbLevel;
 static int MV_ReverbDelay;
-static float MV_ReverbVolume;
+static fix16_t MV_ReverbVolume;
 
 Pan MV_PanTable[MV_NUMPANPOSITIONS][MV_MAXVOLUME + 1];
 
@@ -87,8 +87,8 @@ int MV_RightChannelOffset;
 
 int MV_ErrorCode = MV_NotInstalled;
 
-float MV_GlobalVolume = 1.f;
-float MV_VolumeSmooth = 1.f;
+fix16_t MV_GlobalVolume = fix16_one;
+fix16_t MV_VolumeSmooth = fix16_one;
 
 static int MV_Locked;
 
@@ -115,10 +115,10 @@ static bool MV_Mix(VoiceNode * const voice, int const buffer)
     if (voice->length == 0 && voice->GetSound(voice) != KeepPlaying)
         return false;
 
-    float const gv = MV_GlobalVolume;
+    fix16_t const gv = MV_GlobalVolume;
 
     if (voice->priority == FX_MUSIC_PRIORITY)
-        MV_GlobalVolume = 1.f;
+        MV_GlobalVolume = fix16_one;
 
     int            length = MV_MIXBUFFERSIZE;
     uint32_t       bufsiz = voice->FixedPointBufferSize;
@@ -558,15 +558,15 @@ void MV_SetVoiceMixMode(VoiceNode *voice)
     voice->mix = mixslut[type];
 }
 
-void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, float volume)
+void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t volume)
 {
     if (MV_Channels == 1)
         left = right = vol;
     else if (MV_ReverseStereo)
         swap(&left, &right);
 
-    voice->LeftVolumeDest = float(left)*(1.f/MV_MAXTOTALVOLUME);
-    voice->RightVolumeDest = float(right)*(1.f/MV_MAXTOTALVOLUME);
+    voice->LeftVolumeDest = left*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
+    voice->RightVolumeDest = right*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
     voice->volume = volume;
 
     MV_SetVoiceMixMode(voice);
@@ -689,7 +689,7 @@ int MV_Pan3D(int handle, int angle, int distance)
 void MV_SetReverb(int reverb)
 {
     MV_ReverbLevel = MIX_VOLUME(reverb);
-    MV_ReverbVolume = float(MV_ReverbLevel)*(1.f/MV_MAXVOLUME);
+    MV_ReverbVolume = MV_ReverbLevel*fix16_from_float(1.f/MV_MAXVOLUME);
 }
 
 int MV_GetMaxReverbDelay(void) { return MV_MIXBUFFERSIZE * MV_NumberOfBuffers; }
@@ -781,7 +781,7 @@ static void MV_CalcPanTable(void)
 void MV_SetVolume(int volume)
 {
     MV_TotalVolume  = min(max(0, volume), MV_MAXTOTALVOLUME);
-    MV_GlobalVolume = (float)volume / 255.f;
+    MV_GlobalVolume = volume * fix16_from_float(1.0f / 255.f);
     // MV_CalcVolume(MV_TotalVolume);
 }
 
@@ -862,7 +862,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     // Calculate pan table
     MV_CalcPanTable();
 
-    MV_VolumeSmooth = 1.f-powf(0.1f, 30.f/MixRate);
+    MV_VolumeSmooth = fix16_from_float(1.f-powf(0.1f, 30.f/MixRate));
 
     // Start the playback engine
     if (MV_StartPlayback() != MV_Ok)
