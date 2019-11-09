@@ -343,7 +343,7 @@ void G_GameExit(const char *msg)
 
     Bfflush(NULL);
 
-    Bexit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -6405,8 +6405,6 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
-    win_priorityclass = 0;
-
 #ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
     extern int32_t (*check_filename_casing_fn)(void);
@@ -6543,7 +6541,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(EXIT_SUCCESS);
+            exit(EXIT_SUCCESS);
         }
     }
 #endif

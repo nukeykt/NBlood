@@ -173,8 +173,8 @@
     <ClCompile Include="..\..\source\kenbuild\rsrc\game32_icon.c" />
     <ClCompile Include="..\..\source\kenbuild\src\common.cpp" />
     <ClCompile Include="..\..\source\kenbuild\src\config.cpp" />
+    <ClCompile Include="..\..\source\kenbuild\src\kdmeng.cpp" />
     <ClCompile Include="..\..\source\kenbuild\src\game.cpp" />
-    <ClCompile Include="..\..\source\kenbuild\src\sound_stub.cpp" />
     <ClCompile Include="..\..\source\kenbuild\src\startgtk.game.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>

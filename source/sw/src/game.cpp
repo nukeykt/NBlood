@@ -45,9 +45,7 @@ Things required to make savegames work:
 #include "baselayer.h"
 #include "cache1d.h"
 #include "osd.h"
-#ifdef RENDERTYPEWIN
-# include "winlayer.h"
-#endif
+#include "renderlayer.h"
 
 #include "keys.h"
 #include "names2.h"
@@ -290,6 +288,7 @@ void BOT_DeleteAllBots(void);
 void BotPlayerInsert(PLAYERp pp);
 void SybexScreen(void);
 void DosScreen(void);
+void PlayTheme(void);
 void MenuLevel(void);
 void StatScreen(PLAYERp mpp);
 void InitRunLevel(void);
@@ -682,7 +681,6 @@ TerminateGame(void)
     //uninitkeys();
     KB_Shutdown();
 
-    engineUnInit();
     TermSetup();
 
     //Terminate3DSounds();                // Kill the sounds linked list
@@ -692,6 +690,8 @@ TerminateGame(void)
 
     if (CleanExit)
         DosScreen();
+
+    engineUnInit();
 
     uninitgroupfile();
 }
@@ -809,7 +809,6 @@ void Set_GameMode(void)
             uninitmultiplayers();
             //uninitkeys();
             KB_Shutdown();
-            engineUnInit();
             TermSetup();
             UnInitSound();
             timerUninit();
@@ -836,10 +835,10 @@ void MultiSharewareCheck(void)
         uninitmultiplayers();
         //uninitkeys();
         KB_Shutdown();
-        engineUnInit();
         TermSetup();
         UnInitSound();
         timerUninit();
+        engineUnInit();
         uninitgroupfile();
         exit(0);
     }
@@ -895,8 +894,8 @@ void AnimateCacheCursor(void)
 
 void COVERsetbrightness(int bright, unsigned char *pal)
 {
-    paletteSetColorTable(0, pal);
-    videoSetPalette(bright, 0, 0);
+    paletteSetColorTable(BASEPAL, pal);
+    videoSetPalette(bright, BASEPAL, 0);
 }
 
 
@@ -1642,12 +1641,18 @@ NewLevel(void)
     if (SW_SHAREWARE)
     {
         if (FinishAnim)
+        {
+            PlayTheme();
             MenuLevel();
+        }
     }
     else
     {
         if (FinishAnim == ANIM_ZILLA || FinishAnim == ANIM_SERP)
+        {
+            PlayTheme();
             MenuLevel();
+        }
     }
     FinishAnim = 0;
 }
@@ -1702,41 +1707,26 @@ ResetKeyRange(uint8_t* kb, uint8_t* ke)
     }
 }
 
-
-void
-LogoLevel(void)
+void PlayTheme()
 {
-    char called;
-    int fin;
-    unsigned char backup_pal[256*3];
-    unsigned char pal[PAL_SIZE];
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    UserInput uinfo = { FALSE, FALSE, dir_None };
-    int i;
-
-
-    DSPRINTF(ds,"LogoLevel...");
-    MONO_PRINT(ds);
-
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
-    DSPRINTF(ds,"Created palookup...");
-    MONO_PRINT(ds);
-
     // start music at logo
     strcpy(LevelSong,"theme.mid");
     PlaySong(LevelSong, RedBookSong[0], TRUE, TRUE);
 
     DSPRINTF(ds,"After music stuff...");
     MONO_PRINT(ds);
+}
 
-    //GetPaletteFromVESA(pal);
-    //memcpy(backup_pal, pal, PAL_SIZE);
+void
+LogoLevel(void)
+{
+    char called;
+    int fin;
+    unsigned char pal[PAL_SIZE];
+    UserInput uinfo = { FALSE, FALSE, dir_None };
 
-    DSPRINTF(ds,"Got Palette from VESA...");
+
+    DSPRINTF(ds,"LogoLevel...");
     MONO_PRINT(ds);
 
     // PreCache Anim
@@ -1747,8 +1737,11 @@ LogoLevel(void)
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
 
-        paletteSetColorTable(1, pal);
-        videoSetPalette(gs.Brightness, 1, 2);
+        for (auto & c : pal)
+            c <<= 2;
+
+        paletteSetColorTable(DREALMSPAL, pal);
+        videoSetPalette(gs.Brightness, DREALMSPAL, 2);
     }
     DSPRINTF(ds,"Just read in 3drealms.pal...");
     MONO_PRINT(ds);
@@ -1787,13 +1780,9 @@ LogoLevel(void)
         }
     }
 
-    palookup[0] = palook_bak;
-
     videoClearViewableArea(0L);
     videoNextPage();
-    //SetPaletteToVESA(backup_pal);
-    paletteSetColorTable(0, &palette_data[0][0]);
-    videoSetPalette(gs.Brightness, 0, 2);
+    videoSetPalette(gs.Brightness, BASEPAL, 2);
 
     // put up a blank screen while loading
 
@@ -2105,11 +2094,6 @@ MenuLevel(void)
 
     DSPRINTF(ds,"MenuLevel...");
     MONO_PRINT(ds);
-
-    if (gs.MusicOn)
-    {
-        PlaySong(NULL, RedBookSong[0], TRUE, FALSE);
-    }
 
     if (AutoNet)
     {
@@ -2873,6 +2857,7 @@ GameIntro(void)
 
 
 
+    PlayTheme();
 
     if (!AutoNet)
     {
@@ -3459,14 +3444,22 @@ int32_t app_main(int32_t argc, char const * const * argv)
         }
     }
 
-#ifdef RENDERTYPEWIN
-    if (win_checkinstance())
+#ifdef _WIN32
+#ifndef DEBUGGINGAIDS
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-        if (!wm_ynbox("Shadow Warrior","Another Build game is currently running. "
-                      "Do you wish to continue starting this copy?"))
-            return 0;
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
+            return 3;
     }
 #endif
+#endif
+
+    SW_ExtPreInit(argc, argv);
 
 #if defined(PREFIX)
     {
@@ -3478,96 +3471,31 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 #endif
 
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
     OSD_SetLogFile(APPBASENAME ".log");
 
-    {
-        //char *supportdir = Bgetsupportdir(TRUE);
-        char *appdir = Bgetappdir();
-        char dirpath[BMAX_PATH+1];
+    wm_setapptitle(APPNAME);
 
-        // the OSX app bundle, or on Windows the directory where the EXE was launched
-        if (appdir)
-        {
-            addsearchpath(appdir);
-            free(appdir);
-        }
+    initprintf(APPNAME " %s\n", s_buildRev);
+    PrintBuildInfo();
 
-        // the global support files directory
-#if 0 // [JM] ifdef'd out for now. !CHECKME!
-        if (supportdir)
-        {
-            Bsnprintf(dirpath, sizeof(dirpath), "%s/JFShadowWarrior", supportdir);
-            addsearchpath(dirpath);
-            free(supportdir);
-        }
-#endif
-    }
+    SW_ExtInit();
 
-    // default behaviour is to write to the user profile directory, but
-    // creating a 'user_profiles_disabled' file in the current working
-    // directory where the game was launched makes the installation
-    // "portable" by writing into the working directory
-#if 0 // [JM] ifdef'd out for now. !CHECKME!
-    if (access("user_profiles_disabled", F_OK) == 0)
-#endif
-    {
-        char cwd[BMAX_PATH+1];
-        if (getcwd(cwd, sizeof(cwd)))
-        {
-            addsearchpath(cwd);
-        }
-    }
-#if 0 // [JM] ifdef'd out for now. !CHECKME!
-    else
-    {
-        char *supportdir;
-        char dirpath[BMAX_PATH+1];
-        int asperr;
+    i = CONFIG_ReadSetup();
 
-        if ((supportdir = Bgetsupportdir(FALSE)))
-        {
-            Bsnprintf(dirpath, sizeof(dirpath), "%s/"
-#if defined(_WIN32) || defined(__APPLE__)
-                      "JFShadowWarrior"
-#else
-                      ".jfsw"
-#endif
-                      , supportdir);
-            asperr = addsearchpath(dirpath);
-            if (asperr == -2)
-            {
-                if (Bmkdir(dirpath, S_IRWXU) == 0)
-                {
-                    asperr = addsearchpath(dirpath);
-                }
-                else
-                {
-                    asperr = -1;
-                }
-            }
-            if (asperr == 0)
-            {
-                chdir(dirpath);
-            }
-            free(supportdir);
-        }
-    }
-#endif
-
-    OSD_SetLogFile("sw.log");
-
-    if (g_grpNamePtr == NULL)
-    {
-        const char *cp = getenv("SWGRP");
-        if (cp)
-        {
-            clearGrpNamePtr();
-            g_grpNamePtr = dup_filename(cp);
-            initprintf("Using \"%s\" as main GRP file\n", g_grpNamePtr);
-        }
-    }
-
-    wm_setapptitle("Shadow Warrior");
     if (enginePreInit())
     {
         wm_msgbox("Build Engine Initialisation Error",
@@ -3575,9 +3503,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         exit(1);
     }
 
-    i = CONFIG_ReadSetup();
-
-#if defined RENDERTYPEWIN || (defined RENDERTYPESDL && (defined __APPLE__ || defined HAVE_GTK2))
+#ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || ForceSetup || CommandSetup)
     {
         if (quitevent || !startwin_run())
@@ -3589,6 +3515,10 @@ int32_t app_main(int32_t argc, char const * const * argv)
 #endif
 
     initgroupfile(G_GrpFile());
+
+    if (!g_useCwd)
+        SW_CleanupSearchPaths();
+
     if (!DetectShareware())
     {
         if (SW_SHAREWARE) buildputs("Detected shareware GRP\n");
@@ -3597,7 +3527,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     if (SW_SHAREWARE)
     {
-        wm_setapptitle("Shadow Warrior Shareware");
+        wm_setapptitle(APPNAME " Shareware");
 
         // Zero out the maps that aren't in shareware version
         memset(&LevelInfo[MAX_LEVELS_SW+1], 0, sizeof(LEVEL_INFO)*(MAX_LEVELS_REG-MAX_LEVELS_SW));
@@ -3605,7 +3535,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
     else
     {
-        wm_setapptitle("Shadow Warrior");
+        wm_setapptitle(APPNAME);
     }
 
     for (i = 0; i < MAX_SW_PLAYERS; i++)

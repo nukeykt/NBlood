@@ -31,15 +31,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "palette.h"
 
 #ifdef _WIN32
-# define NEED_SHLWAPI_H
 # include "windows_inc.h"
 # include "winbits.h"
-# ifndef KEY_WOW64_64KEY
-#  define KEY_WOW64_64KEY 0x0100
-# endif
-# ifndef KEY_WOW64_32KEY
-#  define KEY_WOW64_32KEY 0x0200
-# endif
 #elif defined __APPLE__
 # include "osxbits.h"
 #endif
@@ -100,6 +93,8 @@ static char g_rootDir[BMAX_PATH];
 
 int g_useCwd;
 int32_t g_groupFileHandle;
+
+static struct strllist *CommandPaths, *CommandGrps;
 
 void G_ExtPreInit(int32_t argc,char const * const * argv)
 {
@@ -277,224 +272,29 @@ void G_LoadGroups(int32_t autoload)
     pathsearchmode = bakpathsearchmode;
 }
 
-#if defined _WIN32
-static int G_ReadRegistryValue(char const * const SubKey, char const * const Value, char * const Output, DWORD * OutputSize)
-{
-    // KEY_WOW64_32KEY gets us around Wow6432Node on 64-bit builds
-    REGSAM const wow64keys[] = { KEY_WOW64_32KEY, KEY_WOW64_64KEY };
-
-    for (auto &wow64key : wow64keys)
-    {
-        HKEY hkey;
-        LONG keygood = RegOpenKeyEx(HKEY_LOCAL_MACHINE, NULL, 0, KEY_READ | wow64key, &hkey);
-
-        if (keygood != ERROR_SUCCESS)
-            continue;
-
-        LONG retval = SHGetValueA(hkey, SubKey, Value, NULL, Output, OutputSize);
-
-        RegCloseKey(hkey);
-
-        if (retval == ERROR_SUCCESS)
-            return 1;
-    }
-
-    return 0;
-}
-#endif
-
 #ifndef EDUKE32_TOUCH_DEVICES
-#if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
-static void G_AddSteamPaths(const char *basepath)
+#if defined __linux__ || defined EDUKE32_BSD
+static void Blood_Add_GOG_OUWB_Linux(const char * path)
 {
-    UNREFERENCED_PARAMETER(basepath);
-#if 0
     char buf[BMAX_PATH];
 
-    // PORT-TODO:
-    // Duke Nukem 3D: Megaton Edition (Steam)
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot", basepath);
+    Bsnprintf(buf, sizeof(buf), "%s/data", path);
     addsearchpath(buf);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/dc", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/nw", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/gameroot/addons/vacation", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
-
-    // Duke Nukem 3D (3D Realms Anthology (Steam) / Kill-A-Ton Collection 2015)
-#if defined EDUKE32_OSX
-    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Duke Nukem 3D/Duke Nukem 3D.app/drive_c/Program Files/Duke Nukem 3D", basepath);
-    addsearchpath_user(buf, SEARCHPATH_REMOVE);
+}
 #endif
-#endif
-}
 
-// A bare-bones "parser" for Valve's KeyValues VDF format.
-// There is no guarantee this will function properly with ill-formed files.
-static void KeyValues_SkipWhitespace(char **vdfbuf, char * const vdfbufend)
+#if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
+static void Blood_AddSteamPaths(const char *basepath)
 {
-    while (((*vdfbuf)[0] == ' ' || (*vdfbuf)[0] == '\n' || (*vdfbuf)[0] == '\r' || (*vdfbuf)[0] == '\t' || (*vdfbuf)[0] == '\0') && *vdfbuf < vdfbufend)
-        (*vdfbuf)++;
+    char buf[BMAX_PATH];
 
-    // comments
-    if ((*vdfbuf) + 2 < vdfbufend && (*vdfbuf)[0] == '/' && (*vdfbuf)[1] == '/')
-    {
-        while ((*vdfbuf)[0] != '\n' && (*vdfbuf)[0] != '\r' && *vdfbuf < vdfbufend)
-            (*vdfbuf)++;
+    // Blood: Fresh Supply - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Blood", basepath);
+    addsearchpath(buf);
 
-        KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-    }
-}
-static void KeyValues_SkipToEndOfQuotedToken(char **vdfbuf, char * const vdfbufend)
-{
-    (*vdfbuf)++;
-    while ((*vdfbuf)[0] != '\"' && (*vdfbuf)[-1] != '\\' && *vdfbuf < vdfbufend)
-        (*vdfbuf)++;
-}
-static void KeyValues_SkipToEndOfUnquotedToken(char **vdfbuf, char * const vdfbufend)
-{
-    while ((*vdfbuf)[0] != ' ' && (*vdfbuf)[0] != '\n' && (*vdfbuf)[0] != '\r' && (*vdfbuf)[0] != '\t' && (*vdfbuf)[0] != '\0' && *vdfbuf < vdfbufend)
-        (*vdfbuf)++;
-}
-static void KeyValues_SkipNextWhatever(char **vdfbuf, char * const vdfbufend)
-{
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-
-    if (*vdfbuf == vdfbufend)
-        return;
-
-    if ((*vdfbuf)[0] == '{')
-    {
-        (*vdfbuf)++;
-        do
-        {
-            KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-        }
-        while ((*vdfbuf)[0] != '}');
-        (*vdfbuf)++;
-    }
-    else if ((*vdfbuf)[0] == '\"')
-        KeyValues_SkipToEndOfQuotedToken(vdfbuf, vdfbufend);
-    else if ((*vdfbuf)[0] != '}')
-        KeyValues_SkipToEndOfUnquotedToken(vdfbuf, vdfbufend);
-
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-}
-static char* KeyValues_NormalizeToken(char **vdfbuf, char * const vdfbufend)
-{
-    char *token = *vdfbuf;
-
-    if ((*vdfbuf)[0] == '\"' && *vdfbuf < vdfbufend)
-    {
-        token++;
-
-        KeyValues_SkipToEndOfQuotedToken(vdfbuf, vdfbufend);
-        (*vdfbuf)[0] = '\0';
-
-        // account for escape sequences
-        char *writeseeker = token, *readseeker = token;
-        while (readseeker <= *vdfbuf)
-        {
-            if (readseeker[0] == '\\')
-                readseeker++;
-
-            writeseeker[0] = readseeker[0];
-
-            writeseeker++;
-            readseeker++;
-        }
-
-        return token;
-    }
-
-    KeyValues_SkipToEndOfUnquotedToken(vdfbuf, vdfbufend);
-    (*vdfbuf)[0] = '\0';
-
-    return token;
-}
-static void KeyValues_FindKey(char **vdfbuf, char * const vdfbufend, const char *token)
-{
-    char *ParentKey = KeyValues_NormalizeToken(vdfbuf, vdfbufend);
-    if (token != NULL) // pass in NULL to find the next key instead of a specific one
-        while (Bstrcmp(ParentKey, token) != 0 && *vdfbuf < vdfbufend)
-        {
-            KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-            ParentKey = KeyValues_NormalizeToken(vdfbuf, vdfbufend);
-        }
-
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-}
-static int32_t KeyValues_FindParentKey(char **vdfbuf, char * const vdfbufend, const char *token)
-{
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-
-    // end of scope
-    if ((*vdfbuf)[0] == '}')
-        return 0;
-
-    KeyValues_FindKey(vdfbuf, vdfbufend, token);
-
-    // ignore the wrong type
-    while ((*vdfbuf)[0] != '{' && *vdfbuf < vdfbufend)
-    {
-        KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-        KeyValues_FindKey(vdfbuf, vdfbufend, token);
-    }
-
-    if (*vdfbuf == vdfbufend)
-        return 0;
-
-    return 1;
-}
-static char* KeyValues_FindKeyValue(char **vdfbuf, char * const vdfbufend, const char *token)
-{
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-
-    // end of scope
-    if ((*vdfbuf)[0] == '}')
-        return NULL;
-
-    KeyValues_FindKey(vdfbuf, vdfbufend, token);
-
-    // ignore the wrong type
-    while ((*vdfbuf)[0] == '{' && *vdfbuf < vdfbufend)
-    {
-        KeyValues_SkipNextWhatever(vdfbuf, vdfbufend);
-        KeyValues_FindKey(vdfbuf, vdfbufend, token);
-    }
-
-    KeyValues_SkipWhitespace(vdfbuf, vdfbufend);
-
-    if (*vdfbuf == vdfbufend)
-        return NULL;
-
-    return KeyValues_NormalizeToken(vdfbuf, vdfbufend);
-}
-
-static void G_ParseSteamKeyValuesForPaths(const char *vdf)
-{
-    buildvfs_fd fd = buildvfs_open_read(vdf);
-    int32_t size = buildvfs_length(fd);
-    char *vdfbufstart, *vdfbuf, *vdfbufend;
-
-    if (size <= 0)
-        return;
-
-    vdfbufstart = vdfbuf = (char*)Xmalloc(size);
-    size = (int32_t)buildvfs_read(fd, vdfbuf, size);
-    buildvfs_close(fd);
-    vdfbufend = vdfbuf + size;
-
-    if (KeyValues_FindParentKey(&vdfbuf, vdfbufend, "LibraryFolders"))
-    {
-        char *result;
-        vdfbuf++;
-        while ((result = KeyValues_FindKeyValue(&vdfbuf, vdfbufend, NULL)) != NULL)
-            G_AddSteamPaths(result);
-    }
-
-    Xfree(vdfbufstart);
+    // Blood: One Unit Whole Blood - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/One Unit Whole Blood", basepath);
+    addsearchpath(buf);
 }
 #endif
 #endif
@@ -507,10 +307,15 @@ void G_AddSearchPaths(void)
     char *homepath = Bgethomedir();
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam", homepath);
-    G_AddSteamPaths(buf);
+    Blood_AddSteamPaths(buf);
 
     Bsnprintf(buf, sizeof(buf), "%s/.steam/steam/steamapps/libraryfolders.vdf", homepath);
-    G_ParseSteamKeyValuesForPaths(buf);
+    Paths_ParseSteamLibraryVDF(buf, Blood_AddSteamPaths);
+
+    // Blood: One Unit Whole Blood - GOG.com
+    Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Blood One Unit Whole Blood", homepath);
+    Blood_Add_GOG_OUWB_Linux(buf);
+    Paths_ParseXDGDesktopFilesFromGOG(homepath, "Blood_One_Unit_Whole_Blood", Blood_Add_GOG_OUWB_Linux);
 
     Bfree(homepath);
 
@@ -525,16 +330,10 @@ void G_AddSearchPaths(void)
     for (i = 0; i < 2; i++)
     {
         Bsnprintf(buf, sizeof(buf), "%s/Steam", support[i]);
-        G_AddSteamPaths(buf);
+        Blood_AddSteamPaths(buf);
 
         Bsnprintf(buf, sizeof(buf), "%s/Steam/steamapps/libraryfolders.vdf", support[i]);
-        G_ParseSteamKeyValuesForPaths(buf);
-
-#if 0
-        // Duke Nukem 3D: Atomic Edition (GOG.com)
-        Bsnprintf(buf, sizeof(buf), "%s/Duke Nukem 3D.app/Contents/Resources/Duke Nukem 3D.boxer/C.harddisk", applications[i]);
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
-#endif
+        Paths_ParseSteamLibraryVDF(buf, Blood_AddSteamPaths);
     }
 
     for (i = 0; i < 2; i++)
@@ -553,39 +352,45 @@ void G_AddSearchPaths(void)
     DWORD bufsize;
     bool found = false;
 
-    // Blood: One Unit Whole Blood (Steam)
+    // Blood: One Unit Whole Blood - Steam
     bufsize = sizeof(buf);
-    if (!found && G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 299030)", "InstallLocation", buf, &bufsize))
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 299030)", "InstallLocation", buf, &bufsize))
     {
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        addsearchpath(buf);
         found = true;
     }
 
-    // Blood: One Unit Whole Blood (GOG.com)
+    // Blood: One Unit Whole Blood - GOG.com
     bufsize = sizeof(buf);
-    if (!found && G_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGONEUNITONEBLOOD", "PATH", buf, &bufsize))
+    if (!found && Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGONEUNITONEBLOOD", "PATH", buf, &bufsize))
     {
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        addsearchpath(buf);
         found = true;
     }
 
-    // Blood: Fresh Supply (Steam)
+    // Blood: Fresh Supply - Steam
     bufsize = sizeof(buf);
-    if (!found && G_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1010750)", "InstallLocation", buf, &bufsize))
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1010750)", "InstallLocation", buf, &bufsize))
     {
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
-        strncat(buf, R"(\addons\Cryptic Passage)", 23);
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        addsearchpath(buf);
+        strncpy(suffix, "/addons/Cryptic Passage", remaining);
+        addsearchpath(buf);
         found = true;
     }
 
-    // Blood: Fresh Supply (GOG.com)
+    // Blood: Fresh Supply - GOG.com
     bufsize = sizeof(buf);
-    if (!found && G_ReadRegistryValue(R"(SOFTWARE\Wow6432Node\GOG.com\Games\1374469660)", "path", buf, &bufsize))
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1374469660)", "path", buf, &bufsize))
     {
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
-        strncat(buf, R"(\addons\Cryptic Passage)", 23);
-        addsearchpath_user(buf, SEARCHPATH_REMOVE);
+        char * const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        addsearchpath(buf);
+        strncpy(suffix, "/addons/Cryptic Passage", remaining);
+        addsearchpath(buf);
         found = true;
     }
 #endif
@@ -598,8 +403,6 @@ void G_CleanupSearchPaths(void)
 }
 
 //////////
-
-struct strllist *CommandPaths, *CommandGrps;
 
 void G_AddGroup(const char *buffer)
 {

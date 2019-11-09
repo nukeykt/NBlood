@@ -32,7 +32,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MULTIVOC_H_
 
 #include "compat.h"
-#include "drivers.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,24 +67,11 @@ enum MV_Errors
 };
 
 extern void (*MV_Printf)(const char *fmt, ...);
-extern int MV_Locked;
-
-static inline void MV_Lock(void)
-{
-    if (!MV_Locked++)
-        SoundDriver_PCM_Lock();
-}
-
-static inline void MV_Unlock(void)
-{
-    if (!--MV_Locked)
-        SoundDriver_PCM_Unlock();
-    else if (MV_Locked < 0)
-        MV_Printf("MV_Unlock(): lockdepth < 0!\n");
-}
 
 const char *MV_ErrorString(int ErrorNumber);
 
+void MV_Lock();
+void MV_Unlock();
 int  MV_VoicePlaying(int handle);
 int  MV_KillAllVoices(void);
 int  MV_Kill(int handle);
@@ -133,6 +119,13 @@ int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *init
 int  MV_Shutdown(void);
 void MV_HookMusicRoutine(void (*callback)(void));
 void MV_UnhookMusicRoutine(void);
+
+struct MV_MusicRoutineBuffer
+{
+    char * buffer;
+    int32_t size;
+};
+struct MV_MusicRoutineBuffer MV_GetMusicRoutineBuffer(void);
 
 static inline void MV_SetPrintf(void (*function)(const char *, ...)) { if (function) MV_Printf = function; }
 

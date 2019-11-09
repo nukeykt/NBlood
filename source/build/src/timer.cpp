@@ -13,6 +13,11 @@
 #endif
 
 #include <chrono>
+#include <atomic>
+
+#if (defined RENDERTYPESDL) && (SDL_MAJOR_VERSION >= 2)
+#define HAVE_TIMER_SDL
+#endif
 
 using namespace std;
 using namespace chrono;
@@ -25,8 +30,35 @@ static time_point<steady_clock> clockLastSampleTime;
 static int clockTicksPerSecond;
 static void(*usertimercallback)(void) = nullptr;
 
-#ifdef EDUKE32_PLATFORM_INTEL
+#ifdef ZPL_HAVE_RDTSC
 static uint64_t tsc_freq;
+
+static FORCE_INLINE uint64_t timerSampleRDTSC()
+{
+    // We need to serialize the instruction stream before executing RDTSC.
+#if defined __SSE2__
+    // On AMD, MFENCE serializes and LFENCE does not. On Intel, LFENCE serializes and MFENCE does not.
+    // https://stackoverflow.com/a/50332912
+    // MFENCE before LFENCE is preferable since we're using both.
+    // https://www.felixcloutier.com/x86/rdtsc
+    // https://hadibrais.wordpress.com/2018/05/14/the-significance-of-the-x86-lfence-instruction/
+    _mm_mfence();
+    _mm_lfence();
+
+    // Fallbacks on x86 without SSE2 use a LOCK prefix.
+    // The alternative is the CPUID instruction, but benchmarking would be desirable to pick the best choice.
+#elif defined __GNUC__
+    __sync_synchronize();
+#else
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+#endif
+
+    uint64_t const result = zpl_rdtsc();
+
+    // Some sources suggest serialization is also necessary or desirable after RDTSC. For now, don't.
+
+    return result;
+}
 #endif
 
 int timerGetClockRate(void) { return clockTicksPerSecond; }
@@ -69,33 +101,30 @@ uint64_t timerGetTicksU64(void)
 {
     switch (sys_timer)
     {
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
         case TIMER_SDL:
             return SDL_GetPerformanceCounter();
-#elif !defined _WIN32 && !defined RENDERTYPESDL
+#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // RENDERTYPESDL
+#endif // HAVE_TIMER_SDL
         case TIMER_CHRONO:
             return high_resolution_clock::now().time_since_epoch().count() * high_resolution_clock::period::num;
 #ifdef _WIN32
-#if !defined RENDERTYPESDL
+#if !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // !RENDERTYPESDL
+#endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
             LARGE_INTEGER li;
             QueryPerformanceCounter(&li);
             return li.QuadPart;
 #endif // _WIN32
-#ifndef ZPL_CPU_MIPS
+#ifdef ZPL_HAVE_RDTSC
         case TIMER_RDTSC:
-#ifdef EDUKE32_PLATFORM_INTEL
-            zpl_mfence();
-#endif
-            return zpl_rdtsc();
+            return timerSampleRDTSC();
 #endif
     }
 }
@@ -104,7 +133,7 @@ uint64_t timerGetFreqU64(void)
 {
     switch (sys_timer)
     {
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
         case TIMER_SDL:
@@ -114,17 +143,17 @@ uint64_t timerGetFreqU64(void)
                 freq = SDL_GetPerformanceFrequency();
             return freq;
         }
-#elif !defined _WIN32 && !defined RENDERTYPESDL
+#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // RENDERTYPESDL
+#endif // HAVE_TIMER_SDL
         case TIMER_CHRONO:
             return high_resolution_clock::period::den;
 #ifdef _WIN32
-#if !defined RENDERTYPESDL
+#if !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
-#endif // !RENDERTYPESDL
+#endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
         {
             static LARGE_INTEGER li;
@@ -133,7 +162,7 @@ uint64_t timerGetFreqU64(void)
             return li.QuadPart;
         }
 #endif // _WIN32
-#ifndef ZPL_CPU_MIPS
+#ifdef ZPL_HAVE_RDTSC
         case TIMER_RDTSC:
             return tsc_freq;
 #endif
@@ -152,12 +181,12 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
     if (sys_timer == TIMER_QPC)
         sys_timer = TIMER_AUTO;
 #endif
-#ifndef RENDERTYPESDL
+#ifndef HAVE_TIMER_SDL
     if (sys_timer == TIMER_SDL)
         sys_timer = TIMER_AUTO;
 #endif
 
-#if defined EDUKE32_PLATFORM_INTEL || defined ZPL_CPU_MIPS
+#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
     if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
     {
         sys_timer = TIMER_AUTO;
@@ -184,38 +213,29 @@ int timerInit(int const tickspersecond)
 #ifdef _WIN32
                                                 "   1: QueryPerformanceCounter\n"
 #endif
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
                                                 "   2: SDL timer\n"
 #endif
                                                 "   3: std::chrono\n"
-#ifndef ZPL_CPU_MIPS
-                                                "   4: RDTSC instruction\n",
+#ifdef ZPL_HAVE_RDTSC
+                                                "   4: RDTSC instruction\n"
 #endif
-                                                (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
+                                                , (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
 
         OSD_RegisterCvar(&sys_timer_cvar, osdcmd_sys_timer);
 
-#ifdef RENDERTYPESDL
+#ifdef HAVE_TIMER_SDL
         SDL_InitSubSystem(SDL_INIT_TIMER);
 #endif
 
-#ifndef ZPL_CPU_MIPS
+#ifdef ZPL_HAVE_RDTSC
         if (tsc_freq == 0)
         {
             double const calibrationEndTime = timerGetHiTicks() + 100.0;
-#ifdef EDUKE32_PLATFORM_INTEL
-            zpl_mfence();
-#endif
-            auto const time1 = zpl_rdtsc();
+            auto const time1 = timerSampleRDTSC();
             do { } while (timerGetHiTicks() < calibrationEndTime);
-#ifdef EDUKE32_PLATFORM_INTEL
-            zpl_mfence();
-#endif
-            auto const time2 = zpl_rdtsc();
-#ifdef EDUKE32_PLATFORM_INTEL
-            zpl_mfence();
-#endif
-            auto const time3 = zpl_rdtsc() - time2;
+            auto const time2 = timerSampleRDTSC();
+            auto const time3 = timerSampleRDTSC() - time2;
 
             tsc_freq = (time2 - time1 - time3) * 10;
         }
