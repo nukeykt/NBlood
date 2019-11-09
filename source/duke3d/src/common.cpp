@@ -993,11 +993,11 @@ success:
     return fp;
 }
 
+#endif
+
 void Duke_CommonCleanup(void)
 {
     DO_FREE_AND_NULL(g_grpNamePtr);
     DO_FREE_AND_NULL(g_scriptNamePtr);
     DO_FREE_AND_NULL(g_rtsNamePtr);
 }
-
-#endif
