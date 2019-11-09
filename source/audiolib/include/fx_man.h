@@ -65,9 +65,9 @@ int FX_GetDevice(void);
 
 
 int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
-                      int vol, int left, int right, int priority, float volume, uint32_t callbackval);
+                      int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval);
 int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-                  int distance, int priority, float volume, uint32_t callbackval);
+                  int distance, int priority, fix16_t volume, uint32_t callbackval);
 
 
 int FX_SetPrintf(void(*function)(const char *, ...));

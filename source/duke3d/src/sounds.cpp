@@ -287,7 +287,7 @@ static int S_PlayMusic(const char *fn)
     else
     {
         int MyMusicVoice = FX_Play(MyMusicPtr, MusicLen, 0, 0, 0, ud.config.MusicVolume, ud.config.MusicVolume, ud.config.MusicVolume,
-                                   FX_MUSIC_PRIORITY, 1.f, MUSIC_ID);
+                                   FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
 
         if (MyMusicVoice <= FX_Ok)
         {
