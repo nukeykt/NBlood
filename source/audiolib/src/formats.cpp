@@ -460,8 +460,6 @@ int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     voice->LoopEnd     = nullptr;
     voice->LoopSize    = loopend - loopstart + 1;
 
-    voice->volume      = volume;
-
     MV_SetVoiceVolume(voice, vol, left, right, volume);
     MV_PlayVoice(voice);
 
