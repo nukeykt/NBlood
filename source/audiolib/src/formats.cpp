@@ -325,7 +325,7 @@ static playbackstatus MV_GetNextRAWBlock(VoiceNode *voice)
 }
 
 int MV_PlayWAV3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance,
-                     int priority, float volume, intptr_t callbackval)
+                     int priority, fix16_t volume, intptr_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -346,7 +346,7 @@ int MV_PlayWAV3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int a
 }
 
 int MV_PlayWAV(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
-                   int left, int right, int priority, float volume, intptr_t callbackval)
+                   int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -427,7 +427,7 @@ int MV_PlayWAV(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 }
 
 int MV_PlayVOC3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle,
-                     int distance, int priority, float volume, intptr_t callbackval)
+                     int distance, int priority, fix16_t volume, intptr_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -448,7 +448,7 @@ int MV_PlayVOC3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int a
 }
 
 int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
-                   int left, int right, int priority, float volume, intptr_t callbackval)
+                   int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
@@ -490,7 +490,7 @@ int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 }
 
 int MV_PlayRAW(char *ptr, uint32_t length, int rate, char *loopstart, char *loopend, int pitchoffset, int vol,
-                   int left, int right, int priority, float volume, intptr_t callbackval)
+                   int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     if (!MV_Installed)
         return MV_Error;
