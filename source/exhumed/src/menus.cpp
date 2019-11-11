@@ -198,7 +198,7 @@ static void Menu_DrawTopBarCaption(const char *caption, const vec2_t origin)
 
 
 int32_t menu_slidebarz = 65536, menu_slidebarmargin = 65536, menu_slidecursorz = 65536;
-int32_t menu_scrollbartilenum = -1, menu_scrollbarz = 65536, menu_scrollcursorz = 65536;
+int32_t menu_scrollbartilenum = 4167, menu_scrollbarz = 65536, menu_scrollcursorz = 65536;
 
 int32_t SLIDEBAR = 4444; // TODO:
 
@@ -4920,14 +4920,14 @@ static void Menu_RunScrollbar(Menu_t *cm, MenuMenuFormat_t const * const format,
             if (tilesiz[scrollTile].y > 0)
             {
                 for (int32_t y = scrollregionstart + ((tilesiz[scrollTileTop].y == 0)*tilesiz[scrollTile].y*menu_scrollbarz); y < scrollregionend; y += tilesiz[scrollTile].y*menu_scrollbarz)
-                    rotatesprite(scrollx, y - (menu_scrollbarz>>1), menu_scrollbarz, 0, scrollTile, 0, 0, 26, 0, 0, xdim-1, mulscale16(scrollregionend, ydim*200)-1);
+                    rotatesprite(scrollx, y - (menu_scrollbarz>>1), menu_scrollbarz, 0, scrollTile, 0, 0, 26, 0, 0, xdim-1, ydim_from_200_16(scrollregionend));
             }
             rotatesprite_fs(scrollx, scrollregionend - (menu_scrollbarz>>1), menu_scrollbarz, 0, scrollTileBottom, 0, 0, 26);
 
             if (tilesiz[scrollTile].y > 0)
             {
                 for (int32_t y = scrollregionstart; y < scrollregionend; y += tilesiz[scrollTile].y*menu_scrollbarz)
-                    rotatesprite(scrollx, y, menu_scrollbarz, 0, scrollTile, 0, 0, 26, 0, 0, xdim-1, mulscale16(scrollregionend, ydim*200)-1);
+                    rotatesprite(scrollx, y, menu_scrollbarz, 0, scrollTile, 0, 0, 26, 0, 0, xdim-1, ydim_from_200_16(scrollregionend));
             }
             rotatesprite_fs(scrollx, scrolly, menu_scrollbarz, 0, scrollTileTop, 0, 0, 26);
             rotatesprite_fs(scrollx, scrollregionend, menu_scrollbarz, 0, scrollTileBottom, 0, 0, 26);
@@ -5808,12 +5808,9 @@ static void Menu_Run_MouseReturn(Menu_t *cm, const vec2_t origin)
     if (cm->menuID == MENU_MAIN)
         return;
 
-    uint32_t const posx = tilesiz[4165].y * SELECTDIR_z;
-
-    rotatesprite_(origin.x + posx, 0, SELECTDIR_z, 512, 4165,
+    rotatesprite_(origin.x, 0, SELECTDIR_z, 0, 4165,
                   Menu_RunInput_MouseReturn_status ? 4 - (sintable[((int32_t) totalclock << 4) & 2047] >> 11) : 6, 0,
-                  2 | 8 | 16 | RS_ALIGN_L, MOUSEALPHA, 0, xdim_from_320_16(origin.x + x_widescreen_left()), 0,
-                  xdim_from_320_16(origin.x + x_widescreen_left() + ((posx>>17)<<16)), ydim - 1);
+                  2 | 8 | 16 | RS_ALIGN_L, MOUSEALPHA, 0, 0, 0, xdim - 1, ydim - 1);
 }
 #endif
 
@@ -5832,7 +5829,7 @@ static int32_t Menu_RunInput_MouseReturn(void)
 
     const int32_t MouseReturnRegionX = x_widescreen_left();
 
-    vec2_t backbuttonbound = { ((tilesiz[4165].y * SELECTDIR_z)>>17)<<16, tilesiz[4165].x * SELECTDIR_z };
+    vec2_t backbuttonbound = { tilesiz[4165].x * SELECTDIR_z, tilesiz[4165].y * SELECTDIR_z };
 
     if (!Menu_MouseOutsideBounds(&m_mousepos, MouseReturnRegionX, 0, backbuttonbound.x, backbuttonbound.y))
     {
