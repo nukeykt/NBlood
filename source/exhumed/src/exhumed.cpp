@@ -2106,6 +2106,8 @@ static void GameMove(void)
     // YELLOW SECTION
     MoveThings();
 
+    obobangle = bobangle;
+
     if (totalvel[nLocalPlayer] == 0)
     {
         bobangle = 0;

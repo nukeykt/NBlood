@@ -86,10 +86,10 @@ extern short nPlayerScore[];
 
 extern short nPlayerClip[];
 
-extern short bobangle;
+extern short obobangle, bobangle;
 
 extern int totalvel[];
-extern short eyelevel[];
+extern int16_t eyelevel[], oeyelevel[];
 
 extern short nNetStartSprite[kMaxPlayers];
 extern short nNetStartSprites;
