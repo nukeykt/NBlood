@@ -1472,7 +1472,7 @@ void menu_GameSave(int nSaveSlot)
 void menu_ResetZoom()
 {
     zoomsize = 0;
-    PlayLocalSound(StaticSound[kSound62], 0);
+    PlayLocalSound(StaticSound[kSound31], 0);
 }
 
 int menu_MenuOld(int nVal)

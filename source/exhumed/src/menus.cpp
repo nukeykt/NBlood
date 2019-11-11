@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "screentext.h"
 #include "names.h"
 #include "menu.h"
+#include "sound.h"
 // #include "savegame.h"
 #include "xxhash.h"
 
@@ -3074,6 +3075,7 @@ static void Menu_PreInput(MenuEntry_t *entry)
             *column->column[M_KEYBOARDKEYS.currentColumn] = 0xff;
             CONFIG_MapKey(M_KEYBOARDKEYS.currentEntry, KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0], key[0], KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1], key[1]);
             // S_PlaySound(KICK_HIT);
+            PlayLocalSound(StaticSound[kSound35], 0);
             KB_ClearKeyDown(sc_Delete);
         }
         break;
@@ -3133,6 +3135,7 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
             key[1] = KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1];
 
             // S_PlaySound(PISTOL_BODYHIT);
+            PlayLocalSound(StaticSound[kSound33], 0);
 
             *column->column[M_KEYBOARDKEYS.currentColumn] = KB_GetLastScanCode();
 
@@ -5178,6 +5181,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
                                 // if (g_player[myconnectindex].ps->gm&MODE_MENU) // for skill selection
                                 //     S_PlaySound(PISTOL_BODYHIT);
+                                PlayLocalSound(StaticSound[kSound33], 0);
 
                                 m_mousecaught = 1;
                             }
@@ -5222,6 +5226,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 Menu_RunInput_EntryOption_Activate(entry, object);
 
                                 // S_PlaySound(PISTOL_BODYHIT);
+                                PlayLocalSound(StaticSound[kSound33], 0);
 
                                 m_mousecaught = 1;
                             }
@@ -5273,6 +5278,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     Menu_RunInput_EntryCustom2Col_Activate(entry);
 
                                     // S_PlaySound(PISTOL_BODYHIT);
+                                    PlayLocalSound(StaticSound[kSound33], 0);
 
                                     m_mousecaught = 1;
                                 }
@@ -5296,6 +5302,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     Menu_RunInput_EntryCustom2Col_Activate(entry);
 
                                     // S_PlaySound(PISTOL_BODYHIT);
+                                    PlayLocalSound(StaticSound[kSound33], 0);
 
                                     m_mousecaught = 1;
                                 }
@@ -5649,6 +5656,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     Menu_RunInput_EntryString_Submit(/*entry, */object);
 
                                     // S_PlaySound(PISTOL_BODYHIT);
+                                    PlayLocalSound(StaticSound[kSound33], 0);
 
                                     m_mousecaught = 1;
                                 }
@@ -5663,6 +5671,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                     Menu_RunInput_EntryString_Activate(entry);
 
                                     // S_PlaySound(PISTOL_BODYHIT);
+                                    PlayLocalSound(StaticSound[kSound33], 0);
 
                                     m_mousecaught = 1;
                                 }
@@ -5774,9 +5783,8 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
                     object->options->currentEntry = e;
 
                     if (!Menu_RunInput_EntryOptionList_Activate(entry, object))
-                    {
-                    }
                     //    S_PlaySound(PISTOL_BODYHIT);
+                        PlayLocalSound(StaticSound[kSound33], 0);
 
                     m_mousecaught = 1;
                 }
@@ -6657,6 +6665,7 @@ static void Menu_RunInput(Menu_t *cm)
                 m_mousecaught = 1;
 
                 // S_PlaySound(EXITMENUSOUND);
+                PlayLocalSound(StaticSound[kSound31], 0);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -6665,6 +6674,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_PanelUpClear();
 
                 // S_PlaySound(KICK_HIT);
+                PlayLocalSound(StaticSound[kSound35], 0);
                 Menu_AnimateChange(panel->previousID, panel->previousAnimation);
             }
             else if (I_PanelDown() || Menu_RunInput_MouseAdvance())
@@ -6673,6 +6683,7 @@ static void Menu_RunInput(Menu_t *cm)
                 m_mousecaught = 1;
 
                 // S_PlaySound(KICK_HIT);
+                PlayLocalSound(StaticSound[kSound35], 0);
                 Menu_AnimateChange(panel->nextID, panel->nextAnimation);
             }
             break;
@@ -6688,6 +6699,7 @@ static void Menu_RunInput(Menu_t *cm)
                 m_mousecaught = 1;
 
                 // S_PlaySound(EXITMENUSOUND);
+                PlayLocalSound(StaticSound[kSound31], 0);
 
                 object->input = NULL;
 
@@ -6862,6 +6874,7 @@ static void Menu_RunInput(Menu_t *cm)
                 m_mousecaught = 1;
 
                 // S_PlaySound(EXITMENUSOUND);
+                PlayLocalSound(StaticSound[kSound31], 0);
 
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
             }
@@ -6873,6 +6886,7 @@ static void Menu_RunInput(Menu_t *cm)
                 I_ClearAllInput();
 
                 // S_PlaySound(EXITMENUSOUND);
+                PlayLocalSound(StaticSound[kSound31], 0);
 
                 Menu_AnimateChange(message->linkID, message->animation);
             }
@@ -6892,6 +6906,7 @@ static void Menu_RunInput(Menu_t *cm)
                 Menu_AnimateChange(cm->parentID, cm->parentAnimation);
 
                 // S_PlaySound(EXITMENUSOUND);
+                PlayLocalSound(StaticSound[kSound31], 0);
             }
 
             if (I_AdvanceTrigger() || KB_KeyPressed(sc_Y) || Menu_RunInput_MouseAdvance())
@@ -6907,6 +6922,7 @@ static void Menu_RunInput(Menu_t *cm)
                 Menu_AnimateChange(verify->linkID, verify->animation);
 
                 // S_PlaySound(PISTOL_BODYHIT);
+                PlayLocalSound(StaticSound[kSound33], 0);
             }
 
             Menu_PreInput(NULL);
@@ -6940,6 +6956,7 @@ static void Menu_RunInput(Menu_t *cm)
 
                             // if (g_player[myconnectindex].ps->gm&MODE_MENU) // for skill selection
                             //     S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                         }
                         break;
                     case Option:
@@ -6956,6 +6973,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryOption_Activate(currentry, object);
 
                             // S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                         }
                         else if (I_MenuRight())
                         {
@@ -6964,6 +6982,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryOption_Movement(currentry, object, MM_Right);
 
                             // S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                         }
                         else if (I_MenuLeft())
                         {
@@ -6972,6 +6991,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryOption_Movement(currentry, object, MM_Left);
 
                             // S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                         }
                     }
                         break;
@@ -6984,6 +7004,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_Menu_Movement(menu, MM_Swap);
 
                             // S_PlaySound(KICK_HIT);
+                            PlayLocalSound(StaticSound[kSound35], 0);
                         }
 
                         if (currentry->flags & MEF_Disabled)
@@ -6996,6 +7017,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryCustom2Col_Activate(currentry);
 
                             // S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                         }
                         break;
                     case RangeInt32:
@@ -7012,6 +7034,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryRangeInt32_Movement(currentry, object, MM_Left);
 
                             // S_PlaySound(KICK_HIT);
+                            PlayLocalSound(StaticSound[kSound35], 0);
                         }
                         else if (I_SliderRight())
                         {
@@ -7020,6 +7043,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryRangeInt32_Movement(currentry, object, MM_Right);
 
                             // S_PlaySound(KICK_HIT);
+                            PlayLocalSound(StaticSound[kSound35], 0);
                         }
                         break;
                     }
@@ -7037,6 +7061,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryRangeFloat_Movement(currentry, object, MM_Left);
 
                             // S_PlaySound(KICK_HIT);
+                            PlayLocalSound(StaticSound[kSound35], 0);
                         }
                         else if (I_SliderRight())
                         {
@@ -7045,6 +7070,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryRangeFloat_Movement(currentry, object, MM_Right);
 
                             // S_PlaySound(KICK_HIT);
+                            PlayLocalSound(StaticSound[kSound35], 0);
                         }
                         break;
                     }
@@ -7088,6 +7114,7 @@ static void Menu_RunInput(Menu_t *cm)
                             Menu_RunInput_EntryString_Activate(currentry);
 
                             // S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                         }
 
                         break;
@@ -7100,8 +7127,9 @@ static void Menu_RunInput(Menu_t *cm)
                     I_EscapeTriggerClear();
                     m_mousecaught = 1;
 
-                    // if (cm->parentID != MENU_CLOSE || (g_player[myconnectindex].ps->gm & MODE_GAME))
+                    if (cm->parentID != MENU_CLOSE)
                     //     S_PlaySound(EXITMENUSOUND);
+                        PlayLocalSound(StaticSound[kSound31], 0);
 
                     Menu_AnimateChange(cm->parentID, cm->parentAnimation);
                 }
@@ -7110,6 +7138,7 @@ static void Menu_RunInput(Menu_t *cm)
                     KB_ClearKeyDown(sc_Home);
 
                     // S_PlaySound(KICK_HIT);
+                    PlayLocalSound(StaticSound[kSound35], 0);
 
                     currentry = Menu_RunInput_Menu_Movement(menu, MM_Home);
                 }
@@ -7118,6 +7147,7 @@ static void Menu_RunInput(Menu_t *cm)
                     KB_ClearKeyDown(sc_End);
 
                     // S_PlaySound(KICK_HIT);
+                    PlayLocalSound(StaticSound[kSound35], 0);
 
                     currentry = Menu_RunInput_Menu_Movement(menu, MM_End);
                 }
@@ -7126,6 +7156,7 @@ static void Menu_RunInput(Menu_t *cm)
                     I_MenuUpClear();
 
                     // S_PlaySound(KICK_HIT);
+                    PlayLocalSound(StaticSound[kSound35], 0);
 
                     currentry = Menu_RunInput_Menu_Movement(menu, MM_Up);
                 }
@@ -7134,6 +7165,7 @@ static void Menu_RunInput(Menu_t *cm)
                     I_MenuDownClear();
 
                     // S_PlaySound(KICK_HIT);
+                    PlayLocalSound(StaticSound[kSound35], 0);
 
                     currentry = Menu_RunInput_Menu_Movement(menu, MM_Down);
                 }
@@ -7156,12 +7188,14 @@ static void Menu_RunInput(Menu_t *cm)
                         Menu_RunInput_EntryString_Cancel(/*currentry, */object);
 
                         // S_PlaySound(EXITMENUSOUND);
+                        PlayLocalSound(StaticSound[kSound31], 0);
                     }
                     else if (hitstate == 1)
                     {
                         Menu_RunInput_EntryString_Submit(/*currentry, */object);
 
                         // S_PlaySound(PISTOL_BODYHIT);
+                        PlayLocalSound(StaticSound[kSound33], 0);
                     }
                 }
             }
@@ -7177,6 +7211,7 @@ static void Menu_RunInput(Menu_t *cm)
                         m_mousecaught = 1;
 
                         // S_PlaySound(EXITMENUSOUND);
+                        PlayLocalSound(StaticSound[kSound31], 0);
 
                         object->options->currentEntry = -1;
                     }
@@ -7185,15 +7220,15 @@ static void Menu_RunInput(Menu_t *cm)
                         I_AdvanceTriggerClear();
 
                         if (!Menu_RunInput_EntryOptionList_Activate(currentry, object))
-                        {
-                        }
                             // S_PlaySound(PISTOL_BODYHIT);
+                            PlayLocalSound(StaticSound[kSound33], 0);
                     }
                     else if (KB_KeyPressed(sc_Home))
                     {
                         KB_ClearKeyDown(sc_Home);
 
                         // S_PlaySound(KICK_HIT);
+                        PlayLocalSound(StaticSound[kSound35], 0);
 
                         Menu_RunInput_EntryOptionList_Movement(object, MM_Home);
                     }
@@ -7202,6 +7237,7 @@ static void Menu_RunInput(Menu_t *cm)
                         KB_ClearKeyDown(sc_End);
 
                         // S_PlaySound(KICK_HIT);
+                        PlayLocalSound(StaticSound[kSound35], 0);
 
                         Menu_RunInput_EntryOptionList_Movement(object, MM_End);
                     }
@@ -7210,6 +7246,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_MenuUpClear();
 
                         // S_PlaySound(KICK_HIT);
+                        PlayLocalSound(StaticSound[kSound35], 0);
 
                         Menu_RunInput_EntryOptionList_Movement(object, MM_Up);
                     }
@@ -7218,6 +7255,7 @@ static void Menu_RunInput(Menu_t *cm)
                         I_MenuDownClear();
 
                         // S_PlaySound(KICK_HIT);
+                        PlayLocalSound(StaticSound[kSound35], 0);
 
                         Menu_RunInput_EntryOptionList_Movement(object, MM_Down);
                     }
@@ -7230,6 +7268,7 @@ static void Menu_RunInput(Menu_t *cm)
                         m_mousecaught = 1;
 
                         // S_PlaySound(EXITMENUSOUND);
+                        PlayLocalSound(StaticSound[kSound31], 0);
 
                         ((MenuCustom2Col_t*)currentry->entry)->screenOpen = 0;
                     }
