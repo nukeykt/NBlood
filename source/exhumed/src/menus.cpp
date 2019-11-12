@@ -377,7 +377,7 @@ static MenuEntry_t *MEL_MAIN[] = {
     &ME_MAIN_NEWGAME,
     &ME_MAIN_LOADGAME,
     &ME_MAIN_OPTIONS,
-    &ME_MAIN_HELP,
+//    &ME_MAIN_HELP,
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_MAIN_CREDITS,
 #endif
@@ -393,7 +393,7 @@ static MenuEntry_t *MEL_MAIN_INGAME[] = {
     &ME_MAIN_SAVEGAME,
     &ME_MAIN_LOADGAME,
     &ME_MAIN_OPTIONS,
-    &ME_MAIN_HELP,
+//    &ME_MAIN_HELP,
     &ME_MAIN_QUITTOTITLE,
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_MAIN_QUITGAME,
@@ -2079,6 +2079,9 @@ void Menu_Init(void)
 
     for (i = 0; i < ARRAY_SIZE(MEL_MAIN); i++)
         MEL_MAIN[i]->flags |= MEF_MainBG;
+
+    for (i = 0; i < ARRAY_SIZE(MEL_MAIN_INGAME); i++)
+        MEL_MAIN_INGAME[i]->flags |= MEF_MainBG;
 
     MEO_MAIN_NEWGAME.animation = MA_None;
 }
@@ -4252,8 +4255,8 @@ static Menu_t* Menu_Find(MenuID_t query)
 
 static Menu_t* Menu_FindFiltered(MenuID_t query)
 {
-    // if ((g_player[myconnectindex].ps->gm&MODE_GAME) && query == MENU_MAIN)
-    //     query = MENU_MAIN_INGAME;
+    if (g_menuIngame && query == MENU_MAIN)
+        query = MENU_MAIN_INGAME;
 
     return Menu_Find(query);
 }
