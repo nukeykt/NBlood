@@ -2021,13 +2021,19 @@ RECHECK:
         if (g_menuReturn > -1)
         {
             if (demo_handle != buildvfs_kfd_invalid)
+            {
                 kclose(demo_handle);
+                demo_handle = buildvfs_kfd_invalid;
+            }
             return g_menuReturn;
         }
         HandleAsync();
     }
     if (demo_handle != buildvfs_kfd_invalid)
+    {
         kclose(demo_handle);
+        demo_handle = buildvfs_kfd_invalid;
+    }
     if (g_menuActive)
         goto RECHECK;
     // Menu_Close(0);
