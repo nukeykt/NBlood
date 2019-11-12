@@ -1906,6 +1906,7 @@ int menu_Menu(int ingame)
 #if 0
     return menu_MenuOld(ingame);
 #endif
+    g_menuIngame = ingame;
     Menu_Open(0);
     Menu_Change(MENU_MAIN);
     menu_DoPlasmaTile();
@@ -1983,12 +1984,29 @@ RECHECK:
             tclocks += 4;
             menu_DoPlasmaTile();
         }
-        if (founddemo && !g_menuActive && I_EscapeTrigger())
+        if (founddemo)
         {
-            I_EscapeTriggerClear();
-            Menu_Open(0);
-            Menu_Change(MENU_MAIN);
+            if (!g_menuActive && I_EscapeTrigger())
+            {
+                I_EscapeTriggerClear();
+                Menu_Open(0);
+                Menu_Change(MENU_MAIN);
+            }
         }
+        else
+        {
+            if (!g_menuActive)
+            {
+                if (!ingame)
+                {
+                    Menu_Open(0);
+                    Menu_Change(MENU_MAIN);
+                }
+                else
+                    break;
+            }
+        }
+        
         if (G_FPSLimit())
         {
             if (founddemo)

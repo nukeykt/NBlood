@@ -1659,7 +1659,7 @@ static MenuID_t g_previousMenu;
         m.numEntries = ARRAY_SIZE(el);\
     } while (0)
 
-int32_t g_menuActive, g_menuReturn;
+int32_t g_menuActive, g_menuReturn, g_menuIngame;
 
 static int32_t g_zoomStartClock;
 
@@ -2079,6 +2079,8 @@ void Menu_Init(void)
 
     for (i = 0; i < ARRAY_SIZE(MEL_MAIN); i++)
         MEL_MAIN[i]->flags |= MEF_MainBG;
+
+    MEO_MAIN_NEWGAME.animation = MA_None;
 }
 
 static void Menu_Run(Menu_t *cm, vec2_t origin);
@@ -3271,6 +3273,15 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 {
     switch (g_currentMenu)
     {
+    case MENU_MAIN:
+        if (entry == &ME_MAIN_NEWGAME)
+        {
+            SavePosition = 0;
+            StopAllSounds();
+            g_menuReturn = 1;
+            Menu_Change(MENU_CLOSE);
+        }
+        break;
     // case MENU_EPISODE:
     //     if (entry != &ME_EPISODE_USERMAP)
     //     {
@@ -3962,6 +3973,7 @@ static void Menu_Verify(int32_t input)
 
     case MENU_QUIT:
     case MENU_QUIT_INGAME:
+        g_menuReturn = 0;
         // TODO:
         // if (input)
         //     G_GameQuit();
@@ -4767,8 +4779,13 @@ void Menu_Close(uint8_t playerID)
     //     G_UpdateScreenArea();
     //     S_PauseSounds(false);
     // }
+    if (g_menuActive)
+        I_ClearAllInput();
+
     g_menuActive = 0;
     mouseLockToWindow(1);
+    m_animation.start = 0;
+    m_animation.length = 0;
 }
 
 static int32_t x_widescreen_left(void)

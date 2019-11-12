@@ -53,6 +53,7 @@
 #include "lighting.h"
 #include "grpscan.h"
 #include "menus.h"
+#include "dinput.h"
 #include <string.h>
 #include <cstdio> // for printf
 #include <cstdlib>
@@ -2990,9 +2991,9 @@ LOOP3:
         }
         if (!bInDemo)
         {
-            if (BUTTON(gamefunc_Escape))
+            if (I_EscapeTrigger())
             {
-                CONTROL_ClearButton(gamefunc_Escape);
+                I_EscapeTriggerClear();
 // MENU2:
                 CONTROL_BindsEnabled = 0;
                 bInMove = kTrue;
