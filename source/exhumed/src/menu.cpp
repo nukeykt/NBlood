@@ -298,10 +298,10 @@ void menu_DoPlasmaTile()
     {
         tileCreate(kTile4092, kPlasmaWidth, kPlasmaHeight);
 
-        memset((void*)waloff[kTile4092], 96, kPlasmaWidth*kPlasmaHeight);
+        memset((void*)waloff[kTile4092], 255, kPlasmaWidth*kPlasmaHeight);
 
         waloff[kTile4093] = (intptr_t)plasmaBuffer;
-        memset(plasmaBuffer, 96, sizeof(plasmaBuffer));
+        memset(plasmaBuffer, 255, sizeof(plasmaBuffer));
 
         nSmokeLeft = 160 - tilesiz[nLogoTile].x / 2;
         nSmokeRight = nSmokeLeft + tilesiz[nLogoTile].x;
@@ -374,13 +374,13 @@ void menu_DoPlasmaTile()
         {
             uint8_t al = *r_edx;
 
-            if (al != 96)
+            if (al != 255)
             {
                 if (al > 158) {
                     *r_ebx = al - 1;
                 }
                 else {
-                    *r_ebx = 96;
+                    *r_ebx = 255;
                 }
             }
             else
@@ -390,56 +390,24 @@ void menu_DoPlasmaTile()
                 }
                 else
                 {
-                    uint8_t al = *(r_edx + 1);
-                    uint8_t cl = *(r_edx - 1);
-
-                    if (al <= cl) {
-                        al = cl;
-                    }
-
-                    cl = al;
-                    al = *(r_edx - 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx + 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx + 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx + 80);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(r_edx - 79);
-                    if (cl > al) {
-                        al = cl;
-                    }
-
-                    cl = *(r_edx - 81);
-                    if (al <= cl) {
-                        al = cl;
-                    }
-
-                    cl = al;
+                    uint8_t al = 0;
+                    static int offset[] = {
+                        1, -1, -80, 80, -79, -81
+                    };
+                    for (int i = 0; i < ARRAY_SIZE(offset); i++)
+                        if (r_edx[offset[i]] != 255 && al < r_edx[offset[i]])
+                            al = r_edx[offset[i]];
 
                     if (al <= 159) {
-                        *r_ebx = 96;
+                        *r_ebx = 255;
                     }
                     else
                     {
                         if (!menu_RandomBit2()) {
-                            cl--;
+                            al--;
                         }
 
-                        *r_ebx = cl;
+                        *r_ebx = al;
                     }
                 }
             }
@@ -485,7 +453,7 @@ void menu_DoPlasmaTile()
             while (nSmokeOffset < nSmokeBottom)
             {
                 uint8_t al = *ptr3;
-                if (al != 255 && al != 96) {
+                if (al != 255) {
                     break;
                 }
                 
@@ -502,7 +470,7 @@ void menu_DoPlasmaTile()
             while (nSmokeOffset > nSmokeTop)
             {
                 uint8_t al = *ptr3;
-                if (al != 255 && al != 96) {
+                if (al != 255) {
                     break;
                 }
 
