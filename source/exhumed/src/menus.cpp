@@ -136,6 +136,7 @@ static void Menu_DrawBackground(const vec2_t origin)
 
 static void Menu_DrawTopBar(const vec2_t origin)
 {
+    rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (19<<16), MF_Redfont.cursorScale, 0,4171,16,0,10);
     // if ((G_GetLogoFlags() & LOGO_NOTITLEBAR) == 0)
     //     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (19<<16), MF_Redfont.cursorScale, 0,MENUBAR,16,0,10);
 }
@@ -4720,9 +4721,10 @@ void Menu_Open(uint8_t playerID)
     // g_player[playerID].ps->gm |= MODE_MENU;
 
     g_menuActive = 1;
-    g_menuReturn = 0;
+    g_menuReturn = -1;
 
     g_zoomStartClock = (int32_t)totalclock;
+    PlayLocalSound(StaticSound[kSound31], 0);
 
     mouseReadAbs(&m_prevmousepos, &g_mouseAbs);
     m_mouselastactivity = -M_MOUSETIMEOUT;
@@ -7292,11 +7294,11 @@ void M_DisplayMenus(void)
 
     // Net_GetPackets();
     // 
-    // if ((g_player[myconnectindex].ps->gm&MODE_MENU) == 0)
-    // {
-    //     walock[TILE_LOADSHOT] = 1;
-    //     return;
-    // }
+    if (!g_menuActive)
+    {
+        // walock[TILE_LOADSHOT] = 1;
+        return;
+    }
 
     if (!Menu_IsTextInput(m_currentMenu) && KB_KeyPressed(sc_Q))
         Menu_AnimateChange(MENU_QUIT, MA_Advance);

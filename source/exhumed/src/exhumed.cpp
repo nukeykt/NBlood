@@ -1872,7 +1872,7 @@ void WritePlaybackInputs()
 
 uint8_t ReadPlaybackInputs()
 {
-    assert(sizeof(PlayerInput) == 32);
+    //assert(sizeof(PlayerInput) == 32);
 
     if (fread(&moveframes, 1, sizeof(moveframes), vcrfp))
     {
@@ -2025,7 +2025,7 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
 
 ClockTicks tclocks, tclocks2;
 
-static void GameDisplay(void)
+void GameDisplay(void)
 {
     // End Section B
 
@@ -2061,11 +2061,9 @@ static void GameDisplay(void)
         DrawMap();
 #endif
     }
-
-    videoNextPage();
 }
 
-static void GameMove(void)
+void GameMove(void)
 {
     FixPalette();
 
@@ -2123,6 +2121,8 @@ static void GameMove(void)
     // loc_120E9:
     totalmoves++;
     moveframes--;
+    if (moveframes < 0)
+        moveframes = 0;
 }
 
 int32_t r_maxfps = 60;
@@ -2945,6 +2945,8 @@ LOOP3:
             if (G_FPSLimit())
             {
                 GameDisplay();
+
+                videoNextPage();
             }
         }
         else
@@ -2982,6 +2984,8 @@ LOOP3:
             if (G_FPSLimit())
             {
                 GameDisplay();
+
+                videoNextPage();
             }
         }
         if (!bInDemo)

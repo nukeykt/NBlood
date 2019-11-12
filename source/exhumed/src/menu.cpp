@@ -21,6 +21,8 @@
 #include "cd.h"
 #include "cdaudio.h"
 #include "menus.h"
+#include "ra.h"
+#include "dinput.h"
 #include <string>
 
 #include <assert.h>
@@ -1419,6 +1421,156 @@ void menu_GameLoad2(FILE *fp)
     CheckClip(nLocalPlayer);
 }
 
+#pragma pack(push, 1)
+struct demo_header
+{
+    uint8_t nMap;
+    int16_t nWeapons;
+    int16_t nCurrentWeapon;
+    int16_t clip;
+    int16_t items;
+
+    int16_t nHealth;
+    int16_t field_2;
+    int16_t nAction;
+    int16_t nSprite;
+    int16_t bIsMummified;
+    int16_t someNetVal;
+    int16_t invincibility;
+    int16_t nAir;
+    int16_t nSeq;
+    int16_t nMaskAmount;
+    uint16_t keys;
+    int16_t nMagic;
+    uint8_t item[8];
+    int16_t nAmmo[7]; // TODO - kMaxWeapons?
+    int16_t pad[2];
+    int16_t nCurrentWeapon2;
+    int16_t field_3FOUR;
+    int16_t bIsFiring;
+    int16_t field_38;
+    int16_t field_3A;
+    int16_t field_3C;
+    int16_t nRun;
+
+    int16_t nLives;
+};
+
+struct demo_input
+{
+    int32_t moveframes;
+
+    int32_t xVel;
+    int32_t yVel;
+    int16_t nAngle;
+    uint16_t buttons;
+    int16_t nTarget;
+    uint8_t horizon;
+    int8_t nItem;
+    int32_t h;
+    uint8_t i;
+    uint8_t pad[11];
+};
+#pragma pack(pop)
+
+EDUKE32_STATIC_ASSERT(sizeof(demo_header) == 75);
+EDUKE32_STATIC_ASSERT(sizeof(demo_input) == 36);
+
+#define kInputBufferSize 1024
+
+demo_input demo_playerinput[kInputBufferSize];
+
+buildvfs_kfd demo_handle = buildvfs_kfd_invalid;
+
+//int demo_playback = 0;
+int demo_input_cnt = 0;
+int demo_input_pos = 0;
+
+bool demo_GameLoad(const char *demo)
+{
+    auto handle = kopen4loadfrommod(demo, 0);
+    if (handle == buildvfs_kfd_invalid)
+    {
+        demo_handle = buildvfs_kfd_invalid;
+        return false;
+    }
+
+    demo_header header;
+   
+    kread(handle, &header, sizeof(demo_header));
+
+    GameStats.nMap = header.nMap;
+    GameStats.nWeapons = header.nWeapons;
+    GameStats.nCurrentWeapon = header.nCurrentWeapon;
+    GameStats.clip = header.clip;
+    GameStats.items = header.items;
+    GameStats.player.nHealth = header.nHealth;
+    GameStats.player.field_2 = header.field_2;
+    GameStats.player.nAction = header.nAction;
+    GameStats.player.nSprite = header.nSprite;
+    GameStats.player.bIsMummified = header.bIsMummified;
+    GameStats.player.someNetVal = header.someNetVal;
+    GameStats.player.invincibility = header.invincibility;
+    GameStats.player.nAir = header.nAir;
+    GameStats.player.nSeq = header.nSeq;
+    GameStats.player.nMaskAmount = header.nMaskAmount;
+    GameStats.player.keys = header.keys;
+    GameStats.player.nMagic = header.nMagic;
+    Bmemcpy(GameStats.player.items, header.item, sizeof(header.item));
+    Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+    Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
+    GameStats.player.nCurrentWeapon = header.nCurrentWeapon2;
+    GameStats.player.field_3FOUR = header.field_3FOUR;
+    GameStats.player.bIsFiring = header.bIsFiring;
+    GameStats.player.field_38 = header.field_38;
+    GameStats.player.field_3A = header.field_3A;
+    GameStats.player.field_3C = header.field_3C;
+    GameStats.player.nRun = header.nRun;
+    GameStats.nLives = header.nLives;
+
+    nPlayerWeapons[nLocalPlayer] = GameStats.nWeapons;
+
+    PlayerList[nLocalPlayer].nCurrentWeapon = GameStats.nCurrentWeapon;
+    nPlayerClip[nLocalPlayer] = GameStats.clip;
+
+    int nPistolBullets = PlayerList[nLocalPlayer].nAmmo[kWeaponPistol];
+    if (nPistolBullets >= 6) {
+        nPistolBullets = 6;
+    }
+
+    nPistolClip[nLocalPlayer] = nPistolBullets;
+
+    memcpy(&PlayerList[nLocalPlayer], &GameStats.player, sizeof(Player));
+
+    nPlayerItem[nLocalPlayer]  = GameStats.items;
+    nPlayerLives[nLocalPlayer] = GameStats.nLives;
+
+    SetPlayerItem(nLocalPlayer, nPlayerItem[nLocalPlayer]);
+    CheckClip(nLocalPlayer);
+
+    demo_input_cnt = (kfilelength(handle) - sizeof(demo_header)) / sizeof(demo_input);
+    demo_input_pos = 0;
+    demo_handle = handle;
+
+    return true;
+}
+
+void demo_PlaybackInput(demo_input *input)
+{
+    sPlayerInput[nLocalPlayer].xVel = input->xVel;
+    sPlayerInput[nLocalPlayer].yVel = input->yVel;
+    sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(input->nAngle<<2);
+    sPlayerInput[nLocalPlayer].buttons = input->buttons;
+    sPlayerInput[nLocalPlayer].nTarget = input->nTarget;
+    sPlayerInput[nLocalPlayer].horizon = fix16_from_int(input->horizon);
+    sPlayerInput[nLocalPlayer].nItem = input->nItem;
+    sPlayerInput[nLocalPlayer].h = input->h;
+    sPlayerInput[nLocalPlayer].i = input->i;
+
+    besttarget = sPlayerInput[nLocalPlayer].nTarget;
+    Ra[nLocalPlayer].nTarget = besttarget;
+}
+
 short menu_GameLoad(int nSlot)
 {
     memset(&GameStats, 0, sizeof(GameStats));
@@ -1755,25 +1907,111 @@ int menu_Menu(int ingame)
     return menu_MenuOld(ingame);
 #endif
     Menu_Open(0);
+    Menu_Change(MENU_MAIN);
     menu_DoPlasmaTile();
-    int clock = (int)totalclock;
-    while (g_menuActive)
+RECHECK:
+    bool founddemo = false;
+    if (!ingame && nTotalPlayers == 1)
+        founddemo = demo_GameLoad("demo.vcr");
+
+    if (founddemo)
     {
-        while (clock + 4 <= (int)totalclock)
+        InitRandom();
+        levelnew = -1;
+        levelnum = GameStats.nMap;
+        PlayerCount = 0;
+        int nPlayer = GrabPlayer();
+        InitPlayerInventory(nPlayer);
+        PlayerList[nPlayer].someNetVal = -3;
+        if (levelnum == kMap20)
         {
-            clock += 4;
+            lCountDown = 81000;
+            nAlarmTicks = 30;
+            nRedTicks = 0;
+            nClockVal = 0;
+            nEnergyTowers = 0;
+        }
+        if (!LoadLevel(levelnum)) {
+            founddemo = false;
+        }
+        else
+        {
+            SetSavePoint(0, initx, inity, initz, initsect, inita);
+            RestartPlayer(0);
+            InitPlayerKeys(0);
+            UpdateScreenSize();
+            InitStatus();
+            ResetView();
+            ResetEngine();
+            totalmoves = 0;
+            GrabPalette();
+            nCDTrackLength = 0;
+            RefreshStatus();
+        }
+    }
+
+    int movecnt = 0;
+    tclocks = totalclock;
+    while (!founddemo || demo_input_pos < demo_input_cnt)
+    {
+        timerUpdate();
+        while (tclocks + 4 <= totalclock)
+        {
+            if (founddemo)
+            {
+                UpdateSounds();
+                while (movecnt <= 0 && demo_input_pos < demo_input_cnt)
+                {
+                    if (demo_input_pos % kInputBufferSize == 0)
+                    {
+                        kread(demo_handle, demo_playerinput,
+                            min(demo_input_cnt - demo_input_pos, kInputBufferSize) * sizeof(demo_input));
+                    }
+
+                    auto input = &demo_playerinput[(demo_input_pos++) % kInputBufferSize];
+                    demo_PlaybackInput(input);
+                    movecnt = input->moveframes;
+                }
+                if (movecnt)
+                {
+                    timerUpdate();
+                    GameMove();
+                    movecnt--;
+                    timerUpdate();
+                }
+            }
+            tclocks += 4;
             menu_DoPlasmaTile();
+        }
+        if (founddemo && !g_menuActive && I_EscapeTrigger())
+        {
+            I_EscapeTriggerClear();
+            Menu_Open(0);
+            Menu_Change(MENU_MAIN);
         }
         if (G_FPSLimit())
         {
-            videoClearScreen(overscanindex);
+            if (founddemo)
+                GameDisplay();
+            else
+                videoClearScreen(overscanindex);
 
             M_DisplayMenus();
 
             videoNextPage();
         }
+        if (g_menuReturn > -1)
+        {
+            if (demo_handle != buildvfs_kfd_invalid)
+                kclose(demo_handle);
+            return g_menuReturn;
+        }
         HandleAsync();
     }
+    if (demo_handle != buildvfs_kfd_invalid)
+        kclose(demo_handle);
+    if (g_menuActive)
+        goto RECHECK;
     // Menu_Close(0);
 
     return g_menuReturn;
