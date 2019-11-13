@@ -1210,11 +1210,11 @@ void bail2dos(const char *fmt, ...)
 
 void faketimerhandler()
 {
-    if (((int)totalclock < ototalclock + 1) || bInMove)
+    if ((totalclock < ototalclock + 1) || bInMove)
         return;
-    ototalclock++;
+    ototalclock = ototalclock + 1;
 
-    if (!(ototalclock&3) && moveframes < 4)
+    if (!((int)ototalclock&3) && moveframes < 4)
         moveframes++;
 
     PlayerInterruptKeys();
@@ -1988,7 +1988,7 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
     // {
     //     return 65536;
     // }
-    if (bRecord || bPlayback || nFreeze != 0)
+    if (bRecord || bPlayback || nFreeze != 0 || bCamera)
         return 65536;
     int32_t rfreq = (refreshfreq != -1 ? refreshfreq : 60);
     uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*120);
@@ -2100,6 +2100,14 @@ static void GameMove(void)
     totalmoves++;
     moveframes--;
 }
+
+#if defined(_WIN32) && defined(DEBUGGINGAIDS)
+// See FILENAME_CASE_CHECK in cache1d.c
+static int32_t check_filename_casing(void)
+{
+    return 1;
+}
+#endif
 
 int32_t r_maxfps = 60;
 int32_t r_maxfpsoffset = 0;
@@ -2946,6 +2954,7 @@ LOOP3:
                 CONTROL_ClearButton(gamefunc_Escape);
 // MENU2:
                 CONTROL_BindsEnabled = 0;
+                bInMove = kTrue;
                 nMenu = menu_Menu(1);
 
                 switch (nMenu)
@@ -2970,6 +2979,9 @@ LOOP3:
                         }
                         break;
                 }
+
+                totalclock = ototalclock = tclocks;
+                bInMove = kFalse;
                 CONTROL_BindsEnabled = 1;
                 RefreshStatus();
             }
@@ -3397,7 +3409,7 @@ int Query(short nLines, short nKeys, ...)
     {
         char *str = va_arg(args, char*);
         strcpy(strings[i], str);
-        strupr(strings[i]);
+        Bstrupr(strings[i]);
 
         int strWidth = MyGetStringWidth(strings[i]);
 
