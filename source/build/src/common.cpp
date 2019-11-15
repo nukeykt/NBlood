@@ -272,5 +272,5 @@ void COMMON_clearbackground(int numcols, int numrows)
     }
 # endif
 
-    CLEARLINES2D(0, min(ydim, numrows*8+8), editorcolors[16]);
+    CLEARLINES2D(0, min(ydim, numrows*8+8), blackcol*0x01010101);
 }
