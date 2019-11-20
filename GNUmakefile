@@ -894,8 +894,8 @@ exhumed_cflags := -I$(exhumed_src)
 exhumed_game_deps := duke3d_common_midi audiolib mact
 exhumed_editor_deps := audiolib
 
-exhumed_game := eexhumed
-exhumed_editor := eexhumed_editor
+exhumed_game := pcexhumed
+exhumed_editor := pcexhumed_editor
 
 exhumed_game_proper := Exhumed
 exhumed_editor_proper := Exhumed_editor

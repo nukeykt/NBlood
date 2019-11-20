@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{7600A41F-AAB8-4D82-BA42-91B511FFB53A}</ProjectGuid>
-    <RootNamespace>exhumed</RootNamespace>
+    <RootNamespace>pcexhumed</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
     <PlatformToolset>v142</PlatformToolset>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
