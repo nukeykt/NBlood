@@ -1644,17 +1644,20 @@ void OSD_Puts(const char *tmpstr)
         }
     }
 
-    if (log.lines < log.cutoff)
+    if (osdlog != nullptr)
     {
-        char *chp2 = Xstrdup(tmpstr);
-        buildvfs_fputs(OSD_StripColors(chp2, tmpstr), osdlog);
-        Bprintf("%s", chp2);
-        Xfree(chp2);
-    }
-    else if (log.lines == log.cutoff)
-    {
-        buildvfs_fputs("\nLog file full! Consider increasing \"osdlogcutoff\".\n", osdlog);
-        log.lines = log.cutoff + 1;
+        if (log.lines < log.cutoff)
+        {
+            char *chp2 = Xstrdup(tmpstr);
+            buildvfs_fputs(OSD_StripColors(chp2, tmpstr), osdlog);
+            Bprintf("%s", chp2);
+            Xfree(chp2);
+        }
+        else if (log.lines == log.cutoff)
+        {
+            buildvfs_fputs("\nLog file full! Consider increasing \"osdlogcutoff\".\n", osdlog);
+            log.lines = log.cutoff + 1;
+        }
     }
 
     chp = tmpstr;
