@@ -29,12 +29,6 @@ AUDIOLIB_OBJ=$(obj)\$(AUDIOLIB)
 AUDIOLIB_INC=$(AUDIOLIB_ROOT)\include
 AUDIOLIB_SRC=$(AUDIOLIB_ROOT)\src
 
-ENET=enet
-ENET_ROOT=$(source)\$(ENET)
-ENET_OBJ=$(obj)\$(ENET)
-ENET_INC=$(ENET_ROOT)\include
-ENET_SRC=$(ENET_ROOT)\src
-
 GLAD=glad
 GLAD_ROOT=$(source)\$(GLAD)
 GLAD_OBJ=$(obj)\$(GLAD)
@@ -107,11 +101,10 @@ AS=ml
 LINK=link /nologo /opt:ref
 MT=mt
 CFLAGS= /MT /J /nologo /std:c++latest $(flags_cl)  \
-	/I$(DUKE3D_SRC) /I$(ENGINE_INC)\msvc /I$(ENGINE_INC) /I$(MACT_INC) /I$(AUDIOLIB_INC) /I$(ENET_INC) /I$(GLAD_INC) /I$(LIBXMPLITE_INC) \
+	/I$(DUKE3D_SRC) /I$(ENGINE_INC)\msvc /I$(ENGINE_INC) /I$(MACT_INC) /I$(AUDIOLIB_INC) /I$(GLAD_INC) /I$(LIBXMPLITE_INC) \
 	/W2 $(ENGINEOPTS) \
 	/I$(PLATFORM)\include /DRENDERTYPE$(RENDERTYPE)=1 /DMIXERTYPE$(MIXERTYPE)=1 /DSDL_USEFOLDER /DSDL_TARGET=2
 
-ENET_CFLAGS=/I$(ENET_INC) /I$(ENET_SRC)
 LIBXMPLITE_CFLAGS=/I$(LIBXMPLITE_INC) /I$(LIBXMPLITE_INC)/libxmp-lite /I$(LIBXMPLITE_SRC) -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DBUILDING_STATIC
 AUDIOLIB_CFLAGS=/I$(AUDIOLIB_INC) /I$(AUDIOLIB_SRC)
 
@@ -199,15 +192,6 @@ ENGINE_OBJS= \
 ENGINE_EDITOR_OBJS=$(ENGINE_OBJ)\build.$o \
 	$(ENGINE_OBJ)\startwin.editor.$o \
 	$(ENGINE_OBJ)\config.$o
-
-ENET_OBJS=$(ENET_OBJ)\callbacks.$o \
-	$(ENET_OBJ)\host.$o \
-	$(ENET_OBJ)\list.$o \
-	$(ENET_OBJ)\packet.$o \
-	$(ENET_OBJ)\peer.$o \
-	$(ENET_OBJ)\protocol.$o \
-	$(ENET_OBJ)\win32.$o \
-	$(ENET_OBJ)\compress.$o
 
 GLAD_OBJS=$(GLAD_OBJ)\glad.$o \
 !if ("$(RENDERTYPE)"=="WIN")
@@ -334,7 +318,6 @@ DUKE3D_EDITOR_OBJS=$(DUKE3D_EDITOR_OBJS) $(MUSICOBJ)
 
 CHECKDIR_ENGINE=@if not exist "$(ENGINE_OBJ)" mkdir "$(ENGINE_OBJ)"
 CHECKDIR_DUKE3D=@if not exist "$(DUKE3D_OBJ)" mkdir "$(DUKE3D_OBJ)"
-CHECKDIR_ENET=@if not exist "$(ENET_OBJ)" mkdir "$(ENET_OBJ)"
 CHECKDIR_GLAD=@if not exist "$(GLAD_OBJ)" mkdir "$(GLAD_OBJ)"
 CHECKDIR_MACT=@if not exist "$(MACT_OBJ)" mkdir "$(MACT_OBJ)"
 CHECKDIR_AUDIOLIB=@if not exist "$(AUDIOLIB_OBJ)" mkdir "$(AUDIOLIB_OBJ)"
@@ -357,10 +340,6 @@ MAPSTER32_TARGET=$(root)\mapster32$(EXESUFFIX)
 {$(ENGINE_SRC)}.c{$(ENGINE_OBJ)}.$o:
 	$(CHECKDIR_ENGINE)
 	$(CC) /c $(CFLAGS) /Fo$@ $<
-
-{$(ENET_SRC)}.c{$(ENET_OBJ)}.$o:
-	$(CHECKDIR_ENET)
-	$(CC) /c $(CFLAGS) $(ENET_CFLAGS) /Fo$@ $<
 
 {$(GLAD_SRC)}.c{$(GLAD_OBJ)}.$o:
 	$(CHECKDIR_GLAD)
@@ -396,7 +375,7 @@ MAPSTER32_TARGET=$(root)\mapster32$(EXESUFFIX)
 
 all: $(EDUKE32_TARGET) $(MAPSTER32_TARGET)
 
-$(EDUKE32_TARGET): $(DUKE3D_OBJS) $(ENGINE_OBJS) $(AUDIOLIB_OBJS) $(MACT_OBJS) $(ENET_OBJS) $(GLAD_OBJS) $(LIBXMPLITE_OBJS)
+$(EDUKE32_TARGET): $(DUKE3D_OBJS) $(ENGINE_OBJS) $(AUDIOLIB_OBJS) $(MACT_OBJS) $(GLAD_OBJS) $(LIBXMPLITE_OBJS)
 	$(LINK) /OUT:$@ /SUBSYSTEM:WINDOWS $(WINMACHINE) /LIBPATH:$(PLATFORM)\lib$(WINLIB) $(flags_link) /MAP $** $(LIBS)
 	$(MT) -manifest $(DUKE3D_RSRC)\manifest.game.xml -hashupdate -outputresource:$@ -out:$@.manifest
 
@@ -411,5 +390,5 @@ $(MAPSTER32_TARGET): $(DUKE3D_EDITOR_OBJS) $(ENGINE_OBJS) $(ENGINE_EDITOR_OBJS) 
 
 clean:
 	-del /Q $(EDUKE32_TARGET) $(MAPSTER32_TARGET) $(DUKE3D_OBJS) $(DUKE3D_EDITOR_OBJS) $(ENGINE_OBJS) $(ENGINE_EDITOR_OBJS) *.pdb $(root)\*.pdb $(root)\*.map $(root)\*.manifest
-    -del /Q $(ENET_OBJS) $(LIBXMPLITE_OBJS) $(MACT_OBJS) $(AUDIOLIB_OBJS) $(GLAD_OBJS)
+    -del /Q $(LIBXMPLITE_OBJS) $(MACT_OBJS) $(AUDIOLIB_OBJS) $(GLAD_OBJS)
 veryclean: clean

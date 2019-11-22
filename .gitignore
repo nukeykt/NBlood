@@ -68,3 +68,13 @@ project.xcworkspace/
 .DS_Store
 ._*
 /source/voidwrap/sdk/
+/autoload
+/movie
+*.png
+*.MHK
+*.AR_
+*.SMK
+*.WAV
+*.INI
+*.sav
+*.cfg_orig
