@@ -230,6 +230,7 @@ void BlackOut()
         curpalettefaded[i].b = 0;
     }
     videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
 #ifdef USE_OPENGL
     videoTintBlood(0, 0, 0);
 #endif
@@ -288,6 +289,7 @@ void DoFadeToRed()
     }
 
     videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
 }
 
 void FadeToWhite()
@@ -334,6 +336,7 @@ void FadeToWhite()
         }
 
         videoUpdatePalette(0, 256);
+        g_lastpalettesum = -1;
         WaitTicks(2);
 
         // need to page flip in each iteration of the loop for non DOS version
@@ -392,6 +395,7 @@ void FadeOut(int bFadeMusic)
         }
 
         videoUpdatePalette(0, 256);
+        g_lastpalettesum = -1;
         WaitTicks(2);
 
         // need to page flip in each iteration of the loop for non DOS version
@@ -464,6 +468,7 @@ int DoFadeIn()
     }
 
     videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
 
     return v2;
 }
@@ -578,7 +583,10 @@ void FixPalette()
     if (videoGetRenderMode() >= REND_POLYMOST) videoTintBlood(rtint, gtint, btint);
     else
 #endif
-    videoUpdatePalette(0, 256);
+    {
+        videoUpdatePalette(0, 256);
+        g_lastpalettesum = -1;
+    }
 }
 
 void TintPalette(int r, int g, int b)
