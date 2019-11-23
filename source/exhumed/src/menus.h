@@ -480,6 +480,7 @@ void Menu_Init(void);
 void Menu_Open(uint8_t playerID);
 void Menu_Close(uint8_t playerID);
 void M_DisplayMenus(void);
+void Menu_CorrectClocks(int diff);
 
 extern int32_t g_menuActive, g_menuReturn, g_menuIngame;
 

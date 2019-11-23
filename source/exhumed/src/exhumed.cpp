@@ -2123,8 +2123,6 @@ void GameDisplay(void)
     }
 
     G_PrintFPS();
-
-    videoNextPage();
 }
 
 void GameMove(void)
@@ -3089,6 +3087,8 @@ LOOP3:
             if (G_FPSLimit())
             {
                 GameDisplay();
+
+                videoNextPage();
                 frameJustDrawn = true;
             }
         }

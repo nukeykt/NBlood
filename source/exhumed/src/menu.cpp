@@ -514,14 +514,6 @@ void menu_DoPlasma()
     overwritesprite(0,   0,  nPlasmaTile,  0, 2, kPalNormal);
     overwritesprite(160, 40, nLogoTile, 0, 3, kPalNormal);
 
-    // flip between tile 4092 and 4093
-    if (nPlasmaTile == kTile4092) {
-        nPlasmaTile = kTile4093;
-    }
-    else if (nPlasmaTile == kTile4093) {
-        nPlasmaTile = kTile4092;
-    }
-
     // draw the fire urn/lamp thingies
     int dword_9AB5F = ((int)totalclock/16) & 3;
 
@@ -1917,6 +1909,8 @@ RECHECK:
     if (!ingame && nTotalPlayers == 1)
         founddemo = demo_GameLoad("demo.vcr");
 
+    int startclock = (int)totalclock;
+
     if (founddemo)
     {
         InitRandom();
@@ -1952,6 +1946,8 @@ RECHECK:
             RefreshStatus();
         }
     }
+
+    Menu_CorrectClocks((int)totalclock - startclock);
 
     int movecnt = 0;
     tclocks = totalclock;

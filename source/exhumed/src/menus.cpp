@@ -7534,3 +7534,11 @@ void M_DisplayMenus(void)
     //     CAMERADIST = 65536;
     // }
 }
+
+
+void Menu_CorrectClocks(int diff)
+{
+    g_zoomStartClock += diff;
+    m_mouselastactivity += diff;
+    m_animation.start += diff;
+}
