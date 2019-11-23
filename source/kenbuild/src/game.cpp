@@ -41,6 +41,10 @@ static int32_t setsprite_eyeheight(int16_t spritenum, const vec3_t *pos)
     return setsprite(spritenum, &eyepos);
 }
 
+int ksqr(int eax)
+{
+    return eax*eax;
+}
 
 // declared in sound.c
 void initsb(char,char,int,char,char,char,char);
@@ -48,8 +52,8 @@ void uninitsb(void);
 void setears(int,int,int,int);
 void wsayfollow(char const *,int,int,int *,int *,char);
 void wsay(char const *,int,int,int);
-void loadwaves(void);
-void loadsong(char const *);
+void loadwaves(char const *);
+int loadsong(char const *);
 void musicon(void);
 void musicoff(void);
 void refreshaudio(void);
@@ -136,15 +140,18 @@ static int screentilt = 0, oscreentilt = 0;
 static int fvel, svel, avel;
 static int fvel2, svel2, avel2;
 
-unsigned char option[NUMOPTIONS] = {0,0,0,0,0,0,1,0};
+unsigned char option[NUMOPTIONS] = {0,0,1,0,0,0,1,1+4+(6<<4)};
 unsigned char keys[NUMGAMEKEYS] =
 {
     0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,
     0x1e,0x2c,0xd1,0xc9,0x33,0x34,
     0x9c,0x1c,0xd,0xc,0xf
 };
+
+extern "C" {
 int xdimgame = 320, ydimgame = 200, bppgame = 8, xdim2d = 640, ydim2d = 480;    // JBF 20050318: config.c expects to find these
 int forcesetup = 1;
+}
 
 static int digihz[8] = {6000,8000,11025,16000,22050,32000,44100,48000};
 
@@ -437,8 +444,8 @@ static void Ken_UninitAll(void)
     uninitmultiplayers();
     timerUninit();
     uninitinput();
-    engineUnInit();
     uninitsb();
+    engineUnInit();
     uninitgroupfile();
 }
 
@@ -1171,8 +1178,8 @@ void prepareboard(char *daboardfilename)
         uninitmultiplayers();
         timerUninit();
         uninitinput();
-        engineUnInit();
         uninitsb();
+        engineUnInit();
         uninitgroupfile();
         printf("Board not found\n");
         exit(0);
@@ -2644,7 +2651,7 @@ void statuslistcode(void)
                     if (j != (sprite[i].owner & (MAXSPRITES - 1)))
                         if (cansee(sprite[i].x,sprite[i].y,sprite[i].z,sprite[i].sectnum,pos[j].x,pos[j].y,pos[j].z,cursectnum[j]))
                         {
-                            k = ksqrt(sqr(pos[j].x - sprite[i].x) + sqr(pos[j].y - sprite[i].y) + (sqr(pos[j].z - sprite[i].z) >> 8));
+                            k = ksqrt(ksqr(pos[j].x - sprite[i].x) + ksqr(pos[j].y - sprite[i].y) + (ksqr(pos[j].z - sprite[i].z) >> 8));
                             if (k < l)
                             {
                                 l = k;
@@ -2658,7 +2665,7 @@ void statuslistcode(void)
                     nextj = nextspritestat[j];
                     if (cansee(sprite[i].x,sprite[i].y,sprite[i].z,sprite[i].sectnum,sprite[j].x,sprite[j].y,sprite[j].z,sprite[j].sectnum))
                     {
-                        k = ksqrt(sqr(sprite[j].x - sprite[i].x) + sqr(sprite[j].y - sprite[i].y) + (sqr(sprite[j].z - sprite[i].z) >> 8));
+                        k = ksqrt(ksqr(sprite[j].x - sprite[i].x) + ksqr(sprite[j].y - sprite[i].y) + (ksqr(sprite[j].z - sprite[i].z) >> 8));
                         if (k < l)
                         {
                             l = k;
@@ -2673,7 +2680,7 @@ void statuslistcode(void)
                     nextj = nextspritestat[j];
                     if (cansee(sprite[i].x,sprite[i].y,sprite[i].z,sprite[i].sectnum,sprite[j].x,sprite[j].y,sprite[j].z,sprite[j].sectnum))
                     {
-                        k = ksqrt(sqr(sprite[j].x - sprite[i].x) + sqr(sprite[j].y - sprite[i].y) + (sqr(sprite[j].z - sprite[i].z) >> 8));
+                        k = ksqrt(ksqr(sprite[j].x - sprite[i].x) + ksqr(sprite[j].y - sprite[i].y) + (ksqr(sprite[j].z - sprite[i].z) >> 8));
                         if (k < l)
                         {
                             l = k;
@@ -3916,7 +3923,7 @@ void drawscreen(short snum, int dasmoothratio)
                 {
                     walock[TILE_TILT] = 255;
                     if (waloff[TILE_TILT] == 0)
-                        cacheAllocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
+                        g_cache.allocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
                     if ((tiltlock&1023) == 0)
                         renderSetTarget(TILE_TILT,200L>>detailmode,320L>>detailmode);
                     else
@@ -4792,7 +4799,7 @@ void playback(void)
 
         while (totalclock >= lockclock+TICSPERFRAME)
         {
-            timerUpdate();
+            timerUpdateClock();
             if (i >= reccnt)
             {
                 prepareboard(boardfilename);
@@ -4832,8 +4839,8 @@ void playback(void)
     uninitmultiplayers();
     timerUninit();
     uninitinput();
-    engineUnInit();
     uninitsb();
+    engineUnInit();
     uninitgroupfile();
     exit(0);
 }
@@ -4851,8 +4858,8 @@ void setup3dscreen(void)
         uninitmultiplayers();
         timerUninit();
         uninitinput();
-        engineUnInit();
         uninitsb();
+        engineUnInit();
         uninitgroupfile();
         exit(0);
     }
@@ -5665,7 +5672,7 @@ void faketimerhandler(void)
     short other /*, packbufleng*/;
     int i, j, k, l;
 
-    timerUpdate();
+    timerUpdateClock();
     if ((totalclock < ototalclock+(TIMERINTSPERSECOND/MOVESPERSECOND)) || (ready2send == 0)) return;
     ototalclock += (TIMERINTSPERSECOND/MOVESPERSECOND);
 
@@ -6268,8 +6275,8 @@ void waitforeverybody()
             uninitmultiplayers();
             timerUninit();
             uninitinput();
-            engineUnInit();
             uninitsb();
+            engineUnInit();
             uninitgroupfile();
             exit(0);
         }

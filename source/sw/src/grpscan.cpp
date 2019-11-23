@@ -95,7 +95,7 @@ static void FreeGroupsCache(void)
 
 int ScanGroups(void)
 {
-    CACHE1D_FIND_REC *srch, *sidx;
+    BUILDVFS_FIND_REC *srch, *sidx;
     struct grpcache *fg, *fgg;
     struct grpfile *grp;
     char *fn;
@@ -105,7 +105,7 @@ int ScanGroups(void)
 
     LoadGroupsCache();
 
-    srch = klistpath("/", "*.grp", CACHE1D_FIND_FILE);
+    srch = klistpath("/", "*.grp", BUILDVFS_FIND_FILE);
 
     for (sidx = srch; sidx; sidx = sidx->next)
     {

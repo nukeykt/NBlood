@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "light.h"
 #include "engine.h"
@@ -114,7 +131,7 @@ void SetGreenPal()
     // {
     //     palookup[i] = palookup[6];
     // }
-    // 
+    //
     // palookup[5] = origpalookup[5];
 }
 
@@ -213,6 +230,7 @@ void BlackOut()
         curpalettefaded[i].b = 0;
     }
     videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
 #ifdef USE_OPENGL
     videoTintBlood(0, 0, 0);
 #endif
@@ -271,6 +289,7 @@ void DoFadeToRed()
     }
 
     videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
 }
 
 void FadeToWhite()
@@ -317,6 +336,7 @@ void FadeToWhite()
         }
 
         videoUpdatePalette(0, 256);
+        g_lastpalettesum = -1;
         WaitTicks(2);
 
         // need to page flip in each iteration of the loop for non DOS version
@@ -375,6 +395,7 @@ void FadeOut(int bFadeMusic)
         }
 
         videoUpdatePalette(0, 256);
+        g_lastpalettesum = -1;
         WaitTicks(2);
 
         // need to page flip in each iteration of the loop for non DOS version
@@ -447,6 +468,7 @@ int DoFadeIn()
     }
 
     videoUpdatePalette(0, 256);
+    g_lastpalettesum = -1;
 
     return v2;
 }
@@ -561,7 +583,10 @@ void FixPalette()
     if (videoGetRenderMode() >= REND_POLYMOST) videoTintBlood(rtint, gtint, btint);
     else
 #endif
-    videoUpdatePalette(0, 256);
+    {
+        videoUpdatePalette(0, 256);
+        g_lastpalettesum = -1;
+    }
 }
 
 void TintPalette(int r, int g, int b)

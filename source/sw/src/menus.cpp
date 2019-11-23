@@ -3283,7 +3283,7 @@ MNU_MusicCheck(MenuItem *item)
 {
     if (SW_SHAREWARE)
     {
-        if (MusicDevice < 0 || !MusicInitialized)
+        if (!MusicToggle || !MusicInitialized)
         {
             SET(item->flags, mf_disabled);
         }
@@ -3312,7 +3312,7 @@ MNU_MusicCheck(MenuItem *item)
 SWBOOL
 MNU_FxCheck(MenuItem *item)
 {
-    if (FXDevice < 0 || !FxInitialized)
+    if (!FXToggle || !FxInitialized)
     {
         SET(item->flags, mf_disabled);
     }
@@ -3327,7 +3327,7 @@ MNU_FxCheck(MenuItem *item)
 SWBOOL
 MNU_MusicFxCheck(MenuItem *item)
 {
-    if (FXDevice < 0 && MusicDevice < 0)
+    if (!FXToggle && !MusicToggle)
     {
         SET(item->flags, mf_disabled);
     }
@@ -4588,7 +4588,7 @@ SetupMenu(void)
 void MNU_DoMenu(CTLType type, PLAYERp pp)
 {
     SWBOOL resetitem;
-    UCHAR key;
+    unsigned char key;
     int zero = 0;
     static int handle2 = 0;
     static int limitmove=0;

@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "engine.h"
 #include "anims.h"
@@ -37,11 +54,6 @@ void InitAnims()
 
 void DestroyAnim(int nAnim)
 {
-//	if (nAnim == 386) {
-    if (nAnim == 365) {
-        int gasd = 123;
-    }
-
     short nSprite = AnimList[nAnim].nSprite;
 
     if (nSprite >= 0)
@@ -58,25 +70,16 @@ void DestroyAnim(int nAnim)
 
 int BuildAnim(int nSprite, int val, int val2, int x, int y, int z, int nSector, int nRepeat, int nFlag)
 {
-    if (!nAnimsFree)
-        return -1;
-
-    if (nSector >= kMaxSectors) {
-        int asdffdg = 123;
-    }
+	if (!nAnimsFree) {
+		return -1;
+	}
 
     nAnimsFree--;
 
     short nAnim = AnimsFree[nAnimsFree];
 
-    //	if (nAnim == 386) {
-    if (nAnim == 365) {
-        int blag = 123;
-    }
-
     if (nSprite == -1) {
         nSprite = insertsprite(nSector, 500);
-//		assert(nSprite != -1);
     }
 
     sprite[nSprite].x = x;
@@ -121,7 +124,7 @@ int BuildAnim(int nSprite, int val, int val2, int x, int y, int z, int nSector, 
     AnimList[nAnim].field_2 = 0;
     AnimList[nAnim].nSeq = SeqOffsets[val] + val2;
     AnimList[nAnim].field_4 = 256;
-    
+
     if (nFlag & 0x80) {
         sprite[nSprite].cstat |= 0x2; // set transluscence
     }
@@ -321,7 +324,7 @@ int BuildSplash(int nSprite, int nSector)
 
     if (!bIsLava)
     {
-        D3PlayFX(StaticSound[nSound] | 10, AnimList[nAnim].nSprite);
+        D3PlayFX(StaticSound[nSound] | 0xa00, AnimList[nAnim].nSprite);
     }
 
     return AnimList[nAnim].nSprite;

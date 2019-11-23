@@ -8,7 +8,11 @@ extern "C" {
 #ifdef USE_OPENGL
 #include "hightile.h"
 
+#if defined(_M_IX86) || defined(_M_AMD64) || defined(__i386) || defined(__x86_64)
+#define SHIFTMOD32(a) (a)
+#else
 #define SHIFTMOD32(a) ((a)&31)
+#endif
 
 #define SHARED_MODEL_DATA int32_t mdnum, shadeoff; \
                   float scale, bscale, zadd, yoffset; \

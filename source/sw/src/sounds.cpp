@@ -33,6 +33,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "mytypes.h"
 #include "fx_man.h"
 #include "music.h"
+#include "al_midi.h"
 #include "gamedefs.h"
 #include "config.h"
 
@@ -476,7 +477,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                     if (LoadSong(waveformtrack))
                     {
                         SongVoice = FX_Play(SongPtr, SongLength, 0, 0, 0,
-                                                      255, 255, 255, FX_MUSIC_PRIORITY, 1.f, MUSIC_ID);
+                                                      255, 255, 255, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
                         if (SongVoice > FX_Ok)
                         {
                             SongType = SongTypeWave;
@@ -512,7 +513,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
     else
     {
         SongVoice = FX_Play(SongPtr, SongLength, 0, 0, 0,
-                                      255, 255, 255, FX_MUSIC_PRIORITY, 1.f, MUSIC_ID);
+                                      255, 255, 255, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
         if (SongVoice > FX_Ok)
         {
             SongType = SongTypeWave;
@@ -773,7 +774,7 @@ SWBOOL CacheSound(int num, int type)
             */
             vp->lock = CACHE_UNLOCK_MAX;
 
-            cacheAllocateBlock((intptr_t*)&vp->data, length, &vp->lock);
+            g_cache.allocateBlock((intptr_t*)&vp->data, length, &vp->lock);
 
 #if 0
             // DEBUG
@@ -1024,7 +1025,7 @@ PlaySound(int num, int *x, int *y, int *z, Voc3D_Flags flags)
         if (sound_dist < 255 || (flags & v3df_init))
         {
             voice = FX_Play((char *)vp->data, vp->datalen, 0, 0,
-                                      pitch, loopvol, loopvol, loopvol, priority, 1.f, num); // [JM] Should probably utilize floating point volume. !CHECKME!
+                                      pitch, loopvol, loopvol, loopvol, priority, fix16_one, num); // [JM] Check the volume parameter for correctness. !CHECKME!
         }
         else
             voice = -1;
@@ -1034,13 +1035,13 @@ PlaySound(int num, int *x, int *y, int *z, Voc3D_Flags flags)
     //if(!flags & v3df_init)  // If not initing sound, play it
     if (tx==0 && ty==0 && tz==0)     // It's a non-inlevel sound
     {
-        voice = FX_Play((char *)vp->data, vp->datalen, -1, -1, pitch, 255, 255, 255, priority, 1.f, num); // [JM] And here !CHECKME!
+        voice = FX_Play((char *)vp->data, vp->datalen, -1, -1, pitch, 255, 255, 255, priority, fix16_one, num); // [JM] And here !CHECKME!
     }
     else     // It's a 3d sound
     {
         if (sound_dist < 255)
         {
-            voice = FX_Play3D((char *)vp->data, vp->datalen, FX_ONESHOT, pitch, angle, sound_dist, priority, 1.f, num); // [JM] And here !CHECKME!
+            voice = FX_Play3D((char *)vp->data, vp->datalen, FX_ONESHOT, pitch, angle, sound_dist, priority, fix16_one, num); // [JM] And here !CHECKME!
         }
         else
             voice = -1;
@@ -1079,7 +1080,7 @@ void PlaySoundRTS(int rts_num)
 
     ASSERT(rtsptr);
 
-    voice = FX_Play3D(rtsptr, RTS_SoundLength(rts_num - 1), FX_ONESHOT, 0, 0, 0, 255, 1.f, -rts_num); // [JM] Float volume here too I bet. !CHECKME!
+    voice = FX_Play3D(rtsptr, RTS_SoundLength(rts_num - 1), FX_ONESHOT, 0, 0, 0, 255, fix16_one, -rts_num); // [JM] Check the volume parameter for correctness. !CHECKME!
 
     if (voice <= FX_Ok)
     {
@@ -1166,11 +1167,10 @@ void FlipStereo(void)
 void
 SoundStartup(void)
 {
-    int32_t status;
     void *initdata = 0;
 
     // if they chose None lets return
-    if (FXDevice < 0)
+    if (!FXToggle)
     {
         gs.FxOn = FALSE;
         return;
@@ -1182,19 +1182,20 @@ SoundStartup(void)
 
     //gs.FxOn = TRUE;
 
-    status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
-    if (status == FX_Ok)
-    {
-        FxInitialized = TRUE;
-        FX_SetVolume(gs.SoundVolume);
+    buildprintf("Initializing sound... ");
 
-        if (gs.FlipStereo)
-            FX_SetReverseStereo(!FX_GetReverseStereo());
-    }
+    int status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n",FX_ErrorString(FX_Error));
+        buildprintf("Sound error: %s\n", FX_ErrorString(status));
+        return;
     }
+
+    FxInitialized = TRUE;
+    FX_SetVolume(gs.SoundVolume);
+
+    if (gs.FlipStereo)
+        FX_SetReverseStereo(!FX_GetReverseStereo());
 
     FX_SetCallBack(SoundCallBack);
 }
@@ -1210,10 +1211,8 @@ SoundStartup(void)
 void
 SoundShutdown(void)
 {
-    int32_t status;
-
     // if they chose None lets return
-    if (FXDevice < 0)
+    if (!FXToggle)
     {
         return;
     }
@@ -1221,10 +1220,10 @@ SoundShutdown(void)
     if (!FxInitialized)
         return;
 
-    status = FX_Shutdown();
+    int status = FX_Shutdown();
     if (status != FX_Ok)
     {
-        buildprintf("Sound error: %s\n",FX_ErrorString(FX_Error));
+        buildprintf("Sound error: %s\n", FX_ErrorString(status));
     }
 }
 
@@ -1237,47 +1236,48 @@ SoundShutdown(void)
 ===================
 */
 
-#if 0
-void loadtmb(void)
-{
-    char tmb[8000];
-    int fil, l;
-
-    fil = kopen4load("swtimbr.tmb",0);
-    if (fil == -1)
-        return;
-
-    l = min((size_t)kfilelength(fil), sizeof(tmb));
-    kread(fil,tmb,l);
-    MUSIC_RegisterTimbreBank(tmb);
-    kclose(fil);
-}
-#endif
-
 void MusicStartup(void)
 {
     // if they chose None lets return
-    if (MusicDevice < 0)
+    if (!MusicToggle)
     {
         gs.MusicOn = FALSE;
         return;
     }
 
-    if (MUSIC_Init(0, 0) == MUSIC_Ok || MUSIC_Init(1, 0) == MUSIC_Ok)
+    buildprintf("Initializing MIDI driver... ");
+
+    int status;
+    if ((status = MUSIC_Init(MusicDevice)) == MUSIC_Ok)
     {
-        MusicInitialized = TRUE;
-        MUSIC_SetVolume(gs.MusicVolume);
+        if (MusicDevice == ASS_AutoDetect)
+            MusicDevice = MIDI_GetDevice();
+    }
+    else if ((status = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
+    {
+        MusicDevice = MIDI_GetDevice();
     }
     else
     {
-        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_ErrorCode));
+        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
         gs.MusicOn = FALSE;
+        return;
     }
 
-#if 0
-    if (MusicInitialized)
-        loadtmb();
-#endif
+    MusicInitialized = TRUE;
+    MUSIC_SetVolume(gs.MusicVolume);
+
+    auto const fil = kopen4load("swtimbr.tmb", 0);
+
+    if (fil != buildvfs_kfd_invalid)
+    {
+        int l = kfilelength(fil);
+        auto tmb = (uint8_t *)Xmalloc(l);
+        kread(fil, tmb, l);
+        AL_RegisterTimbreBank(tmb);
+        Xfree(tmb);
+        kclose(fil);
+    }
 }
 
 void COVER_SetReverb(int amt)
@@ -1296,10 +1296,8 @@ void COVER_SetReverb(int amt)
 void
 MusicShutdown(void)
 {
-    int32_t status;
-
     // if they chose None lets return
-    if (MusicDevice < 0)
+    if (!MusicToggle)
         return;
 
     if (!MusicInitialized)
@@ -1307,10 +1305,10 @@ MusicShutdown(void)
 
     StopSong();
 
-    status = MUSIC_Shutdown();
+    int status = MUSIC_Shutdown();
     if (status != MUSIC_Ok)
     {
-        buildprintf("Music error: %s\n",MUSIC_ErrorString(MUSIC_ErrorCode));
+        buildprintf("Music error: %s\n", MUSIC_ErrorString(status));
     }
 }
 

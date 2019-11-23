@@ -121,6 +121,8 @@ enum rendmode_t {
 #define PR_LIGHT_PRIO_LOW       4
 #define PR_LIGHT_PRIO_LOW_GAME  5
 
+#define CLOCKTICKSPERSECOND 120
+
 // Convenient sprite iterators, must not be used if any sprites inside the loop
 // are potentially deleted or their sector changed...
 #define SPRITES_OF(Statnum, Iter)  Iter=headspritestat[Statnum]; Iter>=0; Iter=nextspritestat[Iter]
@@ -733,7 +735,7 @@ EXTERN char *palookup[MAXPALOOKUPS];
 extern uint8_t *basepaltable[MAXBASEPALS];
 EXTERN uint8_t paletteloaded;
 EXTERN char *blendtable[MAXBLENDTABS];
-EXTERN uint8_t whitecol, redcol;
+EXTERN uint8_t whitecol, redcol, blackcol;
 
 EXTERN int32_t maxspritesonscreen;
 
@@ -888,6 +890,7 @@ EXTERN char editorcolors[256];
 
 EXTERN char faketile[(MAXTILES+7)>>3];
 EXTERN char *faketiledata[MAXTILES];
+EXTERN int faketilesize[MAXTILES];
 
 EXTERN char spritecol2d[MAXTILES][2];
 EXTERN uint8_t tilecols[MAXTILES];

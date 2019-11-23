@@ -515,7 +515,7 @@ void G_CacheMapData(void)
         MUSIC_Update();
 
         if ((++cnt & 7) == 0)
-            G_HandleAsync();
+            gameHandleEvents();
 
         if (videoGetRenderMode() != REND_CLASSIC && totalclock - clock > (TICRATE>>2))
         {
@@ -524,9 +524,9 @@ void G_CacheMapData(void)
             // this just prevents the loading screen percentage bar from making large jumps
             while (percentDisplayed < percentComplete)
             {
+                gameHandleEvents();
                 Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, g_precacheCount);
                 G_DoLoadScreen(tempbuf, percentDisplayed);
-                timerUpdate();
 
                 if (totalclock - clock >= 1)
                 {
@@ -1383,12 +1383,12 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
 {
     auto &p0 = *g_player[0].ps;
 
-    G_HandleAsync();
+    gameHandleEvents();
 
     if (ud.skill_voice > 0 && ud.config.SoundToggle)
     {
         while (FX_SoundActive(ud.skill_voice))
-            G_HandleAsync();
+            gameHandleEvents();
     }
 
     ready2send = 0;

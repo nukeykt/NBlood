@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "engine.h"
 #include "object.h"
@@ -368,7 +385,7 @@ int BuildElevF(int nChannel, int nSector, int nWallSprite, int arg_4, int arg_5,
     }
 
     Elevator[ElevCount].nSprite = nWallSprite;
-    
+
     va_list zlist;
     va_start(zlist, nCount);
 
@@ -799,7 +816,7 @@ int BuildWallFace(short nChannel, short nWall, short nCount, ...)
         int i = WallFace[WallFaceCount].field_4;
         WallFace[WallFaceCount].field_4++;
 
-        WallFace[WallFaceCount].field_6[i] = va_arg(piclist, short);
+        WallFace[WallFaceCount].field_6[i] = (short)va_arg(piclist, int);
     }
     va_end(piclist);
 
@@ -1081,7 +1098,7 @@ void FuncSlide(int a, int b, int c)
                 int var_28 = nSeekB;
 
                 dragpoint(SlideData[nSlide].field_0, x, y, 0);
-                
+
                 if (edi == 0 && ecx == 0) {
                     ebp = clipmask;
                 }
@@ -1213,9 +1230,9 @@ int BuildTrap(int nSprite, int edx, int ebx, int ecx)
     }
 }
 
-void FuncTrap(int a, int b, int c)
+void FuncTrap(int a, int b, int nRun)
 {
-    short nTrap = RunData[c].nVal;
+    short nTrap = RunData[nRun].nVal;
     short nSprite = sTrap[nTrap].nSprite;
 
     int nMessage = a & 0x7F0000;
@@ -1246,7 +1263,7 @@ void FuncTrap(int a, int b, int c)
                 if (sTrap[nTrap].field_0 > 10) {
                     return;
                 }
-                
+
                 short nType = sTrap[nTrap].nType;
 
                 if (sTrap[nTrap].field_0 == 0)
@@ -1276,30 +1293,34 @@ void FuncTrap(int a, int b, int c)
                     }
 
                     int nBullet = BuildBullet(nSprite, nType, 0, 0, 0, sprite[nSprite].ang, 0, 1);
-                    short nBulletSprite = nBullet & 0xFFFF; // isolate the sprite index (disregard top 16 bits)
-
-                    if (nType == 15)
+                    if (nBullet > -1)
                     {
-                        sprite[nBulletSprite].ang = (sprite[nBulletSprite].ang - 512) & kAngleMask;
-                        D3PlayFX(StaticSound[kSound32], nSprite);
-                    }
-                    else
-                    {
-                        sprite[nBulletSprite].clipdist = 50;
+                        short nBulletSprite = nBullet & 0xFFFF; // isolate the sprite index (disregard top 16 bits)
+                        assert(nBulletSprite >= 0);
 
-                        short nWall = sTrap[nTrap].field_6;
-                        if (nWall > -1)
+                        if (nType == 15)
                         {
-                            wall[nWall].picnum = sTrap[nTrap].field_A + 1;
+                            sprite[nBulletSprite].ang = (sprite[nBulletSprite].ang - 512) & kAngleMask;
+                            D3PlayFX(StaticSound[kSound32], nSprite);
                         }
-
-                        nWall = sTrap[nTrap].field_8;
-                        if (nWall > -1)
+                        else
                         {
-                            wall[nWall].picnum = sTrap[nTrap].field_C + 1;
-                        }
+                            sprite[nBulletSprite].clipdist = 50;
 
-                        D3PlayFX(StaticSound[kSound36], nSprite);
+                            short nWall = sTrap[nTrap].field_6;
+                            if (nWall > -1)
+                            {
+                                wall[nWall].picnum = sTrap[nTrap].field_A + 1;
+                            }
+
+                            nWall = sTrap[nTrap].field_8;
+                            if (nWall > -1)
+                            {
+                                wall[nWall].picnum = sTrap[nTrap].field_C + 1;
+                            }
+
+                            D3PlayFX(StaticSound[kSound36], nSprite);
+                        }
                     }
                 }
             }
@@ -1329,7 +1350,6 @@ int BuildFireBall(int nSprite, int a, int b)
     return BuildTrap(nSprite, 1, a, b);
 }
 
-// Confirmed 100% correct with original .exe
 int BuildSpark(int nSprite, int nVal)
 {
     int var_14 = insertsprite(sprite[nSprite].sectnum, 0);
@@ -1345,9 +1365,9 @@ int BuildSpark(int nSprite, int nVal)
     sprite[var_14].cstat = 0;
     sprite[var_14].shade = -127;
     sprite[var_14].pal = 1;
-    sprite[var_14].xrepeat = 50;
     sprite[var_14].xoffset = 0;
     sprite[var_14].yoffset = 0;
+    sprite[var_14].xrepeat = 50;
     sprite[var_14].yrepeat = 50;
 
     if (nVal >= 2)
@@ -1357,13 +1377,13 @@ int BuildSpark(int nSprite, int nVal)
 
         if (nVal == 3)
         {
-            sprite[var_14].yrepeat = 120;
             sprite[var_14].xrepeat = 120;
+            sprite[var_14].yrepeat = 120;
         }
         else
         {
-            sprite[var_14].yrepeat = sprite[var_14].xrepeat + 15;
-            sprite[var_14].xrepeat = sprite[var_14].xrepeat + 15;
+            sprite[var_14].xrepeat = sprite[nSprite].xrepeat + 15;
+            sprite[var_14].yrepeat = sprite[nSprite].xrepeat + 15;
         }
     }
     else
@@ -1399,9 +1419,9 @@ int BuildSpark(int nSprite, int nVal)
     return var_14;
 }
 
-void FuncSpark(int a, int b, int c)
+void FuncSpark(int a, int b, int nRun)
 {
-    int nSprite = RunData[c].nVal;
+    int nSprite = RunData[nRun].nVal;
     assert(nSprite >= 0 && nSprite < kMaxSprites);
 
     int nMessage = a & 0x7F0000;
@@ -1417,7 +1437,7 @@ void FuncSpark(int a, int b, int c)
     {
         sprite[nSprite].yrepeat -= 2;
 
-        if (sprite[nSprite].picnum == kTile986 && sprite[nSprite].xrepeat & 2)
+        if (sprite[nSprite].picnum == kTile986 && (sprite[nSprite].xrepeat & 2))
         {
             BuildSpark(nSprite, 2);
         }
@@ -1438,9 +1458,9 @@ void FuncSpark(int a, int b, int c)
         }
     }
 
-    sprite[nSprite].zvel = 0;
-    sprite[nSprite].yvel = 0;
     sprite[nSprite].xvel = 0;
+    sprite[nSprite].yvel = 0;
+    sprite[nSprite].zvel = 0;
 
     if (sprite[nSprite].picnum > kTile3000) {
         nSmokeSparks--;
@@ -1469,7 +1489,7 @@ void DimLights()
             sector[i].floorshade++;
 
         int nWall = sector[i].wallptr;
-        
+
         while (nWall < nWall + sector[i].wallnum)
         {
             if (wall[nWall].shade < 100)
@@ -1549,23 +1569,17 @@ int BuildEnergyBlock(short nSector)
 {
     short startwall = sector[nSector].wallptr;
 
-    int i = 0;
     int x = 0;
     int y = 0;
 
-    while (1)
+    for (int i = 0; i < sector[nSector].wallnum; i++)
     {
-        if (i >= sector[nSector].wallnum) {
-            break;
-        }
-
         x += wall[startwall + i].x;
         y += wall[startwall + i].y;
 
+ //       wall[startwall + i].picnum = kTile3621;
         wall[startwall + i].pal = 0;
         wall[startwall + i].shade = 50;
-
-        i++;
     }
 
     int xAvg = x / 2;
@@ -1666,7 +1680,7 @@ void ExplodeEnergyBlock(int nSprite)
     sector[nSector].floorshade = 50;
     sector[nSector].extra = -1;
     sector[nSector].floorz = sprite[nSprite].z;
-        
+
     sprite[nSprite].z = (sprite[nSprite].z + sector[nSector].floorz) / 2;
 
     BuildSpark(nSprite, 3);
@@ -1735,11 +1749,10 @@ void ExplodeEnergyBlock(int nSprite)
     changespritestat(nSprite, 0);
 }
 
-void FuncEnergyBlock(int a, int b, int nRun)
+void FuncEnergyBlock(int a, int nDamage, int nRun)
 {
     short nSprite = RunData[nRun].nVal;
 
-    int nDamage = b;
     int nMessage = a & 0x7F0000;
 
     switch (nMessage)
@@ -1766,8 +1779,8 @@ void FuncEnergyBlock(int a, int b, int nRun)
 
             nDamage = runlist_CheckRadialDamage(nSprite);
 
+            // restore previous values
             sector[nSector].floorz = nFloorZ;
-
             sprite[nSprite].z += 256;
 
             if (nDamage <= 0) {
@@ -1970,7 +1983,7 @@ void FuncObject(int a, int b, int nRun)
                 {
                     sprite[nSprite].xvel = 0;
                     sprite[nSprite].yvel = 0;
-                    sprite[nSprite].zvel = 0;	
+                    sprite[nSprite].zvel = 0;
                 }
                 else if (sprite[nSprite].statnum != kStat98)
                 {
@@ -2101,8 +2114,6 @@ FUNCOBJECT_GOTO:
                     runlist_SubRunRec(sprite[nSprite].owner);
                     runlist_SubRunRec(ObjectList[nObject].field_4);
 
-                    assert(nSprite != 59);
-
                     mydeletesprite(nSprite);
                     return;
                 }
@@ -2137,7 +2148,6 @@ void BuildDrip(int nSprite)
     sprite[nSprite].cstat = 0x8000u;
 }
 
-// Confirmed 100% correct with original .exe
 void DoDrips()
 {
     int i;
@@ -2177,7 +2187,7 @@ void DoDrips()
             int nFloorZ = sector[nSector].floorz;
 
             sector[nSector].floorz = edx + sBob[i].z;
-            
+
             MoveSectorSprites(nSector, sector[nSector].floorz - nFloorZ);
         }
     }
@@ -2233,7 +2243,7 @@ void AddSectorBob(int nSector, int nHitag, int bx)
     sBob[nBobs].field_3 = bx;
 
     int z;
-    
+
     if (bx == 0) {
         z = sector[nSector].floorz;
     }
@@ -2468,7 +2478,7 @@ void DoMovingSects()
                 }
             }
         }
-        else 
+        else
         {
             // repeat of code from loc_23908
             nYVel = ecx;
@@ -2476,15 +2486,11 @@ void DoMovingSects()
 
             if (sMoveDir[i] > 0)
             {
-                int thepoint = nTrailPointNext[sMoveSect[i].nTrailPoint];
                 sMoveSect[i].nTrailPoint = nTrailPointNext[sMoveSect[i].nTrailPoint];
-                
             }
             else
             {
-                int thepoint = nTrailPointPrev[sMoveSect[i].nTrailPoint];
                 sMoveSect[i].nTrailPoint = nTrailPointPrev[sMoveSect[i].nTrailPoint];
-                
             }
         }
 
@@ -2568,7 +2574,7 @@ void PostProcess()
             if (SectSpeed[i] && SectDepth[i] && !(SectFlag[i] & kSectLava))
             {
                 SectSoundSect[i] = i;
-                SectSound[i] = StaticSound[kSound62];
+                SectSound[i] = StaticSound[kSound43];
             }
             else
             {
@@ -2593,7 +2599,7 @@ void PostProcess()
                         {
                             var_20 = xVal + yVal;
                             SectSoundSect[i] = j;
-                            SectSound[i] = j;
+                            SectSound[i] = StaticSound[kSound43];
                         }
                     }
                 }

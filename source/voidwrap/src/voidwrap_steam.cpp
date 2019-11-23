@@ -218,19 +218,6 @@ void SteamScreenshotHandler::screenshotReady(ScreenshotReady_t * pCallback)
 #endif
 
 
-#ifdef VWCONTROLLER
-static int32_t NumControllerHandles;
-static ControllerHandle_t * ControllerHandles;
-
-VOIDWRAP_API int32_t Voidwrap_Steam_GetConnectedControllers()
-{
-    SteamController()->RunFrame(); // poll for any queued controller events
-    NumControllerHandles = SteamController()->GetConnectedControllers(ControllerHandles);
-    return NumControllerHandles;
-}
-#endif
-
-
 VOIDWRAP_API bool Voidwrap_Steam_Init()
 {
     if (!SteamAPI_Init())
@@ -254,11 +241,6 @@ VOIDWRAP_API bool Voidwrap_Steam_Init()
     SteamScreenshots()->HookScreenshots(true);
     if (SteamScreenshots()->IsScreenshotsHooked()) { PrintDebug("Screenshots hooked."); }
     ScreenHandler = new SteamScreenshotHandler();
-#endif
-
-#ifdef VWCONTROLLER
-    if (SteamController()->Init()) { PrintDebug("Controller API init succeeded."); }
-    ControllerHandles = new ControllerHandle_t[STEAM_CONTROLLER_MAX_COUNT];
 #endif
 
     SteamAPI_RunCallbacks();

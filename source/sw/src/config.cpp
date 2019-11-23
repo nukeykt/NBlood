@@ -62,8 +62,10 @@ int32_t NumberPlayers,CommPort,PortSpeed,IrqNumber,UartAddress;
 //
 // Sound variables
 //
+int32_t FXToggle    = 1;
+int32_t MusicToggle = 1;
 int32_t FXDevice    = 0;
-int32_t MusicDevice = 0;
+int32_t MusicDevice = ASS_AutoDetect;
 int32_t NumVoices   = 32;
 int32_t NumChannels = 2;
 int32_t NumBits     = 16;
@@ -227,8 +229,10 @@ void CONFIG_SetDefaults(void)
     }
 
     ScreenBPP = 32;
+    FXToggle = 1;
+    MusicToggle = 1;
     FXDevice = 0;
-    MusicDevice = 0;
+    MusicDevice = ASS_AutoDetect;
     NumVoices = 32;
     NumChannels = 2;
     NumBits = 16;
@@ -601,6 +605,8 @@ int32_t CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "GLAnisotropy", &glanisotropy);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "GLUseTextureCompr", &glusetexcompr);
 
+    SCRIPT_GetNumber(scripthandle, "Sound Setup", "FXToggle",&FXToggle);
+    SCRIPT_GetNumber(scripthandle, "Sound Setup", "MusicToggle",&MusicToggle);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "FXDevice",&FXDevice);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "MusicDevice",&MusicDevice);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "FXVolume",&dummy);
@@ -668,6 +674,8 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLAnisotropy",glanisotropy,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLUseTextureCompr",glusetexcompr,FALSE,FALSE);
 
+    SCRIPT_PutNumber(scripthandle, "Sound Setup", "FXToggle", FXToggle, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Sound Setup", "MusicToggle", MusicToggle, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "FXDevice", FXDevice, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "MusicDevice", MusicDevice, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "NumVoices", NumVoices, FALSE, FALSE);

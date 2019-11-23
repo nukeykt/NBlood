@@ -90,12 +90,13 @@ static inline void idle_waitevent(void)
     SDL_WaitEvent(NULL);
 }
 
-static inline void idle(void)
+static inline void idle(int const msec = 1)
 {
-#ifndef _WIN32
-    usleep(1000);
+#ifdef _WIN32
+    Sleep(msec);
 #else
-    Sleep(1);
+    timespec req = { 0, msec * 1000000 };
+    do { } while (nanosleep(&req, &req));
 #endif
 }
 

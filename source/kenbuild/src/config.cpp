@@ -143,7 +143,7 @@ int Ken_loadsetup(const char *fn)
     }
     if (readconfig(fp, "xdim", val, VL) > 0) xdimgame = xdim2d = Batoi(val);
     if (readconfig(fp, "ydim", val, VL) > 0) ydimgame = xdim2d = Batoi(val);
-    if (readconfig(fp, "samplerate", val, VL) > 0) option[7] = (Batoi(val) & 0x0f) << 4;
+    if (readconfig(fp, "samplerate", val, VL) > 0) option[7] = (option[7] & (~(0x0f<<4))) |(Batoi(val) & 0x0f) << 4;
     if (readconfig(fp, "music", val, VL) > 0) { if (Batoi(val) != 0) option[2] = 1; else option[2] = 0; }
     if (readconfig(fp, "mouse", val, VL) > 0) { if (Batoi(val) != 0) option[3] = 1; else option[3] = 0; }
     if (readconfig(fp, "bpp", val, VL) > 0) bppgame = Batoi(val);

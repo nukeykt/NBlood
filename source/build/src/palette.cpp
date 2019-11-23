@@ -28,7 +28,6 @@ palette_t curpalette[256];			// the current palette, unadjusted for brightness o
 palette_t curpalettefaded[256];		// the current palette, adjusted for brightness and tint (ie. what gets sent to the card)
 palette_t palfadergb = { 0, 0, 0, 0 };
 char palfadedelta = 0;
-uint8_t blackcol;
 
 int32_t realmaxshade;
 float frealmaxshade;
@@ -529,7 +528,7 @@ static void maybe_alloc_palookup(int32_t palnum)
     {
         alloc_palookup(palnum);
         if (palookup[palnum] == NULL)
-            Bexit(1);
+            fatal_exit("NULL palette!\n");
     }
 }
 

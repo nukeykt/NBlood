@@ -24,9 +24,9 @@ static inline void idle_waitevent(void)
     idle_waitevent_timeout(100);
 }
 
-static inline void idle(void)
+static inline void idle(int const msec = 1)
 {
-    idle_waitevent();
+    Sleep(msec);
 }
 
 #include "baselayer.h"

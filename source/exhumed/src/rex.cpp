@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "rex.h"
 #include "exhumed.h"
@@ -72,24 +89,23 @@ int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, in
 
     sprite[nSprite].x = x;
     sprite[nSprite].y = y;
-    sprite[nSprite].cstat = 0x101;
     sprite[nSprite].z = z;
     sprite[nSprite].cstat = 0x101;
-    sprite[nSprite].shade = -12;
     sprite[nSprite].clipdist = 80;
-    sprite[nSprite].xvel = 0;
-    sprite[nSprite].yvel = 0;
-    sprite[nSprite].zvel = 0;
+    sprite[nSprite].shade = -12;
     sprite[nSprite].xrepeat = 64;
     sprite[nSprite].yrepeat = 64;
+    sprite[nSprite].picnum = 1;
     sprite[nSprite].pal = sector[sprite[nSprite].sectnum].ceilingpal;
     sprite[nSprite].xoffset = 0;
     sprite[nSprite].yoffset = 0;
     sprite[nSprite].ang = nAngle;
-    sprite[nSprite].picnum = 1;
-    sprite[nSprite].hitag = 0;
+    sprite[nSprite].xvel = 0;
+    sprite[nSprite].yvel = 0;
+    sprite[nSprite].zvel = 0;
     sprite[nSprite].lotag = runlist_HeadRun() + 1;
     sprite[nSprite].extra = -1;
+    sprite[nSprite].hitag = 0;
 
     GrabTimeSlot(3);
 
@@ -198,10 +214,8 @@ void FuncRex(int a, int nDamage, int nRun)
             }
 
             // moves the mouth open and closed as it's idle?
-            do
+            while (--ecx != -1)
             {
-                ecx--;
-
                 seq_MoveSequence(nSprite, nSeq, RexList[nRex].field_2);
 
                 RexList[nRex].field_2++;
@@ -210,15 +224,11 @@ void FuncRex(int a, int nDamage, int nRun)
                     RexList[nRex].field_2 = 0;
                     var_1C = 1;
                 }
-            } while (ecx != -1);
+            }
 
             int nFlag = FrameFlag[SeqBase[nSeq] + RexList[nRex].field_2];
 
             short nTarget = RexList[nRex].nTarget;
-
-            if (nAction > 7) {
-                return;
-            }
 
             switch (nAction)
             {
@@ -252,7 +262,7 @@ void FuncRex(int a, int nDamage, int nRun)
                             RexList[nRex].nAction = 1;
                             RexList[nRex].field_2 = 0;
 
-                            sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
+                            sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
 
                             D3PlayFX(StaticSound[kSound48], nSprite);
@@ -302,18 +312,9 @@ void FuncRex(int a, int nDamage, int nRun)
 
                     int nVal = MoveCreatureWithCaution(nSprite);
 
-                    if ((nVal & 0xC000) == 0x8000)
+                    switch ((nVal & 0xC000))
                     {
-                        sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
-                        sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
-                        sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
-                        RexList[nRex].nAction = 1;
-                        RexList[nRex].field_2 = 0;
-                        nAction = 1;
-                        break;
-                    }
-                    else if ((nVal & 0xC000) == 0xC000)
-                    {
+                    case 0xc000:
                         if ((nVal & 0x3FFF) == nTarget)
                         {
                             PlotCourseToSprite(nSprite, nTarget);
@@ -321,19 +322,16 @@ void FuncRex(int a, int nDamage, int nRun)
                             RexList[nRex].field_2 = 0;
                             break;
                         }
-                        else
-                        {
-                            sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
-                            sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
-                            sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
-                            RexList[nRex].nAction = 1;
-                            RexList[nRex].field_2 = 0;
-                            nAction = 1;
-                            break;
-                        }
+                        fallthrough__;
+                    case 0x8000:
+                        sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
+                        sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
+                        sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
+                        RexList[nRex].nAction = 1;
+                        RexList[nRex].field_2 = 0;
+                        nAction = 1;
+                        break;
                     }
-
-                    break;
                 }
 
                 case 2:
@@ -343,26 +341,25 @@ void FuncRex(int a, int nDamage, int nRun)
                     {
                         PlotCourseToSprite(nSprite, nTarget);
 
-                        sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 1;
+                        sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 1;
                         sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 1;
 
                         int nVal = MoveCreatureWithCaution(nSprite);
 
-                        if ((nVal & 0x0C000) == 0x8000)
+                        switch(nVal & 0x0C000)
                         {
+                        case 0x8000:
                             SetQuake(nSprite, 25);
                             RexList[nRex].field_A = 60;
 
                             sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
-                            sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
+                            sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
                             RexList[nRex].nAction = 1;
                             RexList[nRex].field_2 = 0;
                             nAction = 1;
                             break;
-                        }
-                        else if ((nVal & 0x0C000) == 0x0C000)
-                        {
+                        case 0xc000:
                             RexList[nRex].nAction = 3;
                             RexList[nRex].field_2 = 0;
 
@@ -374,7 +371,7 @@ void FuncRex(int a, int nDamage, int nRun)
 
                                 runlist_DamageEnemy(nSprite2, nSprite, 15);
 
-                                int ebx = Sin(nAngle + 512) * 15;
+                                int ebx = Cos(nAngle) * 15;
                                 int edx = Sin(nAngle) * 15;
 
                                 if (sprite[nSprite2].statnum == 100)
@@ -393,6 +390,7 @@ void FuncRex(int a, int nDamage, int nRun)
                             }
 
                             RexList[nRex].field_A >>= 2;
+                            return;
                         }
                     }
                     else
@@ -400,9 +398,8 @@ void FuncRex(int a, int nDamage, int nRun)
                         RexList[nRex].nAction = 1;
                         RexList[nRex].field_2 = 0;
                         RexList[nRex].field_A = 90;
+                        return;
                     }
-
-                    return;
                 }
 
                 case 3:
@@ -428,7 +425,7 @@ void FuncRex(int a, int nDamage, int nRun)
                             break;
                         }
                     }
-    
+
                     RexList[nRex].nAction = 1;
                     break;
                 }

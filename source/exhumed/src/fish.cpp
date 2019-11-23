@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "fish.h"
 #include "anims.h"
@@ -258,9 +275,9 @@ int BuildFish(int nSprite, int x, int y, int z, int nSector, int nAngle)
 void IdleFish(short nFish, short edx)
 {
     short nSprite = FishList[nFish].nSprite;
-    short nAngle = sprite[nSprite].ang;
 
-    sprite[nSprite].ang += ((256 - RandomSize(9)) + 1024) & kAngleMask;
+    sprite[nSprite].ang += (256 - RandomSize(9)) + 1024;
+    sprite[nSprite].ang &= kAngleMask;
 
     sprite[nSprite].xvel = (sprite[nSprite].ang + 512) >> 8;
     sprite[nSprite].yvel = (sprite[nSprite].ang) >> 8;
@@ -310,6 +327,13 @@ void FuncFish(int a, int nDamage, int nRun)
             return;
         }
 
+        case 0x90000:
+        {
+            seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqFish] + ActionSeq[nAction].a, FishList[nFish].field_2, ActionSeq[nAction].b);
+            tsprite[a & 0xFFFF].owner = -1;
+            return;
+        }
+
         case 0xA0000:
         {
             if (FishList[nFish].nHealth <= 0) {
@@ -321,10 +345,8 @@ void FuncFish(int a, int nDamage, int nRun)
                 if (!nDamage) {
                     return;
                 }
-                else
-                {
-                    FishList[nFish].field_C = 10;
-                }
+
+                FishList[nFish].field_C = 10;
             }
             // fall through
         }
@@ -373,13 +395,6 @@ void FuncFish(int a, int nDamage, int nRun)
                 FishList[nFish].field_C += 10;
             }
 
-            return;
-        }
-
-        case 0x90000:
-        {
-            seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqFish] + ActionSeq[nAction].a, FishList[nFish].field_2, ActionSeq[nAction].b);
-            tsprite[a & 0xFFFF].owner = -1;
             return;
         }
 
@@ -460,7 +475,7 @@ void FuncFish(int a, int nDamage, int nRun)
                         if (z <= nHeight)
                         {
                             sprite[nSprite].xvel = (Sin(sprite[nSprite].ang + 512) >> 5) - (Sin(sprite[nSprite].ang + 512) >> 7);
-                            sprite[nSprite].yvel = ((Sin(sprite[nSprite].ang) >> 5) >> 5) - ((Sin(sprite[nSprite].ang) >> 5) >> 7);
+                            sprite[nSprite].yvel = (Sin(sprite[nSprite].ang) >> 5) - (Sin(sprite[nSprite].ang) >> 7);
                         }
                         else
                         {
@@ -475,7 +490,7 @@ void FuncFish(int a, int nDamage, int nRun)
 
                 case 4:
                 {
-                    if (!FishList[nFish].field_2)
+                    if (FishList[nFish].field_2 == 0)
                     {
                         IdleFish(nFish, 0);
                     }
@@ -489,7 +504,7 @@ void FuncFish(int a, int nDamage, int nRun)
 
                 case 9:
                 {
-                    if (!FishList[nFish].field_2)
+                    if (FishList[nFish].field_2 == 0)
                     {
                         DestroyFish(nFish);
                     }

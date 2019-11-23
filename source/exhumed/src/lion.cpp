@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "lion.h"
 #include "engine.h"
@@ -59,7 +76,7 @@ int BuildLion(short nSprite, int x, int y, int z, short nSector, short nAngle)
         y = sprite[nSprite].y;
         z = sector[sprite[nSprite].sectnum].floorz;
         nAngle = sprite[nSprite].ang;
-        
+
     }
 
     assert(nSprite >= 0 && nSprite < kMaxSprites);
@@ -142,9 +159,9 @@ void FuncLion(int a, int nDamage, int nRun)
                 if (LionList[nLion].nHealth <= 0)
                 {
                     // R.I.P.
-                    sprite[nSprite].zvel = 0;
-                    sprite[nSprite].yvel = 0;
                     sprite[nSprite].xvel = 0;
+                    sprite[nSprite].yvel = 0;
+                    sprite[nSprite].zvel = 0;
                     LionList[nLion].nHealth = 0;
                     sprite[nSprite].cstat &= 0xFEFE;
 
@@ -168,7 +185,7 @@ void FuncLion(int a, int nDamage, int nRun)
                 }
                 else
                 {
-                    if (a >= 0)
+                    if ((a & 0xFFFF) >= 0)
                     {
                         short nTarget = a & 0xFFFF;
 
@@ -181,8 +198,8 @@ void FuncLion(int a, int nDamage, int nRun)
                             if (RandomSize(8) <= (LionList[nLion].nHealth >> 2))
                             {
                                 LionList[nLion].nAction = 4;
-                                sprite[nSprite].yvel = 0;
                                 sprite[nSprite].xvel = 0;
+                                sprite[nSprite].yvel = 0;
                             }
                             else if (RandomSize(1))
                             {
@@ -192,12 +209,17 @@ void FuncLion(int a, int nDamage, int nRun)
 
                                 sprite[nSprite].ang = (sprite[nSprite].ang - (RandomSize(1) << 8)) + (RandomSize(1) << 8);
                             }
+                            else
+                            {
+                                sprite[nSprite].xvel = 0;
+                                sprite[nSprite].yvel = 0;
+                                LionList[nLion].nAction = 8;
+                                sprite[nSprite].cstat &= 0xFEFE;
+                            }
 
                             LionList[nLion]._b = 0;
-                            return;
                         }
                     }
-                    return;
                 }
             }
             return;
@@ -253,7 +275,7 @@ void FuncLion(int a, int nDamage, int nRun)
                             }
                         }
                     }
-                    
+
                     if (nAction)
                     {
                         LionList[nLion]._g--;
@@ -268,7 +290,7 @@ void FuncLion(int a, int nDamage, int nRun)
                             else
                             {
                                 sprite[nSprite].xvel = 0;
-                                sprite[nSprite].yvel = 0;            
+                                sprite[nSprite].yvel = 0;
                             }
 
                             LionList[nLion]._g = 100;
@@ -314,7 +336,14 @@ void FuncLion(int a, int nDamage, int nRun)
                     {
                         if ((nVal & 0x3FFF) == nTarget)
                         {
-                            if (sprite[nSprite].cstat != 0x8000)
+                            if (sprite[nSprite].cstat & 0x8000)
+                            {
+                                LionList[nLion].nAction = 9;
+                                sprite[nSprite].cstat &= 0x7FFF;
+                                sprite[nSprite].xvel = 0;
+                                sprite[nSprite].yvel = 0;
+                            }
+                            else
                             {
                                 int nAng = getangle(sprite[nTarget].x - sprite[nSprite].x, sprite[nTarget].y - sprite[nSprite].y);
 
@@ -322,13 +351,6 @@ void FuncLion(int a, int nDamage, int nRun)
                                 {
                                     LionList[nLion].nAction = 3;
                                 }
-                            }
-                            else
-                            {
-                                LionList[nLion].nAction = 9;
-                                sprite[nSprite].cstat &= 0x7FFF;
-                                sprite[nSprite].xvel = 0;
-                                sprite[nSprite].yvel = 0;
                             }
 
                             LionList[nLion]._b = 0;
@@ -399,7 +421,7 @@ void FuncLion(int a, int nDamage, int nRun)
                         int z = sprite[nSprite].z - (GetSpriteHeight(nSprite) >> 1);
 
                         int var_40 = 0x7FFFFFFF;
-                        
+
                         short nSector = sprite[nSprite].sectnum;
                         short var_28 = sprite[nSprite].ang;
 
@@ -481,9 +503,10 @@ void FuncLion(int a, int nDamage, int nRun)
                             sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
                             sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 1;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 1;
+                            break;
                         }
                     }
-                    
+
                     return;
                 }
 

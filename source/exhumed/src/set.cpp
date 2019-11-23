@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "set.h"
 #include "engine.h"
@@ -177,7 +194,7 @@ void FuncSoul(int pA, int, int nRun)
             sprite[nSoulSprite].extra &= 0x7FF;
 
             int ebx = (Sin(sprite[nSoulSprite].extra + 512) >> 7);// *Sin(sprite[nSoulSprite].ang);
-    
+
             if (movesprite(nSoulSprite, Sin(sprite[nSoulSprite].ang + 512) * ebx, Sin(sprite[nSoulSprite].ang) * ebx, sprite[nSoulSprite].zvel, 5120, 0, CLIPMASK0) & 0x10000)
             {
                 int nSet = sprite[nSoulSprite].hitag;
@@ -242,12 +259,7 @@ void FuncSet(int a, int nDamage, int nRun)
                     SetList[nSet].nHealth -= nDamage;
                 }
 
-                if (SetList[nSet].nHealth > 0 && nAction == 1)
-                {
-                    SetList[nSet].nAction = 2;
-                    SetList[nSet].field_2 = 0;
-                }
-                else
+                if (SetList[nSet].nHealth <= 0)
                 {
                     sprite[nSprite].xvel = 0;
                     sprite[nSprite].yvel = 0;
@@ -262,6 +274,11 @@ void FuncSet(int a, int nDamage, int nRun)
                         SetList[nSet].field_2 = 0;
                         SetList[nSet].nAction = 10;
                     }
+                }
+                else if (nAction == 1)
+                {
+                    SetList[nSet].nAction = 2;
+                    SetList[nSet].field_2 = 0;
                 }
             }
             return;
@@ -354,8 +371,12 @@ void FuncSet(int a, int nDamage, int nRun)
                 {
                     if (FindPlayer(nSprite, 1000) >= 0)
                     {
-                        SetList[nSet].nAction = 2;
-                        SetList[nSet].field_2 = 0;
+                        SetList[nSet].field_A--;
+                        if (SetList[nSet].field_A <= 0)
+                        {
+                            SetList[nSet].nAction = 2;
+                            SetList[nSet].field_2 = 0;
+                        }
                     }
 
                     return;
@@ -389,8 +410,8 @@ void FuncSet(int a, int nDamage, int nRun)
 
                         if ((nSet & 0x1F) == (totalmoves & 0x1F))
                         {
-                            int nRand = RandomSize(1);
-                            
+                            int nRand = RandomSize(3);
+
                             switch (nRand)
                             {
                                 case 0:
@@ -439,9 +460,13 @@ void FuncSet(int a, int nDamage, int nRun)
                             sprite[nSprite].yvel *= 2;
                         }
 
-                        if ((nVal & 0xC000) == 0x8000)
+                        if ((nVal & 0xC000) < 0x8000)
                         {
-                            short nWall = nVal & 0xC000;
+                            break;
+                        }
+                        else if ((nVal & 0xC000) == 0x8000)
+                        {
+                            short nWall = nVal & 0x3FFF;
                             short nSector = wall[nWall].nextsector;
 
                             if (nSector >= 0)
@@ -460,14 +485,14 @@ void FuncSet(int a, int nDamage, int nRun)
                                 }
                             }
 
-                            sprite[nSprite].ang = (sprite[nSprite].ang + 100) & kAngleMask;
+                            sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
                             sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 1;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 1;
                             break;
                         }
                         else if ((nVal & 0xC000) == 0xC000)
                         {
-                            if (nTarget)
+                            if (nTarget == (nVal & 0x3FFF))
                             {
                                 int nAng = getangle(sprite[nTarget].x - sprite[nSprite].x, sprite[nTarget].y - sprite[nSprite].y);
                                 if (AngleDiff(sprite[nSprite].ang, nAng) < 64)
@@ -487,6 +512,8 @@ void FuncSet(int a, int nDamage, int nRun)
                                 return;
                             }
                         }
+
+                        break;
                     }
                     else
                     {
@@ -494,8 +521,6 @@ void FuncSet(int a, int nDamage, int nRun)
                         SetList[nSet].field_2 = 0;
                         return;
                     }
-
-                    return; // CHECKME
                 }
 
                 case 4:
@@ -514,7 +539,6 @@ void FuncSet(int a, int nDamage, int nRun)
                         else if (nFlag & 0x80)
                         {
                             runlist_DamageEnemy(nTarget, nSprite, 5);
-                            
                         }
                     }
 
@@ -542,12 +566,8 @@ void FuncSet(int a, int nDamage, int nRun)
                         SetList[nSet].field_E--;
                         if (SetList[nSet].field_E <= 0 || !RandomBit())
                         {
-                            if (!RandomBit())
-                            {
-                                // TODO - same as block belowm
-                                SetList[nSet].nAction = 0;
-                                SetList[nSet].field_2 = 0;						
-                            }
+                            SetList[nSet].nAction = 0;
+                            SetList[nSet].field_2 = 0;
                         }
                     }
                     return;
@@ -616,7 +636,7 @@ void FuncSet(int a, int nDamage, int nRun)
                 case 10:
                 {
                     if (nFlag & 0x80)
-                    {	
+                    {
                         sprite[nSprite].z -= GetSpriteHeight(nSprite);
                         BuildCreatureChunk(nSprite, seq_GetSeqPicnum(kSeqSet, 76, 0));
                         sprite[nSprite].z += GetSpriteHeight(nSprite);

@@ -1,8 +1,27 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
+
 #ifndef __exhumed_h__
 #define __exhumed_h__
 
 #include "compat.h"
 #include "cache1d.h"
+#include "vfs.h"
 #include "grpscan.h"
 
 #define kTimerTicks		120
@@ -12,11 +31,11 @@ void handleevents();
 #endif
 
 #ifndef APPNAME
-#define APPNAME             "Exhumed"
+#define APPNAME             "PCExhumed"
 #endif
 
 #ifndef APPBASENAME
-#define APPBASENAME         "exhumed"
+#define APPBASENAME         "pcexhumed"
 #endif
 
 // TODO:
@@ -155,7 +174,7 @@ extern short levelnum;
 //extern short nScreenWidth;
 //extern short nScreenHeight;
 
-extern short bMapMode;
+extern short nMapMode;
 
 extern short nButtonColor;
 
@@ -236,6 +255,7 @@ enum {
 };
 
 extern char g_modDir[BMAX_PATH];
+extern int r_showfps;
 
 extern struct grpfile_t const* g_selectedGrp;
 

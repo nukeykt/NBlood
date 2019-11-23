@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "typedefs.h"
 #include "sequence.h"
@@ -148,7 +165,7 @@ int seq_ReadSequence(const char *seqName)
     strcat(buffer, ".seq");
 
     int hFile = kopen4load(buffer, 1);
-    if (hFile == -1) 
+    if (hFile == -1)
     {
         initprintf("Unable to open '%s'!\n", buffer);
         kclose(hFile);
@@ -165,14 +182,14 @@ int seq_ReadSequence(const char *seqName)
     }
 
     short centerx, centery; // TODO - are global vars?
-    short nSeqs; 
+    short nSeqs;
     kread(hFile, &centerx, sizeof(centerx));
     kread(hFile, &centery, sizeof(centery));
     kread(hFile, &nSeqs, sizeof(nSeqs));
 
     if (nSeqs <= 0 || sequences + nSeqs >= kMaxSequences)
     {
-        if (nSeqs < 0) 
+        if (nSeqs < 0)
         {
             initprintf("Invalid sequence count!\n");
             kclose(hFile);
@@ -257,7 +274,7 @@ int seq_ReadSequence(const char *seqName)
     {
         short var_20;
         kread(hFile, &var_20, sizeof(var_20));
-        
+
         for (i = 0; i < var_20; i++)
         {
             kread(hFile, &buffer[i * 10], 8);
@@ -319,7 +336,7 @@ void seq_LoadSequences()
     nFontFirstChar = seq_GetFirstSeqPicnum(kSeqFont2);
 
     short nSize = SeqSize[SeqOffsets[kSeqFont2]];
-    
+
     for (i = 0; i < nSize; i++)
     {
         picanm[nFontFirstChar + i].xofs = 0;
@@ -393,7 +410,7 @@ void seq_DrawPilotLightSeq(int xOffset, int yOffset)
             int x = ChunkXpos[nFrameBase] + (160 + xOffset);
             int y = ChunkYpos[nFrameBase] + (100 + yOffset);
 
-            rotatesprite(x << 16, y << 16, 0x10000, (-8 * nPlayerDAng) & kAngleMask, nTile, -127, 1, 2, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
+            rotatesprite(x << 16, y << 16, 0x10000, (-2 * fix16_to_int(nPlayerDAng)) & kAngleMask, nTile, -127, 1, 2, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
             nFrameBase++;
         }
     }
@@ -638,7 +655,7 @@ int seq_PlotSequence(short nSprite, short edx, short nFrame, short ecx)
             }
 
             tsprite[nSprite].cstat = 0x22; // transluscence, floor sprite
-            tsprite[nSprite].z = nFloorZ + 1;
+            tsprite[nSprite].z = videoGetRenderMode() >= REND_POLYMOST ? nFloorZ : nFloorZ + 1;
             tsprite[nSprite].yrepeat = (uint8_t)edx;
             tsprite[nSprite].xrepeat = (uint8_t)edx;
             tsprite[nSprite].statnum = -3;

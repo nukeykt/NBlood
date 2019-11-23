@@ -1,3 +1,20 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "compat.h"
 #include "baselayer.h"
@@ -83,7 +100,7 @@ void FinishLevel();
 int htimer = 0;
 
 /* these are XORed in the original game executable then XORed back to normal when the game first starts. Here they are normally */
-const char *gString[] = 
+const char *gString[] =
 {
     "CINEMAS",
     "THE ANCIENT EGYPTIAN CITY",
@@ -463,7 +480,7 @@ const char *g_gameNamePtr = NULL;
 // grp handling
 
 static const char *defaultgamegrp = "STUFF.DAT";
-static const char *defaultdeffilename = "powerslave.def";
+static const char *defaultdeffilename = "exhumed.def";
 
 // g_grpNamePtr can ONLY point to a malloc'd block (length BMAX_PATH)
 char *g_grpNamePtr = NULL;
@@ -498,6 +515,8 @@ int32_t g_noSetup = 0;
 int32_t g_noAutoLoad = 0;
 int g_useCwd;
 int32_t g_groupFileHandle;
+
+static struct strllist *CommandPaths, *CommandGrps;
 
 void G_ExtPreInit(int32_t argc,char const * const * argv)
 {
@@ -726,8 +745,6 @@ void G_LoadGroups(int32_t autoload)
 
 //////////
 
-struct strllist *CommandPaths, *CommandGrps;
-
 void G_AddGroup(const char *buffer)
 {
     char buf[BMAX_PATH];
@@ -777,7 +794,7 @@ void G_LoadGroupsInDir(const char *dirname)
 
     for (auto & extension : extensions)
     {
-        CACHE1D_FIND_REC *rec;
+        BUILDVFS_FIND_REC *rec;
 
         fnlist_getnames(&fnlist, dirname, extension, -1, 0);
 
@@ -1117,11 +1134,12 @@ short lastfps;
 
 short nCDTracks = 0;
 
-short bMapMode = kFalse;
+short nMapMode = 0;
 short bNoCreatures = kFalse;
 
 short nTotalPlayers = 1;
-short socket = 0;
+// TODO: Rename this (or make it static) so it doesn't conflict with library function
+//short socket = 0;
 
 short nFirstPassword = 0;
 short nFirstPassInfo = 0;
@@ -1166,6 +1184,7 @@ short wConsoleNode; // TODO - move me into network file
 int mouseaiming, aimmode, mouseflip;
 int runkey_mode, auto_run;
 
+ClockTicks tclocks, tclocks2;
 
 void DebugOut(const char *fmt, ...)
 {
@@ -1186,6 +1205,7 @@ void DebugOut(const char *fmt, ...)
 
 void ShutDown(void)
 {
+    CONFIG_WriteSetup(0);
     StopCD();
     if (bSerialPlay)
     {
@@ -1237,7 +1257,7 @@ void faketimerhandler()
 {
     if ((totalclock < ototalclock + 1) || bInMove)
         return;
-    ototalclock += 1;
+    ototalclock = ototalclock + 1;
 
     if (!((int)ototalclock&3) && moveframes < 4)
         moveframes++;
@@ -1258,13 +1278,13 @@ void timerhandler()
             nCDTrackLength--;
         }
     }
+    if (!bInMove)
+        OSD_DispatchQueued();
 }
 
 void HandleAsync()
 {
     handleevents();
-    if (!bInMove)
-        OSD_DispatchQueued();
 }
 
 int MyGetStringWidth(const char *str)
@@ -1451,7 +1471,7 @@ void CheckKeys()
     // {
     //     if (lMouseSens < 64)
     //         lMouseSens++;
-    // 
+    //
     //     CONTROL_ClearButton(gamefunc_Mouse_Sensitivity_Up);
     //     StatusMessage(500, "MOUSE SENSITIVITY SET TO %d", lMouseSens);
     // }
@@ -1461,7 +1481,7 @@ void CheckKeys()
     //     {
     //         if (lMouseSens >= 1)
     //             lMouseSens -= 1;
-    // 
+    //
     //         CONTROL_ClearButton(gamefunc_Mouse_Sensitivity_Down);
     //         StatusMessage(500, "MOUSE SENSITIVITY SET TO %d", lMouseSens);
     //     }
@@ -1528,18 +1548,19 @@ void CheckKeys()
         {
             if (bPause)
             {
+                ototalclock = totalclock = tclocks;
                 bPause = kFalse;
-                KB_KeyDown[sc_Pause] = 0;
             }
             else
             {
                 bPause = kTrue;
-                NoClip();
-                int nLen = MyGetStringWidth("PAUSED");
-                myprintext((320 - nLen) / 2, 100, "PAUSED", 0);
-                Clip();
-                videoNextPage();
+                // NoClip();
+                // int nLen = MyGetStringWidth("PAUSED");
+                // myprintext((320 - nLen) / 2, 100, "PAUSED", 0);
+                // Clip();
+                // videoNextPage();
             }
+            KB_KeyDown[sc_Pause] = 0;
         }
         return;
     }
@@ -1563,7 +1584,7 @@ void CheckKeys()
                     {
                         bHolly = kFalse;
                         StatusMessage(1, " ");
-                    } 
+                    }
                     else if (!strcmp(pToken, "GOTO"))
                     {
                         // move player to X, Y coordinates
@@ -1780,7 +1801,7 @@ void DoCredits()
 
         for (int i = nStart; i < nCreditsIndex; i++)
         {
-            // var 24 == 
+            // var 24 ==
 
             int nWidth = MyGetStringWidth(gString[edi]);
             myprintext((320 - nWidth) / 2, y, gString[edi], 0);
@@ -1830,7 +1851,7 @@ void FinishLevel()
     StopAllSounds();
 
     bCamera = kFalse;
-    bMapMode = kFalse;
+    nMapMode = 0;
 
     if (levelnum != kMap20)
     {
@@ -1970,7 +1991,7 @@ void DrawClock()
 
     tileLoad(kTile3603);
 
-    nRedTicks = 0;
+//    nRedTicks = 0;
     memset((void*)waloff[kTile3603], -1, 4096);
 
     if (lCountDown / 30 != nClockVal)
@@ -2013,7 +2034,7 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
     // {
     //     return 65536;
     // }
-    if (bRecord || bPlayback || nFreeze != 0 || bCamera)
+    if (bRecord || bPlayback || nFreeze != 0 || bCamera || bPause)
         return 65536;
     int32_t rfreq = (refreshfreq != -1 ? refreshfreq : 60);
     uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*120);
@@ -2024,7 +2045,59 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
     return clamp(tabledivide64(65536*elapsedFrames*30, rfreq), 0, 65536);
 }
 
-ClockTicks tclocks, tclocks2;
+int r_showfps;
+
+#define COLOR_RED redcol
+#define COLOR_WHITE whitecol
+
+#define LOW_FPS ((videoGetRenderMode() == REND_CLASSIC) ? 35 : 50)
+#define SLOW_FRAME_TIME 20
+
+#if defined GEKKO
+# define FPS_YOFFSET 16
+#else
+# define FPS_YOFFSET 0
+#endif
+
+#define FPS_COLOR(x) ((x) ? COLOR_RED : COLOR_WHITE)
+
+static void G_PrintFPS(void)
+{
+    static char tempbuf[256];
+    static int32_t frameCount;
+    static double cumulativeFrameDelay;
+    static double lastFrameTime;
+    static float lastFPS, minFPS = std::numeric_limits<float>::max(), maxFPS;
+    static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
+
+    double frameTime = timerGetHiTicks();
+    double frameDelay = frameTime - lastFrameTime;
+    cumulativeFrameDelay += frameDelay;
+
+    if (frameDelay >= 0)
+    {
+        int32_t x = (xdim <= 640);
+
+        if (r_showfps)
+        {
+            int32_t chars = Bsprintf(tempbuf, "%.1f ms, %5.1f fps", frameDelay, lastFPS);
+
+            printext256(windowxy2.x-(chars<<(3-x))+1, windowxy1.y+2+FPS_YOFFSET, blackcol, -1, tempbuf, x);
+            printext256(windowxy2.x-(chars<<(3-x)), windowxy1.y+1+FPS_YOFFSET,
+                FPS_COLOR(lastFPS < LOW_FPS), -1, tempbuf, x);
+        }
+
+        if (cumulativeFrameDelay >= 1000.0)
+        {
+            lastFPS = 1000.f * frameCount / cumulativeFrameDelay;
+            // g_frameRate = Blrintf(lastFPS);
+            frameCount = 0;
+            cumulativeFrameDelay = 0.0;
+        }
+        frameCount++;
+    }
+    lastFrameTime = frameTime;
+}
 
 void GameDisplay(void)
 {
@@ -2042,26 +2115,16 @@ void GameDisplay(void)
     auto smoothRatio = calc_smoothratio(totalclock, tclocks);
 
     DrawView(smoothRatio);
-    UpdateMap();
 
-    if (bMapMode)
+    if (bPause)
     {
-#if 0
-        if (bHiRes && nViewBottom > nMaskY)
-        {
-            videoSetViewableArea(nViewLeft, nViewTop, nViewRight, nMaskY);
-            DrawMap();
-            videoSetViewableArea(nViewLeft, nViewTop, nViewRight, nViewBottom);
-        }
-        else
-        {
-            DrawMap();
-        }
-#else
-        // TODO: Map should not be drawn on top of status bar. Redraw status bar?
-        DrawMap();
-#endif
+        int nLen = MyGetStringWidth("PAUSED");
+        myprintext((320 - nLen) / 2, 100, "PAUSED", 0);
     }
+
+    G_PrintFPS();
+
+    videoNextPage();
 }
 
 void GameMove(void)
@@ -2092,13 +2155,13 @@ void GameMove(void)
             if (nRedTicks <= 0) {
                 DoRedAlert(0);
             }
+        }
 
-            nAlarmTicks--;
-            nButtonColor--;
+        nAlarmTicks--;
+        nButtonColor--;
 
-            if (nAlarmTicks <= 0) {
-                DoRedAlert(1);
-            }
+        if (nAlarmTicks <= 0) {
+            DoRedAlert(1);
         }
     }
 
@@ -2125,6 +2188,14 @@ void GameMove(void)
     if (moveframes < 0)
         moveframes = 0;
 }
+
+#if defined(_WIN32) && defined(DEBUGGINGAIDS)
+// See FILENAME_CASE_CHECK in cache1d.c
+static int32_t check_filename_casing(void)
+{
+    return 1;
+}
+#endif
 
 int32_t r_maxfps = 60;
 int32_t r_maxfpsoffset = 0;
@@ -2155,12 +2226,14 @@ int G_FPSLimit(void)
     return 0;
 }
 
+static int32_t nonsharedtimer;
+
 int app_main(int argc, char const* const* argv)
 {
     char tempbuf[256];
 #ifdef _WIN32
 #ifndef DEBUGGINGAIDS
-    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
 #ifdef EDUKE32_STANDALONE
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
@@ -2171,8 +2244,6 @@ int app_main(int argc, char const* const* argv)
             return 3;
     }
 #endif
-
-    backgroundidle = 0;
 
 #ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
@@ -2205,7 +2276,7 @@ int app_main(int argc, char const* const* argv)
 
     //int esi = 1;
     //int edi = esi;
-    int doTitle = kFalse; // REVERT kTrue;
+    int doTitle = kTrue; // REVERT kTrue;
     int stopTitle = kFalse;
     levelnew = 1;
 
@@ -2327,9 +2398,11 @@ int app_main(int argc, char const* const* argv)
                     case 'h':
                         SetHiRes();
                         break;
+#if 0
                     case 's':
                         socket = atoi(pChar + 1);
                         break;
+#endif
                     case 't':
                         nNetTime = atoi(pChar + 1);
                         if (nNetTime < 0) {
@@ -2345,6 +2418,8 @@ int app_main(int argc, char const* const* argv)
                         if (pChar[1] == 'd' && pChar[2] == 'o' && pChar[3] == 'f' && pChar[4] == 'f') {
                             bNoCDCheck = kTrue;
                         }
+
+						break;
                     }
                     default:
                     {
@@ -2453,7 +2528,7 @@ int app_main(int argc, char const* const* argv)
                     break;
                 }
 
-                
+
             }
 
 //			strupr(gString[j]);
@@ -2490,6 +2565,25 @@ int app_main(int argc, char const* const* argv)
     OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
+    SetupInput();
+
+    char *const setupFileName = Xstrdup(setupfilename);
+    char *const p = strtok(setupFileName, ".");
+
+    if (!p || !Bstrcmp(setupfilename, kSetupFilename))
+        Bsprintf(tempbuf, "settings.cfg");
+    else
+        Bsprintf(tempbuf, "%s_settings.cfg", p);
+
+    Xfree(setupFileName);
+
+    OSD_Exec(tempbuf);
+    OSD_Exec("autoexec.cfg");
+
+    CONFIG_SetDefaultKeys(keydefaults, true);
+
+    system_getcvars();
+
     if (nNetPlayerCount == -1)
     {
         nNetPlayerCount = nCfgNetPlayers - 1;
@@ -2498,6 +2592,7 @@ int app_main(int argc, char const* const* argv)
 
     // loc_116A5:
 
+#if 0
     if (nNetPlayerCount)
     {
         InitInput();
@@ -2528,6 +2623,7 @@ int app_main(int argc, char const* const* argv)
             WaitTicks(nWaitTicks);
         }
     }
+#endif
 
     // temp - moving InstallEngine(); before FadeOut as we use nextpage() in FadeOut
     InstallEngine();
@@ -2558,7 +2654,6 @@ int app_main(int argc, char const* const* argv)
     FadeOut(0);
 //	InstallEngine();
     KB_Startup();
-    SetupInput();
     InitView();
     myloadconfig();
     InitFX();
@@ -2917,7 +3012,7 @@ LOOP3:
                 // if (nNetTime > 0)
                 // {
                 //     nNetTime--;
-                // 
+                //
                 //     if (!nNetTime) {
                 //         nFreeze = 3;
                 //     }
@@ -2952,31 +3047,40 @@ LOOP3:
         }
         else
         {
+            static bool frameJustDrawn;
             bInMove = kTrue;
             if (!bPause && totalclock >= tclocks + 4)
             {
-                GetLocalInput();
-
-                sPlayerInput[nLocalPlayer].xVel = lPlayerXVel;
-                sPlayerInput[nLocalPlayer].yVel = lPlayerYVel;
-                sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
-                sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
-                sPlayerInput[nLocalPlayer].nTarget = besttarget;
-
-                Ra[nLocalPlayer].nTarget = besttarget;
-
-                lLocalCodes = 0;
-                nPlayerDAng = 0;
-
-                sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
-
                 do
                 {
-                    timerUpdate();
-                    tclocks += 4;
-                    GameMove();
-                    timerUpdate();
-                } while (levelnew < 0 && totalclock >= tclocks + 4);
+                    if (!frameJustDrawn)
+                        break;
+
+                    frameJustDrawn = false;
+
+                    GetLocalInput();
+
+                    sPlayerInput[nLocalPlayer].xVel = lPlayerXVel;
+                    sPlayerInput[nLocalPlayer].yVel = lPlayerYVel;
+                    sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
+                    sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
+                    sPlayerInput[nLocalPlayer].nTarget = besttarget;
+
+                    Ra[nLocalPlayer].nTarget = besttarget;
+
+                    lLocalCodes = 0;
+                    nPlayerDAng = 0;
+
+                    sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
+
+                    do
+                    {
+                        // timerUpdate();
+                        tclocks += 4;
+                        GameMove();
+                        // timerUpdate();
+                    } while (levelnew < 0 && totalclock >= tclocks + 4);
+                } while (0);
             }
             bInMove = kFalse;
 
@@ -2985,8 +3089,7 @@ LOOP3:
             if (G_FPSLimit())
             {
                 GameDisplay();
-
-                videoNextPage();
+                frameJustDrawn = true;
             }
         }
         if (!bInDemo)
@@ -3019,7 +3122,7 @@ LOOP3:
                             levelnew = 0;
                             levelnum = 0;
                         }
-                        break;
+                        goto STARTGAME2;
                 }
 
                 totalclock = ototalclock = tclocks;
@@ -3027,52 +3130,33 @@ LOOP3:
                 CONTROL_BindsEnabled = 1;
                 RefreshStatus();
             }
-            else if (KB_KeyDown[sc_PrintScreen])
+            else if (KB_UnBoundKeyPressed(sc_F12))
             {
+                KB_ClearKeyDown(sc_F12);
                 videoCaptureScreen("captxxxx.png", 0);
-                KB_KeyDown[sc_PrintScreen] = 0;
             }
             else if (BUTTON(gamefunc_Map)) // e.g. TAB (to show 2D map)
             {
                 CONTROL_ClearButton(gamefunc_Map);
 
                 if (!nFreeze) {
-                    bMapMode = !bMapMode;
+                    nMapMode = (nMapMode+1)%3;
                 }
             }
-            else if (BUTTON(gamefunc_Zoom_Out))
-            {
-                lMapZoom -= ldMapZoom;
 
-                if (lMapZoom <= 32)
-                {
-                    lMapZoom = 32;
-                }
-                else if (ldMapZoom <= 16)
-                {
-                    ldMapZoom = 16;
-                }
-                else
-                {
-                    ldMapZoom -= 2;
-                }
-            }
-            else if (BUTTON(gamefunc_Zoom_In))
+            if (nMapMode != 0)
             {
-                lMapZoom += ldMapZoom;
-                if (lMapZoom >= 1280)
-                {
-                    lMapZoom = 1280;
+                int const timerOffset = ((int) totalclock - nonsharedtimer);
+                nonsharedtimer += timerOffset;
+
+                if (BUTTON(gamefunc_Zoom_In))
+                    lMapZoom += mulscale6(timerOffset, max<int>(lMapZoom, 256));
+
+                if (BUTTON(gamefunc_Zoom_Out))
+                    lMapZoom -= mulscale6(timerOffset, max<int>(lMapZoom, 256));
+
+                lMapZoom = clamp(lMapZoom, 48, 2048);
                 }
-                else if (ldMapZoom >= 128)
-                {
-                    ldMapZoom = 128;
-                }
-                else
-                {
-                    ldMapZoom += 2;
-                }
-            }
 
             if (PlayerList[nLocalPlayer].nHealth > 0)
             {
@@ -3193,18 +3277,21 @@ void DoTitle()
 
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
 
-    BlackOut();
+    if (videoGetRenderMode() == REND_CLASSIC)
+        BlackOut();
 
     overwritesprite(0, 0, EXHUMED ? kTileBMGLogo : kTilePIELogo, 0, 2, kPalNormal);
     videoNextPage();
 
-    FadeIn();
+    if (videoGetRenderMode() == REND_CLASSIC)
+        FadeIn();
 
     ClearAllKeys();
 
     WaitAnyKey(2);
 
-    FadeOut(0);
+    if (videoGetRenderMode() == REND_CLASSIC)
+        FadeOut(0);
 
     SetOverscan(BASEPAL);
 
@@ -3213,17 +3300,20 @@ void DoTitle()
     overwritesprite(0, 0, nScreenTile, 0, 2, kPalNormal);
     videoNextPage();
 
-    FadeIn();
+    if (videoGetRenderMode() == REND_CLASSIC)
+        FadeIn();
     PlayLogoSound();
 
     WaitAnyKey(2);
 
-    FadeOut(0);
+    if (videoGetRenderMode() == REND_CLASSIC)
+        FadeOut(0);
     ClearAllKeys();
 
     PlayMovie("book.mov");
 
-    FadeOut(0);
+    if (videoGetRenderMode() == REND_CLASSIC)
+        FadeOut(0);
 
     SetOverscan(BASEPAL);
     GrabPalette();
@@ -3355,9 +3445,9 @@ void CopyTileToBitmap(short nSrcTile,  short nDestTile, int xPos, int yPos)
 
     int destYSize = tilesiz[nDestTile].y;
     int srcYSize = tilesiz[nSrcTile].y;
-    
+
     uint8_t *pSrc = (uint8_t*)waloff[nSrcTile];
-    
+
     for (int x = 0; x < tilesiz[nSrcTile].x; x++)
     {
         pDest += destYSize;
@@ -3451,7 +3541,7 @@ int Query(short nLines, short nKeys, ...)
     {
         char *str = va_arg(args, char*);
         strcpy(strings[i], str);
-        strupr(strings[i]);
+        Bstrupr(strings[i]);
 
         int strWidth = MyGetStringWidth(strings[i]);
 
@@ -3461,7 +3551,7 @@ int Query(short nLines, short nKeys, ...)
     }
 
     for (i = 0; i < nKeys; i++) {
-        keys[i] = va_arg(args, char);
+        keys[i] = (char)va_arg(args, int);
     }
 
     va_end(args);
@@ -3472,17 +3562,22 @@ int Query(short nLines, short nKeys, ...)
 
     // add some padding to left and right sides of text in the box
     nWidth += 30;
-    
+
     int x1 = (320 - nWidth) / 2;
     int x2 = x1 + nWidth;
 
-    if (bHiRes)
-    {
-        x1 *= 2;
-        y1 *= 2;
-        nHeight *= 2;
-        x2 *= 2;
-    }
+    // if (bHiRes)
+    // {
+    //     x1 *= 2;
+    //     y1 *= 2;
+    //     nHeight *= 2;
+    //     x2 *= 2;
+    // }
+
+    y1 = scale(y1, ydim, 200);
+    nHeight = scale(nHeight, ydim, 200);
+    x1 = scale(x1-160, ydim*4/3, 320)+xdim/2;
+    x2 = scale(x2-160, ydim*4/3, 320)+xdim/2;
 
     // draw background box that the text sits in
     for (i = 0; i < nHeight; i++) {
@@ -3590,7 +3685,7 @@ void InitSpiritHead()
     sprite[nSpiritSprite].picnum = kTileRamsesWorkTile;
 
     nHeadStage = 0;
-    
+
     // work tile is twice as big as the normal head size
     tilesiz[kTileRamsesWorkTile].x = 97  * 2; // 194;
     tilesiz[kTileRamsesWorkTile].y = 106 * 2; // 212;
@@ -3620,7 +3715,7 @@ void InitSpiritHead()
     nCDTrackLength = playCDtrack(nTrack);
 
     bSubTitles = nCDTrackLength == 0;
-    
+
     StartSwirlies();
 
     sprintf(filename, "LEV%d.PUP", levelnum);
@@ -3640,18 +3735,18 @@ void DimSector(short nSector)
 {
     short startwall = sector[nSector].wallptr;
     short nWalls = sector[nSector].wallnum;
- 
+
     for (int i = 0; i < nWalls; i++)
     {
         if (wall[startwall+i].shade < 40) {
             wall[startwall+i].shade++;
         }
     }
- 
+
     if (sector[nSector].floorshade < 40) {
         sector[nSector].floorshade++;
     }
- 
+
     if (sector[nSector].ceilingshade < 40) {
         sector[nSector].ceilingshade++;
     }
@@ -4021,7 +4116,7 @@ int DoSpiritHead()
         for (int i = 0; i < 97; i++)
         {
             memcpy(pDest, pSrc, 106);
-            
+
             pDest += 212;
             pSrc += 106;
         }

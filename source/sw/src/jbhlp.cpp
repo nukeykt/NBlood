@@ -157,7 +157,7 @@ void ContextHelp(short spritenum)
     kclose(fp);
 
     // Conver filebuffer to all upper case
-    //strupr(filebuffer);
+    //Bstrupr(filebuffer);
 
     // Assign a token name to search for based on the sprite being pointed to.
 

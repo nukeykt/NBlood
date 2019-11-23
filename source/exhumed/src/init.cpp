@@ -1,3 +1,21 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
+
 #include "compat.h"
 #include "keyboard.h"
 #include "control.h"
@@ -57,6 +75,7 @@ int   SectBelow[kMaxSectors]     = { 0 };
 
 uint8_t bIsVersion6 = kTrue;
 
+#if 0
 // definitions for map version 6 structures
 #pragma pack(1)
 
@@ -107,7 +126,7 @@ struct Sprite_6
 static Sector_6 sector_6[1024];
 static Wall_6   wall_6[8192];
 static Sprite_6 sprite_6[4096];
-
+#endif
 
 
 uint8_t LoadLevel(int nMap)
@@ -397,15 +416,6 @@ uint8_t LoadLevel(int nMap)
 
     levelnum = nMap;
 
-    // TEMP - show full 2D map// TEMP
-    for (i = 0; i < (kMaxWalls >> 3); i++)
-        show2dwall[i] = 0xFF;
-    for (i = 0; i < (kMaxSprites >> 3); i++)
-        show2dsprite[i] = 0xFF;
-    for (i = 0; i < numsectors; i++) {
-        show2dsector[i >> 3] |= (1 << (i & 7));
-    }
-
     return kTrue;
 }
 
@@ -418,7 +428,7 @@ void ResetEngine()
     resettiming();
 
     totalclock  = 0;
-    ototalclock = (int)totalclock;
+    ototalclock = totalclock;
     localclock  = (int)totalclock;
 
     numframes = 0;
@@ -539,7 +549,7 @@ void SnapSectors(short nSectorA, short nSectorB, short b)
     while (num1 > nCount)
     {
         short dx = nWallB;
-        
+
         int esi = 0x7FFFFFF;
         int edi = esi;
 
@@ -548,7 +558,7 @@ void SnapSectors(short nSectorA, short nSectorB, short b)
 
         int var_14 = 0;
 
-        int nCount2 = 0; 
+        int nCount2 = 0;
 
         while (nCount2 < num2)
         {
@@ -586,7 +596,7 @@ void SnapSectors(short nSectorA, short nSectorB, short b)
 
             var_34 += var_3C;
 
-            if (var_38 < var_34) 
+            if (var_38 < var_34)
             {
                 esi = x - wall[dx].x;
                 edi = y - wall[dx].y;
@@ -637,10 +647,6 @@ void ProcessSpriteTag(short nSprite, short lotag, short hitag)
     int nLotag2 = lotag / 1000;
     if (nLotag2 == 0) {
         nLotag2 = 1;
-    }
-
-    if (lotag > 1000) {
-        int blahgh = 123;
     }
 
     // this value can change in the below code but we also need to retain the original hitag value
@@ -873,7 +879,7 @@ void ProcessSpriteTag(short nSprite, short lotag, short hitag)
                 BuildRex(nSprite, 0, 0, 0, 0, 0, nChannel);
                 return;
             }
-            case 106: 
+            case 106:
             {
                 if (bNoCreatures) {
                     mydeletesprite(nSprite);
@@ -994,7 +1000,7 @@ void ProcessSpriteTag(short nSprite, short lotag, short hitag)
             {
                 short nSector = sprite[nSprite].sectnum;
                 SectDepth[nSector] = hitag << 8;
-                
+
                 mydeletesprite(nSprite);
                 return;
             }

@@ -1,3 +1,21 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
+
 #include "compat.h"
 #include "renderlayer.h"
 #include "_control.h"
@@ -12,11 +30,11 @@
 #include "config.h"
 
 #include <string>
-#include <io.h>
+//#include <io.h>
 #include <stdio.h>
 #include <time.h>
 
-static const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
+const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
 {
   "Move_Forward",
   "Move_Backward",
@@ -56,11 +74,11 @@ static const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
   "Inventory_Left",
   "Inventory_Right",
   "Mouse_Sensitivity_Up",
-  "Mouse_Sensitivity_Down"
+  "Mouse_Sensitivity_Down",
   "Show_Console",
 };
 
-static const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
+const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
 {
    "W", "Kpad8",
    "S", "Kpad2",
@@ -104,7 +122,7 @@ static const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "`", "",
 };
 
-static const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
+const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
 {
    "Up", "Kpad8",
    "Down", "Kpad2",
@@ -529,7 +547,7 @@ int CONFIG_ReadSetup()
 
     if (cachesize > MAXCACHE1DSIZE)
         MAXCACHE1DSIZE = cachesize;
-    
+
 
     if (g_noSetup == 0 && g_modDir[0] == '/')
     {
@@ -557,6 +575,7 @@ int CONFIG_ReadSetup()
     if (gSetup.bpp < 8) gSetup.bpp = 32;
 
     setupread = 1;
+    return 0;
 }
 
 // wrapper for CONTROL_MapKey(), generates key bindings to reflect changes to keyboard setup

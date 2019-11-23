@@ -29,10 +29,6 @@ VOIDWRAP_API void Voidwrap_Steam_SetCallback_ScreenshotReady(VW_VOID_INT32 funct
 #endif
 #endif
 
-#ifdef VWCONTROLLER
-VOIDWRAP_API int32_t Voidwrap_Steam_GetConnectedControllers(void);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
@@ -57,10 +53,6 @@ static VW_SETCALLBACK_VOID Voidwrap_Steam_SetCallback_ScreenshotRequested;
 #if 0
 static VW_SETCALLBACK_VOID_INT32 Voidwrap_Steam_SetCallback_ScreenshotReady;
 #endif
-#endif
-
-#ifdef VWCONTROLLER
-static VW_INT32 Voidwrap_Steam_GetConnectedControllers;
 #endif
 
 #endif

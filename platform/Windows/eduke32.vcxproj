@@ -188,7 +188,6 @@
     <ClInclude Include="..\..\source\duke3d\src\input.h" />
     <ClInclude Include="..\..\source\duke3d\src\inv.h" />
     <ClInclude Include="..\..\source\duke3d\src\menus.h" />
-    <ClInclude Include="..\..\source\duke3d\src\mpu401.h" />
     <ClInclude Include="..\..\source\duke3d\src\network.h" />
     <ClInclude Include="..\..\source\duke3d\src\player.h" />
     <ClInclude Include="..\..\source\duke3d\src\premap.h" />
@@ -244,9 +243,6 @@
     <ClCompile Include="..\..\source\duke3d\src\input.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\mdump.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\menus.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\midi.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\mpu401.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\music.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\namesdyn.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\network.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\osdcmds.cpp" />
@@ -258,12 +254,6 @@
     <ClCompile Include="..\..\source\duke3d\src\sbar.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\screens.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\screentext.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\sdlmusic.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\sector.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sounds.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\soundsdyn.cpp" />
@@ -282,9 +272,6 @@
     </ProjectReference>
     <ProjectReference Include="build.vcxproj">
       <Project>{dbecb851-5624-4fa8-9a9d-7169d0f12ff1}</Project>
-    </ProjectReference>
-    <ProjectReference Include="enet.vcxproj">
-      <Project>{a68cc5e4-567a-44c8-94fe-c1de09aeeb40}</Project>
     </ProjectReference>
     <ProjectReference Include="glad.vcxproj">
       <Project>{6ac1d997-8dae-4343-8dd8-da2a1ca63212}</Project>
