@@ -17,10 +17,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 
 #include "cdaudio.h"
+#include "cd.h"
+#include "exhumed.h"
+
 
 int fadecdaudio()
 {
-/* TODO
     StartfadeCDaudio();
 
     while (1)
@@ -32,7 +34,7 @@ int fadecdaudio()
             WaitTicks(1);
         }
     }
-*/
+
     return 1;
 }
 

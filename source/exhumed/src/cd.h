@@ -19,6 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef __cd_h__
 #define __cd_h__
 
+extern int trackhandle;
+
 int initcdaudio();
 void setCDaudiovolume(int val);
 int playCDtrack(int nTrack);
