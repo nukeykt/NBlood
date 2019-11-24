@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "qav.h"
 
 
-QAV* weaponQAV[];
+extern QAV* weaponQAV[];
 
 void WeaponInit(void);
 void WeaponDraw(PLAYER *pPlayer, int a2, int a3, int a4, int a5);

@@ -354,7 +354,6 @@ HAVE_VORBIS := 1
 HAVE_FLAC := 1
 HAVE_XMP := 1
 RENDERTYPE := SDL
-MIXERTYPE := SDL
 SDL_TARGET := 2
 USE_PHYSFS := 0
 
@@ -385,12 +384,6 @@ ifneq (100,$(RELEASE)$(PROFILER)$(ALLOCACHE_AS_MALLOC))
 endif
 
 ifeq ($(PLATFORM),WINDOWS)
-    MIXERTYPE := WIN
-    ifneq ($(RENDERTYPE),SDL)
-        ifeq ($(MIXERTYPE),SDL)
-            override MIXERTYPE := WIN
-        endif
-    endif
     override HAVE_GTK2 := 0
 else ifeq ($(PLATFORM),DARWIN)
     HAVE_GTK2 := 0
@@ -846,7 +839,7 @@ ifneq (0,$(MEMMAP))
     endif
 endif
 
-COMPILERFLAGS += -DRENDERTYPE$(RENDERTYPE)=1 -DMIXERTYPE$(MIXERTYPE)=1
+COMPILERFLAGS += -DRENDERTYPE$(RENDERTYPE)=1
 
 ifeq (0,$(NETCODE))
     COMPILERFLAGS += -DNETCODE_DISABLE
@@ -959,17 +952,10 @@ ifeq ($(RENDERTYPE),SDL)
         ifeq ($(PLATFORM),DARWIN)
             APPLE_FRAMEWORKS := /Library/Frameworks
             LIBDIRS += -F$(APPLE_FRAMEWORKS)
-            ifeq ($(MIXERTYPE),SDL)
-                COMPILERFLAGS += -I$(APPLE_FRAMEWORKS)/$(SDLNAME)_mixer.framework/Headers
-                LIBS += -Wl,-framework,$(SDLNAME)_mixer
-            endif
             COMPILERFLAGS += -I$(APPLE_FRAMEWORKS)/$(SDLNAME).framework/Headers
             LIBS += -Wl,-framework,$(SDLNAME) -Wl,-rpath -Wl,"@loader_path/../Frameworks"
         endif
     else
-        ifeq ($(MIXERTYPE),SDL)
-            LIBS += -l$(SDLNAME)_mixer
-        endif
         ifneq ($(SDLCONFIG),)
             SDLCONFIG_CFLAGS := $(strip $(subst -Dmain=SDL_main,,$(shell $(SDLCONFIG) --cflags)))
             SDLCONFIG_LIBS := $(strip $(subst -mwindows,,$(shell $(SDLCONFIG) --libs)))

@@ -13099,7 +13099,7 @@ void ExtCheckKeys(void)
 
 void faketimerhandler(void)
 {
-    timerUpdate();
+    timerUpdateClock();
 }
 
 void SetGamePalette(int32_t palid)

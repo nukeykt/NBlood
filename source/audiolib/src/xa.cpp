@@ -4,10 +4,11 @@
  * Adapted and remixed from superxa2wav
  */
 
-#include "compat.h"
-#include "pitch.h"
-#include "multivoc.h"
 #include "_multivc.h"
+#include "compat.h"
+#include "multivoc.h"
+#include "pitch.h"
+#include "pragmas.h"
 
 //#define NO_XA_HEADER
 
@@ -29,7 +30,7 @@
 
 #if USE_FXD
 #define FXD_FxdToPcm16(dt)      (max(min((dt)/2, 32767), -32768))
-#define FXD_Pcm16ToFxd(dt)      ((int32_t)dt*2)
+#define FXD_Pcm16ToFxd(dt)      ((int)dt*2)
 #endif
 
 typedef struct {
@@ -38,8 +39,8 @@ typedef struct {
    size_t pos;
 
 #if USE_FXD
-   int32_t t1, t2;
-   int32_t t1_x, t2_x;
+   int t1, t2;
+   int t1_x, t2_x;
 #else
    double t1, t2;
    double t1_x, t2_x;
@@ -58,17 +59,17 @@ typedef struct XASector {
 } XASector;
 
 #if USE_FXD
-static int32_t K0[4] = {
+static int K0[4] = {
     0x00000000,
     0x0000F000,
     0x0001CC00,
     0x00018800,
 };
-static int32_t K1[4] = {
+static int K1[4] = {
     0x00000000,
     0x00000000,
-    (int32_t)0xFFFF3000u,
-    (int32_t)0xFFFF2400u,
+    (int)0xFFFF3000u,
+    (int)0xFFFF2400u,
 };
 #else
 static double K0[4] = {
@@ -87,12 +88,12 @@ static double K1[4] = {
 
 
 #if USE_FXD
-static int32_t FXD_FixMul(int32_t a, int32_t b)
+static int FXD_FixMul(int a, int b)
 {
-    int32_t  high_a, low_a, high_b, low_b;
-    int32_t  hahb, halb, lahb;
+    int  high_a, low_a, high_b, low_b;
+    int  hahb, halb, lahb;
     uint32_t lalb;
-    int32_t  ret;
+    int  ret;
 
     high_a = a >> 16;
     low_a  = a & 0x0000FFFF;
@@ -112,11 +113,11 @@ static int32_t FXD_FixMul(int32_t a, int32_t b)
 
 
 
-static int8_t getSoundData(int8_t *buf, int32_t unit, int32_t sample)
+static int8_t getSoundData(int8_t *buf, int unit, int sample)
 {
     int8_t ret;
     int8_t *p;
-    int32_t offset, shift;
+    int offset, shift;
 
     p = buf;
     shift = (unit%2) * 4;
@@ -132,13 +133,13 @@ static int8_t getSoundData(int8_t *buf, int32_t unit, int32_t sample)
     return ret;
 }
 
-static int8_t getFilter(const int8_t *buf, int32_t unit)
+static int8_t getFilter(const int8_t *buf, int unit)
 {
     return (*(buf + 4 + unit) >> 4) & 0x03;
 }
 
 
-static int8_t getRange(const int8_t *buf, int32_t unit)
+static int8_t getRange(const int8_t *buf, int unit)
 {
     return *(buf + 4 + unit) & 0x0F;
 }
@@ -149,10 +150,10 @@ static void decodeSoundSectMono(XASector *ssct, xa_data * xad)
     size_t count = 0;
     int8_t snddat, filt, range;
     int16_t decoded;
-    int32_t unit, sample;
-    int32_t sndgrp;
+    int unit, sample;
+    int sndgrp;
 #if USE_FXD
-    int32_t tmp2, tmp3, tmp4, tmp5;
+    int tmp2, tmp3, tmp4, tmp5;
 #else
     double tmp2, tmp3, tmp4, tmp5;
 #endif
@@ -168,7 +169,7 @@ static void decodeSoundSectMono(XASector *ssct, xa_data * xad)
             {
                 snddat = getSoundData(ssct->SoundGroups[sndgrp], unit, sample);
 #if USE_FXD
-                tmp2 = (int32_t)(snddat) << (12 - range);
+                tmp2 = (int)(snddat) << (12 - range);
                 tmp3 = FXD_Pcm16ToFxd(tmp2);
                 tmp4 = FXD_FixMul(K0[filt], xad->t1);
                 tmp5 = FXD_FixMul(K1[filt], xad->t2);
@@ -199,10 +200,10 @@ static void decodeSoundSectStereo(XASector *ssct, xa_data * xad)
     int8_t snddat, filt, range;
     int8_t filt1, range1;
     int16_t decoded;
-    int32_t unit, sample;
-    int32_t sndgrp;
+    int unit, sample;
+    int sndgrp;
 #if USE_FXD
-    int32_t tmp2, tmp3, tmp4, tmp5;
+    int tmp2, tmp3, tmp4, tmp5;
 #else
     double tmp2, tmp3, tmp4, tmp5;
 #endif
@@ -222,7 +223,7 @@ static void decodeSoundSectStereo(XASector *ssct, xa_data * xad)
                 // Channel 1
                 snddat = getSoundData(ssct->SoundGroups[sndgrp], unit, sample);
 #if USE_FXD
-                tmp2 = (int32_t)(snddat) << (12 - range);
+                tmp2 = (int)(snddat) << (12 - range);
                 tmp3 = FXD_Pcm16ToFxd(tmp2);
                 tmp4 = FXD_FixMul(K0[filt], xad->t1);
                 tmp5 = FXD_FixMul(K1[filt], xad->t2);
@@ -244,7 +245,7 @@ static void decodeSoundSectStereo(XASector *ssct, xa_data * xad)
                 // Channel 2
                 snddat = getSoundData(ssct->SoundGroups[sndgrp], unit+1, sample);
 #if USE_FXD
-                tmp2 = (int32_t)(snddat) << (12 - range1);
+                tmp2 = (int)(snddat) << (12 - range1);
                 tmp3 = FXD_Pcm16ToFxd(tmp2);
                 tmp4 = FXD_FixMul(K0[filt1], xad->t1_x);
                 tmp5 = FXD_FixMul(K1[filt1], xad->t2_x);
@@ -269,13 +270,13 @@ static void decodeSoundSectStereo(XASector *ssct, xa_data * xad)
     memcpy(xad->block, decodeBuf, kBufSize);
 }
 
-int32_t MV_GetXAPosition(VoiceNode *voice)
+int MV_GetXAPosition(VoiceNode *voice)
 {
     auto xad = (xa_data *) voice->rawdataptr;
     return xad->pos;
 }
 
-void MV_SetXAPosition(VoiceNode *voice, int32_t position)
+void MV_SetXAPosition(VoiceNode *voice, int position)
 {
     auto xad = (xa_data *) voice->rawdataptr;
 
@@ -324,7 +325,7 @@ static playbackstatus MV_GetNextXABlock
     voice->SamplingRate = (((coding >> 2) & 3) == 1) ? 18900 : 37800;
 
     // CODEDUP multivoc.c MV_SetVoicePitch
-    voice->RateScale    = ( voice->SamplingRate * voice->PitchScale ) / MV_MixRate;
+    voice->RateScale    = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
     voice->FixedPointBufferSize = ( voice->RateScale * MV_MIXBUFFERSIZE ) - voice->RateScale;
     MV_SetVoiceMixMode( voice );
 
@@ -368,20 +369,17 @@ Begin playback of sound data at specified angle and distance
 from listener.
 ---------------------------------------------------------------------*/
 
-int32_t MV_PlayXA3D(char *ptr, uint32_t length, int32_t loophow, int32_t pitchoffset, int32_t angle, int32_t distance, int32_t priority, float volume,
+int MV_PlayXA3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, float volume,
                     intptr_t callbackval)
 {
-    int32_t left;
-    int32_t right;
-    int32_t mid;
-    int32_t vol;
-    int32_t status;
+    int left;
+    int right;
+    int mid;
+    int vol;
+    int status;
 
     if (!MV_Installed)
-    {
-        MV_SetErrorCode(MV_NotInstalled);
-        return MV_Error;
-    }
+        return MV_SetErrorCode(MV_NotInstalled);
 
     if (distance < 0)
     {
@@ -411,25 +409,20 @@ Begin playback of sound data with the given sound levels and
 priority.
 ---------------------------------------------------------------------*/
 
-int32_t MV_PlayXA(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend, int32_t pitchoffset, int32_t vol, int32_t left, int32_t right,
-                  int32_t priority, float volume, intptr_t callbackval)
+int MV_PlayXA(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right,
+                  int priority, float volume, intptr_t callbackval)
 {
    VoiceNode   *voice;
    xa_data * xad = 0;
 
    UNREFERENCED_PARAMETER(loopend);
 
-   if ( !MV_Installed )
-   {
-      MV_SetErrorCode( MV_NotInstalled );
-      return MV_Error;
-   }
+   if (!MV_Installed)
+       return MV_SetErrorCode(MV_NotInstalled);
 
    xad = (xa_data *) Xcalloc( 1, sizeof(xa_data) );
-   if (!xad) {
-      MV_SetErrorCode( MV_InvalidFile );
-      return MV_Error;
-   }
+   if (!xad)
+       return MV_SetErrorCode(MV_InvalidFile);
 
    xad->ptr = ptr;
    xad->pos = XA_DATA_START;
@@ -437,13 +430,11 @@ int32_t MV_PlayXA(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend
    xad->length = length;
 
    // Request a voice from the voice pool
-   voice = MV_AllocVoice( priority );
-   if ( voice == NULL )
+   voice = MV_AllocVoice(priority);
+   if (voice == nullptr)
    {
-
-      Xfree(xad);
-      MV_SetErrorCode( MV_NoVoices );
-      return MV_Error;
+       Xfree(xad);
+       return MV_SetErrorCode(MV_NoVoices);
    }
 
    xad->owner = voice;
@@ -455,8 +446,8 @@ int32_t MV_PlayXA(char *ptr, uint32_t length, int32_t loopstart, int32_t loopend
    voice->LoopCount   = 0;
    voice->BlockLength = 0;
    voice->PitchScale  = PITCH_GetScale( pitchoffset );
-   voice->next        = NULL;
-   voice->prev        = NULL;
+   voice->next        = nullptr;
+   voice->prev        = nullptr;
    voice->priority    = priority;
    voice->callbackval = callbackval;
 

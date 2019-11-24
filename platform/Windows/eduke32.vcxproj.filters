@@ -132,6 +132,9 @@
     <ClInclude Include="..\..\source\duke3d\src\android.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\duke3d\src\_midi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\cheats.h">
       <Filter>Header Files</Filter>
     </ClInclude>

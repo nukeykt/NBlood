@@ -7,6 +7,7 @@
 #include "build.h"
 #include "cache1d.h"
 #include "compat.h"
+#include "build_cpuid.h"
 #include "engine_priv.h"
 #include "osd.h"
 #include "palette.h"
@@ -43,6 +44,8 @@
 
 #if SDL_MAJOR_VERSION != 1
 static SDL_version linked;
+#else
+#define SDL_JoystickNameForIndex(x) SDL_JoystickName(x)
 #endif
 
 #if !defined STARTUP_SETUP_WINDOW
@@ -313,7 +316,12 @@ void wm_setapptitle(const char *name)
 static inline char grabmouse_low(char a);
 
 #ifndef __ANDROID__
-static void attach_debugger_here(void) {}
+static void attach_debugger_here(void)
+{
+#ifdef DEBUGGINGAIDS
+    debug_break();
+#endif
+}
 
 static void sighandler(int signum)
 {
@@ -334,8 +342,7 @@ static void sighandler(int signum)
 #endif
         attach_debugger_here();
         app_crashhandler();
-        uninitsystem();
-        Bexit(8);
+        Bexit(EXIT_FAILURE);
     }
 }
 #endif
@@ -384,9 +391,7 @@ int sdlayer_mobilefilter(void *userdata, SDL_Event *event)
 
     UNREFERENCED_PARAMETER(userdata);
 }
-#endif
 
-#ifdef __ANDROID__
 # include <setjmp.h>
 static jmp_buf eduke32_exit_jmp_buf;
 static int eduke32_return_value;
@@ -398,6 +403,30 @@ void eduke32_exit_return(int retval)
     EDUKE32_UNREACHABLE_SECTION(return);
 }
 #endif
+
+void sdlayer_sethints()
+{
+#if defined _WIN32
+    // Thread naming interferes with debugging using MinGW-w64's GDB.
+#if defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
+    SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
+#endif
+#if defined SDL_HINT_XINPUT_ENABLED
+    if (!Bgetenv("EDUKE32_NO_XINPUT"))
+        SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+#endif
+#endif
+
+#if defined SDL_HINT_NO_SIGNAL_HANDLERS
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+#endif
+#if defined SDL_HINT_VIDEO_HIGHDPI_DISABLED
+    SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
+#endif
+#if defined SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
+    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
+#endif
+}
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
@@ -419,21 +448,17 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#if defined _WIN32 && defined SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING
-    // Thread naming interferes with debugging using MinGW-w64's GDB.
-    SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
-#endif
-
-    int32_t r;
+    sdlayer_sethints();
 
 #ifdef USE_OPENGL
     char *argp;
 
-    if ((argp = Bgetenv("BUILD_NOFOG")) != NULL)
+    if ((argp = Bgetenv("EDUKE32_NO_OPENGL_FOG")) != NULL)
         nofog = Batol(argp);
 
-#ifndef _WIN32
-    setenv("__GL_THREADED_OPTIMIZATIONS", "1", 0);
+#ifdef __linux__
+    if (!Bgetenv("EDUKE32_NO_NVIDIA_THREADED_OPTIMIZATIONS"))
+        setenv("__GL_THREADED_OPTIMIZATIONS", "1", 0);
 #endif
 #endif
 
@@ -454,23 +479,17 @@ int main(int argc, char *argv[])
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
 
-    win_open();
-
-    if (!CheckWinVersion())
-    {
-        MessageBox(0, "This application requires a newer Windows version to run.", apptitle, MB_OK | MB_ICONSTOP);
+    if (windowsPreInit())
         return -1;
-    }
+
 #elif defined(GEKKO)
     wii_open();
 #elif defined(HAVE_GTK2)
     // Pre-initialize SDL video system in order to make sure XInitThreads() is called
     // before GTK starts talking to X11.
-    uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
-    if (inited == 0)
-        SDL_Init(SDL_INIT_VIDEO);
-    else if (!(inited & SDL_INIT_VIDEO))
+    if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
         SDL_InitSubSystem(SDL_INIT_VIDEO);
+
     gtkbuild_init(&argc, &argv);
 #endif
 
@@ -479,7 +498,7 @@ int main(int argc, char *argv[])
 
 #ifdef _WIN32
     char *argvbuf;
-    int32_t buildargc = win_buildargs(&argvbuf);
+    int buildargc = windowsGetCommandLine(&argvbuf);
     const char **buildargv = (const char **) Xmalloc(sizeof(char *)*(buildargc+1));
     char *wp = argvbuf;
 
@@ -494,21 +513,19 @@ int main(int argc, char *argv[])
     PHYSFS_init(buildargv[0]);
     PHYSFS_setWriteDir(PHYSFS_getBaseDir());
 #endif
-    r = app_main(buildargc, (const char **)buildargv);
+    int const r = app_main(buildargc, (const char **)buildargv);
 #else
 #ifdef USE_PHYSFS
     int pfsi = PHYSFS_init(argv[0]);
     assert(pfsi != 0);
     PHYSFS_setWriteDir(PHYSFS_getUserDir());
 #endif
-    r = app_main(argc, (char const * const *)argv);
+    int const r = app_main(argc, (char const * const *)argv);
 #endif
 
     startwin_close();
 
-#ifdef _WIN32
-    win_close();
-#elif defined(HAVE_GTK2)
+#if defined(HAVE_GTK2)
     gtkbuild_exit(r);
 #endif
 
@@ -575,10 +592,10 @@ int32_t sdlayer_checkversion(void)
                " (built against SDL version %d.%d.%d)\n",
                linked.major, linked.minor, linked.patch, compiled.major, compiled.minor, compiled.patch);
 
-    if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL_REQUIREDVERSION)
+    if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL2_REQUIREDVERSION)
     {
         /*reject running under SDL versions older than what is stated in sdl_inc.h */
-        initprintf("You need at least v%d.%d.%d of SDL to run this game\n",SDL_MIN_X,SDL_MIN_Y,SDL_MIN_Z);
+        initprintf("You need at least v%d.%d.%d of SDL to run this game\n",SDL2_MIN_X,SDL2_MIN_Y,SDL2_MIN_Z);
         return -1;
     }
 
@@ -590,27 +607,24 @@ int32_t sdlayer_checkversion(void)
 //
 int32_t initsystem(void)
 {
-    const int sdlinitflags = SDL_INIT_VIDEO;
-
     mutex_init(&m_initprintf);
 
 #ifdef _WIN32
-    win_init();
+    windowsPlatformInit();
 #endif
+    sysReadCPUID();
 
     if (sdlayer_checkversion())
         return -1;
 
     int32_t err = 0;
-    uint32_t inited = SDL_WasInit(sdlinitflags);
-    if (inited == 0)
-        err = SDL_Init(sdlinitflags);
-    else if ((inited & sdlinitflags) != sdlinitflags)
-        err = SDL_InitSubSystem(sdlinitflags & ~inited);
+
+    if (SDL_WasInit(SDL_INIT_VIDEO) != SDL_INIT_VIDEO)
+        err = SDL_InitSubSystem(SDL_INIT_VIDEO);
 
     if (err)
     {
-        initprintf("Initialization failed! (%s)\nNon-interactive mode enabled\n", SDL_GetError());
+        initprintf("SDL initialization failed! (%s)\nNon-interactive mode enabled.  This is probably not what you want.\n", SDL_GetError());
         novideo = 1;
 #ifdef USE_OPENGL
         nogl = 1;
@@ -622,6 +636,8 @@ int32_t initsystem(void)
 #endif
 
     atexit(uninitsystem);
+
+    timerInit(CLOCKTICKSPERSECOND);
 
     frameplace = 0;
     lockcount = 0;
@@ -637,7 +653,7 @@ int32_t initsystem(void)
 #ifdef POLYMER
         if (loadglulibrary(getenv("BUILD_GLULIB")))
         {
-            initprintf("Failed loading GLU.  GL modes will be unavailable. Error: %s\n", SDL_GetError());
+            initprintf("Failed loading GLU.  GL modes will be unavailable.\n");
             nogl = 1;
         }
 #endif
@@ -671,11 +687,11 @@ void uninitsystem(void)
         appicon = NULL;
     }
 
-    SDL_Quit();
-
 #ifdef _WIN32
-    win_uninit();
+    windowsPlatformCleanup();
 #endif
+
+    SDL_Quit();
 
 #ifdef USE_OPENGL
 # if SDL_MAJOR_VERSION!=1
@@ -785,14 +801,14 @@ static void LoadSDLControllerDB()
     if (fh == buildvfs_kfd_invalid)
         return;
 
-    int flen = kfilelength(fh);
+    int const flen = kfilelength(fh);
     if (flen <= 0)
     {
         kclose(fh);
         return;
     }
 
-    char * dbuf = (char *)malloc(flen + 1);
+    char * dbuf = (char *)Xaligned_alloc(16, flen + 1);
     if (!dbuf)
     {
         kclose(fh);
@@ -801,7 +817,7 @@ static void LoadSDLControllerDB()
 
     if (kread_and_test(fh, dbuf, flen))
     {
-        free(dbuf);
+        Xaligned_free(dbuf);
         kclose(fh);
         return;
     }
@@ -812,18 +828,18 @@ static void LoadSDLControllerDB()
     SDL_RWops * rwops = SDL_RWFromConstMem(dbuf, flen);
     if (!rwops)
     {
-        free(dbuf);
+        Xaligned_free(dbuf);
         return;
     }
 
-    int i = SDL_GameControllerAddMappingsFromRW(rwops, 0);
+    int i = SDL_GameControllerAddMappingsFromRW(rwops, 1);
+
     if (i == -1)
         buildprintf("Failed loading game controller database: %s\n", SDL_GetError());
     else
         buildputs("Loaded game controller database\n");
 
-    SDL_free(rwops);
-    free(dbuf);
+    Xaligned_free(dbuf);
 }
 #endif
 
@@ -831,11 +847,13 @@ void joyScanDevices()
 {
     inputdevices &= ~4;
 
+#if SDL_MAJOR_VERSION >= 2
     if (controller)
     {
         SDL_GameControllerClose(controller);
         controller = nullptr;
     }
+#endif
     if (joydev)
     {
         SDL_JoystickClose(joydev);
@@ -891,7 +909,7 @@ void joyScanDevices()
         {
             if ((joydev = SDL_JoystickOpen(i)))
             {
-                buildprintf("Using joystick %s\n", SDL_JoystickName(joydev));
+                buildprintf("Using joystick %s\n", SDL_JoystickNameForIndex(i));
 
                 // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
                 joystick.numAxes = min(9, SDL_JoystickNumAxes(joydev));
@@ -931,11 +949,6 @@ int32_t initinput(void)
 {
     int32_t i;
 
-#ifdef _WIN32
-    Win_GetOriginalLayoutName();
-    Win_SetKeyboardLayoutUS(1);
-#endif
-
 #if defined EDUKE32_OSX
     // force OS X to operate in >1 button mouse mode so that LMB isn't adulterated
     if (!getenv("SDL_HAS3BUTTONMOUSE"))
@@ -952,7 +965,6 @@ int32_t initinput(void)
 
 #if SDL_MAJOR_VERSION == 1
 #define SDL_SCANCODE_TO_KEYCODE(x) (SDLKey)(x)
-#define SDL_JoystickNameForIndex(x) SDL_JoystickName(x)
 #define SDL_NUM_SCANCODES SDLK_LAST
     if (SDL_EnableKeyRepeat(250, 30))
         initprintf("Error enabling keyboard repeat.\n");
@@ -988,9 +1000,6 @@ int32_t initinput(void)
 //
 void uninitinput(void)
 {
-#ifdef _WIN32
-    Win_SetKeyboardLayoutUS(0);
-#endif
     mouseUninit();
 
 #if SDL_MAJOR_VERSION >= 2
@@ -1467,6 +1476,7 @@ void sdlayer_setvideomode_opengl(void)
     glinfo.depthclamp = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_clamp");
     glinfo.clipcontrol = !!Bstrstr(glinfo.extensions, "GL_ARB_clip_control");
 
+#if 0
     if (Bstrstr(glinfo.extensions, "WGL_3DFX_gamma_control"))
     {
         static int32_t warnonce;
@@ -1476,6 +1486,7 @@ void sdlayer_setvideomode_opengl(void)
             initprintf("3dfx card detected: OpenGL fog disabled\n");
         warnonce |= 1;
     }
+#endif
 #else
     // don't bother checking because ETC2 et al. are not listed in extensions anyway
     glinfo.texcompr = 1; // !!Bstrstr(glinfo.extensions, "GL_OES_compressed_ETC1_RGB8_texture");
@@ -1616,7 +1627,6 @@ void setrefreshrate(void)
         newmode.refresh_rate = 60;
 
     refreshfreq = error ? -1 : newmode.refresh_rate;
-    currentVBlankInterval = timerGetFreqU64()/(double)newmode.refresh_rate;
 }
 
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
@@ -1656,7 +1666,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #endif
         if (nogl)
             return -1;
-
+# ifdef _WIN32
+        windowsDwmEnableComposition(false);
+# endif
         struct glattribs
         {
             SDL_GLattr attr;
@@ -1737,7 +1749,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
 
-    SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
     setvideomode_sdlcommonpost(x, y, c, fs, regrab);
 
     return 0;
@@ -1884,26 +1895,29 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
-        SDL_GL_SwapWindow(sdl_window);
-
         if (vsync)
         {
             switch (swapcomplete)
             {
-                case 1: glFinish(); break;
+                case 1: glFlush(); break;
                 case 2:
                 {
                     static uint64_t lastSwapTime;
                     // busy loop until we're ready to update again
                     // sit on it and spin
+                    currentVBlankInterval = timerGetFreqU64()/(double)refreshfreq;
                     uint64_t swapTime = timerGetTicksU64();
-                    while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval) { }
+                    if (lastSwapTime > swapTime)
+                        lastSwapTime = swapTime;
+                    do { } while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval);
                     lastSwapTime = swapTime;
                 }
                 break;
-                case 3: glFlush(); break;
             }
         }
+
+        SDL_GL_SwapWindow(sdl_window);
+
         return;
     }
 #endif
@@ -2455,10 +2469,7 @@ int32_t handleevents_pollsdl(void)
                         if (g_mouseGrabbed && g_mouseEnabled)
                             grabmouse_low(appactive);
 #ifdef _WIN32
-                        // Win_SetKeyboardLayoutUS(appactive);
-
-                        if (backgroundidle)
-                            SetPriorityClass(GetCurrentProcess(), appactive ? NORMAL_PRIORITY_CLASS : IDLE_PRIORITY_CLASS);
+                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
 #endif
                         break;
 
@@ -2476,10 +2487,11 @@ int32_t handleevents_pollsdl(void)
                         break;
                     }
                     case SDL_WINDOWEVENT_ENTER:
-                        g_mouseInsideWindow = 1;
-                        break;
                     case SDL_WINDOWEVENT_LEAVE:
-                        g_mouseInsideWindow = 0;
+                        g_mouseInsideWindow = (ev.window.event == SDL_WINDOWEVENT_ENTER);
+#ifdef _WIN32
+                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
+#endif
                         break;
                 }
 
@@ -2518,7 +2530,7 @@ int32_t handleevents(void)
     rv = handleevents_pollsdl();
 
     inputchecked = 0;
-    timerUpdate();
+    timerUpdateClock();
 
     communityapiRunCallbacks();
 

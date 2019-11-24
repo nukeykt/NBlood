@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "duke3d.h"
 #include "demo.h"
-#include "enet/enet.h"
+#include "enet.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -3050,9 +3050,9 @@ void P_GetInput(int const playerNum)
     localInput.bits |= (BUTTON(gamefunc_Open) << SK_OPEN);
 
     int const sectorLotag = pPlayer->cursectnum != -1 ? sector[pPlayer->cursectnum].lotag : 0;
-    int const crouchable = sectorLotag != 2 && (sectorLotag != 1 || pPlayer->spritebridge);
+    int const crouchable = sectorLotag != 2 && (sectorLotag != 1 || pPlayer->spritebridge) && !pPlayer->jetpack_on;
 
-    if (BUTTON(gamefunc_Toggle_Crouch))
+    if (pPlayer->cheat_phase == 0 && BUTTON(gamefunc_Toggle_Crouch))
     {
         pPlayer->crouch_toggle = !pPlayer->crouch_toggle && crouchable;
 
@@ -4909,21 +4909,17 @@ void P_ProcessInput(int playerNum)
         pPlayer->bobcounter += sprite[pPlayer->i].xvel>>1;
 
     if (ud.noclip == 0 && ((uint16_t)pPlayer->cursectnum >= MAXSECTORS || sector[pPlayer->cursectnum].floorpicnum == MIRROR))
-    {
-        pPlayer->pos.x = pPlayer->opos.x;
-        pPlayer->pos.y = pPlayer->opos.y;
-    }
+        pPlayer->pos.vec2 = pPlayer->opos.vec2;
     else
-    {
-        pPlayer->opos.x = pPlayer->pos.x;
-        pPlayer->opos.y = pPlayer->pos.y;
-    }
+        pPlayer->opos.vec2 = pPlayer->pos.vec2;
 
-    pPlayer->bobpos.x = pPlayer->pos.x;
-    pPlayer->bobpos.y = pPlayer->pos.y;
-    pPlayer->opos.z   = pPlayer->pos.z;
-    pPlayer->opyoff   = pPlayer->pyoff;
-    pPlayer->oq16ang    = pPlayer->q16ang;
+    pPlayer->bobpos  = pPlayer->pos.vec2;
+    pPlayer->opos.z  = pPlayer->pos.z;
+    pPlayer->opyoff  = pPlayer->pyoff;
+    pPlayer->oq16ang = pPlayer->q16ang;
+
+    updatesector(pPlayer->pos.x, pPlayer->pos.y, &pPlayer->cursectnum);
+    pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L<<8), stepHeight, CLIPMASK0);
 
     if (pPlayer->one_eighty_count < 0)
     {
@@ -5016,8 +5012,7 @@ void P_ProcessInput(int playerNum)
                 pPlayer->pos.z = floorZ - (floorZOffset << 8);
             else
             {
-                pPlayer->on_ground = 0;
-                pPlayer->vel.z    += (g_spriteGravity + 80);  // (TICSPERFRAME<<6);
+                pPlayer->vel.z += (g_spriteGravity + 80);  // (TICSPERFRAME<<6);
 
                 if (pPlayer->vel.z >= (4096 + 2048))
                     pPlayer->vel.z = (4096 + 2048);
@@ -5063,7 +5058,10 @@ void P_ProcessInput(int playerNum)
                             A_PlaySound(DUKE_LAND, pPlayer->i);
 #endif
                     }
+                    pPlayer->on_ground = 1;
                 }
+                else
+                    pPlayer->on_ground = 0;
             }
         }
         else
@@ -5428,7 +5426,7 @@ HORIZONLY:;
 
     pPlayer->on_warping_sector = 0;
 
-    bool mashedPotato = 0;
+    bool mashedPotato = false;
 
     if (pPlayer->cursectnum >= 0 && ud.noclip == 0)
     {

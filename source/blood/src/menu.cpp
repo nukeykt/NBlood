@@ -52,7 +52,8 @@ void SetCDVol(CGameMenuItemSlider *);
 void SetDoppler(CGameMenuItemZBool *);
 void SetCrosshair(CGameMenuItemZBool *);
 void SetCenterHoriz(CGameMenuItemZBool *);
-void SetShowWeapons(CGameMenuItemZBool *);
+void SetShowPlayerNames(CGameMenuItemZBool *);
+void SetShowWeapons(CGameMenuItemZCycle *);
 
 void SetWeaponsV10X(CGameMenuItemZBool*);
 
@@ -142,6 +143,12 @@ const char *zDiffStrings[] =
     "EXTRA CRISPY",
 };
 
+const char *pzShowWeaponStrings[] = {
+    "OFF",
+    "SPRITE",
+    "VOXEL"
+};
+
 char zUserMapName[16];
 const char *zEpisodeNames[6];
 const char *zLevelNames[6][16];
@@ -225,7 +232,7 @@ CGameMenuItemSlider sliderSound("SOUND:", 3, 66, 80, 180, FXVolume, 0, 256, 48, 
 CGameMenuItemSlider sliderCDAudio("CD AUDIO:", 3, 66, 90, 180, CDVolume, 0, 256, 48, SetCDVol, -1, -1);
 CGameMenuItemZBool bool3DAudio("3D AUDIO:", 3, 66, 100, 180, gDoppler, SetDoppler, NULL, NULL);
 CGameMenuItemZBool boolCrosshair("CROSSHAIR:", 3, 66, 110, 180, gAimReticle, SetCrosshair, NULL, NULL);
-CGameMenuItemZBool boolShowWeapons("SHOW WEAPONS:", 3, 66, 120, 180, gShowWeapon, SetShowWeapons, NULL, NULL);
+CGameMenuItemZCycle itemCycleShowWeapons("SHOW WEAPONS:", 3, 66, 120, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
 CGameMenuItemZBool boolSlopeTilting("SLOPE TILTING:", 3, 66, 130, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
 CGameMenuItemZBool boolViewBobbing("VIEW BOBBING:", 3, 66, 140, 180, gViewVBobbing, SetViewBobbing, NULL, NULL);
 CGameMenuItemZBool boolViewSwaying("VIEW SWAYING:", 3, 66, 150, 180, gViewHBobbing, SetViewSwaying, NULL, NULL);
@@ -400,7 +407,8 @@ CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
 CGameMenuItemZBool itemOptionsGameBoolWeaponsV10X("V1.0x WEAPONS BALANCE:", 3, 66, 130, 180, gWeaponsV10x, SetWeaponsV10X, NULL, NULL);
 ///////////////////
 
-CGameMenuItemZBool itemOptionsGameBoolShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, gShowWeapon, SetShowWeapons, NULL, NULL);
+CGameMenuItemZBool itemOptionsGameBoolShowPlayerNames("SHOW PLAYER NAMES:", 3, 66, 60, 180, gShowPlayerNames, SetShowPlayerNames, NULL, NULL);
+CGameMenuItemZCycle itemOptionsGameShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
 CGameMenuItemZBool itemOptionsGameBoolSlopeTilting("SLOPE TILTING:", 3, 66, 80, 180, gSlopeTilting, SetSlopeTilting, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolViewBobbing("VIEW BOBBING:", 3, 66, 90, 180, gViewVBobbing, SetViewBobbing, NULL, NULL);
 CGameMenuItemZBool itemOptionsGameBoolViewSwaying("VIEW SWAYING:", 3, 66, 100, 180, gViewHBobbing, SetViewSwaying, NULL, NULL);
@@ -578,9 +586,18 @@ int nSoundRateValues[] = {
     48000
 };
 
+int nMusicDeviceValues[] = {
+    ASS_OPL3,
+#ifdef _WIN32
+    ASS_WinMM,
+#endif
+};
+
 const char *pzMusicDeviceStrings[] = {
+    "OPL3(SB/ADLIB)",
+#ifdef _WIN32
     "SYSTEM MIDI",
-    "OPL3(SB/ADLIB)"
+#endif
 };
 
 CGameMenuItemTitle itemOptionsSoundTitle("SOUND SETUP", 1, 160, 20, 2038);
@@ -592,7 +609,7 @@ CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 100, 180
 CGameMenuItemZCycle itemOptionsSoundSampleRate("SAMPLE RATE:", 3, 66, 110, 180, 0, UpdateSoundRate, pzSoundRateStrings, 3, 0);
 CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 256, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 130, 180, false, UpdateCDToggle, NULL, NULL);
-CGameMenuItemZCycle itemOptionsSoundMusicDevice("MUSIC DEVICE:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, 2, 0);
+CGameMenuItemZCycle itemOptionsSoundMusicDevice("MUSIC DEVICE:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, ARRAY_SIZE(pzMusicDeviceStrings), 0);
 CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 150, 180, 0, NULL, 0, SetSound, 0);
 
 
@@ -756,7 +773,7 @@ void SetupOptionsOldMenu(void)
     sliderSound.nValue = ClipRange(FXVolume, sliderSound.nRangeLow, sliderSound.nRangeHigh);
     bool3DAudio.at20 = gDoppler;
     boolCrosshair.at20 = gAimReticle;
-    boolShowWeapons.at20 = gShowWeapon;
+    itemCycleShowWeapons.m_nFocus = gShowWeapon;
     boolSlopeTilting.at20 = gSlopeTilting;
     boolViewBobbing.at20 = gViewVBobbing;
     boolViewSwaying.at20 = gViewHBobbing;
@@ -770,7 +787,7 @@ void SetupOptionsOldMenu(void)
     menuOptionsOld.Add(&sliderCDAudio, false);
     menuOptionsOld.Add(&bool3DAudio, false);
     menuOptionsOld.Add(&boolCrosshair, false);
-    menuOptionsOld.Add(&boolShowWeapons, false);
+    menuOptionsOld.Add(&itemCycleShowWeapons, false);
     menuOptionsOld.Add(&boolSlopeTilting, false);
     menuOptionsOld.Add(&boolViewBobbing, false);
     menuOptionsOld.Add(&boolViewSwaying, false);
@@ -1107,7 +1124,8 @@ void SetupOptionsMenu(void)
     menuOptions.Add(&itemBloodQAV, false);
 
     menuOptionsGame.Add(&itemOptionsGameTitle, false);
-    menuOptionsGame.Add(&itemOptionsGameBoolShowWeapons, true);
+    menuOptionsGame.Add(&itemOptionsGameBoolShowPlayerNames, true);
+    menuOptionsGame.Add(&itemOptionsGameShowWeapons, false);
     menuOptionsGame.Add(&itemOptionsGameBoolSlopeTilting, false);
     menuOptionsGame.Add(&itemOptionsGameBoolViewBobbing, false);
     menuOptionsGame.Add(&itemOptionsGameBoolViewSwaying, false);
@@ -1122,7 +1140,8 @@ void SetupOptionsMenu(void)
 
     //menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
     menuOptionsGame.Add(&itemBloodQAV, false);
-    itemOptionsGameBoolShowWeapons.at20 = gShowWeapon;
+    itemOptionsGameBoolShowPlayerNames.at20 = gShowPlayerNames;
+    itemOptionsGameShowWeapons.m_nFocus = gShowWeapon;
     itemOptionsGameBoolSlopeTilting.at20 = gSlopeTilting;
     itemOptionsGameBoolViewBobbing.at20 = gViewVBobbing;
     itemOptionsGameBoolViewSwaying.at20 = gViewHBobbing;
@@ -1405,9 +1424,14 @@ void SetWeaponsV10X(CGameMenuItemZBool* pItem)
 }
 ////
 
-void SetShowWeapons(CGameMenuItemZBool *pItem)
+void SetShowPlayerNames(CGameMenuItemZBool *pItem)
 {
-    gShowWeapon = pItem->at20;
+    gShowPlayerNames = pItem->at20;
+}
+
+void SetShowWeapons(CGameMenuItemZCycle *pItem)
+{
+    gShowWeapon = pItem->m_nFocus;
 }
 
 void SetSlopeTilting(CGameMenuItemZBool *pItem)
@@ -1867,7 +1891,7 @@ void SetSound(CGameMenuItemChain *pItem)
     UNREFERENCED_PARAMETER(pItem);
     MixRate = nSoundRateValues[itemOptionsSoundSampleRate.m_nFocus];
     NumVoices = itemOptionsSoundNumVoices.nValue;
-    MusicDevice = itemOptionsSoundMusicDevice.m_nFocus;
+    MusicDevice = nMusicDeviceValues[itemOptionsSoundMusicDevice.m_nFocus];
     sfxTerm();
     sndTerm();
 
@@ -1900,7 +1924,15 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
         }
     }
     itemOptionsSoundNumVoices.nValue = NumVoices;
-    itemOptionsSoundMusicDevice.m_nFocus = MusicDevice;
+    itemOptionsSoundMusicDevice.m_nFocus = 0;
+    for (int i = 0; i < ARRAY_SIZE(nMusicDeviceValues); i++)
+    {
+        if (nMusicDeviceValues[i] == MusicDevice)
+        {
+            itemOptionsSoundMusicDevice.m_nFocus = i;
+            break;
+        }
+    }
 }
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)

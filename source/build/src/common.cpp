@@ -184,14 +184,14 @@ void fnlist_clearnames(fnlist_t *fnl)
 int32_t fnlist_getnames(fnlist_t *fnl, const char *dirname, const char *pattern,
                         int32_t dirflags, int32_t fileflags)
 {
-    CACHE1D_FIND_REC *r;
+    BUILDVFS_FIND_REC *r;
 
     fnlist_clearnames(fnl);
 
     if (dirflags != -1)
-        fnl->finddirs = klistpath(dirname, "*", CACHE1D_FIND_DIR|dirflags);
+        fnl->finddirs = klistpath(dirname, "*", BUILDVFS_FIND_DIR|dirflags);
     if (fileflags != -1)
-        fnl->findfiles = klistpath(dirname, pattern, CACHE1D_FIND_FILE|fileflags);
+        fnl->findfiles = klistpath(dirname, pattern, BUILDVFS_FIND_FILE|fileflags);
 
     for (r=fnl->finddirs; r; r=r->next)
         fnl->numdirs++;
@@ -273,4 +273,260 @@ void COMMON_clearbackground(int numcols, int numrows)
 # endif
 
     CLEARLINES2D(0, min(ydim, numrows*8+8), editorcolors[16]);
+}
+
+#if defined _WIN32 && !defined EDUKE32_STANDALONE
+# define NEED_SHLWAPI_H
+# include "windows_inc.h"
+# ifndef KEY_WOW64_64KEY
+#  define KEY_WOW64_64KEY 0x0100
+# endif
+# ifndef KEY_WOW64_32KEY
+#  define KEY_WOW64_32KEY 0x0200
+# endif
+
+int Paths_ReadRegistryValue(char const * const SubKey, char const * const Value, char * const Output, DWORD * OutputSize)
+{
+    // KEY_WOW64_32KEY gets us around Wow6432Node on 64-bit builds
+    REGSAM const wow64keys[] = { KEY_WOW64_32KEY, KEY_WOW64_64KEY };
+
+    for (auto &wow64key : wow64keys)
+    {
+        HKEY hkey;
+        LONG keygood = RegOpenKeyEx(HKEY_LOCAL_MACHINE, NULL, 0, KEY_READ | wow64key, &hkey);
+
+        if (keygood != ERROR_SUCCESS)
+            continue;
+
+        LONG retval = SHGetValueA(hkey, SubKey, Value, NULL, Output, OutputSize);
+
+        RegCloseKey(hkey);
+
+        if (retval == ERROR_SUCCESS)
+            return 1;
+    }
+
+    return 0;
+}
+#endif
+
+// A bare-bones "parser" for Valve's KeyValues VDF format.
+// There is no guarantee this will function properly with ill-formed files.
+static void KeyValues_SkipWhitespace(char *& buf, char * const bufend)
+{
+    while (buf < bufend && (buf[0] == ' ' || buf[0] == '\n' || buf[0] == '\r' || buf[0] == '\t' || buf[0] == '\0'))
+        ++buf;
+
+    // comments
+    if (buf + 2 < bufend && buf[0] == '/' && buf[1] == '/')
+    {
+        while (buf < bufend && buf[0] != '\n' && buf[0] != '\r')
+            ++buf;
+
+        KeyValues_SkipWhitespace(buf, bufend);
+    }
+}
+static void KeyValues_SkipToEndOfQuotedToken(char *& buf, char * const bufend)
+{
+    ++buf;
+    while (buf < bufend && buf[0] != '\"' && buf[-1] != '\\')
+        ++buf;
+}
+static void KeyValues_SkipToEndOfUnquotedToken(char *& buf, char * const bufend)
+{
+    while (buf < bufend && buf[0] != ' ' && buf[0] != '\n' && buf[0] != '\r' && buf[0] != '\t' && buf[0] != '\0')
+        ++buf;
+}
+static void KeyValues_SkipNextWhatever(char *& buf, char * const bufend)
+{
+    KeyValues_SkipWhitespace(buf, bufend);
+
+    if (buf == bufend)
+        return;
+
+    if (buf[0] == '{')
+    {
+        ++buf;
+        do
+            KeyValues_SkipNextWhatever(buf, bufend);
+        while (buf[0] != '}');
+        ++buf;
+    }
+    else if (buf[0] == '\"')
+        KeyValues_SkipToEndOfQuotedToken(buf, bufend);
+    else if (buf[0] != '}')
+        KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
+
+    KeyValues_SkipWhitespace(buf, bufend);
+}
+static char* KeyValues_NormalizeToken(char *& buf, char * const bufend)
+{
+    char * token = buf;
+
+    if (buf < bufend && buf[0] == '\"')
+    {
+        ++token;
+
+        KeyValues_SkipToEndOfQuotedToken(buf, bufend);
+        buf[0] = '\0';
+
+        // account for escape sequences
+        const char * readseeker = token;
+        char * writeseeker = token;
+        while (readseeker <= buf)
+        {
+            if (readseeker[0] == '\\')
+                ++readseeker;
+
+            writeseeker[0] = readseeker[0];
+
+            ++writeseeker;
+            ++readseeker;
+        }
+
+        return token;
+    }
+
+    KeyValues_SkipToEndOfUnquotedToken(buf, bufend);
+    buf[0] = '\0';
+
+    return token;
+}
+static void KeyValues_FindKey(char *& buf, char * const bufend, const char * token)
+{
+    char *ParentKey = KeyValues_NormalizeToken(buf, bufend);
+    if (token != NULL) // pass in NULL to find the next key instead of a specific one
+        while (buf < bufend && Bstrcmp(ParentKey, token) != 0)
+        {
+            KeyValues_SkipNextWhatever(buf, bufend);
+            ParentKey = KeyValues_NormalizeToken(buf, bufend);
+        }
+
+    KeyValues_SkipWhitespace(buf, bufend);
+}
+static int32_t KeyValues_FindParentKey(char *& buf, char * const bufend, const char * token)
+{
+    KeyValues_SkipWhitespace(buf, bufend);
+
+    // end of scope
+    if (buf[0] == '}')
+        return 0;
+
+    KeyValues_FindKey(buf, bufend, token);
+
+    // ignore the wrong type
+    while (buf < bufend && buf[0] != '{')
+    {
+        KeyValues_SkipNextWhatever(buf, bufend);
+        KeyValues_FindKey(buf, bufend, token);
+    }
+
+    if (buf == bufend)
+        return 0;
+
+    return 1;
+}
+static char* KeyValues_FindKeyValue(char *& buf, char * const bufend, const char * token)
+{
+    KeyValues_SkipWhitespace(buf, bufend);
+
+    // end of scope
+    if (buf[0] == '}')
+        return NULL;
+
+    KeyValues_FindKey(buf, bufend, token);
+
+    // ignore the wrong type
+    while (buf < bufend && buf[0] == '{')
+    {
+        KeyValues_SkipNextWhatever(buf, bufend);
+        KeyValues_FindKey(buf, bufend, token);
+    }
+
+    KeyValues_SkipWhitespace(buf, bufend);
+
+    if (buf == bufend)
+        return NULL;
+
+    return KeyValues_NormalizeToken(buf, bufend);
+}
+
+void Paths_ParseSteamLibraryVDF(const char * fn, PathsParseFunc func)
+{
+    buildvfs_fd const fd = buildvfs_open_read(fn);
+    if (fd == buildvfs_fd_invalid)
+        return;
+
+    int32_t size = buildvfs_length(fd);
+    if (size <= 0)
+        return;
+
+    auto const bufstart = (char *)Xmalloc(size+1);
+    char * buf = bufstart;
+    size = (int32_t)buildvfs_read(fd, buf, size);
+    buildvfs_close(fd);
+    char * const bufend = buf + size;
+    bufend[0] = '\0';
+
+    if (KeyValues_FindParentKey(buf, bufend, "LibraryFolders"))
+    {
+        char *result;
+        ++buf;
+        while ((result = KeyValues_FindKeyValue(buf, bufend, NULL)) != NULL)
+            func(result);
+    }
+
+    Xfree(bufstart);
+}
+
+void Paths_ParseXDGDesktopFile(const char * fn, PathsParseFunc func)
+{
+    buildvfs_fd const fd = buildvfs_open_read(fn);
+    if (fd == buildvfs_fd_invalid)
+        return;
+
+    int32_t size = buildvfs_length(fd);
+    if (size <= 0)
+        return;
+
+    auto const bufstart = (char *)Xmalloc(size+1);
+    char * buf = bufstart;
+    size = (int32_t)buildvfs_read(fd, buf, size);
+    buildvfs_close(fd);
+    char * const bufend = buf + size;
+    bufend[0] = '\0';
+
+    static char const s_PathEquals[] = "Path=";
+
+    while (buf < bufend)
+    {
+        if (Bstrncmp(buf, s_PathEquals, ARRAY_SIZE(s_PathEquals)-1) == 0)
+        {
+            const char * path = buf += ARRAY_SIZE(s_PathEquals)-1;
+
+            while (buf < bufend && *buf != '\n')
+                ++buf;
+            *buf = '\0';
+
+            func(path);
+
+            break;
+        }
+
+        while (buf < bufend && *buf++ != '\n') { }
+    }
+
+    Xfree(bufstart);
+}
+
+void Paths_ParseXDGDesktopFilesFromGOG(const char * homepath, const char * game, PathsParseFunc func)
+{
+    static char const * const locations[] = { ".local/share/applications", "Desktop" };
+    char buf[BMAX_PATH];
+
+    for (char const * location : locations)
+    {
+        Bsnprintf(buf, sizeof(buf), "%s/%s/gog_com-%s_1.desktop", homepath, location, game);
+        Paths_ParseXDGDesktopFile(buf, func);
+    }
 }

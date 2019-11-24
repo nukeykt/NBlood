@@ -34,45 +34,42 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 #include "compat.h"
 
-extern int32_t MUSIC_ErrorCode;
+extern int MUSIC_ErrorCode;
 
 enum MUSIC_ERRORS
-   {
-   MUSIC_Warning = -2,
-   MUSIC_Error   = -1,
-   MUSIC_Ok      = 0,
-   MUSIC_MidiError,
-   };
+{
+    MUSIC_Warning = -2,
+    MUSIC_Error   = -1,
+    MUSIC_Ok      = 0,
+    MUSIC_MidiError,
+};
 
 typedef struct
-   {
-   uint32_t tickposition;
-   uint32_t milliseconds;
-   uint32_t  measure;
-   uint32_t  beat;
-   uint32_t  tick;
-   } songposition;
-
-enum MIDI_Device
 {
-    MIDIDEVICE_NONE = -1,
-    MIDIDEVICE_MPU = 0,
-    MIDIDEVICE_OPL
-};
+    uint32_t tickposition;
+    uint32_t milliseconds;
+    uint32_t measure;
+    uint32_t beat;
+    uint32_t tick;
+} songposition;
 
 #define MUSIC_LoopSong ( 1 == 1 )
 #define MUSIC_PlayOnce ( !MUSIC_LoopSong )
 
-const char *MUSIC_ErrorString( int32_t ErrorNumber );
-int32_t   MUSIC_Init( int32_t SoundCard, int32_t Address );
-int32_t   MUSIC_Shutdown( void );
-void  MUSIC_SetVolume( int32_t volume );
-int32_t   MUSIC_GetVolume( void );
-void  MUSIC_SetLoopFlag( int32_t loopflag );
-void  MUSIC_Continue( void );
-void  MUSIC_Pause( void );
-int32_t   MUSIC_StopSong( void );
-int32_t   MUSIC_PlaySong( char *song, int32_t songsize, int32_t loopflag );
-void  MUSIC_Update(void);
+#define MUSIC_SetErrorCode(status) MUSIC_ErrorCode = (status);
+
+extern const char *MUSIC_ErrorString(int ErrorNumber);
+
+int  MUSIC_Init(int SoundCard);
+int  MUSIC_Shutdown(void);
+int  MIDI_GetDevice(void);
+void MUSIC_SetVolume(int volume);
+int  MUSIC_GetVolume(void);
+void MUSIC_SetLoopFlag(int loopflag);
+void MUSIC_Continue(void);
+void MUSIC_Pause(void);
+int  MUSIC_StopSong(void);
+int  MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn = nullptr);
+void MUSIC_Update(void);
 
 #endif
