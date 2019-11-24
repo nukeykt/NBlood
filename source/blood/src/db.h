@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxSuperXSprites 128
 
 // by NoOne: functions to quckly check range of specifical arrays
-inline bool xsprRangeIsFine(int nXindex) {
+inline bool xspriRangeIsFine(int nXindex) {
     return (nXindex >= 0 && nXindex < kMaxXSprites);
 }
 
@@ -40,6 +40,10 @@ inline bool xsectRangeIsFine(int nXindex) {
 
 inline bool xwallRangeIsFine(int nXindex) {
     return (nXindex >= 0 && nXindex < kMaxXWalls);
+}
+
+inline bool xspriIsFine(int nIndex) {
+    return (nIndex >= 0 && nIndex < kMaxSprites && !(sprite[nIndex].flags & 32) && sprite[nIndex].statnum != kStatFree);
 }
 
 extern bool gModernMap;

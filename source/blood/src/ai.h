@@ -29,13 +29,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct AISTATE {
     int stateType; // By NoOne: current type of state. Basically required for kModernDudeTargetChanger, but can be used for something else.
-    int at0; // seq
-    int at4; // seq callback
-    int at8;
-    void(*atc)(spritetype *, XSPRITE *);
-    void(*at10)(spritetype *, XSPRITE *);
-    void(*at14)(spritetype *, XSPRITE *);
-    AISTATE *at18; // next state ?
+    int seqId;
+    int funcId; // seq callback
+    int stateTicks;
+    void(*enterFunc)(spritetype *, XSPRITE *);
+    void(*moveFunc)(spritetype *, XSPRITE *);
+    void(*thinkFunc)(spritetype *, XSPRITE *);
+    AISTATE *nextState;
 };
 extern AISTATE aiState[];
 
@@ -83,6 +83,7 @@ struct TARGETTRACK {
 extern int dword_138BB0[5];
 extern DUDEEXTRA gDudeExtra[];
 extern int gDudeSlope[];
+extern int cumulDamage[];
 
 bool sub_5BDA8(spritetype *pSprite, int nSeq);
 void aiPlay3DSound(spritetype *pSprite, int a2, AI_SFX_PRIORITY a3, int a4);
@@ -101,6 +102,7 @@ void aiProcessDudes(void);
 void aiInit(void);
 void aiInitSprite(spritetype *pSprite);
 bool CanMove(spritetype* pSprite, int a2, int nAngle, int nRange);
+void RecoilDude(spritetype* pSprite, XSPRITE* pXSprite);
 
 // By NoOne: this function required for kModernDudeTargetChanger
 void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite);
