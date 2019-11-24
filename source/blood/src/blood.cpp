@@ -656,6 +656,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                     case kModernObjDataAccumulator:
                     case kModernEffectSpawner:
                     case kModernWindGenerator:
+                    case kModernPlayerControl:
                         pSprite->type = kSpriteDecoration;
                         break;
                     case kItemModernMapLevel:
