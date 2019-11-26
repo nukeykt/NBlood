@@ -4930,7 +4930,6 @@ void GetHelpInput(PLAYERp pp)
 }
 
 short MirrorDelay;
-int MouseYAxisMode = -1;
 
 void
 getinput(SW_PACKET *loc)
@@ -4950,16 +4949,11 @@ getinput(SW_PACKET *loc)
 #define MAXVEL       ((NORMALKEYMOVE*2)+10)
 #define MAXSVEL      ((NORMALKEYMOVE*2)+10)
 #define MAXANGVEL    100
+#define MAXAIMVEL    128
 #define SET_LOC_KEY(loc, sync_num, key_test) SET(loc, ((!!(key_test)) << (sync_num)))
 
-    ControlInfo info;
-    int32_t running;
-    int32_t turnamount;
     static int32_t turnheldtime;
-    int32_t keymove;
     int32_t momx, momy;
-    int aimvel;
-    int mouseaxis;
 
     extern SWBOOL MenuButtonAutoRun;
     extern SWBOOL MenuButtonAutoAim;
@@ -4971,7 +4965,6 @@ getinput(SW_PACKET *loc)
 
     // reset all syncbits
     loc->bits = 0;
-    svel = vel = angvel = aimvel = 0;
 
     // MAKE SURE THIS WILL GET SET
     SET_LOC_KEY(loc->bits, SK_QUIT_GAME, MultiPlayQuitFlag);
@@ -5011,24 +5004,10 @@ getinput(SW_PACKET *loc)
         }
     }
 
-    if (TEST(pp->Flags, PF_MOUSE_AIMING_ON))
-    {
-        mouseaxis = analog_lookingupanddown;
-    }
-    else
-    {
-        mouseaxis = MouseAnalogAxes[1];
-    }
-    if (mouseaxis != MouseYAxisMode)
-    {
-        CONTROL_MapAnalogAxis(1, mouseaxis, controldevice_mouse);
-        MouseYAxisMode = mouseaxis;
-    }
+    int const aimMode = TEST(pp->Flags, PF_MOUSE_AIMING_ON);
 
+    ControlInfo info;
     CONTROL_GetInput(&info);
-
-    info.dz = (info.dz * move_scale)>>8;
-    info.dyaw = (info.dyaw * turn_scale)>>8;
 
     PauseKey(pp);
 
@@ -5088,26 +5067,10 @@ getinput(SW_PACKET *loc)
 
     SET_LOC_KEY(loc->bits, SK_SPACE_BAR, ((!!KEY_PRESSED(KEYSC_SPACE)) | BUTTON(gamefunc_Open)));
 
-    running = BUTTON(gamefunc_Run) || TEST(pp->Flags, PF_LOCK_RUN);
-
-    if (BUTTON(gamefunc_Strafe) && !pp->sop)
-        svel = -info.dyaw;
-    else
-    {
-        if (info.dyaw > 0)
-            angvel = labs((-info.dyaw));
-        else
-            angvel = info.dyaw;
-    }
-
-    aimvel = info.dpitch;
-    aimvel = min(127, aimvel);
-    aimvel = max(-128, aimvel);
-    if (gs.MouseInvert)
-        aimvel = -aimvel;
-
-    svel -= info.dx;
-    vel = -info.dz;
+    int const running = BUTTON(gamefunc_Run) || TEST(pp->Flags, PF_LOCK_RUN);
+    int32_t turnamount;
+    int32_t keymove;
+    constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
 
     if (running)
     {
@@ -5127,6 +5090,34 @@ getinput(SW_PACKET *loc)
 
         keymove = NORMALKEYMOVE;
     }
+
+    info.dz = (info.dz * move_scale)>>8;
+    info.dyaw = (info.dyaw * turn_scale)>>8;
+
+    int32_t svel = 0, vel = 0, angvel = 0, aimvel = 0;
+
+    if (BUTTON(gamefunc_Strafe) && !pp->sop)
+    {
+        svel = -info.mousex;
+        svel -= info.dyaw * keymove / analogExtent;
+    }
+    else
+    {
+        angvel = info.mousex / 32;
+        angvel += info.dyaw * (turnamount << 1) / analogExtent;
+    }
+
+    if (aimMode)
+        aimvel = -info.mousey / 64;
+    else
+        vel = -(info.mousey >> 6);
+
+    if (gs.MouseInvert)
+        aimvel = -aimvel;
+
+    aimvel -= info.dpitch * turnamount / analogExtent;
+    svel -= info.dx * keymove / analogExtent;
+    vel -= info.dz * keymove / analogExtent;
 
     if (BUTTON(gamefunc_Strafe) && !pp->sop)
     {
@@ -5180,19 +5171,11 @@ getinput(SW_PACKET *loc)
     if (BUTTON(gamefunc_Move_Backward))
         vel += -keymove;
 
+    vel = clamp(vel, -MAXVEL, MAXVEL);
+    svel = clamp(svel, -MAXSVEL, MAXSVEL);
 
-    if (vel < -MAXVEL)
-        vel = -MAXVEL;
-    if (vel > MAXVEL)
-        vel = MAXVEL;
-    if (svel < -MAXSVEL)
-        svel = -MAXSVEL;
-    if (svel > MAXSVEL)
-        svel = MAXSVEL;
-    if (angvel < -MAXANGVEL)
-        angvel = -MAXANGVEL;
-    if (angvel > MAXANGVEL)
-        angvel = MAXANGVEL;
+    angvel = clamp(angvel, -MAXANGVEL, MAXANGVEL);
+    aimvel = clamp(aimvel, -MAXAIMVEL, MAXAIMVEL);
 
     momx = mulscale9(vel, sintable[NORM_ANGLE(newpp->pang + 512)]);
     momy = mulscale9(vel, sintable[NORM_ANGLE(newpp->pang)]);
