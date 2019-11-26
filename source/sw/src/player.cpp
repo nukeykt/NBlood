@@ -2414,7 +2414,6 @@ MoveScrollMode2D(PLAYERp pp)
 #define MAXANGVEL    100
 
     ControlInfo scrl_input;
-    int32_t running;
     int32_t keymove;
     int32_t momx, momy;
     static int mfvel=0, mfsvel=0;
@@ -2444,19 +2443,19 @@ MoveScrollMode2D(PLAYERp pp)
         Follow_posy = pp->posy;
     }
 
-    running = BUTTON(gamefunc_Run) || TEST(pp->Flags, PF_LOCK_RUN);
-
     if (BUTTON(gamefunc_Strafe))
         mfsvel -= scrl_input.dyaw>>2;
     mfsvel -= scrl_input.dx>>2;
     mfvel = -scrl_input.dz>>2;
 
+#if 0
+    int const running = !!BUTTON(gamefunc_Run) ^ !!TEST(pp->Flags, PF_LOCK_RUN);
     if (running)
     {
-        //keymove = NORMALKEYMOVE << 1;
-        keymove = NORMALKEYMOVE;
+        keymove = NORMALKEYMOVE << 1;
     }
     else
+#endif
     {
         keymove = NORMALKEYMOVE;
     }
