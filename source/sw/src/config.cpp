@@ -256,6 +256,8 @@ void CONFIG_SetDefaults(void)
     SetDefaultKeyDefinitions(0);
     SetMouseDefaults(0);
 
+    gs.MouseAimingOn = TRUE;
+
     memset(MouseDigitalAxes, -1, sizeof(MouseDigitalAxes));
     for (i=0; i<MAXMOUSEAXES; i++)
     {
