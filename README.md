@@ -11,7 +11,8 @@ A port of the PC version of Exhumed based on EDuke32
    
    The game is unfortunately not currently available for sale. Please provide files from an original release of the game.
 
-3. Recommended (but optional) - Add the games CD audio tracks as OGG files in the format exhumedXX.ogg, where XX is the track number. The game includes tracks 02 to 19.
+3. Recommended (but optional) - Add the games CD audio tracks as OGG files in the format exhumedXX.ogg (where XX is the track number) to the same folder as 
+   pcexhumed.exe. The game includes tracks 02 to 19.
    These will provide the game with it's awesome music soundtrack and add storyline narration by the King Ramses NPC.
 
 4. Launch PCExhumed.
