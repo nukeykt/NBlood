@@ -1656,9 +1656,9 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
     {
         DidOrderSound = TRUE;
         choose_snd = STD_RANDOM_RANGE(1000);
-        if (choose_snd > 500 && !FX_SoundActive(wanghandle))
+        if (choose_snd > 500 && !FX_SoundValidAndActive(wanghandle))
             wanghandle = PlaySound(DIGI_WANGORDER1, &zero, &zero, &zero, v3df_dontpan);
-        else if (!FX_SoundActive(wanghandle))
+        else if (!FX_SoundValidAndActive(wanghandle))
             wanghandle = PlaySound(DIGI_WANGORDER2, &zero, &zero, &zero, v3df_dontpan);
     }
 
@@ -4211,11 +4211,11 @@ static void
 MNU_UpLevel(void)
 {
     int zero = 0;
-    static int handle1=0;
+    static int handle1;
     // if run out of menus then EXIT
     if (!menuarrayptr)
     {
-        if (!FX_SoundActive(handle1))
+        if (!FX_SoundValidAndActive(handle1))
             handle1 = PlaySound(DIGI_STARCLINK,&zero,&zero,&zero,v3df_dontpan);
         ExitMenus();
         return;
@@ -4565,7 +4565,7 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
     SWBOOL resetitem;
     unsigned char key;
     int zero = 0;
-    static int handle2 = 0;
+    static int handle2;
     static int limitmove=0;
     static SWBOOL select_held=FALSE;
 
@@ -4630,7 +4630,7 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
             mnu_input.dir = mnu_input_buffered.dir;
 
             if (mnu_input.dir != dir_None)
-                if (!FX_SoundActive(handle2))
+                if (!FX_SoundValidAndActive(handle2))
                     handle2 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
 
             limitmove = (int32_t) totalclock;
@@ -4650,8 +4650,8 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
     }
     else if (mnu_input.button0)
     {
-        static int handle5=0;
-        if (!FX_SoundActive(handle5))
+        static int handle5;
+        if (!FX_SoundValidAndActive(handle5))
             handle5 = PlaySound(DIGI_SWORDSWOOSH,&zero,&zero,&zero,v3df_dontpan);
         KB_ClearKeysDown();
         MNU_DoItem();
@@ -4671,17 +4671,17 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
     }
     else if (mnu_input.button1 || BUTTON(gamefunc_Show_Menu))
     {
-        static int handle3=0;
+        static int handle3;
         CONTROL_ClearButton(gamefunc_Show_Menu);
-        if (!FX_SoundActive(handle3))
+        if (!FX_SoundValidAndActive(handle3))
             handle3 = PlaySound(DIGI_SWORDSWOOSH,&zero,&zero,&zero,v3df_dontpan);
         MNU_UpLevel();
         resetitem = TRUE;
     }
     else if (MNU_DoHotkey())
     {
-        static int handle4=0;
-        if (!FX_SoundActive(handle4))
+        static int handle4;
+        if (!FX_SoundValidAndActive(handle4))
             handle4 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
         resetitem = TRUE;
         mnu_input_buffered.button0 = mnu_input_buffered.button1 = FALSE;
