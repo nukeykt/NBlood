@@ -2257,7 +2257,6 @@ extern char keys[];
 extern short screenpeek;
 
 extern int dimensionmode, zoom;
-extern int vel,svel,angvel;
 
 #define STAT_DAMAGE_LIST_SIZE 20
 extern int16_t StatDamageList[STAT_DAMAGE_LIST_SIZE];
