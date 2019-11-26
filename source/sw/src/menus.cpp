@@ -3270,11 +3270,8 @@ MNU_JoystickCheck(MenuItem *item)
 static SWBOOL
 MNU_TryMusicInit(void)
 {
-    if (PlaySong(0, RedBookSong[Level], TRUE, FALSE))
-    {
-        if (currentmenu->cursor == 0)
-            MNU_MusicCheck(&currentmenu->items[currentmenu->cursor+1]);
-    }
+    if (currentmenu->cursor == 0)
+        MNU_MusicCheck(&currentmenu->items[currentmenu->cursor+1]);
 
     return TRUE;
 }
@@ -3282,29 +3279,13 @@ MNU_TryMusicInit(void)
 SWBOOL
 MNU_MusicCheck(MenuItem *item)
 {
-    if (SW_SHAREWARE)
+    if (!MusicToggle || !MusicInitialized)
     {
-        if (!MusicToggle || !MusicInitialized)
-        {
-            SET(item->flags, mf_disabled);
-        }
-        else
-        {
-            RESET(item->flags, mf_disabled);
-        }
+        SET(item->flags, mf_disabled);
     }
     else
     {
-        // Redbook audio stuff
-        //JBF
-        //if (!cdvalid)
-        //    {
-        //    SET(item->flags, mf_disabled); // Just don't let CD Redbook ever be invalid!
-        //    }
-        //else
-        {
-            RESET(item->flags, mf_disabled);
-        }
+        RESET(item->flags, mf_disabled);
     }
 
     return TRUE;
