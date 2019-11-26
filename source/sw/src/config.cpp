@@ -269,6 +269,9 @@ void CONFIG_SetDefaults(void)
     gs.MouseSpeed = DEFAULTMOUSESENSITIVITY*8192; // fix magic scale factor
     CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
 
+#if 0
+    // joystick defaults are pointless
+
     memset(JoystickButtons, -1, sizeof(JoystickButtons));
     memset(JoystickButtonsClicked, -1, sizeof(JoystickButtonsClicked));
     for (i=0; i < (int32_t)(sizeof(joystickdefaults)/sizeof(char *)); i++)
@@ -289,6 +292,7 @@ void CONFIG_SetDefaults(void)
 
         JoystickAnalogAxes[i] = CONFIG_AnalogNameToNum(joystickanalogdefaults[i]);
     }
+#endif
 }
 
 
