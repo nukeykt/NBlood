@@ -917,3 +917,45 @@ void CONTROL_Shutdown(void)
     CONTROL_Started = FALSE;
 }
 
+
+// temporary hack until input is unified
+void CONTROL_GetUserInput(UserInput * uinfo)
+{
+    if (
+        KB_KeyPressed(sc_DownArrow)
+        || KB_KeyPressed(sc_kpad_2)
+        || (MOUSE_GetButtons()&WHEELDOWN_MOUSE)
+        )
+        uinfo->dir = dir_South;
+    else if (
+        KB_KeyPressed(sc_UpArrow)
+        || KB_KeyPressed(sc_kpad_8)
+        || (MOUSE_GetButtons()&WHEELUP_MOUSE)
+        )
+        uinfo->dir = dir_North;
+    else if (
+        KB_KeyPressed(sc_LeftArrow)
+        || KB_KeyPressed(sc_kpad_4)
+        )
+        uinfo->dir = dir_West;
+    else if (
+        KB_KeyPressed(sc_RightArrow)
+        || KB_KeyPressed(sc_kpad_6)
+        )
+        uinfo->dir = dir_East;
+
+    uinfo->button0 =
+        KB_KeyPressed(sc_Enter)
+        || KB_KeyPressed(sc_kpad_Enter)
+        || (MOUSE_GetButtons()&LEFT_MOUSE)
+        ;
+
+    uinfo->button1 =
+        KB_KeyPressed(sc_Escape)
+        || (MOUSE_GetButtons()&RIGHT_MOUSE)
+        ;
+}
+void CONTROL_ClearUserInput(UserInput * uinfo)
+{
+    *uinfo = UserInput{};
+}
