@@ -32,6 +32,8 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 //
 //****************************************************************************
 
+#include "_control.h"
+
 #ifndef gamedefs_public_
 #define gamedefs_public_
 #ifdef __cplusplus
@@ -64,7 +66,7 @@ extern "C" {
 
 // Number of JOY buttons
 
-#define MAXJOYBUTTONS (32+4)
+// #define MAXJOYBUTTONS (32+4)
 
 // Number of EXTERNAL buttons
 
@@ -125,11 +127,11 @@ extern "C" {
 
 // Number of JOY axes
 
-#define MAXJOYAXES 6
+// #define MAXJOYAXES 6
 
 // Number of GAMEPAD axes
 
-#define MAXGAMEPADAXES 2
+// #define MAXGAMEPADAXES 2
 
 #ifdef __FLAT__
 #define CONTROLSHIFT 0
@@ -158,7 +160,7 @@ extern "C" {
 
 // DEFAULT mouse sensitivity scale
 
-#define DEFAULTMOUSESENSITIVITY (1<<(15-CONTROLSHIFT))
+// #define DEFAULTMOUSESENSITIVITY (1<<(15-CONTROLSHIFT))
 
 enum
 {

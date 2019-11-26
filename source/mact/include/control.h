@@ -251,8 +251,8 @@ static inline int CONTROL_KeyIsBound(int const key)
 
 void CONTROL_ProcessBinds(void);
 
-#define CONTROL_GetUserInput(...)
-#define CONTROL_ClearUserInput(...)
+void CONTROL_GetUserInput(UserInput *);
+void CONTROL_ClearUserInput(UserInput *);
 
 ////////////////////
 
