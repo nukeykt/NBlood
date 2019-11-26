@@ -416,6 +416,7 @@ ifneq ($(FORCEDEBUG),0)
     override STRIP :=
 endif
 
+DBGLEVEL :=
 ifeq ($(RELEASE),0)
     OPTLEVEL := 0
 
@@ -623,7 +624,7 @@ endif
 
 ifneq ($(RELEASE)$(FORCEDEBUG),10)
     ifeq ($(PACKAGE_REPOSITORY),0)
-        COMMONFLAGS += -g
+        COMMONFLAGS += -g$(DBGLEVEL)
         ifeq (0,$(CLANG))
             ifneq ($(PLATFORM),WII)
                 COMMONFLAGS += -fno-omit-frame-pointer
