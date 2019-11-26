@@ -411,23 +411,20 @@ GetUpperLowerSector(short match, int x, int y, short *upper, short *lower)
         *lower = -1;
         return;
     }
-
     // Map rooms have NOT been dragged on top of each other
-    if (sln == 1)
+    else if (sln == 1)
     {
         *lower = sectorlist[0];
         *upper = sectorlist[0];
         return;
     }
-    else
     // Map rooms HAVE been dragged on top of each other
-    if (sln > 2)
+    else if (sln > 2)
     {
         // try again moving the x,y pos around until you only get two sectors
         GetUpperLowerSector(match, x - 1, y, upper, lower);
     }
-
-    if (sln == 2)
+    else if (sln == 2)
     {
         if (sector[sectorlist[0]].floorz < sector[sectorlist[1]].floorz)
         {
