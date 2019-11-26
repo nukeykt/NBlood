@@ -76,11 +76,11 @@ AISTATE tinycalebBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, th
 AISTATE tinycalebBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &tinycalebBurnSearch };
 AISTATE tinycalebBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &tinycalebBurnChase };
 
-AISTATE GDXGenDudeBurnIdle = { kAiStateIdle, 3, -1, 0, NULL, NULL, aiThinkTarget, NULL };
-AISTATE GDXGenDudeBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
-AISTATE GDXGenDudeBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &GDXGenDudeBurnSearch };
-AISTATE GDXGenDudeBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &GDXGenDudeBurnSearch };
-AISTATE GDXGenDudeBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &GDXGenDudeBurnChase };
+AISTATE genDudeBurnIdle = { kAiStateIdle, 3, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE genDudeBurnChase = { kAiStateChase, 3, -1, 0, NULL, aiMoveForward, thinkChase, NULL };
+AISTATE genDudeBurnGoto = { kAiStateMove, 3, -1, 3600, NULL, aiMoveForward, thinkGoto, &genDudeBurnSearch };
+AISTATE genDudeBurnSearch = { kAiStateSearch, 3, -1, 3600, NULL, aiMoveForward, thinkSearch, &genDudeBurnSearch };
+AISTATE genDudeBurnAttack = { kAiStateChase, 3, nBurnClient, 120, NULL, NULL, NULL, &genDudeBurnChase };
 
 static void BurnSeqCallback(int, int)
 {
@@ -124,7 +124,7 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
             aiNewState(pSprite, pXSprite, &tinycalebBurnSearch);
             break;
         case kDudeModernCustomBurning:
-            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
+            aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
             break;
         }
     }
@@ -156,7 +156,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
             break;
         case kDudeModernCustomBurning:
-            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
+            aiNewState(pSprite, pXSprite, &genDudeBurnGoto);
             break;
         }
         return;
@@ -192,7 +192,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
             aiNewState(pSprite, pXSprite, &tinycalebBurnSearch);
             break;
         case kDudeModernCustomBurning:
-            aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
+            aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
             break;
         }
         return;
@@ -230,7 +230,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         aiNewState(pSprite, pXSprite, &tinycalebBurnAttack);
                         break;
                     case kDudeModernCustomBurning:
-                        aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
+                        aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
                         break;
                     }
                 }
@@ -260,7 +260,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         aiNewState(pSprite, pXSprite, &tinycalebBurnGoto);
         break;
     case kDudeModernCustomBurning:
-        aiNewState(pSprite, pXSprite, &GDXGenDudeBurnSearch);
+        aiNewState(pSprite, pXSprite, &genDudeBurnSearch);
         break;
     }
     pXSprite->target = -1;

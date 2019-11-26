@@ -2530,16 +2530,16 @@ void XSectorControlSet(int nSector)
     ControlSet(controlXSector, 7, pXSector->triggerOnce); // 1-shot
     ControlSet(controlXSector, 8, pXSector->locked); // Locked
     ControlSet(controlXSector, 9, pXSector->interruptable); // Interruptable
-    ControlSet(controlXSector, 10, pXSector->at37_7); // DudeLockout
+    ControlSet(controlXSector, 10, pXSector->dudeLockout); // DudeLockout
     ControlSet(controlXSector, 11, pXSector->triggerOn); // Send at ON
     ControlSet(controlXSector, 12, pXSector->busyTimeA); // OFF->ON busyTime
-    ControlSet(controlXSector, 13, pXSector->at7_2); // OFF->ON wave
-    ControlSet(controlXSector, 14, pXSector->atf_6); // OFF->ON wait
+    ControlSet(controlXSector, 13, pXSector->busyWaveA); // OFF->ON wave
+    ControlSet(controlXSector, 14, pXSector->reTriggerA); // OFF->ON wait
     ControlSet(controlXSector, 15, pXSector->waitTimeA); // OFF->ON waitTime
     ControlSet(controlXSector, 16, pXSector->triggerOff); // Send at OFF
     ControlSet(controlXSector, 17, pXSector->busyTimeB); // ON->OFF busyTime
-    ControlSet(controlXSector, 18, pXSector->at7_5); // ON->OFF wave
-    ControlSet(controlXSector, 19, pXSector->atf_7); // ON->OFF wait
+    ControlSet(controlXSector, 18, pXSector->busyWaveB); // ON->OFF wave
+    ControlSet(controlXSector, 19, pXSector->reTriggerB); // ON->OFF wait
     ControlSet(controlXSector, 20, pXSector->waitTimeB); // ON->OFF waitTime
     ControlSet(controlXSector, 21, pXSector->Push); // Push
     ControlSet(controlXSector, 22, pXSector->Vector); // Vector
@@ -2596,16 +2596,16 @@ void XSectorControlRead(int nSector)
     pXSector->triggerOnce = ControlRead(controlXSector, 7); // 1-shot
     pXSector->locked = ControlRead(controlXSector, 8); // Locked
     pXSector->interruptable = ControlRead(controlXSector, 9); // Interruptable
-    pXSector->at37_7 = ControlRead(controlXSector, 10); // DudeLockout
+    pXSector->dudeLockout = ControlRead(controlXSector, 10); // DudeLockout
     pXSector->triggerOn = ControlRead(controlXSector, 11); // Send at ON
     pXSector->busyTimeA = ControlRead(controlXSector, 12); // OFF->ON busyTime
-    pXSector->at7_2 = ControlRead(controlXSector, 13); // OFF->ON wave
-    pXSector->atf_6 = ControlRead(controlXSector, 14); // OFF->ON wait
+    pXSector->busyWaveA = ControlRead(controlXSector, 13); // OFF->ON wave
+    pXSector->reTriggerA = ControlRead(controlXSector, 14); // OFF->ON wait
     pXSector->waitTimeA = ControlRead(controlXSector, 15); // OFF->ON waitTime
     pXSector->triggerOff = ControlRead(controlXSector, 16); // Send at OFF
     pXSector->busyTimeB = ControlRead(controlXSector, 17); // ON->OFF busyTime
-    pXSector->at7_5 = ControlRead(controlXSector, 18); // ON->OFF wave
-    pXSector->atf_7 = ControlRead(controlXSector, 19); // ON->OFF wait
+    pXSector->busyWaveB = ControlRead(controlXSector, 18); // ON->OFF wave
+    pXSector->reTriggerB = ControlRead(controlXSector, 19); // ON->OFF wait
     pXSector->waitTimeB = ControlRead(controlXSector, 20); // ON->OFF waitTime
     pXSector->Push = ControlRead(controlXSector, 21); // Push
     pXSector->Vector = ControlRead(controlXSector, 22); // Vector
