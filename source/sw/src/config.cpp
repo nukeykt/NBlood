@@ -266,7 +266,8 @@ void CONFIG_SetDefaults(void)
 
         MouseAnalogAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
     }
-    CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Temporary !CHECKME!
+    gs.MouseSpeed = DEFAULTMOUSESENSITIVITY*8192; // fix magic scale factor
+    CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
 
     memset(JoystickButtons, -1, sizeof(JoystickButtons));
     memset(JoystickButtonsClicked, -1, sizeof(JoystickButtonsClicked));
@@ -487,7 +488,7 @@ void CONFIG_SetupMouse(void)
         CONTROL_SetAnalogAxisScale(i, MouseAnalogScale[i], controldevice_mouse);
     }
 
-    CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Temporary !CHECKME!
+    CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/8192.f); // fix magic scale factor
 }
 
 /*

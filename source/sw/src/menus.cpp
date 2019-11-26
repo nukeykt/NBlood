@@ -790,17 +790,18 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
         const char *col[2] = { "(primary)", "(secondary)" };
         short w, h = 8;
         int i, j, y;
+        int32_t sc;
 
         if (KEY_PRESSED(KEYSC_ESC))
         {
             KB_ClearKeyDown(sc_Escape);
             currentmode = 0;
         }
-        else if (KB_GetLastScanCode() > 0)
+        else if ((sc = KB_GetLastScanCode()) != sc_None)
         {
-            KB_ClearKeyDown(KB_GetLastScanCode());
+            KB_ClearKeyDown(sc);
 
-            KeyboardKeys[currentkey][currentcol] = KB_GetLastScanCode();
+            KeyboardKeys[currentkey][currentcol] = sc;
             if (currentkey != gamefunc_Show_Console)
             {
 #if 0 // [JM] Re-do this shit !CHECKME!
@@ -811,7 +812,7 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
             }
             else
             {
-                OSD_CaptureKey(KB_GetLastScanCode());
+                OSD_CaptureKey(sc);
             }
 
             currentmode = 0;
@@ -3652,7 +3653,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         slidersettings[sldr_mouse] = offset;
 
         gs.MouseSpeed = offset * (MOUSE_SENS_MAX_VALUE/SLDR_MOUSESENSEMAX);
-        CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Will need to verify this. !CHECKME!
+        CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/8192.f); // fix magic scale factor
         break;
 
     case sldr_sndfxvolume:

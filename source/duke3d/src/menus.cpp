@@ -3071,7 +3071,7 @@ static int32_t Menu_PreCustom2ColScreen(MenuEntry_t *entry)
 
             S_PlaySound(PISTOL_BODYHIT);
 
-            *column->column[M_KEYBOARDKEYS.currentColumn] = KB_GetLastScanCode();
+            *column->column[M_KEYBOARDKEYS.currentColumn] = sc;
 
             CONFIG_MapKey(M_KEYBOARDKEYS.currentEntry, ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][0], key[0], ud.config.KeyboardKeys[M_KEYBOARDKEYS.currentEntry][1], key[1]);
 
