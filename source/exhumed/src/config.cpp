@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "exhumed.h"
 #include "typedefs.h"
 #include "scriplib.h"
+#include "view.h"
 
 #include "config.h"
 
@@ -464,6 +465,8 @@ void CONFIG_SetDefaults()
     mouseflip = 1;
     runkey_mode = 0;
     auto_run = 1;
+
+    gFov = 90;
 
     CONFIG_SetDefaultKeys(keydefaults);
 
