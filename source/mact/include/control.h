@@ -189,7 +189,7 @@ extern LastSeenInput CONTROL_LastSeenInput;
 //
 //***************************************************************************
 
-//void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
+void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
 void CONTROL_MapButton(int whichfunction, int whichbutton, int doubleclicked, controldevice device);
 void CONTROL_DefineFlag( int which, int toggle );
 int CONTROL_FlagActive( int which );
