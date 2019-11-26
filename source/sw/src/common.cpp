@@ -76,7 +76,7 @@ void SW_ExtPreInit(int32_t argc, char const * const * argv)
 #ifndef EDUKE32_STANDALONE
 
 #if defined _WIN32 || defined __linux__ || defined EDUKE32_BSD
-static void SW_Add_GOG_SWCR(const char * path)
+static int32_t SW_Add_GOG_SWCR(const char * path)
 {
     char buf[BMAX_PATH];
 
@@ -84,32 +84,32 @@ static void SW_Add_GOG_SWCR(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/addons", path);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/music", path);
-    addsearchpath(buf);
+    return addsearchpath(buf);
 }
-static void SW_Add_GOG_SWCC(const char * path)
+static int32_t SW_Add_GOG_SWCC(const char * path)
 {
     char buf[BMAX_PATH];
 
     addsearchpath_user(path, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/MUSIC", path);
-    addsearchpath(buf);
+    return addsearchpath(buf);
 }
 #endif
 
 #if defined __linux__ || defined EDUKE32_BSD
-static void SW_Add_GOG_SWCR_Linux(const char * path)
+static int32_t SW_Add_GOG_SWCR_Linux(const char * path)
 {
     char buf[BMAX_PATH];
 
     Bsnprintf(buf, sizeof(buf), "%s/game", path);
-    SW_Add_GOG_SWCR(buf);
+    return SW_Add_GOG_SWCR(buf);
 }
-static void SW_Add_GOG_SWCC_Linux(const char * path)
+static int32_t SW_Add_GOG_SWCC_Linux(const char * path)
 {
     char buf[BMAX_PATH];
 
     Bsnprintf(buf, sizeof(buf), "%s/data", path);
-    SW_Add_GOG_SWCC(buf);
+    return SW_Add_GOG_SWCC(buf);
 }
 #endif
 
@@ -126,14 +126,16 @@ static void SW_AddSteamPaths(const char *basepath)
     Bsnprintf(buf, sizeof(buf), "%s/%s/addons", basepath, s_SWCR_Steam);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/%s/classic/MUSIC", basepath, s_SWCR_Steam);
-    addsearchpath(buf);
+    if (addsearchpath(buf) == 0)
+        return;
 
     // Shadow Warrior Classic (1997) - Steam
     static char const s_SWC_Steam[] = "steamapps/common/Shadow Warrior Original/gameroot";
     Bsnprintf(buf, sizeof(buf), "%s/%s", basepath, s_SWC_Steam);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/%s/MUSIC", basepath, s_SWC_Steam);
-    addsearchpath(buf);
+    if (addsearchpath(buf) == 0)
+        return;
 
     // Shadow Warrior (Classic) - 3D Realms Anthology - Steam
 #if defined EDUKE32_OSX
@@ -227,7 +229,8 @@ static void SW_AddSearchPaths()
         Bstrncpy(suffix, "/gameroot/addons", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         Bstrncpy(suffix, "/gameroot/classic/MUSIC", remaining);
-        addsearchpath(buf);
+        if (addsearchpath(buf) == 0)
+            return;
     }
 
     // Shadow Warrior Classic (1997) - Steam
@@ -240,7 +243,24 @@ static void SW_AddSearchPaths()
         Bstrncpy(suffix, "/gameroot", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         Bstrncpy(suffix, "/gameroot/MUSIC", remaining);
-        addsearchpath(buf);
+        if (addsearchpath(buf) == 0)
+            return;
+    }
+
+    // Shadow Warrior Classic Redux - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1618073558)", "PATH", buf, &bufsize))
+    {
+        if (SW_Add_GOG_SWCR(buf) == 0)
+            return;
+    }
+
+    // Shadow Warrior Classic Complete - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGSHADOWARRIOR", "PATH", buf, &bufsize))
+    {
+        if (SW_Add_GOG_SWCC(buf) == 0)
+            return;
     }
 
     // Shadow Warrior (Classic) - 3D Realms Anthology - Steam
@@ -252,20 +272,6 @@ static void SW_AddSearchPaths()
 
         Bstrncpy(suffix, "/Shadow Warrior", remaining);
         addsearchpath(buf);
-    }
-
-    // Shadow Warrior Classic Redux - GOG.com
-    bufsize = sizeof(buf);
-    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1618073558)", "PATH", buf, &bufsize))
-    {
-        SW_Add_GOG_SWCR(buf);
-    }
-
-    // Shadow Warrior Classic Complete - GOG.com
-    bufsize = sizeof(buf);
-    if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGSHADOWARRIOR", "PATH", buf, &bufsize))
-    {
-        SW_Add_GOG_SWCC(buf);
     }
 
     // Shadow Warrior - 3D Realms Anthology
