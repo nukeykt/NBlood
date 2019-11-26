@@ -3969,7 +3969,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
 #endif
 
-        else if (Bstrncasecmp(arg, "map", 3) == 0 && !SW_SHAREWARE)
+        else if (Bstrncasecmp(arg, "map", 3) == 0 && !SW_SHAREWARE && cnt+1 < argc)
         {
             int fil;
 
