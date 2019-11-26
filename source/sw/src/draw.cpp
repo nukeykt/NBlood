@@ -1820,7 +1820,7 @@ void DrawCrosshair(PLAYERp pp)
     {
         int daz;
         short hit_sprite, daang;
-        static int handle=-1;
+        static int handle;
 
         daz = pp->posz + pp->bob_z;
         daang = 32;
@@ -1849,7 +1849,7 @@ void DrawCrosshair(PLAYERp pp)
 
             if (pp->CurWpn == pp->Wpn[WPN_RAIL])
             {
-                if (!FX_SoundActive(handle))
+                if (!FX_SoundValidAndActive(handle))
                     handle = PlaySound(DIGI_RAILLOCKED, &pp->posx, &pp->posy, &pp->posz, v3df_follow|v3df_dontpan);
             }
         }
@@ -1858,8 +1858,11 @@ void DrawCrosshair(PLAYERp pp)
             // It didn't target anything.
             if (pp->CurWpn == pp->Wpn[WPN_RAIL])
             {
-                if (FX_SoundActive(handle))
+                if (FX_SoundValidAndActive(handle))
+                {
                     FX_StopSound(handle);
+                    handle = 0;
+                }
             }
             goto NORMALXHAIR;
         }
