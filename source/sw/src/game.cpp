@@ -5071,7 +5071,7 @@ getinput(SW_PACKET *loc)
 
     SET_LOC_KEY(loc->bits, SK_SPACE_BAR, ((!!KEY_PRESSED(KEYSC_SPACE)) | BUTTON(gamefunc_Open)));
 
-    int const running = BUTTON(gamefunc_Run) || TEST(pp->Flags, PF_LOCK_RUN);
+    int const running = !!BUTTON(gamefunc_Run) ^ !!TEST(pp->Flags, PF_LOCK_RUN);
     int32_t turnamount;
     int32_t keymove;
     constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
