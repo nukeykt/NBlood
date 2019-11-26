@@ -322,10 +322,7 @@ void SetDefaultKeyDefinitions(int style)
         if (f == -1) continue;
         k1 = KB_StringToScanCode(keydefaultset[3*i+1]);
         k2 = KB_StringToScanCode(keydefaultset[3*i+2]);
-// [JM] Needs to be rewritten, I think. !CHECKME!
-#if 0
         CONTROL_MapKey(i, k1, k2);
-#endif
 
         KeyboardKeys[f][0] = k1;
         KeyboardKeys[f][1] = k2;
@@ -420,11 +417,8 @@ void CONFIG_ReadKeys(int32_t scripthandle)
     {
         if (i == gamefunc_Show_Console)
             OSD_CaptureKey(KeyboardKeys[i][0]);
-#if 0
-        // [JM] Needs to be re-done. !CHECKME!
         else
             CONTROL_MapKey(i, KeyboardKeys[i][0], KeyboardKeys[i][1]);
-#endif
     }
 }
 
