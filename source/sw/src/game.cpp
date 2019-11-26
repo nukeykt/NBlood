@@ -2547,6 +2547,9 @@ BonusScreen(PLAYERp pp)
         }
 
         gStateControl(&State, &Tics);
+
+        videoClearViewableArea(0L);
+
         rotatesprite(0, 0, RS_SCALE, 0, 5120, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 
         if (UserMapName[0])
