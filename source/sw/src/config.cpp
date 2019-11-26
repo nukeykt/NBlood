@@ -253,8 +253,8 @@ void CONFIG_SetDefaults(void)
     Bstrcpy(WangBangMacro[8], MACRO9);
     Bstrcpy(WangBangMacro[9], MACRO10);
 
-    SetDefaultKeyDefinitions(0);
-    SetMouseDefaults(0);
+    SetDefaultKeyDefinitions(1);
+    SetMouseDefaults(1);
 
     gs.MouseAimingOn = TRUE;
 
