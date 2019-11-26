@@ -3753,7 +3753,7 @@ DoPlayerFall(PLAYERp pp)
                     PlaySound(DIGI_HITGROUND, &pp->posx, &pp->posy, &pp->posz, v3df_follow|v3df_dontpan);
             }
 
-            if (handle && FX_SoundActive(handle))
+            if (FX_SoundValidAndActive(handle))
             {
                 // My sound code will detect the sound has stopped and clean up
                 // for you.
@@ -5186,9 +5186,10 @@ DoPlayerStopDiveNoWarp(PLAYERp pp)
 
     if (!NoMeters) SetRedrawScreen(pp);
 
-    if (pp->TalkVocHandle && FX_SoundActive(pp->TalkVocHandle))
+    if (FX_SoundValidAndActive(pp->TalkVocHandle))
     {
         FX_StopSound(pp->TalkVocHandle);
+        pp->TalkVocHandle = 0;
         pp->PlayerTalking = FALSE;
     }
 
@@ -5221,9 +5222,10 @@ DoPlayerStopDive(PLAYERp pp)
 
     if (!NoMeters) SetRedrawScreen(pp);
 
-    if (pp->TalkVocHandle && FX_SoundActive(pp->TalkVocHandle))
+    if (FX_SoundValidAndActive(pp->TalkVocHandle))
     {
         FX_StopSound(pp->TalkVocHandle);
+        pp->TalkVocHandle = 0;
         pp->PlayerTalking = FALSE;
     }
 
@@ -6529,7 +6531,7 @@ DoPlayerBeginDie(PLAYERp pp)
     // Override any previous talking, death scream has precedance
     if (pp->PlayerTalking)
     {
-        if (FX_SoundActive(pp->TalkVocHandle))
+        if (FX_SoundValidAndActive(pp->TalkVocHandle))
             FX_StopSound(pp->TalkVocHandle);
         pp->PlayerTalking = FALSE;
         pp->TalkVocnum = -1;
