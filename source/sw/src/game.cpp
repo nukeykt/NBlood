@@ -92,6 +92,10 @@ Things required to make savegames work:
 
 #include "crc32.h"
 
+#ifdef _WIN32
+# include "winbits.h"
+#endif
+
 const char* AppProperName = "VoidSW";
 const char* AppTechnicalName = "voidsw";
 
