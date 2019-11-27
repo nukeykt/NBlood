@@ -75,7 +75,7 @@ void SW_ExtPreInit(int32_t argc, char const * const * argv)
 
 #ifndef EDUKE32_STANDALONE
 
-#if defined _WIN32 || defined __linux__ || defined EDUKE32_BSD
+#if defined _WIN32 || defined __linux__ || defined EDUKE32_BSD || defined EDUKE32_OSX
 static int32_t SW_Add_GOG_SWCR(const char * path)
 {
     char buf[BMAX_PATH];
@@ -97,19 +97,19 @@ static int32_t SW_Add_GOG_SWCC(const char * path)
 #endif
 
 #if defined __linux__ || defined EDUKE32_BSD
-static int32_t SW_Add_GOG_SWCR_Linux(const char * path)
+static void SW_Add_GOG_SWCR_Linux(const char * path)
 {
     char buf[BMAX_PATH];
 
     Bsnprintf(buf, sizeof(buf), "%s/game", path);
-    return SW_Add_GOG_SWCR(buf);
+    SW_Add_GOG_SWCR(buf);
 }
-static int32_t SW_Add_GOG_SWCC_Linux(const char * path)
+static void SW_Add_GOG_SWCC_Linux(const char * path)
 {
     char buf[BMAX_PATH];
 
     Bsnprintf(buf, sizeof(buf), "%s/data", path);
-    return SW_Add_GOG_SWCC(buf);
+    SW_Add_GOG_SWCC(buf);
 }
 #endif
 
