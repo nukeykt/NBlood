@@ -76,4 +76,6 @@ void DoAfterCinemaScene(int nLevel);
 
 void InitEnergyTile();
 
+void menu_DoPlasmaTile();
+
 #endif
