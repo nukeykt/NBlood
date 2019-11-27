@@ -5035,9 +5035,9 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
             if (dodraw)
             {
-                const int32_t mousex = origin.x + indent + entry->format->width == 0 ? x - ((textsize.x>>17)<<16) : x;
+                const int32_t mousex = origin.x + indent + (status & MT_XCenter) ? x - ((textsize.x>>17)<<16) : x;
                 const int32_t mousey = origin.y + y_upper + y - menu->scrollPos;
-                int32_t mousewidth = entry->format->width == 0 ? textsize.x : klabs(entry->format->width);
+                int32_t mousewidth = (status & MT_XCenter) ? textsize.x : klabs(entry->format->width);
 
                 if (entry->name)
                     x += klabs(entry->format->width);
@@ -5065,7 +5065,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 Menu_RunInput_Menu_MovementVerify(menu);
                             }
 
-                            if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, mousex, mousey, mousewidth, entry->font->get_yline()))
+                            if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, mousex, mousey, mousewidth, height))
                             {
                                 menu->currentEntry = e;
                                 Menu_RunInput_Menu_MovementVerify(menu);
@@ -5097,7 +5097,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                             currentOption < 0 ? MenuCustom : currentOption < object->options->numOptions ? object->options->optionNames[currentOption] : NULL,
                             status, ydim_upper, ydim_lower);
 
-                        if (entry->format->width > 0)
+                        if (!(status & MT_XRight))
                             mousewidth += optiontextsize.x;
                         else
                             optiontextx -= optiontextsize.x;
@@ -5110,7 +5110,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 Menu_RunInput_Menu_MovementVerify(menu);
                             }
 
-                            if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, mousex, mousey, mousewidth, entry->font->get_yline()))
+                            if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, mousex, mousey, mousewidth, height))
                             {
                                 menu->currentEntry = e;
                                 Menu_RunInput_Menu_MovementVerify(menu);
@@ -5131,18 +5131,29 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                     case Custom2Col:
                     {
                         auto object = (MenuCustom2Col_t*)entry->entry;
-                        int32_t columnx[2] = { origin.x + x - ((status & MT_XRight) ? object->columnWidth : 0), origin.x + x + ((status & MT_XRight) ? 0 : object->columnWidth) };
+                        int32_t const objectHeight = height; // object->font->get_yline();
+                        int32_t const columnWidth = object->columnWidth;
+                        int32_t columnx[2] =
+                        {
+                            origin.x + x - ((status & MT_XRight) ? columnWidth : 0),
+                            origin.x + x + ((status & MT_XRight) ? 0 : columnWidth),
+                        };
                         const int32_t columny = origin.y + y_upper + y - menu->scrollPos;
 
-                        const vec2_t column0textsize = Menu_Text(columnx[0], columny + ((height>>17)<<16), object->font, object->key[*object->column[0]], menu->currentColumn == 0 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower);
-                        const vec2_t column1textsize = Menu_Text(columnx[1], columny + ((height>>17)<<16), object->font, object->key[*object->column[1]], menu->currentColumn == 1 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower);
+                        vec2_t const columnTextSize[2] =
+                        {
+                            Menu_Text(columnx[0], columny + ((height>>17)<<16), object->font, object->key[*object->column[0]], menu->currentColumn == 0 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower),
+                            Menu_Text(columnx[1], columny + ((height>>17)<<16), object->font, object->key[*object->column[1]], menu->currentColumn == 1 ? status : (status & ~MT_Selected), ydim_upper, ydim_lower),
+                        };
 
-                        if (entry->format->width > 0)
-                            mousewidth += object->columnWidth + column1textsize.x;
+                        if (!(status & MT_XRight))
+                        {
+                            mousewidth += columnWidth + columnTextSize[1].x;
+                        }
                         else
                         {
-                            columnx[0] -= column0textsize.x;
-                            columnx[1] -= column1textsize.x;
+                            columnx[0] -= columnTextSize[0].x;
+                            columnx[1] -= columnTextSize[1].x;
                         }
 
                         if (MOUSEACTIVECONDITIONAL(state != 1 && cm == m_currentMenu && !Menu_MouseOutsideBounds(&m_mousepos, mousex, mousey, mousewidth, height)))
@@ -5153,50 +5164,32 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                 Menu_RunInput_Menu_MovementVerify(menu);
                             }
 
-                            if (!Menu_MouseOutsideBounds(&m_mousepos, columnx[1], mousey, column1textsize.x, object->font->get_yline()))
+                            for (int c = 1; c >= 0; --c)
                             {
-                                if (MOUSEWATCHPOINTCONDITIONAL(Menu_MouseOutsideBounds(&m_prevmousepos, columnx[1], mousey, column1textsize.x, object->font->get_yline())))
+                                if (!Menu_MouseOutsideBounds(&m_mousepos, columnx[c], mousey, columnTextSize[c].x, objectHeight))
                                 {
-                                    menu->currentColumn = 1;
-                                }
+                                    if (MOUSEWATCHPOINTCONDITIONAL(Menu_MouseOutsideBounds(&m_prevmousepos, columnx[c], mousey, columnTextSize[c].x, objectHeight)))
+                                    {
+                                        menu->currentColumn = c;
+                                    }
 
-                                if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, columnx[1], mousey, column1textsize.x, object->font->get_yline()))
-                                {
-                                    menu->currentEntry = e;
-                                    Menu_RunInput_Menu_MovementVerify(menu);
-                                    menu->currentColumn = 1;
+                                    if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, columnx[c], mousey, columnTextSize[c].x, objectHeight))
+                                    {
+                                        menu->currentEntry = e;
+                                        Menu_RunInput_Menu_MovementVerify(menu);
+                                        menu->currentColumn = c;
 
-                                    if (entry->flags & MEF_Disabled)
-                                        break;
+                                        if (entry->flags & MEF_Disabled)
+                                            break;
 
-                                    Menu_RunInput_EntryCustom2Col_Activate(entry);
+                                        Menu_RunInput_EntryCustom2Col_Activate(entry);
 
-                                    S_PlaySound(PISTOL_BODYHIT);
+                                        S_PlaySound(PISTOL_BODYHIT);
 
-                                    m_mousecaught = 1;
-                                }
-                            }
-                            else if (!Menu_MouseOutsideBounds(&m_mousepos, columnx[0], mousey, column0textsize.x, object->font->get_yline()))
-                            {
-                                if (MOUSEWATCHPOINTCONDITIONAL(Menu_MouseOutsideBounds(&m_prevmousepos, columnx[0], mousey, column0textsize.x, object->font->get_yline())))
-                                {
-                                    menu->currentColumn = 0;
-                                }
+                                        m_mousecaught = 1;
+                                    }
 
-                                if (!m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !Menu_MouseOutsideBounds(&m_mousedownpos, columnx[0], mousey, column0textsize.x, object->font->get_yline()))
-                                {
-                                    menu->currentEntry = e;
-                                    Menu_RunInput_Menu_MovementVerify(menu);
-                                    menu->currentColumn = 0;
-
-                                    if (entry->flags & MEF_Disabled)
-                                        break;
-
-                                    Menu_RunInput_EntryCustom2Col_Activate(entry);
-
-                                    S_PlaySound(PISTOL_BODYHIT);
-
-                                    m_mousecaught = 1;
+                                    break;
                                 }
                             }
                         }
@@ -5523,7 +5516,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                             h = max(dim.y, entry->font->get_yline());
                         }
 
-                        if (entry->format->width > 0)
+                        if (!(status & MT_XRight))
                         {
                             if (entry->name)
                                 mousewidth += dim.x;
@@ -5657,9 +5650,9 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
 
         if (dodraw)
         {
-            const int32_t mousex = origin.x + object->options->entryFormat->width == 0 ? x - ((textsize.x>>17)<<16) : x;
+            const int32_t mousex = origin.x + (status & MT_XCenter) ? x - ((textsize.x>>17)<<16) : x;
             const int32_t mousey = origin.y + y_upper + y - object->options->scrollPos;
-            const int32_t mousewidth = object->options->entryFormat->width == 0 ? textsize.x : klabs(object->options->entryFormat->width);
+            const int32_t mousewidth = (status & MT_XCenter) ? textsize.x : klabs(object->options->entryFormat->width);
 
             if (MOUSEACTIVECONDITIONAL(cm == m_currentMenu && !Menu_MouseOutsideBounds(&m_mousepos, mousex, mousey, mousewidth, object->options->font->get_yline())))
             {
