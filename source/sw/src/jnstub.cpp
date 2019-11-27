@@ -3263,10 +3263,11 @@ AdjustShade(void)
                     wall[j].shade += shade;
                 }
 
-                if (!TEST(wall[wall[j].nextwall].extra, 0x1))
+                uint16_t const nextwall = wall[j].nextwall;
+                if (nextwall < MAXWALLS && !TEST(wall[nextwall].extra, 0x1))
                 {
-                    SET(wall[wall[j].nextwall].extra, 0x1);
-                    wall[wall[j].nextwall].shade += shade;
+                    SET(wall[nextwall].extra, 0x1);
+                    wall[nextwall].shade += shade;
                 }
 
             }

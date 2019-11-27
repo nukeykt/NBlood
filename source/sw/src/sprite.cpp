@@ -2607,7 +2607,8 @@ SpriteSetup(void)
                         wallcount++;
                         if (TEST_BOOL5(sp))
                         {
-                            if (wall[w].nextwall >= 0)
+                            uint16_t const nextwall = wall[w].nextwall;
+                            if (nextwall < MAXWALLS)
                             {
                                 wall_shade[wallcount] = wall[wall[w].nextwall].shade;
                                 wallcount++;
@@ -2663,7 +2664,8 @@ SpriteSetup(void)
                         wallcount++;
                         if (TEST_BOOL5(sp))
                         {
-                            if (wall[w].nextwall >= 0)
+                            uint16_t const nextwall = wall[w].nextwall;
+                            if (nextwall < MAXWALLS)
                             {
                                 wall_shade[wallcount] = wall[wall[w].nextwall].shade;
                                 wallcount++;
@@ -2947,7 +2949,7 @@ SpriteSetup(void)
                     do
                     {
                         // DO NOT TAG WHITE WALLS!
-                        if (wall[wall_num].nextwall >= 0)
+                        if ((uint16_t)wall[wall_num].nextwall < MAXWALLS)
                         {
                             SET(wall[wall_num].cstat, CSTAT_WALL_WARP_HITSCAN);
                         }
@@ -3062,8 +3064,9 @@ SpriteSetup(void)
                     do
                     {
                         SET(wall[wall_num].cstat, CSTAT_WALL_BLOCK_ACTOR);
-                        if (wall[wall_num].nextwall >= 0)
-                            SET(wall[wall[wall_num].nextwall].cstat, CSTAT_WALL_BLOCK_ACTOR);
+                        uint16_t const nextwall = wall[wall_num].nextwall;
+                        if (nextwall < MAXWALLS)
+                            SET(wall[nextwall].cstat, CSTAT_WALL_BLOCK_ACTOR);
                         wall_num = wall[wall_num].point2;
                     }
                     while (wall_num != start_wall);
