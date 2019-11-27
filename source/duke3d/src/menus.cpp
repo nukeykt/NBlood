@@ -5142,7 +5142,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         else
                         {
                             columnx[0] -= column0textsize.x;
-                            columnx[1] -= column0textsize.x;
+                            columnx[1] -= column1textsize.x;
                         }
 
                         if (MOUSEACTIVECONDITIONAL(state != 1 && cm == m_currentMenu && !Menu_MouseOutsideBounds(&m_mousepos, mousex, mousey, mousewidth, height)))
