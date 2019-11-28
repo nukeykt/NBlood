@@ -1925,10 +1925,9 @@ void ReadyCinemaText(uint16_t nVal)
 
 uint8_t AdvanceCinemaText()
 {
-    int var_1C = nCDTrackLength;
     int tmp = nHeight + nCrawlY > 0;
 
-    if (tmp || nCDTrackLength && nCDTrackLength > 0)
+    if (tmp || CDplaying())
     {
         nextclock = (int)totalclock + 14;
 
@@ -1958,7 +1957,7 @@ uint8_t AdvanceCinemaText()
                 break;
             }
 
-            if (var_1C || nCDTrackLength)
+            if (CDplaying())
             {
                 if (nextclock <= (int)totalclock) {
                     return kTrue;
@@ -2124,7 +2123,7 @@ void GoToTheCinema(int nVal)
                 fadecdaudio();
             }
 
-            playCDtrack(edx + 2); // , 1);
+            playCDtrack(edx + 2, false);
         }
 
         DoCinemaText(ebx);
@@ -2132,7 +2131,7 @@ void GoToTheCinema(int nVal)
 
     FadeOut(kTrue);
 
-    overwritesprite(0, 0, 764, 100, 2, kPalNormal);
+    overwritesprite(0, 0, kMovieTile, 100, 2, kPalNormal);
     videoNextPage();
 
     GrabPalette();
@@ -2199,7 +2198,7 @@ void DoFailedFinalScene()
         fadecdaudio();
     }
 
-    playCDtrack(9);
+    playCDtrack(9, false);
     FadeToWhite();
 
     GoToTheCinema(4);

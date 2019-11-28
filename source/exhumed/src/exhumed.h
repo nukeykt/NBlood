@@ -117,8 +117,6 @@ extern buildvfs_kfd kopen4loadfrommod(const char* filename, char searchfirst);
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;
 
-extern short nCDTrackLength;
-
 extern char sHollyStr[];
 
 extern int localclock;

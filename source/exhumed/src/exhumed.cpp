@@ -1100,14 +1100,8 @@ short nCurBodyNum = 0;
 
 short nBodyTotal = 0;
 
-
 short textpages;
-
-short nCDTrackLength = 0;
-
 short lastfps;
-
-short nCDTracks = 0;
 
 short nMapMode = 0;
 short bNoCreatures = kFalse;
@@ -1248,13 +1242,11 @@ void timerhandler()
         scan_char = 0;
         lastfps = fps;
         fps = 0;
-
-//        if (nCDTrackLength > 0) {
-//            nCDTrackLength--;
-//        }
     }
-    if (!bInMove)
+
+    if (!bInMove) {
         OSD_DispatchQueued();
+    }
 }
 
 void HandleAsync()
@@ -1741,7 +1733,7 @@ void DoCredits()
 {
     NoClip();
 
-    playCDtrack(19);
+    playCDtrack(19, false);
 
     int var_20 = 0;
 
@@ -2516,7 +2508,6 @@ int app_main(int argc, char const* const* argv)
     }
 
     ResetPassword();
-    nCDTracks = initcdaudio();
 
     // GetCurPal(NULL);
 
@@ -2844,7 +2835,7 @@ LOOP3:
     lPlayerXVel = 0;
     lPlayerYVel = 0;
     movefifopos = movefifoend;
-//    nCDTrackLength = 0;
+
     RefreshStatus();
 
     if (bSerialPlay) {
@@ -2866,19 +2857,16 @@ LOOP3:
 
         HandleAsync();
         OSD_DispatchQueued();
+
         // Section B
-        if (!nCDTrackLength && !nFreeze && !nNetPlayerCount)
+        if (!CDplaying() && !nFreeze && !nNetPlayerCount)
         {
             int nTrack = levelnum;
             if (nTrack != 0) {
                 nTrack--;
             }
 
-            nCDTrackLength = playCDtrack((nTrack % 8) + 11);
-
-            if (!nCDTrackLength) {
-                nCDTrackLength = -1;
-            }
+            playCDtrack((nTrack % 8) + 11, true);
         }
 
 // TODO		CONTROL_GetButtonInput();
@@ -3279,12 +3267,11 @@ void DoTitle()
 
     EraseScreen(4);
 
-    playCDtrack(19);
+    playCDtrack(19, true);
 
     videoNextPage();
     FadeIn();
     WaitVBL();
-
 
     int String_Copyright = FindGString("COPYRIGHT");
 
@@ -3669,9 +3656,7 @@ void InitSpiritHead()
         nTrack = 7;
     }
 
-    nCDTrackLength = playCDtrack(nTrack);
-
-    bSubTitles = nCDTrackLength == 0;
+    bSubTitles = playCDtrack(nTrack, false) == 0;
 
     StartSwirlies();
 

@@ -29,28 +29,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern short word_9AC30;
 
 static char *pTrack = NULL;
-int trackhandle = -1;
+static int trackhandle = -1;
 int nLastVolumeSet = 0;
 
+/* TODO
 
-int cd_check_device_present()
-{
-    return 1;
-}
+Currently playing music must keep playing on return to map screen or exit from training level
 
-int initcdaudio()
-{
-    if (!cd_check_device_present())
-    {
-        word_9AC30 = 1;
-
-        // return to text video mode
-        initprintf("No MSCDEX driver installed!\n");
-        exit(0);
-    }
-
-    return 1;
-}
+*/
 
 void setCDaudiovolume(int val)
 {
@@ -59,13 +45,13 @@ void setCDaudiovolume(int val)
     }
 }
 
-int playCDtrack(int nTrack)
+bool playCDtrack(int nTrack, bool bLoop)
 {
     if (nTrack < 2) {
-        return 0;
+        return false;
     }
 
-    nCDTrackLength = 0;
+    StopCD();
 
     char filename[128];
 
@@ -78,7 +64,7 @@ int playCDtrack(int nTrack)
         sprintf(filename, "exhumed%02d.ogg", nTrack);
         hFile = kopen4load(filename, 0);
         if (hFile < 0) {
-            return 0;
+            return false;
         }
     }
 
@@ -89,7 +75,7 @@ int playCDtrack(int nTrack)
     {
         OSD_Printf("Error allocating music track data memory for %s", filename);
         kclose(hFile);
-        return 0;
+        return false;
     }
 
     int nRead = kread(hFile, pTrack, nFileLen);
@@ -99,12 +85,12 @@ int playCDtrack(int nTrack)
         Xaligned_free(pTrack);
         pTrack = NULL;
         kclose(hFile);
-        return 0;
+        return false;
     }
 
     kclose(hFile);
 
-    trackhandle = FX_Play(pTrack, nRead, -1, 0, 0, 255, 255, 255, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
+    trackhandle = FX_Play(pTrack, nRead, bLoop ? 0 : -1, 0, 0, 255, 255, 255, FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
     if (trackhandle <= FX_Ok)
     {
         OSD_Printf("Error playing music track %s", filename);
@@ -113,14 +99,12 @@ int playCDtrack(int nTrack)
             Xaligned_free(pTrack);
             pTrack = NULL;
         }
-        return 0;
+        return false;
     }
 
     setCDaudiovolume(gMusicVolume);
 
-    nCDTrackLength = 1;
-
-    return nCDTrackLength;
+    return true;
 }
 
 void StartfadeCDaudio()
@@ -155,13 +139,13 @@ int StepFadeCDaudio()
     return 1;
 }
 
-int CDplaying()
+bool CDplaying()
 {
-    if (trackhandle > 0 && pTrack) { // better way to do this?
-        return 1;
+    if (trackhandle <= 0) {
+        return false;
     }
     else {
-        return 0;
+        return FX_SoundActive(trackhandle);
     }
 }
 
@@ -171,8 +155,6 @@ void StopCD()
         FX_StopSound(trackhandle);
         trackhandle = -1;
     }
-
-    nCDTrackLength = 0;
 
     if (pTrack)
     {

@@ -594,8 +594,9 @@ void DrawView(int smoothRatio)
                     {
                         levelnew = levelnum + 1;
 
-                        if (CDplaying())
+                        if (CDplaying()) {
                             fadecdaudio();
+                        }
                     }
 
                     videoSetViewableArea(nViewLeft, nViewTop, nViewRight, nViewBottom);
