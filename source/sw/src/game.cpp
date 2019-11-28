@@ -5893,22 +5893,19 @@ int osdcmd_restartvid(const osdfuncparm_t *parm)
 
 #include "saveable.h"
 
-static saveable_data saveable_build_data[] =
-{
-    SAVE_DATA(sector),
-    SAVE_DATA(sprite),
-    SAVE_DATA(wall)
-};
+saveable_module saveable_build{};
 
-saveable_module saveable_build =
+void Saveable_Init_Dynamic()
 {
-    // code
-    NULL,
-    0,
+    static saveable_data saveable_build_data[] =
+    {
+        {sector, MAXSECTORS*sizeof(sectortype)},
+        {sprite, MAXSPRITES*sizeof(spritetype)},
+        {wall, MAXWALLS*sizeof(walltype)},
+    };
 
-    // data
-    saveable_build_data,
-    NUM_SAVEABLE_ITEMS(saveable_build_data)
-};
+    saveable_build.data = saveable_build_data;
+    saveable_build.numdata = NUM_SAVEABLE_ITEMS(saveable_build_data);
+}
 
 // vim:ts=4:sw=4:expandtab:
