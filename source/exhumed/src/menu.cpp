@@ -1076,7 +1076,6 @@ int menu_NewGameMenu()
             // Loop #3
             for (int i = 0; i < 5; i++)
             {
-                // CHECKME
                 int8_t shade = ((Sin((int)totalclock << 4) >> 9) * (i == nSlot)) + ((i != nSlot) * 31);
 
                 overwritesprite(55, arg_4A, kMenuBlankTitleTile, shade, 2, kPalNormal);
@@ -1336,8 +1335,8 @@ int menu_LoadGameMenu()
 
         for (int i = 0; i < kMaxSaveSlots; i++)
         {
-            // TODO - shade flashing
-            overwritesprite(55, spriteY, kMenuBlankTitleTile, 0, 2, kPalNormal);
+            int8_t shade = ((Sin((int)totalclock << 4) >> 9)* (i == nSlot)) + ((i != nSlot) * 31);
+            overwritesprite(55, spriteY, kMenuBlankTitleTile, shade, 2, kPalNormal);
 
             myprintext(63, textY, nameList[i], 0);
             textY += 22;
