@@ -37,6 +37,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "fx_man.h"
 #include "sounds.h"
 #include "config.h"
+#include "common.h"
 #include "common_game.h"
 
 // we load this in to get default button and key assignments
@@ -628,6 +629,14 @@ int32_t CONFIG_ReadSetup(void)
         memcpy(gs.WaveformTrackName, waveformtrackname, MAXWAVEFORMTRACKLENGTH);
 
     SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup",&ForceSetup);
+
+    if (g_grpNamePtr == NULL)
+    {
+        SCRIPT_GetStringPtr(scripthandle, "Setup", "SelectedGRP", &g_grpNamePtr);
+        if (g_grpNamePtr && !strlen(g_grpNamePtr))
+            g_grpNamePtr = dup_filename(G_DefaultGrpFile());
+    }
+
     SCRIPT_GetNumber(scripthandle, "Controls","UseMouse",&UseMouse);
     SCRIPT_GetNumber(scripthandle, "Controls","UseJoystick",&UseJoystick);
     SCRIPT_GetString(scripthandle, "Comm Setup", "RTSName",RTSName);
@@ -690,6 +699,10 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutString(scripthandle, "Sound Setup", "WaveformTrackName", gs.WaveformTrackName);
 
     SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup",ForceSetup,FALSE,FALSE);
+
+    if (g_grpNamePtr)
+        SCRIPT_PutString(scripthandle, "Setup", "SelectedGRP", g_grpNamePtr);
+
     SCRIPT_PutNumber(scripthandle, "Controls","UseMouse",UseMouse,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Controls","UseJoystick",UseJoystick,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Controls","MouseSensitivity",gs.MouseSpeed,FALSE,FALSE);

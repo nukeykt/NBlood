@@ -87,6 +87,7 @@ Things required to make savegames work:
 #include "text.h"
 #include "music.h"
 
+#include "grpscan.h"
 #include "common.h"
 #include "common_game.h"
 
@@ -696,6 +697,7 @@ TerminateGame(void)
         DosScreen();
 
     engineUnInit();
+    FreeGroups();
 
     uninitgroupfile();
 }
@@ -843,6 +845,7 @@ void MultiSharewareCheck(void)
         UnInitSound();
         timerUninit();
         engineUnInit();
+        FreeGroups();
         uninitgroupfile();
         exit(0);
     }
@@ -928,7 +931,6 @@ InitGame(int32_t argc, char const * const * argv)
     if (engineInit())
         SW_FatalEngineError();
 
-    //initgroupfile(G_GrpFile());  // JBF: moving this close to start of program to detect shareware
     InitSetup();
 
     InitAutoNet();
@@ -3471,18 +3473,21 @@ int32_t app_main(int32_t argc, char const * const * argv)
         exit(1);
     }
 
+    SW_ScanGroups();
+
 #ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || ForceSetup || CommandSetup)
     {
         if (quitevent || !startwin_run())
         {
             engineUnInit();
+            FreeGroups();
             exit(0);
         }
     }
 #endif
 
-    initgroupfile(G_GrpFile());
+    SW_LoadGroups();
 
     if (!g_useCwd)
         SW_CleanupSearchPaths();

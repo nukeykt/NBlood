@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "common_game.h"
+#include "grpscan.h"
 
 static const char *defaultgrpfilename = "SW.GRP";
 static const char *defaultdeffilename = "sw.def";
@@ -368,4 +369,44 @@ void SW_ExtInit()
         }
     }
 #endif
+}
+
+struct grpfile const * g_selectedGrp;
+
+void SW_ScanGroups()
+{
+    ScanGroups();
+
+    g_selectedGrp = NULL;
+
+    char const * const currentGrp = G_GrpFile();
+
+    for (grpfile_t const *fg = foundgrps; fg; fg=fg->next)
+    {
+        if (!Bstrcasecmp(fg->filename, currentGrp))
+        {
+            g_selectedGrp = fg;
+            break;
+        }
+    }
+
+    if (g_selectedGrp == NULL)
+        g_selectedGrp = foundgrps;
+}
+
+int32_t SW_TryLoadingGrp(char const * const grpfile)
+{
+    int32_t i;
+
+    if ((i = initgroupfile(grpfile)) == -1)
+        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
+    else
+        initprintf("Using \"%s\" as main game data file.\n", grpfile);
+
+    return i;
+}
+
+void SW_LoadGroups()
+{
+    SW_TryLoadingGrp(g_selectedGrp != nullptr ? g_selectedGrp->filename : G_GrpFile());
 }

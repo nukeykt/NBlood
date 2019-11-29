@@ -48,7 +48,7 @@ static struct grpcache
     char name[BMAX_PATH+1];
     int size;
     int mtime;
-    unsigned int crcval;
+    uint32_t crcval;
 } *grpcache = NULL, *usedgrpcache = NULL;
 
 static int LoadGroupsCache(void)
@@ -70,7 +70,7 @@ static int LoadGroupsCache(void)
         if (scriptfile_getnumber(script, &fmtime)) break;   // modification time
         if (scriptfile_getnumber(script, &fcrcval)) break;  // crc checksum
 
-        fg = (struct grpcache*)calloc(1, sizeof(struct grpcache));
+        fg = (struct grpcache*)Xcalloc(1, sizeof(struct grpcache));
         fg->next = grpcache;
         grpcache = fg;
 
@@ -91,16 +91,26 @@ static void FreeGroupsCache(void)
     while (grpcache)
     {
         fg = grpcache->next;
-        free(grpcache);
+        Xfree(grpcache);
         grpcache = fg;
     }
+}
+
+static struct internalgrpfile const * FindGrpInfo(uint32_t crcval, int32_t size)
+{
+    for (struct internalgrpfile const & grptype : grpfiles)
+    {
+        if (grptype.crcval == crcval && grptype.size == size)
+            return &grptype;
+    }
+
+    return NULL;
 }
 
 int ScanGroups(void)
 {
     BUILDVFS_FIND_REC *srch, *sidx;
     struct grpcache *fg, *fgg;
-    struct grpfile *grp;
     char *fn;
     struct Bstat st;
 
@@ -120,18 +130,21 @@ int ScanGroups(void)
         if (fg)
         {
             if (findfrompath(sidx->name, &fn)) continue;    // failed to resolve the filename
-            if (Bstat(fn, &st)) { free(fn); continue; } // failed to stat the file
+            if (Bstat(fn, &st)) { Xfree(fn); continue; } // failed to stat the file
             free(fn);
             if (fg->size == st.st_size && fg->mtime == st.st_mtime)
             {
-                grp = (struct grpfile *)calloc(1, sizeof(struct grpfile));
-                grp->name = strdup(sidx->name);
-                grp->crcval = fg->crcval;
-                grp->size = fg->size;
-                grp->next = foundgrps;
-                foundgrps = grp;
+                struct internalgrpfile const * const grptype = FindGrpInfo(fg->crcval, fg->size);
+                if (grptype)
+                {
+                    auto grp = (struct grpfile *)Xcalloc(1, sizeof(struct grpfile));
+                    grp->filename = Xstrdup(sidx->name);
+                    grp->type = grptype;
+                    grp->next = foundgrps;
+                    foundgrps = grp;
+                }
 
-                fgg = (struct grpcache *)calloc(1, sizeof(struct grpcache));
+                fgg = (struct grpcache *)Xcalloc(1, sizeof(struct grpcache));
                 strcpy(fgg->name, fg->name);
                 fgg->size = fg->size;
                 fgg->mtime = fg->mtime;
@@ -161,14 +174,17 @@ int ScanGroups(void)
             close(fh);
             buildputs(" Done\n");
 
-            grp = (struct grpfile *)calloc(1, sizeof(struct grpfile));
-            grp->name = strdup(sidx->name);
-            grp->crcval = crcval;
-            grp->size = st.st_size;
-            grp->next = foundgrps;
-            foundgrps = grp;
+            struct internalgrpfile const * const grptype = FindGrpInfo(crcval, st.st_size);
+            if (grptype)
+            {
+                auto grp = (struct grpfile *)Xcalloc(1, sizeof(struct grpfile));
+                grp->filename = Xstrdup(sidx->name);
+                grp->type = grptype;
+                grp->next = foundgrps;
+                foundgrps = grp;
+            }
 
-            fgg = (struct grpcache *)calloc(1, sizeof(struct grpcache));
+            fgg = (struct grpcache *)Xcalloc(1, sizeof(struct grpcache));
             strncpy(fgg->name, sidx->name, BMAX_PATH);
             fgg->size = st.st_size;
             fgg->mtime = st.st_mtime;
@@ -191,7 +207,7 @@ int ScanGroups(void)
             {
                 fgg = fg->next;
                 fprintf(fp, "\"%s\" %d %d %d\n", fg->name, fg->size, fg->mtime, fg->crcval);
-                free(fg);
+                Xfree(fg);
             }
             fclose(fp);
         }
@@ -207,8 +223,8 @@ void FreeGroups(void)
     while (foundgrps)
     {
         fg = foundgrps->next;
-        free(foundgrps->name);
-        free(foundgrps);
+        Xfree(foundgrps->filename);
+        Xfree(foundgrps);
         foundgrps = fg;
     }
 }
