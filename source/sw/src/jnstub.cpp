@@ -685,8 +685,10 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     SW_ExtPreInit(argc, argv);
 
     OSD_SetLogFile("wangulator.log");
-    OSD_SetVersion(AppProperName,0,2);
-    initprintf("%s %s\n", AppProperName, s_buildRev);
+    char tempbuf[256];
+    snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
+    OSD_SetVersion(tempbuf, 10,0);
+    buildputs(tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -730,6 +732,7 @@ ExtInit(void)
     //LogUserTime(TRUE);              // Send true because user is logging
     // in.
 
+    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", 0);
 
     SW_ExtInit();
 
