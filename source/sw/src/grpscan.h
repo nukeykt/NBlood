@@ -29,16 +29,16 @@
 struct internalgrpfile
 {
     const char *name;
-    unsigned int crcval;
+    uint32_t crcval;
     int size;
 };
-struct grpfile
+
+typedef struct grpfile
 {
-    char *name;
-    unsigned int crcval;
-    int size;
+    char * filename;
+    struct internalgrpfile const * type;
     struct grpfile *next;
-};
+} grpfile_t;
 
 extern internalgrpfile grpfiles[numgrpfiles];
 extern grpfile *foundgrps;
