@@ -505,7 +505,7 @@ void G_LoadGroups(int32_t autoload)
 static void G_LoadAddon(void)
 {
 #ifndef EDUKE32_STANDALONE
-    int32_t crc = 0;  // compiler-happy
+    uint32_t crc;
 
     switch (g_addonNum)
     {
@@ -518,9 +518,9 @@ static void G_LoadAddon(void)
     case ADDON_CARIBBEAN:
         crc = DUKECB_CRC;
         break;
+    default:
+        return;
     }
-
-    if (!crc) return;
 
     grpfile_t const * const grp = FindGroup(crc);
 
