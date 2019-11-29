@@ -931,6 +931,13 @@ InitGame(int32_t argc, char const * const * argv)
     if (engineInit())
         SW_FatalEngineError();
 
+    {
+        char tempbuf[256];
+        snprintf(tempbuf, ARRAY_SIZE(tempbuf), APPNAME " %s", s_buildRev);
+        OSD_SetVersion(tempbuf, 10,0);
+    }
+    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", 0);
+
     InitSetup();
 
     InitAutoNet();
@@ -3453,6 +3460,13 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     initprintf(APPNAME " %s\n", s_buildRev);
     PrintBuildInfo();
+
+    OSD_SetFunctions(
+        NULL, NULL, NULL, NULL, NULL,
+        COMMON_clearbackground,
+        BGetTime,
+        NULL
+        );
 
     if (argc > 1)
     {
