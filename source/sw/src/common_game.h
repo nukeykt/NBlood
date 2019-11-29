@@ -134,6 +134,8 @@ extern "C" {
 #define MACRO9  "Hope you were paying attention."
 #define MACRO10 "ITTAIIIUUU!!!"
 
+extern struct grpfile const * g_selectedGrp;
+
 extern int g_useCwd;
 
 extern char *g_grpNamePtr;
@@ -147,6 +149,9 @@ void SW_InitMultiPsky(void);
 
 void SW_ExtPreInit(int32_t argc, char const * const * argv);
 void SW_ExtInit(void);
+
+void SW_ScanGroups(void);
+void SW_LoadGroups(void);
 
 void SW_CleanupSearchPaths(void);
 

@@ -753,6 +753,8 @@ ExtInit(void)
     kensplayerheight = 58;
     zmode = 0;
 
+    SW_ScanGroups();
+
 #ifndef BUILD_DEV_VER
 }                                   // end user press Y
 else
@@ -766,7 +768,7 @@ else
 
 int32_t ExtPostStartupWindow(void)
 {
-    initgroupfile(G_GrpFile());
+    SW_LoadGroups();
 
     if (!g_useCwd)
         SW_CleanupSearchPaths();
