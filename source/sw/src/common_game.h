@@ -159,6 +159,7 @@ enum searchpathtypes_t {
     SEARCHPATH_REMOVE = 1<<0,
 };
 
+extern int g_addonNum;
 
 typedef enum basepal_ {
     BASEPAL = 0,

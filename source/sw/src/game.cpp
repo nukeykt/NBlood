@@ -3464,6 +3464,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     SW_ExtInit();
 
+    // hackish since SW's init order is a bit different right now
+    if (G_CheckCmdSwitch(argc, argv, "-addon1"))
+        g_addonNum = 1;
+    else if (G_CheckCmdSwitch(argc, argv, "-addon2"))
+        g_addonNum = 2;
+
     i = CONFIG_ReadSetup();
 
     if (enginePreInit())

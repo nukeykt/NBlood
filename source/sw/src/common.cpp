@@ -419,8 +419,13 @@ static int32_t SW_LoadGrpDependencyChain(grpfile_t const * const grp)
     return i;
 }
 
+int g_addonNum;
+
 void SW_LoadGroups()
 {
+    if (g_addonNum)
+        SW_LoadAddon();
+
     if (SW_LoadGrpDependencyChain(g_selectedGrp) != -1)
     {
         clearGrpNamePtr();
