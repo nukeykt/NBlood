@@ -101,7 +101,7 @@ int ScanGroups(void)
     char *fn;
     struct Bstat st;
 
-    buildputs("Scanning for GRP files...\n");
+    buildputs("Scanning for game data...\n");
 
     LoadGroupsCache();
 
