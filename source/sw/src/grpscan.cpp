@@ -32,9 +32,12 @@
 
 internalgrpfile grpfiles[numgrpfiles] =
 {
-    { "Registered Version",     0x7545319Fu, 47536148 },
-    { "Shareware Version",      0x08A7FA1Fu, 26056769 },
-    { "Wanton Destruction (Addon)", 0xA9AAA7B7u, 48698128 },
+    { "Shadow Warrior",               0x7545319Fu, 47536148 },
+    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245 },
+    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456 },
+    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769 },
+    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769 },
+    { "Wanton Destruction",           0xA9AAA7B7u, 48698128 },
 };
 grpfile *foundgrps = NULL;
 
