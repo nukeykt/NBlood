@@ -29,15 +29,21 @@
 #include "crc32.h"
 
 #include "grpscan.h"
+#include "common_game.h"
+
+#define SWREG12_CRC 0x7545319Fu
+#define SWWD_CRC 0xA9AAA7B7u
+#define SWTD_CRC 0xA1A65BE8u
 
 internalgrpfile grpfiles[numgrpfiles] =
 {
-    { "Shadow Warrior",               0x7545319Fu, 47536148 },
-    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245 },
-    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456 },
-    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769 },
-    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769 },
-    { "Wanton Destruction",           0xA9AAA7B7u, 48698128 },
+    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0 },
+    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, 0, 0 },
+    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, 0, 0 },
+    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, 0, 0 },
+    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, 0, 0 },
+    { "Wanton Destruction",           SWWD_CRC, 48698128, GRP_HAS_DEPENDENCY, SWREG12_CRC },
+    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC },
 };
 grpfile *foundgrps = NULL;
 
@@ -94,6 +100,40 @@ static void FreeGroupsCache(void)
         Xfree(grpcache);
         grpcache = fg;
     }
+}
+
+static void RemoveGroup(grpfile_t *igrp)
+{
+    for (grpfile_t *prev = NULL, *grp = foundgrps; grp; grp=grp->next)
+    {
+        if (grp == igrp)
+        {
+            if (grp == foundgrps)
+                foundgrps = grp->next;
+            else
+                prev->next = grp->next;
+
+            Xfree(grp->filename);
+            Xfree(grp);
+
+            return;
+        }
+
+        prev = grp;
+    }
+}
+
+grpfile_t * FindGroup(uint32_t crcval)
+{
+    grpfile_t *grp;
+
+    for (grp = foundgrps; grp; grp=grp->next)
+    {
+        if (grp->type->crcval == crcval)
+            return grp;
+    }
+
+    return NULL;
 }
 
 static struct internalgrpfile const * FindGrpInfo(uint32_t crcval, int32_t size)
@@ -196,6 +236,20 @@ int ScanGroups(void)
 
     klistfree(srch);
     FreeGroupsCache();
+
+    for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
+    {
+        if (grp->type->flags & GRP_HAS_DEPENDENCY)
+        {
+            if (FindGroup(grp->type->dependency) == NULL) // couldn't find dependency
+            {
+                RemoveGroup(grp);
+                grp = foundgrps;
+                // start from the beginning so we can remove anything that depended on this grp
+                continue;
+            }
+        }
+    }
 
     if (usedgrpcache)
     {

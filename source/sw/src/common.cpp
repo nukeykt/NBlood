@@ -406,7 +406,28 @@ int32_t SW_TryLoadingGrp(char const * const grpfile)
     return i;
 }
 
+static int32_t SW_LoadGrpDependencyChain(grpfile_t const * const grp)
+{
+    if (!grp)
+        return -1;
+
+    if ((grp->type->flags & GRP_HAS_DEPENDENCY) && grp->type->dependency != grp->type->crcval)
+        SW_LoadGrpDependencyChain(FindGroup(grp->type->dependency));
+
+    int32_t const i = SW_TryLoadingGrp(grp->filename);
+
+    return i;
+}
+
 void SW_LoadGroups()
 {
-    SW_TryLoadingGrp(g_selectedGrp != nullptr ? g_selectedGrp->filename : G_GrpFile());
+    if (SW_LoadGrpDependencyChain(g_selectedGrp) != -1)
+    {
+        clearGrpNamePtr();
+        g_grpNamePtr = dup_filename(g_selectedGrp->filename);
+    }
+    else
+    {
+        SW_TryLoadingGrp(G_GrpFile());
+    }
 }
