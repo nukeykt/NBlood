@@ -283,3 +283,26 @@ void FreeGroups(void)
     }
 }
 
+void SW_LoadAddon()
+{
+#ifndef EDUKE32_STANDALONE
+    uint32_t crc;
+
+    switch (g_addonNum)
+    {
+    case 1:
+        crc = SWWD_CRC;
+        break;
+    case 2:
+        crc = SWTD_CRC;
+        break;
+    default:
+        return;
+    }
+
+    grpfile_t const * const grp = FindGroup(crc);
+
+    if (grp)
+        g_selectedGrp = grp;
+#endif
+}

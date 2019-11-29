@@ -55,4 +55,6 @@ extern grpfile_t * FindGroup(uint32_t crcval);
 int ScanGroups(void);
 void FreeGroups(void);
 
+void SW_LoadAddon(void);
+
 #endif
