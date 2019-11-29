@@ -566,6 +566,11 @@ int32_t app_main(int32_t argc, char const * const * argv)
         NULL
         );
 
+    {
+        char tempbuf[256];
+        snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
+        OSD_SetVersion(tempbuf, 10,0);
+    }
     OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO: Add error and red palookup IDs.
 
     //Here's an example of TRUE ornamented walls
