@@ -5953,11 +5953,7 @@ KeyMain:
             if (pp->WpnAmmo[WPN_STAR] >= DamageData[WPN_STAR].max_ammo)
                 break;
 
-#ifdef UK_VERSION
-            sprintf(ds,"Darts");
-#else
-            //sprintf(ds,"Shurikens");
-#endif
+            sprintf(ds, gs.Darts ? "Darts" : "Shurikens");
             PutStringInfo(Player+pnum, DamageData[WPN_STAR].weapon_name);
             PlayerUpdateAmmo(pp, WPN_STAR, DamageData[WPN_STAR].weapon_pickup);
             SetFadeAmt(pp,ITEMFLASHAMT,ITEMFLASHCLR);  // Flash blue on item pickup
