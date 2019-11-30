@@ -1674,7 +1674,7 @@ void ScreenCaptureKeys(void)
     {
         KEY_PRESSED(KEYSC_F12) = 0;
         PauseAction();
-        videoCaptureScreenTGA("swcpxxxx.tga", KEY_PRESSED(KEYSC_LSHIFT) | KEY_PRESSED(KEYSC_RSHIFT));
+        videoCaptureScreen("swcpxxxx.png", KEY_PRESSED(KEYSC_LSHIFT) | KEY_PRESSED(KEYSC_RSHIFT));
         ResumeAction();
         PutStringInfo(Player + myconnectindex, "Screen Captured");
     }
