@@ -231,6 +231,7 @@ const GAME_SET gs_defaults =
     FALSE, // play cd
     "Track??", // waveform track name
     FALSE,
+    TRUE,
 };
 GAME_SET gs;
 

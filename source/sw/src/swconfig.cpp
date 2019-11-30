@@ -230,6 +230,10 @@ void ReadGameSetup(int32_t scripthandle)
     if (dummy != -1) gs.Darts = dummy;
 
     dummy = -1;
+    SCRIPT_GetNumber(scripthandle, "Options", "WeaponAutoSwitch",&dummy);
+    if (dummy != -1) gs.WeaponAutoSwitch = dummy;
+
+    dummy = -1;
     SCRIPT_GetNumber(scripthandle, "Options", "MouseAimingOn",&dummy);
     if (dummy != -1) gs.MouseAimingOn = dummy;
 
@@ -337,6 +341,8 @@ void WriteGameSetup(int32_t scripthandle)
     SCRIPT_PutNumber(scripthandle, "Options", "Stats",dummy,FALSE,FALSE);
     dummy = gs.Darts;
     SCRIPT_PutNumber(scripthandle, "Options", "Darts",dummy,FALSE,FALSE);
+    dummy = gs.WeaponAutoSwitch;
+    SCRIPT_PutNumber(scripthandle, "Options", "WeaponAutoSwitch",dummy,FALSE,FALSE);
 
     EncodePassword(gs.Password);
     SCRIPT_PutString(scripthandle, "Options","Rooster",gs.Password);
