@@ -90,6 +90,7 @@ enum
     gamefunc_Previous_Weapon,
     gamefunc_Show_Menu,
     gamefunc_Show_Console,
+    gamefunc_Alt_Weapon_Mode,
     NUMGAMEFUNCTIONS,
 };
 #endif

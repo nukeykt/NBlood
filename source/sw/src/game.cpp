@@ -5352,6 +5352,14 @@ getinput(SW_PACKET *loc)
         SET(loc->bits, prev_weapon + 1);
     }
 
+    if (BUTTON(gamefunc_Alt_Weapon_Mode))
+    {
+        CONTROL_ClearButton(gamefunc_Alt_Weapon_Mode);
+        USERp u = User[pp->PlayerSprite];
+        short const which_weapon = u->WeaponNum + 1;
+        SET(loc->bits, which_weapon);
+    }
+
     inv_hotkey = 0;
     if (BUTTON(gamefunc_Med_Kit))
         inv_hotkey = INVENTORY_MEDKIT+1;
