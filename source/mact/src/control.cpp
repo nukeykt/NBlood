@@ -956,4 +956,27 @@ void CONTROL_GetUserInput(UserInput * uinfo)
 void CONTROL_ClearUserInput(UserInput * uinfo)
 {
     *uinfo = UserInput{};
+
+    KB_FlushKeyboardQueue();
+
+    KB_ClearKeyDown(sc_UpArrow);
+    KB_ClearKeyDown(sc_kpad_8);
+    MOUSE_ClearButton(WHEELUP_MOUSE);
+
+    KB_ClearKeyDown(sc_DownArrow);
+    KB_ClearKeyDown(sc_kpad_2);
+    MOUSE_ClearButton(WHEELDOWN_MOUSE);
+
+    KB_ClearKeyDown(sc_LeftArrow);
+    KB_ClearKeyDown(sc_kpad_4);
+
+    KB_ClearKeyDown(sc_RightArrow);
+    KB_ClearKeyDown(sc_kpad_6);
+
+    KB_ClearKeyDown(sc_kpad_Enter);
+    KB_ClearKeyDown(sc_Enter);
+    MOUSE_ClearButton(LEFT_MOUSE);
+
+    KB_ClearKeyDown(sc_Escape);
+    MOUSE_ClearButton(RIGHT_MOUSE);
 }
