@@ -211,6 +211,7 @@ typedef enum
     btn_voxels, btn_stats, btn_playcd,
     btn_videofs,
     btn_darts,
+    btn_autoswitch,
     btn_max
 } BTNType;
 
