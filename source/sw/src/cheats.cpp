@@ -117,6 +117,12 @@ void WeaponCheat(PLAYERp UNUSED(pp), char *UNUSED(cheat_string))
         p = &Player[pnum];
         u = User[p->PlayerSprite];
 
+        if (!TEST(p->Flags, PF_TWO_UZI))
+        {
+            SET(p->Flags, PF_TWO_UZI);
+            SET(p->Flags, PF_PICKED_UP_AN_UZI);
+        }
+
         // ALL WEAPONS
         if (!SW_SHAREWARE)
             p->WpnFlags = 0xFFFFFFFF;
@@ -198,13 +204,6 @@ void ItemCheat(PLAYERp pp, char *cheat_string)
     {
         p = &Player[pnum];
         memset(p->HasKey, TRUE, sizeof(p->HasKey));
-
-        if (p->Wpn[WPN_UZI] && p->CurWpn == p->Wpn[WPN_UZI])
-        {
-            SET(p->Flags, PF_TWO_UZI);
-            SET(p->Flags, PF_PICKED_UP_AN_UZI);
-            InitWeaponUzi(p);
-        }
 
         p->WpnShotgunAuto = 50;
         p->WpnRocketHeat = 5;
