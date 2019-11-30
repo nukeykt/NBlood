@@ -2918,9 +2918,11 @@ Control(int32_t argc, char const * const * argv)
 void
 _Assert(const char *expr, const char *strFile, unsigned uLine)
 {
-    sprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
-    MONO_PRINT(ds);
+    buildprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
+    debug_break();
+
     TerminateGame();
+
 #if 1 //def RENDERTYPEWIN
     wm_msgbox(apptitle, "%s", ds);
 #else
