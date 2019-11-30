@@ -87,6 +87,7 @@ const char *gamefunctions[] =
     "Previous_Weapon",
     "Show_Menu",
     "Show_Console",
+    "Alt_Weapon_Mode",
 };
 
 #define NUMKEYENTRIES 50
@@ -215,7 +216,7 @@ static const char *mousedefaults_modern[] =
 {
     "Fire",
     "Open",
-    "",
+    "Alt_Weapon_Mode",
     "",
     "Next_Weapon",
     "Previous_Weapon"
