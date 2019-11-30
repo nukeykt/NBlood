@@ -69,6 +69,7 @@ typedef struct
     SWBOOL MouseAimingOn; // whether it was on or off - NOT the type of mouse aiming
     SWBOOL PlayCD;
     char WaveformTrackName[MAXWAVEFORMTRACKLENGTH];
+    SWBOOL Darts;
 } GAME_SET, *GAME_SETp;
 
 extern const GAME_SET gs_defaults;

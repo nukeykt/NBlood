@@ -230,6 +230,7 @@ const GAME_SET gs_defaults =
     FALSE, // mouse aiming on
     FALSE, // play cd
     "Track??", // waveform track name
+    FALSE,
 };
 GAME_SET gs;
 
@@ -3307,7 +3308,7 @@ Rules->0=WangBang 1=WangBang(No Respawn) 2=CoOperative
 commit -map grenade -autonet 0,0,1,1,1,0,3,2,1,1 -name frank
 #endif
 
-char isShareware = FALSE, useDarts = FALSE;
+char isShareware = FALSE;
 
 int DetectShareware(void)
 {
