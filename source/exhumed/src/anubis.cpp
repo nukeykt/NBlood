@@ -246,6 +246,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                                 break; // only break if condition met
                             }
                             // else we fall through to 0x8000
+                            fallthrough__;
                         }
                         case 0x8000:
                         {
@@ -404,6 +405,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
             }
 
             nDamage = runlist_CheckRadialDamage(nSprite);
+            fallthrough__;
         }
         case 0x80000:
         {
