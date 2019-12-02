@@ -130,7 +130,7 @@ int BuildSnake(short nPlayer, short zVal)
     int z = (sprite[nPlayerSprite].z + zVal) - 2560;
     short nAngle = sprite[nPlayerSprite].ang;
 
-    short hitsect, hitwall, hitsprite;
+    short hitsect, hitsprite;
     int hitx, hity, hitz;
 
     short nSprite;
@@ -143,7 +143,6 @@ int BuildSnake(short nPlayer, short zVal)
     hity = hitData.pos.y;
     hitz = hitData.pos.z;
     hitsect = hitData.sect;
-    hitwall = hitData.wall;
     hitsprite = hitData.sprite;
 
     int nSqrt = ksqrt(((hity - y) * (hity - y)) + ((hitx - x) * (hitx - x)));
@@ -297,7 +296,7 @@ int FindSnakeEnemy(short nSnake)
     return nEnemy;
 }
 
-void FuncSnake(int a, int nDamage, int nRun)
+void FuncSnake(int a, int UNUSED(nDamage), int nRun)
 {
     int nMessage = a & 0x7F0000;
 

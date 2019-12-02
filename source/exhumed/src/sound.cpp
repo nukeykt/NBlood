@@ -748,7 +748,7 @@ void UpdateSounds()
         return;
 
     nLocalSectFlags = SectFlag[nPlayerViewSect[nLocalPlayer]];
-    spritetype *pSprite = &sprite[PlayerList[nLocalPlayer].nSprite];
+//    spritetype *pSprite = &sprite[PlayerList[nLocalPlayer].nSprite];
     int x, y;
     short ang;
     if (nSnakeCam > -1)

@@ -1410,8 +1410,6 @@ void mysetbrightness(char nBrightness)
 
 void CheckKeys()
 {
-    int eax;
-
     if (BUTTON(gamefunc_Enlarge_Screen))
     {
         if (screensize == 0)
@@ -1541,7 +1539,7 @@ void CheckKeys()
         {
             if (ch)
             {
-                int nStringLen = strlen(sHollyStr);
+                size_t nStringLen = strlen(sHollyStr);
 
                 if (ch == asc_Enter)
                 {
@@ -1952,7 +1950,6 @@ void DrawClock()
 
     tileLoad(kTile3603);
 
-//    nRedTicks = 0;
     memset((void*)waloff[kTile3603], -1, 4096);
 
     if (lCountDown / 30 != nClockVal)
@@ -2028,8 +2025,8 @@ static void G_PrintFPS(void)
     static int32_t frameCount;
     static double cumulativeFrameDelay;
     static double lastFrameTime;
-    static float lastFPS, minFPS = std::numeric_limits<float>::max(), maxFPS;
-    static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
+    static float lastFPS; // , minFPS = std::numeric_limits<float>::max(), maxFPS;
+    //static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
 
     double frameTime = timerGetHiTicks();
     double frameDelay = frameTime - lastFrameTime;
@@ -2600,7 +2597,7 @@ int app_main(int argc, char const* const* argv)
     g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
 
     // loc_11745:
-    FadeOut(0);
+//    FadeOut(0);
 //	InstallEngine();
     KB_Startup();
     InitView();
@@ -3665,7 +3662,7 @@ void InitSpiritHead()
     lNextStateChange = (int)totalclock;
     lHeadStartClock = (int)totalclock;
 
-    headfd = kopen4load(filename, 512); // 512??
+    headfd = kopen4load(filename, 0);
     nPupData = kread(headfd, cPupData, sizeof(cPupData));
     pPupData = cPupData;
     kclose(headfd);

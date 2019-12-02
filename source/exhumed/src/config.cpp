@@ -514,7 +514,7 @@ void CONFIG_SetDefaults()
 
 int CONFIG_ReadSetup()
 {
-    char tempbuf[1024];
+    //char tempbuf[1024];
 
     CONTROL_ClearAssignments();
     CONFIG_SetDefaults();
