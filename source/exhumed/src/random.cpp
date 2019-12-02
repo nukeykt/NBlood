@@ -52,7 +52,7 @@ char RandomByte()
     return randByte;
 }
 
-short RandomWord()
+uint16_t RandomWord()
 {
     short randWord = RandomByte() << 8;
     randWord |= RandomByte();
