@@ -2245,6 +2245,8 @@ void DoStatic(int a, int b)
 
     uint8_t *pTile = (uint8_t*)(waloff[kTileLoboLaptop] + (200 * v2)) + v4;
 
+    tileInvalidate(kTileLoboLaptop, -1, -1);
+
     while (v2 < var_18)
     {
         uint8_t *pStart = pTile;
