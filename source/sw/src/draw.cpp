@@ -2263,6 +2263,8 @@ drawscreen(PLAYERp pp)
     static short lv_sectnum = -1;
     static int lv_x, lv_y, lv_z;
 
+    int const viewingRange = viewingrange;
+
     if (HelpInputMode)
     {
         renderFlushPerms();
@@ -2422,6 +2424,12 @@ drawscreen(PLAYERp pp)
         thoriz = min(thoriz, PLAYER_HORIZ_MAX);
     }
 
+    if (r_usenewaspect)
+    {
+        newaspect_enable = 1;
+        videoSetCorrectedAspect();
+    }
+
     if (FAF_DebugView)
         videoClearViewableArea(255L);
 
@@ -2445,6 +2453,12 @@ drawscreen(PLAYERp pp)
     analyzesprites(tx, ty, tz, FALSE);
     post_analyzesprites();
     renderDrawMasks();
+
+    if (r_usenewaspect)
+    {
+        newaspect_enable = 0;
+        renderSetAspect(viewingRange, tabledivide32_noinline(65536 * ydim * 8, xdim * 5));
+    }
 
     UpdatePanel();
 
