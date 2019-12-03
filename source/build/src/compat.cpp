@@ -642,7 +642,7 @@ size_t Bgetsysmemsize(void)
     int64_t const scphyspages = sysconf(_SC_PHYS_PAGES);
 
     if (scpagesiz >= 0 && scphyspages >= 0)
-        siz = (uint32_t)min<uint64_t>(SIZE_MAX, scpagesiz * scphyspages);
+        siz = (size_t)min<uint64_t>(SIZE_MAX, scpagesiz * scphyspages);
 
     //initprintf("Bgetsysmemsize(): %d pages of %d bytes, %d bytes of system memory\n",
     //		scphyspages, scpagesiz, siz);
