@@ -7736,7 +7736,7 @@ void TraverseBreakableWalls(short start_sect, int x, int y, int z, short ang, in
     {
         sect = sectlist[sectlistplc++];
 
-        ASSERT(sectlistplc < SIZ(sectlist));
+        ASSERT((uint16_t)sectlistplc < SIZ(sectlist));
 
         startwall = sector[sect].wallptr;
         endwall = startwall + sector[sect].wallnum;
@@ -7786,7 +7786,7 @@ void TraverseBreakableWalls(short start_sect, int x, int y, int z, short ang, in
             if (k < 0)
             {
                 sectlist[sectlistend++] = nextsector;
-                ASSERT(sectlistend < SIZ(sectlist));
+                ASSERT((uint16_t)sectlistend < SIZ(sectlist));
             }
         }
 

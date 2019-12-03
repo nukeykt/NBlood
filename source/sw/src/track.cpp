@@ -719,7 +719,7 @@ void
 SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 {
     int xlow, ylow, xhigh, yhigh;
-    short sp_num, next_sp_num, sn, startwall, endwall;
+    short sp_num, next_sp_num, startwall, endwall;
     int i, k, j;
     SPRITEp BoundSprite;
     SWBOOL FoundOutsideLoop = FALSE, FoundSector = FALSE;
@@ -839,7 +839,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
             sop->num_sectors++;
         }
 
-        ASSERT(sop->num_sectors < SIZ(SectorObject[0].sector));
+        ASSERT((uint16_t)sop->num_sectors < SIZ(SectorObject[0].sector));
     }
 
     //
@@ -960,6 +960,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
                 // sector
 
                 // place all sprites on list
+                uint16_t sn;
                 for (sn = 0; sn < (int)SIZ(sop->sp_num); sn++)
                 {
                     if (sop->sp_num[sn] == -1)
@@ -1491,7 +1492,7 @@ PlaceSectorObjectsOnTracks(void)
             }
         }
 
-        ASSERT(sop->num_walls < SIZ(sop->xorig));
+        ASSERT((uint16_t)sop->num_walls < SIZ(sop->xorig));
 
         if (sop->track <= -1)
             continue;
