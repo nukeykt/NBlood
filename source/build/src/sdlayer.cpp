@@ -499,7 +499,13 @@ int main(int argc, char *argv[])
     gtkbuild_init(&argc, &argv);
 #endif
 
+#ifdef EDUKE32_OSX
+    osx_preopen();
+#endif
     startwin_open();
+#ifdef EDUKE32_OSX
+    osx_postopen();
+#endif
     maybe_redirect_outputs();
 
 #ifdef _WIN32
