@@ -140,7 +140,7 @@ uint16_t g_nummenusaves;
 static menusave_t * g_internalsaves;
 static uint16_t g_numinternalsaves;
 
-static void ReadSaveGameHeaders_CACHE1D(CACHE1D_FIND_REC *f)
+static void ReadSaveGameHeaders_CACHE1D(BUILDVFS_FIND_REC *f)
 {
     savehead_t h;
 
@@ -179,7 +179,7 @@ static void ReadSaveGameHeaders_CACHE1D(CACHE1D_FIND_REC *f)
     }
 }
 
-static int countcache1dfind(CACHE1D_FIND_REC *f)
+static int countcache1dfind(BUILDVFS_FIND_REC *f)
 {
     int x = 0;
     for (; f != nullptr; f = f->next)
@@ -191,7 +191,7 @@ static void ReadSaveGameHeaders_Internal(void)
 {
     static char const DefaultPath[] = "/", SavePattern[] = "*.esv";
 
-    CACHE1D_FIND_REC *findfiles_default = klistpath(DefaultPath, SavePattern, CACHE1D_FIND_FILE);
+    BUILDVFS_FIND_REC *findfiles_default = klistpath(DefaultPath, SavePattern, BUILDVFS_FIND_FILE);
 
     // potentially overallocating but programmatically simple
     int const numfiles = countcache1dfind(findfiles_default);
@@ -292,7 +292,7 @@ int32_t G_LoadSaveHeaderNew(char const *fn, savehead_t *saveh)
 
     walock[TILE_LOADSHOT] = 255;
     if (waloff[TILE_LOADSHOT] == 0)
-        cacheAllocateBlock(&waloff[TILE_LOADSHOT], 320*200, &walock[TILE_LOADSHOT]);
+        g_cache.allocateBlock(&waloff[TILE_LOADSHOT], 320*200, &walock[TILE_LOADSHOT]);
     tilesiz[TILE_LOADSHOT].x = 200;
     tilesiz[TILE_LOADSHOT].y = 320;
     if (screenshotofs)
@@ -427,8 +427,6 @@ static void G_SaveTimers(void)
 
 static void G_RestoreTimers(void)
 {
-    timerUpdate();
-
     totalclock     = g_timers.totalclock;
     totalclocklock = g_timers.totalclocklock;
     ototalclock    = g_timers.ototalclock;

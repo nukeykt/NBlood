@@ -1048,7 +1048,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         {
             walock[TILE_SAVESHOT] = 199;
             if (waloff[TILE_SAVESHOT] == 0)
-                cacheAllocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
+                g_cache.allocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
 
             if (videoGetRenderMode() == REND_CLASSIC)
                 renderSetTarget(TILE_SAVESHOT, 200, 320);
@@ -1108,7 +1108,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
                 walock[TILE_TILT] = 255;
                 if (waloff[TILE_TILT] == 0)
-                    cacheAllocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
+                    g_cache.allocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
                 renderSetTarget(TILE_TILT, viewtilexsiz, viewtileysiz);
 
@@ -7775,18 +7775,24 @@ int app_main(int argc, char const * const * argv)
 #endif
 
 #ifdef _WIN32
-    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
+#ifndef DEBUGGINGAIDS
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-        if (!wm_ynbox(APPNAME, "Another Build game is currently running. "
-                      "Do you wish to continue starting this copy?"))
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
             return 3;
     }
+#endif
 
-    backgroundidle = 0;
-
+#ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
     extern int32_t (*check_filename_casing_fn)(void);
     check_filename_casing_fn = check_filename_casing;
+#endif
 #endif
 #endif
 
@@ -7935,18 +7941,6 @@ int app_main(int argc, char const * const * argv)
     g_logFlushWindow = 0;
     G_LoadGroups(!g_noAutoLoad && !ud.setup.noautoload);
 //    flushlogwindow = 1;
-    
-    int32_t timbre = kopen4load("d3dtimbr.tmb", 0);
-    if (timbre != -1)
-    {
-        int32_t length = kfilelength(timbre);
-        uint8_t *tmb = (uint8_t*)Xmalloc(length);
-        kread(timbre, tmb, length);
-        OPLMusic::AL_RegisterTimbreBank(tmb);
-        //OPLMusic::AL_SetMaxMidiChannel(10);
-        Bfree(tmb);
-        kclose(timbre);
-    }
 
     if (!g_useCwd)
         G_CleanupSearchPaths();
@@ -8371,8 +8365,6 @@ MAIN_LOOP_RESTART:
 
             do
             {
-                timerUpdate();
-
                 if (ready2send == 0) break;
                 Net_GetInput();
 
@@ -8391,8 +8383,6 @@ MAIN_LOOP_RESTART:
                     inputfifo[0][myconnectindex].horz = 0;
 #endif
                 }
-
-                timerUpdate();
 
                 if (totalclock - moveClock >= TICSPERFRAME)
                 {

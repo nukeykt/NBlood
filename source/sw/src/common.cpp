@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "common_game.h"
+#include "grpscan.h"
 
 static const char *defaultgrpfilename = "SW.GRP";
 static const char *defaultdeffilename = "sw.def";
@@ -75,8 +76,8 @@ void SW_ExtPreInit(int32_t argc, char const * const * argv)
 
 #ifndef EDUKE32_STANDALONE
 
-#if defined _WIN32 || defined __linux__ || defined EDUKE32_BSD
-static void SW_Add_GOG_SWCR(const char * path)
+#if defined _WIN32 || defined __linux__ || defined EDUKE32_BSD || defined EDUKE32_OSX
+static int32_t SW_Add_GOG_SWCR(const char * path)
 {
     char buf[BMAX_PATH];
 
@@ -84,15 +85,15 @@ static void SW_Add_GOG_SWCR(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/addons", path);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/music", path);
-    addsearchpath(buf);
+    return addsearchpath(buf);
 }
-static void SW_Add_GOG_SWCC(const char * path)
+static int32_t SW_Add_GOG_SWCC(const char * path)
 {
     char buf[BMAX_PATH];
 
     addsearchpath_user(path, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/MUSIC", path);
-    addsearchpath(buf);
+    return addsearchpath(buf);
 }
 #endif
 
@@ -126,14 +127,16 @@ static void SW_AddSteamPaths(const char *basepath)
     Bsnprintf(buf, sizeof(buf), "%s/%s/addons", basepath, s_SWCR_Steam);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/%s/classic/MUSIC", basepath, s_SWCR_Steam);
-    addsearchpath(buf);
+    if (addsearchpath(buf) == 0)
+        return;
 
     // Shadow Warrior Classic (1997) - Steam
     static char const s_SWC_Steam[] = "steamapps/common/Shadow Warrior Original/gameroot";
     Bsnprintf(buf, sizeof(buf), "%s/%s", basepath, s_SWC_Steam);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
     Bsnprintf(buf, sizeof(buf), "%s/%s/MUSIC", basepath, s_SWC_Steam);
-    addsearchpath(buf);
+    if (addsearchpath(buf) == 0)
+        return;
 
     // Shadow Warrior (Classic) - 3D Realms Anthology - Steam
 #if defined EDUKE32_OSX
@@ -227,7 +230,8 @@ static void SW_AddSearchPaths()
         Bstrncpy(suffix, "/gameroot/addons", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         Bstrncpy(suffix, "/gameroot/classic/MUSIC", remaining);
-        addsearchpath(buf);
+        if (addsearchpath(buf) == 0)
+            return;
     }
 
     // Shadow Warrior Classic (1997) - Steam
@@ -240,7 +244,24 @@ static void SW_AddSearchPaths()
         Bstrncpy(suffix, "/gameroot", remaining);
         addsearchpath_user(buf, SEARCHPATH_REMOVE);
         Bstrncpy(suffix, "/gameroot/MUSIC", remaining);
-        addsearchpath(buf);
+        if (addsearchpath(buf) == 0)
+            return;
+    }
+
+    // Shadow Warrior Classic Redux - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1618073558)", "PATH", buf, &bufsize))
+    {
+        if (SW_Add_GOG_SWCR(buf) == 0)
+            return;
+    }
+
+    // Shadow Warrior Classic Complete - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGSHADOWARRIOR", "PATH", buf, &bufsize))
+    {
+        if (SW_Add_GOG_SWCC(buf) == 0)
+            return;
     }
 
     // Shadow Warrior (Classic) - 3D Realms Anthology - Steam
@@ -252,20 +273,6 @@ static void SW_AddSearchPaths()
 
         Bstrncpy(suffix, "/Shadow Warrior", remaining);
         addsearchpath(buf);
-    }
-
-    // Shadow Warrior Classic Redux - GOG.com
-    bufsize = sizeof(buf);
-    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1618073558)", "PATH", buf, &bufsize))
-    {
-        SW_Add_GOG_SWCR(buf);
-    }
-
-    // Shadow Warrior Classic Complete - GOG.com
-    bufsize = sizeof(buf);
-    if (Paths_ReadRegistryValue("SOFTWARE\\GOG.com\\GOGSHADOWARRIOR", "PATH", buf, &bufsize))
-    {
-        SW_Add_GOG_SWCC(buf);
     }
 
     // Shadow Warrior - 3D Realms Anthology
@@ -362,4 +369,70 @@ void SW_ExtInit()
         }
     }
 #endif
+}
+
+struct grpfile const * g_selectedGrp;
+
+void SW_ScanGroups()
+{
+    ScanGroups();
+
+    g_selectedGrp = NULL;
+
+    char const * const currentGrp = G_GrpFile();
+
+    for (grpfile_t const *fg = foundgrps; fg; fg=fg->next)
+    {
+        if (!Bstrcasecmp(fg->filename, currentGrp))
+        {
+            g_selectedGrp = fg;
+            break;
+        }
+    }
+
+    if (g_selectedGrp == NULL)
+        g_selectedGrp = foundgrps;
+}
+
+int32_t SW_TryLoadingGrp(char const * const grpfile)
+{
+    int32_t i;
+
+    if ((i = initgroupfile(grpfile)) == -1)
+        initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
+    else
+        initprintf("Using \"%s\" as main game data file.\n", grpfile);
+
+    return i;
+}
+
+static int32_t SW_LoadGrpDependencyChain(grpfile_t const * const grp)
+{
+    if (!grp)
+        return -1;
+
+    if ((grp->type->flags & GRP_HAS_DEPENDENCY) && grp->type->dependency != grp->type->crcval)
+        SW_LoadGrpDependencyChain(FindGroup(grp->type->dependency));
+
+    int32_t const i = SW_TryLoadingGrp(grp->filename);
+
+    return i;
+}
+
+int g_addonNum;
+
+void SW_LoadGroups()
+{
+    if (g_addonNum)
+        SW_LoadAddon();
+
+    if (SW_LoadGrpDependencyChain(g_selectedGrp) != -1)
+    {
+        clearGrpNamePtr();
+        g_grpNamePtr = dup_filename(g_selectedGrp->filename);
+    }
+    else
+    {
+        SW_TryLoadingGrp(G_GrpFile());
+    }
 }

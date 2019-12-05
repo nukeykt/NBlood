@@ -101,8 +101,7 @@ void main()
 
     color.rgb = mix(v_color.rgb*color.rgb, color.rgb, fullbright);
 
-    float fogEnabled = mix(u_fogEnabled, c_zero, u_usePalette);
-    fullbright = max(c_one-fogEnabled, fullbright);
+    fullbright = max(c_one-u_fogEnabled, fullbright);
     float fogFactor = clamp((gl_Fog.end-gl_FogFragCoord)*gl_Fog.scale, fullbright, c_one);
     //float fogFactor = clamp(gl_FogFragCoord, fullbright, c_one);
     color.rgb = mix(gl_Fog.color.rgb, color.rgb, fogFactor);

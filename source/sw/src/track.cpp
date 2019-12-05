@@ -719,7 +719,7 @@ void
 SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 {
     int xlow, ylow, xhigh, yhigh;
-    short sp_num, next_sp_num, sn, startwall, endwall;
+    short sp_num, next_sp_num, startwall, endwall;
     int i, k, j;
     SPRITEp BoundSprite;
     SWBOOL FoundOutsideLoop = FALSE, FoundSector = FALSE;
@@ -839,7 +839,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
             sop->num_sectors++;
         }
 
-        ASSERT(sop->num_sectors < SIZ(SectorObject[0].sector));
+        ASSERT((uint16_t)sop->num_sectors < SIZ(SectorObject[0].sector));
     }
 
     //
@@ -865,8 +865,9 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
             // each wall has this set - for collision detection
             SET(wall[k].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
-            if (wall[k].nextwall >= 0)
-                SET(wall[wall[k].nextwall].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
+            uint16_t const nextwall = wall[k].nextwall;
+            if (nextwall < MAXWALLS)
+                SET(wall[nextwall].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
         }
     }
 
@@ -959,6 +960,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
                 // sector
 
                 // place all sprites on list
+                uint16_t sn;
                 for (sn = 0; sn < (int)SIZ(sop->sp_num); sn++)
                 {
                     if (sop->sp_num[sn] == -1)
@@ -1490,7 +1492,7 @@ PlaceSectorObjectsOnTracks(void)
             }
         }
 
-        ASSERT(sop->num_walls < SIZ(sop->xorig));
+        ASSERT((uint16_t)sop->num_walls < SIZ(sop->xorig));
 
         if (sop->track <= -1)
             continue;
@@ -2111,7 +2113,8 @@ DetectSectorObjectByWall(WALLp wph)
                 // if outer wall check the NEXTWALL also
                 if (TEST(wp->extra, WALLFX_LOOP_OUTER))
                 {
-                    if (wph == &wall[wp->nextwall])
+                    uint16_t const nextwall = wp->nextwall;
+                    if (nextwall < MAXWALLS && wph == &wall[nextwall])
                         return sop;
                 }
 

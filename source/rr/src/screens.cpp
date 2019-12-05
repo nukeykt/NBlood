@@ -699,36 +699,36 @@ static void G_PrintCoords(int32_t snum)
 #endif
 }
 
-#if !defined DEBUG_ALLOCACHE_AS_MALLOC
-extern int32_t cacnum;
-extern cactype cac [];
-#endif
-
 static void G_ShowCacheLocks(void)
 {
-    int16_t i, k;
-
     if (offscreenrendering)
         return;
 
-    k = 0;
+    int k = 0;
+
 #if !defined DEBUG_ALLOCACHE_AS_MALLOC
-    for (i=cacnum-1; i>=0; i--)
-        if ((*cac[i].lock) >= 200)
+    auto indexes = g_cache.getIndex();
+
+    for (int i=g_cache.numBlocks()-1; i>=0; i--)
+    {
+        if ((*indexes[i].lock) != CACHE1D_LOCKED && (*indexes[i].lock) != 1)
         {
             if (k >= ydim-12)
                 break;
 
-            Bsprintf(tempbuf, "Locked- %d: Leng:%d, Lock:%d", i, cac[i].leng, *cac[i].lock);
+            Bsprintf(tempbuf, "Locked- %d: Leng:%d, Lock:%d", i, indexes[i].leng, *indexes[i].lock);
             printext256(0L, k, COLOR_WHITE, -1, tempbuf, 1);
             k += 6;
         }
+    }
 #endif
+
     if (k < ydim-12)
         k += 6;
 
-    for (i=10; i>=0; i--)
-        if (rts_lumplockbyte[i] >= 200)
+    for (int i=10; i>=0; i--)
+    {
+        if (rts_lumplockbyte[i] >= CACHE1D_LOCKED)
         {
             if (k >= ydim-12)
                 break;
@@ -737,6 +737,7 @@ static void G_ShowCacheLocks(void)
             printext256(0, k, COLOR_WHITE, -1, tempbuf, 1);
             k += 6;
         }
+    }
 
     if (k >= ydim-12 && k<ydim-6)
         printext256(0, k, COLOR_WHITE, -1, "(MORE . . .)", 1);
@@ -745,24 +746,24 @@ static void G_ShowCacheLocks(void)
     if (xdim < 640)
         return;
 
-    k = 18;
-    for (i=0; i<=g_highestSoundIdx; i++)
+    k = 0;
+
+    for (int i=0; i<=g_highestSoundIdx; i++)
+    {
         if (g_sounds[i].num > 0)
         {
-            int32_t j, n=g_sounds[i].num;
-
-            for (j=0; j<n; j++)
+            for (int j = 0, n = g_sounds[i].num; j < n; j++)
             {
                 if (k >= ydim-12)
-                    break;
+                    return;
 
-                Bsprintf(tempbuf, "snd #%d inst %d: voice %d, ow %d", i, j,
-                    g_sounds[i].voices[j].id, g_sounds[i].voices[j].owner);
-                printext256(240, k, COLOR_WHITE, -1, tempbuf, 0);
+                Bsprintf(tempbuf, "snd %d_%d: voice %d, ow %d", i, j, g_sounds[i].voices[j].id, g_sounds[i].voices[j].owner);
+                printext256(160, k, COLOR_WHITE, -1, tempbuf, 1);
 
-                k += 9;
+                k += 6;
             }
         }
+    }
 }
 
 #define LOW_FPS 30

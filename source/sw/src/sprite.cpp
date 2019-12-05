@@ -918,7 +918,7 @@ SpawnSprite(short stat, short id, STATEp state, short sectnum, int x, int y, int
 
     ASSERT(!Prediction);
 
-    PRODUCTION_ASSERT(sectnum >= 0 && sectnum < MAXSECTORS);
+    // PRODUCTION_ASSERT(sectnum >= 0 && sectnum < MAXSECTORS);
 
     SpriteNum = COVERinsertsprite(sectnum, stat);
 
@@ -2607,7 +2607,8 @@ SpriteSetup(void)
                         wallcount++;
                         if (TEST_BOOL5(sp))
                         {
-                            if (wall[w].nextwall >= 0)
+                            uint16_t const nextwall = wall[w].nextwall;
+                            if (nextwall < MAXWALLS)
                             {
                                 wall_shade[wallcount] = wall[wall[w].nextwall].shade;
                                 wallcount++;
@@ -2663,7 +2664,8 @@ SpriteSetup(void)
                         wallcount++;
                         if (TEST_BOOL5(sp))
                         {
-                            if (wall[w].nextwall >= 0)
+                            uint16_t const nextwall = wall[w].nextwall;
+                            if (nextwall < MAXWALLS)
                             {
                                 wall_shade[wallcount] = wall[wall[w].nextwall].shade;
                                 wallcount++;
@@ -2947,7 +2949,7 @@ SpriteSetup(void)
                     do
                     {
                         // DO NOT TAG WHITE WALLS!
-                        if (wall[wall_num].nextwall >= 0)
+                        if ((uint16_t)wall[wall_num].nextwall < MAXWALLS)
                         {
                             SET(wall[wall_num].cstat, CSTAT_WALL_WARP_HITSCAN);
                         }
@@ -3062,8 +3064,9 @@ SpriteSetup(void)
                     do
                     {
                         SET(wall[wall_num].cstat, CSTAT_WALL_BLOCK_ACTOR);
-                        if (wall[wall_num].nextwall >= 0)
-                            SET(wall[wall[wall_num].nextwall].cstat, CSTAT_WALL_BLOCK_ACTOR);
+                        uint16_t const nextwall = wall[wall_num].nextwall;
+                        if (nextwall < MAXWALLS)
+                            SET(wall[nextwall].cstat, CSTAT_WALL_BLOCK_ACTOR);
                         wall_num = wall[wall_num].point2;
                     }
                     while (wall_num != start_wall);
@@ -5950,11 +5953,7 @@ KeyMain:
             if (pp->WpnAmmo[WPN_STAR] >= DamageData[WPN_STAR].max_ammo)
                 break;
 
-#ifdef UK_VERSION
-            sprintf(ds,"Darts");
-#else
-            //sprintf(ds,"Shurikens");
-#endif
+            sprintf(ds, gs.Darts ? "Darts" : "Shurikens");
             PutStringInfo(Player+pnum, DamageData[WPN_STAR].weapon_name);
             PlayerUpdateAmmo(pp, WPN_STAR, DamageData[WPN_STAR].weapon_pickup);
             SetFadeAmt(pp,ITEMFLASHAMT,ITEMFLASHCLR);  // Flash blue on item pickup
@@ -5964,6 +5963,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_STAR)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_STAR));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum <= WPN_STAR && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponStar(pp);
@@ -5989,6 +5991,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_MINE)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_MINE));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum > WPN_MINE && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponMine(pp);
@@ -6030,6 +6035,9 @@ KeyMain:
                 ChoosePlayerGetSound(pp);
             }
 
+            if (!gs.WeaponAutoSwitch)
+                break;
+
             if (User[pp->PlayerSprite]->WeaponNum > WPN_UZI && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
 
@@ -6069,6 +6077,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_MICRO)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_MICRO));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum > WPN_MICRO && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponMicro(pp);
@@ -6137,6 +6148,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_GRENADE)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_GRENADE));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum > WPN_GRENADE && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponGrenade(pp);
@@ -6163,6 +6177,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_ROCKET)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_ROCKET));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             InitWeaponRocket(pp);
             break;
 
@@ -6207,6 +6224,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_RAIL)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_RAIL));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum > WPN_RAIL && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponRail(pp);
@@ -6246,6 +6266,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_SHOTGUN)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_SHOTGUN));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum > WPN_SHOTGUN && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponShotgun(pp);
@@ -6312,6 +6335,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_HOTHEAD)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_NAPALM) | BIT(WPN_RING) | BIT(WPN_HOTHEAD));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
             if (User[pp->PlayerSprite]->WeaponNum > WPN_HOTHEAD && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
             InitWeaponHothead(pp);
@@ -6355,6 +6381,9 @@ KeyMain:
             if (TEST(pp->WpnFlags, BIT(WPN_HEART)))
                 break;
             SET(pp->WpnFlags, BIT(WPN_HEART));
+
+            if (!gs.WeaponAutoSwitch)
+                break;
 
             if (User[pp->PlayerSprite]->WeaponNum > WPN_HEART && User[pp->PlayerSprite]->WeaponNum != WPN_SWORD)
                 break;
@@ -6777,11 +6806,11 @@ SpriteControl(void)
         u = User[i];
         sp = User[i]->SpriteP;
         STATE_CONTROL(i, sp, u, StateTics)
-        ASSERT(nexti >= 0 ? User[nexti] != NULL : TRUE);
+        // ASSERT(nexti >= 0 ? User[nexti] != NULL : TRUE);
 #else
         ASSERT(User[i]);
         StateControl(i);
-        ASSERT(nexti >= 0 ? User[nexti] != NULL : TRUE);
+        // ASSERT(nexti >= 0 ? User[nexti] != NULL : TRUE);
 #endif
     }
 

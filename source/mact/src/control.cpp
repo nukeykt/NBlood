@@ -38,7 +38,7 @@ static int32_t CONTROL_NumJoyAxes       = 0;
 
 static controlflags      CONTROL_Flags[CONTROL_NUM_FLAGS];
 
-// static controlkeymaptype  CONTROL_KeyMapping[CONTROL_NUM_FLAGS];
+static controlkeymaptype  CONTROL_KeyMapping[CONTROL_NUM_FLAGS];
 
 static int32_t            CONTROL_MouseAxesScale[2];
 
@@ -146,7 +146,6 @@ static void CONTROL_SetFlag(int which, int active)
     }
 }
 
-#if 0
 int32_t CONTROL_KeyboardFunctionPressed(int32_t which)
 {
     int32_t key1 = 0, key2 = 0;
@@ -155,10 +154,10 @@ int32_t CONTROL_KeyboardFunctionPressed(int32_t which)
 
     if (!CONTROL_Flags[which].used) return FALSE;
 
-    if (CONTROL_KeyMapping[which].key1 != KEYUNDEFINED && !KeyBindings[CONTROL_KeyMapping[which].key1].cmdstr)
+    if (CONTROL_KeyMapping[which].key1 != KEYUNDEFINED)
         key1 = KB_KeyDown[ CONTROL_KeyMapping[which].key1 ] ? TRUE : FALSE;
 
-    if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED && !KeyBindings[CONTROL_KeyMapping[which].key2].cmdstr)
+    if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED)
         key2 = KB_KeyDown[ CONTROL_KeyMapping[which].key2 ] ? TRUE : FALSE;
 
     return key1 | key2;
@@ -176,7 +175,6 @@ void CONTROL_ClearKeyboardFunction(int32_t which)
     if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED)
         KB_KeyDown[ CONTROL_KeyMapping[which].key2 ] = 0;
 }
-#endif
 
 void CONTROL_DefineFlag(int which, int toggle)
 {
@@ -198,7 +196,6 @@ int CONTROL_FlagActive(int which)
     return CONTROL_Flags[which].used;
 }
 
-#if 0
 void CONTROL_MapKey(int32_t which, kb_scancode key1, kb_scancode key2)
 {
     if (CONTROL_CheckRange(which)) return;
@@ -207,6 +204,7 @@ void CONTROL_MapKey(int32_t which, kb_scancode key1, kb_scancode key2)
     CONTROL_KeyMapping[which].key2 = key2 ? key2 : KEYUNDEFINED;
 }
 
+#if 0
 void CONTROL_PrintKeyMap(void)
 {
     int32_t i;
@@ -827,7 +825,7 @@ static void CONTROL_GetFunctionInput(void)
 
     do
     {
-        CONTROL_SetFlag(i, /*CONTROL_KeyboardFunctionPressed(i) | */CONTROL_ButtonFlags[i]);
+        CONTROL_SetFlag(i, CONTROL_KeyboardFunctionPressed(i) | CONTROL_ButtonFlags[i]);
 
         if (CONTROL_Flags[i].cleared == FALSE) BUTTONSET(i, CONTROL_Flags[i].active);
         else if (CONTROL_Flags[i].active == FALSE) CONTROL_Flags[i].cleared = 0;
@@ -917,3 +915,68 @@ void CONTROL_Shutdown(void)
     CONTROL_Started = FALSE;
 }
 
+
+// temporary hack until input is unified
+void CONTROL_GetUserInput(UserInput * uinfo)
+{
+    if (
+        KB_KeyPressed(sc_DownArrow)
+        || KB_KeyPressed(sc_kpad_2)
+        || (MOUSE_GetButtons()&WHEELDOWN_MOUSE)
+        )
+        uinfo->dir = dir_South;
+    else if (
+        KB_KeyPressed(sc_UpArrow)
+        || KB_KeyPressed(sc_kpad_8)
+        || (MOUSE_GetButtons()&WHEELUP_MOUSE)
+        )
+        uinfo->dir = dir_North;
+    else if (
+        KB_KeyPressed(sc_LeftArrow)
+        || KB_KeyPressed(sc_kpad_4)
+        )
+        uinfo->dir = dir_West;
+    else if (
+        KB_KeyPressed(sc_RightArrow)
+        || KB_KeyPressed(sc_kpad_6)
+        )
+        uinfo->dir = dir_East;
+
+    uinfo->button0 =
+        KB_KeyPressed(sc_Enter)
+        || KB_KeyPressed(sc_kpad_Enter)
+        || (MOUSE_GetButtons()&LEFT_MOUSE)
+        ;
+
+    uinfo->button1 =
+        KB_KeyPressed(sc_Escape)
+        || (MOUSE_GetButtons()&RIGHT_MOUSE)
+        ;
+}
+void CONTROL_ClearUserInput(UserInput * uinfo)
+{
+    *uinfo = UserInput{};
+
+    KB_FlushKeyboardQueue();
+
+    KB_ClearKeyDown(sc_UpArrow);
+    KB_ClearKeyDown(sc_kpad_8);
+    MOUSE_ClearButton(WHEELUP_MOUSE);
+
+    KB_ClearKeyDown(sc_DownArrow);
+    KB_ClearKeyDown(sc_kpad_2);
+    MOUSE_ClearButton(WHEELDOWN_MOUSE);
+
+    KB_ClearKeyDown(sc_LeftArrow);
+    KB_ClearKeyDown(sc_kpad_4);
+
+    KB_ClearKeyDown(sc_RightArrow);
+    KB_ClearKeyDown(sc_kpad_6);
+
+    KB_ClearKeyDown(sc_kpad_Enter);
+    KB_ClearKeyDown(sc_Enter);
+    MOUSE_ClearButton(LEFT_MOUSE);
+
+    KB_ClearKeyDown(sc_Escape);
+    MOUSE_ClearButton(RIGHT_MOUSE);
+}

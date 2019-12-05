@@ -406,7 +406,7 @@ void CONFIG_SetDefaults(void)
 }
 
 
-// wrapper for CONTROL_MapKey(), generates key bindings to reflect changes to keyboard setup
+// generates key bindings to reflect changes to keyboard setup
 void CONFIG_MapKey(int which, kb_scancode key1, kb_scancode oldkey1, kb_scancode key2, kb_scancode oldkey2)
 {
     int const keys[] = { key1, key2, oldkey1, oldkey2 };

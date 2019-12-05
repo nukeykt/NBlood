@@ -53,7 +53,7 @@ typedef struct
 {
     char *    ptr, *filename;                // 8b/16b
     int32_t   length, num, siz;              // 12b
-    float     volume;                        // 4b
+    fix16_t   volume;                        // 4b
     assvoice_t voices[MAXSOUNDINSTANCES];  // 64b
     int16_t   ps, pe, vo;                    // 6b
     char      pr, m;                         // 2b

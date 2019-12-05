@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "duke3d.h"
 #include "renderlayer.h" // for win_gethwnd()
+#include "al_midi.h"
 #include <atomic>
 
 #define DQSIZE 128
@@ -96,15 +97,37 @@ void S_SoundShutdown(void)
 
 void S_MusicStartup(void)
 {
-    initprintf("Initializing music...\n");
+    initprintf("Initializing MIDI driver... ");
 
-    if (MUSIC_Init(ud.config.MusicDevice, 0) == MUSIC_Ok || MUSIC_Init(0, 0) == MUSIC_Ok || MUSIC_Init(1, 0) == MUSIC_Ok)
+    int status;
+    if ((status = MUSIC_Init(ud.config.MusicDevice)) == MUSIC_Ok)
     {
-        MUSIC_SetVolume(ud.config.MusicVolume);
+        if (ud.config.MusicDevice == ASS_AutoDetect)
+            ud.config.MusicDevice = MIDI_GetDevice();
+    }
+    else if ((status = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
+    {
+        ud.config.MusicDevice = MIDI_GetDevice();
+    }
+    else
+    {
+        initprintf("S_MusicStartup(): failed initializing: %s\n", MUSIC_ErrorString(status));
         return;
     }
 
-    initprintf("S_MusicStartup(): failed initializing\n");
+    MUSIC_SetVolume(ud.config.MusicVolume);
+
+    auto const fil = kopen4load("d3dtimbr.tmb", 0);
+
+    if (fil != buildvfs_kfd_invalid)
+    {
+        int l = kfilelength(fil);
+        auto tmb = (uint8_t *)Xmalloc(l);
+        kread(fil, tmb, l);
+        AL_RegisterTimbreBank(tmb);
+        Xfree(tmb);
+        kclose(fil);
+    }
 }
 
 void S_MusicShutdown(void)
@@ -246,7 +269,7 @@ static int S_PlayMusic(const char *fn, int loop)
     else
     {
         int MyMusicVoice = FX_Play(MyMusicPtr, MusicLen, 0, 0, 0, ud.config.MusicVolume, ud.config.MusicVolume, ud.config.MusicVolume,
-                                   FX_MUSIC_PRIORITY, 1.f, MUSIC_ID);
+                                   FX_MUSIC_PRIORITY, fix16_one, MUSIC_ID);
 
         if (MyMusicVoice <= FX_Ok)
         {
@@ -449,7 +472,7 @@ int32_t S_LoadSound(int num)
     int32_t l = kfilelength(fp);
     g_soundlocks[num] = 200;
     snd.siz = l;
-    cacheAllocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
+    g_cache.allocateBlock((intptr_t *)&snd.ptr, l, (char *)&g_soundlocks[num]);
     l = kread(fp, snd.ptr, l);
     kclose(fp);
 

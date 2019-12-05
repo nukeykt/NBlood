@@ -177,7 +177,7 @@ int sndPlaySong(const char *songName, bool bLoop)
     else
     {
         int nNewWaveMusicHandle = FX_Play(pNewSongPtr, bLoop ? nNewSongSize : -1, 0, 0, 0, MusicVolume, MusicVolume, MusicVolume,
-                                   FX_MUSIC_PRIORITY, 1.f, (intptr_t)&nWaveMusicHandle);
+                                   FX_MUSIC_PRIORITY, fix16_one, (intptr_t)&nWaveMusicHandle);
 
         if (nNewWaveMusicHandle <= FX_Ok)
         {
@@ -281,7 +281,7 @@ void sndStartSample(const char *pzSound, int nVolume, int nChannel)
         return;
     int nSize = pChannel->at5->size;
     char *pData = (char*)gSoundRes.Lock(pChannel->at5);
-    pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(1), 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+    pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(1), 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
 }
 
 void sndStartSample(unsigned int nSound, int nVolume, int nChannel, bool bLoop)
@@ -318,12 +318,12 @@ void sndStartSample(unsigned int nSound, int nVolume, int nChannel, bool bLoop)
     if (bLoop)
     {
         pChannel->at0 = FX_PlayLoopedRaw(pData, nSize, pData + pEffect->loopStart, pData + nLoopEnd, sndGetRate(pEffect->format),
-            0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+            0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
         pChannel->at4 |= 1;
     }
     else
     {
-        pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(pEffect->format), 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+        pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(pEffect->format), 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
         pChannel->at4 &= ~1;
     }
 }
@@ -344,7 +344,7 @@ void sndStartWavID(unsigned int nSound, int nVolume, int nChannel)
     if (!pChannel->at5)
         return;
     char *pData = (char*)gSoundRes.Lock(pChannel->at5);
-    pChannel->at0 = FX_Play(pData, pChannel->at5->size, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+    pChannel->at0 = FX_Play(pData, pChannel->at5->size, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
 }
 
 void sndKillSound(SAMPLE2D *pChannel)
@@ -381,7 +381,7 @@ void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
     kclose(hFile);
     pChannel->at5 = (DICTNODE*)pData;
     pChannel->at4 |= 2;
-    pChannel->at0 = FX_Play(pData, nLength, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+    pChannel->at0 = FX_Play(pData, nLength, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
 }
 
 void sndKillAllSounds(void)
