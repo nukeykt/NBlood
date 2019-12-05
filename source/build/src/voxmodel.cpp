@@ -1125,6 +1125,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     char prevClamp = polymost_getClamp();
     polymost_setClamp(0);
+    polymost_setFogEnabled(false);
 
     if (m->is8bit && r_useindexedcolortextures)
     {
@@ -1135,9 +1136,11 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
         int visShade = int(fabsf(((tspr->x-globalposx)*gcosang+(tspr->y-globalposy)*gsinang)*globvis2*(1.f/(64.f*1024.f*2.f))));
 
-        globalshade = max(min(globalshade+visShade, numshades-1), 0);
-        
-        pc[0] = pc[1] = pc[2] = 1.f;
+        if (!(globalflags & GLOBAL_NO_GL_TILESHADES))
+        {
+            globalshade = max(min(globalshade+visShade, numshades-1), 0);
+            pc[0] = pc[1] = pc[2] = 1.f;
+        }
         polymost_usePaletteIndexing(true);
         polymost_updatePalette();
         polymost_setTexturePosSize({ 0.f, 0.f, 1.f, 1.f });
@@ -1214,6 +1217,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     polymost_setClamp(prevClamp);
     polymost_usePaletteIndexing(true);
+    if (!nofog) polymost_setFogEnabled(true);
     polymost_resetVertexPointers();
 
     //------------
