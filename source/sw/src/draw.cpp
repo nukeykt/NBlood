@@ -761,7 +761,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 
             //#define DART_REPEAT 6
             //#define DART_PIC 2233
-            if (useDarts)
+            if (gs.Darts)
                 if (tu->ID == 1793 || tsp->picnum == 1793)
                 {
                     tsp->picnum = 2519;
@@ -773,7 +773,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 #define DART_REPEAT 16
             if (tu->ID == STAR1)
             {
-                if (useDarts)
+                if (gs.Darts)
                 {
                     tsp->picnum = DART_PIC;
                     tsp->ang = NORM_ANGLE(tsp->ang - 512 - 24);
@@ -837,7 +837,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
             }
         }
 
-        if (useDarts)
+        if (gs.Darts)
             if (tsp->statnum == STAT_STAR_QUEUE)
             {
                 tsp->picnum = DART_PIC;
@@ -1674,7 +1674,7 @@ void ScreenCaptureKeys(void)
     {
         KEY_PRESSED(KEYSC_F12) = 0;
         PauseAction();
-        videoCaptureScreenTGA("swcpxxxx.tga", KEY_PRESSED(KEYSC_LSHIFT) | KEY_PRESSED(KEYSC_RSHIFT));
+        videoCaptureScreen("swcpxxxx.png", KEY_PRESSED(KEYSC_LSHIFT) | KEY_PRESSED(KEYSC_RSHIFT));
         ResumeAction();
         PutStringInfo(Player + myconnectindex, "Screen Captured");
     }
@@ -1820,7 +1820,7 @@ void DrawCrosshair(PLAYERp pp)
     {
         int daz;
         short hit_sprite, daang;
-        static int handle=-1;
+        static int handle;
 
         daz = pp->posz + pp->bob_z;
         daang = 32;
@@ -1849,7 +1849,7 @@ void DrawCrosshair(PLAYERp pp)
 
             if (pp->CurWpn == pp->Wpn[WPN_RAIL])
             {
-                if (!FX_SoundActive(handle))
+                if (!FX_SoundValidAndActive(handle))
                     handle = PlaySound(DIGI_RAILLOCKED, &pp->posx, &pp->posy, &pp->posz, v3df_follow|v3df_dontpan);
             }
         }
@@ -1858,8 +1858,11 @@ void DrawCrosshair(PLAYERp pp)
             // It didn't target anything.
             if (pp->CurWpn == pp->Wpn[WPN_RAIL])
             {
-                if (FX_SoundActive(handle))
+                if (FX_SoundValidAndActive(handle))
+                {
                     FX_StopSound(handle);
+                    handle = 0;
+                }
             }
             goto NORMALXHAIR;
         }
@@ -2246,7 +2249,6 @@ drawscreen(PLAYERp pp)
     int tx, ty, tz,thoriz,pp_siz;
     short tang,tsectnum;
     short i,j;
-    walltype *wal;
     int tiltlock;
     int bob_amt = 0;
     int quake_z, quake_x, quake_y;
@@ -2259,6 +2261,8 @@ drawscreen(PLAYERp pp)
     // last valid stuff
     static short lv_sectnum = -1;
     static int lv_x, lv_y, lv_z;
+
+    int const viewingRange = viewingrange;
 
     if (HelpInputMode)
     {
@@ -2339,11 +2343,13 @@ drawscreen(PLAYERp pp)
 
     if (tsectnum < 0)
     {
+#if 0
         // if we hit an invalid sector move to the last valid position for drawing
         tsectnum = lv_sectnum;
         tx = lv_x;
         ty = lv_y;
         tz = lv_z;
+#endif
     }
     else
     {
@@ -2355,7 +2361,7 @@ drawscreen(PLAYERp pp)
     }
 
     // with "last valid" code this should never happen
-    ASSERT(tsectnum >= 0 && tsectnum <= MAXSECTORS);
+    // ASSERT(tsectnum >= 0 && tsectnum <= MAXSECTORS);
 
     pp->six = tx;
     pp->siy = ty;
@@ -2419,6 +2425,12 @@ drawscreen(PLAYERp pp)
         thoriz = min(thoriz, PLAYER_HORIZ_MAX);
     }
 
+    if (r_usenewaspect)
+    {
+        newaspect_enable = 1;
+        videoSetCorrectedAspect();
+    }
+
     if (FAF_DebugView)
         videoClearViewableArea(255L);
 
@@ -2443,6 +2455,12 @@ drawscreen(PLAYERp pp)
     post_analyzesprites();
     renderDrawMasks();
 
+    if (r_usenewaspect)
+    {
+        newaspect_enable = 0;
+        renderSetAspect(viewingRange, tabledivide32_noinline(65536 * ydim * 8, xdim * 5));
+    }
+
     UpdatePanel();
 
 #define SLIME 2305
@@ -2460,17 +2478,21 @@ drawscreen(PLAYERp pp)
 
     i = pp->cursectnum;
 
-    show2dsector[i>>3] |= (1<<(i&7));
-    wal = &wall[sector[i].wallptr];
-    for (j=sector[i].wallnum; j>0; j--,wal++)
+    if (i >= 0)
     {
-        i = wal->nextsector;
-        if (i < 0) continue;
-        if (wal->cstat&0x0071) continue;
-        if (wall[wal->nextwall].cstat&0x0071) continue;
-        if (sector[i].lotag == 32767) continue;
-        if (sector[i].ceilingz >= sector[i].floorz) continue;
         show2dsector[i>>3] |= (1<<(i&7));
+        walltype *wal = &wall[sector[i].wallptr];
+        for (j=sector[i].wallnum; j>0; j--,wal++)
+        {
+            i = wal->nextsector;
+            if (i < 0) continue;
+            if (wal->cstat&0x0071) continue;
+            uint16_t const nextwall = wal->nextwall;
+            if (nextwall < MAXWALLS && wall[nextwall].cstat&0x0071) continue;
+            if (sector[i].lotag == 32767) continue;
+            if (sector[i].ceilingz >= sector[i].floorz) continue;
+            show2dsector[i>>3] |= (1<<(i&7));
+        }
     }
 
     if ((dimensionmode == 5 || dimensionmode == 6) && pp == Player+myconnectindex)
@@ -2651,7 +2673,7 @@ DrawCompass(PLAYERp pp)
     start_ang = NORM_CANG(start_ang - 4);
 
     flags = ROTATE_SPRITE_SCREEN_CLIP | ROTATE_SPRITE_CORNER;
-    if (RedrawCompass)
+    if (RedrawCompass && !UsingMenus)
     {
         RedrawCompass = FALSE;
         SET(flags, ROTATE_SPRITE_ALL_PAGES);

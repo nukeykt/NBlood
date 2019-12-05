@@ -31,7 +31,7 @@ static struct
     int xdim3d, ydim3d, bpp3d;
     int forcesetup;
     int usemouse, usejoy;
-    char selectedgrp[BMAX_PATH+1];
+    struct grpfile const * selectedgrp;
 } settings;
 
 extern int gtkenabled;
@@ -135,7 +135,6 @@ static void PopulateForm(int pgs)
     if (pgs & (1<<TAB_GAME))
     {
         struct grpfile *fg;
-        int i;
         GtkListStore *list;
         GtkTreeIter iter;
         GtkTreeView *gamelist;
@@ -146,13 +145,9 @@ static void PopulateForm(int pgs)
 
         for (fg = foundgrps; fg; fg=fg->next)
         {
-            for (i = 0; i<numgrpfiles; i++)
-                if (fg->crcval == grpfiles[i].crcval) break;
-            if (i == numgrpfiles) continue; // unrecognised grp file
-
             gtk_list_store_append(list, &iter);
-            gtk_list_store_set(list, &iter, 0, grpfiles[i].name, 1, fg->name, 2, (gpointer)fg, -1);
-            if (!Bstrcasecmp(fg->name, settings.selectedgrp))
+            gtk_list_store_set(list, &iter, 0, fg->type->name, 1, fg->filename, 2, (gpointer)fg, -1);
+            if (fg == settings.selectedgrp)
             {
                 GtkTreeSelection *sel = gtk_tree_view_get_selection(gamelist);
                 g_signal_handlers_block_by_func(sel, on_gamelist_selection_changed, NULL);
@@ -219,7 +214,7 @@ static void on_gamelist_selection_changed(GtkTreeSelection *selection, gpointer 
     if (gtk_tree_selection_get_selected(selection, &model, &iter))
     {
         gtk_tree_model_get(model, &iter, 2, (gpointer)&fg, -1);
-        strcpy(settings.selectedgrp, fg->name);
+        settings.selectedgrp = fg;
     }
 }
 
@@ -718,8 +713,6 @@ int startwin_run(void)
     if (!gtkenabled) return 0;
     if (!startwin) return 1;
 
-    ScanGroups();
-
     SetPage(TAB_CONFIG);
 
     settings.fullscreen = ScreenMode;
@@ -729,7 +722,7 @@ int startwin_run(void)
     settings.forcesetup = ForceSetup;
     settings.usemouse = UseMouse;
     settings.usejoy = UseJoystick;
-    Bstrncpyz(settings.selectedgrp, G_GrpFile(), BMAX_PATH);
+    settings.selectedgrp = g_selectedGrp;
     PopulateForm(-1);
 
     gtk_main();
@@ -744,7 +737,7 @@ int startwin_run(void)
         ForceSetup = settings.forcesetup;
         UseMouse = settings.usemouse;
         UseJoystick = settings.usejoy;
-        g_grpNamePtr = dup_filename(settings.selectedgrp);
+        g_selectedGrp = settings.selectedgrp;
     }
 
     return retval;

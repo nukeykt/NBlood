@@ -33,14 +33,11 @@
     self = [super init];
     if (self) {
         struct grpfile *p;
-        int i;
 
         list = [[NSMutableArray alloc] init];
 
         for (p = foundgrps; p; p=p->next) {
-            for (i=0; i<numgrpfiles; i++) if (p->crcval == grpfiles[i].crcval) break;
-            if (i == numgrpfiles) continue;
-            [list addObject:[[GrpFile alloc] initWithGrpfile:p andName:[NSString stringWithUTF8String:grpfiles[i].name]]];
+            [list addObject:[[GrpFile alloc] initWithGrpfile:p andName:[NSString stringWithUTF8String:p->type->name]]];
         }
     }
 

@@ -83,7 +83,7 @@ void ambProcess(void)
         {
             int end = ClipLow(pChannel->at14-1, 0);
             pChannel->at0 = FX_PlayLoopedRaw(pChannel->at10, pChannel->at14, pChannel->at10, pChannel->at10+end, sndGetRate(pChannel->at18), 0,
-                pChannel->at4, pChannel->at4, pChannel->at4, pChannel->at4, 1.f, (intptr_t)&pChannel->at0);
+                pChannel->at4, pChannel->at4, pChannel->at4, pChannel->at4, fix16_one, (intptr_t)&pChannel->at0);
         }
         pChannel->at4 = 0;
     }

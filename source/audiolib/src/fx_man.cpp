@@ -185,7 +185,7 @@ static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
 }
 
 int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
-                          int vol, int left, int right, int priority, float volume, intptr_t callbackval)
+                          int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     static constexpr decltype(MV_PlayVOC) *func[] =
     { nullptr, nullptr, MV_PlayVOC, MV_PlayWAV, MV_PlayVorbis, MV_PlayFLAC, MV_PlayXA, MV_PlayXMP };
@@ -207,7 +207,7 @@ int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitch
 }
 
 int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle, int distance,
-                      int priority, float volume, intptr_t callbackval)
+                      int priority, fix16_t volume, intptr_t callbackval)
 {
     static constexpr decltype(MV_PlayVOC3D) *func[] =
     { nullptr, nullptr, MV_PlayVOC3D, MV_PlayWAV3D, MV_PlayVorbis3D, MV_PlayFLAC3D, MV_PlayXA3D, MV_PlayXMP3D };
@@ -229,7 +229,7 @@ int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int a
 }
 
 int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol,
-    int left, int right, int priority, float volume, intptr_t callbackval)
+    int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     int handle = MV_PlayRAW(ptr, ptrlength, rate, NULL, NULL, pitchoffset, vol, left, right, priority, volume, callbackval);
 
@@ -243,7 +243,7 @@ int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol
 }
 
 int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int rate,
-    int pitchoffset, int vol, int left, int right, int priority, float volume, intptr_t callbackval)
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     int handle = MV_PlayRAW(ptr, ptrlength, rate, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval);
 

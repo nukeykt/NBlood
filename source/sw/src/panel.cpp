@@ -990,7 +990,11 @@ WeaponOperate(PLAYERp pp)
     if (pp->WpnRocketType != 2 || pp->CurWpn != pp->Wpn[WPN_MICRO])
     {
         pp->InitingNuke = FALSE;
-        FX_StopSound(pp->nukevochandle);
+        if (pp->nukevochandle > 0)
+        {
+            FX_StopSound(pp->nukevochandle);
+            pp->nukevochandle = 0;
+        }
     }
 
     return 0;
@@ -1805,7 +1809,7 @@ InitWeaponStar(PLAYERp pp)
     PlaySound(DIGI_PULL, &pp->posx, &pp->posy, &pp->posz, v3df_follow|v3df_dontpan);
     if (STD_RANDOM_RANGE(1000) > 900 && pp == Player+myconnectindex)
     {
-        if (!useDarts)
+        if (!gs.Darts)
             PlayerSound(DIGI_ILIKESHURIKEN,&pp->posx,&pp->posy,&pp->posz,v3df_follow|v3df_dontpan,pp);
     }
 
@@ -7345,7 +7349,6 @@ pDisplaySprites(PLAYERp pp)
     int smoothratio;
     unsigned i;
 
-    SECT_USERp sectu = SectUser[pp->cursectnum];
     uint8_t pal = 0;
     short ang;
     int flags;
@@ -7387,7 +7390,7 @@ pDisplaySprites(PLAYERp pp)
             picnum = psp->picndx;
 
         // UK panzies have to have darts instead of shurikens.
-        if (useDarts)
+        if (gs.Darts)
             switch (picnum)
             {
             case STAR_REST:
@@ -7450,7 +7453,8 @@ pDisplaySprites(PLAYERp pp)
                 break;
 
             case STAR_REST:
-                if (!useDarts)
+            case 2510:
+                if (!gs.Darts)
                     picnum = 2138;
                 else
                     picnum = 2518; // Bloody Dart Hand
@@ -7485,17 +7489,23 @@ pDisplaySprites(PLAYERp pp)
         // if its a weapon sprite and the view is set to the outside don't draw the sprite
         if (TEST(psp->flags, PANF_WEAPON_SPRITE))
         {
-            pal = sector[pp->cursectnum].floorpal;
-
-            if (sector[pp->cursectnum].floorpal != PALETTE_DEFAULT)
+            SECT_USERp sectu = nullptr;
+            int16_t floorshade = 0;
+            if (pp->cursectnum >= 0)
             {
-                SECT_USERp sectu = SectUser[pp->cursectnum];
-                if (sectu && TEST(sectu->flags, SECTFU_DONT_COPY_PALETTE))
-                    pal = PALETTE_DEFAULT;
-            }
+                sectu = SectUser[pp->cursectnum];
+                pal = sector[pp->cursectnum].floorpal;
+                floorshade = sector[pp->cursectnum].floorshade;
 
-            if (pal == PALETTE_FOG || pal == PALETTE_DIVE || pal == PALETTE_DIVE_LAVA)
-                pal = psp->pal; // Set it back
+                if (pal != PALETTE_DEFAULT)
+                {
+                    if (sectu && TEST(sectu->flags, SECTFU_DONT_COPY_PALETTE))
+                        pal = PALETTE_DEFAULT;
+                }
+
+                if (pal == PALETTE_FOG || pal == PALETTE_DIVE || pal == PALETTE_DIVE_LAVA)
+                    pal = psp->pal; // Set it back
+            }
 
             ///////////
 
@@ -7505,7 +7515,7 @@ pDisplaySprites(PLAYERp pp)
             }
 
             //shade = overlay_shade = DIV2(sector[pp->cursectnum].floorshade + sector[pp->cursectnum].ceilingshade);
-            shade = overlay_shade = sector[pp->cursectnum].floorshade - 10;
+            shade = overlay_shade = floorshade - 10;
 
             if (TEST(psp->PlayerP->Flags, PF_VIEW_FROM_OUTSIDE))
             {
@@ -7589,7 +7599,8 @@ pDisplaySprites(PLAYERp pp)
         }
 
 #if 1
-        if (TEST(psp->flags, PANF_KILL_AFTER_SHOW) && !TEST(psp->flags, PANF_NOT_ALL_PAGES))
+        extern SWBOOL UsingMenus;
+        if (TEST(psp->flags, PANF_KILL_AFTER_SHOW) && !TEST(psp->flags, PANF_NOT_ALL_PAGES) && !UsingMenus)
         {
             psp->numpages = 0;
             SET(flags, ROTATE_SPRITE_ALL_PAGES);
@@ -7663,7 +7674,7 @@ pSpriteControl(PLAYERp pp)
         // RULE: Sprites can only kill themselves
         PRODUCTION_ASSERT(psp);
         ASSERT(ValidPtr(psp));
-        ASSERT((uint32_t) psp->Next != 0xCCCCCCCC);
+        // ASSERT((uint32_t) psp->Next != 0xCCCCCCCC);
 
         if (psp->State)
             pStateControl(psp);

@@ -467,7 +467,7 @@ int32_t Anim_Play(const char *fn)
     anim->animlock = 1;
 
     if (!anim->animbuf)
-        cacheAllocateBlock((intptr_t *)&anim->animbuf, length + 1, &anim->animlock);
+        g_cache.allocateBlock((intptr_t *)&anim->animbuf, length + 1, &anim->animlock);
 
     tilesiz[TILE_ANIM].x = 200;
     tilesiz[TILE_ANIM].y = 320;
@@ -509,7 +509,6 @@ int32_t Anim_Play(const char *fn)
     gltexapplyprops();
 #endif
 
-    timerUpdate();
     ototalclock = totalclock;
 
     i = 1;
