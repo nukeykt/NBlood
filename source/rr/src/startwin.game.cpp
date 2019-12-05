@@ -64,7 +64,7 @@ static HWND pages[3];
 static int done = -1;
 static int mode = TAB_CONFIG;
 
-static CACHE1D_FIND_REC *finddirs;
+static BUILDVFS_FIND_REC *finddirs;
 
 static inline void clearfilenames(void)
 {
@@ -75,7 +75,7 @@ static inline void clearfilenames(void)
 static inline void getfilenames(char const *path)
 {
     clearfilenames();
-    finddirs = klistpath(path,"*",CACHE1D_FIND_DIR);
+    finddirs = klistpath(path,"*",BUILDVFS_FIND_DIR);
 }
 
 #define POPULATE_VIDEO 1
@@ -293,7 +293,7 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
                         settings.gamedir = NULL;
                     else
                     {
-                        CACHE1D_FIND_REC *dir = finddirs;
+                        BUILDVFS_FIND_REC *dir = finddirs;
                         for (int j = 1; dir != NULL; dir = dir->next, j++)
                         {
                             if (j == i)
@@ -702,7 +702,9 @@ int32_t startwin_run(void)
     if (done)
     {
         ud.setup = settings.shared;
+#ifdef USE_OPENGL
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
+#endif
         g_selectedGrp = settings.grp;
         Bstrcpy(g_modDir, (g_noSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }

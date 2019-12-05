@@ -227,6 +227,8 @@ void G_ExtPreInit(int32_t argc,char const * const * argv)
 #endif
 }
 
+struct strllist *CommandPaths, *CommandGrps;
+
 void G_ExtInit(void)
 {
     char cwd[BMAX_PATH];
@@ -901,8 +903,6 @@ void G_CleanupSearchPaths(void)
 
 //////////
 
-struct strllist *CommandPaths, *CommandGrps;
-
 GrowArray<char *> g_scriptModules;
 
 void G_AddGroup(const char *buffer)
@@ -966,7 +966,7 @@ void G_LoadGroupsInDir(const char *dirname)
 
     for (auto & extension : extensions)
     {
-        CACHE1D_FIND_REC *rec;
+        BUILDVFS_FIND_REC *rec;
 
         fnlist_getnames(&fnlist, dirname, extension, -1, 0);
 
