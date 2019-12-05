@@ -1136,7 +1136,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
         int visShade = int(fabsf(((tspr->x-globalposx)*gcosang+(tspr->y-globalposy)*gsinang)*globvis2*(1.f/(64.f*1024.f*2.f))));
 
-        if (!(globalflags & GLOBAL_NO_GL_TILESHADES))
+        if (polymost_usetileshades())
         {
             globalshade = max(min(globalshade+visShade, numshades-1), 0);
             pc[0] = pc[1] = pc[2] = 1.f;
