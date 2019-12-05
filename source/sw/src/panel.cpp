@@ -7599,7 +7599,8 @@ pDisplaySprites(PLAYERp pp)
         }
 
 #if 1
-        if (TEST(psp->flags, PANF_KILL_AFTER_SHOW) && !TEST(psp->flags, PANF_NOT_ALL_PAGES))
+        extern SWBOOL UsingMenus;
+        if (TEST(psp->flags, PANF_KILL_AFTER_SHOW) && !TEST(psp->flags, PANF_NOT_ALL_PAGES) && !UsingMenus)
         {
             psp->numpages = 0;
             SET(flags, ROTATE_SPRITE_ALL_PAGES);
