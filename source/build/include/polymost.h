@@ -101,6 +101,7 @@ extern int32_t shadescale_unbounded;
 extern uint8_t alphahackarray[MAXTILES];
 
 extern int32_t r_usenewshading;
+extern int32_t r_usetileshades;
 extern int32_t r_npotwallmode;
 extern int32_t polymostcenterhoriz;
 
@@ -114,7 +115,7 @@ static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_
 
 static FORCE_INLINE int polymost_usetileshades(void)
 {
-    return !(globalflags & GLOBAL_NO_GL_TILESHADES);
+    return r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES);
 }
 
 static inline float getshadefactor(int32_t const shade)
