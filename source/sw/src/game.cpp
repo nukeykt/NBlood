@@ -1825,7 +1825,6 @@ CreditsLevel(void)
     // get rid of all PERM sprites!
     renderFlushPerms();
     save = gs.BorderNum;
-    SetBorder(Player + myconnectindex,0);
     ClearStartMost();
     gs.BorderNum = save;
     videoClearViewableArea(0L);
