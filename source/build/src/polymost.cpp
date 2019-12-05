@@ -764,7 +764,7 @@ static void polymost_setShade(int32_t shade)
     if (currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
-    if (globalflags & GLOBAL_NO_GL_TILESHADES)
+    if (!polymost_usetileshades())
         shade = 0;
 
     static int32_t lastShade;
@@ -790,7 +790,7 @@ void polymost_setVisibility(float visibility)
     if (currentShaderProgramID != polymost1CurrentShaderProgramID)
         return;
 
-    if (globalflags & GLOBAL_NO_GL_TILESHADES)
+    if (!polymost_usetileshades())
         visibility = -16;
 
     float visFactor = visibility * fviewingrange * (1.f / (64.f * 65536.f));
@@ -3255,7 +3255,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
         //POGOTODO: I could move this into bindPth
         if (!(pth->flags & PTH_INDEXED))
             polymost_usePaletteIndexing(false);
-        else if (!(globalflags & GLOBAL_NO_GL_TILESHADES))
+        else if (polymost_usetileshades())
             polymost_setFogEnabled(false);
 
         if (drawpoly_srepeat)
@@ -3378,8 +3378,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 #endif
     {
         polytint_t const & tint = hictinting[globalpal];
-        float shadeFactor = (pth->flags & PTH_INDEXED) &&
-                            !(globalflags & GLOBAL_NO_GL_TILESHADES) ? 1.f : getshadefactor(globalshade);
+        float shadeFactor = (pth->flags & PTH_INDEXED) && polymost_usetileshades() ? 1.f : getshadefactor(globalshade);
         pc[0] = (1.f-(tint.sr*(1.f/255.f)))*shadeFactor+(tint.sr*(1.f/255.f));
         pc[1] = (1.f-(tint.sg*(1.f/255.f)))*shadeFactor+(tint.sg*(1.f/255.f));
         pc[2] = (1.f-(tint.sb*(1.f/255.f)))*shadeFactor+(tint.sb*(1.f/255.f));
@@ -4962,7 +4961,7 @@ static void polymost_internal_nonparallaxed(vec2f_t n0, vec2f_t n1, float ryp0, 
     drawpoly_alpha = 0.f;
     drawpoly_blend = 0;
 
-    if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+    if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
         calc_and_apply_fog(fogshade(global_cf_shade, global_cf_pal), sec->visibility, POLYMOST_CHOOSE_FOG_PAL(global_cf_fogpal, global_cf_pal));
 
     if (have_floor)
@@ -5462,7 +5461,7 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].floorstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+            if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                 calc_and_apply_fog_factor(sec->floorshade, sec->visibility, sec->floorpal, 0.005f);
 
             globvis2 = globalpisibility;
@@ -5866,7 +5865,7 @@ static void polymost_drawalls(int32_t const bunch)
         else if ((nextsectnum < 0) || (!(sector[nextsectnum].ceilingstat&1)))
         {
             //Parallaxing sky... hacked for Ken's mountain texture
-            if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+            if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                 calc_and_apply_fog_factor(sec->ceilingshade, sec->visibility, sec->ceilingpal, 0.005f);
 
             globvis2 = globalpisibility;
@@ -6327,7 +6326,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -6383,7 +6382,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (nwal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(nwal->shade, nwal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -6450,7 +6449,7 @@ static void polymost_drawalls(int32_t const bunch)
                 }
                 if (wal->cstat&256) { xtex.v = -xtex.v; ytex.v = -ytex.v; otex.v = -otex.v; } //yflip
 
-                if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+                if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
                     calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
                 pow2xsplit = 1;
@@ -7146,7 +7145,7 @@ static void polymost_drawmaskwallinternal(int32_t wallIndex)
     drawpoly_alpha = 0.f;
     drawpoly_blend = blend;
 
-    if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
+    if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART)))
         calc_and_apply_fog(fogshade(wal->shade, wal->pal), sec->visibility, get_floor_fogpal(sec));
 
     float const csy[4] = { ((float)(cz[0] - globalposz)) * ryp0 + ghoriz,
@@ -7952,7 +7951,7 @@ void polymost_drawsprite(int32_t snum)
 
     sec = (usectorptr_t)&sector[tspr->sectnum];
 
-    if (globalflags & GLOBAL_NO_GL_TILESHADES || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
+    if (!polymost_usetileshades() || (usehightile && hicfindsubst(globalpicnum, globalpal, hictinting[globalpal].f & HICTINT_ALWAYSUSEART))
         || (usemodels && md_tilehasmodel(globalpicnum, globalpal) >= 0))
         calc_and_apply_fog(fogshade(globalshade, globalpal), sec->visibility, get_floor_fogpal(sec));
 
