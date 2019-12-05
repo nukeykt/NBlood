@@ -213,7 +213,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                             AnubisList[nAnubis].nFrame = 0;
                             AnubisList[nAnubis].nTarget = nTarget;
 
-                            sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
+                            sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
                         }
                     }
@@ -225,7 +225,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     {
                         PlotCourseToSprite(nSprite, nTarget);
 
-                        sprite[nSprite].xvel = Sin((sprite[nSprite].ang & 0xFFF8) + 512) >> 2;
+                        sprite[nSprite].xvel = Cos(sprite[nSprite].ang & 0xFFF8) >> 2;
                         sprite[nSprite].yvel = Sin(sprite[nSprite].ang & 0xFFF8) >> 2;
                     }
 
@@ -251,7 +251,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                         case 0x8000:
                         {
                             sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
-                            sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
+                            sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
                             sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
                             break;
                         }
@@ -311,7 +311,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     {
                         AnubisList[nAnubis].nAction = 1;
 
-                        sprite[nSprite].xvel = Sin(sprite[nSprite].ang + 512) >> 2;
+                        sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
                         sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
                         AnubisList[nAnubis].nFrame = 0;
                     }
@@ -359,8 +359,9 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     {
                         AnubisList[nAnubis].nAction = nAction + 2;
                         AnubisList[nAnubis].nFrame = 0;
-                        sprite[nSprite].yvel = 0;
+
                         sprite[nSprite].xvel = 0;
+                        sprite[nSprite].yvel = 0;
                     }
                     return;
                 }
@@ -384,8 +385,9 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     AnubisList[nAnubis].nFrame = 0;
                     AnubisList[nAnubis].g = 100;
                     AnubisList[nAnubis].nTarget = -1;
-                    sprite[nSprite].yvel = 0;
+
                     sprite[nSprite].xvel = 0;
+                    sprite[nSprite].yvel = 0;
                 }
             }
 
@@ -441,8 +443,8 @@ void FuncAnubis(int a, int nDamage, int nRun)
                             sprite[nThisSprite].x = sprite[nSprite].x;
                             sprite[nThisSprite].y = sprite[nSprite].y;
                             sprite[nThisSprite].z = sector[sprite[nThisSprite].sectnum].floorz;
-                            sprite[nThisSprite].yrepeat = 40;
                             sprite[nThisSprite].xrepeat = 40;
+                            sprite[nThisSprite].yrepeat = 40;
                             sprite[nThisSprite].shade = -64;
 
                             BuildObject(nThisSprite, 2, 0);
