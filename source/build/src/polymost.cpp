@@ -51,6 +51,7 @@ int32_t shadescale_unbounded = 0;
 int32_t r_polymostDebug = 0;
 int32_t r_enablepolymost2 = 0;
 int32_t r_usenewshading = 4;
+int32_t r_usetileshades = 1;
 int32_t r_npotwallmode = 2;
 
 static float gviewxrange;
@@ -9705,6 +9706,7 @@ void polymost_initosdfuncs(void)
         { "r_useindexedcolortextures", "enable/disable indexed color texture rendering", (void *) &r_useindexedcolortextures, CVAR_BOOL, 0, 1 },
         { "r_usenewshading", "visibility/fog code: 0: orig. Polymost   1: 07/2011   2: linear 12/2012   3: no neg. start 03/2014   4: base constant on shade table 11/2017",
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4 },
+        { "r_usetileshades", "enable/disable apply shade tables to art tiles", (void *) &r_usetileshades, CVAR_BOOL, 0, 1 },
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
         { "r_yshearing", "enable/disable y-shearing", (void*) &r_yshearing, CVAR_BOOL, 0, 1 },
         { "r_flatsky", "enable/disable flat skies", (void*)& r_flatsky, CVAR_BOOL, 0, 1 },
