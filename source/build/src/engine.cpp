@@ -960,7 +960,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                     j = bunches[cf][bnchcnt];  // the actual bunchnum...
                     yax_globalbunch = j;
 #ifdef YAX_DEBUG
-                    t=timerGetTicksU64();
+                    t=timerGetPerformanceCounter();
 #endif
                     k = bunchsec[j];
 
@@ -984,7 +984,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                         yaxdebug("l%d: faked (bn %2d) sec %4d,%3d dspr, ob=[%2d,%2d], sn=%4d, %.3f ms",
                                  yax_globallev-YAX_MAXDRAWS, j, k, yax_spritesortcnt[yax_globallev]-odsprcnt,
                                  ourbunch[0],ourbunch[1],sectnum,
-                                 (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+                                 (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
                     }
 
                     if (ourbunch[cf]==j)
@@ -1052,7 +1052,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                 k = bunchsec[j];  // best start-drawing sector
                 yax_globalbunch = j;
 #ifdef YAX_DEBUG
-                t=timerGetTicksU64();
+                t=timerGetPerformanceCounter();
 #endif
                 yax_tweakpicnums(j, cf, 0);
                 if (k < 0)
@@ -1068,7 +1068,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                     {
                         yaxdebug("nm1 l%d: DRAWN (bn %2d) sec %4d,          %.3f ms",
                                  yax_globallev-YAX_MAXDRAWS, j, k,
-                                 (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+                                 (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
 
                         if (!yax_nomaskdidit)
                         {
@@ -1084,7 +1084,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                 yax_copytsprites();
                 yaxdebug("nm0 l%d: DRAWN (bn %2d) sec %4d,%3d tspr, %.3f ms",
                          yax_globallev-YAX_MAXDRAWS, j, k, spritesortcnt,
-                         (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+                         (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
 
                 SpriteAnimFunc(globalposx, globalposy, globalposz, globalang, smoothr);
                 renderDrawMasks();
@@ -1097,7 +1097,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
     }
 
 #ifdef YAX_DEBUG
-    t=timerGetTicksU64();
+    t=timerGetPerformanceCounter();
 #endif
     yax_globalcf = -1;
     yax_globalbunch = -1;
@@ -1111,7 +1111,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 //        spritesortcnt = 0;
     yax_copytsprites();
     yaxdebug("DRAWN base level sec %d,%3d tspr, %.3f ms", osectnum,
-             spritesortcnt, (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+             spritesortcnt, (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
     scansector_collectsprites = 1;
 
     for (cf=0; cf<2; cf++)
@@ -8254,7 +8254,7 @@ int32_t engineInit(void)
     }
 
 #ifdef YAX_DEBUG
-    u64tickspersec = (double)timerGetFreqU64();
+    u64tickspersec = (double)timerGetPerformanceFrequency();
     if (u64tickspersec==0.0)
         u64tickspersec = 1.0;
 #endif

@@ -981,6 +981,13 @@ extern "C" {
 
     extern size_t enet_protocol_command_size (enet_uint8);
 
+#if defined _WIN32 || __APPLE__ && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+    extern int enet_gettime(int X, struct timespec *tv);
+#else
+# define enet_gettime clock_gettime
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -4849,7 +4856,7 @@ extern "C" {
             return (t);
         }
 
-        int clock_gettime(int X, struct timespec *tv) {
+        int enet_gettime(int X, struct timespec *tv) {
             UNREFERENCED_PARAMETER(X);
             LARGE_INTEGER t;
             FILETIME f;
@@ -4890,7 +4897,7 @@ extern "C" {
     #elif __APPLE__ && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
         #define CLOCK_MONOTONIC 0
 
-        int clock_gettime(int X, struct timespec *ts) {
+        int enet_gettime(int X, struct timespec *ts) {
             clock_serv_t cclock;
             mach_timespec_t mts;
 
@@ -4920,9 +4927,9 @@ extern "C" {
 
         struct timespec ts;
     #if defined(CLOCK_MONOTONIC_RAW)
-        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+        enet_gettime(CLOCK_MONOTONIC_RAW, &ts);
     #else
-        clock_gettime(CLOCK_MONOTONIC, &ts);
+        enet_gettime(CLOCK_MONOTONIC, &ts);
     #endif
 
         static const uint64_t ns_in_s = 1000 * 1000 * 1000;
