@@ -164,7 +164,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     voice->LoopSize    = loopstart >= 0 ? 1 : 0;
 
     xmp_start_player(xmpd->context, MV_MixRate, 0);
-    xmp_set_player(xmpd->context, XMP_PLAYER_INTERP, XMP_INTERP_SPLINE);
+    xmp_set_player(xmpd->context, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 
     // CODEDUP multivoc.c MV_SetVoicePitch
     voice->RateScale = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
@@ -330,4 +330,11 @@ int MV_IdentifyXMP(char const *ptr, uint32_t ptrlength)
     }
 
     return 0;
+}
+
+void MV_SetXMPInterpolation(void)
+{
+    for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
+        if (voice->wavetype == FMT_XMP)
+            xmp_set_player((xmp_context)voice->rawdataptr, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 }
