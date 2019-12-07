@@ -366,7 +366,6 @@ audiolib := audiolib
 
 audiolib_objs := \
     driver_adlib.cpp \
-    driver_nosound.cpp \
     drivers.cpp \
     flac.cpp \
     formats.cpp \

@@ -193,7 +193,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\source\audiolib\src\driver_nosound.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\driver_sdl.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\driver_winmm.cpp" />
     <ClCompile Include="..\..\source\audiolib\src\flac.cpp" />
@@ -229,7 +228,6 @@
     <ClInclude Include="..\..\source\audiolib\src\drivers.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_adlib.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_directsound.h" />
-    <ClInclude Include="..\..\source\audiolib\src\driver_nosound.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_sdl.h" />
     <ClInclude Include="..\..\source\audiolib\src\driver_winmm.h" />
     <ClInclude Include="..\..\source\audiolib\src\linklist.h" />
