@@ -108,8 +108,6 @@ int  MV_SetPosition(int handle, int position);
 void MV_SetVolume(int volume);
 int  MV_GetVolume(void);
 void MV_SetCallBack(void (*function)(uint32_t));
-void MV_SetReverseStereo(int setting);
-int  MV_GetReverseStereo(void);
 int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata);
 int  MV_Shutdown(void);
 void MV_HookMusicRoutine(void (*callback)(void));
