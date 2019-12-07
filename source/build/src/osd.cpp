@@ -68,6 +68,8 @@ static int32_t (*_getrowheight)(int32_t) = _internal_getrowheight;
 static hashtable_t h_cvars      = { OSDMAXSYMBOLS >> 1, NULL };
 bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown command in the osd
 
+static int osdfunc_printvar(int const cvaridx);
+
 void OSD_RegisterCvar(osdcvardata_t * const cvar, int (*func)(osdcmdptr_t))
 {
     if (!osd)
@@ -577,7 +579,12 @@ static int osdfunc_help(osdcmdptr_t parm)
     if (!symb)
         OSD_Printf("Error: no help for undefined symbol \"%s\"\n", parm->parms[0]);
     else
-        OSD_Printf("%s\n", symb->help);
+    {
+        int const cvaridx = hash_findcase(&h_cvars, symb->name);
+        if (cvaridx >= 0)
+            return osdfunc_printvar(cvaridx);
+        else OSD_Printf("%s\n", symb->help);
+    }
 
     return OSDCMD_OK;
 }
@@ -1904,7 +1911,14 @@ void OSD_Dispatch(const char *cmd)
             {
                 default:
                 case OSDCMD_OK: break;
-                case OSDCMD_SHOWHELP: OSD_Printf("%s\n", symbol->help); break;
+                case OSDCMD_SHOWHELP:
+                {
+                    int const cvaridx = hash_findcase(&h_cvars, symbol->name);
+                    if (cvaridx >= 0)
+                        osdfunc_printvar(cvaridx);
+                    else OSD_Printf("%s\n", symbol->help);
+                    break;
+                }
             }
         }
 
@@ -2045,6 +2059,34 @@ static osdsymbol_t * osd_findexactsymbol(const char *pszName)
     return (symbolNum >= 0) ? osd->symbptrs[symbolNum] : NULL;
 }
 
+static int osdfunc_printvar(int const cvaridx)
+{
+    auto& pData = *osd->cvars[cvaridx].pData;
+
+    switch (pData.flags & CVAR_TYPEMASK)
+    {
+        case CVAR_FLOAT:
+            OSD_Printf("\"%s\" is \"%f\"\n%s [%d-%d]: %s\n", pData.name, *pData.f, pData.name, pData.min, pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_DOUBLE:
+            OSD_Printf("\"%s\" is \"%f\"\n%s [%d-%d]: %s\n", pData.name, *pData.d, pData.name, pData.min, pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_INT:
+        case CVAR_BOOL:
+            OSD_Printf("\"%s\" is \"%d\"\n%s [%d%c%d]: %s\n", pData.name, *pData.i32, pData.name, pData.min,
+                (pData.flags & CVAR_BOOL ? '/' : '-'), pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_UINT:
+            OSD_Printf("\"%s\" is \"%d\"\n%s [%d-%d]: %s\n", pData.name, *pData.u32, pData.name, pData.min, pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_STRING:
+            OSD_Printf("\"%s\" is \"%s\"\n%s: %s\n", pData.name, pData.string, pData.name, pData.desc);
+            return OSDCMD_OK;
+        default:
+            EDUKE32_UNREACHABLE_SECTION(return OSDCMD_OK);
+    }
+}
+
 int osdcmd_cvar_set(osdcmdptr_t parm)
 {
     int const printValue = (parm->numparms == 0);
@@ -2052,7 +2094,7 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
 
     Bassert(cvaridx >= 0);
 
-    auto pData = *osd->cvars[cvaridx].pData;
+    auto &pData = *osd->cvars[cvaridx].pData;
 
     if (pData.flags & CVAR_READONLY)
     {
@@ -2060,49 +2102,34 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
         return OSDCMD_OK;
     }
 
+    if (printValue)
+        return osdfunc_printvar(cvaridx);
+
     switch (pData.flags & CVAR_TYPEMASK)
     {
         case CVAR_FLOAT:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%f\"\n%s: %s\n", pData.name, *pData.f, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             Bsscanf(parm->parms[0], "%f", pData.f);
             *pData.f = clamp(*pData.f, pData.min, pData.max);
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %f",pData.name, *pData.f);
+                OSD_Printf("%s %f", pData.name, *pData.f);
         }
         break;
         case CVAR_DOUBLE:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%f\"\n%s: %s\n", pData.name, *pData.d, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             Bsscanf(parm->parms[0], "%lf", pData.d);
             *pData.d = clamp(*pData.d, pData.min, pData.max);
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %f",pData.name, *pData.d);
+                OSD_Printf("%s %f", pData.name, *pData.d);
         }
         break;
         case CVAR_INT:
         case CVAR_BOOL:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%d\"\n%s: %s\n", pData.name, *pData.i32, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             *pData.i32 = clamp(Batoi(parm->parms[0]), pData.min, pData.max);
 
             if ((pData.flags & CVAR_TYPEMASK) == CVAR_BOOL)
@@ -2111,17 +2138,11 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %d",pData.name, *pData.i32);
+                OSD_Printf("%s %d", pData.name, *pData.i32);
         }
         break;
         case CVAR_UINT:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%u\"\n%s: %s\n", pData.name, *pData.u32, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             *pData.u32 = clamp(Bstrtoul(parm->parms[0], NULL, 0), pData.min, pData.max);
             pData.flags |= CVAR_MODIFIED;
 
@@ -2131,18 +2152,12 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
         break;
         case CVAR_STRING:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%s\"\n%s: %s\n", pData.name, pData.string, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             Bstrncpy(pData.string, parm->parms[0], pData.max-1);
             (pData.string)[pData.max-1] = 0;
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %s",pData.name, pData.string);
+                OSD_Printf("%s %s", pData.name, pData.string);
         }
         break;
         default:
@@ -2202,7 +2217,7 @@ void OSD_WriteCvars(buildvfs_FILE fp)
 
     for (int i = 0; i < osd->numcvars; i++)
     {
-        osdcvardata_t const &pData = *osd->cvars[i].pData;
+        auto &pData = *osd->cvars[i].pData;
 
         if (!(pData.flags & CVAR_NOSAVE) && OSD_CvarModified(&osd->cvars[i]))
         {
