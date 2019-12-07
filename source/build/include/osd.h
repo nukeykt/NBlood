@@ -257,7 +257,7 @@ void OSD_CaptureKey(uint8_t scanCode);
 // or the scancode if it should be handled by the game.
 int OSD_HandleScanCode(uint8_t scanCode, int keyDown);
 int OSD_HandleChar(char ch);
-
+void OSD_HandleWheel(void);
 // handles the readjustment when screen resolution changes
 void OSD_ResizeDisplay(int w,int h);
 
