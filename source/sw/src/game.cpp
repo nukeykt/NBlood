@@ -92,6 +92,7 @@ Things required to make savegames work:
 #include "common_game.h"
 
 #include "crc32.h"
+#include "winbits.h"
 
 #ifdef _WIN32
 # include "winbits.h"
@@ -210,7 +211,6 @@ const GAME_SET gs_defaults =
     TRUE, // Music on
     TRUE, // talking
     TRUE, // ambient
-    FALSE, // Flip Stereo
 
 // Network game settings
     0, // GameType

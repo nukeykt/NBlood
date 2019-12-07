@@ -88,7 +88,6 @@ void S_SoundStartup(void)
     FX_SetVolume(ud.config.FXVolume);
     S_MusicVolume(ud.config.MusicVolume);
 
-    FX_SetReverseStereo(ud.config.ReverseStereo);
     FX_SetCallBack(S_Callback);
     FX_SetPrintf(OSD_Printf);
     mutex_init(&m_callback);

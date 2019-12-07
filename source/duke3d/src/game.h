@@ -268,9 +268,6 @@ typedef struct {
         int32_t NumBits;
         int32_t MixRate;
 
-        int32_t ReverseStereo;
-
-
         int32_t scripthandle;
         int32_t setupread;
 

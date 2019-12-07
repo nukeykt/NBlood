@@ -73,7 +73,7 @@ int32_t S_SoundStartup(void)
     void *initdata = 0;
 
     // TODO: read config
-    int32_t FXVolume=220, /*NumVoices=32,*/ NumChannels=2, ReverseStereo=0;
+    int32_t FXVolume=220, /*NumVoices=32,*/ NumChannels=2;
 
 #ifdef _WIN32
     initdata = (void *) win_gethwnd(); // used for DirectSound
@@ -89,7 +89,6 @@ int32_t S_SoundStartup(void)
     }
 
     FX_SetVolume(FXVolume);
-    FX_SetReverseStereo(ReverseStereo);
     FX_SetCallBack(S_Callback);
 
     SM32_havesound = 1;

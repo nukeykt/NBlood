@@ -1160,11 +1160,6 @@ LoadSong(const char *filename)
 }
 
 
-void FlipStereo(void)
-{
-    FX_SetReverseStereo(gs.FlipStereo);
-}
-
 void
 SoundStartup(void)
 {
@@ -1194,9 +1189,6 @@ SoundStartup(void)
 
     FxInitialized = TRUE;
     FX_SetVolume(gs.SoundVolume);
-
-    if (gs.FlipStereo)
-        FX_SetReverseStereo(!FX_GetReverseStereo());
 
     FX_SetCallBack(SoundCallBack);
 }
