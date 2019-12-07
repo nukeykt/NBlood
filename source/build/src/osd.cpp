@@ -927,6 +927,18 @@ static void OSD_HistoryNext(void)
     OSD_AdjustEditorPosition(e);
 }
 
+void OSD_HandleWheel()
+{
+    if (osd->flags & OSD_CAPTURE)
+    {
+        if ((g_mouseBits & 16) && osd->draw.head <  osd->text.lines - osdrowscur)
+            ++osd->draw.head;
+
+        if ((g_mouseBits & 32) && osd->draw.head > 0)
+            --osd->draw.head;
+    }
+}
+
 //
 // OSD_HandleKey() -- Handles keyboard input when capturing input.
 //  Returns 0 if the key was handled internally, or the scancode if it should
@@ -1278,7 +1290,7 @@ int OSD_HandleScanCode(uint8_t scanCode, int keyDown)
         break;
 
     case sc_PgUp:
-        if (draw.head < osd->text.lines-1)
+        if (draw.head < osd->text.lines-osdrowscur)
             ++draw.head;
         break;
 

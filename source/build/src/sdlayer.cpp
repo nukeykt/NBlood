@@ -2536,6 +2536,8 @@ int32_t handleevents(void)
             if (g_mouseBits & 32)
                 g_mouseCallback(6, 0);
         }
+
+        OSD_HandleWheel();
         g_mouseBits &= ~(16 | 32);
     }
 
