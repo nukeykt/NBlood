@@ -427,6 +427,9 @@ void sdlayer_sethints()
 #if defined SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
 #endif
+#if defined SDL_HINT_AUDIO_RESAMPLING_MODE
+    SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "3");
+#endif
 }
 
 #ifdef _WIN32
