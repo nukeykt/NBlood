@@ -3,11 +3,12 @@
 #include "timer.h"
 
 #include "build.h"
-#include "compat.h"
 #include "build_cpuid.h"
-#include "renderlayer.h"
-#include <time.h>
+#include "compat.h"
 #include "enet.h"
+#include "renderlayer.h"
+
+#include <time.h>
 
 #ifdef _WIN32
 # include "winbits.h"
@@ -104,7 +105,7 @@ ATTRIBUTE((flatten)) void timerUpdateClock(void)
         for (; cnt > 0; cnt--) usertimercallback();
 }
 
-uint64_t timerGetPerformanceCounter(void)
+static inline int timerGetCounterType(void)
 {
     switch (sys_timer)
     {
@@ -112,10 +113,7 @@ uint64_t timerGetPerformanceCounter(void)
         default:
         case TIMER_AUTO:
         case TIMER_SDL:
-            return SDL_GetPerformanceCounter();
-#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
+            return TIMER_SDL;
 #endif // HAVE_TIMER_SDL
 #ifdef _WIN32
 #if !defined HAVE_TIMER_SDL
@@ -123,51 +121,59 @@ uint64_t timerGetPerformanceCounter(void)
         case TIMER_AUTO:
 #endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
+            return TIMER_QPC;
+#endif // _WIN32
+#ifdef ZPL_HAVE_RDTSC
+#if !defined _WIN32 && !defined HAVE_TIMER_SDL
+        default:
+        case TIMER_AUTO:
+#endif // !_WIN32 && !HAVE_TIMER_SDL
+        case TIMER_RDTSC:
+            return TIMER_RDTSC;
+#endif
+    }
+}
+
+uint64_t timerGetPerformanceCounter(void)
+{
+    switch (timerGetCounterType())
+    {
+        default:
+#ifdef HAVE_TIMER_SDL
+        case TIMER_SDL: return SDL_GetPerformanceCounter();
+#endif
+#ifdef _WIN32
+        case TIMER_QPC:
+        {
             LARGE_INTEGER li;
             QueryPerformanceCounter(&li);
             return li.QuadPart;
+        }
 #endif // _WIN32
 #ifdef ZPL_HAVE_RDTSC
-        case TIMER_RDTSC:
-            return timerSampleRDTSC();
+        case TIMER_RDTSC: return timerSampleRDTSC();
 #endif
     }
 }
 
 uint64_t timerGetPerformanceFrequency(void)
 {
-    switch (sys_timer)
+    switch (timerGetCounterType())
     {
+        default:
 #ifdef HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
-        case TIMER_SDL:
-        {
-            static uint64_t freq;
-            if (freq == 0)
-                freq = SDL_GetPerformanceFrequency();
-            return freq;
-        }
-#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
-#endif // HAVE_TIMER_SDL
+        case TIMER_SDL: return SDL_GetPerformanceFrequency();
+#endif
 #ifdef _WIN32
-#if !defined HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
-#endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
         {
-            static LARGE_INTEGER li;
-            if (li.QuadPart == 0)
-                QueryPerformanceFrequency(&li);
+            LARGE_INTEGER li;
+            QueryPerformanceFrequency(&li);
             return li.QuadPart;
         }
 #endif // _WIN32
 #ifdef ZPL_HAVE_RDTSC
-        case TIMER_RDTSC:
-            return tsc_freq;
+        case TIMER_RDTSC: return tsc_freq;
 #endif
     }
 }
