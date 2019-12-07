@@ -597,7 +597,7 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium3
+            OPTOPT := -march=pentium-m
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
