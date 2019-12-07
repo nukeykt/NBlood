@@ -19,7 +19,7 @@ typedef struct
     char *    lock;
     intptr_t *hand;
     int32_t   leng;
-    int32_t  asked;
+    int32_t   ovh;
 } cacheindex_t;
 
 enum cachelock_t: char

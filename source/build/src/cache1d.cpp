@@ -239,7 +239,7 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
     found.hand  = newhandle;
     found.leng  = newbytes;
     found.lock  = newlockptr;
-    found.asked = askedbytes;
+    found.ovh   = newbytes-askedbytes;
 
     *newhandle = m_baseAddress + besto;
 
@@ -338,9 +338,8 @@ void cache1d::report(void)
         if (tile != -1)
             buildprint("PIC:", tile, " ");
 
-        int const overhead = m_index[i].leng - m_index[i].asked;
-        unusable += overhead;
-        buildprint("OVH:", overhead, "\n");
+        unusable += m_index[i].ovh;
+        buildprint("OVH:", m_index[i].ovh, "\n");
     }
     
     buildprint("Cache size:  ", m_totalSize >> 10, " KB\n"
