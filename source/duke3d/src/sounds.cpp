@@ -85,8 +85,6 @@ void S_SoundStartup(void)
 #endif
     }
 
-    cacheAllSounds();
-
     FX_SetVolume(ud.config.FXVolume);
     S_MusicVolume(ud.config.MusicVolume);
 
