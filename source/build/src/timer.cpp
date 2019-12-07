@@ -80,7 +80,7 @@ template<typename T> T timerGetTicks(T freq)
 {
     timespec ts;
     enet_gettime(CLOCK_TYPE, &ts);
-    return ts.tv_sec * freq + ts.tv_nsec * freq / (T)1000000000;
+    return ts.tv_sec * freq + (T)((uint64_t)ts.tv_nsec * freq / (T)1000000000);
 }
 
 uint32_t timerGetTicks(void) { return timerGetTicks<uint32_t>(1000); }
