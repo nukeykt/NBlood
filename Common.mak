@@ -590,6 +590,8 @@ ifndef OPTOPT
         else
             ifeq ($(PLATFORM),DARWIN)
                 OPTOPT := -march=core2 -mmmx -msse -msse2 -msse3 -mssse3
+            else
+                OPTOPT := -march=nocona
             endif
         endif
     endif
