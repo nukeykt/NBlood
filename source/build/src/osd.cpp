@@ -2050,12 +2050,6 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
     int const printValue = (parm->numparms == 0);
     int const cvaridx    = hash_findcase(&h_cvars, parm->name);
 
-#if 0
-    if (i < 0)
-        for (i = osd->numcvars-1; i >= 0; i--)
-            if (!Bstrcasecmp(parm->name, pData.name)) break;
-#endif
-
     Bassert(cvaridx >= 0);
 
     auto pData = *osd->cvars[cvaridx].pData;
