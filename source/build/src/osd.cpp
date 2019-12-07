@@ -724,16 +724,20 @@ void OSD_Init(void)
 
     static osdcvardata_t cvars_osd [] =
     {
-        { "osdeditpal", "sets the palette of the OSD input text", (void *) &osd->draw.editpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
-        { "osdpromptpal", "sets the palette of the OSD prompt", (void *) &osd->draw.promptpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
-        { "osdtextpal", "sets the palette of the OSD text", (void *) &osd->draw.textpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
-        { "osdeditshade", "sets the shade of the OSD input text", (void *) &osd->draw.editshade, CVAR_INT, 0, 7 },
-        { "osdtextshade", "sets the shade of the OSD text", (void *) &osd->draw.textshade, CVAR_INT, 0, 7 },
-        { "osdpromptshade", "sets the shade of the OSD prompt", (void *) &osd->draw.promptshade, CVAR_INT, INT8_MIN, INT8_MAX },
         { "osdrows", "sets the number of visible lines of the OSD", (void *) &osd->draw.rows, CVAR_INT|CVAR_FUNCPTR, 1, 400 },
-        { "osdtextmode", "set OSD text mode (0:graphical, 1:fast)", (void *) &osd->draw.mode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
-        { "osdlogcutoff", "sets the maximal line count of the log file", (void *) &osd->log.cutoff, CVAR_INT, 0, 262144 },
-        { "osdhistorydepth", "sets the history depth, in lines", (void *) &osd->history.maxlines, CVAR_INT|CVAR_FUNCPTR, OSDMINHISTORYDEPTH, OSDMAXHISTORYDEPTH },
+        { "osdeditpal", "console input text palette", (void *) &osd->draw.editpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
+        { "osdeditshade", "console input text shade", (void *) &osd->draw.editshade, CVAR_INT, 0, 7 },
+
+        { "osdtextpal", "unformatted console text palette", (void *) &osd->draw.textpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
+        { "osdtextshade", "unformatted console text shade", (void *) &osd->draw.textshade, CVAR_INT, 0, 7 },
+
+        { "osdpromptpal", "console prompt palette", (void *) &osd->draw.promptpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
+        { "osdpromptshade", "console prompt shade", (void *) &osd->draw.promptshade, CVAR_INT, INT8_MIN, INT8_MAX },
+
+        { "osdtextmode", "console character mode: 0: sprites  1: simple glyphs", (void *) &osd->draw.mode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+
+        { "osdlogcutoff", "maximum number of error messages to log to the console", (void *) &osd->log.cutoff, CVAR_INT, -1, OSDMAXERRORS },
+        { "osdhistorydepth", "number of lines of command history to cycle through with the up and down cursor keys", (void *) &osd->history.maxlines, CVAR_INT|CVAR_FUNCPTR, OSDMINHISTORYDEPTH, OSDMAXHISTORYDEPTH },
     };
 
     for (auto & i : cvars_osd)
