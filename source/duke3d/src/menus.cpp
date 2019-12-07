@@ -3343,21 +3343,31 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     }
     else if (entry == &ME_SOUND_RESTART)
     {
-        ud.config.MixRate = soundrate;
-        ud.config.NumVoices = soundvoices;
-        ud.config.MusicDevice = musicdevice;
+        if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices)
+        {
+            S_MusicShutdown();
+            S_SoundShutdown();
 
-        S_SoundShutdown();
-        S_MusicShutdown();
+            ud.config.MixRate = soundrate;
+            ud.config.NumVoices = soundvoices;
 
-        S_SoundStartup();
-        S_MusicStartup();
+            S_SoundStartup();
+            S_MusicStartup();
 
-        FX_StopAllSounds();
-        S_ClearSoundLocks();
+            S_ClearSoundLocks();
+        }
 
         if (ud.config.MusicToggle)
+        {
+            if (ud.config.MusicDevice != musicdevice)
+            {
+                S_MusicShutdown();
+                ud.config.MusicDevice = musicdevice;
+                S_MusicStartup();
+            }
+
             S_RestartMusic();
+        }
     }
     else if (entry == &ME_SAVESETUP_CLEANUP)
     {
