@@ -33,18 +33,17 @@ static void(*usertimercallback)(void) = nullptr;
 #ifdef ZPL_HAVE_RDTSC
 static uint64_t tsc_freq;
 
-static FORCE_INLINE uint64_t timerSampleRDTSC()
+
+static FORCE_INLINE ATTRIBUTE((flatten)) void fence(void)
 {
-    // We need to serialize the instruction stream before executing RDTSC.
 #if defined __SSE2__
-    // On AMD, MFENCE serializes and LFENCE does not. On Intel, LFENCE serializes and MFENCE does not.
+    // On AMD, MFENCE serializes and LFENCE may not. On Intel, LFENCE serializes and MFENCE does not.
     // https://stackoverflow.com/a/50332912
-    // MFENCE before LFENCE is preferable since we're using both.
+    // We may want to detect CPUs requiring MFENCE and use that if necessary in the future.
     // https://www.felixcloutier.com/x86/rdtsc
     // https://hadibrais.wordpress.com/2018/05/14/the-significance-of-the-x86-lfence-instruction/
-    _mm_mfence();
-    _mm_lfence();
 
+    _mm_lfence();
     // Fallbacks on x86 without SSE2 use a LOCK prefix.
     // The alternative is the CPUID instruction, but benchmarking would be desirable to pick the best choice.
 #elif defined __GNUC__
@@ -52,10 +51,17 @@ static FORCE_INLINE uint64_t timerSampleRDTSC()
 #else
     atomic_thread_fence(memory_order_seq_cst);
 #endif
+}
+
+static FORCE_INLINE uint64_t timerSampleRDTSC(void)
+{
+    // We need to serialize the instruction stream before executing RDTSC.
+    fence();
 
     uint64_t const result = zpl_rdtsc();
 
-    // Some sources suggest serialization is also necessary or desirable after RDTSC. For now, don't.
+    // Some sources suggest serialization is also necessary or desirable after RDTSC.
+    fence();
 
     return result;
 }
