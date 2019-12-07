@@ -34,6 +34,7 @@
 #endif
 
 #include "baselayer.h"
+#include "build.h"
 #include "cache1d.h"
 #include "compat.h"
 #include "klzw.h"
@@ -41,9 +42,6 @@
 #include "osd.h"
 #include "pragmas.h"
 #include "vfs.h"
-
-#define CACHEINCREMENT 1024
-#define MEANCACHEBLOCKSIZE 24576
 
 static bool g_cacheInit;
 static char zerochar;
@@ -61,7 +59,17 @@ static int osdfunc_cacheinfo(osdcmdptr_t UNUSED(parm))
     return OSDCMD_OK;
 }
 
-void cache1d::initBuffer(intptr_t dacachestart, int32_t dacachesize)
+void cache1d::reset(void)
+{
+    Bmemset(m_index, 0, m_maxBlocks * sizeof(cacheindex_t));
+
+    m_index[0].leng = m_totalSize;
+    m_index[0].lock = &zerochar;
+
+    m_numBlocks = 1;
+}
+
+void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t minsize /*= 0*/)
 {
     if (!g_cacheInit)
     {
@@ -79,14 +87,11 @@ void cache1d::initBuffer(intptr_t dacachestart, int32_t dacachesize)
     m_baseAddress = ((uintptr_t)dacachestart + 15) & ~(uintptr_t)0xf;
     m_totalSize   = (dacachesize - (((uintptr_t)(dacachestart)) & 0xf)) & ~(uintptr_t)0xf;
 
-    m_maxBlocks = max(m_totalSize / MEANCACHEBLOCKSIZE, 8192);
-    m_index     = (cacheindex_t *)Xaligned_alloc(Bgetpagesize(), m_maxBlocks * sizeof(cacheindex_t));
-    Bmemset(m_index, 0, m_maxBlocks * sizeof(cacheindex_t));
+    m_maxBlocks    = MINCACHEINDEXSIZE;
+    m_minBlockSize = minsize >= MINCACHEBLOCKSIZE ? minsize : Bgetpagesize();
+    m_index        = (cacheindex_t *)Xaligned_alloc(m_minBlockSize, m_maxBlocks * sizeof(cacheindex_t));
 
-    m_index[0].leng = m_totalSize;
-    m_index[0].lock = &zerochar;
-
-    m_numBlocks = 1;
+    reset();
 
 #ifdef DEBUGGINGAIDS
     buildprint("Cache object array initialized with ", m_maxBlocks, " entries.\n");
@@ -99,24 +104,24 @@ void cache1d::inc_and_check_cacnum(void)
 {
     if (++m_numBlocks >= m_maxBlocks)
     {
-        auto new_index = (cacheindex_t *)Xaligned_alloc(Bgetpagesize(), (m_maxBlocks + CACHEINCREMENT) * sizeof(cacheindex_t));
+        auto new_index = (cacheindex_t *)Xaligned_alloc(Bgetpagesize(), (m_maxBlocks + MINCACHEINDEXSIZE) * sizeof(cacheindex_t));
 
-        Bmemset(new_index + m_maxBlocks, 0, CACHEINCREMENT * sizeof(cacheindex_t));
+        Bmemset(new_index + m_maxBlocks, 0, MINCACHEINDEXSIZE * sizeof(cacheindex_t));
         Bmemcpy(new_index, m_index, m_maxBlocks * sizeof(cacheindex_t));
 
         Xaligned_free(m_index);
         m_index = new_index;
 
 #ifdef DEBUGGINGAIDS
-        buildprint("Cache increased from \'", m_maxBlocks, "\' to \'", m_maxBlocks + CACHEINCREMENT, "\' entries.\n");
+        buildprint("Cache increased from \'", m_maxBlocks, "\' to \'", m_maxBlocks + MINCACHEINDEXSIZE, "\' entries.\n");
 #endif
-        m_maxBlocks += CACHEINCREMENT;
+        m_maxBlocks += MINCACHEINDEXSIZE;
     }
 }
 
-int32_t cache1d::findBlock(int32_t newbytes, int32_t *besto, int32_t *bestz)
+int32_t cache1d::findBlock(int32_t const newbytes, int32_t * const besto, int32_t * const bestz)
 {
-    int32_t bestval = 0x7fffffff;
+    int32_t bestval = INT32_MAX;
 
     for (native_t z=m_numBlocks-1, o1=m_totalSize; z>=0; z--)
     {
@@ -135,7 +140,7 @@ int32_t cache1d::findBlock(int32_t newbytes, int32_t *besto, int32_t *bestz)
                 continue;
             else if (*m_index[zz].lock >= CACHE1D_LOCKED)
             {
-                daval = 0x7fffffff;
+                daval = INT32_MAX;
                 break;
             }
 
@@ -162,11 +167,31 @@ int32_t cache1d::findBlock(int32_t newbytes, int32_t *besto, int32_t *bestz)
     return bestval;
 }
 
+void cache1d::tryHarder(int32_t const newbytes, int32_t *const besto, int32_t *const bestz)
+{
+    buildprint("WARNING: request for ", newbytes >> 10, " KB block exhausted cache!\nAttempting to make it fit...\n");
+
+    if (m_minBlockSize > MINCACHEBLOCKSIZE)
+        m_minBlockSize >>= 1;
+
+    int cnt = m_numBlocks - 1;
+
+    while (findBlock(newbytes, besto, bestz) == INT32_MAX)
+    {
+        ageBlocks();
+        if (EDUKE32_PREDICT_FALSE(!cnt--))
+        {
+            report();
+            fatal_exit("CACHE SPACE ALL LOCKED UP!");
+        }
+    }
+}
+
 void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlockptr)
 {
-    // Make all requests a multiple of the system page size
-    int const pageSize = Bgetpagesize();
-    newbytes = (newbytes + pageSize-1) & ~(pageSize-1);
+    // Make all requests a multiple of the minimum block size
+    int const askedbytes = newbytes;
+    newbytes = (newbytes + m_minBlockSize-1) & ~(m_minBlockSize-1);
 
 #ifdef DEBUGGINGAIDS
     if (EDUKE32_PREDICT_FALSE(!newlockptr || *newlockptr == 0))
@@ -186,22 +211,12 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
 
     int32_t bestz = 0;
     int32_t besto = 0;
-    int cnt = m_numBlocks-1;
 
     // if we can't find a block, try to age the cache until we can
     // it's better than the alternative of aborting the entire program
-    while (findBlock(newbytes, &besto, &bestz) == 0x7fffffff)
-    {
-        OSD_Printf("WARNING: request for %d byte block exhausted cache!\n"
-                   "Attempting to make it fit...\n",
-                   newbytes);
-        ageBlocks();
-        if (!cnt--)
-        {
-            report();
-            fatal_exit("CACHE SPACE ALL LOCKED UP!");
-        }
-    }
+    
+    if (findBlock(newbytes, &besto, &bestz) == INT32_MAX)
+        tryHarder(newbytes, &besto, &bestz);
 
     //printf("%d %d %d\n",besto,newbytes,*newlockptr);
 
@@ -217,12 +232,16 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
     suckz -= bestz+1;
     m_numBlocks -= suckz;
 
-    Bmemmove(&m_index[bestz], &m_index[bestz + suckz], (m_numBlocks - bestz) * sizeof(cacheindex_t));
+    auto &found = m_index[bestz];
 
-    m_index[bestz].hand = newhandle;
-    *newhandle      = m_baseAddress + besto;
-    m_index[bestz].leng = newbytes;
-    m_index[bestz].lock = newlockptr;
+    Bmemmove(&found, &m_index[bestz + suckz], (m_numBlocks - bestz) * sizeof(cacheindex_t));
+
+    found.hand  = newhandle;
+    found.leng  = newbytes;
+    found.lock  = newlockptr;
+    found.asked = askedbytes;
+
+    *newhandle = m_baseAddress + besto;
 
     //Add new empty block if necessary
     if (sucklen <= 0)
@@ -236,9 +255,11 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
         return;
     }
 
-    if (*m_index[bestz].lock == 0)
+    auto &rem = m_index[bestz];
+
+    if (*rem.lock == 0)
     {
-        m_index[bestz].leng += sucklen;
+        rem.leng += sucklen;
         return;
     }
 
@@ -247,8 +268,8 @@ void cache1d::allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlock
     for (native_t z=m_numBlocks-1; z>bestz; z--)
         m_index[z] = m_index[z-1];
 
-    m_index[bestz].leng = sucklen;
-    m_index[bestz].lock = &zerochar;
+    rem.leng = sucklen;
+    rem.lock = &zerochar;
 }
 
 void cache1d::ageBlocks(void)
@@ -279,39 +300,65 @@ void cache1d::ageBlocks(void)
 void cache1d::report(void)
 {
     int32_t usedSize = 0;
+    int32_t unusable = 0;
+    inthashtable_t h_blocktotile = { nullptr, INTHASH_SIZE(m_maxBlocks) };
+
+    inthash_init(&h_blocktotile);
+
+    for (native_t j = 0; j < MAXTILES-1; j++)
+        if (waloff[j])
+            inthash_add(&h_blocktotile, waloff[j], j, true);
 
     for (native_t i = 0; i < m_numBlocks-1; i++)
     {
-        buildprint("#", i, "- ");
+        buildprint("CAC:", i, " ");
 
         if (m_index[i].hand)
-            buildprint("PTR: 0x", hex(*m_index[i].hand), ", ");
+            buildprint("OFS:0x", hex((int32_t)(*m_index[i].hand - m_baseAddress)), " ");
         else
-            buildprint("PTR: NULL, ");
+        {
+            buildprint("FREE\n");
+            continue;
+        }
 
-        buildprint("SIZ: ", m_index[i].leng, ", ");
+        buildprint("SIZ:", m_index[i].leng, " ");
 
         if (m_index[i].lock)
         {
-            buildprint("LCK: ", *m_index[i].lock, "\n");
+            buildprint("LCK:", *m_index[i].lock, " ");
 
             if (*m_index[i].lock)
                 usedSize += m_index[i].leng;
         }
         else
-            buildprint("LCK: NULL\n");
-    }
+            buildprint("LCK: NULL ");
 
-    buildprint("Cache used: ", usedSize, "\n");
-    buildprint("Remaining:  ", m_totalSize - usedSize, "\n");
-    buildprint("Total size: ", m_totalSize, "\n");
-    buildprint("Num blocks: ", m_numBlocks, "\n");
+        int const tile = inthash_find(&h_blocktotile, *m_index[i].hand);
+
+        if (tile != -1)
+            buildprint("PIC:", tile, " ");
+
+        int const overhead = m_index[i].leng - m_index[i].asked;
+        unusable += overhead;
+        buildprint("OVH:", overhead, "\n");
+    }
+    
+    buildprint("Cache size:  ", m_totalSize >> 10, " KB\n"
+               "Used:        ", usedSize >> 10, " KB\n"
+               "Remaining:   ", (m_totalSize - usedSize) >> 10, " KB\n"
+               "Block count: ", m_numBlocks, "/", m_maxBlocks, "\n");
+
+    initprintf("%d KB (%.2f%%) space made unusable by %d KB block alignment.\n", unusable >> 10, (float)unusable / m_totalSize * 100.f,
+               m_minBlockSize >> 10);
+
+    inthash_free(&h_blocktotile);
 }
 #else
-void cache1d::initBuffer(intptr_t dacachestart, int32_t dacachesize)
+void cache1d::initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t minsize /*= 0*/)
 {
     UNREFERENCED_PARAMETER(dacachestart);
     UNREFERENCED_PARAMETER(dacachesize);
+    UNREFERENCED_PARAMETER(minsize);
 }
 
 void cache1d::allocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr)
@@ -322,4 +369,5 @@ void cache1d::allocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlock
 
 void cache1d::ageBlocks(void) {}
 void cache1d::report(void) {}
+void cache1d::reset(void) {}
 #endif

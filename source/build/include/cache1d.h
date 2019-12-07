@@ -9,13 +9,17 @@
 #ifndef cache1d_h_
 #define cache1d_h_
 
-#include "compat.h"
+#include <inttypes.h>
+
+#define MINCACHEINDEXSIZE 1024
+#define MINCACHEBLOCKSIZE 16
 
 typedef struct
 {
     char *    lock;
     intptr_t *hand;
     int32_t   leng;
+    int32_t  asked;
 } cacheindex_t;
 
 enum cachelock_t: char
@@ -29,22 +33,26 @@ enum cachelock_t: char
 class cache1d
 {
 public:
-    void    initBuffer(intptr_t dacachestart, int32_t dacachesize);
-    void    allocateBlock(intptr_t *newhandle, int32_t newbytes, char *newlockptr);
-    void    ageBlocks();
-    int32_t findBlock(int32_t newbytes, int32_t *besto, int32_t *bestz);
-    void    report();
+    void    initBuffer(intptr_t dacachestart, uint32_t dacachesize, uint32_t minsize = 0);
+    void    allocateBlock(intptr_t* newhandle, int32_t newbytes, char* newlockptr);
+    void    tryHarder(int32_t const newbytes, int32_t * const besto, int32_t * const bestz);
 
-    inline int numBlocks() { return m_numBlocks; };
-    inline cacheindex_t const * getIndex() { return m_index; }
+    void    ageBlocks(void);
+    int32_t findBlock(int32_t const newbytes, int32_t * const besto, int32_t * const bestz);
+    void    report(void);
+    void    reset(void);
+
+    inline int numBlocks(void) { return m_numBlocks; }
+    inline cacheindex_t const * getIndex(void) { return m_index; }
 
 private:
-    void inc_and_check_cacnum();
+    void inc_and_check_cacnum(void);
 
     cacheindex_t *m_index{};
 
     intptr_t m_baseAddress{};
     int32_t  m_totalSize{};
+    int32_t  m_minBlockSize{};
 
     int m_maxBlocks{};
     int m_numBlocks{};
