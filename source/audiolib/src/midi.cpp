@@ -35,14 +35,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "midi.h"
 
 #include "_midi.h"
-#include "_multivc.h"
 #include "compat.h"
 #include "drivers.h"
-#include "multivoc.h"
 #include "music.h"
 #include "pragmas.h"
 #include "sndcards.h"
-#include "driver_adlib.h"
 
 extern int MV_MixRate;
 extern int ASS_MIDISoundDriver;
@@ -94,6 +91,8 @@ int MV_MIDIRenderTempo = -1;
 int MV_MIDIRenderTimer;
 
 static char *_MIDI_SongPtr;
+
+static void _MIDI_SetChannelVolume(int channel, int volume);
 
 void MIDI_Restart(void)
 {
@@ -400,7 +399,7 @@ static int _MIDI_InterpretControllerInfo(track *Track, int TimeSet, int channel,
     return TimeSet;
 }
 
-static void _MIDI_ServiceRoutine(void)
+void MIDI_ServiceRoutine(void)
 {
     if (!_MIDI_SongActive)
         return;
@@ -514,27 +513,6 @@ static void _MIDI_ServiceRoutine(void)
 
     _MIDI_AdvanceTick();
     _MIDI_GlobalPositionInTicks++;
-}
-
-static void _MIDI_ServiceMultivoc(void)
-{
-    int16_t * buffer16 = (int16_t *)MV_MusicBuffer;
-    int const samples  = MV_BufferSize >> 2;
-
-    for (int i = 0; i < samples; i++)
-    {
-        Bit16s buf[2];
-        while (MV_MIDIRenderTimer >= MV_MixRate)
-        {
-            if (MV_MIDIRenderTempo >= 0)
-                _MIDI_ServiceRoutine();
-            MV_MIDIRenderTimer -= MV_MixRate;
-        }
-        if (MV_MIDIRenderTempo >= 0) MV_MIDIRenderTimer += MV_MIDIRenderTempo;
-        OPL3_GenerateResampled(AL_GetChip(), buf);
-        *buffer16++ = clamp(buf[0]<<AL_PostAmp, INT16_MIN, INT16_MAX);
-        *buffer16++ = clamp(buf[1]<<AL_PostAmp, INT16_MIN, INT16_MAX);
-    }
 }
 
 static int _MIDI_SendControlChange(int channel, int c1, int c2)
@@ -705,6 +683,8 @@ void MIDI_StopSong(void)
     _MIDI_TotalMeasures = 0;
 }
 
+static void _MIDI_InitEMIDI(void);
+
 int MIDI_PlaySong(char *song, int loopflag)
 {
     if (_MIDI_Funcs == nullptr)
@@ -781,7 +761,7 @@ int MIDI_PlaySong(char *song, int loopflag)
     _MIDI_Reset = FALSE;
 
     // this can either stay like this, or I can add another field to the MIDI driver spec that holds the service callback
-    if (SoundDriver_MIDI_StartPlayback(ASS_MIDISoundDriver == ASS_OPL3 ? _MIDI_ServiceMultivoc : _MIDI_ServiceRoutine) != MIDI_Ok)
+    if (SoundDriver_MIDI_StartPlayback() != MIDI_Ok)
         return MIDI_DriverError;
 
     MIDI_SetTempo(120);
@@ -801,17 +781,7 @@ void MIDI_SetTempo(int tempo)
 
 static void _MIDI_InitEMIDI(void)
 {
-    int type = EMIDI_GeneralMIDI;
-
-    switch (ASS_MIDISoundDriver)
-    {
-    case ASS_OPL3:
-        type = EMIDI_SoundBlaster;
-        break;
-    }
-
-    if (ASS_EMIDICard != -1)
-        type = ASS_EMIDICard;
+    int const type = (ASS_EMIDICard != -1) ? ASS_EMIDICard : SoundDriver_MIDI_GetCardType();
 
     _MIDI_ResetTracks();
 

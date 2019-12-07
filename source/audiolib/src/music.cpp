@@ -63,6 +63,8 @@ redetect:
         SoundCard = ASS_OPL3;
     }
 
+    MV_Printf("Initializing MIDI driver... ");
+
     if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
     {
 failed:
@@ -73,7 +75,7 @@ failed:
 
     if (!SoundDriver_IsMIDISupported(SoundCard))
     {
-        MV_Printf("Couldn't init %s\n", SoundDriver_GetName(SoundCard));
+        MV_Printf("%s MIDI output not supported!\n", SoundDriver_GetName(SoundCard));
 
         if (detected < 2)
             goto redetect;
@@ -83,6 +85,9 @@ failed:
 
     ASS_MIDISoundDriver = SoundCard;
 
+    MV_Printf("%s", SoundDriver_GetName(SoundCard));
+
+    // SoundDriver_MIDI_Init() prints to the same line in the log for the MME driver
     int status = SoundDriver_MIDI_Init(&MUSIC_MidiFunctions);
 
     if (status != MUSIC_Ok)
@@ -93,8 +98,7 @@ failed:
         goto failed;
     }
 
-    MV_Printf("%s\n", SoundDriver_GetName(SoundCard));
-
+    MV_Printf("\n");
     MIDI_SetMidiFuncs(&MUSIC_MidiFunctions);
 
     return MUSIC_Ok;

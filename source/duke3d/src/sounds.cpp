@@ -109,8 +109,6 @@ void S_SoundShutdown(void)
 
 void S_MusicStartup(void)
 {
-    initprintf("Initializing MIDI driver... ");
-
     int status;
     if ((status = MUSIC_Init(ud.config.MusicDevice)) == MUSIC_Ok)
     {

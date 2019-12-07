@@ -35,9 +35,10 @@ void NoSoundDrv_PCM_Unlock(void);
 
 int  NoSoundDrv_MIDI_Init(midifuncs *);
 void NoSoundDrv_MIDI_Shutdown(void);
-int  NoSoundDrv_MIDI_StartPlayback(void (*service)(void));
+int  NoSoundDrv_MIDI_StartPlayback(void);
 void NoSoundDrv_MIDI_HaltPlayback(void);
 uint32_t NoSoundDrv_MIDI_GetTick(void);
 void NoSoundDrv_MIDI_SetTempo(int tempo, int division);
 void NoSoundDrv_MIDI_Lock(void);
 void NoSoundDrv_MIDI_Unlock(void);
+void NoSoundDrv_MIDI_Service(void);

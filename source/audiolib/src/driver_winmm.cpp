@@ -26,6 +26,7 @@
 
 #include "compat.h"
 #include "ll.h"
+#include "midi.h"
 #include "midifuncs.h"
 #include "multivoc.h"
 
@@ -51,21 +52,22 @@ enum
 
 static int ErrorCode = WinMMErr_Ok;
 
-static BOOL midiInstalled;
+static BOOL      midiInstalled;
 static HMIDISTRM midiStream;
-static UINT midiDeviceID = MIDI_MAPPER;
-static void (*midiThreadService)(void);
+static UINT      midiDeviceID = MIDI_MAPPER;
+static void    (*midiThreadService)(void);
 static uint32_t midiThreadTimer;
 static uint32_t midiLastEventTime;
 static uint32_t midiThreadQueueTimer;
 static uint32_t midiThreadQueueTicks;
-static HANDLE midiThread;
-static HANDLE midiThreadQuitEvent;
-static HANDLE midiMutex;
-static BOOL midiStreamRunning;
-static int midiLastDivision;
-#define THREAD_QUEUE_INTERVAL 10      // 1/10 sec
-#define MIDI_BUFFER_SPACE   (12*128u)  // 128 note-on events
+static HANDLE   midiThread;
+static HANDLE   midiThreadQuitEvent;
+static HANDLE   midiMutex;
+static BOOL     midiStreamRunning;
+static int      midiLastDivision;
+
+#define THREAD_QUEUE_INTERVAL 10       // 1/10 sec
+#define MIDI_BUFFER_SPACE (12 * 128u)  // 128 note-on events
 
 typedef struct MidiBuffer {
     struct MidiBuffer *next;
@@ -75,22 +77,9 @@ typedef struct MidiBuffer {
     MIDIHDR hdr;
 } MidiBuffer;
 
-static volatile MidiBuffer activeMidiBuffers;
-static volatile MidiBuffer spareMidiBuffers;
+static MidiBuffer activeMidiBuffers;
+static MidiBuffer spareMidiBuffers;
 static MidiBuffer *currentMidiBuffer;
-
-#define MIDI_NOTE_OFF         0x80
-#define MIDI_NOTE_ON          0x90
-#define MIDI_POLY_AFTER_TCH   0xA0
-#define MIDI_CONTROL_CHANGE   0xB0
-#define MIDI_PROGRAM_CHANGE   0xC0
-#define MIDI_AFTER_TOUCH      0xD0
-#define MIDI_PITCH_BEND       0xE0
-#define MIDI_META_EVENT       0xFF
-#define MIDI_END_OF_TRACK     0x2F
-#define MIDI_TEMPO_CHANGE     0x51
-#define MIDI_MONO_MODE_ON     0x7E
-#define MIDI_ALL_NOTES_OFF    0x7B
 
 
 int WinMMDrv_GetError(void)
@@ -468,7 +457,7 @@ static void Func_NoteOff( int channel, int key, int velocity )
     unsigned char * data;
 
     if (midi_get_buffer(3, &data)) {
-        data[0] = MIDI_NOTE_OFF | channel;
+        data[0] = WINMM_NOTE_OFF | channel;
         data[1] = key;
         data[2] = velocity;
         midi_sequence_event();
@@ -480,7 +469,7 @@ static void Func_NoteOn( int channel, int key, int velocity )
     unsigned char * data;
 
     if (midi_get_buffer(3, &data)) {
-        data[0] = MIDI_NOTE_ON | channel;
+        data[0] = WINMM_NOTE_ON | channel;
         data[1] = key;
         data[2] = velocity;
         midi_sequence_event();
@@ -492,7 +481,7 @@ static void Func_PolyAftertouch( int channel, int key, int pressure )
     unsigned char * data;
 
     if (midi_get_buffer(3, &data)) {
-        data[0] = MIDI_POLY_AFTER_TCH | channel;
+        data[0] = WINMM_POLY_AFTER_TCH | channel;
         data[1] = key;
         data[2] = pressure;
         midi_sequence_event();
@@ -504,7 +493,7 @@ static void Func_ControlChange( int channel, int number, int value )
     unsigned char * data;
 
     if (midi_get_buffer(3, &data)) {
-        data[0] = MIDI_CONTROL_CHANGE | channel;
+        data[0] = WINMM_CONTROL_CHANGE | channel;
         data[1] = number;
         data[2] = value;
         midi_sequence_event();
@@ -516,7 +505,7 @@ static void Func_ProgramChange( int channel, int program )
     unsigned char * data;
 
     if (midi_get_buffer(2, &data)) {
-        data[0] = MIDI_PROGRAM_CHANGE | channel;
+        data[0] = WINMM_PROGRAM_CHANGE | channel;
         data[1] = program;
         midi_sequence_event();
     } else MV_Printf("WinMM Func_ProgramChange error\n");
@@ -527,7 +516,7 @@ static void Func_ChannelAftertouch( int channel, int pressure )
     unsigned char * data;
 
     if (midi_get_buffer(2, &data)) {
-        data[0] = MIDI_AFTER_TOUCH | channel;
+        data[0] = WINMM_AFTER_TOUCH | channel;
         data[1] = pressure;
         midi_sequence_event();
     } else MV_Printf("WinMM Func_ChannelAftertouch error\n");
@@ -538,7 +527,7 @@ static void Func_PitchBend( int channel, int lsb, int msb )
     unsigned char * data;
 
     if (midi_get_buffer(3, &data)) {
-        data[0] = MIDI_PITCH_BEND | channel;
+        data[0] = WINMM_PITCH_BEND | channel;
         data[1] = lsb;
         data[2] = msb;
         midi_sequence_event();
@@ -657,10 +646,9 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
 
     WinMMDrv_MIDI_Lock();
     midi_gc_buffers();
-    while (midiThreadTimer < midiThreadQueueTimer) {
-        if (midiThreadService) {
-            midiThreadService();
-        }
+    while (midiThreadTimer < midiThreadQueueTimer)
+    {
+        midiThreadService();
         midiThreadTimer++;
     }
     midi_flush_current_buffer();
@@ -687,10 +675,9 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
 
             WinMMDrv_MIDI_Lock();
             midi_gc_buffers();
-            while (midiThreadTimer < midiThreadQueueTimer) {
-                if (midiThreadService) {
-                    midiThreadService();
-                }
+            while (midiThreadTimer < midiThreadQueueTimer)
+            {
+                midiThreadService();
                 midiThreadTimer++;
             }
             midi_flush_current_buffer();
@@ -704,13 +691,13 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
     return 0;
 }
 
-int WinMMDrv_MIDI_StartPlayback(void (*service)(void))
+int WinMMDrv_MIDI_StartPlayback(void)
 {
     MMRESULT rv;
 
     WinMMDrv_MIDI_HaltPlayback();
 
-    midiThreadService = service;
+    midiThreadService = WinMMDrv_MIDI_Service;
 
     midiThreadQuitEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
     if (!midiThreadQuitEvent) {
@@ -806,7 +793,7 @@ void WinMMDrv_MIDI_SetTempo(int tempo, int division)
     }
 
     if (midiLastDivision != division) {
-        if (running && WinMMDrv_MIDI_StartPlayback(midiThreadService) != WinMMErr_Ok) {
+        if (running && WinMMDrv_MIDI_StartPlayback() != WinMMErr_Ok) {
             return;
         }
 
@@ -835,4 +822,4 @@ void WinMMDrv_MIDI_Unlock(void)
     ReleaseMutex(midiMutex);
 }
 
-// vim:ts=4:sw=4:expandtab:
+void WinMMDrv_MIDI_Service(void) { MIDI_ServiceRoutine(); }

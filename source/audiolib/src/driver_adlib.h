@@ -31,7 +31,8 @@ const char *AdLibDrv_ErrorString(int ErrorNumber);
 
 int  AdLibDrv_MIDI_Init(midifuncs *);
 void AdLibDrv_MIDI_Shutdown(void);
-int  AdLibDrv_MIDI_StartPlayback(void (*service)(void));
+int  AdLibDrv_MIDI_StartPlayback(void);
 void AdLibDrv_MIDI_HaltPlayback(void);
 void AdLibDrv_MIDI_SetTempo(int tempo, int division);
+void AdLibDrv_MIDI_Service(void);
 
