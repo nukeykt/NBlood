@@ -555,6 +555,8 @@ void WinMMDrv_MIDI_PrintDevices(void)
         if (!midiOutGetDevCaps(i, &midicaps, sizeof(MIDIOUTCAPS)))
             MV_Printf("%d: %s  ", i, midicaps.szPname);
     }
+
+    MV_Printf("\n");
 }
 
 int WinMMDrv_MIDI_GetNumDevices(void) { return midiOutGetNumDevs(); }

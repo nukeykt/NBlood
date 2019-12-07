@@ -60,17 +60,10 @@ void S_SoundStartup(void)
     void *initdata = NULL;
 #endif
 
-    initprintf("Initializing sound... ");
-
     int status = FX_Init(ud.config.NumVoices, ud.config.NumChannels, ud.config.MixRate, initdata);
-    if (status != FX_Ok)
-    {
-        initprintf("failed! %s\n", FX_ErrorString(status));
-        return;
-    }
 
-    initprintf("%d voices, %d channels, %d-bit %d Hz\n", ud.config.NumVoices, ud.config.NumChannels,
-        ud.config.NumBits, ud.config.MixRate);
+    if (status != FX_Ok)
+        return;
 
     for (int i = 0; i <= g_highestSoundIdx; ++i)
     {

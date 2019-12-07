@@ -64,16 +64,16 @@ Pan MV_PanTable[MV_NUMPANPOSITIONS][MV_MAXVOLUME + 1];
 
 int MV_Installed;
 static int MV_TotalVolume = MV_MAXTOTALVOLUME;
-static int MV_MaxVoices = 1;
 
 int MV_BufferSize = MV_MIXBUFFERSIZE;
 static int MV_BufferLength;
 
 static int MV_NumberOfBuffers = MV_NUMBEROFBUFFERS;
 
-static int MV_Channels = 1;
-
+int MV_MaxVoices = 1;
+int MV_Channels = 1;
 int MV_MixRate;
+void *MV_InitDataPtr;
 
 static int MV_BufferEmpty[MV_NUMBEROFBUFFERS];
 char *MV_MixBuffer[(MV_NUMBEROFBUFFERS << 1) + 1];
@@ -836,6 +836,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     }
 
     MV_Installed    = TRUE;
+    MV_InitDataPtr  = initdata;
     MV_CallBackFunc = nullptr;
     MV_ReverbLevel  = 0;
     MV_ReverbVolume = 0.f;

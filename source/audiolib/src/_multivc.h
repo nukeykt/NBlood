@@ -239,6 +239,11 @@ extern int MV_MixRate;
 extern char *MV_MusicBuffer;
 extern int MV_BufferSize;
 
+extern int MV_MaxVoices;
+extern int MV_Channels;
+extern int MV_MixRate;
+extern void *MV_InitDataPtr;
+
 extern int MV_MIDIRenderTempo;
 extern int MV_MIDIRenderTimer;
 
