@@ -241,7 +241,7 @@ int AL_PostAmp = 3;
     LL_RemoveNode((char *)(node), (char **)&((listhead)->start), (char **)&((listhead)->end), (intptr_t) & ((type *)0)->next, \
                   (intptr_t) & ((type *)0)->prev)
 
-static void LL_RemoveNode(char *item, char **head, char **tail, intptr_t next, intptr_t prev)
+static void LL_RemoveNode(char * __restrict item, char ** __restrict head, char ** __restrict tail, intptr_t next, intptr_t prev)
 {
     if (OFFSET(item, prev) == nullptr)
         *head = OFFSET(item, next);
@@ -257,7 +257,7 @@ static void LL_RemoveNode(char *item, char **head, char **tail, intptr_t next, i
     OFFSET(item, prev) = nullptr;
 }
 
-static void LL_AddNode(char *item, char **head, char **tail, intptr_t next, intptr_t prev)
+static void LL_AddNode(char * __restrict item, char ** __restrict head, char ** __restrict tail, intptr_t next, intptr_t prev)
 {
     OFFSET(item, prev) = nullptr;
     OFFSET(item, next) = *head;
