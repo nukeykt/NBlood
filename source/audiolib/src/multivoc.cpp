@@ -237,9 +237,9 @@ static void MV_ServiceVoc(void)
     }
     else
     {
-        char const *const end    = MV_MixBuffer[0] + MV_BufferLength;
-        char *            dest   = MV_MixBuffer[MV_MixPage];
-        char const *      source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
+        char const *const __restrict end    = MV_MixBuffer[0] + MV_BufferLength;
+        char *            __restrict dest   = MV_MixBuffer[MV_MixPage];
+        char const *      __restrict source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
 
         if (source < MV_MixBuffer[ 0 ])
             source += MV_BufferLength;
@@ -288,15 +288,13 @@ static void MV_ServiceVoc(void)
     if (MV_MixMusic)
     {
         MV_MusicCallback();
-        int16_t *source = (int16_t*)MV_MusicBuffer;
-        int16_t *dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
+        int16_t * __restrict source = (int16_t*)MV_MusicBuffer;
+        int16_t * __restrict dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
         for (int32_t i = 0; i < MV_BufferSize>>2; i++)
         {
-            int32_t sl = *source++;
-            int32_t sr = *source++;
-            *dest = clamp(*dest+sl,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
             dest++;
-            *dest = clamp(*dest+sr,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
             dest++;
         }
     }
