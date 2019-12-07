@@ -35,6 +35,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # include <mmsystem.h>
 #endif
 
+#ifdef RENDERTYPESDL
+# include "driver_sdl.h"
+#endif
+
 int FX_ErrorCode = FX_Ok;
 int FX_Installed;
 
@@ -58,12 +62,19 @@ static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
 {
     int32_t r = osdcmd_cvar_set(parm);
 
+    if (parm->numparms == 0)
+    {
 #ifdef _WIN32
-    if (parm->numparms == 0 && !Bstrcasecmp(parm->name, "mus_winmm_device"))
-        WinMMDrv_MIDI_PrintDevices();
+        if (!Bstrcasecmp(parm->name, "mus_winmm_device"))
+            WinMMDrv_MIDI_PrintDevices();
 #endif
+#ifdef RENDERTYPESDL
+        if (!Bstrcasecmp(parm->name, "snd_sdl_audiodriver"))
+            SDLDrv_PCM_PrintDevices();
+#endif
+    }
 
-    if (r != OSDCMD_OK) return r;
+    if (r != OSDCMD_OK || parm->numparms < 1) return r;
 
     if (!Bstrcasecmp(parm->name, "mus_emidicard"))
         MIDI_Restart();
@@ -73,51 +84,65 @@ static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
     else if (!Bstrcasecmp(parm->name, "mus_xmp_interpolation"))
         MV_SetXMPInterpolation();
 #endif
+#ifdef RENDERTYPESDL
+    else if (!Bstrcasecmp(parm->name, "snd_sdl_audiodriver"))
+    {
+        if (!FX_Installed || !Bstrcasecmp(parm->parms[0], SDLDrv_PCM_GetDevice()))
+            return r;
+
+        if (!SDLDrv_PCM_CheckDevice(parm->parms[0]))
+        {
+            SDLDrv_PCM_PrintDevices();
+            return r;
+        }
+
+        FX_Init(MV_MaxVoices, MV_Channels, MV_MixRate, MV_InitDataPtr);
+    }
+#endif
+
     return r;
 }
 
-int FX_Init(int numvoices, int numchannels, int mixrate, void *initdata)
+void FX_InitCvars(void)
+{
+    static osdcvardata_t cvars_audiolib [] ={
+        { "mus_emidicard", "force a specific EMIDI instrument set", (void*) &ASS_EMIDICard, CVAR_INT | CVAR_FUNCPTR, -1, 10 },
+        { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void*) &AL_AdditiveMode, CVAR_BOOL, 0, 1 },
+        { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void*) &AL_PostAmp, CVAR_INT, 0, 3 },
+        { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void*) &AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
+#ifdef _WIN32
+        { "mus_winmm_device", "select Windows MME MIDI device", (void*) &WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
+#endif
+#ifdef HAVE_XMP
+        { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void*) &MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
+#endif
+#ifdef RENDERTYPESDL
+        { "snd_sdl_audiodriver", "select SDL audio backend: platform-specific string typically set by the SDL_AUDIODRIVER environment variable",
+          (void *)SDLAudioDriverName, CVAR_STRING | CVAR_FUNCPTR, 0, sizeof(SDLAudioDriverName) - 1 },
+#endif
+    };
+
+    for (auto& i : cvars_audiolib)
+        OSD_RegisterCvar(&i, (i.flags & CVAR_FUNCPTR) ? osdcmd_cvar_set_audiolib : osdcmd_cvar_set);
+}
+
+int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
 {
     if (FX_Installed)
         FX_Shutdown();
-    else
-    {
-        static int init;
-
-        static osdcvardata_t cvars_audiolib[] = {
-            { "mus_emidicard", "force a specific EMIDI instrument set", (void *)&ASS_EMIDICard, CVAR_INT | CVAR_FUNCPTR, -1, 10 },
-            { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void *)&AL_AdditiveMode, CVAR_BOOL, 0, 1 },
-            { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void *)&AL_PostAmp, CVAR_INT, 0, 3 },
-            { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void *)&AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
-#ifdef _WIN32
-            { "mus_winmm_device", "select Windows MME MIDI device", (void *)&WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
-#endif
-#ifdef HAVE_XMP
-            { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void *)&MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
-#endif
-        };
-
-        if (!init++)
-        {
-            for (auto &i : cvars_audiolib)
-                OSD_RegisterCvar(&i, (i.flags & CVAR_FUNCPTR) ? osdcmd_cvar_set_audiolib : osdcmd_cvar_set);
-        }
-    }
-
-    int SoundCard = ASS_AutoDetect;
-
-    if (SoundCard == ASS_AutoDetect)
-    {
+   
 #if defined RENDERTYPESDL
-        SoundCard = ASS_SDL;
+    int SoundCard = ASS_SDL;
 #elif defined RENDERTYPEWIN
-        SoundCard = ASS_DirectSound;
+    int SoundCard = ASS_DirectSound;
 #endif
-    }
+
+    MV_Printf("Initializing sound: ");
 
     if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
     {
         FX_SetErrorCode(FX_InvalidCard);
+        MV_Printf("failed! %s\n", FX_ErrorString(FX_InvalidCard));
         return FX_Error;
     }
 
@@ -133,11 +158,15 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void *initdata)
     if (MV_Init(SoundCard, mixrate, numvoices, numchannels, initdata) != MV_Ok)
     {
         FX_SetErrorCode(FX_MultiVocError);
+        MV_Printf("failed! %s\n", MV_ErrorString(MV_DriverError));
         status = FX_Error;
     }
 
     if (status == FX_Ok)
+    {
+        MV_Printf(": %.1f KHz %s with %d voices\n", mixrate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
         FX_Installed = TRUE;
+    }
 
     return status;
 }

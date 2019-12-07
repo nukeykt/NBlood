@@ -63,7 +63,7 @@ redetect:
         SoundCard = ASS_OPL3;
     }
 
-    MV_Printf("Initializing MIDI driver... ");
+    MV_Printf("Initializing MIDI driver: ");
 
     if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
     {
