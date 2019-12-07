@@ -1038,7 +1038,7 @@ endif
 #    VC_REV := $(word 2,$(subst @, ,$(filter git-svn-id:$(GIT_SVN_URL)@%,$(subst : ,:,$(shell git log -1 $(GIT_SVN_FETCH::%=%))))))
 #endif
 ifneq (,$(VC_REV)$(VC_REV_CUSTOM))
-    REVFLAG := -DREV="\"$(VC_REV)$(VC_REV_CUSTOM)\""
+    REVFLAG := -DREV="$(VC_REV)$(VC_REV_CUSTOM)"
 endif
 
 

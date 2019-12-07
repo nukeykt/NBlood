@@ -142,3 +142,23 @@
 #ifndef UNREFERENCED_PARAMETER
 # define UNREFERENCED_PARAMETER(x) (x) = (x)
 #endif
+
+#ifdef RC_INVOKED
+# ifndef __DATE__
+#  define __DATE__ "0000-00-00"
+#  define EDUKE32_FAKE_DATE
+# endif
+# ifndef __TIME__
+#  define __TIME__ "00:00:00"
+#  define EDUKE32_FAKE_TIME
+# endif
+#endif
+
+#if defined REV
+# define REV__(x) #x
+# define REV_(x) REV__(x)
+# define REVSTR REV_(REV)
+#else
+# define REVSTR "r(?)"
+# define EDUKE32_UNKNOWN_REVISION
+#endif
