@@ -136,5 +136,8 @@
     <ClInclude Include="..\..\source\audiolib\src\driver_adlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\include\opl3_reg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
