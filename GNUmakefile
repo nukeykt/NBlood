@@ -1059,7 +1059,7 @@ $$($1_obj)/%.$$o: $$($1_src)/%.glsl | $$($1_obj)
 
 $$($1_obj)/%.$$o: $$($1_rsrc)/%.rc | $$($1_obj)
 	$$(COMPILE_STATUS)
-	$$(RECIPE_IF) $$(RC) -i $$< -o $$@ --include-dir=$$(engine_inc) --include-dir=$$($1_src) --include-dir=$$($1_rsrc) -DPOLYMER=$$(POLYMER) $$(RECIPE_RESULT_COMPILE)
+	$$(RECIPE_IF) $$(RC) -i $$< -o $$@ --include-dir=$$(engine_inc) --include-dir=$$($1_src) --include-dir=$$($1_rsrc) -DPOLYMER=$$(POLYMER) $(REVFLAG) $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_rsrc)/%.c | $$($1_obj)
 	$$(COMPILE_STATUS)
