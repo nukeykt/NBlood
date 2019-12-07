@@ -2889,7 +2889,7 @@ void P_GetInput(int const playerNum)
     auto const pPlayer = g_player[playerNum].ps;
     ControlInfo info;
 
-    if ((pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
+    if (g_cheatBufLen > 1 || (pPlayer->gm & (MODE_MENU|MODE_TYPE)) || (ud.pause_on && !KB_KeyPressed(sc_Pause)))
     {
         if (!(pPlayer->gm&MODE_MENU))
             CONTROL_GetInput(&info);
@@ -3052,20 +3052,23 @@ void P_GetInput(int const playerNum)
     int const sectorLotag = pPlayer->cursectnum != -1 ? sector[pPlayer->cursectnum].lotag : 0;
     int const crouchable = sectorLotag != 2 && (sectorLotag != 1 || pPlayer->spritebridge) && !pPlayer->jetpack_on;
 
-    if (pPlayer->cheat_phase == 0 && BUTTON(gamefunc_Toggle_Crouch))
+    if (pPlayer->cheat_phase < 1)
     {
-        pPlayer->crouch_toggle = !pPlayer->crouch_toggle && crouchable;
+        if (BUTTON(gamefunc_Toggle_Crouch))
+        {
+            pPlayer->crouch_toggle = !pPlayer->crouch_toggle && crouchable;
 
-        if (crouchable)
-            CONTROL_ClearButton(gamefunc_Toggle_Crouch);
+            if (crouchable)
+                CONTROL_ClearButton(gamefunc_Toggle_Crouch);
+        }
+
+        if (BUTTON(gamefunc_Crouch) || BUTTON(gamefunc_Jump) || pPlayer->jetpack_on || (!crouchable && pPlayer->on_ground))
+            pPlayer->crouch_toggle = 0;
+
+        int const crouching = BUTTON(gamefunc_Crouch) || BUTTON(gamefunc_Toggle_Crouch) || pPlayer->crouch_toggle;
+
+        localInput.bits |= (BUTTON(gamefunc_Jump) << SK_JUMP) | (crouching << SK_CROUCH);
     }
-
-    if (BUTTON(gamefunc_Crouch) || BUTTON(gamefunc_Jump) || pPlayer->jetpack_on || (!crouchable && pPlayer->on_ground))
-        pPlayer->crouch_toggle = 0;
-
-    int const crouching = BUTTON(gamefunc_Crouch) || BUTTON(gamefunc_Toggle_Crouch) || pPlayer->crouch_toggle;
-
-    localInput.bits |= (BUTTON(gamefunc_Jump) << SK_JUMP) | (crouching << SK_CROUCH);
 
     localInput.bits |= (BUTTON(gamefunc_Aim_Up) || (BUTTON(gamefunc_Dpad_Aiming) && input.fvel > 0)) << SK_AIM_UP;
     localInput.bits |= (BUTTON(gamefunc_Aim_Down) || (BUTTON(gamefunc_Dpad_Aiming) && input.fvel < 0)) << SK_AIM_DOWN;
