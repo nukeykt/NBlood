@@ -41,6 +41,7 @@ static uint32_t osdkeytime = 0;
 static uint32_t osdscrtime = 0;
 
 #define OSD_EDIT_LINE_WIDTH (osd->draw.cols - 1 - 3)
+#define OSDMAXERRORS 4096
 
 static hashtable_t h_osd = { OSDMAXSYMBOLS >> 1, NULL };
 
@@ -714,7 +715,7 @@ void OSD_Init(void)
     osd->text.maxlines = OSDDEFAULTMAXLINES;  // overwritten later
     osd->draw.rows     = OSDDEFAULTROWS;
     osd->draw.cols     = OSDDEFAULTCOLS;
-    osd->log.cutoff    = OSDLOGCUTOFF;
+    osd->log.cutoff    = OSDMAXERRORS;
 
     osd->history.maxlines = OSDMINHISTORYDEPTH;
 
@@ -819,6 +820,7 @@ void OSD_SetParameters(int promptShade, int promptPal, int editShade, int editPa
     draw.textshade   = textShade;
     draw.textpal     = textPal;
     draw.errorfmt    = errorStr;
+    draw.errfmtlen   = errorStr ? Bstrlen(errorStr) : -1;
     draw.highlight   = highlight;
 
     osd->flags |= flags;
@@ -1613,114 +1615,106 @@ static inline void OSD_LineFeed(void)
         t.lines++;
 }
 
-#define MAX_ERRORS 4096
-
-void OSD_Puts(const char *tmpstr)
+void OSD_Puts(const char *putstr)
 {
-    if (tmpstr[0] == 0)
+    if (putstr[0] == 0 || !osd)
         return;
 
-    if (!osd)
-        OSD_Init();
+    auto &t = osd->text;
+    auto &d = osd->draw;
+    auto &l = osd->log;
 
-    const char *chp;
+    int textPal   = d.textpal;
+    int textShade = d.textshade;
 
-    int textPal   = osd->draw.textpal;
-    int textShade = osd->draw.textshade;
+    static int errorCnt;
 
     mutex_lock(&osd->mutex);
 
-    osdlog_t &log = osd->log;
-
-    if (tmpstr[0]=='^' && tmpstr[1]=='1' && tmpstr[2]=='0' && ++log.errors > MAX_ERRORS)
+    if (Bstrlen(putstr) >= (unsigned)d.errfmtlen && !Bstrncmp(putstr, d.errorfmt, d.errfmtlen) && (unsigned)++errorCnt > (unsigned)l.cutoff)
     {
-        if (log.errors == MAX_ERRORS + 1)
-            tmpstr = "\nToo many errors. Logging errors stopped.\n";
-        else
+        if (errorCnt >= l.cutoff + 2)
         {
-            log.errors = MAX_ERRORS + 2;
+            errorCnt = l.cutoff + 2;
             mutex_unlock(&osd->mutex);
             return;
         }
+
+        putstr = "\nError count exceeded \"osdlogcutoff\"!\n";
+    }
+    else if ((unsigned)errorCnt < (unsigned)l.cutoff)
+    {
+        auto s = Xstrdup(putstr);
+        buildvfs_fputs(OSD_StripColors(s, putstr), osdlog);
+        Bprintf("%s", s);
+        Xfree(s);
     }
 
-    if (log.lines < log.cutoff)
-    {
-        char *chp2 = Xstrdup(tmpstr);
-        buildvfs_fputs(OSD_StripColors(chp2, tmpstr), osdlog);
-        Bprintf("%s", chp2);
-        Xfree(chp2);
-    }
-    else if (log.lines == log.cutoff)
-    {
-        buildvfs_fputs("\nLog file full! Consider increasing \"osdlogcutoff\".\n", osdlog);
-        log.lines = log.cutoff + 1;
-    }
+    auto s = putstr;
 
-    chp = tmpstr;
     do
     {
-        if (*chp == '\n')
+        if (*s == '\n')
         {
-            osd->text.pos = 0;
-            ++log.lines;
+            t.pos = 0;
+            ++l.lines;
             OSD_LineFeed();
             continue;
         }
 
-        if (*chp == '\r')
+        if (*s == '\r')
         {
-            osd->text.pos = 0;
+            t.pos = 0;
             continue;
         }
 
-        if (*chp == '^')
+        if (*s == '^')
         {
-            if (isdigit(*(chp+1)))
+            // palette
+            if (isdigit(*(s+1)))
             {
-                char smallbuf[4];
-                if (!isdigit(*(++chp+1)))
+                if (!isdigit(*(++s+1)))
                 {
-                    smallbuf[0] = *(chp);
-                    smallbuf[1] = '\0';
+                    char const smallbuf[] = { *(s), '\0' };
                     textPal = Batoi(smallbuf);
                     continue;
                 }
 
-                smallbuf[0] = *(chp++);
-                smallbuf[1] = *(chp);
-                smallbuf[2] = '\0';
+                char const smallbuf[] = { *(s), *(s+1), '\0' };
+                s++;
                 textPal = Batoi(smallbuf);
                 continue;
             }
 
-            if (Btoupper(*(chp+1)) == 'S')
+            // shade
+            if (Btoupper(*(s+1)) == 'S')
             {
-                chp++;
-                if (isdigit(*(++chp)))
-                    textShade = *chp;
+                s++;
+                if (isdigit(*(++s)))
+                    textShade = *s;
                 continue;
             }
 
-            if (Btoupper(*(chp+1)) == 'O')
+            // reset
+            if (Btoupper(*(s+1)) == 'O')
             {
-                chp++;
-                textPal   = osd->draw.textpal;
-                textShade = osd->draw.textshade;
+                s++;
+                textPal   = d.textpal;
+                textShade = d.textshade;
                 continue;
             }
         }
 
-        osd->text.buf[osd->text.pos] = *chp;
-        osd->text.fmt[osd->text.pos++] = textPal+(textShade<<5);
+        t.buf[t.pos] = *s;
+        t.fmt[t.pos] = textPal + (textShade << 5);
 
-        if (osd->text.pos == osd->draw.cols)
+        if (++t.pos == d.cols)
         {
-            osd->text.pos = 0;
+            t.pos = 0;
             OSD_LineFeed();
         }
     }
-    while (*(++chp));
+    while (*(++s));
 
     mutex_unlock(&osd->mutex);
 }
