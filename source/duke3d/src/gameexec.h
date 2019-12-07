@@ -37,7 +37,7 @@ int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playe
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum);
 int32_t VM_ExecuteEventWithValue(int const nEventID, int const spriteNum, int const playerNum, int32_t const nReturn);
 
-static FORCE_INLINE bool VM_HaveEvent(int const nEventID)
+static FORCE_INLINE int VM_HaveEvent(int const nEventID)
 {
 #ifdef LUNATIC
     return L_IsInitialized(&g_ElState) && El_HaveEvent(nEventID);
@@ -129,7 +129,7 @@ void G_GetTimeDate(int32_t * pValues);
 int G_StartTrack(int levelNum);
 #ifdef LUNATIC
 void G_ShowView(vec3_t vec, fix16_t a, fix16_t horiz, int sect,
-                int ix1, int iy1, int ix2, int iy2, bool unbiasedp);
+                int ix1, int iy1, int ix2, int iy2, int unbiasedp);
 void P_AddWeaponMaybeSwitchI(int32_t snum, int32_t weap);
 void VM_FallSprite(int32_t i);
 int32_t VM_ResetPlayer2(int32_t snum, int32_t flags);
