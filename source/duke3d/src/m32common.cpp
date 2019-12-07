@@ -548,13 +548,13 @@ int32_t map_undoredo(int32_t dir)
     if (mapstate->num[0])
     {
         // restore sector[]
-        LZ4_decompress_safe(mapstate->sws[0]+4, (char*)sector, mapstate->size[0], MAXSECTORS*sizeof(sectortype));
+        LZ4_decompress_safe(mapstate->sws[0]+4, (char*)sector, mapstate->size[0], numsectors*sizeof(sectortype));
 
         if (mapstate->num[1])  // restore wall[]
-            LZ4_decompress_safe(mapstate->sws[1]+4, (char*)wall, mapstate->size[1], MAXWALLS*sizeof(walltype));
+            LZ4_decompress_safe(mapstate->sws[1]+4, (char*)wall, mapstate->size[1], numwalls*sizeof(walltype));
 
         if (mapstate->num[2])  // restore sprite[]
-            LZ4_decompress_safe(mapstate->sws[2]+4, (char*)sprite, mapstate->size[2], MAXSPRITES*sizeof(spritetype));
+            LZ4_decompress_safe(mapstate->sws[2]+4, (char*)sprite, mapstate->size[2], (mapstate->num[2])*sizeof(spritetype));
     }
 
     // insert sprites
