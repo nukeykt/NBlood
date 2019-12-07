@@ -6,7 +6,8 @@
 #endif
 
 #ifndef _WIN32_WINNT
-# define _WIN32_WINNT _WIN32_WINNT_VISTA
+# define _WIN32_WINNT _WIN32_WINNT_WINXP
+#define LOCALE_SNAME 0x0000005c  // locale name (ie: en-us)
 #endif
 
 #ifndef WIN32_LEAN_AND_MEAN

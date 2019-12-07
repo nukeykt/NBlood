@@ -50,7 +50,7 @@ static FORCE_INLINE uint64_t timerSampleRDTSC()
 #elif defined __GNUC__
     __sync_synchronize();
 #else
-    std::atomic_thread_fence(std::memory_order_seq_cst);
+    atomic_thread_fence(memory_order_seq_cst);
 #endif
 
     uint64_t const result = zpl_rdtsc();
@@ -95,8 +95,6 @@ uint32_t timerGetTicks(void)
 // (May be not monotonic for certain configurations.)
 double timerGetHiTicks(void) { return duration<double, nano>(steady_clock::now().time_since_epoch()).count() / 1000000.0; }
 
-EDUKE32_STATIC_ASSERT((high_resolution_clock::period::den/high_resolution_clock::period::num) >= 1000000000);
-
 uint64_t timerGetTicksU64(void)
 {
     switch (sys_timer)
@@ -110,8 +108,6 @@ uint64_t timerGetTicksU64(void)
         default:
         case TIMER_AUTO:
 #endif // HAVE_TIMER_SDL
-        case TIMER_CHRONO:
-            return high_resolution_clock::now().time_since_epoch().count() * high_resolution_clock::period::num;
 #ifdef _WIN32
 #if !defined HAVE_TIMER_SDL
         default:
@@ -147,8 +143,6 @@ uint64_t timerGetFreqU64(void)
         default:
         case TIMER_AUTO:
 #endif // HAVE_TIMER_SDL
-        case TIMER_CHRONO:
-            return high_resolution_clock::period::den;
 #ifdef _WIN32
 #if !defined HAVE_TIMER_SDL
         default:
@@ -171,7 +165,7 @@ uint64_t timerGetFreqU64(void)
 
 static int osdcmd_sys_timer(osdcmdptr_t parm)
 {
-    static char constexpr const *s[] = { "auto", "QueryPerformanceCounter", "SDL", "std::chrono", "RDTSC instruction" };
+    static char constexpr const *s[] = { "auto", "QueryPerformanceCounter", "SDL", "RDTSC instruction" };
     int const r = osdcmd_cvar_set(parm);
 
     if (r != OSDCMD_OK)
@@ -216,9 +210,8 @@ int timerInit(int const tickspersecond)
 #ifdef HAVE_TIMER_SDL
                                                 "   2: SDL timer\n"
 #endif
-                                                "   3: std::chrono\n"
 #ifdef ZPL_HAVE_RDTSC
-                                                "   4: RDTSC instruction\n"
+                                                "   3: RDTSC instruction\n"
 #endif
                                                 , (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
 

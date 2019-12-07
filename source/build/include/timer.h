@@ -13,8 +13,7 @@ enum buildtimertype
     TIMER_AUTO   = 0,
     TIMER_QPC    = 1,
     TIMER_SDL    = 2,
-    TIMER_CHRONO = 3,
-    TIMER_RDTSC  = 4,
+    TIMER_RDTSC  = 3,
 };
 
 int      timerInit(int const tickspersecond);
