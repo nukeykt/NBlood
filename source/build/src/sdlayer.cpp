@@ -1918,11 +1918,11 @@ void videoShowFrame(int32_t w)
                     static uint64_t lastSwapTime;
                     // busy loop until we're ready to update again
                     // sit on it and spin
-                    currentVBlankInterval = timerGetFreqU64()/(double)refreshfreq;
-                    uint64_t swapTime = timerGetTicksU64();
+                    currentVBlankInterval = timerGetPerformanceFrequency()/(double)refreshfreq;
+                    uint64_t swapTime = timerGetPerformanceCounter();
                     if (lastSwapTime > swapTime)
                         lastSwapTime = swapTime;
-                    do { } while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval);
+                    do { } while ((double)(timerGetPerformanceCounter() - lastSwapTime) < currentVBlankInterval);
                     lastSwapTime = swapTime;
                 }
                 break;
