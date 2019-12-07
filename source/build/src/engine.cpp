@@ -8290,6 +8290,9 @@ void engineUnInit(void)
     pskynummultis = 0;
 
     DO_FREE_AND_NULL(g_defNamePtr);
+
+    for (auto s : osdstrings)
+        Xfree(s);
 }
 
 
