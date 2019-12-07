@@ -29,9 +29,11 @@ static int32_t _internal_gettime(void);
 static void _internal_onshowosd(int32_t);
 
 osdmain_t *osd;
+GrowArray<char *> osdstrings;
 
 static int osdrowscur = -1;
-static int osdmaxrows = 20;
+static int osdmaxrows = MAXYDIM >> 3;
+static int osdrows;
 
 buildvfs_FILE osdlog;
 
@@ -410,6 +412,16 @@ static void _internal_onshowosd(int a)
     UNREFERENCED_PARAMETER(a);
 }
 
+static void osd_clear(int clearstrings = false)
+{
+    Bmemset(osd->text.buf, asc_Space, OSDBUFFERSIZE);
+    Bmemset(osd->text.fmt, osd->draw.textpal + (osd->draw.textshade << 5), OSDBUFFERSIZE);
+    osd->text.lines = 1;
+
+    if (clearstrings)
+        osdstrings.clear();
+}
+
 ////////////////////////////
 
 static int osdfunc_alias(osdcmdptr_t parm)
@@ -573,13 +585,7 @@ static int osdfunc_help(osdcmdptr_t parm)
 static int osdfunc_clear(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
-
-    auto &t = osd->text;
-
-    Bmemset(t.buf, 0, OSDBUFFERSIZE);
-    Bmemset(t.fmt, osd->draw.textpal + (osd->draw.textshade<<5), OSDBUFFERSIZE);
-    t.lines = 1;
-
+    osd_clear();
     return OSDCMD_OK;
 }
 
@@ -643,8 +649,7 @@ static int osdcmd_cvar_set_osd(osdcmdptr_t parm)
 
     if (!Bstrcasecmp(parm->name, "osdrows"))
     {
-        if (osd->draw.rows > osdmaxrows)
-            osd->draw.rows = osdmaxrows;
+        osd->draw.rows = osdrows ? clamp(osdrows, 1, osdmaxrows) : (osdmaxrows >> 1);
 
         if (osdrowscur != -1)
             osdrowscur = osd->draw.rows;
@@ -713,7 +718,6 @@ void OSD_Init(void)
     osd->numcvars      = 0;
     osd->text.lines    = 1;
     osd->text.maxlines = OSDDEFAULTMAXLINES;  // overwritten later
-    osd->draw.rows     = OSDDEFAULTROWS;
     osd->draw.cols     = OSDDEFAULTCOLS;
     osd->log.cutoff    = OSDMAXERRORS;
 
@@ -724,7 +728,6 @@ void OSD_Init(void)
 
     static osdcvardata_t cvars_osd [] =
     {
-        { "osdrows", "sets the number of visible lines of the OSD", (void *) &osd->draw.rows, CVAR_INT|CVAR_FUNCPTR, 1, 400 },
         { "osdeditpal", "console input text palette", (void *) &osd->draw.editpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
         { "osdeditshade", "console input text shade", (void *) &osd->draw.editshade, CVAR_INT, 0, 7 },
 
@@ -734,6 +737,7 @@ void OSD_Init(void)
         { "osdpromptpal", "console prompt palette", (void *) &osd->draw.promptpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
         { "osdpromptshade", "console prompt shade", (void *) &osd->draw.promptshade, CVAR_INT, INT8_MIN, INT8_MAX },
 
+        { "osdrows", "lines of text to display in console", (void *) &osdrows, CVAR_INT|CVAR_FUNCPTR, 0, MAXYDIM >> 3 },
         { "osdtextmode", "console character mode: 0: sprites  1: simple glyphs", (void *) &osd->draw.mode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
 
         { "osdlogcutoff", "maximum number of error messages to log to the console", (void *) &osd->log.cutoff, CVAR_INT, -1, OSDMAXERRORS },
@@ -765,6 +769,9 @@ void OSD_SetLogFile(const char *fn)
 {
     MAYBE_FCLOSE_AND_NULL(osdlog);
     osdlogfn = NULL;
+
+    if (!osd)
+        OSD_Init();
 
     if (!fn)
         return;
@@ -806,6 +813,9 @@ void OSD_SetFunctions(void (*drawchar)(int, int, char, int, int),
     clearbackground = clearbg    ? clearbg    : _internal_clearbackground;
     gettime         = gtime      ? gtime      : _internal_gettime;
     onshowosd       = showosd    ? showosd    : _internal_onshowosd;
+
+    if (!osd)
+        OSD_Init();
 }
 
 
@@ -1122,9 +1132,7 @@ int OSD_HandleChar(char ch)
             return 0;
 
         case asc_Ctrl_L:  // clear screen
-            Bmemset(osd->text.buf, 0, OSDBUFFERSIZE);
-            Bmemset(osd->text.fmt, osd->draw.textpal + (osd->draw.textshade << 5), OSDBUFFERSIZE);
-            osd->text.lines = 1;
+            osd_clear();
             return 0;
 
         case asc_Enter:  // control m, enter
@@ -1420,42 +1428,26 @@ void OSD_ResizeDisplay(int w, int h)
     auto &d = osd->draw;
 
     int const newcols     = getcolumnwidth(w);
-    int const newmaxlines = OSDBUFFERSIZE / newcols;
-
-    auto newtext = (char *)Xmalloc(OSDBUFFERSIZE);
-    auto newfmt  = (char *)Xmalloc(OSDBUFFERSIZE);
-
-    Bmemset(newtext, asc_Space, OSDBUFFERSIZE);
-
-    int const copylines = min(newmaxlines, t.maxlines);
-    int const copycols  = min(newcols, d.cols);
-
-    for (int i = 0; i < copylines; ++i)
-    {
-        Bmemcpy(newtext + newcols * i, t.buf + d.cols * i, copycols);
-        Bmemcpy(newfmt  + newcols * i, t.fmt + d.cols * i, copycols);
-    }
-
-    Xfree(t.buf);
-    t.buf = newtext;
-
-    Xfree(t.fmt);
-    t.fmt = newfmt;
-
-    t.maxlines = newmaxlines;
-    osdmaxrows = getrowheight(h) - 2;
     d.cols     = newcols;
 
-    if (d.rows > osdmaxrows)
-        d.rows = osdmaxrows;
+    int const newmaxlines = OSDBUFFERSIZE / newcols;
+    t.maxlines = newmaxlines;
 
-    t.pos  = 0;
-    d.head = 0;
+    osdmaxrows = getrowheight(h) - 2;
+    d.rows = osdrows ? clamp(osdrows, 1, osdmaxrows) : (osdmaxrows >> 1);
 
-    osd->editor.start = 0;
-    osd->editor.end   = OSD_EDIT_LINE_WIDTH;
+    if (osdrowscur != -1)
+        osdrowscur = d.rows;
+
+    osd->editor.start = d.head = t.pos = 0;
+    osd->editor.end = OSD_EDIT_LINE_WIDTH;
 
     whiteColorIdx = -1;
+
+    osd_clear(false);
+
+    for (auto s : osdstrings)
+        OSD_Puts(s, true);
 }
 
 
@@ -1595,6 +1587,7 @@ void OSD_Printf(const char *fmt, ...)
     Bvsnprintf(tmpstr, sizeof(tmpstr), fmt, va);
     va_end(va);
 
+    osdstrings.append(Xstrdup(tmpstr));
     OSD_Puts(tmpstr);
 }
 
@@ -1619,7 +1612,7 @@ static inline void OSD_LineFeed(void)
         t.lines++;
 }
 
-void OSD_Puts(const char *putstr)
+void OSD_Puts(const char *putstr, int const nolog /*= false*/)
 {
     if (putstr[0] == 0 || !osd)
         return;
@@ -1646,7 +1639,7 @@ void OSD_Puts(const char *putstr)
 
         putstr = "\nError count exceeded \"osdlogcutoff\"!\n";
     }
-    else if ((unsigned)errorCnt < (unsigned)l.cutoff)
+    else if (!nolog && (unsigned)errorCnt < (unsigned)l.cutoff)
     {
         auto s = Xstrdup(putstr);
         buildvfs_fputs(OSD_StripColors(s, putstr), osdlog);
