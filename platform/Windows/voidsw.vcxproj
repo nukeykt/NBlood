@@ -170,9 +170,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\source\duke3d\src\midi.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\mpu401.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\music.cpp" />
     <ClCompile Include="..\..\source\sw\rsrc\game_icon.c" />
     <ClCompile Include="..\..\source\sw\src\actor.cpp" />
     <ClCompile Include="..\..\source\sw\src\ai.cpp" />
