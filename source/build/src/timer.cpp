@@ -15,8 +15,12 @@
 #include <chrono>
 #include <atomic>
 
-#if (defined RENDERTYPESDL) && (SDL_MAJOR_VERSION >= 2)
-#define HAVE_TIMER_SDL
+#if defined RENDERTYPESDL && (SDL_MAJOR_VERSION >= 2)
+# define HAVE_TIMER_SDL
+#endif
+
+#if !defined _WIN32 && !defined HAVE_TIMER_SDL && !defined ZPL_HAVE_RDTSC
+# error No platform timer implementation!
 #endif
 
 using namespace std;
@@ -171,7 +175,7 @@ uint64_t timerGetFreqU64(void)
 
 static int osdcmd_sys_timer(osdcmdptr_t parm)
 {
-    static char constexpr const *s[] = { "auto", "QueryPerformanceCounter", "SDL", "RDTSC instruction" };
+    static char constexpr const *s[] = { "auto", "QPC", "SDL", "RDTSC" };
     int const r = osdcmd_cvar_set(parm);
 
     if (r != OSDCMD_OK)
@@ -185,18 +189,19 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
     if (sys_timer == TIMER_SDL)
         sys_timer = TIMER_AUTO;
 #endif
-
-#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
-    if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
-    {
+#ifndef ZPL_HAVE_RDTSC
+    if (sys_timer == TIMER_RDTSC)
         sys_timer = TIMER_AUTO;
-        OSD_Printf("Invariant TSC support not detected.\n");
-    }
 #endif
 
     if (sys_timer != TIMER_AUTO || !OSD_ParsingScript())
 print_and_return:
         OSD_Printf("Using \"%s\" timer with %g MHz frequency\n", s[sys_timer], timerGetFreqU64() / 1000000.0);
+
+#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
+    if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
+        OSD_Printf("WARNING: invariant TSC support not detected! You may experience timing issues.\n");
+#endif
 
     return r;
 }
@@ -207,17 +212,19 @@ int timerInit(int const tickspersecond)
 
     if (initDone == 0)
     {
+        initDone = 1;
+
         static osdcvardata_t sys_timer_cvar = { "sys_timer",
                                                 "engine frame timing backend:\n"
                                                 "   0: auto\n"
 #ifdef _WIN32
-                                                "   1: QueryPerformanceCounter\n"
+                                                "   1: WinAPI QueryPerformanceCounter\n"
 #endif
 #ifdef HAVE_TIMER_SDL
-                                                "   2: SDL timer\n"
+                                                "   2: SDL_GetPerformanceCounter\n"
 #endif
 #ifdef ZPL_HAVE_RDTSC
-                                                "   3: RDTSC instruction\n"
+                                                "   3: CPU RDTSC instruction\n"
 #endif
                                                 , (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
 
