@@ -454,8 +454,6 @@ enum SaveBoardFlags
 
 #define M32_MAXPALOOKUPS (MAXPALOOKUPS-RESERVEDPALS-1)
 
-static FORCE_INLINE int32_t atoi_safe(const char *str) { return (int32_t)Bstrtol(str, NULL, 10); }
-
 static FORCE_INLINE void inpclamp(int32_t *x, int32_t mi, int32_t ma)
 {
     if (*x > ma) *x = ma;
