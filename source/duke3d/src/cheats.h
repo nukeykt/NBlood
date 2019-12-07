@@ -26,8 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MAXCHEATDESC 64
 #define NUMCHEATCODES (int32_t) ARRAY_SIZE(CheatStrings)
 
-extern void G_DoCheats(void);
-extern void G_SetupCheats(void);
+void G_DoCheats(void);
+void G_SetupCheats(void);
+extern int g_cheatBufLen;
 
 enum cheatindex_t
 {
