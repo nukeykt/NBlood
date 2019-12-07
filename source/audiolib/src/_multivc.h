@@ -52,6 +52,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define MIX_VOLUME(volume) ((max(0, min((volume), 255)) * (MV_MAXVOLUME + 1)) >> 8)
 
+extern struct VoiceNode *MV_Voices;
+extern struct VoiceNode  VoiceList;
+extern struct VoiceNode  VoicePool;
+
 extern fix16_t MV_GlobalVolume;
 extern fix16_t MV_VolumeSmooth;
 
@@ -265,6 +269,10 @@ void MV_ReleaseVorbisVoice(VoiceNode *voice);
 void MV_ReleaseFLACVoice(VoiceNode *voice);
 void MV_ReleaseXAVoice(VoiceNode *voice);
 void MV_ReleaseXMPVoice(VoiceNode *voice);
+
+#ifdef HAVE_XMP
+extern int MV_XMPInterpolation;
+#endif
 
 // implemented in mix.c
 template <typename S, typename D> uint32_t MV_MixMono(struct VoiceNode * const voice, uint32_t length);

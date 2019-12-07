@@ -58,7 +58,10 @@ static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
         MIDI_Restart();
     else if (!Bstrcasecmp(parm->name, "mus_al_stereo"))
         AL_SetStereo(AL_Stereo);
-
+#ifdef HAVE_XMP
+    else if (!Bstrcasecmp(parm->name, "mus_xmp_interpolation"))
+        MV_SetXMPInterpolation();
+#endif
     return r;
 }
 
@@ -75,6 +78,9 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void *initdata)
             { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void *)&AL_AdditiveMode, CVAR_BOOL, 0, 1 },
             { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void *)&AL_PostAmp, CVAR_INT, 0, 3 },
             { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void *)&AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
+#ifdef HAVE_XMP
+            { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void *)&MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
+#endif
         };
 
         if (!init++)

@@ -43,6 +43,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pitch.h"
 #include "pragmas.h"
 
+#ifdef HAVE_XMP
+# define BUILDING_STATIC
+# include "libxmp-lite/xmp.h"
+
+int MV_XMPInterpolation = XMP_INTERP_SPLINE;
+#endif
+
+
 static void MV_StopVoice(VoiceNode *voice);
 static void MV_ServiceVoc(void);
 
@@ -72,9 +80,9 @@ int MV_MixRate;
 static int MV_BufferEmpty[MV_NUMBEROFBUFFERS];
 char *MV_MixBuffer[(MV_NUMBEROFBUFFERS << 1) + 1];
 
-static VoiceNode *MV_Voices;
-static VoiceNode  VoiceList;
-static VoiceNode  VoicePool;
+VoiceNode *MV_Voices;
+VoiceNode  VoiceList;
+VoiceNode  VoicePool;
 
 static int MV_MixPage;
 

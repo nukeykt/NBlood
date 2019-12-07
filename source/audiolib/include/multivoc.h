@@ -114,6 +114,7 @@ int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *init
 int  MV_Shutdown(void);
 void MV_HookMusicRoutine(void (*callback)(void));
 void MV_UnhookMusicRoutine(void);
+void MV_SetXMPInterpolation(void);
 
 struct MV_MusicRoutineBuffer
 {
