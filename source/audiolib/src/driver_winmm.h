@@ -20,14 +20,22 @@
 
 #include "midifuncs.h"
 
+#define WINMM_NOTE_OFF         0x80
+#define WINMM_NOTE_ON          0x90
+#define WINMM_POLY_AFTER_TCH   0xA0
+#define WINMM_CONTROL_CHANGE   0xB0
+#define WINMM_PROGRAM_CHANGE   0xC0
+#define WINMM_AFTER_TOUCH      0xD0
+#define WINMM_PITCH_BEND       0xE0
+
 int WinMMDrv_GetError(void);
 const char *WinMMDrv_ErrorString( int ErrorNumber );
 
 int  WinMMDrv_MIDI_Init(midifuncs *);
 void WinMMDrv_MIDI_Shutdown(void);
-int  WinMMDrv_MIDI_StartPlayback(void (*service)(void));
+int  WinMMDrv_MIDI_StartPlayback(void);
 void WinMMDrv_MIDI_HaltPlayback(void);
 void WinMMDrv_MIDI_SetTempo(int tempo, int division);
 void WinMMDrv_MIDI_Lock(void);
 void WinMMDrv_MIDI_Unlock(void);
-
+void WinMMDrv_MIDI_Service(void);

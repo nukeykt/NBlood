@@ -47,10 +47,11 @@ void SoundDriver_PCM_Unlock(void);
 
 int  SoundDriver_MIDI_Init(midifuncs *);
 void SoundDriver_MIDI_Shutdown(void);
-int  SoundDriver_MIDI_StartPlayback(void (*service)(void));
+int  SoundDriver_MIDI_StartPlayback(void);
 void SoundDriver_MIDI_HaltPlayback(void);
 void SoundDriver_MIDI_SetTempo(int tempo, int division);
 void SoundDriver_MIDI_Lock(void);
 void SoundDriver_MIDI_Unlock(void);
+int  SoundDriver_MIDI_GetCardType(void);
 
 #endif

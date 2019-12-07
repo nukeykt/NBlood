@@ -1229,9 +1229,9 @@ static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, 
 #endif
 
 static char const *MEOSN_SOUND_MIDIDRIVER[] = {
-    "OPL3",
+    "OPL3 emu.",
 #ifdef _WIN32
-    "Windows",
+    "Windows MME",
 #endif
 };
 static int32_t MEOSV_SOUND_MIDIDRIVER[] = {

@@ -98,12 +98,12 @@ void AdLibDrv_MIDI_Shutdown(void)
     AL_Shutdown();
 }
 
-int AdLibDrv_MIDI_StartPlayback(void (*service)(void))
+int AdLibDrv_MIDI_StartPlayback(void)
 {
     AdLibDrv_MIDI_HaltPlayback();
 
     AL_Init(MV_MixRate);
-    MV_HookMusicRoutine(service);
+    MV_HookMusicRoutine(AdLibDrv_MIDI_Service);
 
     return MIDI_Ok;
 }
@@ -114,12 +114,35 @@ void AdLibDrv_MIDI_SetTempo(int const tempo, int const division)
     MV_MIDIRenderTimer = 0;
 }
 
+void AdLibDrv_MIDI_Service(void)
+{
+    int16_t * buffer16 = (int16_t *)MV_MusicBuffer;
+    int const samples  = MV_BufferSize >> 2;
+
+    for (int i = 0; i < samples; i++)
+    {
+        Bit16s buf[2];
+        while (MV_MIDIRenderTimer >= MV_MixRate)
+        {
+            if (MV_MIDIRenderTempo >= 0)
+                MIDI_ServiceRoutine();
+            MV_MIDIRenderTimer -= MV_MixRate;
+        }
+        if (MV_MIDIRenderTempo >= 0) MV_MIDIRenderTimer += MV_MIDIRenderTempo;
+        OPL3_GenerateResampled(AL_GetChip(), buf);
+        *buffer16++ = clamp(buf[0]<<AL_PostAmp, INT16_MIN, INT16_MAX);
+        *buffer16++ = clamp(buf[1]<<AL_PostAmp, INT16_MIN, INT16_MAX);
+    }
+}
+
 static opl3_chip chip;
 
 opl3_chip *AL_GetChip(void) { return &chip; }
 
+/* Definition of octave information to be ORed onto F-Number */
+
 static uint32_t constexpr OctavePitch[MAX_OCTAVE+1] = {
-    OCTAVE_0, OCTAVE_1, OCTAVE_2, OCTAVE_3, OCTAVE_4, OCTAVE_5, OCTAVE_6, OCTAVE_7,
+    0x0000, 0x0400, 0x0800, 0x0C00, 0x1000, 0x1400, 0x1800, 0x1C00,
 };
 
 static uint32_t NoteMod12[MAX_NOTE+1];
@@ -675,7 +698,7 @@ static void AL_ControlChange(int const channel, int const type, int const data)
             break;
 
         case MIDI_DATAENTRY_MSB:
-            if (Channel[channel].RPN == MIDI_PITCHBEND_RPN)
+            if (Channel[channel].RPN == MIDI_PITCHBEND_MSB)
             {
                 Channel[channel].PitchBendSemiTones = data;
                 Channel[channel].PitchBendRange     = Channel[channel].PitchBendSemiTones * 100 + Channel[channel].PitchBendHundreds;
@@ -683,7 +706,7 @@ static void AL_ControlChange(int const channel, int const type, int const data)
             break;
 
         case MIDI_DATAENTRY_LSB:
-            if (Channel[channel].RPN == MIDI_PITCHBEND_RPN)
+            if (Channel[channel].RPN == MIDI_PITCHBEND_LSB)
             {
                 Channel[channel].PitchBendHundreds = data;
                 Channel[channel].PitchBendRange    = Channel[channel].PitchBendSemiTones * 100 + Channel[channel].PitchBendHundreds;
@@ -746,7 +769,7 @@ static int AL_Init(int const rate)
 }
 
 
-void AL_RegisterTimbreBank(uint8_t const *timbres)
+void AL_RegisterTimbreBank(uint8_t *timbres)
 {
     for (int i = 0; i < 256; i++)
     {

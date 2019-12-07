@@ -73,7 +73,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void *initdata)
         static osdcvardata_t cvars_audiolib[] = {
             { "mus_emidicard", "force a specific EMIDI instrument set", (void *)&ASS_EMIDICard, CVAR_INT | CVAR_FUNCPTR, -1, 10 },
             { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void *)&AL_AdditiveMode, CVAR_BOOL, 0, 1 },
-            { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification--high values will clip", (void *)&AL_PostAmp, CVAR_INT, 0, 4 },
+            { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void *)&AL_PostAmp, CVAR_INT, 0, 3 },
             { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void *)&AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
         };
 
