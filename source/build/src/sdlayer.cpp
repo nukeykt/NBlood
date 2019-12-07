@@ -726,7 +726,7 @@ void system_getcvars(void)
 }
 
 //
-// initprintf() -- prints a formatted string to the intitialization window
+// initprintf() -- prints a formatted string to the initialization window
 //
 void initprintf(const char *f, ...)
 {
@@ -737,12 +737,13 @@ void initprintf(const char *f, ...)
     Bvsnprintf(buf, sizeof(buf), f, va);
     va_end(va);
 
+    osdstrings.append(Xstrdup(buf));
     initputs(buf);
 }
 
 
 //
-// initputs() -- prints a string to the intitialization window
+// initputs() -- prints a string to the initialization window
 //
 void initputs(const char *buf)
 {
