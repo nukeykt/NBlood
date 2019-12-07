@@ -337,8 +337,6 @@ void Gv_ResetVars(void) /* this is called during a new game and nowhere else */
 {
     Gv_Free();
 
-    osd->log.errors = 0;
-
     for (auto &aGameVar : aGameVars)
     {
         if (aGameVar.szLabel != NULL)

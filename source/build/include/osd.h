@@ -156,13 +156,13 @@ typedef struct
     int32_t  cols;  // width of onscreen display in text columns
     uint16_t head;  // topmost visible line number
     int8_t   scrolling;
+    int      errfmtlen;
 } osddraw_t;
 
 typedef struct
 {
     buildvfs_FILE fp;
     int32_t cutoff;
-    int32_t errors;
     int32_t lines;
 } osdlog_t;
 
@@ -277,7 +277,7 @@ void OSD_Draw(void);
 void OSD_Printf(const char *fmt, ...) ATTRIBUTE((format(printf,1,2)));
 
 // just like puts
-void OSD_Puts(const char *str);
+void OSD_Puts(const char *putstr);
 
 // executes buffered commands
 void OSD_DispatchQueued(void);
