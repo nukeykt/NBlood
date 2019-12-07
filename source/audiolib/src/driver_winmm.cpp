@@ -50,11 +50,12 @@ enum
     WinMMErr_MIDICreateMutex
 };
 
+UINT WinMM_DeviceID = MIDI_MAPPER;
+
 static int ErrorCode = WinMMErr_Ok;
 
 static BOOL      midiInstalled;
 static HMIDISTRM midiStream;
-static UINT      midiDeviceID = MIDI_MAPPER;
 static void    (*midiThreadService)(void);
 static uint32_t midiThreadTimer;
 static uint32_t midiLastEventTime;
@@ -544,6 +545,20 @@ static void Func_SysEx( const unsigned char * data, int length )
     } else MV_Printf("WinMM Func_SysEx error\n");
 }
 
+void WinMMDrv_MIDI_PrintDevices(void)
+{
+    auto numDevices = (int)midiOutGetNumDevs();
+    MIDIOUTCAPS midicaps;
+
+    for (int i = -1; i < numDevices; i++)
+    {
+        if (!midiOutGetDevCaps(i, &midicaps, sizeof(MIDIOUTCAPS)))
+            MV_Printf("%d: %s  ", i, midicaps.szPname);
+    }
+}
+
+int WinMMDrv_MIDI_GetNumDevices(void) { return midiOutGetNumDevs(); }
+
 int WinMMDrv_MIDI_Init(midifuncs * funcs)
 {
     MMRESULT rv;
@@ -563,7 +578,13 @@ int WinMMDrv_MIDI_Init(midifuncs * funcs)
         return WinMMErr_Error;
     }
 
-    rv = midiStreamOpen(&midiStream, &midiDeviceID, 1, (DWORD_PTR) 0, (DWORD_PTR) 0, CALLBACK_NULL);
+    MIDIOUTCAPS midicaps;
+    if (WinMM_DeviceID > midiOutGetNumDevs() || midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
+    WinMM_DeviceID = MIDI_MAPPER;
+        if (!midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
+            MV_Printf(": [%d] %s", WinMM_DeviceID, midicaps.szPname);
+
+    rv = midiStreamOpen(&midiStream, &WinMM_DeviceID, 1, (DWORD_PTR) 0, (DWORD_PTR) 0, CALLBACK_NULL);
     if (rv != MMSYSERR_NOERROR) {
         CloseHandle(midiMutex);
         midiMutex = 0;

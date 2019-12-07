@@ -19,6 +19,7 @@
  */
 
 #include "midifuncs.h"
+#include "windows_inc.h"
 
 #define WINMM_NOTE_OFF         0x80
 #define WINMM_NOTE_ON          0x90
@@ -27,6 +28,8 @@
 #define WINMM_PROGRAM_CHANGE   0xC0
 #define WINMM_AFTER_TOUCH      0xD0
 #define WINMM_PITCH_BEND       0xE0
+
+extern UINT WinMM_DeviceID;
 
 int WinMMDrv_GetError(void);
 const char *WinMMDrv_ErrorString( int ErrorNumber );
@@ -39,3 +42,6 @@ void WinMMDrv_MIDI_SetTempo(int tempo, int division);
 void WinMMDrv_MIDI_Lock(void);
 void WinMMDrv_MIDI_Unlock(void);
 void WinMMDrv_MIDI_Service(void);
+
+void WinMMDrv_MIDI_PrintDevices(void);
+int WinMMDrv_MIDI_GetNumDevices(void);

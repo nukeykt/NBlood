@@ -28,6 +28,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "midi.h"
 #include "multivoc.h"
 #include "osd.h"
+#include "_multivc.h"
+
+#ifdef _WIN32
+# include "driver_winmm.h"
+# include <mmsystem.h>
+#endif
 
 int FX_ErrorCode = FX_Ok;
 int FX_Installed;
@@ -51,6 +57,11 @@ const char *FX_ErrorString(int const ErrorNumber)
 static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
 {
     int32_t r = osdcmd_cvar_set(parm);
+
+#ifdef _WIN32
+    if (parm->numparms == 0 && !Bstrcasecmp(parm->name, "mus_winmm_device"))
+        WinMMDrv_MIDI_PrintDevices();
+#endif
 
     if (r != OSDCMD_OK) return r;
 
@@ -78,6 +89,9 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void *initdata)
             { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void *)&AL_AdditiveMode, CVAR_BOOL, 0, 1 },
             { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void *)&AL_PostAmp, CVAR_INT, 0, 3 },
             { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void *)&AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
+#ifdef _WIN32
+            { "mus_winmm_device", "select Windows MME MIDI device", (void *)&WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
+#endif
 #ifdef HAVE_XMP
             { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void *)&MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
 #endif
