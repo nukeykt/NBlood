@@ -30,8 +30,6 @@ static OSVERSIONINFOEX osv;
 
 FARPROC pwinever;
 
-static char const *enUSLayoutString = "00000409";
-
 void windowsSetupTimer(int ntDllVoodoo)
 {
     typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
@@ -248,9 +246,6 @@ int windowsPreInit(void)
         return -1;
     }
 
-    windowsGetSystemKeyboardLayout();
-    windowsGetSystemKeyboardLayoutName();
-
 #ifdef DEBUGGINGAIDS
     HMODULE ebacktrace = LoadLibraryA(EBACKTRACEDLL);
     if (ebacktrace)
@@ -339,8 +334,6 @@ void windowsPlatformCleanup(void)
 {
     if (g_singleInstanceSemaphore)
         CloseHandle(g_singleInstanceSemaphore);
-
-    windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName());
 }
 
 
@@ -360,89 +353,6 @@ LPTSTR windowsGetErrorMessage(DWORD code)
 }
 
 
-// Keyboard layout switching
-
-static char const * windowsDecodeKeyboardLayoutName(char const * keyboardLayout)
-{
-    int const   localeID = Bstrtol(keyboardLayout, NULL, 16);
-    static char localeName[16];
-
-    int const result = GetLocaleInfo(MAKELCID(localeID, SORT_DEFAULT), LOCALE_SNAME, localeName, ARRAY_SIZE(localeName));
-
-    if (!result)
-    {
-        OSD_Printf("Error decoding name for locale ID %d: %s\n", localeID, windowsGetErrorMessage(GetLastError()));
-        return keyboardLayout;
-    }
-
-    return localeName;
-}
-
-void windowsSetKeyboardLayout(char const *layout, int focusChanged /*= 0*/)
-{
-    char layoutName[KL_NAMELENGTH];
-    
-    GetKeyboardLayoutName(layoutName);
-
-    if (!Bstrcmp(layoutName, layout))
-        return;
-
-    //if (!win_silentfocuschange)
-    {
-        if (focusChanged)
-            OSD_Printf("Focus change: ");
-
-        if (layout == enUSLayoutString)
-            OSD_Printf("Loaded %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
-        else
-            OSD_Printf("Restored %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
-    }
-
-    static int enUSLoaded;
-    static HKL enUSLayout;
-
-    if (layout == enUSLayoutString)
-    {
-        if (enUSLoaded)
-            ActivateKeyboardLayout(enUSLayout, KLF_SETFORPROCESS);
-        else if ((enUSLayout = LoadKeyboardLayout(enUSLayoutString, KLF_ACTIVATE | KLF_SETFORPROCESS | KLF_SUBSTITUTE_OK)))
-            enUSLoaded = true;
-    }
-    else
-        ActivateKeyboardLayout(windowsGetSystemKeyboardLayout(), KLF_SETFORPROCESS);
-}
-
-
-char *windowsGetSystemKeyboardLayoutName(void)
-{
-    static char systemLayoutName[KL_NAMELENGTH];
-    static int layoutSaved;
-
-    if (!layoutSaved)
-    {
-        if (!GetKeyboardLayoutName(systemLayoutName))
-            OSD_Printf("Error determining system keyboard layout: %s\n", windowsGetErrorMessage(GetLastError()));
-
-        layoutSaved = true;
-    }
-
-    return systemLayoutName;
-}
-
-HKL windowsGetSystemKeyboardLayout(void)
-{
-    static HKL systemLayout;
-    static int layoutSaved;
-
-    if (!layoutSaved)
-    {
-        systemLayout = GetKeyboardLayout(0);
-        layoutSaved  = true;
-    }
-
-    return systemLayout;
-}
-
 void windowsHandleFocusChange(int const appactive)
 {
 #ifndef DEBUGGINGAIDS
@@ -455,7 +365,6 @@ void windowsHandleFocusChange(int const appactive)
             SetPriorityClass(GetCurrentProcess(), win_priorityclass ? BELOW_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
 
         windowsSetupTimer(win_systemtimermode);
-        windowsSetKeyboardLayout(enUSLayoutString, true);
     }
     else
     {
@@ -463,7 +372,6 @@ void windowsHandleFocusChange(int const appactive)
             SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
 
         windowsSetupTimer(0);
-        windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
     }
 
     win_silentfocuschange = false;
