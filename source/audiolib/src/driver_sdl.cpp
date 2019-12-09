@@ -60,8 +60,10 @@ static void (*MixCallBack)(void);
 static SDL_AudioDeviceID audio_dev;
 #endif
 
+#if SDL_MAJOR_VERSION >= 2
 char SDLAudioDriverName[16];
 char *SDLAudioDriverNameEnv;
+#endif
 
 static void fillData(void * userdata, Uint8 * ptr, int remaining)
 {
@@ -140,6 +142,7 @@ const char *SDLDrv_ErrorString(int ErrorNumber)
     return ErrorString;
 }
 
+#if SDL_MAJOR_VERSION >= 2
 void SDLDrv_PCM_PrintDevices(void)
 {
     MV_Printf("Available backends: ");
@@ -165,6 +168,7 @@ static void SDLDrv_Cleanup(void)
 {
     DO_FREE_AND_NULL(SDLAudioDriverNameEnv);
 }
+#endif
 
 int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 {
@@ -177,6 +181,7 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     if (Initialised) {
         SDLDrv_PCM_Shutdown();
     }
+#if SDL_MAJOR_VERSION >= 2
     else if (SDLAudioDriverNameEnv == nullptr)
     {
         static int done;
@@ -193,6 +198,7 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 
     if (SDLAudioDriverName[0])
         SDL_setenv("SDL_AUDIODRIVER", SDLAudioDriverName, true);
+#endif
 
     inited = SDL_WasInit(SDL_INIT_AUDIO);
 
@@ -226,9 +232,11 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     audio_dev = err = SDL_OpenAudioDevice(nullptr, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 #endif
 
+#if SDL_MAJOR_VERSION >= 2
     // restore original value
     if (SDLAudioDriverNameEnv)
         SDL_setenv("SDL_AUDIODRIVER", SDLAudioDriverNameEnv, true);
+#endif
 
     if (err == 0) {
         ErrorCode = SDLErr_OpenAudio;
