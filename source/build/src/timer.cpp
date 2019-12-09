@@ -198,6 +198,8 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
     if (sys_timer == TIMER_RDTSC)
         sys_timer = TIMER_AUTO;
 #endif
+    if ((unsigned)sys_timer >= NUMTIMERS)
+        sys_timer = TIMER_AUTO;
 
     if (sys_timer != TIMER_AUTO || !OSD_ParsingScript())
 print_and_return:
