@@ -25,6 +25,21 @@ int32_t mutex_init(mutex_t *mutex)
 #endif
 }
 
+void mutex_destroy(mutex_t *mutex)
+{
+#if SDL_MAJOR_VERSION >= 2
+    *mutex = 0;
+#elif defined _WIN32
+    DeleteCriticalSection(mutex);
+#elif SDL_MAJOR_VERSION == 1
+    if (mutex)
+    {
+        SDL_DestroyMutex(mutex);
+        *mutex = nullptr;
+    }
+#endif
+}
+
 void mutex_lock(mutex_t *mutex)
 {
 #if SDL_MAJOR_VERSION >= 2

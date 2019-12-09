@@ -184,8 +184,7 @@ static void TeardownDSound(HRESULT err)
     }
 
 #ifdef RENDERTYPEWIN
-    if (mutex)
-        CloseHandle(mutex), mutex = nullptr;
+    mutex_destroy(&mutex);
 #endif
 
     if (lpdsbsec)
