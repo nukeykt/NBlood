@@ -57,12 +57,12 @@ bool playCDtrack(int nTrack, bool bLoop)
 
     // prefer flac if available
     sprintf(filename, "exhumed%02d.flac", nTrack);
-    int32_t hFile = kopen4load(filename, 0);
+    int32_t hFile = kopen4loadfrommod(filename, 0);
     if (hFile < 0)
     {
         // try ogg vorbis now
         sprintf(filename, "exhumed%02d.ogg", nTrack);
-        hFile = kopen4load(filename, 0);
+        hFile = kopen4loadfrommod(filename, 0);
         if (hFile < 0) {
             return false;
         }

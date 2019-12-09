@@ -3643,7 +3643,7 @@ void InitSpiritHead()
     lNextStateChange = (int)totalclock;
     lHeadStartClock = (int)totalclock;
 
-    headfd = kopen4load(filename, 0);
+    headfd = kopen4loadfrommod(filename, 0);
     nPupData = kread(headfd, cPupData, sizeof(cPupData));
     pPupData = cPupData;
     kclose(headfd);

@@ -1841,7 +1841,7 @@ int LoadCinemaPalette(int nPal)
 
     // original code strcpy'd into a buffer first...
 
-    int hFile = kopen4load(cinpalfname[nPal], 1);
+    int hFile = kopen4loadfrommod(cinpalfname[nPal], 0);
     if (hFile < 0) {
         return -2;
     }
