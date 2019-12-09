@@ -2484,7 +2484,7 @@ int32_t handleevents_pollsdl(void)
                         if (g_mouseGrabbed && g_mouseEnabled)
                             grabmouse_low(appactive);
 #ifdef _WIN32
-                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
+                        windowsHandleFocusChange(appactive);
 #endif
                         break;
 
@@ -2504,9 +2504,6 @@ int32_t handleevents_pollsdl(void)
                     case SDL_WINDOWEVENT_ENTER:
                     case SDL_WINDOWEVENT_LEAVE:
                         g_mouseInsideWindow = (ev.window.event == SDL_WINDOWEVENT_ENTER);
-#ifdef _WIN32
-                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
-#endif
                         break;
                 }
 
