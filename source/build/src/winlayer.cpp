@@ -279,6 +279,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
+    mutex_init(&m_initprintf);
+
     if (windowsPreInit())
         return -1;
 
@@ -458,8 +460,6 @@ int32_t initsystem(void)
     DEVMODE desktopmode;
 
     //    initprintf("Initializing Windows DirectX/GDI system interface\n");
-
-    mutex_init(&m_initprintf);
 
     // get the desktop dimensions before anything changes them
     ZeroMemory(&desktopmode, sizeof(DEVMODE));
