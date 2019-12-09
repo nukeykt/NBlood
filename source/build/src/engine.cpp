@@ -3577,7 +3577,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     shy1 = y1+(shoffs>>15);
     if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
     {
-        OSD_Printf("%s:%d: slopalookup[] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, sectnum);
+        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
         return;
     }
 
@@ -3592,10 +3592,15 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
             shy1 = y1+(shoffs>>15);
             shy2 = y2+(shoffs>>15);
 
-            if ((unsigned)shy1 >= SLOPALOOKUPSIZ || (unsigned)shy2 >= SLOPALOOKUPSIZ)
+            // Ridiculously steep gradient?
+            if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
             {
-                // Ridiculously steep gradient?
-                OSD_Printf("%s:%d: slopalookup[] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, sectnum);
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                goto next_most;
+            }
+            if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
                 goto next_most;
             }
 
@@ -3881,7 +3886,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     shy1 = y1+(shoffs>>15);
     if ((unsigned)shy1 >= SLOPALOOKUPSIZ - 1)
     {
-        OSD_Printf("%s:%d: slopalookup[] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, sectnum);
+        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
         return;
     }
 
@@ -3896,10 +3901,15 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
             shy1 = y1+(shoffs>>15);
             shy2 = y2+(shoffs>>15);
 
-            if ((unsigned)shy1 >= SLOPALOOKUPSIZ || (unsigned)shy2 >= SLOPALOOKUPSIZ)
+            // Ridiculously steep gradient?
+            if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
             {
-                // Ridiculously steep gradient?
-                OSD_Printf("%s:%d: slopalookup[] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, sectnum);
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                goto next_most;
+            }
+            if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
                 goto next_most;
             }
 
