@@ -21,6 +21,8 @@ int     windowsCheckAlreadyRunning(void);
 void    windowsDwmEnableComposition(int compEnable);
 int     windowsGetCommandLine(char **argvbuf);
 LPTSTR  windowsGetErrorMessage(DWORD code);
+HKL     windowsGetSystemKeyboardLayout(void);
+char *  windowsGetSystemKeyboardLayoutName(void);
 BOOL    windowsGetVersion(void);
 void    windowsHandleFocusChange(int const appactive);
 void    windowsShowError(const char *m);
@@ -28,4 +30,5 @@ void    windowsPlatformCleanup(void);
 void    windowsPlatformInit(void);
 int     windowsPreInit(void);
 void    windowsSetupTimer(int ntDllVoodoo);
+void    windowsSetKeyboardLayout(char const *layout, int focusChanged = false);
 #endif // winbits_h__
