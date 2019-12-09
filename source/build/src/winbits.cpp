@@ -44,7 +44,7 @@ void windowsSetupTimer(int ntDllVoodoo)
 
     if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
     {
-#ifdef RENDERTYPESDL
+#if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
         int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
 #else
         static constexpr int const onBattery = 0;
@@ -300,7 +300,7 @@ void windowsPlatformInit(void)
                                             "Windows timer interrupt resolution:\n"
                                             "   0: 1.0ms\n"
                                             "   1: 0.5ms low-latency\n"
-#ifdef RENDERTYPESDL
+#if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
                                             "This option has no effect when running on battery power.\n",
 #else
                                             ,
