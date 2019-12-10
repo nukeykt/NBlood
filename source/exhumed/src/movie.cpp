@@ -244,6 +244,7 @@ void PlayMovie(const char* fileName)
 
     int angle = 1536;
     int z = 0;
+    int f = 255;
 
     videoSetPalette(0, ANIMPAL, 2 + 8);
 
@@ -278,8 +279,19 @@ void PlayMovie(const char* fileName)
             videoClearViewableArea(blackcol);
             rotatesprite(160 << 16, 100 << 16, z, angle, kMovieTile, 0, 1, 2, 0, 0, xdim - 1, ydim - 1);
 
-            if (bDoFade) {
-                bDoFade = DoFadeIn();
+            if (videoGetRenderMode() == REND_CLASSIC)
+            {
+                if (bDoFade) {
+                    bDoFade = DoFadeIn();
+                }
+            }
+            else
+            {
+                if (f >= 0)
+                {
+                    fullscreen_tint_gl(0, 0, 0, f);
+                    f -= 8;
+                }
             }
 
             videoNextPage();
@@ -299,4 +311,21 @@ void PlayMovie(const char* fileName)
     }
 
     fclose(fp);
+
+    // need to do OpenGL fade out here
+    f = 0;
+
+    while (f <= 255)
+    {
+        HandleAsync();
+
+        rotatesprite(160 << 16, 100 << 16, z, angle, kMovieTile, 0, 1, 2, 0, 0, xdim - 1, ydim - 1);
+
+        fullscreen_tint_gl(0, 0, 0, f);
+        f += 4;
+
+        WaitTicks(2);
+
+        videoNextPage();
+    }
 }

@@ -3188,6 +3188,44 @@ void DoGameOverScene()
     SetOverscan(BASEPAL);
 }
 
+void FadeOutScreen(int nTile)
+{
+    int f = 0;
+
+    while (f <= 255)
+    {
+        HandleAsync();
+
+        overwritesprite(0, 0, nTile, 0, 2, kPalNormal);
+
+        fullscreen_tint_gl(0, 0, 0, f);
+        f += 4;
+
+        WaitTicks(2);
+
+        videoNextPage();
+    }
+}
+
+void FadeInScreen(int nTile)
+{
+    int f = 255;
+
+    while (f >= 0)
+    {
+        HandleAsync();
+
+        overwritesprite(0, 0, nTile, 0, 2, kPalNormal);
+
+        fullscreen_tint_gl(0, 0, 0, f);
+        f -= 4;
+
+        WaitTicks(2);
+
+        videoNextPage();
+    }
+}
+
 // TODO - missing some values?
 short word_10010[] = {6, 25, 43, 50, 68, 78, 101, 111, 134, 158, 173, 230, 6000};
 
@@ -3198,8 +3236,12 @@ void DoTitle()
 
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
 
-    if (videoGetRenderMode() == REND_CLASSIC)
-        BlackOut();
+//  if (videoGetRenderMode() == REND_CLASSIC)
+//     BlackOut();
+
+    // for OpenGL, fade from black to the publisher logo
+    if (videoGetRenderMode() > REND_CLASSIC)
+        FadeInScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
 
     overwritesprite(0, 0, EXHUMED ? kTileBMGLogo : kTilePIELogo, 0, 2, kPalNormal);
     videoNextPage();
@@ -3213,22 +3255,31 @@ void DoTitle()
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+    else
+        FadeOutScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
 
     SetOverscan(BASEPAL);
 
     int nScreenTile = seq_GetSeqPicnum(kSeqScreens, 0, 0);
+
+    if (videoGetRenderMode() > REND_CLASSIC)
+        FadeInScreen(nScreenTile);
 
     overwritesprite(0, 0, nScreenTile, 0, 2, kPalNormal);
     videoNextPage();
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeIn();
+
     PlayLogoSound();
 
     WaitAnyKey(2);
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+    else
+        FadeOutScreen(nScreenTile);
+
     ClearAllKeys();
 
     PlayMovie("book.mov");
