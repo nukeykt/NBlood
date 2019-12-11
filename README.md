@@ -18,7 +18,6 @@ A port of the PC version of Exhumed based on EDuke32
 4. Launch PCExhumed.
 
 ## Notes
-The intro movie is not yet working with audio.
 Demo playback is not yet working.
 
 ## Adjusting settings
