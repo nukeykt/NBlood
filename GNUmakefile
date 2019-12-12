@@ -1194,7 +1194,7 @@ endif
 
 #### Targets
 
-all: blood
+all: blood rr
 
 start:
 	$(BUILD_STARTED)
