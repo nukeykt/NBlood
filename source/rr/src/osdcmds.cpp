@@ -1455,7 +1455,7 @@ int32_t registerosdcommands(void)
         { "in_mousesmoothing", "enable/disable mouse input smoothing", (void *)&ud.config.SmoothInput, CVAR_BOOL, 0, 1 },
 
         { "mus_enabled", "enables/disables music", (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
-        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, 1 },
+        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, ASS_NumSoundCards },
         { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },
 
         { "osdhightile", "enable/disable hires art replacements for console text", (void *)&osdhightile, CVAR_BOOL, 0, 1 },
@@ -1487,6 +1487,9 @@ int32_t registerosdcommands(void)
         { "snd_numvoices", "the number of concurrent sounds", (void *)&ud.config.NumVoices, CVAR_INT, 1, 128 },
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ud.config.ReverseStereo, CVAR_BOOL, 0, 1 },
         { "snd_speech", "enables/disables player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+        { "snd_tryformats", "enables/disables automatic discovery of replacement sounds and music in .flac and .ogg formats", (void *)&g_maybeUpgradeSoundFormats, CVAR_BOOL, 0, 1 },
+#endif
 
         { "team","change team in multiplayer", (void *)&ud.team, CVAR_INT|CVAR_MULTI, 0, 3 },
 

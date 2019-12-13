@@ -1077,9 +1077,13 @@ void G_LoadLookups(void)
 //////////
 
 #ifdef FORMAT_UPGRADE_ELIGIBLE
+int g_maybeUpgradeSoundFormats = 1;
 
 static int32_t S_TryFormats(char * const testfn, char * const fn_suffix, char const searchfirst)
 {
+    if (!g_maybeUpgradeSoundFormats)
+        return -1;
+
 #ifdef HAVE_FLAC
     {
         Bstrcpy(fn_suffix, ".flac");
@@ -1187,11 +1191,11 @@ int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic)
     return origfp;
 }
 
+#endif
+
 void Duke_CommonCleanup(void)
 {
     DO_FREE_AND_NULL(g_grpNamePtr);
     DO_FREE_AND_NULL(g_scriptNamePtr);
     DO_FREE_AND_NULL(g_rtsNamePtr);
 }
-
-#endif
