@@ -209,7 +209,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].offset.x = i;
+            spriteext[whichsprite].pivot_offset.x = i;
         }
         break;
         case T_MDYOFF:     // mdyoff <xx>
@@ -224,7 +224,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].offset.y = i;
+            spriteext[whichsprite].pivot_offset.y = i;
         }
         break;
         case T_MDZOFF:     // mdzoff <xx>
@@ -239,7 +239,7 @@ int32_t engineLoadMHK(const char *filename)
                     script->filename, scriptfile_getlinum(script, cmdtokptr));
                 break;
             }
-            spriteext[whichsprite].offset.z = i;
+            spriteext[whichsprite].pivot_offset.z = i;
         }
         break;
         case T_AWAY1:      // away1

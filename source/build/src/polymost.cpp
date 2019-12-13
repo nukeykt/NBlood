@@ -8786,7 +8786,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
         glEnable(GL_BLEND);
 
         spriteext[tspr.owner].roll = a;
-        spriteext[tspr.owner].offset.z = z;
+        spriteext[tspr.owner].pivot_offset.z = z;
 
         fov = hud->fov;
 
@@ -8802,7 +8802,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
         polymer_setaspect(pr_fov);
 
-        spriteext[tspr.owner].offset.z = 0;
+        spriteext[tspr.owner].pivot_offset.z = 0;
         spriteext[tspr.owner].roll = 0;
 
         glDisable(GL_BLEND);

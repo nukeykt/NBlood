@@ -4506,7 +4506,7 @@ static void         polymer_drawmdsprite(uspritetype *tspr)
         radplayerang = (globalang & 2047) * (2.0f * fPI / 2048.0f);
         cosminusradplayerang = cos(-radplayerang);
         sinminusradplayerang = sin(-radplayerang);
-        hudzoom = 65536.0 / spriteext[tspr->owner].offset.z;
+        hudzoom = 65536.0 / spriteext[tspr->owner].pivot_offset.z;
 
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(horizang, -cosminusradplayerang, 0.0f, sinminusradplayerang);
@@ -4561,9 +4561,9 @@ static void         polymer_drawmdsprite(uspritetype *tspr)
         pitchang = (float)(spriteext[tspr->owner].pitch) * (360.f/2048.f);
         rollang = (float)(spriteext[tspr->owner].roll) * (360.f/2048.f);
 
-        offsets[0] = -spriteext[tspr->owner].offset.x / (scale * tspr->xrepeat);
-        offsets[1] = -spriteext[tspr->owner].offset.y / (scale * tspr->xrepeat);
-        offsets[2] = (float)(spriteext[tspr->owner].offset.z) / 16.0f / (scale * tspr->yrepeat);
+        offsets[0] = -spriteext[tspr->owner].pivot_offset.x / (scale * tspr->xrepeat);
+        offsets[1] = -spriteext[tspr->owner].pivot_offset.y / (scale * tspr->xrepeat);
+        offsets[2] = (float)(spriteext[tspr->owner].pivot_offset.z) / 16.0f / (scale * tspr->yrepeat);
 
         glTranslatef(-offsets[0], -offsets[1], -offsets[2]);
 

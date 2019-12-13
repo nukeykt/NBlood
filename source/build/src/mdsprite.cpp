@@ -2273,14 +2273,14 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         float f = 1.f/(fxdimen * fviewingrange) * (256.f/(65536.f*128.f)) * (m0.x+m1.x);
         Bmemset(&a0, 0, sizeof(a0));
 
-        if (sext->offset.x)
-            a0.x = (float) sext->offset.x * f;
+        if (sext->pivot_offset.x)
+            a0.x = (float) sext->pivot_offset.x * f;
 
-        if (sext->offset.y)  // Compare with SCREEN_FACTORS above
-            a0.y = (float) sext->offset.y * f;
+        if (sext->pivot_offset.y)  // Compare with SCREEN_FACTORS above
+            a0.y = (float) sext->pivot_offset.y * f;
 
-        if ((sext->offset.z) && !(tspr->extra&TSPR_EXTRA_MDHACK))  // Compare with SCREEN_FACTORS above
-            a0.z = (float)sext->offset.z / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
+        if ((sext->pivot_offset.z) && !(tspr->extra&TSPR_EXTRA_MDHACK))  // Compare with SCREEN_FACTORS above
+            a0.z = (float)sext->pivot_offset.z / (gxyaspect * fxdimen * (65536.f/128.f) * (m0.z+m1.z));
 
         k0 = (float)sintable[(sext->pitch+512)&2047] * (1.f/16384.f);
         k1 = (float)sintable[sext->pitch&2047] * (1.f/16384.f);
