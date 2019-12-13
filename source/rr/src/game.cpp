@@ -174,6 +174,14 @@ enum gametokens
     T_TEXTUREFILTER,
 };
 
+static void gameTimerHandler(void)
+{
+    S_Cleanup();
+    MUSIC_Update();
+
+    G_HandleSpecialKeys();
+}
+
 void G_HandleSpecialKeys(void)
 {
     // we need CONTROL_GetInput in order to pick up joystick button presses
@@ -7448,6 +7456,7 @@ static void G_Startup(void)
     set_memerr_handler(&G_HandleMemErr);
 
     timerInit(TICRATE);
+    timerSetCallback(gameTimerHandler);
 
     initcrc32table();
 
@@ -8345,6 +8354,7 @@ MAIN_LOOP_RESTART:
 
         OSD_DispatchQueued();
 
+        static bool frameJustDrawn;
         char gameUpdate = false;
         double const gameUpdateStartTime = timerGetHiTicks();
         if (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME)
@@ -8361,7 +8371,10 @@ MAIN_LOOP_RESTART:
 
             //Bmemcpy(&inputfifo[0][myconnectindex], &localInput, sizeof(input_t));
 
-            S_Update();
+            if (!frameJustDrawn)
+                break;
+
+            frameJustDrawn = false;
 
             do
             {
@@ -8376,6 +8389,7 @@ MAIN_LOOP_RESTART:
                         (g_player[myconnectindex].ps->gm&MODE_GAME))
                 {
                     G_MoveLoop();
+                    S_Update();
 #ifdef __ANDROID__
                     inputfifo[0][myconnectindex].fvel = 0;
                     inputfifo[0][myconnectindex].svel = 0;
@@ -8430,6 +8444,8 @@ MAIN_LOOP_RESTART:
             {
                 g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
             }
+
+            frameJustDrawn = true;
         }
 
         // handle CON_SAVE and CON_SAVENN

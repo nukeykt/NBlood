@@ -2900,10 +2900,6 @@ void Net_ReceiveDisconnect(ENetEvent *event)
 
 void Net_GetPackets(void)
 {
-    MUSIC_Update();
-
-    G_HandleSpecialKeys();
-
     if (g_netDisconnect)
     {
         Net_Disconnect();
