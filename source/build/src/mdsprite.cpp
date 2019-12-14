@@ -2015,8 +2015,8 @@ void md3_vox_calcmat_common(tspriteptr_t tspr, const vec3f_t *a0, float f, float
     float g;
     float k0, k1, k2, k3, k4, k5, k6, k7;
 
-    k0 = ((float)(tspr->x-globalposx))*f*(1.f/1024.f);
-    k1 = ((float)(tspr->y-globalposy))*f*(1.f/1024.f);
+    k0 = ((float)(tspr->x+spriteext[tspr->owner].position_offset.x-globalposx))*f*(1.f/1024.f);
+    k1 = ((float)(tspr->y+spriteext[tspr->owner].position_offset.y-globalposy))*f*(1.f/1024.f);
     f = gcosang2*gshang/gvrcorrection;
     g = gsinang2*gshang/gvrcorrection;
     k4 = (float)sintable[(tspr->ang+spriteext[tspr->owner].angoff+1024)&2047] * (1.f/16384.f);

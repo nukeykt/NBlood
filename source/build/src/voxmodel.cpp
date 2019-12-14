@@ -1161,8 +1161,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     int const shadowHack = !!(tspr->extra&TSPR_EXTRA_MDHACK);
 
-    m0.y *= f; a0.y = (((float)((tspr->x+spriteext[tspr->owner].position_offset.x)-globalposx)) * (1.f/1024.f) + a0.y) * f;
-    m0.x *=-f; a0.x = (((float)((tspr->y+spriteext[tspr->owner].position_offset.y)-globalposy)) * -(1.f/1024.f) + a0.x) * -f;
+    m0.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].position_offset.x-globalposx)) * (1.f/1024.f) + a0.y) * f;
+    m0.x *=-f; a0.x = (((float)(tspr->y+spriteext[tspr->owner].position_offset.y-globalposy)) * -(1.f/1024.f) + a0.x) * -f;
     m0.z *= g; a0.z = (((float)(k0     -globalposz - shadowHack)) * -(1.f/16384.f) + a0.z) * g;
 
     float mat[16];
