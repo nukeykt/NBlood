@@ -107,6 +107,7 @@ struct demo_input
 };
 #pragma pack(pop)
 
+void ExitGame();
 void ShutDown(void);
 void DebugOut(const char *fmt, ...);
 void bail2dos(const char *fmt, ...);
@@ -250,7 +251,9 @@ extern int lCountDown;
 extern short bSlipMode;
 
 extern short nItemTextIndex;
-extern const char *gString[];
+extern const char* gString[];
+extern const char* gPSDemoString[];
+extern const char* gEXDemoString[];
 
 extern short bNoSound;
 
@@ -260,6 +263,7 @@ extern int32_t g_gameType;
 
 #define POWERSLAVE  (g_gameType & GAMEFLAG_POWERSLAVE)
 #define EXHUMED     (g_gameType & GAMEFLAG_EXHUMED)
+#define ISDEMOVER   (g_gameType & GAMEFLAG_DEMO)
 
 extern int mouseaiming, aimmode, mouseflip;
 extern int runkey_mode, auto_run;

@@ -40,8 +40,10 @@ static void process_vacapp15(int32_t crcval);
 //    name          crc             size      flags                 dependency
 static internalgrpinfo_t const internalgrpfiles[] =
 {
-    { "Powerslave", POWERSLAVE_CRC, 27020745, GAMEFLAG_POWERSLAVE,  0 },
-    { "Exhumed",    EXHUMED_CRC,    27108170, GAMEFLAG_EXHUMED,     0 },
+    { "Powerslave", POWERSLAVE_CRC, 27020745, GAMEFLAG_POWERSLAVE, 0 },
+    { "Exhumed",    EXHUMED_CRC,    27108170, GAMEFLAG_EXHUMED,    0 },
+    { "Powerslave Demo", POWERSLAVE_DEMO_CRC, 15904838, GAMEFLAG_POWERSLAVE | GAMEFLAG_DEMO, 0 },
+//  { "Exhumed Demo",    EXHUMED_DEMO_CRC,    16481687, GAMEFLAG_EXHUMED | GAMEFLAG_DEMO,    0 },
 };
 #endif
 
@@ -59,6 +61,8 @@ static void LoadList(const char * filename)
     scriptfile_addsymbolvalue("GAMEFLAG_POWERSLAVE", GAMEFLAG_POWERSLAVE);
     scriptfile_addsymbolvalue("POWERSLAVE_CRC", POWERSLAVE_CRC);
     scriptfile_addsymbolvalue("EXHUMED_CRC", EXHUMED_CRC);
+    scriptfile_addsymbolvalue("EXHUMED_DEMO_CRC", EXHUMED_DEMO_CRC);
+    scriptfile_addsymbolvalue("POWERSLAVE_DEMO_CRC", POWERSLAVE_DEMO_CRC);
 #endif
 
     while (!scriptfile_eof(script))

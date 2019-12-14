@@ -30,12 +30,16 @@ extern "C" {
 #define MAXLISTNAMELEN 32
 
 // List of internally-known GRP files
-#define POWERSLAVE_CRC  (int32_t)0x303CBD89
-// TODO:
-#define EXHUMED_CRC     (int32_t)0xE3B172F1
+#define POWERSLAVE_CRC      (int32_t)0x303CBD89
+#define EXHUMED_CRC         (int32_t)0xE3B172F1
+#define POWERSLAVE_DEMO_CRC (int32_t)0x1D8C7645
+#define EXHUMED_DEMO_CRC    (int32_t)0x1A6E27FA
 
-#define GAMEFLAG_POWERSLAVE 0x00000001
-#define GAMEFLAG_EXHUMED    0x00000002
+#define GAMEFLAG_POWERSLAVE       0x00000001
+#define GAMEFLAG_EXHUMED          0x00000002
+
+#define GAMEFLAG_DEMO         0x00000020
+
 //#define GAMEFLAG_ADDON      0x00000010
 //#define GAMEFLAG_SHAREWARE  0x00000020
 #define GAMEFLAGMASK        0x000000FF // flags allowed from grpinfo

@@ -525,7 +525,9 @@ int LoadSound(const char *sound)
     }
     else
     {
-        bail2dos("Unable to open sound '%s'!\n", buffer);
+        if (!ISDEMOVER) {
+            bail2dos("Unable to open sound '%s'!\n", buffer); // demo tries to load sound files it doesn't have
+        }
         SoundBuf[i] = NULL;
         SoundLen[i] = 0;
         //return hVoc;
