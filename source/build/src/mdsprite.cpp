@@ -2148,7 +2148,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     a0.z = m->zadd * m->scale;
 
     // Parkar: Moved up to be able to use k0 for the y-flipping code
-    k0 = (float)tspr->z;
+    k0 = (float)tspr->z+spriteext[tspr->owner].position_offset.z;
     if ((globalorientation&128) && !((globalorientation&48)==32))
         k0 += (float)(sizyrep<<1);
 
@@ -2171,7 +2171,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     m0.z *= f; m1.z *= f; a0.z *= f;
 
     // floor aligned
-    k1 = (float)tspr->y;
+    k1 = (float)tspr->y+spriteext[tspr->owner].position_offset.y;
     if ((globalorientation&48)==32)
     {
         m0.z = -m0.z; m1.z = -m1.z; a0.z = -a0.z;
@@ -2184,7 +2184,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     // calculations below again, but are needed for the base offsets.
     f = (65536.f*512.f)/(fxdimen*fviewingrange);
     g = 32.f/(fxdimen*gxyaspect);
-    m0.y *= f; m1.y *= f; a0.y = (((float)(tspr->x-globalposx))*  (1.f/1024.f) + a0.y)*f;
+    m0.y *= f; m1.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].position_offset.x-globalposx))*  (1.f/1024.f) + a0.y)*f;
     m0.x *=-f; m1.x *=-f; a0.x = ((k1     -fglobalposy) * -(1.f/1024.f) + a0.x)*-f;
     m0.z *= g; m1.z *= g; a0.z = ((k0     -fglobalposz) * -(1.f/16384.f) + a0.z)*g;
 
