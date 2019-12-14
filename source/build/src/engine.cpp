@@ -6203,9 +6203,9 @@ draw_as_face_sprite:
             }
         }
 
-        x = tspr->x + spriteext[spritenum].pivot_offset.x;
-        y = tspr->y + spriteext[spritenum].pivot_offset.y;
-        z = tspr->z + spriteext[spritenum].pivot_offset.z;
+        x = tspr->x + spriteext[spritenum].position_offset.x;
+        y = tspr->y + spriteext[spritenum].position_offset.y;
+        z = tspr->z + spriteext[spritenum].position_offset.z;
 
         i = (int32_t)tspr->ang+1536;
         i += spriteext[spritenum].angoff;
