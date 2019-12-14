@@ -4476,9 +4476,9 @@ static void         polymer_drawmdsprite(uspritetype *tspr)
         spos2[1] = (z - fglobalposz) * (-1.f/16.f);
         spos2[2] = fglobalposx - x;
     } else {
-        spos[0] = (float)tspr->y;
-        spos[1] = -(float)(tspr->z) / 16.0f;
-        spos[2] = -(float)tspr->x;
+        spos[0] = (float)tspr->y+spriteext[tspr->owner].position_offset.y;
+        spos[1] = -(float)(tspr->z+spriteext[tspr->owner].position_offset.z) / 16.0f;
+        spos[2] = -(float)tspr->x+spriteext[tspr->owner].position_offset.x;
 
         spos2[0] = spos2[1] = spos2[2] = 0.0f;
     }
