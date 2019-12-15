@@ -49,7 +49,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx_man.h"
 
 #include "macros.h"
-#include "lz4.h"
 #include "colmatch.h"
 #include "palette.h"
 

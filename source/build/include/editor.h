@@ -141,15 +141,22 @@ extern int32_t map_undoredo(int32_t dir);
 extern void map_undoredo_free(void);
 extern void create_map_snapshot(void);
 
+enum
+{
+    UNDO_SECTORS,
+    UNDO_WALLS,
+    UNDO_SPRITES
+};
+
 typedef struct mapundo_
 {
     int32_t revision;
     int32_t num[3];  // numsectors, numwalls, numsprites
 
-    // These exist temporarily as sector/wall/sprite data, but are compressed
-    // most of the time.  +4 bytes refcount at the beginning.
-    char *sws[3];  // sector, wall, sprite
-    int size[3];
+    // These exist temporarily as sector/wall/sprite data, but are always compressed
+    // +4 bytes refcount at the beginning.
+    char *lz4Blocks[3];  // sector, wall, sprite
+    int   lz4Size[3];
 
     uintptr_t crc[3];
 
