@@ -4,23 +4,31 @@
   * pogokeen
   * Plagman
   * Helixhorned
-  
+
 ### JFDuke3D by:
   * JonoF
-  
+
 ### Uses BUILD Engine technology by:
   * Ken Silverman
-  
+
 ### NBlood programming:
   * Nuke.YKT
   * NoOne
   * sirlemonhead
-  
-### Widescreen tiles & NBlood logo:
+
+### NBlood widescreen tiles & logo:
   * Maxi Clouds
-  
-### Special thanks:
+
+### NBlood special thanks:
   * NY00123, MetHy, Striker, oasiz, Mblackwell, Zombie, Marphy Black, SAmik37, meleemario
 
-### Contributors
+### NBlood contributors:
   * alexey-lysiuk, CommonLoon102, Jan200101
+
+### PCExhumed programming:
+  * sirlemonhead
+  * Nuke.YKT
+  * NY00123
+
+### PCExhumed special thanks:
+  * Hendricks266, NY00123, MetHy, oasiz, Daedolon, NoOne, phredreeke, Lobotomy Software

@@ -3666,6 +3666,7 @@ static int32_t defsparser(scriptfile *script)
                 paletteloaded &= ~PALETTE_TRANSLUC;
         }
         break;
+
         case T_NEWGAMECHOICES: // stub
         {
             char *blockend;
@@ -3679,7 +3680,6 @@ static int32_t defsparser(scriptfile *script)
             char *dummy;
             int dummy2;
 
-
             if (scriptfile_getstring(script, &dummy))
                 break;
             if (scriptfile_getstring(script, &dummy))
@@ -3689,7 +3689,9 @@ static int32_t defsparser(scriptfile *script)
             if (scriptfile_getstring(script, &dummy))
                 break;
         }
-        break;        default:
+        break;
+
+        default:
             initprintf("Unknown token.\n"); break;
         }
     }
