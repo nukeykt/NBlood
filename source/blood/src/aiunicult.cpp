@@ -1,0 +1,1727 @@
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 Nuke.YKT
+Copyright (C) NoOne
+
+This file is part of NBlood.
+
+NBlood is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
+#include "compat.h"
+#include "build.h"
+#include "pragmas.h"
+#include "mmulti.h"
+#include "common_game.h"
+#include "actor.h"
+#include "ai.h"
+#include "aiunicult.h"
+#include "blood.h"
+#include "db.h"
+#include "dude.h"
+
+#include "eventq.h"
+#include "globals.h"
+#include "levels.h"
+#include "player.h"
+#include "seq.h"
+#include "sfx.h"
+#include "sound.h"
+#include "trig.h"
+#include "triggers.h"
+#include "endgame.h"
+#include "view.h"
+#include "tile.h"
+
+static void genDudeAttack1(int, int);
+static void punchCallback(int, int);
+static void ThrowCallback1(int, int);
+static void ThrowCallback2(int, int);
+static void ThrowThing(int, bool);
+static void thinkSearch(spritetype*, XSPRITE*);
+static void thinkGoto(spritetype*, XSPRITE*);
+static void thinkChase(spritetype*, XSPRITE*);
+static void forcePunch(spritetype*, XSPRITE*);
+
+static int nGenDudeAttack1 = seqRegisterClient(genDudeAttack1);
+static int nGenDudePunch = seqRegisterClient(punchCallback);
+static int nGenDudeThrow1 = seqRegisterClient(ThrowCallback1);
+static int nGenDudeThrow2 = seqRegisterClient(ThrowCallback2);
+
+AISTATE genDudeIdleL = { kAiStateIdle, 0, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+AISTATE genDudeIdleW = { kAiStateIdle, 13, -1, 0, NULL, NULL, aiThinkTarget, NULL };
+// ---------------------
+AISTATE genDudeSearchL = { kAiStateSearch, 9, -1, 600, NULL, aiGenDudeMoveForward, thinkSearch, &genDudeIdleL };
+AISTATE genDudeSearchW = { kAiStateSearch, 13, -1, 600, NULL, aiGenDudeMoveForward, thinkSearch, &genDudeIdleW };
+// ---------------------
+AISTATE genDudeSearchShortL = { kAiStateSearch, 9, -1, 200, NULL, aiGenDudeMoveForward, thinkSearch, &genDudeIdleL };
+AISTATE genDudeSearchShortW = { kAiStateSearch, 13, -1, 200, NULL, aiGenDudeMoveForward, thinkSearch, &genDudeIdleW };
+// ---------------------
+AISTATE genDudeSearchNoWalkL = { kAiStateSearch, 0, -1, 600, NULL, aiMoveTurn, thinkSearch, &genDudeIdleL };
+AISTATE genDudeSearchNoWalkW = { kAiStateSearch, 13, -1, 600, NULL, aiMoveTurn, thinkSearch, &genDudeIdleW };
+// ---------------------
+AISTATE genDudeGotoL = { kAiStateMove, 9, -1, 600, NULL, aiGenDudeMoveForward, thinkGoto, &genDudeIdleL };
+AISTATE genDudeGotoW = { kAiStateMove, 13, -1, 600, NULL, aiGenDudeMoveForward, thinkGoto, &genDudeIdleW };
+// ---------------------
+AISTATE genDudeDodgeL = { kAiStateMove, 9, -1, 90, NULL,	aiMoveDodge,	NULL, &genDudeChaseL };
+AISTATE genDudeDodgeD = { kAiStateMove, 14, -1, 90, NULL, aiMoveDodge,	NULL, &genDudeChaseD };
+AISTATE genDudeDodgeW = { kAiStateMove, 13, -1, 90, NULL, aiMoveDodge,	NULL, &genDudeChaseW };
+// ---------------------
+AISTATE genDudeDodgeShortL = { kAiStateMove, 9, -1, 60, NULL,	aiMoveDodge,	NULL, &genDudeChaseL };
+AISTATE genDudeDodgeShortD = { kAiStateMove, 14, -1, 60, NULL, aiMoveDodge,	NULL, &genDudeChaseD };
+AISTATE genDudeDodgeShortW = { kAiStateMove, 13, -1, 60, NULL, aiMoveDodge,	NULL, &genDudeChaseW };
+// ---------------------
+AISTATE genDudeChaseL = { kAiStateChase, 9, -1, 0, NULL,	aiGenDudeMoveForward, thinkChase, NULL };
+AISTATE genDudeChaseD = { kAiStateChase, 14, -1, 0, NULL,	aiGenDudeMoveForward, thinkChase, NULL };
+AISTATE genDudeChaseW = { kAiStateChase, 13, -1, 0, NULL,	aiGenDudeMoveForward, thinkChase, NULL };
+// ---------------------
+AISTATE genDudeChaseNoWalkL = { kAiStateChase, 0, -1, 0, NULL,	aiMoveTurn, thinkChase, NULL };
+AISTATE genDudeChaseNoWalkD = { kAiStateChase, 14, -1, 0, NULL,	aiMoveTurn, thinkChase, NULL };
+AISTATE genDudeChaseNoWalkW = { kAiStateChase, 13, -1, 0, NULL,	aiMoveTurn, thinkChase, NULL };
+// ---------------------
+AISTATE genDudeFireL = { kAiStateChase, 6, nGenDudeAttack1, 0, NULL, aiMoveTurn, thinkChase, &genDudeFireL };
+AISTATE genDudeFireD = { kAiStateChase, 8, nGenDudeAttack1, 0, NULL, aiMoveTurn, thinkChase, &genDudeFireD };
+AISTATE genDudeFireW = { kAiStateChase, 8, nGenDudeAttack1, 0, NULL, aiMoveTurn, thinkChase, &genDudeFireW };
+// ---------------------z
+AISTATE genDudeRecoilL = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &genDudeChaseL };
+AISTATE genDudeRecoilD = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &genDudeChaseD };
+AISTATE genDudeRecoilW = { kAiStateRecoil, 5, -1, 0, NULL, NULL, NULL, &genDudeChaseW };
+AISTATE genDudeRecoilTesla = { kAiStateRecoil, 4, -1, 0, NULL, NULL, NULL, &genDudeDodgeShortL };
+// ---------------------
+AISTATE genDudeThrow = { kAiStateChase, 7, nGenDudeThrow1, 0, NULL, NULL, NULL, &genDudeChaseL };
+AISTATE genDudeThrow2 = { kAiStateChase, 7, nGenDudeThrow2, 0, NULL, NULL, NULL, &genDudeChaseL };
+// ---------------------
+AISTATE genDudePunch = { kAiStateChase,10, nGenDudePunch, 0, NULL, NULL, forcePunch, &genDudeChaseL };
+// ---------------------
+
+GENDUDESND gCustomDudeSnd[] = {
+    { 1003, 2, 0, true, false   },      // spot sound
+    { 1013, 2, 2, true, true    },      // pain sound
+    { 1018, 2, 4, false, true   },      // death sound
+    { 1031, 2, 6, true, true    },      // burning state sound
+    { 1018, 2, 8, false, true   },      // explosive death or end of burning state sound
+    { 4021, 2, 10, true, false  },	    // target of dude is dead
+    { 1005, 2, 12, true, false  },	    // chase sound
+    { -1, 0, 14, false, true    },	    // weapon attack
+    { -1, 0, 15, false, true    },	    // throw attack
+    { -1, 0, 16, false, true    },	    // melee attack
+    { 9008, 0, 17, false, false },      // transforming in other dude
+};
+
+GENDUDEEXTRA gGenDudeExtra[kMaxSprites];
+
+static void forcePunch(spritetype* pSprite, XSPRITE* pXSprite) {
+    if (gGenDudeExtra[pSprite->index].forcePunch && seqGetStatus(3, pSprite->extra) == -1)
+        punchCallback(0,pSprite->extra);
+}
+
+void genDudeProcess(spritetype* pSprite, XSPRITE* pXSprite) {
+    GENDUDEEXTRA* pExtra = &gGenDudeExtra[pSprite->index]; 
+    
+    if (pExtra->slaveCount > 0)
+        updateTargetOfSlaves(pSprite);
+    
+    if (pExtra->nLifeLeech >= 0)
+        updateTargetOfLeech(pSprite);
+
+    if (pXSprite->aiState->moveFunc)
+        pXSprite->aiState->moveFunc(pSprite, pXSprite);
+
+    if (pXSprite->aiState->thinkFunc && (gFrame & 3) == (pSprite->index & 3))
+        pXSprite->aiState->thinkFunc(pSprite, pXSprite);
+
+    if (pXSprite->stateTimer == 0 && pXSprite->aiState->nextState && (pXSprite->aiState->stateTicks > 0 || seqGetStatus(3, pSprite->extra) < 0))
+        aiGenDudeNewState(pSprite, pXSprite->aiState->nextState);
+
+    if (pXSprite->health > 0 && ((dudeInfo[pSprite->type - kDudeBase].hinderDamage << 4) <= cumulDamage[pSprite->extra])) {
+        pXSprite->data3 = cumulDamage[pSprite->extra];
+        RecoilDude(pSprite, pXSprite);
+    }
+}
+
+void genDudeUpdate(spritetype* pSprite) {
+    for (int i = 0; i < kGenDudePropertyMax; i++) {
+        if (gGenDudeExtra[pSprite->index].updReq[i])
+            genDudePrepare(pSprite, i);
+    }
+}
+
+static void punchCallback(int, int nXIndex) {
+    XSPRITE* pXSprite = &xsprite[nXIndex];
+    if (pXSprite->target != -1) {
+        int nSprite = pXSprite->reference;
+        spritetype* pSprite = &sprite[nSprite];
+
+        int nZOffset1 = dudeInfo[pSprite->type - kDudeBase].eyeHeight * pSprite->yrepeat << 2;
+        int nZOffset2 = 0;
+        
+        spritetype* pTarget = &sprite[pXSprite->target];
+        if(IsDudeSprite(pTarget))
+            nZOffset2 = dudeInfo[pTarget->type - kDudeBase].eyeHeight * pTarget->yrepeat << 2;
+
+        int dx = Cos(pSprite->ang) >> 16;
+        int dy = Sin(pSprite->ang) >> 16;
+        int dz = nZOffset1 - nZOffset2;
+
+        if (!playGenDudeSound(pSprite, kGenDudeSndAttackMelee))
+            sfxPlay3DSound(pSprite, 530, 1, 0);
+
+        actFireVector(pSprite, 0, 0, dx, dy, dz,VECTOR_TYPE_22);
+    }
+}
+
+static void genDudeAttack1(int, int nXIndex) {
+    if (!(nXIndex >= 0 && nXIndex < kMaxXSprites)) {
+        consoleSysMsg("nXIndex >= 0 && nXIndex < kMaxXSprites");
+        return;
+    }
+    
+    XSPRITE* pXSprite = &xsprite[nXIndex]; int nSprite = pXSprite->reference;
+    
+    if (!(nSprite >= 0 && nSprite < kMaxSprites)) {
+        consoleSysMsg("nIndex >= 0 && nIndex < kMaxSprites");
+        return;
+    }
+
+    spritetype* pSprite = &sprite[nSprite]; int dx, dy, dz;
+    xvel[pSprite->index] = yvel[pSprite->index] = 0;
+
+    short curWeapon = gGenDudeExtra[nSprite].curWeapon;
+    short dispersion = gGenDudeExtra[nSprite].baseDispersion;
+    if (inDuck(pXSprite->aiState)) dispersion = ClipLow(dispersion >> 1, 250);
+
+    if (curWeapon >= 0 && curWeapon < kVectorMax) {
+
+        dx = Cos(pSprite->ang) >> 16; dy = Sin(pSprite->ang) >> 16; dz = gDudeSlope[nXIndex];
+
+        VECTORDATA* pVectorData = &gVectorData[curWeapon];
+        int vdist = pVectorData->maxDist;
+            
+        // dispersal modifiers here in case if non-melee enemy
+        if (vdist <= 0 || vdist > 1280) {
+            dx += Random3(dispersion); dy += Random3(dispersion);
+            dz += Random3(dispersion);
+        }
+
+        actFireVector(pSprite, 0, 0, dx, dy, dz,(VECTOR_TYPE)curWeapon);
+        if (!playGenDudeSound(pSprite, kGenDudeSndAttackNormal))
+            sfxPlayVectorSound(pSprite, curWeapon);
+            
+    } else if (curWeapon >= kDudeBase && curWeapon < kDudeMax) {
+
+        spritetype* pSpawned = NULL; int dist = pSprite->clipdist << 4; 
+        short slaveCnt = gGenDudeExtra[pSprite->index].slaveCount;
+        if (slaveCnt <= gGameOptions.nDifficulty && (pSpawned = actSpawnDude(pSprite, curWeapon, dist + Random(dist), 0)) != NULL) {
+            
+            pSpawned->owner = nSprite;
+            
+            if (pSpawned->extra > -1) {
+                xsprite[pSpawned->extra].target = pXSprite->target;
+                if (pXSprite->target > -1)
+                    aiActivateDude(pSpawned, &xsprite[pSpawned->extra]);
+            }
+                
+            gKillMgr.sub_263E0(1);
+            gGenDudeExtra[pSprite->index].slave[slaveCnt] = pSpawned->index;
+            gGenDudeExtra[pSprite->index].slaveCount++;
+
+            if (!playGenDudeSound(pSprite, kGenDudeSndAttackNormal))
+                sfxPlay3DSoundCP(pSprite, 379, 1, 0, 0x10000 - Random3(0x3000));
+        }
+
+    } else if (curWeapon >= kMissileBase && curWeapon < kMissileMax) {
+
+        dx = Cos(pSprite->ang) >> 16;
+        dy = Sin(pSprite->ang) >> 16;
+        dz = gDudeSlope[nXIndex];
+
+        // dispersal modifiers here
+        dx += Random3(dispersion); dy += Random3(dispersion);
+        dz += Random3(dispersion >> 1);
+
+        actFireMissile(pSprite, 0, 0, dx, dy, dz, curWeapon);
+        if (!playGenDudeSound(pSprite, kGenDudeSndAttackNormal))
+            sfxPlayMissileSound(pSprite, curWeapon);
+    }
+}
+
+static void ThrowCallback1(int, int nXIndex) {
+    ThrowThing(nXIndex, true);
+}
+
+static void ThrowCallback2(int, int nXIndex) {
+    ThrowThing(nXIndex, false);
+}
+
+static void ThrowThing(int nXIndex, bool impact) {
+    XSPRITE* pXSprite = &xsprite[nXIndex]; spritetype* pSprite = &sprite[pXSprite->reference];
+
+    if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites))
+        return;
+
+    spritetype * pTarget = &sprite[pXSprite->target];
+    if (!(pTarget->type >= kDudeBase && pTarget->type < kDudeMax))
+        return;
+
+    short curWeapon = gGenDudeExtra[sprite[pXSprite->reference].index].curWeapon;
+    if (curWeapon < kThingBase || curWeapon >= kThingMax)
+        return;
+
+    THINGINFO* pThinkInfo = &thingInfo[curWeapon - kThingBase];
+    if (!pThinkInfo->allowThrow) return;
+
+    if (!playGenDudeSound(pSprite, kGenDudeSndAttackThrow))
+        sfxPlay3DSound(pSprite, 455, -1, 0);
+            
+    int zThrow = 14500;
+    int dx = pTarget->x - pSprite->x;
+    int dy = pTarget->y - pSprite->y;
+    int dz = pTarget->z - pSprite->z;
+    int dist = approxDist(dx, dy);
+    
+    spritetype* pLeech = leechIsDropped(pSprite); 
+    XSPRITE* pXLeech = (pLeech != NULL) ? &xsprite[pLeech->extra] : NULL;
+    
+    switch (curWeapon) {
+        case kModernThingEnemyLifeLeech:
+        case kThingDroppedLifeLeech:
+            zThrow = 5000;
+            // pickup life leech before throw it again
+            if (pLeech != NULL) removeLeech(pLeech);
+            break;
+    }
+
+    spritetype* pThing = NULL;
+    if ((pThing = actFireThing(pSprite, 0, 0, (dz / 128) - zThrow, curWeapon, divscale(dist / 540, 120, 23))) == NULL) return;
+    else if (pThinkInfo->picnum < 0 && pThing->type != kModernThingThrowableRock) pThing->picnum = 0;
+            
+    pThing->owner = pSprite->xvel;
+            
+    switch (curWeapon) {
+        case kThingNapalmBall:
+            pThing->xrepeat = pThing->yrepeat = 24;
+            xsprite[pThing->extra].data4 = 3 + gGameOptions.nDifficulty;
+            impact = true;
+            break;
+        case kModernThingThrowableRock:
+            int sPics[6];
+            sPics[0] = 2406;	sPics[1] = 2280;
+            sPics[2] = 2185;	sPics[3] = 2155;
+            sPics[4] = 2620;	sPics[5] = 3135;
+
+            pThing->picnum = sPics[Random(5)];
+            pThing->xrepeat = pThing->yrepeat = 24 + Random(42);
+            pThing->cstat |= 0x0001;
+            pThing->pal = 5;
+
+            if (Chance(0x5000)) pThing->cstat |= 0x0004;
+            if (Chance(0x5000)) pThing->cstat |= 0x0008;
+
+            if (pThing->xrepeat > 60) xsprite[pThing->extra].data1 = 43;
+            else if (pThing->xrepeat > 40) xsprite[pThing->extra].data1 = 33;
+            else if (pThing->xrepeat > 30) xsprite[pThing->extra].data1 = 23;
+            else xsprite[pThing->extra].data1 = 12;
+            return;
+        case kThingTNTBarrel:
+        case kThingArmedProxBomb:
+        case kThingArmedSpray:
+            impact = false;
+            break;
+        case kModernThingTNTProx:
+            xsprite[pThing->extra].state = 0;
+            xsprite[pThing->extra].Proximity = true;
+            return;
+        case kModernThingEnemyLifeLeech:
+            XSPRITE* pXThing = &xsprite[pThing->extra];
+            if (pLeech != NULL) pXThing->health = pXLeech->health;
+            else pXThing->health = 300 * gGameOptions.nDifficulty;
+
+            sfxPlay3DSound(pSprite, 490, -1, 0);
+
+            if (gGameOptions.nDifficulty <= 2) pXThing->data3 = 32700;
+            else pXThing->data3 = Random(10);
+            pThing->cstat &= ~CSTAT_SPRITE_BLOCK;
+            pThing->pal = 6; 
+            pXThing->target = pTarget->xvel;
+            pXThing->Proximity = true;
+            pXThing->stateTimer = 1;
+                
+            gGenDudeExtra[pSprite->index].nLifeLeech = pThing->index;
+            evPost(pThing->xvel, 3, 80, kCallbackLeechStateTimer);
+            return;
+    }
+
+    if (impact == true && dist <= 7680) xsprite[pThing->extra].Impact = true;
+    else {
+        xsprite[pThing->extra].Impact = false;
+        evPost(pThing->xvel, 3, 120 * Random(2) + 120, kCmdOn, pXSprite->reference);
+    }
+}
+
+static void thinkSearch( spritetype* pSprite, XSPRITE* pXSprite ) {
+    aiChooseDirection(pSprite, pXSprite, pXSprite->goalAng);
+    sub_5F15C(pSprite, pXSprite);
+}
+
+static void thinkGoto(spritetype* pSprite, XSPRITE* pXSprite) {
+
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
+        return;
+    }
+
+    int dx = pXSprite->targetX - pSprite->x;
+    int dy = pXSprite->targetY - pSprite->y;
+    int nAngle = getangle(dx, dy);
+
+    aiChooseDirection(pSprite, pXSprite, nAngle);
+
+    // if reached target, change to search mode
+    if (approxDist(dx, dy) < 5120 && klabs(pSprite->ang - nAngle) < dudeInfo[pSprite->type - kDudeBase].periphery) {
+        if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeSearchW);
+        else aiGenDudeNewState(pSprite, &genDudeSearchL);
+    }
+    aiThinkTarget(pSprite, pXSprite);
+}
+
+static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
+
+    if (pSprite->type < kDudeBase || pSprite->type >= kDudeMax) return;
+    else if (pXSprite->target < 0 || pXSprite->target >= kMaxSprites) {
+        if(spriteIsUnderwater(pSprite,false)) aiGenDudeNewState(pSprite, &genDudeGotoW);
+        else aiGenDudeNewState(pSprite, &genDudeGotoL);
+        return;
+    } else {
+        
+        genDudeUpdate(pSprite);
+
+    }
+
+
+
+    spritetype* pTarget = &sprite[pXSprite->target];
+    XSPRITE* pXTarget = (!IsDudeSprite(pTarget) || pTarget->extra < 0) ? NULL : &xsprite[pTarget->extra];
+
+    if (pXTarget == NULL) {  // target lost
+        if(spriteIsUnderwater(pSprite,false)) aiGenDudeNewState(pSprite, &genDudeSearchShortW);
+        else aiGenDudeNewState(pSprite, &genDudeSearchShortL);
+        return;
+    } else if (pXTarget->health <= 0) { // target is dead
+        PLAYER* pPlayer = NULL;
+        if ((!IsPlayerSprite(pTarget) && pSprite->index == pTarget->owner)
+            || ((pPlayer = getPlayerById(pTarget->type)) != NULL && pPlayer->fraggerId == pSprite->index)) {
+                
+                playGenDudeSound(pSprite, kGenDudeSndTargetDead);
+                
+                if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeSearchShortW);
+                else aiGenDudeNewState(pSprite, &genDudeSearchShortL);
+        } 
+        else if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeGotoW);
+        else aiGenDudeNewState(pSprite, &genDudeGotoL);
+
+        return;
+    }
+    
+    // check target
+    int dx = pTarget->x - pSprite->x; int dy = pTarget->y - pSprite->y;
+    int dist = ClipLow((int)approxDist(dx, dy), 1);
+
+    // quick hack to prevent spinning around or changing attacker's sprite angle on high movement speeds
+    // when attacking the target. It happens because vanilla function takes in account x and y velocity, 
+    // so i use fake velocity with fixed value and pass it as argument.
+    int xvelocity = xvel[pSprite->index]; int yvelocity = yvel[pSprite->index];
+    if (inAttack(pXSprite->aiState))
+       xvelocity = yvelocity = ClipLow(pSprite->clipdist >> 1, 1);
+
+    aiGenDudeChooseDirection(pSprite, pXSprite, getangle(dx, dy), xvelocity, yvelocity);
+
+    GENDUDEEXTRA* pExtra = &gGenDudeExtra[pSprite->index];
+    if (!pExtra->canAttack) {
+        aiSetTarget(pXSprite, pSprite->index);
+        if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeGotoW);
+        else aiGenDudeNewState(pSprite, &genDudeGotoL);
+        return;
+    }
+
+    if (IsPlayerSprite(pTarget)) {
+        PLAYER* pPlayer = &gPlayer[ pTarget->type - kDudePlayer1 ];
+        if (powerupCheck(pPlayer, kPwUpShadowCloak) > 0)  {
+            if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeSearchShortW);
+            else aiGenDudeNewState(pSprite, &genDudeSearchShortL);
+            return;
+        }
+    }
+    
+    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    int eyeAboveZ = pDudeInfo->eyeHeight * pSprite->yrepeat << 2;
+    if (dist > pDudeInfo->seeDist || !cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum,
+        pSprite->x, pSprite->y, pSprite->z - eyeAboveZ, pSprite->sectnum)) {
+
+        if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeSearchW);
+        else aiGenDudeNewState(pSprite, &genDudeSearchL);
+        pXSprite->target = -1;
+        return;
+    }
+
+    int nAngle = getangle(dx, dy);
+    int losAngle = ((kAng180 + nAngle - pSprite->ang) & 2047) - kAng180;
+    
+    // is the target visible?
+    if (dist < pDudeInfo->seeDist && klabs(losAngle) <= pDudeInfo->periphery) {
+
+        if (((int)gFrameClock & 64) == 0 && Chance(0x3000) && !spriteIsUnderwater(pSprite, false))
+            playGenDudeSound(pSprite, kGenDudeSndChasing);
+
+        gDudeSlope[sprite[pXSprite->reference].extra] = (int)divscale(pTarget->z - pSprite->z, dist, 10);
+        
+        short curWeapon = gGenDudeExtra[pSprite->index].curWeapon;
+        spritetype* pLeech = leechIsDropped(pSprite); VECTORDATA* meleeVector = &gVectorData[22];
+
+        if (pExtra->updReq[kGenDudePropertyAttack]) 
+            genDudePrepare(pSprite, kGenDudePropertyAttack);
+
+        if (curWeapon >= kThingBase && curWeapon < kThingMax) {
+            if (klabs(losAngle) < kAng15) {
+                if (dist < 12264 && dist > 7680 && !spriteIsUnderwater(pSprite, false) && curWeapon != kModernThingEnemyLifeLeech) {
+                    int pHit = HitScan(pSprite, pSprite->z, dx, dy, 0, 16777280, 0);
+                    switch (pHit) {
+                        case 0:
+                        case 4:
+                            return;
+                        default:
+                            aiGenDudeNewState(pSprite, &genDudeThrow);
+                            return;
+                    }
+
+                } else if (dist > 4072 && dist <= 11072 && !spriteIsUnderwater(pSprite, false) && pSprite->owner != (kMaxSprites - 1)) {
+                    switch (curWeapon) {
+                        case kModernThingEnemyLifeLeech: {
+                            if (pLeech == NULL) {
+                                aiGenDudeNewState(pSprite, &genDudeThrow2);
+                                genDudeThrow2.nextState = &genDudeDodgeShortL;
+                                return;
+                            }
+
+                            XSPRITE* pXLeech = &xsprite[pLeech->extra];
+                            int ldist = getTargetDist(pTarget, pDudeInfo, pLeech);
+                            if (ldist > 3 || !cansee(pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum,
+                                pLeech->x, pLeech->y, pLeech->z, pLeech->sectnum) || pXLeech->target == -1) {
+
+                                aiGenDudeNewState(pSprite, &genDudeThrow2);
+                                genDudeThrow2.nextState = &genDudeDodgeShortL;
+
+                            } else {
+                                
+                                genDudeThrow2.nextState = &genDudeChaseL;
+                                if (dist > 5072 && Chance(0x5000)) {
+                                    if (!canDuck(pSprite) || Chance(0x4000)) aiGenDudeNewState(pSprite, &genDudeDodgeShortL);
+                                    else aiGenDudeNewState(pSprite, &genDudeDodgeShortD);
+                                } else {
+                                    aiGenDudeNewState(pSprite, &genDudeChaseL);
+                                }
+
+                            }
+                        }
+                        return;
+                        case kModernThingThrowableRock:
+                            if (Chance(0x4000)) aiGenDudeNewState(pSprite, &genDudeThrow2);
+                            else playGenDudeSound(pSprite, kGenDudeSndTargetSpot);
+                            return;
+                        default:
+                            aiGenDudeNewState(pSprite, &genDudeThrow2);
+                            return;
+                    }
+
+                } else if (dist <= meleeVector->maxDist) {
+
+                    if (spriteIsUnderwater(pSprite, false)) {
+                        if (Chance(0x9000)) aiGenDudeNewState(pSprite, &genDudePunch);
+                        else aiGenDudeNewState(pSprite, &genDudeDodgeW);
+
+                    }
+                    else if (Chance(0x9000)) aiGenDudeNewState(pSprite, &genDudePunch);
+                    else aiGenDudeNewState(pSprite, &genDudeDodgeL);
+                    return;
+
+                } else {
+                    int state = checkAttackState(pSprite, pXSprite);
+                    if (state == 1) aiGenDudeNewState(pSprite, &genDudeChaseW);
+                    else if (state == 2) {
+                        if (Chance(0x5000)) aiGenDudeNewState(pSprite, &genDudeChaseD);
+                        else aiGenDudeNewState(pSprite, &genDudeChaseL);
+                    }
+                    else  aiGenDudeNewState(pSprite, &genDudeChaseL);
+                    return;
+                }
+            }
+
+        } else {
+
+            int defDist = gGenDudeExtra[pSprite->index].fireDist; int vdist = defDist;
+
+            if (curWeapon > 0 && curWeapon < kVectorMax) {
+                if ((vdist = gVectorData[curWeapon].maxDist) <= 0 || vdist > defDist)
+                    vdist = defDist;
+
+            } else if (curWeapon >= kDudeBase && curWeapon < kDudeMax) {
+
+                // don't attack slaves
+                if (pXSprite->target >= 0 && sprite[pXSprite->target].owner == pSprite->xvel) {
+                    aiSetTarget(pXSprite, pSprite->x, pSprite->y, pSprite->z);
+                    return;
+                } else if (gGenDudeExtra[pSprite->index].slaveCount > gGameOptions.nDifficulty || dist < meleeVector->maxDist) {
+                    if (dist <= meleeVector->maxDist) {
+                        aiGenDudeNewState(pSprite, &genDudePunch);
+                        return;
+                    } else {
+                        int state = checkAttackState(pSprite, pXSprite);
+                        if (state == 1) aiGenDudeNewState(pSprite, &genDudeChaseW);
+                        else if (state == 2) aiGenDudeNewState(pSprite, &genDudeChaseD);
+                        else aiGenDudeNewState(pSprite, &genDudeChaseL);
+                        return;
+                    }
+                }
+
+            } else if (curWeapon >= kMissileBase && curWeapon < kMissileMax) {
+                // special handling for flame, explosive and life leech missiles
+                int state = checkAttackState(pSprite, pXSprite);
+                int mdist = (curWeapon != kMissileFlareAlt) ? 3000 : 2500;
+                switch (curWeapon) {
+                    case kMissileLifeLeechRegular:
+                        // pickup life leech if it was thrown previously
+                        if (pLeech != NULL) removeLeech(pLeech);
+                        break;
+                    case kMissileFlareAlt:
+                    case kMissileFireball:
+                    case kMissileFireballNapam:
+                    case kMissileFireballCerberus:
+                    case kMissileFireballTchernobog:
+                        if (dist > mdist || pXSprite->locked == 1) break;
+                        else if (dist <= meleeVector->maxDist && Chance(0x9000))
+                            aiGenDudeNewState(pSprite, &genDudePunch);
+                        else if (state == 1) aiGenDudeNewState(pSprite, &genDudeChaseW);
+                        else if (state == 2) aiGenDudeNewState(pSprite, &genDudeChaseD);
+                        else aiGenDudeNewState(pSprite, &genDudeChaseL);
+                        return;
+                    case kMissileFlameSpray:
+                    case kMissileFlameHound:
+                        if (spriteIsUnderwater(pSprite, false)) {
+                            if (dist > meleeVector->maxDist) aiGenDudeNewState(pSprite, &genDudeChaseW);
+                            else if (Chance(0x8000)) aiGenDudeNewState(pSprite, &genDudePunch);
+                            else aiGenDudeNewState(pSprite, &genDudeDodgeW);
+                            return;
+                    }
+
+                    vdist = 4200; if (((int)gFrameClock & 16) == 0) vdist += Random(800);
+                    break;
+                }
+            } else if (curWeapon >= kTrapExploder && curWeapon < (kTrapExploder + kExplodeMax) - 1) {
+                int nType = curWeapon - kTrapExploder; EXPLOSION* pExpl = &explodeInfo[nType];
+                if (CheckProximity(pSprite, pTarget->x, pTarget->y, pTarget->z, pTarget->sectnum, pExpl->radius / 2)) {
+                    xvel[pSprite->xvel] = zvel[pSprite->xvel] = yvel[pSprite->xvel] = 0;
+                    if (doExplosion(pSprite, nType) && pXSprite->health > 0)
+                            actDamageSprite(pSprite->xvel, pSprite, DAMAGE_TYPE_3, 65535);
+                }
+                return;
+            }
+
+            //if (dist <= vdist && pXSprite->aiState == &genDudeChaseD)
+                //aiGenDudeNewState(pSprite, &genDudeChaseL);
+
+            int state = checkAttackState(pSprite, pXSprite);
+            int kAngle = (dist <= 2048) ? kAngle = pDudeInfo->periphery : kAng5;
+
+            if (dist < vdist && klabs(losAngle) < kAngle) {
+                switch (state) {
+                    case 1:
+                        aiGenDudeNewState(pSprite, &genDudeFireW);
+                        pXSprite->aiState->nextState = &genDudeFireW;
+                        return;
+                    case 2:
+                        aiGenDudeNewState(pSprite, &genDudeFireD);
+                        pXSprite->aiState->nextState = &genDudeFireD;
+                        return;
+                    default:
+                        aiGenDudeNewState(pSprite, &genDudeFireL);
+                        pXSprite->aiState->nextState = &genDudeFireL;
+                        return;
+                }
+            } else {
+                
+                if (seqGetID(3, pSprite->extra) == pXSprite->data2 + (state < 3) ? 8 : 6) {
+                    if (state == 1) pXSprite->aiState->nextState = &genDudeChaseW;
+                    else if (state == 2) pXSprite->aiState->nextState = &genDudeChaseD;
+                    else pXSprite->aiState->nextState = &genDudeChaseL;
+
+                } else if (state == 1 && pXSprite->aiState != &genDudeChaseW && pXSprite->aiState != &genDudeFireW) {
+                    aiGenDudeNewState(pSprite, &genDudeChaseW);
+                    pXSprite->aiState->nextState = &genDudeFireW;
+
+                } else if (state == 2 && pXSprite->aiState != &genDudeChaseD && pXSprite->aiState != &genDudeFireD) {
+                    aiGenDudeNewState(pSprite, &genDudeChaseD);
+                    pXSprite->aiState->nextState = &genDudeFireD;
+
+                } else if (pXSprite->aiState != &genDudeChaseL && pXSprite->aiState != &genDudeFireL) {
+                    aiGenDudeNewState(pSprite, &genDudeChaseL);
+                    pXSprite->aiState->nextState = &genDudeFireL;
+                }
+
+            }
+        }
+    }
+}
+
+
+int checkAttackState(spritetype* pSprite, XSPRITE* pXSprite) {
+    UNREFERENCED_PARAMETER(pXSprite);
+    if (sub_5BDA8(pSprite, 14) || spriteIsUnderwater(pSprite,false))
+    {
+        if ( !sub_5BDA8(pSprite, 14) || spriteIsUnderwater(pSprite,false))
+        {
+            if (spriteIsUnderwater(pSprite,false))
+            {
+                return 1; //water
+            }
+        }
+        else
+        {
+            return 2; //duck
+        }
+    }
+    else
+    {
+        return 3; //land
+    }
+    return 0;
+}
+
+bool TargetNearThing(spritetype* pSprite, int thingType) {
+    for ( int nSprite = headspritesect[pSprite->sectnum]; nSprite >= 0; nSprite = nextspritesect[nSprite] )
+    {
+        // check for required things or explosions in the same sector as the target
+        if ( sprite[nSprite].type == thingType || sprite[nSprite].statnum == kStatExplosion )
+            return true; // indicate danger
+    }
+    return false;
+}
+    
+///// For gen dude
+int getGenDudeMoveSpeed(spritetype* pSprite,int which, bool mul, bool shift) {
+    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    int speed = -1; int step = 2500; int maxSpeed = 146603;
+    switch(which){
+        case 0:
+            speed = pDudeInfo->frontSpeed;
+            break;
+        case 1:
+            speed = pDudeInfo->sideSpeed;
+            break;
+        case 2:
+            speed = pDudeInfo->backSpeed;
+            break;
+        case 3:
+            speed = pDudeInfo->angSpeed;
+            break;
+        default:
+            return -1;
+    }
+    if (pXSprite->busyTime > 0) speed /=3;
+    if (speed > 0 && mul) {
+            
+
+        if (pXSprite->busyTime > 0)
+            speed += (step * pXSprite->busyTime);
+    }
+        
+    if (shift) speed *= 4 >> 4;
+    if (speed > maxSpeed) speed = maxSpeed;
+        
+    return speed;
+}
+    
+void aiGenDudeMoveForward(spritetype* pSprite, XSPRITE* pXSprite ) {
+    DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    GENDUDEEXTRA* pExtra = &gGenDudeExtra[pSprite->index];
+    int maxTurn = pDudeInfo->angSpeed * 4 >> 4;
+
+
+    if (pExtra->canFly) {
+        int nAng = ((pXSprite->goalAng + 1024 - pSprite->ang) & 2047) - 1024;
+        int nTurnRange = (pDudeInfo->angSpeed << 2) >> 4;
+        pSprite->ang = (pSprite->ang + ClipRange(nAng, -nTurnRange, nTurnRange)) & 2047;
+        int nAccel = pDudeInfo->frontSpeed << 2;
+        if (klabs(nAng) > 341)
+            return;
+        if (pXSprite->target == -1)
+            pSprite->ang = (pSprite->ang + 256) & 2047;
+        int dx = pXSprite->targetX - pSprite->x;
+        int dy = pXSprite->targetY - pSprite->y;
+        int UNUSED(nAngle) = getangle(dx, dy);
+        int nDist = approxDist(dx, dy);
+        if ((unsigned int)Random(64) < 32 && nDist <= 0x400)
+            return;
+        int nCos = Cos(pSprite->ang);
+        int nSin = Sin(pSprite->ang);
+        int vx = xvel[pSprite->index];
+        int vy = yvel[pSprite->index];
+        int t1 = dmulscale30(vx, nCos, vy, nSin);
+        int t2 = dmulscale30(vx, nSin, -vy, nCos);
+        if (pXSprite->target == -1)
+            t1 += nAccel;
+        else
+            t1 += nAccel >> 1;
+        xvel[pSprite->index] = dmulscale30(t1, nCos, t2, nSin);
+        yvel[pSprite->index] = dmulscale30(t1, nSin, -t2, nCos);
+    } else {
+        int dang = ((kAng180 + pXSprite->goalAng - pSprite->ang) & 2047) - kAng180;
+        pSprite->ang = ((pSprite->ang + ClipRange(dang, -maxTurn, maxTurn)) & 2047);
+
+        // don't move forward if trying to turn around
+        if (klabs(dang) > kAng60)
+            return;
+
+        int sin = Sin(pSprite->ang);
+        int cos = Cos(pSprite->ang);
+
+        int frontSpeed = gGenDudeExtra[pSprite->index].frontSpeed;
+        xvel[pSprite->xvel] += mulscale(cos, frontSpeed, 30);
+        yvel[pSprite->xvel] += mulscale(sin, frontSpeed, 30);
+    }
+}
+
+void aiGenDudeChooseDirection(spritetype* pSprite, XSPRITE* pXSprite, int a3, int xvel, int yvel) {
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
+        return;
+    }
+    
+    // TO-DO: Take in account if sprite is flip-x, so enemy select correct angle
+
+    int vc = ((a3 + 1024 - pSprite->ang) & 2047) - 1024;
+    int t1 = dmulscale30(xvel, Cos(pSprite->ang), yvel, Sin(pSprite->ang));
+    int vsi = ((t1 * 15) >> 12) / 2; int v8 = (vc >= 0) ? 341 : -341;
+    
+    if (CanMove(pSprite, pXSprite->target, pSprite->ang + vc, vsi))
+        pXSprite->goalAng = pSprite->ang + vc;
+    else if (CanMove(pSprite, pXSprite->target, pSprite->ang + vc / 2, vsi))
+        pXSprite->goalAng = pSprite->ang + vc / 2;
+    else if (CanMove(pSprite, pXSprite->target, pSprite->ang - vc / 2, vsi))
+        pXSprite->goalAng = pSprite->ang - vc / 2;
+    else if (CanMove(pSprite, pXSprite->target, pSprite->ang + v8, vsi))
+        pXSprite->goalAng = pSprite->ang + v8;
+    else if (CanMove(pSprite, pXSprite->target, pSprite->ang, vsi))
+        pXSprite->goalAng = pSprite->ang;
+    else if (CanMove(pSprite, pXSprite->target, pSprite->ang - v8, vsi))
+        pXSprite->goalAng = pSprite->ang - v8;
+    else
+        pXSprite->goalAng = pSprite->ang + 341;
+    
+    pXSprite->dodgeDir = (Chance(0x8000)) ? 1 : -1;
+
+    if (!CanMove(pSprite, pXSprite->target, pSprite->ang + pXSprite->dodgeDir * 512, 512)) {
+        pXSprite->dodgeDir = -pXSprite->dodgeDir;
+        if (!CanMove(pSprite, pXSprite->target, pSprite->ang + pXSprite->dodgeDir * 512, 512))
+            pXSprite->dodgeDir = 0;
+    }
+}
+
+void aiGenDudeNewState(spritetype* pSprite, AISTATE* pAIState) {
+    if (!xspriRangeIsFine(pSprite->extra)) {
+        consoleSysMsg("!xspriRangeIsFine(pSprite->extra)");
+        return;
+    }
+
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+
+    // redirect dudes which cannot walk to non-walk states
+    if (!gGenDudeExtra[pSprite->index].canWalk) {
+        
+        if (pAIState == &genDudeDodgeL || pAIState == &genDudeDodgeShortL) 
+            pAIState = &genDudeRecoilL;
+
+        else if (pAIState == &genDudeDodgeD || pAIState == &genDudeDodgeShortD) 
+            pAIState = &genDudeRecoilD;
+
+        else if (pAIState == &genDudeDodgeW || pAIState == &genDudeDodgeD) 
+            pAIState = &genDudeRecoilW;
+
+        else if (pAIState == &genDudeSearchL) pAIState = &genDudeSearchNoWalkL;
+        else if (pAIState == &genDudeSearchW) pAIState = &genDudeSearchNoWalkW;
+        else if (pAIState == &genDudeGotoL) pAIState = &genDudeIdleL;
+        else if (pAIState == &genDudeGotoW) pAIState = &genDudeIdleW;
+        else if (pAIState == &genDudeChaseL) pAIState = &genDudeChaseNoWalkL;
+        else if (pAIState == &genDudeChaseD) pAIState = &genDudeChaseNoWalkD;
+        else if (pAIState == &genDudeChaseW) pAIState = &genDudeChaseNoWalkW;
+        else if (pAIState == &genDudeRecoilTesla) {
+            
+            if (spriteIsUnderwater(pSprite, false)) pAIState = &genDudeRecoilW;
+            else pAIState = &genDudeRecoilL;
+
+        }
+
+    }
+    
+    pXSprite->stateTimer = pAIState->stateTicks; pXSprite->aiState = pAIState;
+    int seqStartId = pXSprite->data2;
+
+    if (pAIState->seqId >= 0 && gSysRes.Lookup((seqStartId += pAIState->seqId), "SEQ"))
+        seqSpawn(seqStartId, 3, pSprite->extra, pAIState->funcId);
+
+    if (pAIState->enterFunc)
+        pAIState->enterFunc(pSprite, pXSprite);
+
+}
+
+    
+bool playGenDudeSound(spritetype* pSprite, int mode, bool forceInterrupt) {
+    
+    if (mode < kGenDudeSndTargetSpot || mode >= kGenDudeSndMax) return false;
+    GENDUDESND* sndInfo =& gCustomDudeSnd[mode]; bool gotSnd = false;
+    short sndStartId = xsprite[pSprite->extra].sysData1; int rand = sndInfo->randomRange;
+    int sndId = (sndStartId <= 0) ? sndInfo->defaultSndId : sndStartId + sndInfo->sndIdOffset;
+    GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
+
+    // let's check if there same sounds already played by other dudes
+    // so we won't get a lot of annoying screams in the same time and ensure sound played in it's full length (if not interruptable)
+    if (pExtra->sndPlaying && !sndInfo->interruptable) {
+        for (int i = 0; i < 256; i++) {
+            if (Bonkle[i].atc <= 0) continue;
+            for (int a = 0; a < rand; a++) {
+                if (sndId + a == Bonkle[i].atc) {
+                    if (Bonkle[i].at0 <= 0) {
+                        pExtra->sndPlaying = false;
+                        break;
+                    }
+                    //viewSetSystemMessage("PLAYING %d / %d / %d", Bonkle[i].atc, (sndId + a), Bonkle[i].at0);
+                    return true;
+                }
+            }
+        }
+
+        pExtra->sndPlaying = false;
+        
+    }
+
+    if (sndId < 0) return false;
+    else if (sndStartId <= 0) { sndId += Random(rand); gotSnd = true; }
+    else {
+
+        // Let's try to get random snd
+        int maxRetries = 5;
+        while (maxRetries-- > 0) {
+            int random = Random(rand);
+            if (!gSoundRes.Lookup(sndId + random, "SFX")) continue;
+            sndId = sndId + random;
+            gotSnd = true;
+            break;
+        }
+
+        // If no success in getting random snd, get first existing one
+        if (gotSnd == false) {
+            int maxSndId = sndId + rand;
+            while (sndId++ <= maxSndId) {
+                if (!gSoundRes.Lookup(sndId, "SFX")) continue;
+                gotSnd = true;
+                break;
+            }
+        }
+
+    }
+
+    if (gotSnd == false) return false;
+    else if (sndInfo->aiPlaySound) aiPlay3DSound(pSprite, sndId, AI_SFX_PRIORITY_2, -1);
+    else sfxPlay3DSound(pSprite, sndId, -1, 0);
+    
+    pExtra->sndPlaying = true;
+    return true;
+}
+    
+    
+bool spriteIsUnderwater(spritetype* pSprite, bool oldWay) {
+    return ((sector[pSprite->sectnum].extra >= 0 && xsector[sector[pSprite->sectnum].extra].Underwater)
+        || (oldWay && (xsprite[pSprite->extra].medium == kMediumWater || xsprite[pSprite->extra].medium == kMediumGoo)));
+}
+
+spritetype* leechIsDropped(spritetype* pSprite) {
+    short nLeech = gGenDudeExtra[pSprite->index].nLifeLeech;
+    if (nLeech >= 0 && nLeech < kMaxSprites) return &sprite[nLeech];
+    return NULL;
+
+}
+    
+void removeDudeStuff(spritetype* pSprite) {
+    for (short nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+        if (sprite[nSprite].owner != pSprite->xvel) continue;
+        switch (sprite[nSprite].type) {
+            case kThingArmedProxBomb:
+            case kThingArmedRemoteBomb:
+            case kModernThingTNTProx:
+                sprite[nSprite].type = kSpriteDecoration;
+                actPostSprite(sprite[nSprite].xvel, kStatFree);
+                break;
+            case kModernThingEnemyLifeLeech:
+                killDudeLeech(&sprite[nSprite]);
+                break;
+        }
+    }
+
+    for (short nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+        if (sprite[nSprite].owner != pSprite->xvel) continue;
+        actDamageSprite(sprite[nSprite].owner, &sprite[nSprite], (DAMAGE_TYPE) 0, 65535);
+    }
+}
+    
+void removeLeech(spritetype* pLeech, bool delSprite) {
+    if (pLeech != NULL) {
+        spritetype* pEffect = gFX.fxSpawn((FX_ID)52,pLeech->sectnum,pLeech->x,pLeech->y,pLeech->z,pLeech->ang);
+        if (pEffect != NULL) {
+            pEffect->cstat = CSTAT_SPRITE_ALIGNMENT_FACING;
+            pEffect->pal = 6;
+            int repeat = 64 + Random(50);
+            pEffect->xrepeat = repeat;
+            pEffect->yrepeat = repeat;
+        }
+        
+        sfxPlay3DSoundCP(pLeech, 490, -1, 0,60000);
+        
+        if (pLeech->owner >= 0 && pLeech->owner < kMaxSprites)
+            gGenDudeExtra[sprite[pLeech->owner].index].nLifeLeech = -1;
+
+        if (delSprite) {
+            pLeech->type = kSpriteDecoration;
+            actPostSprite(pLeech->index, kStatFree);
+        }
+
+
+    }
+}
+    
+void killDudeLeech(spritetype* pLeech) {
+    if (pLeech != NULL) {
+        actDamageSprite(pLeech->owner, pLeech, DAMAGE_TYPE_3, 65535);
+        sfxPlay3DSoundCP(pLeech, 522, -1, 0, 60000);
+
+        if (pLeech->owner >= 0 && pLeech->owner < kMaxSprites)
+            gGenDudeExtra[sprite[pLeech->owner].index].nLifeLeech = -1;
+    }
+}
+    
+XSPRITE* getNextIncarnation(XSPRITE* pXSprite) {
+    for (int i = bucketHead[pXSprite->txID]; i < bucketHead[pXSprite->txID + 1]; i++) {
+        if (rxBucket[i].type != 3 || rxBucket[i].index == pXSprite->reference)
+            continue;
+        
+        switch (sprite[rxBucket[i].index].statnum) {
+            case kStatDude:
+            case kStatInactive: // inactive (ambush) dudes
+                if (xsprite[sprite[rxBucket[i].index].extra].health > 0)
+                    return &xsprite[sprite[rxBucket[i].index].extra];
+        }
+
+    }
+    return NULL;
+}
+
+bool dudeIsMelee(XSPRITE* pXSprite) {
+    return gGenDudeExtra[sprite[pXSprite->reference].index].isMelee;
+}
+
+void scaleDamage(XSPRITE* pXSprite) {
+
+    short curWeapon = gGenDudeExtra[sprite[pXSprite->reference].index].curWeapon;
+    short* curScale = gGenDudeExtra[sprite[pXSprite->reference].index].dmgControl;
+    for (int i = 0; i < kDmgMax; i++)
+        curScale[i] = dudeInfo[kDudeModernCustom - kDudeBase].startDamage[i];
+
+    // all enemies with vector weapons gets extra resistance to bullet damage
+    if (curWeapon > 0 && curWeapon < kVectorMax) {
+        //curScale[kDmgBullet] -= 10;
+
+    // just copy damage resistance of dude that should be summoned
+    } else if (curWeapon >= kDudeBase && curWeapon < kDudeMax) {
+        
+        for (int i = 0; i < kDmgMax; i++)
+            curScale[i] = dudeInfo[curWeapon - kDudeBase].startDamage[i];
+
+    // these does not like the explosions and burning
+    } else if (curWeapon >= kTrapExploder && curWeapon < (kTrapExploder + kExplodeMax) - 1) {
+
+        curScale[kDmgBurn] = curScale[kDmgExplode] = 512;
+
+    } else if (curWeapon >= kMissileBase && curWeapon < kThingMax) {
+
+        switch (curWeapon) {
+            case kMissileButcherKnife:
+                curScale[kDmgBullet] = 100;
+                fallthrough__;
+            case kMissileEctoSkull:
+                curScale[kDmgSpirit] = 32;
+                break;
+            case kMissileLifeLeechAltNormal:
+            case kMissileLifeLeechAltSmall:
+            case kMissileArcGargoyle:
+                curScale[kDmgSpirit] = 32;
+                curScale[kDmgElectric] = 52;
+                break;
+            case kMissileFlareRegular:
+            case kMissileFlareAlt:
+            case kMissileFlameSpray:
+            case kMissileFlameHound:
+            case kThingArmedSpray:
+            case kThingPodFireBall:
+            case kThingNapalmBall:
+                curScale[kDmgBurn] = 32;
+                curScale[kDmgExplode] = 50;
+                break;
+            case kMissileLifeLeechRegular:
+            case kThingDroppedLifeLeech:
+            case kModernThingEnemyLifeLeech:
+                curScale[kDmgSpirit] = 32 + Random(18);
+                curScale[kDmgBurn] = 60 + Random(4);
+                for (int i = 2; i < kDmgMax; i++) {
+                    if (Chance(0x1000) && i != kDmgSpirit)
+                        curScale[i] = 48 + Random(32);
+                }
+                break;
+            case kMissileFireball:
+            case kMissileFireballNapam:
+            case kMissileFireballCerberus:
+            case kMissileFireballTchernobog:
+                curScale[kDmgBurn] = 50;
+                curScale[kDmgExplode] = 32;
+                curScale[kDmgFall] = 65 + Random(15);
+                break;
+            case kThingTNTBarrel:
+            case kThingArmedProxBomb:
+            case kThingArmedRemoteBomb:
+            case kThingArmedTNTBundle:
+            case kThingArmedTNTStick:
+            case kModernThingTNTProx:
+                curScale[kDmgExplode] = 32;
+                curScale[kDmgFall] = 65 + Random(15);
+                break;
+            case kMissileTeslaAlt:
+            case kMissileTeslaRegular:
+                curScale[kDmgElectric] = 32 + Random(8);
+                break;
+        }
+
+    }
+
+    // add resistance if have an armor item to drop
+    if (pXSprite->dropMsg >= kItemArmorAsbest && pXSprite->dropMsg <= kItemArmorSuper) {
+        switch (pXSprite->dropMsg) {
+            case kItemArmorAsbest:
+                curScale[kDmgBurn] = 0;
+                curScale[kDmgExplode] -= 25;
+                break;
+            case kItemArmorBasic:
+                curScale[kDmgBurn] -= 10;
+                curScale[kDmgExplode] -= 10;
+                curScale[kDmgBullet] -= 10;
+                curScale[kDmgSpirit] -= 10;
+                break;
+            case kItemArmorBody:
+                curScale[kDmgBullet] -= 20;
+                break;
+            case kItemArmorFire:
+                curScale[kDmgBurn] -= 20;
+                curScale[kDmgExplode] -= 10;
+                break;
+            case kItemArmorSpirit:
+                curScale[kDmgSpirit] -= 20;
+                break;
+            case kItemArmorSuper:
+                curScale[kDmgBurn] -= 20;
+                curScale[kDmgExplode] -= 20;
+                curScale[kDmgBullet] -= 20;
+                curScale[kDmgSpirit] -= 20;
+                break;
+        }
+    }
+
+    // take in account yrepeat of sprite
+    short yrepeat = sprite[pXSprite->reference].yrepeat;
+    if (yrepeat < 64) {
+        for (int i = 0; i < kDmgMax; i++) curScale[i] += (64 - yrepeat);
+    } else if (yrepeat > 64) {
+        for (int i = 0; i < kDmgMax; i++) curScale[i] -= ((yrepeat - 64) / 2);
+    }
+
+    // take surface type into account
+    int surfType = tileGetSurfType(sprite[pXSprite->reference].index + 0xc000);
+    //int surfType = 4;
+    switch (surfType) {
+        case 1:  // stone
+            curScale[kDmgFall] = 0;
+            curScale[kDmgBullet] -= 128;
+            curScale[kDmgBurn] -= 50;
+            curScale[kDmgExplode] -= 40;
+            curScale[kDmgChoke] += 30;
+            curScale[kDmgElectric] += 20;
+            break;
+        case 2:  // metal
+            curScale[kDmgFall] = 16;
+            curScale[kDmgBullet] -= 64;
+            curScale[kDmgBurn] -= 45;
+            curScale[kDmgExplode] -= 35;
+            curScale[kDmgChoke] += 20;
+            curScale[kDmgElectric] += 30;
+            break;
+        case 3:  // wood 
+            curScale[kDmgBullet] -= 5;
+            curScale[kDmgBurn] += 50;
+            curScale[kDmgExplode] += 40;
+            curScale[kDmgChoke] += 10;
+            curScale[kDmgElectric] -= 30;
+            break;
+        case 5:  // water
+        case 6:  // dirt
+        case 7:  // clay
+        case 13: // goo
+            curScale[kDmgFall] = 8;
+            curScale[kDmgBullet] -= 10;
+            curScale[kDmgBurn] -= 128;
+            curScale[kDmgExplode] -= 30;
+            curScale[kDmgChoke] = 0;
+            curScale[kDmgElectric] += 40;
+            break;
+        case 8:  // snow
+        case 9:  // ice
+            curScale[kDmgFall] = 8;
+            curScale[kDmgBullet] -= 10;
+            curScale[kDmgBurn] -= 60;
+            curScale[kDmgExplode] -= 40;
+            curScale[kDmgChoke] = 0;
+            curScale[kDmgElectric] += 40;
+            break;
+        case 10: // leaves
+        case 12: // plant
+            curScale[kDmgFall] = 0;
+            curScale[kDmgBullet] -= 5;
+            curScale[kDmgBurn] += 70;
+            curScale[kDmgExplode] += 50;
+            break;
+        case 11: // cloth
+            curScale[kDmgFall] = 8;
+            curScale[kDmgBullet] -= 5;
+            curScale[kDmgBurn] += 30;
+            curScale[kDmgExplode] += 20;
+            break;
+        case 14: // lava
+            curScale[kDmgBurn] = 0;
+            curScale[kDmgExplode] = 0;
+            curScale[kDmgChoke] += 30;
+            break;
+    }
+
+    // finally, scale dmg for difficulty
+    for (int i = 0; i < kDmgMax; i++) 
+        curScale[i] = mulscale8(DudeDifficulty[gGameOptions.nDifficulty], ClipLow(curScale[i], 1));
+    
+    short* dc = curScale;
+    if (gGenDudeExtra[sprite[pXSprite->reference].index].canFly) {
+        curScale[0] = -1;
+    }
+    
+    if (pXSprite->rxID == 788)
+        viewSetSystemMessage("0: %d, 1: %d, 2: %d, 3: %d, 4: %d, 5: %d, 6: %d", dc[0], dc[1], dc[2], dc[3], dc[4], dc[5], dc[6]);
+}
+
+int getDispersionModifier(spritetype* pSprite, int minDisp, int maxDisp) {
+    // the faster fire rate, the less frames = more dispersion
+    Seq* pSeq = NULL; DICTNODE* hSeq = gSysRes.Lookup(xsprite[pSprite->extra].data2 + 6, "SEQ"); int disp = 1;
+    if (hSeq != NULL && (pSeq = (Seq*)gSysRes.Load(hSeq)) != NULL) {
+        int nFrames = pSeq->nFrames; int ticks = pSeq->at8; int shots = 0;
+        for (int i = 0; i <= pSeq->nFrames; i++) {
+            if (pSeq->frames[i].at5_5) shots++;
+        }
+        
+        disp = (((shots * 1000) / nFrames) / ticks) * 20;
+        if (gGameOptions.nDifficulty > 0)
+            disp /= gGameOptions.nDifficulty + 1;
+
+        //viewSetSystemMessage("DISP: %d FRAMES: %d SHOTS: %d TICKS %d", disp, nFrames, shots, ticks);
+
+    }
+
+    return ClipRange(disp, minDisp, maxDisp);
+}
+
+// the distance counts from sprite size
+int getRangeAttackDist(spritetype* pSprite, int minDist, int maxDist) {
+    short yrepeat = pSprite->yrepeat; int dist = 0; int seqId = xsprite[pSprite->extra].data2; 
+    short mul = 550; int picnum = pSprite->picnum;
+    
+    if (yrepeat > 0) {
+        if (seqId >= 0) {
+            Seq* pSeq = NULL; DICTNODE* hSeq = gSysRes.Lookup(seqId, "SEQ");
+            if (hSeq) {
+                pSeq = (Seq*)gSysRes.Load(hSeq);
+                picnum = seqGetTile(&pSeq->frames[0]);
+            }
+        }
+        dist = tilesiz[picnum].y << 8;
+        
+        if (yrepeat < 64) dist -= (64 - yrepeat) * mul;
+        else if (yrepeat > 64) dist += (yrepeat - 64) * (mul / 3);
+    }
+    
+    dist = ClipRange(dist, minDist, maxDist);
+    //viewSetSystemMessage("DIST: %d, SPRHEIGHT: %d: YREPEAT: %d PIC: %d", dist, tilesiz[pSprite->picnum].y, yrepeat, picnum);
+    return dist;
+}
+
+int getBaseChanceModifier(int baseChance) {
+    return ((gGameOptions.nDifficulty > 0) ? baseChance - (0x0500 * gGameOptions.nDifficulty) : baseChance);
+}
+
+int getRecoilChance(spritetype* pSprite) {
+    XSPRITE* pXSprite = &xsprite[pSprite->extra]; int mass = getSpriteMassBySize(pSprite);
+    int baseChance = (!dudeIsMelee(pXSprite) ? 0x8000 : 0x5000);
+    baseChance = getBaseChanceModifier(baseChance) + pXSprite->data3;
+    
+    int chance = ((baseChance / mass) << 7);
+    return chance;
+}
+
+int getDodgeChance(spritetype* pSprite) {
+    int mass = getSpriteMassBySize(pSprite); int baseChance = getBaseChanceModifier(0x6000);
+    if (pSprite->extra >= 0) {
+        XSPRITE* pXSprite = &xsprite[pSprite->extra];
+        baseChance += pXSprite->burnTime;
+        if (dudeIsMelee(pXSprite))
+            baseChance = 0x1000;
+    }
+
+    int chance = ((baseChance / mass) << 7);
+    return chance;
+}
+
+void dudeLeechOperate(spritetype* pSprite, XSPRITE* pXSprite, EVENT event)
+{
+    if (event.cmd == kCmdOff) {
+        actPostSprite(pSprite->xvel, kStatFree);
+        return;
+    }
+
+    int nTarget = pXSprite->target;
+    if (spriRangeIsFine(nTarget)) {
+        spritetype* pTarget = &sprite[nTarget];
+        if (pTarget->statnum == kStatDude && !(pTarget->flags & 32) && pTarget->extra > 0 && pTarget->extra < kMaxXSprites && !pXSprite->stateTimer) {
+            
+            if (IsPlayerSprite(pTarget)) {
+                PLAYER* pPlayer = &gPlayer[pTarget->type - kDudePlayer1];
+                if (powerupCheck(pPlayer, kPwUpShadowCloak) > 0) return;
+            }
+            int top, bottom;
+            GetSpriteExtents(pSprite, &top, &bottom);
+            int nType = pTarget->type - kDudeBase;
+            DUDEINFO* pDudeInfo = &dudeInfo[nType];
+            int z1 = (top - pSprite->z) - 256;
+            int x = pTarget->x; int y = pTarget->y; int z = pTarget->z;
+            int nDist = approxDist(x - pSprite->x, y - pSprite->y);
+            
+            if (nDist != 0 && cansee(pSprite->x, pSprite->y, top, pSprite->sectnum, x, y, z, pTarget->sectnum)) {
+                int t = divscale(nDist, 0x1aaaaa, 12);
+                x += (xvel[nTarget] * t) >> 12;
+                y += (yvel[nTarget] * t) >> 12;
+                int angBak = pSprite->ang;
+                pSprite->ang = getangle(x - pSprite->x, y - pSprite->y);
+                int dx = Cos(pSprite->ang) >> 16;
+                int dy = Sin(pSprite->ang) >> 16;
+                int tz = pTarget->z - (pTarget->yrepeat * pDudeInfo->aimHeight) * 4;
+                int dz = divscale(tz - top - 256, nDist, 10);
+                int nMissileType = kMissileLifeLeechAltNormal + (pXSprite->data3 ? 1 : 0);
+                int t2;
+                
+                if (!pXSprite->data3) t2 = 120 / 10.0;
+                else t2 = (3 * 120) / 10.0;
+
+                spritetype * pMissile = actFireMissile(pSprite, 0, z1, dx, dy, dz, nMissileType);
+                if (pMissile)
+                {
+                    pMissile->owner = pSprite->owner;
+                    pXSprite->stateTimer = 1;
+                    evPost(pSprite->index, 3, t2, kCallbackLeechStateTimer);
+                    pXSprite->data3 = ClipLow(pXSprite->data3 - 1, 0);
+                }
+                pSprite->ang = angBak;
+            }
+        }
+        
+    }
+}
+
+bool doExplosion(spritetype* pSprite, int nType) {
+    spritetype* pExplosion = actSpawnSprite(pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, kStatExplosion, true);
+    if (pExplosion->extra < 0 || pExplosion->extra >= kMaxXSprites) 
+        return false;
+
+    int nSeq = 4; int nSnd = 304; EXPLOSION* pExpl = &explodeInfo[nType];
+    
+    pExplosion->type = nType;
+    pExplosion->cstat |= CSTAT_SPRITE_INVISIBLE;
+    pExplosion->owner = pSprite->index;
+    pExplosion->shade = -127;
+
+    pExplosion->yrepeat = pExplosion->xrepeat = pExpl->repeat;
+
+    xsprite[pExplosion->extra].data1 = pExpl->ticks;
+    xsprite[pExplosion->extra].data2 = pExpl->quakeEffect;
+    xsprite[pExplosion->extra].data3 = pExpl->flashEffect;
+
+    if (nType == 0) { nSeq = 3; nSnd = 303; }
+    else if (nType == 2) { nSeq = 4; nSnd = 305; }
+    else if (nType == 3) { nSeq = 9; nSnd = 307; }
+    else if (nType == 4) { nSeq = 5; nSnd = 307; }
+    else if (nType <= 6) { nSeq = 4; nSnd = 303; }
+    else if (nType == 7) { nSeq = 4; nSnd = 303; }
+    
+    seqSpawn(nSeq, 3, pExplosion->extra, -1);
+    sfxPlay3DSound(pExplosion, nSnd, -1, 0);
+
+    return true;
+}
+
+
+void updateTargetOfLeech(spritetype* pSprite) {
+    if (!(pSprite->extra >= 0 && pSprite->extra < kMaxXSprites)) {
+        consoleSysMsg("pSprite->extra >= 0 && pSprite->extra < kMaxXSprites");
+        return;
+    }
+    
+    
+    spritetype* pLeech = leechIsDropped(pSprite);
+    if (pLeech == NULL || pLeech->extra < 0) gGenDudeExtra[pSprite->index].nLifeLeech = -1;
+    else if (xsprite[pSprite->extra].target != xsprite[pLeech->extra].target) {
+        XSPRITE* pXDude = &xsprite[pSprite->extra]; XSPRITE* pXLeech = &xsprite[pLeech->extra];
+        if (pXDude->target < 0 && spriRangeIsFine(pXLeech->target)) {
+            aiSetTarget(pXDude, pXLeech->target);
+            if (inIdle(pXDude->aiState))
+                aiActivateDude(pSprite, pXDude);
+        } else {
+            pXLeech->target = pXDude->target;
+        }
+    }
+}
+
+void updateTargetOfSlaves(spritetype* pSprite) {
+    if (!(pSprite->extra >= 0 && pSprite->extra < kMaxXSprites)) {
+        consoleSysMsg("pSprite->extra >= 0 && pSprite->extra < kMaxXSprites");
+        return;
+    }
+
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    
+    short* slave = gGenDudeExtra[pSprite->index].slave;
+    spritetype* pTarget = (pXSprite->target >= 0 && IsDudeSprite(&sprite[pXSprite->target])) ? &sprite[pXSprite->target] : NULL;
+    XSPRITE* pXTarget = (pTarget != NULL && pTarget->extra >= 0 && xsprite[pTarget->extra].health > 0) ? &xsprite[pTarget->extra] : NULL;
+
+    for (int i = 0; i <= gGameOptions.nDifficulty; i++) {
+        if (slave[i] >= 0) {
+            spritetype* pSlave = &sprite[slave[i]];
+            if (!IsDudeSprite(pSlave) || pSlave->extra < 0 || xsprite[pSlave->extra].health < 0) {
+                slave[i] = -1;
+                continue;
+            }
+            
+            XSPRITE* pXSlave = &xsprite[pSlave->index];
+            if (pXTarget == NULL) aiSetTarget(pXSlave, pSprite->x, pSprite->y, pSprite->z); // try return to master
+            else if (pXSprite->target != pXSlave->target)
+                aiSetTarget(pXSlave, pXSprite->target);
+
+            // check if slave attacking another slave
+            if (pXSlave->target >= 0) {
+                if (sprite[pXSlave->target].owner == pSprite->index)
+                    aiSetTarget(pXSlave, pSprite->x, pSprite->y, pSprite->z); // try return to master
+
+            } else {
+                // try return to master
+                aiSetTarget(pXSlave, pSprite->x, pSprite->y, pSprite->z);
+            }
+        } 
+    }
+}
+
+bool inDodge(AISTATE* aiState) {
+    return (aiState == &genDudeDodgeShortW || aiState == &genDudeDodgeShortL || aiState == &genDudeDodgeShortD);
+}
+
+bool inIdle(AISTATE* aiState) {
+    return (aiState == &genDudeIdleW || aiState == &genDudeIdleL);
+}
+
+bool inAttack(AISTATE* aiState) {
+    return (aiState == &genDudeFireL || aiState == &genDudeFireW
+        || aiState == &genDudeFireD || aiState == &genDudeThrow || aiState == &genDudeThrow2 || aiState == &genDudePunch);
+}
+
+short inSearch(AISTATE* aiState) {
+    if (aiState->stateType == kAiStateSearch) return 1;
+    return 0;
+}
+
+short inRecoil(AISTATE* aiState) {
+    if (aiState == &genDudeRecoilL || aiState == &genDudeRecoilTesla) return 1;
+    else if (aiState == &genDudeRecoilD) return 2;
+    else if (aiState == &genDudeRecoilW) return 3;
+    else return 0;
+}
+
+short inDuck(AISTATE* aiState) {
+    if (aiState == &genDudeFireD) return 1;
+    else if (aiState == &genDudeChaseD) return 2;
+    else if (aiState == &genDudeChaseNoWalkD) return 3;
+    else if (aiState == &genDudeRecoilD) return 4;
+    else if (aiState == &genDudeDodgeShortD) return 5;
+    return 0;
+}
+
+
+bool canSwim(spritetype* pSprite) {
+    return gGenDudeExtra[pSprite->index].canSwim;
+}
+
+bool canDuck(spritetype* pSprite) {
+    return gGenDudeExtra[pSprite->index].canDuck;
+}
+
+bool canWalk(spritetype* pSprite) {
+    return gGenDudeExtra[pSprite->index].canWalk;
+}
+
+
+int genDudeSeqStartId(XSPRITE* pXSprite) {
+    if (genDudePrepare(&sprite[pXSprite->reference], kGenDudePropertyStates)) return pXSprite->data2;
+    else return kGenDudeDefaultSeq;
+}
+
+bool genDudePrepare(spritetype* pSprite, int propId) {
+    if (!(pSprite->index >= 0 && pSprite->index < kMaxSprites)) {
+        consoleSysMsg("pSprite->index >= 0 && pSprite->index < kMaxSprites");
+        return false;
+    } else if (!(pSprite->extra >= 0 && pSprite->extra < kMaxXSprites)) {
+        consoleSysMsg("pSprite->extra >= 0 && pSprite->extra < kMaxXSprites");
+        return false;
+    } else if (pSprite->type != kDudeModernCustom) {
+        consoleSysMsg("pSprite->type != kDudeModernCustom");
+        return false;
+    } else if (propId < kGenDudePropertyAll || propId >= kGenDudePropertyMax) {
+        viewSetSystemMessage("Unknown custom dude #%d property (%d)", pSprite->index, propId);
+        return false;
+    }
+    
+    XSPRITE* pXSprite = &xsprite[pSprite->extra];
+    GENDUDEEXTRA* pExtra = &gGenDudeExtra[pSprite->index]; pExtra->updReq[propId] = false;
+    
+    switch (propId) {
+        case kGenDudePropertyAll:
+        case kGenDudePropertyInitVals:
+            pExtra->frontSpeed = getGenDudeMoveSpeed(pSprite, 0, true, false);
+            pExtra->initVals[0] = pSprite->xrepeat;
+            pExtra->initVals[1] = pSprite->yrepeat;
+            pExtra->initVals[2] = pSprite->clipdist;
+            if (propId) break;
+        case kGenDudePropertyWeapon: {
+            pExtra->curWeapon = pXSprite->data1;
+            switch (pXSprite->data1) {
+                case 19: pExtra->curWeapon = 2; break;
+                case 310: pExtra->curWeapon = kMissileArcGargoyle; break;
+                case kThingDroppedLifeLeech: pExtra->curWeapon = kModernThingEnemyLifeLeech; break;
+            }
+
+            pExtra->canAttack = false;
+            if (pExtra->curWeapon > 0 && gSysRes.Lookup(pXSprite->data2 + kGenDudeSeqAttackNormalL, "SEQ"))
+                pExtra->canAttack = true;
+            
+            pExtra->isMelee = false;
+            if (pExtra->curWeapon >= kTrapExploder && pExtra->curWeapon < (kTrapExploder + kExplodeMax) - 1) pExtra->isMelee = true;
+            else if (pExtra->curWeapon >= 0 && pExtra->curWeapon < kVectorMax) {
+                if (gVectorData[pExtra->curWeapon].maxDist > 0 && gVectorData[pExtra->curWeapon].maxDist <= kGenDudeMaxMeleeDist)
+                    pExtra->isMelee = true;
+            }
+
+            if (propId) break;
+        }
+        case kGenDudePropertyDmgScale:
+            scaleDamage(pXSprite);
+            if (propId) break;
+        case kGenDudePropertyMass: {
+            // to ensure mass get's updated, let's clear all cache
+            SPRITEMASS* pMass = &gSpriteMass[pSprite->index];
+            pMass->seqId = pMass->picnum = pMass->xrepeat = pMass->yrepeat = pMass->clipdist = 0;
+            pMass->mass = pMass->airVel = pMass->fraction = 0;
+
+            getSpriteMassBySize(pSprite);
+            if (propId) break;
+        }
+        case kGenDudePropertyAttack:
+            pExtra->fireDist = getRangeAttackDist(pSprite, 1200, 45000);
+            pExtra->throwDist = pExtra->fireDist; // temp
+            pExtra->baseDispersion = getDispersionModifier(pSprite, 200, 3500);
+            if (propId) break;
+        case kGenDudePropertyStates: {
+
+            pExtra->canFly = false;
+
+            // check the animation
+            int seqStartId = dudeInfo[pSprite->type - kDudeBase].seqStartID;
+            if (pXSprite->data2 <= 0) seqStartId = pXSprite->data2 = dudeInfo[pSprite->type - kDudeBase].seqStartID;
+            else seqStartId = pXSprite->data2;
+
+            for (int i = seqStartId; i < seqStartId + kGenDudeSeqMax; i++) {
+                switch (i - seqStartId) {
+                    case kGenDudeSeqIdleL:
+                    case kGenDudeSeqDeathDefault:
+                        if (!gSysRes.Lookup(i, "SEQ")) {
+                            pXSprite->data2 = dudeInfo[pSprite->type - kDudeBase].seqStartID;
+                            viewSetSystemMessage("No SEQ animation id %d found for custom dude #%d!", i, pSprite->index);
+                            viewSetSystemMessage("SEQ base id: %d", seqStartId);
+                        }
+                        break;
+                    case kGenDudeSeqDeathExplode:
+                        if (gSysRes.Lookup(i, "SEQ")) pExtra->availDeaths[kDmgExplode] = 1;
+                        else pExtra->availDeaths[kDmgExplode] = 0;
+                        break;
+                    case kGenDudeSeqAttackNormalL:
+                        pExtra->canAttack = (gSysRes.Lookup(i, "SEQ") && pExtra->curWeapon > 0);
+                        break;
+                    case kGenDudeSeqBurning:
+                        pExtra->canBurn = gSysRes.Lookup(i, "SEQ");
+                        break;
+                    case kGenDudeSeqElectocuted:
+                        pExtra->canElectrocute = gSysRes.Lookup(i, "SEQ");
+                        break;
+                    case kGenDudeSeqRecoil:
+                        pExtra->canRecoil = gSysRes.Lookup(i, "SEQ");
+                        break;
+                    case kGenDudeSeqMoveL: {
+                        bool oldStatus = pExtra->canWalk;
+                        pExtra->canWalk = gSysRes.Lookup(i, "SEQ");
+                        if (oldStatus != pExtra->canWalk) {
+                            if (!spriRangeIsFine(pXSprite->target)) {
+                                if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeIdleW);
+                                else aiGenDudeNewState(pSprite, &genDudeIdleL);
+                            } else if (pExtra->canWalk) {
+                                if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeChaseW);
+                                else if (inDuck(pXSprite->aiState)) aiGenDudeNewState(pSprite, &genDudeChaseD);
+                                else aiGenDudeNewState(pSprite, &genDudeChaseL);
+                            } else {
+                                if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeChaseNoWalkW);
+                                else if (inDuck(pXSprite->aiState)) aiGenDudeNewState(pSprite, &genDudeChaseNoWalkD);
+                                else aiGenDudeNewState(pSprite, &genDudeChaseNoWalkL);
+                            }
+                        }
+                        break;
+                    }
+                    case kGenDudeSeqAttackPunch: {
+                        pExtra->forcePunch = true; // required for those who don't have fire trigger in punch seq and for default animation
+                        Seq* pSeq = NULL; DICTNODE* hSeq = gSysRes.Lookup(i, "SEQ");
+                        if (hSeq != NULL) {
+                            pSeq = (Seq*)gSysRes.Load(hSeq);
+                            for (int i = 0; i < pSeq->nFrames; i++) {
+                                if (!pSeq->frames[i].at5_5) continue;
+                                pExtra->forcePunch = false;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case kGenDudeSeqAttackNormalDW:
+                        pExtra->canDuck = (gSysRes.Lookup(i, "SEQ") && gSysRes.Lookup(seqStartId + 14, "SEQ"));
+                        pExtra->canSwim = (gSysRes.Lookup(i, "SEQ") && gSysRes.Lookup(seqStartId + 13, "SEQ")
+                            && gSysRes.Lookup(seqStartId + 17, "SEQ"));
+                        break;
+                    case kGenDudeSeqDeathBurn1: {
+                        bool seq15 = gSysRes.Lookup(i, "SEQ"); bool seq16 = gSysRes.Lookup(seqStartId + 16, "SEQ");
+                        if (seq15 && seq16) pExtra->availDeaths[kDmgBurn] = 3;
+                        else if (seq16) pExtra->availDeaths[kDmgBurn] = 2;
+                        else if (seq15) pExtra->availDeaths[kDmgBurn] = 1;
+                        else pExtra->availDeaths[kDmgBurn] = 0;
+                        break;
+                    }
+                    case kGenDudeSeqMoveW:
+                    case kGenDudeSeqMoveD:
+                    case kGenDudeSeqDeathBurn2:
+                    case kGenDudeSeqIdleW:
+                        continue;
+                    case kGenDudeSeqReserved3:
+                    case kGenDudeSeqReserved4:
+                    case kGenDudeSeqReserved5:
+                    case kGenDudeSeqReserved6:
+                    case kGenDudeSeqReserved7:
+                    case kGenDudeSeqReserved8:
+                        /*if (gSysRes.Lookup(i, "SEQ")) {
+                            viewSetSystemMessage("Found reserved SEQ animation (%d) for custom dude #%d!", i, pSprite->index);
+                            viewSetSystemMessage("Using reserved animation is not recommended.");
+                            viewSetSystemMessage("SEQ base id: %d", seqStartId);
+                        }*/
+                        break;
+                }
+            }
+            if (propId) break;
+        }
+        case kGenDudePropertyLeech:
+            //viewSetSystemMessage("PROPERTY: LEECH");
+            pExtra->nLifeLeech = -1;
+            if (pSprite->owner != kMaxSprites - 1) {
+                for (int nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+                    if (sprite[nSprite].owner == pSprite->index && pSprite->type == kModernThingEnemyLifeLeech) {
+                        pExtra->nLifeLeech = nSprite;
+                        break;
+                    }
+                }
+            }
+            if (propId) break;
+        case kGenDudePropertySlaves:
+            //viewSetSystemMessage("PROPERTY: SLAVES");
+            pExtra->slaveCount = 0; memset(pExtra->slave, -1, sizeof(pExtra->slave));
+            for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+                if (sprite[nSprite].owner != pSprite->xvel) continue;
+                else if (!IsDudeSprite(&sprite[nSprite]) || sprite[nSprite].extra < 0 || xsprite[sprite[nSprite].extra].health <= 0) {
+                    sprite[nSprite].owner = -1;
+                    continue;
+                }
+
+                pExtra->slave[pExtra->slaveCount++] = nSprite;
+                if (pExtra->slaveCount > gGameOptions.nDifficulty)
+                    break;
+            }
+            if (propId) break;
+        case kGenDudePropertySpriteSize: {
+            if (seqGetStatus(3, pSprite->extra) == -1)
+                seqSpawn(pXSprite->data2 + pXSprite->aiState->seqId, 3, pSprite->extra, -1);
+
+            // make sure dudes aren't in the floor or ceiling
+            int zTop, zBot; GetSpriteExtents(pSprite, &zTop, &zBot);
+            if (!(sector[pSprite->sectnum].ceilingstat & 0x0001))
+                pSprite->z += ClipLow(sector[pSprite->sectnum].ceilingz - zTop, 0);
+            if (!(sector[pSprite->sectnum].floorstat & 0x0001))
+                pSprite->z += ClipHigh(sector[pSprite->sectnum].floorz - zBot, 0);
+
+            int curSumm = pSprite->xrepeat + pSprite->yrepeat; int defSumm = pExtra->initVals[0] + pExtra->initVals[1];
+            if (curSumm < defSumm) pSprite->clipdist = ClipLow(curSumm >> 1, 4);
+            else if (curSumm > defSumm) pSprite->clipdist = ClipHigh(curSumm >> 1, 255);
+            else pSprite->clipdist = pExtra->initVals[2];
+            
+            if (propId) break;
+        }
+    }
+
+    return true;
+}

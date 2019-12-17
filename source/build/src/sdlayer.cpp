@@ -1183,6 +1183,15 @@ void mouseLockToWindow(char a)
     SDL_ShowCursor((osd && osd->flags & OSD_CAPTURE) ? SDL_ENABLE : SDL_DISABLE);
 }
 
+void mouseMoveToCenter(void)
+{
+    if (sdl_window)
+    {
+        g_mouseAbs = { xdim >> 1, ydim >> 1 };
+        SDL_WarpMouseInWindow(sdl_window, g_mouseAbs.x, g_mouseAbs.y);
+    }
+}
+
 //
 // setjoydeadzone() -- sets the dead and saturation zones for the joystick
 //
@@ -2413,10 +2422,10 @@ int32_t handleevents_pollsdl(void)
                         {
                             if (keyGetState(j))
                             {
-                                keySetState(j, 0);
                                 if (keypresscallback)
                                     keypresscallback(j, 0);
                             }
+                            keySetState(j, 0);
                         }
                     }
                     break;
@@ -2426,10 +2435,10 @@ int32_t handleevents_pollsdl(void)
                 {
                     if (!keyGetState(code))
                     {
-                        keySetState(code, 1);
                         if (keypresscallback)
                             keypresscallback(code, 1);
                     }
+                    keySetState(code, 1);
                 }
                 else
                 {

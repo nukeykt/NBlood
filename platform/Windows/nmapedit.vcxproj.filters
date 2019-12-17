@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\blood_editor">
+      <UniqueIdentifier>{ee09cb31-7362-4130-8d18-bbd79d8b6beb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\editor">
+      <UniqueIdentifier>{0a73384a-1c85-408e-b551-41eee33e3db6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\build\src\startwin.editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\build\src\startgtk.editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\build\src\build.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\mapedit.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\build\src\config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\rsrc\build_icon.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\m32common.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\m32def.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\m32exec.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\m32structures.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\m32vars.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\common.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\db.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gfx.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\globals.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gui.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\iob.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\qheap.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\replace.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\resource.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\screen.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\sectorfx.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\sound.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\gameutil.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\getopt.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\trig.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\tile.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\misc.cpp">
+      <Filter>Source Files\blood_editor</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\source\build\include\startwin.editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\build\include\m32script.h">
+      <Filter>Header Files\editor</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\source\blood\rsrc\buildres.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

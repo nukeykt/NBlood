@@ -390,7 +390,6 @@ void videoShowFrame(int32_t w)
             if (palfadedelta)
                 fullscreen_tint_gl(palfadergb.r, palfadergb.g, palfadergb.b, palfadedelta);
             fullscreen_tint_gl_blood();
-
         }
         else
         {
@@ -451,10 +450,10 @@ int32_t handleevents_pollsdl(void)
                         {
                             if (keyGetState(j))
                             {
-                                keySetState(j, 0);
                                 if (keypresscallback)
                                     keypresscallback(j, 0);
                             }
+                            keySetState(j, 0);
                         }
                     }
                     break;
@@ -464,10 +463,10 @@ int32_t handleevents_pollsdl(void)
                 {
                     if (!keyGetState(code))
                     {
-                        keySetState(code, 1);
                         if (keypresscallback)
                             keypresscallback(code, 1);
                     }
+                    keySetState(code, 1);
                 }
                 else
                 {

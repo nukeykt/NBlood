@@ -228,6 +228,7 @@ void voxvbofree(voxmodel_t *vm);
 
 void voxfree(voxmodel_t *m);
 voxmodel_t *voxload(const char *filnam);
+voxmodel_t *loadkvxfrombuf(const char *buffer, int32_t length);
 int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr);
 
 int      md3postload_polymer(md3model_t* m);

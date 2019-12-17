@@ -443,10 +443,10 @@ void InstallEngine()
     if (g_modDir[0] != '/' && (cwd = buildvfs_getcwd(NULL, 0)))
     {
         buildvfs_chdir(g_modDir);
-        if (artLoadFiles("tiles000.art", MAXCACHE1DSIZE) < 0)
+        if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
         {
             buildvfs_chdir(cwd);
-            if (artLoadFiles("tiles000.art", MAXCACHE1DSIZE) < 0)
+            if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
                 bail2dos("Failed loading art.");
         }
         buildvfs_chdir(cwd);
@@ -454,7 +454,7 @@ void InstallEngine()
         Xfree(cwd);
 #endif
     }
-    else if (artLoadFiles("tiles000.art",MAXCACHE1DSIZE) < 0)
+    else if (artLoadFiles("tiles%03i.art",MAXCACHE1DSIZE) < 0)
         bail2dos("Failed loading art.");
 
     // TEMP

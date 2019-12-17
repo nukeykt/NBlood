@@ -120,7 +120,6 @@ static FORCE_INLINE int polymost_usetileshades(void)
     return r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES);
 }
 
-
 static inline float getshadefactor(int32_t const shade, int32_t const pal)
 {
     // 8-bit tiles, i.e. non-hightiles and non-models, don't get additional

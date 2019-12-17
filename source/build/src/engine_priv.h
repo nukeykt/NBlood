@@ -288,7 +288,7 @@ int32_t wallfront(int32_t l1, int32_t l2);
 
 void set_globalang(fix16_t const ang);
 
-int32_t animateoffs(int tilenum);
+int32_t animateoffs(int tilenum, int fakevar);
 
 static FORCE_INLINE int32_t bad_tspr(tspriteptr_t tspr)
 {
@@ -302,6 +302,8 @@ static FORCE_INLINE int32_t bad_tspr(tspriteptr_t tspr)
 //
 static FORCE_INLINE int32_t getpalookup(int32_t davis, int32_t dashade)
 {
+    if (getpalookup_replace)
+        return getpalookup_replace(davis, dashade);
     return min(max(dashade + (davis >> 8), 0), numshades - 1);
 }
 
@@ -425,7 +427,7 @@ template <typename T> static FORCE_INLINE void tileUpdatePicnum(T * const tilept
     auto &tile = *tileptr;
 
     if (picanm[tile].sf & PICANM_ANIMTYPE_MASK)
-        tile += animateoffs(tile);
+        tile += animateoffs(tile, obj);
 
     if (((obj & 16384) == 16384) && (globalorientation & CSTAT_WALL_ROTATE_90) && rottile[tile].newtile != -1)
         tile = rottile[tile].newtile;

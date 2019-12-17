@@ -138,6 +138,10 @@ int32_t r_animsmoothing = 1;
 int32_t r_downsize = 0;
 int32_t r_downsizevar = -1;
 
+int32_t r_rortexture = 0;
+int32_t r_rortexturerange = 0;
+int32_t r_rorphase = 0;
+
 int32_t r_yshearing = 0;
 int32_t r_flatsky = 1;
 
@@ -1342,7 +1346,6 @@ void calc_and_apply_fog(int32_t shade, int32_t vis, int32_t pal)
     }
 
     fogcalc(shade, vis, pal);
-
     glFogfv(GL_FOG_COLOR, (GLfloat *)&fogcol);
 
     if (r_usenewshading < 2)
@@ -5457,7 +5460,17 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->floorxpanning; global_cf_ypanning = sec->floorypanning, global_cf_heinum = sec->floorheinum;
         global_getzofslope_func = &fgetflorzofslope;
 
-        if (!(globalorientation&1))
+        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
+        {
+            xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
+            ytex.d = 0;
+            otex.d = ryp0*gxyaspect - xtex.d*x0;
+        
+            xtex.u = ytex.u = otex.u = 0;
+            xtex.v = ytex.v = otex.v = 0;
+            polymost_domost(x0, fy0, x1, fy1);
+        }
+        else if (!(globalorientation&1))
         {
             int32_t fz = getflorzofslope(sectnum, globalposx, globalposy);
             if (globalposz <= fz)
@@ -5851,7 +5864,17 @@ static void polymost_drawalls(int32_t const bunch)
         global_cf_xpanning = sec->ceilingxpanning; global_cf_ypanning = sec->ceilingypanning, global_cf_heinum = sec->ceilingheinum;
         global_getzofslope_func = &fgetceilzofslope;
 
-        if (!(globalorientation&1))
+        if (globalpicnum >= r_rortexture && globalpicnum < r_rortexture + r_rortexturerange && r_rorphase == 0)
+        {
+            xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
+            ytex.d = 0;
+            otex.d = ryp0*gxyaspect - xtex.d*x0;
+        
+            xtex.u = ytex.u = otex.u = 0;
+            xtex.v = ytex.v = otex.v = 0;
+            polymost_domost(x1, cy1, x0, cy0);
+        }
+        else if (!(globalorientation&1))
         {
             int32_t cz = getceilzofslope(sectnum, globalposx, globalposy);
             if (globalposz >= cz)

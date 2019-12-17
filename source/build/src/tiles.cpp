@@ -43,7 +43,8 @@ static rottile_t *g_bakRottile;
 //static int32_t artsize = 0;
 static int32_t g_vm_size = 0;
 
-static char artfilename[20];
+static char artfilename[BMAX_PATH];
+static char artfilenameformat[BMAX_PATH];
 static char mapartfilename[BMAX_PATH];  // map-specific ART file name
 static int32_t mapartfnXXofs;  // byte offset to 'XX' (the number part) in the above
 static int32_t artfilnum, artfilplc;
@@ -52,7 +53,6 @@ static buildvfs_kfd artfil;
 ////////// Per-map ART file loading //////////
 
 // Some forward declarations.
-static void tileUpdatePicSiz(int32_t picnum);
 static const char *artGetIndexedFileName(int32_t tilefilei);
 static int32_t artReadIndexedFile(int32_t tilefilei);
 
@@ -153,7 +153,7 @@ void artSetupMapArt(const char *filename)
     mapartfnXXofs = Bstrlen(mapartfilename) - 6;
 
     // Check for first per-map ART file: if that one doesn't exist, don't load any.
-    buildvfs_kfd fil = kopen4load(artGetIndexedFileName(MAXARTFILES_BASE), 0);
+    buildvfs_kfd fil = kopen4loadfrommod(artGetIndexedFileName(MAXARTFILES_BASE), 0);
 
     if (fil == buildvfs_kfd_invalid)
     {
@@ -280,7 +280,7 @@ void tileDelete(int32_t const tile)
 #endif
 }
 
-static void tileUpdatePicSiz(int32_t picnum)
+void tileUpdatePicSiz(int32_t picnum)
 {
     int j = 15;
 
@@ -396,20 +396,16 @@ int32_t artCheckUnitFileHeader(uint8_t const * const buf, int32_t length)
     return 0;
 }
 
-void tileConvertAnimFormat(int32_t const picnum)
+void tileConvertAnimFormat(int32_t const picnum, int32_t const picanmdisk)
 {
-    EDUKE32_STATIC_ASSERT(sizeof(picanm_t) == 4);
     EDUKE32_STATIC_ASSERT(PICANM_ANIMTYPE_MASK == 192);
 
     picanm_t * const thispicanm = &picanm[picnum];
-
-    // Old on-disk format: anim type is in the 2 highest bits of the lowest byte.
-    thispicanm->sf &= ~192;
-    thispicanm->sf |= thispicanm->num&192;
-    thispicanm->num &= ~192;
-
-    // don't allow setting texhitscan/nofullbright from ART
-    thispicanm->sf &= ~PICANM_MISC_MASK;
+    thispicanm->num = picanmdisk&63;
+    thispicanm->xofs = (picanmdisk>>8)&255;
+    thispicanm->yofs = (picanmdisk>>16)&255;
+    thispicanm->sf = ((picanmdisk>>24)&15) | (picanmdisk&192);
+    thispicanm->extra = (picanmdisk>>28)&15;
 }
 
 void artReadManifest(buildvfs_kfd const fil, artheader_t const * const local)
@@ -418,14 +414,18 @@ void artReadManifest(buildvfs_kfd const fil, artheader_t const * const local)
     int16_t *tilesizy = (int16_t *) Xmalloc(local->numtiles * sizeof(int16_t));
     kread(fil, tilesizx, local->numtiles*sizeof(int16_t));
     kread(fil, tilesizy, local->numtiles*sizeof(int16_t));
-    kread(fil, &picanm[local->tilestart], local->numtiles*sizeof(picanm_t));
 
     for (bssize_t i=local->tilestart; i<=local->tileend; i++)
     {
+        int32_t picanmdisk;
+
         tilesiz[i].x = B_LITTLE16(tilesizx[i-local->tilestart]);
         tilesiz[i].y = B_LITTLE16(tilesizy[i-local->tilestart]);
 
-        tileConvertAnimFormat(i);
+        kread(fil, &picanmdisk, sizeof(int32_t));
+        picanmdisk = B_LITTLE32(picanmdisk);
+
+        tileConvertAnimFormat(i, picanmdisk);
     }
 
     DO_FREE_AND_NULL(tilesizx);
@@ -492,9 +492,7 @@ static const char *artGetIndexedFileName(int32_t tilefilei)
     }
     else
     {
-        artfilename[7] = '0' + tilefilei%10;
-        artfilename[6] = '0' + (tilefilei/10)%10;
-        artfilename[5] = '0' + (tilefilei/100)%10;
+        Bsnprintf(artfilename, sizeof(artfilename), artfilenameformat, tilefilei);
 
         return artfilename;
     }
@@ -588,7 +586,7 @@ static int32_t artReadIndexedFile(int32_t tilefilei)
 //
 int32_t artLoadFiles(const char *filename, int32_t askedsize)
 {
-    Bstrncpyz(artfilename, filename, sizeof(artfilename));
+    Bstrncpyz(artfilenameformat, filename, sizeof(artfilenameformat));
 
     Bmemset(&tilesiz[0], 0, sizeof(vec2_16_t) * MAXTILES);
     Bmemset(picanm, 0, sizeof(picanm));
@@ -714,7 +712,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
 
         char const *fn = artGetIndexedFileName(tfn);
 
-        artfil = kopen4load(fn, 0);
+        artfil = kopen4loadfrommod(fn, 0);
 
         if (artfil == buildvfs_kfd_invalid)
         {

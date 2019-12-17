@@ -79,7 +79,7 @@ static VoiceNode  VoicePool;
 static int MV_MixPage;
 
 void (*MV_Printf)(const char *fmt, ...) = initprintf;
-static void (*MV_CallBackFunc)(uint32_t);
+static void (*MV_CallBackFunc)(intptr_t);
 
 char *MV_MixDestination;
 int MV_SampleSize = 1;
@@ -92,13 +92,13 @@ fix16_t MV_VolumeSmooth = fix16_one;
 
 static int MV_Locked;
 
-static inline void MV_Lock()
+void MV_Lock()
 {
     if (!MV_Locked++)
         SoundDriver_PCM_Lock();
 }
 
-static inline void MV_Unlock()
+void MV_Unlock()
 {
     if (!--MV_Locked)
         SoundDriver_PCM_Unlock();
@@ -803,7 +803,7 @@ void MV_SetVolume(int volume)
 
 int MV_GetVolume(void) { return MV_TotalVolume; }
 
-void MV_SetCallBack(void (*function)(uint32_t)) { MV_CallBackFunc = function; }
+void MV_SetCallBack(void (*function)(intptr_t)) { MV_CallBackFunc = function; }
 
 void MV_SetReverseStereo(int setting) { MV_ReverseStereo = setting; }
 
@@ -1034,7 +1034,7 @@ int MV_StartDemandFeedPlayback
     int right,
     int priority,
     fix16_t volume,
-    uint32_t callbackval
+    intptr_t callbackval
 )
 
 {

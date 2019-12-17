@@ -597,12 +597,20 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium3
+            OPTOPT := -march=pentium-m
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
             OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
+
+            # Fix for 32 bit CPUs on Linux without SSE2
+            ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
+                ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
+                    OPTOPT := -march=native
+                endif
+            endif
+
         endif
     endif
     ifeq ($(PLATFORM),WII)
@@ -1019,15 +1027,18 @@ LIBS += -lm
 VC_REV :=
 -include EDUKE32_REVISION.mak
 ifeq (,$(VC_REV))
-    VC_REV := $(word 2,$(subst :, ,$(filter Revision:%,$(subst : ,:,$(strip $(shell svn info 2>&1))))))
+    VC_REV := $(filter v%,$(shell git describe --tags))
 endif
-ifeq (,$(VC_REV))
-    GIT_SVN_URL := $(strip $(shell git config --local svn-remote.svn.url))
-    GIT_SVN_FETCH := $(strip $(shell git config --local svn-remote.svn.fetch))
-    VC_REV := $(word 2,$(subst @, ,$(filter git-svn-id:$(GIT_SVN_URL)@%,$(subst : ,:,$(shell git log -1 $(GIT_SVN_FETCH::%=%))))))
-endif
+#ifeq (,$(VC_REV))
+#    VC_REV := $(word 2,$(subst :, ,$(filter Revision:%,$(subst : ,:,$(strip $(shell svn info 2>&1))))))
+#endif
+#ifeq (,$(VC_REV))
+#    GIT_SVN_URL := $(strip $(shell git config --local svn-remote.svn.url))
+#    GIT_SVN_FETCH := $(strip $(shell git config --local svn-remote.svn.fetch))
+#    VC_REV := $(word 2,$(subst @, ,$(filter git-svn-id:$(GIT_SVN_URL)@%,$(subst : ,:,$(shell git log -1 $(GIT_SVN_FETCH::%=%))))))
+#endif
 ifneq (,$(VC_REV)$(VC_REV_CUSTOM))
-    REVFLAG := -DREV="\"r$(VC_REV)$(VC_REV_CUSTOM)\""
+    REVFLAG := -DREV="\"$(VC_REV)$(VC_REV_CUSTOM)\""
 endif
 
 

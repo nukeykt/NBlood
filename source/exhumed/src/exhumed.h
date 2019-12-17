@@ -175,7 +175,6 @@ extern short nAlarmTicks, nClockVal, nRedTicks;
 
 extern ClockTicks tclocks, tclocks2;
 
-extern buildvfs_kfd kopen4loadfrommod(const char* filename, char searchfirst);
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;
 
@@ -307,7 +306,6 @@ enum {
     kPalBrite2
 };
 
-extern char g_modDir[BMAX_PATH];
 extern int r_showfps;
 
 extern struct grpfile_t const* g_selectedGrp;

@@ -292,7 +292,7 @@ void CalcASSPan(int nPan, int nVolume, int *pLeft, int *pRight)
     *pRight = mulscale6(nPanTable[127-nPan], nVolume);
 }
 
-void ASSCallback(uint32_t num)
+void ASSCallback(intptr_t num)
 {
     if ((int32_t)num == MUSIC_ID) {
         return;

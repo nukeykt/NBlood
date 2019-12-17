@@ -52,6 +52,8 @@ enum rendmode_t {
 #define MAXWALLSV7 8192
 #define MAXSPRITESV7 4096
 
+#define MAXVOXMIPS 5
+
 #if !defined GEKKO && !defined __OPENDINGUX__
 # define MAXSECTORS MAXSECTORSV8
 # define MAXWALLS MAXWALLSV8
@@ -108,7 +110,7 @@ enum rendmode_t {
 #define MAXSTATUS 1024
 #define MAXPLAYERS 16
 // Maximum number of component tiles in a multi-psky:
-#define MAXPSKYTILES 8
+#define MAXPSKYTILES 16
 #define MAXSPRITESONSCREEN 2560
 #define MAXUNIQHUDID 256 //Extra slots so HUD models can store animation state without messing game sprites
 
@@ -177,8 +179,8 @@ void yax_updategrays(int32_t posze);
 #  define YAX_NEXTWALLDEFAULT(Cf) (-1)
 # else
    // More user tag hijacking: lotag/extra. :/
-#  define YAX_PTRNEXTWALL(Ptr, Wall, Cf) (*(int16_t *)(&Ptr[Wall].lotag + 2*Cf))
-#  define YAX_NEXTWALLDEFAULT(Cf) (((Cf)==YAX_CEILING) ? 0 : -1)
+#  define YAX_PTRNEXTWALL(Ptr, Wall, Cf) (*(int16_t *)(&Ptr[Wall].lotag + (bloodhack ? 1 : 2)*Cf))
+#  define YAX_NEXTWALLDEFAULT(Cf) (bloodhack ? 0 : ((Cf)==YAX_CEILING) ? 0 : -1)
    extern int16_t yax_bunchnum[MAXSECTORS][2];
    extern int16_t yax_nextwall[MAXWALLS][2];
 # endif
@@ -220,7 +222,7 @@ static FORCE_INLINE CONSTEXPR int32_t yax_waltosecmask(int32_t const walclipmask
     return ((walclipmask&1)<<9) | ((walclipmask&64)<<5);
 }
 void yax_preparedrawrooms(void);
-void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t),
+void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_t),
                    int16_t sectnum, int32_t didmirror, int32_t smoothr);
 # define YAX_SKIPSECTOR(i) if (graysectbitmap[(i)>>3]&pow2char[(i)&7]) continue
 # define YAX_SKIPWALL(i) if (graywallbitmap[(i)>>3]&pow2char[(i)&7]) continue
@@ -851,6 +853,7 @@ typedef struct {
     uint8_t num;  // animate number
     int8_t xofs, yofs;
     uint8_t sf;  // anim. speed and flags
+    uint8_t extra;
 } picanm_t;
 EXTERN picanm_t picanm[MAXTILES];
 typedef struct { int16_t newtile; int16_t owner; } rottile_t;
@@ -946,6 +949,7 @@ static FORCE_INLINE int32_t videoGetRenderMode(void)
 #endif
 }
 
+extern int32_t bloodhack;
 enum {
     ENGINECOMPATIBILITY_NONE = 0,
     ENGINECOMPATIBILITY_19950829, // Powerslave/Exhumed
@@ -1089,7 +1093,7 @@ void    tileSetSize(int32_t picnum, int16_t dasizx, int16_t dasizy);
 int32_t artReadHeader(buildvfs_kfd fil, char const *fn, artheader_t *local);
 int32_t artReadHeaderFromBuffer(uint8_t const *buf, artheader_t *local);
 int32_t artCheckUnitFileHeader(uint8_t const *buf, int32_t length);
-void    tileConvertAnimFormat(int32_t picnum);
+void    tileConvertAnimFormat(int32_t picnum, int32_t const picanmdisk);
 void    artReadManifest(buildvfs_kfd fil, artheader_t const *local);
 void    artPreloadFile(buildvfs_kfd fil, artheader_t const *local);
 int32_t artLoadFiles(const char *filename, int32_t askedsize);
@@ -1099,6 +1103,7 @@ bool    tileLoad(int16_t tilenume);
 void    tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer);
 int32_t tileCRC(int16_t tileNum);
 void    artConvertRGB(palette_t *pic, uint8_t const *buf, int32_t bufsizx, int32_t sizx, int32_t sizy);
+void    tileUpdatePicSiz(int32_t picnum);
 
 int32_t   qloadkvx(int32_t voxindex, const char *filename);
 void vox_undefine(int32_t const);
@@ -1172,6 +1177,7 @@ static FORCE_INLINE void rotatesprite_win(int32_t sx, int32_t sy, int32_t z, int
 
 void   getzrange(const vec3_t *pos, int16_t sectnum, int32_t *ceilz, int32_t *ceilhit, int32_t *florz,
                  int32_t *florhit, int32_t walldist, uint32_t cliptype) ATTRIBUTE((nonnull(1,3,4,5,6)));
+extern vec2_t hitscangoal;
 int32_t   hitscan(const vec3_t *sv, int16_t sectnum, int32_t vx, int32_t vy, int32_t vz,
                   hitdata_t *hitinfo, uint32_t cliptype) ATTRIBUTE((nonnull(1,6)));
 void   neartag(int32_t xs, int32_t ys, int32_t zs, int16_t sectnum, int16_t ange,
@@ -1426,6 +1432,10 @@ extern int32_t r_downsize;
 extern int32_t r_downsizevar;
 extern int32_t mdtims, omdtims;
 extern int32_t glrendmode;
+
+extern int32_t r_rortexture;
+extern int32_t r_rortexturerange;
+extern int32_t r_rorphase;
 #endif
 
 void hicinit(void);
@@ -1450,6 +1460,10 @@ extern GrowArray<char *> g_defModules;
 #ifdef HAVE_CLIPSHAPE_FEATURE
 extern GrowArray<char *> g_clipMapFiles;
 #endif
+
+EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
+EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
+EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
 
 #ifdef USE_OPENGL
 // TODO: dynamically allocate this
@@ -1617,6 +1631,21 @@ extern int32_t rintersect(int32_t x1, int32_t y1, int32_t z1,
     int32_t vx_, int32_t vy_, int32_t vz,
     int32_t x3, int32_t y3, int32_t x4, int32_t y4,
     int32_t *intx, int32_t *inty, int32_t *intz);
+
+extern int32_t(*animateoffs_replace)(int const tilenum, int fakevar);
+extern void(*paletteLoadFromDisk_replace)(void);
+extern int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade);
+extern void(*initspritelists_replace)(void);
+extern int32_t(*insertsprite_replace)(int16_t sectnum, int16_t statnum);
+extern int32_t(*deletesprite_replace)(int16_t spritenum);
+extern int32_t(*changespritesect_replace)(int16_t spritenum, int16_t newsectnum);
+extern int32_t(*changespritestat_replace)(int16_t spritenum, int16_t newstatnum);
+extern void(*loadvoxel_replace)(int32_t voxel);
+extern int32_t(*loadboard_replace)(const char *filename, char flags, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum);
+extern int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum);
+#ifdef USE_OPENGL
+extern void(*PolymostProcessVoxels_Callback)(void);
+#endif
 
 #ifdef __cplusplus
 }

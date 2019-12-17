@@ -184,6 +184,8 @@ static void alloc_palookup(int32_t pal)
 
 static void maybe_alloc_palookup(int32_t palnum);
 
+void (*paletteLoadFromDisk_replace)(void) = NULL;
+
 //
 // loadpalette (internal)
 //
@@ -196,6 +198,12 @@ void paletteLoadFromDisk(void)
     for (auto & x : glblend)
         x = defaultglblend;
 #endif
+
+    if (paletteLoadFromDisk_replace)
+    {
+        paletteLoadFromDisk_replace();
+        return;
+    }
 
     buildvfs_kfd fil;
     if ((fil = kopen4load("palette.dat", 0)) == buildvfs_kfd_invalid)
@@ -382,7 +390,7 @@ void palettePostLoadTables(void)
     for (size_t i = 0; i<16; i++)
     {
         palette_t *edcol = (palette_t *) &vgapal16[4*i];
-        editorcolors[i] = getclosestcol_lim(edcol->b, edcol->g, edcol->r, 239);
+        editorcolors[i] = getclosestcol_lim(edcol->b, edcol->g, edcol->r, bloodhack ? 254 : 239);
     }
 
     // Bmemset(PaletteIndexFullbrights, 0, sizeof(PaletteIndexFullbrights));
@@ -887,4 +895,3 @@ void videoTintBlood(int32_t r, int32_t g, int32_t b)
     tint_blood_b = b;
 }
 #endif
-

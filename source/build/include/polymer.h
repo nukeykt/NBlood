@@ -328,6 +328,7 @@ typedef struct      s_prmirror {
     _prplane        *plane;
     int16_t         sectnum;
     int16_t         wallnum;
+    int8_t          rorstat;
 }                   _prmirror;
 
 typedef struct      s_prhighpalookup {
@@ -335,12 +336,14 @@ typedef struct      s_prhighpalookup {
     GLuint          map;
 }                   _prhighpalookup;
 
-typedef void    (*animatespritesptr)(int32_t, int32_t, int32_t, int32_t);
+typedef void    (*animatespritesptr)(int32_t, int32_t, int32_t, int32_t, int32_t);
 
 typedef struct      s_pranimatespritesinfo {
     animatespritesptr animatesprites;
-    int32_t         x, y, a, smoothratio;
+    int32_t         x, y, z, a, smoothratio;
 }                   _pranimatespritesinfo;
+
+typedef void    (*rorcallback)(int16_t sectnum, int16_t wallnum, int8_t rorstat, int16_t *msectnum, int32_t *gx, int32_t *gy, int32_t *gz);
 
 // this one has to be provided by the application
 extern void G_Polymer_UnInit(void);
@@ -361,13 +364,14 @@ void                polymer_inb4rotatesprite(int16_t tilenum, char pal, int8_t s
 void                polymer_postrotatesprite(void);
 void                polymer_drawmaskwall(int32_t damaskwallcnt);
 void                polymer_drawsprite(int32_t snum);
-void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t a, int32_t smoothratio);
+void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t z, int32_t a, int32_t smoothratio);
 int16_t             polymer_addlight(_prlight* light);
 void                polymer_deletelight(int16_t lighti);
 void                polymer_invalidatelights(void);
 void                polymer_texinvalidate(void);
 void                polymer_definehighpalookup(char basepalnum, char palnum, char *data);
 int32_t             polymer_havehighpalookup(int32_t basepalnum, int32_t palnum);
+void                polymer_setrorcallback(rorcallback callback);
 
 
 extern _prsprite    *prsprites[MAXSPRITES];

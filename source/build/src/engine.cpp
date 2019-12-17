@@ -99,7 +99,7 @@ uint8_t globalr = 255, globalg = 255, globalb = 255;
 
 int16_t pskybits_override = -1;
 
-//void loadvoxel(int32_t voxindex) { UNREFERENCED_PARAMATER(voxindex); }
+void (*loadvoxel_replace)(int32_t voxindex) = NULL;
 int16_t tiletovox[MAXTILES];
 int32_t usevoxels = 1;
 #ifdef USE_OPENGL
@@ -114,13 +114,11 @@ int32_t novoxmips = 1;
 #define MAXXSIZ 256
 #define MAXYSIZ 256
 #define MAXZSIZ 255
-#define MAXVOXMIPS 5
 #ifdef EDUKE32_TOUCH_DEVICES
 # define DISTRECIPSIZ (65536+256)
 #else
 # define DISTRECIPSIZ 131072
 #endif
-intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 static char voxlock[MAXVOXELS][MAXVOXMIPS];
 int32_t voxscale[MAXVOXELS];
 
@@ -204,6 +202,10 @@ static void draw_rainbow_background(void);
 
 int16_t editstatus = 0;
 static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to drawrooms)
+
+int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
+
+int32_t bloodhack = 0;
 
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
@@ -764,7 +766,7 @@ void yax_tweakpicnums(int32_t bunchnum, int32_t cf, int32_t restore)
                 if (editstatus && showinvisibility)
                     SECTORFLD(i,picnum, cf) = MAXTILES-1;
                 else //if ((dastat&(128+256))==0)
-                    SECTORFLD(i,picnum, cf) = 13; //FOF;
+                    SECTORFLD(i,picnum, cf) = bloodhack ? MAXTILES-2 : 13; //FOF;
             }
             else
             {
@@ -862,7 +864,7 @@ void yax_preparedrawrooms(void)
     }
 }
 
-void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t),
+void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_t),
                    int16_t sectnum, int32_t didmirror, int32_t smoothr)
 {
     static uint8_t havebunch[(YAX_MAXBUNCHES+7)>>3];
@@ -1083,7 +1085,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t),
                          yax_globallev-YAX_MAXDRAWS, j, k, spritesortcnt,
                          (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
 
-                SpriteAnimFunc(globalposx, globalposy, globalang, smoothr);
+                SpriteAnimFunc(globalposx, globalposy, globalposz, globalang, smoothr);
                 renderDrawMasks();
             }
 
@@ -1428,7 +1430,7 @@ static int32_t globaly1, globalx2;
 
 int16_t sectorborder[256];
 int32_t ydim16, qsetmode = 0;
-int16_t pointhighlight=-1, linehighlight=-1, highlightcnt=0;
+int16_t pointhighlight=-1, linehighlight=-1, sectorhighlight = -1, highlightcnt=0;
 static int32_t *lastx;
 
 int32_t halfxdim16, midydim16;
@@ -2324,8 +2326,14 @@ static void prepwall(int32_t z, uwallptr_t wal)
 //
 // animateoffs (internal)
 //
-int32_t animateoffs(int const tilenum)
+int32_t (*animateoffs_replace)(int const tilenum, int fakevar) = NULL;
+int32_t animateoffs(int const tilenum, int fakevar)
 {
+    if (animateoffs_replace)
+    {
+        return animateoffs_replace(tilenum, fakevar);
+    }
+
     int const animnum = picanm[tilenum].num;
 
     if (animnum <= 0)
@@ -5189,6 +5197,10 @@ static void classicDrawSprite(int32_t snum)
                 cstat |= 512;
             else
                 cstat &= ~512;
+
+            // Blood's transparency table is inverted
+            if (bloodhack)
+                cstat ^= 512;
         }
 
         tspr->cstat = cstat;
@@ -6087,14 +6099,15 @@ draw_as_face_sprite:
                 if (lwall[x] < swall[x]) break;
             if (x == rx) return;
         }
-/*
+
         for (i=0; i<MAXVOXMIPS; i++)
             if (!voxoff[vtilenum][i])
             {
-                kloadvoxel(vtilenum);
+                if (loadvoxel_replace)
+                    loadvoxel_replace(vtilenum);
                 break;
             }
-*/
+
         const int32_t *const longptr = (int32_t *)voxoff[vtilenum][0];
         if (longptr == NULL)
         {
@@ -7056,6 +7069,10 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
                 dastat |= RS_TRANS2;
             else
                 dastat &= ~RS_TRANS2;
+
+            // Blood's transparency table is inverted
+            if (bloodhack)
+                dastat ^= RS_TRANS2;
         }
     }
 
@@ -7503,6 +7520,7 @@ static void dosetaspect(void)
     {
         oxyaspect = xyaspect;
         j = xyaspect*320;
+        horizycent = (ydim*4)>>1;
         horizlookup2[horizycent-1] = divscale32(131072,j);
 
         for (i=0; i < horizycent-1; i++)
@@ -7547,7 +7565,7 @@ static void dosetaspect(void)
             radarang2[i] = ((qradarang[k]+j)>>6);
         }
 
-        if (xdimen != oxdimen && voxoff[0][0])
+        if (xdimen != oxdimen && (voxoff[0][0] || bloodhack))
         {
             distrecip = NULL;
             for (i = 0; i < DISTRECIPCACHESIZE; i++)
@@ -7768,8 +7786,11 @@ LISTFN_STATIC void do_deletespritestat(int16_t deleteme)
 //
 // insertsprite
 //
+int32_t(*insertsprite_replace)(int16_t sectnum, int16_t statnum) = NULL;
 int32_t insertsprite(int16_t sectnum, int16_t statnum)
 {
+    if (insertsprite_replace)
+        return insertsprite_replace(sectnum, statnum);
     // TODO: guard against bad sectnum?
     int32_t const newspritenum = insertspritestat(statnum);
 
@@ -7788,8 +7809,11 @@ int32_t insertsprite(int16_t sectnum, int16_t statnum)
 //
 // deletesprite
 //
+int32_t (*deletesprite_replace)(int16_t spritenum) = NULL;
 int32_t deletesprite(int16_t spritenum)
 {
+    if (deletesprite_replace)
+        return deletesprite_replace(spritenum);
     Bassert((sprite[spritenum].statnum == MAXSTATUS)
             == (sprite[spritenum].sectnum == MAXSECTORS));
 
@@ -7826,8 +7850,11 @@ int32_t deletesprite(int16_t spritenum)
 //
 // changespritesect
 //
+int32_t (*changespritesect_replace)(int16_t spritenum, int16_t newsectnum) = NULL;
 int32_t changespritesect(int16_t spritenum, int16_t newsectnum)
 {
+    if (changespritesect_replace)
+        return changespritesect_replace(spritenum, newsectnum);
     // XXX: NOTE: MAXSECTORS is allowed
     if ((newsectnum < 0 || newsectnum > MAXSECTORS) || (sprite[spritenum].sectnum == MAXSECTORS))
         return -1;
@@ -7844,8 +7871,11 @@ int32_t changespritesect(int16_t spritenum, int16_t newsectnum)
 //
 // changespritestat
 //
+int32_t (*changespritestat_replace)(int16_t spritenum, int16_t newstatnum) = NULL;
 int32_t changespritestat(int16_t spritenum, int16_t newstatnum)
 {
+    if (changespritestat_replace)
+        return changespritestat_replace(spritenum, newstatnum);
     // XXX: NOTE: MAXSTATUS is allowed
     if ((newstatnum < 0 || newstatnum > MAXSTATUS) || (sprite[spritenum].statnum == MAXSTATUS))
         return -1;  // can't set the statnum of a sprite not in the world
@@ -8211,6 +8241,7 @@ int32_t engineInit(void)
     for (i=0; i<MAXTILES; i++)
         tiletovox[i] = -1;
     clearbuf(voxscale, sizeof(voxscale)>>2, 65536);
+    clearbufbyte(voxrotate, sizeof(voxrotate), 0);
 
     paletteloaded = 0;
 
@@ -8325,8 +8356,14 @@ void engineUnInit(void)
 //
 // initspritelists
 //
+void (*initspritelists_replace)(void) = NULL;
 void initspritelists(void)
 {
+    if (initspritelists_replace)
+    {
+        initspritelists_replace();
+        return;
+    }
     int32_t i;
 
     // initial list state for statnum lists:
@@ -8493,16 +8530,16 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         if (wall[i].cstat & CSTAT_WALL_ROTATE_90)
         {
             auto &w    = wall[i];
-            auto &tile = rottile[w.picnum+animateoffs(w.picnum)];
+            auto &tile = rottile[w.picnum+animateoffs(w.picnum,16384)];
 
             if (tile.newtile == -1 && tile.owner == -1)
             {
                 tile.newtile = findUnusedTile();
                 Bassert(tile.newtile != -1);
 
-                rottile[tile.newtile].owner = w.picnum+animateoffs(w.picnum);
+                rottile[tile.newtile].owner = w.picnum+animateoffs(w.picnum,16384);
 
-                auto &siz  = tilesiz[w.picnum+animateoffs(w.picnum)];
+                auto &siz  = tilesiz[w.picnum+animateoffs(w.picnum,16384)];
                 tileSetSize(tile.newtile, siz.x, siz.y);
 
                 tileLoad(tile.newtile);
@@ -9767,6 +9804,8 @@ LUNATIC_CB int32_t (*loadboard_maptext)(buildvfs_kfd fil, vec3_t *dapos, int16_t
 
 #include "md4.h"
 
+int32_t(*loadboard_replace)(const char *filename, char flags, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum) = NULL;
+
 // flags: 1, 2: former parameter "fromwhere"
 //           4: don't call polymer_loadboard
 //           8: don't autoexec <mapname>.cfg
@@ -9777,6 +9816,8 @@ LUNATIC_CB int32_t (*loadboard_maptext)(buildvfs_kfd fil, vec3_t *dapos, int16_t
 //       <= -4: map-text error
 int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
 {
+    if (loadboard_replace)
+        return loadboard_replace(filename, flags, dapos, daang, dacursectnum);
     int32_t i;
     int16_t numsprites;
     const char myflags = flags&(~3);
@@ -10216,8 +10257,12 @@ static int32_t get_mapversion(void)
 //
 // saveboard
 //
+int32_t(*saveboard_replace)(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum) = NULL;
 int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum)
 {
+    if (saveboard_replace)
+        return saveboard_replace(filename, dapos, daang, dacursectnum);
+
     int16_t numsprites, ts;
     int32_t i, j, tl;
 
@@ -10476,6 +10521,7 @@ static void videoAllocateBuffers(void)
 }
 
 #ifdef USE_OPENGL
+void (*PolymostProcessVoxels_Callback)(void) = NULL;
 static void PolymostProcessVoxels(void)
 {
 # ifdef USE_GLEXT
@@ -10485,7 +10531,8 @@ static void PolymostProcessVoxels(void)
             voxvboalloc(voxmodels[i]);
     }
 # endif
-
+    if (PolymostProcessVoxels_Callback)
+        PolymostProcessVoxels_Callback();
     if (g_haveVoxels != 1)
         return;
 
@@ -10771,6 +10818,7 @@ void vox_undefine(int32_t const tile)
         voxoff[voxindex][j] = 0;
     }
     voxscale[voxindex] = 65536;
+    voxrotate[voxindex>>3] &= ~pow2char[voxindex&7];
     tiletovox[tile] = -1;
 
     // TODO: nextvoxid

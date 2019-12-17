@@ -8,6 +8,7 @@
 #define EDUKE32_COMMON_H_
 
 #include "cache1d.h"
+#include "vfs.h"
 #include "compat.h"
 #include "pragmas.h"  // klabs
 #include "scriptfile.h"
@@ -106,6 +107,9 @@ int32_t maybe_append_ext(char *wbuf, int32_t wbufsiz, const char *fn, const char
 static inline int32_t sepldist(const int32_t dx, const int32_t dy)
 {
     vec2_t d = { klabs(dx), klabs(dy) };
+
+    if (!d.y) return d.x;
+    if (!d.x) return d.y;
 
     if (d.x < d.y)
         swaplong(&d.x, &d.y);

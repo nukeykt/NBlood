@@ -65,12 +65,16 @@ int FX_GetDevice(void);
 
 
 int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
-                      int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval);
+                      int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-                  int distance, int priority, fix16_t volume, uint32_t callbackval);
+                  int distance, int priority, fix16_t volume, intptr_t callbackval);
+int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol,
+    int left, int right, int priority, fix16_t volume, intptr_t callbackval);
+int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int rate,
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 
 int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate, int pitchoffset,
-                    int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval);
+                    int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 
 int FX_SetPrintf(void(*function)(const char *, ...));
 
@@ -88,7 +92,7 @@ static FORCE_INLINE int FX_CheckMVErr(int status)
     return status;
 }
 
-static FORCE_INLINE void FX_SetCallBack(void(*function)(uint32_t)) { MV_SetCallBack(function); }
+static FORCE_INLINE void FX_SetCallBack(void(*function)(intptr_t)) { MV_SetCallBack(function); }
 static FORCE_INLINE void FX_SetVolume(int volume) { MV_SetVolume(volume); }
 static FORCE_INLINE int FX_GetVolume(void) { return MV_GetVolume(); }
 static FORCE_INLINE void FX_SetReverseStereo(int setting) { MV_SetReverseStereo(setting); }

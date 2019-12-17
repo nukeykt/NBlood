@@ -39,7 +39,7 @@ static int32_t CallExtPostStartupWindow(void);
 static void CallExtPostInit(void);
 static void CallExtUnInit(void);
 static void CallExtPreCheckKeys(void);
-static void CallExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t);
+static void CallExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
 static void CallExtCheckKeys(void);
 static void CallExtPreLoadMap(void);
 static void CallExtSetupMapFilename(const char *mapname);
@@ -110,7 +110,7 @@ static int16_t oldmousebstatus = 0;
 char game_executable[BMAX_PATH] = {0};
 
 int32_t zlock = 0x7fffffff, zmode = 0, kensplayerheight = 32;
-//int16_t defaultspritecstat = 0;
+int16_t defaultspritecstat = 0;
 
 int16_t localartfreq[MAXTILES];
 int16_t localartlookup[MAXTILES], localartlookupnum;
@@ -529,7 +529,7 @@ void M32_DrawRoomsAndMasks(void)
         searchstat = 3;
         searchwall = srchwall;
     }
-    CallExtAnalyzeSprites(0,0,0,0);
+    CallExtAnalyzeSprites(0,0,0,0,0);
     searchwall = osearchwall, searchstat=osearchstat;
 
     renderDrawMasks();
@@ -541,7 +541,7 @@ void M32_DrawRoomsAndMasks(void)
     {
         polymer_editorpick();
         drawrooms(pos.x,pos.y,pos.z,ang,horiz,cursectnum);
-        CallExtAnalyzeSprites(0,0,0,0);
+        CallExtAnalyzeSprites(0,0,0,0,0);
         renderDrawMasks();
         M32_ResetFakeRORTiles();
     }
@@ -680,7 +680,8 @@ int app_main(int argc, char const * const * argv)
     timerInit(CLOCKTICKSPERSECOND);
     timerSetCallback(keytimerstuff);
 
-    artLoadFiles("tiles000.art", g_maxCacheSize);
+    if (!bloodhack)
+        artLoadFiles("tiles%03i.art", g_maxCacheSize);
 
     Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");
     initcrc();
@@ -2297,7 +2298,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
         return -1;
 
     sprite[i].x = dax, sprite[i].y = day;
-    sprite[i].cstat = DEFAULT_SPRITE_CSTAT;
+    sprite[i].cstat = defaultspritecstat;
     sprite[i].shade = 0;
     sprite[i].pal = 0;
     sprite[i].xrepeat = 64, sprite[i].yrepeat = 64;
@@ -3240,7 +3241,7 @@ int32_t select_sprite_tag(int32_t spritenum)
     return INT32_MIN;
 }
 
-static void drawlinebetween(const vec3_t *v1, const vec3_t *v2, int32_t col, uint32_t pat)
+void drawlinebetween(const vec3_t *v1, const vec3_t *v2, int32_t col, uint32_t pat)
 {
     // based on m32exec.c/drawline*
     const int32_t xofs=halfxdim16, yofs=midydim16;
@@ -3338,7 +3339,7 @@ static void drawspritelabel(int i)
     else if (i == pointhighlight - 16384)
     {
         if (spritecol >= 8 && spritecol <= 15)
-            col -= M32_THROB>>1;
+            col -= bloodhack ? M32_THROB>>2 : M32_THROB>>1;
         else col += M32_THROB>>2;
 
         if (bordercol > col && !blocking)
@@ -3616,6 +3617,11 @@ void overheadeditor(void)
             getpoint(searchx, searchy, &mousxplc, &mousyplc);
             linehighlight = getlinehighlight(mousxplc, mousyplc, linehighlight, 0);
             linehighlight2 = getlinehighlight(mousxplc, mousyplc, linehighlight, 1);
+
+            if (!m32_sideview)
+                updatesector(mousxplc, mousyplc, &sectorhighlight);
+            else
+                sectorhighlight = -1;
         }
 
         if ((unsigned)newnumwalls < MAXWALLS && newnumwalls >= numwalls)
@@ -3691,7 +3697,7 @@ void overheadeditor(void)
                 drawline16base(cx,cy, x1,j, -y1,+i, editorcolors[6]);
             }
 
-            if (keystatus[sc_LeftShift] && (pointhighlight&16384) && highlightcnt<=0)  // LShift
+            if (keystatus[sc_LeftShift] && (pointhighlight&16384) && highlightcnt<=0 && !bloodhack)  // LShift
             {
                 // draw lines to linking sprites
                 const int32_t refspritenum = pointhighlight&16383;
@@ -4448,7 +4454,21 @@ rotate_hlsect_out:
 #if 1
         if (keystatus[sc_F5])  //F5
         {
-            CallExtShowSectorData(0);
+            int found = 0;
+            if (bloodhack)
+            {
+                for (i=0; i<numsectors; i++)
+                    if (inside_editor_curpos(i) == 1)
+                    {
+                        YAX_SKIPSECTOR(i);
+
+                        CallExtShowSectorData(i);
+                        found = 1;
+                        break;
+                    }
+            }
+            if (!found)
+                CallExtShowSectorData(-1);
         }
         if (keystatus[sc_F6])  //F6
         {
@@ -4457,7 +4477,7 @@ rotate_hlsect_out:
             else if (linehighlight >= 0)
                 CallExtShowWallData(linehighlight);
             else
-                CallExtShowWallData(0);
+                CallExtShowWallData(-1);
         }
         if (keystatus[sc_F7])  //F7
         {
@@ -11147,9 +11167,9 @@ static void CallExtPreCheckKeys(void)
 {
     ExtPreCheckKeys();
 }
-static void CallExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr)
+static void CallExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
-    ExtAnalyzeSprites(ourx, oury, oura, smoothr);
+    ExtAnalyzeSprites(ourx, oury, ourz, oura, smoothr);
     VM_OnEvent(EVENT_ANALYZESPRITES, -1);
 }
 static void CallExtCheckKeys(void)

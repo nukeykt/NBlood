@@ -7,6 +7,10 @@ voidsw
 wangulator
 ekenbuild
 ekenbuild-editor
+nblood
+rednukem
+rrmapster32
+pcexhumed
 apps/
 *.exe
 /*.dll
@@ -65,3 +69,14 @@ project.xcworkspace/
 .DS_Store
 ._*
 /source/voidwrap/sdk/
+
+/autoload
+/movie
+/*.png
+/*.MHK
+/*.AR_
+/*.SMK
+/*.WAV
+/*.INI
+/*.sav
+/*.cfg_orig
