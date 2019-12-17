@@ -69,6 +69,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "record.h"
 #include "lighting.h"
 #include "grpscan.h"
+#include "menus.h"
+#include "dinput.h"
 #include <string.h>
 #include <cstdio> // for printf
 #include <cstdlib>
@@ -446,6 +448,9 @@ const char *gString[] =
     "EOF",
     "",
 };
+
+#define kFontPK3 "fonts.pk3"
+#define kFontDef "fonts.def"
 
 static char g_rootDir[BMAX_PATH];
 
@@ -966,6 +971,26 @@ int loaddefinitions_game(const char *fileName, int32_t firstPass)
     scriptfile_clearsymbols();
 
     return 0;
+}
+
+
+
+void G_UpdateAppTitle(void)
+{
+    char tempbuf[256];
+    if (g_gameNamePtr)
+    {
+#ifdef EDUKE32_STANDALONE
+        Bstrcpy(tempbuf, g_gameNamePtr);
+#else
+        Bsprintf(tempbuf, "%s - " APPNAME, g_gameNamePtr);
+#endif
+        wm_setapptitle(tempbuf);
+    }
+    else
+    {
+        wm_setapptitle(APPNAME);
+    }
 }
 
 ////////
@@ -1958,7 +1983,7 @@ static inline int32_t calc_smoothratio(ClockTicks totalclk, ClockTicks ototalclk
     // {
     //     return 65536;
     // }
-    if (bRecord || bPlayback || nFreeze != 0 || bCamera || bPause)
+    if (bRecord || bPlayback || nFreeze != 0 || bCamera || bPause || (g_menuActive && nNetPlayerCount < 2 && g_menuIngame))
         return 65536;
     int32_t rfreq = (refreshfreq != -1 ? refreshfreq : 60);
     uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*120);
@@ -2023,7 +2048,7 @@ static void G_PrintFPS(void)
     lastFrameTime = frameTime;
 }
 
-static void GameDisplay(void)
+void GameDisplay(void)
 {
     // End Section B
 
@@ -2047,11 +2072,9 @@ static void GameDisplay(void)
     }
 
     G_PrintFPS();
-
-    videoNextPage();
 }
 
-static void GameMove(void)
+void GameMove(void)
 {
     FixPalette();
 
@@ -2109,6 +2132,8 @@ static void GameMove(void)
     // loc_120E9:
     totalmoves++;
     moveframes--;
+    if (moveframes < 0)
+        moveframes = 0;
 }
 
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
@@ -2245,7 +2270,7 @@ int app_main(int argc, char const* const* argv)
 
     wm_setapptitle(APPNAME);
 
-    initprintf("Exhumed %s\n", s_buildRev);
+    initprintf(APPNAME" %s\n", s_buildRev);
     PrintBuildInfo();
 
     int i;
@@ -2469,6 +2494,8 @@ int app_main(int argc, char const* const* argv)
 
     G_LoadGroups(!g_noAutoLoad && !gSetup.noautoload);
 
+    G_UpdateAppTitle();
+
     PatchDemoStrings();
 
     // Decrypt strings code would normally be here
@@ -2535,7 +2562,7 @@ int app_main(int argc, char const* const* argv)
 
     initprintf("Initializing OSD...\n");
 
-    Bsprintf(tempbuf, "Exhumed %s", s_buildRev);
+    Bsprintf(tempbuf, APPNAME" %s", s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
     OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
@@ -2603,6 +2630,14 @@ int app_main(int argc, char const* const* argv)
     // temp - moving InstallEngine(); before FadeOut as we use nextpage() in FadeOut
     InstallEngine();
 
+    if (initgroupfile(kFontPK3) != -1)
+    {
+        if (loaddefinitionsfile(kFontDef) != 0)
+        {
+            initprintf("Couldn't load menu fonts.\n");
+        }
+    }
+
     const char *defsfile = G_DefFile();
     uint32_t stime = timerGetTicks();
     if (!loaddefinitionsfile(defsfile))
@@ -2611,7 +2646,6 @@ int app_main(int argc, char const* const* argv)
         initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
     }
     loaddefinitions_game(defsfile, FALSE);
-
 
     if (enginePostInit())
         ShutDown();
@@ -2630,6 +2664,8 @@ int app_main(int argc, char const* const* argv)
     seq_LoadSequences();
     InitStatus();
     InitTimer();
+
+    Menu_Init();
 
     for (i = 0; i < kMaxPlayers; i++) {
         nPlayerLives[i] = kDefaultLives;
@@ -3004,13 +3040,14 @@ LOOP3:
             if (G_FPSLimit())
             {
                 GameDisplay();
+
+                videoNextPage();
             }
         }
         else
         {
             static bool frameJustDrawn;
-            bInMove = kTrue;
-            if (!bPause && totalclock >= tclocks + 4)
+            if (totalclock >= tclocks + 4)
             {
                 do
                 {
@@ -3019,46 +3056,103 @@ LOOP3:
 
                     frameJustDrawn = false;
 
-                    GetLocalInput();
+                    if (((!bPause && !g_menuActive) || nNetPlayerCount > 1))
+                    {
+                        GetLocalInput();
 
-                    sPlayerInput[nLocalPlayer].xVel = lPlayerXVel;
-                    sPlayerInput[nLocalPlayer].yVel = lPlayerYVel;
-                    sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
-                    sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
-                    sPlayerInput[nLocalPlayer].nTarget = besttarget;
+                        sPlayerInput[nLocalPlayer].xVel = lPlayerXVel;
+                        sPlayerInput[nLocalPlayer].yVel = lPlayerYVel;
+                        sPlayerInput[nLocalPlayer].buttons = lLocalButtons | lLocalCodes;
+                        sPlayerInput[nLocalPlayer].nAngle = nPlayerDAng;
+                        sPlayerInput[nLocalPlayer].nTarget = besttarget;
 
-                    Ra[nLocalPlayer].nTarget = besttarget;
+                        Ra[nLocalPlayer].nTarget = besttarget;
 
-                    lLocalCodes = 0;
-                    nPlayerDAng = 0;
+                        lLocalCodes = 0;
+                        nPlayerDAng = 0;
 
-                    sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
+                        sPlayerInput[nLocalPlayer].horizon = nVertPan[nLocalPlayer];
+                    }
 
                     do
                     {
                         // timerUpdate();
                         tclocks += 4;
-                        GameMove();
+                        if (((!bPause && !g_menuActive) || nNetPlayerCount > 1))
+                        {
+                            bInMove = kTrue;
+                            GameMove();
+                            bInMove = kFalse;
+                        }
+                        if (g_menuActive)
+                            menu_DoPlasmaTile();
                         // timerUpdate();
                     } while (levelnew < 0 && totalclock >= tclocks + 4);
                 } while (0);
             }
-            bInMove = kFalse;
 
             faketimerhandler();
 
             if (G_FPSLimit())
             {
                 GameDisplay();
+
+                if (g_menuActive)
+                    M_DisplayMenus();
+
+                videoNextPage();
                 frameJustDrawn = true;
             }
         }
         if (!bInDemo)
         {
-            if (BUTTON(gamefunc_Escape))
+            if (I_EscapeTrigger())
             {
-                CONTROL_ClearButton(gamefunc_Escape);
+                if (g_menuActive && g_currentMenu <= MENU_MAIN_INGAME)
+                {
+                    I_EscapeTriggerClear();
+                    CONTROL_BindsEnabled = 1;
+                    Menu_Change(MENU_CLOSE);
+                    bInMove = 0;
+
+                    switch (g_menuReturn)
+                    {
+                    case 0:
+                        goto EXITGAME;
+
+                    case 1:
+                        goto STARTGAME1;
+
+                    case 2:
+                        levelnum = levelnew = menu_GameLoad(SavePosition);
+                        lastlevel = -1;
+                        nBestLevel = levelnew - 1;
+                        goto LOOP2;
+
+                    case 3: // When selecting 'Training' from ingame menu when already playing a level
+                        if (levelnum == 0 || !Query(2, 4, "Quit current game?", "Y/N", 'Y', 13, 'N', 27))
+                        {
+                            levelnew = 0;
+                            levelnum = 0;
+                        }
+                        goto STARTGAME2;
+                    }
+                    totalclock = ototalclock = tclocks;
+                    RefreshStatus();
+                }
+                else if (!g_menuActive)
+                {
+                    I_EscapeTriggerClear();
+                    CONTROL_BindsEnabled = 0;
+                    g_menuIngame = 1;
+                    bInMove = 1;
+                    Menu_Open(0);
+                    Menu_Change(MENU_MAIN_INGAME);
+                }
+
 // MENU2:
+#if 0
+                I_EscapeTriggerClear();
                 CONTROL_BindsEnabled = 0;
                 bInMove = kTrue;
                 nMenu = menu_Menu(1);
@@ -3091,6 +3185,7 @@ LOOP3:
                 bInMove = kFalse;
                 CONTROL_BindsEnabled = 1;
                 RefreshStatus();
+#endif
             }
             else if (KB_UnBoundKeyPressed(sc_F12))
             {
@@ -3118,7 +3213,7 @@ LOOP3:
                     lMapZoom -= mulscale6(timerOffset, max<int>(lMapZoom, 256));
 
                 lMapZoom = clamp(lMapZoom, 48, 2048);
-            }
+                }
 
             if (PlayerList[nLocalPlayer].nHealth > 0)
             {

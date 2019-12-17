@@ -45,6 +45,8 @@ extern unsigned char cinemapal[];
 
 extern short SavePosition;
 
+extern int nPlasmaTile, nLogoTile;
+
 int showmap(short nLevel, short nLevelNew, short nLevelBest);
 
 void ClearCinemaSeen();
@@ -73,5 +75,7 @@ void DoLastLevelCinema();
 void DoAfterCinemaScene(int nLevel);
 
 void InitEnergyTile();
+
+void menu_DoPlasmaTile();
 
 #endif

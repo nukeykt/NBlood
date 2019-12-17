@@ -55,6 +55,10 @@ enum basepal_t {
     BASEPALCOUNT
 };
 
+#define WIN_IS_PRESSED ( KB_KeyPressed( sc_RightWin ) || KB_KeyPressed( sc_LeftWin ) )
+#define ALT_IS_PRESSED ( KB_KeyPressed( sc_RightAlt ) || KB_KeyPressed( sc_LeftAlt ) )
+#define SHIFTS_IS_PRESSED ( KB_KeyPressed( sc_RightShift ) || KB_KeyPressed( sc_LeftShift ) )
+
 #pragma pack(push, 1)
 struct demo_header
 {
@@ -166,6 +170,11 @@ void UpdateScreenSize();
 
 void HandleAsync();
 
+void GameDisplay(void), GameMove(void);
+extern short nAlarmTicks, nClockVal, nRedTicks;
+
+extern ClockTicks tclocks, tclocks2;
+
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;
 
@@ -271,6 +280,16 @@ extern int32_t r_maxfpsoffset;
 extern double g_frameDelay;
 
 static inline double calcFrameDelay(int const maxFPS) { return maxFPS > 0 ? (timerGetFreqU64()/(double)maxFPS) : 0.0; }
+
+int G_FPSLimit(void);
+
+// the point of this is to prevent re-running a function or calculation passed to potentialValue
+// without making a new variable under each individual circumstance
+static inline void SetIfGreater(int32_t *variable, int32_t potentialValue)
+{
+    if (potentialValue > *variable)
+        *variable = potentialValue;
+}
 
 enum {
     kPalNormal = 0,

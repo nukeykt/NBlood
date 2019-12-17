@@ -136,21 +136,22 @@ void videoFadeToBlack(int32_t moreopaquep)
         char *const p = (char *) frameplace;
         const char *const trans = paletteGetBlendTable(0);
         const int32_t shiftamnt = ((!!moreopaquep)*8);
+        const int32_t bcol = blackcol<<((!moreopaquep)*8);
         const int32_t dimprod = xdim*ydim;
         int32_t i = 0;
 
 #ifdef CLASSIC_SLICE_BY_4
         for (; i<dimprod-4; i+=4)
         {
-            p[i] = trans[p[i]<<shiftamnt];
-            p[i+1] = trans[p[i+1]<<shiftamnt];
-            p[i+2] = trans[p[i+2]<<shiftamnt];
-            p[i+3] = trans[p[i+3]<<shiftamnt];
+            p[i] = trans[(p[i]<<shiftamnt)+bcol];
+            p[i+1] = trans[(p[i+1]<<shiftamnt)+bcol];
+            p[i+2] = trans[(p[i+2]<<shiftamnt)+bcol];
+            p[i+3] = trans[(p[i+3]<<shiftamnt)+bcol];
         }
 #endif
 
         for (; i<dimprod; i++)
-            p[i] = trans[p[i]<<shiftamnt];
+            p[i] = trans[(p[i]<<shiftamnt)+bcol];
         videoEndDrawing();
     }
 }
