@@ -1125,14 +1125,8 @@ short nCurBodyNum = 0;
 
 short nBodyTotal = 0;
 
-
 short textpages;
-
-short nCDTrackLength = 0;
-
 short lastfps;
-
-short nCDTracks = 0;
 
 short nMapMode = 0;
 short bNoCreatures = kFalse;
@@ -1273,13 +1267,11 @@ void timerhandler()
         scan_char = 0;
         lastfps = fps;
         fps = 0;
-
-        if (nCDTrackLength > 0) {
-            nCDTrackLength--;
-        }
     }
-    if (!bInMove)
+
+    if (!bInMove) {
         OSD_DispatchQueued();
+    }
 }
 
 void HandleAsync()
@@ -1443,8 +1435,6 @@ void mysetbrightness(char nBrightness)
 
 void CheckKeys()
 {
-    int eax;
-
     if (BUTTON(gamefunc_Enlarge_Screen))
     {
         if (screensize == 0)
@@ -1574,7 +1564,7 @@ void CheckKeys()
         {
             if (ch)
             {
-                int nStringLen = strlen(sHollyStr);
+                size_t nStringLen = strlen(sHollyStr);
 
                 if (ch == asc_Enter)
                 {
@@ -1766,11 +1756,12 @@ void DoCredits()
 {
     NoClip();
 
-    playCDtrack(19);
+    playCDtrack(19, false);
 
     int var_20 = 0;
 
-    FadeOut(0);
+    if (videoGetRenderMode() == REND_CLASSIC)
+        FadeOut(0);
 
     int nCreditsIndex = FindGString("CREDITS");
 
@@ -1785,36 +1776,28 @@ void DoCredits()
             nCreditsIndex++;
         }
 
-        // vars
-        int eax = (10 * (nCreditsIndex - nStart - 1)) / 2;
-
-        if (eax < 0) {
-            eax++;
-        }
-
-        eax >>= 1;
-
-        int y = 100 - eax;
-
-        int edi = nStart;
-
+        int y = 100 - ((10 * (nCreditsIndex - nStart - 1)) / 2);
 
         for (int i = nStart; i < nCreditsIndex; i++)
         {
-            // var 24 ==
-
-            int nWidth = MyGetStringWidth(gString[edi]);
-            myprintext((320 - nWidth) / 2, y, gString[edi], 0);
-
-            edi++;
+            int nWidth = MyGetStringWidth(gString[i]);
+            myprintext((320 - nWidth) / 2, y, gString[i], 0);
             y += 10;
         }
 
         videoNextPage();
-        FadeIn();
 
-        while ((int)totalclock + 600 > (int)totalclock)
+        nCreditsIndex++;
+
+        if (videoGetRenderMode() == REND_CLASSIC)
+            FadeIn();
+
+        int nDuration = (int)totalclock + 600;
+
+        while ((int)totalclock <= nDuration)
         {
+            handleevents();
+
             if (KB_KeyDown[sc_F12])
             {
                 var_20++;
@@ -1827,7 +1810,8 @@ void DoCredits()
             }
         }
 
-        FadeOut(0);
+        if (videoGetRenderMode() == REND_CLASSIC)
+            FadeOut(0);
     }
 
     while (CDplaying())
@@ -1886,6 +1870,10 @@ void FinishLevel()
     }
 }
 
+EDUKE32_STATIC_ASSERT(sizeof(demo_header) == 75);
+EDUKE32_STATIC_ASSERT(sizeof(demo_input) == 36);
+
+
 void WritePlaybackInputs()
 {
     fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
@@ -1894,43 +1882,20 @@ void WritePlaybackInputs()
 
 uint8_t ReadPlaybackInputs()
 {
-    //assert(sizeof(PlayerInput) == 32);
-
-    if (fread(&moveframes, 1, sizeof(moveframes), vcrfp))
+    demo_input input;
+    if (fread(&input, 1, sizeof(input), vcrfp))
     {
-#if 0
-        fread(&sPlayerInput[nLocalPlayer], 1, sizeof(PlayerInput), vcrfp);
-#else
-        /*
-        struct PlayerInput
-        {
-            int xVel;
-            int yVel;
-            short nAngle;
-            short buttons;
-            short nTarget;
-            char horizon;
-            int8_t nItem;
-            int h;
-            char i;
-            char field_15[11];
-        };
-        */
-        fread(&sPlayerInput[nLocalPlayer].xVel,    1, sizeof(sPlayerInput[nLocalPlayer].xVel), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].yVel,    1, sizeof(sPlayerInput[nLocalPlayer].yVel), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].nAngle,  1, sizeof(sPlayerInput[nLocalPlayer].nAngle), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].buttons, 1, sizeof(sPlayerInput[nLocalPlayer].buttons), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].nTarget, 1, sizeof(sPlayerInput[nLocalPlayer].nTarget), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].horizon, 1, sizeof(sPlayerInput[nLocalPlayer].horizon), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].nItem,   1, sizeof(sPlayerInput[nLocalPlayer].nItem), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].h,       1, sizeof(sPlayerInput[nLocalPlayer].h), vcrfp);
-        fread(&sPlayerInput[nLocalPlayer].i,       1, sizeof(sPlayerInput[nLocalPlayer].i), vcrfp);
+        moveframes = input.moveframes;
+        sPlayerInput[nLocalPlayer].xVel = input.xVel;
+        sPlayerInput[nLocalPlayer].yVel = input.yVel;
+        sPlayerInput[nLocalPlayer].nAngle = fix16_from_int(input.nAngle<<2);
+        sPlayerInput[nLocalPlayer].buttons = input.buttons;
+        sPlayerInput[nLocalPlayer].nTarget = input.nTarget;
+        sPlayerInput[nLocalPlayer].horizon = fix16_from_int(input.horizon);
+        sPlayerInput[nLocalPlayer].nItem = input.nItem;
+        sPlayerInput[nLocalPlayer].h = input.h;
+        sPlayerInput[nLocalPlayer].i = input.i;
 
-        // skip pad
-        fseek(vcrfp, 11, SEEK_CUR);
-
-
-#endif
         besttarget = sPlayerInput[nLocalPlayer].nTarget;
         Ra[nLocalPlayer].nTarget = besttarget;
         return kTrue;
@@ -1991,7 +1956,6 @@ void DrawClock()
 
     tileLoad(kTile3603);
 
-//    nRedTicks = 0;
     memset((void*)waloff[kTile3603], -1, 4096);
 
     if (lCountDown / 30 != nClockVal)
@@ -2067,8 +2031,8 @@ static void G_PrintFPS(void)
     static int32_t frameCount;
     static double cumulativeFrameDelay;
     static double lastFrameTime;
-    static float lastFPS, minFPS = std::numeric_limits<float>::max(), maxFPS;
-    static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
+    static float lastFPS; // , minFPS = std::numeric_limits<float>::max(), maxFPS;
+    //static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
 
     double frameTime = timerGetHiTicks();
     double frameDelay = frameTime - lastFrameTime;
@@ -2224,6 +2188,61 @@ int G_FPSLimit(void)
     return 0;
 }
 
+void PatchDemoStrings()
+{
+    if (!ISDEMOVER)
+        return;
+
+    if (EXHUMED) {
+        gString[60] = "PICK UP A COPY OF EXHUMED";
+    }
+    else {
+        gString[60] = "PICK UP A COPY OF POWERSLAVE";
+    }
+
+    gString[61] = "TODAY TO CONTINUE THE ADVENTURE!";
+    gString[62] = "MORE LEVELS, NASTIER CREATURES";
+    gString[63] = "AND THE EVIL DOINGS OF THE";
+    gString[64] = "KILMAAT AWAIT YOU IN THE FULL";
+    gString[65] = "VERSION OF THE GAME.";
+    gString[66] = "TWENTY LEVELS, PLUS 12 NETWORK";
+    gString[67] = "PLAY LEVELS CAN BE YOURS!";
+    gString[68] = "END";
+}
+
+void ExitGame()
+{
+    if (bRecord) {
+        fclose(vcrfp);
+    }
+
+    FadeSong();
+    if (CDplaying()) {
+        fadecdaudio();
+    }
+
+    StopAllSounds();
+    StopLocalSound();
+    mysaveconfig();
+
+    if (bSerialPlay)
+    {
+        if (nNetPlayerCount != 0) {
+            bSendBye = kTrue;
+            UpdateSerialInputs();
+        }
+    }
+    else
+    {
+        if (nNetPlayerCount != 0) {
+            SendGoodbye();
+        }
+    }
+
+    ShutDown();
+    exit(0);
+}
+
 static int32_t nonsharedtimer;
 
 int app_main(int argc, char const* const* argv)
@@ -2270,7 +2289,6 @@ int app_main(int argc, char const* const* argv)
     PrintBuildInfo();
 
     int i;
-
 
     //int esi = 1;
     //int edi = esi;
@@ -2493,6 +2511,8 @@ int app_main(int argc, char const* const* argv)
 
     G_UpdateAppTitle();
 
+    PatchDemoStrings();
+
     // Decrypt strings code would normally be here
 #if 0
 
@@ -2549,7 +2569,6 @@ int app_main(int argc, char const* const* argv)
     }
 
     ResetPassword();
-    nCDTracks = initcdaudio();
 
     // GetCurPal(NULL);
 
@@ -2649,7 +2668,7 @@ int app_main(int argc, char const* const* argv)
     g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
 
     // loc_11745:
-    FadeOut(0);
+//    FadeOut(0);
 //	InstallEngine();
     KB_Startup();
     InitView();
@@ -2697,9 +2716,9 @@ int app_main(int argc, char const* const* argv)
         goto STARTGAME1;
     }
     // no forcelevel specified...
-    if (!bPlayback)
+    if (bPlayback)
     {
-        goto MENU;
+        goto STARTGAME1;
     }
 MENU:
     SavePosition = -1;
@@ -2761,7 +2780,7 @@ STARTGAME2:
 
     if (bPlayback)
     {
-        menu_GameLoad2(vcrfp);
+        menu_GameLoad2(vcrfp, true);
         levelnew = GameStats.nMap;
         levelnum = GameStats.nMap;
         forcelevel = GameStats.nMap;
@@ -2886,7 +2905,7 @@ LOOP3:
     lPlayerXVel = 0;
     lPlayerYVel = 0;
     movefifopos = movefifoend;
-    nCDTrackLength = 0;
+
     RefreshStatus();
 
     if (bSerialPlay) {
@@ -2908,19 +2927,16 @@ LOOP3:
 
         HandleAsync();
         OSD_DispatchQueued();
+
         // Section B
-        if (!nCDTrackLength && !nFreeze && !nNetPlayerCount)
+        if (!CDplaying() && !nFreeze && !nNetPlayerCount)
         {
             int nTrack = levelnum;
             if (nTrack != 0) {
                 nTrack--;
             }
 
-            nCDTrackLength = playCDtrack((nTrack % 8) + 11);
-
-            if (!nCDTrackLength) {
-                nCDTrackLength = -1;
-            }
+            playCDtrack((nTrack % 8) + 11, true);
         }
 
 // TODO		CONTROL_GetButtonInput();
@@ -2942,7 +2958,7 @@ LOOP3:
             if (bPlayback)
             {
                 // YELLOW
-                if ((bInDemo && KB_KeyWaiting() || !ReadPlaybackInputs()) && KB_GetCh())
+                if (((bInDemo && KB_KeyWaiting()) || !ReadPlaybackInputs()) && KB_GetCh())
                 {
                     KB_FlushKeyboardQueue();
                     KB_ClearKeysDown();
@@ -3030,7 +3046,7 @@ LOOP3:
             // END YELLOW SECTION
 
             // loc_12149:
-            if (bInDemo)
+            if (bInDemo || bPlayback)
             {
                 while (tclocks > totalclock) { HandleAsync(); }
                 tclocks = totalclock;
@@ -3175,8 +3191,9 @@ LOOP3:
                         {
                             levelnew = 0;
                             levelnum = 0;
+
+                            goto STARTGAME2;
                         }
-                        goto STARTGAME2;
                 }
 
                 totalclock = ototalclock = tclocks;
@@ -3241,34 +3258,8 @@ LOOP3:
         fps++;
     }
 EXITGAME:
-    if (bRecord) {
-        fclose(vcrfp);
-    }
 
-    FadeSong();
-    if (CDplaying()) {
-        fadecdaudio();
-    }
-
-    StopAllSounds();
-    StopLocalSound();
-    mysaveconfig();
-
-    if (bSerialPlay)
-    {
-        if (nNetPlayerCount != 0) {
-            bSendBye = kTrue;
-            UpdateSerialInputs();
-        }
-    }
-    else
-    {
-        if (nNetPlayerCount != 0) {
-            SendGoodbye();
-        }
-    }
-
-    ShutDown();
+    ExitGame();
     return 0;
 }
 
@@ -3322,6 +3313,46 @@ void DoGameOverScene()
     SetOverscan(BASEPAL);
 }
 
+void FadeOutScreen(int nTile)
+{
+    int f = 0;
+
+    while (f <= 255)
+    {
+        HandleAsync();
+
+        overwritesprite(0, 0, nTile, 0, 2, kPalNormal);
+
+        fullscreen_tint_gl(0, 0, 0, f);
+        f += 4;
+
+        WaitTicks(2);
+
+        videoNextPage();
+    }
+
+    EraseScreen(overscanindex);
+}
+
+void FadeInScreen(int nTile)
+{
+    int f = 255;
+
+    while (f >= 0)
+    {
+        HandleAsync();
+
+        overwritesprite(0, 0, nTile, 0, 2, kPalNormal);
+
+        fullscreen_tint_gl(0, 0, 0, f);
+        f -= 4;
+
+        WaitTicks(2);
+
+        videoNextPage();
+    }
+}
+
 // TODO - missing some values?
 short word_10010[] = {6, 25, 43, 50, 68, 78, 101, 111, 134, 158, 173, 230, 6000};
 
@@ -3332,8 +3363,12 @@ void DoTitle()
 
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
 
-    if (videoGetRenderMode() == REND_CLASSIC)
-        BlackOut();
+//  if (videoGetRenderMode() == REND_CLASSIC)
+//     BlackOut();
+
+    // for OpenGL, fade from black to the publisher logo
+    if (videoGetRenderMode() > REND_CLASSIC)
+        FadeInScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
 
     overwritesprite(0, 0, EXHUMED ? kTileBMGLogo : kTilePIELogo, 0, 2, kPalNormal);
     videoNextPage();
@@ -3347,22 +3382,31 @@ void DoTitle()
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+    else
+        FadeOutScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
 
     SetOverscan(BASEPAL);
 
     int nScreenTile = seq_GetSeqPicnum(kSeqScreens, 0, 0);
+
+    if (videoGetRenderMode() > REND_CLASSIC)
+        FadeInScreen(nScreenTile);
 
     overwritesprite(0, 0, nScreenTile, 0, 2, kPalNormal);
     videoNextPage();
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeIn();
+
     PlayLogoSound();
 
     WaitAnyKey(2);
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+    else
+        FadeOutScreen(nScreenTile);
+
     ClearAllKeys();
 
     PlayMovie("book.mov");
@@ -3380,12 +3424,11 @@ void DoTitle()
 
     EraseScreen(4);
 
-    playCDtrack(19);
+    playCDtrack(19, true);
 
     videoNextPage();
     FadeIn();
     WaitVBL();
-
 
     int String_Copyright = FindGString("COPYRIGHT");
 
@@ -3427,13 +3470,13 @@ void DoTitle()
 
         int nStringWidth = MyGetStringWidth(a);
 
-        int y = ydim - 24;
-        myprintext((xdim / 2 - nStringWidth / 2), y, a, 0);
+        int y = 200 - 24;
+        myprintext((320 / 2 - nStringWidth / 2), y, a, 0);
 
         nStringWidth = MyGetStringWidth(b);
 
-        y = ydim - 16;
-        myprintext((xdim / 2 - nStringWidth / 2), y, b, 0);
+        y = 200 - 16;
+        myprintext((320 / 2 - nStringWidth / 2), y, b, 0);
 
         if ((int)totalclock > var_18)
         {
@@ -3688,6 +3731,9 @@ void InitSpiritHead()
 
     nPixels = 0;
 
+    nSpiritRepeatX = sprite[nSpiritSprite].xrepeat;
+    nSpiritRepeatY = sprite[nSpiritSprite].yrepeat;
+
     tileLoad(kTileRamsesNormal); // Ramses Normal Head
 
     for (int i = 0; i < kMaxSprites; i++)
@@ -3767,9 +3813,7 @@ void InitSpiritHead()
         nTrack = 7;
     }
 
-    nCDTrackLength = playCDtrack(nTrack);
-
-    bSubTitles = nCDTrackLength == 0;
+    bSubTitles = playCDtrack(nTrack, false) == 0;
 
     StartSwirlies();
 
@@ -3777,7 +3821,7 @@ void InitSpiritHead()
     lNextStateChange = (int)totalclock;
     lHeadStartClock = (int)totalclock;
 
-    headfd = kopen4load(filename, 512); // 512??
+    headfd = kopen4loadfrommod(filename, 0);
     nPupData = kread(headfd, cPupData, sizeof(cPupData));
     pPupData = cPupData;
     kclose(headfd);
@@ -3823,7 +3867,6 @@ void CopyHeadToWorkTile(short nTile)
     }
 }
 
-#if 1
 int DoSpiritHead()
 {
     static short word_964E6 = 0;
@@ -4218,348 +4261,3 @@ int DoSpiritHead()
 
     return 0;
 }
-#endif
-
-#if 0
-int DoSpiritHead()
-{
-    static short word_964E6 = 0;
-
-    nVertPan[0] += (nDestVertPan[0] - nVertPan[0]) / 4;
-
-    if (nHeadStage < 2)
-    {
-        memset(worktile, -1, sizeof(worktile));
-    }
-    else if (nHeadStage == 5)
-    {
-        if (lNextStateChange <= (int)totalclock)
-        {
-            if (nPupData)
-            {
-                short nPupVal = *pPupData;
-                pPupData++;
-                nPupData -= 2;
-
-                if (nPupData > 0)
-                {
-                    lNextStateChange = (nPupVal + lHeadStartClock) - 10;
-                    nTalkTime = !nTalkTime;
-                }
-                else
-                {
-                    nTalkTime = 0;
-                    nPupData = 0;
-                }
-            }
-            else if (!bSubTitles)
-            {
-                if (!CDplaying())
-                {
-                    levelnew = levelnum + 1;
-                    fadecdaudio();
-                }
-            }
-        }
-
-        word_964E8--;
-        if (word_964E8 <= 0)
-        {
-            word_964EA = RandomBit() * 2;
-            word_964E8 = RandomSize(5) + 4;
-        }
-
-        int ebx = 592;
-        word_964EC--;
-
-        if (word_964EC < 3)
-        {
-            ebx = 593;
-            if (word_964EC <= 0) {
-                word_964EC = RandomSize(6) + 4;
-            }
-        }
-
-        ebx += word_964EA;
-
-        loadtile(ebx);
-
-        // TODO - fixme. How big is worktile?
-        uint8_t *pDest = (uint8_t*)&worktile[10441];
-        uint8_t *pSrc = waloff[ebx];
-
-        for (int i = 0; i < 97; i++)
-        {
-            memcpy(pDest, pSrc, 106);
-
-            pDest += 212;
-            pSrc += 106;
-        }
-
-        if (nTalkTime)
-        {
-            if (nMouthTile < 2) {
-                nMouthTile++;
-            }
-        }
-        else if (nMouthTile != 0)
-        {
-            nMouthTile--;
-        }
-
-        if (nMouthTile)
-        {
-            loadtile(nMouthTile + 598);
-
-            short nTileSizeX = tilesizx[nMouthTile + 598];
-            short nTileSizeY = tilesizy[nMouthTile + 598];
-
-            // TODO - checkme. near loc_133AA
-            //          uint8_t *pDest = (uint8_t*)worktile;
-            //          pDest += (212 * (97 - nTileSizeX / 2)) + (159 - nTileSizeY);
-
-            uint8_t *pDest = (uint8_t*)&worktile[212 * (97 - nTileSizeX / 2)] + (159 - nTileSizeY);
-            uint8_t *pSrc = waloff[nMouthTile + 598];
-
-            while (nTileSizeX > 0)
-            {
-                memcpy(pDest, pSrc, nTileSizeY);
-
-                nTileSizeX--;
-                pDest += 212;
-                pSrc += nTileSizeY;
-            }
-        }
-
-        return 1;
-    }
-    nPixelsToShow = ((int)totalclock - nHeadTimeStart) * 15;
-
-    if (nPixelsToShow > nPixels) {
-        nPixelsToShow = nPixels;
-    }
-
-    if (nHeadStage < 3)
-    {
-        UpdateSwirlies();
-
-        if (sprite[nSpiritSprite].shade > -127) {
-            sprite[nSpiritSprite].shade--;
-        }
-
-        word_964E6--;
-        if (word_964E6 < 0)
-        {
-            DimSector(sprite[nSpiritSprite].sectnum);
-            word_964E6 = 5;
-        }
-
-        if (!nHeadStage)
-        {
-            if (((int)totalclock - nHeadTimeStart) > 480)
-            {
-                nHeadStage = 1;
-                nHeadTimeStart = (int)totalclock + 480;
-            }
-
-            //              int ecx = 0;
-
-            // loc_1362C
-            for (int i = 0; i < nPixelsToShow; i++)
-            {
-                if (destvely[i] < 0)
-                {
-                    vely[i]--;
-
-                    if (vely[i] <= destvely[i])
-                    {
-                        destvely[i] = RandomSize(2) + 1;
-                    }
-                }
-                else
-                {
-                    vely[i]++;
-
-                    if (vely[i] >= destvely[i])
-                    {
-                        destvely[i] = -(RandomSize(2) + 1);
-                    }
-                }
-
-                // loc_13541
-                if (destvelx[i] >= 0)
-                {
-                    velx[i]--;
-
-                    if (velx[i] <= destvelx[i])
-                    {
-                        destvelx[i] = RandomSize(2) + 1;
-                    }
-                }
-                else
-                {
-                    velx[i]++;
-
-                    if (velx[i] >= destvelx[i])
-                    {
-                        destvelx[i] = -(RandomSize(2) + 1);
-                    }
-                }
-
-                // loc_13593
-                int esi = vely[i] + (cury[i] >> 8);
-
-                if (esi >= 106)
-                {
-                    vely[i] = 0;
-                    esi = 0;
-                }
-                else if (esi < -105)
-                {
-                    vely[i] = 0;
-                    esi = 0;
-                }
-
-                // loc_135C6
-                int ebx = velx[i] + (curx[i] >> 8);
-
-                if (ebx >= 97)
-                {
-                    velx[i] = 0;
-                    ebx = 0;
-                }
-                else if (ebx < -96)
-                {
-                    velx[i] = 0;
-                    ebx = 0;
-                }
-
-                // loc_135F9
-                curx[i] = ebx << 8;
-                cury[i] = esi << 8;
-
-                //ecx += 2;
-                //                  ecx++;
-
-                //                  uint8_t *pVal = (uint8_t*)worktile;
-
-                worktile[106 + esi + (ebx + 97) * 212] = pixelval[i];
-                //pVal += (106 + esi);
-                //*pVal = pixelval[i];
-            }
-        }
-        else if (nHeadStage == 1)
-        {
-            uint8_t nXRepeat = sprite[nSpiritSprite].xrepeat;
-            if (nXRepeat > nSpiritRepeatX)
-            {
-                sprite[nSpiritSprite].xrepeat -= 2;
-
-                nXRepeat = sprite[nSpiritSprite].xrepeat;
-                if (nXRepeat < nSpiritRepeatX)
-                {
-                    sprite[nSpiritSprite].xrepeat = nSpiritRepeatX;
-                }
-            }
-
-            uint8_t nYRepeat = sprite[nSpiritSprite].yrepeat;
-            if (nYRepeat > nSpiritRepeatY)
-            {
-                sprite[nSpiritSprite].yrepeat -= 2;
-
-                nYRepeat = sprite[nSpiritSprite].yrepeat;
-                if (nYRepeat < nSpiritRepeatY)
-                {
-                    sprite[nSpiritSprite].yrepeat = nSpiritRepeatY;
-                }
-            }
-
-            // loc_13705
-            int esi = 0;
-            //              int edx = 0;
-
-            // loc_137E7:
-            for (int i = 0; i < nPixels; i++)
-            {
-                int eax = (origx[i] << 8) - curx[i];
-                int ecx = eax;
-
-                if (eax && klabs(eax) < 8)
-                {
-                    curx[i] = origx[i] << 8;
-                    ecx = 0;
-                }
-                else
-                {
-                    ecx >>= 3;
-                }
-
-                // loc_1374B
-                int var_1C = (origy[i] << 8) - cury[i];
-                int ebp = var_1C;
-
-                if (ebp && klabs(ebp) < 8)
-                {
-                    cury[i] = origy[i] << 8;
-                    var_1C = 0;
-                }
-                else
-                {
-                    var_1C >>= 3;
-                }
-
-                if (var_1C | ecx)
-                {
-                    curx[i] += ecx;
-                    cury[i] += var_1C;
-
-                    esi++;
-                }
-
-                //                  edx++;
-
-                //                  uint8_t *pVal = (uint8_t*)worktile;
-
-                worktile[106 + (((curx[i] >> 8) + 97) * 212) + (cury[i] >> 8)] = pixelval[i];
-
-                //pVal += (106 + ecx);
-                //*pVal = pixelval[i];
-            }
-
-            if (((int)totalclock - lHeadStartClock) > 600) {
-                CopyHeadToWorkTile(kTileRamsesGold);
-            }
-
-            int eax = (nPixels * 15) / 16;
-
-            if (esi < eax)
-            {
-                // SoundBigEntrance(); // TODO
-                AddGlow(sprite[nSpiritSprite].sectnum, 20);
-                AddFlash(
-                    sprite[nSpiritSprite].sectnum,
-                    sprite[nSpiritSprite].x,
-                    sprite[nSpiritSprite].y,
-                    sprite[nSpiritSprite].z,
-                    128);
-
-                nHeadStage = 3;
-                TintPalette(255, 255, 255);
-                CopyHeadToWorkTile(kTileRamsesNormal);
-            }
-
-        }
-        return 1;
-    }
-    // loc_138A7
-    FixPalette();
-
-    if (!nPalDiff)
-    {
-        nFreeze = 2;
-        nHeadStage++;
-    }
-
-    return 0;
-}
-#endif

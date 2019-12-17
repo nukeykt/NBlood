@@ -164,7 +164,7 @@ int seq_ReadSequence(const char *seqName)
     strcat(buffer, seqName);
     strcat(buffer, ".seq");
 
-    int hFile = kopen4load(buffer, 1);
+    int hFile = kopen4loadfrommod(buffer, 0);
     if (hFile == -1)
     {
         initprintf("Unable to open '%s'!\n", buffer);

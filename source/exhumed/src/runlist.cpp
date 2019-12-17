@@ -437,14 +437,10 @@ void runlist_ReadyChannel(short eax)
 void runlist_ProcessChannels()
 {
 #if 1
-    short v0; // di@1
-    short v1; // si@1
-    short *v2; // ebx@3
-    short v3; // cx@3
-    short v4; // cx@5
-    int v5; // eax@11
-    int result; // eax@13
-    short b; // [sp+0h] [bp-1Ch]@3
+    short v0;
+    short v1;
+    int v5;
+    short b;
     short d;
 
     do
@@ -494,7 +490,6 @@ void runlist_ProcessChannels()
             }
             ChannelList = b;
         }
-        result = v1;
         ChannelList = v1;
     } while (v1 != -1);
 
@@ -601,7 +596,6 @@ void runlist_ProcessSectorTag(int nSector, int lotag, int hitag)
     int nChannel = runlist_AllocChannel(hitag % 1000);
     assert(nChannel >= 0); // REMOVE
 
-    int var_2C = 1000;
     int var_24 = (hitag / 1000) << 12;
     int var_18 = lotag / 1000;
 
@@ -1309,6 +1303,7 @@ void runlist_ProcessSectorTag(int nSector, int lotag, int hitag)
             runlist_AddRunRec(sRunChannels[nChannel].a, nSwitch);
 
             // Fall through to case 62
+            fallthrough__;
         }
         case 62:
         {
@@ -1805,42 +1800,43 @@ void runlist_DamageEnemy(int nSprite, int nSprite2, short nDamage)
     }
 
     short nRun = sprite[nSprite].owner;
-
     if (nRun <= -1) {
         return;
     }
 
+    short nPreCreaturesLeft = nCreaturesLeft;
+
     runlist_SendMessageToRunRec(nRun, (nSprite2 & 0xFFFF) | 0x80000, nDamage * 4);
 
-    if (nCreaturesLeft <= 0) {
-        return;
-    }
-
-    if (sprite[nSprite2].statnum != 100) {
-        return;
-    }
-
-    short nPlayer = GetPlayerFromSprite(nSprite2);
-    nTauntTimer[nPlayer]--;
-
-    if (nTauntTimer[nPlayer] <= 0)
+    // is there now one less creature? (has one died)
+    if (nPreCreaturesLeft > nCreaturesLeft && nSprite2 > -1)
     {
-        // Do a taunt
-        int nPlayerSprite = PlayerList[nPlayer].nSprite;
-        int nSector = sprite[nPlayerSprite].sectnum;
-
-        if (!(SectFlag[nSector] & kSectUnderwater))
-        {
-            int ebx = 0x4000;
-
-            if (nPlayer == nLocalPlayer) {
-                ebx = 0x6000;
-            }
-
-            int nDopSprite = nDoppleSprite[nPlayer];
-            D3PlayFX(StaticSound[kSoundTauntStart + (RandomSize(3) % 5)], nDopSprite | ebx);
+        if (sprite[nSprite2].statnum != 100) {
+            return;
         }
 
-        nTauntTimer[nPlayer] = RandomSize(3) + 3;
+        short nPlayer = GetPlayerFromSprite(nSprite2);
+        nTauntTimer[nPlayer]--;
+
+        if (nTauntTimer[nPlayer] <= 0)
+        {
+            // Do a taunt
+            int nPlayerSprite = PlayerList[nPlayer].nSprite;
+            int nSector = sprite[nPlayerSprite].sectnum;
+
+            if (!(SectFlag[nSector] & kSectUnderwater))
+            {
+                int ebx = 0x4000;
+
+                if (nPlayer == nLocalPlayer) {
+                    ebx = 0x6000;
+                }
+
+                int nDopSprite = nDoppleSprite[nPlayer];
+                D3PlayFX(StaticSound[kSoundTauntStart + (RandomSize(3) % 5)], nDopSprite | ebx);
+            }
+
+            nTauntTimer[nPlayer] = RandomSize(3) + 3;
+        }
     }
 }

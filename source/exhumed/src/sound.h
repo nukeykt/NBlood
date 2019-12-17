@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define kCreepyCount 150
 
+#define MUSIC_ID    (-65536)
+
 enum {
     kSound0 = 0,
     kSound1,

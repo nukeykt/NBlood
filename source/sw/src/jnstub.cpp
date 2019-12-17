@@ -685,8 +685,10 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     SW_ExtPreInit(argc, argv);
 
     OSD_SetLogFile("wangulator.log");
-    OSD_SetVersion(AppProperName,0,2);
-    initprintf("%s %s\n", AppProperName, s_buildRev);
+    char tempbuf[256];
+    snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
+    OSD_SetVersion(tempbuf, 10,0);
+    buildputs(tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -730,6 +732,7 @@ ExtInit(void)
     //LogUserTime(TRUE);              // Send true because user is logging
     // in.
 
+    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", 0);
 
     SW_ExtInit();
 
@@ -753,6 +756,8 @@ ExtInit(void)
     kensplayerheight = 58;
     zmode = 0;
 
+    SW_ScanGroups();
+
 #ifndef BUILD_DEV_VER
 }                                   // end user press Y
 else
@@ -766,7 +771,7 @@ else
 
 int32_t ExtPostStartupWindow(void)
 {
-    initgroupfile(G_GrpFile());
+    SW_LoadGroups();
 
     if (!g_useCwd)
         SW_CleanupSearchPaths();
@@ -3263,10 +3268,11 @@ AdjustShade(void)
                     wall[j].shade += shade;
                 }
 
-                if (!TEST(wall[wall[j].nextwall].extra, 0x1))
+                uint16_t const nextwall = wall[j].nextwall;
+                if (nextwall < MAXWALLS && !TEST(wall[nextwall].extra, 0x1))
                 {
-                    SET(wall[wall[j].nextwall].extra, 0x1);
-                    wall[wall[j].nextwall].shade += shade;
+                    SET(wall[nextwall].extra, 0x1);
+                    wall[nextwall].shade += shade;
                 }
 
             }

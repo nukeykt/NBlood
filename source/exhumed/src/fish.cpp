@@ -141,7 +141,7 @@ void BuildBlood(int x, int y, int z, short nSector)
     BuildAnim(-1, kSeqFish, 36, x, y, z, nSector, 75, 128);
 }
 
-void FuncFishLimb(int a, int nDamage, int nRun)
+void FuncFishLimb(int a, int UNUSED(nDamage), int nRun)
 {
     short nFish = RunData[nRun].nVal;
     short nSprite = FishChunk[nFish].nSprite;
@@ -279,8 +279,8 @@ void IdleFish(short nFish, short edx)
     sprite[nSprite].ang += (256 - RandomSize(9)) + 1024;
     sprite[nSprite].ang &= kAngleMask;
 
-    sprite[nSprite].xvel = (sprite[nSprite].ang + 512) >> 8;
-    sprite[nSprite].yvel = (sprite[nSprite].ang) >> 8;
+    sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 8;
+    sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 8;
 
     FishList[nFish].nAction = 0;
     FishList[nFish].field_2 = 0;
@@ -349,6 +349,7 @@ void FuncFish(int a, int nDamage, int nRun)
                 FishList[nFish].field_C = 10;
             }
             // fall through
+            fallthrough__;
         }
         case 0x80000:
         {
@@ -546,7 +547,7 @@ void FuncFish(int a, int nDamage, int nRun)
                     return;
                 }
 
-                if (nVal != 0x30000)
+                if ((nVal & 0x30000) == 0)
                 {
                     if ((nVal & 0xC000) == 0x8000)
                     {
@@ -572,7 +573,7 @@ void FuncFish(int a, int nDamage, int nRun)
                         }
                     }
                 }
-                else if (nVal == 0x20000)
+                else if (nVal & 0x20000)
                 {
                     IdleFish(nFish, -1);
                 }

@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "exhumed.h"
 #include "config.h"
 #include "osdcmds.h"
+#include "view.h"
 
 #include "vfs.h"
 
@@ -571,7 +572,7 @@ int32_t registerosdcommands(void)
         //{ "demoplay_diffs","enable/disable application of diffs in demo playback",(void *)&demoplay_diffs, CVAR_BOOL, 0, 1 },
         //{ "demoplay_showsync","enable/disable display of sync status",(void *)&demoplay_showsync, CVAR_BOOL, 0, 1 },
 
-        //{ "fov", "change the field of view", (void *)&ud.fov, CVAR_INT|CVAR_FUNCPTR, 60, 120 },
+        { "fov", "change the field of view", (void *)&gFov, CVAR_INT|CVAR_FUNCPTR, 60, 140 },
 
         //{ "hud_althud", "enable/disable alternate mini-hud", (void *)&ud.althud, CVAR_BOOL, 0, 1 },
         //{ "hud_custom", "change the custom hud", (void *)&ud.statusbarcustom, CVAR_INT, 0, ud.statusbarrange },

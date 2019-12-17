@@ -69,6 +69,8 @@ int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitch
 int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
                   int distance, int priority, fix16_t volume, uint32_t callbackval);
 
+int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate, int pitchoffset,
+                    int vol, int left, int right, int priority, fix16_t volume, uint32_t callbackval);
 
 int FX_SetPrintf(void(*function)(const char *, ...));
 
@@ -112,6 +114,7 @@ static FORCE_INLINE int FX_Pan3D(int handle, int angle, int distance)
     return FX_CheckMVErr(MV_Pan3D(handle, angle, distance));
 }
 static FORCE_INLINE int FX_SoundActive(int handle) { return MV_VoicePlaying(handle); }
+static FORCE_INLINE int FX_SoundValidAndActive(int handle) { return handle > 0 && MV_VoicePlaying(handle); }
 static FORCE_INLINE int FX_SoundsPlaying(void) { return MV_VoicesPlaying(); }
 static FORCE_INLINE int FX_StopSound(int handle) { return FX_CheckMVErr(MV_Kill(handle)); }
 static FORCE_INLINE int FX_StopAllSounds(void) { return FX_CheckMVErr(MV_KillAllVoices()); }

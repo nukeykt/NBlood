@@ -1028,10 +1028,9 @@ void PlayAlert(const char *str)
 
 void DoKenTest()
 {
-    int nPlayerSprite = PlayerList[0].nSprite; // CHECKME
+    int nPlayerSprite = PlayerList[0].nSprite;
     if ((unsigned int)nPlayerSprite >= kMaxSprites)
     {
-        initprintf("DoKenTest: (unsigned int)nPlayerSprite >= kMaxSprites)\n");
         return;
     }
     int nSector = sprite[nPlayerSprite].sectnum;
@@ -1101,6 +1100,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
 
             nSprite2 = nRadialOwner;
             // fall through to case 0x80000
+            fallthrough__;
         }
 
         case 0x80000:
@@ -1171,8 +1171,8 @@ void FuncPlayer(int pA, int nDamage, int nRun)
             }
             else
             {
-                // ded
-                if (sprite[nSprite2].statnum == 100)
+                // player has died
+                if (nSprite2 > -1 && sprite[nSprite2].statnum == 100)
                 {
                     short nPlayer2 = GetPlayerFromSprite(nSprite2);
 
@@ -1626,7 +1626,7 @@ loc_1AB8E:
 
             uint16_t buttons = sPlayerInput[nPlayer].buttons;
 
-            if (buttons & 0x40)
+            if (buttons & 0x40) // LOBODEITY cheat
             {
                 char strDeity[96]; // TODO - reduce in size?
 
@@ -1645,24 +1645,24 @@ loc_1AB8E:
 
                 sPlayerInput[nPlayer].buttons &= 0xBF;
 
-                sprintf(strDeity, "Deity mode %s for player %d", strDMode, nPlayer);
+                sprintf(strDeity, "Deity mode %s for player", strDMode);
                 StatusMessage(150, strDeity);
             }
-            else if (buttons & 0x20)
+            else if (buttons & 0x20) // LOBOCOP cheat
             {
                 FillWeapons(nPlayer);
-                StatusMessage(150, "All weapons loaded for player %d", nPlayer);
+                StatusMessage(150, "All weapons loaded for player");
             }
-            else if (buttons & 0x80)
+            else if (buttons & 0x80) // LOBOPICK cheat
             {
                 PlayerList[nPlayer].keys = 0xFFFF;
-                StatusMessage(150, "All keys for player %d", nPlayer);
+                StatusMessage(150, "All keys loaded for player");
                 RefreshStatus();
             }
-            else if (buttons & 0x100)
+            else if (buttons & 0x100) // LOBOSWAG cheat
             {
                 FillItems(nPlayer);
-                StatusMessage(150, "All items loaded for player %d", nPlayer);
+                StatusMessage(150, "All items loaded for player");
             }
 
             // loc_1AEF5:
@@ -2943,12 +2943,11 @@ do_default_b:
                         }
                         else
                         {
-                            int nEyeLevel = eyelevel[nPlayer];
-
-                            if (nEyeLevel < -8320) {
-                                eyelevel[nPlayer] = ((-8320 - nEyeLevel) >> 1) + nEyeLevel;
+                            if (eyelevel[nPlayer] < -8320) {
+                                eyelevel[nPlayer] += ((-8320 - eyelevel[nPlayer]) >> 1);
                             }
 
+loc_1BD2E:
                             if (totalvel[nPlayer] < 1) {
                                 nActionB = 6;
                             }
@@ -2978,13 +2977,7 @@ do_default_b:
                                 // CHECKME - confirm branching in this area is OK
                                 if (var_48)
                                 {
-                                    // loc_1BD2E:
-                                    if (totalvel[nPlayer] < 1) {
-                                        nActionB = 6;
-                                    }
-                                    else {
-                                        nActionB = 7;
-                                    }
+                                    goto loc_1BD2E;
                                 }
                                 else
                                 {
@@ -3000,38 +2993,19 @@ do_default_b:
                                     }
                                 }
                             }
-
-                            // loc_1BE30
-                            if (buttons & kButtonFire) // was var_38
-                            {
-                                if (bUnderwater)
-                                {
-                                    nActionB = 11;
-                                }
-                                else
-                                {
-                                    if (nActionB != 2 && nActionB != 1)
-                                    {
-                                        nActionB = 5;
-                                    }
-                                }
-                            }
                         }
-                        else // player's health is 0
+                        // loc_1BE30
+                        if (buttons & kButtonFire) // was var_38
                         {
-                            // loc_1BE30
-                            if (buttons & kButtonFire) // was var_38
+                            if (bUnderwater)
                             {
-                                if (bUnderwater)
+                                nActionB = 11;
+                            }
+                            else
+                            {
+                                if (nActionB != 2 && nActionB != 1)
                                 {
-                                    nActionB = 11;
-                                }
-                                else
-                                {
-                                    if (nActionB != 2 && nActionB != 1)
-                                    {
-                                        nActionB = 5;
-                                    }
+                                    nActionB = 5;
                                 }
                             }
                         }

@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "exhumed.h"
 #include "view.h"
 
-short bShowTowers = kTrue; //kFalse; REVERT to kFalse
+short bShowTowers = kFalse;
 int ldMapZoom;
 int lMapZoom;
 
@@ -104,7 +104,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
 
         var_10 = 111 - var_10;
 
-        int startwallB = startwall;
+        // int startwallB = startwall;
 
         for (int nWall = startwall; nWall <= endwall; nWall++)
         {
@@ -284,14 +284,11 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
 
 static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16_t cang)
 {
-    int32_t i, j, k, l, x1, y1, x2=0, y2=0, x3, y3, x4, y4, ox, oy, xoff, yoff;
-    int32_t dax, day, cosang, sinang, xspan, yspan, sprx, spry;
-    int32_t xrepeat, yrepeat, z1, z2, startwall, endwall, tilenum, daang;
+    int32_t i, j, k, x1, y1, x2=0, y2=0, ox, oy;
+    int32_t z1, z2, startwall, endwall;
     int32_t xvect, yvect, xvect2, yvect2;
-    int16_t p;
     char col;
     uwallptr_t wal, wal2;
-    spritetype *spr;
 
     int32_t tmpydim = (xdim*5)/8;
 

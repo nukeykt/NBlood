@@ -456,9 +456,15 @@ int main(int argc, char *argv[])
     if ((argp = Bgetenv("EDUKE32_NO_OPENGL_FOG")) != NULL)
         nofog = Batol(argp);
 
-#ifdef __linux__
-    if (!Bgetenv("EDUKE32_NO_NVIDIA_THREADED_OPTIMIZATIONS"))
-        setenv("__GL_THREADED_OPTIMIZATIONS", "1", 0);
+#if defined __linux__ || defined EDUKE32_BSD
+    if (!Bgetenv("EDUKE32_NO_GL_THREADED_OPTIMIZATIONS"))
+    {
+        if (!Bgetenv("EDUKE32_NO_NVIDIA_THREADED_OPTIMIZATIONS"))
+            setenv("__GL_THREADED_OPTIMIZATIONS", "1", 0);
+
+        if (!Bgetenv("EDUKE32_NO_MESA_THREADED_OPTIMIZATIONS"))
+            setenv("mesa_glthread", "true", 0);
+    }
 #endif
 #endif
 
@@ -493,7 +499,13 @@ int main(int argc, char *argv[])
     gtkbuild_init(&argc, &argv);
 #endif
 
+#ifdef EDUKE32_OSX
+    osx_preopen();
+#endif
     startwin_open();
+#ifdef EDUKE32_OSX
+    osx_postopen();
+#endif
     maybe_redirect_outputs();
 
 #ifdef _WIN32

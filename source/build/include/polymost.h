@@ -101,6 +101,7 @@ extern int32_t shadescale_unbounded;
 extern uint8_t alphahackarray[MAXTILES];
 
 extern int32_t r_usenewshading;
+extern int32_t r_usetileshades;
 extern int32_t r_npotwallmode;
 extern int32_t polymostcenterhoriz;
 
@@ -114,11 +115,17 @@ static FORCE_INLINE int32_t eligible_for_tileshades(int32_t const picnum, int32_
     return !usehightile || !hicfindsubst(picnum, pal, hictinting[pal].f & HICTINT_ALWAYSUSEART);
 }
 
+static FORCE_INLINE int polymost_usetileshades(void)
+{
+    return r_usetileshades && !(globalflags & GLOBAL_NO_GL_TILESHADES);
+}
+
+
 static inline float getshadefactor(int32_t const shade, int32_t const pal)
 {
     // 8-bit tiles, i.e. non-hightiles and non-models, don't get additional
     // glColor() shading with r_usetileshades!
-    if (videoGetRenderMode() == REND_POLYMOST && !(globalflags & GLOBAL_NO_GL_TILESHADES) && eligible_for_tileshades(globalpicnum, globalpal))
+    if (videoGetRenderMode() == REND_POLYMOST && polymost_usetileshades() && eligible_for_tileshades(globalpicnum, globalpal))
         return 1.f;
 
     float const fshade = fogfactor[pal] != 0.f ? shade / fogfactor[pal] : 0.f;

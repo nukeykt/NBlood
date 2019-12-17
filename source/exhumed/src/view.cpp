@@ -70,6 +70,8 @@ short besttarget;
 short nViewLeft;
 short bCamera = kFalse;
 
+int gFov;
+
 short nViewy;
 
 int viewz;
@@ -506,12 +508,16 @@ void DrawView(int smoothRatio)
         static uint8_t sectorCeilingPal[MAXSECTORS];
         static uint8_t wallPal[MAXWALLS];
         int const viewingRange = viewingrange;
+        int const vr = Blrintf(65536.f * tanf(gFov * (fPI / 360.f)));
 
         if (r_usenewaspect)
         {
             newaspect_enable = 1;
             videoSetCorrectedAspect();
+            renderSetAspect(mulscale16(vr, viewingrange), yxaspect);
         }
+        else
+            renderSetAspect(vr, yxaspect);
 
         if (HavePLURemap())
         {
@@ -588,8 +594,9 @@ void DrawView(int smoothRatio)
                     {
                         levelnew = levelnum + 1;
 
-                        if (CDplaying())
+                        if (CDplaying()) {
                             fadecdaudio();
+                        }
                     }
 
                     videoSetViewableArea(nViewLeft, nViewTop, nViewRight, nViewBottom);

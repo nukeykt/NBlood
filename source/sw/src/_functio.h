@@ -87,6 +87,7 @@ const char *gamefunctions[] =
     "Previous_Weapon",
     "Show_Menu",
     "Show_Console",
+    "Alt_Weapon_Mode",
 };
 
 #define NUMKEYENTRIES 50
@@ -142,28 +143,29 @@ static const char *keydefaults[] =
     "Toggle_Crosshair", "I", "",
     "Next_Weapon", "'", "",
     "Previous_Weapon", ";", "",
+    "Show_Menu", "", "",
     "Show_Console", "NumLck", "",
 };
 
 static const char *keydefaults_modern[] =
 {
-    "Move_Forward", "W", "",
-    "Move_Backward", "S", "",
-    "Turn_Left", "", "",
-    "Turn_Right", "", "",
-    "Strafe", "", "",
-    "Fire", "", "",
+    "Move_Forward", "W", "Up",
+    "Move_Backward", "S", "Down",
+    "Turn_Left", "Left", "",
+    "Turn_Right", "Right", "",
+    "Strafe", "LAlt", "RAlt",
+    "Fire", "RCtrl", "",
     "Open", "E", "",
-    "Run", "LShift", "",
+    "Run", "LShift", "RShift",
     "AutoRun", "CapLck", "",
-    "Jump", "Space", "",
-    "Crouch", "LAlt", "",
-    "Look_Up", "", "",
-    "Look_Down", "", "",
-    "Strafe_Left", "A", "",
-    "Strafe_Right", "D", "",
-    "Aim_Up", "", "",
-    "Aim_Down", "", "",
+    "Jump", "Space", "/",
+    "Crouch", "LCtrl", "",
+    "Look_Up", "PgUp", "",
+    "Look_Down", "PgDn", "",
+    "Strafe_Left", "A", ",",
+    "Strafe_Right", "D", ".",
+    "Aim_Up", "Home", "",
+    "Aim_Down", "End", "",
     "Weapon_1", "1", "",
     "Weapon_2", "2", "",
     "Weapon_3", "3", "",
@@ -188,15 +190,16 @@ static const char *keydefaults_modern[] =
     "Map", "Tab", "",
     "Shrink_Screen", "-", "",
     "Enlarge_Screen", "=", "",
-    "Center_View", "", "",
-    "Holster_Weapon", "H", "",
+    "Center_View", "KPad5", "",
+    "Holster_Weapon", "ScrLck", "",
     "Map_Follow_Mode", "F", "",
     "See_Co_Op_View", "K", "",
-    "Mouse_Aiming", "U", "",
-    "Toggle_Crosshair", "I", "",
-    "Next_Weapon", "", "",
-    "Previous_Weapon", "", "",
-    "Show_Console", "NumLck", "",
+    "Mouse_Aiming", "", "",
+    "Toggle_Crosshair", "", "",
+    "Next_Weapon", "'", "",
+    "Previous_Weapon", ";", "",
+    "Show_Menu", "", "",
+    "Show_Console", "`", "",
 };
 
 
@@ -213,7 +216,7 @@ static const char *mousedefaults_modern[] =
 {
     "Fire",
     "Open",
-    "",
+    "Alt_Weapon_Mode",
     "",
     "Next_Weapon",
     "Previous_Weapon"
@@ -240,88 +243,6 @@ static const char *mouseclickeddefaults_modern[] =
 };
 
 
-static const char *joystickdefaults[] =
-{
-    "Fire",
-    "Strafe",
-    "Run",
-    "Open",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "Aim_Down",
-    "Look_Right",
-    "Aim_Up",
-    "Look_Left",
-};
-
-
-static const char *joystickclickeddefaults[] =
-{
-    "",
-    "Inventory",
-    "Jump",
-    "Crouch",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-};
-
-
 static const char *mouseanalogdefaults[] =
 {
     "analog_turning",
@@ -331,51 +252,6 @@ static const char *mouseanalogdefaults[] =
 
 static const char *mousedigitaldefaults[] =
 {
-    "",
-    "",
-    "",
-    "",
-};
-
-
-#if 0
-static const char *gamepaddigitaldefaults[] =
-{
-    "Turn_Left",
-    "Turn_Right",
-    "Move_Forward",
-    "Move_Backward",
-};
-#endif
-
-
-static const char *joystickanalogdefaults[] =
-{
-    "analog_turning",
-    "analog_moving",
-    "analog_strafing",
-    "",
-    "",
-    "",
-    "",
-    "",
-};
-
-
-static const char *joystickdigitaldefaults[] =
-{
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "Run",
-    "",
-    "",
-    "",
-    "",
-    "",
     "",
     "",
     "",

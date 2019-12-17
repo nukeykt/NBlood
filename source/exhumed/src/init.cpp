@@ -642,7 +642,7 @@ void ProcessSpriteTag(short nSprite, short lotag, short hitag)
     int nChannel = runlist_AllocChannel(hitag % 1000);
 //	int ebp = nChannel;
 
-    int nHitag2 = hitag / 1000;
+//    int nHitag2 = hitag / 1000;
 
     int nLotag2 = lotag / 1000;
     if (nLotag2 == 0) {
@@ -665,6 +665,7 @@ void ProcessSpriteTag(short nSprite, short lotag, short hitag)
         {
             nVal = 3 * (hitag / 3);
             // fall through to 6,7 etc
+            fallthrough__;
         }
         case 6:
         case 7:

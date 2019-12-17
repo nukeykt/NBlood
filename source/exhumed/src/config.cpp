@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "exhumed.h"
 #include "typedefs.h"
 #include "scriplib.h"
+#include "view.h"
 
 #include "config.h"
 
@@ -465,6 +466,8 @@ void CONFIG_SetDefaults()
     runkey_mode = 0;
     auto_run = 1;
 
+    gFov = 90;
+
     CONFIG_SetDefaultKeys(keydefaults);
 
     memset(MouseFunctions, -1, sizeof(MouseFunctions));
@@ -511,7 +514,7 @@ void CONFIG_SetDefaults()
 
 int CONFIG_ReadSetup()
 {
-    char tempbuf[1024];
+    //char tempbuf[1024];
 
     CONTROL_ClearAssignments();
     CONFIG_SetDefaults();

@@ -154,6 +154,7 @@ void FuncRex(int a, int nDamage, int nRun)
                 nDamage = runlist_CheckRadialDamage(nSprite);
             }
             // fall through to case 0x80000
+            fallthrough__;
         }
 
         case 0x80000:
@@ -314,24 +315,26 @@ void FuncRex(int a, int nDamage, int nRun)
 
                     switch ((nVal & 0xC000))
                     {
-                    case 0xc000:
-                        if ((nVal & 0x3FFF) == nTarget)
-                        {
-                            PlotCourseToSprite(nSprite, nTarget);
-                            RexList[nRex].nAction = 4;
+                        case 0xc000:
+                            if ((nVal & 0x3FFF) == nTarget)
+                            {
+                                PlotCourseToSprite(nSprite, nTarget);
+                                RexList[nRex].nAction = 4;
+                                RexList[nRex].field_2 = 0;
+                                break;
+                            }
+                            fallthrough__;
+                        case 0x8000:
+                            sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
+                            sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
+                            sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
+                            RexList[nRex].nAction = 1;
                             RexList[nRex].field_2 = 0;
+                            nAction = 1;
                             break;
-                        }
-                        fallthrough__;
-                    case 0x8000:
-                        sprite[nSprite].ang = (sprite[nSprite].ang + 256) & kAngleMask;
-                        sprite[nSprite].xvel = Cos(sprite[nSprite].ang) >> 2;
-                        sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 2;
-                        RexList[nRex].nAction = 1;
-                        RexList[nRex].field_2 = 0;
-                        nAction = 1;
-                        break;
                     }
+
+                    break;
                 }
 
                 case 2:
@@ -398,8 +401,9 @@ void FuncRex(int a, int nDamage, int nRun)
                         RexList[nRex].nAction = 1;
                         RexList[nRex].field_2 = 0;
                         RexList[nRex].field_A = 90;
-                        return;
                     }
+
+                    return;
                 }
 
                 case 3:

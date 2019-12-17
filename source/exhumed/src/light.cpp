@@ -82,7 +82,7 @@ int LoadPaletteLookups()
 
     for (int i = 0; i < kMaxGrads; i++)
     {
-        int hFile = kopen4load(GradList[i], 1);
+        int hFile = kopen4loadfrommod(GradList[i], 0);
         if (hFile == -1)
         {
             initprintf("Error reading palette lookup '%s'\n", GradList[i]);

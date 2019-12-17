@@ -96,8 +96,6 @@ void FillWeapons(short nPlayer)
 {
     nPlayerWeapons[nPlayer] = 0xFFFF; // turn on all bits
 
-    StatusMessage(150, "All weapons ON");
-
     for (int i = 0; i < kMaxWeapons; i++)
     {
         if (WeaponInfo[i].d) {
@@ -827,6 +825,7 @@ loc_flag:
                         }
 
                         // fall through to case 1 (kWeaponPistol)
+                        fallthrough__;
                     }
                 }
 
@@ -836,13 +835,12 @@ loc_flag:
                         nQuake[nPlayer] = 128;
                     }
                     // fall through
+                    fallthrough__;
                 }
                 case kWeaponPistol:
                 {
                     int var_50 = (fix16_to_int(sPlayerInput[nPlayer].horizon) - 92) << 2;
                     nHeight -= var_50;
-
-                    short thetargetthin = sPlayerInput[nPlayer].nTarget;
 
                     if (sPlayerInput[nPlayer].nTarget >= 0)
                     {

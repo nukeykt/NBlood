@@ -182,79 +182,77 @@ void DoEnergyTile()
         {
             for (j = 0; j < 64; j++)
             {
-                if (*c != 96)
+                uint8_t val = *c;
+
+                if (val != 96)
                 {
-                    if (*c <= 158) {
-                        *ptrW = 96;
+                    if (val > 158) {
+                        *ptrW = val - 1;
                     }
                     else {
-                        *ptrW = (*c) - 1;
+                        *ptrW = 96;
                     }
-                    //continue;
                 }
                 else
                 {
                     if (menu_RandomBit2()) {
                         *ptrW = *c;
-                        c++;
-                        ptrW++;
-                        continue;
-                    }
-
-                    char al = *(c + 1);
-                    char ah = *(c - 1);
-
-                    if (al <= ah) {
-                        al = ah;
-                    }
-
-                    char cl = al;
-                    al = *(c - 66);
-
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(c + 66);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(c + 66);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(c + 66);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(c - 65);
-                    if (cl <= al) {
-                        cl = al;
-                    }
-
-                    al = *(c - 67);
-                    if (cl > al) {
-                        al = cl;
-                    }
-
-                    cl = al;
-
-                    if (al <= 159) {
-                        *ptrW = 96;
-                        //continue;
                     }
                     else
                     {
-                        if (!menu_RandomBit2())
-                        {
-                            cl--;
+                        uint8_t al = *(c + 1);
+                        uint8_t ah = *(c - 1);
+
+                        if (al <= ah) {
+                            al = ah;
                         }
 
-                        *ptrW = cl;
-                    }
+                        uint8_t cl = al;
+
+                        al = *(c - 66);
+                        if (cl <= al) {
+                            cl = al;
+                        }
+
+                        al = *(c + 66);
+                        if (cl <= al) {
+                            cl = al;
+                        }
+
+                        al = *(c + 66);
+                        if (cl <= al) {
+                            cl = al;
+                        }
+
+                        al = *(c + 66);
+                        if (cl <= al) {
+                            cl = al;
+                        }
+
+                        al = *(c - 65);
+                        if (cl <= al) {
+                            cl = al;
+                        }
+
+                        al = *(c - 67);
+                        if (cl > al) {
+                            al = cl;
+                        }
+
+                        cl = al;
+
+                        if (al <= 159) {
+                            *ptrW = 96;
+                        }
+                        else
+                        {
+                            if (!menu_RandomBit2()) {
+                                cl--;
+                            }
+
+                            *ptrW = cl;
+                        }
+                    }     
                 }
 
                 c++;
@@ -267,6 +265,7 @@ void DoEnergyTile()
         c = &energytile[67];
         ptrW = (uint8_t*)waloff[kEnergy2];
 
+        // copy back to energytile[]
         for (i = 0; i < 64; i++)
         {
             memcpy(c, ptrW, 64);
@@ -276,13 +275,12 @@ void DoEnergyTile()
 
         ptrW = (uint8_t*)waloff[kEnergy2];
 
+        // kEnergy2 is 64 x 64
         for (i = 0; i < 4096; i++)
         {
-            if ((*ptrW) == 96) {
-                *ptrW = 255; // -1?
+            if (ptrW[i] == 96) {
+                ptrW[i] = 255; // -1?
             }
-
-            ptrW++;
         }
 
         word_9AB5B--;
@@ -295,6 +293,8 @@ void DoEnergyTile()
             val += randSize;
             val *= 2;
             val += randSize2;
+
+            assert(val < 4356);
 
             energytile[val] = 175;
             word_9AB5B = 1;
@@ -929,7 +929,7 @@ void menu_AdjustVolume()
                     }
 
 // TODO				SetMusicVolume();
-// TODO				setCDaudiovolume(gMusicVolume);
+    				setCDaudiovolume(gMusicVolume);
                     continue;
                 }
 
@@ -960,8 +960,8 @@ void menu_AdjustVolume()
                         gMusicVolume += 4;
                     }
 
-// TODO				SetMusicVolume();
-// TODO				setCDaudiovolume(gMusicVolume);
+//  				SetMusicVolume();
+    				setCDaudiovolume(gMusicVolume);
                     continue;
                 }
 
@@ -1052,7 +1052,6 @@ int menu_NewGameMenu()
             // Loop #3
             for (int i = 0; i < 5; i++)
             {
-                // CHECKME
                 int8_t shade = ((Sin((int)totalclock << 4) >> 9) * (i == nSlot)) + ((i != nSlot) * 31);
 
                 overwritesprite(55, arg_4A, kMenuBlankTitleTile, shade, 2, kPalNormal);
@@ -1312,8 +1311,8 @@ int menu_LoadGameMenu()
 
         for (int i = 0; i < kMaxSaveSlots; i++)
         {
-            // TODO - shade flashing
-            overwritesprite(55, spriteY, kMenuBlankTitleTile, 0, 2, kPalNormal);
+            int8_t shade = ((Sin((int)totalclock << 4) >> 9)* (i == nSlot)) + ((i != nSlot) * 31);
+            overwritesprite(55, spriteY, kMenuBlankTitleTile, shade, 2, kPalNormal);
 
             myprintext(63, textY, nameList[i], 0);
             textY += 22;
@@ -1383,9 +1382,44 @@ void menu_ResetKeyTimer()
     keytimer = (int)totalclock + 2400;
 }
 
-void menu_GameLoad2(FILE *fp)
+void menu_GameLoad2(FILE *fp, bool bIsDemo)
 {
-    fread(&GameStats, sizeof(GameStats), 1, fp);
+    if (bIsDemo)
+    {
+        demo_header header;
+        fread(&header, 1, sizeof(demo_header), fp);
+
+        GameStats.nMap = header.nMap;
+        GameStats.nWeapons = header.nWeapons;
+        GameStats.nCurrentWeapon = header.nCurrentWeapon;
+        GameStats.clip = header.clip;
+        GameStats.items = header.items;
+        GameStats.player.nHealth = header.nHealth;
+        GameStats.player.field_2 = header.field_2;
+        GameStats.player.nAction = header.nAction;
+        GameStats.player.nSprite = header.nSprite;
+        GameStats.player.bIsMummified = header.bIsMummified;
+        GameStats.player.someNetVal = header.someNetVal;
+        GameStats.player.invincibility = header.invincibility;
+        GameStats.player.nAir = header.nAir;
+        GameStats.player.nSeq = header.nSeq;
+        GameStats.player.nMaskAmount = header.nMaskAmount;
+        GameStats.player.keys = header.keys;
+        GameStats.player.nMagic = header.nMagic;
+        Bmemcpy(GameStats.player.items, header.item, sizeof(header.item));
+        Bmemcpy(GameStats.player.nAmmo, header.nAmmo, sizeof(header.nAmmo));
+        Bmemcpy(GameStats.player.pad, header.pad, sizeof(header.pad));
+        GameStats.player.nCurrentWeapon = header.nCurrentWeapon2;
+        GameStats.player.field_3FOUR = header.field_3FOUR;
+        GameStats.player.bIsFiring = header.bIsFiring;
+        GameStats.player.field_38 = header.field_38;
+        GameStats.player.field_3A = header.field_3A;
+        GameStats.player.field_3C = header.field_3C;
+        GameStats.player.nRun = header.nRun;
+        GameStats.nLives = header.nLives;
+    }
+    else
+        fread(&GameStats, sizeof(GameStats), 1, fp);
 
     nPlayerWeapons[nLocalPlayer] = GameStats.nWeapons;
 
@@ -2074,7 +2108,7 @@ int LoadCinemaPalette(int nPal)
 
     // original code strcpy'd into a buffer first...
 
-    int hFile = kopen4load(cinpalfname[nPal], 1);
+    int hFile = kopen4loadfrommod(cinpalfname[nPal], 0);
     if (hFile < 0) {
         return -2;
     }
@@ -2193,10 +2227,9 @@ void ReadyCinemaText(uint16_t nVal)
 
 uint8_t AdvanceCinemaText()
 {
-    int var_1C = nCDTrackLength;
     int tmp = nHeight + nCrawlY > 0;
 
-    if (tmp || nCDTrackLength && nCDTrackLength > 0)
+    if (tmp || CDplaying())
     {
         nextclock = (int)totalclock + 14;
 
@@ -2226,7 +2259,7 @@ uint8_t AdvanceCinemaText()
                 break;
             }
 
-            if (var_1C || nCDTrackLength)
+            if (CDplaying())
             {
                 if (nextclock <= (int)totalclock) {
                     return kTrue;
@@ -2256,7 +2289,7 @@ void DoCinemaText(short nVal)
         videoNextPage();
 
         // TEMP
-        int time = (int)totalclock + 8;
+        int time = (int)totalclock + 4;
         while ((int)totalclock < time) {
             HandleAsync();
         }
@@ -2326,6 +2359,12 @@ void GoToTheCinema(int nVal)
         }
     }
 
+    if (ISDEMOVER) {
+        if (!waloff[cinematile]) {
+            tileCreate(cinematile, 320, 200);
+        }
+    }
+
     FadeOut(kFalse);
     StopAllSounds();
     NoClip();
@@ -2392,7 +2431,7 @@ void GoToTheCinema(int nVal)
                 fadecdaudio();
             }
 
-            playCDtrack(edx + 2); // , 1);
+            playCDtrack(edx + 2, false);
         }
 
         DoCinemaText(ebx);
@@ -2400,11 +2439,16 @@ void GoToTheCinema(int nVal)
 
     FadeOut(kTrue);
 
-    overwritesprite(0, 0, 764, 100, 2, kPalNormal);
+    overwritesprite(0, 0, kMovieTile, 100, 2, kPalNormal);
     videoNextPage();
 
     GrabPalette();
     Clip();
+
+    // quit the game if we've finished level 4 and displayed the advert text
+    if (ISDEMOVER && nVal == 3) {
+        ExitGame();
+    }
 }
 
 
@@ -2452,10 +2496,10 @@ int showmap(short nLevel, short nLevelNew, short nLevelBest)
 
 void DoAfterCinemaScene(int nLevel)
 {
-    short word_9ABD5[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 7, 0, 0, 0, 0, 6 };
+    short nAfterScene[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 7, 0, 0, 0, 0, 6 };
 
-    if (word_9ABD5[nLevel]) {
-        GoToTheCinema(word_9ABD5[nLevel]);
+    if (nAfterScene[nLevel]) {
+        GoToTheCinema(nAfterScene[nLevel]);
     }
 }
 
@@ -2467,10 +2511,10 @@ void DoFailedFinalScene()
         fadecdaudio();
     }
 
-    playCDtrack(9);
+    playCDtrack(9, false);
     FadeToWhite();
 
-// TODO	GoToTheCinema(word_9ABFF);
+    GoToTheCinema(4);
 }
 
 int FindGString(const char *str)
@@ -2514,6 +2558,8 @@ void DoStatic(int a, int b)
 
     uint8_t *pTile = (uint8_t*)(waloff[kTileLoboLaptop] + (200 * v2)) + v4;
 
+    tileInvalidate(kTileLoboLaptop, -1, -1);
+
     while (v2 < var_18)
     {
         uint8_t *pStart = pTile;
@@ -2551,8 +2597,6 @@ void DoLastLevelCinema()
 
     tileLoad(kTileLoboLaptop);
 
-    memcpy((void*)waloff[kTileLoboLaptop], (void*)waloff[kTileLoboLaptop], tilesiz[kTileLoboLaptop].x * tilesiz[kTileLoboLaptop].y);
-
     int var_24 = 16;
     int var_28 = 12;
 
@@ -2577,6 +2621,12 @@ void DoLastLevelCinema()
         }
 
         DoStatic(var_28, var_24);
+
+        // WaitVBL();
+        int time = (int)totalclock + 4;
+        while ((int)totalclock < time) {
+            HandleAsync();
+        }
     }
 
 //	loadtilelockmode = 1;
@@ -2586,9 +2636,11 @@ void DoLastLevelCinema()
     // loc_3AD75
 
     do
-    {
+    {  
+    LABEL_11:
+
         HandleAsync();
-LABEL_11:
+
         if (strlen(gString[nString]) == 0)
             break;
 
@@ -2602,7 +2654,8 @@ LABEL_11:
         int ebp = esi;
 
         ebp -= nString;
-        ebp = 81 - (ebp <<= 2);
+        ebp <<= 2;
+        ebp = 81 - ebp;
 
         int var_1C = esi - nString;
 
@@ -2634,7 +2687,12 @@ LABEL_11:
                 overwritesprite(0, 0, kTileLoboLaptop, 0, 2, kPalNormal);
                 videoNextPage();
 
-                WaitVBL();
+                // WaitVBL();
+                int time = (int)totalclock + 4;
+                while ((int)totalclock < time) {
+                    HandleAsync();
+                }
+
                 if (CheckForEscape())
                     goto LABEL_28;
             }
@@ -2647,7 +2705,7 @@ LABEL_11:
         KB_FlushKeyboardQueue();
         KB_ClearKeysDown();
 
-        int v11 = kTimerTicks * (var_1C + 2) + (int)totalclock;
+        int v11 = (kTimerTicks * (var_1C + 2)) + (int)totalclock;
 
         do
         {
@@ -2662,11 +2720,19 @@ LABEL_11:
 LABEL_28:
     PlayLocalSound(StaticSound[kSound75], 0);
 
-    while (1)
+    nEndTime = (int)totalclock + 240;
+
+    while (nEndTime > (int)totalclock)
     {
         HandleAsync();
 
         DoStatic(var_28, var_24);
+
+        // WaitVBL();
+        int time = (int)totalclock + 4;
+        while ((int)totalclock < time) {
+            HandleAsync();
+        }
 
         if (var_28 > 20) {
             var_28 -= 20;

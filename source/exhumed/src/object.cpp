@@ -516,7 +516,7 @@ int CheckSectorSprites(short nSector, int nVal)
                         sprite[nSprite].x,
                         sprite[nSprite].y,
                         sprite[nSprite].z,
-                        sprite[nSprite].sectnum | 0x40FF); // TODO - check last param??
+                        sprite[nSprite].sectnum | 0x4000);
                 }
             }
             nSprite = nextspritesect[nSprite];
@@ -565,15 +565,13 @@ void StartElevSound(short nSprite, int nVal)
     D3PlayFX(StaticSound[nSound], nSprite);
 }
 
-void FuncElev(int a, int b, int nRun)
+void FuncElev(int a, int UNUSED(b), int nRun)
 {
     short nElev = RunData[nRun].nVal;
     assert(nElev >= 0 && nElev < kMaxElevs);
 
     short nChannel = Elevator[nElev].nChannel;
     short var_18 = Elevator[nElev].field_0;
-
-    RunChannel *pRunChannel = &sRunChannels[nChannel];
 
     assert(nChannel >= 0 && nChannel < kMaxChannels);
 
@@ -823,8 +821,7 @@ int BuildWallFace(short nChannel, short nWall, short nCount, ...)
     return WallFaceCount | 0x70000;
 }
 
-// Confirmed 100% correct with original .exe
-void FuncWallFace(int a, int b, int nRun)
+void FuncWallFace(int a, int UNUSED(b), int nRun)
 {
     int nWallFace = RunData[nRun].nVal;
     assert(nWallFace >= 0 && nWallFace < kMaxWallFace);
@@ -983,9 +980,9 @@ int BuildSlide(int nChannel, int edx, int ebx, int ecx, int arg1, int arg2, int 
     return nSlide | 0x80000;
 }
 
-void FuncSlide(int a, int b, int c)
+void FuncSlide(int a, int UNUSED(b), int nRun)
 {
-    int nSlide = RunData[c].nVal;
+    int nSlide = RunData[nRun].nVal;
     assert(nSlide >= 0 && nSlide < kMaxSlides);
 
     short nChannel = SlideData2[nSlide].nChannel;
@@ -1010,7 +1007,7 @@ void FuncSlide(int a, int b, int c)
                 return;
             }
 
-            SlideData2[nSlide].field_4 = runlist_AddRunRec(NewRun, RunData[c].nMoves);
+            SlideData2[nSlide].field_4 = runlist_AddRunRec(NewRun, RunData[nRun].nMoves);
 
             if (SlideData2[nSlide].field_8 != sRunChannels[nChannel].c)
             {
@@ -1230,7 +1227,7 @@ int BuildTrap(int nSprite, int edx, int ebx, int ecx)
     }
 }
 
-void FuncTrap(int a, int b, int nRun)
+void FuncTrap(int a, int UNUSED(b), int nRun)
 {
     short nTrap = RunData[nRun].nVal;
     short nSprite = sTrap[nTrap].nSprite;
@@ -1419,7 +1416,7 @@ int BuildSpark(int nSprite, int nVal)
     return var_14;
 }
 
-void FuncSpark(int a, int b, int nRun)
+void FuncSpark(int a, int UNUSED(b), int nRun)
 {
     int nSprite = RunData[nRun].nVal;
     assert(nSprite >= 0 && nSprite < kMaxSprites);
@@ -1488,9 +1485,10 @@ void DimLights()
         if (sector[i].floorshade < 100)
             sector[i].floorshade++;
 
-        int nWall = sector[i].wallptr;
+        short startwall = sector[i].wallptr;
+        short endwall = startwall + sector[i].wallnum;
 
-        while (nWall < nWall + sector[i].wallnum)
+        for (int nWall = startwall; nWall < endwall; nWall++)
         {
             if (wall[nWall].shade < 100)
                 wall[nWall].shade++;
@@ -1788,6 +1786,7 @@ void FuncEnergyBlock(int a, int nDamage, int nRun)
             }
 
             // fall through to case 0x80000
+            fallthrough__;
         }
 
         case 0x80000:
@@ -1858,7 +1857,24 @@ int BuildObject(short nSprite, int nOjectType, int nHitag)
 
     short nSeq = ObjectSeq[nOjectType];
 
-    if (nSeq <= -1)
+    if (nSeq > -1)
+    {
+        ObjectList[nObject].field_8 = SeqOffsets[nSeq];
+
+        if (!nOjectType) // if not Explosion Trigger (e.g. Exploding Fire Cauldron)
+        {
+            ObjectList[nObject].field_0 = RandomSize(4) % (SeqSize[ObjectList[nObject].field_8] - 1);
+        }
+
+        int nSprite2 = insertsprite(sprite[nSprite].sectnum, 0);
+        ObjectList[nObject].field_10 = nSprite2;
+
+        sprite[nSprite2].cstat = 0x8000;
+        sprite[nSprite2].x = sprite[nSprite].x;
+        sprite[nSprite2].y = sprite[nSprite].y;
+        sprite[nSprite2].z = sprite[nSprite].z;
+    }
+    else
     {
         ObjectList[nObject].field_0 = 0;
         ObjectList[nObject].field_8 = -1;
@@ -1869,23 +1885,6 @@ int BuildObject(short nSprite, int nOjectType, int nHitag)
         else {
             ObjectList[nObject].field_10 = -nHitag;
         }
-    }
-    else
-    {
-        ObjectList[nObject].field_8 = SeqOffsets[nSeq];
-
-        if (!nOjectType) // if not Explosion Trigger (e.g. Exploding Fire Cauldron)
-        {
-            ObjectList[nObject].field_0 = RandomSize(4) % (SeqSize[nSeq] - 1);
-        }
-
-        int nSprite2 = insertsprite(sprite[nSprite].sectnum, 0);
-        ObjectList[nObject].field_10 = nSprite2;
-
-        sprite[nSprite2].cstat = 0x8000;
-        sprite[nSprite2].x = sprite[nSprite].x;
-        sprite[nSprite2].y = sprite[nSprite].y;
-        sprite[nSprite2].z = sprite[nSprite].z;
     }
 
     return nObject | 0x170000;

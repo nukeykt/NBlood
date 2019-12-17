@@ -100,7 +100,7 @@ void MoveRaToEnemy(short nPlayer)
 
     if (nTarget != -1)
     {
-        if (!(sprite[nTarget].cstat & 0x101) || sprite[nTarget].sectnum == kMaxSectors)
+        if (!(sprite[nTarget].cstat & 0x101) || sprite[nTarget].sectnum == MAXSECTORS)
         {
             Ra[nPlayer].nTarget = -1;
             if (!field_0 || field_0 == 3) {
@@ -144,7 +144,7 @@ void MoveRaToEnemy(short nPlayer)
     }
 }
 
-void FuncRa(int a, int nDamage, int nRun)
+void FuncRa(int a, int UNUSED(nDamage), int nRun)
 {
     short nPlayer = RunData[nRun].nVal;
     short nCurrentWeapon = PlayerList[nPlayer].nCurrentWeapon;

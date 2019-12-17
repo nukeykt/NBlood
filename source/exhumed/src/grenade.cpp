@@ -93,7 +93,7 @@ void BounceGrenade(short nGrenade, short nAngle)
     D3PlayFX(StaticSound[kSound3], GrenadeList[nGrenade].nSprite);
 }
 
-int ThrowGrenade(short nPlayer, int edx, int ebx, int ecx, int push1)
+int ThrowGrenade(short nPlayer, int UNUSED(edx), int UNUSED(ebx), int ecx, int push1)
 {
     if (nPlayerGrenade[nPlayer] < 0)
         return -1;
@@ -103,16 +103,16 @@ int ThrowGrenade(short nPlayer, int edx, int ebx, int ecx, int push1)
     short nGrenadeSprite = GrenadeList[nGrenade].nSprite;
     short nPlayerSprite = PlayerList[nPlayer].nSprite;
 
-    mychangespritesect(nGrenadeSprite, nPlayerViewSect[nPlayer]);
-
     short nAngle = sprite[nPlayerSprite].ang;
+
+    mychangespritesect(nGrenadeSprite, nPlayerViewSect[nPlayer]);
 
     sprite[nGrenadeSprite].x = sprite[nPlayerSprite].x;
     sprite[nGrenadeSprite].y = sprite[nPlayerSprite].y;
     sprite[nGrenadeSprite].z = sprite[nPlayerSprite].z;
 
     if (nAngle < 0) {
-        nAngle = sprite[nPlayerSprite].ang; // TODO - checkme
+        nAngle = sprite[nPlayerSprite].ang;
     }
 
     sprite[nGrenadeSprite].cstat &= 0x7FFF;
@@ -264,7 +264,7 @@ void ExplodeGrenade(short nGrenade)
     DestroyGrenade(nGrenade);
 }
 
-void FuncGrenade(int a, int nDamage, int nRun)
+void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
 {
     short nGrenade = RunData[nRun].nVal;
     assert(nGrenade >= 0 && nGrenade < kMaxGrenades);

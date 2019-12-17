@@ -55,11 +55,63 @@ enum basepal_t {
     BASEPALCOUNT
 };
 
-
 #define WIN_IS_PRESSED ( KB_KeyPressed( sc_RightWin ) || KB_KeyPressed( sc_LeftWin ) )
 #define ALT_IS_PRESSED ( KB_KeyPressed( sc_RightAlt ) || KB_KeyPressed( sc_LeftAlt ) )
 #define SHIFTS_IS_PRESSED ( KB_KeyPressed( sc_RightShift ) || KB_KeyPressed( sc_LeftShift ) )
 
+#pragma pack(push, 1)
+struct demo_header
+{
+    uint8_t nMap;
+    int16_t nWeapons;
+    int16_t nCurrentWeapon;
+    int16_t clip;
+    int16_t items;
+
+    int16_t nHealth;
+    int16_t field_2;
+    int16_t nAction;
+    int16_t nSprite;
+    int16_t bIsMummified;
+    int16_t someNetVal;
+    int16_t invincibility;
+    int16_t nAir;
+    int16_t nSeq;
+    int16_t nMaskAmount;
+    uint16_t keys;
+    int16_t nMagic;
+    uint8_t item[8];
+    int16_t nAmmo[7]; // TODO - kMaxWeapons?
+    int16_t pad[2];
+    int16_t nCurrentWeapon2;
+    int16_t field_3FOUR;
+    int16_t bIsFiring;
+    int16_t field_38;
+    int16_t field_3A;
+    int16_t field_3C;
+    int16_t nRun;
+
+    int16_t nLives;
+};
+
+struct demo_input
+{
+    int32_t moveframes;
+
+    int32_t xVel;
+    int32_t yVel;
+    int16_t nAngle;
+    uint16_t buttons;
+    int16_t nTarget;
+    uint8_t horizon;
+    int8_t nItem;
+    int32_t h;
+    uint8_t i;
+    uint8_t pad[11];
+};
+#pragma pack(pop)
+
+void ExitGame();
 void ShutDown(void);
 void DebugOut(const char *fmt, ...);
 void bail2dos(const char *fmt, ...);
@@ -126,8 +178,6 @@ extern ClockTicks tclocks, tclocks2;
 extern buildvfs_kfd kopen4loadfrommod(const char* filename, char searchfirst);
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;
-
-extern short nCDTrackLength;
 
 extern char sHollyStr[];
 
@@ -210,7 +260,9 @@ extern int lCountDown;
 extern short bSlipMode;
 
 extern short nItemTextIndex;
-extern const char *gString[];
+extern const char* gString[];
+extern const char* gPSDemoString[];
+extern const char* gEXDemoString[];
 
 extern short bNoSound;
 
@@ -220,6 +272,7 @@ extern int32_t g_gameType;
 
 #define POWERSLAVE  (g_gameType & GAMEFLAG_POWERSLAVE)
 #define EXHUMED     (g_gameType & GAMEFLAG_EXHUMED)
+#define ISDEMOVER   (g_gameType & GAMEFLAG_DEMO)
 
 extern int mouseaiming, aimmode, mouseflip;
 extern int runkey_mode, auto_run;

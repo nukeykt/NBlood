@@ -27,6 +27,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "baselayer.h"
 #include "typedefs.h"
 #include "keyboard.h"
+#include "fx_man.h"
+#include "sound.h"
+#include "mutex.h"
+
+void ServeSample(const char** ptr, uint32_t* length);
 
 enum {
     kFramePalette = 0,
@@ -35,23 +40,24 @@ enum {
     kFrameDone
 };
 
+#define kSampleRate     22050
+#define kSampleSize     2205
+
+uint8_t bankbuf[kSampleRate];
+uint32_t bankptr = 0;
+uint32_t banktail = 0;
+
+uint32_t lSoundBytesRead = 0;
+uint32_t lSoundBytesUsed = 0;
+
 uint8_t lh[32] = { 0 };
-char streambuf[2205];
-char byte_1C6DF5[2205];
 
 static uint8_t* CurFrame = NULL;
 
-
-int serve_sample()
-{
-//	if (!SoundCardActive()) {
-//		return 1;
-//	}
-
-    return 0;
-}
-
+bool bServedSample = false;
 palette_t moviepal[256];
+static mutex_t mutex;
+
 
 int ReadFrame(FILE *fp)
 {
@@ -99,8 +105,31 @@ int ReadFrame(FILE *fp)
             case kFrameSound:
             {
                 DebugOut("Reading sound block size %d...\n", nSize);
-                // TODO - just skip for now
-                fseek(fp, nSize, SEEK_CUR);
+
+                if (lSoundBytesRead - lSoundBytesUsed >= kSampleRate)
+                {
+                    DebugOut("SOUND BUF FULL!\n");
+                    fseek(fp, nSize, SEEK_CUR);
+                }
+                else
+                {
+                    mutex_lock(&mutex);
+
+                    int nRead = fread((char*)bankbuf + bankptr, 1, nSize, fp);
+
+                    lSoundBytesRead += nRead;
+                    bankptr += nSize;
+
+                    assert(nSize == nRead);
+                    assert(bankptr <= kSampleRate);
+
+                    if (bankptr >= kSampleRate) {
+                        bankptr -= kSampleRate; // loop back to start
+                    }
+
+                    mutex_unlock(&mutex);
+                }
+
                 continue;
             }
             case kFrameImage:
@@ -146,11 +175,29 @@ int ReadFrame(FILE *fp)
     }
 }
 
-void PlayMovie(const char *fileName)
+void ServeSample(const char** ptr, uint32_t* length)
+{
+    mutex_lock(&mutex);
+
+    *ptr = (char*)bankbuf + banktail;
+    *length = kSampleSize;
+
+    banktail += kSampleSize;
+    if (banktail >= kSampleRate) {
+        banktail -= kSampleRate; // rotate back to start
+    }
+
+    lSoundBytesUsed += kSampleSize;
+    bServedSample = true;
+
+    mutex_unlock(&mutex);
+}
+
+void PlayMovie(const char* fileName)
 {
     char buffer[256];
-
-    int bDoFade = 1;
+    int bDoFade = kTrue;
+    int hFx = -1;
 
     if (bNoCDCheck)
     {
@@ -168,7 +215,7 @@ void PlayMovie(const char *fileName)
     tileLoad(kMovieTile);
     CurFrame = (uint8_t*)waloff[kMovieTile];
 
-    FILE *fp = fopen(buffer, "rb");
+    FILE* fp = fopen(buffer, "rb");
     if (fp == NULL)
     {
         DebugOut("Can't open movie file '%s' on CD-ROM\n", buffer);
@@ -181,10 +228,11 @@ void PlayMovie(const char *fileName)
     }
 
     fread(lh, sizeof(lh), 1, fp);
-    memset(streambuf, 0, sizeof(streambuf));
-    memset(byte_1C6DF5, 0, sizeof(byte_1C6DF5));
 
     // sound stuff
+    mutex_init(&mutex);
+    bankptr = 0;
+    banktail = 0;
 
     // clear keys
     KB_FlushKeyboardQueue();
@@ -196,14 +244,27 @@ void PlayMovie(const char *fileName)
 
     int angle = 1536;
     int z = 0;
+    int f = 255;
 
-    videoSetPalette(0, ANIMPAL, 2+8);
+    videoSetPalette(0, ANIMPAL, 2 + 8);
 
+    // Read a frame in first
     if (ReadFrame(fp))
     {
+        // start audio playback
+        hFx = FX_StartDemandFeedPlayback(ServeSample, kSampleRate, 0, gMusicVolume, gMusicVolume, gMusicVolume, FX_MUSIC_PRIORITY, fix16_one, -1);
+
         while (!KB_KeyWaiting())
         {
-            handleevents();
+            HandleAsync();
+
+            // audio is king for sync - if the backend doesn't need any more samples yet, 
+            // don't process any more movie file data.
+            if (!bServedSample) {
+                continue;
+            }
+
+            bServedSample = false;
 
             if (z < 65536) { // Zoom - normal zoom is 65536.
                 z += 2048;
@@ -215,10 +276,22 @@ void PlayMovie(const char *fileName)
                 }
             }
 
+            videoClearViewableArea(blackcol);
             rotatesprite(160 << 16, 100 << 16, z, angle, kMovieTile, 0, 1, 2, 0, 0, xdim - 1, ydim - 1);
 
-            if (bDoFade) {
-                bDoFade = DoFadeIn();
+            if (videoGetRenderMode() == REND_CLASSIC)
+            {
+                if (bDoFade) {
+                    bDoFade = DoFadeIn();
+                }
+            }
+            else
+            {
+                if (f >= 0)
+                {
+                    fullscreen_tint_gl(0, 0, 0, f);
+                    f -= 8;
+                }
             }
 
             videoNextPage();
@@ -229,9 +302,30 @@ void PlayMovie(const char *fileName)
         }
     }
 
+    if (hFx > 0) {
+        FX_StopSound(hFx);
+    }
+
     if (KB_KeyWaiting()) {
         KB_GetCh();
     }
 
     fclose(fp);
+
+    // need to do OpenGL fade out here
+    f = 0;
+
+    while (f <= 255)
+    {
+        HandleAsync();
+
+        rotatesprite(160 << 16, 100 << 16, z, angle, kMovieTile, 0, 1, 2, 0, 0, xdim - 1, ydim - 1);
+
+        fullscreen_tint_gl(0, 0, 0, f);
+        f += 4;
+
+        WaitTicks(2);
+
+        videoNextPage();
+    }
 }
