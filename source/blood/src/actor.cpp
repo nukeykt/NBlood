@@ -2425,9 +2425,9 @@ void DudeToGibCallback1(int, int);
 void DudeToGibCallback2(int, int);
 
 int nFireballClient = seqRegisterClient(FireballSeqCallback);
-int dword_2192D8 = seqRegisterClient(sub_38938);
+int dword_2192D8 = seqRegisterClient(sub_38938); // fireball smoke
 int nNapalmClient = seqRegisterClient(NapalmSeqCallback);
-int dword_2192E0 = seqRegisterClient(sub_3888C);
+int dword_2192E0 = seqRegisterClient(sub_3888C); // flame lick
 int nTreeToGibClient = seqRegisterClient(TreeToGibCallback);
 int nDudeToGibClient1 = seqRegisterClient(DudeToGibCallback1);
 int nDudeToGibClient2 = seqRegisterClient(DudeToGibCallback2);
@@ -2535,11 +2535,14 @@ short gSightSpritesCount; // current count
 short gPhysSpritesList[];  // by NoOne: list of additional sprites which can be affected by physics
 short gPhysSpritesCount; // current count
 
+
+short gQavPlayerIndex = -1; // by NoOne: index of sprite which currently activated to play qav
+
 void actInit(bool bSaveLoad) {
     
     // by NoOne: init code for all my stuff
     if (gModernMap) {
-        
+
         // reset counters
         gProxySpritesCount = gSightSpritesCount = gPhysSpritesCount = 0;
 
@@ -2609,7 +2612,7 @@ void actInit(bool bSaveLoad) {
                         else {
                             gProxySpritesList[gProxySpritesCount++] = pSprite->xvel;
                             if (gProxySpritesCount == kMaxSuperXSprites)
-                                ThrowError("Max (%d) *additional* Proximity sprites reached!",kMaxSuperXSprites);
+                                viewSetSystemMessage("Max (%d) *additional* Proximity sprites reached!", kMaxSuperXSprites);
                         }
                         break;
                 }
@@ -2633,7 +2636,7 @@ void actInit(bool bSaveLoad) {
                     default:
                         gSightSpritesList[gSightSpritesCount++] = pSprite->xvel;
                         if (gSightSpritesCount == kMaxSuperXSprites)
-                            ThrowError("Max (%d) Sight sprites reached!", kMaxSuperXSprites);
+                            viewSetSystemMessage("Max (%d) Sight sprites reached!", kMaxSuperXSprites);
                         break;
                 }
             }
@@ -2665,7 +2668,7 @@ void actInit(bool bSaveLoad) {
         spritetype* pSprite = &sprite[nSprite]; XSPRITE *pXSprite = &xsprite[pSprite->extra];
         
         int nType = pSprite->type - kThingBase;
-        pXSprite->health = thingInfo[nType].health << 4;
+        pXSprite->health = thingInfo[nType].startHealth << 4;
         pSprite->clipdist = thingInfo[nType].clipdist;
         pSprite->flags = thingInfo[nType].flags;
         if (pSprite->flags & kPhysGravity) pSprite->flags |= kPhysFalling;
@@ -2729,7 +2732,7 @@ void actInit(bool bSaveLoad) {
                     case kDudeModernCustom:
                     case kDudeModernCustomBurning:
                         pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
-                        seqStartId = getSeqStartId(pXSprite); // by NoOne: Custom Dude stores it's SEQ in data2
+                        seqStartId = genDudeSeqStartId(pXSprite); // by NoOne: Custom Dude stores it's SEQ in data2
                         pXSprite->sysData1 = pXSprite->data3; // by NoOne move sndStartId to sysData1, because data3 used by the game;
                         pXSprite->data3 = 0;
                         break;
@@ -2776,13 +2779,14 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
                 mass = getSpriteMassBySize(pSprite);
                 break;
             }
-        }
-        else if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
+
+        } else if (pSprite->type >= kThingBase && pSprite->type < kThingMax) {
             mass = thingInfo[pSprite->type - kThingBase].mass;
-        else
+        } else {
+            consoleSysMsg("Unexpected type in ConcussSprite(): Sprite: %d  Type: %d  Stat: %d", (int)pSprite->index, (int)pSprite->type, (int)pSprite->statnum);
             return;
-        //else
-            //ThrowError("Unexpected type in ConcussSprite(): Sprite: %d  Type: %d  Stat: %d", (int)pSprite->index, (int)pSprite->type, (int)pSprite->statnum);
+        }
+
         int size = (tilesiz[pSprite->picnum].x*pSprite->xrepeat*tilesiz[pSprite->picnum].y*pSprite->yrepeat)>>1;
         dassert(mass > 0);
 
@@ -3083,6 +3087,25 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     int nXSprite = pSprite->extra;
     dassert(nXSprite > 0);
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
+
+    // kMaxSprites - 1 = custom dude had once life leech
+    if (pSprite->owner >= 0 && pSprite->owner != (kMaxSprites - 1)) {
+        switch (sprite[pSprite->owner].type) {
+            case kDudeModernCustom:
+            case kDudeModernCustomBurning:
+                for (int i = 0; i <= gGameOptions.nDifficulty; i++) {
+                    if (!IsDudeSprite(pSprite) || gGenDudeExtra[pSprite->owner].slave[i] == pSprite->index || pXSprite->health <= 0) {
+                        gGenDudeExtra[pSprite->owner].slave[i] = -1;
+                        gGenDudeExtra[pSprite->owner].slaveCount = ClipRange(gGenDudeExtra[pSprite->owner].slaveCount - 1, 0, gGameOptions.nDifficulty + 1);
+                        //viewSetSystemMessage("REMOVING %d FROM %d, COUNT: %d", pSprite->index, sprite[pSprite->owner].type, gGenDudeExtra[pSprite->owner].slaveCount);
+                        break;
+                    }
+                }
+                break;
+        }
+    }
+
+
     switch (pSprite->type) {
     case kDudeModernCustom: {
         removeDudeStuff(pSprite);
@@ -3096,13 +3119,13 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             }
 
             if (damageType == DAMAGE_TYPE_1) {
-                if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) && pXSprite->medium == 0) {
+                if ((gSysRes.Lookup(pXSprite->data2 + 15, "SEQ") || gSysRes.Lookup(pXSprite->data2 + 16, "SEQ")) && pXSprite->medium == kMediumNormal) {
                     if (gSysRes.Lookup(pXSprite->data2 + 3, "SEQ")) {
                         pSprite->type = kDudeModernCustomBurning;
-                        if (pXSprite->data2 == kDefaultAnimationBase) // don't inherit palette for burning if using default animation
+                        if (pXSprite->data2 == kGenDudeDefaultSeq) // don't inherit palette for burning if using default animation
                             pSprite->pal = 0;
 
-                        aiNewState(pSprite, pXSprite, &GDXGenDudeBurnGoto);
+                        aiGenDudeNewState(pSprite, &genDudeBurnGoto);
                         actHealDude(pXSprite, dudeInfo[55].startHealth, dudeInfo[55].startHealth);
                         if (pXSprite->burnTime <= 0) pXSprite->burnTime = 1200;
                         gDudeExtra[pSprite->extra].at0 = (int)gFrameClock + 360;
@@ -3119,7 +3142,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         } else {
             
             pXSprite->locked = 1; // lock while transforming
-            
+
             aiSetGenIdleState(pSprite, pXSprite); // set idle state
             
             if (pXSprite->key > 0) // drop keys
@@ -3128,13 +3151,13 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             if (pXSprite->dropMsg > 0) // drop items
                 actDropObject(pSprite, pXSprite->dropMsg);
             
-
+           
             pSprite->flags &= ~kPhysMove; xvel[pSprite->index] = yvel[pSprite->index] = 0;
 
             int seqId = pXSprite->data2 + 18;
             if (!gSysRes.Lookup(seqId, "SEQ")) {
                 seqKill(3, nXSprite);
-                sfxPlayGDXGenDudeSound(pSprite, 10);
+                playGenDudeSound(pSprite, kGenDudeSndTransforming);
                 spritetype* pEffect = gFX.fxSpawn((FX_ID)52, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, pSprite->ang);
                 if (pEffect != NULL) {
                     pEffect->cstat = CSTAT_SPRITE_ALIGNMENT_FACING;
@@ -3159,7 +3182,10 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
                 return;
             }
             seqSpawn(seqId, 3, nXSprite, -1);
-            sfxPlayGDXGenDudeSound(pSprite, 10);
+            playGenDudeSound(pSprite, kGenDudeSndTransforming);
+            
+            pXSprite->sysData1 = kGenDudeTransformStatus; // in transform
+            
             return;
         }
         break;
@@ -3171,7 +3197,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     case kDudeCultistShotgun:
     case kDudeCultistTesla:
     case kDudeCultistTNT:
-        if (damageType == DAMAGE_TYPE_1 && pXSprite->medium == 0)
+        if (damageType == DAMAGE_TYPE_1 && pXSprite->medium == kMediumNormal)
         {
             pSprite->type = kDudeBurningCultist;
             aiNewState(pSprite, pXSprite, &cultistBurnGoto);
@@ -3181,7 +3207,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         // no break
         fallthrough__;
     case kDudeBeast:
-        if (damageType == DAMAGE_TYPE_1 && pXSprite->medium == 0)
+        if (damageType == DAMAGE_TYPE_1 && pXSprite->medium == kMediumNormal)
         {
             pSprite->type = kDudeBurningBeast;
             aiNewState(pSprite, pXSprite, &beastBurnGoto);
@@ -3191,7 +3217,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         // no break
         fallthrough__;
     case kDudeInnocent:
-        if (damageType == DAMAGE_TYPE_1 && pXSprite->medium == 0)
+        if (damageType == DAMAGE_TYPE_1 && pXSprite->medium == kMediumNormal)
         {
             pSprite->type = kDudeBurningInnocent;
             aiNewState(pSprite, pXSprite, &innocentBurnGoto);
@@ -3202,18 +3228,18 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        if (gPlayer[p].at2ee == pSprite->index && gPlayer[p].at1fe > 0)
-            gPlayer[p].at2ee = -1;
+        if (gPlayer[p].fraggerId == pSprite->index && gPlayer[p].deathTime > 0)
+            gPlayer[p].fraggerId = -1;
     }
     if (pSprite->type != kDudeCultistBeast)
-        trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+        trTriggerSprite(pSprite->index, pXSprite, kCmdOff, nKillerSprite);
 
     pSprite->flags |= 7;
     if (VanillaMode()) {
         if (IsPlayerSprite(pKillerSprite)) {
             PLAYER *pPlayer = &gPlayer[pKillerSprite->type - kDudePlayer1];
             if (gGameOptions.nGameType == 1)
-                pPlayer->at2c6++;
+                pPlayer->fragCount++;
         }
     } else if (gGameOptions.nGameType == 1 && IsPlayerSprite(pKillerSprite) && pSprite->statnum == kStatDude) {
             switch (pSprite->type) {
@@ -3224,7 +3250,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
                     break;
                 default:
                     PLAYER* pKillerPlayer = &gPlayer[pKillerSprite->type - kDudePlayer1];
-                    pKillerPlayer->at2c6++;
+                    pKillerPlayer->fragCount++;
                     break;
             }
 
@@ -3259,7 +3285,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         switch (pSprite->type) {
             case kDudeModernCustom:
             case kDudeModernCustomBurning:
-                sfxPlayGDXGenDudeSound(pSprite, 4);
+                playGenDudeSound(pSprite, kGenDudeSndDeathExplode);
                 break;
             case kDudeCultistTommy:
             case kDudeCultistShotgun:
@@ -3378,26 +3404,25 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             seqSpawn(dudeInfo[nType].seqStartID+15, 3, nXSprite, nDudeToGibClient2);
         break;
     case kDudeModernCustom:
-        sfxPlayGDXGenDudeSound(pSprite, 2);
+        playGenDudeSound(pSprite, kGenDudeSndDeathNormal);
         if (nSeq == 3) {
             
-            bool seq15 = gSysRes.Lookup(pXSprite->data2 + 15, "SEQ"); bool seq16 = gSysRes.Lookup(pXSprite->data2 + 16, "SEQ");
-            if (seq15 && seq16) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (seq16) seqSpawn(16 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (seq15) seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (gSysRes.Lookup(pXSprite->data2 + nSeq, "SEQ")) seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else seqKill(3, nXSprite);
+            GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
+            if (pExtra->availDeaths[kDmgBurn] == 3) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (pExtra->availDeaths[kDmgBurn] == 2) seqSpawn(16 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (pExtra->availDeaths[kDmgBurn] == 1) seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else if (gSysRes.Lookup(pXSprite->data2 + nSeq, "SEQ"))seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            else seqSpawn(1 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
 
          } else {
             seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
-        }
+         }
 
         pXSprite->txID = 0; // to avoid second trigger.
         break;
 
-    case kDudeModernCustomBurning:
-    {
-        sfxPlayGDXGenDudeSound(pSprite, 4);
+    case kDudeModernCustomBurning: {
+        playGenDudeSound(pSprite, kGenDudeSndDeathExplode);
         damageType = DAMAGE_TYPE_3;
 
         if (Chance(0x4000)) {
@@ -3408,14 +3433,11 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             GibSprite(pSprite, GIBTYPE_7, &gibPos, &gibVel);
         }
 
-        int seqId = pXSprite->data2;
-        bool seq15 = gSysRes.Lookup(pXSprite->data2 + 15, "SEQ"); bool seq16 = gSysRes.Lookup(pXSprite->data2 + 16, "SEQ");
-        
-        if (seq15 && seq16) seqId += (15 + Random(2));
-        else if (seq16) seqId += 16;
-        else seqId += 15;
-        
-        seqSpawn(seqId, 3, nXSprite, nDudeToGibClient1);
+        GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
+        if (pExtra->availDeaths[kDmgBurn] == 3) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
+        else if (pExtra->availDeaths[kDmgBurn] == 2) seqSpawn(16 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
+        else if (pExtra->availDeaths[kDmgBurn] == 1) seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
+        else seqSpawn(1 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
         break;
     }
     case kDudeBurningZombieAxe:
@@ -3543,29 +3565,37 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         seqSpawn(dudeInfo[nType].seqStartID+nSeq, 3, nXSprite, -1);
         break;
     case kDudePodGreen:
-        if (Chance(0x4000) && nSeq == 3)
-            sfxPlay3DSound(pSprite, 2205, -1, 0);
-        else
-            sfxPlay3DSound(pSprite, 2203+Random(2), -1, 0);
-        seqSpawn(dudeInfo[nType].seqStartID+nSeq, 3, nXSprite, -1);
-        break;
     case kDudeTentacleGreen:
-        if (damage == 5)
-            sfxPlay3DSound(pSprite, 2471, -1, 0);
-        else
-            sfxPlay3DSound(pSprite, 2472, -1, 0);
-        seqSpawn(dudeInfo[nType].seqStartID+nSeq, 3, nXSprite, -1);
-        break;
     case kDudePodFire:
-        if (damage == 5)
-            sfxPlay3DSound(pSprite, 2451, -1, 0);
-        else
-            sfxPlay3DSound(pSprite, 2452, -1, 0);
-        seqSpawn(dudeInfo[nType].seqStartID+nSeq, 3, nXSprite, -1);
-        break;
     case kDudeTentacleFire:
-        sfxPlay3DSound(pSprite, 2501, -1, 0);
-        seqSpawn(dudeInfo[nType].seqStartID+nSeq, 3, nXSprite, -1);
+        if ((pSprite->cstat & CSTAT_SPRITE_YFLIP)) pSprite->cstat &= ~CSTAT_SPRITE_YFLIP;
+        switch (pSprite->type) {
+            case kDudePodGreen:
+                if (Chance(0x4000) && nSeq == 3)
+                    sfxPlay3DSound(pSprite, 2205, -1, 0);
+                else
+                    sfxPlay3DSound(pSprite, 2203 + Random(2), -1, 0);
+                seqSpawn(dudeInfo[nType].seqStartID + nSeq, 3, nXSprite, -1);
+                break;
+            case kDudeTentacleGreen:
+                if (damage == 5)
+                    sfxPlay3DSound(pSprite, 2471, -1, 0);
+                else
+                    sfxPlay3DSound(pSprite, 2472, -1, 0);
+                seqSpawn(dudeInfo[nType].seqStartID + nSeq, 3, nXSprite, -1);
+                break;
+            case kDudePodFire:
+                if (damage == 5)
+                    sfxPlay3DSound(pSprite, 2451, -1, 0);
+                else
+                    sfxPlay3DSound(pSprite, 2452, -1, 0);
+                seqSpawn(dudeInfo[nType].seqStartID + nSeq, 3, nXSprite, -1);
+                break;
+            case kDudeTentacleFire:
+                sfxPlay3DSound(pSprite, 2501, -1, 0);
+                seqSpawn(dudeInfo[nType].seqStartID + nSeq, 3, nXSprite, -1);
+                break;
+        }
         break;
     case kDudePodMother:
         if (Chance(0x4000) && nSeq == 3)
@@ -3619,21 +3649,6 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         break;
     }
     
-                                    // kMaxSprites - 1 = custom dude had once life leech
-    if (pSprite->owner != -1 && pSprite->owner != (kMaxSprites - 1)) {
-        //int owner = actSpriteIdToOwnerId(pSprite->xvel);
-        int owner = pSprite->owner;
-
-        switch (sprite[owner].type) {
-        case kDudeModernCustom:
-        case kDudeModernCustomBurning:
-            if (owner != -1) gDudeExtra[sprite[owner].extra].at6.u1.at4--;
-            break;
-        default:
-            break;
-        }
-    }
-    
     if (damageType == DAMAGE_TYPE_3)
     {
         DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
@@ -3663,16 +3678,21 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
         nSource = pSprite->index;
     
     PLAYER *pSourcePlayer = NULL;
-    if (IsPlayerSprite(&sprite[nSource]))  pSourcePlayer = &gPlayer[sprite[nSource].type - kDudePlayer1];
+    if (IsPlayerSprite(&sprite[nSource])) pSourcePlayer = &gPlayer[sprite[nSource].type - kDudePlayer1];
     if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pSourcePlayer, pSprite)) return 0;
     
     switch (pSprite->statnum) {
         case kStatDude: {
-            if (!IsDudeSprite(pSprite))
-                ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & kHitagRespawn) ? "RESPAWN" : "NORMAL");
+            if (!IsDudeSprite(pSprite)) {
+                consoleSysMsg("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & 16) ? "RESPAWN" : "NORMAL");
+                return damage >> 4;
+                //ThrowError("Bad Dude Failed: initial=%d type=%d %s\n", (int)pSprite->inittype, (int)pSprite->type, (int)(pSprite->flags & 16) ? "RESPAWN" : "NORMAL");
+            }
 
             int nType = pSprite->type - kDudeBase; int nDamageFactor = dudeInfo[nType].at70[damageType];
-        
+            if (pSprite->type == kDudeModernCustom)
+                nDamageFactor = gGenDudeExtra[pSprite->index].dmgControl[damageType];
+
             if (!nDamageFactor) return 0;
             else if (nDamageFactor != 256)
                 damage = mulscale8(damage, nDamageFactor);
@@ -3695,7 +3715,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
         break;
     case kStatThing:
         dassert(pSprite->type >= kThingBase && pSprite->type < kThingMax);
-        int nType = pSprite->type - kThingBase; int nDamageFactor = thingInfo[nType].at17[damageType];
+        int nType = pSprite->type - kThingBase; int nDamageFactor = thingInfo[nType].dmgControl[damageType];
         
         if (!nDamageFactor) return 0;
         else if (nDamageFactor != 256)
@@ -3719,7 +3739,7 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                     break;
             }
 
-            trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
+            trTriggerSprite(pSprite->index, pXSprite, kCmdOff, nSource);
             
             switch (pSprite->type) {
                 case kThingObjectGib:
@@ -3727,9 +3747,9 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
                 case kThingBloodBits:
                 case kThingBloodChunks:
                 case kThingZombieHead:
-                    if (damageType == 3 && pSourcePlayer && gFrameClock > pSourcePlayer->at312 && Chance(0x4000)) {
+                    if (damageType == 3 && pSourcePlayer && gFrameClock > pSourcePlayer->laughCount && Chance(0x4000)) {
                         sfxPlay3DSound(pSourcePlayer->pSprite, gPlayerGibThingComments[Random(10)], 0, 2);
-                        pSourcePlayer->at312 = (int)gFrameClock+3600;
+                        pSourcePlayer->laughCount = (int)gFrameClock+3600;
                     }
                     break;
                 case kTrapMachinegun:
@@ -3862,7 +3882,7 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
                 DAMAGE_TYPE rand1 = (DAMAGE_TYPE)Random(7);
                 int rand2 = (7 + Random(7)) << 4;
                 int nDamage = actDamageSprite(nOwner, pSpriteHit, rand1, rand2);
-                if ((pThingInfo && pThingInfo->at17[DAMAGE_TYPE_1] != 0) || (pDudeInfo && pDudeInfo->at70[DAMAGE_TYPE_1] != 0))
+                if ((pThingInfo && pThingInfo->dmgControl[DAMAGE_TYPE_1] != 0) || (pDudeInfo && pDudeInfo->at70[DAMAGE_TYPE_1] != 0))
                     actBurnSprite(pMissile->owner, pXSpriteHit, 360);
 
                 // by NoOne: make Life Leech heal user, just like it was in 1.0x versions
@@ -3954,7 +3974,7 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
             sfxKill3DSound(pMissile, -1, -1);
             if ((hitCode == 3 && pSpriteHit) && (pThingInfo || pDudeInfo)) {
                 int nOwner = actSpriteOwnerToSpriteId(pMissile);
-                if ((pThingInfo && pThingInfo->at17[DAMAGE_TYPE_1] != 0) || (pDudeInfo && pDudeInfo->at70[DAMAGE_TYPE_1] != 0)) {
+                if ((pThingInfo && pThingInfo->dmgControl[DAMAGE_TYPE_1] != 0) || (pDudeInfo && pDudeInfo->at70[DAMAGE_TYPE_1] != 0)) {
                     if (pThingInfo && pSpriteHit->type == kThingTNTBarrel && pXSpriteHit->burnTime == 0)
                         evPost(nSpriteHit, 3, 0, kCallbackFXFlameLick);
                 
@@ -4066,7 +4086,7 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
         case kMissileButcherKnife:
             actPostSprite(pMissile->index, kStatDebris);
             pMissile->cstat &= ~16;
-            pMissile->type = 0;
+            pMissile->type = kSpriteDecoration;
             seqSpawn(20, 3, pMissile->extra, -1);
             if (hitCode == 3)
             {
@@ -4227,7 +4247,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                         }
                     }
                     
-                    if (!IsPlayerSprite(pSprite) || gPlayer[pSprite->type - kDudePlayer1].at31a == 0) {
+                    if (!IsPlayerSprite(pSprite) || gPlayer[pSprite->type - kDudePlayer1].godMode == 0) {
                         switch (pSprite2->type) {
                             case kDudeTchernobog:
                                 actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_3, pXSprite->health << 2);
@@ -4236,7 +4256,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                             case kDudeModernCustomBurning:
                                 int dmg = (getSpriteMassBySize(pSprite2) - getSpriteMassBySize(pSprite)) + pSprite2->clipdist;
                                 if (dmg > 0) {
-                                    if (IsPlayerSprite(pSprite) && powerupCheck(&gPlayer[pSprite->type - kDudePlayer1],15) > 0)
+                                    if (IsPlayerSprite(pSprite) && powerupCheck(&gPlayer[pSprite->type - kDudePlayer1], kPwUpJumpBoots) > 0)
                                         actDamageSprite(pSprite2->xvel, pSprite, DAMAGE_TYPE_3, dmg);
                                     else
                                         actDamageSprite(pSprite2->xvel, pSprite, DAMAGE_TYPE_0, dmg);
@@ -4337,8 +4357,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         break;
     }
     nHitSprite = pSpriteHit->florhit & 0x3fff;
-    switch (pSpriteHit->florhit&0xc000)
-    {
+    switch (pSpriteHit->florhit & 0xc000) {
     case 0x8000:
         break;
     case 0x4000:
@@ -4393,8 +4412,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             switch (pSprite2->type) {
             case kThingKickablePail:
                 if (pPlayer) {
-                    if (pPlayer->at30e > gFrameClock) return;
-                    pPlayer->at30e = (int)gFrameClock+60;
+                    if (pPlayer->kickPower > gFrameClock) return;
+                    pPlayer->kickPower = (int)gFrameClock+60;
                 }
                 actKickObject(pSprite, pSprite2);
                 sfxPlay3DSound(pSprite->x, pSprite->y, pSprite->z, 357, pSprite->sectnum);
@@ -4402,8 +4421,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                 break;
             case kThingZombieHead:
                 if (pPlayer) {
-                    if (pPlayer->at30e > gFrameClock) return;
-                    pPlayer->at30e = (int)gFrameClock+60;
+                    if (pPlayer->kickPower > gFrameClock) return;
+                    pPlayer->kickPower = (int)gFrameClock+60;
                 }
                 actKickObject(pSprite, pSprite2);
                 sfxPlay3DSound(pSprite->x, pSprite->y, pSprite->z, 357, pSprite->sectnum);
@@ -4473,7 +4492,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         if (nHSprite >= 0 && sprite[nHSprite].extra >= 0) {
             XSPRITE* pXHSprite = &xsprite[sprite[nHSprite].extra];
             if (pXHSprite->Touch && !pXHSprite->isTriggered && (!pXHSprite->DudeLockout || IsPlayerSprite(pSprite)))
-                trTriggerSprite(nHSprite, pXHSprite, kCmdSpriteTouch);
+                trTriggerSprite(nHSprite, pXHSprite, kCmdSpriteTouch, nSprite);
         }
 
         // Touch walls
@@ -4482,7 +4501,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             if ((nHWall = gSpriteHit[nXSprite].hit & 0x3fff) >= 0 && wall[nHWall].extra >= 0) {
                 XWALL* pXHWall = &xwall[wall[nHWall].extra];
                 if (pXHWall->triggerTouch && !pXHWall->isTriggered && (!pXHWall->dudeLockout || IsPlayerSprite(pSprite)))
-                    trTriggerWall(nHWall, pXHWall, kCmdWallTouch);
+                    trTriggerWall(nHWall, pXHWall, kCmdWallTouch, nSprite);
             }
         }
     }
@@ -4541,7 +4560,7 @@ int MoveThing(spritetype *pSprite)
         }
         if ((gSpriteHit[nXSprite].hit&0xc000) == 0x8000) {
             int nHitWall = gSpriteHit[nXSprite].hit&0x3fff;
-            actWallBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], nHitWall, pThingInfo->at7);
+            actWallBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], nHitWall, pThingInfo->elastic);
             switch (pSprite->type) {
                 case kThingZombieHead:
                     sfxPlay3DSound(pSprite, 607, 0, 0);
@@ -4600,8 +4619,8 @@ int MoveThing(spritetype *pSprite)
         {
 
             pSprite->flags |= 4;
-            int vax = actFloorBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], (int*)&v20, pSprite->sectnum, pThingInfo->at7);
-            int nDamage = mulscale(vax, vax, 30)-pThingInfo->atb;
+            int vax = actFloorBounceVector((int*)&xvel[nSprite], (int*)&yvel[nSprite], (int*)&v20, pSprite->sectnum, pThingInfo->elastic);
+            int nDamage = mulscale(vax, vax, 30)-pThingInfo->dmgResist;
             if (nDamage > 0)
                 actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_0, nDamage);
             zvel[nSprite] = v20;
@@ -4700,7 +4719,10 @@ void MoveDude(spritetype *pSprite)
     PLAYER *pPlayer = NULL;
     if (IsPlayerSprite(pSprite))
         pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
-    dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
+    if (!(pSprite->type >= kDudeBase && pSprite->type < kDudeMax)) {
+        consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
+        return;
+    }
     DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -4765,13 +4787,13 @@ void MoveDude(spritetype *pSprite)
                 
                 // by NoOne: do not check state (so, things can work with touch too) and allow dudelockout
                 if ((gModernMap) && (!pHitXSprite->DudeLockout || IsPlayerSprite(pSprite)))
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
                 else if (!pHitXSprite->state) // or check like vanilla do
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
             } 
             
             if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
-                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush);
+                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush, nSprite);
 
             break;
         }
@@ -4783,15 +4805,15 @@ void MoveDude(spritetype *pSprite)
             if (pHitWall->extra > 0)
                 pHitXWall = &xwall[pHitWall->extra];
             if (pDudeInfo->lockOut && pHitXWall && pHitXWall->triggerPush && !pHitXWall->key && !pHitXWall->dudeLockout && !pHitXWall->state && !pHitXWall->busy && !pPlayer)
-                trTriggerWall(nHitWall, pHitXWall, kCmdWallPush);
+                trTriggerWall(nHitWall, pHitXWall, kCmdWallPush, nSprite);
             if (pHitWall->nextsector != -1)
             {
                 sectortype *pHitSector = &sector[pHitWall->nextsector];
                 XSECTOR *pHitXSector = NULL;
                 if (pHitSector->extra > 0)
                     pHitXSector = &xsector[pHitSector->extra];
-                if (pDudeInfo->lockOut && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->at37_7 && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
-                    trTriggerSector(pHitWall->nextsector, pHitXSector, kCmdSectorPush);
+                if (pDudeInfo->lockOut && pHitXSector && pHitXSector->Wallpush && !pHitXSector->Key && !pHitXSector->dudeLockout && !pHitXSector->state && !pHitXSector->busy && !pPlayer)
+                    trTriggerSector(pHitWall->nextsector, pHitXSector, kCmdSectorPush, nSprite);
                 if (top < pHitSector->ceilingz || bottom > pHitSector->floorz)
                 {
                     // ???
@@ -4816,17 +4838,17 @@ void MoveDude(spritetype *pSprite)
             pXSector = &xsector[nXSector];
         else
             pXSector = NULL;
-        if (pXSector && pXSector->Exit && (pPlayer || !pXSector->at37_7))
-            trTriggerSector(pSprite->sectnum, pXSector, kCmdSectorExit);
+        if (pXSector && pXSector->Exit && (pPlayer || !pXSector->dudeLockout))
+            trTriggerSector(pSprite->sectnum, pXSector, kCmdSectorExit, nSprite);
         ChangeSpriteSect(nSprite, nSector);
         
         nXSector = sector[nSector].extra;
         pXSector = (nXSector > 0) ? pXSector = &xsector[nXSector] : NULL;
-        if (pXSector && pXSector->Enter && (pPlayer || !pXSector->at37_7)) {
+        if (pXSector && pXSector->Enter && (pPlayer || !pXSector->dudeLockout)) {
 
             if (sector[nSector].type == kSectorTeleport)
                 pXSector->data = pPlayer ? nSprite : -1;
-            trTriggerSector(nSector, pXSector, kCmdSectorEnter);
+            trTriggerSector(nSector, pXSector, kCmdSectorEnter, nSprite);
         }
 
         nSector = pSprite->sectnum;
@@ -4843,9 +4865,9 @@ void MoveDude(spritetype *pSprite)
     }
     int nUpperLink = gUpperLink[nSector];
     int nLowerLink = gLowerLink[nSector];
-    if (nUpperLink >= 0 && (sprite[nUpperLink].type == 9 || sprite[nUpperLink].type == 13))
+    if (nUpperLink >= 0 && (sprite[nUpperLink].type == kMarkerUpWater || sprite[nUpperLink].type == kMarkerUpGoo))
         bDepth = 1;
-    if (nLowerLink >= 0 && (sprite[nLowerLink].type == 10 || sprite[nLowerLink].type == 14))
+    if (nLowerLink >= 0 && (sprite[nLowerLink].type == kMarkerLowWater || sprite[nLowerLink].type == kMarkerLowGoo))
         bDepth = 1;
     if (pPlayer)
         wd += 16;
@@ -4888,9 +4910,9 @@ void MoveDude(spritetype *pSprite)
             zvel[nSprite] += vc;
         }
     }
-    if (pPlayer && zvel[nSprite] > 0x155555 && !pPlayer->at31b && pXSprite->height > 0)
+    if (pPlayer && zvel[nSprite] > 0x155555 && !pPlayer->fallScream && pXSprite->height > 0)
     {
-        pPlayer->at31b = 1;
+        pPlayer->fallScream = 1;
         sfxPlay3DSound(pSprite, 719, 0, 0);
     }
     vec3_t const oldpos = pSprite->pos;
@@ -4916,13 +4938,13 @@ void MoveDude(spritetype *pSprite)
             break;
         case kMarkerLowWater:
         case kMarkerLowGoo:
-            pXSprite->medium = 0;
+            pXSprite->medium = kMediumNormal;
             if (pPlayer) {
-                pPlayer->at2f = 0;
-                pPlayer->at302 = 0;
-                if (!pPlayer->at31c && pPlayer->atc.buttonFlags.jump) {
+                pPlayer->posture = 0;
+                pPlayer->bubbleTime = 0;
+                if (!pPlayer->cantJump && pPlayer->input.buttonFlags.jump) {
                     zvel[nSprite] = -0x6aaaa;
-                    pPlayer->at31c = 1;
+                    pPlayer->cantJump = 1;
                 }
                 sfxPlay3DSound(pSprite, 721, -1, 0);
             } else {
@@ -4945,7 +4967,7 @@ void MoveDude(spritetype *pSprite)
         case kMarkerUpWater:
         case kMarkerUpGoo:
         {
-            pXSprite->medium = nLink == kMarkerUpGoo ? 2 : 1;
+            pXSprite->medium = (nLink == kMarkerUpGoo ? kMediumGoo : kMediumWater);
 
             if (pPlayer)
             {
@@ -4955,9 +4977,9 @@ void MoveDude(spritetype *pSprite)
                 if (nXUpper >= 0)
                     pPlayer->nWaterPal = xsprite[nXUpper].data2;
 
-                pPlayer->at2f = 1;
+                pPlayer->posture = 1;
                 pXSprite->burnTime = 0;
-                pPlayer->at302 = klabs(zvel[nSprite]) >> 12;
+                pPlayer->bubbleTime = klabs(zvel[nSprite]) >> 12;
                 evPost(nSprite, 3, 0, kCallbackPlayerBubble);
                 sfxPlay3DSound(pSprite, 720, -1, 0);
             }
@@ -5031,12 +5053,12 @@ void MoveDude(spritetype *pSprite)
             break;
         }
         /*case 13:
-            pXSprite->medium = 2;
+            pXSprite->medium = kMediumGoo;
             if (pPlayer)
             {
                 pPlayer->changeTargetKin = 1;
                 pXSprite->burnTime = 0;
-                pPlayer->at302 = klabs(zvel[nSprite])>>12;
+                pPlayer->bubbleTime = klabs(zvel[nSprite])>>12;
                 evPost(nSprite, 3, 0, kCallbackPlayerBubble);
                 sfxPlay3DSound(pSprite, 720, -1, 0);
             }
@@ -5126,7 +5148,7 @@ void MoveDude(spritetype *pSprite)
             int nDamage = mulscale(vax, vax, 30);
             if (pPlayer)
             {
-                pPlayer->at31b = 0;
+                pPlayer->fallScream = 0;
 
                 if (nDamage > (15<<4) && (pSprite->flags&4))
                     playerLandingSound(pPlayer);
@@ -5260,7 +5282,7 @@ int MoveMissile(spritetype *pSprite)
         {
             int nTargetAngle = getangle(-(pTarget->y-pSprite->y), pTarget->x-pSprite->x);
             int UNUSED(nAngle) = getangle(xvel[nSprite]>>12,yvel[nSprite]>>12);
-            int vx = missileInfo[pSprite->type - kMissileBase].at2;
+            int vx = missileInfo[pSprite->type - kMissileBase].velocity;
             int vy = 0;
             RotatePoint(&vx, &vy, (nTargetAngle+1536)&2047, 0, 0);
             xvel[nSprite] = vx;
@@ -5329,7 +5351,7 @@ int MoveMissile(spritetype *pSprite)
                 XWALL *pXWall = &xwall[pWall->extra];
                 if (pXWall->triggerVector)
                 {
-                    trTriggerWall(gHitInfo.hitwall, pXWall, kCmdWallImpact);
+                    trTriggerWall(gHitInfo.hitwall, pXWall, kCmdWallImpact, nSprite);
                     if (!(pWall->cstat&64))
                     {
                         vdi = -1;
@@ -5457,7 +5479,7 @@ void actExplodeSprite(spritetype *pSprite)
         {
             XSPRITE *pXSprite = &xsprite[nXSprite];
             pXSprite->state = 1;
-            pXSprite->health = thingInfo[0].health<<4;
+            pXSprite->health = thingInfo[0].startHealth<<4;
         }
         else
             actPostSprite(pSprite->index, kStatFree);
@@ -5503,7 +5525,7 @@ void actExplodeSprite(spritetype *pSprite)
 		sfxPlay3DSound(pSprite, nSnd, -1, 0);
 	}
         break;
-    case kThingPodGreenBall:
+    case kThingPodFireBall:
         nType = 3;
         seqSpawn(9, 3, nXSprite, -1);
         sfxPlay3DSound(pSprite, 307, -1, 0);
@@ -5522,15 +5544,15 @@ void actExplodeSprite(spritetype *pSprite)
     int nSprite = pSprite->index;
     xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
     actPostSprite(nSprite, kStatExplosion);
-    pSprite->xrepeat = pSprite->yrepeat = explodeInfo[nType].at0;
+    pSprite->xrepeat = pSprite->yrepeat = explodeInfo[nType].repeat;
 
     pSprite->flags &= ~3;
     pSprite->type = nType;
     EXPLOSION *pExplodeInfo = &explodeInfo[nType];
     xsprite[nXSprite].target = 0;
-    xsprite[nXSprite].data1 = pExplodeInfo->atf;
-    xsprite[nXSprite].data2 = pExplodeInfo->at13;
-    xsprite[nXSprite].data3 = pExplodeInfo->at17;
+    xsprite[nXSprite].data1 = pExplodeInfo->ticks;
+    xsprite[nXSprite].data2 = pExplodeInfo->quakeEffect;
+    xsprite[nXSprite].data3 = pExplodeInfo->flashEffect;
 }
 
 void actActivateGibObject(spritetype *pSprite, XSPRITE *pXSprite)
@@ -5593,7 +5615,7 @@ void actProcessSprites(void)
 
                         if ((sprite[nAffected].flags & 32) || xsprite[sprite[nAffected].extra].health <= 0) continue;
                         else if (CheckProximity(&sprite[nAffected], x, y, z, sectnum, 96)) {
-                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity);
+                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity, nAffected);
                             break;
                         }
                     }
@@ -5602,7 +5624,7 @@ void actProcessSprites(void)
 
                     for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
                         if (gPlayer[a].pXSprite->health > 0 && CheckProximity(gPlayer[a].pSprite, x, y, z, sectnum, 96)) {
-                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity);
+                            trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity, gPlayer[a].pSprite->index);
                             break;
                         }
                     }
@@ -5627,7 +5649,7 @@ void actProcessSprites(void)
                 for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
                     spritetype* pPlaySprite = gPlayer[a].pSprite;
                     if (gPlayer[a].pXSprite->health > 0 && cansee(x, y, z, sectnum, pPlaySprite->x, pPlaySprite->y, pPlaySprite->z, pPlaySprite->sectnum)) {
-                        trTriggerSprite(index, pXSightSpr, kCmdSpriteSight);
+                        trTriggerSprite(index, pXSightSpr, kCmdSpriteSight, pPlaySprite->index);
                         break;
                     }
                 }
@@ -5745,13 +5767,13 @@ void actProcessSprites(void)
                         else if (pSprite->type == kThingDroppedLifeLeech && pXSprite->target == -1)  {
                             int nOwner = actOwnerIdToSpriteId(pSprite->owner);
                             spritetype *pOwner = &sprite[nOwner];
-                            PLAYER *pPlayer = &gPlayer[pOwner->type-kDudePlayer1];
+                            PLAYER *pPlayer = &gPlayer[pOwner->type - kDudePlayer1];
                             PLAYER *pPlayer2 = NULL;
                             if (IsPlayerSprite(pSprite2))
-                                pPlayer2 = &gPlayer[pSprite2->type-kDudePlayer1];
+                                pPlayer2 = &gPlayer[pSprite2->type - kDudePlayer1];
                             if (nSprite2 == nOwner || pSprite2->type == kDudeZombieAxeBuried || pSprite2->type == kDudeRat || pSprite2->type == kDudeBat)
                                 continue;
-                            if (gGameOptions.nGameType == 3 && pPlayer2 && pPlayer->at2ea == pPlayer2->at2ea)
+                            if (gGameOptions.nGameType == 3 && pPlayer2 && pPlayer->teamId == pPlayer2->teamId)
                                 continue;
                             if (gGameOptions.nGameType == 1 && pPlayer2)
                                 continue;
@@ -5775,7 +5797,7 @@ void actProcessSprites(void)
                                     break;
                             }
                             if (pSprite->owner == -1) actPropagateSpriteOwner(pSprite, pSprite2);
-                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
+                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity, pSprite2->index);
                         }
                     }
                 }
@@ -5851,9 +5873,8 @@ void actProcessSprites(void)
                     {
                         XSPRITE *pXSprite = &xsprite[nXSprite];
                         if (pXSprite->Impact)
-                            trTriggerSprite(nSprite, pXSprite, kCmdOff);
-                        switch (pSprite->type)
-                        {
+                            trTriggerSprite(nSprite, pXSprite, kCmdOff, -1);
+                        switch (pSprite->type) {
                         case kThingDripWater:
                         case kThingDripBlood:
                             MakeSplash(pSprite, pXSprite);
@@ -5880,7 +5901,7 @@ void actProcessSprites(void)
                                 actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, DAMAGE_TYPE_0, 12);
                             }
                             break;
-                        case kThingPodFireBall:
+                        case kThingPodGreenBall:
                             if ((hit&0xc000) == 0x4000)
                             {
                                 sub_2A620(actSpriteOwnerToSpriteId(pSprite), pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, 200, 1, 20, DAMAGE_TYPE_3, 6, 0, 0, 0);
@@ -5897,7 +5918,7 @@ void actProcessSprites(void)
                                 evPost(pSprite->index, 3, 0, kCallbackFXPodBloodSplat);
                             }
                             break;
-                        case kThingPodGreenBall:
+                        case kThingPodFireBall:
                         {
                             int nObject = hit & 0x3fff;
                             if ((hit&0xc000) != 0xc000 && (nObject < 0 || nObject >= 4096))
@@ -5959,7 +5980,7 @@ void actProcessSprites(void)
             if (nWall == -1)
                 break;
             XWALL *pXWall = &xwall[wall[nWall].extra];
-            trTriggerWall(nWall, pXWall, kCmdWallImpact);
+            trTriggerWall(nWall, pXWall, kCmdWallImpact, nSprite);
         }
         
         for (int nSprite2 = headspritestat[kStatDude]; nSprite2 >= 0; nSprite2 = nextspritestat[nSprite2])
@@ -5972,20 +5993,20 @@ void actProcessSprites(void)
             {
                 if (pXSprite->data1 && CheckProximity(pDude, x, y, z, nSector, radius))
                 {
-                    if (pExplodeInfo->at1 && pXSprite->target == 0)
+                    if (pExplodeInfo->dmg && pXSprite->target == 0)
                     {
                         pXSprite->target = 1;
-                        actDamageSprite(nOwner, pDude, DAMAGE_TYPE_0, (pExplodeInfo->at1+Random(pExplodeInfo->at2))<<4);
+                        actDamageSprite(nOwner, pDude, DAMAGE_TYPE_0, (pExplodeInfo->dmg+Random(pExplodeInfo->dmgRng))<<4);
                     }
                     if (pExplodeInfo->dmgType)
                         ConcussSprite(nOwner, pDude, x, y, z, pExplodeInfo->dmgType);
-                    if (pExplodeInfo->atb)
+                    if (pExplodeInfo->burnTime)
                     {
                         dassert(pDude->extra > 0 && pDude->extra < kMaxXSprites);
                         XSPRITE *pXDude = &xsprite[pDude->extra];
                         if (!pXDude->burnTime)
                             evPost(nSprite2, 3, 0, kCallbackFXFlameLick);
-                        actBurnSprite(pSprite->owner, pXDude, pExplodeInfo->atb<<2);
+                        actBurnSprite(pSprite->owner, pXDude, pExplodeInfo->burnTime<<2);
                     }
                 }
             }
@@ -6006,13 +6027,13 @@ void actProcessSprites(void)
                     {
                         if (pExplodeInfo->dmgType)
                             ConcussSprite(nOwner, pThing, x, y, z, pExplodeInfo->dmgType);
-                        if (pExplodeInfo->atb)
+                        if (pExplodeInfo->burnTime)
                         {
                             dassert(pThing->extra > 0 && pThing->extra < kMaxXSprites);
                             XSPRITE *pXThing = &xsprite[pThing->extra];
                             if (pThing->type == kThingTNTBarrel && !pXThing->burnTime)
                                 evPost(nSprite2, 3, 0, kCallbackFXFlameLick);
-                            actBurnSprite(pSprite->owner, pXThing, pExplodeInfo->atb<<2);
+                            actBurnSprite(pSprite->owner, pXThing, pExplodeInfo->burnTime<<2);
                         }
                     }
                 }
@@ -6041,7 +6062,7 @@ void actProcessSprites(void)
             int dz = (z - pSprite2->z)>>8;
             int nDist = dx*dx+dy*dy+dz*dz+0x40000;
             int t = divscale16(pXSprite->data2, nDist);
-            gPlayer[p].at35a += t;
+            gPlayer[p].flickerEffect += t;
         }
         
         // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
@@ -6125,9 +6146,10 @@ void actProcessSprites(void)
             }
 
             // By NoOne: handle incarnations of custom dude
-            if (pSprite->type == kDudeModernCustom && pXSprite->txID > 0 && pXSprite->health <= 0 && seqGetStatus(3, nXSprite) < 0) {
+            if (pSprite->type == kDudeModernCustom && pXSprite->txID > 0 && pXSprite->health <= 0 && pXSprite->sysData1 == kGenDudeTransformStatus) {
+                xvel[pSprite->index] = ClipLow(xvel[pSprite->index] >> 4, 0); yvel[pSprite->index] = ClipLow(yvel[pSprite->index] >> 4, 0);
                 XSPRITE* pXIncarnation = getNextIncarnation(pXSprite);
-                if (pXIncarnation != NULL) {
+                if (seqGetStatus(3, nXSprite) < 0 && pXIncarnation != NULL) {
                     spritetype* pIncarnation = &sprite[pXIncarnation->reference];
                     pXSprite->key = pXSprite->dropMsg = pXSprite->locked = 0;
 
@@ -6140,8 +6162,7 @@ void actProcessSprites(void)
                     pXIncarnation->triggerOff = false;
 
                     // trigger dude death before transform
-                    trTriggerSprite(nSprite, pXSprite, kCmdOff);
-
+                    trTriggerSprite(nSprite, pXSprite, kCmdOff, pSprite->owner);
 
                     pSprite->type = pIncarnation->type;
                     pSprite->flags = pIncarnation->flags;
@@ -6162,7 +6183,7 @@ void actProcessSprites(void)
                     pXSprite->burnSource = -1;
 
                     pXSprite->data1 = pXIncarnation->data1;
-                    short oldData2 = pXSprite->data2; pXSprite->data2 = pXIncarnation->data2; // seq new seqId and save old one.
+                    pXSprite->data2 = pXIncarnation->data2;
                    
                     // if incarnation is active dude, it's sndStartId will be stored in sysData1, otherwise it will be data3
                     if (pIncarnation->statnum == kStatDude && pIncarnation->type == kDudeModernCustom) pXSprite->sysData1 = pXIncarnation->sysData1;
@@ -6195,9 +6216,8 @@ void actProcessSprites(void)
                             break;
                         case kDudeModernCustom:
                         case kDudeModernCustomBurning:
-                            seqId = getSeqStartId(pXSprite);
-                            if (seqId != oldData2)
-                                getSpriteMassBySize(pSprite); // create or refresh mass cache 
+                            seqId = genDudeSeqStartId(pXSprite);
+                            genDudePrepare(pSprite, kGenDudePropertyMass);
                             fallthrough__; // go below
                         default:
                             seqSpawn(seqId, 3, nXSprite, -1);
@@ -6232,7 +6252,7 @@ void actProcessSprites(void)
                 } else {
                     
                     // just trigger dude death
-                    trTriggerSprite(nSprite, pXSprite, kCmdOff);
+                    trTriggerSprite(nSprite, pXSprite, kCmdOff, pSprite->owner);
 
                 }
             }
@@ -6258,48 +6278,45 @@ void actProcessSprites(void)
                     if (pSprite2->flags&32)
                         continue;
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
-                    if ((unsigned int)pXSprite2->health > 0 && IsPlayerSprite(pSprite2))
-                    {
+                    if ((unsigned int)pXSprite2->health > 0 && IsPlayerSprite(pSprite2)) {
                         if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, 128))
-                        {
-                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
-                        }
+                            trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity, pSprite2->index);
                     }
                 }
             }
             if (IsPlayerSprite(pSprite))
             {
                 PLAYER *pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
-                if (pPlayer->at34e)
+                if (pPlayer->voodooTargets)
                     sub_41250(pPlayer);
-                if (pPlayer->at376 && Chance(0x8000))
+                if (pPlayer->hand && Chance(0x8000))
                     actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_4, 12);
-                if (pPlayer->at87)
+                if (pPlayer->isUnderwater)
                 {
                     char bActive = packItemActive(pPlayer, 1);
-                    if (bActive || pPlayer->at31a)
-                        pPlayer->at2f2 = 1200;
+                    if (bActive || pPlayer->godMode)
+                        pPlayer->underwaterTime = 1200;
                     else
-                        pPlayer->at2f2 = ClipLow(pPlayer->at2f2-4, 0);
-                    if (pPlayer->at2f2 < 1080 && packCheckItem(pPlayer, 1) && !bActive)
+                        pPlayer->underwaterTime = ClipLow(pPlayer->underwaterTime-4, 0);
+                    if (pPlayer->underwaterTime < 1080 && packCheckItem(pPlayer, 1) && !bActive)
                         packUseItem(pPlayer, 1);
-                    if (!pPlayer->at2f2)
+                    if (!pPlayer->underwaterTime)
                     {
-                        pPlayer->at36e += 4;
-                        if (Chance(pPlayer->at36e))
+                        pPlayer->chokeEffect += 4;
+                        if (Chance(pPlayer->chokeEffect))
                             actDamageSprite(nSprite, pSprite, DAMAGE_TYPE_4, 3<<4);
                     }
                     else
-                        pPlayer->at36e = 0;
+                        pPlayer->chokeEffect = 0;
                     if (xvel[nSprite] || yvel[nSprite])
                         sfxPlay3DSound(pSprite, 709, 100, 2);
-                    pPlayer->at302 = ClipLow(pPlayer->at302-4, 0);
+                    pPlayer->bubbleTime = ClipLow(pPlayer->bubbleTime-4, 0);
                 }
                 else if (gGameOptions.nGameType == 0)
                 {
-                    if (pPlayer->pXSprite->health > 0 && pPlayer->at30a >= 1200 && Chance(0x200))
+                    if (pPlayer->pXSprite->health > 0 && pPlayer->restTime >= 1200 && Chance(0x200))
                     {
-                        pPlayer->at30a = -1;
+                        pPlayer->restTime = -1;
                         sfxPlay3DSound(pSprite, 3100+Random(11), 0, 2);
                     }
                 }
@@ -6412,7 +6429,7 @@ spritetype * actSpawnSprite(int nSector, int x, int y, int z, int nStat, char a6
     vec3_t pos = { x, y, z };
     setsprite(nSprite, &pos);
     spritetype *pSprite = &sprite[nSprite];
-    pSprite->type = 0;
+    pSprite->type = kSpriteDecoration;
     if (a6 && pSprite->extra == -1)
     {
         int nXSprite = dbInsertXSprite(nSprite);
@@ -6429,7 +6446,7 @@ spritetype * actSpawnSprite(spritetype *pSource, int nStat);
 spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
 {
     XSPRITE* pXSource = &xsprite[pSource->extra];
-    spritetype *pSprite2 = actSpawnSprite(pSource, 6);
+    spritetype *pSprite2 = actSpawnSprite(pSource, kStatDude);
     if (!pSprite2) return NULL;
     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
     int angle = pSource->ang;
@@ -6453,6 +6470,7 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     pSprite2->cstat |= 0x1101;
     pSprite2->clipdist = dudeInfo[nDude].clipdist;
     pXSprite2->health = dudeInfo[nDude].startHealth<<4;
+    pXSprite2->respawn = 1;
     if (gSysRes.Lookup(dudeInfo[nDude].seqStartID, "SEQ"))
         seqSpawn(dudeInfo[nDude].seqStartID, 3, pSprite2->extra, -1);
     
@@ -6524,19 +6542,19 @@ spritetype * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
     dassert(nXThing > 0 && nXThing < kMaxXSprites);
     XSPRITE *pXThing = &xsprite[nXThing];
     THINGINFO *pThingInfo = &thingInfo[nType];
-    pXThing->health = pThingInfo->health<<4;
+    pXThing->health = pThingInfo->startHealth<<4;
     pSprite->clipdist = pThingInfo->clipdist;
     pSprite->flags = pThingInfo->flags;
     if (pSprite->flags & 2)
         pSprite->flags |= 4;
-    pSprite->cstat |= pThingInfo->atf;
-    pSprite->picnum = pThingInfo->at11;
-    pSprite->shade = pThingInfo->at13;
-    pSprite->pal = pThingInfo->at14;
-    if (pThingInfo->at15)
-        pSprite->xrepeat = pThingInfo->at15;
-    if (pThingInfo->at16)
-        pSprite->yrepeat = pThingInfo->at16;
+    pSprite->cstat |= pThingInfo->cstat;
+    pSprite->picnum = pThingInfo->picnum;
+    pSprite->shade = pThingInfo->shade;
+    pSprite->pal = pThingInfo->pal;
+    if (pThingInfo->xrepeat)
+        pSprite->xrepeat = pThingInfo->xrepeat;
+    if (pThingInfo->yrepeat)
+        pSprite->yrepeat = pThingInfo->yrepeat;
     SetBitString(show2dsprite, pSprite->index);
     switch (nThingType) {
     case kThingVoodooHead:
@@ -6631,7 +6649,7 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
     int x = pSprite->x+mulscale30(a2, Cos(pSprite->ang+512));
     int y = pSprite->y+mulscale30(a2, Sin(pSprite->ang+512));
     int z = pSprite->z+a3;
-    int clipdist = pMissileInfo->atd+pSprite->clipdist;
+    int clipdist = pMissileInfo->clipDist+pSprite->clipdist;
     x += mulscale28(clipdist, Cos(pSprite->ang));
     y += mulscale28(clipdist, Sin(pSprite->ang));
     int hit = HitScan(pSprite, z, x-pSprite->x, y-pSprite->y, 0, CLIPMASK0, clipdist);
@@ -6645,25 +6663,25 @@ spritetype* actFireMissile(spritetype *pSprite, int a2, int a3, int a4, int a5, 
         }
         else
         {
-            x = gHitInfo.hitx-mulscale28(pMissileInfo->atd<<1, Cos(pSprite->ang));
-            y = gHitInfo.hity-mulscale28(pMissileInfo->atd<<1, Sin(pSprite->ang));
+            x = gHitInfo.hitx-mulscale28(pMissileInfo->clipDist<<1, Cos(pSprite->ang));
+            y = gHitInfo.hity-mulscale28(pMissileInfo->clipDist<<1, Sin(pSprite->ang));
         }
     }
     spritetype *pMissile = actSpawnSprite(pSprite->sectnum, x, y, z, 5, 1);
     int nMissile = pMissile->index;
     SetBitString(show2dsprite, nMissile);
     pMissile->type = nType;
-    pMissile->shade = pMissileInfo->atc;
+    pMissile->shade = pMissileInfo->shade;
     pMissile->pal = 0;
-    pMissile->clipdist = pMissileInfo->atd;
+    pMissile->clipdist = pMissileInfo->clipDist;
     pMissile->flags = 1;
-    pMissile->xrepeat = pMissileInfo->ata;
-    pMissile->yrepeat = pMissileInfo->atb;
+    pMissile->xrepeat = pMissileInfo->xrepeat;
+    pMissile->yrepeat = pMissileInfo->yrepeat;
     pMissile->picnum = pMissileInfo->picnum;
-    pMissile->ang = (pSprite->ang+pMissileInfo->at6)&2047;
-    xvel[nMissile] = mulscale(pMissileInfo->at2, a4, 14);
-    yvel[nMissile] = mulscale(pMissileInfo->at2, a5, 14);
-    zvel[nMissile] = mulscale(pMissileInfo->at2, a6, 14);
+    pMissile->ang = (pSprite->ang+pMissileInfo->angleOfs)&2047;
+    xvel[nMissile] = mulscale(pMissileInfo->velocity, a4, 14);
+    yvel[nMissile] = mulscale(pMissileInfo->velocity, a5, 14);
+    zvel[nMissile] = mulscale(pMissileInfo->velocity, a6, 14);
     actPropagateSpriteOwner(pMissile, pSprite);
     pMissile->cstat |= 1;
     int nXSprite = pMissile->extra;
@@ -6865,12 +6883,10 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
         int nSprite = gHitInfo.hitsprite;
         dassert(nSprite >= 0 && nSprite < kMaxSprites);
         spritetype *pSprite = &sprite[nSprite];
-        if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pShooter, pSprite))
-            return;
-        if (IsPlayerSprite(pSprite))
-        {
+        if (!gGameOptions.bFriendlyFire && IsTargetTeammate(pShooter, pSprite)) return;
+        if (IsPlayerSprite(pSprite)) {
             PLAYER *pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
-            if (powerupCheck(pPlayer, 24))
+            if (powerupCheck(pPlayer, kPwUpReflectShots))
             {
                 gHitInfo.hitsprite = nShooter;
                 gHitInfo.hitx = pShooter->x;
@@ -6918,9 +6934,9 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                 int z = gHitInfo.hitz-mulscale(a6, 256, 14);
                 int nSurf = surfType[wall[nWall].picnum];
                 dassert(nSurf < kSurfMax);
-                if (pVectorData->at1d[nSurf].at0 >= 0)
+                if (pVectorData->surfHit[nSurf].fx1 >= 0)
                 {
-                    spritetype *pFX = gFX.fxSpawn(pVectorData->at1d[nSurf].at0, nSector, x, y, z, 0);
+                    spritetype *pFX = gFX.fxSpawn(pVectorData->surfHit[nSurf].fx1, nSector, x, y, z, 0);
                     if (pFX)
                     {
                         pFX->ang = (GetWallAngle(nWall)+512)&2047;
@@ -6940,7 +6956,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             {
                 XWALL *pXWall = &xwall[nXWall];
                 if (pXWall->triggerVector)
-                    trTriggerWall(nWall, pXWall, kCmdWallImpact);
+                    trTriggerWall(nWall, pXWall, kCmdWallImpact, nShooter);
             }
             break;
         }
@@ -6956,30 +6972,30 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             int shift = 4;
             if (vectorType == VECTOR_TYPE_0 && !IsPlayerSprite(pSprite))
                 shift = 3;
-            actDamageSprite(nShooter, pSprite, pVectorData->at0, pVectorData->at1<<shift);
+            actDamageSprite(nShooter, pSprite, pVectorData->dmgType, pVectorData->dmg<<shift);
             int nXSprite = pSprite->extra;
             if (nXSprite > 0)
             {
                 XSPRITE *pXSprite = &xsprite[nXSprite];
                 if (pXSprite->Vector)
-                    trTriggerSprite(nSprite, pXSprite, kCmdSpriteImpact);
+                    trTriggerSprite(nSprite, pXSprite, kCmdSpriteImpact, nShooter);
             }
             if (pSprite->statnum == kStatThing)
             {
                 int t = thingInfo[pSprite->type-kThingBase].mass;
-                if (t > 0 && pVectorData->at5)
+                if (t > 0 && pVectorData->impulse)
                 {
-                    int t2 = divscale(pVectorData->at5, t, 8);
+                    int t2 = divscale(pVectorData->impulse, t, 8);
                     xvel[nSprite] += mulscale16(a4, t2);
                     yvel[nSprite] += mulscale16(a5, t2);
                     zvel[nSprite] += mulscale16(a6, t2);
                 }
-                if (pVectorData->at11)
+                if (pVectorData->burnTime)
                 {
                     XSPRITE *pXSprite = &xsprite[nXSprite];
                     if (!pXSprite->burnTime)
                         evPost(nSprite, 3, 0, kCallbackFXFlameLick);
-                    actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->at11);
+                    actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->burnTime);
                 }
             }
             if (pSprite->statnum == kStatDude)
@@ -6995,21 +7011,21 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                     }
                 }
 
-                if (t > 0 && pVectorData->at5)
+                if (t > 0 && pVectorData->impulse)
                 {
-                    int t2 = divscale(pVectorData->at5, t, 8);
+                    int t2 = divscale(pVectorData->impulse, t, 8);
                     xvel[nSprite] += mulscale16(a4, t2);
                     yvel[nSprite] += mulscale16(a5, t2);
                     zvel[nSprite] += mulscale16(a6, t2);
                 }
-                if (pVectorData->at11)
+                if (pVectorData->burnTime)
                 {
                     XSPRITE *pXSprite = &xsprite[nXSprite];
                     if (!pXSprite->burnTime)
                         evPost(nSprite, 3, 0, kCallbackFXFlameLick);
-                    actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->at11);
+                    actBurnSprite(actSpriteIdToOwnerId(nShooter), pXSprite, pVectorData->burnTime);
                 }
-                if (Chance(pVectorData->atd))
+                if (Chance(pVectorData->fxChance))
                 {
                     int t = gVectorData[19].maxDist;
                     a4 += Random3(4000);
@@ -7028,8 +7044,8 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                                 int z = gHitInfo.hitz - mulscale(a6, 16<<4, 14);
                                 int nSurf = surfType[wall[nWall].picnum];
                                 VECTORDATA *pVectorData = &gVectorData[19];
-                                FX_ID t2 = pVectorData->at1d[nSurf].at1;
-                                FX_ID t3 = pVectorData->at1d[nSurf].at2;
+                                FX_ID t2 = pVectorData->surfHit[nSurf].fx2;
+                                FX_ID t3 = pVectorData->surfHit[nSurf].fx3;
                                 spritetype *pFX = NULL;
                                 if (t2 > FX_NONE && (t3 == FX_NONE || Chance(0x4000)))
                                     pFX = gFX.fxSpawn(t2, nSector, x, y, z, 0);
@@ -7045,23 +7061,23 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                         }
                     }
                 }
-                for (int i = 0; i < pVectorData->at15; i++)
-                    if (Chance(pVectorData->at19))
-                        fxSpawnBlood(pSprite, pVectorData->at1<<4);
+                for (int i = 0; i < pVectorData->bloodSplats; i++)
+                    if (Chance(pVectorData->splatChance))
+                        fxSpawnBlood(pSprite, pVectorData->dmg<<4);
             }
 
             // by NoOne: add impulse for sprites from physics list
-            if (gPhysSpritesCount > 0 && pVectorData->at5) {
+            if (gPhysSpritesCount > 0 && pVectorData->impulse) {
                 int nIndex = isDebris(pSprite->index);
                 if (nIndex != -1 && (xsprite[pSprite->extra].physAttr & kPhysDebrisVector)) {
-                    int impulse = divscale(pVectorData->at5, ClipLow(gSpriteMass[pSprite->extra].mass, 10), 6);
+                    int impulse = divscale(pVectorData->impulse, ClipLow(gSpriteMass[pSprite->extra].mass, 10), 6);
                     xvel[nSprite] += mulscale16(a4, impulse);
                     yvel[nSprite] += mulscale16(a5, impulse);
                     zvel[nSprite] += mulscale16(a6, impulse);
 
-                    if (pVectorData->at11 != 0) {
+                    if (pVectorData->burnTime != 0) {
                         if (!xsprite[nXSprite].burnTime) evPost(nSprite, 3, 0, kCallbackFXFlameLick);
-                        actBurnSprite(actSpriteIdToOwnerId(nShooter), &xsprite[nXSprite], pVectorData->at11);
+                        actBurnSprite(actSpriteIdToOwnerId(nShooter), &xsprite[nXSprite], pVectorData->burnTime);
                     }
 
                     if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
@@ -7075,12 +7091,12 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
         }
     }
     dassert(nSurf < kSurfMax);
-    if (pVectorData->at1d[nSurf].at1 >= 0)
-        gFX.fxSpawn(pVectorData->at1d[nSurf].at1, nSector, x, y, z, 0);
-    if (pVectorData->at1d[nSurf].at2 >= 0)
-        gFX.fxSpawn(pVectorData->at1d[nSurf].at2, nSector, x, y, z, 0);
-    if (pVectorData->at1d[nSurf].at3 >= 0)
-        sfxPlay3DSound(x, y, z, pVectorData->at1d[nSurf].at3, nSector);
+    if (pVectorData->surfHit[nSurf].fx2 >= 0)
+        gFX.fxSpawn(pVectorData->surfHit[nSurf].fx2, nSector, x, y, z, 0);
+    if (pVectorData->surfHit[nSurf].fx3 >= 0)
+        gFX.fxSpawn(pVectorData->surfHit[nSurf].fx3, nSector, x, y, z, 0);
+    if (pVectorData->surfHit[nSurf].fxSnd >= 0)
+        sfxPlay3DSound(x, y, z, pVectorData->surfHit[nSurf].fxSnd, nSector);
 }
 
 void FireballSeqCallback(int, int nXSprite)
@@ -7153,7 +7169,7 @@ void TreeToGibCallback(int, int nXSprite)
     pXSprite->data1 = 15;
     pXSprite->data2 = 0;
     pXSprite->data3 = 0;
-    pXSprite->health = thingInfo[17].health;
+    pXSprite->health = thingInfo[17].startHealth;
     pXSprite->data4 = 312;
     pSprite->cstat |= 257;
 }
@@ -7167,7 +7183,7 @@ void DudeToGibCallback1(int, int nXSprite)
     pXSprite->data1 = 8;
     pXSprite->data2 = 0;
     pXSprite->data3 = 0;
-    pXSprite->health = thingInfo[26].health;
+    pXSprite->health = thingInfo[26].startHealth;
     pXSprite->data4 = 319;
     pXSprite->triggerOnce = 0;
     pXSprite->isTriggered = 0;
@@ -7185,7 +7201,7 @@ void DudeToGibCallback2(int, int nXSprite)
     pXSprite->data1 = 3;
     pXSprite->data2 = 0;
     pXSprite->data3 = 0;
-    pXSprite->health = thingInfo[26].health;
+    pXSprite->health = thingInfo[26].startHealth;
     pXSprite->data4 = 319;
     pXSprite->triggerOnce = 0;
     pXSprite->isTriggered = 0;
@@ -7499,7 +7515,7 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
     pXDude->data3 = 0;
 
     // spawn seq
-    seqSpawn(getSeqStartId(pXDude), 3, pDude->extra, -1);
+    seqSpawn(genDudeSeqStartId(pXDude), 3, pDude->extra, -1);
 
     // inherit movement speed.
     pXDude->busyTime = pXSource->busyTime;
@@ -7539,6 +7555,12 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
         }
     }
 
+    // inherit sprite size (useful for seqs with zero repeats)
+    if (pSource->flags & kModernTypeFlag2) {
+        pDude->xrepeat = pSource->xrepeat;
+        pDude->yrepeat = pSource->yrepeat;
+    }
+
     aiInitSprite(pDude);
     return pDude;
 }
@@ -7546,7 +7568,6 @@ spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
 int getSpriteMassBySize(spritetype* pSprite) {
     int mass = 0; int seqId = -1; Seq* pSeq = NULL;
     if (IsDudeSprite(pSprite)) {
-
 
         switch (pSprite->type) {
             case kDudePodMother: // fake dude, no seq
@@ -7556,7 +7577,6 @@ int getSpriteMassBySize(spritetype* pSprite) {
                 seqId = xsprite[pSprite->extra].data2;
                 break;
             default:
-
                 seqId = dudeInfo[pSprite->type - kDudeBase].seqStartID;
                 break;
         }
@@ -7641,6 +7661,7 @@ int getSpriteMassBySize(spritetype* pSprite) {
     cached->picnum = pSprite->picnum;               cached->seqId = seqId;
     cached->clipdist = pSprite->clipdist;
 
+    //viewSetSystemMessage("MASS: %d", cached->mass);
     return cached->mass;
 }
 
@@ -7872,8 +7893,9 @@ void debrisMove(int listIndex) {
             //actPostSprite(nSprite, kStatThing); // !!!! not working here for some reason
             changespritestat(nSprite, kStatThing);
 
-        if (pXDebris->state == 1) trTriggerSprite(pSprite->xvel, pXDebris, kCmdOff);
-        else trTriggerSprite(pSprite->xvel, pXDebris, kCmdOn);
+        
+        if (pXDebris->state == 1) trTriggerSprite(pSprite->xvel, pXDebris, kCmdOff, -1);
+        else trTriggerSprite(pSprite->xvel, pXDebris, kCmdOn, -1);
     }
 }
 

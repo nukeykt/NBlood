@@ -26,7 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "common_game.h"
 #include "crc32.h"
-#include "debugbreak.h"
 #include "duke3d.h"
 #include "gameexec.h"
 #include "namesdyn.h"
@@ -5755,7 +5754,7 @@ repeatcase:
             g_sounds[k].vo = g_scriptPtr[-1];
             g_scriptPtr -= 5;
 
-            g_sounds[k].volume = 1.f;
+            g_sounds[k].volume = fix16_one;
 
             if (k > g_highestSoundIdx)
                 g_highestSoundIdx = k;

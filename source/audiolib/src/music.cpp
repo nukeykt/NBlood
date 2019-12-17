@@ -21,24 +21,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-// This object is shared by all Build games with MIDI playback!
+#include "music.h"
 
 #include "compat.h"
-#include "music.h"
+#include "drivers.h"
 #include "midi.h"
-#include "mpu401.h"
-#include "al_midi.h"
+#include "multivoc.h"
+#include "sndcards.h"
 
-int32_t MUSIC_SoundDevice = MIDIDEVICE_NONE;
-int32_t MUSIC_ErrorCode = MUSIC_Ok;
+int MUSIC_ErrorCode = MUSIC_Ok;
 
 static midifuncs MUSIC_MidiFunctions;
 
-int32_t MUSIC_InitMidi(int32_t card, midifuncs *Funcs, int32_t Address);
-
 #define MUSIC_SetErrorCode(status) MUSIC_ErrorCode = (status);
 
-const char *MUSIC_ErrorString(int32_t ErrorNumber)
+const char *MUSIC_ErrorString(int ErrorNumber)
 {
     const char *ErrorString;
 
@@ -55,15 +52,56 @@ const char *MUSIC_ErrorString(int32_t ErrorNumber)
 }
 
 
-int32_t MUSIC_Init(int32_t SoundCard, int32_t Address)
+int MUSIC_Init(int SoundCard)
 {
-    MUSIC_SoundDevice = SoundCard;
+    int detected = 0;
 
-    return MUSIC_InitMidi(SoundCard, &MUSIC_MidiFunctions, Address);
+    if (SoundCard == ASS_AutoDetect)
+    {
+redetect:
+        detected++;
+        SoundCard = ASS_OPL3;
+    }
+
+    if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
+    {
+failed:
+        MV_Printf("failed!\n");
+        MUSIC_ErrorCode = MUSIC_MidiError;
+        return MUSIC_Error;
+    }
+
+    if (!SoundDriver_IsMIDISupported(SoundCard))
+    {
+        MV_Printf("Couldn't init %s\n", SoundDriver_GetName(SoundCard));
+
+        if (detected < 2)
+            goto redetect;
+
+        goto failed;
+    }
+
+    ASS_MIDISoundDriver = SoundCard;
+
+    int status = SoundDriver_MIDI_Init(&MUSIC_MidiFunctions);
+
+    if (status != MUSIC_Ok)
+    {
+        if (detected < 2)
+            goto redetect;
+
+        goto failed;
+    }
+
+    MV_Printf("%s\n", SoundDriver_GetName(SoundCard));
+
+    MIDI_SetMidiFuncs(&MUSIC_MidiFunctions);
+
+    return MUSIC_Ok;
 }
 
 
-int32_t MUSIC_Shutdown(void)
+int MUSIC_Shutdown(void)
 {
     MIDI_StopSong();
 
@@ -71,19 +109,15 @@ int32_t MUSIC_Shutdown(void)
 }
 
 
-void MUSIC_SetVolume(int32_t volume)
-{
-    if (MUSIC_SoundDevice != -1)
-        MIDI_SetVolume(min(max(0, volume), 255));
-}
+void MUSIC_SetVolume(int volume) { MIDI_SetVolume(min(max(0, volume), 255)); }
 
 
-int32_t MUSIC_GetVolume(void) { return MUSIC_SoundDevice == -1 ? 0 : MIDI_GetVolume(); }
-void MUSIC_SetLoopFlag(int32_t loopflag) { MIDI_SetLoopFlag(loopflag); }
+int MUSIC_GetVolume(void) { return MIDI_GetVolume(); }
+void MUSIC_SetLoopFlag(int loopflag) { MIDI_SetLoopFlag(loopflag); }
 void MUSIC_Continue(void) { MIDI_ContinueSong(); }
 void MUSIC_Pause(void) { MIDI_PauseSong(); }
 
-int32_t MUSIC_StopSong(void)
+int MUSIC_StopSong(void)
 {
     MIDI_StopSong();
     MUSIC_SetErrorCode(MUSIC_Ok);
@@ -91,9 +125,10 @@ int32_t MUSIC_StopSong(void)
 }
 
 
-int32_t MUSIC_PlaySong(char *song, int32_t songsize, int32_t loopflag)
+int MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn /*= nullptr*/)
 {
     UNREFERENCED_PARAMETER(songsize);
+    UNREFERENCED_PARAMETER(fn);
 
     MUSIC_SetErrorCode(MUSIC_Ok)
 
@@ -107,35 +142,6 @@ int32_t MUSIC_PlaySong(char *song, int32_t songsize, int32_t loopflag)
 }
 
 
-int32_t MUSIC_InitMidi(int32_t card, midifuncs *Funcs, int32_t Address)
+void MUSIC_Update(void)
 {
-    UNREFERENCED_PARAMETER(card);
-    UNREFERENCED_PARAMETER(Address);
-    switch (card)
-    {
-    case MIDIDEVICE_MPU:
-        Funcs->NoteOff = MPU_NoteOff;
-        Funcs->NoteOn = MPU_NoteOn;
-        Funcs->PolyAftertouch = MPU_PolyAftertouch;
-        Funcs->ControlChange = MPU_ControlChange;
-        Funcs->ProgramChange = MPU_ProgramChange;
-        Funcs->ChannelAftertouch = MPU_ChannelAftertouch;
-        Funcs->PitchBend = MPU_PitchBend;
-        break;
-    case MIDIDEVICE_OPL:
-        Funcs->NoteOff = OPLMusic::AL_NoteOff;
-        Funcs->NoteOn = OPLMusic::AL_NoteOn;
-        Funcs->PolyAftertouch = NULL;
-        Funcs->ControlChange = OPLMusic::AL_ControlChange;
-        Funcs->ProgramChange = OPLMusic::AL_ProgramChange;
-        Funcs->ChannelAftertouch = NULL;
-        Funcs->PitchBend = OPLMusic::AL_SetPitchBend;
-        break;
-    }
-
-    MIDI_SetMidiFuncs(Funcs);
-
-    return MIDI_Ok;
 }
-
-void MUSIC_Update(void) { MIDI_UpdateMusic(); }

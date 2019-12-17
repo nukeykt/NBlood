@@ -189,7 +189,7 @@ extern LastSeenInput CONTROL_LastSeenInput;
 //
 //***************************************************************************
 
-//void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
+void CONTROL_MapKey( int32_t which, kb_scancode key1, kb_scancode key2 );
 void CONTROL_MapButton(int whichfunction, int whichbutton, int doubleclicked, controldevice device);
 void CONTROL_DefineFlag( int which, int toggle );
 int CONTROL_FlagActive( int which );
@@ -251,8 +251,8 @@ static inline int CONTROL_KeyIsBound(int const key)
 
 void CONTROL_ProcessBinds(void);
 
-#define CONTROL_GetUserInput(...)
-#define CONTROL_ClearUserInput(...)
+void CONTROL_GetUserInput(UserInput *);
+void CONTROL_ClearUserInput(UserInput *);
 
 ////////////////////
 

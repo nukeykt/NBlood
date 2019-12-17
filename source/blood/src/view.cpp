@@ -246,11 +246,11 @@ void viewInitializePrediction(void)
 	predict.at20 = gMe->q16look;
 	predict.at24 = gMe->q16horiz;
 	predict.at28 = gMe->q16slopehoriz;
-	predict.at2c = gMe->at83;
-	predict.at6f = gMe->at31c;
-	predict.at70 = gMe->at2e;
-	predict.at72 = gMe->at87;
-	predict.at71 = gMe->atc.buttonFlags.jump;
+	predict.at2c = gMe->slope;
+	predict.at6f = gMe->cantJump;
+	predict.at70 = gMe->isRunning;
+	predict.at72 = gMe->isUnderwater;
+	predict.at71 = gMe->input.buttonFlags.jump;
 	predict.at50 = gMe->pSprite->x;
 	predict.at54 = gMe->pSprite->y;
 	predict.at58 = gMe->pSprite->z;
@@ -260,23 +260,23 @@ void viewInitializePrediction(void)
 	predict.at60 = yvel[gMe->pSprite->index];
 	predict.at64 = zvel[gMe->pSprite->index];
 	predict.at6a = gMe->pXSprite->height;
-	predict.at48 = gMe->at2f;
-	predict.at4c = gMe->at316;
-	predict.at6e = gMe->atc.keyFlags.lookCenter;
+	predict.at48 = gMe->posture;
+	predict.at4c = gMe->spin;
+	predict.at6e = gMe->input.keyFlags.lookCenter;
 	memcpy(&predict.at75,&gSpriteHit[gMe->pSprite->extra],sizeof(SPRITEHIT));
-	predict.at0 = gMe->at37;
-	predict.at4 = gMe->at3b;
-	predict.at8 = gMe->at3f;
-	predict.atc = gMe->at43;
-	predict.at10 = gMe->at47;
-	predict.at14 = gMe->at4b;
-	predict.at18 = gMe->at4f;
-	predict.at1c = gMe->at53;
-	predict.at34 = gMe->at6f-gMe->at67-(12<<8);
-	predict.at38 = gMe->at67;
-	predict.at3c = gMe->at6b;
-	predict.at40 = gMe->at6f;
-	predict.at44 = gMe->at73;
+	predict.at0 = gMe->bobPhase;
+	predict.at4 = gMe->bobAmp;
+	predict.at8 = gMe->bobHeight;
+	predict.atc = gMe->bobWidth;
+	predict.at10 = gMe->swayPhase;
+	predict.at14 = gMe->swayAmp;
+	predict.at18 = gMe->swayHeight;
+	predict.at1c = gMe->swayWidth;
+	predict.at34 = gMe->zWeapon-gMe->zView-(12<<8);
+	predict.at38 = gMe->zView;
+	predict.at3c = gMe->zViewVel;
+	predict.at40 = gMe->zWeapon;
+	predict.at44 = gMe->zWeaponVel;
     predictOld = predict;
 }
 
@@ -294,13 +294,13 @@ void viewUpdatePrediction(GINPUT *pInput)
 
 void sub_158B4(PLAYER *pPlayer)
 {
-    predict.at38 = predict.at58 - gPosture[pPlayer->at5f][predict.at48].at24;
-    predict.at40 = predict.at58 - gPosture[pPlayer->at5f][predict.at48].at28;
+    predict.at38 = predict.at58 - gPosture[pPlayer->lifeMode][predict.at48].eyeAboveZ;
+    predict.at40 = predict.at58 - gPosture[pPlayer->lifeMode][predict.at48].weaponAboveZ;
 }
 
 void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
 {
-    POSTURE *pPosture = &gPosture[pPlayer->at5f][predict.at48];
+    POSTURE *pPosture = &gPosture[pPlayer->lifeMode][predict.at48];
     predict.at70 = pInput->syncFlags.run;
     predict.at70 = 0;
     predict.at71 = pInput->buttonFlags.jump;
@@ -312,16 +312,16 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         {
             int forward = pInput->forward;
             if (forward > 0)
-                forward = mulscale8(pPosture->at0, forward);
+                forward = mulscale8(pPosture->frontAccel, forward);
             else
-                forward = mulscale8(pPosture->at8, forward);
+                forward = mulscale8(pPosture->backAccel, forward);
             predict.at5c += mulscale30(forward, x);
             predict.at60 += mulscale30(forward, y);
         }
         if (pInput->strafe)
         {
             int strafe = pInput->strafe;
-            strafe = mulscale8(pPosture->at4, strafe);
+            strafe = mulscale8(pPosture->sideAccel, strafe);
             predict.at5c += mulscale30(strafe, y);
             predict.at60 -= mulscale30(strafe, x);
         }
@@ -337,9 +337,9 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         {
             int forward = pInput->forward;
             if (forward > 0)
-                forward = mulscale8(pPosture->at0, forward);
+                forward = mulscale8(pPosture->frontAccel, forward);
             else
-                forward = mulscale8(pPosture->at8, forward);
+                forward = mulscale8(pPosture->backAccel, forward);
             if (predict.at6a)
                 forward = mulscale16(forward, speed);
             predict.at5c += mulscale30(forward, x);
@@ -348,7 +348,7 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
         if (pInput->strafe)
         {
             int strafe = pInput->strafe;
-            strafe = mulscale8(pPosture->at4, strafe);
+            strafe = mulscale8(pPosture->sideAccel, strafe);
             if (predict.at6a)
                 strafe = mulscale16(strafe, speed);
             predict.at5c += mulscale30(strafe, y);
@@ -379,21 +379,22 @@ void fakeProcessInput(PLAYER *pPlayer, GINPUT *pInput)
     {
     case 1:
         if (predict.at71)
-            predict.at64 -= 0x5b05;
+            predict.at64 -= pPosture->normalJumpZ;//0x5b05;
         if (pInput->buttonFlags.crouch)
-            predict.at64 += 0x5b05;
+            predict.at64 += pPosture->normalJumpZ;//0x5b05;
         break;
     case 2:
         if (!pInput->buttonFlags.crouch)
             predict.at48 = 0;
         break;
     default:
-        if (!predict.at6f && predict.at71 && predict.at6a == 0)
-        {
-            if (packItemActive(pPlayer, 4))
-                predict.at64 = -0x175555;
-            else
-                predict.at64 = -0xbaaaa;
+        if (!predict.at6f && predict.at71 && predict.at6a == 0) {
+            if (packItemActive(pPlayer, 4)) predict.at64 = pPosture->pwupJumpZ;//-0x175555;
+            else predict.at64 = pPosture->normalJumpZ;//-0xbaaaa;
+            
+            if (isShrinked(pPlayer->pSprite)) zvel[pPlayer->nSprite] -= gPosture[kModeHumanShrink][pPlayer->posture].normalJumpZ;//-200000;
+            else if (isGrown(pPlayer->pSprite)) zvel[pPlayer->nSprite] += gPosture[kModeHumanGrown][pPlayer->posture].normalJumpZ; //-250000;
+
             predict.at6f = 1;
         }
         if (pInput->buttonFlags.crouch)
@@ -482,7 +483,7 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
 {
     spritetype *pSprite = pPlayer->pSprite;
     XSPRITE *pXSprite = pPlayer->pXSprite;
-    POSTURE *pPosture = &gPosture[pPlayer->at5f][predict.at48];
+    POSTURE *pPosture = &gPosture[pPlayer->lifeMode][predict.at48];
 
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -506,7 +507,7 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
     int nSpeed = approxDist(predict.at5c, predict.at60);
 
     predict.at3c = interpolate(predict.at3c, predict.at64, 0x7000);
-    int dz = predict.at58-pPosture->at24-predict.at38;
+    int dz = predict.at58-pPosture->eyeAboveZ-predict.at38;
     if (dz > 0)
         predict.at3c += mulscale16(dz<<8, 0xa000);
     else
@@ -514,7 +515,7 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
     predict.at38 += predict.at3c>>8;
 
     predict.at44 = interpolate(predict.at44, predict.at64, 0x5000);
-    dz = predict.at58-pPosture->at28-predict.at40;
+    dz = predict.at58-pPosture->weaponAboveZ-predict.at40;
     if (dz > 0)
         predict.at44 += mulscale16(dz<<8, 0x8000);
     else
@@ -530,17 +531,17 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
 	{
 		predict.at4 = (predict.at4+17)&2047;
 		predict.at14 = (predict.at14+17)&2047;
-		predict.at8 = mulscale30(10*pPosture->at14,Sin(predict.at4*2));
-		predict.atc = mulscale30(predict.at0*pPosture->at18,Sin(predict.at4-256));
-		predict.at18 = mulscale30(predict.at0*pPosture->at1c,Sin(predict.at14*2));
-		predict.at1c = mulscale30(predict.at0*pPosture->at20,Sin(predict.at14-0x155));
+		predict.at8 = mulscale30(10*pPosture->bobV,Sin(predict.at4*2));
+		predict.atc = mulscale30(predict.at0*pPosture->bobH,Sin(predict.at4-256));
+		predict.at18 = mulscale30(predict.at0*pPosture->swayV,Sin(predict.at14*2));
+		predict.at1c = mulscale30(predict.at0*pPosture->swayH,Sin(predict.at14-0x155));
 	}
 	else
 	{
 		if (pXSprite->height < 256)
 		{
-			predict.at4 = (predict.at4+(pPosture->atc[predict.at70]*4))&2047;
-			predict.at14 = (predict.at14+(pPosture->atc[predict.at70]*4)/2)&2047;
+			predict.at4 = (predict.at4+(pPosture->pace[predict.at70]*4))&2047;
+			predict.at14 = (predict.at14+(pPosture->pace[predict.at70]*4)/2)&2047;
 			if (predict.at70)
 			{
 				if (predict.at0 < 60)
@@ -552,10 +553,10 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
                     predict.at0 = ClipHigh(predict.at0 + nSpeed, 30);
 			}
 		}
-		predict.at8 = mulscale30(predict.at0*pPosture->at14,Sin(predict.at4*2));
-		predict.atc = mulscale30(predict.at0*pPosture->at18,Sin(predict.at4-256));
-		predict.at18 = mulscale30(predict.at0*pPosture->at1c,Sin(predict.at14*2));
-		predict.at1c = mulscale30(predict.at0*pPosture->at20,Sin(predict.at14-0x155));
+		predict.at8 = mulscale30(predict.at0*pPosture->bobV,Sin(predict.at4*2));
+		predict.atc = mulscale30(predict.at0*pPosture->bobH,Sin(predict.at4-256));
+		predict.at18 = mulscale30(predict.at0*pPosture->swayV,Sin(predict.at14*2));
+		predict.at1c = mulscale30(predict.at0*pPosture->swayH,Sin(predict.at14-0x155));
 	}
 	if (!pXSprite->health)
         return;
@@ -565,7 +566,7 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
 		predict.at72 = 1;
         int nSector = predict.at68;
         int nLink = gLowerLink[nSector];
-		if (nLink > 0 && (sprite[nLink].type == 14 || sprite[nLink].type == 10))
+		if (nLink > 0 && (sprite[nLink].type == kMarkerLowGoo || sprite[nLink].type == kMarkerLowWater))
 		{
 			if (getceilzofslope(nSector, predict.at50, predict.at54) > predict.at38)
 				predict.at72 = 0;
@@ -654,9 +655,9 @@ void fakeMoveDude(spritetype *pSprite)
     }
     int nUpperLink = gUpperLink[nSector];
     int nLowerLink = gLowerLink[nSector];
-    if (nUpperLink >= 0 && (sprite[nUpperLink].type == 9 || sprite[nUpperLink].type == 13))
+    if (nUpperLink >= 0 && (sprite[nUpperLink].type == kMarkerUpWater || sprite[nUpperLink].type == kMarkerUpGoo))
         bDepth = 1;
-    if (nLowerLink >= 0 && (sprite[nLowerLink].type == 10 || sprite[nLowerLink].type == 14))
+    if (nLowerLink >= 0 && (sprite[nLowerLink].type == kMarkerLowWater || sprite[nLowerLink].type == kMarkerLowGoo))
         bDepth = 1;
     if (pPlayer)
         wd += 16;
@@ -885,15 +886,15 @@ void viewBackupView(int nPlayer)
     pView->at30 = pPlayer->q16ang;
     pView->at50 = pPlayer->pSprite->x;
     pView->at54 = pPlayer->pSprite->y;
-    pView->at38 = pPlayer->at67;
-    pView->at34 = pPlayer->at6f-pPlayer->at67-0xc00;
+    pView->at38 = pPlayer->zView;
+    pView->at34 = pPlayer->zWeapon-pPlayer->zView-0xc00;
     pView->at24 = pPlayer->q16horiz;
     pView->at28 = pPlayer->q16slopehoriz;
-    pView->at2c = pPlayer->at83;
-    pView->at8 = pPlayer->at3f;
-    pView->atc = pPlayer->at43;
-    pView->at18 = pPlayer->at4f;
-    pView->at1c = pPlayer->at53;
+    pView->at2c = pPlayer->slope;
+    pView->at8 = pPlayer->bobHeight;
+    pView->atc = pPlayer->bobWidth;
+    pView->at18 = pPlayer->swayHeight;
+    pView->at1c = pPlayer->swayWidth;
 }
 
 void viewCorrectViewOffsets(int nPlayer, vec3_t const *oldpos)
@@ -1139,25 +1140,24 @@ AMMOICON gAmmoIcons[] = {
 
 struct WEAPONICON {
     short nTile;
-    char xRepeat;
-    char yRepeat;
+    char zOffset;
 };
 
 WEAPONICON gWeaponIcon[] = {
-    { -1, 0, 0 },
-    { -1, 0, 0 },
-    { 524, 32, 32 },
-    { 559, 32, 32 },
-    { 558, 32, 32 },
-    { 526, 32, 32 },
-    { 589, 32, 32 },
-    { 618, 32, 32 },
-    { 539, 32, 32 },
-    { 800, 32, 32 },
-    { 525, 32, 32 },
-    { 811, 32, 32 },
-    { 810, 32, 32 },
-    { -1, 0, 0 },
+    { -1, 0 },
+    { -1, 0 }, // 1: pitchfork
+    { 524, 6 }, // 2: flare gun
+    { 559, 6 }, // 3: shotgun
+    { 558, 8 }, // 4: tommy gun
+    { 526, 6 }, // 5: napalm launcher
+    { 589, 11 }, // 6: dynamite
+    { 618, 11 }, // 7: spray can
+    { 539, 6 }, // 8: tesla gun
+    { 800, 0 }, // 9: life leech
+    { 525, 11 }, // 10: voodoo doll
+    { 811, 11 }, // 11: proxy bomb
+    { 810, 11 }, // 12: remote bomb
+    { -1, 0 },
 };
 
 int dword_14C508;
@@ -1181,7 +1181,7 @@ void viewDrawStats(PLAYER *pPlayer, int x, int y)
     if (gGameOptions.nGameType != 3)
         sprintf(buffer, "K:%d/%d", gKillMgr.at4, gKillMgr.at0);
     else
-        sprintf(buffer, "K:%d", pPlayer->at2c6);
+        sprintf(buffer, "K:%d", pPlayer->fragCount);
     viewDrawText(3, buffer, x, y, 20, 0, 0, true, 256);
     y += nHeight+1;
     sprintf(buffer, "S:%d/%d", gSecretMgr.at4+gSecretMgr.at8, gSecretMgr.at0);
@@ -1223,18 +1223,21 @@ void viewDrawPowerUps(PLAYER* pPlayer)
     if (!gPowerupDuration)
         return;
 
-    const int nCloakOfInvisibility = 13;
-    const int nReflectiveShots = 24;
-    const int nDeathMask = 14; // invulnerability
-    const int nGunsAkimbo = 17;
-    const int nCloakOfShadow = 26; // does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
+    // NoOne to author: the following powerups can be safely added in this list:
+    // kPwUpFeatherFall -   (used in some user addons, makes player immune to fall damage)
+    // kPwUpGasMask -       (used in some user addons, makes player immune to choke damage)
+    // kPwUpDoppleganger -  (works in multiplayer, it swaps player's team colors, so enemy team player thinks it's a team mate)
+    // kPwUpAsbestArmor -   (used in some user addons, makes player immune to fire damage and draws hud)
+    // kPwUpGrowShroom -    (grows player size, works only if gModernMap == true)
+    // kPwUpShrinkShroom -  (shrinks player size, works only if gModernMap == true)
 
     POWERUPDISPLAY powerups[5];
-    powerups[0] = { 896, 0.4f, 0, pPlayer->at202[nCloakOfInvisibility] };
-    powerups[1] = { 2428, 0.4f, 5, pPlayer->at202[nReflectiveShots] };
-    powerups[2] = { 825, 0.3f, 9, pPlayer->at202[nDeathMask] };
-    powerups[3] = { 829, 0.3f, 5, pPlayer->at202[nGunsAkimbo] };
-    powerups[4] = { 768, 0.4f, 9, pPlayer->at202[nCloakOfShadow] };
+    powerups[0] = { gPowerUpInfo[kPwUpShadowCloak].picnum,  0.4f, 0, pPlayer->pwUpTime[kPwUpShadowCloak] }; // invisibility
+    powerups[1] = { gPowerUpInfo[kPwUpReflectShots].picnum, 0.4f, 5, pPlayer->pwUpTime[kPwUpReflectShots] };
+    powerups[2] = { gPowerUpInfo[kPwUpDeathMask].picnum, 0.3f, 9, pPlayer->pwUpTime[kPwUpDeathMask] }; // invulnerability
+    powerups[3] = { gPowerUpInfo[kPwUpTwoGuns].picnum, 0.3f, 5, pPlayer->pwUpTime[kPwUpTwoGuns] };
+    // does nothing, only appears at near the end of Cryptic Passage's Lost Monastery (CP04)
+    powerups[4] = { gPowerUpInfo[kPwUpShadowCloakUseless].picnum, 0.4f, 9, pPlayer->pwUpTime[kPwUpShadowCloakUseless] };
 
     sortPowerUps(powerups);
 
@@ -1274,16 +1277,35 @@ void viewDrawMapTitle(void)
     }
 }
 
+void viewDrawAimedPlayerName(void)
+{
+    if (!gShowPlayerNames || (gView->aim.dx == 0 && gView->aim.dy == 0))
+        return;
+
+    int hit = HitScan(gView->pSprite, gView->pSprite->z, gView->aim.dx, gView->aim.dy, gView->aim.dz, CLIPMASK0, 512);
+    if (hit == 3)
+    {
+        spritetype* pSprite = &sprite[gHitInfo.hitsprite];
+        if (IsPlayerSprite(pSprite))
+        {
+            char nPlayer = pSprite->type-kDudePlayer1;
+            char* szName = gProfile[nPlayer].name;
+            int nPalette = (gPlayer[nPlayer].teamId&3)+11;
+            viewDrawText(4, szName, 160, 125, -128, nPalette, 1, 1);
+        }
+    }
+}
+
 void viewDrawPack(PLAYER *pPlayer, int x, int y)
 {
     int packs[5];
-    if (pPlayer->at31d)
+    if (pPlayer->packItemTime)
     {
         int nPacks = 0;
         int width = 0;
         for (int i = 0; i < 5; i++)
         {
-            if (pPlayer->packInfo[i].at1)
+            if (pPlayer->packSlots[i].curAmount)
             {
                 packs[nPacks++] = i;
                 width += tilesiz[gPackIcons[i]].x + 1;
@@ -1297,38 +1319,38 @@ void viewDrawPack(PLAYER *pPlayer, int x, int y)
             DrawStatSprite(2568, x+1, y-8);
             DrawStatSprite(2568, x+1, y-6);
             DrawStatSprite(gPackIcons[nPack], x+1, y+1);
-            if (nPack == pPlayer->at321)
+            if (nPack == pPlayer->packItemId)
                 DrawStatMaskedSprite(2559, x+1, y+1);
             int nShade;
-            if (pPlayer->packInfo[nPack].at0)
+            if (pPlayer->packSlots[nPack].isActive)
                 nShade = 4;
             else
                 nShade = 24;
-            DrawStatNumber("%3d", pPlayer->packInfo[nPack].at1, 2250, x-4, y-13, nShade, 0);
+            DrawStatNumber("%3d", pPlayer->packSlots[nPack].curAmount, 2250, x-4, y-13, nShade, 0);
             x += tilesiz[gPackIcons[nPack]].x + 1;
         }
     }
-    if (pPlayer->at31d != dword_14C508)
+    if (pPlayer->packItemTime != dword_14C508)
     {
         viewUpdatePages();
     }
-    dword_14C508 = pPlayer->at31d;
+    dword_14C508 = pPlayer->packItemTime;
 }
 
 void DrawPackItemInStatusBar(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat)
 {
-    if (pPlayer->at321 < 0) return;
+    if (pPlayer->packItemId < 0) return;
 
-    DrawStatSprite(gPackIcons[pPlayer->at321], x, y, 0, 0, nStat);
-    DrawStatNumber("%3d", pPlayer->packInfo[pPlayer->at321].at1, 2250, x2, y2, 0, 0, nStat);
+    DrawStatSprite(gPackIcons[pPlayer->packItemId], x, y, 0, 0, nStat);
+    DrawStatNumber("%3d", pPlayer->packSlots[pPlayer->packItemId].curAmount, 2250, x2, y2, 0, 0, nStat);
 }
 
 void DrawPackItemInStatusBar2(PLAYER *pPlayer, int x, int y, int x2, int y2, int nStat, int nScale)
 {
-    if (pPlayer->at321 < 0) return;
+    if (pPlayer->packItemId < 0) return;
 
-    DrawStatMaskedSprite(gPackIcons2[pPlayer->at321].nTile, x, y+gPackIcons2[pPlayer->at321].nYOffs, 0, 0, nStat, gPackIcons2[pPlayer->at321].nScale);
-    DrawStatNumber("%3d", pPlayer->packInfo[pPlayer->at321].at1, kSBarNumberInv, x2, y2, 0, 0, nStat, nScale);
+    DrawStatMaskedSprite(gPackIcons2[pPlayer->packItemId].nTile, x, y+gPackIcons2[pPlayer->packItemId].nYOffs, 0, 0, nStat, gPackIcons2[pPlayer->packItemId].nScale);
+    DrawStatNumber("%3d", pPlayer->packSlots[pPlayer->packItemId].curAmount, kSBarNumberInv, x2, y2, 0, 0, nStat, nScale);
 }
 
 void viewDrawPlayerSlots(void)
@@ -1351,7 +1373,7 @@ void viewDrawPlayerFrags(void)
     {
         int x = 80 * (i & 3);
         int y = 9 * (i / 4);
-        int col = gPlayer[p].at2ea & 3;
+        int col = gPlayer[p].teamId & 3;
         char* name = gProfile[p].name;
         if (gProfile[p].skill == 2)
             sprintf(gTempStr, "%s", name);
@@ -1359,7 +1381,7 @@ void viewDrawPlayerFrags(void)
             sprintf(gTempStr, "%s [%d]", name, gProfile[p].skill);
         Bstrupr(gTempStr);
         viewDrawText(4, gTempStr, x + 4, y + 1, -128, 11 + col, 0, 0);
-        sprintf(gTempStr, "%2d", gPlayer[p].at2c6);
+        sprintf(gTempStr, "%2d", gPlayer[p].fragCount);
         viewDrawText(4, gTempStr, x + 76, y + 1, -128, 11 + col, 2, 0);
     }
 }
@@ -1371,7 +1393,7 @@ void viewDrawPlayerFlags(void)
     {
         int x = 80 * (i & 3);
         int y = 9 * (i / 4);
-        int col = gPlayer[p].at2ea & 3;
+        int col = gPlayer[p].teamId & 3;
         char* name = gProfile[p].name;
         if (gProfile[p].skill == 2)
             sprintf(gTempStr, "%s", name);
@@ -1382,13 +1404,13 @@ void viewDrawPlayerFlags(void)
 
         sprintf(gTempStr, "F");
         x += 76;
-        if (gPlayer[p].at90 & 2)
+        if (gPlayer[p].hasFlag & 2)
         {
             viewDrawText(4, gTempStr, x, y + 1, -128, 12, 2, 0);
             x -= 6;
         }
 
-        if (gPlayer[p].at90 & 1)
+        if (gPlayer[p].hasFlag & 1)
             viewDrawText(4, gTempStr, x, y + 1, -128, 11, 2, 0);
     }
 }
@@ -1447,19 +1469,19 @@ void viewDrawCtfHud(ClockTicks arg)
     int redFlagCarrierColor = 0;
     for (int i = 0, p = connecthead; p >= 0; i++, p = connectpoint2[p])
     {
-        if ((gPlayer[p].at90 & 1) != 0)
+        if ((gPlayer[p].hasFlag & 1) != 0)
         {
             blueFlagTaken = true;
-            blueFlagCarrierColor = gPlayer[p].at2ea & 3;
+            blueFlagCarrierColor = gPlayer[p].teamId & 3;
         }
-        if ((gPlayer[p].at90 & 2) != 0)
+        if ((gPlayer[p].hasFlag & 2) != 0)
         {
             redFlagTaken = true;
-            redFlagCarrierColor = gPlayer[p].at2ea & 3;
+            redFlagCarrierColor = gPlayer[p].teamId & 3;
         }
     }
 
-    bool meHaveBlueFlag = gMe->at90 & 1;
+    bool meHaveBlueFlag = gMe->hasFlag & 1;
     DrawStatMaskedSprite(meHaveBlueFlag ? 3558 : 3559, 320, 75, 0, 10, 512, 65536 * 0.35);
     if (gBlueFlagDropped)
         DrawStatMaskedSprite(2332, 305, 83, 0, 10, 512, 65536);
@@ -1467,7 +1489,7 @@ void viewDrawCtfHud(ClockTicks arg)
         DrawStatMaskedSprite(4097, 307, 77, 0, blueFlagCarrierColor ? 2 : 10, 512, 65536);
     flashTeamScore(arg, 0, true);
 
-    bool meHaveRedFlag = gMe->at90 & 2;
+    bool meHaveRedFlag = gMe->hasFlag & 2;
     DrawStatMaskedSprite(meHaveRedFlag ? 3558 : 3559, 320, 110, 0, 2, 512, 65536 * 0.35);
     if (gRedFlagDropped)
         DrawStatMaskedSprite(2332, 305, 117, 0, 2, 512, 65536);
@@ -1485,7 +1507,7 @@ void UpdateStatusBar(ClockTicks arg)
 
     if (gGameOptions.nGameType == 3)
     {
-        if (pPlayer->at2ea & 1)
+        if (pPlayer->teamId & 1)
             nPalette = 7;
         else
             nPalette = 10;
@@ -1497,43 +1519,43 @@ void UpdateStatusBar(ClockTicks arg)
     {
         DrawStatMaskedSprite(2169, 12, 195, 0, 0, 256, (int)(65536*0.56));
         DrawStatNumber("%d", pXSprite->health>>4, kSBarNumberHealth, 28, 187, 0, 0, 256);
-        if (pPlayer->at33e[1])
+        if (pPlayer->armor[1])
         {
             DrawStatMaskedSprite(2578, 70, 186, 0, 0, 256, (int)(65536*0.5));
-            DrawStatNumber("%3d", pPlayer->at33e[1]>>4, kSBarNumberArmor2, 83, 187, 0, 0, 256, (int)(65536*0.65));
+            DrawStatNumber("%3d", pPlayer->armor[1]>>4, kSBarNumberArmor2, 83, 187, 0, 0, 256, (int)(65536*0.65));
         }
-        if (pPlayer->at33e[0])
+        if (pPlayer->armor[0])
         {
             DrawStatMaskedSprite(2586, 112, 195, 0, 0, 256, (int)(65536*0.5));
-            DrawStatNumber("%3d", pPlayer->at33e[0]>>4, kSBarNumberArmor1, 125, 187, 0, 0, 256, (int)(65536*0.65));
+            DrawStatNumber("%3d", pPlayer->armor[0]>>4, kSBarNumberArmor1, 125, 187, 0, 0, 256, (int)(65536*0.65));
         }
-        if (pPlayer->at33e[2])
+        if (pPlayer->armor[2])
         {
             DrawStatMaskedSprite(2602, 155, 196, 0, 0, 256, (int)(65536*0.5));
-            DrawStatNumber("%3d", pPlayer->at33e[2]>>4, kSBarNumberArmor3, 170, 187, 0, 0, 256, (int)(65536*0.65));
+            DrawStatNumber("%3d", pPlayer->armor[2]>>4, kSBarNumberArmor3, 170, 187, 0, 0, 256, (int)(65536*0.65));
         }
 
         DrawPackItemInStatusBar2(pPlayer, 225, 194, 240, 187, 512, (int)(65536*0.7));
 
-        if (pPlayer->atbd && pPlayer->atc7 != -1)
+        if (pPlayer->curWeapon && pPlayer->weaponAmmo != -1)
         {
-            int num = pPlayer->at181[pPlayer->atc7];
-            if (pPlayer->atc7 == 6)
+            int num = pPlayer->ammoCount[pPlayer->weaponAmmo];
+            if (pPlayer->weaponAmmo == 6)
                 num /= 10;
-            if ((unsigned int)gAmmoIcons[pPlayer->atc7].nTile < kMaxTiles)
-                DrawStatMaskedSprite(gAmmoIcons[pPlayer->atc7].nTile, 304, 192+gAmmoIcons[pPlayer->atc7].nYOffs,
-                    0, 0, 512, gAmmoIcons[pPlayer->atc7].nScale);
+            if ((unsigned int)gAmmoIcons[pPlayer->weaponAmmo].nTile < kMaxTiles)
+                DrawStatMaskedSprite(gAmmoIcons[pPlayer->weaponAmmo].nTile, 304, 192+gAmmoIcons[pPlayer->weaponAmmo].nYOffs,
+                    0, 0, 512, gAmmoIcons[pPlayer->weaponAmmo].nScale);
             DrawStatNumber("%3d", num, kSBarNumberAmmo, 267, 187, 0, 0, 512);
         }
 
         for (int i = 0; i < 6; i++)
         {
-            if (pPlayer->at88[i+1])
+            if (pPlayer->hasKey[i+1])
                 DrawStatMaskedSprite(2552+i, 260+10*i, 170, 0, 0, 512, (int)(65536*0.25));
         }
 
-        if (pPlayer->at1ba)
-            TileHGauge(2260, 124, 175-10, pPlayer->at1ba, 65536);
+        if (pPlayer->throwPower)
+            TileHGauge(2260, 124, 175-10, pPlayer->throwPower, 65536);
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2-30);
         viewDrawStats(pPlayer, 2, 140);
@@ -1541,8 +1563,8 @@ void UpdateStatusBar(ClockTicks arg)
     }
     else if (gViewSize <= 2)
     {
-        if (pPlayer->at1ba)
-            TileHGauge(2260, 124, 175, pPlayer->at1ba, 65536);
+        if (pPlayer->throwPower)
+            TileHGauge(2260, 124, 175, pPlayer->throwPower, 65536);
         else
             viewDrawPack(pPlayer, 166, 200-tilesiz[2201].y/2);
     }
@@ -1553,28 +1575,28 @@ void UpdateStatusBar(ClockTicks arg)
         {
             DrawStatNumber("%3d", pXSprite->health>>4, 2190, 8, 183, 0, 0, 256);
         }
-        if (pPlayer->atbd && pPlayer->atc7 != -1)
+        if (pPlayer->curWeapon && pPlayer->weaponAmmo != -1)
         {
-            int num = pPlayer->at181[pPlayer->atc7];
-            if (pPlayer->atc7 == 6)
+            int num = pPlayer->ammoCount[pPlayer->weaponAmmo];
+            if (pPlayer->weaponAmmo == 6)
                 num /= 10;
             DrawStatNumber("%3d", num, 2240, 42, 183, 0, 0, 256);
         }
         DrawStatSprite(2173, 284, 187, 16, nPalette, 512);
-        if (pPlayer->at33e[1])
+        if (pPlayer->armor[1])
         {
-            TileHGauge(2207, 250, 175, pPlayer->at33e[1], 3200, 512);
-            DrawStatNumber("%3d", pPlayer->at33e[1]>>4, 2230, 255, 178, 0, 0, 512);
+            TileHGauge(2207, 250, 175, pPlayer->armor[1], 3200, 512);
+            DrawStatNumber("%3d", pPlayer->armor[1]>>4, 2230, 255, 178, 0, 0, 512);
         }
-        if (pPlayer->at33e[0])
+        if (pPlayer->armor[0])
         {
-            TileHGauge(2209, 250, 183, pPlayer->at33e[0], 3200, 512);
-            DrawStatNumber("%3d", pPlayer->at33e[0]>>4, 2230, 255, 186, 0, 0, 512);
+            TileHGauge(2209, 250, 183, pPlayer->armor[0], 3200, 512);
+            DrawStatNumber("%3d", pPlayer->armor[0]>>4, 2230, 255, 186, 0, 0, 512);
         }
-        if (pPlayer->at33e[2])
+        if (pPlayer->armor[2])
         {
-            TileHGauge(2208, 250, 191, pPlayer->at33e[2], 3200, 512);
-            DrawStatNumber("%3d", pPlayer->at33e[2]>>4, 2230, 255, 194, 0, 0, 512);
+            TileHGauge(2208, 250, 191, pPlayer->armor[2], 3200, 512);
+            DrawStatNumber("%3d", pPlayer->armor[2]>>4, 2230, 255, 194, 0, 0, 512);
         }
         DrawPackItemInStatusBar(pPlayer, 286, 186, 302, 183, 512);
 
@@ -1593,7 +1615,7 @@ void UpdateStatusBar(ClockTicks arg)
                 x = 73+(i>>1)*10;
                 nStat |= 256;
             }
-            if (pPlayer->at88[i+1])
+            if (pPlayer->hasKey[i+1])
                 DrawStatSprite(nTile, x, y, 0, 0, nStat);
 #if 0
             else
@@ -1612,10 +1634,10 @@ void UpdateStatusBar(ClockTicks arg)
         {
             DrawStatNumber("%3d", pXSprite->health>>4, 2190, 86, 183, 0, 0);
         }
-        if (pPlayer->atbd && pPlayer->atc7 != -1)
+        if (pPlayer->curWeapon && pPlayer->weaponAmmo != -1)
         {
-            int num = pPlayer->at181[pPlayer->atc7];
-            if (pPlayer->atc7 == 6)
+            int num = pPlayer->ammoCount[pPlayer->weaponAmmo];
+            if (pPlayer->weaponAmmo == 6)
                 num /= 10;
             DrawStatNumber("%3d", num, 2240, 216, 183, 0, 0);
         }
@@ -1623,10 +1645,10 @@ void UpdateStatusBar(ClockTicks arg)
         {
             int x = 135+((i-1)/3)*23;
             int y = 182+((i-1)%3)*6;
-            int num = pPlayer->at181[i];
+            int num = pPlayer->ammoCount[i];
             if (i == 6)
                 num /= 10;
-            if (i == pPlayer->atc7)
+            if (i == pPlayer->weaponAmmo)
             {
                 DrawStatNumber("%3d", num, 2230, x, y, -128, 10);
             }
@@ -1636,38 +1658,38 @@ void UpdateStatusBar(ClockTicks arg)
             }
         }
 
-        if (pPlayer->atc7 == 10)
+        if (pPlayer->weaponAmmo == 10)
         {
-            DrawStatNumber("%2d", pPlayer->at181[10], 2230, 291, 194, -128, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[10], 2230, 291, 194, -128, 10);
         }
         else
         {
-            DrawStatNumber("%2d", pPlayer->at181[10], 2230, 291, 194, 32, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[10], 2230, 291, 194, 32, 10);
         }
 
-        if (pPlayer->atc7 == 11)
+        if (pPlayer->weaponAmmo == 11)
         {
-            DrawStatNumber("%2d", pPlayer->at181[11], 2230, 309, 194, -128, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[11], 2230, 309, 194, -128, 10);
         }
         else
         {
-            DrawStatNumber("%2d", pPlayer->at181[11], 2230, 309, 194, 32, 10);
+            DrawStatNumber("%2d", pPlayer->ammoCount[11], 2230, 309, 194, 32, 10);
         }
 
-        if (pPlayer->at33e[1])
+        if (pPlayer->armor[1])
         {
-            TileHGauge(2207, 44, 174, pPlayer->at33e[1], 3200);
-            DrawStatNumber("%3d", pPlayer->at33e[1]>>4, 2230, 50, 177, 0, 0);
+            TileHGauge(2207, 44, 174, pPlayer->armor[1], 3200);
+            DrawStatNumber("%3d", pPlayer->armor[1]>>4, 2230, 50, 177, 0, 0);
         }
-        if (pPlayer->at33e[0])
+        if (pPlayer->armor[0])
         {
-            TileHGauge(2209, 44, 182, pPlayer->at33e[0], 3200);
-            DrawStatNumber("%3d", pPlayer->at33e[0]>>4, 2230, 50, 185, 0, 0);
+            TileHGauge(2209, 44, 182, pPlayer->armor[0], 3200);
+            DrawStatNumber("%3d", pPlayer->armor[0]>>4, 2230, 50, 185, 0, 0);
         }
-        if (pPlayer->at33e[2])
+        if (pPlayer->armor[2])
         {
-            TileHGauge(2208, 44, 190, pPlayer->at33e[2], 3200);
-            DrawStatNumber("%3d", pPlayer->at33e[2]>>4, 2230, 50, 193, 0, 0);
+            TileHGauge(2208, 44, 190, pPlayer->armor[2], 3200);
+            DrawStatNumber("%3d", pPlayer->armor[2]>>4, 2230, 50, 193, 0, 0);
         }
         sprintf(gTempStr, "v%s", GetVersionString());
         viewDrawText(3, gTempStr, 20, 191, 32, 0, 1, 0);
@@ -1677,22 +1699,20 @@ void UpdateStatusBar(ClockTicks arg)
             int nTile = 2220+i;
             int x = 73+(i&1)*173;
             int y = 171+(i>>1)*11;
-            if (pPlayer->at88[i+1])
+            if (pPlayer->hasKey[i+1])
                 DrawStatSprite(nTile, x, y);
             else
                 DrawStatSprite(nTile, x, y, 40, 5);
         }
-        DrawStatMaskedSprite(2202, 118, 185, pPlayer->at2e ? 16 : 40);
-        DrawStatMaskedSprite(2202, 201, 185, pPlayer->at2e ? 16 : 40);
-        if (pPlayer->at1ba)
+        DrawStatMaskedSprite(2202, 118, 185, pPlayer->isRunning ? 16 : 40);
+        DrawStatMaskedSprite(2202, 201, 185, pPlayer->isRunning ? 16 : 40);
+        if (pPlayer->throwPower)
         {
-            TileHGauge(2260, 124, 175, pPlayer->at1ba, 65536);
+            TileHGauge(2260, 124, 175, pPlayer->throwPower, 65536);
         }
         viewDrawStats(pPlayer, 2, 140);
         viewDrawPowerUps(pPlayer);
     }
-
-    viewDrawMapTitle();
 
     if (gGameOptions.nGameType < 1) return;
 
@@ -1846,6 +1866,8 @@ void viewDrawInterface(ClockTicks arg)
     UpdateStatusBar(arg);
 }
 
+static fix16_t gCameraAng;
+
 uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite)
 {
     int nTSprite = spritesortcnt;
@@ -1870,9 +1892,8 @@ uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite)
     }
     if (videoGetRenderMode() >= REND_POLYMOST)
     {
-        int nAngle = getangle(pTSprite->x-gView->pSprite->x, pTSprite->y-gView->pSprite->y);
-        pTSprite->x += Cos(nAngle)>>25;
-        pTSprite->y += Sin(nAngle)>>25;
+        pTSprite->x += Cos(gCameraAng)>>25;
+        pTSprite->y += Sin(gCameraAng)>>25;
     }
     return &tsprite[nTSprite];
 }
@@ -2144,17 +2165,31 @@ uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     {
         dassert(pTSprite->type >= kDudePlayer1 && pTSprite->type <= kDudePlayer8);
         PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
-        if (gWeaponIcon[pPlayer->atbd].nTile < 0) break;
+        WEAPONICON weaponIcon = gWeaponIcon[pPlayer->curWeapon];
+        const int nTile = weaponIcon.nTile;
+        if (nTile < 0) break;
         uspritetype *pNSprite = viewInsertTSprite(pTSprite->sectnum, 32767, pTSprite);
-        int top, bottom;
-        GetSpriteExtents((spritetype *)pTSprite, &top, &bottom);
         pNSprite->x = pTSprite->x;
         pNSprite->y = pTSprite->y;
         pNSprite->z = pTSprite->z-(32<<8);
-        pNSprite->picnum = gWeaponIcon[pPlayer->atbd].nTile;
+        pNSprite->picnum = nTile;
         pNSprite->shade = pTSprite->shade;
-        pNSprite->xrepeat = gWeaponIcon[pPlayer->atbd].xRepeat;
-        pNSprite->yrepeat = gWeaponIcon[pPlayer->atbd].yRepeat;
+        pNSprite->xrepeat = 32;
+        pNSprite->yrepeat = 32;
+        const int nVoxel = voxelIndex[nTile];
+        if (gShowWeapon == 2 && usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && nVoxel != -1)
+        {
+            pNSprite->cstat |= 48;
+            pNSprite->cstat &= ~8;
+            pNSprite->picnum = nVoxel;
+            pNSprite->z -= weaponIcon.zOffset<<8;
+            const int lifeLeech = 9;
+            if (pPlayer->curWeapon == lifeLeech)
+            {
+                pNSprite->x -=  mulscale30(128, Cos(pNSprite->ang));
+                pNSprite->y -= mulscale30(128, Sin(pNSprite->ang));
+            }
+        }
         break;
     }
     }
@@ -2175,11 +2210,11 @@ static void viewApplyDefaultPal(uspritetype *pTSprite, sectortype const *pSector
 
 void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t smooth)
 {
-    UNREFERENCED_PARAMETER(cA);
     UNREFERENCED_PARAMETER(smooth);
     dassert(spritesortcnt <= kMaxViewSprites);
+    gCameraAng = cA;
     int nViewSprites = spritesortcnt;
-    for (int nTSprite = nViewSprites-1; nTSprite >= 0; nTSprite--)
+    for (int nTSprite = spritesortcnt-1; nTSprite >= 0; nTSprite--)
     {
         uspritetype *pTSprite = &tsprite[nTSprite];
         //int nXSprite = pTSprite->extra;
@@ -2452,7 +2487,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 case kMissileFlareAlt:
                     if (pTSprite->statnum == kStatFlare) {
                         dassert(pTXSprite != NULL);
-                        if (pTXSprite->target == gView->at5b) {
+                        if (pTXSprite->target == gView->nSprite) {
                             pTSprite->xrepeat = 0;
                             break;
                         }
@@ -2487,51 +2522,47 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     break;
                 }
             }
-            viewApplyDefaultPal(pTSprite, pSector);
-            if (powerupCheck(gView, 25) > 0)
-            {
-                pTSprite->shade = -128;
-            }
-            if (IsPlayerSprite((spritetype *)pTSprite))
-            {
+
+
+            
+
+            if (pXSector && pXSector->color) pTSprite->pal = pSector->floorpal;
+            if (powerupCheck(gView, kPwUpBeastVision) > 0) pTSprite->shade = -128;
+
+            if (IsPlayerSprite((spritetype *)pTSprite)) {
+                viewApplyDefaultPal(pTSprite, pSector);
+
                 PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
-                if (powerupCheck(pPlayer, 13) && !powerupCheck(gView, 25))
-                {
+                if (powerupCheck(pPlayer, kPwUpShadowCloak) && !powerupCheck(gView, kPwUpBeastVision)) {
                     pTSprite->cstat |= 2;
                     pTSprite->pal = 5;
-                }
-                else if (powerupCheck(pPlayer, 14))
-                {
+                }  else if (powerupCheck(pPlayer, kPwUpDeathMask)) {
                     pTSprite->shade = -128;
                     pTSprite->pal = 5;
+                } else if (powerupCheck(pPlayer, kPwUpDoppleganger)) {
+                    pTSprite->pal = 11+(gView->teamId&3);
                 }
-                else if (powerupCheck(pPlayer, 23))
-                {
-                    pTSprite->pal = 11+(gView->at2ea&3);
-                }
-                if (powerupCheck(pPlayer, 24))
-                {
+                
+                if (powerupCheck(pPlayer, kPwUpReflectShots)) {
                     viewAddEffect(nTSprite, VIEW_EFFECT_13);
                 }
-                if (gShowWeapon && gGameOptions.nGameType > 0 && gView)
-                {
+                
+                if (gShowWeapon && gGameOptions.nGameType > 0 && gView) {
                     viewAddEffect(nTSprite, VIEW_EFFECT_12);
                 }
-                if (pPlayer->at37b && (gView != pPlayer || gViewPos != VIEWPOS_0))
-                {
+                
+                if (pPlayer->flashEffect && (gView != pPlayer || gViewPos != VIEWPOS_0)) {
                     uspritetype *pNTSprite = viewAddEffect(nTSprite, VIEW_EFFECT_14);
-                    if (pNTSprite)
-                    {
-                        POSTURE *pPosture = &gPosture[pPlayer->at5f][pPlayer->at2f];
-                        pNTSprite->x += mulscale28(pPosture->at30, Cos(pTSprite->ang));
-                        pNTSprite->y += mulscale28(pPosture->at30, Sin(pTSprite->ang));
-                        pNTSprite->z = pPlayer->pSprite->z-pPosture->at2c;
+                    if (pNTSprite) {
+                        POSTURE *pPosture = &gPosture[pPlayer->lifeMode][pPlayer->posture];
+                        pNTSprite->x += mulscale28(pPosture->zOffset, Cos(pTSprite->ang));
+                        pNTSprite->y += mulscale28(pPosture->zOffset, Sin(pTSprite->ang));
+                        pNTSprite->z = pPlayer->pSprite->z-pPosture->xOffset;
                     }
                 }
-                if (pPlayer->at90 > 0 && gGameOptions.nGameType == 3)
-                {
-                    if (pPlayer->at90&1)
-                    {
+                
+                if (pPlayer->hasFlag > 0 && gGameOptions.nGameType == 3) {
+                    if (pPlayer->hasFlag&1)  {
                         uspritetype *pNTSprite = viewAddEffect(nTSprite, VIEW_EFFECT_16);
                         if (pNTSprite)
                         {
@@ -2539,8 +2570,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                             pNTSprite->cstat |= 4;
                         }
                     }
-                    if (pPlayer->at90&2)
-                    {
+                    if (pPlayer->hasFlag&2) {
                         uspritetype *pNTSprite = viewAddEffect(nTSprite, VIEW_EFFECT_16);
                         if (pNTSprite)
                         {
@@ -2550,8 +2580,8 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     }
                 }
             }
-            if (pTSprite->owner != gView->pSprite->index || gViewPos != VIEWPOS_0)
-            {
+            
+            if (pTSprite->owner != gView->pSprite->index || gViewPos != VIEWPOS_0) {
                 if (getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) >= cZ)
                 {
                     viewAddEffect(nTSprite, VIEW_EFFECT_0);
@@ -2758,10 +2788,10 @@ void viewBurnTime(int gScale)
 
 // by NoOne: show warning msgs in game instead of throwing errors (in some cases)
 void viewSetSystemMessage(const char* pMessage, ...) {
-    char buffer[256]; va_list args; va_start(args, pMessage);
+    char buffer[1024]; va_list args; va_start(args, pMessage);
     vsprintf(buffer, pMessage, args);
-
-    OSD_Printf("%s\n", buffer);
+    
+    OSD_Printf("%s\n", buffer); // print it also in console
     gGameMessageMgr.Add(buffer, 15, 7, MESSAGE_PRIORITY_SYSTEM);
 }
 
@@ -2852,21 +2882,21 @@ void UpdateDacs(int nPalette, bool bNoTint)
         }
         if (!bNoTint)
         {
-            nRed += gView->at377;
-            nGreen += gView->at377;
-            nBlue -= gView->at377;
+            nRed += gView->pickupEffect;
+            nGreen += gView->pickupEffect;
+            nBlue -= gView->pickupEffect;
 
-            nRed += ClipHigh(gView->at366, 85)*2;
-            nGreen -= ClipHigh(gView->at366, 85)*3;
-            nBlue -= ClipHigh(gView->at366, 85)*3;
+            nRed += ClipHigh(gView->painEffect, 85)*2;
+            nGreen -= ClipHigh(gView->painEffect, 85)*3;
+            nBlue -= ClipHigh(gView->painEffect, 85)*3;
 
-            nRed -= gView->at36a;
-            nGreen -= gView->at36a;
-            nBlue -= gView->at36a;
+            nRed -= gView->blindEffect;
+            nGreen -= gView->blindEffect;
+            nBlue -= gView->blindEffect;
 
-            nRed -= gView->at36e>>6;
-            nGreen -= gView->at36e>>5;
-            nBlue -= gView->at36e>>6;
+            nRed -= gView->chokeEffect>>6;
+            nGreen -= gView->chokeEffect>>5;
+            nBlue -= gView->chokeEffect>>6;
         }
         nRed = ClipRange(nRed, -255, 255);
         nGreen = ClipRange(nGreen, -255, 255);
@@ -2890,21 +2920,21 @@ void UpdateDacs(int nPalette, bool bNoTint)
                 int nRed = baseDAC[i].red;
                 int nGreen = baseDAC[i].green;
                 int nBlue = baseDAC[i].blue;
-                nRed += gView->at377;
-                nGreen += gView->at377;
-                nBlue -= gView->at377;
+                nRed += gView->pickupEffect;
+                nGreen += gView->pickupEffect;
+                nBlue -= gView->pickupEffect;
 
-                nRed += ClipHigh(gView->at366, 85)*2;
-                nGreen -= ClipHigh(gView->at366, 85)*3;
-                nBlue -= ClipHigh(gView->at366, 85)*3;
+                nRed += ClipHigh(gView->painEffect, 85)*2;
+                nGreen -= ClipHigh(gView->painEffect, 85)*3;
+                nBlue -= ClipHigh(gView->painEffect, 85)*3;
 
-                nRed -= gView->at36a;
-                nGreen -= gView->at36a;
-                nBlue -= gView->at36a;
+                nRed -= gView->blindEffect;
+                nGreen -= gView->blindEffect;
+                nBlue -= gView->blindEffect;
 
-                nRed -= gView->at36e>>6;
-                nGreen -= gView->at36e>>5;
-                nBlue -= gView->at36e>>6;
+                nRed -= gView->chokeEffect>>6;
+                nGreen -= gView->chokeEffect>>5;
+                nBlue -= gView->chokeEffect>>6;
 
                 newDAC[i].red = ClipRange(nRed, 0, 255);
                 newDAC[i].green = ClipRange(nGreen, 0, 255);
@@ -2936,7 +2966,7 @@ void viewUpdateDelirium(void)
     deliriumTurnO = deliriumTurn;
     deliriumPitchO = deliriumPitch;
 	int powerCount;
-	if ((powerCount = powerupCheck(gView,28)) != 0)
+	if ((powerCount = powerupCheck(gView, kPwUpDeliriumShroom)) != 0)
 	{
 		int tilt1 = 170, tilt2 = 170, pitch = 20;
         int timer = (int)gFrameClock*4;
@@ -2982,9 +3012,9 @@ void viewUpdateShake(void)
     shakeZ = 0;
     shakeBobX = 0;
     shakeBobY = 0;
-    if (gView->at35a)
+    if (gView->flickerEffect)
     {
-        int nValue = ClipHigh(gView->at35a * 8, 2000);
+        int nValue = ClipHigh(gView->flickerEffect * 8, 2000);
         shakeHoriz += QRandom2(nValue >> 8);
         shakeAngle += QRandom2(nValue >> 8);
         shakeX += QRandom2(nValue >> 4);
@@ -2993,9 +3023,9 @@ void viewUpdateShake(void)
         shakeBobX += QRandom2(nValue);
         shakeBobY += QRandom2(nValue);
     }
-    if (gView->at37f)
+    if (gView->quakeEffect)
     {
-        int nValue = ClipHigh(gView->at37f * 8, 2000);
+        int nValue = ClipHigh(gView->quakeEffect * 8, 2000);
         shakeHoriz += QRandom2(nValue >> 8);
         shakeAngle += QRandom2(nValue >> 8);
         shakeX += QRandom2(nValue >> 4);
@@ -3050,8 +3080,7 @@ void viewDrawScreen(void)
 #ifdef USE_OPENGL
     polymostcenterhoriz = defaultHoriz;
 #endif
-
-    timerUpdate();
+    gameHandleEvents();
     ClockTicks delta = totalclock - lastUpdate;
     if (delta < 0)
         delta = 0;
@@ -3085,15 +3114,15 @@ void viewDrawScreen(void)
         renderSetAspect(Blrintf(float(viewingrange) * tanf(gFov * (PI/360.f))), yxaspect);
         int cX = gView->pSprite->x;
         int cY = gView->pSprite->y;
-        int cZ = gView->at67;
-        int zDelta = gView->at6f-gView->at67-(12<<8);
+        int cZ = gView->zView;
+        int zDelta = gView->zWeapon-gView->zView-(12<<8);
         fix16_t cA = gView->q16ang;
         fix16_t q16horiz = gView->q16horiz;
         fix16_t q16slopehoriz = gView->q16slopehoriz;
-        int v74 = gView->at43;
-        int v8c = gView->at3f;
-        int v4c = gView->at53;
-        int v48 = gView->at4f;
+        int v74 = gView->bobWidth;
+        int v8c = gView->bobHeight;
+        int v4c = gView->swayWidth;
+        int v48 = gView->swayHeight;
         int nSectnum = gView->pSprite->sectnum;
         if (gViewInterpolate)
         {
@@ -3136,7 +3165,7 @@ void viewDrawScreen(void)
         cZ += shakeZ;
         v4c += shakeBobX;
         v48 += shakeBobY;
-        q16horiz += fix16_from_int(mulscale30(0x40000000-Cos(gView->at35e<<2), 30));
+        q16horiz += fix16_from_int(mulscale30(0x40000000-Cos(gView->tiltEffect<<2), 30));
         if (gViewPos == 0)
         {
             if (gViewHBobbing)
@@ -3164,10 +3193,10 @@ void viewDrawScreen(void)
         int v78 = interpolateang(gScreenTiltO, gScreenTilt, gInterpolate);
         char v14 = 0;
         char v10 = 0;
-        bool bDelirium = powerupCheck(gView, 28) > 0;
+        bool bDelirium = powerupCheck(gView, kPwUpDeliriumShroom) > 0;
         static bool bDeliriumOld = false;
         int tiltcs, tiltdim;
-        char v4 = powerupCheck(gView, 21) > 0;
+        char v4 = powerupCheck(gView, kPwUpCrystalBall) > 0;
 #ifdef USE_OPENGL
         renderSetRollAngle(0);
 #endif
@@ -3227,22 +3256,22 @@ void viewDrawScreen(void)
             renderSetAspect(65536, 78643);
             int vd8 = pOther->pSprite->x;
             int vd4 = pOther->pSprite->y;
-            int vd0 = pOther->at67;
+            int vd0 = pOther->zView;
             int vcc = pOther->pSprite->sectnum;
             int v50 = pOther->pSprite->ang;
             int v54 = 0;
-            if (pOther->at35a)
+            if (pOther->flickerEffect)
             {
-                int nValue = ClipHigh(pOther->at35a*8, 2000);
+                int nValue = ClipHigh(pOther->flickerEffect*8, 2000);
                 v54 += QRandom2(nValue>>8);
                 v50 += QRandom2(nValue>>8);
                 vd8 += QRandom2(nValue>>4);
                 vd4 += QRandom2(nValue>>4);
                 vd0 += QRandom2(nValue);
             }
-            if (pOther->at37f)
+            if (pOther->quakeEffect)
             {
-                int nValue = ClipHigh(pOther->at37f*8, 2000);
+                int nValue = ClipHigh(pOther->quakeEffect*8, 2000);
                 v54 += QRandom2(nValue >> 8);
                 v50 += QRandom2(nValue >> 8);
                 vd8 += QRandom2(nValue >> 4);
@@ -3257,7 +3286,7 @@ void viewDrawScreen(void)
             }
             memcpy(bakMirrorGotpic, gotpic+510, 2);
             memcpy(gotpic+510, otherMirrorGotpic, 2);
-            g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->at362, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
+            g_visibility = (int32_t)(ClipLow(gVisibility-32*pOther->visibility, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
             int vc4, vc8;
             getzsofslope(vcc, vd8, vd4, &vc8, &vc4);
             if (vd0 >= vc4)
@@ -3327,7 +3356,7 @@ RORHACKOTHER:
             }
             nSprite = nextspritestat[nSprite];
         }
-        g_visibility = (int32_t)(ClipLow(gVisibility - 32 * gView->at362 - unk, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
+        g_visibility = (int32_t)(ClipLow(gVisibility - 32 * gView->visibility - unk, 0) * (numplayers > 1 ? 1.f : r_ambientlightrecip));
         cA = (cA + interpolateangfix16(fix16_from_int(deliriumTurnO), fix16_from_int(deliriumTurn), gInterpolate)) & 0x7ffffff;
         int vfc, vf8;
         getzsofslope(nSectnum, cX, cY, &vfc, &vf8);
@@ -3457,18 +3486,22 @@ RORHACK:
             }
             cX = (v4c>>8)+160;
             cY = (v48>>8)+220+(zDelta>>7);
-            int nShade = sector[nSectnum].floorshade;
-            int nPalette = 0;
-            if (sector[gView->pSprite->sectnum].extra > 0)
-            {
+            int nShade = sector[nSectnum].floorshade; int nPalette = 0;
+            if (sector[gView->pSprite->sectnum].extra > 0) {
                 sectortype *pSector = &sector[gView->pSprite->sectnum];
                 XSECTOR *pXSector = &xsector[pSector->extra];
                 if (pXSector->color)
-                {
                     nPalette = pSector->floorpal;
-                }
             }
-            WeaponDraw(gView, nShade, cX, cY, nPalette);
+            
+            if (gView->sceneQav < 0) WeaponDraw(gView, nShade, cX, cY, nPalette);
+            else if (gView->pXSprite->health > 0) qavSceneDraw(gView, nShade, cX, cY, nPalette);
+            else {
+                gView->sceneQav = gView->weaponQav = -1;
+                gView->weaponTimer = gView->curWeapon = 0;
+            }
+           
+
         }
         if (gViewPos == 0 && gView->pXSprite->burnTime > 60)
         {
@@ -3486,7 +3519,7 @@ RORHACK:
                 rotatesprite(212<<16, 77<<16, 65536, 0, 2347, 32, 0, 512+19, gViewX0, gViewY0, gViewX1, gViewY1);
             }
         }
-        if (powerupCheck(gView, 39) > 0)
+        if (powerupCheck(gView, kPwUpAsbestArmor) > 0)
         {
             rotatesprite(0, 200<<16, 65536, 0, 2358, 0, 0, 256+22, gViewX0, gViewY0, gViewX1, gViewY1);
             rotatesprite(320<<16, 200<<16, 65536, 1024, 2358, 0, 0, 512+18, gViewX0, gViewY0, gViewX1, gViewY1);
@@ -3501,32 +3534,15 @@ RORHACK:
             rotatesprite(280<<16, 35<<16, 53248, 0, 1683, v10, 0, 512+35, gViewX0, gViewY0, gViewX1, gViewY1);
             renderSetAspect(viewingRange, yxAspect);
         }
-        if (powerupCheck(gView, 14) > 0)
-        {
-            nPalette = 4;
-        }
-        else if(powerupCheck(gView, 24) > 0)
-        {
-            nPalette = 1;
-        }
-        else if (gView->at87)
-        {
-            if (gView->nWaterPal)
-                nPalette = gView->nWaterPal;
-            else
-            {
-                if (gView->pXSprite->medium == 1)
-                {
-                    nPalette = 1;
-                }
-                else if (gView->pXSprite->medium == 2)
-                {
-                    nPalette = 3;
-                }
-                else
-                {
-                    nPalette = 2;
-                }
+        
+        if (powerupCheck(gView, kPwUpDeathMask) > 0) nPalette = 4;
+        else if(powerupCheck(gView, kPwUpReflectShots) > 0) nPalette = 1;
+        else if (gView->isUnderwater) {
+            if (gView->nWaterPal) nPalette = gView->nWaterPal;
+            else {
+                if (gView->pXSprite->medium == kMediumWater) nPalette = 1;
+                else if (gView->pXSprite->medium == kMediumGoo) nPalette = 3;
+                else nPalette = 2;
             }
         }
     }
@@ -3535,15 +3551,15 @@ RORHACK:
         gViewMap.sub_25DB0(gView->pSprite);
     }
     viewDrawInterface(delta);
-    int zn = ((gView->at6f-gView->at67-(12<<8))>>7)+220;
+    int zn = ((gView->zWeapon-gView->zView-(12<<8))>>7)+220;
     PLAYER *pPSprite = &gPlayer[gMe->pSprite->type-kDudePlayer1];
-    if (pPSprite->at376 == 1)
+    if (pPSprite->hand == 1)
     {
         //static int lastClock;
         gChoke.sub_84110(160, zn);
         //if ((gGameClock % 5) == 0 && gGameClock != lastClock)
         //{
-        //    gChoke.at1c(pPSprite);
+        //    gChoke.swayV(pPSprite);
         //}
         //lastClock = gGameClock;
     }
@@ -3584,6 +3600,8 @@ RORHACK:
         printext256(fX-strlen(gTempStr)*4, fY, 31, -1, gTempStr, 1);
     }
 #endif
+    viewDrawMapTitle();
+    viewDrawAimedPlayerName();
     viewPrintFPS();
     if (gPaused)
     {
@@ -3591,7 +3609,7 @@ RORHACK:
     }
     else if (gView != gMe)
     {
-        sprintf(gTempStr, "] %s [", gProfile[gView->at57].name);
+        sprintf(gTempStr, "] %s [", gProfile[gView->nPlayer].name);
         viewDrawText(0, gTempStr, 160, 10, 0, 0, 1, 0);
     }
     if (errMsg[0])

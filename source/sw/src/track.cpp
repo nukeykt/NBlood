@@ -719,7 +719,7 @@ void
 SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 {
     int xlow, ylow, xhigh, yhigh;
-    short sp_num, next_sp_num, sn, startwall, endwall;
+    short sp_num, next_sp_num, startwall, endwall;
     int i, k, j;
     SPRITEp BoundSprite;
     SWBOOL FoundOutsideLoop = FALSE, FoundSector = FALSE;
@@ -839,7 +839,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
             sop->num_sectors++;
         }
 
-        ASSERT(sop->num_sectors < SIZ(SectorObject[0].sector));
+        ASSERT((uint16_t)sop->num_sectors < SIZ(SectorObject[0].sector));
     }
 
     //
@@ -865,8 +865,9 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
             // each wall has this set - for collision detection
             SET(wall[k].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
-            if (wall[k].nextwall >= 0)
-                SET(wall[wall[k].nextwall].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
+            uint16_t const nextwall = wall[k].nextwall;
+            if (nextwall < MAXWALLS)
+                SET(wall[nextwall].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
         }
     }
 
@@ -959,6 +960,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
                 // sector
 
                 // place all sprites on list
+                uint16_t sn;
                 for (sn = 0; sn < (int)SIZ(sop->sp_num); sn++)
                 {
                     if (sop->sp_num[sn] == -1)
@@ -1421,7 +1423,7 @@ PostSetupSectorObject(void)
 
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == MAXLONG)
+        if (sop->xmid == INT32_MAX)
             continue;
         FindMainSector(sop);
     }
@@ -1435,7 +1437,7 @@ PlayerOnObject(short sectnum_match)
     SECTOR_OBJECTp sop;
 
     // place each sector object on the track
-    //for (i = 0; (SectorObject[i].xmid != MAXLONG) && (i < MAX_SECTOR_OBJECTS); i++)
+    //for (i = 0; (SectorObject[i].xmid != INT32_MAX) && (i < MAX_SECTOR_OBJECTS); i++)
     for (i = 0; (i < MAX_SECTOR_OBJECTS); i++)
     {
         sop = &SectorObject[i];
@@ -1470,7 +1472,7 @@ PlaceSectorObjectsOnTracks(void)
         TRACK_POINTp tpoint = NULL;
         short spnum, next_spnum;
 
-        if (sop->xmid == MAXLONG)
+        if (sop->xmid == INT32_MAX)
             continue;
 
 
@@ -1490,7 +1492,7 @@ PlaceSectorObjectsOnTracks(void)
             }
         }
 
-        ASSERT(sop->num_walls < SIZ(sop->xorig));
+        ASSERT((uint16_t)sop->num_walls < SIZ(sop->xorig));
 
         if (sop->track <= -1)
             continue;
@@ -1686,14 +1688,14 @@ MovePoints(SECTOR_OBJECTp sop, short delta_ang, int nx, int ny)
     short i, nexti, rot_ang;
     SWBOOL PlayerMove = TRUE;
 
-    if (sop->xmid >= (int)MAXSO)
+    if (sop->xmid >= MAXSO)
         PlayerMove = FALSE;
 
     // move along little midpoint
     sop->xmid += BOUND_4PIX(nx);
     sop->ymid += BOUND_4PIX(ny);
 
-    if (sop->xmid >= (int)MAXSO)
+    if (sop->xmid >= MAXSO)
         PlayerMove = FALSE;
 
     // move child sprite along also
@@ -1875,7 +1877,7 @@ PlayerPart:
 
             // Does not necessarily move with the sector so must accout for
             // moving across sectors
-            if (sop->xmid < (int)MAXSO) // special case for operating SO's
+            if (sop->xmid < MAXSO) // special case for operating SO's
                 setspritez(sop->sp_num[i], (vec3_t *)sp);
         }
 
@@ -1895,7 +1897,7 @@ PlayerPart:
             // update here AFTER sectors/player has been manipulated
             // prevents you from falling into map HOLEs created by moving
             // Sectors and sprites around.
-            //if (sop->xmid < (int)MAXSO)
+            //if (sop->xmid < MAXSO)
             COVERupdatesector(pp->posx, pp->posy, &pp->cursectnum);
 
             // in case you are in a whirlpool
@@ -2070,7 +2072,7 @@ DetectSectorObject(SECTORp sectph)
     // move all points to nx,ny
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == MAXLONG /*|| sop->xmid == MAXSO*/)
+        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
             continue;
 
         for (sectp = sop->sectp, j = 0; *sectp; sectp++, j++)
@@ -2098,7 +2100,7 @@ DetectSectorObjectByWall(WALLp wph)
     // move all points to nx,ny
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == MAXLONG /*|| sop->xmid == MAXSO*/)
+        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
             continue;
 
         for (sectp = sop->sectp, j = 0; *sectp; sectp++, j++)
@@ -2111,7 +2113,8 @@ DetectSectorObjectByWall(WALLp wph)
                 // if outer wall check the NEXTWALL also
                 if (TEST(wp->extra, WALLFX_LOOP_OUTER))
                 {
-                    if (wph == &wall[wp->nextwall])
+                    uint16_t const nextwall = wp->nextwall;
+                    if (nextwall < MAXWALLS && wph == &wall[nextwall])
                         return sop;
                 }
 

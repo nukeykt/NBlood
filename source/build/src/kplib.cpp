@@ -209,7 +209,7 @@ static void suckbitsnextblock()
     nbitpos = B_BIG32(B_UNBUF32(&filptr[8]));
     nfilptr = &filptr[nbitpos+12];
     B_BUF32(&fakebuf[0], B_UNBUF32(&filptr[0])); //Copy last dword of IDAT chunk
-    if (B_UNBUF32(&filptr[12]) == B_LITTLE32(0x54414449)) //Copy 1st dword of next IDAT chunk
+    if (B_UNBUF32(&filptr[12]) == B_LITTLE32(0x54414449u)) //Copy 1st dword of next IDAT chunk
         B_BUF32(&fakebuf[4], B_UNBUF32(&filptr[16]));
     filptr = &fakebuf[4]; bitpos -= 32;
 }
@@ -721,7 +721,7 @@ static int32_t kpngrend(const char *kfilebuf, int32_t kfilength,
 
     if (!pnginited) { pnginited = 1; initpngtables(); }
 
-    if ((B_UNBUF32(&kfilebuf[0]) != B_LITTLE32(0x474e5089)) || (B_UNBUF32(&kfilebuf[4]) != B_LITTLE32(0x0a1a0a0d)))
+    if ((B_UNBUF32(&kfilebuf[0]) != B_LITTLE32(0x474e5089u)) || (B_UNBUF32(&kfilebuf[4]) != B_LITTLE32(0x0a1a0a0du)))
         return -1; //"Invalid PNG file signature"
     filptr = (uint8_t const *)&kfilebuf[8];
 
@@ -732,7 +732,7 @@ static int32_t kpngrend(const char *kfilebuf, int32_t kfilength,
         leng = B_BIG32(B_UNBUF32(&filptr[0])); i = B_UNBUF32(&filptr[4]);
         filptr = &filptr[8];
 
-        if (i == (int32_t)B_LITTLE32(0x52444849)) //IHDR (must be first)
+        if (i == B_LITTLE32(0x52444849)) //IHDR (must be first)
         {
             xsiz = B_BIG32(B_UNBUF32(&filptr[0])); if (xsiz <= 0) return -1;
             ysiz = B_BIG32(B_UNBUF32(&filptr[4])); if (ysiz <= 0) return -1;
@@ -751,12 +751,12 @@ static int32_t kpngrend(const char *kfilebuf, int32_t kfilength,
                 for (i=0; i<paleng; i++,j+=k) palcol[i] = B_LITTLE32(j);
             }
         }
-        else if (i == (int32_t)B_LITTLE32(0x45544c50)) //PLTE (must be before IDAT)
+        else if (i == B_LITTLE32(0x45544c50)) //PLTE (must be before IDAT)
         {
             paleng = leng/3;
             for (i=paleng-1; i>=0; i--) palcol[i] = B_LITTLE32((B_BIG32(B_UNBUF32(&filptr[i*3]))>>8)|0xff000000);
         }
-        else if (i == (int32_t)B_LITTLE32(0x44474b62)) //bKGD (must be after PLTE and before IDAT)
+        else if (i == B_LITTLE32(0x44474b62)) //bKGD (must be after PLTE and before IDAT)
         {
             switch (kcoltype)
             {
@@ -780,7 +780,7 @@ static int32_t kpngrend(const char *kfilebuf, int32_t kfilength,
             bakb = (bakcol&255);
             bakcol = B_LITTLE32(bakcol);
         }
-        else if (i == (int32_t)B_LITTLE32(0x534e5274)) //tRNS (must be after PLTE and before IDAT)
+        else if (i == B_LITTLE32(0x534e5274)) //tRNS (must be after PLTE and before IDAT)
         {
             switch (kcoltype)
             {
@@ -802,7 +802,7 @@ static int32_t kpngrend(const char *kfilebuf, int32_t kfilength,
                 EDUKE32_UNREACHABLE_SECTION();
             }
         }
-        else if (i == (int32_t)B_LITTLE32(0x54414449)) { break; }  //IDAT
+        else if (i == B_LITTLE32(0x54414449)) { break; }  //IDAT
 
         filptr = &filptr[leng+4]; //crc = B_BIG32(B_UNBUF32(&filptr[-4]));
     }
@@ -1754,8 +1754,8 @@ static int32_t kcelrend(const char *buf, int32_t fleng,
 
     kcoltype = 3; bitdepth = 8; paleng = 256; //For PNGOUT
 
-    xsiz = (int32_t)B_LITTLE16(B_UNBUF16(&buf[2])); if (xsiz <= 0) return -1;
-    ysiz = (int32_t)B_LITTLE16(B_UNBUF16(&buf[4])); if (ysiz <= 0) return -1;
+    xsiz = B_LITTLE16(B_UNBUF16(&buf[2])); if (xsiz <= 0) return -1;
+    ysiz = B_LITTLE16(B_UNBUF16(&buf[4])); if (ysiz <= 0) return -1;
 
     cptr = &buf[32];
     for (i=0; i<256; i++)
@@ -1797,8 +1797,8 @@ static int32_t ktgarend(const char *header, int32_t fleng,
     if (header[17]&0xc0) return -1;
 
     fptr = (uint8_t const *)&header[header[0]+18];
-    xsiz = (int32_t)B_LITTLE16(B_UNBUF16(&header[12])); if (xsiz <= 0) return -1;
-    ysiz = (int32_t)B_LITTLE16(B_UNBUF16(&header[14])); if (ysiz <= 0) return -1;
+    xsiz = B_LITTLE16(B_UNBUF16(&header[12])); if (xsiz <= 0) return -1;
+    ysiz = B_LITTLE16(B_UNBUF16(&header[14])); if (ysiz <= 0) return -1;
     colbyte = ((((int32_t)header[16])+7)>>3);
 
     if (header[1] == 1)
@@ -1838,7 +1838,7 @@ static int32_t ktgarend(const char *header, int32_t fleng,
                 if (header[1] == 1)
                 {
                     if (colbyte == 1) i = fptr[0];
-                    else i = (int32_t)B_LITTLE16(B_UNBUF16(&fptr[0]));
+                    else i = B_LITTLE16(B_UNBUF16(&fptr[0]));
                     nptr = &cptr[i*pixbyte];
                 }
                 else nptr = fptr;
@@ -1846,7 +1846,7 @@ static int32_t ktgarend(const char *header, int32_t fleng,
                 switch (pixbyte)
                 {
                 case 1: i = palcol[(int32_t)nptr[0]]; break;
-                case 2: i = (int32_t)B_LITTLE16(B_UNBUF16(&nptr[0]));
+                case 2: i = B_LITTLE16(B_UNBUF16(&nptr[0]));
                     i = B_LITTLE32(((i&0x7c00)<<9) + ((i&0x03e0)<<6) + ((i&0x001f)<<3) + 0xff000000);
                     break;
                 case 3: i = (B_UNBUF32(&nptr[0])) | B_LITTLE32(0xff000000); break;
@@ -1891,12 +1891,12 @@ static int32_t kbmprend(const char *buf, int32_t fleng,
     UNREFERENCED_PARAMETER(fleng);
 
     headsiz = B_UNBUF32(&buf[14]);
-    if (headsiz == (int32_t)B_LITTLE32(12)) //OS/2 1.x (old format)
+    if (headsiz == B_LITTLE32(12)) //OS/2 1.x (old format)
     {
         if (B_UNBUF16(&buf[22]) != B_LITTLE16(1)) return -1;
-        xsiz = (int32_t)B_LITTLE16(B_UNBUF16(&buf[18]));
-        ysiz = (int32_t)B_LITTLE16(B_UNBUF16(&buf[20]));
-        cdim = (int32_t)B_LITTLE16(B_UNBUF16(&buf[24]));
+        xsiz = B_LITTLE16(B_UNBUF16(&buf[18]));
+        ysiz = B_LITTLE16(B_UNBUF16(&buf[20]));
+        cdim = B_LITTLE16(B_UNBUF16(&buf[24]));
         comp = 0;
     }
     else //All newer formats...
@@ -1904,7 +1904,7 @@ static int32_t kbmprend(const char *buf, int32_t fleng,
         if (B_UNBUF16(&buf[26]) != B_LITTLE16(1)) return -1;
         xsiz = B_LITTLE32(B_UNBUF32(&buf[18]));
         ysiz = B_LITTLE32(B_UNBUF32(&buf[22]));
-        cdim = (int32_t)B_LITTLE16(B_UNBUF16(&buf[28]));
+        cdim = B_LITTLE16(B_UNBUF16(&buf[28]));
         comp = B_LITTLE32(B_UNBUF32(&buf[30]));
     }
     if ((xsiz <= 0) || (!ysiz)) return -1;
@@ -1917,7 +1917,7 @@ static int32_t kbmprend(const char *buf, int32_t fleng,
     if (cdim < 16)
     {
         if (cdim == 2) { palcol[0] = 0xffffffff; palcol[1] = B_LITTLE32(0xff000000); }
-        if (headsiz == (int32_t)B_LITTLE32(12)) j = 3; else j = 4;
+        if (headsiz == B_LITTLE32(12)) j = 3; else j = 4;
         for (i=0,cptr=&buf[headsiz+14]; cptr<&buf[rastoff]; i++,cptr+=j)
             palcol[i] = ((B_UNBUF32(&cptr[0]))|B_LITTLE32(0xff000000));
         kcoltype = 3; bitdepth = (int8_t)cdim; paleng = i; //For PNGOUT
@@ -2002,7 +2002,7 @@ static int32_t kpcxrend(const char *buf, int32_t fleng,
     uint8_t c;
     uint8_t const *cptr;
 
-    if (B_UNBUF32(buf) != B_LITTLE32(0x0801050a)) return -1;
+    if (B_UNBUF32(buf) != B_LITTLE32(0x0801050au)) return -1;
     xsiz = B_LITTLE16(B_UNBUF16(&buf[ 8]))-B_LITTLE16(B_UNBUF16(&buf[4]))+1; if (xsiz <= 0) return -1;
     ysiz = B_LITTLE16(B_UNBUF16(&buf[10]))-B_LITTLE16(B_UNBUF16(&buf[6]))+1; if (ysiz <= 0) return -1;
     //buf[3]: bpp/plane:{1,2,4,8}
@@ -2219,11 +2219,11 @@ void kpgetdim(const char *buf, int32_t leng, int32_t *xsiz, int32_t *ysiz)
     if (B_UNBUF16(&ubuf[0]) == B_LITTLE16(0x5089)) //.PNG
     {
         lptr = (int32_t const *)buf;
-        if ((lptr[0] != (int32_t)B_LITTLE32(0x474e5089)) || (lptr[1] != (int32_t)B_LITTLE32(0x0a1a0a0d))) return;
+        if ((lptr[0] != B_LITTLE32(0x474e5089)) || (lptr[1] != B_LITTLE32(0x0a1a0a0d))) return;
         lptr = &lptr[2];
         while (((uintptr_t)lptr-(uintptr_t)buf) < (uintptr_t)(leng-16))
         {
-            if (lptr[1] == (int32_t)B_LITTLE32(0x52444849)) //IHDR
+            if (lptr[1] == B_LITTLE32(0x52444849)) //IHDR
                 {(*xsiz) = B_BIG32(lptr[2]); (*ysiz) = B_BIG32(lptr[3]); break; }
             lptr = (int32_t *)((intptr_t)lptr + B_BIG32(lptr[0]) + 12);
         }
@@ -2252,7 +2252,7 @@ void kpgetdim(const char *buf, int32_t leng, int32_t *xsiz, int32_t *ysiz)
         }
         else if ((ubuf[0] == 'B') && (ubuf[1] == 'M')) //.BMP
         {
-            if (B_UNBUF32(&buf[14]) == B_LITTLE32(12)) //OS/2 1.x (old format)
+            if (B_UNBUF32(&buf[14]) == B_LITTLE32(12u)) //OS/2 1.x (old format)
             {
                 if (B_UNBUF16(&buf[22]) != B_LITTLE16(1)) return;
                 (*xsiz) = (int32_t) B_LITTLE16(B_UNBUF16(&buf[18]));
@@ -2265,7 +2265,7 @@ void kpgetdim(const char *buf, int32_t leng, int32_t *xsiz, int32_t *ysiz)
                 (*ysiz) = B_LITTLE32(B_UNBUF32(&buf[22]));
             }
         }
-        else if (B_UNBUF32(ubuf) == B_LITTLE32(0x0801050a)) //.PCX
+        else if (B_UNBUF32(ubuf) == B_LITTLE32(0x0801050au)) //.PCX
         {
             (*xsiz) = B_LITTLE16(B_UNBUF16(&buf[8]))-B_LITTLE16(B_UNBUF16(&buf[4]))+1;
             (*ysiz) = B_LITTLE16(B_UNBUF16(&buf[10]))-B_LITTLE16(B_UNBUF16(&buf[6]))+1;
@@ -2310,7 +2310,7 @@ int32_t kprender(const char *buf, int32_t leng, intptr_t frameptr, int32_t bpl,
             return kgifrend(buf, leng, frameptr, bpl, xdim, ydim);
         else if ((ubuf[0] == 'B') && (ubuf[1] == 'M')) //.BMP
             return kbmprend(buf, leng, frameptr, bpl, xdim, ydim);
-        else if (B_UNBUF32(ubuf) == B_LITTLE32(0x0801050a)) //.PCX
+        else if (B_UNBUF32(ubuf) == B_LITTLE32(0x0801050au)) //.PCX
             return kpcxrend(buf, leng, frameptr, bpl, xdim, ydim);
 #ifdef KPCEL
         else if ((ubuf[0] == 0x19) && (ubuf[1] == 0x91) && (ubuf[10] == 8) && (ubuf[11] == 0)) //old .CEL/.PIC
@@ -2466,11 +2466,11 @@ int32_t kzaddstack(const char *filnam)
     zipnamoffs = kzhashpos; kzhashpos += i;
 
     buildvfs_fread(&i,4,1,fil);
-    if (i == (int32_t)B_LITTLE32(0x04034b50)) //'PK\3\4' is ZIP file id
+    if (i == B_LITTLE32(0x04034b50)) //'PK\3\4' is ZIP file id
     {
         buildvfs_fseek_abs(fil,buildvfs_flength(fil)-22);
         buildvfs_fread(tempbuf,22,1,fil);
-        if (B_UNBUF32(&tempbuf[0]) == B_LITTLE32(0x06054b50)) //Fast way of finding dir info
+        if (B_UNBUF32(&tempbuf[0]) == B_LITTLE32(0x06054b50u)) //Fast way of finding dir info
         {
             numfiles = B_LITTLE16(B_UNBUF16(&tempbuf[10]));
             buildvfs_fseek_abs(fil,B_LITTLE32(B_UNBUF32(&tempbuf[16])));
@@ -2481,8 +2481,8 @@ int32_t kzaddstack(const char *filnam)
             while (1)
             {
                 if (!buildvfs_fread(&j,4,1,fil)) { numfiles = -1; break; }
-                if (j == (int32_t)B_LITTLE32(0x02014b50)) break; //Found central file header :)
-                if (j != (int32_t)B_LITTLE32(0x04034b50)) { numfiles = -1; break; }
+                if (j == B_LITTLE32(0x02014b50)) break; //Found central file header :)
+                if (j != B_LITTLE32(0x04034b50)) { numfiles = -1; break; }
                 buildvfs_fread(tempbuf,26,1,fil);
                 buildvfs_fseek_rel(fil,B_LITTLE32(B_UNBUF32(&tempbuf[14])) + B_LITTLE16(B_UNBUF16(&tempbuf[24])) + B_LITTLE16(B_UNBUF16(&tempbuf[22])));
                 numfiles++;
@@ -2493,7 +2493,7 @@ int32_t kzaddstack(const char *filnam)
         for (i=0; i<numfiles; i++)
         {
             buildvfs_fread(tempbuf,46,1,fil);
-            if (B_UNBUF32(&tempbuf[0]) != B_LITTLE32(0x02014b50)) { buildvfs_fclose(fil); return 0; }
+            if (B_UNBUF32(&tempbuf[0]) != B_LITTLE32(0x02014b50u)) { buildvfs_fclose(fil); return 0; }
 
             j = B_LITTLE16(B_UNBUF16(&tempbuf[28])); //filename length
             buildvfs_fread(&tempbuf[46],j,1,fil);
@@ -2516,11 +2516,11 @@ int32_t kzaddstack(const char *filnam)
             buildvfs_fseek_rel(fil,j);
         }
     }
-    else if (i == (int32_t)B_LITTLE32(0x536e654b)) //'KenS' is GRP file id
+    else if (i == B_LITTLE32(0x536e654b)) //'KenS' is GRP file id
     {
         buildvfs_fread(tempbuf,12,1,fil);
-        if ((B_UNBUF32(&tempbuf[0]) != B_LITTLE32(0x65766c69)) || //'ilve'
-                (B_UNBUF32(&tempbuf[4]) != B_LITTLE32(0x6e616d72)))   //'rman'
+        if ((B_UNBUF32(&tempbuf[0]) != B_LITTLE32(0x65766c69u)) || //'ilve'
+                (B_UNBUF32(&tempbuf[4]) != B_LITTLE32(0x6e616d72u)))   //'rman'
             { buildvfs_fclose(fil); return 0; }
         numfiles = B_LITTLE32(B_UNBUF32(&tempbuf[8])); k = ((numfiles+1)<<4);
         for (i=0; i<numfiles; i++,k+=leng)
@@ -2594,7 +2594,7 @@ intptr_t kzopen(const char *filnam)
         else
         {
             buildvfs_fread(tempbuf,30,1,fil);
-            if (B_UNBUF32(&tempbuf[0]) != B_LITTLE32(0x04034b50)) { buildvfs_fclose(fil); return 0; }
+            if (B_UNBUF32(&tempbuf[0]) != B_LITTLE32(0x04034b50u)) { buildvfs_fclose(fil); return 0; }
             buildvfs_fseek_rel(fil,B_LITTLE16(B_UNBUF16(&tempbuf[26]))+B_LITTLE16(B_UNBUF16(&tempbuf[28])));
 
             kzfs.fil = fil;
@@ -2608,7 +2608,7 @@ intptr_t kzopen(const char *filnam)
             case 8:
                     if (!pnginited) { pnginited = 1; initpngtables(); }
                 kzfs.comptell = 0;
-                kzfs.compleng = (int32_t)B_LITTLE32(B_UNBUF32(&tempbuf[18]));
+                kzfs.compleng = B_LITTLE32(B_UNBUF32(&tempbuf[18]));
 
                 //WARNING: No file in ZIP can be > 2GB-32K bytes
                 gslidew = 0x7fffffff; //Force reload at beginning

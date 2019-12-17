@@ -60,7 +60,6 @@ short TimeLimitTable[9] = {0,3,5,10,15,20,30,45,60};
 
 short QuickLoadNum = -1;
 char QuickLoadDescrDialog[128];
-SWBOOL QuickSaveMode = FALSE;
 SWBOOL SavePrompt = FALSE;
 extern SWBOOL InMenuLevel, LoadGameOutsideMoveLoop, LoadGameFromDemo;
 extern uint8_t RedBookSong[40];
@@ -392,6 +391,8 @@ MenuItem options_i[] =
     {DefButton(btn_auto_aim, 0, "Auto-Aiming"), OPT_XS,          OPT_LINE(9), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefButton(btn_voxels, 0, "Voxel Sprites"), OPT_XS,          OPT_LINE(10), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefButton(btn_stats, 0, "Level Stats"), OPT_XS,             OPT_LINE(11), 1, m_defshade, 0, NULL, MNU_StatCheck, NULL},
+    {DefButton(btn_darts, 0, "Use Darts"), OPT_XS,               OPT_LINE(12), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefButton(btn_autoswitch, 0, "Equip Pickups"), OPT_XS,      OPT_LINE(13), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefNone}
 };
 
@@ -515,7 +516,7 @@ MenuGroup LoadGameGroup = {100, 5, "^Load Game", load_i, pic_loadgame, 0, m_defs
 #define MAIN_XSTART 55
 #define MAIN_LINE(line) (MAIN_YSTART + (MAIN_YOFF * line))
 
-#define MAIN_MENU_COOL_STUFF "^Cool Stuff"
+#define MAIN_MENU_COOL_STUFF "^Credits"
 #define MAIN_MENU_HOW_TO_ORDER "^How to Order"
 
 MenuItem main_i[] =
@@ -564,7 +565,6 @@ MenuItem_p cust_callback_item;
 
 static void MNU_ClearDialog(void);
 static SWBOOL MNU_Dialog(void);
-void LoadSaveMsg(const char *msg);
 static void MNU_ItemPreProcess(MenuGroup *group);
 static void MNU_SelectItem(MenuGroup *group, short index, SWBOOL draw);
 static void MNU_PushItem(MenuItem *item, SWBOOL draw);
@@ -790,28 +790,27 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
         const char *col[2] = { "(primary)", "(secondary)" };
         short w, h = 8;
         int i, j, y;
+        int32_t sc;
 
         if (KEY_PRESSED(KEYSC_ESC))
         {
             KB_ClearKeyDown(sc_Escape);
             currentmode = 0;
         }
-        else if (KB_GetLastScanCode() > 0)
+        else if ((sc = KB_GetLastScanCode()) != sc_None)
         {
-            KB_ClearKeyDown(KB_GetLastScanCode());
+            KB_ClearKeyDown(sc);
 
-            KeyboardKeys[currentkey][currentcol] = KB_GetLastScanCode();
+            KeyboardKeys[currentkey][currentcol] = sc;
             if (currentkey != gamefunc_Show_Console)
             {
-#if 0 // [JM] Re-do this shit !CHECKME!
                 CONTROL_MapKey(currentkey,
                                KeyboardKeys[currentkey][0],
                                KeyboardKeys[currentkey][1]);
-#endif
             }
             else
             {
-                OSD_CaptureKey(KB_GetLastScanCode());
+                OSD_CaptureKey(sc);
             }
 
             currentmode = 0;
@@ -857,11 +856,9 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
             if (currentkey != gamefunc_Show_Console)
             {
                 KeyboardKeys[currentkey][currentcol] = 0xff;
-#if 0 // [JM] Re-do this shit !CHECKME!
                 CONTROL_MapKey(currentkey,
                                KeyboardKeys[currentkey][0],
                                KeyboardKeys[currentkey][1]);
-#endif
             }
         }
         else if (KB_KeyPressed(sc_Home))
@@ -931,14 +928,14 @@ SWBOOL MNU_KeySetupCustom(UserCall call, MenuItem *item)
             MNU_DrawSmallString(OPT_XS, j, ds, (i==currentkey) ? 0 : 12, 16);
 
             p = keyGetName(KeyboardKeys[i][0]);
-            if (!p || KeyboardKeys[i][0]==0xff) p = "  -";
+            if (!p || !KeyboardKeys[i][0] || KeyboardKeys[i][0]==0xff) p = "  -";
             MNU_DrawSmallString(OPT_XSIDE, j, p, (i==currentkey) ? -5 : 12,
                                 (i==currentkey && currentcol==0) ? 14 : 16);
 
             if (i == gamefunc_Show_Console) continue;
 
             p = keyGetName(KeyboardKeys[i][1]);
-            if (!p || KeyboardKeys[i][1]==0xff) p = "  -";
+            if (!p || !KeyboardKeys[i][1] || KeyboardKeys[i][1]==0xff) p = "  -";
             MNU_DrawSmallString(OPT_XSIDE + 4*14, j, p, (i==currentkey) ? -5 : 12,
                                 (i==currentkey && currentcol==1) ? 14 : 16);
         }
@@ -962,7 +959,7 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
 {
     const int PGSIZ = 9;
     const char *strs[] = { "Select the function to assign to", "%s", "or ESCAPE to cancel." };
-    int topitem = 0, botitem = NUMGAMEFUNCTIONS-1;
+    int topitem = 0, botitem = NUMGAMEFUNCTIONS;
     int i, j, y;
     short w, h=0;
     int returnval = 0;
@@ -982,13 +979,13 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
     }
     else if (KB_KeyPressed(sc_End))
     {
-        *currentfunc = NUMGAMEFUNCTIONS-1;   // -1 because the last one is the console and the top is 'none'
+        *currentfunc = NUMGAMEFUNCTIONS;
         KB_ClearKeyDown(sc_End);
     }
     else if (KB_KeyPressed(sc_PgDn))
     {
         *currentfunc += PGSIZ;
-        if (*currentfunc >= NUMGAMEFUNCTIONS) *currentfunc = NUMGAMEFUNCTIONS-1;
+        if (*currentfunc > NUMGAMEFUNCTIONS) *currentfunc = NUMGAMEFUNCTIONS;
         KB_ClearKeyDown(sc_PgDn);
     }
     else if (KB_KeyPressed(sc_PgUp))
@@ -1002,11 +999,11 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
         returnval = 1;
     }
     else if (inpt.dir == dir_North) *currentfunc = max(0, *currentfunc-1);
-    else if (inpt.dir == dir_South) *currentfunc = min(NUMGAMEFUNCTIONS-1, *currentfunc+1);
+    else if (inpt.dir == dir_South) *currentfunc = min(int(NUMGAMEFUNCTIONS), *currentfunc+1);
 
     CONTROL_ClearUserInput(&inpt);
 
-    if (NUMGAMEFUNCTIONS-1 > PGSIZ)
+    if (NUMGAMEFUNCTIONS > PGSIZ)
     {
         topitem = *currentfunc - PGSIZ/2;
         botitem = topitem + PGSIZ;
@@ -1016,9 +1013,9 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
             botitem += -topitem;
             topitem = 0;
         }
-        else if (botitem >= NUMGAMEFUNCTIONS)
+        else if (botitem > NUMGAMEFUNCTIONS)
         {
-            botitem = NUMGAMEFUNCTIONS-1;
+            botitem = NUMGAMEFUNCTIONS;
             topitem = botitem - PGSIZ;
         }
     }
@@ -1061,7 +1058,7 @@ static int MNU_SelectButtonFunction(const char *buttonname, int *currentfunc)
         MNU_MeasureSmallString(morestr,&dx,&dy);
         if (topitem > 0)
             MNU_DrawSmallString(XDIM - OPT_XS - dx, OPT_LINE(4), morestr, 8,16);
-        if (botitem < NUMGAMEFUNCTIONS-1)
+        if (botitem < NUMGAMEFUNCTIONS)
             MNU_DrawSmallString(XDIM - OPT_XS - dx, OPT_LINE(4)+PGSIZ*8, morestr, 8,16);
     }
 
@@ -1606,31 +1603,26 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
 
     static short RegOrderScreen[] =
     {
-        5262,
-        5261,
-        4979,
+        // 5262,
+        // 5261,
         5111,
         5118,
+        4979,
         5113,
-        //5111,
-        //5118,
-        //4979,
-        //5261,
-        //5262
 
-        5114    // JBF: for my credits
+        5120 // 5114    // JBF: for my credits
     };
     static short SWOrderScreen[] =
     {
-        5262,
         5110,
         5112,
-        5113,
+        // 5262,
         5111,
         5118,
         4979,
+        5113,
 
-        5114    // JBF: for my credits
+        5120 // 5114    // JBF: for my credits
     };
     short *OrderScreen, OrderScreenSiz;
 
@@ -1659,9 +1651,9 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
     {
         DidOrderSound = TRUE;
         choose_snd = STD_RANDOM_RANGE(1000);
-        if (choose_snd > 500 && !FX_SoundActive(wanghandle))
+        if (choose_snd > 500 && !FX_SoundValidAndActive(wanghandle))
             wanghandle = PlaySound(DIGI_WANGORDER1, &zero, &zero, &zero, v3df_dontpan);
-        else if (!FX_SoundActive(wanghandle))
+        else if (!FX_SoundValidAndActive(wanghandle))
             wanghandle = PlaySound(DIGI_WANGORDER2, &zero, &zero, &zero, v3df_dontpan);
     }
 
@@ -1760,7 +1752,8 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         on_screen = 0;
 // CTW MODIFICATION END
 
-    rotatesprite(0,0,RS_SCALE,0,OrderScreen[on_screen],0,0,
+    int const shade = on_screen == OrderScreenSiz-1 ? 8 : 0;
+    rotatesprite(0,0,RS_SCALE,0,OrderScreen[on_screen], shade, 0,
                  (ROTATE_SPRITE_CORNER|ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_NON_MASK|ROTATE_SPRITE_IGNORE_START_MOST),
                  0, 0, xdim-1, ydim-1);
 
@@ -1771,38 +1764,31 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         static const char *jtitle = "^Port Credits";
         static const char *jtext[] =
         {
-            "*GAME AND ENGINE PORT",
+            "*Developers",
+            " Richard \"TerminX\" Gobeille",
+            " Evan \"Hendricks266\" Ramos",
+            " Alex \"pogokeen\" Dawson",
+            "*Retired developers",
+            " Pierre-Loup \"Plagman\" Griffais",
+            " Philipp \"Helixhorned\" Kutin",
+            "*Special thanks to",
             " Jonathon \"JonoF\" Fowler",
-            "-",
-            "*\"POLYMOST\" 3D RENDERER",
-            "*NETWORKING, OTHER CODE",
+            "*Uses BUILD Engine technology by",
             " Ken \"Awesoken\" Silverman",
+            "*Additional thanks to",
+            " Alexey \"Nuke.YKT\" Skrybykin",
+            " Jordon \"Striker\" Moss",
+            " Par \"Parkar\" Karlsson", // "Pär \"Parkar\" Karlsson",
+            " Ben \"ProAsm\" Smit",
+            " NY00123",
             "-",
-            " Visit http://www.jonof.id.au/jfsw for the",
-            " source code, latest news, and updates of this port."
+            " Visit eduke32.com for news and updates"
         };
+#if 0
         static const char *scroller[] =
         {
-            "This program is free software; you can redistribute it",
-            "and/or modify it under the terms of the GNU General",
-            "Public License as published by the Free Software",
-            "Foundation; either version 2 of the License, or (at your",
-            "option) any later version.",
-            "",
-            "This program is distributed in the hope that it will be",
-            "useful but WITHOUT ANY WARRANTY; without even the implied",
-            "warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR",
-            "PURPOSE. See the GNU General Public License (GPL.TXT) for",
-            "more details.",
-            "",
-            "",
-            "",
-            "",
             "Thanks to these people for their input and contributions:",
             "",
-            "Richard \"TerminX\" Gobeille,",
-            "Par \"Parkar\" Karlsson", // "Pär \"Parkar\" Karlsson",
-            "Ben \"ProAsm\" Smit",
             "",
             "and all those who submitted bug reports and ",
             "supported the project financially!",
@@ -1814,9 +1800,9 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             "",
             ""
         };
-        const int numscrollerlines = SIZ(scroller);
+#endif
         short dimx, dimy;
-        int ycur = 54;
+        int ycur = 20;
         unsigned ji;
 
         dimy = 0; MNU_MeasureString(jtitle, &dimx, &dimy);
@@ -1846,6 +1832,8 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             }
         }
 
+#if 0
+        const int numscrollerlines = SIZ(scroller);
         int m,i;
         for (m=0, i=((int32_t) totalclock/104)%numscrollerlines; m<4; m++,i++)
         {
@@ -1855,6 +1843,7 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             MNU_MeasureSmallString(scroller[i], &dimx, &dimy);
             MNU_DrawSmallString(160-(dimx>>1), 154+(m*7), scroller[i], 0, 8);
         }
+#endif
     }
 
     //KB_ClearKeysDown();
@@ -2154,24 +2143,17 @@ MNU_QuickLoadCustom(UserCall call, MenuItem_p item)
         // Y pressed
         cust_callback = NULL;
 
-        KB_ClearKeysDown();
         LoadSaveMsg("Loading...");
 
-        PauseAction();
-
-        ReloadPrompt = FALSE;
-        if (LoadGame(QuickLoadNum) == -1)
+        if (DoQuickLoad() == FALSE)
         {
             ResumeAction();
             return FALSE;
         }
 
-        ready2send = 1;
-        LastSaveNum = -1;
-
-        // do a load game here
-        KB_ClearKeysDown();
         ExitMenus();
+
+        return TRUE;
     }
 
     KB_ClearKeysDown();
@@ -2231,6 +2213,8 @@ MNU_InitMenus(void)
     buttonsettings[btn_playcd] = gs.PlayCD;
     buttonsettings[btn_flipstereo] = gs.FlipStereo;
     buttonsettings[btn_stats] = gs.Stats;
+    buttonsettings[btn_darts] = gs.Darts;
+    buttonsettings[btn_autoswitch] = gs.WeaponAutoSwitch;
 
     slidersettings[sldr_gametype] = gs.NetGameType;
     slidersettings[sldr_netlevel] = gs.NetLevel;
@@ -2806,16 +2790,11 @@ MNU_GetSaveCustom(void)
 
     if (MenuInputMode)
     {
-        PauseAction();
-
         LoadSaveMsg("Saving...");
 
-        if (SaveGame(save_num) != -1)
+        if (DoQuickSave(save_num) == FALSE)
         {
-            QuickLoadNum = save_num;
-
             LoadGameGroup.cursor = save_num;
-            LastSaveNum = -1;
         }
 
         ResumeAction();
@@ -2899,15 +2878,6 @@ MNU_LoadSaveMove(UserCall call, MenuItem_p item)
 
         sprintf(SaveGameInfo1, "Level %d, Skill %d", SaveGameLevel, SaveGameSkill+1);
         SaveGameInfo2[0] = 0;
-    }
-
-    if (QuickSaveMode)
-    {
-        QuickSaveMode = FALSE;
-        MenuInputMode = TRUE;
-        strcpy(BackupSaveGameDescr, SaveGameDescr[game_num]);
-        KB_ClearKeysDown();
-        KB_FlushKeyboardQueue();
     }
 
     LastSaveNum = game_num;
@@ -3269,11 +3239,8 @@ MNU_JoystickCheck(MenuItem *item)
 static SWBOOL
 MNU_TryMusicInit(void)
 {
-    if (PlaySong(0, RedBookSong[Level], TRUE, FALSE))
-    {
-        if (currentmenu->cursor == 0)
-            MNU_MusicCheck(&currentmenu->items[currentmenu->cursor+1]);
-    }
+    if (currentmenu->cursor == 0)
+        MNU_MusicCheck(&currentmenu->items[currentmenu->cursor+1]);
 
     return TRUE;
 }
@@ -3281,29 +3248,13 @@ MNU_TryMusicInit(void)
 SWBOOL
 MNU_MusicCheck(MenuItem *item)
 {
-    if (SW_SHAREWARE)
+    if (!MusicToggle || !MusicInitialized)
     {
-        if (MusicDevice < 0 || !MusicInitialized)
-        {
-            SET(item->flags, mf_disabled);
-        }
-        else
-        {
-            RESET(item->flags, mf_disabled);
-        }
+        SET(item->flags, mf_disabled);
     }
     else
     {
-        // Redbook audio stuff
-        //JBF
-        //if (!cdvalid)
-        //    {
-        //    SET(item->flags, mf_disabled); // Just don't let CD Redbook ever be invalid!
-        //    }
-        //else
-        {
-            RESET(item->flags, mf_disabled);
-        }
+        RESET(item->flags, mf_disabled);
     }
 
     return TRUE;
@@ -3312,7 +3263,7 @@ MNU_MusicCheck(MenuItem *item)
 SWBOOL
 MNU_FxCheck(MenuItem *item)
 {
-    if (FXDevice < 0 || !FxInitialized)
+    if (!FXToggle || !FxInitialized)
     {
         SET(item->flags, mf_disabled);
     }
@@ -3327,7 +3278,7 @@ MNU_FxCheck(MenuItem *item)
 SWBOOL
 MNU_MusicFxCheck(MenuItem *item)
 {
-    if (FXDevice < 0 && MusicDevice < 0)
+    if (!FXToggle && !MusicToggle)
     {
         SET(item->flags, mf_disabled);
     }
@@ -3378,6 +3329,12 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
             break;
         case btn_stats:
             gs.Stats = state = buttonsettings[item->button];
+            break;
+        case btn_darts:
+            gs.Darts = state = buttonsettings[item->button];
+            break;
+        case btn_autoswitch:
+            gs.WeaponAutoSwitch = state = buttonsettings[item->button];
             break;
         case btn_markers:
             gs.NetSpawnMarkers = state = buttonsettings[item->button];
@@ -3652,7 +3609,7 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         slidersettings[sldr_mouse] = offset;
 
         gs.MouseSpeed = offset * (MOUSE_SENS_MAX_VALUE/SLDR_MOUSESENSEMAX);
-        CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Will need to verify this. !CHECKME!
+        CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/8192.f); // fix magic scale factor
         break;
 
     case sldr_sndfxvolume:
@@ -4236,11 +4193,11 @@ static void
 MNU_UpLevel(void)
 {
     int zero = 0;
-    static int handle1=0;
+    static int handle1;
     // if run out of menus then EXIT
     if (!menuarrayptr)
     {
-        if (!FX_SoundActive(handle1))
+        if (!FX_SoundValidAndActive(handle1))
             handle1 = PlaySound(DIGI_STARCLINK,&zero,&zero,&zero,v3df_dontpan);
         ExitMenus();
         return;
@@ -4588,9 +4545,9 @@ SetupMenu(void)
 void MNU_DoMenu(CTLType type, PLAYERp pp)
 {
     SWBOOL resetitem;
-    UCHAR key;
+    unsigned char key;
     int zero = 0;
-    static int handle2 = 0;
+    static int handle2;
     static int limitmove=0;
     static SWBOOL select_held=FALSE;
 
@@ -4655,7 +4612,7 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
             mnu_input.dir = mnu_input_buffered.dir;
 
             if (mnu_input.dir != dir_None)
-                if (!FX_SoundActive(handle2))
+                if (!FX_SoundValidAndActive(handle2))
                     handle2 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
 
             limitmove = (int32_t) totalclock;
@@ -4675,8 +4632,8 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
     }
     else if (mnu_input.button0)
     {
-        static int handle5=0;
-        if (!FX_SoundActive(handle5))
+        static int handle5;
+        if (!FX_SoundValidAndActive(handle5))
             handle5 = PlaySound(DIGI_SWORDSWOOSH,&zero,&zero,&zero,v3df_dontpan);
         KB_ClearKeysDown();
         MNU_DoItem();
@@ -4696,17 +4653,17 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
     }
     else if (mnu_input.button1 || BUTTON(gamefunc_Show_Menu))
     {
-        static int handle3=0;
+        static int handle3;
         CONTROL_ClearButton(gamefunc_Show_Menu);
-        if (!FX_SoundActive(handle3))
+        if (!FX_SoundValidAndActive(handle3))
             handle3 = PlaySound(DIGI_SWORDSWOOSH,&zero,&zero,&zero,v3df_dontpan);
         MNU_UpLevel();
         resetitem = TRUE;
     }
     else if (MNU_DoHotkey())
     {
-        static int handle4=0;
-        if (!FX_SoundActive(handle4))
+        static int handle4;
+        if (!FX_SoundValidAndActive(handle4))
             handle4 = PlaySound(DIGI_STAR,&zero,&zero,&zero,v3df_dontpan);
         resetitem = TRUE;
         mnu_input_buffered.button0 = mnu_input_buffered.button1 = FALSE;

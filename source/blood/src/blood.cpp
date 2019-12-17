@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mmulti.h"
 #include "compat.h"
 #include "renderlayer.h"
+#include "vfs.h"
 #include "fx_man.h"
 #include "common.h"
 #include "common_game.h"
@@ -382,7 +383,7 @@ void PreloadTiles(void)
         for (int i = 1; i < gSkyCount; i++)
             tilePrecacheTile(skyTile+i, 0);
     }
-    G_HandleAsync();
+    gameHandleEvents();
 }
 
 #ifdef USE_OPENGL
@@ -459,7 +460,7 @@ void PreloadCache(void)
             MUSIC_Update();
 
             if ((++cnt & 7) == 0)
-                G_HandleAsync();
+                gameHandleEvents();
 
             if (videoGetRenderMode() != REND_CLASSIC && totalclock - clock > (kTicRate>>2))
             {
@@ -468,10 +469,10 @@ void PreloadCache(void)
                 // this just prevents the loading screen percentage bar from making large jumps
                 while (percentDisplayed < percentComplete)
                 {
+                    gameHandleEvents();
                     Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", percentDisplayed, cnt, nPrecacheCount);
                     viewLoadingScreenUpdate(tempbuf, percentDisplayed);
                     videoNextPage();
-                    timerUpdate();
 
                     if (totalclock - clock >= 1)
                     {
@@ -625,15 +626,17 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                     case kModernDudeTargetChanger:
                         changespritestat(i, kStatModernDudeTargetChanger);
                         break;
-                    // add statnum for faster searching of already enabled qav players
-                    case kModernPlayQAV:
-                        changespritestat(i, kStatModernPlayQAV);
-                        break;
                     // remove kStatItem status from random item generators
                     case kModernRandom:
                     case kModernRandom2:
                         changespritestat(i, kStatDecoration);
                         break;
+                }
+
+                // very quick fix for floor sprites with Touch trigger flag if their Z is equals sector floorz / ceilgz
+                if ((pSprite->cstat & CSTAT_SPRITE_ALIGNMENT_FLOOR) && pSprite->sectnum >= 0 && pSprite->extra >= 0 && xsprite[pSprite->extra].Touch) {
+                    if (pSprite->z == sector[pSprite->sectnum].floorz) pSprite->z--;
+                    else if (pSprite->z == sector[pSprite->sectnum].ceilingz) pSprite->z++;
                 }
 
             } else {
@@ -654,6 +657,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                     case kModernObjDataAccumulator:
                     case kModernEffectSpawner:
                     case kModernWindGenerator:
+                    case kModernPlayerControl:
                         pSprite->type = kSpriteDecoration;
                         break;
                     case kItemModernMapLevel:
@@ -741,14 +745,14 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             PLAYER *pPlayer = &gPlayer[i];
             pPlayer->pXSprite->health &= 0xf000;
             pPlayer->pXSprite->health |= gHealthTemp[i];
-            pPlayer->at26 = gPlayerTemp[i].at26;
-            pPlayer->atbd = gPlayerTemp[i].atbd;
-            pPlayer->atc3 = gPlayerTemp[i].atc3;
-            pPlayer->atc7 = gPlayerTemp[i].atc7;
-            pPlayer->at2a = gPlayerTemp[i].at2a;
-            pPlayer->at1b1 = gPlayerTemp[i].at1b1;
-            pPlayer->atbf = gPlayerTemp[i].atbf;
-            pPlayer->atbe = gPlayerTemp[i].atbe;
+            pPlayer->weaponQav = gPlayerTemp[i].weaponQav;
+            pPlayer->curWeapon = gPlayerTemp[i].curWeapon;
+            pPlayer->weaponState = gPlayerTemp[i].weaponState;
+            pPlayer->weaponAmmo = gPlayerTemp[i].weaponAmmo;
+            pPlayer->qavCallback = gPlayerTemp[i].qavCallback;
+            pPlayer->qavLoop = gPlayerTemp[i].qavLoop;
+            pPlayer->weaponTimer = gPlayerTemp[i].weaponTimer;
+            pPlayer->nextWeapon = gPlayerTemp[i].nextWeapon;
         }
     }
     gameOptions->uGameFlags &= ~3;
@@ -757,7 +761,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     InitMirrors();
     gFrameClock = 0;
     trInit();
-    if (!bVanilla && !gMe->packInfo[1].at0) // if diving suit is not active, turn off reverb sound effect
+    if (!bVanilla && !gMe->packSlots[1].isActive) // if diving suit is not active, turn off reverb sound effect
         sfxSetReverb(0);
     ambInit();
     sub_79760();
@@ -876,7 +880,7 @@ void LocalKeys(void)
                 gViewIndex = connectpoint2[gViewIndex];
                 if (gViewIndex == -1)
                     gViewIndex = connecthead;
-                if (oldViewIndex == gViewIndex || gMe->at2ea == gPlayer[gViewIndex].at2ea)
+                if (oldViewIndex == gViewIndex || gMe->teamId == gPlayer[gViewIndex].teamId)
                     break;
             } while (oldViewIndex != gViewIndex);
             gView = &gPlayer[gViewIndex];
@@ -999,15 +1003,15 @@ void ProcessFrame(void)
     char buffer[128];
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        gPlayer[i].atc.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
-        gPlayer[i].atc.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
-        gPlayer[i].atc.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
+        gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
+        gPlayer[i].input.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
+        gPlayer[i].input.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
         if (gFifoInput[gNetFifoTail&255][i].newWeapon)
-            gPlayer[i].atc.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
-        gPlayer[i].atc.forward = gFifoInput[gNetFifoTail&255][i].forward;
-        gPlayer[i].atc.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
-        gPlayer[i].atc.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
-        gPlayer[i].atc.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
+            gPlayer[i].input.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
+        gPlayer[i].input.forward = gFifoInput[gNetFifoTail&255][i].forward;
+        gPlayer[i].input.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
+        gPlayer[i].input.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
+        gPlayer[i].input.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
     }
     gNetFifoTail++;
     if (!(gFrame&((gSyncRate<<3)-1)))
@@ -1018,9 +1022,9 @@ void ProcessFrame(void)
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        if (gPlayer[i].atc.keyFlags.quit)
+        if (gPlayer[i].input.keyFlags.quit)
         {
-            gPlayer[i].atc.keyFlags.quit = 0;
+            gPlayer[i].input.keyFlags.quit = 0;
             netBroadcastPlayerLogoff(i);
             if (i == myconnectindex)
             {
@@ -1032,15 +1036,15 @@ void ProcessFrame(void)
                 return;
             }
         }
-        if (gPlayer[i].atc.keyFlags.restart)
+        if (gPlayer[i].input.keyFlags.restart)
         {
-            gPlayer[i].atc.keyFlags.restart = 0;
+            gPlayer[i].input.keyFlags.restart = 0;
             levelRestart();
             return;
         }
-        if (gPlayer[i].atc.keyFlags.pause)
+        if (gPlayer[i].input.keyFlags.pause)
         {
-            gPlayer[i].atc.keyFlags.pause = 0;
+            gPlayer[i].input.keyFlags.pause = 0;
             gPaused = !gPaused;
             if (gPaused && gGameOptions.nGameType > 0 && numplayers > 1)
             {
@@ -1074,7 +1078,7 @@ void ProcessFrame(void)
     viewUpdateDelirium();
     viewUpdateShake();
     sfxUpdate3DSounds();
-    if (gMe->at376 == 1)
+    if (gMe->hand == 1)
     {
 #define CHOKERATE 8
 #define TICRATE 30
@@ -1095,7 +1099,7 @@ void ProcessFrame(void)
         {
             while (gNetFifoMasterTail < gNetFifoTail)
             {
-                G_HandleAsync();
+                gameHandleEvents();
                 netMasterUpdate();
             }
         }
@@ -1534,14 +1538,20 @@ int app_main(int argc, char const * const * argv)
     margc = argc;
     margv = argv;
 #ifdef _WIN32
-    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
+#ifndef DEBUGGINGAIDS
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-        if (!wm_ynbox(APPNAME, "Another Build game is currently running. "
-                      "Do you wish to continue starting this copy?"))
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
             return 3;
     }
+#endif
 
-    backgroundidle = 0;
+    win_priorityclass = 0;
 
     G_ExtPreInit(argc, argv);
 
@@ -1797,7 +1807,7 @@ RESTART:
         {
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
-            G_HandleAsync();
+            gameHandleEvents();
             while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
             {
                 viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
@@ -1818,10 +1828,8 @@ RESTART:
                         break;
                     faketimerhandler();
                     ProcessFrame();
-                    timerUpdate();
                     gameUpdate = true;
                 }
-                timerUpdate();
             }
             if (gameUpdate)
             {
@@ -1851,7 +1859,7 @@ RESTART:
                 videoClearScreen(0);
                 rotatesprite(160<<16,100<<16,65536,0,kMenuScreen,0,0,0x4a,0,0,xdim-1,ydim-1);
             }
-            G_HandleAsync();
+            gameHandleEvents();
             if (gQuitRequest && !gQuitGame)
                 netBroadcastMyLogoff(gQuitRequest == 2);
         }
@@ -1906,7 +1914,7 @@ RESTART:
         while (gGameMenuMgr.m_bActive)
         {
             gGameMenuMgr.Process();
-            G_HandleAsync();
+            gameHandleEvents();
             if (viewFPSLimit())
             {
                 videoClearScreen(0);
@@ -2572,7 +2580,7 @@ bool AddINIFile(const char *pzFile, bool bForce = false)
 void ScanINIFiles(void)
 {
     nINICount = 0;
-    CACHE1D_FIND_REC *pINIList = klistpath("/", "*.ini", CACHE1D_FIND_FILE);
+    BUILDVFS_FIND_REC *pINIList = klistpath("/", "*.ini", BUILDVFS_FIND_FILE);
     pINIChain = NULL;
 
     if (bINIOverride || !pINIList)

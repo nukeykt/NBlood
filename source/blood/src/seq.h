@@ -54,7 +54,7 @@ struct Seq {
     short at8;
     short ata;
     int atc;
-    SEQFRAME frames[1]; // at10
+    SEQFRAME frames[1];
     void Preload(void);
     void Precache(void);
 };
@@ -68,11 +68,11 @@ struct ACTIVE
 struct SEQINST
 {
     DICTNODE *hSeq;
-    Seq *pSequence; // mass
+    Seq *pSequence;
     int at8;
     int atc;
     short at10;
-    unsigned char frameIndex; // at12
+    unsigned char frameIndex;
     char at13;
     void Update(ACTIVE *pActive);
 };

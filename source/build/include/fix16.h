@@ -133,7 +133,13 @@ extern fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
 */
 static FORCE_INLINE fix16_t fix16_mod(fix16_t x, fix16_t y) { return x %= y; }
 
+/*! Performs a fast multiplication of the two given fix16_t's with truncation, and returns the result.
+*/
+static FORCE_INLINE fix16_t fix16_fast_trunc_mul(fix16_t x, fix16_t y) { return ((int64_t)x * y) >> 16; }
 
+/*! Performs a fast multiplication of an int by a fix16_t with truncation, and returns an int.
+*/
+static FORCE_INLINE int fix16_fast_trunc_mul_int_by_fix16(int x, fix16_t y) { return ((int64_t)x * y) >> 16; }
 
 /*! Returns the linear interpolation: (inArg0 * (1 - inFract)) + (inArg1 * inFract)
 */

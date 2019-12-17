@@ -28,8 +28,6 @@
 
 char levelname[BMAX_PATH] = {0};
 
-#define TIMERINTSPERSECOND 120
-
 #define updatecrc16(crc,dat) (crc = (((crc<<8)&65535)^crctable[((((uint16_t)crc)>>8)&65535)^dat]))
 static int32_t crctable[256];
 static char kensig[64];
@@ -102,7 +100,7 @@ int32_t xdim2d = 640, ydim2d = 480, xdimgame = 640, ydimgame = 480, bppgame = 8;
 int32_t forcesetup = 1;
 
 #ifndef GEKKO
-int32_t g_maxCacheSize = 24<<20;
+int32_t g_maxCacheSize = 128<<20;
 #else
 int32_t g_maxCacheSize = 8<<20;
 #endif
@@ -168,7 +166,7 @@ void B_SetBoardFileName(const char *fn)
 }
 
 static fnlist_t fnlist;
-static CACHE1D_FIND_REC *finddirshigh=NULL, *findfileshigh=NULL;
+static BUILDVFS_FIND_REC *finddirshigh=NULL, *findfileshigh=NULL;
 static int32_t currentlist=0;
 
 //static int32_t repeatcountx, repeatcounty;
@@ -571,10 +569,12 @@ void M32_OnShowOSD(int shown)
 
 static void M32_FatalEngineError(void)
 {
-    wm_msgbox("Fatal Engine Initialization Error",
-              "There was a problem initializing the engine: %s\n\nThe application will now close.", engineerrstr);
-    ERRprintf("app_main: There was a problem initializing the engine: %s\n", engineerrstr);
-    exit(2);
+#ifdef DEBUGGINGAIDS
+    debug_break();
+#endif
+    Bsprintf(tempbuf, "There was a problem initializing the engine: %s\n", engineerrstr);
+    ERRprintf("%s", tempbuf);
+    fatal_exit(tempbuf);
 }
 
 int app_main(int argc, char const * const * argv)
@@ -602,7 +602,7 @@ int app_main(int argc, char const * const * argv)
     if ((i = CallExtPreInit(argc,argv)) < 0) return -1;
 
 #ifdef _WIN32
-    backgroundidle = 1;
+    win_priorityclass = 1;
 #endif
 
     for (i=1; i<argc; i++)
@@ -664,7 +664,7 @@ int app_main(int argc, char const * const * argv)
         if (quitevent || !startwin_run())
         {
             engineUnInit();
-            Bexit(0);
+            exit(EXIT_SUCCESS);
         }
     }
 #endif
@@ -677,7 +677,7 @@ int app_main(int argc, char const * const * argv)
 
     mouseInit();
 
-    timerInit(TIMERINTSPERSECOND);
+    timerInit(CLOCKTICKSPERSECOND);
     timerSetCallback(keytimerstuff);
 
     if (!bloodhack)
@@ -723,10 +723,10 @@ int app_main(int argc, char const * const * argv)
         char *newtile;
         int32_t sx=32, sy=32, col, j;
 
-        walock[i] = 255; // permanent tile
+        walock[i] = CACHE1D_PERMANENT;
         picsiz[i] = 5 + (5<<4);
         tilesiz[i].x = sx; tilesiz[i].y = sy;
-        cacheAllocateBlock(&waloff[i], sx*sy, &walock[i]);
+        g_cache.allocateBlock(&waloff[i], sx*sy, &walock[i]);
         newtile = (char *)waloff[i];
 
         col = paletteGetClosestColor(128, 128, 0);
@@ -781,7 +781,7 @@ int app_main(int argc, char const * const * argv)
             CallExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim2d,ydim2d);
-            Bexit(0);
+            Bexit(EXIT_SUCCESS);
         }
 
         system_getcvars();
@@ -804,7 +804,7 @@ int app_main(int argc, char const * const * argv)
             CallExtUnInit();
             engineUnInit();
             Bprintf("%d * %d not supported in this graphics mode\n",xdim,ydim);
-            Bexit(0);
+            Bexit(EXIT_SUCCESS);
         }
 
         system_getcvars();
@@ -7974,7 +7974,7 @@ end_insert_points:
         if ((j&0xffff) != 0xebf)
         {
         	printf("Don't screw with my name.\n");
-        	Bexit(0);
+        	Bexit(EXIT_SUCCESS);
         }*/
         //printext16(9L,336+9L,4,-1,kensig,0);
         //printext16(8L,336+8L,12,-1,kensig,0);
@@ -8312,7 +8312,7 @@ CANCEL:
 //                        clearfilenames();
                         engineUnInit();
 
-                        Bexit(0);
+                        exit(EXIT_SUCCESS);
                     }
 
                     // printmessage16("");
@@ -8347,7 +8347,7 @@ CANCEL:
         CallExtUnInit();
 //        clearfilenames();
         engineUnInit();
-        Bexit(1);
+        Bexit(EXIT_FAILURE);
     }
 
     videoSetPalette(GAMMA_CALC,0,0);
@@ -9723,9 +9723,9 @@ const char *getstring_simple(const char *querystr, const char *defaultstr, int32
 
 static int32_t getfilenames(const char *path, const char *kind)
 {
-    const int32_t addflags = (!pathsearchmode && grponlymode ? CACHE1D_OPT_NOSTACK : 0);
+    const int32_t addflags = (!pathsearchmode && grponlymode ? BUILDVFS_OPT_NOSTACK : 0);
 
-    fnlist_getnames(&fnlist, path, kind, addflags|CACHE1D_FIND_DRIVE, addflags);
+    fnlist_getnames(&fnlist, path, kind, addflags|BUILDVFS_FIND_DRIVE, addflags);
 
     finddirshigh = fnlist.finddirs;
     findfileshigh = fnlist.findfiles;
@@ -9838,7 +9838,7 @@ static int32_t menuselect(void)
 
         if (finddirshigh)
         {
-            const CACHE1D_FIND_REC *dir = finddirshigh;
+            const BUILDVFS_FIND_REC *dir = finddirshigh;
 
             for (i=(listsize/2)-1; i>=0; i--)
             {
@@ -9847,7 +9847,7 @@ static int32_t menuselect(void)
             }
             for (i=0; ((i<listsize) && dir); i++, dir=dir->next)
             {
-                int32_t c = (dir->type == CACHE1D_FIND_DIR ? 2 : 3); //PK
+                int32_t c = (dir->type == BUILDVFS_FIND_DIR ? 2 : 3); //PK
                 Bmemset(buffer,0,sizeof(buffer));
                 Bstrncpy(buffer,dir->name,25);
                 if (Bstrlen(buffer) == 25)
@@ -9866,7 +9866,7 @@ static int32_t menuselect(void)
 
         if (findfileshigh)
         {
-            const CACHE1D_FIND_REC *dir = findfileshigh;
+            const BUILDVFS_FIND_REC *dir = findfileshigh;
 
             for (i=(listsize/2)-1; i>=0; i--)
             {
@@ -9916,7 +9916,7 @@ static int32_t menuselect(void)
 
             {
                 // JBF 20040208: seek to first name matching pressed character
-                CACHE1D_FIND_REC *seeker = currentlist ? fnlist.findfiles : fnlist.finddirs;
+                BUILDVFS_FIND_REC *seeker = currentlist ? fnlist.findfiles : fnlist.finddirs;
                 if (keystatus[sc_Home]||keystatus[sc_End]) // home/end
                 {
                     while (keystatus[sc_End] ? seeker->next : seeker->prev)
@@ -10046,7 +10046,7 @@ static int32_t menuselect(void)
         }
         else if (ch == 13 && currentlist == 0)
         {
-            if (finddirshigh->type == CACHE1D_FIND_DRIVE)
+            if (finddirshigh->type == BUILDVFS_FIND_DRIVE)
                 Bstrcpy(selectedboardfilename, finddirshigh->name);
             else
                 Bstrcat(selectedboardfilename, finddirshigh->name);

@@ -444,8 +444,8 @@ static void Ken_UninitAll(void)
     uninitmultiplayers();
     timerUninit();
     uninitinput();
-    engineUnInit();
     uninitsb();
+    engineUnInit();
     uninitgroupfile();
 }
 
@@ -566,6 +566,11 @@ int32_t app_main(int32_t argc, char const * const * argv)
         NULL
         );
 
+    {
+        char tempbuf[256];
+        snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
+        OSD_SetVersion(tempbuf, 10,0);
+    }
     OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO: Add error and red palookup IDs.
 
     //Here's an example of TRUE ornamented walls
@@ -1178,8 +1183,8 @@ void prepareboard(char *daboardfilename)
         uninitmultiplayers();
         timerUninit();
         uninitinput();
-        engineUnInit();
         uninitsb();
+        engineUnInit();
         uninitgroupfile();
         printf("Board not found\n");
         exit(0);
@@ -3923,7 +3928,7 @@ void drawscreen(short snum, int dasmoothratio)
                 {
                     walock[TILE_TILT] = 255;
                     if (waloff[TILE_TILT] == 0)
-                        cacheAllocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
+                        g_cache.allocateBlock(&waloff[TILE_TILT],320L*320L,&walock[TILE_TILT]);
                     if ((tiltlock&1023) == 0)
                         renderSetTarget(TILE_TILT,200L>>detailmode,320L>>detailmode);
                     else
@@ -4799,7 +4804,7 @@ void playback(void)
 
         while (totalclock >= lockclock+TICSPERFRAME)
         {
-            timerUpdate();
+            timerUpdateClock();
             if (i >= reccnt)
             {
                 prepareboard(boardfilename);
@@ -4839,8 +4844,8 @@ void playback(void)
     uninitmultiplayers();
     timerUninit();
     uninitinput();
-    engineUnInit();
     uninitsb();
+    engineUnInit();
     uninitgroupfile();
     exit(0);
 }
@@ -4858,8 +4863,8 @@ void setup3dscreen(void)
         uninitmultiplayers();
         timerUninit();
         uninitinput();
-        engineUnInit();
         uninitsb();
+        engineUnInit();
         uninitgroupfile();
         exit(0);
     }
@@ -5672,7 +5677,7 @@ void faketimerhandler(void)
     short other /*, packbufleng*/;
     int i, j, k, l;
 
-    timerUpdate();
+    timerUpdateClock();
     if ((totalclock < ototalclock+(TIMERINTSPERSECOND/MOVESPERSECOND)) || (ready2send == 0)) return;
     ototalclock += (TIMERINTSPERSECOND/MOVESPERSECOND);
 
@@ -6275,8 +6280,8 @@ void waitforeverybody()
             uninitmultiplayers();
             timerUninit();
             uninitinput();
-            engineUnInit();
             uninitsb();
+            engineUnInit();
             uninitgroupfile();
             exit(0);
         }

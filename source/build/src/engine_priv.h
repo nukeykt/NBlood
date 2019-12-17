@@ -387,7 +387,7 @@ skipit:
 
 static FORCE_INLINE void setgotpic(int32_t tilenume)
 {
-    if (walock[tilenume] < 200) walock[tilenume] = 199;
+    if (walock[tilenume] < CACHE1D_LOCKED) walock[tilenume] = CACHE1D_UNLOCKED;
     gotpic[tilenume>>3] |= pow2char[tilenume&7];
 }
 

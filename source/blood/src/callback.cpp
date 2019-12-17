@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trig.h"
 #include "triggers.h"
 #include "view.h"
+#include "aiunicult.h"
 
 void fxFlameLick(int nSprite) // 0
 {
@@ -258,7 +259,6 @@ void Respawn(int nSprite) // 9
             pXSprite->burnTime = 0;
             pXSprite->isTriggered = 0;
             if (IsDudeSprite(pSprite)) {
-                
                 int nType = pSprite->type-kDudeBase;
                 pSprite->x = baseSprite[nSprite].x;
                 pSprite->y = baseSprite[nSprite].y;
@@ -270,12 +270,9 @@ void Respawn(int nSprite) // 9
                     seqSpawn(dudeInfo[nType].seqStartID, 3, pSprite->extra, -1);
                 aiInitSprite(pSprite);
                 pXSprite->key = 0;
-            
             } else if (pSprite->type == kThingTNTBarrel) {
-                
                 pSprite->cstat |= CSTAT_SPRITE_BLOCK | CSTAT_SPRITE_BLOCK_HITSCAN;
                 pSprite->cstat &= (unsigned short)~CSTAT_SPRITE_INVISIBLE;
-
             }
 
             gFX.fxSpawn(FX_29, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
@@ -292,11 +289,11 @@ void PlayerBubble(int nSprite) // 10
     {
         PLAYER *pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
         dassert(pPlayer != NULL);
-        if (!pPlayer->at302)
+        if (!pPlayer->bubbleTime)
             return;
         int top, bottom;
         GetSpriteExtents(pSprite, &top, &bottom);
-        for (int i = 0; i < (pPlayer->at302>>6); i++)
+        for (int i = 0; i < (pPlayer->bubbleTime>>6); i++)
         {
             int nDist = (pSprite->xrepeat*(tilesiz[pSprite->picnum].x/2))>>2;
             int nAngle = Random(2048);
@@ -357,7 +354,7 @@ void CounterCheck(int nSector) // 12
         return;
     } else {
         //pXSector->waitTimeA = 0; //do not reset necessary objects counter to zero
-        trTriggerSector(nSector, pXSector, kCmdOn);
+        trTriggerSector(nSector, pXSector, kCmdOn, -1);
         pXSector->locked = 1; //lock sector, so it can be opened again later
     }
 }
@@ -368,7 +365,7 @@ void FinishHim(int nSprite) // 13
     spritetype* pSprite = &sprite[nSprite];
     int nXSprite = pSprite->extra;
     XSPRITE* pXSprite = &xsprite[nXSprite];
-    if (playerSeqPlaying(&gPlayer[pSprite->type - kDudePlayer1], 16) && pXSprite->target == gMe->at5b)
+    if (playerSeqPlaying(&gPlayer[pSprite->type - kDudePlayer1], 16) && pXSprite->target == gMe->nSprite)
         sndStartSample(3313, -1, 1, 0);
 }
 
@@ -485,13 +482,13 @@ void returnFlagToBase(int nSprite) // 17
         XSPRITE* pXOwner = &xsprite[pOwner->extra];
         switch (pSprite->type) {
             case kItemFlagA:
-                trTriggerSprite(pOwner->index, pXOwner, kCmdOn);
+                trTriggerSprite(pOwner->index, pXOwner, kCmdOn, pOwner->index);
                 sndStartSample(8003, 255, 2, 0);
                 gBlueFlagDropped = false;
                 viewSetMessage("Blue Flag returned to base.");
                 break;
             case kItemFlagB:
-                trTriggerSprite(pOwner->index, pXOwner, kCmdOn);
+                trTriggerSprite(pOwner->index, pXOwner, kCmdOn, pOwner->index);
                 sndStartSample(8002, 255, 2, 0);
                 gRedFlagDropped = false;
                 viewSetMessage("Red Flag returned to base.");
@@ -538,9 +535,9 @@ void fxPodBloodSplat(int nSprite) // 19
         sfxPlay3DSound(pSprite, 385, nChannel, 1);
     }
     spritetype *pFX = NULL;
-    if (pSprite->type == 53 || pSprite->type == kThingPodFireBall)
+    if (pSprite->type == 53 || pSprite->type == kThingPodGreenBall)
     {
-        if (Chance(0x500) || pSprite->type == kThingPodFireBall)
+        if (Chance(0x500) || pSprite->type == kThingPodGreenBall)
             pFX = gFX.fxSpawn(FX_55, pSprite->sectnum, x, y, floorZ-64, 0);
         if (pFX)
             pFX->ang = nAngle;
@@ -585,7 +582,7 @@ void sub_76A08(spritetype *pSprite, spritetype *pSprite2, PLAYER *pPlayer) // ??
     if (pPlayer)
     {
         playerResetInertia(pPlayer);
-        pPlayer->at6b = pPlayer->at73 = 0;
+        pPlayer->zViewVel = pPlayer->zWeaponVel = 0;
     }
 }
 
@@ -641,11 +638,11 @@ void DropVoodoo(int nSprite) // unused
                     {
                         if (gGameOptions.nGameType == 1)
                             continue;
-                        if (gGameOptions.nGameType == 3 && pPlayer->at2ea == pPlayer2->at2ea)
+                        if (gGameOptions.nGameType == 3 && pPlayer->teamId == pPlayer2->teamId)
                             continue;
                         int t = 0x8000/ClipLow(gNetPlayers-1, 1);
-                        if (!powerupCheck(pPlayer2, 14))
-                            t += ((3200-pPlayer2->at33e[2])<<15)/3200;
+                        if (!powerupCheck(pPlayer2, kPwUpDeathMask))
+                            t += ((3200-pPlayer2->armor[2])<<15)/3200;
                         if (Chance(t) || nNextSprite < 0)
                         {
                             int nDmg = actDamageSprite(nOwner, pSprite2, DAMAGE_TYPE_5, pXSprite->data1<<4);
@@ -731,7 +728,7 @@ void UniMissileBurst(int nSprite) // 22
         pBurst->flags = pSprite->flags;
         pBurst->xrepeat = pSprite->xrepeat / 2;
         pBurst->yrepeat = pSprite->yrepeat / 2;
-        pBurst->ang = ((pSprite->ang + missileInfo[pSprite->type - kMissileBase].at6) & 2047);
+        pBurst->ang = ((pSprite->ang + missileInfo[pSprite->type - kMissileBase].angleOfs) & 2047);
         pBurst->owner = pSprite->owner;
 
         actBuildMissile(pBurst, pBurst->extra, pSprite->xvel);
@@ -762,6 +759,12 @@ void makeMissileBlocking(int nSprite) // 23
     sprite[nSprite].cstat |= CSTAT_SPRITE_BLOCK;
 }
 
+void genDudeUpdateCallback(int nSprite) // 24
+{
+    if (spriRangeIsFine(nSprite))
+        genDudeUpdate(&sprite[nSprite]);
+}
+
 void(*gCallback[kCallbackMax])(int) =
 {
     fxFlameLick,
@@ -788,4 +791,5 @@ void(*gCallback[kCallbackMax])(int) =
     DropVoodoo, // unused
     UniMissileBurst,
     makeMissileBlocking,
+    genDudeUpdateCallback,
 };

@@ -38,7 +38,7 @@ static struct {
 	int fullscreen;
 	int xdim3d, ydim3d, bpp3d;
 	int forcesetup;
-	char selectedgrp[BMAX_PATH+1];
+    struct grpfile const * selectedgrp;
     int samplerate, bitspersample, channels;
     int usemouse, usejoystick;
 } settings;
@@ -232,7 +232,7 @@ static struct soundQuality_t {
 	if (row >= 0) {
 		struct grpfile *p = [[gamelistsrc grpAtIndex:row] entryptr];
 		if (p) {
-			strcpy(settings.selectedgrp, p->name);
+			settings.selectedgrp = p;
 		}
 	}
 
@@ -265,7 +265,7 @@ static struct soundQuality_t {
 	[[gameList documentView] setDataSource:gamelistsrc];
 	[[gameList documentView] deselectAll:nil];
 
-	int row = [gamelistsrc findIndexForGrpname:[NSString stringWithUTF8String:settings.selectedgrp]];
+	int row = [gamelistsrc findIndexForGrpname:[NSString stringWithUTF8String:settings.selectedgrp->filename]];
 	if (row >= 0) {
 		[[gameList documentView] scrollRowToVisible:row];
 		[[gameList documentView] selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
@@ -412,7 +412,6 @@ int startwin_idle(void *v)
 	return 0;
 }
 
-extern char* grpfile;
 extern int32 ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP, ForceSetup, UseMouse, UseJoystick;
 
 int startwin_run(void)
@@ -420,8 +419,6 @@ int startwin_run(void)
 	int retval;
 
 	if (startwin == nil) return 0;
-
-	ScanGroups();
 
 	settings.fullscreen = ScreenMode;
 	settings.xdim3d = ScreenWidth;
@@ -433,7 +430,7 @@ int startwin_run(void)
     settings.usemouse = UseMouse;
     settings.usejoystick = UseJoystick;
 	settings.forcesetup = ForceSetup;
-	strncpy(settings.selectedgrp, grpfile, BMAX_PATH);
+	settings.selectedgrp = g_selectedGrp;
 
 	[startwin setupRunMode];
 
@@ -461,7 +458,7 @@ int startwin_run(void)
         UseMouse = settings.usemouse;
         UseJoystick = settings.usejoystick;
 		ForceSetup = settings.forcesetup;
-		grpfile = settings.selectedgrp;
+		g_selectedGrp = settings.selectedgrp;
 	}
 
 	return retval;

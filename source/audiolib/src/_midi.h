@@ -25,8 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define ___MIDI_H
 #include "compat.h"
 
-#define RELATIVE_BEAT( measure, beat, tick ) \
-   ( ( tick ) + ( ( beat ) << 9 ) + ( ( measure ) << 16 ) )
+#define RELATIVE_BEAT(measure, beat, tick) ((tick) + ((beat) << 9) + ((measure) << 16))
 
 //Bobby Prince thinks this may be 100
 //#define GENMIDI_DefaultVolume 100
@@ -45,6 +44,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MIDI_PAN                   10
 #define MIDI_DETUNE                94
 #define MIDI_RHYTHM_CHANNEL        9
+#define MIDI_BANK_SELECT_MSB       0
+#define MIDI_BANK_SELECT_LSB       32
 #define MIDI_RPN_MSB               100
 #define MIDI_RPN_LSB               101
 #define MIDI_DATAENTRY_MSB         6
@@ -64,8 +65,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define MIDI_SYSEX_CONTINUE        0xF7
 #define MIDI_META_EVENT            0xFF
 #define MIDI_END_OF_TRACK          0x2F
+#define MIDI_HOLD1                 0x40
+#define MIDI_SOSTENUTO             0x42
 #define MIDI_TEMPO_CHANGE          0x51
 #define MIDI_TIME_SIGNATURE        0x58
+#define MIDI_REVERB                0x5b
+#define MIDI_CHORUS                0x5d
+#define MIDI_ALL_SOUNDS_OFF        0x78
 #define MIDI_RESET_ALL_CONTROLLERS 0x79
 #define MIDI_ALL_NOTES_OFF         0x7b
 #define MIDI_MONO_MODE_ON          0x7E
@@ -95,6 +101,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define EMIDI_GeneralMIDI       0
 #define EMIDI_SoundBlaster      4
+#define EMIDI_AdLib             7
 
 #define EMIDI_AffectsCurrentCard(c, type) (((c) == EMIDI_ALL_CARDS) || ((c) == (type)))
 #define EMIDI_NUM_CONTEXTS      7
@@ -106,14 +113,14 @@ typedef struct
     int16_t loopcount;
     int16_t RunningStatus;
     unsigned time;
-    int32_t FPSecondsPerTick;
+    int FPSecondsPerTick;
     int16_t tick;
     int16_t beat;
     int16_t measure;
     int16_t BeatsPerMeasure;
     int16_t TicksPerBeat;
     int16_t TimeBase;
-    int32_t delay;
+    int delay;
     int16_t active;
 } songcontext;
 
@@ -122,7 +129,7 @@ typedef struct
     char *start;
     char *pos;
 
-    int32_t delay;
+    int delay;
     int16_t active;
     int16_t RunningStatus;
 
@@ -134,15 +141,15 @@ typedef struct
     char EMIDI_VolumeChange;
 } track;
 
-static int32_t _MIDI_ReadNumber(void *from, size_t size);
-static int32_t _MIDI_ReadDelta(track *ptr);
+static int  _MIDI_ReadNumber(void *from, size_t size);
+static int  _MIDI_ReadDelta(track *ptr);
 static void _MIDI_ResetTracks(void);
 static void _MIDI_AdvanceTick(void);
 static void _MIDI_MetaEvent(track *Track);
 static void _MIDI_SysEx(track *Track);
-static int32_t _MIDI_InterpretControllerInfo(track *Track, int32_t TimeSet, int32_t channel, int32_t c1, int32_t c2);
-static int32_t _MIDI_SendControlChange(int32_t channel, int32_t c1, int32_t c2);
-static void _MIDI_SetChannelVolume(int32_t channel, int32_t volume);
+static int  _MIDI_InterpretControllerInfo(track *Track, int TimeSet, int channel, int c1, int c2);
+static int  _MIDI_SendControlChange(int channel, int c1, int c2);
+static void _MIDI_SetChannelVolume(int channel, int volume);
 static void _MIDI_SendChannelVolumes(void);
 static void _MIDI_InitEMIDI(void);
 

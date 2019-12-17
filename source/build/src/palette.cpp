@@ -531,7 +531,7 @@ static void maybe_alloc_palookup(int32_t palnum)
     {
         alloc_palookup(palnum);
         if (palookup[palnum] == NULL)
-            Bexit(1);
+            fatal_exit("NULL palette!\n");
     }
 }
 
@@ -748,7 +748,7 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
     int32_t palsumdidchange;
     //    uint32_t lastbright = curbrightness;
 
-    Bassert((flags&4)==0);
+    // Bassert((flags&4)==0); // What is so bad about this flag?
 
     if (/*(unsigned)dapalid >= MAXBASEPALS ||*/ basepaltable[dapalid] == NULL)
         dapalid = 0;

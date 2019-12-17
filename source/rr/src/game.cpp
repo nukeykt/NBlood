@@ -174,6 +174,14 @@ enum gametokens
     T_TEXTUREFILTER,
 };
 
+static void gameTimerHandler(void)
+{
+    S_Cleanup();
+    MUSIC_Update();
+
+    G_HandleSpecialKeys();
+}
+
 void G_HandleSpecialKeys(void)
 {
     // we need CONTROL_GetInput in order to pick up joystick button presses
@@ -1048,7 +1056,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         {
             walock[TILE_SAVESHOT] = 199;
             if (waloff[TILE_SAVESHOT] == 0)
-                cacheAllocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
+                g_cache.allocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
 
             if (videoGetRenderMode() == REND_CLASSIC)
                 renderSetTarget(TILE_SAVESHOT, 200, 320);
@@ -1108,7 +1116,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
                 walock[TILE_TILT] = 255;
                 if (waloff[TILE_TILT] == 0)
-                    cacheAllocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
+                    g_cache.allocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
                 renderSetTarget(TILE_TILT, viewtilexsiz, viewtileysiz);
 
@@ -7448,6 +7456,7 @@ static void G_Startup(void)
     set_memerr_handler(&G_HandleMemErr);
 
     timerInit(TICRATE);
+    timerSetCallback(gameTimerHandler);
 
     initcrc32table();
 
@@ -7775,18 +7784,24 @@ int app_main(int argc, char const * const * argv)
 #endif
 
 #ifdef _WIN32
-    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && win_checkinstance())
+#ifndef DEBUGGINGAIDS
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-        if (!wm_ynbox(APPNAME, "Another Build game is currently running. "
-                      "Do you wish to continue starting this copy?"))
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
             return 3;
     }
+#endif
 
-    backgroundidle = 0;
-
+#ifndef USE_PHYSFS
 #ifdef DEBUGGINGAIDS
     extern int32_t (*check_filename_casing_fn)(void);
     check_filename_casing_fn = check_filename_casing;
+#endif
 #endif
 #endif
 
@@ -7935,18 +7950,6 @@ int app_main(int argc, char const * const * argv)
     g_logFlushWindow = 0;
     G_LoadGroups(!g_noAutoLoad && !ud.setup.noautoload);
 //    flushlogwindow = 1;
-    
-    int32_t timbre = kopen4load("d3dtimbr.tmb", 0);
-    if (timbre != -1)
-    {
-        int32_t length = kfilelength(timbre);
-        uint8_t *tmb = (uint8_t*)Xmalloc(length);
-        kread(timbre, tmb, length);
-        OPLMusic::AL_RegisterTimbreBank(tmb);
-        //OPLMusic::AL_SetMaxMidiChannel(10);
-        Bfree(tmb);
-        kclose(timbre);
-    }
 
     if (!g_useCwd)
         G_CleanupSearchPaths();
@@ -8351,64 +8354,68 @@ MAIN_LOOP_RESTART:
 
         OSD_DispatchQueued();
 
+        static bool frameJustDrawn;
         char gameUpdate = false;
         double const gameUpdateStartTime = timerGetHiTicks();
         if (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME)
         {
-            //if (g_networkMode != NET_DEDICATED_SERVER)
-            //{
-            //    if (RRRA && g_player[myconnectindex].ps->on_motorcycle)
-            //        P_GetInputMotorcycle(myconnectindex);
-            //    else if (RRRA && g_player[myconnectindex].ps->on_boat)
-            //        P_GetInputBoat(myconnectindex);
-            //    else
-            //        P_GetInput(myconnectindex);
-            //}
-
-            //Bmemcpy(&inputfifo[0][myconnectindex], &localInput, sizeof(input_t));
-
-            S_Update();
-
             do
             {
-                timerUpdate();
+                //if (g_networkMode != NET_DEDICATED_SERVER)
+                //{
+                //    if (RRRA && g_player[myconnectindex].ps->on_motorcycle)
+                //        P_GetInputMotorcycle(myconnectindex);
+                //    else if (RRRA && g_player[myconnectindex].ps->on_boat)
+                //        P_GetInputBoat(myconnectindex);
+                //    else
+                //        P_GetInput(myconnectindex);
+                //}
 
-                if (ready2send == 0) break;
-                Net_GetInput();
+                //Bmemcpy(&inputfifo[0][myconnectindex], &localInput, sizeof(input_t));
 
-                ototalclock += TICSPERFRAME;
-
-                int const moveClock = (int) totalclock;
-
-                if (((ud.show_help == 0 && (g_player[myconnectindex].ps->gm&MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1)) &&
-                        (g_player[myconnectindex].ps->gm&MODE_GAME))
-                {
-                    G_MoveLoop();
-#ifdef __ANDROID__
-                    inputfifo[0][myconnectindex].fvel = 0;
-                    inputfifo[0][myconnectindex].svel = 0;
-                    inputfifo[0][myconnectindex].avel = 0;
-                    inputfifo[0][myconnectindex].horz = 0;
-#endif
-                }
-
-                timerUpdate();
-
-                if (totalclock - moveClock >= TICSPERFRAME)
-                {
-                    // computing a tic takes longer than a tic, so we're slowing
-                    // the game down. rather than tightly spinning here, go draw
-                    // a frame since we're fucked anyway
+                if (!frameJustDrawn)
                     break;
-                }
-            }
-            while (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME);
 
-            gameUpdate = true;
-            g_gameUpdateTime = timerGetHiTicks()-gameUpdateStartTime;
-            if (g_gameUpdateAvgTime < 0.f)
-                g_gameUpdateAvgTime = g_gameUpdateTime;
-            g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
+                frameJustDrawn = false;
+
+                do
+                {
+                    if (ready2send == 0) break;
+                    Net_GetInput();
+
+                    ototalclock += TICSPERFRAME;
+
+                    int const moveClock = (int) totalclock;
+
+                    if (((ud.show_help == 0 && (g_player[myconnectindex].ps->gm&MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1)) &&
+                            (g_player[myconnectindex].ps->gm&MODE_GAME))
+                    {
+                        G_MoveLoop();
+                        S_Update();
+#ifdef __ANDROID__
+                        inputfifo[0][myconnectindex].fvel = 0;
+                        inputfifo[0][myconnectindex].svel = 0;
+                        inputfifo[0][myconnectindex].avel = 0;
+                        inputfifo[0][myconnectindex].horz = 0;
+#endif
+                    }
+
+                    if (totalclock - moveClock >= TICSPERFRAME)
+                    {
+                        // computing a tic takes longer than a tic, so we're slowing
+                        // the game down. rather than tightly spinning here, go draw
+                        // a frame since we're fucked anyway
+                        break;
+                    }
+                }
+                while (((g_netClient || g_netServer) || !(g_player[myconnectindex].ps->gm & (MODE_MENU|MODE_DEMO))) && totalclock >= ototalclock+TICSPERFRAME);
+
+                gameUpdate = true;
+                g_gameUpdateTime = timerGetHiTicks()-gameUpdateStartTime;
+                if (g_gameUpdateAvgTime < 0.f)
+                    g_gameUpdateAvgTime = g_gameUpdateTime;
+                g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
+            } while(0);
         }
 
         G_DoCheats();
@@ -8440,6 +8447,8 @@ MAIN_LOOP_RESTART:
             {
                 g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;
             }
+
+            frameJustDrawn = true;
         }
 
         // handle CON_SAVE and CON_SAVENN

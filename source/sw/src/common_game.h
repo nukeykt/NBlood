@@ -44,6 +44,7 @@ extern "C" {
 //
 //****************************************************************************
 
+#define APPNAME "VoidSW"
 #ifndef APPBASENAME
 #define APPBASENAME         "voidsw"
 #endif
@@ -133,6 +134,9 @@ extern "C" {
 #define MACRO9  "Hope you were paying attention."
 #define MACRO10 "ITTAIIIUUU!!!"
 
+extern struct grpfile const * g_selectedGrp;
+
+extern int g_useCwd;
 
 extern char *g_grpNamePtr;
 
@@ -142,6 +146,29 @@ const char *G_GrpFile(void);
 void clearGrpNamePtr(void);
 
 void SW_InitMultiPsky(void);
+
+void SW_ExtPreInit(int32_t argc, char const * const * argv);
+void SW_ExtInit(void);
+
+void SW_ScanGroups(void);
+void SW_LoadGroups(void);
+
+void SW_CleanupSearchPaths(void);
+
+enum searchpathtypes_t {
+    SEARCHPATH_REMOVE = 1<<0,
+};
+
+extern int g_addonNum;
+
+typedef enum basepal_ {
+    BASEPAL = 0,
+    DREALMSPAL,
+    TITLEPAL,
+    TENPAL,
+    ANIMPAL,
+    BASEPALCOUNT
+} basepal_t;
 
 #ifdef __cplusplus
 };

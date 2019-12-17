@@ -37,6 +37,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "fx_man.h"
 #include "sounds.h"
 #include "config.h"
+#include "common.h"
 #include "common_game.h"
 
 // we load this in to get default button and key assignments
@@ -62,8 +63,10 @@ int32_t NumberPlayers,CommPort,PortSpeed,IrqNumber,UartAddress;
 //
 // Sound variables
 //
+int32_t FXToggle    = 1;
+int32_t MusicToggle = 1;
 int32_t FXDevice    = 0;
-int32_t MusicDevice = 0;
+int32_t MusicDevice = ASS_AutoDetect;
 int32_t NumVoices   = 32;
 int32_t NumChannels = 2;
 int32_t NumBits     = 16;
@@ -227,8 +230,10 @@ void CONFIG_SetDefaults(void)
     }
 
     ScreenBPP = 32;
+    FXToggle = 1;
+    MusicToggle = 1;
     FXDevice = 0;
-    MusicDevice = 0;
+    MusicDevice = ASS_AutoDetect;
     NumVoices = 32;
     NumChannels = 2;
     NumBits = 16;
@@ -249,8 +254,11 @@ void CONFIG_SetDefaults(void)
     Bstrcpy(WangBangMacro[8], MACRO9);
     Bstrcpy(WangBangMacro[9], MACRO10);
 
-    SetDefaultKeyDefinitions(0);
-    SetMouseDefaults(0);
+    SetDefaultKeyDefinitions(1);
+    SetMouseDefaults(1);
+
+    gs.MouseAimingOn = TRUE;
+    gs.AutoRun = TRUE;
 
     memset(MouseDigitalAxes, -1, sizeof(MouseDigitalAxes));
     for (i=0; i<MAXMOUSEAXES; i++)
@@ -262,7 +270,11 @@ void CONFIG_SetDefaults(void)
 
         MouseAnalogAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
     }
-    CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Temporary !CHECKME!
+    gs.MouseSpeed = DEFAULTMOUSESENSITIVITY*8192; // fix magic scale factor
+    CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
+
+#if 0
+    // joystick defaults are pointless
 
     memset(JoystickButtons, -1, sizeof(JoystickButtons));
     memset(JoystickButtonsClicked, -1, sizeof(JoystickButtonsClicked));
@@ -284,6 +296,7 @@ void CONFIG_SetDefaults(void)
 
         JoystickAnalogAxes[i] = CONFIG_AnalogNameToNum(joystickanalogdefaults[i]);
     }
+#endif
 }
 
 
@@ -311,10 +324,7 @@ void SetDefaultKeyDefinitions(int style)
         if (f == -1) continue;
         k1 = KB_StringToScanCode(keydefaultset[3*i+1]);
         k2 = KB_StringToScanCode(keydefaultset[3*i+2]);
-// [JM] Needs to be rewritten, I think. !CHECKME!
-#if 0
         CONTROL_MapKey(i, k1, k2);
-#endif
 
         KeyboardKeys[f][0] = k1;
         KeyboardKeys[f][1] = k2;
@@ -409,11 +419,8 @@ void CONFIG_ReadKeys(int32_t scripthandle)
     {
         if (i == gamefunc_Show_Console)
             OSD_CaptureKey(KeyboardKeys[i][0]);
-#if 0
-        // [JM] Needs to be re-done. !CHECKME!
         else
             CONTROL_MapKey(i, KeyboardKeys[i][0], KeyboardKeys[i][1]);
-#endif
     }
 }
 
@@ -483,7 +490,7 @@ void CONFIG_SetupMouse(void)
         CONTROL_SetAnalogAxisScale(i, MouseAnalogScale[i], controldevice_mouse);
     }
 
-    CONTROL_MouseSensitivity = float(gs.MouseSpeed); // [JM] Temporary !CHECKME!
+    CONTROL_MouseSensitivity = float(gs.MouseSpeed) * (1.f/8192.f); // fix magic scale factor
 }
 
 /*
@@ -601,6 +608,8 @@ int32_t CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "GLAnisotropy", &glanisotropy);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "GLUseTextureCompr", &glusetexcompr);
 
+    SCRIPT_GetNumber(scripthandle, "Sound Setup", "FXToggle",&FXToggle);
+    SCRIPT_GetNumber(scripthandle, "Sound Setup", "MusicToggle",&MusicToggle);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "FXDevice",&FXDevice);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "MusicDevice",&MusicDevice);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "FXVolume",&dummy);
@@ -621,6 +630,14 @@ int32_t CONFIG_ReadSetup(void)
         memcpy(gs.WaveformTrackName, waveformtrackname, MAXWAVEFORMTRACKLENGTH);
 
     SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup",&ForceSetup);
+
+    if (g_grpNamePtr == NULL && g_addonNum == 0)
+    {
+        SCRIPT_GetStringPtr(scripthandle, "Setup", "SelectedGRP", &g_grpNamePtr);
+        if (g_grpNamePtr && !strlen(g_grpNamePtr))
+            g_grpNamePtr = dup_filename(G_DefaultGrpFile());
+    }
+
     SCRIPT_GetNumber(scripthandle, "Controls","UseMouse",&UseMouse);
     SCRIPT_GetNumber(scripthandle, "Controls","UseJoystick",&UseJoystick);
     SCRIPT_GetString(scripthandle, "Comm Setup", "RTSName",RTSName);
@@ -668,6 +685,8 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLAnisotropy",glanisotropy,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLUseTextureCompr",glusetexcompr,FALSE,FALSE);
 
+    SCRIPT_PutNumber(scripthandle, "Sound Setup", "FXToggle", FXToggle, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Sound Setup", "MusicToggle", MusicToggle, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "FXDevice", FXDevice, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "MusicDevice", MusicDevice, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "NumVoices", NumVoices, FALSE, FALSE);
@@ -681,6 +700,10 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutString(scripthandle, "Sound Setup", "WaveformTrackName", gs.WaveformTrackName);
 
     SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup",ForceSetup,FALSE,FALSE);
+
+    if (g_grpNamePtr && !g_addonNum)
+        SCRIPT_PutString(scripthandle, "Setup", "SelectedGRP", g_grpNamePtr);
+
     SCRIPT_PutNumber(scripthandle, "Controls","UseMouse",UseMouse,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Controls","UseJoystick",UseJoystick,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Controls","MouseSensitivity",gs.MouseSpeed,FALSE,FALSE);

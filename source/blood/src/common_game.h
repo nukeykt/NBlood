@@ -47,6 +47,7 @@ void _SetErrorLoc(const char *pzFile, int nLine);
 void _ThrowError(const char *pzFormat, ...);
 void __dassert(const char *pzExpr, const char *pzFile, int nLine);
 void QuitGame(void);
+void _consoleSysMsg(const char* pMessage, ...);
 
 #define ThrowError(...) \
 	{ \
@@ -54,7 +55,15 @@ void QuitGame(void);
 		_ThrowError(__VA_ARGS__); \
 	}
 
+// print error to console only
+#define consoleSysMsg(...) \
+	{ \
+		_SetErrorLoc(__FILE__,__LINE__); \
+		_consoleSysMsg(__VA_ARGS__); \
+	}
+
 #define dassert(x) if (!(x)) __dassert(#x,__FILE__,__LINE__)
+
 
 #define kMaxSectors MAXSECTORS
 #define kMaxWalls MAXWALLS
@@ -83,32 +92,6 @@ void QuitGame(void);
 
 #define kExplodeMax 8
 
-
-
-#define kMaxPowerUps 51
-
-#define kStatNothing -1
-#define kStatDecoration 0
-#define kStatFX 1
-#define kStatExplosion 2
-#define kStatItem 3
-#define kStatThing 4
-#define kStatProjectile 5
-#define kStatDude 6
-#define kStatInactive 7 // inactive (ambush) dudes
-#define kStatRespawn 8
-#define kStatPurge 9
-#define kStatMarker 10
-#define kStatTraps 11
-#define kStatAmbience 12
-#define kStatSpares 13
-#define kStatFlare 14
-#define kStatDebris 15
-#define kStatPathMarker 16
-#define kStatModernDudeTargetChanger 20 // gModernMap only
-#define kStatModernPlayQAV 21 // gModernMap only
-#define kStatFree 1024
-
 #define kLensSize 80
 #define kViewEffectMax 19
 
@@ -118,7 +101,70 @@ void QuitGame(void);
 // defined by NoOne:
 // -------------------------------
 #define kMaxPAL 5
+#define kFreeQAVEntry 108
 
+#define kDmgFall 0
+#define kDmgBurn 1
+#define kDmgBullet 2
+#define kDmgExplode 3
+#define kDmgChoke 4
+#define kDmgSpirit 5
+#define kDmgElectric 6
+#define kDmgMax 7
+
+// MEDIUM /////////////////////////////////////////////////////
+enum {
+kMediumNormal                   = 0,
+kMediumWater                    = 1,
+kMediumGoo                      = 2,
+};
+
+// STATNUMS /////////////////////////////////////////////////////
+enum {
+kStatNothing                    = -1,
+kStatDecoration                 = 0,
+kStatFX                         = 1,
+kStatExplosion                  = 2,
+kStatItem                       = 3,
+kStatThing                      = 4,
+kStatProjectile                 = 5,
+kStatDude                       = 6,
+kStatInactive                   = 7, // inactive (ambush) dudes
+kStatRespawn                    = 8,
+kStatPurge                      = 9,
+kStatMarker                     = 10,
+kStatTraps                      = 11,
+kStatAmbience                   = 12,
+kStatSpares                     = 13,
+kStatFlare                      = 14,
+kStatDebris                     = 15,
+kStatPathMarker                 = 16,
+kStatModernDudeTargetChanger    = 20, // gModernMap only
+kStatFree                       = 1024,
+};
+
+
+// POWERUPS /////////////////////////////////////////////////////
+enum {
+kPwUpFeatherFall        = 12,
+kPwUpShadowCloak        = 13,
+kPwUpDeathMask          = 14,
+kPwUpJumpBoots          = 15,
+kPwUpTwoGuns            = 17,
+kPwUpDivingSuit         = 18,
+kPwUpGasMask            = 19,
+kPwUpCrystalBall        = 21,
+kPwUpDoppleganger       = 23,
+kPwUpReflectShots       = 24,
+kPwUpBeastVision        = 25,
+kPwUpShadowCloakUseless = 26,
+kPwUpDeliriumShroom     = 28,
+kPwUpGrowShroom         = 29,
+kPwUpShrinkShroom       = 30,
+kPwUpDeathMaskUseless   = 31,
+kPwUpAsbestArmor        = 39,
+kMaxPowerUps            = 51,
+};
 
 // SPRITE TYPES /////////////////////////////////////////////////
 enum {
@@ -167,7 +213,7 @@ enum {
     kModernEffectSpawner = 38,
     kModernWindGenerator = 39,
     kModernConcussSprite = 712, /// WIP
-    kModernPlayQAV = 713, /// WIP
+    kModernPlayerControl = 500, /// WIP
 
     // decorations
     kDecorationTorch = 30,
@@ -222,8 +268,8 @@ enum {
     kItemReflectShots = 124,
     kItemBeastVision = 125,
     kItemShroomDelirium = 128,
-    kItemShroomGrow = 129, // gModernMap = only
-    kItemShroomShrink = 130, // gModernMap = only
+    kItemShroomGrow = 129, // gModernMap only
+    kItemShroomShrink = 130, // gModernMap only
 
     kItemArmorAsbest = 139,
     kItemArmorBasic = 140,
@@ -346,8 +392,8 @@ enum {
     kThingBloodChunks = 426,
     kThingZombieHead = 427,
     kThingNapalmBall = 428,
-    kThingPodGreenBall = 429,
-    kThingPodFireBall = 430,
+    kThingPodFireBall = 429,
+    kThingPodGreenBall = 430,
     kThingDroppedLifeLeech = 431,
     kThingVoodooHead = 432, // unused
     kModernThingTNTProx = 433, // gModernMap only - detects only players
@@ -405,6 +451,17 @@ enum {
     kSectorMax = 620,
 };
 
+// ai state types
+enum {
+kAiStateOther           = -1,
+kAiStateIdle            =  0,
+kAiStateGenIdle         =  1,
+kAiStateMove            =  2,
+kAiStateSearch          =  3,
+kAiStateChase           =  4,
+kAiStateRecoil          =  5,
+kAiStateAttack          =  6,
+};
 
 // sprite attributes
 #define kHitagAutoAim 0x0008
@@ -439,16 +496,6 @@ enum {
 #define kSecCFlipMask 0x34
 #define kSecCRelAlign 0x40
 #define kSecCFloorShade 0x8000
-
-
-// ai state types
-#define kAiStateOther -1
-#define kAiStateIdle 0
-#define kAiStateGenIdle 1
-#define kAiStateMove 2
-#define kAiStateSearch 3
-#define kAiStateChase 4
-#define kAiStateRecoil 5
 
 
 #define kAng5 28
@@ -510,10 +557,10 @@ extern void G_SetupGlobalPsky(void);
 #define G_ModDirSnprintfLite(buf, size, basename) \
     ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, "%s", basename))
 
-static inline void G_HandleAsync(void)
+static inline int gameHandleEvents(void)
 {
-    handleevents();
     netGetPackets();
+    return handleevents();
 }
 
 #if defined HAVE_FLAC || defined HAVE_VORBIS

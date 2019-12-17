@@ -92,8 +92,10 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     UNREFERENCED_PARAMETER(argv);
 
     OSD_SetLogFile("ekenbuild-editor.log");
-    OSD_SetVersion(AppProperName,0,2);
-    initprintf("%s %s\n", AppProperName, s_buildRev);
+    char tempbuf[256];
+    snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
+    OSD_SetVersion(tempbuf, 10,0);
+    buildputs(tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -112,6 +114,8 @@ int32_t ExtInit(void)
     printf("------------------------------------------------------------------------------\n");
     getch();
     */
+
+    OSD_SetParameters(0,2, 0,0, 4,0, 0, 0, 0); // TODO
 
     bpp = 8;
     if (loadsetup(setupfilename) < 0) buildputs("Configuration file not found, using defaults.\n"), rv = 1;
@@ -244,7 +248,7 @@ void ExtPreCheckKeys(void)
         dy = (ydim + (ydim >> 3) + (ydim >> 4) + (ydim >> 6)) & (~7);
         i = scale(320,ydim,xdim);
 
-        if (waloff[4094] == 0) cacheAllocateBlock(&waloff[4094],/*240L*384L*/ dx*dy,&walock[4094]);
+        if (waloff[4094] == 0) g_cache.allocateBlock(&waloff[4094],/*240L*384L*/ dx*dy,&walock[4094]);
         renderSetTarget(4094,/*240L,384L*/ dy,dx);
 
         cosang = sintable[(hang+512)&2047];
@@ -594,7 +598,7 @@ void ExtEditSpriteData(short spritenum)   //F8
 
 void faketimerhandler(void)
 {
-    timerUpdate();
+    timerUpdateClock();
 }
 
 void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }

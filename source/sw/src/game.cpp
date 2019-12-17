@@ -45,9 +45,7 @@ Things required to make savegames work:
 #include "baselayer.h"
 #include "cache1d.h"
 #include "osd.h"
-#ifdef RENDERTYPEWIN
-# include "winlayer.h"
-#endif
+#include "renderlayer.h"
 
 #include "keys.h"
 #include "names2.h"
@@ -89,10 +87,15 @@ Things required to make savegames work:
 #include "text.h"
 #include "music.h"
 
+#include "grpscan.h"
 #include "common.h"
 #include "common_game.h"
 
 #include "crc32.h"
+
+#ifdef _WIN32
+# include "winbits.h"
+#endif
 
 const char* AppProperName = "VoidSW";
 const char* AppTechnicalName = "voidsw";
@@ -227,6 +230,8 @@ const GAME_SET gs_defaults =
     FALSE, // mouse aiming on
     FALSE, // play cd
     "Track??", // waveform track name
+    FALSE,
+    TRUE,
 };
 GAME_SET gs;
 
@@ -290,6 +295,7 @@ void BOT_DeleteAllBots(void);
 void BotPlayerInsert(PLAYERp pp);
 void SybexScreen(void);
 void DosScreen(void);
+void PlayTheme(void);
 void MenuLevel(void);
 void StatScreen(PLAYERp mpp);
 void InitRunLevel(void);
@@ -682,7 +688,6 @@ TerminateGame(void)
     //uninitkeys();
     KB_Shutdown();
 
-    engineUnInit();
     TermSetup();
 
     //Terminate3DSounds();                // Kill the sounds linked list
@@ -692,6 +697,9 @@ TerminateGame(void)
 
     if (CleanExit)
         DosScreen();
+
+    engineUnInit();
+    FreeGroups();
 
     uninitgroupfile();
 }
@@ -809,7 +817,6 @@ void Set_GameMode(void)
             uninitmultiplayers();
             //uninitkeys();
             KB_Shutdown();
-            engineUnInit();
             TermSetup();
             UnInitSound();
             timerUninit();
@@ -836,10 +843,11 @@ void MultiSharewareCheck(void)
         uninitmultiplayers();
         //uninitkeys();
         KB_Shutdown();
-        engineUnInit();
         TermSetup();
         UnInitSound();
         timerUninit();
+        engineUnInit();
+        FreeGroups();
         uninitgroupfile();
         exit(0);
     }
@@ -895,8 +903,8 @@ void AnimateCacheCursor(void)
 
 void COVERsetbrightness(int bright, unsigned char *pal)
 {
-    paletteSetColorTable(0, pal);
-    videoSetPalette(bright, 0, 0);
+    paletteSetColorTable(BASEPAL, pal);
+    videoSetPalette(bright, BASEPAL, 0);
 }
 
 
@@ -925,7 +933,13 @@ InitGame(int32_t argc, char const * const * argv)
     if (engineInit())
         SW_FatalEngineError();
 
-    //initgroupfile(G_GrpFile());  // JBF: moving this close to start of program to detect shareware
+    {
+        char tempbuf[256];
+        snprintf(tempbuf, ARRAY_SIZE(tempbuf), APPNAME " %s", s_buildRev);
+        OSD_SetVersion(tempbuf, 10,0);
+    }
+    OSD_SetParameters(0, 0, 0, 4, 2, 4, "^14", "^14", 0);
+
     InitSetup();
 
     InitAutoNet();
@@ -1007,8 +1021,8 @@ InitGame(int32_t argc, char const * const * argv)
 
     // LoadImages will now proceed to steal all the remaining heap space
     //_outtext("\n\n\n\n\n\n\n\n");
+    //buildputs("Loading sound and graphics...\n");
     //AnimateCacheCursor();
-    buildputs("Loading sound and graphics...\n");
     LoadImages("tiles%03i.art");
 
     // Now free it up for later use
@@ -1642,12 +1656,18 @@ NewLevel(void)
     if (SW_SHAREWARE)
     {
         if (FinishAnim)
+        {
+            PlayTheme();
             MenuLevel();
+        }
     }
     else
     {
         if (FinishAnim == ANIM_ZILLA || FinishAnim == ANIM_SERP)
+        {
+            PlayTheme();
             MenuLevel();
+        }
     }
     FinishAnim = 0;
 }
@@ -1702,41 +1722,26 @@ ResetKeyRange(uint8_t* kb, uint8_t* ke)
     }
 }
 
-
-void
-LogoLevel(void)
+void PlayTheme()
 {
-    char called;
-    int fin;
-    unsigned char backup_pal[256*3];
-    unsigned char pal[PAL_SIZE];
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    UserInput uinfo = { FALSE, FALSE, dir_None };
-    int i;
-
-
-    DSPRINTF(ds,"LogoLevel...");
-    MONO_PRINT(ds);
-
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
-    DSPRINTF(ds,"Created palookup...");
-    MONO_PRINT(ds);
-
     // start music at logo
     strcpy(LevelSong,"theme.mid");
     PlaySong(LevelSong, RedBookSong[0], TRUE, TRUE);
 
     DSPRINTF(ds,"After music stuff...");
     MONO_PRINT(ds);
+}
 
-    //GetPaletteFromVESA(pal);
-    //memcpy(backup_pal, pal, PAL_SIZE);
+void
+LogoLevel(void)
+{
+    char called;
+    int fin;
+    unsigned char pal[PAL_SIZE];
+    UserInput uinfo = { FALSE, FALSE, dir_None };
 
-    DSPRINTF(ds,"Got Palette from VESA...");
+
+    DSPRINTF(ds,"LogoLevel...");
     MONO_PRINT(ds);
 
     // PreCache Anim
@@ -1747,8 +1752,11 @@ LogoLevel(void)
         kread(fin, pal, PAL_SIZE);
         kclose(fin);
 
-        paletteSetColorTable(1, pal);
-        videoSetPalette(gs.Brightness, 1, 2);
+        for (auto & c : pal)
+            c <<= 2;
+
+        paletteSetColorTable(DREALMSPAL, pal);
+        videoSetPalette(gs.Brightness, DREALMSPAL, 2);
     }
     DSPRINTF(ds,"Just read in 3drealms.pal...");
     MONO_PRINT(ds);
@@ -1787,13 +1795,9 @@ LogoLevel(void)
         }
     }
 
-    palookup[0] = palook_bak;
-
     videoClearViewableArea(0L);
     videoNextPage();
-    //SetPaletteToVESA(backup_pal);
-    paletteSetColorTable(0, &palette_data[0][0]);
-    videoSetPalette(gs.Brightness, 0, 2);
+    videoSetPalette(gs.Brightness, BASEPAL, 2);
 
     // put up a blank screen while loading
 
@@ -1821,7 +1825,6 @@ CreditsLevel(void)
     // get rid of all PERM sprites!
     renderFlushPerms();
     save = gs.BorderNum;
-    SetBorder(Player + myconnectindex,0);
     ClearStartMost();
     gs.BorderNum = save;
     videoClearViewableArea(0L);
@@ -2105,11 +2108,6 @@ MenuLevel(void)
 
     DSPRINTF(ds,"MenuLevel...");
     MONO_PRINT(ds);
-
-    if (gs.MusicOn)
-    {
-        PlaySong(NULL, RedBookSong[0], TRUE, FALSE);
-    }
 
     if (AutoNet)
     {
@@ -2559,6 +2557,9 @@ BonusScreen(PLAYERp pp)
         }
 
         gStateControl(&State, &Tics);
+
+        videoClearViewableArea(0L);
+
         rotatesprite(0, 0, RS_SCALE, 0, 5120, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
 
         if (UserMapName[0])
@@ -2873,6 +2874,7 @@ GameIntro(void)
 
 
 
+    PlayTheme();
 
     if (!AutoNet)
     {
@@ -2917,9 +2919,11 @@ Control(int32_t argc, char const * const * argv)
 void
 _Assert(const char *expr, const char *strFile, unsigned uLine)
 {
-    sprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
-    MONO_PRINT(ds);
+    buildprintf(ds, "Assertion failed: %s %s, line %u", expr, strFile, uLine);
+    debug_break();
+
     TerminateGame();
+
 #if 1 //def RENDERTYPEWIN
     wm_msgbox(apptitle, "%s", ds);
 #else
@@ -3222,53 +3226,6 @@ void DosScreen(void)
 #endif
 }
 
-#if 0 //PLOCK_VERSION
-void AlphaMessage(void)
-{
-    Global_PLock = TRUE; // Set the hardwired parental lock mode!
-    buildputs(""
-              "                          SHADOW WARRIOR(tm) Version 1.2                      \n"
-              "Copyright (c) 1997 3D Realms Entertainment\n"
-              "\n\n"
-              "     NOTE: This version of Shadow Warrior has been modified from it's\n"
-              "     original form.  All of the violent and mature content has been\n"
-              "     removed.  To download a patch to restore this version to its\n"
-              "     original form visit www.3drealms.com, www.gtinteractive.com, or look\n"
-              "     inside your retail packaging for information about this version.\n\n\n"
-              );
-}
-#endif
-
-#if 0 //UK_VERSION
-void AlphaMessage(void)
-{
-    buildputs(""
-              "                    SHADOW WARRIOR(tm) Version 1.2 (UK Version)               \n"
-              "Copyright (c) 1997 3D Realms Entertainment\n"
-              "\n\n"
-              "     NOTE: This is a modified version of Shadow Warrior created for the UK.\n"
-              "     It has been altered from its original version to replace \"shurikens\" \n"
-              "     with darts.  We apologize for the inconvenience and hope you enjoy the\n"
-              "     game.  Visit us on the web at www.3drealms.com.\n\n\n"
-              );
-}
-#endif
-
-#if 1 //!UK_VERSION && !PLOCK_VERSION
-void AlphaMessage(void)
-{
-    if (SW_SHAREWARE)
-    {
-        buildputs("SHADOW WARRIOR(tm) Version 1.2 (Shareware Version)\n");
-    }
-    else
-    {
-        buildputs("SHADOW WARRIOR(tm) Version 1.2\n");
-    }
-    buildputs("Copyright (c) 1997 3D Realms Entertainment\n\n\n");
-}
-#endif
-
 typedef struct
 {
     char    notshareware;
@@ -3351,7 +3308,7 @@ Rules->0=WangBang 1=WangBang(No Respawn) 2=CoOperative
 commit -map grenade -autonet 0,0,1,1,1,0,3,2,1,1 -name frank
 #endif
 
-char isShareware = FALSE, useDarts = FALSE;
+char isShareware = FALSE;
 
 int DetectShareware(void)
 {
@@ -3459,14 +3416,22 @@ int32_t app_main(int32_t argc, char const * const * argv)
         }
     }
 
-#ifdef RENDERTYPEWIN
-    if (win_checkinstance())
+#ifdef _WIN32
+#ifndef DEBUGGINGAIDS
+    if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-        if (!wm_ynbox("Shadow Warrior","Another Build game is currently running. "
-                      "Do you wish to continue starting this copy?"))
-            return 0;
+#ifdef EDUKE32_STANDALONE
+        if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+                      "Are you sure you want to start another copy?"))
+            return 3;
     }
 #endif
+#endif
+
+    SW_ExtPreInit(argc, argv);
 
 #if defined(PREFIX)
     {
@@ -3478,96 +3443,52 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 #endif
 
+#ifdef __APPLE__
+    if (!g_useCwd)
+    {
+        char cwd[BMAX_PATH];
+        char *homedir = Bgethomedir();
+        if (homedir)
+            Bsnprintf(cwd, sizeof(cwd), "%s/Library/Logs/" APPBASENAME ".log", homedir);
+        else
+            Bstrcpy(cwd, APPBASENAME ".log");
+        OSD_SetLogFile(cwd);
+        Xfree(homedir);
+    }
+    else
+#endif
     OSD_SetLogFile(APPBASENAME ".log");
 
+    wm_setapptitle(APPNAME);
+
+    initprintf(APPNAME " %s\n", s_buildRev);
+    PrintBuildInfo();
+
+    OSD_SetFunctions(
+        NULL, NULL, NULL, NULL, NULL,
+        COMMON_clearbackground,
+        BGetTime,
+        NULL
+        );
+
+    if (argc > 1)
     {
-        //char *supportdir = Bgetsupportdir(TRUE);
-        char *appdir = Bgetappdir();
-        char dirpath[BMAX_PATH+1];
-
-        // the OSX app bundle, or on Windows the directory where the EXE was launched
-        if (appdir)
-        {
-            addsearchpath(appdir);
-            free(appdir);
-        }
-
-        // the global support files directory
-#if 0 // [JM] ifdef'd out for now. !CHECKME!
-        if (supportdir)
-        {
-            Bsnprintf(dirpath, sizeof(dirpath), "%s/JFShadowWarrior", supportdir);
-            addsearchpath(dirpath);
-            free(supportdir);
-        }
-#endif
+        buildputs("Application parameters: ");
+        for (i = 1; i < argc; ++i)
+            buildprintf("%s ", argv[i]);
+        buildputs("\n");
     }
 
-    // default behaviour is to write to the user profile directory, but
-    // creating a 'user_profiles_disabled' file in the current working
-    // directory where the game was launched makes the installation
-    // "portable" by writing into the working directory
-#if 0 // [JM] ifdef'd out for now. !CHECKME!
-    if (access("user_profiles_disabled", F_OK) == 0)
-#endif
-    {
-        char cwd[BMAX_PATH+1];
-        if (getcwd(cwd, sizeof(cwd)))
-        {
-            addsearchpath(cwd);
-        }
-    }
-#if 0 // [JM] ifdef'd out for now. !CHECKME!
-    else
-    {
-        char *supportdir;
-        char dirpath[BMAX_PATH+1];
-        int asperr;
+    SW_ExtInit();
 
-        if ((supportdir = Bgetsupportdir(FALSE)))
-        {
-            Bsnprintf(dirpath, sizeof(dirpath), "%s/"
-#if defined(_WIN32) || defined(__APPLE__)
-                      "JFShadowWarrior"
-#else
-                      ".jfsw"
-#endif
-                      , supportdir);
-            asperr = addsearchpath(dirpath);
-            if (asperr == -2)
-            {
-                if (Bmkdir(dirpath, S_IRWXU) == 0)
-                {
-                    asperr = addsearchpath(dirpath);
-                }
-                else
-                {
-                    asperr = -1;
-                }
-            }
-            if (asperr == 0)
-            {
-                chdir(dirpath);
-            }
-            free(supportdir);
-        }
-    }
-#endif
+    // hackish since SW's init order is a bit different right now
+    if (G_CheckCmdSwitch(argc, argv, "-addon1"))
+        g_addonNum = 1;
+    else if (G_CheckCmdSwitch(argc, argv, "-addon2"))
+        g_addonNum = 2;
 
-    OSD_SetLogFile("sw.log");
+    i = CONFIG_ReadSetup();
 
-    if (g_grpNamePtr == NULL)
-    {
-        const char *cp = getenv("SWGRP");
-        if (cp)
-        {
-            clearGrpNamePtr();
-            g_grpNamePtr = dup_filename(cp);
-            initprintf("Using \"%s\" as main GRP file\n", g_grpNamePtr);
-        }
-    }
-
-    wm_setapptitle("Shadow Warrior");
     if (enginePreInit())
     {
         wm_msgbox("Build Engine Initialisation Error",
@@ -3575,20 +3496,25 @@ int32_t app_main(int32_t argc, char const * const * argv)
         exit(1);
     }
 
-    i = CONFIG_ReadSetup();
+    SW_ScanGroups();
 
-#if defined RENDERTYPEWIN || (defined RENDERTYPESDL && (defined __APPLE__ || defined HAVE_GTK2))
+#ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || ForceSetup || CommandSetup)
     {
         if (quitevent || !startwin_run())
         {
             engineUnInit();
+            FreeGroups();
             exit(0);
         }
     }
 #endif
 
-    initgroupfile(G_GrpFile());
+    SW_LoadGroups();
+
+    if (!g_useCwd)
+        SW_CleanupSearchPaths();
+
     if (!DetectShareware())
     {
         if (SW_SHAREWARE) buildputs("Detected shareware GRP\n");
@@ -3597,7 +3523,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     if (SW_SHAREWARE)
     {
-        wm_setapptitle("Shadow Warrior Shareware");
+        wm_setapptitle(APPNAME " Shareware");
 
         // Zero out the maps that aren't in shareware version
         memset(&LevelInfo[MAX_LEVELS_SW+1], 0, sizeof(LEVEL_INFO)*(MAX_LEVELS_REG-MAX_LEVELS_SW));
@@ -3605,7 +3531,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
     else
     {
-        wm_setapptitle("Shadow Warrior");
+        wm_setapptitle(APPNAME);
     }
 
     for (i = 0; i < MAX_SW_PLAYERS; i++)
@@ -3613,9 +3539,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     DebugOperate = TRUE;
 
-    AlphaMessage();
+    if (SW_SHAREWARE)
+        buildputs("SHADOW WARRIOR(tm) Version 1.2 (Shareware Version)\n");
+    else
+        buildputs("SHADOW WARRIOR(tm) Version 1.2\n");
 
-    buildputs("\nType 'SW -?' for command line options.\n\n");
+    buildputs("Copyright (c) 1997 3D Realms Entertainment\n");
 
     UserMapName[0] = '\0';
 
@@ -4039,7 +3968,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
 #endif
 
-        else if (Bstrncasecmp(arg, "map", 3) == 0 && !SW_SHAREWARE)
+        else if (Bstrncasecmp(arg, "map", 3) == 0 && !SW_SHAREWARE && cnt+1 < argc)
         {
             int fil;
 
@@ -4448,11 +4377,44 @@ ConKey(void)
 
 char WangBangMacro[10][64];
 
+SWBOOL DoQuickSave(short save_num)
+{
+    PauseAction();
+
+    if (SaveGame(save_num) != -1)
+    {
+        QuickLoadNum = save_num;
+
+        LastSaveNum = -1;
+
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+SWBOOL DoQuickLoad()
+{
+    KB_ClearKeysDown();
+
+    PauseAction();
+
+    ReloadPrompt = FALSE;
+    if (LoadGame(QuickLoadNum) == -1)
+    {
+        return FALSE;
+    }
+
+    ready2send = 1;
+    LastSaveNum = -1;
+
+    return TRUE;
+}
+
 void
 FunctionKeys(PLAYERp pp)
 {
     extern SWBOOL GamePaused;
-    extern short QuickLoadNum;
     static int rts_delay = 0;
     int fn_key = 0;
 
@@ -4546,16 +4508,25 @@ FunctionKeys(PLAYERp pp)
             }
         }
 
-        // F6 option menu
+        // F6 quick save
         if (KEY_PRESSED(KEYSC_F6))
         {
-            extern SWBOOL QuickSaveMode;
             KEY_PRESSED(KEYSC_F6) = 0;
             if (!TEST(pp->Flags, PF_DEAD))
             {
                 KEY_PRESSED(KEYSC_ESC) = 1;
-                ControlPanelType = ct_savemenu;
-                QuickSaveMode = TRUE;
+                if (QuickLoadNum < 0)
+                {
+                    KEY_PRESSED(KEYSC_ESC) = 1;
+                    ControlPanelType = ct_savemenu;
+                }
+                else
+                {
+                    KB_ClearKeysDown();
+                    KB_FlushKeyboardQueue();
+                    DoQuickSave(QuickLoadNum);
+                    ResumeAction();
+                }
             }
         }
 
@@ -4568,17 +4539,16 @@ FunctionKeys(PLAYERp pp)
             {
                 if (QuickLoadNum < 0)
                 {
-                    PutStringInfoLine(pp, "Last saved game not found.");
+                    KEY_PRESSED(KEYSC_ESC) = 1;
+                    ControlPanelType = ct_loadmenu;
                 }
                 else
                 {
-                    KB_ClearKeysDown();
-                    KEY_PRESSED(KEYSC_ESC) = 1;
-                    ControlPanelType = ct_quickloadmenu;
+                    DoQuickLoad();
+                    ResumeAction();
                 }
             }
         }
-
     }
 
 
@@ -4662,7 +4632,6 @@ FunctionKeys(PLAYERp pp)
 void PauseKey(PLAYERp pp)
 {
     extern SWBOOL GamePaused,CheatInputMode;
-    extern short QuickLoadNum;
     extern SWBOOL enabled;
 
     if (KEY_PRESSED(sc_Pause) && !CommEnabled && !InputMode && !UsingMenus && !CheatInputMode && !ConPanel)
@@ -5000,7 +4969,6 @@ void GetHelpInput(PLAYERp pp)
 }
 
 short MirrorDelay;
-int MouseYAxisMode = -1;
 
 void
 getinput(SW_PACKET *loc)
@@ -5020,16 +4988,11 @@ getinput(SW_PACKET *loc)
 #define MAXVEL       ((NORMALKEYMOVE*2)+10)
 #define MAXSVEL      ((NORMALKEYMOVE*2)+10)
 #define MAXANGVEL    100
+#define MAXAIMVEL    128
 #define SET_LOC_KEY(loc, sync_num, key_test) SET(loc, ((!!(key_test)) << (sync_num)))
 
-    ControlInfo info;
-    int32_t running;
-    int32_t turnamount;
     static int32_t turnheldtime;
-    int32_t keymove;
     int32_t momx, momy;
-    int aimvel;
-    int mouseaxis;
 
     extern SWBOOL MenuButtonAutoRun;
     extern SWBOOL MenuButtonAutoAim;
@@ -5041,7 +5004,6 @@ getinput(SW_PACKET *loc)
 
     // reset all syncbits
     loc->bits = 0;
-    svel = vel = angvel = aimvel = 0;
 
     // MAKE SURE THIS WILL GET SET
     SET_LOC_KEY(loc->bits, SK_QUIT_GAME, MultiPlayQuitFlag);
@@ -5081,24 +5043,10 @@ getinput(SW_PACKET *loc)
         }
     }
 
-    if (TEST(pp->Flags, PF_MOUSE_AIMING_ON))
-    {
-        mouseaxis = analog_lookingupanddown;
-    }
-    else
-    {
-        mouseaxis = MouseAnalogAxes[1];
-    }
-    if (mouseaxis != MouseYAxisMode)
-    {
-        CONTROL_MapAnalogAxis(1, mouseaxis, controldevice_mouse);
-        MouseYAxisMode = mouseaxis;
-    }
+    int const aimMode = TEST(pp->Flags, PF_MOUSE_AIMING_ON);
 
+    ControlInfo info;
     CONTROL_GetInput(&info);
-
-    info.dz = (info.dz * move_scale)>>8;
-    info.dyaw = (info.dyaw * turn_scale)>>8;
 
     PauseKey(pp);
 
@@ -5158,26 +5106,10 @@ getinput(SW_PACKET *loc)
 
     SET_LOC_KEY(loc->bits, SK_SPACE_BAR, ((!!KEY_PRESSED(KEYSC_SPACE)) | BUTTON(gamefunc_Open)));
 
-    running = BUTTON(gamefunc_Run) || TEST(pp->Flags, PF_LOCK_RUN);
-
-    if (BUTTON(gamefunc_Strafe) && !pp->sop)
-        svel = -info.dyaw;
-    else
-    {
-        if (info.dyaw > 0)
-            angvel = labs((-info.dyaw));
-        else
-            angvel = info.dyaw;
-    }
-
-    aimvel = info.dpitch;
-    aimvel = min(127, aimvel);
-    aimvel = max(-128, aimvel);
-    if (gs.MouseInvert)
-        aimvel = -aimvel;
-
-    svel -= info.dx;
-    vel = -info.dz;
+    int const running = !!BUTTON(gamefunc_Run) ^ !!TEST(pp->Flags, PF_LOCK_RUN);
+    int32_t turnamount;
+    int32_t keymove;
+    constexpr int const analogExtent = 32767; // KEEPINSYNC sdlayer.cpp
 
     if (running)
     {
@@ -5197,6 +5129,34 @@ getinput(SW_PACKET *loc)
 
         keymove = NORMALKEYMOVE;
     }
+
+    info.dz = (info.dz * move_scale)>>8;
+    info.dyaw = (info.dyaw * turn_scale)>>8;
+
+    int32_t svel = 0, vel = 0, angvel = 0, aimvel = 0;
+
+    if (BUTTON(gamefunc_Strafe) && !pp->sop)
+    {
+        svel = -info.mousex;
+        svel -= info.dyaw * keymove / analogExtent;
+    }
+    else
+    {
+        angvel = info.mousex / 32;
+        angvel += info.dyaw * (turnamount << 1) / analogExtent;
+    }
+
+    if (aimMode)
+        aimvel = -info.mousey / 64;
+    else
+        vel = -(info.mousey >> 6);
+
+    if (gs.MouseInvert)
+        aimvel = -aimvel;
+
+    aimvel -= info.dpitch * turnamount / analogExtent;
+    svel -= info.dx * keymove / analogExtent;
+    vel -= info.dz * keymove / analogExtent;
 
     if (BUTTON(gamefunc_Strafe) && !pp->sop)
     {
@@ -5250,19 +5210,11 @@ getinput(SW_PACKET *loc)
     if (BUTTON(gamefunc_Move_Backward))
         vel += -keymove;
 
+    vel = clamp(vel, -MAXVEL, MAXVEL);
+    svel = clamp(svel, -MAXSVEL, MAXSVEL);
 
-    if (vel < -MAXVEL)
-        vel = -MAXVEL;
-    if (vel > MAXVEL)
-        vel = MAXVEL;
-    if (svel < -MAXSVEL)
-        svel = -MAXSVEL;
-    if (svel > MAXSVEL)
-        svel = MAXSVEL;
-    if (angvel < -MAXANGVEL)
-        angvel = -MAXANGVEL;
-    if (angvel > MAXANGVEL)
-        angvel = MAXANGVEL;
+    angvel = clamp(angvel, -MAXANGVEL, MAXANGVEL);
+    aimvel = clamp(aimvel, -MAXAIMVEL, MAXAIMVEL);
 
     momx = mulscale9(vel, sintable[NORM_ANGLE(newpp->pang + 512)]);
     momy = mulscale9(vel, sintable[NORM_ANGLE(newpp->pang)]);
@@ -5397,6 +5349,14 @@ getinput(SW_PACKET *loc)
         }
 
         SET(loc->bits, prev_weapon + 1);
+    }
+
+    if (BUTTON(gamefunc_Alt_Weapon_Mode))
+    {
+        CONTROL_ClearButton(gamefunc_Alt_Weapon_Mode);
+        USERp u = User[pp->PlayerSprite];
+        short const which_weapon = u->WeaponNum + 1;
+        SET(loc->bits, which_weapon);
     }
 
     inv_hotkey = 0;
@@ -5547,7 +5507,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
         for (j = startwall, wal = &wall[startwall]; j <= endwall; j++, wal++)
         {
             k = wal->nextwall;
-            if (k < 0)
+            if ((unsigned)k >= MAXWALLS)
                 continue;
 
             if ((show2dwall[j >> 3] & (1 << (j & 7))) == 0)
@@ -5800,7 +5760,7 @@ SHOWSPRITE:
 
         for (j = startwall, wal = &wall[startwall]; j <= endwall; j++, wal++)
         {
-            if (wal->nextwall >= 0)
+            if ((uint16_t)wal->nextwall < MAXWALLS)
                 continue;
 
             if ((show2dwall[j >> 3] & (1 << (j & 7))) == 0)
@@ -5973,22 +5933,19 @@ int osdcmd_restartvid(const osdfuncparm_t *parm)
 
 #include "saveable.h"
 
-static saveable_data saveable_build_data[] =
-{
-    SAVE_DATA(sector),
-    SAVE_DATA(sprite),
-    SAVE_DATA(wall)
-};
+saveable_module saveable_build{};
 
-saveable_module saveable_build =
+void Saveable_Init_Dynamic()
 {
-    // code
-    NULL,
-    0,
+    static saveable_data saveable_build_data[] =
+    {
+        {sector, MAXSECTORS*sizeof(sectortype)},
+        {sprite, MAXSPRITES*sizeof(spritetype)},
+        {wall, MAXWALLS*sizeof(walltype)},
+    };
 
-    // data
-    saveable_build_data,
-    NUM_SAVEABLE_ITEMS(saveable_build_data)
-};
+    saveable_build.data = saveable_build_data;
+    saveable_build.numdata = NUM_SAVEABLE_ITEMS(saveable_build_data);
+}
 
 // vim:ts=4:sw=4:expandtab:

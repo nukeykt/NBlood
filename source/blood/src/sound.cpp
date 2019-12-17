@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "renderlayer.h"
 
+
 int32_t SoundToggle;
 int32_t MusicToggle;
 int32_t CDAudioToggle;
@@ -62,7 +63,7 @@ int soundRates[13] = {
     44100,
     44100,
 };
-#define kMaxChannels 32
+#define kChannelMax 32
 
 int sndGetRate(int format)
 {
@@ -71,14 +72,14 @@ int sndGetRate(int format)
     return 11025;
 }
 
-SAMPLE2D Channel[kMaxChannels];
+SAMPLE2D Channel[kChannelMax];
 
 SAMPLE2D * FindChannel(void)
 {
-    for (int i = kMaxChannels - 1; i >= 0; i--)
-        if (Channel[i].at5 == 0)
-            return &Channel[i];
-    ThrowError("No free channel available for sample");
+    for (int i = kChannelMax - 1; i >= 0; i--)
+        if (Channel[i].at5 == 0) return &Channel[i];
+    consoleSysMsg("No free channel available for sample");
+    //ThrowError("No free channel available for sample");
     return NULL;
 }
 
@@ -176,7 +177,7 @@ int sndPlaySong(const char *songName, bool bLoop)
     else
     {
         int nNewWaveMusicHandle = FX_Play(pNewSongPtr, bLoop ? nNewSongSize : -1, 0, 0, 0, MusicVolume, MusicVolume, MusicVolume,
-                                   FX_MUSIC_PRIORITY, 1.f, (intptr_t)&nWaveMusicHandle);
+                                   FX_MUSIC_PRIORITY, fix16_one, (intptr_t)&nWaveMusicHandle);
 
         if (nNewWaveMusicHandle <= FX_Ok)
         {
@@ -220,7 +221,7 @@ void sndFadeSong(int nTime)
         nWaveMusicHandle = -1;
         bWaveMusic = false;
     }
-    MUSIC_SetVolume(0);
+    // MUSIC_SetVolume(0);
     MUSIC_StopSong();
 }
 
@@ -267,7 +268,7 @@ void sndStartSample(const char *pzSound, int nVolume, int nChannel)
         return;
     if (!strlen(pzSound))
         return;
-    dassert(nChannel >= -1 && nChannel < kMaxChannels);
+    dassert(nChannel >= -1 && nChannel < kChannelMax);
     SAMPLE2D *pChannel;
     if (nChannel == -1)
         pChannel = FindChannel();
@@ -280,14 +281,14 @@ void sndStartSample(const char *pzSound, int nVolume, int nChannel)
         return;
     int nSize = pChannel->at5->size;
     char *pData = (char*)gSoundRes.Lock(pChannel->at5);
-    pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(1), 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+    pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(1), 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
 }
 
 void sndStartSample(unsigned int nSound, int nVolume, int nChannel, bool bLoop)
 {
     if (!SoundToggle)
         return;
-    dassert(nChannel >= -1 && nChannel < kMaxChannels);
+    dassert(nChannel >= -1 && nChannel < kChannelMax);
     DICTNODE *hSfx = gSoundRes.Lookup(nSound, "SFX");
     if (!hSfx)
         return;
@@ -317,12 +318,12 @@ void sndStartSample(unsigned int nSound, int nVolume, int nChannel, bool bLoop)
     if (bLoop)
     {
         pChannel->at0 = FX_PlayLoopedRaw(pData, nSize, pData + pEffect->loopStart, pData + nLoopEnd, sndGetRate(pEffect->format),
-            0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+            0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
         pChannel->at4 |= 1;
     }
     else
     {
-        pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(pEffect->format), 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+        pChannel->at0 = FX_PlayRaw(pData, nSize, sndGetRate(pEffect->format), 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
         pChannel->at4 &= ~1;
     }
 }
@@ -331,7 +332,7 @@ void sndStartWavID(unsigned int nSound, int nVolume, int nChannel)
 {
     if (!SoundToggle)
         return;
-    dassert(nChannel >= -1 && nChannel < kMaxChannels);
+    dassert(nChannel >= -1 && nChannel < kChannelMax);
     SAMPLE2D *pChannel;
     if (nChannel == -1)
         pChannel = FindChannel();
@@ -343,7 +344,7 @@ void sndStartWavID(unsigned int nSound, int nVolume, int nChannel)
     if (!pChannel->at5)
         return;
     char *pData = (char*)gSoundRes.Lock(pChannel->at5);
-    pChannel->at0 = FX_Play(pData, pChannel->at5->size, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+    pChannel->at0 = FX_Play(pData, pChannel->at5->size, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
 }
 
 void sndKillSound(SAMPLE2D *pChannel)
@@ -358,7 +359,7 @@ void sndKillSound(SAMPLE2D *pChannel)
 
 void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
 {
-    dassert(nChannel >= -1 && nChannel < kMaxChannels);
+    dassert(nChannel >= -1 && nChannel < kChannelMax);
     SAMPLE2D *pChannel;
     if (nChannel == -1)
         pChannel = FindChannel();
@@ -380,12 +381,12 @@ void sndStartWavDisk(const char *pzFile, int nVolume, int nChannel)
     kclose(hFile);
     pChannel->at5 = (DICTNODE*)pData;
     pChannel->at4 |= 2;
-    pChannel->at0 = FX_Play(pData, nLength, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, 1.f, (intptr_t)&pChannel->at0);
+    pChannel->at0 = FX_Play(pData, nLength, 0, -1, 0, nVolume, nVolume, nVolume, nVolume, fix16_one, (intptr_t)&pChannel->at0);
 }
 
 void sndKillAllSounds(void)
 {
-    for (int i = 0; i < kMaxChannels; i++)
+    for (int i = 0; i < kChannelMax; i++)
     {
         SAMPLE2D *pChannel = &Channel[i];
         if (pChannel->at0 > 0)
@@ -412,7 +413,7 @@ void sndKillAllSounds(void)
 
 void sndProcess(void)
 {
-    for (int i = 0; i < kMaxChannels; i++)
+    for (int i = 0; i < kChannelMax; i++)
     {
         if (Channel[i].at0 <= 0 && Channel[i].at5)
         {
@@ -459,15 +460,20 @@ void DeinitSoundDevice(void)
 
 void InitMusicDevice(void)
 {
-    int nStatus = MUSIC_Init(MusicDevice, 0);
-    if (nStatus != 0)
+    int nStatus;
+    if ((nStatus = MUSIC_Init(MusicDevice)) == MUSIC_Ok)
+    {
+        if (MusicDevice == ASS_AutoDetect)
+            MusicDevice = MIDI_GetDevice();
+    }
+    else if ((nStatus = MUSIC_Init(ASS_AutoDetect)) == MUSIC_Ok)
     {
         initprintf("InitMusicDevice: %s\n", MUSIC_ErrorString(nStatus));
         return;
     }
     DICTNODE *hTmb = gSoundRes.Lookup("GMTIMBRE", "TMB");
     if (hTmb)
-        OPLMusic::AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
+        AL_RegisterTimbreBank((unsigned char*)gSoundRes.Load(hTmb));
     MUSIC_SetVolume(MusicVolume);
 }
 

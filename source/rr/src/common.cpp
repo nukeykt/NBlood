@@ -227,6 +227,8 @@ void G_ExtPreInit(int32_t argc,char const * const * argv)
 #endif
 }
 
+struct strllist *CommandPaths, *CommandGrps;
+
 void G_ExtInit(void)
 {
     char cwd[BMAX_PATH];
@@ -901,8 +903,6 @@ void G_CleanupSearchPaths(void)
 
 //////////
 
-struct strllist *CommandPaths, *CommandGrps;
-
 GrowArray<char *> g_scriptModules;
 
 void G_AddGroup(const char *buffer)
@@ -966,7 +966,7 @@ void G_LoadGroupsInDir(const char *dirname)
 
     for (auto & extension : extensions)
     {
-        CACHE1D_FIND_REC *rec;
+        BUILDVFS_FIND_REC *rec;
 
         fnlist_getnames(&fnlist, dirname, extension, -1, 0);
 
@@ -1077,9 +1077,13 @@ void G_LoadLookups(void)
 //////////
 
 #ifdef FORMAT_UPGRADE_ELIGIBLE
+int g_maybeUpgradeSoundFormats = 1;
 
 static int32_t S_TryFormats(char * const testfn, char * const fn_suffix, char const searchfirst)
 {
+    if (!g_maybeUpgradeSoundFormats)
+        return -1;
+
 #ifdef HAVE_FLAC
     {
         Bstrcpy(fn_suffix, ".flac");
@@ -1187,11 +1191,11 @@ int32_t S_OpenAudio(const char *fn, char searchfirst, uint8_t const ismusic)
     return origfp;
 }
 
+#endif
+
 void Duke_CommonCleanup(void)
 {
     DO_FREE_AND_NULL(g_grpNamePtr);
     DO_FREE_AND_NULL(g_scriptNamePtr);
     DO_FREE_AND_NULL(g_rtsNamePtr);
 }
-
-#endif

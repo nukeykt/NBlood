@@ -152,45 +152,6 @@ void CKillMgr::sub_2641C(void)
     }
 }
 
-/*
-void CKillMgr::AddKill(spritetype *pSprite) {
-    if (pSprite->statnum == kStatDude) {
-        switch (pSprite->type) {
-            case kDudeBat:
-            case kDudeRat:
-            case kDudeBurningInnocent:
-            case kDudeInnocent:
-                return;
-        }
-
-        at4++;
-    }
-}
-
-void CKillMgr::sub_2641C(void)
-{
-    at0 = 0;
-    for (int nSprite = headspritestat[kStatDude]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
-        
-        spritetype *pSprite = &sprite[nSprite];
-        if (IsDudeSprite(pSprite)) {
-            if (pSprite->statnum == kStatDude) {
-                switch (pSprite->type) {
-                case kDudeBat:
-                case kDudeRat:
-                case kDudeBurningInnocent:
-                case kDudeInnocent:
-                    return;
-                }
-
-                at0++;
-            }
-        }
-
-    }
-}
-*/
-
 void CKillMgr::Draw(void)
 {
     char pBuffer[40];
@@ -221,7 +182,7 @@ void CKillMgr::Draw(void)
             viewDrawText(3, pBuffer, 85, 50+8*i, -128, 0, 0, 1);
             sprintf(pBuffer, "%s", gProfile[i].name);
             viewDrawText(3, pBuffer, 100, 50+8*i, -128, 0, 0, 1);
-            sprintf(pBuffer, "%d", gPlayer[i].at2c6);
+            sprintf(pBuffer, "%d", gPlayer[i].fragCount);
             viewDrawText(3, pBuffer, 210, 50+8*i, -128, 0, 0, 1);
         }
     }

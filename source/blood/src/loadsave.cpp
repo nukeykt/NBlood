@@ -124,7 +124,7 @@ void LoadSave::LoadGame(char *pzFile)
     InitSectorFX();
     viewInitializePrediction();
     PreloadCache();
-    if (!bVanilla && !gMe->packInfo[1].at0) // if diving suit is not active, turn off reverb sound effect
+    if (!bVanilla && !gMe->packSlots[1].isActive) // if diving suit is not active, turn off reverb sound effect
         sfxSetReverb(0);
     ambInit();
 #ifdef YAX_ENABLE
@@ -147,7 +147,7 @@ void LoadSave::LoadGame(char *pzFile)
     gBufferJitter = 0;
     bOutOfSync = 0;
     for (int i = 0; i < gNetPlayers; i++)
-        playerSetRace(&gPlayer[i], gPlayer[i].at5f);
+        playerSetRace(&gPlayer[i], gPlayer[i].lifeMode);
     if (VanillaMode())
         viewSetMessage("");
     else
@@ -309,6 +309,7 @@ void MyLoadSave::Load(void)
     Read(&gMapRev, sizeof(gMapRev));
     Read(&gSongId, sizeof(gSkyCount));
     Read(&gFogMode, sizeof(gFogMode));
+    Read(&gModernMap, sizeof(gModernMap));
 #ifdef YAX_ENABLE
     Read(&numyaxbunches, sizeof(numyaxbunches));
 #endif
@@ -414,6 +415,7 @@ void MyLoadSave::Save(void)
     Write(&gMapRev, sizeof(gMapRev));
     Write(&gSongId, sizeof(gSkyCount));
     Write(&gFogMode, sizeof(gFogMode));
+    Write(&gModernMap, sizeof(gModernMap));
 #ifdef YAX_ENABLE
     Write(&numyaxbunches, sizeof(numyaxbunches));
 #endif
@@ -421,7 +423,7 @@ void MyLoadSave::Save(void)
 
 void LoadSavedInfo(void)
 {
-    auto pList = klistpath("./", "game*.sav", CACHE1D_FIND_FILE);
+    auto pList = klistpath("./", "game*.sav", BUILDVFS_FIND_FILE);
     int nCount = 0;
     for (auto pIterator = pList; pIterator != NULL && nCount < 10; pIterator = pIterator->next, nCount++)
     {

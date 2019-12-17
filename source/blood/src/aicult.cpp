@@ -176,7 +176,7 @@ static void ThrowSeqCallback(int, int nXSprite)
     if (v4)
         xsprite[pMissile->extra].Impact = 1;
     else
-        evPost(pMissile->index, 3, 120*(1+Random(2)), kCmdOn);
+        evPost(pMissile->index, 3, 120*(1+Random(2)), kCmdOn, nSprite);
 }
 
 static void sub_68170(int, int nXSprite)
@@ -189,7 +189,7 @@ static void sub_68170(int, int nXSprite)
         nMissile = kThingArmedTNTBundle;
     sfxPlay3DSound(pSprite, 455, -1, 0);
     spritetype *pMissile = actFireThing(pSprite, 0, 0, gDudeSlope[nXSprite]-9460, nMissile, 0x133333);
-    evPost(pMissile->index, 3, 120*(2+Random(2)), kCmdOn);
+    evPost(pMissile->index, 3, 120*(2+Random(2)), kCmdOn, nSprite);
 }
 
 static void sub_68230(int, int nXSprite)
@@ -242,11 +242,11 @@ static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
     {
         switch (pXSprite->medium)
         {
-        case 0:
+        case kMediumNormal:
             aiNewState(pSprite, pXSprite, &cultistSearch);
             break;
-        case 1:
-        case 2:
+        case kMediumWater:
+        case kMediumGoo:
             aiNewState(pSprite, pXSprite, &cultistSwimSearch);
             break;
         }
@@ -260,11 +260,11 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
     {
         switch (pXSprite->medium)
         {
-        case 0:
+        case kMediumNormal:
             aiNewState(pSprite, pXSprite, &cultistGoto);
             break;
-        case 1:
-        case 2:
+        case kMediumWater:
+        case kMediumGoo:
             aiNewState(pSprite, pXSprite, &cultistSwimGoto);
             break;
         }
@@ -282,29 +282,29 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
     {
         switch (pXSprite->medium)
         {
-        case 0:
+        case kMediumNormal:
             aiNewState(pSprite, pXSprite, &cultistSearch);
             if (pSprite->type == kDudeCultistTommy)
                 aiPlay3DSound(pSprite, 4021+Random(4), AI_SFX_PRIORITY_1, -1);
             else
                 aiPlay3DSound(pSprite, 1021+Random(4), AI_SFX_PRIORITY_1, -1);
             break;
-        case 1:
-        case 2:
+        case kMediumWater:
+        case kMediumGoo:
             aiNewState(pSprite, pXSprite, &cultistSwimSearch);
             break;
         }
         return;
     }
-    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], 13) > 0)
+    if (IsPlayerSprite(pTarget) && powerupCheck(&gPlayer[pTarget->type-kDudePlayer1], kPwUpShadowCloak) > 0)
     {
         switch (pXSprite->medium)
         {
-        case 0:
+        case kMediumNormal:
             aiNewState(pSprite, pXSprite, &cultistSearch);
             break;
-        case 1:
-        case 2:
+        case kMediumWater:
+        case kMediumGoo:
             aiNewState(pSprite, pXSprite, &cultistSwimSearch);
             break;
         }
@@ -325,21 +325,21 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                 switch (pSprite->type) {
                 case kDudeCultistTommy:
                     if (nDist < 0x1e00 && nDist > 0xe00 && klabs(nDeltaAngle) < 85 && !TargetNearExplosion(pTarget)
-                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].isRunning
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
                         switch (hit)
                         {
                         case -1:
-                            if (pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTThrow);
                             break;
                         case 0:
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTThrow);
                             break;
                         default:
@@ -353,39 +353,39 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         switch (hit)
                         {
                         case -1:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTProneFire);
-                            else if (sub_5BDA8(pSprite, 13) && (pXSprite->medium == 1 || pXSprite->medium == 2))
+                            else if (sub_5BDA8(pSprite, 13) && (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo))
                                 aiNewState(pSprite, pXSprite, &cultistTSwimFire);
                             break;
                         case 3:
                             if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun)
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistTFire);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistTProneFire);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistTSwimFire);
                             }
                             else
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
                             }
                             break;
                         default:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTSwimFire);
                             break;
                         }
@@ -393,21 +393,21 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case kDudeCultistShotgun:
                     if (nDist < 0x2c00 && nDist > 0x1400 && !TargetNearExplosion(pTarget)
-                        && (pTarget->flags&2) && gGameOptions.nDifficulty >= 2 && IsPlayerSprite(pTarget) && !gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty >= 2 && IsPlayerSprite(pTarget) && !gPlayer[pTarget->type-kDudePlayer1].isRunning
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
                         switch (hit)
                         {
                         case -1:
-                            if (pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         case 0:
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         default:
@@ -421,39 +421,39 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         switch (hit)
                         {
                         case -1:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         case 3:
                             if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistTommy)
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistSFire);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistSProneFire);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             }
                             else
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
                             }
                             break;
                         default:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         }
@@ -461,21 +461,21 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case kDudeCultistTesla:
                     if (nDist < 0x1e00 && nDist > 0xe00 && !TargetNearExplosion(pTarget)
-                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].isRunning
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
                         switch (hit)
                         {
                         case -1:
-                            if (pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTsThrow);
                             break;
                         case 0:
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTsThrow);
                             break;
                         default:
@@ -489,39 +489,39 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         switch (hit)
                         {
                         case -1:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTsFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTsProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTsSwimFire);
                             break;
                         case 3:
                             if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistTommy)
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistTsFire);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistTsProneFire);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistTsSwimFire);
                             }
                             else
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
                             }
                             break;
                         default:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTsFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistTsProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistTsSwimFire);
                             break;
                         }
@@ -535,13 +535,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         switch (hit)
                         {
                         case -1:
-                            if (pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistDThrow);
                             break;
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistDThrow);
                             break;
                         default:
@@ -556,13 +556,13 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         switch (hit)
                         {
                         case -1:
-                            if (pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pXSprite->medium != 1 && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultist139A78);
                             break;
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultist139A78);
                             break;
                         default:
@@ -573,21 +573,21 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                     break;
                 case kDudeCultistBeast:
                     if (nDist < 0x1e00 && nDist > 0xe00 && !TargetNearExplosion(pTarget)
-                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].at2e
+                        && (pTarget->flags&2) && gGameOptions.nDifficulty > 2 && IsPlayerSprite(pTarget) && gPlayer[pTarget->type-kDudePlayer1].isRunning
                         && Chance(0x8000))
                     {
                         int hit = HitScan(pSprite, pSprite->z, dx, dy, 0, CLIPMASK1, 0);
                         switch (hit)
                         {
                         case -1:
-                            if (pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         case 0:
                         case 4:
                             break;
                         case 3:
-                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != 1 && pXSprite->medium != 2)
+                            if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistShotgun && pXSprite->medium != kMediumWater && pXSprite->medium != kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSThrow);
                             break;
                         default:
@@ -601,39 +601,39 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
                         switch (hit)
                         {
                         case -1:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         case 3:
                             if (pSprite->type != sprite[gHitInfo.hitsprite].type && sprite[gHitInfo.hitsprite].type != kDudeCultistTommy)
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistSFire);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistSProneFire);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             }
                             else
                             {
-                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistDodge);
-                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                                else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                     aiNewState(pSprite, pXSprite, &cultistProneDodge);
-                                else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                                else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                     aiNewState(pSprite, pXSprite, &cultistSwimDodge);
                             }
                             break;
                         default:
-                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            if (!sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSFire);
-                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == 0)
+                            else if (sub_5BDA8(pSprite, 14) && pXSprite->medium == kMediumNormal)
                                 aiNewState(pSprite, pXSprite, &cultistSProneFire);
-                            else if (pXSprite->medium == 1 || pXSprite->medium == 2)
+                            else if (pXSprite->medium == kMediumWater || pXSprite->medium == kMediumGoo)
                                 aiNewState(pSprite, pXSprite, &cultistSSwimFire);
                             break;
                         }
@@ -646,11 +646,11 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
     }
     switch (pXSprite->medium)
     {
-    case 0:
+    case kMediumNormal:
         aiNewState(pSprite, pXSprite, &cultistGoto);
         break;
-    case 1:
-    case 2:
+    case kMediumWater:
+    case kMediumGoo:
         aiNewState(pSprite, pXSprite, &cultistSwimGoto);
         break;
     }

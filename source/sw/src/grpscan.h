@@ -25,25 +25,36 @@
 #define grpscan_h__
 
 // List of internally-known GRP files
-#define numgrpfiles 3
+#define numgrpfiles 7
 struct internalgrpfile
 {
     const char *name;
-    unsigned int crcval;
+    uint32_t crcval;
     int size;
+    unsigned int flags;
+    uint32_t dependency;
 };
-struct grpfile
+
+enum
 {
-    char *name;
-    unsigned int crcval;
-    int size;
-    struct grpfile *next;
+    GRP_HAS_DEPENDENCY = 1u<<0u,
 };
+
+typedef struct grpfile
+{
+    char * filename;
+    struct internalgrpfile const * type;
+    struct grpfile *next;
+} grpfile_t;
 
 extern internalgrpfile grpfiles[numgrpfiles];
 extern grpfile *foundgrps;
 
+extern grpfile_t * FindGroup(uint32_t crcval);
+
 int ScanGroups(void);
 void FreeGroups(void);
+
+void SW_LoadAddon(void);
 
 #endif

@@ -170,7 +170,7 @@ static int osdcmd_map(osdcmdptr_t parm)
 
     if (parm->numparms != 1 || wildcardp)
     {
-        CACHE1D_FIND_REC *r;
+        BUILDVFS_FIND_REC *r;
         fnlist_t fnlist = FNLIST_INITIALIZER;
         int32_t maxwidth = 0;
 
@@ -1097,6 +1097,7 @@ static int osdcmd_listplayers(osdcmdptr_t parm)
     return OSDCMD_OK;
 }
 
+#if 0
 static int osdcmd_kick(osdcmdptr_t parm)
 {
     ENetPeer *currentPeer;
@@ -1178,6 +1179,7 @@ static int osdcmd_kickban(osdcmdptr_t parm)
 
     return OSDCMD_OK;
 }
+#endif
 #endif
 
 static int osdcmd_purgesaves(osdcmdptr_t UNUSED(parm))
@@ -1453,7 +1455,7 @@ int32_t registerosdcommands(void)
         { "in_mousesmoothing", "enable/disable mouse input smoothing", (void *)&ud.config.SmoothInput, CVAR_BOOL, 0, 1 },
 
         { "mus_enabled", "enables/disables music", (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
-        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, 1 },
+        { "mus_device", "music device", (void*)& ud.config.MusicDevice, CVAR_INT, 0, ASS_NumSoundCards },
         { "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },
 
         { "osdhightile", "enable/disable hires art replacements for console text", (void *)&osdhightile, CVAR_BOOL, 0, 1 },
@@ -1485,6 +1487,9 @@ int32_t registerosdcommands(void)
         { "snd_numvoices", "the number of concurrent sounds", (void *)&ud.config.NumVoices, CVAR_INT, 1, 128 },
         { "snd_reversestereo", "reverses the stereo channels", (void *)&ud.config.ReverseStereo, CVAR_BOOL, 0, 1 },
         { "snd_speech", "enables/disables player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
+#ifdef FORMAT_UPGRADE_ELIGIBLE
+        { "snd_tryformats", "enables/disables automatic discovery of replacement sounds and music in .flac and .ogg formats", (void *)&g_maybeUpgradeSoundFormats, CVAR_BOOL, 0, 1 },
+#endif
 
         { "team","change team in multiplayer", (void *)&ud.team, CVAR_INT|CVAR_MULTI, 0, 3 },
 
@@ -1562,8 +1567,10 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("inittimer","debug", osdcmd_inittimer);
 #endif
 #if !defined NETCODE_DISABLE
+#if 0
     OSD_RegisterFunction("kick","kick <id>: kicks a multiplayer client.  See listplayers.", osdcmd_kick);
     OSD_RegisterFunction("kickban","kickban <id>: kicks a multiplayer client and prevents them from reconnecting.  See listplayers.", osdcmd_kickban);
+#endif
 
     OSD_RegisterFunction("listplayers","listplayers: lists currently connected multiplayer clients", osdcmd_listplayers);
 #endif

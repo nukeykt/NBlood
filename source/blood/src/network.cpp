@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mmulti.h"
 #include "pragmas.h"
 #ifndef NETCODE_DISABLE
-#include "enet/enet.h"
+#include "enet.h"
 #endif
 #include "compat.h"
 #include "config.h"
@@ -259,7 +259,7 @@ void CalcGameChecksum(void)
     gChecksum[0] = wrand();
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        int *pBuffer = &gPlayer[p].at22;
+        int *pBuffer = &gPlayer[p].used1;
         int sum = 0;
         int length = ((char*)&gPlayer[p+1]-(char*)pBuffer)/4;
         while (length--)
@@ -635,7 +635,7 @@ void netWaitForEveryone(char a1)
     {
         if (keystatus[sc_Escape] && a1)
             exit(0);
-        G_HandleAsync();
+        gameHandleEvents();
         faketimerhandler();
         for (p = connecthead; p >= 0; p = connectpoint2[p])
             if (gPlayerReady[p] < gPlayerReady[myconnectindex])
@@ -1371,7 +1371,6 @@ void netUpdate(void)
 
 void faketimerhandler(void)
 {
-    timerUpdate();
 #ifndef NETCODE_DISABLE
     if (gNetMode != NETWORK_NONE && gNetENetInit)
         netUpdate();
@@ -1390,12 +1389,12 @@ void faketimerhandler(void)
 void netPlayerQuit(int nPlayer)
 {
     char buffer[128];
-    sprintf(buffer, "%s left the game with %d frags.", gProfile[nPlayer].name, gPlayer[nPlayer].at2c6);
+    sprintf(buffer, "%s left the game with %d frags.", gProfile[nPlayer].name, gPlayer[nPlayer].fragCount);
     viewSetMessage(buffer);
     if (gGameStarted)
     {
         seqKill(3, gPlayer[nPlayer].pSprite->extra);
-        actPostSprite(gPlayer[nPlayer].at5b, kStatFree);
+        actPostSprite(gPlayer[nPlayer].nSprite, kStatFree);
         if (nPlayer == gViewIndex)
             gViewIndex = myconnectindex;
         gView = &gPlayer[gViewIndex];

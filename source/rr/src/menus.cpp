@@ -1175,11 +1175,22 @@ static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
 #endif
 
-static char const *MEOSN_SOUND_MUSICDEVICE[] = { "System MIDI", "OPL3", };
-static int32_t MEOSV_SOUND_MUSICDEVICE[] = { 0, 1, };
-static MenuOptionSet_t MEOS_SOUND_MUSICDEVICE = MAKE_MENUOPTIONSET( MEOSN_SOUND_MUSICDEVICE, MEOSV_SOUND_MUSICDEVICE, 0x2 );
-static MenuOption_t MEO_SOUND_MUSICDEVICE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_SOUND_MUSICDEVICE, &musicdevice );
-static MenuEntry_t ME_SOUND_MUSICDEVICE = MAKE_MENUENTRY( "Music device:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_MUSICDEVICE, Option );
+static char const *MEOSN_SOUND_MIDIDRIVER[] = {
+    "OPL3",
+#ifdef _WIN32
+    "Windows",
+#endif
+};
+static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
+    ASS_OPL3,
+#ifdef _WIN32
+    ASS_WinMM,
+#endif
+};
+
+static MenuOptionSet_t MEOS_SOUND_MIDIDRIVER = MAKE_MENUOPTIONSET( MEOSN_SOUND_MIDIDRIVER, MEOSV_SOUND_MIDIDRIVER, 0x2 );
+static MenuOption_t MEO_SOUND_MIDIDRIVER = MAKE_MENUOPTION( &MF_Redfont, &MEOS_SOUND_MIDIDRIVER, &musicdevice );
+static MenuEntry_t ME_SOUND_MIDIDRIVER = MAKE_MENUENTRY( "MIDI driver:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_MIDIDRIVER, Option );
 
 static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
 
@@ -1206,7 +1217,7 @@ static MenuEntry_t *MEL_ADVSOUND[] = {
     &ME_SOUND_NUMVOICES,
     &ME_Space2_Redfont,
 #endif
-    &ME_SOUND_MUSICDEVICE,
+    &ME_SOUND_MIDIDRIVER,
     &ME_Space2_Redfont,
     &ME_SOUND_RESTART,
 };
@@ -4340,7 +4351,7 @@ static void Menu_TextFormSubmit(char *input)
     }
 }
 
-void klistbookends(CACHE1D_FIND_REC *start)
+void klistbookends(BUILDVFS_FIND_REC *start)
 {
     auto end = start;
 
@@ -6226,7 +6237,7 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
             {
                 if (object->findhigh[i])
                 {
-                    CACHE1D_FIND_REC *dir;
+                    BUILDVFS_FIND_REC *dir;
                     int32_t y = 0;
                     const int32_t y_upper = object->format[i]->pos.y;
                     const int32_t y_lower = klabs(object->format[i]->bottomcutoff);
@@ -7011,7 +7022,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 int32_t i;
 
-                CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList];
+                BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgUp);
 
@@ -7034,7 +7045,7 @@ static void Menu_RunInput(Menu_t *cm)
             {
                 int32_t i;
 
-                CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList];
+                BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList];
 
                 KB_ClearKeyDown(sc_PgDn);
 
@@ -7088,7 +7099,7 @@ static void Menu_RunInput(Menu_t *cm)
                 ch = KB_GetCh();
                 if (ch > 0 && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')))
                 {
-                    CACHE1D_FIND_REC *seeker = object->findhigh[object->currentList]->usera;
+                    BUILDVFS_FIND_REC *seeker = object->findhigh[object->currentList]->usera;
                     if (ch >= 'a')
                         ch -= ('a'-'A');
                     while (seeker)

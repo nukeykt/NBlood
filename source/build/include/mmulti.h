@@ -37,6 +37,9 @@ static inline void initmultiplayers(int argc, char const * const * argv, unsigne
     UNREFERENCED_PARAMETER(damultioption);
     UNREFERENCED_PARAMETER(dacomrateoption);
     UNREFERENCED_PARAMETER(dapriority);
+
+    numplayers = 1; myconnectindex = 0;
+    connecthead = 0; connectpoint2[0] = -1;
 }
 #endif
 

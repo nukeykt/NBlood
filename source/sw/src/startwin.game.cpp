@@ -30,7 +30,7 @@ static struct
     int xdim, ydim, bpp;
     int forcesetup;
     int usemouse, usejoy;
-    char selectedgrp[BMAX_PATH+1];
+    struct grpfile const * selectedgrp;
     int samplerate, bitspersample, channels;
 } settings;
 
@@ -150,21 +150,18 @@ static void PopulateForm(int pgs)
     if (pgs & POPULATE_GAME)
     {
         struct grpfile *fg;
-        int i, j;
+        int j;
         char buf[128+BMAX_PATH];
 
         hwnd = GetDlgItem(pages[TAB_GAME], IDGDATA);
 
         for (fg = foundgrps; fg; fg=fg->next)
         {
-            for (i = 0; i<numgrpfiles; i++)
-                if (fg->crcval == grpfiles[i].crcval) break;
-            if (i == numgrpfiles) continue; // unrecognised grp file
-
-            Bsprintf(buf, "%s\t%s", grpfiles[i].name, fg->name);
+            Bsprintf(buf, "%s\t%s", fg->type->name, fg->filename);
             j = ListBox_AddString(hwnd, buf);
             ListBox_SetItemData(hwnd, j, (LPARAM)fg);
-            if (!Bstrcasecmp(fg->name, settings.selectedgrp)) ListBox_SetCurSel(hwnd, j);
+            if (fg == settings.selectedgrp)
+                ListBox_SetCurSel(hwnd, j);
         }
     }
 }
@@ -234,13 +231,14 @@ static INT_PTR CALLBACK GamePageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
         {
         case IDGDATA:
         {
+            if (HIWORD(wParam) != LBN_SELCHANGE) break;
             int i;
             i = ListBox_GetCurSel((HWND)lParam);
             if (i != CB_ERR)
             {
                 LRESULT j = ListBox_GetItemData((HWND)lParam, i);
                 if (j != CB_ERR)
-                    strcpy(settings.selectedgrp, ((struct grpfile const *)j)->name);
+                    settings.selectedgrp = (struct grpfile const *)j;
             }
             return TRUE;
         }
@@ -615,8 +613,6 @@ int startwin_run(void)
 
     done = -1;
 
-    ScanGroups();
-
     SetPage(TAB_CONFIG);
     EnableConfig(1);
 
@@ -630,7 +626,7 @@ int startwin_run(void)
     settings.forcesetup = ForceSetup;
     settings.usemouse = UseMouse;
     settings.usejoy = UseJoystick;
-    Bstrncpyz(settings.selectedgrp, G_GrpFile(), BMAX_PATH);
+    settings.selectedgrp = g_selectedGrp;
     PopulateForm(-1);
 
     while (done < 0)
@@ -661,13 +657,8 @@ int startwin_run(void)
         ForceSetup = settings.forcesetup;
         UseMouse = settings.usemouse;
         UseJoystick = settings.usejoy;
-        clearGrpNamePtr();
-        g_grpNamePtr = dup_filename(settings.selectedgrp);
+        g_selectedGrp = settings.selectedgrp;
     }
-
-    FreeGroups();
 
     return done;
 }
-
-
