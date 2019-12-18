@@ -92,7 +92,6 @@ Things required to make savegames work:
 #include "common_game.h"
 
 #include "crc32.h"
-#include "winbits.h"
 
 #ifdef _WIN32
 # include "winbits.h"
