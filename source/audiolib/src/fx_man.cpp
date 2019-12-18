@@ -276,6 +276,34 @@ int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int a
     return handle;
 }
 
+int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol,
+    int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+{
+    int handle = MV_PlayRAW(ptr, ptrlength, rate, NULL, NULL, pitchoffset, vol, left, right, priority, volume, callbackval);
+
+    if (handle <= MV_Ok)
+    {
+        FX_SetErrorCode(FX_MultiVocError);
+        handle = FX_Warning;
+    }
+
+    return handle;
+}
+
+int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int rate,
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+{
+    int handle = MV_PlayRAW(ptr, ptrlength, rate, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval);
+
+    if (handle <= MV_Ok)
+    {
+        FX_SetErrorCode(FX_MultiVocError);
+        handle = FX_Warning;
+    }
+
+    return handle;
+}
+
 int FX_SetPrintf(void (*function)(const char *, ...))
 {
     MV_SetPrintf(function);

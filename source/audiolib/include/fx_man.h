@@ -69,6 +69,10 @@ int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitch
                       int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
                   int distance, int priority, fix16_t volume, intptr_t callbackval);
+int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol,
+    int left, int right, int priority, fix16_t volume, intptr_t callbackval);
+int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int rate,
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 
 
 int FX_SetPrintf(void(*function)(const char *, ...));
