@@ -85,7 +85,7 @@ VoiceNode  VoicePool;
 static int MV_MixPage;
 
 void (*MV_Printf)(const char *fmt, ...) = initprintf;
-static void (*MV_CallBackFunc)(uint32_t);
+static void (*MV_CallBackFunc)(intptr_t);
 
 char *MV_MixDestination;
 int MV_SampleSize = 1;
@@ -789,7 +789,7 @@ void MV_SetVolume(int volume)
 
 int MV_GetVolume(void) { return MV_TotalVolume; }
 
-void MV_SetCallBack(void (*function)(uint32_t)) { MV_CallBackFunc = function; }
+void MV_SetCallBack(void (*function)(intptr_t)) { MV_CallBackFunc = function; }
 
 int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata)
 {

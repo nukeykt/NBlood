@@ -87,9 +87,9 @@ int  MV_GetReverbDelay(void);
 void MV_SetReverbDelay(int delay);
 
 int MV_PlayVOC3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance,
-                 int priority, fix16_t volume, uint32_t callbackval);
+                 int priority, fix16_t volume, intptr_t callbackval);
 int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol,
-               int left, int right, int priority, fix16_t volume, uint32_t callbackval);
+               int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 
 decltype(MV_PlayVOC3D) MV_PlayWAV3D;
 decltype(MV_PlayVOC)   MV_PlayWAV;
@@ -107,7 +107,7 @@ int  MV_GetPosition(int handle, int *position);
 int  MV_SetPosition(int handle, int position);
 void MV_SetVolume(int volume);
 int  MV_GetVolume(void);
-void MV_SetCallBack(void (*function)(uint32_t));
+void MV_SetCallBack(void (*function)(intptr_t));
 int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata);
 int  MV_Shutdown(void);
 void MV_HookMusicRoutine(void (*callback)(void));

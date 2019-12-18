@@ -65,7 +65,7 @@ extern int32_t g_numEnvSoundsPlaying,g_highestSoundIdx;
 
 int A_CheckSoundPlaying(int spriteNum,int soundNum);
 int A_PlaySound(int soundNum, int spriteNum);
-void S_Callback(uint32_t num);
+void S_Callback(intptr_t num);
 int A_CheckAnySoundPlaying(int spriteNum);
 int S_CheckSoundPlaying(int soundNum);
 void S_Cleanup(void);

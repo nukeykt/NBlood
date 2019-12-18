@@ -279,7 +279,7 @@ void CheckSndData(char *file, int line)
 //
 
 void
-SoundCallBack(unsigned int num)
+SoundCallBack(intptr_t num)
 {
     VOC_INFOp vp;
 

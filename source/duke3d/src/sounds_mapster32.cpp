@@ -56,7 +56,7 @@ int32_t MixRate = 44100;
 
 int32_t g_numEnvSoundsPlaying;
 
-void S_Callback(uint32_t);
+void S_Callback(intptr_t);
 
 /*
 ===================
@@ -437,7 +437,7 @@ void S_Update(void)
         }
 }
 
-void S_Callback(uint32_t num)
+void S_Callback(intptr_t num)
 {
     int32_t i,j,k;
 
