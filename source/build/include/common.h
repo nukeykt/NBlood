@@ -107,6 +107,9 @@ static inline int32_t sepldist(const int32_t dx, const int32_t dy)
 {
     vec2_t d = { klabs(dx), klabs(dy) };
 
+    if (!d.y) return d.x;
+    if (!d.x) return d.y;
+
     if (d.x < d.y)
         swaplong(&d.x, &d.y);
 
