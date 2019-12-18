@@ -521,6 +521,22 @@ int MV_SetFrequency(int handle, int frequency)
     return MV_Ok;
 }
 
+int MV_GetFrequency(int handle, int *frequency)
+{
+    VoiceNode* voice = MV_BeginService(handle);
+
+    if (voice == NULL || !frequency)
+        return MV_Error;
+
+    if (voice->SamplingRate == 0)
+        voice->GetSound(voice);
+
+    *frequency = voice->SamplingRate;
+    MV_EndService();
+
+    return MV_Ok;
+}
+
 /*---------------------------------------------------------------------
    Function: MV_SetVoiceMixMode
 
