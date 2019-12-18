@@ -1429,7 +1429,7 @@ static int32_t globaly1, globalx2;
 
 int16_t sectorborder[256];
 int32_t ydim16, qsetmode = 0;
-int16_t pointhighlight=-1, linehighlight=-1, highlightcnt=0;
+int16_t pointhighlight=-1, linehighlight=-1, sectorhighlight = -1, highlightcnt=0;
 static int32_t *lastx;
 
 int32_t halfxdim16, midydim16;

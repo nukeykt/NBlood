@@ -3616,6 +3616,11 @@ void overheadeditor(void)
             getpoint(searchx, searchy, &mousxplc, &mousyplc);
             linehighlight = getlinehighlight(mousxplc, mousyplc, linehighlight, 0);
             linehighlight2 = getlinehighlight(mousxplc, mousyplc, linehighlight, 1);
+
+            if (!m32_sideview)
+                updatesector(mousxplc, mousyplc, &sectorhighlight);
+            else
+                sectorhighlight = -1;
         }
 
         if ((unsigned)newnumwalls < MAXWALLS && newnumwalls >= numwalls)
