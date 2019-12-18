@@ -4453,7 +4453,7 @@ rotate_hlsect_out:
 #if 1
         if (keystatus[sc_F5])  //F5
         {
-            CallExtShowSectorData(0);
+            CallExtShowSectorData(-1);
         }
         if (keystatus[sc_F6])  //F6
         {
@@ -4462,7 +4462,7 @@ rotate_hlsect_out:
             else if (linehighlight >= 0)
                 CallExtShowWallData(linehighlight);
             else
-                CallExtShowWallData(0);
+                CallExtShowWallData(-1);
         }
         if (keystatus[sc_F7])  //F7
         {
