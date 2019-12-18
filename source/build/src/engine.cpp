@@ -114,13 +114,11 @@ int32_t novoxmips = 1;
 #define MAXXSIZ 256
 #define MAXYSIZ 256
 #define MAXZSIZ 255
-#define MAXVOXMIPS 5
 #ifdef EDUKE32_TOUCH_DEVICES
 # define DISTRECIPSIZ (65536+256)
 #else
 # define DISTRECIPSIZ 131072
 #endif
-intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 static char voxlock[MAXVOXELS][MAXVOXMIPS];
 int32_t voxscale[MAXVOXELS];
 

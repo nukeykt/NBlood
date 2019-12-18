@@ -52,6 +52,8 @@ enum rendmode_t {
 #define MAXWALLSV7 8192
 #define MAXSPRITESV7 4096
 
+#define MAXVOXMIPS 5
+
 #if !defined GEKKO && !defined __OPENDINGUX__
 # define MAXSECTORS MAXSECTORSV8
 # define MAXWALLS MAXWALLSV8
@@ -1443,6 +1445,8 @@ extern GrowArray<char *> g_defModules;
 #ifdef HAVE_CLIPSHAPE_FEATURE
 extern GrowArray<char *> g_clipMapFiles;
 #endif
+
+EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 
 #ifdef USE_OPENGL
 // TODO: dynamically allocate this
