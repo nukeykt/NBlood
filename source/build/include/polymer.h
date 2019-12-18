@@ -335,11 +335,11 @@ typedef struct      s_prhighpalookup {
     GLuint          map;
 }                   _prhighpalookup;
 
-typedef void    (*animatespritesptr)(int32_t, int32_t, int32_t, int32_t);
+typedef void    (*animatespritesptr)(int32_t, int32_t, int32_t, int32_t, int32_t);
 
 typedef struct      s_pranimatespritesinfo {
     animatespritesptr animatesprites;
-    int32_t         x, y, a, smoothratio;
+    int32_t         x, y, z, a, smoothratio;
 }                   _pranimatespritesinfo;
 
 // this one has to be provided by the application
@@ -361,7 +361,7 @@ void                polymer_inb4rotatesprite(int16_t tilenum, char pal, int8_t s
 void                polymer_postrotatesprite(void);
 void                polymer_drawmaskwall(int32_t damaskwallcnt);
 void                polymer_drawsprite(int32_t snum);
-void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t a, int32_t smoothratio);
+void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t z, int32_t a, int32_t smoothratio);
 int16_t             polymer_addlight(_prlight* light);
 void                polymer_deletelight(int16_t lighti);
 void                polymer_invalidatelights(void);

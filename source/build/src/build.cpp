@@ -39,7 +39,7 @@ static int32_t CallExtPostStartupWindow(void);
 static void CallExtPostInit(void);
 static void CallExtUnInit(void);
 static void CallExtPreCheckKeys(void);
-static void CallExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t);
+static void CallExtAnalyzeSprites(int32_t, int32_t, int32_t, int32_t, int32_t);
 static void CallExtCheckKeys(void);
 static void CallExtPreLoadMap(void);
 static void CallExtSetupMapFilename(const char *mapname);
@@ -529,7 +529,7 @@ void M32_DrawRoomsAndMasks(void)
         searchstat = 3;
         searchwall = srchwall;
     }
-    CallExtAnalyzeSprites(0,0,0,0);
+    CallExtAnalyzeSprites(0,0,0,0,0);
     searchwall = osearchwall, searchstat=osearchstat;
 
     renderDrawMasks();
@@ -541,7 +541,7 @@ void M32_DrawRoomsAndMasks(void)
     {
         polymer_editorpick();
         drawrooms(pos.x,pos.y,pos.z,ang,horiz,cursectnum);
-        CallExtAnalyzeSprites(0,0,0,0);
+        CallExtAnalyzeSprites(0,0,0,0,0);
         renderDrawMasks();
         M32_ResetFakeRORTiles();
     }
@@ -11147,9 +11147,9 @@ static void CallExtPreCheckKeys(void)
 {
     ExtPreCheckKeys();
 }
-static void CallExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr)
+static void CallExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
-    ExtAnalyzeSprites(ourx, oury, oura, smoothr);
+    ExtAnalyzeSprites(ourx, oury, ourz, oura, smoothr);
     VM_OnEvent(EVENT_ANALYZESPRITES, -1);
 }
 static void CallExtCheckKeys(void)

@@ -1632,11 +1632,12 @@ void                polymer_drawsprite(int32_t snum)
     }
 }
 
-void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t a, int32_t smoothratio)
+void                polymer_setanimatesprites(animatespritesptr animatesprites, int32_t x, int32_t y, int32_t z, int32_t a, int32_t smoothratio)
 {
     asi.animatesprites = animatesprites;
     asi.x = x;
     asi.y = y;
+    asi.z = z;
     asi.a = a;
     asi.smoothratio = smoothratio;
 }
@@ -2463,7 +2464,7 @@ static inline void  polymer_inb4mirror(_prvert* buffer, const GLfloat* plane)
 static void         polymer_animatesprites(void)
 {
     if (asi.animatesprites)
-        asi.animatesprites(globalposx, globalposy, fix16_to_int(viewangle), asi.smoothratio);
+        asi.animatesprites(globalposx, globalposy, globalposz, fix16_to_int(viewangle), asi.smoothratio);
 }
 
 static void         polymer_freeboard(void)
