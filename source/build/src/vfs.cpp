@@ -1065,7 +1065,7 @@ static void kclose_grp(int32_t handle)
 }
 #endif
 
-static int32_t klistaddentry(BUILDVFS_FIND_REC **rec, const char *name, int32_t type, int32_t source)
+int32_t klistaddentry(BUILDVFS_FIND_REC **rec, const char *name, int32_t type, int32_t source)
 {
     BUILDVFS_FIND_REC *r = NULL, *attach = NULL;
 

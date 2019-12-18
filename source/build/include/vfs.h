@@ -290,6 +290,7 @@ typedef struct _BUILDVFS_FIND_REC {
     int32_t type, source;
     struct _BUILDVFS_FIND_REC *next, *prev, *usera, *userb;
 } BUILDVFS_FIND_REC;
+int32_t klistaddentry(BUILDVFS_FIND_REC **rec, const char *name, int32_t type, int32_t source);
 void klistfree(BUILDVFS_FIND_REC *rec);
 BUILDVFS_FIND_REC *klistpath(const char *path, const char *mask, int type);
 
