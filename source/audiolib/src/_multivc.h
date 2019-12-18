@@ -167,7 +167,11 @@ typedef struct VoiceNode
     fix16_t LeftVolume, LeftVolumeDest;
     fix16_t RightVolume, RightVolumeDest;
 
-    void *rawdataptr;
+    union
+    {
+        void *rawdataptr;
+        void (*DemandFeed)(const char** ptr, uint32_t* length);
+    };
 
     const char *NextBlock;
     const char *LoopStart;
