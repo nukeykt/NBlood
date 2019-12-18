@@ -125,11 +125,13 @@ static inline float getshadefactor(int32_t const shade)
     if (videoGetRenderMode() == REND_POLYMOST && polymost_usetileshades() && eligible_for_tileshades(globalpicnum, globalpal))
         return 1.f;
 
+    float const fshade = (float)shade;
+
     if (r_usenewshading == 4)
-        return max(min(1.f - (shade * shadescale / frealmaxshade), 1.f), 0.f);
+        return max(min(1.f - (fshade * shadescale / frealmaxshade), 1.f), 0.f);
 
     float const shadebound = (float)((shadescale_unbounded || shade>=numshades) ? numshades : numshades-1);
-    float const scaled_shade = (float)shade*shadescale;
+    float const scaled_shade = fshade*shadescale;
     float const clamped_shade = min(max(scaled_shade, 0.f), shadebound);
 
     return ((float)(numshades-clamped_shade))/(float)numshades;
