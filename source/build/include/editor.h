@@ -64,8 +64,7 @@ extern int16_t asksave;
 
 extern int16_t pointhighlight, linehighlight, highlightcnt;
 
-#define DEFAULT_SPRITE_CSTAT 0
-//extern int16_t defaultspritecstat;
+extern int16_t defaultspritecstat;
 
 extern int32_t tempsectornum;
 extern int32_t temppicnum, tempcstat, templotag, temphitag, tempextra;

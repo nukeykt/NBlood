@@ -110,7 +110,7 @@ static int16_t oldmousebstatus = 0;
 char game_executable[BMAX_PATH] = {0};
 
 int32_t zlock = 0x7fffffff, zmode = 0, kensplayerheight = 32;
-//int16_t defaultspritecstat = 0;
+int16_t defaultspritecstat = 0;
 
 int16_t localartfreq[MAXTILES];
 int16_t localartlookup[MAXTILES], localartlookupnum;
@@ -2297,7 +2297,7 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
         return -1;
 
     sprite[i].x = dax, sprite[i].y = day;
-    sprite[i].cstat = DEFAULT_SPRITE_CSTAT;
+    sprite[i].cstat = defaultspritecstat;
     sprite[i].shade = 0;
     sprite[i].pal = 0;
     sprite[i].xrepeat = 64, sprite[i].yrepeat = 64;
