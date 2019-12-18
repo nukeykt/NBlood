@@ -599,12 +599,20 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium-m
+            USE_SSE2 := 0
+            ifneq (0,$(USE_SSE2))
+                OPTOPT := -march=pentium-m
+            else
+                OPTOPT := -march=pentium3
+            endif
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
             OPTOPT += -mmmx -msse -mfpmath=sse
+            ifneq (0,$(USE_SSE2))
+                OPTOPT += -msse2
+            endif
         endif
     endif
     ifeq ($(PLATFORM),WII)
