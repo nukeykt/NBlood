@@ -153,7 +153,7 @@ void artSetupMapArt(const char *filename)
     mapartfnXXofs = Bstrlen(mapartfilename) - 6;
 
     // Check for first per-map ART file: if that one doesn't exist, don't load any.
-    buildvfs_kfd fil = kopen4load(artGetIndexedFileName(MAXARTFILES_BASE), 0);
+    buildvfs_kfd fil = kopen4loadfrommod(artGetIndexedFileName(MAXARTFILES_BASE), 0);
 
     if (fil == buildvfs_kfd_invalid)
     {
@@ -714,7 +714,7 @@ void tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer)
 
         char const *fn = artGetIndexedFileName(tfn);
 
-        artfil = kopen4load(fn, 0);
+        artfil = kopen4loadfrommod(fn, 0);
 
         if (artfil == buildvfs_kfd_invalid)
         {
