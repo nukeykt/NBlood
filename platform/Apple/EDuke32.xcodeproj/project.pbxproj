@@ -550,8 +550,6 @@
 		0008E8CC19F1AC530091588D /* sdlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = sdlayer.h; path = ../../source/build/include/sdlayer.h; sourceTree = SOURCE_ROOT; };
 		0008E8CF19F1AC530091588D /* texcache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = texcache.h; path = ../../source/build/include/texcache.h; sourceTree = SOURCE_ROOT; };
 		0008E8D019F1AC530091588D /* tracker.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = tracker.hpp; path = ../../source/build/include/tracker.hpp; sourceTree = SOURCE_ROOT; };
-		0008E8D119F1AC530091588D /* tracker_operator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = tracker_operator.hpp; path = ../../source/build/include/tracker_operator.hpp; sourceTree = SOURCE_ROOT; };
-		0008E8D219F1AC530091588D /* tracker_operators.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = tracker_operators.hpp; path = ../../source/build/include/tracker_operators.hpp; sourceTree = SOURCE_ROOT; };
 		0008E8D519F1AC530091588D /* xxhash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = xxhash.h; path = ../../source/build/include/xxhash.h; sourceTree = SOURCE_ROOT; };
 		0008E8DC19F1AC530091588D /* baselayer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = baselayer.cpp; path = ../../source/build/src/baselayer.cpp; sourceTree = SOURCE_ROOT; };
 		0008E8DD19F1AC530091588D /* build.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; name = build.cpp; path = ../../source/build/src/build.cpp; sourceTree = SOURCE_ROOT; };
@@ -743,8 +741,6 @@
 		8A9E0D502216C116000327F4 /* print.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = print.h; sourceTree = "<group>"; };
 		8A9E0D512216C117000327F4 /* pragmas_x86_msvc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pragmas_x86_msvc.h; sourceTree = "<group>"; };
 		8A9E0D522216C117000327F4 /* lunatic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lunatic.h; sourceTree = "<group>"; };
-		8A9E0D542216C117000327F4 /* inttypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = inttypes.h; sourceTree = "<group>"; };
-		8A9E0D552216C117000327F4 /* stdint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stdint.h; sourceTree = "<group>"; };
 		8A9E0D562216C117000327F4 /* pngwrite.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pngwrite.h; sourceTree = "<group>"; };
 		8A9E0D572216C117000327F4 /* winlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = winlayer.h; sourceTree = "<group>"; };
 		8A9E0D582216C117000327F4 /* glsurface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = glsurface.h; sourceTree = "<group>"; };
@@ -803,7 +799,6 @@
 		8A9E0DD22216D78C000327F4 /* _control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _control.h; sourceTree = "<group>"; };
 		8A9E0DD32216D78C000327F4 /* animlib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = animlib.h; sourceTree = "<group>"; };
 		8A9E0DD42216D78C000327F4 /* control.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = control.h; sourceTree = "<group>"; };
-		8A9E0DD52216D78C000327F4 /* file_lib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = file_lib.h; sourceTree = "<group>"; };
 		8A9E0DD62216D78C000327F4 /* joystick.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = joystick.h; sourceTree = "<group>"; };
 		8A9E0DD72216D78C000327F4 /* keyboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = keyboard.h; sourceTree = "<group>"; };
 		8A9E0DD82216D78C000327F4 /* mouse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mouse.h; sourceTree = "<group>"; };
@@ -811,7 +806,6 @@
 		8A9E0DDB2216D78C000327F4 /* _scrplib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _scrplib.h; sourceTree = "<group>"; };
 		8A9E0DDC2216D78C000327F4 /* animlib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = animlib.cpp; sourceTree = "<group>"; };
 		8A9E0DDD2216D78C000327F4 /* control.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = control.cpp; sourceTree = "<group>"; };
-		8A9E0DDE2216D78C000327F4 /* file_lib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = file_lib.cpp; sourceTree = "<group>"; };
 		8A9E0DDF2216D78C000327F4 /* joystick.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = joystick.cpp; sourceTree = "<group>"; };
 		8A9E0DE02216D78C000327F4 /* keyboard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = keyboard.cpp; sourceTree = "<group>"; };
 		8A9E0DE12216D78C000327F4 /* scriplib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = scriplib.cpp; sourceTree = "<group>"; };
@@ -1426,7 +1420,6 @@
 		0008E8A019F1AC530091588D /* include */ = {
 			isa = PBXGroup;
 			children = (
-				8A9E0D532216C117000327F4 /* msvc */,
 				0008E8A119F1AC530091588D /* a.h */,
 				0008E9A319F1AD9B0091588D /* animvpx.h */,
 				0008E8A219F1AC530091588D /* baselayer.h */,
@@ -1500,8 +1493,6 @@
 				8A9E0D592216C117000327F4 /* startwin.editor.h */,
 				0008E8CF19F1AC530091588D /* texcache.h */,
 				8A9E0D5C2216C117000327F4 /* tilepacker.h */,
-				0008E8D119F1AC530091588D /* tracker_operator.hpp */,
-				0008E8D219F1AC530091588D /* tracker_operators.hpp */,
 				0008E8D019F1AC530091588D /* tracker.hpp */,
 				8ADA335E2324E0E7006F528A /* timer.h */,
 				8ADA335B2324E0E7006F528A /* vfs.h */,
@@ -1669,15 +1660,6 @@
 			path = ../../source/etcpak;
 			sourceTree = SOURCE_ROOT;
 		};
-		8A9E0D532216C117000327F4 /* msvc */ = {
-			isa = PBXGroup;
-			children = (
-				8A9E0D542216C117000327F4 /* inttypes.h */,
-				8A9E0D552216C117000327F4 /* stdint.h */,
-			);
-			path = msvc;
-			sourceTree = "<group>";
-		};
 		8A9E0D852216CDB3000327F4 /* glad */ = {
 			isa = PBXGroup;
 			children = (
@@ -1729,7 +1711,6 @@
 				8A9E0DD22216D78C000327F4 /* _control.h */,
 				8A9E0DD32216D78C000327F4 /* animlib.h */,
 				8A9E0DD42216D78C000327F4 /* control.h */,
-				8A9E0DD52216D78C000327F4 /* file_lib.h */,
 				8A9E0DD62216D78C000327F4 /* joystick.h */,
 				8A9E0DD72216D78C000327F4 /* keyboard.h */,
 				8A9E0DD82216D78C000327F4 /* mouse.h */,
@@ -1745,7 +1726,6 @@
 				8A9E0DDB2216D78C000327F4 /* _scrplib.h */,
 				8A9E0DDC2216D78C000327F4 /* animlib.cpp */,
 				8A9E0DDD2216D78C000327F4 /* control.cpp */,
-				8A9E0DDE2216D78C000327F4 /* file_lib.cpp */,
 				8A9E0DDF2216D78C000327F4 /* joystick.cpp */,
 				8A9E0DE02216D78C000327F4 /* keyboard.cpp */,
 				8A9E0DE12216D78C000327F4 /* scriplib.cpp */,
