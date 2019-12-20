@@ -70,8 +70,24 @@ extern void (*MV_Printf)(const char *fmt, ...);
 
 const char *MV_ErrorString(int ErrorNumber);
 
-void MV_Lock();
-void MV_Unlock();
+extern int MV_Locked;
+static inline void MV_Lock(void)
+{
+    extern void SoundDriver_PCM_Lock(void);
+
+    if (!MV_Locked++)
+        SoundDriver_PCM_Lock();
+}
+static inline void MV_Unlock(void)
+{
+    extern void SoundDriver_PCM_Unlock(void);
+
+    if (!--MV_Locked)
+        SoundDriver_PCM_Unlock();
+    else if (MV_Locked < 0)
+        MV_Printf("MV_Unlock(): lockdepth < 0!\n");
+}
+
 int  MV_VoicePlaying(int handle);
 int  MV_KillAllVoices(void);
 int  MV_Kill(int handle);

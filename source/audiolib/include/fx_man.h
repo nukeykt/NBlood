@@ -76,6 +76,7 @@ int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loope
 int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate, int pitchoffset,
                     int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 
+
 int FX_SetPrintf(void(*function)(const char *, ...));
 
 extern int FX_ErrorCode;

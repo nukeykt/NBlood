@@ -5465,7 +5465,7 @@ static void polymost_drawalls(int32_t const bunch)
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
             ytex.d = 0;
             otex.d = ryp0*gxyaspect - xtex.d*x0;
-        
+
             xtex.u = ytex.u = otex.u = 0;
             xtex.v = ytex.v = otex.v = 0;
             polymost_domost(x0, fy0, x1, fy1);
@@ -5869,7 +5869,7 @@ static void polymost_drawalls(int32_t const bunch)
             xtex.d = (ryp0-ryp1)*gxyaspect / (x0-x1);
             ytex.d = 0;
             otex.d = ryp0*gxyaspect - xtex.d*x0;
-        
+
             xtex.u = ytex.u = otex.u = 0;
             xtex.v = ytex.v = otex.v = 0;
             polymost_domost(x1, cy1, x0, cy0);

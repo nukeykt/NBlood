@@ -11104,12 +11104,12 @@ int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t
     int32_t intx, inty, intz, i, cnt, nextsector, dasectnum, dacnt, danum;
 
     if ((xs == xe) && (ys == ye) && (sectnums == sectnume)) return 1;
-    
+
     clipsectorlist[0] = sectnums; danum = 1;
     for(dacnt=0;dacnt<danum;dacnt++)
     {
         dasectnum = clipsectorlist[dacnt]; sec = &sector[dasectnum];
-        
+
         for(cnt=sec->wallnum,wal=&wall[sec->wallptr];cnt>0;cnt--,wal++)
         {
             wal2 = &wall[wal->point2];

@@ -526,7 +526,7 @@ int MV_PlayRAW(char *ptr, uint32_t length, int rate, char *loopstart, char *loop
     voice->LoopSize    = loopend - loopstart + 1;
 
     voice->volume      = volume;
-    
+
     MV_SetVoicePitch(voice, rate, pitchoffset);
     MV_SetVoiceVolume(voice, vol, left, right, volume);
     MV_PlayVoice(voice);

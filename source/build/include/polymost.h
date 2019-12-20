@@ -127,7 +127,7 @@ static inline float getshadefactor(int32_t const shade, int32_t const pal)
     if (videoGetRenderMode() == REND_POLYMOST && polymost_usetileshades() && eligible_for_tileshades(globalpicnum, globalpal))
         return 1.f;
 
-    float const fshade = fogfactor[pal] != 0.f ? shade / fogfactor[pal] : 0.f;
+    float const fshade = fogfactor[pal] != 0.f ? (float)shade / fogfactor[pal] : 0.f;
 
     if (r_usenewshading == 4)
         return max(min(1.f - (fshade * shadescale / frealmaxshade), 1.f), 0.f);

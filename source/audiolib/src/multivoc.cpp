@@ -90,21 +90,7 @@ int MV_ErrorCode = MV_NotInstalled;
 fix16_t MV_GlobalVolume = fix16_one;
 fix16_t MV_VolumeSmooth = fix16_one;
 
-static int MV_Locked;
-
-void MV_Lock()
-{
-    if (!MV_Locked++)
-        SoundDriver_PCM_Lock();
-}
-
-void MV_Unlock()
-{
-    if (!--MV_Locked)
-        SoundDriver_PCM_Unlock();
-    else if (MV_Locked < 0)
-        MV_Printf("MV_Unlock(): lockdepth < 0!\n");
-}
+int MV_Locked;
 
 char *MV_MusicBuffer;
 static void (*MV_MusicCallback)(void);
@@ -977,17 +963,7 @@ const char *MV_ErrorString(int ErrorNumber)
     }
 }
 
-/*---------------------------------------------------------------------
-   Function: MV_GetNextDemandFeedBlock
-
-   Controls playback of demand fed data.
----------------------------------------------------------------------*/
-
-playbackstatus MV_GetNextDemandFeedBlock
-(
-    VoiceNode* voice
-)
-
+playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
 {
     if (voice->BlockLength > 0)
     {
@@ -997,13 +973,11 @@ playbackstatus MV_GetNextDemandFeedBlock
         voice->BlockLength -= voice->length;
         voice->length <<= 16;
 
-        return(KeepPlaying);
+        return KeepPlaying;
     }
 
     if (voice->DemandFeed == NULL)
-    {
-        return(NoMoreData);
-    }
+        return NoMoreData;
 
     voice->position = 0;
     (voice->DemandFeed)(&voice->sound, &voice->BlockLength);
@@ -1011,39 +985,21 @@ playbackstatus MV_GetNextDemandFeedBlock
     voice->BlockLength -= voice->length;
     voice->length <<= 16;
 
-    if ((voice->length > 0) && (voice->sound != NULL))
-    {
-        return(KeepPlaying);
-    }
-    return(NoMoreData);
+    if (voice->length > 0 && voice->sound != NULL)
+        return KeepPlaying;
+
+    return NoMoreData;
 }
 
-/*---------------------------------------------------------------------
-   Function: MV_StartDemandFeedPlayback
-
-   Plays a digitized sound from a user controlled buffering system.
----------------------------------------------------------------------*/
-
-int MV_StartDemandFeedPlayback
-(
-    void (*function)(const char** ptr, uint32_t* length),
-    int rate,
-    int pitchoffset,
-    int vol,
-    int left,
-    int right,
-    int priority,
-    fix16_t volume,
-    intptr_t callbackval
-)
-
+int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate,
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     VoiceNode* voice;
 
     if (!MV_Installed)
     {
         MV_SetErrorCode(MV_NotInstalled);
-        return(MV_Error);
+        return MV_Error;
     }
 
     // Request a voice from the voice pool
@@ -1051,7 +1007,7 @@ int MV_StartDemandFeedPlayback
     if (voice == NULL)
     {
         MV_SetErrorCode(MV_NoVoices);
-        return(MV_Error);
+        return MV_Error;
     }
 
 //    voice->wavetype = FMT_DEMANDFED;
@@ -1075,5 +1031,5 @@ int MV_StartDemandFeedPlayback
     MV_SetVoiceVolume(voice, vol, left, right, volume);
     MV_PlayVoice(voice);
 
-    return(voice->handle);
+    return voice->handle;
 }
