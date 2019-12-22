@@ -95,7 +95,7 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     char tempbuf[256];
     snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
-    buildputs(tempbuf);
+    buildprintf("%s\n", tempbuf);
     PrintBuildInfo();
 
     return 0;
