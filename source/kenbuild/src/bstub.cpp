@@ -260,8 +260,6 @@ void ExtPreCheckKeys(void)
 #endif
 }
 
-#define MAXVOXMIPS 5
-extern intptr_t voxoff[][MAXVOXMIPS];
 void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     int i, *longptr;
@@ -275,19 +273,28 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels && tiletovox[tspr->picnum] >= 0)
+        if (usevoxels)
         {
             switch (tspr->picnum)
             {
             case PLAYER:
-                //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
-                longptr = (int *)voxoff[tiletovox[PLAYER]][0];
+                if (voxid_PLAYER == -1)
+                    break;
+
+                tspr->cstat |= 48;
+                tspr->picnum = voxid_PLAYER;
+
+                longptr = (int32_t *)voxoff[voxid_PLAYER][0];
                 tspr->xrepeat = scale(tspr->xrepeat,56,longptr[2]);
                 tspr->yrepeat = scale(tspr->yrepeat,56,longptr[2]);
                 tspr->shade -= 6;
                 break;
             case BROWNMONSTER:
-                //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
+                if (voxid_BROWNMONSTER == -1)
+                    break;
+
+                tspr->cstat |= 48;
+                tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }
         }

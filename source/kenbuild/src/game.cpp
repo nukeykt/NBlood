@@ -1966,8 +1966,6 @@ void shootgun(short snum, const vec3_t *vector,
     }
 }
 
-#define MAXVOXMIPS 5
-extern intptr_t voxoff[][MAXVOXMIPS];
 void analyzesprites(int dax, int day)
 {
     int i, j=0, k, *intptr;
@@ -1979,7 +1977,7 @@ void analyzesprites(int dax, int day)
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels && tiletovox[tspr->picnum] >= 0)
+        if (usevoxels)
             switch (tspr->picnum)
             {
             case PLAYER:
@@ -2001,15 +1999,24 @@ void analyzesprites(int dax, int day)
 
                 if ((tspr->cstat&2) == 0)
                 {
-                    //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
-                    intptr = (int *)voxoff[tiletovox[PLAYER]][0];
+                    if (voxid_PLAYER == -1)
+                        break;
+
+                    tspr->cstat |= 48;
+                    tspr->picnum = voxid_PLAYER;
+
+                    intptr = (int32_t *)voxoff[voxid_PLAYER][0];
                     tspr->xrepeat = scale(tspr->xrepeat,56,intptr[2]);
                     tspr->yrepeat = scale(tspr->yrepeat,56,intptr[2]);
                     tspr->shade -= 6;
                 }
                 break;
             case BROWNMONSTER:
-                //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
+                if (voxid_BROWNMONSTER == -1)
+                    break;
+
+                tspr->cstat |= 48;
+                tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }
 

@@ -79,10 +79,12 @@ void Ken_PostStartupWindow()
     paletteMakeLookupTable(18,tempbuf,32,32,192,1);
 }
 
+int32_t voxid_PLAYER = -1, voxid_BROWNMONSTER = -1;
+
 void Ken_LoadVoxels()
 {
     if (!qloadkvx(nextvoxid,"voxel000.kvx"))
-        tiletovox[PLAYER] = nextvoxid++;
+        voxid_PLAYER = nextvoxid++;
     if (!qloadkvx(nextvoxid,"voxel001.kvx"))
-        tiletovox[BROWNMONSTER] = nextvoxid++;
+        voxid_BROWNMONSTER = nextvoxid++;
 }
