@@ -31,15 +31,7 @@ static struct
     int forcesetup;
     int usemouse, usejoy;
     struct grpfile const * selectedgrp;
-    int samplerate, bitspersample, channels;
 } settings;
-
-static struct soundQuality_t
-{
-    int frequency;
-    int samplesize;
-    int channels;
-} *soundQualities = 0;
 
 static HWND startupdlg = NULL;
 static HWND pages[3] = { NULL, NULL, NULL };
@@ -48,25 +40,6 @@ static int done = -1, mode = TAB_CONFIG;
 #define POPULATE_VIDEO 1
 #define POPULATE_CONFIG 2
 #define POPULATE_GAME 4
-
-static int addSoundQualityItem(struct soundQuality_t *q, HWND hwnd)
-{
-    char buf[128];
-    const char *ch;
-
-    switch (q->channels)
-    {
-    case 1: ch = "Mono"; break;
-    case 2: ch = "Stereo"; break;
-    default: ch = "?"; break;
-    }
-
-    sprintf(buf, "%dkHz, %d-bit, %s",
-            q->frequency / 1000,
-            q->samplesize,
-            ch);
-    return ComboBox_AddString(hwnd, buf);
-}
 
 static void PopulateForm(int pgs)
 {
@@ -116,35 +89,6 @@ static void PopulateForm(int pgs)
 
         Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCINPUTMOUSE), (settings.usemouse ? BST_CHECKED : BST_UNCHECKED));
         Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCINPUTJOY), (settings.usejoy ? BST_CHECKED : BST_UNCHECKED));
-
-        hwnd = GetDlgItem(pages[TAB_CONFIG], IDCSOUNDQUAL);
-
-        ComboBox_ResetContent(hwnd);
-        for (i = 0; soundQualities[i].frequency > 0; i++)
-        {
-            j = addSoundQualityItem(&soundQualities[i], hwnd);
-            ComboBox_SetItemData(hwnd, j, i);
-
-            if (soundQualities[i].frequency == settings.samplerate &&
-                soundQualities[i].samplesize == settings.bitspersample &&
-                soundQualities[i].channels == settings.channels)
-            {
-                ComboBox_SetCurSel(hwnd, j);
-            }
-        }
-
-        if (curidx < 0)
-        {
-            soundQualities[i].frequency = settings.samplerate;
-            soundQualities[i].samplesize = settings.bitspersample;
-            soundQualities[i].channels = settings.channels;
-
-            j = addSoundQualityItem(&soundQualities[i], hwnd);
-            ComboBox_SetItemData(hwnd, j, i);
-
-            i++;
-            soundQualities[i].frequency = -1;
-        }
     }
 
     if (pgs & POPULATE_GAME)
@@ -188,20 +132,6 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
                     settings.xdim = validmode[i].xdim;
                     settings.ydim = validmode[i].ydim;
                     settings.bpp  = validmode[i].bpp;
-                }
-            }
-            return TRUE;
-        case IDCSOUNDQUAL:
-            if (HIWORD(wParam) == CBN_SELCHANGE)
-            {
-                int i;
-                i = ComboBox_GetCurSel((HWND)lParam);
-                if (i != CB_ERR) i = ComboBox_GetItemData((HWND)lParam, i);
-                if (i != CB_ERR)
-                {
-                    settings.samplerate = soundQualities[i].frequency;
-                    settings.bitspersample = soundQualities[i].samplesize;
-                    settings.channels = soundQualities[i].channels;
                 }
             }
             return TRUE;
@@ -271,7 +201,6 @@ static void EnableConfig(int n)
     EnableWindow(GetDlgItem(startupdlg, WIN_STARTWIN_START), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCVMODE), n);
-    EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCSOUNDQUAL), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCINPUTMOUSE), n);
     EnableWindow(GetDlgItem(pages[TAB_CONFIG], IDCINPUTJOY), n);
 
@@ -486,37 +415,6 @@ int startwin_open(void)
     startupdlg = CreateDialog((HINSTANCE)win_gethinstance(), MAKEINTRESOURCE(WIN_STARTWIN), NULL, startup_dlgproc);
     if (startupdlg)
     {
-        {
-            static int soundQualityFrequencies[] = { 44100, 22050, 11025 };
-            static int soundQualitySampleSizes[] = { 16, 8 };
-            static int soundQualityChannels[]    = { 2, 1 };
-            unsigned int f, b, c, i;
-
-            i = sizeof(soundQualityFrequencies) *
-                sizeof(soundQualitySampleSizes) *
-                sizeof(soundQualityChannels) /
-                sizeof(int) + 2;    // one for the terminator, one for a custom setting
-            soundQualities = (struct soundQuality_t *) malloc(i * sizeof(struct soundQuality_t));
-
-            i = 0;
-            for (c = 0; c < sizeof(soundQualityChannels) / sizeof(int); c++)
-            {
-                for (b = 0; b < sizeof(soundQualitySampleSizes) / sizeof(int); b++)
-                {
-                    for (f = 0; f < sizeof(soundQualityFrequencies) / sizeof(int); f++)
-                    {
-                        soundQualities[i].frequency = soundQualityFrequencies[f];
-                        soundQualities[i].samplesize = soundQualitySampleSizes[b];
-                        soundQualities[i].channels = soundQualityChannels[c];
-
-                        i++;
-                    }
-                }
-            }
-
-            soundQualities[i].frequency = -1;
-        }
-
         SetPage(TAB_MESSAGES);
         EnableConfig(0);
         return 0;
@@ -529,7 +427,6 @@ int startwin_close(void)
     if (!startupdlg) return 1;
     DestroyWindow(startupdlg);
     startupdlg = NULL;
-    free(soundQualities);
     return 0;
 }
 
@@ -620,9 +517,6 @@ int startwin_run(void)
     settings.xdim = ScreenWidth;
     settings.ydim = ScreenHeight;
     settings.bpp = ScreenBPP;
-    settings.samplerate = MixRate;
-    settings.bitspersample = NumBits;
-    settings.channels = NumChannels;
     settings.forcesetup = ForceSetup;
     settings.usemouse = UseMouse;
     settings.usejoy = UseJoystick;
@@ -651,9 +545,6 @@ int startwin_run(void)
         ScreenWidth = settings.xdim;
         ScreenHeight = settings.ydim;
         ScreenBPP = settings.bpp;
-        MixRate = settings.samplerate;
-        NumBits = settings.bitspersample;
-        NumChannels = settings.channels;
         ForceSetup = settings.forcesetup;
         UseMouse = settings.usemouse;
         UseJoystick = settings.usejoy;
