@@ -621,6 +621,9 @@ int32_t CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "NumChannels",&NumChannels);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "NumBits",&NumBits);
     SCRIPT_GetNumber(scripthandle, "Sound Setup", "MixRate",&MixRate);
+    SCRIPT_GetNumber(scripthandle, "Sound Setup", "ReverseStereo",&dummy);
+    gs.FlipStereo = dummy;
+    if (gs.FlipStereo) gs.FlipStereo = 1;
 
     SCRIPT_GetString(scripthandle, "Sound Setup", "WaveformTrackName", waveformtrackname);
     if (waveformtrackname[0] != '\0')
@@ -692,6 +695,8 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "MixRate", MixRate, FALSE, FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "FXVolume",gs.SoundVolume,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "MusicVolume",gs.MusicVolume,FALSE,FALSE);
+    dummy = gs.FlipStereo;
+    SCRIPT_PutNumber(scripthandle, "Sound Setup", "ReverseStereo",dummy,FALSE,FALSE);
     SCRIPT_PutString(scripthandle, "Sound Setup", "WaveformTrackName", gs.WaveformTrackName);
 
     SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup",ForceSetup,FALSE,FALSE);

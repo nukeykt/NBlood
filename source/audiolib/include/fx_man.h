@@ -97,6 +97,10 @@ static FORCE_INLINE int FX_CheckMVErr(int status)
 static FORCE_INLINE void FX_SetCallBack(void(*function)(intptr_t)) { MV_SetCallBack(function); }
 static FORCE_INLINE void FX_SetVolume(int volume) { MV_SetVolume(volume); }
 static FORCE_INLINE int FX_GetVolume(void) { return MV_GetVolume(); }
+#ifdef ASS_REVERSESTEREO
+static FORCE_INLINE void FX_SetReverseStereo(int setting) { MV_SetReverseStereo(setting); }
+static FORCE_INLINE int FX_GetReverseStereo(void) { return MV_GetReverseStereo(); }
+#endif
 static FORCE_INLINE void FX_SetReverb(int reverb) { MV_SetReverb(reverb); }
 static FORCE_INLINE int FX_GetMaxReverbDelay(void) { return MV_GetMaxReverbDelay(); }
 static FORCE_INLINE int FX_GetReverbDelay(void) { return MV_GetReverbDelay(); }

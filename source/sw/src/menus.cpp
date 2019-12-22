@@ -199,6 +199,9 @@ MenuItem sound_i[] =
 
     //{DefButton(btn_talking, 0, "Talking"), OPT_XS,            OPT_LINE(4), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
     {DefButton(btn_ambience, 0, "Ambience"), OPT_XS,          OPT_LINE(4), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
+#ifdef ASS_REVERSESTEREO
+    {DefButton(btn_flipstereo, 0, "Flip Stereo"), OPT_XS,     OPT_LINE(5), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
+#endif
     //{DefButton(btn_playcd, 0, "Play CD"), OPT_XS,         OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefNone}
 };
@@ -2210,6 +2213,7 @@ MNU_InitMenus(void)
     buttonsettings[btn_voxels] = gs.Voxels;
     buttonsettings[btn_ambience] = gs.Ambient;
     buttonsettings[btn_playcd] = gs.PlayCD;
+    buttonsettings[btn_flipstereo] = gs.FlipStereo;
     buttonsettings[btn_stats] = gs.Stats;
     buttonsettings[btn_darts] = gs.Darts;
     buttonsettings[btn_autoswitch] = gs.WeaponAutoSwitch;
@@ -3440,6 +3444,14 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
                         StopAmbientSound();
                 }
             }
+            break;
+        case btn_flipstereo:
+            last_value = gs.FlipStereo;
+            gs.FlipStereo = state = buttonsettings[item->button];
+#ifdef ASS_REVERSESTEREO
+            if (gs.FlipStereo != last_value)
+                FX_SetReverseStereo(gs.FlipStereo);
+#endif
             break;
         case btn_shadows:
             gs.Shadows = state = buttonsettings[item->button];

@@ -210,6 +210,7 @@ const GAME_SET gs_defaults =
     TRUE, // Music on
     TRUE, // talking
     TRUE, // ambient
+    FALSE, // Flip Stereo
 
 // Network game settings
     0, // GameType

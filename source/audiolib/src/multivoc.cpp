@@ -75,6 +75,10 @@ int MV_Channels = 1;
 int MV_MixRate;
 void *MV_InitDataPtr;
 
+#ifdef ASS_REVERSESTEREO
+static int MV_ReverseStereo;
+#endif
+
 static int MV_BufferEmpty[MV_NUMBEROFBUFFERS];
 char *MV_MixBuffer[(MV_NUMBEROFBUFFERS << 1) + 1];
 
@@ -568,6 +572,10 @@ void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t v
 {
     if (MV_Channels == 1)
         left = right = vol;
+#ifdef ASS_REVERSESTEREO
+    else if (MV_ReverseStereo)
+        swap(&left, &right);
+#endif
 
     voice->LeftVolumeDest = left*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
     voice->RightVolumeDest = right*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
@@ -793,6 +801,11 @@ int MV_GetVolume(void) { return MV_TotalVolume; }
 
 void MV_SetCallBack(void (*function)(intptr_t)) { MV_CallBackFunc = function; }
 
+#ifdef ASS_REVERSESTEREO
+void MV_SetReverseStereo(int setting) { MV_ReverseStereo = setting; }
+int MV_GetReverseStereo(void) { return MV_ReverseStereo; }
+#endif
+
 int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata)
 {
     if (MV_Installed)
@@ -820,6 +833,10 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
 
     for (int index = 0; index < Voices; index++)
         LL::Insert(&VoicePool, &MV_Voices[index]);
+
+#ifdef ASS_REVERSESTEREO
+    MV_SetReverseStereo(FALSE);
+#endif
 
     ASS_PCMSoundDriver = soundcard;
 

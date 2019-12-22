@@ -133,6 +133,13 @@ int  MV_SetPosition(int handle, int position);
 void MV_SetVolume(int volume);
 int  MV_GetVolume(void);
 void MV_SetCallBack(void (*function)(intptr_t));
+
+#ifdef __MSDOS__
+#define ASS_REVERSESTEREO
+void MV_SetReverseStereo(int setting);
+int  MV_GetReverseStereo(void);
+#endif
+
 int  MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata);
 int  MV_Shutdown(void);
 void MV_HookMusicRoutine(void (*callback)(void));

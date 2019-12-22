@@ -272,6 +272,9 @@ void CONFIG_SetDefaults(void)
     ud.config.MusicVolume     = 195;
     ud.config.NumBits         = 16;
     ud.config.NumChannels     = 2;
+#ifdef ASS_REVERSESTEREO
+    ud.config.ReverseStereo   = 0;
+#endif
     ud.config.ShowWeapons     = 0;
     ud.config.SmoothInput     = 1;
     ud.config.SoundToggle     = 1;
