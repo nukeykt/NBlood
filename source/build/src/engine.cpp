@@ -10690,6 +10690,9 @@ void videoNextPage(void)
 //
 int32_t qloadkvx(int32_t voxindex, const char *filename)
 {
+    if ((unsigned)voxindex >= MAXVOXELS)
+        return -1;
+
     const buildvfs_kfd fil = kopen4load(filename, 0);
     if (fil == buildvfs_kfd_invalid)
         return -1;
