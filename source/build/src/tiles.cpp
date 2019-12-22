@@ -792,6 +792,14 @@ int32_t tileGetCRC32(int16_t tileNum)
     return crc;
 }
 
+vec2_16_t tileGetSize(int16_t tileNum)
+{
+    if ((unsigned)tileNum >= (unsigned)MAXTILES)
+        return vec2_16_t{};
+
+    return tilesiz[tileNum];
+}
+
 // Assumes pic has been initialized to zero.
 void artConvertRGB(palette_t * const pic, uint8_t const * const buf, int32_t const bufsizx, int32_t const sizx, int32_t const sizy)
 {
