@@ -1059,6 +1059,8 @@ InitGame(int32_t argc, char const * const * argv)
     if (enginePostInit())
         SW_FatalEngineError();
 
+    palettePostLoadLookups();
+
     DemoModeMenuInit = TRUE;
     // precache as much stuff as you can
     if (UserMapName[0] == '\0')

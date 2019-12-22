@@ -794,6 +794,7 @@ int32_t ExtPostStartupWindow(void)
 
 void ExtPostInit(void)
 {
+    palettePostLoadLookups();
 }
 
 void
