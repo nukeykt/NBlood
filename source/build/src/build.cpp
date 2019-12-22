@@ -577,6 +577,72 @@ static void M32_FatalEngineError(void)
     fatal_exit(tempbuf);
 }
 
+static void InitCustomColors()
+{
+    /* blue */
+    vgapal16[9*4+0] = 252;
+    vgapal16[9*4+1] = 124;
+    vgapal16[9*4+2] = 28;
+
+    /* orange */
+    vgapal16[31*4+0] = 80; // blue
+    vgapal16[31*4+1] = 180; // green
+    vgapal16[31*4+2] = 240; // red
+
+    // UNUSED?
+    vgapal16[39*4+0] = 144;
+    vgapal16[39*4+1] = 212;
+    vgapal16[39*4+2] = 252;
+
+
+    /* light yellow */
+    vgapal16[22*4+0] = 204;
+    vgapal16[22*4+1] = 252;
+    vgapal16[22*4+2] = 252;
+
+    /* grey */
+    vgapal16[23*4+0] = 180;
+    vgapal16[23*4+1] = 180;
+    vgapal16[23*4+2] = 180;
+
+    /* blue */
+    vgapal16[24*4+0] = 204;
+    vgapal16[24*4+1] = 164;
+    vgapal16[24*4+2] = 48;
+
+    vgapal16[32*4+0] = 240;
+    vgapal16[32*4+1] = 200;
+    vgapal16[32*4+2] = 84;
+
+    // grid color
+    vgapal16[25*4+0] = 64;
+    vgapal16[25*4+1] = 56;
+    vgapal16[25*4+2] = 56;
+
+    vgapal16[26*4+0] = 96;
+    vgapal16[26*4+1] = 96;
+    vgapal16[26*4+2] = 96;
+
+    // UNUSED?
+    vgapal16[33*4+0] = 0; //60; // blue
+    vgapal16[33*4+1] = 0; //120; // green
+    vgapal16[33*4+2] = 192; //180; // red
+
+    // UNUSED?
+    vgapal16[41*4+0] = 0; //96;
+    vgapal16[41*4+1] = 0; //160;
+    vgapal16[41*4+2] = 252; //192;
+
+    for (int i = 0; i<256; i++)
+    {
+        if (editorcolors[i] == 0)
+        {
+            palette_t *edcol = (palette_t *)&vgapal16[4*i];
+            editorcolors[i] = getclosestcol_lim(edcol->b,edcol->g,edcol->r, 239);
+        }
+    }
+}
+
 int app_main(int argc, char const * const * argv)
 {
 #ifdef STARTUP_SETUP_WINDOW
@@ -699,6 +765,8 @@ int app_main(int argc, char const * const * argv)
 
     if (enginePostInit())
         M32_FatalEngineError();
+
+    InitCustomColors();
 
     CallExtPostInit();
 
