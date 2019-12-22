@@ -108,7 +108,7 @@ sound_t g_sounds[MAXSOUNDS];
 static int16_t g_definedsndnum[MAXSOUNDS];  // maps parse order index to g_sounds index
 static int16_t g_sndnum[MAXSOUNDS];  // maps current order index to g_sounds index
 int32_t g_numsounds = 0;
-static int32_t mousecol, bstatus;
+static int32_t bstatus;
 
 static int32_t corruptchecktimer;
 static int32_t curcorruptthing=-1;
@@ -2343,69 +2343,6 @@ static inline void SpriteName(int16_t spritenum, char *lo2)
     Bstrcpy(lo2, names[sprite[spritenum].picnum]);
 }// end SpriteName
 
-
-static void m32_showmouse(void)
-{
-    int32_t i, col;
-
-    mousecol = M32_THROB;
-
-    if (whitecol > editorcolors[0])
-        col = whitecol - mousecol;
-    else col = whitecol + mousecol;
-
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        renderDisableFog();
-        polymost_useColorOnly(true);
-    }
-#endif
-
-    int const lores = !!(xdim <= 640);
-
-    for (i = (3 - lores); i <= (7 >> lores); i++)
-    {
-        plotpixel(searchx+i,searchy,col);
-        plotpixel(searchx-i,searchy,col);
-        plotpixel(searchx,searchy-i,col);
-        plotpixel(searchx,searchy+i,col);
-    }
-
-    for (i=1; i<=(2 >> lores); i++)
-    {
-        plotpixel(searchx+i,searchy,whitecol);
-        plotpixel(searchx-i,searchy,whitecol);
-        plotpixel(searchx,searchy-i,whitecol);
-        plotpixel(searchx,searchy+i,whitecol);
-    }
-
-    i = (8 >> lores);
-
-    plotpixel(searchx+i,searchy,editorcolors[0]);
-    plotpixel(searchx-i,searchy,editorcolors[0]);
-    plotpixel(searchx,searchy-i,editorcolors[0]);
-    plotpixel(searchx,searchy+i,editorcolors[0]);
-
-    if (!lores)
-    {
-        for (i=1; i<=4; i++)
-        {
-            plotpixel(searchx+i,searchy,whitecol);
-            plotpixel(searchx-i,searchy,whitecol);
-            plotpixel(searchx,searchy-i,whitecol);
-            plotpixel(searchx,searchy+i,whitecol);
-        }
-    }
-
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        renderEnableFog();
-        polymost_useColorOnly(false);
-    }
-#endif
-}
 
 int32_t AskIfSure(const char *text)
 {

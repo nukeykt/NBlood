@@ -472,6 +472,8 @@ static FORCE_INLINE void inpclamp(int32_t *x, int32_t mi, int32_t ma)
 // Range: 0 .. 16
 #define M32_THROB klabs(sintable[(((int32_t) totalclock << 4) & 2047)] >> 10)
 
+void m32_showmouse(void);
+
 #ifdef __cplusplus
 }
 #endif
