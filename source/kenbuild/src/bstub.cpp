@@ -312,7 +312,7 @@ void ExtCheckKeys(void)
     int i; //, p, y, dx, dy, cosang, sinang, bufplc, tsizy, tsizyup15;
     int j;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
 #if 0
         if (hang != 0)
@@ -459,7 +459,7 @@ const char *ExtGetSpriteCaption(short spritenum)
 void ExtShowSectorData(short sectnum)   //F5
 {
     int i;
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -486,7 +486,7 @@ void ExtShowSectorData(short sectnum)   //F5
 
 void ExtShowWallData(short wallnum)       //F6
 {
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -502,7 +502,7 @@ void ExtShowWallData(short wallnum)       //F6
 
 void ExtShowSpriteData(short spritenum)   //F6
 {
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -520,7 +520,7 @@ void ExtEditSectorData(short sectnum)    //F7
 {
     short nickdata;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
         //Ceiling
         if (searchstat == 1)
@@ -545,7 +545,7 @@ void ExtEditWallData(short wallnum)       //F8
 {
     short nickdata;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -563,7 +563,7 @@ void ExtEditSpriteData(short spritenum)   //F8
 {
     short nickdata;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else

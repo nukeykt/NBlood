@@ -143,8 +143,6 @@ char default_buildkeys[NUMBUILDKEYS] =
     0x9c, 0x1c, 0xd, 0xc, 0xf, 0x29
 };
 
-#define MODE_3D 200
-
 extern short pointhighlight, linehighlight;
 extern short asksave;
 short ExtSectorTag[MAXSECTORS][4];
@@ -1415,7 +1413,7 @@ MoreKeys(short searchstat, short searchwall, short searchsector, short pointhigh
     GET_NUM_FUNCp getnumber;
     PRINT_MSG_FUNCp printmessage;
 
-    if (qsetmode == MODE_3D)
+    if (in3dmode())
     {
         getnumber = sw_getnumber256;
         printmessage = sw_printmessage256;
@@ -2086,7 +2084,7 @@ void
 ExtCheckKeysNotice(void)
 {
 #if 0
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
     {
         if (intro < 600)
         {
@@ -2125,7 +2123,7 @@ ExtCheckKeys(void)
 //  ticdiff = 0;            // Set it back to 0!
 
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
     {
 #define AVERAGEFRAMES 16
         static int frameval[AVERAGEFRAMES], framecnt = 0;
@@ -2144,7 +2142,7 @@ ExtCheckKeys(void)
 
     MoreKeys(searchstat, searchwall, searchsector, pointhighlight);
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
     {
         Keys3D();
 
@@ -2797,7 +2795,7 @@ ExtShowSectorData(short sectnum)        // F5
 {
     int i, x, y, x2;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     clearmidstatbar16();                // Clear middle of status bar
@@ -2939,7 +2937,7 @@ ExtShowSectorData(short sectnum)        // F5
 void
 ExtShowWallData(short wallnum)          // F6
 {
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
 
@@ -2951,7 +2949,7 @@ ExtShowWallData(short wallnum)          // F6
 void
 ExtShowSpriteData(short spritenum)      // F6
 {
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     while (KEY_PRESSED(KEYSC_F6)) ;
@@ -2971,7 +2969,7 @@ ExtEditSectorData(short sectnum)        // F7
     short key_num;
     SPRITEp sp;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
 
@@ -2999,7 +2997,7 @@ ExtEditWallData(short wallnum)          // F8
 {
 //    short nickdata;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
 //    sprintf(tempbuf, "Wall (%ld): ", wallnum);
@@ -3023,7 +3021,7 @@ ExtEditSpriteData(short spritenum)      // F8
     sp = &sprite[spritenum];
 
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     clearmidstatbar16();                // Clear middle of status bar
@@ -3158,7 +3156,7 @@ PlaxSetShade(void)
     short shade;
     int i, count = 0;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Plax Sky set shade to #: ");
@@ -3191,7 +3189,7 @@ PlaxAdjustShade(void)
     short shade;
     int i, count = 0;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Plax Sky adjust shade by (+10000 for negative): ");
@@ -3230,7 +3228,7 @@ AdjustShade(void)
     int i, count;
     short SpriteNum, NextSprite;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Adjust amount (+10000 for negative): ");
@@ -3318,7 +3316,7 @@ SetClipdist2D(void)
     int i;
     short num;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     if (highlightcnt <= -1)
@@ -3348,7 +3346,7 @@ AdjustVisibility(void)
     short vis;
     int i, count = 0;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Adjust non-zero vis sectors by (+10000 for neg): ");
@@ -3403,7 +3401,7 @@ FindSprite(short picnum, short findspritenum)
     SWBOOL bFoundPicNum, bFoundHiTag, bFoundLowTag, bFoundIt;
 
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     if (picnum == 0)
@@ -3475,7 +3473,7 @@ FindNextSprite(short picnum)
 
     SWBOOL bFoundPicNum, bFoundHiTag, bFoundLowTag, bFoundIt;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     for (i = 0; i < numsectors; i++)
@@ -3544,7 +3542,7 @@ DoMatchCheck(SPRITEp sp)
 void
 ShowNextTag(void)
 {
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     printmessage16(" ");
@@ -3559,7 +3557,7 @@ FindNextTag(void)
     short siNextFind;                   // Next tag that SHOULD be found
     SPRITEp sp;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     siNextTag = siNextEndTag = 0;       // Reset tags for new search
@@ -3594,7 +3592,7 @@ ShadeMenu(void)                         // F8
 {
     uint8_t* key;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     clearmidstatbar16();                // Clear middle of status bar
