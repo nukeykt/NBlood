@@ -18,7 +18,7 @@
 
 #include "common_game.h"
 
-const char *AppProperName = "KenBuild";
+const char *AppProperName = "EKenBuild";
 const char *AppTechnicalName = "ekenbuild";
 
 #define SETUPFILENAME "ekenbuild.cfg"
