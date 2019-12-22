@@ -98,8 +98,6 @@ SWBOOL bVoxelsOn = TRUE;                  // Turn voxels on by default
 SWBOOL bSpinBobVoxels = TRUE;             // Do twizzly stuff to voxels
 SWBOOL bAutoSize = TRUE;                  // Autosizing on/off
 
-int nextvoxid = 0;
-
 // Globals used to hold current sprite type being searched for.
 short FindPicNum = 0;
 short FindSpriteNum = 0;

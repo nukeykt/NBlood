@@ -78,8 +78,6 @@ int averagefps;
 static unsigned int frameval[AVERAGEFRAMES];
 static int framecnt = 0;
 
-int nextvoxid = 0;
-
 
 const char *ExtGetVer(void)
 {

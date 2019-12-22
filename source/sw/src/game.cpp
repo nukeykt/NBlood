@@ -908,7 +908,6 @@ void COVERsetbrightness(int bright, unsigned char *pal)
 
 
 static int firstnet = 0;    // JBF
-int nextvoxid = 0;  // JBF
 
 extern int startwin_run(void);
 
