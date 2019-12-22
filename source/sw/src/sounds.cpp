@@ -1188,6 +1188,11 @@ SoundStartup(void)
     FxInitialized = TRUE;
     FX_SetVolume(gs.SoundVolume);
 
+#ifdef ASS_REVERSESTEREO
+    if (gs.FlipStereo)
+        FX_SetReverseStereo(!FX_GetReverseStereo());
+#endif
+
     FX_SetCallBack(SoundCallBack);
 }
 

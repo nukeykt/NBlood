@@ -89,6 +89,9 @@ int32_t S_SoundStartup(void)
     }
 
     FX_SetVolume(FXVolume);
+#ifdef ASS_REVERSESTEREO
+    FX_SetReverseStereo(0);
+#endif
     FX_SetCallBack(S_Callback);
 
     SM32_havesound = 1;

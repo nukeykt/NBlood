@@ -60,6 +60,7 @@ extern int32_t NumChannels; // Number of channels
 extern int32_t NumBits; // Number of bits
 extern int32_t MixRate; // Mixing rate
 extern int32_t MidiPort; // Midi Port
+extern int32_t ReverseStereo; // Reverse Stereo Channels
 
 // comm externs
 extern int32_t ComPort;
