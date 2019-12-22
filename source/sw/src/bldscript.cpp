@@ -385,8 +385,6 @@ int ParseNum(char *str)
 //      spritenumber, voxelnumber
 int aVoxelArray[MAXTILES];
 
-extern int nextvoxid;
-
 // Load all the voxel files using swvoxfil.txt script file
 // Script file format:
 

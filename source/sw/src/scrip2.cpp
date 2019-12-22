@@ -42,8 +42,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 
 //#define COMPUTE_TOTALS    1
 
-extern int nextvoxid;   // JBF: in game.c
-
 ParentalStruct aVoxelArray[MAXTILES];
 
 

@@ -363,8 +363,6 @@ static int animatevel[MAXANIMATES], animateacc[MAXANIMATES], animatecnt = 0;
     }
 #endif
 
-int nextvoxid = 0;
-
 int osdcmd_restartvid(const osdfuncparm_t *parm)
 {
     UNREFERENCED_PARAMETER(parm);
