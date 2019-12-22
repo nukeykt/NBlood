@@ -127,7 +127,7 @@ typedef enum
 char *SongPtr = NULL;
 int SongLength = 0;
 char *SongName = NULL;
-int SongTrack = 0;
+int8_t SongTrack = 0;
 SongType_t SongType = SongTypeNone;
 int SongVoice = -1;
 extern SWBOOL DemoMode;
