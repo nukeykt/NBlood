@@ -15,6 +15,7 @@
 #include "cache1d.h"
 #include "common.h"
 #include "m32script.h"
+#include "keys.h"
 
 #include "common_game.h"
 
@@ -35,6 +36,12 @@ const char *DefaultGameLocalExec = DEFAULT_GAME_LOCAL_EXEC;
 #define SETUPFILENAME "ekenbuild-editor.cfg"
 const char *defaultsetupfilename = SETUPFILENAME;
 char setupfilename[BMAX_PATH] = SETUPFILENAME;
+
+#define eitherALT   (keystatus[KEYSC_LALT] || keystatus[KEYSC_RALT])
+#define eitherCTRL  (keystatus[KEYSC_LCTRL] || keystatus[KEYSC_RCTRL])
+#define eitherSHIFT (keystatus[KEYSC_LSHIFT] || keystatus[KEYSC_RSHIFT])
+
+#define PRESSED_KEYSC(Key) (keystatus[KEYSC_##Key] && !(keystatus[KEYSC_##Key]=0))
 
 static char tempbuf[256];
 
@@ -307,6 +314,46 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
     }
 }
 
+static void Keys2D()
+{
+    if (PRESSED_KEYSC(G))  // G (grid on/off)
+    {
+        if (autogrid)
+        {
+            grid = 8*eitherSHIFT;
+
+            autogrid = 0;
+        }
+        else
+        {
+            grid += (1-2*eitherSHIFT);
+            if (grid == -1 || grid == 9)
+            {
+                autogrid = 1;
+                grid = 0;
+            }
+        }
+
+        if (autogrid)
+            printmessage16("Grid size: 9 (autosize)");
+        else if (!grid)
+            printmessage16("Grid off");
+        else
+            printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
+    }
+
+    if (autogrid)
+    {
+        grid = -1;
+
+        while (grid++ < 7)
+        {
+            if (mulscale14((2048>>grid), zoom) <= 16)
+                break;
+        }
+    }
+}
+
 void ExtCheckKeys(void)
 {
     int i; //, p, y, dx, dy, cosang, sinang, bufplc, tsizy, tsizyup15;
@@ -366,6 +413,7 @@ void ExtCheckKeys(void)
     }
     else
     {
+        Keys2D();
     }
 }
 
