@@ -795,8 +795,8 @@ static int32_t defsparser(scriptfile *script)
             int32_t havexoffset = 0, haveyoffset = 0;
             int32_t xoffset = 0, yoffset = 0;
             int32_t istexture = 0;
-            int32_t tilecrc = 0;
-            uint8_t have_ifcrc = 0;
+            int32_t tile_crc32 = 0;
+            uint8_t have_crc32 = 0;
 
             static const tokenlist tilefromtexturetokens[] =
             {
@@ -838,8 +838,8 @@ static int32_t defsparser(scriptfile *script)
                     yoffset = clamp(yoffset, -128, 127);
                     break;
                 case T_IFCRC:
-                    scriptfile_getsymbol(script, &tilecrc);
-                    have_ifcrc = 1;
+                    scriptfile_getsymbol(script, &tile_crc32);
+                    have_crc32 = 1;
                     break;
                 case T_TEXHITSCAN:
                     flags |= PICANM_TEXHITSCAN_BIT;
@@ -862,12 +862,12 @@ static int32_t defsparser(scriptfile *script)
                 break;
             }
 
-            if (have_ifcrc)
+            if (have_crc32)
             {
-                int32_t origcrc = tileCRC(tile);
-                if (origcrc != tilecrc)
+                int32_t const orig_crc32 = tileGetCRC32(tile);
+                if (orig_crc32 != tile_crc32)
                 {
-                    //initprintf("CRC of tile %d doesn't match! CRC: %d, Expected: %d\n", tile, origcrc, tilecrc);
+                    // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
                     break;
                 }
             }
