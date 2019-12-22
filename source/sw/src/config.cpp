@@ -46,6 +46,8 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "_functio.h"
 #include "_config.h"
 
+#include "renderlayer.h"
+
 #if defined RENDERTYPESDL && defined SDL_TARGET && SDL_TARGET > 1
 # include "sdl_inc.h"
 #endif
@@ -600,9 +602,7 @@ int32_t CONFIG_ReadSetup(void)
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &ScreenBPP);
     if (ScreenBPP < 8) ScreenBPP = 8;
 
-#ifdef RENDERTYPEWIN
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
-#endif
 
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "GLTextureMode", &gltexfiltermode);
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "GLAnisotropy", &glanisotropy);
@@ -678,9 +678,7 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenHeight",ScreenHeight,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenMode",ScreenMode,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenBPP",ScreenBPP,FALSE,FALSE);
-#ifdef RENDERTYPEWIN
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "MaxRefreshFreq",maxrefreshfreq,FALSE,FALSE);
-#endif
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLTextureMode",gltexfiltermode,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLAnisotropy",glanisotropy,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLUseTextureCompr",glusetexcompr,FALSE,FALSE);

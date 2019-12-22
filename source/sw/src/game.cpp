@@ -714,12 +714,8 @@ LoadLevel(const char *filename)
     if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
-#ifdef RENDERTYPEWIN
-        {
-            char msg[256];
-            Bsnprintf(msg, 256, "Level not found: %s", filename);
-            wm_msgbox(apptitle, msg);
-        }
+#if 1 /* defined RENDERTYPEWIN */
+        wm_msgbox(apptitle, "Level not found: %s", filename);
 #else
         printf("Level Not Found: %s\n", filename);
 #endif
@@ -736,10 +732,8 @@ LoadImages(const char *filename)
     if (artLoadFiles(filename, 32*1048576) == -1)
     {
         TerminateGame();
-#ifdef RENDERTYPEWIN
-        {
-            wm_msgbox(apptitle, "Art not found. Please check your GRP file.");
-        }
+#if 1 /* defined RENDERTYPEWIN */
+        wm_msgbox(apptitle, "Art not found. Please check your GRP file.");
 #else
         printf("Art not found. Please check your GRP file.\n");
 #endif
@@ -834,7 +828,7 @@ void MultiSharewareCheck(void)
     if (!SW_SHAREWARE) return;
     if (numplayers > 4)
     {
-#ifdef RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
         wm_msgbox(apptitle,"To play a Network game with more than 4 players you must purchase "
                   "the full version.  Read the Ordering Info screens for details.");
 #else
@@ -2927,7 +2921,7 @@ _Assert(const char *expr, const char *strFile, unsigned uLine)
 
     TerminateGame();
 
-#if 1 //def RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
     wm_msgbox(apptitle, "%s", ds);
 #else
     printf("Assertion failed: %s\n %s, line %u\n", expr, strFile, uLine);
@@ -2945,7 +2939,7 @@ _ErrMsg(const char *strFile, unsigned uLine, const char *format, ...)
     //MONO_PRINT(ds);
     TerminateGame();
 
-#if 1 //def RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
     {
         char msg[256], *p;
         Bsnprintf(msg, sizeof(msg), "Error: %s, line %u\n", strFile, uLine);
@@ -3343,7 +3337,7 @@ int DetectShareware(void)
 void CommandLineHelp(char const * const * argv)
 {
     int i;
-#ifdef RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
     char *str;
     int strl;
 
@@ -3662,7 +3656,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 #if DEBUG
         else if (Bstrncasecmp(arg, "debug",5) == 0)
         {
-#ifdef RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
             char *str;
             int strl;
 
@@ -3983,13 +3977,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
             if ((fil = kopen4load(UserMapName,0)) == -1)
             {
-#ifdef RENDERTYPEWIN
-                char msg[256];
-                Bsnprintf(msg, 256, "ERROR: Could not find user map %s!",UserMapName);
-                wm_msgbox(apptitle, msg);
-#else
-                printf("ERROR: Could not find user map %s!\n\n",UserMapName);
-#endif
+                wm_msgbox(apptitle, "ERROR: Could not find user map %s!", UserMapName);
                 kclose(fil);
                 swexit(0);
             }
