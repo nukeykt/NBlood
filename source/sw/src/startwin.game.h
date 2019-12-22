@@ -15,7 +15,6 @@
 // config page
 #define IDCFULLSCREEN   100
 #define IDCVMODE    101
-#define IDCSOUNDQUAL    102
 #define IDCINPUTMOUSE   105
 #define IDCINPUTJOY 106
 #define IDCALWAYSSHOW   107
