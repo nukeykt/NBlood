@@ -553,10 +553,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     option[4] = (numplayers >= 2);
 
     artLoadFiles("tiles000.art",1048576);                      //Load artwork
-    if (!qloadkvx(nextvoxid,"voxel000.kvx"))
-        tiletovox[PLAYER] = nextvoxid++;
-    if (!qloadkvx(nextvoxid,"voxel001.kvx"))
-        tiletovox[BROWNMONSTER] = nextvoxid++;
+    Ken_LoadVoxels();
     if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
 
     if (enginePostInit())

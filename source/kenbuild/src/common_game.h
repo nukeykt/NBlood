@@ -5,3 +5,5 @@ extern const char *G_DefaultGrpFile(void);
 extern const char *G_GrpFile(void);
 
 void Ken_PostStartupWindow(void);
+
+void Ken_LoadVoxels(void);

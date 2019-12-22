@@ -143,14 +143,12 @@ int32_t ExtPostStartupWindow(void)
 
     Ken_PostStartupWindow();
 
-    tiletovox[PLAYER] = nextvoxid++;
-    tiletovox[BROWNMONSTER] = nextvoxid++;
-
     return 0;
 }
 
 void ExtPostInit(void)
 {
+    Ken_LoadVoxels();
     palettePostLoadLookups();
 }
 
@@ -282,14 +280,6 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
             switch (tspr->picnum)
             {
             case PLAYER:
-                if (!voxoff[tiletovox[PLAYER]][0])
-                {
-                    if (qloadkvx(tiletovox[PLAYER],"voxel000.kvx"))
-                    {
-                        tiletovox[PLAYER] = -1;
-                        break;
-                    }
-                }
                 //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
                 longptr = (int *)voxoff[tiletovox[PLAYER]][0];
                 tspr->xrepeat = scale(tspr->xrepeat,56,longptr[2]);
@@ -297,14 +287,6 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
                 tspr->shade -= 6;
                 break;
             case BROWNMONSTER:
-                if (!voxoff[tiletovox[BROWNMONSTER]][0])
-                {
-                    if (qloadkvx(tiletovox[BROWNMONSTER],"voxel001.kvx"))
-                    {
-                        tiletovox[BROWNMONSTER] = -1;
-                        break;
-                    }
-                }
                 //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
                 break;
             }

@@ -78,3 +78,11 @@ void Ken_PostStartupWindow()
     for (i=0; i<256; i++) tempbuf[i] = i; //(i&31)+32;
     paletteMakeLookupTable(18,tempbuf,32,32,192,1);
 }
+
+void Ken_LoadVoxels()
+{
+    if (!qloadkvx(nextvoxid,"voxel000.kvx"))
+        tiletovox[PLAYER] = nextvoxid++;
+    if (!qloadkvx(nextvoxid,"voxel001.kvx"))
+        tiletovox[BROWNMONSTER] = nextvoxid++;
+}
