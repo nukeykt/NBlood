@@ -3497,6 +3497,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     SW_ScanGroups();
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || ForceSetup || CommandSetup)
     {
