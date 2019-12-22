@@ -479,13 +479,14 @@ DoAutoSize(uspritetype *tspr)
 short rotang = 0;
 
 void
-ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr)
+ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     int i, currsprite;
     uspritetype *tspr;
 
     UNREFERENCED_PARAMETER(ourx);
     UNREFERENCED_PARAMETER(oury);
+    UNREFERENCED_PARAMETER(ourz);
     UNREFERENCED_PARAMETER(oura);
     UNREFERENCED_PARAMETER(smoothr);
 
