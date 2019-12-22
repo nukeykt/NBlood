@@ -2120,7 +2120,7 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
 
 void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp *pth, int32_t doalloc)
 {
-    if (dameth & PTH_INDEXED)
+    if (dameth & DAMETH_INDEXED)
     {
         return gloadtile_art_indexed(dapic, dameth, pth, doalloc);
     }
@@ -2852,7 +2852,7 @@ static void polymost2_drawVBO(GLenum mode,
         tileLoad(globalpicnum);
     }
 
-    pthtyp *pth = our_texcache_fetch(dameth | (r_useindexedcolortextures ? PTH_INDEXED : 0));
+    pthtyp *pth = our_texcache_fetch(dameth | (r_useindexedcolortextures ? DAMETH_INDEXED : 0));
 
     if (!pth)
     {
@@ -3212,7 +3212,7 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
 
     polymost_outputGLDebugMessage(3, "polymost_drawpoly(dpxy:%p, n:%d, method_:%X), method: %X", dpxy, n, method_, method);
 
-    pthtyp *pth = our_texcache_fetch(method | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
+    pthtyp *pth = our_texcache_fetch(method | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
 
     if (!pth)
     {
@@ -9269,7 +9269,7 @@ void polymost_fillpolygon(int32_t npoints)
 
     if (gloy1 != -1) polymostSet2dView(); //disables blending, texturing, and depth testing
     glEnable(GL_ALPHA_TEST);
-    pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
+    pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
 
     if (pth)
     {
@@ -9348,7 +9348,7 @@ int32_t polymost_drawtilescreen(int32_t tilex, int32_t tiley, int32_t wallnum, i
 
     int32_t const ousehightile = usehightile;
     usehightile = usehitile && usehightile;
-    pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? PTH_INDEXED : 0));
+    pth = texcache_fetch(wallnum, 0, 0, DAMETH_CLAMPED | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
     if (usehightile)
         loadedhitile[wallnum>>3] |= pow2char[wallnum&7];
     usehightile = ousehightile;

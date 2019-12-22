@@ -201,6 +201,8 @@ enum {
 
     DAMETH_WALL = 32,  // signals a texture for a wall (for r_npotwallmode)
 
+    DAMETH_INDEXED = 512,
+
     // used internally by polymost_domost
     DAMETH_BACKFACECULL = -1,
 
@@ -290,6 +292,8 @@ EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_NOMASK) == PTH_NOTRANSFIX);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_MASK) == 0);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_TRANS1) == 0);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_MASKPROPS) == 0);
+#define TO_PTH_INDEXED(dameth) ((dameth)&DAMETH_INDEXED)
+EDUKE32_STATIC_ASSERT(TO_PTH_INDEXED(DAMETH_INDEXED) == PTH_INDEXED);
 
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);

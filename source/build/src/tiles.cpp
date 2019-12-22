@@ -646,8 +646,8 @@ bool tileLoad(int16_t tileNum)
         int type;
         for (type = 0; type <= 1; ++type)
         {
-            gltexinvalidate(tileNum, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | PTH_INDEXED);
-            texcache_fetch(tileNum, 0, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | PTH_INDEXED);
+            gltexinvalidate(tileNum, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | DAMETH_INDEXED);
+            texcache_fetch(tileNum, 0, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | DAMETH_INDEXED);
         }
     }
 #endif
