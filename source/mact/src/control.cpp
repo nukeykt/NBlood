@@ -955,6 +955,8 @@ void CONTROL_GetUserInput(UserInput * uinfo)
 }
 void CONTROL_ClearUserInput(UserInput * uinfo)
 {
+    UNREFERENCED_PARAMETER(uinfo);
+
     KB_FlushKeyboardQueue();
 
     KB_ClearKeyDown(sc_UpArrow);
