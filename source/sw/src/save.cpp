@@ -397,6 +397,7 @@ int SaveGame(short save_num)
     MWRITE(headspritestat,sizeof(headspritestat),1,fil);
     MWRITE(prevspritestat,sizeof(prevspritestat),1,fil);
     MWRITE(nextspritestat,sizeof(nextspritestat),1,fil);
+    MWRITE(&tailspritefree,sizeof(tailspritefree),1,fil);
 
     //User information
     for (i = 0; i < MAXSPRITES; i++)
@@ -488,11 +489,6 @@ int SaveGame(short save_num)
         else
             MWRITE(Track[i].TrackPoint, Track[i].NumPoints * sizeof(TRACK_POINT),1,fil);
     }
-
-    int32_t svel = 0, vel = 0, angvel = 0;
-    MWRITE(&vel,sizeof(vel),1,fil);
-    MWRITE(&svel,sizeof(svel),1,fil);
-    MWRITE(&angvel,sizeof(angvel),1,fil);
 
     MWRITE(&loc,sizeof(loc),1,fil);
     //MWRITE(&oloc,sizeof(oloc),1,fil);
@@ -659,6 +655,7 @@ int SaveGame(short save_num)
     MWRITE(&gNet,sizeof(gNet),1,fil);
 
     MWRITE(LevelSong,sizeof(LevelSong),1,fil);
+    MWRITE(&SongTrack,sizeof(SongTrack),1,fil);
 
     MWRITE(palette,sizeof(palette),1,fil);
     MWRITE(palette_data,sizeof(palette_data),1,fil);
@@ -911,6 +908,7 @@ int LoadGame(short save_num)
     MREAD(headspritestat,sizeof(headspritestat),1,fil);
     MREAD(prevspritestat,sizeof(prevspritestat),1,fil);
     MREAD(nextspritestat,sizeof(nextspritestat),1,fil);
+    MREAD(&tailspritefree,sizeof(tailspritefree),1,fil);
 
     //User information
     memset(User, 0, sizeof(User));
@@ -1006,11 +1004,6 @@ int LoadGame(short save_num)
             MREAD(Track[i].TrackPoint, Track[i].NumPoints * sizeof(TRACK_POINT),1,fil);
         }
     }
-
-    int32_t svel, vel, angvel;
-    MREAD(&vel,sizeof(vel),1,fil);
-    MREAD(&svel,sizeof(svel),1,fil);
-    MREAD(&angvel,sizeof(angvel),1,fil);
 
     MREAD(&loc,sizeof(loc),1,fil);
 
@@ -1159,6 +1152,8 @@ int LoadGame(short save_num)
     MREAD(&gNet,sizeof(gNet),1,fil);
 
     MREAD(LevelSong,sizeof(LevelSong),1,fil);
+    decltype(SongTrack) SavedSongTrack;
+    MREAD(&SavedSongTrack,sizeof(SongTrack),1,fil);
 
     MREAD(palette,sizeof(palette),1,fil);
     MREAD(palette_data,sizeof(palette_data),1,fil);
@@ -1283,7 +1278,7 @@ int LoadGame(short save_num)
     screenpeek = myconnectindex;
     PlayingLevel = Level;
 
-    PlaySong(LevelSong, RedBookSong[Level], TRUE, TRUE);
+    PlaySong(LevelSong, SavedSongTrack, TRUE, TRUE);
     if (gs.Ambient)
         StartAmbientSound();
     FX_SetVolume(gs.SoundVolume);
