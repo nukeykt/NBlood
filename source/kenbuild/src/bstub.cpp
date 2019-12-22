@@ -133,15 +133,7 @@ int32_t ExtInit(void)
 
 int32_t ExtPostStartupWindow(void)
 {
-    int i;
-
     initgroupfile(G_GrpFile());
-
-    //You can load your own palette lookup tables here if you just
-    //copy the right code!
-    for (i=0; i<256; i++)
-        tempbuf[i] = ((i+32)&255);  //remap colors for screwy palette sectors
-    paletteMakeLookupTable(16,tempbuf,0,0,0,1);
 
     if (engineInit())
     {
@@ -149,7 +141,7 @@ int32_t ExtPostStartupWindow(void)
         return -1;
     }
 
-    Ken_InitMultiPsky();
+    Ken_PostStartupWindow();
 
     tiletovox[PLAYER] = nextvoxid++;
     tiletovox[BROWNMONSTER] = nextvoxid++;

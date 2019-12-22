@@ -530,7 +530,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         return -1;
     }
 
-    Ken_InitMultiPsky();
+    Ken_PostStartupWindow();
 
     initinput();
     if (option[3] != 0) mouseInit();
@@ -596,16 +596,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     initlava();
-
-    for (j=0; j<256; j++)
-        tempbuf[j] = ((j+32)&255);  //remap colors for screwy palette sectors
-    paletteMakeLookupTable(16,tempbuf,0,0,0,1);
-
-    for (j=0; j<256; j++) tempbuf[j] = j;
-    paletteMakeLookupTable(17,tempbuf,96,96,96,1);
-
-    for (j=0; j<256; j++) tempbuf[j] = j; //(j&31)+32;
-    paletteMakeLookupTable(18,tempbuf,32,32,192,1);
 
     palettePostLoadLookups();
 
@@ -4775,19 +4765,6 @@ void initplayersprite(short snum)
     spawnsprite(playersprite[snum],pos[snum].x,pos[snum].y,pos[snum].z+EYEHEIGHT,
                 1+256,0,snum,32,64,64,0,0,PLAYER,ang[snum],0,0,0,snum+4096,
                 cursectnum[snum],8,0,0,0);
-
-    switch (snum)
-    {
-    case 1: for (i=0; i<32; i++) tempbuf[i+192] = i+128; break; //green->red
-    case 2: for (i=0; i<32; i++) tempbuf[i+192] = i+32; break; //green->blue
-    case 3: for (i=0; i<32; i++) tempbuf[i+192] = i+224; break; //green->pink
-    case 4: for (i=0; i<32; i++) tempbuf[i+192] = i+64; break; //green->brown
-    case 5: for (i=0; i<32; i++) tempbuf[i+192] = i+96; break;
-    case 6: for (i=0; i<32; i++) tempbuf[i+192] = i+160; break;
-    case 7: for (i=0; i<32; i++) tempbuf[i+192] = i+192; break;
-    default: for (i=0; i<256; i++) tempbuf[i] = i; break;
-    }
-    paletteMakeLookupTable(snum,tempbuf,0,0,0,1);
 }
 
 void playback(void)
