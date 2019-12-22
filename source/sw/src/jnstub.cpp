@@ -2250,6 +2250,22 @@ ExtCheckKeys(void)
         }
 
     }
+
+    if ((in3dmode() && !m32_is2d3dmode()) || m32_is2d3dmode())
+    {
+#ifdef USE_OPENGL
+        int bakrendmode = rendmode;
+
+        if (m32_is2d3dmode())
+            rendmode = REND_CLASSIC;
+#endif
+
+        m32_showmouse();
+
+#ifdef USE_OPENGL
+        rendmode = bakrendmode;
+#endif
+    }
 }
 
 void

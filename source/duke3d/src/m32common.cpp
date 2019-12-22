@@ -1923,6 +1923,69 @@ static void FuncMenu_Process(const StatusBarMenu *m, int32_t col, int32_t row)
     }  // switch (col)
 }
 
+void m32_showmouse()
+{
+    int32_t i, col;
+
+    int32_t mousecol = M32_THROB;
+
+    if (whitecol > editorcolors[0])
+        col = whitecol - mousecol;
+    else col = whitecol + mousecol;
+
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        renderDisableFog();
+        polymost_useColorOnly(true);
+    }
+#endif
+
+    int const lores = !!(xdim <= 640);
+
+    for (i = (3 - lores); i <= (7 >> lores); i++)
+    {
+        plotpixel(searchx+i,searchy,col);
+        plotpixel(searchx-i,searchy,col);
+        plotpixel(searchx,searchy-i,col);
+        plotpixel(searchx,searchy+i,col);
+    }
+
+    for (i=1; i<=(2 >> lores); i++)
+    {
+        plotpixel(searchx+i,searchy,whitecol);
+        plotpixel(searchx-i,searchy,whitecol);
+        plotpixel(searchx,searchy-i,whitecol);
+        plotpixel(searchx,searchy+i,whitecol);
+    }
+
+    i = (8 >> lores);
+
+    plotpixel(searchx+i,searchy,editorcolors[0]);
+    plotpixel(searchx-i,searchy,editorcolors[0]);
+    plotpixel(searchx,searchy-i,editorcolors[0]);
+    plotpixel(searchx,searchy+i,editorcolors[0]);
+
+    if (!lores)
+    {
+        for (i=1; i<=4; i++)
+        {
+            plotpixel(searchx+i,searchy,whitecol);
+            plotpixel(searchx-i,searchy,whitecol);
+            plotpixel(searchx,searchy-i,whitecol);
+            plotpixel(searchx,searchy+i,whitecol);
+        }
+    }
+
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        renderEnableFog();
+        polymost_useColorOnly(false);
+    }
+#endif
+}
+
 #ifdef LUNATIC
 typedef const char *(*luamenufunc_t)(void);
 
