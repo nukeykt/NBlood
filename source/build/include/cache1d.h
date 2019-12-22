@@ -22,7 +22,7 @@ typedef struct
     int32_t   ovh;
 } cacheindex_t;
 
-enum cachelock_t: char
+enum cachelock_t : char
 {
     CACHE1D_FREE      = 1,
     CACHE1D_UNLOCKED  = 199,
@@ -42,8 +42,8 @@ public:
     void    report(void);
     void    reset(void);
 
-    inline int numBlocks(void) { return m_numBlocks; }
-    inline cacheindex_t const * getIndex(void) { return m_index; }
+    int numBlocks(void) { return m_numBlocks; }
+    cacheindex_t const * getIndex(void) { return m_index; }
 
 private:
     void inc_and_check_cacnum(void);
