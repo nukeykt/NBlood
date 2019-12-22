@@ -18,7 +18,7 @@
 
 #include "common_game.h"
 
-const char *AppProperName = "KenBuild Editor";
+const char *AppProperName = "EKenBuild Editor";
 const char *AppTechnicalName = "ekenbuild-editor";
 
 #if defined(_WIN32)
