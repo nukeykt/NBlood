@@ -759,6 +759,8 @@ ExtInit(void)
 
     SW_ScanGroups();
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #ifndef BUILD_DEV_VER
 }                                   // end user press Y
 else

@@ -125,6 +125,8 @@ int32_t ExtInit(void)
     kensplayerheight = 32;
     zmode = 0;
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #ifdef _WIN32
 //  allowtaskswitching(0);
 #endif

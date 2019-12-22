@@ -508,6 +508,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
     if ((i = Ken_loadsetup(setupfilename)) < 0)
         buildputs("Configuration file not found, using defaults.\n");
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #if defined STARTUP_SETUP_WINDOW
     if (i || forcesetup || cmdsetup)
     {
