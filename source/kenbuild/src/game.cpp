@@ -467,6 +467,13 @@ int32_t app_main(int32_t argc, char const * const * argv)
     initprintf("%s %s\n", AppProperName, s_buildRev);
     PrintBuildInfo();
 
+    if (enginePreInit())
+    {
+        wm_msgbox("Build Engine Initialisation Error",
+                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        exit(1);
+    }
+
 #ifdef USE_OPENGL
     OSD_RegisterFunction("restartvid","restartvid: reinitialise the video mode",osdcmd_restartvid);
     OSD_RegisterFunction("vidmode","vidmode [xdim ydim] [bpp] [fullscreen]: immediately change the video mode",osdcmd_vidmode);
