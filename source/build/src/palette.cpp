@@ -190,8 +190,8 @@ void (*paletteLoadFromDisk_replace)(void) = NULL;
 //
 void paletteLoadFromDisk(void)
 {
-    initfastcolorlookup_scale(30, 59, 11);
-    initfastcolorlookup_gridvectors();
+    paletteInitClosestColorScale(30, 59, 11);
+    paletteInitClosestColorGrid();
 
 #ifdef USE_OPENGL
     for (auto & x : glblend)
@@ -217,7 +217,7 @@ void paletteLoadFromDisk(void)
     for (unsigned char & k : palette)
         k <<= 2;
 
-    initfastcolorlookup_palette(palette);
+    paletteInitClosestColorMap(palette);
 
     paletteloaded |= PALETTE_MAIN;
 
@@ -389,7 +389,7 @@ void palettePostLoadTables(void)
     for (size_t i = 0; i<16; i++)
     {
         palette_t *edcol = (palette_t *) &vgapal16[4*i];
-        editorcolors[i] = getclosestcol_lim(edcol->b, edcol->g, edcol->r, bloodhack ? 254 : 239);
+        editorcolors[i] = paletteGetClosestColorUpToIndex(edcol->b, edcol->g, edcol->r, bloodhack ? 254 : 239);
     }
 
     // Bmemset(PaletteIndexFullbrights, 0, sizeof(PaletteIndexFullbrights));

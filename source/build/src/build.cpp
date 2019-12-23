@@ -638,7 +638,7 @@ static void InitCustomColors()
         if (editorcolors[i] == 0)
         {
             palette_t *edcol = (palette_t *)&vgapal16[4*i];
-            editorcolors[i] = getclosestcol_lim(edcol->b,edcol->g,edcol->r, 239);
+            editorcolors[i] = paletteGetClosestColorUpToIndex(edcol->b,edcol->g,edcol->r, 239);
         }
     }
 }
