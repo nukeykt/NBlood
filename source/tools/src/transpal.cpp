@@ -105,9 +105,9 @@ int main(int argc, char **argv)
         palette[k] = origpalette[k] << 2;
 
     initdivtables();
-    initfastcolorlookup_scale(rscale,gscale,bscale);
-    initfastcolorlookup_palette(palette);
-    initfastcolorlookup_gridvectors();
+    paletteInitClosestColorScale(rscale,gscale,bscale);
+    paletteInitClosestColorMap(palette);
+    paletteInitClosestColorGrid();
 
     for(i=0;i<numshades;i++)
         for(j=0;j<256;j++)

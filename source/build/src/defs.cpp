@@ -206,7 +206,7 @@ static void tile_from_truecolpic(int32_t tile, const palette_t *picptr, int32_t 
 
     maybe_grow_buffer(&faketilebuffer, &faketilebuffersiz, tsiz);
 
-    getclosestcol_flush();
+    paletteFlushClosestColor();
 
     for (j = 0; j < siz.y; ++j)
     {
@@ -215,7 +215,7 @@ static void tile_from_truecolpic(int32_t tile, const palette_t *picptr, int32_t 
         {
             palette_t const *const col = &picptr[ofs + i];
             faketilebuffer[(i * siz.y) + j] =
-            (col->f < alphacut) ? 255 : getclosestcol_lim(col->b, col->g, col->r, 254);
+            (col->f < alphacut) ? 255 : paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
         }
     }
 
@@ -2979,7 +2979,7 @@ static int32_t defsparser(scriptfile *script)
 
             if (didLoadPal && id == 0)
             {
-                initfastcolorlookup_palette(palette);
+                paletteInitClosestColorMap(palette);
 
                 paletteloaded |= PALETTE_MAIN;
             }
