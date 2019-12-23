@@ -47,13 +47,24 @@ static uint64_t tsc_freq;
 static FORCE_INLINE ATTRIBUTE((flatten)) void timerFenceRDTSC(void)
 {
 #if defined __SSE2__
-    // On AMD, MFENCE serializes but LFENCE may not. On Intel, LFENCE serializes and MFENCE does not.
-    // https://stackoverflow.com/a/50332912
-    // We may want to detect CPUs requiring MFENCE and use that if necessary in the future.
-    // https://www.felixcloutier.com/x86/rdtsc
+    // On Intel, LFENCE serializes the instruction stream and MFENCE does not.
+    // On AMD, MFENCE is dispatch serializing. LFENCE is not, unless:
+    // - The processor is AMD family 0Fh/11h, or
+    // - The processor is AMD family 10h/12h/14h or later, and MSR (Model Specific Register) C001_1029[1] is set by the kernel
     // https://hadibrais.wordpress.com/2018/05/14/the-significance-of-the-x86-lfence-instruction/
+    // https://stackoverflow.com/a/50332912
+
+#if 0
+    // MFENCE before LFENCE is preferable when using both.
+    // https://www.felixcloutier.com/x86/rdtsc
+    _mm_mfence();
+#else
+    // The above conditions are reasonable assumptions to make for using only LFENCE.
+    // In the future, we may want to detect CPUs requiring MFENCE and switch to that if necessary.
+#endif
 
     _mm_lfence();
+
     // Fallbacks on x86 without SSE2 use a LOCK prefix.
     // The alternative is the CPUID instruction, but benchmarking would be desirable to pick the best choice.
 #elif defined __GNUC__
@@ -68,6 +79,7 @@ static FORCE_INLINE ATTRIBUTE((flatten)) uint64_t timerSampleRDTSC(void)
     timerFenceRDTSC();  // We need to serialize the instruction stream before executing RDTSC.
     uint64_t const result = zpl_rdtsc();
     timerFenceRDTSC();  // Some sources suggest serialization is also necessary or desirable after RDTSC.
+    // If this code is ever changed to run by itself in a loop in its own thread, only one fence should be needed.
 
     return result;
 }
