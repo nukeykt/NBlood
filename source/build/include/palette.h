@@ -36,9 +36,9 @@ extern const char *(paletteGetBlendTable) (int32_t blend);
 #define paletteGetBlendTable(blend) (blendtable[blend])
 #endif
 
-extern uint32_t PaletteIndexFullbrights[8];
-#define IsPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>5] & (1u<<((col)&31)))
-#define SetPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>5] |= (1u<<((col)&31)))
+extern uint8_t PaletteIndexFullbrights[32];
+#define IsPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] & (1u<<((col)&7)))
+#define SetPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] |= (1u<<((col)&7)))
 
 typedef struct {
     char r, g, b, f;

@@ -363,7 +363,7 @@ void paletteLoadFromDisk(void)
         palookupfogfactor[i] = 1.f;
 }
 
-uint32_t PaletteIndexFullbrights[8];
+uint8_t PaletteIndexFullbrights[32];
 
 void palettePostLoadTables(void)
 {
