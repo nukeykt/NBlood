@@ -73,6 +73,9 @@ int FX_PlayRaw(char *ptr, uint32_t ptrlength, int rate, int pitchoffset, int vol
 int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loopend, int rate,
     int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
 
+int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate, int pitchoffset,
+                    int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval);
+
 
 int FX_SetPrintf(void(*function)(const char *, ...));
 
@@ -110,6 +113,7 @@ static FORCE_INLINE int FX_SetPan(int handle, int vol, int left, int right)
 }
 static FORCE_INLINE int FX_SetPitch(int handle, int pitchoffset) { return FX_CheckMVErr(MV_SetPitch(handle, pitchoffset)); }
 static FORCE_INLINE int FX_SetFrequency(int handle, int frequency) { return FX_CheckMVErr(MV_SetFrequency(handle, frequency)); }
+static FORCE_INLINE int32_t FX_GetFrequency(int handle, int *frequency) { return FX_CheckMVErr(MV_GetFrequency(handle, frequency)); }
 static FORCE_INLINE int FX_Pan3D(int handle, int angle, int distance)
 {
     return FX_CheckMVErr(MV_Pan3D(handle, angle, distance));

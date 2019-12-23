@@ -1122,36 +1122,36 @@ static void editorDraw2DBloodMarker(int x, int y, int col)
     plotpixel(x-4, y-1, col);
     plotpixel(x-4, y-0, col);
     plotpixel(x-4, y+1, col);
-    
+
     plotpixel(x-3, y-3, col);
     plotpixel(x-3, y-2, col);
     plotpixel(x-3, y+2, col);
     plotpixel(x-3, y+3, col);
-    
+
     plotpixel(x-2, y-3, col);
     plotpixel(x-2, y-2, col);
     plotpixel(x-2, y+2, col);
     plotpixel(x-2, y+3, col);
-    
+
     plotpixel(x-1, y-4, col);
     plotpixel(x-1, y-1, col);
     plotpixel(x-1, y+1, col);
     plotpixel(x-1, y+4, col);
-    
+
     plotpixel(x-0, y-4, col);
     plotpixel(x-0, y-0, col);
     plotpixel(x-0, y+4, col);
-    
+
     plotpixel(x+1, y-4, col);
     plotpixel(x+1, y-1, col);
     plotpixel(x+1, y+1, col);
     plotpixel(x+1, y+4, col);
-    
+
     plotpixel(x+2, y-3, col);
     plotpixel(x+2, y-2, col);
     plotpixel(x+2, y+2, col);
     plotpixel(x+2, y+3, col);
-    
+
     plotpixel(x+3, y-3, col);
     plotpixel(x+3, y-2, col);
     plotpixel(x+3, y+2, col);

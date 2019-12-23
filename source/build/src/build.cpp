@@ -3618,7 +3618,6 @@ void overheadeditor(void)
             linehighlight = getlinehighlight(mousxplc, mousyplc, linehighlight, 0);
             linehighlight2 = getlinehighlight(mousxplc, mousyplc, linehighlight, 1);
 
-
             if (!m32_sideview)
                 updatesector(mousxplc, mousyplc, &sectorhighlight);
             else

@@ -7193,7 +7193,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
                     if (d4 >= u4) vlineasm4(d4-u4+1, (char *)(ylookup[u4]+p));
 
-                    i = p+ylookup[d4+1];
+                    intptr_t i = p+ylookup[d4+1];
                     if (y2ve[0] > d4) prevlineasm1(vince[0],palookupoffse[0],y2ve[0]-d4-1,vplce[0],bufplce[0],i+0);
                     if (y2ve[1] > d4) prevlineasm1(vince[1],palookupoffse[1],y2ve[1]-d4-1,vplce[1],bufplce[1],i+1);
                     if (y2ve[2] > d4) prevlineasm1(vince[2],palookupoffse[2],y2ve[2]-d4-1,vplce[2],bufplce[2],i+2);
@@ -7217,7 +7217,7 @@ static void dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t
 
                     if (d4 >= u4) mvlineasm4(d4-u4+1, (char *)(ylookup[u4]+p));
 
-                    i = p+ylookup[d4+1];
+                    intptr_t i = p+ylookup[d4+1];
                     if (y2ve[0] > d4) mvlineasm1(vince[0],palookupoffse[0],y2ve[0]-d4-1,vplce[0],bufplce[0],i+0);
                     if (y2ve[1] > d4) mvlineasm1(vince[1],palookupoffse[1],y2ve[1]-d4-1,vplce[1],bufplce[1],i+1);
                     if (y2ve[2] > d4) mvlineasm1(vince[2],palookupoffse[2],y2ve[2]-d4-1,vplce[2],bufplce[2],i+2);
@@ -11104,12 +11104,12 @@ int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t
     int32_t intx, inty, intz, i, cnt, nextsector, dasectnum, dacnt, danum;
 
     if ((xs == xe) && (ys == ye) && (sectnums == sectnume)) return 1;
-    
+
     clipsectorlist[0] = sectnums; danum = 1;
     for(dacnt=0;dacnt<danum;dacnt++)
     {
         dasectnum = clipsectorlist[dacnt]; sec = &sector[dasectnum];
-        
+
         for(cnt=sec->wallnum,wal=&wall[sec->wallptr];cnt>0;cnt--,wal++)
         {
             wal2 = &wall[wal->point2];
@@ -11138,7 +11138,7 @@ int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, int32_t y2, int32_t z2, int16_t sect2)
 {
     if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
-        return cansee_old(x1, y1, z2, sect1, x2, y2, z2, sect2);
+        return cansee_old(x1, y1, z1, sect1, x2, y2, z2, sect2);
     int32_t dacnt, danum;
     const int32_t x21 = x2-x1, y21 = y2-y1, z21 = z2-z1;
 

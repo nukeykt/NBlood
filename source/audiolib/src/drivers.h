@@ -24,6 +24,10 @@
 #include "sndcards.h"
 #include "midifuncs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ASS_PCMSoundDriver;
 extern int ASS_MIDISoundDriver;
 extern int ASS_EMIDICard;
@@ -52,5 +56,9 @@ void SoundDriver_MIDI_HaltPlayback(void);
 void SoundDriver_MIDI_SetTempo(int tempo, int division);
 void SoundDriver_MIDI_Lock(void);
 void SoundDriver_MIDI_Unlock(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
