@@ -2552,9 +2552,6 @@ short gSightSpritesCount; // current count
 short gPhysSpritesList[];  // by NoOne: list of additional sprites which can be affected by physics
 short gPhysSpritesCount; // current count
 
-
-short gQavPlayerIndex = -1; // by NoOne: index of sprite which currently activated to play qav
-
 void actInit(bool bSaveLoad) {
     
     // by NoOne: init code for all my stuff
@@ -2579,12 +2576,14 @@ void actInit(bool bSaveLoad) {
                     getSpriteMassBySize(pSprite); // create mass cache
                     break;
             }
-            
+
             // init after loading save file
             if (bSaveLoad) {
-
+                
                 // add in list of physics affected sprites
                 if (pXSprite->physAttr != 0) {
+                    //xvel[pSprite->index] = yvel[pSprite->index] = zvel[pSprite->index] = 0;
+                    
                     gPhysSpritesList[gPhysSpritesCount++] = pSprite->index; // add sprite index
                     getSpriteMassBySize(pSprite); // create mass cache
                 }
@@ -2629,7 +2628,7 @@ void actInit(bool bSaveLoad) {
                         else {
                             gProxySpritesList[gProxySpritesCount++] = pSprite->xvel;
                             if (gProxySpritesCount == kMaxSuperXSprites)
-                                viewSetSystemMessage("Max (%d) *additional* Proximity sprites reached!", kMaxSuperXSprites);
+                                ThrowError("Max (%d) *additional* Proximity sprites reached!", kMaxSuperXSprites);
                         }
                         break;
                 }
@@ -2653,7 +2652,7 @@ void actInit(bool bSaveLoad) {
                     default:
                         gSightSpritesList[gSightSpritesCount++] = pSprite->xvel;
                         if (gSightSpritesCount == kMaxSuperXSprites)
-                            viewSetSystemMessage("Max (%d) Sight sprites reached!", kMaxSuperXSprites);
+                            ThrowError("Max (%d) Sight sprites reached!", kMaxSuperXSprites);
                         break;
                 }
             }
@@ -2686,7 +2685,11 @@ void actInit(bool bSaveLoad) {
         
         int nType = pSprite->type - kThingBase;
         pXSprite->health = thingInfo[nType].startHealth << 4;
-        pSprite->clipdist = thingInfo[nType].clipdist;
+        // by NoOne: allow level designer to set custom clipdist.
+        // this is especially useful for various Gib and Explode objects which have clipdist 1 for some reason predefined,
+        // but what if it have voxel model...?
+        if (!gModernMap) pSprite->clipdist = thingInfo[nType].clipdist;
+        
         pSprite->flags = thingInfo[nType].flags;
         if (pSprite->flags & kPhysGravity) pSprite->flags |= kPhysFalling;
         xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
@@ -4254,16 +4257,17 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                                 break;
                             case kDudeModernCustom:
                             case kDudeModernCustomBurning:
-                                int dmg = (getSpriteMassBySize(pSprite2) - getSpriteMassBySize(pSprite)) + pSprite2->clipdist;
-                                if (dmg > 0) {
-                                    if (IsPlayerSprite(pSprite) && powerupCheck(&gPlayer[pSprite->type - kDudePlayer1], kPwUpJumpBoots) > 0)
-                                        actDamageSprite(pSprite2->xvel, pSprite, DAMAGE_TYPE_3, dmg);
-                                    else
-                                        actDamageSprite(pSprite2->xvel, pSprite, DAMAGE_TYPE_0, dmg);
-                                }
+                                int dmg = 0;
+                                if (!IsDudeSprite(pSprite) || (dmg = ClipLow((getSpriteMassBySize(pSprite2) - getSpriteMassBySize(pSprite)) >> 1, 0)) == 0)
+                                    break;
 
-                                if (!IsPlayerSprite(pSprite) && pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
-                                    aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
+                                if (!IsPlayerSprite(pSprite)) {
+                                    actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_0, dmg);
+                                    if (xspriRangeIsFine(pSprite->extra) && !isActive(pSprite->index))
+                                        aiActivateDude(pSprite, &xsprite[pSprite->extra]);
+                                }
+                                else if (powerupCheck(&gPlayer[pSprite->type - kDudePlayer1], kPwUpJumpBoots) > 0) actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_3, dmg);
+                                else actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_0, dmg);
                                 break;
 
                         }
@@ -4478,7 +4482,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
     }
 
     // by NoOne: add more trigger statements for Touch flag
-    if (gModernMap) {
+    if (gModernMap && IsDudeSprite(pSprite)) {
         
         // Touch sprites
         int nHSprite = -1;
@@ -4489,7 +4493,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         else if ((gSpriteHit[nXSprite].ceilhit & 0xc000) == 0xc000)
             nHSprite = gSpriteHit[nXSprite].ceilhit & 0x3fff;
 
-        if (nHSprite >= 0 && sprite[nHSprite].extra >= 0) {
+        if (spriRangeIsFine(nHSprite) && xspriRangeIsFine(sprite[nHSprite].extra)) {
             XSPRITE* pXHSprite = &xsprite[sprite[nHSprite].extra];
             if (pXHSprite->Touch && !pXHSprite->isTriggered && (!pXHSprite->DudeLockout || IsPlayerSprite(pSprite)))
                 trTriggerSprite(nHSprite, pXHSprite, kCmdSpriteTouch, nSprite);
@@ -4498,12 +4502,14 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         // Touch walls
         int nHWall = -1;
         if ((gSpriteHit[nXSprite].hit & 0xc000) == 0x8000) {
-            if ((nHWall = gSpriteHit[nXSprite].hit & 0x3fff) >= 0 && wall[nHWall].extra >= 0) {
+            nHWall = gSpriteHit[nXSprite].hit & 0x3fff;
+            if (wallRangeIsFine(nHWall) && xwallRangeIsFine(wall[nHWall].extra)) {
                 XWALL* pXHWall = &xwall[wall[nHWall].extra];
                 if (pXHWall->triggerTouch && !pXHWall->isTriggered && (!pXHWall->dudeLockout || IsPlayerSprite(pSprite)))
                     trTriggerWall(nHWall, pXHWall, kCmdWallTouch, nSprite);
             }
         }
+
     }
 }
 
@@ -4783,15 +4789,9 @@ void MoveDude(spritetype *pSprite)
                 gHitInfo = hitInfo;
             }
 
-            if (pHitXSprite && pHitXSprite->Touch && !pHitXSprite->isTriggered) {
-                
-                // by NoOne: do not check state (so, things can work with touch too) and allow dudelockout
-                if ((gModernMap) && (!pHitXSprite->DudeLockout || IsPlayerSprite(pSprite)))
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
-                else if (!pHitXSprite->state) // or check like vanilla do
-                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
-            } 
-            
+            if (!gModernMap && pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
+                trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch, nSprite);
+
             if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
                 trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush, nSprite);
 
@@ -5658,10 +5658,9 @@ void actProcessSprites(void)
 
         // by NoOne: process Debris sprites for movement
         if (gPhysSpritesCount > 0) {
-            //System.err.println("PHYS COUNT: "+gPhysSpritesCount);
+            //viewSetSystemMessage("PHYS COUNT: %d", gPhysSpritesCount);
             for (int i = 0; i < gPhysSpritesCount; i++) {
                 if (gPhysSpritesList[i] == -1) continue;
-
                 else if (sprite[gPhysSpritesList[i]].statnum == kStatFree || (sprite[gPhysSpritesList[i]].flags & kHitagFree) != 0) {
                     gPhysSpritesList[i] = -1;
                     continue;
@@ -5675,7 +5674,6 @@ void actProcessSprites(void)
 
                 spritetype* pDebris = &sprite[gPhysSpritesList[i]];
                 XSECTOR* pXSector = (sector[pDebris->sectnum].extra >= 0) ? &xsector[sector[pDebris->sectnum].extra] : NULL;
-
                 viewBackupSpriteLoc(pDebris->xvel, pDebris);
                 int airVel = gSpriteMass[pDebris->extra].airVel;
                 if (pXSector != NULL) {
