@@ -632,15 +632,6 @@ static void InitCustomColors()
     vgapal16[41*4+0] = 0; //96;
     vgapal16[41*4+1] = 0; //160;
     vgapal16[41*4+2] = 252; //192;
-
-    for (int i = 0; i<256; i++)
-    {
-        if (editorcolors[i] == 0)
-        {
-            palette_t *edcol = (palette_t *)&vgapal16[4*i];
-            editorcolors[i] = paletteGetClosestColorUpToIndex(edcol->b,edcol->g,edcol->r, 239);
-        }
-    }
 }
 
 int app_main(int argc, char const * const * argv)
@@ -751,6 +742,8 @@ int app_main(int argc, char const * const * argv)
     Bstrcpy(kensig,"Uses BUILD technology by Ken Silverman");
     initcrc();
 
+    InitCustomColors();
+
     const char *defsfile = G_DefFile();
 
     if (testkopen("editor.def", 0))
@@ -765,8 +758,6 @@ int app_main(int argc, char const * const * argv)
 
     if (enginePostInit())
         M32_FatalEngineError();
-
-    InitCustomColors();
 
     CallExtPostInit();
 

@@ -889,6 +889,7 @@ EXTERN char GOTPIC_USED gotpic[(MAXTILES+7)>>3];
 EXTERN char gotsector[(MAXSECTORS+7)>>3];
 
 EXTERN char editorcolors[256];
+EXTERN char editorcolorsdef[256];
 
 EXTERN char faketile[(MAXTILES+7)>>3];
 EXTERN char *faketiledata[MAXTILES];
