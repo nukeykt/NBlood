@@ -65,12 +65,30 @@ static FORCE_INLINE ATTRIBUTE((flatten)) void timerFenceRDTSC(void)
 
     _mm_lfence();
 
-    // Fallbacks on x86 without SSE2 use a LOCK prefix.
-    // The alternative is the CPUID instruction, but benchmarking would be desirable to pick the best choice.
-#elif defined __GNUC__
-    __sync_synchronize();
+#elif defined EDUKE32_CPU_X86
+    // 32-bit x86 without SSE2 uses CPUID.
+    // Use inline assembly to avoid the compiler optimizing out the intrinsic versions.
+# if defined _MSC_VER
+    __asm
+    {
+        xor eax, eax
+        cpuid
+    }
+# else
+    asm volatile
+    (
+        "xor %%eax, %%eax\n"
+        "cpuid"
+        ::: "eax", "ebx", "ecx", "edx"
+    );
+# endif
 #else
-    atomic_thread_fence(memory_order_seq_cst);
+    // Everything else gets this.
+# if defined __GNUC__
+    __sync_synchronize();
+# else
+    std::atomic_thread_fence(memory_order_seq_cst);
+# endif
 #endif
 }
 
