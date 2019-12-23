@@ -540,6 +540,13 @@ static void Duke_Add_GOG_Atomic_Linux(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/data", path);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
 }
+static void Fury_Add_GOG_Linux(const char * path)
+{
+    char buf[BMAX_PATH];
+
+    Bsnprintf(buf, sizeof(buf), "%s/game", path);
+    addsearchpath(buf);
+}
 #endif
 
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
@@ -575,6 +582,10 @@ static void Duke_AddSteamPaths(const char *basepath)
     // WWII GI - Steam
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/World War II GI/WW2GI", basepath);
     addsearchpath_user(buf, SEARCHPATH_WW2GI);
+
+    // Ion Fury - Steam
+    Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Ion Fury", basepath);
+    addsearchpath(buf);
 }
 #endif
 #endif
@@ -598,6 +609,11 @@ void G_AddSearchPaths(void)
     Bsnprintf(buf, sizeof(buf), "%s/GOG Games/Duke Nukem 3D Atomic Edition", homepath);
     Duke_Add_GOG_Atomic_Linux(buf);
     Paths_ParseXDGDesktopFilesFromGOG(homepath, "Duke_Nukem_3D_Atomic_Edition", Duke_Add_GOG_Atomic_Linux);
+
+    // Ion Fury - GOG.com
+    Bsnprintf(buf, sizeof(buf), "%s/GOG Games/ION Fury", homepath);
+    Fury_Add_GOG_Linux(buf);
+    Paths_ParseXDGDesktopFilesFromGOG(homepath, "ION_Fury", Fury_Add_GOG_Linux);
 
     Xfree(homepath);
 
@@ -725,6 +741,20 @@ void G_AddSearchPaths(void)
 
         Bstrncpy(suffix, "/WW2GI", remaining);
         addsearchpath_user(buf, SEARCHPATH_WW2GI);
+    }
+
+    // Ion Fury - Steam
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 562860)", "InstallLocation", buf, &bufsize))
+    {
+        addsearchpath(buf);
+    }
+
+    // Ion Fury - GOG.com
+    bufsize = sizeof(buf);
+    if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1740836875)", "path", buf, &bufsize))
+    {
+        addsearchpath(buf);
     }
 #endif
 #endif
