@@ -530,6 +530,7 @@ void G_ExtInit(void)
 #endif
         addsearchpath(cwd);
 
+    // TODO:
     if (CommandPaths)
     {
         int32_t i;
@@ -2421,8 +2422,7 @@ int app_main(int argc, char const* const* argv)
 
     // This needs to happen afterwards, as G_CheckCommandLine() is where we set
     // up the command-line-provided search paths (duh).
-    // TODO:
-    //G_ExtInit();
+    G_ExtInit();
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
     if (forcegl) initprintf("GL driver blacklist disabled.\n");
