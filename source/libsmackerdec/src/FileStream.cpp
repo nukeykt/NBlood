@@ -22,9 +22,9 @@
 
 namespace SmackerCommon {
 
-bool FileStream::Open(const std::string &fileName)
+bool FileStream::Open(const char *fileName)
 {
-    file = kopen4loadfrommod(fileName.c_str(), 0);
+    file = kopen4loadfrommod(fileName, 0);
 	if (file == -1)
 	{
 		// log error
