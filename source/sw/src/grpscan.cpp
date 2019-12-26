@@ -253,6 +253,7 @@ int ScanGroups(void)
     static char const * extensions[] =
     {
         "*.grp",
+        "*.zip",
     };
 
     for (char const * extension : extensions)
