@@ -394,14 +394,18 @@ void SW_ScanGroups()
         g_selectedGrp = foundgrps;
 }
 
-int32_t SW_TryLoadingGrp(char const * const grpfile)
+static int32_t SW_TryLoadingGrp(char const * const grpfile, internalgrpfile const * type = nullptr)
 {
     int32_t i;
 
     if ((i = initgroupfile(grpfile)) == -1)
         initprintf("Warning: could not find main data file \"%s\"!\n", grpfile);
     else
+    {
         initprintf("Using \"%s\" as main game data file.\n", grpfile);
+        if (type && type->postprocessing)
+            type->postprocessing(i);
+    }
 
     return i;
 }
@@ -414,7 +418,7 @@ static int32_t SW_LoadGrpDependencyChain(grpfile_t const * const grp)
     if ((grp->type->flags & GRP_HAS_DEPENDENCY) && grp->type->dependency != grp->type->crcval)
         SW_LoadGrpDependencyChain(FindGroup(grp->type->dependency));
 
-    int32_t const i = SW_TryLoadingGrp(grp->filename);
+    int32_t const i = SW_TryLoadingGrp(grp->filename, grp->type);
 
     return i;
 }
