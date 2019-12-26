@@ -415,6 +415,43 @@ ExternalSoundMod(void)
 
 extern short Level;
 
+static inline SWBOOL LoadSongUpgrade(char const * fn)
+{
+#if defined HAVE_FLAC || defined HAVE_VORBIS
+    static char const * extensions[] =
+    {
+#ifdef HAVE_FLAC
+        ".flac",
+#endif
+#ifdef HAVE_VORBIS
+        ".ogg",
+#endif
+    };
+
+    size_t const len = strlen(fn);
+    auto testfn = (char *)Xmalloc(len+5); // 5 = strlen(".flac")
+    memcpy(testfn, fn, len+1);
+    char * suffix = strrchr(testfn, '.');
+    if (suffix == nullptr)
+        suffix = testfn + len;
+
+    for (char const * ext : extensions)
+    {
+        strcpy(suffix, ext);
+        SWBOOL const result = LoadSong(testfn);
+        if (result)
+        {
+            Xfree(testfn);
+            return result;
+        }
+    }
+
+    Xfree(testfn);
+#endif
+
+    return LoadSong(fn);
+}
+
 SWBOOL
 PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
 {
@@ -498,7 +535,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
         }
     }
 
-    if (!song_file_name || !LoadSong(song_file_name))
+    if (!song_file_name || !LoadSongUpgrade(song_file_name))
     {
         return FALSE;
     }
