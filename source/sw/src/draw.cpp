@@ -595,10 +595,7 @@ void WarpCopySprite(void)
                     if (sprite[spnum].picnum == ST1)
                         continue;
 
-                    tspriteptr_t New = &tsprite[spritesortcnt];
-                    memcpy(New, &sprite[spnum], sizeof(tspritetype));
-                    spritesortcnt++;
-                    New->owner = spnum;
+                    tspriteptr_t New = renderAddTSpriteFromSprite(spnum);
                     New->statnum = 0;
 
                     xoff = sp1->x - New->x;
@@ -619,10 +616,7 @@ void WarpCopySprite(void)
                     if (sprite[spnum].picnum == ST1)
                         continue;
 
-                    tspriteptr_t New = &tsprite[spritesortcnt];
-                    memcpy(New, &sprite[spnum], sizeof(tspritetype));
-                    spritesortcnt++;
-                    New->owner = spnum;
+                    tspriteptr_t New = renderAddTSpriteFromSprite(spnum);
                     New->statnum = 0;
 
                     xoff = sp2->x - New->x;
@@ -1525,8 +1519,7 @@ void SpriteSortList2D(int tx, int ty)
 
                 if (dist < 22000)
                 {
-                    memcpy(&tsprite[spritesortcnt], sp, sizeof(tspritetype));
-                    tsprite[spritesortcnt++].owner = i;
+                    renderAddTSpriteFromSprite(i);
                 }
             }
         }
