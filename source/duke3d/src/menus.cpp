@@ -1520,7 +1520,7 @@ static Menu_t Menus[] = {
     { &M_MAIN, MENU_MAIN, MENU_CLOSE, MA_None, Menu },
     { &M_MAIN_INGAME, MENU_MAIN_INGAME, MENU_CLOSE, MA_None, Menu },
     { &M_EPISODE, MENU_EPISODE, MENU_MAIN, MA_Return, Menu },
-    { &M_USERMAP, MENU_USERMAP, MENU_PREVIOUS, MA_Return, FileSelect },
+    { &M_USERMAP, MENU_USERMAP, MENU_EPISODE, MA_Return, FileSelect },
     { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
     { &M_SKILL, MENU_SKILL, MENU_PREVIOUS, MA_Return, Menu },
@@ -4454,6 +4454,15 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 
 static void Menu_ChangingTo(Menu_t * m)
 {
+    switch (m->menuID)
+    {
+    case MENU_USERMAP:
+        // terrible hack
+        if (g_previousMenu != MENU_SKILL && g_previousMenu != MENU_USERMAP)
+            m->parentID = g_previousMenu;
+        break;
+    }
+
 #ifdef __ANDROID__
     if (m->menuID == MENU_TOUCHBUTTONS)
         AndroidToggleButtonEditor();
