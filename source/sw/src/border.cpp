@@ -54,7 +54,7 @@ short SWBorderTest[] =
 
 #undef BORDER_TILE
 #define BORDER_TILE \
-    (isShareware ? \
+    (SW_SHAREWARE ? \
      SWBorderTest[gs.BorderTile % SIZ(SWBorderTest)] : \
      RegBorderTest[gs.BorderTile % SIZ(RegBorderTest)] \
     )

@@ -134,6 +134,15 @@ extern "C" {
 #define MACRO9  "Hope you were paying attention."
 #define MACRO10 "ITTAIIIUUU!!!"
 
+enum
+{
+    GAMEFLAG_SHAREWARE = 1u<<0u,
+};
+extern uint8_t SW_GameFlags;
+
+//#define SW_SHAREWARE 1     // This determines whether game is shareware compile or not!
+#define SW_SHAREWARE (SW_GameFlags & GAMEFLAG_SHAREWARE)
+
 extern struct grpfile const * g_selectedGrp;
 
 extern int g_useCwd;
