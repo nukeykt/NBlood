@@ -195,7 +195,7 @@ static void midi_dispose_buffer(MidiBuffer * node, const char * caller)
         //MV_Printf("WinMM %s/midi_dispose_buffer recycling buffer %p\n", caller, node);
     } else {
         // when not, we throw them away
-        free(node);
+        Xfree(node);
         //MV_Printf("WinMM %s/midi_dispose_buffer freeing buffer %p\n", caller, node);
     }
 }
@@ -229,7 +229,7 @@ static void midi_free_buffers(void)
     for ( node = spareMidiBuffers.next; node != &spareMidiBuffers; node = next ) {
         next = node->next;
         LL_Remove( node, next, prev );
-        free(node);
+        Xfree(node);
         //MV_Printf("WinMM midi_free_buffers freeing buffer %p\n", node);
     }
     
@@ -416,7 +416,7 @@ static BOOL midi_get_buffer(int length, unsigned char ** data)
             size = datalen;
         }
         
-        node = (MidiBuffer *) malloc( sizeof(MidiBuffer) + size );
+        node = (MidiBuffer *) Xmalloc( sizeof(MidiBuffer) + size );
         if (node == 0) {
             return FALSE;
         }

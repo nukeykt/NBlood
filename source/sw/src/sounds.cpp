@@ -519,7 +519,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                         {
                             SongType = SongTypeWave;
                             SongTrack = cdaudio_track;
-                            SongName = Bstrdup(waveformtrack);
+                            SongName = Xstrdup(waveformtrack);
                             return TRUE;
                         }
                     }
@@ -544,7 +544,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
     {
         MUSIC_PlaySong(SongPtr, SongLength, MUSIC_LoopSong);
         SongType = SongTypeMIDI;
-        SongName = strdup(song_file_name);
+        SongName = Xstrdup(song_file_name);
         return TRUE;
     }
     else
@@ -554,7 +554,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
         if (SongVoice > FX_Ok)
         {
             SongType = SongTypeWave;
-            SongName = strdup(song_file_name);
+            SongName = Xstrdup(song_file_name);
             return TRUE;
         }
     }
