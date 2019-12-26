@@ -3305,8 +3305,6 @@ Rules->0=WangBang 1=WangBang(No Respawn) 2=CoOperative
 commit -map grenade -autonet 0,0,1,1,1,0,3,2,1,1 -name frank
 #endif
 
-char isShareware = FALSE;
-
 int DetectShareware(void)
 {
 #define DOS_SCREEN_NAME_SW  "SHADSW.BIN"
@@ -3317,7 +3315,7 @@ int DetectShareware(void)
     h = kopen4load(DOS_SCREEN_NAME_SW,1);
     if (h >= 0)
     {
-        isShareware = TRUE;
+        SW_GameFlags |= GAMEFLAG_SHAREWARE;
         kclose(h);
         return 0;
     }
@@ -3325,7 +3323,7 @@ int DetectShareware(void)
     h = kopen4load(DOS_SCREEN_NAME_REG,1);
     if (h >= 0)
     {
-        isShareware = FALSE;
+        SW_GameFlags &= ~GAMEFLAG_SHAREWARE;
         kclose(h);
         return 0;
     }

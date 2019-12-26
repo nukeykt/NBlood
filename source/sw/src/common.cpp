@@ -12,6 +12,8 @@
 #include "common_game.h"
 #include "grpscan.h"
 
+uint8_t SW_GameFlags;
+
 static const char *defaultgrpfilename = "SW.GRP";
 static const char *defaultdeffilename = "sw.def";
 
