@@ -2778,7 +2778,7 @@ int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall)
     return pth && (pth->flags & PTH_HASALPHA) && !(pth->flags & PTH_ONEBITALPHA);
 }
 
-int32_t polymost_spriteHasTranslucency(uspritetype const * const tspr)
+int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr)
 {
     if ((tspr->cstat & (CSTAT_SPRITE_TRANSLUCENT | CSTAT_SPRITE_RESERVED1)) ||
         ((unsigned)tspr->owner < MAXSPRITES && spriteext[tspr->owner].alpha))
@@ -7324,7 +7324,7 @@ void Polymost_prepare_loadboard(void)
     Bmemset(wsprinfo, 0, sizeof(wsprinfo));
 }
 
-static inline int32_t polymost_findwall(uspriteptr_t const tspr, vec2_t const * const tsiz, int32_t * rd)
+static inline int32_t polymost_findwall(tspritetype const * const tspr, vec2_t const * const tsiz, int32_t * rd)
 {
     int32_t dist = 4, closest = -1;
     auto const sect = (usectortype  * )&sector[tspr->sectnum];
@@ -8575,8 +8575,7 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
 
     vec3f_t vec1;
 
-    uspritetype tspr;
-    Bmemset(&tspr, 0, sizeof(spritetype));
+    tspritetype tspr{};
 
     hudtyp const * const hud = tile2model[tilenum].hudmem[(dastat&4)>>2];
 

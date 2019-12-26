@@ -1970,7 +1970,7 @@ void analyzesprites(int dax, int day)
 {
     int i, j=0, k, *intptr;
     vec3_t *ospr;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     //This function is called between drawrooms() and renderDrawMasks()
     //It has a list of possible sprites that may be drawn on this frame
@@ -3705,7 +3705,7 @@ void drawscreen(short snum, int dasmoothratio)
     short cang, csect;
     fix16_t tang;
     char ch, *ptr, *ptr2, *ptr3, *ptr4;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     smoothratio = max(min(dasmoothratio,65536),0);
 
