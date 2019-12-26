@@ -25,7 +25,6 @@
 #define grpscan_h__
 
 // List of internally-known GRP files
-#define numgrpfiles 7
 struct internalgrpfile
 {
     const char *name;
@@ -48,7 +47,6 @@ typedef struct grpfile
     struct grpfile *next;
 } grpfile_t;
 
-extern internalgrpfile grpfiles[numgrpfiles];
 extern grpfile *foundgrps;
 
 extern grpfile_t * FindGroup(uint32_t crcval);
