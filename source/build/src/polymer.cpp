@@ -1512,10 +1512,10 @@ void                polymer_drawsprite(int32_t snum)
     if (bad_tspr(tspr))
         return;
 
-    if ((tspr->cstat & 8192) && (depth && !mirrors[depth-1].plane))
+    if ((tspr->clipdist & TSPR_FLAGS_NO_SHADOW) && (depth && !mirrors[depth-1].plane))
         return;
 
-    if ((tspr->cstat & 16384) && (!depth || mirrors[depth-1].plane))
+    if ((tspr->clipdist & TSPR_FLAGS_INVISIBLE_WITH_SHADOW) && (!depth || mirrors[depth-1].plane))
         return;
 
     int const spritenum = tspr->owner;
