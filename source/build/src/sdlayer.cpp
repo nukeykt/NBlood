@@ -2,7 +2,6 @@
 // Use SDL 1.2 or 2.0 from http://www.libsdl.org
 
 #include <signal.h>
-#include <string>
 
 #include "a.h"
 #include "build.h"
@@ -938,9 +937,11 @@ void joyScanDevices()
 
                 joystick.isGameController = 0;
 
-                buildprint("Joystick ", i+1, " has ", joystick.numAxes, " axes, ", joystick.numButtons, " buttons, ",
-                            (joystick.numHats ? std::to_string(joystick.numHats).c_str() : "no"), " hats, and ",
-                            (joystick.numBalls ? std::to_string(joystick.numBalls).c_str() : "no"), " balls.\n");
+                buildprint("Joystick ", i+1, " has ", joystick.numAxes, " axes, ", joystick.numButtons, " buttons, ");
+                if (joystick.numHats) buildprint(joystick.numHats); else buildprint("no");
+                buildprint(" hats, and ");
+                if (joystick.numBalls) buildprint(joystick.numBalls); else buildprint("no");
+                buildprint(" balls.\n");
 
                 Xfree(joystick.pAxis);
                 joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
