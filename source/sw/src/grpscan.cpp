@@ -43,6 +43,9 @@ static void process_tdragongrp(int32_t crcval)
 static internalgrpfile grpfiles[] =
 {
     { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0, 0, nullptr },
+    { "Shadow Warrior (Europe)",      0xD4A1E153u, 47536148, 0, 0, 0, nullptr }, // only difference: corrupt tile #28
+    { "Shadow Warrior (UK)",          0x3EE68767u, 47536148, 0, 0, 0, nullptr }, // only differences: corrupt tiles #2811, #4349
+    { "Shadow Warrior (Censored)",    0x1A8776D2u, 47537951, 0, 0, 0, nullptr }, // only difference: added CREDITS.TXT
     { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
     { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
     { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
