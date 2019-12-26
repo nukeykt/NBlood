@@ -1153,19 +1153,92 @@ LEVEL_INFO LevelInfo[MAX_LEVELS+2] =  // Shareware
     };
 #endif*/
 
+struct LevelNamePatch
+{
+    uint8_t index;
+    char const * name;
+};
+// names hex-edited into the exe
+static LevelNamePatch const LevelNamesWD[] =
+{
+    { 5, "Chinatown" },
+    { 6, "Monastery" }, // "Monastary"
+    { 7, "Trolley Yard" }, // "Trolly Yard"
+    { 8, "Restaurant" }, // "Resturant"
+    { 9, "Skyscraper" },
+    { 10, "Airplane" },
+    { 11, "Military Base" },
+    { 12, "Train" },
+    { 13, "Auto Factory" },
+    { 20, "Skyline" },
+    { 21, "Redwood Forest" },
+    { 22, "The Docks" },
+    { 23, "Waterfight (DM only)" },
+    { 24, "Wanton DM 1 (DM only)" },
+    { 25, "Wanton DM 2 (DM only)" },
+    { 27, "Wanton CTF (CTF)" },
+};
+#if 0
+// truncated names hex-edited into the exe
+static LevelNamePatch const LevelNamesTD[] =
+{
+    { 5, "Wang's Home" },
+    { 6, "City of Despair" }, // "City Of Despair"
+    { 7, "Emergency Room" },
+    { 8, "Hide and Seek" }, // "Hide And Seek"
+    { 9, "Warehouse" },
+    { 10, "Military Research Base" },
+    { 11, "Toxic Waste" },
+    { 12, "Crazy Train" },
+    { 13, "Fishing Village" },
+    { 14, "The Garden" },
+    { 15, "The Fortress" },
+    { 20, "The Palace" },
+    { 21, "Prison Camp" },
+    { 23, "Ninja Training Camp (DM only)" }, // "Ninja Training Camp"
+    { 24, "Death Becomes You (DM only)" }, // "Death Becomes You"
+    { 25, "Island Caves (DM only)" }, // "Island Caves"
+};
+#else
+// names from the readme
+static LevelNamePatch const LevelNamesTD[] =
+{
+    { 5, "Home Sweet Home" },
+    { 6, "City of Despair" },
+    { 7, "Emergency Room" },
+    { 8, "Hide and Seek" },
+    { 9, "Warehouse Madness" },
+    { 10, "Weapons Research Center" },
+    { 11, "Toxic Waste Facility" },
+    { 12, "Silver Bullet" },
+    { 13, "Fishing Village" },
+    { 14, "Secret Garden" },
+    { 15, "Hung Lo's Fortress" },
+    { 20, "Hung Lo's Palace" },
+    { 21, "Prison Camp" }, // "Prison Camp (secret level)"
+    { 23, "Ninja Training Camp (DM only)" }, // "Ninja Training Camp (dm)"
+    { 24, "The Morgue/Mortuary (DM only)" }, // "The Morgue/mortuary (dm)"
+    { 25, "Island Caves (DM only)" }, // "Island Caves (dm)"
+};
+#endif
+
 char EpisodeNames[2][MAX_EPISODE_NAME_LEN+2] =
 {
     "^Enter the Wang",
     "^Code of Honor"
 };
+static char const s_EpisodeNameWD[] = "^Wanton Destruction"; // "^Wanton Destr"
+static char const s_EpisodeNameTD[] = "^Twin Dragon";
 char EpisodeSubtitles[2][MAX_EPISODE_SUBTITLE_LEN+1] =
 {
     "Four levels (Shareware Version)",
     "Eighteen levels (Full Version Only)"
 };
+static char const s_EpisodeSubtitleWD[] = "Twelve levels (Full Version Only)";
+static char const s_EpisodeSubtitleTD[] = "Thirteen levels (Full Version Only)";
 char SkillNames[4][MAX_SKILL_NAME_LEN+2] =
 {
-    "^Tiny grasshopper",
+    "^Tiny Grasshopper", // "^Tiny grasshopper"
     "^I Have No Fear",
     "^Who Wants Wang",
     "^No Pain, No Gain"
@@ -3529,6 +3602,23 @@ int32_t app_main(int32_t argc, char const * const * argv)
     else
     {
         wm_setapptitle(APPNAME);
+
+        if (SW_GameFlags & GAMEFLAG_SWWD)
+        {
+            for (LevelNamePatch const lnp : LevelNamesWD)
+                LevelInfo[lnp.index].Description = lnp.name;
+
+            strcpy(EpisodeNames[1], s_EpisodeNameWD);
+            strcpy(EpisodeSubtitles[1], s_EpisodeSubtitleWD);
+        }
+        else if (SW_GameFlags & GAMEFLAG_SWTD)
+        {
+            for (LevelNamePatch const lnp : LevelNamesTD)
+                LevelInfo[lnp.index].Description = lnp.name;
+
+            strcpy(EpisodeNames[1], s_EpisodeNameTD);
+            strcpy(EpisodeSubtitles[1], s_EpisodeSubtitleTD);
+        }
     }
 
     for (i = 0; i < MAX_SW_PLAYERS; i++)
