@@ -10383,6 +10383,9 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
+        Bassert((unsigned)tspr->owner < MAXSPRITES);
+        Duke_ApplySpritePropertiesToTSprite(tspr, (uspriteptr_t)&sprite[tspr->owner]);
+
         frames=0;
 
         if ((nosprites==1||nosprites==3) && tspr->picnum<11)
