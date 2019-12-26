@@ -524,7 +524,11 @@ ifeq ($(PLATFORM),WINDOWS)
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
-    DYNAMICBASE := ,--dynamicbase
+    ifneq ($(RELEASE),0)
+        ifeq ($(FORCEDEBUG),0)
+            DYNAMICBASE := ,--dynamicbase
+        endif
+    endif
     LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat$(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
