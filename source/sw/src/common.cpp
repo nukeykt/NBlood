@@ -308,6 +308,15 @@ void SW_CleanupSearchPaths()
     removesearchpaths_withuser(SEARCHPATH_REMOVE);
 }
 
+static inline void SW_AddMusicFolder()
+{
+#ifndef _WIN32
+    if (addsearchpath("MUSIC") == 0)
+        return;
+#endif
+    addsearchpath("music");
+}
+
 void SW_ExtInit()
 {
     if (!g_useCwd)
@@ -358,6 +367,8 @@ void SW_ExtInit()
             Xfree(homedir);
         }
     }
+
+    SW_AddMusicFolder();
 
 #ifndef EDUKE32_STANDALONE
     if (g_grpNamePtr == NULL)
