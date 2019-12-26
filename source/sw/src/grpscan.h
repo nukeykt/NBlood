@@ -30,7 +30,8 @@ struct internalgrpfile
     const char *name;
     uint32_t crcval;
     int size;
-    unsigned int flags;
+    uint16_t gameflags;
+    uint16_t flags;
     uint32_t dependency;
     void (*postprocessing)(int32_t);
 };

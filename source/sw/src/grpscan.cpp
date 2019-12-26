@@ -42,14 +42,14 @@ static void process_tdragongrp(int32_t crcval)
 
 static internalgrpfile grpfiles[] =
 {
-    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0, nullptr },
-    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, 0, 0, nullptr },
-    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, 0, 0, nullptr },
-    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, 0, 0, nullptr },
-    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, 0, 0, nullptr },
-    { "Wanton Destruction",           SWWD_CRC, 48698128, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
-    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC, process_tdragongrp },
-    { "Twin Dragon",                  0xB5B71277u, 6236287, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Wanton Destruction",           SWWD_CRC, 48698128, GAMEFLAG_SWWD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Twin Dragon",                  SWTD_CRC, 12499012, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, process_tdragongrp },
+    { "Twin Dragon",                  0xB5B71277u, 6236287, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
 };
 grpfile *foundgrps = NULL;
 
