@@ -152,7 +152,7 @@ static struct internalgrpfile const * FindGrpInfo(uint32_t crcval, int32_t size)
     return NULL;
 }
 
-static void ProcessGroups(BUILDVFS_FIND_REC *srch)
+static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
 {
     BUILDVFS_FIND_REC *sidx;
     struct grpcache *fg, *fgg;
@@ -202,6 +202,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch)
             fh = openfrompath(sidx->name, BO_RDONLY|BO_BINARY, BS_IREAD);
             if (fh < 0) continue;
             if (fstat(fh, &st)) continue;
+            if (st.st_size > maxsize) continue;
 
             buildprintf(" Checksumming %s...", sidx->name);
             do
@@ -242,6 +243,13 @@ int ScanGroups(void)
 
     LoadGroupsCache();
 
+    native_t maxsize = 0;
+    for (struct internalgrpfile const & grptype : grpfiles)
+    {
+        if (maxsize < grptype.size)
+            maxsize = grptype.size;
+    }
+
     static char const * extensions[] =
     {
         "*.grp",
@@ -250,7 +258,7 @@ int ScanGroups(void)
     for (char const * extension : extensions)
     {
         BUILDVFS_FIND_REC *srch = klistpath("/", extension, BUILDVFS_FIND_FILE);
-        ProcessGroups(srch);
+        ProcessGroups(srch, maxsize);
         klistfree(srch);
     }
 
