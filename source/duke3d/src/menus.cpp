@@ -1643,7 +1643,7 @@ static void MenuEntry_HideOnCondition(MenuEntry_t * const entry, const int32_t c
         entry->flags &= ~MEF_Hidden;
 }
 
-static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, vec2_t origin, bool actually_draw = true);
+static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, vec2_t origin, int actually_draw = 1);
 static void Menu_EntryFocus(/*MenuEntry_t *entry*/);
 
 static MenuEntry_t *Menu_AdjustForCurrentEntryAssignment(MenuMenu_t *menu)
@@ -1662,7 +1662,7 @@ static MenuEntry_t *Menu_AdjustForCurrentEntryAssignment(MenuMenu_t *menu)
 
 static MenuEntry_t *Menu_AdjustForCurrentEntryAssignmentBlind(MenuMenu_t *menu)
 {
-    M_RunMenu_Menu(nullptr, menu, nullptr, 0, { 0, 0 }, false);
+    M_RunMenu_Menu(nullptr, menu, nullptr, 0, { 0, 0 }, 0);
     return Menu_AdjustForCurrentEntryAssignment(menu);
 }
 
@@ -4790,7 +4790,7 @@ static vec2_t Menu_TextSize(int32_t x, int32_t y, const MenuFont_t *font, const 
 static int32_t Menu_FindOptionBinarySearch(MenuOption_t *object, const int32_t query, uint16_t searchstart, uint16_t searchend)
 {
     const uint16_t thissearch    = (searchstart + searchend) / 2;
-    const bool     isIdentityMap = object->options->optionValues == NULL;
+    const int      isIdentityMap = object->options->optionValues == NULL;
     const int32_t  destination   = isIdentityMap ? (int32_t)thissearch : object->options->optionValues[thissearch];
     const int32_t  difference    = query - destination;
 
@@ -4933,7 +4933,7 @@ static void Menu_RunInput_FileSelect_MovementVerify(MenuFileSelect_t *object);
 static void Menu_RunInput_FileSelect_Movement(MenuFileSelect_t *object, MenuMovement_t direction);
 static void Menu_RunInput_FileSelect_Select(MenuFileSelect_t *object);
 
-static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, const vec2_t origin, bool actually_draw)
+static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, const vec2_t origin, int actually_draw)
 {
     int32_t totalHeight = 0;
 
@@ -5011,9 +5011,9 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
             if (entry->format->width == 0)
                 status |= MT_XCenter;
 
-            bool const dodraw = entry->type != Spacer && actually_draw &&
-                                0 <= y - menu->scrollPos + entry->font->get_yline() &&
-                                y - menu->scrollPos <= klabs(menu->format->bottomcutoff) - menu->format->pos.y;
+            int const dodraw = entry->type != Spacer && actually_draw &&
+                               0 <= y - menu->scrollPos + entry->font->get_yline() &&
+                               y - menu->scrollPos <= klabs(menu->format->bottomcutoff) - menu->format->pos.y;
 
             int32_t const height = entry->getHeight(); // max(textsize.y, entry->font->get_yline()); // bluefont Q ruins this
             status |= MT_YCenter;
@@ -5633,8 +5633,8 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
         if (object->options->entryFormat->width == 0)
             status |= MT_XCenter;
 
-        bool const dodraw = 0 <= y - object->options->scrollPos + object->options->font->get_yline() &&
-                            y - object->options->scrollPos <= object->options->menuFormat->bottomcutoff - object->options->menuFormat->pos.y;
+        int const dodraw = 0 <= y - object->options->scrollPos + object->options->font->get_yline() &&
+                           y - object->options->scrollPos <= object->options->menuFormat->bottomcutoff - object->options->menuFormat->pos.y;
 
         int32_t const height = object->options->font->get_yline(); // max(textsize.y, object->options->font->get_yline());
         status |= MT_YCenter;
