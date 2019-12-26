@@ -407,6 +407,7 @@ static int32_t SW_TryLoadingGrp(char const * const grpfile, internalgrpfile cons
         initprintf("Using \"%s\" as main game data file.\n", grpfile);
         if (type && type->postprocessing)
             type->postprocessing(i);
+        SW_GameFlags |= type->gameflags;
     }
 
     return i;

@@ -137,6 +137,8 @@ extern "C" {
 enum
 {
     GAMEFLAG_SHAREWARE = 1u<<0u,
+    GAMEFLAG_SWWD = 1u<<1u,
+    GAMEFLAG_SWTD = 1u<<2u,
 };
 extern uint8_t SW_GameFlags;
 
