@@ -4706,7 +4706,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         if (!mdspritematerial.diffusemap)
             continue;
 
-        if (!(tspr->extra&TSPR_EXTRA_MDHACK))
+        if (!(tspr->clipdist & TSPR_FLAGS_MDHACK))
         {
             mdspritematerial.detailmap =
                     mdloadskin((md2model_t *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,DETAILPAL,surfi);
