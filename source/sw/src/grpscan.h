@@ -33,6 +33,7 @@ struct internalgrpfile
     int size;
     unsigned int flags;
     uint32_t dependency;
+    void (*postprocessing)(int32_t);
 };
 
 enum

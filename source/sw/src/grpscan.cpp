@@ -37,13 +37,13 @@
 
 internalgrpfile grpfiles[numgrpfiles] =
 {
-    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0 },
-    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, 0, 0 },
-    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, 0, 0 },
-    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, 0, 0 },
-    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, 0, 0 },
-    { "Wanton Destruction",           SWWD_CRC, 48698128, GRP_HAS_DEPENDENCY, SWREG12_CRC },
-    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC },
+    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, 0, 0, nullptr },
+    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, 0, 0, nullptr },
+    { "Wanton Destruction",           SWWD_CRC, 48698128, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
 };
 grpfile *foundgrps = NULL;
 
