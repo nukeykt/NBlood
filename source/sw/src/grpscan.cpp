@@ -152,18 +152,12 @@ static struct internalgrpfile const * FindGrpInfo(uint32_t crcval, int32_t size)
     return NULL;
 }
 
-int ScanGroups(void)
+static void ProcessGroups(BUILDVFS_FIND_REC *srch)
 {
-    BUILDVFS_FIND_REC *srch, *sidx;
+    BUILDVFS_FIND_REC *sidx;
     struct grpcache *fg, *fgg;
     char *fn;
     struct Bstat st;
-
-    buildputs("Scanning for game data...\n");
-
-    LoadGroupsCache();
-
-    srch = klistpath("/", "*.grp", BUILDVFS_FIND_FILE);
 
     for (sidx = srch; sidx; sidx = sidx->next)
     {
@@ -238,9 +232,27 @@ int ScanGroups(void)
             usedgrpcache = fgg;
         }
     }
+}
 
-    klistfree(srch);
-    FreeGroupsCache();
+int ScanGroups(void)
+{
+    struct grpcache *fg, *fgg;
+
+    buildputs("Scanning for game data...\n");
+
+    LoadGroupsCache();
+
+    static char const * extensions[] =
+    {
+        "*.grp",
+    };
+
+    for (char const * extension : extensions)
+    {
+        BUILDVFS_FIND_REC *srch = klistpath("/", extension, BUILDVFS_FIND_FILE);
+        ProcessGroups(srch);
+        klistfree(srch);
+    }
 
     for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
     {
