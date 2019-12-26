@@ -343,7 +343,7 @@ int startwin_open(void)
             sizeof(soundQualitySampleSizes) *
             sizeof(soundQualityChannels) /
             sizeof(int) + 2;    // one for the terminator, one for a custom setting
-        soundQualities = (struct soundQuality_t *) malloc(i * sizeof(struct soundQuality_t));
+        soundQualities = (struct soundQuality_t *) Xmalloc(i * sizeof(struct soundQuality_t));
 
         i = 0;
         for (c = 0; c < sizeof(soundQualityChannels) / sizeof(int); c++) {

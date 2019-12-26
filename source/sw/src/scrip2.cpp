@@ -629,7 +629,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getstring(script, &t)) break;
 
                     //Bfree(custommaps[curmap].LevelName);
-                    custommaps[curmap].LevelName = strdup(t);
+                    custommaps[curmap].LevelName = Xstrdup(t);
                     LevelInfo[curmap].LevelName = custommaps[curmap].LevelName;
                     break;
                 }
@@ -639,7 +639,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getstring(script, &t)) break;
 
                     //Bfree(custommaps[curmap].SongName);
-                    custommaps[curmap].SongName = strdup(t);
+                    custommaps[curmap].SongName = Xstrdup(t);
                     LevelInfo[curmap].SongName = custommaps[curmap].SongName;
                     break;
                 }
@@ -649,7 +649,7 @@ void LoadCustomInfoFromScript(const char *filename)
                     if (scriptfile_getstring(script, &t)) break;
 
                     //Bfree(custommaps[curmap].Description);
-                    custommaps[curmap].Description = strdup(t);
+                    custommaps[curmap].Description = Xstrdup(t);
                     LevelInfo[curmap].Description = custommaps[curmap].Description;
                     break;
                 }
@@ -661,7 +661,7 @@ void LoadCustomInfoFromScript(const char *filename)
 
                     Bsnprintf(s, 10, "%d : %02d", n/60, n%60);
                     //Bfree(custommaps[curmap].BestTime);
-                    custommaps[curmap].BestTime = strdup(s);
+                    custommaps[curmap].BestTime = Xstrdup(s);
                     LevelInfo[curmap].BestTime = custommaps[curmap].BestTime;
                     break;
                 }
@@ -673,7 +673,7 @@ void LoadCustomInfoFromScript(const char *filename)
 
                     Bsnprintf(s, 10, "%d : %02d", n/60, n%60);
                     //Bfree(custommaps[curmap].ParTime);
-                    custommaps[curmap].ParTime = strdup(s);
+                    custommaps[curmap].ParTime = Xstrdup(s);
                     LevelInfo[curmap].ParTime = custommaps[curmap].ParTime;
                     break;
                 }
@@ -799,7 +799,7 @@ void LoadCustomInfoFromScript(const char *filename)
 
                 if (fc == MAX_FORTUNES) continue;
 
-                customfortune[fc] = strdup(t);
+                customfortune[fc] = Xstrdup(t);
                 if (customfortune[fc]) ReadFortune[fc] = customfortune[fc];
                 fc++;
             }
@@ -818,7 +818,7 @@ void LoadCustomInfoFromScript(const char *filename)
 
                 if (fc == MAX_KEYS) continue;
 
-                customkeymsg[fc] = strdup(t);
+                customkeymsg[fc] = Xstrdup(t);
                 if (customkeymsg[fc]) KeyMsg[fc] = customkeymsg[fc];
                 fc++;
             }
@@ -837,7 +837,7 @@ void LoadCustomInfoFromScript(const char *filename)
 
                 if (fc == MAX_KEYS) continue;
 
-                customkeydoormsg[fc] = strdup(t);
+                customkeydoormsg[fc] = Xstrdup(t);
                 if (customkeydoormsg[fc]) KeyDoorMessage[fc] = customkeydoormsg[fc];
                 fc++;
             }
@@ -886,7 +886,7 @@ void LoadCustomInfoFromScript(const char *filename)
             if (name)
             {
                 Bfree(custominventoryname[in]);
-                custominventoryname[in] = strdup(name);
+                custominventoryname[in] = Xstrdup(name);
                 InventoryDecls[in].name = custominventoryname[in];
             }
             if (amt >= 0)
@@ -961,7 +961,7 @@ void LoadCustomInfoFromScript(const char *filename)
                 if (name)
                 {
                     Bfree(customweaponname[0][id]);
-                    customweaponname[0][id] = strdup(name);
+                    customweaponname[0][id] = Xstrdup(name);
                     DamageData[id].weapon_name = customweaponname[0][id];
                 }
                 if (wpickup >= 0) DamageData[id].weapon_pickup = wpickup;
@@ -971,7 +971,7 @@ void LoadCustomInfoFromScript(const char *filename)
                 if (ammo)
                 {
                     Bfree(customweaponname[1][id]);
-                    customweaponname[1][id] = strdup(ammo);
+                    customweaponname[1][id] = Xstrdup(ammo);
                     DamageData[id].ammo_name = customweaponname[1][id];
                 }
                 if (pickup >= 0) DamageData[id].ammo_pickup = pickup;

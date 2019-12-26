@@ -35,12 +35,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "rts.h"
 #include "cache.h"
 
-char ValidPtr(void *ptr);
-void *AllocMem(int size);
-void *CallocMem(int size, int num);
-void *ReAllocMem(void *ptr, int size);
-void FreeMem(void *ptr);
-
 extern char ds[];
 char lumplockbyte[11];
 
@@ -106,7 +100,7 @@ int32_t RTS_AddFile(char *filename)
     header.numlumps = B_LITTLE32(header.numlumps);
     header.infotableofs = B_LITTLE32(header.infotableofs);
     length = header.numlumps*sizeof(filelump_t);
-    fileinfo = fileinfoo = (filelump_t*)malloc(length);
+    fileinfo = fileinfoo = (filelump_t*)Xmalloc(length);
     if (!fileinfo)
     {
         buildprintf("RTS file could not allocate header info\n");
@@ -119,7 +113,7 @@ int32_t RTS_AddFile(char *filename)
 //
 // Fill in lumpinfo
 //
-    lump_p = (lumpinfo_t*)realloc(lumpinfo, (numlumps + header.numlumps)*sizeof(lumpinfo_t));
+    lump_p = (lumpinfo_t*)Xrealloc(lumpinfo, (numlumps + header.numlumps)*sizeof(lumpinfo_t));
     if (!lump_p)
     {
         kclose(handle);
@@ -139,7 +133,7 @@ int32_t RTS_AddFile(char *filename)
         strncpy(lump_p->name, fileinfo->name, 8);
     }
 
-    free(fileinfoo);
+    Xfree(fileinfoo);
 
     return 0;
 }

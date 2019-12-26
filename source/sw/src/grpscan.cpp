@@ -174,7 +174,7 @@ static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
         {
             if (findfrompath(sidx->name, &fn)) continue;    // failed to resolve the filename
             if (Bstat(fn, &st)) { Xfree(fn); continue; } // failed to stat the file
-            free(fn);
+            Xfree(fn);
             if (fg->size == st.st_size && fg->mtime == st.st_mtime)
             {
                 struct internalgrpfile const * const grptype = FindGrpInfo(fg->crcval, fg->size);

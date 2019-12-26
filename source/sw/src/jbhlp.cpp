@@ -139,7 +139,7 @@ void ContextHelp(short spritenum)
 
     // Read in whole file
     size = kfilelength(fp);
-    filebuffer = (char *)malloc(size);
+    filebuffer = (char *)Xmalloc(size);
     if (filebuffer == NULL)
     {
         Msg("Not enough memory to load swhelp.hlp",M_RED);

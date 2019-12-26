@@ -497,11 +497,18 @@ AllocMem(int size)
 void *
 ReAllocMem(void *ptr, int size)
 {
+    if (ptr == nullptr)
+        return AllocMem(size);
+
+    if (size == 0)
+    {
+        FreeMem(ptr);
+        return nullptr;
+    }
+
     uint8_t* bp;
     MEM_HDRp mhp;
     uint8_t* check;
-
-    ASSERT(size != 0);
 
     ASSERT(ValidPtr(ptr));
 
@@ -562,10 +569,11 @@ CallocMem(int size, int num)
 void
 FreeMem(void *ptr)
 {
+    if (ptr == nullptr)
+        return;
+
     MEM_HDRp mhp;
     uint8_t* check;
-
-    ASSERT(ptr != NULL);
 
     ASSERT(ValidPtr(ptr));
 
@@ -575,37 +583,6 @@ FreeMem(void *ptr)
     memset(mhp, 0xCC, mhp->size + sizeof(MEM_HDR));
 
     free(mhp);
-}
-
-#else
-SWBOOL
-ValidPtr(void *ptr)
-{
-    return TRUE;
-}
-
-void *
-AllocMem(int size)
-{
-    return malloc(size);
-}
-
-void *
-CallocMem(int size, int num)
-{
-    return calloc(size, num);
-}
-
-void *
-ReAllocMem(void *ptr, int size)
-{
-    return realloc(ptr, size);
-}
-
-void
-FreeMem(void *ptr)
-{
-    free(ptr);
 }
 
 #endif
@@ -1049,7 +1026,7 @@ InitGame(int32_t argc, char const * const * argv)
     if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
 
     for (char * m : g_defModules)
-        free(m);
+        Xfree(m);
     g_defModules.clear();
 
     if (enginePostInit())
@@ -3417,7 +3394,7 @@ void CommandLineHelp(char const * const * argv)
         if (cli_arg[i].arg_fmt && (!SW_SHAREWARE || (!cli_arg[i].notshareware && SW_SHAREWARE)))
             strl += strlen(cli_arg[i].arg_fmt) + 1 + strlen(cli_arg[i].arg_descr) + 1;
 
-    str = (char *)malloc(strl);
+    str = (char *)Xmalloc(strl);
     if (str)
     {
         strcpy(str,"Usage: sw [options]\n");
@@ -3433,7 +3410,7 @@ void CommandLineHelp(char const * const * argv)
             }
         }
         wm_msgbox("Shadow Warrior Help",str);
-        free(str);
+        Xfree(str);
     }
 #else
     if (SW_SHAREWARE)
@@ -3752,7 +3729,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             for (i=0; i < (int)SIZ(cli_dbg_arg); i++)
                 strl += strlen(cli_dbg_arg[i].arg_fmt) + 1 + strlen(cli_dbg_arg[i].arg_descr) + 1;
 
-            str = (char *)malloc(strl);
+            str = (char *)Xmalloc(strl);
             if (str)
             {
                 strcpy(str,
@@ -3767,7 +3744,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
                     strcat(str, "\n");
                 }
                 wm_msgbox("Shadow Warrior Debug Help",str);
-                free(str);
+                Xfree(str);
             }
 #else
             printf("Usage: %s [options]\n", argv[0]);
