@@ -329,7 +329,7 @@ ToggleSprites()
 
 
 void
-DoAutoSize(uspritetype *tspr)
+DoAutoSize(tspriteptr_t tspr)
 {
     short i;
 
@@ -484,7 +484,7 @@ void
 ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     int i, currsprite;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     UNREFERENCED_PARAMETER(ourx);
     UNREFERENCED_PARAMETER(oury);
