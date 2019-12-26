@@ -503,7 +503,7 @@ kenbuild_editor_rsrc_objs :=
 kenbuild_game_gen_objs :=
 kenbuild_editor_rsrc_objs :=
 
-ifeq (1,$(HAVE_GTK2))
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     kenbuild_game_objs += startgtk.game.cpp
     kenbuild_game_gen_objs += game_banner.c
     kenbuild_editor_gen_objs += build_banner.c
@@ -1109,7 +1109,7 @@ sw_editor_rsrc_objs :=
 sw_game_gen_objs :=
 sw_editor_gen_objs :=
 
-ifeq (1,$(HAVE_GTK2))
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     sw_game_objs += startgtk.game.cpp
     sw_game_gen_objs += game_banner.c
     sw_editor_gen_objs += build_banner.c
