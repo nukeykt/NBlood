@@ -35,6 +35,11 @@
 #define SWWD_CRC 0xA9AAA7B7u
 #define SWTD_CRC 0xA1A65BE8u
 
+static void process_tdragongrp(int32_t crcval)
+{
+    krename(crcval, 53, "TDCUSTOM.TXT");
+}
+
 internalgrpfile grpfiles[numgrpfiles] =
 {
     { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0, nullptr },
@@ -43,7 +48,7 @@ internalgrpfile grpfiles[numgrpfiles] =
     { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, 0, 0, nullptr },
     { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, 0, 0, nullptr },
     { "Wanton Destruction",           SWWD_CRC, 48698128, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
-    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC, process_tdragongrp },
 };
 grpfile *foundgrps = NULL;
 
