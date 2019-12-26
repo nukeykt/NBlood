@@ -5045,7 +5045,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
             if (dodraw)
             {
-                const int32_t mousex = origin.x + indent + (status & MT_XCenter) ? x - ((textsize.x>>17)<<16) : x;
+                const int32_t mousex = origin.x + x - ((status & MT_XCenter) ? ((textsize.x>>17)<<16) : 0);
                 const int32_t mousey = origin.y + y_upper + y - menu->scrollPos;
                 int32_t mousewidth = (status & MT_XCenter) ? textsize.x : klabs(entry->format->width);
 
@@ -5660,7 +5660,7 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
 
         if (dodraw)
         {
-            const int32_t mousex = origin.x + (status & MT_XCenter) ? x - ((textsize.x>>17)<<16) : x;
+            const int32_t mousex = origin.x + x - ((status & MT_XCenter) ? ((textsize.x>>17)<<16) : 0);
             const int32_t mousey = origin.y + y_upper + y - object->options->scrollPos;
             const int32_t mousewidth = (status & MT_XCenter) ? textsize.x : klabs(object->options->entryFormat->width);
 
