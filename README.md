@@ -33,8 +33,8 @@ Blood port based on EDuke32
 A port of the PC version of Exhumed based on EDuke32
 
 ### Installing
-1. Extract PCExhumed to a new directory
-2. Copy the following files from the PC retail version of Exhumed or PowerSlave (Exhumed preferred). Beta, demo or pre-release versions not supported.
+1. Extract PCExhumed to a new directory.
+2. Copy the following files from the PC retail version of Exhumed or Powerslave (Exhumed preferred), or the Powerslave demo available at http://www.jonof.id.au/build.games/ps. Beta, pre-release or other demo versions not supported.
 
    STUFF.DAT  
    DEMO.VCR  
