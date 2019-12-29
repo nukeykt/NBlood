@@ -4634,7 +4634,7 @@ SPAWN_END:
     return newSprite;
 }
 
-static int G_MaybeTakeOnFloorPal(uspritetype *pSprite, int sectNum)
+static int G_MaybeTakeOnFloorPal(tspritetype *pSprite, int sectNum)
 {
     int const floorPal = sector[sectNum].floorpal;
 
@@ -4763,9 +4763,9 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
 #endif
     for (j=spritesortcnt-1; j>=0; j--)
     {
-        uspritetype *const t = &tsprite[j];
+        auto const t = &tsprite[j];
         const int32_t i = t->owner;
-        const spritetype *const s = &sprite[i];
+        auto const s = &sprite[i];
 
         switch (DYNAMICTILEMAP(s->picnum))
         {
@@ -4792,7 +4792,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
 
     for (j=spritesortcnt-1; j>=0; j--)
     {
-        uspritetype *const t = &tsprite[j];
+        auto const t = &tsprite[j];
         const int32_t i = t->owner;
         spritetype *const s = &sprite[i];
 
@@ -4903,11 +4903,12 @@ default_case1:
         int32_t curframe;
         int32_t scrofs_action;
         //is the perfect time to animate sprites
-        uspritetype *const t = &tsprite[j];
+        auto const t = &tsprite[j];
         const int32_t i = t->owner;
         // XXX: what's up with the (i < 0) check?
         // NOTE: not const spritetype because set at SET_SPRITE_NOT_TSPRITE (see below).
-        uspritetype *const pSprite = (i < 0) ? &tsprite[j] : (uspritetype *)&sprite[i];
+        EDUKE32_STATIC_ASSERT(sizeof(uspritetype) == sizeof(tspritetype)); // see TSPRITE_SIZE
+        uspritetype *const pSprite = (i < 0) ? (uspritetype *)&tsprite[j] : (uspritetype *)&sprite[i];
 
         if (ud.lockout && G_CheckAdultTile(DYNAMICTILEMAP(pSprite->picnum)))
         {
@@ -5269,7 +5270,7 @@ default_case1:
                 if (ud.showweapons && sprite[g_player[playerNum].ps->i].extra > 0 && g_player[playerNum].ps->curr_weapon > 0
                         && spritesortcnt < maxspritesonscreen)
                 {
-                    uspritetype *const newTspr       = &tsprite[spritesortcnt];
+                    tspritetype *const newTspr       = &tsprite[spritesortcnt];
                     int const          currentWeapon = g_player[playerNum].ps->curr_weapon;
 
                     *newTspr         = *t;
@@ -5308,7 +5309,7 @@ default_case1:
 
                 if (g_player[playerNum].inputBits->extbits & (1 << 7) && !ud.pause_on && spritesortcnt < maxspritesonscreen)
                 {
-                    uspritetype *const playerTyping = t;
+                    tspritetype *const playerTyping = t;
 
                     playerTyping->statnum = TSPR_TEMP;
                     playerTyping->cstat   = 0;
@@ -5688,7 +5689,7 @@ skip:
 
                     if ((pSprite->z-shadowZ) < ZOFFSET3 && g_player[screenpeek].ps->pos.z < shadowZ)
                     {
-                        uspritetype *const tsprShadow = &tsprite[spritesortcnt];
+                        tspritetype *const tsprShadow = &tsprite[spritesortcnt];
 
                         *tsprShadow         = *t;
                         tsprShadow->statnum = TSPR_TEMP;
@@ -5711,7 +5712,7 @@ skip:
                                 tsprShadow->yrepeat = 0;
                                 // 512:trans reverse
                                 //1024:tell MD2SPRITE.C to use Z-buffer hacks to hide overdraw issues
-                                tsprShadow->extra |= TSPR_EXTRA_MDHACK;
+                                tsprShadow->clipdist |= TSPR_FLAGS_MDHACK;
                                 tsprShadow->cstat |= 512;
                             }
                             else
@@ -7748,27 +7749,34 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps)
-        return 1;
+    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
+        return true;
 
     static double   nextPageDelay;
     static uint64_t lastFrameTicks;
 
-    uint64_t const frameTicks   = timerGetTicksU64();
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
+
+    uint64_t const frameTicks = timerGetPerformanceCounter();
+
+    if (lastFrameTicks > frameTicks)
+        lastFrameTicks = frameTicks;
+
     uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
     double const   dElapsedTime = elapsedTime;
 
-    if (dElapsedTime >= floor(nextPageDelay))
+    if (dElapsedTime >= nextPageDelay)
     {
         if (dElapsedTime <= nextPageDelay+g_frameDelay)
             nextPageDelay += g_frameDelay-dElapsedTime;
 
         lastFrameTicks = frameTicks;
 
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
