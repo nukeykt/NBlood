@@ -2126,27 +2126,34 @@ double g_frameDelay = 0.0;
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps)
-        return 1;
+    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
+        return true;
 
     static double   nextPageDelay;
     static uint64_t lastFrameTicks;
 
-    uint64_t const frameTicks   = timerGetTicksU64();
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
+
+    uint64_t const frameTicks = timerGetPerformanceCounter();
+
+    if (lastFrameTicks > frameTicks)
+        lastFrameTicks = frameTicks;
+
     uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
     double const   dElapsedTime = elapsedTime;
 
-    if (dElapsedTime >= floor(nextPageDelay))
+    if (dElapsedTime >= nextPageDelay)
     {
         if (dElapsedTime <= nextPageDelay+g_frameDelay)
             nextPageDelay += g_frameDelay-dElapsedTime;
 
         lastFrameTicks = frameTicks;
 
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 void PatchDemoStrings()
