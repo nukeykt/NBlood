@@ -773,6 +773,8 @@ KillSprite(int16_t SpriteNum)
 void ChangeState(short SpriteNum, STATEp statep)
 {
     USERp u = User[SpriteNum];
+    if (u == nullptr)
+        return;
 
     u->Tics = 0;
     u->State = u->StateStart = statep;

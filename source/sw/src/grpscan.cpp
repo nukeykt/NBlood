@@ -35,15 +35,24 @@
 #define SWWD_CRC 0xA9AAA7B7u
 #define SWTD_CRC 0xA1A65BE8u
 
-internalgrpfile grpfiles[numgrpfiles] =
+static void process_tdragongrp(int32_t crcval)
 {
-    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0 },
-    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, 0, 0 },
-    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, 0, 0 },
-    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, 0, 0 },
-    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, 0, 0 },
-    { "Wanton Destruction",           SWWD_CRC, 48698128, GRP_HAS_DEPENDENCY, SWREG12_CRC },
-    { "Twin Dragon",                  SWTD_CRC, 12499012, GRP_HAS_DEPENDENCY, SWREG12_CRC },
+    krename(crcval, 53, "TDCUSTOM.TXT");
+}
+
+static internalgrpfile grpfiles[] =
+{
+    { "Shadow Warrior",               SWREG12_CRC, 47536148, 0, 0, 0, nullptr },
+    { "Shadow Warrior (Europe)",      0xD4A1E153u, 47536148, 0, 0, 0, nullptr }, // only difference: corrupt tile #28
+    { "Shadow Warrior (UK)",          0x3EE68767u, 47536148, 0, 0, 0, nullptr }, // only differences: corrupt tiles #2811, #4349
+    { "Shadow Warrior (Censored)",    0x1A8776D2u, 47537951, 0, 0, 0, nullptr }, // only difference: added CREDITS.TXT
+    { "Shadow Warrior Shareware 1.0", 0xDAA6BECEu, 25702245, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.1", 0xF21A6B35u, 25833456, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Shadow Warrior Shareware 1.2", 0x08A7FA1Fu, 26056769, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Shadow Warrior Mac Demo",      0x4227F535u, 26056769, GAMEFLAG_SHAREWARE, 0, 0, nullptr },
+    { "Wanton Destruction",           SWWD_CRC, 48698128, GAMEFLAG_SWWD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
+    { "Twin Dragon",                  SWTD_CRC, 12499012, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, process_tdragongrp },
+    { "Twin Dragon",                  0xB5B71277u, 6236287, GAMEFLAG_SWTD, GRP_HAS_DEPENDENCY, SWREG12_CRC, nullptr },
 };
 grpfile *foundgrps = NULL;
 
@@ -147,18 +156,12 @@ static struct internalgrpfile const * FindGrpInfo(uint32_t crcval, int32_t size)
     return NULL;
 }
 
-int ScanGroups(void)
+static void ProcessGroups(BUILDVFS_FIND_REC *srch, native_t maxsize)
 {
-    BUILDVFS_FIND_REC *srch, *sidx;
+    BUILDVFS_FIND_REC *sidx;
     struct grpcache *fg, *fgg;
     char *fn;
     struct Bstat st;
-
-    buildputs("Scanning for game data...\n");
-
-    LoadGroupsCache();
-
-    srch = klistpath("/", "*.grp", BUILDVFS_FIND_FILE);
 
     for (sidx = srch; sidx; sidx = sidx->next)
     {
@@ -171,7 +174,7 @@ int ScanGroups(void)
         {
             if (findfrompath(sidx->name, &fn)) continue;    // failed to resolve the filename
             if (Bstat(fn, &st)) { Xfree(fn); continue; } // failed to stat the file
-            free(fn);
+            Xfree(fn);
             if (fg->size == st.st_size && fg->mtime == st.st_mtime)
             {
                 struct internalgrpfile const * const grptype = FindGrpInfo(fg->crcval, fg->size);
@@ -203,6 +206,7 @@ int ScanGroups(void)
             fh = openfrompath(sidx->name, BO_RDONLY|BO_BINARY, BS_IREAD);
             if (fh < 0) continue;
             if (fstat(fh, &st)) continue;
+            if (st.st_size > maxsize) continue;
 
             buildprintf(" Checksumming %s...", sidx->name);
             do
@@ -233,9 +237,35 @@ int ScanGroups(void)
             usedgrpcache = fgg;
         }
     }
+}
 
-    klistfree(srch);
-    FreeGroupsCache();
+int ScanGroups(void)
+{
+    struct grpcache *fg, *fgg;
+
+    buildputs("Scanning for game data...\n");
+
+    LoadGroupsCache();
+
+    native_t maxsize = 0;
+    for (struct internalgrpfile const & grptype : grpfiles)
+    {
+        if (maxsize < grptype.size)
+            maxsize = grptype.size;
+    }
+
+    static char const * extensions[] =
+    {
+        "*.grp",
+        "*.zip",
+    };
+
+    for (char const * extension : extensions)
+    {
+        BUILDVFS_FIND_REC *srch = klistpath("/", extension, BUILDVFS_FIND_FILE);
+        ProcessGroups(srch, maxsize);
+        klistfree(srch);
+    }
 
     for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
     {

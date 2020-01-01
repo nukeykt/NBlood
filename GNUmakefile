@@ -386,7 +386,6 @@ audiolib := audiolib
 
 audiolib_objs := \
     driver_adlib.cpp \
-    driver_nosound.cpp \
     drivers.cpp \
     flac.cpp \
     formats.cpp \
@@ -504,7 +503,7 @@ kenbuild_editor_rsrc_objs :=
 kenbuild_game_gen_objs :=
 kenbuild_editor_rsrc_objs :=
 
-ifeq (1,$(HAVE_GTK2))
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     kenbuild_game_objs += startgtk.game.cpp
     kenbuild_game_gen_objs += game_banner.c
     kenbuild_editor_gen_objs += build_banner.c
@@ -1110,7 +1109,7 @@ sw_editor_rsrc_objs :=
 sw_game_gen_objs :=
 sw_editor_gen_objs :=
 
-ifeq (1,$(HAVE_GTK2))
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     sw_game_objs += startgtk.game.cpp
     sw_game_gen_objs += game_banner.c
     sw_editor_gen_objs += build_banner.c
@@ -1448,7 +1447,7 @@ $$($1_obj)/%.$$o: $$($1_src)/%.glsl | $$($1_obj)
 
 $$($1_obj)/%.$$o: $$($1_rsrc)/%.rc | $$($1_obj)
 	$$(COMPILE_STATUS)
-	$$(RECIPE_IF) $$(RC) -i $$< -o $$@ --include-dir=$$(engine_inc) --include-dir=$$($1_src) --include-dir=$$($1_rsrc) -DPOLYMER=$$(POLYMER) $$(RECIPE_RESULT_COMPILE)
+	$$(RECIPE_IF) $$(RC) -i $$< -o $$@ --include-dir=$$(engine_inc) --include-dir=$$($1_src) --include-dir=$$($1_rsrc) -DPOLYMER=$$(POLYMER) $(REVFLAG) $$(RECIPE_RESULT_COMPILE)
 
 $$($1_obj)/%.$$o: $$($1_rsrc)/%.c | $$($1_obj)
 	$$(COMPILE_STATUS)

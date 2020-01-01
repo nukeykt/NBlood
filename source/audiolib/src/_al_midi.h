@@ -21,8 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ___AL_MIDI_H
 
 #include <inttypes.h>
-
-#define STEREO_DETUNE 5
+#include "_midi.h"
 
 #define lobyte(num) ((uint32_t)*((char *)&(num)))
 #define hibyte(num) ((uint32_t)*(((char *)&(num)) + 1))
@@ -50,31 +49,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define FINETUNE_RANGE (FINETUNE_MAX + 1)
 
 #define PITCHBEND_CENTER 1638400
-
-#define MIDI_VOLUME 7
-#define MIDI_PAN 10
-#define MIDI_DETUNE 94
-#define MIDI_ALL_NOTES_OFF 0x7B
-#define MIDI_RESET_ALL_CONTROLLERS 0x79
-#define MIDI_RPN_MSB 100
-#define MIDI_RPN_LSB 101
-#define MIDI_DATAENTRY_MSB 6
-#define MIDI_DATAENTRY_LSB 38
-#define MIDI_PITCHBEND_RPN 0
-
-/* Definition of octave information to be ORed onto F-Number */
-
-enum octaves
-{
-    OCTAVE_0 = 0x0000,
-    OCTAVE_1 = 0x0400,
-    OCTAVE_2 = 0x0800,
-    OCTAVE_3 = 0x0C00,
-    OCTAVE_4 = 0x1000,
-    OCTAVE_5 = 0x1400,
-    OCTAVE_6 = 0x1800,
-    OCTAVE_7 = 0x1C00
-};
 
 typedef struct AdLibVoice
 {

@@ -1512,10 +1512,10 @@ void                polymer_drawsprite(int32_t snum)
     if (bad_tspr(tspr))
         return;
 
-    if ((tspr->cstat & 8192) && (depth && !mirrors[depth-1].plane))
+    if ((tspr->clipdist & TSPR_FLAGS_NO_SHADOW) && (depth && !mirrors[depth-1].plane))
         return;
 
-    if ((tspr->cstat & 16384) && (!depth || mirrors[depth-1].plane))
+    if ((tspr->clipdist & TSPR_FLAGS_INVISIBLE_WITH_SHADOW) && (!depth || mirrors[depth-1].plane))
         return;
 
     int const spritenum = tspr->owner;
@@ -1796,7 +1796,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
     GLfloat         localprojectionmatrix[16];
     float           frustum[5 * 4];
     int32_t         localspritesortcnt;
-    uspritetype     localtsprite[MAXSPRITESONSCREEN];
+    tspritetype     localtsprite[MAXSPRITESONSCREEN];
     int16_t         localmaskwall[MAXWALLSB];
     int16_t         localmaskwallcnt;
     _prmirror       mirrorlist[10];
@@ -2201,7 +2201,7 @@ static void         polymer_displayrooms(const int16_t dacursectnum)
     }
 
     spritesortcnt = localspritesortcnt;
-    Bmemcpy(tsprite, localtsprite, sizeof(spritetype) * spritesortcnt);
+    Bmemcpy(tsprite, localtsprite, sizeof(tspritetype) * spritesortcnt);
     maskwallcnt = localmaskwallcnt;
     Bmemcpy(maskwall, localmaskwall, sizeof(int16_t) * maskwallcnt);
 
@@ -3913,7 +3913,7 @@ static inline int32_t polymer_planeinfrustum(_prplane *plane, const float* frust
     return 1;
 }
 
-static inline void  polymer_scansprites(int16_t sectnum, uspritetype* localtsprite, int32_t* localspritesortcnt)
+static inline void  polymer_scansprites(int16_t sectnum, tspriteptr_t localtsprite, int32_t* localspritesortcnt)
 {
     int32_t         i;
     spritetype      *spr;
@@ -3927,9 +3927,7 @@ static inline void  polymer_scansprites(int16_t sectnum, uspritetype* localtspri
         {
             // this function's localtsprite is either the tsprite global or
             // polymer_drawroom's locattsprite, so no aliasing
-            Bmemcpy(&localtsprite[*localspritesortcnt], spr, sizeof(spritetype));
-            localtsprite[*localspritesortcnt].extra = 0;
-            localtsprite[(*localspritesortcnt)++].owner = i;
+            renderMakeTSpriteFromSprite(&localtsprite[(*localspritesortcnt)++], i);
         }
     }
 }
@@ -4432,7 +4430,7 @@ static void         polymer_drawskybox(int16_t tilenum, char palnum, int8_t shad
 }
 
 // MDSPRITES
-static void         polymer_drawmdsprite(uspritetype *tspr)
+static void         polymer_drawmdsprite(tspriteptr_t tspr)
 {
     md3model_t*     m;
     mdskinmap_t*    sk;
@@ -4780,7 +4778,7 @@ static void         polymer_drawmdsprite(uspritetype *tspr)
         if (!mdspritematerial.diffusemap)
             continue;
 
-        if (!(tspr->extra&TSPR_EXTRA_MDHACK))
+        if (!(tspr->clipdist & TSPR_FLAGS_MDHACK))
         {
             mdspritematerial.detailmap =
                     mdloadskin((md2model_t *)m,tile2model[Ptile2tile(tspr->picnum,lpal)].skinnum,DETAILPAL,surfi);

@@ -37,8 +37,8 @@ template void MV_Reverb<int16_t>(char const *src, char * const dest, const fix16
 template <typename S, typename D>
 uint32_t MV_MixMono(struct VoiceNode * const voice, uint32_t length)
 {
-    auto const source = (S const *)voice->sound;
-    auto       dest   = (D *)MV_MixDestination;
+    auto const * __restrict source = (S const *)voice->sound;
+    auto       * __restrict dest   = (D *)MV_MixDestination;
 
     uint32_t       position = voice->position;
     uint32_t const rate     = voice->RateScale;
@@ -66,8 +66,8 @@ uint32_t MV_MixMono(struct VoiceNode * const voice, uint32_t length)
 template <typename S, typename D>
 uint32_t MV_MixStereo(struct VoiceNode * const voice, uint32_t length)
 {
-    auto const source = (S const *)voice->sound;
-    auto       dest   = (D *)MV_MixDestination;
+    auto const * __restrict source = (S const *)voice->sound;
+    auto       * __restrict dest   = (D *)MV_MixDestination;
 
     uint32_t       position = voice->position;
     uint32_t const rate     = voice->RateScale;

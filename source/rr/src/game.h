@@ -236,8 +236,6 @@ typedef struct {
         int32_t NumBits;
         int32_t MixRate;
 
-        int32_t ReverseStereo;
-
 
         int32_t scripthandle;
         int32_t setupread;
@@ -318,7 +316,7 @@ extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 
 extern double g_frameDelay;
-static inline double calcFrameDelay(int maxFPS) { return maxFPS ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
+static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -551,7 +549,22 @@ static inline int G_GetMusicIdx(const char *str)
     return (ep * MAXLEVELS) + lev;
 }
 
-static inline int G_GetViewscreenSizeShift(const uspritetype *tspr)
+extern void G_PrintCurrentMusic(void);
+
+EXTERN_INLINE_HEADER void G_SetStatusBarScale(int32_t sc);
+
+EXTERN_INLINE_HEADER void SetIfGreater(int32_t *variable, int32_t potentialValue);
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef ONLY_USERDEFS
+
+template <typename T>
+static inline int G_GetViewscreenSizeShift(T const *tspr)
 {
 #if VIEWSCREENFACTOR == 0
     UNREFERENCED_PARAMETER(tspr);
@@ -567,20 +580,6 @@ static inline int G_GetViewscreenSizeShift(const uspritetype *tspr)
     return VIEWSCREENFACTOR;
 #endif
 }
-
-extern void G_PrintCurrentMusic(void);
-
-EXTERN_INLINE_HEADER void G_SetStatusBarScale(int32_t sc);
-
-EXTERN_INLINE_HEADER void SetIfGreater(int32_t *variable, int32_t potentialValue);
-
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifndef ONLY_USERDEFS
 
 #if defined game_c_ || !defined DISABLE_INLINING
 

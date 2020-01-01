@@ -10,18 +10,18 @@
 
 enum buildtimertype
 {
-    TIMER_AUTO   = 0,
-    TIMER_QPC    = 1,
-    TIMER_SDL    = 2,
-    TIMER_CHRONO = 3,
-    TIMER_RDTSC  = 4,
+    TIMER_AUTO = 0,
+    TIMER_QPC,
+    TIMER_SDL,
+    TIMER_RDTSC,
+    NUMTIMERS,
 };
 
 int      timerInit(int const tickspersecond);
 void     timerUpdateClock(void);
 int      timerGetClockRate(void);
-uint64_t timerGetTicksU64(void);
-uint64_t timerGetFreqU64(void);
+uint64_t timerGetPerformanceCounter(void);
+uint64_t timerGetPerformanceFrequency(void);
 double   timerGetHiTicks(void);
 uint32_t timerGetTicks(void);
 

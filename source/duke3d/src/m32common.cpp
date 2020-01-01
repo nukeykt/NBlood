@@ -350,8 +350,9 @@ static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, uintptr_t crc)
     if (mapstate->prev && mapstate->prev->num[idx]==numsthgs && mapstate->prev->crc[idx]==crc)
     {
         // found match!
-        mapstate->sws[idx] = mapstate->prev->sws[idx];
-        (*(int32_t *)mapstate->sws[idx])++;  // increase refcount!
+        mapstate->lz4Blocks[idx] = mapstate->prev->lz4Blocks[idx];
+        mapstate->lz4Size[idx] = mapstate->prev->lz4Size[idx];
+        (*(int32_t *)mapstate->lz4Blocks[idx])++;  // increase refcount!
 
         return 1;
     }
@@ -361,19 +362,18 @@ static int32_t try_match_with_prev(int32_t idx, int32_t numsthgs, uintptr_t crc)
 
 static void create_compressed_block(int32_t idx, const void *srcdata, uint32_t size, uintptr_t crc)
 {
-    uint32_t j;
-
     // allocate
     int const compressed_size = LZ4_compressBound(size);
-    mapstate->sws[idx] = (char *)Xmalloc(4 + compressed_size);
-    mapstate->size[idx] = size;
+    Bassert(compressed_size);
+    mapstate->lz4Blocks[idx] = (char *)Xmalloc(4+compressed_size);
 
     // compress & realloc
-    j = LZ4_compress_default((const char*)srcdata, mapstate->sws[idx]+4, size, compressed_size);
-    mapstate->sws[idx] = (char *)Xrealloc(mapstate->sws[idx], 4 + j);
+    mapstate->lz4Size[idx] = LZ4_compress_default((const char*)srcdata, mapstate->lz4Blocks[idx]+4, size, compressed_size);
+    Bassert(mapstate->lz4Size[idx] > 0);
+    mapstate->lz4Blocks[idx] = (char *)Xrealloc(mapstate->lz4Blocks[idx], 4+mapstate->lz4Size[idx]);
 
     // write refcount
-    *(int32_t *)mapstate->sws[idx] = 1;
+    *(int32_t *)mapstate->lz4Blocks[idx] = 1;
 
     mapstate->crc[idx] = crc;
 }
@@ -394,7 +394,7 @@ static void free_self_and_successors(mapundo_t *mapst)
 
         for (i=0; i<3; i++)
         {
-            int32_t *const refcnt = (int32_t *)cur->sws[i];
+            int32_t *const refcnt = (int32_t *)cur->lz4Blocks[i];
 
             if (refcnt)
             {
@@ -445,10 +445,9 @@ void create_map_snapshot(void)
 
     fixspritesectors();
 
-    mapstate->num[0] = numsectors;
-    mapstate->num[1] = numwalls;
-    mapstate->num[2] = Numsprites;
-
+    mapstate->num[UNDO_SECTORS] = numsectors;
+    mapstate->num[UNDO_WALLS]   = numwalls;
+    mapstate->num[UNDO_SPRITES] = Numsprites;
 
     if (numsectors)
     {
@@ -482,8 +481,8 @@ void create_map_snapshot(void)
             if (!try_match_with_prev(2, Numsprites, temphash))
             {
                 int32_t i = 0;
-                auto const tspri = (spritetype *)Xmalloc(Numsprites*sizeof(spritetype) + 4);
-                auto spri = tspri;
+                auto const uspri = (uspritetype *)Xmalloc(Numsprites*sizeof(spritetype) + 4);
+                auto spri = uspri;
 
                 for (bssize_t j=0; j<MAXSPRITES && i < Numsprites; j++)
                     if (sprite[j].statnum != MAXSTATUS)
@@ -492,8 +491,8 @@ void create_map_snapshot(void)
                         i++;
                     }
 
-                create_compressed_block(2, tspri, Numsprites*sizeof(spritetype), temphash);
-                Xfree(tspri);
+                create_compressed_block(2, uspri, Numsprites*sizeof(spritetype), temphash);
+                Xfree(uspri);
             }
         }
 #undef XXH__
@@ -513,29 +512,17 @@ void map_undoredo_free(void)
     map_revision = 1;
 }
 
-int32_t map_undoredo(int32_t dir)
+int32_t map_undoredo(int dir)
 {
-    int32_t i;
-
     if (mapstate == NULL) return 1;
 
-    if (dir)
-    {
-        if (mapstate->next == NULL || !mapstate->next->num[0]) return 1;
+    auto const which = dir ? mapstate->next : mapstate->prev;
+    if (which == NULL || !which->num[UNDO_SECTORS]) return 1;
 
-        //        while (map_revision+1 != mapstate->revision && mapstate->next)
-        mapstate = mapstate->next;
-    }
-    else
-    {
-        if (mapstate->prev == NULL || !mapstate->prev->num[0]) return 1;
+    mapstate = which;
 
-        //        while (map_revision-1 != mapstate->revision && mapstate->prev)
-        mapstate = mapstate->prev;
-    }
-
-    numsectors = mapstate->num[0];
-    numwalls = mapstate->num[1];
+    numsectors   = mapstate->num[UNDO_SECTORS];
+    numwalls     = mapstate->num[UNDO_WALLS];
     map_revision = mapstate->revision;
 
     Bmemset(show2dsector, 0, sizeof(show2dsector));
@@ -545,20 +532,27 @@ int32_t map_undoredo(int32_t dir)
 
     initspritelists();
 
-    if (mapstate->num[0])
+    if (mapstate->num[UNDO_SECTORS])
     {
         // restore sector[]
-        LZ4_decompress_safe(mapstate->sws[0]+4, (char*)sector, mapstate->size[0], MAXSECTORS*sizeof(sectortype));
+        auto bytes = LZ4_decompress_safe(mapstate->lz4Blocks[UNDO_SECTORS]+4, (char*)sector, mapstate->lz4Size[UNDO_SECTORS], MAXSECTORS*sizeof(sectortype));
+        Bassert(bytes > 0);
 
-        if (mapstate->num[1])  // restore wall[]
-            LZ4_decompress_safe(mapstate->sws[1]+4, (char*)wall, mapstate->size[1], MAXWALLS*sizeof(walltype));
+        if (mapstate->num[UNDO_WALLS])  // restore wall[]
+        {
+            bytes = LZ4_decompress_safe(mapstate->lz4Blocks[UNDO_WALLS]+4, (char*)wall, mapstate->lz4Size[UNDO_WALLS], MAXWALLS*sizeof(walltype));
+            Bassert(bytes > 0);
+        }
 
-        if (mapstate->num[2])  // restore sprite[]
-            LZ4_decompress_safe(mapstate->sws[2]+4, (char*)sprite, mapstate->size[2], MAXSPRITES*sizeof(spritetype));
+        if (mapstate->num[UNDO_SPRITES])  // restore sprite[]
+        {
+            bytes = LZ4_decompress_safe(mapstate->lz4Blocks[UNDO_SPRITES]+4, (char*)sprite, mapstate->lz4Size[UNDO_SPRITES], MAXSPRITES*sizeof(spritetype));
+            Bassert(bytes > 0);
+        }
     }
 
     // insert sprites
-    for (i=0; i<mapstate->num[2]; i++)
+    for (int i=0; i<mapstate->num[UNDO_SPRITES]; i++)
     {
         if ((sprite[i].cstat & 48) == 48) sprite[i].cstat &= ~48;
         Bassert((unsigned)sprite[i].sectnum < (unsigned)numsectors
@@ -566,7 +560,7 @@ int32_t map_undoredo(int32_t dir)
         insertsprite(sprite[i].sectnum, sprite[i].statnum);
     }
 
-    Bassert(Numsprites == mapstate->num[2]);
+    Bassert(Numsprites == mapstate->num[UNDO_SPRITES]);
 
 #ifdef POLYMER
     if (in3dmode() && videoGetRenderMode() == REND_POLYMER)
@@ -1927,6 +1921,69 @@ static void FuncMenu_Process(const StatusBarMenu *m, int32_t col, int32_t row)
     break;  // switch (col) / case 0
 
     }  // switch (col)
+}
+
+void m32_showmouse()
+{
+    int32_t i, col;
+
+    int32_t mousecol = M32_THROB;
+
+    if (whitecol > editorcolors[0])
+        col = whitecol - mousecol;
+    else col = whitecol + mousecol;
+
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        renderDisableFog();
+        polymost_useColorOnly(true);
+    }
+#endif
+
+    int const lores = !!(xdim <= 640);
+
+    for (i = (3 - lores); i <= (7 >> lores); i++)
+    {
+        plotpixel(searchx+i,searchy,col);
+        plotpixel(searchx-i,searchy,col);
+        plotpixel(searchx,searchy-i,col);
+        plotpixel(searchx,searchy+i,col);
+    }
+
+    for (i=1; i<=(2 >> lores); i++)
+    {
+        plotpixel(searchx+i,searchy,whitecol);
+        plotpixel(searchx-i,searchy,whitecol);
+        plotpixel(searchx,searchy-i,whitecol);
+        plotpixel(searchx,searchy+i,whitecol);
+    }
+
+    i = (8 >> lores);
+
+    plotpixel(searchx+i,searchy,editorcolors[0]);
+    plotpixel(searchx-i,searchy,editorcolors[0]);
+    plotpixel(searchx,searchy-i,editorcolors[0]);
+    plotpixel(searchx,searchy+i,editorcolors[0]);
+
+    if (!lores)
+    {
+        for (i=1; i<=4; i++)
+        {
+            plotpixel(searchx+i,searchy,whitecol);
+            plotpixel(searchx-i,searchy,whitecol);
+            plotpixel(searchx,searchy-i,whitecol);
+            plotpixel(searchx,searchy+i,whitecol);
+        }
+    }
+
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        renderEnableFog();
+        polymost_useColorOnly(false);
+    }
+#endif
 }
 
 #ifdef LUNATIC

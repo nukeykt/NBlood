@@ -116,6 +116,7 @@
       <LanguageStandard>stdcpp14</LanguageStandard>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -138,6 +139,7 @@
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -159,6 +161,7 @@
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -180,6 +183,7 @@
       <LanguageStandard>stdcpp14</LanguageStandard>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

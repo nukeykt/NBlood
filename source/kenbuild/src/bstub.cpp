@@ -15,10 +15,11 @@
 #include "cache1d.h"
 #include "common.h"
 #include "m32script.h"
+#include "keys.h"
 
 #include "common_game.h"
 
-const char *AppProperName = "KenBuild Editor";
+const char *AppProperName = "EKenBuild Editor";
 const char *AppTechnicalName = "ekenbuild-editor";
 
 #if defined(_WIN32)
@@ -36,6 +37,12 @@ const char *DefaultGameLocalExec = DEFAULT_GAME_LOCAL_EXEC;
 const char *defaultsetupfilename = SETUPFILENAME;
 char setupfilename[BMAX_PATH] = SETUPFILENAME;
 
+#define eitherALT   (keystatus[KEYSC_LALT] || keystatus[KEYSC_RALT])
+#define eitherCTRL  (keystatus[KEYSC_LCTRL] || keystatus[KEYSC_RCTRL])
+#define eitherSHIFT (keystatus[KEYSC_LSHIFT] || keystatus[KEYSC_RSHIFT])
+
+#define PRESSED_KEYSC(Key) (keystatus[KEYSC_##Key] && !(keystatus[KEYSC_##Key]=0))
+
 static char tempbuf[256];
 
 #define NUMOPTIONS 9
@@ -44,7 +51,7 @@ unsigned char default_buildkeys[NUMBUILDKEYS] =
 {
     0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,
     0x1e,0x2c,0xd1,0xc9,0x33,0x34,
-    0x9c,0x1c,0xd,0xc,0xf,0x45
+    0x9c,0x1c,0xd,0xc,0xf,0x29
 };
 
 
@@ -78,8 +85,6 @@ int averagefps;
 static unsigned int frameval[AVERAGEFRAMES];
 static int framecnt = 0;
 
-int nextvoxid = 0;
-
 
 const char *ExtGetVer(void)
 {
@@ -95,7 +100,7 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     char tempbuf[256];
     snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
-    buildputs(tempbuf);
+    buildprintf("%s\n", tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -125,6 +130,8 @@ int32_t ExtInit(void)
     kensplayerheight = 32;
     zmode = 0;
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #ifdef _WIN32
 //  allowtaskswitching(0);
 #endif
@@ -133,15 +140,7 @@ int32_t ExtInit(void)
 
 int32_t ExtPostStartupWindow(void)
 {
-    int i;
-
     initgroupfile(G_GrpFile());
-
-    //You can load your own palette lookup tables here if you just
-    //copy the right code!
-    for (i=0; i<256; i++)
-        tempbuf[i] = ((i+32)&255);  //remap colors for screwy palette sectors
-    paletteMakeLookupTable(16,tempbuf,0,0,0,1);
 
     if (engineInit())
     {
@@ -149,16 +148,14 @@ int32_t ExtPostStartupWindow(void)
         return -1;
     }
 
-    Ken_InitMultiPsky();
-
-    tiletovox[PLAYER] = nextvoxid++;
-    tiletovox[BROWNMONSTER] = nextvoxid++;
+    Ken_PostStartupWindow();
 
     return 0;
 }
 
 void ExtPostInit(void)
 {
+    Ken_LoadVoxels();
     palettePostLoadLookups();
 }
 
@@ -270,49 +267,41 @@ void ExtPreCheckKeys(void)
 #endif
 }
 
-#define MAXVOXMIPS 5
-extern intptr_t voxoff[][MAXVOXMIPS];
-void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr)
+void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     int i, *longptr;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     UNREFERENCED_PARAMETER(ourx);
     UNREFERENCED_PARAMETER(oury);
+    UNREFERENCED_PARAMETER(ourz);
     UNREFERENCED_PARAMETER(oura);
     UNREFERENCED_PARAMETER(smoothr);
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels && tiletovox[tspr->picnum] >= 0)
+        if (usevoxels)
         {
             switch (tspr->picnum)
             {
             case PLAYER:
-                if (!voxoff[tiletovox[PLAYER]][0])
-                {
-                    if (qloadkvx(tiletovox[PLAYER],"voxel000.kvx"))
-                    {
-                        tiletovox[PLAYER] = -1;
-                        break;
-                    }
-                }
-                //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
-                longptr = (int *)voxoff[tiletovox[PLAYER]][0];
+                if (voxid_PLAYER == -1)
+                    break;
+
+                tspr->cstat |= 48;
+                tspr->picnum = voxid_PLAYER;
+
+                longptr = (int32_t *)voxoff[voxid_PLAYER][0];
                 tspr->xrepeat = scale(tspr->xrepeat,56,longptr[2]);
                 tspr->yrepeat = scale(tspr->yrepeat,56,longptr[2]);
                 tspr->shade -= 6;
                 break;
             case BROWNMONSTER:
-                if (!voxoff[tiletovox[BROWNMONSTER]][0])
-                {
-                    if (qloadkvx(tiletovox[BROWNMONSTER],"voxel001.kvx"))
-                    {
-                        tiletovox[BROWNMONSTER] = -1;
-                        break;
-                    }
-                }
-                //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
+                if (voxid_BROWNMONSTER == -1)
+                    break;
+
+                tspr->cstat |= 48;
+                tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }
         }
@@ -325,12 +314,52 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr
     }
 }
 
+static void Keys2D()
+{
+    if (PRESSED_KEYSC(G))  // G (grid on/off)
+    {
+        if (autogrid)
+        {
+            grid = 8*eitherSHIFT;
+
+            autogrid = 0;
+        }
+        else
+        {
+            grid += (1-2*eitherSHIFT);
+            if (grid == -1 || grid == 9)
+            {
+                autogrid = 1;
+                grid = 0;
+            }
+        }
+
+        if (autogrid)
+            printmessage16("Grid size: 9 (autosize)");
+        else if (!grid)
+            printmessage16("Grid off");
+        else
+            printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
+    }
+
+    if (autogrid)
+    {
+        grid = -1;
+
+        while (grid++ < 7)
+        {
+            if (mulscale14((2048>>grid), zoom) <= 16)
+                break;
+        }
+    }
+}
+
 void ExtCheckKeys(void)
 {
     int i; //, p, y, dx, dy, cosang, sinang, bufplc, tsizy, tsizyup15;
     int j;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
 #if 0
         if (hang != 0)
@@ -384,6 +413,23 @@ void ExtCheckKeys(void)
     }
     else
     {
+        Keys2D();
+    }
+
+    if ((in3dmode() && !m32_is2d3dmode()) || m32_is2d3dmode())
+    {
+#ifdef USE_OPENGL
+        int bakrendmode = rendmode;
+
+        if (m32_is2d3dmode())
+            rendmode = REND_CLASSIC;
+#endif
+
+        m32_showmouse();
+
+#ifdef USE_OPENGL
+        rendmode = bakrendmode;
+#endif
     }
 }
 
@@ -477,7 +523,7 @@ const char *ExtGetSpriteCaption(short spritenum)
 void ExtShowSectorData(short sectnum)   //F5
 {
     int i;
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -504,7 +550,7 @@ void ExtShowSectorData(short sectnum)   //F5
 
 void ExtShowWallData(short wallnum)       //F6
 {
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -520,7 +566,7 @@ void ExtShowWallData(short wallnum)       //F6
 
 void ExtShowSpriteData(short spritenum)   //F6
 {
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -538,7 +584,7 @@ void ExtEditSectorData(short sectnum)    //F7
 {
     short nickdata;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
         //Ceiling
         if (searchstat == 1)
@@ -563,7 +609,7 @@ void ExtEditWallData(short wallnum)       //F8
 {
     short nickdata;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else
@@ -581,7 +627,7 @@ void ExtEditSpriteData(short spritenum)   //F8
 {
     short nickdata;
 
-    if (qsetmode == 200)    //In 3D mode
+    if (in3dmode())
     {
     }
     else

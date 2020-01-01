@@ -43,7 +43,6 @@ int32_t NumVoices;
 int32_t NumChannels;
 int32_t NumBits;
 int32_t MixRate;
-int32_t ReverseStereo;
 int32_t MusicDevice;
 
 Resource gSoundRes;
@@ -445,8 +444,6 @@ void InitSoundDevice(void)
         initprintf("InitSoundDevice: %s\n", FX_ErrorString(nStatus));
         return;
     }
-    if (ReverseStereo == 1)
-        FX_SetReverseStereo(!FX_GetReverseStereo());
     FX_SetVolume(FXVolume);
     FX_SetCallBack(SoundCallback);
 }

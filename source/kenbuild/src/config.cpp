@@ -8,9 +8,7 @@
 
 #include "game.h"
 
-#ifdef RENDERTYPEWIN
-#include "winlayer.h"
-#endif
+#include "renderlayer.h"
 #include "baselayer.h"
 
 #if defined RENDERTYPESDL && defined SDL_TARGET && SDL_TARGET > 1
@@ -150,9 +148,7 @@ int Ken_loadsetup(const char *fn)
     if (readconfig(fp, "renderer", val, VL) > 0) { i = Batoi(val); videoSetRenderMode(i); }
     if (readconfig(fp, "brightness", val, VL) > 0) brightness = min(max(Batoi(val),0),15);
 
-#ifdef RENDERTYPEWIN
     if (readconfig(fp, "maxrefreshfreq", val, VL) > 0) maxrefreshfreq = Batoi(val);
-#endif
 
     option[0] = 1;  // vesa all the way...
     option[1] = 1;  // sound all the way...
@@ -217,11 +213,9 @@ int Ken_writesetup(const char *fn)
              "glusetexcache = %d\n"
              "\n"
 #endif
-#ifdef RENDERTYPEWIN
              "; Maximum OpenGL mode refresh rate (Windows only, in Hertz)\n"
              "maxrefreshfreq = %d\n"
              "\n"
-#endif
              "; 3D mode brightness setting\n"
              ";   0  - lowest\n"
              ";   15 - highest\n"
@@ -298,9 +292,7 @@ int Ken_writesetup(const char *fn)
 #ifdef USE_OPENGL
              glusetexcache,
 #endif
-#ifdef RENDERTYPEWIN
              maxrefreshfreq,
-#endif
              brightness, option[7]>>4, option[2],
              option[3], msens,
              keys[0], keys[1], keys[2], keys[3], keys[4], keys[5],

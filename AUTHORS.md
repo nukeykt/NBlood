@@ -31,4 +31,4 @@
   * NY00123
 
 ### PCExhumed special thanks:
-  * Hendricks266, NY00123, MetHy, oasiz, Daedolon, NoOne, phredreeke, Lobotomy Software
+  * Hendricks266, JonoF, NY00123, MetHy, oasiz, Daedolon, NoOne, phredreeke, Lobotomy Software

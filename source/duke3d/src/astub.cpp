@@ -49,7 +49,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "fx_man.h"
 
 #include "macros.h"
-#include "lz4.h"
 #include "colmatch.h"
 #include "palette.h"
 
@@ -109,7 +108,7 @@ sound_t g_sounds[MAXSOUNDS];
 static int16_t g_definedsndnum[MAXSOUNDS];  // maps parse order index to g_sounds index
 static int16_t g_sndnum[MAXSOUNDS];  // maps current order index to g_sounds index
 int32_t g_numsounds = 0;
-static int32_t mousecol, bstatus;
+static int32_t bstatus;
 
 static int32_t corruptchecktimer;
 static int32_t curcorruptthing=-1;
@@ -2344,69 +2343,6 @@ static inline void SpriteName(int16_t spritenum, char *lo2)
     Bstrcpy(lo2, names[sprite[spritenum].picnum]);
 }// end SpriteName
 
-
-static void m32_showmouse(void)
-{
-    int32_t i, col;
-
-    mousecol = M32_THROB;
-
-    if (whitecol > editorcolors[0])
-        col = whitecol - mousecol;
-    else col = whitecol + mousecol;
-
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        renderDisableFog();
-        polymost_useColorOnly(true);
-    }
-#endif
-
-    int const lores = !!(xdim <= 640);
-
-    for (i = (3 - lores); i <= (7 >> lores); i++)
-    {
-        plotpixel(searchx+i,searchy,col);
-        plotpixel(searchx-i,searchy,col);
-        plotpixel(searchx,searchy-i,col);
-        plotpixel(searchx,searchy+i,col);
-    }
-
-    for (i=1; i<=(2 >> lores); i++)
-    {
-        plotpixel(searchx+i,searchy,whitecol);
-        plotpixel(searchx-i,searchy,whitecol);
-        plotpixel(searchx,searchy-i,whitecol);
-        plotpixel(searchx,searchy+i,whitecol);
-    }
-
-    i = (8 >> lores);
-
-    plotpixel(searchx+i,searchy,editorcolors[0]);
-    plotpixel(searchx-i,searchy,editorcolors[0]);
-    plotpixel(searchx,searchy-i,editorcolors[0]);
-    plotpixel(searchx,searchy+i,editorcolors[0]);
-
-    if (!lores)
-    {
-        for (i=1; i<=4; i++)
-        {
-            plotpixel(searchx+i,searchy,whitecol);
-            plotpixel(searchx-i,searchy,whitecol);
-            plotpixel(searchx,searchy-i,whitecol);
-            plotpixel(searchx,searchy+i,whitecol);
-        }
-    }
-
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        renderEnableFog();
-        polymost_useColorOnly(false);
-    }
-#endif
-}
 
 int32_t AskIfSure(const char *text)
 {
@@ -7949,75 +7885,6 @@ static void Keys2d(void)
     }
 }// end key2d
 
-static void InitCustomColors(void)
-{
-    int32_t i;
-    palette_t *edcol;
-
-    /* blue */
-    vgapal16[9*4+0] = 252;
-    vgapal16[9*4+1] = 124;
-    vgapal16[9*4+2] = 28;
-
-    /* orange */
-    vgapal16[31*4+0] = 80; // blue
-    vgapal16[31*4+1] = 180; // green
-    vgapal16[31*4+2] = 240; // red
-
-    // UNUSED?
-    vgapal16[39*4+0] = 144;
-    vgapal16[39*4+1] = 212;
-    vgapal16[39*4+2] = 252;
-
-
-    /* light yellow */
-    vgapal16[22*4+0] = 204;
-    vgapal16[22*4+1] = 252;
-    vgapal16[22*4+2] = 252;
-
-    /* grey */
-    vgapal16[23*4+0] = 180;
-    vgapal16[23*4+1] = 180;
-    vgapal16[23*4+2] = 180;
-
-    /* blue */
-    vgapal16[24*4+0] = 204;
-    vgapal16[24*4+1] = 164;
-    vgapal16[24*4+2] = 48;
-
-    vgapal16[32*4+0] = 240;
-    vgapal16[32*4+1] = 200;
-    vgapal16[32*4+2] = 84;
-
-    // grid color
-    vgapal16[25*4+0] = 64;
-    vgapal16[25*4+1] = 56;
-    vgapal16[25*4+2] = 56;
-
-    vgapal16[26*4+0] = 96;
-    vgapal16[26*4+1] = 96;
-    vgapal16[26*4+2] = 96;
-
-    // UNUSED?
-    vgapal16[33*4+0] = 0; //60; // blue
-    vgapal16[33*4+1] = 0; //120; // green
-    vgapal16[33*4+2] = 192; //180; // red
-
-    // UNUSED?
-    vgapal16[41*4+0] = 0; //96;
-    vgapal16[41*4+1] = 0; //160;
-    vgapal16[41*4+2] = 252; //192;
-
-    for (i = 0; i<256; i++)
-    {
-        if (editorcolors[i] == 0)
-        {
-            edcol = (palette_t *)&vgapal16[4*i];
-            editorcolors[i] = getclosestcol_lim(edcol->b,edcol->g,edcol->r, 239);
-        }
-    }
-}
-
 int32_t ExtPreSaveMap(void)
 {
     int32_t numfixedsprites;
@@ -10118,8 +9985,6 @@ int32_t ExtPostStartupWindow(void)
 
 void ExtPostInit(void)
 {
-    InitCustomColors();
-
     if (!(duke3d_m32_globalflags & DUKE3D_NO_PALETTE_CHANGES))
     {
         // Make base shade table at shade 0 into the identity map.
@@ -10507,7 +10372,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
 void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     int32_t i, k;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
     int32_t frames=0, sh;
 
     UNREFERENCED_PARAMETER(ourx);
@@ -10518,6 +10383,9 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
+        Bassert((unsigned)tspr->owner < MAXSPRITES);
+        Duke_ApplySpritePropertiesToTSprite(tspr, (uspriteptr_t)&sprite[tspr->owner]);
+
         frames=0;
 
         if ((nosprites==1||nosprites==3) && tspr->picnum<11)

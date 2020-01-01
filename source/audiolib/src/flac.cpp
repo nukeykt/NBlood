@@ -581,7 +581,7 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
                             voice->LoopSize = 1;
                         }
                     }
-                    free(vc_loopstart);
+                    Xfree(vc_loopstart);
                 }
                 if (vc_loopend != nullptr)
                 {
@@ -591,7 +591,7 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
                         if (flac_loopend > 0)  // a loop ending at 0 is invalid
                             voice->LoopEnd = (const char *)(intptr_t)flac_loopend;
                     }
-                    free(vc_loopend);
+                    Xfree(vc_loopend);
                 }
                 if (vc_looplength != nullptr)
                 {
@@ -601,7 +601,7 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
                         if (flac_looplength > 0)  // a loop of length 0 is invalid
                             voice->LoopEnd = (const char *)((intptr_t)flac_looplength + (intptr_t)voice->LoopStart);
                     }
-                    free(vc_looplength);
+                    Xfree(vc_looplength);
                 }
 
                 FLAC__metadata_iterator_delete(metadata_iterator);

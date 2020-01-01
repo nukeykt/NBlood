@@ -26,14 +26,17 @@ BEGIN
 	CONTROL "&Fullscreen",    IDCFULLSCREEN, "BUTTON", BS_CHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 154, 6, 46, 10
 END
 
-#define FILEVER        0,0,0,0
-#define PRODUCTVER     0,0,0,0
-#define STRFILEVER     ""
-#define STRPRODUCTVER  ""
+#define VER        2,0,1,9
+
+#if defined EDUKE32_FAKE_DATE || defined EDUKE32_FAKE_TIME
+# define VERSTR     REVSTR
+#else
+# define VERSTR     REVSTR " built " __DATE__ " " __TIME__
+#endif
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION FILEVER
- PRODUCTVERSION PRODUCTVER
+ FILEVERSION VER
+ PRODUCTVERSION VER
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x3L
@@ -49,12 +52,13 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "Ion Fury"
-            VALUE "FileVersion", STRFILEVER
+            VALUE "FileVersion", VERSTR
             VALUE "InternalName", "Ion Fury"
-            VALUE "LegalCopyright", "© 2019 Voidpoint, LLC and EDuke32 developers"
+            VALUE "LegalCopyright", "Copyright © Voidpoint, LLC and EDuke32 contributors. All rights reserved."
+            VALUE "LegalTrademarks", "Ion Fury® is a Registered Trademark of 3D Realms Entertainment ApS."
             VALUE "OriginalFilename", "fury.exe"
             VALUE "ProductName", "Ion Fury"
-            VALUE "ProductVersion", STRPRODUCTVER
+            VALUE "ProductVersion", VERSTR
         END
     END
     BLOCK "VarFileInfo"

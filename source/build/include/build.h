@@ -362,7 +362,6 @@ using uwalltype = uwalltypevx;
 
 using spritetype  = spritetypev7;
 using uspritetype = uspritetypev7;
-using tspritetype = uspritetypev7;
 
 using uspriteptr_t = uspritetype const *;
 using uwallptr_t   = uwalltype const *;
@@ -544,7 +543,7 @@ typedef struct {
     uint8_t filler;
     float alpha;
     // NOTE: keep 'tspr' on an 8-byte boundary:
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 #if !defined UINTPTR_MAX
 # error Need UINTPTR_MAX define to select between 32- and 64-bit structs
 #endif
@@ -574,7 +573,14 @@ typedef struct {
 #define SPREXT_TSPRACCESS 16
 #define SPREXT_TEMPINVISIBLE 32
 
-#define TSPR_EXTRA_MDHACK 1
+// using the clipdist field
+enum
+{
+    TSPR_FLAGS_MDHACK = 1u<<0u,
+    TSPR_FLAGS_DRAW_LAST = 1u<<1u,
+    TSPR_FLAGS_NO_SHADOW = 1u<<2u,
+    TSPR_FLAGS_INVISIBLE_WITH_SHADOW = 1u<<3u,
+};
 
 EXTERN int32_t guniqhudid;
 EXTERN int32_t spritesortcnt;
@@ -678,6 +684,39 @@ static FORCE_INLINE void sprite_tracker_hook__(intptr_t const address)
     ++spritechanged[spritenum];
 }
 #endif
+
+static inline tspriteptr_t renderMakeTSpriteFromSprite(tspriteptr_t const tspr, uint16_t const spritenum)
+{
+    auto const spr = (uspriteptr_t)&sprite[spritenum];
+
+    tspr->pos = spr->pos;
+    tspr->cstat = spr->cstat;
+    tspr->picnum = spr->picnum;
+    tspr->shade = spr->shade;
+    tspr->pal = spr->pal;
+    tspr->blend = spr->blend;
+    tspr->xrepeat = spr->xrepeat;
+    tspr->yrepeat = spr->yrepeat;
+    tspr->xoffset = spr->xoffset;
+    tspr->yoffset = spr->yoffset;
+    tspr->sectnum = spr->sectnum;
+    tspr->statnum = spr->statnum;
+    tspr->ang = spr->ang;
+    tspr->vel = spr->vel;
+    tspr->lotag = spr->lotag;
+    tspr->hitag = spr->hitag;
+
+    tspr->clipdist = 0;
+    tspr->owner = spritenum;
+    tspr->extra = 0;
+
+    return tspr;
+}
+
+static inline tspriteptr_t renderAddTSpriteFromSprite(uint16_t const spritenum)
+{
+    return renderMakeTSpriteFromSprite(&tsprite[spritesortcnt++], spritenum);
+}
 
 
 EXTERN int16_t maskwall[MAXWALLSB], maskwallcnt;
@@ -890,6 +929,7 @@ EXTERN char GOTPIC_USED gotpic[(MAXTILES+7)>>3];
 EXTERN char gotsector[(MAXSECTORS+7)>>3];
 
 EXTERN char editorcolors[256];
+EXTERN char editorcolorsdef[256];
 
 EXTERN char faketile[(MAXTILES+7)>>3];
 EXTERN char *faketiledata[MAXTILES];
@@ -1101,7 +1141,8 @@ void    artClearMapArt(void);
 void    artSetupMapArt(const char *filename);
 bool    tileLoad(int16_t tilenume);
 void    tileLoadData(int16_t tilenume, int32_t dasiz, char *buffer);
-int32_t tileCRC(int16_t tileNum);
+int32_t tileGetCRC32(int16_t tileNum);
+vec2_16_t tileGetSize(int16_t tileNum);
 void    artConvertRGB(palette_t *pic, uint8_t const *buf, int32_t bufsizx, int32_t sizx, int32_t sizy);
 void    tileUpdatePicSiz(int32_t picnum);
 
@@ -1203,7 +1244,7 @@ void updatesectorneighbor(int32_t const x, int32_t const y, int16_t * const sect
 void updatesectorneighborz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum, int32_t initialMaxDistance = INITIALUPDATESECTORDIST, int32_t maxDistance = MAXUPDATESECTORDIST) ATTRIBUTE((nonnull(4)));
 
 int findwallbetweensectors(int sect1, int sect2);
-static FORCE_INLINE bool sectoradjacent(int sect1, int sect2) { return findwallbetweensectors(sect1, sect2) != -1; }
+static FORCE_INLINE int sectoradjacent(int sect1, int sect2) { return findwallbetweensectors(sect1, sect2) != -1; }
 int32_t getsectordist(vec2_t const in, int const sectnum, vec2_t * const out = nullptr);
 extern const int16_t *chsecptr_onextwall;
 int32_t checksectorpointer(int16_t i, int16_t sectnum);
@@ -1461,6 +1502,7 @@ extern GrowArray<char *> g_defModules;
 extern GrowArray<char *> g_clipMapFiles;
 #endif
 
+EXTERN int32_t nextvoxid;
 EXTERN intptr_t voxoff[MAXVOXELS][MAXVOXMIPS]; // used in KenBuild
 EXTERN int8_t voxreserve[(MAXVOXELS+7)>>3];
 EXTERN int8_t voxrotate[(MAXVOXELS+7)>>3];
@@ -1493,7 +1535,7 @@ static FORCE_INLINE int32_t md_tilehasmodel(int32_t const tilenume, int32_t cons
 }
 #endif  // defined USE_OPENGL
 
-static FORCE_INLINE bool tilehasmodelorvoxel(int const tilenume, int pal)
+static FORCE_INLINE int tilehasmodelorvoxel(int const tilenume, int pal)
 {
     UNREFERENCED_PARAMETER(pal);
     return
@@ -1563,7 +1605,7 @@ extern const int32_t engine_v8;
 int32_t Mulscale(int32_t a, int32_t b, int32_t sh);
 #endif
 
-static FORCE_INLINE CONSTEXPR bool inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
+static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
 
 #define SET_AND_RETURN(Lval, Rval) \
     do                             \

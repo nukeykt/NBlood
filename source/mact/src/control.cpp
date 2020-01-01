@@ -955,7 +955,7 @@ void CONTROL_GetUserInput(UserInput * uinfo)
 }
 void CONTROL_ClearUserInput(UserInput * uinfo)
 {
-    *uinfo = UserInput{};
+    UNREFERENCED_PARAMETER(uinfo);
 
     KB_FlushKeyboardQueue();
 

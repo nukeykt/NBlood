@@ -60,6 +60,12 @@ const char *DefaultGameLocalExec = DEFAULT_GAME_LOCAL_EXEC;
 const char *defaultsetupfilename = SETUPFILENAME;
 char setupfilename[BMAX_PATH] = SETUPFILENAME;
 
+#define eitherALT   (keystatus[KEYSC_LALT] || keystatus[KEYSC_RALT])
+#define eitherCTRL  (keystatus[KEYSC_LCTRL] || keystatus[KEYSC_RCTRL])
+#define eitherSHIFT (keystatus[KEYSC_LSHIFT] || keystatus[KEYSC_RSHIFT])
+
+#define PRESSED_KEYSC(Key) (keystatus[KEYSC_##Key] && !(keystatus[KEYSC_##Key]=0))
+
 
 #define M_RED 102
 #define M_BLUE 198
@@ -97,8 +103,6 @@ SWBOOL bFindLowTag = FALSE;
 SWBOOL bVoxelsOn = TRUE;                  // Turn voxels on by default
 SWBOOL bSpinBobVoxels = TRUE;             // Do twizzly stuff to voxels
 SWBOOL bAutoSize = TRUE;                  // Autosizing on/off
-
-int nextvoxid = 0;
 
 // Globals used to hold current sprite type being searched for.
 short FindPicNum = 0;
@@ -142,10 +146,8 @@ char default_buildkeys[NUMBUILDKEYS] =
 {
     0xc8, 0xd0, 0xcb, 0xcd, 0x2a, 0x9d, 0x1d, 0x39,
     0x1e, 0x2c, 0xd1, 0xc9, 0x33, 0x34,
-    0x9c, 0x1c, 0xd, 0xc, 0xf, 0x45
+    0x9c, 0x1c, 0xd, 0xc, 0xf, 0x29
 };
-
-#define MODE_3D 200
 
 extern short pointhighlight, linehighlight;
 extern short asksave;
@@ -327,7 +329,7 @@ ToggleSprites()
 
 
 void
-DoAutoSize(uspritetype *tspr)
+DoAutoSize(tspriteptr_t tspr)
 {
     short i;
 
@@ -479,13 +481,14 @@ DoAutoSize(uspritetype *tspr)
 short rotang = 0;
 
 void
-ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr)
+ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
     int i, currsprite;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     UNREFERENCED_PARAMETER(ourx);
     UNREFERENCED_PARAMETER(oury);
+    UNREFERENCED_PARAMETER(ourz);
     UNREFERENCED_PARAMETER(oura);
     UNREFERENCED_PARAMETER(smoothr);
 
@@ -688,7 +691,7 @@ int32_t ExtPreInit(int32_t argc,char const * const * argv)
     char tempbuf[256];
     snprintf(tempbuf, ARRAY_SIZE(tempbuf), "%s %s", AppProperName, s_buildRev);
     OSD_SetVersion(tempbuf, 10,0);
-    buildputs(tempbuf);
+    buildprintf("%s\n", tempbuf);
     PrintBuildInfo();
 
     return 0;
@@ -758,6 +761,8 @@ ExtInit(void)
 
     SW_ScanGroups();
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #ifndef BUILD_DEV_VER
 }                                   // end user press Y
 else
@@ -791,6 +796,7 @@ int32_t ExtPostStartupWindow(void)
 
 void ExtPostInit(void)
 {
+    palettePostLoadLookups();
 }
 
 void
@@ -855,6 +861,45 @@ ResetSpriteFound(void)
     }
 }
 
+static void Keys2D()
+{
+    if (PRESSED_KEYSC(G))  // G (grid on/off)
+    {
+        if (autogrid)
+        {
+            grid = 8*eitherSHIFT;
+
+            autogrid = 0;
+        }
+        else
+        {
+            grid += (1-2*eitherSHIFT);
+            if (grid == -1 || grid == 9)
+            {
+                autogrid = 1;
+                grid = 0;
+            }
+        }
+
+        if (autogrid)
+            printmessage16("Grid size: 9 (autosize)");
+        else if (!grid)
+            printmessage16("Grid off");
+        else
+            printmessage16("Grid size: %d (%d units)", grid, 2048>>grid);
+    }
+
+    if (autogrid)
+    {
+        grid = -1;
+
+        while (grid++ < 7)
+        {
+            if (mulscale14((2048>>grid), zoom) <= 16)
+                break;
+        }
+    }
+}
 
 // imported from allen code
 void
@@ -1413,7 +1458,7 @@ MoreKeys(short searchstat, short searchwall, short searchsector, short pointhigh
     GET_NUM_FUNCp getnumber;
     PRINT_MSG_FUNCp printmessage;
 
-    if (qsetmode == MODE_3D)
+    if (in3dmode())
     {
         getnumber = sw_getnumber256;
         printmessage = sw_printmessage256;
@@ -2084,7 +2129,7 @@ void
 ExtCheckKeysNotice(void)
 {
 #if 0
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
     {
         if (intro < 600)
         {
@@ -2123,7 +2168,7 @@ ExtCheckKeys(void)
 //  ticdiff = 0;            // Set it back to 0!
 
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
     {
 #define AVERAGEFRAMES 16
         static int frameval[AVERAGEFRAMES], framecnt = 0;
@@ -2142,7 +2187,7 @@ ExtCheckKeys(void)
 
     MoreKeys(searchstat, searchwall, searchsector, pointhighlight);
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
     {
         Keys3D();
 
@@ -2174,6 +2219,7 @@ ExtCheckKeys(void)
     }
     else
     {
+        Keys2D();
 
         if (KEY_PRESSED(KEYSC_QUOTE) && KEY_PRESSED(KEYSC_M))
         {
@@ -2203,6 +2249,22 @@ ExtCheckKeys(void)
             SetClipdist2D();
         }
 
+    }
+
+    if ((in3dmode() && !m32_is2d3dmode()) || m32_is2d3dmode())
+    {
+#ifdef USE_OPENGL
+        int bakrendmode = rendmode;
+
+        if (m32_is2d3dmode())
+            rendmode = REND_CLASSIC;
+#endif
+
+        m32_showmouse();
+
+#ifdef USE_OPENGL
+        rendmode = bakrendmode;
+#endif
     }
 }
 
@@ -2795,7 +2857,7 @@ ExtShowSectorData(short sectnum)        // F5
 {
     int i, x, y, x2;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     clearmidstatbar16();                // Clear middle of status bar
@@ -2937,7 +2999,7 @@ ExtShowSectorData(short sectnum)        // F5
 void
 ExtShowWallData(short wallnum)          // F6
 {
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
 
@@ -2949,7 +3011,7 @@ ExtShowWallData(short wallnum)          // F6
 void
 ExtShowSpriteData(short spritenum)      // F6
 {
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     while (KEY_PRESSED(KEYSC_F6)) ;
@@ -2969,7 +3031,7 @@ ExtEditSectorData(short sectnum)        // F7
     short key_num;
     SPRITEp sp;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
 
@@ -2997,7 +3059,7 @@ ExtEditWallData(short wallnum)          // F8
 {
 //    short nickdata;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
 //    sprintf(tempbuf, "Wall (%ld): ", wallnum);
@@ -3021,7 +3083,7 @@ ExtEditSpriteData(short spritenum)      // F8
     sp = &sprite[spritenum];
 
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     clearmidstatbar16();                // Clear middle of status bar
@@ -3156,7 +3218,7 @@ PlaxSetShade(void)
     short shade;
     int i, count = 0;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Plax Sky set shade to #: ");
@@ -3189,7 +3251,7 @@ PlaxAdjustShade(void)
     short shade;
     int i, count = 0;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Plax Sky adjust shade by (+10000 for negative): ");
@@ -3228,7 +3290,7 @@ AdjustShade(void)
     int i, count;
     short SpriteNum, NextSprite;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Adjust amount (+10000 for negative): ");
@@ -3316,7 +3378,7 @@ SetClipdist2D(void)
     int i;
     short num;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     if (highlightcnt <= -1)
@@ -3346,7 +3408,7 @@ AdjustVisibility(void)
     short vis;
     int i, count = 0;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     sprintf(tempbuf, "Adjust non-zero vis sectors by (+10000 for neg): ");
@@ -3401,7 +3463,7 @@ FindSprite(short picnum, short findspritenum)
     SWBOOL bFoundPicNum, bFoundHiTag, bFoundLowTag, bFoundIt;
 
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     if (picnum == 0)
@@ -3473,7 +3535,7 @@ FindNextSprite(short picnum)
 
     SWBOOL bFoundPicNum, bFoundHiTag, bFoundLowTag, bFoundIt;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     for (i = 0; i < numsectors; i++)
@@ -3542,7 +3604,7 @@ DoMatchCheck(SPRITEp sp)
 void
 ShowNextTag(void)
 {
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     printmessage16(" ");
@@ -3557,7 +3619,7 @@ FindNextTag(void)
     short siNextFind;                   // Next tag that SHOULD be found
     SPRITEp sp;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     siNextTag = siNextEndTag = 0;       // Reset tags for new search
@@ -3592,7 +3654,7 @@ ShadeMenu(void)                         // F8
 {
     uint8_t* key;
 
-    if (qsetmode == 200)                // In 3D mode
+    if (in3dmode())
         return;
 
     clearmidstatbar16();                // Clear middle of status bar

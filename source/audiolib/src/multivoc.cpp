@@ -43,6 +43,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pitch.h"
 #include "pragmas.h"
 
+#ifdef HAVE_XMP
+# define BUILDING_STATIC
+# include "libxmp-lite/xmp.h"
+
+int MV_XMPInterpolation = XMP_INTERP_SPLINE;
+#endif
+
+
 static void MV_StopVoice(VoiceNode *voice);
 static void MV_ServiceVoc(void);
 
@@ -56,25 +64,27 @@ Pan MV_PanTable[MV_NUMPANPOSITIONS][MV_MAXVOLUME + 1];
 
 int MV_Installed;
 static int MV_TotalVolume = MV_MAXTOTALVOLUME;
-static int MV_MaxVoices = 1;
 
 int MV_BufferSize = MV_MIXBUFFERSIZE;
 static int MV_BufferLength;
 
 static int MV_NumberOfBuffers = MV_NUMBEROFBUFFERS;
 
-static int MV_Channels = 1;
-
-static int MV_ReverseStereo;
-
+int MV_MaxVoices = 1;
+int MV_Channels = 1;
 int MV_MixRate;
+void *MV_InitDataPtr;
+
+#ifdef ASS_REVERSESTEREO
+static int MV_ReverseStereo;
+#endif
 
 static int MV_BufferEmpty[MV_NUMBEROFBUFFERS];
 char *MV_MixBuffer[(MV_NUMBEROFBUFFERS << 1) + 1];
 
-static VoiceNode *MV_Voices;
-static VoiceNode  VoiceList;
-static VoiceNode  VoicePool;
+VoiceNode *MV_Voices;
+VoiceNode  VoiceList;
+VoiceNode  VoicePool;
 
 static int MV_MixPage;
 
@@ -217,9 +227,9 @@ static void MV_ServiceVoc(void)
     }
     else
     {
-        char const *const end    = MV_MixBuffer[0] + MV_BufferLength;
-        char *            dest   = MV_MixBuffer[MV_MixPage];
-        char const *      source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
+        char const *const __restrict end    = MV_MixBuffer[0] + MV_BufferLength;
+        char *            __restrict dest   = MV_MixBuffer[MV_MixPage];
+        char const *      __restrict source = MV_MixBuffer[MV_MixPage] - MV_ReverbDelay;
 
         if (source < MV_MixBuffer[ 0 ])
             source += MV_BufferLength;
@@ -268,15 +278,13 @@ static void MV_ServiceVoc(void)
     if (MV_MixMusic)
     {
         MV_MusicCallback();
-        int16_t *source = (int16_t*)MV_MusicBuffer;
-        int16_t *dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
+        int16_t * __restrict source = (int16_t*)MV_MusicBuffer;
+        int16_t * __restrict dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
         for (int32_t i = 0; i < MV_BufferSize>>2; i++)
         {
-            int32_t sl = *source++;
-            int32_t sr = *source++;
-            *dest = clamp(*dest+sl,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
             dest++;
-            *dest = clamp(*dest+sr,INT16_MIN, INT16_MAX);
+            *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
             dest++;
         }
     }
@@ -564,8 +572,10 @@ void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t v
 {
     if (MV_Channels == 1)
         left = right = vol;
+#ifdef ASS_REVERSESTEREO
     else if (MV_ReverseStereo)
         swap(&left, &right);
+#endif
 
     voice->LeftVolumeDest = left*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
     voice->RightVolumeDest = right*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
@@ -791,9 +801,10 @@ int MV_GetVolume(void) { return MV_TotalVolume; }
 
 void MV_SetCallBack(void (*function)(intptr_t)) { MV_CallBackFunc = function; }
 
+#ifdef ASS_REVERSESTEREO
 void MV_SetReverseStereo(int setting) { MV_ReverseStereo = setting; }
-
 int MV_GetReverseStereo(void) { return MV_ReverseStereo; }
+#endif
 
 int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initdata)
 {
@@ -823,7 +834,9 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     for (int index = 0; index < Voices; index++)
         LL::Insert(&VoicePool, &MV_Voices[index]);
 
+#ifdef ASS_REVERSESTEREO
     MV_SetReverseStereo(FALSE);
+#endif
 
     ASS_PCMSoundDriver = soundcard;
 
@@ -840,6 +853,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     }
 
     MV_Installed    = TRUE;
+    MV_InitDataPtr  = initdata;
     MV_CallBackFunc = nullptr;
     MV_ReverbLevel  = 0;
     MV_ReverbVolume = 0.f;

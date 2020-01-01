@@ -124,7 +124,9 @@ SWBOOL Global_PLock = TRUE;
 SWBOOL Global_PLock = FALSE;
 #endif
 
-int GameVersion = 13;   // 12 was original source release. For future releases increment by two.
+// 12 was original source release. For future releases increment by two.
+int GameVersion = 15;
+
 char DemoText[3][64];
 int DemoTextYstart = 0;
 
@@ -495,11 +497,18 @@ AllocMem(int size)
 void *
 ReAllocMem(void *ptr, int size)
 {
+    if (ptr == nullptr)
+        return AllocMem(size);
+
+    if (size == 0)
+    {
+        FreeMem(ptr);
+        return nullptr;
+    }
+
     uint8_t* bp;
     MEM_HDRp mhp;
     uint8_t* check;
-
-    ASSERT(size != 0);
 
     ASSERT(ValidPtr(ptr));
 
@@ -560,10 +569,11 @@ CallocMem(int size, int num)
 void
 FreeMem(void *ptr)
 {
+    if (ptr == nullptr)
+        return;
+
     MEM_HDRp mhp;
     uint8_t* check;
-
-    ASSERT(ptr != NULL);
 
     ASSERT(ValidPtr(ptr));
 
@@ -573,37 +583,6 @@ FreeMem(void *ptr)
     memset(mhp, 0xCC, mhp->size + sizeof(MEM_HDR));
 
     free(mhp);
-}
-
-#else
-SWBOOL
-ValidPtr(void *ptr)
-{
-    return TRUE;
-}
-
-void *
-AllocMem(int size)
-{
-    return malloc(size);
-}
-
-void *
-CallocMem(int size, int num)
-{
-    return calloc(size, num);
-}
-
-void *
-ReAllocMem(void *ptr, int size)
-{
-    return realloc(ptr, size);
-}
-
-void
-FreeMem(void *ptr)
-{
-    free(ptr);
 }
 
 #endif
@@ -712,12 +691,8 @@ LoadLevel(const char *filename)
     if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
-#ifdef RENDERTYPEWIN
-        {
-            char msg[256];
-            Bsnprintf(msg, 256, "Level not found: %s", filename);
-            wm_msgbox(apptitle, msg);
-        }
+#if 1 /* defined RENDERTYPEWIN */
+        wm_msgbox(apptitle, "Level not found: %s", filename);
 #else
         printf("Level Not Found: %s\n", filename);
 #endif
@@ -734,10 +709,8 @@ LoadImages(const char *filename)
     if (artLoadFiles(filename, 32*1048576) == -1)
     {
         TerminateGame();
-#ifdef RENDERTYPEWIN
-        {
-            wm_msgbox(apptitle, "Art not found. Please check your GRP file.");
-        }
+#if 1 /* defined RENDERTYPEWIN */
+        wm_msgbox(apptitle, "Art not found. Please check your GRP file.");
 #else
         printf("Art not found. Please check your GRP file.\n");
 #endif
@@ -832,7 +805,7 @@ void MultiSharewareCheck(void)
     if (!SW_SHAREWARE) return;
     if (numplayers > 4)
     {
-#ifdef RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
         wm_msgbox(apptitle,"To play a Network game with more than 4 players you must purchase "
                   "the full version.  Read the Ordering Info screens for details.");
 #else
@@ -909,7 +882,6 @@ void COVERsetbrightness(int bright, unsigned char *pal)
 
 
 static int firstnet = 0;    // JBF
-int nextvoxid = 0;  // JBF
 
 extern int startwin_run(void);
 
@@ -1054,11 +1026,13 @@ InitGame(int32_t argc, char const * const * argv)
     if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
 
     for (char * m : g_defModules)
-        free(m);
+        Xfree(m);
     g_defModules.clear();
 
     if (enginePostInit())
         SW_FatalEngineError();
+
+    palettePostLoadLookups();
 
     DemoModeMenuInit = TRUE;
     // precache as much stuff as you can
@@ -1156,19 +1130,92 @@ LEVEL_INFO LevelInfo[MAX_LEVELS+2] =  // Shareware
     };
 #endif*/
 
+struct LevelNamePatch
+{
+    uint8_t index;
+    char const * name;
+};
+// names hex-edited into the exe
+static LevelNamePatch const LevelNamesWD[] =
+{
+    { 5, "Chinatown" },
+    { 6, "Monastery" }, // "Monastary"
+    { 7, "Trolley Yard" }, // "Trolly Yard"
+    { 8, "Restaurant" }, // "Resturant"
+    { 9, "Skyscraper" },
+    { 10, "Airplane" },
+    { 11, "Military Base" },
+    { 12, "Train" },
+    { 13, "Auto Factory" },
+    { 20, "Skyline" },
+    { 21, "Redwood Forest" },
+    { 22, "The Docks" },
+    { 23, "Waterfight (DM only)" },
+    { 24, "Wanton DM 1 (DM only)" },
+    { 25, "Wanton DM 2 (DM only)" },
+    { 27, "Wanton CTF (CTF)" },
+};
+#if 0
+// truncated names hex-edited into the exe
+static LevelNamePatch const LevelNamesTD[] =
+{
+    { 5, "Wang's Home" },
+    { 6, "City of Despair" }, // "City Of Despair"
+    { 7, "Emergency Room" },
+    { 8, "Hide and Seek" }, // "Hide And Seek"
+    { 9, "Warehouse" },
+    { 10, "Military Research Base" },
+    { 11, "Toxic Waste" },
+    { 12, "Crazy Train" },
+    { 13, "Fishing Village" },
+    { 14, "The Garden" },
+    { 15, "The Fortress" },
+    { 20, "The Palace" },
+    { 21, "Prison Camp" },
+    { 23, "Ninja Training Camp (DM only)" }, // "Ninja Training Camp"
+    { 24, "Death Becomes You (DM only)" }, // "Death Becomes You"
+    { 25, "Island Caves (DM only)" }, // "Island Caves"
+};
+#else
+// names from the readme
+static LevelNamePatch const LevelNamesTD[] =
+{
+    { 5, "Home Sweet Home" },
+    { 6, "City of Despair" },
+    { 7, "Emergency Room" },
+    { 8, "Hide and Seek" },
+    { 9, "Warehouse Madness" },
+    { 10, "Weapons Research Center" },
+    { 11, "Toxic Waste Facility" },
+    { 12, "Silver Bullet" },
+    { 13, "Fishing Village" },
+    { 14, "Secret Garden" },
+    { 15, "Hung Lo's Fortress" },
+    { 20, "Hung Lo's Palace" },
+    { 21, "Prison Camp" }, // "Prison Camp (secret level)"
+    { 23, "Ninja Training Camp (DM only)" }, // "Ninja Training Camp (dm)"
+    { 24, "The Morgue/Mortuary (DM only)" }, // "The Morgue/mortuary (dm)"
+    { 25, "Island Caves (DM only)" }, // "Island Caves (dm)"
+};
+#endif
+
 char EpisodeNames[2][MAX_EPISODE_NAME_LEN+2] =
 {
     "^Enter the Wang",
     "^Code of Honor"
 };
+static char const s_EpisodeNameWD[] = "^Wanton Destruction"; // "^Wanton Destr"
+static char const s_EpisodeNameTD[] = "^Twin Dragon";
 char EpisodeSubtitles[2][MAX_EPISODE_SUBTITLE_LEN+1] =
 {
     "Four levels (Shareware Version)",
     "Eighteen levels (Full Version Only)"
 };
+static char const s_EpisodeSubtitleWD[] = "Twelve levels (Full Version Only)";
+static char const s_EpisodeSubtitleTD[] = "Thirteen levels (Full Version Only)";
 char SkillNames[4][MAX_SKILL_NAME_LEN+2] =
 {
-    "^Tiny grasshopper",
+    "^Tiny Grasshopper", // "^Tiny grasshopper"
     "^I Have No Fear",
     "^Who Wants Wang",
     "^No Pain, No Gain"
@@ -2924,7 +2971,7 @@ _Assert(const char *expr, const char *strFile, unsigned uLine)
 
     TerminateGame();
 
-#if 1 //def RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
     wm_msgbox(apptitle, "%s", ds);
 #else
     printf("Assertion failed: %s\n %s, line %u\n", expr, strFile, uLine);
@@ -2942,7 +2989,7 @@ _ErrMsg(const char *strFile, unsigned uLine, const char *format, ...)
     //MONO_PRINT(ds);
     TerminateGame();
 
-#if 1 //def RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
     {
         char msg[256], *p;
         Bsnprintf(msg, sizeof(msg), "Error: %s, line %u\n", strFile, uLine);
@@ -3308,8 +3355,6 @@ Rules->0=WangBang 1=WangBang(No Respawn) 2=CoOperative
 commit -map grenade -autonet 0,0,1,1,1,0,3,2,1,1 -name frank
 #endif
 
-char isShareware = FALSE;
-
 int DetectShareware(void)
 {
 #define DOS_SCREEN_NAME_SW  "SHADSW.BIN"
@@ -3320,7 +3365,7 @@ int DetectShareware(void)
     h = kopen4load(DOS_SCREEN_NAME_SW,1);
     if (h >= 0)
     {
-        isShareware = TRUE;
+        SW_GameFlags |= GAMEFLAG_SHAREWARE;
         kclose(h);
         return 0;
     }
@@ -3328,7 +3373,7 @@ int DetectShareware(void)
     h = kopen4load(DOS_SCREEN_NAME_REG,1);
     if (h >= 0)
     {
-        isShareware = FALSE;
+        SW_GameFlags &= ~GAMEFLAG_SHAREWARE;
         kclose(h);
         return 0;
     }
@@ -3340,7 +3385,7 @@ int DetectShareware(void)
 void CommandLineHelp(char const * const * argv)
 {
     int i;
-#ifdef RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
     char *str;
     int strl;
 
@@ -3349,7 +3394,7 @@ void CommandLineHelp(char const * const * argv)
         if (cli_arg[i].arg_fmt && (!SW_SHAREWARE || (!cli_arg[i].notshareware && SW_SHAREWARE)))
             strl += strlen(cli_arg[i].arg_fmt) + 1 + strlen(cli_arg[i].arg_descr) + 1;
 
-    str = (char *)malloc(strl);
+    str = (char *)Xmalloc(strl);
     if (str)
     {
         strcpy(str,"Usage: sw [options]\n");
@@ -3365,7 +3410,7 @@ void CommandLineHelp(char const * const * argv)
             }
         }
         wm_msgbox("Shadow Warrior Help",str);
-        free(str);
+        Xfree(str);
     }
 #else
     if (SW_SHAREWARE)
@@ -3498,6 +3543,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     SW_ScanGroups();
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || ForceSetup || CommandSetup)
     {
@@ -3532,6 +3579,23 @@ int32_t app_main(int32_t argc, char const * const * argv)
     else
     {
         wm_setapptitle(APPNAME);
+
+        if (SW_GameFlags & GAMEFLAG_SWWD)
+        {
+            for (LevelNamePatch const lnp : LevelNamesWD)
+                LevelInfo[lnp.index].Description = lnp.name;
+
+            strcpy(EpisodeNames[1], s_EpisodeNameWD);
+            strcpy(EpisodeSubtitles[1], s_EpisodeSubtitleWD);
+        }
+        else if (SW_GameFlags & GAMEFLAG_SWTD)
+        {
+            for (LevelNamePatch const lnp : LevelNamesTD)
+                LevelInfo[lnp.index].Description = lnp.name;
+
+            strcpy(EpisodeNames[1], s_EpisodeNameTD);
+            strcpy(EpisodeSubtitles[1], s_EpisodeSubtitleTD);
+        }
     }
 
     for (i = 0; i < MAX_SW_PLAYERS; i++)
@@ -3657,7 +3721,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 #if DEBUG
         else if (Bstrncasecmp(arg, "debug",5) == 0)
         {
-#ifdef RENDERTYPEWIN
+#if 1 /* defined RENDERTYPEWIN */
             char *str;
             int strl;
 
@@ -3665,7 +3729,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             for (i=0; i < (int)SIZ(cli_dbg_arg); i++)
                 strl += strlen(cli_dbg_arg[i].arg_fmt) + 1 + strlen(cli_dbg_arg[i].arg_descr) + 1;
 
-            str = (char *)malloc(strl);
+            str = (char *)Xmalloc(strl);
             if (str)
             {
                 strcpy(str,
@@ -3680,7 +3744,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
                     strcat(str, "\n");
                 }
                 wm_msgbox("Shadow Warrior Debug Help",str);
-                free(str);
+                Xfree(str);
             }
 #else
             printf("Usage: %s [options]\n", argv[0]);
@@ -3978,13 +4042,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
             if ((fil = kopen4load(UserMapName,0)) == -1)
             {
-#ifdef RENDERTYPEWIN
-                char msg[256];
-                Bsnprintf(msg, 256, "ERROR: Could not find user map %s!",UserMapName);
-                wm_msgbox(apptitle, msg);
-#else
-                printf("ERROR: Could not find user map %s!\n\n",UserMapName);
-#endif
+                wm_msgbox(apptitle, "ERROR: Could not find user map %s!", UserMapName);
                 kclose(fil);
                 swexit(0);
             }

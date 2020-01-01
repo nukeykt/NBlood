@@ -270,7 +270,7 @@ extern int32_t r_maxfps;
 extern int32_t r_maxfpsoffset;
 extern double g_frameDelay;
 
-static inline double calcFrameDelay(int const maxFPS) { return maxFPS > 0 ? (timerGetFreqU64()/(double)maxFPS) : 0.0; }
+static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
 
 enum {
     kPalNormal = 0,

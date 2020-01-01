@@ -29,9 +29,11 @@ static int32_t _internal_gettime(void);
 static void _internal_onshowosd(int32_t);
 
 osdmain_t *osd;
+GrowArray<char *> osdstrings;
 
 static int osdrowscur = -1;
-static int osdmaxrows = 20;
+static int osdmaxrows = MAXYDIM >> 3;
+static int osdrows;
 
 buildvfs_FILE osdlog;
 
@@ -41,6 +43,7 @@ static uint32_t osdkeytime = 0;
 static uint32_t osdscrtime = 0;
 
 #define OSD_EDIT_LINE_WIDTH (osd->draw.cols - 1 - 3)
+#define OSDMAXERRORS 4096
 
 static hashtable_t h_osd = { OSDMAXSYMBOLS >> 1, NULL };
 
@@ -64,6 +67,8 @@ static int32_t (*_getrowheight)(int32_t) = _internal_getrowheight;
 
 static hashtable_t h_cvars      = { OSDMAXSYMBOLS >> 1, NULL };
 bool m32_osd_tryscript = false;  // whether to try executing m32script on unkown command in the osd
+
+static int osdfunc_printvar(int const cvaridx);
 
 void OSD_RegisterCvar(osdcvardata_t * const cvar, int (*func)(osdcmdptr_t))
 {
@@ -409,6 +414,16 @@ static void _internal_onshowosd(int a)
     UNREFERENCED_PARAMETER(a);
 }
 
+static void osd_clear(int clearstrings = false)
+{
+    Bmemset(osd->text.buf, asc_Space, OSDBUFFERSIZE);
+    Bmemset(osd->text.fmt, osd->draw.textpal + (osd->draw.textshade << 5), OSDBUFFERSIZE);
+    osd->text.lines = 1;
+
+    if (clearstrings)
+        osdstrings.clear();
+}
+
 ////////////////////////////
 
 static int osdfunc_alias(osdcmdptr_t parm)
@@ -564,7 +579,12 @@ static int osdfunc_help(osdcmdptr_t parm)
     if (!symb)
         OSD_Printf("Error: no help for undefined symbol \"%s\"\n", parm->parms[0]);
     else
-        OSD_Printf("%s\n", symb->help);
+    {
+        int const cvaridx = hash_findcase(&h_cvars, symb->name);
+        if (cvaridx >= 0)
+            return osdfunc_printvar(cvaridx);
+        else OSD_Printf("%s\n", symb->help);
+    }
 
     return OSDCMD_OK;
 }
@@ -572,13 +592,7 @@ static int osdfunc_help(osdcmdptr_t parm)
 static int osdfunc_clear(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
-
-    auto &t = osd->text;
-
-    Bmemset(t.buf, 0, OSDBUFFERSIZE);
-    Bmemset(t.fmt, osd->draw.textpal + (osd->draw.textshade<<5), OSDBUFFERSIZE);
-    t.lines = 1;
-
+    osd_clear();
     return OSDCMD_OK;
 }
 
@@ -642,8 +656,7 @@ static int osdcmd_cvar_set_osd(osdcmdptr_t parm)
 
     if (!Bstrcasecmp(parm->name, "osdrows"))
     {
-        if (osd->draw.rows > osdmaxrows)
-            osd->draw.rows = osdmaxrows;
+        osd->draw.rows = osdrows ? clamp(osdrows, 1, osdmaxrows) : (osdmaxrows >> 1);
 
         if (osdrowscur != -1)
             osdrowscur = osd->draw.rows;
@@ -712,9 +725,8 @@ void OSD_Init(void)
     osd->numcvars      = 0;
     osd->text.lines    = 1;
     osd->text.maxlines = OSDDEFAULTMAXLINES;  // overwritten later
-    osd->draw.rows     = OSDDEFAULTROWS;
     osd->draw.cols     = OSDDEFAULTCOLS;
-    osd->log.cutoff    = OSDLOGCUTOFF;
+    osd->log.cutoff    = OSDMAXERRORS;
 
     osd->history.maxlines = OSDMINHISTORYDEPTH;
 
@@ -723,16 +735,20 @@ void OSD_Init(void)
 
     static osdcvardata_t cvars_osd [] =
     {
-        { "osdeditpal", "sets the palette of the OSD input text", (void *) &osd->draw.editpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
-        { "osdpromptpal", "sets the palette of the OSD prompt", (void *) &osd->draw.promptpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
-        { "osdtextpal", "sets the palette of the OSD text", (void *) &osd->draw.textpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
-        { "osdeditshade", "sets the shade of the OSD input text", (void *) &osd->draw.editshade, CVAR_INT, 0, 7 },
-        { "osdtextshade", "sets the shade of the OSD text", (void *) &osd->draw.textshade, CVAR_INT, 0, 7 },
-        { "osdpromptshade", "sets the shade of the OSD prompt", (void *) &osd->draw.promptshade, CVAR_INT, INT8_MIN, INT8_MAX },
-        { "osdrows", "sets the number of visible lines of the OSD", (void *) &osd->draw.rows, CVAR_INT|CVAR_FUNCPTR, 1, 400 },
-        { "osdtextmode", "set OSD text mode (0:graphical, 1:fast)", (void *) &osd->draw.mode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
-        { "osdlogcutoff", "sets the maximal line count of the log file", (void *) &osd->log.cutoff, CVAR_INT, 0, 262144 },
-        { "osdhistorydepth", "sets the history depth, in lines", (void *) &osd->history.maxlines, CVAR_INT|CVAR_FUNCPTR, OSDMINHISTORYDEPTH, OSDMAXHISTORYDEPTH },
+        { "osdeditpal", "console input text palette", (void *) &osd->draw.editpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
+        { "osdeditshade", "console input text shade", (void *) &osd->draw.editshade, CVAR_INT, 0, 7 },
+
+        { "osdtextpal", "unformatted console text palette", (void *) &osd->draw.textpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
+        { "osdtextshade", "unformatted console text shade", (void *) &osd->draw.textshade, CVAR_INT, 0, 7 },
+
+        { "osdpromptpal", "console prompt palette", (void *) &osd->draw.promptpal, CVAR_INT, 0, MAXPALOOKUPS-1 },
+        { "osdpromptshade", "console prompt shade", (void *) &osd->draw.promptshade, CVAR_INT, INT8_MIN, INT8_MAX },
+
+        { "osdrows", "lines of text to display in console", (void *) &osdrows, CVAR_INT|CVAR_FUNCPTR, 0, MAXYDIM >> 3 },
+        { "osdtextmode", "console character mode: 0: sprites  1: simple glyphs", (void *) &osd->draw.mode, CVAR_BOOL|CVAR_FUNCPTR, 0, 1 },
+
+        { "osdlogcutoff", "maximum number of error messages to log to the console", (void *) &osd->log.cutoff, CVAR_INT, -1, OSDMAXERRORS },
+        { "osdhistorydepth", "number of lines of command history to cycle through with the up and down cursor keys", (void *) &osd->history.maxlines, CVAR_INT|CVAR_FUNCPTR, OSDMINHISTORYDEPTH, OSDMAXHISTORYDEPTH },
     };
 
     for (auto & i : cvars_osd)
@@ -760,6 +776,9 @@ void OSD_SetLogFile(const char *fn)
 {
     MAYBE_FCLOSE_AND_NULL(osdlog);
     osdlogfn = NULL;
+
+    if (!osd)
+        OSD_Init();
 
     if (!fn)
         return;
@@ -801,6 +820,9 @@ void OSD_SetFunctions(void (*drawchar)(int, int, char, int, int),
     clearbackground = clearbg    ? clearbg    : _internal_clearbackground;
     gettime         = gtime      ? gtime      : _internal_gettime;
     onshowosd       = showosd    ? showosd    : _internal_onshowosd;
+
+    if (!osd)
+        OSD_Init();
 }
 
 
@@ -819,6 +841,7 @@ void OSD_SetParameters(int promptShade, int promptPal, int editShade, int editPa
     draw.textshade   = textShade;
     draw.textpal     = textPal;
     draw.errorfmt    = errorStr;
+    draw.errfmtlen   = errorStr ? Bstrlen(errorStr) : -1;
     draw.highlight   = highlight;
 
     osd->flags |= flags;
@@ -909,6 +932,18 @@ static void OSD_HistoryNext(void)
     Bmemcpy(e.buf, h.buf[--h.pos], OSDEDITLENGTH);
 
     OSD_AdjustEditorPosition(e);
+}
+
+void OSD_HandleWheel()
+{
+    if (osd->flags & OSD_CAPTURE)
+    {
+        if ((g_mouseBits & 16) && osd->draw.head <  osd->text.lines - osdrowscur)
+            ++osd->draw.head;
+
+        if ((g_mouseBits & 32) && osd->draw.head > 0)
+            --osd->draw.head;
+    }
 }
 
 //
@@ -1116,9 +1151,7 @@ int OSD_HandleChar(char ch)
             return 0;
 
         case asc_Ctrl_L:  // clear screen
-            Bmemset(osd->text.buf, 0, OSDBUFFERSIZE);
-            Bmemset(osd->text.fmt, osd->draw.textpal + (osd->draw.textshade << 5), OSDBUFFERSIZE);
-            osd->text.lines = 1;
+            osd_clear();
             return 0;
 
         case asc_Enter:  // control m, enter
@@ -1264,7 +1297,7 @@ int OSD_HandleScanCode(uint8_t scanCode, int keyDown)
         break;
 
     case sc_PgUp:
-        if (draw.head < osd->text.lines-1)
+        if (draw.head < osd->text.lines-osdrowscur)
             ++draw.head;
         break;
 
@@ -1414,42 +1447,26 @@ void OSD_ResizeDisplay(int w, int h)
     auto &d = osd->draw;
 
     int const newcols     = getcolumnwidth(w);
-    int const newmaxlines = OSDBUFFERSIZE / newcols;
-
-    auto newtext = (char *)Xmalloc(OSDBUFFERSIZE);
-    auto newfmt  = (char *)Xmalloc(OSDBUFFERSIZE);
-
-    Bmemset(newtext, asc_Space, OSDBUFFERSIZE);
-
-    int const copylines = min(newmaxlines, t.maxlines);
-    int const copycols  = min(newcols, d.cols);
-
-    for (int i = 0; i < copylines; ++i)
-    {
-        Bmemcpy(newtext + newcols * i, t.buf + d.cols * i, copycols);
-        Bmemcpy(newfmt  + newcols * i, t.fmt + d.cols * i, copycols);
-    }
-
-    Xfree(t.buf);
-    t.buf = newtext;
-
-    Xfree(t.fmt);
-    t.fmt = newfmt;
-
-    t.maxlines = newmaxlines;
-    osdmaxrows = getrowheight(h) - 2;
     d.cols     = newcols;
 
-    if (d.rows > osdmaxrows)
-        d.rows = osdmaxrows;
+    int const newmaxlines = OSDBUFFERSIZE / newcols;
+    t.maxlines = newmaxlines;
 
-    t.pos  = 0;
-    d.head = 0;
+    osdmaxrows = getrowheight(h) - 2;
+    d.rows = osdrows ? clamp(osdrows, 1, osdmaxrows) : (osdmaxrows >> 1);
 
-    osd->editor.start = 0;
-    osd->editor.end   = OSD_EDIT_LINE_WIDTH;
+    if (osdrowscur != -1)
+        osdrowscur = d.rows;
+
+    osd->editor.start = d.head = t.pos = 0;
+    osd->editor.end = OSD_EDIT_LINE_WIDTH;
 
     whiteColorIdx = -1;
+
+    osd_clear(false);
+
+    for (auto s : osdstrings)
+        OSD_Puts(s, true);
 }
 
 
@@ -1589,6 +1606,7 @@ void OSD_Printf(const char *fmt, ...)
     Bvsnprintf(tmpstr, sizeof(tmpstr), fmt, va);
     va_end(va);
 
+    osdstrings.append(Xstrdup(tmpstr));
     OSD_Puts(tmpstr);
 }
 
@@ -1613,114 +1631,106 @@ static inline void OSD_LineFeed(void)
         t.lines++;
 }
 
-#define MAX_ERRORS 4096
-
-void OSD_Puts(const char *tmpstr)
+void OSD_Puts(const char *putstr, int const nolog /*= false*/)
 {
-    if (tmpstr[0] == 0)
+    if (putstr[0] == 0 || !osd)
         return;
 
-    if (!osd)
-        OSD_Init();
+    auto &t = osd->text;
+    auto &d = osd->draw;
+    auto &l = osd->log;
 
-    const char *chp;
+    int textPal   = d.textpal;
+    int textShade = d.textshade;
 
-    int textPal   = osd->draw.textpal;
-    int textShade = osd->draw.textshade;
+    static int errorCnt;
 
     mutex_lock(&osd->mutex);
 
-    osdlog_t &log = osd->log;
-
-    if (tmpstr[0]=='^' && tmpstr[1]=='1' && tmpstr[2]=='0' && ++log.errors > MAX_ERRORS)
+    if (Bstrlen(putstr) >= (unsigned)d.errfmtlen && !Bstrncmp(putstr, d.errorfmt, d.errfmtlen) && (unsigned)++errorCnt > (unsigned)l.cutoff)
     {
-        if (log.errors == MAX_ERRORS + 1)
-            tmpstr = "\nToo many errors. Logging errors stopped.\n";
-        else
+        if (errorCnt >= l.cutoff + 2)
         {
-            log.errors = MAX_ERRORS + 2;
+            errorCnt = l.cutoff + 2;
             mutex_unlock(&osd->mutex);
             return;
         }
+
+        putstr = "\nError count exceeded \"osdlogcutoff\"!\n";
+    }
+    else if (!nolog && (unsigned)errorCnt < (unsigned)l.cutoff)
+    {
+        auto s = Xstrdup(putstr);
+        buildvfs_fputs(OSD_StripColors(s, putstr), osdlog);
+        Bprintf("%s", s);
+        Xfree(s);
     }
 
-    if (log.lines < log.cutoff)
-    {
-        char *chp2 = Xstrdup(tmpstr);
-        buildvfs_fputs(OSD_StripColors(chp2, tmpstr), osdlog);
-        Bprintf("%s", chp2);
-        Xfree(chp2);
-    }
-    else if (log.lines == log.cutoff)
-    {
-        buildvfs_fputs("\nLog file full! Consider increasing \"osdlogcutoff\".\n", osdlog);
-        log.lines = log.cutoff + 1;
-    }
+    auto s = putstr;
 
-    chp = tmpstr;
     do
     {
-        if (*chp == '\n')
+        if (*s == '\n')
         {
-            osd->text.pos = 0;
-            ++log.lines;
+            t.pos = 0;
+            ++l.lines;
             OSD_LineFeed();
             continue;
         }
 
-        if (*chp == '\r')
+        if (*s == '\r')
         {
-            osd->text.pos = 0;
+            t.pos = 0;
             continue;
         }
 
-        if (*chp == '^')
+        if (*s == '^')
         {
-            if (isdigit(*(chp+1)))
+            // palette
+            if (isdigit(*(s+1)))
             {
-                char smallbuf[4];
-                if (!isdigit(*(++chp+1)))
+                if (!isdigit(*(++s+1)))
                 {
-                    smallbuf[0] = *(chp);
-                    smallbuf[1] = '\0';
+                    char const smallbuf[] = { *(s), '\0' };
                     textPal = Batoi(smallbuf);
                     continue;
                 }
 
-                smallbuf[0] = *(chp++);
-                smallbuf[1] = *(chp);
-                smallbuf[2] = '\0';
+                char const smallbuf[] = { *(s), *(s+1), '\0' };
+                s++;
                 textPal = Batoi(smallbuf);
                 continue;
             }
 
-            if (Btoupper(*(chp+1)) == 'S')
+            // shade
+            if (Btoupper(*(s+1)) == 'S')
             {
-                chp++;
-                if (isdigit(*(++chp)))
-                    textShade = *chp;
+                s++;
+                if (isdigit(*(++s)))
+                    textShade = *s;
                 continue;
             }
 
-            if (Btoupper(*(chp+1)) == 'O')
+            // reset
+            if (Btoupper(*(s+1)) == 'O')
             {
-                chp++;
-                textPal   = osd->draw.textpal;
-                textShade = osd->draw.textshade;
+                s++;
+                textPal   = d.textpal;
+                textShade = d.textshade;
                 continue;
             }
         }
 
-        osd->text.buf[osd->text.pos] = *chp;
-        osd->text.fmt[osd->text.pos++] = textPal+(textShade<<5);
+        t.buf[t.pos] = *s;
+        t.fmt[t.pos] = textPal + (textShade << 5);
 
-        if (osd->text.pos == osd->draw.cols)
+        if (++t.pos == d.cols)
         {
-            osd->text.pos = 0;
+            t.pos = 0;
             OSD_LineFeed();
         }
     }
-    while (*(++chp));
+    while (*(++s));
 
     mutex_unlock(&osd->mutex);
 }
@@ -1901,7 +1911,14 @@ void OSD_Dispatch(const char *cmd)
             {
                 default:
                 case OSDCMD_OK: break;
-                case OSDCMD_SHOWHELP: OSD_Printf("%s\n", symbol->help); break;
+                case OSDCMD_SHOWHELP:
+                {
+                    int const cvaridx = hash_findcase(&h_cvars, symbol->name);
+                    if (cvaridx >= 0)
+                        osdfunc_printvar(cvaridx);
+                    else OSD_Printf("%s\n", symbol->help);
+                    break;
+                }
             }
         }
 
@@ -2042,20 +2059,42 @@ static osdsymbol_t * osd_findexactsymbol(const char *pszName)
     return (symbolNum >= 0) ? osd->symbptrs[symbolNum] : NULL;
 }
 
+static int osdfunc_printvar(int const cvaridx)
+{
+    auto& pData = *osd->cvars[cvaridx].pData;
+
+    switch (pData.flags & CVAR_TYPEMASK)
+    {
+        case CVAR_FLOAT:
+            OSD_Printf("\"%s\" is \"%f\"\n%s [%d-%d]: %s\n", pData.name, *pData.f, pData.name, pData.min, pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_DOUBLE:
+            OSD_Printf("\"%s\" is \"%f\"\n%s [%d-%d]: %s\n", pData.name, *pData.d, pData.name, pData.min, pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_INT:
+        case CVAR_BOOL:
+            OSD_Printf("\"%s\" is \"%d\"\n%s [%d%c%d]: %s\n", pData.name, *pData.i32, pData.name, pData.min,
+                (pData.flags & CVAR_BOOL ? '/' : '-'), pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_UINT:
+            OSD_Printf("\"%s\" is \"%d\"\n%s [%d-%d]: %s\n", pData.name, *pData.u32, pData.name, pData.min, pData.max, pData.desc);
+            return OSDCMD_OK;
+        case CVAR_STRING:
+            OSD_Printf("\"%s\" is \"%s\"\n%s: %s\n", pData.name, pData.string, pData.name, pData.desc);
+            return OSDCMD_OK;
+        default:
+            EDUKE32_UNREACHABLE_SECTION(return OSDCMD_OK);
+    }
+}
+
 int osdcmd_cvar_set(osdcmdptr_t parm)
 {
     int const printValue = (parm->numparms == 0);
     int const cvaridx    = hash_findcase(&h_cvars, parm->name);
 
-#if 0
-    if (i < 0)
-        for (i = osd->numcvars-1; i >= 0; i--)
-            if (!Bstrcasecmp(parm->name, pData.name)) break;
-#endif
-
     Bassert(cvaridx >= 0);
 
-    auto pData = *osd->cvars[cvaridx].pData;
+    auto &pData = *osd->cvars[cvaridx].pData;
 
     if (pData.flags & CVAR_READONLY)
     {
@@ -2063,49 +2102,34 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
         return OSDCMD_OK;
     }
 
+    if (printValue)
+        return osdfunc_printvar(cvaridx);
+
     switch (pData.flags & CVAR_TYPEMASK)
     {
         case CVAR_FLOAT:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%f\"\n%s: %s\n", pData.name, *pData.f, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             Bsscanf(parm->parms[0], "%f", pData.f);
             *pData.f = clamp(*pData.f, pData.min, pData.max);
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %f",pData.name, *pData.f);
+                OSD_Printf("%s %f", pData.name, *pData.f);
         }
         break;
         case CVAR_DOUBLE:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%f\"\n%s: %s\n", pData.name, *pData.d, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             Bsscanf(parm->parms[0], "%lf", pData.d);
             *pData.d = clamp(*pData.d, pData.min, pData.max);
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %f",pData.name, *pData.d);
+                OSD_Printf("%s %f", pData.name, *pData.d);
         }
         break;
         case CVAR_INT:
         case CVAR_BOOL:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%d\"\n%s: %s\n", pData.name, *pData.i32, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             *pData.i32 = clamp(Batoi(parm->parms[0]), pData.min, pData.max);
 
             if ((pData.flags & CVAR_TYPEMASK) == CVAR_BOOL)
@@ -2114,17 +2138,11 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %d",pData.name, *pData.i32);
+                OSD_Printf("%s %d", pData.name, *pData.i32);
         }
         break;
         case CVAR_UINT:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%u\"\n%s: %s\n", pData.name, *pData.u32, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             *pData.u32 = clamp(Bstrtoul(parm->parms[0], NULL, 0), pData.min, pData.max);
             pData.flags |= CVAR_MODIFIED;
 
@@ -2134,18 +2152,12 @@ int osdcmd_cvar_set(osdcmdptr_t parm)
         break;
         case CVAR_STRING:
         {
-            if (printValue)
-            {
-                OSD_Printf("\"%s\" is \"%s\"\n%s: %s\n", pData.name, pData.string, pData.name, pData.desc);
-                return OSDCMD_OK;
-            }
-
             Bstrncpy(pData.string, parm->parms[0], pData.max-1);
             (pData.string)[pData.max-1] = 0;
             pData.flags |= CVAR_MODIFIED;
 
             if (!OSD_ParsingScript())
-                OSD_Printf("%s %s",pData.name, pData.string);
+                OSD_Printf("%s %s", pData.name, pData.string);
         }
         break;
         default:
@@ -2205,7 +2217,7 @@ void OSD_WriteCvars(buildvfs_FILE fp)
 
     for (int i = 0; i < osd->numcvars; i++)
     {
-        osdcvardata_t const &pData = *osd->cvars[i].pData;
+        auto &pData = *osd->cvars[i].pData;
 
         if (!(pData.flags & CVAR_NOSAVE) && OSD_CvarModified(&osd->cvars[i]))
         {
@@ -2233,10 +2245,13 @@ void OSD_WriteCvars(buildvfs_FILE fp)
                 buildvfs_fputstrptr(fp, buf);
                 break;
             case CVAR_STRING:
-                buildvfs_fputstrptr(fp, pData.name);
-                buildvfs_fputstr(fp, " \"");
-                buildvfs_fputstrptr(fp, pData.string);
-                buildvfs_fputstr(fp, "\"\n");
+                if (pData.string && pData.string[0])
+                {
+                    buildvfs_fputstrptr(fp, pData.name);
+                    buildvfs_fputstr(fp, " \"");
+                    buildvfs_fputstrptr(fp, pData.string);
+                    buildvfs_fputstr(fp, "\"\n");
+                }
                 break;
             default: EDUKE32_UNREACHABLE_SECTION(break);
             }

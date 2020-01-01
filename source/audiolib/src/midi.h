@@ -49,8 +49,6 @@ enum MIDI_Errors
 };
 
 
-#define MIDI_PASS_THROUGH 1
-#define MIDI_DONT_PLAY    0
 
 #define MIDI_MaxVolume 255
 
@@ -66,5 +64,6 @@ void MIDI_StopSong(void);
 int  MIDI_PlaySong(char *song, int loopflag);
 void MIDI_SetTempo(int tempo);
 void MIDI_Restart(void);
+void MIDI_ServiceRoutine(void);
 
 #endif

@@ -84,7 +84,6 @@ void UnInitSound(void);
 void InitFX(void);
 void InitMusic(void);
 void StopFX(void);
-void FlipStereo(void);
 void StopSong(void);
 void PauseSong(SWBOOL pauseon);
 void StopSound(void);
@@ -94,6 +93,7 @@ SWBOOL PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL res
 void SetSongVolume(int volume);
 SWBOOL SongIsPlaying(void);
 void PlaySoundRTS(int rts_num);
+extern int8_t SongTrack;
 
 //
 // Standard VOC format information - generally don't need this

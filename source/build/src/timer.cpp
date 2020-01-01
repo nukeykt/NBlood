@@ -3,59 +3,101 @@
 #include "timer.h"
 
 #include "build.h"
-#include "compat.h"
 #include "build_cpuid.h"
+#include "compat.h"
+#include "enet.h"
 #include "renderlayer.h"
 
+#include <time.h>
+
 #ifdef _WIN32
-#include "winbits.h"
-#include <mmsystem.h>
+# include "winbits.h"
+# include <mmsystem.h>
 #endif
 
-#include <chrono>
 #include <atomic>
 
-#if (defined RENDERTYPESDL) && (SDL_MAJOR_VERSION >= 2)
-#define HAVE_TIMER_SDL
+#if defined RENDERTYPESDL && (SDL_MAJOR_VERSION >= 2)
+# define HAVE_TIMER_SDL
 #endif
 
-using namespace std;
-using namespace chrono;
+#if !defined _WIN32 && !defined HAVE_TIMER_SDL && !defined ZPL_HAVE_RDTSC
+# error No platform timer implementation!
+#endif
+
+#define CLOCK_FREQ 1000000ULL
+
+EDUKE32_STATIC_ASSERT(CLOCK_FREQ <= 1000000000ULL);
+
+#ifdef CLOCK_MONOTONIC_RAW
+# define CLOCK_TYPE CLOCK_MONOTONIC_RAW
+#else
+# define CLOCK_TYPE CLOCK_MONOTONIC
+#endif  
 
 static int sys_timer;
-
-EDUKE32_STATIC_ASSERT(steady_clock::is_steady);
-
-static time_point<steady_clock> clockLastSampleTime;
+uint64_t   clockLastSampleTime;
 static int clockTicksPerSecond;
-static void(*usertimercallback)(void) = nullptr;
+
+static void(*usertimercallback)(void);
 
 #ifdef ZPL_HAVE_RDTSC
 static uint64_t tsc_freq;
 
-static FORCE_INLINE uint64_t timerSampleRDTSC()
+static FORCE_INLINE ATTRIBUTE((flatten)) void timerFenceRDTSC(void)
 {
-    // We need to serialize the instruction stream before executing RDTSC.
 #if defined __SSE2__
-    // On AMD, MFENCE serializes and LFENCE does not. On Intel, LFENCE serializes and MFENCE does not.
-    // https://stackoverflow.com/a/50332912
-    // MFENCE before LFENCE is preferable since we're using both.
-    // https://www.felixcloutier.com/x86/rdtsc
+    // On Intel, LFENCE serializes the instruction stream and MFENCE does not.
+    // On AMD, MFENCE is dispatch serializing. LFENCE is not, unless:
+    // - The processor is AMD family 0Fh/11h, or
+    // - The processor is AMD family 10h/12h/14h or later, and MSR (Model Specific Register) C001_1029[1] is set by the kernel
     // https://hadibrais.wordpress.com/2018/05/14/the-significance-of-the-x86-lfence-instruction/
-    _mm_mfence();
-    _mm_lfence();
+    // https://stackoverflow.com/a/50332912
 
-    // Fallbacks on x86 without SSE2 use a LOCK prefix.
-    // The alternative is the CPUID instruction, but benchmarking would be desirable to pick the best choice.
-#elif defined __GNUC__
-    __sync_synchronize();
+#if 0
+    // MFENCE before LFENCE is preferable when using both.
+    // https://www.felixcloutier.com/x86/rdtsc
+    _mm_mfence();
 #else
-    std::atomic_thread_fence(std::memory_order_seq_cst);
+    // The above conditions are reasonable assumptions to make for using only LFENCE.
+    // In the future, we may want to detect CPUs requiring MFENCE and switch to that if necessary.
 #endif
 
-    uint64_t const result = zpl_rdtsc();
+    _mm_lfence();
 
-    // Some sources suggest serialization is also necessary or desirable after RDTSC. For now, don't.
+#elif defined EDUKE32_CPU_X86
+    // 32-bit x86 without SSE2 uses CPUID.
+    // Use inline assembly to avoid the compiler optimizing out the intrinsic versions.
+# if defined _MSC_VER
+    __asm
+    {
+        xor eax, eax
+        cpuid
+    }
+# else
+    asm volatile
+    (
+        "xor %%eax, %%eax\n"
+        "cpuid"
+        ::: "eax", "ebx", "ecx", "edx"
+    );
+# endif
+#else
+    // Everything else gets this.
+# if defined __GNUC__
+    __sync_synchronize();
+# else
+    std::atomic_thread_fence(memory_order_seq_cst);
+# endif
+#endif
+}
+
+static FORCE_INLINE ATTRIBUTE((flatten)) uint64_t timerSampleRDTSC(void)
+{    
+    timerFenceRDTSC();  // We need to serialize the instruction stream before executing RDTSC.
+    uint64_t const result = zpl_rdtsc();
+    timerFenceRDTSC();  // Some sources suggest serialization is also necessary or desirable after RDTSC.
+    // If this code is ever changed to run by itself in a loop in its own thread, only one fence should be needed.
 
     return result;
 }
@@ -63,41 +105,37 @@ static FORCE_INLINE uint64_t timerSampleRDTSC()
 
 int timerGetClockRate(void) { return clockTicksPerSecond; }
 
+// returns ticks since epoch in the format and frequency specified
+template<typename T> T timerGetTicks(T freq)
+{
+    timespec ts;
+    enet_gettime(CLOCK_TYPE, &ts);
+    return ts.tv_sec * freq + (T)((uint64_t)ts.tv_nsec * freq / (T)1000000000);
+}
+
+uint32_t timerGetTicks(void) { return timerGetTicks<uint32_t>(1000); }
+double   timerGetHiTicks(void) { return timerGetTicks<double>(1000.0); }
+
 ATTRIBUTE((flatten)) void timerUpdateClock(void)
 {
-    auto time = steady_clock::now();
-    auto elapsedTime = time - clockLastSampleTime;
+    if (!clockTicksPerSecond) return;
 
-    uint64_t numerator = (elapsedTime.count() * (uint64_t) clockTicksPerSecond * steady_clock::period::num);
-    uint64_t const freq = steady_clock::period::den;
-    int n = tabledivide64(numerator, freq);
-    totalclock.setFraction(tabledivide64((numerator - n*freq) * 65536, freq));
+    auto time    = timerGetTicks<uint64_t>(CLOCK_FREQ);
+    auto elapsed = (time - clockLastSampleTime) * clockTicksPerSecond;
+    auto cnt     = elapsed / CLOCK_FREQ;
 
-    if (n <= 0) return;
+    totalclock.setFraction(((elapsed - cnt * CLOCK_FREQ) * 65536) / CLOCK_FREQ);
 
-    totalclock += n;
-    clockLastSampleTime += n*nanoseconds(1000000000/clockTicksPerSecond);
+    if (cnt <= 0) return;
+
+    totalclock += cnt;
+    clockLastSampleTime += cnt * tabledivide64_noinline(CLOCK_FREQ, clockTicksPerSecond);
 
     if (usertimercallback)
-        for (; n > 0; n--) usertimercallback();
+        for (; cnt > 0; cnt--) usertimercallback();
 }
 
-uint32_t timerGetTicks(void)
-{
-#ifdef _WIN32
-    return timeGetTime();
-#else
-    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-#endif
-}
-
-// Returns the time since an unspecified starting time in milliseconds (fractional).
-// (May be not monotonic for certain configurations.)
-double timerGetHiTicks(void) { return duration<double, nano>(steady_clock::now().time_since_epoch()).count() / 1000000.0; }
-
-EDUKE32_STATIC_ASSERT((high_resolution_clock::period::den/high_resolution_clock::period::num) >= 1000000000);
-
-uint64_t timerGetTicksU64(void)
+static inline int timerGetCounterType(void)
 {
     switch (sys_timer)
     {
@@ -105,73 +143,74 @@ uint64_t timerGetTicksU64(void)
         default:
         case TIMER_AUTO:
         case TIMER_SDL:
-            return SDL_GetPerformanceCounter();
-#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
+            return TIMER_SDL;
 #endif // HAVE_TIMER_SDL
-        case TIMER_CHRONO:
-            return high_resolution_clock::now().time_since_epoch().count() * high_resolution_clock::period::num;
 #ifdef _WIN32
 #if !defined HAVE_TIMER_SDL
         default:
         case TIMER_AUTO:
 #endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
-            LARGE_INTEGER li;
-            QueryPerformanceCounter(&li);
-            return li.QuadPart;
+            return TIMER_QPC;
 #endif // _WIN32
 #ifdef ZPL_HAVE_RDTSC
+#if !defined _WIN32 && !defined HAVE_TIMER_SDL
+        default:
+        case TIMER_AUTO:
+#endif // !_WIN32 && !HAVE_TIMER_SDL
         case TIMER_RDTSC:
-            return timerSampleRDTSC();
+            return TIMER_RDTSC;
 #endif
     }
 }
 
-uint64_t timerGetFreqU64(void)
+uint64_t timerGetPerformanceCounter(void)
 {
-    switch (sys_timer)
+    switch (timerGetCounterType())
     {
+        default:
 #ifdef HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
-        case TIMER_SDL:
-        {
-            static uint64_t freq;
-            if (freq == 0)
-                freq = SDL_GetPerformanceFrequency();
-            return freq;
-        }
-#elif !defined _WIN32 && !defined HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
-#endif // HAVE_TIMER_SDL
-        case TIMER_CHRONO:
-            return high_resolution_clock::period::den;
+        case TIMER_SDL: return SDL_GetPerformanceCounter();
+#endif
 #ifdef _WIN32
-#if !defined HAVE_TIMER_SDL
-        default:
-        case TIMER_AUTO:
-#endif // !HAVE_TIMER_SDL
         case TIMER_QPC:
         {
-            static LARGE_INTEGER li;
-            if (li.QuadPart == 0)
-                QueryPerformanceFrequency(&li);
+            LARGE_INTEGER li;
+            QueryPerformanceCounter(&li);
             return li.QuadPart;
         }
 #endif // _WIN32
 #ifdef ZPL_HAVE_RDTSC
-        case TIMER_RDTSC:
-            return tsc_freq;
+        case TIMER_RDTSC: return timerSampleRDTSC();
+#endif
+    }
+}
+
+uint64_t timerGetPerformanceFrequency(void)
+{
+    switch (timerGetCounterType())
+    {
+        default:
+#ifdef HAVE_TIMER_SDL
+        case TIMER_SDL: return SDL_GetPerformanceFrequency();
+#endif
+#ifdef _WIN32
+        case TIMER_QPC:
+        {
+            LARGE_INTEGER li;
+            QueryPerformanceFrequency(&li);
+            return li.QuadPart;
+        }
+#endif // _WIN32
+#ifdef ZPL_HAVE_RDTSC
+        case TIMER_RDTSC: return tsc_freq;
 #endif
     }
 }
 
 static int osdcmd_sys_timer(osdcmdptr_t parm)
 {
-    static char constexpr const *s[] = { "auto", "QueryPerformanceCounter", "SDL", "std::chrono", "RDTSC instruction" };
+    static char constexpr const *s[] = { "auto", "QPC", "SDL", "RDTSC" };
     int const r = osdcmd_cvar_set(parm);
 
     if (r != OSDCMD_OK)
@@ -185,18 +224,23 @@ static int osdcmd_sys_timer(osdcmdptr_t parm)
     if (sys_timer == TIMER_SDL)
         sys_timer = TIMER_AUTO;
 #endif
-
-#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
-    if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
-    {
+#ifndef ZPL_HAVE_RDTSC
+    if (sys_timer == TIMER_RDTSC)
         sys_timer = TIMER_AUTO;
-        OSD_Printf("Invariant TSC support not detected.\n");
-    }
 #endif
+    if ((unsigned)sys_timer >= NUMTIMERS)
+        sys_timer = TIMER_AUTO;
 
     if (sys_timer != TIMER_AUTO || !OSD_ParsingScript())
 print_and_return:
-        OSD_Printf("Using \"%s\" timer with %g MHz frequency\n", s[sys_timer], timerGetFreqU64() / 1000000.0);
+        OSD_Printf("Using \"%s\" timer with %g MHz frequency\n", s[sys_timer], timerGetPerformanceFrequency() / 1.0e6);
+
+#if defined EDUKE32_CPU_X86 && defined ZPL_HAVE_RDTSC
+    if (sys_timer == TIMER_RDTSC && !cpu.features.invariant_tsc)
+        OSD_Printf("WARNING: invariant TSC support not detected! You may experience timing issues.\n");
+#endif
+
+    clockLastSampleTime = timerGetTicks<uint64_t>(CLOCK_FREQ);
 
     return r;
 }
@@ -207,18 +251,19 @@ int timerInit(int const tickspersecond)
 
     if (initDone == 0)
     {
+        initDone = 1;
+
         static osdcvardata_t sys_timer_cvar = { "sys_timer",
-                                                "engine frame timing backend:\n"
+                                                "engine timing backend:\n"
                                                 "   0: auto\n"
 #ifdef _WIN32
-                                                "   1: QueryPerformanceCounter\n"
+                                                "   1: WinAPI QueryPerformanceCounter\n"
 #endif
 #ifdef HAVE_TIMER_SDL
-                                                "   2: SDL timer\n"
+                                                "   2: SDL_GetPerformanceCounter\n"
 #endif
-                                                "   3: std::chrono\n"
 #ifdef ZPL_HAVE_RDTSC
-                                                "   4: RDTSC instruction\n"
+                                                "   3: CPU RDTSC instruction\n"
 #endif
                                                 , (void *)&sys_timer, CVAR_INT | CVAR_FUNCPTR, 0, 4 };
 
@@ -227,24 +272,23 @@ int timerInit(int const tickspersecond)
 #ifdef HAVE_TIMER_SDL
         SDL_InitSubSystem(SDL_INIT_TIMER);
 #endif
-
 #ifdef ZPL_HAVE_RDTSC
         if (tsc_freq == 0)
         {
-            double const calibrationEndTime = timerGetHiTicks() + 100.0;
-            auto const time1 = timerSampleRDTSC();
+            auto const calibrationEndTime = timerGetHiTicks() + 100.0;
+            auto const samplePeriodBegin  = timerSampleRDTSC();
             do { } while (timerGetHiTicks() < calibrationEndTime);
-            auto const time2 = timerSampleRDTSC();
-            auto const time3 = timerSampleRDTSC() - time2;
+            auto const samplePeriodEnd = timerSampleRDTSC();
+            auto const timePerSample   = timerSampleRDTSC() - samplePeriodEnd;
 
-            tsc_freq = (time2 - time1 - time3) * 10;
+            tsc_freq = (samplePeriodEnd - samplePeriodBegin - timePerSample) * 10;
         }
 #endif
         initDone = 1;
     }
 
     clockTicksPerSecond = tickspersecond;
-    clockLastSampleTime = steady_clock::now();
+    clockLastSampleTime = timerGetTicks<uint64_t>(CLOCK_FREQ);
 
     usertimercallback = nullptr;
 

@@ -177,7 +177,8 @@ int32_t globalx1, globaly2, globalx3, globaly3;
 #endif
 
 int32_t sloptable[SLOPTABLESIZ];
-static intptr_t slopalookup[16384];    // was 2048
+#define SLOPALOOKUPSIZ 16384
+static intptr_t slopalookup[SLOPALOOKUPSIZ];    // was 2048
 
 static int32_t no_radarang2 = 0;
 static int16_t radarang[1280];
@@ -838,11 +839,8 @@ static void yax_copytsprites()
         if (spritesortcnt >= maxspritesonscreen)
             break;
 
-        Bmemcpy(&tsprite[spritesortcnt], spr, sizeof(spritetype));
-        tsprite[spritesortcnt].owner = spritenum;
-        tsprite[spritesortcnt].extra = 0;
-        tsprite[spritesortcnt].sectnum = sectnum;  // potentially tweak sectnum!
-        spritesortcnt++;
+        tspriteptr_t tsp = renderAddTSpriteFromSprite(spritenum);
+        tsp->sectnum = sectnum;  // potentially tweak sectnum!
     }
 }
 
@@ -959,7 +957,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                     j = bunches[cf][bnchcnt];  // the actual bunchnum...
                     yax_globalbunch = j;
 #ifdef YAX_DEBUG
-                    t=timerGetTicksU64();
+                    t=timerGetPerformanceCounter();
 #endif
                     k = bunchsec[j];
 
@@ -983,7 +981,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                         yaxdebug("l%d: faked (bn %2d) sec %4d,%3d dspr, ob=[%2d,%2d], sn=%4d, %.3f ms",
                                  yax_globallev-YAX_MAXDRAWS, j, k, yax_spritesortcnt[yax_globallev]-odsprcnt,
                                  ourbunch[0],ourbunch[1],sectnum,
-                                 (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+                                 (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
                     }
 
                     if (ourbunch[cf]==j)
@@ -1051,7 +1049,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                 k = bunchsec[j];  // best start-drawing sector
                 yax_globalbunch = j;
 #ifdef YAX_DEBUG
-                t=timerGetTicksU64();
+                t=timerGetPerformanceCounter();
 #endif
                 yax_tweakpicnums(j, cf, 0);
                 if (k < 0)
@@ -1067,7 +1065,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                     {
                         yaxdebug("nm1 l%d: DRAWN (bn %2d) sec %4d,          %.3f ms",
                                  yax_globallev-YAX_MAXDRAWS, j, k,
-                                 (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+                                 (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
 
                         if (!yax_nomaskdidit)
                         {
@@ -1083,7 +1081,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
                 yax_copytsprites();
                 yaxdebug("nm0 l%d: DRAWN (bn %2d) sec %4d,%3d tspr, %.3f ms",
                          yax_globallev-YAX_MAXDRAWS, j, k, spritesortcnt,
-                         (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+                         (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
 
                 SpriteAnimFunc(globalposx, globalposy, globalposz, globalang, smoothr);
                 renderDrawMasks();
@@ -1096,7 +1094,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
     }
 
 #ifdef YAX_DEBUG
-    t=timerGetTicksU64();
+    t=timerGetPerformanceCounter();
 #endif
     yax_globalcf = -1;
     yax_globalbunch = -1;
@@ -1110,7 +1108,7 @@ void yax_drawrooms(void (*SpriteAnimFunc)(int32_t,int32_t,int32_t,int32_t,int32_
 //        spritesortcnt = 0;
     yax_copytsprites();
     yaxdebug("DRAWN base level sec %d,%3d tspr, %.3f ms", osectnum,
-             spritesortcnt, (double)(1000*(timerGetTicksU64()-t))/u64tickspersec);
+             spritesortcnt, (double)(1000*(timerGetPerformanceCounter()-t))/u64tickspersec);
     scansector_collectsprites = 1;
 
     for (cf=0; cf<2; cf++)
@@ -1455,9 +1453,21 @@ static int16_t numhits;
 
 uint8_t vgapal16[4*256] =
 {
-    0,0,0,0, 170,0,0,0, 0,170,0,0, 170,170,0,0, 0,0,170,0,
-    170,0,170,0, 0,85,170,0, 170,170,170,0, 85,85,85,0, 255,85,85,0,
-    85,255,85,0, 255,255,85,0, 85,85,255,0, 255,85,255,0, 85,255,255,0,
+    0,0,0,0,
+    170,0,0,0,
+    0,170,0,0,
+    170,170,0,0,
+    0,0,170,0,
+    170,0,170,0,
+    0,85,170,0,
+    170,170,170,0,
+    85,85,85,0,
+    255,85,85,0,
+    85,255,85,0,
+    255,255,85,0,
+    85,85,255,0,
+    255,85,255,0,
+    85,255,255,0,
     255,255,255,0
 };
 
@@ -1512,9 +1522,7 @@ int32_t renderAddTsprite(int16_t z, int16_t sectnum)
             if (spritesortcnt >= maxspritesonscreen)
                 return 1;
 
-            Bmemcpy(&tsprite[spritesortcnt], spr, sizeof(spritetype));
-            tsprite[spritesortcnt].extra = 0;
-            tsprite[spritesortcnt++].owner = z;
+            renderAddTSpriteFromSprite(z);
 
 #ifdef YAX_ENABLE
         }
@@ -2101,7 +2109,7 @@ int32_t wallfront(int32_t l1, int32_t l2)
 //
 // spritewallfront (internal)
 //
-static inline int32_t spritewallfront(uspriteptr_t s, int32_t w)
+static inline int32_t spritewallfront(tspritetype const * const s, int32_t w)
 {
     auto const wal = (uwallptr_t)&wall[w];
     auto const wal2 = (uwallptr_t)&wall[wal->point2];
@@ -3448,7 +3456,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     int32_t i, j, l, globalx1, globaly1, y1, y2, daslope, daz, wxi, wyi;
     float fi, wx, wy, dasqr;
     float globalx, globaly, globalx2, globaly2, globalx3, globaly3, globalz, globalzd, globalzx;
-    int32_t shoffs, m1, m2;
+    int32_t shoffs, m1, m2, shy1, shy2;
     intptr_t *mptr1, *mptr2;
 
     const usectortype *const sec = (usectortype *)&sector[sectnum];
@@ -3581,7 +3589,14 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     //Avoid visibility overflow by crossing horizon
     m1 += klabs(l);
     m2 = m1+l;
-    mptr1 = (intptr_t *)&slopalookup[y1+(shoffs>>15)]; mptr2 = mptr1+1;
+    shy1 = y1+(shoffs>>15);
+    if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
+    {
+        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+        return;
+    }
+
+    mptr1 = &slopalookup[shy1]; mptr2 = mptr1+1;
 
     for (int x=dax1; x<=dax2; x++)
     {
@@ -3589,8 +3604,23 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
         else { y1 = max(umost[x],dplc[x]); y2 = dmost[x]-1; }
         if (y1 <= y2)
         {
-            intptr_t *nptr1 = &slopalookup[y1+(shoffs>>15)];
-            intptr_t *nptr2 = &slopalookup[y2+(shoffs>>15)];
+            shy1 = y1+(shoffs>>15);
+            shy2 = y2+(shoffs>>15);
+
+            // Ridiculously steep gradient?
+            if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                goto next_most;
+            }
+            if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
+                goto next_most;
+            }
+
+            intptr_t *nptr1 = &slopalookup[shy1];
+            intptr_t *nptr2 = &slopalookup[shy2];
 
             while (nptr1 <= mptr1)
             {
@@ -3720,6 +3750,7 @@ static void fgrouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 #undef LINTERPSIZ
             if ((x&15) == 0) faketimerhandler();
         }
+next_most:
         globalx2 += globalx;
         globaly2 += globaly;
         globalzx += globalz;
@@ -3736,7 +3767,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     }
     int32_t i, l, x, y, dx, dy, wx, wy, y1, y2, daz;
     int32_t daslope, dasqr;
-    int32_t shoffs, m1, m2;
+    int32_t shoffs, m1, m2, shy1, shy2;
     intptr_t *mptr1, *mptr2, j;
 
     // Er, yes, they're not global anymore:
@@ -3867,7 +3898,14 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
     //Avoid visibility overflow by crossing horizon
     m1 += klabs((int32_t) (globalzd>>16));
     m2 = m1+l;
-    mptr1 = (intptr_t *)&slopalookup[y1+(shoffs>>15)]; mptr2 = mptr1+1;
+    shy1 = y1+(shoffs>>15);
+    if ((unsigned)shy1 >= SLOPALOOKUPSIZ - 1)
+    {
+        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+        return;
+    }
+
+    mptr1 = &slopalookup[shy1]; mptr2 = mptr1+1;
 
     for (x=dax1; x<=dax2; x++)
     {
@@ -3875,8 +3913,23 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
         else { y1 = max(umost[x],dplc[x]); y2 = dmost[x]-1; }
         if (y1 <= y2)
         {
-            intptr_t *nptr1 = &slopalookup[y1+(shoffs>>15)];
-            intptr_t *nptr2 = &slopalookup[y2+(shoffs>>15)];
+            shy1 = y1+(shoffs>>15);
+            shy2 = y2+(shoffs>>15);
+
+            // Ridiculously steep gradient?
+            if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, sectnum);
+                goto next_most;
+            }
+            if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sector %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, sectnum);
+                goto next_most;
+            }
+
+            intptr_t *nptr1 = &slopalookup[shy1];
+            intptr_t *nptr2 = &slopalookup[shy2];
 
             while (nptr1 <= mptr1)
             {
@@ -3908,6 +3961,7 @@ static void grouscan(int32_t dax1, int32_t dax2, int32_t sectnum, char dastat)
 
             if ((x&15) == 0) faketimerhandler();
         }
+next_most:
         globalx2 += globalx;
         globaly2 += globaly;
         globalzx += globalz;
@@ -6835,16 +6889,13 @@ void dorotspr_handle_bit2(int32_t *sxptr, int32_t *syptr, int32_t *z, int32_t da
         int32_t zoomsc, sx=*sxptr, sy=*syptr;
         int32_t ouryxaspect = yxaspect, ourxyaspect = xyaspect;
 
-        if ((dastat & RS_ALIGN_MASK) && (dastat & RS_ALIGN_MASK) != RS_ALIGN_MASK)
-            sx += NEGATE_ON_CONDITION(scale(120<<16,xdim,ydim) - (160<<16), !(dastat & RS_ALIGN_R));
-
         sy += rotatesprite_y_offset;
-
-        // screen center to s[xy], 320<<16 coords.
-        const int32_t normxofs = sx-(320<<15), normyofs = sy-(200<<15);
 
         if (!(dastat & RS_STRETCH) && 4*ydim <= 3*xdim)
         {
+            if ((dastat & RS_ALIGN_MASK) && (dastat & RS_ALIGN_MASK) != RS_ALIGN_MASK)
+                sx += NEGATE_ON_CONDITION(scale(120<<16,xdim,ydim) - (160<<16), !(dastat & RS_ALIGN_R));
+
             if ((dastat & RS_ALIGN_MASK) == RS_ALIGN_MASK)
                 ydim = scale(xdim, 3, 4);
             else
@@ -6856,6 +6907,9 @@ void dorotspr_handle_bit2(int32_t *sxptr, int32_t *syptr, int32_t *z, int32_t da
 
         ouryxaspect = mulscale16(ouryxaspect, rotatesprite_yxaspect);
         ourxyaspect = divscale16(ourxyaspect, rotatesprite_yxaspect);
+
+        // screen center to s[xy], 320<<16 coords.
+        const int32_t normxofs = sx-(320<<15), normyofs = sy-(200<<15);
 
         // nasty hacks go here
         if (!(dastat & RS_NOCLIP))
@@ -7565,7 +7619,7 @@ static void dosetaspect(void)
             radarang2[i] = ((qradarang[k]+j)>>6);
         }
 
-        if (xdimen != oxdimen && (voxoff[0][0] || bloodhack))
+        if (xdimen != oxdimen)
         {
             distrecip = NULL;
             for (i = 0; i < DISTRECIPCACHESIZE; i++)
@@ -8217,7 +8271,7 @@ int32_t engineInit(void)
     }
 
 #ifdef YAX_DEBUG
-    u64tickspersec = (double)timerGetFreqU64();
+    u64tickspersec = (double)timerGetPerformanceFrequency();
     if (u64tickspersec==0.0)
         u64tickspersec = 1.0;
 #endif
@@ -8350,6 +8404,9 @@ void engineUnInit(void)
     pskynummultis = 0;
 
     DO_FREE_AND_NULL(g_defNamePtr);
+
+    for (auto s : osdstrings)
+        Xfree(s);
 }
 
 
@@ -9221,7 +9278,7 @@ killsprite:
                             if ((tspr->cstat & 48) != 16)
                                 tspriteptr[i]->ang = globalang;
 
-                            get_wallspr_points((uspriteptr_t)tspr, &xx[0], &xx[1], &yy[0], &yy[1]);
+                            get_wallspr_points(tspr, &xx[0], &xx[1], &yy[0], &yy[1]);
 
                             if ((tspr->cstat & 48) != 16)
                                 tspriteptr[i]->ang = oang;
@@ -10418,8 +10475,8 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
 
         if (numsprites > 0)
         {
-            auto const tspri = (uspritetype *)Xmalloc(sizeof(spritetype) * numsprites);
-            auto spri = tspri;
+            auto const uspri = (uspritetype *)Xmalloc(sizeof(spritetype) * numsprites);
+            auto spri = uspri;
 
             for (j=0; j<MAXSPRITES; j++)
             {
@@ -10445,8 +10502,8 @@ int32_t saveboard(const char *filename, const vec3_t *dapos, int16_t daang, int1
                 }
             }
 
-            buildvfs_write(fil, tspri, sizeof(spritetype)*numsprites);
-            Xfree(tspri);
+            buildvfs_write(fil, uspri, sizeof(spritetype)*numsprites);
+            Xfree(uspri);
         }
 
         buildvfs_close(fil);
@@ -10754,6 +10811,9 @@ void videoNextPage(void)
 //
 int32_t qloadkvx(int32_t voxindex, const char *filename)
 {
+    if ((unsigned)voxindex >= MAXVOXELS)
+        return -1;
+
     const buildvfs_kfd fil = kopen4load(filename, 0);
     if (fil == buildvfs_kfd_invalid)
         return -1;
@@ -11315,70 +11375,6 @@ add_nextsector:
     return 0;
 }
 
-// x1, y1: in/out
-// rest x/y: out
-void get_wallspr_points(uspriteptr_t const spr, int32_t *x1, int32_t *x2,
-                               int32_t *y1, int32_t *y2)
-{
-    //These lines get the 2 points of the rotated sprite
-    //Given: (x1, y1) starts out as the center point
-
-    const int32_t tilenum=spr->picnum, ang=spr->ang;
-    const int32_t xrepeat = spr->xrepeat;
-    int32_t xoff = picanm[tilenum].xofs + spr->xoffset;
-    int32_t k, l, dax, day;
-
-    if (spr->cstat&4)
-        xoff = -xoff;
-
-    dax = sintable[ang&2047]*xrepeat;
-    day = sintable[(ang+1536)&2047]*xrepeat;
-
-    l = tilesiz[tilenum].x;
-    k = (l>>1)+xoff;
-
-    *x1 -= mulscale16(dax,k);
-    *x2 = *x1 + mulscale16(dax,l);
-
-    *y1 -= mulscale16(day,k);
-    *y2 = *y1 + mulscale16(day,l);
-}
-
-// x1, y1: in/out
-// rest x/y: out
-void get_floorspr_points(uspriteptr_t const spr, int32_t px, int32_t py,
-                                int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
-                                int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4)
-{
-    const int32_t tilenum = spr->picnum;
-    const int32_t cosang = sintable[(spr->ang+512)&2047];
-    const int32_t sinang = sintable[spr->ang&2047];
-
-    vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
-    vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
-
-    vec2_t adjofs = { picanm[tilenum].xofs + spr->xoffset, picanm[tilenum].yofs + spr->yoffset };
-
-    if (spr->cstat & 4)
-        adjofs.x = -adjofs.x;
-
-    if (spr->cstat & 8)
-        adjofs.y = -adjofs.y;
-
-    vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x, ((span.y >> 1) + adjofs.y) * repeat.y };
-    vec2_t const rspan  = { span.x * repeat.x, span.y * repeat.y };
-    vec2_t const ofs    = { -mulscale16(cosang, rspan.y), -mulscale16(sinang, rspan.y) };
-
-    *x1 += dmulscale16(sinang, center.x, cosang, center.y) - px;
-    *y1 += dmulscale16(sinang, center.y, -cosang, center.x) - py;
-
-    *x2 = *x1 - mulscale16(sinang, rspan.x);
-    *y2 = *y1 + mulscale16(cosang, rspan.x);
-
-    *x3 = *x2 + ofs.x, *x4 = *x1 + ofs.x;
-    *y3 = *y2 + ofs.y, *y4 = *y1 + ofs.y;
-}
-
 //
 // neartag
 //
@@ -11668,13 +11664,13 @@ int32_t lastwall(int16_t point)
  * NOTE: The redundant bound checks are expected to be optimized away in the
  * inlined code. */
 
-static FORCE_INLINE CONSTEXPR bool inside_exclude_p(int32_t const x, int32_t const y, int const sectnum, const uint8_t *excludesectbitmap)
+static FORCE_INLINE CONSTEXPR int inside_exclude_p(int32_t const x, int32_t const y, int const sectnum, const uint8_t *excludesectbitmap)
 {
     return (sectnum>=0 && !bitmap_test(excludesectbitmap, sectnum) && inside_p(x, y, sectnum));
 }
 
 /* NOTE: no bound check */
-static inline bool inside_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum)
+static inline int inside_z_p(int32_t const x, int32_t const y, int32_t const z, int const sectnum)
 {
     int32_t cz, fz;
     getzsofslope(sectnum, x, y, &cz, &fz);

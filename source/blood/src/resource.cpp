@@ -347,7 +347,7 @@ void Resource::Reindex(void)
     memset(indexId, 0, buffSize * sizeof(DICTNODE*));
     for (unsigned int i = 0; i < count; i++)
     {
-        if (dict[i].flags & DICT_ID)
+        if (dict[i].flags & (DICT_ID|DICT_EXTERNAL))
         {
             DICTNODE **node = Probe(dict[i].id, dict[i].type);
             *node = &dict[i];

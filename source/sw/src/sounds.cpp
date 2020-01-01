@@ -127,7 +127,7 @@ typedef enum
 char *SongPtr = NULL;
 int SongLength = 0;
 char *SongName = NULL;
-int SongTrack = 0;
+int8_t SongTrack = 0;
 SongType_t SongType = SongTypeNone;
 int SongVoice = -1;
 extern SWBOOL DemoMode;
@@ -415,6 +415,43 @@ ExternalSoundMod(void)
 
 extern short Level;
 
+static inline SWBOOL LoadSongUpgrade(char const * fn)
+{
+#if defined HAVE_FLAC || defined HAVE_VORBIS
+    static char const * extensions[] =
+    {
+#ifdef HAVE_FLAC
+        ".flac",
+#endif
+#ifdef HAVE_VORBIS
+        ".ogg",
+#endif
+    };
+
+    size_t const len = strlen(fn);
+    auto testfn = (char *)Xmalloc(len+5); // 5 = strlen(".flac")
+    memcpy(testfn, fn, len+1);
+    char * suffix = strrchr(testfn, '.');
+    if (suffix == nullptr)
+        suffix = testfn + len;
+
+    for (char const * ext : extensions)
+    {
+        strcpy(suffix, ext);
+        SWBOOL const result = LoadSong(testfn);
+        if (result)
+        {
+            Xfree(testfn);
+            return result;
+        }
+    }
+
+    Xfree(testfn);
+#endif
+
+    return LoadSong(fn);
+}
+
 SWBOOL
 PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
 {
@@ -482,7 +519,8 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
                         {
                             SongType = SongTypeWave;
                             SongTrack = cdaudio_track;
-                            SongName = Bstrdup(waveformtrack);
+                            Xfree(SongName);
+                            SongName = Xstrdup(waveformtrack);
                             return TRUE;
                         }
                     }
@@ -498,7 +536,7 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
         }
     }
 
-    if (!song_file_name || !LoadSong(song_file_name))
+    if (!song_file_name || !LoadSongUpgrade(song_file_name))
     {
         return FALSE;
     }
@@ -507,7 +545,8 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
     {
         MUSIC_PlaySong(SongPtr, SongLength, MUSIC_LoopSong);
         SongType = SongTypeMIDI;
-        SongName = strdup(song_file_name);
+        Xfree(SongName);
+        SongName = Xstrdup(song_file_name);
         return TRUE;
     }
     else
@@ -517,7 +556,8 @@ PlaySong(char *song_file_name, int cdaudio_track, SWBOOL loop, SWBOOL restart)
         if (SongVoice > FX_Ok)
         {
             SongType = SongTypeWave;
-            SongName = strdup(song_file_name);
+            Xfree(SongName);
+            SongName = Xstrdup(song_file_name);
             return TRUE;
         }
     }
@@ -551,12 +591,9 @@ StopSong(void)
     DO_FREE_AND_NULL(SongName);
     SongTrack = 0;
 
-    if (SongPtr)
-    {
-        FreeMem(SongPtr);
-        SongPtr = 0;
-        SongLength = 0;
-    }
+    FreeMem(SongPtr);
+    SongPtr = nullptr;
+    SongLength = 0;
 }
 
 void
@@ -1160,11 +1197,6 @@ LoadSong(const char *filename)
 }
 
 
-void FlipStereo(void)
-{
-    FX_SetReverseStereo(gs.FlipStereo);
-}
-
 void
 SoundStartup(void)
 {
@@ -1183,8 +1215,6 @@ SoundStartup(void)
 
     //gs.FxOn = TRUE;
 
-    buildprintf("Initializing sound... ");
-
     int status = FX_Init(NumVoices, NumChannels, MixRate, initdata);
     if (status != FX_Ok)
     {
@@ -1195,8 +1225,10 @@ SoundStartup(void)
     FxInitialized = TRUE;
     FX_SetVolume(gs.SoundVolume);
 
+#ifdef ASS_REVERSESTEREO
     if (gs.FlipStereo)
         FX_SetReverseStereo(!FX_GetReverseStereo());
+#endif
 
     FX_SetCallBack(SoundCallBack);
 }
@@ -1245,8 +1277,6 @@ void MusicStartup(void)
         gs.MusicOn = FALSE;
         return;
     }
-
-    buildprintf("Initializing MIDI driver... ");
 
     int status;
     if ((status = MUSIC_Init(MusicDevice)) == MUSIC_Ok)
