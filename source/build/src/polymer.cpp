@@ -197,7 +197,7 @@ static const GLfloat  skyboxdata[4 * 5 * 6] =
 
 GLuint          skyboxdatavbo;
 
-GLfloat         artskydata[16];
+GLfloat         artskydata[32];
 
 // LIGHTS
 static _prplanelist *plpool;
@@ -4257,16 +4257,11 @@ void         polymer_drawsky(int16_t tilenum, char palnum, int8_t shade)
 
 static void         polymer_initartsky(void)
 {
-    GLfloat         halfsqrt2 = 0.70710678f;
-
-    artskydata[0] = -1.0f;          artskydata[1] = 0.0f;           // 0
-    artskydata[2] = -halfsqrt2;     artskydata[3] = halfsqrt2;      // 1
-    artskydata[4] = 0.0f;           artskydata[5] = 1.0f;           // 2
-    artskydata[6] = halfsqrt2;      artskydata[7] = halfsqrt2;      // 3
-    artskydata[8] = 1.0f;           artskydata[9] = 0.0f;           // 4
-    artskydata[10] = halfsqrt2;     artskydata[11] = -halfsqrt2;    // 5
-    artskydata[12] = 0.0f;          artskydata[13] = -1.0f;         // 6
-    artskydata[14] = -halfsqrt2;    artskydata[15] = -halfsqrt2;    // 7
+    for (int i = 0; i < 16; i++)
+    {
+        artskydata[i * 2 + 0] = -cos(i * 2.0 * PI / 16.0);
+        artskydata[i * 2 + 1] = sin(i * 2.0 * PI / 16.0);
+    }
 }
 
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade)
@@ -4324,7 +4319,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
     glEnable(GL_TEXTURE_2D);
     i = 0;
-    j = 8;  // In Polymer, an ART sky has always 8 sides...
+    j = 16;  // In Polymer, an ART sky has always 16 sides...
     while (i < j)
     {
         GLint oldswrap;
