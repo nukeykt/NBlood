@@ -49,7 +49,7 @@ enum {
 };
 
 
-// by NoOne: functions to quckly check range of specifical arrays
+// by NoOne: functions to quickly check range of specifical arrays
 inline bool spriRangeIsFine(int nIndex) {
     return (nIndex >= 0 && nIndex < kMaxSprites);
 }
@@ -81,3 +81,6 @@ int GetDistToLine(int x1, int y1, int x2, int y2, int x3, int y3);
 unsigned int ClipMove(int *x, int *y, int *z, int *nSector, int xv, int yv, int wd, int cd, int fd, unsigned int nMask);
 int GetClosestSectors(int nSector, int x, int y, int nDist, short *pSectors, char *pSectBit);
 int GetClosestSpriteSectors(int nSector, int x, int y, int nDist, short *pSectors, char *pSectBit, short *a8);
+int picWidth(short nPic, short repeat);
+int picHeight(short nPic, short repeat);
+int STD_Random(int a, int b);

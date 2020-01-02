@@ -66,6 +66,8 @@ int nUniMissileTrapClient = seqRegisterClient(UniMissileTrapSeqCallback);
 int nMGunFireClient = seqRegisterClient(MGunFireSeqCallback);
 int nMGunOpenClient = seqRegisterClient(MGunOpenSeqCallback);
 
+
+
 unsigned int GetWaveValue(unsigned int nPhase, int nType)
 {
     switch (nType)
@@ -365,9 +367,6 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 {
     spritetype *pSprite = &sprite[nSprite];
     
-    //if (pSprite->type != 706 && pSprite->type != 707)
-        //viewSetSystemMessage("SPRITE %d (TYPE %d), EVENT INITED BY: %d", nSprite, pSprite->type, event.causedBy);
-    
     if (gModernMap) {
         switch (event.cmd) {
             case kCmdUnlock:
@@ -438,29 +437,23 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
             // Random Event Switch takes random data field and uses it as TX ID
             case kModernRandomTX: {
-                std::default_random_engine rng; int tx = 0; int maxRetries = 10;
+
+                int tx = 0; int maxRetries = 10;
                 // set range of TX ID if data2 and data3 is empty.
                 if (pXSprite->data1 > 0 && pXSprite->data2 <= 0 && pXSprite->data3 <= 0 && pXSprite->data4 > 0) {
 
                     // data1 must be less than data4
                     if (pXSprite->data1 > pXSprite->data4) {
                         short tmp = pXSprite->data1;
-                        pXSprite->data1 = (short)pXSprite->data4;
+                        pXSprite->data1 = pXSprite->data4;
                         pXSprite->data4 = tmp;
                     }
 
                     int total = pXSprite->data4 - pXSprite->data1;
                     while (maxRetries > 0) {
-
-                        // use true random only for single player mode
-                        // otherwise use Blood's default one. In the future it maybe possible to make
-                        // host send info to clients about what was generated.
-
-                        if (gGameOptions.nGameType != 0 || VanillaMode() || DemoRecordStatus()) tx = Random(total) + pXSprite->data1;
-                        else {
-                            rng.seed(std::random_device()());
-                            tx = (int)my_random(pXSprite->data1, pXSprite->data4);
-                        }
+                        // use true random only for single player mode, otherwise use Blood's default one.
+                        if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) tx = STD_Random(pXSprite->data1, pXSprite->data4);
+                        else tx = Random(total) + pXSprite->data1;
 
                         if (tx != pXSprite->txID) break;
                         maxRetries--;
@@ -468,18 +461,15 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
                 } else {
                     while (maxRetries > 0) {
-                        if ((tx = GetRandDataVal(NULL, pSprite)) > 0 && tx != pXSprite->txID) break;
+                        if ((tx = GetRandDataVal(pXSprite, kRandomizeTX)) > 0 && tx != pXSprite->txID) break;
                         maxRetries--;
                     }
                 }
 
-                if (tx > 0) {
-                    pXSprite->txID = tx;
-                    SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
-                }
+                pXSprite->txID = (tx > 0 && tx < kChannelUserMax) ? tx : 0;
+                SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
             }
             return;
-            
             // Sequential Switch takes values from data fields starting from data1 and uses it as TX ID
             case kModernSequentialTX: {
                 bool range = false; int cnt = 3; int tx = 0;
@@ -569,7 +559,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                         break;
                 }
 
-                pXSprite->txID = tx;
+                pXSprite->txID = (tx > 0 && tx < kChannelUserMax) ? tx : 0;
                 SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
             }
             return;
@@ -592,8 +582,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kModernSpriteDamager:
                 if (pXSprite->txID <= 0) {
                     if (SetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy) == 1) {
-                        if (spriRangeIsFine(event.causedBy)) 
-                            useSpriteDamager(pXSprite, &sprite[event.causedBy]);
+                        if (pXSprite->data1 == 0 && spriRangeIsFine(event.causedBy)) useSpriteDamager(pXSprite, &sprite[event.causedBy]);
                         else if (pXSprite->data1 > 0) {
                             PLAYER* pPlayer = getPlayerById(pXSprite->data1);
                             if (pPlayer != NULL)
@@ -625,7 +614,6 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             case kModernObjPicnumChanger:
             case kModernSectorFXChanger:
             case kModernObjDataChanger:
-            case kModernConcussSprite:
                 modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy);
                 return;
             
@@ -868,17 +856,21 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 else if (pXSprite->command < kCmdNumberic + 3 && pXSprite->command > kCmdNumberic + 4
                     && !modernTypeSetSpriteState(nSprite, pXSprite, pXSprite->state ^ 1, event.causedBy)) return;
                 
-                TRPLAYERCTRL* pCtrl = pCtrl = &gPlayerCtrl[pPlayer->nPlayer];
+                TRPLAYERCTRL* pCtrl = &gPlayerCtrl[pPlayer->nPlayer];
                 if (event.cmd >= kCmdNumberic) {
                     switch (event.cmd) {
-                        case kCmdNumberic + 3:// start playing qav scene
+                        case kCmdNumberic + 3: // start playing qav scene
                             if (pCtrl->qavScene.index != nSprite || pXSprite->Interrutable)
                                 trPlayerCtrlStartScene(pXSprite, pPlayer, event.causedBy);
                             return;
-                        case kCmdNumberic + 4: // stop playing qav scene
-                            if (pCtrl->qavScene.index == nSprite || event.type != 3 || sprite[event.index].type != kModernPlayerControl)
+                        case kCmdNumberic + 4: { // stop playing qav scene
+                            int scnIndex = pCtrl->qavScene.index;
+                            if (spriRangeIsFine(scnIndex) && (scnIndex == nSprite || event.type != 3 || sprite[event.index].type != kModernPlayerControl)) {
+                                if (scnIndex != nSprite) pXSprite = &xsprite[sprite[scnIndex].extra];
                                 trPlayerCtrlStopScene(pXSprite, pPlayer);
+                            }
                             return;
+                        }
                         default:
                             oldCmd = pXSprite->command;
                             pXSprite->command = event.cmd; // convert event command to current sprite command
@@ -910,36 +902,41 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                         break;
 
                     case kCmdNumberic + 1: // 65
-                        // player movement speed (for all players ATM)
+                        // player movement speed (for all races and postures)
                         if (valueIsBetween(pXSprite->data2, -1, 32767)) {
-                            for (int i = 0, speed = pXSprite->data2 << 1, k = 0; i < kModeMax; i++) {
-                                for (int a = 0; a < kPostureMax; a++, k++) {
-                                    int defSpeed = gDefaultAccel[k];
-                                    if (pXSprite->data1 == 100)
-                                        gPosture[i][a].frontAccel = gPosture[i][a].sideAccel = gPosture[i][a].backAccel = defSpeed;
-                                    else if (speed >= 0)
-                                        gPosture[i][a].frontAccel = gPosture[i][a].sideAccel = gPosture[i][a].backAccel = ClipRange(mulscale8(defSpeed, speed), 0, 65535);
+                            int speed = pXSprite->data2 << 1;
+                            for (int i = 0; i < kModeMax; i++) {
+                                for (int a = 0; a < kPostureMax; a++) {
+                                    POSTURE* curPosture = &pPlayer->pPosture[i][a]; POSTURE defPosture = gPostureDefaults[i][a];
+                                    if (pXSprite->data2 == 100) {
+                                        curPosture->frontAccel  = defPosture.frontAccel;
+                                        curPosture->sideAccel   = defPosture.sideAccel;
+                                        curPosture->backAccel   = defPosture.backAccel;
+                                    } else if (speed >= 0) {
+                                        curPosture->frontAccel  = ClipRange(mulscale8(defPosture.frontAccel, speed), 0, 65535);
+                                        curPosture->sideAccel   = ClipRange(mulscale8(defPosture.sideAccel, speed), 0, 65535);
+                                        curPosture->backAccel   = ClipRange(mulscale8(defPosture.backAccel, speed), 0, 65535);
+                                    }
                                 }
                             }
 
                             //viewSetSystemMessage("MOVEMENT: %d %d %d", pXSprite->rxID,pSprite->index, gPosture[0][0].frontAccel);
                         }
 
-                        // player jump height (for all players ATM)
+                        // player jump height (for all races and stand posture only)
                         if (valueIsBetween(pXSprite->data3, -1, 32767)) {
-                            for (int i = 0, jump = pXSprite->data3 * 3, k = 0; i < kModeMax; i++) {
-                                for (int a = 0; a < kPostureMax; a++) {
-                                    int njmp = gDefaultJumpZ[k++]; int pjmp = gDefaultJumpZ[k++];
-                                    if (a != kPostureStand) continue;
-                                    else if (pXSprite->data3 == 100) {
-                                        gPosture[i][a].normalJumpZ = njmp;
-                                        gPosture[i][a].pwupJumpZ = pjmp;
-                                    } else if (jump >= 0) {
-                                        gPosture[i][a].normalJumpZ = ClipRange(mulscale8(njmp, jump), -0x200000, 0);
-                                        gPosture[i][a].pwupJumpZ = ClipRange(mulscale8(pjmp, jump), -0x200000, 0);
-                                    }
+                            int jump = pXSprite->data3 * 3;
+                            for (int i = 0; i < kModeMax; i++) {
+                                POSTURE* curPosture = &pPlayer->pPosture[i][kPostureStand]; POSTURE defPosture = gPostureDefaults[i][kPostureStand];
+                                if (pXSprite->data3 == 100) {
+                                    curPosture->normalJumpZ     = defPosture.normalJumpZ;
+                                    curPosture->pwupJumpZ       = defPosture.pwupJumpZ;
+                                } else if (jump >= 0) {
+                                    curPosture->normalJumpZ     = ClipRange(mulscale8(defPosture.normalJumpZ, jump), -0x200000, 0);
+                                    curPosture->pwupJumpZ       = ClipRange(mulscale8(defPosture.pwupJumpZ, jump), -0x200000, 0);
                                 }
                             }
+                            
                             //viewSetSystemMessage("JUMPING: %d", gPosture[0][0].normalJumpZ);
                         }
                         break;
@@ -1002,8 +999,8 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 
                             // angle
                             // TO-DO: if tx > 0, take a look on TX ID sprite
-                            if (pXSprite->data3 == 1) pPlayer->pSprite->ang = pXSprite->data3;
-                            else if (valueIsBetween(pXSprite->data3, 0, kAng180)) 
+                            if (pXSprite->data3 == 1) pPlayer->pSprite->ang = pSprite->ang;
+                            else if (valueIsBetween(pXSprite->data3, 1, kAng180)) 
                                 pPlayer->pSprite->ang = pXSprite->data3;
                         }
                         //viewSetSystemMessage("ANGLE: %d, SLOPE: %d", pPlayer->pSprite->ang, pPlayer->q16look);
@@ -1014,44 +1011,48 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                         switch (pXSprite->data2) {
                             // erase all
                             case 0:
+                                fallthrough__;
+
                             // erase weapons
                             case 1:
                                 // erase all
-                                if (pXSprite->data3 <= 0) {
-                                    WeaponLower(pPlayer);
+                                WeaponLower(pPlayer);
 
-                                    for (int i = 0; i < 14; i++) {
-                                        pPlayer->hasWeapon[i] = false;
-                                        // also erase ammo
-                                        if (i < 12) pPlayer->ammoCount[i] = 0;
-                                    }
-
-                                    pPlayer->hasWeapon[1] = true;
-                                    pPlayer->curWeapon = 0;
-                                    pPlayer->nextWeapon = 1;
-
-                                    WeaponRaise(pPlayer);
-                                
-                                // erase just specified
-                                } else {
-
+                                for (int i = 0; i < 14; i++) {
+                                    pPlayer->hasWeapon[i] = false;
+                                    // also erase ammo
+                                    if (i < 12) pPlayer->ammoCount[i] = 0;
                                 }
+
+                                pPlayer->hasWeapon[1] = true;
+                                pPlayer->curWeapon = 0;
+                                pPlayer->nextWeapon = 1;
+
+                                WeaponRaise(pPlayer);
                                 if (pXSprite->data2) break;
+                                fallthrough__;
+                            
                             // erase all armor
                             case 2:
                                 for (int i = 0; i < 3; i++) pPlayer->armor[i] = 0;
                                 if (pXSprite->data2) break;
+                                fallthrough__;
+                            
                             // erase all pack items
                             case 3:
                                 for (int i = 0; i < 5; i++) {
-                                    pPlayer->packSlots[i].isActive = pPlayer->packSlots[i].curAmount = 0;
+                                    pPlayer->packSlots[i].isActive = false;
+                                    pPlayer->packSlots[i].curAmount = 0;
                                     pPlayer->packItemId = -1;
                                 }
                                 if (pXSprite->data2) break;
+                                fallthrough__;
+
                             // erase all keys
                             case 4:
                                 for (int i = 0; i < 8; i++) pPlayer->hasKey[i] = false;
                                 if (pXSprite->data2) break;
+                                fallthrough__;
                         }
                         break;
 
@@ -1075,7 +1076,9 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                                     pPlayer->hasWeapon[pXSprite->data3] = true;
 
                                     if (pXSprite->data4 == 0) { // switch on it
-                                        if (pPlayer->sceneQav >= 0) {
+                                        pPlayer->nextWeapon = 0;
+
+                                        if (pPlayer->sceneQav >= 0 && spriRangeIsFine(pCtrl->qavScene.index)) {
                                             XSPRITE* pXScene = &xsprite[sprite[pCtrl->qavScene.index].extra];
                                             pXScene->dropMsg = pXSprite->data3;
                                         } else if (pPlayer->curWeapon != pXSprite->data3) {
@@ -1091,11 +1094,14 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                     case kCmdNumberic + 8: // 72
                         // use inventory item
                         if (pXSprite->data2 > 0 && pXSprite->data2 <= 5) {
-                            packUseItem(pPlayer, pXSprite->data2 - 1);
+                            unsigned int invItem = pXSprite->data2 - 1;
+                            packUseItem(pPlayer, invItem);
                             
                             // force remove after use
-                            if (pXSprite->data4 == 1)
-                                pPlayer->packSlots[0].curAmount = pPlayer->packSlots[0].curAmount = 0;
+                            if (pXSprite->data4 == 1) {
+                                pPlayer->packSlots[invItem].isActive = false;
+                                pPlayer->packSlots[invItem].curAmount = 0;
+                            }
 
                         }
                         break;
@@ -1287,8 +1293,12 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                         pXSpawn->target = -1;
                         aiActivateDude(pSpawn, pXSpawn);
                         break;
+                    default:
+                        if (gModernMap && (pSprite->flags & kModernTypeFlag3)) aiActivateDude(pSpawn, pXSpawn);
+                        break;
                     }
                 }
+
             }
         }
         break;
@@ -1347,6 +1357,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                     sfxPlay3DSound(pSprite, 452, 0, 0);
                     evPost(nSprite, 3, 30, kCmdOff, event.causedBy);
                     pXSprite->state = 1;
+                    fallthrough__;
                 case kCmdOn:
                     sfxPlay3DSound(pSprite, 451, 0, 0);
                     pXSprite->Proximity = 1;
@@ -1448,19 +1459,6 @@ void stopWindOnSectors(XSPRITE* pXSource) {
             pXSector->windVel = 0;
     }
 }
-/// WIP ////////////////////////////////////////////////////////
-void useConcussSprite(XSPRITE* pXSource, spritetype* pSprite) {
-    spritetype* pSource = &sprite[pXSource->reference];
-    int nIndex = isDebris(pSprite->index);
-    //ThrowError("%d", gPhysSpritesList[nIndex]);
-    //int size = (tilesiz[pSprite->picnum].x * pSprite->xrepeat * tilesiz[pSprite->picnum].y * pSprite->yrepeat) >> 1;
-    //int t = scale(pXSource->data1, size, gSpriteMass[pSprite->extra].mass);
-    //xvel[pSprite->xvel] += mulscale16(t, pSprite->x);
-    //yvel[pSprite->xvel] += mulscale16(t, pSprite->y);
-    //zvel[pSprite->xvel] += mulscale16(t, pSprite->z);
-
-    //debrisConcuss(pXSource->reference, nIndex, pSprite->x - 100, pSprite->y - 100, pSprite->z - 100, pXSource->data1);
-}
 
 void trPlayerCtrlStartScene(XSPRITE* pXSource, PLAYER* pPlayer, int causedBy) {
     
@@ -1498,7 +1496,7 @@ void trPlayerCtrlStartScene(XSPRITE* pXSource, PLAYER* pPlayer, int causedBy) {
 void trPlayerCtrlStopScene(XSPRITE* pXSource, PLAYER* pPlayer) {
     
     TRPLAYERCTRL* pCtrl = &gPlayerCtrl[pPlayer->nPlayer];
-    viewSetSystemMessage("OFF %d", pCtrl->qavScene.index);
+    //viewSetSystemMessage("OFF %d", pCtrl->qavScene.index);
 
     pXSource->sysData1 = 0;
     pCtrl->qavScene.index = -1;
@@ -2026,22 +2024,30 @@ void useSectorWindGen(XSPRITE* pXSource, sectortype* pSector) {
 
 
 void useSpriteDamager(XSPRITE* pXSource, spritetype* pSprite) {
-    
     spritetype* pSource = &sprite[pXSource->reference];
-    if (pSprite != NULL && xspriIsFine(pSprite->index)) {
-        int dmg = (pXSource->data3 == 0) ? 65535 : ClipRange(pXSource->data3, 1, 65535);
-        int dmgType = ClipRange(pXSource->data2, 0, 6);
-        
-        if (pXSource->data2 == -1 && IsDudeSprite(pSprite)) {
-            xsprite[pSprite->extra].health = ClipLow(xsprite[pSprite->extra].health - dmg, 0);
-            if (xsprite[pSprite->extra].health == 0)
-                actKillDude(pSource->index, pSprite, (DAMAGE_TYPE)0, 65535);
+    if (pSprite != NULL && xspriRangeIsFine(pSprite->extra) && xsprite[pSprite->extra].health > 0) {
+        DAMAGE_TYPE dmgType = (DAMAGE_TYPE)ClipRange(pXSource->data2, kDmgFall, kDmgElectric);
+        int dmg = (pXSource->data3 == 0) ? 65535 : ClipRange(pXSource->data3 << 1, 1, 65535);
+        if (pXSource->data2 >= 0) actDamageSprite(pSource->index, pSprite, dmgType, dmg);
+        else if (pXSource->data2 == -1 && IsDudeSprite(pSprite)) {
+            PLAYER* pPlayer = getPlayerById(pSprite->type);
+            if (pPlayer == NULL || !pPlayer->godMode) {
+                xsprite[pSprite->extra].health = ClipLow(xsprite[pSprite->extra].health - dmg, 0);
+                if (xsprite[pSprite->extra].health == 0) {
+                    if (pPlayer == NULL) actKillDude(pSource->index, pSprite, DAMAGE_TYPE_0, 4);
+                    else playerDamageSprite(pSource->index, pPlayer, DAMAGE_TYPE_0, 4);
+                }
+            }
         }
-        else actDamageSprite(pSource->index, pSprite, (DAMAGE_TYPE)dmgType, dmg);
     }
 }
 
 void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index) {
+    if (pXSource->data2 > 0 && !gSysRes.Lookup(pXSource->data2, "SEQ")) {
+        consoleSysMsg("Missing sequence #%d",pXSource->data2);
+        return;
+    }
+
     switch (objType) {
         case 6:
             if (pXSource->data2 <= 0) {
@@ -2086,7 +2092,7 @@ void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index) {
 
                 if (pXSource->data4 > 0) {
 
-                    int cx, cy, cz, wx, wy, wz;
+                    int cx, cy, cz;
                     cx = (wall[index].x + wall[wall[index].point2].x) >> 1;
                     cy = (wall[index].y + wall[wall[index].point2].y) >> 1;
                     int nSector = sectorofwall(index);
@@ -2096,9 +2102,6 @@ void useSeqSpawnerGen(XSPRITE* pXSource, int objType, int index) {
                     getzsofslope(wall[index].nextsector, cx, cy, &ceilZ2, &floorZ2);
                     ceilZ = ClipLow(ceilZ, ceilZ2);
                     floorZ = ClipHigh(floorZ, floorZ2);
-                    wz = floorZ - ceilZ;
-                    wx = wall[wall[index].point2].x - wall[index].x;
-                    wy = wall[wall[index].point2].y - wall[index].y;
                     cz = (ceilZ + floorZ) >> 1;
                     
                     sfxPlay3DSound(cx, cy, cz, pXSource->data4, nSector);
@@ -3456,31 +3459,24 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
     if (event.type != 3) return;
     spritetype* pSource = &sprite[event.index];
     
-    if (pSource->extra < 0) return;
+    if (!xspriRangeIsFine(pSource->extra)) return;
     XSPRITE* pXSource = &xsprite[pSource->extra];
 
     switch (type) {
         case 6:
-            if (sector[nDest].extra < 0) return;
+            if (!xsectRangeIsFine(sector[nDest].extra)) return;
             break;
         case 0:
-            if (wall[nDest].extra < 0) return;
+            if (!xwallRangeIsFine(wall[nDest].extra)) return;
             break;
         case 3:
-            if (sprite[nDest].extra < 0) return;
+            if (!xspriRangeIsFine(sprite[nDest].extra)) return;
             break;
         default:
             return;
     }
 
-    if (pSource->type == kModernConcussSprite) {
-        /* - Concussing any physics affected sprite with give strength - */
-        if (type != 3) return;
-        else if ((sprite[nDest].flags & kPhysMove) || (sprite[nDest].flags & kPhysGravity) || isDebris(nDest))
-            useConcussSprite(pXSource, &sprite[nDest]);
-        return;
-
-    } else if (pSource->type == kMarkerWarpDest) {
+    if (pSource->type == kMarkerWarpDest) {
         /* - Allows teleport any sprite from any location to the source destination - */
         useTeleportTarget(pXSource, &sprite[nDest]);
         return;
@@ -3488,7 +3484,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
     } else if (pSource->type == kModernSpriteDamager) {
         /* - damages xsprite via TX ID	- */
         if (type != 3) return;
-        else if (xsprite[sprite[nDest].extra].health > 0) useSpriteDamager(pXSource, &sprite[nDest]);
+        useSpriteDamager(pXSource, &sprite[nDest]);
         return;
 
     } if (pSource->type == kModernEffectSpawner) {
@@ -3500,7 +3496,6 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
     }
     else if (pSource->type == kModernSeqSpawner) {
         /* - SEQ Spawner takes data2 as SEQ ID and spawns it on it's or TX ID sprite - */
-        if (pXSource->data2 > 0 && !gSysRes.Lookup(pXSource->data2, "SEQ")) return;
         useSeqSpawnerGen(pXSource, type, nDest);
         return;
     }
@@ -3632,7 +3627,7 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                 if ((pSource->flags & kModernTypeFlag1) || (pXSource->data3 != -1 && pXSource->data3 != 32767))
                     setDataValueOfObject(type, nDest, 3, pXSource->data3, event.causedBy);
 
-                if ((pSource->flags & kModernTypeFlag1) || (pXSource->data4 != -1 && pXSource->data1 != 65535))
+                if ((pSource->flags & kModernTypeFlag1) || pXSource->data4 != 65535)
                     setDataValueOfObject(type, nDest, 4, pXSource->data4, event.causedBy);
                 break;
 
@@ -3702,12 +3697,11 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         /*			 4: follow player(s) when no targets in sight, attack targets if any in sight					- */
 
         if (type != 3) return;
-        else if (!IsDudeSprite(&sprite[nDest]) && sprite[nDest].statnum != kStatDude && xsprite[sprite[nDest].extra].data3 != 0) {
+        else if (!IsDudeSprite(&sprite[nDest]) && sprite[nDest].statnum != kStatDude) {
             switch (sprite[nDest].type) { // can be dead dude turned in gib
                 // make current target and all other dudes not attack this dude anymore
                 case kThingBloodBits:
                 case kThingBloodChunks:
-                    xsprite[sprite[nDest].extra].data3 = 0;
                     freeTargets(nDest);
                     return;
                 default:
@@ -3720,8 +3714,9 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
         DUDEINFO* pDudeInfo = &dudeInfo[pSprite->type - kDudeBase]; int matesPerEnemy = 1;
 
         // dude is burning?
-        if (pXSprite->burnTime > 0 && pXSprite->burnSource >= 0 && pXSprite->burnSource < kMaxSprites) {
-            if (IsBurningDude(pSprite)) actKillDude(pSource->xvel, pSprite, DAMAGE_TYPE_0, 65535);
+        if (pXSprite->burnTime > 0 && spriRangeIsFine(pXSprite->burnSource)) {
+            
+            if (IsBurningDude(pSprite)) return;
             else {
                 spritetype* pBurnSource = &sprite[pXSprite->burnSource];
                 if (pBurnSource->extra >= 0) {
@@ -3739,12 +3734,6 @@ void pastePropertiesInObj(int type, int nDest, EVENT event) {
                     }
                 }
             }
-        }
-
-        // dude is dead?
-        if (pXSprite->health <= 0) {
-            pSprite->type = kThingBloodChunks; actPostSprite(pSprite->xvel, kStatThing); // turn it in gib
-            return;
         }
 
         spritetype* pPlayer = targetIsPlayer(pXSprite);
@@ -4835,7 +4824,7 @@ void ActivateGenerator(int nSprite)
             if (pXSprite->dropMsg > 0) {
                 for (short nItem = headspritestat[kStatItem]; nItem >= 0; nItem = nextspritestat[nItem]) {
                     spritetype* pItem = &sprite[nItem];
-                    if (pItem->type == pXSprite->dropMsg && pItem->x == pSprite->x && pItem->y == pSprite->y && pItem->z == pSprite->z) {
+                    if ((unsigned int)pItem->type == pXSprite->dropMsg && pItem->x == pSprite->x && pItem->y == pSprite->y && pItem->z == pSprite->z) {
                         gFX.fxSpawn((FX_ID)29, pSprite->sectnum, pSprite->x, pSprite->y, pSprite->z, 0);
                         deletesprite(nItem);
                         break;
