@@ -232,6 +232,13 @@ void scrLoadPalette(void)
 
     paletteInitClosestColorMap(palette);
     palettePostLoadTables();
+    // Make color index 255 of palette black.
+    for (int i = 0; i < 5; i++)
+    {
+        if (basepaltable[i] != NULL)
+            Bmemset(&basepaltable[i][255 * 3], 0, 3);
+    }
+    palettePostLoadLookups();
 }
 
 void scrSetPalette(int palId)
