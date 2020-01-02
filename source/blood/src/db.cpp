@@ -45,6 +45,10 @@ SPRITEHIT gSpriteHit[kMaxXSprites];
 
 int xvel[kMaxSprites], yvel[kMaxSprites], zvel[kMaxSprites];
 
+#ifdef POLYMER
+PolymerLight_t gPolymerLight[kMaxSprites];
+#endif
+
 char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
 
 int gVisibility;
@@ -151,6 +155,27 @@ void dbCrypt(char *pPtr, int nLength, int nKey)
         nKey++;
     }
 }
+
+#ifdef POLYMER
+
+void DeleteLight(int32_t s)
+{
+    if (gPolymerLight[s].lightId >= 0)
+        polymer_deletelight(gPolymerLight[s].lightId);
+    gPolymerLight[s].lightId = -1;
+    gPolymerLight[s].lightptr = NULL;
+}
+
+
+void G_Polymer_UnInit(void)
+{
+    int32_t i;
+
+    for (i = 0; i < kMaxSprites; i++)
+        DeleteLight(i);
+}
+#endif
+
 
 void InsertSpriteSect(int nSprite, int nSector)
 {
@@ -282,6 +307,10 @@ int InsertSprite(int nSector, int nStat)
     pSprite->index = nSprite;
     xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
 
+#ifdef POLYMER
+    gPolymerLight[nSprite].lightId = -1;
+#endif
+
     Numsprites++;
 
     return nSprite;
@@ -294,6 +323,10 @@ int qinsertsprite(short nSector, short nStat) // Replace
 
 int DeleteSprite(int nSprite)
 {
+#ifdef POLYMER
+    if (gPolymerLight[nSprite].lightptr != NULL && videoGetRenderMode() == REND_POLYMER)
+        DeleteLight(nSprite);
+#endif
     if (sprite[nSprite].extra > 0)
     {
         dbDeleteXSprite(sprite[nSprite].extra);

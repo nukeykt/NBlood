@@ -198,6 +198,10 @@ extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
 extern short gAffectedXWalls[kMaxXWalls];
 
+#ifdef POLYMER
+extern 
+#endif
+
 inline bool IsPlayerSprite(spritetype *pSprite)
 {
     if (pSprite->type >= kDudePlayer1 && pSprite->type <= kDudePlayer8)
@@ -217,6 +221,11 @@ inline void actBurnSprite(int nSource, XSPRITE *pXSprite, int nTime)
     pXSprite->burnTime = ClipHigh(pXSprite->burnTime + nTime, sprite[pXSprite->reference].statnum == kStatDude ? 2400 : 1200);
     pXSprite->burnSource = nSource;
 }
+
+#ifdef POLYMER
+void actAddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange, int lightColor, int lightPrio);
+void actDoLight(int spriteNum);
+#endif
 
 bool IsItemSprite(spritetype *pSprite);
 bool IsWeaponSprite(spritetype *pSprite);

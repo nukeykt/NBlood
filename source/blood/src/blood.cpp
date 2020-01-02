@@ -170,11 +170,6 @@ void app_crashhandler(void)
     // NUKE-TODO:
 }
 
-void G_Polymer_UnInit(void)
-{
-    // NUKE-TODO:
-}
-
 void M32RunScript(const char *s)
 {
     UNREFERENCED_PARAMETER(s);
@@ -542,6 +537,29 @@ void G_LoadMapHack(char* outbuf, const char* filename)
             G_TryMapHack(pMapInfo->mhkfile);
     }
 }
+
+#ifdef POLYMER
+void G_RefreshLights(void)
+{
+    if (Numsprites && videoGetRenderMode() == REND_POLYMER)
+    {
+        int statNum = 0;
+
+        do
+        {
+            int spriteNum = headspritestat[statNum++];
+
+            while (spriteNum >= 0)
+            {
+                actDoLight(spriteNum);
+                spriteNum = nextspritestat[spriteNum];
+            }
+        }
+        while (statNum < MAXSTATUS);
+    }
+}
+#endif // POLYMER
+
 
 PLAYER gPlayerTemp[kMaxPlayers];
 int gHealthTemp[kMaxPlayers];
@@ -1087,6 +1105,9 @@ void ProcessFrame(void)
     DoSectorPanning();
     actProcessSprites();
     actPostProcess();
+#ifdef POLYMER
+    G_RefreshLights();
+#endif
     viewCorrectPrediction();
     sndProcess();
     ambProcess();

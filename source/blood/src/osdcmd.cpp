@@ -438,7 +438,6 @@ static int osdcmd_restartsound(osdcmdptr_t UNUSED(parm))
 
 void onvideomodechange(int32_t newmode)
 {
-    UNREFERENCED_PARAMETER(newmode);
 #if 0
     uint8_t palid;
 
@@ -468,6 +467,24 @@ void onvideomodechange(int32_t newmode)
 
     videoSetPalette(ud.brightness>>2, palid, 0);
     g_restorePalette = -1;
+#endif
+
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+    {
+        int32_t i = 0;
+
+        while (i < MAXSPRITES)
+        {
+            if (gPolymerLight[i].lightptr)
+            {
+                polymer_deletelight(gPolymerLight[i].lightId);
+                gPolymerLight[i].lightptr = NULL;
+                gPolymerLight[i].lightId = -1;
+            }
+            i++;
+        }
+    }
 #endif
     if (newmode)
         scrResetPalette();
