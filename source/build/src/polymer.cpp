@@ -746,6 +746,8 @@ int32_t         polymersearching;
 
 int32_t         culledface;
 
+static char     transluctable[2] = { 0x55, 0xAA };
+
 // EXTERNAL FUNCTIONS
 int32_t             polymer_init(void)
 {
@@ -843,6 +845,12 @@ int32_t             polymer_init(void)
             j++;
         }
         i++;
+    }
+
+    if (bloodhack)
+    {
+        transluctable[0] = 0xAA;
+        transluctable[1] = 0x55;
     }
 
 #ifndef __APPLE__
@@ -2904,9 +2912,9 @@ attributes:
 
     if (sec->floorstat & 256) {
         if (sec->floorstat & 128) {
-            s->floor.material.diffusemodulation[3] = 0x55;
+            s->floor.material.diffusemodulation[3] = transluctable[0];
         } else {
-            s->floor.material.diffusemodulation[3] = 0xAA;
+            s->floor.material.diffusemodulation[3] = transluctable[1];
         }
     }
 
@@ -2914,9 +2922,9 @@ attributes:
 
     if (sec->ceilingstat & 256) {
         if (sec->ceilingstat & 128) {
-            s->ceil.material.diffusemodulation[3] = 0x55;
+            s->ceil.material.diffusemodulation[3] = transluctable[0];
         } else {
-            s->ceil.material.diffusemodulation[3] = 0xAA;
+            s->ceil.material.diffusemodulation[3] = transluctable[1];
         }
     }
 
@@ -3488,9 +3496,9 @@ static void         polymer_updatewall(int16_t wallnum)
                 if (wal->cstat & 128)
                 {
                     if (wal->cstat & 512)
-                        w->mask.material.diffusemodulation[3] = 0x55;
+                        w->mask.material.diffusemodulation[3] = transluctable[0];
                     else
-                        w->mask.material.diffusemodulation[3] = 0xAA;
+                        w->mask.material.diffusemodulation[3] = transluctable[1];
                 }
             }
 
@@ -3993,9 +4001,9 @@ void                polymer_updatesprite(int32_t snum)
     if (tspr->cstat & 2)
     {
         if (tspr->cstat & 512)
-            s->plane.material.diffusemodulation[3] = 0x55;
+            s->plane.material.diffusemodulation[3] = transluctable[0];
         else
-            s->plane.material.diffusemodulation[3] = 0xAA;
+            s->plane.material.diffusemodulation[3] = transluctable[1];
     }
 
     float f = s->plane.material.diffusemodulation[3] * (1.0f - spriteext[tspr->owner].alpha);
@@ -4636,9 +4644,9 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     if (tspr->cstat & 2)
     {
         if (!(tspr->cstat&512))
-            color[3] = 0xAA;
+            color[3] = transluctable[1];
         else
-            color[3] = 0x55;
+            color[3] = transluctable[0];
     } else
         color[3] = 0xFF;
 
