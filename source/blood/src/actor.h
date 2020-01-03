@@ -211,7 +211,7 @@ inline bool IsPlayerSprite(spritetype *pSprite)
 
 template<typename T> bool IsDudeSprite(T *pSprite)
 {
-    if (pSprite->lotag >= kDudeBase && pSprite->lotag < kDudeMax)
+    if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
         return 1;
     return 0;
 }
