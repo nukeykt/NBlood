@@ -1829,12 +1829,10 @@ badindex:
                 }
                 else
                 {
-                    Bmemcpy(&tsprite[spritesortcnt], &sprite[ospritenum], sizeof(tspritetype));
-                    tsprite[spritesortcnt].owner = ospritenum;
+                    tspriteptr_t tsp = renderAddTSpriteFromSprite(ospritenum);
                     vm.spriteNum = -1;
                     EDUKE32_STATIC_ASSERT(sizeof(uspritetype) == sizeof(tspritetype)); // see TSPRITE_SIZE
-                    vm.pUSprite = (uspriteptr_t)&tsprite[spritesortcnt];
-                    spritesortcnt++;
+                    vm.pUSprite = (uspriteptr_t)tsp;
                 }
             }
             continue;
