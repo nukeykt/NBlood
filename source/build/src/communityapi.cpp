@@ -41,6 +41,8 @@ static void steam_callback_screenshotready(int32_t result)
 {
 #ifdef VWDEBUG
     initprintf("Voidwrap: Steam screenshot ready! - Result: %d\n", result);
+#else
+    UNREFERENCED_PARAMETER(result);
 #endif
 }
 #endif
@@ -172,6 +174,8 @@ void communityapiUnlockAchievement(char const * id)
         return;
 
     Voidwrap_Steam_UnlockAchievement(id);
+#else
+    UNREFERENCED_PARAMETER(id);
 #endif
 }
 
@@ -185,6 +189,9 @@ void communityapiSetStat(char const * id, int32_t value)
         return;
 
     Voidwrap_Steam_SetStat(id, value);
+#else
+    UNREFERENCED_PARAMETER(id);
+    UNREFERENCED_PARAMETER(value);
 #endif
 }
 
