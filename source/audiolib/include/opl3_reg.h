@@ -26,8 +26,8 @@
 // original definitions found at http://www.cs.albany.edu/~sdc/Linux/linux-2.0/drivers/sound/opl3.h
 // it's from old Linux source but the license is pretty clearly 2-clause BSD.
 
-#ifndef opl3_reg_h__
-#define OPL3_opl3_reg_h__
+#ifndef opl3_reg_h_
+#define opl3_reg_h_
 
 #define OPL3_TEST_REGISTER                  0x01
 #define     OPL3_ENABLE_WAVE_SELECT         0x20
@@ -141,4 +141,4 @@
 #define         OPL3_VOICE_TO_LEFT          0x10
 #define         OPL3_VOICE_TO_RIGHT         0x20
 
-#endif // opl3_reg_h__
+#endif /* opl3_reg_h_ */
