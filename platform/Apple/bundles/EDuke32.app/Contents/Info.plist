@@ -33,7 +33,7 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.action-games</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright Voidpoint, LLC</string>
+	<string>Copyright EDuke32 contributors</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

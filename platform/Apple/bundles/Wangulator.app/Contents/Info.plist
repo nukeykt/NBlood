@@ -5,25 +5,25 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mapster32</string>
+	<string>Wangulator</string>
 	<key>CFBundleExecutable</key>
-	<string>mapster32</string>
+	<string>wangulator</string>
 	<key>CFBundleGetInfoString</key>
-	<string>2.0, Copyright EDuke32 Team</string>
+	<string>2.0, Copyright VoidSW Team</string>
 	<key>CFBundleIconFile</key>
-	<string>mapster32.icns</string>
+	<string>voidsw.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Mapster32</string>
+	<string>Wangulator</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>2.0</string>
 	<key>CFBundleSignature</key>
-	<string>MP32</string>
+	<string>WULT</string>
 	<key>CFBundleVersion</key>
 	<string>2.0</string>
 	<key>CGDisableCoalescedUpdates</key>
@@ -31,7 +31,7 @@
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright EDuke32 contributors</string>
+	<string>Copyright VoidSW contributors</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>
