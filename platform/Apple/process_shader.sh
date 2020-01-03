@@ -2,19 +2,23 @@
 
 set -o errexit
 
-if [ -z "$1" ]; then
-	echo "Usage: ${0} shader.glsl"
+if [ -z "$1" -o -z "$2" ]; then
+	echo "Usage: $0 <in.glsl> <out.glsl.cpp>"
 	exit 1
 fi
 
-if [ ! -e shaders ]; then
-	mkdir shaders
+INFILE="$1"
+OUTFILE="$2"
+
+OUTDIR=$(dirname -- "$OUTFILE")
+if [ ! -e "$OUTDIR" ]; then
+	mkdir -p "$OUTDIR"
 fi
 
-INFILE=$(basename -- "$1")
-OUTFILE=shaders/${INFILE}.cpp
-VARNAME=${INFILE%.*}
+VARNAME=$(basename -- "$INFILE")
+VARNAME=${VARNAME%.*}
 
-echo char const* ${VARNAME} = R\"shader\( > $OUTFILE
-cat "$1" >> $OUTFILE
-echo ')shader";' >> $OUTFILE
+echo "extern char const *$VARNAME;" > "$OUTFILE"
+echo "char const *$VARNAME = R\"shader(" >> "$OUTFILE"
+cat "$INFILE" >> "$OUTFILE"
+echo ')shader";' >> "$OUTFILE"
