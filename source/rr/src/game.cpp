@@ -4916,7 +4916,7 @@ default_case1:
         if (!RR && pSprite->picnum == NATURALLIGHTNING)
         {
             t->shade = -127;
-            t->cstat |= 8192;
+            t->clipdist |= TSPR_FLAGS_NO_SHADOW;
         }
 
         if (t->statnum == TSPR_TEMP)
@@ -5368,7 +5368,7 @@ default_case1:
                     if ((!g_netServer && ud.multimode < 2) || ((g_netServer || ud.multimode > 1) && playerNum == screenpeek))
                     {
                         if (videoGetRenderMode() == REND_POLYMER)
-                            t->cstat |= 16384;
+                            t->clipdist |= TSPR_FLAGS_INVISIBLE_WITH_SHADOW;
                         else
                         {
                             t->owner = -1;
@@ -5766,7 +5766,7 @@ rrcoolexplosion1:
             else if (RR && t->picnum == FIRELASER)
                 t->picnum = FIRELASER+(((int32_t) totalclock>>2)&5);
             t->shade = -127;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
         case UFOBEAM__STATICRR:
         case RRTILE3586__STATICRR:
@@ -5791,12 +5791,12 @@ rrcoolexplosion1:
             fallthrough__;
         case SMALLSMOKE__STATIC:
             if (RR) break;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
         case COOLEXPLOSION1__STATIC:
             if (RR) goto rrcoolexplosion1;
             t->shade = -127;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             t->picnum += (pSprite->shade>>1);
             break;
         case WALLLIGHT3__STATIC:
