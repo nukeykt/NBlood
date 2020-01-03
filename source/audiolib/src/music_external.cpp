@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "multivoc.h"
 #include "music.h"
 #include "vfs.h"
-#include "winbits.h"
+#include "baselayer.h"
 
 // fork/exec based external music player
 #ifndef _WIN32
@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define INVALID_HANDLE_VALUE -1
 typedef pid_t proc_t;
 #else
+#include "winbits.h"
 typedef HANDLE proc_t;
 #endif
 
