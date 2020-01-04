@@ -695,6 +695,8 @@ int menu_DrawTheMap(int nLevel, int nLevelNew, int nLevelBest)
     // User has 12 seconds to do something on the map screen before loading the current level
     while (nIdleSeconds < 12)
     {
+        videoClearScreen(overscanindex); // fix hall of mirrors when smoke renders offscreen in widescreen resolutions.
+
         HandleAsync();
 
         if (((int)totalclock - startTime) / kTimerTicks)
