@@ -343,7 +343,7 @@ char evGetSourceState(int nType, int nIndex)
 
 void evSend(int nIndex, int nType, int rxId, COMMAND_ID command, short causedBy)
 {
-    EVENT event; event.index = nIndex; event.type = nType; event.cmd = command; event.causedBy = causedBy;
+    
 
     switch (command) {
         case kCmdState:
@@ -355,6 +355,12 @@ void evSend(int nIndex, int nType, int rxId, COMMAND_ID command, short causedBy)
         default:
             break;
     }
+    
+    EVENT event;
+    event.index = nIndex;
+    event.type = nType;
+    event.cmd = command;
+    event.causedBy = causedBy;
 
     switch (rxId) {
     case kChannelTextOver:
