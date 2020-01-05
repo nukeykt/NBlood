@@ -1394,6 +1394,13 @@ void mysetbrightness(char nBrightness)
     g_visibility = 2048 - (nBrightness << 9);
 }
 
+// Replicate original DOS EXE behaviour when pointer is null
+static const char *safeStrtok(char *s, const char *d)
+{
+    const char *r = strtok(s, d);
+    return r ? r : "";
+}
+
 void CheckKeys()
 {
     if (BUTTON(gamefunc_Enlarge_Screen))
@@ -1529,21 +1536,16 @@ void CheckKeys()
 
                 if (ch == asc_Enter)
                 {
-                    char *pToken = strtok(sHollyStr, " ");
+                    const char *pToken = safeStrtok(sHollyStr, " ");
 
-                    if (nStringLen == 0 || pToken == NULL) // bjd - added this check. watcom allows passing NULL to strcmp so the below checks will all fail OK on DOS but will cause a crash on Windows
-                    {
-                        bHolly = kFalse;
-                        StatusMessage(1, " ");
-                    }
-                    else if (!strcmp(pToken, "GOTO"))
+                    if (!strcmp(pToken, "GOTO"))
                     {
                         // move player to X, Y coordinates
                         int nSprite = PlayerList[0].nSprite;
 
-                        pToken = strtok(NULL, ",");
+                        pToken = safeStrtok(NULL, ",");
                         sprite[nSprite].x = atoi(pToken);
-                        pToken = strtok(NULL, ",");
+                        pToken = safeStrtok(NULL, ",");
                         sprite[nSprite].y = atoi(pToken);
 
                         setsprite(nSprite, &sprite[nSprite].pos);
@@ -1551,13 +1553,8 @@ void CheckKeys()
                     }
                     else if (!strcmp(pToken, "LEVEL"))
                     {
-                        pToken = strtok(NULL, " ");
-                        if (pToken) {
-                            levelnew = atoi(pToken);
-                        }
-                        else {
-                            levelnew = 0; // replicate original DOS EXE behaviour when no level number is specified.
-                        }
+                        pToken = safeStrtok(NULL, " ");
+                        levelnew = atoi(pToken);
                     }
                     else if (!strcmp(pToken, "DOORS"))
                     {
@@ -1581,7 +1578,7 @@ void CheckKeys()
                         // i = nNetPlayerCount;
                         if (!nNetPlayerCount)
                         {
-                            pToken = strtok(NULL, " ");
+                            pToken = safeStrtok(NULL, " ");
                             switch (atoi(pToken))
                             {
                                 // TODO - enums?
