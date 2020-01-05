@@ -1174,6 +1174,8 @@ void ShutDown(void)
     RemoveEngine();
     UnInitNet();
     UnInitFX();
+
+    exit(EXIT_SUCCESS);
 }
 
 void bail2dos(const char *fmt, ...)
@@ -2210,7 +2212,6 @@ void ExitGame()
     }
 
     ShutDown();
-    exit(0);
 }
 
 static int32_t nonsharedtimer;
