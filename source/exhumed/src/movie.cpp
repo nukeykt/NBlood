@@ -291,7 +291,7 @@ void PlayMovie(const char* fileName)
                 if (f >= 0)
                 {
                     fullscreen_tint_gl(0, 0, 0, f);
-                   f -= 8;
+                    f -= 8;
                 }
             }
 #endif
