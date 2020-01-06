@@ -175,6 +175,9 @@ int seq_ReadSequence(const char *seqName)
 
     short tag;
     kread(hFile, &tag, sizeof(tag));
+#if B_BIG_ENDIAN == 1
+    tag = B_LITTLE16(tag);
+#endif
     if (tag < 'HI' || tag > 'HI' && tag != 'SD')
     {
         initprintf("Unsupported sequence version!\n");
@@ -187,6 +190,11 @@ int seq_ReadSequence(const char *seqName)
     kread(hFile, &centerx, sizeof(centerx));
     kread(hFile, &centery, sizeof(centery));
     kread(hFile, &nSeqs, sizeof(nSeqs));
+#if B_BIG_ENDIAN == 1
+    centerx = B_LITTLE16(centerx);
+    centery = B_LITTLE16(centery);
+    nSeqs = B_LITTLE16(nSeqs);
+#endif
 
     if (nSeqs <= 0 || sequences + nSeqs >= kMaxSequences)
     {
@@ -207,6 +215,11 @@ int seq_ReadSequence(const char *seqName)
 
     for (i = 0; i < nSeqs; i++)
     {
+#if B_BIG_ENDIAN == 1
+        SeqBase[sequences + i] = B_LITTLE16(SeqBase[sequences + i]);
+        SeqSize[sequences + i] = B_LITTLE16(SeqSize[sequences + i]);
+        SeqFlag[sequences + i] = B_LITTLE16(SeqFlag[sequences + i]);
+#endif
         SeqBase[sequences + i] += frames;
     }
 
@@ -214,6 +227,9 @@ int seq_ReadSequence(const char *seqName)
 
     int16_t nFrames;
     kread(hFile, &nFrames, sizeof(nFrames));
+#if B_BIG_ENDIAN == 1
+    nFrames = B_LITTLE16(nFrames);
+#endif
 
     if (nFrames <= 0 || frames + nFrames >= kMaxSEQFrames)
     {
@@ -235,11 +251,19 @@ int seq_ReadSequence(const char *seqName)
 
     for (i = 0; i < nFrames; i++)
     {
+#if B_BIG_ENDIAN == 1
+        FrameBase[frames + i] = B_LITTLE16(FrameBase[frames + i]);
+        FrameSize[frames + i] = B_LITTLE16(FrameSize[frames + i]);
+        FrameFlag[frames + i] = B_LITTLE16(FrameFlag[frames + i]);
+#endif
         FrameBase[frames + i] += chunks;
     }
 
     int16_t nChunks;
     kread(hFile, &nChunks, sizeof(nChunks));
+#if B_BIG_ENDIAN == 1
+    nChunks = B_LITTLE16(nChunks);
+#endif
 
     if (nChunks < 0 || chunks + nChunks >= kMaxSEQChunks)
     {
@@ -261,6 +285,12 @@ int seq_ReadSequence(const char *seqName)
 
     for (i = 0; i < nChunks; i++)
     {
+#if B_BIG_ENDIAN == 1
+        ChunkXpos[chunks + i] = B_LITTLE16(ChunkXpos[chunks + i]);
+        ChunkYpos[chunks + i] = B_LITTLE16(ChunkYpos[chunks + i]);
+        ChunkPict[chunks + i] = B_LITTLE16(ChunkPict[chunks + i]);
+        ChunkFlag[chunks + i] = B_LITTLE16(ChunkFlag[chunks + i]);
+#endif
         ChunkXpos[chunks + i] -= centerx;
         ChunkYpos[chunks + i] -= centery;
     }
@@ -275,6 +305,9 @@ int seq_ReadSequence(const char *seqName)
     {
         short var_20;
         kread(hFile, &var_20, sizeof(var_20));
+#if B_BIG_ENDIAN == 1
+        var_20 = B_LITTLE16(var_20);
+#endif
 
         for (i = 0; i < var_20; i++)
         {
@@ -283,12 +316,19 @@ int seq_ReadSequence(const char *seqName)
 
         short var_24;
         kread(hFile, &var_24, sizeof(var_24));
+#if B_BIG_ENDIAN == 1
+        var_24 = B_LITTLE16(var_24);
+#endif
 
         for (i = 0; i < var_24; i++)
         {
             short var_28, var_2C;
             kread(hFile, &var_28, sizeof(var_28));
             kread(hFile, &var_2C, sizeof(var_2C));
+#if B_BIG_ENDIAN == 1
+            var_28 = B_LITTLE16(var_28);
+            var_2C = B_LITTLE16(var_2C);
+#endif
 
             int hSound = LoadSound(&buffer[(var_2C&0x1FF)*10]);
 

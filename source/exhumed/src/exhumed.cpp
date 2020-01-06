@@ -3730,6 +3730,12 @@ void InitSpiritHead()
 
     headfd = kopen4loadfrommod(filename, 0);
     nPupData = kread(headfd, cPupData, sizeof(cPupData));
+#if B_BIG_ENDIAN == 1
+    for (int i = 0; i < ARRAY_SIZE(cPupData); i++)
+    {
+        cPupData[i] = B_LITTLE16(cPupData[i]);
+    }
+#endif
     pPupData = cPupData;
     kclose(headfd);
     headfd = -1;
