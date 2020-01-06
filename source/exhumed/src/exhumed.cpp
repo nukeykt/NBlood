@@ -3213,6 +3213,7 @@ void DoGameOverScene()
     SetOverscan(BASEPAL);
 }
 
+#ifdef USE_OPENGL
 void FadeOutScreen(int nTile)
 {
     int f = 0;
@@ -3252,6 +3253,7 @@ void FadeInScreen(int nTile)
         videoNextPage();
     }
 }
+#endif
 
 // TODO - missing some values?
 short word_10010[] = {6, 25, 43, 50, 68, 78, 101, 111, 134, 158, 173, 230, 6000};
@@ -3266,9 +3268,11 @@ void DoTitle()
 //  if (videoGetRenderMode() == REND_CLASSIC)
 //     BlackOut();
 
+#ifdef USE_OPENGL
     // for OpenGL, fade from black to the publisher logo
     if (videoGetRenderMode() > REND_CLASSIC)
         FadeInScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
+#endif
 
     overwritesprite(0, 0, EXHUMED ? kTileBMGLogo : kTilePIELogo, 0, 2, kPalNormal);
     videoNextPage();
@@ -3282,15 +3286,19 @@ void DoTitle()
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+#ifdef USE_OPENGL
     else
         FadeOutScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
+#endif
 
     SetOverscan(BASEPAL);
 
     int nScreenTile = seq_GetSeqPicnum(kSeqScreens, 0, 0);
 
+#ifdef USE_OPENGL
     if (videoGetRenderMode() > REND_CLASSIC)
         FadeInScreen(nScreenTile);
+#endif
 
     overwritesprite(0, 0, nScreenTile, 0, 2, kPalNormal);
     videoNextPage();
@@ -3304,8 +3312,10 @@ void DoTitle()
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+#ifdef USE_OPENGL
     else
         FadeOutScreen(nScreenTile);
+#endif
 
     ClearAllKeys();
 

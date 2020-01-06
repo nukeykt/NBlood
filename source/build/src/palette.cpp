@@ -359,8 +359,10 @@ void paletteLoadFromDisk(void)
 
     kclose(fil);
 
+#ifdef USE_OPENGL
     for (int i = 0; i < MAXPALOOKUPS; i++)
         palookupfogfactor[i] = 1.f;
+#endif
 }
 
 uint8_t PaletteIndexFullbrights[32];

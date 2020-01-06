@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "init.h"
 #include "light.h"
+#include "baselayer.h"
 #ifndef __WATCOMC__
 #include <cstring>
 #include <cstdio> // for printf
