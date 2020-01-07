@@ -94,6 +94,7 @@ const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
 
 void FinishLevel();
+void PrintHelp();
 
 int htimer = 0;
 
@@ -1122,6 +1123,8 @@ short bInDemo = kFalse;
 short bSlipMode = kFalse;
 short bDoFlashes = kTrue;
 short bHolly = kFalse;
+
+int doTitle = kTrue;
 
 short nItemTextIndex;
 
@@ -2261,14 +2264,8 @@ int app_main(int argc, char const* const* argv)
 
     int i;
 
-    //int esi = 1;
-    //int edi = esi;
-    int doTitle = kTrue; // REVERT kTrue;
     int stopTitle = kFalse;
     levelnew = 1;
-
-    // REVERT - change back to kTrue
-//	short bDoTitle = kFalse;
 
     wConsoleNode = 0;
 
@@ -2279,12 +2276,19 @@ int app_main(int argc, char const* const* argv)
     {
         const char *pChar = argv[i];
 
-        if (*pChar == '/')
+        if ((*pChar == '-') 
+#ifdef _WIN32            
+            || (*pChar == '/')
+#endif
+            )
         {
             pChar++;
             //strlwr(pChar);
 
-            if (Bstrcasecmp(pChar, "nocreatures") == 0) {
+            if (!Bstrcasecmp(pChar, "?") || !Bstrcasecmp(pChar, "help") || !Bstrcasecmp(pChar, "-help")) {
+                PrintHelp();
+            }
+            else if (Bstrcasecmp(pChar, "nocreatures") == 0) {
                 bNoCreatures = kTrue;
             }
             else if (Bstrcasecmp(pChar, "nosound") == 0) {
@@ -2375,6 +2379,48 @@ int app_main(int argc, char const* const* argv)
             else if (Bstrcasecmp(pChar, "nosetup") == 0) {
                 g_noSetup = 1;
                 g_commandSetup = 0;
+            }
+            else if (Bstrcasecmp(pChar, "quick") == 0) {
+                doTitle = kFalse;
+            }
+            else if (Bstrcasecmp(pChar, "noautoload") == 0)
+            {
+                initprintf("Autoload disabled\n");
+                g_noAutoLoad = 1;
+            }
+            else if (Bstrcasecmp(pChar, "cachesize") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    uint32_t j = Batol(argv[i + 1]);
+                    MAXCACHE1DSIZE = j << 10;
+                    initprintf("Cache size: %dkB\n", j);
+                    i++;
+                }
+            }
+            else if (Bstrcasecmp(pChar, "g") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddGroup(argv[i + 1]);
+                    i++;
+                }
+            }
+            else if (Bstrcasecmp(pChar, "h") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddDef(argv[i + 1]);
+                    i++;
+                }
+            }
+            else if (Bstrcasecmp(pChar, "j") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddPath(argv[i + 1]);
+                    i++;
+                }
             }
             else
             {
@@ -4170,4 +4216,44 @@ int DoSpiritHead()
     // TEMP FIXME - temporary return value. what to return here? 1?
 
     return 0;
+}
+
+void PrintHelp()
+{
+    char tempbuf[128];
+    static char const s[] = "Usage: " APPBASENAME " [files] [options]\n"
+        //"Example: " APPBASENAME " -usecwd -cfg myconfig.cfg -map nukeland.map\n\n"
+        "Example: " APPBASENAME " -g ruins.grp -quick -nomonsters -2\n\n"
+        "Files can be of type [grp|zip|def]\n"
+        "\n"
+        //"-art [file.art]\tSpecify an art base file name\n"
+        "-cachesize #\tSet cache size in kB\n"
+        //"-cfg [file.cfg]\tUse an alternate configuration file\n"
+        //"-client [host]\tConnect to a multiplayer game\n"
+        //"-game_dir [dir]\tSpecify game data directory\n"
+        "-g [file.grp]\tLoad additional game data\n"
+        "-h [file.def]\tLoad an alternate definitions file\n"
+        "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
+        //"-map [file.map]\tLoad an external map file\n"
+        "-mh [file.def]\tInclude an additional definitions module\n"
+        "-noautoload\tDisable loading from autoload directory\n"
+        //"-nodemo\t\tNo Demos\n"
+        "-nocreatures\tNo enemy creatures\n"
+        "-nosound\tNo sound\n"
+        "-record\t\tRecord demo to file data.vcr\n"
+        "-playback\tPlay back a demo from file data.vcr\n"
+        "-quick\t\tSkip intro splash screens and movie\n"
+        "-#\t\tImmediately jump to level number specified\n"
+
+#ifdef STARTUP_SETUP_WINDOW
+        "-setup/nosetup\tEnable or disable startup window\n"
+#endif
+        "-usecwd\t\tRead data and configuration from current directory\n"
+        ;
+#ifdef WM_MSGBOX_WINDOW
+    Bsnprintf(tempbuf, sizeof(tempbuf), APPNAME " %s", s_buildRev);
+    wm_msgbox(tempbuf, s);
+#else
+    initprintf("%s\n", s);
+#endif
 }
