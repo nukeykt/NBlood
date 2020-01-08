@@ -526,6 +526,66 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 
+#### TekWar
+
+tekwar := tekwar
+
+tekwar_root := $(source)/$(tekwar)
+tekwar_src := $(tekwar_root)/src
+tekwar_rsrc := $(tekwar_root)/rsrc
+tekwar_obj := $(obj)/$(tekwar)
+
+tekwar_cflags := -I$(tekwar_src)
+
+tekwar_game := etekwar
+tekwar_editor := etekwar-editor
+
+tekwar_game_proper := ETekWar
+tekwar_editor_proper := ETekWar Editor
+
+tekwar_game_deps := libsmackerdec
+
+tekwar_game_objs := \
+    b5compat.cpp \
+    config.cpp \
+    tekcdr.cpp \
+    tekchng.cpp \
+    tekgame.cpp \
+    tekgun.cpp \
+    tekldsv.cpp \
+    tekmap.cpp \
+    tekmsc.cpp \
+    tekprep.cpp \
+    teksmk.cpp \
+    teksnd.cpp \
+    tekspr.cpp \
+    tekstat.cpp \
+    tektag.cpp \
+    tektxt.cpp \
+    tekver.cpp \
+
+tekwar_editor_objs := \
+    bstub.cpp \
+
+tekwar_game_rsrc_objs :=
+tekwar_editor_rsrc_objs :=
+tekwar_game_gen_objs :=
+tekwar_editor_rsrc_objs :=
+
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
+    tekwar_game_objs += startgtk.game.cpp
+endif
+ifeq ($(PLATFORM),WINDOWS)
+    tekwar_game_objs += startwin.game.cpp
+    tekwar_game_rsrc_objs += gameres.rc
+endif
+ifeq ($(PLATFORM),DARWIN)
+    ifeq ($(STARTUP_WINDOW),1)
+        tekwar_game_objs += StartupWinController.game.mm
+    endif
+endif
+
+
 #### Duke Nukem 3D
 
 duke3d := duke3d
