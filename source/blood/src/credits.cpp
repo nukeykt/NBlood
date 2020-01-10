@@ -20,6 +20,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+#include "credits.h"
 #include "build.h"
 #include "compat.h"
 #include "SmackerDecoder.h"
@@ -96,42 +97,39 @@ void credLogosDos(void)
     videoClearScreen(0);
     if (bShift)
         return;
-    {
-        //CSMKPlayer smkPlayer;
-        //if (smkPlayer.PlaySMKWithWAV("LOGO.SMK", 300) == 1)
-        //{
-            rotatesprite(160<<16, 100<<16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
-            sndStartSample("THUNDER2", 128, -1);
-            scrNextPage();
-            if (!Wait(360))
-                return;
-            if (!DoFade(0, 0, 0, 60))
-                return;
-        //}
-        //if (smkPlayer.PlaySMKWithWAV("GTI.SMK", 301) == 1)
-        //{
-            videoClearScreen(0);
-            rotatesprite(160<<16, 100<<16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim-1, ydim-1);
-            scrNextPage();
-            DoUnFade(1);
-            sndStartSample("THUNDER2", 128, -1);
-            if (!Wait(360))
-                return;
-        //}
-    }
-    sndPlaySpecialMusicOrNothing(MUS_INTRO);
+    credPlaySmk("LOGO.SMK", "logo811m.wav", 300);
+    rotatesprite(160<<16, 100<<16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
     sndStartSample("THUNDER2", 128, -1);
+    scrNextPage();
+    if (!Wait(360))
+        return;
     if (!DoFade(0, 0, 0, 60))
         return;
-    videoClearScreen(0);
-    scrNextPage();
-    if (!DoUnFade(1))
-        return;
-    videoClearScreen(0);
-    rotatesprite(160<<16, 100<<16, 65536, 0, 2518, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
-    scrNextPage();
-    Wait(360);
-    sndFadeSong(4000);
+    credPlaySmk("GTI.SMK", "gti.wav", 301);
+    //videoClearScreen(0);
+    //rotatesprite(160<<16, 100<<16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim-1, ydim-1);
+    //scrNextPage();
+    //DoUnFade(1);
+    //sndStartSample("THUNDER2", 128, -1);
+    //if (!Wait(360))
+    //    return;
+    //sndPlaySpecialMusicOrNothing(MUS_INTRO);
+    //sndStartSample("THUNDER2", 128, -1);
+    //if (!DoFade(0, 0, 0, 60))
+    //    return;
+    //videoClearScreen(0);
+    //scrNextPage();
+    //if (!DoUnFade(1))
+    //    return;
+    //videoClearScreen(0);
+    //rotatesprite(160<<16, 100<<16, 65536, 0, 2518, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
+    //scrNextPage();
+    //Wait(360);
+    //sndFadeSong(4000);
+    scrSetDac();
+    viewResizeView(gViewSize);
+    credReset();
+    scrSetDac();
 }
 
 void credReset(void)

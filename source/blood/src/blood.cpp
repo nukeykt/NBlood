@@ -95,7 +95,7 @@ unsigned int nMaxAlloc = 0x4000000;
 bool bCustomName = false;
 char bAddUserMap = false;
 bool bNoDemo = false;
-bool bQuickStart = true;
+bool bQuickStart = false;
 bool bNoAutoLoad = false;
 
 int gMusicPrevLoadedEpisode = -1;
