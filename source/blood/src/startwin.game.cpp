@@ -709,7 +709,9 @@ int32_t startwin_run(void)
     if (done)
     {
         gSetup = settings.shared;
+#ifdef USE_OPENGL
         glrendmode = (settings.polymer) ? REND_POLYMER : REND_POLYMOST;
+#endif
         pINISelected = settings.ini;
         Bstrcpy(g_modDir, (gNoSetup == 0 && settings.gamedir != NULL) ? settings.gamedir : "/");
     }
