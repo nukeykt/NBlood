@@ -36,19 +36,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "view.h"
 
-bool Wait(int nTicks)
+char Wait(int nTicks)
 {
     totalclock = 0;
     while (totalclock < nTicks)
     {
         gameHandleEvents();
         if (keyGetScan())
-            return false;
+            return FALSE;
     }
-    return true;
+    return TRUE;
 }
 
-bool DoFade(char r, char g, char b, int nTicks)
+char DoFade(char r, char g, char b, int nTicks)
 {
     dassert(nTicks > 0);
     scrSetupFade(r, g, b);
@@ -60,12 +60,12 @@ bool DoFade(char r, char g, char b, int nTicks)
         scrNextPage();
         scrFadeAmount(divscale16(ClipHigh((int)totalclock, nTicks), nTicks));
         if (keyGetScan())
-            return false;
+            return FALSE;
     } while (totalclock <= nTicks);
-    return true;
+    return TRUE;
 }
 
-bool DoUnFade(int nTicks)
+char DoUnFade(int nTicks)
 {
     dassert(nTicks > 0);
     scrSetupUnfade();
@@ -77,9 +77,9 @@ bool DoUnFade(int nTicks)
         scrNextPage();
         scrFadeAmount(0x10000-divscale16(ClipHigh((int)totalclock, nTicks), nTicks));
         if (keyGetScan())
-            return false;
+            return FALSE;
     } while (totalclock <= nTicks);
-    return true;
+    return TRUE;
 }
 
 void credLogosDos(void)
@@ -156,7 +156,7 @@ int credKOpen4Load(char *&pzFile)
 #define kSMKPal 5
 #define kSMKTile (MAXTILES-1)
 
-bool credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
+char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
 {
 #if 0
     CSMKPlayer smkPlayer;
@@ -165,7 +165,7 @@ bool credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         if (toupper(*pzSMK) == 'A'+dword_148E14)
         {
             if (Redbook.sub_82258() == 0 || Redbook.sub_82258() > 20)
-                return false;
+                return FALSE;
         }
         Redbook.sub_82554();
     }
@@ -182,7 +182,7 @@ bool credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     {
         Bfree(pzSMK_);
         Bfree(pzWAV_);
-        return false;
+        return FALSE;
     }
     kclose(nHandleSMK);
     SmackerHandle hSMK = Smacker_Open(pzSMK);
@@ -190,7 +190,7 @@ bool credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     {
         Bfree(pzSMK_);
         Bfree(pzWAV_);
-        return false;
+        return FALSE;
     }
     uint32_t nWidth, nHeight;
     Smacker_GetFrameSize(hSMK, nWidth, nHeight);
@@ -204,7 +204,7 @@ bool credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         Smacker_Close(hSMK);
         Bfree(pzSMK_);
         Bfree(pzWAV_);
-        return false;
+        return FALSE;
     }
     int nFrameRate = Smacker_GetFrameRate(hSMK);
     int nFrames = Smacker_GetNumFrames(hSMK);
@@ -272,5 +272,5 @@ bool credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     Bfree(pzSMK_);
     Bfree(pzWAV_);
 
-    return true;
+    return TRUE;
 }
