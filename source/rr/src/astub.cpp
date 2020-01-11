@@ -10426,7 +10426,7 @@ void ExtPreCheckKeys(void) // just before drawrooms
 void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t oura, int32_t smoothr)
 {
     int32_t i, k;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
     int32_t frames=0, sh;
 
     UNREFERENCED_PARAMETER(ourx);

@@ -30,5 +30,8 @@
   * Nuke.YKT
   * NY00123
 
+### PCExhumed startup window banner:
+  * Maxi Clouds
+
 ### PCExhumed special thanks:
   * Hendricks266, JonoF, NY00123, MetHy, oasiz, Daedolon, NoOne, phredreeke, Lobotomy Software

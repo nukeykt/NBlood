@@ -140,3 +140,15 @@ void QAV::Preload(void)
         }
     }
 }
+
+void QAV::Precache(void)
+{
+    for (int i = 0; i < nFrames; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (frames[i].tiles[j].picnum >= 0)
+                tilePrecacheTile(frames[i].tiles[j].picnum, 0);
+        }
+    }
+}

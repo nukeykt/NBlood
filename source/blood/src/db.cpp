@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "common_game.h"
 #include "crc32.h"
+#include "md4.h"
 
 //#include "actor.h"
 #include "globals.h"
@@ -44,6 +45,10 @@ XWALL xwall[kMaxXWalls];
 SPRITEHIT gSpriteHit[kMaxXSprites];
 
 int xvel[kMaxSprites], yvel[kMaxSprites], zvel[kMaxSprites];
+
+#ifdef POLYMER
+PolymerLight_t gPolymerLight[kMaxSprites];
+#endif
 
 char qsprite_filler[kMaxSprites], qsector_filler[kMaxSectors];
 
@@ -151,6 +156,27 @@ void dbCrypt(char *pPtr, int nLength, int nKey)
         nKey++;
     }
 }
+
+#ifdef POLYMER
+
+void DeleteLight(int32_t s)
+{
+    if (gPolymerLight[s].lightId >= 0)
+        polymer_deletelight(gPolymerLight[s].lightId);
+    gPolymerLight[s].lightId = -1;
+    gPolymerLight[s].lightptr = NULL;
+}
+
+
+void G_Polymer_UnInit(void)
+{
+    int32_t i;
+
+    for (i = 0; i < kMaxSprites; i++)
+        DeleteLight(i);
+}
+#endif
+
 
 void InsertSpriteSect(int nSprite, int nSector)
 {
@@ -282,6 +308,10 @@ int InsertSprite(int nSector, int nStat)
     pSprite->index = nSprite;
     xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
 
+#ifdef POLYMER
+    gPolymerLight[nSprite].lightId = -1;
+#endif
+
     Numsprites++;
 
     return nSprite;
@@ -294,6 +324,10 @@ int qinsertsprite(short nSector, short nStat) // Replace
 
 int DeleteSprite(int nSprite)
 {
+#ifdef POLYMER
+    if (gPolymerLight[nSprite].lightptr != NULL && videoGetRenderMode() == REND_POLYMER)
+        DeleteLight(nSprite);
+#endif
     if (sprite[nSprite].extra > 0)
     {
         dbDeleteXSprite(sprite[nSprite].extra);
@@ -1190,6 +1224,7 @@ int dbLoadMap(const char *pPath, int *pX, int *pY, int *pZ, short *pAngle, short
 #if B_BIG_ENDIAN == 1
     nCRC = B_LITTLE32(nCRC);
 #endif
+    md4once((unsigned char*)pData, nSize, g_loadedMapHack.md4);
     if (Bcrc32(pData, nSize-4, 0) != nCRC)
     {
         initprintf("Map File does not match CRC");

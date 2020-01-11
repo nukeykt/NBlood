@@ -198,14 +198,19 @@ extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
 extern short gAffectedXWalls[kMaxXWalls];
 
-inline bool IsPlayerSprite(spritetype *pSprite)
+#ifdef POLYMER
+extern 
+#endif
+
+inline bool IsPlayerSprite(spritetype const * const pSprite)
 {
     if (pSprite->type >= kDudePlayer1 && pSprite->type <= kDudePlayer8)
         return 1;
     return 0;
 }
 
-template<typename T> bool IsDudeSprite(T *pSprite)
+
+template<typename T> bool IsDudeSprite(T const * const pSprite)
 {
     if (pSprite->lotag >= kDudeBase && pSprite->lotag < kDudeMax)
         return 1;
@@ -217,6 +222,11 @@ inline void actBurnSprite(int nSource, XSPRITE *pXSprite, int nTime)
     pXSprite->burnTime = ClipHigh(pXSprite->burnTime + nTime, sprite[pXSprite->reference].statnum == kStatDude ? 2400 : 1200);
     pXSprite->burnSource = nSource;
 }
+
+#ifdef POLYMER
+void actAddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange, int lightColor, int lightPrio);
+void actDoLight(int spriteNum);
+#endif
 
 bool IsItemSprite(spritetype *pSprite);
 bool IsWeaponSprite(spritetype *pSprite);

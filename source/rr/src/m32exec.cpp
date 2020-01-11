@@ -1411,22 +1411,23 @@ skip_check:
                 case ITER_DRAWNSPRITES:
                 {
                     uspritetype lastSpriteBackup;
-                    uspritetype *const lastSpritePtr = (uspritetype *)&sprite[MAXSPRITES-1];
+                    auto const lastSpritePtr = (uspritetype *)&sprite[MAXSPRITES-1];
 
                     // Back up sprite MAXSPRITES-1.
                     Bmemcpy(&lastSpriteBackup, lastSpritePtr, sizeof(uspritetype));
 
+                    EDUKE32_STATIC_ASSERT(sizeof(uspritetype) == sizeof(tspritetype)); // see TSPRITE_SIZE
                     for (bssize_t ii=0; ii<spritesortcnt && !vm.flags; ii++)
                     {
                         vm.pUSprite = lastSpritePtr;
-                        Bmemcpy(lastSpritePtr, &tsprite[ii], sizeof(uspritetype));
+                        Bmemcpy(lastSpritePtr, &tsprite[ii], sizeof(tspritetype));
 
                         Gv_SetVarX(var, ii);
                         insptr = beg;
                         VM_Execute(1);
 
                         // Copy over potentially altered tsprite.
-                        Bmemcpy(&tsprite[ii], lastSpritePtr, sizeof(uspritetype));
+                        Bmemcpy(&tsprite[ii], lastSpritePtr, sizeof(tspritetype));
                     }
 
                     // Restore sprite MAXSPRITES-1.
@@ -1823,11 +1824,11 @@ badindex:
                 }
                 else
                 {
-                    Bmemcpy(&tsprite[spritesortcnt], &sprite[ospritenum], sizeof(spritetype));
-                    tsprite[spritesortcnt].owner = ospritenum;
+                    tspriteptr_t tsp = renderAddTSpriteFromSprite(ospritenum);
                     vm.spriteNum = -1;
-                    vm.pUSprite = &tsprite[spritesortcnt];
-                    spritesortcnt++;
+
+                    EDUKE32_STATIC_ASSERT(sizeof(uspritetype) == sizeof(tspritetype)); // see TSPRITE_SIZE
+                    vm.pUSprite = (uspriteptr_t)tsp;
                 }
             }
             continue;

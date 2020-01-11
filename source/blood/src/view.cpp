@@ -172,11 +172,11 @@ void RotateXY(int *pX, int *pY, int *pZ, int ang)
 	*pY = dmulscale30r(oX,angSin,oY,angCos);
 }
 
-FONT gFont[5];
+FONT gFont[kFontNum];
 
 void FontSet(int id, int tile, int space)
 {
-	if (id < 0 || id >= 5 || tile < 0 || tile >= kMaxTiles)
+	if (id < 0 || id >= kFontNum || tile < 0 || tile >= kMaxTiles)
 		return;
 
 	FONT *pFont = &gFont[id];
@@ -197,7 +197,7 @@ void FontSet(int id, int tile, int space)
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize)
 {
-	if (id < 0 || id >= 5)
+	if (id < 0 || id >= kFontNum)
 		return;
 	FONT *pFont = &gFont[id];
 	if (!unk1)
@@ -973,7 +973,7 @@ void RestoreInterpolations(void)
 
 void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat, uint8_t alpha)
 {
-    if (nFont < 0 || nFont >= 5 || !pString) return;
+    if (nFont < 0 || nFont >= kFontNum || !pString) return;
     FONT *pFont = &gFont[nFont];
 
     if (position)
@@ -1711,6 +1711,47 @@ void UpdateStatusBar(ClockTicks arg)
     }
 }
 
+void viewPrecacheTiles(void)
+{
+    tilePrecacheTile(2173, 0);
+    tilePrecacheTile(2200, 0);
+    tilePrecacheTile(2201, 0);
+    tilePrecacheTile(2202, 0);
+    tilePrecacheTile(2207, 0);
+    tilePrecacheTile(2208, 0);
+    tilePrecacheTile(2209, 0);
+    tilePrecacheTile(2229, 0);
+    tilePrecacheTile(2260, 0);
+    tilePrecacheTile(2559, 0);
+    tilePrecacheTile(2169, 0);
+    tilePrecacheTile(2578, 0);
+    tilePrecacheTile(2586, 0);
+    tilePrecacheTile(2602, 0);
+    for (int i = 0; i < 10; i++)
+    {
+        tilePrecacheTile(2190 + i, 0);
+        tilePrecacheTile(2230 + i, 0);
+        tilePrecacheTile(2240 + i, 0);
+        tilePrecacheTile(2250 + i, 0);
+        tilePrecacheTile(kSBarNumberHealth + i, 0);
+        tilePrecacheTile(kSBarNumberAmmo + i, 0);
+        tilePrecacheTile(kSBarNumberInv + i, 0);
+        tilePrecacheTile(kSBarNumberArmor1 + i, 0);
+        tilePrecacheTile(kSBarNumberArmor2 + i, 0);
+        tilePrecacheTile(kSBarNumberArmor3 + i, 0);
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        tilePrecacheTile(gPackIcons[i], 0);
+        tilePrecacheTile(gPackIcons2[i].nTile, 0);
+    }
+    for (int i = 0; i < 6; i++)
+    {
+        tilePrecacheTile(2220 + i, 0);
+        tilePrecacheTile(2552 + i, 0);
+    }
+}
+
 int *lensTable;
 
 int gZoom = 1024;
@@ -1845,7 +1886,8 @@ void viewDrawInterface(ClockTicks arg)
 
 static fix16_t gCameraAng;
 
-template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T *pSprite)
+
+template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T const * const pSprite)
 {
     int nTSprite = spritesortcnt;
     tspritetype *pTSprite = &tsprite[nTSprite];
@@ -1872,7 +1914,7 @@ template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T
         pTSprite->x += Cos(gCameraAng)>>25;
         pTSprite->y += Sin(gCameraAng)>>25;
     }
-    return &tsprite[nTSprite];
+    return pTSprite;
 }
 
 int effectDetail[] = {
@@ -2295,7 +2337,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     break;
 #endif
                 // Can be overridden by def script
-                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1 && voxelIndex[pTSprite->picnum] != -1)
+                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1 && voxelIndex[pTSprite->picnum] != -1 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                 {
                     if ((pTSprite->hitag&kHitagRespawn) == 0)
                     {
@@ -2320,7 +2362,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             nAnim--;
         }
 
-        if ((pTSprite->cstat&48) != 48 && usevoxels && videoGetRenderMode() != REND_POLYMER)
+        if ((pTSprite->cstat&48) != 48 && usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[nSprite].flags&SPREXT_NOTMD))
         {
             int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
 
@@ -3466,7 +3508,7 @@ RORHACK:
         {
             if (gAimReticle)
             {
-                rotatesprite(160<<16, defaultHoriz<<16, 65536, 0, kCrosshairTile, 0, CROSSHAIR_PAL, 2, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(160<<16, defaultHoriz<<16, 65536, 0, kCrosshairTile, 0, g_isAlterDefaultCrosshair ? CROSSHAIR_PAL : 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
             }
             cX = (v4c>>8)+160;
             cY = (v48>>8)+220+(zDelta>>7);

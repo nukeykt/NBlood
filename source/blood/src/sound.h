@@ -50,6 +50,9 @@ extern int32_t NumVoices;
 extern int32_t NumChannels;
 extern int32_t NumBits;
 extern int32_t MixRate;
+#ifdef ASS_REVERSESTEREO
+extern int32_t ReverseStereo;
+#endif
 extern int32_t MusicDevice;
 
 int sndGetRate(int format);
