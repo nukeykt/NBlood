@@ -80,8 +80,8 @@ project.xcworkspace/
 /*.INI
 /*.sav
 /*.cfg_orig
-*.DEM
-*.DEM_
+/*.DEM
+/*.DEM_
 
 /platform/Windows/autoload
 /platform/Windows/movie
