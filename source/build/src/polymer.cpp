@@ -4282,7 +4282,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
     i = 0;
     while (i < numskytiles)
     {
-        int16_t picnum = tilenum + i;
+        int16_t picnum = tilenum + dapskyoff[i];
         // Prevent oob by bad user input:
         if (picnum >= MAXTILES)
             picnum = MAXTILES-1;
@@ -4328,7 +4328,7 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
     {
         GLint oldswrap;
         // ... but in case a multi-psky specifies less than 8, repeat cyclically:
-        const int8_t tileofs = dapskyoff[j&numskytilesm1];
+        const int8_t tileofs = j&numskytilesm1;
 
         glColor4f(glcolors[tileofs][0], glcolors[tileofs][1], glcolors[tileofs][2], 1.0f);
         glBindTexture(GL_TEXTURE_2D, glpics[tileofs]);
