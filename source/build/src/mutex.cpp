@@ -34,7 +34,6 @@ void mutex_destroy(mutex_t *mutex)
 #elif SDL_MAJOR_VERSION == 1
     if (mutex)
     {
-
         SDL_DestroyMutex(*mutex);
         *mutex = nullptr;
     }

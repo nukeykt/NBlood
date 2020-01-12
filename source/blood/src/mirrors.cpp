@@ -269,11 +269,9 @@ void sub_557C4(int x, int y, int interpolation)
                         int dy = mirror[j].atc;
                         int dz = mirror[j].at10;
                         tspritetype *pTSprite = &tsprite[spritesortcnt];
-
                         memset(pTSprite, 0, sizeof(tspritetype));
                         pTSprite->type = pSprite->type;
                         pTSprite->index = pSprite->index;
-
                         pTSprite->sectnum = nSector2;
                         pTSprite->x = pSprite->x+dx;
                         pTSprite->y = pSprite->y+dy;
@@ -290,7 +288,7 @@ void sub_557C4(int x, int y, int interpolation)
                         pTSprite->statnum = kStatDecoration;
                         pTSprite->owner = pSprite->index;
                         pTSprite->extra = pSprite->extra;
-                        pTSprite->hitag = pSprite->hitag|0x200;
+                        pTSprite->flags = pSprite->hitag|0x200;
                         LOCATION *pLocation = &gPrevSpriteLoc[pSprite->index];
                         pTSprite->x = dx+interpolate(pLocation->x, pSprite->x, interpolation);
                         pTSprite->y = dy+interpolate(pLocation->y, pSprite->y, interpolation);
