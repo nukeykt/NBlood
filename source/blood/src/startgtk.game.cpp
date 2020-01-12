@@ -231,7 +231,7 @@ static unsigned char GetModsDirNames(GtkListStore *list)
 
     if ((homedir = Bgethomedir()))
     {
-        Bsnprintf(pdir, sizeof(pdir), "%s/" ".blood", homedir);
+        Bsnprintf(pdir, sizeof(pdir), "%s/" ".nblood", homedir);
         dirs = klistpath(pdir, "*", BUILDVFS_FIND_DIR);
         for (; dirs != NULL; dirs=dirs->next)
         {
