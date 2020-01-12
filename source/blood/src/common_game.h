@@ -160,6 +160,18 @@ kPwUpAsbestArmor        = 39,
 kMaxPowerUps            = 51,
 };
 
+enum {
+    kExplosionSmall = 0,
+    kExplosionStandard = 1,
+    kExplosionLarge = 2,
+    kExplosionFireball = 3,
+    kExplosionSpray = 4,
+    kExplosion5 = 5,
+    kExplosion6 = 6,
+    kExplosionNapalm = 7,
+    kExplosionMax = 8
+};
+
 // SPRITE TYPES /////////////////////////////////////////////////
 enum {
     kSpriteDecoration = 0,

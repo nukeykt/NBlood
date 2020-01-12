@@ -310,7 +310,7 @@ static inline int GetWallType(int nWall)
     return wall[nWall].type;
 }
 
-template<typename T> void GetSpriteExtents(T *pSprite, int *top, int *bottom)
+template<typename T> void GetSpriteExtents(T const * const pSprite, int *top, int *bottom)
 {
     *top = *bottom = pSprite->z;
     if ((pSprite->cstat & 0x30) != 0x20)
@@ -321,6 +321,21 @@ template<typename T> void GetSpriteExtents(T *pSprite, int *top, int *bottom)
         *bottom += (pSprite->yrepeat << 2)*(height - center);
     }
 }
+
+#ifdef POLYMER
+#pragma pack(push, 1)
+struct PolymerLight_t {
+    int16_t lightId, lightmaxrange;
+    _prlight* lightptr;
+    uint8_t lightcount;
+};
+#pragma pack(pop)
+
+extern PolymerLight_t gPolymerLight[kMaxSprites];
+
+void DeleteLight(int32_t s);
+
+#endif
 
 void InsertSpriteSect(int nSprite, int nSector);
 void RemoveSpriteSect(int nSprite);

@@ -438,7 +438,6 @@ static int osdcmd_restartsound(osdcmdptr_t UNUSED(parm))
 
 void onvideomodechange(int32_t newmode)
 {
-    UNREFERENCED_PARAMETER(newmode);
 #if 0
     uint8_t palid;
 
@@ -468,6 +467,24 @@ void onvideomodechange(int32_t newmode)
 
     videoSetPalette(ud.brightness>>2, palid, 0);
     g_restorePalette = -1;
+#endif
+
+#ifdef POLYMER
+    if (videoGetRenderMode() == REND_POLYMER)
+    {
+        int32_t i = 0;
+
+        while (i < MAXSPRITES)
+        {
+            if (gPolymerLight[i].lightptr)
+            {
+                polymer_deletelight(gPolymerLight[i].lightId);
+                gPolymerLight[i].lightptr = NULL;
+                gPolymerLight[i].lightId = -1;
+            }
+            i++;
+        }
+    }
 #endif
     if (newmode)
         scrResetPalette();
@@ -1038,6 +1055,9 @@ int32_t registerosdcommands(void)
         { "snd_mixrate", "sound mixing rate", (void *)&MixRate, CVAR_INT, 0, 48000 },
         { "snd_numchannels", "the number of sound channels", (void *)&NumChannels, CVAR_INT, 0, 2 },
         { "snd_numvoices", "the number of concurrent sounds", (void *)&NumVoices, CVAR_INT, 1, 128 },
+#ifdef ASS_REVERSESTEREO
+        { "snd_reversestereo", "reverses the stereo channels", (void *)&ReverseStereo, CVAR_BOOL, 0, 1 },
+#endif
         { "snd_doppler", "enable/disable 3d sound", (void *)&gDoppler, CVAR_BOOL, 0, 1 },
 //        { "snd_speech", "enables/disables player speech", (void *)&ud.config.VoiceToggle, CVAR_INT, 0, 5 },
 //

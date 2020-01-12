@@ -197,7 +197,7 @@ static const GLfloat  skyboxdata[4 * 5 * 6] =
 
 GLuint          skyboxdatavbo;
 
-GLfloat         artskydata[16];
+GLfloat         artskydata[PSKYOFF_MAX*2];
 
 // LIGHTS
 static _prplanelist *plpool;
@@ -746,6 +746,8 @@ int32_t         polymersearching;
 
 int32_t         culledface;
 
+static char     transluctable[2] = { 0x55, 0xAA };
+
 // EXTERNAL FUNCTIONS
 int32_t             polymer_init(void)
 {
@@ -843,6 +845,12 @@ int32_t             polymer_init(void)
             j++;
         }
         i++;
+    }
+
+    if (bloodhack)
+    {
+        transluctable[0] = 0xAA;
+        transluctable[1] = 0x55;
     }
 
 #ifndef __APPLE__
@@ -2904,9 +2912,9 @@ attributes:
 
     if (sec->floorstat & 256) {
         if (sec->floorstat & 128) {
-            s->floor.material.diffusemodulation[3] = 0x55;
+            s->floor.material.diffusemodulation[3] = transluctable[0];
         } else {
-            s->floor.material.diffusemodulation[3] = 0xAA;
+            s->floor.material.diffusemodulation[3] = transluctable[1];
         }
     }
 
@@ -2914,9 +2922,9 @@ attributes:
 
     if (sec->ceilingstat & 256) {
         if (sec->ceilingstat & 128) {
-            s->ceil.material.diffusemodulation[3] = 0x55;
+            s->ceil.material.diffusemodulation[3] = transluctable[0];
         } else {
-            s->ceil.material.diffusemodulation[3] = 0xAA;
+            s->ceil.material.diffusemodulation[3] = transluctable[1];
         }
     }
 
@@ -3488,9 +3496,9 @@ static void         polymer_updatewall(int16_t wallnum)
                 if (wal->cstat & 128)
                 {
                     if (wal->cstat & 512)
-                        w->mask.material.diffusemodulation[3] = 0x55;
+                        w->mask.material.diffusemodulation[3] = transluctable[0];
                     else
-                        w->mask.material.diffusemodulation[3] = 0xAA;
+                        w->mask.material.diffusemodulation[3] = transluctable[1];
                 }
             }
 
@@ -3993,9 +4001,9 @@ void                polymer_updatesprite(int32_t snum)
     if (tspr->cstat & 2)
     {
         if (tspr->cstat & 512)
-            s->plane.material.diffusemodulation[3] = 0x55;
+            s->plane.material.diffusemodulation[3] = transluctable[0];
         else
-            s->plane.material.diffusemodulation[3] = 0xAA;
+            s->plane.material.diffusemodulation[3] = transluctable[1];
     }
 
     float f = s->plane.material.diffusemodulation[3] * (1.0f - spriteext[tspr->owner].alpha);
@@ -4249,32 +4257,30 @@ void         polymer_drawsky(int16_t tilenum, char palnum, int8_t shade)
 
 static void         polymer_initartsky(void)
 {
-    GLfloat         halfsqrt2 = 0.70710678f;
+    constexpr double factor = 2.0 * PI / (double)PSKYOFF_MAX;
 
-    artskydata[0] = -1.0f;          artskydata[1] = 0.0f;           // 0
-    artskydata[2] = -halfsqrt2;     artskydata[3] = halfsqrt2;      // 1
-    artskydata[4] = 0.0f;           artskydata[5] = 1.0f;           // 2
-    artskydata[6] = halfsqrt2;      artskydata[7] = halfsqrt2;      // 3
-    artskydata[8] = 1.0f;           artskydata[9] = 0.0f;           // 4
-    artskydata[10] = halfsqrt2;     artskydata[11] = -halfsqrt2;    // 5
-    artskydata[12] = 0.0f;          artskydata[13] = -1.0f;         // 6
-    artskydata[14] = -halfsqrt2;    artskydata[15] = -halfsqrt2;    // 7
+    for (int i = 0; i < PSKYOFF_MAX; i++)
+    {
+        artskydata[i * 2 + 0] = -cos(i * factor);
+        artskydata[i * 2 + 1] = sin(i * factor);
+    }
 }
 
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade)
 {
     pthtyp*         pth;
-    GLuint          glpics[PSKYOFF_MAX+1];
-    GLfloat         glcolors[PSKYOFF_MAX+1][3];
+    GLuint          glpics[PSKYOFF_MAX];
+    GLfloat         glcolors[PSKYOFF_MAX][3];
     int32_t         i, j;
     GLfloat         height = 2.45f / 2.0f;
 
     int32_t dapskybits;
     const int8_t *dapskyoff = getpsky(tilenum, NULL, &dapskybits, NULL, NULL);
-    const int32_t numskytilesm1 = (1<<dapskybits)-1;
+    const int32_t numskytiles = 1<<dapskybits;
+    const int32_t numskytilesm1 = numskytiles-1;
 
     i = 0;
-    while (i <= PSKYOFF_MAX)
+    while (i < numskytiles)
     {
         int16_t picnum = tilenum + i;
         // Prevent oob by bad user input:
@@ -4316,12 +4322,13 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
     glEnable(GL_TEXTURE_2D);
     i = 0;
-    j = 8;  // In Polymer, an ART sky has always 8 sides...
-    while (i < j)
+    j = 0;
+    int32_t const increment = PSKYOFF_MAX>>max(3, dapskybits);  // In Polymer, an ART sky has 8 or 16 sides...
+    while (i < PSKYOFF_MAX)
     {
         GLint oldswrap;
         // ... but in case a multi-psky specifies less than 8, repeat cyclically:
-        const int8_t tileofs = dapskyoff[i&numskytilesm1];
+        const int8_t tileofs = dapskyoff[j&numskytilesm1];
 
         glColor4f(glcolors[tileofs][0], glcolors[tileofs][1], glcolors[tileofs][2], 1.0f);
         glBindTexture(GL_TEXTURE_2D, glpics[tileofs]);
@@ -4329,11 +4336,12 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &oldswrap);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
 
-        polymer_drawartskyquad(i, (i + 1) & (j - 1), height);
+        polymer_drawartskyquad(i, (i + increment) & (PSKYOFF_MAX - 1), height);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, oldswrap);
 
-        i++;
+        i += increment;
+        ++j;
     }
     glDisable(GL_TEXTURE_2D);
 }
@@ -4474,9 +4482,9 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         spos2[1] = (z - fglobalposz) * (-1.f/16.f);
         spos2[2] = fglobalposx - x;
     } else {
-        spos[0] = (float)tspr->y;
-        spos[1] = -(float)(tspr->z) / 16.0f;
-        spos[2] = -(float)tspr->x;
+        spos[0] = (float)tspr->y+spriteext[tspr->owner].position_offset.y;
+        spos[1] = -(float)(tspr->z+spriteext[tspr->owner].position_offset.z) / 16.0f;
+        spos[2] = -(float)(tspr->x+spriteext[tspr->owner].position_offset.x);
 
         spos2[0] = spos2[1] = spos2[2] = 0.0f;
     }
@@ -4504,7 +4512,7 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         radplayerang = (globalang & 2047) * (2.0f * fPI / 2048.0f);
         cosminusradplayerang = cos(-radplayerang);
         sinminusradplayerang = sin(-radplayerang);
-        hudzoom = 65536.0 / spriteext[tspr->owner].offset.z;
+        hudzoom = 65536.0 / spriteext[tspr->owner].pivot_offset.z;
 
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(horizang, -cosminusradplayerang, 0.0f, sinminusradplayerang);
@@ -4559,9 +4567,9 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         pitchang = (float)(spriteext[tspr->owner].pitch) * (360.f/2048.f);
         rollang = (float)(spriteext[tspr->owner].roll) * (360.f/2048.f);
 
-        offsets[0] = -spriteext[tspr->owner].offset.x / (scale * tspr->xrepeat);
-        offsets[1] = -spriteext[tspr->owner].offset.y / (scale * tspr->xrepeat);
-        offsets[2] = (float)(spriteext[tspr->owner].offset.z) / 16.0f / (scale * tspr->yrepeat);
+        offsets[0] = -spriteext[tspr->owner].pivot_offset.x / (scale * tspr->xrepeat);
+        offsets[1] = -spriteext[tspr->owner].pivot_offset.y / (scale * tspr->xrepeat);
+        offsets[2] = (float)(spriteext[tspr->owner].pivot_offset.z) / 16.0f / (scale * tspr->yrepeat);
 
         glTranslatef(-offsets[0], -offsets[1], -offsets[2]);
 
@@ -4636,9 +4644,9 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
     if (tspr->cstat & 2)
     {
         if (!(tspr->cstat&512))
-            color[3] = 0xAA;
+            color[3] = transluctable[1];
         else
-            color[3] = 0x55;
+            color[3] = transluctable[0];
     } else
         color[3] = 0xFF;
 

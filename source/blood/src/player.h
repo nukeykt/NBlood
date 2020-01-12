@@ -223,14 +223,16 @@ struct POWERUPINFO
 };
 
 // by NoOne: this one stores qavs anims that can be played by trigger
-struct QAVSCENE {
+struct QAVSCENE
+{
     short index     = -1;  // index of sprite which triggered qav scene
     QAV * qavResrc  = NULL;
     short dummy     = -1;
 };
 
 // by NoOne: this one for controlling the player using triggers (movement speed, jumps and other stuff)
-struct TRPLAYERCTRL {
+struct TRPLAYERCTRL
+{
     QAVSCENE qavScene;
 };
 

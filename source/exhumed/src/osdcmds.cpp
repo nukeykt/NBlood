@@ -32,6 +32,69 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "vfs.h"
 
+
+static int osdcmd_god(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+
+    if (!nNetPlayerCount && !bInDemo)
+    {
+        DoPassword(3);
+    }
+    else
+        OSD_Printf("god: Not in a single-player game.\n");
+
+    return OSDCMD_OK;
+}
+
+static int osdcmd_noclip(osdcmdptr_t UNUSED(parm))
+{
+    UNREFERENCED_CONST_PARAMETER(parm);
+
+    if (!nNetPlayerCount && !bInDemo)
+    {
+        DoPassword(6);
+    }
+    else
+    {
+        OSD_Printf("noclip: Not in a single-player game.\n");
+    }
+
+    return OSDCMD_OK;
+}
+
+static int osdcmd_changelevel(osdcmdptr_t parm)
+{
+    char* p;
+
+    if (parm->numparms != 1) return OSDCMD_SHOWHELP;
+
+    int nLevel = strtol(parm->parms[0], &p, 10);
+    if (p[0]) return OSDCMD_SHOWHELP;
+
+    if (nLevel < 0) return OSDCMD_SHOWHELP;
+
+    int nMaxLevels;
+
+    if (!ISDEMOVER) {
+        nMaxLevels = 32;
+    }
+    else {
+        nMaxLevels = 4;
+    }
+
+    if (nLevel > nMaxLevels)
+    {
+        OSD_Printf("changelevel: invalid level number\n");
+        return OSDCMD_SHOWHELP;
+    }
+
+    levelnew = nLevel;
+    levelnum = nLevel;
+
+    return OSDCMD_OK;
+}
+
 static inline int osdcmd_quit(osdcmdptr_t UNUSED(parm))
 {
     UNREFERENCED_CONST_PARAMETER(parm);
@@ -666,7 +729,7 @@ int32_t registerosdcommands(void)
     }
 
     //if (VOLUMEONE)
-    //    OSD_RegisterFunction("changelevel","changelevel <level>: warps to the given level", osdcmd_changelevel);
+    OSD_RegisterFunction("changelevel","changelevel <level>: warps to the given level", osdcmd_changelevel);
     //else
     //{
     //    OSD_RegisterFunction("changelevel","changelevel <volume> <level>: warps to the given level", osdcmd_changelevel);
@@ -696,7 +759,7 @@ int32_t registerosdcommands(void)
     }
 
     //OSD_RegisterFunction("give","give <all|health|weapons|ammo|armor|keys|inventory>: gives requested item", osdcmd_give);
-    //OSD_RegisterFunction("god","god: toggles god mode", osdcmd_god);
+    OSD_RegisterFunction("god","god: toggles god mode", osdcmd_god);
     //OSD_RegisterFunction("activatecheat","activatecheat <id>: activates a cheat code", osdcmd_activatecheat);
 
     OSD_RegisterFunction("initgroupfile","initgroupfile <path>: adds a grp file into the game filesystem", osdcmd_initgroupfile);
@@ -705,7 +768,7 @@ int32_t registerosdcommands(void)
 //#endif
     //OSD_RegisterFunction("music","music E<ep>L<lev>: change music", osdcmd_music);
 
-    //OSD_RegisterFunction("noclip","noclip: toggles clipping mode", osdcmd_noclip);
+    OSD_RegisterFunction("noclip","noclip: toggles clipping mode", osdcmd_noclip);
 
 
     //OSD_RegisterFunction("printtimes", "printtimes: prints VM timing statistics", osdcmd_printtimes);

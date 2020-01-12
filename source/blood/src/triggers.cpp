@@ -1332,21 +1332,7 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
                 evPost(nSprite, 3, 18, kCmdOff);
             }
         }
-        break;
-
-        /*if (pSprite->statnum != kStatRespawn) {
-            switch (event.cmd) {
-                case kCmdOn:
-                    actExplodeSprite(pSprite);
-                    break;
-                default:
-                    sfxPlay3DSound(pSprite, 454, 0, 0);
-                    evPost(nSprite, 3, 18, kCmdOff);
-                    break;
-            }
-        }*/
-        break;
-    
+        break;    
     case kThingArmedProxBomb:
     case kModernThingTNTProx:
         if (pSprite->statnum != kStatRespawn) {

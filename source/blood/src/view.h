@@ -72,12 +72,14 @@ enum INTERPOLATE_TYPE {
 #define kLoadScreenWideRight 9218
 #define kLoadScreenWideMiddle 9219
 
+#define kFontNum 5
+
 struct FONT {
     int tile, xSize, ySize, space;
 };
 
 extern int gZoom;
-extern FONT gFont[5];
+extern FONT gFont[kFontNum];
 extern int gViewMode;
 extern VIEWPOS gViewPos;
 extern int gViewIndex;
@@ -158,6 +160,7 @@ void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
 void viewResetCrosshairToDefault(void);
 void viewPrintFPS(void);
 void viewSetSystemMessage(const char* pMessage, ...);
+void viewPrecacheTiles(void);
 
 inline void viewInterpolateSector(int nSector, sectortype *pSector)
 {

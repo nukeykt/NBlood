@@ -688,17 +688,14 @@ static void G_OROR_DupeSprites(const spritetype *sp)
 
         if (sprite[k].picnum != SECTOREFFECTOR && sprite[k].z >= sp->z)
         {
-            Bmemcpy(&tsprite[spritesortcnt], &sprite[k], sizeof(spritetype));
+            tspriteptr_t tsp = renderAddTSpriteFromSprite(k);
 
-            tsprite[spritesortcnt].x += (refsp->x - sp->x);
-            tsprite[spritesortcnt].y += (refsp->y - sp->y);
-            tsprite[spritesortcnt].z = tsprite[spritesortcnt].z - sp->z + actor[sp->yvel].ceilingz;
-            tsprite[spritesortcnt].sectnum = refsp->sectnum;
-            tsprite[spritesortcnt].owner = k;
-            tsprite[spritesortcnt].extra = 0;
+            tsp->x += (refsp->x - sp->x);
+            tsp->y += (refsp->y - sp->y);
+            tsp->z += -sp->z + actor[sp->yvel].ceilingz;
+            tsp->sectnum = refsp->sectnum;
 
-//            OSD_Printf("duped sprite of pic %d at %d %d %d\n",tsprite[spritesortcnt].picnum,tsprite[spritesortcnt].x,tsprite[spritesortcnt].y,tsprite[spritesortcnt].z);
-            spritesortcnt++;
+//            OSD_Printf("duped sprite of pic %d at %d %d %d\n",tsp->picnum,tsp->x,tsp->y,tsp->z);
         }
     }
 }
@@ -4919,7 +4916,7 @@ default_case1:
         if (!RR && pSprite->picnum == NATURALLIGHTNING)
         {
             t->shade = -127;
-            t->cstat |= 8192;
+            t->clipdist |= TSPR_FLAGS_NO_SHADOW;
         }
 
         if (t->statnum == TSPR_TEMP)
@@ -5073,9 +5070,9 @@ default_case1:
 #if 0
                 if (spritesortcnt < maxspritesonscreen)
                 {
-                    spritetype *const newt = &tsprite[spritesortcnt++];
+                    auto const newt = &tsprite[spritesortcnt++];
 
-                    Bmemcpy(newt, t, sizeof(spritetype));
+                    *newt = *t;
 
                     newt->cstat |= 2|512;
                     newt->x += (sintable[(newt->ang+512)&2047]>>12);
@@ -5371,7 +5368,7 @@ default_case1:
                     if ((!g_netServer && ud.multimode < 2) || ((g_netServer || ud.multimode > 1) && playerNum == screenpeek))
                     {
                         if (videoGetRenderMode() == REND_POLYMER)
-                            t->cstat |= 16384;
+                            t->clipdist |= TSPR_FLAGS_INVISIBLE_WITH_SHADOW;
                         else
                         {
                             t->owner = -1;
@@ -5769,7 +5766,7 @@ rrcoolexplosion1:
             else if (RR && t->picnum == FIRELASER)
                 t->picnum = FIRELASER+(((int32_t) totalclock>>2)&5);
             t->shade = -127;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
         case UFOBEAM__STATICRR:
         case RRTILE3586__STATICRR:
@@ -5794,12 +5791,12 @@ rrcoolexplosion1:
             fallthrough__;
         case SMALLSMOKE__STATIC:
             if (RR) break;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
         case COOLEXPLOSION1__STATIC:
             if (RR) goto rrcoolexplosion1;
             t->shade = -127;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             t->picnum += (pSprite->shade>>1);
             break;
         case WALLLIGHT3__STATIC:

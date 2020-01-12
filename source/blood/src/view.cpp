@@ -172,11 +172,11 @@ void RotateXY(int *pX, int *pY, int *pZ, int ang)
 	*pY = dmulscale30r(oX,angSin,oY,angCos);
 }
 
-FONT gFont[5];
+FONT gFont[kFontNum];
 
 void FontSet(int id, int tile, int space)
 {
-	if (id < 0 || id >= 5 || tile < 0 || tile >= kMaxTiles)
+	if (id < 0 || id >= kFontNum || tile < 0 || tile >= kMaxTiles)
 		return;
 
 	FONT *pFont = &gFont[id];
@@ -197,7 +197,7 @@ void FontSet(int id, int tile, int space)
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize)
 {
-	if (id < 0 || id >= 5)
+	if (id < 0 || id >= kFontNum)
 		return;
 	FONT *pFont = &gFont[id];
 	if (!unk1)
@@ -973,7 +973,7 @@ void RestoreInterpolations(void)
 
 void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int nPalette, int position, char shadow, unsigned int nStat, uint8_t alpha)
 {
-    if (nFont < 0 || nFont >= 5 || !pString) return;
+    if (nFont < 0 || nFont >= kFontNum || !pString) return;
     FONT *pFont = &gFont[nFont];
 
     if (position)
@@ -1711,6 +1711,47 @@ void UpdateStatusBar(ClockTicks arg)
     }
 }
 
+void viewPrecacheTiles(void)
+{
+    tilePrecacheTile(2173, 0);
+    tilePrecacheTile(2200, 0);
+    tilePrecacheTile(2201, 0);
+    tilePrecacheTile(2202, 0);
+    tilePrecacheTile(2207, 0);
+    tilePrecacheTile(2208, 0);
+    tilePrecacheTile(2209, 0);
+    tilePrecacheTile(2229, 0);
+    tilePrecacheTile(2260, 0);
+    tilePrecacheTile(2559, 0);
+    tilePrecacheTile(2169, 0);
+    tilePrecacheTile(2578, 0);
+    tilePrecacheTile(2586, 0);
+    tilePrecacheTile(2602, 0);
+    for (int i = 0; i < 10; i++)
+    {
+        tilePrecacheTile(2190 + i, 0);
+        tilePrecacheTile(2230 + i, 0);
+        tilePrecacheTile(2240 + i, 0);
+        tilePrecacheTile(2250 + i, 0);
+        tilePrecacheTile(kSBarNumberHealth + i, 0);
+        tilePrecacheTile(kSBarNumberAmmo + i, 0);
+        tilePrecacheTile(kSBarNumberInv + i, 0);
+        tilePrecacheTile(kSBarNumberArmor1 + i, 0);
+        tilePrecacheTile(kSBarNumberArmor2 + i, 0);
+        tilePrecacheTile(kSBarNumberArmor3 + i, 0);
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        tilePrecacheTile(gPackIcons[i], 0);
+        tilePrecacheTile(gPackIcons2[i].nTile, 0);
+    }
+    for (int i = 0; i < 6; i++)
+    {
+        tilePrecacheTile(2220 + i, 0);
+        tilePrecacheTile(2552 + i, 0);
+    }
+}
+
 int *lensTable;
 
 int gZoom = 1024;
@@ -1845,7 +1886,7 @@ void viewDrawInterface(ClockTicks arg)
 
 static fix16_t gCameraAng;
 
-template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T *pSprite)
+template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T const * const pSprite)
 {
     int nTSprite = spritesortcnt;
     tspritetype *pTSprite = &tsprite[nTSprite];
@@ -1855,7 +1896,7 @@ template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T
     pTSprite->yrepeat = 64;
     pTSprite->owner = -1;
     pTSprite->extra = -1;
-    pTSprite->lotag = -spritesortcnt;
+    pTSprite->type = -spritesortcnt;
     pTSprite->statnum = nStatnum;
     pTSprite->sectnum = nSector;
     spritesortcnt++;
@@ -1872,7 +1913,7 @@ template<typename T> tspritetype* viewInsertTSprite(int nSector, int nStatnum, T
         pTSprite->x += Cos(gCameraAng)>>25;
         pTSprite->y += Sin(gCameraAng)>>25;
     }
-    return &tsprite[nTSprite];
+    return pTSprite;
 }
 
 int effectDetail[] = {
@@ -2034,7 +2075,7 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
         int top, bottom;
         GetSpriteExtents(pTSprite, &top, &bottom);
         pNSprite->z = bottom;
-        if (pTSprite->lotag >= kDudeBase && pTSprite->lotag < kDudeMax)
+        if (pTSprite->type >= kDudeBase && pTSprite->type < kDudeMax)
             pNSprite->picnum = 672;
         else
             pNSprite->picnum = 754;
@@ -2140,8 +2181,8 @@ tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect)
     }
     case VIEW_EFFECT_12:
     {
-        dassert(pTSprite->lotag >= kDudePlayer1 && pTSprite->lotag <= kDudePlayer8);
-        PLAYER *pPlayer = &gPlayer[pTSprite->lotag-kDudePlayer1];
+        dassert(pTSprite->type >= kDudePlayer1 && pTSprite->type <= kDudePlayer8);
+        PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
         WEAPONICON weaponIcon = gWeaponIcon[pPlayer->curWeapon];
         const int nTile = weaponIcon.nTile;
         if (nTile < 0) break;
@@ -2213,7 +2254,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
 
         int nSprite = pTSprite->owner;
-        if (gViewInterpolate && TestBitString(gInterpolateSprite, nSprite) && !(pTSprite->hitag&512))
+        if (gViewInterpolate && TestBitString(gInterpolateSprite, nSprite) && !(pTSprite->flags&512))
         {
             LOCATION *pPrevLoc = &gPrevSpriteLoc[nSprite];
             pTSprite->x = interpolate(pPrevLoc->x, pTSprite->x, gInterpolate);
@@ -2226,7 +2267,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             case 0:
                 //dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
                 if (nXSprite <= 0 || nXSprite >= kMaxXSprites) break;
-                switch (pTSprite->lotag) {
+                switch (pTSprite->type) {
                     case kSwitchToggle:
                     case kSwitchOneWay:
                         if (xsprite[nXSprite].state) nAnim = 1;
@@ -2295,9 +2336,9 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     break;
 #endif
                 // Can be overridden by def script
-                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1 && voxelIndex[pTSprite->picnum] != -1)
+                if (usevoxels && gDetail >= 4 && videoGetRenderMode() != REND_POLYMER && tiletovox[pTSprite->picnum] == -1 && voxelIndex[pTSprite->picnum] != -1 && !(spriteext[nSprite].flags&SPREXT_NOTMD))
                 {
-                    if ((pTSprite->hitag&kHitagRespawn) == 0)
+                    if ((pTSprite->flags&kHitagRespawn) == 0)
                     {
                         pTSprite->cstat |= 48;
                         pTSprite->cstat &= ~(4|8);
@@ -2320,7 +2361,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             nAnim--;
         }
 
-        if ((pTSprite->cstat&48) != 48 && usevoxels && videoGetRenderMode() != REND_POLYMER)
+        if ((pTSprite->cstat&48) != 48 && usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[nSprite].flags&SPREXT_NOTMD))
         {
             int nAnimTile = pTSprite->picnum + animateoffs_replace(pTSprite->picnum, 32768+pTSprite->owner);
 
@@ -2357,7 +2398,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         nShade += tileShade[pTSprite->picnum];
         pTSprite->shade = ClipRange(nShade, -128, 127);
-        if ((pTSprite->hitag&kHitagRespawn) && sprite[pTSprite->owner].owner == 3)
+        if ((pTSprite->flags&kHitagRespawn) && sprite[pTSprite->owner].owner == 3)
         {
             dassert(pTXSprite != NULL);
             pTSprite->xrepeat = 48;
@@ -2380,21 +2421,21 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         {
             pTSprite->shade = ClipRange(pTSprite->shade-16-QRandom(8), -128, 127);
         }
-        if (pTSprite->hitag&256)
+        if (pTSprite->flags&256)
         {
             viewAddEffect(nTSprite, VIEW_EFFECT_6);
         }
-        if (pTSprite->hitag&1024)
+        if (pTSprite->flags&1024)
         {
             pTSprite->cstat |= 4;
         }
-        if (pTSprite->hitag&2048)
+        if (pTSprite->flags&2048)
         {
             pTSprite->cstat |= 8;
         }
         switch (pTSprite->statnum) {
         case kStatDecoration: {
-            switch (pTSprite->hitag) {
+            switch (pTSprite->type) {
                 case kDecorationCandle:
                     if (!pTXSprite || pTXSprite->state == 1) {
                         pTSprite->shade = -128;
@@ -2418,7 +2459,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         break;
         case kStatItem: {
-            switch (pTSprite->hitag) {
+            switch (pTSprite->type) {
                 case kItemFlagABase:
                     if (pTXSprite && pTXSprite->state > 0 && gGameOptions.nGameType == 3) {
                         auto pNTSprite = viewAddEffect(nTSprite, VIEW_EFFECT_17);
@@ -2440,7 +2481,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     pTSprite->cstat |= 1024;
                     break;
                 default:
-                    if (pTSprite->lotag >= kItemKeySkull && pTSprite->lotag < kItemKeyMax)
+                    if (pTSprite->type >= kItemKeySkull && pTSprite->type < kItemKeyMax)
                         pTSprite->shade = -128;
 
                     viewApplyDefaultPal(pTSprite, pSector);
@@ -2449,7 +2490,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         break;
         case kStatProjectile: {
-            switch (pTSprite->lotag) {
+            switch (pTSprite->type) {
                 case kMissileTeslaAlt:
                     pTSprite->yrepeat = 128;
                     pTSprite->cstat |= 32;
@@ -2471,7 +2512,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     }
                     
                     viewAddEffect(nTSprite, VIEW_EFFECT_1);
-                    if (pTSprite->lotag != kMissileFlareRegular) break;
+                    if (pTSprite->type != kMissileFlareRegular) break;
                     sectortype *pSector = &sector[pTSprite->sectnum];
                     
                     int zDiff = (pTSprite->z - pSector->ceilingz) >> 8;
@@ -2489,7 +2530,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         }
         case kStatDude:
         {
-            if (pTSprite->lotag == kDudeHand && pTXSprite->aiState == &hand13A3B4)
+            if (pTSprite->type == kDudeHand && pTXSprite->aiState == &hand13A3B4)
             {
                 spritetype *pTTarget = &sprite[pTXSprite->target];
                 dassert(pTXSprite != NULL && pTTarget != NULL);
@@ -2509,7 +2550,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             if (IsPlayerSprite((spritetype *)pTSprite)) {
                 viewApplyDefaultPal(pTSprite, pSector);
 
-                PLAYER *pPlayer = &gPlayer[pTSprite->lotag-kDudePlayer1];
+                PLAYER *pPlayer = &gPlayer[pTSprite->type-kDudePlayer1];
                 if (powerupCheck(pPlayer, kPwUpShadowCloak) && !powerupCheck(gView, kPwUpBeastVision)) {
                     pTSprite->cstat |= 2;
                     pTSprite->pal = 5;
@@ -2567,7 +2608,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
             break;
         }
         case kStatTraps: {
-            if (pTSprite->lotag == kTrapSawCircular) {
+            if (pTSprite->type == kTrapSawCircular) {
                 if (pTXSprite->state) {
                     if (pTXSprite->data1) {
                         pTSprite->picnum = 772;
@@ -2584,8 +2625,8 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
         case kStatThing: {
             viewApplyDefaultPal(pTSprite, pSector);
 
-            if (pTSprite->lotag < kThingBase || pTSprite->lotag >= kThingMax || !gSpriteHit[nXSprite].florhit) {
-                if ((pTSprite->hitag & kPhysMove) && getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) >= cZ)
+            if (pTSprite->type < kThingBase || pTSprite->type >= kThingMax || !gSpriteHit[nXSprite].florhit) {
+                if ((pTSprite->flags & kPhysMove) && getflorzofslope(pTSprite->sectnum, pTSprite->x, pTSprite->y) >= cZ)
                     viewAddEffect(nTSprite, VIEW_EFFECT_0);
             }
         }
@@ -3466,7 +3507,7 @@ RORHACK:
         {
             if (gAimReticle)
             {
-                rotatesprite(160<<16, defaultHoriz<<16, 65536, 0, kCrosshairTile, 0, CROSSHAIR_PAL, 2, gViewX0, gViewY0, gViewX1, gViewY1);
+                rotatesprite(160<<16, defaultHoriz<<16, 65536, 0, kCrosshairTile, 0, g_isAlterDefaultCrosshair ? CROSSHAIR_PAL : 0, 2, gViewX0, gViewY0, gViewX1, gViewY1);
             }
             cX = (v4c>>8)+160;
             cY = (v48>>8)+220+(zDelta>>7);

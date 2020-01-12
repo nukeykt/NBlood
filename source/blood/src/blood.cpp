@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 #include "fire.h"
 #include "fx.h"
+#include "gib.h"
 #include "getopt.h"
 #include "globals.h"
 #include "gui.h"
@@ -165,11 +166,6 @@ enum gametokens
 int blood_globalflags;
 
 void app_crashhandler(void)
-{
-    // NUKE-TODO:
-}
-
-void G_Polymer_UnInit(void)
 {
     // NUKE-TODO:
 }
@@ -319,20 +315,22 @@ void PrecacheThing(spritetype *pSprite) {
         case kThingObjectGib:
         //case kThingObjectExplode: weird that only gib object is precached and this one is not
             break;
-        default:
-            tilePreloadTile(pSprite->picnum);
-            break;
     }
-    seqPrecacheId(3);
-    seqPrecacheId(4);
-    seqPrecacheId(5);
-    seqPrecacheId(9);
+    tilePrecacheTile(pSprite->picnum);
 }
 
 void PreloadTiles(void)
 {
     int skyTile = -1;
     memset(gotpic,0,sizeof(gotpic));
+    // Fonts
+    for (int i = 0; i < kFontNum; i++)
+    {
+        for (int j = 0; j < 96; j++)
+        {
+            tilePrecacheTile(gFont[i].tile + j, 0);
+        }
+    }
     for (int i = 0; i < numsectors; i++)
     {
         tilePrecacheTile(sector[i].floorpicnum, 0);
@@ -365,25 +363,40 @@ void PreloadTiles(void)
             }
         }
     }
-    if (numplayers > 1)
+
+    // Precache common SEQs
+    for (int i = 0; i < 100; i++)
     {
-        seqPrecacheId(dudeInfo[31].seqStartID+6);
-        seqPrecacheId(dudeInfo[31].seqStartID+7);
-        seqPrecacheId(dudeInfo[31].seqStartID+8);
-        seqPrecacheId(dudeInfo[31].seqStartID+9);
-        seqPrecacheId(dudeInfo[31].seqStartID+10);
-        seqPrecacheId(dudeInfo[31].seqStartID+14);
-        seqPrecacheId(dudeInfo[31].seqStartID+15);
-        seqPrecacheId(dudeInfo[31].seqStartID+12);
-        seqPrecacheId(dudeInfo[31].seqStartID+16);
-        seqPrecacheId(dudeInfo[31].seqStartID+17);
-        seqPrecacheId(dudeInfo[31].seqStartID+18);
+        seqPrecacheId(i);
     }
+
+    tilePrecacheTile(1147); // water drip
+    tilePrecacheTile(1160); // blood drip
+
+    // Player SEQs
+    seqPrecacheId(dudeInfo[31].seqStartID+6);
+    seqPrecacheId(dudeInfo[31].seqStartID+7);
+    seqPrecacheId(dudeInfo[31].seqStartID+8);
+    seqPrecacheId(dudeInfo[31].seqStartID+9);
+    seqPrecacheId(dudeInfo[31].seqStartID+10);
+    seqPrecacheId(dudeInfo[31].seqStartID+14);
+    seqPrecacheId(dudeInfo[31].seqStartID+15);
+    seqPrecacheId(dudeInfo[31].seqStartID+12);
+    seqPrecacheId(dudeInfo[31].seqStartID+16);
+    seqPrecacheId(dudeInfo[31].seqStartID+17);
+    seqPrecacheId(dudeInfo[31].seqStartID+18);
+
     if (skyTile > -1 && skyTile < kMaxTiles)
     {
         for (int i = 1; i < gSkyCount; i++)
             tilePrecacheTile(skyTile+i, 0);
     }
+
+    WeaponPrecache();
+    viewPrecacheTiles();
+    fxPrecache();
+    gibPrecache();
+
     gameHandleEvents();
 }
 
@@ -524,6 +537,29 @@ void G_LoadMapHack(char* outbuf, const char* filename)
             G_TryMapHack(pMapInfo->mhkfile);
     }
 }
+
+#ifdef POLYMER
+void G_RefreshLights(void)
+{
+    if (Numsprites && videoGetRenderMode() == REND_POLYMER)
+    {
+        int statNum = 0;
+
+        do
+        {
+            int spriteNum = headspritestat[statNum++];
+
+            while (spriteNum >= 0)
+            {
+                actDoLight(spriteNum);
+                spriteNum = nextspritestat[spriteNum];
+            }
+        }
+        while (statNum < MAXSTATUS);
+    }
+}
+#endif // POLYMER
+
 
 PLAYER gPlayerTemp[kMaxPlayers];
 int gHealthTemp[kMaxPlayers];
@@ -1069,6 +1105,9 @@ void ProcessFrame(void)
     DoSectorPanning();
     actProcessSprites();
     actPostProcess();
+#ifdef POLYMER
+    G_RefreshLights();
+#endif
     viewCorrectPrediction();
     sndProcess();
     ambProcess();
