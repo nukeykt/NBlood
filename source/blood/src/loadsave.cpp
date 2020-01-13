@@ -196,7 +196,7 @@ void LoadSave::LoadGame(char *pzFile)
         || demoWasPlayed
         || (gMusicPrevLoadedEpisode != gGameOptions.nEpisode || gMusicPrevLoadedLevel != gGameOptions.nLevel))
     {
-        levelTryPlayMusic(gGameOptions.nEpisode, gGameOptions.nLevel);
+        levelTryPlayMusicOrNothing(gGameOptions.nEpisode, gGameOptions.nLevel);
     }
     gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
     gMusicPrevLoadedLevel = gGameOptions.nLevel;
