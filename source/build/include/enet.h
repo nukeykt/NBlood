@@ -981,6 +981,13 @@ extern "C" {
 
     extern size_t enet_protocol_command_size (enet_uint8);
 
+#if defined _WIN32 || __APPLE__ && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+    extern int enet_gettime(int X, struct timespec *tv);
+#else
+# define enet_gettime clock_gettime
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -4849,7 +4856,7 @@ extern "C" {
             return (t);
         }
 
-        int clock_gettime(int X, struct timespec *tv) {
+        int enet_gettime(int X, struct timespec *tv) {
             UNREFERENCED_PARAMETER(X);
             LARGE_INTEGER t;
             FILETIME f;
@@ -4890,7 +4897,7 @@ extern "C" {
     #elif __APPLE__ && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
         #define CLOCK_MONOTONIC 0
 
-        int clock_gettime(int X, struct timespec *ts) {
+        int enet_gettime(int X, struct timespec *ts) {
             clock_serv_t cclock;
             mach_timespec_t mts;
 
@@ -4920,9 +4927,9 @@ extern "C" {
 
         struct timespec ts;
     #if defined(CLOCK_MONOTONIC_RAW)
-        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+        enet_gettime(CLOCK_MONOTONIC_RAW, &ts);
     #else
-        clock_gettime(CLOCK_MONOTONIC, &ts);
+        enet_gettime(CLOCK_MONOTONIC, &ts);
     #endif
 
         static const uint64_t ns_in_s = 1000 * 1000 * 1000;
@@ -5407,12 +5414,37 @@ extern "C" {
         return 0;
     }
 
+    int enet_pton(int const af, const char * const src, void * const dst) {
+        struct sockaddr_storage ss;
+
+        int  size = sizeof(ss);
+        char src_copy[INET6_ADDRSTRLEN + 1];
+
+        ZeroMemory(&ss, sizeof(ss));
+
+        strncpy(src_copy, src, INET6_ADDRSTRLEN + 1);
+        src_copy[INET6_ADDRSTRLEN] = 0;
+
+        if (WSAStringToAddress(src_copy, af, NULL, (struct sockaddr *)&ss, &size) == 0) {
+            switch (af) {
+                case AF_INET:
+                    *(struct in_addr *)dst = ((struct sockaddr_in *)&ss)->sin_addr;
+                    return 1;
+                case AF_INET6:
+                    *(struct in6_addr *)dst = ((struct sockaddr_in6 *)&ss)->sin6_addr;
+                    return 1;
+            }
+        }
+
+        return 0;
+    }
+
     int enet_address_set_host(ENetAddress *address, char *name) {
         struct hostent *hostEntry = NULL;
         hostEntry = gethostbyname(name);
 
         if (hostEntry == NULL || hostEntry->h_addrtype != AF_INET) {
-            if (!inet_pton(AF_INET6, name, &address->host)) {
+            if (!enet_pton(AF_INET6, name, &address->host)) {
                 return -1;
             }
 
@@ -5427,8 +5459,28 @@ extern "C" {
         return 0;
     }
 
+    char const *enet_ntop(int const af, void const *const src, char *const dst, socklen_t const cnt) {
+        if (af == AF_INET) {
+            struct sockaddr_in in;
+            memset(&in, 0, sizeof(in));
+            in.sin_family = AF_INET;
+            memcpy(&in.sin_addr, src, sizeof(struct in_addr));
+            getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in), dst, cnt, NULL, 0, NI_NUMERICHOST);
+            return dst;
+        } else if (af == AF_INET6) {
+            struct sockaddr_in6 in;
+            memset(&in, 0, sizeof(in));
+            in.sin6_family = AF_INET6;
+            memcpy(&in.sin6_addr, src, sizeof(struct in_addr6));
+            getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in6), dst, cnt, NULL, 0, NI_NUMERICHOST);
+            return dst;
+        }
+
+        return NULL;
+    }
+
     int enet_address_get_host_ip(ENetAddress *address, char *name, size_t nameLength) {
-        if (inet_ntop(AF_INET6, (PVOID)&address->host, name, nameLength) == NULL) {
+        if (enet_ntop(AF_INET6, (PVOID)&address->host, name, nameLength) == NULL) {
             return -1;
         }
 

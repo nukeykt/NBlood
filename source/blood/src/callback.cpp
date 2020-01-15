@@ -341,7 +341,9 @@ void CounterCheck(int nSector) // 12
 
     // By NoOne: remove check below, so every sector can be counter if command 12 (this callback) received.
     //if (pSector->type != kSectorCounter) return;
-    if (sector[nSector].extra <= 0) return; XSECTOR *pXSector = &xsector[sector[nSector].extra];
+    if (sector[nSector].extra <= 0) return;
+    
+    XSECTOR *pXSector = &xsector[sector[nSector].extra];
     int nReq = pXSector->waitTimeA; int nType = pXSector->data; int nCount = 0;
     if (!nType || !nReq) return;
     
@@ -354,7 +356,7 @@ void CounterCheck(int nSector) // 12
         return;
     } else {
         //pXSector->waitTimeA = 0; //do not reset necessary objects counter to zero
-        trTriggerSector(nSector, pXSector, kCmdOn, -1);
+        trTriggerSector(nSector, pXSector, kCmdOn);
         pXSector->locked = 1; //lock sector, so it can be opened again later
     }
 }
@@ -482,13 +484,13 @@ void returnFlagToBase(int nSprite) // 17
         XSPRITE* pXOwner = &xsprite[pOwner->extra];
         switch (pSprite->type) {
             case kItemFlagA:
-                trTriggerSprite(pOwner->index, pXOwner, kCmdOn, pOwner->index);
+                trTriggerSprite(pOwner->index, pXOwner, kCmdOn);
                 sndStartSample(8003, 255, 2, 0);
                 gBlueFlagDropped = false;
                 viewSetMessage("Blue Flag returned to base.");
                 break;
             case kItemFlagB:
-                trTriggerSprite(pOwner->index, pXOwner, kCmdOn, pOwner->index);
+                trTriggerSprite(pOwner->index, pXOwner, kCmdOn);
                 sndStartSample(8002, 255, 2, 0);
                 gRedFlagDropped = false;
                 viewSetMessage("Red Flag returned to base.");

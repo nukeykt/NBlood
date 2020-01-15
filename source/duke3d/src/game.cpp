@@ -459,17 +459,15 @@ static void G_OROR_DupeSprites(spritetype const *sp)
 
         if (sprite[k].picnum != SECTOREFFECTOR && sprite[k].z >= sp->z)
         {
-            Bmemcpy(&tsprite[spritesortcnt], &sprite[k], sizeof(spritetype));
+            tspriteptr_t tsp = renderAddTSpriteFromSprite(k);
+            Duke_ApplySpritePropertiesToTSprite(tsp, (uspriteptr_t)&sprite[k]);
 
-            tsprite[spritesortcnt].x += (refsp->x - sp->x);
-            tsprite[spritesortcnt].y += (refsp->y - sp->y);
-            tsprite[spritesortcnt].z = tsprite[spritesortcnt].z - sp->z + actor[sp->yvel].ceilingz;
-            tsprite[spritesortcnt].sectnum = refsp->sectnum;
-            tsprite[spritesortcnt].owner = k;
-            tsprite[spritesortcnt].extra = 0;
+            tsp->x += (refsp->x - sp->x);
+            tsp->y += (refsp->y - sp->y);
+            tsp->z += -sp->z + actor[sp->yvel].ceilingz;
+            tsp->sectnum = refsp->sectnum;
 
-//            OSD_Printf("duped sprite of pic %d at %d %d %d\n",tsprite[spritesortcnt].picnum,tsprite[spritesortcnt].x,tsprite[spritesortcnt].y,tsprite[spritesortcnt].z);
-            spritesortcnt++;
+//            OSD_Printf("duped sprite of pic %d at %d %d %d\n",tsp->picnum,tsp->x,tsp->y,tsp->z);
         }
     }
 }
@@ -3638,6 +3636,8 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         const int32_t i = t->owner;
         auto const s = &sprite[i];
 
+        Duke_ApplySpritePropertiesToTSprite(t, (uspriteptr_t)s);
+
         switch (DYNAMICTILEMAP(s->picnum))
         {
         case SECTOREFFECTOR__STATIC:
@@ -3756,6 +3756,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         const int32_t i = t->owner;
         // XXX: what's up with the (i < 0) check?
         // NOTE: not const spritetype because set at SET_SPRITE_NOT_TSPRITE (see below).
+        EDUKE32_STATIC_ASSERT(sizeof(uspritetype) == sizeof(tspritetype)); // see TSPRITE_SIZE
         auto const pSprite = (i < 0) ? (uspriteptr_t)&tsprite[j] : (uspriteptr_t)&sprite[i];
 
 #ifndef EDUKE32_STANDALONE
@@ -3768,7 +3769,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         if (pSprite->picnum == NATURALLIGHTNING)
         {
             t->shade = -127;
-            t->cstat |= 8192;
+            t->clipdist |= TSPR_FLAGS_NO_SHADOW;
         }
 #endif
         if (t->statnum == TSPR_TEMP)
@@ -3897,7 +3898,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
                 {
                     auto const newt = &tsprite[spritesortcnt++];
 
-                    Bmemcpy(newt, t, sizeof(spritetype));
+                    *newt = *t;
 
                     newt->cstat |= 2|512;
                     newt->x += (sintable[(newt->ang+512)&2047]>>12);
@@ -4071,7 +4072,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
                     if ((!g_netServer && ud.multimode < 2) || ((g_netServer || ud.multimode > 1) && playerNum == screenpeek))
                     {
                         if (videoGetRenderMode() == REND_POLYMER)
-                            t->cstat |= 16384;
+                            t->clipdist |= TSPR_FLAGS_INVISIBLE_WITH_SHADOW;
                         else
                         {
                             t->owner = -1;
@@ -4303,7 +4304,7 @@ skip:
                                 tsprShadow->yrepeat = 0;
                                 // 512:trans reverse
                                 //1024:tell MD2SPRITE.C to use Z-buffer hacks to hide overdraw issues
-                                tsprShadow->extra |= TSPR_EXTRA_MDHACK;
+                                tsprShadow->clipdist |= TSPR_FLAGS_MDHACK;
                                 tsprShadow->cstat |= 512;
                             }
                             else
@@ -4354,7 +4355,7 @@ skip:
                 //g_restorePalette = 1;   // JBF 20040101: why?
             }
             t->shade = -127;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
 #ifndef EDUKE32_STANDALONE
         case FIRE__STATIC:
@@ -4368,11 +4369,11 @@ skip:
             t->shade = -127;
             fallthrough__;
         case SMALLSMOKE__STATIC:
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
         case COOLEXPLOSION1__STATIC:
             t->shade = -127;
-            t->cstat |= 8192+1024;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             t->picnum += (pSprite->shade>>1);
             break;
         case PLAYERONWATER__STATIC:
@@ -6152,26 +6153,8 @@ static void G_Startup(void)
     if (numplayers > 1)
         initprintf("Multiplayer initialized.\n");
 
-    char *cwd;
-
-    if (g_modDir[0] != '/' && (cwd = buildvfs_getcwd(NULL, 0)))
-    {
-        buildvfs_chdir(g_modDir);
-        if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
-        {
-            buildvfs_chdir(cwd);
-            if (artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE) < 0)
-                G_GameExit("Failed loading art.");
-        }
-        buildvfs_chdir(cwd);
-#ifndef __ANDROID__ //This crashes on *some* Android devices. Small onetime memory leak. TODO fix above function
-        Xfree(cwd);
-#endif
-    }
-    else if (artLoadFiles("tiles%03i.art",MAXCACHE1DSIZE) < 0)
+    if (artLoadFiles("tiles%03i.art",MAXCACHE1DSIZE) < 0)
         G_GameExit("Failed loading art.");
-
-    cacheAllSounds();
 
     // Make the fullscreen nuke logo background non-fullbright.  Has to be
     // after dynamic tile remapping (from C_Compile) and loading tiles.
@@ -6350,7 +6333,7 @@ void G_MaybeAllocPlayer(int32_t pnum)
 int G_FPSLimit(void)
 {
     if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
-        return 1;
+        return true;
 
     static double   nextPageDelay;
     static uint64_t lastFrameTicks;
@@ -6358,7 +6341,7 @@ int G_FPSLimit(void)
     g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
     nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
 
-    uint64_t const frameTicks = timerGetTicksU64();
+    uint64_t const frameTicks = timerGetPerformanceCounter();
 
     if (lastFrameTicks > frameTicks)
         lastFrameTicks = frameTicks;
@@ -6373,10 +6356,10 @@ int G_FPSLimit(void)
 
         lastFrameTicks = frameTicks;
 
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
@@ -6643,6 +6626,8 @@ int app_main(int argc, char const * const * argv)
     for (char * m : g_defModules)
         free(m);
     g_defModules.clear();
+
+    cacheAllSounds();
 
     if (enginePostInit())
         G_FatalEngineInitError();

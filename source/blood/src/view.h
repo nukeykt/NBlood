@@ -72,12 +72,14 @@ enum INTERPOLATE_TYPE {
 #define kLoadScreenWideRight 9218
 #define kLoadScreenWideMiddle 9219
 
+#define kFontNum 5
+
 struct FONT {
     int tile, xSize, ySize, space;
 };
 
 extern int gZoom;
-extern FONT gFont[5];
+extern FONT gFont[kFontNum];
 extern int gViewMode;
 extern VIEWPOS gViewPos;
 extern int gViewIndex;
@@ -104,7 +106,7 @@ extern int gLastPal;
 extern int32_t gShowFps, gFramePeriod;
 
 
-static inline double calcFrameDelay(int maxFPS) { return maxFPS ? ((double)timerGetFreqU64() / (double)(maxFPS)) : 0.0; }
+static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize);
 void viewUpdatePages(void);
@@ -138,8 +140,7 @@ void viewInit(void);
 void viewResizeView(int size);
 void UpdateFrame(void);
 void viewDrawInterface(ClockTicks arg);
-uspritetype *viewInsertTSprite(int nSector, int nStatnum, uspritetype *pSprite);
-uspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect);
+tspritetype *viewAddEffect(int nTSprite, VIEW_EFFECT nViewEffect);
 void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t smooth);
 void CalcOtherPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, int zm);
 void CalcPosition(spritetype *pSprite, int *pX, int *pY, int *pZ, int *vsectnum, int nAng, int zm);
@@ -159,6 +160,7 @@ void viewSetCrosshairColor(int32_t r, int32_t g, int32_t b);
 void viewResetCrosshairToDefault(void);
 void viewPrintFPS(void);
 void viewSetSystemMessage(const char* pMessage, ...);
+void viewPrecacheTiles(void);
 
 inline void viewInterpolateSector(int nSector, sectortype *pSector)
 {

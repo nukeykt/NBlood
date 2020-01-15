@@ -285,6 +285,7 @@ void PlayMovie(const char* fileName)
                     bDoFade = DoFadeIn();
                 }
             }
+#ifdef USE_OPENGL
             else
             {
                 if (f >= 0)
@@ -293,6 +294,7 @@ void PlayMovie(const char* fileName)
                     f -= 8;
                 }
             }
+#endif
 
             videoNextPage();
 
@@ -312,6 +314,7 @@ void PlayMovie(const char* fileName)
 
     fclose(fp);
 
+#ifdef USE_OPENGL
     // need to do OpenGL fade out here
     f = 0;
 
@@ -328,4 +331,5 @@ void PlayMovie(const char* fileName)
 
         videoNextPage();
     }
+#endif
 }

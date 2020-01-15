@@ -60,17 +60,10 @@ void S_SoundStartup(void)
     void *initdata = NULL;
 #endif
 
-    initprintf("Initializing sound... ");
-
     int status = FX_Init(ud.config.NumVoices, ud.config.NumChannels, ud.config.MixRate, initdata);
-    if (status != FX_Ok)
-    {
-        initprintf("failed! %s\n", FX_ErrorString(status));
-        return;
-    }
 
-    initprintf("%d voices, %d channels, %d-bit %d Hz\n", ud.config.NumVoices, ud.config.NumChannels,
-        ud.config.NumBits, ud.config.MixRate);
+    if (status != FX_Ok)
+        return;
 
     for (int i = 0; i <= g_highestSoundIdx; ++i)
     {
@@ -85,12 +78,12 @@ void S_SoundStartup(void)
 #endif
     }
 
-    cacheAllSounds();
-
     FX_SetVolume(ud.config.FXVolume);
     S_MusicVolume(ud.config.MusicVolume);
 
+#ifdef ASS_REVERSESTEREO
     FX_SetReverseStereo(ud.config.ReverseStereo);
+#endif
     FX_SetCallBack(S_Callback);
     FX_SetPrintf(OSD_Printf);
     mutex_init(&m_callback);
@@ -111,8 +104,6 @@ void S_SoundShutdown(void)
 
 void S_MusicStartup(void)
 {
-    initprintf("Initializing MIDI driver... ");
-
     int status;
     if ((status = MUSIC_Init(ud.config.MusicDevice)) == MUSIC_Ok)
     {

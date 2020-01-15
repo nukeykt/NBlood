@@ -235,15 +235,6 @@
     <ClCompile Include="..\..\source\sw\src\jnstub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\midi.cpp">
-      <Filter>Source Files\midi</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\mpu401.cpp">
-      <Filter>Source Files\midi</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\music.cpp">
-      <Filter>Source Files\midi</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -257,9 +248,6 @@
     </Filter>
     <Filter Include="Header Files\midi">
       <UniqueIdentifier>{e969efff-b36b-455e-a639-b0d7bfbdd2a0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\midi">
-      <UniqueIdentifier>{7c7b4f6f-d5af-422c-885e-429acbd2e725}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

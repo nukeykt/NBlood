@@ -119,7 +119,7 @@ int Handicap[] = {
     144, 208, 256, 304, 368
 };
 
-int gDefaultAccel[] = {
+/*int gDefaultAccel[] = {
     
     // normal human
     0x4000, 0x1200, 0x2000, // stand (front, side, back)  / swim (front, side, back)  / crouch (front, side, back)
@@ -128,244 +128,52 @@ int gDefaultAccel[] = {
     // shrink human
     10384,  2108,  2192,    // stand (front, side, back)  / swim (front, side, back)  / crouch (front, side, back)
     // grown human
-    19384,  5608,  11192    // stand (front, side, back)  / swim (front, side, back) / crouch (front, side, back) 
+    19384,  5608,  11192,    // stand (front, side, back)  / swim (front, side, back) / crouch (front, side, back) 
 
 };
 
 int gDefaultJumpZ[] = {
 
     // normal human
-    -0xbaaaa, -0x175555, 0x5b05, 0, 0, 0 // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
+    -0xbaaaa, -0x175555, 0x5b05, 0, 0, 0, // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
     // normal beast
-    -0xbaaaa, -0x175555, 0x5b05, 0, 0, 0 // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
+    -0xbaaaa, -0x175555, 0x5b05, 0, 0, 0, // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
     // shrink human
-    -200000, -0x175555, 0x5b05, 0, 0, 0 // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
+    -564586, -1329173, 0x5b05, 0, 0, 0, // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
     // grown human
-    -250000, -0x175555, 0x5b05, 0, 0, 0 // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
+    -1014586, -1779173, 0x5b05, 0, 0, 0, // stand (normal jump, pwup jump) / swim (normal jump, pwup jump) / crouch (normal jump, pwup jump)
 
-};
+};*/
 
 
-POSTURE gPosture[kModeMax][kPostureMax] = {
+POSTURE gPostureDefaults[kModeMax][kPostureMax] = {
     
     // normal human
     {
-        {
-            gDefaultAccel[0],
-            gDefaultAccel[0],
-            gDefaultAccel[0],
-            14,
-            17,
-            24,
-            16,
-            32,
-            80,
-            0x1600,
-            0x1200,
-            0xc00,
-            0x90,
-            gDefaultJumpZ[0],
-            gDefaultJumpZ[1],
-        },
-        {
-            gDefaultAccel[1],
-            gDefaultAccel[1],
-            gDefaultAccel[1],
-            14,
-            17,
-            24,
-            16,
-            32,
-            80,
-            0x1400,
-            0x1000,
-            -0x600,
-            0xb0,
-            gDefaultJumpZ[2],
-            gDefaultJumpZ[3],
-        },
-        {
-            gDefaultAccel[2],
-            gDefaultAccel[2],
-            gDefaultAccel[2],
-            22,
-            28,
-            24,
-            16,
-            16,
-            40,
-            0x800,
-            0x600,
-            -0x600,
-            0xb0,
-            gDefaultJumpZ[4],
-            gDefaultJumpZ[5],
-        },
+        { 0x4000, 0x4000, 0x4000, 14, 17, 24, 16, 32, 80, 0x1600, 0x1200, 0xc00, 0x90, -0xbaaaa, -0x175555 },
+        { 0x1200, 0x1200, 0x1200, 14, 17, 24, 16, 32, 80, 0x1400, 0x1000, -0x600, 0xb0, 0x5b05, 0 },
+        { 0x2000, 0x2000, 0x2000, 22, 28, 24, 16, 16, 40, 0x800, 0x600, -0x600, 0xb0, 0, 0 },
     },
 
     // normal beast
     {
-        {
-            gDefaultAccel[3],
-            gDefaultAccel[3],
-            gDefaultAccel[3],
-            14,
-            17,
-            24,
-            16,
-            32,
-            80,
-            0x1600,
-            0x1200,
-            0xc00,
-            0x90,
-            gDefaultJumpZ[6],
-            gDefaultJumpZ[7],
-        },
-        {
-            gDefaultAccel[4],
-            gDefaultAccel[4],
-            gDefaultAccel[4],
-            14,
-            17,
-            24,
-            16,
-            32,
-            80,
-            0x1400,
-            0x1000,
-            -0x600,
-            0xb0,
-            gDefaultJumpZ[8],
-            gDefaultJumpZ[9],
-        },
-        {
-            gDefaultAccel[5],
-            gDefaultAccel[5],
-            gDefaultAccel[5],
-            22,
-            28,
-            24,
-            16,
-            16,
-            40,
-            0x800,
-            0x600,
-            -0x600,
-            0xb0,
-            gDefaultJumpZ[10],
-            gDefaultJumpZ[11],
-        },
+        { 0x4000, 0x4000, 0x4000, 14, 17, 24, 16, 32, 80, 0x1600, 0x1200, 0xc00, 0x90, -0xbaaaa, -0x175555 },
+        { 0x1200, 0x1200, 0x1200, 14, 17, 24, 16, 32, 80, 0x1400, 0x1000, -0x600, 0xb0, 0x5b05, 0 },
+        { 0x2000, 0x2000, 0x2000, 22, 28, 24, 16, 16, 40, 0x800, 0x600, -0x600, 0xb0, 0, 0 },
     },
 
     // shrink human
     {
-        {
-            gDefaultAccel[6],
-            gDefaultAccel[6],
-            gDefaultAccel[6],
-            14, 
-            17, 
-            24, 
-            16, 
-            32, 
-            80, 
-            5632, 
-            4608, 
-            3072, 
-            144,
-            gDefaultJumpZ[12],
-            gDefaultJumpZ[13],
-        },
-        {
-            gDefaultAccel[7],
-            gDefaultAccel[7],
-            gDefaultAccel[7],
-            14, 
-            17, 
-            24,
-            16, 
-            32, 
-            80, 
-            5120, 
-            4096, 
-            -1536, 
-            176,
-            gDefaultJumpZ[14],
-            gDefaultJumpZ[15],
-        },
-        {
-            gDefaultAccel[8],
-            gDefaultAccel[8],
-            gDefaultAccel[8],
-            22, 
-            28, 
-            24, 
-            16,
-            16,
-            40, 
-            2048, 
-            1536, 
-            -1536,
-            176,
-            gDefaultJumpZ[16],
-            gDefaultJumpZ[17],
-        },
+        { 10384, 10384, 10384, 14, 17, 24, 16, 32, 80, 5632, 4608, 3072, 144, -564586, -1329173 },
+        { 2108, 2108, 2108, 14, 17, 24, 16, 32, 80, 5120, 4096, -1536, 176, 0x5b05, 0 },
+        { 2192, 2192, 2192, 22, 28, 24, 16, 16, 40, 2048, 1536, -1536, 176, 0, 0 },
     },
 
     // grown human
     {
-        {
-            gDefaultAccel[9],
-            gDefaultAccel[9],
-            gDefaultAccel[9],
-            14, 
-            17, 
-            24, 
-            16, 
-            32, 
-            80, 
-            5632, 
-            4608, 
-            3072,
-            144,
-            gDefaultJumpZ[18],
-            gDefaultJumpZ[19],
-        },
-        {
-            gDefaultAccel[10],
-            gDefaultAccel[10],
-            gDefaultAccel[10],
-            14, 
-            17, 
-            24, 
-            16, 
-            32, 
-            80, 
-            5120, 
-            4096, 
-            -1536, 
-            176,
-            gDefaultJumpZ[20],
-            gDefaultJumpZ[21],
-        },
-        {
-            gDefaultAccel[11],
-            gDefaultAccel[11],
-            gDefaultAccel[11],
-            22, 
-            28, 
-            24, 
-            16, 
-            16, 
-            40, 
-            2048, 
-            1536, 
-            -1536, 
-            176,
-            gDefaultJumpZ[22],
-            gDefaultJumpZ[23],
-        },
+        { 19384, 19384, 19384, 14, 17, 24, 16, 32, 80, 5632, 4608, 3072, 144, -1014586, -1779173 },
+        { 5608, 5608, 5608, 14, 17, 24, 16, 32, 80, 5120, 4096, -1536, 176, 0x5b05, 0 },
+        { 11192, 11192, 11192, 22, 28, 24, 16, 16, 40, 2048, 1536, -1536, 176, 0, 0 },
     },
 };
 
@@ -584,16 +392,24 @@ void deactivateSizeShrooms(PLAYER* pPlayer) {
 
 
 PLAYER* getPlayerById(short id) {
-    if (id > 0) {
+    
+    // relative to connected players
+    if (id >= 1 && id <= kMaxPlayers) {
+        id = id - 1;
         for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
-            if (id < kMaxPlayers && id == i + 1) return &gPlayer[i]; // relative to connected players
-            else if (id >= kDudePlayer1 && id <= kDudePlayer8 && id == gPlayer[i].pSprite->type) // absolute type
+            if (id == gPlayer[i].nPlayer)
+                return &gPlayer[i]; 
+        }
+        
+    // absolute sprite type
+    } else if (id >= kDudePlayer1 && id <= kDudePlayer8) {
+        for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
+            if (id == gPlayer[i].pSprite->type)
                 return &gPlayer[i];
         }
-
-        if (id >= kDudePlayer1 && id <= kDudePlayer8) viewSetSystemMessage("There is no player #%d", (kDudePlayer8 - id) + kMaxPlayers);
-        else  viewSetSystemMessage("There is no player #%d", id);
     }
+    
+    viewSetSystemMessage("There is no player id #%d", id);
     return NULL;
 }
 
@@ -947,7 +763,7 @@ void playerSetGodMode(PLAYER *pPlayer, char bGodMode)
 
 void playerResetInertia(PLAYER *pPlayer)
 {
-    POSTURE *pPosture = &gPosture[pPlayer->lifeMode][pPlayer->posture];
+    POSTURE *pPosture = &pPlayer->pPosture[pPlayer->lifeMode][pPlayer->posture];
     pPlayer->zView = pPlayer->pSprite->z-pPosture->eyeAboveZ;
     pPlayer->zWeapon = pPlayer->pSprite->z-pPosture->weaponAboveZ;
     viewBackupView(pPlayer->nPlayer);
@@ -1014,6 +830,7 @@ void playerStart(int nPlayer)
     DUDEINFO *pDudeInfo = &dudeInfo[kDudePlayer1 + nPlayer - kDudeBase];
     pPlayer->pDudeInfo = pDudeInfo;
     playerSetRace(pPlayer, kModeHuman);
+    playerResetPosture(pPlayer);
     seqSpawn(pDudeInfo->seqStartID, 3, pSprite->extra, -1);
     if (pPlayer == gMe)
         SetBitString(show2dsprite, pSprite->index);
@@ -1092,6 +909,7 @@ void playerStart(int nPlayer)
     pPlayer->weaponTimer = 0;
     pPlayer->weaponState = 0;
     pPlayer->weaponQav = -1;
+    playerResetQavScene(pPlayer); // reset qav scene
     pPlayer->hand = 0;
     pPlayer->nWaterPal = 0;
     playerResetPowerUps(pPlayer);
@@ -1155,32 +973,21 @@ void playerReset(PLAYER *pPlayer)
 
     ///////////////// 
     // reset qav scene
-    QAVSCENE* pQavScene = &gPlayerCtrl[pPlayer->nPlayer].qavScene;
-    pQavScene->index = pQavScene->causedBy = pPlayer->sceneQav = -1;
-    pQavScene->qavResrc = NULL;
+    playerResetQavScene(pPlayer);
 
-    // restore default movement speed
-    playerResetMoveSpeed(pPlayer);
-
-    // restore default jump height
-    playerResetJumpHeight(pPlayer);
+    // reset posture (mainly required for resetting movement speed and jump height)
+    playerResetPosture(pPlayer);
     /////////////////
 }
 
-void playerResetMoveSpeed(PLAYER* pPlayer) {
-    for (int i = 0, k = 0; i < 4; i++) {
-        for (int a = 0; a < 3; a++, k++)
-            gPosture[i][a].frontAccel = gPosture[i][a].sideAccel = gPosture[i][a].backAccel = gDefaultAccel[k];
-    }
+void playerResetPosture(PLAYER* pPlayer) {
+    memcpy(pPlayer->pPosture, gPostureDefaults, sizeof(gPostureDefaults));
 }
 
-void playerResetJumpHeight(PLAYER* pPlayer) {
-    for (int i = 0, k = 0; i < 4; i++) {
-        for (int a = 0; a < 3; a++) {
-            gPosture[i][a].normalJumpZ = gDefaultJumpZ[k++];
-            gPosture[i][a].pwupJumpZ = gDefaultJumpZ[k++];
-        }
-    }
+void playerResetQavScene(PLAYER* pPlayer) {
+    QAVSCENE* pQavScene = &gPlayerCtrl[pPlayer->nPlayer].qavScene;
+    pQavScene->index = pQavScene->dummy = pPlayer->sceneQav = -1;
+    pQavScene->qavResrc = NULL;
 }
 
 int dword_21EFB0[8];
@@ -1199,6 +1006,7 @@ void playerInit(int nPlayer, unsigned int a2)
     memset(dword_21EFB0, 0, sizeof(dword_21EFB0));
     memset(dword_21EFD0, 0, sizeof(dword_21EFD0));
     memset(pPlayer->fragInfo, 0, sizeof(pPlayer->fragInfo));
+
     if (!(a2&1))
         playerReset(pPlayer);
 }
@@ -1249,7 +1057,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 1) == 0 && pXItem->state) {
                         pPlayer->hasFlag |= 1;
                         pPlayer->used2[0] = pItem->index;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOff, pPlayer->nSprite);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOff);
                         sprintf(buffer, "%s stole Blue Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8007, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1261,7 +1069,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 1) != 0 && !pXItem->state) {
                         pPlayer->hasFlag &= ~1;
                         pPlayer->used2[0] = -1;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOn, pPlayer->nSprite);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOn);
                         sprintf(buffer, "%s returned Blue Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8003, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1272,7 +1080,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->used2[1] = -1;
                         dword_21EFB0[pPlayer->teamId] += 10;
                         dword_21EFD0[pPlayer->teamId] += 240;
-                        evSend(0, 0, 81, kCmdOn, pPlayer->nSprite);
+                        evSend(0, 0, 81, kCmdOn);
                         sprintf(buffer, "%s captured Red Flag!", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8001, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1293,7 +1101,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     if ((pPlayer->hasFlag & 2) == 0 && pXItem->state) {
                         pPlayer->hasFlag |= 2;
                         pPlayer->used2[1] = pItem->index;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOff, pPlayer->nSprite);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOff);
                         sprintf(buffer, "%s stole Red Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8006, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1305,7 +1113,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                     {
                         pPlayer->hasFlag &= ~2;
                         pPlayer->used2[1] = -1;
-                        trTriggerSprite(pItem->index, pXItem, kCmdOn, pPlayer->nSprite);
+                        trTriggerSprite(pItem->index, pXItem, kCmdOn);
                         sprintf(buffer, "%s returned Red Flag", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8002, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1316,7 +1124,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->used2[0] = -1;
                         dword_21EFB0[pPlayer->teamId] += 10;
                         dword_21EFD0[pPlayer->teamId] += 240;
-                        evSend(0, 0, 80, kCmdOn, pPlayer->nSprite);
+                        evSend(0, 0, 80, kCmdOn);
                         sprintf(buffer, "%s captured Blue Flag!", gProfile[pPlayer->nPlayer].name);
                         sndStartSample(8000, 255, 2, 0);
                         viewSetMessage(buffer);
@@ -1492,7 +1300,7 @@ void PickUp(PLAYER *pPlayer, spritetype *pSprite)
     else if (pSprite->extra > 0) {
         XSPRITE *pXSprite = &xsprite[pSprite->extra];
         if (pXSprite->Pickup)
-            trTriggerSprite(pSprite->index, pXSprite, kCmdSpritePickup, pPlayer->nSprite);
+            trTriggerSprite(pSprite->index, pXSprite, kCmdSpritePickup);
     }
         
     if (!actCheckRespawn(pSprite)) 
@@ -1587,7 +1395,7 @@ int ActionScan(PLAYER *pPlayer, int *a2, int *a3)
                     zvel[*a2] += mulscale16(z, t2);
                 }
                 if (pXSprite->Push && !pXSprite->state && !pXSprite->isTriggered)
-                    trTriggerSprite(*a2, pXSprite, kCmdSpritePush, pPlayer->nSprite);
+                    trTriggerSprite(*a2, pXSprite, kCmdSpritePush);
             }
             break;
         case 0:
@@ -1625,7 +1433,7 @@ void ProcessInput(PLAYER *pPlayer)
     spritetype *pSprite = pPlayer->pSprite;
     XSPRITE *pXSprite = pPlayer->pXSprite;
     int nSprite = pPlayer->nSprite;
-    POSTURE *pPosture = &gPosture[pPlayer->lifeMode][pPlayer->posture];
+    POSTURE *pPosture = &pPlayer->pPosture[pPlayer->lifeMode][pPlayer->posture];
     GINPUT *pInput = &pPlayer->input;
     pPlayer->isRunning = pInput->syncFlags.run;
     if (pInput->buttonFlags.byte || pInput->forward || pInput->strafe || pInput->q16turn)
@@ -1765,17 +1573,13 @@ void ProcessInput(PLAYER *pPlayer)
         break;
     default:
         if (!pPlayer->cantJump && pInput->buttonFlags.jump && pXSprite->height == 0) {
-            sfxPlay3DSound(pSprite, 700, 0, 0);
-            if (packItemActive(pPlayer, 4)) zvel[nSprite] = pPosture->pwupJumpZ;// -0x175555;
-            else zvel[nSprite] = pPosture->normalJumpZ;//-0xbaaaa;
+            if ((packItemActive(pPlayer, 4) && pPosture->pwupJumpZ != 0) || pPosture->normalJumpZ != 0)
+                sfxPlay3DSound(pSprite, 700, 0, 0);
 
-
-            if (isShrinked(pPlayer->pSprite)) zvel[nSprite] -= gPosture[kModeHumanShrink][pPlayer->posture].normalJumpZ;//-200000;
-            else if (isGrown(pPlayer->pSprite)) zvel[nSprite] += gPosture[kModeHumanGrown][pPlayer->posture].normalJumpZ; //-250000;
-            
+            if (packItemActive(pPlayer, 4)) zvel[nSprite] = pPosture->pwupJumpZ; //-0x175555;
+            else zvel[nSprite] = pPosture->normalJumpZ; //-0xbaaaa;
             pPlayer->cantJump = 1;
         }
-
 
         if (pInput->buttonFlags.crouch)
             pPlayer->posture = 2;
@@ -1798,7 +1602,7 @@ void ProcessInput(PLAYER *pPlayer)
                     sndStartSample(3062, 255, 2, 0);
                 }
                 if (!key || pPlayer->hasKey[key])
-                    trTriggerSector(a2, pXSector, kCmdSpritePush, nSprite);
+                    trTriggerSector(a2, pXSector, kCmdSpritePush);
                 else if (pPlayer == gMe)
                 {
                     viewSetMessage("That requires a key.");
@@ -1816,7 +1620,7 @@ void ProcessInput(PLAYER *pPlayer)
                 sndStartSample(3062, 255, 2, 0);
             }
             if (!key || pPlayer->hasKey[key])
-                trTriggerWall(a2, pXWall, kCmdWallPush, pPlayer->nSprite);
+                trTriggerWall(a2, pXWall, kCmdWallPush);
             else if (pPlayer == gMe)
             {
                 viewSetMessage("That requires a key.");
@@ -1831,7 +1635,7 @@ void ProcessInput(PLAYER *pPlayer)
             if (pXSprite->locked && pPlayer == gMe && pXSprite->lockMsg)
                 trTextOver(pXSprite->lockMsg);
             if (!key || pPlayer->hasKey[key])
-                trTriggerSprite(a2, pXSprite, kCmdSpritePush, pPlayer->nSprite);
+                trTriggerSprite(a2, pXSprite, kCmdSpritePush);
             else if (pPlayer == gMe)
             {
                 viewSetMessage("That requires a key.");
@@ -1992,7 +1796,7 @@ void playerProcess(PLAYER *pPlayer)
     int nSprite = pPlayer->nSprite;
     int nXSprite = pSprite->extra;
     XSPRITE *pXSprite = pPlayer->pXSprite;
-    POSTURE *pPosture = &gPosture[pPlayer->lifeMode][pPlayer->posture];
+    POSTURE* pPosture = &pPlayer->pPosture[pPlayer->lifeMode][pPlayer->posture];
     powerupProcess(pPlayer);
     int top, bottom;
     GetSpriteExtents(pSprite, &top, &bottom);
@@ -2203,16 +2007,16 @@ void FragPlayer(PLAYER *pPlayer, int nSprite)
         if (nTeam1 == 0)
         {
             if (nTeam1 != nTeam2)
-                evSend(0, 0, 15, kCmdToggle, pKiller->nSprite);
+                evSend(0, 0, 15, kCmdToggle);
             else
-                evSend(0, 0, 16, kCmdToggle, pKiller->nSprite);
+                evSend(0, 0, 16, kCmdToggle);
         }
         else
         {
             if (nTeam1 == nTeam2)
-                evSend(0, 0, 16, kCmdToggle, pKiller->nSprite);
+                evSend(0, 0, 16, kCmdToggle);
             else
-                evSend(0, 0, 15, kCmdToggle, pKiller->nSprite);
+                evSend(0, 0, 15, kCmdToggle);
         }
     }
 }
@@ -2394,7 +2198,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
     {
         powerupClear(pPlayer);
         if (nXSector > 0 && xsector[nXSector].Exit)
-            trTriggerSector(pSprite->sectnum, &xsector[nXSector], kCmdSectorExit, nSprite);
+            trTriggerSector(pSprite->sectnum, &xsector[nXSector], kCmdSectorExit);
         pSprite->flags |= 7;
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
@@ -2402,7 +2206,7 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
                 gPlayer[p].fraggerId = -1;
         }
         FragPlayer(pPlayer, nSource);
-        trTriggerSprite(nSprite, pXSprite, kCmdOff, nSource);
+        trTriggerSprite(nSprite, pXSprite, kCmdOff);
     }
     dassert(gSysRes.Lookup(pDudeInfo->seqStartID + nDeathSeqID, "SEQ") != NULL);
     seqSpawn(pDudeInfo->seqStartID+nDeathSeqID, 3, nXSprite, nKneelingPlayer);

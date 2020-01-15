@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "init.h"
 #include "light.h"
+#include "baselayer.h"
 #ifndef __WATCOMC__
 #include <cstring>
 #include <cstdio> // for printf
@@ -174,6 +175,9 @@ int seq_ReadSequence(const char *seqName)
 
     short tag;
     kread(hFile, &tag, sizeof(tag));
+#if B_BIG_ENDIAN == 1
+    tag = B_LITTLE16(tag);
+#endif
     if (tag < 'HI' || tag > 'HI' && tag != 'SD')
     {
         initprintf("Unsupported sequence version!\n");
@@ -186,6 +190,11 @@ int seq_ReadSequence(const char *seqName)
     kread(hFile, &centerx, sizeof(centerx));
     kread(hFile, &centery, sizeof(centery));
     kread(hFile, &nSeqs, sizeof(nSeqs));
+#if B_BIG_ENDIAN == 1
+    centerx = B_LITTLE16(centerx);
+    centery = B_LITTLE16(centery);
+    nSeqs = B_LITTLE16(nSeqs);
+#endif
 
     if (nSeqs <= 0 || sequences + nSeqs >= kMaxSequences)
     {
@@ -206,6 +215,11 @@ int seq_ReadSequence(const char *seqName)
 
     for (i = 0; i < nSeqs; i++)
     {
+#if B_BIG_ENDIAN == 1
+        SeqBase[sequences + i] = B_LITTLE16(SeqBase[sequences + i]);
+        SeqSize[sequences + i] = B_LITTLE16(SeqSize[sequences + i]);
+        SeqFlag[sequences + i] = B_LITTLE16(SeqFlag[sequences + i]);
+#endif
         SeqBase[sequences + i] += frames;
     }
 
@@ -213,6 +227,9 @@ int seq_ReadSequence(const char *seqName)
 
     int16_t nFrames;
     kread(hFile, &nFrames, sizeof(nFrames));
+#if B_BIG_ENDIAN == 1
+    nFrames = B_LITTLE16(nFrames);
+#endif
 
     if (nFrames <= 0 || frames + nFrames >= kMaxSEQFrames)
     {
@@ -234,11 +251,19 @@ int seq_ReadSequence(const char *seqName)
 
     for (i = 0; i < nFrames; i++)
     {
+#if B_BIG_ENDIAN == 1
+        FrameBase[frames + i] = B_LITTLE16(FrameBase[frames + i]);
+        FrameSize[frames + i] = B_LITTLE16(FrameSize[frames + i]);
+        FrameFlag[frames + i] = B_LITTLE16(FrameFlag[frames + i]);
+#endif
         FrameBase[frames + i] += chunks;
     }
 
     int16_t nChunks;
     kread(hFile, &nChunks, sizeof(nChunks));
+#if B_BIG_ENDIAN == 1
+    nChunks = B_LITTLE16(nChunks);
+#endif
 
     if (nChunks < 0 || chunks + nChunks >= kMaxSEQChunks)
     {
@@ -260,6 +285,12 @@ int seq_ReadSequence(const char *seqName)
 
     for (i = 0; i < nChunks; i++)
     {
+#if B_BIG_ENDIAN == 1
+        ChunkXpos[chunks + i] = B_LITTLE16(ChunkXpos[chunks + i]);
+        ChunkYpos[chunks + i] = B_LITTLE16(ChunkYpos[chunks + i]);
+        ChunkPict[chunks + i] = B_LITTLE16(ChunkPict[chunks + i]);
+        ChunkFlag[chunks + i] = B_LITTLE16(ChunkFlag[chunks + i]);
+#endif
         ChunkXpos[chunks + i] -= centerx;
         ChunkYpos[chunks + i] -= centery;
     }
@@ -274,6 +305,9 @@ int seq_ReadSequence(const char *seqName)
     {
         short var_20;
         kread(hFile, &var_20, sizeof(var_20));
+#if B_BIG_ENDIAN == 1
+        var_20 = B_LITTLE16(var_20);
+#endif
 
         for (i = 0; i < var_20; i++)
         {
@@ -282,12 +316,19 @@ int seq_ReadSequence(const char *seqName)
 
         short var_24;
         kread(hFile, &var_24, sizeof(var_24));
+#if B_BIG_ENDIAN == 1
+        var_24 = B_LITTLE16(var_24);
+#endif
 
         for (i = 0; i < var_24; i++)
         {
             short var_28, var_2C;
             kread(hFile, &var_28, sizeof(var_28));
             kread(hFile, &var_2C, sizeof(var_2C));
+#if B_BIG_ENDIAN == 1
+            var_28 = B_LITTLE16(var_28);
+            var_2C = B_LITTLE16(var_2C);
+#endif
 
             int hSound = LoadSound(&buffer[(var_2C&0x1FF)*10]);
 
@@ -504,17 +545,18 @@ int seq_GetSeqPicnum(short nSeq, short edx, short ebx)
 
 int seq_PlotArrowSequence(short nSprite, short nSeq, int nVal)
 {
-    int nAngle = GetMyAngle(nCamerax - tsprite[nSprite].x, nCameray - tsprite[nSprite].y);
+    tspriteptr_t pTSprite = &tsprite[nSprite];
+    int nAngle = GetMyAngle(nCamerax - pTSprite->x, nCameray - pTSprite->y);
 
-    int nSeqOffset = ((((tsprite[nSprite].ang + 512) - nAngle) + 128) & kAngleMask) >> 8;
+    int nSeqOffset = ((((pTSprite->ang + 512) - nAngle) + 128) & kAngleMask) >> 8;
 
     short nFrame = SeqBase[nSeqOffset + nSeq] + nVal;
 
     short nFrameBase = FrameBase[nFrame];
     short nFrameSize = FrameSize[nFrame];
 
-    uint8_t nShade = tsprite[nSprite].shade;
-    short nStat = tsprite[nSprite].cstat;
+    uint8_t nShade = pTSprite->shade;
+    short nStat = pTSprite->cstat;
 
     nStat |= 0x80;
 
@@ -529,29 +571,30 @@ int seq_PlotArrowSequence(short nSprite, short nSeq, int nVal)
         nShade -= 100;
     }
 
-    tsprite[nSprite].cstat = nStat;
-    tsprite[nSprite].shade = nShade;
-    tsprite[nSprite].statnum = nFrameSize;
+    pTSprite->cstat = nStat;
+    pTSprite->shade = nShade;
+    pTSprite->statnum = nFrameSize;
 
     if (ChunkFlag[nFrameBase] & 1)
     {
-        tsprite[nSprite].xoffset = ChunkXpos[nFrameBase];
-        tsprite[nSprite].cstat |= 4;
+        pTSprite->xoffset = ChunkXpos[nFrameBase];
+        pTSprite->cstat |= 4;
     }
     else
     {
-        tsprite[nSprite].xoffset = -ChunkXpos[nFrameBase];
+        pTSprite->xoffset = -ChunkXpos[nFrameBase];
     }
 
-    tsprite[nSprite].yoffset = -ChunkYpos[nFrameBase];
-    tsprite[nSprite].picnum = ChunkPict[nFrameBase];
+    pTSprite->yoffset = -ChunkYpos[nFrameBase];
+    pTSprite->picnum = ChunkPict[nFrameBase];
 
     return ChunkPict[nFrameBase];
 }
 
 int seq_PlotSequence(short nSprite, short edx, short nFrame, short ecx)
 {
-    int nAngle = GetMyAngle(nCamerax - tsprite[nSprite].x, nCameray - tsprite[nSprite].y);
+    tspriteptr_t pTSprite = &tsprite[nSprite];
+    int nAngle = GetMyAngle(nCamerax - pTSprite->x, nCameray - pTSprite->y);
 
     int val;
 
@@ -561,7 +604,7 @@ int seq_PlotSequence(short nSprite, short edx, short nFrame, short ecx)
     }
     else
     {
-        val = (((tsprite[nSprite].ang - nAngle) + 128) & kAngleMask) >> 8;
+        val = (((pTSprite->ang - nAngle) + 128) & kAngleMask) >> 8;
     }
 
     int eax = SeqBase[edx] + nFrame;
@@ -570,7 +613,7 @@ int seq_PlotSequence(short nSprite, short edx, short nFrame, short ecx)
     short nBase = FrameBase[edi];
     short nSize = FrameSize[edi];
 
-    int8_t shade = tsprite[nSprite].shade;
+    int8_t shade = pTSprite->shade;
 
     if (FrameFlag[eax] & 4)
     {
@@ -592,7 +635,7 @@ int seq_PlotSequence(short nSprite, short edx, short nFrame, short ecx)
     esi += edx;
 
     int var_14 = edx + 1;
-    short nOwner = tsprite[nSprite].owner;
+    short nOwner = pTSprite->owner;
 
     while (1)
     {
@@ -603,63 +646,63 @@ int seq_PlotSequence(short nSprite, short edx, short nFrame, short ecx)
             break;
         }
 
-        tsprite[spritesortcnt].x = tsprite[nSprite].x;
-        tsprite[spritesortcnt].y = tsprite[nSprite].y;
-        tsprite[spritesortcnt].z = tsprite[nSprite].z;
-        tsprite[spritesortcnt].shade = shade;
-        tsprite[spritesortcnt].pal   = tsprite[nSprite].pal;
-        tsprite[spritesortcnt].xrepeat = tsprite[nSprite].xrepeat;
-        tsprite[spritesortcnt].yrepeat = tsprite[nSprite].yrepeat;
-        tsprite[spritesortcnt].ang     = tsprite[nSprite].ang;
-        tsprite[spritesortcnt].owner   = tsprite[nSprite].owner;
-        tsprite[spritesortcnt].sectnum = tsprite[nSprite].sectnum;
-        tsprite[spritesortcnt].cstat   = tsprite[nSprite].cstat |= 0x80;
-        tsprite[spritesortcnt].statnum = esi;
+        tspriteptr_t tsp = &tsprite[spritesortcnt++];
+        tsp->x       = pTSprite->x;
+        tsp->y       = pTSprite->y;
+        tsp->z       = pTSprite->z;
+        tsp->shade   = shade;
+        tsp->pal     = pTSprite->pal;
+        tsp->xrepeat = pTSprite->xrepeat;
+        tsp->yrepeat = pTSprite->yrepeat;
+        tsp->ang     = pTSprite->ang;
+        tsp->owner   = pTSprite->owner;
+        tsp->sectnum = pTSprite->sectnum;
+        tsp->cstat   = pTSprite->cstat |= 0x80;
+        tsp->statnum = esi;
 
         if (ChunkFlag[nBase] & 1)
         {
-            tsprite[spritesortcnt].xoffset = ChunkXpos[nBase];
-            tsprite[spritesortcnt].cstat |= 4; // x-flipped
+            tsp->xoffset = ChunkXpos[nBase];
+            tsp->cstat |= 4; // x-flipped
         }
         else
         {
-            tsprite[spritesortcnt].xoffset = -ChunkXpos[nBase];
+            tsp->xoffset = -ChunkXpos[nBase];
         }
 
-        tsprite[spritesortcnt].yoffset = -ChunkYpos[nBase];
-        tsprite[spritesortcnt].picnum = ChunkPict[nBase];
+        tsp->yoffset = -ChunkYpos[nBase];
+        tsp->picnum = ChunkPict[nBase];
 
-        spritesortcnt++;
         nBase++;
     }
 
-    if (!(tsprite[nSprite].cstat & 0x101) || (sprite[nOwner].statnum == 100 && nNetPlayerCount))
+    if (!(pTSprite->cstat & 0x101) || (sprite[nOwner].statnum == 100 && nNetPlayerCount))
     {
-        tsprite[nSprite].owner = -1;
+        pTSprite->owner = -1;
     }
     else
     {
-        short nSector = tsprite[nSprite].sectnum;
+        short nSector = pTSprite->sectnum;
         int nFloorZ = sector[nSector].floorz;
 
         if (nFloorZ <= eyelevel[nLocalPlayer] + initz) {
-            tsprite[nSprite].owner = -1;
+            pTSprite->owner = -1;
         }
         else
         {
-            tsprite[nSprite].picnum = nShadowPic;
+            pTSprite->picnum = nShadowPic;
 
-            int edx = ((tilesiz[nPict].x << 5) / nShadowWidth) - ((nFloorZ - tsprite[nSprite].z) >> 10);
+            int edx = ((tilesiz[nPict].x << 5) / nShadowWidth) - ((nFloorZ - pTSprite->z) >> 10);
             if (edx < 1) {
                 edx = 1;
             }
 
-            tsprite[nSprite].cstat = 0x22; // transluscence, floor sprite
-            tsprite[nSprite].z = videoGetRenderMode() >= REND_POLYMOST ? nFloorZ : nFloorZ + 1;
-            tsprite[nSprite].yrepeat = (uint8_t)edx;
-            tsprite[nSprite].xrepeat = (uint8_t)edx;
-            tsprite[nSprite].statnum = -3;
-            tsprite[nSprite].pal = 0;
+            pTSprite->cstat = 0x22; // transluscence, floor sprite
+            pTSprite->z = videoGetRenderMode() >= REND_POLYMOST ? nFloorZ : nFloorZ + 1;
+            pTSprite->yrepeat = (uint8_t)edx;
+            pTSprite->xrepeat = (uint8_t)edx;
+            pTSprite->statnum = -3;
+            pTSprite->pal = 0;
         }
     }
 

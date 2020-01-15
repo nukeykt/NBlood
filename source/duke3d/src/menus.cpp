@@ -1229,9 +1229,9 @@ static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, 
 #endif
 
 static char const *MEOSN_SOUND_MIDIDRIVER[] = {
-    "OPL3",
+    "OPL3 emu.",
 #ifdef _WIN32
-    "Windows",
+    "Windows MME",
 #endif
 };
 static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
@@ -1520,7 +1520,7 @@ static Menu_t Menus[] = {
     { &M_MAIN, MENU_MAIN, MENU_CLOSE, MA_None, Menu },
     { &M_MAIN_INGAME, MENU_MAIN_INGAME, MENU_CLOSE, MA_None, Menu },
     { &M_EPISODE, MENU_EPISODE, MENU_MAIN, MA_Return, Menu },
-    { &M_USERMAP, MENU_USERMAP, MENU_PREVIOUS, MA_Return, FileSelect },
+    { &M_USERMAP, MENU_USERMAP, MENU_EPISODE, MA_Return, FileSelect },
     { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
     { &M_SKILL, MENU_SKILL, MENU_PREVIOUS, MA_Return, Menu },
@@ -1643,7 +1643,7 @@ static void MenuEntry_HideOnCondition(MenuEntry_t * const entry, const int32_t c
         entry->flags &= ~MEF_Hidden;
 }
 
-static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, vec2_t origin, bool actually_draw = true);
+static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, vec2_t origin, int actually_draw = 1);
 static void Menu_EntryFocus(/*MenuEntry_t *entry*/);
 
 static MenuEntry_t *Menu_AdjustForCurrentEntryAssignment(MenuMenu_t *menu)
@@ -1662,7 +1662,7 @@ static MenuEntry_t *Menu_AdjustForCurrentEntryAssignment(MenuMenu_t *menu)
 
 static MenuEntry_t *Menu_AdjustForCurrentEntryAssignmentBlind(MenuMenu_t *menu)
 {
-    M_RunMenu_Menu(nullptr, menu, nullptr, 0, { 0, 0 }, false);
+    M_RunMenu_Menu(nullptr, menu, nullptr, 0, { 0, 0 }, 0);
     return Menu_AdjustForCurrentEntryAssignment(menu);
 }
 
@@ -3343,21 +3343,31 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     }
     else if (entry == &ME_SOUND_RESTART)
     {
-        ud.config.MixRate = soundrate;
-        ud.config.NumVoices = soundvoices;
-        ud.config.MusicDevice = musicdevice;
+        if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices)
+        {
+            S_MusicShutdown();
+            S_SoundShutdown();
 
-        S_SoundShutdown();
-        S_MusicShutdown();
+            ud.config.MixRate = soundrate;
+            ud.config.NumVoices = soundvoices;
 
-        S_SoundStartup();
-        S_MusicStartup();
+            S_SoundStartup();
+            S_MusicStartup();
 
-        FX_StopAllSounds();
-        S_ClearSoundLocks();
+            S_ClearSoundLocks();
+        }
 
         if (ud.config.MusicToggle)
+        {
+            if (ud.config.MusicDevice != musicdevice)
+            {
+                S_MusicShutdown();
+                ud.config.MusicDevice = musicdevice;
+                S_MusicStartup();
+            }
+
             S_RestartMusic();
+        }
     }
     else if (entry == &ME_SAVESETUP_CLEANUP)
     {
@@ -4444,6 +4454,15 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 
 static void Menu_ChangingTo(Menu_t * m)
 {
+    switch (m->menuID)
+    {
+    case MENU_USERMAP:
+        // terrible hack
+        if (g_previousMenu != MENU_SKILL && g_previousMenu != MENU_USERMAP)
+            m->parentID = g_previousMenu;
+        break;
+    }
+
 #ifdef __ANDROID__
     if (m->menuID == MENU_TOUCHBUTTONS)
         AndroidToggleButtonEditor();
@@ -4780,7 +4799,7 @@ static vec2_t Menu_TextSize(int32_t x, int32_t y, const MenuFont_t *font, const 
 static int32_t Menu_FindOptionBinarySearch(MenuOption_t *object, const int32_t query, uint16_t searchstart, uint16_t searchend)
 {
     const uint16_t thissearch    = (searchstart + searchend) / 2;
-    const bool     isIdentityMap = object->options->optionValues == NULL;
+    const int      isIdentityMap = object->options->optionValues == NULL;
     const int32_t  destination   = isIdentityMap ? (int32_t)thissearch : object->options->optionValues[thissearch];
     const int32_t  difference    = query - destination;
 
@@ -4923,7 +4942,7 @@ static void Menu_RunInput_FileSelect_MovementVerify(MenuFileSelect_t *object);
 static void Menu_RunInput_FileSelect_Movement(MenuFileSelect_t *object, MenuMovement_t direction);
 static void Menu_RunInput_FileSelect_Select(MenuFileSelect_t *object);
 
-static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, const vec2_t origin, bool actually_draw)
+static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *currentry, int32_t state, const vec2_t origin, int actually_draw)
 {
     int32_t totalHeight = 0;
 
@@ -5001,9 +5020,9 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
             if (entry->format->width == 0)
                 status |= MT_XCenter;
 
-            bool const dodraw = entry->type != Spacer && actually_draw &&
-                                0 <= y - menu->scrollPos + entry->font->get_yline() &&
-                                y - menu->scrollPos <= klabs(menu->format->bottomcutoff) - menu->format->pos.y;
+            int const dodraw = entry->type != Spacer && actually_draw &&
+                               0 <= y - menu->scrollPos + entry->font->get_yline() &&
+                               y - menu->scrollPos <= klabs(menu->format->bottomcutoff) - menu->format->pos.y;
 
             int32_t const height = entry->getHeight(); // max(textsize.y, entry->font->get_yline()); // bluefont Q ruins this
             status |= MT_YCenter;
@@ -5035,7 +5054,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
 
             if (dodraw)
             {
-                const int32_t mousex = origin.x + indent + (status & MT_XCenter) ? x - ((textsize.x>>17)<<16) : x;
+                const int32_t mousex = origin.x + x - ((status & MT_XCenter) ? ((textsize.x>>17)<<16) : 0);
                 const int32_t mousey = origin.y + y_upper + y - menu->scrollPos;
                 int32_t mousewidth = (status & MT_XCenter) ? textsize.x : klabs(entry->format->width);
 
@@ -5623,8 +5642,8 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
         if (object->options->entryFormat->width == 0)
             status |= MT_XCenter;
 
-        bool const dodraw = 0 <= y - object->options->scrollPos + object->options->font->get_yline() &&
-                            y - object->options->scrollPos <= object->options->menuFormat->bottomcutoff - object->options->menuFormat->pos.y;
+        int const dodraw = 0 <= y - object->options->scrollPos + object->options->font->get_yline() &&
+                           y - object->options->scrollPos <= object->options->menuFormat->bottomcutoff - object->options->menuFormat->pos.y;
 
         int32_t const height = object->options->font->get_yline(); // max(textsize.y, object->options->font->get_yline());
         status |= MT_YCenter;
@@ -5650,7 +5669,7 @@ static void Menu_RunOptionList(Menu_t *cm, MenuEntry_t *entry, MenuOption_t *obj
 
         if (dodraw)
         {
-            const int32_t mousex = origin.x + (status & MT_XCenter) ? x - ((textsize.x>>17)<<16) : x;
+            const int32_t mousex = origin.x + x - ((status & MT_XCenter) ? ((textsize.x>>17)<<16) : 0);
             const int32_t mousey = origin.y + y_upper + y - object->options->scrollPos;
             const int32_t mousewidth = (status & MT_XCenter) ? textsize.x : klabs(object->options->entryFormat->width);
 

@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 #include "fire.h"
 #include "fx.h"
+#include "gib.h"
 #include "getopt.h"
 #include "globals.h"
 #include "gui.h"
@@ -154,7 +155,8 @@ enum gametokens
     T_TEXTUREFILTER,
     T_RFFDEFINEID,
     T_TILEFROMTEXTURE,
-    T_IFCRC,
+    T_IFCRC, T_IFMATCH, T_CRC32,
+    T_SIZE,
     T_SURFACE,
     T_VOXEL,
     T_VIEW,
@@ -164,11 +166,6 @@ enum gametokens
 int blood_globalflags;
 
 void app_crashhandler(void)
-{
-    // NUKE-TODO:
-}
-
-void G_Polymer_UnInit(void)
 {
     // NUKE-TODO:
 }
@@ -318,20 +315,22 @@ void PrecacheThing(spritetype *pSprite) {
         case kThingObjectGib:
         //case kThingObjectExplode: weird that only gib object is precached and this one is not
             break;
-        default:
-            tilePreloadTile(pSprite->picnum);
-            break;
     }
-    seqPrecacheId(3);
-    seqPrecacheId(4);
-    seqPrecacheId(5);
-    seqPrecacheId(9);
+    tilePrecacheTile(pSprite->picnum);
 }
 
 void PreloadTiles(void)
 {
     int skyTile = -1;
     memset(gotpic,0,sizeof(gotpic));
+    // Fonts
+    for (int i = 0; i < kFontNum; i++)
+    {
+        for (int j = 0; j < 96; j++)
+        {
+            tilePrecacheTile(gFont[i].tile + j, 0);
+        }
+    }
     for (int i = 0; i < numsectors; i++)
     {
         tilePrecacheTile(sector[i].floorpicnum, 0);
@@ -364,25 +363,40 @@ void PreloadTiles(void)
             }
         }
     }
-    if (numplayers > 1)
+
+    // Precache common SEQs
+    for (int i = 0; i < 100; i++)
     {
-        seqPrecacheId(dudeInfo[31].seqStartID+6);
-        seqPrecacheId(dudeInfo[31].seqStartID+7);
-        seqPrecacheId(dudeInfo[31].seqStartID+8);
-        seqPrecacheId(dudeInfo[31].seqStartID+9);
-        seqPrecacheId(dudeInfo[31].seqStartID+10);
-        seqPrecacheId(dudeInfo[31].seqStartID+14);
-        seqPrecacheId(dudeInfo[31].seqStartID+15);
-        seqPrecacheId(dudeInfo[31].seqStartID+12);
-        seqPrecacheId(dudeInfo[31].seqStartID+16);
-        seqPrecacheId(dudeInfo[31].seqStartID+17);
-        seqPrecacheId(dudeInfo[31].seqStartID+18);
+        seqPrecacheId(i);
     }
+
+    tilePrecacheTile(1147); // water drip
+    tilePrecacheTile(1160); // blood drip
+
+    // Player SEQs
+    seqPrecacheId(dudeInfo[31].seqStartID+6);
+    seqPrecacheId(dudeInfo[31].seqStartID+7);
+    seqPrecacheId(dudeInfo[31].seqStartID+8);
+    seqPrecacheId(dudeInfo[31].seqStartID+9);
+    seqPrecacheId(dudeInfo[31].seqStartID+10);
+    seqPrecacheId(dudeInfo[31].seqStartID+14);
+    seqPrecacheId(dudeInfo[31].seqStartID+15);
+    seqPrecacheId(dudeInfo[31].seqStartID+12);
+    seqPrecacheId(dudeInfo[31].seqStartID+16);
+    seqPrecacheId(dudeInfo[31].seqStartID+17);
+    seqPrecacheId(dudeInfo[31].seqStartID+18);
+
     if (skyTile > -1 && skyTile < kMaxTiles)
     {
         for (int i = 1; i < gSkyCount; i++)
             tilePrecacheTile(skyTile+i, 0);
     }
+
+    WeaponPrecache();
+    viewPrecacheTiles();
+    fxPrecache();
+    gibPrecache();
+
     gameHandleEvents();
 }
 
@@ -523,6 +537,29 @@ void G_LoadMapHack(char* outbuf, const char* filename)
             G_TryMapHack(pMapInfo->mhkfile);
     }
 }
+
+#ifdef POLYMER
+void G_RefreshLights(void)
+{
+    if (Numsprites && videoGetRenderMode() == REND_POLYMER)
+    {
+        int statNum = 0;
+
+        do
+        {
+            int spriteNum = headspritestat[statNum++];
+
+            while (spriteNum >= 0)
+            {
+                actDoLight(spriteNum);
+                spriteNum = nextspritestat[spriteNum];
+            }
+        }
+        while (statNum < MAXSTATUS);
+    }
+}
+#endif // POLYMER
+
 
 PLAYER gPlayerTemp[kMaxPlayers];
 int gHealthTemp[kMaxPlayers];
@@ -665,10 +702,6 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                     case kDudeModernCustomBurning:
                     case kModernThingTNTProx:
                     case kModernThingEnemyLifeLeech:
-                        pSprite->type = kSpriteDecoration;
-                        changespritestat(pSprite->index, kStatDecoration);
-                        break;
-                    case kModernConcussSprite:
                         pSprite->type = kSpriteDecoration;
                         changespritestat(pSprite->index, kStatDecoration);
                         break;
@@ -1072,6 +1105,9 @@ void ProcessFrame(void)
     DoSectorPanning();
     actProcessSprites();
     actPostProcess();
+#ifdef POLYMER
+    G_RefreshLights();
+#endif
     viewCorrectPrediction();
     sndProcess();
     ambProcess();
@@ -2276,7 +2312,10 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
             int32_t tile = -1;
             int32_t havesurface = 0, havevox = 0, haveview = 0, haveshade = 0;
             int32_t surface = 0, vox = 0, view = 0, shade = 0;
-            int32_t tilecrc = 0, origcrc = 0;
+            int32_t tile_crc32 = 0;
+            vec2_t  tile_size{};
+            uint8_t have_crc32 = 0;
+            uint8_t have_size = 0;
 
             static const tokenlist tilefromtexturetokens[] =
             {
@@ -2295,8 +2334,40 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                 switch (token)
                 {
                 case T_IFCRC:
-                    scriptfile_getsymbol(pScript, &tilecrc);
+                    scriptfile_getsymbol(pScript, &tile_crc32);
+                    have_crc32 = 1;
                     break;
+                case T_IFMATCH:
+                {
+                    char *ifmatchend;
+
+                    static const tokenlist ifmatchtokens[] =
+                    {
+                        { "crc32",           T_CRC32 },
+                        { "size",            T_SIZE },
+                    };
+
+                    if (scriptfile_getbraces(pScript,&ifmatchend)) break;
+                    while (pScript->textptr < ifmatchend)
+                    {
+                        int32_t token = getatoken(pScript,ifmatchtokens,ARRAY_SIZE(ifmatchtokens));
+                        switch (token)
+                        {
+                        case T_CRC32:
+                            scriptfile_getsymbol(pScript, &tile_crc32);
+                            have_crc32 = 1;
+                            break;
+                        case T_SIZE:
+                            scriptfile_getsymbol(pScript, &tile_size.x);
+                            scriptfile_getsymbol(pScript, &tile_size.y);
+                            have_size = 1;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                    break;
+                }
                 case T_SURFACE:
                     havesurface = 1;
                     scriptfile_getsymbol(pScript, &surface);
@@ -2325,12 +2396,22 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
                     break;
                 }
 
-                if (tilecrc)
+                if (have_crc32)
                 {
-                    origcrc = tileCRC(tile);
-                    if (origcrc != tilecrc)
+                    int32_t const orig_crc32 = tileGetCRC32(tile);
+                    if (orig_crc32 != tile_crc32)
                     {
-                        //initprintf("CRC of tile %d doesn't match! CRC: %d, Expected: %d\n", tile, origcrc, tilecrc);
+                        // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
+                        break;
+                    }
+                }
+
+                if (have_size)
+                {
+                    vec2_16_t const orig_size = tileGetSize(tile);
+                    if (orig_size.x != tile_size.x && orig_size.y != tile_size.y)
+                    {
+                        // initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
                         break;
                     }
                 }

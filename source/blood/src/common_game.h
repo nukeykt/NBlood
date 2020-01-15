@@ -103,6 +103,8 @@ void _consoleSysMsg(const char* pMessage, ...);
 #define kMaxPAL 5
 #define kFreeQAVEntry 108
 
+#define kUserPLUStart  15
+
 #define kDmgFall 0
 #define kDmgBurn 1
 #define kDmgBullet 2
@@ -166,6 +168,18 @@ kPwUpAsbestArmor        = 39,
 kMaxPowerUps            = 51,
 };
 
+enum {
+    kExplosionSmall = 0,
+    kExplosionStandard = 1,
+    kExplosionLarge = 2,
+    kExplosionFireball = 3,
+    kExplosionSpray = 4,
+    kExplosion5 = 5,
+    kExplosion6 = 6,
+    kExplosionNapalm = 7,
+    kExplosionMax = 8
+};
+
 // SPRITE TYPES /////////////////////////////////////////////////
 enum {
     kSpriteDecoration = 0,
@@ -212,7 +226,6 @@ enum {
     kModernObjDataAccumulator = 37,
     kModernEffectSpawner = 38,
     kModernWindGenerator = 39,
-    kModernConcussSprite = 712, /// WIP
     kModernPlayerControl = 500, /// WIP
 
     // decorations

@@ -481,8 +481,8 @@ void create_map_snapshot(void)
             if (!try_match_with_prev(2, Numsprites, temphash))
             {
                 int32_t i = 0;
-                auto const tspri = (spritetype *)Xmalloc(Numsprites*sizeof(spritetype) + 4);
-                auto spri = tspri;
+                auto const uspri = (uspritetype *)Xmalloc(Numsprites*sizeof(spritetype) + 4);
+                auto spri = uspri;
 
                 for (bssize_t j=0; j<MAXSPRITES && i < Numsprites; j++)
                     if (sprite[j].statnum != MAXSTATUS)
@@ -491,8 +491,8 @@ void create_map_snapshot(void)
                         i++;
                     }
 
-                create_compressed_block(2, tspri, Numsprites*sizeof(spritetype), temphash);
-                Xfree(tspri);
+                create_compressed_block(2, uspri, Numsprites*sizeof(spritetype), temphash);
+                Xfree(uspri);
             }
         }
 #undef XXH__

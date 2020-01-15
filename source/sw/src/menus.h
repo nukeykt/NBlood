@@ -183,12 +183,12 @@ typedef enum
 #define SLDR_MUSICVOLMAX                16
 #define SLDR_SCRSIZEMAX                 14
 #define SLDR_BRIGHTNESSMAX              8
-#define SLDR_BORDERTILEMAX              (isShareware ? 21 : 38) // counted from border.c
+#define SLDR_BORDERTILEMAX              (SW_SHAREWARE ? 21 : 38) // counted from border.c
 #define SLDR_GAMETYPEMAX                3
 
 #define SLDR_NETLEVELMAX_REG             28
 #define SLDR_NETLEVELMAX_SW              4
-#define SLDR_NETLEVELMAX                (isShareware ? SLDR_NETLEVELMAX_SW : SLDR_NETLEVELMAX_REG)
+#define SLDR_NETLEVELMAX                (SW_SHAREWARE ? SLDR_NETLEVELMAX_SW : SLDR_NETLEVELMAX_REG)
 
 #define SLDR_MONSTERSMAX                5   // Skill Levels
 #define SLDR_KILLLIMITMAX               11  // Increments of 10 up to 100, 1 is no limit

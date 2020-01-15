@@ -96,6 +96,7 @@ const char* AppProperName = APPNAME;
 const char* AppTechnicalName = APPBASENAME;
 
 void FinishLevel();
+void PrintHelp();
 
 int htimer = 0;
 
@@ -535,6 +536,7 @@ void G_ExtInit(void)
 #endif
         addsearchpath(cwd);
 
+    // TODO:
     if (CommandPaths)
     {
         int32_t i;
@@ -1147,6 +1149,8 @@ short bSlipMode = kFalse;
 short bDoFlashes = kTrue;
 short bHolly = kFalse;
 
+int doTitle = kTrue;
+
 short nItemTextIndex;
 
 short scan_char = 0;
@@ -1198,6 +1202,8 @@ void ShutDown(void)
     RemoveEngine();
     UnInitNet();
     UnInitFX();
+
+    exit(EXIT_SUCCESS);
 }
 
 void bail2dos(const char *fmt, ...)
@@ -1326,13 +1332,13 @@ void DoPassword(int nPassword)
 
         case 2: // LOBOCOP
         {
-            lLocalCodes |= 0x20;
+            lLocalCodes |= kButtonCheatGuns;
             break;
         }
 
         case 3: // LOBODEITY
         {
-            lLocalCodes |= 0x40;
+            lLocalCodes |= kButtonCheatGodMode;
             break;
         }
 
@@ -1349,7 +1355,7 @@ void DoPassword(int nPassword)
 
         case 5:
         {
-            lLocalCodes |= 0x80;
+            lLocalCodes |= kButtonCheatKeys;
             break;
         }
 
@@ -1393,7 +1399,7 @@ void DoPassword(int nPassword)
 
         case 9:
         {
-            lLocalCodes |= 0x100; // LOBOSWAG?
+            lLocalCodes |= kButtonCheatItems; // LOBOSWAG
             break;
         }
 
@@ -1416,6 +1422,13 @@ void DoPassword(int nPassword)
 void mysetbrightness(char nBrightness)
 {
     g_visibility = 2048 - (nBrightness << 9);
+}
+
+// Replicate original DOS EXE behaviour when pointer is null
+static const char *safeStrtok(char *s, const char *d)
+{
+    const char *r = strtok(s, d);
+    return r ? r : "";
 }
 
 void CheckKeys()
@@ -1553,21 +1566,16 @@ void CheckKeys()
 
                 if (ch == asc_Enter)
                 {
-                    char *pToken = strtok(sHollyStr, " ");
+                    const char *pToken = safeStrtok(sHollyStr, " ");
 
-                    if (nStringLen == 0) // bjd - added this check. watcom allows passing NULL to strcmp so the below checks will all fail OK on DOS but will cause a crash on Windows
-                    {
-                        bHolly = kFalse;
-                        StatusMessage(1, " ");
-                    }
-                    else if (!strcmp(pToken, "GOTO"))
+                    if (!strcmp(pToken, "GOTO"))
                     {
                         // move player to X, Y coordinates
                         int nSprite = PlayerList[0].nSprite;
 
-                        pToken = strtok(NULL, ",");
+                        pToken = safeStrtok(NULL, ",");
                         sprite[nSprite].x = atoi(pToken);
-                        pToken = strtok(NULL, ",");
+                        pToken = safeStrtok(NULL, ",");
                         sprite[nSprite].y = atoi(pToken);
 
                         setsprite(nSprite, &sprite[nSprite].pos);
@@ -1575,7 +1583,7 @@ void CheckKeys()
                     }
                     else if (!strcmp(pToken, "LEVEL"))
                     {
-                        pToken = strtok(NULL, " ");
+                        pToken = safeStrtok(NULL, " ");
                         levelnew = atoi(pToken);
                     }
                     else if (!strcmp(pToken, "DOORS"))
@@ -1600,7 +1608,7 @@ void CheckKeys()
                         // i = nNetPlayerCount;
                         if (!nNetPlayerCount)
                         {
-                            pToken = strtok(NULL, " ");
+                            pToken = safeStrtok(NULL, " ");
                             switch (atoi(pToken))
                             {
                                 // TODO - enums?
@@ -2150,27 +2158,34 @@ double g_frameDelay = 0.0;
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps)
-        return 1;
+    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
+        return true;
 
     static double   nextPageDelay;
     static uint64_t lastFrameTicks;
 
-    uint64_t const frameTicks   = timerGetTicksU64();
+    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
+
+    uint64_t const frameTicks = timerGetPerformanceCounter();
+
+    if (lastFrameTicks > frameTicks)
+        lastFrameTicks = frameTicks;
+
     uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
     double const   dElapsedTime = elapsedTime;
 
-    if (dElapsedTime >= floor(nextPageDelay))
+    if (dElapsedTime >= nextPageDelay)
     {
         if (dElapsedTime <= nextPageDelay+g_frameDelay)
             nextPageDelay += g_frameDelay-dElapsedTime;
 
         lastFrameTicks = frameTicks;
 
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 void PatchDemoStrings()
@@ -2225,7 +2240,6 @@ void ExitGame()
     }
 
     ShutDown();
-    exit(0);
 }
 
 static int32_t nonsharedtimer;
@@ -2275,14 +2289,8 @@ int app_main(int argc, char const* const* argv)
 
     int i;
 
-    //int esi = 1;
-    //int edi = esi;
-    int doTitle = kTrue; // REVERT kTrue;
     int stopTitle = kFalse;
     levelnew = 1;
-
-    // REVERT - change back to kTrue
-//	short bDoTitle = kFalse;
 
     wConsoleNode = 0;
 
@@ -2293,12 +2301,19 @@ int app_main(int argc, char const* const* argv)
     {
         const char *pChar = argv[i];
 
-        if (*pChar == '/')
+        if ((*pChar == '-') 
+#ifdef _WIN32            
+            || (*pChar == '/')
+#endif
+            )
         {
             pChar++;
             //strlwr(pChar);
 
-            if (Bstrcasecmp(pChar, "nocreatures") == 0) {
+            if (!Bstrcasecmp(pChar, "?") || !Bstrcasecmp(pChar, "help") || !Bstrcasecmp(pChar, "-help")) {
+                PrintHelp();
+            }
+            else if (Bstrcasecmp(pChar, "nocreatures") == 0) {
                 bNoCreatures = kTrue;
             }
             else if (Bstrcasecmp(pChar, "nosound") == 0) {
@@ -2390,6 +2405,48 @@ int app_main(int argc, char const* const* argv)
                 g_noSetup = 1;
                 g_commandSetup = 0;
             }
+            else if (Bstrcasecmp(pChar, "quick") == 0) {
+                doTitle = kFalse;
+            }
+            else if (Bstrcasecmp(pChar, "noautoload") == 0)
+            {
+                initprintf("Autoload disabled\n");
+                g_noAutoLoad = 1;
+            }
+            else if (Bstrcasecmp(pChar, "cachesize") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    uint32_t j = Batol(argv[i + 1]);
+                    MAXCACHE1DSIZE = j << 10;
+                    initprintf("Cache size: %dkB\n", j);
+                    i++;
+                }
+            }
+            else if (Bstrcasecmp(pChar, "g") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddGroup(argv[i + 1]);
+                    i++;
+                }
+            }
+            else if (Bstrcasecmp(pChar, "h") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddDef(argv[i + 1]);
+                    i++;
+                }
+            }
+            else if (Bstrcasecmp(pChar, "j") == 0)
+            {
+                if (argc > i + 1)
+                {
+                    G_AddPath(argv[i + 1]);
+                    i++;
+                }
+            }
             else
             {
                 char c = tolower(*pChar);
@@ -2446,8 +2503,7 @@ int app_main(int argc, char const* const* argv)
 
     // This needs to happen afterwards, as G_CheckCommandLine() is where we set
     // up the command-line-provided search paths (duh).
-    // TODO:
-    //G_ExtInit();
+    G_ExtInit();
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
     if (forcegl) initprintf("GL driver blacklist disabled.\n");
@@ -3298,6 +3354,7 @@ void DoGameOverScene()
     SetOverscan(BASEPAL);
 }
 
+#ifdef USE_OPENGL
 void FadeOutScreen(int nTile)
 {
     int f = 0;
@@ -3337,6 +3394,7 @@ void FadeInScreen(int nTile)
         videoNextPage();
     }
 }
+#endif
 
 // TODO - missing some values?
 short word_10010[] = {6, 25, 43, 50, 68, 78, 101, 111, 134, 158, 173, 230, 6000};
@@ -3351,9 +3409,11 @@ void DoTitle()
 //  if (videoGetRenderMode() == REND_CLASSIC)
 //     BlackOut();
 
+#ifdef USE_OPENGL
     // for OpenGL, fade from black to the publisher logo
     if (videoGetRenderMode() > REND_CLASSIC)
         FadeInScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
+#endif
 
     overwritesprite(0, 0, EXHUMED ? kTileBMGLogo : kTilePIELogo, 0, 2, kPalNormal);
     videoNextPage();
@@ -3367,15 +3427,19 @@ void DoTitle()
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+#ifdef USE_OPENGL
     else
         FadeOutScreen(EXHUMED ? kTileBMGLogo : kTilePIELogo);
+#endif
 
     SetOverscan(BASEPAL);
 
     int nScreenTile = seq_GetSeqPicnum(kSeqScreens, 0, 0);
 
+#ifdef USE_OPENGL
     if (videoGetRenderMode() > REND_CLASSIC)
         FadeInScreen(nScreenTile);
+#endif
 
     overwritesprite(0, 0, nScreenTile, 0, 2, kPalNormal);
     videoNextPage();
@@ -3389,8 +3453,10 @@ void DoTitle()
 
     if (videoGetRenderMode() == REND_CLASSIC)
         FadeOut(0);
+#ifdef USE_OPENGL
     else
         FadeOutScreen(nScreenTile);
+#endif
 
     ClearAllKeys();
 
@@ -3808,6 +3874,12 @@ void InitSpiritHead()
 
     headfd = kopen4loadfrommod(filename, 0);
     nPupData = kread(headfd, cPupData, sizeof(cPupData));
+#if B_BIG_ENDIAN == 1
+    for (int i = 0; i < ARRAY_SIZE(cPupData); i++)
+    {
+        cPupData[i] = B_LITTLE16(cPupData[i]);
+    }
+#endif
     pPupData = cPupData;
     kclose(headfd);
     headfd = -1;
@@ -4245,4 +4317,44 @@ int DoSpiritHead()
     // TEMP FIXME - temporary return value. what to return here? 1?
 
     return 0;
+}
+
+void PrintHelp()
+{
+    char tempbuf[128];
+    static char const s[] = "Usage: " APPBASENAME " [files] [options]\n"
+        //"Example: " APPBASENAME " -usecwd -cfg myconfig.cfg -map nukeland.map\n\n"
+        "Example: " APPBASENAME " -g ruins.grp -quick -nomonsters -2\n\n"
+        "Files can be of type [grp|zip|def]\n"
+        "\n"
+        //"-art [file.art]\tSpecify an art base file name\n"
+        "-cachesize #\tSet cache size in kB\n"
+        //"-cfg [file.cfg]\tUse an alternate configuration file\n"
+        //"-client [host]\tConnect to a multiplayer game\n"
+        //"-game_dir [dir]\tSpecify game data directory\n"
+        "-g [file.grp]\tLoad additional game data\n"
+        "-h [file.def]\tLoad an alternate definitions file\n"
+        "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
+        //"-map [file.map]\tLoad an external map file\n"
+        "-mh [file.def]\tInclude an additional definitions module\n"
+        "-noautoload\tDisable loading from autoload directory\n"
+        //"-nodemo\t\tNo Demos\n"
+        "-nocreatures\tNo enemy creatures\n"
+        "-nosound\tNo sound\n"
+        "-record\t\tRecord demo to file data.vcr\n"
+        "-playback\tPlay back a demo from file data.vcr\n"
+        "-quick\t\tSkip intro splash screens and movie\n"
+        "-#\t\tImmediately jump to level number specified\n"
+
+#ifdef STARTUP_SETUP_WINDOW
+        "-setup/nosetup\tEnable or disable startup window\n"
+#endif
+        "-usecwd\t\tRead data and configuration from current directory\n"
+        ;
+#ifdef WM_MSGBOX_WINDOW
+    Bsnprintf(tempbuf, sizeof(tempbuf), APPNAME " %s", s_buildRev);
+    wm_msgbox(tempbuf, s);
+#else
+    initprintf("%s\n", s);
+#endif
 }

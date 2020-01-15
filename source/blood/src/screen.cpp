@@ -163,8 +163,9 @@ void scrLoadPLUs(void)
         parallaxvisibility = 3072;
         return;
     }
-    for (int i = 0; i < 15; i++)
-    {
+    
+    // load default palookups
+    for (int i = 0; i < 15; i++) {
         DICTNODE *pPlu = gSysRes.Lookup(PLU[i].name, "PLU");
         if (!pPlu)
             ThrowError("%s.PLU not found", PLU[i].name);
@@ -172,6 +173,15 @@ void scrLoadPLUs(void)
             ThrowError("Incorrect PLU size");
         palookup[PLU[i].id] = (char*)gSysRes.Lock(pPlu);
     }
+
+    // by NoOne: load user palookups
+    for (int i = kUserPLUStart; i < MAXPALOOKUPS; i++) {
+        DICTNODE* pPlu = gSysRes.Lookup(i, "PLU");
+        if (!pPlu) continue;
+        else if (pPlu->size / 256 != 64) { consoleSysMsg("Incorrect filesize of PLU#%d", i); }
+        else palookup[i] = (char*)gSysRes.Lock(pPlu);
+    }
+
 #ifdef USE_OPENGL
     palookupfog[1].r = 255;
     palookupfog[1].g = 255;
@@ -191,8 +201,8 @@ glblend_t const bloodglblend =
 
 void scrLoadPalette(void)
 {
-    initfastcolorlookup_scale(30, 59, 11);
-    initfastcolorlookup_gridvectors();
+    paletteInitClosestColorScale(30, 59, 11);
+    paletteInitClosestColorGrid();
     paletteloaded = 0;
     initprintf("Loading palettes\n");
     for (int i = 0; i < 5; i++)
@@ -220,8 +230,15 @@ void scrLoadPalette(void)
         x = bloodglblend;
 #endif
 
-    initfastcolorlookup_palette(palette);
+    paletteInitClosestColorMap(palette);
     palettePostLoadTables();
+    // Make color index 255 of palette black.
+    for (int i = 0; i < 5; i++)
+    {
+        if (basepaltable[i] != NULL)
+            Bmemset(&basepaltable[i][255 * 3], 0, 3);
+    }
+    palettePostLoadLookups();
 }
 
 void scrSetPalette(int palId)

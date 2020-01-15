@@ -18,7 +18,7 @@
 
 #include "common_game.h"
 
-const char *AppProperName = "KenBuild";
+const char *AppProperName = "EKenBuild";
 const char *AppTechnicalName = "ekenbuild";
 
 #define SETUPFILENAME "ekenbuild.cfg"
@@ -140,7 +140,7 @@ static int screentilt = 0, oscreentilt = 0;
 static int fvel, svel, avel;
 static int fvel2, svel2, avel2;
 
-unsigned char option[NUMOPTIONS] = {0,0,1,0,0,0,1,1+4+(6<<4)};
+unsigned char option[NUMOPTIONS] = {0,0,1,1,0,0,1,1+4+(6<<4)};
 unsigned char keys[NUMGAMEKEYS] =
 {
     0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,
@@ -363,8 +363,6 @@ static int animatevel[MAXANIMATES], animateacc[MAXANIMATES], animatecnt = 0;
     }
 #endif
 
-int nextvoxid = 0;
-
 int osdcmd_restartvid(const osdfuncparm_t *parm)
 {
     UNREFERENCED_PARAMETER(parm);
@@ -467,6 +465,13 @@ int32_t app_main(int32_t argc, char const * const * argv)
     initprintf("%s %s\n", AppProperName, s_buildRev);
     PrintBuildInfo();
 
+    if (enginePreInit())
+    {
+        wm_msgbox("Build Engine Initialisation Error",
+                  "There was a problem initialising the Build engine: %s", engineerrstr);
+        exit(1);
+    }
+
 #ifdef USE_OPENGL
     OSD_RegisterFunction("restartvid","restartvid: reinitialise the video mode",osdcmd_restartvid);
     OSD_RegisterFunction("vidmode","vidmode [xdim ydim] [bpp] [fullscreen]: immediately change the video mode",osdcmd_vidmode);
@@ -508,6 +513,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
     if ((i = Ken_loadsetup(setupfilename)) < 0)
         buildputs("Configuration file not found, using defaults.\n");
 
+    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
 #if defined STARTUP_SETUP_WINDOW
     if (i || forcesetup || cmdsetup)
     {
@@ -523,7 +530,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         return -1;
     }
 
-    Ken_InitMultiPsky();
+    Ken_PostStartupWindow();
 
     initinput();
     if (option[3] != 0) mouseInit();
@@ -546,10 +553,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     option[4] = (numplayers >= 2);
 
     artLoadFiles("tiles%03i.art",1048576);                      //Load artwork
-    if (!qloadkvx(nextvoxid,"voxel000.kvx"))
-        tiletovox[PLAYER] = nextvoxid++;
-    if (!qloadkvx(nextvoxid,"voxel001.kvx"))
-        tiletovox[BROWNMONSTER] = nextvoxid++;
+    Ken_LoadVoxels();
     if (!loaddefinitionsfile(G_DefFile())) buildputs("Definitions file loaded.\n");
 
     if (enginePostInit())
@@ -589,16 +593,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
     }
 
     initlava();
-
-    for (j=0; j<256; j++)
-        tempbuf[j] = ((j+32)&255);  //remap colors for screwy palette sectors
-    paletteMakeLookupTable(16,tempbuf,0,0,0,1);
-
-    for (j=0; j<256; j++) tempbuf[j] = j;
-    paletteMakeLookupTable(17,tempbuf,96,96,96,1);
-
-    for (j=0; j<256; j++) tempbuf[j] = j; //(j&31)+32;
-    paletteMakeLookupTable(18,tempbuf,32,32,192,1);
 
     palettePostLoadLookups();
 
@@ -1972,20 +1966,18 @@ void shootgun(short snum, const vec3_t *vector,
     }
 }
 
-#define MAXVOXMIPS 5
-extern intptr_t voxoff[][MAXVOXMIPS];
 void analyzesprites(int dax, int day)
 {
     int i, j=0, k, *intptr;
     vec3_t *ospr;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     //This function is called between drawrooms() and renderDrawMasks()
     //It has a list of possible sprites that may be drawn on this frame
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels && tiletovox[tspr->picnum] >= 0)
+        if (usevoxels)
             switch (tspr->picnum)
             {
             case PLAYER:
@@ -2007,15 +1999,24 @@ void analyzesprites(int dax, int day)
 
                 if ((tspr->cstat&2) == 0)
                 {
-                    //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
-                    intptr = (int *)voxoff[tiletovox[PLAYER]][0];
+                    if (voxid_PLAYER == -1)
+                        break;
+
+                    tspr->cstat |= 48;
+                    tspr->picnum = voxid_PLAYER;
+
+                    intptr = (int32_t *)voxoff[voxid_PLAYER][0];
                     tspr->xrepeat = scale(tspr->xrepeat,56,intptr[2]);
                     tspr->yrepeat = scale(tspr->yrepeat,56,intptr[2]);
                     tspr->shade -= 6;
                 }
                 break;
             case BROWNMONSTER:
-                //tspr->cstat |= 48; tspr->picnum = tiletovox[tspr->picnum];
+                if (voxid_BROWNMONSTER == -1)
+                    break;
+
+                tspr->cstat |= 48;
+                tspr->picnum = voxid_BROWNMONSTER;
                 break;
             }
 
@@ -3704,7 +3705,7 @@ void drawscreen(short snum, int dasmoothratio)
     short cang, csect;
     fix16_t tang;
     char ch, *ptr, *ptr2, *ptr3, *ptr4;
-    uspritetype *tspr;
+    tspriteptr_t tspr;
 
     smoothratio = max(min(dasmoothratio,65536),0);
 
@@ -4768,19 +4769,6 @@ void initplayersprite(short snum)
     spawnsprite(playersprite[snum],pos[snum].x,pos[snum].y,pos[snum].z+EYEHEIGHT,
                 1+256,0,snum,32,64,64,0,0,PLAYER,ang[snum],0,0,0,snum+4096,
                 cursectnum[snum],8,0,0,0);
-
-    switch (snum)
-    {
-    case 1: for (i=0; i<32; i++) tempbuf[i+192] = i+128; break; //green->red
-    case 2: for (i=0; i<32; i++) tempbuf[i+192] = i+32; break; //green->blue
-    case 3: for (i=0; i<32; i++) tempbuf[i+192] = i+224; break; //green->pink
-    case 4: for (i=0; i<32; i++) tempbuf[i+192] = i+64; break; //green->brown
-    case 5: for (i=0; i<32; i++) tempbuf[i+192] = i+96; break;
-    case 6: for (i=0; i<32; i++) tempbuf[i+192] = i+160; break;
-    case 7: for (i=0; i<32; i++) tempbuf[i+192] = i+192; break;
-    default: for (i=0; i<256; i++) tempbuf[i] = i; break;
-    }
-    paletteMakeLookupTable(snum,tempbuf,0,0,0,1);
 }
 
 void playback(void)

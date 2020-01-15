@@ -31,8 +31,13 @@ struct RunStruct
         int nMoves;
         struct
         {
+#if B_BIG_ENDIAN == 1
+            short nRef;
+            short nVal;
+#else
             short nVal;
             short nRef;
+#endif
         };
     };
 

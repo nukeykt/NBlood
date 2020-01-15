@@ -98,7 +98,7 @@ SWBOOL LoadScriptFile(const char *filename)
 
     size = kfilelength(fp);
 
-    scriptbuffer = (char *)malloc(size);
+    scriptbuffer = (char *)Xmalloc(size);
 
     ASSERT(scriptbuffer != NULL);
 
@@ -385,8 +385,6 @@ int ParseNum(char *str)
 //      spritenumber, voxelnumber
 int aVoxelArray[MAXTILES];
 
-extern int nextvoxid;
-
 // Load all the voxel files using swvoxfil.txt script file
 // Script file format:
 
@@ -404,7 +402,7 @@ void LoadKVXFromScript(const char *filename)
 
     int grabbed=0;          // Number of lines parsed
 
-    sName = (char *)malloc(256);    // Up to 256 bytes for path
+    sName = (char *)Xmalloc(256);    // Up to 256 bytes for path
     ASSERT(sName != NULL);
 
     // zero out the array memory with -1's for pics not being voxelized
@@ -444,7 +442,7 @@ void LoadKVXFromScript(const char *filename)
     }
     while (script_p < scriptend_p);
 
-    free(scriptbuffer);
+    Xfree(scriptbuffer);
     script_p = NULL;
 }
 
@@ -494,7 +492,7 @@ void LogUserTime( SWBOOL bIsLoggingIn )
     strcpy(serialid,token);
 
     // Free the script memory when done
-    free(scriptbuffer);
+    Xfree(scriptbuffer);
     script_p = NULL;
 
     // Build a file name using serial id.
@@ -595,7 +593,7 @@ void LogUserTime( SWBOOL bIsLoggingIn )
         } while (script_p < scriptend_p);
 
         // Free the script memory when done
-        free(scriptbuffer);
+        Xfree(scriptbuffer);
         script_p = NULL;
 
         // Open the file

@@ -48,7 +48,7 @@ static pthtyp *texcache_tryart(int32_t const dapicnum, int32_t const dapalnum, i
     if (tintflags & (HICTINT_USEONART|HICTINT_ALWAYSUSEART))
     {
         tintpalnum = dapalnum;
-        dameth &= ~PTH_INDEXED;
+        dameth &= ~DAMETH_INDEXED;
         if (!(tintflags & HICTINT_APPLYOVERPALSWAP))
             searchpalnum = 0;
     }
@@ -56,8 +56,8 @@ static pthtyp *texcache_tryart(int32_t const dapicnum, int32_t const dapalnum, i
     // load from art
     for (pth=texcache.list[j]; pth; pth=pth->next)
         if (pth->picnum == dapicnum &&
-            (dameth & PTH_INDEXED ? (pth->flags & PTH_INDEXED) &&
-                                    (pth->flags & PTH_CLAMPED) == TO_PTH_CLAMPED(dameth) :
+            (dameth & DAMETH_INDEXED ? (pth->flags & PTH_INDEXED) &&
+                                       (pth->flags & PTH_CLAMPED) == TO_PTH_CLAMPED(dameth) :
                  (pth->palnum == dapalnum && pth->shade == dashade &&
                  !(pth->flags & PTH_INDEXED) &&
                  (pth->flags & (PTH_CLAMPED | PTH_HIGHTILE | PTH_NOTRANSFIX)) ==

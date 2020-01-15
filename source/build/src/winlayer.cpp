@@ -279,6 +279,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
+    mutex_init(&m_initprintf);
+
     if (windowsPreInit())
         return -1;
 
@@ -459,8 +461,6 @@ int32_t initsystem(void)
 
     //    initprintf("Initializing Windows DirectX/GDI system interface\n");
 
-    mutex_init(&m_initprintf);
-
     // get the desktop dimensions before anything changes them
     ZeroMemory(&desktopmode, sizeof(DEVMODE));
     desktopmode.dmSize = sizeof(DEVMODE);
@@ -554,7 +554,7 @@ void system_getcvars(void)
 
 
 //
-// initprintf() -- prints a formatted string to the intitialization window
+// initprintf() -- prints a formatted string to the initialization window
 //
 void initprintf(const char *f, ...)
 {
@@ -565,12 +565,13 @@ void initprintf(const char *f, ...)
     Bvsnprintf(buf, sizeof(buf), f, va);
     va_end(va);
 
+    osdstrings.append(Xstrdup(buf));
     initputs(buf);
 }
 
 
 //
-// initputs() -- prints a string to the intitialization window
+// initputs() -- prints a string to the initialization window
 //
 void initputs(const char *buf)
 {

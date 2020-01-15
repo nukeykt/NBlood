@@ -199,7 +199,9 @@ MenuItem sound_i[] =
 
     //{DefButton(btn_talking, 0, "Talking"), OPT_XS,            OPT_LINE(4), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
     {DefButton(btn_ambience, 0, "Ambience"), OPT_XS,          OPT_LINE(4), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
+#ifdef ASS_REVERSESTEREO
     {DefButton(btn_flipstereo, 0, "Flip Stereo"), OPT_XS,     OPT_LINE(5), 1, m_defshade, 0, NULL, MNU_FxCheck, NULL},
+#endif
     //{DefButton(btn_playcd, 0, "Play CD"), OPT_XS,         OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefNone}
 };
@@ -3446,8 +3448,10 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
         case btn_flipstereo:
             last_value = gs.FlipStereo;
             gs.FlipStereo = state = buttonsettings[item->button];
+#ifdef ASS_REVERSESTEREO
             if (gs.FlipStereo != last_value)
-                FlipStereo();
+                FX_SetReverseStereo(gs.FlipStereo);
+#endif
             break;
         case btn_shadows:
             gs.Shadows = state = buttonsettings[item->button];
@@ -4264,21 +4268,23 @@ MNU_DrawItemIcon(MenuItem *item)
     int scale = MZ;
     short w,h;
 
+    int16_t cursorpic = tilesiz[pic_yinyang].x == 0 && tilesiz[pic_shuriken1].x != 0 ? pic_shuriken1 : pic_yinyang;
+
     if (item->text)
     {
         scale /= 2;
-        x -= mulscale17(tilesiz[pic_yinyang].x,scale) + 2;
+        x -= mulscale17(tilesiz[cursorpic].x,scale) + 2;
         y += 4;
     }
     else
     {
         scale -= (1<<13);
-        x -= ((tilesiz[pic_yinyang].x) / 2) - 3;
+        x -= (tilesiz[cursorpic].x / 2) - 3;
         y += 8;
     }
 
     rotatesprite(x << 16, y << 16,
-                 scale, 0, pic_yinyang, item->shade, 0, MenuDrawFlags, 0, 0, xdim - 1, ydim - 1);
+                 scale, 0, cursorpic, item->shade, 0, MenuDrawFlags, 0, 0, xdim - 1, ydim - 1);
 
     SetRedrawScreen(&Player[myconnectindex]);
     //BorderRefreshClip(&Player[myconnectindex], x - 24, y - 24, x + 24, y + 24);

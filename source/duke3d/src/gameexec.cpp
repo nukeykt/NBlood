@@ -70,7 +70,7 @@ int32_t g_structVarIDs   = -1;
 uint32_t g_eventCalls[MAXEVENTS], g_actorCalls[MAXTILES];
 double g_eventTotalMs[MAXEVENTS], g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];
 
-GAMEEXEC_STATIC void VM_Execute(bool const loop = false);
+GAMEEXEC_STATIC void VM_Execute(int const loop = false);
 
 # include "gamestructures.cpp"
 #endif
@@ -155,7 +155,7 @@ static inline void VM_DummySprite(void)
 }
 
 // verification that the event actually exists happens elsewhere
-static FORCE_INLINE int32_t VM_EventInlineInternal__(int const &eventNum, int const &spriteNum, int const &playerNum,
+static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int const spriteNum, int const playerNum,
                                                        int const playerDist = -1, int32_t returnValue = 0)
 {
     vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0,
@@ -231,7 +231,7 @@ int32_t VM_ExecuteEventWithValue(int const nEventID, int const spriteNum, int co
 }
 
 
-static bool VM_CheckSquished(void)
+static int VM_CheckSquished(void)
 {
     auto const pSector = (usectorptr_t)&sector[vm.pSprite->sectnum];
 
@@ -288,8 +288,8 @@ GAMEEXEC_STATIC GAMEEXEC_INLINE void P_ForceAngle(DukePlayer_t *pPlayer)
 #ifdef __cplusplus
 extern "C"
 #endif
-bool A_Dodge(spritetype * const);
-bool A_Dodge(spritetype * const pSprite)
+int A_Dodge(spritetype * const);
+int A_Dodge(spritetype * const pSprite)
 {
     if (A_CheckEnemySprite(pSprite) && pSprite->extra <= 0)  // hack
         return 0;
@@ -1163,7 +1163,7 @@ static int G_StartTrackSlotWrap(int const volumeNum, int const levelNum)
 int G_StartTrack(int const levelNum) { return G_StartTrackSlot(ud.volume_number, levelNum); }
 #endif
 
-LUNATIC_EXTERN void G_ShowView(vec3_t vec, fix16_t a, fix16_t horiz, int sect, int ix1, int iy1, int ix2, int iy2, bool unbiasedp)
+LUNATIC_EXTERN void G_ShowView(vec3_t vec, fix16_t a, fix16_t horiz, int sect, int ix1, int iy1, int ix2, int iy2, int unbiasedp)
 {
     int x1 = min(ix1, ix2);
     int x2 = max(ix1, ix2);
@@ -1288,7 +1288,7 @@ void Screen_Play(void)
         }                                                                                         \
     } while (0)
 
-GAMEEXEC_STATIC void VM_Execute(bool const loop /*= false*/)
+GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 {
     int vm_execution_depth = loop;
 #ifdef CON_USE_COMPUTED_GOTO
@@ -2595,6 +2595,14 @@ GAMEEXEC_STATIC void VM_Execute(bool const loop /*= false*/)
                     dispatch();
                 }
 
+#define CON_FOR_ITERATION()       \
+    do                            \
+    {                             \
+        Gv_SetVar(returnVar, jj); \
+        insptr = pNext;           \
+        VM_Execute();             \
+    } while (0)
+
             vInstruction(CON_FOR):  // special-purpose iteration
                 insptr++;
                 {
@@ -2612,113 +2620,76 @@ GAMEEXEC_STATIC void VM_Execute(bool const loop /*= false*/)
                             {
                                 if (sprite[jj].statnum == MAXSTATUS)
                                     continue;
-
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
+                                CON_FOR_ITERATION();
                             }
                             break;
+
                         case ITER_ALLSPRITESBYSTAT:
                             for (native_t statNum = 0; statNum < MAXSTATUS; ++statNum)
                             {
-                                for (native_t jj = headspritestat[statNum]; jj >= 0;)
-                                {
-                                    int const kk = nextspritestat[jj];
-                                    Gv_SetVar(returnVar, jj);
-                                    insptr = pNext;
-                                    VM_Execute();
-                                    jj = kk;
-                                }
+                                for (native_t jj = headspritestat[statNum], kk = nextspritestat[jj]; jj >= 0; jj = kk, kk = nextspritestat[jj])
+                                    CON_FOR_ITERATION();
                             }
                             break;
+
                         case ITER_ALLSPRITESBYSECT:
                             for (native_t sectNum = 0; sectNum < numsectors; ++sectNum)
                             {
-                                for (native_t jj = headspritesect[sectNum]; jj >= 0;)
-                                {
-                                    int const kk = nextspritesect[jj];
-                                    Gv_SetVar(returnVar, jj);
-                                    insptr = pNext;
-                                    VM_Execute();
-                                    jj = kk;
-                                }
+                                for (native_t jj = headspritesect[sectNum], kk = nextspritesect[jj]; jj >= 0; jj = kk, kk = nextspritesect[jj])
+                                    CON_FOR_ITERATION();
                             }
                             break;
+
                         case ITER_ALLSECTORS:
                             for (native_t jj = 0; jj < numsectors; ++jj)
-                            {
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
-                            }
+                                CON_FOR_ITERATION();
                             break;
+
                         case ITER_ALLWALLS:
                             for (native_t jj = 0; jj < numwalls; ++jj)
-                            {
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
-                            }
+                                CON_FOR_ITERATION();
                             break;
+
                         case ITER_ACTIVELIGHTS:
 #ifdef POLYMER
                             for (native_t jj = 0; jj < PR_MAXLIGHTS; ++jj)
                             {
                                 if (!prlights[jj].flags.active)
                                     continue;
-
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
+                                CON_FOR_ITERATION();
                             }
 #endif
                             break;
 
                         case ITER_DRAWNSPRITES:
-                        {
-                            for (native_t ii = 0; ii < spritesortcnt; ii++)
-                            {
-                                Gv_SetVar(returnVar, ii);
-                                insptr = pNext;
-                                VM_Execute();
-                            }
+                            for (native_t jj = 0; jj < spritesortcnt; jj++)
+                                CON_FOR_ITERATION();
                             break;
-                        }
 
                         case ITER_SPRITESOFSECTOR:
                             if ((unsigned)nIndex >= MAXSECTORS)
                                 goto badindex;
-                            for (native_t jj = headspritesect[nIndex]; jj >= 0;)
-                            {
-                                int const kk = nextspritesect[jj];
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
-                                jj = kk;
-                            }
+
+                            for (native_t jj = headspritesect[nIndex], kk = nextspritesect[jj]; jj >= 0; jj = kk, kk = nextspritesect[jj])
+                                CON_FOR_ITERATION();
                             break;
+
                         case ITER_SPRITESOFSTATUS:
                             if ((unsigned)nIndex >= MAXSTATUS)
                                 goto badindex;
-                            for (native_t jj = headspritestat[nIndex]; jj >= 0;)
-                            {
-                                int const kk = nextspritestat[jj];
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
-                                jj = kk;
-                            }
+
+                            for (native_t jj = headspritestat[nIndex], kk = nextspritestat[jj]; jj >= 0; jj = kk, kk = nextspritestat[jj])
+                                CON_FOR_ITERATION();
                             break;
+
                         case ITER_WALLSOFSECTOR:
                             if ((unsigned)nIndex >= MAXSECTORS)
                                 goto badindex;
+
                             for (native_t jj = sector[nIndex].wallptr, endwall = jj + sector[nIndex].wallnum - 1; jj <= endwall; jj++)
-                            {
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
-                            }
+                                CON_FOR_ITERATION();
                             break;
+
                         case ITER_LOOPOFWALL:
                             if ((unsigned)nIndex >= (unsigned)numwalls)
                                 goto badindex;
@@ -2726,20 +2697,15 @@ GAMEEXEC_STATIC void VM_Execute(bool const loop /*= false*/)
                                 int jj = nIndex;
                                 do
                                 {
-                                    Gv_SetVar(returnVar, jj);
-                                    insptr = pNext;
-                                    VM_Execute();
+                                    CON_FOR_ITERATION();
                                     jj = wall[jj].point2;
                                 } while (jj != nIndex);
                             }
                             break;
+
                         case ITER_RANGE:
                             for (native_t jj = 0; jj < nIndex; jj++)
-                            {
-                                Gv_SetVar(returnVar, jj);
-                                insptr = pNext;
-                                VM_Execute();
-                            }
+                                CON_FOR_ITERATION();
                             break;
 badindex:
                             OSD_Printf(OSD_ERROR "Line %d, for %s: index %d out of range!\n", VM_DECODE_LINE_NUMBER(g_tw), iter_tokens[iterType].token, nIndex);
@@ -2749,6 +2715,7 @@ badindex:
                     insptr = pEnd;
                 }
                 dispatch();
+#undef CON_FOR_ITERATION
 
             vInstruction(CON_REDEFINEQUOTE):
                 insptr++;
@@ -5353,7 +5320,7 @@ badindex:
                     // -1 for none found
                     // <type> <maxdistvarid> <varid>
                     int const  decodedInst  = VM_DECODE_INST(tw);
-                    bool const actorsOnly   = (decodedInst == CON_FINDNEARACTOR || decodedInst == CON_FINDNEARACTOR3D);
+                    int const  actorsOnly   = (decodedInst == CON_FINDNEARACTOR || decodedInst == CON_FINDNEARACTOR3D);
                     auto const dist_funcptr = (decodedInst == CON_FINDNEARACTOR || decodedInst == CON_FINDNEARSPRITE) ? &ldist : &dist;
 
                     int const findTile  = *insptr++;
@@ -5401,7 +5368,7 @@ badindex:
                     // that is of <type> into <getvar>
                     // -1 for none found
                     // <type> <maxdistvarid> <varid>
-                    bool const actorsOnly = (VM_DECODE_INST(tw) == CON_FINDNEARACTORZ);
+                    int const actorsOnly = (VM_DECODE_INST(tw) == CON_FINDNEARACTORZ);
 
                     int const findTile  = *insptr++;
                     int       maxDist   = Gv_GetVar(*insptr++);
@@ -5931,7 +5898,7 @@ badindex:
                 {
                     tw = *insptr++;
                     int32_t const rgb = Gv_GetVar(*insptr++);
-                    Gv_SetVar(tw, getclosestcol_lim(rgb & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 16) & 0xFF, Gv_GetVar(*insptr++)));
+                    Gv_SetVar(tw, paletteGetClosestColorUpToIndex(rgb & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 16) & 0xFF, Gv_GetVar(*insptr++)));
                 }
                 dispatch();
 

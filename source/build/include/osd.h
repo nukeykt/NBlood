@@ -5,13 +5,13 @@
 #ifndef osd_h_
 #define osd_h_
 
+#include "collections.h"
+#include "mutex.h"
 #include "vfs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "mutex.h"
 
 typedef struct {
     int32_t numparms;
@@ -29,7 +29,6 @@ const char *OSD_StripColors(char *outBuf, const char *inBuf);
 #define OSDMINHISTORYDEPTH  32
 #define OSDMAXHISTORYDEPTH  256
 #define OSDBUFFERSIZE       32768
-#define OSDDEFAULTROWS      20
 #define OSDDEFAULTCOLS      60
 #define OSDLOGCUTOFF        131072
 #define OSDMAXSYMBOLS       512
@@ -156,13 +155,13 @@ typedef struct
     int32_t  cols;  // width of onscreen display in text columns
     uint16_t head;  // topmost visible line number
     int8_t   scrolling;
+    int      errfmtlen;
 } osddraw_t;
 
 typedef struct
 {
     buildvfs_FILE fp;
     int32_t cutoff;
-    int32_t errors;
     int32_t lines;
 } osdlog_t;
 
@@ -190,6 +189,7 @@ typedef struct
 } osdmain_t;
 
 extern osdmain_t *osd;
+extern GrowArray<char *> osdstrings;
 
 extern buildvfs_FILE osdlog;
 extern const char* osdlogfn;
@@ -257,7 +257,7 @@ void OSD_CaptureKey(uint8_t scanCode);
 // or the scancode if it should be handled by the game.
 int OSD_HandleScanCode(uint8_t scanCode, int keyDown);
 int OSD_HandleChar(char ch);
-
+void OSD_HandleWheel(void);
 // handles the readjustment when screen resolution changes
 void OSD_ResizeDisplay(int w,int h);
 
@@ -277,7 +277,7 @@ void OSD_Draw(void);
 void OSD_Printf(const char *fmt, ...) ATTRIBUTE((format(printf,1,2)));
 
 // just like puts
-void OSD_Puts(const char *str);
+void OSD_Puts(const char *putstr, int const nolog = false);
 
 // executes buffered commands
 void OSD_DispatchQueued(void);

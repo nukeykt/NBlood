@@ -76,7 +76,7 @@ void DrawCompass(PLAYERp pp);
 
 #if 1
 void
-ShadeSprite(uspritetype * tsp)
+ShadeSprite(tspriteptr_t tsp)
 {
     // set shade of sprite
     tsp->shade = sector[tsp->sectnum].floorshade - 25;
@@ -99,7 +99,7 @@ GetRotation(short tSpriteNum, int viewx, int viewy)
     short rotation;
     extern short screenpeek;
 
-    uspritetype * tsp = &tsprite[tSpriteNum];
+    tspriteptr_t tsp = &tsprite[tSpriteNum];
     USERp tu = User[tsp->owner];
     PLAYERp pp = Player + screenpeek;
     short angle2;
@@ -167,7 +167,7 @@ directions was not standardized.
 int
 SetActorRotation(short tSpriteNum, int viewx, int viewy)
 {
-    uspritetype * tsp = &tsprite[tSpriteNum];
+    tspriteptr_t tsp = &tsprite[tSpriteNum];
     USERp tu = User[tsp->owner];
     short StateOffset, Rotation;
 
@@ -228,7 +228,7 @@ SetActorRotation(short tSpriteNum, int viewx, int viewy)
 }
 
 int
-DoShadowFindGroundPoint(uspritetype * sp)
+DoShadowFindGroundPoint(tspriteptr_t sp)
 {
     // USES TSPRITE !!!!!
     USERp u = User[sp->owner];
@@ -364,9 +364,9 @@ DoVoxelShadow(SPRITEp tspr)
 #endif
 
 void
-DoShadows(uspritetype * tsp, int viewz)
+DoShadows(tspriteptr_t tsp, int viewz)
 {
-    uspritetype * New = &tsprite[spritesortcnt];
+    tspriteptr_t New = &tsprite[spritesortcnt];
     USERp tu = User[tsp->owner];
     int ground_dist = 0;
     int view_dist = 0;
@@ -391,7 +391,7 @@ DoShadows(uspritetype * tsp, int viewz)
     }
 
     tsp->sectnum = sectnum;
-    memcpy(New, tsp, sizeof(SPRITE));
+    *New = *tsp;
     // shadow is ALWAYS draw last - status is priority
     New->statnum = MAXSTATUS;
     New->sectnum = sectnum;
@@ -459,9 +459,8 @@ DoShadows(uspritetype * tsp, int viewz)
 }
 
 void
-DoMotionBlur(uspritetype const * tsp)
+DoMotionBlur(tspritetype const * const tsp)
 {
-    uspritetype * New;
     USERp tu = User[tsp->owner];
     int nx,ny,nz = 0,dx,dy,dz;
     short i, ang;
@@ -532,8 +531,8 @@ DoMotionBlur(uspritetype const * tsp)
 
     for (i = 0; i < tu->motion_blur_num; i++)
     {
-        New = &tsprite[spritesortcnt];
-        memcpy(New, tsp, sizeof(SPRITE));
+        tspriteptr_t New = &tsprite[spritesortcnt];
+        *New = *tsp;
         SET(New->cstat, CSTAT_SPRITE_TRANSLUCENT|CSTAT_SPRITE_TRANSLUCENT_INVERT);
 
         New->x += dx;
@@ -564,7 +563,6 @@ void SetVoxelSprite(SPRITEp sp, short pic)
 void WarpCopySprite(void)
 {
     SPRITEp sp1, sp2, sp;
-    uspritetype * New;
     short sn, nsn;
     short sn2, nsn2;
     short spnum, next_spnum;
@@ -597,10 +595,7 @@ void WarpCopySprite(void)
                     if (sprite[spnum].picnum == ST1)
                         continue;
 
-                    New = &tsprite[spritesortcnt];
-                    memcpy(New, &sprite[spnum], sizeof(SPRITE));
-                    spritesortcnt++;
-                    New->owner = spnum;
+                    tspriteptr_t New = renderAddTSpriteFromSprite(spnum);
                     New->statnum = 0;
 
                     xoff = sp1->x - New->x;
@@ -621,10 +616,7 @@ void WarpCopySprite(void)
                     if (sprite[spnum].picnum == ST1)
                         continue;
 
-                    New = &tsprite[spritesortcnt];
-                    memcpy(New, &sprite[spnum], sizeof(SPRITE));
-                    spritesortcnt++;
-                    New->owner = spnum;
+                    tspriteptr_t New = renderAddTSpriteFromSprite(spnum);
                     New->statnum = 0;
 
                     xoff = sp2->x - New->x;
@@ -641,7 +633,7 @@ void WarpCopySprite(void)
     }
 }
 
-void DoStarView(uspritetype * tsp, USERp tu, int viewz)
+void DoStarView(tspriteptr_t tsp, USERp tu, int viewz)
 {
     extern STATE s_Star[], s_StarDown[];
     extern STATE s_StarStuck[], s_StarDownStuck[];
@@ -670,7 +662,6 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
     int tSpriteNum, j, k;
     short SpriteNum, pnum;
     int smr4, smr2;
-    uspritetype * tsp;
     USERp tu;
     static int ang = 0;
     PLAYERp pp = Player + screenpeek;
@@ -685,7 +676,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
     for (tSpriteNum = spritesortcnt - 1; tSpriteNum >= 0; tSpriteNum--)
     {
         SpriteNum = tsprite[tSpriteNum].owner;
-        tsp = &tsprite[tSpriteNum];
+        tspriteptr_t tsp = &tsprite[tSpriteNum];
         tu = User[SpriteNum];
 
         //if(tsp->statnum == STAT_GENERIC_QUEUE)
@@ -896,7 +887,8 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 
         if (OverlapDraw && FAF_ConnectArea(tsp->sectnum) && tsp->owner >= 0)
         {
-            ConnectCopySprite(tsp);
+            EDUKE32_STATIC_ASSERT(sizeof(uspritetype) == sizeof(tspritetype)); // see TSPRITE_SIZE
+            ConnectCopySprite((uspriteptr_t)tsp);
         }
 
         //
@@ -972,8 +964,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 }
 
 #if 1
-uspritetype *
-get_tsprite(short SpriteNum)
+tspriteptr_t get_tsprite(short SpriteNum)
 {
     int tSpriteNum;
 
@@ -991,14 +982,13 @@ post_analyzesprites(void)
 {
     int tSpriteNum;
     short SpriteNum;
-    uspritetype * tsp;
     USERp tu;
 
     for (tSpriteNum = spritesortcnt - 1; tSpriteNum >= 0; tSpriteNum--)
     {
         SpriteNum = tsprite[tSpriteNum].owner;
         if (SpriteNum < 0) continue;    // JBF: verify this is safe
-        tsp = &tsprite[tSpriteNum];
+        tspriteptr_t tsp = &tsprite[tSpriteNum];
         tu = User[SpriteNum];
 
         if (tu)
@@ -1006,7 +996,7 @@ post_analyzesprites(void)
             if (tu->ID == FIREBALL_FLAMES && tu->Attach >= 0)
             {
                 //uspritetype * const atsp = &sprite[tu->Attach];
-                uspritetype * const atsp = get_tsprite(tu->Attach);
+                tspriteptr_t const atsp = get_tsprite(tu->Attach);
 
                 if (!atsp)
                 {
@@ -1529,8 +1519,7 @@ void SpriteSortList2D(int tx, int ty)
 
                 if (dist < 22000)
                 {
-                    memcpy(&tsprite[spritesortcnt], sp, sizeof(SPRITE));
-                    tsprite[spritesortcnt++].owner = i;
+                    renderAddTSpriteFromSprite(i);
                 }
             }
         }
@@ -1869,16 +1858,15 @@ void DrawCrosshair(PLAYERp pp)
 
         rotatesprite(x << 8, y << 8, (1 << 16), 0,
                      2326, 10, 0,
-                     ROTATE_SPRITE_VIEW_CLIP|ROTATE_SPRITE_CORNER, 0, 0, xdim - 1, ydim - 1);
+                     ROTATE_SPRITE_VIEW_CLIP, 0, 0, xdim - 1, ydim - 1);
     }
     else
 #endif
     {
 //NORMALXHAIR:
-        rotatesprite(CrosshairX, CrosshairY, (1 << 16), 0,
+        rotatesprite(160<<16, 100<<16, (1 << 16), 0,
                      2326, 10, 0,
-                     //ROTATE_SPRITE_VIEW_CLIP|ROTATE_SPRITE_CORNER, 0, 0, xdim - 1, ydim - 1);
-                     ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_CORNER, 0, 0, xdim - 1, ydim - 1);
+                     ROTATE_SPRITE_VIEW_CLIP, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
     }
 
     //#define TITLE_ROT_FLAGS (ROTATE_SPRITE_CORNER|ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_NON_MASK)

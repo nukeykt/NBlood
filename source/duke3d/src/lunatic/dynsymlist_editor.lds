@@ -66,7 +66,7 @@ clipmovex;
 rotatesprite_;
 setaspect;
 
-getclosestcol_lim;
+paletteGetClosestColorUpToIndex;
 palookup;
 palette;
 getblendtab;

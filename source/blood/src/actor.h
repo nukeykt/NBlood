@@ -66,6 +66,12 @@ enum VECTOR_TYPE {
     kVectorMax,
 };
 
+enum {
+kRandomizeItem          = 0,
+kRandomizeDude          = 1,
+kRandomizeTX            = 2,
+};
+
 struct THINGINFO
 {
     short startHealth;
@@ -131,6 +137,7 @@ struct MissileType
     char shade;
     unsigned char clipDist;
     int fireSound[2]; // By NoOne: predefined fire sounds. used by kDudeModernCustom, but can be used for something else.
+    bool dmgType[kDamageMax];   // By NoOne: list of damages types missile can use
 };
 
 struct EXPLOSION
@@ -191,14 +198,18 @@ extern int gDudeDrag;
 extern short gAffectedSectors[kMaxSectors];
 extern short gAffectedXWalls[kMaxXWalls];
 
-inline bool IsPlayerSprite(spritetype *pSprite)
+#ifdef POLYMER
+extern 
+#endif
+
+inline bool IsPlayerSprite(spritetype const * const pSprite)
 {
     if (pSprite->type >= kDudePlayer1 && pSprite->type <= kDudePlayer8)
         return 1;
     return 0;
 }
 
-inline bool IsDudeSprite(spritetype *pSprite)
+template<typename T> bool IsDudeSprite(T const * const pSprite)
 {
     if (pSprite->type >= kDudeBase && pSprite->type < kDudeMax)
         return 1;
@@ -210,6 +221,11 @@ inline void actBurnSprite(int nSource, XSPRITE *pXSprite, int nTime)
     pXSprite->burnTime = ClipHigh(pXSprite->burnTime + nTime, sprite[pXSprite->reference].statnum == kStatDude ? 2400 : 1200);
     pXSprite->burnSource = nSource;
 }
+
+#ifdef POLYMER
+void actAddGameLight(int lightRadius, int spriteNum, int zOffset, int lightRange, int lightColor, int lightPrio);
+void actDoLight(int spriteNum);
+#endif
 
 bool IsItemSprite(spritetype *pSprite);
 bool IsWeaponSprite(spritetype *pSprite);
@@ -266,8 +282,7 @@ void MakeSplash(spritetype *pSprite, XSPRITE *pXSprite);
 spritetype* DropRandomPickupObject(spritetype* pSprite, short prevItem);
 spritetype* spawnRandomDude(spritetype* pSprite);
 int GetDataVal(spritetype* pSprite, int data);
-int my_random(int a, int b);
-int GetRandDataVal(int *rData, spritetype* pSprite);
+int GetRandDataVal(XSPRITE* pXSprite, int randType);
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId);
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId);
 spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist);
@@ -278,6 +293,7 @@ int isDebris(int nSprite);
 int debrisGetFreeIndex(void);
 void debrisMove(int listIndex);
 void debrisConcuss(int nOwner, int listIndex, int x, int y, int z, int dmg);
+bool isImmune(spritetype* pSprite, int dmgType, int minScale = 16);
 
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
 extern short gProxySpritesList[kMaxSuperXSprites];

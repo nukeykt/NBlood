@@ -645,8 +645,8 @@ bool tileLoad(int16_t tileNum)
         int type;
         for (type = 0; type <= 1; ++type)
         {
-            gltexinvalidate(tileNum, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | PTH_INDEXED);
-            texcache_fetch(tileNum, 0, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | PTH_INDEXED);
+            gltexinvalidate(tileNum, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | DAMETH_INDEXED);
+            texcache_fetch(tileNum, 0, 0, (type ? DAMETH_CLAMPED : DAMETH_MASK) | DAMETH_INDEXED);
         }
     }
 #endif
@@ -773,17 +773,15 @@ static void tilePostLoad(int16_t tilenume)
 #endif
 }
 
-int32_t tileCRC(int16_t tileNum)
+int32_t tileGetCRC32(int16_t tileNum)
 {
-    char *data;
-
     if ((unsigned)tileNum >= (unsigned)MAXTILES)
         return 0;
     int const dasiz = tilesiz[tileNum].x * tilesiz[tileNum].y;
     if (dasiz <= 0)
         return 0;
 
-    data = (char *)Xmalloc(dasiz);
+    auto data = (char *)Xmalloc(dasiz);
     tileLoadData(tileNum, dasiz, data);
 
     int32_t crc = Bcrc32((unsigned char *)data, (unsigned int)dasiz, 0);
@@ -791,6 +789,14 @@ int32_t tileCRC(int16_t tileNum)
     Xfree(data);
 
     return crc;
+}
+
+vec2_16_t tileGetSize(int16_t tileNum)
+{
+    if ((unsigned)tileNum >= (unsigned)MAXTILES)
+        return vec2_16_t{};
+
+    return tilesiz[tileNum];
 }
 
 // Assumes pic has been initialized to zero.

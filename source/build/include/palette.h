@@ -36,9 +36,9 @@ extern const char *(paletteGetBlendTable) (int32_t blend);
 #define paletteGetBlendTable(blend) (blendtable[blend])
 #endif
 
-extern uint32_t PaletteIndexFullbrights[8];
-#define IsPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>5] & (1u<<((col)&31)))
-#define SetPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>5] |= (1u<<((col)&31)))
+extern uint8_t PaletteIndexFullbrights[32];
+#define IsPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] & (1u<<((col)&7)))
+#define SetPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] |= (1u<<((col)&7)))
 
 typedef struct {
     char r, g, b, f;
@@ -49,8 +49,10 @@ typedef struct {
 extern palette_t curpalette[256], curpalettefaded[256], palfadergb;
 
 extern char palfadedelta;
+#ifdef USE_OPENGL
 extern void fullscreen_tint_gl(uint8_t r, uint8_t g, uint8_t b, uint8_t f);
 extern void fullscreen_tint_gl_blood(void);
+#endif
 extern void videoFadeToBlack(int32_t moreopaquep);
 void paletteMakeLookupTable(int32_t palnum, const char *remapbuf, uint8_t r, uint8_t g, uint8_t b, char noFloorPal);
 void paletteSetColorTable(int32_t id, uint8_t const *table);

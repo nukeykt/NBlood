@@ -235,7 +235,9 @@ void CONFIG_SetDefaults(void)
 #else
     ud.config.NumVoices = 64;
 #endif
+#ifdef ASS_REVERSESTEREO
     ud.config.ReverseStereo = 0;
+#endif
     ud.auto_run = 1;
     ud.config.ShowOpponentWeapons = 0;
     ud.config.SmoothInput = 1;

@@ -21,15 +21,19 @@
 #ifndef driver_sdl_h__
 #define driver_sdl_h__
 
-#include "compat.h"
+extern char SDLAudioDriverName[16];
+const char *SDLDrv_ErrorString(int ErrorNumber);
 
-int SDLDrv_GetError(void);
-const char *SDLDrv_ErrorString( int ErrorNumber );
-int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata);
+int  SDLDrv_GetError(void);
+int  SDLDrv_PCM_Init(int *mixrate, int *numchannels, void *initdata);
 void SDLDrv_PCM_Shutdown(void);
-int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
-                 int NumDivisions, void ( *CallBackFunc )( void ) );
+int  SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize, int NumDivisions, void (*CallBackFunc)(void));
 void SDLDrv_PCM_StopPlayback(void);
 void SDLDrv_PCM_Lock(void);
 void SDLDrv_PCM_Unlock(void);
+
+void SDLDrv_PCM_PrintDevices(void);
+int  SDLDrv_PCM_CheckDevice(char const *dev);
+char const *SDLDrv_PCM_GetDevice(void);
+
 #endif // driver_sdl_h__

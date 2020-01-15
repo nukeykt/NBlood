@@ -333,7 +333,7 @@ void menu_DoPlasmaTile()
 
         //uint32_t t = time(0) << 16;
         //uint32_t t2 = time(0) | t;
-        nRandom = timerGetTicksU64();
+        nRandom = timerGetPerformanceCounter();
 
         for (int i = 0; i < 5; i++)
         {
@@ -668,18 +668,27 @@ int menu_DrawTheMap(int nLevel, int nLevelNew, int nLevelBest)
 
     int runtimer = (int)totalclock;
 
+    // Trim smoke in widescreen
+    vec2_t mapwinxy1 = windowxy1, mapwinxy2 = windowxy2;
+    int32_t width = mapwinxy2.x - mapwinxy1.x + 1, height = mapwinxy2.y - mapwinxy1.y + 1;
+    if (3 * width > 4 * height)
+    {
+        mapwinxy1.x += (width - 4 * height / 3) / 2;
+        mapwinxy2.x -= (width - 4 * height / 3) / 2;
+    }
+
     // User has 12 seconds to do something on the map screen before loading the current level
     while (nIdleSeconds < 12)
     {
         HandleAsync();
+
+        videoClearScreen(overscanindex); // fix hall of mirrors when console renders offscreen in widescreen resolutions.
 
         if (((int)totalclock - startTime) / kTimerTicks)
         {
             nIdleSeconds++;
             startTime = (int)totalclock;
         }
-
-        int moveTimer = (int)totalclock;
 
         int tileY = curYPos;
 
@@ -709,7 +718,10 @@ int menu_DrawTheMap(int nLevel, int nLevelNew, int nLevelBest)
                     int smokeX = MapLevelFires[i].fires[j].xPos + FireTiles[nFireType][nFireFrame].xOffs;
                     int smokeY = MapLevelFires[i].fires[j].yPos + FireTiles[nFireType][nFireFrame].yOffs + curYPos + screenY;
 
-                    overwritesprite(smokeX, smokeY, nTile, 0, 2, kPalNormal);
+                    // Use rotatesprite to trim smoke in widescreen
+                    rotatesprite(smokeX << 16, smokeY << 16, 65536L, 0,
+                                 nTile, 0, kPalNormal, 16 + 2, mapwinxy1.x, mapwinxy1.y, mapwinxy2.x, mapwinxy2.y);
+//                    overwritesprite(smokeX, smokeY, nTile, 0, 2, kPalNormal);
                 }
             }
 
@@ -747,7 +759,6 @@ int menu_DrawTheMap(int nLevel, int nLevelNew, int nLevelBest)
         {
             bFadeDone = kTrue;
             FadeIn();
-            moveTimer = (int)totalclock;
         }
 
         if (curYPos == destYPos)
@@ -811,8 +822,6 @@ int menu_DrawTheMap(int nLevel, int nLevelNew, int nLevelBest)
                 curYPos += var_2C;
                 runtimer = (int)totalclock;
             }
-
-            //curYPos += var_2C * (((int)totalclock - moveTimer) / 2);
 
             if (KB_KeyDown[sc_Escape] || KB_KeyDown[sc_Space] || KB_KeyDown[sc_Return])
             {

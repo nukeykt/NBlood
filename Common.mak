@@ -524,7 +524,11 @@ ifeq ($(PLATFORM),WINDOWS)
     ASFORMAT := win$(BITS)
     ASFLAGS += -DUNDERSCORES
 
-    DYNAMICBASE := ,--dynamicbase
+    ifneq ($(RELEASE),0)
+        ifeq ($(FORCEDEBUG),0)
+            DYNAMICBASE := ,--dynamicbase
+        endif
+    endif
     LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat$(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
@@ -590,6 +594,8 @@ ifndef OPTOPT
         else
             ifeq ($(PLATFORM),DARWIN)
                 OPTOPT := -march=core2 -mmmx -msse -msse2 -msse3 -mssse3
+            else
+                OPTOPT := -march=nocona
             endif
         endif
     endif
@@ -597,20 +603,20 @@ ifndef OPTOPT
         ifeq ($(PLATFORM),DARWIN)
             OPTOPT := -march=nocona -mmmx -msse -msse2 -msse3
         else
-            OPTOPT := -march=pentium-m
+            USE_SSE2 := 0
+            ifneq (0,$(USE_SSE2))
+                OPTOPT := -march=pentium-m
+            else
+                OPTOPT := -march=pentium3
+            endif
             ifneq (0,$(GCC_PREREQ_4))
                 OPTOPT += -mtune=generic
                 # -mstackrealign
             endif
-            OPTOPT += -mmmx -msse -msse2 -mfpmath=sse
-
-            # Fix for 32 bit CPUs on Linux without SSE2
-            ifeq ($(HOSTPLATFORM),$(filter $(HOSTPLATFORM),LINUX BSD))
-                ifneq ($(shell $(CC) -march=native -dM -E - < /dev/null | grep -i "__SSE2__" | wc -l),1)
-                    OPTOPT := -march=native
-                endif
+            OPTOPT += -mmmx -msse -mfpmath=sse
+            ifneq (0,$(USE_SSE2))
+                OPTOPT += -msse2
             endif
-
         endif
     endif
     ifeq ($(PLATFORM),WII)
@@ -1038,7 +1044,7 @@ endif
 #    VC_REV := $(word 2,$(subst @, ,$(filter git-svn-id:$(GIT_SVN_URL)@%,$(subst : ,:,$(shell git log -1 $(GIT_SVN_FETCH::%=%))))))
 #endif
 ifneq (,$(VC_REV)$(VC_REV_CUSTOM))
-    REVFLAG := -DREV="\"$(VC_REV)$(VC_REV_CUSTOM)\""
+    REVFLAG := -DREV="$(VC_REV)$(VC_REV_CUSTOM)"
 endif
 
 

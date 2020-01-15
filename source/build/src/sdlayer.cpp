@@ -426,6 +426,9 @@ void sdlayer_sethints()
 #if defined SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "0");
 #endif
+#if defined SDL_HINT_AUDIO_RESAMPLING_MODE
+    SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "3");
+#endif
 }
 
 #ifdef _WIN32
@@ -725,7 +728,7 @@ void system_getcvars(void)
 }
 
 //
-// initprintf() -- prints a formatted string to the intitialization window
+// initprintf() -- prints a formatted string to the initialization window
 //
 void initprintf(const char *f, ...)
 {
@@ -736,12 +739,13 @@ void initprintf(const char *f, ...)
     Bvsnprintf(buf, sizeof(buf), f, va);
     va_end(va);
 
+    osdstrings.append(Xstrdup(buf));
     initputs(buf);
 }
 
 
 //
-// initputs() -- prints a string to the intitialization window
+// initputs() -- prints a string to the initialization window
 //
 void initputs(const char *buf)
 {
@@ -901,8 +905,10 @@ void joyScanDevices()
                 buildprintf("Using controller %s\n", SDL_GameControllerName(controller));
 
                 joystick.numAxes    = SDL_CONTROLLER_AXIS_MAX;
+                joystick.numBalls   = 0;
                 joystick.numButtons = SDL_CONTROLLER_BUTTON_MAX;
                 joystick.numHats    = 0;
+
                 joystick.isGameController = 1;
 
                 Xfree(joystick.pAxis);
@@ -924,12 +930,18 @@ void joyScanDevices()
                 buildprintf("Using joystick %s\n", SDL_JoystickNameForIndex(i));
 
                 // KEEPINSYNC duke3d/src/gamedefs.h, mact/include/_control.h
-                joystick.numAxes = min(9, SDL_JoystickNumAxes(joydev));
+                joystick.numAxes    = min(9, SDL_JoystickNumAxes(joydev));
+                joystick.numBalls   = SDL_JoystickNumBalls(joydev);
                 joystick.numButtons = min(32, SDL_JoystickNumButtons(joydev));
-                joystick.numHats = min((36-joystick.numButtons)/4,SDL_JoystickNumHats(joydev));
+                joystick.numHats    = min((36 - joystick.numButtons) / 4, SDL_JoystickNumHats(joydev));
+
                 joystick.isGameController = 0;
 
-                initprintf("Joystick %d has %d axes, %d buttons, and %d hat(s).\n", i+1, joystick.numAxes, joystick.numButtons, joystick.numHats);
+                buildprint("Joystick ", i+1, " has ", joystick.numAxes, " axes, ", joystick.numButtons, " buttons, ");
+                if (joystick.numHats) buildprint(joystick.numHats); else buildprint("no");
+                buildprint(" hats, and ");
+                if (joystick.numBalls) buildprint(joystick.numBalls); else buildprint("no");
+                buildprint(" balls.\n");
 
                 Xfree(joystick.pAxis);
                 joystick.pAxis = (int32_t *)Xcalloc(joystick.numAxes, sizeof(int32_t));
@@ -1185,11 +1197,13 @@ void mouseLockToWindow(char a)
 
 void mouseMoveToCenter(void)
 {
+#if SDL_MAJOR_VERSION != 1
     if (sdl_window)
     {
         g_mouseAbs = { xdim >> 1, ydim >> 1 };
         SDL_WarpMouseInWindow(sdl_window, g_mouseAbs.x, g_mouseAbs.y);
     }
+#endif
 }
 
 //
@@ -1917,11 +1931,11 @@ void videoShowFrame(int32_t w)
                     static uint64_t lastSwapTime;
                     // busy loop until we're ready to update again
                     // sit on it and spin
-                    currentVBlankInterval = timerGetFreqU64()/(double)refreshfreq;
-                    uint64_t swapTime = timerGetTicksU64();
+                    currentVBlankInterval = timerGetPerformanceFrequency()/(double)refreshfreq;
+                    uint64_t swapTime = timerGetPerformanceCounter();
                     if (lastSwapTime > swapTime)
                         lastSwapTime = swapTime;
-                    do { } while ((double)(timerGetTicksU64() - lastSwapTime) < currentVBlankInterval);
+                    do { } while ((double)(timerGetPerformanceCounter() - lastSwapTime) < currentVBlankInterval);
                     lastSwapTime = swapTime;
                 }
                 break;
@@ -2110,7 +2124,9 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 #ifndef GEKKO
             g_mouseAbs.x = ev->motion.x;
             g_mouseAbs.y = ev->motion.y;
+            fallthrough__;
 #endif
+        case SDL_JOYBALLMOTION:
             // SDL <VER> doesn't handle relative mouse movement correctly yet as the cursor still clips to the
             // screen edges
             // so, we call SDL_WarpMouse() to center the cursor and ignore the resulting motion event that occurs
@@ -2481,7 +2497,7 @@ int32_t handleevents_pollsdl(void)
                         if (g_mouseGrabbed && g_mouseEnabled)
                             grabmouse_low(appactive);
 #ifdef _WIN32
-                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
+                        windowsHandleFocusChange(appactive);
 #endif
                         break;
 
@@ -2501,9 +2517,6 @@ int32_t handleevents_pollsdl(void)
                     case SDL_WINDOWEVENT_ENTER:
                     case SDL_WINDOWEVENT_LEAVE:
                         g_mouseInsideWindow = (ev.window.event == SDL_WINDOWEVENT_ENTER);
-#ifdef _WIN32
-                        windowsHandleFocusChange(appactive && g_mouseInsideWindow);
-#endif
                         break;
                 }
 
@@ -2536,6 +2549,8 @@ int32_t handleevents(void)
             if (g_mouseBits & 32)
                 g_mouseCallback(6, 0);
         }
+
+        OSD_HandleWheel();
         g_mouseBits &= ~(16 | 32);
     }
 

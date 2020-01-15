@@ -25,7 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "build.h"
 #include "cache1d.h"
-#include "file_lib.h"
 #include "sndcards.h"
 #include "hash.h"
 #include "scriplib.h"
@@ -327,7 +326,9 @@ void CONFIG_SetDefaults(void)
     MusicVolume     = 195;
     NumBits         = 16;
     NumChannels     = 2;
+#ifdef ASS_REVERSESTEREO
     ReverseStereo   = 0;
+#endif
     gBrightness = 8;
     //ud.config.ShowWeapons     = 0;
     SmoothInput     = 1;

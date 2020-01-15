@@ -4935,8 +4935,11 @@ SetSuicide(short SpriteNum)
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
-    SET(u->Flags, SPR_SUICIDE);
-    u->RotNum = 0;
+    if (u != nullptr)
+    {
+        SET(u->Flags, SPR_SUICIDE);
+        u->RotNum = 0;
+    }
     ChangeState(SpriteNum, s_Suicide);
 #else
     // this will NOT work because
@@ -7845,7 +7848,7 @@ int DoExpDamageTest(short Weapon)
             {
                 int zdist=0;
 
-                if ((unsigned)FindDistance3D(sp->x - wp->x, sp->y - wp->y, (sp->z - wp->z)>>4) > wu->Radius + u->Radius)
+                if ((unsigned)FindDistance3D(sp->x - wp->x, sp->y - wp->y, sp->z - wp->z) > wu->Radius + u->Radius)
                     continue;
 
                 // added hitscan block because mines no long clip against actors/players
@@ -7882,7 +7885,7 @@ int DoExpDamageTest(short Weapon)
             if ((unsigned)dist > wu->Radius)
                 continue;
 
-            dist = FindDistance3D(sp->x - wp->x, sp->y - wp->y, (SPRITEp_MID(sp) - wp->z)>>4);
+            dist = FindDistance3D(sp->x - wp->x, sp->y - wp->y, SPRITEp_MID(sp) - wp->z);
             if ((unsigned)dist > wu->Radius)
                 continue;
 
@@ -9008,7 +9011,7 @@ DoGrenade(int16_t Weapon)
     if (TEST(u->Flags, SPR_UNDERWATER) && (RANDOM_P2(1024 << 4) >> 4) < 256)
         SpawnBubble(Weapon);
 
-    ////DSPRINTF(ds, "dist %d, u->ret %d", FindDistance3D(u->xchange, u->ychange, u->zchange>>4), u->ret);
+    ////DSPRINTF(ds, "dist %d, u->ret %d", FindDistance3D(u->xchange, u->ychange, u->zchange), u->ret);
     //MONO_PRINT(ds);
 
     if (u->ret)
@@ -9441,7 +9444,7 @@ DoMineRangeTest(short Weapon, short range)
             if (u->ID == GIRLNINJA_RUN_R0 && !ownerisplayer)
                 continue;
 
-            dist = FindDistance3D(wp->x - sp->x, wp->y - sp->y, (wp->z - sp->z)>>4);
+            dist = FindDistance3D(wp->x - sp->x, wp->y - sp->y, wp->z - sp->z);
             if (dist > range)
                 continue;
 
@@ -11269,7 +11272,7 @@ SpawnNuclearSecondaryExp(int16_t Weapon, short ang)
     eu->ret = move_missile(explosion, eu->xchange, eu->ychange, 0,
                            eu->ceiling_dist, eu->floor_dist, CLIPMASK_MISSILE, MISSILEMOVETICS);
 
-    if (FindDistance3D(exp->x - sp->x, exp->y - sp->y, (exp->z - sp->z)>>4) < 1024)
+    if (FindDistance3D(exp->x - sp->x, exp->y - sp->y, exp->z - sp->z) < 1024)
     {
         KillSprite(explosion);
         return -1;
@@ -11615,7 +11618,7 @@ SpawnGrenadeSecondaryExp(int16_t Weapon, short ang)
     eu->ret = move_missile(explosion, eu->xchange, eu->ychange, 0,
                            eu->ceiling_dist, eu->floor_dist, CLIPMASK_MISSILE, MISSILEMOVETICS);
 
-    if (FindDistance3D(exp->x - sp->x, exp->y - sp->y, (exp->z - sp->z)>>4) < 1024)
+    if (FindDistance3D(exp->x - sp->x, exp->y - sp->y, exp->z - sp->z) < 1024)
     {
         KillSprite(explosion);
         return -1;
@@ -13918,7 +13921,7 @@ InitSwordAttack(PLAYERp pp)
         if (hitinfo.sect < 0)
             return 0;
 
-        if (FindDistance3D(pp->posx - hitinfo.pos.x, pp->posy - hitinfo.pos.y, (pp->posz - hitinfo.pos.z)>>4) < 700)
+        if (FindDistance3D(pp->posx - hitinfo.pos.x, pp->posy - hitinfo.pos.y, pp->posz - hitinfo.pos.z) < 700)
         {
 
             if (hitinfo.sprite >= 0)
@@ -14110,7 +14113,7 @@ InitFistAttack(PLAYERp pp)
         if (hitinfo.sect < 0)
             return 0;
 
-        if (FindDistance3D(pp->posx - hitinfo.pos.x, pp->posy - hitinfo.pos.y, (pp->posz - hitinfo.pos.z)>>4) < 700)
+        if (FindDistance3D(pp->posx - hitinfo.pos.x, pp->posy - hitinfo.pos.y, pp->posz - hitinfo.pos.z) < 700)
         {
 
             if (hitinfo.sprite >= 0)
@@ -16148,7 +16151,7 @@ InitRipperSlash(short SpriteNum)
             if (i == SpriteNum)
                 break;
 
-            if ((unsigned)FindDistance3D(sp->x - hp->x, sp->y - hp->y, (sp->z - hp->z)>>4) > hu->Radius + u->Radius)
+            if ((unsigned)FindDistance3D(sp->x - hp->x, sp->y - hp->y, sp->z - hp->z) > hu->Radius + u->Radius)
                 continue;
 
             DISTANCE(hp->x, hp->y, sp->x, sp->y, dist, a, b, c);
@@ -16297,7 +16300,7 @@ DoBladeDamage(short SpriteNum)
             if (dist > 2000)
                 continue;
 
-            dist = FindDistance3D(sp->x - hp->x, sp->y - hp->y, (sp->z - hp->z)>>4);
+            dist = FindDistance3D(sp->x - hp->x, sp->y - hp->y, sp->z - hp->z);
 
             if (dist > 2000)
                 continue;
@@ -16340,7 +16343,7 @@ DoStaticFlamesDamage(short SpriteNum)
             if (dist > 2000)
                 continue;
 
-            dist = FindDistance3D(sp->x - hp->x, sp->y - hp->y, (sp->z - hp->z)>>4);
+            dist = FindDistance3D(sp->x - hp->x, sp->y - hp->y, sp->z - hp->z);
 
             if (dist > 2000)
                 continue;
@@ -17358,7 +17361,7 @@ InitEelFire(short SpriteNum)
             if (hp != u->tgt_sp)
                 continue;
 
-            if ((unsigned)FindDistance3D(sp->x - hp->x, sp->y - hp->y, (sp->z - hp->z)>>4) > hu->Radius + u->Radius)
+            if ((unsigned)FindDistance3D(sp->x - hp->x, sp->y - hp->y, sp->z - hp->z) > hu->Radius + u->Radius)
                 continue;
 
             DISTANCE(hp->x, hp->y, sp->x, sp->y, dist, a, b, c);

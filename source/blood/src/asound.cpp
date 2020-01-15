@@ -133,7 +133,8 @@ void ambInit(void)
             DICTNODE *pSFXNode = gSoundRes.Lookup(nSFX, "SFX");
             if (!pSFXNode) {
                 //ThrowError("Missing sound #%d used in ambient sound generator %d\n", nSFX);
-                viewSetSystemMessage("Missing sound #%d used in ambient sound generator #%d\n", nSFX);
+                viewSetSystemMessage("Missing sound #%d used in ambient sound generator #%d\n", nSFX, nSprite);
+                actPostSprite(nSprite, kStatDecoration);
                 continue;
             }
 
@@ -141,7 +142,8 @@ void ambInit(void)
             DICTNODE *pRAWNode = gSoundRes.Lookup(pSFX->rawName, "RAW");
             if (!pRAWNode) {
                 //ThrowError("Missing RAW sound \"%s\" used in ambient sound generator %d\n", pSFX->rawName, nSFX);
-                viewSetSystemMessage("Missing RAW sound \"%s\" used in ambient sound generator %d\n", pSFX->rawName, nSFX);
+                viewSetSystemMessage("Missing RAW sound \"%s\" used in ambient sound generator #%d\n", pSFX->rawName, nSprite);
+                actPostSprite(nSprite, kStatDecoration);
                 continue;
             }
             

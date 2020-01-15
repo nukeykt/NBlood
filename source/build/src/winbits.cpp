@@ -30,6 +30,8 @@ static OSVERSIONINFOEX osv;
 
 FARPROC pwinever;
 
+static char const *enUSLayoutString = "00000409";
+
 void windowsSetupTimer(int ntDllVoodoo)
 {
     typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
@@ -42,7 +44,7 @@ void windowsSetupTimer(int ntDllVoodoo)
 
     if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
     {
-#ifdef RENDERTYPESDL
+#if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
         int const onBattery = (SDL_GetPowerInfo(NULL, NULL) == SDL_POWERSTATE_ON_BATTERY);
 #else
         static constexpr int const onBattery = 0;
@@ -247,6 +249,7 @@ int windowsPreInit(void)
     }
 
     windowsGetSystemKeyboardLayout();
+    windowsGetSystemKeyboardLayoutName();
 
 #ifdef DEBUGGINGAIDS
     HMODULE ebacktrace = LoadLibraryA(EBACKTRACEDLL);
@@ -297,7 +300,7 @@ void windowsPlatformInit(void)
                                             "Windows timer interrupt resolution:\n"
                                             "   0: 1.0ms\n"
                                             "   1: 0.5ms low-latency\n"
-#ifdef RENDERTYPESDL
+#if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
                                             "This option has no effect when running on battery power.\n",
 #else
                                             ,
@@ -337,7 +340,7 @@ void windowsPlatformCleanup(void)
     if (g_singleInstanceSemaphore)
         CloseHandle(g_singleInstanceSemaphore);
 
-    windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout());
+    windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName());
 }
 
 
@@ -378,7 +381,7 @@ static char const * windowsDecodeKeyboardLayoutName(char const * keyboardLayout)
 void windowsSetKeyboardLayout(char const *layout, int focusChanged /*= 0*/)
 {
     char layoutName[KL_NAMELENGTH];
-
+    
     GetKeyboardLayoutName(layoutName);
 
     if (!Bstrcmp(layoutName, layout))
@@ -389,17 +392,28 @@ void windowsSetKeyboardLayout(char const *layout, int focusChanged /*= 0*/)
         if (focusChanged)
             OSD_Printf("Focus change: ");
 
-        if (!Bstrcmp(layout, windowsGetSystemKeyboardLayout()))
-            OSD_Printf("Restored %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
-        else
+        if (layout == enUSLayoutString)
             OSD_Printf("Loaded %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
+        else
+            OSD_Printf("Restored %s keyboard layout\n", windowsDecodeKeyboardLayoutName(layout));
     }
 
-    LoadKeyboardLayout(layout, KLF_ACTIVATE|KLF_SETFORPROCESS|KLF_SUBSTITUTE_OK);
+    static int enUSLoaded;
+    static HKL enUSLayout;
+
+    if (layout == enUSLayoutString)
+    {
+        if (enUSLoaded)
+            ActivateKeyboardLayout(enUSLayout, KLF_SETFORPROCESS);
+        else if ((enUSLayout = LoadKeyboardLayout(enUSLayoutString, KLF_ACTIVATE | KLF_SETFORPROCESS | KLF_SUBSTITUTE_OK)))
+            enUSLoaded = true;
+    }
+    else
+        ActivateKeyboardLayout(windowsGetSystemKeyboardLayout(), KLF_SETFORPROCESS);
 }
 
 
-char *windowsGetSystemKeyboardLayout(void)
+char *windowsGetSystemKeyboardLayoutName(void)
 {
     static char systemLayoutName[KL_NAMELENGTH];
     static int layoutSaved;
@@ -415,6 +429,20 @@ char *windowsGetSystemKeyboardLayout(void)
     return systemLayoutName;
 }
 
+HKL windowsGetSystemKeyboardLayout(void)
+{
+    static HKL systemLayout;
+    static int layoutSaved;
+
+    if (!layoutSaved)
+    {
+        systemLayout = GetKeyboardLayout(0);
+        layoutSaved  = true;
+    }
+
+    return systemLayout;
+}
+
 void windowsHandleFocusChange(int const appactive)
 {
 #ifndef DEBUGGINGAIDS
@@ -427,7 +455,7 @@ void windowsHandleFocusChange(int const appactive)
             SetPriorityClass(GetCurrentProcess(), win_priorityclass ? BELOW_NORMAL_PRIORITY_CLASS : HIGH_PRIORITY_CLASS);
 
         windowsSetupTimer(win_systemtimermode);
-        windowsSetKeyboardLayout(EDUKE32_KEYBOARD_LAYOUT, true);
+        windowsSetKeyboardLayout(enUSLayoutString, true);
     }
     else
     {
@@ -435,7 +463,7 @@ void windowsHandleFocusChange(int const appactive)
             SetPriorityClass(GetCurrentProcess(), win_priorityclass ? IDLE_PRIORITY_CLASS : ABOVE_NORMAL_PRIORITY_CLASS);
 
         windowsSetupTimer(0);
-        windowsSetKeyboardLayout(windowsGetSystemKeyboardLayout(), true);
+        windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
     }
 
     win_silentfocuschange = false;
@@ -518,10 +546,3 @@ int windowsGetCommandLine(char **argvbuf)
 
     return buildargc;
 }
-
-
-// Workaround for a bug in mingwrt-4.0.0 and up where a function named main() in misc/src/libcrt/gdtoa/qnan.c takes precedence over the proper one in src/libcrt/crt/main.c.
-#if 0 && (defined __MINGW32__ && EDUKE32_GCC_PREREQ(4,8)) || EDUKE32_CLANG_PREREQ(3,4)
-# undef main
-# include "mingw_main.cpp"
-#endif

@@ -50,7 +50,7 @@ void polymost_prepareMirror(int32_t dax, int32_t day, int32_t daz, fix16_t daang
 void polymost_completeMirror();
 
 int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall);
-int32_t polymost_spriteHasTranslucency(uspritetype const * const tspr);
+int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr);
 
 void polymost_resetVertexPointers(void);
 void polymost_disableProgram(void);
@@ -127,7 +127,7 @@ static inline float getshadefactor(int32_t const shade, int32_t const pal)
     if (videoGetRenderMode() == REND_POLYMOST && polymost_usetileshades() && eligible_for_tileshades(globalpicnum, globalpal))
         return 1.f;
 
-    float const fshade = fogfactor[pal] != 0.f ? shade / fogfactor[pal] : 0.f;
+    float const fshade = fogfactor[pal] != 0.f ? (float)shade / fogfactor[pal] : 0.f;
 
     if (r_usenewshading == 4)
         return max(min(1.f - (fshade * shadescale / frealmaxshade), 1.f), 0.f);
@@ -202,6 +202,8 @@ enum {
     DAMETH_CLAMPED = 4,
 
     DAMETH_WALL = 32,  // signals a texture for a wall (for r_npotwallmode)
+
+    DAMETH_INDEXED = 512,
 
     // used internally by polymost_domost
     DAMETH_BACKFACECULL = -1,
@@ -292,6 +294,8 @@ EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_NOMASK) == PTH_NOTRANSFIX);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_MASK) == 0);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_TRANS1) == 0);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_MASKPROPS) == 0);
+#define TO_PTH_INDEXED(dameth) ((dameth)&DAMETH_INDEXED)
+EDUKE32_STATIC_ASSERT(TO_PTH_INDEXED(DAMETH_INDEXED) == PTH_INDEXED);
 
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);
