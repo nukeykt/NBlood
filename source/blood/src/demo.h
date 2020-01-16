@@ -80,7 +80,7 @@ public:
     CDemo();
     ~CDemo();
     bool Create(const char *);
-    void Write(GINPUT *);
+    void Write(int nFrame);
     void Close(void);
     bool SetupPlayback(const char *);
     void ProcessKeys(void);

@@ -130,18 +130,15 @@ void LoadSave::LoadGame(char *pzFile)
 #ifdef YAX_ENABLE
     yax_update(numyaxbunches > 0 ? 2 : 1);
 #endif
-    memset(myMinLag, 0, sizeof(myMinLag));
     otherMinLag = 0;
     myMaxLag = 0;
     gNetFifoClock = 0;
     gNetFifoTail = 0;
-    memset(gNetFifoHead, 0, sizeof(gNetFifoHead));
     gPredictTail = 0;
     gNetFifoMasterTail = 0;
-    memset(gFifoInput, 0, sizeof(gFifoInput));
     memset(gChecksum, 0, sizeof(gChecksum));
-    memset(gCheckFifo, 0, sizeof(gCheckFifo));
-    memset(gCheckHead, 0, sizeof(gCheckHead));
+    for (int i = 0; i < MAXPLAYERS; i++)
+        gNetNodes[i].clear();
     gSendCheckTail = 0;
     gCheckTail = 0;
     gBufferJitter = 0;
@@ -156,7 +153,8 @@ void LoadSave::LoadGame(char *pzFile)
     if (!gGameStarted)
     {
         netWaitForEveryone(0);
-        memset(gPlayerReady, 0, sizeof(gPlayerReady));
+        for (int i = 0; i < MAXPLAYERS; i++)
+            gNetNodes[i].playerReady = 0;
     }
     gFrameTicks = 0;
     gFrame = 0;

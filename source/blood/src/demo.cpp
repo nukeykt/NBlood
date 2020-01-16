@@ -155,9 +155,8 @@ bool CDemo::Create(const char *pzFile)
     return true;
 }
 
-void CDemo::Write(GINPUT *pPlayerInputs)
+void CDemo::Write(int nFrame)
 {
-    dassert(pPlayerInputs != NULL);
     if (!at0)
         return;
     if (atb == 0)
@@ -176,7 +175,7 @@ void CDemo::Write(GINPUT *pPlayerInputs)
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        memcpy(&at1aa[atb&1023], &pPlayerInputs[p], sizeof(GINPUT));
+        memcpy(&at1aa[atb&1023], &gNetNodes[p].fifoInput[nFrame&255], sizeof(GINPUT));
         atb++;
         if((atb&(kInputBufferSize-1))==0)
             FlushInput(kInputBufferSize);
@@ -351,7 +350,8 @@ _DEMOPLAYBACK:
                 connecthead = atf.nConnectHead;
                 for (int i = 0; i < 8; i++)
                     connectpoint2[i] = atf.connectPoints[i];
-                memset(gNetFifoHead, 0, sizeof(gNetFifoHead));
+                for (int i = 0; i < MAXPLAYERS; i++)
+                    gNetNodes[i].clear();
                 gNetFifoTail = 0;
                 //memcpy(connectpoint2, aimHeight.connectPoints, sizeof(aimHeight.connectPoints));
                 memcpy(&gGameOptions, &m_gameOptions, sizeof(GAMEOPTIONS));
@@ -372,6 +372,7 @@ _DEMOPLAYBACK:
             ProcessKeys();
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
             {
+                auto pNode = &gNetNodes[p];
                 if ((v4&1023) == 0)
                 {
                     unsigned int nSize = atb-v4;
@@ -379,8 +380,8 @@ _DEMOPLAYBACK:
                         nSize = kInputBufferSize;
                     ReadInput(nSize);
                 }
-                memcpy(&gFifoInput[gNetFifoHead[p]&255], &at1aa[v4&1023], sizeof(GINPUT));
-                gNetFifoHead[p]++;
+                memcpy(&pNode->fifoInput[pNode->netFifoHead&255], &at1aa[v4&1023], sizeof(GINPUT));
+                pNode->netFifoHead++;
                 v4++;
                 if (v4 >= atf.nInputCount)
                 {

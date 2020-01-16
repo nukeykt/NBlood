@@ -867,9 +867,9 @@ void viewCorrectPrediction(void)
         viewInitializePrediction();
         predictOld = gPrevView[myconnectindex];
         gPredictTail = gNetFifoTail;
-        while (gPredictTail < gNetFifoHead[myconnectindex])
+        while (gPredictTail < gNetNodes[myconnectindex].netFifoHead)
         {
-            viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
+            viewUpdatePrediction(&gNetNodes[myconnectindex].fifoInput[gPredictTail&255]);
         }
     }
 }

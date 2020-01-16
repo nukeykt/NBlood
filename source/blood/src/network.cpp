@@ -42,26 +42,22 @@ bool gStartNewGame = 0;
 PACKETMODE gPacketMode = PACKETMODE_1;
 ClockTicks gNetFifoClock = 0;
 int gNetFifoTail = 0;
-int gNetFifoHead[8];
 int gPredictTail = 0;
 int gNetFifoMasterTail = 0;
-GINPUT gFifoInput[256][8];
-int myMinLag[8];
 int otherMinLag = 0;
 int myMaxLag = 0;
 unsigned int gChecksum[4];
-unsigned int gCheckFifo[256][8][4];
-int gCheckHead[8];
 int gSendCheckTail = 0;
 int gCheckTail = 0;
 int gInitialNetPlayers = 0;
 int gBufferJitter = 1;
-int gPlayerReady[8];
 int gSyncRate = 1;
 bool bNoResend = true;
 bool gRobust = false;
 bool bOutOfSync = false;
 bool ready2send = false;
+
+NET_NODE gNetNodes[MAXPLAYERS];
 
 NETWORKMODE gNetMode = NETWORK_NONE;
 char gNetAddress[32];
@@ -240,17 +236,17 @@ void sub_79760(void)
     gNetFifoMasterTail = 0;
     gPredictTail = 0;
     gNetFifoTail = 0;
-    memset(gNetFifoHead, 0, sizeof(gNetFifoHead));
-    memset(gCheckFifo, 0, sizeof(gCheckFifo));
-    memset(myMinLag, 0, sizeof(myMinLag));
     otherMinLag = 0;
     myMaxLag = 0;
-    memset(gCheckHead, 0, sizeof(gCheckHead));
     gSendCheckTail = 0;
     gCheckTail = 0;
     memset(&byte_28E3B0, 0, sizeof(byte_28E3B0));
     bOutOfSync = 0;
     gBufferJitter = 1;
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        gNetNodes[i].clear();
+    }
 }
 
 void CalcGameChecksum(void)
@@ -299,7 +295,7 @@ void netCheckSync(void)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            if (gCheckTail >= gCheckHead[p])
+            if (gCheckTail >= gNetNodes[p].checkHead)
                 return;
         }
 
@@ -307,14 +303,15 @@ void netCheckSync(void)
         {
             if (p != myconnectindex)
             {
-                int status = memcmp(gCheckFifo[gCheckTail&255][p], gCheckFifo[gCheckTail&255][connecthead], 16);
+                auto const pNode = &gNetNodes[p];
+                int status = memcmp(&pNode->checkFifo[gCheckTail&255], &gNetNodes[connecthead].checkFifo[gCheckTail&255], 16);
                 if (status)
                 {
                     sprintf(buffer, "OUT OF SYNC (%d)", p);
                     char *pBuffer = buffer + strlen(buffer);
                     for (unsigned int i = 0; i < 4; i++)
                     {
-                        if (gCheckFifo[gCheckTail&255][p][i] != gCheckFifo[gCheckTail&255][connecthead][i])
+                        if (pNode->checkFifo[gCheckTail&255][i] != gNetNodes[connecthead].checkFifo[gCheckTail&255][i])
                             pBuffer += sprintf(pBuffer, " %d", i);
                     }
                     viewSetErrorMessage(buffer);
@@ -357,6 +354,7 @@ void netGetPackets(void)
     while ((nSize = netGetPacket(&nPlayer, packet)) > 0)
     {
         char *pPacket = packet;
+        auto pPlayerNode = &gNetNodes[nPlayer];
         switch (GetPacketByte(pPacket))
         {
         case 0: // From master
@@ -364,7 +362,8 @@ void netGetPackets(void)
             {
                 if (p != myconnectindex)
                 {
-                    GINPUT *pInput = &gFifoInput[gNetFifoHead[p]&255][p];
+                    auto pNode = &gNetNodes[p];
+                    GINPUT *pInput = &pNode->fifoInput[pNode->netFifoHead&255];
                     memset(pInput, 0, sizeof(GINPUT));
                     pInput->syncFlags.byte = GetPacketByte(pPacket);
                     pInput->forward = GetPacketWord(pPacket);
@@ -380,7 +379,7 @@ void netGetPackets(void)
                         pInput->newWeapon = GetPacketByte(pPacket);
                     if (pInput->syncFlags.mlookChange)
                         pInput->q16mlook = GetPacketDWord(pPacket);
-                    gNetFifoHead[p]++;
+                    pNode->netFifoHead++;
                 }
                 else
                 {
@@ -399,7 +398,7 @@ void netGetPackets(void)
                         pPacket+=4;
                 }
             }
-            if (((gNetFifoHead[connecthead]-1)&15)==0)
+            if (((gNetNodes[connecthead].netFifoHead-1)&15)==0)
             {
                 for (int p = connectpoint2[connecthead]; p >= 0; p = connectpoint2[p])
                 {
@@ -416,15 +415,16 @@ void netGetPackets(void)
                 {
                     if (p != myconnectindex)
                     {
-                        memcpy(gCheckFifo[gCheckHead[p]&255][p], checkSum, sizeof(checkSum));
-                        gCheckHead[p]++;
+                        auto pNode = &gNetNodes[p];
+                        memcpy(pNode->checkFifo[pNode->checkHead&255], checkSum, sizeof(checkSum));
+                        pNode->checkHead++;
                     }
                 }
             }
             break;
         case 1: // From slave
         {
-            GINPUT *pInput = &gFifoInput[gNetFifoHead[nPlayer]&255][nPlayer];
+            GINPUT *pInput = &pPlayerNode->fifoInput[pPlayerNode->netFifoHead&255];
             memset(pInput, 0, sizeof(GINPUT));
             pInput->syncFlags.byte = GetPacketByte(pPacket);
             pInput->forward = GetPacketWord(pPacket);
@@ -440,19 +440,19 @@ void netGetPackets(void)
                 pInput->newWeapon = GetPacketByte(pPacket);
             if (pInput->syncFlags.mlookChange)
                 pInput->q16mlook = GetPacketDWord(pPacket);
-            gNetFifoHead[nPlayer]++;
+            pPlayerNode->netFifoHead++;
             while (pPacket < packet+nSize)
             {
                 int checkSum[4];
                 GetPacketBuffer(pPacket, checkSum, sizeof(checkSum));
-                memcpy(gCheckFifo[gCheckHead[nPlayer]&255][nPlayer], checkSum, sizeof(checkSum));
-                gCheckHead[nPlayer]++;
+                memcpy(pPlayerNode->checkFifo[pPlayerNode->checkHead&255], checkSum, sizeof(checkSum));
+                pPlayerNode->checkHead++;
             }
             break;
         }
         case 2:
         {
-            if (nPlayer == connecthead && (gNetFifoHead[nPlayer]&15) == 0)
+            if (nPlayer == connecthead && (pPlayerNode->netFifoHead&15) == 0)
             {
                 for (int p = connectpoint2[connecthead]; p >= 0; p = connectpoint2[p])
                 {
@@ -461,7 +461,7 @@ void netGetPackets(void)
                         otherMinLag = nLag;
                 }
             }
-            GINPUT *pInput = &gFifoInput[gNetFifoHead[nPlayer]&255][nPlayer];
+            GINPUT *pInput = &pPlayerNode->fifoInput[pPlayerNode->netFifoHead&255];
             memset(pInput, 0, sizeof(GINPUT));
             pInput->syncFlags.byte = GetPacketByte(pPacket);
             pInput->forward = GetPacketWord(pPacket);
@@ -477,23 +477,23 @@ void netGetPackets(void)
                 pInput->newWeapon = GetPacketByte(pPacket);
             if (pInput->syncFlags.mlookChange)
                 pInput->q16mlook = GetPacketDWord(pPacket);
-            gNetFifoHead[nPlayer]++;
+            pPlayerNode->netFifoHead++;
             for (int i = gSyncRate; i > 1; i--)
             {
-                GINPUT *pInput2 = &gFifoInput[gNetFifoHead[nPlayer]&255][nPlayer];
+                GINPUT *pInput2 = &pPlayerNode->fifoInput[pPlayerNode->netFifoHead&255];
                 memcpy(pInput2, pInput, sizeof(GINPUT));
                 pInput2->keyFlags.word = 0;
                 pInput2->useFlags.byte = 0;
                 pInput2->newWeapon = 0;
                 pInput2->syncFlags.weaponChange = 0;
-                gNetFifoHead[nPlayer]++;
+                pPlayerNode->netFifoHead++;
             }
             while (pPacket < packet+nSize)
             {
                 int checkSum[4];
                 GetPacketBuffer(pPacket, checkSum, sizeof(checkSum));
-                memcpy(gCheckFifo[gCheckHead[nPlayer]&255][nPlayer], checkSum, sizeof(checkSum));
-                gCheckHead[nPlayer]++;
+                memcpy(pPlayerNode->checkFifo[pPlayerNode->checkHead&255], checkSum, sizeof(checkSum));
+                pPlayerNode->checkHead++;
             }
             break;
         }
@@ -523,7 +523,7 @@ void netGetPackets(void)
             netWaitForEveryone(0);
             break;
         case 250:
-            gPlayerReady[nPlayer]++;
+            pPlayerNode->playerReady++;
             break;
         case 251:
             memcpy(&gProfile[nPlayer], pPacket, sizeof(PROFILE));
@@ -629,7 +629,7 @@ void netWaitForEveryone(char a1)
     char *pPacket = packet;
     PutPacketByte(pPacket, 250);
     netSendPacketAll(packet, pPacket-packet);
-    gPlayerReady[myconnectindex]++;
+    gNetNodes[myconnectindex].playerReady++;
     int p;
     do
     {
@@ -638,7 +638,7 @@ void netWaitForEveryone(char a1)
         gameHandleEvents();
         faketimerhandler();
         for (p = connecthead; p >= 0; p = connectpoint2[p])
-            if (gPlayerReady[p] < gPlayerReady[myconnectindex])
+            if (gNetNodes[p].playerReady < gNetNodes[myconnectindex].playerReady)
                 break;
         if (gRestartGame || gNetPlayers <= 1)
             break;
@@ -713,7 +713,7 @@ void netMasterUpdate(void)
     do
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
-            if (gNetFifoMasterTail >= gNetFifoHead[p])
+            if (gNetFifoMasterTail >= gNetNodes[p].netFifoHead)
             {
                 if (v4)
                     return;
@@ -728,7 +728,7 @@ void netMasterUpdate(void)
         PutPacketByte(pPacket, 0);
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            GINPUT *pInput = &gFifoInput[gNetFifoMasterTail&255][p];
+            GINPUT *pInput = &gNetNodes[p].fifoInput[gNetFifoMasterTail&255];
             if (pInput->buttonFlags.byte)
                 pInput->syncFlags.buttonChange = 1;
             if (pInput->keyFlags.word)
@@ -757,13 +757,13 @@ void netMasterUpdate(void)
         if ((gNetFifoMasterTail&15) == 0)
         {
             for (int p = connectpoint2[connecthead]; p >= 0; p = connectpoint2[p])
-                PutPacketByte(pPacket, ClipRange(myMinLag[p], -128, 127));
+                PutPacketByte(pPacket, ClipRange(gNetNodes[p].myMinLag, -128, 127));
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
-                myMinLag[p] = 0x7fffffff;
+                gNetNodes[p].myMinLag = 0x7fffffff;
         }
-        while (gSendCheckTail != gCheckHead[myconnectindex])
+        while (gSendCheckTail != gNetNodes[myconnectindex].checkHead)
         {
-            PutPacketBuffer(pPacket, gCheckFifo[gSendCheckTail&255][myconnectindex], 16);
+            PutPacketBuffer(pPacket, gNetNodes[myconnectindex].checkFifo[gSendCheckTail&255], 16);
             gSendCheckTail++;
         }
         for (int p = connectpoint2[connecthead]; p >= 0; p = connectpoint2[p])
@@ -777,36 +777,36 @@ void netGetInput(void)
     if (numplayers > 1)
         netGetPackets();
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
-        if (gNetFifoHead[myconnectindex]-200 > gNetFifoHead[p])
+        if (gNetNodes[myconnectindex].netFifoHead-200 > gNetNodes[p].netFifoHead)
             return;
     ctrlGetInput();
     sub_7AD90(&gInput);
-    if (gNetFifoHead[myconnectindex]&(gSyncRate-1))
+    GINPUT *pInput = &gNetNodes[myconnectindex].fifoInput[gNetNodes[myconnectindex].netFifoHead&255];
+    if (gNetNodes[myconnectindex].netFifoHead&(gSyncRate-1))
     {
-        GINPUT *pInput1 = &gFifoInput[gNetFifoHead[myconnectindex]&255][myconnectindex];
-        GINPUT *pInput2 = &gFifoInput[(gNetFifoHead[myconnectindex]-1)&255][myconnectindex];
-        memcpy(pInput1, pInput2, sizeof(GINPUT));
-        pInput1->keyFlags.word = 0;
-        pInput1->useFlags.byte = 0;
-        pInput1->newWeapon = 0;
-        pInput1->syncFlags.weaponChange = 0;
-        gNetFifoHead[myconnectindex]++;
+        GINPUT *pInput2 = &gNetNodes[myconnectindex].fifoInput[(gNetNodes[myconnectindex].netFifoHead-1)&255];
+        memcpy(pInput, pInput2, sizeof(GINPUT));
+        pInput->keyFlags.word = 0;
+        pInput->useFlags.byte = 0;
+        pInput->newWeapon = 0;
+        pInput->syncFlags.weaponChange = 0;
+        gNetNodes[myconnectindex].netFifoHead++;
         return;
     }
-    GINPUT *pInput = &gFifoInput[gNetFifoHead[myconnectindex]&255][myconnectindex];
     sub_7AE2C(pInput);
     memcpy(&gInput, pInput, sizeof(GINPUT));
-    gNetFifoHead[myconnectindex]++;
+    gNetNodes[myconnectindex].netFifoHead++;
     if (gGameOptions.nGameType == 0 || numplayers == 1)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             if (p != myconnectindex)
             {
-                GINPUT *pInput1 = &gFifoInput[(gNetFifoHead[p]-1)&255][p];
-                GINPUT *pInput2 = &gFifoInput[gNetFifoHead[p]&255][p];
+                auto pNode = &gNetNodes[p];
+                GINPUT *pInput1 = &pNode->fifoInput[(pNode->netFifoHead-1)&255];
+                GINPUT *pInput2 = &pNode->fifoInput[pNode->netFifoHead&255];
                 memcpy(pInput2, pInput1, sizeof(GINPUT));
-                gNetFifoHead[p]++;
+                pNode->netFifoHead++;
             }
         }
         return;
@@ -815,12 +815,13 @@ void netGetInput(void)
     {
         if (p != myconnectindex)
         {
-            int nLag = gNetFifoHead[myconnectindex]-1-gNetFifoHead[p];
-            myMinLag[p] = ClipHigh(nLag, myMinLag[p]);
+            auto pNode = &gNetNodes[p];
+            int nLag = gNetNodes[myconnectindex].netFifoHead-1-pNode->netFifoHead;
+            pNode->myMinLag = ClipHigh(nLag, pNode->myMinLag);
             myMaxLag = ClipLow(nLag, myMaxLag);
         }
     }
-    if (((gNetFifoHead[myconnectindex]-1)&15) == 0)
+    if (((gNetNodes[myconnectindex].netFifoHead-1)&15) == 0)
     {
         int t = myMaxLag-gBufferJitter;
         myMaxLag = 0;
@@ -833,16 +834,16 @@ void netGetInput(void)
     {
         char *pPacket = packet;
         PutPacketByte(pPacket, 2);
-        if (((gNetFifoHead[myconnectindex]-1)&15) == 0)
+        if (((gNetNodes[myconnectindex].netFifoHead-1)&15) == 0)
         {
             if (myconnectindex == connecthead)
             {
                 for (int p = connectpoint2[connecthead]; p >= 0; p = connectpoint2[p])
-                    PutPacketByte(pPacket, ClipRange(myMinLag[p], -128, 127));
+                    PutPacketByte(pPacket, ClipRange(gNetNodes[p].myMinLag, -128, 127));
             }
             else
             {
-                int t = myMinLag[connecthead]-otherMinLag;
+                int t = gNetNodes[connecthead].myMinLag-otherMinLag;
                 if (klabs(t) > 2)
                 {
                     if (klabs(t) > 8)
@@ -855,11 +856,11 @@ void netGetInput(void)
                         t = ksgn(t);
                     totalclock -= t<<2;
                     otherMinLag += t;
-                    myMinLag[connecthead] -= t;
+                    gNetNodes[connecthead].myMinLag -= t;
                 }
             }
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
-                myMinLag[p] = 0x7fffffff;
+                gNetNodes[p].myMinLag = 0x7fffffff;
         }
         if (gInput.buttonFlags.byte)
             gInput.syncFlags.buttonChange = 1;
@@ -885,9 +886,9 @@ void netGetInput(void)
             PutPacketByte(pPacket, gInput.newWeapon);
         if (gInput.syncFlags.mlookChange)
             PutPacketDWord(pPacket, gInput.q16mlook);
-        while (gSendCheckTail != gCheckHead[myconnectindex])
+        while (gSendCheckTail != gNetNodes[myconnectindex].checkHead)
         {
-            unsigned int *checkSum = gCheckFifo[gSendCheckTail&255][myconnectindex];
+            auto checkSum = gNetNodes[myconnectindex].checkFifo[gSendCheckTail&255];
             PutPacketBuffer(pPacket, checkSum, 16);
             gSendCheckTail++;
         }
@@ -922,9 +923,9 @@ void netGetInput(void)
             PutPacketByte(pPacket, gInput.newWeapon);
         if (gInput.syncFlags.mlookChange)
             PutPacketDWord(pPacket, gInput.q16mlook);
-        if (((gNetFifoHead[myconnectindex]-1)&15) == 0)
+        if (((gNetNodes[myconnectindex].netFifoHead-1)&15) == 0)
         {
-            int t = myMinLag[connecthead]-otherMinLag;
+            int t = gNetNodes[connecthead].myMinLag-otherMinLag;
             if (klabs(t) > 2)
             {
                 if (klabs(t) > 8)
@@ -937,14 +938,14 @@ void netGetInput(void)
                     t = ksgn(t);
                 totalclock -= t<<2;
                 otherMinLag += t;
-                myMinLag[connecthead] -= t;
+                gNetNodes[connecthead].myMinLag -= t;
             }
             for (int p = connecthead; p >= 0; p = connectpoint2[p])
-                myMinLag[p] = 0x7fffffff;
+                gNetNodes[p].myMinLag = 0x7fffffff;
         }
-        while (gSendCheckTail != gCheckHead[myconnectindex])
+        while (gSendCheckTail != gNetNodes[myconnectindex].checkHead)
         {
-            PutPacketBuffer(pPacket, gCheckFifo[gSendCheckTail&255][myconnectindex], 16);
+            PutPacketBuffer(pPacket, gNetNodes[myconnectindex].checkFifo[gSendCheckTail&255], 16);
             gSendCheckTail++;
         }
         netSendPacket(connecthead, packet, pPacket-packet);
@@ -956,7 +957,10 @@ void netGetInput(void)
 void netInitialize(bool bConsole)
 {
     netDeinitialize();
-    memset(gPlayerReady, 0, sizeof(gPlayerReady));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        gNetNodes[i].playerReady = 0;
+    }
     sub_79760();
 #ifndef NETCODE_DISABLE
     char buffer[128];

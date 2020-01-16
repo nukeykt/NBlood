@@ -45,21 +45,21 @@ extern bool gStartNewGame;
 extern PACKETMODE gPacketMode;
 extern ClockTicks gNetFifoClock;
 extern int gNetFifoTail;
-extern int gNetFifoHead[8];
+//extern int gNetFifoHead[MAXPLAYERS];
 extern int gPredictTail;
 extern int gNetFifoMasterTail;
-extern GINPUT gFifoInput[256][8];
-extern int myMinLag[8];
+//extern GINPUT gFifoInput[256][MAXPLAYERS];
+//extern int myMinLag[MAXPLAYERS];
 extern int otherMinLag;
 extern int myMaxLag;
 extern unsigned int gChecksum[4];
-extern unsigned int gCheckFifo[256][8][4];
-extern int gCheckHead[8];
+//extern unsigned int gCheckFifo[256][MAXPLAYERS][4];
+//extern int gCheckHead[MAXPLAYERS];
 extern int gSendCheckTail;
 extern int gCheckTail;
 extern int gInitialNetPlayers;
 extern int gBufferJitter;
-extern int gPlayerReady[8];
+//extern int gPlayerReady[MAXPLAYERS];
 extern int gSyncRate;
 extern bool bNoResend;
 extern bool gRobust;
@@ -68,6 +68,26 @@ extern bool ready2send;
 extern NETWORKMODE gNetMode;
 extern char gNetAddress[32];
 extern int gNetPort;
+
+struct NET_NODE {
+    GINPUT fifoInput[256];
+    int netFifoHead;
+    uint32_t checkFifo[256][4];
+    int checkHead;
+    int myMinLag;
+    int playerReady;
+
+    void clear(void)
+    {
+        memset(fifoInput, 0, sizeof(fifoInput));
+        memset(checkFifo, 0, sizeof(checkFifo));
+        netFifoHead = 0;
+        myMinLag = 0;
+        checkHead = 0;
+    }
+};
+
+extern NET_NODE gNetNodes[MAXPLAYERS];
 
 
 struct PKT_STARTGAME {

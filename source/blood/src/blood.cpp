@@ -1036,22 +1036,23 @@ void ProcessFrame(void)
     char buffer[128];
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
-        gPlayer[i].input.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
-        gPlayer[i].input.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
-        if (gFifoInput[gNetFifoTail&255][i].newWeapon)
-            gPlayer[i].input.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
-        gPlayer[i].input.forward = gFifoInput[gNetFifoTail&255][i].forward;
-        gPlayer[i].input.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
-        gPlayer[i].input.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
-        gPlayer[i].input.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
+        auto input = &gNetNodes[i].fifoInput[gNetFifoTail&255];
+        gPlayer[i].input.buttonFlags = input->buttonFlags;
+        gPlayer[i].input.keyFlags.word |= input->keyFlags.word;
+        gPlayer[i].input.useFlags.byte |= input->useFlags.byte;
+        if (input->newWeapon)
+            gPlayer[i].input.newWeapon = input->newWeapon;
+        gPlayer[i].input.forward = input->forward;
+        gPlayer[i].input.q16turn = input->q16turn;
+        gPlayer[i].input.strafe = input->strafe;
+        gPlayer[i].input.q16mlook = input->q16mlook;
     }
     gNetFifoTail++;
     if (!(gFrame&((gSyncRate<<3)-1)))
     {
         CalcGameChecksum();
-        memcpy(gCheckFifo[gCheckHead[myconnectindex]&255][myconnectindex], gChecksum, sizeof(gChecksum));
-        gCheckHead[myconnectindex]++;
+        memcpy(gNetNodes[myconnectindex].checkFifo[gNetNodes[myconnectindex].checkHead&255], gChecksum, sizeof(gChecksum));
+        gNetNodes[myconnectindex].checkHead++;
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
@@ -1092,7 +1093,7 @@ void ProcessFrame(void)
         if (gPaused || gEndGameMgr.at0 || (gGameOptions.nGameType == 0 && gGameMenuMgr.m_bActive))
             return;
         if (gDemo.at0)
-            gDemo.Write(gFifoInput[(gNetFifoTail-1)&255]);
+            gDemo.Write(gNetFifoTail-1);
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
@@ -1844,9 +1845,9 @@ RESTART:
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
             gameHandleEvents();
-            while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
+            while (gPredictTail < gNetNodes[myconnectindex].netFifoHead && !gPaused)
             {
-                viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
+                viewUpdatePrediction(&gNetNodes[myconnectindex].fifoInput[gPredictTail&255]);
             }
             if (numplayers == 1)
                 gBufferJitter = 0;
@@ -1854,11 +1855,11 @@ RESTART:
             {
                 netGetInput();
                 gNetFifoClock += 4;
-                while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
+                while (gNetNodes[myconnectindex].netFifoHead-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
                 {
                     int i;
                     for (i = connecthead; i >= 0; i = connectpoint2[i])
-                        if (gNetFifoHead[i] == gNetFifoTail)
+                        if (gNetNodes[i].netFifoHead == gNetFifoTail)
                             break;
                     if (i >= 0)
                         break;
