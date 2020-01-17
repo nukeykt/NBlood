@@ -1210,7 +1210,9 @@ void SetupOptionsMenu(void)
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeRenderer, false);
 #endif
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFullscreen, false);
+#ifdef USE_OPENGL
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeVSync, false);
+#endif
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFrameLimit, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeFPSOffset, false);
     menuOptionsDisplayMode.Add(&itemOptionsDisplayModeApply, false);
