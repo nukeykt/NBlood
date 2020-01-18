@@ -27,7 +27,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "pragmas.h"
 #include "misc.h"
-#include "network.h"
 
 extern int g_useCwd;
 #ifndef APPNAME
@@ -40,7 +39,7 @@ extern int g_useCwd;
 
 #define BLOODWIDESCREENDEF "blood_widescreen.def"
 
-#define BYTEVERSION 102
+#define BYTEVERSION 103
 #define EXEVERSION 101
 
 void _SetErrorLoc(const char *pzFile, int nLine);
@@ -557,6 +556,8 @@ extern void G_SetupGlobalPsky(void);
 
 #define G_ModDirSnprintfLite(buf, size, basename) \
     ((g_modDir[0] != '/') ? Bsnprintf(buf, size, "%s/%s", g_modDir, basename) : Bsnprintf(buf, size, "%s", basename))
+
+extern void netGetPackets(void);
 
 static inline int gameHandleEvents(void)
 {

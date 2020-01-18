@@ -59,6 +59,8 @@ bool ready2send = false;
 
 NET_NODE gNetNodes[MAXPLAYERS];
 
+int gNetPlayerNode[kMaxPlayers];
+
 NETWORKMODE gNetMode = NETWORK_NONE;
 char gNetAddress[32];
 // PORT-TODO: Use different port?
@@ -172,6 +174,7 @@ void netResetToSinglePlayer(void)
     myconnectindex = connecthead = 0;
     gInitialNetPlayers = gNetPlayers = numplayers = 1;
     connectpoint2[0] = -1;
+    gNetPlayerNode[0] = 0;
     gGameOptions.nGameType = 0;
     gNetMode = NETWORK_NONE;
     UpdateNetworkMenus();
@@ -247,6 +250,7 @@ void sub_79760(void)
     {
         gNetNodes[i].clear();
     }
+    memset(gNetPlayerNode, -1, sizeof(gNetPlayerNode));
 }
 
 void CalcGameChecksum(void)

@@ -45,6 +45,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "screen.h"
 #include "view.h"
 
+#define kDemoSignature 0x1a4d4544 // DEM\x1a
+#define kEDemoSignature 0x1a4d4445 // EDM\x1a
+
 int nBuild = 0;
 
 void ReadGameOptionsLegacy(GAMEOPTIONS &gameOptions, GAMEOPTIONSLEGACY &gameOptionsLegacy)
@@ -74,6 +77,19 @@ void ReadGameOptionsLegacy(GAMEOPTIONS &gameOptions, GAMEOPTIONSLEGACY &gameOpti
     gameOptions.nSpecialRespawnTime = gameOptionsLegacy.nSpecialRespawnTime;
 }
 
+void ReadDemoHeaderLegacy(EDEMOHEADER &demoHeader, DEMOHEADERLEGACY &demoHeaderLegacy)
+{
+    demoHeader.nInputCount = demoHeaderLegacy.nInputCount;
+    demoHeader.nNetPlayers = demoHeaderLegacy.nNetPlayers;
+    demoHeader.nMyConnectIndex = demoHeaderLegacy.nMyConnectIndex;
+    demoHeader.nConnectHead = demoHeaderLegacy.nConnectHead;
+    for (int i = 0; i < 8; i++)
+        demoHeader.connectPoints[i] = demoHeaderLegacy.connectPoints[i];
+    Bmemset(demoHeader.nPlayerNode, -1, sizeof(demoHeader.nPlayerNode));
+    for (int i = 0; i < demoHeader.nNetPlayers; i++)
+        demoHeader.nPlayerNode[i] = i;
+}
+
 CDemo gDemo;
 
 CDemo::CDemo()
@@ -89,7 +105,7 @@ CDemo::CDemo()
     pCurrentDemo = NULL;
     at59ef = 0;
     at2 = 0;
-    memset(&atf, 0, sizeof(atf));
+    memset(&m_header2, 0, sizeof(m_header2));
     m_bLegacy = false;
 }
 
@@ -99,7 +115,7 @@ CDemo::~CDemo()
     at1 = 0;
     at3 = 0;
     atb = 0;
-    memset(&atf, 0, sizeof(atf));
+    memset(&m_header2, 0, sizeof(m_header2));
     if (hPFile >= 0)
     {
         kclose(hPFile);
@@ -161,16 +177,18 @@ void CDemo::Write(int nFrame)
         return;
     if (atb == 0)
     {
-        atf.signature = 0x1a4d4445; // '\x1aMDE';
-        atf.nVersion = BYTEVERSION;
-        atf.nBuild = nBuild;
-        atf.nInputCount = 0;
-        atf.nNetPlayers = gNetPlayers;
-        atf.nMyConnectIndex = myconnectindex;
-        atf.nConnectHead = connecthead;
-        memcpy(atf.connectPoints, connectpoint2, sizeof(atf.connectPoints));
+        // TODO: big endian
+        m_header.signature = 0x1a4d4445; // '\x1aMDE';
+        m_header.nVersion = BYTEVERSION;
+        m_header2.nInputCount = 0;
+        m_header2.nNetPlayers = numplayers;
+        m_header2.nMyConnectIndex = myconnectindex;
+        m_header2.nConnectHead = connecthead;
+        memcpy(m_header2.connectPoints, connectpoint2, sizeof(m_header2.connectPoints));
+        memcpy(m_header2.nPlayerNode, gNetPlayerNode, sizeof(m_header2.nPlayerNode));
         memcpy(&m_gameOptions, &gGameOptions, sizeof(gGameOptions));
-        fwrite(&atf, sizeof(DEMOHEADER), 1, hRFile);
+        fwrite(&m_header, sizeof(DEMOHEADER), 1, hRFile);
+        fwrite(&m_header2, sizeof(EDEMOHEADER), 1, hRFile);
         fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, hRFile);
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
@@ -188,9 +206,10 @@ void CDemo::Close(void)
     {
         if (atb&(kInputBufferSize-1))
             FlushInput(atb&(kInputBufferSize-1));
-        atf.nInputCount = atb;
+        m_header2.nInputCount = atb;
         fseek(hRFile, 0, SEEK_SET);
-        fwrite(&atf, sizeof(DEMOHEADER), 1, hRFile);
+        fwrite(&m_header, sizeof(DEMOHEADER), 1, hRFile);
+        fwrite(&m_header2, sizeof(EDEMOHEADER), 1, hRFile);
         fwrite(&m_gameOptions, sizeof(GAMEOPTIONS), 1, hRFile);
     }
     if (hPFile >= 0)
@@ -225,35 +244,46 @@ bool CDemo::SetupPlayback(const char *pzFile)
         if (hPFile == -1)
             return false;
     }
-    kread(hPFile, &atf, sizeof(DEMOHEADER));
-#if B_BIG_ENDIAN == 1
-    atf.signature = B_LITTLE32(atf.signature);
-    atf.nVersion = B_LITTLE16(atf.nVersion);
-    atf.nBuild = B_LITTLE32(atf.nBuild);
-    atf.nInputCount = B_LITTLE32(atf.nInputCount);
-    atf.nNetPlayers = B_LITTLE32(atf.nNetPlayers);
-    atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
-    atf.nConnectHead = B_LITTLE16(atf.nConnectHead);
-    atf.nMyConnectIndex = B_LITTLE16(atf.nMyConnectIndex);
-    for (int i = 0; i < 8; i++)
-        atf.connectPoints[i] = B_LITTLE16(atf.connectPoints[i]);
-#endif
-    // if (aimHeight.signature != '\x1aMED' && aimHeight.signature != '\x1aMDE')
-    if (atf.signature != 0x1a4d4544 && atf.signature != 0x1a4d4445)
+    kread(hPFile, &m_header, sizeof(m_header));
+    m_header.signature = B_LITTLE32(m_header.signature);
+    m_header.nVersion = B_LITTLE16(m_header.nVersion);
+    if (m_header.signature != kDemoSignature && m_header.signature != kEDemoSignature)
         return 0;
-    m_bLegacy = atf.signature == 0x1a4d4544;
-    if (m_bLegacy)
+    if (m_header.signature == kDemoSignature)
     {
-        GAMEOPTIONSLEGACY gameOptions;
-        if (BloodVersion != atf.nVersion)
+        if (m_header.nVersion != BloodVersion)
             return 0;
+        m_bLegacy = 1;
+        DEMOHEADERLEGACY header2;
+        kread(hPFile, &header2, sizeof(header2));
+        header2.nBuild = B_LITTLE32(header2.nBuild);
+        header2.nInputCount = B_LITTLE32(header2.nInputCount);
+        header2.nNetPlayers = B_LITTLE32(header2.nNetPlayers);
+        header2.nMyConnectIndex = B_LITTLE16(header2.nMyConnectIndex);
+        header2.nConnectHead = B_LITTLE16(header2.nConnectHead);
+        for (int i = 0; i < 8; i++)
+            header2.connectPoints[i] = B_LITTLE16(header2.connectPoints[i]);
+
+        GAMEOPTIONSLEGACY gameOptions;
         kread(hPFile, &gameOptions, sizeof(GAMEOPTIONSLEGACY));
         ReadGameOptionsLegacy(m_gameOptions, gameOptions);
+        ReadDemoHeaderLegacy(m_header2, header2);
     }
     else
     {
-        if (BYTEVERSION != atf.nVersion)
+        if (m_header.nVersion != BYTEVERSION)
             return 0;
+        m_bLegacy = 0;
+        kread(hPFile, &m_header2, sizeof(m_header2));
+        m_header2.nInputCount = B_LITTLE32(m_header2.nInputCount);
+        m_header2.nNetPlayers = B_LITTLE32(m_header2.nNetPlayers);
+        m_header2.nMyConnectIndex = B_LITTLE16(m_header2.nMyConnectIndex);
+        m_header2.nConnectHead = B_LITTLE16(m_header2.nConnectHead);
+        for (int i = 0; i < MAXPLAYERS; i++)
+            m_header2.connectPoints[i] = B_LITTLE32(m_header2.connectPoints[i]);
+        for (int i = 0; i < kMaxPlayers; i++)
+            m_header2.nPlayerNode[i] = B_LITTLE32(m_header2.nPlayerNode[i]);
+
         kread(hPFile, &m_gameOptions, sizeof(GAMEOPTIONS));
     }
 #if B_BIG_ENDIAN == 1
@@ -344,14 +374,17 @@ _DEMOPLAYBACK:
             {
                 viewResizeView(gViewSize);
                 viewSetMessage("");
-                gNetPlayers = atf.nNetPlayers;
-                atb = atf.nInputCount;
-                myconnectindex = atf.nMyConnectIndex;
-                connecthead = atf.nConnectHead;
+                gNetPlayers = m_header2.nNetPlayers;
+                atb = m_header2.nInputCount;
+                myconnectindex = m_header2.nMyConnectIndex;
+                connecthead = m_header2.nConnectHead;
                 for (int i = 0; i < 8; i++)
-                    connectpoint2[i] = atf.connectPoints[i];
+                    connectpoint2[i] = m_header2.connectPoints[i];
                 for (int i = 0; i < MAXPLAYERS; i++)
+                {
                     gNetNodes[i].clear();
+                    gNetNodes[i].playerId = i < kMaxPlayers ? i : -1;
+                }
                 gNetFifoTail = 0;
                 //memcpy(connectpoint2, aimHeight.connectPoints, sizeof(aimHeight.connectPoints));
                 memcpy(&gGameOptions, &m_gameOptions, sizeof(GAMEOPTIONS));
@@ -383,7 +416,7 @@ _DEMOPLAYBACK:
                 memcpy(&pNode->fifoInput[pNode->netFifoHead&255], &at1aa[v4&1023], sizeof(GINPUT));
                 pNode->netFifoHead++;
                 v4++;
-                if (v4 >= atf.nInputCount)
+                if (v4 >= m_header2.nInputCount)
                 {
                     ready2send = 0;
                     if (at59ef != 1)
@@ -440,17 +473,18 @@ void CDemo::LoadDemoInfo(void)
     auto pIterator = pList;
     while (pIterator != NULL)
     {
+        DEMOHEADER header;
         int hFile = kopen4loadfrommod(pIterator->name, 0);
         if (hFile == -1)
             ThrowError("Error loading demo file header.");
-        kread(hFile, &atf, sizeof(atf));
+        kread(hFile, &header, sizeof(header));
         kclose(hFile);
 #if B_BIG_ENDIAN == 1
-        atf.signature = B_LITTLE32(atf.signature);
-        atf.nVersion = B_LITTLE16(atf.nVersion);
+        m_header2.signature = B_LITTLE32(m_header2.signature);
+        m_header2.nVersion = B_LITTLE16(m_header2.nVersion);
 #endif
-        if ((atf.signature == 0x1a4d4544 /* '\x1aMED' */&& atf.nVersion == BloodVersion)
-            || (atf.signature == 0x1a4d4445 /* '\x1aMDE' */ && atf.nVersion == BYTEVERSION))
+        if ((header.signature == kDemoSignature && header.nVersion == BloodVersion)
+            || (header.signature == kEDemoSignature && header.nVersion == BYTEVERSION))
         {
             *pDemo = new DEMOCHAIN;
             (*pDemo)->pNext = NULL;

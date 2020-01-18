@@ -59,12 +59,26 @@ struct DEMOHEADER
 {
     int signature;
     short nVersion;
+};
+
+struct DEMOHEADERLEGACY
+{
     int nBuild;
     int nInputCount;
     int nNetPlayers;
     short nMyConnectIndex;
     short nConnectHead;
     short connectPoints[8];
+};
+
+struct EDEMOHEADER
+{
+    int nInputCount;
+    int nNetPlayers;
+    short nMyConnectIndex;
+    short nConnectHead;
+    int connectPoints[MAXPLAYERS];
+    int nPlayerNode[kMaxPlayers];
 };
 
 #pragma pack(pop)
@@ -98,7 +112,8 @@ public:
     int hPFile;
     FILE *hRFile;
     int atb;
-    DEMOHEADER atf;
+    DEMOHEADER m_header;
+    EDEMOHEADER m_header2;
     GAMEOPTIONS m_gameOptions;
     GINPUT at1aa[kInputBufferSize];
     const char **pzDemoFile;

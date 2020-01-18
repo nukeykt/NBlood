@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //-------------------------------------------------------------------------
 #pragma once
 #include "compat.h"
+#include "common_game.h"
 #include "build.h"
 #include "controls.h"
 
@@ -76,6 +77,7 @@ struct NET_NODE {
     int checkHead;
     int myMinLag;
     int playerReady;
+    int playerId;
 
     void clear(void)
     {
@@ -84,10 +86,12 @@ struct NET_NODE {
         netFifoHead = 0;
         myMinLag = 0;
         checkHead = 0;
+        playerId = -1;
     }
 };
 
 extern NET_NODE gNetNodes[MAXPLAYERS];
+extern int gNetPlayerNode[kMaxPlayers];
 
 
 struct PKT_STARTGAME {
