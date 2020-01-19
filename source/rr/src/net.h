@@ -390,6 +390,13 @@ void    faketimerhandler(void);
 
 #define Net_NotifyNewGame(...) ((void)0)
 
+#define Net_WaitForEverybody(...) ((void)0)
+#define initsynccrc(...) ((void)0)
+#define Net_GetSyncStat(...) ((void)0)
+#define Net_DisplaySyncMsg(...) ((void)0)
+#define Net_ClearFIFO(...) ((void)0)
+#define Net_GetInput(...) ((void)0)
+
 #endif
 
 #endif // netplay_h_
