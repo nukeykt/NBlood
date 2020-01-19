@@ -56,6 +56,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "globals.h"
 #include "levels.h"
 #include "loadsave.h"
+#include "network.h"
 #include "player.h"
 #include "seq.h"
 #include "sound.h"
@@ -1348,7 +1349,10 @@ void aiThinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            PLAYER *pPlayer = &gPlayer[p];
+            int const nPlayer = gNetNodes[p].playerId;
+            if (nPlayer < 0)
+                continue;
+            PLAYER *pPlayer = &gPlayer[nPlayer];
             if (pSprite->owner == pPlayer->nSprite || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
                 continue;
             int x = pPlayer->pSprite->x;
@@ -1387,7 +1391,10 @@ void sub_5F15C(spritetype *pSprite, XSPRITE *pXSprite)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            PLAYER *pPlayer = &gPlayer[p];
+            int const nPlayer = gNetNodes[p].playerId;
+            if (nPlayer < 0)
+                continue;
+            PLAYER *pPlayer = &gPlayer[nPlayer];
             if (pSprite->owner == pPlayer->nSprite || pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
                 continue;
             int x = pPlayer->pSprite->x;

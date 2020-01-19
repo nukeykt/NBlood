@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "dude.h"
 #include "eventq.h"
 #include "levels.h"
+#include "network.h"
 #include "player.h"
 #include "seq.h"
 #include "sfx.h"
@@ -242,7 +243,10 @@ static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
     {
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            PLAYER *pPlayer = &gPlayer[p];
+            int const nPlayer = gNetNodes[p].playerId;
+            if (nPlayer < 0)
+                continue;
+            PLAYER *pPlayer = &gPlayer[nPlayer];
             if (pPlayer->pXSprite->health == 0 || powerupCheck(pPlayer, kPwUpShadowCloak) > 0)
                 continue;
             int x = pPlayer->pSprite->x;

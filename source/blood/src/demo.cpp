@@ -181,8 +181,8 @@ void CDemo::Write(int nFrame)
         m_header.signature = 0x1a4d4445; // '\x1aMDE';
         m_header.nVersion = BYTEVERSION;
         m_header2.nInputCount = 0;
-        m_header2.nNetPlayers = numplayers;
-        m_header2.nMyConnectIndex = myconnectindex;
+        m_header2.nNetPlayers = gNetPlayers;
+        m_header2.nMyConnectIndex = 0;
         m_header2.nConnectHead = connecthead;
         memcpy(m_header2.connectPoints, connectpoint2, sizeof(m_header2.connectPoints));
         memcpy(m_header2.nPlayerNode, gNetPlayerNode, sizeof(m_header2.nPlayerNode));
@@ -378,21 +378,26 @@ _DEMOPLAYBACK:
                 atb = m_header2.nInputCount;
                 myconnectindex = m_header2.nMyConnectIndex;
                 connecthead = m_header2.nConnectHead;
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < MAXPLAYERS; i++)
                     connectpoint2[i] = m_header2.connectPoints[i];
                 for (int i = 0; i < MAXPLAYERS; i++)
                 {
                     gNetNodes[i].clear();
-                    gNetNodes[i].playerId = i < kMaxPlayers ? i : -1;
+                    gNetNodes[i].playerId = -1;
                 }
+                for (int i = 0; i < kMaxPlayers; i++)
+                {
+                    gNetNodes[m_header2.nPlayerNode[i]].playerId = i;
+                }
+                gMyPlayerIndex = 0;
                 gNetFifoTail = 0;
                 //memcpy(connectpoint2, aimHeight.connectPoints, sizeof(aimHeight.connectPoints));
                 memcpy(&gGameOptions, &m_gameOptions, sizeof(GAMEOPTIONS));
                 gSkill = gGameOptions.nDifficulty;
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < kMaxPlayers; i++)
                     playerInit(i, 0);
                 StartLevel(&gGameOptions);
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < MAXPLAYERS; i++)
                 {
                     gProfile[i].nAutoAim = 1;
                     gProfile[i].nWeaponSwitch = 1;

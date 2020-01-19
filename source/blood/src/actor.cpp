@@ -62,6 +62,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "globals.h"
 #include "levels.h"
 #include "loadsave.h"
+#include "network.h"
 #include "player.h"
 #include "seq.h"
 #include "sfx.h"
@@ -3226,8 +3227,11 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     }
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        if (gPlayer[p].fraggerId == pSprite->index && gPlayer[p].deathTime > 0)
-            gPlayer[p].fraggerId = -1;
+        int const nPlayer = gNetNodes[p].playerId;
+        if (nPlayer < 0)
+            continue;
+        if (gPlayer[nPlayer].fraggerId == pSprite->index && gPlayer[nPlayer].deathTime > 0)
+            gPlayer[nPlayer].fraggerId = -1;
     }
     if (pSprite->type != kDudeCultistBeast)
         trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
@@ -5627,7 +5631,10 @@ void actProcessSprites(void)
                 } else {
 
                     for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
-                        if (gPlayer[a].pXSprite->health > 0 && CheckProximity(gPlayer[a].pSprite, x, y, z, sectnum, 96)) {
+                        int const nPlayer = gNetNodes[a].playerId;
+                        if (nPlayer < 0)
+                            continue;
+                        if (gPlayer[nPlayer].pXSprite->health > 0 && CheckProximity(gPlayer[nPlayer].pSprite, x, y, z, sectnum, 96)) {
                             trTriggerSprite(index, pXProxSpr, kCmdSpriteProximity);
                             break;
                         }
@@ -5651,8 +5658,11 @@ void actProcessSprites(void)
                 int sectnum = sprite[gSightSpritesList[i]].sectnum;
 
                 for (int a = connecthead; a >= 0; a = connectpoint2[a]) {
-                    spritetype* pPlaySprite = gPlayer[a].pSprite;
-                    if (gPlayer[a].pXSprite->health > 0 && cansee(x, y, z, sectnum, pPlaySprite->x, pPlaySprite->y, pPlaySprite->z, pPlaySprite->sectnum)) {
+                    int const nPlayer = gNetNodes[a].playerId;
+                    if (nPlayer < 0)
+                        continue;
+                    spritetype* pPlaySprite = gPlayer[nPlayer].pSprite;
+                    if (gPlayer[nPlayer].pXSprite->health > 0 && cansee(x, y, z, sectnum, pPlaySprite->x, pPlaySprite->y, pPlaySprite->z, pPlaySprite->sectnum)) {
                         trTriggerSprite(index, pXSightSpr, kCmdSpriteSight);
                         break;
                     }
@@ -6058,13 +6068,16 @@ void actProcessSprites(void)
 
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            spritetype *pSprite2 = gPlayer[p].pSprite;
+            int const nPlayer = gNetNodes[p].playerId;
+            if (nPlayer < 0)
+                continue;
+            spritetype *pSprite2 = gPlayer[nPlayer].pSprite;
             int dx = (x - pSprite2->x)>>4;
             int dy = (y - pSprite2->y)>>4;
             int dz = (z - pSprite2->z)>>8;
             int nDist = dx*dx+dy*dy+dz*dz+0x40000;
             int t = divscale16(pXSprite->data2, nDist);
-            gPlayer[p].flickerEffect += t;
+            gPlayer[nPlayer].flickerEffect += t;
         }
         
         // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually

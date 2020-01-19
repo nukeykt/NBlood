@@ -180,7 +180,7 @@ void CKillMgr::Draw(void)
         {
             sprintf(pBuffer, "%-2d", i);
             viewDrawText(3, pBuffer, 85, 50+8*i, -128, 0, 0, 1);
-            sprintf(pBuffer, "%s", gProfile[i].name);
+            sprintf(pBuffer, "%s", gProfile[gNetPlayerNode[i]].name);
             viewDrawText(3, pBuffer, 100, 50+8*i, -128, 0, 0, 1);
             sprintf(pBuffer, "%d", gPlayer[i].fragCount);
             viewDrawText(3, pBuffer, 210, 50+8*i, -128, 0, 0, 1);

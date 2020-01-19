@@ -859,13 +859,13 @@ void fakeActProcessSprites(void)
 
 void viewCorrectPrediction(void)
 {
-    if (gGameOptions.nGameType == 0) return;
+    if (gGameOptions.nGameType == 0 || gMyPlayerIndex < 0) return;
     spritetype *pSprite = gMe->pSprite;
     VIEW *pView = &predictFifo[(gNetFifoTail-1)&255];
     if (gMe->q16ang != pView->at30 || pView->at24 != gMe->q16horiz || pView->at50 != pSprite->x || pView->at54 != pSprite->y || pView->at58 != pSprite->z)
     {
         viewInitializePrediction();
-        predictOld = gPrevView[myconnectindex];
+        predictOld = gPrevView[gMyPlayerIndex];
         gPredictTail = gNetFifoTail;
         while (gPredictTail < gNetNodes[myconnectindex].netFifoHead)
         {
@@ -1346,49 +1346,58 @@ char gTempStr[128];
 void viewDrawPlayerFrags(void)
 {
     viewDrawPlayerSlots();
-    for (int i = 0, p = connecthead; p >= 0; i++, p = connectpoint2[p])
+    for (int i = 0, p = connecthead; p >= 0; p = connectpoint2[p])
     {
+        int const nPlayer = gNetNodes[p].playerId;
+        if (nPlayer < 0)
+            continue;
         int x = 80 * (i & 3);
         int y = 9 * (i / 4);
-        int col = gPlayer[p].teamId & 3;
-        char* name = gProfile[p].name;
-        if (gProfile[p].skill == 2)
+        int col = gPlayer[nPlayer].teamId & 3;
+        char* name = gProfile[nPlayer].name;
+        if (gProfile[nPlayer].skill == 2)
             sprintf(gTempStr, "%s", name);
         else
-            sprintf(gTempStr, "%s [%d]", name, gProfile[p].skill);
+            sprintf(gTempStr, "%s [%d]", name, gProfile[nPlayer].skill);
         Bstrupr(gTempStr);
         viewDrawText(4, gTempStr, x + 4, y + 1, -128, 11 + col, 0, 0);
-        sprintf(gTempStr, "%2d", gPlayer[p].fragCount);
+        sprintf(gTempStr, "%2d", gPlayer[nPlayer].fragCount);
         viewDrawText(4, gTempStr, x + 76, y + 1, -128, 11 + col, 2, 0);
+        i++;
     }
 }
 
 void viewDrawPlayerFlags(void)
 {
     viewDrawPlayerSlots();
-    for (int i = 0, p = connecthead; p >= 0; i++, p = connectpoint2[p])
+    for (int i = 0, p = connecthead; p >= 0; p = connectpoint2[p])
     {
+        int const nPlayer = gNetNodes[p].playerId;
+        if (nPlayer < 0)
+            continue;
         int x = 80 * (i & 3);
         int y = 9 * (i / 4);
-        int col = gPlayer[p].teamId & 3;
-        char* name = gProfile[p].name;
-        if (gProfile[p].skill == 2)
+        int col = gPlayer[nPlayer].teamId & 3;
+        char* name = gProfile[nPlayer].name;
+        if (gProfile[nPlayer].skill == 2)
             sprintf(gTempStr, "%s", name);
         else
-            sprintf(gTempStr, "%s [%d]", name, gProfile[p].skill);
+            sprintf(gTempStr, "%s [%d]", name, gProfile[nPlayer].skill);
         Bstrupr(gTempStr);
         viewDrawText(4, gTempStr, x + 4, y + 1, -128, 11 + col, 0, 0);
 
         sprintf(gTempStr, "F");
         x += 76;
-        if (gPlayer[p].hasFlag & 2)
+        if (gPlayer[nPlayer].hasFlag & 2)
         {
             viewDrawText(4, gTempStr, x, y + 1, -128, 12, 2, 0);
             x -= 6;
         }
 
-        if (gPlayer[p].hasFlag & 1)
+        if (gPlayer[nPlayer].hasFlag & 1)
             viewDrawText(4, gTempStr, x, y + 1, -128, 11, 2, 0);
+
+        i++;
     }
 }
 
@@ -1444,17 +1453,20 @@ void viewDrawCtfHud(ClockTicks arg)
     bool redFlagTaken = false;
     int blueFlagCarrierColor = 0;
     int redFlagCarrierColor = 0;
-    for (int i = 0, p = connecthead; p >= 0; i++, p = connectpoint2[p])
+    for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        if ((gPlayer[p].hasFlag & 1) != 0)
+        int const nPlayer = gNetNodes[p].playerId;
+        if (nPlayer < 0)
+            continue;
+        if ((gPlayer[nPlayer].hasFlag & 1) != 0)
         {
             blueFlagTaken = true;
-            blueFlagCarrierColor = gPlayer[p].teamId & 3;
+            blueFlagCarrierColor = gPlayer[nPlayer].teamId & 3;
         }
-        if ((gPlayer[p].hasFlag & 2) != 0)
+        if ((gPlayer[nPlayer].hasFlag & 2) != 0)
         {
             redFlagTaken = true;
-            redFlagCarrierColor = gPlayer[p].teamId & 3;
+            redFlagCarrierColor = gPlayer[nPlayer].teamId & 3;
         }
     }
 
@@ -3264,14 +3276,19 @@ void viewDrawScreen(void)
             int i = connecthead;
             while (1)
             {
-                if (i == gViewIndex)
+                int nPlayer = gNetNodes[i].playerId;
+                if (nPlayer == gViewIndex)
+                {
                     i = connectpoint2[i];
+                    nPlayer = gNetNodes[i].playerId;
+                }
                 if (tmp == 0)
                     break;
+                if (nPlayer >= 0)
+                    tmp--;
                 i = connectpoint2[i];
-                tmp--;
             }
-            PLAYER *pOther = &gPlayer[i];
+            PLAYER *pOther = &gPlayer[gNetNodes[i].playerId];
             //othercameraclock = gGameClock;
             if (!waloff[4079])
             {

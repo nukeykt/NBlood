@@ -138,7 +138,11 @@ void LoadSave::LoadGame(char *pzFile)
     gNetFifoMasterTail = 0;
     memset(gChecksum, 0, sizeof(gChecksum));
     for (int i = 0; i < MAXPLAYERS; i++)
+    {
         gNetNodes[i].clear();
+        gNetNodes[i].playerId = i < kMaxPlayers ? i : -1;
+    }
+    gMyPlayerIndex = 0;
     gSendCheckTail = 0;
     gCheckTail = 0;
     gBufferJitter = 0;

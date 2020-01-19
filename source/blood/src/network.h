@@ -92,6 +92,7 @@ struct NET_NODE {
 
 extern NET_NODE gNetNodes[MAXPLAYERS];
 extern int gNetPlayerNode[kMaxPlayers];
+extern int gMyPlayerIndex;
 
 
 struct PKT_STARTGAME {

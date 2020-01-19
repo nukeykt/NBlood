@@ -42,6 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "globals.h"
 #include "levels.h"
 #include "loadsave.h"
+#include "network.h"
 #include "player.h"
 #include "seq.h"
 #include "qav.h"
@@ -1297,12 +1298,15 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
         pXSprite->isTriggered = 1;
         SetSpriteState(nSprite, pXSprite, 1);
         for (int p = connecthead; p >= 0; p = connectpoint2[p]) {
-            spritetype *pPlayerSprite = gPlayer[p].pSprite;
+            int const nPlayer = gNetNodes[p].playerId;
+            if (nPlayer < 0)
+                continue;
+            spritetype *pPlayerSprite = gPlayer[nPlayer].pSprite;
             int dx = (pSprite->x - pPlayerSprite->x)>>4;
             int dy = (pSprite->y - pPlayerSprite->y)>>4;
             int dz = (pSprite->z - pPlayerSprite->z)>>8;
             int nDist = dx*dx+dy*dy+dz*dz+0x40000;
-            gPlayer[p].quakeEffect = divscale16(pXSprite->data1, nDist);
+            gPlayer[nPlayer].quakeEffect = divscale16(pXSprite->data1, nDist);
         }
         break;
     case kThingTNTBarrel:

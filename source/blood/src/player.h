@@ -242,7 +242,7 @@ extern PLAYER *gMe, *gView;
 extern bool gBlueFlagDropped;
 extern bool gRedFlagDropped;
 
-extern PROFILE gProfile[kMaxPlayers];
+extern PROFILE gProfile[MAXPLAYERS];
 
 extern int         dword_21EFB0[kMaxPlayers];
 extern ClockTicks  dword_21EFD0[kMaxPlayers];

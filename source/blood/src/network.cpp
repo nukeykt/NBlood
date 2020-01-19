@@ -60,6 +60,7 @@ bool ready2send = false;
 NET_NODE gNetNodes[MAXPLAYERS];
 
 int gNetPlayerNode[kMaxPlayers];
+int gMyPlayerIndex;
 
 NETWORKMODE gNetMode = NETWORK_NONE;
 char gNetAddress[32];
@@ -171,7 +172,7 @@ void netClientDisconnect(void)
 
 void netResetToSinglePlayer(void)
 {
-    myconnectindex = connecthead = 0;
+    gMyPlayerIndex = myconnectindex = connecthead = 0;
     gInitialNetPlayers = gNetPlayers = numplayers = 1;
     connectpoint2[0] = -1;
     gNetPlayerNode[0] = 0;
@@ -259,15 +260,19 @@ void CalcGameChecksum(void)
     gChecksum[0] = wrand();
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        int *pBuffer = &gPlayer[p].used1;
+        // TODO: This code is platform dependent
+        int const nPlayer = gNetPlayerNode[p];
+        if (nPlayer < 0)
+            continue;
+        int *pBuffer = &gPlayer[nPlayer].used1;
         int sum = 0;
-        int length = ((char*)&gPlayer[p+1]-(char*)pBuffer)/4;
+        int length = ((char*)&gPlayer[nPlayer+1]-(char*)pBuffer)/4;
         while (length--)
         {
             sum += *pBuffer++;
         }
         gChecksum[1] ^= sum;
-        pBuffer = (int*)gPlayer[p].pSprite;
+        pBuffer = (int*)gPlayer[nPlayer].pSprite;
         sum = 0;
         length = sizeof(spritetype)/4;
         while (length--)
@@ -275,7 +280,7 @@ void CalcGameChecksum(void)
             sum += *pBuffer++;
         }
         gChecksum[2] ^= sum;
-        pBuffer = (int*)gPlayer[p].pXSprite;
+        pBuffer = (int*)gPlayer[nPlayer].pXSprite;
         sum = 0;
         length = sizeof(XSPRITE)/4;
         while (length--)
@@ -1397,15 +1402,20 @@ void faketimerhandler(void)
 void netPlayerQuit(int nPlayer)
 {
     char buffer[128];
-    sprintf(buffer, "%s left the game with %d frags.", gProfile[nPlayer].name, gPlayer[nPlayer].fragCount);
-    viewSetMessage(buffer);
-    if (gGameStarted)
+    int nPlayerId = gNetNodes[nPlayer].playerId;
+    if (nPlayerId >= 0)
     {
-        seqKill(3, gPlayer[nPlayer].pSprite->extra);
-        actPostSprite(gPlayer[nPlayer].nSprite, kStatFree);
-        if (nPlayer == gViewIndex)
-            gViewIndex = myconnectindex;
-        gView = &gPlayer[gViewIndex];
+        sprintf(buffer, "%s left the game with %d frags.", gProfile[nPlayerId].name, gPlayer[nPlayerId].fragCount);
+        viewSetMessage(buffer);
+        if (gGameStarted)
+        {
+            seqKill(3, gPlayer[nPlayerId].pSprite->extra);
+            actPostSprite(gPlayer[nPlayerId].nSprite, kStatFree);
+            if (nPlayerId == gViewIndex)
+                gViewIndex = myconnectindex;
+            gView = &gPlayer[gViewIndex];
+        }
+        gNetPlayers--;
     }
     if (nPlayer == connecthead)
     {
@@ -1430,7 +1440,6 @@ void netPlayerQuit(int nPlayer)
         gNetPlayerPeer[nPlayer] = NULL;
 #endif
     }
-    gNetPlayers--;
     numplayers = ClipLow(numplayers-1, 1);
     if (gNetPlayers <= 1)
     {

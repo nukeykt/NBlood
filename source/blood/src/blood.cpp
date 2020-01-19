@@ -619,8 +619,11 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     {
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
-            memcpy(&gPlayerTemp[i],&gPlayer[i],sizeof(PLAYER));
-            gHealthTemp[i] = xsprite[gPlayer[i].pSprite->extra].health;
+            int const nPlayer = gNetNodes[i].playerId;
+            if (nPlayer < 0)
+                continue;
+            memcpy(&gPlayerTemp[nPlayer],&gPlayer[nPlayer],sizeof(PLAYER));
+            gHealthTemp[nPlayer] = xsprite[gPlayer[nPlayer].pSprite->extra].health;
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
@@ -759,6 +762,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     evInit();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
+        int const nPlayer = gNetNodes[i].playerId;
         if (!(gameOptions->uGameFlags&1))
         {
             if (numplayers == 1)
@@ -767,25 +771,30 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                 gProfile[i].nAutoAim = gAutoAim;
                 gProfile[i].nWeaponSwitch = gWeaponSwitch;
             }
-            playerInit(i,0);
+            if (nPlayer >= 0)
+                playerInit(nPlayer,0);
         }
-        playerStart(i);
+        if (nPlayer >= 0)
+            playerStart(nPlayer);
     }
     if (gameOptions->uGameFlags&1)
     {
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
-            PLAYER *pPlayer = &gPlayer[i];
+            int const nPlayer = gNetNodes[i].playerId;
+            if (nPlayer < 0)
+                continue;
+            PLAYER *pPlayer = &gPlayer[nPlayer];
             pPlayer->pXSprite->health &= 0xf000;
-            pPlayer->pXSprite->health |= gHealthTemp[i];
-            pPlayer->weaponQav = gPlayerTemp[i].weaponQav;
-            pPlayer->curWeapon = gPlayerTemp[i].curWeapon;
-            pPlayer->weaponState = gPlayerTemp[i].weaponState;
-            pPlayer->weaponAmmo = gPlayerTemp[i].weaponAmmo;
-            pPlayer->qavCallback = gPlayerTemp[i].qavCallback;
-            pPlayer->qavLoop = gPlayerTemp[i].qavLoop;
-            pPlayer->weaponTimer = gPlayerTemp[i].weaponTimer;
-            pPlayer->nextWeapon = gPlayerTemp[i].nextWeapon;
+            pPlayer->pXSprite->health |= gHealthTemp[nPlayer];
+            pPlayer->weaponQav = gPlayerTemp[nPlayer].weaponQav;
+            pPlayer->curWeapon = gPlayerTemp[nPlayer].curWeapon;
+            pPlayer->weaponState = gPlayerTemp[nPlayer].weaponState;
+            pPlayer->weaponAmmo = gPlayerTemp[nPlayer].weaponAmmo;
+            pPlayer->qavCallback = gPlayerTemp[nPlayer].qavCallback;
+            pPlayer->qavLoop = gPlayerTemp[nPlayer].qavLoop;
+            pPlayer->weaponTimer = gPlayerTemp[nPlayer].weaponTimer;
+            pPlayer->nextWeapon = gPlayerTemp[nPlayer].nextWeapon;
         }
     }
     gameOptions->uGameFlags &= ~3;
@@ -871,7 +880,7 @@ static void DoQuickLoad(void)
 
 static void DoQuickSave(void)
 {
-    if (gGameStarted && !gGameMenuMgr.m_bActive && gPlayer[myconnectindex].pXSprite->health != 0)
+    if (gGameStarted && !gGameMenuMgr.m_bActive && gMyPlayerIndex >= 0 && gPlayer[gMyPlayerIndex].pXSprite->health != 0)
     {
         if (gQuickSaveSlot != -1)
         {
@@ -898,24 +907,25 @@ void LocalKeys(void)
     if (BUTTON(gamefunc_See_Coop_View))
     {
         CONTROL_ClearButton(gamefunc_See_Coop_View);
-        if (gGameOptions.nGameType == 1)
+        if (gNetPlayers > 1 && (gGameOptions.nGameType == 1 || gGameOptions.nGameType == 3))
         {
-            gViewIndex = connectpoint2[gViewIndex];
-            if (gViewIndex == -1)
-                gViewIndex = connecthead;
-            gView = &gPlayer[gViewIndex];
-        }
-        else if (gGameOptions.nGameType == 3)
-        {
-            int oldViewIndex = gViewIndex;
+            int const oldViewIndex = gViewIndex;
+            int nNode = gNetPlayerNode[gViewIndex];
+            int const oldNode = nNode;
             do
             {
-                gViewIndex = connectpoint2[gViewIndex];
-                if (gViewIndex == -1)
-                    gViewIndex = connecthead;
-                if (oldViewIndex == gViewIndex || gMe->teamId == gPlayer[gViewIndex].teamId)
-                    break;
-            } while (oldViewIndex != gViewIndex);
+                nNode = connectpoint2[nNode];
+                if (nNode == -1)
+                    nNode = connecthead;
+                if (gNetNodes[nNode].playerId >= 0)
+                {
+                    gViewIndex = gNetNodes[nNode].playerId;
+                    if (gGameOptions.nGameType == 1)
+                        break;
+                    if (gGameOptions.nGameType == 3 && gMyPlayerIndex >= 0 && gMe->teamId == gPlayer[gViewIndex].teamId)
+                        break;
+                }
+            } while (oldNode != nNode);
             gView = &gPlayer[gViewIndex];
         }
     }
@@ -966,7 +976,7 @@ void LocalKeys(void)
             break;
         case sc_Escape:
             keyFlushScans();
-            if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
+            if (gGameStarted && gMyPlayerIndex >= 0 && gPlayer[gMyPlayerIndex].pXSprite->health != 0)
             {
                 if (!gGameMenuMgr.m_bActive)
                     gGameMenuMgr.Push(&menuMainWithSave,-1);
@@ -1034,18 +1044,23 @@ bool gRestartGame = false;
 void ProcessFrame(void)
 {
     char buffer[128];
+    char gNodeQuit[MAXPLAYERS];
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        auto input = &gNetNodes[i].fifoInput[gNetFifoTail&255];
-        gPlayer[i].input.buttonFlags = input->buttonFlags;
-        gPlayer[i].input.keyFlags.word |= input->keyFlags.word;
-        gPlayer[i].input.useFlags.byte |= input->useFlags.byte;
+        int const nPlayer = gNetNodes[i].playerId;
+        auto input = &gNetNodes[nPlayer].fifoInput[gNetFifoTail & 255];
+        gNodeQuit[i] = input->keyFlags.quit;
+        if (nPlayer < 0)
+            continue;
+        gPlayer[nPlayer].input.buttonFlags = input->buttonFlags;
+        gPlayer[nPlayer].input.keyFlags.word |= input->keyFlags.word;
+        gPlayer[nPlayer].input.useFlags.byte |= input->useFlags.byte;
         if (input->newWeapon)
-            gPlayer[i].input.newWeapon = input->newWeapon;
-        gPlayer[i].input.forward = input->forward;
-        gPlayer[i].input.q16turn = input->q16turn;
-        gPlayer[i].input.strafe = input->strafe;
-        gPlayer[i].input.q16mlook = input->q16mlook;
+            gPlayer[nPlayer].input.newWeapon = input->newWeapon;
+        gPlayer[nPlayer].input.forward = input->forward;
+        gPlayer[nPlayer].input.q16turn = input->q16turn;
+        gPlayer[nPlayer].input.strafe = input->strafe;
+        gPlayer[nPlayer].input.q16mlook = input->q16mlook;
     }
     gNetFifoTail++;
     if (!(gFrame&((gSyncRate<<3)-1)))
@@ -1056,9 +1071,11 @@ void ProcessFrame(void)
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        if (gPlayer[i].input.keyFlags.quit)
+        int const nPlayer = gNetNodes[i].playerId;
+        if (gNodeQuit[i])
         {
-            gPlayer[i].input.keyFlags.quit = 0;
+            if (nPlayer >= 0)
+                gPlayer[nPlayer].input.keyFlags.quit = 0;
             netBroadcastPlayerLogoff(i);
             if (i == myconnectindex)
             {
@@ -1070,15 +1087,17 @@ void ProcessFrame(void)
                 return;
             }
         }
-        if (gPlayer[i].input.keyFlags.restart)
+        if (nPlayer < 0)
+            continue;
+        if (gPlayer[nPlayer].input.keyFlags.restart)
         {
-            gPlayer[i].input.keyFlags.restart = 0;
+            gPlayer[nPlayer].input.keyFlags.restart = 0;
             levelRestart();
             return;
         }
-        if (gPlayer[i].input.keyFlags.pause)
+        if (gPlayer[nPlayer].input.keyFlags.pause)
         {
-            gPlayer[i].input.keyFlags.pause = 0;
+            gPlayer[nPlayer].input.keyFlags.pause = 0;
             gPaused = !gPaused;
             if (gPaused && gGameOptions.nGameType > 0 && numplayers > 1)
             {
@@ -1097,8 +1116,11 @@ void ProcessFrame(void)
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        viewBackupView(i);
-        playerProcess(&gPlayer[i]);
+        int const nPlayer = gNetNodes[i].playerId;
+        if (nPlayer < 0)
+            continue;
+        viewBackupView(nPlayer);
+        playerProcess(&gPlayer[nPlayer]);
     }
     trProcessBusy();
     evProcess((int)gFrameClock);
@@ -1779,8 +1801,8 @@ int app_main(int argc, char const * const * argv)
     scrSetDac();
 RESTART:
     sub_79760();
-    gViewIndex = myconnectindex;
-    gMe = gView = &gPlayer[myconnectindex];
+    gViewIndex = gMyPlayerIndex >= 0 ? gMyPlayerIndex : 0;
+    gMe = gView = &gPlayer[gViewIndex];
     netBroadcastPlayerInfo(myconnectindex);
     initprintf("Waiting for network players!\n");
     netWaitForEveryone(0);
@@ -1845,9 +1867,12 @@ RESTART:
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
             gameHandleEvents();
-            while (gPredictTail < gNetNodes[myconnectindex].netFifoHead && !gPaused)
+            if (gMyPlayerIndex >= 0)
             {
-                viewUpdatePrediction(&gNetNodes[myconnectindex].fifoInput[gPredictTail&255]);
+                while (gPredictTail < gNetNodes[myconnectindex].netFifoHead && !gPaused)
+                {
+                    viewUpdatePrediction(&gNetNodes[myconnectindex].fifoInput[gPredictTail&255]);
+                }
             }
             if (numplayers == 1)
                 gBufferJitter = 0;

@@ -52,7 +52,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "messages.h"
 
-PROFILE gProfile[kMaxPlayers];
+PROFILE gProfile[MAXPLAYERS];
 
 PLAYER gPlayer[kMaxPlayers];
 PLAYER *gMe, *gView;
@@ -397,15 +397,21 @@ PLAYER* getPlayerById(short id) {
     if (id >= 1 && id <= kMaxPlayers) {
         id = id - 1;
         for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
-            if (id == gPlayer[i].nPlayer)
-                return &gPlayer[i]; 
+            int const nPlayer = gNetNodes[i].playerId;
+            if (nPlayer < 0)
+                continue;
+            if (id == gPlayer[nPlayer].nPlayer)
+                return &gPlayer[nPlayer];
         }
         
     // absolute sprite type
     } else if (id >= kDudePlayer1 && id <= kDudePlayer8) {
         for (int i = connecthead; i >= 0; i = connectpoint2[i]) {
-            if (id == gPlayer[i].pSprite->type)
-                return &gPlayer[i];
+            int const nPlayer = gNetNodes[i].playerId;
+            if (nPlayer < 0)
+                continue;
+            if (id == gPlayer[nPlayer].pSprite->type)
+                return &gPlayer[nPlayer];
         }
     }
     
@@ -743,7 +749,7 @@ void playerSetRace(PLAYER *pPlayer, int nLifeMode)
     pPlayer->pSprite->clipdist = pDudeInfo->clipdist;
     
     for (int i = 0; i < 7; i++)
-        pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[pPlayer->nPlayer].skill], pDudeInfo->startDamage[i]);
+        pDudeInfo->at70[i] = mulscale8(Handicap[gProfile[gNetPlayerNode[pPlayer->nPlayer]].skill], pDudeInfo->startDamage[i]);
 }
 
 void playerSetGodMode(PLAYER *pPlayer, char bGodMode)
@@ -1058,7 +1064,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->hasFlag |= 1;
                         pPlayer->used2[0] = pItem->index;
                         trTriggerSprite(pItem->index, pXItem, kCmdOff);
-                        sprintf(buffer, "%s stole Blue Flag", gProfile[pPlayer->nPlayer].name);
+                        sprintf(buffer, "%s stole Blue Flag", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                         sndStartSample(8007, 255, 2, 0);
                         viewSetMessage(buffer);
                     }
@@ -1070,7 +1076,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->hasFlag &= ~1;
                         pPlayer->used2[0] = -1;
                         trTriggerSprite(pItem->index, pXItem, kCmdOn);
-                        sprintf(buffer, "%s returned Blue Flag", gProfile[pPlayer->nPlayer].name);
+                        sprintf(buffer, "%s returned Blue Flag", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                         sndStartSample(8003, 255, 2, 0);
                         viewSetMessage(buffer);
                     }
@@ -1081,7 +1087,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         dword_21EFB0[pPlayer->teamId] += 10;
                         dword_21EFD0[pPlayer->teamId] += 240;
                         evSend(0, 0, 81, kCmdOn);
-                        sprintf(buffer, "%s captured Red Flag!", gProfile[pPlayer->nPlayer].name);
+                        sprintf(buffer, "%s captured Red Flag!", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                         sndStartSample(8001, 255, 2, 0);
                         viewSetMessage(buffer);
 #if 0
@@ -1102,7 +1108,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->hasFlag |= 2;
                         pPlayer->used2[1] = pItem->index;
                         trTriggerSprite(pItem->index, pXItem, kCmdOff);
-                        sprintf(buffer, "%s stole Red Flag", gProfile[pPlayer->nPlayer].name);
+                        sprintf(buffer, "%s stole Red Flag", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                         sndStartSample(8006, 255, 2, 0);
                         viewSetMessage(buffer);
                     }
@@ -1114,7 +1120,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         pPlayer->hasFlag &= ~2;
                         pPlayer->used2[1] = -1;
                         trTriggerSprite(pItem->index, pXItem, kCmdOn);
-                        sprintf(buffer, "%s returned Red Flag", gProfile[pPlayer->nPlayer].name);
+                        sprintf(buffer, "%s returned Red Flag", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                         sndStartSample(8002, 255, 2, 0);
                         viewSetMessage(buffer);
                     }
@@ -1125,7 +1131,7 @@ char PickupItem(PLAYER *pPlayer, spritetype *pItem) {
                         dword_21EFB0[pPlayer->teamId] += 10;
                         dword_21EFD0[pPlayer->teamId] += 240;
                         evSend(0, 0, 80, kCmdOn);
-                        sprintf(buffer, "%s captured Blue Flag!", gProfile[pPlayer->nPlayer].name);
+                        sprintf(buffer, "%s captured Blue Flag!", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                         sndStartSample(8000, 255, 2, 0);
                         viewSetMessage(buffer);
 #if 0
@@ -1963,7 +1969,7 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
         }
         else
         {
-            sprintf(buffer, gSuicide[nMessage].at0, gProfile[nVictim].name);
+            sprintf(buffer, gSuicide[nMessage].at0, gProfile[gNetPlayerNode[nVictim]].name);
         }
     }
     else
@@ -1986,7 +1992,7 @@ void playerFrag(PLAYER *pKiller, PLAYER *pVictim)
         int nMessage = Random(25);
         int nSound = gVictory[nMessage].at4;
         const char* pzMessage = gVictory[nMessage].at0;
-        sprintf(buffer, pzMessage, gProfile[nKiller].name, gProfile[nVictim].name);
+        sprintf(buffer, pzMessage, gProfile[gNetPlayerNode[nKiller]].name, gProfile[gNetPlayerNode[nVictim]].name);
         if (gGameOptions.nGameType > 0 && nSound >= 0 && pKiller == gMe)
             sndStartSample(nSound, 255, 2, 0);
     }
@@ -2054,7 +2060,7 @@ spritetype *sub_40A94(PLAYER *pPlayer, int a2)
         if (pSprite)
             pSprite->owner = pPlayer->used2[0];
         gBlueFlagDropped = true;
-        sprintf(buffer, "%s dropped Blue Flag", gProfile[pPlayer->nPlayer].name);
+        sprintf(buffer, "%s dropped Blue Flag", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
         sndStartSample(8005, 255, 2, 0);
         viewSetMessage(buffer);
         break;
@@ -2064,7 +2070,7 @@ spritetype *sub_40A94(PLAYER *pPlayer, int a2)
         if (pSprite)
             pSprite->owner = pPlayer->used2[1];
         gRedFlagDropped = true;
-        sprintf(buffer, "%s dropped Red Flag", gProfile[pPlayer->nPlayer].name);
+        sprintf(buffer, "%s dropped Red Flag", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
         sndStartSample(8004, 255, 2, 0);
         viewSetMessage(buffer);
         break;
@@ -2202,8 +2208,11 @@ int playerDamageSprite(int nSource, PLAYER *pPlayer, DAMAGE_TYPE nDamageType, in
         pSprite->flags |= 7;
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
-            if (gPlayer[p].fraggerId == nSprite && gPlayer[p].deathTime > 0)
-                gPlayer[p].fraggerId = -1;
+            int const nPlayer = gNetNodes[p].playerId;
+            if (nPlayer < 0)
+                continue;
+            if (gPlayer[nPlayer].fraggerId == nSprite && gPlayer[nPlayer].deathTime > 0)
+                gPlayer[nPlayer].fraggerId = -1;
         }
         FragPlayer(pPlayer, nSource);
         trTriggerSprite(nSprite, pXSprite, kCmdOff);
@@ -2290,7 +2299,7 @@ void PlayerSurvive(int, int nXSprite)
                 viewSetMessage("I LIVE...AGAIN!!");
             else
             {
-                sprintf(buffer, "%s lives again!", gProfile[pPlayer->nPlayer].name);
+                sprintf(buffer, "%s lives again!", gProfile[gNetPlayerNode[pPlayer->nPlayer]].name);
                 viewSetMessage(buffer);
             }
             pPlayer->input.newWeapon = 1;
@@ -2303,9 +2312,12 @@ void PlayerKneelsOver(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     for (int p = connecthead; p >= 0; p = connectpoint2[p])
     {
-        if (gPlayer[p].pXSprite == pXSprite)
+        int const nPlayer = gNetNodes[p].playerId;
+        if (nPlayer < 0)
+            continue;
+        if (gPlayer[nPlayer].pXSprite == pXSprite)
         {
-            PLAYER *pPlayer = &gPlayer[p];
+            PLAYER *pPlayer = &gPlayer[nPlayer];
             playerDamageSprite(pPlayer->fraggerId, pPlayer, DAMAGE_TYPE_5, 500<<4);
             return;
         }
