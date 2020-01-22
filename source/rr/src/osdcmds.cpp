@@ -1366,6 +1366,7 @@ static int osdcmd_cvar_set_multi(osdcmdptr_t parm)
 
 int32_t registerosdcommands(void)
 {
+    FX_InitCvars();
     static osdcvardata_t cvars_game[] =
     {
         { "crosshair", "enable/disable crosshair", (void *)&ud.crosshair, CVAR_BOOL, 0, 1 },

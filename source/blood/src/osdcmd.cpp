@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "mmulti.h"
 #include "sndcards.h"
+#include "fx_man.h"
 #include "common_game.h"
 #include "config.h"
 #include "blood.h"
@@ -921,6 +922,8 @@ static int osdcmd_cvar_set_multi(osdcmdptr_t parm)
 
 int32_t registerosdcommands(void)
 {
+    FX_InitCvars();
+
     char buffer[256];
     static osdcvardata_t cvars_game[] =
     {
