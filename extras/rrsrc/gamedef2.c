@@ -1311,33 +1311,35 @@ char parse(void)
         case 115:
             insptr++;
             {
-                spritetype *js;
-                short hitag;
-                short lotag;
-                short k;
-                short jj;
-                short wi, wj;
-                short nextk;
-                short nextjj;
-                short spr;
+#define B0 spritetype *js;
+#define B1 short lotag, hitag;
+#define B2 short k, jj;
+#define B3 short wi, wj;
+#define B4 short nextk, nextjj;
+#define B5 short spr;
+#define B6 short wallstart, wallend;
+#define B7 short wallstart2, wallend2;
+#define B8 short sectnum;
+//012354867.LST
+#define A0 B0
+#define A1 B1
+#define A2 B2
+#define A3 B3
+#define A5 B4
+#define A4 B5
+#define A8 B6
+#define A6 B7
+#define A7 B8
+                A0
+                A1
+                A2
+                A3
+                A4
+                A5
+                A6
+                A7
+                A8
 
-
-                short wallstart, wallend;
-                short wallstart2, wallend2;
-                short sectnum;
-                //spritetype *js;
-                //short k;
-                //short jj;
-                //short nextk;
-                //short nextjj;
-                //short hitag;
-                //short lotag;
-                //short spr;
-                //short wi;
-                //short wj;
-                //short wallstart, wallend;
-                //short wallstart2, wallend2;
-                //short sectnum;
                 hitag = 0;
                 k = headspritesect[g_sp->sectnum];
                 while (k != -1)
