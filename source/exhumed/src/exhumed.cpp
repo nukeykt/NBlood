@@ -59,7 +59,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "wasp.h"
 #include "scorp.h"
 #include "rat.h"
-#include "cdrom.h"
 #include "cdaudio.h"
 #include "serial.h"
 #include "network.h"
@@ -1068,7 +1067,6 @@ int lLocalCodes = 0;
 short bHiRes = kFalse;
 short bCoordinates = kFalse;
 
-short bNoCDCheck = kFalse;
 int nNetTime = -1;
 
 short nCodeMin = 0;
@@ -2445,15 +2443,6 @@ int app_main(int argc, char const* const* argv)
                             nNetTime = nNetTime * 1800;
                         }
                         break;
-                    case 'c':
-                    {
-                        // CHANGEME? - make this a strcmp. this is how the original does it though...
-                        if (pChar[1] == 'd' && pChar[2] == 'o' && pChar[3] == 'f' && pChar[4] == 'f') {
-                            bNoCDCheck = kTrue;
-                        }
-
-						break;
-                    }
                     default:
                     {
                         if (isdigit(c))
@@ -2849,21 +2838,6 @@ LOOP3:
         }
 
         CheckCD();
-
-#if 0
-        if (!bNoCDCheck)
-        {
-            while (!checkcdrom())
-            {
-                EraseScreen(overscanindex);
-                Query(2, 0, "Insert CD into drive", "(ESC to abort)");
-                KB_ClearKeysDown();
-                if (KB_GetCh() == asc_Escape) {
-                    bail2dos("Aborted\n");
-                }
-            }
-        }
-#endif
 
         if (levelnew == kMap20)
         {

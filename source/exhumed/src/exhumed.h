@@ -200,8 +200,6 @@ extern short nEnergyChan;
 
 extern short nSpiritSprite;
 
-extern short bNoCDCheck;
-
 extern short bInDemo;
 
 extern short nFreeze;

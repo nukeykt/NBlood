@@ -20,7 +20,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "exhumed.h"
 #include "names.h"
 #include "movie.h"
-#include "cdrom.h"
 #include "light.h"
 #include <cstdio>
 #include <cstring>
@@ -195,36 +194,17 @@ void ServeSample(const char** ptr, uint32_t* length)
 
 void PlayMovie(const char* fileName)
 {
-    char buffer[256];
     int bDoFade = kTrue;
     int hFx = -1;
-
-    if (bNoCDCheck)
-    {
-        sprintf(buffer, "C:\\PS\\%s", fileName);
-    }
-    else
-    {
-        char driveLetter = GetCDDriveLetter();
-        if (!driveLetter) {
-            driveLetter = 'C';
-        }
-        sprintf(buffer, "%c:%s", driveLetter, fileName);
-    }
 
     tileLoad(kMovieTile);
     CurFrame = (uint8_t*)waloff[kMovieTile];
 
-    FILE* fp = fopen(buffer, "rb");
+    FILE* fp = fopen(fileName, "rb");
     if (fp == NULL)
     {
-        DebugOut("Can't open movie file '%s' on CD-ROM\n", buffer);
-        fp = fopen(fileName, "rb");
-        if (fp == NULL)
-        {
-            DebugOut("Can't open movie file on hard drive\n");
-            return;
-        }
+        DebugOut("Can't open movie file on hard drive\n");
+        return;
     }
 
     fread(lh, sizeof(lh), 1, fp);
