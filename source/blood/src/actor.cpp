@@ -5417,6 +5417,7 @@ void actExplodeSprite(spritetype *pSprite)
     sfxKill3DSound(pSprite, -1, -1);
     evKill(pSprite->index, 3);
     int nType = kExplosionStandard;
+
     switch (pSprite->type)
     {
     case kMissileFireballNapam:

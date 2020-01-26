@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "keyboard.h"
 #include "control.h"
+#include "fx_man.h"
 #include "exhumed.h"
 #include "config.h"
 #include "osdcmds.h"
@@ -579,6 +580,7 @@ static int osdcmd_cvar_set_game(osdcmdptr_t parm)
 
 int32_t registerosdcommands(void)
 {
+    FX_InitCvars();
     char tempbuf[256];
     static osdcvardata_t cvars_game[] =
     {

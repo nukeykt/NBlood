@@ -1982,7 +1982,6 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
 
             pSprite->clipdist = ClipRange((pSprite->xrepeat + pSprite->yrepeat) >> 1, 4, 120);           
             if (propId) break;
-            fallthrough__;
         }
     }
 

@@ -228,6 +228,9 @@ void scrLoadPalette(void)
 #ifdef USE_OPENGL
     for (auto & x : glblend)
         x = bloodglblend;
+
+    for (int i = 0; i < MAXPALOOKUPS; i++)
+        palookupfogfactor[i] = 1.f;
 #endif
 
     paletteInitClosestColorMap(palette);
