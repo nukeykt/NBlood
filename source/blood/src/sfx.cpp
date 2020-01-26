@@ -254,7 +254,7 @@ void sfxPlay3DSound(spritetype *pSprite, int soundId, int a3, int a4)
     MV_Unlock();
 }
 
-// By NoOne: same as previous, but allows to set custom pitch for sound AND volume. Used by SFX gen now.
+// by NoOne: same as previous, but allows to set custom pitch for sound AND volume.
 void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitch, int volume)
 {
     if (!SoundToggle || !pSprite || soundId < 0) return;
@@ -364,7 +364,6 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
     }
     MV_Unlock();
 }
-
 
 void sfxKill3DSound(spritetype *pSprite, int a2, int a3)
 {

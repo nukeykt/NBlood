@@ -656,6 +656,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             }
 
             
+            #ifdef NOONE_EXTENSIONS
             if (gModernMap) {
                 
                 switch (pSprite->type) {
@@ -727,6 +728,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
                     }
                 }
             }
+            #endif
         }
     }
     scrLoadPLUs();
@@ -738,7 +740,8 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         gStartZone[i].sectnum = startsectnum;
         gStartZone[i].ang = startang;
 
-        // By NoOne: Create spawn zones for players in teams mode.
+        #ifdef NOONE_EXTENSIONS
+        // Create spawn zones for players in teams mode.
         if (gModernMap && i <= kMaxPlayers / 2) {
             gStartZoneTeam1[i].x = startpos.x;
             gStartZoneTeam1[i].y = startpos.y;
@@ -752,6 +755,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             gStartZoneTeam2[i].sectnum = startsectnum;
             gStartZoneTeam2[i].ang = startang;
         }
+        #endif
     }
     InitSectorFX();
     warpInit();
