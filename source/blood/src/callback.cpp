@@ -338,9 +338,11 @@ void EnemyBubble(int nSprite) // 11
 void CounterCheck(int nSector) // 12
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
-
-    // By NoOne: remove check below, so every sector can be counter if command 12 (this callback) received.
-    //if (pSector->type != kSectorCounter) return;
+    
+    // remove check below, so every sector can be counter if command 12 (this callback) received.
+    #ifndef NOONE_EXTENSIONS
+    if (sector[nSector].type != kSectorCounter) return;
+    #endif
     if (sector[nSector].extra <= 0) return;
     
     XSECTOR *pXSector = &xsector[sector[nSector].extra];
@@ -561,7 +563,9 @@ void LeechStateTimer(int nSprite) // 20
     if (pSprite->statnum == kStatThing && !(pSprite->flags & 32)) {
         switch (pSprite->type) {
             case kThingDroppedLifeLeech:
+            #ifdef NOONE_EXTENSIONS
             case kModernThingEnemyLifeLeech:
+            #endif
                 xsprite[pSprite->extra].stateTimer = 0;
                 break;
         }
@@ -703,6 +707,7 @@ void DropVoodoo(int nSprite) // unused
     }
 }
 
+#ifdef NOONE_EXTENSIONS
 void UniMissileBurst(int nSprite) // 22
 {
     dassert(nSprite >= 0 && nSprite < kMaxSprites);
@@ -761,12 +766,13 @@ void makeMissileBlocking(int nSprite) // 23
     sprite[nSprite].cstat |= CSTAT_SPRITE_BLOCK;
 }
 
-void genDudeUpdateCallback(int nSprite) // 24
-{
-    if (spriRangeIsFine(nSprite))
-        genDudeUpdate(&sprite[nSprite]);
-}
 
+    void genDudeUpdateCallback(int nSprite) // 24
+    {
+        if (spriRangeIsFine(nSprite))
+            genDudeUpdate(&sprite[nSprite]);
+    }
+#endif
 void(*gCallback[kCallbackMax])(int) =
 {
     fxFlameLick,
@@ -791,7 +797,9 @@ void(*gCallback[kCallbackMax])(int) =
     fxPodBloodSplat,
     LeechStateTimer,
     DropVoodoo, // unused
+#ifdef NOONE_EXTENSIONS
     UniMissileBurst,
     makeMissileBlocking,
     genDudeUpdateCallback,
+#endif
 };

@@ -74,6 +74,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "weapon.h"
 
 VECTORDATA gVectorData[] = {
+    
     // Tine
     {
         DAMAGE_TYPE_2,
@@ -99,8 +100,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        1207, 1207,
     },
+   
     // Shell
     {
         DAMAGE_TYPE_2,
@@ -126,8 +127,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        1001, 1001,
     },
+    
     // Bullet
     {
         DAMAGE_TYPE_2,
@@ -153,8 +154,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 513,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        4001, 4002,
+
     },
+    
     // Tommy AP
     {
         DAMAGE_TYPE_2,
@@ -180,8 +182,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 513,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        431, 431
     },
+    
     // Shell AP
     {
         DAMAGE_TYPE_2,
@@ -207,8 +209,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        1002, 1002,
     },
+    
     // Tommy regular
     {
         DAMAGE_TYPE_2,
@@ -234,8 +236,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 513,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        359, 359,
     },
+    
     // Bat bite
     {
         DAMAGE_TYPE_2,
@@ -261,8 +263,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        521, 521,
     },
+    
     // Eel bite
     {
         DAMAGE_TYPE_2,
@@ -288,8 +290,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        513, 513
     },
+    
     // Gill bite
     {
         DAMAGE_TYPE_2,
@@ -315,9 +317,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        499, 499
     },
-            // Beast slash
+    
+    // Beast slash
     {
         DAMAGE_TYPE_3,
         50,
@@ -342,9 +344,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        9012, 9014
     },
-            // Axe
+    
+    // Axe
     {
         DAMAGE_TYPE_2,
         18,
@@ -369,9 +371,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        1101, 1101
     },
-            // Cleaver
+    
+    // Cleaver
     {
         DAMAGE_TYPE_2,
         9,
@@ -396,9 +398,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        1207, 1207
     },
-            // Phantasm slash
+    
+    // Phantasm slash
     {
         DAMAGE_TYPE_2,
         20,
@@ -423,9 +425,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        499, 495
     },
-            // Gargoyle Slash
+
+    // Gargoyle Slash
     {
         DAMAGE_TYPE_2,
         16,
@@ -450,9 +452,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_6, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_5, FX_NONE, -1,
-        495, 496
     },
-            // Cerberus bite
+
+    // Cerberus bite
     {
         DAMAGE_TYPE_2,
         19,
@@ -477,9 +479,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        9013, 499
     },
-            // Hound bite
+
+    // Hound bite
     {
         DAMAGE_TYPE_2,
         10,
@@ -504,9 +506,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        1307, 1308
     },
-            // Rat bite
+
+    // Rat bite
     {
         DAMAGE_TYPE_2,
         4,
@@ -531,9 +533,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        499, 499
     },
-            // Spider bite
+
+    // Spider bite
     {
         DAMAGE_TYPE_2,
         8,
@@ -558,9 +560,9 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        499, 499
     },
-            // Unk
+
+    // Unk
     {
         DAMAGE_TYPE_2,
         9,
@@ -585,7 +587,6 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 502,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        499, 499
     },
     
     {
@@ -612,8 +613,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        499, 499
     },
+
     // Tchernobog burn vector
     {
         DAMAGE_TYPE_1,
@@ -639,8 +640,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        351, 351
     },
+
     // Vodoo 1.0 vector
     {
         DAMAGE_TYPE_5,
@@ -666,8 +667,8 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
         FX_NONE, FX_NONE, FX_NONE, -1,
-        0,0
     },
+
     // 22 kVectorGenDudePunch
     {
     DAMAGE_TYPE_0, 
@@ -693,7 +694,6 @@ VECTORDATA gVectorData[] = {
         FX_NONE, FX_NONE, FX_NONE, 357,
         FX_NONE, FX_NONE, FX_NONE, 357,
         FX_NONE, FX_NONE, FX_NONE, 357,
-        357, 499
     },
 };
 
@@ -1509,9 +1509,6 @@ MissileType missileInfo[] = {
         40,
         (char)-16,
         16,
-        1207, 1207,
-        false, false, false, false, false, true, false
-
     },
     // Regular flare
     {
@@ -1522,8 +1519,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         32,
-        420, 420,
-        false, true, true, false, false, false, false
     },
     // Tesla alt
     {
@@ -1534,8 +1529,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         32,
-        471, 471,
-        false, false, false, false, false, false, true
     },
     // Flare alt
     {
@@ -1546,8 +1539,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         4,
-        421, 421,
-        false, true, false, true, false, false, false
     },
     // Spray flame
     {
@@ -1558,8 +1549,6 @@ MissileType missileInfo[] = {
         24,
         (char)-128,
         16,
-        1309, 351,
-        false, true, false, false, false, false, false
     },
     // Fireball
     {
@@ -1570,8 +1559,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         32,
-        480, 480,
-        false, true, false, true, false, false, false
     },
     // Tesla regular
     {
@@ -1582,8 +1569,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         16,
-        470, 470,
-        false, false, false, false, false, false, true
     },
     // EctoSkull
     {
@@ -1594,8 +1579,6 @@ MissileType missileInfo[] = {
         32,
         (char)-24,
         32,
-        489, 490,
-        false, false, false, false, false, true, false
     },
     // Hellhound flame
     {
@@ -1606,8 +1589,6 @@ MissileType missileInfo[] = {
         24,
         (char)-128,
         16,
-        462, 351,
-        false, true, false, false, false, false, false
     },
     // Puke
     {
@@ -1618,8 +1599,6 @@ MissileType missileInfo[] = {
         16,
         (char)-16,
         16,
-        1203, 172,
-        false, false, true, false, false, false, false
     },
     // Reserved
     {
@@ -1630,8 +1609,6 @@ MissileType missileInfo[] = {
         8,
         (char)0,
         16,
-        0,0,
-        false, false, true, false, false, false, false
     },
     // Stone gargoyle projectile
     {
@@ -1642,8 +1619,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         16,
-        1457, 249,
-        false, false, false, false, false, true, false
     },
     // Napalm launcher
     {
@@ -1654,8 +1629,6 @@ MissileType missileInfo[] = {
         30,
         (char)-128,
         24,
-        480, 489,
-        false, true, false, true, false, false, false
     },
     // Cerberus fireball
     {
@@ -1666,8 +1639,6 @@ MissileType missileInfo[] = {
         30,
         (char)-128,
         24,
-        480, 489,
-        false, false, false, true, false, false, false
     },
     // Tchernobog fireball
     {
@@ -1678,8 +1649,6 @@ MissileType missileInfo[] = {
         24,
         (char)-128,
         16,
-        480, 489,
-        false, false, false, true, false, false, false
     },
     // Regular life leech
     {
@@ -1690,8 +1659,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         16,
-        491, 491,
-        true, true, true, true, true, true, true
     },
     // Dropped life leech (enough ammo)
     {
@@ -1702,8 +1669,6 @@ MissileType missileInfo[] = {
         16,
         (char)-128,
         16,
-        520, 520,
-        false, false, false, false, false, true, false
     },
     // Dropped life leech (no ammo)
     {
@@ -1714,8 +1679,6 @@ MissileType missileInfo[] = {
         32,
         (char)-128,
         16,
-        520, 520,
-        false, false, false, false, false, true, false
     }
 };
 
@@ -1735,8 +1698,8 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 256, 128, 64, 0, 0, 128,
-        1
     },
+    
     // Armed Proxy Dynamite
     {
         5,
@@ -1752,7 +1715,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         256, 256, 256, 64, 0, 0, 512,
-        1
     },
     // Armed Remote Dynamite
     {
@@ -1769,7 +1731,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         256, 256, 256, 64, 0, 0, 512,
-        1
     },
     // Vase1
     {
@@ -1786,7 +1747,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 0, 256, 128, 0, 0, 0,
-        0
     },
     // Vase2
     {
@@ -1803,7 +1763,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 256, 256, 128, 0, 0, 0,
-        0
     },
     // Crate face
     {
@@ -1820,7 +1779,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 256, 0, 0, 0,
-        0
     },
     // Glass window
     {
@@ -1837,7 +1795,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 0, 256, 256, 0, 0, 0,
-        0,
     },
     // Flourescent Light
     {
@@ -1854,7 +1811,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 0, 256, 256, 0, 0, 512,
-        0,
     },
     // Wall Crack
     {
@@ -1871,7 +1827,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 256, 0, 0, 0,
-        0,
     },
     // Wood Beam
     {
@@ -1888,7 +1843,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 0, 256, 128, 0, 0, 0,
-        0,
     },
     // Spider's Web
     {
@@ -1905,7 +1859,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 256, 64, 256, 0, 0, 128,
-        0,
     },
     // Metal Grate
     {
@@ -1922,7 +1875,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         64, 0, 128, 256, 0, 0, 0,
-        0,
     },
     // Flammable Tree
     {
@@ -1939,7 +1891,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 256, 0, 256, 0, 0, 128,
-        0,
     },
     // MachineGun Trap
     {
@@ -1956,7 +1907,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 128, 256, 0, 0, 512,
-        0,
     },
     // Falling Rock
     {
@@ -1973,7 +1923,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 0, 0, 0, 0,
-        0,
     },
     // Kickable Pail
     {
@@ -1990,7 +1939,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 0, 0, 0, 0,
-        1,
     },
     // Gib Object
     {
@@ -2007,7 +1955,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 0, 256, 256, 0, 0, 128,
-        0,
     },
     // Explode Object
     {
@@ -2024,7 +1971,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 256, 0, 0, 128,
-        0,
     },
     // Armed stick Of TNT
     {
@@ -2041,7 +1987,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         64, 256, 128, 64, 0, 0, 256,
-        1
     },
     // Armed bundle Of TNT
     {
@@ -2058,7 +2003,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         64, 256, 128, 64, 0, 0, 256,
-        1
     },
     // Armed aerosol
     {
@@ -2075,7 +2019,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         64, 256, 128, 64, 0, 0, 256,
-        1
     },
     // Bone (Flesh Garg.)
     {
@@ -2092,7 +2035,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         0, 0, 0, 0, 0, 0, 0,
-        1
     },
     // Some alpha stuff
     {
@@ -2109,7 +2051,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         256, 0, 256, 256, 0, 0, 0,
-        0,
     },
     // WaterDrip 
     {
@@ -2126,7 +2067,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 0, 0, 0, 0,
-        0
     },
     // BloodDrip 
     {
@@ -2143,7 +2083,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         0, 0, 0, 0, 0, 0, 0,
-        0,
     },
     // Blood chucks1 
     {
@@ -2160,7 +2099,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         128, 64, 256, 256, 0, 0, 256,
-        0,
     },
     // Blood chucks2
     {
@@ -2177,7 +2115,6 @@ THINGINFO thingInfo[] = {
         0,
         0,
         128, 64, 256, 256, 0, 0, 64,
-        0,
     },
     // Axe Zombie Head 
     {
@@ -2194,7 +2131,6 @@ THINGINFO thingInfo[] = {
         40,
         40,
         128, 64, 256, 256, 0, 0, 64,
-        1,
     },
     // Napalm's Alt Fire explosion
     {
@@ -2211,7 +2147,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         0, 0, 0, 0, 0, 0, 0,
-        1,
     },
     // Fire Pod Explosion
     {
@@ -2228,7 +2163,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         256, 0, 256, 256, 0, 0, 0,
-        1,
     },
     // Green Pod Explosion
     {
@@ -2245,7 +2179,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         256, 0, 256, 256, 0, 0, 0,
-        1,
     },
     // Life Leech
     {
@@ -2262,7 +2195,6 @@ THINGINFO thingInfo[] = {
         48,
         48,
         64, 64, 112, 64, 0, 96, 96,
-        1,
     },
     // Voodoo Head
     {
@@ -2279,7 +2211,6 @@ THINGINFO thingInfo[] = {
         16,
         16,
         0, 0, 0, 0, 0, 0, 0,
-        1,
     },
     // 433 - kModernThingTNTProx
     {
@@ -2296,7 +2227,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         256, 256, 256, 64, 0, 0, 512,
-        1
     },
     // 434 - kModernThingThrowableRock
     {
@@ -2313,7 +2243,6 @@ THINGINFO thingInfo[] = {
         32,
         32,
         0, 0, 0, 0, 0, 0, 0,
-        1
     },
     // 435 - kModernThingEnemyLifeLeech
     {
@@ -2330,7 +2259,6 @@ THINGINFO thingInfo[] = {
         48,
         48,
         64, 64, 112, 64, 0, 96, 96,
-        1,
     },
 };
 
@@ -2458,7 +2386,50 @@ struct POSTPONE {
 
 POSTPONE gPost[kMaxSprites];
 
-//static char buffer[120];
+#ifdef NOONE_EXTENSIONS
+VECTORINFO_EXTRA gVectorInfoExtra[] = {
+    1207,1207,      1001,1001,      4001,4002,
+    431,431,        1002,1002,      359,359,
+    521,521,        513,513,        499,499,
+    9012,9014,      1101,1101,      1207,1207,
+    499,495,        495,496,        9013,499,
+    1307,1308,      499,499,        499,499,
+    499,499,        499,499,        351,351,
+    0,0,            357,499
+};
+
+MISSILEINFO_EXTRA gMissileInfoExtra[] = {
+    1207, 1207, false, false, false, false, false, true, false,
+    420, 420,   false, true, true, false, false, false, false,
+    471, 471,   false, false, false, false, false, false, true,
+    421, 421,   false, true, false, true, false, false, false,
+    1309, 351,  false, true, false, false, false, false, false,
+    480, 480,   false, true, false, true, false, false, false,
+    470, 470,   false, false, false, false, false, false, true,
+    489, 490,   false, false, false, false, false, true, false,
+    462, 351,   false, true, false, false, false, false, false,
+    1203, 172,  false, false, true, false, false, false, false,
+    0,0,        false, false, true, false, false, false, false,
+    1457, 249,  false, false, false, false, false, true, false,
+    480, 489,   false, true, false, true, false, false, false,
+    480, 489,   false, false, false, true, false, false, false,
+    480, 489,   false, false, false, true, false, false, false,
+    491, 491,   true, true, true, true, true, true, true,
+    520, 520,   false, false, false, false, false, true, false,
+    520, 520,   false, false, false, false, false, true, false
+};
+
+THINGINFO_EXTRA gThingInfoExtra[] = {
+    true,   true,   true,   false,  false,
+    false,  false,  false,  false,  false,
+    false,  false,  false,  false,  false,
+    true,   false,  false,  true,   true,
+    true,   true,   false,  false,  false,
+    false,  false,  true,   true,   true,
+    true,   true,   true,   true,   true,
+    true,
+};
+#endif
 
 bool IsItemSprite(spritetype *pSprite)
 {
@@ -2541,20 +2512,23 @@ int DudeDifficulty[5] = {
     512, 384, 256, 208, 160
 };
 
-SPRITEMASS gSpriteMass[]; // by NoOne: cache for getSpriteMassBySize();
+#ifdef NOONE_EXTENSIONS
+SPRITEMASS gSpriteMass[]; // cache for getSpriteMassBySize();
 
-short gProxySpritesList[]; // by NoOne: list of additional sprites which can be triggered by Proximity
+short gProxySpritesList[]; // list of additional sprites which can be triggered by Proximity
 short gProxySpritesCount; // current count
 
-short gSightSpritesList[]; // by NoOne: list of additional sprites which can be triggered by Sight
+short gSightSpritesList[]; // list of additional sprites which can be triggered by Sight
 short gSightSpritesCount; // current count
 
-short gPhysSpritesList[];  // by NoOne: list of additional sprites which can be affected by physics
+short gPhysSpritesList[];  // list of additional sprites which can be affected by physics
 short gPhysSpritesCount; // current count
+#endif
 
 void actInit(bool bSaveLoad) {
     
-    // by NoOne: init code for all my stuff
+    #ifdef NOONE_EXTENSIONS
+    // init code for all my stuff
     if (gModernMap) {
 
         // reset counters
@@ -2658,6 +2632,7 @@ void actInit(bool bSaveLoad) {
             }
         }
     }
+    #endif
     
     for (int nSprite = headspritestat[kStatItem]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
         switch (sprite[nSprite].type) {
@@ -2685,10 +2660,13 @@ void actInit(bool bSaveLoad) {
         
         int nType = pSprite->type - kThingBase;
         pXSprite->health = thingInfo[nType].startHealth << 4;
-        // by NoOne: allow level designer to set custom clipdist.
-        // this is especially useful for various Gib and Explode objects which have clipdist 1 for some reason predefined,
-        // but what if it have voxel model...?
-        if (!gModernMap) pSprite->clipdist = thingInfo[nType].clipdist;
+        #ifdef NOONE_EXTENSIONS
+            // allow level designer to set custom clipdist.
+            // this is especially useful for various Gib and Explode objects which have clipdist 1 for some reason predefined,
+            // but what if it have voxel model...?
+            if (!gModernMap)
+        #endif
+            pSprite->clipdist = thingInfo[nType].clipdist;
         
         pSprite->flags = thingInfo[nType].flags;
         if (pSprite->flags & kPhysGravity) pSprite->flags |= kPhysFalling;
@@ -2697,7 +2675,9 @@ void actInit(bool bSaveLoad) {
         switch (pSprite->type) {
             case kThingArmedProxBomb:
             case kTrapMachinegun:
+            #ifdef NOONE_EXTENSIONS
             case kModernThingTNTProx:
+            #endif
                 pXSprite->state = 0;
                 break;
             case kThingBloodChunks: {
@@ -2748,28 +2728,38 @@ void actInit(bool bSaveLoad) {
             
             int nType = pSprite->type - kDudeBase; int seqStartId = dudeInfo[nType].seqStartID;
             if (!IsPlayerSprite(pSprite)) {
-                switch (pSprite->type) {
-                    case kDudeModernCustom:
-                    case kDudeModernCustomBurning:
-                        pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
-                        seqStartId = genDudeSeqStartId(pXSprite); // by NoOne: Custom Dude stores it's SEQ in data2
-                        pXSprite->sysData1 = pXSprite->data3; // by NoOne move sndStartId to sysData1, because data3 used by the game;
-                        pXSprite->data3 = 0;
-                        break;
-                    case kDudePodMother:  // by NoOne: FakeDude type (no seq, custom flags, clipdist and cstat)
-                        if (gModernMap) break;
-                        fallthrough__;
-                    default:
-                        pSprite->clipdist = dudeInfo[nType].clipdist;
-                        pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
-                        break;
-                }
+                #ifdef NOONE_EXTENSIONS
+                    switch (pSprite->type) {
+                        case kDudeModernCustom:
+                        case kDudeModernCustomBurning:
+                            pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
+                            seqStartId = genDudeSeqStartId(pXSprite); //  Custom Dude stores it's SEQ in data2
+                            pXSprite->sysData1 = pXSprite->data3; // move sndStartId to sysData1, because data3 used by the game;
+                            pXSprite->data3 = 0;
+                            break;
+                        case kDudePodMother:  // FakeDude type (no seq, custom flags, clipdist and cstat)
+                            if (gModernMap) break;
+                            fallthrough__;
+                        default:
+                            pSprite->clipdist = dudeInfo[nType].clipdist;
+                            pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
+                            break;
+                    }
+                #else
+                    pSprite->clipdist = dudeInfo[nType].clipdist;
+                    pSprite->cstat |= 4096 + CSTAT_SPRITE_BLOCK_HITSCAN + CSTAT_SPRITE_BLOCK;
+                #endif
 
                 xvel[nSprite] = yvel[nSprite] = zvel[nSprite] = 0;
                 
-                // By NoOne: add a way to set custom hp for every enemy - should work only if map just started and not loaded.
-                if (!gModernMap || pXSprite->data4 <= 0) pXSprite->health = dudeInfo[nType].startHealth << 4;
-                else pXSprite->health = ClipRange(pXSprite->data4 << 4, 1, 65535);
+                #ifdef NOONE_EXTENSIONS
+                    // add a way to set custom hp for every enemy - should work only if map just started and not loaded.
+                    if (!gModernMap || pXSprite->data4 <= 0) pXSprite->health = dudeInfo[nType].startHealth << 4;
+                    else pXSprite->health = ClipRange(pXSprite->data4 << 4, 1, 65535);
+                #else
+                    pXSprite->health = dudeInfo[nType].startHealth << 4;
+                #endif
+                    
             }
 
             if (gSysRes.Lookup(seqStartId, "SEQ")) seqSpawn(seqStartId, 3, pSprite->extra);
@@ -2793,12 +2783,14 @@ void ConcussSprite(int a1, spritetype *pSprite, int x, int y, int z, int a6)
         if (IsDudeSprite(pSprite)) {
 
             mass = dudeInfo[pSprite->type - kDudeBase].mass;
-            switch (pSprite->type) {
-            case kDudeModernCustom:
-            case kDudeModernCustomBurning:
-                mass = getSpriteMassBySize(pSprite);
-                break;
-            }
+            #ifdef NOONE_EXTENSIONS
+                switch (pSprite->type) {
+                case kDudeModernCustom:
+                case kDudeModernCustomBurning:
+                    mass = getSpriteMassBySize(pSprite);
+                    break;
+                }
+            #endif
 
         } else if (pSprite->type >= kThingBase && pSprite->type < kThingMax) {
             mass = thingInfo[pSprite->type - kThingBase].mass;
@@ -3109,6 +3101,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
     
     switch (pSprite->type) {
+    #ifdef NOONE_EXTENSIONS
     case kDudeModernCustom: {
         
         GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
@@ -3188,6 +3181,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         }
         break;
     }
+    #endif
     case kDudeCerberusTwoHead: // Cerberus
         seqSpawn(dudeInfo[nType].seqStartID+1, 3, nXSprite, -1);
         return;
@@ -3281,6 +3275,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
     case DAMAGE_TYPE_3:
         nSeq = 2;
         switch (pSprite->type) {
+            #ifdef NOONE_EXTENSIONS
             case kDudeModernCustom:
             case kDudeModernCustomBurning: {
                 playGenDudeSound(pSprite, kGenDudeSndDeathExplode);
@@ -3290,6 +3285,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
                 }
                 break;
             }
+            #endif
             case kDudeCultistTommy:
             case kDudeCultistShotgun:
             case kDudeCultistTommyProne:
@@ -3406,6 +3402,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         else
             seqSpawn(dudeInfo[nType].seqStartID+15, 3, nXSprite, nDudeToGibClient2);
         break;
+#ifdef NOONE_EXTENSIONS
     case kDudeModernCustom:
         playGenDudeSound(pSprite, kGenDudeSndDeathNormal);
         if (nSeq == 3) {
@@ -3443,6 +3440,7 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         else seqSpawn(1 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
         break;
     }
+#endif
     case kDudeBurningZombieAxe:
         if (Chance(0x8000) && nSeq == 3)
             sfxPlay3DSound(pSprite, 1109, -1, 0);
@@ -3693,8 +3691,10 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
             }
 
             int nType = pSprite->type - kDudeBase; int nDamageFactor = dudeInfo[nType].at70[damageType];
+            #ifdef NOONE_EXTENSIONS
             if (pSprite->type == kDudeModernCustom)
                 nDamageFactor = gGenDudeExtra[pSprite->index].dmgControl[damageType];
+            #endif
 
             if (!nDamageFactor) return 0;
             else if (nDamageFactor != 256)
@@ -3728,14 +3728,19 @@ int actDamageSprite(int nSource, spritetype *pSprite, DAMAGE_TYPE damageType, in
         if (pXSprite->health <= 0) {
             switch (pSprite->type) {
                 case kThingDroppedLifeLeech:
+                #ifdef NOONE_EXTENSIONS
                 case kModernThingEnemyLifeLeech:
+                #endif
                     GibSprite(pSprite, GIBTYPE_14, NULL, NULL);
                     pXSprite->data1 = pXSprite->data2 =  pXSprite->data3 = pXSprite->DudeLockout = 0;
                     pXSprite->stateTimer =  pXSprite->data4 = pXSprite->isTriggered = 0;
 
+                    #ifdef NOONE_EXTENSIONS
                     if (pSprite->owner >= 0 && sprite[pSprite->owner].type == kDudeModernCustom)
-                        sprite[pSprite->owner].owner = kMaxSprites - 1; // By NoOne: indicates if custom dude had life leech.
+                        sprite[pSprite->owner].owner = kMaxSprites - 1; // indicates if custom dude had life leech.
+                    #endif
                     break;
+
                 default:
                     if (!(pSprite->flags & kHitagRespawn))
                         actPropagateSpriteOwner(pSprite, &sprite[nSource]);
@@ -4227,7 +4232,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                     xvel[pSprite2->index] += mulscale(4, pSprite2->x-sprite[nSprite].x, 2);
                     yvel[pSprite2->index] += mulscale(4, pSprite2->y-sprite[nSprite].y, 2);
                     
-                    // by NoOne: add size shroom abilities
+                    #ifdef NOONE_EXTENSIONS
+                    // add size shroom abilities
                     if ((IsPlayerSprite(pSprite) && isShrinked(pSprite)) || (IsPlayerSprite(pSprite2) && isGrown(pSprite2))) {
 
                         int mass1 = dudeInfo[pSprite2->type - kDudeBase].mass;
@@ -4249,12 +4255,13 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                             }
                         }
                     }
-                    
+                    #endif
                     if (!IsPlayerSprite(pSprite) || gPlayer[pSprite->type - kDudePlayer1].godMode == 0) {
                         switch (pSprite2->type) {
                             case kDudeTchernobog:
                                 actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_3, pXSprite->health << 2);
                                 break;
+                            #ifdef NOONE_EXTENSIONS
                             case kDudeModernCustom:
                             case kDudeModernCustomBurning:
                                 int dmg = 0;
@@ -4269,6 +4276,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                                 else if (powerupCheck(&gPlayer[pSprite->type - kDudePlayer1], kPwUpJumpBoots) > 0) actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_3, dmg);
                                 else actDamageSprite(pSprite2->index, pSprite, DAMAGE_TYPE_0, dmg);
                                 break;
+                            #endif
 
                         }
                             
@@ -4299,7 +4307,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             spritetype *pSprite2 = &sprite[nHitSprite];
             //XSPRITE *pXSprite2 = &Xsprite[pSprite2->extra];
             
-            // by NoOne: add size shroom abilities
+            #ifdef NOONE_EXTENSIONS
+            // add size shroom abilities
             if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite))) {
                 if (xvel[pSprite->xvel] != 0 && IsDudeSprite(pSprite2)) {
                     int mass1 = dudeInfo[pSprite->type - kDudeBase].mass;
@@ -4319,25 +4328,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                     }
                 }
             }
-
-            /*switch (pSprite->type) {
-                case kDudeModernCustom:
-                case kDudeModernCustomBurning:
-                {
-                    if (IsDudeSprite(pSprite2) && !IsPlayerSprite(pSprite2)) {
-                        int mass1 = getSpriteMassBySize(pSprite);
-                        int mass2 = getSpriteMassBySize(pSprite2);
-
-                        if ((mass1 - mass2) >= mass2) {
-                            if ((pXSprite->target == pSprite2->xvel && !dudeIsMelee(pXSprite) && Chance(0x0500)) || pXSprite->target != pSprite2->xvel) 
-                                actKickObject(pSprite, pSprite2);
-                            if (pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
-                                aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
-                        }
-                    }
-                    break;
-                }
-            }*/
+            #endif
             
             switch (pSprite2->type) {
                 case kThingKickablePail:
@@ -4373,7 +4364,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             spritetype *pSprite2 = &sprite[nHitSprite];
             XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
             
-            // by NoOne: add size shroom abilities
+            #ifdef NOONE_EXTENSIONS
+            // add size shroom abilities
             if ((IsPlayerSprite(pSprite2) && isShrinked(pSprite2)) || (IsPlayerSprite(pSprite) && isGrown(pSprite))) {
                 
                 int mass1 = dudeInfo[pSprite->type - kDudeBase].mass;
@@ -4393,26 +4385,8 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
                         actDamageSprite(nSprite, pSprite2, (Chance(0x2000)) ? DAMAGE_TYPE_0 : DAMAGE_TYPE_2, dmg);
                 }
             }
+            #endif
 
-            /*switch (pSprite->type) {
-                case kDudeModernCustom:
-                case kDudeModernCustomBurning:
-                {
-                    if (IsDudeSprite(pSprite2) && !IsPlayerSprite(pSprite2)) {
-                        int mass1 = getSpriteMassBySize(pSprite);
-                        int mass2 = getSpriteMassBySize(pSprite2);
-
-                        if ((mass1 - mass2) >= mass2) {
-                            if (Chance((pXSprite->target == pSprite2->xvel) ? 0x0500 : 0x1000)) actKickObject(pSprite, pSprite2);
-                            if (pSprite2->extra >= 0 && !isActive(pSprite2->xvel))
-                                aiActivateDude(pSprite2, &xsprite[pSprite2->extra]);
-                        }
-                    }
-                    break;
-                }
-            }*/
-
-            
             switch (pSprite2->type) {
             case kThingKickablePail:
                 if (pPlayer) {
@@ -4473,15 +4447,20 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
             case kDudePlayer6:
             case kDudePlayer7:
             case kDudePlayer8:
+            #ifdef NOONE_EXTENSIONS
                 if (pPlayer && !isShrinked(pSprite))
-                    actDamageSprite(nSprite, pSprite2,DAMAGE_TYPE_2, 8);
+            #else
+                if (pPlayer)
+            #endif
+                actDamageSprite(nSprite, pSprite2,DAMAGE_TYPE_2, 8);
                 break;
             }
         }
         break;
     }
 
-    // by NoOne: add more trigger statements for Touch flag
+    #ifdef NOONE_EXTENSIONS
+    // add more trigger statements for Touch flag
     if (gModernMap && IsDudeSprite(pSprite)) {
         
         // Touch sprites
@@ -4514,6 +4493,7 @@ void ProcessTouchObjects(spritetype *pSprite, int nXSprite)
         if (nHWall != -1 || nHSprite != -1) xvel[nSprite] += 5;
 
     }
+    #endif
 }
 
 void actAirDrag(spritetype *pSprite, int a2)
@@ -4791,9 +4771,13 @@ void MoveDude(spritetype *pSprite)
                 actImpactMissile(pHitSprite, 3);
                 gHitInfo = hitInfo;
             }
-
+            #ifdef NOONE_EXTENSIONS
             if (!gModernMap && pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
                 trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+            #else
+                if (pHitXSprite && pHitXSprite->Touch && !pHitXSprite->state && !pHitXSprite->isTriggered)
+                    trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpriteTouch);
+            #endif
 
             if (pDudeInfo->lockOut && pHitXSprite && pHitXSprite->Push && !pHitXSprite->key && !pHitXSprite->DudeLockout && !pHitXSprite->state && !pHitXSprite->busy && !pPlayer)
                 trTriggerSprite(nHitSprite, pHitXSprite, kCmdSpritePush);
@@ -4966,19 +4950,26 @@ void MoveDude(spritetype *pSprite)
                 }
             }
             break;
-        // By NoOne: part of "change of global view palette for stacks" feature
         case kMarkerUpWater:
         case kMarkerUpGoo:
         {
-            pXSprite->medium = (nLink == kMarkerUpGoo ? kMediumGoo : kMediumWater);
+            int chance = 0xa00; int medium = kMediumWater;
+            if (nLink == kMarkerUpGoo){
+                medium = kMediumGoo;
+                chance = 0x400;
+            }
+
+            pXSprite->medium = medium;
 
             if (pPlayer)
             {
+                #ifdef NOONE_EXTENSIONS
                 // look for palette in data2 of marker. If value <= 0, use default ones.
                 pPlayer->nWaterPal = 0;
                 int nXUpper = sprite[gUpperLink[nSector]].extra;
                 if (nXUpper >= 0)
                     pPlayer->nWaterPal = xsprite[nXUpper].data2;
+                #endif
 
                 pPlayer->posture = 1;
                 pXSprite->burnTime = 0;
@@ -4998,8 +4989,7 @@ void MoveDude(spritetype *pSprite)
                     break;
                 case kDudeBurningCultist:
                 {
-                    // There is no difference between water and goo except following chance:
-                    if (Chance(nLink == kMarkerUpGoo ? 0x400 : 0xa00))
+                    if (Chance(chance))
                     {
                         pSprite->type = kDudeCultistTommy;
                         pXSprite->burnTime = 0;
@@ -5047,11 +5037,14 @@ void MoveDude(spritetype *pSprite)
                 case kDudeBurningInnocent:
                     actKillDude(pSprite->index, pSprite, DAMAGE_TYPE_0, 1000 << 4);
                     break;
+                #ifdef NOONE_EXTENSIONS
                 case kDudeModernCustom:
                     evPost(nSprite, 3, 0, kCallbackEnemeyBubble);
                     if (!canSwim(pSprite)) actKillDude(pSprite->index, pSprite, DAMAGE_TYPE_0, 1000 << 4);
                     break;
+                #endif
                 }
+
             }
             break;
         }
@@ -5459,7 +5452,9 @@ void actExplodeSprite(spritetype *pSprite)
     case kThingArmedProxBomb:
     case kThingArmedRemoteBomb:
     case kThingArmedTNTBundle:
+    #ifdef NOONE_EXTENSIONS
     case kModernThingTNTProx:
+    #endif
         nType = kExplosionStandard;
         if (gSpriteHit[nXSprite].florhit == 0)
             seqSpawn(4,3,nXSprite,-1);
@@ -5494,11 +5489,13 @@ void actExplodeSprite(spritetype *pSprite)
         pSprite = pSprite2;
         break;
     }
-    case kTrapExploder:	// By NoOne: allow to customize hidden exploder trap
+    case kTrapExploder:	
 	{
 		// Defaults for exploder
 		nType = 1; int nSnd = 304; int nSeq = 4;
 
+        #ifdef NOONE_EXTENSIONS
+        // By NoOne: allow to customize hidden exploder trap
         if (gModernMap) {
             // Temp variables for override via data fields
             int tSnd = 0; int tSeq = 0;
@@ -5521,6 +5518,7 @@ void actExplodeSprite(spritetype *pSprite)
             if (tSeq > 0) nSeq = tSeq;
             if (tSnd > 0) nSnd = tSnd;
         }
+        #endif
 		
         if (gSysRes.Lookup(nSeq, "SEQ"))
 		    seqSpawn(nSeq, 3, nXSprite, -1);
@@ -5596,10 +5594,10 @@ void actProcessSprites(void)
 {
     int nSprite;
     int nNextSprite;
-    
+    #ifdef NOONE_EXTENSIONS
     if (gModernMap) {
 
-        // by NoOne: process additional proximity sprites
+        // process additional proximity sprites
         if (gProxySpritesCount > 0) {
             for (int i = 0; i < gProxySpritesCount; i++) {
                 if (sprite[gProxySpritesList[i]].extra < 0) continue;
@@ -5636,7 +5634,7 @@ void actProcessSprites(void)
             }
         }
 
-        // by NoOne: process sight sprites (for players only)
+        // process sight sprites (for players only)
         if (gSightSpritesCount > 0) {
             for (int i = 0; i < gSightSpritesCount; i++) {
                 if (sprite[gSightSpritesList[i]].extra < 0) continue;
@@ -5659,7 +5657,7 @@ void actProcessSprites(void)
             }
         }
 
-        // by NoOne: process Debris sprites for movement
+        // process Debris sprites for movement
         if (gPhysSpritesCount > 0) {
             //viewSetSystemMessage("PHYS COUNT: %d", gPhysSpritesCount);
             for (int i = 0; i < gPhysSpritesCount; i++) {
@@ -5719,6 +5717,7 @@ void actProcessSprites(void)
             }
         }
     }
+    #endif
 
     for (nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite])
     {
@@ -5744,9 +5743,11 @@ void actProcessSprites(void)
             }
                                        
             if (pXSprite->Proximity) {
-                // by NoOne: don't process locked or 1-shot things for proximity
+                #ifdef NOONE_EXTENSIONS
+                // don't process locked or 1-shot things for proximity
                 if (gModernMap && (pXSprite->locked || pXSprite->isTriggered)) 
                     continue;
+                #endif
                 
                 if (pSprite->type == kThingDroppedLifeLeech) pXSprite->target = -1;
                 for (int nSprite2 = headspritestat[kStatDude]; nSprite2 >= 0; nSprite2 = nNextSprite)
@@ -5759,13 +5760,18 @@ void actProcessSprites(void)
                     XSPRITE *pXSprite2 = &xsprite[pSprite2->extra];
                     if ((unsigned int)pXSprite2->health > 0) {
                    
-                        // by NoOne: allow dudeLockout for proximity flag
+                        #ifdef NOONE_EXTENSIONS
+                        // allow dudeLockout for proximity flag
                         if (gModernMap && pSprite->type != kThingDroppedLifeLeech && pXSprite->DudeLockout && !IsPlayerSprite(pSprite2))
                             continue;
+                        #endif
 
                         int proxyDist = 96;
+                        #ifdef NOONE_EXTENSIONS
                         if (pSprite->type == kModernThingEnemyLifeLeech) proxyDist = 512;
-                        else if (pSprite->type == kThingDroppedLifeLeech && pXSprite->target == -1)  {
+                        else 
+                        #endif
+                            if (pSprite->type == kThingDroppedLifeLeech && pXSprite->target == -1)  {
                             int nOwner = actOwnerIdToSpriteId(pSprite->owner);
                             spritetype *pOwner = &sprite[nOwner];
                             PLAYER *pPlayer = &gPlayer[pOwner->type - kDudePlayer1];
@@ -5784,18 +5790,20 @@ void actProcessSprites(void)
                         if (CheckProximity(pSprite2, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum, proxyDist)) {
 
                             switch (pSprite->type) {
-                                case kModernThingTNTProx:
-                                    if (!IsPlayerSprite(pSprite2)) continue;
-                                    pSprite->pal = 0;
-                                    break;
                                 case kThingDroppedLifeLeech:
                                     if (!Chance(0x4000) && nNextSprite >= 0) continue;
                                     if (pSprite2->cstat & CLIPMASK0) pXSprite->target = pSprite2->index;
                                     else continue;
                                     break;
+                                #ifdef NOONE_EXTENSIONS
+                                case kModernThingTNTProx:
+                                    if (!IsPlayerSprite(pSprite2)) continue;
+                                    pSprite->pal = 0;
+                                    break;
                                 case kModernThingEnemyLifeLeech:
                                     if (pXSprite->target != pSprite2->xvel) continue;
                                     break;
+                                #endif
                             }
                             if (pSprite->owner == -1) actPropagateSpriteOwner(pSprite, pSprite2);
                             trTriggerSprite(nSprite, pXSprite, kCmdSpriteProximity);
@@ -5880,6 +5888,7 @@ void actProcessSprites(void)
                         case kThingDripBlood:
                             MakeSplash(pSprite, pXSprite);
                             break;
+                        #ifdef NOONE_EXTENSIONS
                         case kModernThingThrowableRock:
                             seqSpawn(24, 3, nXSprite, -1);
                             if ((hit & 0xc000) == 0xc000)
@@ -5892,6 +5901,7 @@ void actProcessSprites(void)
                                 actDamageSprite(actSpriteOwnerToSpriteId(pSprite), pObject, DAMAGE_TYPE_0, pXSprite->data1);
                             }
                             break;
+                        #endif
                         case kThingBone:
                             seqSpawn(24, 3, nXSprite, -1);
                             if ((hit&0xc000) == 0xc000)
@@ -5968,10 +5978,12 @@ void actProcessSprites(void)
         gAffectedXWalls[0] = -1;
         int radius = pExplodeInfo->radius;
 
-        // By NoOne: Allow to override explosion radius by data4 field of any sprite which have statnum 2 set in editor
+        #ifdef NOONE_EXTENSIONS
+        // Allow to override explosion radius by data4 field of any sprite which have statnum 2 set in editor
         // or of Hidden Exploder.
         if (gModernMap && pXSprite->data4 > 0)
             radius = pXSprite->data4;
+        #endif
         
         GetClosestSpriteSectors(nSector, x, y, radius, gAffectedSectors, v24c, gAffectedXWalls);
         
@@ -6041,7 +6053,8 @@ void actProcessSprites(void)
             }
         }
         
-        // by NoOne: add impulse for sprites from physics list
+        #ifdef NOONE_EXTENSIONS
+        // add impulse for sprites from physics list
         if (gPhysSpritesCount > 0 && pExplodeInfo->dmgType != 0 && pXSprite->data1 != 0) {
             for (int i = 0; i < gPhysSpritesCount; i++) {
                 if (gPhysSpritesList[i] == -1) continue;
@@ -6054,7 +6067,7 @@ void actProcessSprites(void)
                 else debrisConcuss(nOwner, i, x, y, z, pExplodeInfo->dmgType);
             }
         }
-
+        #endif
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             spritetype *pSprite2 = gPlayer[p].pSprite;
@@ -6065,15 +6078,19 @@ void actProcessSprites(void)
             int t = divscale16(pXSprite->data2, nDist);
             gPlayer[p].flickerEffect += t;
         }
-        
-        // By NoOne: if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
-	    // via sprite statnum 2.
-
+        #ifdef NOONE_EXTENSIONS
         if (!gModernMap || !(pSprite->flags & kModernTypeFlag1)) {
+            // if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
+            // via sprite statnum 2.
             pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
             pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
             pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
         }
+        #else
+        pXSprite->data1 = ClipLow(pXSprite->data1 - 4, 0);
+        pXSprite->data2 = ClipLow(pXSprite->data2 - 4, 0);
+        pXSprite->data3 = ClipLow(pXSprite->data3 - 4, 0);
+        #endif
 
         if (pXSprite->data1 == 0 && pXSprite->data2 == 0 && pXSprite->data3 == 0 && seqGetStatus(3, nXSprite) < 0)
             actPostSprite(nSprite, kStatFree);
@@ -6146,7 +6163,8 @@ void actProcessSprites(void)
                 }
             }
 
-            // By NoOne: handle incarnations of custom dude
+            #ifdef NOONE_EXTENSIONS
+            // handle incarnations of custom dude
             if (pSprite->type == kDudeModernCustom && pXSprite->txID > 0 && pXSprite->sysData1 == kGenDudeTransformStatus) {
                 xvel[pSprite->index] = yvel[pSprite->index] =  0;
                 if (seqGetStatus(3, nXSprite) < 0) {
@@ -6256,7 +6274,7 @@ void actProcessSprites(void)
                     }
                 }
             }
-
+            #endif
             if (pSprite->type == kDudeCerberusTwoHead)
             {
                 if (pXSprite->health <= 0 && seqGetStatus(3, nXSprite) < 0)
@@ -6474,7 +6492,8 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
     if (gSysRes.Lookup(dudeInfo[nDude].seqStartID, "SEQ"))
         seqSpawn(dudeInfo[nDude].seqStartID, 3, pSprite2->extra, -1);
     
-    // By NoOne: add a way to inherit some values of spawner type 18 by dude.
+    #ifdef NOONE_EXTENSIONS
+    // add a way to inherit some values of spawner type 18 by dude.
     // This way designer can count enemies via switches and do many other interesting things.
     if (gModernMap && pSource->flags & kModernTypeFlag1) {
         switch (pSource->type) { // allow inheriting only for selected source types
@@ -6499,6 +6518,7 @@ spritetype *actSpawnDude(spritetype *pSource, short nType, int a3, int a4)
                 break;
         }
     }
+    #endif
 
     aiInitSprite(pSprite2);
     return pSprite2;
@@ -6567,7 +6587,9 @@ spritetype * actSpawnThing(int nSector, int x, int y, int z, int nThingType)
         pXThing->isTriggered = 0;
         break;
     case kThingDroppedLifeLeech:
+    #ifdef NOONE_EXTENSIONS
     case kModernThingEnemyLifeLeech:
+    #endif
         pXThing->data1 = 0;
         pXThing->data2 = 0;
         pXThing->data3 = 0;
@@ -7002,6 +7024,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
             {
                 int t = pSprite->type == kThingBloodChunks ? 0 : dudeInfo[pSprite->type-kDudeBase].mass;
                 
+                #ifdef NOONE_EXTENSIONS
                 if (IsDudeSprite(pSprite)) {
                     switch (pSprite->type) {
                         case kDudeModernCustom:
@@ -7010,6 +7033,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                             break;
                     }
                 }
+                #endif
 
                 if (t > 0 && pVectorData->impulse)
                 {
@@ -7065,8 +7089,8 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                     if (Chance(pVectorData->splatChance))
                         fxSpawnBlood(pSprite, pVectorData->dmg<<4);
             }
-
-            // by NoOne: add impulse for sprites from physics list
+            #ifdef NOONE_EXTENSIONS
+            // add impulse for sprites from physics list
             if (gPhysSpritesCount > 0 && pVectorData->impulse) {
                 int nIndex = isDebris(pSprite->index);
                 if (nIndex != -1 && (xsprite[pSprite->extra].physAttr & kPhysDebrisVector)) {
@@ -7085,7 +7109,7 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                         //actPostSprite(pSprite->index, kStatThing); // if it was a thing, return it's statnum back
                 }
             }
-
+            #endif
             break;
         }
         }
@@ -7315,7 +7339,8 @@ void ActorLoadSaveConstruct(void)
 }
 
 
-// By NoOne: The following functions required for random event features
+#ifdef NOONE_EXTENSIONS
+// The following functions required for random event features
 //-------------------------
 int GetDataVal(spritetype* pSprite, int data) {
     if (pSprite->extra >= 0) {
@@ -7422,9 +7447,9 @@ spritetype* spawnRandomDude(spritetype* pSource) {
 }
 //-------------------------
 
-// By NoOne: this function plays sound predefined in missile info
+// this function plays sound predefined in missile info
 bool sfxPlayMissileSound(spritetype* pSprite, int missileId) {
-    MissileType* pMissType = &missileInfo[missileId - kMissileBase];
+    MISSILEINFO_EXTRA* pMissType = &gMissileInfoExtra[missileId - kMissileBase];
     if (Chance(0x4000))
         sfxPlay3DSound(pSprite, pMissType->fireSound[0], -1, 0);
     else
@@ -7433,9 +7458,9 @@ bool sfxPlayMissileSound(spritetype* pSprite, int missileId) {
     return true;
 }
 
-// By NoOne: this function plays sound predefined in vector info
+// this function plays sound predefined in vector info
 bool sfxPlayVectorSound(spritetype* pSprite, int vectorId) {
-    VECTORDATA* pVectorData = &gVectorData[vectorId];
+    VECTORINFO_EXTRA* pVectorData = &gVectorInfoExtra[vectorId];
     if (Chance(0x4000))
         sfxPlay3DSound(pSprite, pVectorData->fireSound[0], -1, 0);
     else
@@ -7444,7 +7469,7 @@ bool sfxPlayVectorSound(spritetype* pSprite, int vectorId) {
     return true;
 }
 
-// By NoOne: this function allows to spawn new custom dude and inherit spawner settings,
+// this function allows to spawn new custom dude and inherit spawner settings,
 // so custom dude can have different weapons, hp and so on...
 spritetype* actSpawnCustomDude(spritetype* pSprite, int nDist) {
 
@@ -7871,6 +7896,7 @@ bool ceilIsTooLow(spritetype* pSprite) {
     return false;
 }
 
+
 bool isImmune(spritetype* pSprite, int dmgType, int minScale) {
 
     if (dmgType >= kDmgFall && dmgType < kDmgMax && pSprite->extra >= 0 && xsprite[pSprite->extra].locked != 1) {
@@ -7885,6 +7911,7 @@ bool isImmune(spritetype* pSprite, int dmgType, int minScale) {
 
     return true;
 }
+#endif
 
 #ifdef POLYMER
 
