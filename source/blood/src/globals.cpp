@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common_game.h"
 #include "globals.h"
 #include "resource.h"
+#include "renderlayer.h"
 
 
 ud_setup_t gSetup;
@@ -60,9 +61,11 @@ void _ThrowError(const char *pzFormat, ...)
     vsprintf(buffer, pzFormat, args);
     initprintf("%s(%i): %s\n", _module, _line, buffer);
 
+#ifdef WM_MSGBOX_WINDOW
     char titlebuf[256];
     Bsprintf(titlebuf, APPNAME " %s", s_buildRev);
     wm_msgbox(titlebuf, "%s(%i): %s\n", _module, _line, buffer);
+#endif
 
     Bfflush(NULL);
     QuitGame();
@@ -85,9 +88,11 @@ void __dassert(const char * pzExpr, const char * pzFile, int nLine)
 {
     initprintf("Assertion failed: %s in file %s at line %i\n", pzExpr, pzFile, nLine);
 
+#ifdef WM_MSGBOX_WINDOW
     char titlebuf[256];
     Bsprintf(titlebuf, APPNAME " %s", s_buildRev);
     wm_msgbox(titlebuf, "Assertion failed: %s in file %s at line %i\n", pzExpr, pzFile, nLine);
+#endif
 
     Bfflush(NULL);
     exit(0);
