@@ -453,7 +453,7 @@ int A_GetClipdist(int spriteNum, int clipDist)
             if (pSprite->xrepeat > 60)
                 clipDist = 1024;
 #ifndef EDUKE32_STANDALONE
-            else if (pSprite->picnum == LIZMAN)
+            else if (!FURY && pSprite->picnum == LIZMAN)
                 clipDist = 292;
 #endif
             else if (A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY))
@@ -483,7 +483,7 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const * const change, uin
     Bassert(pSprite->sectnum < MAXSECTORS);
 
 #ifndef EDUKE32_STANDALONE
-    if (pSprite->statnum == STAT_MISC || (isEnemy && pSprite->xrepeat < 4))
+    if (!FURY && (pSprite->statnum == STAT_MISC || (isEnemy && pSprite->xrepeat < 4)))
     {
         pSprite->x += change->x;
         pSprite->y += change->y;
@@ -532,9 +532,9 @@ int32_t A_MoveSpriteClipdist(int32_t spriteNum, vec3_t const * const change, uin
         if (newSectnum < 0 || ((actor[spriteNum].stayput >= 0 && actor[spriteNum].stayput != newSectnum)
                 || ((g_tile[pSprite->picnum].flags & SFLAG_NOWATERSECTOR) && sector[newSectnum].lotag == ST_1_ABOVE_WATER)
 #ifndef EDUKE32_STANDALONE
-                || (pSprite->picnum == BOSS2 && pSprite->pal == 0 && sector[newSectnum].lotag != ST_3)
-                || ((pSprite->picnum == BOSS1 || pSprite->picnum == BOSS2) && sector[newSectnum].lotag == ST_1_ABOVE_WATER)
-                || (sector[oldSectnum].lotag != ST_1_ABOVE_WATER && sector[newSectnum].lotag == ST_1_ABOVE_WATER
+                || (!FURY && pSprite->picnum == BOSS2 && pSprite->pal == 0 && sector[newSectnum].lotag != ST_3)
+                || (!FURY && (pSprite->picnum == BOSS1 || pSprite->picnum == BOSS2) && sector[newSectnum].lotag == ST_1_ABOVE_WATER)
+                || (!FURY && sector[oldSectnum].lotag != ST_1_ABOVE_WATER && sector[newSectnum].lotag == ST_1_ABOVE_WATER
                     && (pSprite->picnum == LIZMAN || (pSprite->picnum == LIZTROOP && pSprite->zvel == 0)))
 #endif
                 ))
@@ -1042,15 +1042,19 @@ ACTOR_STATIC void G_MoveZombieActors(void)
                             case NUKEBARRELDENTED__STATIC:
                             case NUKEBARRELLEAKED__STATIC:
                             case TRIPBOMB__STATIC:
-                                pSprite->shade = ((sector[pSprite->sectnum].ceilingstat & 1) && A_CheckSpriteFlags(spriteNum, SFLAG_NOSHADE) == 0)
-                                                ? sector[pSprite->sectnum].ceilingshade
-                                                : sector[pSprite->sectnum].floorshade;
-                                actor[spriteNum].timetosleep = 0;
-                                changespritestat(spriteNum, STAT_STANDABLE);
+                                if (!FURY)
+                                {
+                                    pSprite->shade = ((sector[pSprite->sectnum].ceilingstat & 1) && A_CheckSpriteFlags(spriteNum, SFLAG_NOSHADE) == 0)
+                                                     ? sector[pSprite->sectnum].ceilingshade
+                                                     : sector[pSprite->sectnum].floorshade;
+                                    actor[spriteNum].timetosleep = 0;
+                                    changespritestat(spriteNum, STAT_STANDABLE);
+                                }
                                 break;
 
                             case RECON__STATIC:
-                                CS(spriteNum) |= 257;
+                                if (!FURY)
+                                    CS(spriteNum) |= 257;
                                 fallthrough__;
 #endif
                             default:
@@ -1691,7 +1695,7 @@ ACTOR_STATIC void G_MoveStandables(void)
             actor[spriteNum].bpos = pSprite->pos;
 
 #ifndef EDUKE32_STANDALONE
-        if (PN(spriteNum) >= CRANE && PN(spriteNum) <= CRANE+3)
+        if (!FURY && PN(spriteNum) >= CRANE && PN(spriteNum) <= CRANE+3)
         {
             int32_t nextj;
 
@@ -1878,7 +1882,7 @@ ACTOR_STATIC void G_MoveStandables(void)
 
             goto next_sprite;
         }
-        else if (PN(spriteNum) >= WATERFOUNTAIN && PN(spriteNum) <= WATERFOUNTAIN+3)
+        else if (!FURY && PN(spriteNum) >= WATERFOUNTAIN && PN(spriteNum) <= WATERFOUNTAIN+3)
         {
             if (pData[0] > 0)
             {
@@ -1907,7 +1911,7 @@ ACTOR_STATIC void G_MoveStandables(void)
             }
             goto next_sprite;
         }
-        else if (AFLAMABLE(pSprite->picnum))
+        else if (!FURY && AFLAMABLE(pSprite->picnum))
         {
             if (T1(spriteNum) == 1)
             {
@@ -1944,7 +1948,7 @@ ACTOR_STATIC void G_MoveStandables(void)
             }
             goto next_sprite;
         }
-        else if (pSprite->picnum == TRIPBOMB)
+        else if (!FURY && pSprite->picnum == TRIPBOMB)
         {
             // TIMER_CONTROL
             if (actor[spriteNum].t_data[6] == 1)
@@ -2118,7 +2122,7 @@ ACTOR_STATIC void G_MoveStandables(void)
 
             goto next_sprite;
         }
-        else if (pSprite->picnum >= CRACK1 && pSprite->picnum <= CRACK4)
+        else if (!FURY && pSprite->picnum >= CRACK1 && pSprite->picnum <= CRACK4)
         {
             if (pSprite->hitag)
             {
@@ -2158,7 +2162,7 @@ crack_default:
             }
             goto next_sprite;
         }
-        else if (pSprite->picnum == FIREEXT)
+        else if (!FURY && pSprite->picnum == FIREEXT)
         {
             if (A_IncurDamage(spriteNum) < 0)
                 goto next_sprite;
@@ -2291,7 +2295,7 @@ DETONATE:
                     pSprite->z -= ZOFFSET5;
 
 #ifndef EDUKE32_STANDALONE
-                    if (pSprite->xrepeat)
+                    if (!FURY && pSprite->xrepeat)
                         for (int x=0; x<8; x++)
                             RANDOMSCRAP(pSprite, spriteNum);
 #endif
@@ -2358,10 +2362,13 @@ DETONATE:
             switchPic = pSprite->picnum;
 
 #ifndef EDUKE32_STANDALONE
-            if (switchPic > SIDEBOLT1 && switchPic <= SIDEBOLT1 + 3)
-                switchPic = SIDEBOLT1;
-            else if (switchPic > BOLT1 && switchPic <= BOLT1 + 3)
-                switchPic = BOLT1;
+            if (!FURY)
+            {
+                if (switchPic > SIDEBOLT1 && switchPic <= SIDEBOLT1 + 3)
+                    switchPic = SIDEBOLT1;
+                else if (switchPic > BOLT1 && switchPic <= BOLT1 + 3)
+                    switchPic = BOLT1;
+            }
 #endif
             switch (DYNAMICTILEMAP(switchPic))
             {
@@ -2474,7 +2481,11 @@ DETONATE:
                     }
 
                     goto next_sprite;
+            }
 #ifndef EDUKE32_STANDALONE
+            if (!FURY)
+            switch (DYNAMICTILEMAP(switchPic))
+            {
                 case TRASH__STATIC:
 
                     if (pSprite->xvel == 0)
@@ -2682,8 +2693,8 @@ DETONATE:
                         A_Execute(spriteNum, playerNum, playerDist);
                     }
                     goto next_sprite;
-#endif
             }
+#endif
         }
 
     next_sprite:
@@ -3134,7 +3145,11 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
             case RADIUSEXPLOSION__STATIC:
             case KNEE__STATIC: DELETE_SPRITE_AND_CONTINUE(spriteNum);
+        }
 #ifndef EDUKE32_STANDALONE
+        if (!FURY)
+        switch (DYNAMICTILEMAP(pSprite->picnum))
+        {
             case FREEZEBLAST__STATIC:
                 if (pSprite->yvel < 1 || pSprite->extra < 2 || (pSprite->xvel | pSprite->zvel) == 0)
                 {
@@ -3390,8 +3405,8 @@ ACTOR_STATIC void G_MoveWeapons(void)
 
                 goto next_sprite;
             }
-#endif
         }
+#endif
     next_sprite:
         spriteNum = nextSprite;
     }
@@ -3411,7 +3426,7 @@ static int P_Submerge(int const playerNum, DukePlayer_t * const pPlayer, int con
         }
 
 #ifndef EDUKE32_STANDALONE
-        if (sprite[pPlayer->i].extra > 0)
+        if (!FURY && sprite[pPlayer->i].extra > 0)
             A_PlaySound(DUKE_UNDERWATER, pPlayer->i);
 #endif
 
@@ -3441,7 +3456,8 @@ static int P_Emerge(int const playerNum, DukePlayer_t * const pPlayer, int const
         }
 
 #ifndef EDUKE32_STANDALONE
-        A_PlaySound(DUKE_GASP, pPlayer->i);
+        if (!FURY)
+            A_PlaySound(DUKE_GASP, pPlayer->i);
 #endif
 
         pPlayer->opos.z = pPlayer->pos.z = sector[otherSect].floorz;
@@ -3534,7 +3550,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                             if (pPlayer->on_ground && sectLotag == 0 && onFloor && pPlayer->jetpack_on == 0)
                             {
 #ifndef EDUKE32_STANDALONE
-                                if (sprite[spriteNum].pal == 0)
+                                if (!FURY && sprite[spriteNum].pal == 0)
                                 {
                                     A_Spawn(spriteNum, TRANSPORTERBEAM);
                                     A_PlaySound(TELEPORTER, spriteNum);
@@ -3567,7 +3583,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                 pPlayer->cursectnum = sprite[sectSprite].sectnum;
 
 #ifndef EDUKE32_STANDALONE
-                                if (sprite[spriteNum].pal == 0)
+                                if (!FURY && sprite[spriteNum].pal == 0)
                                 {
                                     int const newSprite = A_Spawn(OW(spriteNum), TRANSPORTERBEAM);
                                     A_PlaySound(TELEPORTER, newSprite);
@@ -3665,9 +3681,10 @@ ACTOR_STATIC void G_MoveTransports(void)
                             if (A_CheckSpriteFlags(sectSprite, SFLAG_DECAL))
                                 goto JBOLT;
 
+#ifndef EDUKE32_STANDALONE
+                            if (!FURY)
                             switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
                             {
-#ifndef EDUKE32_STANDALONE
                                 case TRANSPORTERSTAR__STATIC:
                                 case TRANSPORTERBEAM__STATIC:
                                 case TRIPBOMB__STATIC:
@@ -3679,7 +3696,10 @@ ACTOR_STATIC void G_MoveTransports(void)
                                 case FIRE2__STATIC:
                                 case TOILETWATER__STATIC:
                                 case LASERLINE__STATIC: goto JBOLT;
+                            }
 #endif
+                            switch (DYNAMICTILEMAP(sprite[sectSprite].picnum))
+                            {
                                 case PLAYERONWATER__STATIC:
                                     if (sectLotag == ST_2_UNDERWATER)
                                     {
@@ -3702,13 +3722,16 @@ ACTOR_STATIC void G_MoveTransports(void)
 
                                         Bassert(sectLotag == ST_1_ABOVE_WATER || sectLotag == ST_2_UNDERWATER);
 #ifndef EDUKE32_STANDALONE
-                                        int const newSprite = A_Spawn(sectSprite, WATERSPLASH2);
-
-                                        if (sectLotag == ST_1_ABOVE_WATER && sprite[sectSprite].statnum == STAT_PROJECTILE)
+                                        if (!FURY)
                                         {
-                                            sprite[newSprite].xvel = sprite[sectSprite].xvel >> 1;
-                                            sprite[newSprite].ang  = sprite[sectSprite].ang;
-                                            A_SetSprite(newSprite, CLIPMASK0);
+                                            int const newSprite = A_Spawn(sectSprite, WATERSPLASH2);
+
+                                            if (sectLotag == ST_1_ABOVE_WATER && sprite[sectSprite].statnum == STAT_PROJECTILE)
+                                            {
+                                                sprite[newSprite].xvel = sprite[sectSprite].xvel >> 1;
+                                                sprite[newSprite].ang  = sprite[sectSprite].ang;
+                                                A_SetSprite(newSprite, CLIPMASK0);
+                                            }
                                         }
 #endif
                                         actor[sectSprite].lasttransport = ((int32_t) totalclock & UINT8_MAX);
@@ -3738,7 +3761,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                                 sprite[sectSprite].ang = sprite[OW(spriteNum)].ang;
                                                 actor[sectSprite].bpos = sprite[sectSprite].pos;
 #ifndef EDUKE32_STANDALONE
-                                                if (sprite[spriteNum].pal == 0)
+                                                if (!FURY && sprite[spriteNum].pal == 0)
                                                 {
                                                     int newSprite = A_Spawn(spriteNum, TRANSPORTERBEAM);
                                                     A_PlaySound(TELEPORTER, newSprite);
@@ -3827,8 +3850,10 @@ ACTOR_STATIC void G_MoveActors(void)
 
         switchPic = pSprite->picnum;
 
-        if (pSprite->picnum > GREENSLIME && pSprite->picnum <= GREENSLIME+7)
+#ifndef EDUKE32_STANDALONE
+        if (!FURY && pSprite->picnum > GREENSLIME && pSprite->picnum <= GREENSLIME+7)
             switchPic = GREENSLIME;
+#endif
 
         switch (DYNAMICTILEMAP(switchPic))
         {
@@ -3846,7 +3871,45 @@ ACTOR_STATIC void G_MoveActors(void)
 
             goto next_sprite;
         }
+        case CAMERA1__STATIC:
+            if (pData[0] == 0)
+            {
+                pData[1]+=8;
+                if (g_damageCameras)
+                {
+                    if (A_IncurDamage(spriteNum) >= 0)
+                    {
+                        pData[0]       = 1;  // static
+                        pSprite->cstat = 32768;
+
 #ifndef EDUKE32_STANDALONE
+                        if (!FURY)
+                        {
+                            for (bssize_t x = 0; x < 5; x++)
+                                RANDOMSCRAP(pSprite, spriteNum);
+                        }
+#endif
+                        goto next_sprite;
+                    }
+                }
+
+                if (pSprite->hitag > 0)
+                {
+                    if (pData[1] < pSprite->hitag)             pSprite->ang += 8;
+                    else if (pData[1] < pSprite->hitag * 3)    pSprite->ang -= 8;
+                    else if (pData[1] < (pSprite->hitag << 2)) pSprite->ang += 8;
+                    else
+                    {
+                        pData[1] = 8;
+                        pSprite->ang += 16;
+                    }
+                }
+            }
+            goto next_sprite;
+        }
+#ifndef EDUKE32_STANDALONE
+        switch (DYNAMICTILEMAP(switchPic))
+        {
         case DUCK__STATIC:
         case TARGET__STATIC:
             if (pSprite->cstat&32)
@@ -5059,41 +5122,8 @@ DETONATEB:
             }
             goto next_sprite;
         }
-#endif // EDUKE32_STANDALONE
-
-        case CAMERA1__STATIC:
-            if (pData[0] == 0)
-            {
-                pData[1]+=8;
-                if (g_damageCameras)
-                {
-                    if (A_IncurDamage(spriteNum) >= 0)
-                    {
-                        pData[0]       = 1;  // static
-                        pSprite->cstat = 32768;
-
-#ifndef EDUKE32_STANDALONE
-                        for (bssize_t x = 0; x < 5; x++)
-                            RANDOMSCRAP(pSprite, spriteNum);
-#endif
-                        goto next_sprite;
-                    }
-                }
-
-                if (pSprite->hitag > 0)
-                {
-                    if (pData[1] < pSprite->hitag)             pSprite->ang += 8;
-                    else if (pData[1] < pSprite->hitag * 3)    pSprite->ang -= 8;
-                    else if (pData[1] < (pSprite->hitag << 2)) pSprite->ang += 8;
-                    else
-                    {
-                        pData[1] = 8;
-                        pSprite->ang += 16;
-                    }
-                }
-            }
-            goto next_sprite;
         }
+#endif // EDUKE32_STANDALONE
 
         if (!g_netServer && ud.multimode < 2 && A_CheckEnemySprite(pSprite))
         {
@@ -5156,6 +5186,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
             actor[spriteNum].floorz = pSprite->z = getflorzofslope(pSprite->sectnum,pSprite->x,pSprite->y);
         else
 #endif
+        {
             switch (DYNAMICTILEMAP(switchPic))
             {
                 case APLAYER__STATIC: pSprite->cstat = 32768; goto next_sprite;
@@ -5203,8 +5234,12 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     A_Execute(spriteNum, playerNum, playerDist);
                     goto next_sprite;
                 }
+            }
 
 #ifndef EDUKE32_STANDALONE
+            if (!FURY)
+            switch (DYNAMICTILEMAP(switchPic))
+            {
                 case NEON1__STATIC:
                 case NEON2__STATIC:
                 case NEON3__STATIC:
@@ -5636,11 +5671,12 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 A_SetSprite(spriteNum,CLIPMASK0);
 
                 goto next_sprite;
-#endif
             }
+#endif
+        }
 
 #ifndef EDUKE32_STANDALONE
-        if (PN(spriteNum) >= SCRAP6 && PN(spriteNum) <= SCRAP5+3)
+        if (!FURY && PN(spriteNum) >= SCRAP6 && PN(spriteNum) <= SCRAP5+3)
         {
             if (pSprite->xvel > 0)
                 pSprite->xvel--;
@@ -6900,7 +6936,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             }
 
 #ifndef EDUKE32_STANDALONE
-            if (pData[2] == 4 && pSprite->ang != 512)
+            if (!FURY && pData[2] == 4 && pSprite->ang != 512)
                 for (x=0; x<7; x++) RANDOMSCRAP(pSprite, spriteNum);
 #endif
             break;
@@ -7887,7 +7923,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
 #ifndef EDUKE32_STANDALONE
         case SE_33_QUAKE_DEBRIS:
-            if (g_earthquakeTime > 0 && (krand()&7) == 0)
+            if (!FURY && g_earthquakeTime > 0 && (krand()&7) == 0)
                 RANDOMSCRAP(pSprite, spriteNum);
             break;
 #endif
@@ -8201,6 +8237,9 @@ static void A_DoLight(int spriteNum)
             return;
 
 #ifndef EDUKE32_STANDALONE
+        if (FURY)
+            return;
+
         for (int ii=0; ii<2; ii++)
         {
             if (pSprite->picnum <= 0)  // oob safety
@@ -8405,6 +8444,9 @@ void A_PlayAlertSound(int spriteNum)
             return;
 
 #ifndef EDUKE32_STANDALONE
+        if (FURY)
+            return;
+
         switch (DYNAMICTILEMAP(PN(spriteNum)))
         {
             case LIZTROOPONTOILET__STATIC:
@@ -8444,6 +8486,9 @@ int A_CheckSwitchTile(int spriteNum)
     UNREFERENCED_PARAMETER(spriteNum);
 
 #ifndef EDUKE32_STANDALONE
+    if (FURY)
+        return 0;
+
     // picnum 0 would oob in the switch below,
 
     if (PN(spriteNum) <= 0)
