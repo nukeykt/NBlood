@@ -2928,19 +2928,6 @@ void P_GetInput(int const playerNum)
 
     CONTROL_GetInput(&info);
 
-    if (ud.config.MouseDeadZone)
-    {
-        if (info.mousey > 0)
-            info.mousey = max(info.mousey - ud.config.MouseDeadZone, 0);
-        else if (info.mousey < 0)
-            info.mousey = min(info.mousey + ud.config.MouseDeadZone, 0);
-
-        if (info.mousex > 0)
-            info.mousex = max(info.mousex - ud.config.MouseDeadZone, 0);
-        else if (info.mousex < 0)
-            info.mousex = min(info.mousex + ud.config.MouseDeadZone, 0);
-    }
-
     if (ud.config.MouseBias)
     {
         if (klabs(info.mousex) > klabs(info.mousey))
