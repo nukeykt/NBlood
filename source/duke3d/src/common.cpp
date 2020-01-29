@@ -585,7 +585,7 @@ static void Duke_AddSteamPaths(const char *basepath)
 
     // Ion Fury - Steam
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Ion Fury", basepath);
-    addsearchpath(buf);
+    addsearchpath_user(buf, SEARCHPATH_FURY);
 }
 #endif
 #endif
@@ -747,14 +747,14 @@ void G_AddSearchPaths(void)
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 562860)", "InstallLocation", buf, &bufsize))
     {
-        addsearchpath(buf);
+        addsearchpath_user(buf, SEARCHPATH_FURY);
     }
 
     // Ion Fury - GOG.com
     bufsize = sizeof(buf);
     if (Paths_ReadRegistryValue(R"(SOFTWARE\GOG.com\Games\1740836875)", "path", buf, &bufsize))
     {
-        addsearchpath(buf);
+        addsearchpath_user(buf, SEARCHPATH_FURY);
     }
 #endif
 #endif
@@ -770,6 +770,9 @@ void G_CleanupSearchPaths(void)
 
     if (!WW2GI)
         removesearchpaths_withuser(SEARCHPATH_WW2GI);
+
+    if (!FURY)
+        removesearchpaths_withuser(SEARCHPATH_FURY);
 }
 
 //////////
