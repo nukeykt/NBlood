@@ -671,7 +671,6 @@ int32_t registerosdcommands(void)
         { "in_mousedeadzone", "amount of mouse movement to filter out", (void *)&MouseDeadZone, CVAR_INT, 0, 512 },
         { "in_mouseflip", "invert vertical mouse movement", (void *)&mouseflip, CVAR_BOOL, 0, 1 },
         { "in_mousemode", "toggles vertical mouse view", (void *)&aimmode, CVAR_BOOL, 0, 1 },
-        { "in_mousesmoothing", "enable/disable mouse input smoothing", (void *)&SmoothInput, CVAR_BOOL, 0, 1 },
 
         //{ "mus_enabled", "enables/disables music", (void *)&ud.config.MusicToggle, CVAR_BOOL, 0, 1 },
         //{ "mus_volume", "controls music volume", (void *)&ud.config.MusicVolume, CVAR_INT, 0, 255 },

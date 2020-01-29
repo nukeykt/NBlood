@@ -120,7 +120,6 @@ extern int32_t scripthandle;
 extern int32_t setupread;
 extern int32_t useprecache;
 extern int32_t MouseDeadZone, MouseBias;
-extern int32_t SmoothInput;
 
 extern int32_t FXVolume;
 extern int32_t MusicVolume;

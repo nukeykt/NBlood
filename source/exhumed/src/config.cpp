@@ -216,7 +216,6 @@ int32_t setupread;
 // TODO: implement precaching toggle
 int32_t useprecache;
 int32_t MouseDeadZone, MouseBias;
-int32_t SmoothInput;
 
 // JBF 20031211: Store the input settings because
 // (currently) mact can't regurgitate them

@@ -56,7 +56,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 hashtable_t h_gamefuncs    = { NUMGAMEFUNCTIONS<<1, NULL };
 
 int32_t MouseDeadZone, MouseBias;
-int32_t SmoothInput;
 int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
 int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
 int32_t MouseAnalogueAxes[MAXMOUSEAXES];
@@ -328,7 +327,6 @@ void CONFIG_SetDefaults(void)
 #endif
     gBrightness = 8;
     //ud.config.ShowWeapons     = 0;
-    SmoothInput     = 1;
     SoundToggle     = 1;
     CDAudioToggle = 0;
     MusicDevice = ASS_AutoDetect;

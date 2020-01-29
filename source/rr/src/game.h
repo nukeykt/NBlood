@@ -204,7 +204,6 @@ typedef struct {
         int32_t AutoAim;
         int32_t ShowOpponentWeapons;
         int32_t MouseDeadZone,MouseBias;
-        int32_t SmoothInput;
 
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them
