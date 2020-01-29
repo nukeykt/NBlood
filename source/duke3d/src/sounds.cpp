@@ -29,8 +29,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "vfs.h"
 
-#define DQSIZE 256
-
 int32_t g_numEnvSoundsPlaying, g_highestSoundIdx;
 
 static char *MusicPtr;
@@ -41,8 +39,8 @@ static int32_t MusicVoice = -1;
 static bool MusicPaused;
 static bool SoundPaused;
 
-static std::atomic<uint32_t> dnum, dq[DQSIZE];
-static mutex_t m_callback;
+static uint32_t freeSlotQueue[MAXVOICES];
+static std::atomic<uint32_t> freeSlotQueueIndex, freeSlotsPendingCnt;
 
 static inline void S_SetProperties(assvoice_t *snd, int const owner, int const voice, int const dist, int const clock)
 {
@@ -86,7 +84,6 @@ void S_SoundStartup(void)
 #endif
     FX_SetCallBack(S_Callback);
     FX_SetPrintf(OSD_Printf);
-    mutex_init(&m_callback);
 }
 
 void S_SoundShutdown(void)
@@ -405,12 +402,17 @@ void S_StopMusic(void)
 
 void S_Cleanup(void)
 {
-    static uint32_t ldnum = 0;
+    static uint32_t ldpos = 0;
 
-    while (ldnum < dnum)
+    while (freeSlotsPendingCnt)
     {
-        uint32_t num = dq[ldnum++ & (DQSIZE - 1)];
+        --freeSlotsPendingCnt;
 
+        uint32_t num = freeSlotQueue[++ldpos & (MAXVOICES-1)];
+#ifdef DEBUGGINGAIDS
+        Bassert(num != 0xdeadbeef);
+        freeSlotQueue[ldpos & (MAXVOICES-1)] = 0xdeadbeef;
+#endif
         // negative index is RTS playback
         if ((int32_t)num < 0)
         {
@@ -440,9 +442,12 @@ void S_Cleanup(void)
 
         int const spriteNum = voice.owner;
 
+#ifdef DEBUGGINGAIDS
         if (EDUKE32_PREDICT_FALSE(snd.num > MAXSOUNDINSTANCES))
             OSD_Printf(OSD_ERROR "S_Cleanup(): num exceeds MAXSOUNDINSTANCES! g_sounds[%d].num %d wtf?\n", num, snd.num);
-        else if (snd.num > 0)
+        else
+#endif
+        if (snd.num > 0)
             --snd.num;
 
         // MUSICANDSFX uses t_data[0] to control restarting the sound
@@ -519,7 +524,7 @@ static int S_TakeSlot(int soundNum)
 
     auto &snd = g_sounds[soundNum];
 
-    while (slot < MAXSOUNDINSTANCES && snd.voices[slot].id > 0)
+    do
     {
         auto &voice = snd.voices[slot];
 
@@ -533,18 +538,13 @@ static int S_TakeSlot(int soundNum)
 
         slot++;
     }
+    while (slot < MAXSOUNDINSTANCES && snd.voices[slot].id > 0);
 
     if (slot != MAXSOUNDINSTANCES)
         return slot;
 
     if (FX_SoundActive(snd.voices[bestslot].id))
         FX_StopSound(snd.voices[bestslot].id);
-
-    mutex_lock(&m_callback);
-    unative_t const ldnum = dnum;
-    dq[ldnum & (DQSIZE-1)] = (soundNum * MAXSOUNDINSTANCES) + bestslot;
-    dnum++;
-    mutex_unlock(&m_callback);
 
     S_Cleanup();
 
@@ -985,18 +985,16 @@ void S_Update(void)
     } while (++sndnum <= highest);
 }
 
-// S_Callback() can be called from either the audio thread when a sound ends, or the main thread
 // when playing back a new sound needs an existing sound to be stopped first
+// S_Callback() can be called from either the audio thread when a sound ends, or the main thread
+// this is essentially a multiple producer single consumer queue
 void S_Callback(intptr_t num)
 {
     if ((int32_t)num == MUSIC_ID)
         return;
 
-    mutex_lock(&m_callback);
-    unative_t const ldnum = dnum;
-    dq[ldnum & (DQSIZE - 1)] = (uint32_t)num;
-    dnum++;
-    mutex_unlock(&m_callback);
+    freeSlotQueue[++freeSlotQueueIndex & (MAXVOICES-1)] = (uint32_t)num;
+    freeSlotsPendingCnt++;
 }
 
 void S_ClearSoundLocks(void)
