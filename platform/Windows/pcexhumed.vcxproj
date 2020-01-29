@@ -208,7 +208,6 @@
     <ClCompile Include="..\..\source\exhumed\src\bullet.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\cd.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\cdaudio.cpp" />
-    <ClCompile Include="..\..\source\exhumed\src\cdrom.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\config.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\enginesubs.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\exhumed.cpp" />
@@ -272,7 +271,6 @@
     <ClInclude Include="..\..\source\exhumed\src\bullet.h" />
     <ClInclude Include="..\..\source\exhumed\src\cd.h" />
     <ClInclude Include="..\..\source\exhumed\src\cdaudio.h" />
-    <ClInclude Include="..\..\source\exhumed\src\cdrom.h" />
     <ClInclude Include="..\..\source\exhumed\src\config.h" />
     <ClInclude Include="..\..\source\exhumed\src\engine.h" />
     <ClInclude Include="..\..\source\exhumed\src\exhumed.h" />
