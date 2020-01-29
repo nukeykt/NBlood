@@ -309,7 +309,7 @@ MAKE_SPACER( Space8, 8<<16 ); // colcorr, redslide
 static MenuEntry_t ME_Space2_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space2, Spacer );
 static MenuEntry_t ME_Space4_Bluefont = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF_Null, &MEO_Space4, Spacer );
 static MenuEntry_t ME_Space4_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space4, Spacer );
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuEntry_t ME_Space8_Bluefont = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF_Null, &MEO_Space8, Spacer );
 #endif
 static MenuEntry_t ME_Space6_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space6, Spacer );
@@ -327,7 +327,7 @@ static char const s_Options[] = "Options";
 static char const s_Credits[] = "Credits";
 
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME, MENU_EPISODE );
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Resume Game", MEF_MainMenu, MAIN_RESUMEGAME, MENU_CLOSE );
 #endif
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME_INGAME, MENU_NEWVERIFY );
@@ -340,12 +340,12 @@ MAKE_MENU_TOP_ENTRYLINK( "Read me!", MEF_MainMenu, MAIN_HELP, MENU_STORY );
 #else
 MAKE_MENU_TOP_ENTRYLINK("Help", MEF_MainMenu, MAIN_HELP, MENU_STORY);
 #endif
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 MAKE_MENU_TOP_ENTRYLINK( s_Credits, MEF_MainMenu, MAIN_CREDITS, MENU_CREDITS );
 #endif
 MAKE_MENU_TOP_ENTRYLINK( "End Game", MEF_MainMenu, MAIN_QUITTOTITLE, MENU_QUITTOTITLE );
 MAKE_MENU_TOP_ENTRYLINK( "Quit", MEF_MainMenu, MAIN_QUIT, MENU_QUIT );
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Quit Game", MEF_MainMenu, MAIN_QUITGAME, MENU_QUIT );
 #endif
 
@@ -354,14 +354,14 @@ static MenuEntry_t *MEL_MAIN[] = {
     &ME_MAIN_LOADGAME,
     &ME_MAIN_OPTIONS,
     &ME_MAIN_HELP,
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_MAIN_CREDITS,
 #endif
     &ME_MAIN_QUIT,
 };
 
 static MenuEntry_t *MEL_MAIN_INGAME[] = {
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
     &ME_MAIN_RESUMEGAME,
 #else
     &ME_MAIN_NEWGAME_INGAME,
@@ -371,7 +371,7 @@ static MenuEntry_t *MEL_MAIN_INGAME[] = {
     &ME_MAIN_OPTIONS,
     &ME_MAIN_HELP,
     &ME_MAIN_QUITTOTITLE,
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_MAIN_QUITGAME,
 #endif
 };
@@ -398,12 +398,12 @@ static MenuEntry_t ME_SKILL_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_C
 static MenuEntry_t ME_SKILL[MAXSKILLS];
 static MenuEntry_t *MEL_SKILL[MAXSKILLS];
 
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
 static MenuLink_t MEO_GAMESETUP_SAVESETUP = { MENU_SAVESETUP, MA_Advance, };
 static MenuEntry_t ME_GAMESETUP_SAVESETUP = MAKE_MENUENTRY( "Save setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_SAVESETUP, Link );
 #endif
 
-#if defined STARTUP_SETUP_WINDOW && !defined EDUKE32_SIMPLE_MENU
+#if defined STARTUP_SETUP_WINDOW && !defined EDUKE32_RETAIL_MENU
 static MenuOption_t MEO_GAMESETUP_STARTWIN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.setup.forcesetup );
 static MenuEntry_t ME_GAMESETUP_STARTWIN = MAKE_MENUENTRY( "Startup window:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_STARTWIN, Option );
 #endif
@@ -454,13 +454,13 @@ static MenuOption_t MEO_GAMESETUP_QUICKSWITCH = MAKE_MENUOPTION(&MF_Redfont, &ME
 static MenuEntry_t ME_GAMESETUP_QUICKSWITCH = MAKE_MENUENTRY("Quick weapon switch:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_QUICKSWITCH, Option);
 #endif
 
-#if defined(EDUKE32_ANDROID_MENU) || !defined(EDUKE32_SIMPLE_MENU)
+#if defined(EDUKE32_ANDROID_MENU) || !defined(EDUKE32_RETAIL_MENU)
 static MenuLink_t MEO_GAMESETUP_CHEATS = { MENU_CHEATS, MA_Advance, };
 static MenuEntry_t ME_GAMESETUP_CHEATS = MAKE_MENUENTRY( "Cheats", &MF_Redfont, &MEF_BigOptionsRt, &MEO_GAMESETUP_CHEATS, Link );
 
 static MenuEntry_t *MEL_GAMESETUP[] = {
     &ME_ADULTMODE,
-#if defined STARTUP_SETUP_WINDOW && !defined EDUKE32_SIMPLE_MENU
+#if defined STARTUP_SETUP_WINDOW && !defined EDUKE32_RETAIL_MENU
     &ME_GAMESETUP_STARTWIN,
 #endif
 #ifndef EDUKE32_ANDROID_MENU
@@ -473,7 +473,7 @@ static MenuEntry_t *MEL_GAMESETUP[] = {
 };
 #endif
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Game Setup", MEF_OptionsMenu, OPTIONS_GAMESETUP, MENU_GAMESETUP );
 #endif
 MAKE_MENU_TOP_ENTRYLINK( "Sound Setup", MEF_OptionsMenu, OPTIONS_SOUNDSETUP, MENU_SOUND );
@@ -489,7 +489,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Gamepad Setup", MEF_BigOptionsRtSections, OPTIONS_JOYS
 #ifdef EDUKE32_ANDROID_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHSETUP, MENU_TOUCHSETUP );
 #endif
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
 MAKE_MENU_TOP_ENTRYLINK("Cheats", MEF_OptionsMenu, OPTIONS_CHEATS, MENU_CHEATS);
 #endif
 
@@ -649,7 +649,7 @@ static MenuLink_t MEO_DISPLAYSETUP_SCREENSETUP = { MENU_SCREENSETUP, MA_Advance,
 static MenuEntry_t ME_DISPLAYSETUP_SCREENSETUP = MAKE_MENUENTRY( "HUD setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_SCREENSETUP, Link );
 
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 #ifdef USE_OPENGL
 static MenuLink_t MEO_DISPLAYSETUP_ADVANCED_GL_POLYMOST = { MENU_POLYMOST, MA_Advance, };
 static MenuEntry_t ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST = MAKE_MENUENTRY( "Polymost setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ADVANCED_GL_POLYMOST, Link );
@@ -700,20 +700,20 @@ static MenuEntry_t ME_CheatCodes[] = {
 };
 
 static MenuEntry_t *MEL_OPTIONS[] = {
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_OPTIONS_GAMESETUP,
 #endif
     &ME_OPTIONS_DISPLAYSETUP,
     &ME_OPTIONS_SOUNDSETUP,
 #ifndef EDUKE32_ANDROID_MENU
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_OPTIONS_PLAYERSETUP,
 #endif
     &ME_OPTIONS_CONTROLS,
 #else
     &ME_OPTIONS_TOUCHSETUP,
 #endif
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
     &ME_GAMESETUP_SAVESETUP,
     &ME_OPTIONS_CHEATS
 #endif
@@ -790,7 +790,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
     &ME_DISPLAYSETUP_ANISOTROPY,
 #  endif
 # endif
-# ifndef EDUKE32_SIMPLE_MENU
+# ifndef EDUKE32_RETAIL_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMOST,
 # endif
 #endif
@@ -809,7 +809,7 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL_POLYMER[] = {
     &ME_DISPLAYSETUP_TEXFILTER,
     &ME_DISPLAYSETUP_ANISOTROPY,
 #endif
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMER,
 #endif
 };
@@ -891,7 +891,7 @@ static MenuEntry_t ME_MOUSESETUP_BTNS = MAKE_MENUENTRY( "Button assignment", &MF
 static MenuRangeFloat_t MEO_MOUSESETUP_SENSITIVITY = MAKE_MENURANGE( &CONTROL_MouseSensitivity, &MF_Redfont, .1f, 10.f, 0.f, 100, 1 );
 static MenuEntry_t ME_MOUSESETUP_SENSITIVITY = MAKE_MENUENTRY( "Sensitivity:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SENSITIVITY, RangeFloat );
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static char const *MEOSN_MOUSESETUP_AIM_TYPE [] = { "Toggle", "Hold" };
 static MenuOptionSet_t MEOS_MOUSESETUP_AIM_TYPE = MAKE_MENUOPTIONSET(MEOSN_MOUSESETUP_AIM_TYPE, NULL, 0x2);
 static MenuOption_t MEO_MOUSESETUP_MOUSEAIMINGTYPE = MAKE_MENUOPTION(&MF_Redfont, &MEOS_MOUSESETUP_AIM_TYPE, &ud.mouseaiming);
@@ -902,7 +902,7 @@ static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:
 static MenuOption_t MEO_MOUSESETUP_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &ud.mouseflip );
 static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_INVERT, Option );
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuLink_t MEO_MOUSESETUP_ADVANCED = { MENU_MOUSEADVANCED, MA_Advance, };
 static MenuEntry_t ME_MOUSESETUP_ADVANCED = MAKE_MENUENTRY( "Advanced setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_ADVANCED, Link );
 #endif
@@ -914,13 +914,13 @@ static MenuEntry_t ME_MOUSEADVANCED_SCALEY = MAKE_MENUENTRY("Y-Scale:", &MF_Redf
 static MenuEntry_t *MEL_MOUSESETUP[] = {
     &ME_MOUSESETUP_BTNS,
     &ME_MOUSESETUP_SENSITIVITY,
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
     &ME_MOUSEADVANCED_SCALEX,
     &ME_MOUSEADVANCED_SCALEY,
 #endif
     &ME_Space2_Redfont,
     &ME_MOUSESETUP_INVERT,
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_MOUSESETUP_MOUSEAIMINGTYPE,
     &ME_MOUSESETUP_MOUSEAIMING,
     &ME_MOUSESETUP_ADVANCED,
@@ -1143,7 +1143,7 @@ static MenuEntry_t ME_COLCORR_RESET = MAKE_MENUENTRY( "Reset To Defaults", &MF_R
 #else
 #define MINVIS 0.125f
 #endif
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuRangeFloat_t MEO_COLCORR_AMBIENT = MAKE_MENURANGE( &r_ambientlight, &MF_Bluefont, MINVIS, 4.f, 0.f, 32, 1 );
 static MenuEntry_t ME_COLCORR_AMBIENT = MAKE_MENUENTRY( "Visibility:", &MF_Redfont, &MEF_ColorCorrect, &MEO_COLCORR_AMBIENT, RangeFloat );
 #endif
@@ -1153,7 +1153,7 @@ static MenuEntry_t *MEL_COLCORR[] = {
     &ME_COLCORR_CONTRAST,
     &ME_COLCORR_BRIGHTNESS,
 #endif
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_COLCORR_AMBIENT,
 #endif
     &ME_Space8_Redfont,
@@ -1221,7 +1221,7 @@ static MenuOptionSet_t MEOS_SOUND_SAMPLINGRATE = MAKE_MENUOPTIONSET( MEOSN_SOUND
 static MenuOption_t MEO_SOUND_SAMPLINGRATE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_SOUND_SAMPLINGRATE, &soundrate );
 static MenuEntry_t ME_SOUND_SAMPLINGRATE = MAKE_MENUENTRY( "Sample rate:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_SAMPLINGRATE, Option );
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 128, 0, 8, 1 );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
 #endif
@@ -1245,7 +1245,7 @@ static MenuEntry_t ME_SOUND_MIDIDRIVER = MAKE_MENUENTRY( "MIDI driver:", &MF_Red
 
 static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuLink_t MEO_ADVSOUND = { MENU_ADVSOUND, MA_Advance, };
 static MenuEntry_t ME_SOUND_ADVSOUND = MAKE_MENUENTRY( "Advanced", &MF_Redfont, &MEF_BigOptionsRt, &MEO_ADVSOUND, Link );
 #endif
@@ -1256,7 +1256,7 @@ static MenuEntry_t *MEL_SOUND[] = {
     &ME_SOUND_MUSIC,
     &ME_SOUND_VOLUME_MUSIC,
     &ME_SOUND_DUKETALK,
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_SOUND_ADVSOUND,
 #endif
 };
@@ -1264,7 +1264,7 @@ static MenuEntry_t *MEL_SOUND[] = {
 static MenuEntry_t *MEL_ADVSOUND[] = {
     &ME_SOUND_SAMPLINGRATE,
     &ME_Space2_Redfont,
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_SOUND_NUMVOICES,
     &ME_Space2_Redfont,
 #endif
@@ -1319,7 +1319,7 @@ static char const *MEOSN_PLAYER_TEAM[] = { "Blue", "Red", "Green", "Gray", };
 static MenuOptionSet_t MEOS_PLAYER_TEAM = MAKE_MENUOPTIONSET( MEOSN_PLAYER_TEAM, NULL, 0x2 );
 static MenuOption_t MEO_PLAYER_TEAM = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_PLAYER_TEAM, &ud.team );
 static MenuEntry_t ME_PLAYER_TEAM = MAKE_MENUENTRY( "Team", &MF_Bluefont, &MEF_PlayerNarrow, &MEO_PLAYER_TEAM, Option );
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuLink_t MEO_PLAYER_MACROS = { MENU_MACROS, MA_Advance, };
 static MenuEntry_t ME_PLAYER_MACROS = MAKE_MENUENTRY( "Multiplayer macros", &MF_Bluefont, &MEF_SmallOptions, &MEO_PLAYER_MACROS, Link );
 #endif
@@ -1330,7 +1330,7 @@ static MenuEntry_t *MEL_PLAYER[] = {
     &ME_PLAYER_COLOR,
     &ME_Space4_Bluefont,
     &ME_PLAYER_TEAM,
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     &ME_Space8_Bluefont,
     &ME_PLAYER_MACROS,
 #endif
@@ -1342,9 +1342,7 @@ static MenuEntry_t ME_MACROS_TEMPLATE = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF
 static MenuEntry_t ME_MACROS[MAXRIDECULE];
 static MenuEntry_t *MEL_MACROS[MAXRIDECULE];
 
-#ifndef EDUKE32_SIMPLE_MENU
 static char const *MenuUserMap = "User Map";
-#endif
 static char const *MenuSkillNone = "None";
 
 static char const *MEOSN_NetGametypes[MAXGAMETYPES];
@@ -1423,7 +1421,7 @@ static MenuMenu_t M_EPISODE = MAKE_MENUMENU( "Select An Episode", &MMF_Top_Episo
 static MenuMenu_t M_SKILL = MAKE_MENUMENU( "Select Skill", &MMF_Top_Skill, MEL_SKILL );
 static MenuMenu_t M_NEWGAMECUSTOM = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustom, MEL_NEWGAMECUSTOM );
 static MenuMenu_t M_NEWGAMECUSTOMSUB = MAKE_MENUMENU( s_NewGame, &MMF_Top_NewGameCustomSub, MEL_NEWGAMECUSTOMSUB );
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
 static MenuMenu_t M_GAMESETUP = MAKE_MENUMENU( "Game Setup", &MMF_BigOptions, MEL_GAMESETUP );
 #endif
 static MenuMenu_t M_OPTIONS = MAKE_MENUMENU( s_Options, &MMF_Top_Options, MEL_OPTIONS );
@@ -1465,7 +1463,7 @@ static MenuMenu_t M_NETHOST = MAKE_MENUMENU( "Host Network Game", &MMF_SmallOpti
 static MenuMenu_t M_NETOPTIONS = MAKE_MENUMENU( "Net Game Options", &MMF_NetSetup, MEL_NETOPTIONS );
 static MenuMenu_t M_NETJOIN = MAKE_MENUMENU( "Join Network Game", &MMF_SmallOptionsNarrow, MEL_NETJOIN );
 
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
 static MenuPanel_t M_STORY = { NoTitle, MENU_STORY, MA_Return, MENU_STORY, MA_Advance, };
 #else
 static MenuPanel_t M_STORY = { NoTitle, MENU_F1HELP, MA_Return, MENU_F1HELP, MA_Advance, };
@@ -1522,7 +1520,7 @@ static Menu_t Menus[] = {
     { &M_NEWGAMECUSTOM, MENU_NEWGAMECUSTOM, MENU_MAIN, MA_Return, Menu },
     { &M_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOMSUB, MENU_NEWGAMECUSTOM, MA_Return, Menu },
     { &M_SKILL, MENU_SKILL, MENU_PREVIOUS, MA_Return, Menu },
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     { &M_GAMESETUP, MENU_GAMESETUP, MENU_OPTIONS, MA_Return, Menu },
 #endif
     { &M_OPTIONS, MENU_OPTIONS, MENU_MAIN, MA_Return, Menu },
@@ -1568,7 +1566,7 @@ static Menu_t Menus[] = {
     { &M_SAVESETUP, MENU_SAVESETUP, MENU_OPTIONS, MA_Return, Menu },
     { &M_SAVECLEANVERIFY, MENU_SAVECLEANVERIFY, MENU_SAVESETUP, MA_None, Verify },
     { &M_RESETSTATSVERIFY, MENU_RESETSTATSVERIFY, MENU_SAVESETUP, MA_None, Verify },
-#ifdef EDUKE32_SIMPLE_MENU
+#ifdef EDUKE32_RETAIL_MENU
     { &M_CHEATS, MENU_CHEATS, MENU_OPTIONS, MA_Return, Menu },
 #else
     { &M_CHEATS, MENU_CHEATS, MENU_GAMESETUP, MA_Return, Menu },
@@ -1796,7 +1794,7 @@ void Menu_Init(void)
         MEOS_NETOPTIONS_LEVEL[i].optionNames = MEOSN_NetLevels[i];
     }
     M_EPISODE.numEntries = g_volumeCnt+2;
-#ifndef EDUKE32_SIMPLE_MENU
+#if 1 //ifndef EDUKE32_SIMPLE_MENU
     MEL_EPISODE[g_volumeCnt] = &ME_Space4_Redfont;
     MEL_EPISODE[g_volumeCnt+1] = &ME_EPISODE_USERMAP;
     MEOSN_NetEpisodes[k] = MenuUserMap;
@@ -2030,7 +2028,7 @@ void Menu_Init(void)
     }
 
     MenuEntry_HideOnCondition(&ME_MAIN_HELP, G_GetLogoFlags() & LOGO_NOHELP);
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     MenuEntry_HideOnCondition(&ME_MAIN_CREDITS, G_GetLogoFlags() & LOGO_NOCREDITS);
 #endif
 }
@@ -2220,7 +2218,7 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MUSIC, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_DUKETALK, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
 #endif
         MenuEntry_DisableOnCondition(&ME_SOUND_RESTART, soundrate == ud.config.MixRate &&
@@ -2242,7 +2240,7 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_JOYSTICK_DEFAULTS_PRO, !joystick.isGameController);
         break;
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     case MENU_MOUSESETUP:
         MenuEntry_DisableOnCondition(&ME_MOUSESETUP_MOUSEAIMING, ud.mouseaiming);
         break;
@@ -2509,7 +2507,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 mgametextcenterat(origin.x + (101<<16), origin.y + (50<<16),
                     msv.brief.isExt ? "Previous Version,\nSequence Point Available" : "Previous Version,\nUnable to Load");
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
                 Bsprintf(tempbuf,"Saved: %d.%d.%d.%u %d-bit", savehead.majorver, savehead.minorver,
                          savehead.bytever, savehead.userbytever, 8*savehead.getPtrSize());
                 mgametext(origin.x + (25<<16), origin.y + (124<<16), tempbuf);
@@ -2574,7 +2572,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                     mgametextcenterat(origin.x + (101<<16), origin.y + (50<<16),
                         msv.brief.isExt ? "Previous Version,\nSequence Point Available" : "Previous Version,\nUnable to Load");
 
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
                     Bsprintf(tempbuf,"Saved: %d.%d.%d.%u %d-bit", savehead.majorver, savehead.minorver,
                              savehead.bytever, savehead.userbytever, 8*savehead.getPtrSize());
                     mgametext(origin.x + (25<<16), origin.y + (124<<16), tempbuf);
@@ -3633,7 +3631,7 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
 
 static int32_t Menu_EntryRangeFloatModify(MenuEntry_t *entry, float newValue)
 {
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     if (entry == &ME_COLCORR_AMBIENT)
         r_ambientlightrecip = 1.f/newValue;
 #else

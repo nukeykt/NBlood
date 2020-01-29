@@ -1596,7 +1596,7 @@ void gameDisplayTitleScreen(void)
     totalclock = 0;
 
     while (
-#ifndef EDUKE32_SIMPLE_MENU
+#ifndef EDUKE32_RETAIL_MENU
     totalclock < (860 + 120) &&
 #endif
     !I_GeneralTrigger())
