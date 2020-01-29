@@ -2183,6 +2183,20 @@ static void Menu_Pre(MenuID_t cm)
             }
         }
 
+        if (newresolution == -1)
+        {
+            newresolution = 0;
+
+            for (int i = 0; i < MAXVALIDMODES; ++i)
+            {
+                if (resolution[i].xdim == xres && resolution[i].ydim == yres)
+                {
+                    newresolution = i;
+                    break;
+                }
+            }
+        }
+
         const int32_t nr = newresolution;
 
         // don't allow setting fullscreen mode if it's not supported by the resolution
@@ -4385,15 +4399,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_VIDEOSETUP:
-        newresolution = 0;
-        for (int i = 0; i < MAXVALIDMODES; ++i)
-        {
-            if (resolution[i].xdim == xres && resolution[i].ydim == yres)
-            {
-                newresolution = i;
-                break;
-            }
-        }
+        newresolution = -1;
         newrendermode = videoGetRenderMode();
         newfullscreen = fullscreen;
         newvsync = vsync;
