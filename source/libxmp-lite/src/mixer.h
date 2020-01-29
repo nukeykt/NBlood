@@ -40,6 +40,7 @@ struct mixer_voice {
 #define ANTICLICK	(1 << 1)	
 #define SAMPLE_LOOP	(1 << 2)
 	int flags;		/* flags */
+	int slen;		/* sample length */
 	void *sptr;		/* sample pointer */
 #ifdef LIBXMP_PAULA_SIMULATOR
 	struct paula_state *paula; /* paula simulation state */
