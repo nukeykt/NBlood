@@ -115,8 +115,6 @@ static int32_t nonsharedtimer;
 
 int32_t ticrandomseed;
 
-GAME_STATIC GAME_INLINE int32_t G_MoveLoop(void);
-
 int32_t hud_showmapname = 1;
 
 int32_t g_levelTextTime = 0;
@@ -6944,7 +6942,8 @@ MAIN_LOOP_RESTART:
                     if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1))
                         && (myplayer.gm & MODE_GAME))
                     {
-                        G_MoveLoop();
+                        Net_GetPackets();
+                        G_DoMoveThings();
 
 #ifdef __ANDROID__
                         inputfifo[0][myconnectindex].fvel = 0;
@@ -7074,13 +7073,6 @@ MAIN_LOOP_RESTART:
     while (1);
 
     return 0;  // not reached (duh)
-}
-
-GAME_STATIC GAME_INLINE int32_t G_MoveLoop()
-{
-    Net_GetPackets();
-
-    return G_DoMoveThings();
 }
 
 int G_DoMoveThings(void)
