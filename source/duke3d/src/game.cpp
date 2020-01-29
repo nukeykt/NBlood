@@ -6996,7 +6996,8 @@ MAIN_LOOP_RESTART:
                 // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
                 CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
 
-#ifndef _WIN32
+#ifndef NETCODE_DISABLE
+# ifndef _WIN32
                 // stdin -> OSD input for dedicated server
                 if (g_networkMode == NET_DEDICATED_SERVER)
                 {
@@ -7004,10 +7005,10 @@ MAIN_LOOP_RESTART:
                     char ch;
                     static uint32_t bufpos = 0;
                     static char buf[128];
-#ifndef GEKKO
+# ifndef GEKKO
                     int32_t flag = 1;
                     ioctl(0, FIONBIO, &flag);
-#endif
+# endif
                     if ((nb = read(0, &ch, 1)) > 0 && bufpos < sizeof(buf))
                     {
                         if (ch != '\n')
@@ -7022,6 +7023,7 @@ MAIN_LOOP_RESTART:
                     }
                 }
                 else
+# endif
 #endif
                     G_HandleLocalKeys();
 
