@@ -1909,11 +1909,13 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
+        SDL_GL_SwapWindow(sdl_window);
+
         if (vsync)
         {
             switch (swapcomplete)
             {
-                case 1: glFlush(); break;
+                case 1: glFinish(); break;
                 case 2:
                 {
                     static uint64_t lastSwapTime;
@@ -1929,8 +1931,6 @@ void videoShowFrame(int32_t w)
                 break;
             }
         }
-
-        SDL_GL_SwapWindow(sdl_window);
 
         return;
     }
