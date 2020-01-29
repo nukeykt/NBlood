@@ -6970,7 +6970,6 @@ MAIN_LOOP_RESTART:
                         && (myplayer.gm & MODE_GAME))
                     {
                         G_MoveLoop();
-                        S_Update();
 
 #ifdef __ANDROID__
                         inputfifo[0][myconnectindex].fvel = 0;
@@ -6998,6 +6997,8 @@ MAIN_LOOP_RESTART:
                 g_gameUpdateAvgTime
                 = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
             } while (0);
+
+            S_Update();
         }
 
         G_DoCheats();
