@@ -32,8 +32,8 @@ void SDLDrv_PCM_StopPlayback(void);
 void SDLDrv_PCM_Lock(void);
 void SDLDrv_PCM_Unlock(void);
 
-void SDLDrv_PCM_PrintDevices(void);
-int  SDLDrv_PCM_CheckDevice(char const *dev);
-char const *SDLDrv_PCM_GetDevice(void);
+void SDLDrv_PCM_PrintDrivers(void);
+int  SDLDrv_PCM_CheckDriverName(char const *dev);
+char const *SDLDrv_PCM_GetDriverName(void);
 
 #endif // driver_sdl_h__

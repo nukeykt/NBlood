@@ -35,13 +35,14 @@
 #include "android.h"
 #endif
 
-enum {
-   SDLErr_Warning = -2,
-   SDLErr_Error   = -1,
-   SDLErr_Ok      = 0,
-   SDLErr_Uninitialised,
-   SDLErr_InitSubSystem,
-   SDLErr_OpenAudio
+enum
+{
+    SDLErr_Warning = -2,
+    SDLErr_Error   = -1,
+    SDLErr_Ok      = 0,
+    SDLErr_Uninitialised,
+    SDLErr_InitSubSystem,
+    SDLErr_OpenAudio
 };
 
 static int ErrorCode = SDLErr_Ok;
@@ -67,32 +68,29 @@ char *SDLAudioDriverNameEnv;
 
 static void fillData(void * userdata, Uint8 * ptr, int remaining)
 {
+    UNREFERENCED_PARAMETER(userdata);
+
     if (!MixBuffer || !MixCallBack)
       return;
 
-    UNREFERENCED_PARAMETER(userdata);
-
-    int len;
-    char *sptr;
-
-    while (remaining > 0) {
-        if (MixBufferUsed == MixBufferSize) {
+    while (remaining > 0)
+    {
+        if (MixBufferUsed == MixBufferSize)
+        {
             MixCallBack();
-
             MixBufferUsed = 0;
-            MixBufferCurrent++;
-            if (MixBufferCurrent >= MixBufferCount) {
+
+            if (++MixBufferCurrent >= MixBufferCount)
                 MixBufferCurrent -= MixBufferCount;
-            }
         }
 
-        while (remaining > 0 && MixBufferUsed < MixBufferSize) {
-            sptr = MixBuffer + (MixBufferCurrent * MixBufferSize) + MixBufferUsed;
+        while (remaining > 0 && MixBufferUsed < MixBufferSize)
+        {
+            auto sptr = MixBuffer + (MixBufferCurrent * MixBufferSize) + MixBufferUsed;
+            int  len  = MixBufferSize - MixBufferUsed;
 
-            len = MixBufferSize - MixBufferUsed;
-            if (remaining < len) {
+            if (remaining < len)
                 len = remaining;
-            }
 
             memcpy(ptr, sptr, len);
 
@@ -103,22 +101,20 @@ static void fillData(void * userdata, Uint8 * ptr, int remaining)
     }
 }
 
-int SDLDrv_GetError(void)
-{
-    return ErrorCode;
-}
+int SDLDrv_GetError(void) { return ErrorCode; }
 
 const char *SDLDrv_ErrorString(int ErrorNumber)
 {
     const char *ErrorString;
 
-    switch( ErrorNumber ) {
-        case SDLErr_Warning :
-        case SDLErr_Error :
-            ErrorString = SDLDrv_ErrorString( ErrorCode );
+    switch (ErrorNumber)
+    {
+        case SDLErr_Warning:
+        case SDLErr_Error:
+            ErrorString = SDLDrv_ErrorString(ErrorCode);
             break;
 
-        case SDLErr_Ok :
+        case SDLErr_Ok:
             ErrorString = "SDL Audio ok.";
             break;
 
@@ -143,9 +139,9 @@ const char *SDLDrv_ErrorString(int ErrorNumber)
 }
 
 #if SDL_MAJOR_VERSION >= 2
-void SDLDrv_PCM_PrintDevices(void)
+void SDLDrv_PCM_PrintDrivers(void)
 {
-    MV_Printf("Available backends: ");
+    MV_Printf("Available audio drivers: ");
 
     for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i)
         MV_Printf("%s ", SDL_GetAudioDriver(i));
@@ -153,7 +149,7 @@ void SDLDrv_PCM_PrintDevices(void)
     MV_Printf("\n");
 }
 
-int SDLDrv_PCM_CheckDevice(char const *dev)
+int SDLDrv_PCM_CheckDriverName(char const *dev)
 {
     for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i)
         if (!Bstrcasecmp(dev, SDL_GetAudioDriver(i)))
@@ -162,12 +158,8 @@ int SDLDrv_PCM_CheckDevice(char const *dev)
     return false;
 }
 
-char const *SDLDrv_PCM_GetDevice(void) { return SDL_GetCurrentAudioDriver(); }
-
-static void SDLDrv_Cleanup(void)
-{
-    DO_FREE_AND_NULL(SDLAudioDriverNameEnv);
-}
+char const *SDLDrv_PCM_GetDriverName(void) { return SDL_GetCurrentAudioDriver(); }
+static void SDLDrv_Cleanup(void) { DO_FREE_AND_NULL(SDLAudioDriverNameEnv); }
 #endif
 
 int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
@@ -178,9 +170,8 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     int err = 0;
     SDL_AudioSpec spec, actual;
 
-    if (Initialised) {
+    if (Initialised)
         SDLDrv_PCM_Shutdown();
-    }
 #if SDL_MAJOR_VERSION >= 2
     else if (SDLAudioDriverNameEnv == nullptr)
     {
@@ -202,12 +193,14 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 
     inited = SDL_WasInit(SDL_INIT_AUDIO);
 
-    if (!(inited & SDL_INIT_AUDIO)) {
-        err = SDL_InitSubSystem(SDL_INIT_AUDIO);
+    if (!(inited & SDL_INIT_AUDIO))
+    {
+        err        = SDL_InitSubSystem(SDL_INIT_AUDIO);
         StartedSDL = SDL_WasInit(SDL_INIT_AUDIO);
     }
 
-    if (err < 0) {
+    if (err < 0)
+    {
         ErrorCode = SDLErr_InitSubSystem;
         return SDLErr_Error;
     }
@@ -238,7 +231,8 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
         SDL_setenv("SDL_AUDIODRIVER", SDLAudioDriverNameEnv, true);
 #endif
 
-    if (err == 0) {
+    if (err == 0)
+    {
         ErrorCode = SDLErr_OpenAudio;
         return SDLErr_Error;
     }
@@ -271,7 +265,8 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 #endif
 
 #if (SDL_MAJOR_VERSION == 1)
-    if (actual.freq == 0 || actual.channels == 0) {
+    if (actual.freq == 0 || actual.channels == 0)
+    {
         // hack for when SDL said it opened the audio, but clearly didn't
         SDL_CloseAudio();
         ErrorCode = SDLErr_OpenAudio;
@@ -319,14 +314,14 @@ void SDLDrv_PCM_Shutdown(void)
 int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
                         int NumDivisions, void ( *CallBackFunc )( void ) )
 {
-    if (!Initialised) {
+    if (!Initialised)
+    {
         ErrorCode = SDLErr_Uninitialised;
         return SDLErr_Error;
     }
 
-    if (Playing) {
+    if (Playing)
         SDLDrv_PCM_StopPlayback();
-    }
 
     MixBuffer = BufferStart;
     MixBufferSize = BufferSize;
@@ -350,9 +345,8 @@ int SDLDrv_PCM_BeginPlayback(char *BufferStart, int BufferSize,
 
 void SDLDrv_PCM_StopPlayback(void)
 {
-    if (!Initialised || !Playing) {
+    if (!Initialised || !Playing)
         return;
-    }
 
 #if (SDL_MAJOR_VERSION == 2)
     SDL_PauseAudioDevice(audio_dev, 1);

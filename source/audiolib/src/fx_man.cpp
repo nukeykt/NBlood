@@ -70,7 +70,7 @@ static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
 #endif
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
         if (!Bstrcasecmp(parm->name, "snd_sdl_audiodriver"))
-            SDLDrv_PCM_PrintDevices();
+            SDLDrv_PCM_PrintDrivers();
 #endif
     }
 
@@ -87,12 +87,12 @@ static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
     else if (!Bstrcasecmp(parm->name, "snd_sdl_audiodriver"))
     {
-        if (!FX_Installed || !Bstrcasecmp(parm->parms[0], SDLDrv_PCM_GetDevice()))
+        if (!FX_Installed || !Bstrcasecmp(parm->parms[0], SDLDrv_PCM_GetDriverName()))
             return r;
 
-        if (!SDLDrv_PCM_CheckDevice(parm->parms[0]))
+        if (!SDLDrv_PCM_CheckDriverName(parm->parms[0]))
         {
-            SDLDrv_PCM_PrintDevices();
+            SDLDrv_PCM_PrintDrivers();
             return r;
         }
 
@@ -117,7 +117,7 @@ void FX_InitCvars(void)
         { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void*) &MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
 #endif
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
-        { "snd_sdl_audiodriver", "select SDL audio backend: platform-specific string typically set by the SDL_AUDIODRIVER environment variable",
+        { "snd_sdl_audiodriver", "select SDL audio driver (platform-specific)",
           (void *)SDLAudioDriverName, CVAR_STRING | CVAR_FUNCPTR, 0, sizeof(SDLAudioDriverName) - 1 },
 #endif
     };
