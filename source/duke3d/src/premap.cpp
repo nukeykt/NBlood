@@ -1391,6 +1391,10 @@ void G_NewGame(int volumeNum, int levelNum, int skillNum)
             gameHandleEvents();
     }
 
+    S_PauseSounds(false);
+    FX_StopAllSounds();
+    S_Cleanup();
+
     ready2send = 0;
 
     if (ud.m_recstat != 2 && ud.last_level != -1 && !VM_OnEventWithReturn(EVENT_EXITGAMESCREEN, g_player[myconnectindex].ps->i, myconnectindex, 0)
