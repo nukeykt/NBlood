@@ -333,12 +333,6 @@ void CDemo::Playback(void)
 _DEMOPLAYBACK:
     while (at1 && !gQuitGame)
     {
-        if (handleevents() && quitevent)
-        {
-            KB_KeyDown[sc_Escape] = 1;
-            quitevent = 0;
-        }
-        MUSIC_Update();
         while (totalclock >= gNetFifoClock && !gQuitGame)
         {
             if (!v4)
@@ -408,6 +402,12 @@ _DEMOPLAYBACK:
         }
         if (viewFPSLimit())
         {
+            if (handleevents() && quitevent)
+            {
+                KB_KeyDown[sc_Escape] = 1;
+                quitevent = 0;
+            }
+            MUSIC_Update();
             viewDrawScreen();
             if (gInputMode == INPUT_MODE_1 && CGameMenuMgr::m_bActive)
                 gGameMenuMgr.Draw();

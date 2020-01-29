@@ -1819,37 +1819,11 @@ RESTART:
     ready2send = 1;
     while (!gQuitGame)
     {
-        if (handleevents() && quitevent)
-        {
-            KB_KeyDown[sc_Escape] = 1;
-            quitevent = 0;
-        }
-        netUpdate();
-        MUSIC_Update();
-        CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
-        switch (gInputMode)
-        {
-        case INPUT_MODE_1:
-            if (gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Process();
-            break;
-        case INPUT_MODE_0:
-            LocalKeys();
-            break;
-        default:
-            break;
-        }
-        if (gQuitGame)
-            continue;
-
-        OSD_DispatchQueued();
-        
         bool bDraw;
         if (gGameStarted)
         {
             char gameUpdate = false;
             double const gameUpdateStartTime = timerGetHiTicks();
-            gameHandleEvents();
             while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
             {
                 viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
@@ -1901,12 +1875,35 @@ RESTART:
                 videoClearScreen(0);
                 rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
             }
-            gameHandleEvents();
             if (gQuitRequest && !gQuitGame)
                 netBroadcastMyLogoff(gQuitRequest == 2);
         }
         if (bDraw)
         {
+            if (gameHandleEvents() && quitevent)
+            {
+                KB_KeyDown[sc_Escape] = 1;
+                quitevent = 0;
+            }
+            MUSIC_Update();
+            CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
+            switch (gInputMode)
+            {
+            case INPUT_MODE_1:
+                if (gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Process();
+                break;
+            case INPUT_MODE_0:
+                LocalKeys();
+                break;
+            default:
+                break;
+            }
+            if (gQuitGame)
+                continue;
+
+            OSD_DispatchQueued();
+
             switch (gInputMode)
             {
             case INPUT_MODE_1:
@@ -1956,9 +1953,9 @@ RESTART:
         while (gGameMenuMgr.m_bActive)
         {
             gGameMenuMgr.Process();
-            gameHandleEvents();
             if (viewFPSLimit())
             {
+                gameHandleEvents();
                 videoClearScreen(0);
                 gGameMenuMgr.Draw();
                 videoNextPage();
