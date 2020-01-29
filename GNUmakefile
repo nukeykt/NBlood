@@ -1213,7 +1213,7 @@ exhumed_editor_rsrc_objs :=
 exhumed_game_gen_objs :=
 exhumed_editor_gen_objs :=
 
-ifeq (1,$(HAVE_GTK2))
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     exhumed_game_objs += startgtk.game.cpp
     exhumed_game_gen_objs += game_banner.c
     exhumed_editor_gen_objs += build_banner.c
