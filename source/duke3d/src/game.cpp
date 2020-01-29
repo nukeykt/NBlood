@@ -197,9 +197,7 @@ enum gametokens
 
 static void gameTimerHandler(void)
 {
-    S_Cleanup();
     MUSIC_Update();
-
     G_HandleSpecialKeys();
 }
 
