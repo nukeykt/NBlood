@@ -2976,7 +2976,7 @@ void P_GetInput(int const playerNum)
     if (g_myAimMode)
         input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
     else
-        input.fvel = -(info.mousey >> 6);
+        input.fvel = -(info.mousey >> 3);
 
     if (ud.mouseflip) input.q16horz = -input.q16horz;
 
