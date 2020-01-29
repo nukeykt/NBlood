@@ -140,33 +140,36 @@ static void CONTROL_SetFlag(int which, int active)
 
 int32_t CONTROL_KeyboardFunctionPressed(int32_t which)
 {
-    int32_t key1 = 0, key2 = 0;
+    if (CONTROL_CheckRange(which) || !CONTROL_Flags[which].used)
+        return FALSE;
 
-    if (CONTROL_CheckRange(which)) return FALSE;
+    int r = 0;
+    auto &mapped = CONTROL_KeyMapping[which];
 
-    if (!CONTROL_Flags[which].used) return FALSE;
+    if (mapped.keyPrimary != KEYUNDEFINED && !CONTROL_KeyBinds[mapped.keyPrimary].cmdstr)
+        r = !!KB_KeyDown[mapped.keyPrimary];
 
-    if (CONTROL_KeyMapping[which].key1 != KEYUNDEFINED && !CONTROL_KeyBinds[CONTROL_KeyMapping[which].key1].cmdstr)
-        key1 = KB_KeyDown[ CONTROL_KeyMapping[which].key1 ] ? TRUE : FALSE;
+    if (mapped.keySecondary != KEYUNDEFINED && !CONTROL_KeyBinds[mapped.keySecondary].cmdstr)
+        r |= !!KB_KeyDown[mapped.keySecondary];
 
-    if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED && !CONTROL_KeyBinds[CONTROL_KeyMapping[which].key2].cmdstr)
-        key2 = KB_KeyDown[ CONTROL_KeyMapping[which].key2 ] ? TRUE : FALSE;
-
-    return key1 | key2;
+    return r;
 }
 
+#if 0
 void CONTROL_ClearKeyboardFunction(int32_t which)
 {
-    if (CONTROL_CheckRange(which)) return;
+    if (CONTROL_CheckRange(which) || !CONTROL_Flags[which].used)
+        return;
 
-    if (!CONTROL_Flags[which].used) return;
+    auto &mapped = CONTROL_KeyMapping[which];
 
-    if (CONTROL_KeyMapping[which].key1 != KEYUNDEFINED)
-        KB_KeyDown[ CONTROL_KeyMapping[which].key1 ] = 0;
+    if (mapped.key1 != KEYUNDEFINED)
+        KB_KeyDown[mapped.key1] = 0;
 
-    if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED)
-        KB_KeyDown[ CONTROL_KeyMapping[which].key2 ] = 0;
+    if (mapped.key2 != KEYUNDEFINED)
+        KB_KeyDown[mapped.key2] = 0;
 }
+#endif
 
 void CONTROL_DefineFlag(int which, int toggle)
 {
@@ -192,8 +195,8 @@ void CONTROL_MapKey(int32_t which, kb_scancode key1, kb_scancode key2)
 {
     if (CONTROL_CheckRange(which)) return;
 
-    CONTROL_KeyMapping[which].key1 = key1 ? key1 : KEYUNDEFINED;
-    CONTROL_KeyMapping[which].key2 = key2 ? key2 : KEYUNDEFINED;
+    CONTROL_KeyMapping[which].keyPrimary = key1 ? key1 : KEYUNDEFINED;
+    CONTROL_KeyMapping[which].keySecondary = key2 ? key2 : KEYUNDEFINED;
 }
 
 #if 0

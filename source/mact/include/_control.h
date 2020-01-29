@@ -144,8 +144,8 @@ typedef struct
 
 typedef struct
 {
-    kb_scancode key1;
-    kb_scancode key2;
+    kb_scancode keyPrimary;
+    kb_scancode keySecondary;
 } controlkeymaptype;
 
 typedef struct
