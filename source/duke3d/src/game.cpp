@@ -4926,7 +4926,8 @@ FAKE_F3:
             Menu_Change(MENU_SOUND_INGAME);
         }
 
-        if (KB_UnBoundKeyPressed(sc_F5) && ud.config.MusicToggle)
+#ifndef EDUKE32_STANDALONE // FIXME?
+        if (!FURY && KB_UnBoundKeyPressed(sc_F5) && ud.config.MusicToggle)
         {
             map_t *const pMapInfo    = &g_mapInfo[g_musicIndex];
             char *const  musicString = apStrings[QUOTE_MUSIC];
@@ -4940,6 +4941,7 @@ FAKE_F3:
 
             P_DoQuote(QUOTE_MUSIC, g_player[myconnectindex].ps);
         }
+#endif
 
         if ((BUTTON(gamefunc_Quick_Save) || g_doQuickSave == 1) && (myplayer.gm & MODE_GAME))
         {
