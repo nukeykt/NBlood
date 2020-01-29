@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #if defined EDUKE32_TOUCH_DEVICES
-# define EDUKE32_SIMPLE_MENU
+# define EDUKE32_RETAIL_MENU
 # define EDUKE32_ANDROID_MENU
 #endif
 

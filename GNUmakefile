@@ -8,7 +8,7 @@ ifeq ($(FURY),1)
     APPNAME := Ion Fury
     NETCODE := 0
     POLYMER := 0
-    SIMPLE_MENU := 1
+    RETAIL_MENU := 1
     STANDALONE := 1
     USE_LIBVPX := 0
 endif
