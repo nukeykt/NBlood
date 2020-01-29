@@ -258,7 +258,6 @@ void CONTROL_ClearUserInput(UserInput *);
 
 #define CONTROL_NUM_FLAGS   64
 extern int32_t CONTROL_ButtonFlags[CONTROL_NUM_FLAGS];
-extern bool CONTROL_SmoothMouse;
 
 #ifdef __cplusplus
 }

@@ -71,7 +71,6 @@ static uint8_t CONTROL_DoubleClickSpeed;
 int32_t CONTROL_ButtonFlags[CONTROL_NUM_FLAGS];
 consolekeybind_t CONTROL_KeyBinds[MAXBOUNDKEYS + MAXMOUSEBUTTONS];
 bool CONTROL_BindsEnabled = 0;
-bool CONTROL_SmoothMouse  = 0;
 
 #define CONTROL_CheckRange(which) ((unsigned)which >= (unsigned)CONTROL_NUM_FLAGS)
 #define BIND(x, s, r, k) do { Xfree(x.cmdstr); x.cmdstr = s; x.repeat = r; x.key = k; } while (0)
@@ -110,13 +109,6 @@ static void CONTROL_GetMouseDelta(ControlInfo * info)
     mouseReadPos(&input.x, &input.y);
 
     vec2f_t finput = { float(input.x), float(input.y) };
-
-    if (CONTROL_SmoothMouse)
-    {
-        static vec2_t last;
-        finput = { float(input.x + last.x) * 0.5f, float(input.y + last.y) * 0.5f };
-        last = input;
-    }
 
     info->mousex = mulscale16(Blrintf(finput.x * 4.f * CONTROL_MouseSensitivity), CONTROL_MouseAxesScale[0]);
     info->mousey = mulscale16(Blrintf(finput.y * 4.f * CONTROL_MouseSensitivity), CONTROL_MouseAxesScale[1]);
