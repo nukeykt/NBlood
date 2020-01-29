@@ -146,10 +146,10 @@ int32_t CONTROL_KeyboardFunctionPressed(int32_t which)
 
     if (!CONTROL_Flags[which].used) return FALSE;
 
-    if (CONTROL_KeyMapping[which].key1 != KEYUNDEFINED)
+    if (CONTROL_KeyMapping[which].key1 != KEYUNDEFINED && !CONTROL_KeyBinds[CONTROL_KeyMapping[which].key1].cmdstr)
         key1 = KB_KeyDown[ CONTROL_KeyMapping[which].key1 ] ? TRUE : FALSE;
 
-    if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED)
+    if (CONTROL_KeyMapping[which].key2 != KEYUNDEFINED && !CONTROL_KeyBinds[CONTROL_KeyMapping[which].key2].cmdstr)
         key2 = KB_KeyDown[ CONTROL_KeyMapping[which].key2 ] ? TRUE : FALSE;
 
     return key1 | key2;
@@ -407,7 +407,7 @@ void CONTROL_ClearAssignments(void)
     memset(CONTROL_JoyAxesInvert,       0,               sizeof(CONTROL_JoyAxesInvert));
     memset(CONTROL_JoyAxesMap,          AXISUNDEFINED,   sizeof(CONTROL_JoyAxesMap));
     memset(CONTROL_JoyButtonMapping,    BUTTONUNDEFINED, sizeof(CONTROL_JoyButtonMapping));
-//    memset(CONTROL_KeyMapping,          KEYUNDEFINED,    sizeof(CONTROL_KeyMapping));
+    memset(CONTROL_KeyMapping,          KEYUNDEFINED,    sizeof(CONTROL_KeyMapping));
     memset(CONTROL_LastJoyAxes,         0,               sizeof(CONTROL_LastJoyAxes));
     memset(CONTROL_MouseButtonMapping,  BUTTONUNDEFINED, sizeof(CONTROL_MouseButtonMapping));
 
