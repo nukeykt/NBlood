@@ -276,7 +276,6 @@ void CONFIG_SetDefaults(void)
     ud.config.ReverseStereo   = 0;
 #endif
     ud.config.ShowWeapons     = 0;
-    ud.config.SmoothInput     = 1;
     ud.config.SoundToggle     = 1;
     ud.config.VoiceToggle     = 5;  // bitfield, 1 = local, 2 = dummy, 4 = other players in DM
     ud.config.useprecache     = 1;
