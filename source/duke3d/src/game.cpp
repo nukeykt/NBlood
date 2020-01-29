@@ -6944,13 +6944,6 @@ MAIN_LOOP_RESTART:
                     {
                         Net_GetPackets();
                         G_DoMoveThings();
-
-#ifdef __ANDROID__
-                        inputfifo[0][myconnectindex].fvel = 0;
-                        inputfifo[0][myconnectindex].svel = 0;
-                        inputfifo[0][myconnectindex].avel = 0;
-                        inputfifo[0][myconnectindex].horz = 0;
-#endif
                     }
 
                     if (totalclock - moveClock >= (TICSPERFRAME>>1))
