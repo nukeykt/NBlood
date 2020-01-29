@@ -701,16 +701,16 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 ////////// TIMER SAVING/RESTORING //////////
 
 static struct {
-    int32_t totalclock, totalclocklock;  // engine
-    int32_t ototalclock, lockclock;  // game
+    ClockTicks totalclock, totalclocklock;  // engine
+    ClockTicks ototalclock, lockclock;  // game
 } g_timers;
 
 static void G_SaveTimers(void)
 {
-    g_timers.totalclock     = (int32_t) totalclock;
-    g_timers.totalclocklock = (int32_t) totalclocklock;
-    g_timers.ototalclock    = (int32_t) ototalclock;
-    g_timers.lockclock      = (int32_t) lockclock;
+    g_timers.totalclock     = totalclock;
+    g_timers.totalclocklock = totalclocklock;
+    g_timers.ototalclock    = ototalclock;
+    g_timers.lockclock      = lockclock;
 }
 
 static void G_RestoreTimers(void)
@@ -851,7 +851,6 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
     Net_WaitForServer();
 
     G_RestoreTimers();
-    ototalclock = totalclock;
 
     VM_OnEvent(EVENT_POSTSAVEGAME, g_player[myconnectindex].ps->i, myconnectindex);
 
@@ -862,7 +861,6 @@ saveproblem:
     Net_WaitForServer();
 
     G_RestoreTimers();
-    ototalclock = totalclock;
 
     return -1;
 }
