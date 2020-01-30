@@ -105,6 +105,11 @@ extern GINPUT gInput;
 extern bool bSilentAim;
 extern int32_t gMouseAim; // Should be an int32 due to being passed to OSD
 
+extern fix16_t gViewLook, gViewAngle;
+extern float gViewAngleAdjust;
+extern float gViewLookAdjust;
+extern int gViewLookRecenter;
+
 int32_t ctrlCheckAllInput(void);
 void ctrlClearAllInput(void);
 void ctrlInit();
