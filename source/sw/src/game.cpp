@@ -5522,6 +5522,10 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
     SWBOOL sprisplayer = FALSE;
     short txt_x, txt_y;
 
+    int32_t tmpydim = (xdim*5)/8;
+
+    renderSetAspect(65536, divscale16(tmpydim*320, xdim*200));
+
     // draw location text
     if (gs.BorderNum <= BORDER_BAR-1)
     {
@@ -5844,6 +5848,7 @@ SHOWSPRITE:
         }
     }
 
+    videoSetCorrectedAspect();
 }
 
 extern int tilefileoffs[MAXTILES]; //offset into the
