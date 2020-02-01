@@ -117,9 +117,9 @@ void AdLibDrv_MIDI_SetTempo(int const tempo, int const division)
 void AdLibDrv_MIDI_Service(void)
 {
     int16_t * buffer16 = (int16_t *)MV_MusicBuffer;
-    int const samples  = MV_BufferSize >> 2;
+    int32_t const samples = MV_MIXBUFFERSIZE;
 
-    for (int i = 0; i < samples; i++)
+    for (int32_t i = 0; i < samples; i++)
     {
         Bit16s buf[2];
         while (MV_MIDIRenderTimer >= MV_MixRate)
@@ -130,8 +130,13 @@ void AdLibDrv_MIDI_Service(void)
         }
         if (MV_MIDIRenderTempo >= 0) MV_MIDIRenderTimer += MV_MIDIRenderTempo;
         OPL3_GenerateResampled(AL_GetChip(), buf);
-        *buffer16++ = clamp(buf[0]<<AL_PostAmp, INT16_MIN, INT16_MAX);
-        *buffer16++ = clamp(buf[1]<<AL_PostAmp, INT16_MIN, INT16_MAX);
+        if (MV_Channels == 2)
+        {
+            *buffer16++ = clamp(buf[0]<<AL_PostAmp, INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp(buf[1]<<AL_PostAmp, INT16_MIN, INT16_MAX);
+        }
+        else
+            *buffer16++ = clamp(((buf[0]<<AL_PostAmp)+(buf[1]<<AL_PostAmp))/2, INT16_MIN, INT16_MAX);
     }
 }
 
