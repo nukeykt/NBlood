@@ -280,13 +280,8 @@ static void MV_ServiceVoc(void)
         MV_MusicCallback();
         int16_t * __restrict source = (int16_t*)MV_MusicBuffer;
         int16_t * __restrict dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
-        for (int32_t i = 0; i < MV_BufferSize>>2; i++)
-        {
+        for (int32_t i = 0; i < MV_BufferSize>>1; i++, dest++)
             *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
-            dest++;
-            *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
-            dest++;
-        }
     }
 }
 
@@ -814,7 +809,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     MV_SetErrorCode(MV_Ok);
 
     // MV_TotalMemory + 2: FIXME, see valgrind_errors.log
-    int const totalmem = Voices * sizeof(VoiceNode) + (MV_TOTALBUFFERSIZE<<1) + (MV_MIXBUFFERSIZE<<2) + 2;
+    int const totalmem = Voices * sizeof(VoiceNode) + (MV_TOTALBUFFERSIZE<<1) + (MV_MIXBUFFERSIZE*numchannels*2) + 2;
 
     char *ptr = (char *) Xaligned_alloc(16, totalmem);
 
