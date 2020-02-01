@@ -737,6 +737,7 @@ int MIDI_PlaySong(char *song, int loopflag)
         int tracklength = _MIDI_ReadNumber(ptr + 4, 4);
         ptr += 8;
         CurrentTrack->start = ptr;
+        CurrentTrack->EMIDI_IncludeTrack = FALSE;
         ptr += tracklength;
         CurrentTrack++;
     }
