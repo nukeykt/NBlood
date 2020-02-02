@@ -77,7 +77,11 @@ static void BiteSeqCallback(int, int nXSprite)
         return;
     }
     spritetype *pTarget = &sprite[pXSprite->target];
-    if (IsPlayerSprite(pTarget) || !VanillaMode()) // allow to hit non-player targets if not a demo
+    if (IsPlayerSprite(pTarget)
+#ifdef NOONE_EXTENSIONS
+        || !VanillaMode() // By NoOne: allow to hit non-player targets if not a demo
+#endif
+       )
         actFireVector(pSprite, 0, 0, dx, dy, pTarget->z-pSprite->z, VECTOR_TYPE_15);
 }
 
