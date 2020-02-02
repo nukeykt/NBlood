@@ -626,7 +626,7 @@ int32_t CONFIG_ReadSetup(void)
 
     SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup",&ud_setup.ForceSetup);
 
-    if (g_grpNamePtr == NULL && g_addonNum == 0)
+    if (g_grpNamePtr == NULL && g_addonNum == -1)
     {
         SCRIPT_GetStringPtr(scripthandle, "Setup", "SelectedGRP", &g_grpNamePtr);
         if (g_grpNamePtr && !strlen(g_grpNamePtr))
@@ -694,7 +694,7 @@ void CONFIG_WriteSetup(void)
 
     SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup",ud_setup.ForceSetup,FALSE,FALSE);
 
-    if (g_grpNamePtr && !g_addonNum)
+    if (g_grpNamePtr && g_addonNum == -1)
         SCRIPT_PutString(scripthandle, "Setup", "SelectedGRP", g_grpNamePtr);
 
     SCRIPT_PutNumber(scripthandle, "Controls","UseMouse",ud_setup.UseMouse,FALSE,FALSE);

@@ -3545,7 +3545,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
     SW_ExtInit();
 
     // hackish since SW's init order is a bit different right now
-    if (G_CheckCmdSwitch(argc, argv, "-addon1"))
+    if (G_CheckCmdSwitch(argc, argv, "-addon0"))
+    {
+        g_addonNum = 0;
+        g_noSetup = 1;
+    }
+    else if (G_CheckCmdSwitch(argc, argv, "-addon1"))
     {
         g_addonNum = 1;
         g_noSetup = 1;
