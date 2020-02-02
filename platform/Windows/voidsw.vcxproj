@@ -60,7 +60,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <OutDir>$(SolutionDir)..\..\</OutDir>
     <IntDir>$(Platform)\Build\$(ProjectName)\$(Configuration)\</IntDir>
-    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);..\..\source\build\include;..\..\source\mact\include;..\..\source\audiolib\include;..\..\source\enet\include;..\..\platform\windows\include</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);..\..\source\build\include;..\..\source\mact\include;..\..\source\audiolib\include;..\..\platform\windows\include</NMakeIncludeSearchPath>
     <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nmake /f msvc.mak DEBUG=1 WINBITS=32 RENDERTYPE=SDL</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nmake /f msvc.mak veryclean all DEBUG=1 WINBITS=32 RENDERTYPE=SDL</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nmake /f msvc.mak veryclean DEBUG=1 WINBITS=32 RENDERTYPE=SDL</NMakeCleanCommandLine>
@@ -280,9 +280,6 @@
     </ProjectReference>
     <ProjectReference Include="build.vcxproj">
       <Project>{dbecb851-5624-4fa8-9a9d-7169d0f12ff1}</Project>
-    </ProjectReference>
-    <ProjectReference Include="enet.vcxproj">
-      <Project>{a68cc5e4-567a-44c8-94fe-c1de09aeeb40}</Project>
     </ProjectReference>
     <ProjectReference Include="glad.vcxproj">
       <Project>{6ac1d997-8dae-4343-8dd8-da2a1ca63212}</Project>

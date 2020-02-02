@@ -187,6 +187,7 @@ ENGINE_OBJS= \
 	$(ENGINE_OBJ)\fix16.$o \
 	$(ENGINE_OBJ)\fix16_str.$o \
 	$(ENGINE_OBJ)\sjson.$o \
+	$(ENGINE_OBJ)\enet.$o \
 
 
 ENGINE_EDITOR_OBJS=$(ENGINE_OBJ)\build.$o \
