@@ -3453,6 +3453,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
         if (!Bstrcasecmp(argv[i]+1, "setup"))
         {
             CommandSetup = TRUE;
+            g_noSetup = 0;
+        }
+        else if (!Bstrcasecmp(argv[i]+1, "nosetup"))
+        {
+            CommandSetup = FALSE;
+            g_noSetup = 1;
         }
         else if (!Bstrcasecmp(argv[i]+1, "?"))
         {
@@ -3528,9 +3534,15 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     // hackish since SW's init order is a bit different right now
     if (G_CheckCmdSwitch(argc, argv, "-addon1"))
+    {
         g_addonNum = 1;
+        g_noSetup = 1;
+    }
     else if (G_CheckCmdSwitch(argc, argv, "-addon2"))
+    {
         g_addonNum = 2;
+        g_noSetup = 1;
+    }
 
     i = CONFIG_ReadSetup();
 
@@ -3546,7 +3558,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (i < 0 || ud_setup.ForceSetup || CommandSetup)
+    if (i < 0 || CommandSetup || (ud_setup.ForceSetup && !g_noSetup))
     {
         if (quitevent || !startwin_run())
         {

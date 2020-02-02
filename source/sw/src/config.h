@@ -64,6 +64,8 @@ extern "C" {
 extern ud_setup_t ud_setup;
 #endif
 
+extern int g_noSetup;
+
 #define SETUPNAMEPARM "SETUPFILE"
 
 // screen externs
