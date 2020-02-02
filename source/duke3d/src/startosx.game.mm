@@ -179,9 +179,7 @@ static int retval = -1;
 
 static struct {
     grpfile_t const * grp;
-    int fullscreen;
-    int xdim3d, ydim3d, bpp3d;
-    int forcesetup;
+    ud_setup_t shared;
 } settings;
 
 @interface StartupWindow : NSWindow <NSWindowDelegate>
@@ -430,9 +428,9 @@ static struct {
     int xdim = 0, ydim = 0, bpp = 0;
 
     if (firstTime) {
-        xdim = settings.xdim3d;
-        ydim = settings.ydim3d;
-        bpp  = settings.bpp3d;
+        xdim = settings.shared.xdim;
+        ydim = settings.shared.ydim;
+        bpp  = settings.shared.bpp;
     } else {
         mode3d = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
         if (mode3d >= 0) {
@@ -490,10 +488,10 @@ static struct {
 
     int mode = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
     if (mode >= 0) {
-        settings.xdim3d = validmode[mode].xdim;
-        settings.ydim3d = validmode[mode].ydim;
-        settings.bpp3d = validmode[mode].bpp;
-        settings.fullscreen = validmode[mode].fs;
+        settings.shared.xdim = validmode[mode].xdim;
+        settings.shared.ydim = validmode[mode].ydim;
+        settings.shared.bpp = validmode[mode].bpp;
+        settings.shared.fullscreen = validmode[mode].fs;
     }
 
     int row = [[gameList documentView] selectedRow];
@@ -501,7 +499,7 @@ static struct {
         settings.grp = [[gamelistsrc grpAtIndex:row] entryptr];
     }
 
-    settings.forcesetup = [alwaysShowButton state] == NSControlStateValueOn;
+    settings.shared.forcesetup = [alwaysShowButton state] == NSControlStateValueOn;
 
     retval = 1;
 }
@@ -510,8 +508,8 @@ static struct {
 {
     videoGetModes();
 
-    [fullscreenButton setState: (settings.fullscreen ? NSControlStateValueOn : NSControlStateValueOff)];
-    [alwaysShowButton setState: (settings.forcesetup ? NSControlStateValueOn : NSControlStateValueOff)];
+    [fullscreenButton setState: (settings.shared.fullscreen ? NSControlStateValueOn : NSControlStateValueOff)];
+    [alwaysShowButton setState: (settings.shared.forcesetup ? NSControlStateValueOn : NSControlStateValueOff)];
     [self populateVideoModes:YES];
 
     // enable all the controls on the Configuration page
@@ -674,11 +672,7 @@ int startwin_run(void)
 {
     if (startwin == nil) return 0;
 
-    settings.fullscreen = ud.setup.fullscreen;
-    settings.xdim3d = ud.setup.xdim;
-    settings.ydim3d = ud.setup.ydim;
-    settings.bpp3d = ud.setup.bpp;
-    settings.forcesetup = ud.setup.forcesetup;
+    settings.shared = ud.setup;
     settings.grp = g_selectedGrp;
 
     [startwin setupRunMode];
@@ -695,11 +689,7 @@ int startwin_run(void)
     [nsapp updateWindows];
 
     if (retval) {
-        ud.setup.fullscreen = settings.fullscreen;
-        ud.setup.xdim = settings.xdim3d;
-        ud.setup.ydim = settings.ydim3d;
-        ud.setup.bpp = settings.bpp3d;
-        ud.setup.forcesetup = settings.forcesetup;
+        ud.setup = settings.shared;
         g_selectedGrp = settings.grp;
     }
 

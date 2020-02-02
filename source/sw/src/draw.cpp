@@ -1528,10 +1528,10 @@ void SpriteSortList2D(int tx, int ty)
 
 int COVERsetgamemode(int mode, int xdim, int ydim, int bpp)
 {
-    ScreenHeight = ydim;
-    ScreenWidth  = xdim;
-    ScreenMode   = mode;
-    ScreenBPP    = bpp;
+    ud_setup.ScreenHeight = ydim;
+    ud_setup.ScreenWidth  = xdim;
+    ud_setup.ScreenMode   = mode;
+    ud_setup.ScreenBPP    = bpp;
 
     // [JM] Should I be using upscalefactor here, or some SW equivalent to Duke's ud.detail? !CHECKME!
     return (int)videoSetGameMode(mode,xdim,ydim,bpp,upscalefactor);

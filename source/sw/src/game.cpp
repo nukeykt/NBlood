@@ -767,24 +767,24 @@ void DisplayDemoText(void)
 
 void Set_GameMode(void)
 {
-    extern int ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP;
     int result;
     char ch;
 
-    //DSPRINTF(ds,"ScreenMode %d, ScreenWidth %d, ScreenHeight %d",ScreenMode, ScreenWidth, ScreenHeight);
+    //DSPRINTF(ds,"ScreenMode %d, ScreenWidth %d, ScreenHeight %d", ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight);
     //MONO_PRINT(ds);
-    result = COVERsetgamemode(ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP);
+    result = COVERsetgamemode(ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight, ud_setup.ScreenBPP);
 
     if (result < 0)
     {
         buildprintf("Failure setting video mode %dx%dx%d %s! Attempting safer mode...",
-                    ScreenWidth,ScreenHeight,ScreenBPP,ScreenMode ? "fullscreen" : "windowed");
-        ScreenMode = 0;
-        ScreenWidth = 640;
-        ScreenHeight = 480;
-        ScreenBPP = 8;
+                    ud_setup.ScreenWidth,ud_setup.ScreenHeight,ud_setup.ScreenBPP,
+                    ud_setup.ScreenMode ? "fullscreen" : "windowed");
+        ud_setup.ScreenMode = 0;
+        ud_setup.ScreenWidth = 640;
+        ud_setup.ScreenHeight = 480;
+        ud_setup.ScreenBPP = 8;
 
-        result = COVERsetgamemode(ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP);
+        result = COVERsetgamemode(ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight, ud_setup.ScreenBPP);
         if (result < 0)
         {
             uninitmultiplayers();
@@ -3546,7 +3546,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (i < 0 || ForceSetup || CommandSetup)
+    if (i < 0 || ud_setup.ForceSetup || CommandSetup)
     {
         if (quitevent || !startwin_run())
         {

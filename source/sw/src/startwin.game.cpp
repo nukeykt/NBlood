@@ -26,11 +26,8 @@
 
 static struct
 {
-    int fullscreen;
-    int xdim, ydim, bpp;
-    int forcesetup;
-    int usemouse, usejoy;
     struct grpfile const * selectedgrp;
+    ud_setup_t shared;
 } settings;
 
 static HWND startupdlg = NULL;
@@ -53,25 +50,25 @@ static void PopulateForm(int pgs)
 
         hwnd = GetDlgItem(pages[TAB_CONFIG], IDCVMODE);
 
-        mode = videoCheckMode(&settings.xdim, &settings.ydim, settings.bpp, settings.fullscreen, 1);
+        mode = videoCheckMode(&settings.shared.xdim, &settings.shared.ydim, settings.shared.bpp, settings.shared.fullscreen, 1);
         if (mode < 0)
         {
             int cd[] = { 32, 24, 16, 15, 8, 0 };
-            for (i=0; cd[i]; ) { if (cd[i] >= settings.bpp) i++; else break; }
+            for (i=0; cd[i]; ) { if (cd[i] >= settings.shared.bpp) i++; else break; }
             for (; cd[i]; i++)
             {
-                mode = videoCheckMode(&settings.xdim, &settings.ydim, cd[i], settings.fullscreen, 1);
+                mode = videoCheckMode(&settings.shared.xdim, &settings.shared.ydim, cd[i], settings.shared.fullscreen, 1);
                 if (mode < 0) continue;
-                settings.bpp = cd[i];
+                settings.shared.bpp = cd[i];
                 break;
             }
         }
 
-        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), (settings.fullscreen ? BST_CHECKED : BST_UNCHECKED));
+        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCFULLSCREEN), (settings.shared.fullscreen ? BST_CHECKED : BST_UNCHECKED));
         ComboBox_ResetContent(hwnd);
         for (i=0; i<validmodecnt; i++)
         {
-            if (validmode[i].fs != settings.fullscreen) continue;
+            if (validmode[i].fs != settings.shared.fullscreen) continue;
 
             // all modes get added to the 3D mode list
             Bsprintf(buf, "%d x %d %dbpp", validmode[i].xdim, validmode[i].ydim, validmode[i].bpp);
@@ -85,10 +82,10 @@ static void PopulateForm(int pgs)
     {
         int curidx = -1;
 
-        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCALWAYSSHOW), (settings.forcesetup ? BST_CHECKED : BST_UNCHECKED));
+        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCALWAYSSHOW), (settings.shared.forcesetup ? BST_CHECKED : BST_UNCHECKED));
 
-        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCINPUTMOUSE), (settings.usemouse ? BST_CHECKED : BST_UNCHECKED));
-        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCINPUTJOY), (settings.usejoy ? BST_CHECKED : BST_UNCHECKED));
+        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCINPUTMOUSE), (settings.shared.usemouse ? BST_CHECKED : BST_UNCHECKED));
+        Button_SetCheck(GetDlgItem(pages[TAB_CONFIG], IDCINPUTJOY), (settings.shared.usejoystick ? BST_CHECKED : BST_UNCHECKED));
     }
 
     if (pgs & POPULATE_GAME)
@@ -118,7 +115,7 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
         switch (LOWORD(wParam))
         {
         case IDCFULLSCREEN:
-            settings.fullscreen = !settings.fullscreen;
+            settings.shared.fullscreen = !settings.shared.fullscreen;
             PopulateForm(1<<TAB_CONFIG);
             return TRUE;
         case IDCVMODE:
@@ -129,20 +126,20 @@ static INT_PTR CALLBACK ConfigPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
                 if (i != CB_ERR) i = ComboBox_GetItemData((HWND)lParam, i);
                 if (i != CB_ERR)
                 {
-                    settings.xdim = validmode[i].xdim;
-                    settings.ydim = validmode[i].ydim;
-                    settings.bpp  = validmode[i].bpp;
+                    settings.shared.xdim = validmode[i].xdim;
+                    settings.shared.ydim = validmode[i].ydim;
+                    settings.shared.bpp  = validmode[i].bpp;
                 }
             }
             return TRUE;
         case IDCALWAYSSHOW:
-            settings.forcesetup = IsDlgButtonChecked(hwndDlg, IDCALWAYSSHOW) == BST_CHECKED;
+            settings.shared.forcesetup = IsDlgButtonChecked(hwndDlg, IDCALWAYSSHOW) == BST_CHECKED;
             return TRUE;
         case IDCINPUTMOUSE:
-            settings.usemouse = IsDlgButtonChecked(hwndDlg, IDCINPUTMOUSE) == BST_CHECKED;
+            settings.shared.usemouse = IsDlgButtonChecked(hwndDlg, IDCINPUTMOUSE) == BST_CHECKED;
             return TRUE;
         case IDCINPUTJOY:
-            settings.usejoy = IsDlgButtonChecked(hwndDlg, IDCINPUTJOY) == BST_CHECKED;
+            settings.shared.usejoystick = IsDlgButtonChecked(hwndDlg, IDCINPUTJOY) == BST_CHECKED;
             return TRUE;
         default: break;
         }
@@ -513,13 +510,7 @@ int startwin_run(void)
     SetPage(TAB_CONFIG);
     EnableConfig(1);
 
-    settings.fullscreen = ScreenMode;
-    settings.xdim = ScreenWidth;
-    settings.ydim = ScreenHeight;
-    settings.bpp = ScreenBPP;
-    settings.forcesetup = ForceSetup;
-    settings.usemouse = UseMouse;
-    settings.usejoy = UseJoystick;
+    settings.shared = ud_setup;
     settings.selectedgrp = g_selectedGrp;
     PopulateForm(-1);
 
@@ -541,13 +532,7 @@ int startwin_run(void)
     EnableConfig(0);
     if (done)
     {
-        ScreenMode = settings.fullscreen;
-        ScreenWidth = settings.xdim;
-        ScreenHeight = settings.ydim;
-        ScreenBPP = settings.bpp;
-        ForceSetup = settings.forcesetup;
-        UseMouse = settings.usemouse;
-        UseJoystick = settings.usejoy;
+        ud_setup = settings.shared;
         g_selectedGrp = settings.selectedgrp;
     }
 

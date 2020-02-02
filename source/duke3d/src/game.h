@@ -166,7 +166,7 @@ extern camera_t g_camera;
 #define MAX_RETURN_VALUES 6
 
 // KEEPINSYNC lunatic/_defs_game.lua
-typedef struct {
+typedef struct ud_setup_s {
     int32_t usejoystick;
     int32_t usemouse;
     int32_t fullscreen;
