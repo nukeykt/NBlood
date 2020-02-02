@@ -197,7 +197,7 @@ static const GLfloat  skyboxdata[4 * 5 * 6] =
 
 GLuint          skyboxdatavbo;
 
-GLfloat         artskydata[16];
+GLfloat         artskydata[PSKYOFF_MAX*2];
 
 // LIGHTS
 static _prplanelist *plpool;
@@ -4177,34 +4177,32 @@ void         polymer_drawsky(int16_t tilenum, char palnum, int8_t shade)
 
 static void         polymer_initartsky(void)
 {
-    GLfloat         halfsqrt2 = 0.70710678f;
+    constexpr double factor = 2.0 * PI / (double)PSKYOFF_MAX;
 
-    artskydata[0] = -1.0f;          artskydata[1] = 0.0f;           // 0
-    artskydata[2] = -halfsqrt2;     artskydata[3] = halfsqrt2;      // 1
-    artskydata[4] = 0.0f;           artskydata[5] = 1.0f;           // 2
-    artskydata[6] = halfsqrt2;      artskydata[7] = halfsqrt2;      // 3
-    artskydata[8] = 1.0f;           artskydata[9] = 0.0f;           // 4
-    artskydata[10] = halfsqrt2;     artskydata[11] = -halfsqrt2;    // 5
-    artskydata[12] = 0.0f;          artskydata[13] = -1.0f;         // 6
-    artskydata[14] = -halfsqrt2;    artskydata[15] = -halfsqrt2;    // 7
+    for (int i = 0; i < PSKYOFF_MAX; i++)
+    {
+        artskydata[i * 2 + 0] = -cos(i * factor);
+        artskydata[i * 2 + 1] = sin(i * factor);
+    }
 }
 
 static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shade)
 {
     pthtyp*         pth;
-    GLuint          glpics[PSKYOFF_MAX+1];
-    GLfloat         glcolors[PSKYOFF_MAX+1][3];
+    GLuint          glpics[PSKYOFF_MAX];
+    GLfloat         glcolors[PSKYOFF_MAX][3];
     int32_t         i, j;
     GLfloat         height = 2.45f / 2.0f;
 
     int32_t dapskybits;
     const int8_t *dapskyoff = getpsky(tilenum, NULL, &dapskybits, NULL, NULL);
-    const int32_t numskytilesm1 = (1<<dapskybits)-1;
+    const int32_t numskytiles = 1<<dapskybits;
+    const int32_t numskytilesm1 = numskytiles-1;
 
     i = 0;
-    while (i <= PSKYOFF_MAX)
+    while (i < numskytiles)
     {
-        int16_t picnum = tilenum + i;
+        int16_t picnum = tilenum + dapskyoff[i];
         // Prevent oob by bad user input:
         if (picnum >= MAXTILES)
             picnum = MAXTILES-1;
@@ -4244,12 +4242,13 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
 
     glEnable(GL_TEXTURE_2D);
     i = 0;
-    j = 8;  // In Polymer, an ART sky has always 8 sides...
-    while (i < j)
+    j = 0;
+    int32_t const increment = PSKYOFF_MAX>>max(3, dapskybits);  // In Polymer, an ART sky has 8 or 16 sides...
+    while (i < PSKYOFF_MAX)
     {
         GLint oldswrap;
         // ... but in case a multi-psky specifies less than 8, repeat cyclically:
-        const int8_t tileofs = dapskyoff[i&numskytilesm1];
+        const int8_t tileofs = j&numskytilesm1;
 
         glColor4f(glcolors[tileofs][0], glcolors[tileofs][1], glcolors[tileofs][2], 1.0f);
         glBindTexture(GL_TEXTURE_2D, glpics[tileofs]);
@@ -4257,11 +4256,12 @@ static void         polymer_drawartsky(int16_t tilenum, char palnum, int8_t shad
         glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &oldswrap);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glinfo.clamptoedge?GL_CLAMP_TO_EDGE:GL_CLAMP);
 
-        polymer_drawartskyquad(i, (i + 1) & (j - 1), height);
+        polymer_drawartskyquad(i, (i + increment) & (PSKYOFF_MAX - 1), height);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, oldswrap);
 
-        i++;
+        i += increment;
+        ++j;
     }
     glDisable(GL_TEXTURE_2D);
 }
