@@ -249,7 +249,8 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     ClockTicks nStartTime = totalclock;
 
     ctrlClearAllInput();
-    
+
+    CONSTEXPR kb_scancode escape = 0x1;
     int nFrame = 0;
     do
     {
@@ -257,7 +258,7 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         if (scale((int)(totalclock-nStartTime), nFrameRate, kTicRate) < nFrame)
             continue;
 
-        if (ctrlCheckAllInput())
+        if (KB_KeyPressed(escape) || (nFrame > nFrameRate<<1 && ctrlCheckAllInput()))
             break;
 
         videoClearScreen(0);
