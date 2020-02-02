@@ -518,7 +518,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     i++;
                     continue;
                 }
-                if (!Bstrcasecmp(c+1, "nologo"))
+                if (!Bstrcasecmp(c+1, "nologo") || !Bstrcasecmp(c+1, "quick"))
                 {
                     g_noLogo = 1;
                     i++;
