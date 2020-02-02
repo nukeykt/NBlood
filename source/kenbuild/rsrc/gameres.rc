@@ -29,14 +29,17 @@ BEGIN
 	CONTROL "&Always show configuration on start", IDCALWAYSSHOW, "BUTTON", BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 118, 116, 140, 8
 END
 
-#define FILEVER        1,9,9,9
-#define PRODUCTVER     1,9,9,9
-#define STRFILEVER     "2.0.0devel\0"
-#define STRPRODUCTVER  "2.0.0devel\0"
+#define VER        2,0,0,4
+
+#if defined EDUKE32_FAKE_DATE || defined EDUKE32_FAKE_TIME
+# define VERSTR     REVSTR
+#else
+# define VERSTR     REVSTR " built " __DATE__ " " __TIME__
+#endif
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION FILEVER
- PRODUCTVERSION PRODUCTVER
+ FILEVERSION VER
+ PRODUCTVERSION VER
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x3L
@@ -51,13 +54,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "FileDescription", "KenBuild"
-            VALUE "FileVersion", STRFILEVER
-            VALUE "InternalName", "KenBuild"
-            VALUE "LegalCopyright", "Copyright © 2015 EDuke32 Developers, 2000, 2003 Ken Silverman"
+            VALUE "FileDescription", "EKenBuild"
+            VALUE "FileVersion", VERSTR
+            VALUE "InternalName", "EKenBuild"
+            VALUE "LegalCopyright", "Copyright © EDuke32 Developers, 2000, 2003 Ken Silverman"
             VALUE "OriginalFilename", "ekenbuild.exe"
-            VALUE "ProductName", "KenBuild"
-            VALUE "ProductVersion", STRPRODUCTVER
+            VALUE "ProductName", "EKenBuild"
+            VALUE "ProductVersion", VERSTR
         END
     END
     BLOCK "VarFileInfo"

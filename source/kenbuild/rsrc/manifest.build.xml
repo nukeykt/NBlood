@@ -8,10 +8,10 @@
   <assemblyIdentity
       version="1.0.0.0"
       processorArchitecture="*"
-      name="KenBuild.Mapster32"
+      name="EKenBuild.Editor"
       type="win32"
 />
-  <description>Mapster32 for KenBuild</description>
+  <description>Editor for EKenBuild</description>
   <dependency>
     <dependentAssembly>
       <assemblyIdentity

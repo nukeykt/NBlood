@@ -8,10 +8,10 @@
   <assemblyIdentity
       version="1.0.0.0"
       processorArchitecture="*"
-      name="KenBuild"
+      name="EKenBuild"
       type="win32"
 />
-  <description>KenBuild</description>
+  <description>EKenBuild</description>
   <dependency>
     <dependentAssembly>
       <assemblyIdentity
