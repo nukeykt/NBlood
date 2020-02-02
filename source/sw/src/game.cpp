@@ -1779,9 +1779,14 @@ void PlayTheme()
     MONO_PRINT(ds);
 }
 
+static int g_noLogo;
+
 void
 LogoLevel(void)
 {
+    if (g_noLogo)
+        return;
+
     char called;
     int fin;
     unsigned char pal[PAL_SIZE];
@@ -2139,6 +2144,9 @@ short PlayerQuitMenuLevel = -1;
 void
 IntroAnimLevel(void)
 {
+    if (g_noLogo)
+        return;
+
     DSPRINTF(ds,"IntroAnimLevel");
     MONO_PRINT(ds);
     playanm(0);
@@ -3459,6 +3467,10 @@ int32_t app_main(int32_t argc, char const * const * argv)
         {
             CommandSetup = FALSE;
             g_noSetup = 1;
+        }
+        else if (!Bstrcasecmp(argv[i]+1, "nologo"))
+        {
+            g_noLogo = 1;
         }
         else if (!Bstrcasecmp(argv[i]+1, "?"))
         {
