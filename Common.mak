@@ -346,6 +346,7 @@ POLYMER ?= 1
 USE_OPENGL := 1
 LUNATIC := 0
 USE_LUAJIT_2_1 := 0
+NOONE_EXTENSIONS ?= 1
 
 # Library toggles
 HAVE_GTK2 := 1
@@ -865,6 +866,9 @@ ifneq (0,$(USE_OPENGL))
 endif
 ifneq (0,$(POLYMER))
     COMPILERFLAGS += -DPOLYMER
+endif
+ifneq (0,$(NOONE_EXTENSIONS))
+    COMPILERFLAGS += -DNOONE_EXTENSIONS
 endif
 
 
