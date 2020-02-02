@@ -1977,7 +1977,9 @@ void analyzesprites(int dax, int day)
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels)
+        Bassert((unsigned)tspr->owner < MAXSPRITES);
+
+        if (usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[tspr->owner].flags&SPREXT_NOTMD))
             switch (tspr->picnum)
             {
             case PLAYER:

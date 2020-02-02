@@ -280,7 +280,7 @@ void ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, i
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels)
+        if (usevoxels && videoGetRenderMode() != REND_POLYMER)
         {
             switch (tspr->picnum)
             {
