@@ -174,11 +174,10 @@ static SWBOOL ApplyModeSettings(void)
         videoSetGameMode(lastfs, lastx, lasty, lastbpp, upscalefactor);
     else
     {
-        extern int32_t ScreenMode,ScreenWidth,ScreenHeight,ScreenBPP; // Because I'm too lazy to include config.h
-        ScreenMode = newfs;
-        ScreenWidth = newx;
-        ScreenHeight = newy;
-        ScreenBPP = newbpp;
+        ud_setup.ScreenMode = newfs;
+        ud_setup.ScreenWidth = newx;
+        ud_setup.ScreenHeight = newy;
+        ud_setup.ScreenBPP = newbpp;
 
         SetupAspectRatio();
         SetRedrawScreen(Player + myconnectindex);

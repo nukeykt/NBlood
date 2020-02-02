@@ -119,8 +119,8 @@ void InitSetup(void)
     CONFIG_SetupMouse();
     CONFIG_SetupJoystick();
 
-    CONTROL_JoystickEnabled = (UseJoystick && CONTROL_JoyPresent);
-    CONTROL_MouseEnabled = (UseMouse && CONTROL_MousePresent);
+    CONTROL_JoystickEnabled = (ud_setup.UseJoystick && CONTROL_JoyPresent);
+    CONTROL_MouseEnabled = (ud_setup.UseMouse && CONTROL_MousePresent);
 
     /*{
     int i;
