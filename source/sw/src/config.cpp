@@ -56,6 +56,7 @@ extern void ReadGameSetup(int32_t scripthandle);
 extern void WriteGameSetup(int32_t scripthandle);
 
 ud_setup_t ud_setup{};
+int g_noSetup;
 
 //
 // Comm variables
