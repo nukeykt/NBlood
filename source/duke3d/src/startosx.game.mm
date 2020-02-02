@@ -37,36 +37,34 @@
 # define NSControlStateValueOff NSOffState
 #endif
 
-static NSRect NSRectChangeXY(NSRect const rect, CGFloat const x, CGFloat const y)
+static inline NSRect NSRectChangeXY(NSRect const rect, CGFloat const x, CGFloat const y)
 {
     return NSMakeRect(x, y, rect.size.width, rect.size.height);
 }
-static NSRect NSSizeAddXY(NSSize const size, CGFloat const x, CGFloat const y)
+static inline NSRect NSSizeAddXY(NSSize const size, CGFloat const x, CGFloat const y)
 {
     return NSMakeRect(x, y, size.width, size.height);
 }
-#if 0
-static CGFloat NSRightEdge(NSRect rect)
+static inline CGFloat NSRightEdge(NSRect rect)
 {
     return rect.origin.x + rect.size.width;
 }
-#endif
-static CGFloat NSTopEdge(NSRect rect)
+static inline CGFloat NSTopEdge(NSRect rect)
 {
     return rect.origin.y + rect.size.height;
 }
 
-static void setFontToSmall(id control)
+static inline void setFontToSmall(id control)
 {
     [control setFont:[NSFont fontWithDescriptor:[[control font] fontDescriptor] size:[NSFont smallSystemFontSize]]];
 }
 
-static void setControlToSmall(id control)
+static inline void setControlToSmall(id control)
 {
     [control setControlSize:NSControlSizeSmall];
 }
 
-static NSTextField * makeLabel(NSString * labelText)
+static inline NSTextField * makeLabel(NSString * labelText)
 {
     NSTextField *textField = [[NSTextField alloc] init];
     setFontToSmall(textField);
@@ -80,7 +78,7 @@ static NSTextField * makeLabel(NSString * labelText)
     return textField;
 }
 
-static NSButton * makeCheckbox(NSString * labelText)
+static inline NSButton * makeCheckbox(NSString * labelText)
 {
     NSButton *checkbox = [[NSButton alloc] init];
     setFontToSmall(checkbox);
@@ -91,7 +89,7 @@ static NSButton * makeCheckbox(NSString * labelText)
     return checkbox;
 }
 
-static NSPopUpButton * makeComboBox(void)
+static inline NSPopUpButton * makeComboBox(void)
 {
     NSPopUpButton *comboBox = [[NSPopUpButton alloc] init];
     [comboBox setPullsDown:NO];
@@ -109,7 +107,7 @@ static NSPopUpButton * makeComboBox(void)
 - (void)setAppleMenu:(NSMenu *)menu;
 @end
 
-static NSString * GetApplicationName(void)
+static inline NSString * GetApplicationName(void)
 {
     NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
     if (!appName)
@@ -120,7 +118,7 @@ static NSString * GetApplicationName(void)
     return appName;
 }
 
-static void CreateApplicationMenus(void)
+static inline void CreateApplicationMenus(void)
 {
     NSString *appName;
     NSString *title;
