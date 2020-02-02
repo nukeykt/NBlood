@@ -8,10 +8,10 @@
   <assemblyIdentity
       version="1.0.0.0"
       processorArchitecture="*"
-      name="VoidSW.Mapster32"
+      name="VoidSW.Wangulator"
       type="win32"
 />
-  <description>Mapster32 for VoidSW</description>
+  <description>Wangulator for VoidSW</description>
   <dependency>
     <dependentAssembly>
       <assemblyIdentity
