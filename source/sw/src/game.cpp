@@ -3409,7 +3409,7 @@ void CommandLineHelp(char const * const * argv)
                 strcat(str, "\n");
             }
         }
-        wm_msgbox("Shadow Warrior Help",str);
+        wm_msgbox("Shadow Warrior Help", "%s", str);
         Xfree(str);
     }
 #else
