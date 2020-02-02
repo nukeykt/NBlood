@@ -3468,7 +3468,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             CommandSetup = FALSE;
             g_noSetup = 1;
         }
-        else if (!Bstrcasecmp(argv[i]+1, "nologo"))
+        else if (!Bstrcasecmp(argv[i]+1, "nologo") || !Bstrcasecmp(argv[i]+1, "quick"))
         {
             g_noLogo = 1;
         }
