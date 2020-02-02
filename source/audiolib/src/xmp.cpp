@@ -194,6 +194,13 @@ void MV_ReleaseXMPVoice(VoiceNode * voice)
     Xfree(xmpd);
 }
 
+void MV_SetXMPInterpolation(void)
+{
+    for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
+        if (voice->wavetype == FMT_XMP)
+            xmp_set_player((xmp_context)voice->rawdataptr, XMP_PLAYER_INTERP, MV_XMPInterpolation);
+}
+
 #else
 
 #include "_multivc.h"
@@ -330,11 +337,4 @@ int MV_IdentifyXMP(char const *ptr, uint32_t ptrlength)
     }
 
     return 0;
-}
-
-void MV_SetXMPInterpolation(void)
-{
-    for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
-        if (voice->wavetype == FMT_XMP)
-            xmp_set_player((xmp_context)voice->rawdataptr, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 }
