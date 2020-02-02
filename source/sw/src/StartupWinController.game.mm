@@ -242,10 +242,10 @@ static struct {
         // image on the left
         NSRect const imageFrame = NSMakeRect(0, 0, 100, 280);
         NSImageView * imageView = [[NSImageView alloc] initWithFrame:imageFrame];
-        [imageView setImageScaling:NSImageScaleNone];
+        [imageView setImageScaling:NSImageScaleProportionallyUpOrDown];
         [imageView setImage:[NSImage imageNamed:@"game"]];
         [[self contentView] addSubview:imageView];
-        [imageView setAutoresizingMask:NSViewMaxXMargin | NSViewHeightSizable];
+        [imageView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable | NSViewMaxXMargin];
 
 
         // buttons
@@ -278,7 +278,7 @@ static struct {
         [[self contentView] addSubview:tabView];
         setFontToSmall(tabView);
         setControlToSmall(tabView);
-        [tabView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+        [tabView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable | NSViewMinXMargin];
 
 
         // setup tab
