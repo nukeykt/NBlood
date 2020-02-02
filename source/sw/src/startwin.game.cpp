@@ -330,7 +330,6 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
         hbmp = LoadBitmap((HINSTANCE)win_gethinstance(), MAKEINTRESOURCE(RSRC_BMP));
 
         HWND hwnd = GetDlgItem(hwndDlg, WIN_STARTWIN_BITMAP);
-        SendMessage(hwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbmp);
 
         RECT r;
         GetClientRect(hwnd, &r);
@@ -465,6 +464,35 @@ static INT_PTR CALLBACK startup_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
         if ((HWND)lParam == pages[TAB_MESSAGES])
             return (BOOL)(intptr_t)GetSysColorBrush(COLOR_WINDOW);
         break;
+
+    case WM_PAINT:
+    {
+        // manually paint the banner with antialiasing
+        HWND hwnd = GetDlgItem(hwndDlg, WIN_STARTWIN_BITMAP);
+
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+
+        if (ps.rcPaint.right > ps.rcPaint.left && ps.rcPaint.bottom > ps.rcPaint.top)
+        {
+            RECT r;
+            GetClientRect(hwnd, &r);
+
+            BITMAP bm;
+            GetObject(hbmp, sizeof(BITMAP), &bm);
+
+            HDC hdcbmp = CreateCompatibleDC(hdc);
+            SelectObject(hdcbmp, hbmp);
+
+            SetStretchBltMode(hdc, HALFTONE);
+            StretchBlt(hdc, r.left,r.top,r.right,r.bottom, hdcbmp, 0,0,bm.bmWidth,bm.bmHeight, SRCCOPY);
+
+            DeleteDC(hdcbmp);
+        }
+
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
 
     default:
         break;
