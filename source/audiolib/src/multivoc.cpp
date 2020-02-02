@@ -972,7 +972,7 @@ const char *MV_ErrorString(int ErrorNumber)
     }
 }
 
-playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
+static playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
 {
     if (voice->BlockLength > 0)
     {
@@ -1000,7 +1000,7 @@ playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
     return NoMoreData;
 }
 
-int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate,
+int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int bitdepth, int channels, int rate,
     int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
     VoiceNode* voice;
@@ -1020,23 +1020,25 @@ int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     }
 
 //    voice->wavetype = FMT_DEMANDFED;
-    voice->bits = 8;
-    voice->channels = 1;
+    voice->bits = bitdepth;
+    voice->channels = channels;
     voice->GetSound = MV_GetNextDemandFeedBlock;
-    voice->NextBlock = NULL;
+    voice->NextBlock  = nullptr;
     voice->DemandFeed = function;
-    voice->LoopStart = NULL;
-    voice->LoopCount = 0;
+    voice->LoopStart  = nullptr;
+    voice->LoopEnd    = nullptr;
+    voice->LoopCount  = 0;
     voice->BlockLength = 0;
     voice->position = 0;
-    voice->sound = NULL;
+    voice->sound  = nullptr;
     voice->length = 0;
-    voice->next = NULL;
-    voice->prev = NULL;
+    voice->next = nullptr;
+    voice->prev = nullptr;
     voice->priority = priority;
     voice->callbackval = callbackval;
 
     MV_SetVoicePitch(voice, rate, pitchoffset);
+    MV_SetVoiceMixMode(voice);
     MV_SetVoiceVolume(voice, vol, left, right, volume);
     MV_PlayVoice(voice);
 

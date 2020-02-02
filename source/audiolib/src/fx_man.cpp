@@ -304,10 +304,10 @@ int FX_PlayLoopedRaw(char *ptr, uint32_t ptrlength, char *loopstart, char *loope
     return handle;
 }
 
-int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int rate, int pitchoffset,
+int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int bitdepth, int channels, int rate, int pitchoffset,
                     int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
-    int handle = MV_StartDemandFeedPlayback(function, rate,
+    int handle = MV_StartDemandFeedPlayback(function, bitdepth, channels, rate,
         pitchoffset, vol, left, right, priority, volume, callbackval);
 
     if (handle <= MV_Ok)
