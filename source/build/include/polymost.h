@@ -51,6 +51,7 @@ void polymost_completeMirror();
 
 int32_t polymost_maskWallHasTranslucency(uwalltype const * const wall);
 int32_t polymost_spriteHasTranslucency(tspritetype const * const tspr);
+int32_t polymost_spriteIsModelOrVoxel(tspritetype const * const tspr);
 
 void polymost_resetVertexPointers(void);
 void polymost_disableProgram(void);
