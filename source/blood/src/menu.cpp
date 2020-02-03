@@ -98,6 +98,20 @@ char strRestoreGameStrings[][16] =
     "<Empty>",
 };
 
+char restoreGameDifficulty[] = 
+{
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+};
+
 const char *zNetGameTypes[] =
 {
     "Cooperative",
@@ -2146,6 +2160,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", nSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[nSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
+    restoreGameDifficulty[nSlot] = gGameOptions.nDifficulty;
     gGameOptions.nSaveGameSlot = nSlot;
     viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[nSlot]);
     videoNextPage();
@@ -2168,6 +2183,7 @@ void QuickSaveGame(void)
     G_ModDirSnprintf(strSaveGameName, BMAX_PATH, "game00%02d.sav", gQuickSaveSlot);
     strcpy(gGameOptions.szUserGameName, strRestoreGameStrings[gQuickSaveSlot]);
     sprintf(gGameOptions.szSaveGameName, "%s", strSaveGameName);
+    restoreGameDifficulty[gQuickSaveSlot] = gGameOptions.nDifficulty;
     gGameOptions.nSaveGameSlot = gQuickSaveSlot;
     viewLoadingScreen(2518, "Saving", "Saving Your Game", strRestoreGameStrings[gQuickSaveSlot]);
     videoNextPage();

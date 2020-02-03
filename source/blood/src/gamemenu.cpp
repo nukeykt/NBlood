@@ -1984,7 +1984,12 @@ void CGameMenuItemZEditBitmap::Draw(void)
     int shade = bEnable ? 32 : 48;
     int pal = bEnable ? 0 : 5;
     if (pMenu->IsFocusItem(this))
+    {
         shade = 32-((int)totalclock&63);
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "DIFFICULTY: %s", zDiffStrings[restoreGameDifficulty[at28]]);
+        gMenuTextMgr.DrawText(buffer, m_nFont, 20, 50, 32, 0, true);
+    }
     at2c->at24 = -1;
     if (bScan)
         shade = -128;

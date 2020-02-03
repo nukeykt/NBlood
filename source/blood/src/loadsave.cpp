@@ -481,7 +481,7 @@ void LoadSavedInfo(void)
         }
         if ((uint32_t)kread(hFile, &gSaveGameOptions[nCount], sizeof(gSaveGameOptions[0])) != sizeof(gSaveGameOptions[0]))
             ThrowError("Error reading save file.");
-        strcpy(strRestoreGameStrings[gSaveGameOptions[nCount].nSaveGameSlot], gSaveGameOptions[nCount].szUserGameName);
+        UpdateSavedInfo(nCount);
         kclose(hFile);
     }
     klistfree(pList);
@@ -490,6 +490,7 @@ void LoadSavedInfo(void)
 void UpdateSavedInfo(int nSlot)
 {
     strcpy(strRestoreGameStrings[gSaveGameOptions[nSlot].nSaveGameSlot], gSaveGameOptions[nSlot].szUserGameName);
+    restoreGameDifficulty[gSaveGameOptions[nSlot].nSaveGameSlot] = gSaveGameOptions[nSlot].nDifficulty;
 }
 
 static MyLoadSave *myLoadSave;
