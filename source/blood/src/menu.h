@@ -52,6 +52,8 @@ extern CGameMenu menuOptionsDisplayMode;
 extern short gQuickLoadSlot;
 extern short gQuickSaveSlot;
 extern char strRestoreGameStrings[][16];
+extern char restoreGameDifficulty[];
+extern const char *zDiffStrings[];
 void drawLoadingScreen(void);
 void SetupMenus(void);
 void UpdateNetworkMenus(void);

@@ -304,7 +304,7 @@ class CGameMenuItemZEditBitmap : public CGameMenuItem
 public:
     char *at20;
     int at24;
-    int at28;
+    int at28; // save game slot
     CGameMenuItemBitmapLS *at2c;
     void(*at30)(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
     char bScan;
