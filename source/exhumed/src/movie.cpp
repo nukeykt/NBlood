@@ -30,8 +30,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "mutex.h"
 
-void ServeSample(const char** ptr, uint32_t* length);
-
 enum {
     kFramePalette = 0,
     kFrameSound,
