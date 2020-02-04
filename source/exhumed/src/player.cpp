@@ -1898,7 +1898,7 @@ do_default_b:
                             {
                                 if (AddAmmo(nPlayer, 1, sprite[nValB].hitag))
                                 {
-                                    var_88 = StaticSound[kSound69];
+                                    var_88 = StaticSound[kSoundAmmoPickup];
                                     goto do_default;
                                 }
 
@@ -1908,7 +1908,7 @@ do_default_b:
                             {
                                 if (AddAmmo(nPlayer, 3, sprite[nValB].hitag))
                                 {
-                                    var_88 = StaticSound[kSound69];
+                                    var_88 = StaticSound[kSoundAmmoPickup];
                                     goto do_default;
                                 }
                                 break;
@@ -1917,7 +1917,7 @@ do_default_b:
                             {
                                 if (AddAmmo(nPlayer, 2, sprite[nValB].hitag))
                                 {
-                                    var_88 = StaticSound[kSound69];
+                                    var_88 = StaticSound[kSoundAmmoPickup];
                                     CheckClip(nPlayer);
                                     goto do_default;
                                 }
@@ -1929,7 +1929,7 @@ do_default_b:
                             {
                                 if (AddAmmo(nPlayer, 4, 1))
                                 {
-                                    var_88 = StaticSound[kSound69];
+                                    var_88 = StaticSound[kSoundAmmoPickup];
                                     if (!(nPlayerWeapons[nPlayer] & 0x10))
                                     {
                                         nPlayerWeapons[nPlayer] |= 0x10;
@@ -2684,7 +2684,7 @@ do_default_b:
                             case 31: // Cobra staff ammo
                             {
                                 if (AddAmmo(nPlayer, 5, 1)) {
-                                    var_88 = StaticSound[kSound69];
+                                    var_88 = StaticSound[kSoundAmmoPickup];
                                     goto do_default;
                                 }
 
@@ -2694,7 +2694,7 @@ do_default_b:
                             case 32: // Raw Energy
                             {
                                 if (AddAmmo(nPlayer, 6, sprite[nValB].hitag)) {
-                                    var_88 = StaticSound[kSound69];
+                                    var_88 = StaticSound[kSoundAmmoPickup];
                                     goto do_default;
                                 }
 
@@ -2814,7 +2814,7 @@ do_default_b:
                                     break;
                                 }
 
-                                var_88 = StaticSound[kSound67];
+                                var_88 = StaticSound[kSoundMana1];
 
                                 PlayerList[nPlayer].nMagic += 100;
                                 if (PlayerList[nPlayer].nMagic >= 1000) {

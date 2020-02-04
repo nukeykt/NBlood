@@ -16,6 +16,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#include "aistuff.h"
 #include "grenade.h"
 #include "engine.h"
 #include "player.h"
@@ -87,7 +88,7 @@ void BounceGrenade(short nGrenade, short nAngle)
 {
     GrenadeList[nGrenade].field_10 >>= 1;
 
-    GrenadeList[nGrenade].x = (Sin(nAngle + 512) >> 5) * GrenadeList[nGrenade].field_10;
+    GrenadeList[nGrenade].x = (Cos(nAngle) >> 5) * GrenadeList[nGrenade].field_10;
     GrenadeList[nGrenade].y = (Sin(nAngle) >> 5) * GrenadeList[nGrenade].field_10;
 
     D3PlayFX(StaticSound[kSound3], GrenadeList[nGrenade].nSprite);
@@ -125,7 +126,7 @@ int ThrowGrenade(short nPlayer, int UNUSED(edx), int UNUSED(ebx), int ecx, int p
         GrenadeList[nGrenade].field_10 = ((90 - GrenadeList[nGrenade].field_E) * (90 - GrenadeList[nGrenade].field_E)) + nVel;
         sprite[nGrenadeSprite].zvel = (-64 * push1) - 4352;
 
-        int nMov = movesprite(nGrenadeSprite, Sin(nAngle + 512) * (sprite[nPlayerSprite].clipdist << 3), Sin(nAngle) * (sprite[nPlayerSprite].clipdist << 3), ecx, 0, 0, CLIPMASK1);
+        int nMov = movesprite(nGrenadeSprite, Cos(nAngle) * (sprite[nPlayerSprite].clipdist << 3), Sin(nAngle) * (sprite[nPlayerSprite].clipdist << 3), ecx, 0, 0, CLIPMASK1);
         if (nMov & 0x8000)
         {
             nAngle = GetWallNormal(nMov & 0x3FFF);
@@ -138,7 +139,7 @@ int ThrowGrenade(short nPlayer, int UNUSED(edx), int UNUSED(ebx), int ecx, int p
         sprite[nGrenadeSprite].zvel = sprite[nPlayerSprite].zvel;
     }
 
-    GrenadeList[nGrenade].x = Sin(nAngle + 512) >> 4;
+    GrenadeList[nGrenade].x = Cos(nAngle) >> 4;
     GrenadeList[nGrenade].x *= GrenadeList[nGrenade].field_10;
 
     GrenadeList[nGrenade].y = Sin(nAngle) >> 4;
@@ -167,16 +168,16 @@ int BuildGrenade(int nPlayer)
     sprite[nSprite].shade = -64;
     sprite[nSprite].xrepeat = 20;
     sprite[nSprite].yrepeat = 20;
-    sprite[nSprite].cstat = 0x8000u;
+    sprite[nSprite].cstat = 0x8000;
     sprite[nSprite].picnum = 1;
     sprite[nSprite].pal = 0;
     sprite[nSprite].clipdist = 30;
     sprite[nSprite].xoffset = 0;
     sprite[nSprite].yoffset = 0;
     sprite[nSprite].ang = sprite[nPlayerSprite].ang;
-    sprite[nSprite].yvel = 0;
     sprite[nSprite].owner = nPlayerSprite;
     sprite[nSprite].xvel = 0;
+    sprite[nSprite].yvel = 0;
     sprite[nSprite].zvel = 0;
     sprite[nSprite].hitag = 0;
     sprite[nSprite].lotag = runlist_HeadRun() + 1;
@@ -239,7 +240,7 @@ void ExplodeGrenade(short nGrenade)
         short nAngle = sprite[nPlayerSprite].ang;
 
         sprite[nGrenadeSprite].z = sprite[nPlayerSprite].z;
-        sprite[nGrenadeSprite].x = (Sin(nAngle + 512) >> 5) + sprite[nPlayerSprite].x;
+        sprite[nGrenadeSprite].x = (Cos(nAngle) >> 5) + sprite[nPlayerSprite].x;
         sprite[nGrenadeSprite].y = (Sin(nAngle) >> 5) + sprite[nPlayerSprite].y;
 
         changespritesect(nGrenadeSprite, sprite[nPlayerSprite].sectnum);
@@ -255,7 +256,7 @@ void ExplodeGrenade(short nGrenade)
         nDamage *= 2;
     }
 
-    runlist_RadialDamageEnemy(nGrenadeSprite, nDamage, BulletInfo[kWeaponGrenade].field_10);
+    runlist_RadialDamageEnemy(nGrenadeSprite, nDamage, BulletInfo[kWeaponGrenade].nRadius);
 
     BuildAnim(-1, var_28, 0, sprite[nGrenadeSprite].x, sprite[nGrenadeSprite].y, sprite[nGrenadeSprite].z, sprite[nGrenadeSprite].sectnum, var_20, 4);
     AddFlash(sprite[nGrenadeSprite].sectnum, sprite[nGrenadeSprite].x, sprite[nGrenadeSprite].y, sprite[nGrenadeSprite].z, 128);
@@ -281,7 +282,7 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
         nSeq = SeqOffsets[kSeqGrenRoll] + GrenadeList[nGrenade].field_A;
     }
 
-    int nMessage = a & 0x7F0000;
+    int nMessage = a & kMessageMask;
 
     switch (nMessage)
     {
@@ -293,7 +294,7 @@ void FuncGrenade(int a, int UNUSED(nDamage), int nRun)
 
         default:
         {
-            DebugOut("unknown msg %d for bullet\n", a & 0x7F0000); // TODO - change 'bullet' to 'grenade' ?
+            DebugOut("unknown msg %d for grenade\n", nMessage);
             return;
         }
 

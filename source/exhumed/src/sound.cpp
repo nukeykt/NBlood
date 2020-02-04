@@ -176,42 +176,22 @@ short nDistTable[256];
 
 struct ActiveSound
 {
-/*
-    short _0
-    short _2
-    short _4
-    short _6
-    byte _7
-
-    short _10
-    short _12
-    int _14
-    int _18
-    int _22;
-    int _26
-
-    int _30; // x val
-    int _34; // y val
-    int _38; // z val
-    short _42
-    short _44
-*/
-    short f_0;
-    short f_2;
-    short f_4;
-    short f_6;
-    short f_8;
+    short nSprite;
+    short nSound;
+    short f_4; // volume
+    short nAngle;
+    short f_8; // volume
     short f_a;
     short f_c;
-    int f_e;
-    int f_12;
-    int f_16;
-    int f_1a;
-    int f_1e;
-    int f_22;
-    int f_26;
-    short f_2a;
-    short f_2c;
+    int hFX; // ASS FX_() handle
+    int f_12; // pitch
+    int f_16; // pitch
+    int nClock;
+    int x;
+    int y;
+    int z;
+    short nSector;
+    short nChannel;
 };
 
 ActiveSound sActiveSound[kMaxSounds];
@@ -302,7 +282,7 @@ void ASSCallback(intptr_t num)
     if ((int32_t)num == -1)
         handle = -1;
     else if ((int32_t)num >= 0 && (int32_t)num < kMaxActiveSounds)
-        sActiveSound[num].f_e = -1;
+        sActiveSound[num].hFX = -1;
 }
 
 void CreateDistTable(void)
@@ -328,10 +308,11 @@ void InitSoundInfo(void)
 {
     int i;
     memset(sActiveSound, 255, sizeof(sActiveSound));
+
     for (i = 0; i < kMaxSounds; i++)
     {
-        sActiveSound[i].f_2c = 0;
-        sActiveSound[i].f_e = -1;
+        sActiveSound[i].nChannel = 0;
+        sActiveSound[i].hFX = -1;
     }
     nActiveSounds = i;
 
@@ -486,7 +467,9 @@ int LoadSound(const char *sound)
     if (!dig)
         //return 0;
         return -1;
+
     int i;
+
     for (i = 0; i < nSoundCount; i++)
     {
         if (!Bstrncasecmp(szSoundName[i], sound, kMaxSoundNameLen))
@@ -517,6 +500,7 @@ int LoadSound(const char *sound)
         SoundLock[i] = 255; // TODO: implement cache lock properly
         SoundLen[i] = nSize;
         g_cache.allocateBlock((intptr_t*)&SoundBuf[i], nSize, &SoundLock[i]);
+
         if (!SoundBuf[i])
             bail2dos("Error allocating buf '%s' to %lld  (size=%ld)!\n", buffer, (intptr_t)&SoundBuf[i], nSize);
 
@@ -528,11 +512,13 @@ int LoadSound(const char *sound)
         if (!ISDEMOVER) {
             bail2dos("Unable to open sound '%s'!\n", buffer); // demo tries to load sound files it doesn't have
         }
+
         SoundBuf[i] = NULL;
         SoundLen[i] = 0;
         //return hVoc;
         return -1;
     }
+
     kclose(hVoc);
     nSoundCount++;
     return i;
@@ -556,6 +542,7 @@ void LoadFX(void)
     for (i = 0; i < kMaxSoundFiles; i++)
     {
         StaticSound[i] = LoadSound(SoundFiles[i]);
+
         if (StaticSound[i] < 0)
             bail2dos("error loading static sound #%d ('%.8s')\n", i, SoundFiles[i]);
     }
@@ -565,7 +552,8 @@ void GetSpriteSoundPitch(short nSector, int *pVolume, int *pPitch)
 {
     if (nSector < 0)
         return;
-    if ((SectFlag[nSector]^nLocalSectFlags) & kSectUnderwater)
+
+    if ((SectFlag[nSector] ^ nLocalSectFlags) & kSectUnderwater)
     {
         *pVolume >>= 1;
         *pPitch -= 1200;
@@ -576,13 +564,13 @@ void BendAmbientSound(void)
 {
     if (nAmbientChannel < 0)
         return;
+
     ActiveSound *pASound = &sActiveSound[nAmbientChannel];
     //AIL_set_sample_playback_rate(pASound->f_e, nDronePitch+11000);
-    if (pASound->f_e > -1)
-        FX_SetFrequency(pASound->f_e, nDronePitch+11000);
-}
 
-short PlayFXAtXYZ(unsigned short ax, int x, int y, int z, int nSector);
+    if (pASound->hFX > -1)
+        FX_SetFrequency(pASound->hFX, nDronePitch+11000);
+}
 
 void CheckAmbience(short nSector)
 {
@@ -590,31 +578,35 @@ void CheckAmbience(short nSector)
     {
         short nSector2 = SectSoundSect[nSector];
         walltype *pWall = &wall[sector[nSector2].wallptr];
+
         if (nAmbientChannel < 0)
         {
             PlayFXAtXYZ(SectSound[nSector]|0x4000, pWall->x, pWall->y, sector[nSector2].floorz, nSector);
             return;
         }
+
         ActiveSound *pASound = &sActiveSound[nAmbientChannel];
+
         if (nSector == nSector2)
         {
             spritetype *pSprite = &sprite[PlayerList[0].nSprite];
-            pASound->f_1e = pSprite->x;
-            pASound->f_22 = pSprite->y;
-            pASound->f_26 = pSprite->z;
+            pASound->x = pSprite->x;
+            pASound->y = pSprite->y;
+            pASound->z = pSprite->z;
         }
         else
         {
-            pASound->f_1e = pWall->x;
-            pASound->f_22 = pWall->y;
-            pASound->f_26 = sector[nSector2].floorz;
+            pASound->x = pWall->x;
+            pASound->y = pWall->y;
+            pASound->z = sector[nSector2].floorz;
         }
     }
     else if (nAmbientChannel != -1)
     {
-        if (sActiveSound[nAmbientChannel].f_e > -1)
-            FX_StopSound(sActiveSound[nAmbientChannel].f_e);
-        sActiveSound[nAmbientChannel].f_e = -1;
+        if (sActiveSound[nAmbientChannel].hFX > -1)
+            FX_StopSound(sActiveSound[nAmbientChannel].hFX);
+
+        sActiveSound[nAmbientChannel].hFX = -1;
         nAmbientChannel = -1;
     }
 }
@@ -651,6 +643,7 @@ void SoundBigEntrance(void)
 {
     StopAllSounds();
     ActiveSound *pASound = sActiveSound;
+
     for (int i = 0; i < 4; i++, pASound++)
     {
 #if 0
@@ -667,27 +660,31 @@ void SoundBigEntrance(void)
         pASound->f_16 = nPitch;
         int nLeft, nRight;
         CalcASSPan(63-(i&1)*127, 200, &nLeft, &nRight);
-        if (pASound->f_e >= 0)
-            FX_StopSound(pASound->f_e);
-        pASound->f_e = FX_Play(SoundBuf[kSoundTorchOn], SoundLen[kSoundTorchOn], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, i);
-        if (pASound->f_e > -1)
-            FX_SetFrequency(pASound->f_e, 11000+nPitch);
+
+        if (pASound->hFX >= 0)
+            FX_StopSound(pASound->hFX);
+
+        pASound->hFX = FX_Play(SoundBuf[kSoundTorchOn], SoundLen[kSoundTorchOn], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, i);
+
+        if (pASound->hFX > -1)
+            FX_SetFrequency(pASound->hFX, 11000+nPitch);
     }
 }
 
 void StartSwirly(int nActiveSound)
 {
     ActiveSound *pASound = &sActiveSound[nActiveSound];
-    pASound->f_6 &= 0x7ff;
+    pASound->nAngle &= kAngleMask;
 
     //AIL_init_sample(pASound->f_e);
-    short nPitch = nNextFreq-RandomSize(9);
+    short nPitch = nNextFreq - RandomSize(9);
     pASound->f_16 = nPitch;
-    nNextFreq = 25000-RandomSize(10)*6;
+
+    nNextFreq = 25000 - RandomSize(10) * 6;
     if (nNextFreq > 32000)
         nNextFreq = 32000;
 
-    //AIL_set_sample_file(pASound->f_e, SoundBuf[StaticSound[kSound67]], -1);
+    //AIL_set_sample_file(pASound->f_e, SoundBuf[StaticSound[kSoundMana1]], -1);
 
     int nVolume = nSwirlyFrames+1;
     if (nVolume >= 220)
@@ -695,14 +692,22 @@ void StartSwirly(int nActiveSound)
 
     pASound->f_4 = nVolume;
 
-    int nPan = pASound->f_6&127;
+    int nPan = pASound->nAngle & 127;
     int nLeft, nRight;
+
     CalcASSPan(nPan, nVolume, &nLeft, &nRight);
-    if (pASound->f_e >= 0)
-        FX_StopSound(pASound->f_e);
-    pASound->f_e = FX_Play(SoundBuf[StaticSound[kSound67]], SoundLen[StaticSound[kSound67]], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, nActiveSound);
-    if (pASound->f_e > -1)
-        FX_SetFrequency(pASound->f_e, nPitch);
+
+    if (pASound->hFX >= 0)
+        FX_StopSound(pASound->hFX);
+
+    pASound->hFX = FX_Play(SoundBuf[StaticSound[kSoundMana1]], SoundLen[StaticSound[kSoundMana1]], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, nActiveSound);
+    
+    char buf[100];
+    sprintf(buf, "nPitch: %d\n", nPitch);
+    OutputDebugString(buf);
+
+    if (pASound->hFX > -1)
+        FX_SetFrequency(pASound->hFX, nPitch);
 
 #if 0
     AIL_set_sample_volume(pASound->f_e, nVolume);
@@ -729,16 +734,18 @@ void UpdateSwirlies()
     nSwirlyFrames++;
     ActiveSound* pASound = sActiveSound;
     pASound++;
+
     for (int i = 1; i <= 4; i++, pASound++)
     {
-        if (pASound->f_e < 0 || !FX_SoundActive(pASound->f_e))
+        if (pASound->hFX < 0 || !FX_SoundActive(pASound->hFX))
             StartSwirly(i);
-        if (pASound->f_e >= 0)
+
+        if (pASound->hFX >= 0)
         {
             int nLeft, nRight;
             int nPan = 64+(Sin((int)totalclock<<(4+i))>>8);
             CalcASSPan(nPan, pASound->f_4, &nLeft, &nRight);
-            MV_SetPan(pASound->f_e, max(nLeft, nRight), nLeft, nRight);
+            MV_SetPan(pASound->hFX, max(nLeft, nRight), nLeft, nRight);
         }
         //AIL_set_sample_pan(pASound->f_e, 64+(Sin((int)totalclock<<(4+i))>>8));
     }
@@ -753,6 +760,7 @@ void UpdateSounds()
 //    spritetype *pSprite = &sprite[PlayerList[nLocalPlayer].nSprite];
     int x, y;
     short ang;
+
     if (nSnakeCam > -1)
     {
         Snake *pSnake = &SnakeList[nSnakeCam];
@@ -767,18 +775,20 @@ void UpdateSounds()
         y = inity;
         ang = inita;
     }
+
     ActiveSound* pASound = sActiveSound;
     pASound++;
+
     for (int i = 1; i < kMaxActiveSounds; i++, pASound++)
     {
-        if (pASound->f_e >= 0 && FX_SoundActive(pASound->f_e))
+        if (pASound->hFX >= 0 && FX_SoundActive(pASound->hFX))
         {
-            short nSoundSprite = pASound->f_0;
+            short nSoundSprite = pASound->nSprite;
             int dx, dy;
             if (nSoundSprite < 0)
             {
-                dx = x-pASound->f_1e;
-                dy = y-pASound->f_22;
+                dx = x-pASound->x;
+                dy = y-pASound->y;
             }
             else
             {
@@ -798,7 +808,7 @@ void UpdateSounds()
             int nDist = GetDistFromDXDY(dx, dy);
             if (nDist >= 255)
             {
-                FX_StopSound(pASound->f_e);
+                FX_StopSound(pASound->hFX);
                 if (pASound->f_a&0x4000)
                     nAmbientChannel = -1;
                 return;
@@ -820,25 +830,25 @@ void UpdateSounds()
                     nSoundSect = sprite[nSoundSprite].sectnum;
             }
             else
-                nSoundSect = pASound->f_2a;
+                nSoundSect = pASound->nSector;
 
             GetSpriteSoundPitch(nSoundSect, &nVolume, &nPitch);
 
             if (pASound->f_12 != nPitch)
                 pASound->f_12 = nPitch;
 
-            if (nVolume != pASound->f_4 || nSoundAng != pASound->f_6)
+            if (nVolume != pASound->f_4 || nSoundAng != pASound->nAngle)
             {
                 int nLeft, nRight;
                 int nPan = 63+(Sin(nSoundAng+1023)>>8);
                 CalcASSPan(nPan, nVolume, &nLeft, &nRight);
-                FX_SetPan(pASound->f_e, nVolume, nLeft, nRight);
+                FX_SetPan(pASound->hFX, nVolume, nLeft, nRight);
 
                 if (nPitch < 0)
-                    FX_SetFrequency(pASound->f_e, 7000);
+                    FX_SetFrequency(pASound->hFX, 7000);
 
                 pASound->f_4 = nVolume;
-                pASound->f_6 = nSoundAng;
+                pASound->nAngle = nSoundAng;
             }
         }
     }
@@ -848,19 +858,25 @@ void UpdateCreepySounds()
 {
     if (levelnum == 20 || nFreeze)
         return;
+
     spritetype *pSprite = &sprite[PlayerList[nLocalPlayer].nSprite];
     nCreepyTimer--;
+
     if (nCreepyTimer <= 0)
     {
-        if (nCreaturesLeft > 0 && !(SectFlag[nPlayerViewSect[nLocalPlayer]]&0x2000))
+        if (nCreaturesLeft > 0 && !(SectFlag[nPlayerViewSect[nLocalPlayer]] & 0x2000))
         {
-            int vsi = seq_GetFrameSound(SeqOffsets[kSeqCreepy], totalmoves%SeqSize[SeqOffsets[kSeqCreepy]]);
+            int vsi = seq_GetFrameSound(SeqOffsets[kSeqCreepy], totalmoves % SeqSize[SeqOffsets[kSeqCreepy]]);
+
             if (vsi >= 0 && (vsi&0x1ff) < kMaxSounds)
             {
                 int vdx = (totalmoves+32)&31;
+
                 if (totalmoves & 1)
                     vdx = -vdx;
+
                 int vax = (totalmoves+32)&63;
+
                 if (totalmoves & 2)
                     vax = -vax;
 
@@ -876,7 +892,7 @@ int LocalSoundPlaying(void)
     if (!dig)
         return 0;
 
-    return sActiveSound[nLocalChan].f_e >= 0 && FX_SoundActive(sActiveSound[nLocalChan].f_e);
+    return sActiveSound[nLocalChan].hFX >= 0 && FX_SoundActive(sActiveSound[nLocalChan].hFX);
 }
 
 int GetLocalSound(void)
@@ -884,7 +900,7 @@ int GetLocalSound(void)
     if (LocalSoundPlaying() == -1)
         return -1;
 
-    return sActiveSound[nLocalChan].f_2&0x1ff;
+    return sActiveSound[nLocalChan].nSound & 0x1ff;
 }
 
 void UpdateLocalSound(void)
@@ -892,8 +908,8 @@ void UpdateLocalSound(void)
     if (!dig)
         return;
 
-    if (sActiveSound[nLocalChan].f_e >= 0)
-        FX_SetPan(sActiveSound[nLocalChan].f_e, gFXVolume, gFXVolume, gFXVolume);
+    if (sActiveSound[nLocalChan].hFX >= 0)
+        FX_SetPan(sActiveSound[nLocalChan].hFX, gFXVolume, gFXVolume, gFXVolume);
 }
 
 void StopLocalSound(void)
@@ -905,7 +921,7 @@ void StopLocalSound(void)
         nAmbientChannel = -1;
 
     if (LocalSoundPlaying())
-        FX_StopSound(sActiveSound[nLocalChan].f_e);
+        FX_StopSound(sActiveSound[nLocalChan].hFX);
 }
 
 void SetLocalChan(int nChannel)
@@ -960,16 +976,17 @@ void PlayLocalSound(short nSound, short nRate)
     int bLoop = SoundBuf[nSound][26] == 6;
 
     ActiveSound* pASound = &sActiveSound[nLocalChan];
-    if (pASound->f_e >= 0)
-        FX_StopSound(pASound->f_e);
 
-    pASound->f_e = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, gFXVolume, gFXVolume, gFXVolume, 0, fix16_one, nLocalChan);
+    if (pASound->hFX >= 0)
+        FX_StopSound(pASound->hFX);
+
+    pASound->hFX = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, gFXVolume, gFXVolume, gFXVolume, 0, fix16_one, nLocalChan);
 
     if (nRate)
     {
         int nFreq = 0;
-        FX_GetFrequency(pASound->f_e, &nFreq);
-        FX_SetFrequency(pASound->f_e, nFreq+nRate);
+        FX_GetFrequency(pASound->hFX, &nFreq);
+        FX_SetFrequency(pASound->hFX, nFreq+nRate);
     }
 #if 0
     AIL_init_sample(pASound->f_e);
@@ -984,23 +1001,23 @@ void PlayLocalSound(short nSound, short nRate)
 
     AIL_start_sample(pASound->f_e);
 #endif
-    pASound->f_2 = nSound;
+    pASound->nSound = nSound;
     SetLocalChan(0);
 }
 
 void PlayTitleSound(void)
 {
-    PlayLocalSound(StaticSound[kSound10], 0);
+    PlayLocalSound(StaticSound[kSoundItemSpecial], 0);
 }
 
 void PlayLogoSound(void)
 {
-    PlayLocalSound(StaticSound[kSound28], 7000);
+    PlayLocalSound(StaticSound[kSoundJonLaugh2], 7000);
 }
 
 void PlayGameOverSound(void)
 {
-    PlayLocalSound(StaticSound[kSound28], 0);
+    PlayLocalSound(StaticSound[kSoundJonLaugh2], 0);
 }
 
 int soundx, soundy, soundz;
@@ -1018,40 +1035,35 @@ short PlayFX2(unsigned short nSound, short nSprite)
     }
 
     nLocalSectFlags = SectFlag[nPlayerViewSect[nLocalPlayer]];
-    short v1c;
-    short vcx;
-    if (nSprite < 0)
+    short v1c = 0;
+    short vcx = 0;
+
+    if (nSprite >= 0)
     {
-        vcx = 0;
-        v1c = 0;
-    }
-    else
-    {
-        v1c = nSprite&0x2000;
-        vcx = nSprite&0x4000;
+        v1c = nSprite & 0x2000;
+        vcx = nSprite & 0x4000;
         nSprite &= 0xfff;
         soundx = sprite[nSprite].x;
         soundy = sprite[nSprite].y;
         soundz = sprite[nSprite].z;
+        soundsect = sprite[nSprite].sectnum;
     }
-    int dx, dy;
 
-    dx = initx-soundx;
-    dy = inity-soundy;
+    int dx = (initx - soundx) >> 8;
+    int dy = (inity - soundy) >> 8;
 
-    dx >>= 8; dy >>= 8;
+    short nSoundAng = 0;
 
-    short nSoundAng;
-    if ((dx|dy) == 0)
-        nSoundAng = 0;
-    else
+    if (dx || dy) {
         nSoundAng = AngleDelta(GetMyAngle(dx, dy), inita, 1024);
+    }
 
     int nDist = GetDistFromDXDY(dx, dy);
     if (nDist >= 255)
     {
-        if ((int16_t)nSound > -1)
-            StopSpriteSound(nSound);
+        if (nSprite > -1)
+            StopSpriteSound(nSprite);
+
         return -1;
     }
 
@@ -1062,8 +1074,8 @@ short PlayFX2(unsigned short nSound, short nSprite)
         nVolume = gFXVolume+10-(Sin(nDist<<1)>>6)-10;
         if (nVolume <= 0)
         {
-            if ((int16_t)nSound > -1)
-                StopSpriteSound(nSound);
+            if (nSprite > -1)
+                StopSpriteSound(nSprite);
             return -1;
         }
         if (nVolume > 255)
@@ -1076,7 +1088,7 @@ short PlayFX2(unsigned short nSound, short nSprite)
     short v4 = nSound & 0x2000;
     short v8 = nSound & 0x1000;
     short v14 = nSound & 0x4000;
-    short v10 = (nSound&0xe00)>>9;
+    short v10 = (nSound & 0xe00)>>9;
     int v2c = 0x7fffffff;
     ActiveSound* v38 = NULL;
     ActiveSound* v28 = NULL;
@@ -1091,31 +1103,34 @@ short PlayFX2(unsigned short nSound, short nSprite)
         v20 = 2000;
     else
         v20 = 0;
+
     ActiveSound* pASound = sActiveSound;
     pASound++;
+
     for (int i = 1; i < kMaxActiveSounds; i++, pASound++)
     {
-        if (pASound->f_e < 0 || !FX_SoundActive(pASound->f_e))
+        if (pASound->hFX < 0 || !FX_SoundActive(pASound->hFX))
             vdi = pASound;
         else if (v20 >= pASound->f_c)
         {
-            if (v2c > pASound->f_1a && pASound->f_c <= v20)
+            if (v2c > pASound->nClock && pASound->f_c <= v20)
             {
                 v28 = pASound;
-                v2c = pASound->f_1a;
+                v2c = pASound->nClock;
             }
             if (!v8)
             {
-                if (nSound == pASound->f_2)
+                if (nSound == pASound->nSound)
                 {
-                    if (v4 == 0 && nSprite == pASound->f_0)
+                    if (v4 == 0 && nSprite == pASound->nSprite)
                         return -1;
+
                     if (v20 >= pASound->f_c)
                         v38 = pASound;
                 }
-                else if (nSprite == pASound->f_0)
+                else if (nSprite == pASound->nSprite)
                 {
-                    if (v4 || nSound != pASound->f_2)
+                    if (v4 || nSound != pASound->nSound)
                     {
                         vdi = pASound;
                         break;
@@ -1133,10 +1148,10 @@ short PlayFX2(unsigned short nSound, short nSprite)
             vdi = v28;
     }
 
-    if (vdi->f_e >= 0 && FX_SoundActive(vdi->f_e))
+    if (vdi->hFX >= 0 && FX_SoundActive(vdi->hFX))
     {
-        FX_StopSound(vdi->f_e);
-        if (vdi->f_2c == nAmbientChannel)
+        FX_StopSound(vdi->hFX);
+        if (vdi->nChannel == nAmbientChannel)
             nAmbientChannel = -1;
     }
 
@@ -1150,19 +1165,22 @@ short PlayFX2(unsigned short nSound, short nSprite)
     {
         vdi->f_16 = nPitch;
         vdi->f_8 = nVolume;
+
         if (nSprite < 0)
         {
-            vdi->f_1e = soundx;
-            vdi->f_22 = soundy;
-            vdi->f_2a = soundsect;
+            vdi->x = soundx;
+            vdi->y = soundy;
+            vdi->nSector = soundsect;
         }
+
         GetSpriteSoundPitch(soundsect, &nVolume, &nPitch);
+
         vdi->f_12 = nPitch;
         vdi->f_4 = nVolume;
-        vdi->f_6 = nSoundAng;
-        vdi->f_0 = nSprite;
-        vdi->f_2 = nSound;
-        vdi->f_1a = (int)totalclock;
+        vdi->nAngle = nSoundAng;
+        vdi->nSprite = nSprite;
+        vdi->nSound = nSound;
+        vdi->nClock = (int)totalclock;
         vdi->f_c = v20;
         vdi->f_a = vc;
         short nPan = 63+(Sin(nSoundAng+1023)>>8);
@@ -1172,13 +1190,13 @@ short PlayFX2(unsigned short nSound, short nSprite)
 
         CalcASSPan(nPan, nVolume>>1, &nLeft, &nRight);
 
-        vdi->f_e = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, vdi-sActiveSound);
+        vdi->hFX = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, vdi-sActiveSound);
 
         if (nPitch)
         {
             int nFreq = 0;
-            FX_GetFrequency(vdi->f_e, &nFreq);
-            FX_SetFrequency(vdi->f_e, nFreq+nPitch);
+            FX_GetFrequency(vdi->hFX, &nFreq);
+            FX_SetFrequency(vdi->hFX, nFreq+nPitch);
         }
 #if 0
         AIL_init_sample(vdi->f_e);
@@ -1198,7 +1216,7 @@ short PlayFX2(unsigned short nSound, short nSprite)
             nAmbientChannel = v14;
 
         // Nuke: added nSprite >= 0 check
-        if (nSprite != nLocalSpr && nSprite >= 0 && (sprite[nSprite].cstat&257))
+        if (nSprite != nLocalSpr && nSprite >= 0 && (sprite[nSprite].cstat & 257))
             nCreepyTimer = kCreepyCount;
 
         return v14;
@@ -1206,21 +1224,23 @@ short PlayFX2(unsigned short nSound, short nSprite)
     return -1;
 }
 
-short PlayFXAtXYZ(unsigned short ax, int x, int y, int z, int nSector)
+short PlayFXAtXYZ(unsigned short nSound, int x, int y, int z, int nSector)
 {
     soundx = x;
     soundy = y;
     soundz = z;
-    soundsect = nSector&0x3fff;
-    short nSnd = PlayFX2(ax, -1);
-    if (nSnd > -1 && (nSector&0x4000))
+    soundsect = nSector & 0x3fff;
+    short nSnd = PlayFX2(nSound, -1);
+
+    if (nSnd > -1 && (nSector & 0x4000))
         sActiveSound[nSnd].f_c = 2000;
+
     return nSnd;
 }
 
-short D3PlayFX(unsigned short nSound, short nVal)
+short D3PlayFX(unsigned short nSound, short nSprite)
 {
-    return PlayFX2(nSound, nVal);
+    return PlayFX2(nSound, nSprite);
 }
 
 void StopSpriteSound(short nSprite)
@@ -1230,9 +1250,9 @@ void StopSpriteSound(short nSprite)
 
     for (int i = 0; i < kMaxActiveSounds; i++)
     {
-        if (sActiveSound[i].f_e >= 0 && FX_SoundActive(sActiveSound[i].f_e) && nSprite == sActiveSound[i].f_0)
+        if (sActiveSound[i].hFX >= 0 && FX_SoundActive(sActiveSound[i].hFX) && nSprite == sActiveSound[i].nSprite)
         {
-            FX_StopSound(sActiveSound[i].f_e);
+            FX_StopSound(sActiveSound[i].hFX);
             return;
         }
     }
@@ -1245,24 +1265,11 @@ void StopAllSounds(void)
 
     for (int i = 0; i < kMaxActiveSounds; i++)
     {
-        if (sActiveSound[i].f_e >= 0)
-            FX_StopSound(sActiveSound[i].f_e);
-        // AIL_end_sample(sActiveSound[i].f_e);
+        if (sActiveSound[i].hFX >= 0)
+            FX_StopSound(sActiveSound[i].hFX);
+        // AIL_end_sample(sActiveSound[i].hFX);
     }
 
     nSoundsPlaying = 0;
     nAmbientChannel = -1;
 }
-
-#if 0
-void Lock(void)
-{
-    AIL_lock();
-}
-
-void Unlock(void)
-{
-    AIL_unlock();
-}
-
-#endif

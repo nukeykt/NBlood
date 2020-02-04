@@ -394,7 +394,7 @@ void FuncSwNotOnPause(int a, int, int nRun)
     }
 }
 
-int BuildSwPressSector(int nChannel, int nLink, int nSector, int ecx)
+int BuildSwPressSector(int nChannel, int nLink, int nSector, int keyMask)
 {
     if (SwitchCount <= 0 || nLink < 0 || nSector < 0)
         bail2dos("Too many switches!\n");
@@ -404,7 +404,7 @@ int BuildSwPressSector(int nChannel, int nLink, int nSector, int ecx)
     SwitchData[nSwitch].nChannel = nChannel;
     SwitchData[nSwitch].nLink = nLink;
     SwitchData[nSwitch].nSector = nSector;
-    SwitchData[nSwitch].field_12 = ecx;
+    SwitchData[nSwitch].field_12 = keyMask;
     SwitchData[nSwitch].field_C = -1;
 
     return nSwitch | 0x50000;

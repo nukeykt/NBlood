@@ -26,8 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <stdlib.h>
 
-extern short word_9AC30;
-
 static char *pTrack = NULL;
 static int trackhandle = -1;
 int nLastVolumeSet = 0;

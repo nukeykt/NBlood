@@ -16,6 +16,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#include "aistuff.h"
 #include "mummy.h"
 #include "sequence.h"
 #include "move.h"
@@ -56,13 +57,11 @@ static actionSeq ActionSeq[] = {
     {50, 0}
 };
 
-// done
 void InitMummy()
 {
     nMummies = 0;
 }
 
-// done
 int BuildMummy(int nSprite, int x, int y, int z, int nSector, int nAngle)
 {
     if (nMummies >= kMaxMummies) {
@@ -126,7 +125,6 @@ int BuildMummy(int nSprite, int x, int y, int z, int nSector, int nAngle)
     return (nMummy | 0xE0000);
 }
 
-// done
 void CheckMummyRevive(short nMummy)
 {
     short nSprite = MummyList[nMummy].nSprite;
@@ -171,7 +169,7 @@ void FuncMummy(int a, int nDamage, int nRun)
     short nSprite = MummyList[nMummy].nSprite;
     short nAction = MummyList[nMummy].nAction;
 
-    int nMessage = a & 0x7F0000;
+    int nMessage = a & kMessageMask;
 
     switch (nMessage)
     {
@@ -188,14 +186,14 @@ void FuncMummy(int a, int nDamage, int nRun)
 
             seq_MoveSequence(nSprite, nSeq, MummyList[nMummy].B);
 
-            short ecx = 0;
+            bool bVal = 0;
 
             MummyList[nMummy].B++;
             if (MummyList[nMummy].B >= SeqSize[nSeq])
             {
                 MummyList[nMummy].B = 0;
 
-                ecx = 1;
+                bVal = true;
             }
 
             if (nTarget != -1 && nAction < 4)
@@ -370,7 +368,7 @@ void FuncMummy(int a, int nDamage, int nRun)
 
                 case 3:
                 {
-                    if (ecx)
+                    if (bVal)
                     {
                         MummyList[nMummy].B = 0;
                         MummyList[nMummy].nAction = 0;
@@ -383,7 +381,7 @@ void FuncMummy(int a, int nDamage, int nRun)
                         SetQuake(nSprite, 100);
 
                         // low 16 bits of returned var contains the sprite index, the high 16 the bullet number
-                        int nBullet = BuildBullet(nSprite, 9, 0, 0, 0x0FFFFC400, sprite[nSprite].ang, nTarget + 10000, 1);
+                        int nBullet = BuildBullet(nSprite, 9, 0, 0, -15360, sprite[nSprite].ang, nTarget + 10000, 1);
                         CheckMummyRevive(nMummy);
 
                         if (nBullet > -1)
@@ -402,7 +400,7 @@ void FuncMummy(int a, int nDamage, int nRun)
 
                 case 4:
                 {
-                    if (ecx)
+                    if (bVal)
                     {
                         MummyList[nMummy].B = 0;
                         MummyList[nMummy].nAction = 5;
@@ -418,7 +416,7 @@ void FuncMummy(int a, int nDamage, int nRun)
 
                 case 6:
                 {
-                    if (ecx)
+                    if (bVal)
                     {
                         MummyList[nMummy].nAction = 0;
                         sprite[nSprite].cstat = 0x101;
@@ -437,7 +435,7 @@ void FuncMummy(int a, int nDamage, int nRun)
                         sprite[nSprite].yvel >>= 1;
                     }
 
-                    if (ecx)
+                    if (bVal)
                     {
                         sprite[nSprite].xvel = 0;
                         sprite[nSprite].yvel = 0;

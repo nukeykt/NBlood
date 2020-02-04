@@ -588,7 +588,7 @@ void DoFlickers()
 }
 
 // nWall can also be passed in here via nSprite parameter - TODO - rename nSprite parameter :)
-void AddFlow(int nSprite, int a, int b)
+void AddFlow(int nSprite, int nSpeed, int b)
 {
     if (nFlowCount >= kMaxFlows)
         return;
@@ -606,8 +606,8 @@ void AddFlow(int nSprite, int a, int b)
 
         sFlowInfo[nFlow].field_14 = (tilesiz[nPic].x << 14) - 1;
         sFlowInfo[nFlow].field_18 = (tilesiz[nPic].y << 14) - 1;
-        sFlowInfo[nFlow].field_C  = -Cos(nAngle) * a;
-        sFlowInfo[nFlow].field_10 = Sin(nAngle) * a;
+        sFlowInfo[nFlow].field_C  = -Cos(nAngle) * nSpeed;
+        sFlowInfo[nFlow].field_10 = Sin(nAngle) * nSpeed;
     }
     else
     {
@@ -625,8 +625,8 @@ void AddFlow(int nSprite, int a, int b)
 
         sFlowInfo[nFlow].field_14 = (tilesiz[nPic].x * wall[var_18].xrepeat) << 8;
         sFlowInfo[nFlow].field_18 = (tilesiz[nPic].y * wall[var_18].yrepeat) << 8;
-        sFlowInfo[nFlow].field_C = -Cos(nAngle) * a;
-        sFlowInfo[nFlow].field_10 = Sin(nAngle) * a;
+        sFlowInfo[nFlow].field_C = -Cos(nAngle) * nSpeed;
+        sFlowInfo[nFlow].field_10 = Sin(nAngle) * nSpeed;
     }
 
     sFlowInfo[nFlow].field_8 = 0;

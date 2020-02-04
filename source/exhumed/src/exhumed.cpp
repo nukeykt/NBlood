@@ -1935,9 +1935,9 @@ void DrawClock()
     while (nVal)
     {
         int v2 = nVal & 0xF;
-        int yPos = 32 - tilesiz[v2 + kTile3606].y / 2;
+        int yPos = 32 - tilesiz[v2 + kClockSymbol1].y / 2;
 
-        CopyTileToBitmap(v2 + kTile3606, kTile3603, ebp - tilesiz[v2 + kTile3606].x / 2, yPos);
+        CopyTileToBitmap(v2 + kClockSymbol1, kTile3603, ebp - tilesiz[v2 + kClockSymbol1].x / 2, yPos);
 
         ebp -= 15;
 
@@ -3275,13 +3275,9 @@ void FadeInScreen(int nTile)
 }
 #endif
 
-// TODO - missing some values?
-short word_10010[] = {6, 25, 43, 50, 68, 78, 101, 111, 134, 158, 173, 230, 6000};
-
 void DoTitle()
 {
-    short theArray[13];
-    memcpy(theArray, word_10010, sizeof(word_10010));
+    short skullDurations[] = { 6, 25, 43, 50, 68, 78, 101, 111, 134, 158, 173, 230, 6000 };
 
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
 
@@ -3384,14 +3380,12 @@ void DoTitle()
 
     int nStartTime = (int)totalclock;
     int nCount = 0;
-    int var_18 = (int)totalclock;
+    int var_18 = (int)totalclock + skullDurations[0];
     int var_4 = 0;
 
     int esi = 130;
 
-    var_18 += theArray[0];
-
-    while (LocalSoundPlaying())
+    while (LocalSoundPlaying() && !KB_KeyWaiting())
     {
         HandleAsync();
 
@@ -3413,8 +3407,7 @@ void DoTitle()
             nCount++;
 
             assert(nCount <= 12);
-            var_18 = nStartTime + theArray[nCount];
-
+            var_18 = nStartTime + skullDurations[nCount];
             var_4 = var_4 == 0;
         }
 
@@ -3847,9 +3840,6 @@ int DoSpiritHead()
                     nHeadTimeStart = (int)totalclock + 480;
                 }
 
-//				int ecx = 0;
-
-                // loc_1362C
                 for (int i = 0; i < nPixelsToShow; i++)
                 {
                     if (destvely[i] >= 0)
@@ -3891,7 +3881,6 @@ int DoSpiritHead()
                         }
                     }
 
-                    // loc_13593
                     int esi = vely[i] + (cury[i] >> 8);
 
                     if (esi < 106)
@@ -3908,7 +3897,6 @@ int DoSpiritHead()
                         esi = 0;
                     }
 
-                    // loc_135C6
                     int ebx = velx[i] + (curx[i] >> 8);
 
                     if (ebx < 97)
@@ -3925,27 +3913,18 @@ int DoSpiritHead()
                         ebx = 0;
                     }
 
-                    // loc_135F9
                     curx[i] = ebx * 256;
                     cury[i] = esi * 256;
 
-                    //ecx += 2;
-//					ecx++;
-
                     esi += (ebx + 97) * 212;
 
-//					uint8_t *pVal = (uint8_t*)worktile;
-
                     worktile[106 + esi] = pixelval[i];
-                    //pVal += (106 + esi);
-                    //*pVal = pixelval[i];
                 }
 
                 return 1;
             }
             else
             {
-                // loc_13679:
                 if (nHeadStage != 1) {
                     return 1;
                 }
@@ -3974,11 +3953,8 @@ int DoSpiritHead()
                     }
                 }
 
-                // loc_13705
                 int esi = 0;
-//				int edx = 0;
 
-                // loc_137E7:
                 for (int i = 0; i < nPixels; i++)
                 {
                     int eax = (origx[i] << 8) - curx[i];
@@ -4004,7 +3980,6 @@ int DoSpiritHead()
                         ecx >>= 3;
                     }
 
-                    // loc_1374B
                     int var_1C = (origy[i] << 8) - cury[i];
                     int ebp = var_1C;
 
@@ -4041,14 +4016,7 @@ int DoSpiritHead()
 
                     ecx = (((curx[i] >> 8) + 97) * 212) + (cury[i] >> 8);
 
-//					edx++;
-
-//					uint8_t *pVal = (uint8_t*)worktile;
-
                     worktile[106 + ecx] = pixelval[i];
-
-                    //pVal += (106 + ecx);
-                    //*pVal = pixelval[i];
                 }
 
                 if (((int)totalclock - lHeadStartClock) > 600) {
@@ -4078,7 +4046,6 @@ int DoSpiritHead()
         }
         else
         {
-            // loc_138A7
             FixPalette();
 
             if (!nPalDiff)
@@ -4143,7 +4110,6 @@ int DoSpiritHead()
 
         tileLoad(ebx);
 
-        // TODO - fixme. How big is worktile?
         uint8_t *pDest = (uint8_t*)&worktile[10441];
         uint8_t *pSrc = (uint8_t*)waloff[ebx];
 
@@ -4172,10 +4138,6 @@ int DoSpiritHead()
 
             short nTileSizeX = tilesiz[nMouthTile + 598].x;
             short nTileSizeY = tilesiz[nMouthTile + 598].y;
-
-            // TODO - checkme. near loc_133AA
-//			uint8_t *pDest = (uint8_t*)worktile;
-//			pDest += (212 * (97 - nTileSizeX / 2)) + (159 - nTileSizeY);
 
             uint8_t *pDest = (uint8_t*)&worktile[212 * (97 - nTileSizeX / 2)] + (159 - nTileSizeY);
             uint8_t *pSrc = (uint8_t*)waloff[nMouthTile + 598];
