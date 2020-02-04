@@ -701,10 +701,6 @@ void StartSwirly(int nActiveSound)
         FX_StopSound(pASound->hFX);
 
     pASound->hFX = FX_Play(SoundBuf[StaticSound[kSoundMana1]], SoundLen[StaticSound[kSoundMana1]], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, nActiveSound);
-    
-    char buf[100];
-    sprintf(buf, "nPitch: %d\n", nPitch);
-    OutputDebugString(buf);
 
     if (pASound->hFX > -1)
         FX_SetFrequency(pASound->hFX, nPitch);
