@@ -103,7 +103,7 @@ static void thinkSearch(spritetype *pSprite, XSPRITE *pXSprite)
 static void thinkGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     XSECTOR *pXSector;
     int nXSector = sector[pSprite->sectnum].extra;
     if (nXSector > 0)
@@ -142,7 +142,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
@@ -256,7 +256,7 @@ static void thinkChase(spritetype *pSprite, XSPRITE *pXSprite)
 static void thinkSwimGoto(spritetype *pSprite, XSPRITE *pXSprite)
 {
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
@@ -275,7 +275,7 @@ static void thinkSwimChase(spritetype *pSprite, XSPRITE *pXSprite)
         return;
     }
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     spritetype *pTarget = &sprite[pXSprite->target];
     XSPRITE *pXTarget = &xsprite[pTarget->extra];
@@ -321,7 +321,7 @@ static void sub_65D04(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
@@ -354,10 +354,10 @@ static void sub_65F44(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     spritetype *pTarget = &sprite[pXSprite->target];
-    int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].eyeHeight;
-    int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].eyeHeight;
+    int z = pSprite->z + getDudeInfo(pSprite->type)->eyeHeight;
+    int z2 = pTarget->z + getDudeInfo(pTarget->type)->eyeHeight;
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;
@@ -390,10 +390,10 @@ static void sub_661E0(spritetype *pSprite, XSPRITE *pXSprite)
 {
     int nSprite = pSprite->index;
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     spritetype *pTarget = &sprite[pXSprite->target];
-    int z = pSprite->z + dudeInfo[pSprite->type - kDudeBase].eyeHeight;
-    int z2 = pTarget->z + dudeInfo[pTarget->type - kDudeBase].eyeHeight;
+    int z = pSprite->z + getDudeInfo(pSprite->type)->eyeHeight;
+    int z2 = pTarget->z + getDudeInfo(pTarget->type)->eyeHeight;
     int nAng = ((pXSprite->goalAng+1024-pSprite->ang)&2047)-1024;
     int nTurnRange = (pDudeInfo->angSpeed<<2)>>4;
     pSprite->ang = (pSprite->ang+ClipRange(nAng, -nTurnRange, nTurnRange))&2047;

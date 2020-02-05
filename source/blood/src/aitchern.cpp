@@ -83,7 +83,7 @@ static void sub_71BD4(int, int nXSprite)
     XSPRITE *pXSprite = &xsprite[nXSprite];
     int nSprite = pXSprite->reference;
     spritetype *pSprite = &sprite[nSprite];
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     int height = pSprite->yrepeat*pDudeInfo->eyeHeight;
     ///dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites)) {
@@ -162,7 +162,7 @@ static void sub_720AC(int, int nXSprite)
         consoleSysMsg("pXSprite->target >= 0 && pXSprite->target < kMaxSprites");
         return;
     }
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     int height = pSprite->yrepeat*pDudeInfo->eyeHeight;
     int ax, ay, az;
     ax = Cos(pSprite->ang)>>16;
@@ -243,7 +243,7 @@ static void sub_725A4(spritetype *pSprite, XSPRITE *pXSprite)
         consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
     }
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type-kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     DUDEEXTRA_at6_u2 *pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u2;
     if (pDudeExtraE->at4 && pDudeExtraE->at0 < 10)
         pDudeExtraE->at0++;
@@ -300,7 +300,7 @@ static void sub_72850(spritetype *pSprite, XSPRITE *pXSprite)
         consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
     }
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     int dx = pXSprite->targetX-pSprite->x;
     int dy = pXSprite->targetY-pSprite->y;
     int nAngle = getangle(dx, dy);
@@ -323,7 +323,7 @@ static void sub_72934(spritetype *pSprite, XSPRITE *pXSprite)
         consoleSysMsg("pSprite->type >= kDudeBase && pSprite->type < kDudeMax");
         return;
     }
-    DUDEINFO *pDudeInfo = &dudeInfo[pSprite->type - kDudeBase];
+    DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     ///dassert(pXSprite->target >= 0 && pXSprite->target < kMaxSprites);
     if (!(pXSprite->target >= 0 && pXSprite->target < kMaxSprites)) {
         consoleSysMsg("pXSprite->target >= 0 && pXSprite->target < kMaxSprites");

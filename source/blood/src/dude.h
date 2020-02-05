@@ -53,3 +53,11 @@ struct DUDEINFO {
 
 extern DUDEINFO dudeInfo[kDudeMax-kDudeBase];
 extern DUDEINFO gPlayerTemplate[4];
+extern DUDEINFO fakeDudeInfo;
+
+inline DUDEINFO *getDudeInfo(int const nType)
+{
+    if (nType >= kDudeBase && nType < kDudeMax)
+        return &dudeInfo[nType - kDudeBase];
+    return &fakeDudeInfo;
+}

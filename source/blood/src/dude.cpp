@@ -1725,3 +1725,5 @@ DUDEINFO gPlayerTemplate[4] =
          0
      },
 };
+
+DUDEINFO fakeDudeInfo = {};
