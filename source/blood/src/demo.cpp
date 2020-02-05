@@ -328,13 +328,12 @@ void CDemo::Playback(void)
         gGameMenuMgr.Push(&menuMain, -1);
         at2 = 1;
     }
-    totalclock = 0;
     gNetFifoClock = totalclock;
     gViewMode = 3;
 _DEMOPLAYBACK:
     while (at1 && !gQuitGame)
     {
-        while (((int)totalclock*16) >= gNetFifoClock && !gQuitGame)
+        while (totalclock >= gNetFifoClock && !gQuitGame)
         {
             if (!v4)
             {
