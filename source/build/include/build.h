@@ -1450,7 +1450,6 @@ enum {
 };
 
 extern int32_t glusetexcache, glusememcache;
-extern int32_t glmultisample, glnvmultisamplehint;
 extern int32_t glprojectionhacks;
 extern int32_t gltexmaxsize;
 void gltexapplyprops (void);

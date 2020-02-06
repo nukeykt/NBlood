@@ -112,7 +112,6 @@ int32_t r_polygonmode = 0;     // 0:GL_FILL,1:GL_LINE,2:GL_POINT //FUK
 static int32_t lastglpolygonmode = 0; //FUK
 #endif
 #ifdef USE_GLEXT
-int32_t glmultisample = 0, glnvmultisamplehint = 0;
 int32_t r_detailmapping = 1;
 int32_t r_glowmapping = 1;
 #endif
@@ -957,13 +956,6 @@ void polymost_glinit()
     }
 
 #ifdef USE_GLEXT
-    if (glmultisample > 0 && glinfo.multisample)
-    {
-        if (glinfo.nvmultisamplehint)
-            glHint(GL_MULTISAMPLE_FILTER_HINT_NV, glnvmultisamplehint ? GL_NICEST:GL_FASTEST);
-        glEnable(GL_MULTISAMPLE);
-    }
-
     if (r_persistentStreamBuffer && ((!glinfo.bufferstorage) || (!glinfo.sync)))
     {
         OSD_Printf("Your OpenGL implementation doesn't support the required extensions for persistent stream buffers. Disabling...\n");

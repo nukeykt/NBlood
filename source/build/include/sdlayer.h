@@ -28,11 +28,6 @@ int32_t SDL_WaitEventTimeout(SDL_Event *event, int32_t timeout);
     for (iter = 0; iter < (int32_t)ARRAY_SIZE(attrib); iter++)                                                         \
     {                                                                                                                  \
         int32_t j = attrib[iter].value;                                                                                \
-        if (!multisamplecheck &&                                                                                       \
-            (attrib[iter].attr == SDL_GL_MULTISAMPLEBUFFERS || attrib[iter].attr == SDL_GL_MULTISAMPLESAMPLES))        \
-        {                                                                                                              \
-            j = 0;                                                                                                     \
-        }                                                                                                              \
         SDL_GL_SetAttribute(attrib[iter].attr, j);                                                                     \
     }
 
