@@ -119,9 +119,9 @@ int32_t hud_showmapname = 1;
 
 int32_t g_levelTextTime = 0;
 
-int32_t r_maxfps = 60;
-int32_t r_maxfpsoffset = 0;
-double g_frameDelay = 0.0;
+int32_t r_maxfps = -1;
+int32_t r_maxfpsoffset;
+uint64_t g_frameDelay;
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
 extern char forcegl;
@@ -6327,30 +6327,18 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
+    if (!r_maxfps)
         return true;
 
-    static double   nextPageDelay;
-    static uint64_t lastFrameTicks;
+    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
 
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
-    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
+    uint64_t const  frameTicks     = timerGetPerformanceCounter();
+    static uint64_t nextFrameTicks = frameTicks + g_frameDelay;
 
-    uint64_t const frameTicks = timerGetPerformanceCounter();
-
-    if (lastFrameTicks > frameTicks)
-        lastFrameTicks = frameTicks;
-
-    uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
-    double const   dElapsedTime = elapsedTime;
-
-    if (dElapsedTime >= nextPageDelay)
+    if (frameTicks >= nextFrameTicks)
     {
-        if (dElapsedTime <= nextPageDelay+g_frameDelay)
-            nextPageDelay += g_frameDelay-dElapsedTime;
-
-        lastFrameTicks = frameTicks;
-
+        while (frameTicks >= nextFrameTicks)
+            nextFrameTicks += g_frameDelay;
         return true;
     }
 
@@ -6759,7 +6747,7 @@ int app_main(int argc, char const * const * argv)
             ud.setup.bpp  = bpp;
         }
 
-        g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, myplayer.palette, 0);
         S_SoundStartup();
         S_MusicStartup();

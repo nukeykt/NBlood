@@ -743,6 +743,10 @@ void uninitsystem(void)
 //
 void system_getcvars(void)
 {
+# ifdef _WIN32
+    windowsDwmSetupComposition(false);
+# endif
+
     vsync = videoSetVsync(vsync);
 }
 
@@ -1697,10 +1701,6 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
         if (nogl)
             return -1;
-
-# ifdef _WIN32
-        windowsDwmSetupComposition(false);
-# endif
 
         struct glattribs
         {
