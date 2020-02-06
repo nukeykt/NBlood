@@ -501,8 +501,6 @@ int32_t baselayer_init(void)
 
     for (native_t i = 0; i < NUMKEYS; i++) g_keyRemapTable[i] = i;
 
-    communityapiInit();
-
     return 0;
 }
 
