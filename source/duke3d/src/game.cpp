@@ -6497,7 +6497,10 @@ int app_main(int argc, char const * const * argv)
     if (enginePreInit())
         G_FatalEngineInitError();
 
-    communityapiInit();
+#ifdef EDUKE32_STANDALONE
+    if (!G_CheckCmdSwitch(argc, argv, "-nosteam"))
+        communityapiInit();
+#endif
 
     if (Bstrcmp(g_setupFileName, SETUPFILENAME))
         initprintf("Using config file \"%s\".\n",g_setupFileName);
