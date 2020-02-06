@@ -3,6 +3,11 @@
 #ifndef winbits_h__
 #define winbits_h__
 
+#define NEED_DWMAPI_H
+#define NEED_BCRYPT_H
+
+#include "windows_inc.h"
+
 #include "compat.h"
 
 #ifdef APPNAME
