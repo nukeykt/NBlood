@@ -772,7 +772,8 @@ void initputs(const char *buf)
 #ifndef _WIN32
         startwin_idle(NULL);
 #else
-        handleevents();
+        if (sdl_window)
+            handleevents();
 #endif
         Bmemset(dabuf, 0, sizeof(dabuf));
     }
