@@ -66,8 +66,8 @@ static internalgrpinfo_t const internalgrpfiles[] =
     { "Duke!ZONE II",                          (int32_t) 0x1E9516F1,  3186656, GAMEFLAG_DUKE|GAMEFLAG_ADDON, DUKE15_CRC, "DZ-GAME.CON", NULL},
     { "NAM",                                   NAM_CRC,     43448927, GAMEFLAG_NAM,                          0, NULL, NULL},
     { "NAPALM",                                NAPALM_CRC,  44365728, GAMEFLAG_NAM|GAMEFLAG_NAPALM,          0, NULL, NULL},
-    //{ "WWII GI",                               WW2GI_CRC,   77939508, GAMEFLAG_WW2GI,                        0, NULL, NULL},
-    //{ "Platoon Leader",                        PLATOONL_CRC, 37852572, GAMEFLAG_WW2GI|GAMEFLAG_ADDON,        WW2GI_CRC, "PLATOONL.DEF", NULL},
+    { "WWII GI",                               WW2GI_CRC,   77939508, GAMEFLAG_WW2GI,                        0, NULL, NULL},
+    { "Platoon Leader",                        PLATOONL_CRC, 37852572, GAMEFLAG_WW2GI|GAMEFLAG_ADDON,        WW2GI_CRC, "PLATOONL.DEF", NULL},
     { "Redneck Rampage",                       RR_CRC,     141174222, GAMEFLAG_RR,                           0, NULL, NULL },
     { "Redneck Rampage: Rides Again",          RRRA_CRC,   191798609, GAMEFLAG_RR|GAMEFLAG_RRRA,             0, NULL, NULL },
 };

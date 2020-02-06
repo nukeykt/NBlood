@@ -83,7 +83,7 @@ int32_t vote_map = -1, vote_episode = -1;
 
 int32_t g_Debug = 0;
 
-const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "REDNECK.RTS", "REDNECK.RTS", "NAM.RTS", "NAPALM.RTS" };
+const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "REDNECK.RTS", "REDNECK.RTS", "NAM.RTS", "NAPALM.RTS", "WW2GI.RTS" };
 
 int32_t g_Shareware = 0;
 

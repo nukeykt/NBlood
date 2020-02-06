@@ -1902,7 +1902,7 @@ void Menu_Init(void)
     else if (NAM)
         ME_SOUND_DUKETALK.name = "Grunt talk:";
 
-    if (IONMAIDEN)
+    if (FURY)
     {
         MF_Redfont.between.x = 2<<16;
         MF_Redfont.cursorScale = 32768;
