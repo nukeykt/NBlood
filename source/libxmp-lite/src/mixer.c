@@ -454,7 +454,6 @@ void libxmp_mixer_softmixer(struct context_data *ctx)
 		usmp = 0;
 		for (size = s->ticksize; size > 0; ) {
 			int split_noloop = 0;
-			vi->slen = xxs->len;
 
 			if (p->xc_data[vi->chn].split) {
 				split_noloop = 1;
