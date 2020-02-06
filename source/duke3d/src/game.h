@@ -354,8 +354,16 @@ extern int32_t MAXCACHE1DSIZE;
 extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 
-extern double g_frameDelay;
-static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
+extern uint64_t g_frameDelay;
+static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
+{
+    uint64_t const perfFreq = timerGetPerformanceFrequency();
+
+    if (maxFPS == -1)
+        return perfFreq / (refreshfreq - ceil(refreshfreq / 60.0));
+
+    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
+}
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
