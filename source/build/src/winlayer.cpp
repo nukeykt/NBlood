@@ -157,7 +157,6 @@ HWND win_gethwnd(void)
     return hWindow;
 }
 
-
 //
 // win_gethinstance() -- gets the application instance
 //
@@ -1478,7 +1477,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         gammabrightness = 0;
     }
 
-    windowsDwmEnableComposition(c == 8);
+    windowsDwmSetupComposition(c == 8);
 
     if (!win_silentvideomodeswitch)
         initprintf("Setting video mode %dx%d (%d-bit %s)\n",

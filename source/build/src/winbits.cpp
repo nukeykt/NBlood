@@ -1,4 +1,5 @@
 // Windows layer-independent code
+// (c) EDuke32 developers and contributors. All rights reserved. ;)
 
 #include "winbits.h"
 
@@ -7,10 +8,11 @@
 #include "cache1d.h"
 #include "compat.h"
 #include "osd.h"
-#include "windows_inc.h"
+#include "renderlayer.h"
 
 #include <mmsystem.h>
 #include <winnls.h>
+#include <winternl.h>
 
 #ifdef BITNESS64
 # define EBACKTRACEDLL "ebacktrace1-64.dll"
@@ -27,15 +29,15 @@ static int32_t win_togglecomposition;
 static int32_t win_systemtimermode;
 
 static OSVERSIONINFOEX osv;
-
-FARPROC pwinever;
-
+static FARPROC pwinever;
 static char const *enUSLayoutString = "00000409";
+
+DWM_TIMING_INFO timingInfo;
 
 void windowsSetupTimer(int ntDllVoodoo)
 {
-    typedef HRESULT(NTAPI* pSetTimerResolution)(ULONG, BOOLEAN, PULONG);
-    typedef HRESULT(NTAPI* pQueryTimerResolution)(PULONG, PULONG, PULONG);
+    typedef HRESULT(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
+    typedef HRESULT(NTAPI* PQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
 
     TIMECAPS timeCaps;
 
@@ -51,19 +53,19 @@ void windowsSetupTimer(int ntDllVoodoo)
 #endif
         static int   setPeriod;
         static ULONG setTimerNT;
-        HMODULE      ntDllHandle = GetModuleHandle("ntdll.dll");
+        HMODULE      hNTDLL = GetModuleHandle("ntdll.dll");
 
-        static pQueryTimerResolution NtQueryTimerResolution;
-        static pSetTimerResolution   NtSetTimerResolution;
+        static PQUERYTIMERRESOLUTION NtQueryTimerResolution;
+        static PFNSETTIMERRESOLUTION NtSetTimerResolution;
 
         if (ntDllVoodoo)
         {
             if (!onBattery)
             {
-                if (ntDllHandle != nullptr)
+                if (hNTDLL != nullptr)
                 {
-                    NtQueryTimerResolution = (pQueryTimerResolution)(void(*))GetProcAddress(ntDllHandle, "NtQueryTimerResolution");
-                    NtSetTimerResolution   = (pSetTimerResolution)(void(*))GetProcAddress(ntDllHandle, "NtSetTimerResolution");
+                    NtQueryTimerResolution = (PQUERYTIMERRESOLUTION)(void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
+                    NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)(void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
 
                     if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
                     {
@@ -135,10 +137,10 @@ failsafe:
 //
 BOOL windowsGetVersion(void)
 {
-    HMODULE hntdll = GetModuleHandle("ntdll.dll");
+    HMODULE hNTDLL = GetModuleHandle("ntdll.dll");
 
-    if (hntdll)
-        pwinever = GetProcAddress(hntdll, "wine_get_version");
+    if (hNTDLL)
+        pwinever = GetProcAddress(hNTDLL, "wine_get_version");
 
     ZeroMemory(&osv, sizeof(osv));
     osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
@@ -292,16 +294,16 @@ void windowsPlatformInit(void)
           "Windows process priority class:\n"
           "  -1: do not alter process priority\n"
           "   0: HIGH when game has focus, NORMAL when interacting with other programs\n"
-          "   1: NORMAL when game has focus, IDLE when interacting with other programs\n",
+          "   1: NORMAL when game has focus, IDLE when interacting with other programs",
           (void *)&win_priorityclass, CVAR_INT, -1, 1 },
     };
 
     static osdcvardata_t win_timer_cvar = { "win_systemtimermode",
                                             "Windows timer interrupt resolution:\n"
                                             "   0: 1.0ms\n"
-                                            "   1: 0.5ms low-latency\n"
+                                            "   1: 0.5ms low-latency"
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
-                                            "This option has no effect when running on battery power.\n",
+                                            "\nThis option has no effect when running on battery power.",
 #else
                                             ,
 #endif
@@ -316,20 +318,148 @@ void windowsPlatformInit(void)
     windowsSetupTimer(0);
 }
 
-void windowsDwmEnableComposition(int const compEnable)
+typedef UINT D3DKMT_HANDLE;
+typedef UINT D3DDDI_VIDEO_PRESENT_SOURCE_ID;
+
+typedef struct _D3DKMT_OPENADAPTERFROMHDC
 {
-    if (!win_togglecomposition || osv.dwMajorVersion != 6 || osv.dwMinorVersion >= 2)
+    HDC           hDc;
+    D3DKMT_HANDLE hAdapter;
+    LUID          AdapterLuid;
+
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+} D3DKMT_OPENADAPTERFROMHDC;
+
+typedef struct _D3DKMT_CLOSEADAPTER
+{
+    D3DKMT_HANDLE hAdapter;
+} D3DKMT_CLOSEADAPTER;
+
+typedef struct _D3DKMT_WAITFORVERTICALBLANKEVENT
+{
+    D3DKMT_HANDLE hAdapter;
+    D3DKMT_HANDLE hDevice;
+
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+} D3DKMT_WAITFORVERTICALBLANKEVENT;
+
+typedef NTSTATUS(APIENTRY *PFND3DKMTOPENADAPTERFROMHDC)(D3DKMT_OPENADAPTERFROMHDC *);
+typedef NTSTATUS(APIENTRY *PFND3DKMTCLOSEADAPTER)(D3DKMT_CLOSEADAPTER *);
+typedef NTSTATUS(APIENTRY *PFND3DKMTWAITFORVERTICALBLANKEVENT)(D3DKMT_WAITFORVERTICALBLANKEVENT *);
+
+typedef HRESULT(WINAPI *PFNDWMENABLECOMPOSITION)(UINT);
+typedef HRESULT(WINAPI *PFNDWMGETCOMPOSITIONTIMINGINFO)(HWND, DWM_TIMING_INFO *);
+typedef HRESULT(WINAPI *PFNDWMISCOMPOSITIONENABLED)(BOOL *);
+typedef HRESULT(WINAPI *PFNDWMFLUSH)(void);
+
+static HMODULE hDWMApiDLL;
+static PFNDWMFLUSH aDwmFlush;
+static PFNDWMISCOMPOSITIONENABLED aDwmIsCompositionEnabled;
+
+void windowsWaitForVBlank(void)
+{
+    // if we don't have these, we aren't going to have the WDDM functions below either, so bailing here is fine.
+    if (osv.dwMajorVersion < 6 || !aDwmFlush || !aDwmIsCompositionEnabled)
         return;
 
-    static HMODULE hDWMApiDLL = NULL;
-    static HRESULT(WINAPI * aDwmEnableComposition)(UINT);
+    static int useDWMsync;
 
-    if (!hDWMApiDLL && (hDWMApiDLL = LoadLibrary("DWMAPI.DLL")))
-        aDwmEnableComposition = (HRESULT(WINAPI *)(UINT))(void (*)(void))GetProcAddress(hDWMApiDLL, "DwmEnableComposition");
+    // here comes the voodoo bullshit ;)
+    static HMODULE hGDI32;
+    static PFND3DKMTOPENADAPTERFROMHDC        aD3DKMTOpenAdapterFromHdc;
+    static PFND3DKMTCLOSEADAPTER              aD3DKMTCloseAdapter;
+    static PFND3DKMTWAITFORVERTICALBLANKEVENT aD3DKMTWaitForVBlank;
 
-    if (aDwmEnableComposition)
+    if (!hGDI32 && (hGDI32 = GetModuleHandle("gdi32.dll")))
+    {
+        aD3DKMTOpenAdapterFromHdc = (PFND3DKMTOPENADAPTERFROMHDC)       (void (*)(void))GetProcAddress(hGDI32, "D3DKMTOpenAdapterFromHdc");
+        aD3DKMTCloseAdapter       = (PFND3DKMTCLOSEADAPTER)             (void (*)(void))GetProcAddress(hGDI32, "D3DKMTCloseAdapter");
+        aD3DKMTWaitForVBlank      = (PFND3DKMTWAITFORVERTICALBLANKEVENT)(void (*)(void))GetProcAddress(hGDI32, "D3DKMTWaitForVerticalBlankEvent");
+    }
+
+    if (useDWMsync || !fullscreen || !aD3DKMTOpenAdapterFromHdc || !aD3DKMTCloseAdapter || !aD3DKMTWaitForVBlank)
+    {
+dwm:
+        // if we don't have the better APIs but composition is enabled, this is sometimes good enough
+        BOOL compositionEnabled = false;
+
+        if (SUCCEEDED(aDwmIsCompositionEnabled(&compositionEnabled)) && compositionEnabled && aDwmFlush() != S_OK)
+            OSD_Printf("debug: DWM flush FAILED!\n");
+
+        return;
+    }
+    
+    MONITORINFOEX mi = {};
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(MonitorFromWindow(win_gethwnd(), MONITOR_DEFAULTTONULL), &mi);
+
+    D3DKMT_OPENADAPTERFROMHDC activeAdapter = {};
+    activeAdapter.hDc = CreateDC(mi.szDevice, mi.szDevice, nullptr, nullptr);
+
+    if (activeAdapter.hDc == nullptr)
+    {
+        OSD_Printf("debug: CreateDC() FAILED! display: %s windowx: %d windowy: %d\n", mi.szDevice, windowx, windowy);
+        useDWMsync = 1;
+        goto dwm;
+    }
+
+    auto status = aD3DKMTOpenAdapterFromHdc(&activeAdapter);
+    DeleteDC(activeAdapter.hDc);
+
+    if (NT_SUCCESS(status))
+    {
+        D3DKMT_WAITFORVERTICALBLANKEVENT vBlankEvent = { activeAdapter.hAdapter, 0, activeAdapter.VidPnSourceId };
+
+        if (NT_SUCCESS(status = aD3DKMTWaitForVBlank(&vBlankEvent)))
+        {
+            // the D3DKMT_CLOSEADAPTER struct only contains one member, and it's
+            // the same as the first member in D3DKMT_WAITFORVERTICALBLANKEVENT
+            if (NT_SUCCESS(status = aD3DKMTCloseAdapter((D3DKMT_CLOSEADAPTER *)&vBlankEvent)))
+                return;
+            else
+                OSD_Printf("debug: D3DKMTCloseAdapter() FAILED! NTSTATUS: 0x%x\n", (unsigned)status);
+        }
+        else
+            OSD_Printf("debug: D3DKMTWaitForVerticalBlankEvent() FAILED! NTSTATUS: 0x%x\n", (unsigned)status);
+    }
+    else
+        OSD_Printf("debug: D3DKMTOpenAdapterFromHdc() FAILED! NTSTATUS: 0x%x\n", (unsigned)status);
+
+    OSD_Printf("debug: D3DKMT failure, falling back to DWM sync\n");
+    useDWMsync = 1;
+    goto dwm;
+}
+
+void windowsDwmSetupComposition(int const compEnable)
+{
+    if (osv.dwMajorVersion < 6)
+        return;
+
+    static PFNDWMENABLECOMPOSITION        aDwmEnableComposition;
+    static PFNDWMGETCOMPOSITIONTIMINGINFO aDwmGetCompositionTimingInfo;
+    
+    if (!hDWMApiDLL && (hDWMApiDLL = GetModuleHandle("dwmapi.dll")))
+    {
+        aDwmEnableComposition        = (PFNDWMENABLECOMPOSITION)        (void (*)(void))GetProcAddress(hDWMApiDLL, "DwmEnableComposition");
+        aDwmFlush                    = (PFNDWMFLUSH)                    (void (*)(void))GetProcAddress(hDWMApiDLL, "DwmFlush");
+        aDwmGetCompositionTimingInfo = (PFNDWMGETCOMPOSITIONTIMINGINFO) (void (*)(void))GetProcAddress(hDWMApiDLL, "DwmGetCompositionTimingInfo");
+        aDwmIsCompositionEnabled     = (PFNDWMISCOMPOSITIONENABLED)     (void (*)(void))GetProcAddress(hDWMApiDLL, "DwmIsCompositionEnabled");
+    }
+
+    if (aDwmGetCompositionTimingInfo)
+    {
+        timingInfo = {};
+        timingInfo.cbSize = sizeof(DWM_TIMING_INFO);
+
+        // the HWND parameter was deprecated in Windows 8.1 because DWM always syncs to the primary monitor's refresh...
+        if (FAILED(aDwmGetCompositionTimingInfo(nullptr, &timingInfo)))
+            OSD_Printf("debug: DwmGetCompositionTimingInfo() FAILED!\n");
+    }
+
+    if (win_togglecomposition && aDwmEnableComposition && osv.dwMinorVersion < 2)
     {
         aDwmEnableComposition(compEnable);
+
         if (!win_silentvideomodeswitch)
             OSD_Printf("%sabling DWM desktop composition...\n", (compEnable) ? "En" : "Dis");
     }

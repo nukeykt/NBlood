@@ -19,7 +19,6 @@ extern "C"
 }
 #endif // _WIN32
 
-int32_t swapcomplete=0;
 int32_t g_borderless=2;
 
 // input
