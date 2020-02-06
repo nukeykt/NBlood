@@ -452,7 +452,7 @@ static inline int32_t gameHandleEvents(void)
 
 static inline int32_t calc_smoothratio_demo(ClockTicks totalclk, ClockTicks ototalclk)
 {
-    int32_t rfreq = tabledivide64((refreshfreq != -1 ? refreshfreq : 60) * TICRATE, timerGetClockRate());
+    int32_t rfreq = tabledivide64(refreshfreq * TICRATE, timerGetClockRate());
     uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*TICRATE);
 #if 0
     //POGO: additional debug info for testing purposes

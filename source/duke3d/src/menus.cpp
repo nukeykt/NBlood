@@ -540,8 +540,18 @@ static MenuOptionSet_t MEOS_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTIONSET(MEOSN_VID
 static MenuOption_t MEO_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_BORDERLESS, &newborderless);
 static MenuEntry_t ME_VIDEOSETUP_BORDERLESS = MAKE_MENUENTRY("Borderless:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_BORDERLESS, Option);
 
-static char const *MEOSN_VIDEOSETUP_VSYNC [] = { "Adaptive", "Off", "On", };
-static int32_t MEOSV_VIDEOSETUP_VSYNC [] = { -1, 0, 1, };
+static char const *MEOSN_VIDEOSETUP_VSYNC[] = { "Adaptive", "Off", "On",
+#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+                                                "KMT",
+#endif
+};
+
+static int32_t MEOSV_VIDEOSETUP_VSYNC[] = { -1, 0, 1,
+#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+                                             2,
+#endif
+};
+
 static MenuOptionSet_t MEOS_VIDEOSETUP_VSYNC = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_VSYNC, MEOSV_VIDEOSETUP_VSYNC, 0x2);
 static MenuOption_t MEO_VIDEOSETUP_VSYNC = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_VSYNC, &newvsync);
 static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_VSYNC, Option);
@@ -2464,11 +2474,13 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         }
         break;
 
+#if 0
     case MENU_VIDEOSETUP:
         if (entry == &ME_VIDEOSETUP_VSYNC && *MEO_VIDEOSETUP_VSYNC.data)
             mgametextcenter(origin.x, origin.y + (175<<16), "Try VSync in your graphics driver's\n"
                                                             "control panel before this option.");
         break;
+#endif
 
     case MENU_RESETPLAYER:
         videoFadeToBlack(1);
