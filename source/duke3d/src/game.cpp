@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define game_c_
 
 #include "duke3d.h"
+#include "communityapi.h"
 #include "compat.h"
 #include "renderlayer.h"
 #include "osdfuncs.h"
@@ -6495,6 +6496,8 @@ int app_main(int argc, char const * const * argv)
 
     if (enginePreInit())
         G_FatalEngineInitError();
+
+    communityapiInit();
 
     if (Bstrcmp(g_setupFileName, SETUPFILENAME))
         initprintf("Using config file \"%s\".\n",g_setupFileName);
