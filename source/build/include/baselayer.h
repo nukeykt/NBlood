@@ -106,8 +106,6 @@ struct glinfo_t {
     char clamptoedge;
     char texcompr;
     char texnpot;
-    char multisample;
-    char nvmultisamplehint;
     char arbfp;
     char depthtex;
     char shadow;

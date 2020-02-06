@@ -1454,8 +1454,6 @@ void sdlayer_setvideomode_opengl(void)
     // process the extensions string and flag stuff we recognize
 
     glinfo.texnpot = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_non_power_of_two") || !!Bstrstr(glinfo.extensions, "GL_OES_texture_npot");
-    glinfo.multisample = !!Bstrstr(glinfo.extensions, "GL_ARB_multisample");
-    glinfo.nvmultisamplehint = !!Bstrstr(glinfo.extensions, "GL_NV_multisample_filter_hint");
     glinfo.arbfp = !!Bstrstr(glinfo.extensions, "GL_ARB_fragment_program");
     glinfo.depthtex = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_texture");
     glinfo.shadow = !!Bstrstr(glinfo.extensions, "GL_ARB_shadow");
@@ -1674,11 +1672,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     if (c > 8 || !nogl)
     {
         int32_t i;
-#ifdef USE_GLEXT
-        int32_t multisamplecheck = (glmultisample > 0);
-#else
-        int32_t multisamplecheck = 0;
-#endif
+
         if (nogl)
             return -1;
 # ifdef _WIN32
@@ -1695,52 +1689,46 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
               { SDL_GL_CONTEXT_MINOR_VERSION, 1 },
 #endif
               { SDL_GL_DOUBLEBUFFER, 1 },
-#ifdef USE_GLEXT
-              { SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
-              { SDL_GL_MULTISAMPLESAMPLES, glmultisample },
-#endif
+
               { SDL_GL_STENCIL_SIZE, 1 },
               { SDL_GL_ACCELERATED_VISUAL, 1 },
           };
 
-        do
+        SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
+
+        /* HACK: changing SDL GL attribs only works before surface creation,
+            so we have to create a new surface in a different format first
+            to force the surface we WANT to be recreated instead of reused. */
+
+
+        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                        windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+                                        SDL_WINDOW_OPENGL | borderless);
+
+        if (sdl_window)
+            sdl_context = SDL_GL_CreateContext(sdl_window);
+
+        if (!sdl_window || !sdl_context)
         {
-            SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
+            initprintf("Unable to set video mode: %s failed: %s\n", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
+            nogl = 1;
+            destroy_window_resources();
+            return -1;
+        }
 
-            /* HACK: changing SDL GL attribs only works before surface creation,
-               so we have to create a new surface in a different format first
-               to force the surface we WANT to be recreated instead of reused. */
+        gladLoadGLLoader(SDL_GL_GetProcAddress);
+        if (GLVersion.major < 2)
+        {
+            initprintf("Your computer does not support OpenGL version 2 or greater. GL modes are unavailable.\n");
+            nogl = 1;
+            destroy_window_resources();
+            return -1;
+        }
 
+        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
+        SDL_GL_SetSwapInterval(vsync_renderlayer);
 
-            sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                          windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
-                                          SDL_WINDOW_OPENGL | borderless);
-
-            if (sdl_window)
-                sdl_context = SDL_GL_CreateContext(sdl_window);
-
-            if (!sdl_window || !sdl_context)
-            {
-                initprintf("Unable to set video mode: %s failed: %s\n", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
-                nogl = 1;
-                destroy_window_resources();
-                return -1;
-            }
-
-            gladLoadGLLoader(SDL_GL_GetProcAddress);
-            if (GLVersion.major < 2)
-            {
-                initprintf("Your computer does not support OpenGL version 2 or greater. GL modes are unavailable.\n");
-                nogl = 1;
-                destroy_window_resources();
-                return -1;
-            }
-
-            SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
-            SDL_GL_SetSwapInterval(vsync_renderlayer);
-
-            setrefreshrate();
-        } while (multisamplecheck--);
+        setrefreshrate();
     }
     else
 #endif  // defined USE_OPENGL
