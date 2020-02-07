@@ -2168,6 +2168,7 @@ void SaveGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
     LoadSave::SaveGame(strSaveGameName);
     gQuickSaveSlot = nSlot;
     gGameMenuMgr.Deactivate();
+    viewSetMessage("Game saved");
 }
 
 void QuickSaveGame(void)
@@ -2192,6 +2193,7 @@ void QuickSaveGame(void)
     gSaveGameOptions[gQuickSaveSlot] = gGameOptions;
     UpdateSavedInfo(gQuickSaveSlot);
     gGameMenuMgr.Deactivate();
+    viewSetMessage("Game saved");
 }
 
 void LoadGame(CGameMenuItemZEditBitmap *pItem, CGameMenuEvent *event)
