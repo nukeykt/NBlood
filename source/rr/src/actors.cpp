@@ -1180,7 +1180,7 @@ ACTOR_STATIC void G_MovePlayers(void)
                 {
                     pSprite->extra = pPlayer->max_player_health;
                     pSprite->cstat = 257;
-                    if (!RR)
+                    if (!RR && !WW2GI)
                         pPlayer->inv_amount[GET_JETPACK] = 1599;
                 }
 
@@ -1800,6 +1800,20 @@ ACTOR_STATIC void G_MoveStandables(void)
         }
         else if (!RR && pSprite->picnum == TRIPBOMB)
         {
+            int const tripBombMode = Gv_GetVarByLabel("TRIPBOMB_CONTROL", TRIPBOMB_TRIPWIRE, -1, -1);
+            if(tripBombMode & TRIPBOMB_TIMER)
+			{
+				// we're on a timer....
+				if (pSprite->extra >= 0)
+				{
+					pSprite->extra--;
+					if (pSprite->extra == 0)
+					{
+						T3(spriteNum) = 16;
+						A_PlaySound(LASERTRIP_ARMING,spriteNum);
+					}
+				}
+			}
             if (T3(spriteNum) > 0)
             {
                 T3(spriteNum)--;
@@ -1870,30 +1884,33 @@ ACTOR_STATIC void G_MoveStandables(void)
                 actor[spriteNum].lastv.x = hitDist;
                 pSprite->ang = oldAng;
 
-                // we're on a trip wire
-                int16_t cursectnum;
-
-                while (hitDist > 0)
+                if (tripBombMode & TRIPBOMB_TRIPWIRE)
                 {
-                    j = A_Spawn(spriteNum,LASERLINE);
-                    setsprite(j,(vec3_t *)&sprite[j]);
-                    sprite[j].hitag = pSprite->hitag;
-                    actor[j].t_data[1] = sprite[j].z;
+                    // we're on a trip wire
+                    int16_t cursectnum;
 
-                    pSprite->x += sintable[(T6(spriteNum)+512)&2047]>>4;
-                    pSprite->y += sintable[(T6(spriteNum))&2047]>>4;
-
-                    if (hitDist < 1024)
+                    while (hitDist > 0)
                     {
-                        sprite[j].xrepeat = hitDist>>5;
-                        break;
-                    }
-                    hitDist -= 1024;
+                        j = A_Spawn(spriteNum,LASERLINE);
+                        setsprite(j,(vec3_t *)&sprite[j]);
+                        sprite[j].hitag = pSprite->hitag;
+                        actor[j].t_data[1] = sprite[j].z;
 
-                    //cursectnum = pSprite->sectnum;
-                    //updatesector(pSprite->x, pSprite->y, &cursectnum);
-                    //if (cursectnum < 0)
-                    //    break;
+                        pSprite->x += sintable[(T6(spriteNum)+512)&2047]>>4;
+                        pSprite->y += sintable[(T6(spriteNum))&2047]>>4;
+
+                        if (hitDist < 1024)
+                        {
+                            sprite[j].xrepeat = hitDist>>5;
+                            break;
+                        }
+                        hitDist -= 1024;
+
+                        //cursectnum = pSprite->sectnum;
+                        //updatesector(pSprite->x, pSprite->y, &cursectnum);
+                        //if (cursectnum < 0)
+                        //    break;
+                    }
                 }
 
                 T1(spriteNum)++;
@@ -1905,7 +1922,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 setsprite(spriteNum,(vec3_t *)pSprite);
                 T4(spriteNum) = T3(spriteNum) = 0;
 
-                if (hitSprite >= 0)
+                if (hitSprite >= 0 && (tripBombMode & TRIPBOMB_TRIPWIRE))
                 {
                     T3(spriteNum) = 13;
                     A_PlaySound(LASERTRIP_ARMING,spriteNum);
@@ -1933,7 +1950,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 setsprite(spriteNum, (vec3_t *) pSprite);
 
                 //                if( Actor[i].lastvx != x && lTripBombControl & TRIPBOMB_TRIPWIRE)
-                if (actor[spriteNum].lastv.x != hitDist)
+                if (actor[spriteNum].lastv.x != hitDist && (tripBombMode & TRIPBOMB_TRIPWIRE))
                 {
                     T3(spriteNum) = 13;
                     A_PlaySound(LASERTRIP_ARMING, spriteNum);

@@ -518,7 +518,7 @@ static weapondata_t weapondefaults[MAX_WEAPONS] = {
         FlashColor
     */
     {
-        KNEE_WEAPON, 0, 30, 7, 14, 14,
+        KNEE_WEAPON__STATIC, 0, 30, 7, 14, 14,
         WEAPON_RANDOMRESTART | WEAPON_AUTOMATIC,
         KNEE__STATIC, 0, 0, 0, 0, 0, 0,
         0
@@ -532,70 +532,70 @@ static weapondata_t weapondefaults[MAX_WEAPONS] = {
     },
 
     {
-        SHOTGUN_WEAPON, 0, 13, 4, 31, 0,
+        SHOTGUN_WEAPON__STATIC, 0, 13, 4, 31, 0,
         WEAPON_CHECKATRELOAD,
         SHOTGUN__STATIC, 24, SHOTGUNSHELL__STATIC, 7, 0, SHOTGUN_FIRE__STATIC, 15, SHOTGUN_COCK__STATIC,
         255+(95<<8)
     },
 
     {
-        CHAINGUN_WEAPON, 0, 30, 1, 12, 10,
+        CHAINGUN_WEAPON__STATIC, 0, 30, 1, 12, 10,
         WEAPON_AUTOMATIC | WEAPON_FIREEVERYTHIRD | WEAPON_AMMOPERSHOT,
         CHAINGUN__STATIC, 0, SHELL__STATIC, 0, 0, CHAINGUN_FIRE__STATIC, 0, 0,
         255+(95<<8)
     },
 
     {
-        RPG_WEAPON, 0, 30, 4, 20, 0,
+        RPG_WEAPON__STATIC, 0, 30, 4, 20, 0,
         0,
         RPG__STATIC, 0, 0, 0, 0, 0, 0, 0,
         255+(95<<8)
     },
 
     {
-        HANDBOMB_WEAPON, 0, 30, 6, 19, 12,
+        HANDBOMB_WEAPON__STATIC, 0, 30, 6, 19, 12,
         WEAPON_THROWIT,
         HEAVYHBOMB__STATIC, 0, 0, 0, 0, 0, 0,
         0
     },
 
     {
-        SHRINKER_WEAPON, 0, 0, 10, 30, 0,
+        SHRINKER_WEAPON__STATIC, 0, 0, 10, 30, 0,
         WEAPON_GLOWS,
         SHRINKER__STATIC, 0, 0, 0, SHRINKER_FIRE__STATIC, 0, 0, 0,
         176+(252<<8)+(120<<16)
     },
 
     {
-        DEVISTATOR_WEAPON, 0, 30, 2, 5, 5,
+        DEVISTATOR_WEAPON__STATIC, 0, 30, 2, 5, 5,
         WEAPON_FIREEVERYOTHER,
         RPG__STATIC, 0, 0, 2, CAT_FIRE__STATIC, 0, 0, 0,
         255+(95<<8)
     },
 
     {
-        TRIPBOMB_WEAPON, 0, 30, 3, 16, 0,
+        TRIPBOMB_WEAPON__STATIC, 0, 30, 3, 16, 0,
         WEAPON_STANDSTILL,
         HANDHOLDINGLASER__STATIC, 0, 0, 0, 0, 0, 0,
         0
     },
 
     {
-        FREEZE_WEAPON, 0, 0, 3, 5, 0,
+        FREEZE_WEAPON__STATIC, 0, 0, 3, 5, 0,
         WEAPON_FIREEVERYOTHER,
         FREEZEBLAST__STATIC, 0, 0, 0, CAT_FIRE__STATIC, CAT_FIRE__STATIC, 0, 0,
         72+(88<<8)+(140<<16)
     },
 
     {
-        HANDREMOTE_WEAPON, 0, 30, 2, 10, 0,
+        HANDREMOTE_WEAPON__STATIC, 0, 30, 2, 10, 0,
         WEAPON_BOMB_TRIGGER | WEAPON_NOVISIBLE,
         0, 0, 0, 0, 0, 0, 0,
         0
     },
 
     {
-        GROW_WEAPON, 0, 0, 3, 30, 0,
+        GROW_WEAPON__STATIC, 0, 0, 3, 30, 0,
         WEAPON_GLOWS,
         GROWSPARK__STATIC, 0, 0, 0, EXPANDERSHOOT__STATIC, EXPANDERSHOOT__STATIC, 0, 0,
         216+(52<<8)+(20<<16)
