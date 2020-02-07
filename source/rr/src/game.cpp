@@ -2736,7 +2736,7 @@ rrbloodpool_fallthrough:
                 pSprite->y     = sprite[spriteNum].y + (sintable[shellAng & 2047] >> 7);
                 pSprite->shade = -8;
 
-                if (NAM)
+                if (NAM_WW2GI)
                 {
                     pSprite->ang  = shellAng + 512;
                     pSprite->xvel = 30;
