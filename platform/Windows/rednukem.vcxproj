@@ -229,6 +229,7 @@
     <ClCompile Include="..\..\source\rr\src\game.cpp" />
     <ClCompile Include="..\..\source\rr\src\gamedef.cpp" />
     <ClCompile Include="..\..\source\rr\src\gameexec.cpp" />
+    <ClCompile Include="..\..\source\rr\src\gamevars.cpp" />
     <ClCompile Include="..\..\source\rr\src\global.cpp" />
     <ClCompile Include="..\..\source\rr\src\grpscan.cpp" />
     <ClCompile Include="..\..\source\rr\src\input.cpp" />

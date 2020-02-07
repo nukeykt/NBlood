@@ -7172,6 +7172,9 @@ static void G_Cleanup(void)
 
 //    Bfree(MusicPtr);
 
+    Gv_Clear();
+
+    hash_free(&h_gamevars);
     hash_free(&h_labels);
     hash_free(&h_gamefuncs);
 
