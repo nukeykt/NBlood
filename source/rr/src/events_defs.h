@@ -44,7 +44,8 @@ enum GameEvent_t {
     EVENT_USEMEDKIT,
     EVENT_USEJETPACK,
     EVENT_TURNAROUND,
-    MAXEVENTS
+    MAXEVENTS,
+    EVENT_AIMDOWN = 14,
 };
 
 #endif

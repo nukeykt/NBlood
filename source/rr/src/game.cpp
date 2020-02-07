@@ -7260,6 +7260,7 @@ static void G_CompileScripts(void)
     Bmemset(sector, 0, MAXSECTORS*sizeof(sectortype));
     Bmemset(wall, 0, MAXWALLS*sizeof(walltype));
 
+    VM_OnEvent(EVENT_INIT);
     pathsearchmode = psm;
 }
 
