@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "pqueue.h"
 #include "triggers.h"
 #include "view.h"
+#include "nnexts.h"
 
 class EventQueue
 {

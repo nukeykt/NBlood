@@ -48,8 +48,8 @@ enum
 enum
 {
     kPostureStand  = 0,
-    kPostureCrouch = 1,
-    kPostureSwim   = 2,
+    kPostureSwim   = 1,
+    kPostureCrouch = 2,
     kPostureMax    = 3,
 };
 
@@ -217,34 +217,6 @@ struct POWERUPINFO
     int   maxTime;
 };
 
-#ifdef NOONE_EXTENSIONS
-    // this one stores qavs anims that can be played by trigger
-    struct QAVSCENE
-    {
-        short index     = -1;  // index of sprite which triggered qav scene
-        QAV * qavResrc  = NULL;
-        short dummy     = -1;
-    };
-
-    // this one for controlling the player using triggers (movement speed, jumps and other stuff)
-    struct TRPLAYERCTRL
-    {
-        QAVSCENE qavScene;
-    };
-
-    extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
-    bool        isGrown(spritetype *pSprite);
-    bool        isShrinked(spritetype *pSprite);
-    bool        shrinkPlayerSize(PLAYER *pPlayer, int divider);
-    bool        growPlayerSize(PLAYER *pPlayer, int multiplier);
-    bool        resetPlayerSize(PLAYER *pPlayer);
-    void        deactivateSizeShrooms(PLAYER *pPlayer);
-    PLAYER *    getPlayerById(short id);
-    QAV *       qavSceneLoad(int qavId);
-    void        qavScenePlay(PLAYER *pPlayer);
-    void        qavSceneDraw(PLAYER *pPlayer, int a2, int a3, int a4, int a5);
-    void        playerResetQavScene(PLAYER *pPlayer);
-#endif
 void playerResetPosture(PLAYER* pPlayer);
 
 extern PLAYER  gPlayer[kMaxPlayers];

@@ -797,6 +797,7 @@ blood_game_objs := \
 	aispid.cpp \
 	aitchern.cpp \
 	aiunicult.cpp \
+	nnexts.cpp \
 	aizomba.cpp \
 	aizombf.cpp \
 	asound.cpp \

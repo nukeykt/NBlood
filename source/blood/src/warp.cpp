@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "loadsave.h"
 #include "view.h"
 #include "warp.h"
+#include "nnexts.h"
 
 ZONE gStartZone[8];
 #ifdef NOONE_EXTENSIONS

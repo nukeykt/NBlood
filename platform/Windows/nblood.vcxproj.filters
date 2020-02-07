@@ -237,6 +237,9 @@
     <ClCompile Include="..\..\source\blood\src\barf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\blood\src\nnexts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\source\blood\rsrc\gameres.rc">
@@ -473,6 +476,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\blood\src\barf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\blood\src\nnexts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
