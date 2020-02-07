@@ -2387,21 +2387,6 @@ struct POSTPONE {
 
 POSTPONE gPost[kMaxSprites];
 
-bool IsItemSprite(spritetype *pSprite)
-{
-    return pSprite->type >= kItemBase && pSprite->type < kItemMax;
-}
-
-bool IsWeaponSprite(spritetype *pSprite)
-{
-    return pSprite->type >= kItemWeaponBase && pSprite->type < kItemWeaponMax;
-}
-
-bool IsAmmoSprite(spritetype *pSprite)
-{
-    return pSprite->type >= kItemAmmoBase && pSprite->type < kItemAmmoMax;
-}
-
 bool IsUnderwaterSector(int nSector)
 {
     int nXSector = sector[nSector].extra;
