@@ -14,6 +14,8 @@
 #include <winnls.h>
 #include <winternl.h>
 
+#include <system_error>
+
 #ifdef BITNESS64
 # define EBACKTRACEDLL "ebacktrace1-64.dll"
 #else
@@ -452,8 +454,11 @@ void windowsDwmSetupComposition(int const compEnable)
         timingInfo.cbSize = sizeof(DWM_TIMING_INFO);
 
         // the HWND parameter was deprecated in Windows 8.1 because DWM always syncs to the primary monitor's refresh...
-        if (FAILED(aDwmGetCompositionTimingInfo(nullptr, &timingInfo)))
-            OSD_Printf("debug: DwmGetCompositionTimingInfo() FAILED!\n");
+
+        HRESULT result = aDwmGetCompositionTimingInfo(nullptr, &timingInfo);
+
+        if (FAILED(result))
+            OSD_Printf("debug: DwmGetCompositionTimingInfo() FAILED! HRESULT: %s\n", std::system_category().message(result).c_str());
     }
 
     if (win_togglecomposition && aDwmEnableComposition && osv.dwMinorVersion < 2)
