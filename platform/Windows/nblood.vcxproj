@@ -117,7 +117,7 @@
       <Optimization>Disabled</Optimization>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;RENDERTYPESDL=1;MIXERTYPEWIN=1;SDL_USEFOLDER;SDL_TARGET=2;USE_OPENGL=1;POLYMER=1;STARTUP_WINDOW;USE_LIBVPX;HAVE_VORBIS;HAVE_XMP;NOONE_EXTENSIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;RENDERTYPESDL=1;MIXERTYPEWIN=1;SDL_USEFOLDER;SDL_TARGET=2;USE_OPENGL=1;POLYMER=1;STARTUP_WINDOW;USE_LIBVPX;HAVE_VORBIS;HAVE_XMP;NOONE_EXTENSIONS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -229,6 +229,7 @@
     <ClCompile Include="..\..\source\blood\src\mirrors.cpp" />
     <ClCompile Include="..\..\source\blood\src\misc.cpp" />
     <ClCompile Include="..\..\source\blood\src\network.cpp" />
+    <ClCompile Include="..\..\source\blood\src\nnexts.cpp" />
     <ClCompile Include="..\..\source\blood\src\osdcmd.cpp" />
     <ClCompile Include="..\..\source\blood\src\player.cpp" />
     <ClCompile Include="..\..\source\blood\src\qav.cpp" />
@@ -329,6 +330,7 @@
     <ClInclude Include="..\..\source\blood\src\menu.h" />
     <ClInclude Include="..\..\source\blood\src\messages.h" />
     <ClInclude Include="..\..\source\blood\src\mirrors.h" />
+    <ClInclude Include="..\..\source\blood\src\nnexts.h" />
     <ClInclude Include="..\..\source\blood\src\warp.h" />
     <ClInclude Include="..\..\source\blood\src\inifile.h" />
     <ClInclude Include="..\..\source\blood\src\iob.h" />

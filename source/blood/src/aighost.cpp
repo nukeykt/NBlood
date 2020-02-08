@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "seq.h"
 #include "sfx.h"
 #include "trig.h"
+#include "nnexts.h"
 
 static void SlashSeqCallback(int, int);
 static void ThrowSeqCallback(int, int);
@@ -187,11 +188,18 @@ static void BlastSeqCallback(int, int nXSprite)
             }
         }
     }
-    if (IsPlayerSprite(pTarget) || !VanillaMode()) // By NoOne: allow fire missile in non-player targets if not a demo
-    {
-        sfxPlay3DSound(pSprite, 489, 0, 0);
-        actFireMissile(pSprite, 0, 0, aim.dx, aim.dy, aim.dz, kMissileEctoSkull);
-    }
+    #ifdef NOONE_EXTENSIONS
+        // allow fire missile in non-player targets if not a demo
+        if (IsPlayerSprite(pTarget) || gModernMap) {
+            sfxPlay3DSound(pSprite, 489, 0, 0);
+            actFireMissile(pSprite, 0, 0, aim.dx, aim.dy, aim.dz, kMissileEctoSkull);
+        }
+    #else
+        if (IsPlayerSprite(pTarget)) {
+            sfxPlay3DSound(pSprite, 489, 0, 0);
+            actFireMissile(pSprite, 0, 0, aim.dx, aim.dy, aim.dz, kMissileEctoSkull);
+        }
+    #endif
 }
 
 static void thinkTarget(spritetype *pSprite, XSPRITE *pXSprite)
