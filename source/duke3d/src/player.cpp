@@ -2987,10 +2987,10 @@ void P_GetInput(int const playerNum)
         if (!localInput.svel)
         {
             if (BUTTON(gamefunc_Turn_Left) && !(pPlayer->movement_lock & 4) && !localInput.svel)
-                input.svel = -keyMove;
+                input.svel = keyMove;
 
             if (BUTTON(gamefunc_Turn_Right) && !(pPlayer->movement_lock & 8) && !localInput.svel)
-                input.svel = keyMove;
+                input.svel = -keyMove;
         }
     }
     else
