@@ -38,6 +38,8 @@ void FuncPlayer(int nSector, int nSprite, int nRun);
 #define kMaxPlayerLives		5
 #define kMaxHealth			800
 
+extern bool bDemoPlayerFinsishedLevel;
+
 extern int nLocalPlayer;
 
 extern int lPlayerXVel;

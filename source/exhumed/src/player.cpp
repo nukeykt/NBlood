@@ -53,6 +53,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <string.h>
 
+bool bDemoPlayerFinsishedLevel = false;
+
 struct PlayerSave
 {
     int x;
@@ -2851,7 +2853,8 @@ do_default_b:
                                     FinishLevel();
                                 }
                                 else {
-                                    keySetState(32, 1);
+                                    // KB_Addch(32);
+                                    bDemoPlayerFinsishedLevel = true;
                                 }
 
                                 DestroyItemAnim(nValB);
@@ -3322,7 +3325,6 @@ loc_1BD2E:
             }
 
             MoveWeapons(nPlayer);
-
             return;
         }
     }
