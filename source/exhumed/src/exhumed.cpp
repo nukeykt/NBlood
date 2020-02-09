@@ -2937,9 +2937,9 @@ LOOP3:
             if (bPlayback)
             {
                 // YELLOW
-                if ((bInDemo && KB_KeyWaiting() || !ReadPlaybackInputs()) /*&& KB_GetCh()*/ && bDemoPlayerFinsishedLevel)
+                if ((bInDemo && KB_KeyWaiting() || !ReadPlaybackInputs()) /*&& KB_GetCh()*/ && bDemoPlayerFinishedLevel)
                 {
-                    bDemoPlayerFinsishedLevel = false;
+                    bDemoPlayerFinishedLevel = false;
                     KB_FlushKeyboardQueue();
                     KB_ClearKeysDown();
 

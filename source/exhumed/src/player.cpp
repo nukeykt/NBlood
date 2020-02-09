@@ -53,7 +53,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <string.h>
 
-bool bDemoPlayerFinsishedLevel = false;
+bool bDemoPlayerFinishedLevel = false;
 
 struct PlayerSave
 {
@@ -2854,7 +2854,7 @@ do_default_b:
                                 }
                                 else {
                                     // KB_Addch(32);
-                                    bDemoPlayerFinsishedLevel = true;
+                                    bDemoPlayerFinishedLevel = true;
                                 }
 
                                 DestroyItemAnim(nValB);
