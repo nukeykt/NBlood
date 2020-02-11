@@ -66,7 +66,8 @@ void G_ShowParameterHelp(void)
 #ifndef EDUKE32_STANDALONE
         "-nam\t\tRun in NAM compatibility mode\n"
         "-napalm\t\tRun in NAPALM compatibility mode\n"
-#else
+#endif
+#if defined VW_ENABLED
         "-nosteam\t\tDisable Steam support\n"
 #endif
         "-rts [file.rts]\tLoad a custom Remote Ridicule sound bank\n"
@@ -559,6 +560,13 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 if (!Bstrcasecmp(c+1, "forcegl"))
                 {
                     forcegl = 1;
+                    i++;
+                    continue;
+                }
+#endif
+#ifdef VW_ENABLED
+                if (!Bstrcasecmp(c+1, "nosteam"))
+                {
                     i++;
                     continue;
                 }
