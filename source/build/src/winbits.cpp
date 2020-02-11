@@ -458,7 +458,7 @@ void windowsDwmSetupComposition(int const compEnable)
         HRESULT result = aDwmGetCompositionTimingInfo(nullptr, &timingInfo);
 
         if (FAILED(result))
-            OSD_Printf("debug: DwmGetCompositionTimingInfo() FAILED! HRESULT: %s\n", std::system_category().message(result).c_str());
+            OSD_Printf("debug: DwmGetCompositionTimingInfo() FAILED! HRESULT: 0x%x (%s)\n", (unsigned)result, std::system_category().message(result).c_str());
     }
 
     if (win_togglecomposition && aDwmEnableComposition && osv.dwMinorVersion < 2)
