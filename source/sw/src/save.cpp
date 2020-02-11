@@ -1278,7 +1278,7 @@ int LoadGame(short save_num)
     screenpeek = myconnectindex;
     PlayingLevel = Level;
 
-    PlaySong(LevelSong, SavedSongTrack, TRUE, TRUE);
+    PlaySong(LevelSong, SavedSongTrack, TRUE, FALSE);
     if (gs.Ambient)
         StartAmbientSound();
     FX_SetVolume(gs.SoundVolume);
