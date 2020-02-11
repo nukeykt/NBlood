@@ -6362,11 +6362,7 @@ int app_main(int argc, char const * const * argv)
 #ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-#ifdef EDUKE32_STANDALONE
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
-#else
-        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
-#endif
                       "Are you sure you want to start another copy?"))
             return 3;
     }
