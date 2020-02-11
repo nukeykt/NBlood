@@ -97,7 +97,10 @@ void credLogosDos(void)
         scrNextPage();
         sndStartSample("THUNDER2", 128, -1);
         if (Wait(360))
-            DoFade(0, 0, 0, 60);
+        {
+            if (videoGetRenderMode() == REND_CLASSIC)
+                DoFade(0, 0, 0, 60);
+        }
     }
 
     credReset();
@@ -108,7 +111,10 @@ void credLogosDos(void)
         scrNextPage();
         sndStartSample("THUNDER2", 128, -1);
         if (Wait(360))
-            DoFade(0, 0, 0, 60);
+        {
+            if (videoGetRenderMode() == REND_CLASSIC)
+                DoFade(0, 0, 0, 60);
+        }
     }
 
     credReset();
@@ -195,8 +201,8 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     uint8_t palette[768];
     uint8_t *pFrame = (uint8_t*)Xmalloc(nWidth*nHeight);
     waloff[kSMKTile] = (intptr_t)pFrame;
-    tilesiz[kSMKTile].y = nWidth;
-    tilesiz[kSMKTile].x = nHeight;
+    tileSetSize(kSMKTile, nHeight, nWidth);
+
     if (!pFrame)
     {
         Smacker_Close(hSMK);
@@ -211,12 +217,28 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     paletteSetColorTable(kSMKPal, palette);
     videoSetPalette(gBrightness>>2, kSMKPal, 8+2);
 
-    int nScale;
+    auto const oyxaspect = yxaspect;
 
-    if ((nWidth / (nHeight * 1.2f)) > (1.f * xdim / ydim))
-        nScale = divscale16(320 * xdim * 3, nWidth * ydim * 4);
+    int nScale;
+    int32_t nStat;
+
+    if (nWidth > 320 || nHeight > 200)
+    {
+        // handle GTI.SMK with its 320x320 resolution. Scale as per original DOS release.
+        nScale = 32768;
+        nStat = 2|4|8|64|1024;
+
+        renderSetAspect(viewingrange, 65536);
+    }
     else
-        nScale = divscale16(200, nHeight);
+    {
+        if ((nWidth / (nHeight * 1.2f)) > (1.f * xdim / ydim))
+            nScale = divscale16(320 * xdim * 3, nWidth * ydim * 4);
+        else
+            nScale = divscale16(200, nHeight);
+
+        nStat = 2|4|8|64;
+    }
 
     if (nWav)
         sndStartWavID(nWav, FXVolume);
@@ -253,7 +275,8 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         videoSetPalette(gBrightness >> 2, kSMKPal, 0);
         tileInvalidate(kSMKTile, 0, 1 << 4);  // JBF 20031228
         Smacker_GetFrame(hSMK, pFrame);
-        rotatesprite_fs(160<<16, 100<<16, nScale, 512, kSMKTile, 0, 0, 2|4|8|64);
+
+        rotatesprite_fs(160<<16, 100<<16, nScale, 512, kSMKTile, 0, 0, nStat);
 
         videoNextPage();
 
@@ -265,6 +288,7 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     Smacker_Close(hSMK);
     ctrlClearAllInput();
     FX_StopAllSounds();
+    renderSetAspect(viewingrange, oyxaspect);
     videoSetPalette(gBrightness >> 2, 0, 8+2);
     Bfree(pFrame);
     Bfree(pzSMK_);
