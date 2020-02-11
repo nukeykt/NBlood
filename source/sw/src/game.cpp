@@ -1062,6 +1062,7 @@ InitGame(int32_t argc, char const * const * argv)
     InitFX();   // JBF: do it down here so we get a hold of the window handle
     InitMusic();
 
+    enginecompatibility_mode = ENGINECOMPATIBILITY_19961112; // SW 1.0: 19970212, SW 1.1-1.2: 19970522
 }
 
 
