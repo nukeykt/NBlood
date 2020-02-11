@@ -528,6 +528,7 @@ static void Duke_Add_GOG_Atomic_Linux(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/data", path);
     addsearchpath_user(buf, SEARCHPATH_REMOVE);
 }
+#if 0
 static void Fury_Add_GOG_Linux(const char * path)
 {
     char buf[BMAX_PATH];
@@ -535,6 +536,7 @@ static void Fury_Add_GOG_Linux(const char * path)
     Bsnprintf(buf, sizeof(buf), "%s/game", path);
     addsearchpath(buf);
 }
+#endif
 #endif
 
 #if defined EDUKE32_OSX || defined __linux__ || defined EDUKE32_BSD
@@ -571,9 +573,11 @@ static void Duke_AddSteamPaths(const char *basepath)
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/World War II GI/WW2GI", basepath);
     addsearchpath_user(buf, SEARCHPATH_WW2GI);
 
+#if 0
     // Ion Fury - Steam
     Bsnprintf(buf, sizeof(buf), "%s/steamapps/common/Ion Fury", basepath);
     addsearchpath_user(buf, SEARCHPATH_FURY);
+#endif
 }
 #endif
 #endif
