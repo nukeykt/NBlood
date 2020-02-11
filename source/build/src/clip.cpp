@@ -1429,7 +1429,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     do
     {
-        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && (xvect|yvect)) 
+        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && (xvect|yvect))
         {
             for (native_t i=clipnum-1;i>=0;--i)
             {

@@ -995,7 +995,7 @@ enum {
     ENGINECOMPATIBILITY_NONE = 0,
     ENGINECOMPATIBILITY_19950829, // Powerslave/Exhumed
     ENGINECOMPATIBILITY_19960925, // Blood v1.21
-    ENGINECOMPATIBILITY_19961112, // Duke 3d v1.5, Redneck Rampage
+    ENGINECOMPATIBILITY_19961112, // Duke 3D v1.5, Redneck Rampage
 };
 
 EXTERN int32_t enginecompatibility_mode;
