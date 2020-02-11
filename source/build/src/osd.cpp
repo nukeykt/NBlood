@@ -19,8 +19,8 @@ static osdsymbol_t *osd_findsymbol(const char *pszName, osdsymbol_t *pSymbol);
 static osdsymbol_t *osd_findexactsymbol(const char *pszName);
 
 static int32_t whiteColorIdx=-1;            // colour of white (used by default display routines)
-static void _internal_drawosdchar(int32_t, int32_t, char, int32_t, int32_t);
-static void _internal_drawosdstr(int32_t, int32_t, const char *, int32_t, int32_t, int32_t);
+static void _internal_drawosdchar(int, int, char, int, int);
+static void _internal_drawosdstr(int, int, const char *, int, int, int);
 static void _internal_drawosdcursor(int32_t,int32_t,int32_t,int32_t);
 static int32_t _internal_getcolumnwidth(int32_t);
 static int32_t _internal_getrowheight(int32_t);
