@@ -6494,13 +6494,13 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
-    if (enginePreInit())
-        G_FatalEngineInitError();
-
 #ifdef EDUKE32_STANDALONE
     if (!G_CheckCmdSwitch(argc, argv, "-nosteam"))
         communityapiInit();
 #endif
+
+    if (enginePreInit())
+        G_FatalEngineInitError();
 
     if (Bstrcmp(g_setupFileName, SETUPFILENAME))
         initprintf("Using config file \"%s\".\n",g_setupFileName);
