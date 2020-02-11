@@ -165,6 +165,8 @@ extern camera_t g_camera;
 
 #define MAX_RETURN_VALUES 6
 
+#define MAX_ARRAYRANGE_VALUES 32
+
 // KEEPINSYNC lunatic/_defs_game.lua
 typedef struct ud_setup_s {
     int32_t usejoystick;
