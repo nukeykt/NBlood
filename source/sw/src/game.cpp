@@ -1821,14 +1821,15 @@ LogoLevel(void)
     DSPRINTF(ds,"About to display 3drealms pic...");
     MONO_PRINT(ds);
 
-    videoClearViewableArea(0L);
-    rotatesprite(0, 0, RS_SCALE, 0, THREED_REALMS_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    videoNextPage();
     //FadeIn(0, 3);
 
     ResetKeys();
     while (TRUE)
     {
+        videoClearViewableArea(0L);
+        rotatesprite(0, 0, RS_SCALE, 0, THREED_REALMS_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
+        videoNextPage();
+
         handleevents();
         CONTROL_GetUserInput(&uinfo);
         CONTROL_ClearUserInput(&uinfo);
