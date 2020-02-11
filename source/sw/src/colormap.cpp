@@ -271,7 +271,7 @@ InitPalette(void)
     // Save default palette
     //
 
-    memcpy(DefaultPalette, palookup[PALETTE_DEFAULT], 256 * 32);
+    memcpy(DefaultPalette, palookup[PALETTE_DEFAULT], 256 * numshades);
 
     //
     // Dive palettes
