@@ -1612,24 +1612,6 @@ int app_main(int argc, char const * const * argv)
     OSD_SetParameters(0, 0, 0, 12, 2, 12, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0' ? OSD_PROTECTED : 0);
     registerosdcommands();
 
-    char *const setupFileName = Xstrdup(SetupFilename);
-    char *const p = strtok(setupFileName, ".");
-
-    if (!p || !Bstrcmp(SetupFilename, SETUPFILENAME))
-        Bsprintf(buffer, "settings.cfg");
-    else
-        Bsprintf(buffer, "%s_settings.cfg", p);
-
-    Bfree(setupFileName);
-
-    OSD_Exec(buffer);
-    OSD_Exec("autoexec.cfg");
-
-    // Not neccessary ?
-    // CONFIG_SetDefaultKeys(keydefaults, true);
-
-    system_getcvars();
-
 #ifdef USE_QHEAP
     Resource::heap = new QHeap(nMaxAlloc);
 #endif
@@ -1709,6 +1691,25 @@ int app_main(int argc, char const * const * argv)
     }
     SetupMenus();
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
+
+    char *const setupFileName = Xstrdup(SetupFilename);
+    char *const p = strtok(setupFileName, ".");
+
+    if (!p || !Bstrcmp(SetupFilename, SETUPFILENAME))
+        Bsprintf(buffer, "settings.cfg");
+    else
+        Bsprintf(buffer, "%s_settings.cfg", p);
+
+    Bfree(setupFileName);
+
+    OSD_Exec(buffer);
+    OSD_Exec("autoexec.cfg");
+
+    // Not neccessary ?
+    // CONFIG_SetDefaultKeys(keydefaults, true);
+
+    system_getcvars();
+
     if (!bQuickStart)
         credLogosDos();
     scrSetDac();
