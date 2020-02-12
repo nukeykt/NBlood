@@ -2938,7 +2938,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
             tint->b = 255;
             break;
         }
-        if (!bNoTint)
+        if (!bNoTint && gView != nullptr)
         {
             nRed += gView->pickupEffect;
             nGreen += gView->pickupEffect;
@@ -2967,7 +2967,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
 #endif
     {
         gLastPal = nPalette;
-        if (bNoTint)
+        if (bNoTint || gView == nullptr)
         {
             memcpy(newDAC, baseDAC, sizeof(newDAC));
         }
