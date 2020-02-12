@@ -53,15 +53,11 @@ static uint8_t* CurFrame = NULL;
 
 bool bServedSample = false;
 palette_t moviepal[256];
-static mutex_t mutex;
+static mutex_t mutex = 0;
 
 
 int ReadFrame(FILE *fp)
 {
-    static int nFrame = 0;
-    DebugOut("Reading frame %d...\n", nFrame);
-    nFrame++;
-
     uint8_t nType;
     uint8_t var_1C;
     int nSize;
@@ -101,11 +97,9 @@ int ReadFrame(FILE *fp)
             }
             case kFrameSound:
             {
-                DebugOut("Reading sound block size %d...\n", nSize);
-
                 if (lSoundBytesRead - lSoundBytesUsed >= kSampleRate)
                 {
-                    DebugOut("SOUND BUF FULL!\n");
+                    DebugOut("ReadFrame() - Sound buffer full\n");
                     fseek(fp, nSize, SEEK_CUR);
                 }
                 else
@@ -131,7 +125,6 @@ int ReadFrame(FILE *fp)
             }
             case kFrameImage:
             {
-                DebugOut("Reading image block size %d...\n", nSize);
                 if (nSize == 0) {
                     continue;
                 }
@@ -200,7 +193,7 @@ void PlayMovie(const char* fileName)
     FILE* fp = fopen(fileName, "rb");
     if (fp == NULL)
     {
-        DebugOut("Can't open movie file on hard drive\n");
+        DebugOut("Can't open movie file %s\n", fileName);
         return;
     }
 
@@ -289,6 +282,7 @@ void PlayMovie(const char* fileName)
         KB_GetCh();
     }
 
+    mutex_destroy(&mutex);
     fclose(fp);
 
 #ifdef USE_OPENGL
