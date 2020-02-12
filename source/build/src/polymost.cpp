@@ -2087,10 +2087,10 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
 
         if (!doalloc &&
             !tileIsPacked &&
-            (siz.x > pth->siz.x ||
-             siz.y > pth->siz.y))
+            (siz.x != pth->siz.x ||
+             siz.y != pth->siz.y))
         {
-            //POGO: grow our texture to hold the tile data
+            //POGO: resize our texture to match the tile data
             doalloc = true;
         }
         uploadtextureindexed(doalloc, {(int32_t) tile.rect.u, (int32_t) tile.rect.v}, siz, waloff[dapic]);
