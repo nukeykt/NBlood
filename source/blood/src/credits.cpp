@@ -222,7 +222,7 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     int nScale;
     int32_t nStat;
 
-    if (nWidth > 320 || nHeight > 200)
+    if (nWidth == 320 && nHeight == 320)
     {
         // handle GTI.SMK with its 320x320 resolution. Scale as per original DOS release.
         nScale = 32768;
