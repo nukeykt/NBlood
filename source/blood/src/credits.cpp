@@ -223,15 +223,7 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     int nScale;
     int32_t nStat;
 
-    if (nWidth == 320 && nHeight == 320)
-    {
-        // handle GTI.SMK with its 320x320 resolution. Scale as per original DOS release.
-        nScale = 32768;
-        nStat = 2|4|8|64|1024;
-
-        renderSetAspect(viewingrange, 65536);
-    }
-    else
+    if (nWidth <= 320 && nHeight <= 200)
     {
         if ((nWidth / (nHeight * 1.2f)) > (1.f * xdim / ydim))
             nScale = divscale16(320 * xdim * 3, nWidth * ydim * 4);
@@ -239,6 +231,13 @@ char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
             nScale = divscale16(200, nHeight);
 
         nStat = 2|4|8|64;
+    }
+    else
+    {
+        // DOS Blood v1.11: 320x240, 320x320, 640x400, and 640x480 SMKs all display 1:1 and centered in a 640x480 viewport
+        nScale = tabledivide32(scale(65536, ydim << 2, xdim * 3), ((max(nHeight, 240+1u) + 239) / 240));
+        nStat = 2|4|8|64|1024;
+        renderSetAspect(viewingrange, 65536);
     }
 
     if (nWav)
