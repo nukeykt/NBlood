@@ -57,6 +57,7 @@ struct GAMEOPTIONS {
     int weaponsV10x;
     bool bFriendlyFire;
     bool bKeepKeysOnRespawn;
+    char szUserMap[BMAX_PATH];
 };
 
 #pragma pack(pop)

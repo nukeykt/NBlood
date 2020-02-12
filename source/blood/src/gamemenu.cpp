@@ -984,7 +984,10 @@ bool CGameMenuItemChain7F2F0::Event(CGameMenuEvent &event)
     {
     case kMenuEventEnter:
         if (at34 > -1)
+        {
             gGameOptions.nEpisode = at34;
+            Bstrcpy(gGameOptions.szUserMap, "\0");
+        }
         return CGameMenuItemChain::Event(event);
     }
     return CGameMenuItem::Event(event);
@@ -2470,12 +2473,16 @@ void CGameMenuItemZCycle::Draw(void)
     int x = m_nX;
     int y = m_nY;
 
+    bool isUserMapMenuItem = !Bstrcmp("USER MAP", m_pzText) && m_nWidth == 321 && m_pCallback; // shameful hax
+
     if (m_nMenuSelectReturn != -1)
     {
         m_nFocus = m_nMenuSelectReturn;
         if (m_pCallback)
             m_pCallback(this);
         m_nMenuSelectReturn = -1;
+        if (isUserMapMenuItem)
+            gGameMenuMgr.Push(&menuDifficulty, 3);
     }
 
     if (m_pzText)
@@ -2493,7 +2500,7 @@ void CGameMenuItemZCycle::Draw(void)
         default:
             break;
         }
-        gMenuTextMgr.DrawText(m_pzText, m_nFont, x, y, shade, pal, false);
+        gMenuTextMgr.DrawText(m_pzText, m_nFont, x, y, shade, pal, isUserMapMenuItem);
     }
     const char *pzText;
     if (!m_nItems)
@@ -2502,7 +2509,8 @@ void CGameMenuItemZCycle::Draw(void)
         pzText = m_pzStrings[m_nFocus];
     dassert(pzText != NULL);
     gMenuTextMgr.GetFontInfo(m_nFont, pzText, &width, NULL);
-    gMenuTextMgr.DrawText(pzText, m_nFont, m_nX + m_nWidth - 1 - width, y, shade, pal, false);
+    if (!isUserMapMenuItem)
+        gMenuTextMgr.DrawText(pzText, m_nFont, m_nX + m_nWidth - 1 - width, y, shade, pal, false);
     if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, x<<16, y<<16, m_nWidth<<16, height<<16)))
     {
         if (MOUSEWATCHPOINTCONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_prevmousepos, x<<16, y<<16, m_nWidth<<16, height<<16)))

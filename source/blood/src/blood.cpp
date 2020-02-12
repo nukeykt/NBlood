@@ -586,7 +586,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
             && gEpisodeInfo[gGameOptions.nEpisode].at8f08)
             gGameOptions.uGameFlags |= 4;
-        if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
+        if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0 && !Bstrlen(gGameOptions.szUserMap))
             levelPlayIntroScene(gGameOptions.nEpisode);
 
         ///////

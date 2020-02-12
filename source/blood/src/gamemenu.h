@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define M_MOUSETIMEOUT 210
 
 #define kMaxGameMenuItems 128
-#define kMaxGameCycleItems 128
+#define kMaxGameCycleItems 1280
 #define kMaxPicCycleItems 128
 #define kMaxTitleLength 32
 

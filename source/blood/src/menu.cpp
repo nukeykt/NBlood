@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 void SaveGame(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
 
 void SaveGameProcess(CGameMenuItemChain *);
+void SetCustomMap(CGameMenuItemZCycle *pItem);
 void SetDifficultyAndStart(CGameMenuItemChain *);
 void SetDetail(CGameMenuItemSlider *);
 void SetGamma(CGameMenuItemSlider *);
@@ -228,7 +229,9 @@ CGameMenuItemChain itemMainSave7("END GAME", 1, 0, 135, 320, 1, &menuRestart, -1
 CGameMenuItemChain itemMainSave8("QUIT", 1, 0, 150, 320, 1, &menuQuit, -1, NULL, 0);
 
 CGameMenuItemTitle itemEpisodesTitle("EPISODES", 1, 160, 20, 2038);
-CGameMenuItemChain7F2F0 itemEpisodes[6];
+CGameMenuItemChain7F2F0 itemEpisodes[kMaxEpisodes-1];
+
+CGameMenuItemZCycle itemUserMapCycle("USER MAP", 1, 160, 60, 320, 0, SetCustomMap, NULL, 0, 0, true);
 
 CGameMenuItemTitle itemDifficultyTitle("DIFFICULTY", 1, 160, 20, 2038);
 CGameMenuItemChain itemDifficulty1("STILL KICKING", 1, 0, 60, 320, 1, NULL, -1, SetDifficultyAndStart, 0);
@@ -374,6 +377,8 @@ struct resolution_t {
 resolution_t gResolution[MAXVALIDMODES];
 int gResolutionNum;
 const char *gResolutionName[MAXVALIDMODES];
+
+const char *customMaps[kMaxGameCycleItems-1];
 
 CGameMenu menuOptions;
 CGameMenu menuOptionsGame;
@@ -826,7 +831,7 @@ void SetupEpisodeMenu(void)
     int height;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &height);
     int j = 0;
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < kMaxEpisodes-1; i++)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
         if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
@@ -863,6 +868,35 @@ void SetupEpisodeMenu(void)
             j++;
         }
     }
+
+    // User Map
+    BUILDVFS_FIND_REC *r;
+    fnlist_t fnlist = FNLIST_INITIALIZER;
+
+    char filename[BMAX_PATH];
+    Bstrcpy(filename, "*.MAP");
+
+    fnlist_getnames(&fnlist, "/", filename, -1, 0);
+    gSysRes.FNAddFiles(&fnlist, filename);
+
+    int i = 0;
+    for (r=fnlist.findfiles; r; r=r->next)
+    {
+        if (i >= kMaxGameCycleItems)
+            break;
+
+        customMaps[i] = r->name;
+        i++;
+    }
+
+    itemUserMapCycle.SetTextArray(customMaps, i, 0);
+    itemUserMapCycle.m_nX = 125;
+    itemUserMapCycle.m_nWidth = 321;
+    itemUserMapCycle.m_nY = 55+(height+8)*(gEpisodeCount-1);
+    itemUserMapCycle.bCanSelect = 1;
+    itemUserMapCycle.bEnable = 1;
+
+    menuEpisode.Add(&itemUserMapCycle, false);
     menuEpisode.Add(&itemBloodQAV, false);
 }
 
@@ -1559,6 +1593,11 @@ void SetWeaponSwitch(CGameMenuItemZCycle *pItem)
 
 extern bool gStartNewGame;
 
+void SetCustomMap(CGameMenuItemZCycle *pItem)
+{
+    Bstrcpy(gGameOptions.szUserMap, customMaps[pItem->m_nFocus]);
+}
+
 void SetDifficultyAndStart(CGameMenuItemChain *pItem)
 {
     gGameOptions.nDifficulty = pItem->at30;
@@ -1568,6 +1607,13 @@ void SetDifficultyAndStart(CGameMenuItemChain *pItem)
         gDemo.StopPlayback();
     gStartNewGame = true;
     gCheatMgr.sub_5BCF4();
+    if (Bstrlen(gGameOptions.szUserMap))
+    {
+        levelAddUserMap(gGameOptions.szUserMap);
+        levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+        StartLevel(&gGameOptions);
+        viewResizeView(gViewSize);
+    }
     gGameMenuMgr.Deactivate();
 }
 
