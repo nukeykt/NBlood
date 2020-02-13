@@ -838,7 +838,7 @@ void SetupEpisodeMenu(void)
                 pEpisodeItem->m_nX = 0;
                 pEpisodeItem->m_nWidth = 320;
                 pEpisodeItem->at20 = 1;
-                pEpisodeItem->m_pzText = pEpisode->at0;
+                pEpisodeItem->m_pzText = pEpisode->title;
                 pEpisodeItem->m_nY = 55+(height+8)*j;
                 pEpisodeItem->at34 = i;
                 if (!unk || j == 0)
@@ -922,7 +922,7 @@ void SetupNetStartMenu(void)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
         if (i < gEpisodeCount)
-            itemNetStart2.Add(pEpisode->at0, i == 0);
+            itemNetStart2.Add(pEpisode->title, i == 0);
     }
     menuNetStart.Add(&itemNetStart2, false);
     menuNetStart.Add(&itemNetStart3, false);
@@ -2326,12 +2326,12 @@ void MenuSetupEpisodeInfo(void)
         if (i < gEpisodeCount)
         {
             EPISODEINFO *pEpisode = &gEpisodeInfo[i];
-            zEpisodeNames[i] = pEpisode->at0;
+            zEpisodeNames[i] = pEpisode->title;
             for (int j = 0; j < 16; j++)
             {
                 if (j < pEpisode->nLevels)
                 {
-                    zLevelNames[i][j] = pEpisode->at28[j].at90;
+                    zLevelNames[i][j] = pEpisode->levelsInfo[j].at90;
                 }
             }
         }

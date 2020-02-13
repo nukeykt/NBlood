@@ -91,7 +91,7 @@ void levelPlayIntroScene(int nEpisode)
     ambKillAll();
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
-    credPlaySmk(pEpisode->at8f08, pEpisode->at9030, pEpisode->at9028);
+    credPlaySmk(pEpisode->cutsceneASmkPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
@@ -107,7 +107,7 @@ void levelPlayEndScene(int nEpisode)
     ambKillAll();
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
-    credPlaySmk(pEpisode->at8f98, pEpisode->at90c0, pEpisode->at902c);
+    credPlaySmk(pEpisode->cutsceneBSmkPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
@@ -148,7 +148,7 @@ LEVELINFO * levelGetInfoPtr(int nEpisode, int nLevel)
     dassert(nEpisode >= 0 && nEpisode < gEpisodeCount);
     EPISODEINFO *pEpisodeInfo = &gEpisodeInfo[nEpisode];
     dassert(nLevel >= 0 && nLevel < pEpisodeInfo->nLevels);
-    return &pEpisodeInfo->at28[nLevel];
+    return &pEpisodeInfo->levelsInfo[nLevel];
 }
 
 char * levelGetFilename(int nEpisode, int nLevel)
@@ -156,7 +156,7 @@ char * levelGetFilename(int nEpisode, int nLevel)
     dassert(nEpisode >= 0 && nEpisode < gEpisodeCount);
     EPISODEINFO *pEpisodeInfo = &gEpisodeInfo[nEpisode];
     dassert(nLevel >= 0 && nLevel < pEpisodeInfo->nLevels);
-    return pEpisodeInfo->at28[nLevel].at0;
+    return pEpisodeInfo->levelsInfo[nLevel].at0;
 }
 
 char * levelGetMessage(int nMessage)
@@ -164,7 +164,7 @@ char * levelGetMessage(int nMessage)
     int nEpisode = gGameOptions.nEpisode;
     int nLevel = gGameOptions.nLevel;
     dassert(nMessage < kMaxMessages);
-    char *pMessage = gEpisodeInfo[nEpisode].at28[nLevel].atec[nMessage];
+    char *pMessage = gEpisodeInfo[nEpisode].levelsInfo[nLevel].atec[nMessage];
     if (*pMessage == 0)
         return NULL;
     return pMessage;
@@ -174,7 +174,7 @@ char * levelGetTitle(void)
 {
     int nEpisode = gGameOptions.nEpisode;
     int nLevel = gGameOptions.nLevel;
-    char *pTitle = gEpisodeInfo[nEpisode].at28[nLevel].at90;
+    char *pTitle = gEpisodeInfo[nEpisode].levelsInfo[nLevel].at90;
     if (*pTitle == 0)
         return NULL;
     return pTitle;
@@ -184,7 +184,7 @@ char * levelGetAuthor(void)
 {
     int nEpisode = gGameOptions.nEpisode;
     int nLevel = gGameOptions.nLevel;
-    char *pAuthor = gEpisodeInfo[nEpisode].at28[nLevel].atb0;
+    char *pAuthor = gEpisodeInfo[nEpisode].levelsInfo[nLevel].atb0;
     if (*pAuthor == 0)
         return NULL;
     return pAuthor;
@@ -194,10 +194,10 @@ void levelSetupOptions(int nEpisode, int nLevel)
 {
     gGameOptions.nEpisode = nEpisode;
     gGameOptions.nLevel = nLevel;
-    strcpy(gGameOptions.zLevelName, gEpisodeInfo[nEpisode].at28[nLevel].at0);
+    strcpy(gGameOptions.zLevelName, gEpisodeInfo[nEpisode].levelsInfo[nLevel].at0);
     gGameOptions.uMapCRC = dbReadMapCRC(gGameOptions.zLevelName);
     // strcpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0);
-    gGameOptions.nTrackNumber = gEpisodeInfo[nEpisode].at28[nLevel].ate0;
+    gGameOptions.nTrackNumber = gEpisodeInfo[nEpisode].levelsInfo[nLevel].ate0;
 }
 
 void levelLoadMapInfo(IniFile *pIni, LEVELINFO *pLevelInfo, const char *pzSection)
@@ -226,7 +226,7 @@ void levelLoadDefaults(void)
     char buffer2[16];
     levelInitINI(pINISelected->zName);
     memset(gEpisodeInfo, 0, sizeof(gEpisodeInfo));
-    strncpy(gEpisodeInfo[MUS_INTRO/kMaxLevels].at28[MUS_INTRO%kMaxLevels].atd0, "PESTIS", BMAX_PATH);
+    strncpy(gEpisodeInfo[MUS_INTRO/kMaxLevels].levelsInfo[MUS_INTRO%kMaxLevels].atd0, "PESTIS", BMAX_PATH);
     int i;
     for (i = 0; i < kMaxEpisodes; i++)
     {
@@ -234,19 +234,19 @@ void levelLoadDefaults(void)
         if (!BloodINI->SectionExists(buffer))
             break;
         EPISODEINFO *pEpisodeInfo = &gEpisodeInfo[i];
-        strncpy(pEpisodeInfo->at0, BloodINI->GetKeyString(buffer, "Title", buffer), 31);
-        strncpy(pEpisodeInfo->at8f08, BloodINI->GetKeyString(buffer, "CutSceneA", ""), BMAX_PATH);
-        pEpisodeInfo->at9028 = BloodINI->GetKeyInt(buffer, "CutWavA", -1);
-        if (pEpisodeInfo->at9028 == 0)
-            strncpy(pEpisodeInfo->at9030, BloodINI->GetKeyString(buffer, "CutWavA", ""), BMAX_PATH);
+        strncpy(pEpisodeInfo->title, BloodINI->GetKeyString(buffer, "Title", buffer), 31);
+        strncpy(pEpisodeInfo->cutsceneASmkPath, BloodINI->GetKeyString(buffer, "CutSceneA", ""), BMAX_PATH);
+        pEpisodeInfo->cutsceneAWavRsrcID = BloodINI->GetKeyInt(buffer, "CutWavA", -1);
+        if (pEpisodeInfo->cutsceneAWavRsrcID == 0)
+            strncpy(pEpisodeInfo->cutsceneAWavPath, BloodINI->GetKeyString(buffer, "CutWavA", ""), BMAX_PATH);
         else
-            pEpisodeInfo->at9030[0] = 0;
-        strncpy(pEpisodeInfo->at8f98, BloodINI->GetKeyString(buffer, "CutSceneB", ""), BMAX_PATH);
-        pEpisodeInfo->at902c = BloodINI->GetKeyInt(buffer, "CutWavB", -1);
-        if (pEpisodeInfo->at902c == 0)
-            strncpy(pEpisodeInfo->at90c0, BloodINI->GetKeyString(buffer, "CutWavB", ""), BMAX_PATH);
+            pEpisodeInfo->cutsceneAWavPath[0] = 0;
+        strncpy(pEpisodeInfo->cutsceneBSmkPath, BloodINI->GetKeyString(buffer, "CutSceneB", ""), BMAX_PATH);
+        pEpisodeInfo->cutsceneBWavRsrcID = BloodINI->GetKeyInt(buffer, "CutWavB", -1);
+        if (pEpisodeInfo->cutsceneBWavRsrcID == 0)
+            strncpy(pEpisodeInfo->cutsceneBWavPath, BloodINI->GetKeyString(buffer, "CutWavB", ""), BMAX_PATH);
         else
-            pEpisodeInfo->at90c0[0] = 0;
+            pEpisodeInfo->cutsceneBWavPath[0] = 0;
 
         pEpisodeInfo->bloodbath = BloodINI->GetKeyInt(buffer, "BloodBathOnly", 0);
         pEpisodeInfo->cutALevel = BloodINI->GetKeyInt(buffer, "CutSceneALevel", 0);
@@ -255,7 +255,7 @@ void levelLoadDefaults(void)
         int j;
         for (j = 0; j < kMaxLevels; j++)
         {
-            LEVELINFO *pLevelInfo = &pEpisodeInfo->at28[j];
+            LEVELINFO *pLevelInfo = &pEpisodeInfo->levelsInfo[j];
             sprintf(buffer2, "Map%d", j+1);
             if (!BloodINI->KeyExists(buffer, buffer2))
                 break;
@@ -286,11 +286,11 @@ void levelAddUserMap(const char *pzMap)
         if (pEpisodeInfo->nLevels == 0)
         {
             gEpisodeCount++;
-            sprintf(pEpisodeInfo->at0, "Episode %d", nEpisode);
+            sprintf(pEpisodeInfo->title, "Episode %d", nEpisode);
         }
         nLevel = pEpisodeInfo->nLevels++;
     }
-    LEVELINFO *pLevelInfo = &pEpisodeInfo->at28[nLevel];
+    LEVELINFO *pLevelInfo = &pEpisodeInfo->levelsInfo[nLevel];
     ChangeExtension(buffer, "");
     strncpy(pLevelInfo->at0, buffer, BMAX_PATH);
     levelLoadMapInfo(&UserINI, pLevelInfo, NULL);
@@ -304,7 +304,7 @@ void levelAddUserMap(const char *pzMap)
 void levelGetNextLevels(int nEpisode, int nLevel, int *pnEndingA, int *pnEndingB)
 {
     dassert(pnEndingA != NULL && pnEndingB != NULL);
-    LEVELINFO *pLevelInfo = &gEpisodeInfo[nEpisode].at28[nLevel];
+    LEVELINFO *pLevelInfo = &gEpisodeInfo[nEpisode].levelsInfo[nLevel];
     int nEndingA = pLevelInfo->ate4;
     if (nEndingA >= 0)
         nEndingA--;
@@ -326,7 +326,7 @@ void levelEndLevel(int arg)
     case 0:
         if (nEndingA == -1)
         {
-            if (pEpisodeInfo->at8f98[0])
+            if (pEpisodeInfo->cutsceneBSmkPath[0])
                 gGameOptions.uGameFlags |= 8;
             gGameOptions.nLevel = 0;
             gGameOptions.uGameFlags |= 2;
@@ -339,7 +339,7 @@ void levelEndLevel(int arg)
         {
             if (gGameOptions.nEpisode + 1 < gEpisodeCount)
             {
-                if (pEpisodeInfo->at8f98[0])
+                if (pEpisodeInfo->cutsceneBSmkPath[0])
                     gGameOptions.uGameFlags |= 8;
                 gGameOptions.nLevel = 0;
                 gGameOptions.uGameFlags |= 2;
@@ -381,10 +381,10 @@ int levelGetMusicIdx(const char *str)
 bool levelTryPlayMusic(int nEpisode, int nLevel, bool bSetLevelSong)
 {
     char buffer[BMAX_PATH];
-    if (CDAudioToggle && gEpisodeInfo[nEpisode].at28[nLevel].ate0 > 0)
-        snprintf(buffer, BMAX_PATH, "blood%02i.ogg", gEpisodeInfo[nEpisode].at28[nLevel].ate0);
+    if (CDAudioToggle && gEpisodeInfo[nEpisode].levelsInfo[nLevel].ate0 > 0)
+        snprintf(buffer, BMAX_PATH, "blood%02i.ogg", gEpisodeInfo[nEpisode].levelsInfo[nLevel].ate0);
     else
-        strncpy(buffer, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        strncpy(buffer, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
     bool bReturn = !!sndPlaySong(buffer, true);
     if (!bReturn || bSetLevelSong)
         strncpy(gGameOptions.zLevelSong, buffer, BMAX_PATH);

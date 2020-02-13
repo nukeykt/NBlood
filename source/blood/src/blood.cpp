@@ -584,7 +584,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         if (!(gGameOptions.uGameFlags&1))
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
         if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
-            && gEpisodeInfo[gGameOptions.nEpisode].at8f08)
+            && gEpisodeInfo[gGameOptions.nEpisode].cutsceneASmkPath)
             gGameOptions.uGameFlags |= 4;
         if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
             levelPlayIntroScene(gGameOptions.nEpisode);
@@ -1953,7 +1953,7 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
 
     int nEpisode = sel/kMaxLevels;
     int nLevel = sel%kMaxLevels;
-    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].at28[nLevel].atd0, name);
+    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, name);
 }
 
 static int parsedefinitions_game(scriptfile *, int);
@@ -2673,9 +2673,9 @@ int sndTryPlaySpecialMusic(int nMusic)
 {
     int nEpisode = nMusic/kMaxLevels;
     int nLevel = nMusic%kMaxLevels;
-    if (!sndPlaySong(gEpisodeInfo[nEpisode].at28[nLevel].atd0, true))
+    if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, true))
     {
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
         return 0;
     }
     return 1;
@@ -2688,6 +2688,6 @@ void sndPlaySpecialMusicOrNothing(int nMusic)
     if (sndTryPlaySpecialMusic(nMusic))
     {
         sndStopSong();
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
     }
 }
