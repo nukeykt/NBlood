@@ -238,9 +238,9 @@ static int osdcmd_music(osdcmdptr_t parm)
         if (!levelTryPlayMusic(nEpisode, nLevel))
         {
             if (CDAudioToggle)
-                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].at28[nLevel].ate0);
+                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].levelsInfo[nLevel].ate0);
             else
-                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].at28[nLevel].atd0);
+                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0);
             viewSetMessage(buffer);
         }
         else
