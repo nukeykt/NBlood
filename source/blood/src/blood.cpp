@@ -1746,7 +1746,11 @@ RESTART:
     if (gDemo.at59ef > 0)
         gGameMenuMgr.Deactivate();
     if (!bAddUserMap && !gGameStarted)
+    {
         gGameMenuMgr.Push(&menuMain, -1);
+        if (gGameOptions.nGameType > 0)
+            gGameMenuMgr.Push(&menuNetStart, 1);
+    }
     ready2send = 1;
     while (!gQuitGame)
     {
