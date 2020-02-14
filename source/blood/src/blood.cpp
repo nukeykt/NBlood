@@ -1899,8 +1899,6 @@ RESTART:
             if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
                 gDemo.NextDemo();
             videoSetViewableArea(0,0,xdim-1,ydim-1);
-            if (!bQuickStart)
-                credLogosDos();
             scrSetDac();
         }
         goto RESTART;
