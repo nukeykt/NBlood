@@ -1746,7 +1746,11 @@ RESTART:
     if (gDemo.at59ef > 0)
         gGameMenuMgr.Deactivate();
     if (!bAddUserMap && !gGameStarted)
+    {
         gGameMenuMgr.Push(&menuMain, -1);
+        if (gGameOptions.nGameType > 0)
+            gGameMenuMgr.Push(&menuNetStart, 1);
+    }
     ready2send = 1;
     while (!gQuitGame)
     {
@@ -1899,8 +1903,6 @@ RESTART:
             if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
                 gDemo.NextDemo();
             videoSetViewableArea(0,0,xdim-1,ydim-1);
-            if (!bQuickStart)
-                credLogosDos();
             scrSetDac();
         }
         goto RESTART;
