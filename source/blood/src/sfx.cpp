@@ -365,8 +365,9 @@ void sfxPlay3DSoundCP(spritetype* pSprite, int soundId, int a3, int a4, int pitc
     MV_Unlock();
 }
 
-EXTERN_INLINE void sfxKillSoundInternal(BONKLE *pBonkle, int i)
+EXTERN_INLINE void sfxKillSoundInternal(int i)
 {
+    BONKLE *pBonkle = BonkleCache[i];
     if (pBonkle->at0 > 0)
     {
         FX_EndLooping(pBonkle->at0);
@@ -395,7 +396,7 @@ void sfxKill3DSound(spritetype *pSprite, int a2, int a3)
         BONKLE *pBonkle = BonkleCache[i];
         if (pBonkle->at10 == pSprite && (a2 < 0 || a2 == pBonkle->at14) && (a3 < 0 || a3 == pBonkle->atc))
         {
-            sfxKillSoundInternal(pBonkle, i);
+            sfxKillSoundInternal(i);
             break;
         }
     }
@@ -405,12 +406,11 @@ void sfxKillAllSounds(void)
 {
     for (int i = nBonkles - 1; i >= 0; i--)
     {
-        BONKLE *pBonkle = BonkleCache[i];
-        sfxKillSoundInternal(pBonkle, i);
+        sfxKillSoundInternal(i);
     }
 }
 
-void sfxKillAllSounds(spritetype *pSprite)
+void sfxKillSpriteSounds(spritetype *pSprite)
 {
     if (!pSprite)
         return;
@@ -419,7 +419,7 @@ void sfxKillAllSounds(spritetype *pSprite)
         BONKLE *pBonkle = BonkleCache[i];
         if (pBonkle->at10 == pSprite)
         {
-            sfxKillSoundInternal(pBonkle, i);
+            sfxKillSoundInternal(i);
         }
     }
 }
