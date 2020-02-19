@@ -36,6 +36,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "lists.h"
 #include "interp.h"
 #include "interpso.h"
+#include "text.h"
 
 #include "network.h"
 //#include "save.h"
@@ -681,6 +682,8 @@ int SaveGame(short save_num)
 
     if (saveisshot)
         CON_Message("There was a problem saving. See \"Save Help\" section of release notes.");
+    else
+        PutStringInfo(&Player[myconnectindex], "Game Saved");
 
     return saveisshot ? -1 : 0;
 }
