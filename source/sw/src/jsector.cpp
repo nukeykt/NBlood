@@ -347,6 +347,13 @@ JS_InitMirrors(void)
         {
             if ((sector[s].floorstat & 1) == 0)
             {
+                if (mirrorcnt >= MAXMIRRORS)
+                {
+                    buildprintf("MAXMIRRORS reached! Skipping mirror wall[%d]\n", i);
+                    wall[i].overpicnum = sector[s].ceilingpicnum;
+                    continue;
+                }
+
                 wall[i].overpicnum = MIRRORLABEL + mirrorcnt;
                 wall[i].picnum = MIRRORLABEL + mirrorcnt;
                 sector[s].ceilingpicnum = MIRRORLABEL + mirrorcnt;
@@ -356,12 +363,11 @@ JS_InitMirrors(void)
                 mirror[mirrorcnt].mirrorsector = s;
                 mirror[mirrorcnt].numspawnspots = 0;
                 mirror[mirrorcnt].ismagic = FALSE;
-                if (wall[i].lotag == TAG_WALL_MAGIC_MIRROR)
+                do if (wall[i].lotag == TAG_WALL_MAGIC_MIRROR)
                 {
                     short ii, nextii;
                     SPRITEp sp;
 
-                    mirror[mirrorcnt].ismagic = TRUE;
                     Found_Cam = FALSE;
                     TRAVERSE_SPRITE_STAT(headspritestat[STAT_ST1], ii, nextii)
                     {
@@ -396,10 +402,12 @@ JS_InitMirrors(void)
 
                     if (!Found_Cam)
                     {
-                        printf("Cound not find the camera view sprite for match %d\n",TrackerCast(wall[i].hitag));
-                        printf("Map Coordinates: x = %d, y = %d\n",TrackerCast(wall[i].x),TrackerCast(wall[i].y));
-                        exit(0);
+                        buildprintf("Could not find the camera view sprite for match %d\n",TrackerCast(wall[i].hitag));
+                        buildprintf("Map Coordinates: x = %d, y = %d\n",TrackerCast(wall[i].x),TrackerCast(wall[i].y));
+                        break;
                     }
+
+                    mirror[mirrorcnt].ismagic = TRUE;
 
                     Found_Cam = FALSE;
                     if (TEST_BOOL1(&sprite[mirror[mirrorcnt].camera]))
@@ -422,10 +430,10 @@ JS_InitMirrors(void)
 
                         if (!Found_Cam)
                         {
-                            printf("Did not find drawtotile for camera number %d\n",mirrorcnt);
-                            printf("wall[%d].hitag == %d\n",i,TrackerCast(wall[i].hitag));
-                            printf("Map Coordinates: x = %d, y = %d\n", TrackerCast(wall[i].x), TrackerCast(wall[i].y));
-                            exit(0);
+                            buildprintf("Did not find drawtotile for camera number %d\n",mirrorcnt);
+                            buildprintf("wall[%d].hitag == %d\n",i,TrackerCast(wall[i].hitag));
+                            buildprintf("Map Coordinates: x = %d, y = %d\n", TrackerCast(wall[i].x), TrackerCast(wall[i].y));
+                            RESET_BOOL1(&sprite[mirror[mirrorcnt].camera]);
                         }
                     }
 
@@ -436,6 +444,7 @@ JS_InitMirrors(void)
                     mirror[mirrorcnt].maxtics = 60 * 30;
 
                 }
+                while (0);
 
                 mirror[mirrorcnt].mstate = m_normal;
 
@@ -453,7 +462,6 @@ JS_InitMirrors(void)
                 }
 
                 mirrorcnt++;
-                ASSERT(mirrorcnt < MAXMIRRORS);
             }
             else
                 wall[i].overpicnum = sector[s].ceilingpicnum;
@@ -791,8 +799,8 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
                         if (mirror[cnt].campic == -1)
                         {
                             TerminateGame();
-                            printf("Missing campic for mirror %d\n",cnt);
-                            printf("Map Coordinates: x = %d, y = %d\n",midx,midy);
+                            buildprintf("Missing campic for mirror %d\n",cnt);
+                            buildprintf("Map Coordinates: x = %d, y = %d\n",midx,midy);
                             exit(0);
                         }
 
