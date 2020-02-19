@@ -680,6 +680,9 @@ void playerStart(int nPlayer, int bNewLevel)
         pStartZone = &gStartZone[Random(8)];
     }
 
+    if (!VanillaMode())
+        sfxKillSpriteSounds(pPlayer->pSprite);
+
     spritetype *pSprite = actSpawnSprite(pStartZone->sectnum, pStartZone->x, pStartZone->y, pStartZone->z, 6, 1);
     dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
     XSPRITE *pXSprite = &xsprite[pSprite->extra];
