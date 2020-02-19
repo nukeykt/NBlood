@@ -72,6 +72,7 @@ typedef struct
     char WaveformTrackName[MAXWAVEFORMTRACKLENGTH];
     SWBOOL Darts;
     SWBOOL WeaponAutoSwitch;
+    int FOV;
 } GAME_SET, *GAME_SETp;
 
 extern const GAME_SET gs_defaults;

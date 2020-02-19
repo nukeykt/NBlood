@@ -237,6 +237,7 @@ const GAME_SET gs_defaults =
     "Track??", // waveform track name
     FALSE,
     TRUE,
+    90, // FOV
 };
 GAME_SET gs;
 

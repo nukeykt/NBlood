@@ -2462,6 +2462,8 @@ drawscreen(PLAYERp pp)
         videoSetCorrectedAspect();
     }
 
+    renderSetAspect(Blrintf(float(viewingrange) * tanf(gs.FOV * (fPI/360.f))), yxaspect);
+
     if (FAF_DebugView)
         videoClearViewableArea(255L);
 

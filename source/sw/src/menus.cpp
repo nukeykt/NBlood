@@ -227,12 +227,15 @@ MenuItem screen_i[] =
     {DefSlider(sldr_brightness, KEYSC_B, "Brightness"), OPT_XS,  OPT_LINE(2), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(2), 0, m_defshade, 0, NULL, NULL, NULL},
 
-    {DefButton(btn_videofs, 0, "Fullscreen"), OPT_XS,            OPT_LINE(4), 1, m_defshade, 0, NULL, NULL, NULL},
-    {DefSlider(sldr_videobpp, 0, "Colour"), OPT_XS,              OPT_LINE(5), 1, m_defshade, 0, NULL, NULL, NULL},
-    {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(5), 0, m_defshade, 0, NULL, NULL, NULL},
-    {DefSlider(sldr_videores, 0, "Resolution"), OPT_XS,          OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefSlider(sldr_fov, 0, "FOV"), OPT_XS,                      OPT_LINE(3), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(3), 0, m_defshade, 0, NULL, NULL, NULL},
+
+    {DefButton(btn_videofs, 0, "Fullscreen"), OPT_XS,            OPT_LINE(5), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefSlider(sldr_videobpp, 0, "Colour"), OPT_XS,              OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(6), 0, m_defshade, 0, NULL, NULL, NULL},
-    {DefOption(0, "Apply Settings"), OPT_XSIDE,                  OPT_LINE(8), 1, m_defshade, 0, ApplyModeSettings, NULL, NULL},
+    {DefSlider(sldr_videores, 0, "Resolution"), OPT_XS,          OPT_LINE(7), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(7), 0, m_defshade, 0, NULL, NULL, NULL},
+    {DefOption(0, "Apply Settings"), OPT_XSIDE,                  OPT_LINE(9), 1, m_defshade, 0, ApplyModeSettings, NULL, NULL},
     {DefNone}
 };
 
@@ -2201,6 +2204,7 @@ MNU_InitMenus(void)
     slidersettings[sldr_scrsize] = gs.BorderNum;
     slidersettings[sldr_brightness] = gs.Brightness;
     slidersettings[sldr_bordertile] = gs.BorderTile;
+    slidersettings[sldr_fov] = (gs.FOV - MinFOV) / IncFOV;
 
     {
         int i,newx=xdim,newy=ydim;
@@ -3897,6 +3901,25 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         }
 
         sprintf(tmp_text, "%d bpp", validbpps[offset]);
+        MNU_DrawString(OPT_XSIDE+tilesiz[pic_slidelend].x+tilesiz[pic_sliderend].x+(barwidth+1)*tilesiz[pic_slidebar].x, item->y, tmp_text, 1, 16);
+    } break;
+
+    case sldr_fov:
+    {
+        constexpr int numvalid = (MaxFOV - MinFOV) / IncFOV + 1;
+        offset = clamp(slidersettings[sldr_fov] + dir, 0, numvalid-1);
+        barwidth = numvalid;
+
+        if (TEST(item->flags, mf_disabled))
+            break;
+
+        if (dir)
+        {
+            slidersettings[sldr_fov] = offset;
+            gs.FOV = offset * IncFOV + MinFOV;
+        }
+
+        sprintf(tmp_text, "%d", gs.FOV);
         MNU_DrawString(OPT_XSIDE+tilesiz[pic_slidelend].x+tilesiz[pic_sliderend].x+(barwidth+1)*tilesiz[pic_slidebar].x, item->y, tmp_text, 1, 16);
     } break;
 
