@@ -2598,19 +2598,26 @@ bool AddINIFile(const char *pzFile, bool bForce = false)
 
 void ScanINIFiles(void)
 {
-    nINICount = 0;
+    nINICount                   = 0;
     BUILDVFS_FIND_REC *pINIList = klistpath("/", "*.ini", BUILDVFS_FIND_FILE);
-    pINIChain = NULL;
+    pINIChain                   = NULL;
+    //issue #323 FIX
+    //check if input param INI file is already in the Nblood folder to fix duplicate or case sensitive issues (linux) INI showing in menu.
+    bool iniExists              = false;
+    for (auto pIter = pINIList; pIter; pIter = pIter->next)
+    {
+        if (Bstrncasecmp(BloodIniFile, pIter->name, BMAX_PATH) == 0)
+        {
+            iniExists = true;
+        }
+        AddINIFile(pIter->name);
+    }
 
-    if (bINIOverride || !pINIList)
+    if (bINIOverride && !iniExists)
     {
         AddINIFile(BloodIniFile, true);
     }
 
-    for (auto pIter = pINIList; pIter; pIter = pIter->next)
-    {
-        AddINIFile(pIter->name);
-    }
     klistfree(pINIList);
     pINISelected = pINIChain;
     for (auto pIter = pINIChain; pIter; pIter = pIter->pNext)
