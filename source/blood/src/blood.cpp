@@ -20,70 +20,73 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
-#include "build.h"
-#include "mmulti.h"
-#include "compat.h"
-#include "renderlayer.h"
-#include "vfs.h"
-#include "fx_man.h"
-#include "common.h"
-#include "common_game.h"
-#include "gamedefs.h"
+#include "blood.h"
 
 #include "asound.h"
-#include "db.h"
-#include "blood.h"
+#include "build.h"
 #include "choke.h"
+#include "common.h"
+#include "common_game.h"
+#include "compat.h"
 #include "config.h"
 #include "controls.h"
 #include "credits.h"
+#include "db.h"
 #include "demo.h"
 #include "dude.h"
 #include "endgame.h"
 #include "eventq.h"
 #include "fire.h"
 #include "fx.h"
-#include "gib.h"
+#include "fx_man.h"
+#include "gamedefs.h"
 #include "getopt.h"
+#include "gib.h"
 #include "globals.h"
 #include "gui.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "menu.h"
 #include "mirrors.h"
+#include "mmulti.h"
 #include "music.h"
 #include "network.h"
+#include "nnexts.h"
 #include "osdcmds.h"
+#include "qheap.h"
+#include "renderlayer.h"
 #include "replace.h"
 #include "resource.h"
-#include "qheap.h"
 #include "screen.h"
 #include "sectorfx.h"
 #include "seq.h"
 #include "sfx.h"
 #include "sound.h"
+#include "string.h"
 #include "tile.h"
 #include "trig.h"
 #include "triggers.h"
+#include "vfs.h"
 #include "view.h"
 #include "warp.h"
 #include "weapon.h"
-#include "nnexts.h"
 
+#include <string>
 #ifdef _WIN32
-# include <shellapi.h>
-# define UPDATEINTERVAL 604800 // 1w
-# include "winbits.h"
+#include <shellapi.h>
+#define UPDATEINTERVAL 604800  // 1w
+#include "winbits.h"
 #else
-# ifndef GEKKO
-#  include <sys/ioctl.h>
-# endif
+#ifndef GEKKO
+#include <sys/ioctl.h>
+#endif
+
 #endif /* _WIN32 */
 
-const char* AppProperName = APPNAME;
-const char* AppTechnicalName = APPBASENAME;
+const char *AppProperName    = APPNAME;
+const char *AppTechnicalName = APPBASENAME;
 
-char SetupFilename[BMAX_PATH] = SETUPFILENAME;
+char    SetupFilename[BMAX_PATH] = SETUPFILENAME;
 int32_t gNoSetup = 0, gCommandSetup = 0;
 
 INPUT_MODE gInputMode;
@@ -94,12 +97,12 @@ unsigned int nMaxAlloc = 0x4000000;
 
 bool bCustomName = false;
 char bAddUserMap = false;
-bool bNoDemo = false;
+bool bNoDemo     = false;
 bool bQuickStart = false;
 bool bNoAutoLoad = false;
 
 int gMusicPrevLoadedEpisode = -1;
-int gMusicPrevLoadedLevel = -1;
+int gMusicPrevLoadedLevel   = -1;
 
 char gUserMapFilename[BMAX_PATH];
 char gPName[MAXPLAYERNAME];
@@ -108,30 +111,30 @@ short BloodVersion = 0x115;
 
 int gNetPlayers;
 
-char *pUserTiles = NULL;
+char *pUserTiles    = NULL;
 char *pUserSoundRFF = NULL;
-char *pUserRFF = NULL;
+char *pUserRFF      = NULL;
 
 int gChokeCounter = 0;
 
 double g_gameUpdateTime, g_gameUpdateAndDrawTime;
 double g_gameUpdateAvgTime = 0.001;
 
-int gSaveGameNum;
+int  gSaveGameNum;
 bool gQuitGame;
-int gQuitRequest;
+int  gQuitRequest;
 bool gPaused;
 bool gSaveGameActive;
-int gCacheMiss;
+int  gCacheMiss;
 
 enum gametokens
 {
-    T_INCLUDE = 0,
+    T_INCLUDE   = 0,
     T_INTERFACE = 0,
-    T_LOADGRP = 1,
-    T_MODE = 1,
+    T_LOADGRP   = 1,
+    T_MODE      = 1,
     T_CACHESIZE = 2,
-    T_ALLOW = 2,
+    T_ALLOW     = 2,
     T_NOAUTOLOAD,
     T_INCLUDEDEFAULT,
     T_MUSIC,
@@ -156,7 +159,9 @@ enum gametokens
     T_TEXTUREFILTER,
     T_RFFDEFINEID,
     T_TILEFROMTEXTURE,
-    T_IFCRC, T_IFMATCH, T_CRC32,
+    T_IFCRC,
+    T_IFMATCH,
+    T_CRC32,
     T_SIZE,
     T_SURFACE,
     T_VOXEL,
@@ -171,10 +176,7 @@ void app_crashhandler(void)
     // NUKE-TODO:
 }
 
-void M32RunScript(const char *s)
-{
-    UNREFERENCED_PARAMETER(s);
-}
+void M32RunScript(const char *s) { UNREFERENCED_PARAMETER(s); }
 
 void ShutDown(void)
 {
@@ -211,90 +213,92 @@ void PrecacheDude(spritetype *pSprite)
 {
     DUDEINFO *pDudeInfo = getDudeInfo(pSprite->type);
     seqPrecacheId(pDudeInfo->seqStartID);
-    seqPrecacheId(pDudeInfo->seqStartID+5);
-    seqPrecacheId(pDudeInfo->seqStartID+1);
-    seqPrecacheId(pDudeInfo->seqStartID+2);
+    seqPrecacheId(pDudeInfo->seqStartID + 5);
+    seqPrecacheId(pDudeInfo->seqStartID + 1);
+    seqPrecacheId(pDudeInfo->seqStartID + 2);
     switch (pSprite->type)
     {
-    case kDudeCultistTommy:
-    case kDudeCultistShotgun:
-    case kDudeCultistTesla:
-    case kDudeCultistTNT:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        seqPrecacheId(pDudeInfo->seqStartID+8);
-        seqPrecacheId(pDudeInfo->seqStartID+9);
-        seqPrecacheId(pDudeInfo->seqStartID+13);
-        seqPrecacheId(pDudeInfo->seqStartID+14);
-        seqPrecacheId(pDudeInfo->seqStartID+15);
-        break;
-    case kDudeZombieButcher:
-    case kDudeGillBeast:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        seqPrecacheId(pDudeInfo->seqStartID+8);
-        seqPrecacheId(pDudeInfo->seqStartID+9);
-        seqPrecacheId(pDudeInfo->seqStartID+10);
-        seqPrecacheId(pDudeInfo->seqStartID+11);
-        break;
-    case kDudeGargoyleStatueFlesh:
-    case kDudeGargoyleStatueStone:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        fallthrough__;
-    case kDudeGargoyleFlesh:
-    case kDudeGargoyleStone:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        seqPrecacheId(pDudeInfo->seqStartID+8);
-        seqPrecacheId(pDudeInfo->seqStartID+9);
-        break;
-    case kDudePhantasm:
-    case kDudeHellHound:
-    case kDudeSpiderBrown:
-    case kDudeSpiderRed:
-    case kDudeSpiderBlack:
-    case kDudeSpiderMother:
-    case kDudeTchernobog:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        seqPrecacheId(pDudeInfo->seqStartID+8);
-        break;
-    case kDudeCerberusTwoHead:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        fallthrough__;
-    case kDudeHand:
-    case kDudeBoneEel:
-    case kDudeBat:
-    case kDudeRat:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        break;
-    case kDudeCultistBeast:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        break;
-    case kDudeZombieAxeBuried:
-        seqPrecacheId(pDudeInfo->seqStartID+12);
-        seqPrecacheId(pDudeInfo->seqStartID+9);
-        fallthrough__;
-    case kDudeZombieAxeLaying:
-        seqPrecacheId(pDudeInfo->seqStartID+10);
-        fallthrough__;
-    case kDudeZombieAxeNormal:
-        seqPrecacheId(pDudeInfo->seqStartID+6);
-        seqPrecacheId(pDudeInfo->seqStartID+7);
-        seqPrecacheId(pDudeInfo->seqStartID+8);
-        seqPrecacheId(pDudeInfo->seqStartID+11);
-        seqPrecacheId(pDudeInfo->seqStartID+13);
-        seqPrecacheId(pDudeInfo->seqStartID+14);
-        break;
+        case kDudeCultistTommy:
+        case kDudeCultistShotgun:
+        case kDudeCultistTesla:
+        case kDudeCultistTNT:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            seqPrecacheId(pDudeInfo->seqStartID + 8);
+            seqPrecacheId(pDudeInfo->seqStartID + 9);
+            seqPrecacheId(pDudeInfo->seqStartID + 13);
+            seqPrecacheId(pDudeInfo->seqStartID + 14);
+            seqPrecacheId(pDudeInfo->seqStartID + 15);
+            break;
+        case kDudeZombieButcher:
+        case kDudeGillBeast:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            seqPrecacheId(pDudeInfo->seqStartID + 8);
+            seqPrecacheId(pDudeInfo->seqStartID + 9);
+            seqPrecacheId(pDudeInfo->seqStartID + 10);
+            seqPrecacheId(pDudeInfo->seqStartID + 11);
+            break;
+        case kDudeGargoyleStatueFlesh:
+        case kDudeGargoyleStatueStone:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            fallthrough__;
+        case kDudeGargoyleFlesh:
+        case kDudeGargoyleStone:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            seqPrecacheId(pDudeInfo->seqStartID + 8);
+            seqPrecacheId(pDudeInfo->seqStartID + 9);
+            break;
+        case kDudePhantasm:
+        case kDudeHellHound:
+        case kDudeSpiderBrown:
+        case kDudeSpiderRed:
+        case kDudeSpiderBlack:
+        case kDudeSpiderMother:
+        case kDudeTchernobog:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            seqPrecacheId(pDudeInfo->seqStartID + 8);
+            break;
+        case kDudeCerberusTwoHead:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            fallthrough__;
+        case kDudeHand:
+        case kDudeBoneEel:
+        case kDudeBat:
+        case kDudeRat:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            break;
+        case kDudeCultistBeast:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            break;
+        case kDudeZombieAxeBuried:
+            seqPrecacheId(pDudeInfo->seqStartID + 12);
+            seqPrecacheId(pDudeInfo->seqStartID + 9);
+            fallthrough__;
+        case kDudeZombieAxeLaying:
+            seqPrecacheId(pDudeInfo->seqStartID + 10);
+            fallthrough__;
+        case kDudeZombieAxeNormal:
+            seqPrecacheId(pDudeInfo->seqStartID + 6);
+            seqPrecacheId(pDudeInfo->seqStartID + 7);
+            seqPrecacheId(pDudeInfo->seqStartID + 8);
+            seqPrecacheId(pDudeInfo->seqStartID + 11);
+            seqPrecacheId(pDudeInfo->seqStartID + 13);
+            seqPrecacheId(pDudeInfo->seqStartID + 14);
+            break;
     }
 }
 
-void PrecacheThing(spritetype *pSprite) {
-    switch (pSprite->type) {
-        case kThingGlassWindow: // worthless...
+void PrecacheThing(spritetype *pSprite)
+{
+    switch (pSprite->type)
+    {
+        case kThingGlassWindow:  // worthless...
         case kThingFluorescent:
             seqPrecacheId(12);
             break;
@@ -314,7 +318,7 @@ void PrecacheThing(spritetype *pSprite) {
             seqPrecacheId(28);
             break;
         case kThingObjectGib:
-        //case kThingObjectExplode: weird that only gib object is precached and this one is not
+            //case kThingObjectExplode: weird that only gib object is precached and this one is not
             break;
     }
     tilePrecacheTile(pSprite->picnum);
@@ -323,7 +327,7 @@ void PrecacheThing(spritetype *pSprite) {
 void PreloadTiles(void)
 {
     int skyTile = -1;
-    memset(gotpic,0,sizeof(gotpic));
+    memset(gotpic, 0, sizeof(gotpic));
     // Fonts
     for (int i = 0; i < kFontNum; i++)
     {
@@ -336,7 +340,7 @@ void PreloadTiles(void)
     {
         tilePrecacheTile(sector[i].floorpicnum, 0);
         tilePrecacheTile(sector[i].ceilingpicnum, 0);
-        if ((sector[i].ceilingstat&1) != 0 && skyTile == -1)
+        if ((sector[i].ceilingstat & 1) != 0 && skyTile == -1)
             skyTile = sector[i].ceilingpicnum;
     }
     for (int i = 0; i < numwalls; i++)
@@ -352,15 +356,15 @@ void PreloadTiles(void)
             spritetype *pSprite = &sprite[i];
             switch (pSprite->statnum)
             {
-            case kStatDude:
-                PrecacheDude(pSprite);
-                break;
-            case kStatThing:
-                PrecacheThing(pSprite);
-                break;
-            default:
-                tilePrecacheTile(pSprite->picnum);
-                break;
+                case kStatDude:
+                    PrecacheDude(pSprite);
+                    break;
+                case kStatThing:
+                    PrecacheThing(pSprite);
+                    break;
+                default:
+                    tilePrecacheTile(pSprite->picnum);
+                    break;
             }
         }
     }
@@ -371,26 +375,26 @@ void PreloadTiles(void)
         seqPrecacheId(i);
     }
 
-    tilePrecacheTile(1147); // water drip
-    tilePrecacheTile(1160); // blood drip
+    tilePrecacheTile(1147);  // water drip
+    tilePrecacheTile(1160);  // blood drip
 
     // Player SEQs
-    seqPrecacheId(dudeInfo[31].seqStartID+6);
-    seqPrecacheId(dudeInfo[31].seqStartID+7);
-    seqPrecacheId(dudeInfo[31].seqStartID+8);
-    seqPrecacheId(dudeInfo[31].seqStartID+9);
-    seqPrecacheId(dudeInfo[31].seqStartID+10);
-    seqPrecacheId(dudeInfo[31].seqStartID+14);
-    seqPrecacheId(dudeInfo[31].seqStartID+15);
-    seqPrecacheId(dudeInfo[31].seqStartID+12);
-    seqPrecacheId(dudeInfo[31].seqStartID+16);
-    seqPrecacheId(dudeInfo[31].seqStartID+17);
-    seqPrecacheId(dudeInfo[31].seqStartID+18);
+    seqPrecacheId(dudeInfo[31].seqStartID + 6);
+    seqPrecacheId(dudeInfo[31].seqStartID + 7);
+    seqPrecacheId(dudeInfo[31].seqStartID + 8);
+    seqPrecacheId(dudeInfo[31].seqStartID + 9);
+    seqPrecacheId(dudeInfo[31].seqStartID + 10);
+    seqPrecacheId(dudeInfo[31].seqStartID + 14);
+    seqPrecacheId(dudeInfo[31].seqStartID + 15);
+    seqPrecacheId(dudeInfo[31].seqStartID + 12);
+    seqPrecacheId(dudeInfo[31].seqStartID + 16);
+    seqPrecacheId(dudeInfo[31].seqStartID + 17);
+    seqPrecacheId(dudeInfo[31].seqStartID + 18);
 
     if (skyTile > -1 && skyTile < kMaxTiles)
     {
         for (int i = 1; i < gSkyCount; i++)
-            tilePrecacheTile(skyTile+i, 0);
+            tilePrecacheTile(skyTile + i, 0);
     }
 
     WeaponPrecache();
@@ -457,11 +461,11 @@ void PreloadCache(void)
     if (MusicRestartsOnLoadToggle)
         sndTryPlaySpecialMusic(MUS_LOADING);
     PreloadTiles();
-    ClockTicks clock = totalclock;
-    int cnt = 0;
-    int percentDisplayed = -1;
+    ClockTicks clock            = totalclock;
+    int        cnt              = 0;
+    int        percentDisplayed = -1;
 
-    for (int i=0; i<kMaxTiles && !KB_KeyPressed(sc_Space); i++)
+    for (int i = 0; i < kMaxTiles && !KB_KeyPressed(sc_Space); i++)
     {
         if (TestBitString(gotpic, i))
         {
@@ -477,7 +481,7 @@ void PreloadCache(void)
             if ((++cnt & 7) == 0)
                 gameHandleEvents();
 
-            if (videoGetRenderMode() != REND_CLASSIC && totalclock - clock > (kTicRate>>2))
+            if (videoGetRenderMode() != REND_CLASSIC && totalclock - clock > (kTicRate >> 2))
             {
                 int const percentComplete = min(100, tabledivide32_noinline(100 * cnt, nPrecacheCount));
 
@@ -500,7 +504,7 @@ void PreloadCache(void)
             }
         }
     }
-    memset(gotpic,0,sizeof(gotpic));
+    memset(gotpic, 0, sizeof(gotpic));
 }
 
 void EndLevel(void)
@@ -513,7 +517,7 @@ void EndLevel(void)
     seqKillAll();
 }
 
-int G_TryMapHack(const char* mhkfile)
+int G_TryMapHack(const char *mhkfile)
 {
     int const failure = engineLoadMHK(mhkfile);
 
@@ -523,7 +527,7 @@ int G_TryMapHack(const char* mhkfile)
     return failure;
 }
 
-void G_LoadMapHack(char* outbuf, const char* filename)
+void G_LoadMapHack(char *outbuf, const char *filename)
 {
     if (filename != NULL)
         Bstrcpy(outbuf, filename);
@@ -532,8 +536,7 @@ void G_LoadMapHack(char* outbuf, const char* filename)
 
     if (G_TryMapHack(outbuf) && usermaphacks != NULL)
     {
-        auto pMapInfo = (usermaphack_t*)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks,
-            sizeof(usermaphack_t), compare_usermaphacks);
+        auto pMapInfo = (usermaphack_t *)bsearch(&g_loadedMapHack, usermaphacks, num_usermaphacks, sizeof(usermaphack_t), compare_usermaphacks);
         if (pMapInfo)
             G_TryMapHack(pMapInfo->mhkfile);
     }
@@ -555,55 +558,53 @@ void G_RefreshLights(void)
                 actDoLight(spriteNum);
                 spriteNum = nextspritestat[spriteNum];
             }
-        }
-        while (statNum < MAXSTATUS);
+        } while (statNum < MAXSTATUS);
     }
 }
-#endif // POLYMER
+#endif  // POLYMER
 
 
 PLAYER gPlayerTemp[kMaxPlayers];
-int gHealthTemp[kMaxPlayers];
+int    gHealthTemp[kMaxPlayers];
 
-vec3_t startpos;
+vec3_t  startpos;
 int16_t startang, startsectnum;
 
 void StartLevel(GAMEOPTIONS *gameOptions)
 {
     EndLevel();
-    gInput = {};
-    gStartNewGame = 0;
-    ready2send = 0;
+    gInput                  = {};
+    gStartNewGame           = 0;
+    ready2send              = 0;
     gMusicPrevLoadedEpisode = gGameOptions.nEpisode;
-    gMusicPrevLoadedLevel = gGameOptions.nLevel;
+    gMusicPrevLoadedLevel   = gGameOptions.nLevel;
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
     if (gGameOptions.nGameType == 0)
     {
-        if (!(gGameOptions.uGameFlags&1))
+        if (!(gGameOptions.uGameFlags & 1))
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
-        if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
-            && gEpisodeInfo[gGameOptions.nEpisode].cutsceneASmkPath)
+        if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel && gEpisodeInfo[gGameOptions.nEpisode].cutsceneASmkPath)
             gGameOptions.uGameFlags |= 4;
-        if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
+        if ((gGameOptions.uGameFlags & 4) && gDemo.at1 == 0)
             levelPlayIntroScene(gGameOptions.nEpisode);
 
         ///////
         gGameOptions.weaponsV10x = gWeaponsV10x;
         ///////
     }
-    else if (gGameOptions.nGameType > 0 && !(gGameOptions.uGameFlags&1))
+    else if (gGameOptions.nGameType > 0 && !(gGameOptions.uGameFlags & 1))
     {
-        gGameOptions.nEpisode = gPacketStartGame.episodeId;
-        gGameOptions.nLevel = gPacketStartGame.levelId;
-        gGameOptions.nGameType = gPacketStartGame.gameType;
-        gGameOptions.nDifficulty = gPacketStartGame.difficulty;
-        gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
-        gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
-        gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
-        gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
-        gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
+        gGameOptions.nEpisode           = gPacketStartGame.episodeId;
+        gGameOptions.nLevel             = gPacketStartGame.levelId;
+        gGameOptions.nGameType          = gPacketStartGame.gameType;
+        gGameOptions.nDifficulty        = gPacketStartGame.difficulty;
+        gGameOptions.nMonsterSettings   = gPacketStartGame.monsterSettings;
+        gGameOptions.nWeaponSettings    = gPacketStartGame.weaponSettings;
+        gGameOptions.nItemSettings      = gPacketStartGame.itemSettings;
+        gGameOptions.nRespawnSettings   = gPacketStartGame.respawnSettings;
+        gGameOptions.bFriendlyFire      = gPacketStartGame.bFriendlyFire;
         gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
@@ -615,22 +616,23 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         ///////
 
         gBlueFlagDropped = false;
-        gRedFlagDropped = false;
+        gRedFlagDropped  = false;
     }
-    if (gameOptions->uGameFlags&1)
+    if (gameOptions->uGameFlags & 1)
     {
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
-            memcpy(&gPlayerTemp[i],&gPlayer[i],sizeof(PLAYER));
+            memcpy(&gPlayerTemp[i], &gPlayer[i], sizeof(PLAYER));
             gHealthTemp[i] = xsprite[gPlayer[i].pSprite->extra].health;
         }
     }
-    bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    enginecompatibility_mode = ENGINECOMPATIBILITY_19960925;//bVanilla;
-    memset(xsprite,0,sizeof(xsprite));
-    memset(sprite,0,kMaxSprites*sizeof(spritetype));
+    bVanilla                 = gDemo.at1 && gDemo.m_bLegacy;
+    enginecompatibility_mode = ENGINECOMPATIBILITY_19960925;  //bVanilla;
+    memset(xsprite, 0, sizeof(xsprite));
+    memset(sprite, 0, kMaxSprites * sizeof(spritetype));
     drawLoadingScreen();
-    if (dbLoadMap(gameOptions->zLevelName,(int*)&startpos.x,(int*)&startpos.y,(int*)&startpos.z,&startang,&startsectnum,(unsigned int*)&gameOptions->uMapCRC))
+    if (dbLoadMap(gameOptions->zLevelName, (int *)&startpos.x, (int *)&startpos.y, (int *)&startpos.z, &startang, &startsectnum,
+                  (unsigned int *)&gameOptions->uMapCRC))
     {
         gQuitGame = true;
         return;
@@ -640,62 +642,63 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     wsrand(gameOptions->uMapCRC);
     gKillMgr.Clear();
     gSecretMgr.Clear();
-    gLevelTime = 0;
+    gLevelTime  = 0;
     automapping = 1;
-  
+
     int modernTypesErased = 0;
     for (int i = 0; i < kMaxSprites; i++)
     {
         spritetype *pSprite = &sprite[i];
-        if (pSprite->statnum < kMaxStatus && pSprite->extra > 0) {
-            
+        if (pSprite->statnum < kMaxStatus && pSprite->extra > 0)
+        {
             XSPRITE *pXSprite = &xsprite[pSprite->extra];
             if ((pXSprite->lSkill & (1 << gameOptions->nDifficulty)) || (pXSprite->lS && gameOptions->nGameType == 0)
-                || (pXSprite->lB && gameOptions->nGameType == 2) || (pXSprite->lT && gameOptions->nGameType == 3)
-                || (pXSprite->lC && gameOptions->nGameType == 1)) {
-                
+                || (pXSprite->lB && gameOptions->nGameType == 2) || (pXSprite->lT && gameOptions->nGameType == 3) || (pXSprite->lC && gameOptions->nGameType == 1))
+            {
                 DeleteSprite(i);
                 continue;
             }
 
-            
-            #ifdef NOONE_EXTENSIONS
+
+#ifdef NOONE_EXTENSIONS
             if (!gModernMap && nnExtEraseModernStuff(pSprite, pXSprite))
-               modernTypesErased++;
-            #endif
+                modernTypesErased++;
+#endif
         }
     }
-    
-    #ifdef NOONE_EXTENSIONS
+
+#ifdef NOONE_EXTENSIONS
     if (!gModernMap)
         OSD_Printf("> Modern types erased: %d.\n", modernTypesErased);
-    #endif
+#endif
 
     scrLoadPLUs();
-    startpos.z = getflorzofslope(startsectnum,startpos.x,startpos.y);
-    for (int i = 0; i < kMaxPlayers; i++) {
-        gStartZone[i].x = startpos.x;
-        gStartZone[i].y = startpos.y;
-        gStartZone[i].z = startpos.z;
+    startpos.z = getflorzofslope(startsectnum, startpos.x, startpos.y);
+    for (int i = 0; i < kMaxPlayers; i++)
+    {
+        gStartZone[i].x       = startpos.x;
+        gStartZone[i].y       = startpos.y;
+        gStartZone[i].z       = startpos.z;
         gStartZone[i].sectnum = startsectnum;
-        gStartZone[i].ang = startang;
+        gStartZone[i].ang     = startang;
 
-        #ifdef NOONE_EXTENSIONS
+#ifdef NOONE_EXTENSIONS
         // Create spawn zones for players in teams mode.
-        if (gModernMap && i <= kMaxPlayers / 2) {
-            gStartZoneTeam1[i].x = startpos.x;
-            gStartZoneTeam1[i].y = startpos.y;
-            gStartZoneTeam1[i].z = startpos.z;
+        if (gModernMap && i <= kMaxPlayers / 2)
+        {
+            gStartZoneTeam1[i].x       = startpos.x;
+            gStartZoneTeam1[i].y       = startpos.y;
+            gStartZoneTeam1[i].z       = startpos.z;
             gStartZoneTeam1[i].sectnum = startsectnum;
-            gStartZoneTeam1[i].ang = startang;
+            gStartZoneTeam1[i].ang     = startang;
 
-            gStartZoneTeam2[i].x = startpos.x;
-            gStartZoneTeam2[i].y = startpos.y;
-            gStartZoneTeam2[i].z = startpos.z;
+            gStartZoneTeam2[i].x       = startpos.x;
+            gStartZoneTeam2[i].y       = startpos.y;
+            gStartZoneTeam2[i].z       = startpos.z;
             gStartZoneTeam2[i].sectnum = startsectnum;
-            gStartZoneTeam2[i].ang = startang;
+            gStartZoneTeam2[i].ang     = startang;
         }
-        #endif
+#endif
     }
     InitSectorFX();
     warpInit();
@@ -703,33 +706,33 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     evInit();
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        if (!(gameOptions->uGameFlags&1))
+        if (!(gameOptions->uGameFlags & 1))
         {
             if (numplayers == 1)
             {
-                gProfile[i].skill = gSkill;
-                gProfile[i].nAutoAim = gAutoAim;
+                gProfile[i].skill         = gSkill;
+                gProfile[i].nAutoAim      = gAutoAim;
                 gProfile[i].nWeaponSwitch = gWeaponSwitch;
             }
-            playerInit(i,0);
+            playerInit(i, 0);
         }
         playerStart(i, 1);
     }
-    if (gameOptions->uGameFlags&1)
+    if (gameOptions->uGameFlags & 1)
     {
         for (int i = connecthead; i >= 0; i = connectpoint2[i])
         {
             PLAYER *pPlayer = &gPlayer[i];
             pPlayer->pXSprite->health &= 0xf000;
             pPlayer->pXSprite->health |= gHealthTemp[i];
-            pPlayer->weaponQav = gPlayerTemp[i].weaponQav;
-            pPlayer->curWeapon = gPlayerTemp[i].curWeapon;
+            pPlayer->weaponQav   = gPlayerTemp[i].weaponQav;
+            pPlayer->curWeapon   = gPlayerTemp[i].curWeapon;
             pPlayer->weaponState = gPlayerTemp[i].weaponState;
-            pPlayer->weaponAmmo = gPlayerTemp[i].weaponAmmo;
+            pPlayer->weaponAmmo  = gPlayerTemp[i].weaponAmmo;
             pPlayer->qavCallback = gPlayerTemp[i].qavCallback;
-            pPlayer->qavLoop = gPlayerTemp[i].qavLoop;
+            pPlayer->qavLoop     = gPlayerTemp[i].qavLoop;
             pPlayer->weaponTimer = gPlayerTemp[i].weaponTimer;
-            pPlayer->nextWeapon = gPlayerTemp[i].nextWeapon;
+            pPlayer->nextWeapon  = gPlayerTemp[i].nextWeapon;
         }
     }
     gameOptions->uGameFlags &= ~3;
@@ -738,12 +741,12 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     InitMirrors();
     gFrameClock = 0;
     trInit();
-    if (!bVanilla && !gMe->packSlots[1].isActive) // if diving suit is not active, turn off reverb sound effect
+    if (!bVanilla && !gMe->packSlots[1].isActive)  // if diving suit is not active, turn off reverb sound effect
         sfxSetReverb(0);
     ambInit();
     sub_79760();
-    gCacheMiss = 0;
-    gFrame = 0;
+    gCacheMiss    = 0;
+    gFrame        = 0;
     gChokeCounter = 0;
     if (!gDemo.at1)
         gGameMenuMgr.Deactivate();
@@ -752,37 +755,37 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     viewSetErrorMessage("");
     viewResizeView(gViewSize);
     if (gGameOptions.nGameType == 3)
-        gGameMessageMgr.SetCoordinates(gViewX0S+1,gViewY0S+15);
+        gGameMessageMgr.SetCoordinates(gViewX0S + 1, gViewY0S + 15);
     netWaitForEveryone(0);
-    totalclock = 0;
-    gPaused = 0;
+    totalclock   = 0;
+    gPaused      = 0;
     gGameStarted = 1;
-    ready2send = 1;
+    ready2send   = 1;
 }
 
 void StartNetworkLevel(void)
 {
     if (gDemo.at0)
         gDemo.Close();
-    if (!(gGameOptions.uGameFlags&1))
+    if (!(gGameOptions.uGameFlags & 1))
     {
-        gGameOptions.nEpisode = gPacketStartGame.episodeId;
-        gGameOptions.nLevel = gPacketStartGame.levelId;
-        gGameOptions.nGameType = gPacketStartGame.gameType;
-        gGameOptions.nDifficulty = gPacketStartGame.difficulty;
-        gGameOptions.nMonsterSettings = gPacketStartGame.monsterSettings;
-        gGameOptions.nWeaponSettings = gPacketStartGame.weaponSettings;
-        gGameOptions.nItemSettings = gPacketStartGame.itemSettings;
-        gGameOptions.nRespawnSettings = gPacketStartGame.respawnSettings;
-        gGameOptions.bFriendlyFire = gPacketStartGame.bFriendlyFire;
+        gGameOptions.nEpisode           = gPacketStartGame.episodeId;
+        gGameOptions.nLevel             = gPacketStartGame.levelId;
+        gGameOptions.nGameType          = gPacketStartGame.gameType;
+        gGameOptions.nDifficulty        = gPacketStartGame.difficulty;
+        gGameOptions.nMonsterSettings   = gPacketStartGame.monsterSettings;
+        gGameOptions.nWeaponSettings    = gPacketStartGame.weaponSettings;
+        gGameOptions.nItemSettings      = gPacketStartGame.itemSettings;
+        gGameOptions.nRespawnSettings   = gPacketStartGame.respawnSettings;
+        gGameOptions.bFriendlyFire      = gPacketStartGame.bFriendlyFire;
         gGameOptions.bKeepKeysOnRespawn = gPacketStartGame.bKeepKeysOnRespawn;
-        
+
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
         ///////
 
         gBlueFlagDropped = false;
-        gRedFlagDropped = false;
+        gRedFlagDropped  = false;
 
         if (gPacketStartGame.userMap)
             levelAddUserMap(gPacketStartGame.userMapName);
@@ -809,7 +812,7 @@ static void DoQuickLoad(void)
             QuickLoadGame();
             return;
         }
-        gGameMenuMgr.Push(&menuLoadGame,-1);
+        gGameMenuMgr.Push(&menuLoadGame, -1);
     }
 }
 
@@ -822,14 +825,14 @@ static void DoQuickSave(void)
             QuickSaveGame();
             return;
         }
-        gGameMenuMgr.Push(&menuSaveGame,-1);
+        gGameMenuMgr.Push(&menuSaveGame, -1);
     }
 }
 
 void LocalKeys(void)
 {
-    char alt = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
-    char ctrl = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
+    char alt   = keystatus[sc_LeftAlt] | keystatus[sc_RightAlt];
+    char ctrl  = keystatus[sc_LeftControl] | keystatus[sc_RightControl];
     char shift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
     if (BUTTON(gamefunc_See_Chase_View) && !alt && !shift)
     {
@@ -868,12 +871,12 @@ void LocalKeys(void)
         keyFlushScans();
         switch (gDoQuickSave)
         {
-        case 1:
-            DoQuickSave();
-            break;
-        case 2:
-            DoQuickLoad();
-            break;
+            case 1:
+                DoQuickSave();
+                break;
+            case 2:
+                DoQuickLoad();
+                break;
         }
         gDoQuickSave = 0;
         return;
@@ -900,75 +903,75 @@ void LocalKeys(void)
         }
         switch (key)
         {
-        case sc_kpad_Period:
-        case sc_Delete:
-            if (ctrl && alt)
-            {
-                gQuitGame = 1;
+            case sc_kpad_Period:
+            case sc_Delete:
+                if (ctrl && alt)
+                {
+                    gQuitGame = 1;
+                    return;
+                }
+                break;
+            case sc_Escape:
+                keyFlushScans();
+                if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
+                {
+                    if (!gGameMenuMgr.m_bActive)
+                        gGameMenuMgr.Push(&menuMainWithSave, -1);
+                }
+                else
+                {
+                    if (!gGameMenuMgr.m_bActive)
+                        gGameMenuMgr.Push(&menuMain, -1);
+                }
                 return;
-            }
-            break;
-        case sc_Escape:
-            keyFlushScans();
-            if (gGameStarted && gPlayer[myconnectindex].pXSprite->health != 0)
-            {
+            case sc_F1:
+                keyFlushScans();
+                if (gGameOptions.nGameType == 0)
+                    gGameMenuMgr.Push(&menuOrder, -1);
+                break;
+            case sc_F2:
+                keyFlushScans();
+                if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+                    gGameMenuMgr.Push(&menuSaveGame, -1);
+                break;
+            case sc_F3:
+                keyFlushScans();
+                if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
+                    gGameMenuMgr.Push(&menuLoadGame, -1);
+                break;
+            case sc_F4:
+                keyFlushScans();
                 if (!gGameMenuMgr.m_bActive)
-                    gGameMenuMgr.Push(&menuMainWithSave,-1);
-            }
-            else
-            {
+                    gGameMenuMgr.Push(&menuOptionsSound, -1);
+                return;
+            case sc_F5:
+                keyFlushScans();
                 if (!gGameMenuMgr.m_bActive)
-                    gGameMenuMgr.Push(&menuMain,-1);
-            }
-            return;
-        case sc_F1:
-            keyFlushScans();
-            if (gGameOptions.nGameType == 0)
-                gGameMenuMgr.Push(&menuOrder,-1);
-            break;
-        case sc_F2:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
-                gGameMenuMgr.Push(&menuSaveGame,-1);
-            break;
-        case sc_F3:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive && gGameOptions.nGameType == 0)
-                gGameMenuMgr.Push(&menuLoadGame,-1);
-            break;
-        case sc_F4:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuOptionsSound,-1);
-            return;
-        case sc_F5:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuOptions,-1);
-            return;
-        case sc_F6:
-            keyFlushScans();
-            DoQuickSave();
-            break;
-        case sc_F8:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuOptionsDisplayMode, -1);
-            return;
-        case sc_F9:
-            keyFlushScans();
-            DoQuickLoad();
-            break;
-        case sc_F10:
-            keyFlushScans();
-            if (!gGameMenuMgr.m_bActive)
-                gGameMenuMgr.Push(&menuQuit,-1);
-            break;
-        case sc_F11:
-            break;
-        case sc_F12:
-            videoCaptureScreen("blud0000.tga", 0);
-            break;
+                    gGameMenuMgr.Push(&menuOptions, -1);
+                return;
+            case sc_F6:
+                keyFlushScans();
+                DoQuickSave();
+                break;
+            case sc_F8:
+                keyFlushScans();
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuOptionsDisplayMode, -1);
+                return;
+            case sc_F9:
+                keyFlushScans();
+                DoQuickLoad();
+                break;
+            case sc_F10:
+                keyFlushScans();
+                if (!gGameMenuMgr.m_bActive)
+                    gGameMenuMgr.Push(&menuQuit, -1);
+                break;
+            case sc_F11:
+                break;
+            case sc_F12:
+                videoCaptureScreen("blud0000.tga", 0);
+                break;
         }
     }
 }
@@ -980,21 +983,21 @@ void ProcessFrame(void)
     char buffer[128];
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
-        gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
-        gPlayer[i].input.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
-        gPlayer[i].input.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
-        if (gFifoInput[gNetFifoTail&255][i].newWeapon)
-            gPlayer[i].input.newWeapon = gFifoInput[gNetFifoTail&255][i].newWeapon;
-        gPlayer[i].input.forward = gFifoInput[gNetFifoTail&255][i].forward;
-        gPlayer[i].input.q16turn = gFifoInput[gNetFifoTail&255][i].q16turn;
-        gPlayer[i].input.strafe = gFifoInput[gNetFifoTail&255][i].strafe;
-        gPlayer[i].input.q16mlook = gFifoInput[gNetFifoTail&255][i].q16mlook;
+        gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail & 255][i].buttonFlags;
+        gPlayer[i].input.keyFlags.word |= gFifoInput[gNetFifoTail & 255][i].keyFlags.word;
+        gPlayer[i].input.useFlags.byte |= gFifoInput[gNetFifoTail & 255][i].useFlags.byte;
+        if (gFifoInput[gNetFifoTail & 255][i].newWeapon)
+            gPlayer[i].input.newWeapon = gFifoInput[gNetFifoTail & 255][i].newWeapon;
+        gPlayer[i].input.forward  = gFifoInput[gNetFifoTail & 255][i].forward;
+        gPlayer[i].input.q16turn  = gFifoInput[gNetFifoTail & 255][i].q16turn;
+        gPlayer[i].input.strafe   = gFifoInput[gNetFifoTail & 255][i].strafe;
+        gPlayer[i].input.q16mlook = gFifoInput[gNetFifoTail & 255][i].q16mlook;
     }
     gNetFifoTail++;
-    if (!(gFrame&7))
+    if (!(gFrame & 7))
     {
         CalcGameChecksum();
-        memcpy(gCheckFifo[gCheckHead[myconnectindex]&255][myconnectindex], gChecksum, sizeof(gChecksum));
+        memcpy(gCheckFifo[gCheckHead[myconnectindex] & 255][myconnectindex], gChecksum, sizeof(gChecksum));
         gCheckHead[myconnectindex]++;
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
@@ -1006,7 +1009,7 @@ void ProcessFrame(void)
             if (i == myconnectindex)
             {
                 // netBroadcastMyLogoff(gQuitRequest == 2);
-                gQuitGame = true;
+                gQuitGame    = true;
                 gRestartGame = gQuitRequest == 2;
                 netDeinitialize();
                 netResetToSinglePlayer();
@@ -1022,10 +1025,10 @@ void ProcessFrame(void)
         if (gPlayer[i].input.keyFlags.pause)
         {
             gPlayer[i].input.keyFlags.pause = 0;
-            gPaused = !gPaused;
+            gPaused                         = !gPaused;
             if (gPaused && gGameOptions.nGameType > 0 && numplayers > 1)
             {
-                sprintf(buffer,"%s paused the game",gProfile[i].name);
+                sprintf(buffer, "%s paused the game", gProfile[i].name);
                 viewSetMessage(buffer);
             }
         }
@@ -1036,7 +1039,7 @@ void ProcessFrame(void)
         if (gPaused || gEndGameMgr.at0 || (gGameOptions.nGameType == 0 && gGameMenuMgr.m_bActive))
             return;
         if (gDemo.at0)
-            gDemo.Write(gFifoInput[(gNetFifoTail-1)&255]);
+            gDemo.Write(gFifoInput[(gNetFifoTail - 1) & 255]);
     }
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
@@ -1072,7 +1075,7 @@ void ProcessFrame(void)
     gLevelTime++;
     gFrame++;
     gFrameClock += 4;
-    if ((gGameOptions.uGameFlags&1) != 0 && !gStartNewGame)
+    if ((gGameOptions.uGameFlags & 1) != 0 && !gStartNewGame)
     {
         ready2send = 0;
         if (gNetPlayers > 1 && gNetMode == NETWORK_SERVER && gPacketMode == PACKETMODE_1 && myconnectindex == connecthead)
@@ -1087,18 +1090,18 @@ void ProcessFrame(void)
             gDemo.Close();
         sndFadeSong(4000);
         seqKillAll();
-        if (gGameOptions.uGameFlags&2)
+        if (gGameOptions.uGameFlags & 2)
         {
             if (gGameOptions.nGameType == 0)
             {
-                if (gGameOptions.uGameFlags&8)
+                if (gGameOptions.uGameFlags & 8)
                     levelPlayEndScene(gGameOptions.nEpisode);
                 gGameMenuMgr.Deactivate();
-                gGameMenuMgr.Push(&menuCredits,-1);
+                gGameMenuMgr.Push(&menuCredits, -1);
             }
             gGameOptions.uGameFlags &= ~3;
             gRestartGame = 1;
-            gQuitGame = 1;
+            gQuitGame    = 1;
         }
         else
         {
@@ -1108,93 +1111,90 @@ void ProcessFrame(void)
     }
 }
 
-SWITCH switches[] = {
-    { "?", 0, 0 },
-    { "help", 0, 0 },
-    { "broadcast", 1, 0 },
-    { "map", 2, 1 },
-    { "masterslave", 3, 0 },
-    //{ "net", 4, 1 },
-    { "nodudes", 5, 1 },
-    { "playback", 6, 1 },
-    { "record", 7, 1 },
-    { "robust", 8, 0 },
-    { "setupfile", 9, 1 },
-    { "skill", 10, 1 },
-    //{ "nocd", 11, 0 },
-    //{ "8250", 12, 0 },
-    { "ini", 13, 1 },
-    { "noaim", 14, 0 },
-    //{ "f", 15, 1 },
-    { "control", 16, 1 },
-    { "vector", 17, 1 },
-    { "quick", 18, 0 },
-    //{ "getopt", 19, 1 },
-    //{ "auto", 20, 1 },
-    { "pname", 21, 1 },
-    { "noresend", 22, 0 },
-    { "silentaim", 23, 0 },
-    { "nodemo", 25, 0 },
-    { "art", 26, 1 },
-    { "snd", 27, 1 },
-    { "rff", 28, 1 },
+SWITCH switches[] = { { "?", 0, 0 },
+                      { "help", 0, 0 },
+                      { "broadcast", 1, 0 },
+                      { "map", 2, 1 },
+                      { "masterslave", 3, 0 },
+                      //{ "net", 4, 1 },
+                      { "nodudes", 5, 1 },
+                      { "playback", 6, 1 },
+                      { "record", 7, 1 },
+                      { "robust", 8, 0 },
+                      { "setupfile", 9, 1 },
+                      { "skill", 10, 1 },
+                      //{ "nocd", 11, 0 },
+                      //{ "8250", 12, 0 },
+                      { "ini", 13, 1 },
+                      { "noaim", 14, 0 },
+                      //{ "f", 15, 1 },
+                      { "control", 16, 1 },
+                      { "vector", 17, 1 },
+                      { "quick", 18, 0 },
+                      //{ "getopt", 19, 1 },
+                      //{ "auto", 20, 1 },
+                      { "pname", 21, 1 },
+                      { "noresend", 22, 0 },
+                      { "silentaim", 23, 0 },
+                      { "nodemo", 25, 0 },
+                      { "art", 26, 1 },
+                      { "snd", 27, 1 },
+                      { "rff", 28, 1 },
 #ifdef USE_QHEAP
-    { "maxalloc", 29, 1 },
+                      { "maxalloc", 29, 1 },
 #endif
-    { "server", 30, 1 },
-    { "client", 31, 1 },
-    { "noautoload", 32, 0 },
-    { "usecwd", 33, 0 },
-    { "cachesize", 34, 1 },
-    { "g", 35, 1 },
-    { "grp", 35, 1 },
-    { "game_dir", 36, 1 },
-    { "cfg", 9, 1 },
-    { "setup", 37, 0 },
-    { "nosetup", 38, 0 },
-    { "port", 39, 1 },
-    { "h", 40, 1 },
-    { "mh", 41, 1 },
-    { "j", 42, 1 },
-    { "c", 43, 1 },
-    { "conf", 43, 1 },
-    { "noconsole", 43, 0 },
-    { NULL, 0, 0 }
-};
+                      { "server", 30, 1 },
+                      { "client", 31, 1 },
+                      { "noautoload", 32, 0 },
+                      { "usecwd", 33, 0 },
+                      { "cachesize", 34, 1 },
+                      { "g", 35, 1 },
+                      { "grp", 35, 1 },
+                      { "game_dir", 36, 1 },
+                      { "cfg", 9, 1 },
+                      { "setup", 37, 0 },
+                      { "nosetup", 38, 0 },
+                      { "port", 39, 1 },
+                      { "h", 40, 1 },
+                      { "mh", 41, 1 },
+                      { "j", 42, 1 },
+                      { "c", 43, 1 },
+                      { "conf", 43, 1 },
+                      { "noconsole", 43, 0 },
+                      { NULL, 0, 0 } };
 
 void PrintHelp(void)
 {
-    char tempbuf[128];
+    char              tempbuf[128];
     static char const s[] = "Usage: " APPBASENAME " [files] [options]\n"
-        "Example: " APPBASENAME " -usecwd -cfg myconfig.cfg -map nukeland.map\n\n"
-        "Files can be of type [grp|zip|map|def]\n"
-        "\n"
-        "-art [file.art]\tSpecify an art base file name\n"
-        "-cachesize #\tSet cache size in kB\n"
-        "-cfg [file.cfg]\tUse an alternate configuration file\n"
-        "-client [host]\tConnect to a multiplayer game\n"
-        "-game_dir [dir]\tSpecify game data directory\n"
-        "-g [file.grp]\tLoad additional game data\n"
-        "-h [file.def]\tLoad an alternate definitions file\n"
-        "-ini [file.ini]\tSpecify an INI file name (default is blood.ini)\n"
-        "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
-        "-map [file.map]\tLoad an external map file\n"
-        "-mh [file.def]\tInclude an additional definitions module\n"
-        "-noautoload\tDisable loading from autoload directory\n"
-        "-nodemo\t\tNo Demos\n"
-        "-nodudes\tNo monsters\n"
-        "-playback\tPlay back a demo\n"
-        "-pname\t\tOverride player name setting from config file\n"
-        "-record\t\tRecord demo\n"
-        "-rff\t\tSpecify an RFF file for Blood game resources\n"
-        "-server [players]\tStart a multiplayer server\n"
+                            "Example: " APPBASENAME " -usecwd -cfg myconfig.cfg -map nukeland.map\n\n"
+                            "Files can be of type [grp|zip|map|def]\n"
+                            "\n"
+                            "-art [file.art]\tSpecify an art base file name\n"
+                            "-cachesize #\tSet cache size in kB\n"
+                            "-cfg [file.cfg]\tUse an alternate configuration file\n"
+                            "-client [host]\tConnect to a multiplayer game\n"
+                            "-game_dir [dir]\tSpecify game data directory\n"
+                            "-g [file.grp]\tLoad additional game data\n"
+                            "-h [file.def]\tLoad an alternate definitions file\n"
+                            "-ini [file.ini]\tSpecify an INI file name (default is blood.ini)\n"
+                            "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
+                            "-map [file.map]\tLoad an external map file\n"
+                            "-mh [file.def]\tInclude an additional definitions module\n"
+                            "-noautoload\tDisable loading from autoload directory\n"
+                            "-nodemo\t\tNo Demos\n"
+                            "-nodudes\tNo monsters\n"
+                            "-playback\tPlay back a demo\n"
+                            "-pname\t\tOverride player name setting from config file\n"
+                            "-record\t\tRecord demo\n"
+                            "-rff\t\tSpecify an RFF file for Blood game resources\n"
+                            "-server [players]\tStart a multiplayer server\n"
 #ifdef STARTUP_SETUP_WINDOW
-        "-setup/nosetup\tEnable or disable startup window\n"
+                            "-setup/nosetup\tEnable or disable startup window\n"
 #endif
-        "-skill\t\tSet player handicap; Range:0..4; Default:2; (NOT difficulty level.)\n"
-        "-snd\t\tSpecify an RFF Sound file name\n"
-        "-usecwd\t\tRead data and configuration from current directory\n"
-        ;
+                            "-skill\t\tSet player handicap; Range:0..4; Default:2; (NOT difficulty level.)\n"
+                            "-snd\t\tSpecify an RFF Sound file name\n"
+                            "-usecwd\t\tRead data and configuration from current directory\n";
 #ifdef WM_MSGBOX_WINDOW
     Bsnprintf(tempbuf, sizeof(tempbuf), APPNAME " %s", s_buildRev);
     wm_msgbox(tempbuf, s);
@@ -1237,242 +1237,242 @@ void ParseOptions(void)
     {
         switch (option)
         {
-        case -3:
-            ThrowError("Invalid argument: %s", OptFull);
-            fallthrough__;
-        case 29:
+            case -3:
+                ThrowError("Invalid argument: %s", OptFull);
+                fallthrough__;
+            case 29:
 #ifdef USE_QHEAP
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            nMaxAlloc = atoi(OptArgv[0]);
-            if (!nMaxAlloc)
-                nMaxAlloc = 0x2000000;
-            break;
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                nMaxAlloc = atoi(OptArgv[0]);
+                if (!nMaxAlloc)
+                    nMaxAlloc = 0x2000000;
+                break;
 #endif
-        case 0:
-            PrintHelp();
-            break;
-        //case 19:
-        //    byte_148eec = 1;
-        //case 20:
-        //    if (OptArgc < 1)
-        //        ThrowError("Missing argument");
-        //    strncpy(byte_148ef0, OptArgv[0], 13);
-        //    byte_148ef0[12] = 0;
-        //    bQuickStart = 1;
-        //    byte_148eeb = 1;
-        //    if (gGameOptions.gameType == 0)
-        //        gGameOptions.gameType = 2;
-        //    break;
-        case 25:
-            bNoDemo = 1;
-            break;
-        case 18:
-            bQuickStart = 1;
-            break;
-        //case 12:
-        //    EightyTwoFifty = 1;
-        //    break;
-        case 1:
-            gPacketMode = PACKETMODE_2;
-            break;
-        case 21:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            strcpy(gPName, OptArgv[0]);
-            bCustomName = 1;
-            break;
-        case 2:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            strcpy(gUserMapFilename, OptArgv[0]);
-            bAddUserMap = 1;
-            bNoDemo = 1;
-            break;
-        case 3:
-            gPacketMode = PACKETMODE_2;
-            break;
-        case 4:
-            //if (OptArgc < 1)
-            //    ThrowError("Missing argument");
-            //if (gGameOptions.nGameType == 0)
-            //    gGameOptions.nGameType = 2;
-            break;
-        case 30:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            gNetPlayers = ClipRange(atoi(OptArgv[0]), 1, kMaxPlayers);
-            gNetMode = NETWORK_SERVER;
-            break;
-        case 31:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            gNetMode = NETWORK_CLIENT;
-            strncpy(gNetAddress, OptArgv[0], sizeof(gNetAddress)-1);
-            break;
-        case 14:
-            gAutoAim = 0;
-            break;
-        case 22:
-            bNoResend = 0;
-            break;
-        case 23:
-            bSilentAim = 1;
-            break;
-        case 5:
-            gGameOptions.nMonsterSettings = 0;
-            break;
-        case 6:
-            if (OptArgc < 1)
-                gDemo.SetupPlayback(NULL);
-            else
-                gDemo.SetupPlayback(OptArgv[0]);
-            break;
-        case 7:
-            if (OptArgc < 1)
-                gDemo.Create(NULL);
-            else
-                gDemo.Create(OptArgv[0]);
-            break;
-        case 8:
-            gRobust = 1;
-            break;
-        case 13:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            levelOverrideINI(OptArgv[0]);
-            bNoDemo = 1;
-            break;
-        case 26:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            pUserTiles = (char*)malloc(strlen(OptArgv[0])+1);
-            if (!pUserTiles)
-                return;
-            strcpy(pUserTiles, OptArgv[0]);
-            break;
-        case 27:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            pUserSoundRFF = (char*)malloc(strlen(OptArgv[0])+1);
-            if (!pUserSoundRFF)
-                return;
-            strcpy(pUserSoundRFF, OptArgv[0]);
-            break;
-        case 28:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            pUserRFF = (char*)malloc(strlen(OptArgv[0])+1);
-            if (!pUserRFF)
-                return;
-            strcpy(pUserRFF, OptArgv[0]);
-            break;
-        case 9:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            strcpy(SetupFilename, OptArgv[0]);
-            break;
-        case 10:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            gSkill = strtoul(OptArgv[0], NULL, 0);
-            if (gSkill < 0)
-                gSkill = 0;
-            else if (gSkill > 4)
-                gSkill = 4;
-            break;
-        case 15:
-            break;
-        case -2:
-        {
-            const char *k = strrchr(OptFull, '.');
-            if (k)
+            case 0:
+                PrintHelp();
+                break;
+            //case 19:
+            //    byte_148eec = 1;
+            //case 20:
+            //    if (OptArgc < 1)
+            //        ThrowError("Missing argument");
+            //    strncpy(byte_148ef0, OptArgv[0], 13);
+            //    byte_148ef0[12] = 0;
+            //    bQuickStart = 1;
+            //    byte_148eeb = 1;
+            //    if (gGameOptions.gameType == 0)
+            //        gGameOptions.gameType = 2;
+            //    break;
+            case 25:
+                bNoDemo = 1;
+                break;
+            case 18:
+                bQuickStart = 1;
+                break;
+            //case 12:
+            //    EightyTwoFifty = 1;
+            //    break;
+            case 1:
+                gPacketMode = PACKETMODE_2;
+                break;
+            case 21:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                strcpy(gPName, OptArgv[0]);
+                bCustomName = 1;
+                break;
+            case 2:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                strcpy(gUserMapFilename, OptArgv[0]);
+                bAddUserMap = 1;
+                bNoDemo     = 1;
+                break;
+            case 3:
+                gPacketMode = PACKETMODE_2;
+                break;
+            case 4:
+                //if (OptArgc < 1)
+                //    ThrowError("Missing argument");
+                //if (gGameOptions.nGameType == 0)
+                //    gGameOptions.nGameType = 2;
+                break;
+            case 30:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                gNetPlayers = ClipRange(atoi(OptArgv[0]), 1, kMaxPlayers);
+                gNetMode    = NETWORK_SERVER;
+                break;
+            case 31:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                gNetMode = NETWORK_CLIENT;
+                strncpy(gNetAddress, OptArgv[0], sizeof(gNetAddress) - 1);
+                break;
+            case 14:
+                gAutoAim = 0;
+                break;
+            case 22:
+                bNoResend = 0;
+                break;
+            case 23:
+                bSilentAim = 1;
+                break;
+            case 5:
+                gGameOptions.nMonsterSettings = 0;
+                break;
+            case 6:
+                if (OptArgc < 1)
+                    gDemo.SetupPlayback(NULL);
+                else
+                    gDemo.SetupPlayback(OptArgv[0]);
+                break;
+            case 7:
+                if (OptArgc < 1)
+                    gDemo.Create(NULL);
+                else
+                    gDemo.Create(OptArgv[0]);
+                break;
+            case 8:
+                gRobust = 1;
+                break;
+            case 13:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                levelOverrideINI(OptArgv[0]);
+                bNoDemo = 1;
+                break;
+            case 26:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                pUserTiles = (char *)malloc(strlen(OptArgv[0]) + 1);
+                if (!pUserTiles)
+                    return;
+                strcpy(pUserTiles, OptArgv[0]);
+                break;
+            case 27:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                pUserSoundRFF = (char *)malloc(strlen(OptArgv[0]) + 1);
+                if (!pUserSoundRFF)
+                    return;
+                strcpy(pUserSoundRFF, OptArgv[0]);
+                break;
+            case 28:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                pUserRFF = (char *)malloc(strlen(OptArgv[0]) + 1);
+                if (!pUserRFF)
+                    return;
+                strcpy(pUserRFF, OptArgv[0]);
+                break;
+            case 9:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                strcpy(SetupFilename, OptArgv[0]);
+                break;
+            case 10:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                gSkill = strtoul(OptArgv[0], NULL, 0);
+                if (gSkill < 0)
+                    gSkill = 0;
+                else if (gSkill > 4)
+                    gSkill = 4;
+                break;
+            case 15:
+                break;
+            case -2:
             {
-                if (!Bstrcasecmp(k, ".map"))
+                const char *k = strrchr(OptFull, '.');
+                if (k)
+                {
+                    if (!Bstrcasecmp(k, ".map"))
+                    {
+                        strcpy(gUserMapFilename, OptFull);
+                        bAddUserMap = 1;
+                        bNoDemo     = 1;
+                    }
+                    else if (!Bstrcasecmp(k, ".grp") || !Bstrcasecmp(k, ".zip") || !Bstrcasecmp(k, ".pk3") || !Bstrcasecmp(k, ".pk4"))
+                    {
+                        G_AddGroup(OptFull);
+                    }
+                    else if (!Bstrcasecmp(k, ".def"))
+                    {
+                        clearDefNamePtr();
+                        g_defNamePtr = dup_filename(OptFull);
+                        initprintf("Using DEF file \"%s\".\n", g_defNamePtr);
+                        continue;
+                    }
+                }
+                else
                 {
                     strcpy(gUserMapFilename, OptFull);
                     bAddUserMap = 1;
-                    bNoDemo = 1;
+                    bNoDemo     = 1;
                 }
-                else if (!Bstrcasecmp(k, ".grp") || !Bstrcasecmp(k, ".zip") || !Bstrcasecmp(k, ".pk3") || !Bstrcasecmp(k, ".pk4"))
-                {
-                    G_AddGroup(OptFull);
-                }
-                else if (!Bstrcasecmp(k, ".def"))
-                {
-                    clearDefNamePtr();
-                    g_defNamePtr = dup_filename(OptFull);
-                    initprintf("Using DEF file \"%s\".\n", g_defNamePtr);
-                    continue;
-                }
+                break;
             }
-            else
+            case 11:
+                //bNoCDAudio = 1;
+                break;
+            case 32:
+                initprintf("Autoload disabled\n");
+                bNoAutoLoad = true;
+                break;
+            case 33:
+                g_useCwd = true;
+                break;
+            case 34:
             {
-                strcpy(gUserMapFilename, OptFull);
-                bAddUserMap = 1;
-                bNoDemo = 1;
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                uint32_t j     = strtoul(OptArgv[0], NULL, 0);
+                MAXCACHE1DSIZE = j << 10;
+                initprintf("Cache size: %dkB\n", j);
+                break;
             }
-            break;
-        }
-        case 11:
-            //bNoCDAudio = 1;
-            break;
-        case 32:
-            initprintf("Autoload disabled\n");
-            bNoAutoLoad = true;
-            break;
-        case 33:
-            g_useCwd = true;
-            break;
-        case 34:
-        {
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            uint32_t j = strtoul(OptArgv[0], NULL, 0);
-            MAXCACHE1DSIZE = j<<10;
-            initprintf("Cache size: %dkB\n", j);
-            break;
-        }
-        case 35:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            G_AddGroup(OptArgv[0]);
-            break;
-        case 36:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            Bstrncpyz(g_modDir, OptArgv[0], sizeof(g_modDir));
-            G_AddPath(OptArgv[0]);
-            break;
-        case 37:
-            gCommandSetup = true;
-            break;
-        case 38:
-            gNoSetup = true;
-            gCommandSetup = false;
-            break;
-        case 39:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            gNetPort = strtoul(OptArgv[0], NULL, 0);
-            break;
-        case 40:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            G_AddDef(OptArgv[0]);
-            break;
-        case 41:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            G_AddDefModule(OptArgv[0]);
-            break;
-        case 42:
-            if (OptArgc < 1)
-                ThrowError("Missing argument");
-            G_AddPath(OptArgv[0]);
-            break;
-        case 43: // conf, noconsole
-            break;
+            case 35:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                G_AddGroup(OptArgv[0]);
+                break;
+            case 36:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                Bstrncpyz(g_modDir, OptArgv[0], sizeof(g_modDir));
+                G_AddPath(OptArgv[0]);
+                break;
+            case 37:
+                gCommandSetup = true;
+                break;
+            case 38:
+                gNoSetup      = true;
+                gCommandSetup = false;
+                break;
+            case 39:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                gNetPort = strtoul(OptArgv[0], NULL, 0);
+                break;
+            case 40:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                G_AddDef(OptArgv[0]);
+                break;
+            case 41:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                G_AddDefModule(OptArgv[0]);
+                break;
+            case 42:
+                if (OptArgc < 1)
+                    ThrowError("Missing argument");
+                G_AddPath(OptArgv[0]);
+                break;
+            case 43:  // conf, noconsole
+                break;
         }
     }
 #if 0
@@ -1496,13 +1496,10 @@ void ClockStrobe()
 
 #if defined(_WIN32) && defined(DEBUGGINGAIDS)
 // See FILENAME_CASE_CHECK in cache1d.c
-static int32_t check_filename_casing(void)
-{
-    return 1;
-}
+static int32_t check_filename_casing(void) { return 1; }
 #endif
 
-int app_main(int argc, char const * const * argv)
+int app_main(int argc, char const *const *argv)
 {
     char buffer[BMAX_PATH];
     margc = argc;
@@ -1516,7 +1513,7 @@ int app_main(int argc, char const * const * argv)
 #else
         if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
 #endif
-                      "Are you sure you want to start another copy?"))
+                               "Are you sure you want to start another copy?"))
             return 3;
     }
 #endif
@@ -1533,14 +1530,7 @@ int app_main(int argc, char const * const * argv)
 
     OSD_SetLogFile(APPBASENAME ".log");
 
-    OSD_SetFunctions(NULL,
-                     NULL,
-                     NULL,
-                     NULL,
-                     NULL,
-                     GAME_clearbackground,
-                     BGetTime,
-                     GAME_onshowosd);
+    OSD_SetFunctions(NULL, NULL, NULL, NULL, NULL, GAME_clearbackground, BGetTime, GAME_onshowosd);
 
     wm_setapptitle(APPNAME);
 
@@ -1556,17 +1546,17 @@ int app_main(int argc, char const * const * argv)
 
     // used with binds for fast function lookup
     hash_init(&h_gamefuncs);
-    for (bssize_t i=NUMGAMEFUNCTIONS-1; i>=0; i--)
+    for (bssize_t i = NUMGAMEFUNCTIONS - 1; i >= 0; i--)
     {
         if (gamefunctions[i][0] == '\0')
             continue;
 
         char *str = Bstrtolower(Xstrdup(gamefunctions[i]));
-        hash_add(&h_gamefuncs,gamefunctions[i],i,0);
-        hash_add(&h_gamefuncs,str,i,0);
+        hash_add(&h_gamefuncs, gamefunctions[i], i, 0);
+        hash_add(&h_gamefuncs, str, i, 0);
         Bfree(str);
     }
-    
+
 #ifdef STARTUP_SETUP_WINDOW
     int const readSetup =
 #endif
@@ -1577,8 +1567,7 @@ int app_main(int argc, char const * const * argv)
     if (enginePreInit())
     {
 #ifdef WM_MSGBOX_WINDOW
-        wm_msgbox("Build Engine Initialization Error",
-                  "There was a problem initializing the Build engine: %s", engineerrstr);
+        wm_msgbox("Build Engine Initialization Error", "There was a problem initializing the Build engine: %s", engineerrstr);
 #endif
         ERRprintf("app_main: There was a problem initializing the Build engine: %s\n", engineerrstr);
         Bexit(2);
@@ -1626,18 +1615,18 @@ int app_main(int argc, char const * const * argv)
 
     initprintf("Creating standard color lookups\n");
     scrCreateStdColors();
-    
+
     initprintf("Loading tiles\n");
     if (pUserTiles)
     {
-        strcpy(buffer,pUserTiles);
-        strcat(buffer,"%03i.ART");
-        if (!tileInit(0,buffer))
+        strcpy(buffer, pUserTiles);
+        strcat(buffer, "%03i.ART");
+        if (!tileInit(0, buffer))
             ThrowError("User specified ART files not found");
     }
     else
     {
-        if (!tileInit(0,NULL))
+        if (!tileInit(0, NULL))
             ThrowError("TILES###.ART files not found");
     }
 
@@ -1649,11 +1638,11 @@ int app_main(int argc, char const * const * argv)
     loaddefinitions_game(BLOODWIDESCREENDEF, FALSE);
 
     const char *defsfile = G_DefFile();
-    uint32_t stime = timerGetTicks();
+    uint32_t    stime    = timerGetTicks();
     if (!loaddefinitionsfile(defsfile))
     {
         uint32_t etime = timerGetTicks();
-        initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime-stime);
+        initprintf("Definitions file \"%s\" loaded in %d ms.\n", defsfile, etime - stime);
     }
     loaddefinitions_game(defsfile, FALSE);
     powerupInit();
@@ -1693,7 +1682,7 @@ int app_main(int argc, char const * const * argv)
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
 
     char *const setupFileName = Xstrdup(SetupFilename);
-    char *const p = strtok(setupFileName, ".");
+    char *const p             = strtok(setupFileName, ".");
 
     if (!p || !Bstrcmp(SetupFilename, SETUPFILENAME))
         Bsprintf(buffer, "settings.cfg");
@@ -1723,7 +1712,7 @@ RESTART:
     if (gRestartGame)
     {
         // Network error
-        gQuitGame = false;
+        gQuitGame    = false;
         gRestartGame = false;
         netDeinitialize();
         netResetToSinglePlayer();
@@ -1733,7 +1722,7 @@ RESTART:
     if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
         gDemo.SetupPlayback(NULL);
     viewSetCrosshairColor(CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
-    gQuitGame = 0;
+    gQuitGame    = 0;
     gRestartGame = 0;
     if (gGameOptions.nGameType > 0)
     {
@@ -1753,11 +1742,11 @@ RESTART:
         bool bDraw;
         if (gGameStarted)
         {
-            char gameUpdate = false;
+            char         gameUpdate          = false;
             double const gameUpdateStartTime = timerGetHiTicks();
             while (gPredictTail < gNetFifoHead[myconnectindex] && !gPaused)
             {
-                viewUpdatePrediction(&gFifoInput[gPredictTail&255][myconnectindex]);
+                viewUpdatePrediction(&gFifoInput[gPredictTail & 255][myconnectindex]);
             }
             if (numplayers == 1)
                 gBufferJitter = 0;
@@ -1765,7 +1754,7 @@ RESTART:
             {
                 netGetInput();
                 gNetFifoClock += 4;
-                while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
+                while (gNetFifoHead[myconnectindex] - gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
                 {
                     int i;
                     for (i = connecthead; i >= 0; i = connectpoint2[i])
@@ -1783,7 +1772,7 @@ RESTART:
                 g_gameUpdateTime = timerGetHiTicks() - gameUpdateStartTime;
                 if (g_gameUpdateAvgTime < 0.f)
                     g_gameUpdateAvgTime = g_gameUpdateTime;
-                g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
+                g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
             }
             bDraw = viewFPSLimit() != 0;
             if (gQuitRequest && gQuitGame)
@@ -1804,7 +1793,7 @@ RESTART:
             if (bDraw)
             {
                 videoClearScreen(0);
-                rotatesprite(160<<16,100<<16,65536,0,2518,0,0,0x4a,0,0,xdim-1,ydim-1);
+                rotatesprite(160 << 16, 100 << 16, 65536, 0, 2518, 0, 0, 0x4a, 0, 0, xdim - 1, ydim - 1);
             }
             if (gQuitRequest && !gQuitGame)
                 netBroadcastMyLogoff(gQuitRequest == 2);
@@ -1814,21 +1803,21 @@ RESTART:
             if (gameHandleEvents() && quitevent)
             {
                 KB_KeyDown[sc_Escape] = 1;
-                quitevent = 0;
+                quitevent             = 0;
             }
             MUSIC_Update();
             CONTROL_BindsEnabled = gInputMode == INPUT_MODE_0;
             switch (gInputMode)
             {
-            case INPUT_MODE_1:
-                if (gGameMenuMgr.m_bActive)
-                    gGameMenuMgr.Process();
-                break;
-            case INPUT_MODE_0:
-                LocalKeys();
-                break;
-            default:
-                break;
+                case INPUT_MODE_1:
+                    if (gGameMenuMgr.m_bActive)
+                        gGameMenuMgr.Process();
+                    break;
+                case INPUT_MODE_0:
+                    LocalKeys();
+                    break;
+                default:
+                    break;
             }
             if (gQuitGame)
                 continue;
@@ -1839,20 +1828,20 @@ RESTART:
 
             switch (gInputMode)
             {
-            case INPUT_MODE_1:
-                if (gGameMenuMgr.m_bActive)
-                    gGameMenuMgr.Draw();
-                break;
-            case INPUT_MODE_2:
-                gPlayerMsg.ProcessKeys();
-                gPlayerMsg.Draw();
-                break;
-            case INPUT_MODE_3:
-                gEndGameMgr.ProcessKeys();
-                gEndGameMgr.Draw();
-                break;
-            default:
-                break;
+                case INPUT_MODE_1:
+                    if (gGameMenuMgr.m_bActive)
+                        gGameMenuMgr.Draw();
+                    break;
+                case INPUT_MODE_2:
+                    gPlayerMsg.ProcessKeys();
+                    gPlayerMsg.Draw();
+                    break;
+                case INPUT_MODE_3:
+                    gEndGameMgr.ProcessKeys();
+                    gEndGameMgr.Draw();
+                    break;
+                default:
+                    break;
             }
             videoNextPage();
         }
@@ -1878,11 +1867,11 @@ RESTART:
         UpdateDacs(0, true);
         sndStopSong();
         FX_StopAllSounds();
-        gQuitGame = 0;
+        gQuitGame    = 0;
         gQuitRequest = 0;
         gRestartGame = 0;
         gGameStarted = 0;
-        levelSetupOptions(0,0);
+        levelSetupOptions(0, 0);
         while (gGameMenuMgr.m_bActive)
         {
             gGameMenuMgr.Process();
@@ -1898,7 +1887,7 @@ RESTART:
         {
             if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
                 gDemo.NextDemo();
-            videoSetViewableArea(0,0,xdim-1,ydim-1);
+            videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
             if (!bQuickStart)
                 credLogosDos();
             scrSetDac();
@@ -1914,14 +1903,14 @@ static int32_t S_DefineAudioIfSupported(char *fn, const char *name)
 {
 #if !defined HAVE_FLAC || !defined HAVE_VORBIS
     const char *extension = Bstrrchr(name, '.');
-# if !defined HAVE_FLAC
+#if !defined HAVE_FLAC
     if (extension && !Bstrcasecmp(extension, ".flac"))
         return -2;
-# endif
-# if !defined HAVE_VORBIS
+#endif
+#if !defined HAVE_VORBIS
     if (extension && !Bstrcasecmp(extension, ".ogg"))
         return -2;
-# endif
+#endif
 #endif
     Bstrncpy(fn, name, BMAX_PATH);
     return 0;
@@ -1936,11 +1925,11 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
 
     Bassert(ID != NULL);
 
-    if (!Bstrcmp(ID,"intro"))
+    if (!Bstrcmp(ID, "intro"))
     {
         sel = MUS_INTRO;
     }
-    else if (!Bstrcmp(ID,"loading"))
+    else if (!Bstrcmp(ID, "loading"))
     {
         sel = MUS_LOADING;
     }
@@ -1951,8 +1940,8 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
             return -1;
     }
 
-    int nEpisode = sel/kMaxLevels;
-    int nLevel = sel%kMaxLevels;
+    int nEpisode = sel / kMaxLevels;
+    int nLevel   = sel % kMaxLevels;
     return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, name);
 }
 
@@ -1964,11 +1953,11 @@ static void parsedefinitions_game_include(const char *fileName, scriptfile *pScr
 
     if (!included)
     {
-        if (!Bstrcasecmp(cmdtokptr,"null") || pScript == NULL) // this is a bit overboard to prevent unused parameter warnings
-            {
-           // initprintf("Warning: Failed including %s as module\n", fn);
-            }
-/*
+        if (!Bstrcasecmp(cmdtokptr, "null") || pScript == NULL)  // this is a bit overboard to prevent unused parameter warnings
+        {
+            // initprintf("Warning: Failed including %s as module\n", fn);
+        }
+        /*
         else
             {
             initprintf("Warning: Failed including %s on line %s:%d\n",
@@ -2077,35 +2066,27 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
     int   token;
     char *pToken;
 
-    static const tokenlist tokens[] =
-    {
-        { "include",         T_INCLUDE          },
-        { "#include",        T_INCLUDE          },
-        { "includedefault",  T_INCLUDEDEFAULT   },
-        { "#includedefault", T_INCLUDEDEFAULT   },
-        { "loadgrp",         T_LOADGRP          },
-        { "cachesize",       T_CACHESIZE        },
-        { "noautoload",      T_NOAUTOLOAD       },
-        { "music",           T_MUSIC            },
-        { "sound",           T_SOUND            },
+    static const tokenlist tokens[] = {
+        { "include", T_INCLUDE },
+        { "#include", T_INCLUDE },
+        { "includedefault", T_INCLUDEDEFAULT },
+        { "#includedefault", T_INCLUDEDEFAULT },
+        { "loadgrp", T_LOADGRP },
+        { "cachesize", T_CACHESIZE },
+        { "noautoload", T_NOAUTOLOAD },
+        { "music", T_MUSIC },
+        { "sound", T_SOUND },
         //{ "cutscene",        T_CUTSCENE         },
         //{ "animsounds",      T_ANIMSOUNDS       },
-        { "renamefile",      T_RENAMEFILE       },
-        { "globalgameflags", T_GLOBALGAMEFLAGS  },
-        { "rffdefineid",     T_RFFDEFINEID      },
-        { "tilefromtexture", T_TILEFROMTEXTURE  },
+        { "renamefile", T_RENAMEFILE },
+        { "globalgameflags", T_GLOBALGAMEFLAGS },
+        { "rffdefineid", T_RFFDEFINEID },
+        { "tilefromtexture", T_TILEFROMTEXTURE },
     };
 
-    static const tokenlist soundTokens[] =
-    {
-        { "id",       T_ID },
-        { "file",     T_FILE },
-        { "minpitch", T_MINPITCH },
-        { "maxpitch", T_MAXPITCH },
-        { "priority", T_PRIORITY },
-        { "type",     T_TYPE },
-        { "distance", T_DISTANCE },
-        { "volume",   T_VOLUME },
+    static const tokenlist soundTokens[] = {
+        { "id", T_ID },     { "file", T_FILE },         { "minpitch", T_MINPITCH }, { "maxpitch", T_MAXPITCH }, { "priority", T_PRIORITY },
+        { "type", T_TYPE }, { "distance", T_DISTANCE }, { "volume", T_VOLUME },
     };
 
 #if 0
@@ -2127,242 +2108,242 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
         switch (token)
         {
-        case T_LOADGRP:
-        {
-            char *fileName;
-
-            pathsearchmode = 1;
-            if (!scriptfile_getstring(pScript,&fileName) && firstPass)
+            case T_LOADGRP:
             {
-                if (initgroupfile(fileName) == -1)
-                    initprintf("Could not find file \"%s\".\n", fileName);
-                else
+                char *fileName;
+
+                pathsearchmode = 1;
+                if (!scriptfile_getstring(pScript, &fileName) && firstPass)
                 {
-                    initprintf("Using file \"%s\" as game data.\n", fileName);
-                    if (!bNoAutoLoad && !gSetup.noautoload)
-                        G_DoAutoload(fileName);
-                }
-            }
-
-            pathsearchmode = 0;
-        }
-        break;
-        case T_CACHESIZE:
-        {
-            int32_t cacheSize;
-
-            if (scriptfile_getnumber(pScript, &cacheSize) || !firstPass)
-                break;
-
-            if (cacheSize > 0)
-                MAXCACHE1DSIZE = cacheSize << 10;
-        }
-        break;
-        case T_INCLUDE:
-        {
-            char *fileName;
-
-            if (!scriptfile_getstring(pScript, &fileName))
-                parsedefinitions_game_include(fileName, pScript, pToken, firstPass);
-
-            break;
-        }
-        case T_INCLUDEDEFAULT:
-        {
-            parsedefinitions_game_include(G_DefaultDefFile(), pScript, pToken, firstPass);
-            break;
-        }
-        case T_NOAUTOLOAD:
-            if (firstPass)
-                bNoAutoLoad = true;
-            break;
-        case T_MUSIC:
-        {
-            char *tokenPtr = pScript->ltextptr;
-            char *musicID  = NULL;
-            char *fileName = NULL;
-            char *musicEnd;
-
-            if (scriptfile_getbraces(pScript, &musicEnd))
-                break;
-
-            while (pScript->textptr < musicEnd)
-            {
-                switch (getatoken(pScript, soundTokens, ARRAY_SIZE(soundTokens)))
-                {
-                    case T_ID: scriptfile_getstring(pScript, &musicID); break;
-                    case T_FILE: scriptfile_getstring(pScript, &fileName); break;
-                }
-            }
-
-            if (!firstPass)
-            {
-                if (musicID==NULL)
-                {
-                    initprintf("Error: missing ID for music definition near line %s:%d\n",
-                               pScript->filename, scriptfile_getlinum(pScript,tokenPtr));
-                    break;
-                }
-
-                if (fileName == NULL || check_file_exist(fileName))
-                    break;
-
-                if (S_DefineMusic(musicID, fileName) == -1)
-                    initprintf("Error: invalid music ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
-            }
-        }
-        break;
-
-        case T_RFFDEFINEID:
-        {
-            char *resName = NULL;
-            char *resType = NULL;
-            char *rffName = NULL;
-            int resID;
-
-            if (scriptfile_getstring(pScript, &resName))
-                break;
-
-            if (scriptfile_getstring(pScript, &resType))
-                break;
-
-            if (scriptfile_getnumber(pScript, &resID))
-                break;
-
-            if (scriptfile_getstring(pScript, &rffName))
-                break;
-
-            if (!firstPass)
-            {
-                if (!Bstrcasecmp(rffName, "SYSTEM"))
-                    gSysRes.AddExternalResource(resName, resType, resID);
-                else if (!Bstrcasecmp(rffName, "SOUND"))
-                    gSoundRes.AddExternalResource(resName, resType, resID);
-            }
-        }
-        break;
-
-        case T_TILEFROMTEXTURE:
-        {
-            char *texturetokptr = pScript->ltextptr, *textureend;
-            int32_t tile = -1;
-            int32_t havesurface = 0, havevox = 0, haveview = 0, haveshade = 0;
-            int32_t surface = 0, vox = 0, view = 0, shade = 0;
-            int32_t tile_crc32 = 0;
-            vec2_t  tile_size{};
-            uint8_t have_crc32 = 0;
-            uint8_t have_size = 0;
-
-            static const tokenlist tilefromtexturetokens[] =
-            {
-                { "surface", T_SURFACE },
-                { "voxel",   T_VOXEL },
-                { "ifcrc",   T_IFCRC },
-                { "view",    T_VIEW },
-                { "shade",   T_SHADE },
-            };
-
-            if (scriptfile_getsymbol(pScript,&tile)) break;
-            if (scriptfile_getbraces(pScript,&textureend)) break;
-            while (pScript->textptr < textureend)
-            {
-                int32_t token = getatoken(pScript,tilefromtexturetokens,ARRAY_SIZE(tilefromtexturetokens));
-                switch (token)
-                {
-                case T_IFCRC:
-                    scriptfile_getsymbol(pScript, &tile_crc32);
-                    have_crc32 = 1;
-                    break;
-                case T_IFMATCH:
-                {
-                    char *ifmatchend;
-
-                    static const tokenlist ifmatchtokens[] =
+                    if (initgroupfile(fileName) == -1)
+                        initprintf("Could not find file \"%s\".\n", fileName);
+                    else
                     {
-                        { "crc32",           T_CRC32 },
-                        { "size",            T_SIZE },
-                    };
+                        initprintf("Using file \"%s\" as game data.\n", fileName);
+                        if (!bNoAutoLoad && !gSetup.noautoload)
+                            G_DoAutoload(fileName);
+                    }
+                }
 
-                    if (scriptfile_getbraces(pScript,&ifmatchend)) break;
-                    while (pScript->textptr < ifmatchend)
+                pathsearchmode = 0;
+            }
+            break;
+            case T_CACHESIZE:
+            {
+                int32_t cacheSize;
+
+                if (scriptfile_getnumber(pScript, &cacheSize) || !firstPass)
+                    break;
+
+                if (cacheSize > 0)
+                    MAXCACHE1DSIZE = cacheSize << 10;
+            }
+            break;
+            case T_INCLUDE:
+            {
+                char *fileName;
+
+                if (!scriptfile_getstring(pScript, &fileName))
+                    parsedefinitions_game_include(fileName, pScript, pToken, firstPass);
+
+                break;
+            }
+            case T_INCLUDEDEFAULT:
+            {
+                parsedefinitions_game_include(G_DefaultDefFile(), pScript, pToken, firstPass);
+                break;
+            }
+            case T_NOAUTOLOAD:
+                if (firstPass)
+                    bNoAutoLoad = true;
+                break;
+            case T_MUSIC:
+            {
+                char *tokenPtr = pScript->ltextptr;
+                char *musicID  = NULL;
+                char *fileName = NULL;
+                char *musicEnd;
+
+                if (scriptfile_getbraces(pScript, &musicEnd))
+                    break;
+
+                while (pScript->textptr < musicEnd)
+                {
+                    switch (getatoken(pScript, soundTokens, ARRAY_SIZE(soundTokens)))
                     {
-                        int32_t token = getatoken(pScript,ifmatchtokens,ARRAY_SIZE(ifmatchtokens));
-                        switch (token)
-                        {
-                        case T_CRC32:
+                        case T_ID:
+                            scriptfile_getstring(pScript, &musicID);
+                            break;
+                        case T_FILE:
+                            scriptfile_getstring(pScript, &fileName);
+                            break;
+                    }
+                }
+
+                if (!firstPass)
+                {
+                    if (musicID == NULL)
+                    {
+                        initprintf("Error: missing ID for music definition near line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                        break;
+                    }
+
+                    if (fileName == NULL || check_file_exist(fileName))
+                        break;
+
+                    if (S_DefineMusic(musicID, fileName) == -1)
+                        initprintf("Error: invalid music ID on line %s:%d\n", pScript->filename, scriptfile_getlinum(pScript, tokenPtr));
+                }
+            }
+            break;
+
+            case T_RFFDEFINEID:
+            {
+                char *resName = NULL;
+                char *resType = NULL;
+                char *rffName = NULL;
+                int   resID;
+
+                if (scriptfile_getstring(pScript, &resName))
+                    break;
+
+                if (scriptfile_getstring(pScript, &resType))
+                    break;
+
+                if (scriptfile_getnumber(pScript, &resID))
+                    break;
+
+                if (scriptfile_getstring(pScript, &rffName))
+                    break;
+
+                if (!firstPass)
+                {
+                    if (!Bstrcasecmp(rffName, "SYSTEM"))
+                        gSysRes.AddExternalResource(resName, resType, resID);
+                    else if (!Bstrcasecmp(rffName, "SOUND"))
+                        gSoundRes.AddExternalResource(resName, resType, resID);
+                }
+            }
+            break;
+
+            case T_TILEFROMTEXTURE:
+            {
+                char *  texturetokptr = pScript->ltextptr, *textureend;
+                int32_t tile          = -1;
+                int32_t havesurface = 0, havevox = 0, haveview = 0, haveshade = 0;
+                int32_t surface = 0, vox = 0, view = 0, shade = 0;
+                int32_t tile_crc32 = 0;
+                vec2_t  tile_size {};
+                uint8_t have_crc32 = 0;
+                uint8_t have_size  = 0;
+
+                static const tokenlist tilefromtexturetokens[] = {
+                    { "surface", T_SURFACE }, { "voxel", T_VOXEL }, { "ifcrc", T_IFCRC }, { "view", T_VIEW }, { "shade", T_SHADE },
+                };
+
+                if (scriptfile_getsymbol(pScript, &tile))
+                    break;
+                if (scriptfile_getbraces(pScript, &textureend))
+                    break;
+                while (pScript->textptr < textureend)
+                {
+                    int32_t token = getatoken(pScript, tilefromtexturetokens, ARRAY_SIZE(tilefromtexturetokens));
+                    switch (token)
+                    {
+                        case T_IFCRC:
                             scriptfile_getsymbol(pScript, &tile_crc32);
                             have_crc32 = 1;
                             break;
-                        case T_SIZE:
-                            scriptfile_getsymbol(pScript, &tile_size.x);
-                            scriptfile_getsymbol(pScript, &tile_size.y);
-                            have_size = 1;
+                        case T_IFMATCH:
+                        {
+                            char *ifmatchend;
+
+                            static const tokenlist ifmatchtokens[] = {
+                                { "crc32", T_CRC32 },
+                                { "size", T_SIZE },
+                            };
+
+                            if (scriptfile_getbraces(pScript, &ifmatchend))
+                                break;
+                            while (pScript->textptr < ifmatchend)
+                            {
+                                int32_t token = getatoken(pScript, ifmatchtokens, ARRAY_SIZE(ifmatchtokens));
+                                switch (token)
+                                {
+                                    case T_CRC32:
+                                        scriptfile_getsymbol(pScript, &tile_crc32);
+                                        have_crc32 = 1;
+                                        break;
+                                    case T_SIZE:
+                                        scriptfile_getsymbol(pScript, &tile_size.x);
+                                        scriptfile_getsymbol(pScript, &tile_size.y);
+                                        have_size = 1;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
                             break;
-                        default:
+                        }
+                        case T_SURFACE:
+                            havesurface = 1;
+                            scriptfile_getsymbol(pScript, &surface);
+                            break;
+                        case T_VOXEL:
+                            havevox = 1;
+                            scriptfile_getsymbol(pScript, &vox);
+                            break;
+                        case T_VIEW:
+                            haveview = 1;
+                            scriptfile_getsymbol(pScript, &view);
+                            break;
+                        case T_SHADE:
+                            haveshade = 1;
+                            scriptfile_getsymbol(pScript, &shade);
+                            break;
+                    }
+                }
+
+                if (!firstPass)
+                {
+                    if (EDUKE32_PREDICT_FALSE((unsigned)tile >= MAXUSERTILES))
+                    {
+                        initprintf("Error: missing or invalid 'tile number' for texture definition near line %s:%d\n", pScript->filename,
+                                   scriptfile_getlinum(pScript, texturetokptr));
+                        break;
+                    }
+
+                    if (have_crc32)
+                    {
+                        int32_t const orig_crc32 = tileGetCRC32(tile);
+                        if (orig_crc32 != tile_crc32)
+                        {
+                            // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
                             break;
                         }
                     }
-                    break;
-                }
-                case T_SURFACE:
-                    havesurface = 1;
-                    scriptfile_getsymbol(pScript, &surface);
-                    break;
-                case T_VOXEL:
-                    havevox = 1;
-                    scriptfile_getsymbol(pScript, &vox);
-                    break;
-                case T_VIEW:
-                    haveview = 1;
-                    scriptfile_getsymbol(pScript, &view);
-                    break;
-                case T_SHADE:
-                    haveshade = 1;
-                    scriptfile_getsymbol(pScript, &shade);
-                    break;
+
+                    if (have_size)
+                    {
+                        vec2_16_t const orig_size = tileGetSize(tile);
+                        if (orig_size.x != tile_size.x && orig_size.y != tile_size.y)
+                        {
+                            // initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
+                            break;
+                        }
+                    }
+
+                    if (havesurface)
+                        surfType[tile] = surface;
+                    if (havevox)
+                        voxelIndex[tile] = vox;
+                    if (haveshade)
+                        tileShade[tile] = shade;
+                    if (haveview)
+                        picanm[tile].extra = view & 7;
                 }
             }
-
-            if (!firstPass)
-            {
-                if (EDUKE32_PREDICT_FALSE((unsigned)tile >= MAXUSERTILES))
-                {
-                    initprintf("Error: missing or invalid 'tile number' for texture definition near line %s:%d\n",
-                               pScript->filename, scriptfile_getlinum(pScript,texturetokptr));
-                    break;
-                }
-
-                if (have_crc32)
-                {
-                    int32_t const orig_crc32 = tileGetCRC32(tile);
-                    if (orig_crc32 != tile_crc32)
-                    {
-                        // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
-                        break;
-                    }
-                }
-
-                if (have_size)
-                {
-                    vec2_16_t const orig_size = tileGetSize(tile);
-                    if (orig_size.x != tile_size.x && orig_size.y != tile_size.y)
-                    {
-                        // initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
-                        break;
-                    }
-                }
-
-                if (havesurface)
-                    surfType[tile] = surface;
-                if (havevox)
-                    voxelIndex[tile] = vox;
-                if (haveshade)
-                    tileShade[tile] = shade;
-                if (haveview)
-                    picanm[tile].extra = view&7;
-            }
-        }
-        break;
+            break;
 
 #if 0
         case T_CUTSCENE:
@@ -2513,12 +2494,15 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         }
         break;
 #endif
-        case T_GLOBALGAMEFLAGS: scriptfile_getnumber(pScript, &blood_globalflags); break;
-        case T_EOF: return 0;
-        default: break;
+            case T_GLOBALGAMEFLAGS:
+                scriptfile_getnumber(pScript, &blood_globalflags);
+                break;
+            case T_EOF:
+                return 0;
+            default:
+                break;
         }
-    }
-    while (1);
+    } while (1);
 
     return 0;
 }
@@ -2530,7 +2514,7 @@ int loaddefinitions_game(const char *fileName, int32_t firstPass)
     if (pScript)
         parsedefinitions_game(pScript, firstPass);
 
-    for (char const * m : g_defModules)
+    for (char const *m : g_defModules)
         parsedefinitions_game_include(m, NULL, "null", firstPass);
 
     if (pScript)
@@ -2541,13 +2525,11 @@ int loaddefinitions_game(const char *fileName, int32_t firstPass)
     return 0;
 }
 
-INICHAIN *pINIChain;
-INICHAIN const*pINISelected;
-int nINICount = 0;
+INICHAIN *      pINIChain;
+INICHAIN const *pINISelected;
+int             nINICount = 0;
 
-const char *pzCrypticArts[] = {
-    "CPART07.AR_", "CPART15.AR_"
-};
+const char *pzCrypticArts[] = { "CPART07.AR_", "CPART15.AR_" };
 
 INIDESCRIPTION gINIDescription[] = {
     { "BLOOD: One Unit Whole Blood", "BLOOD.INI", NULL, 0 },
@@ -2556,17 +2538,18 @@ INIDESCRIPTION gINIDescription[] = {
 
 bool AddINIFile(const char *pzFile, bool bForce = false)
 {
-    char *pzFN;
-    struct Bstat st;
+    char *           pzFN;
+    struct Bstat     st;
     static INICHAIN *pINIIter = NULL;
     if (!bForce)
     {
-        if (findfrompath(pzFile, &pzFN)) return false; // failed to resolve the filename
+        if (findfrompath(pzFile, &pzFN))
+            return false;  // failed to resolve the filename
         if (Bstat(pzFN, &st))
         {
             Bfree(pzFN);
             return false;
-        } // failed to stat the file
+        }  // failed to stat the file
         Bfree(pzFN);
         IniFile *pTempIni = new IniFile(pzFile);
         if (!pTempIni->FindSection("Episode1"))
@@ -2580,7 +2563,7 @@ bool AddINIFile(const char *pzFile, bool bForce = false)
         pINIIter = pINIChain = new INICHAIN;
     else
         pINIIter = pINIIter->pNext = new INICHAIN;
-    pINIIter->pNext = NULL;
+    pINIIter->pNext        = NULL;
     pINIIter->pDescription = NULL;
     Bstrncpy(pINIIter->zName, pzFile, BMAX_PATH);
     for (int i = 0; i < ARRAY_SSIZE(gINIDescription); i++)
@@ -2596,19 +2579,26 @@ bool AddINIFile(const char *pzFile, bool bForce = false)
 
 void ScanINIFiles(void)
 {
-    nINICount = 0;
+    nINICount                   = 0;
     BUILDVFS_FIND_REC *pINIList = klistpath("/", "*.ini", BUILDVFS_FIND_FILE);
-    pINIChain = NULL;
+    pINIChain                   = NULL;
+    bool iniExists               = false;
+    //check if input param INI file is already in the Nblood folder to fix duplicate or case sensitive issues (linux) INI showing in menu.
+    for (auto pIter = pINIList; pIter; pIter = pIter->next)
+    {
+        if (Bstrncasecmp(BloodIniFile, pIter->name, BMAX_PATH) == 0)
+        {
+            iniExists   = true;
+        }
+        AddINIFile(pIter->name);
+    }
 
-    if (bINIOverride || !pINIList)
+    if (bINIOverride && !iniExists)
     {
         AddINIFile(BloodIniFile, true);
     }
 
-    for (auto pIter = pINIList; pIter; pIter = pIter->next)
-    {
-        AddINIFile(pIter->name);
-    }
+    
     klistfree(pINIList);
     pINISelected = pINIChain;
     for (auto pIter = pINIChain; pIter; pIter = pIter->pNext)
@@ -2630,7 +2620,7 @@ bool LoadArtFile(const char *pzFile)
         return false;
     }
     artheader_t artheader;
-    int nStatus = artReadHeader(hFile, pzFile, &artheader);
+    int         nStatus = artReadHeader(hFile, pzFile, &artheader);
     if (nStatus != 0)
     {
         kclose(hFile);
@@ -2657,22 +2647,16 @@ void LoadExtraArts(void)
     }
 }
 
-bool DemoRecordStatus(void) {
-    return gDemo.at0;
-}
+bool DemoRecordStatus(void) { return gDemo.at0; }
 
-bool VanillaMode() {
-    return gDemo.m_bLegacy && gDemo.at1;
-}
+bool VanillaMode() { return gDemo.m_bLegacy && gDemo.at1; }
 
-bool fileExistsRFF(int id, const char *ext) {
-    return gSysRes.Lookup(id, ext);
-}
+bool fileExistsRFF(int id, const char *ext) { return gSysRes.Lookup(id, ext); }
 
 int sndTryPlaySpecialMusic(int nMusic)
 {
-    int nEpisode = nMusic/kMaxLevels;
-    int nLevel = nMusic%kMaxLevels;
+    int nEpisode = nMusic / kMaxLevels;
+    int nLevel   = nMusic % kMaxLevels;
     if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, true))
     {
         strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
@@ -2683,8 +2667,8 @@ int sndTryPlaySpecialMusic(int nMusic)
 
 void sndPlaySpecialMusicOrNothing(int nMusic)
 {
-    int nEpisode = nMusic/kMaxLevels;
-    int nLevel = nMusic%kMaxLevels;
+    int nEpisode = nMusic / kMaxLevels;
+    int nLevel   = nMusic % kMaxLevels;
     if (sndTryPlaySpecialMusic(nMusic))
     {
         sndStopSong();

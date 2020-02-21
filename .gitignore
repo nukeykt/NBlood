@@ -95,3 +95,8 @@ project.xcworkspace/
 /platform/Windows/*.cfg_orig
 /platform/Windows/*.DEM
 /platform/Windows/*.DEM_
+/eduke32.exe.lastcodeanalysissucceeded
+/mapster32.exe.lastcodeanalysissucceeded
+/nblood.exe.lastcodeanalysissucceeded
+/pcexhumed.exe.lastcodeanalysissucceeded
+/rednukem.exe.lastcodeanalysissucceeded
