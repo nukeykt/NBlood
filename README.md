@@ -1,3 +1,6 @@
+#Features This version VS master
+-#323 Nblood fix of duplicate INI files when sending CMD -ini <FileNAme>.ini, fixes case sensitive INI loading keeping the correct file name from the NbloodFolder insted of misspelled input paramater.
+   
 # NBlood / Rednukem / PCExhumed
 Reverse-engineered ports of Build games using EDuke32 engine technology and development principles
 
