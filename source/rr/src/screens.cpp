@@ -1197,7 +1197,7 @@ void G_DisplayRest(int32_t smoothratio)
         }
     }
 
-    if (g_player[myconnectindex].ps->newowner == -1 && ud.overhead_on == 0 && ud.crosshair && ud.camerasprite == -1)
+    if (!DEER && g_player[myconnectindex].ps->newowner == -1 && ud.overhead_on == 0 && ud.crosshair && ud.camerasprite == -1)
     {
         int32_t a = CROSSHAIR;
         if ((unsigned) a < MAXTILES)
@@ -1515,6 +1515,101 @@ void G_DisplayLogo(void)
     S_StopMusic();
     FX_StopAllSounds(); // JBF 20031228
     S_ClearSoundLocks();  // JBF 20031228
+    if (DEER)
+    {
+        if (!g_noLogo /* && (!g_netServer && ud.multimode < 2) */)
+        {
+            if (!I_CheckAllInput() && g_noLogoAnim == 0)
+            {
+                videoClearScreen(0);
+
+                P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 8 + 2 + 1);    // JBF 20040308
+                fadepal(0, 0, 0, 0, 252, 28);
+                renderFlushPerms();
+                rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, 7106, 0, 0, 2 + 8 + 64 + BGSTRETCH);
+                videoNextPage();
+                fadepaltile(0, 0, 0, 252, 0, -4, 7106);
+                totalclock = 0;
+
+                while (totalclock < (120 * 3) && !I_CheckAllInput())
+                {
+                    if (G_FPSLimit())
+                    {
+                        videoClearScreen(0);
+                        rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, 7106, 0, 0, 2 + 8 + 64 + BGSTRETCH);
+                        G_HandleAsync();
+
+                        if (g_restorePalette)
+                        {
+                            P_SetGamePalette(g_player[myconnectindex].ps, g_player[myconnectindex].ps->palette, 0);
+                            g_restorePalette = 0;
+                        }
+                        videoNextPage();
+                    }
+                }
+
+                fadepaltile(0, 0, 0, 0, 252, 4, 7106);
+            }
+
+            videoClearScreen(0L);
+            videoNextPage();
+
+            I_ClearAllInput();
+
+            videoClearScreen(0L);
+            videoNextPage();
+
+            videoClearScreen(0);
+
+            //g_player[myconnectindex].ps->palette = drealms;
+            //G_FadePalette(0,0,0,252);
+
+            if (!I_CheckAllInput() && g_noLogoAnim == 0)
+            {
+                videoClearScreen(0);
+
+                P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 8 + 2 + 1);    // JBF 20040308
+                fadepal(0, 0, 0, 0, 252, 28);
+                renderFlushPerms();
+                rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, 7107, 0, 0, 2 + 8 + 64 + BGSTRETCH);
+                videoNextPage();
+                fadepaltile(0, 0, 0, 252, 0, -4, 7107);
+                totalclock = 0;
+
+                while (totalclock < (120 * 3) && !I_CheckAllInput())
+                {
+                    if (G_FPSLimit())
+                    {
+                        videoClearScreen(0);
+                        rotatesprite_fs(160 << 16, 100 << 16, 65536L, 0, 7107, 0, 0, 2 + 8 + 64 + BGSTRETCH);
+                        G_HandleAsync();
+
+                        if (g_restorePalette)
+                        {
+                            P_SetGamePalette(g_player[myconnectindex].ps, g_player[myconnectindex].ps->palette, 0);
+                            g_restorePalette = 0;
+                        }
+                        videoNextPage();
+                    }
+                }
+
+                fadepaltile(0, 0, 0, 0, 252, 4, 7107);
+            }
+
+            I_ClearAllInput();
+        }
+
+        renderFlushPerms();
+        videoClearScreen(0L);
+        videoNextPage();
+
+        //g_player[myconnectindex].ps->palette = palette;
+        P_SetGamePalette(g_player[myconnectindex].ps, BASEPAL, 0);    // JBF 20040308
+
+        //G_FadePalette(0,0,0,0);
+        videoClearScreen(0L);
+        return;
+    }
     if (RRRA)
         return;
     if (RR)

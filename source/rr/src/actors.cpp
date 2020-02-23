@@ -9555,6 +9555,8 @@ static void A_DoLight(int spriteNum)
 
 void A_PlayAlertSound(int spriteNum)
 {
+    if (DEER)
+        return;
     if (RR)
     {
         if (sprite[spriteNum].extra > 0)

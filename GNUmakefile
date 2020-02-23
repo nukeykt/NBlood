@@ -956,6 +956,7 @@ rr_game_objs := \
     screentext.cpp \
     screens.cpp \
     cmdline.cpp \
+    rrdh.cpp \
 
 rr_editor_objs := \
     astub.cpp \

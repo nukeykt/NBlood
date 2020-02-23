@@ -32,10 +32,11 @@ extern int g_useCwd;
 #define GAMEFLAG_SHAREWARE  0x00000020
 #define GAMEFLAG_RR         0x00000040
 #define GAMEFLAG_RRRA       0x00000080
+#define GAMEFLAG_DEER       0x00000100
 //#define GAMEFLAG_DUKEBETA   0x00000060 // includes 0x20 since it's a shareware beta
 //#define GAMEFLAG_FURY       0x00000080
 //#define GAMEFLAG_STANDALONE 0x00000100
-#define GAMEFLAGMASK        0x000000FF // flags allowed from grpinfo
+#define GAMEFLAGMASK        0x000001FF // flags allowed from grpinfo
 
 extern struct grpfile_t const *g_selectedGrp;
 
@@ -50,6 +51,7 @@ extern int     g_addonNum;
 #define WW2GI               (g_gameType & GAMEFLAG_WW2GI)
 #define NAM_WW2GI           (g_gameType & (GAMEFLAG_NAM|GAMEFLAG_WW2GI))
 #define SHAREWARE           (g_gameType & GAMEFLAG_SHAREWARE)
+#define DEER                (g_gameType & GAMEFLAG_DEER)
 //#define DUKEBETA            ((g_gameType & GAMEFLAG_DUKEBETA) == GAMEFLAG_DUKEBETA)
 //#define FURY                (g_gameType & GAMEFLAG_FURY)
 

@@ -150,6 +150,9 @@
     <ClInclude Include="..\..\source\rr\src\inv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\rr\src\rrdh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\rr\src\actors.cpp">
@@ -252,6 +255,9 @@
       <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\rr\src\gamevars.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\rr\src\rrdh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -191,6 +191,7 @@
     <ClInclude Include="..\..\source\rr\src\player.h" />
     <ClInclude Include="..\..\source\rr\src\premap.h" />
     <ClInclude Include="..\..\source\rr\src\quotes.h" />
+    <ClInclude Include="..\..\source\rr\src\rrdh.h" />
     <ClInclude Include="..\..\source\rr\src\savegame.h" />
     <ClInclude Include="..\..\source\rr\src\sbar.h" />
     <ClInclude Include="..\..\source\rr\src\screens.h" />
@@ -241,6 +242,7 @@
     <ClCompile Include="..\..\source\rr\src\osdfuncs.cpp" />
     <ClCompile Include="..\..\source\rr\src\player.cpp" />
     <ClCompile Include="..\..\source\rr\src\premap.cpp" />
+    <ClCompile Include="..\..\source\rr\src\rrdh.cpp" />
     <ClCompile Include="..\..\source\rr\src\rts.cpp" />
     <ClCompile Include="..\..\source\rr\src\savegame.cpp" />
     <ClCompile Include="..\..\source\rr\src\sbar.cpp" />

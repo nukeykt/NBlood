@@ -117,6 +117,7 @@ static tokenmap_t const vm_keywords[] =
     { "defineskillname",        CON_DEFINESKILLNAME },
     { "definesound",            CON_DEFINESOUND },
     { "definevolumename",       CON_DEFINEVOLUMENAME },
+    { "deploybias",             CON_DEPLOYBIAS },
     { "destroyit",              CON_DESTROYIT },
     { "else",                   CON_ELSE },
     { "enda",                   CON_ENDA },
@@ -149,6 +150,7 @@ static tokenmap_t const vm_keywords[] =
     { "ifceilingdistl",         CON_IFCEILINGDISTL },
     { "ifcount",                CON_IFCOUNT },
     { "ifdead",                 CON_IFDEAD },
+    { "iffindnewspot",          CON_IFFINDNEWSPOT },
     { "iffloordistl",           CON_IFFLOORDISTL },
     { "ifgapzl",                CON_IFGAPZL },
     { "ifgotweaponce",          CON_IFGOTWEAPONCE },
@@ -186,6 +188,7 @@ static tokenmap_t const vm_keywords[] =
     { "ifsquished",             CON_IFSQUISHED },
     { "ifstrength",             CON_IFSTRENGTH },
     { "iftipcow",               CON_IFTIPCOW },
+    { "ifpupwind",              CON_IFPUPWIND },
     { "ifvare",                 CON_IFVARE },
     { "ifvarg",                 CON_IFVARG },
     { "ifvarl",                 CON_IFVARL },
@@ -199,6 +202,8 @@ static tokenmap_t const vm_keywords[] =
     { "iseat",                  CON_ISEAT },
     { "killit",                 CON_KILLIT },
     { "larrybird",              CON_LARRYBIRD },
+    { "leavedroppings",         CON_LEAVEDROPPINGS },
+    { "leavetrax",              CON_LEAVETRAX },
     { "lotsofglass",            CON_LOTSOFGLASS },
     { "mail",                   CON_MAIL },
     { "mamaend",                CON_MAMAEND },
@@ -2208,6 +2213,8 @@ ifvar:
         case CON_IFONMOTO:
         case CON_IFONBOAT:
         case CON_IFSIZEDOWN:
+        case CON_IFFINDNEWSPOT:
+        case CON_IFPUPWIND:
             {
                 intptr_t offset;
                 intptr_t lastScriptPtr = (g_scriptPtr-&apScript[0]-1);
@@ -2669,6 +2676,9 @@ ifvar:
         case CON_GARYBANJO:
         case CON_MOTOLOOPSND:
         case CON_RNDMOVE:
+        case CON_LEAVETRAX:
+        case CON_LEAVEDROPPINGS:
+        case CON_DEPLOYBIAS:
             continue;
 
         case CON_NULLOP:
