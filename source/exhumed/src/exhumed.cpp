@@ -1408,24 +1408,27 @@ void CheckKeys()
 {
     if (BUTTON(gamefunc_Enlarge_Screen))
     {
-        if (screensize == 0)
+        if (nMapMode == 0)
         {
-            if (!bFullScreen)
+            if (screensize == 0)
             {
-                bFullScreen = kTrue;
-                UnMaskStatus();
+                if (!bFullScreen)
+                {
+                    bFullScreen = kTrue;
+                    UnMaskStatus();
+                }
             }
-        }
-        else
-        {
-            screensize--;
-            if (screensize < 0) {
-                screensize = 0;
-            }
+            else
+            {
+                screensize--;
+                if (screensize < 0) {
+                    screensize = 0;
+                }
 
-            UpdateScreenSize();
+                UpdateScreenSize();
+            }
+            CONTROL_ClearButton(gamefunc_Enlarge_Screen);
         }
-        CONTROL_ClearButton(gamefunc_Enlarge_Screen);
     }
 
     // if (BUTTON(gamefunc_Mouse_Sensitivity_Up))
@@ -1462,18 +1465,21 @@ void CheckKeys()
 
     if (BUTTON(gamefunc_Shrink_Screen))
     {
-        if (bFullScreen)
+        if (nMapMode == 0)
         {
-            bFullScreen = kFalse;
-        }
-        else
-        {
-            if ((screensize + 1) < 15)
-                screensize++;
-        }
+            if (bFullScreen)
+            {
+                bFullScreen = kFalse;
+            }
+            else
+            {
+                if ((screensize + 1) < 15)
+                    screensize++;
+            }
 
-        UpdateScreenSize();
-        CONTROL_ClearButton(gamefunc_Shrink_Screen);
+            UpdateScreenSize();
+            CONTROL_ClearButton(gamefunc_Shrink_Screen);
+        }
     }
 
     // print version string?
