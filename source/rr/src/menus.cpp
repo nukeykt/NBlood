@@ -440,7 +440,7 @@ MAKE_MENU_TOP_ENTRYLINK( "Quit Game", MEF_MainMenu, MAIN_QUITGAME, MENU_QUIT );
 
 MAKE_MENU_TOP_ENTRYLINK( "Go Huntin'!", MEF_MainMenu, MAIN_DHHUNTING, MENU_DHHUNTING );
 MAKE_MENU_TOP_ENTRYLINK( "Target Range", MEF_MainMenu, MAIN_DHTARGET, MENU_DHTARGET );
-MAKE_MENU_TOP_ENTRYLINK( "Throphies", MEF_MainMenu, MAIN_DHTHROPHIES, MENU_DHTHROPHIES );
+MAKE_MENU_TOP_ENTRYLINK( "Trophies", MEF_MainMenu, MAIN_DHTROPHIES, MENU_DHTROPHIES );
 
 static MenuEntry_t *MEL_MAIN[] = {
     &ME_MAIN_NEWGAME,
@@ -1494,6 +1494,20 @@ static MenuEntry_t *MEL_DHTARGET[] = {
     &ME_DHTARGET_L2,
 };
 
+static MenuEntry_t ME_DHWEAPON_PISTOL = MAKE_MENUENTRY( "Pistol", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_RIFLE = MAKE_MENUENTRY( "Rifle", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_RIFLES = MAKE_MENUENTRY( "Rifle With Scope", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_SHOTGUN = MAKE_MENUENTRY( "Shotgun", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_CROSSBOW = MAKE_MENUENTRY( "Crossbow", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+
+static MenuEntry_t *MEL_DHWEAPON[] = {
+    &ME_DHWEAPON_PISTOL,
+    &ME_DHWEAPON_RIFLE,
+    &ME_DHWEAPON_RIFLES,
+    &ME_DHWEAPON_SHOTGUN,
+    &ME_DHWEAPON_CROSSBOW,
+};
+
 #define NoTitle NULL
 
 #define MAKE_MENUMENU(Title, Format, Entries) { Title, Format, Entries, ARRAY_SIZE(Entries), 0, 0, 0 }
@@ -1547,6 +1561,7 @@ static MenuMenu_t M_NETOPTIONS = MAKE_MENUMENU( "Net Game Options", &MMF_NetSetu
 static MenuMenu_t M_NETJOIN = MAKE_MENUMENU( "Join Network Game", &MMF_SmallOptionsNarrow, MEL_NETJOIN );
 static MenuMenu_t M_DHHUNTING = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHHUNTING );
 static MenuMenu_t M_DHTARGET = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHTARGET );
+static MenuMenu_t M_DHWEAPON = MAKE_MENUMENU( NoTitle, &MMF_Top_Skill, MEL_DHWEAPON );
 
 #ifdef EDUKE32_SIMPLE_MENU
 static MenuPanel_t M_STORY = { NoTitle, MENU_STORY, MA_Return, MENU_STORY, MA_Advance, };
@@ -1729,8 +1744,8 @@ static Menu_t Menus[] = {
     { &M_NETJOIN, MENU_NETJOIN, MENU_NETWORK, MA_Return, Menu },
     { &M_DHHUNTING, MENU_DHHUNTING, MENU_MAIN, MA_Return, Menu },
     { &M_DHTARGET, MENU_DHTARGET, MENU_MAIN, MA_Return, Menu },
-    //{ &M_DHWEAPON, MENU_DHWEAPON, MENU_DHHUNTING, MA_Return, Menu },
-    //{ &M_DHTHROPHIES, MENU_DHTHROPHIES, MENU_MAIN, MA_Return, Menu },
+    { &M_DHWEAPON, MENU_DHWEAPON, MENU_PREVIOUS, MA_Return, Menu },
+    //{ &M_DHTROPHIES, MENU_DHTROPHIES, MENU_MAIN, MA_Return, Menu },
 };
 
 static CONSTEXPR const uint16_t numMenus = ARRAY_SIZE(Menus);
@@ -2136,9 +2151,15 @@ void Menu_Init(void)
     {
         MEL_MAIN[0] = &ME_MAIN_DHHUNTING;
         MEL_MAIN[1] = &ME_MAIN_DHTARGET;
-        MEL_MAIN[2] = &ME_MAIN_DHTHROPHIES;
+        MEL_MAIN[2] = &ME_MAIN_DHTROPHIES;
         MEL_MAIN[3] = &ME_MAIN_OPTIONS;
         MEL_MAIN[4] = &ME_MAIN_HELP;
+        MMF_Top_Main.pos.y = 72 << 16;
+        MMF_Top_Main.bottomcutoff = -(180 << 16);
+        MMF_Top_Episode.pos.y = 102 << 16;
+        MMF_Top_Episode.bottomcutoff = -(180 << 16);
+        MMF_Top_Skill.pos.y = 102 << 16;
+        MMF_Top_Skill.bottomcutoff = -(200 << 16);
     }
 }
 
@@ -2456,12 +2477,16 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     switch (cm)
     {
     case MENU_MAIN_INGAME:
+        if (DEER)
+            break;
         l += 4;
         fallthrough__;
     case MENU_MAIN:
         if (RR)
         {
-            if (RRRA)
+            if (DEER)
+                rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((32+l)<<16), 20480L,0,DUKENUKEM,0,0,10);
+            else if (RRRA)
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER-5)<<16), origin.y + ((57+l)<<16), 16592L,0,THREEDEE,0,0,10);
             else
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+5)<<16), origin.y + ((24+l)<<16), 23592L,0,INGAMEDUKETHREEDEE,0,0,10);
@@ -3485,6 +3510,97 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                     creditsminitext(origin.x + (160<<16), origin.y + ((17+10+10+8+4+(c*7)+(i*7)-l)<<16), footer[c], 8);
         }
 
+        break;
+
+    case MENU_DHHUNTING:
+    {
+        int t1, t2;
+        short ang;
+        switch (M_DHHUNTING.currentEntry)
+        {
+        case 0:
+        default:
+            t1 = 7098;
+            t2 = 7041;
+            ang = 16;
+            break;
+        case 1:
+            t1 = 7099;
+            t2 = 7042;
+            ang = 2032;
+            break;
+        case 2:
+            t1 = 7100;
+            t2 = 7043;
+            ang = 16;
+            break;
+        case 3:
+            t1 = 7101;
+            t2 = 7044;
+            ang = 2032;
+            break;
+        }
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(56<<16), 24576L, ang, t1, 2, 0, 64+10);
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(42<<16), 24576L, ang, 7104, 2, 0, 10);
+        rotatesprite_fs(origin.x+(20<<16), origin.y+(10<<16), 32768L, 0, t2, -64, 0, 128+16+10);
+    }
+        break;
+
+    case MENU_DHTARGET:
+    {
+        int t1, t2;
+        short ang;
+        switch (M_DHTARGET.currentEntry)
+        {
+        case 0:
+        default:
+            t1 = 7102;
+            t2 = 7045;
+            ang = 16;
+            break;
+        case 1:
+            t1 = 7103;
+            t2 = 7046;
+            ang = 2032;
+            break;
+            break;
+        }
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(56<<16), 24576L, ang, t1, 2, 0, 64+10);
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(42<<16), 24576L, ang, 7104, 2, 0, 10);
+        rotatesprite_fs(origin.x+(20<<16), origin.y+(10<<16), 32768L, 0, t2, -64, 0, 128+16+10);
+    }
+        break;
+
+    case MENU_DHWEAPON:
+    {
+        int t1, t2;
+        switch (M_DHWEAPON.currentEntry)
+        {
+        case 0:
+        default:
+            t1 = 7124;
+            t2 = 7066;
+            break;
+        case 1:
+            t1 = 7125;
+            t2 = 7067;
+            break;
+        case 2:
+            t1 = 7126;
+            t2 = 7068;
+            break;
+        case 3:
+            t1 = 7127;
+            t2 = 7069;
+            break;
+        case 4:
+            t1 = 7128;
+            t2 = 7070;
+            break;
+        }
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(56<<16), 32768L, 0, t1, 2, 0, 64+10);
+        rotatesprite_fs(origin.x+(8<<16), origin.y+(4<<16), 32768L, 0, t2, -64, 0, 128+16+10);
+    }
         break;
 
     default:

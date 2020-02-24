@@ -139,7 +139,7 @@ enum MenuIndex_t {
     MENU_DHHUNTING      = 30000,
     MENU_DHTARGET       = 30001,
     MENU_DHWEAPON       = 30002,
-    MENU_DHTHROPHIES    = 30003,
+    MENU_DHTROPHIES     = 30003,
 };
 
 
