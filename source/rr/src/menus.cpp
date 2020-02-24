@@ -438,6 +438,10 @@ MAKE_MENU_TOP_ENTRYLINK( "Quit", MEF_MainMenu, MAIN_QUIT, MENU_QUIT );
 MAKE_MENU_TOP_ENTRYLINK( "Quit Game", MEF_MainMenu, MAIN_QUITGAME, MENU_QUIT );
 #endif
 
+MAKE_MENU_TOP_ENTRYLINK( "Go Huntin'!", MEF_MainMenu, MAIN_DHHUNTING, MENU_DHHUNTING );
+MAKE_MENU_TOP_ENTRYLINK( "Target Range", MEF_MainMenu, MAIN_DHTARGET, MENU_DHTARGET );
+MAKE_MENU_TOP_ENTRYLINK( "Throphies", MEF_MainMenu, MAIN_DHTHROPHIES, MENU_DHTHROPHIES );
+
 static MenuEntry_t *MEL_MAIN[] = {
     &ME_MAIN_NEWGAME,
     &ME_MAIN_LOADGAME,
@@ -1468,6 +1472,27 @@ static MenuEntry_t *MEL_NETJOIN[] = {
     &ME_NETJOIN_CONNECT,
 };
 
+static MenuLink_t MEO_DHHUNTING = { MENU_DHWEAPON, MA_Advance, };
+static MenuEntry_t ME_DHHUNTING_L1 = MAKE_MENUENTRY( "LAKE SWAMPY", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+static MenuEntry_t ME_DHHUNTING_L2 = MAKE_MENUENTRY( "SAGEBRUSH FLATS", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+static MenuEntry_t ME_DHHUNTING_L3 = MAKE_MENUENTRY( "OZARK FOREST", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+static MenuEntry_t ME_DHHUNTING_L4 = MAKE_MENUENTRY( "SNOWBUSH RIDGE", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+
+static MenuEntry_t *MEL_DHHUNTING[] = {
+    &ME_DHHUNTING_L1,
+    &ME_DHHUNTING_L2,
+    &ME_DHHUNTING_L3,
+    &ME_DHHUNTING_L4,
+};
+
+static MenuLink_t MEO_DHTARGET = { MENU_DHWEAPON, MA_Advance, };
+static MenuEntry_t ME_DHTARGET_L1 = MAKE_MENUENTRY( "NORTH RANGE", &MF_Redfont, &MEF_CenterMenu, &MEO_DHTARGET, Link );
+static MenuEntry_t ME_DHTARGET_L2 = MAKE_MENUENTRY( "SOUTH RANGE", &MF_Redfont, &MEF_CenterMenu, &MEO_DHTARGET, Link );
+
+static MenuEntry_t *MEL_DHTARGET[] = {
+    &ME_DHTARGET_L1,
+    &ME_DHTARGET_L2,
+};
 
 #define NoTitle NULL
 
@@ -1520,6 +1545,8 @@ static MenuMenu_t M_MACROS = MAKE_MENUMENU( "Multiplayer Macros", &MMF_Macros, M
 static MenuMenu_t M_NETHOST = MAKE_MENUMENU( "Host Network Game", &MMF_SmallOptionsNarrow, MEL_NETHOST );
 static MenuMenu_t M_NETOPTIONS = MAKE_MENUMENU( "Net Game Options", &MMF_NetSetup, MEL_NETOPTIONS );
 static MenuMenu_t M_NETJOIN = MAKE_MENUMENU( "Join Network Game", &MMF_SmallOptionsNarrow, MEL_NETJOIN );
+static MenuMenu_t M_DHHUNTING = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHHUNTING );
+static MenuMenu_t M_DHTARGET = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHTARGET );
 
 #ifdef EDUKE32_SIMPLE_MENU
 static MenuPanel_t M_STORY = { NoTitle, MENU_STORY, MA_Return, MENU_STORY, MA_Advance, };
@@ -1559,8 +1586,8 @@ static MenuPanel_t M_CREDITS27 = { s_Credits, MENU_CREDITS26, MA_Return, MENU_CR
 static MenuPanel_t M_CREDITS28 = { s_Credits, MENU_CREDITS27, MA_Return, MENU_CREDITS29, MA_Advance, };
 static MenuPanel_t M_CREDITS29 = { s_Credits, MENU_CREDITS28, MA_Return, MENU_CREDITS30, MA_Advance, };
 static MenuPanel_t M_CREDITS30 = { s_Credits, MENU_CREDITS29, MA_Return, MENU_CREDITS31, MA_Advance, };
-static MenuPanel_t M_CREDITS31 = { "About " APPNAME, MENU_CREDITS3, MA_Return, MENU_CREDITS32, MA_Advance, };
-static MenuPanel_t M_CREDITS32 = { "About EDuke32", MENU_CREDITS31, MA_Return, MENU_CREDITS33, MA_Advance, };
+static MenuPanel_t M_CREDITS31 = { "About EDuke32", MENU_CREDITS3, MA_Return, MENU_CREDITS32, MA_Advance, };
+static MenuPanel_t M_CREDITS32 = { "About " APPNAME, MENU_CREDITS31, MA_Return, MENU_CREDITS33, MA_Advance, };
 static MenuPanel_t M_CREDITS33 = { "About EDuke32", MENU_CREDITS32, MA_Return, MENU_CREDITS, MA_Advance, };
 
 #define CURSOR_CENTER_2LINE { MENU_MARGIN_CENTER<<16, 120<<16, }
@@ -1700,6 +1727,10 @@ static Menu_t Menus[] = {
     { &M_NETOPTIONS, MENU_NETOPTIONS, MENU_NETWORK, MA_Return, Menu },
     { &M_USERMAP, MENU_NETUSERMAP, MENU_NETOPTIONS, MA_Return, FileSelect },
     { &M_NETJOIN, MENU_NETJOIN, MENU_NETWORK, MA_Return, Menu },
+    { &M_DHHUNTING, MENU_DHHUNTING, MENU_MAIN, MA_Return, Menu },
+    { &M_DHTARGET, MENU_DHTARGET, MENU_MAIN, MA_Return, Menu },
+    //{ &M_DHWEAPON, MENU_DHWEAPON, MENU_DHHUNTING, MA_Return, Menu },
+    //{ &M_DHTHROPHIES, MENU_DHTHROPHIES, MENU_MAIN, MA_Return, Menu },
 };
 
 static CONSTEXPR const uint16_t numMenus = ARRAY_SIZE(Menus);
@@ -2099,6 +2130,15 @@ void Menu_Init(void)
     {
         // prepare credits
         M_CREDITS.title = M_CREDITS2.title = M_CREDITS3.title = s_Credits;
+    }
+
+    if (DEER)
+    {
+        MEL_MAIN[0] = &ME_MAIN_DHHUNTING;
+        MEL_MAIN[1] = &ME_MAIN_DHTARGET;
+        MEL_MAIN[2] = &ME_MAIN_DHTHROPHIES;
+        MEL_MAIN[3] = &ME_MAIN_OPTIONS;
+        MEL_MAIN[4] = &ME_MAIN_HELP;
     }
 }
 
@@ -3318,41 +3358,54 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         }
         break;
 
-    case MENU_CREDITS31:
-        l = 7;
+    case MENU_CREDITS31:   // JBF 20031220
+    {
+#define MENU_YOFFSET 40
+#define MENU_INCREMENT(x) (oy += ((x) << 16))  // maybe this should have been MENU_EXCREMENT instead
 
-        mgametextcenter(origin.x, origin.y + ((55-l)<<16), "Developer");
-        creditsminitext(origin.x + (160<<16), origin.y + ((60+10-l)<<16), "Alexey \"Nuke.YKT\" Skrybykin", 8);
+        int32_t oy = origin.y;
 
-        mgametextcenter(origin.x, origin.y + ((85-l)<<16), "Tester & support");
-        creditsminitext(origin.x + (160<<16), origin.y + ((90+10-l)<<16), "Sergey \"Maxi Clouds\" Skrybykin", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(MENU_YOFFSET), "Developers");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Richard \"TerminX\" Gobeille", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Evan \"Hendricks266\" Ramos", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Alex \"pogokeen\" Dawson", 8);
 
-        mgametextcenter(origin.x, origin.y + ((115-l)<<16), "Special thanks to");
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+10-l)<<16), "Evan \"Hendricks266\" Ramos", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+20-l)<<16), "Richard \"TerminX\" Gobeille", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+30-l)<<16), "\"NY00123\"", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+40-l)<<16), "\"MetHy\"", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Retired developers");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Pierre-Loup \"Plagman\" Griffais", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Philipp \"Helixhorned\" Kutin", 8);
 
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Special thanks to");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Jonathon \"JonoF\" Fowler", 8);
+
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Uses BUILD Engine technology by");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Ken \"Awesoken\" Silverman", 8);
+
+#undef MENU_INCREMENT
+#undef MENU_YOFFSET
+    }
         break;
 
-    case MENU_CREDITS32:   // JBF 20031220
-        l = 7;
+    case MENU_CREDITS32:
+    {
+#define MENU_YOFFSET 40
+#define MENU_INCREMENT(x) (oy += ((x) << 16))  // maybe this should have been MENU_EXCREMENT instead
 
-        mgametextcenter(origin.x, origin.y + ((50-l)<<16), "Developers");
-        creditsminitext(origin.x + (160<<16), origin.y + ((50+10-l)<<16), "Richard \"TerminX\" Gobeille", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((50+7+10-l)<<16), "Evan \"Hendricks266\" Ramos", 8);
+        int32_t oy = origin.y;
 
-        mgametextcenter(origin.x, origin.y + ((80-l)<<16), "Retired developers");
-        creditsminitext(origin.x + (160<<16), origin.y + ((80+10-l)<<16), "Pierre-Loup \"Plagman\" Griffais", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((80+7+10-l)<<16), "Philipp \"Helixhorned\" Kutin", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(MENU_YOFFSET), "Developer");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Alexey \"Nuke.YKT\" Skrybykin", 8);
 
-        mgametextcenter(origin.x, origin.y + ((130+7-l)<<16), "Special thanks to");
-        creditsminitext(origin.x + (160<<16), origin.y + ((130+7+10-l)<<16), "Jonathon \"JonoF\" Fowler", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Special thanks to");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Evan \"Hendricks266\" Ramos", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Richard \"TerminX\" Gobeille", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Sergey \"Maxi Clouds\" Skrybykin", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "\"NY00123\"", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "\"MetHy\"", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "\"sirlemonhead\"", 8);
 
-        mgametextcenter(origin.x, origin.y + ((150+7-l)<<16), "Uses BUILD Engine technology by");
-        creditsminitext(origin.x + (160<<16), origin.y + ((150+7+10-l)<<16), "Ken \"Awesoken\" Silverman", 8);
-
-
+#undef MENU_INCREMENT
+#undef MENU_YOFFSET
+    }
         break;
 
     case MENU_CREDITS33:
@@ -3372,7 +3425,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             };
             static const char *body[] =
             {
-                "Alex Dawson",       // "pogokeen" - Polymost2, renderer work, bugfixes
+                "Alexey Skrybykin",  // Nuke.YKT - Polymost fixes
                 "Bioman",            // GTK work, APT repository and package upkeep
                 "Brandon Bergren",   // "Bdragon" - tiles.cfg
                 "Charlie Honig",     // "CONAN" - showview command
