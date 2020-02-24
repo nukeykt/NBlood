@@ -3915,15 +3915,15 @@ ACTOR_STATIC void G_MoveActors(void)
     extern char g_demo_legacy;
     int spriteNum;
 
-    if (g_jailDoorCnt)
+    if (!DEER && g_jailDoorCnt)
         G_DoJailDoor();
 
-    if (g_mineCartCnt)
+    if (!DEER && g_mineCartCnt)
         G_MoveMineCart();
 
     int bBoom = 0;
 
-    if (RRRA)
+    if (!DEER && RRRA)
     {
         int spriteNum = headspritestat[117];
         while (spriteNum >= 0)
@@ -4309,7 +4309,7 @@ ACTOR_STATIC void G_MoveActors(void)
         }
     }
 
-    if (RR)
+    if (!DEER && RR)
     {
         spriteNum = headspritestat[107];
         while (spriteNum >= 0)
@@ -4536,6 +4536,7 @@ ACTOR_STATIC void G_MoveActors(void)
             switchPic--;
 
 
+        if (!DEER)
         switch (DYNAMICTILEMAP(switchPic))
         {
         case DUCK__STATIC:
@@ -9696,13 +9697,17 @@ void G_MoveWorld(void)
     extern double g_moveActorsTime, g_moveWorldTime;
     const double worldTime = timerGetHiTicks();
 
-    G_MoveZombieActors();     //ST 2
-    G_MoveWeapons();          //ST 4
-    G_MoveTransports();       //ST 9
+    if (!DEER)
+    {
+        G_MoveZombieActors();     //ST 2
+        G_MoveWeapons();          //ST 4
+        G_MoveTransports();       //ST 9
+    }
 
     G_MovePlayers();          //ST 10
     G_MoveFallers();          //ST 12
-    G_MoveMisc();             //ST 5
+    if (!DEER)
+        G_MoveMisc();             //ST 5
 
     const double actorsTime = timerGetHiTicks();
 
@@ -9713,12 +9718,16 @@ void G_MoveWorld(void)
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
     G_DoEffectorLights();
-    G_MoveEffectors();        //ST 3
-    G_MoveStandables();       //ST 6
+    if (!DEER)
+    {
+        G_MoveEffectors();        //ST 3
+        G_MoveStandables();       //ST 6
+    }
 
     G_RefreshLights();
     G_DoSectorAnimations();
-    G_MoveFX();               //ST 11
+    if (!DEER)
+        G_MoveFX();               //ST 11
 
     if (RR && numplayers < 2 && g_thunderOn)
         G_Thunder();

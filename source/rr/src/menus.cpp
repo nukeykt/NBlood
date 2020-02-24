@@ -171,6 +171,110 @@ static void Menu_DrawCursorText(int32_t x, int32_t y, int32_t h, int32_t ydim_up
     Menu_DrawCursorTextTile(x, y, h, SPINNINGNUKEICON+(((int32_t) totalclock>>3)%frames), siz, ydim_upper, ydim_lower);
 }
 
+int dword_A99A0, dword_A99A4, dword_A99A8, dword_A99AC;
+short word_A99B0, word_A99B2;
+int dword_A99B4, dword_A99B8, dword_A99BC, dword_A99C0, dword_A99C4, dword_A99C8;
+
+void Menu_DHLeaonardHeadReset(void)
+{
+    dword_A99A0 = 0;
+    dword_A99A4 = 0;
+    dword_A99A8 = 0;
+    dword_A99AC = 0;
+    word_A99B2 = 0;
+    dword_A99B4 = 0;
+    word_A99B0 = 0;
+}
+
+void Menu_DHLeaonardHeadDisplay(vec2_t pos)
+{
+    if (sub_51B68() && !dword_A99C0)
+    {
+        dword_A99C0 = (int)totalclock;
+    }
+    if (dword_A99C0 && (int)totalclock - dword_A99C0 > 40)
+    {
+        dword_A99C0 = 0;
+        dword_A99C4 = 1;
+    }
+    switch (dword_A99A0)
+    {
+    case 0:
+        if ((int)totalclock - dword_A99B8 >= 240 && dword_A99C4 && (rrdh_random()&63) < 32)
+        {
+            dword_A99A0 = 1;
+            dword_A99A4 = 160 - ((rrdh_random() & 255) - 128);
+            word_A99B0 = ((rrdh_random() & 127) + 1984) & 2047;
+            dword_A99AC = (rrdh_random() & 4095) - 4090;
+            word_A99B2 = SPINNINGNUKEICON + (rrdh_random() & 15);
+        }
+        break;
+    case 1:
+        if (dword_A99A8 < 54)
+        {
+            if ((int)totalclock - dword_A99B4 > 2)
+            {
+                dword_A99B4 = (int)totalclock;
+                dword_A99A8 += 2;
+            }
+        }
+        else
+        {
+            dword_A99A0 = 2;
+            dword_A99BC = (int)totalclock;
+        }
+        pos.x += dword_A99A4 << 16;
+        pos.y += (240 - dword_A99A8) << 16;
+        rotatesprite(pos.x, pos.y, 32768 - dword_A99AC, word_A99B0, word_A99B2, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+        break;
+    case 2:
+        if (dword_A99C4 == 1)
+        {
+            if ((rrdh_random()&63) > 32)
+                word_A99B2--;
+            else
+                word_A99B2++;
+        }
+        else
+        {
+            if ((rrdh_random() & 127) == 48)
+            {
+                if ((int)totalclock - dword_A99BC > 240)
+                    dword_A99A0 = 3;
+            }
+        }
+        if (word_A99B2 < SPINNINGNUKEICON)
+            word_A99B2 = SPINNINGNUKEICON + 15;
+        if (word_A99B2 > SPINNINGNUKEICON + 15)
+            word_A99B2 = SPINNINGNUKEICON;
+        pos.x += dword_A99A4 << 16;
+        pos.y += (240 - dword_A99A8) << 16;
+        rotatesprite(pos.x, pos.y, 32768 - dword_A99AC, word_A99B0, word_A99B2, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+        if ((int)totalclock - dword_A99BC > 960)
+            dword_A99A0 = 3;
+        break;
+    case 3:
+        if (dword_A99A8 > 0)
+        {
+            if ((int)totalclock - dword_A99B4 > 2)
+            {
+                dword_A99B4 = (int)totalclock;
+                dword_A99A8 -= 2;
+            }
+            pos.x += dword_A99A4 << 16;
+            pos.y += (240 - dword_A99A8) << 16;
+            rotatesprite(pos.x, pos.y, 32768 - dword_A99AC, word_A99B0, word_A99B2, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+        }
+        else
+        {
+            dword_A99B8 = (int)totalclock;
+            dword_A99A0 = 0;
+        }
+        break;
+    }
+    dword_A99C4 = 0;
+}
+
 
 static uint16_t g_oldSaveCnt;
 
@@ -2242,6 +2346,10 @@ static void Menu_PreDrawBackground(MenuID_t cm, const vec2_t origin)
 {
     switch (cm)
     {
+    case MENU_MAIN:
+        if (DEER)
+            Menu_DHLeaonardHeadDisplay(origin);
+        break;
     case MENU_CREDITS:
     case MENU_CREDITS2:
     case MENU_CREDITS3:
@@ -4607,6 +4715,8 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     switch (m->menuID)
     {
     case MENU_MAIN:
+        if (DEER)
+            Menu_DHLeaonardHeadReset();
         break;
 
     case MENU_MAIN_INGAME:
