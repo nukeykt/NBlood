@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "compat.h"
 
-#define kMaxGameFunctions	40
 #define kMaxGameFuncLen     64
 
 // KEEPINSYNC mact/include/_control.h, build/src/sdlayer.cpp
@@ -43,10 +42,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEFAULTJOYSTICKANALOGUESCALE        65536
 #define DEFAULTJOYSTICKANALOGUEDEAD         2000
 #define DEFAULTJOYSTICKANALOGUESATURATE     9500
-
-extern const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen];
-extern const char keydefaults[kMaxGameFunctions*2][kMaxGameFuncLen];
-extern const char oldkeydefaults[kMaxGameFunctions*2][kMaxGameFuncLen];
 
 enum {
 	gamefunc_Move_Forward,  // 0
@@ -74,7 +69,7 @@ enum {
 	gamefunc_Weapon_5,
 	gamefunc_Weapon_6,
 	gamefunc_Weapon_7,
-	gamefunc_Mouseview,
+//	gamefunc_Mouseview,
 	gamefunc_Pause,
 	gamefunc_Map,
 	gamefunc_Zoom_In,
@@ -89,7 +84,14 @@ enum {
 	gamefunc_Mouse_Sensitivity_Up,
 	gamefunc_Mouse_Sensitivity_Down,
     gamefunc_Show_Console,
+	gamefunc_Mouse_Aiming,
+	gamefunc_Toggle_Crosshair,
+	kMaxGameFunctions
 };
+
+extern const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen];
+extern const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen];
+extern const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen];
 
 typedef struct {
     int32_t usejoystick;

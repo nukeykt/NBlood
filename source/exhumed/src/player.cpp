@@ -70,6 +70,8 @@ fix16_t nPlayerDAng = 0;
 short obobangle = 0, bobangle  = 0;
 short bPlayerPan = 0;
 short bLockPan  = 0;
+bool bLookCentre = false;
+
 
 static actionSeq ActionSeq[] = {
     {18,  0}, {0,   0}, {9,   0}, {27,  0}, {63,  0},
@@ -163,6 +165,34 @@ void PlayerInterruptKeys()
     CONTROL_ProcessBinds();
     memset(&info, 0, sizeof(ControlInfo)); // this is done within CONTROL_GetInput() anyway
     CONTROL_GetInput(&info);
+
+    if (mouseaiming) {
+        aimmode = 0;
+    }
+
+    if (BUTTON(gamefunc_Mouse_Aiming))
+    {
+        if (mouseaiming)
+            aimmode = 1;
+        else
+        {
+            CONTROL_ClearButton(gamefunc_Mouse_Aiming);
+            aimmode = !aimmode;
+            if (aimmode)
+            {
+                StatusMessage(150, "Mouse aiming ON");
+            }
+            else
+            {
+                StatusMessage(150, "Mouse aiming OFF");
+                bLookCentre = true;
+            }
+        }
+    }
+    else if (mouseaiming)
+    {
+        bLookCentre = true;
+    }
 
     if (MouseDeadZone)
     {
@@ -3082,12 +3112,16 @@ loc_1BD2E:
                         bPlayerPan = kTrue;
                         nDestVertPan[nPlayer] = nVertPan[nPlayer];
                     }
-                    else if (BUTTON(gamefunc_Look_Straight))
+                    else if (BUTTON(gamefunc_Look_Straight) || bLookCentre)
                     {
                         bLockPan = kFalse;
                         bPlayerPan = kFalse;
                         nVertPan[nPlayer] = F16(92);
                         nDestVertPan[nPlayer] = F16(92);
+
+                        if (bLookCentre) {
+                            bLookCentre = false;
+                        }
                     }
                     else if (BUTTON(gamefunc_Aim_Up))
                     {
