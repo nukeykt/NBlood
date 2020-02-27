@@ -1468,6 +1468,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define GUTMETER_LIGHT3__STATICRR -922
 #define GUTMETER_LIGHT4__STATICRR -923
 #define AMMO_ICON__STATICRR -930
+#define RRTILE1076__STATICRR -1076
 #define MUD__STATICRR -1420
 #define EXPLOSION3__STATICRR -1442
 #define RRTILE1636__STATICRR -1636
@@ -1789,6 +1790,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define RRTILE5088__STATICRR -5088
 #define RRTILE5090__STATICRR -5090
 #define RRTILE6144__STATICRR -6144
+#define RRTILE7110__STATICRR -7110
+#define RRTILE7111__STATICRR -7111
+#define RRTILE7112__STATICRR -7112
+#define RRTILE7113__STATICRR -7113
 #define MOTOGUN__STATICRR -7168
 #define RRTILE7169__STATICRR -7169
 #define MOTOHIT__STATICRR -7170
@@ -2890,6 +2895,7 @@ extern int32_t GUTMETER_LIGHT2;
 extern int32_t GUTMETER_LIGHT3;
 extern int32_t GUTMETER_LIGHT4;
 extern int32_t AMMO_ICON;
+extern int32_t RRTILE1076;
 extern int32_t MUD;
 extern int32_t EXPLOSION3;
 extern int32_t RRTILE1636;
@@ -3211,6 +3217,10 @@ extern int32_t RRTILE5087;
 extern int32_t RRTILE5088;
 extern int32_t RRTILE5090;
 extern int32_t RRTILE6144;
+extern int32_t RRTILE7110;
+extern int32_t RRTILE7111;
+extern int32_t RRTILE7112;
+extern int32_t RRTILE7113;
 extern int32_t MOTOGUN;
 extern int32_t RRTILE7169;
 extern int32_t MOTOHIT;
