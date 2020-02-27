@@ -161,7 +161,23 @@ static int osdcmd_map(osdcmdptr_t parm)
     if (gDemo.at1)
         gDemo.StopPlayback();
 
-    levelAddUserMap(filename);
+    int bFound = 0;
+    for (int i = 0; i < gEpisodeCount; i++)
+    {
+        auto pEpisodeInfo = &gEpisodeInfo[i];
+        for (int j = 0; j < pEpisodeInfo->nLevels; j++)
+        {
+            auto pLevelInfo = &pEpisodeInfo->levelsInfo[j];
+            if (!Bstrcasecmp(pLevelInfo->at0, filename))
+            {
+                gGameOptions.nEpisode = i;
+                gGameOptions.nLevel = j;
+                bFound = 1;
+            }
+        }
+    }
+    if (!bFound)
+        levelAddUserMap(filename);
 
     if (numplayers > 1)
     {
