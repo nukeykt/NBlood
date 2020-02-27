@@ -327,6 +327,7 @@ static MenuMenuFormat_t MMF_LoadSave =             { {                 200<<16, 
 static MenuMenuFormat_t MMF_NetSetup =             { {                  36<<16, 38<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
+static MenuMenuFormat_t MMF_Top_MainDH =           { {  MENU_MARGIN_CENTER<<16, 72<<16, }, -(180<<16) };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
 static MenuEntryFormat_t MEF_MainMenu =         { 4<<16,      0,          0 };
@@ -420,9 +421,9 @@ static char const s_Options[] = "Options";
 static char const s_Credits[] = "Credits";
 
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME, MENU_EPISODE );
-#ifdef EDUKE32_SIMPLE_MENU
+//#ifdef EDUKE32_SIMPLE_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Resume Game", MEF_MainMenu, MAIN_RESUMEGAME, MENU_CLOSE );
-#endif
+//#endif
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME_INGAME, MENU_NEWVERIFY );
 static MenuLink_t MEO_MAIN_NEWGAME_NETWORK = { MENU_NETWORK, MA_Advance, };
 MAKE_MENU_TOP_ENTRYLINK( s_SaveGame, MEF_MainMenu, MAIN_SAVEGAME, MENU_SAVE );
@@ -1562,6 +1563,7 @@ static MenuMenu_t M_NETJOIN = MAKE_MENUMENU( "Join Network Game", &MMF_SmallOpti
 static MenuMenu_t M_DHHUNTING = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHHUNTING );
 static MenuMenu_t M_DHTARGET = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHTARGET );
 static MenuMenu_t M_DHWEAPON = MAKE_MENUMENU( NoTitle, &MMF_Top_Skill, MEL_DHWEAPON );
+static MenuPanel_t M_DHTROPHIES = { NoTitle, MENU_NULL, MA_Return, MENU_NULL, MA_Advance, };
 
 #ifdef EDUKE32_SIMPLE_MENU
 static MenuPanel_t M_STORY = { NoTitle, MENU_STORY, MA_Return, MENU_STORY, MA_Advance, };
@@ -1745,7 +1747,7 @@ static Menu_t Menus[] = {
     { &M_DHHUNTING, MENU_DHHUNTING, MENU_MAIN, MA_Return, Menu },
     { &M_DHTARGET, MENU_DHTARGET, MENU_MAIN, MA_Return, Menu },
     { &M_DHWEAPON, MENU_DHWEAPON, MENU_PREVIOUS, MA_Return, Menu },
-    //{ &M_DHTROPHIES, MENU_DHTROPHIES, MENU_MAIN, MA_Return, Menu },
+    { &M_DHTROPHIES, MENU_DHTROPHIES, MENU_MAIN, MA_Return, Panel },
 };
 
 static CONSTEXPR const uint16_t numMenus = ARRAY_SIZE(Menus);
@@ -2154,8 +2156,18 @@ void Menu_Init(void)
         MEL_MAIN[2] = &ME_MAIN_DHTROPHIES;
         MEL_MAIN[3] = &ME_MAIN_OPTIONS;
         MEL_MAIN[4] = &ME_MAIN_HELP;
-        MMF_Top_Main.pos.y = 72 << 16;
-        MMF_Top_Main.bottomcutoff = -(180 << 16);
+        M_MAIN.format = &MMF_Top_MainDH;
+
+        MEL_MAIN_INGAME[0] = &ME_MAIN_RESUMEGAME;
+        MEL_MAIN_INGAME[1] = &ME_MAIN_DHTROPHIES;
+        MEL_MAIN_INGAME[2] = &ME_MAIN_OPTIONS;
+        MEL_MAIN_INGAME[3] = &ME_MAIN_HELP;
+        MEL_MAIN_INGAME[4] = &ME_MAIN_QUITTOTITLE;
+        MEL_MAIN_INGAME[5] = &ME_MAIN_QUITGAME;
+        M_MAIN_INGAME.numEntries = 6;
+
+        ME_MAIN_RESUMEGAME.name = "Keep Huntin'";
+
         MMF_Top_Episode.pos.y = 102 << 16;
         MMF_Top_Episode.bottomcutoff = -(180 << 16);
         MMF_Top_Skill.pos.y = 102 << 16;
@@ -3603,6 +3615,25 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     }
         break;
 
+    case MENU_DHTROPHIES:
+        if (g_player[myconnectindex].ps->gm & MODE_GAME)
+        {
+            if (ud.level_number < 4)
+            {
+                rotatesprite_fs(origin.x+(160<<16), origin.y+(100<<16), 65536, 0, 1730, 0, 0, 10);
+                sub_5469C(origin, 0);
+            }
+            else
+                sub_5469C(origin, 2);
+        }
+        else
+        {
+            rotatesprite_fs(origin.x+(160<<16), origin.y+(100<<16),65536, 0, 1730, 0, 0, 10);
+            sub_5469C(origin, 1);
+        }
+        break;
+        break;
+
     default:
         break;
     }
@@ -3929,6 +3960,35 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         }
         break;
     }
+
+    case MENU_DHHUNTING:
+        ud.m_volume_number = 0;
+        ud.m_level_number = M_DHHUNTING.currentEntry;
+        break;
+
+    case MENU_DHTARGET:
+        ud.m_volume_number = 0;
+        ud.m_level_number = M_DHTARGET.currentEntry + 4;
+        break;
+
+    case MENU_DHWEAPON:
+        ud.m_player_skill = 1;
+
+        g_skillSoundVoice = -1;
+
+        ud.m_respawn_monsters = 0;
+
+        ud.m_monsters_off = ud.monsters_off = 0;
+
+        ud.m_respawn_items = 0;
+        ud.m_respawn_inventory = 0;
+
+        ud.multimode = 1;
+
+        g_player[myconnectindex].ps->dhat61f = M_DHWEAPON.currentEntry;
+
+        G_NewGame_EnterLevel();
+        break;
 
     default:
         break;
@@ -4889,6 +4949,13 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_MAIN_INGAME:
+        if (DEER)
+        {
+            if (ud.level_number < 4)
+                ME_MAIN_QUITTOTITLE.name = "Leave Area";
+            else
+                ME_MAIN_QUITTOTITLE.name = "Leave Range";
+        }
         break;
 
     case MENU_LOAD:

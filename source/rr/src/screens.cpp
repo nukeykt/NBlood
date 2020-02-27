@@ -1608,6 +1608,8 @@ void G_DisplayLogo(void)
 
         //G_FadePalette(0,0,0,0);
         videoClearScreen(0L);
+
+        g_noLogo = 1; // Play intro only once
         return;
     }
     if (RRRA)
