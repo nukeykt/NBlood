@@ -193,6 +193,20 @@ void LoadSave::LoadGame(char *pzFile)
     }
 #endif
 
+    if ((unsigned)gGameOptions.nEpisode >= kMaxEpisodes || (unsigned)gGameOptions.nLevel >= gGameOptions.nEpisode
+        || Bstrcasecmp(gEpisodeInfo[gGameOptions.nEpisode].levelsInfo[gGameOptions.nLevel].at0, gGameOptions.zLevelName) != 0)
+    {
+        if (!gSysRes.Lookup(gGameOptions.zLevelName, "MAP"))
+        {
+            gGameOptions.nEpisode = 0;
+            gGameOptions.nLevel = 0;
+        }
+        else
+        {
+            levelAddUserMap(gGameOptions.zLevelName);
+        }
+    }
+
     if (MusicRestartsOnLoadToggle
         || demoWasPlayed
         || (gMusicPrevLoadedEpisode != gGameOptions.nEpisode || gMusicPrevLoadedLevel != gGameOptions.nLevel))
