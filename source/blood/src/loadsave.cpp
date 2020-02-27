@@ -355,6 +355,10 @@ void MyLoadSave::Load(void)
 #ifdef YAX_ENABLE
     Read(&numyaxbunches, sizeof(numyaxbunches));
 #endif
+    psky_t skyInfo;
+    Read(&skyInfo, sizeof(skyInfo));
+
+    *tileSetupSky(0) = skyInfo;
     gCheatMgr.sub_5BCF4();
 
 }
@@ -463,6 +467,8 @@ void MyLoadSave::Save(void)
 #ifdef YAX_ENABLE
     Write(&numyaxbunches, sizeof(numyaxbunches));
 #endif
+    psky_t skyInfo = *tileSetupSky(0);
+    Write(&skyInfo, sizeof(skyInfo));
 }
 
 void LoadSavedInfo(void)
