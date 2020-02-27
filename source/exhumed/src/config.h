@@ -44,19 +44,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEFAULTJOYSTICKANALOGUESATURATE     9500
 
 enum {
-	gamefunc_Move_Forward,  // 0
-	gamefunc_Move_Backward, // 1
+	gamefunc_Move_Forward,
+	gamefunc_Move_Backward,
 	gamefunc_Turn_Left,
 	gamefunc_Turn_Right,
 	gamefunc_Strafe,
 	gamefunc_Strafe_Left,
 	gamefunc_Strafe_Right,
-	gamefunc_Run, // 7
-	gamefunc_Jump, // 8
-	gamefunc_Crouch, // 9
-	gamefunc_Fire, // 10
-	gamefunc_Open, // 11
-	gamefunc_Look_Up, // 12
+	gamefunc_Run,
+	gamefunc_Jump,
+	gamefunc_Crouch,
+	gamefunc_Fire,
+	gamefunc_Open,
+	gamefunc_Look_Up,
 	gamefunc_Look_Down,
 	gamefunc_Look_Straight,
 	gamefunc_Aim_Up,
@@ -69,7 +69,6 @@ enum {
 	gamefunc_Weapon_5,
 	gamefunc_Weapon_6,
 	gamefunc_Weapon_7,
-//	gamefunc_Mouseview,
 	gamefunc_Pause,
 	gamefunc_Map,
 	gamefunc_Zoom_In,

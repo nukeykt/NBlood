@@ -62,7 +62,6 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
   "Weapon_5",
   "Weapon_6",
   "Weapon_7",
-//  "Mouseview",
   "Pause",
   "Map",
   "Zoom_In",
@@ -108,7 +107,6 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "5", "",
    "6", "",
    "7", "",
-   "/", "",
    "Pause", "",
    "Tab", "",
    "=", "",
@@ -123,6 +121,8 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "F7", "",
    "F8", "",
    "`", "",
+   "U", "",
+   "I", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -152,7 +152,6 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "5", "",
    "6", "",
    "7", "",
-   "/", "",
    "Pause", "",
    "Tab", "",
    "=", "",
@@ -167,6 +166,8 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "F7", "",
    "F8", "",
    "`", "",
+   "U", "",
+   "I", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
