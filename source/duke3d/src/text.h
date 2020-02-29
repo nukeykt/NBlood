@@ -83,15 +83,15 @@ extern void G_PrintGameText(int32_t tile, int32_t x, int32_t y, const char *t,
                             int32_t x1, int32_t y1, int32_t x2, int32_t y2,
                             int32_t z, int32_t a);
 
-extern int32_t G_GetStringTile(int32_t font, char c, int32_t f);
+extern int32_t G_GetStringTileASCII(TileFontPtr_t tilefontPtr, int32_t font, char c, int32_t f);
 extern void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f);
 
-uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * text, char const * str, char const * const end, int32_t font, int32_t flags);
+uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * text, char const * str, char const * const end, TileFontPtr_t tilefontPtr, int32_t font, int32_t flags);
 
-static inline int32_t PopulateConstWidth(int32_t font, int32_t flags)
+static inline int32_t PopulateConstWidth(TileFontPtr_t tilefontPtr, int32_t font, int32_t flags)
 {
     char numeral = '0'; // this is subject to change as an implementation detail
-    uint16_t const tile = G_GetStringTile(font, numeral, flags);
+    uint16_t const tile = G_GetStringTileASCII(tilefontPtr, font, numeral, flags);
     Bassert(tile < MAXTILES);
     return (tilesiz[tile].x - 1) << 16;
 }
@@ -108,16 +108,19 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
         return {};
     }
 
+    TileFontPtr_t tilefontPtr = tilefontFind(font);
+
+
     ScreenTextSize_t data{};
 
     str = localeLookup(str);
 
-    data.constwidth = PopulateConstWidth(font, f);
+    data.constwidth = PopulateConstWidth(tilefontPtr, font, f);
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = ((f & TEXT_CONSTWIDTHNUMS) ? strbuflen << 1 : strbuflen) + 1;
     auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
-    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, font, f);
+    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, tilefontPtr, font, f);
     data.text = text;
     data.len = textlen;
 
@@ -147,16 +150,18 @@ static inline vec2_t G_ScreenText(const int32_t font,
         return {};
     }
 
+    TileFontPtr_t tilefontPtr = tilefontFind(font);
+
     ScreenText_t data{};
 
     str = localeLookup(str);
 
-    data.constwidth = PopulateConstWidth(font, f);
+    data.constwidth = PopulateConstWidth(tilefontPtr, font, f);
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = ((f & TEXT_CONSTWIDTHNUMS) ? strbuflen << 1 : strbuflen) + 1;
     auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
-    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, font, f);
+    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, tilefontPtr, font, f);
     data.text = text;
     data.len = textlen;
 
@@ -190,6 +195,8 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
         return {};
     }
 
+    TileFontPtr_t tilefontPtr = tilefontFind(font);
+
     ScreenText_t data{};
 
     Bassert(!(f & TEXT_CONSTWIDTHNUMS));
@@ -199,7 +206,7 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = strbuflen + 1;
     auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
-    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, font, f);
+    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, tilefontPtr, font, f);
     data.text = text;
     data.len = textlen;
 

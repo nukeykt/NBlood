@@ -426,6 +426,48 @@ vec2_t screentextRenderShadow(ScreenText_t const & data, vec2_t shadowpos, int32
 #include <string>
 #include <unordered_map>
 
+using tilefont_map_t = std::unordered_map<uint32_t, uint16_t>;
+static std::unordered_map<uint16_t, tilefont_map_t> tilefontList;
+
+TileFontPtr_t tilefontGetPtr(uint16_t tilenum)
+{
+    tilefont_map_t & myTileFont = tilefontList[tilenum];
+    return TileFontPtr_t{&myTileFont};
+}
+
+TileFontPtr_t tilefontFind(uint16_t tilenum)
+{
+    auto iter = tilefontList.find(tilenum);
+    if (iter == tilefontList.end())
+        return TileFontPtr_t{nullptr};
+
+    tilefont_map_t & myTileFont = iter->second;
+    return TileFontPtr_t{&myTileFont};
+}
+
+void tilefontDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum)
+{
+    auto & myTileFont = *(tilefont_map_t *)tilefontPtr.opaque;
+    myTileFont[chr] = tilenum;
+}
+
+void tilefontMaybeDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum)
+{
+    auto & myTileFont = *(tilefont_map_t *)tilefontPtr.opaque;
+    myTileFont.emplace(chr, tilenum);
+}
+
+uint16_t tilefontLookup(TileFontPtr_t tilefontPtr, uint32_t chr)
+{
+    auto & myTileFont = *(tilefont_map_t *)tilefontPtr.opaque;
+
+    auto iter = myTileFont.find(chr);
+    if (iter == myTileFont.end())
+        return 0;
+
+    return iter->second;
+}
+
 using locale_map_t = std::unordered_map<std::string, std::string>;
 static std::unordered_map<std::string, locale_map_t> localeList{{"en", {}}};
 static locale_map_t * currentLocale;

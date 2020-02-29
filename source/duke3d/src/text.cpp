@@ -33,10 +33,67 @@ void G_InitText()
 
     for (int i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
         minitext_lowercase &= (int)tileLoad(i);
+
+    TileFontPtr_t tilefont_BIGALPHANUM = tilefontGetPtr(BIGALPHANUM);
+    unsigned i, j;
+    j = -10;
+    for (i = 0; i <= '9'-'0'; ++i)
+    {
+        char c = '0' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, BIGALPHANUM + i + j);
+    }
+    j += i;
+    for (i = 0; i <= 'Z'-'A'; ++i)
+    {
+        char c = 'A' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, BIGALPHANUM + i + j);
+    }
+    j += i;
+    for (i = 0; i <= 'z'-'a'; ++i)
+    {
+        char c = 'a' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, BIGALPHANUM + i + j);
+    }
+    j += i;
+    struct { char c; int32_t tilenum; } const bigalphanum_mappings[] =
+    {
+        { '-', BIGALPHANUM - 11, },
+        { '_', BIGALPHANUM - 11, },
+        { '.', BIGPERIOD, },
+        { ',', BIGCOMMA, },
+        { '!', BIGX_, },
+        { '?', BIGQ, },
+        { ';', BIGSEMI, },
+        { ':', BIGCOLIN, },
+        { '\\', BIGALPHANUM + 68, },
+        { '/', BIGALPHANUM + 68, },
+        { '%', BIGALPHANUM + 69, },
+        { '`', BIGAPPOS, },
+        { '\"', BIGAPPOS, },
+        { '\'', BIGAPPOS, },
+    };
+    for (auto const & mapping : bigalphanum_mappings)
+    {
+        uint32_t chr32 = tilefontGetChr32FromASCII(mapping.c);
+        tilefontMaybeDefineMapping(tilefont_BIGALPHANUM, chr32, mapping.tilenum);
+    }
+
+    TileFontPtr_t tilefont_STARTALPHANUM = tilefontGetPtr(STARTALPHANUM);
+    TileFontPtr_t tilefont_MINIFONT = tilefontGetPtr(MINIFONT);
+    for (i = 0; i <= '\x7F'-'!'; ++i)
+    {
+        char c = '!' + i;
+        uint32_t chr32 = tilefontGetChr32FromASCII(c);
+        tilefontMaybeDefineMapping(tilefont_STARTALPHANUM, chr32, STARTALPHANUM + i);
+        tilefontMaybeDefineMapping(tilefont_MINIFONT, chr32, MINIFONT + i);
+    }
 }
 
 // assign the character's tilenum
-int32_t G_GetStringTile(int32_t font, char c, int32_t f)
+static int32_t G_GetStringTileLegacy(int32_t font, char c, int32_t f)
 {
     if (f & TEXT_DIGITALNUMBER)
         return c - '0' + font;
@@ -94,7 +151,23 @@ int32_t G_GetStringTile(int32_t font, char c, int32_t f)
         return c - '!' + font; // uses ASCII order
 }
 
-uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * str, char const * const end, int32_t font, int32_t flags)
+int32_t G_GetStringTileASCII(TileFontPtr_t tilefontPtr, int32_t font, char c, int32_t f)
+{
+    if (tilefontPtr.opaque != nullptr)
+        return tilefontLookup(tilefontPtr, tilefontGetChr32FromASCII(c));
+
+    return G_GetStringTileLegacy(font, c, f);
+}
+
+static inline int32_t G_GetStringTile(TileFontPtr_t tilefontPtr, uint32_t chr32)
+{
+    if (tilefontPtr.opaque != nullptr)
+        return tilefontLookup(tilefontPtr, chr32);
+
+    return 0;
+}
+
+uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * str, char const * const end, TileFontPtr_t tilefontPtr, int32_t font, int32_t flags)
 {
     ScreenTextGlyph_t * text = textbuf;
     char c;
@@ -128,38 +201,51 @@ uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * 
             continue;
         }
 
-        // handle case bits
-        if (flags & TEXT_UPPERCASE)
+        if (!(c & 0x80))
         {
-            if (flags & TEXT_INVERTCASE) // optimization...?
-            { // v^ important that these two ifs remain separate due to the else below
+            // handle case bits
+            if (flags & TEXT_UPPERCASE)
+            {
+                if (flags & TEXT_INVERTCASE) // optimization...?
+                { // v^ important that these two ifs remain separate due to the else below
+                    if (Bisupper(c))
+                        c = Btolower(c);
+                }
+                else if (Bislower(c))
+                    c = Btoupper(c);
+            }
+            else if (flags & TEXT_INVERTCASE)
+            {
                 if (Bisupper(c))
                     c = Btolower(c);
+                else if (Bislower(c))
+                    c = Btoupper(c);
             }
-            else if (Bislower(c))
-                c = Btoupper(c);
-        }
-        else if (flags & TEXT_INVERTCASE)
-        {
-            if (Bisupper(c))
-                c = Btolower(c);
-            else if (Bislower(c))
-                c = Btoupper(c);
-        }
 
-        if ((flags & TEXT_CONSTWIDTHNUMS) && c >= '0' && c <= '9')
-            *text++ = SCREENTEXT_CONSTWIDTH;
+            if ((flags & TEXT_CONSTWIDTHNUMS) && c >= '0' && c <= '9')
+                *text++ = SCREENTEXT_CONSTWIDTH;
 
-        if (c == '\n')
-            *text++ = SCREENTEXT_NEWLINE;
-        else if (c == '\t')
-            *text++ = SCREENTEXT_TAB;
-        else if (c == ' ')
-            *text++ = SCREENTEXT_SPACE;
+            if (c == '\n')
+                *text++ = SCREENTEXT_NEWLINE;
+            else if (c == '\t')
+                *text++ = SCREENTEXT_TAB;
+            else if (c == ' ')
+                *text++ = SCREENTEXT_SPACE;
+            else
+                *text++ = G_GetStringTileASCII(tilefontPtr, font, c, flags);
+
+            ++str;
+        }
         else
-            *text++ = G_GetStringTile(font, c, flags);
+        {
+            uint32_t chr32 = 0;
+            size_t bytes = min(utf8charbytes(c), size_t(end - str));
+            memcpy(&chr32, str, bytes);
 
-        ++str;
+            *text++ = G_GetStringTile(tilefontPtr, chr32);
+
+            str += bytes;
+        }
     }
 
     *text = 0;
@@ -169,12 +255,14 @@ uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * 
 
 void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
 {
+    TileFontPtr_t tilefontPtr = tilefontFind(font);
+
     if (f & (TEXT_INTERNALSPACE|TEXT_TILESPACE))
     {
         char space = '.'; // this is subject to change as an implementation detail
         if (f & TEXT_TILESPACE)
             space = '\x7F'; // tile after '~'
-        uint32_t const tile = G_GetStringTile(font, space, f);
+        uint32_t const tile = G_GetStringTileASCII(tilefontPtr, font, space, f);
         Bassert(tile < MAXTILES);
 
         empty.x += tilesiz[tile].x << 16;
@@ -185,7 +273,7 @@ void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
         char line = 'A'; // this is subject to change as an implementation detail
         if (f & TEXT_TILELINE)
             line = '\x7F'; // tile after '~'
-        uint32_t const tile = G_GetStringTile(font, line, f);
+        uint32_t const tile = G_GetStringTileASCII(tilefontPtr, font, line, f);
         Bassert(tile < MAXTILES);
 
         empty.y += tilesiz[tile].y << 16;

@@ -14,6 +14,30 @@
 extern "C" {
 #endif
 
+static inline CONSTEXPR_CXX14 size_t utf8len(char const * s)
+{
+    size_t len = 0;
+    char c = '\0';
+    while ((c = *s) != '\0')
+    {
+        len += ((c & 0xC0) != 0x80);
+        ++s;
+    }
+    return len;
+}
+
+static inline CONSTEXPR_CXX14 size_t utf8charbytes(char c)
+{
+    if ((c & 0xF8) == 0xF0)
+        return 4;
+    else if ((c & 0xF0) == 0xE0)
+        return 3;
+    else if ((c & 0xE0) == 0xC0)
+        return 2;
+
+    return 1;
+}
+
 typedef uint16_t ScreenTextGlyph_t;
 
 enum ScreenTextSentinels : ScreenTextGlyph_t
@@ -114,6 +138,24 @@ struct ScreenText_t
 vec2_t screentextGetSize(ScreenTextSize_t const &);
 vec2_t screentextRender(ScreenText_t const &);
 vec2_t screentextRenderShadow(ScreenText_t const &, vec2_t, int32_t);
+
+struct TileFontPtr_t
+{
+    void * opaque;
+};
+
+static FORCE_INLINE uint32_t tilefontGetChr32FromASCII(char c)
+{
+    uint32_t chr32 = 0;
+    memcpy(&chr32, &c, sizeof(char));
+    return chr32;
+}
+
+TileFontPtr_t tilefontGetPtr(uint16_t tilenum);
+TileFontPtr_t tilefontFind(uint16_t tilenum);
+void tilefontDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum);
+void tilefontMaybeDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum);
+uint16_t tilefontLookup(TileFontPtr_t tilefontPtr, uint32_t chr);
 
 struct LocalePtr_t
 {

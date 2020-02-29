@@ -126,6 +126,7 @@ enum scripttoken_t
     T_SIZE,
     T_NEWGAMECHOICES,
     T_LOCALIZATION, T_STRING,
+    T_TILEFONT, T_CHARACTER,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -407,6 +408,7 @@ static int32_t defsparser(scriptfile *script)
         { "shadefactor",     T_SHADEFACTOR      },
         { "newgamechoices",  T_NEWGAMECHOICES   },
         { "localization",    T_LOCALIZATION     },
+        { "tilefont",        T_TILEFONT         },
     };
 
     while (1)
@@ -3760,6 +3762,96 @@ static int32_t defsparser(scriptfile *script)
                         initprintf("Error: localization: Invalid token on line %s:%d\n",
                                    script->filename, scriptfile_getlinum(script, script->ltextptr));
                         break;
+                }
+            }
+            break;
+        }
+
+        case T_TILEFONT:
+        {
+            int32_t tilenum;
+            if (scriptfile_getsymbol(script, &tilenum))
+            {
+                initprintf("Error: tilefont: Invalid tile on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            char * blockend;
+            if (scriptfile_getbraces(script, &blockend))
+            {
+                initprintf("Error: tilefont: Invalid braces on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            if ((unsigned)tilenum >= MAXUSERTILES)
+            {
+                initprintf("Error: tilefont: Invalid tile %d on line %s:%d\n", tilenum,
+                           script->filename, scriptfile_getlinum(script, script->ltextptr));
+                script->textptr = blockend+1;
+                break;
+            }
+
+            static const tokenlist subtokens[] =
+            {
+                { "character",   T_CHARACTER },
+                { "char",        T_CHARACTER },
+                { "chr",         T_CHARACTER },
+            };
+
+            TileFontPtr_t tilefontPtr = tilefontGetPtr(tilenum);
+
+            while (script->textptr < blockend)
+            {
+                int32_t token = getatoken(script, subtokens, ARRAY_SIZE(subtokens));
+                switch (token)
+                {
+                    case T_CHARACTER:
+                    {
+                        char * key;
+                        int32_t val;
+                        auto keyResult = scriptfile_getstring(script, &key);
+                        auto valResult = scriptfile_getsymbol(script, &val);
+                        if (keyResult)
+                        {
+                            initprintf("Error: tilefont character: Invalid character on line %s:%d\n",
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+                        if (valResult || script->ltextptr == blockend)
+                        {
+                            initprintf("Error: tilefont character: Invalid tile for character \"%s\" on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        if (utf8len(key) != 1)
+                        {
+                            initprintf("Error: tilefont character: String \"%s\" consists of multiple characters on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+                        if ((unsigned)val >= MAXUSERTILES)
+                        {
+                            initprintf("Error: tilefont character: Invalid tile %d on line %s:%d\n", val,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        size_t const buflen = strlen(key);
+                        if (buflen > sizeof(uint32_t))
+                        {
+                            initprintf("Error: tilefont character: Character \"%s\" is longer than four bytes on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        uint32_t chr32 = 0;
+                        memcpy(&chr32, key, buflen);
+                        tilefontDefineMapping(tilefontPtr, chr32, val);
+                        break;
+                    }
                 }
             }
             break;
