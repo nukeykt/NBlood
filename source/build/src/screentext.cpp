@@ -87,18 +87,6 @@ vec2_t G_ScreenTextSize(const int32_t font,
     char const * text = str;
     char const * const end = Bstrchr(str, '\0');
 
-    // for best results, we promote 320x200 coordinates to full precision before any math
-    if (!(o & ROTATESPRITE_FULL16))
-    {
-        x <<= 16;
-        y <<= 16;
-        xspace <<= 16;
-        yline <<= 16;
-        xbetween <<= 16;
-        ybetween <<= 16;
-    }
-    // coordinate values should be shifted left by 16
-
     vec2_t size{}; // eventually the return value
     vec2_t pos{}; // holds the coordinate position as we draw each character tile of the string
     vec2_t extent{}; // holds the x-width of each character and the greatest y-height of each line
@@ -357,13 +345,6 @@ vec2_t G_ScreenTextSize(const int32_t font,
     if (f & TEXT_YJUSTIFY)
         size.y = ybetween;
 
-    // return values in the same manner we receive them
-    if (!(o & ROTATESPRITE_FULL16))
-    {
-        size.x >>= 16;
-        size.y >>= 16;
-    }
-
     return size;
 }
 
@@ -386,25 +367,13 @@ vec2_t G_ScreenText(const int32_t font,
     char const * text = str;
     char const * const end = Bstrchr(str, '\0');
 
-    // for best results, we promote 320x200 coordinates to full precision before any math
-    if (!(o & ROTATESPRITE_FULL16))
-    {
-        x <<= 16;
-        y <<= 16;
-        xspace <<= 16;
-        yline <<= 16;
-        xbetween <<= 16;
-        ybetween <<= 16;
-    }
-    // coordinate values should be shifted left by 16
-
     // eliminate conflicts, necessary here to get the correct size value
     // especially given justification's special handling in G_ScreenTextSize()
     if ((f & TEXT_XRIGHT) || (f & TEXT_XCENTER) || (f & TEXT_XJUSTIFY) || (f & TEXT_YJUSTIFY) || blockangle % 512 != 0)
         o &= ~TEXT_LINEWRAP;
 
     // size is the return value, and we need it for alignment
-    vec2_t size = G_ScreenTextSize(font, x, y, z, blockangle, str, o | ROTATESPRITE_FULL16, xspace, yline, (f & TEXT_XJUSTIFY) ? 0 : xbetween, (f & TEXT_YJUSTIFY) ? 0 : ybetween, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2);
+    vec2_t size = G_ScreenTextSize(font, x, y, z, blockangle, str, o, xspace, yline, (f & TEXT_XJUSTIFY) ? 0 : xbetween, (f & TEXT_YJUSTIFY) ? 0 : ybetween, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2);
 
     vec2_t origin{}; // where to start, depending on the alignment
     vec2_t pos{}; // holds the coordinate position as we draw each character tile of the string
@@ -444,7 +413,7 @@ vec2_t G_ScreenText(const int32_t font,
             {
                 char * const line = GetSubString(text, end, length);
 
-                linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2).x;
+                linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2).x;
 
                 Xfree(line);
             }
@@ -636,7 +605,7 @@ vec2_t G_ScreenText(const int32_t font,
 
                 char * const line = GetSubString(text+1, end, length);
 
-                int32_t linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2).x;
+                int32_t linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2).x;
 
                 Xfree(line);
 
@@ -749,13 +718,6 @@ vec2_t G_ScreenText(const int32_t font,
         ++text;
     }
 
-    // return values in the same manner we receive them
-    if (!(o & ROTATESPRITE_FULL16))
-    {
-        size.x >>= 16;
-        size.y >>= 16;
-    }
-
     return size;
 }
 
@@ -766,28 +728,6 @@ vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
-    if (!(o & ROTATESPRITE_FULL16))
-    {
-        sx <<= 16;
-        sy <<= 16;
-        x <<= 16;
-        y <<= 16;
-        xspace <<= 16;
-        yline <<= 16;
-        xbetween <<= 16;
-        ybetween <<= 16;
-    }
-
-    G_ScreenText(font, x + mulscale16(sx, z), y + mulscale16(sy, z), z, blockangle, charangle, str, 127, sp, o|ROTATESPRITE_FULL16, alpha, xspace, yline, xbetween, ybetween, f, x1, y1, x2, y2);
-
-    vec2_t size = G_ScreenText(font, x, y, z, blockangle, charangle, str, shade, pal, o|ROTATESPRITE_FULL16, alpha, xspace, yline, xbetween, ybetween, f, x1, y1, x2, y2);
-
-    // return values in the same manner we receive them
-    if (!(o & ROTATESPRITE_FULL16))
-    {
-        size.x >>= 16;
-        size.y >>= 16;
-    }
-
-    return size;
+    G_ScreenText(font, x + mulscale16(sx, z), y + mulscale16(sy, z), z, blockangle, charangle, str, 127, sp, o, alpha, xspace, yline, xbetween, ybetween, f, x1, y1, x2, y2);
+    return G_ScreenText(font, x, y, z, blockangle, charangle, str, shade, pal, o, alpha, xspace, yline, xbetween, ybetween, f, x1, y1, x2, y2);
 }
