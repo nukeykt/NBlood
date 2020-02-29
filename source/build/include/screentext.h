@@ -37,12 +37,43 @@ enum ScreenTextFlags_t
     TEXT_CONSTWIDTHNUMS  = 0x00040000,
 };
 
+struct ScreenTextSize_t
+{
+    const char * str;
+    vec2_t pos;
+    vec2_t empty, between;
+    vec2_t b1, b2;
+    int32_t zoom, o, f;
+    int16_t font, blockangle;
+};
+
+struct ScreenText_t
+{
+    union
+    {
+        ScreenTextSize_t size;
+        struct
+        {
+            const char * str;
+            vec2_t pos;
+            vec2_t empty, between;
+            vec2_t b1, b2;
+            int32_t zoom, o, f;
+            int16_t font, blockangle;
+        };
+    };
+    int32_t alpha;
+    int16_t charangle;
+    int8_t shade;
+    uint8_t pal;
+};
+
+vec2_t screentextGetSize(ScreenTextSize_t const &);
+vec2_t screentextRender(ScreenText_t const &);
+vec2_t screentextRenderShadow(ScreenText_t const &, vec2_t, int32_t);
+
 typedef int32_t (*getstringtile_t)(int32_t, char *, int32_t);
 void screentextSetStringTile(getstringtile_t func);
-
-extern vec2_t G_ScreenTextSize(int32_t font, int32_t x, int32_t y, int32_t z, int32_t blockangle, const char *str, int32_t o, int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2);
-extern vec2_t G_ScreenText(int32_t font, int32_t x, int32_t y, int32_t z, int32_t blockangle, int32_t charangle, const char *str, int32_t shade, int32_t pal, int32_t o, int32_t alpha, int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2);
-extern vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, int32_t font, int32_t x, int32_t y, int32_t z, int32_t blockangle, int32_t charangle, const char *str, int32_t shade, int32_t pal, int32_t o, int32_t alpha, int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 
 #ifdef __cplusplus
 }
