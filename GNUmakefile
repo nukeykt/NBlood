@@ -257,6 +257,7 @@ engine_objs := \
     pragmas.cpp \
     rev.cpp \
     screenshot.cpp \
+    screentext.cpp \
     scriptfile.cpp \
     sjson.cpp \
     smalltextfont.cpp \
