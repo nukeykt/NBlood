@@ -422,10 +422,6 @@ void M32RunScript(const char *s);
 void P_DoQuote(int32_t q,DukePlayer_t *p);
 void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set);
 
-#define NEG_ALPHA_TO_BLEND(alpha, blend, orientation) do { \
-    if (alpha < 0) { blend = -alpha; alpha = 0; orientation |= RS_TRANS1; } \
-} while (0)
-
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?
 // 2048+(32+16)+8+4
@@ -606,8 +602,6 @@ void El_SetCON(const char *conluacode);
 
 EXTERN_INLINE_HEADER void G_SetStatusBarScale(int32_t sc);
 
-EXTERN_INLINE_HEADER void SetIfGreater(int32_t *variable, int32_t potentialValue);
-
 #endif
 
 #ifdef __cplusplus
@@ -640,14 +634,6 @@ EXTERN_INLINE void G_SetStatusBarScale(int32_t sc)
 {
     ud.statusbarscale = clamp(sc, 50, 100);
     G_UpdateScreenArea();
-}
-
-// the point of this is to prevent re-running a function or calculation passed to potentialValue
-// without making a new variable under each individual circumstance
-EXTERN_INLINE void SetIfGreater(int32_t *variable, int32_t potentialValue)
-{
-    if (potentialValue > *variable)
-        *variable = potentialValue;
 }
 
 #endif

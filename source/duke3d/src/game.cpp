@@ -6755,6 +6755,8 @@ int app_main(int argc, char const * const * argv)
         S_MusicStartup();
     }
 
+    screentextSetStringTile(G_GetStringTile);
+
     // check if the minifont will support lowercase letters (3136-3161)
     // there is room for them in tiles012.art between "[\]^_." and "{|}~"
     minitext_lowercase = 1;
