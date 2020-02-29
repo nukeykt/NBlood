@@ -1611,7 +1611,8 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         4979,
         5113,
 
-        5120 // 5114    // JBF: for my credits
+        5120, // 5114    // JBF: for my credits
+        5120,
     };
     static short SWOrderScreen[] =
     {
@@ -1623,7 +1624,8 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         4979,
         5113,
 
-        5120 // 5114    // JBF: for my credits
+        5120, // 5114    // JBF: for my credits
+        5120,
     };
     short *OrderScreen, OrderScreenSiz;
 
@@ -1753,21 +1755,22 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         on_screen = 0;
 // CTW MODIFICATION END
 
-    int const shade = on_screen == OrderScreenSiz-1 ? 8 : 0;
+    int const shade = on_screen >= OrderScreenSiz-2 ? 8 : 0;
     rotatesprite(0,0,RS_SCALE,0,OrderScreen[on_screen], shade, 0,
                  (ROTATE_SPRITE_CORNER|ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_NON_MASK|ROTATE_SPRITE_IGNORE_START_MOST),
                  0, 0, xdim-1, ydim-1);
 
-    if (on_screen == OrderScreenSiz-1)
+    if (on_screen >= OrderScreenSiz-2)
     {
         // Jonathon's credits page hack :-)
 
         static const char *jtitle = "^Port Credits";
-        static const char *jtext[] =
+        static const char *text1[] =
         {
+            "*Technical Director",
+            " Evan \"Hendricks266\" Ramos",
             "*Developers",
             " Richard \"TerminX\" Gobeille",
-            " Evan \"Hendricks266\" Ramos",
             " Alex \"pogokeen\" Dawson",
             "*Retired developers",
             " Pierre-Loup \"Plagman\" Griffais",
@@ -1776,15 +1779,43 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             " Jonathon \"JonoF\" Fowler",
             "*Uses BUILD Engine technology by",
             " Ken \"Awesoken\" Silverman",
+        };
+        static const char *text2[] =
+        {
             "*Additional thanks to",
             " Alexey \"Nuke.YKT\" Skrybykin",
             " Jordon \"Striker\" Moss",
+            " Fox",
+            " NY00123",
+            " Barry \"sirlemonhead\" Duncan",
+            " Gennadii \"termit\" Potapov",
+            " Sergei Shubin",
             " Par \"Parkar\" Karlsson", // "Pär \"Parkar\" Karlsson",
             " Ben \"ProAsm\" Smit",
-            " NY00123",
+            " Charlie Wiederhold",
+            "-",
+            " This program is distributed under the terms of the",
+            " GNU General Public License version 2 as published by the",
+            " Free Software Foundation. See gpl-2.0.txt for details.",
+            " BUILD engine technology available under license. See buildlic.txt.",
             "-",
             " Visit eduke32.com for news and updates"
         };
+
+        const char ** jtext;
+        unsigned jtextsiz;
+
+        if (on_screen == OrderScreenSiz-2)
+        {
+            jtext = text1;
+            jtextsiz = SIZ(text1);
+        }
+        else
+        {
+            jtext = text2;
+            jtextsiz = SIZ(text2);
+        }
+
 #if 0
         static const char *scroller[] =
         {
@@ -1810,7 +1841,7 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         MNU_DrawString(160-(dimx>>1), ycur, jtitle, 0, 0);
         ycur += dimy + 8;
 
-        for (ji = 0; ji < SIZ(jtext); ji++)
+        for (ji = 0; ji < jtextsiz; ji++)
         {
             switch (jtext[ji][0])
             {

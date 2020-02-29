@@ -2926,15 +2926,19 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             };
             static const char *body[] =
             {
-                "Alexey Skrybykin",  // Nuke.YKT - Polymost fixes
+                "Alexey Lysiuk",     // "_mental_" - bugfixes, shader build step in Xcode project
+                "Alexey Skrybykin",  // "Nuke.YKT" - Polymost fixes, OPL3, engine version compatibility
+                "Barry Duncan",      // "sirlemonhead" - engine version compatibility
                 "Bioman",            // GTK work, APT repository and package upkeep
                 "Brandon Bergren",   // "Bdragon" - tiles.cfg
                 "Charlie Honig",     // "CONAN" - showview command
+                "CL102",             // "CommonLoon102" - mdposoff
                 "Dan Gaskill",       // "DeeperThought" - testing
                 "David Koenig",      // "Bargle" - Merged a couple of things from duke3d_w32
+                "Dino Bollinger",    // "Doom64hunter" - bugfixes
                 "Ed Coolidge",       // Mapster32 improvements
-                "Emile Belanger",    // original Android work
-                "Fox",               // various patches
+                "Emile Belanger",    // "Beloko" - original Android work
+                "Fox",               // "Fox666" - various patches
                 "Hunter_rus",        // tons of stuff
                 "James Bentler",     // Mapster32 improvements
                 "Jasper Foreman",    // netcode contributions
@@ -2944,11 +2948,12 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 "Jordon Moss",       // "Striker" - various patches, OldMP work
                 "Jose del Castillo", // "Renegado" - EDuke 2.1.1 components
                 "Lachlan McDonald",  // official EDuke32 icon
+                "LeoD",              // bugfixes
                 "LSDNinja",          // OS X help and testing
                 "Marcus Herbert",    // "rhoenie" - OS X compatibility work
                 "Matthew Palmer",    // "Usurper" - testing and eduke32.com domain
-                "Matt Saettler",     // original DOS EDuke/WW2GI enhancements
-                "NY00123",           // Linux / SDL usability patches
+                "Matt Saettler",     // "Matteus" - NAM, WWII GI, DOS EDuke 2.0 enhancements
+                "NY00123",           // Linux / SDL patches, engine version compatibility
                 "Ozkan Sezer",       // SDL/GTK version checking improvements
                 "Peter Green",       // "Plugwash" - dynamic remapping, custom gametypes
                 "Peter Veenstra",    // "Qbix" - port to 64-bit
@@ -2956,6 +2961,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                 "Ryan Gordon",       // "icculus" - icculus.org Duke3D port sound code
                 "Stephen Anthony",   // early 64-bit porting work
                 "tueidj",            // Wii port
+                nullptr,
             };
             EDUKE32_STATIC_ASSERT(ARRAY_SIZE(body) % 3 == 0);
             static const char *footer[] =
