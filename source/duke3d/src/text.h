@@ -36,6 +36,11 @@ extern int32_t minitext_lowercase;
 extern int32_t minitext_yofs;
 
 enum {
+    TEXT_INTERNALSPACE   = 0x00000010,
+    TEXT_TILESPACE       = 0x00000020,
+    TEXT_INTERNALLINE    = 0x00000040,
+    TEXT_TILELINE        = 0x00000080,
+
     TEXT_DIGITALNUMBER   = 0x00080000,
     TEXT_BIGALPHANUM     = 0x00100000,
     TEXT_GRAYFONT        = 0x00200000,
@@ -71,6 +76,7 @@ extern void G_PrintGameText(int32_t tile, int32_t x, int32_t y, const char *t,
                             int32_t z, int32_t a);
 
 extern int32_t G_GetStringTile(int32_t font, char *t, int32_t f);
+extern void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f);
 
 static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle,

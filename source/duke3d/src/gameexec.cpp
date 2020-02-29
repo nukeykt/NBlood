@@ -3622,6 +3622,8 @@ badindex:
                             v.between.y <<= 16;
                         }
 
+                        G_SetScreenTextEmpty(v.offset, v.tileNum, v.f);
+
                         vec2_t dim = G_ScreenTextSize(v.tileNum, v.vect.x, v.vect.y, v.vect.z, v.blockAngle, apStrings[v.quoteNum], 2 | v.orientation,
                                                       v.offset.x, v.offset.y, v.between.x, v.between.y, v.f, v.bound[0].x, v.bound[0].y, v.bound[1].x,
                                                       v.bound[1].y);
@@ -4516,6 +4518,8 @@ badindex:
                         v.between.x <<= 16;
                         v.between.y <<= 16;
                     }
+
+                    G_SetScreenTextEmpty(v.spacing, v.tilenum, v.nFlags);
 
                     G_ScreenText(v.tilenum, v.v.x, v.v.y, v.v.z, v.blockangle, v.charangle, apStrings[v.nQuote], v.shade, v.pal,
                                  2 | (v.orientation & (ROTATESPRITE_MAX - 1)), v.alpha, v.spacing.x, v.spacing.y, v.between.x, v.between.y, v.nFlags,

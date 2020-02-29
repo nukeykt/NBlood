@@ -91,6 +91,29 @@ int32_t G_GetStringTile(int32_t font, char *t, int32_t f)
         return *t - '!' + font; // uses ASCII order
 }
 
+void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
+{
+    if (f & (TEXT_INTERNALSPACE|TEXT_TILESPACE))
+    {
+        char space = '.'; // this is subject to change as an implementation detail
+        if (f & TEXT_TILESPACE)
+            space = '\x7F'; // tile after '~'
+        uint32_t tile = G_GetStringTile(font, &space, f);
+
+        empty.x += tilesiz[tile].x << 16;
+    }
+
+    if (f & (TEXT_INTERNALLINE|TEXT_TILELINE))
+    {
+        char line = 'A'; // this is subject to change as an implementation detail
+        if (f & TEXT_TILELINE)
+            line = '\x7F'; // tile after '~'
+        uint32_t tile = G_GetStringTile(font, &line, f);
+
+        empty.y += tilesiz[tile].y << 16;
+    }
+}
+
 void G_PrintGameText(int32_t tile, int32_t x, int32_t y, const char *t,
                      int32_t s, int32_t p, int32_t o,
                      int32_t x1, int32_t y1, int32_t x2, int32_t y2,
