@@ -25,6 +25,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sbar.h"
 #include "menus.h"
 
+void G_InitText()
+{
+    // check if the minifont will support lowercase letters (3136-3161)
+    // there is room for them in tiles012.art between "[\]^_." and "{|}~"
+    minitext_lowercase = 1;
+
+    for (int i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
+        minitext_lowercase &= (int)tileLoad(i);
+}
+
 // assign the character's tilenum
 int32_t G_GetStringTile(int32_t font, char c, int32_t f)
 {

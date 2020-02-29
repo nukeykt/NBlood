@@ -35,6 +35,8 @@ extern int32_t user_quote_time[MAXUSERQUOTES];
 extern int32_t minitext_lowercase;
 extern int32_t minitext_yofs;
 
+void G_InitText(void);
+
 enum {
     TEXT_INTERNALSPACE   = 0x00000010,
     TEXT_TILESPACE       = 0x00000020,
