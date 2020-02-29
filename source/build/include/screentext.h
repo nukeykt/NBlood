@@ -115,6 +115,17 @@ vec2_t screentextGetSize(ScreenTextSize_t const &);
 vec2_t screentextRender(ScreenText_t const &);
 vec2_t screentextRenderShadow(ScreenText_t const &, vec2_t, int32_t);
 
+struct LocalePtr_t
+{
+    void * opaque;
+};
+
+LocalePtr_t localeGetPtr(const char * localeName);
+void localeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val);
+void localeMaybeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val);
+void localeSetCurrent(const char * localeName);
+const char * localeLookup(const char * str);
+
 #ifdef __cplusplus
 }
 #endif

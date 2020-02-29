@@ -16,6 +16,7 @@
 #include "common.h"
 #include "mdsprite.h"  // md3model_t
 #include "colmatch.h"
+#include "screentext.h"
 
 #ifdef USE_OPENGL
 # include "hightile.h"
@@ -124,6 +125,7 @@ enum scripttoken_t
     T_IFCRC,T_IFMATCH,T_CRC32,
     T_SIZE,
     T_NEWGAMECHOICES,
+    T_LOCALIZATION, T_STRING,
 };
 
 static int32_t lastmodelid = -1, lastvoxid = -1, modelskin = -1, lastmodelskin = -1, seenframe = 0;
@@ -404,6 +406,7 @@ static int32_t defsparser(scriptfile *script)
         { "undefblendtablerange", T_UNDEFBLENDTABLERANGE },
         { "shadefactor",     T_SHADEFACTOR      },
         { "newgamechoices",  T_NEWGAMECHOICES   },
+        { "localization",    T_LOCALIZATION     },
     };
 
     while (1)
@@ -3694,6 +3697,71 @@ static int32_t defsparser(scriptfile *script)
             if (scriptfile_getbraces(script,&blockend))
                 break;
             script->textptr = blockend+1;
+            break;
+        }
+
+        case T_LOCALIZATION:
+        {
+            char * localeName;
+            if (scriptfile_getstring(script, &localeName))
+            {
+                initprintf("Error: localization: Invalid name on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            char * blockend;
+            if (scriptfile_getbraces(script, &blockend))
+            {
+                initprintf("Error: localization: Invalid braces on line %s:%d\n",
+                           script->filename, scriptfile_getlinum(script, cmdtokptr));
+                break;
+            }
+
+            static const tokenlist subtokens[] =
+            {
+                { "string",   T_STRING   },
+                { "str",      T_STRING   },
+                { "text",     T_STRING   },
+            };
+
+            LocalePtr_t localePtr = localeGetPtr(localeName);
+
+            while (script->textptr < blockend)
+            {
+                int32_t token = getatoken(script, subtokens, ARRAY_SIZE(subtokens));
+                switch (token)
+                {
+                    case T_STRING:
+                    {
+                        char * key, * val;
+                        auto keyResult = scriptfile_getstring(script, &key);
+                        auto valResult = scriptfile_getstring(script, &val);
+                        if (keyResult)
+                        {
+                            initprintf("Error: localization string: Invalid key on line %s:%d\n",
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+                        if (valResult || script->ltextptr == blockend)
+                        {
+                            initprintf("Error: localization string: Invalid value for key \"%s\" on line %s:%d\n", key,
+                                       script->filename, scriptfile_getlinum(script, script->ltextptr));
+                            break;
+                        }
+
+                        localeDefineMapping(localePtr, key, val);
+                        break;
+                    }
+
+                    default:
+                        if (script->textptr == blockend+1)
+                            break;
+                        initprintf("Error: localization: Invalid token on line %s:%d\n",
+                                   script->filename, scriptfile_getlinum(script, script->ltextptr));
+                        break;
+                }
+            }
             break;
         }
 

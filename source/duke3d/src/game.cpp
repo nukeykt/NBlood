@@ -188,6 +188,7 @@ enum gametokens
     T_LOCKED,
     T_HIDDEN,
     T_USERCONTENT,
+    T_LOCALIZATION,
 };
 
 static void gameTimerHandler(void)
@@ -5385,6 +5386,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
         { "newgamechoices",  T_NEWGAMECHOICES   },
+        { "localization"  ,  T_LOCALIZATION     },
     };
 
     static const tokenlist soundTokens[] =
@@ -5794,6 +5796,21 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
             break;
         }
+
+        case T_LOCALIZATION: // silence game-side warnings due to strings like "Music"
+        {
+            char * localeName;
+            if (scriptfile_getstring(pScript, &localeName))
+                break;
+
+            char * blockend;
+            if (scriptfile_getbraces(pScript, &blockend))
+                break;
+
+            pScript->textptr = blockend+1;
+            break;
+        }
+
         case T_EOF: return 0;
         default: break;
         }

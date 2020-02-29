@@ -98,7 +98,7 @@ static inline int32_t PopulateConstWidth(int32_t font, int32_t flags)
 
 static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle,
-    const char * const str, const int32_t o,
+    const char * str, const int32_t o,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween,
     const int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
@@ -109,6 +109,8 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
     }
 
     ScreenTextSize_t data{};
+
+    str = localeLookup(str);
 
     data.constwidth = PopulateConstWidth(font, f);
 
@@ -135,7 +137,7 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
 
 static inline vec2_t G_ScreenText(const int32_t font,
     int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle, const int32_t charangle,
-    const char * const str, const int32_t shade, uint32_t pal, int32_t o, int32_t alpha,
+    const char * str, const int32_t shade, uint32_t pal, int32_t o, int32_t alpha,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
@@ -146,6 +148,8 @@ static inline vec2_t G_ScreenText(const int32_t font,
     }
 
     ScreenText_t data{};
+
+    str = localeLookup(str);
 
     data.constwidth = PopulateConstWidth(font, f);
 
@@ -176,7 +180,7 @@ static inline vec2_t G_ScreenText(const int32_t font,
 
 static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, const int32_t font,
     int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle, const int32_t charangle,
-    const char * const str, const int32_t shade, uint32_t pal, int32_t o, const int32_t alpha,
+    const char * str, const int32_t shade, uint32_t pal, int32_t o, const int32_t alpha,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
@@ -189,6 +193,8 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
     ScreenText_t data{};
 
     Bassert(!(f & TEXT_CONSTWIDTHNUMS));
+
+    str = localeLookup(str);
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = strbuflen + 1;

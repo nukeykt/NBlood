@@ -422,3 +422,50 @@ vec2_t screentextRenderShadow(ScreenText_t const & data, vec2_t shadowpos, int32
 
     return screentextRender(data);
 }
+
+#include <string>
+#include <unordered_map>
+
+using locale_map_t = std::unordered_map<std::string, std::string>;
+static std::unordered_map<std::string, locale_map_t> localeList{{"en", {}}};
+static locale_map_t * currentLocale;
+
+LocalePtr_t localeGetPtr(const char * localeName)
+{
+    locale_map_t & myLocale = localeList[localeName];
+    return LocalePtr_t{&myLocale};
+}
+
+void localeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val)
+{
+    auto & myLocale = *(locale_map_t *)localePtr.opaque;
+    myLocale[key] = val;
+}
+
+void localeMaybeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val)
+{
+    auto & myLocale = *(locale_map_t *)localePtr.opaque;
+    myLocale.emplace(key, val);
+}
+
+void localeSetCurrent(const char * localeName)
+{
+    auto iter = localeList.find(localeName);
+    if (iter == localeList.end())
+        return;
+
+    locale_map_t & myLocale = iter->second;
+    currentLocale = &myLocale;
+}
+
+const char * localeLookup(const char * str)
+{
+    if (currentLocale == nullptr)
+        return str;
+
+    auto iter = currentLocale->find(str);
+    if (iter == currentLocale->end())
+        return str;
+
+    return iter->second.c_str();
+}
