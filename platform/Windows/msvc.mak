@@ -251,7 +251,7 @@ DUKE3D_OBJS=$(DUKE3D_OBJ)\game.$o \
 	$(DUKE3D_OBJ)\anim.$o \
         $(DUKE3D_OBJ)\cheats.$o \
         $(DUKE3D_OBJ)\sbar.$o \
-        $(DUKE3D_OBJ)\screentext.$o \
+        $(DUKE3D_OBJ)\text.$o \
         $(DUKE3D_OBJ)\screens.$o \
         $(DUKE3D_OBJ)\cmdline.$o \
 	$(DUKE3D_OBJ)\common.$o \

@@ -603,8 +603,8 @@
 		20E16CE81C7022DE00EE8446 /* screens.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20E16CE61C7022DE00EE8446 /* screens.cpp */; };
 		20E16CE91C7022DE00EE8446 /* screens.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20E16CE61C7022DE00EE8446 /* screens.cpp */; };
 		20F70F131A8F25CE00F71870 /* libc++.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 0013832819F366720007DA6C /* libc++.dylib */; };
-		20F7124D1C6C19E5006B68D0 /* screentext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* screentext.cpp */; };
-		20F7124E1C6C19E5006B68D0 /* screentext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* screentext.cpp */; };
+		20F7124D1C6C19E5006B68D0 /* text.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* text.cpp */; };
+		20F7124E1C6C19E5006B68D0 /* text.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* text.cpp */; };
 		20F712511C6C19F4006B68D0 /* sbar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124F1C6C19F4006B68D0 /* sbar.cpp */; };
 		20F712521C6C19F4006B68D0 /* sbar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124F1C6C19F4006B68D0 /* sbar.cpp */; };
 		20F712551C6C1A07006B68D0 /* cheats.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F712531C6C1A07006B68D0 /* cheats.cpp */; };
@@ -1086,8 +1086,8 @@
 		20E16CE01C7022C300EE8446 /* cmdline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = cmdline.h; sourceTree = "<group>"; };
 		20E16CE61C7022DE00EE8446 /* screens.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = screens.cpp; sourceTree = "<group>"; };
 		20E16CE71C7022DE00EE8446 /* screens.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = screens.h; sourceTree = "<group>"; };
-		20F7124B1C6C19E5006B68D0 /* screentext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = screentext.cpp; sourceTree = "<group>"; };
-		20F7124C1C6C19E5006B68D0 /* screentext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = screentext.h; sourceTree = "<group>"; };
+		20F7124B1C6C19E5006B68D0 /* text.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = text.cpp; sourceTree = "<group>"; };
+		20F7124C1C6C19E5006B68D0 /* text.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = text.h; sourceTree = "<group>"; };
 		20F7124F1C6C19F4006B68D0 /* sbar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = sbar.cpp; sourceTree = "<group>"; };
 		20F712501C6C19F4006B68D0 /* sbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = sbar.h; sourceTree = "<group>"; };
 		20F712531C6C1A07006B68D0 /* cheats.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = cheats.cpp; sourceTree = "<group>"; };
@@ -1796,8 +1796,6 @@
 				20F712501C6C19F4006B68D0 /* sbar.h */,
 				20E16CE61C7022DE00EE8446 /* screens.cpp */,
 				20E16CE71C7022DE00EE8446 /* screens.h */,
-				20F7124B1C6C19E5006B68D0 /* screentext.cpp */,
-				20F7124C1C6C19E5006B68D0 /* screentext.h */,
 				0008E9DA19F1AD9B0091588D /* sector.cpp */,
 				0008E9DB19F1AD9B0091588D /* sector.h */,
 				0008E9DC19F1AD9B0091588D /* soundefs.h */,
@@ -1807,6 +1805,8 @@
 				0008E9E019F1AD9B0091588D /* soundsdyn.h */,
 				0008E9E119F1AD9B0091588D /* standard.h */,
 				0008E9E219F1AD9B0091588D /* startosx.game.mm */,
+				20F7124B1C6C19E5006B68D0 /* text.cpp */,
+				20F7124C1C6C19E5006B68D0 /* text.h */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -2523,7 +2523,7 @@
 				0008E9F519F1AD9B0091588D /* namesdyn.cpp in Sources */,
 				20E16CE81C7022DE00EE8446 /* screens.cpp in Sources */,
 				0008E9EB19F1AD9B0091588D /* gamedef.cpp in Sources */,
-				20F7124D1C6C19E5006B68D0 /* screentext.cpp in Sources */,
+				20F7124D1C6C19E5006B68D0 /* text.cpp in Sources */,
 				0008EA0219F1AD9B0091588D /* soundsdyn.cpp in Sources */,
 				0008E9EF19F1AD9B0091588D /* gamevars.cpp in Sources */,
 				0008E9EC19F1AD9B0091588D /* gameexec.cpp in Sources */,
@@ -2727,7 +2727,7 @@
 				20F712521C6C19F4006B68D0 /* sbar.cpp in Sources */,
 				000C489919F35601006E6B52 /* common.cpp in Sources */,
 				000C48AF19F35601006E6B52 /* rts.cpp in Sources */,
-				20F7124E1C6C19E5006B68D0 /* screentext.cpp in Sources */,
+				20F7124E1C6C19E5006B68D0 /* text.cpp in Sources */,
 				000C489D19F35601006E6B52 /* demo.cpp in Sources */,
 				20F712561C6C1A07006B68D0 /* cheats.cpp in Sources */,
 				000C48A719F35601006E6B52 /* menus.cpp in Sources */,

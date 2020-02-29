@@ -199,8 +199,8 @@
     <ClInclude Include="..\..\source\duke3d\src\savegame.h" />
     <ClInclude Include="..\..\source\duke3d\src\sbar.h" />
     <ClInclude Include="..\..\source\duke3d\src\screens.h" />
-    <ClInclude Include="..\..\source\duke3d\src\screentext.h" />
     <ClInclude Include="..\..\source\duke3d\src\sector.h" />
+    <ClInclude Include="..\..\source\duke3d\src\text.h" />
     <ClInclude Include="..\..\source\duke3d\src\_functio.h" />
     <ClInclude Include="..\..\source\duke3d\src\_midi.h" />
     <ClInclude Include="..\..\source\duke3d\src\_rts.h" />
@@ -257,7 +257,6 @@
     <ClCompile Include="..\..\source\duke3d\src\savegame.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sbar.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\screens.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\screentext.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sector.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sounds.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\soundsdyn.cpp" />
@@ -268,6 +267,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\startwin.game.cpp" />
+    <ClCompile Include="..\..\source\duke3d\src\text.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\winbits.cpp" />
   </ItemGroup>
   <ItemGroup>
