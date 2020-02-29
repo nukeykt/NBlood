@@ -26,69 +26,135 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "menus.h"
 
 // assign the character's tilenum
-int32_t G_GetStringTile(int32_t font, char *t, int32_t f)
+int32_t G_GetStringTile(int32_t font, char c, int32_t f)
 {
     if (f & TEXT_DIGITALNUMBER)
-        return *t - '0' + font; // copied from digitalnumber
+        return c - '0' + font;
     else if (f & (TEXT_BIGALPHANUM|TEXT_GRAYFONT))
     {
         int32_t offset = (f & TEXT_GRAYFONT) ? 26 : 0;
 
-        if (*t >= '0' && *t <= '9')
-            return *t - '0' + font + ((f & TEXT_GRAYFONT) ? 26 : -10);
-        else if (*t >= 'a' && *t <= 'z')
-            return *t - 'a' + font + ((f & TEXT_GRAYFONT) ? -26 : 26);
-        else if (*t >= 'A' && *t <= 'Z')
-            return *t - 'A' + font;
-        else switch (*t)
+        if (c >= '0' && c <= '9')
+            return c - '0' + font + ((f & TEXT_GRAYFONT) ? 26 : -10);
+        else if (c >= 'a' && c <= 'z')
+            return c - 'a' + font + ((f & TEXT_GRAYFONT) ? -26 : 26);
+        else if (c >= 'A' && c <= 'Z')
+            return c - 'A' + font;
+        else switch (c)
         {
         case '_':
         case '-':
             return font - (11 + offset);
-            break;
         case '.':
             return font + (BIGPERIOD - (BIGALPHANUM + offset));
-            break;
         case ',':
             return font + (BIGCOMMA - (BIGALPHANUM + offset));
-            break;
         case '!':
             return font + (BIGX_ - (BIGALPHANUM + offset));
-            break;
         case '?':
             return font + (BIGQ - (BIGALPHANUM + offset));
-            break;
         case ';':
             return font + (BIGSEMI - (BIGALPHANUM + offset));
-            break;
         case ':':
             return font + (BIGCOLIN - (BIGALPHANUM + offset));
-            break;
         case '\\':
         case '/':
             return font + (68 - offset); // 3008-2940
-            break;
         case '%':
             return font + (69 - offset); // 3009-2940
-            break;
         case '`':
         case '\"': // could be better hacked in
         case '\'':
             return font + (BIGAPPOS - (BIGALPHANUM + offset));
-            break;
-        default: // unknown character
-            *t = ' '; // whitespace-ize
-            fallthrough__;
-        case '\t':
-        case ' ':
-        case '\n':
+
         case '\x7F':
             return font;
             break;
+
+        case '\n':
+            return SCREENTEXT_NEWLINE;
+        case '\t':
+            return SCREENTEXT_TAB;
+        case ' ':
+        default: // unknown character
+            return SCREENTEXT_SPACE;
         }
     }
     else
-        return *t - '!' + font; // uses ASCII order
+        return c - '!' + font; // uses ASCII order
+}
+
+uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * const textbuf, char const * str, char const * const end, int32_t font, int32_t flags)
+{
+    ScreenTextGlyph_t * text = textbuf;
+    char c;
+
+    while (str < end && (c = *str))
+    {
+        // handle escape sequences
+        if (c == '^' && str + 1 < end && Bisdigit(*(str + 1)) && !(flags & TEXT_LITERALESCAPE))
+        {
+            char smallbuf[4];
+
+            ++str;
+            smallbuf[0] = *str;
+
+            ++str;
+            if (str < end && Bisdigit(*str))
+            {
+                smallbuf[1] = *str;
+                smallbuf[2] = '\0';
+                ++str;
+            }
+            else
+                smallbuf[1] = '\0';
+
+            if (!(flags & TEXT_IGNOREESCAPE))
+            {
+                uint8_t const pal = Batoi(smallbuf);
+                *text++ = SCREENTEXT_PALCHANGE | pal;
+            }
+
+            continue;
+        }
+
+        // handle case bits
+        if (flags & TEXT_UPPERCASE)
+        {
+            if (flags & TEXT_INVERTCASE) // optimization...?
+            { // v^ important that these two ifs remain separate due to the else below
+                if (Bisupper(c))
+                    c = Btolower(c);
+            }
+            else if (Bislower(c))
+                c = Btoupper(c);
+        }
+        else if (flags & TEXT_INVERTCASE)
+        {
+            if (Bisupper(c))
+                c = Btolower(c);
+            else if (Bislower(c))
+                c = Btoupper(c);
+        }
+
+        if ((flags & TEXT_CONSTWIDTHNUMS) && c >= '0' && c <= '9')
+            *text++ = SCREENTEXT_CONSTWIDTH;
+
+        if (c == '\n')
+            *text++ = SCREENTEXT_NEWLINE;
+        else if (c == '\t')
+            *text++ = SCREENTEXT_TAB;
+        else if (c == ' ')
+            *text++ = SCREENTEXT_SPACE;
+        else
+            *text++ = G_GetStringTile(font, c, flags);
+
+        ++str;
+    }
+
+    *text = 0;
+
+    return text - textbuf;
 }
 
 void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
@@ -98,7 +164,8 @@ void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
         char space = '.'; // this is subject to change as an implementation detail
         if (f & TEXT_TILESPACE)
             space = '\x7F'; // tile after '~'
-        uint32_t tile = G_GetStringTile(font, &space, f);
+        uint32_t const tile = G_GetStringTile(font, space, f);
+        Bassert(tile < MAXTILES);
 
         empty.x += tilesiz[tile].x << 16;
     }
@@ -108,7 +175,8 @@ void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f)
         char line = 'A'; // this is subject to change as an implementation detail
         if (f & TEXT_TILELINE)
             line = '\x7F'; // tile after '~'
-        uint32_t tile = G_GetStringTile(font, &line, f);
+        uint32_t const tile = G_GetStringTile(font, line, f);
+        Bassert(tile < MAXTILES);
 
         empty.y += tilesiz[tile].y << 16;
     }

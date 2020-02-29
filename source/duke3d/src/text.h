@@ -41,6 +41,12 @@ enum {
     TEXT_INTERNALLINE    = 0x00000040,
     TEXT_TILELINE        = 0x00000080,
 
+    TEXT_UPPERCASE       = 0x00002000,
+    TEXT_INVERTCASE      = 0x00004000,
+    TEXT_IGNOREESCAPE    = 0x00008000,
+    TEXT_LITERALESCAPE   = 0x00010000,
+
+    TEXT_CONSTWIDTHNUMS  = 0x00040000,
     TEXT_DIGITALNUMBER   = 0x00080000,
     TEXT_BIGALPHANUM     = 0x00100000,
     TEXT_GRAYFONT        = 0x00200000,
@@ -75,8 +81,18 @@ extern void G_PrintGameText(int32_t tile, int32_t x, int32_t y, const char *t,
                             int32_t x1, int32_t y1, int32_t x2, int32_t y2,
                             int32_t z, int32_t a);
 
-extern int32_t G_GetStringTile(int32_t font, char *t, int32_t f);
+extern int32_t G_GetStringTile(int32_t font, char c, int32_t f);
 extern void G_SetScreenTextEmpty(vec2_t & empty, int32_t font, int32_t f);
+
+uint32_t G_ScreenTextFromString(ScreenTextGlyph_t * text, char const * str, char const * const end, int32_t font, int32_t flags);
+
+static inline int32_t PopulateConstWidth(int32_t font, int32_t flags)
+{
+    char numeral = '0'; // this is subject to change as an implementation detail
+    uint16_t const tile = G_GetStringTile(font, numeral, flags);
+    Bassert(tile < MAXTILES);
+    return (tilesiz[tile].x - 1) << 16;
+}
 
 static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle,
@@ -84,9 +100,17 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween,
     const int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
-    ScreenTextSize_t data;
+    ScreenTextSize_t data{};
 
-    data.str = str;
+    data.constwidth = PopulateConstWidth(font, f);
+
+    size_t const strbuflen = strlen(str);
+    size_t const textbufcount = ((f & TEXT_CONSTWIDTHNUMS) ? strbuflen << 1 : strbuflen) + 1;
+    auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
+    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, font, f);
+    data.text = text;
+    data.len = textlen;
+
     data.pos = {x, y};
     data.empty = {xspace, yline};
     data.between = {xbetween, ybetween};
@@ -109,7 +133,15 @@ static inline vec2_t G_ScreenText(const int32_t font,
 {
     ScreenText_t data{};
 
-    data.str = str;
+    data.constwidth = PopulateConstWidth(font, f);
+
+    size_t const strbuflen = strlen(str);
+    size_t const textbufcount = ((f & TEXT_CONSTWIDTHNUMS) ? strbuflen << 1 : strbuflen) + 1;
+    auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
+    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, font, f);
+    data.text = text;
+    data.len = textlen;
+
     data.pos = {x, y};
     data.empty = {xspace, yline};
     data.between = {xbetween, ybetween};
@@ -136,7 +168,15 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
 {
     ScreenText_t data{};
 
-    data.str = str;
+    Bassert(!(f & TEXT_CONSTWIDTHNUMS));
+
+    size_t const strbuflen = strlen(str);
+    size_t const textbufcount = strbuflen + 1;
+    auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
+    uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, font, f);
+    data.text = text;
+    data.len = textlen;
+
     data.pos = {x, y};
     data.empty = {xspace, yline};
     data.between = {xbetween, ybetween};
