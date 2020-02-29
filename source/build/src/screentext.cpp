@@ -72,7 +72,6 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
     int32_t ybetween = mulscale16(data.between.y, data.zoom);
     // size/width/height/spacing/offset values should be multiplied or scaled by zoom (since 100% is 65536, the same as 1<<16)
 
-    int32_t tile;
     char t;
 
     // loop through the string
@@ -107,7 +106,7 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
         }
 
         // translate the character to a tilenum
-        tile = GetStringTile(data.font, &t, data.f);
+        uint32_t tile = GetStringTile(data.font, &t, data.f);
 
         // reset this here because we haven't printed anything yet this loop
         extent.x = 0;
@@ -123,32 +122,8 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
             // width
             extent.x = xspace;
 
-            if (data.f & (TEXT_INTERNALSPACE|TEXT_TILESPACE))
-            {
-                char space = '.'; // this is subject to change as an implementation detail
-                if (data.f & TEXT_TILESPACE)
-                    space = '\x7F'; // tile after '~'
-                tile = GetStringTile(data.font, &space, data.f);
-
-                extent.x += (tilesiz[tile].x * data.zoom);
-            }
-
-            // prepare the height // near-CODEDUP the other two near-CODEDUPs for this section
-            {
-                int32_t tempyextent = yline;
-
-                if (data.f & (TEXT_INTERNALLINE|TEXT_TILELINE))
-                {
-                    char line = 'A'; // this is subject to change as an implementation detail
-                    if (data.f & TEXT_TILELINE)
-                        line = '\x7F'; // tile after '~'
-                    tile = GetStringTile(data.font, &line, data.f);
-
-                    tempyextent += tilesiz[tile].y * data.zoom;
-                }
-
-                SetIfGreater(&extent.y, tempyextent);
-            }
+            // prepare the height
+            SetIfGreater(&extent.y, yline);
 
             if (t == '\t')
                 extent.x <<= 2; // *= 4
@@ -167,21 +142,7 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
             pos.x = 0;
 
             // prepare the height
-            {
-                int32_t tempyextent = yline;
-
-                if (data.f & (TEXT_INTERNALLINE|TEXT_TILELINE))
-                {
-                    char line = 'A'; // this is subject to change as an implementation detail
-                    if (data.f & TEXT_TILELINE)
-                        line = '\x7F'; // tile after '~'
-                    tile = GetStringTile(data.font, &line, data.f);
-
-                    tempyextent += tilesiz[tile].y * data.zoom;
-                }
-
-                SetIfGreater(&extent.y, tempyextent);
-            }
+            SetIfGreater(&extent.y, yline);
 
             // move down the line height
             if (!(data.f & TEXT_YOFFSETZERO))
@@ -256,21 +217,7 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
                 pos.x = 0;
 
                 // prepare the height
-                {
-                    int32_t tempyextent = yline;
-
-                    if (data.f & (TEXT_INTERNALLINE|TEXT_TILELINE))
-                    {
-                        char line = 'A'; // this is subject to change as an implementation detail
-                        if (data.f & TEXT_TILELINE)
-                            line = '\x7F'; // tile after '~'
-                        tile = GetStringTile(data.font, &line, data.f);
-
-                        tempyextent += tilesiz[tile].y * data.zoom;
-                    }
-
-                    SetIfGreater(&extent.y, tempyextent);
-                }
+                SetIfGreater(&extent.y, yline);
 
                 // move down the line height
                 if (!(data.f & TEXT_YOFFSETZERO))
@@ -375,7 +322,6 @@ vec2_t screentextRender(ScreenText_t const & data)
     NEG_ALPHA_TO_BLEND(alpha, blendidx, o);
     uint8_t pal = data.pal;
 
-    int32_t tile;
     char t;
 
     // alignment
@@ -472,7 +418,7 @@ vec2_t screentextRender(ScreenText_t const & data)
         }
 
         // translate the character to a tilenum
-        tile = GetStringTile(data.font, &t, data.f);
+        uint32_t tile = GetStringTile(data.font, &t, data.f);
 
         switch (t)
         {
@@ -509,32 +455,8 @@ vec2_t screentextRender(ScreenText_t const & data)
             // width
             extent.x = xspace;
 
-            if (data.f & (TEXT_INTERNALSPACE|TEXT_TILESPACE))
-            {
-                char space = '.'; // this is subject to change as an implementation detail
-                if (data.f & TEXT_TILESPACE)
-                    space = '\x7F'; // tile after '~'
-                tile = GetStringTile(data.font, &space, data.f);
-
-                extent.x += (tilesiz[tile].x * data.zoom);
-            }
-
-            // prepare the height // near-CODEDUP the other two near-CODEDUPs for this section
-            {
-                int32_t tempyextent = yline;
-
-                if (data.f & (TEXT_INTERNALLINE|TEXT_TILELINE))
-                {
-                    char line = 'A'; // this is subject to change as an implementation detail
-                    if (data.f & TEXT_TILELINE)
-                        line = '\x7F'; // tile after '~'
-                    tile = GetStringTile(data.font, &line, data.f);
-
-                    tempyextent += tilesiz[tile].y * data.zoom;
-                }
-
-                SetIfGreater(&extent.y, tempyextent);
-            }
+            // prepare the height
+            SetIfGreater(&extent.y, yline);
 
             if (t == '\t')
                 extent.x <<= 2; // *= 4
@@ -548,21 +470,7 @@ vec2_t screentextRender(ScreenText_t const & data)
             pos.x = 0;
 
             // prepare the height
-            {
-                int32_t tempyextent = yline;
-
-                if (data.f & (TEXT_INTERNALLINE|TEXT_TILELINE))
-                {
-                    char line = 'A'; // this is subject to change as an implementation detail
-                    if (data.f & TEXT_TILELINE)
-                        line = '\x7F'; // tile after '~'
-                    tile = GetStringTile(data.font, &line, data.f);
-
-                    tempyextent += tilesiz[tile].y * data.zoom;
-                }
-
-                SetIfGreater(&extent.y, tempyextent);
-            }
+            SetIfGreater(&extent.y, yline);
 
             // move down the line height
             if (!(data.f & TEXT_YOFFSETZERO))
@@ -654,21 +562,7 @@ vec2_t screentextRender(ScreenText_t const & data)
                     pos.x = 0;
 
                     // prepare the height
-                    {
-                        int32_t tempyextent = yline;
-
-                        if (data.f & (TEXT_INTERNALLINE|TEXT_TILELINE))
-                        {
-                            char line = 'A'; // this is subject to change as an implementation detail
-                            if (data.f & TEXT_TILELINE)
-                                line = '\x7F'; // tile after '~'
-                            tile = GetStringTile(data.font, &line, data.f);
-
-                            tempyextent += tilesiz[tile].y * data.zoom;
-                        }
-
-                        SetIfGreater(&extent.y, tempyextent);
-                    }
+                    SetIfGreater(&extent.y, yline);
 
                     // move down the line height
                     if (!(data.f & TEXT_YOFFSETZERO))
