@@ -581,10 +581,10 @@ duke3d_game_objs := \
     savegame.cpp \
     sbar.cpp \
     screens.cpp \
-    screentext.cpp \
     sector.cpp \
     sounds.cpp \
     soundsdyn.cpp \
+    text.cpp \
 
 duke3d_editor_objs := \
     astub.cpp \
