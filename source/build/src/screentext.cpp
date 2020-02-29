@@ -14,21 +14,17 @@ static inline void SetIfGreater(int32_t *variable, int32_t potentialValue)
 }
 
 // get the string length until the next '\n'
-static inline int32_t GetStringLineLength(char const * text, char const * const end, int32_t const iter)
+static inline int32_t GetStringLineLength(char const * const start, char const * const end)
 {
-    int32_t length = 0;
+    char const * text = start;
 
     while (text < end && *text != '\n')
-    {
-        ++length;
+        ++text;
 
-        text += iter;
-    }
-
-    return length;
+    return text - start;
 }
 
-static inline int32_t GetStringNumLines(char const * text, const char * const end, int32_t const iter)
+static inline int32_t GetStringNumLines(char const * text, char const * const end)
 {
     int32_t count = 1;
 
@@ -36,7 +32,7 @@ static inline int32_t GetStringNumLines(char const * text, const char * const en
     {
         if (*text == '\n')
             ++count;
-        text += iter;
+        ++text;
     }
 
     return count;
@@ -44,7 +40,7 @@ static inline int32_t GetStringNumLines(char const * text, const char * const en
 // Note: Neither of these care about TEXT_LINEWRAP. This is intended.
 
 // This function requires you to Xfree() the returned char*.
-static char * GetSubString(char const * text, char const * const end, int32_t const iter, int32_t const length)
+static char * GetSubString(char const * text, char const * const end, int32_t const length)
 {
     auto line = (char *)Xmalloc((length+1) * sizeof(char));
     int32_t counter = 0;
@@ -53,7 +49,7 @@ static char * GetSubString(char const * text, char const * const end, int32_t co
     {
         line[counter] = *text;
 
-        text += iter;
+        ++text;
         ++counter;
     }
 
@@ -81,21 +77,15 @@ vec2_t G_ScreenTextSize(const int32_t font,
     const int32_t f,
     int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
-    // set the start and end points depending on direction
-    int32_t iter = (f & TEXT_BACKWARDS) ? -1 : 1; // iteration direction
-
-    const char *end;
-    const char *text;
-
     if (str == NULL)
         return {};
-
-    end = (f & TEXT_BACKWARDS) ? str-1 : Bstrchr(str, '\0');
-    text = (f & TEXT_BACKWARDS) ? Bstrchr(str, '\0')-1 : str;
 
     // optimization: justification in both directions
     if ((f & TEXT_XJUSTIFY) && (f & TEXT_YJUSTIFY))
         return {xbetween, ybetween};
+
+    char const * text = str;
+    char const * const end = Bstrchr(str, '\0');
 
     // for best results, we promote 320x200 coordinates to full precision before any math
     if (!(o & ROTATESPRITE_FULL16))
@@ -128,11 +118,11 @@ vec2_t G_ScreenTextSize(const int32_t font,
     while (text < end && (t = *text))
     {
         // handle escape sequences
-        if (t == '^' && Bisdigit(*(text+iter)) && !(f & TEXT_LITERALESCAPE))
+        if (t == '^' && Bisdigit(*(text + 1)) && !(f & TEXT_LITERALESCAPE))
         {
-            text += iter + iter;
+            text += 2;
             if (Bisdigit(*text))
-                text += iter;
+                ++text;
             continue;
         }
 
@@ -343,7 +333,7 @@ vec2_t G_ScreenTextSize(const int32_t font,
             offset.x -= extent.x;
 
         // iterate to the next character in the string
-        text += iter;
+        ++text;
     }
 
     // calculate final size
@@ -390,17 +380,11 @@ vec2_t G_ScreenText(const int32_t font,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
-    // set the start and end points depending on direction
-    int32_t iter = (f & TEXT_BACKWARDS) ? -1 : 1; // iteration direction
-
-    const char *end;
-    const char *text;
-
     if (str == NULL)
         return {};
 
-    end = (f & TEXT_BACKWARDS) ? str-1 : Bstrchr(str, '\0');
-    text = (f & TEXT_BACKWARDS) ? Bstrchr(str, '\0')-1 : str;
+    char const * text = str;
+    char const * const end = Bstrchr(str, '\0');
 
     // for best results, we promote 320x200 coordinates to full precision before any math
     if (!(o & ROTATESPRITE_FULL16))
@@ -448,19 +432,19 @@ vec2_t G_ScreenText(const int32_t font,
     // alignment
     // near-CODEDUP "case '\n':"
     {
-        int32_t lines = GetStringNumLines(text, end, iter);
+        int32_t lines = GetStringNumLines(text, end);
 
         if ((f & TEXT_XJUSTIFY) || (f & TEXT_XRIGHT) || (f & TEXT_XCENTER))
         {
-            int32_t const length = GetStringLineLength(text, end, iter);
+            int32_t const length = GetStringLineLength(text, end);
 
             int32_t linewidth = size.x;
 
             if (lines != 1)
             {
-                char * const line = GetSubString(text, end, iter, length);
+                char * const line = GetSubString(text, end, length);
 
-                linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY|TEXT_BACKWARDS), x1, y1, x2, y2).x;
+                linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2).x;
 
                 Xfree(line);
             }
@@ -500,19 +484,19 @@ vec2_t G_ScreenText(const int32_t font,
         int32_t angle = blockangle + charangle;
 
         // handle escape sequences
-        if (t == '^' && Bisdigit(*(text+iter)) && !(f & TEXT_LITERALESCAPE))
+        if (t == '^' && Bisdigit(*(text + 1)) && !(f & TEXT_LITERALESCAPE))
         {
             char smallbuf[4];
 
-            text += iter;
+            ++text;
             smallbuf[0] = *text;
 
-            text += iter;
+            ++text;
             if (Bisdigit(*text))
             {
                 smallbuf[1] = *text;
                 smallbuf[2] = '\0';
-                text += iter;
+                ++text;
             }
             else
                 smallbuf[1] = '\0';
@@ -648,11 +632,11 @@ vec2_t G_ScreenText(const int32_t font,
             // near-CODEDUP "alignments"
             if ((f & TEXT_XJUSTIFY) || (f & TEXT_XRIGHT) || (f & TEXT_XCENTER))
             {
-                int32_t const length = GetStringLineLength(text+1, end, iter);
+                int32_t const length = GetStringLineLength(text+1, end);
 
-                char * const line = GetSubString(text+1, end, iter, length);
+                char * const line = GetSubString(text+1, end, length);
 
-                int32_t linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY|TEXT_BACKWARDS), x1, y1, x2, y2).x;
+                int32_t linewidth = G_ScreenTextSize(font, x, y, z, blockangle, line, o | ROTATESPRITE_FULL16, xspace_orig, yline_orig, (f & TEXT_XJUSTIFY) ? 0 : xbetween_orig, (f & TEXT_YJUSTIFY) ? 0 : ybetween_orig, f & ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY), x1, y1, x2, y2).x;
 
                 Xfree(line);
 
@@ -762,7 +746,7 @@ vec2_t G_ScreenText(const int32_t font,
         }
 
         // iterate to the next character in the string
-        text += iter;
+        ++text;
     }
 
     // return values in the same manner we receive them
