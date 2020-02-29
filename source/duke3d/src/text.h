@@ -72,6 +72,83 @@ extern void G_PrintGameText(int32_t tile, int32_t x, int32_t y, const char *t,
 
 extern int32_t G_GetStringTile(int32_t font, char *t, int32_t f);
 
+static inline vec2_t G_ScreenTextSize(const int32_t font,
+    int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle,
+    const char * const str, const int32_t o,
+    int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween,
+    const int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
+{
+    ScreenTextSize_t data;
+
+    data.str = str;
+    data.pos = {x, y};
+    data.empty = {xspace, yline};
+    data.between = {xbetween, ybetween};
+    data.b1 = {x1, y1};
+    data.b2 = {x2, y2};
+    data.zoom = zoom;
+    data.o = o;
+    data.f = f;
+    data.font = font;
+    data.blockangle = blockangle;
+
+    return screentextGetSize(data);
+}
+
+static inline vec2_t G_ScreenText(const int32_t font,
+    int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle, const int32_t charangle,
+    const char * const str, const int32_t shade, uint32_t pal, int32_t o, int32_t alpha,
+    int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
+    const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
+{
+    ScreenText_t data{};
+
+    data.str = str;
+    data.pos = {x, y};
+    data.empty = {xspace, yline};
+    data.between = {xbetween, ybetween};
+    data.b1 = {x1, y1};
+    data.b2 = {x2, y2};
+    data.zoom = zoom;
+    data.o = o;
+    data.f = f;
+    data.font = font;
+    data.blockangle = blockangle;
+    data.alpha = alpha;
+    data.charangle = charangle;
+    data.shade = shade;
+    data.pal = pal;
+
+    return screentextRender(data);
+}
+
+static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, const int32_t font,
+    int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle, const int32_t charangle,
+    const char * const str, const int32_t shade, uint32_t pal, int32_t o, const int32_t alpha,
+    int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
+    const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
+{
+    ScreenText_t data{};
+
+    data.str = str;
+    data.pos = {x, y};
+    data.empty = {xspace, yline};
+    data.between = {xbetween, ybetween};
+    data.b1 = {x1, y1};
+    data.b2 = {x2, y2};
+    data.zoom = zoom;
+    data.o = o;
+    data.f = f;
+    data.font = font;
+    data.blockangle = blockangle;
+    data.alpha = alpha;
+    data.charangle = charangle;
+    data.shade = shade;
+    data.pal = pal;
+
+    return screentextRenderShadow(data, {sx, sy}, sp);
+}
+
 #ifdef __cplusplus
 }
 #endif
