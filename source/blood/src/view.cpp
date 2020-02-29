@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamemenu.h"
 #include "gameutil.h"
 #include "globals.h"
+#include "gfx.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "map2d.h"
@@ -181,6 +182,37 @@ void FontSet(int id, int tile, int space)
 {
 	if (id < 0 || id >= kFontNum || tile < 0 || tile >= kMaxTiles)
 		return;
+
+    DICTNODE* hFont = gSysRes.Lookup(id, "QFN");
+    if (hFont)
+    {
+        QFONT *pFont = (QFONT*)gSysRes.Load(hFont);
+        for (int i = 32; i < 128; i++)
+        {
+            int const nTile = tile + i - 32;
+            if (waloff[nTile])
+                continue;
+            QFONTCHAR *pChar = &pFont->at20[i];
+            int const width = max(pChar->w, pChar->ox);
+            int const height = max(pFont->atf+pChar->oy+pChar->h, 1);
+            char *tilePtr = (char*)tileCreate(nTile, width, height);
+            if (!tilePtr)
+                continue;
+            Bmemset(tilePtr, 255, width * height);
+            for (int x = 0; x < pChar->w; x++)
+            {
+                for (int y = 0; y < pChar->h; y++)
+                {
+                    int const dx = x;
+                    int const dy = y + pFont->atf + pChar->oy;
+                    if (dx >= 0 && dx < width && dy >= 0 && dy <= height)
+                        tilePtr[dx*height + dy] = pFont->at820[pChar->offset + x * pChar->h + y];
+                }
+            }
+        }
+
+        space = pFont->at11;
+    }
 
 	FONT *pFont = &gFont[id];
 	int xSize = 0;
