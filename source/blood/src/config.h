@@ -38,7 +38,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern int32_t MouseDeadZone, MouseBias;
 extern int32_t SmoothInput;
 extern int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
-extern int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
 extern int32_t MouseAnalogueAxes[MAXMOUSEAXES];
 extern int32_t MouseAnalogueScale[MAXMOUSEAXES];
 extern int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];

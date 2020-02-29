@@ -651,7 +651,6 @@ void SetMouseAimMode(CGameMenuItemZBool *pItem);
 void SetMouseVerticalAim(CGameMenuItemZBool *pItem);
 void SetMouseXScale(CGameMenuItemSlider *pItem);
 void SetMouseYScale(CGameMenuItemSlider *pItem);
-void SetMouseDigitalAxis(CGameMenuItemZCycle *pItem);
 
 void PreDrawControlMouse(CGameMenuItem *pItem);
 
@@ -665,10 +664,6 @@ CGameMenuItemZBool itemOptionsControlMouseAimMode("AIMING TYPE:", 3, 66, 90, 180
 CGameMenuItemZBool itemOptionsControlMouseVerticalAim("VERTICAL AIMING:", 3, 66, 100, 180, false, SetMouseVerticalAim, NULL, NULL);
 CGameMenuItemSlider itemOptionsControlMouseXScale("X-SCALE:", 3, 66, 110, 180, (int*)&MouseAnalogueScale[0], 0, 65536, 1024, SetMouseXScale, -1, -1, kMenuSliderQ16);
 CGameMenuItemSlider itemOptionsControlMouseYScale("Y-SCALE:", 3, 66, 120, 180, (int*)&MouseAnalogueScale[1], 0, 65536, 1024, SetMouseYScale, -1, -1, kMenuSliderQ16);
-CGameMenuItemZCycle itemOptionsControlMouseDigitalUp("DIGITAL UP", 3, 66, 130, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
-CGameMenuItemZCycle itemOptionsControlMouseDigitalDown("DIGITAL DOWN", 3, 66, 140, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
-CGameMenuItemZCycle itemOptionsControlMouseDigitalLeft("DIGITAL LEFT", 3, 66, 150, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
-CGameMenuItemZCycle itemOptionsControlMouseDigitalRight("DIGITAL RIGHT", 3, 66, 160, 180, 0, SetMouseDigitalAxis, NULL, 0, 0, true);
 
 void SetupNetworkMenu(void);
 void SetupNetworkHostMenu(CGameMenuItemChain *pItem);
@@ -1304,16 +1299,7 @@ void SetupOptionsMenu(void)
     menuOptionsControlMouse.Add(&itemOptionsControlMouseVerticalAim, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseXScale, false);
     menuOptionsControlMouse.Add(&itemOptionsControlMouseYScale, false);
-    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalUp, false);
-    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalDown, false);
-    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalLeft, false);
-    menuOptionsControlMouse.Add(&itemOptionsControlMouseDigitalRight, false);
     menuOptionsControlMouse.Add(&itemBloodQAV, false);
-
-    itemOptionsControlMouseDigitalUp.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
-    itemOptionsControlMouseDigitalDown.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
-    itemOptionsControlMouseDigitalLeft.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
-    itemOptionsControlMouseDigitalRight.SetTextArray(pzGamefuncsStrings, NUMGAMEFUNCTIONS+1, 0);
 
     itemOptionsControlMouseVerticalAim.pPreDrawCallback = PreDrawControlMouse;
 
@@ -1977,52 +1963,9 @@ void SetMouseYScale(CGameMenuItemSlider *pItem)
     CONTROL_SetAnalogAxisScale(1, pItem->nValue, controldevice_mouse);
 }
 
-void SetMouseDigitalAxis(CGameMenuItemZCycle *pItem)
-{
-    if (pItem == &itemOptionsControlMouseDigitalUp)
-    {
-        MouseDigitalFunctions[1][0] = nGamefuncsValues[pItem->m_nFocus];
-        CONTROL_MapDigitalAxis(1, MouseDigitalFunctions[1][0], 0, controldevice_mouse);
-    }
-    else if (pItem == &itemOptionsControlMouseDigitalDown)
-    {
-        MouseDigitalFunctions[1][1] = nGamefuncsValues[pItem->m_nFocus];
-        CONTROL_MapDigitalAxis(1, MouseDigitalFunctions[1][1], 1, controldevice_mouse);
-    }
-    else if (pItem == &itemOptionsControlMouseDigitalLeft)
-    {
-        MouseDigitalFunctions[0][0] = nGamefuncsValues[pItem->m_nFocus];
-        CONTROL_MapDigitalAxis(0, MouseDigitalFunctions[0][0], 0, controldevice_mouse);
-    }
-    else if (pItem == &itemOptionsControlMouseDigitalRight)
-    {
-        MouseDigitalFunctions[0][1] = nGamefuncsValues[pItem->m_nFocus];
-        CONTROL_MapDigitalAxis(0, MouseDigitalFunctions[0][1], 1, controldevice_mouse);
-    }
-}
-
 void SetupMouseMenu(CGameMenuItemChain *pItem)
 {
     UNREFERENCED_PARAMETER(pItem);
-    static CGameMenuItemZCycle *pMouseDigitalAxis[4] = {
-        &itemOptionsControlMouseDigitalLeft,
-        &itemOptionsControlMouseDigitalRight,
-        &itemOptionsControlMouseDigitalUp,
-        &itemOptionsControlMouseDigitalDown
-    };
-    for (int i = 0; i < ARRAY_SSIZE(pMouseDigitalAxis); i++)
-    {
-        CGameMenuItemZCycle *pItem = pMouseDigitalAxis[i];
-        pItem->m_nFocus = 0;
-        for (int j = 0; j < NUMGAMEFUNCTIONS+1; j++)
-        {
-            if (nGamefuncsValues[j] == MouseDigitalFunctions[i>>1][i&1])
-            {
-                pItem->m_nFocus = j;
-                break;
-            }
-        }
-    }
     itemOptionsControlMouseAimFlipped.at20 = gMouseAimingFlipped;
     itemOptionsControlMouseAimMode.at20 = gMouseAiming;
     itemOptionsControlMouseVerticalAim.at20 = gMouseAim;
