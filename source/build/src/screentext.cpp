@@ -13,24 +13,26 @@ static inline void SetIfGreater(int32_t *variable, int32_t potentialValue)
         *variable = potentialValue;
 }
 
-// get the string length until the next '\n'
-static inline int32_t GetStringLineLength(char const * const start, char const * const end)
-{
-    char const * text = start;
+using glyph_t = ScreenTextGlyph_t;
 
-    while (text < end && *text != '\n')
+// get the string length until the next newline
+static inline int32_t GetStringLineLength(glyph_t const * const start, glyph_t const * const end)
+{
+    glyph_t const * text = start;
+
+    while (text < end && !screentextGlyphIsNewline(*text))
         ++text;
 
     return text - start;
 }
 
-static inline int32_t GetStringNumLines(char const * text, char const * const end)
+static inline int32_t GetStringNumLines(glyph_t const * text, glyph_t const * const end)
 {
     int32_t count = 1;
 
     while (text < end)
     {
-        if (*text == '\n')
+        if (screentextGlyphIsNewline(*text))
             ++count;
         ++text;
     }
@@ -38,24 +40,18 @@ static inline int32_t GetStringNumLines(char const * text, char const * const en
     return count;
 }
 
-#define CONSTWIDTHNUMS(f, t) (((f) & TEXT_CONSTWIDTHNUMS) && (t) >= '0' && (t) <= '9')
-
-static getstringtile_t GetStringTile;
-
-void screentextSetStringTile(getstringtile_t func)
-{
-    GetStringTile = func;
-}
-
 // qstrdim
-vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
+vec2_t screentextGetSize(ScreenTextSize_t const & data)
 {
+    if (data.text == NULL)
+        return {};
+
     // optimization: justification in both directions
     if ((data.f & TEXT_XJUSTIFY) && (data.f & TEXT_YJUSTIFY))
         return data.between;
 
-    char const * text = data.str;
-    char const * const end = data.str + len;
+    glyph_t const * text = data.text;
+    glyph_t const * const end = data.text + data.len;
 
     vec2_t size{}; // eventually the return value
     vec2_t pos{}; // holds the coordinate position as we draw each character tile of the string
@@ -67,44 +63,15 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
     int32_t yline = mulscale16(data.empty.y, data.zoom);
     int32_t xbetween = mulscale16(data.between.x, data.zoom);
     int32_t ybetween = mulscale16(data.between.y, data.zoom);
+    int32_t constwidth = mulscale16(data.constwidth, data.zoom);
     // size/width/height/spacing/offset values should be multiplied or scaled by zoom (since 100% is 65536, the same as 1<<16)
 
-    char t;
+    glyph_t glyph;
+    int constwidthactive = 0;
 
     // loop through the string
-    while (text < end && (t = *text))
+    while (text < end && (glyph = *text))
     {
-        // handle escape sequences
-        if (t == '^' && Bisdigit(*(text + 1)) && !(data.f & TEXT_LITERALESCAPE))
-        {
-            text += 2;
-            if (Bisdigit(*text))
-                ++text;
-            continue;
-        }
-
-        // handle case bits
-        if (data.f & TEXT_UPPERCASE)
-        {
-            if (data.f & TEXT_INVERTCASE) // optimization...?
-            { // v^ important that these two ifs remain separate due to the else below
-                if (Bisupper(t))
-                    t = Btolower(t);
-            }
-            else if (Bislower(t))
-                t = Btoupper(t);
-        }
-        else if (data.f & TEXT_INVERTCASE)
-        {
-            if (Bisupper(t))
-                t = Btolower(t);
-            else if (Bislower(t))
-                t = Btoupper(t);
-        }
-
-        // translate the character to a tilenum
-        uint32_t tile = GetStringTile(data.font, &t, data.f);
-
         // reset this here because we haven't printed anything yet this loop
         extent.x = 0;
 
@@ -112,85 +79,97 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
         offset.y = 0;
 
         // handle each character itself in the context of screen drawing
-        switch (t)
+        if (screentextGlyphIsControlCode(glyph))
         {
-        case '\t':
-        case ' ':
-            // width
-            extent.x = xspace;
-
-            // prepare the height
-            SetIfGreater(&extent.y, yline);
-
-            if (t == '\t')
-                extent.x <<= 2; // *= 4
-
-            break;
-
-        case '\n':
-            extent.x = 0;
-
-            // save the position
-            if (!(data.f & TEXT_XOFFSETZERO)) // we want the entire offset to count as the character width
-                pos.x -= offset.x;
-            SetIfGreater(&size.x, pos.x);
-
-            // reset the position
-            pos.x = 0;
-
-            // prepare the height
-            SetIfGreater(&extent.y, yline);
-
-            // move down the line height
-            if (!(data.f & TEXT_YOFFSETZERO))
-                pos.y += extent.y;
-
-            // reset the current height
-            extent.y = 0;
-
-            // line spacing
-            offset.y = (data.f & TEXT_YJUSTIFY) ? 0 : ybetween; // ternary to prevent overflow
-            pos.y += offset.y;
-
-            break;
-
-        default:
-            // width
-            extent.x = tilesiz[tile].x * data.zoom;
-
-            if (CONSTWIDTHNUMS(data.f, t))
+            if (screentextGlyphIsSpace(glyph))
             {
-                char numeral = '0'; // this is subject to change as an implementation detail
-                extent.x = (tilesiz[GetStringTile(data.font, &numeral, data.f)].x-1) * data.zoom;
+                // width
+                extent.x = xspace;
+
+                // prepare the height
+                SetIfGreater(&extent.y, yline);
             }
+            else if (screentextGlyphIsTab(glyph))
+            {
+                // width
+                extent.x = xspace << 2; // * 4
+
+                // prepare the height
+                SetIfGreater(&extent.y, yline);
+            }
+            else if (screentextGlyphIsNewline(glyph))
+            {
+                extent.x = 0;
+
+                // save the position
+                if (!(data.f & TEXT_XOFFSETZERO)) // we want the entire offset to count as the character width
+                    pos.x -= offset.x;
+                SetIfGreater(&size.x, pos.x);
+
+                // reset the position
+                pos.x = 0;
+
+                // prepare the height
+                SetIfGreater(&extent.y, yline);
+
+                // move down the line height
+                if (!(data.f & TEXT_YOFFSETZERO))
+                    pos.y += extent.y;
+
+                // reset the current height
+                extent.y = 0;
+
+                // line spacing
+                offset.y = (data.f & TEXT_YJUSTIFY) ? 0 : ybetween; // ternary to prevent overflow
+                pos.y += offset.y;
+            }
+            else if (screentextGlyphIsPalChange(glyph))
+            {
+                ++text;
+                continue;
+            }
+            else if (screentextGlyphIsConstWidth(glyph))
+            {
+                constwidthactive = 1;
+                ++text;
+                continue;
+            }
+        }
+        else
+        {
+            uint16_t const tile = screentextGlyphGetTile(glyph);
+
+            // width
+            extent.x = constwidthactive ? constwidth : tilesiz[tile].x * data.zoom;
 
             // height
             SetIfGreater(&extent.y, (tilesiz[tile].y * data.zoom));
-
-            break;
         }
 
         // incrementing the coordinate counters
         offset.x = 0;
 
         // advance the x coordinate
-        if (!(data.f & TEXT_XOFFSETZERO) || CONSTWIDTHNUMS(data.f, t))
+        if (!(data.f & TEXT_XOFFSETZERO) || constwidthactive)
             offset.x += extent.x;
 
         // account for text spacing
-        if (!CONSTWIDTHNUMS(data.f, t)
-            && t != '\n'
+        if (!constwidthactive
+            && !screentextGlyphIsNewline(glyph)
             && !(data.f & TEXT_XJUSTIFY)) // to prevent overflow
             offset.x += xbetween;
 
         pos.x += offset.x;
 
         // save some trouble with calculation in case the line breaks
-        if (!(data.f & TEXT_XOFFSETZERO) || CONSTWIDTHNUMS(data.f, t))
+        if (!(data.f & TEXT_XOFFSETZERO) || constwidthactive)
             offset.x -= extent.x;
 
         // iterate to the next character in the string
         ++text;
+
+        // reset at end of loop
+        constwidthactive = 0;
     }
 
     // calculate final size
@@ -216,13 +195,6 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
 
     return size;
 }
-vec2_t screentextGetSize(ScreenTextSize_t const & data)
-{
-    if (data.str == NULL)
-        return {};
-
-    return screentextGetSizeLen(data, strlen(data.str));
-}
 
 static inline void AddCoordsFromRotation(vec2_t *coords, const vec2_t *unitDirection, const int32_t magnitude)
 {
@@ -233,11 +205,11 @@ static inline void AddCoordsFromRotation(vec2_t *coords, const vec2_t *unitDirec
 // screentext
 vec2_t screentextRender(ScreenText_t const & data)
 {
-    if (data.str == NULL)
+    if (data.text == NULL)
         return {};
 
-    char const * text = data.str;
-    char const * const end = Bstrchr(data.str, '\0');
+    glyph_t const * text = data.text;
+    glyph_t const * const end = data.text + data.len;
 
     ScreenTextSize_t sizedata{data.size};
     sizedata.f &= ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY);
@@ -258,16 +230,17 @@ vec2_t screentextRender(ScreenText_t const & data)
     int32_t yline = mulscale16(data.empty.y, data.zoom);
     int32_t xbetween = mulscale16(data.between.x, data.zoom);
     int32_t ybetween = mulscale16(data.between.x, data.zoom);
+    int32_t constwidth = mulscale16(data.constwidth, data.zoom);
     // size/width/height/spacing/offset values should be multiplied or scaled by zoom (since 100% is 65536, the same as 1<<16)
 
     int32_t alpha = data.alpha, blendidx = 0, o = data.o;
     NEG_ALPHA_TO_BLEND(alpha, blendidx, o);
     uint8_t pal = data.pal;
 
-    char t;
+    glyph_t glyph;
+    int constwidthactive = 0;
 
-    // alignment
-    // near-CODEDUP "case '\n':"
+    // near-CODEDUP "alignments"
     {
         int32_t lines = GetStringNumLines(text, end);
 
@@ -279,8 +252,9 @@ vec2_t screentextRender(ScreenText_t const & data)
 
             if (lines != 1)
             {
-                sizedata.str = text;
-                linewidth = screentextGetSizeLen(sizedata, length).x;
+                sizedata.text = text;
+                sizedata.len = length;
+                linewidth = screentextGetSize(sizedata).x;
             }
 
             if (data.f & TEXT_XJUSTIFY)
@@ -312,66 +286,90 @@ vec2_t screentextRender(ScreenText_t const & data)
     }
 
     // loop through the string
-    while (text < end && (t = *text))
+    while (text < end && (glyph = *text))
     {
+        // reset this here because we haven't printed anything yet this loop
+        extent.x = 0;
+
         int32_t angle = data.blockangle + data.charangle;
 
-        // handle escape sequences
-        if (t == '^' && Bisdigit(*(text + 1)) && !(data.f & TEXT_LITERALESCAPE))
+        // handle each character itself in the context of screen drawing
+        if (screentextGlyphIsControlCode(glyph))
         {
-            char smallbuf[4];
-
-            ++text;
-            smallbuf[0] = *text;
-
-            ++text;
-            if (Bisdigit(*text))
+            if (screentextGlyphIsSpace(glyph))
             {
-                smallbuf[1] = *text;
-                smallbuf[2] = '\0';
+                // width
+                extent.x = xspace;
+
+                // prepare the height
+                SetIfGreater(&extent.y, yline);
+            }
+            else if (screentextGlyphIsTab(glyph))
+            {
+                // width
+                extent.x = xspace << 2; // * 4
+
+                // prepare the height
+                SetIfGreater(&extent.y, yline);
+            }
+            else if (screentextGlyphIsNewline(glyph))
+            {
+                extent.x = 0;
+
+                // reset the position
+                pos.x = 0;
+
+                // prepare the height
+                SetIfGreater(&extent.y, yline);
+
+                // move down the line height
+                if (!(data.f & TEXT_YOFFSETZERO))
+                    pos.y += extent.y;
+
+                // reset the current height
+                extent.y = 0;
+
+                // line spacing
+                pos.y += ybetween;
+
+                // near-CODEDUP "alignments"
+                if ((data.f & TEXT_XJUSTIFY) || (data.f & TEXT_XRIGHT) || (data.f & TEXT_XCENTER))
+                {
+                    int32_t const length = GetStringLineLength(text+1, end);
+
+                    sizedata.text = text+1;
+                    sizedata.len = length;
+                    int32_t linewidth = screentextGetSize(sizedata).x;
+
+                    if (data.f & TEXT_XJUSTIFY)
+                    {
+                        xbetween = (length == 1) ? 0 : tabledivide32_noinline(xbetween - linewidth, length - 1);
+
+                        linewidth = size.x;
+                    }
+
+                    if (data.f & TEXT_XRIGHT)
+                        origin.x = -linewidth;
+                    else if (data.f & TEXT_XCENTER)
+                        origin.x = -(linewidth / 2);
+                }
+            }
+            else if (screentextGlyphIsPalChange(glyph))
+            {
+                pal = screentextGlyphGetPalChange(glyph);
                 ++text;
+                continue;
             }
-            else
-                smallbuf[1] = '\0';
-
-            if (!(data.f & TEXT_IGNOREESCAPE))
-                pal = Batoi(smallbuf);
-
-            continue;
-        }
-
-        // handle case bits
-        if (data.f & TEXT_UPPERCASE)
-        {
-            if (data.f & TEXT_INVERTCASE) // optimization...?
-            { // v^ important that these two ifs remain separate due to the else below
-                if (Bisupper(t))
-                    t = Btolower(t);
+            else if (screentextGlyphIsConstWidth(glyph))
+            {
+                constwidthactive = 1;
+                ++text;
+                continue;
             }
-            else if (Bislower(t))
-                t = Btoupper(t);
         }
-        else if (data.f & TEXT_INVERTCASE)
+        else
         {
-            if (Bisupper(t))
-                t = Btolower(t);
-            else if (Bislower(t))
-                t = Btoupper(t);
-        }
-
-        // translate the character to a tilenum
-        uint32_t tile = GetStringTile(data.font, &t, data.f);
-
-        switch (t)
-        {
-        case '\t':
-        case ' ':
-        case '\n':
-        case '\x7F':
-            break;
-
-        default:
-        {
+            uint16_t const tile = screentextGlyphGetTile(glyph);
             vec2_t location{data.pos};
 
             AddCoordsFromRotation(&location, &Xdirection, origin.x);
@@ -382,103 +380,32 @@ vec2_t screentextRender(ScreenText_t const & data)
 
             rotatesprite_(location.x, location.y, data.zoom, angle, tile, data.shade, pal, o, alpha, blendidx, data.b1.x, data.b1.y, data.b2.x, data.b2.y);
 
-            break;
-        }
-        }
-
-        // reset this here because we haven't printed anything yet this loop
-        extent.x = 0;
-
-        // handle each character itself in the context of screen drawing
-        switch (t)
-        {
-        case '\t':
-        case ' ':
             // width
-            extent.x = xspace;
-
-            // prepare the height
-            SetIfGreater(&extent.y, yline);
-
-            if (t == '\t')
-                extent.x <<= 2; // *= 4
-
-            break;
-
-        case '\n':
-            extent.x = 0;
-
-            // reset the position
-            pos.x = 0;
-
-            // prepare the height
-            SetIfGreater(&extent.y, yline);
-
-            // move down the line height
-            if (!(data.f & TEXT_YOFFSETZERO))
-                pos.y += extent.y;
-
-            // reset the current height
-            extent.y = 0;
-
-            // line spacing
-            pos.y += ybetween;
-
-            // near-CODEDUP "alignments"
-            if ((data.f & TEXT_XJUSTIFY) || (data.f & TEXT_XRIGHT) || (data.f & TEXT_XCENTER))
-            {
-                int32_t const length = GetStringLineLength(text+1, end);
-
-                sizedata.str = text+1;
-                int32_t linewidth = screentextGetSizeLen(sizedata, length).x;
-
-                if (data.f & TEXT_XJUSTIFY)
-                {
-                    xbetween = (length == 1) ? 0 : tabledivide32_noinline(xbetween - linewidth, length - 1);
-
-                    linewidth = size.x;
-                }
-
-                if (data.f & TEXT_XRIGHT)
-                    origin.x = -linewidth;
-                else if (data.f & TEXT_XCENTER)
-                    origin.x = -(linewidth / 2);
-            }
-
-            break;
-
-        default:
-            // width
-            extent.x = tilesiz[tile].x * data.zoom;
-
-            if (CONSTWIDTHNUMS(data.f, t))
-            {
-                char numeral = '0'; // this is subject to change as an implementation detail
-                extent.x = (tilesiz[GetStringTile(data.font, &numeral, data.f)].x-1) * data.zoom;
-            }
+            extent.x = constwidthactive ? constwidth : tilesiz[tile].x * data.zoom;
 
             // height
             SetIfGreater(&extent.y, (tilesiz[tile].y * data.zoom));
-
-            break;
         }
 
         // incrementing the coordinate counters
         int32_t xoffset = 0;
 
         // advance the x coordinate
-        if (!(data.f & TEXT_XOFFSETZERO) || CONSTWIDTHNUMS(data.f, t))
+        if (!(data.f & TEXT_XOFFSETZERO) || constwidthactive)
             xoffset += extent.x;
 
         // account for text spacing
-        if (!CONSTWIDTHNUMS(data.f, t)
-            && t != '\n')
+        if (!constwidthactive
+            && !screentextGlyphIsNewline(glyph))
             xoffset += xbetween;
 
         pos.x += xoffset;
 
         // iterate to the next character in the string
         ++text;
+
+        // reset at end of loop
+        constwidthactive = 0;
     }
 
     return size;
