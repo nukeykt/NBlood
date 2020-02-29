@@ -37,11 +37,8 @@ static inline int32_t GetStringNumLines(char const * text, char const * const en
 
     return count;
 }
-// Note: Neither of these care about TEXT_LINEWRAP. This is intended.
 
 #define CONSTWIDTHNUMS(f, t) (((f) & TEXT_CONSTWIDTHNUMS) && (t) >= '0' && (t) <= '9')
-
-#define LINEWRAP_MARGIN 14
 
 static getstringtile_t GetStringTile;
 
@@ -130,7 +127,7 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
 
             break;
 
-        case '\n': // near-CODEDUP "if (wrap)"
+        case '\n':
             extent.x = 0;
 
             // save the position
@@ -186,55 +183,7 @@ vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
             && !(data.f & TEXT_XJUSTIFY)) // to prevent overflow
             offset.x += xbetween;
 
-        // line wrapping
-        if ((data.f & TEXT_LINEWRAP) && !(data.f & TEXT_XRIGHT) && !(data.f & TEXT_XCENTER) && data.blockangle % 512 == 0)
-        {
-            int32_t wrap = 0;
-            const int32_t ang = data.blockangle % 2048;
-
-            // this is the only place in qstrdim where angle actually affects direction, but only in the wrapping measurement
-            switch (ang)
-            {
-            case 0:
-                wrap = (data.pos.x + (pos.x + offset.x) > ((data.o & 2) ? (320<<16) : ((data.b2.x - LINEWRAP_MARGIN)<<16)));
-                break;
-            case 512:
-                wrap = (data.pos.y + (pos.x + offset.x) > ((data.o & 2) ? (200<<16) : ((data.b2.y - LINEWRAP_MARGIN)<<16)));
-                break;
-            case 1024:
-                wrap = (data.pos.x - (pos.x + offset.x) < ((data.o & 2) ? 0 : ((data.b1.x + LINEWRAP_MARGIN)<<16)));
-                break;
-            case 1536:
-                wrap = (data.pos.y - (pos.x + offset.x) < ((data.o & 2) ? 0 : ((data.b1.y + LINEWRAP_MARGIN)<<16)));
-                break;
-            }
-            if (wrap) // near-CODEDUP "case '\n':"
-            {
-                // save the position
-                SetIfGreater(&size.x, pos.x);
-
-                // reset the position
-                pos.x = 0;
-
-                // prepare the height
-                SetIfGreater(&extent.y, yline);
-
-                // move down the line height
-                if (!(data.f & TEXT_YOFFSETZERO))
-                    pos.y += extent.y;
-
-                // reset the current height
-                extent.y = 0;
-
-                // line spacing
-                offset.y = (data.f & TEXT_YJUSTIFY) ? 0 : ybetween; // ternary to prevent overflow
-                pos.y += offset.y;
-            }
-            else
-                pos.x += offset.x;
-        }
-        else
-            pos.x += offset.x;
+        pos.x += offset.x;
 
         // save some trouble with calculation in case the line breaks
         if (!(data.f & TEXT_XOFFSETZERO) || CONSTWIDTHNUMS(data.f, t))
@@ -290,19 +239,12 @@ vec2_t screentextRender(ScreenText_t const & data)
     char const * text = data.str;
     char const * const end = Bstrchr(data.str, '\0');
 
-    int32_t o = data.o;
-    // eliminate conflicts, necessary here to get the correct size value
-    // especially given justification's special handling in screentextGetSize()
-    if ((data.f & TEXT_XRIGHT) || (data.f & TEXT_XCENTER) || (data.f & TEXT_XJUSTIFY) || (data.f & TEXT_YJUSTIFY) || data.blockangle % 512 != 0)
-        o &= ~TEXT_LINEWRAP;
-
     ScreenTextSize_t sizedata{data.size};
     sizedata.f &= ~(TEXT_XJUSTIFY|TEXT_YJUSTIFY);
     if (data.f & TEXT_XJUSTIFY)
         sizedata.between.x = 0;
     if (data.f & TEXT_YJUSTIFY)
         sizedata.between.y = 0;
-    sizedata.o = o;
 
     vec2_t size = screentextGetSize(sizedata); // eventually the return value, and we need it for alignment
     vec2_t origin{}; // where to start, depending on the alignment
@@ -318,7 +260,7 @@ vec2_t screentextRender(ScreenText_t const & data)
     int32_t ybetween = mulscale16(data.between.x, data.zoom);
     // size/width/height/spacing/offset values should be multiplied or scaled by zoom (since 100% is 65536, the same as 1<<16)
 
-    int32_t alpha = data.alpha, blendidx = 0;
+    int32_t alpha = data.alpha, blendidx = 0, o = data.o;
     NEG_ALPHA_TO_BLEND(alpha, blendidx, o);
     uint8_t pal = data.pal;
 
@@ -463,7 +405,7 @@ vec2_t screentextRender(ScreenText_t const & data)
 
             break;
 
-        case '\n': // near-CODEDUP "if (wrap)"
+        case '\n':
             extent.x = 0;
 
             // reset the position
@@ -522,64 +464,18 @@ vec2_t screentextRender(ScreenText_t const & data)
         }
 
         // incrementing the coordinate counters
-        {
-            int32_t xoffset = 0;
+        int32_t xoffset = 0;
 
-            // advance the x coordinate
-            if (!(data.f & TEXT_XOFFSETZERO) || CONSTWIDTHNUMS(data.f, t))
-                xoffset += extent.x;
+        // advance the x coordinate
+        if (!(data.f & TEXT_XOFFSETZERO) || CONSTWIDTHNUMS(data.f, t))
+            xoffset += extent.x;
 
-            // account for text spacing
-            if (!CONSTWIDTHNUMS(data.f, t)
-                && t != '\n')
-                xoffset += xbetween;
+        // account for text spacing
+        if (!CONSTWIDTHNUMS(data.f, t)
+            && t != '\n')
+            xoffset += xbetween;
 
-            // line wrapping
-            if (data.f & TEXT_LINEWRAP)
-            {
-                int32_t wrap = 0;
-                const int32_t ang = data.blockangle % 2048;
-
-                // it's safe to make some assumptions and not go through AddCoordsFromRotation() since we limit to four directions
-                switch (ang)
-                {
-                case 0:
-                    wrap = (data.pos.x + (pos.x + xoffset) > ((o & 2) ? (320<<16) : ((data.b2.x - LINEWRAP_MARGIN)<<16)));
-                    break;
-                case 512:
-                    wrap = (data.pos.y + (pos.x + xoffset) > ((o & 2) ? (200<<16) : ((data.b2.y - LINEWRAP_MARGIN)<<16)));
-                    break;
-                case 1024:
-                    wrap = (data.pos.x - (pos.x + xoffset) < ((o & 2) ? 0 : ((data.b1.x + LINEWRAP_MARGIN)<<16)));
-                    break;
-                case 1536:
-                    wrap = (data.pos.y - (pos.x + xoffset) < ((o & 2) ? 0 : ((data.b1.y + LINEWRAP_MARGIN)<<16)));
-                    break;
-                }
-                if (wrap) // near-CODEDUP "case '\n':"
-                {
-                    // reset the position
-                    pos.x = 0;
-
-                    // prepare the height
-                    SetIfGreater(&extent.y, yline);
-
-                    // move down the line height
-                    if (!(data.f & TEXT_YOFFSETZERO))
-                        pos.y += extent.y;
-
-                    // reset the current height
-                    extent.y = 0;
-
-                    // line spacing
-                    pos.y += ybetween;
-                }
-                else
-                    pos.x += xoffset;
-            }
-            else
-                pos.x += xoffset;
-        }
+        pos.x += xoffset;
 
         // iterate to the next character in the string
         ++text;
