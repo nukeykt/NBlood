@@ -205,7 +205,7 @@ void FontSet(int id, int tile, int space)
                 {
                     int const dx = x;
                     int const dy = y + pFont->atf + pChar->oy;
-                    if (dx >= 0 && dx < width && dy >= 0 && dy <= height)
+                    if (dx >= 0 && dx < width && dy >= 0 && dy < height)
                         tilePtr[dx*height + dy] = pFont->at820[pChar->offset + x * pChar->h + y];
                 }
             }
