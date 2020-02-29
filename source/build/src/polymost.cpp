@@ -8647,8 +8647,6 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     float const oldfviewingrange = fviewingrange; fviewingrange = 65536.f;
     float const ogvrcorrection = gvrcorrection; gvrcorrection = 1.f;
 
-    polymost_updaterotmat();
-
     vec1 = hud->add;
 
 #ifdef POLYMER
@@ -8847,7 +8845,6 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     gshang = ogshang;
     gctang = ogctang;
     gstang = ogstang;
-    polymost_identityrotmat();
 }
 
 void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16_t picnum,
