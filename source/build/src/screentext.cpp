@@ -39,25 +39,6 @@ static inline int32_t GetStringNumLines(char const * text, char const * const en
 }
 // Note: Neither of these care about TEXT_LINEWRAP. This is intended.
 
-// This function requires you to Xfree() the returned char*.
-static char * GetSubString(char const * text, char const * const end, int32_t const length)
-{
-    auto line = (char *)Xmalloc((length+1) * sizeof(char));
-    int32_t counter = 0;
-
-    while (counter < length && text < end)
-    {
-        line[counter] = *text;
-
-        ++text;
-        ++counter;
-    }
-
-    line[counter] = '\0';
-
-    return line;
-}
-
 #define CONSTWIDTHNUMS(f, t) (((f) & TEXT_CONSTWIDTHNUMS) && (t) >= '0' && (t) <= '9')
 
 #define LINEWRAP_MARGIN 14
@@ -70,17 +51,14 @@ void screentextSetStringTile(getstringtile_t func)
 }
 
 // qstrdim
-vec2_t screentextGetSize(ScreenTextSize_t const & data)
+vec2_t screentextGetSizeLen(ScreenTextSize_t const & data, uint32_t len)
 {
-    if (data.str == NULL)
-        return {};
-
     // optimization: justification in both directions
     if ((data.f & TEXT_XJUSTIFY) && (data.f & TEXT_YJUSTIFY))
         return data.between;
 
     char const * text = data.str;
-    char const * const end = Bstrchr(data.str, '\0');
+    char const * const end = data.str + len;
 
     vec2_t size{}; // eventually the return value
     vec2_t pos{}; // holds the coordinate position as we draw each character tile of the string
@@ -342,6 +320,13 @@ vec2_t screentextGetSize(ScreenTextSize_t const & data)
 
     return size;
 }
+vec2_t screentextGetSize(ScreenTextSize_t const & data)
+{
+    if (data.str == NULL)
+        return {};
+
+    return screentextGetSizeLen(data, strlen(data.str));
+}
 
 static inline void AddCoordsFromRotation(vec2_t *coords, const vec2_t *unitDirection, const int32_t magnitude)
 {
@@ -406,12 +391,8 @@ vec2_t screentextRender(ScreenText_t const & data)
 
             if (lines != 1)
             {
-                char * const line = GetSubString(text, end, length);
-
-                sizedata.str = line;
-                linewidth = screentextGetSize(sizedata).x;
-
-                Xfree(line);
+                sizedata.str = text;
+                linewidth = screentextGetSizeLen(sizedata, length).x;
             }
 
             if (data.f & TEXT_XJUSTIFY)
@@ -598,12 +579,8 @@ vec2_t screentextRender(ScreenText_t const & data)
             {
                 int32_t const length = GetStringLineLength(text+1, end);
 
-                char * const line = GetSubString(text+1, end, length);
-
-                sizedata.str = line;
-                int32_t linewidth = screentextGetSize(sizedata).x;
-
-                Xfree(line);
+                sizedata.str = text+1;
+                int32_t linewidth = screentextGetSizeLen(sizedata, length).x;
 
                 if (data.f & TEXT_XJUSTIFY)
                 {
