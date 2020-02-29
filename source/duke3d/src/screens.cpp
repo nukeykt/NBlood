@@ -1314,7 +1314,7 @@ void G_DisplayRest(int32_t smoothratio)
             (myps->player_par/REALGAMETICSPERSEC)%60,
             ((myps->player_par%REALGAMETICSPERSEC)*33)/10
             );
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(21<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(21<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
 
         if (ud.player_skill > 3 || ((g_netServer || ud.multimode > 1) && !GTFLAGS(GAMETYPE_PLAYERSFRIENDLY)))
             Bsprintf(tempbuf, "K:^15%d", (ud.multimode>1 &&!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY)) ?
@@ -1326,12 +1326,12 @@ void G_DisplayRest(int32_t smoothratio)
             else
                 Bsprintf(tempbuf, "K:^15%d/%d", myps->actors_killed, myps->max_actors_killed);
         }
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(14<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(14<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
 
         if (myps->secret_rooms == myps->max_secret_rooms)
             Bsprintf(tempbuf, "S:%d/%d", myps->secret_rooms, myps->max_secret_rooms);
         else Bsprintf(tempbuf, "S:^15%d/%d", myps->secret_rooms, myps->max_secret_rooms);
-        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(7<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256|ROTATESPRITE_FULL16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
+        G_ScreenText(MF_Bluefont.tilenum, 2<<16, i-gtextsc(7<<16), gtextsc(MF_Bluefont.zoom), 0, 0, tempbuf, 0, 10, 2|8|16|256, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, xbetween, MF_Bluefont.between.y, MF_Bluefont.textflags|TEXT_XOFFSETZERO|TEXT_CONSTWIDTHNUMS, 0, 0, xdim-1, ydim-1);
     }
 
     if (g_player[myconnectindex].gotvote == 0 && voting != -1 && voting != myconnectindex)

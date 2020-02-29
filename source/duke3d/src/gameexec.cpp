@@ -3612,9 +3612,25 @@ badindex:
                         CON_ERRPRINTF("invalid quote %d\n", v.quoteNum);
                     else
                     {
+                        if (!(v.orientation & ROTATESPRITE_FULL16))
+                        {
+                            v.vect.x <<= 16;
+                            v.vect.y <<= 16;
+                            v.offset.x <<= 16;
+                            v.offset.y <<= 16;
+                            v.between.x <<= 16;
+                            v.between.y <<= 16;
+                        }
+
                         vec2_t dim = G_ScreenTextSize(v.tileNum, v.vect.x, v.vect.y, v.vect.z, v.blockAngle, apStrings[v.quoteNum], 2 | v.orientation,
                                                       v.offset.x, v.offset.y, v.between.x, v.between.y, v.f, v.bound[0].x, v.bound[0].y, v.bound[1].x,
                                                       v.bound[1].y);
+
+                        if (!(v.orientation & ROTATESPRITE_FULL16))
+                        {
+                            dim.x >>= 16;
+                            dim.y >>= 16;
+                        }
 
                         Gv_SetVar(widthVar, dim.x);
                         Gv_SetVar(heightVar, dim.y);
@@ -4490,6 +4506,16 @@ badindex:
                     }
 
                     VM_ASSERT((unsigned)v.nQuote < MAXQUOTES && apStrings[v.nQuote], "invalid quote %d\n", v.nQuote);
+
+                    if (!(v.orientation & ROTATESPRITE_FULL16))
+                    {
+                        v.v.x <<= 16;
+                        v.v.y <<= 16;
+                        v.spacing.x <<= 16;
+                        v.spacing.y <<= 16;
+                        v.between.x <<= 16;
+                        v.between.y <<= 16;
+                    }
 
                     G_ScreenText(v.tilenum, v.v.x, v.v.y, v.v.z, v.blockangle, v.charangle, apStrings[v.nQuote], v.shade, v.pal,
                                  2 | (v.orientation & (ROTATESPRITE_MAX - 1)), v.alpha, v.spacing.x, v.spacing.y, v.between.x, v.between.y, v.nFlags,
