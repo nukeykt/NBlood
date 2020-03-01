@@ -153,7 +153,6 @@ extern GENDUDESND gCustomDudeSnd[];
 struct GENDUDEEXTRA {
     unsigned short initVals[3];             // xrepeat, yrepeat, clipdist
     unsigned short availDeaths[kDamageMax]; // list of seqs with deaths for each damage type
-    unsigned short dmgControl[kDamageMax];  // depends of current weapon, drop armor item, sprite yrepeat and surface type
     unsigned int moveSpeed;
     unsigned int fireDist;                  // counts from sprite size
     unsigned int throwDist;                 // counts from sprite size
@@ -163,6 +162,7 @@ struct GENDUDEEXTRA {
     unsigned short slaveCount;              // how many dudes is summoned
     signed short nLifeLeech;                // spritenum of dropped dude's leech
     signed short slave[kGenDudeMaxSlaves];  // index of the ones dude is summon
+    signed short dmgControl[kDamageMax];    // depends of current weapon, drop armor item, sprite yrepeat and surface type
     bool updReq[kGenDudePropertyMax];       // update requests
     bool sndPlaying;                        // indicate if sound of AISTATE currently playing
     bool forcePunch;                        // indicate if there is no fire trigger in punch state seq
