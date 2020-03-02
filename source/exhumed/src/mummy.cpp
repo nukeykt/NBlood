@@ -16,7 +16,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "aistuff.h"
 #include "mummy.h"
 #include "sequence.h"
 #include "move.h"
@@ -47,8 +46,8 @@ struct Mummy
 Mummy MummyList[kMaxMummies];
 
 static actionSeq ActionSeq[] = {
-    {8, 0},
-    {0, 0},
+    {8,  0},
+    {0,  0},
     {16, 0},
     {24, 0},
     {32, 1},
@@ -106,7 +105,7 @@ int BuildMummy(int nSprite, int x, int y, int z, int nSector, int nAngle)
     sprite[nSprite].lotag = runlist_HeadRun() + 1;
     sprite[nSprite].extra = -1;
 
-//	GrabTimeSlot(3);
+//  GrabTimeSlot(3);
 
     MummyList[nMummy].nAction = 0;
     MummyList[nMummy].nHealth = 640;
@@ -173,6 +172,12 @@ void FuncMummy(int a, int nDamage, int nRun)
 
     switch (nMessage)
     {
+        default:
+        {
+            DebugOut("unknown msg %d for Mummy\n", nMessage);
+            break;
+        }
+
         case 0x20000:
         {
             Gravity(nSprite);
@@ -186,7 +191,7 @@ void FuncMummy(int a, int nDamage, int nRun)
 
             seq_MoveSequence(nSprite, nSeq, MummyList[nMummy].B);
 
-            bool bVal = 0;
+            bool bVal = false;
 
             MummyList[nMummy].B++;
             if (MummyList[nMummy].B >= SeqSize[nSeq])
@@ -418,10 +423,12 @@ void FuncMummy(int a, int nDamage, int nRun)
                 {
                     if (bVal)
                     {
-                        MummyList[nMummy].nAction = 0;
                         sprite[nSprite].cstat = 0x101;
+
+                        MummyList[nMummy].nAction = 0;
                         MummyList[nMummy].nHealth = 300;
                         MummyList[nMummy].nTarget = -1;
+
                         nCreaturesLeft++;
                     }
                     return;
@@ -508,12 +515,6 @@ void FuncMummy(int a, int nDamage, int nRun)
             }
 
             return;
-        }
-
-        default:
-        {
-            DebugOut("unknown msg %d for Mummy\n", a & 0x7F0000);
-            break;
         }
     }
 }

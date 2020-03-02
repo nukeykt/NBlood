@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <assert.h>
 
-#define kMaxSnakes	50
+#define kMaxSnakes  50
 
 int nSnakeCount = 0;
 int nSnakesFree;
@@ -298,7 +298,7 @@ int FindSnakeEnemy(short nSnake)
 
 void FuncSnake(int a, int UNUSED(nDamage), int nRun)
 {
-    int nMessage = a & 0x7F0000;
+    int nMessage = a & kMessageMask;
 
     switch (nMessage)
     {
@@ -416,7 +416,7 @@ SEARCH_ENEMY:
 
         default:
         {
-            DebugOut("unknown msg %x for bullet\n", a & 0x7F0000);
+            DebugOut("unknown msg %x for bullet\n", nMessage);
             break;
         }
     }

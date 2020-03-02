@@ -16,10 +16,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "exhumed.h"
-#include "aistuff.h"
-#include "engine.h"
 #include "queen.h"
+#include "exhumed.h"
+#include "engine.h"
 #include "move.h"
 #include "sequence.h"
 #include "runlist.h"
@@ -32,44 +31,44 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "names.h"
 #include <assert.h>
 
-#define kMaxQueens	1
-#define kMaxEggs	10
-#define kMaxTails	7
+#define kMaxQueens  1
+#define kMaxEggs    10
+#define kMaxTails   7
 
 short QueenCount = 0;
 
 static actionSeq ActionSeq[] = {
-    { 0, 0 },
-    { 0, 0 },
-    { 9, 0 },
-    { 36, 0 },
-    { 18, 0 },
-    { 27, 0 },
-    { 45, 0 },
-    { 45, 0 },
-    { 54, 1 },
-    { 53, 1 },
-    { 55, 1 }
+    {0,  0},
+    {0,  0},
+    {9,  0},
+    {36, 0},
+    {18, 0},
+    {27, 0},
+    {45, 0},
+    {45, 0},
+    {54, 1},
+    {53, 1},
+    {55, 1}
 };
 
 static actionSeq HeadSeq[] = {
-    { 56, 1 },
-    { 65, 0 },
-    { 65, 0 },
-    { 65, 0 },
-    { 65, 0 },
-    { 65, 0 },
-    { 74, 0 },
-    { 82, 0 },
-    { 90, 0 }
+    {56, 1},
+    {65, 0},
+    {65, 0},
+    {65, 0},
+    {65, 0},
+    {65, 0},
+    {74, 0},
+    {82, 0},
+    {90, 0}
 };
 
 static actionSeq EggSeq[] = {
-    { 19, 1 },
-    { 18, 1 },
-    { 0, 0 },
-    { 9, 0 },
-    { 23, 1 },
+    {19, 1},
+    {18, 1},
+    {0,  0},
+    {9,  0},
+    {23, 1},
 };
 
 int nQHead = 0;
@@ -83,13 +82,10 @@ short nEggFree[kMaxEggs];
 
 short QueenChan[kMaxQueens];
 
-
-
-
 struct Queen
 {
     short nHealth;
-    short field_2;
+    short nFrame;
     short nAction;
     short nSprite;
     short nTarget;
@@ -432,18 +428,24 @@ void FuncQueenEgg(int a, int nDamage, int nRun)
 {
     short nEgg = RunData[nRun].nVal;
 
-    int var_14 = 0;
-
     Egg *pEgg = &QueenEgg[nEgg];
     short nSprite = pEgg->nSprite;
     short nAction = pEgg->nAction;
 
     short nTarget;
 
-    int nMessage = a & 0x7F0000;
+    bool bVal = false;
+
+    int nMessage = a & kMessageMask;
 
     switch (nMessage)
     {
+        default:
+        {
+            DebugOut("unknown msg %d for Queenhead\n", nMessage);
+            break;
+        }
+
         case 0x20000:
         {
             if (pEgg->nHealth <= 0)
@@ -468,7 +470,7 @@ void FuncQueenEgg(int a, int nDamage, int nRun)
                 if (pEgg->field_2 >= SeqSize[nSeq])
                 {
                     pEgg->field_2 = 0;
-                    var_14 = 1;
+                    bVal = true;
                 }
 
                 nTarget = UpdateEnemy(&pEgg->nTarget);
@@ -533,7 +535,7 @@ void FuncQueenEgg(int a, int nDamage, int nRun)
 
                 case 1:
                 {
-                    if (var_14)
+                    if (bVal)
                     {
                         pEgg->nAction = 3;
                         sprite[nSprite].cstat = 0x101;
@@ -619,12 +621,6 @@ void FuncQueenEgg(int a, int nDamage, int nRun)
         case 0x90000:
         {
             seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqQueenEgg] + EggSeq[nAction].a, pEgg->field_2, EggSeq[nAction].b);
-            break;
-        }
-
-        default:
-        {
-            DebugOut("unknown msg %d for Queenhead\n", a & 0x7F0000);
             break;
         }
     }
@@ -1108,7 +1104,7 @@ int BuildQueen(int nSprite, int x, int y, int z, int nSector, int nAngle, int nC
 
     QueenList[nQueen].nAction = 0;
     QueenList[nQueen].nHealth = 4000;
-    QueenList[nQueen].field_2 = 0;
+    QueenList[nQueen].nFrame = 0;
     QueenList[nQueen].nSprite = nSprite;
     QueenList[nQueen].nTarget = -1;
     QueenList[nQueen].field_A = 0;
@@ -1136,20 +1132,27 @@ void SetQueenSpeed(short nSprite, int nSpeed)
 
 void FuncQueen(int a, int nDamage, int nRun)
 {
-    int var_18 = 0;
-
     short nQueen = RunData[nRun].nVal;
     assert(nQueen >= 0 && nQueen < kMaxQueens);
-
-    int nMessage = a & 0x7F0000;
 
     short nSprite = QueenList[nQueen].nSprite;
     short nAction = QueenList[nQueen].nAction;
     short si = QueenList[nQueen].field_A;
     short nTarget = QueenList[nQueen].nTarget;
 
+    bool bVal = false;
+
+    int nMessage = a & kMessageMask;
+
     switch (nMessage)
     {
+
+        default:
+        {
+            DebugOut("unknown msg %d for Queen\n", nMessage);
+            break;
+        }
+
         case 0x20000:
         {
             if (si < 3) {
@@ -1158,18 +1161,18 @@ void FuncQueen(int a, int nDamage, int nRun)
 
             short nSeq = SeqOffsets[kSeqQueen] + ActionSeq[nAction].a;
 
-            sprite[nSprite].picnum = seq_GetSeqPicnum2(nSeq, QueenList[nQueen].field_2);
+            sprite[nSprite].picnum = seq_GetSeqPicnum2(nSeq, QueenList[nQueen].nFrame);
 
-            seq_MoveSequence(nSprite, nSeq, QueenList[nQueen].field_2);
+            seq_MoveSequence(nSprite, nSeq, QueenList[nQueen].nFrame);
 
-            QueenList[nQueen].field_2++;
-            if (QueenList[nQueen].field_2 >= SeqSize[nSeq])
+            QueenList[nQueen].nFrame++;
+            if (QueenList[nQueen].nFrame >= SeqSize[nSeq])
             {
-                QueenList[nQueen].field_2 = 0;
-                var_18 = 1;
+                QueenList[nQueen].nFrame = 0;
+                bVal = true;
             }
 
-            short nFlag = FrameFlag[SeqBase[nSeq] + QueenList[nQueen].field_2];
+            short nFlag = FrameFlag[SeqBase[nSeq] + QueenList[nQueen].nFrame];
 
             if (nTarget > -1)
             {
@@ -1195,7 +1198,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                     if (nTarget >= 0)
                     {
                         QueenList[nQueen].nAction = QueenList[nQueen].field_A + 1;
-                        QueenList[nQueen].field_2 = 0;
+                        QueenList[nQueen].nFrame  = 0;
                         QueenList[nQueen].nTarget = nTarget;
                         QueenList[nQueen].field_C = RandomSize(7);
 
@@ -1206,7 +1209,7 @@ void FuncQueen(int a, int nDamage, int nRun)
 
                 case 6:
                 {
-                    if (var_18)
+                    if (bVal)
                     {
                         BuildQueenEgg(nQueen, 1);
                         QueenList[nQueen].nAction = 3;
@@ -1228,7 +1231,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                         {
                             if (QueenList[nQueen].field_C <= 0)
                             {
-                                QueenList[nQueen].field_2 = 0;
+                                QueenList[nQueen].nFrame = 0;
                                 sprite[nSprite].xvel = 0;
                                 sprite[nSprite].yvel = 0;
                                 QueenList[nQueen].nAction = si + 4;
@@ -1252,7 +1255,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                                 if (nWaspCount < 100)
                                 {
                                     QueenList[nQueen].nAction = 6;
-                                    QueenList[nQueen].field_2 = 0;
+                                    QueenList[nQueen].nFrame  = 0;
                                     break;
                                 }
                                 else
@@ -1293,7 +1296,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                         if (!(sprite[nTarget].cstat & 0x101))
                         {
                             QueenList[nQueen].nAction = 0;
-                            QueenList[nQueen].field_2 = 0;
+                            QueenList[nQueen].nFrame  = 0;
                             QueenList[nQueen].field_C = 100;
                             QueenList[nQueen].nTarget = -1;
 
@@ -1308,7 +1311,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                 case 4:
                 case 5:
                 {
-                    if (var_18 && QueenList[nQueen].field_10 <= 0)
+                    if (bVal && QueenList[nQueen].field_10 <= 0)
                     {
                         QueenList[nQueen].nAction = 0;
                         QueenList[nQueen].field_C = 15;
@@ -1337,10 +1340,10 @@ void FuncQueen(int a, int nDamage, int nRun)
 
                 case 7:
                 {
-                    if (var_18)
+                    if (bVal)
                     {
                         QueenList[nQueen].nAction = 0;
-                        QueenList[nQueen].field_2 = 0;
+                        QueenList[nQueen].nFrame  = 0;
                     }
 
                     break;
@@ -1349,7 +1352,7 @@ void FuncQueen(int a, int nDamage, int nRun)
                 case 8:
                 case 9:
                 {
-                    if (var_18)
+                    if (bVal)
                     {
                         if (nAction == 9)
                         {
@@ -1363,8 +1366,8 @@ void FuncQueen(int a, int nDamage, int nRun)
                                     short nChunkSprite = BuildCreatureChunk(nSprite, seq_GetSeqPicnum(kSeqQueen, 57, 0)) & 0xFFFF;
 
                                     sprite[nChunkSprite].picnum = kTile3117 + (i % 3);
-                                    sprite[nChunkSprite].yrepeat = 100;
                                     sprite[nChunkSprite].xrepeat = 100;
+                                    sprite[nChunkSprite].yrepeat = 100;
                                 }
 
                                 short nChunkSprite = BuildCreatureChunk(nSprite, seq_GetSeqPicnum(kSeqQueen, 57, 0));
@@ -1372,12 +1375,14 @@ void FuncQueen(int a, int nDamage, int nRun)
                                 sprite[nChunkSprite].picnum = kTile3126;
                                 sprite[nChunkSprite].yrepeat = 100;
                                 sprite[nChunkSprite].xrepeat = 100;
+
                                 PlayFXAtXYZ(
                                     StaticSound[kSound40],
                                     sprite[nSprite].x,
                                     sprite[nSprite].y,
                                     sprite[nSprite].z,
                                     sprite[nSprite].sectnum);
+
                                 BuildQueenHead(nQueen);
 
                                 QueenList[nQueen].nAction++;
@@ -1452,14 +1457,14 @@ void FuncQueen(int a, int nDamage, int nRun)
                         break;
                     }
 
-                    QueenList[nQueen].field_2 = 0;
+                    QueenList[nQueen].nFrame = 0;
                 }
                 else
                 {
                     if (si > 0 && !RandomSize(4))
                     {
                         QueenList[nQueen].nAction = 7;
-                        QueenList[nQueen].field_2 = 0;
+                        QueenList[nQueen].nFrame  = 0;
                     }
                 }
             }
@@ -1468,13 +1473,7 @@ void FuncQueen(int a, int nDamage, int nRun)
 
         case 0x90000:
         {
-            seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqQueen] + ActionSeq[nAction].a, QueenList[nQueen].field_2, ActionSeq[nAction].b);
-            break;
-        }
-
-        default:
-        {
-            DebugOut("unknown msg %d for Queen\n", a & 0x7F0000);
+            seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqQueen] + ActionSeq[nAction].a, QueenList[nQueen].nFrame, ActionSeq[nAction].b);
             break;
         }
     }

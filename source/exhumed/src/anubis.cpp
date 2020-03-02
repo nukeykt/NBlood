@@ -18,6 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "exhumed.h"
 #include "anubis.h"
+#include "aistuff.h"
 #include "engine.h"
 #include "runlist.h"
 #include "sequence.h"
@@ -30,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include <assert.h>
 
-#define kMaxAnubis	80
+#define kMaxAnubis  80
 
 struct Anubis
 {
@@ -46,12 +47,11 @@ struct Anubis
 
 Anubis AnubisList[kMaxAnubis];
 
-short AnubisSprite = -1;
 short AnubisCount  = -1;
 
 static actionSeq ActionSeq[] = {
-    { 0, 0 },
-    { 8, 0 },
+    { 0,  0 },
+    { 8,  0 },
     { 16, 0 },
     { 24, 0 },
     { 32, 0 },
@@ -73,7 +73,6 @@ short nAnubisDrum = 0;
 void InitAnubis()
 {
     AnubisCount = kMaxAnubis;
-    AnubisSprite = 1;
     nAnubisDrum = 1;
 }
 
@@ -155,17 +154,23 @@ int BuildAnubis(int nSprite, int x, int y, int z, int nSector, int nAngle, uint8
 void FuncAnubis(int a, int nDamage, int nRun)
 {
     short nAnubis = RunData[nRun].nVal;
-    int var_14 = 0;
-
     assert(nAnubis >= 0 && nAnubis < kMaxAnubis);
 
     short nSprite = AnubisList[nAnubis].nSprite;
     short nAction = AnubisList[nAnubis].nAction;
 
-    int nMessage = a & 0x7F0000;
+    bool bVal = false;
+
+    int nMessage = a & kMessageMask;
 
     switch (nMessage)
     {
+        default:
+        {
+            DebugOut("unknown msg %d for Anubis\n", nMessage);
+            return;
+        }
+
         case 0x20000:
         {
             if (nAction < 11) {
@@ -182,7 +187,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
             if (AnubisList[nAnubis].nFrame >= SeqSize[nSeq])
             {
                 AnubisList[nAnubis].nFrame = 0;
-                var_14 = 1;
+                bVal = true;
             }
 
             short nTarget = AnubisList[nAnubis].nTarget;
@@ -190,10 +195,10 @@ void FuncAnubis(int a, int nDamage, int nRun)
             short nFrame = SeqBase[nSeq] + AnubisList[nAnubis].nFrame;
             short nFlag = FrameFlag[nFrame];
 
-			int c = 0;
+            int nMov = 0;
 
             if (nAction > 0 && nAction < 11) {
-                c = MoveCreatureWithCaution(nSprite);
+                nMov = MoveCreatureWithCaution(nSprite);
             }
 
             switch (nAction)
@@ -225,15 +230,16 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     {
                         PlotCourseToSprite(nSprite, nTarget);
 
-                        sprite[nSprite].xvel = Cos(sprite[nSprite].ang & 0xFFF8) >> 2;
-                        sprite[nSprite].yvel = Sin(sprite[nSprite].ang & 0xFFF8) >> 2;
+                        int nAngle = sprite[nSprite].ang & 0xFFF8;
+                        sprite[nSprite].xvel = Cos(nAngle) >> 2;
+                        sprite[nSprite].yvel = Sin(nAngle) >> 2;
                     }
 
-                    switch (c & 0xC000)
+                    switch (nMov & 0xC000)
                     {
                         case 0xC000:
                         {
-                            if ((c & 0x3FFF) == nTarget)
+                            if ((nMov & 0x3FFF) == nTarget)
                             {
                                 int nAng = getangle(sprite[nTarget].x - sprite[nSprite].x, sprite[nTarget].y - sprite[nSprite].y);
                                 int nAngDiff = AngleDiff(sprite[nSprite].ang, nAng);
@@ -243,7 +249,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                                     AnubisList[nAnubis].nAction = 2;
                                     AnubisList[nAnubis].nFrame = 0;
                                 }
-                                break; // only break if condition met
+                                break;
                             }
                             // else we fall through to 0x8000
                             fallthrough__;
@@ -268,11 +274,12 @@ void FuncAnubis(int a, int nDamage, int nRun)
 
                                 if (cansee(sprite[nSprite].x, sprite[nSprite].y, sprite[nSprite].z - GetSpriteHeight(nSprite), sprite[nSprite].sectnum,
                                     sprite[nTarget].x, sprite[nTarget].y, sprite[nTarget].z - GetSpriteHeight(nTarget), sprite[nTarget].sectnum))
-                                {
-                                    AnubisList[nAnubis].nAction = 3;
+                                { 
                                     sprite[nSprite].xvel = 0;
                                     sprite[nSprite].yvel = 0;
                                     sprite[nSprite].ang = GetMyAngle(sprite[nTarget].x - sprite[nSprite].x, sprite[nTarget].y - sprite[nSprite].y);
+
+                                    AnubisList[nAnubis].nAction = 3;
                                     AnubisList[nAnubis].nFrame = 0;
                                 }
                             }
@@ -307,7 +314,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                 }
                 case 3:
                 {
-                    if (var_14)
+                    if (bVal)
                     {
                         AnubisList[nAnubis].nAction = 1;
 
@@ -332,7 +339,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                     sprite[nSprite].xvel = 0;
                     sprite[nSprite].yvel = 0;
 
-                    if (var_14)
+                    if (bVal)
                     {
                         AnubisList[nAnubis].nAction = 1;
                         AnubisList[nAnubis].nFrame = 0;
@@ -345,7 +352,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                 case 9:
                 case 10:
                 {
-                    if (var_14)
+                    if (bVal)
                     {
                         AnubisList[nAnubis].nAction = (RandomSize(3) % 5) + 6;
                         AnubisList[nAnubis].nFrame = 0;
@@ -355,7 +362,7 @@ void FuncAnubis(int a, int nDamage, int nRun)
                 case 11:
                 case 12:
                 {
-                    if (var_14)
+                    if (bVal)
                     {
                         AnubisList[nAnubis].nAction = nAction + 2;
                         AnubisList[nAnubis].nFrame = 0;
@@ -481,11 +488,6 @@ void FuncAnubis(int a, int nDamage, int nRun)
                 }
             }
 
-            return;
-        }
-        default:
-        {
-            DebugOut("unknown msg %d for Anubis\n", a & 0x7F0000);
             return;
         }
     }

@@ -1084,7 +1084,7 @@ void DoKenTest()
     }
 }
 
-void FuncPlayer(int pA, int nDamage, int nRun)
+void FuncPlayer(int a, int nDamage, int nRun)
 {
     int var_48 = 0;
     int var_40;
@@ -1102,7 +1102,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
     short nAction = PlayerList[nPlayer].nAction;
     short nActionB = PlayerList[nPlayer].nAction;
 
-    int nMessage = pA & 0x7F0000;
+    int nMessage = a & kMessageMask;
 
     short nSprite2;
 
@@ -1115,7 +1115,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
     {
         case 0x90000:
         {
-            seq_PlotSequence(pA & 0xFFFF, SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a, PlayerList[nPlayer].field_2, ActionSeq[nAction].b);
+            seq_PlotSequence(a & 0xFFFF, SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a, PlayerList[nPlayer].field_2, ActionSeq[nAction].b);
             return;
         }
 
@@ -1144,7 +1144,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
                     return;
                 }
 
-                nSprite2 = pA & 0xFFFF;
+                nSprite2 = a & 0xFFFF;
             }
 
             // ok continue case 0x80000 as normal, loc_1C57C
