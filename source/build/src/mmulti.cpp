@@ -10,6 +10,10 @@
 #include "compat.h"
 #include "mmulti.h"
 
+int myconnectindex, numplayers;
+int connectpoint2[MAXPLAYERS];
+
+#ifndef EDUKE32_STANDALONE
 
 #ifdef _WIN32
 #define _WIN32_WINNT 0x0600
@@ -99,8 +103,8 @@ static unsigned char simlagfif[MAXPLAYERS][SIMLAG+1][MAXPAKSIZ+2];
 #pragma message("\n\nWARNING! INTENTIONAL PACKET LOSS SIMULATION IS ENABLED!\nREMEMBER TO CHANGE SIMMIS&SIMLAG to 0 before RELEASE!\n\n")
 #endif
 
-int myconnectindex, numplayers, networkmode = -1;
-int connecthead, connectpoint2[MAXPLAYERS];
+int networkmode = -1;
+int connecthead;
 
 static int tims, lastsendtims[MAXPLAYERS], lastrecvtims[MAXPLAYERS], prevlastrecvtims[MAXPLAYERS];
 static unsigned char pakbuf[MAXPAKSIZ], playerslive[MAXPLAYERS];
@@ -1245,3 +1249,5 @@ void savesnatchhost(int other)
 	replyfrom4[other] = snatchreplyfrom4;
 	replyfrom6[other] = snatchreplyfrom6;
 }
+
+#endif // EDUKE32_STANDALONE
