@@ -471,11 +471,12 @@ int32_t app_main(int32_t argc, char const * const * argv)
         exit(1);
     }
 
-#ifdef USE_OPENGL
     OSD_RegisterFunction("restartvid","restartvid: reinitialise the video mode",osdcmd_restartvid);
     OSD_RegisterFunction("vidmode","vidmode [xdim ydim] [bpp] [fullscreen]: immediately change the video mode",osdcmd_vidmode);
-    OSD_RegisterFunction("map", "map [filename]: load a map", osdcmd_map);
+#ifdef USE_OPENGL
+    baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
 #endif
+    OSD_RegisterFunction("map", "map [filename]: load a map", osdcmd_map);
 
     wm_setapptitle(AppProperName);
 
