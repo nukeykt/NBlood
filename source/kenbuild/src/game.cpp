@@ -191,7 +191,6 @@ static int nummoves;
 static signed char statrate[NUMSTATS] = {-1,0,-1,0,0,0,1,3,0,3,15,-1,-1};
 
 //Input structures
-static char networkmode;     //0 is 2(n-1) mode, 1 is n(n-1) mode
 static int locselectedgun, locselectedgun2;
 static input loc, oloc, loc2;
 static input ffsync[MAXPLAYERS], osync[MAXPLAYERS], ssync[MAXPLAYERS];
@@ -457,8 +456,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
 #if defined STARTUP_SETUP_WINDOW
     int cmdsetup = 0;
 #endif
-    int i, j, k /*, l, fil, waitplayers, x1, y1, x2, y2*/;
-    int /*other, packleng,*/ netparm;
+    int i, j, k /*, l, fil*/, waitplayers, x1, y1, x2, y2;
+    int other, /*packleng, */netparm;
 
     OSD_SetLogFile("ekenbuild.log");
 
@@ -481,32 +480,20 @@ int32_t app_main(int32_t argc, char const * const * argv)
     wm_setapptitle(AppProperName);
 
     Bstrcpy(boardfilename, "nukeland.map");
-    j = 0; netparm = argc;
+    netparm = argc;
     for (i=1; i<argc; i++)
     {
-        if ((!Bstrcasecmp("-net",argv[i])) || (!Bstrcasecmp("/net",argv[i]))) { j = 1; netparm = i; continue; }
-        if (j)
+        if ((!Bstrcasecmp("-net",argv[i])) || (!Bstrcasecmp("/net",argv[i]))) { netparm = i+1; break; }
+        if (!Bstrcasecmp(argv[i], "-setup"))
         {
-            if (argv[i][0] == '-' || argv[i][0] == '/')
-            {
-                if (((argv[i][1] == 'n') || (argv[i][1] == 'N')) && (argv[i][2] == '0')) { networkmode = 0; continue; }
-                if (((argv[i][1] == 'n') || (argv[i][1] == 'N')) && (argv[i][2] == '1')) { networkmode = 1; continue; }
-            }
-            if (isvalidipaddress(argv[i])) continue;
-        }
-        else
-        {
-            if (!Bstrcasecmp(argv[i], "-setup"))
-            {
 #if defined STARTUP_SETUP_WINDOW
                 cmdsetup = 1;
 #endif
-            }
-            else
-            {
-                Bstrcpy(boardfilename, argv[i]);
-                if (!Bstrrchr(boardfilename,'.')) Bstrcat(boardfilename,".map");
-            }
+        }
+        else
+        {
+            Bstrcpy(boardfilename, argv[i]);
+            if (!Bstrrchr(boardfilename,'.')) Bstrcat(boardfilename,".map");
         }
     }
 
@@ -605,7 +592,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
     loadsong("neatsong.kdm");
     musicon();
 
-#if 0
     if (option[4] > 0)
     {
         x1 = ((xdim-screensize)>>1);
@@ -665,9 +651,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
         else
             Bstrcat(getmessage," (Even)");
         getmessageleng = Bstrlen(getmessage);
-        getmessagetimeoff = totalclock+120;
+        getmessagetimeoff = (int32_t) totalclock+120;
     }
-#endif
     screenpeek = myconnectindex;
     reccnt = 0;
     for (i=connecthead; i>=0; i=connectpoint2[i]) initplayersprite((short)i);
@@ -4511,7 +4496,7 @@ void fakedomovethingscorrect(void)
         return;
 
     //Re-start fakedomovethings back to place of error
-    my = omy;
+    my = omy = pos[myconnectindex];
     myzvel = hvel[myconnectindex];
     myang = omyang = ang[myconnectindex];
     mycursectnum = cursectnum[myconnectindex];
@@ -4936,6 +4921,7 @@ void findrandomspot(int *x, int *y, short *sectnum)
         endwall = startwall+sector[dasector].wallnum;
         if (endwall <= startwall) continue;
 
+        da.x = da.y = 0;
         minx = 0x7fffffff; maxx = 0x80000000;
         miny = 0x7fffffff; maxy = 0x80000000;
 
