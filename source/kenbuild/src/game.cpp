@@ -1155,6 +1155,25 @@ void drawstatusbar(short snum)     // Andy did this
     }
 }
 
+static void refreshstatusbar(void)
+{
+    int32_t i;
+
+    rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    for (i = ((xdim-320)>>1)-8; i >= 0; i -= 8)
+        rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    if (i >= -4)
+    {
+        i += 4;
+        rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    }
+    for (i = ((xdim-320)>>1)+320; i <= xdim-8; i += 8)
+        rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    if (i <= xdim-4) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 4;
+
+    drawstatusbar(screenpeek);   // Andy did this
+}
+
 void prepareboard(char *daboardfilename)
 {
     short startwall, endwall, dasector;
@@ -3753,15 +3772,7 @@ void drawscreen(short snum, int dasmoothratio)
 
                 renderFlushPerms();
 
-                rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-                i = ((xdim-320)>>1);
-                while (i >= 8) i -= 8, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-                if (i >= 4) i -= 4, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-                i = ((xdim-320)>>1)+320;
-                while (i <= xdim-8) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 8;
-                if (i <= xdim-4) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 4;
-
-                drawstatusbar(screenpeek);   // Andy did this
+                refreshstatusbar();
             }
 
             x1 = ((xdim-screensize)>>1);
@@ -4157,6 +4168,11 @@ void drawscreen(short snum, int dasmoothratio)
         if (dimensionmode[snum] == 2)
         {
             videoClearViewableArea(0L);  //Clear screen to specified color
+#ifdef USE_OPENGL
+            // Don't refresh with split screen
+            if ((videoGetRenderMode() >= REND_POLYMOST) && ((option[4] != 0) || (numplayers < 2)))
+                refreshstatusbar(); // Necessary GL fills the entire screen with black
+#endif
             renderDrawMapView(cpos.x,cpos.y,i,cang);
         }
         drawoverheadmap(cpos.x,cpos.y,i,cang);
@@ -4778,8 +4794,6 @@ void getinput(void)
 
 void initplayersprite(short snum)
 {
-    int i;
-
     if (playersprite[snum] >= 0) return;
 
     spawnsprite(playersprite[snum],pos[snum].x,pos[snum].y,pos[snum].z+EYEHEIGHT,
@@ -4901,17 +4915,7 @@ void setup3dscreen(void)
         drawtilebackground(/*0L,0L,*/ BACKGROUND,8,0L,0L,xdim-1L,ydim-1L,0);     //Draw background
 
     if (screensize <= xdim)
-    {
-        rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-        i = ((xdim-320)>>1);
-        while (i >= 8) i -= 8, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-        if (i >= 4) i -= 4, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-        i = ((xdim-320)>>1)+320;
-        while (i <= xdim-8) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 8;
-        if (i <= xdim-4) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 4;
-
-        drawstatusbar(screenpeek);   // Andy did this
-    }
+        refreshstatusbar();
 }
 
 void findrandomspot(int *x, int *y, short *sectnum)
