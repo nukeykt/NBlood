@@ -169,7 +169,7 @@ ENGINE_OBJS= \
 	$(ENGINE_OBJ)\smalltextfont.$o \
 	$(ENGINE_OBJ)\lz4.$o \
 	$(ENGINE_OBJ)\md4.$o \
-	$(ENGINE_OBJ)\mmulti_null.$o \
+	$(ENGINE_OBJ)\mmulti.$o \
 	$(ENGINE_OBJ)\osd.$o \
 	$(ENGINE_OBJ)\pragmas.$o \
 	$(ENGINE_OBJ)\rev.$o \

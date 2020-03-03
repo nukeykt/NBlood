@@ -246,7 +246,7 @@ engine_objs := \
     miniz.c \
     miniz_tdef.c \
     miniz_tinfl.c \
-    mmulti_null.cpp \
+    mmulti.cpp \
     mutex.cpp \
     osd.cpp \
     palette.cpp \

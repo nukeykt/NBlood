@@ -252,7 +252,7 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\miniz_tdef.c" />
     <ClCompile Include="..\..\source\build\src\miniz_tinfl.c" />
-    <ClCompile Include="..\..\source\build\src\mmulti_null.cpp" />
+    <ClCompile Include="..\..\source\build\src\mmulti.cpp" />
     <ClCompile Include="..\..\source\build\src\mutex.cpp" />
     <ClCompile Include="..\..\source\build\src\osd.cpp" />
     <ClCompile Include="..\..\source\build\src\palette.cpp" />

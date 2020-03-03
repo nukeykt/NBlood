@@ -92,7 +92,7 @@
     <ClCompile Include="..\..\source\build\src\miniz.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\build\src\mmulti_null.cpp">
+    <ClCompile Include="..\..\source\build\src\mmulti.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\mutex.cpp">
