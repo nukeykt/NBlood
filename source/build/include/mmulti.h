@@ -9,13 +9,13 @@
 #ifndef mmulti_h
 #define mmulti_h
 
-#define MAXMULTIPLAYERS 16
+#include "build.h"
 
 #define MMULTI_MODE_MS  0
 #define MMULTI_MODE_P2P 1
 
 extern int myconnectindex, numplayers, networkmode;
-extern int connecthead, connectpoint2[MAXMULTIPLAYERS];
+extern int connecthead, connectpoint2[MAXPLAYERS];
 extern unsigned char syncstate;
 
 void initsingleplayers(void);
