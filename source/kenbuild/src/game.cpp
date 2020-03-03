@@ -3960,7 +3960,9 @@ void drawscreen(short snum, int dasmoothratio)
             {
                 tiltlock = screentilt;
                 // Ken loves to interpolate
+#ifdef USE_OPENGL
                 renderSetRollAngle(oscreentilt + mulscale16(((screentilt-oscreentilt+1024)&2047)-1024,smoothratio));
+#endif
             }
 
             if ((gotpic[FLOORMIRROR>>3]&(1<<(FLOORMIRROR&7))) > 0)
