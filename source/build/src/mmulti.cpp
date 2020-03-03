@@ -113,6 +113,9 @@ static unsigned char pakmem[4194304]; static int pakmemi = 1;
 #define NETPORT 0x5bd9
 static SOCKET mysock = -1;
 static int domain = PF_UNSPEC;
+#ifdef USE_IPV6
+static int forceipv4 = 0;
+#endif
 static struct sockaddr_storage otherhost[MAXPLAYERS], snatchhost;	// IPV4/6 address of peers
 static struct in_addr replyfrom4[MAXPLAYERS], snatchreplyfrom4;		// our IPV4 address peers expect to hear from us on
 static struct in6_addr replyfrom6[MAXPLAYERS], snatchreplyfrom6;	// our IPV6 address peers expect to hear from us on
@@ -153,7 +156,7 @@ int netinit (int portnum)
 #endif
 
 #ifdef USE_IPV6
-	domain = PF_INET6;
+	domain = forceipv4 ? PF_INET : PF_INET6;
 #else
 	domain = PF_INET;
 #endif
@@ -688,6 +691,15 @@ int initmultiplayersparms(int argc, char const * const argv[])
 			}
 			continue;
 		}
+
+#ifdef USE_IPV6
+		// -forceipv4 == Force IPv4
+		if (!Bstrcasecmp(argv[i]+1, "forceipv4"))
+		{
+			forceipv4 = 1;
+			continue;
+		}
+#endif
 	}
 
 	if (!netinit(portnum)) {
