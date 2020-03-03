@@ -1756,12 +1756,9 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 
         setrefreshrate();
 
+        sdl_surface = SDL_GetWindowSurface(sdl_window);
         if (!sdl_surface)
-        {
-            sdl_surface = SDL_GetWindowSurface(sdl_window);
-            if (!sdl_surface)
-                SDL2_VIDEO_ERR("SDL_GetWindowSurface");
-        }
+            SDL2_VIDEO_ERR("SDL_GetWindowSurface");
 
         SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
     }
