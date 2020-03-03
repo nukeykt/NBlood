@@ -929,7 +929,7 @@ InitGame(int32_t argc, char const * const * argv)
     // sets numplayers, connecthead, connectpoint2, myconnectindex
 
     if (!firstnet)
-        initmultiplayers(0, NULL, 0, 0, 0);
+        initsingleplayers();
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
         buildputs("Waiting for players...\n");
