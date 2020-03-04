@@ -989,7 +989,7 @@ static playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
         return NoMoreData;
 
     voice->position = 0;
-    (voice->DemandFeed)(&voice->sound, &voice->BlockLength);
+    (voice->DemandFeed)(&voice->sound, &voice->BlockLength, voice->userdata);
     voice->length = min(voice->BlockLength, 0x8000u);
     voice->BlockLength -= voice->length;
     voice->length <<= 16;
@@ -1000,8 +1000,8 @@ static playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
     return NoMoreData;
 }
 
-int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int bitdepth, int channels, int rate,
-    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval, void* userdata)
 {
     VoiceNode* voice;
 
@@ -1036,6 +1036,7 @@ int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     voice->prev = nullptr;
     voice->priority = priority;
     voice->callbackval = callbackval;
+    voice->userdata = userdata;
 
     MV_SetVoicePitch(voice, rate, pitchoffset);
     MV_SetVoiceMixMode(voice);

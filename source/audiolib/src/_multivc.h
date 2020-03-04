@@ -170,7 +170,7 @@ typedef struct VoiceNode
     union
     {
         void *rawdataptr;
-        void (*DemandFeed)(const char** ptr, uint32_t* length);
+        void (*DemandFeed)(const char** ptr, uint32_t* length, void* userdata);
     };
 
     const char *NextBlock;
@@ -203,6 +203,7 @@ typedef struct VoiceNode
     int priority;
 
     intptr_t callbackval;
+    void *userdata;
 } VoiceNode;
 
 typedef struct
