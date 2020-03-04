@@ -1453,9 +1453,8 @@ getpackets(void)
 
             PlaySound(DIGI_PMESSAGE,&tp->posx,&tp->posy,&tp->posz,v3df_dontpan);
 
-            memcpy(ds,&packbuf[3],packbufleng-3);
-            ds[packbufleng-3] = 0;
-            //sprintf(ds, "%s",&packbuf[3]);
+            memcpy(ds,&packbuf[1],packbufleng-1);
+            ds[packbufleng-1] = 0;
             adduserquote(ds);
             break;
         }
