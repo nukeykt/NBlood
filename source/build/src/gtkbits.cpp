@@ -11,6 +11,12 @@ int32_t gtkenabled = 0;
 
 static GdkPixbuf *appicon = NULL;
 
+static void gtkbuild_runpendingevents(void)
+{
+    while (gtk_events_pending())
+        gtk_main_iteration_do(FALSE);
+}
+
 int gtkbuild_msgbox(const char *name, const char *msg)
 {
     GtkWidget *dialog;
@@ -25,6 +31,8 @@ int gtkbuild_msgbox(const char *name, const char *msg)
     gtk_window_set_title(GTK_WINDOW(dialog), name);
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
+
+    gtkbuild_runpendingevents();
 
     return 1;
 }
@@ -44,6 +52,8 @@ int gtkbuild_ynbox(const char *name, const char *msg)
     gtk_window_set_title(GTK_WINDOW(dialog), name);
     r = gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
+
+    gtkbuild_runpendingevents();
 
     if (r == GTK_RESPONSE_YES) return 1;
     return 0;

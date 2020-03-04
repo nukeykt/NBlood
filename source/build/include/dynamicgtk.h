@@ -117,6 +117,7 @@ typedef GtkListStore *(*gtk_list_store_new_ptr) (gint n_columns, ...);
 typedef void (*gtk_list_store_set_ptr) (GtkListStore *list_store, GtkTreeIter *iter, ...);
 
 // gtkmain.h
+typedef gboolean (*gtk_events_pending_ptr) (void);
 typedef void (*gtk_main_ptr) (void);
 typedef gboolean (*gtk_main_iteration_do_ptr) (gboolean blocking);
 typedef void (*gtk_main_quit_ptr) (void);
@@ -292,6 +293,7 @@ struct _dynamicgtksyms {
     gtk_list_store_get_type_ptr gtk_list_store_get_type;
     gtk_list_store_new_ptr gtk_list_store_new;
     gtk_list_store_set_ptr gtk_list_store_set;
+    gtk_events_pending_ptr gtk_events_pending;
     gtk_main_ptr gtk_main;
     gtk_main_iteration_do_ptr gtk_main_iteration_do;
     gtk_main_quit_ptr gtk_main_quit;
@@ -482,6 +484,7 @@ void dynamicgtk_uninit(void);
 #define gtk_list_store_set dynamicgtksyms.gtk_list_store_set
 
 // gtkmain.h
+#define gtk_events_pending dynamicgtksyms.gtk_events_pending
 #define gtk_main dynamicgtksyms.gtk_main
 #define gtk_main_iteration_do dynamicgtksyms.gtk_main_iteration_do
 #define gtk_main_quit dynamicgtksyms.gtk_main_quit
