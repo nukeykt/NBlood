@@ -5046,8 +5046,8 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
             status |= MT_YCenter;
             int32_t const y_internal = origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos;
 
-            vec2_t textsize;
-            if (dodraw)
+            vec2_t textsize{};
+            if (dodraw && entry->name != nullptr)
                 textsize = Menu_Text(origin.x + x + indent, y_internal, entry->font, entry->name, status, ydim_upper, ydim_lower);
 
             if (entry->format->width < 0)
@@ -5535,22 +5535,24 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                     {
                         auto object = (MenuString_t*)entry->entry;
 
-                        vec2_t dim;
+                        vec2_t dim{};
                         int32_t stringx = x;
                         const int32_t stringy = origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos;
-                        int32_t h;
+                        int32_t h = entry->font->get_yline();
 
                         if (entry == currentry && object->editfield != NULL)
                         {
                             dim = Menu_Text(origin.x + stringx, stringy, object->font, object->editfield, (status & ~MT_Disabled) | MT_Literal, ydim_upper, ydim_lower);
-                            h = max(dim.y, entry->font->get_yline());
+                            if (h < dim.y)
+                                h = dim.y;
 
                             Menu_DrawCursorText(origin.x + x + dim.x + (1<<16), stringy, h, ydim_upper, ydim_lower);
                         }
-                        else
+                        else if (object->variable != nullptr)
                         {
                             dim = Menu_Text(origin.x + stringx, stringy, object->font, object->variable, status, ydim_upper, ydim_lower);
-                            h = max(dim.y, entry->font->get_yline());
+                            if (h < dim.y)
+                                h = dim.y;
                         }
 
                         if (!(status & MT_XRight))
