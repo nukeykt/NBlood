@@ -117,7 +117,7 @@ using buildvfs_fd = int;
 #define buildvfs_fd_invalid (-1)
 #define buildvfs_read(fd, p, s) read((fd), (p), (s))
 #define buildvfs_write(fd, p, s) write((fd), (p), (s))
-#define buildvfs_open_read(fn) open((fn), O_RDONLY)
+#define buildvfs_open_read(fn) open((fn), O_RDONLY|O_BINARY)
 #define buildvfs_open_write(fn) open((fn), O_BINARY|O_TRUNC|O_CREAT|O_WRONLY, S_IREAD|S_IWRITE)
 // #define buildvfs_open_append(fn) todo(fn)
 #define buildvfs_close(fd) close(fd)
