@@ -67,6 +67,9 @@ void G_ShowParameterHelp(void)
         "-nam\t\tRun in NAM compatibility mode\n"
         "-napalm\t\tRun in NAPALM compatibility mode\n"
 #endif
+#if defined VW_ENABLED
+        "-nosteam\t\tDisable Steam support\n"
+#endif
         "-rts [file.rts]\tLoad a custom Remote Ridicule sound bank\n"
         "-r\t\tRecord demo\n"
         "-s#\t\tStart game on skill level #\n"
@@ -518,7 +521,7 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                     i++;
                     continue;
                 }
-                if (!Bstrcasecmp(c+1, "nologo"))
+                if (!Bstrcasecmp(c+1, "nologo") || !Bstrcasecmp(c+1, "quick"))
                 {
                     g_noLogo = 1;
                     i++;
@@ -557,6 +560,13 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 if (!Bstrcasecmp(c+1, "forcegl"))
                 {
                     forcegl = 1;
+                    i++;
+                    continue;
+                }
+#endif
+#ifdef VW_ENABLED
+                if (!Bstrcasecmp(c+1, "nosteam"))
+                {
                     i++;
                     continue;
                 }

@@ -136,6 +136,10 @@ enum MenuIndex_t {
     MENU_NETOPTIONS     = 20011,
     MENU_NETUSERMAP     = 20012,
     MENU_NETJOIN        = 20020,
+    MENU_DHHUNTING      = 30000,
+    MENU_DHTARGET       = 30001,
+    MENU_DHWEAPON       = 30002,
+    MENU_DHTROPHIES     = 30003,
 };
 
 

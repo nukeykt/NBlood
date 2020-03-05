@@ -95,7 +95,7 @@ unsigned int nMaxAlloc = 0x4000000;
 bool bCustomName = false;
 char bAddUserMap = false;
 bool bNoDemo = false;
-bool bQuickStart = true;
+bool bQuickStart = false;
 bool bNoAutoLoad = false;
 
 int gMusicPrevLoadedEpisode = -1;
@@ -584,7 +584,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         if (!(gGameOptions.uGameFlags&1))
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
         if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
-            && gEpisodeInfo[gGameOptions.nEpisode].at8f08)
+            && gEpisodeInfo[gGameOptions.nEpisode].cutsceneASmkPath)
             gGameOptions.uGameFlags |= 4;
         if ((gGameOptions.uGameFlags&4) && gDemo.at1 == 0)
             levelPlayIntroScene(gGameOptions.nEpisode);
@@ -713,7 +713,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             }
             playerInit(i,0);
         }
-        playerStart(i);
+        playerStart(i, 1);
     }
     if (gameOptions->uGameFlags&1)
     {
@@ -1623,7 +1623,6 @@ int app_main(int argc, char const * const * argv)
     Bfree(setupFileName);
 
     OSD_Exec(buffer);
-    OSD_Exec("autoexec.cfg");
 
     // Not neccessary ?
     // CONFIG_SetDefaultKeys(keydefaults, true);
@@ -1709,6 +1708,9 @@ int app_main(int argc, char const * const * argv)
     }
     SetupMenus();
     videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
+
+    OSD_Exec("autoexec.cfg");
+
     if (!bQuickStart)
         credLogosDos();
     scrSetDac();
@@ -1745,7 +1747,11 @@ RESTART:
     if (gDemo.at59ef > 0)
         gGameMenuMgr.Deactivate();
     if (!bAddUserMap && !gGameStarted)
+    {
         gGameMenuMgr.Push(&menuMain, -1);
+        if (gGameOptions.nGameType > 0)
+            gGameMenuMgr.Push(&menuNetStart, 1);
+    }
     ready2send = 1;
     while (!gQuitGame)
     {
@@ -1898,8 +1904,6 @@ RESTART:
             if (!gDemo.at0 && gDemo.at59ef > 0 && gGameOptions.nGameType == 0 && !bNoDemo)
                 gDemo.NextDemo();
             videoSetViewableArea(0,0,xdim-1,ydim-1);
-            if (!bQuickStart)
-                credLogosDos();
             scrSetDac();
         }
         goto RESTART;
@@ -1952,7 +1956,7 @@ static int32_t S_DefineMusic(const char *ID, const char *name)
 
     int nEpisode = sel/kMaxLevels;
     int nLevel = sel%kMaxLevels;
-    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].at28[nLevel].atd0, name);
+    return S_DefineAudioIfSupported(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, name);
 }
 
 static int parsedefinitions_game(scriptfile *, int);
@@ -2672,9 +2676,9 @@ int sndTryPlaySpecialMusic(int nMusic)
 {
     int nEpisode = nMusic/kMaxLevels;
     int nLevel = nMusic%kMaxLevels;
-    if (!sndPlaySong(gEpisodeInfo[nEpisode].at28[nLevel].atd0, true))
+    if (!sndPlaySong(gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, true))
     {
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
         return 0;
     }
     return 1;
@@ -2687,6 +2691,6 @@ void sndPlaySpecialMusicOrNothing(int nMusic)
     if (sndTryPlaySpecialMusic(nMusic))
     {
         sndStopSong();
-        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].at28[nLevel].atd0, BMAX_PATH);
+        strncpy(gGameOptions.zLevelSong, gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0, BMAX_PATH);
     }
 }

@@ -640,7 +640,7 @@ void playerResetPosture(PLAYER* pPlayer) {
     memcpy(pPlayer->pPosture, gPostureDefaults, sizeof(gPostureDefaults));
 }
 
-void playerStart(int nPlayer)
+void playerStart(int nPlayer, int bNewLevel)
 {
     PLAYER* pPlayer = &gPlayer[nPlayer];
     GINPUT* pInput = &pPlayer->input;
@@ -679,6 +679,9 @@ void playerStart(int nPlayer)
     else {
         pStartZone = &gStartZone[Random(8)];
     }
+
+    if (!VanillaMode())
+        sfxKillSpriteSounds(pPlayer->pSprite);
 
     spritetype *pSprite = actSpawnSprite(pStartZone->sectnum, pStartZone->x, pStartZone->y, pStartZone->z, 6, 1);
     dassert(pSprite->extra > 0 && pSprite->extra < kMaxXSprites);
@@ -734,7 +737,7 @@ void playerStart(int nPlayer)
     pPlayer->relAim.dz = 0;
     pPlayer->aimTarget = -1;
     pPlayer->zViewVel = pPlayer->zWeaponVel;
-    if (!(gGameOptions.nGameType == 1 && gGameOptions.bKeepKeysOnRespawn))
+    if (!(gGameOptions.nGameType == 1 && gGameOptions.bKeepKeysOnRespawn && !bNewLevel))
         for (int i = 0; i < 8; i++)
             pPlayer->hasKey[i] = gGameOptions.nGameType >= 2;
     pPlayer->hasFlag = 0;

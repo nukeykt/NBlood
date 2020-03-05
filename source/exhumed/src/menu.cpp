@@ -1586,11 +1586,10 @@ int menu_Menu(int nVal)
             }
         }
 
-        // TODO: Uncomment after fixing demo playback
-        // menu idle timer
-        // if (!nVal && (int)totalclock > keytimer) {
-        //     return 9;
-        // }
+        // menu idle timer - will play the demo file if no keys pressed after timer runs out
+        if (!nVal && (int)totalclock > keytimer) {
+            return 9;
+        }
 
         // loc_39F54:
         menu_DoPlasma();

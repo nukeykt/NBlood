@@ -515,7 +515,7 @@ ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_
         }
 
         // Check for voxels
-        if (bVoxelsOn)
+        if (bVoxelsOn && usevoxels && videoGetRenderMode() != REND_POLYMER)
         {
             if (bSpinBobVoxels)
             {

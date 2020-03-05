@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define __rex_h__
 
 void InitRexs();
-int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, int nVal);
+int BuildRex(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel);
 void FuncRex(int, int, int);
 
 #endif

@@ -136,6 +136,7 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 #include "sector.h"
 #include "sounds.h"
 #include "soundsdyn.h"
+#include "rrdh.h"
 
 static inline int32_t G_HaveActor(int spriteNum)
 {

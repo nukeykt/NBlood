@@ -320,6 +320,9 @@ void SW_LoadAddon()
 
     switch (g_addonNum)
     {
+    case 0:
+        crc = SWREG12_CRC;
+        break;
     case 1:
         crc = SWWD_CRC;
         break;

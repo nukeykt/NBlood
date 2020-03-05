@@ -743,6 +743,15 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
                 }
             }
 
+            // workaround for mines and floor decals beneath the floor
+            if (tsp->picnum == BETTY_R0 || tsp->picnum == FLOORBLOOD1)
+            {
+                auto sp = (uspriteptr_t)&sprite[SpriteNum];
+                int32_t const floorz = getflorzofslope(sp->sectnum, sp->x, sp->y);
+                if (sp->z > floorz)
+                    tsp->z = floorz;
+            }
+
             if (gs.Shadows && TEST(tu->Flags, SPR_SHADOW))
             {
                 DoShadows(tsp, viewz);
@@ -1528,10 +1537,10 @@ void SpriteSortList2D(int tx, int ty)
 
 int COVERsetgamemode(int mode, int xdim, int ydim, int bpp)
 {
-    ScreenHeight = ydim;
-    ScreenWidth  = xdim;
-    ScreenMode   = mode;
-    ScreenBPP    = bpp;
+    ud_setup.ScreenHeight = ydim;
+    ud_setup.ScreenWidth  = xdim;
+    ud_setup.ScreenMode   = mode;
+    ud_setup.ScreenBPP    = bpp;
 
     // [JM] Should I be using upscalefactor here, or some SW equivalent to Duke's ud.detail? !CHECKME!
     return (int)videoSetGameMode(mode,xdim,ydim,bpp,upscalefactor);

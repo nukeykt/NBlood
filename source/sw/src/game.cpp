@@ -767,24 +767,24 @@ void DisplayDemoText(void)
 
 void Set_GameMode(void)
 {
-    extern int ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP;
     int result;
     char ch;
 
-    //DSPRINTF(ds,"ScreenMode %d, ScreenWidth %d, ScreenHeight %d",ScreenMode, ScreenWidth, ScreenHeight);
+    //DSPRINTF(ds,"ScreenMode %d, ScreenWidth %d, ScreenHeight %d", ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight);
     //MONO_PRINT(ds);
-    result = COVERsetgamemode(ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP);
+    result = COVERsetgamemode(ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight, ud_setup.ScreenBPP);
 
     if (result < 0)
     {
         buildprintf("Failure setting video mode %dx%dx%d %s! Attempting safer mode...",
-                    ScreenWidth,ScreenHeight,ScreenBPP,ScreenMode ? "fullscreen" : "windowed");
-        ScreenMode = 0;
-        ScreenWidth = 640;
-        ScreenHeight = 480;
-        ScreenBPP = 8;
+                    ud_setup.ScreenWidth,ud_setup.ScreenHeight,ud_setup.ScreenBPP,
+                    ud_setup.ScreenMode ? "fullscreen" : "windowed");
+        ud_setup.ScreenMode = 0;
+        ud_setup.ScreenWidth = 640;
+        ud_setup.ScreenHeight = 480;
+        ud_setup.ScreenBPP = 8;
 
-        result = COVERsetgamemode(ScreenMode, ScreenWidth, ScreenHeight, ScreenBPP);
+        result = COVERsetgamemode(ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight, ud_setup.ScreenBPP);
         if (result < 0)
         {
             uninitmultiplayers();
@@ -1062,6 +1062,7 @@ InitGame(int32_t argc, char const * const * argv)
     InitFX();   // JBF: do it down here so we get a hold of the window handle
     InitMusic();
 
+    enginecompatibility_mode = ENGINECOMPATIBILITY_19961112; // SW 1.0: 19970212, SW 1.1-1.2: 19970522
 }
 
 
@@ -1558,7 +1559,7 @@ TerminateLevel(void)
     // Clear the tracks
     memset(Track, 0, sizeof(Track));
 
-    StopSound();
+    StopFX();
     Terminate3DSounds();        // Kill the 3d sounds linked list
     //ClearSoundLocks();
 
@@ -1779,9 +1780,14 @@ void PlayTheme()
     MONO_PRINT(ds);
 }
 
+static int g_noLogo;
+
 void
 LogoLevel(void)
 {
+    if (g_noLogo)
+        return;
+
     char called;
     int fin;
     unsigned char pal[PAL_SIZE];
@@ -1816,14 +1822,15 @@ LogoLevel(void)
     DSPRINTF(ds,"About to display 3drealms pic...");
     MONO_PRINT(ds);
 
-    videoClearViewableArea(0L);
-    rotatesprite(0, 0, RS_SCALE, 0, THREED_REALMS_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    videoNextPage();
     //FadeIn(0, 3);
 
     ResetKeys();
     while (TRUE)
     {
+        videoClearViewableArea(0L);
+        rotatesprite(0, 0, RS_SCALE, 0, THREED_REALMS_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
+        videoNextPage();
+
         handleevents();
         CONTROL_GetUserInput(&uinfo);
         CONTROL_ClearUserInput(&uinfo);
@@ -1904,6 +1911,8 @@ CreditsLevel(void)
 
     while (TRUE)
     {
+        handleevents();
+
         // taken from top of faketimerhandler
         // limits checks to max of 40 times a second
         if (totalclock >= ototalclock + synctics)
@@ -2139,6 +2148,9 @@ short PlayerQuitMenuLevel = -1;
 void
 IntroAnimLevel(void)
 {
+    if (g_noLogo)
+        return;
+
     DSPRINTF(ds,"IntroAnimLevel");
     MONO_PRINT(ds);
     playanm(0);
@@ -3409,7 +3421,7 @@ void CommandLineHelp(char const * const * argv)
                 strcat(str, "\n");
             }
         }
-        wm_msgbox("Shadow Warrior Help",str);
+        wm_msgbox("Shadow Warrior Help", "%s", str);
         Xfree(str);
     }
 #else
@@ -3453,6 +3465,16 @@ int32_t app_main(int32_t argc, char const * const * argv)
         if (!Bstrcasecmp(argv[i]+1, "setup"))
         {
             CommandSetup = TRUE;
+            g_noSetup = 0;
+        }
+        else if (!Bstrcasecmp(argv[i]+1, "nosetup"))
+        {
+            CommandSetup = FALSE;
+            g_noSetup = 1;
+        }
+        else if (!Bstrcasecmp(argv[i]+1, "nologo") || !Bstrcasecmp(argv[i]+1, "quick"))
+        {
+            g_noLogo = 1;
         }
         else if (!Bstrcasecmp(argv[i]+1, "?"))
         {
@@ -3527,10 +3549,21 @@ int32_t app_main(int32_t argc, char const * const * argv)
     SW_ExtInit();
 
     // hackish since SW's init order is a bit different right now
-    if (G_CheckCmdSwitch(argc, argv, "-addon1"))
+    if (G_CheckCmdSwitch(argc, argv, "-addon0"))
+    {
+        g_addonNum = 0;
+        g_noSetup = 1;
+    }
+    else if (G_CheckCmdSwitch(argc, argv, "-addon1"))
+    {
         g_addonNum = 1;
+        g_noSetup = 1;
+    }
     else if (G_CheckCmdSwitch(argc, argv, "-addon2"))
+    {
         g_addonNum = 2;
+        g_noSetup = 1;
+    }
 
     i = CONFIG_ReadSetup();
 
@@ -3546,7 +3579,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
     wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (i < 0 || ForceSetup || CommandSetup)
+    if (i < 0 || CommandSetup || (ud_setup.ForceSetup && !g_noSetup))
     {
         if (quitevent || !startwin_run())
         {
@@ -5522,6 +5555,10 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
     SWBOOL sprisplayer = FALSE;
     short txt_x, txt_y;
 
+    int32_t tmpydim = (xdim*5)/8;
+
+    renderSetAspect(65536, divscale16(tmpydim*320, xdim*200));
+
     // draw location text
     if (gs.BorderNum <= BORDER_BAR-1)
     {
@@ -5844,6 +5881,7 @@ SHOWSPRITE:
         }
     }
 
+    videoSetCorrectedAspect();
 }
 
 extern int tilefileoffs[MAXTILES]; //offset into the

@@ -62,7 +62,6 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
   "Weapon_5",
   "Weapon_6",
   "Weapon_7",
-  "Mouseview",
   "Pause",
   "Map",
   "Zoom_In",
@@ -77,6 +76,8 @@ const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
   "Mouse_Sensitivity_Up",
   "Mouse_Sensitivity_Down",
   "Show_Console",
+  "Mouse_Aiming",
+  "Toggle_Crosshair"
 };
 
 const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -106,7 +107,6 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "5", "",
    "6", "",
    "7", "",
-   "/", "",
    "Pause", "",
    "Tab", "",
    "=", "",
@@ -121,6 +121,8 @@ const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "F7", "",
    "F8", "",
    "`", "",
+   "U", "",
+   "I", "",
 };
 
 const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
@@ -150,7 +152,6 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "5", "",
    "6", "",
    "7", "",
-   "/", "",
    "Pause", "",
    "Tab", "",
    "=", "",
@@ -165,6 +166,8 @@ const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
    "F7", "",
    "F8", "",
    "`", "",
+   "U", "",
+   "I", "",
 };
 
 static const char *mousedefaults[MAXMOUSEBUTTONS] =
@@ -272,10 +275,12 @@ void SetupGameButtons()
     CONTROL_DefineFlag(gamefunc_Zoom_Out,				kFalse);
     CONTROL_DefineFlag(gamefunc_Inventory_Left,			kFalse);
     CONTROL_DefineFlag(gamefunc_Inventory_Right,		kFalse);
-    CONTROL_DefineFlag(gamefunc_Mouseview,				kFalse);
+//    CONTROL_DefineFlag(gamefunc_Mouseview,				kFalse);
     CONTROL_DefineFlag(gamefunc_Inventory,				kFalse);
     CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Up,	kFalse);
     CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Down,	kFalse);
+    CONTROL_DefineFlag(gamefunc_Mouse_Aiming,           kFalse);
+    CONTROL_DefineFlag(gamefunc_Toggle_Crosshair,       kFalse);
 }
 
 hashtable_t h_gamefuncs    = { kMaxGameFunctions<<1, NULL };

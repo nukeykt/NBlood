@@ -20,6 +20,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
+#include "credits.h"
 #include "build.h"
 #include "compat.h"
 #include "SmackerDecoder.h"
@@ -35,23 +36,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "view.h"
 
-char exitCredits = 0;
-
 char Wait(int nTicks)
 {
     totalclock = 0;
     while (totalclock < nTicks)
     {
         gameHandleEvents();
-        char key = keyGetScan();
-        if (key)
-        {
-            if (key == sc_Escape) // sc_Escape
-                exitCredits = 1;
-            return 0;
-        }
+        if (keyGetScan())
+            return FALSE;
     }
-    return 1;
+    return TRUE;
 }
 
 char DoFade(char r, char g, char b, int nTicks)
@@ -66,9 +60,9 @@ char DoFade(char r, char g, char b, int nTicks)
         scrNextPage();
         scrFadeAmount(divscale16(ClipHigh((int)totalclock, nTicks), nTicks));
         if (keyGetScan())
-            return 0;
+            return FALSE;
     } while (totalclock <= nTicks);
-    return 1;
+    return TRUE;
 }
 
 char DoUnFade(int nTicks)
@@ -83,53 +77,52 @@ char DoUnFade(int nTicks)
         scrNextPage();
         scrFadeAmount(0x10000-divscale16(ClipHigh((int)totalclock, nTicks), nTicks));
         if (keyGetScan())
-            return 0;
+            return FALSE;
     } while (totalclock <= nTicks);
-    return 1;
+    return TRUE;
 }
 
 void credLogosDos(void)
 {
     char bShift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
-    videoSetViewableArea(0, 0, xdim-1, ydim-1);
-    DoUnFade(1);
-    videoClearScreen(0);
     if (bShift)
         return;
+
+    videoClearScreen(0);
+    DoUnFade(1);
+
+    if (!credPlaySmk("LOGO.SMK", "logo811m.wav", 300))
     {
-        //CSMKPlayer smkPlayer;
-        //if (smkPlayer.PlaySMKWithWAV("LOGO.SMK", 300) == 1)
-        //{
-            rotatesprite(160<<16, 100<<16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
-            sndStartSample("THUNDER2", 128, -1);
-            scrNextPage();
-            if (!Wait(360))
-                return;
-            if (!DoFade(0, 0, 0, 60))
-                return;
-        //}
-        //if (smkPlayer.PlaySMKWithWAV("GTI.SMK", 301) == 1)
-        //{
-            videoClearScreen(0);
-            rotatesprite(160<<16, 100<<16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim-1, ydim-1);
-            scrNextPage();
-            DoUnFade(1);
-            sndStartSample("THUNDER2", 128, -1);
-            if (!Wait(360))
-                return;
-        //}
+        rotatesprite(160<<16, 100<<16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
+        scrNextPage();
+        sndStartSample("THUNDER2", 128, -1);
+        if (Wait(360))
+        {
+            if (videoGetRenderMode() == REND_CLASSIC)
+                DoFade(0, 0, 0, 60);
+        }
     }
-    sndPlaySpecialMusicOrNothing(MUS_INTRO);
-    sndStartSample("THUNDER2", 128, -1);
-    if (!DoFade(0, 0, 0, 60))
-        return;
-    videoClearScreen(0);
-    scrNextPage();
-    if (!DoUnFade(1))
-        return;
-    videoClearScreen(0);
+
+    credReset();
+
+    if (!credPlaySmk("GTI.SMK", "gti.wav", 301))
+    {
+        rotatesprite(160<<16, 100<<16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim-1, ydim-1);
+        scrNextPage();
+        sndStartSample("THUNDER2", 128, -1);
+        if (Wait(360))
+        {
+            if (videoGetRenderMode() == REND_CLASSIC)
+                DoFade(0, 0, 0, 60);
+        }
+    }
+
+    credReset();
+
     rotatesprite(160<<16, 100<<16, 65536, 0, 2518, 0, 0, 0x4a, 0, 0, xdim-1, ydim-1);
     scrNextPage();
+    sndStartSample("THUNDER2", 128, -1);
+    sndPlaySpecialMusicOrNothing(MUS_INTRO);
     Wait(360);
     sndFadeSong(4000);
 }
@@ -167,7 +160,7 @@ int credKOpen4Load(char *&pzFile)
 #define kSMKPal 5
 #define kSMKTile (MAXTILES-1)
 
-void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
+char credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
 {
 #if 0
     CSMKPlayer smkPlayer;
@@ -176,14 +169,14 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         if (toupper(*pzSMK) == 'A'+dword_148E14)
         {
             if (Redbook.sub_82258() == 0 || Redbook.sub_82258() > 20)
-                return;
+                return FALSE;
         }
         Redbook.sub_82554();
     }
     smkPlayer.sub_82E6C(pzSMK, pzWAV);
 #endif
     if (Bstrlen(_pzSMK) == 0)
-        return;
+        return false;
     char *pzSMK = Xstrdup(_pzSMK);
     char *pzWAV = Xstrdup(_pzWAV);
     char *pzSMK_ = pzSMK;
@@ -193,7 +186,7 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     {
         Bfree(pzSMK_);
         Bfree(pzWAV_);
-        return;
+        return FALSE;
     }
     kclose(nHandleSMK);
     SmackerHandle hSMK = Smacker_Open(pzSMK);
@@ -201,21 +194,22 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     {
         Bfree(pzSMK_);
         Bfree(pzWAV_);
-        return;
+        return FALSE;
     }
     uint32_t nWidth, nHeight;
     Smacker_GetFrameSize(hSMK, nWidth, nHeight);
     uint8_t palette[768];
     uint8_t *pFrame = (uint8_t*)Xmalloc(nWidth*nHeight);
+    walock[kSMKTile] = CACHE1D_PERMANENT;
     waloff[kSMKTile] = (intptr_t)pFrame;
-    tilesiz[kSMKTile].y = nWidth;
-    tilesiz[kSMKTile].x = nHeight;
+    tileSetSize(kSMKTile, nHeight, nWidth);
+
     if (!pFrame)
     {
         Smacker_Close(hSMK);
         Bfree(pzSMK_);
         Bfree(pzWAV_);
-        return;
+        return FALSE;
     }
     int nFrameRate = Smacker_GetFrameRate(hSMK);
     int nFrames = Smacker_GetNumFrames(hSMK);
@@ -224,12 +218,27 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     paletteSetColorTable(kSMKPal, palette);
     videoSetPalette(gBrightness>>2, kSMKPal, 8+2);
 
-    int nScale;
+    auto const oyxaspect = yxaspect;
 
-    if ((nWidth / (nHeight * 1.2f)) > (1.f * xdim / ydim))
-        nScale = divscale16(320 * xdim * 3, nWidth * ydim * 4);
+    int nScale;
+    int32_t nStat;
+
+    if (nWidth <= 320 && nHeight <= 200)
+    {
+        if ((nWidth / (nHeight * 1.2f)) > (1.f * xdim / ydim))
+            nScale = divscale16(320 * xdim * 3, nWidth * ydim * 4);
+        else
+            nScale = divscale16(200, nHeight);
+
+        nStat = 2|4|8|64;
+    }
     else
-        nScale = divscale16(200, nHeight);
+    {
+        // DOS Blood v1.11: 320x240, 320x320, 640x400, and 640x480 SMKs all display 1:1 and centered in a 640x480 viewport
+        nScale = tabledivide32(scale(65536, ydim << 2, xdim * 3), ((max(nHeight, 240+1u) + 239) / 240));
+        nStat = 2|4|8|64|1024;
+        renderSetAspect(viewingrange, 65536);
+    }
 
     if (nWav)
         sndStartWavID(nWav, FXVolume);
@@ -249,7 +258,7 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     ClockTicks nStartTime = totalclock;
 
     ctrlClearAllInput();
-    
+
     int nFrame = 0;
     do
     {
@@ -257,7 +266,7 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         if (scale((int)(totalclock-nStartTime), nFrameRate, kTicRate) < nFrame)
             continue;
 
-        if (ctrlCheckAllInput())
+        if (KB_KeyPressed(sc_Escape) || (nFrame > nFrameRate && ctrlCheckAllInput()))
             break;
 
         videoClearScreen(0);
@@ -266,7 +275,8 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
         videoSetPalette(gBrightness >> 2, kSMKPal, 0);
         tileInvalidate(kSMKTile, 0, 1 << 4);  // JBF 20031228
         Smacker_GetFrame(hSMK, pFrame);
-        rotatesprite_fs(160<<16, 100<<16, nScale, 512, kSMKTile, 0, 0, 2|4|8|64);
+
+        rotatesprite_fs(160<<16, 100<<16, nScale, 512, kSMKTile, 0, 0, nStat);
 
         videoNextPage();
 
@@ -278,8 +288,14 @@ void credPlaySmk(const char *_pzSMK, const char *_pzWAV, int nWav)
     Smacker_Close(hSMK);
     ctrlClearAllInput();
     FX_StopAllSounds();
+    renderSetAspect(viewingrange, oyxaspect);
     videoSetPalette(gBrightness >> 2, 0, 8+2);
+    walock[kSMKTile] = 0;
+    waloff[kSMKTile] = 0;
+    tileSetSize(kSMKTile, 0, 0);
     Bfree(pFrame);
     Bfree(pzSMK_);
     Bfree(pzWAV_);
+
+    return TRUE;
 }

@@ -83,7 +83,7 @@ int32_t vote_map = -1, vote_episode = -1;
 
 int32_t g_Debug = 0;
 
-const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "REDNECK.RTS", "REDNECK.RTS", "NAM.RTS", "NAPALM.RTS" };
+const char *defaultrtsfilename[GAMECOUNT] = { "DUKE.RTS", "REDNECK.RTS", "REDNECK.RTS", "NAM.RTS", "NAPALM.RTS", "WW2GI.RTS" };
 
 int32_t g_Shareware = 0;
 
@@ -1822,7 +1822,11 @@ int A_Spawn(int spriteNum, int tileNum)
         pSprite->picnum = BOLT1;
     else if (!RR && pSprite->picnum >= SIDEBOLT1 && pSprite->picnum <= SIDEBOLT1 + 3)
         pSprite->picnum = SIDEBOLT1;
-    if (RRRA && pSprite->picnum == PIG+11)
+    if (DEER && pSprite->picnum != APLAYER && pSprite->picnum != RRTILE7936)
+    {
+        goto default_case;
+    }
+    else if (RRRA && pSprite->picnum == PIG+11)
     {
         pSprite->xrepeat = 16;
         pSprite->yrepeat = 16;
@@ -2736,7 +2740,7 @@ rrbloodpool_fallthrough:
                 pSprite->y     = sprite[spriteNum].y + (sintable[shellAng & 2047] >> 7);
                 pSprite->shade = -8;
 
-                if (NAM)
+                if (NAM_WW2GI)
                 {
                     pSprite->ang  = shellAng + 512;
                     pSprite->xvel = 30;
@@ -3448,7 +3452,7 @@ rr_badguy:
                     pSprite->cstat |= 257;
 
                     if (pSprite->picnum != SHARK)
-                        if (A_CheckSpriteFlags(newSprite, SFLAG_KILLCOUNT))
+                        if (!RR || A_CheckSpriteFlags(newSprite, SFLAG_KILLCOUNT))
                             g_player[myconnectindex].ps->max_actors_killed++;
                 }
 
@@ -4796,6 +4800,24 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
         if (t->picnum < GREENSLIME || t->picnum > GREENSLIME+7)
             switch (DYNAMICTILEMAP(t->picnum))
             {
+            case PIG__STATICRR:
+            case DOGRUN__STATICRR:
+            case VIXEN__STATICRR:
+            case CHEER__STATICRR:
+                if (DEER)
+                {
+                    if ((t->cstat & 32768) == 0 && (t->cstat & 257) != 0)
+                    {
+                        if (klabs(ourx - t->x) + klabs(oury - t->y) < 46080)
+                        {
+                            if (klabs(oura - (getangle(t->x - ourx, t->y - oury) & 2047)) < 128)
+                                sub_5A250(32);
+                            else
+                                sub_5A250(64);
+                        }
+                    }
+                }
+                goto default_case1;
             case PUKE__STATIC:
                 if (RR) goto default_case1;
                 fallthrough__;
@@ -5678,8 +5700,9 @@ skip:
 #endif
                     )
                 {
+                    if (DEER && klabs(sector[sect].ceilingheinum - sector[sect].floorheinum) > 576) continue;
                     if (RRRA && sector[sect].lotag == 160) continue;
-                    int const shadowZ = ((sector[sect].lotag & 0xff) > 2 || pSprite->statnum == STAT_PROJECTILE ||
+                    int const shadowZ = (DEER || (sector[sect].lotag & 0xff) > 2 || pSprite->statnum == STAT_PROJECTILE ||
                                    pSprite->statnum == STAT_MISC || pSprite->picnum == DRONE || (!RR && pSprite->picnum == COMMANDER))
                                   ? sector[sect].floorz
                                   : actor[i].floorz;
@@ -5726,8 +5749,13 @@ skip:
                     }
                 }
             }
-
-        switch (DYNAMICTILEMAP(pSprite->picnum))
+        
+        if (DEER)
+        {
+            if (pSprite->picnum == 806)
+                t->picnum = 1023;
+        }
+        else switch (DYNAMICTILEMAP(pSprite->picnum))
         {
         case LASERLINE__STATIC:
             if (RR) break;
@@ -6057,6 +6085,12 @@ void G_PrintCurrentMusic(void)
 void G_HandleLocalKeys(void)
 {
 //    CONTROL_ProcessBinds();
+
+    if (DEER)
+    {
+        sub_53304();
+        return;
+    }
 
     if (ud.recstat == 2)
     {
@@ -7172,6 +7206,9 @@ static void G_Cleanup(void)
 
 //    Bfree(MusicPtr);
 
+    Gv_Clear();
+
+    hash_free(&h_gamevars);
     hash_free(&h_labels);
     hash_free(&h_gamefuncs);
 
@@ -7257,6 +7294,7 @@ static void G_CompileScripts(void)
     Bmemset(sector, 0, MAXSECTORS*sizeof(sectortype));
     Bmemset(wall, 0, MAXWALLS*sizeof(walltype));
 
+    VM_OnEvent(EVENT_INIT);
     pathsearchmode = psm;
 }
 
@@ -7295,7 +7333,15 @@ static void G_PostLoadPalette(void)
 // Has to be after setting the dynamic names (e.g. SHARK).
 static void A_InitEnemyFlags(void)
 {
-    if (RRRA)
+    if (DEER)
+    {
+        int DukeEnemies[] = {
+            DOGRUN, PIG, VIXEN, CHEER };
+
+        for (bssize_t i = ARRAY_SIZE(DukeEnemies) - 1; i >= 0; i--)
+            SETFLAG(DukeEnemies[i], SFLAG_HARDCODED_BADGUY|SFLAG_BADGUY_TILE|SFLAG_KILLCOUNT);
+    }
+    else if (RRRA)
     {
         int DukeEnemies[] = {
             BOULDER, BOULDER1, EGG, RAT, TORNADO, BILLYCOCK, BILLYRAY, BILLYRAYSTAYPUT,
@@ -7602,6 +7648,9 @@ static void G_Startup(void)
 
 //    initprintf("Loading palette/lookups...\n");
     G_LoadLookups();
+
+    if (DEER)
+        sub_54DE0();
 
     screenpeek = myconnectindex;
 
@@ -8232,6 +8281,9 @@ int app_main(int argc, char const * const * argv)
     FX_StopAllSounds();
     S_ClearSoundLocks();
 
+    if (DEER)
+        ghtrophy_loadbestscores();
+
     //    getpackets();
 
 MAIN_LOOP_RESTART:
@@ -8454,6 +8506,9 @@ MAIN_LOOP_RESTART:
             }
 
             frameJustDrawn = true;
+
+            if (DEER)
+                sub_5A02C();
         }
 
         // handle CON_SAVE and CON_SAVENN
@@ -8508,6 +8563,8 @@ GAME_STATIC GAME_INLINE int32_t G_MoveLoop()
 
 int G_DoMoveThings(void)
 {
+    if (DEER)
+        sub_579A0();
     ud.camerasprite = -1;
     lockclock += TICSPERFRAME;
 
@@ -8640,12 +8697,14 @@ int G_DoMoveThings(void)
         if (sprite[g_player[i].ps->i].pal != 1)
             sprite[g_player[i].ps->i].pal = g_player[i].pcolor;
 
-        P_HandleSharedKeys(i);
+        if (!DEER)
+            P_HandleSharedKeys(i);
 
         if (ud.pause_on == 0)
         {
             P_ProcessInput(i);
-            P_CheckSectors(i);
+            if (!DEER)
+                P_CheckSectors(i);
         }
     }
 
@@ -8659,8 +8718,15 @@ int G_DoMoveThings(void)
 
     if ((everyothertime&1) == 0)
     {
-        G_AnimateWalls();
-        A_MoveCyclers();
+        if (DEER)
+        {
+            ghsound_ambientlooppoll();
+        }
+        else
+        {
+            G_AnimateWalls();
+            A_MoveCyclers();
+        }
 
         //if (g_netServer && (everyothertime % 10) == 0)
         //{

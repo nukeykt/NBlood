@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 enum kStatus
 {
     kStatDestructibleSprite = 97,
-    kStat98,
+    kStatAnubisDrum,
     kStatExplodeTrigger = 141,
     kStatExplodeTarget = 152
 };

@@ -132,7 +132,7 @@ static void G_CacheSpriteNum(int32_t i)
         break;
     case DOGRUN__STATICRR:
         for (j = DOGATTACK; j <= DOGATTACK + 35; j++) tloadtile(j,1);
-        for (j = DOGRUN; j <= DOGRUN + 80; j++) tloadtile(j,1);
+        for (j = DOGRUN; j <= DOGRUN + 121; j++) tloadtile(j,1);
         maxc = 0;
         break;
     case RABBIT__STATICRR:
@@ -163,8 +163,7 @@ static void G_CacheSpriteNum(int32_t i)
         break;
     case CHEERB__STATICRR:
         if (!RRRA) break;
-        for (j = CHEERB; j <= CHEERB + 83; j++) tloadtile(j,1);
-        for (j = CHEERB + 157; j <= CHEERB + 157 + 83; j++) tloadtile(j,1);
+        for (j = CHEERB; j <= CHEERB + 157 + 83; j++) tloadtile(j,1);
         maxc = 0;
         break;
     case MAMA__STATICRR:
@@ -201,7 +200,7 @@ static void G_CacheSpriteNum(int32_t i)
         break;
     case PIG__STATICRR:
     case PIGSTAYPUT__STATICRR:
-        maxc = 68;
+        maxc = 69;
         break;
     case TORNADO__STATICRR:
         maxc = 7;
@@ -483,8 +482,10 @@ static void G_DoLoadScreen(const char *statustext, int32_t percent)
         }
 
         videoClearScreen(0);
+        
+        int const loadScreenTile = VM_OnEventWithReturn(EVENT_GETLOADTILE, g_player[screenpeek].ps->i, screenpeek, DEER ? 7040 : LOADSCREEN);
 
-        rotatesprite_fs(320<<15,200<<15,65536L,0,LOADSCREEN,0,0,2+8+64+BGSTRETCH);
+        rotatesprite_fs(320<<15,200<<15,65536L,0,loadScreenTile,0,0,2+8+64+BGSTRETCH);
 
         int const textY = RRRA ? 140 : 90;
 
@@ -669,6 +670,7 @@ void G_CacheMapData(void)
 
             while (percentage > lpc)
             {
+                G_HandleAsync();
                 Bsprintf(tempbuf, "Loaded %d%% (%d/%d textures)\n", lpc, pc, g_precacheCount);
                 G_DoLoadScreen(tempbuf, lpc);
 
@@ -1079,6 +1081,8 @@ void P_ResetWeapons(int playerNum)
     pPlayer->last_pissed_time           = 0;
     pPlayer->holster_weapon             = 0;
     pPlayer->last_used_weapon           = -1;
+    
+    VM_OnEvent(EVENT_RESETWEAPONS, pPlayer->i, playerNum);
 }
 
 void P_ResetInventory(int playerNum)
@@ -1135,6 +1139,8 @@ void P_ResetInventory(int playerNum)
             g_hulkSpawn = 2;
         }
     }
+
+    VM_OnEvent(EVENT_RESETINVENTORY, pPlayer->i, playerNum);
 }
 
 static void resetprestat(int playerNum, int gameMode)
@@ -1303,19 +1309,22 @@ static void prelevel(char g)
         g_mamaSpawnCnt = 15;
         g_banjoSong = 0;
         g_RAendLevel = 0;
-        for (bssize_t TRAVERSE_CONNECT(playerNum))
+        if (!DEER)
         {
-            DukePlayer_t *ps = g_player[playerNum].ps;
-            ps->sea_sick_stat = 0;
-            if (ud.level_number == 4 && ud.volume_number == 1)
-                ps->inv_amount[GET_STEROIDS] = 0;
+            for (bssize_t TRAVERSE_CONNECT(playerNum))
+            {
+                DukePlayer_t *ps = g_player[playerNum].ps;
+                ps->sea_sick_stat = 0;
+                if (ud.level_number == 4 && ud.volume_number == 1)
+                    ps->inv_amount[GET_STEROIDS] = 0;
+            }
+            if (ud.level_number == 3 && ud.volume_number == 0)
+                g_mamaSpawnCnt = 5;
+            else if (ud.level_number == 2 && ud.volume_number == 1)
+                g_mamaSpawnCnt = 10;
+            else if (ud.level_number == 6 && ud.volume_number == 1)
+                g_mamaSpawnCnt = 15;
         }
-        if (ud.level_number == 3 && ud.volume_number == 0)
-            g_mamaSpawnCnt = 5;
-        else if (ud.level_number == 2 && ud.volume_number == 1)
-            g_mamaSpawnCnt = 10;
-        else if (ud.level_number == 6 && ud.volume_number == 1)
-            g_mamaSpawnCnt = 15;
     }
 
     Bmemset(g_spriteExtra, 0, sizeof(g_spriteExtra));
@@ -1373,6 +1382,7 @@ static void prelevel(char g)
 
     int missedCloudSectors = 0;
 
+    if (!DEER)
     for (bssize_t i=0; i<numsectors; i++)
     {
         if (RR && sector[i].ceilingpicnum == RRTILE2577)
@@ -1507,6 +1517,7 @@ static void prelevel(char g)
         OSD_Printf(OSDTEXT_RED "Map warning: have %d unhandled CLOUDYSKIES ceilings.\n", missedCloudSectors);
 
     // NOTE: must be safe loop because callbacks could delete sprites.
+    if (!DEER)
     for (bssize_t nextSprite, SPRITES_OF_STAT_SAFE(STAT_DEFAULT, i, nextSprite))
     {
         //A_LoadActor(i);
@@ -1597,7 +1608,7 @@ static void prelevel(char g)
             //    break;
             }
     }
-    if (RR)
+    if (RR && !DEER)
     {
         for (bssize_t i = 0; i < MAXSPRITES; i++)
         {
@@ -1634,10 +1645,11 @@ static void prelevel(char g)
 
     for (size_t i = 0; i < MAXSPRITES; i++)
     {
-        if (sprite[i].statnum < MAXSTATUS && (PN(i) != SECTOREFFECTOR || SLT(i) != SE_14_SUBWAY_CAR))
+        if (sprite[i].statnum < MAXSTATUS && (DEER || PN(i) != SECTOREFFECTOR || SLT(i) != SE_14_SUBWAY_CAR))
             A_Spawn(-1, i);
     }
 
+    if (!DEER)
     for (size_t i = 0; i < MAXSPRITES; i++)
     {
         if (sprite[i].statnum < MAXSTATUS && PN(i) == SECTOREFFECTOR && SLT(i) == SE_14_SUBWAY_CAR)
@@ -1653,6 +1665,7 @@ static void prelevel(char g)
 
     //G_SetupRotfixedSprites();
 
+    if (!DEER)
     for (bssize_t i=headspritestat[STAT_DEFAULT]; i>=0; i=nextspritestat[i])
     {
         if (PN(i) <= 0)  // oob safety for switch below
@@ -1690,6 +1703,7 @@ static void prelevel(char g)
     }
 
     // initially 'on' SE 12 light (*)
+    if (!DEER)
     for (bssize_t j=headspritestat[STAT_EFFECTOR]; j>=0; j=nextspritestat[j])
     {
         uint16_t const tag = sprite[j].hitag;
@@ -1706,7 +1720,7 @@ static void prelevel(char g)
     {
         walltype * const pWall = &wall[i];
 
-        if (pWall->overpicnum == MIRROR && (pWall->cstat&32) != 0)
+        if (!DEER && pWall->overpicnum == MIRROR && (pWall->cstat&32) != 0)
         {
             int const nextSectnum = pWall->nextsector;
 
@@ -1734,6 +1748,12 @@ static void prelevel(char g)
 
         animwall[g_animWallCnt].tag = 0;
         animwall[g_animWallCnt].wallnum = 0;
+
+        if (DEER)
+        {
+            pWall->extra = -1;
+            continue;
+        }
 
         int const switchPic = G_GetForcefieldPicnum(i);
 
@@ -1891,6 +1911,9 @@ static void prelevel(char g)
     }
 
     G_SetupGlobalPsky();
+
+    if (DEER)
+        sub_52BA8();
 }
 
 
@@ -1977,6 +2000,11 @@ end_vol4a:
     pPlayer->gm = 0;
     Menu_Close(0);
 
+    Gv_ResetVars();
+    Gv_InitWeaponPointers();
+    Gv_RefreshPointers();
+    Gv_ResetSystemDefaults();
+
     //AddLog("Newgame");
 
     for (bssize_t i=0; i<(MAXVOLUMES*MAXLEVELS); i++)
@@ -1986,13 +2014,14 @@ end_vol4a:
     {
         for (bssize_t weaponNum = 0; weaponNum < MAX_WEAPONS; weaponNum++)
         {
-            if (weaponNum == PISTOL_WEAPON)
+            auto const worksLike = WW2GI ? PWEAPON(0, weaponNum, WorksLike) : weaponNum;
+            if (worksLike == PISTOL_WEAPON)
             {
                 pPlayer->curr_weapon = weaponNum;
                 pPlayer->gotweapon |= (1 << weaponNum);
                 pPlayer->ammo_amount[weaponNum] = min<int16_t>(pPlayer->max_ammo_amount[weaponNum], 48);
             }
-            else if (weaponNum == KNEE_WEAPON || (!RR && weaponNum == HANDREMOTE_WEAPON) || (RRRA && weaponNum == SLINGBLADE_WEAPON))
+            else if (worksLike == KNEE_WEAPON || (!RR && worksLike == HANDREMOTE_WEAPON) || (RRRA && worksLike == SLINGBLADE_WEAPON))
             {
                 pPlayer->gotweapon |= (1 << weaponNum);
                 if (RRRA)
@@ -2339,6 +2368,8 @@ int G_EnterLevel(int gameMode)
         ud.recstat = ud.m_recstat;
     if ((gameMode & MODE_DEMO) == 0 && ud.recstat == 2)
         ud.recstat = 0;
+
+    VM_OnEvent(EVENT_ENTERLEVEL);
 
     //if (g_networkMode != NET_DEDICATED_SERVER)
     {

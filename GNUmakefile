@@ -956,6 +956,7 @@ rr_game_objs := \
     screentext.cpp \
     screens.cpp \
     cmdline.cpp \
+    rrdh.cpp \
 
 rr_editor_objs := \
     astub.cpp \
@@ -1123,6 +1124,11 @@ ifeq ($(PLATFORM),WINDOWS)
     sw_game_objs += startwin.game.cpp
     sw_game_rsrc_objs += gameres.rc
     sw_editor_rsrc_objs += buildres.rc
+endif
+ifeq ($(PLATFORM),DARWIN)
+    ifeq ($(STARTUP_WINDOW),1)
+        sw_game_objs += GrpFile.game.mm GameListSource.game.mm StartupWinController.game.mm
+    endif
 endif
 
 

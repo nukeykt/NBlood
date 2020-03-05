@@ -280,13 +280,8 @@ static void MV_ServiceVoc(void)
         MV_MusicCallback();
         int16_t * __restrict source = (int16_t*)MV_MusicBuffer;
         int16_t * __restrict dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
-        for (int32_t i = 0; i < MV_BufferSize>>2; i++)
-        {
+        for (int32_t i = 0; i < MV_BufferSize>>1; i++, dest++)
             *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
-            dest++;
-            *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
-            dest++;
-        }
     }
 }
 
@@ -814,7 +809,7 @@ int MV_Init(int soundcard, int MixRate, int Voices, int numchannels, void *initd
     MV_SetErrorCode(MV_Ok);
 
     // MV_TotalMemory + 2: FIXME, see valgrind_errors.log
-    int const totalmem = Voices * sizeof(VoiceNode) + (MV_TOTALBUFFERSIZE<<1) + (MV_MIXBUFFERSIZE<<2) + 2;
+    int const totalmem = Voices * sizeof(VoiceNode) + (MV_TOTALBUFFERSIZE<<1) + (MV_MIXBUFFERSIZE*numchannels*2) + 2;
 
     char *ptr = (char *) Xaligned_alloc(16, totalmem);
 
@@ -994,7 +989,7 @@ static playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
         return NoMoreData;
 
     voice->position = 0;
-    (voice->DemandFeed)(&voice->sound, &voice->BlockLength);
+    (voice->DemandFeed)(&voice->sound, &voice->BlockLength, voice->userdata);
     voice->length = min(voice->BlockLength, 0x8000u);
     voice->BlockLength -= voice->length;
     voice->length <<= 16;
@@ -1005,8 +1000,8 @@ static playbackstatus MV_GetNextDemandFeedBlock(VoiceNode* voice)
     return NoMoreData;
 }
 
-int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length), int bitdepth, int channels, int rate,
-    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* length, void* userdata), int bitdepth, int channels, int rate,
+    int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval, void* userdata)
 {
     VoiceNode* voice;
 
@@ -1041,6 +1036,7 @@ int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     voice->prev = nullptr;
     voice->priority = priority;
     voice->callbackval = callbackval;
+    voice->userdata = userdata;
 
     MV_SetVoicePitch(voice, rate, pitchoffset);
     MV_SetVoiceMixMode(voice);

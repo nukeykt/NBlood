@@ -28,6 +28,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamedef.h"  // vmstate_t
 #include "events_defs.h"
 
+int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist, int32_t const nReturn);
+int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist);
+int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum);
+int32_t VM_ExecuteEventWithValue(int const nEventID, int const spriteNum, int const playerNum, int32_t const nReturn);
+
+static FORCE_INLINE int VM_HaveEvent(int const nEventID)
+{
+    return !!apScriptEvents[nEventID];
+}
+
+static FORCE_INLINE int32_t VM_OnEvent(int nEventID, int spriteNum, int playerNum, int nDist, int32_t nReturn)
+{
+    return VM_HaveEvent(nEventID) ? VM_ExecuteEvent(nEventID, spriteNum, playerNum, nDist, nReturn) : nReturn;
+}
+
+static FORCE_INLINE int32_t VM_OnEvent(int nEventID, int spriteNum, int playerNum, int nDist)
+{
+    return VM_HaveEvent(nEventID) ? VM_ExecuteEvent(nEventID, spriteNum, playerNum, nDist) : 0;
+}
+
+static FORCE_INLINE int32_t VM_OnEvent(int nEventID, int spriteNum = -1, int playerNum = -1)
+{
+    return VM_HaveEvent(nEventID) ? VM_ExecuteEvent(nEventID, spriteNum, playerNum) : 0;
+}
+
+static FORCE_INLINE int32_t VM_OnEventWithReturn(int nEventID, int spriteNum, int playerNum, int32_t nReturn)
+{
+    return VM_HaveEvent(nEventID) ? VM_ExecuteEventWithValue(nEventID, spriteNum, playerNum, nReturn) : nReturn;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,9 +66,8 @@ extern int32_t ticrandomseed;
 
 extern vmstate_t vm;
 extern int32_t g_tw;
+extern int32_t g_currentEvent;
 extern int32_t g_errorLineNum;
-
-void A_LoadActor(int32_t spriteNum);
 
 extern uint32_t g_actorCalls[MAXTILES];
 extern double g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];

@@ -437,11 +437,11 @@ static int32_t SW_LoadGrpDependencyChain(grpfile_t const * const grp)
     return i;
 }
 
-int g_addonNum;
+int g_addonNum = -1;
 
 void SW_LoadGroups()
 {
-    if (g_addonNum)
+    if (g_addonNum != -1)
         SW_LoadAddon();
 
     if (SW_LoadGrpDependencyChain(g_selectedGrp) != -1)

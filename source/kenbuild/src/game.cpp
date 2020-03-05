@@ -1977,7 +1977,9 @@ void analyzesprites(int dax, int day)
 
     for (i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++)
     {
-        if (usevoxels)
+        Bassert((unsigned)tspr->owner < MAXSPRITES);
+
+        if (usevoxels && videoGetRenderMode() != REND_POLYMER && !(spriteext[tspr->owner].flags&SPREXT_NOTMD))
             switch (tspr->picnum)
             {
             case PLAYER:
@@ -3707,6 +3709,8 @@ void drawscreen(short snum, int dasmoothratio)
     char ch, *ptr, *ptr2, *ptr3, *ptr4;
     tspriteptr_t tspr;
 
+    int32_t const viewingRange = viewingrange;
+
     smoothratio = max(min(dasmoothratio,65536),0);
 
     dointerpolations();
@@ -3803,6 +3807,12 @@ void drawscreen(short snum, int dasmoothratio)
 
     if (dimensionmode[snum] != 2)
     {
+        if (r_usenewaspect)
+        {
+            newaspect_enable = 1;
+            videoSetCorrectedAspect();
+        }
+
         if ((numplayers > 1) && (option[4] == 0))
         {
             //Do not draw other views constantly if they're staying still
@@ -4115,6 +4125,12 @@ void drawscreen(short snum, int dasmoothratio)
 
             if (health[screenpeek] <= 0)
                 rotatesprite(320<<15,200<<15,(-health[screenpeek])<<11,(-health[screenpeek])<<5,NO,0,0,2,windowxy1.x,windowxy1.y,windowxy2.x,windowxy2.y);
+        }
+
+        if (r_usenewaspect)
+        {
+            newaspect_enable = 0;
+            renderSetAspect(viewingRange, tabledivide32_noinline(65536 * ydim * 8, xdim * 5));
         }
     }
 
@@ -5930,6 +5946,10 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
     walltype *wal, *wal2;
     spritetype *spr;
 
+    int32_t tmpydim = (xdim*5)/8;
+
+    renderSetAspect(65536, divscale16(tmpydim*320, xdim*200));
+
     xvect = sintable[(-cang)&2047] * czoom;
     yvect = sintable[(1536-cang)&2047] * czoom;
     xvect2 = mulscale16(xvect,yxaspect);
@@ -6161,6 +6181,8 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
             renderDrawLine(x1,y1,x2,y2,24);
         }
     }
+
+    videoSetCorrectedAspect();
 }
 
 //New movesprite using getzrange.  Note that I made the getzrange

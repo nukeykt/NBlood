@@ -19,8 +19,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef __lavadude_h__
 #define __lavadude_h__
 
+#include "aistuff.h"
+
 void InitLava();
-int BuildLava(short nSprite, int x, int y, int z, short nSector, short nAngle, int lastArg);
+int BuildLava(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel);
 int BuildLavaLimb(int nSprite, int edx, int ebx);
 void FuncLavaLimb(int, int, int);
 void FuncLava(int, int, int);

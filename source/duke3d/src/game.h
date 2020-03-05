@@ -165,8 +165,10 @@ extern camera_t g_camera;
 
 #define MAX_RETURN_VALUES 6
 
+#define MAX_ARRAYRANGE_VALUES 32
+
 // KEEPINSYNC lunatic/_defs_game.lua
-typedef struct {
+typedef struct ud_setup_s {
     int32_t usejoystick;
     int32_t usemouse;
     int32_t fullscreen;
@@ -354,8 +356,16 @@ extern int32_t MAXCACHE1DSIZE;
 extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
 
-extern double g_frameDelay;
-static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
+extern uint64_t g_frameDelay;
+static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
+{
+    uint64_t const perfFreq = timerGetPerformanceFrequency();
+
+    if (maxFPS == -1)
+        return perfFreq / (refreshfreq - ceil(refreshfreq / 60.0));
+
+    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
+}
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -452,7 +462,7 @@ static inline int32_t gameHandleEvents(void)
 
 static inline int32_t calc_smoothratio_demo(ClockTicks totalclk, ClockTicks ototalclk)
 {
-    int32_t rfreq = tabledivide64((refreshfreq != -1 ? refreshfreq : 60) * TICRATE, timerGetClockRate());
+    int32_t rfreq = tabledivide64(refreshfreq * TICRATE, timerGetClockRate());
     uint64_t elapsedFrames = tabledivide64(((uint64_t) (totalclk - ototalclk).toScale16()) * rfreq, 65536*TICRATE);
 #if 0
     //POGO: additional debug info for testing purposes

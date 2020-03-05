@@ -161,7 +161,23 @@ static int osdcmd_map(osdcmdptr_t parm)
     if (gDemo.at1)
         gDemo.StopPlayback();
 
-    levelAddUserMap(filename);
+    int bFound = 0;
+    for (int i = 0; i < gEpisodeCount; i++)
+    {
+        auto pEpisodeInfo = &gEpisodeInfo[i];
+        for (int j = 0; j < pEpisodeInfo->nLevels; j++)
+        {
+            auto pLevelInfo = &pEpisodeInfo->levelsInfo[j];
+            if (!Bstrcasecmp(pLevelInfo->at0, filename))
+            {
+                gGameOptions.nEpisode = i;
+                gGameOptions.nLevel = j;
+                bFound = 1;
+            }
+        }
+    }
+    if (!bFound)
+        levelAddUserMap(filename);
 
     if (numplayers > 1)
     {
@@ -238,9 +254,9 @@ static int osdcmd_music(osdcmdptr_t parm)
         if (!levelTryPlayMusic(nEpisode, nLevel))
         {
             if (CDAudioToggle)
-                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].at28[nLevel].ate0);
+                snprintf(buffer, sizeof(buffer), "Playing %i track", gEpisodeInfo[nEpisode].levelsInfo[nLevel].ate0);
             else
-                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].at28[nLevel].atd0);
+                snprintf(buffer, sizeof(buffer), "Playing %s", gEpisodeInfo[nEpisode].levelsInfo[nLevel].atd0);
             viewSetMessage(buffer);
         }
         else

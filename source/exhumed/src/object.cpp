@@ -1972,7 +1972,7 @@ void FuncObject(int a, int b, int nRun)
                     return;
                 }
 
-                if (sprite[nSprite].statnum != kStat98) {
+                if (sprite[nSprite].statnum != kStatAnubisDrum) {
                     ObjectList[nObject].nHealth -= nDamage;
                 }
 
@@ -1982,7 +1982,7 @@ void FuncObject(int a, int b, int nRun)
                     sprite[nSprite].yvel = 0;
                     sprite[nSprite].zvel = 0;
                 }
-                else if (sprite[nSprite].statnum != kStat98)
+                else if (sprite[nSprite].statnum != kStatAnubisDrum)
                 {
                     sprite[nSprite].xvel >>= 1;
                     sprite[nSprite].yvel >>= 1;

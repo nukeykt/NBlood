@@ -55,6 +55,9 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 extern void ReadGameSetup(int32_t scripthandle);
 extern void WriteGameSetup(int32_t scripthandle);
 
+ud_setup_t ud_setup{};
+int g_noSetup;
+
 //
 // Comm variables
 //
@@ -74,8 +77,6 @@ int32_t NumChannels = 2;
 int32_t NumBits     = 16;
 int32_t MixRate     = 44100;
 
-int32_t UseMouse = 1, UseJoystick = 0;
-
 uint8_t KeyboardKeys[NUMGAMEFUNCTIONS][2];
 int32_t MouseButtons[MAXMOUSEBUTTONS];
 int32_t MouseButtonsClicked[MAXMOUSEBUTTONS];
@@ -93,12 +94,6 @@ int32_t JoystickAnalogSaturate[MAXJOYAXES];
 //
 // Screen variables
 //
-
-int32_t ScreenMode = 1;
-int32_t ScreenWidth = 640;
-int32_t ScreenHeight = 480;
-int32_t ScreenBPP = 8;
-int32_t ForceSetup = 1;
 
 extern char WangBangMacro[10][64];
 char  RTSName[MAXRTSNAMELENGTH];
@@ -209,7 +204,7 @@ void CONFIG_SetDefaults(void)
     int32_t i,f;
     uint8_t k1,k2;
 
-    ScreenMode = 1;
+    ud_setup.ScreenMode = 1;
 
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION > 1
     uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
@@ -221,17 +216,17 @@ void CONFIG_SetDefaults(void)
     SDL_DisplayMode dm;
     if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
     {
-        ScreenWidth = dm.w;
-        ScreenHeight = dm.h;
+        ud_setup.ScreenWidth = dm.w;
+        ud_setup.ScreenHeight = dm.h;
     }
     else
 #endif
     {
-        ScreenWidth = 1024;
-        ScreenHeight = 768;
+        ud_setup.ScreenWidth = 1024;
+        ud_setup.ScreenHeight = 768;
     }
 
-    ScreenBPP = 32;
+    ud_setup.ScreenBPP = 32;
     FXToggle = 1;
     MusicToggle = 1;
     FXDevice = 0;
@@ -596,11 +591,11 @@ int32_t CONFIG_ReadSetup(void)
 
     if (scripthandle < 0) return -1;
 
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenMode",&ScreenMode);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenWidth",&ScreenWidth);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenHeight",&ScreenHeight);
-    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &ScreenBPP);
-    if (ScreenBPP < 8) ScreenBPP = 8;
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenMode",&ud_setup.ScreenMode);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenWidth",&ud_setup.ScreenWidth);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenHeight",&ud_setup.ScreenHeight);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &ud_setup.ScreenBPP);
+    if (ud_setup.ScreenBPP < 8) ud_setup.ScreenBPP = 8;
 
     SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t *)&maxrefreshfreq);
 
@@ -629,17 +624,17 @@ int32_t CONFIG_ReadSetup(void)
     if (waveformtrackname[0] != '\0')
         memcpy(gs.WaveformTrackName, waveformtrackname, MAXWAVEFORMTRACKLENGTH);
 
-    SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup",&ForceSetup);
+    SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup",&ud_setup.ForceSetup);
 
-    if (g_grpNamePtr == NULL && g_addonNum == 0)
+    if (g_grpNamePtr == NULL && g_addonNum == -1)
     {
         SCRIPT_GetStringPtr(scripthandle, "Setup", "SelectedGRP", &g_grpNamePtr);
         if (g_grpNamePtr && !strlen(g_grpNamePtr))
             g_grpNamePtr = dup_filename(G_DefaultGrpFile());
     }
 
-    SCRIPT_GetNumber(scripthandle, "Controls","UseMouse",&UseMouse);
-    SCRIPT_GetNumber(scripthandle, "Controls","UseJoystick",&UseJoystick);
+    SCRIPT_GetNumber(scripthandle, "Controls","UseMouse",&ud_setup.UseMouse);
+    SCRIPT_GetNumber(scripthandle, "Controls","UseJoystick",&ud_setup.UseJoystick);
     SCRIPT_GetString(scripthandle, "Comm Setup", "RTSName",RTSName);
 
     SCRIPT_GetString(scripthandle, "Comm Setup","PlayerName",CommPlayerName);
@@ -674,10 +669,10 @@ void CONFIG_WriteSetup(void)
     if (scripthandle < 0)
         scripthandle = SCRIPT_Init(setupfilename);
 
-    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenWidth", ScreenWidth,FALSE,FALSE);
-    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenHeight",ScreenHeight,FALSE,FALSE);
-    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenMode",ScreenMode,FALSE,FALSE);
-    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenBPP",ScreenBPP,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenWidth", ud_setup.ScreenWidth,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenHeight",ud_setup.ScreenHeight,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenMode",ud_setup.ScreenMode,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenBPP",ud_setup.ScreenBPP,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "MaxRefreshFreq",maxrefreshfreq,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLTextureMode",gltexfiltermode,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Screen Setup", "GLAnisotropy",glanisotropy,FALSE,FALSE);
@@ -697,13 +692,13 @@ void CONFIG_WriteSetup(void)
     SCRIPT_PutNumber(scripthandle, "Sound Setup", "ReverseStereo",dummy,FALSE,FALSE);
     SCRIPT_PutString(scripthandle, "Sound Setup", "WaveformTrackName", gs.WaveformTrackName);
 
-    SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup",ForceSetup,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup",ud_setup.ForceSetup,FALSE,FALSE);
 
-    if (g_grpNamePtr && !g_addonNum)
+    if (g_grpNamePtr && g_addonNum == -1)
         SCRIPT_PutString(scripthandle, "Setup", "SelectedGRP", g_grpNamePtr);
 
-    SCRIPT_PutNumber(scripthandle, "Controls","UseMouse",UseMouse,FALSE,FALSE);
-    SCRIPT_PutNumber(scripthandle, "Controls","UseJoystick",UseJoystick,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Controls","UseMouse",ud_setup.UseMouse,FALSE,FALSE);
+    SCRIPT_PutNumber(scripthandle, "Controls","UseJoystick",ud_setup.UseJoystick,FALSE,FALSE);
     SCRIPT_PutNumber(scripthandle, "Controls","MouseSensitivity",gs.MouseSpeed,FALSE,FALSE);
 
     WriteGameSetup(scripthandle);

@@ -19,7 +19,6 @@ extern "C"
 }
 #endif // _WIN32
 
-int32_t swapcomplete=0;
 int32_t g_borderless=2;
 
 // input
@@ -271,8 +270,6 @@ struct glinfo_t glinfo =
     0,          // clamp-to-edge support
     0,          // texture compression
     0,          // non-power-of-two textures
-    0,          // multisampling
-    0,          // nvidia multisampling hint
     0,          // ARBfp
     0,          // depth textures
     0,          // shadow comparison
@@ -405,8 +402,6 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
     initprintf(" Framebuffer objects:     %s\n", SUPPORTED(glinfo.fbos));
 #ifndef EDUKE32_GLES
     initprintf(" Texture compression:     %s\n", SUPPORTED(glinfo.texcompr));
-    initprintf(" Multi-sampling:          %s\n", SUPPORTED(glinfo.multisample));
-    initprintf(" NVIDIA multisample hint: %s\n", SUPPORTED(glinfo.nvmultisamplehint));
     initprintf(" ARBfp fragment programs: %s\n", SUPPORTED(glinfo.arbfp));
     initprintf(" Depth textures:          %s\n", SUPPORTED(glinfo.depthtex));
     initprintf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
@@ -505,8 +500,6 @@ int32_t baselayer_init(void)
 #endif
 
     for (native_t i = 0; i < NUMKEYS; i++) g_keyRemapTable[i] = i;
-
-    communityapiInit();
 
     return 0;
 }

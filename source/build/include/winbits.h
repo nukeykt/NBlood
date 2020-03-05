@@ -3,6 +3,11 @@
 #ifndef winbits_h__
 #define winbits_h__
 
+#define NEED_DWMAPI_H
+#define NEED_BCRYPT_H
+
+#include "windows_inc.h"
+
 #include "compat.h"
 
 #ifdef APPNAME
@@ -15,10 +20,11 @@
 
 extern int32_t win_priorityclass;
 extern char    win_silentvideomodeswitch;
+extern DWM_TIMING_INFO timingInfo;
 
 int32_t windowsCheckForUpdates(char *buffer);
 int     windowsCheckAlreadyRunning(void);
-void    windowsDwmEnableComposition(int compEnable);
+void    windowsDwmSetupComposition(int compEnable);
 int     windowsGetCommandLine(char **argvbuf);
 LPTSTR  windowsGetErrorMessage(DWORD code);
 HKL     windowsGetSystemKeyboardLayout(void);
@@ -31,4 +37,5 @@ void    windowsPlatformInit(void);
 int     windowsPreInit(void);
 void    windowsSetupTimer(int ntDllVoodoo);
 void    windowsSetKeyboardLayout(char const *layout, int focusChanged = false);
+void    windowsWaitForVBlank(void);
 #endif // winbits_h__

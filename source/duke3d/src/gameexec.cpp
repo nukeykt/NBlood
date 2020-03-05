@@ -387,14 +387,14 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
 void VM_GetZRange(int const spriteNum, int32_t * const ceilhit, int32_t * const florhit, int const wallDist)
 {
     auto const pSprite = &sprite[spriteNum];
-    int const          ocstat  = pSprite->cstat;
+    int const  ocstat  = pSprite->cstat;
 
     pSprite->cstat = 0;
-    pSprite->z -= ZOFFSET;
+    pSprite->z -= ACTOR_FLOOR_OFFSET;
 
     getzrange(&pSprite->pos, pSprite->sectnum, &actor[spriteNum].ceilingz, ceilhit, &actor[spriteNum].floorz, florhit, wallDist, CLIPMASK0);
 
-    pSprite->z += ZOFFSET;
+    pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
 }
 
@@ -402,7 +402,8 @@ void A_GetZLimits(int const spriteNum)
 {
     auto const pSprite = &sprite[spriteNum];
     int32_t    ceilhit, florhit;
-    int const clipDist = A_GetClipdist(spriteNum, -1);
+    int const  clipDist = A_GetClipdist(spriteNum, -1);
+    auto const oceilz   = actor[spriteNum].ceilingz;
 
     VM_GetZRange(spriteNum, &ceilhit, &florhit, pSprite->statnum == STAT_PROJECTILE ? clipDist << 3 : clipDist);
     actor[spriteNum].flags &= ~SFLAG_NOFLOORSHADOW;
@@ -427,6 +428,15 @@ void A_GetZLimits(int const spriteNum)
             actor[spriteNum].floorz   = sector[pSprite->sectnum].floorz;
         }
     }
+
+    // in E1L1, the dumpster fire sprites break after calling this function because the cardboard boxes
+    // are a few units higher than the fire and are detected as the "ceiling"
+    // unfortunately, this trips the "ifgapzl 16 break" in "state firestate"
+    if ((ceilhit&49152) == 49152 && (sprite[ceilhit&(MAXSPRITES-1)].cstat&48) == 0)
+    {
+        if (pSprite->z >= actor[spriteNum].floorz)
+            actor[spriteNum].ceilingz = oceilz;
+    }
 }
 
 void A_Fall(int const spriteNum)
@@ -446,7 +456,7 @@ void A_Fall(int const spriteNum)
     int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);
 #endif
 
-    if (pSprite->z < actor[spriteNum].floorz-ZOFFSET
+    if (pSprite->z < actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET
 #ifdef YAX_ENABLE
             || fbunch >= 0
 #endif
@@ -454,7 +464,7 @@ void A_Fall(int const spriteNum)
     {
         if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER && pSprite->zvel > 3122)
             pSprite->zvel = 3144;
-        pSprite->z += pSprite->zvel = min(6144, pSprite->zvel+spriteGravity);
+        pSprite->z += pSprite->zvel = min(ACTOR_MAXFALLINGZVEL, pSprite->zvel+spriteGravity);
     }
 
 #ifdef YAX_ENABLE
@@ -462,9 +472,9 @@ void A_Fall(int const spriteNum)
         setspritez(spriteNum, &pSprite->pos);
     else
 #endif
-        if (pSprite->z >= actor[spriteNum].floorz-ZOFFSET)
+        if (pSprite->z >= actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET)
         {
-            pSprite->z = actor[spriteNum].floorz-ZOFFSET;
+            pSprite->z = actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET;
             pSprite->zvel = 0;
         }
 }
@@ -996,7 +1006,7 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
 
     A_GetZLimits(spriteNum);
 
-    if (pSprite->z < actor[spriteNum].floorz-ZOFFSET)
+    if (pSprite->z < actor[spriteNum].floorz-ACTOR_FLOOR_OFFSET)
     {
         // Free fall.
         pSprite->zvel = min(pSprite->zvel+spriteGravity, ACTOR_MAXFALLINGZVEL);
@@ -1007,15 +1017,15 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             setspritez(spriteNum, &pSprite->pos);
         else
 #endif
-            if (newZ > actor[spriteNum].floorz - ZOFFSET)
-                newZ = actor[spriteNum].floorz - ZOFFSET;
+            if (newZ > actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET)
+                newZ = actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET;
 
         pSprite->z = newZ;
         return;
     }
 
     // Preliminary new z position of the actor.
-    int newZ = actor[spriteNum].floorz - ZOFFSET;
+    int newZ = actor[spriteNum].floorz - ACTOR_FLOOR_OFFSET;
 
     if (A_CheckEnemySprite(pSprite) || (pSprite->picnum == APLAYER && pSprite->owner >= 0))
     {
@@ -1241,6 +1251,81 @@ void Screen_Play(void)
         videoNextPage();
         I_ClearAllInput();
     } while (running);
+}
+
+static void SetArray(int const arrayNum, int const arrayIndex, int const newValue)
+{
+    if (EDUKE32_PREDICT_FALSE((unsigned)arrayNum >= (unsigned)g_gameArrayCount || (unsigned)arrayIndex >= (unsigned)aGameArrays[arrayNum].size))
+    {
+        OSD_Printf(OSD_ERROR "Gv_SetVar(): tried to set invalid array %d or index out of bounds from "
+                             "sprite %d (%d), player %d\n",
+                   (int)arrayNum, vm.spriteNum, vm.pUSprite->picnum, vm.playerNum);
+        vm.flags |= VM_RETURN;
+        return;
+    }
+
+    auto &arr = aGameArrays[arrayNum];
+
+    if (EDUKE32_PREDICT_FALSE(arr.flags & GAMEARRAY_READONLY))
+    {
+        OSD_Printf(OSD_ERROR "Tried to set value in read-only array `%s'", arr.szLabel);
+        vm.flags |= VM_RETURN;
+        return;
+    }
+
+    switch (arr.flags & GAMEARRAY_TYPE_MASK)
+    {
+        case 0: arr.pValues[arrayIndex]                              = newValue; break;
+        case GAMEARRAY_INT16: ((int16_t *)arr.pValues)[arrayIndex]   = newValue; break;
+        case GAMEARRAY_INT8: ((int8_t *)arr.pValues)[arrayIndex]     = newValue; break;
+        case GAMEARRAY_UINT16: ((uint16_t *)arr.pValues)[arrayIndex] = newValue; break;
+        case GAMEARRAY_UINT8: ((int8_t *)arr.pValues)[arrayIndex]    = newValue; break;
+        case GAMEARRAY_BITMAP:
+        {
+            uint32_t const mask  = pow2char[arrayIndex&7];
+            uint8_t &value = ((uint8_t *)arr.pValues)[arrayIndex>>3];
+            value = (value & ~mask) | (-!!newValue & mask);
+            break;
+        }
+    }
+}
+
+static void ResizeArray(int const arrayNum, int const newSize)
+{
+    auto &arr = aGameArrays[arrayNum];
+
+    int const oldSize = arr.size;
+
+    if (newSize == oldSize || newSize < 0)
+        return;
+#if 0
+    OSD_Printf(OSDTEXT_GREEN "CON_RESIZEARRAY: resizing array %s from %d to %d\n",
+               array.szLabel, array.size, newSize);
+#endif
+    if (newSize == 0)
+    {
+        Xaligned_free(arr.pValues);
+        arr.pValues = nullptr;
+        arr.size = 0;
+        return;
+    }
+
+    size_t const oldBytes = Gv_GetArrayAllocSizeForCount(arrayNum, oldSize);
+    size_t const newBytes = Gv_GetArrayAllocSizeForCount(arrayNum, newSize);
+
+    auto const oldArray = arr.pValues;
+    auto const newArray = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, newBytes);
+
+    if (oldSize != 0)
+        Bmemcpy(newArray, oldArray, min(oldBytes, newBytes));
+
+    if (newSize > oldSize)
+        Bmemset((char *)newArray + oldBytes, 0, newBytes - oldBytes);
+
+    arr.pValues = newArray;
+    arr.size = newSize;
+
+    Xaligned_free(oldArray);
 }
 
 #if !defined LUNATIC
@@ -5572,42 +5657,48 @@ badindex:
                     int const arrayIndex = Gv_GetVar(*insptr++);
                     int const newValue   = Gv_GetVar(*insptr++);
 
-                    if (EDUKE32_PREDICT_FALSE((unsigned)tw >= (unsigned)g_gameArrayCount || (unsigned)arrayIndex >= (unsigned)aGameArrays[tw].size))
-                    {
-                        OSD_Printf(OSD_ERROR "Gv_SetVar(): tried to set invalid array %d or index out of bounds from "
-                                             "sprite %d (%d), player %d\n",
-                                   (int)tw, vm.spriteNum, vm.pUSprite->picnum, vm.playerNum);
-                        vm.flags |= VM_RETURN;
-                        dispatch();
-                    }
-
-                    auto &arr = aGameArrays[tw];
-
-                    if (EDUKE32_PREDICT_FALSE(arr.flags & GAMEARRAY_READONLY))
-                    {
-                        OSD_Printf(OSD_ERROR "Tried to set value in read-only array `%s'", arr.szLabel);
-                        vm.flags |= VM_RETURN;
-                        dispatch();
-                    }
-
-                    switch (arr.flags & GAMEARRAY_TYPE_MASK)
-                    {
-                        case 0: arr.pValues[arrayIndex]                              = newValue; break;
-                        case GAMEARRAY_INT16: ((int16_t *)arr.pValues)[arrayIndex]   = newValue; break;
-                        case GAMEARRAY_INT8: ((int8_t *)arr.pValues)[arrayIndex]     = newValue; break;
-                        case GAMEARRAY_UINT16: ((uint16_t *)arr.pValues)[arrayIndex] = newValue; break;
-                        case GAMEARRAY_UINT8: ((int8_t *)arr.pValues)[arrayIndex]    = newValue; break;
-                        case GAMEARRAY_BITMAP:
-                        {
-                            uint32_t const mask  = pow2char[arrayIndex&7];
-                            uint8_t &value = ((uint8_t *)arr.pValues)[arrayIndex>>3];
-                            value = (value & ~mask) | (-!!newValue & mask);
-                            break;
-                        }
-                    }
+                    SetArray(tw, arrayIndex, newValue);
 
                     dispatch();
                 }
+
+            vInstruction(CON_GETARRAYSEQUENCE):
+            {
+                insptr++;
+                int32_t const arrayNum = *insptr++;
+                int32_t const arraySize = (aGameArrays[arrayNum].flags & GAMEARRAY_VARSIZE) ? Gv_GetVar(aGameArrays[arrayNum].size) : aGameArrays[arrayNum].size;
+                int32_t const sequenceSize = *insptr++;
+                int32_t const copySize = min(sequenceSize, arraySize); // warning?
+                auto const insptrbak = insptr;
+
+                for (int arrayIndex = 0; arrayIndex < copySize; ++arrayIndex)
+                {
+                    int32_t const gameVar = *insptr++;
+                    int32_t const newValue = Gv_GetArrayValue(arrayNum, arrayIndex);
+                    Gv_SetVar(gameVar, newValue);
+                }
+
+                insptr = insptrbak + sequenceSize;
+                dispatch();
+            }
+
+            vInstruction(CON_SETARRAYSEQUENCE):
+            {
+                insptr++;
+                int32_t const arrayNum = *insptr++;
+                int32_t const sequenceSize = *insptr++;
+
+                ResizeArray(arrayNum, sequenceSize);
+
+                for (int arrayIndex = 0; arrayIndex < sequenceSize; ++arrayIndex)
+                {
+                    int32_t const gameVar = *insptr++;
+                    int32_t const newValue = Gv_GetVar(gameVar);
+                    SetArray(arrayNum, arrayIndex, newValue);
+                }
+
+                dispatch();
+            }
 
             vInstruction(CON_READARRAYFROMFILE):
                 insptr++;
@@ -5736,42 +5827,8 @@ badindex:
                 insptr++;
                 {
                     tw = *insptr++;
-
-                    auto &arr = aGameArrays[tw];
-
                     int const newSize = Gv_GetVar(*insptr++);
-                    int const oldSize = arr.size;
-
-                    if (newSize == oldSize || newSize < 0)
-                        dispatch();
-#if 0
-                    OSD_Printf(OSDTEXT_GREEN "CON_RESIZEARRAY: resizing array %s from %d to %d\n",
-                               array.szLabel, array.size, newSize);
-#endif
-                    if (newSize == 0)
-                    {
-                        Xaligned_free(arr.pValues);
-                        arr.pValues = nullptr;
-                        arr.size = 0;
-                        dispatch();
-                    }
-
-                    size_t const oldBytes = Gv_GetArrayAllocSizeForCount(tw, oldSize);
-                    size_t const newBytes = Gv_GetArrayAllocSizeForCount(tw, newSize);
-
-                    auto const oldArray = arr.pValues;
-                    auto const newArray = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, newBytes);
-
-                    if (oldSize != 0)
-                        Bmemcpy(newArray, oldArray, min(oldBytes, newBytes));
-
-                    if (newSize > oldSize)
-                        Bmemset((char *)newArray + oldBytes, 0, newBytes - oldBytes);
-
-                    arr.pValues = newArray;
-                    arr.size = newSize;
-
-                    Xaligned_free(oldArray);
+                    ResizeArray(tw, newSize);
 
                     dispatch();
                 }

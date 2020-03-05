@@ -302,12 +302,12 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
 #ifdef USE_OPENGL
     if (c > 8 || !nogl)
     {
-        int32_t i, multisamplecheck = (glmultisample > 0);
+        int32_t i;
 
         if (nogl)
             return -1;
 # ifdef _WIN32
-        windowsDwmEnableComposition(false);
+        windowsDwmSetupComposition(false);
 # endif
         struct glattribs
         {
@@ -316,44 +316,33 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
         } sdlayer_gl_attributes [] =
         {
             { SDL_GL_DOUBLEBUFFER, 1 },
-            { SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
-            { SDL_GL_MULTISAMPLESAMPLES, glmultisample },
             { SDL_GL_STENCIL_SIZE, 8 },
             { SDL_GL_ACCELERATED_VISUAL, 1 },
             { SDL_GL_SWAP_CONTROL, vsync_renderlayer },
         };
 
-        do
-        {
-            SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
+        SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
 
-            /* HACK: changing SDL GL attribs only works before surface creation,
-               so we have to create a new surface in a different format first
-               to force the surface we WANT to be recreated instead of reused. */
-            if (vsync_renderlayer != ovsync)
+        /* HACK: changing SDL GL attribs only works before surface creation,
+            so we have to create a new surface in a different format first
+            to force the surface we WANT to be recreated instead of reused. */
+        if (vsync_renderlayer != ovsync)
+        {
+            if (sdl_surface)
             {
-                if (sdl_surface)
-                {
-                    SDL_FreeSurface(sdl_surface);
-                    sdl_surface =
-                    SDL_SetVideoMode(1, 1, 8, SDL_NOFRAME | SURFACE_FLAGS | ((fs & 1) ? SDL_FULLSCREEN : 0));
-                    SDL_FreeSurface(sdl_surface);
-                }
-                ovsync = vsync_renderlayer;
+                SDL_FreeSurface(sdl_surface);
+                sdl_surface =
+                SDL_SetVideoMode(1, 1, 8, SDL_NOFRAME | SURFACE_FLAGS | ((fs & 1) ? SDL_FULLSCREEN : 0));
+                SDL_FreeSurface(sdl_surface);
             }
-            sdl_surface = SDL_SetVideoMode(x, y, c, SDL_OPENGL | ((fs & 1) ? SDL_FULLSCREEN : 0));
-            if (!sdl_surface)
-            {
-                if (multisamplecheck)
-                {
-                    initprintf("Multisample mode not possible. Retrying without multisampling.\n");
-                    glmultisample = 0;
-                    continue;
-                }
-                initprintf("Unable to set video mode!\n");
-                return -1;
-            }
-        } while (multisamplecheck--);
+            ovsync = vsync_renderlayer;
+        }
+        sdl_surface = SDL_SetVideoMode(x, y, c, SDL_OPENGL | ((fs & 1) ? SDL_FULLSCREEN : 0));
+        if (!sdl_surface)
+        {
+            initprintf("Unable to set video mode!\n");
+            return -1;
+        }
 
         gladLoadGLLoader(SDL_GL_GetProcAddress);
     }

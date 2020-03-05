@@ -427,8 +427,8 @@ void MoveWeapons(short nPlayer)
                                     if (Ra[nPlayer].nTarget == -1)
                                         break;
 
-                                    Ra[nPlayer].field_0 = 0;
-                                    Ra[nPlayer].field_2 = 0;
+                                    Ra[nPlayer].nAction = 0;
+                                    Ra[nPlayer].nFrame  = 0;
                                     Ra[nPlayer].field_C = 1;
                                 }
 
@@ -442,7 +442,7 @@ void MoveWeapons(short nPlayer)
                                     BuildGrenade(nPlayer);
                                     AddAmmo(nPlayer, 4, -1);
                                 }
-                                else if (nWeapon == kWeaponStaff)
+                                else if (nWeapon == kWeaponMummified)
                                 {
                                     ShootStaff(nPlayer);
                                 }

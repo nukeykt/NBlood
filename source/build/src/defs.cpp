@@ -707,6 +707,8 @@ static int32_t defsparser(scriptfile *script)
 
             artReadManifest(fil, &local);
             artPreloadFile(fil, &local);
+            for (int32_t i = local.tilestart; i <= local.tileend; ++i)
+                tileUpdatePicSiz(i);
 
             kclose(fil);
         }

@@ -136,6 +136,9 @@ void scrCreateStdColors(void)
 
 void scrResetPalette(void)
 {
+    if (palTable[0] == nullptr)
+        return;
+
     paletteSetColorTable(0, (uint8_t*)palTable[0]);
 }
 

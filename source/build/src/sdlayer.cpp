@@ -79,7 +79,8 @@ static SDL_Window *sdl_window=NULL;
 static SDL_GLContext sdl_context=NULL;
 #endif
 
-int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline, refreshfreq=-1;
+int32_t xres=-1, yres=-1, bpp=0, fullscreen=0, bytesperline;
+double refreshfreq = 59.0;
 intptr_t frameplace=0;
 int32_t lockcount=0;
 char modechange=1;
@@ -95,9 +96,6 @@ char nogl=0;
 #endif
 static int32_t vsync_renderlayer;
 int32_t maxrefreshfreq=0;
-#if SDL_MAJOR_VERSION!=1
-static double currentVBlankInterval;
-#endif
 // last gamma, contrast, brightness
 static float lastvidgcb[3];
 
@@ -549,6 +547,24 @@ int main(int argc, char *argv[])
 
 
 #if SDL_MAJOR_VERSION != 1
+static int sdlayer_getswapinterval(int const syncMode)
+{
+    static int intervals[] = { -1, 0, 1, 0};
+    Bassert((unsigned)(syncMode + 1) < ARRAY_SIZE(intervals));
+    return intervals[syncMode + 1];
+}
+
+static int sdlayer_checkvsync(int checkSync)
+{
+    int const actualSync = SDL_GL_GetSwapInterval();
+    if (actualSync != sdlayer_getswapinterval(checkSync))
+    {
+        OSD_Printf("debug: GL driver forcing SwapInterval %d!\n", actualSync);
+        checkSync = actualSync;
+    }
+    return checkSync;
+}
+
 int32_t videoSetVsync(int32_t newSync)
 {
     if (vsync_renderlayer == newSync)
@@ -557,24 +573,26 @@ int32_t videoSetVsync(int32_t newSync)
 #ifdef USE_OPENGL
     if (sdl_context)
     {
-        int result = SDL_GL_SetSwapInterval(newSync);
+        int result = SDL_GL_SetSwapInterval(sdlayer_getswapinterval(newSync));
 
         if (result == -1)
         {
             if (newSync == -1)
             {
+                OSD_Printf("debug: GL driver rejected SwapInterval %d!\n", sdlayer_getswapinterval(newSync));
+
                 newSync = 1;
-                result = SDL_GL_SetSwapInterval(newSync);
+                result  = SDL_GL_SetSwapInterval(sdlayer_getswapinterval(newSync));
             }
 
             if (result == -1)
             {
+                OSD_Printf("debug: GL driver rejected SwapInterval %d!\n", sdlayer_getswapinterval(newSync));
                 newSync = 0;
-                OSD_Printf("Unable to enable VSync!\n");
             }
         }
 
-        vsync_renderlayer = newSync;
+        vsync_renderlayer = sdlayer_checkvsync(newSync);
     }
     else
 #endif
@@ -582,6 +600,7 @@ int32_t videoSetVsync(int32_t newSync)
         vsync_renderlayer = newSync;
 
         videoResetMode();
+
         if (videoSetGameMode(fullscreen, xres, yres, bpp, upscalefactor))
             OSD_Printf("restartvid: Reset failed...\n");
     }
@@ -724,6 +743,10 @@ void uninitsystem(void)
 //
 void system_getcvars(void)
 {
+# ifdef _WIN32
+    windowsDwmSetupComposition(false);
+# endif
+
     vsync = videoSetVsync(vsync);
 }
 
@@ -772,7 +795,8 @@ void initputs(const char *buf)
 #ifndef _WIN32
         startwin_idle(NULL);
 #else
-        handleevents();
+        if (sdl_window)
+            handleevents();
 #endif
         Bmemset(dabuf, 0, sizeof(dabuf));
     }
@@ -1230,20 +1254,6 @@ void joyGetDeadZone(int32_t axis, uint16_t *dead, uint16_t *satur)
 //
 // ---------------------------------------
 //
-// All things Timer
-// Ken did this
-//
-// ---------------------------------------
-//
-//
-
-
-
-
-//
-//
-// ---------------------------------------
-//
 // All things Video
 //
 // ---------------------------------------
@@ -1465,8 +1475,6 @@ void sdlayer_setvideomode_opengl(void)
     // process the extensions string and flag stuff we recognize
 
     glinfo.texnpot = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_non_power_of_two") || !!Bstrstr(glinfo.extensions, "GL_OES_texture_npot");
-    glinfo.multisample = !!Bstrstr(glinfo.extensions, "GL_ARB_multisample");
-    glinfo.nvmultisamplehint = !!Bstrstr(glinfo.extensions, "GL_NV_multisample_filter_hint");
     glinfo.arbfp = !!Bstrstr(glinfo.extensions, "GL_ARB_fragment_program");
     glinfo.depthtex = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_texture");
     glinfo.shadow = !!Bstrstr(glinfo.extensions, "GL_ARB_shadow");
@@ -1644,15 +1652,19 @@ void setrefreshrate(void)
     char error = 0;
 
     if (dispmode.refresh_rate != newmode.refresh_rate)
-    {
-        initprintf("Refresh rate: %dHz\n", newmode.refresh_rate);
         error = SDL_SetWindowDisplayMode(sdl_window, &newmode);
-    }
 
-    if (!newmode.refresh_rate)
-        newmode.refresh_rate = 60;
+    if (!newmode.refresh_rate || error)
+        newmode.refresh_rate = 59;
 
-    refreshfreq = error ? -1 : newmode.refresh_rate;
+#ifdef _WIN32
+    if (timingInfo.rateRefresh.uiNumerator)
+        refreshfreq = timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
+    else
+#endif
+        refreshfreq = newmode.refresh_rate;
+
+    initprintf("Refresh rate: %.2fHz\n", refreshfreq);
 }
 
 int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
@@ -1660,6 +1672,7 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     int32_t regrab = 0, ret;
 
     ret = setvideomode_sdlcommon(&x, &y, c, fs, &regrab);
+
     if (ret != 1)
     {
         if (ret == 0)
@@ -1685,16 +1698,10 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
     if (c > 8 || !nogl)
     {
         int32_t i;
-#ifdef USE_GLEXT
-        int32_t multisamplecheck = (glmultisample > 0);
-#else
-        int32_t multisamplecheck = 0;
-#endif
+
         if (nogl)
             return -1;
-# ifdef _WIN32
-        windowsDwmEnableComposition(false);
-# endif
+
         struct glattribs
         {
             SDL_GLattr attr;
@@ -1706,52 +1713,47 @@ int32_t videoSetMode(int32_t x, int32_t y, int32_t c, int32_t fs)
               { SDL_GL_CONTEXT_MINOR_VERSION, 1 },
 #endif
               { SDL_GL_DOUBLEBUFFER, 1 },
-#ifdef USE_GLEXT
-              { SDL_GL_MULTISAMPLEBUFFERS, glmultisample > 0 },
-              { SDL_GL_MULTISAMPLESAMPLES, glmultisample },
-#endif
+
               { SDL_GL_STENCIL_SIZE, 1 },
               { SDL_GL_ACCELERATED_VISUAL, 1 },
           };
 
-        do
+        SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
+
+        /* HACK: changing SDL GL attribs only works before surface creation,
+            so we have to create a new surface in a different format first
+            to force the surface we WANT to be recreated instead of reused. */
+
+
+        sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
+                                        windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
+                                        SDL_WINDOW_OPENGL | borderless);
+
+        if (sdl_window)
+            sdl_context = SDL_GL_CreateContext(sdl_window);
+
+        if (!sdl_window || !sdl_context)
         {
-            SDL_GL_ATTRIBUTES(i, sdlayer_gl_attributes);
+            initprintf("Unable to set video mode: %s failed: %s\n", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
+            nogl = 1;
+            destroy_window_resources();
+            return -1;
+        }
 
-            /* HACK: changing SDL GL attribs only works before surface creation,
-               so we have to create a new surface in a different format first
-               to force the surface we WANT to be recreated instead of reused. */
+        gladLoadGLLoader(SDL_GL_GetProcAddress);
+        if (GLVersion.major < 2)
+        {
+            initprintf("Your computer does not support OpenGL version 2 or greater. GL modes are unavailable.\n");
+            nogl = 1;
+            destroy_window_resources();
+            return -1;
+        }
 
+        SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
+        SDL_GL_SetSwapInterval(sdlayer_getswapinterval(vsync_renderlayer));
+        vsync_renderlayer = sdlayer_checkvsync(vsync_renderlayer);
 
-            sdl_window = SDL_CreateWindow("", windowpos ? windowx : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display),
-                                          windowpos ? windowy : (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), x, y,
-                                          SDL_WINDOW_OPENGL | borderless);
-
-            if (sdl_window)
-                sdl_context = SDL_GL_CreateContext(sdl_window);
-
-            if (!sdl_window || !sdl_context)
-            {
-                initprintf("Unable to set video mode: %s failed: %s\n", sdl_window ? "SDL_GL_CreateContext" : "SDL_GL_CreateWindow",  SDL_GetError());
-                nogl = 1;
-                destroy_window_resources();
-                return -1;
-            }
-
-            gladLoadGLLoader(SDL_GL_GetProcAddress);
-            if (GLVersion.major < 2)
-            {
-                initprintf("Your computer does not support OpenGL version 2 or greater. GL modes are unavailable.\n");
-                nogl = 1;
-                destroy_window_resources();
-                return -1;
-            }
-
-            SDL_SetWindowFullscreen(sdl_window, ((fs & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
-            SDL_GL_SetSwapInterval(vsync_renderlayer);
-
-            setrefreshrate();
-        } while (multisamplecheck--);
+        setrefreshrate();
     }
     else
 #endif  // defined USE_OPENGL
@@ -1921,28 +1923,27 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
-        SDL_GL_SwapWindow(sdl_window);
-
-        if (vsync)
+#ifdef _WIN32
+        if (vsync_renderlayer == 2)
         {
-            switch (swapcomplete)
-            {
-                case 1: glFinish(); break;
-                case 2:
-                {
-                    static uint64_t lastSwapTime;
-                    // busy loop until we're ready to update again
-                    // sit on it and spin
-                    currentVBlankInterval = timerGetPerformanceFrequency()/(double)refreshfreq;
-                    uint64_t swapTime = timerGetPerformanceCounter();
-                    if (lastSwapTime > swapTime)
-                        lastSwapTime = swapTime;
-                    do { } while ((double)(timerGetPerformanceCounter() - lastSwapTime) < currentVBlankInterval);
-                    lastSwapTime = swapTime;
-                }
-                break;
-            }
+            glFinish();
+
+            static uint64_t nextSwapTime = timerGetPerformanceCounter();
+            uint64_t const  swapInterval = (timerGetPerformanceFrequency() / refreshfreq);
+            uint64_t const  swapTime     = timerGetPerformanceCounter();
+
+            // TODO: use timing information to determine swap time and just busy loop ourselves for more timing control
+            if (swapTime < nextSwapTime)
+                windowsWaitForVBlank();
+
+            if (swapTime > nextSwapTime + swapInterval)
+                nextSwapTime += swapInterval;
+
+            nextSwapTime += swapInterval;
         }
+#endif
+
+        SDL_GL_SwapWindow(sdl_window);
 
         return;
     }
@@ -1952,7 +1953,7 @@ void videoShowFrame(int32_t w)
 
     if (lockcount)
     {
-        printf("Frame still locked %d times when showframe() called.\n", lockcount);
+        OSD_Printf("Frame still locked %d times when showframe() called.\n", lockcount);
         while (lockcount) videoEndDrawing();
     }
 
@@ -2503,11 +2504,8 @@ int32_t handleevents_pollsdl(void)
 
                     case SDL_WINDOWEVENT_MOVED:
                     {
-                        if (windowpos)
-                        {
-                            windowx = ev.window.data1;
-                            windowy = ev.window.data2;
-                        }
+                        windowx = ev.window.data1;
+                        windowy = ev.window.data2;
 
                         r_displayindex = SDL_GetWindowDisplayIndex(sdl_window);
                         modeschecked = 0;

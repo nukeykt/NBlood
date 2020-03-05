@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define game_c_
 
 #include "duke3d.h"
+#include "communityapi.h"
 #include "compat.h"
 #include "renderlayer.h"
 #include "osdfuncs.h"
@@ -119,9 +120,9 @@ int32_t hud_showmapname = 1;
 
 int32_t g_levelTextTime = 0;
 
-int32_t r_maxfps = 60;
-int32_t r_maxfpsoffset = 0;
-double g_frameDelay = 0.0;
+int32_t r_maxfps = -1;
+int32_t r_maxfpsoffset;
+uint64_t g_frameDelay;
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
 extern char forcegl;
@@ -6327,30 +6328,18 @@ void G_MaybeAllocPlayer(int32_t pnum)
 
 int G_FPSLimit(void)
 {
-    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
+    if (!r_maxfps)
         return true;
 
-    static double   nextPageDelay;
-    static uint64_t lastFrameTicks;
+    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
 
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
-    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
+    uint64_t const  frameTicks     = timerGetPerformanceCounter();
+    static uint64_t nextFrameTicks = frameTicks + g_frameDelay;
 
-    uint64_t const frameTicks = timerGetPerformanceCounter();
-
-    if (lastFrameTicks > frameTicks)
-        lastFrameTicks = frameTicks;
-
-    uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
-    double const   dElapsedTime = elapsedTime;
-
-    if (dElapsedTime >= nextPageDelay)
+    if (frameTicks >= nextFrameTicks)
     {
-        if (dElapsedTime <= nextPageDelay+g_frameDelay)
-            nextPageDelay += g_frameDelay-dElapsedTime;
-
-        lastFrameTicks = frameTicks;
-
+        while (frameTicks >= nextFrameTicks)
+            nextFrameTicks += g_frameDelay;
         return true;
     }
 
@@ -6373,11 +6362,7 @@ int app_main(int argc, char const * const * argv)
 #ifndef DEBUGGINGAIDS
     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
     {
-#ifdef EDUKE32_STANDALONE
         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
-#else
-        if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
-#endif
                       "Are you sure you want to start another copy?"))
             return 3;
     }
@@ -6505,6 +6490,11 @@ int app_main(int argc, char const * const * argv)
     }
 #endif
 
+#ifdef EDUKE32_STANDALONE
+    if (!G_CheckCmdSwitch(argc, argv, "-nosteam"))
+        communityapiInit();
+#endif
+
     if (enginePreInit())
         G_FatalEngineInitError();
 
@@ -6514,7 +6504,7 @@ int app_main(int argc, char const * const * argv)
     G_ScanGroups();
 
 #ifdef STARTUP_SETUP_WINDOW
-    if (readSetup < 0 || (!g_noSetup && (ud.configversion != BYTEVERSION_EDUKE32 || ud.setup.forcesetup)) || g_commandSetup)
+    if (!Bgetenv("SteamTenfoot") && (readSetup < 0 || (!g_noSetup && (ud.configversion != BYTEVERSION_EDUKE32 || ud.setup.forcesetup)) || g_commandSetup))
     {
         if (quitevent || !startwin_run())
         {
@@ -6759,7 +6749,7 @@ int app_main(int argc, char const * const * argv)
             ud.setup.bpp  = bpp;
         }
 
-        g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, myplayer.palette, 0);
         S_SoundStartup();
         S_MusicStartup();
@@ -6921,7 +6911,7 @@ MAIN_LOOP_RESTART:
                     input.svel = mulscale9(localInput.fvel, sintable[(q16ang + 2048) & 2047]) +
                                  mulscale9(localInput.svel, sintable[(q16ang + 1536) & 2047]);
 
-                    if (FURY)
+                    if (!FURY)
                     {
                         input.fvel += pPlayer->fric.x;
                         input.svel += pPlayer->fric.y;
@@ -7088,7 +7078,7 @@ int G_DoMoveThings(void)
             if (!i) pub = NUMPAGES;
         }
     }
-
+#ifndef NETCODE_DISABLE
     // Name display when aiming at opponents
     if (ud.idplayers && (g_netServer || ud.multimode > 1)
 #ifdef SPLITSCREEN_MOD_HACKS
@@ -7130,7 +7120,7 @@ int G_DoMoveThings(void)
             }
         }
     }
-
+#endif
     if (g_showShareware > 0)
     {
         g_showShareware--;

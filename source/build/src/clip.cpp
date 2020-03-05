@@ -883,7 +883,7 @@ static int cliptestsector(int const dasect, int const nextsect, int32_t const fl
 
             ((sec2->ceilingstat&1) == 0 && 
             posz <= dacz2+(ceildist-1) &&
-            dacz2 > dacz /*+CLIPCURBHEIGHT*/));  // ceilings check the same conditions ^^^^^
+            dacz2 > dacz+CLIPCURBHEIGHT));  // ceilings check the same conditions ^^^^^
 }
 
 int32_t clipmovex(vec3_t *pos, int16_t *sectnum,
@@ -1429,7 +1429,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     do
     {
-        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && (xvect|yvect)) 
+        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && (xvect|yvect))
         {
             for (native_t i=clipnum-1;i>=0;--i)
             {
@@ -1445,16 +1445,20 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         }
 
         vec2_t vec = goal;
-
+        
         if ((hitwall = cliptrace(pos->vec2, &vec)) >= 0)
         {
             vec2_t const  clipr  = { clipit[hitwall].x2 - clipit[hitwall].x1, clipit[hitwall].y2 - clipit[hitwall].y1 };
-            int64_t const templl = compat_maybe_truncate_to_int32((int64_t)clipr.x * clipr.x + (int64_t)clipr.y * clipr.y);
+            // clamp to the max value we can utilize without reworking the scaling below
+            // this works around the overflow issue that affects dukedc2.map
+            int32_t const templl = (int32_t)clamp(compat_maybe_truncate_to_int32((int64_t)clipr.x * clipr.x + (int64_t)clipr.y * clipr.y), INT32_MIN, INT32_MAX);
 
             if (templl > 0)
             {
-                int64_t const templl2 = compat_maybe_truncate_to_int32((int64_t)(goal.x-vec.x)*clipr.x + (int64_t)(goal.y-vec.y)*clipr.y);
-                int32_t const i = (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829 || (llabs(templl2)>>11) < templl) ?
+                // I don't know if this one actually overflows or not, but I highly doubt it hurts to check
+                int32_t const templl2
+                = (int32_t)clamp(compat_maybe_truncate_to_int32((int64_t)(goal.x - vec.x) * clipr.x + (int64_t)(goal.y - vec.y) * clipr.y), INT32_MIN, INT32_MAX);
+                int32_t const i = (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829 || (klabs(templl2)>>11) < templl) ?
                     divscale64(templl2, templl, 20) : 0;
 
                 goal = { mulscale20(clipr.x, i)+vec.x, mulscale20(clipr.y, i)+vec.y };

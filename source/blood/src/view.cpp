@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamemenu.h"
 #include "gameutil.h"
 #include "globals.h"
+#include "gfx.h"
 #include "levels.h"
 #include "loadsave.h"
 #include "map2d.h"
@@ -60,41 +61,41 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "nnexts.h"
 
 struct VIEW {
-	int at0;
-	int at4;
-	int at8; // bob height
-	int atc; // bob width
-	int at10;
-	int at14;
-	int at18; // bob sway y
-	int at1c; // bob sway x
-	fix16_t at20;
-	fix16_t at24; // horiz
-	int at28; // horizoff
-	int at2c;
-	fix16_t at30; // angle
-	int at34; // weapon z
-	int at38; // view z
-	int at3c;
-	int at40;
-	int at44;
-	int at48; // posture
-	int at4c; // spin
-	int at50; // x
-	int at54; // y
-	int at58; // z
-	int at5c; //xvel
-	int at60; //yvel
-	int at64; //zvel
-	short at68; // sectnum
-	unsigned int at6a; // floordist
-	char at6e; // look center
-	char at6f;
-	char at70; // run
-	char at71; // jump
-	char at72; // underwater
-	short at73; // sprite flags
-	SPRITEHIT at75;
+    int at0;
+    int at4;
+    int at8; // bob height
+    int atc; // bob width
+    int at10;
+    int at14;
+    int at18; // bob sway y
+    int at1c; // bob sway x
+    fix16_t at20;
+    fix16_t at24; // horiz
+    int at28; // horizoff
+    int at2c;
+    fix16_t at30; // angle
+    int at34; // weapon z
+    int at38; // view z
+    int at3c;
+    int at40;
+    int at44;
+    int at48; // posture
+    int at4c; // spin
+    int at50; // x
+    int at54; // y
+    int at58; // z
+    int at5c; //xvel
+    int at60; //yvel
+    int at64; //zvel
+    short at68; // sectnum
+    unsigned int at6a; // floordist
+    char at6e; // look center
+    char at6f;
+    char at70; // run
+    char at71; // jump
+    char at72; // underwater
+    short at73; // sprite flags
+    SPRITEHIT at75;
 };
 
 VIEW gPrevView[kMaxPlayers];
@@ -142,143 +143,188 @@ bool bLoadScreenCrcMatch = false;
 void RotateYZ(int *pX, int *pY, int *pZ, int ang)
 {
     UNREFERENCED_PARAMETER(pX);
-	int oY, oZ, angSin, angCos;
-	oY = *pY;
-	oZ = *pZ;
-	angSin = Sin(ang);
-	angCos = Cos(ang);
-	*pY = dmulscale30r(oY,angCos,oZ,-angSin);
-	*pZ = dmulscale30r(oY,angSin,oZ,angCos);
+    int oY, oZ, angSin, angCos;
+    oY = *pY;
+    oZ = *pZ;
+    angSin = Sin(ang);
+    angCos = Cos(ang);
+    *pY = dmulscale30r(oY,angCos,oZ,-angSin);
+    *pZ = dmulscale30r(oY,angSin,oZ,angCos);
 }
 
 void RotateXZ(int *pX, int *pY, int *pZ, int ang)
 {
     UNREFERENCED_PARAMETER(pY);
-	int oX, oZ, angSin, angCos;
-	oX = *pX;
-	oZ = *pZ;
+    int oX, oZ, angSin, angCos;
+    oX = *pX;
+    oZ = *pZ;
     angSin = Sin(ang);
     angCos = Cos(ang);
-	*pX = dmulscale30r(oX,angCos,oZ,-angSin);
-	*pZ = dmulscale30r(oX,angSin,oZ,angCos);
+    *pX = dmulscale30r(oX,angCos,oZ,-angSin);
+    *pZ = dmulscale30r(oX,angSin,oZ,angCos);
 }
 
 void RotateXY(int *pX, int *pY, int *pZ, int ang)
 {
     UNREFERENCED_PARAMETER(pZ);
-	int oX, oY, angSin, angCos;
-	oX = *pX;
-	oY = *pY;
+    int oX, oY, angSin, angCos;
+    oX = *pX;
+    oY = *pY;
     angSin = Sin(ang);
     angCos = Cos(ang);
-	*pX = dmulscale30r(oX,angCos,oY,-angSin);
-	*pY = dmulscale30r(oX,angSin,oY,angCos);
+    *pX = dmulscale30r(oX,angCos,oY,-angSin);
+    *pY = dmulscale30r(oX,angSin,oY,angCos);
 }
 
 FONT gFont[kFontNum];
 
 void FontSet(int id, int tile, int space)
 {
-	if (id < 0 || id >= kFontNum || tile < 0 || tile >= kMaxTiles)
-		return;
+    if (id < 0 || id >= kFontNum || tile < 0 || tile >= kMaxTiles)
+        return;
 
-	FONT *pFont = &gFont[id];
-	int xSize = 0;
-	int ySize = 0;
-	pFont->tile = tile;
-	for (int i = 0; i < 96; i++)
-	{
-		if (tilesiz[tile+i].x > xSize)
-			xSize = tilesiz[tile+i].x;
-		if (tilesiz[tile+i].y > ySize)
-			ySize = tilesiz[tile+i].y;
-	}
-	pFont->xSize = xSize;
-	pFont->ySize = ySize;
-	pFont->space = space;
+    FONT* pFont = &gFont[id];
+    int yoff = 0;
+
+    DICTNODE* hQFont = gSysRes.Lookup(id, "QFN");
+    if (hQFont)
+    {
+        QFONT *pQFont = (QFONT*)gSysRes.Load(hQFont);
+        for (int i = 32; i < 128; i++)
+        {
+            int const nTile = tile + i - 32;
+            QFONTCHAR* pChar = &pQFont->at20[i];
+            yoff = min(yoff, pQFont->atf + pChar->oy);
+        }
+        for (int i = 32; i < 128; i++)
+        {
+            int const nTile = tile + i - 32;
+            if (waloff[nTile])
+                continue;
+            QFONTCHAR *pChar = &pQFont->at20[i];
+            int const width = max(pChar->w, pChar->ox);
+            int const height = max(pQFont->atf+pChar->oy+pChar->h-yoff, 1);
+            char *tilePtr = (char*)tileCreate(nTile, width, height);
+            if (!tilePtr)
+                continue;
+            Bmemset(tilePtr, 255, width * height);
+            for (int x = 0; x < pChar->w; x++)
+            {
+                for (int y = 0; y < pChar->h; y++)
+                {
+                    int const dx = x;
+                    int const dy = y + pQFont->atf + pChar->oy-yoff;
+                    if (dx >= 0 && dx < width && dy >= 0 && dy < height)
+                        tilePtr[dx*height + dy] = pQFont->at820[pChar->offset + x * pChar->h + y];
+                }
+            }
+        }
+
+        pFont->tile = tile;
+        pFont->xSize = pQFont->at12;
+        pFont->ySize = pQFont->at13;
+        pFont->space = pQFont->at11;
+        pFont->yoff = yoff;
+
+        return;
+    }
+    int xSize = 0;
+    int ySize = 0;
+    pFont->tile = tile;
+    for (int i = 0; i < 96; i++)
+    {
+        if (tilesiz[tile+i].x > xSize)
+            xSize = tilesiz[tile+i].x;
+        if (tilesiz[tile+i].y > ySize)
+            ySize = tilesiz[tile+i].y;
+    }
+    pFont->xSize = xSize;
+    pFont->ySize = ySize;
+    pFont->space = space;
+    pFont->yoff = yoff;
 }
 
 void viewGetFontInfo(int id, const char *unk1, int *pXSize, int *pYSize)
 {
-	if (id < 0 || id >= kFontNum)
-		return;
-	FONT *pFont = &gFont[id];
-	if (!unk1)
-	{
-		if (pXSize)
-			*pXSize = pFont->xSize;
-		if (pYSize)
-			*pYSize = pFont->ySize;
-	}
-	else
-	{
-		int width = -pFont->space;
-		for (const char *pBuf = unk1; *pBuf != 0; pBuf++)
-		{
-			int tile = ((*pBuf-32)&127)+pFont->tile;
-			if (tilesiz[tile].x != 0 && tilesiz[tile].y != 0)
-				width += tilesiz[tile].x+pFont->space;
-		}
-		if (pXSize)
-			*pXSize = width;
-		if (pYSize)
-			*pYSize = pFont->ySize;
-	}
+    if (id < 0 || id >= kFontNum)
+        return;
+    FONT *pFont = &gFont[id];
+    if (!unk1)
+    {
+        if (pXSize)
+            *pXSize = pFont->xSize;
+        if (pYSize)
+            *pYSize = pFont->ySize;
+    }
+    else
+    {
+        int width = -pFont->space;
+        for (const char *pBuf = unk1; *pBuf != 0; pBuf++)
+        {
+            int tile = ((*pBuf-32)&127)+pFont->tile;
+            if (tilesiz[tile].x != 0 && tilesiz[tile].y != 0)
+                width += tilesiz[tile].x+pFont->space;
+        }
+        if (pXSize)
+            *pXSize = width;
+        if (pYSize)
+            *pYSize = pFont->ySize;
+    }
 }
 
 void viewUpdatePages(void)
 {
-	pcBackground = numpages;
+    pcBackground = numpages;
 }
 
 void viewToggle(int viewMode)
 {
-	if (viewMode == 3)
-		gViewMode = 4;
-	else
-	{
-		gViewMode = 3;
-		viewResizeView(gViewSize);
-	}
+    if (viewMode == 3)
+        gViewMode = 4;
+    else
+    {
+        gViewMode = 3;
+        viewResizeView(gViewSize);
+    }
 }
 
 void viewInitializePrediction(void)
 {
-	predict.at30 = gMe->q16ang;
-	predict.at20 = gMe->q16look;
-	predict.at24 = gMe->q16horiz;
-	predict.at28 = gMe->q16slopehoriz;
-	predict.at2c = gMe->slope;
-	predict.at6f = gMe->cantJump;
-	predict.at70 = gMe->isRunning;
-	predict.at72 = gMe->isUnderwater;
-	predict.at71 = gMe->input.buttonFlags.jump;
-	predict.at50 = gMe->pSprite->x;
-	predict.at54 = gMe->pSprite->y;
-	predict.at58 = gMe->pSprite->z;
-	predict.at68 = gMe->pSprite->sectnum;
-	predict.at73 = gMe->pSprite->flags;
-	predict.at5c = xvel[gMe->pSprite->index];
-	predict.at60 = yvel[gMe->pSprite->index];
-	predict.at64 = zvel[gMe->pSprite->index];
-	predict.at6a = gMe->pXSprite->height;
-	predict.at48 = gMe->posture;
-	predict.at4c = gMe->spin;
-	predict.at6e = gMe->input.keyFlags.lookCenter;
-	memcpy(&predict.at75,&gSpriteHit[gMe->pSprite->extra],sizeof(SPRITEHIT));
-	predict.at0 = gMe->bobPhase;
-	predict.at4 = gMe->bobAmp;
-	predict.at8 = gMe->bobHeight;
-	predict.atc = gMe->bobWidth;
-	predict.at10 = gMe->swayPhase;
-	predict.at14 = gMe->swayAmp;
-	predict.at18 = gMe->swayHeight;
-	predict.at1c = gMe->swayWidth;
-	predict.at34 = gMe->zWeapon-gMe->zView-(12<<8);
-	predict.at38 = gMe->zView;
-	predict.at3c = gMe->zViewVel;
-	predict.at40 = gMe->zWeapon;
-	predict.at44 = gMe->zWeaponVel;
+    predict.at30 = gMe->q16ang;
+    predict.at20 = gMe->q16look;
+    predict.at24 = gMe->q16horiz;
+    predict.at28 = gMe->q16slopehoriz;
+    predict.at2c = gMe->slope;
+    predict.at6f = gMe->cantJump;
+    predict.at70 = gMe->isRunning;
+    predict.at72 = gMe->isUnderwater;
+    predict.at71 = gMe->input.buttonFlags.jump;
+    predict.at50 = gMe->pSprite->x;
+    predict.at54 = gMe->pSprite->y;
+    predict.at58 = gMe->pSprite->z;
+    predict.at68 = gMe->pSprite->sectnum;
+    predict.at73 = gMe->pSprite->flags;
+    predict.at5c = xvel[gMe->pSprite->index];
+    predict.at60 = yvel[gMe->pSprite->index];
+    predict.at64 = zvel[gMe->pSprite->index];
+    predict.at6a = gMe->pXSprite->height;
+    predict.at48 = gMe->posture;
+    predict.at4c = gMe->spin;
+    predict.at6e = gMe->input.keyFlags.lookCenter;
+    memcpy(&predict.at75,&gSpriteHit[gMe->pSprite->extra],sizeof(SPRITEHIT));
+    predict.at0 = gMe->bobPhase;
+    predict.at4 = gMe->bobAmp;
+    predict.at8 = gMe->bobHeight;
+    predict.atc = gMe->bobWidth;
+    predict.at10 = gMe->swayPhase;
+    predict.at14 = gMe->swayAmp;
+    predict.at18 = gMe->swayHeight;
+    predict.at1c = gMe->swayWidth;
+    predict.at34 = gMe->zWeapon-gMe->zView-(12<<8);
+    predict.at38 = gMe->zView;
+    predict.at3c = gMe->zViewVel;
+    predict.at40 = gMe->zWeapon;
+    predict.at44 = gMe->zWeaponVel;
     predictOld = predict;
     if (numplayers != 1)
     {
@@ -290,7 +336,7 @@ void viewInitializePrediction(void)
 void viewUpdatePrediction(GINPUT *pInput)
 {
     predictOld = predict;
-	short bakCstat = gMe->pSprite->cstat;
+    short bakCstat = gMe->pSprite->cstat;
     gMe->pSprite->cstat = 0;
     fakePlayerProcess(gMe, pInput);
     fakeActProcessSprites();
@@ -557,51 +603,51 @@ void fakePlayerProcess(PLAYER *pPlayer, GINPUT *pInput)
     predict.at0 = ClipLow(predict.at0-4, 0);
 
     nSpeed >>= 16;
-	if (predict.at48 == 1)
-	{
-		predict.at4 = (predict.at4+17)&2047;
-		predict.at14 = (predict.at14+17)&2047;
-		predict.at8 = mulscale30(10*pPosture->bobV,Sin(predict.at4*2));
-		predict.atc = mulscale30(predict.at0*pPosture->bobH,Sin(predict.at4-256));
-		predict.at18 = mulscale30(predict.at0*pPosture->swayV,Sin(predict.at14*2));
-		predict.at1c = mulscale30(predict.at0*pPosture->swayH,Sin(predict.at14-0x155));
-	}
-	else
-	{
-		if (pXSprite->height < 256)
-		{
-			predict.at4 = (predict.at4+(pPosture->pace[predict.at70]*4))&2047;
-			predict.at14 = (predict.at14+(pPosture->pace[predict.at70]*4)/2)&2047;
-			if (predict.at70)
-			{
-				if (predict.at0 < 60)
+    if (predict.at48 == 1)
+    {
+        predict.at4 = (predict.at4+17)&2047;
+        predict.at14 = (predict.at14+17)&2047;
+        predict.at8 = mulscale30(10*pPosture->bobV,Sin(predict.at4*2));
+        predict.atc = mulscale30(predict.at0*pPosture->bobH,Sin(predict.at4-256));
+        predict.at18 = mulscale30(predict.at0*pPosture->swayV,Sin(predict.at14*2));
+        predict.at1c = mulscale30(predict.at0*pPosture->swayH,Sin(predict.at14-0x155));
+    }
+    else
+    {
+        if (pXSprite->height < 256)
+        {
+            predict.at4 = (predict.at4+(pPosture->pace[predict.at70]*4))&2047;
+            predict.at14 = (predict.at14+(pPosture->pace[predict.at70]*4)/2)&2047;
+            if (predict.at70)
+            {
+                if (predict.at0 < 60)
                     predict.at0 = ClipHigh(predict.at0 + nSpeed, 60);
-			}
-			else
-			{
-				if (predict.at0 < 30)
+            }
+            else
+            {
+                if (predict.at0 < 30)
                     predict.at0 = ClipHigh(predict.at0 + nSpeed, 30);
-			}
-		}
-		predict.at8 = mulscale30(predict.at0*pPosture->bobV,Sin(predict.at4*2));
-		predict.atc = mulscale30(predict.at0*pPosture->bobH,Sin(predict.at4-256));
-		predict.at18 = mulscale30(predict.at0*pPosture->swayV,Sin(predict.at14*2));
-		predict.at1c = mulscale30(predict.at0*pPosture->swayH,Sin(predict.at14-0x155));
-	}
-	if (!pXSprite->health)
+            }
+        }
+        predict.at8 = mulscale30(predict.at0*pPosture->bobV,Sin(predict.at4*2));
+        predict.atc = mulscale30(predict.at0*pPosture->bobH,Sin(predict.at4-256));
+        predict.at18 = mulscale30(predict.at0*pPosture->swayV,Sin(predict.at14*2));
+        predict.at1c = mulscale30(predict.at0*pPosture->swayH,Sin(predict.at14-0x155));
+    }
+    if (!pXSprite->health)
         return;
-	predict.at72 = 0;
-	if (predict.at48 == 1)
-	{
-		predict.at72 = 1;
+    predict.at72 = 0;
+    if (predict.at48 == 1)
+    {
+        predict.at72 = 1;
         int nSector = predict.at68;
         int nLink = gLowerLink[nSector];
-		if (nLink > 0 && (sprite[nLink].type == kMarkerLowGoo || sprite[nLink].type == kMarkerLowWater))
-		{
-			if (getceilzofslope(nSector, predict.at50, predict.at54) > predict.at38)
-				predict.at72 = 0;
-		}
-	}
+        if (nLink > 0 && (sprite[nLink].type == kMarkerLowGoo || sprite[nLink].type == kMarkerLowWater))
+        {
+            if (getceilzofslope(nSector, predict.at50, predict.at54) > predict.at38)
+                predict.at72 = 0;
+        }
+    }
 }
 
 void fakeMoveDude(spritetype *pSprite)
@@ -612,8 +658,8 @@ void fakeMoveDude(spritetype *pSprite)
         pPlayer = &gPlayer[pSprite->type-kDudePlayer1];
     dassert(pSprite->type >= kDudeBase && pSprite->type < kDudeMax);
     GetSpriteExtents(pSprite, &top, &bottom);
-	top += predict.at58 - pSprite->z;
-	bottom += predict.at58 - pSprite->z;
+    top += predict.at58 - pSprite->z;
+    bottom += predict.at58 - pSprite->z;
     int bz = (bottom-predict.at58)/4;
     int tz = (predict.at58-top)/4;
     int wd = pSprite->clipdist*4;
@@ -844,13 +890,13 @@ void fakeActAirDrag(spritetype *pSprite, int num)
 
 void fakeActProcessSprites(void)
 {
-	spritetype *pSprite = gMe->pSprite;
-	if (pSprite->statnum == kStatDude)
-	{
-		int nXSprite = pSprite->extra;
-		dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
-		int nSector = predict.at68;
-		int nXSector = sector[nSector].extra;
+    spritetype *pSprite = gMe->pSprite;
+    if (pSprite->statnum == kStatDude)
+    {
+        int nXSprite = pSprite->extra;
+        dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
+        int nSector = predict.at68;
+        int nXSector = sector[nSector].extra;
         XSECTOR *pXSector = NULL;
         if (nXSector > 0)
         {
@@ -858,28 +904,28 @@ void fakeActProcessSprites(void)
             dassert(xsector[nXSector].reference == nSector);
             pXSector = &xsector[nXSector];
         }
-		if (pXSector)
-		{
+        if (pXSector)
+        {
             int top, bottom;
             GetSpriteExtents(pSprite, &top, &bottom);
-			top += predict.at58 - pSprite->z;
-			bottom += predict.at58 - pSprite->z;
-			if (getflorzofslope(nSector, predict.at50, predict.at54) < bottom)
-			{
-				int angle = pXSector->panAngle;
+            top += predict.at58 - pSprite->z;
+            bottom += predict.at58 - pSprite->z;
+            if (getflorzofslope(nSector, predict.at50, predict.at54) < bottom)
+            {
+                int angle = pXSector->panAngle;
                 int speed = 0;
-				if (pXSector->panAlways || pXSector->state || pXSector->busy)
-				{
-					speed = pXSector->panVel << 9;
-					if (!pXSector->panAlways && pXSector->busy)
-						speed = mulscale16(speed, pXSector->busy);
-				}
-				if (sector[nSector].floorstat&64)
-					angle = (GetWallAngle(sector[nSector].wallptr)+512)&2047;
-				predict.at5c += mulscale30(speed,Cos(angle));
-				predict.at60 += mulscale30(speed,Sin(angle));
-			}
-		}
+                if (pXSector->panAlways || pXSector->state || pXSector->busy)
+                {
+                    speed = pXSector->panVel << 9;
+                    if (!pXSector->panAlways && pXSector->busy)
+                        speed = mulscale16(speed, pXSector->busy);
+                }
+                if (sector[nSector].floorstat&64)
+                    angle = (GetWallAngle(sector[nSector].wallptr)+512)&2047;
+                predict.at5c += mulscale30(speed,Cos(angle));
+                predict.at60 += mulscale30(speed,Sin(angle));
+            }
+        }
         if (pXSector && pXSector->Underwater)
             fakeActAirDrag(pSprite, 5376);
         else
@@ -889,7 +935,7 @@ void fakeActProcessSprites(void)
         {
             fakeMoveDude(pSprite);
         }
-	}
+    }
 }
 
 void viewCorrectPrediction(void)
@@ -1015,6 +1061,8 @@ void viewDrawText(int nFont, const char *pString, int x, int y, int nShade, int 
 {
     if (nFont < 0 || nFont >= kFontNum || !pString) return;
     FONT *pFont = &gFont[nFont];
+
+    y += pFont->yoff;
 
     if (position)
     {
@@ -2938,7 +2986,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
             tint->b = 255;
             break;
         }
-        if (!bNoTint)
+        if (!bNoTint && gView != nullptr)
         {
             nRed += gView->pickupEffect;
             nGreen += gView->pickupEffect;
@@ -2967,7 +3015,7 @@ void UpdateDacs(int nPalette, bool bNoTint)
 #endif
     {
         gLastPal = nPalette;
-        if (bNoTint)
+        if (bNoTint || gView == nullptr)
         {
             memcpy(newDAC, baseDAC, sizeof(newDAC));
         }
@@ -3021,40 +3069,40 @@ void viewUpdateDelirium(void)
     gScreenTiltO = gScreenTilt;
     deliriumTurnO = deliriumTurn;
     deliriumPitchO = deliriumPitch;
-	int powerCount;
-	if ((powerCount = powerupCheck(gView, kPwUpDeliriumShroom)) != 0)
-	{
-		int tilt1 = 170, tilt2 = 170, pitch = 20;
+    int powerCount;
+    if ((powerCount = powerupCheck(gView, kPwUpDeliriumShroom)) != 0)
+    {
+        int tilt1 = 170, tilt2 = 170, pitch = 20;
         int timer = (int)gFrameClock*4;
-		if (powerCount < 512)
-		{
-			int powerScale = (powerCount<<16) / 512;
-			tilt1 = mulscale16(tilt1, powerScale);
-			tilt2 = mulscale16(tilt2, powerScale);
-			pitch = mulscale16(pitch, powerScale);
-		}
-		int sin2 = costable[(2*timer-512)&2047] / 2;
-		int sin3 = costable[(3*timer-512)&2047] / 2;
-		gScreenTilt = mulscale30(sin2+sin3,tilt1);
-		int sin4 = costable[(4*timer-512)&2047] / 2;
-		deliriumTurn = mulscale30(sin3+sin4,tilt2);
-		int sin5 = costable[(5*timer-512)&2047] / 2;
-		deliriumPitch = mulscale30(sin4+sin5,pitch);
-		return;
-	}
-	gScreenTilt = ((gScreenTilt+1024)&2047)-1024;
-	if (gScreenTilt > 0)
-	{
-		gScreenTilt -= 8;
-		if (gScreenTilt < 0)
-			gScreenTilt = 0;
-	}
-	else if (gScreenTilt < 0)
-	{
-		gScreenTilt += 8;
-		if (gScreenTilt >= 0)
-			gScreenTilt = 0;
-	}
+        if (powerCount < 512)
+        {
+            int powerScale = (powerCount<<16) / 512;
+            tilt1 = mulscale16(tilt1, powerScale);
+            tilt2 = mulscale16(tilt2, powerScale);
+            pitch = mulscale16(pitch, powerScale);
+        }
+        int sin2 = costable[(2*timer-512)&2047] / 2;
+        int sin3 = costable[(3*timer-512)&2047] / 2;
+        gScreenTilt = mulscale30(sin2+sin3,tilt1);
+        int sin4 = costable[(4*timer-512)&2047] / 2;
+        deliriumTurn = mulscale30(sin3+sin4,tilt2);
+        int sin5 = costable[(5*timer-512)&2047] / 2;
+        deliriumPitch = mulscale30(sin4+sin5,pitch);
+        return;
+    }
+    gScreenTilt = ((gScreenTilt+1024)&2047)-1024;
+    if (gScreenTilt > 0)
+    {
+        gScreenTilt -= 8;
+        if (gScreenTilt < 0)
+            gScreenTilt = 0;
+    }
+    else if (gScreenTilt < 0)
+    {
+        gScreenTilt += 8;
+        if (gScreenTilt >= 0)
+            gScreenTilt = 0;
+    }
 }
 
 int shakeHoriz, shakeAngle, shakeX, shakeY, shakeZ, shakeBobX, shakeBobY;

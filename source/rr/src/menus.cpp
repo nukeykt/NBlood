@@ -171,6 +171,110 @@ static void Menu_DrawCursorText(int32_t x, int32_t y, int32_t h, int32_t ydim_up
     Menu_DrawCursorTextTile(x, y, h, SPINNINGNUKEICON+(((int32_t) totalclock>>3)%frames), siz, ydim_upper, ydim_lower);
 }
 
+int dword_A99A0, dword_A99A4, dword_A99A8, dword_A99AC;
+short word_A99B0, word_A99B2;
+int dword_A99B4, dword_A99B8, dword_A99BC, dword_A99C0, dword_A99C4, dword_A99C8;
+
+void Menu_DHLeaonardHeadReset(void)
+{
+    dword_A99A0 = 0;
+    dword_A99A4 = 0;
+    dword_A99A8 = 0;
+    dword_A99AC = 0;
+    word_A99B2 = 0;
+    dword_A99B4 = 0;
+    word_A99B0 = 0;
+}
+
+void Menu_DHLeaonardHeadDisplay(vec2_t pos)
+{
+    if (sub_51B68() && !dword_A99C0)
+    {
+        dword_A99C0 = (int)totalclock;
+    }
+    if (dword_A99C0 && (int)totalclock - dword_A99C0 > 40)
+    {
+        dword_A99C0 = 0;
+        dword_A99C4 = 1;
+    }
+    switch (dword_A99A0)
+    {
+    case 0:
+        if ((int)totalclock - dword_A99B8 >= 240 && dword_A99C4 && (rrdh_random()&63) < 32)
+        {
+            dword_A99A0 = 1;
+            dword_A99A4 = 160 - ((rrdh_random() & 255) - 128);
+            word_A99B0 = ((rrdh_random() & 127) + 1984) & 2047;
+            dword_A99AC = (rrdh_random() & 4095) - 4090;
+            word_A99B2 = SPINNINGNUKEICON + (rrdh_random() & 15);
+        }
+        break;
+    case 1:
+        if (dword_A99A8 < 54)
+        {
+            if ((int)totalclock - dword_A99B4 > 2)
+            {
+                dword_A99B4 = (int)totalclock;
+                dword_A99A8 += 2;
+            }
+        }
+        else
+        {
+            dword_A99A0 = 2;
+            dword_A99BC = (int)totalclock;
+        }
+        pos.x += dword_A99A4 << 16;
+        pos.y += (240 - dword_A99A8) << 16;
+        rotatesprite(pos.x, pos.y, 32768 - dword_A99AC, word_A99B0, word_A99B2, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+        break;
+    case 2:
+        if (dword_A99C4 == 1)
+        {
+            if ((rrdh_random()&63) > 32)
+                word_A99B2--;
+            else
+                word_A99B2++;
+        }
+        else
+        {
+            if ((rrdh_random() & 127) == 48)
+            {
+                if ((int)totalclock - dword_A99BC > 240)
+                    dword_A99A0 = 3;
+            }
+        }
+        if (word_A99B2 < SPINNINGNUKEICON)
+            word_A99B2 = SPINNINGNUKEICON + 15;
+        if (word_A99B2 > SPINNINGNUKEICON + 15)
+            word_A99B2 = SPINNINGNUKEICON;
+        pos.x += dword_A99A4 << 16;
+        pos.y += (240 - dword_A99A8) << 16;
+        rotatesprite(pos.x, pos.y, 32768 - dword_A99AC, word_A99B0, word_A99B2, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+        if ((int)totalclock - dword_A99BC > 960)
+            dword_A99A0 = 3;
+        break;
+    case 3:
+        if (dword_A99A8 > 0)
+        {
+            if ((int)totalclock - dword_A99B4 > 2)
+            {
+                dword_A99B4 = (int)totalclock;
+                dword_A99A8 -= 2;
+            }
+            pos.x += dword_A99A4 << 16;
+            pos.y += (240 - dword_A99A8) << 16;
+            rotatesprite(pos.x, pos.y, 32768 - dword_A99AC, word_A99B0, word_A99B2, 0, 0, 10, 0, 0, xdim-1, ydim-1);
+        }
+        else
+        {
+            dword_A99B8 = (int)totalclock;
+            dword_A99A0 = 0;
+        }
+        break;
+    }
+    dword_A99C4 = 0;
+}
+
 
 static uint16_t g_oldSaveCnt;
 
@@ -223,6 +327,7 @@ static MenuMenuFormat_t MMF_LoadSave =             { {                 200<<16, 
 static MenuMenuFormat_t MMF_NetSetup =             { {                  36<<16, 38<<16, },    190<<16 };
 static MenuMenuFormat_t MMF_FileSelectLeft =       { {                  40<<16, 45<<16, },    162<<16 };
 static MenuMenuFormat_t MMF_FileSelectRight =      { {                 164<<16, 45<<16, },    162<<16 };
+static MenuMenuFormat_t MMF_Top_MainDH =           { {  MENU_MARGIN_CENTER<<16, 72<<16, }, -(180<<16) };
 
 static MenuEntryFormat_t MEF_Null =             {     0,      0,          0 };
 static MenuEntryFormat_t MEF_MainMenu =         { 4<<16,      0,          0 };
@@ -316,9 +421,9 @@ static char const s_Options[] = "Options";
 static char const s_Credits[] = "Credits";
 
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME, MENU_EPISODE );
-#ifdef EDUKE32_SIMPLE_MENU
+//#ifdef EDUKE32_SIMPLE_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Resume Game", MEF_MainMenu, MAIN_RESUMEGAME, MENU_CLOSE );
-#endif
+//#endif
 MAKE_MENU_TOP_ENTRYLINK( s_NewGame, MEF_MainMenu, MAIN_NEWGAME_INGAME, MENU_NEWVERIFY );
 static MenuLink_t MEO_MAIN_NEWGAME_NETWORK = { MENU_NETWORK, MA_Advance, };
 MAKE_MENU_TOP_ENTRYLINK( s_SaveGame, MEF_MainMenu, MAIN_SAVEGAME, MENU_SAVE );
@@ -333,6 +438,10 @@ MAKE_MENU_TOP_ENTRYLINK( "Quit", MEF_MainMenu, MAIN_QUIT, MENU_QUIT );
 #ifndef EDUKE32_SIMPLE_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Quit Game", MEF_MainMenu, MAIN_QUITGAME, MENU_QUIT );
 #endif
+
+MAKE_MENU_TOP_ENTRYLINK( "Go Huntin'!", MEF_MainMenu, MAIN_DHHUNTING, MENU_DHHUNTING );
+MAKE_MENU_TOP_ENTRYLINK( "Target Range", MEF_MainMenu, MAIN_DHTARGET, MENU_DHTARGET );
+MAKE_MENU_TOP_ENTRYLINK( "Trophies", MEF_MainMenu, MAIN_DHTROPHIES, MENU_DHTROPHIES );
 
 static MenuEntry_t *MEL_MAIN[] = {
     &ME_MAIN_NEWGAME,
@@ -929,30 +1038,9 @@ static char MenuJoystickAxes[MAXJOYAXES][MAXJOYBUTTONSTRINGLENGTH];
 
 static MenuEntry_t *MEL_JOYSTICKAXES[MAXJOYAXES];
 
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_UP = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[1][0] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_UP = MAKE_MENUENTRY( "Digital Up", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_UP, Option );
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_DOWN = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[1][1] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_DOWN = MAKE_MENUENTRY( "Digital Down", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_DOWN, Option );
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_LEFT = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[0][0] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_LEFT = MAKE_MENUENTRY( "Digital Left", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_LEFT, Option );
-static MenuOption_t MEO_MOUSEADVANCED_DAXES_RIGHT = MAKE_MENUOPTION( &MF_Bluefont, &MEOS_Gamefuncs, &ud.config.MouseDigitalFunctions[0][1] );
-static MenuEntry_t ME_MOUSEADVANCED_DAXES_RIGHT = MAKE_MENUENTRY( "Digital Right", &MF_Redfont, &MEF_BigSliders, &MEO_MOUSEADVANCED_DAXES_RIGHT, Option );
-
 static MenuEntry_t *MEL_MOUSEADVANCED[] = {
     &ME_MOUSEADVANCED_SCALEX,
     &ME_MOUSEADVANCED_SCALEY,
-    &ME_Space8_Redfont,
-    &ME_MOUSEADVANCED_DAXES_UP,
-    &ME_MOUSEADVANCED_DAXES_DOWN,
-    &ME_MOUSEADVANCED_DAXES_LEFT,
-    &ME_MOUSEADVANCED_DAXES_RIGHT,
-};
-
-static MenuEntry_t *MEL_INTERNAL_MOUSEADVANCED_DAXES[] = {
-    &ME_MOUSEADVANCED_DAXES_UP,
-    &ME_MOUSEADVANCED_DAXES_DOWN,
-    &ME_MOUSEADVANCED_DAXES_LEFT,
-    &ME_MOUSEADVANCED_DAXES_RIGHT,
 };
 
 static const char *MenuJoystickHatDirections[] = { "Up", "Right", "Down", "Left", };
@@ -1364,6 +1452,41 @@ static MenuEntry_t *MEL_NETJOIN[] = {
     &ME_NETJOIN_CONNECT,
 };
 
+static MenuLink_t MEO_DHHUNTING = { MENU_DHWEAPON, MA_Advance, };
+static MenuEntry_t ME_DHHUNTING_L1 = MAKE_MENUENTRY( "LAKE SWAMPY", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+static MenuEntry_t ME_DHHUNTING_L2 = MAKE_MENUENTRY( "SAGEBRUSH FLATS", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+static MenuEntry_t ME_DHHUNTING_L3 = MAKE_MENUENTRY( "OZARK FOREST", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+static MenuEntry_t ME_DHHUNTING_L4 = MAKE_MENUENTRY( "SNOWBUSH RIDGE", &MF_Redfont, &MEF_CenterMenu, &MEO_DHHUNTING, Link );
+
+static MenuEntry_t *MEL_DHHUNTING[] = {
+    &ME_DHHUNTING_L1,
+    &ME_DHHUNTING_L2,
+    &ME_DHHUNTING_L3,
+    &ME_DHHUNTING_L4,
+};
+
+static MenuLink_t MEO_DHTARGET = { MENU_DHWEAPON, MA_Advance, };
+static MenuEntry_t ME_DHTARGET_L1 = MAKE_MENUENTRY( "NORTH RANGE", &MF_Redfont, &MEF_CenterMenu, &MEO_DHTARGET, Link );
+static MenuEntry_t ME_DHTARGET_L2 = MAKE_MENUENTRY( "SOUTH RANGE", &MF_Redfont, &MEF_CenterMenu, &MEO_DHTARGET, Link );
+
+static MenuEntry_t *MEL_DHTARGET[] = {
+    &ME_DHTARGET_L1,
+    &ME_DHTARGET_L2,
+};
+
+static MenuEntry_t ME_DHWEAPON_PISTOL = MAKE_MENUENTRY( "Pistol", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_RIFLE = MAKE_MENUENTRY( "Rifle", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_RIFLES = MAKE_MENUENTRY( "Rifle With Scope", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_SHOTGUN = MAKE_MENUENTRY( "Shotgun", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+static MenuEntry_t ME_DHWEAPON_CROSSBOW = MAKE_MENUENTRY( "Crossbow", &MF_Redfont, &MEF_CenterMenu, &MEO_NULL, Link );
+
+static MenuEntry_t *MEL_DHWEAPON[] = {
+    &ME_DHWEAPON_PISTOL,
+    &ME_DHWEAPON_RIFLE,
+    &ME_DHWEAPON_RIFLES,
+    &ME_DHWEAPON_SHOTGUN,
+    &ME_DHWEAPON_CROSSBOW,
+};
 
 #define NoTitle NULL
 
@@ -1416,6 +1539,10 @@ static MenuMenu_t M_MACROS = MAKE_MENUMENU( "Multiplayer Macros", &MMF_Macros, M
 static MenuMenu_t M_NETHOST = MAKE_MENUMENU( "Host Network Game", &MMF_SmallOptionsNarrow, MEL_NETHOST );
 static MenuMenu_t M_NETOPTIONS = MAKE_MENUMENU( "Net Game Options", &MMF_NetSetup, MEL_NETOPTIONS );
 static MenuMenu_t M_NETJOIN = MAKE_MENUMENU( "Join Network Game", &MMF_SmallOptionsNarrow, MEL_NETJOIN );
+static MenuMenu_t M_DHHUNTING = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHHUNTING );
+static MenuMenu_t M_DHTARGET = MAKE_MENUMENU( NoTitle, &MMF_Top_Episode, MEL_DHTARGET );
+static MenuMenu_t M_DHWEAPON = MAKE_MENUMENU( NoTitle, &MMF_Top_Skill, MEL_DHWEAPON );
+static MenuPanel_t M_DHTROPHIES = { NoTitle, MENU_NULL, MA_Return, MENU_NULL, MA_Advance, };
 
 #ifdef EDUKE32_SIMPLE_MENU
 static MenuPanel_t M_STORY = { NoTitle, MENU_STORY, MA_Return, MENU_STORY, MA_Advance, };
@@ -1455,8 +1582,8 @@ static MenuPanel_t M_CREDITS27 = { s_Credits, MENU_CREDITS26, MA_Return, MENU_CR
 static MenuPanel_t M_CREDITS28 = { s_Credits, MENU_CREDITS27, MA_Return, MENU_CREDITS29, MA_Advance, };
 static MenuPanel_t M_CREDITS29 = { s_Credits, MENU_CREDITS28, MA_Return, MENU_CREDITS30, MA_Advance, };
 static MenuPanel_t M_CREDITS30 = { s_Credits, MENU_CREDITS29, MA_Return, MENU_CREDITS31, MA_Advance, };
-static MenuPanel_t M_CREDITS31 = { "About " APPNAME, MENU_CREDITS3, MA_Return, MENU_CREDITS32, MA_Advance, };
-static MenuPanel_t M_CREDITS32 = { "About EDuke32", MENU_CREDITS31, MA_Return, MENU_CREDITS33, MA_Advance, };
+static MenuPanel_t M_CREDITS31 = { "About EDuke32", MENU_CREDITS3, MA_Return, MENU_CREDITS32, MA_Advance, };
+static MenuPanel_t M_CREDITS32 = { "About " APPNAME, MENU_CREDITS31, MA_Return, MENU_CREDITS33, MA_Advance, };
 static MenuPanel_t M_CREDITS33 = { "About EDuke32", MENU_CREDITS32, MA_Return, MENU_CREDITS, MA_Advance, };
 
 #define CURSOR_CENTER_2LINE { MENU_MARGIN_CENTER<<16, 120<<16, }
@@ -1596,6 +1723,10 @@ static Menu_t Menus[] = {
     { &M_NETOPTIONS, MENU_NETOPTIONS, MENU_NETWORK, MA_Return, Menu },
     { &M_USERMAP, MENU_NETUSERMAP, MENU_NETOPTIONS, MA_Return, FileSelect },
     { &M_NETJOIN, MENU_NETJOIN, MENU_NETWORK, MA_Return, Menu },
+    { &M_DHHUNTING, MENU_DHHUNTING, MENU_MAIN, MA_Return, Menu },
+    { &M_DHTARGET, MENU_DHTARGET, MENU_MAIN, MA_Return, Menu },
+    { &M_DHWEAPON, MENU_DHWEAPON, MENU_PREVIOUS, MA_Return, Menu },
+    { &M_DHTROPHIES, MENU_DHTROPHIES, MENU_MAIN, MA_Return, Panel },
 };
 
 static CONSTEXPR const uint16_t numMenus = ARRAY_SIZE(Menus);
@@ -1895,14 +2026,14 @@ void Menu_Init(void)
         }
     }
 
-#if 0
     // prepare sound setup
     if (WW2GI)
         ME_SOUND_DUKETALK.name = "GI talk:";
     else if (NAM)
         ME_SOUND_DUKETALK.name = "Grunt talk:";
 
-    if (IONMAIDEN)
+#if 0
+    if (FURY)
     {
         MF_Redfont.between.x = 2<<16;
         MF_Redfont.cursorScale = 32768;
@@ -1995,6 +2126,31 @@ void Menu_Init(void)
     {
         // prepare credits
         M_CREDITS.title = M_CREDITS2.title = M_CREDITS3.title = s_Credits;
+    }
+
+    if (DEER)
+    {
+        MEL_MAIN[0] = &ME_MAIN_DHHUNTING;
+        MEL_MAIN[1] = &ME_MAIN_DHTARGET;
+        MEL_MAIN[2] = &ME_MAIN_DHTROPHIES;
+        MEL_MAIN[3] = &ME_MAIN_OPTIONS;
+        MEL_MAIN[4] = &ME_MAIN_HELP;
+        M_MAIN.format = &MMF_Top_MainDH;
+
+        MEL_MAIN_INGAME[0] = &ME_MAIN_RESUMEGAME;
+        MEL_MAIN_INGAME[1] = &ME_MAIN_DHTROPHIES;
+        MEL_MAIN_INGAME[2] = &ME_MAIN_OPTIONS;
+        MEL_MAIN_INGAME[3] = &ME_MAIN_HELP;
+        MEL_MAIN_INGAME[4] = &ME_MAIN_QUITTOTITLE;
+        MEL_MAIN_INGAME[5] = &ME_MAIN_QUITGAME;
+        M_MAIN_INGAME.numEntries = 6;
+
+        ME_MAIN_RESUMEGAME.name = "Keep Huntin'";
+
+        MMF_Top_Episode.pos.y = 102 << 16;
+        MMF_Top_Episode.bottomcutoff = -(180 << 16);
+        MMF_Top_Skill.pos.y = 102 << 16;
+        MMF_Top_Skill.bottomcutoff = -(200 << 16);
     }
 }
 
@@ -2242,6 +2398,10 @@ static void Menu_PreDrawBackground(MenuID_t cm, const vec2_t origin)
 {
     switch (cm)
     {
+    case MENU_MAIN:
+        if (DEER)
+            Menu_DHLeaonardHeadDisplay(origin);
+        break;
     case MENU_CREDITS:
     case MENU_CREDITS2:
     case MENU_CREDITS3:
@@ -2308,12 +2468,16 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
     switch (cm)
     {
     case MENU_MAIN_INGAME:
+        if (DEER)
+            break;
         l += 4;
         fallthrough__;
     case MENU_MAIN:
         if (RR)
         {
-            if (RRRA)
+            if (DEER)
+                rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + ((32+l)<<16), 20480L,0,DUKENUKEM,0,0,10);
+            else if (RRRA)
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER-5)<<16), origin.y + ((57+l)<<16), 16592L,0,THREEDEE,0,0,10);
             else
                 rotatesprite_fs(origin.x + ((MENU_MARGIN_CENTER+5)<<16), origin.y + ((24+l)<<16), 23592L,0,INGAMEDUKETHREEDEE,0,0,10);
@@ -2384,17 +2548,6 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             if (ud.m_ffire) mminitext(origin.x + ((90+60)<<16), origin.y + ((90+8+8+8+8)<<16), "On", MF_Minifont.pal_deselected_right);
             else mminitext(origin.x + ((90+60)<<16), origin.y + ((90+8+8+8+8)<<16), "Off", MF_Minifont.pal_deselected_right);
         }
-        break;
-
-    case MENU_MOUSEADVANCED:
-    {
-        for (auto & i : MEL_INTERNAL_MOUSEADVANCED_DAXES)
-            if (entry == i)
-            {
-                mgametextcenter(origin.x, origin.y + (162<<16), "Digital axes are not for mouse look\n"
-                                                                "or for aiming up and down");
-            }
-    }
         break;
 
     case MENU_RESETPLAYER:
@@ -3210,41 +3363,54 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         }
         break;
 
-    case MENU_CREDITS31:
-        l = 7;
+    case MENU_CREDITS31:   // JBF 20031220
+    {
+#define MENU_YOFFSET 40
+#define MENU_INCREMENT(x) (oy += ((x) << 16))  // maybe this should have been MENU_EXCREMENT instead
 
-        mgametextcenter(origin.x, origin.y + ((55-l)<<16), "Developer");
-        creditsminitext(origin.x + (160<<16), origin.y + ((60+10-l)<<16), "Alexey \"Nuke.YKT\" Skrybykin", 8);
+        int32_t oy = origin.y;
 
-        mgametextcenter(origin.x, origin.y + ((85-l)<<16), "Tester & support");
-        creditsminitext(origin.x + (160<<16), origin.y + ((90+10-l)<<16), "Sergey \"Maxi Clouds\" Skrybykin", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(MENU_YOFFSET), "Developers");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Richard \"TerminX\" Gobeille", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Evan \"Hendricks266\" Ramos", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Alex \"pogokeen\" Dawson", 8);
 
-        mgametextcenter(origin.x, origin.y + ((115-l)<<16), "Special thanks to");
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+10-l)<<16), "Evan \"Hendricks266\" Ramos", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+20-l)<<16), "Richard \"TerminX\" Gobeille", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+30-l)<<16), "\"NY00123\"", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((120+40-l)<<16), "\"MetHy\"", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Retired developers");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Pierre-Loup \"Plagman\" Griffais", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Philipp \"Helixhorned\" Kutin", 8);
 
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Special thanks to");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Jonathon \"JonoF\" Fowler", 8);
+
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Uses BUILD Engine technology by");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Ken \"Awesoken\" Silverman", 8);
+
+#undef MENU_INCREMENT
+#undef MENU_YOFFSET
+    }
         break;
 
-    case MENU_CREDITS32:   // JBF 20031220
-        l = 7;
+    case MENU_CREDITS32:
+    {
+#define MENU_YOFFSET 40
+#define MENU_INCREMENT(x) (oy += ((x) << 16))  // maybe this should have been MENU_EXCREMENT instead
 
-        mgametextcenter(origin.x, origin.y + ((50-l)<<16), "Developers");
-        creditsminitext(origin.x + (160<<16), origin.y + ((50+10-l)<<16), "Richard \"TerminX\" Gobeille", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((50+7+10-l)<<16), "Evan \"Hendricks266\" Ramos", 8);
+        int32_t oy = origin.y;
 
-        mgametextcenter(origin.x, origin.y + ((80-l)<<16), "Retired developers");
-        creditsminitext(origin.x + (160<<16), origin.y + ((80+10-l)<<16), "Pierre-Loup \"Plagman\" Griffais", 8);
-        creditsminitext(origin.x + (160<<16), origin.y + ((80+7+10-l)<<16), "Philipp \"Helixhorned\" Kutin", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(MENU_YOFFSET), "Developer");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Alexey \"Nuke.YKT\" Skrybykin", 8);
 
-        mgametextcenter(origin.x, origin.y + ((130+7-l)<<16), "Special thanks to");
-        creditsminitext(origin.x + (160<<16), origin.y + ((130+7+10-l)<<16), "Jonathon \"JonoF\" Fowler", 8);
+        mgametextcenter(origin.x, MENU_INCREMENT(11), "Special thanks to");
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(11), "Evan \"Hendricks266\" Ramos", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Richard \"TerminX\" Gobeille", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "Sergey \"Maxi Clouds\" Skrybykin", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "\"NY00123\"", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "\"MetHy\"", 8);
+        creditsminitext(origin.x + (160 << 16), MENU_INCREMENT(7), "\"sirlemonhead\"", 8);
 
-        mgametextcenter(origin.x, origin.y + ((150+7-l)<<16), "Uses BUILD Engine technology by");
-        creditsminitext(origin.x + (160<<16), origin.y + ((150+7+10-l)<<16), "Ken \"Awesoken\" Silverman", 8);
-
-
+#undef MENU_INCREMENT
+#undef MENU_YOFFSET
+    }
         break;
 
     case MENU_CREDITS33:
@@ -3264,7 +3430,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
             };
             static const char *body[] =
             {
-                "Alex Dawson",       // "pogokeen" - Polymost2, renderer work, bugfixes
+                "Alexey Skrybykin",  // Nuke.YKT - Polymost fixes
                 "Bioman",            // GTK work, APT repository and package upkeep
                 "Brandon Bergren",   // "Bdragon" - tiles.cfg
                 "Charlie Honig",     // "CONAN" - showview command
@@ -3324,6 +3490,116 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
                     creditsminitext(origin.x + (160<<16), origin.y + ((17+10+10+8+4+(c*7)+(i*7)-l)<<16), footer[c], 8);
         }
 
+        break;
+
+    case MENU_DHHUNTING:
+    {
+        int t1, t2;
+        short ang;
+        switch (M_DHHUNTING.currentEntry)
+        {
+        case 0:
+        default:
+            t1 = 7098;
+            t2 = 7041;
+            ang = 16;
+            break;
+        case 1:
+            t1 = 7099;
+            t2 = 7042;
+            ang = 2032;
+            break;
+        case 2:
+            t1 = 7100;
+            t2 = 7043;
+            ang = 16;
+            break;
+        case 3:
+            t1 = 7101;
+            t2 = 7044;
+            ang = 2032;
+            break;
+        }
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(56<<16), 24576L, ang, t1, 2, 0, 64+10);
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(42<<16), 24576L, ang, 7104, 2, 0, 10);
+        rotatesprite_fs(origin.x+(20<<16), origin.y+(10<<16), 32768L, 0, t2, -64, 0, 128+16+10);
+    }
+        break;
+
+    case MENU_DHTARGET:
+    {
+        int t1, t2;
+        short ang;
+        switch (M_DHTARGET.currentEntry)
+        {
+        case 0:
+        default:
+            t1 = 7102;
+            t2 = 7045;
+            ang = 16;
+            break;
+        case 1:
+            t1 = 7103;
+            t2 = 7046;
+            ang = 2032;
+            break;
+            break;
+        }
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(56<<16), 24576L, ang, t1, 2, 0, 64+10);
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(42<<16), 24576L, ang, 7104, 2, 0, 10);
+        rotatesprite_fs(origin.x+(20<<16), origin.y+(10<<16), 32768L, 0, t2, -64, 0, 128+16+10);
+    }
+        break;
+
+    case MENU_DHWEAPON:
+    {
+        int t1, t2;
+        switch (M_DHWEAPON.currentEntry)
+        {
+        case 0:
+        default:
+            t1 = 7124;
+            t2 = 7066;
+            break;
+        case 1:
+            t1 = 7125;
+            t2 = 7067;
+            break;
+        case 2:
+            t1 = 7126;
+            t2 = 7068;
+            break;
+        case 3:
+            t1 = 7127;
+            t2 = 7069;
+            break;
+        case 4:
+            t1 = 7128;
+            t2 = 7070;
+            break;
+        }
+        rotatesprite_fs(origin.x+(240<<16), origin.y+(56<<16), 32768L, 0, t1, 2, 0, 64+10);
+        rotatesprite_fs(origin.x+(8<<16), origin.y+(4<<16), 32768L, 0, t2, -64, 0, 128+16+10);
+    }
+        break;
+
+    case MENU_DHTROPHIES:
+        if (g_player[myconnectindex].ps->gm & MODE_GAME)
+        {
+            if (ud.level_number < 4)
+            {
+                rotatesprite_fs(origin.x+(160<<16), origin.y+(100<<16), 65536, 0, 1730, 0, 0, 10);
+                sub_5469C(origin, 0);
+            }
+            else
+                sub_5469C(origin, 2);
+        }
+        else
+        {
+            rotatesprite_fs(origin.x+(160<<16), origin.y+(100<<16),65536, 0, 1730, 0, 0, 10);
+            sub_5469C(origin, 1);
+        }
+        break;
         break;
 
     default:
@@ -3653,6 +3929,35 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         break;
     }
 
+    case MENU_DHHUNTING:
+        ud.m_volume_number = 0;
+        ud.m_level_number = M_DHHUNTING.currentEntry;
+        break;
+
+    case MENU_DHTARGET:
+        ud.m_volume_number = 0;
+        ud.m_level_number = M_DHTARGET.currentEntry + 4;
+        break;
+
+    case MENU_DHWEAPON:
+        ud.m_player_skill = 1;
+
+        g_skillSoundVoice = -1;
+
+        ud.m_respawn_monsters = 0;
+
+        ud.m_monsters_off = ud.monsters_off = 0;
+
+        ud.m_respawn_items = 0;
+        ud.m_respawn_inventory = 0;
+
+        ud.multimode = 1;
+
+        g_player[myconnectindex].ps->dhat61f = M_DHWEAPON.currentEntry;
+
+        G_NewGame_EnterLevel();
+        break;
+
     default:
         break;
     }
@@ -3859,13 +4164,6 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
     case MENU_MOUSEBTNS:
         CONTROL_MapButton(newOption, MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0], MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][1], controldevice_mouse);
         CONTROL_FreeMouseBind(MenuMouseDataIndex[M_MOUSEBTNS.currentEntry][0]);
-        break;
-    case MENU_MOUSEADVANCED:
-    {
-        for (int i = 0; i < ARRAY_SSIZE(MEL_INTERNAL_MOUSEADVANCED_DAXES); i++)
-            if (entry == MEL_INTERNAL_MOUSEADVANCED_DAXES[i])
-                CONTROL_MapDigitalAxis(i>>1, newOption, i&1, controldevice_mouse);
-    }
         break;
     case MENU_JOYSTICKBTNS:
         CONTROL_MapButton(newOption, M_JOYSTICKBTNS.currentEntry>>1, M_JOYSTICKBTNS.currentEntry&1, controldevice_joystick);
@@ -4607,9 +4905,18 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     switch (m->menuID)
     {
     case MENU_MAIN:
+        if (DEER)
+            Menu_DHLeaonardHeadReset();
         break;
 
     case MENU_MAIN_INGAME:
+        if (DEER)
+        {
+            if (ud.level_number < 4)
+                ME_MAIN_QUITTOTITLE.name = "Leave Area";
+            else
+                ME_MAIN_QUITTOTITLE.name = "Leave Range";
+        }
         break;
 
     case MENU_LOAD:

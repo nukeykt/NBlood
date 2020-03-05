@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kAngleMask	0x7FF
 
 int GetMyAngle(int x, int y);
+
 int AngleDiff(short a, short b);
 int AngleDelta(int a, int b, int c);
 

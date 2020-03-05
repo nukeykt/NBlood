@@ -16,7 +16,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-#include "aistuff.h"
 #include "fish.h"
 #include "anims.h"
 #include "engine.h"
@@ -30,18 +29,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include <assert.h>
 
-#define kMaxFishes		128
-#define kMaxChunks		128
+#define kMaxFishes  128
+#define kMaxChunks  128
 
-short FishSprite = -1;
 short FishCount = 0;
 
 static actionSeq ActionSeq[] = {
-    {8, 0},
-    {8, 0},
-    {0, 0},
+    {8,  0},
+    {8,  0},
+    {0,  0},
     {24, 0},
-    {8, 0},
+    {8,  0},
     {32, 1},
     {33, 1},
     {34, 1},
@@ -56,13 +54,13 @@ int nFreeChunk[kMaxChunks] = { 0 };
 struct Fish
 {
     short nHealth;
-    short field_2;
+    short nFrame;
     short nAction;
     short nSprite;
     short nTarget;
     short field_A;
     short field_C;
-    short field_E;
+    short nRun;
 };
 
 struct Chunk
@@ -80,7 +78,6 @@ Chunk FishChunk[kMaxChunks];
 void InitFishes()
 {
     FishCount = 0;
-    FishSprite = 1;
     nChunksFree = kMaxChunks;
 
     for (int i = 0; i < kMaxChunks; i++) {
@@ -121,7 +118,6 @@ int BuildFishLimb(short nFish, short edx)
     sprite[nSprite2].yoffset = 0;
     sprite[nSprite2].zvel = (-(RandomByte() + 512)) * 2;
 
-    // not sure what's going on here... return value doesn't seem to be used
     seq_GetSeqPicnum(kSeqFish, FishChunk[nFree].field_4, 0);
 
     sprite[nSprite2].picnum = edx;
@@ -146,7 +142,6 @@ void FuncFishLimb(int a, int UNUSED(nDamage), int nRun)
 {
     short nFish = RunData[nRun].nVal;
     short nSprite = FishChunk[nFish].nSprite;
-
     assert(nSprite >= 0 && nSprite < kMaxSprites);
 
     int nSeq = SeqOffsets[kSeqFish] + FishChunk[nFish].field_4;
@@ -196,8 +191,8 @@ void FuncFishLimb(int a, int UNUSED(nDamage), int nRun)
             {
                 if (movesprite(nSprite, sprite[nSprite].xvel << 8, sprite[nSprite].yvel << 8, sprite[nSprite].zvel, 2560, -2560, CLIPMASK1))
                 {
-                    sprite[nSprite].yvel = 0;
                     sprite[nSprite].xvel = 0;
+                    sprite[nSprite].yvel = 0;
                 }
             }
 
@@ -263,10 +258,10 @@ int BuildFish(int nSprite, int x, int y, int z, int nSector, int nAngle)
     FishList[nFish].nSprite = nSprite;
     FishList[nFish].nTarget = -1;
     FishList[nFish].field_C = 60;
-    FishList[nFish].field_2 = 0;
+    FishList[nFish].nFrame = 0;
 
     sprite[nSprite].owner = runlist_AddRunRec(sprite[nSprite].lotag - 1, nFish | 0x120000);
-    FishList[nFish].field_E = runlist_AddRunRec(NewRun, nFish | 0x120000);
+    FishList[nFish].nRun = runlist_AddRunRec(NewRun, nFish | 0x120000);
 
     nCreaturesLeft++;
 
@@ -284,7 +279,7 @@ void IdleFish(short nFish, short edx)
     sprite[nSprite].yvel = Sin(sprite[nSprite].ang) >> 8;
 
     FishList[nFish].nAction = 0;
-    FishList[nFish].field_2 = 0;
+    FishList[nFish].nFrame = 0;
 
     sprite[nSprite].zvel = RandomSize(9);
 
@@ -306,7 +301,7 @@ void DestroyFish(short nFish)
 
     runlist_DoSubRunRec(sprite[nSprite].owner);
     runlist_FreeRun(sprite[nSprite].lotag - 1);
-    runlist_SubRunRec(FishList[nFish].field_E);
+    runlist_SubRunRec(FishList[nFish].nRun);
     mydeletesprite(nSprite);
 }
 
@@ -330,7 +325,7 @@ void FuncFish(int a, int nDamage, int nRun)
 
         case 0x90000:
         {
-            seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqFish] + ActionSeq[nAction].a, FishList[nFish].field_2, ActionSeq[nAction].b);
+            seq_PlotSequence(a & 0xFFFF, SeqOffsets[kSeqFish] + ActionSeq[nAction].a, FishList[nFish].nFrame, ActionSeq[nAction].b);
             tsprite[a & 0xFFFF].owner = -1;
             return;
         }
@@ -379,7 +374,7 @@ void FuncFish(int a, int nDamage, int nRun)
                 else
                 {
                     FishList[nFish].nAction = 9;
-                    FishList[nFish].field_2 = 0;
+                    FishList[nFish].nFrame = 0;
                 }
 
                 return;
@@ -393,7 +388,7 @@ void FuncFish(int a, int nDamage, int nRun)
                 }
 
                 FishList[nFish].nAction = 4;
-                FishList[nFish].field_2 = 0;
+                FishList[nFish].nFrame = 0;
                 FishList[nFish].field_C += 10;
             }
 
@@ -409,13 +404,13 @@ void FuncFish(int a, int nDamage, int nRun)
 
             short nSeq = SeqOffsets[kSeqFish] + ActionSeq[nAction].a;
 
-            sprite[nSprite].picnum = seq_GetSeqPicnum2(nSeq, FishList[nFish].field_2);
+            sprite[nSprite].picnum = seq_GetSeqPicnum2(nSeq, FishList[nFish].nFrame);
 
-            seq_MoveSequence(nSprite, nSeq, FishList[nFish].field_2);
+            seq_MoveSequence(nSprite, nSeq, FishList[nFish].nFrame);
 
-            FishList[nFish].field_2++;
-            if (FishList[nFish].field_2 >= SeqSize[nSeq]) {
-                FishList[nFish].field_2 = 0;
+            FishList[nFish].nFrame++;
+            if (FishList[nFish].nFrame >= SeqSize[nSeq]) {
+                FishList[nFish].nFrame = 0;
             }
 
             short nTarget = FishList[nFish].nTarget;
@@ -435,7 +430,7 @@ void FuncFish(int a, int nDamage, int nRun)
                         {
                             FishList[nFish].nTarget = nTarget;
                             FishList[nFish].nAction = 2;
-                            FishList[nFish].field_2 = 0;
+                            FishList[nFish].nFrame = 0;
 
                             int nAngle = GetMyAngle(sprite[nTarget].x - sprite[nSprite].x, sprite[nTarget].z - sprite[nSprite].z);
                             sprite[nSprite].zvel = Sin(nAngle) >> 5;
@@ -468,21 +463,17 @@ void FuncFish(int a, int nDamage, int nRun)
                         PlotCourseToSprite(nSprite, nTarget);
                         int nHeight = GetSpriteHeight(nSprite) >> 1;
 
-                        int z = sprite[nTarget].z - sprite[nSprite].z;
-
-                        if (z < 0) {
-                            z = -z;
-                        }
+                        int z = klabs(sprite[nTarget].z - sprite[nSprite].z);
 
                         if (z <= nHeight)
                         {
-                            sprite[nSprite].xvel = (Sin(sprite[nSprite].ang + 512) >> 5) - (Sin(sprite[nSprite].ang + 512) >> 7);
+                            sprite[nSprite].xvel = (Cos(sprite[nSprite].ang) >> 5) - (Cos(sprite[nSprite].ang) >> 7);
                             sprite[nSprite].yvel = (Sin(sprite[nSprite].ang) >> 5) - (Sin(sprite[nSprite].ang) >> 7);
                         }
                         else
                         {
-                            sprite[nSprite].yvel = 0;
                             sprite[nSprite].xvel = 0;
+                            sprite[nSprite].yvel = 0;
                         }
 
                         sprite[nSprite].zvel = (sprite[nTarget].z - sprite[nSprite].z) >> 3;
@@ -492,7 +483,7 @@ void FuncFish(int a, int nDamage, int nRun)
 
                 case 4:
                 {
-                    if (FishList[nFish].field_2 == 0)
+                    if (FishList[nFish].nFrame == 0)
                     {
                         IdleFish(nFish, 0);
                     }
@@ -506,7 +497,7 @@ void FuncFish(int a, int nDamage, int nRun)
 
                 case 9:
                 {
-                    if (FishList[nFish].field_2 == 0)
+                    if (FishList[nFish].nFrame == 0)
                     {
                         DestroyFish(nFish);
                     }
@@ -520,7 +511,7 @@ void FuncFish(int a, int nDamage, int nRun)
             short nSector = sprite[nSprite].sectnum;
 
             // loc_2EF54
-            int nVal = movesprite(nSprite, sprite[nSprite].xvel << 13, sprite[nSprite].yvel << 13, sprite[nSprite].zvel << 2, 0, 0, CLIPMASK0);
+            int nMov = movesprite(nSprite, sprite[nSprite].xvel << 13, sprite[nSprite].yvel << 13, sprite[nSprite].zvel << 2, 0, 0, CLIPMASK0);
 
             if (!(SectFlag[sprite[nSprite].sectnum] & kSectUnderwater))
             {
@@ -538,43 +529,43 @@ void FuncFish(int a, int nDamage, int nRun)
                     return;
                 }
 
-                if (!nVal)
+                if (!nMov)
                 {
                     if (nAction == 3)
                     {
                         FishList[nFish].nAction = 2;
-                        FishList[nFish].field_2 = 0;
+                        FishList[nFish].nFrame = 0;
                     }
                     return;
                 }
 
-                if ((nVal & 0x30000) == 0)
+                if ((nMov & 0x30000) == 0)
                 {
-                    if ((nVal & 0xC000) == 0x8000)
+                    if ((nMov & 0xC000) == 0x8000)
                     {
                         IdleFish(nFish, 0);
                     }
-                    else if ((nVal & 0xC000) == 0xC000)
+                    else if ((nMov & 0xC000) == 0xC000)
                     {
-                        if (sprite[nVal & 0x3FFF].statnum == 100)
+                        if (sprite[nMov & 0x3FFF].statnum == 100)
                         {
-                            FishList[nFish].nTarget = nVal & 0x3FFF;
+                            FishList[nFish].nTarget = nMov & 0x3FFF;
                             sprite[nSprite].ang = GetMyAngle(sprite[nTarget].x - sprite[nSprite].x, sprite[nTarget].y - sprite[nSprite].y);
 
                             if (nAction != 3)
                             {
                                 FishList[nFish].nAction = 3;
-                                FishList[nFish].field_2 = 0;
+                                FishList[nFish].nFrame = 0;
                             }
 
-                            if (!FishList[nFish].field_2)
+                            if (!FishList[nFish].nFrame)
                             {
                                 runlist_DamageEnemy(nTarget, nSprite, 2);
                             }
                         }
                     }
                 }
-                else if (nVal & 0x20000)
+                else if (nMov & 0x20000)
                 {
                     IdleFish(nFish, -1);
                 }

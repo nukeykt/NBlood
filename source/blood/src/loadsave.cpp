@@ -193,6 +193,20 @@ void LoadSave::LoadGame(char *pzFile)
     }
 #endif
 
+    if ((unsigned)gGameOptions.nEpisode >= gEpisodeCount || (unsigned)gGameOptions.nLevel >= gEpisodeInfo[gGameOptions.nEpisode].nLevels
+        || Bstrcasecmp(gEpisodeInfo[gGameOptions.nEpisode].levelsInfo[gGameOptions.nLevel].at0, gGameOptions.zLevelName) != 0)
+    {
+        if (!gSysRes.Lookup(gGameOptions.zLevelName, "MAP"))
+        {
+            gGameOptions.nEpisode = 0;
+            gGameOptions.nLevel = 0;
+        }
+        else
+        {
+            levelAddUserMap(gGameOptions.zLevelName);
+        }
+    }
+
     if (MusicRestartsOnLoadToggle
         || demoWasPlayed
         || (gMusicPrevLoadedEpisode != gGameOptions.nEpisode || gMusicPrevLoadedLevel != gGameOptions.nLevel))
@@ -341,6 +355,10 @@ void MyLoadSave::Load(void)
 #ifdef YAX_ENABLE
     Read(&numyaxbunches, sizeof(numyaxbunches));
 #endif
+    psky_t skyInfo;
+    Read(&skyInfo, sizeof(skyInfo));
+
+    *tileSetupSky(0) = skyInfo;
     gCheatMgr.sub_5BCF4();
 
 }
@@ -449,6 +467,8 @@ void MyLoadSave::Save(void)
 #ifdef YAX_ENABLE
     Write(&numyaxbunches, sizeof(numyaxbunches));
 #endif
+    psky_t skyInfo = *tileSetupSky(0);
+    Write(&skyInfo, sizeof(skyInfo));
 }
 
 void LoadSavedInfo(void)

@@ -1180,7 +1180,7 @@ ACTOR_STATIC void G_MovePlayers(void)
                 {
                     pSprite->extra = pPlayer->max_player_health;
                     pSprite->cstat = 257;
-                    if (!RR)
+                    if (!RR && !WW2GI)
                         pPlayer->inv_amount[GET_JETPACK] = 1599;
                 }
 
@@ -1800,6 +1800,20 @@ ACTOR_STATIC void G_MoveStandables(void)
         }
         else if (!RR && pSprite->picnum == TRIPBOMB)
         {
+            int const tripBombMode = Gv_GetVarByLabel("TRIPBOMB_CONTROL", TRIPBOMB_TRIPWIRE, -1, -1);
+            if(tripBombMode & TRIPBOMB_TIMER)
+			{
+				// we're on a timer....
+				if (pSprite->extra >= 0)
+				{
+					pSprite->extra--;
+					if (pSprite->extra == 0)
+					{
+						T3(spriteNum) = 16;
+						A_PlaySound(LASERTRIP_ARMING,spriteNum);
+					}
+				}
+			}
             if (T3(spriteNum) > 0)
             {
                 T3(spriteNum)--;
@@ -1870,30 +1884,33 @@ ACTOR_STATIC void G_MoveStandables(void)
                 actor[spriteNum].lastv.x = hitDist;
                 pSprite->ang = oldAng;
 
-                // we're on a trip wire
-                int16_t cursectnum;
-
-                while (hitDist > 0)
+                if (tripBombMode & TRIPBOMB_TRIPWIRE)
                 {
-                    j = A_Spawn(spriteNum,LASERLINE);
-                    setsprite(j,(vec3_t *)&sprite[j]);
-                    sprite[j].hitag = pSprite->hitag;
-                    actor[j].t_data[1] = sprite[j].z;
+                    // we're on a trip wire
+                    int16_t cursectnum;
 
-                    pSprite->x += sintable[(T6(spriteNum)+512)&2047]>>4;
-                    pSprite->y += sintable[(T6(spriteNum))&2047]>>4;
-
-                    if (hitDist < 1024)
+                    while (hitDist > 0)
                     {
-                        sprite[j].xrepeat = hitDist>>5;
-                        break;
-                    }
-                    hitDist -= 1024;
+                        j = A_Spawn(spriteNum,LASERLINE);
+                        setsprite(j,(vec3_t *)&sprite[j]);
+                        sprite[j].hitag = pSprite->hitag;
+                        actor[j].t_data[1] = sprite[j].z;
 
-                    //cursectnum = pSprite->sectnum;
-                    //updatesector(pSprite->x, pSprite->y, &cursectnum);
-                    //if (cursectnum < 0)
-                    //    break;
+                        pSprite->x += sintable[(T6(spriteNum)+512)&2047]>>4;
+                        pSprite->y += sintable[(T6(spriteNum))&2047]>>4;
+
+                        if (hitDist < 1024)
+                        {
+                            sprite[j].xrepeat = hitDist>>5;
+                            break;
+                        }
+                        hitDist -= 1024;
+
+                        //cursectnum = pSprite->sectnum;
+                        //updatesector(pSprite->x, pSprite->y, &cursectnum);
+                        //if (cursectnum < 0)
+                        //    break;
+                    }
                 }
 
                 T1(spriteNum)++;
@@ -1905,7 +1922,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 setsprite(spriteNum,(vec3_t *)pSprite);
                 T4(spriteNum) = T3(spriteNum) = 0;
 
-                if (hitSprite >= 0)
+                if (hitSprite >= 0 && (tripBombMode & TRIPBOMB_TRIPWIRE))
                 {
                     T3(spriteNum) = 13;
                     A_PlaySound(LASERTRIP_ARMING,spriteNum);
@@ -1933,7 +1950,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 setsprite(spriteNum, (vec3_t *) pSprite);
 
                 //                if( Actor[i].lastvx != x && lTripBombControl & TRIPBOMB_TRIPWIRE)
-                if (actor[spriteNum].lastv.x != hitDist)
+                if (actor[spriteNum].lastv.x != hitDist && (tripBombMode & TRIPBOMB_TRIPWIRE))
                 {
                     T3(spriteNum) = 13;
                     A_PlaySound(LASERTRIP_ARMING, spriteNum);
@@ -3898,15 +3915,15 @@ ACTOR_STATIC void G_MoveActors(void)
     extern char g_demo_legacy;
     int spriteNum;
 
-    if (g_jailDoorCnt)
+    if (!DEER && g_jailDoorCnt)
         G_DoJailDoor();
 
-    if (g_mineCartCnt)
+    if (!DEER && g_mineCartCnt)
         G_MoveMineCart();
 
     int bBoom = 0;
 
-    if (RRRA)
+    if (!DEER && RRRA)
     {
         int spriteNum = headspritestat[117];
         while (spriteNum >= 0)
@@ -4292,7 +4309,7 @@ ACTOR_STATIC void G_MoveActors(void)
         }
     }
 
-    if (RR)
+    if (!DEER && RR)
     {
         spriteNum = headspritestat[107];
         while (spriteNum >= 0)
@@ -4519,6 +4536,7 @@ ACTOR_STATIC void G_MoveActors(void)
             switchPic--;
 
 
+        if (!DEER)
         switch (DYNAMICTILEMAP(switchPic))
         {
         case DUCK__STATIC:
@@ -5787,11 +5805,11 @@ ACTOR_STATIC void G_MoveActors(void)
             }
 
 DETONATEB:
-            if (!NAM)
+            if (!NAM_WW2GI)
                 bBoom = 0;
             if ((detonatePlayer >= 0 && g_player[detonatePlayer].ps->hbomb_on == 0) || pData[3] == 1)
                 bBoom = 1;
-            if (NAM && pSprite->picnum == HEAVYHBOMB)
+            if (NAM_WW2GI && pSprite->picnum == HEAVYHBOMB)
             {
                 pSprite->extra--;
                 if (pSprite->extra <= 0)
@@ -9538,6 +9556,8 @@ static void A_DoLight(int spriteNum)
 
 void A_PlayAlertSound(int spriteNum)
 {
+    if (DEER)
+        return;
     if (RR)
     {
         if (sprite[spriteNum].extra > 0)
@@ -9677,13 +9697,17 @@ void G_MoveWorld(void)
     extern double g_moveActorsTime, g_moveWorldTime;
     const double worldTime = timerGetHiTicks();
 
-    G_MoveZombieActors();     //ST 2
-    G_MoveWeapons();          //ST 4
-    G_MoveTransports();       //ST 9
+    if (!DEER)
+    {
+        G_MoveZombieActors();     //ST 2
+        G_MoveWeapons();          //ST 4
+        G_MoveTransports();       //ST 9
+    }
 
     G_MovePlayers();          //ST 10
     G_MoveFallers();          //ST 12
-    G_MoveMisc();             //ST 5
+    if (!DEER)
+        G_MoveMisc();             //ST 5
 
     const double actorsTime = timerGetHiTicks();
 
@@ -9691,15 +9715,29 @@ void G_MoveWorld(void)
 
     g_moveActorsTime = (1-0.033)*g_moveActorsTime + 0.033*(timerGetHiTicks()-actorsTime);
 
+    if (DEER)
+    {
+        sub_56EA8();
+        ghtarget_move();
+        gharrow_move();
+        ghdeploy_move();
+        sub_519E8(ud.level_number);
+        sub_5524C();
+    }
+
     // XXX: Has to be before effectors, in particular movers?
     // TODO: lights in moving sectors ought to be interpolated
     G_DoEffectorLights();
-    G_MoveEffectors();        //ST 3
-    G_MoveStandables();       //ST 6
+    if (!DEER)
+    {
+        G_MoveEffectors();        //ST 3
+        G_MoveStandables();       //ST 6
+    }
 
     G_RefreshLights();
     G_DoSectorAnimations();
-    G_MoveFX();               //ST 11
+    if (!DEER)
+        G_MoveFX();               //ST 11
 
     if (RR && numplayers < 2 && g_thunderOn)
         G_Thunder();

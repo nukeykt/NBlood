@@ -84,17 +84,17 @@ struct LEVELINFO
 
 struct EPISODEINFO
 {
-    char at0[32];
+    char title[32];
     int nLevels;
     unsigned int bloodbath : 1;
     unsigned int cutALevel : 4;
-    LEVELINFO at28[kMaxLevels];
-    char at8f08[BMAX_PATH];
-    char at8f98[BMAX_PATH];
-    int at9028;
-    int at902c;
-    char at9030[BMAX_PATH];
-    char at90c0[BMAX_PATH];
+    LEVELINFO levelsInfo[kMaxLevels];
+    char cutsceneASmkPath[BMAX_PATH];
+    char cutsceneBSmkPath[BMAX_PATH];
+    int cutsceneAWavRsrcID;
+    int cutsceneBWavRsrcID;
+    char cutsceneAWavPath[BMAX_PATH];
+    char cutsceneBWavPath[BMAX_PATH];
 };
 
 extern EPISODEINFO gEpisodeInfo[];

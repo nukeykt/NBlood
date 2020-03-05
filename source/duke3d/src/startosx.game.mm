@@ -37,36 +37,34 @@
 # define NSControlStateValueOff NSOffState
 #endif
 
-static NSRect NSRectChangeXY(NSRect const rect, CGFloat const x, CGFloat const y)
+static inline NSRect NSRectChangeXY(NSRect const rect, CGFloat const x, CGFloat const y)
 {
     return NSMakeRect(x, y, rect.size.width, rect.size.height);
 }
-static NSRect NSSizeAddXY(NSSize const size, CGFloat const x, CGFloat const y)
+static inline NSRect NSSizeAddXY(NSSize const size, CGFloat const x, CGFloat const y)
 {
     return NSMakeRect(x, y, size.width, size.height);
 }
-#if 0
-static CGFloat NSRightEdge(NSRect rect)
+static inline CGFloat NSRightEdge(NSRect rect)
 {
     return rect.origin.x + rect.size.width;
 }
-#endif
-static CGFloat NSTopEdge(NSRect rect)
+static inline CGFloat NSTopEdge(NSRect rect)
 {
     return rect.origin.y + rect.size.height;
 }
 
-static void setFontToSmall(id control)
+static inline void setFontToSmall(id control)
 {
     [control setFont:[NSFont fontWithDescriptor:[[control font] fontDescriptor] size:[NSFont smallSystemFontSize]]];
 }
 
-static void setControlToSmall(id control)
+static inline void setControlToSmall(id control)
 {
     [control setControlSize:NSControlSizeSmall];
 }
 
-static NSTextField * makeLabel(NSString * labelText)
+static inline NSTextField * makeLabel(NSString * labelText)
 {
     NSTextField *textField = [[NSTextField alloc] init];
     setFontToSmall(textField);
@@ -80,7 +78,7 @@ static NSTextField * makeLabel(NSString * labelText)
     return textField;
 }
 
-static NSButton * makeCheckbox(NSString * labelText)
+static inline NSButton * makeCheckbox(NSString * labelText)
 {
     NSButton *checkbox = [[NSButton alloc] init];
     setFontToSmall(checkbox);
@@ -91,7 +89,7 @@ static NSButton * makeCheckbox(NSString * labelText)
     return checkbox;
 }
 
-static NSPopUpButton * makeComboBox(void)
+static inline NSPopUpButton * makeComboBox(void)
 {
     NSPopUpButton *comboBox = [[NSPopUpButton alloc] init];
     [comboBox setPullsDown:NO];
@@ -109,7 +107,7 @@ static NSPopUpButton * makeComboBox(void)
 - (void)setAppleMenu:(NSMenu *)menu;
 @end
 
-static NSString * GetApplicationName(void)
+static inline NSString * GetApplicationName(void)
 {
     NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
     if (!appName)
@@ -120,7 +118,7 @@ static NSString * GetApplicationName(void)
     return appName;
 }
 
-static void CreateApplicationMenus(void)
+static inline void CreateApplicationMenus(void)
 {
     NSString *appName;
     NSString *title;
@@ -181,9 +179,7 @@ static int retval = -1;
 
 static struct {
     grpfile_t const * grp;
-    int fullscreen;
-    int xdim3d, ydim3d, bpp3d;
-    int forcesetup;
+    ud_setup_t shared;
 } settings;
 
 @interface StartupWindow : NSWindow <NSWindowDelegate>
@@ -432,9 +428,9 @@ static struct {
     int xdim = 0, ydim = 0, bpp = 0;
 
     if (firstTime) {
-        xdim = settings.xdim3d;
-        ydim = settings.ydim3d;
-        bpp  = settings.bpp3d;
+        xdim = settings.shared.xdim;
+        ydim = settings.shared.ydim;
+        bpp  = settings.shared.bpp;
     } else {
         mode3d = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
         if (mode3d >= 0) {
@@ -492,10 +488,10 @@ static struct {
 
     int mode = [[modeslist3d objectAtIndex:[videoMode3DPUButton indexOfSelectedItem]] intValue];
     if (mode >= 0) {
-        settings.xdim3d = validmode[mode].xdim;
-        settings.ydim3d = validmode[mode].ydim;
-        settings.bpp3d = validmode[mode].bpp;
-        settings.fullscreen = validmode[mode].fs;
+        settings.shared.xdim = validmode[mode].xdim;
+        settings.shared.ydim = validmode[mode].ydim;
+        settings.shared.bpp = validmode[mode].bpp;
+        settings.shared.fullscreen = validmode[mode].fs;
     }
 
     int row = [[gameList documentView] selectedRow];
@@ -503,7 +499,7 @@ static struct {
         settings.grp = [[gamelistsrc grpAtIndex:row] entryptr];
     }
 
-    settings.forcesetup = [alwaysShowButton state] == NSControlStateValueOn;
+    settings.shared.forcesetup = [alwaysShowButton state] == NSControlStateValueOn;
 
     retval = 1;
 }
@@ -512,8 +508,8 @@ static struct {
 {
     videoGetModes();
 
-    [fullscreenButton setState: (settings.fullscreen ? NSControlStateValueOn : NSControlStateValueOff)];
-    [alwaysShowButton setState: (settings.forcesetup ? NSControlStateValueOn : NSControlStateValueOff)];
+    [fullscreenButton setState: (settings.shared.fullscreen ? NSControlStateValueOn : NSControlStateValueOff)];
+    [alwaysShowButton setState: (settings.shared.forcesetup ? NSControlStateValueOn : NSControlStateValueOff)];
     [self populateVideoModes:YES];
 
     // enable all the controls on the Configuration page
@@ -676,11 +672,7 @@ int startwin_run(void)
 {
     if (startwin == nil) return 0;
 
-    settings.fullscreen = ud.setup.fullscreen;
-    settings.xdim3d = ud.setup.xdim;
-    settings.ydim3d = ud.setup.ydim;
-    settings.bpp3d = ud.setup.bpp;
-    settings.forcesetup = ud.setup.forcesetup;
+    settings.shared = ud.setup;
     settings.grp = g_selectedGrp;
 
     [startwin setupRunMode];
@@ -697,11 +689,7 @@ int startwin_run(void)
     [nsapp updateWindows];
 
     if (retval) {
-        ud.setup.fullscreen = settings.fullscreen;
-        ud.setup.xdim = settings.xdim3d;
-        ud.setup.ydim = settings.ydim3d;
-        ud.setup.bpp = settings.bpp3d;
-        ud.setup.forcesetup = settings.forcesetup;
+        ud.setup = settings.shared;
         g_selectedGrp = settings.grp;
     }
 

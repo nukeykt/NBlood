@@ -889,7 +889,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, short tpang, int tphoriz)
                     // Must call preparemirror before drawrooms and
                     // completemirror after drawrooms
 
-                    renderPrepareMirror(tx, ty, tz, fix16_from_int(tpang), tphoriz,
+                    renderPrepareMirror(tx, ty, tz, fix16_from_int(tpang), fix16_from_int(tphoriz),
                                   mirror[cnt].mirrorwall, /*mirror[cnt].mirrorsector,*/ &tposx, &tposy, &tang);
 
                     drawrooms(tposx, tposy, tz, fix16_to_int(tang), tphoriz, mirror[cnt].mirrorsector + MAXSECTORS);
@@ -1083,11 +1083,13 @@ JAnalyzeSprites(tspriteptr_t tspr)
 
     if (videoGetRenderMode() >= REND_POLYMOST && md_tilehasmodel(tspr->picnum, 0) >= 0 && usemodels) return;
 
+    Bassert((unsigned)tspr->owner < MAXSPRITES);
+
     // Check for voxels
     //if (bVoxelsOn)
-    if (gs.Voxels)
+    if (gs.Voxels && usevoxels && videoGetRenderMode() != REND_POLYMER)
     {
-        if (aVoxelArray[tspr->picnum].Voxel >= 0)
+        if (aVoxelArray[tspr->picnum].Voxel >= 0 && !(spriteext[tspr->owner].flags&SPREXT_NOTMD))
         {
             // Turn on voxels
             tspr->picnum = aVoxelArray[tspr->picnum].Voxel;     // Get the voxel number
@@ -1099,6 +1101,11 @@ JAnalyzeSprites(tspriteptr_t tspr)
         switch (tspr->picnum)
         {
         case 764: // Gun barrel
+            if (!usevoxels || videoGetRenderMode() == REND_POLYMER || (spriteext[tspr->owner].flags&SPREXT_NOTMD))
+            {
+                tspr->cstat |= 16;
+                break;
+            }
 
             if (aVoxelArray[tspr->picnum].Voxel >= 0)
             {

@@ -112,7 +112,6 @@ int32_t r_polygonmode = 0;     // 0:GL_FILL,1:GL_LINE,2:GL_POINT //FUK
 static int32_t lastglpolygonmode = 0; //FUK
 #endif
 #ifdef USE_GLEXT
-int32_t glmultisample = 0, glnvmultisamplehint = 0;
 int32_t r_detailmapping = 1;
 int32_t r_glowmapping = 1;
 #endif
@@ -957,13 +956,6 @@ void polymost_glinit()
     }
 
 #ifdef USE_GLEXT
-    if (glmultisample > 0 && glinfo.multisample)
-    {
-        if (glinfo.nvmultisamplehint)
-            glHint(GL_MULTISAMPLE_FILTER_HINT_NV, glnvmultisamplehint ? GL_NICEST:GL_FASTEST);
-        glEnable(GL_MULTISAMPLE);
-    }
-
     if (r_persistentStreamBuffer && ((!glinfo.bufferstorage) || (!glinfo.sync)))
     {
         OSD_Printf("Your OpenGL implementation doesn't support the required extensions for persistent stream buffers. Disabling...\n");
@@ -2116,10 +2108,10 @@ static void gloadtile_art_indexed(int32_t dapic, int32_t dameth, pthtyp *pth, in
 
         if (!doalloc &&
             !tileIsPacked &&
-            (siz.x > pth->siz.x ||
-             siz.y > pth->siz.y))
+            (siz.x != pth->siz.x ||
+             siz.y != pth->siz.y))
         {
-            //POGO: grow our texture to hold the tile data
+            //POGO: resize our texture to match the tile data
             doalloc = true;
         }
         uploadtextureindexed(doalloc, {(int32_t) tile.rect.u, (int32_t) tile.rect.v}, siz, waloff[dapic]);
@@ -9687,7 +9679,7 @@ static int osdcmd_cvar_set_polymost(osdcmdptr_t parm)
 
     if (r == OSDCMD_OK)
     {
-        if (!Bstrcasecmp(parm->name, "r_swapinterval"))
+        if (!Bstrcasecmp(parm->name, "r_vsync"))
             vsync = videoSetVsync(vsync);
         else if (!Bstrcasecmp(parm->name, "r_downsize"))
         {
@@ -9761,8 +9753,6 @@ void polymost_initosdfuncs(void)
         { "r_shadeinterpolate", "enable/disable shade interpolation", (void *) &r_shadeinterpolate, CVAR_BOOL, 0, 1 },
         { "r_shadescale","multiplier for shading",(void *) &shadescale, CVAR_FLOAT, 0, 10 },
         { "r_shadescale_unbounded","enable/disable allowance of complete blackness",(void *) &shadescale_unbounded, CVAR_BOOL, 0, 1 },
-        { "r_swapcomplete","VSync post-swap operation: 0: none  1: glFinish()  2: explicitly wait for sync",(void *) &swapcomplete, CVAR_INT, 0, 3 },
-        { "r_swapinterval","sets the GL swap interval (VSync)",(void *) &vsync, CVAR_INT|CVAR_FUNCPTR, -1, 1 },
         { "r_texcompr","enable/disable OpenGL texture compression: 0: off  1: hightile only  2: ART and hightile",(void *) &glusetexcompr, CVAR_INT, 0, 2 },
         { "r_texturemaxsize","changes the maximum OpenGL texture size limit",(void *) &gltexmaxsize, CVAR_INT | CVAR_NOSAVE, 0, 4096 },
         { "r_texturemiplevel","changes the highest OpenGL mipmap level used",(void *) &gltexmiplevel, CVAR_INT, 0, 6 },
@@ -9770,6 +9760,18 @@ void polymost_initosdfuncs(void)
         { "r_usenewshading", "visibility/fog code: 0: orig. Polymost   1: 07/2011   2: linear 12/2012   3: no neg. start 03/2014   4: base constant on shade table 11/2017",
           (void *) &r_usenewshading, CVAR_INT|CVAR_FUNCPTR, 0, 4 },
         { "r_usetileshades", "enable/disable apply shade tables to art tiles", (void *) &r_usetileshades, CVAR_BOOL, 0, 1 },
+
+        { "r_vsync",
+          "VSync mode:\n"
+          "  -1: adaptive (video driver)\n"
+          "   0: disabled\n"
+          "   1: enabled (video driver)\n"
+#if defined _WIN32 && defined RENDERTYPESDL
+          "   2: KMT\n"
+#endif
+          ,
+          (void *)&vsync, CVAR_INT | CVAR_FUNCPTR, -1, 2 },
+
         { "r_vertexarrays","enable/disable using vertex arrays when drawing models",(void *) &r_vertexarrays, CVAR_BOOL, 0, 1 },
         { "r_yshearing", "enable/disable y-shearing", (void*) &r_yshearing, CVAR_BOOL, 0, 1 },
         { "r_flatsky", "enable/disable flat skies", (void*)& r_flatsky, CVAR_BOOL, 0, 1 },

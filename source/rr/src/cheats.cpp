@@ -179,6 +179,43 @@ void G_SetupCheats(void)
             Bstrcpy(CheatStrings[39], "van");
         }
     }
+    if (WW2GI)
+    {
+#if 0
+        // WWII GI's original cheat prefix temporarily disabled because W conflicts with WSAD movement
+        CheatKeys[0] = CheatKeys[1] = sc_W;
+#else
+        CheatKeys[0] = sc_G;
+        CheatKeys[1] = sc_I;
+#endif
+
+        Bstrcpy(CheatStrings[0], "2god");
+        Bstrcpy(CheatStrings[1], "2blood");
+        Bstrcpy(CheatStrings[2], "2level###");
+        Bstrcpy(CheatStrings[3], "2coords");
+        Bstrcpy(CheatStrings[4], "2view");
+        Bstrcpy(CheatStrings[5], "<RESERVED>");
+        Bstrcpy(CheatStrings[7], "<RESERVED>");
+        Bstrcpy(CheatStrings[8], "<RESERVED>");
+        Bstrcpy(CheatStrings[9], "2rate");
+        Bstrcpy(CheatStrings[10], "2skill");
+        Bstrcpy(CheatStrings[11], "<RESERVED>");
+        Bstrcpy(CheatStrings[12], "<RESERVED>");
+        Bstrcpy(CheatStrings[13], "<RESERVED>");
+        Bstrcpy(CheatStrings[16], "2matt");
+        Bstrcpy(CheatStrings[17], "2showmap");
+        Bstrcpy(CheatStrings[18], "2ryan");
+        Bstrcpy(CheatStrings[19], "<RESERVED>");
+        Bstrcpy(CheatStrings[20], "2clip");
+        Bstrcpy(CheatStrings[21], "2weapons");
+        Bstrcpy(CheatStrings[22], "2inventory");
+        Bstrcpy(CheatStrings[23], "<RESERVED>");
+        Bstrcpy(CheatStrings[24], "2debug");
+        Bstrcpy(CheatStrings[26], "2cgs");
+
+        Bstrcpy(g_gametypeNames[0], "GI Match (Spawn)");
+        Bstrcpy(g_gametypeNames[2], "GI Match (No Spawn)");
+    }
     else if (NAM)
     {
         CheatKeys[0] = sc_N;
@@ -213,22 +250,23 @@ void G_SetupCheats(void)
     }
 }
 
-static void doinvcheat(DukePlayer_t * const pPlayer, int32_t invidx, int32_t defaultnum)
+static void doinvcheat(DukePlayer_t * const pPlayer, int32_t invidx, int32_t defaultnum, int event)
 {
+    defaultnum = VM_OnEventWithReturn(event, pPlayer->i, myconnectindex, defaultnum);
     if (defaultnum >= 0)
         pPlayer->inv_amount[invidx] = defaultnum;
 }
 
 static void G_CheatGetInv(DukePlayer_t *pPlayer)
 {
-    doinvcheat(pPlayer, GET_STEROIDS, 400);
-    if (!RR) doinvcheat(pPlayer, GET_HEATS, 1200);
-    doinvcheat(pPlayer, GET_BOOTS, RR ? 2000 : 200);
-    doinvcheat(pPlayer, GET_SHIELD, 100);
-    doinvcheat(pPlayer, GET_SCUBA, 6400);
-    doinvcheat(pPlayer, GET_HOLODUKE, 2400);
-    doinvcheat(pPlayer, GET_JETPACK, RR ? 600 : 1600);
-    doinvcheat(pPlayer, GET_FIRSTAID, pPlayer->max_player_health);
+    doinvcheat(pPlayer, GET_STEROIDS, 400, EVENT_CHEATGETSTEROIDS);
+    if (!RR) doinvcheat(pPlayer, GET_HEATS, 1200, EVENT_CHEATGETHEAT);
+    doinvcheat(pPlayer, GET_BOOTS, RR ? 2000 : 200, EVENT_CHEATGETBOOT);
+    doinvcheat(pPlayer, GET_SHIELD, 100, EVENT_CHEATGETSHIELD);
+    doinvcheat(pPlayer, GET_SCUBA, 6400, EVENT_CHEATGETSCUBA);
+    doinvcheat(pPlayer, GET_HOLODUKE, 2400, EVENT_CHEATGETHOLODUKE);
+    doinvcheat(pPlayer, GET_JETPACK, RR ? 600 : 1600, EVENT_CHEATGETJETPACK);
+    doinvcheat(pPlayer, GET_FIRSTAID, pPlayer->max_player_health, EVENT_CHEATGETFIRSTAID);
 }
 
 static void end_cheat(DukePlayer_t * const pPlayer)
@@ -245,6 +283,9 @@ void G_DoCheats(void)
     DukePlayer_t * const pPlayer = g_player[myconnectindex].ps;
     int consoleCheat = 0;
     int cheatNum;
+
+    if (DEER)
+        return;
 
     if (osdcmd_cheatsinfo_stat.cheatnum != -1)
     {
@@ -659,7 +700,7 @@ void G_DoCheats(void)
                     return;
 
                 case CHEAT_TODD:
-                    if (NAM)
+                    if (NAM_WW2GI)
                     {
                         Bstrcpy(apStrings[QUOTE_RESERVED4], g_NAMMattCheatQuote);
                         P_DoQuote(QUOTE_RESERVED4, pPlayer);

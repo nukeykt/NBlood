@@ -44,6 +44,17 @@
 # undef NEED_SHELLAPI_H
 #endif
 
+#ifdef NEED_DWMAPI_H
+# include <dwmapi.h>
+# undef NEED_DWMAPI_H
+#endif
+
+#ifdef NEED_BCRYPT_H
+# include <bcrypt.h>
+# undef small
+# undef NEED_BCRYPT_H
+#endif
+
 #ifdef NEED_SHLWAPI_H
 # include <shlwapi.h>
 # undef NEED_SHLWAPI_H

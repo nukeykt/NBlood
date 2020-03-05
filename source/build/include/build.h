@@ -706,10 +706,10 @@ static inline tspriteptr_t renderMakeTSpriteFromSprite(tspriteptr_t const tspr, 
     tspr->vel = spr->vel;
     tspr->lotag = spr->lotag;
     tspr->hitag = spr->hitag;
+    tspr->extra = spr->extra;
 
     tspr->clipdist = 0;
     tspr->owner = spritenum;
-    tspr->extra = 0;
 
     return tspr;
 }
@@ -995,7 +995,7 @@ enum {
     ENGINECOMPATIBILITY_NONE = 0,
     ENGINECOMPATIBILITY_19950829, // Powerslave/Exhumed
     ENGINECOMPATIBILITY_19960925, // Blood v1.21
-    ENGINECOMPATIBILITY_19961112, // Duke 3d v1.5, Redneck Rampage
+    ENGINECOMPATIBILITY_19961112, // Duke 3D v1.5, Redneck Rampage
 };
 
 EXTERN int32_t enginecompatibility_mode;
@@ -1450,7 +1450,6 @@ enum {
 };
 
 extern int32_t glusetexcache, glusememcache;
-extern int32_t glmultisample, glnvmultisamplehint;
 extern int32_t glprojectionhacks;
 extern int32_t gltexmaxsize;
 void gltexapplyprops (void);

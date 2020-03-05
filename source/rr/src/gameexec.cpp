@@ -54,9 +54,17 @@ enum vmflags_t
 };
 
 int32_t g_tw;
+int32_t g_currentEvent = -1;
 int32_t g_errorLineNum;
 
 intptr_t const *insptr;
+
+int32_t g_returnVarID    = -1;  // var ID of "RETURN"
+int32_t g_weaponVarID    = -1;  // var ID of "WEAPON"
+int32_t g_worksLikeVarID = -1;  // var ID of "WORKSLIKE"
+int32_t g_zRangeVarID    = -1;  // var ID of "ZRANGE"
+int32_t g_angRangeVarID  = -1;  // var ID of "ANGRANGE"
+int32_t g_aimAngleVarID  = -1;  // var ID of "AUTOAIMANGLE"
 
 // for timing events and actors
 uint32_t g_actorCalls[MAXTILES];
@@ -121,6 +129,89 @@ static void VM_DeleteSprite(int const spriteNum, int const playerNum)
     A_DeleteSprite(spriteNum);
 }
 
+intptr_t apScriptEvents[MAXEVENTS];
+static uspritetype dummy_sprite;
+static actor_t     dummy_actor;
+
+static inline void VM_DummySprite(void)
+{
+    vm.pUSprite = &dummy_sprite;
+    vm.pActor   = &dummy_actor;
+    vm.pData    = &dummy_actor.t_data[0];
+}
+
+// verification that the event actually exists happens elsewhere
+static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int const spriteNum, int const playerNum,
+                                                       int const playerDist = -1, int32_t returnValue = 0)
+{
+    vmstate_t const newVMstate = { spriteNum, playerNum, playerDist, 0,
+                                   &sprite[spriteNum&(MAXSPRITES-1)],
+                                   &actor[spriteNum&(MAXSPRITES-1)].t_data[0],
+                                   g_player[playerNum&(MAXPLAYERS-1)].ps,
+                                   &actor[spriteNum&(MAXSPRITES-1)] };
+
+    auto &globalReturn = aGameVars[g_returnVarID].global;
+
+    struct
+    {
+        vmstate_t vm;
+        intptr_t globalReturn;
+        int eventNum;
+        intptr_t const *insptr;
+    } const saved = { vm, globalReturn, g_currentEvent, insptr };
+
+    vm = newVMstate;
+    g_currentEvent = eventNum;
+    insptr = apScript + apScriptEvents[eventNum];
+    globalReturn = returnValue;
+
+    double const t = timerGetHiTicks();
+
+    if ((unsigned)spriteNum >= MAXSPRITES)
+        VM_DummySprite();
+
+    if ((unsigned)playerNum >= (unsigned)g_mostConcurrentPlayers)
+        vm.pPlayer = g_player[0].ps;
+
+    VM_Execute(true);
+
+    if (vm.flags & VM_KILL)
+        VM_DeleteSprite(vm.spriteNum, vm.playerNum);
+
+    // restoring these needs to happen after VM_DeleteSprite() due to event recursion
+    returnValue = globalReturn;
+
+    vm             = saved.vm;
+    globalReturn   = saved.globalReturn;
+    g_currentEvent = saved.eventNum;
+    insptr         = saved.insptr;
+
+    return returnValue;
+}
+
+// the idea here is that the compiler inlines the call to VM_EventInlineInternal__() and gives us a set of
+// functions which are optimized further based on distance/return having values known at compile time
+
+int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist, int32_t const nReturn)
+{
+    return VM_EventInlineInternal__(nEventID, spriteNum, playerNum, nDist, nReturn);
+}
+
+int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist)
+{
+    return VM_EventInlineInternal__(nEventID, spriteNum, playerNum, nDist);
+}
+
+int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum)
+{
+    return VM_EventInlineInternal__(nEventID, spriteNum, playerNum);
+}
+
+int32_t VM_ExecuteEventWithValue(int const nEventID, int const spriteNum, int const playerNum, int32_t const nReturn)
+{
+    return VM_EventInlineInternal__(nEventID, spriteNum, playerNum, -1, nReturn);
+}
+
 static int32_t VM_CheckSquished(void)
 {
     if (RR)
@@ -180,6 +271,12 @@ extern "C"
 int32_t A_Dodge(spritetype * const);
 int32_t A_Dodge(spritetype * const pSprite)
 {
+    if (DEER)
+    {
+        pSprite->ang += ((rrdh_random() & 255) - 127) * 2;
+        pSprite->ang &= 2047;
+        return 0;
+    }
     vec2_t const msin = { sintable[(pSprite->ang + 512) & 2047], sintable[pSprite->ang & 2047] };
 
     for (native_t nexti, SPRITES_OF_STAT_SAFE(STAT_PROJECTILE, i, nexti)) //weapons list
@@ -564,7 +661,7 @@ GAMEEXEC_STATIC void VM_Move(void)
     if ((movflags&jumptoplayer_bits) == jumptoplayer_bits)
     {
         if (AC_COUNT(vm.pData) < 16)
-            vm.pSprite->zvel -= (RRRA && vm.pSprite->picnum == CHEER) ? (sintable[(512+(AC_COUNT(vm.pData)<<4))&2047]/40)
+            vm.pSprite->zvel -= (!DEER && RRRA && vm.pSprite->picnum == CHEER) ? (sintable[(512+(AC_COUNT(vm.pData)<<4))&2047]/40)
             : (sintable[(512+(AC_COUNT(vm.pData)<<4))&2047]>>5);
     }
 
@@ -777,6 +874,28 @@ GAMEEXEC_STATIC void VM_Move(void)
         = { (spriteXvel * (sintable[(angDiff + 512) & 2047])) >> 14, (spriteXvel * (sintable[angDiff & 2047])) >> 14, vm.pSprite->zvel };
 
         vm.pActor->movflag = A_MoveSprite(vm.spriteNum, &vect, CLIPMASK0);
+        if (DEER && vm.pSprite->picnum != DOGRUN)
+        {
+            if ((vm.pActor->movflag & 49152) == 32768)
+            {
+                int const wallnum = vm.pActor->movflag & (MAXWALLS-1);
+                if (ghcons_isanimalescapewall(wallnum))
+                {
+                    vm.pSprite->z = sector[vm.pSprite->sectnum].ceilingz;
+                    A_MoveSprite(vm.spriteNum, &vect, CLIPMASK0);
+                    vm.pSprite->z = sector[vm.pSprite->sectnum].floorz;
+                }
+            }
+            else if ((vm.pActor->movflag & 49152) == 16384)
+            {
+                int sectnum = vm.pActor->movflag & (MAXSECTORS-1);
+                if (ghcons_isanimalescapesect(sectnum))
+                {
+                    A_MoveSprite(vm.spriteNum, &vect, CLIPMASK0);
+                    vm.pSprite->z = sector[vm.pSprite->sectnum].floorz;
+                }
+            }
+        }
     }
 
     if (!badguyp)
@@ -1057,7 +1176,8 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             if ((unsigned)newsect < MAXSECTORS)
                 changespritesect(spriteNum, newsect);
 
-            A_PlaySound(THUD, spriteNum);
+            if (!DEER)
+                A_PlaySound(THUD, spriteNum);
         }
     }
 
@@ -1203,7 +1323,8 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
         {
             case CON_ENDA:
             case CON_BREAK:
-            case CON_ENDS: return;
+            case CON_ENDS:
+            case CON_ENDEVENT: return;
 
             case CON_IFRND: VM_CONDITIONAL(rnd(*(++insptr))); continue;
 
@@ -1289,6 +1410,18 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
             {
                 uspritetype *pSprite = (uspritetype *)&sprite[pPlayer->i];
 
+                if (DEER)
+                {
+                    if (sintable[vm.pSprite->ang&2047] * (pSprite->y - vm.pSprite->y) + sintable[(vm.pSprite->ang+512)&2047] * (pSprite->x - vm.pSprite->x) >= 0)
+                        tw = cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - (krand2() % 13312), vm.pSprite->sectnum,
+                            pSprite->x, pSprite->y, pPlayer->opos.z-(krand2() % 8192), pPlayer->cursectnum);
+                    else
+                        tw = 0;
+
+                    VM_CONDITIONAL(tw);
+                    continue;
+                }
+
 // select sprite for monster to target
 // if holoduke is on, let them target holoduke first.
 //
@@ -1334,7 +1467,16 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
             }
 
-            case CON_IFHITWEAPON: VM_CONDITIONAL(A_IncurDamage(vm.spriteNum) >= 0); continue;
+            case CON_IFHITWEAPON:
+                if (DEER)
+                {
+                    VM_CONDITIONAL(ghtrophy_isakill(vm.spriteNum));
+                }
+                else
+                {
+                    VM_CONDITIONAL(A_IncurDamage(vm.spriteNum) >= 0);
+                }
+                continue;
 
             case CON_IFSQUISHED: VM_CONDITIONAL(VM_CheckSquished()); continue;
 
@@ -1365,7 +1507,8 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
 
             case CON_IFPDISTL:
-                VM_CONDITIONAL(vm.playerDist < *(++insptr));
+                insptr++;
+                VM_CONDITIONAL(!(DEER && sub_535EC()) && vm.playerDist < *(insptr));
                 if (vm.playerDist > MAXSLEEPDIST && vm.pActor->timetosleep == 0)
                     vm.pActor->timetosleep = SLEEPTIME;
                 continue;
@@ -1657,6 +1800,11 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 }
                 continue;
 
+            case CON_DEPLOYBIAS:
+                insptr++;
+                ghdeploy_bias(vm.spriteNum);
+                continue;
+
             case CON_MAMAEND:
                 insptr++;
                 g_player[myconnectindex].ps->level_end_timer = 150;
@@ -1705,6 +1853,15 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 }
                 else
                     VM_CONDITIONAL(0);
+                continue;
+
+            case CON_IFFINDNEWSPOT:
+                VM_CONDITIONAL(ghcons_findnewspot(vm.spriteNum));
+                continue;
+
+            case CON_LEAVEDROPPINGS:
+                insptr++;
+                ghtrax_leavedroppings(vm.spriteNum);
                 continue;
 
             case CON_TEARITUP:
@@ -1758,10 +1915,22 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
 
             case CON_ADDKILLS:
+                if (DEER)
+                {
+                    // no op
+                    insptr++;
+                    insptr++;
+                    continue;
+                }
                 insptr++;
-                if ((g_spriteExtra[vm.spriteNum] < 1 || g_spriteExtra[vm.spriteNum] == 128)
-                    && A_CheckSpriteFlags(vm.spriteNum, SFLAG_KILLCOUNT))
-                    P_AddKills(pPlayer, *insptr);
+                if (g_gameType & GAMEFLAG_RR)
+                {
+                    // This check does not exist in Duke Nukem.
+                    if ((g_spriteExtra[vm.spriteNum] < 1 || g_spriteExtra[vm.spriteNum] == 128)
+                        && A_CheckSpriteFlags(vm.spriteNum, SFLAG_KILLCOUNT))
+                        P_AddKills(pPlayer, *insptr);
+                }
+                else P_AddKills(pPlayer, *insptr);
                 insptr++;
                 vm.pActor->actorstayput = -1;
                 continue;
@@ -1853,6 +2022,11 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 insptr++;
                 pPlayer->pos.z = sector[sprite[pPlayer->i].sectnum].ceilingz;
                 sprite[pPlayer->i].z = pPlayer->pos.z;
+                continue;
+                
+            case CON_LEAVETRAX:
+                insptr++;
+                ghtrax_leavetrax(vm.spriteNum);
                 continue;
 
             case CON_DESTROYIT:
@@ -2168,6 +2342,11 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
 
             case CON_IFONWATER:
+                if (DEER)
+                {
+                    VM_CONDITIONAL(sector[vm.pSprite->sectnum].hitag == 2003);
+                    continue;
+                }
                 VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_1_ABOVE_WATER
                                && klabs(vm.pSprite->z - sector[vm.pSprite->sectnum].floorz) < ZOFFSET5);
                 continue;
@@ -2194,7 +2373,18 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 VM_CONDITIONAL(g_windTime > 0);
                 continue;
 
-            case CON_IFINWATER: VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_2_UNDERWATER); continue;
+            case CON_IFPUPWIND:
+                VM_CONDITIONAL(ghtrax_isplrupwind(vm.spriteNum, vm.playerNum));
+                continue;
+
+            case CON_IFINWATER:
+                if (DEER)
+                {
+                    VM_CONDITIONAL(sector[vm.pSprite->sectnum].hitag == 2003 && klabs(vm.pSprite->z - sector[vm.pSprite->sectnum].floorz) < ZOFFSET5);
+                    continue;
+                }
+                VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_2_UNDERWATER);
+                continue;
 
             case CON_IFCOUNT:
                 insptr++;
@@ -2241,12 +2431,13 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                     || ((moveFlags & pwalkingback) && playerXVel <= -8 && !TEST_SYNC_KEY(syncBits, SK_RUN))
                     || ((moveFlags & prunningback) && playerXVel <= -8 && TEST_SYNC_KEY(syncBits, SK_RUN))
                     || ((moveFlags & pkicking)
-                        && (pPlayer->quick_kick > 0
-                            || (pPlayer->curr_weapon == KNEE_WEAPON && pPlayer->kickback_pic > 0)))
-                    || ((moveFlags & pshrunk) && sprite[pPlayer->i].xrepeat < (RR ? 8 : 32))
+                        && (DEER ? ghsound_pfiredgunnear(vm.pSprite, vm.playerNum) :(pPlayer->quick_kick > 0
+                            || (pPlayer->curr_weapon == KNEE_WEAPON && pPlayer->kickback_pic > 0))))
+                    || ((moveFlags & pshrunk) && (DEER ? pPlayer->dhat60f && !sub_535EC() : sprite[pPlayer->i].xrepeat < (RR ? 8 : 32)))
                     || ((moveFlags & pjetpack) && pPlayer->jetpack_on)
-                    || ((moveFlags & ponsteroids) && pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400)
-                    || ((moveFlags & ponground) && pPlayer->on_ground)
+                    || ((moveFlags & ponsteroids) && (DEER ? ghsound_pmadesound(vm.pSprite, vm.playerNum) :
+                        pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400))
+                    || ((moveFlags & ponground) && (DEER ? ghsound_pmadecall(vm.pSprite, vm.playerNum) : pPlayer->on_ground))
                     || ((moveFlags & palive) && sprite[pPlayer->i].xrepeat > (RR ? 8 : 32) && sprite[pPlayer->i].extra > 0 && pPlayer->timebeforeexit == 0)
                     || ((moveFlags & pdead) && sprite[pPlayer->i].extra <= 0))
                     nResult = 1;
@@ -2301,7 +2492,14 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
 
             case CON_IFHITSPACE: VM_CONDITIONAL(TEST_SYNC_KEY(g_player[vm.playerNum].inputBits->bits, SK_OPEN)); continue;
 
-            case CON_IFOUTSIDE: VM_CONDITIONAL(sector[vm.pSprite->sectnum].ceilingstat & 1); continue;
+            case CON_IFOUTSIDE:
+                if (DEER)
+                {
+                    VM_CONDITIONAL(sector[vm.pSprite->sectnum].hitag = 2000);
+                    continue;
+                }
+                VM_CONDITIONAL(sector[vm.pSprite->sectnum].ceilingstat & 1);
+                continue;
 
             case CON_IFMULTIPLAYER: VM_CONDITIONAL((g_netServer || g_netClient || ud.multimode > 1)); continue;
 
@@ -2536,6 +2734,128 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 continue;
 
             case CON_IFNOSOUNDS: VM_CONDITIONAL(!A_CheckAnySoundPlaying(vm.spriteNum)); continue;
+                
+
+            case CON_IFVARG:
+                insptr++;
+                tw = Gv_GetVar(*insptr++);
+                VM_CONDITIONAL(tw > *insptr);
+                continue;
+
+            case CON_IFVARL:
+                insptr++;
+                tw = Gv_GetVar(*insptr++);
+                VM_CONDITIONAL(tw < *insptr);
+                continue;
+
+            case CON_SETVARVAR:
+                insptr++;
+                {
+                    tw = *insptr++;
+                    int const nValue = Gv_GetVar(*insptr++);
+
+                    if ((aGameVars[tw].flags & (GAMEVAR_USER_MASK | GAMEVAR_PTR_MASK)) == 0)
+                        aGameVars[tw].global = nValue;
+                    else
+                        Gv_SetVar(tw, nValue);
+                }
+                continue;
+
+            case CON_SETVAR:
+                Gv_SetVar(insptr[1], insptr[2]);
+                insptr += 3;
+                continue;
+
+            case CON_ADDVARVAR:
+                insptr++;
+                tw = *insptr++;
+                Gv_AddVar(tw, Gv_GetVar(*insptr++));
+                continue;
+
+            case CON_ADDVAR:
+                Gv_AddVar(insptr[1], insptr[2]);
+                insptr += 3;
+                continue;
+
+            case CON_IFVARVARL:
+                insptr++;
+                tw = Gv_GetVar(*insptr++);
+                tw = (tw < Gv_GetVar(*insptr++));
+                insptr--;
+                VM_CONDITIONAL(tw);
+                continue;
+
+            case CON_IFVARVARG:
+                insptr++;
+                tw = Gv_GetVar(*insptr++);
+                tw = (tw > Gv_GetVar(*insptr++));
+                insptr--;
+                VM_CONDITIONAL(tw);
+                continue;
+
+            case CON_ADDLOGVAR:
+                insptr++;
+                {
+                    int32_t m = 1;
+                    char    szBuf[256];
+                    int32_t lVarID = *insptr;
+
+                    if ((lVarID >= g_gameVarCount) || lVarID < 0)
+                    {
+                        if (*insptr == MAXGAMEVARS)  // addlogvar for a constant?  Har.
+                            insptr++;
+                        else if (EDUKE32_PREDICT_TRUE(*insptr & GV_FLAG_NEGATIVE))
+                        {
+                            m = -m;
+                            lVarID ^= GV_FLAG_NEGATIVE;
+                        }
+                        else
+                        {
+                            // invalid varID
+                            CON_ERRPRINTF("invalid variable\n");
+                            continue;
+                        }
+                    }
+                    Bsprintf(tempbuf, "CONLOGVAR: L=%d %s ", VM_DECODE_LINE_NUMBER(g_tw), aGameVars[lVarID].szLabel);
+
+                    if (aGameVars[lVarID].flags & GAMEVAR_READONLY)
+                    {
+                        Bsprintf(szBuf, " (read-only)");
+                        Bstrcat(tempbuf, szBuf);
+                    }
+                    if (aGameVars[lVarID].flags & GAMEVAR_PERPLAYER)
+                    {
+                        Bsprintf(szBuf, " (Per Player. Player=%d)", vm.playerNum);
+                    }
+                    else if (aGameVars[lVarID].flags & GAMEVAR_PERACTOR)
+                    {
+                        Bsprintf(szBuf, " (Per Actor. Actor=%d)", vm.spriteNum);
+                    }
+                    else
+                    {
+                        Bsprintf(szBuf, " (Global)");
+                    }
+                    Bstrcat(tempbuf, szBuf);
+                    Bsprintf(szBuf, " =%d\n", Gv_GetVar(lVarID) * m);
+                    Bstrcat(tempbuf, szBuf);
+                    initprintf(OSDTEXT_GREEN "%s", tempbuf);
+                    insptr++;
+                    continue;
+                }
+
+            case CON_IFVARE:
+                insptr++;
+                tw = Gv_GetVar(*insptr++);
+                VM_CONDITIONAL(tw == *insptr);
+                continue;
+
+            case CON_IFVARVARE:
+                insptr++;
+                tw = Gv_GetVar(*insptr++);
+                tw = (tw == Gv_GetVar(*insptr++));
+                insptr--;
+                VM_CONDITIONAL(tw);
+                continue;
 
             default:  // you aren't supposed to be here!
                 if (RR && ud.recstat == 2)
@@ -2554,37 +2874,6 @@ GAMEEXEC_STATIC void VM_Execute(native_t loop)
                 break;
         }
     }
-}
-
-// NORECURSE
-void A_LoadActor(int32_t spriteNum)
-{
-    vm.spriteNum = spriteNum;           // Sprite ID
-    vm.pSprite   = &sprite[spriteNum];  // Pointer to sprite structure
-    vm.pActor    = &actor[spriteNum];
-
-    if (g_tile[vm.pSprite->picnum].loadPtr == NULL)
-        return;
-
-    vm.pData      = &actor[spriteNum].t_data[0];  // Sprite's 'extra' data
-    vm.playerNum  = -1;                           // Player ID
-    vm.playerDist = -1;                           // Distance
-    vm.pPlayer    = g_player[0].ps;
-
-    vm.flags &= ~(VM_RETURN | VM_KILL | VM_NOEXECUTE);
-
-    if ((unsigned)vm.pSprite->sectnum >= MAXSECTORS)
-    {
-        A_DeleteSprite(vm.spriteNum);
-        return;
-    }
-
-    insptr = g_tile[vm.pSprite->picnum].loadPtr;
-    VM_Execute(1);
-    insptr = NULL;
-
-    if (vm.flags & VM_KILL)
-        A_DeleteSprite(vm.spriteNum);
 }
 
 void VM_UpdateAnim(int spriteNum, int32_t *pData)
@@ -2661,7 +2950,7 @@ void A_Execute(int spriteNum, int playerNum, int playerDist)
 
     VM_Move();
 
-    if (vm.pSprite->statnum != STAT_ACTOR)
+    if (DEER || vm.pSprite->statnum != STAT_ACTOR)
     {
         if (vm.pSprite->statnum == STAT_STANDABLE)
         {

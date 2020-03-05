@@ -53,6 +53,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <string.h>
 
+bool bDemoPlayerFinishedLevel = false;
+
 struct PlayerSave
 {
     int x;
@@ -68,6 +70,8 @@ fix16_t nPlayerDAng = 0;
 short obobangle = 0, bobangle  = 0;
 short bPlayerPan = 0;
 short bLockPan  = 0;
+bool bLookCentre = false;
+
 
 static actionSeq ActionSeq[] = {
     {18,  0}, {0,   0}, {9,   0}, {27,  0}, {63,  0},
@@ -161,6 +165,34 @@ void PlayerInterruptKeys()
     CONTROL_ProcessBinds();
     memset(&info, 0, sizeof(ControlInfo)); // this is done within CONTROL_GetInput() anyway
     CONTROL_GetInput(&info);
+
+    if (mouseaiming) {
+        aimmode = 0;
+    }
+
+    if (BUTTON(gamefunc_Mouse_Aiming))
+    {
+        if (mouseaiming)
+            aimmode = 1;
+        else
+        {
+            CONTROL_ClearButton(gamefunc_Mouse_Aiming);
+            aimmode = !aimmode;
+            if (aimmode)
+            {
+                StatusMessage(150, "Mouse aiming ON");
+            }
+            else
+            {
+                StatusMessage(150, "Mouse aiming OFF");
+                bLookCentre = true;
+            }
+        }
+    }
+    else if (mouseaiming)
+    {
+        bLookCentre = true;
+    }
 
     if (MouseDeadZone)
     {
@@ -1052,7 +1084,7 @@ void DoKenTest()
     }
 }
 
-void FuncPlayer(int pA, int nDamage, int nRun)
+void FuncPlayer(int a, int nDamage, int nRun)
 {
     int var_48 = 0;
     int var_40;
@@ -1070,7 +1102,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
     short nAction = PlayerList[nPlayer].nAction;
     short nActionB = PlayerList[nPlayer].nAction;
 
-    int nMessage = pA & 0x7F0000;
+    int nMessage = a & kMessageMask;
 
     short nSprite2;
 
@@ -1083,7 +1115,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
     {
         case 0x90000:
         {
-            seq_PlotSequence(pA & 0xFFFF, SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a, PlayerList[nPlayer].field_2, ActionSeq[nAction].b);
+            seq_PlotSequence(a & 0xFFFF, SeqOffsets[PlayerList[nPlayer].nSeq] + ActionSeq[nAction].a, PlayerList[nPlayer].field_2, ActionSeq[nAction].b);
             return;
         }
 
@@ -1112,7 +1144,7 @@ void FuncPlayer(int pA, int nDamage, int nRun)
                     return;
                 }
 
-                nSprite2 = pA & 0xFFFF;
+                nSprite2 = a & 0xFFFF;
             }
 
             // ok continue case 0x80000 as normal, loc_1C57C
@@ -2851,7 +2883,8 @@ do_default_b:
                                     FinishLevel();
                                 }
                                 else {
-                                    keySetState(32, 1);
+                                    // KB_Addch(32);
+                                    bDemoPlayerFinishedLevel = true;
                                 }
 
                                 DestroyItemAnim(nValB);
@@ -3079,12 +3112,16 @@ loc_1BD2E:
                         bPlayerPan = kTrue;
                         nDestVertPan[nPlayer] = nVertPan[nPlayer];
                     }
-                    else if (BUTTON(gamefunc_Look_Straight))
+                    else if (BUTTON(gamefunc_Look_Straight) || bLookCentre)
                     {
                         bLockPan = kFalse;
                         bPlayerPan = kFalse;
                         nVertPan[nPlayer] = F16(92);
                         nDestVertPan[nPlayer] = F16(92);
+
+                        if (bLookCentre) {
+                            bLookCentre = false;
+                        }
                     }
                     else if (BUTTON(gamefunc_Aim_Up))
                     {
@@ -3322,7 +3359,6 @@ loc_1BD2E:
             }
 
             MoveWeapons(nPlayer);
-
             return;
         }
     }

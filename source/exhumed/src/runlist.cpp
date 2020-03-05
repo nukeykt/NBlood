@@ -70,24 +70,7 @@ short NewRun;
 int sRunStack[kMaxRunStack];
 short RunFree[kMaxRuns];
 RunChannel sRunChannels[kMaxChannels];
-
-
 RunStruct RunData[kMaxRuns];
-
-short word_96760 = 0;
-
-/* variables
-  Name:  _sRunStack
-  Name:  _RunFree
-  Name:  _channel
-  Name:  _RunData
-  Name:  _nRadialOwner
-  Name:  _nDamageRadius
-  Name:  _nRadialDamage
-  Name:  _RunCount
-  Name:  _nRadialSpr
-  Name:  _nStackCount
-*/
 
 AiFunc aiFunctions[kFuncMax] = {
     FuncElev,
@@ -100,7 +83,7 @@ AiFunc aiFunctions[kFuncMax] = {
     FuncWallFace,
     FuncSlide,
     FuncAnubis,
-    FuncPlayer, // 10
+    FuncPlayer,
     FuncBullet,
     FuncSpider,
     FuncCreatureChunk,
@@ -110,7 +93,7 @@ AiFunc aiFunctions[kFuncMax] = {
     FuncSnake,
     FuncFish,
     FuncLion,
-    FuncBubble, // 20
+    FuncBubble,
     FuncLava,
     FuncLavaLimb,
     FuncObject,
@@ -120,17 +103,16 @@ AiFunc aiFunctions[kFuncMax] = {
     FuncQueenHead,
     FuncRoach,
     FuncQueenEgg,
-    FuncWasp, // 30
+    FuncWasp,
     FuncTrap,
     FuncFishLimb,
-    FuncRa, // 33
+    FuncRa,
     FuncScorp,
     FuncSoul,
     FuncRat,
     FuncEnergyBlock,
     FuncSpark,
 };
-
 
 
 int runlist_GrabRun()
@@ -157,7 +139,6 @@ int runlist_FreeRun(int nRun)
     return 1;
 }
 
-// done
 int runlist_HeadRun()
 {
     int nRun = runlist_GrabRun();
@@ -168,7 +149,6 @@ int runlist_HeadRun()
     return nRun;
 }
 
-// sub 4
 void runlist_InitRun()
 {
     int i;
@@ -218,7 +198,6 @@ int runlist_UnlinkRun(int nRun)
     return nRun;
 }
 
-// done ?
 int runlist_InsertRun(int RunLst, int RunNum)
 {
     assert(RunLst >= 0 && RunLst < kMaxRuns);
@@ -236,7 +215,6 @@ int runlist_InsertRun(int RunLst, int RunNum)
     return RunNum;
 }
 
-// done
 int runlist_AddRunRec(int a, int b)
 {
     int nRun = runlist_GrabRun();
@@ -279,7 +257,6 @@ void runlist_CleanRunRecs()
     }
 }
 
-// done
 void runlist_SubRunRec(int RunPtr)
 {
     assert(RunPtr >= 0 && RunPtr < kMaxRuns);
@@ -346,6 +323,7 @@ int runlist_PopMoveRun()
 {
     if (nStackCount <= 0) {
         bail2dos("PopMoveRun() called inappropriately\n");
+        exit(-1);
     }
 
     nStackCount--;
@@ -1298,7 +1276,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
             // Fall through to case 62
             fallthrough__;
         }
-        case 62:
+        case 63: // Ceiling door, kill trigger (Enemy death triggers door)
         {
             if (nLotag == 63) {
                 nEnergyChan = nChannel;
@@ -1356,7 +1334,7 @@ void runlist_ProcessSectorTag(int nSector, int nLotag, int nHitag)
             return;
         }
 
-        case 63:
+        case 62:
         {
             zListA[0] = sector[nSector].floorz;
             int var_20 = 1;
@@ -1575,21 +1553,15 @@ int runlist_CheckRadialDamage(short nSprite)
     int y = (sprite[nSprite].y - sprite[nRadialSpr].y) >> 8;
     int z = (sprite[nSprite].z - sprite[nRadialSpr].z) >> 12;
 
-    x = klabs(x);
-
-    if (x > nDamageRadius) {
+    if (klabs(x) > nDamageRadius) {
         return 0;
     }
 
-    y = klabs(y);
-
-    if (y > nDamageRadius) {
+    if (klabs(y) > nDamageRadius) {
         return 0;
     }
 
-    z = klabs(z);
-
-    if (z > nDamageRadius) {
+    if (klabs(z) > nDamageRadius) {
         return 0;
     }
 
@@ -1620,6 +1592,7 @@ int runlist_CheckRadialDamage(short nSprite)
             else if (edi > 20)
             {
                 int nAngle = GetMyAngle(x, y);
+
                 sprite[nSprite].xvel += (edi * Cos(nAngle)) >> 3;
                 sprite[nSprite].yvel += (edi * Sin(nAngle)) >> 3;
                 sprite[nSprite].zvel -= edi * 24;
@@ -1646,8 +1619,6 @@ void runlist_RadialDamageEnemy(short nSprite, short nDamage, short nRadius)
         return;
     }
 
-    word_96760++;
-
     if (nRadialSpr == -1)
     {
         nRadialDamage = nDamage * 4;
@@ -1658,7 +1629,6 @@ void runlist_RadialDamageEnemy(short nSprite, short nDamage, short nRadius)
         runlist_ExplodeSignalRun();
 
         nRadialSpr = -1;
-        word_96760--;
     }
 }
 

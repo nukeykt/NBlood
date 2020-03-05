@@ -126,7 +126,7 @@ DUDEINFO_EXTRA gDudeInfoExtra[] = {
 // for actor.cpp
 //-------------------------------------------------------------------------
 
-bool nnExtIsUmmune(spritetype* pSprite, int dmgType, int minScale) {
+bool nnExtIsImmune(spritetype* pSprite, int dmgType, int minScale) {
 
     if (dmgType >= kDmgFall && dmgType < kDmgMax && pSprite->extra >= 0 && xsprite[pSprite->extra].locked != 1) {
         if (pSprite->type >= kThingBase && pSprite->type < kThingMax)

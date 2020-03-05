@@ -41,11 +41,14 @@ extern int32_t g_mostConcurrentPlayers;
 #define HORIZ_MAX                   299
 #define AUTO_AIM_ANGLE              48
 #define PHEIGHT                     (38<<8)
-#define PCROUCHHEIGHT               ZOFFSET2
+#define PCROUCHHEIGHT               (16<<8)
 #define PCROUCHINCREMENT            (2048+768)
-#define PMINHEIGHT                  (2048)
+#define PMINHEIGHT                  1024 // this is NOT the value I wanted here, but Duke It Out in DC's shitty vents said otherwise
 
 #define PCRACKTIME                  777
+
+#define PWATERSPEEDMODIFIER         0x1400
+#define PCROUCHSPEEDMODIFIER        0x2000
 
 #define TRIPBOMB_TRIPWIRE       0x00000001
 #define TRIPBOMB_TIMER          0x00000002
