@@ -102,6 +102,12 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween,
     const int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
+    if (str == nullptr)
+    {
+        debug_break();
+        return {};
+    }
+
     ScreenTextSize_t data{};
 
     data.constwidth = PopulateConstWidth(font, f);
@@ -133,6 +139,12 @@ static inline vec2_t G_ScreenText(const int32_t font,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
+    if (str == nullptr)
+    {
+        debug_break();
+        return {};
+    }
+
     ScreenText_t data{};
 
     data.constwidth = PopulateConstWidth(font, f);
@@ -168,6 +180,12 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
+    if (str == nullptr)
+    {
+        debug_break();
+        return {};
+    }
+
     ScreenText_t data{};
 
     Bassert(!(f & TEXT_CONSTWIDTHNUMS));
