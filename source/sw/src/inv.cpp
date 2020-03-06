@@ -106,9 +106,7 @@ void PanelInvTestSuicide(PANEL_SPRITEp psp);
 void UpdateMiniBar(PLAYERp pp)
 {
     USERp u = User[pp->PlayerSprite];
-    short i;
     int x,y;
-    SWBOOL found;
     INVENTORY_DATAp id;
     extern SWBOOL PanelUpdateMode;
 
@@ -260,7 +258,6 @@ PANEL_SPRITEp
 SpawnIcon(PLAYERp pp, PANEL_STATEp state)
 {
     PANEL_SPRITEp psp;
-    short i;
 
     psp = pSpawnSprite(pp, state, PRI_FRONT, 0, 0);
 
@@ -356,8 +353,6 @@ UseInventoryMedkit(PLAYERp pp)
 void
 UseInventoryChemBomb(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
-    short diff;
     short inv = INVENTORY_CHEMBOMB;
 
     if (!pp->InventoryAmount[inv])
@@ -382,8 +377,6 @@ UseInventoryChemBomb(PLAYERp pp)
 void
 UseInventoryFlashBomb(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
-    short diff;
     short inv = INVENTORY_FLASHBOMB;
 
     if (!pp->InventoryAmount[inv])
@@ -408,8 +401,6 @@ UseInventoryFlashBomb(PLAYERp pp)
 void
 UseInventoryCaltrops(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
-    short diff;
     short inv = INVENTORY_CALTROPS;
 
     if (!pp->InventoryAmount[inv])
@@ -435,7 +426,6 @@ UseInventoryCaltrops(PLAYERp pp)
 void
 UseInventoryRepairKit(PLAYERp pp)
 {
-    SPRITEp sp = pp->SpriteP;
     short inv = INVENTORY_REPAIR_KIT;
 
     //PlaySound(DIGI_TOOLBOX, &pp->posx, &pp->posy, &pp->posz, v3df_none);
@@ -643,7 +633,6 @@ DoPlayerNightVisionPalette(PLAYERp pp)
 void
 UseInventoryNightVision(PLAYERp pp)
 {
-    SPRITEp sp = pp->SpriteP;
 #define NIGHT_INVENTORY_TIME 30
 
     if (pp->InventoryActive[pp->InventoryNum])
@@ -664,8 +653,6 @@ UseInventoryNightVision(PLAYERp pp)
 void
 StopInventoryNightVision(PLAYERp pp, short InventoryNum)
 {
-    SPRITEp sp = pp->SpriteP;
-
     pp->InventoryActive[InventoryNum] = FALSE;
 
     if (pp->InventoryPercent[InventoryNum] <= 0)
@@ -1010,9 +997,6 @@ void (*InventoryDisplayString)(PLAYERp, short, short, short, const char *);
 void
 PlayerUpdateInventory(PLAYERp pp, short InventoryNum)
 {
-    USERp u = User[pp->PlayerSprite];
-    short w,h;
-
     // Check for items that need to go translucent from use
     if (pp->InventoryBarTics)
     {
@@ -1093,7 +1077,6 @@ PlayerUpdateInventory(PLAYERp pp, short InventoryNum)
 void
 PlayerUpdateInventoryPercent(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
     short x,y;
     INVENTORY_DATAp id = &InventoryData[pp->InventoryNum];
 
@@ -1115,7 +1098,6 @@ PlayerUpdateInventoryPercent(PLAYERp pp)
 void
 PlayerUpdateInventoryPic(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
     PANEL_SPRITEp psp;
     short pic;
     short x,y;
@@ -1134,7 +1116,6 @@ PlayerUpdateInventoryPic(PLAYERp pp)
 void
 PlayerUpdateInventoryState(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
     short x,y;
     INVENTORY_DATAp id = &InventoryData[pp->InventoryNum];
 

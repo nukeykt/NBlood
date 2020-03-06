@@ -106,7 +106,6 @@ int32_t GetTime(void)
 
 void InitSetup(void)
 {
-    int i;
     //RegisterShutdownFunction( ShutDown );
 
     //StartWindows();

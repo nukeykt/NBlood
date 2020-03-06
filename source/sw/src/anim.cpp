@@ -225,8 +225,7 @@ unsigned char *LoadAnm(short anim_num)
 {
     int handle;
     int length;
-    unsigned char *animbuf, *palptr;
-    int i,j,k;
+    unsigned char *animbuf;
 
     DSPRINTF(ds,"LoadAnm");
     MONO_PRINT(ds);
@@ -263,7 +262,7 @@ void
 playanm(short anim_num)
 {
     unsigned char *animbuf;
-    int i, j, k, length = 0, numframes = 0;
+    int i, length = 0, numframes = 0;
     int32_t handle = -1;
     UserInput uinfo = { FALSE, FALSE, dir_None };
 

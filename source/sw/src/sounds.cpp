@@ -707,7 +707,6 @@ SoundAngle(int x, int y)
 int _PlayerSound(const char *file, int line, int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
 //PlayerSound(int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
 {
-    int handle;
     VOC_INFOp vp;
 
     if (Prediction)
@@ -1538,7 +1537,6 @@ Delete3DSounds(void)
 {
     VOC3D_INFOp vp, dp;
     PLAYERp pp;
-    int cnt=0;
 
 
     vp = voc3dstart;
@@ -1711,7 +1709,6 @@ StopAmbientSound(void)
 void
 StartAmbientSound(void)
 {
-    VOC3D_INFOp p;
     short i,nexti;
     extern SWBOOL InMenuLevel;
 
@@ -1743,9 +1740,7 @@ DoUpdateSounds3D(void)
     VOC3D_INFOp p;
     SWBOOL looping;
     int pitch = 0, pitchmax;
-    int delta;
     short dist, angle;
-    SWBOOL deletesound = FALSE;
 
     TVOC_INFO TmpVocArray[32];
     int i;

@@ -592,7 +592,6 @@ SWBOOL
 MNU_DoEpisodeSelect(UserCall call, MenuItem *item)
 {
     short w,h;
-    char TempString[80];
     char *extra_text;
 
     extra_text = EpisodeSubtitles[0];
@@ -1592,7 +1591,7 @@ static SWBOOL MNU_SetJoystickAxisFunctions(MenuItem_p item)
 SWBOOL
 MNU_OrderCustom(UserCall call, MenuItem *item)
 {
-    static signed char on_screen = 0,last_screen = 0;
+    static signed char on_screen = 0;
     UserInput order_input;
     static int limitmove=0;
     UserInput tst_input;
@@ -1916,7 +1915,6 @@ ExitMenus(void)
 SWBOOL
 MNU_StartGame(void)
 {
-    PLAYERp pp = Player + screenpeek;
     int handle = 0;
     int zero = 0;
 
@@ -1969,7 +1967,6 @@ MNU_StartNetGame(void)
     // CTW REMOVED
     //extern int gTenActivated;
     // CTW REMOVED END
-    int pnum;
 
     // always assumed that a demo is playing
 
@@ -2054,7 +2051,6 @@ MNU_EpisodeCustom(void)
 SWBOOL
 MNU_QuitCustom(UserCall call, MenuItem_p item)
 {
-    int select;
     int ret;
     extern SWBOOL DrawScreen;
 
@@ -2115,7 +2111,6 @@ MNU_QuitCustom(UserCall call, MenuItem_p item)
 SWBOOL
 MNU_QuickLoadCustom(UserCall call, MenuItem_p item)
 {
-    int select;
     extern SWBOOL ReloadPrompt;
     int bak;
     PLAYERp pp = Player + myconnectindex;
@@ -2813,7 +2808,7 @@ SWBOOL
 MNU_GetSaveCustom(void)
 {
     short save_num;
-    extern SWBOOL InMenuLevel, LoadGameOutsideMoveLoop;
+    extern SWBOOL InMenuLevel;
 
     save_num = currentmenu->cursor;
 
@@ -2884,8 +2879,7 @@ MNU_LoadSaveMove(UserCall call, MenuItem_p item)
 {
     short i;
     short game_num;
-    short tile;
-    static short SaveGameEpisode, SaveGameLevel, SaveGameSkill;
+    static short SaveGameLevel, SaveGameSkill;
     SWBOOL GotInput = FALSE;
 
     if (!UsingMenus)
@@ -2984,7 +2978,6 @@ MNU_LoadSaveDraw(UserCall call, MenuItem_p item)
 {
     short i;
     short game_num;
-    short tile;
 
     game_num = currentmenu->cursor;
 
@@ -3337,7 +3330,7 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
     PLAYERp pp = &Player[myconnectindex];
     int button_x,zero=0;
     int handle=0;
-    extern SWBOOL MusicInitialized,FxInitialized;
+    extern SWBOOL FxInitialized;
 
     button_x = OPT_XSIDE;
 
@@ -4178,7 +4171,6 @@ void
 MNU_ItemPostProcess(MenuGroup *group)
 {
     MenuItem *item;
-    int zero = 0;
 
     if (!group->items)
         return;
@@ -4296,7 +4288,6 @@ MNU_DrawItemIcon(MenuItem *item)
     //void BorderRefreshClip(PLAYERp pp, short x, short y, short x2, short y2);
     int x = item->x, y = item->y;
     int scale = MZ;
-    short w,h;
 
     int16_t cursorpic = tilesiz[pic_yinyang].x == 0 && tilesiz[pic_shuriken1].x != 0 ? pic_shuriken1 : pic_yinyang;
 
@@ -4326,9 +4317,6 @@ MNU_DrawItemIcon(MenuItem *item)
 static void
 MNU_DrawItem(MenuItem *item)
 {
-    char *ptr;
-    short px, py;
-
     MNU_ItemPostProcess(currentmenu);  // Put this in so things can be drawn on item select
 
     if (!item->pic)
@@ -4581,11 +4569,9 @@ SetupMenu(void)
 void MNU_DoMenu(CTLType type, PLAYERp pp)
 {
     SWBOOL resetitem;
-    unsigned char key;
     int zero = 0;
     static int handle2;
     static int limitmove=0;
-    static SWBOOL select_held=FALSE;
 
     resetitem = TRUE;
 
@@ -4725,8 +4711,6 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
 void
 MNU_CheckForMenus(void)
 {
-    extern SWBOOL GamePaused;
-
     if (UsingMenus)
     {
         //if (MoveSkip2 == 0)
@@ -5170,7 +5154,7 @@ SetFadeAmt(PLAYERp pp, short damage, unsigned char startcolor)
 void
 DoPaletteFlash(PLAYERp pp)
 {
-    int i, palreg, tmpreg1 = 0, tmpreg2 = 0;
+    int palreg, tmpreg1 = 0, tmpreg2 = 0;
     unsigned char *pal_ptr = &ppalette[screenpeek][0];
 
 

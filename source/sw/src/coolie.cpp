@@ -566,7 +566,6 @@ SetupCoolie(short SpriteNum)
 int SpawnCoolg(short SpriteNum)
 {
     int NewCoolg(short);
-    USERp u = User[SpriteNum];
 
     // Don't do a ghost every time
     if (RANDOM_RANGE(1000) > 700) return 0;
@@ -581,7 +580,6 @@ int SpawnCoolg(short SpriteNum)
 int CooliePain(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     if (TEST(u->Flags,SPR_SLIDING))
         DoActorSlide(SpriteNum);
@@ -600,7 +598,6 @@ int CooliePain(short SpriteNum)
 int NullCoolie(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     if (TEST(u->Flags,SPR_SLIDING))
         DoActorSlide(SpriteNum);
@@ -647,7 +644,6 @@ int DoCoolieMove(short SpriteNum)
 int InitCoolieCharge(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
 
     if (RANDOM_P2(1024) > 950)
         PlaySound(DIGI_COOLIESCREAM, &sp->x, &sp->y, &sp->z, v3df_follow);
@@ -665,11 +661,9 @@ int InitCoolieCharge(short SpriteNum)
 int
 DoCoolieWaitBirth(short SpriteNum)
 {
-    SPRITEp sp;
     USERp u;
 
     u = User[SpriteNum];
-    sp = &sprite[SpriteNum];
 
     if ((u->Counter -= ACTORMOVETICS) <= 0)
     {

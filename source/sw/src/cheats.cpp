@@ -317,8 +317,6 @@ CHEAT_INFO ci[] =
 // !JIM! My simplified version of CheatInput which simply processes MessageInputString
 void CheatInput(void)
 {
-    static SWBOOL cur_show;
-    int ret;
     SWBOOL match = FALSE;
     unsigned int i;
 
