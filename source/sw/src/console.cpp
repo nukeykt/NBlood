@@ -588,7 +588,6 @@ void CON_ModTranslucent(void)
 
 void CON_SoundTest(void)
 {
-    int handle;
     int zero=0;
     char base[80];
     int16_t op1=0;
@@ -607,7 +606,7 @@ void CON_SoundTest(void)
         return;
     }
 
-    handle = PlaySound(op1,&zero,&zero,&zero,v3df_none);
+    PlaySound(op1,&zero,&zero,&zero,v3df_none);
 }
 
 

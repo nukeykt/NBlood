@@ -1296,11 +1296,9 @@ ScreenSave(MFILE_WRITE fout)
 void
 ScreenLoad(MFILE_READ fin)
 {
-    int num;
-
     renderSetTarget(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
 
-    num = MREAD((void *)waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, 1, fin);
+    MREAD((void *)waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, 1, fin);
 
     renderRestoreTarget();
 }

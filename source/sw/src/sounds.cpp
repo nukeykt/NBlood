@@ -1938,7 +1938,7 @@ DoUpdateSounds3D(void)
     //    {
     for (i=0; i<min((int)SIZ(TmpVocArray), NumVoices); i++)
     {
-        int handle;
+//        int handle;
 
         p = TmpVocArray[i].p;
 
@@ -1962,7 +1962,7 @@ DoUpdateSounds3D(void)
             Use_SoundSpriteNum = TRUE;
             SoundSpriteNum = p->owner;
 
-            handle = PlaySound(p->num, p->x, p->y, p->z, p->flags);
+            /*handle = */PlaySound(p->num, p->x, p->y, p->z, p->flags);
             //if(handle >= 0 || TEST(p->flags,v3df_ambient)) // After a valid PlaySound, it's ok to use voc3dend
             voc3dend->owner = p->owner; // Transfer the owner
             p->deleted = TRUE;
@@ -1987,7 +1987,7 @@ DoUpdateSounds3D(void)
             Use_SoundSpriteNum = TRUE;
             SoundSpriteNum = p->owner;
 
-            handle = PlaySound(p->num, &p->fx, &p->fy, &p->fz, p->flags);
+            /*handle = */PlaySound(p->num, &p->fx, &p->fy, &p->fz, p->flags);
             //if(handle >= 0 || TEST(p->flags,v3df_ambient))
             voc3dend->owner = p->owner; // Transfer the owner
             p->deleted = TRUE;
