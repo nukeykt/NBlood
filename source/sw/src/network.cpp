@@ -538,7 +538,6 @@ void
 CheckVersion(int GameVersion)
 {
     short pnum;
-    PACKET_VERSION p;
 #define VERSION_MSG "You cannot play with different versions!"
 
     if (!CommEnabled)
@@ -577,9 +576,6 @@ CheckVersion(int GameVersion)
 void
 Connect(void)
 {
-    int players_found, i, yline;
-    short other;
-
     if (CommEnabled)
     {
 #if 0
@@ -609,7 +605,6 @@ void
 waitforeverybody(void)
 {
     int i, size = 1;
-    short other;
 
     if (!CommEnabled)
         return;
@@ -713,7 +708,6 @@ SWBOOL MyCommPlayerQuit(void)
     {
         if (TEST_SYNC_KEY(Player + i, SK_QUIT_GAME))
         {
-            short pnum;
             found = TRUE;
 
             quit_player_index = i;
@@ -785,7 +779,6 @@ SWBOOL MyCommPlayerQuit(void)
 
 SWBOOL MenuCommPlayerQuit(short quit_player)
 {
-    PLAYERp pp;
     short i;
     short prev_player = 0;
     short pnum;
@@ -802,8 +795,6 @@ SWBOOL MenuCommPlayerQuit(short quit_player)
 
     TRAVERSE_CONNECT(i)
     {
-        pp = Player + i;
-
         // have to reorder the connect list
         if (i != quit_player)
         {
@@ -837,7 +828,7 @@ SWBOOL MenuCommPlayerQuit(short quit_player)
 void ErrorCorrectionQuit(void)
 {
     int oldtotalclock;
-    short i,j;
+    short j;
 
     if (CommPlayers > 1)
     {
@@ -935,10 +926,8 @@ AddSyncInfoToPacket(int *j)
 void
 faketimerhandler(void)
 {
-    short other, packbufleng;
-    int i, j, k, l;
+    int i, j, k;
     PLAYERp pp;
-    short pnum;
     void getinput(SW_PACKET *);
     extern SWBOOL BotMode;
 
@@ -1257,7 +1246,7 @@ void
 getpackets(void)
 {
     int otherconnectindex, packbufleng;
-    int i, j, k, l, fifoCheck, sb;
+    int i, j, sb;
     PLAYERp pp;
     SW_PACKET tempinput;
 

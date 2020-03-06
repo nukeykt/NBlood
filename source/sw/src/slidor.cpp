@@ -39,7 +39,6 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 void ReverseSlidor(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
     ROTATORp r;
 
     r = u->rotator;
@@ -91,7 +90,6 @@ void SetSlidorActive(short SpriteNum)
 {
     USERp u = User[SpriteNum];
     SPRITEp sp = u->SpriteP;
-    SECTORp sectp = &sector[sp->sectnum];
     ROTATORp r;
 
     r = u->rotator;
@@ -115,7 +113,6 @@ void SetSlidorInactive(short SpriteNum)
 {
     USERp u = User[SpriteNum];
     SPRITEp sp = u->SpriteP;
-    SECTORp sectp = &sector[sp->sectnum];
 
     DoSlidorInterp(SpriteNum, stopinterpolation);
 
@@ -128,10 +125,7 @@ void SetSlidorInactive(short SpriteNum)
 // called for operation from the space bar
 short DoSlidorOperate(PLAYERp pp, short sectnum)
 {
-    USERp fu;
-    SPRITEp fsp;
     short match;
-    short i,nexti;
 
     match = sector[sectnum].hitag;
 
@@ -234,7 +228,6 @@ TestSlidorMatchActive(short match)
 {
     USERp fu;
     SPRITEp fsp;
-    short sectnum;
 
     short i,nexti;
 
@@ -498,11 +491,10 @@ int DoSlidorMoveWalls(short SpriteNum, int amt)
 int DoSlidorInstantClose(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
-    short w, pw, startwall, endwall;
+    short w, startwall;
     int diff;
 
     w = startwall = sector[sprite[SpriteNum].sectnum].wallptr;
-    endwall = startwall + sector[sprite[SpriteNum].sectnum].wallnum - 1;
 
     do
     {
@@ -542,10 +534,6 @@ int DoSlidorMove(short SpriteNum)
     USERp u = User[SpriteNum];
     SPRITEp sp = u->SpriteP;
     ROTATORp r;
-    short ndx,w,startwall,endwall;
-    int i, nexti;
-    int nx,ny;
-    int dist,closest;
     int old_pos;
     SWBOOL kill = FALSE;
 
@@ -689,8 +677,6 @@ int DoSlidor(short SpriteNum)
     USERp u = User[SpriteNum];
     SPRITEp sp = u->SpriteP;
     SECTORp sectp = &sector[sp->sectnum];
-    int *lptr;
-    int amt;
 
     DoSlidorMove(SpriteNum);
 

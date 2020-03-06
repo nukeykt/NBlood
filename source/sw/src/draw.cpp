@@ -97,11 +97,9 @@ GetRotation(short tSpriteNum, int viewx, int viewy)
     static short RotTable8[] = {0, 7, 6, 5, 4, 3, 2, 1};
     static short RotTable5[] = {0, 1, 2, 3, 4, 3, 2, 1};
     short rotation;
-    extern short screenpeek;
 
     tspriteptr_t tsp = &tsprite[tSpriteNum];
     USERp tu = User[tsp->owner];
-    PLAYERp pp = Player + screenpeek;
     short angle2;
 
     if (tu->RotNum == 0)
@@ -236,7 +234,6 @@ DoShadowFindGroundPoint(tspriteptr_t sp)
     int ceilhit, florhit;
     int hiz, loz = u->loz;
     short save_cstat, bak_cstat;
-    SWBOOL found = FALSE;
 
     // recursive routine to find the ground - either sector or floor sprite
     // skips over enemy and other types of sprites
@@ -659,8 +656,8 @@ void DoStarView(tspriteptr_t tsp, USERp tu, int viewz)
 void
 analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 {
-    int tSpriteNum, j, k;
-    short SpriteNum, pnum;
+    int tSpriteNum;
+    short SpriteNum;
     int smr4, smr2;
     USERp tu;
     static int ang = 0;
@@ -1148,7 +1145,7 @@ BackView(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
     hitdata_t hitinfo;
-    int i, vx, vy, vz, hx, hy, hz;
+    int i, vx, vy, vz, hx, hy;
     short bakcstat, daang;
     PLAYERp pp = &Player[screenpeek];
     short ang;
@@ -1267,7 +1264,7 @@ CircleCamera(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
     hitdata_t hitinfo;
-    int i, vx, vy, vz, hx, hy, hz;
+    int i, vx, vy, vz, hx, hy;
     short bakcstat, daang;
     PLAYERp pp = &Player[screenpeek];
     short ang;
@@ -1796,7 +1793,6 @@ void DrawConInput(PLAYERp pp)
 
 void DrawCrosshair(PLAYERp pp)
 {
-    extern int CrosshairX, CrosshairY;
     extern SWBOOL DemoMode,CameraTestMode;
 
     if (!gs.Crosshair)
@@ -2114,16 +2110,9 @@ void PreDrawStackedWater(void)
 {
     short si,snexti;
     short i,nexti;
-    SPRITEp sp,np;
+    SPRITEp sp;
     USERp u,nu;
     short New;
-    int smr4,smr2;
-    int x,y,z;
-    short ang;
-    PLAYERp pp = Player + screenpeek;
-
-    smr4 = smoothratio + (((int) MoveSkip4) << 16);
-    smr2 = smoothratio + (((int) MoveSkip2) << 16);
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_CEILING_FLOOR_PIC_OVERRIDE], si, snexti)
     {
@@ -2147,8 +2136,6 @@ void PreDrawStackedWater(void)
                 New = ConnectCopySprite((uspritetype const *)sp);
                 if (New >= 0)
                 {
-                    np = &sprite[New];
-
                     // spawn a user
                     User[New] = nu = (USERp)CallocMem(sizeof(USER), 1);
                     ASSERT(nu != NULL);
@@ -2243,10 +2230,9 @@ void
 drawscreen(PLAYERp pp)
 {
     extern SWBOOL DemoMode,CameraTestMode;
-    int tx, ty, tz,thoriz,pp_siz;
+    int tx, ty, tz,thoriz;
     short tang,tsectnum;
     short i,j;
-    int tiltlock;
     int bob_amt = 0;
     int quake_z, quake_x, quake_y;
     short quake_ang;
@@ -2363,7 +2349,6 @@ drawscreen(PLAYERp pp)
     pp->six = tx;
     pp->siy = ty;
     pp->siz = tz - pp->posz;
-    pp_siz = tz;
     pp->siang = tang;
 
     if (pp->sop_riding || pp->sop_control)
@@ -2621,7 +2606,6 @@ DrawCompass(PLAYERp pp)
     short x;
     short i;
     int flags;
-    PANEL_SPRITEp psp;
 
     static short CompassPic[32] =
     {
@@ -2699,10 +2683,6 @@ void ScreenTileUnLock(void)
 int
 ScreenLoadSaveSetup(PLAYERp pp)
 {
-    int tx, ty, tz,thoriz,pp_siz;
-    short tang,tsectnum;
-    short i;
-
     // lock and allocate memory
 
     ScreenTileLock();
@@ -2719,8 +2699,6 @@ ScreenLoadSaveSetup(PLAYERp pp)
 int
 ScreenSaveSetup(PLAYERp pp)
 {
-    short i;
-
     ScreenLoadSaveSetup(Player + myconnectindex);
 
     renderSetTarget(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);

@@ -331,8 +331,6 @@ ToggleSprites()
 void
 DoAutoSize(tspriteptr_t tspr)
 {
-    short i;
-
     if (!bAutoSize)
         return;
 
@@ -483,7 +481,7 @@ short rotang = 0;
 void
 ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
-    int i, currsprite;
+    int i;
     tspriteptr_t tspr;
 
     UNREFERENCED_PARAMETER(ourx);
@@ -729,7 +727,7 @@ ExtInit(void)
 #endif
 
 
-    int i, fil;
+    int fil;
 
     // Store user log in time
     //LogUserTime(TRUE);              // Send true because user is logging
@@ -2271,9 +2269,6 @@ ExtCheckKeys(void)
 void
 ExtLoadMap(const char *mapname)
 {
-    SPRITEp sp;
-    int i;
-
     BuildStagTable();
 
     SetSpriteExtra();
@@ -2307,7 +2302,6 @@ ExtLoadMap(const char *mapname)
 void
 ExtSaveMap(const char *mapname)
 {
-    SPRITEp sp;
     int i;
 
     SetSpriteExtra();
@@ -3028,7 +3022,6 @@ ExtShowSpriteData(short spritenum)      // F6
 void
 ExtEditSectorData(short sectnum)        // F7
 {
-    short key_num;
     SPRITEp sp;
 
     if (in3dmode())
@@ -3214,7 +3207,6 @@ DISPLAY:
 void
 PlaxSetShade(void)
 {
-    short data;
     short shade;
     int i, count = 0;
 
@@ -3247,7 +3239,6 @@ PlaxSetShade(void)
 void
 PlaxAdjustShade(void)
 {
-    short data;
     short shade;
     int i, count = 0;
 
@@ -3285,7 +3276,6 @@ PlaxAdjustShade(void)
 void
 AdjustShade(void)
 {
-    short data;
     short shade;
     int i, count;
     short SpriteNum, NextSprite;
@@ -3404,7 +3394,6 @@ SetClipdist2D(void)
 void
 AdjustVisibility(void)
 {
-    short data;
     short vis;
     int i, count = 0;
 
@@ -3424,7 +3413,7 @@ AdjustVisibility(void)
 
     if (highlightsectorcnt > -1)
     {
-        short i, j;
+        short i;
 
         for (i = 0; i < highlightsectorcnt; i++)
         {
@@ -3456,7 +3445,7 @@ AdjustVisibility(void)
 void
 FindSprite(short picnum, short findspritenum)
 {
-    int i, count;
+    int i;
     short SpriteNum, NextSprite;
     SPRITEp sp;
 
@@ -3528,10 +3517,9 @@ FindSprite(short picnum, short findspritenum)
 void
 FindNextSprite(short picnum)
 {
-    int i, count;
+    int i;
     short SpriteNum, NextSprite;
     SPRITEp sp;
-    short animlen;
 
     SWBOOL bFoundPicNum, bFoundHiTag, bFoundLowTag, bFoundIt;
 
@@ -3614,16 +3602,14 @@ ShowNextTag(void)
 void
 FindNextTag(void)
 {
-    int i, count, j;
+    int i;
     short SpriteNum, NextSprite;
-    short siNextFind;                   // Next tag that SHOULD be found
     SPRITEp sp;
 
     if (in3dmode())
         return;
 
     siNextTag = siNextEndTag = 0;       // Reset tags for new search
-    siNextFind = 0;
 
     // go to the first one
     for (i = 0; i < numsectors; i++)

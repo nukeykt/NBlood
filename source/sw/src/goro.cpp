@@ -513,7 +513,6 @@ SetupGoro(short SpriteNum)
 
 int NullGoro(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
     ASSERT(SpriteNum >= 0);
@@ -529,7 +528,6 @@ int NullGoro(short SpriteNum)
 
 int DoGoroPain(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
     ASSERT(SpriteNum >= 0);
@@ -543,7 +541,6 @@ int DoGoroPain(short SpriteNum)
 
 int DoGoroMove(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
     ASSERT(SpriteNum >= 0);

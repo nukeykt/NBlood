@@ -428,8 +428,6 @@ SWBOOL CheckValidSprite(short SpriteNum)
 void CON_GetHelp(void)
 {
     char base[80], command[80];
-    short i;
-
 
     if (sscanf(MessageInputString,"%s %s",base,command) < 2)
     {
@@ -502,7 +500,6 @@ void CON_ModXrepeat(void)
     {
         // Do it only for one sprite
         SPRITEp sp = &sprite[op3];
-        USERp u = User[op3];
 
         if (!CheckValidSprite(op3)) return;
 
@@ -551,7 +548,6 @@ void CON_ModYrepeat(void)
     {
         // Do it only for one sprite
         SPRITEp sp = &sprite[op3];
-        USERp u = User[op3];
 
         if (!CheckValidSprite(op3)) return;
 
@@ -565,7 +561,6 @@ void CON_ModTranslucent(void)
     char base[80];
     int16_t op1=0;
     SPRITEp sp;
-    USERp u;
 
     // Format: translucent [SpriteNum]
     if (sscanf(MessageInputString,"%s %hd",base,&op1) < 2)
@@ -578,7 +573,6 @@ void CON_ModTranslucent(void)
     if (!CheckValidSprite(op1)) return;
 
     sp = &sprite[op1];
-    u = User[op1];
 
     if (TEST(sp->cstat,CSTAT_SPRITE_TRANSLUCENT))
     {
@@ -817,7 +811,7 @@ int TileRangeMem(int start)
 void CON_Cache(void)
 {
     char incache[MAXTILES]{};
-    int i,j,tottiles,totsprites,totactors;
+    int i,tottiles,totsprites,totactors;
 
     // Calculate all level tiles, non-actor stuff
     for (i=0; i<numsectors; i++)
@@ -1006,7 +1000,6 @@ void CON_KillSprite(void)
 {
     char base[80];
     int16_t op1=0;
-    SPRITEp sp;
     short i;
     USERp u;
 
@@ -1042,7 +1035,6 @@ void CON_SpriteDetail(void)
 {
     char base[80];
     int16_t op1=0;
-    short i;
 
     // Format: showsprite [SpriteNum]
     if (sscanf(MessageInputString,"%s %hd",base,&op1) < 2)
@@ -1070,8 +1062,6 @@ void CON_UserDetail(void)
 {
     char base[80];
     int16_t op1=0;
-    SPRITEp sp;
-    short i;
     USERp u;
 
     // Format: showuser [SpriteNum]
@@ -1083,7 +1073,6 @@ void CON_UserDetail(void)
     }
 
     if (!CheckValidSprite(op1)) return;
-    sp = &sprite[op1];
     u = User[op1];
 
     if (!u) return;
@@ -1192,8 +1181,6 @@ void CON_DamageData(void)
     char base[80],field[80];
     int16_t op1=0;
     unsigned int op2, i;
-    SPRITEp sp;
-    USERp u;
 
     // Format: damage [field] [item] [value]
     if (sscanf(MessageInputString,"%s %s %hd %u",base,field,&op1,&op2) < 3)

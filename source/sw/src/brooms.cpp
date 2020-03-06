@@ -114,7 +114,6 @@ void ToggleFAF(void)
         short match;
         int tx,ty,tz;
         short tsectnum;
-        short i;
         keystatus[KEYSC_4] = FALSE;
 
         tx = pos.x;
@@ -367,7 +366,7 @@ PicInView(short tile_num, SWBOOL reset)
 void
 GetUpperLowerSector(short match, int x, int y, short *upper, short *lower)
 {
-    int i, j;
+    int i;
     short sectorlist[16];
     short sln = 0;
     short SpriteNum, Next;
@@ -449,7 +448,6 @@ FindCeilingView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum
     int yoff = 0;
     short i, nexti;
     SPRITEp sp = NULL;
-    short top_sprite = -1;
     int pix_diff;
     int newz;
 
@@ -641,10 +639,7 @@ short
 ViewSectorInScene(short cursectnum, short type, short level)
 {
     int i, nexti;
-    int j, nextj;
     SPRITEp sp;
-    SPRITEp sp2;
-    int cz, fz;
     short match;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FAF], i, nexti)

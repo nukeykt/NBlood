@@ -145,7 +145,6 @@ void SetVatorInactive(short SpriteNum)
 // called for operation from the space bar
 short DoVatorOperate(PLAYERp pp, short sectnum)
 {
-    USERp fu;
     SPRITEp fsp;
     short match;
     short i,nexti;
@@ -156,8 +155,6 @@ short DoVatorOperate(PLAYERp pp, short sectnum)
 
         if (fsp->statnum == STAT_VATOR && SP_TAG1(fsp) == SECT_VATOR && SP_TAG3(fsp) == 0)
         {
-            fu = User[i];
-
             sectnum = fsp->sectnum;
 
             // single play only vator
@@ -292,7 +289,6 @@ TestVatorMatchActive(short match)
 {
     USERp fu;
     SPRITEp fsp;
-    short sectnum;
 
     short i,nexti;
 
@@ -343,7 +339,6 @@ void InterpSectorSprites(short sectnum, SWBOOL state)
 
 void MoveSpritesWithSector(short sectnum, int z_amt, SWBOOL type)
 {
-    SECTORp sectp = &sector[sectnum];
     SPRITEp sp;
     short i,nexti;
     SWBOOL both = FALSE;
@@ -412,8 +407,6 @@ cont:
 int DoVatorMove(short SpriteNum, int *lptr)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
-    SECTORp sectp = &sector[sp->sectnum];
     int zval;
     int move_amt;
 
@@ -594,13 +587,10 @@ int DoVator(short SpriteNum)
         {
             int i,nexti;
             SPRITEp bsp;
-            USERp bu;
-            SWBOOL found = FALSE;
 
             TRAVERSE_SPRITE_SECT(headspritesect[sp->sectnum], i, nexti)
             {
                 bsp = &sprite[i];
-                bu = User[i];
 
                 if (bsp->statnum == STAT_ENEMY)
                 {
@@ -626,7 +616,6 @@ int DoVatorAuto(short SpriteNum)
     USERp u = User[SpriteNum];
     SPRITEp sp = u->SpriteP;
     SECTORp sectp = &sector[sp->sectnum];
-    int zval;
     int *lptr;
     int amt;
 

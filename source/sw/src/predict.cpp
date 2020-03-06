@@ -124,7 +124,6 @@ DoPrediction(PLAYERp ppp)
     USERp u;
     SPRITE spr;
     int bakrandomseed;
-    short angvel;
 
     // routine called from MoveLoop
 

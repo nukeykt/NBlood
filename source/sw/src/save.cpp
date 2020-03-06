@@ -221,8 +221,6 @@ int SaveGame(short save_num)
     MFILE_WRITE fil;
     int i,j;
     short ndx;
-    SPRITE tsp;
-    SPRITEp sp;
     PLAYER tp;
     PLAYERp pp;
     SECT_USERp sectu;
@@ -230,14 +228,11 @@ int SaveGame(short save_num)
     USERp u;
     ANIM tanim;
     ANIMp a;
-    int8_t code;
-    uint8_t data_code;
-    int16_t data_ndx;
     PANEL_SPRITE tpanel_sprite;
     PANEL_SPRITEp psp,cur,next;
     SECTOR_OBJECTp sop;
     char game_name[80];
-    int cnt = 0, saveisshot=0;
+    int saveisshot=0;
     OrgTileP otp, next_otp;
 
     Saveable_Init();
@@ -408,7 +403,6 @@ int SaveGame(short save_num)
             // write header
             MWRITE(&ndx,sizeof(ndx),1,fil);
 
-            sp = &sprite[i];
             memcpy(&tu, User[i], sizeof(USER));
             u = &tu;
 
@@ -725,7 +719,6 @@ void LoadGameDescr(short save_num, char *descr)
 {
     MFILE_READ fil;
     char game_name[80];
-    short tile;
     int ver;
 
     sprintf(game_name,"game%d.sav",save_num);
@@ -751,23 +744,14 @@ int LoadGame(short save_num)
     int i,j,saveisshot=0;
     short ndx,SpriteNum,sectnum;
     PLAYERp pp = NULL;
-    SPRITEp sp;
     USERp u;
     SECTOR_OBJECTp sop;
     SECT_USERp sectu;
-    int8_t code;
     ANIMp a;
-    uint8_t data_code;
-    int16_t data_ndx;
-    PANEL_SPRITEp psp,next,cur;
-    PANEL_SPRITE tpanel_sprite;
+    PANEL_SPRITEp psp,next;
     char game_name[80];
-    OrgTileP otp, next_otp;
+    OrgTileP otp;
 
-    int RotNdx;
-    int StateStartNdx;
-    int StateNdx;
-    int StateEndNdx;
     extern SWBOOL InMenuLevel;
 
     Saveable_Init();
@@ -916,7 +900,6 @@ int LoadGame(short save_num)
     MREAD(&SpriteNum, sizeof(SpriteNum),1,fil);
     while (SpriteNum != -1)
     {
-        sp = &sprite[SpriteNum];
         User[SpriteNum] = u = (USERp)CallocMem(sizeof(USER), 1);
         MREAD(u,sizeof(USER),1,fil);
 

@@ -717,7 +717,6 @@ SetupGirlNinja(short SpriteNum)
     SPRITEp sp = &sprite[SpriteNum];
     USERp u;
     ANIMATOR DoActorDecide;
-    short pic = sp->picnum;
 
     if (TEST(sp->cstat, CSTAT_SPRITE_RESTORE))
     {
@@ -753,7 +752,6 @@ int
 DoGirlNinjaMove(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     // jumping and falling
     if (TEST(u->Flags, SPR_JUMPING | SPR_FALLING) && !TEST(u->Flags, SPR_CLIMBING))
@@ -817,7 +815,6 @@ int
 NullGirlNinja(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     if (u->WaitTics > 0) u->WaitTics -= ACTORMOVETICS;
 
@@ -835,7 +832,6 @@ NullGirlNinja(short SpriteNum)
 
 int DoGirlNinjaPain(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
     NullGirlNinja(SpriteNum);

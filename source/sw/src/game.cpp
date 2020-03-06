@@ -648,9 +648,6 @@ setup2dscreen(void)
 void
 TerminateGame(void)
 {
-    int i,j;
-    int oldtotalclock;
-
     DemoTerm();
 
     ErrorCorrectionQuit();
@@ -686,8 +683,6 @@ TerminateGame(void)
 void
 LoadLevel(const char *filename)
 {
-    int pos;
-
     if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
@@ -703,9 +698,6 @@ LoadLevel(const char *filename)
 void
 LoadImages(const char *filename)
 {
-    short ndx;
-    FILE *fin;
-
     if (artLoadFiles(filename, 32*1048576) == -1)
     {
         TerminateGame();
@@ -768,7 +760,6 @@ void DisplayDemoText(void)
 void Set_GameMode(void)
 {
     int result;
-    char ch;
 
     //DSPRINTF(ds,"ScreenMode %d, ScreenWidth %d, ScreenHeight %d", ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight);
     //MONO_PRINT(ds);
@@ -1245,9 +1236,7 @@ void InitNewGame(void)
 
 void FindLevelInfo(char *map_name, short *level)
 {
-    char *ptr;
-    char buff[16];
-    short i,j;
+    short j;
 
     for (j = 1; j <= MAX_LEVELS; j++)
     {
@@ -1788,7 +1777,6 @@ LogoLevel(void)
     if (g_noLogo)
         return;
 
-    char called;
     int fin;
     unsigned char pal[PAL_SIZE];
     UserInput uinfo = { FALSE, FALSE, dir_None };
@@ -1863,9 +1851,6 @@ LogoLevel(void)
 void
 CreditsLevel(void)
 {
-    char called;
-    int fin;
-    int i;
     int curpic;
     int handle;
     uint32_t timer = 0;
@@ -2041,7 +2026,6 @@ TenScreen(void)
 void
 TitleLevel(void)
 {
-    char called;
     int fin;
     unsigned char backup_pal[256*3];
     unsigned char pal[PAL_SIZE];
@@ -2160,8 +2144,6 @@ void
 MenuLevel(void)
 {
     SWBOOL MNU_StartNetGame(void);
-    char called;
-    int fin;
     extern ClockTicks totalclocklock;
     short w,h;
 
@@ -2282,7 +2264,6 @@ MenuLevel(void)
         {
             if (MultiPlayQuitFlag)
             {
-                short pnum;
                 uint8_t pbuf[1];
                 QuitFlag = TRUE;
                 pbuf[0] = PACKET_TYPE_MENU_LEVEL_QUIT;
@@ -2376,7 +2357,6 @@ LoadingLevelScreen(char *level_name)
 {
     short w,h;
     extern SWBOOL DemoMode;
-    extern char *MNU_LevelName[28];
     DrawLoadLevelScreen();
 
     if (DemoMode)
@@ -2455,15 +2435,10 @@ void
 BonusScreen(PLAYERp pp)
 {
     int minutes,seconds,second_tics;
-    extern SWBOOL FinishedLevel;
     extern int PlayClock;
     extern short LevelSecrets;
-    extern short TotalKillable;
     short w,h;
-    short pic,limit;
-    int zero=0;
-    int handle = 0;
-    short LI_Num;
+    short limit;
 
 
 #define BONUS_SCREEN_PIC 5120
@@ -2735,14 +2710,8 @@ void EndGameSequence(void)
 void
 StatScreen(PLAYERp mpp)
 {
-    int minutes,seconds,second_tics;
     extern SWBOOL FinishedLevel;
-    extern int PlayClock;
-    extern short LevelSecrets;
-    extern short TotalKillable;
     short w,h;
-    int zero=0;
-    int handle=0;
 
     short rows,cols,i,j;
     PLAYERp pp = NULL;
@@ -3127,7 +3096,6 @@ void InitPlayerGameSettings(void)
 
 void InitRunLevel(void)
 {
-    int i;
     if (DemoEdit)
         return;
 
@@ -3215,7 +3183,6 @@ void InitRunLevel(void)
 void
 RunLevel(void)
 {
-    int i;
     InitRunLevel();
 
     FX_SetVolume(gs.SoundVolume);
@@ -3444,13 +3411,10 @@ void CommandLineHelp(char const * const * argv)
 int32_t app_main(int32_t argc, char const * const * argv)
 {
     int i;
-    int stat, nexti;
-    char type;
     extern int MovesPerPacket;
     void DoSector(void);
     void gameinput(void);
     int cnt = 0;
-    uint32_t TotalMemory;
 
     for (i=1; i<argc; i++)
     {
@@ -4112,7 +4076,6 @@ void
 ManualPlayerInsert(PLAYERp pp)
 {
     PLAYERp npp = Player + numplayers;
-    int i;
 
     if (numplayers < MAX_SW_PLAYERS)
     {
@@ -4144,7 +4107,6 @@ void
 BotPlayerInsert(PLAYERp pp)
 {
     PLAYERp npp = Player + numplayers;
-    int i;
 
     if (numplayers < MAX_SW_PLAYERS)
     {
@@ -4178,7 +4140,6 @@ ManualPlayerDelete(PLAYERp cur_pp)
 {
     short i, nexti;
     USERp u;
-    short save_myconnectindex;
     PLAYERp pp;
 
     if (numplayers > 1)
@@ -4505,7 +4466,6 @@ SWBOOL DoQuickLoad()
 void
 FunctionKeys(PLAYERp pp)
 {
-    extern SWBOOL GamePaused;
     static int rts_delay = 0;
     int fn_key = 0;
 
@@ -4534,7 +4494,6 @@ FunctionKeys(PLAYERp pp)
 
             if (CommEnabled)
             {
-                short pnum;
                 PACKET_RTS p;
 
                 p.PacketType = PACKET_TYPE_RTS;
@@ -4723,7 +4682,6 @@ FunctionKeys(PLAYERp pp)
 void PauseKey(PLAYERp pp)
 {
     extern SWBOOL GamePaused,CheatInputMode;
-    extern SWBOOL enabled;
 
     if (KEY_PRESSED(sc_Pause) && !CommEnabled && !InputMode && !UsingMenus && !CheatInputMode && !ConPanel)
     {
@@ -4773,11 +4731,9 @@ void PauseKey(PLAYERp pp)
 void GetMessageInput(PLAYERp pp)
 {
     int pnum = myconnectindex;
-    short w,h;
     signed char MNU_InputSmallString(char *, short);
     signed char MNU_InputString(char *, short);
-    static SWBOOL cur_show;
-    static SWBOOL TeamSendAll, TeamSendTeam;
+    static SWBOOL TeamSendAll;
 #define TEAM_MENU "A - Send to ALL,  T - Send to TEAM"
     static char HoldMessageInputString[256];
     int i;
@@ -4791,7 +4747,6 @@ void GetMessageInput(PLAYERp pp)
             KB_FlushKeyboardQueue();
             MessageInputMode = TRUE;
             InputMode = TRUE;
-            TeamSendTeam = FALSE;
             TeamSendAll = FALSE;
 
             if (MessageInputMode)
@@ -4905,7 +4860,6 @@ SEND_MESSAGE:
                 else if (memcmp(MessageInputString, TEAM_MENU "t", sizeof(TEAM_MENU)+1) == 0)
                 {
                     strcpy(MessageInputString, HoldMessageInputString);
-                    TeamSendTeam = TRUE;
                     goto SEND_MESSAGE;
                 }
                 else
@@ -4925,11 +4879,8 @@ SEND_MESSAGE:
 
 void GetConInput(PLAYERp pp)
 {
-    int pnum = myconnectindex;
-    short w,h;
     signed char MNU_InputSmallString(char *, short);
     signed char MNU_InputString(char *, short);
-    static SWBOOL cur_show;
 
     if (MessageInputMode || HelpInputMode)
         return;
@@ -5064,11 +5015,9 @@ short MirrorDelay;
 void
 getinput(SW_PACKET *loc)
 {
-    SWBOOL found = FALSE;
     int i;
     PLAYERp pp = Player + myconnectindex;
     PLAYERp newpp = Player + myconnectindex;
-    int pnum = myconnectindex;
     int inv_hotkey = 0;
 
 #define TURBOTURNTIME (120/8)
