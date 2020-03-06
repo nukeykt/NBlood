@@ -551,9 +551,9 @@ StopInventoryEnvironSuit(PLAYERp pp, short InventoryNum)
 //
 //////////////////////////////////////////////////////////////////////
 
+#if 0
 static char sectorfloorpals[MAXSECTORS], sectorceilingpals[MAXSECTORS], wallpals[MAXWALLS];
 
-#if 0
 void
 DoPlayerNightVisionPalette(PLAYERp pp)
 {
