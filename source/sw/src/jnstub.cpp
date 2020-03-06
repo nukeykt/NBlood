@@ -3366,7 +3366,6 @@ SetClipdist2D(void)
 {
     short dist;
     int i;
-    short num;
 
     if (in3dmode())
         return;
@@ -3381,7 +3380,7 @@ SetClipdist2D(void)
     {
         if (TEST(highlight[i], SPRITE_FLAG))
         {
-            num = RESET(highlight[i], SPRITE_FLAG);
+            RESET(highlight[i], SPRITE_FLAG);
             sprite[highlight[i]].clipdist = dist;
         }
     }

@@ -2288,7 +2288,6 @@ void
 DoPlayerSlide(PLAYERp pp)
 {
     USERp u = User[pp->PlayerSprite];
-    int ret;
     int push_ret;
 
     if ((pp->slide_xvect|pp->slide_yvect) == 0)
@@ -2316,7 +2315,7 @@ DoPlayerSlide(PLAYERp pp)
         }
         return;
     }
-    ret = clipmove((vec3_t *)pp, &pp->cursectnum, pp->slide_xvect, pp->slide_yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+    clipmove((vec3_t *)pp, &pp->cursectnum, pp->slide_xvect, pp->slide_yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     PlayerCheckValidMove(pp);
     push_ret = pushmove((vec3_t *)pp, &pp->cursectnum, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
     if (push_ret < 0)
@@ -2558,7 +2557,6 @@ void PlayerSectorBound(PLAYERp pp, int amt)
 void
 DoPlayerMove(PLAYERp pp)
 {
-    int ret = 0;
     USERp u = User[pp->PlayerSprite];
     int friction;
     int save_cstat;
@@ -2644,7 +2642,7 @@ DoPlayerMove(PLAYERp pp)
         save_cstat = pp->SpriteP->cstat;
         RESET(pp->SpriteP->cstat, CSTAT_SPRITE_BLOCK);
         COVERupdatesector(pp->posx, pp->posy, &pp->cursectnum);
-        ret = clipmove((vec3_t *)pp, &pp->cursectnum, pp->xvect, pp->yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
+        clipmove((vec3_t *)pp, &pp->cursectnum, pp->xvect, pp->yvect, ((int)pp->SpriteP->clipdist<<2), pp->ceiling_dist, pp->floor_dist, CLIPMASK_PLAYER);
         pp->SpriteP->cstat = save_cstat;
         PlayerCheckValidMove(pp);
 
@@ -2812,7 +2810,6 @@ DoPlayerMoveBoat(PLAYERp pp)
 {
     int z;
     int floor_dist;
-    int ret;
     short save_sectnum;
     SECTOR_OBJECTp sop = pp->sop;
 
@@ -2879,7 +2876,7 @@ DoPlayerMoveBoat(PLAYERp pp)
     pp->cursectnum = pp->sop->op_main_sector; // for speed
 
     floor_dist = labs(z - pp->sop->floor_loz);
-    ret = clipmove_old(&pp->posx, &pp->posy, &z, &pp->cursectnum, pp->xvect, pp->yvect, (int)pp->sop->clipdist, Z(4), floor_dist, CLIPMASK_PLAYER);
+    clipmove_old(&pp->posx, &pp->posy, &z, &pp->cursectnum, pp->xvect, pp->yvect, (int)pp->sop->clipdist, Z(4), floor_dist, CLIPMASK_PLAYER);
 
     OperateSectorObject(pp->sop, pp->pang, pp->posx, pp->posy);
     pp->cursectnum = save_sectnum; // for speed
