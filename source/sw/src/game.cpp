@@ -2026,9 +2026,6 @@ TenScreen(void)
 void
 TitleLevel(void)
 {
-    int fin;
-    unsigned char backup_pal[256*3];
-    unsigned char pal[PAL_SIZE];
     char tempbuf[256];
     char *palook_bak = palookup[0];
     int i;
@@ -2037,12 +2034,15 @@ TitleLevel(void)
         tempbuf[i] = i;
     palookup[0] = tempbuf;
 
+//    unsigned char backup_pal[256*3];
+//    unsigned char pal[PAL_SIZE];
     //GetPaletteFromVESA(pal);
     //memcpy(backup_pal, pal, PAL_SIZE);
 
     videoClearViewableArea(0L);
     videoNextPage();
 
+//    int fin;
 //    if ((fin = kopen4load("title.pal", 0)) != -1)
 //        {
 //        kread(fin, pal, PAL_SIZE);

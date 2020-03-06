@@ -183,11 +183,11 @@ void RTS_Init(char *filename)
 
 void RTS_Shutdown(void)
 {
-    int32_t i;
-
     if (lumpcache)
     {
 #if 0
+        int32_t i;
+
         for (i=0; i<numlumps; i++)
         {
             if (lumpcache[i])
