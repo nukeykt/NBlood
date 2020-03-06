@@ -58,8 +58,11 @@ LPFN_WSARECVMSG WSARecvMsgPtr;
 #ifdef __APPLE__
 # define __APPLE_USE_RFC_3542
 #endif
+
 #ifdef __GNUC__
+#ifndef __USE_GNU
 # define __USE_GNU
+#endif
 #endif
 
 #include <unistd.h>
