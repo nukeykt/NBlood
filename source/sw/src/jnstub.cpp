@@ -727,8 +727,6 @@ ExtInit(void)
 #endif
 
 
-    int fil;
-
     // Store user log in time
     //LogUserTime(TRUE);              // Send true because user is logging
     // in.
@@ -738,6 +736,8 @@ ExtInit(void)
     SW_ExtInit();
 
     /*
+        int fil;
+
         if ((fil = open("setup.dat", O_BINARY | O_RDWR, S_IREAD)) != -1)
             {
             read(fil, &option[0], NUMOPTIONS);

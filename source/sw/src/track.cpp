@@ -722,8 +722,6 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
     SWBOOL FoundOutsideLoop = FALSE;
     SWBOOL SectorInBounds;
     SECTORp *sectp;
-    PLAYERp pp;
-    short pnum;
     USERp u = User[sop->sp_child - sprite];
 
     static unsigned char StatList[] =
@@ -775,6 +773,8 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
 #if 0
     // look for players on sector object
+    PLAYERp pp;
+    short pnum;
     TRAVERSE_CONNECT(pnum)
     {
         pp = &Player[pnum];

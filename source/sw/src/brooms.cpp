@@ -173,11 +173,8 @@ void
 SetupBuildFAF(void)
 {
     short i, nexti;
-    SPRITEp sp,vc_sp,vf_sp,vl_sp;
+    SPRITEp sp;
     short SpriteNum, NextSprite;
-    short vc,nextvc,vf,nextvf,l,nextl;
-    int zdiff;
-
     // move every sprite to the correct list
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_DEFAULT], SpriteNum, NextSprite)
     {
@@ -262,6 +259,10 @@ SetupBuildFAF(void)
 
 #if 0
     // check ceiling and floor heights
+    SPRITEp vc_sp,vf_sp,vl_sp;
+    short vc,nextvc,vf,nextvf,l,nextl;
+    int zdiff;
+
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FAF], vc, nextvc)
     {
         vc_sp = &sprite[vc];

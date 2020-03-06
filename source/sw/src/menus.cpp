@@ -3327,7 +3327,7 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
     short shade = MENU_SHADE_DEFAULT;
     extern char LevelSong[];
     const char *extra_text = NULL;
-    PLAYERp pp = &Player[myconnectindex];
+//    PLAYERp pp = &Player[myconnectindex];
     int button_x,zero=0;
     int handle=0;
     extern SWBOOL FxInitialized;

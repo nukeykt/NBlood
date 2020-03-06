@@ -1315,7 +1315,7 @@ void
 DoPlayerTeleportPause(PLAYERp pp)
 {
     USERp u = User[pp->PlayerSprite];
-    SPRITEp sp = pp->SpriteP;
+//    SPRITEp sp = pp->SpriteP;
 
     // set this so we don't get stuck in teleporting loop
     pp->lastcursectnum = pp->cursectnum;
@@ -3810,7 +3810,7 @@ DoPlayerFall(PLAYERp pp)
 void
 DoPlayerBeginClimb(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
+//    USERp u = User[pp->PlayerSprite];
     SPRITEp sp = pp->SpriteP;
 
     RESET(pp->Flags, PF_JUMPING|PF_FALLING);
@@ -4344,7 +4344,7 @@ DoPlayerCrawl(PLAYERp pp)
 void
 DoPlayerBeginFly(PLAYERp pp)
 {
-    USERp u = User[pp->PlayerSprite];
+//    USERp u = User[pp->PlayerSprite];
 
     RESET(pp->Flags, PF_FALLING | PF_JUMPING | PF_CRAWLING);
     SET(pp->Flags, PF_FLYING);
@@ -6454,8 +6454,6 @@ DoPlayerBeginDie(PLAYERp pp)
         DoPlayerDeathDrown,
     };
 
-    short random;
-
 #define PLAYER_DEATH_TILT_VALUE       (32)
 #define PLAYER_DEATH_HORIZ_UP_VALUE   (165)
 #define PLAYER_DEATH_HORIZ_JUMP_VALUE (150)
@@ -6505,6 +6503,8 @@ DoPlayerBeginDie(PLAYERp pp)
     RESET(pp->Flags, PF_JUMPING|PF_FALLING|PF_DIVING|PF_FLYING|PF_CLIMBING|PF_CRAWLING|PF_LOCK_CRAWL);
 
 #if 0
+    short random;
+
     // get tilt value
     random = RANDOM_P2(1024);
     if (random < 128)
@@ -7853,10 +7853,11 @@ void
 domovethings(void)
 {
     extern SWBOOL DebugAnim;
+#if DEBUG
     extern SWBOOL DebugPanel;
+#endif
     extern SWBOOL DebugSector;
     extern SWBOOL DebugActorFreeze;
-    extern SWBOOL ResCheat;
     extern int PlayClock;
     short i, pnum;
     int WeaponOperate(PLAYERp pp);
@@ -7946,6 +7947,7 @@ domovethings(void)
 
 
 #if 0 // has been moved to draw code
+    extern SWBOOL ResCheat;
     if (ResCheat)
     {
         ResCheat = FALSE;
@@ -7999,7 +8001,6 @@ domovethings(void)
         extern SWBOOL PlayerTrackingMode;
         void pSpriteControl(PLAYERp pp);
         extern PLAYERp GlobPlayerP;
-        extern SWBOOL ScrollMode2D;
 
         pp = Player + pnum;
         GlobPlayerP = pp;
@@ -8029,6 +8030,7 @@ domovethings(void)
         DoPlayerSectorUpdatePreMove(pp);
         ChopsCheck(pp);
 
+//        extern SWBOOL ScrollMode2D;
         //if (!ScrollMode2D)
         (*pp->DoPlayerAction)(pp);
 

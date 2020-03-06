@@ -637,11 +637,11 @@ SectorMidPoint(short sectnum, int *xmid, int *ymid, int *zmid)
 void
 DoSpringBoard(PLAYERp pp, short sectnum)
 {
-    int sb;
-    int i;
     void DoPlayerBeginForceJump(PLAYERp);
 
 #if 0
+    int sb;
+    int i;
     i = AnimGetGoal(&sector[sectnum].floorz);
 
     // if in motion return
@@ -1399,7 +1399,6 @@ WeaponExplodeSectorInRange(short weapon)
     SPRITEp sp;
     int dist;
     int radius;
-    short match;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_SPRITE_HIT_MATCH], i, nexti)
     {
@@ -1419,10 +1418,11 @@ WeaponExplodeSectorInRange(short weapon)
         if (!FAFcansee(wp->x,wp->y,wp->z,wp->sectnum,sp->x,sp->y,sp->z,sp->sectnum))
             continue;
 
+#if 0
+//        short match;
         match = sp->hitag;
         // this and every other crack sprite of this type is now dead
         // don't use them
-#if 0
         KillMatchingCrackSprites(match);
         DoExplodeSector(match);
         DoMatchEverything(NULL, match, -1);
@@ -2921,11 +2921,11 @@ DoAnim(int numtics)
 void
 AnimClear(void)
 {
-    int i;
-
 #if 1
     AnimCnt = 0;
 #else
+    int i;
+
     for (i = AnimCnt - 1; i >= 0; i--)
     {
         if (Anim[i].extra)

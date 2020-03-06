@@ -334,10 +334,10 @@ void
 InitFX(void)
 {
     VOC_INFOp vp;
-    short i;
 
 #if 0
     // DEBUG
+    short i;
     for (i=0; i<DIGI_MAX; i++)
     {
         globsndata[i] = globvpdata[i] = NULL;
@@ -377,7 +377,7 @@ ExternalSoundMod(void)
     VOC_INFOp vp;
     char name[40];
     char new_name[40];
-    int pri;
+//    int pri;
     int pitch_lo, pitch_hi;
     int ret;
 

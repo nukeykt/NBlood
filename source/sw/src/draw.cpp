@@ -1678,9 +1678,9 @@ void ScreenCaptureKeys(void)
 void DrawCheckKeys(PLAYERp pp)
 {
     extern SWBOOL ResCheat;
-    extern SWBOOL PauseKeySet;
 
     /* JonoF: Who really needs this now?
+    extern SWBOOL PauseKeySet;
     if (KEY_PRESSED(KEYSC_F5) && !(KEY_PRESSED(KEYSC_RSHIFT) || KEY_PRESSED(KEYSC_LSHIFT) || KEY_PRESSED(KEYSC_ALT) || KEY_PRESSED(KEYSC_RALT)) && !PauseKeySet)
         {
         KEY_PRESSED(KEYSC_F5) = 0;
@@ -2011,8 +2011,6 @@ void
 PostDraw(void)
 {
     short i, nexti;
-    short sectnum,statnum;
-    SPRITEp sp;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FLOOR_SLOPE_DONT_DRAW], i, nexti)
     {
@@ -2028,9 +2026,9 @@ PostDraw(void)
         }
 
 #if DEBUG
-        sp = &sprite[i];
-        statnum = sp->statnum;
-        sectnum = sp->sectnum;
+        SPRITEp sp = &sprite[i];
+        short statnum = sp->statnum;
+        short sectnum = sp->sectnum;
         memset(sp, 0xCC, sizeof(SPRITE));
         sp->statnum = statnum;
         sp->sectnum = sectnum;

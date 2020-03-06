@@ -448,7 +448,7 @@ SW_SendMessage(short pnum, const char *text)
 void
 InitNetPlayerOptions(void)
 {
-    short pnum;
+//    short pnum;
     PLAYERp pp = Player + myconnectindex;
     PACKET_OPTIONS p;
 
@@ -486,7 +486,7 @@ InitNetPlayerOptions(void)
 void
 SendMulitNameChange(char *new_name)
 {
-    short pnum;
+//    short pnum;
     PLAYERp pp = Player + myconnectindex;
     PACKET_NAME_CHANGE p;
 
@@ -513,7 +513,7 @@ SendMulitNameChange(char *new_name)
 void
 SendVersion(int version)
 {
-    short pnum;
+//    short pnum;
     PLAYERp pp = Player + myconnectindex;
     PACKET_VERSION p;
 
@@ -656,7 +656,7 @@ waitforeverybody(void)
             // allow exit
             //if (KEY_PRESSED(KEYSC_ESC))
             {
-                short pnum;
+//                short pnum;
                 //TRAVERSE_CONNECT(pnum)
                 {
                     //if (pnum != myconnectindex)
