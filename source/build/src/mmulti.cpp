@@ -97,8 +97,10 @@ static int GetTickCount(void)
 #define SIMMIS 0     //Release:0  Test:100 Packets per 256 missed.
 #define SIMLAG 0     //Release:0  Test: 10 Packets to delay receipt
 #define PRESENCETIMEOUT 2000
+#if (SIMLAG > 1)
 static int simlagcnt[MAXPLAYERS];
 static unsigned char simlagfif[MAXPLAYERS][SIMLAG+1][MAXPAKSIZ+2];
+#endif
 #if ((SIMMIS != 0) || (SIMLAG != 0))
 #pragma message("\n\nWARNING! INTENTIONAL PACKET LOSS SIMULATION IS ENABLED!\nREMEMBER TO CHANGE SIMMIS&SIMLAG to 0 before RELEASE!\n\n")
 #endif
@@ -885,8 +887,6 @@ int initmultiplayerscycle(void)
 
 void initmultiplayers (int argc, char const * const argv[])
 {
-	int i, j, k, otims;
-
 	if (initmultiplayersparms(argc,argv))
 	{
 		while (initmultiplayerscycle())
@@ -1004,8 +1004,6 @@ void dosendpackets (int other)
 
 void sendpacket (int other, unsigned char *bufptr, int messleng)
 {
-	int i, j;
-
 	if (numplayers < 2) return;
 
 	if (pakmemi+messleng+2 > (int)sizeof(pakmem)) pakmemi = 1;
