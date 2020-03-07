@@ -589,7 +589,7 @@ MNU_Ten(void)
 */
 // CTW REMOVED END
 SWBOOL
-MNU_DoEpisodeSelect(UserCall call, MenuItem *item)
+MNU_DoEpisodeSelect(UserCall UNUSED(call), MenuItem *UNUSED(item))
 {
     short w,h;
     char *extra_text;
@@ -605,7 +605,7 @@ MNU_DoEpisodeSelect(UserCall call, MenuItem *item)
 }
 
 SWBOOL
-MNU_DoParentalPassword(UserCall call, MenuItem_p item)
+MNU_DoParentalPassword(UserCall UNUSED(call), MenuItem_p UNUSED(item))
 {
     short w,h;
     signed char MNU_InputString(char *, short);
@@ -1255,7 +1255,7 @@ static SWBOOL MNU_SetAdvancedMouseFunctions(MenuItem_p item)
 
 static MenuItem_p joystick_button_item = NULL;
 
-static SWBOOL MNU_JoystickButtonsInitialise(MenuItem_p mitem)
+static SWBOOL MNU_JoystickButtonsInitialise(MenuItem_p UNUSED(mitem))
 {
     MenuItem_p item;
     MenuItem templayer = { DefLayer(0, JoystickButtonNames[0], &joybuttonsgroup), OPT_XS, OPT_LINE(0), 1, m_defshade, 0, NULL, NULL, MNU_JoystickButtonPostProcess };
@@ -1480,7 +1480,7 @@ static SWBOOL MNU_SetJoystickButtonFunctions(MenuItem_p item)
 
 static MenuItem_p joystick_axis_item = NULL;
 
-static SWBOOL MNU_JoystickAxesInitialise(MenuItem_p mitem)
+static SWBOOL MNU_JoystickAxesInitialise(MenuItem_p UNUSED(mitem))
 {
     if (!CONTROL_JoyPresent)
     {
@@ -2974,7 +2974,7 @@ MNU_LoadSaveMove(UserCall call, MenuItem_p item)
 }
 
 SWBOOL
-MNU_LoadSaveDraw(UserCall call, MenuItem_p item)
+MNU_LoadSaveDraw(UserCall UNUSED(call), MenuItem_p UNUSED(item))
 {
     short i;
     short game_num;

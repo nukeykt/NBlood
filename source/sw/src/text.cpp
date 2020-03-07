@@ -295,7 +295,7 @@ DisplayMiniBarNumber(short xs, short ys, int number)
 }
 
 void
-DisplayMiniBarSmString(PLAYERp pp, short xs, short ys, short pal, const char *buffer)
+DisplayMiniBarSmString(PLAYERp UNUSED(pp), short xs, short ys, short pal, const char *buffer)
 {
     short size=4,x;
     const char *ptr;
