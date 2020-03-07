@@ -2267,7 +2267,7 @@ ExtCheckKeys(void)
 }
 
 void
-ExtLoadMap(const char *mapname)
+ExtLoadMap(const char *UNUSED(mapname))
 {
     BuildStagTable();
 
@@ -2300,7 +2300,7 @@ ExtLoadMap(const char *mapname)
 }
 
 void
-ExtSaveMap(const char *mapname)
+ExtSaveMap(const char *UNUSED(mapname))
 {
     int i;
 
@@ -2847,7 +2847,7 @@ DrawClipBox(short spritenum)
 }
 
 void
-ExtShowSectorData(short sectnum)        // F5
+ExtShowSectorData(int16_t UNUSED(sectnum))        // F5
 {
     int i, x, y, x2;
 
@@ -3020,7 +3020,7 @@ ExtShowSpriteData(short spritenum)      // F6
 }
 
 void
-ExtEditSectorData(short sectnum)        // F7
+ExtEditSectorData(int16_t UNUSED(sectnum))        // F7
 {
     SPRITEp sp;
 
@@ -3048,7 +3048,7 @@ ExtEditSectorData(short sectnum)        // F7
 }
 
 void
-ExtEditWallData(short wallnum)          // F8
+ExtEditWallData(int16_t UNUSED(wallnum))          // F8
 {
 //    short nickdata;
 
