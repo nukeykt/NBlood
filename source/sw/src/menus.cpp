@@ -564,7 +564,6 @@ MenuItem_p cust_callback_item;
 
 // Prototypes ///////////////////////////////////////////////////////////////////////////////////
 
-static void MNU_ClearDialog(void);
 static SWBOOL MNU_Dialog(void);
 static void MNU_ItemPreProcess(MenuGroup *group);
 static void MNU_SelectItem(MenuGroup *group, short index, SWBOOL draw);
