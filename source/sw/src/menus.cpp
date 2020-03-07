@@ -4566,7 +4566,7 @@ SetupMenu(void)
 ////////////////////////////////////////////////
 #define MNU_SENSITIVITY 10              // The menu's mouse sensitivity, should be real low
 
-void MNU_DoMenu(CTLType type, PLAYERp pp)
+void MNU_DoMenu(CTLType UNUSED(type))
 {
     SWBOOL resetitem;
     int zero = 0;
@@ -4714,7 +4714,7 @@ MNU_CheckForMenus(void)
     if (UsingMenus)
     {
         //if (MoveSkip2 == 0)
-        MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+        MNU_DoMenu(ct_mainmenu);
     }
     else
     {
@@ -4725,7 +4725,7 @@ MNU_CheckForMenus(void)
             KB_ClearKeysDown();
             // setup sliders/buttons
             MNU_InitMenus();
-            MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+            MNU_DoMenu(ct_mainmenu);
             pMenuClearTextLine(Player + myconnectindex);
             PauseGame();
         }
@@ -4738,7 +4738,7 @@ MNU_CheckForMenusAnyKey(void)
     if (UsingMenus)
     {
         //if (MoveSkip2 == 0)
-        MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+        MNU_DoMenu(ct_mainmenu);
     }
     else
     {
@@ -4747,7 +4747,7 @@ MNU_CheckForMenusAnyKey(void)
             ResetKeys();
             KB_ClearKeysDown();
             MNU_InitMenus();
-            MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+            MNU_DoMenu(ct_mainmenu);
             pMenuClearTextLine(Player + myconnectindex);
         }
     }

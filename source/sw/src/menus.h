@@ -46,7 +46,7 @@ extern int16_t MenuTextShade;
 extern int16_t MenuTextPalette;
 
 // Prototypes
-//void MNU_DoMenu( CTLType type, PLAYERp pp );
+//void MNU_DoMenu( CTLType type );
 void MNU_InitMenus(void);
 //void (*CustomRefresh)(void);
 //void MNU_Refresh( void );
