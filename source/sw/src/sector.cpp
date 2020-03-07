@@ -635,7 +635,7 @@ SectorMidPoint(short sectnum, int *xmid, int *ymid, int *zmid)
 
 
 void
-DoSpringBoard(PLAYERp pp, short sectnum)
+DoSpringBoard(PLAYERp pp/*, short sectnum*/)
 {
     void DoPlayerBeginForceJump(PLAYERp);
 
@@ -2693,7 +2693,7 @@ PlayerOperateEnv(PLAYERp pp)
                 DoSlidorOperate(pp, pp->cursectnum);
                 break;
             case TAG_SPRING_BOARD:
-                DoSpringBoard(pp, pp->cursectnum);
+                DoSpringBoard(pp/*, pp->cursectnum*/);
                 FLAG_KEY_RELEASE(pp, SK_OPERATE);
                 break;
             case TAG_DOOR_ROTATE:
