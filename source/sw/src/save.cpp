@@ -90,10 +90,10 @@ extern short BossSpriteNum[3];
 void ScreenTileLock(void);
 void ScreenTileUnLock(void);
 
-int ScreenSaveSetup(PLAYERp pp);
+int ScreenSaveSetup(void);
 void ScreenSave(MFILE_WRITE fout);
 
-int ScreenLoadSaveSetup(PLAYERp pp);
+int ScreenLoadSaveSetup(void);
 void ScreenLoad(MFILE_READ fin);
 
 #define PANEL_SAVE 1
@@ -248,7 +248,7 @@ int SaveGame(short save_num)
     MWRITE(&Level,sizeof(Level),1,fil);
     MWRITE(&Skill,sizeof(Skill),1,fil);
 
-    ScreenSaveSetup(&Player[myconnectindex]);
+    ScreenSaveSetup();
 
     ScreenSave(fil);
 
@@ -707,7 +707,7 @@ int LoadGameFullHeader(short save_num, char *descr, short *level, short *skill)
     MREAD(level,sizeof(*level),1,fil);
     MREAD(skill,sizeof(*skill),1,fil);
 
-    tile = ScreenLoadSaveSetup(Player + myconnectindex);
+    tile = ScreenLoadSaveSetup();
     ScreenLoad(fil);
 
     MCLOSE_READ(fil);
@@ -781,7 +781,7 @@ int LoadGame(short save_num)
     MREAD(&Level,sizeof(Level),1,fil);
     MREAD(&Skill,sizeof(Skill),1,fil);
 
-    ScreenLoadSaveSetup(Player + myconnectindex);
+    ScreenLoadSaveSetup();
     ScreenLoad(fil);
     ScreenTileUnLock();
 

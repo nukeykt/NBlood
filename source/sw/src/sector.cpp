@@ -1436,7 +1436,7 @@ WeaponExplodeSectorInRange(short weapon)
 
 
 void
-ShootableSwitch(short SpriteNum, short Weapon)
+ShootableSwitch(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
 
@@ -1599,7 +1599,7 @@ void DoMatchEverything(PLAYERp pp, short match, short state)
         DoVatorMatch(pp, match);
 
     if (!TestSpikeMatchActive(match))
-        DoSpikeMatch(pp, match);
+        DoSpikeMatch(match);
 
     if (!TestRotatorMatchActive(match))
         DoRotatorMatch(pp, match, FALSE);
@@ -1883,7 +1883,7 @@ OperateSprite(short SpriteNum, short player_is_operating)
             DoVatorMatch(pp, sp->hitag);
 
         if (!TestSpikeMatchActive(sp->hitag))
-            DoSpikeMatch(pp, sp->hitag);
+            DoSpikeMatch(sp->hitag);
 
         if (!TestRotatorMatchActive(sp->hitag))
             DoRotatorMatch(pp, sp->hitag, FALSE);
@@ -2147,7 +2147,7 @@ OperateTripTrigger(PLAYERp pp)
         if (!TestVatorMatchActive(sectp->hitag))
             DoVatorMatch(pp, sectp->hitag);
         if (!TestSpikeMatchActive(sectp->hitag))
-            DoSpikeMatch(pp, sectp->hitag);
+            DoSpikeMatch(sectp->hitag);
         if (!TestRotatorMatchActive(sectp->hitag))
             DoRotatorMatch(pp, sectp->hitag, FALSE);
         if (!TestSlidorMatchActive(sectp->hitag))
@@ -2688,7 +2688,7 @@ PlayerOperateEnv(PLAYERp pp)
             {
             case TAG_VATOR:
                 DoVatorOperate(pp, pp->cursectnum);
-                DoSpikeOperate(pp, pp->cursectnum);
+                DoSpikeOperate(pp->cursectnum);
                 DoRotatorOperate(pp, pp->cursectnum);
                 DoSlidorOperate(pp, pp->cursectnum);
                 break;

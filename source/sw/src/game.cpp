@@ -251,7 +251,7 @@ SWBOOL DebugActor = FALSE;
 SWBOOL DebugAnim = FALSE;
 SWBOOL DebugOperate = FALSE;
 SWBOOL DebugActorFreeze = FALSE;
-void LoadingLevelScreen(char *level_name);
+void LoadingLevelScreen(void);
 
 uint8_t FakeMultiNumPlayers;
 
@@ -1396,7 +1396,7 @@ InitLevel(void)
     if (NewGame)
         InitNewGame();
 
-    LoadingLevelScreen(LevelName);
+    LoadingLevelScreen();
     MONO_PRINT("LoadintLevelScreen");
     if (!DemoMode && !DemoInitOnce)
         DemoPlaySetup();
@@ -2353,7 +2353,7 @@ SceneLevel(void)
 }
 
 void
-LoadingLevelScreen(char *level_name)
+LoadingLevelScreen(void)
 {
     short w,h;
     extern SWBOOL DemoMode;
@@ -2432,7 +2432,7 @@ int BonusGrabSound(short SpriteNum)
 }
 
 void
-BonusScreen(PLAYERp pp)
+BonusScreen(void)
 {
     int minutes,seconds,second_tics;
     extern int PlayClock;
@@ -2679,7 +2679,7 @@ void EndGameSequence(void)
     if (anim_ok)
         playanm(FinishAnim);
 
-    BonusScreen(Player + myconnectindex);
+    BonusScreen();
 
     ExitLevel = FALSE;
     QuitFlag = FALSE;
@@ -2747,7 +2747,7 @@ StatScreen(PLAYERp mpp)
     {
         if (!FinishedLevel)
             return;
-        BonusScreen(mpp);
+        BonusScreen();
         return;
     }
 
@@ -4136,7 +4136,7 @@ BotPlayerInsert(PLAYERp pp)
 }
 
 void
-ManualPlayerDelete(PLAYERp cur_pp)
+ManualPlayerDelete(void)
 {
     short i, nexti;
     USERp u;
@@ -4265,7 +4265,7 @@ SinglePlayInput(PLAYERp pp)
     if (KEY_PRESSED(KEYSC_DEL))
     {
         KEY_PRESSED(KEYSC_DEL) = 0;
-        ManualPlayerDelete(pp);
+        ManualPlayerDelete();
     }
 
     // Move control to numbered player
@@ -4877,7 +4877,7 @@ SEND_MESSAGE:
     }
 }
 
-void GetConInput(PLAYERp pp)
+void GetConInput(void)
 {
     signed char MNU_InputSmallString(char *, short);
     signed char MNU_InputString(char *, short);
@@ -5096,7 +5096,7 @@ getinput(SW_PACKET *loc)
     if (!MenuInputMode && !UsingMenus)
     {
         GetMessageInput(pp);
-        GetConInput(pp);
+        GetConInput();
         GetHelpInput(pp);
     }
 
@@ -5477,7 +5477,7 @@ getinput(SW_PACKET *loc)
     if (BUTTON(gamefunc_Toggle_Crosshair))
     {
         CONTROL_ClearButton(gamefunc_Toggle_Crosshair);
-        pToggleCrosshair(pp);
+        pToggleCrosshair();
     }
 }
 
@@ -5522,7 +5522,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
 
     if (ScrollMode2D)
     {
-        minigametext(txt_x,txt_y-7,"Follow Mode",0,2+8);
+        minigametext(txt_x,txt_y-7,"Follow Mode",2+8);
     }
 
     if (UserMapName[0])
@@ -5530,7 +5530,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
     else
         sprintf(ds,"%s",LevelInfo[Level].Description);
 
-    minigametext(txt_x,txt_y,ds,0,2+8);
+    minigametext(txt_x,txt_y,ds,2+8);
 
     //////////////////////////////////
 

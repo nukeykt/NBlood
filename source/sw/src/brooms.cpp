@@ -38,7 +38,7 @@ extern int qsetmode;
 
 SWBOOL FindCeilingView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum);
 SWBOOL FindFloorView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum);
-short ViewSectorInScene(short cursectnum, short type, short level);
+short ViewSectorInScene(short cursectnum, short level);
 void Message(const char *string, char color);
 
 
@@ -125,7 +125,7 @@ void ToggleFAF(void)
 
         if (sector[cursectnum].ceilingpicnum == FAF_MIRROR_PIC)
         {
-            match = ViewSectorInScene(tsectnum, VIEW_THRU_CEILING, VIEW_LEVEL1);
+            match = ViewSectorInScene(tsectnum, VIEW_LEVEL1);
 
             FAF_DontMoveSectors = TRUE;
             FindCeilingView(match, &tx, &ty, tz, &tsectnum);
@@ -138,7 +138,7 @@ void ToggleFAF(void)
         }
         else if (sector[cursectnum].floorpicnum == FAF_MIRROR_PIC)
         {
-            match = ViewSectorInScene(tsectnum, VIEW_THRU_FLOOR, VIEW_LEVEL2);
+            match = ViewSectorInScene(tsectnum, VIEW_LEVEL2);
 
             FAF_DontMoveSectors = TRUE;
             FindFloorView(match, &tx, &ty, tz, &tsectnum);
@@ -637,7 +637,7 @@ SectorInScene(short tile_num)
 }
 
 short
-ViewSectorInScene(short cursectnum, short type, short level)
+ViewSectorInScene(short cursectnum, short level)
 {
     int i, nexti;
     SPRITEp sp;
@@ -675,7 +675,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
 
     save.zcount = 0;
 
-    match = ViewSectorInScene(tsectnum, VIEW_THRU_CEILING, VIEW_LEVEL1);
+    match = ViewSectorInScene(tsectnum, VIEW_LEVEL1);
     if (match != -1)
     {
         FindCeilingView(match, &tx, &ty, tz, &tsectnum);
@@ -700,7 +700,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
     }
     else
     {
-        match = ViewSectorInScene(tsectnum, VIEW_THRU_FLOOR, VIEW_LEVEL2);
+        match = ViewSectorInScene(tsectnum, VIEW_LEVEL2);
         if (match != -1)
         {
             FindFloorView(match, &tx, &ty, tz, &tsectnum);

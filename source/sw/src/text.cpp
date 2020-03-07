@@ -266,7 +266,7 @@ DisplayPanelNumber(PLAYERp pp, short xs, short ys, int number)
 }
 
 void
-DisplayMiniBarNumber(PLAYERp pp, short xs, short ys, int number)
+DisplayMiniBarNumber(short xs, short ys, int number)
 {
     char buffer[32];
     char *ptr;

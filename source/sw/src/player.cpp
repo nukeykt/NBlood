@@ -184,7 +184,7 @@ void DoPlayerOperateTurret(PLAYERp pp);
 void DoPlayerBeginDive(PLAYERp pp);
 void DoPlayerDive(PLAYERp pp);
 void DoPlayerTeleportPause(PLAYERp pp);
-SWBOOL PlayerFlyKey(PLAYERp pp);
+SWBOOL PlayerFlyKey(void);
 void OperateSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy);
 void CheckFootPrints(PLAYERp pp);
 SWBOOL DoPlayerTestCrawl(PLAYERp pp);
@@ -3533,7 +3533,7 @@ DoPlayerJump(PLAYERp pp)
         }
     }
 
-    if (PlayerFlyKey(pp))
+    if (PlayerFlyKey())
     {
         DoPlayerBeginFly(pp);
         return;
@@ -3785,7 +3785,7 @@ DoPlayerFall(PLAYERp pp)
         }
     }
 
-    if (PlayerFlyKey(pp))
+    if (PlayerFlyKey())
     {
         DoPlayerBeginFly(pp);
         return;
@@ -4085,7 +4085,7 @@ DoPlayerWadeSuperJump(PLAYERp pp)
     return FALSE;
 }
 
-SWBOOL PlayerFlyKey(PLAYERp pp)
+SWBOOL PlayerFlyKey(void)
 {
     SWBOOL key;
 
@@ -4445,7 +4445,7 @@ DoPlayerFly(PLAYERp pp)
         pp->z_speed = 0;
     }
 
-    if (PlayerFlyKey(pp))
+    if (PlayerFlyKey())
     {
         RESET(pp->Flags, PF_FLYING);
         pp->bob_amt = 0;
@@ -5610,7 +5610,7 @@ DoPlayerWade(PLAYERp pp)
         FLAG_KEY_RESET(pp, SK_JUMP);
     }
 
-    if (PlayerFlyKey(pp))
+    if (PlayerFlyKey())
     {
         //pp->InventoryTics[INVENTORY_FLY] = -99;
         DoPlayerBeginFly(pp);
@@ -5766,7 +5766,7 @@ void FindMainSector(SECTOR_OBJECTp sop)
         int sx = sop->xmid;
         int sy = sop->ymid;
 
-        PlaceSectorObject(sop, sop->ang, MAXSO, MAXSO);
+        PlaceSectorObject(sop, MAXSO, MAXSO);
 
         // set it to something valid
         sop->op_main_sector = 0;
@@ -5781,7 +5781,7 @@ void FindMainSector(SECTOR_OBJECTp sop)
         ////DSPRINTF(ds,"main sector %d, zmid %d",sop->op_main_sector, sop->zmid);
         //MONO_PRINT(ds);
 
-        PlaceSectorObject(sop, sop->ang, sx, sy);
+        PlaceSectorObject(sop, sx, sy);
     }
 }
 
@@ -7347,7 +7347,7 @@ DoPlayerRun(PLAYERp pp)
         FLAG_KEY_RESET(pp, SK_CRAWL_LOCK);
     }
 
-    if (PlayerFlyKey(pp))
+    if (PlayerFlyKey())
     {
         //pp->InventoryTics[INVENTORY_FLY] = -99;
         DoPlayerBeginFly(pp);
