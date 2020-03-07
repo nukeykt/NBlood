@@ -136,7 +136,7 @@ void UpdateMiniBar(PLAYERp pp)
                  0, 0, xdim - 1, ydim - 1);
 
     x = MINI_BAR_HEALTH_BOX_X+3;
-    DisplayMiniBarNumber(pp, x, y+5, u->Health);
+    DisplayMiniBarNumber(x, y+5, u->Health);
 
     if (u->WeaponNum != WPN_SWORD && u->WeaponNum != WPN_FIST)
     {
@@ -148,7 +148,7 @@ void UpdateMiniBar(PLAYERp pp)
                      0, 0, xdim - 1, ydim - 1);
 
         x = MINI_BAR_AMMO_BOX_X+3;
-        DisplayMiniBarNumber(pp, x, y+5, pp->WpnAmmo[u->WeaponNum]);
+        DisplayMiniBarNumber(x, y+5, pp->WpnAmmo[u->WeaponNum]);
     }
 
     if (!pp->InventoryAmount[pp->InventoryNum])
@@ -231,7 +231,7 @@ KillPanelInv(PLAYERp pp, short InventoryNum)
 }
 
 void
-KillPlayerIcon(PLAYERp pp, PANEL_SPRITEp *pspp)
+KillPlayerIcon(PANEL_SPRITEp *pspp)
 {
     SET((*pspp)->flags, PANF_SUICIDE);
     (*pspp) = NULL;
@@ -926,7 +926,7 @@ void SpawnInventoryBar(PLAYERp pp)
 void KillInventoryBar(PLAYERp pp)
 {
     KillAllPanelInv(pp);
-    KillPlayerIcon(pp, &pp->InventorySelectionBox);
+    KillPlayerIcon(&pp->InventorySelectionBox);
 }
 
 // In case the BorderNum changes - move the postions

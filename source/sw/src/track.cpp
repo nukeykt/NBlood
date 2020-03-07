@@ -2799,7 +2799,7 @@ OperateSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy)
 }
 
 void
-PlaceSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy)
+PlaceSectorObject(SECTOR_OBJECTp sop, int newx, int newy)
 {
     RefreshPoints(sop, newx - sop->xmid, newy - sop->ymid, FALSE);
 }
@@ -2920,7 +2920,7 @@ DoTornadoObject(SECTOR_OBJECTp sop)
     pos.y = sop->ymid;
     pos.z = floor_dist;
 
-    PlaceSectorObject(sop, *ang, MAXSO, MAXSO);
+    PlaceSectorObject(sop, MAXSO, MAXSO);
     ret = clipmove(&pos, &cursect, xvect, yvect, (int)sop->clipdist, Z(0), floor_dist, CLIPMASK_ACTOR);
 
     if (ret)
