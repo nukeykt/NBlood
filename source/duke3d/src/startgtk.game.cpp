@@ -517,7 +517,7 @@ static GtkWidget *create_window(void)
 
         cell = gtk_cell_renderer_text_new();
         gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(stwidgets.vmode3dcombo), cell, FALSE);
-        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.vmode3dcombo), cell, "text", 0, NULL);
+        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.vmode3dcombo), cell, "text", 0, nullptr);
     }
 
 #ifdef POLYMER
@@ -559,7 +559,7 @@ static GtkWidget *create_window(void)
 
         cell = gtk_cell_renderer_text_new();
         gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(stwidgets.inputdevcombo), cell, FALSE);
-        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.inputdevcombo), cell, "text", 0, NULL);
+        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.inputdevcombo), cell, "text", 0, nullptr);
     }
     gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.inputdevcombo, 1,2, 1,2,
         (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)0, 4, 0);
@@ -579,7 +579,7 @@ static GtkWidget *create_window(void)
 
         cell = gtk_cell_renderer_text_new();
         gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(stwidgets.custommodcombo), cell, FALSE);
-        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.custommodcombo), cell, "text", 0, NULL);
+        gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(stwidgets.custommodcombo), cell, "text", 0, nullptr);
     }
     gtk_table_attach(GTK_TABLE(stwidgets.configtlayout), stwidgets.custommodcombo, 1,2, 2,3,
         (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), (GtkAttachOptions)0, 4, 7);
@@ -630,10 +630,10 @@ static GtkWidget *create_window(void)
         g_object_unref(G_OBJECT(list));
 
         cell = gtk_cell_renderer_text_new();
-        col = gtk_tree_view_column_new_with_attributes("Game", cell, "text", 0, NULL);
+        col = gtk_tree_view_column_new_with_attributes("Game", cell, "text", 0, nullptr);
         gtk_tree_view_column_set_expand(col, TRUE);
         gtk_tree_view_append_column(GTK_TREE_VIEW(stwidgets.gamelist), col);
-        col = gtk_tree_view_column_new_with_attributes("GRP file", cell, "text", 1, NULL);
+        col = gtk_tree_view_column_new_with_attributes("GRP file", cell, "text", 1, nullptr);
         gtk_tree_view_column_set_min_width(col, 64);
         gtk_tree_view_append_column(GTK_TREE_VIEW(stwidgets.gamelist), col);
     }
