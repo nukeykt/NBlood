@@ -1028,6 +1028,8 @@ post_analyzesprites(void)
 }
 #endif
 
+static ClockTicks mapzoomclock;
+
 void
 ResizeView(PLAYERp pp)
 {
@@ -1036,15 +1038,13 @@ ResizeView(PLAYERp pp)
 
     if (dimensionmode == 2 || dimensionmode == 5 || dimensionmode == 6)
     {
+        int32_t timepassed = (int32_t)(totalclock - mapzoomclock);
+        mapzoomclock += timepassed;
         if (PKEY_PRESSED(KEYSC_DASH)||PKEY_PRESSED(KEYSC_GMINUS))
-        {
-            if ((zoom -= (zoom >> 4)) < 48) zoom = 48;
-        }
+            zoom = max<int32_t>(zoom - mulscale7(timepassed * synctics, zoom), 48);
 
         if (PKEY_PRESSED(KEYSC_EQUAL)||PKEY_PRESSED(KEYSC_GPLUS))
-        {
-            if ((zoom += (zoom >> 4)) > 4096) zoom = 4096;
-        }
+            zoom = min<int32_t>(zoom + mulscale7(timepassed * synctics, zoom), 4096);
 
         if (KEY_PRESSED(KEYSC_ESC))
         {
