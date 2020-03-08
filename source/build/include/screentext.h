@@ -129,6 +129,7 @@ struct ScreenText_t
             int16_t font, blockangle;
         };
     };
+    int32_t standardhalfheight;
     int32_t alpha;
     int16_t charangle;
     int8_t shade;

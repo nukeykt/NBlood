@@ -138,12 +138,13 @@ vec2_t screentextGetSize(ScreenTextSize_t const & data)
         else
         {
             uint16_t const tile = screentextGlyphGetTile(glyph);
+            vec2_16_t const siz = tilesiz[tile];
 
             // width
-            extent.x = constwidthactive ? constwidth : tilesiz[tile].x * data.zoom;
+            extent.x = constwidthactive ? constwidth : siz.x * data.zoom;
 
             // height
-            SetIfGreater(&extent.y, (tilesiz[tile].y * data.zoom));
+            SetIfGreater(&extent.y, (siz.y * data.zoom));
         }
 
         // incrementing the coordinate counters
@@ -240,6 +241,9 @@ vec2_t screentextRender(ScreenText_t const & data)
     glyph_t glyph;
     int constwidthactive = 0;
 
+    if (!(o & RS_TOPLEFT))
+        origin.y = mulscale16(data.standardhalfheight, data.zoom);
+
     // near-CODEDUP "alignments"
     {
         int32_t lines = GetStringNumLines(text, end);
@@ -280,9 +284,9 @@ vec2_t screentextRender(ScreenText_t const & data)
         }
 
         if (data.f & TEXT_YBOTTOM)
-            origin.y = -(size.y/data.zoom*data.zoom);
+            origin.y += -(size.y/data.zoom*data.zoom);
         else if (data.f & TEXT_YCENTER)
-            origin.y = -(size.y/2/data.zoom*data.zoom);
+            origin.y += -(size.y/2/data.zoom*data.zoom);
     }
 
     // loop through the string
@@ -349,9 +353,9 @@ vec2_t screentextRender(ScreenText_t const & data)
                     }
 
                     if (data.f & TEXT_XRIGHT)
-                        origin.x = -linewidth;
+                        origin.x = -(linewidth/data.zoom*data.zoom);
                     else if (data.f & TEXT_XCENTER)
-                        origin.x = -(linewidth / 2);
+                        origin.x = -(linewidth/2/data.zoom*data.zoom);
                 }
             }
             else if (screentextGlyphIsPalChange(glyph))
@@ -370,6 +374,7 @@ vec2_t screentextRender(ScreenText_t const & data)
         else
         {
             uint16_t const tile = screentextGlyphGetTile(glyph);
+            vec2_16_t const siz = tilesiz[tile];
             vec2_t location{data.pos};
 
             AddCoordsFromRotation(&location, &Xdirection, origin.x);
@@ -378,13 +383,16 @@ vec2_t screentextRender(ScreenText_t const & data)
             AddCoordsFromRotation(&location, &Xdirection, pos.x);
             AddCoordsFromRotation(&location, &Ydirection, pos.y);
 
+            if (!(o & RS_TOPLEFT))
+                AddCoordsFromRotation(&location, &Xdirection, (siz.x >> 1) * data.zoom);
+
             rotatesprite_(location.x, location.y, data.zoom, angle, tile, data.shade, pal, o, alpha, blendidx, data.b1.x, data.b1.y, data.b2.x, data.b2.y);
 
             // width
-            extent.x = constwidthactive ? constwidth : tilesiz[tile].x * data.zoom;
+            extent.x = constwidthactive ? constwidth : siz.x * data.zoom;
 
             // height
-            SetIfGreater(&extent.y, (tilesiz[tile].y * data.zoom));
+            SetIfGreater(&extent.y, (siz.y * data.zoom));
         }
 
         // incrementing the coordinate counters

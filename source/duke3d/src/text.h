@@ -102,7 +102,7 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween,
     const int32_t f, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
-    if (str == nullptr)
+    if (str == nullptr || (unsigned)font >= MAXTILES)
     {
         debug_break();
         return {};
@@ -144,7 +144,7 @@ static inline vec2_t G_ScreenText(const int32_t font,
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
-    if (str == nullptr)
+    if (str == nullptr || (unsigned)font >= MAXTILES)
     {
         debug_break();
         return {};
@@ -175,6 +175,7 @@ static inline vec2_t G_ScreenText(const int32_t font,
     data.f = f;
     data.font = font;
     data.blockangle = blockangle;
+    data.standardhalfheight = (tilesiz[font].y>>1)<<16;
     data.alpha = alpha;
     data.charangle = charangle;
     data.shade = shade;
@@ -189,7 +190,7 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
     int32_t xspace, int32_t yline, int32_t xbetween, int32_t ybetween, const int32_t f,
     const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2)
 {
-    if (str == nullptr)
+    if (str == nullptr || (unsigned)font >= MAXTILES)
     {
         debug_break();
         return {};
@@ -220,6 +221,7 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
     data.f = f;
     data.font = font;
     data.blockangle = blockangle;
+    data.standardhalfheight = (tilesiz[font].y>>1)<<16;
     data.alpha = alpha;
     data.charangle = charangle;
     data.shade = shade;
