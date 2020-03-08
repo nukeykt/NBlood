@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern "C" {
 #endif
 
+extern int32_t g_textstat;
+
 #define MAXUSERQUOTES 6
 
 extern int32_t user_quote_time[MAXUSERQUOTES];
@@ -66,9 +68,9 @@ extern int32_t textsc(int32_t sc);
 
 #define minitextshade(x, y, t, s, p, sb) minitext_(x,y,t,s,p,sb)
 #define minitext(x, y, t, p, sb) minitext_(x,y,t,0,p,sb)
-#define menutext(x, y, t) menutext_((x), (y), 0, (t), 10|16, 0)
-#define menutext_centeralign(x, y, t) menutext_((x), (y), 0, (t), 10|16, TEXT_XCENTER|TEXT_YCENTER)
-#define menutext_center(y, t) menutext_(160<<16, (y)<<16, 0, (t), 10|16, TEXT_XCENTER)
+#define menutext(x, y, t) menutext_((x), (y), 0, (t), g_textstat, 0)
+#define menutext_centeralign(x, y, t) menutext_((x), (y), 0, (t), g_textstat, TEXT_XCENTER|TEXT_YCENTER)
+#define menutext_center(y, t) menutext_(160<<16, (y)<<16, 0, (t), g_textstat, TEXT_XCENTER)
 #define gametext(x, y, t) gametext_simple((x)<<16, (y)<<16, (t))
 #define gametext_widenumber(x, y, t) gametext_((x)<<16, (y)<<16, (t), 0, MF_Bluefont.pal, 1024, 0, TEXT_CONSTWIDTHNUMS)
 #define gametext_number(x, y, t) gametext_((x)<<16, (y)<<16, (t), 0, MF_Bluefont.pal, 0, 0, TEXT_CONSTWIDTHNUMS)
