@@ -137,6 +137,7 @@ typedef struct MenuFont_t
 {
 //    int32_t xspace, yline;
     vec2_t emptychar, between;
+    int32_t ypadding;
     int32_t zoom;
     int32_t cursorLeftPosition, cursorCenterPosition, cursorScale;
     int32_t textflags;
@@ -147,7 +148,8 @@ typedef struct MenuFont_t
     uint8_t pal_selected, pal_deselected, pal_disabled;
     uint8_t pal_selected_right, pal_deselected_right, pal_disabled_right;
 
-    int32_t get_yline() const { return mulscale16(emptychar.y, zoom); }
+    int32_t get_yline() const { return mulscale16(emptychar.y + ypadding, zoom); }
+    int32_t get_yoffset() const { return mulscale16(ypadding, zoom); }
 } MenuFont_t;
 
 

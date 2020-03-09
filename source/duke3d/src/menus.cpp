@@ -205,13 +205,13 @@ MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
 //                                      emptychar x,y       between x,y         zoom                cursorLeft          cursorCenter        cursorScale         textflags
 //                                      tilenum             shade_deselected    shade_disabled      pal                 pal_selected        pal_deselected      pal_disabled
-MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 },           65536,              20<<16,             110<<16,            65536,              TEXT_BIGALPHANUM | TEXT_UPPERCASE,
+MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 }, 0,        65536,              20<<16,             110<<16,            65536,              TEXT_BIGALPHANUM | TEXT_UPPERCASE,
                                         -1,                 10,                 0,                  0,                  0,                  0,                  1,
                                         0,                  0,                  1 };
-MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           65536,              10<<16,             110<<16,            32768,              0,
+MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 }, 0,        65536,              10<<16,             110<<16,            32768,              0,
                                         -1,                 10,                 0,                  0,                  10,                 10,                 16,
                                         0,                  0,                  16 };
-MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   65536,              10<<16,             110<<16,            32768,              0,
+MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },0, 65536,              10<<16,             110<<16,            32768,              0,
                                         -1,                 10,                 0,                  0,                  2,                  2,                  0,
                                         0,                  0,                  16 };
 
@@ -309,6 +309,9 @@ MAKE_SPACER( Space2, 2<<16 ); // bigoptions
 MAKE_SPACER( Space4, 4<<16 ); // usermap, smalloptions, anything else non-top
 MAKE_SPACER( Space6, 6<<16 ); // videosetup
 MAKE_SPACER( Space8, 8<<16 ); // colcorr, redslide
+
+MAKE_SPACER( Space12, 12<<16 );
+MAKE_SPACER( Space16, 16<<16 );
 
 static MenuEntry_t ME_Space2_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space2, Spacer );
 static MenuEntry_t ME_Space4_Bluefont = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF_Null, &MEO_Space4, Spacer );
@@ -2006,8 +2009,14 @@ void Menu_Init(void)
     {
         MF_Redfont.between.x = 2<<16;
         MF_Redfont.cursorScale = 32768;
-        MF_Redfont.zoom = 16384;
+        MF_Redfont.zoom = 12288;
+        MF_Redfont.ypadding = 10<<16;
         MF_Bluefont.zoom = 16384;
+
+        ME_Space2_Redfont.entry = &MEO_Space4;
+        ME_Space4_Redfont.entry = &MEO_Space8;
+        ME_Space6_Redfont.entry = &MEO_Space12;
+        ME_Space8_Redfont.entry = &MEO_Space16;
 
         // hack; should swap out pointers
         MF_Minifont = MF_Bluefont;
@@ -5110,8 +5119,9 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                y - menu->scrollPos <= klabs(menu->format->bottomcutoff) - menu->format->pos.y;
 
             int32_t const height = entry->getHeight(); // max(textsize.y, entry->font->get_yline()); // bluefont Q ruins this
+            int32_t const padding = entry->font->get_yoffset();
             status |= MT_YCenter;
-            int32_t const y_internal = origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos;
+            int32_t const y_internal = origin.y + y_upper + y + ((height>>17)<<16) + (padding>>1) - menu->scrollPos;
 
             vec2_t textsize{};
             if (dodraw && entry->name != nullptr)
