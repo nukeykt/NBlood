@@ -2931,6 +2931,8 @@ Control(int32_t argc, char const * const * argv)
 {
 
     InitGame(argc, argv);
+    if (QuitFlag)
+        return;
 
     MONO_PRINT("InitGame done");
     MNU_InitMenus();
