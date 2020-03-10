@@ -65,7 +65,7 @@ int LoadCinemaPalette(int nPal);
 void CinemaFadeIn();
 
 void ReadyCinemaText(uint16_t nVal);
-uint8_t AdvanceCinemaText();
+bool AdvanceCinemaText();
 
 void DoFailedFinalScene();
 
