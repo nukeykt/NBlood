@@ -778,7 +778,7 @@ int initmultiplayersparms(int argc, char const * const argv[])
 
 	netready = 0;
 
-	if (((danetmode == MMULTI_MODE_MS) && (numplayers >= 2)) || (numplayers == 2)) {
+	if (numplayers >= 2) {
 		return 1;
 	} else {
 		netuninit();
