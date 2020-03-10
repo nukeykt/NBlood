@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cmdline.h"
 #include "palette.h"
 #include "al_midi.h"
+#include "playmve.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -8252,6 +8253,9 @@ int app_main(int argc, char const * const * argv)
 
     for (bssize_t i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
         minitext_lowercase &= (int)tileLoad(i);
+
+    if (RRRA)
+        playmve("REDINT.MVE");
 
     //if (g_networkMode != NET_DEDICATED_SERVER)
     {

@@ -173,6 +173,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\source\rr\src\actors.h" />
     <ClInclude Include="..\..\source\rr\src\android.h" />
+    <ClInclude Include="..\..\source\rr\src\filestream.h" />
     <ClInclude Include="..\..\source\rr\src\in_android.h" />
     <ClInclude Include="..\..\source\rr\src\anim.h" />
     <ClInclude Include="..\..\source\rr\src\cheats.h" />
@@ -189,6 +190,7 @@
     <ClInclude Include="..\..\source\rr\src\menus.h" />
     <ClInclude Include="..\..\source\rr\src\net.h" />
     <ClInclude Include="..\..\source\rr\src\player.h" />
+    <ClInclude Include="..\..\source\rr\src\playmve.h" />
     <ClInclude Include="..\..\source\rr\src\premap.h" />
     <ClInclude Include="..\..\source\rr\src\quotes.h" />
     <ClInclude Include="..\..\source\rr\src\rrdh.h" />
@@ -227,6 +229,7 @@
     <ClCompile Include="..\..\source\rr\src\config.cpp" />
     <ClCompile Include="..\..\source\rr\src\common.cpp" />
     <ClCompile Include="..\..\source\rr\src\demo.cpp" />
+    <ClCompile Include="..\..\source\rr\src\filestream.cpp" />
     <ClCompile Include="..\..\source\rr\src\game.cpp" />
     <ClCompile Include="..\..\source\rr\src\gamedef.cpp" />
     <ClCompile Include="..\..\source\rr\src\gameexec.cpp" />
@@ -241,6 +244,7 @@
     <ClCompile Include="..\..\source\rr\src\osdcmds.cpp" />
     <ClCompile Include="..\..\source\rr\src\osdfuncs.cpp" />
     <ClCompile Include="..\..\source\rr\src\player.cpp" />
+    <ClCompile Include="..\..\source\rr\src\playmve.cpp" />
     <ClCompile Include="..\..\source\rr\src\premap.cpp" />
     <ClCompile Include="..\..\source\rr\src\rrdh.cpp" />
     <ClCompile Include="..\..\source\rr\src\rts.cpp" />

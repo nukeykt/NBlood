@@ -957,6 +957,8 @@ rr_game_objs := \
     screens.cpp \
     cmdline.cpp \
     rrdh.cpp \
+    filestream.cpp \
+    playmve.cpp \
 
 rr_editor_objs := \
     astub.cpp \
