@@ -923,6 +923,15 @@ InitGame(int32_t argc, char const * const * argv)
         initsingleplayers();
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
+        if ((networkmode == MMULTI_MODE_MS) && (numplayers > 2))
+        {
+            QuitFlag = TRUE;
+            wm_msgbox("Multiplayer Option Error",
+                      "This release does not support a master-slave networking "
+                      "mode for more than 2 players. However, peer-to-peer "
+                      "networking has been found to be playable.");
+            return;
+        }
         buildputs("Waiting for players...\n");
         while (initmultiplayerscycle())
         {
