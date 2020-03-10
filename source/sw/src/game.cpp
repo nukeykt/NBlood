@@ -3639,37 +3639,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
         if (*arg != '/' && *arg != '-') continue;
 
-        if (firstnet > 0)
-        {
-            arg++;
-            switch (arg[0])
-            {
-            case 'n':
-            case 'N':
-                if (arg[1] == '0')
-                {
-                    NetBroadcastMode = FALSE;
-                    buildputs("Network mode: master/slave\n");
-                    wm_msgbox("Multiplayer Option Error",
-                              "This release unfortunately does not support a master-slave networking "
-                              "mode because of certain bugs we have not been able to locate and fix "
-                              "at this time. However, peer-to-peer networking has been found to be "
-                              "playable, so we suggest attempting to use that for now. Details can be "
-                              "found in the release notes. Sorry for the inconvenience.");
-                    return 0;
-                }
-                else if (arg[1] == '1')
-                {
-                    NetBroadcastMode = TRUE;
-                    buildputs("Network mode: peer-to-peer\n");
-                }
-                break;
-            default:
-                break;
-            }
-            continue;
-        }
-
         // Store arg in command line array!
         CON_StoreArg(arg);
         arg++;
@@ -3710,10 +3679,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
         }
         else if (Bstrncasecmp(arg, "net",3) == 0)
         {
-            if (cnt+1 < argc)
-            {
-                firstnet = cnt+1;
-            }
+            firstnet = cnt+1;
+            break; // All further args go to mmulti.
         }
 #if DEBUG
         else if (Bstrncasecmp(arg, "debug",5) == 0)
