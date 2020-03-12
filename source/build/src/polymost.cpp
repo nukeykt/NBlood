@@ -871,8 +871,9 @@ void polymost_shadeInterpolate(int32_t shadeInterpolate)
 
 void polymost_activeTexture(GLenum texture)
 {
+    if (currentActiveTexture != texture)
+        glad_glActiveTexture(texture);
     currentActiveTexture = texture;
-    glad_glActiveTexture(texture);
 }
 
 //POGOTODO: replace this and polymost_activeTexture with proper draw call organization
@@ -922,7 +923,8 @@ static void polymost_bindPth(pthtyp const * const pPth)
 
 void useShaderProgram(uint32_t shaderID)
 {
-    glUseProgram(shaderID);
+    if (currentShaderProgramID != shaderID)
+        glUseProgram(shaderID);
     currentShaderProgramID = shaderID;
 }
 
