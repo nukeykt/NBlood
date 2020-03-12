@@ -120,10 +120,6 @@ int32_t hud_showmapname = 1;
 
 int32_t g_levelTextTime = 0;
 
-int32_t r_maxfps = -1;
-int32_t r_maxfpsoffset;
-uint64_t g_frameDelay;
-
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
 extern char forcegl;
 #endif
@@ -6325,27 +6321,6 @@ void G_MaybeAllocPlayer(int32_t pnum)
 #endif
 }
 
-
-int G_FPSLimit(void)
-{
-    if (!r_maxfps)
-        return true;
-
-    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
-
-    uint64_t const  frameTicks     = timerGetPerformanceCounter();
-    static uint64_t nextFrameTicks = frameTicks + g_frameDelay;
-
-    if (frameTicks >= nextFrameTicks)
-    {
-        while (frameTicks >= nextFrameTicks)
-            nextFrameTicks += g_frameDelay;
-        return true;
-    }
-
-    return false;
-}
-
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
 EDUKE32_STATIC_ASSERT(sizeof(actor_t)%4 == 0);
 EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t)%4 == 0);
@@ -6749,7 +6724,6 @@ int app_main(int argc, char const * const * argv)
             ud.setup.bpp  = bpp;
         }
 
-        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, myplayer.palette, 0);
         S_SoundStartup();
         S_MusicStartup();
@@ -6966,7 +6940,7 @@ MAIN_LOOP_RESTART:
         {
             idle();
         }
-        else if (G_FPSLimit() || g_saveRequested)
+        else if (engineFPSLimit() || g_saveRequested)
         {
             if (!g_saveRequested)
             {

@@ -53,6 +53,9 @@ extern intptr_t frameplace;
 extern char offscreenrendering;
 extern int32_t nofog;
 
+extern int32_t r_maxfps;
+extern int32_t r_maxfpsoffset;
+
 void calc_ylookup(int32_t bpl, int32_t lastyidx);
 
 int32_t videoCheckMode(int32_t *x, int32_t *y, int32_t c, int32_t fs, int32_t forced);
@@ -283,6 +286,17 @@ int32_t baselayer_init();
 void makeasmwriteable(void);
 void maybe_redirect_outputs(void);
 
+extern uint64_t g_frameDelay;
+static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
+{
+    uint64_t const perfFreq = timerGetPerformanceFrequency();
+
+    if (maxFPS == -1)
+        return perfFreq / (refreshfreq - ceil(refreshfreq / 60.0));
+
+    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
+}
+extern int engineFPSLimit(void);
 #ifdef __cplusplus
 }
 #endif
