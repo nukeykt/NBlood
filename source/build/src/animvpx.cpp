@@ -440,8 +440,7 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
 
     ////////// GL STATE //////////
 
-    //Force fullscreen (glox1=-1 forces it to restore afterwards)
-    glViewport(0,0,xdim,ydim); glox1 = -1;
+    glViewport(0,0,xdim,ydim);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
