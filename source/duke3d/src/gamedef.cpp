@@ -5207,7 +5207,7 @@ repeatcase:
             {
                 g_volumeNames[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_volumeNames[j])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_volumeNames[j])))
                 {
                     initprintf("%s:%d: warning: truncating volume name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_volumeNames[j])-1);
@@ -5273,10 +5273,10 @@ repeatcase:
                     scriptSkipLine();
                     break;
                 }
-                if (EDUKE32_PREDICT_FALSE(i >= MAXGAMEFUNCLEN-1))
+                if (EDUKE32_PREDICT_FALSE(i >= MAXGAMEFUNCLEN))
                 {
                     initprintf("%s:%d: warning: truncating function name to %d characters.\n",
-                        g_scriptFileName,g_lineNumber,MAXGAMEFUNCLEN);
+                        g_scriptFileName,g_lineNumber, MAXGAMEFUNCLEN-1);
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5332,7 +5332,7 @@ repeatcase:
             {
                 g_skillNames[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_skillNames[j])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_skillNames[j])))
                 {
                     initprintf("%s:%d: warning: truncating skill name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_skillNames[j])-1);
@@ -5364,7 +5364,7 @@ repeatcase:
                 {
                     gamename[i] = *textptr;
                     textptr++,i++;
-                    if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(gamename)-1))
+                    if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(gamename)))
                     {
                         initprintf("%s:%d: warning: truncating game name to %d characters.\n",
                             g_scriptFileName,g_lineNumber,(int32_t)sizeof(gamename)-1);
@@ -5440,7 +5440,7 @@ repeatcase:
             {
                 g_gametypeNames[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_gametypeNames[j])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_gametypeNames[j])))
                 {
                     initprintf("%s:%d: warning: truncating gametype name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_gametypeNames[j])-1);
@@ -5534,7 +5534,7 @@ repeatcase:
                 if (EDUKE32_PREDICT_FALSE(i >= 32))
                 {
                     initprintf("%s:%d: warning: truncating level name to %d characters.\n",
-                        g_scriptFileName,g_lineNumber,32);
+                        g_scriptFileName,g_lineNumber,31);
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5606,7 +5606,7 @@ repeatcase:
                 else
                     *(apXStrings[g_numXStrings]+i) = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= MAXQUOTELEN-1))
+                if (EDUKE32_PREDICT_FALSE(i >= MAXQUOTELEN))
                 {
                     initprintf("%s:%d: warning: truncating quote text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXQUOTELEN-1);
                     g_warningCnt++;
@@ -5652,7 +5652,7 @@ repeatcase:
             {
                 *(CheatDescriptions[k]+i) = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= MAXCHEATDESC-1))
+                if (EDUKE32_PREDICT_FALSE(i >= MAXCHEATDESC))
                 {
                     initprintf("%s:%d: warning: truncating cheat text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXCHEATDESC-1);
                     g_warningCnt++;
@@ -5710,7 +5710,7 @@ repeatcase:
             {
                 CheatStrings[k][i] = Btolower(*textptr);
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(CheatStrings[k])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(CheatStrings[k])))
                 {
                     initprintf("%s:%d: warning: truncating cheat string to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(signed)sizeof(CheatStrings[k])-1);
