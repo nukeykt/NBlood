@@ -1559,7 +1559,7 @@ void setrefreshrate(void)
 
 #ifdef _WIN32
     if (timingInfo.rateRefresh.uiNumerator)
-        refreshfreq = timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
+        refreshfreq = (double)timingInfo.rateRefresh.uiNumerator / timingInfo.rateRefresh.uiDenominator;
     else
 #endif
         refreshfreq = newmode.refresh_rate;
