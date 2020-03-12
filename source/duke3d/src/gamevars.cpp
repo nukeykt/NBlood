@@ -25,8 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "savegame.h"
 
 #include "vfs.h"
-
-#define gamevars_c_
+#include "gamestructures.h"
 
 #ifdef LUNATIC
 int32_t g_noResetVars;
@@ -58,8 +57,6 @@ intptr_t *aplWeaponSpawn[MAX_WEAPONS];          // the item to spawn
 intptr_t *aplWeaponSpawnTime[MAX_WEAPONS];      // the frame at which to spawn an item
 intptr_t *aplWeaponTotalTime[MAX_WEAPONS];      // The total time the weapon is cycling before next fire.
 intptr_t *aplWeaponWorksLike[MAX_WEAPONS];      // What original the weapon works like
-
-# include "gamestructures.cpp"
 
 // Frees the memory for the *values* of game variables and arrays. Resets their
 // counts to zero. Call this function as many times as needed.
@@ -105,7 +102,7 @@ void Gv_Clear(void)
     for (auto & gameArray : aGameArrays)
         DO_FREE_AND_NULL(gameArray.szLabel);
 
-    for (auto i : struct_tables)
+    for (auto i : vmStructHashTablePtrs)
         hash_free(i);
 }
 

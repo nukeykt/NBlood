@@ -153,6 +153,9 @@
     <ClInclude Include="..\..\source\duke3d\src\inv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\duke3d\src\gamestructures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\duke3d\src\actors.cpp">

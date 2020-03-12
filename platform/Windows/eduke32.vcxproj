@@ -180,6 +180,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\source\duke3d\src\actors.h" />
     <ClInclude Include="..\..\source\duke3d\src\android.h" />
+    <ClInclude Include="..\..\source\duke3d\src\gamestructures.h" />
     <ClInclude Include="..\..\source\duke3d\src\in_android.h" />
     <ClInclude Include="..\..\source\duke3d\src\anim.h" />
     <ClInclude Include="..\..\source\duke3d\src\cheats.h" />
@@ -238,10 +239,10 @@
     <ClCompile Include="..\..\source\duke3d\src\gamedef.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\gameexec.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\gamestructures.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\gamevars.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\global.cpp" />

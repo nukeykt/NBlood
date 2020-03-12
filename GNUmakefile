@@ -566,6 +566,7 @@ duke3d_game_objs := \
     game.cpp \
     gamedef.cpp \
     gameexec.cpp \
+    gamestructures.cpp \
     gamevars.cpp \
     global.cpp \
     grpscan.cpp \
