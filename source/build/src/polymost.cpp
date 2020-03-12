@@ -619,7 +619,7 @@ void polymost_disableProgram()
 
     polymost_outputGLDebugMessage(3, "polymost_disableProgram()");
 
-    useShaderProgram(0);
+    polymost_useShaderProgram(0);
 }
 
 void polymost_resetProgram()
@@ -630,9 +630,9 @@ void polymost_resetProgram()
     polymost_outputGLDebugMessage(3, "polymost_resetProgram()");
 
     if (r_enablepolymost2)
-        useShaderProgram(polymost2BasicShaderProgramID);
+        polymost_useShaderProgram(polymost2BasicShaderProgramID);
     else
-        useShaderProgram(polymost1CurrentShaderProgramID);
+        polymost_useShaderProgram(polymost1CurrentShaderProgramID);
 
     // ensure that palswapTexture and paletteTexture[curbasepal] is bound
     glActiveTexture(GL_TEXTURE1);
@@ -647,7 +647,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     polymost_outputGLDebugMessage(3, "polymost_setCurrentShaderProgram(programID:%u)", programID);
 
     polymost1CurrentShaderProgramID = programID;
-    useShaderProgram(programID);
+    polymost_useShaderProgram(programID);
 
     //update the uniform locations
     polymost1TexSamplerLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "s_texture");
@@ -927,7 +927,7 @@ static void polymost_bindPth(pthtyp const * const pPth)
     glBindTexture(GL_TEXTURE_2D, pPth->glpic);
 }
 
-void useShaderProgram(uint32_t shaderID)
+void polymost_useShaderProgram(uint32_t shaderID)
 {
     if (currentShaderProgramID != shaderID)
         glUseProgram(shaderID);
@@ -1170,7 +1170,7 @@ void polymost_glinit()
     glUniform1i(polymost1TexSamplerLoc, 0);
     glUniform1i(polymost1PalSwapSamplerLoc, 1);
     glUniform1i(polymost1PaletteSamplerLoc, 2);
-    useShaderProgram(0);
+    polymost_useShaderProgram(0);
 
     lastbasepal = -1;
     for (int basepalnum = 0; basepalnum < MAXBASEPALS; ++basepalnum)
@@ -2908,7 +2908,7 @@ static void polymost2_drawVBO(GLenum mode,
 
     handle_blend((dameth & DAMETH_MASKPROPS) > DAMETH_MASK, drawpoly_blend, (dameth & DAMETH_MASKPROPS) == DAMETH_TRANS2);
 
-    useShaderProgram(polymost2BasicShaderProgramID);
+    polymost_useShaderProgram(polymost2BasicShaderProgramID);
 
     //POGOTODO: batch uniform binding
     float tint[4] = {1.0f, 1.0f, 1.0f, 1.0f};
