@@ -3730,16 +3730,7 @@ static inline void yax_vsp_finalize_init(int32_t const yaxbunch, int32_t const v
 #define COMBINE_STRIPS
 
 #ifdef COMBINE_STRIPS
-
-#define MERGE_NODES(i, ni)            \
-    do                                \
-    {                                 \
-        vsp[i].cy[1] = vsp[ni].cy[1]; \
-        vsp[i].fy[1] = vsp[ni].fy[1]; \
-        vsdel(ni);                    \
-    } while (0);
-
-static inline void vsdel(int32_t const i)
+static inline void vsdel(int const i)
 {
     //Delete i
     int const pi = vsp[i].p;
@@ -3754,8 +3745,16 @@ static inline void vsdel(int32_t const i)
     vsp[vsp[VSPMAX-1].n].p = i;
     vsp[VSPMAX-1].n = i;
 }
+
+static inline void vsmerge(int const i, int const ni)
+{
+    vsp[i].cy[1] = vsp[ni].cy[1];
+    vsp[i].fy[1] = vsp[ni].fy[1];
+    vsdel(ni);
+}
+
 # ifdef YAX_ENABLE
-static inline void yax_vsdel(int32_t const yaxbunch, int32_t const i)
+static inline void yax_vsdel(int const yaxbunch, int const i)
 {
     //Delete i
     int const pi = yax_vsp[yaxbunch][i].p;
@@ -3773,7 +3772,7 @@ static inline void yax_vsdel(int32_t const yaxbunch, int32_t const i)
 # endif
 #endif
 
-static inline int32_t vsinsaft(int32_t const i)
+static inline int32_t vsinsaft(int const i)
 {
     //i = next element from empty list
     int32_t const r = vsp[VSPMAX-1].n;
@@ -3790,9 +3789,7 @@ static inline int32_t vsinsaft(int32_t const i)
 }
 
 #ifdef YAX_ENABLE
-
-
-static inline int32_t yax_vsinsaft(int32_t const yaxbunch, int32_t const i)
+static inline int32_t yax_vsinsaft(int const yaxbunch, int const i)
 {
     //i = next element from empty list
     int32_t const r = yax_vsp[yaxbunch][VSPMAX - 1].n;
@@ -4321,7 +4318,7 @@ skip: ;
         {
             if ((vsp[i].ctag == vsp[ni].ctag) && (vsp[i].ftag == vsp[ni].ftag))
             {
-                MERGE_NODES(i, ni);
+                vsmerge(i, ni);
 #if 0
                 //POGO: This GL1 debug code draws the resulting merged VSP segment with floor and ceiling bounds lines as yellow and cyan respectively
                 //      To enable this, ensure that in polymost_drawrooms() that you are clearing the stencil buffer and color buffer.
@@ -4358,7 +4355,7 @@ skip: ;
                 vsp[i].fy[0] = vsp[ni].fy[0];
                 vsp[i].ctag = vsp[ni].ctag;
                 vsp[i].ftag = vsp[ni].ftag;
-                MERGE_NODES(i, ni);
+                vsmerge(i, ni);
                 continue;
             }
         }
@@ -6899,7 +6896,7 @@ void polymost_drawrooms()
 
                     if (Bfabsf(cslop[0]*dx-cslop[1]*dx2) < 0.001f && Bfabsf(fslop[0]*dx-fslop[1]*dx2) < 0.001f)
                     {
-                        MERGE_NODES(i, ni);
+                        vsmerge(i, ni);
                         continue;
                     }
                 }
@@ -6907,7 +6904,6 @@ void polymost_drawrooms()
             i = ni;
         }
         while (i);
-#undef MERGE_NODES
 #endif
     }
     //else if (!g_nodraw) { videoEndDrawing(); return; }
