@@ -102,31 +102,37 @@ struct glinfo_t {
     const char *extensions;
 
     float maxanisotropy;
-    char bgra;
-    char clamptoedge;
-    char texcompr;
-    char texnpot;
-    char arbfp;
-    char depthtex;
-    char shadow;
-    char fbos;
-    char rect;
-    char multitex;
-    char envcombine;
-    char vbos;
-    char vsync;
-    char sm4;
-    char occlusionqueries;
-    char glsl;
-    char debugoutput;
-    char bufferstorage;
-    char sync;
-    char depthclamp;
-    char clipcontrol;
-    char dumped;
+
+    int filled;
+
+    union {
+        uint32_t features;
+        struct
+        {
+            int bgra             : 1;
+            int bufferstorage    : 1;
+            int clamptoedge      : 1;
+            int debugoutput      : 1;
+            int depthclamp       : 1;
+            int depthtex         : 1;
+            int fbos             : 1;
+            int glsl             : 1;
+            int multitex         : 1;
+            int occlusionqueries : 1;
+            int rect             : 1;
+            int shadow           : 1;
+            int sync             : 1;
+            int texcompr         : 1;
+            int texnpot          : 1;
+            int vbos             : 1;
+            int vsync            : 1;
+        };
+    };
 };
 
 extern struct glinfo_t glinfo;
+
+extern void fill_glinfo(void);
 #endif
 
 vec2_t CONSTEXPR const g_defaultVideoModes []
