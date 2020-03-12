@@ -51,6 +51,8 @@ static int ErrorCode;
 
 int AdLibDrv_GetError(void) { return ErrorCode; }
 
+static int AL_Volume = MIDI_MaxVolume;
+
 const char *AdLibDrv_ErrorString(int const ErrorNumber)
 {
     const char *ErrorString;
@@ -86,6 +88,9 @@ int AdLibDrv_MIDI_Init(midifuncs * const funcs)
     funcs->ProgramChange     = AL_ProgramChange;
     funcs->ChannelAftertouch = nullptr;
     funcs->PitchBend         = AL_SetPitchBend;
+    funcs->SetVolume         = AL_SetVolume;
+
+    AL_Volume = MIDI_MaxVolume;
     
     return AdLibErr_Ok;
 }
@@ -132,11 +137,11 @@ void AdLibDrv_MIDI_Service(void)
         OPL3_GenerateResampled(AL_GetChip(), buf);
         if (MV_Channels == 2)
         {
-            *buffer16++ = clamp(buf[0]<<AL_PostAmp, INT16_MIN, INT16_MAX);
-            *buffer16++ = clamp(buf[1]<<AL_PostAmp, INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp((buf[0]<<AL_PostAmp)*AL_Volume/MIDI_MaxVolume, INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp((buf[1]<<AL_PostAmp)*AL_Volume/MIDI_MaxVolume, INT16_MIN, INT16_MAX);
         }
         else
-            *buffer16++ = clamp(((buf[0]<<AL_PostAmp)+(buf[1]<<AL_PostAmp))/2, INT16_MIN, INT16_MAX);
+            *buffer16++ = clamp(((buf[0]<<AL_PostAmp)+(buf[1]<<AL_PostAmp))*AL_Volume/(2*MIDI_MaxVolume), INT16_MIN, INT16_MAX);
     }
 }
 
@@ -752,6 +757,12 @@ static void AL_SetPitchBend(int const channel, int const lsb, int const msb)
         AL_SetVoicePitch(voice->num);
         voice = voice->next;
     }
+}
+
+
+static void AL_SetVolume(int volume)
+{
+    AL_Volume = clamp(volume, 0, MIDI_MaxVolume);
 }
 
 
