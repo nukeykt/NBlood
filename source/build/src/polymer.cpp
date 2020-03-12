@@ -5186,7 +5186,7 @@ static int32_t      polymer_bindmaterial(const _prmaterial *material, const int1
     if (!prprograms[programbits].handle)
         polymer_compileprogram(programbits);
 
-    useShaderProgram(prprograms[programbits].handle);
+    polymost_useShaderProgram(prprograms[programbits].handle);
 
     // --------- bit setup
 
@@ -5563,7 +5563,7 @@ static void         polymer_unbindmaterial(int32_t programbits)
         glDisableVertexAttribArray(prprograms[programbits].attrib_N);
     }
 
-    useShaderProgram(0);
+    polymost_useShaderProgram(0);
 }
 
 static void         polymer_compileprogram(int32_t programbits)

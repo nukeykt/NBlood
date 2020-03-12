@@ -69,7 +69,7 @@ void polymost_useGlowMapping(char useGlowMapping);
 void polymost_activeTexture(GLenum texture);
 void polymost_bindTexture(GLenum target, uint32_t textureID);
 void polymost_updatePalette(void);
-void useShaderProgram(uint32_t shaderID);
+void polymost_useShaderProgram(uint32_t shaderID);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
