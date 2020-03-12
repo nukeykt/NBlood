@@ -3484,29 +3484,24 @@ static void polymost_drawpoly(vec2f_t const * const dpxy, int32_t const n, int32
                 //((px[j]-px[i])*f + px[i])*(ngx.u-ngx.d*du1) +
                 //((py[j]-py[i])*f + py[i])*(ngy.u-ngdy*du1) + (ngo.u-ngo.d*du1) = 0
 
-                //POGOTODO: this could be a static inline function -- the do/while loop should be just a pair of braces
-#define DRAWPOLY_MATH_BULLSHIT(XXX)                                                                                \
-do                                                                                                                 \
-{                                                                                                                  \
-    float const f = -(px[i] * (ngx.u - ngx.d * XXX) + py[i] * (ngy.u - ngy.d * XXX) + (ngo.u - ngo.d * XXX)) /     \
-        ((px[j] - px[i]) * (ngx.u - ngx.d * XXX) + (py[j] - py[i]) * (ngy.u - ngy.d * XXX));                       \
-    uu[nn] = (px[j] - px[i]) * f + px[i];                                                                          \
-    vv[nn] = (py[j] - py[i]) * f + py[i];                                                                          \
-    ++nn;                                                                                                          \
-} while (0)
+                auto mathyMcMatherson = [&](float const f) {
+                    float const ff = -(px[i] * (ngx.u - ngx.d * f) + py[i] * (ngy.u - ngy.d * f) + (ngo.u - ngo.d * f))
+                                    / ((px[j] - px[i]) * (ngx.u - ngx.d * f) + (py[j] - py[i]) * (ngy.u - ngy.d * f));
+                    uu[nn] = (px[j] - px[i]) * ff + px[i];
+                    vv[nn] = (py[j] - py[i]) * ff + py[i];
+                    ++nn;
+                };
 
                 if (duj <= dui)
                 {
-                    if ((du1 < duj) != (du1 < dui)) DRAWPOLY_MATH_BULLSHIT(du1);
-                    if ((du0 < duj) != (du0 < dui)) DRAWPOLY_MATH_BULLSHIT(du0);
+                    if ((du1 < duj) != (du1 < dui)) mathyMcMatherson(du1);
+                    if ((du0 < duj) != (du0 < dui)) mathyMcMatherson(du0);
                 }
                 else
                 {
-                    if ((du0 < duj) != (du0 < dui)) DRAWPOLY_MATH_BULLSHIT(du0);
-                    if ((du1 < duj) != (du1 < dui)) DRAWPOLY_MATH_BULLSHIT(du1);
+                    if ((du0 < duj) != (du0 < dui)) mathyMcMatherson(du0);
+                    if ((du1 < duj) != (du1 < dui)) mathyMcMatherson(du1);
                 }
-
-#undef DRAWPOLY_MATH_BULLSHIT
 
                 i = j;
             }
