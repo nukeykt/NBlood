@@ -235,7 +235,6 @@ engine_objs := \
     enet.cpp \
     engine.cpp \
     fix16.cpp \
-    fix16_str.cpp \
     hash.cpp \
     hightile.cpp \
     klzw.cpp \
