@@ -185,9 +185,6 @@
     <ClCompile Include="..\..\source\build\src\fix16.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\build\src\fix16_str.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\build\src\communityapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
