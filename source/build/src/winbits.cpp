@@ -29,6 +29,7 @@ static int win_silentfocuschange;
 static HANDLE  g_singleInstanceSemaphore = nullptr;
 static int32_t win_togglecomposition;
 static int32_t win_systemtimermode;
+static int32_t win_performancemode;
 
 static OSVERSIONINFOEX osv;
 static FARPROC ntdll_wine_get_version;
@@ -36,15 +37,24 @@ static char const *enUSLayoutString = "00000409";
 
 DWM_TIMING_INFO timingInfo;
 
+static HMODULE hPOWRPROF;
+static GUID *systemPowerSchemeGUID;
+
+typedef DWORD(WINAPI *PFNPOWERGETACTIVESCHEME)(HKEY, GUID **);
+typedef DWORD(WINAPI *PFNPOWERSETACTIVESCHEME)(HKEY, CONST GUID *);
+
+static PFNPOWERGETACTIVESCHEME powrprof_PowerGetActiveScheme;
+static PFNPOWERSETACTIVESCHEME powrprof_PowerSetActiveScheme;
+
 void windowsSetupTimer(int ntDllVoodoo)
 {
+    if (ntdll_wine_get_version)
+        return;
+
     typedef HRESULT(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
     typedef HRESULT(NTAPI* PFNQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
 
     TIMECAPS timeCaps;
-
-    if (ntdll_wine_get_version)
-        return;
 
     if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
     {
@@ -58,7 +68,7 @@ void windowsSetupTimer(int ntDllVoodoo)
         HMODULE      hNTDLL = GetModuleHandle("ntdll.dll");
 
         static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
-        static PFNSETTIMERRESOLUTION ntdll_NtSetTimerResolution;
+        static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
 
         if (ntDllVoodoo)
         {
@@ -298,6 +308,13 @@ void windowsPlatformInit(void)
           "   0: HIGH when game has focus, NORMAL when interacting with other programs\n"
           "   1: NORMAL when game has focus, IDLE when interacting with other programs",
           (void *)&win_priorityclass, CVAR_INT, -1, 1 },
+
+        { "win_performancemode",
+          "Windows performance mode:\n"
+          "   0: do not alter performance mode\n"
+          "   1: use HIGH PERFORMANCE power plan when game has focus",
+          (void *)&win_performancemode, CVAR_BOOL, 0, 1 },
+
     };
 
     static osdcvardata_t win_timer_cvar = { "win_systemtimermode",
@@ -318,6 +335,20 @@ void windowsPlatformInit(void)
 
     windowsPrintVersion();
     windowsSetupTimer(0);
+
+    if (osv.dwMajorVersion >= 6)
+    {
+        if (!hPOWRPROF && (hPOWRPROF = GetModuleHandle("powrprof.dll")))
+        {
+            powrprof_PowerGetActiveScheme = (PFNPOWERGETACTIVESCHEME)(void(*))GetProcAddress(hPOWRPROF, "PowerGetActiveScheme");
+            powrprof_PowerSetActiveScheme = (PFNPOWERSETACTIVESCHEME)(void(*))GetProcAddress(hPOWRPROF, "PowerSetActiveScheme");
+
+            if (powrprof_PowerGetActiveScheme == nullptr || powrprof_PowerSetActiveScheme == nullptr)
+                OSD_Printf("ERROR: unable to locate PowerGetActiveScheme or PowerSetActiveScheme symbols in powrprof.dll!\n");
+            else if (!systemPowerSchemeGUID)
+                powrprof_PowerGetActiveScheme(NULL, &systemPowerSchemeGUID);
+        }
+    }
 }
 
 typedef UINT D3DKMT_HANDLE;
@@ -476,6 +507,12 @@ void windowsPlatformCleanup(void)
         CloseHandle(g_singleInstanceSemaphore);
 
     windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName());
+
+    if (systemPowerSchemeGUID)
+    {
+        powrprof_PowerSetActiveScheme(NULL, systemPowerSchemeGUID);
+        LocalFree(systemPowerSchemeGUID);
+    }
 }
 
 
@@ -591,6 +628,9 @@ void windowsHandleFocusChange(int const appactive)
 
         windowsSetupTimer(win_systemtimermode);
         windowsSetKeyboardLayout(enUSLayoutString, true);
+
+        if (win_performancemode && systemPowerSchemeGUID)
+            powrprof_PowerSetActiveScheme(NULL, &GUID_MIN_POWER_SAVINGS);
     }
     else
     {
@@ -599,6 +639,9 @@ void windowsHandleFocusChange(int const appactive)
 
         windowsSetupTimer(0);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
+
+        if (systemPowerSchemeGUID)
+            powrprof_PowerSetActiveScheme(NULL, systemPowerSchemeGUID);
     }
 
     win_silentfocuschange = false;
