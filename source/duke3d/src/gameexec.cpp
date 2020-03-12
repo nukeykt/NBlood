@@ -1240,7 +1240,7 @@ void Screen_Play(void)
 
         ototalclock = totalclock + 1; // pause game like ANMs
 
-        if (!G_FPSLimit())
+        if (!engineFPSLimit())
             continue;
 
         videoClearScreen(0);

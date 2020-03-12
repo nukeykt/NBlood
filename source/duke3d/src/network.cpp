@@ -4701,7 +4701,7 @@ void Net_WaitForServer(void)
         if (quitevent || keystatus[1])
             G_GameExit("");
 
-        if (G_FPSLimit())
+        if (engineFPSLimit())
         {
             display_betascreen();
             gametext_center_shade(170, "Waiting for server", 14);

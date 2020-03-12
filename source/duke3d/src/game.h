@@ -341,8 +341,6 @@ extern int32_t g_quitDeadline;
 extern int32_t g_restorePalette;
 extern int32_t hud_glowingquotes;
 extern int32_t hud_showmapname;
-extern int32_t r_maxfps;
-extern int32_t r_maxfpsoffset;
 extern int32_t tempwallptr;
 extern int32_t ticrandomseed;
 extern int32_t vote_map;
@@ -355,17 +353,6 @@ extern int32_t MAXCACHE1DSIZE;
 
 extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
-
-extern uint64_t g_frameDelay;
-static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
-{
-    uint64_t const perfFreq = timerGetPerformanceFrequency();
-
-    if (maxFPS == -1)
-        return perfFreq / (refreshfreq - ceil(refreshfreq / 60.0));
-
-    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
-}
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -406,7 +393,7 @@ void G_DrawFrags(void);
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t horiz, int32_t smoothratio);
 void G_DrawRooms(int32_t playerNum,int32_t smoothratio);
 void G_DrawTXDigiNumZ(int32_t starttile,int32_t x,int32_t y,int32_t n,int32_t s,int32_t pal,int32_t cs,int32_t x1,int32_t y1,int32_t x2,int32_t y2,int32_t z);
-int G_FPSLimit(void);
+int engineFPSLimit(void);
 void G_GameExit(const char *msg) ATTRIBUTE((noreturn));
 void G_GameQuit(void);
 void G_GetCrosshairColor(void);
