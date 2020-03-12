@@ -3060,7 +3060,7 @@ CHECKINV1:
     }
 }
 
-int A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
+int32_t A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
 {
     hitdata_t hitData;
     int32_t   zOffset = 0;

@@ -2062,7 +2062,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                 updatesectorneighbor(pSprite->x, pSprite->y, &curSectNum, 1024, 2048);
                 changespritesect(spriteNum, curSectNum);
 
-                int hitDist = A_CheckHitSprite(spriteNum, &hitSprite);
+                int32_t hitDist = A_CheckHitSprite(spriteNum, &hitSprite);
 
                 actor[spriteNum].lastv.x = hitDist;
                 pSprite->ang = oldAng;
@@ -2129,7 +2129,7 @@ ACTOR_STATIC void G_MoveStandables(void)
 
                 setsprite(spriteNum, &pSprite->pos);
 
-                int hitDist = A_CheckHitSprite(spriteNum, NULL);
+                int32_t const hitDist = A_CheckHitSprite(spriteNum, NULL);
 
                 pSprite->pos.vec2 = { T4(spriteNum), T5(spriteNum) };
                 pSprite->z += (3<<8);
