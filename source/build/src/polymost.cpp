@@ -116,6 +116,8 @@ int32_t r_detailmapping = 1;
 int32_t r_glowmapping = 1;
 #endif
 
+int polymost2d;
+
 int32_t gltexmaxsize = 0;      // 0 means autodetection on first run
 int32_t gltexmiplevel = 0;		// discards this many mipmap levels
 int32_t glprojectionhacks = 2;
@@ -414,8 +416,6 @@ void gltexapplyprops(void)
 
 //--------------------------------------------------------------------------------------------------
 
-float glox1, gloy1, glox2, gloy2, gloyxscale, gloxyaspect, glohoriz2, glohorizcorrect, glotang;
-
 //Use this for both initialization and uninitialization of OpenGL.
 static int32_t gltexcacnum = -1;
 
@@ -572,7 +572,6 @@ void polymost_glreset()
 #endif
 
     Bmemset(texcache.list,0,sizeof(texcache.list));
-    glox1 = -1;
 
     texcache_freeptrs();
     texcache_syncmemcache();
@@ -1450,48 +1449,36 @@ static void resizeglcheck(void)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 #endif
 
-    if ((glox1 != windowxy1.x) || (gloy1 != windowxy1.y) || (glox2 != windowxy2.x) || (gloy2 != windowxy2.y) || (gloxyaspect != gxyaspect) || (gloyxscale != gyxscale) || (glohoriz2 != ghoriz2) || (glohorizcorrect != ghorizcorrect) || (glotang != gtang))
-    {
-        const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
-        float ratio = get_projhack_ratio();
-        const int32_t fovcorrect = (int32_t)(ourxdimen*ratio - ourxdimen);
+    const int32_t ourxdimen = (windowxy2.x-windowxy1.x+1);
+    float ratio = get_projhack_ratio();
+    const int32_t fovcorrect = (int32_t)(ourxdimen*ratio - ourxdimen);
 
-        ratio = 1.f/ratio;
+    ratio = 1.f/ratio;
 
-        glox1 = (float)windowxy1.x; gloy1 = (float)windowxy1.y;
-        glox2 = (float)windowxy2.x; gloy2 = (float)windowxy2.y;
+    glViewport(windowxy1.x-(fovcorrect/2), ydim-(windowxy2.y+1),
+                ourxdimen+fovcorrect, windowxy2.y-windowxy1.y+1);
 
-        glViewport(windowxy1.x-(fovcorrect/2), ydim-(windowxy2.y+1),
-                    ourxdimen+fovcorrect, windowxy2.y-windowxy1.y+1);
+    glMatrixMode(GL_PROJECTION);
 
-        glMatrixMode(GL_PROJECTION);
+    float m[4][4];
+    Bmemset(m,0,sizeof(m));
 
-        float m[4][4];
-        Bmemset(m,0,sizeof(m));
+    float const nearclip = 4.f / (gxyaspect * gyxscale * 1024.f);
+    float const farclip = 64.f;
 
-        float const nearclip = 4.f / (gxyaspect * gyxscale * 1024.f);
-        float const farclip = 64.f;
+    m[0][0] = 1.f;
+    m[1][1] = fxdimen / (fydimen * ratio);
+    m[2][0] = 2.f * ghoriz2 * gstang / fxdimen;
+    m[2][1] = 2.f * (ghoriz2 * gctang + ghorizcorrect) / fydimen;
+    m[2][2] = (farclip + nearclip) / (farclip - nearclip);
+    m[2][3] = 1.f;
+    m[3][2] = -(2.f * farclip * nearclip) / (farclip - nearclip);
+    glLoadMatrixf(&m[0][0]);
 
-        gloxyaspect = gxyaspect;
-        gloyxscale = gyxscale;
-        glohoriz2 = ghoriz2;
-        glohorizcorrect = ghorizcorrect;
-        glotang = gtang;
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-        m[0][0] = 1.f;
-        m[1][1] = fxdimen / (fydimen * ratio);
-        m[2][0] = 2.f * ghoriz2 * gstang / fxdimen;
-        m[2][1] = 2.f * (ghoriz2 * gctang + ghorizcorrect) / fydimen;
-        m[2][2] = (farclip + nearclip) / (farclip - nearclip);
-        m[2][3] = 1.f;
-        m[3][2] = -(2.f * farclip * nearclip) / (farclip - nearclip);
-        glLoadMatrixf(&m[0][0]);
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        if (!nofog) polymost_setFogEnabled(true);
-    }
+    if (!nofog) polymost_setFogEnabled(true);
 }
 
 static void fixtransparency(coltype *dapic, vec2_t dasiz, vec2_t dasiz2, int32_t dameth)
@@ -8732,15 +8719,9 @@ void polymost_dorotatespritemodel(int32_t sx, int32_t sy, int32_t z, int16_t a, 
     tspr.cstat = globalorientation = (dastat&RS_TRANS1) | ((dastat&RS_TRANS2)<<4) | ((dastat&RS_YFLIP)<<1);
 
     if ((dastat&(RS_AUTO|RS_NOCLIP)) == RS_AUTO)
-    {
         glViewport(windowxy1.x, ydim-(windowxy2.y+1), windowxy2.x-windowxy1.x+1, windowxy2.y-windowxy1.y+1);
-        glox1 = -1;
-    }
     else
-    {
         glViewport(0, 0, xdim, ydim);
-        glox1 = -1; //Force fullscreen (glox1=-1 forces it to restore)
-    }
 
     if (videoGetRenderMode() < REND_POLYMER)
     {
@@ -8860,7 +8841,7 @@ void polymost_dorotatesprite(int32_t sx, int32_t sy, int32_t z, int16_t a, int16
     polymost_outputGLDebugMessage(3, "polymost_dorotatesprite(sx:%d, sy:%d, z:%d, a:%hd, picnum:%hd, dashade:%hhd, dapalnum:%hhu, dastat:%d, daalpha:%hhu, dablend:%hhu, cx1:%d, cy1:%d, cx2:%d, cy2:%d, uniqid:%d)",
                                   sx, sy, z, a, picnum, dashade, dapalnum, dastat, daalpha, dablend, cx1, cy1, cx2, cy2, uniqid);
 
-    glViewport(0,0,xdim,ydim); glox1 = -1; //Force fullscreen (glox1=-1 forces it to restore)
+    glViewport(0,0,xdim,ydim);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
 
@@ -9314,7 +9295,7 @@ void polymost_fillpolygon(int32_t npoints)
         ((float *)ry1)[i] = ((float)ry1[i])*(1.0f/4096.f);
     }
 
-    if (gloy1 != -1) polymostSet2dView(); //disables blending, texturing, and depth testing
+    if (!polymost2d) polymostSet2dView(); //disables blending, texturing, and depth testing
     glEnable(GL_ALPHA_TEST);
     pthtyp const * const pth = our_texcache_fetch(DAMETH_NOMASK | (videoGetRenderMode() == REND_POLYMOST && r_useindexedcolortextures ? DAMETH_INDEXED : 0));
 

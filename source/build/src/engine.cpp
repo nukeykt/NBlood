@@ -8631,7 +8631,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         polymer_glinit();
         polymer_drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum);
         glDisable(GL_CULL_FACE);
-        gloy1 = 0;
+        polymost2d = 0;
         return 0;
     }
 # endif
@@ -12336,7 +12336,7 @@ void videoClearScreen(int32_t dacol)
     {
         palette_t const p = paletteGetColor(dacol);
 
-        glViewport(0,0,xdim,ydim); glox1 = -1;
+        glViewport(0,0,xdim,ydim);
         glClearColor((float)p.r * (1.f/255.f),
                       (float)p.g * (1.f/255.f),
                       (float)p.b * (1.f/255.f),
