@@ -368,7 +368,9 @@ void menutext_(int32_t x, int32_t y, int32_t s, char const *t, int32_t o, int32_
 
 void captionmenutext(int32_t x, int32_t y, char const *t)
 {
-    G_ScreenText(MF_Redfont.tilenum, x, y - (12<<16), MF_Redfont.zoom, 0, 0, t, 0, ud.menutitle_pal, g_textstat, 0, MF_Redfont.emptychar.x, MF_Redfont.emptychar.y, MF_Redfont.between.x, MF_Redfont.between.y, MF_Redfont.textflags|TEXT_LITERALESCAPE|TEXT_XCENTER|TEXT_YCENTER, 0, 0, xdim-1, ydim-1);
+    G_ScreenText(MF_Redfont.tilenum, x, y, MF_Redfont.zoom, 0, 0, t, 0, ud.menutitle_pal, g_textstat, 0,
+                 MF_Redfont.emptychar.x, MF_Redfont.emptychar.y, MF_Redfont.between.x, MF_Redfont.emptychar.y,
+                 MF_Redfont.textflags|TEXT_LITERALESCAPE|TEXT_XCENTER|TEXT_YCENTER|TEXT_YOFFSETZERO, 0, 0, xdim-1, ydim-1);
 }
 
 

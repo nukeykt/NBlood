@@ -124,10 +124,12 @@ static void Menu_DrawBackground(const vec2_t origin)
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (100<<16), 65536L,0,MENUSCREEN,16,0,10+64);
 }
 
+static constexpr int32_t const TopBarY = 19<<16;
+
 static void Menu_DrawTopBar(const vec2_t origin)
 {
     if ((G_GetLogoFlags() & LOGO_NOTITLEBAR) == 0)
-        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (19<<16), MF_Redfont.cursorScale, 0,MENUBAR,16,0,10);
+        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + TopBarY, MF_Redfont.cursorScale, 0,MENUBAR,16,0,10);
 }
 
 static void Menu_DrawTopBarCaption(const char *caption, const vec2_t origin)
@@ -140,7 +142,7 @@ static void Menu_DrawTopBarCaption(const char *caption, const vec2_t origin)
     char *p = &t[dstlen-1];
     if (*p == ':')
         *p = '\0';
-    captionmenutext(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (24<<16) + ((15>>1)<<16), t);
+    captionmenutext(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + TopBarY, t);
 }
 
 static FORCE_INLINE int32_t Menu_CursorShade(void)
