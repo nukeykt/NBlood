@@ -552,7 +552,7 @@ int32_t clipmoveboxtracenum = 3;
 //
 // clipinsidebox
 //
-int clipinsidebox(vec2_t *vect, int wallnum, int walldist)
+int clipinsidebox(vec2_t const * const vect, int const wallnum, int const walldist)
 {
     int const r = walldist << 1;
 

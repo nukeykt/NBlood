@@ -72,7 +72,7 @@ typedef struct
 
 extern int16_t clipsectorlist[MAXCLIPSECTORS];
 
-int clipinsidebox(vec2_t *vect, int wallnum, int walldist);
+int clipinsidebox(vec2_t const * const vect, int const wallnum, int const walldist);
 int clipinsideboxline(int x, int y, int x1, int y1, int x2, int y2, int walldist);
 
 extern int32_t clipmoveboxtracenum;
