@@ -1050,7 +1050,10 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             if ((unsigned)newsect < MAXSECTORS)
                 changespritesect(spriteNum, newsect);
 
-            A_PlaySound(THUD, spriteNum);
+#ifndef EDUKE32_STANDALONE
+            if (!FURY)
+                A_PlaySound(THUD, spriteNum);
+#endif
         }
     }
 
@@ -5031,7 +5034,10 @@ badindex:
             vInstruction(CON_QUAKE):
                 insptr++;
                 g_earthquakeTime = Gv_GetVar(*insptr++);
-                A_PlaySound(EARTHQUAKE, g_player[screenpeek].ps->i);
+#ifndef EDUKE32_STANDALONE
+                if (!FURY)
+                    A_PlaySound(EARTHQUAKE, g_player[screenpeek].ps->i);
+#endif
                 dispatch();
 
             vInstruction(CON_RESETPLAYER):
