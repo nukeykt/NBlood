@@ -46,7 +46,7 @@ typedef DWORD(WINAPI *PFNPOWERSETACTIVESCHEME)(HKEY, CONST GUID *);
 static PFNPOWERGETACTIVESCHEME powrprof_PowerGetActiveScheme;
 static PFNPOWERSETACTIVESCHEME powrprof_PowerSetActiveScheme;
 
-void windowsSetupTimer(int ntDllVoodoo)
+void windowsSetupTimer(int const useNtTimer)
 {
     if (ntdll_wine_get_version)
         return;
@@ -63,80 +63,75 @@ void windowsSetupTimer(int ntDllVoodoo)
 #else
         static constexpr int const onBattery = 0;
 #endif
-        static int   setPeriod;
-        static ULONG setTimerNT;
-        HMODULE      hNTDLL = GetModuleHandle("ntdll.dll");
+        static int     timePeriod;
+        static ULONG   ntTimerRes;
+        static HMODULE hNTDLL = GetModuleHandle("ntdll.dll");
 
         static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
         static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
 
-        if (ntDllVoodoo)
+        if (useNtTimer)
         {
             if (!onBattery)
             {
-                if (hNTDLL != nullptr)
+                ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
+                ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
+
+                if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
                 {
-                    ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
-                    ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
-
-                    if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
-                    {
-                        OSD_Printf("ERROR: unable to locate NtQueryTimerResolution or NtSetTimerResolution symbols in ntdll.dll!\n");
-                        goto failsafe;
-                    }
-
-                    ULONG minRes, maxRes, actualRes;
-
-                    ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
-
-                    if (setTimerNT != 0)
-                    {
-                        if (setTimerNT == actualRes)
-                            return;
-
-                        ntdll_NtSetTimerResolution(actualRes, FALSE, &actualRes);
-                    }
-
-                    ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes);
-
-                    setTimerNT = actualRes;
-                    setPeriod  = 0;
-
-                    if (!win_silentfocuschange)
-                        OSD_Printf("Low-latency system timer enabled: set %.1fms timer resolution\n", actualRes / 10000.0);
-
-                    return;
+                    OSD_Printf("ERROR: unable to locate NtQueryTimerResolution or NtSetTimerResolution symbols in ntdll.dll!\n");
+                    goto failsafe;
                 }
-                else
-                    OSD_Printf("ERROR: couldn't load ntdll.dll!\n");
+
+                ULONG minRes, maxRes, actualRes;
+
+                ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
+
+                if (ntTimerRes != 0)
+                {
+                    if (ntTimerRes == actualRes)
+                        return;
+
+                    ntdll_NtSetTimerResolution(actualRes, FALSE, &actualRes);
+                }
+
+                ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes);
+
+                ntTimerRes = actualRes;
+                timePeriod = 0;
+
+                if (!win_silentfocuschange)
+                    OSD_Printf("Initialized %.1fms system timer\n", actualRes / 10000.0);
+
+                return;
             }
             else if (!win_silentfocuschange)
                 OSD_Printf("Low-latency timer mode not supported on battery power!\n");
         }
-        else if (setTimerNT != 0)
+        else if (ntTimerRes != 0)
         {
-            ntdll_NtSetTimerResolution(setTimerNT, FALSE, &setTimerNT);
-            setTimerNT = 0;
+            ntdll_NtSetTimerResolution(ntTimerRes, FALSE, &ntTimerRes);
+            ntTimerRes = 0;
         }
 
 failsafe:
-        int const requestedPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
+        int const newPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
             
-        if (setPeriod != 0)
+        if (timePeriod != 0)
         {
-            if (setPeriod == requestedPeriod)
+            if (timePeriod == newPeriod)
                 return;
 
-            timeEndPeriod(requestedPeriod);
+            timeEndPeriod(timePeriod);
         }
 
-        timeBeginPeriod(requestedPeriod);
+        timeBeginPeriod(newPeriod);
 
-        setPeriod  = requestedPeriod;
-        setTimerNT = 0;
+        timePeriod = newPeriod;
+        ntTimerRes = 0;
 
         if (!win_silentfocuschange)
-            OSD_Printf("Initialized %ums system timer\n", requestedPeriod);
+            OSD_Printf("Initialized %ums system timer\n", newPeriod);
 
         return;
     }

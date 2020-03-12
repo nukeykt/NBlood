@@ -35,7 +35,7 @@ void    windowsShowError(const char *m);
 void    windowsPlatformCleanup(void);
 void    windowsPlatformInit(void);
 int     windowsPreInit(void);
-void    windowsSetupTimer(int ntDllVoodoo);
+void    windowsSetupTimer(int useNtTimer);
 void    windowsSetKeyboardLayout(char const *layout, int focusChanged = false);
 void    windowsWaitForVBlank(void);
 #endif // winbits_h__
