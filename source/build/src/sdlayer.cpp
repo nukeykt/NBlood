@@ -667,6 +667,7 @@ int32_t initsystem(void)
 
 #if SDL_MAJOR_VERSION > 1
     SDL_StopTextInput();
+    SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 #endif
 
     atexit(uninitsystem);
