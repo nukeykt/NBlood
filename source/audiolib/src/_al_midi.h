@@ -96,5 +96,6 @@ static void AL_NoteOn(int channel, int key, int vel);
 static void AL_ControlChange(int channel, int type, int data);
 static void AL_ProgramChange(int channel, int patch);
 static void AL_SetPitchBend(int channel, int lsb, int msb);
+static void AL_SetVolume(int volume);
 
 #endif
