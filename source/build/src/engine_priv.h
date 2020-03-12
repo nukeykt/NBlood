@@ -217,7 +217,7 @@ inline int32_t ksqrtasm_old(int32_t n)
 
 inline int32_t clip_nsqrtasm(int32_t n)
 {
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+    if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(n);
     return nsqrtasm(n);
 }

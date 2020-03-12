@@ -204,6 +204,10 @@ static void draw_rainbow_background(void);
 int16_t editstatus = 0;
 static fix16_t global100horiz;  // (-100..300)-scale horiz (the one passed to drawrooms)
 
+#ifndef EDUKE32_STANDALONE
+int32_t enginecompatibilitymode = ENGINE_EDUKE32;
+#endif
+
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
@@ -7798,7 +7802,7 @@ LISTFN_STATIC int32_t insertspritestat(int16_t statnum)
     // make back-link of the new freelist head point to nil
     if (headspritestat[MAXSTATUS] >= 0)
         prevspritestat[headspritestat[MAXSTATUS]] = -1;
-    else if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+    else if (enginecompatibilitymode == ENGINE_EDUKE32)
         tailspritefree = -1;
 
     do_insertsprite_at_headofstat(blanktouse, statnum);
@@ -7861,7 +7865,7 @@ int32_t deletesprite(int16_t spritenum)
     sprite[spritenum].sectnum = MAXSECTORS;
 
     // insert at tail of status freelist
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
         do_insertsprite_at_headofstat(spritenum, MAXSTATUS);
     else
     {
@@ -7936,7 +7940,7 @@ int32_t lintersect(const int32_t originX, const int32_t originY, const int32_t o
 
     if (rayCrossLineVec == 0)
     {
-        if (originDiffCrossRay != 0 || enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+        if (originDiffCrossRay != 0 || enginecompatibilitymode != ENGINE_EDUKE32)
         {
             // line segments are parallel
             return 0;
@@ -8050,7 +8054,7 @@ int32_t rintersect(int32_t x1, int32_t y1, int32_t z1,
 {
     //p1 towards p2 is a ray
 
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
         return rintersect_old(x1,y1,z1,vx,vy,vz,x3,y3,x4,y4,intx,inty,intz);
 
     int64_t const x34=x3-x4, y34=y3-y4;
@@ -10845,7 +10849,7 @@ void vox_undefine(int32_t const tile)
 //
 // See http://fabiensanglard.net/duke3d/build_engine_internals.php,
 // "Inside details" for the idea behind the algorithm.
-int32_t inside_ps(int32_t x, int32_t y, int16_t sectnum)
+static int32_t inside_19950829(int32_t x, int32_t y, int16_t sectnum)
 {
     if (sectnum >= 0 && sectnum < numsectors)
     {
@@ -10871,7 +10875,8 @@ int32_t inside_ps(int32_t x, int32_t y, int16_t sectnum)
 
     return -1;
 }
-int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
+
+static int32_t inside_compat(int32_t x, int32_t y, int16_t sectnum)
 {
     if (sectnum >= 0 && sectnum < numsectors)
     {
@@ -10908,68 +10913,66 @@ int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
 
 int32_t inside(int32_t x, int32_t y, int16_t sectnum)
 {
-    switch (enginecompatibility_mode)
+    switch (enginecompatibilitymode)
     {
-    case ENGINECOMPATIBILITY_NONE:
-        break;
-    case ENGINECOMPATIBILITY_19950829:
-        return inside_ps(x, y, sectnum);
-    default:
-        return inside_old(x, y, sectnum);
-    }
-    if ((unsigned)sectnum < (unsigned)numsectors)
-    {
-        uint32_t cnt1 = 0, cnt2 = 0;
-
-        auto wal       = (uwallptr_t)&wall[sector[sectnum].wallptr];
-        int  wallsleft = sector[sectnum].wallnum;
-
-        do
+    case ENGINE_EDUKE32:
+        if ((unsigned)sectnum < (unsigned)numsectors)
         {
-            // Get the x and y components of the [tested point]-->[wall
-            // point{1,2}] vectors.
-            vec2_t v1 = { wal->x - x, wal->y - y };
-            auto const &wal2 = *(uwallptr_t)&wall[wal->point2];
-            vec2_t v2 = { wal2.x - x, wal2.y - y };
+            uint32_t cnt1 = 0, cnt2 = 0;
 
-            // First, test if the point is EXACTLY_ON_WALL_POINT.
-            if ((v1.x|v1.y) == 0 || (v2.x|v2.y)==0)
-                return 1;
+            auto wal       = (uwallptr_t)&wall[sector[sectnum].wallptr];
+            int  wallsleft = sector[sectnum].wallnum;
 
-            // If their signs differ[*], ...
-            //
-            // [*] where '-' corresponds to <0 and '+' corresponds to >=0.
-            // Equivalently, the branch is taken iff
-            //   y1 != y2 AND y_m <= y < y_M,
-            // where y_m := min(y1, y2) and y_M := max(y1, y2).
-            if ((v1.y^v2.y) < 0)
-                cnt1 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
-
-            v1.y--;
-            v2.y--;
-
-            // Now, do the same comparisons, but with the interval half-open on
-            // the other side! That is, take the branch iff
-            //   y1 != y2 AND y_m < y <= y_M,
-            // For a rectangular sector, without EXACTLY_ON_WALL_POINT, this
-            // would still leave the lower left and upper right points
-            // "outside" the sector.
-            if ((v1.y^v2.y) < 0)
+            do
             {
-                v1.x--;
-                v2.x--;
+                // Get the x and y components of the [tested point]-->[wall
+                // point{1,2}] vectors.
+                vec2_t v1 = { wal->x - x, wal->y - y };
+                auto const &wal2 = *(uwallptr_t)&wall[wal->point2];
+                vec2_t v2 = { wal2.x - x, wal2.y - y };
 
-                cnt2 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+                // First, test if the point is EXACTLY_ON_WALL_POINT.
+                if ((v1.x|v1.y) == 0 || (v2.x|v2.y)==0)
+                    return 1;
+
+                // If their signs differ[*], ...
+                //
+                // [*] where '-' corresponds to <0 and '+' corresponds to >=0.
+                // Equivalently, the branch is taken iff
+                //   y1 != y2 AND y_m <= y < y_M,
+                // where y_m := min(y1, y2) and y_M := max(y1, y2).
+                if ((v1.y^v2.y) < 0)
+                    cnt1 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+
+                v1.y--;
+                v2.y--;
+
+                // Now, do the same comparisons, but with the interval half-open on
+                // the other side! That is, take the branch iff
+                //   y1 != y2 AND y_m < y <= y_M,
+                // For a rectangular sector, without EXACTLY_ON_WALL_POINT, this
+                // would still leave the lower left and upper right points
+                // "outside" the sector.
+                if ((v1.y^v2.y) < 0)
+                {
+                    v1.x--;
+                    v2.x--;
+
+                    cnt2 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+                }
+
+                wal++;
             }
+            while (--wallsleft);
 
-            wal++;
+            return (cnt1|cnt2)>>31;
         }
-        while (--wallsleft);
-
-        return (cnt1|cnt2)>>31;
+        return -1;
+    case ENGINE_19950829:
+        return inside_19950829(x, y, sectnum);
+    default:
+        return inside_compat(x, y, sectnum);
     }
-
-    return -1;
 }
 
 int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
@@ -11113,7 +11116,7 @@ int32_t nextsectorneighborz(int16_t sectnum, int32_t refz, int16_t topbottom, in
 //
 // cansee
 //
-int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t xe, int32_t ye, int32_t ze, int16_t sectnume)
+int32_t cansee_19950829(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t xe, int32_t ye, int32_t ze, int16_t sectnume)
 {
     sectortype *sec, *nsec;
     walltype *wal, *wal2;
@@ -11153,8 +11156,8 @@ int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t
 
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, int32_t y2, int32_t z2, int16_t sect2)
 {
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
-        return cansee_old(x1, y1, z1, sect1, x2, y2, z2, sect2);
+    if (enginecompatibilitymode == ENGINE_19950829)
+        return cansee_19950829(x1, y1, z1, sect1, x2, y2, z2, sect2);
     int32_t dacnt, danum;
     const int32_t x21 = x2-x1, y21 = y2-y1, z21 = z2-z1;
 
@@ -11702,7 +11705,14 @@ int findwallbetweensectors(int sect1, int sect2)
 //
 void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
 {
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode == ENGINE_EDUKE32)
+    {
+        int16_t sect = *sectnum;
+        updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+        if (sect != -1)
+            SET_AND_RETURN(*sectnum, sect);
+    }
+    else
     {
         if (inside_p(x, y, *sectnum))
             return;
@@ -11721,13 +11731,6 @@ void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
             }
             while (--wallsleft);
         }
-    }
-    else
-    {
-        int16_t sect = *sectnum;
-        updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-        if (sect != -1)
-            SET_AND_RETURN(*sectnum, sect);
     }
 
     // we need to support passing in a sectnum of -1, unfortunately
@@ -11772,7 +11775,14 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
 
 void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
 {
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode == ENGINE_EDUKE32)
+    {
+        int16_t sect = *sectnum;
+        updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+        if (sect != -1)
+            SET_AND_RETURN(*sectnum, sect);
+    }
+    else
     {
         if ((uint32_t)(*sectnum) < 2*MAXSECTORS)
         {
@@ -11820,13 +11830,6 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
             }
             while (--wallsleft);
         }
-    }
-    else
-    {
-        int16_t sect = *sectnum;
-        updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-        if (sect != -1)
-            SET_AND_RETURN(*sectnum, sect);
     }
 
     // we need to support passing in a sectnum of -1, unfortunately
@@ -12559,7 +12562,7 @@ int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     if (i == 0) return sec->ceilingz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    int const shift = (enginecompatibilitymode == ENGINE_EDUKE32);
     return sec->ceilingz + (scale(sec->ceilingheinum,j>>shift,i)<<shift);
 }
 
@@ -12578,7 +12581,7 @@ int32_t getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     if (i == 0) return sec->floorz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    int const shift = (enginecompatibilitymode == ENGINE_EDUKE32);
     return sec->floorz + (scale(sec->floorheinum,j>>shift,i)<<shift);
 }
 
@@ -12598,7 +12601,7 @@ void getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day, int32_t *ceilz,
     if (i == 0) return;
 
     int const j = dmulscale3(d.x,day-wal->y, -d.y,dax-wal->x);
-    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    int const shift = (enginecompatibilitymode == ENGINE_EDUKE32);
     if (sec->ceilingstat&2)
         *ceilz += scale(sec->ceilingheinum,j>>shift,i)<<shift;
     if (sec->floorstat&2)

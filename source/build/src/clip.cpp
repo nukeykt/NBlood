@@ -778,7 +778,7 @@ static FORCE_INLINE void clipmove_tweak_pos(const vec3_t *pos, int32_t gx, int32
 {
     int32_t daz;
 
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829 ||
+    if (enginecompatibilitymode == ENGINE_19950829 ||
         rintersect(pos->x, pos->y, 0, gx, gy, 0, x1, y1, x2, y2, daxptr, dayptr, &daz) == -1)
     {
         *daxptr = pos->x;
@@ -786,29 +786,25 @@ static FORCE_INLINE void clipmove_tweak_pos(const vec3_t *pos, int32_t gx, int32
     }
 }
 
-int32_t getceilzofslope_old(int32_t sectnum, int32_t dax, int32_t day)
+int32_t getceilzofslope_19950829(int32_t sectnum, int32_t dax, int32_t day)
 {
-    int32_t dx, dy, i, j;
-
     if (!(sector[sectnum].ceilingstat&2)) return sector[sectnum].ceilingz;
-    j = sector[sectnum].wallptr;
-    dx = wall[wall[j].point2].x-wall[j].x;
-    dy = wall[wall[j].point2].y-wall[j].y;
-    i = (ksqrtasm_old(dx*dx+dy*dy)); if (i == 0) return(sector[sectnum].ceilingz);
+    int32_t const j = sector[sectnum].wallptr;
+    int32_t dx = wall[wall[j].point2].x-wall[j].x;
+    int32_t dy = wall[wall[j].point2].y-wall[j].y;
+    int32_t i = (ksqrtasm_old(dx*dx+dy*dy)); if (i == 0) return(sector[sectnum].ceilingz);
     i = divscale15(sector[sectnum].ceilingheinum,i);
     dx *= i; dy *= i;
     return(sector[sectnum].ceilingz+dmulscale23(dx,day-wall[j].y,-dy,dax-wall[j].x));
 }
 
-int32_t getflorzofslope_old(int32_t sectnum, int32_t dax, int32_t day)
+int32_t getflorzofslope_19950829(int32_t sectnum, int32_t dax, int32_t day)
 {
-    int32_t dx, dy, i, j;
-
     if (!(sector[sectnum].floorstat&2)) return sector[sectnum].floorz;
-    j = sector[sectnum].wallptr;
-    dx = wall[wall[j].point2].x-wall[j].x;
-    dy = wall[wall[j].point2].y-wall[j].y;
-    i = (ksqrtasm_old(dx*dx+dy*dy)); if (i == 0) return sector[sectnum].floorz;
+    int32_t const j = sector[sectnum].wallptr;
+    int32_t dx = wall[wall[j].point2].x-wall[j].x;
+    int32_t dy = wall[wall[j].point2].y-wall[j].y;
+    int32_t i = (ksqrtasm_old(dx*dx+dy*dy)); if (i == 0) return sector[sectnum].floorz;
     i = divscale15(sector[sectnum].floorheinum,i);
     dx *= i; dy *= i;
     return(sector[sectnum].floorz+dmulscale23(dx,day-wall[j].y,-dy,dax-wall[j].x));
@@ -821,19 +817,49 @@ static int cliptestsector(int const dasect, int const nextsect, int32_t const fl
 
     auto const sec2 = (usectorptr_t)&sector[nextsect];
 
-    switch (enginecompatibility_mode)
+    switch (enginecompatibilitymode)
     {
-    case ENGINECOMPATIBILITY_NONE:
-        break;
-    case ENGINECOMPATIBILITY_19950829:
+    case ENGINE_EDUKE32:
     {
-        int32_t daz = getflorzofslope_old(dasect, pos.x, pos.y);
-        int32_t daz2 = getflorzofslope_old(nextsect, pos.x, pos.y);
+        int32_t daz2  = sec2->floorz;
+        int32_t dacz2 = sec2->ceilingz;
+
+        if ((sec2->floorstat|sec2->ceilingstat) & 2)
+            getcorrectzsofslope(nextsect, pos.x, pos.y, &dacz2, &daz2);
+
+        if (daz2 <= dacz2)
+            return 1;
+
+        auto const sec = (usectorptr_t)&sector[dasect];
+
+        int32_t daz  = sec->floorz;
+        int32_t dacz = sec->ceilingz;
+
+        if ((sec->floorstat|sec->ceilingstat) & 2)
+            getcorrectzsofslope(dasect, pos.x, pos.y, &dacz, &daz);
+
+        int32_t const sec2height = klabs(daz2-dacz2);
+
+        return ((klabs(daz-dacz) > sec2height &&       // clip if the current sector is taller and the next is too small
+                sec2height < (ceildist+(CLIPCURBHEIGHT<<1))) ||
+
+                ((sec2->floorstat&1) == 0 &&    // parallaxed floor curbs don't clip
+                posz >= daz2-(flordist-1) &&    // also account for desired z distance tolerance
+                daz2 < daz-CLIPCURBHEIGHT) ||   // curbs less tall than 256 z units don't clip
+
+                ((sec2->ceilingstat&1) == 0 && 
+                posz <= dacz2+(ceildist-1) &&
+                dacz2 > dacz+CLIPCURBHEIGHT));  // ceilings check the same conditions ^^^^^
+    }
+    case ENGINE_19950829:
+    {
+        int32_t daz = getflorzofslope_19950829(dasect, pos.x, pos.y);
+        int32_t daz2 = getflorzofslope_19950829(nextsect, pos.x, pos.y);
 
         if (daz2 < daz && (sec2->floorstat&1) == 0)
             if (posz >= daz2-(flordist-1)) return 1;
-        daz = getceilzofslope_old(dasect, pos.x, pos.y);
-        daz2 = getceilzofslope_old(nextsect, pos.x, pos.y);
+        daz = getceilzofslope_19950829(dasect, pos.x, pos.y);
+        daz2 = getceilzofslope_19950829(nextsect, pos.x, pos.y);
         if (daz2 > daz && (sec2->ceilingstat&1) == 0)
             if (posz <= daz2+(ceildist-1)) return 1;
 
@@ -854,36 +880,6 @@ static int cliptestsector(int const dasect, int const nextsect, int32_t const fl
         return 0;
     }
     }
-
-    int32_t daz2  = sec2->floorz;
-    int32_t dacz2 = sec2->ceilingz;
-
-    if ((sec2->floorstat|sec2->ceilingstat) & 2)
-        getcorrectzsofslope(nextsect, pos.x, pos.y, &dacz2, &daz2);
-
-    if (daz2 <= dacz2)
-        return 1;
-
-    auto const sec = (usectorptr_t)&sector[dasect];
-
-    int32_t daz  = sec->floorz;
-    int32_t dacz = sec->ceilingz;
-
-    if ((sec->floorstat|sec->ceilingstat) & 2)
-        getcorrectzsofslope(dasect, pos.x, pos.y, &dacz, &daz);
-
-    int32_t const sec2height = klabs(daz2-dacz2);
-
-    return ((klabs(daz-dacz) > sec2height &&       // clip if the current sector is taller and the next is too small
-            sec2height < (ceildist+(CLIPCURBHEIGHT<<1))) ||
-
-            ((sec2->floorstat&1) == 0 &&    // parallaxed floor curbs don't clip
-            posz >= daz2-(flordist-1) &&    // also account for desired z distance tolerance
-            daz2 < daz-CLIPCURBHEIGHT) ||   // curbs less tall than 256 z units don't clip
-
-            ((sec2->ceilingstat&1) == 0 && 
-            posz <= dacz2+(ceildist-1) &&
-            dacz2 > dacz+CLIPCURBHEIGHT));  // ceilings check the same conditions ^^^^^
 }
 
 int32_t clipmovex(vec3_t *pos, int16_t *sectnum,
@@ -1010,7 +1006,7 @@ static int get_floorspr_clipyou(vec2_t const v1, vec2_t const v2, vec2_t const v
 
 static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int walldist)
 {
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
     {
         updatesector(pos.x, pos.y, sectnum);
         return;
@@ -1245,7 +1241,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 }
 
            // We're not interested in any sector reached by portal traversal that we're "inside" of.
-            if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && !curspr && dasect != initialsectnum
+            if (enginecompatibilitymode == ENGINE_EDUKE32 && !curspr && dasect != initialsectnum
                 && inside(pos->x, pos->y, dasect) == 1)
             {
                 int k;
@@ -1271,7 +1267,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 v.x = walldist; if (d.y > 0) v.x = -v.x;
                 v.y = walldist; if (d.x < 0) v.y = -v.y;
 
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
+                if (enginecompatibilitymode == ENGINE_EDUKE32 && d.x * (pos->y-p1.y-v.y) < (pos->x-p1.x-v.x) * d.y)
                     v.x >>= 1, v.y >>= 1;
 
                 addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.x, p2.y+v.y, objtype, false);
@@ -1429,7 +1425,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
     do
     {
-        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && (xvect|yvect))
+        if (enginecompatibilitymode == ENGINE_EDUKE32 && (xvect|yvect))
         {
             for (native_t i=clipnum-1;i>=0;--i)
             {
@@ -1458,14 +1454,14 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 // I don't know if this one actually overflows or not, but I highly doubt it hurts to check
                 int32_t const templl2
                 = (int32_t)clamp(compat_maybe_truncate_to_int32((int64_t)(goal.x - vec.x) * clipr.x + (int64_t)(goal.y - vec.y) * clipr.y), INT32_MIN, INT32_MAX);
-                int32_t const i = (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829 || (klabs(templl2)>>11) < templl) ?
+                int32_t const i = (enginecompatibilitymode == ENGINE_19950829 || (klabs(templl2)>>11) < templl) ?
                     divscale64(templl2, templl, 20) : 0;
 
                 goal = { mulscale20(clipr.x, i)+vec.x, mulscale20(clipr.y, i)+vec.y };
             }
 
             int32_t tempint;
-            if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+            if (enginecompatibilitymode == ENGINE_19950829)
                 tempint = clipr.x*(move.x>>6)+clipr.y*(move.y>>6);
             else
                 tempint = dmulscale6(clipr.x, move.x, clipr.y, move.y);
@@ -1475,14 +1471,14 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 j = hitwalls[i];
 
                 int32_t tempint2;
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+                if (enginecompatibilitymode == ENGINE_19950829)
                     tempint2 = (clipit[j].x2-clipit[j].x1)*(move.x>>6)+(clipit[j].y2-clipit[j].y1)*(move.y>>6);
                 else
                     tempint2 = dmulscale6(clipit[j].x2-clipit[j].x1, move.x, clipit[j].y2-clipit[j].y1, move.y);
 
                 if ((tempint ^ tempint2) < 0)
                 {
-                    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19961112)
+                    if (enginecompatibilitymode == ENGINE_19961112)
                         updatesector(pos->x, pos->y, sectnum);
                     return clipReturn;
                 }
@@ -1497,7 +1493,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
             hitwalls[cnt] = hitwall;
         }
 
-        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+        if (enginecompatibilitymode == ENGINE_EDUKE32)
             clipupdatesector(vec, sectnum, rad);
 
         pos->x = vec.x;
@@ -1505,7 +1501,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         cnt--;
     } while ((xvect|yvect) != 0 && hitwall >= 0 && cnt > 0);
 
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
     {
         for (native_t j=0; j<clipsectnum; j++)
             if (inside(pos->x, pos->y, clipsectorlist[j]) == 1)
@@ -1519,7 +1515,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
         for (native_t j=numsectors-1; j>=0; j--)
             if (inside(pos->x, pos->y, j) == 1)
             {
-                if (enginecompatibility_mode != ENGINECOMPATIBILITY_19950829 && (sector[j].ceilingstat&2))
+                if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].ceilingstat&2))
                     tempint2 = getceilzofslope(j, pos->x, pos->y) - pos->z;
                 else
                     tempint2 = sector[j].ceilingz - pos->z;
@@ -1533,7 +1529,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 }
                 else
                 {
-                    if (enginecompatibility_mode != ENGINECOMPATIBILITY_19950829 && (sector[j].floorstat&2))
+                    if (enginecompatibilitymode != ENGINE_19950829 && (sector[j].floorstat&2))
                         tempint2 = pos->z - getflorzofslope(j, pos->x, pos->y);
                     else
                         tempint2 = pos->z - sector[j].floorz;
@@ -1580,7 +1576,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
 
         if (clear)
         {
-            if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE && *sectnum < 0)
+            if (enginecompatibilitymode != ENGINE_EDUKE32 && *sectnum < 0)
                 return 0;
             clipsectorlist[0] = *sectnum;
             clipsectnum = 1;
@@ -1644,7 +1640,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         int32_t daz2;
                         vec2_t closest;
 
-                        if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+                        if (enginecompatibilitymode == ENGINE_19950829)
                             closest = vect->vec2;
                         else
                         {
@@ -1683,7 +1679,7 @@ int pushmove(vec3_t *const vect, int16_t *const sectnum,
                         bad = -1;
                         k--; if (k <= 0) return bad;
                         clipupdatesector(vect->vec2, sectnum, walldist);
-                        if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE && *sectnum < 0) return -1;
+                        if (enginecompatibilitymode == ENGINE_EDUKE32 && *sectnum < 0) return -1;
                     }
                     else if (bitmap_test(clipsectormap, wal->nextsector) == 0)
                         addclipsect(wal->nextsector);
@@ -1730,12 +1726,12 @@ void getzrange(const vec3_t *pos, int16_t sectnum,
     const int32_t dasprclipmask = (cliptype>>16);
 
     vec2_t closest = { pos->x, pos->y };
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode == ENGINE_EDUKE32)
         getsectordist(closest, sectnum, &closest);
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+    if (enginecompatibilitymode == ENGINE_19950829)
     {
-        *ceilz = getceilzofslope_old(sectnum,closest.x,closest.y);
-        *florz = getflorzofslope_old(sectnum,closest.x,closest.y);
+        *ceilz = getceilzofslope_19950829(sectnum,closest.x,closest.y);
+        *florz = getflorzofslope_19950829(sectnum,closest.x,closest.y);
     }
     else
         getzsofslope(sectnum,closest.x,closest.y,ceilz,florz);
@@ -1792,13 +1788,13 @@ restart_grand:
 
                 int32_t daz, daz2;
                 closest = { pos->x, pos->y };
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                if (enginecompatibilitymode == ENGINE_EDUKE32)
                     getsectordist(closest, k, &closest);
                 getzsofslope(k,closest.x,closest.y,&daz,&daz2);
 
                 int32_t fz, cz;
                 closest = { pos->x, pos->y };
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                if (enginecompatibilitymode == ENGINE_EDUKE32)
                     getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
                 getzsofslope(sectq[clipinfo[curidx].qend],closest.x,closest.y,&cz,&fz);
 
@@ -1884,12 +1880,12 @@ restart_grand:
                 //It actually got here, through all the continue's!!!
                 int32_t daz, daz2;
                 closest = { pos->x, pos->y };
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                if (enginecompatibilitymode == ENGINE_EDUKE32)
                     getsectordist(closest, k, &closest);
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+                if (enginecompatibilitymode == ENGINE_19950829)
                 {
-                    daz  = getceilzofslope_old(k, closest.x,closest.y);
-                    daz2 = getflorzofslope_old(k, closest.x,closest.y);
+                    daz  = getceilzofslope_19950829(k, closest.x,closest.y);
+                    daz2 = getflorzofslope_19950829(k, closest.x,closest.y);
                 }
                 else
                     getzsofslope(k, closest.x,closest.y, &daz,&daz2);
@@ -1900,7 +1896,7 @@ restart_grand:
                     int32_t fz,cz, hitwhat=(curspr-(uspritetype *)sprite)+49152;
 
                     closest = { pos->x, pos->y };
-                    if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                    if (enginecompatibilitymode == ENGINE_EDUKE32)
                         getsectordist(closest, sectq[clipinfo[curidx].qend], &closest);
                     getzsofslope(sectq[clipinfo[curidx].qend],closest.x,closest.y,&cz,&fz);
 
@@ -2087,7 +2083,7 @@ restart_grand:
                             addclipsect(j);
 
                             closest = { pos->x, pos->y };
-                            if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                            if (enginecompatibilitymode == ENGINE_EDUKE32)
                                 getsectordist(closest, j, &closest);
                             int const daz = getceilzofslope(j, closest.x, closest.y);
 
@@ -2128,7 +2124,7 @@ restart_grand:
                             addclipsect(j);
 
                             closest = { pos->x, pos->y };
-                            if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                            if (enginecompatibilitymode == ENGINE_EDUKE32)
                                 getsectordist(closest, j, &closest);
                             int const daz = getflorzofslope(j, closest.x,closest.y);
 
@@ -2367,7 +2363,7 @@ restart_grand:
             else tmp[2] = 0;
         }
 #endif
-        if (enginecompatibility_mode != ENGINECOMPATIBILITY_19950829)
+        if (enginecompatibilitymode != ENGINE_19950829)
         {
             if (hitscan_trysector(sv, sec, hit, vx,vy,vz, sec->ceilingstat, sec->ceilingheinum, sec->ceilingz, -i, tmpptr))
                 continue;
@@ -2393,7 +2389,7 @@ restart_grand:
                 < compat_maybe_truncate_to_int32((coord_t)(x2-sv->x)*(y1-sv->y))) continue;
             if (rintersect(sv->x,sv->y,sv->z, vx,vy,vz, x1,y1, x2,y2, &intx,&inty,&intz) == -1) continue;
 
-            if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+            if (enginecompatibilitymode == ENGINE_19950829)
             {
                 if (vz != 0)
                     if ((intz <= sec->ceilingz) || (intz >= sec->floorz))
@@ -2415,7 +2411,7 @@ restart_grand:
 
             if (!curspr)
             {
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+                if (enginecompatibilitymode == ENGINE_19950829)
                 {
                     if ((nextsector < 0) || (wal->cstat&dawalclipmask))
                     {
@@ -2574,7 +2570,7 @@ restart_grand:
 
                 if ((cstat&64) != 0)
                     if ((sv->z > intz) == ((cstat&8)==0)) continue;
-                if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+                if (enginecompatibilitymode == ENGINE_EDUKE32)
                 {
                     // Abyss crash prevention code ((intz-sv->z)*zx overflowing a 8-bit word)
                     // PK: the reason for the crash is not the overflowing (even if it IS a problem;
