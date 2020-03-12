@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crc32.h"
 #include "duke3d.h"
 #include "gameexec.h"
+#include "kplib.h"
 #include "namesdyn.h"
 #include "osd.h"
 #include "savegame.h"
@@ -1973,9 +1974,18 @@ static void C_Include(const char *confile)
 #ifdef _WIN32
 static void check_filename_case(const char *fn)
 {
-    buildvfs_kfd fp;
-    if ((fp = kopen4loadfrommod(fn, g_loadFromGroupOnly)) != buildvfs_kfd_invalid)
-        kclose(fp);
+        static char buf[BMAX_PATH];
+
+        // .zip isn't case sensitive, and calling kopen4load on files in .zips is slow
+        Bstrcpy(buf, fn);
+        kzfindfilestart(buf);
+
+        if (!kzfindfile(buf))
+        {
+            buildvfs_kfd fp;
+            if ((fp = kopen4loadfrommod(fn, g_loadFromGroupOnly)) != buildvfs_kfd_invalid)
+                kclose(fp);
+        }
 }
 #else
 static void check_filename_case(const char *fn) { UNREFERENCED_PARAMETER(fn); }
