@@ -2789,7 +2789,7 @@ StatScreen(PLAYERp mpp)
         DisplayMiniBarSmString(mpp, x, y, 0, ds);
 
         sprintf(ds,"  %-13s", pp->PlayerName);
-        DisplayMiniBarSmString(mpp, x, y, User[pp->PlayerSprite]->spal, ds);
+        DisplayMiniBarSmString(mpp, x, y, PALETTE_PLAYER0 + pp->TeamColor, ds);
 
         x = STAT_TABLE_X;
         for (j = 0; j < cols; j++)
@@ -2805,7 +2805,7 @@ StatScreen(PLAYERp mpp)
             }
             else if (gNet.TeamPlay)
             {
-                if (User[pp->PlayerSprite]->spal == User[Player[j].PlayerSprite]->spal)
+                if (pp->TeamColor == Player[j].TeamColor)
                 {
                     // don't add kill for self or team player
                     pal = PALETTE_PLAYER0 + 4;
