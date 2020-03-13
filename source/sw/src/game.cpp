@@ -2574,6 +2574,7 @@ BonusScreen(void)
     while (!BonusDone)
     {
         handleevents();
+        getpackets();
 
         // taken from top of faketimerhandler
         if (totalclock < ototalclock + limit)
@@ -2878,7 +2879,7 @@ StatScreen(PLAYERp mpp)
     while (!KEY_PRESSED(KEYSC_SPACE) && !KEY_PRESSED(KEYSC_ENTER))
     {
         handleevents();
-
+        getpackets();
         ScreenCaptureKeys();
     }
 
