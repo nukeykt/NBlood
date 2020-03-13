@@ -5017,6 +5017,9 @@ getinput(SW_PACKET *loc)
 
     // MAKE SURE THIS WILL GET SET
     SET_LOC_KEY(loc->bits, SK_QUIT_GAME, MultiPlayQuitFlag);
+    // Slave won't receive the quit bit back from the master, so handle it separately
+    if (MultiPlayQuitFlag && !NetBroadcastMode && (myconnectindex != connecthead))
+        QuitFlag = TRUE;
 
     if (gs.MouseAimingType == 1) // while held
     {
