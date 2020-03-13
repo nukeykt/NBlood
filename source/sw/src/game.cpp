@@ -2008,7 +2008,7 @@ TenScreen(void)
     //FadeIn(0, 3);
     ResetKeys();
 
-    while (!KeyPressed());
+    while (!KeyPressed() && !quitevent) handleevents();
 
     palookup[0] = palook_bak;
 
@@ -2865,7 +2865,7 @@ StatScreen(PLAYERp mpp)
 
     if (KeyPressed())
     {
-        while (KeyPressed()) ;
+        while (KeyPressed() && !quitevent) { handleevents(); getpackets(); }
     }
 
     KEY_PRESSED(KEYSC_SPACE) = 0;
