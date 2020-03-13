@@ -42,6 +42,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // CONSTANTS
 // additional non-thing proximity, sight and physics sprites 
 #define kMaxSuperXSprites 128
+#define kMaxTrackingConditions 64
+#define kMaxTracedObjects 32 // per one tracking condition
 
 // additional physics attributes for debris sprites
 #define kPhysDebrisFly 0x0008 // *debris* affected by negative gravity (fly instead of falling, DO NOT mess with kHitagAutoAim)
@@ -57,7 +59,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kModernTypeFlag4 0x0004
 
 #define kMaxRandomizeRetries 16
-
+#define kCondRange 100
 // modern statnums
 enum {
 kStatModernDudeTargetChanger        = 20,
@@ -93,6 +95,7 @@ kModernThingThrowableRock           = 434, // does small damage if hits target
 kModernThingEnemyLifeLeech          = 435, // the same as normal, except it aims in specified target only
 kModernPlayerControl                = 500, /// WIP
 kModernCondition                    = 501, /// WIP, sends command only if specified conditions == true
+kModernConditionFalse               = 502, /// WIP, sends command only if specified conditions != true
 kGenModernMissileUniversal          = 704,
 kGenModernSound                     = 708,
 };
@@ -109,6 +112,17 @@ enum {
 OBJ_WALL                            = 0,
 OBJ_SPRITE                          = 3,
 OBJ_SECTOR                          = 6,
+};
+
+enum {
+kCondMixedBase                      = 100,
+kCondMixedMax                       = 199,
+kCondWallBase                       = 200,
+kCondWallMax                        = 299,
+kCondSectorBase                     = 300,
+kCondSectorMax                      = 399,
+kCondSpriteBase                     = 500,
+kCondSpriteMax                      = 599,
 };
 
 // - STRUCTS ------------------------------------------------------------------
@@ -153,6 +167,19 @@ struct TRPLAYERCTRL { // this one for controlling the player using triggers (mov
     QAVSCENE qavScene;
 };
 
+struct OBJECTS_TO_TRACK {
+    signed int type:     3;
+    unsigned int index:  16;
+    unsigned int cmd:    8;
+};
+
+struct TRCONDITION {
+    unsigned int length:    8;
+    OBJECTS_TO_TRACK obj[kMaxTracedObjects];
+};
+
+
+
 // - VARIABLES ------------------------------------------------------------------
 extern bool gModernMap;
 extern bool gTeamsSpawnUsed;
@@ -165,6 +192,7 @@ extern MISSILEINFO_EXTRA gMissileInfoExtra[kMissileMax];
 extern DUDEINFO_EXTRA gDudeInfoExtra[kDudeMax];
 extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
+extern TRCONDITION gCondition[kMaxTrackingConditions];
 extern short gProxySpritesList[kMaxSuperXSprites];
 extern short gSightSpritesList[kMaxSuperXSprites];
 extern short gPhysSpritesList[kMaxSuperXSprites];
@@ -173,6 +201,7 @@ extern short gProxySpritesCount;
 extern short gSightSpritesCount;
 extern short gPhysSpritesCount;
 extern short gImpactSpritesCount;
+extern short gTrackingCondsCount;
 
 // - FUNCTIONS ------------------------------------------------------------------
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
@@ -285,6 +314,13 @@ int getSpriteMassBySize(spritetype* pSprite);
 bool ceilIsTooLow(spritetype* pSprite);
 void levelEndLevelCustom(int nLevel);
 XSPRITE* eventRedirected(int objType, int objXIndex, bool byRx);
+void useCondition(XSPRITE* pXSource, EVENT event);
+bool condPush(XSPRITE* pXSprite, int objType, int objIndex);
+bool condCmpr(int val, int min, int max);
+bool condCheckMixed(XSPRITE* pXCond, EVENT event, bool PUSH, bool RVRS);
+bool condCheckSector(XSPRITE* pXCond, bool PUSH, bool RVRS);
+bool condCheckWall(XSPRITE* pXCond, bool PUSH, bool RVRS);
+bool condCheckSprite(XSPRITE* pXCond, bool PUSH, bool RVRS);
 #endif
 
 ////////////////////////////////////////////////////////////////////////
