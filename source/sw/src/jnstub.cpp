@@ -3650,7 +3650,7 @@ ShadeMenu(void)                         // F8
 
     ResetKeys();
 
-    while ((key = BKeyPressed()) == NULL) ;
+    while ((key = BKeyPressed()) == NULL) handleevents();
 
     if (key == (uint8_t*)&KEY_PRESSED(KEYSC_1))
     {
