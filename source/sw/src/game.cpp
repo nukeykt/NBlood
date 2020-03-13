@@ -1674,7 +1674,9 @@ NewLevel(void)
         MONO_PRINT(ds);
         RunLevel();
 
-        if (!QuitFlag)
+        // On map change, or after master player quits
+        if (!QuitFlag ||
+            (!NetBroadcastMode && TEST_SYNC_KEY(Player + connecthead, SK_QUIT_GAME)))
         {
             // for good measure do this
             ready2send = 0;
