@@ -1097,6 +1097,7 @@ void CON_Quit(void)
         MultiPlayQuitFlag = TRUE;
     else
         QuitFlag = TRUE;
+    OSD_ShowDisplay(0);
 }
 
 void CON_MultiNameChange(void)
