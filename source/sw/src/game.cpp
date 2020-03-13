@@ -2251,7 +2251,7 @@ MenuLevel(void)
         handleevents();
         OSD_DispatchQueued();
 
-        if (quitevent) QuitFlag = TRUE;
+        if (quitevent) CON_Quit();
 
         // taken from top of faketimerhandler
         // limits checks to max of 40 times a second
@@ -3204,7 +3204,7 @@ RunLevel(void)
         handleevents();
         OSD_DispatchQueued();
 
-        if (quitevent) QuitFlag = TRUE;
+        if (quitevent) CON_Quit();
 
         //MONO_PRINT("Before MoveLoop");
         MoveLoop();

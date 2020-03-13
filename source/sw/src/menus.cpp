@@ -2094,10 +2094,7 @@ MNU_QuitCustom(UserCall call, MenuItem_p item)
 
     if (KB_KeyPressed(sc_Y) || KB_KeyPressed(sc_Enter) || mnu_input.button0)
     {
-        if (CommPlayers >= 2)
-            MultiPlayQuitFlag = TRUE;
-        else
-            QuitFlag = TRUE;
+        CON_Quit();
 
         ExitMenus();
     }

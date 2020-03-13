@@ -863,6 +863,7 @@ void CON_CommandHistory(signed char dir);
 SWBOOL CON_AddCommand(const char *command, void (*function)(void));
 void CON_ProcessUserCommand(void);
 void CON_InitConsole(void);
+void CON_Quit(void);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
