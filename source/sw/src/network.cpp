@@ -717,6 +717,14 @@ SWBOOL MyCommPlayerQuit(void)
                 sprintf(ds,"%s has quit the game.",Player[i].PlayerName);
                 adduserquote(ds);
             }
+
+            // If master quits, all players should quit. Don't change players list.
+            if (!NetBroadcastMode && i == connecthead)
+            {
+                QuitFlag = TRUE;
+                ready2send = 0;
+                return TRUE;
+            }
         }
     }
 
