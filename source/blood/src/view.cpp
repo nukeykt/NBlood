@@ -3140,42 +3140,6 @@ void viewUpdateShake(void)
     }
 }
 
-int32_t r_maxfps = 60;
-int32_t r_maxfpsoffset = 0;
-double g_frameDelay = 0.0;
-
-int viewFPSLimit(void)
-{
-    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
-        return true;
-
-    static double   nextPageDelay;
-    static uint64_t lastFrameTicks;
-
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
-    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
-
-    uint64_t const frameTicks = timerGetPerformanceCounter();
-
-    if (lastFrameTicks > frameTicks)
-        lastFrameTicks = frameTicks;
-
-    uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
-    double const   dElapsedTime = elapsedTime;
-
-    if (dElapsedTime >= nextPageDelay)
-    {
-        if (dElapsedTime <= nextPageDelay+g_frameDelay)
-            nextPageDelay += g_frameDelay-dElapsedTime;
-
-        lastFrameTicks = frameTicks;
-
-        return true;
-    }
-
-    return false;
-}
-
 float r_ambientlight = 1.0, r_ambientlightrecip = 1.0;
 
 int gLastPal = 0;

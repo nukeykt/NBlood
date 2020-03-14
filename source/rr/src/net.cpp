@@ -167,7 +167,7 @@ void Net_WaitForEverybody(void)
     {
         //if (quitevent || keystatus[sc_Escape]) G_GameExit("");
 
-        if (G_FPSLimit())
+        if (engineFPSLimit())
         {
             display_betascreen();
             gametext_center_shade(170, "Waiting for players", 14);

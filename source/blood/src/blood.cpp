@@ -626,7 +626,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
         }
     }
     bVanilla = gDemo.at1 && gDemo.m_bLegacy;
-    enginecompatibility_mode = ENGINECOMPATIBILITY_19960925;//bVanilla;
+    enginecompatibilitymode = ENGINE_19960925;//bVanilla;
     memset(xsprite,0,sizeof(xsprite));
     memset(sprite,0,kMaxSprites*sizeof(spritetype));
     drawLoadingScreen();
@@ -1790,7 +1790,7 @@ RESTART:
                     g_gameUpdateAvgTime = g_gameUpdateTime;
                 g_gameUpdateAvgTime = ((GAMEUPDATEAVGTIMENUMSAMPLES-1.f)*g_gameUpdateAvgTime+g_gameUpdateTime)/((float) GAMEUPDATEAVGTIMENUMSAMPLES);
             }
-            bDraw = viewFPSLimit() != 0;
+            bDraw = engineFPSLimit() != 0;
             if (gQuitRequest && gQuitGame)
                 videoClearScreen(0);
             else
@@ -1805,7 +1805,7 @@ RESTART:
         }
         else
         {
-            bDraw = viewFPSLimit() != 0;
+            bDraw = engineFPSLimit() != 0;
             if (bDraw)
             {
                 videoClearScreen(0);
@@ -1891,7 +1891,7 @@ RESTART:
         while (gGameMenuMgr.m_bActive)
         {
             gGameMenuMgr.Process();
-            if (viewFPSLimit())
+            if (engineFPSLimit())
             {
                 gameHandleEvents();
                 videoClearScreen(0);

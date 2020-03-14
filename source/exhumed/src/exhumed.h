@@ -265,9 +265,6 @@ extern int32_t g_gameType;
 
 extern int mouseaiming, aimmode, mouseflip;
 extern int runkey_mode, auto_run;
-extern int32_t r_maxfps;
-extern int32_t r_maxfpsoffset;
-extern double g_frameDelay;
 
 static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
 
