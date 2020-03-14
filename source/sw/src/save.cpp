@@ -90,10 +90,10 @@ extern short BossSpriteNum[3];
 void ScreenTileLock(void);
 void ScreenTileUnLock(void);
 
-int ScreenSaveSetup(PLAYERp pp);
+int ScreenSaveSetup(void);
 void ScreenSave(MFILE_WRITE fout);
 
-int ScreenLoadSaveSetup(PLAYERp pp);
+int ScreenLoadSaveSetup(void);
 void ScreenLoad(MFILE_READ fin);
 
 #define PANEL_SAVE 1
@@ -221,8 +221,6 @@ int SaveGame(short save_num)
     MFILE_WRITE fil;
     int i,j;
     short ndx;
-    SPRITE tsp;
-    SPRITEp sp;
     PLAYER tp;
     PLAYERp pp;
     SECT_USERp sectu;
@@ -230,14 +228,11 @@ int SaveGame(short save_num)
     USERp u;
     ANIM tanim;
     ANIMp a;
-    int8_t code;
-    uint8_t data_code;
-    int16_t data_ndx;
     PANEL_SPRITE tpanel_sprite;
     PANEL_SPRITEp psp,cur,next;
     SECTOR_OBJECTp sop;
     char game_name[80];
-    int cnt = 0, saveisshot=0;
+    int saveisshot=0;
     OrgTileP otp, next_otp;
 
     Saveable_Init();
@@ -253,7 +248,7 @@ int SaveGame(short save_num)
     MWRITE(&Level,sizeof(Level),1,fil);
     MWRITE(&Skill,sizeof(Skill),1,fil);
 
-    ScreenSaveSetup(&Player[myconnectindex]);
+    ScreenSaveSetup();
 
     ScreenSave(fil);
 
@@ -408,7 +403,6 @@ int SaveGame(short save_num)
             // write header
             MWRITE(&ndx,sizeof(ndx),1,fil);
 
-            sp = &sprite[i];
             memcpy(&tu, User[i], sizeof(USER));
             u = &tu;
 
@@ -713,7 +707,7 @@ int LoadGameFullHeader(short save_num, char *descr, short *level, short *skill)
     MREAD(level,sizeof(*level),1,fil);
     MREAD(skill,sizeof(*skill),1,fil);
 
-    tile = ScreenLoadSaveSetup(Player + myconnectindex);
+    tile = ScreenLoadSaveSetup();
     ScreenLoad(fil);
 
     MCLOSE_READ(fil);
@@ -725,7 +719,6 @@ void LoadGameDescr(short save_num, char *descr)
 {
     MFILE_READ fil;
     char game_name[80];
-    short tile;
     int ver;
 
     sprintf(game_name,"game%d.sav",save_num);
@@ -751,23 +744,14 @@ int LoadGame(short save_num)
     int i,j,saveisshot=0;
     short ndx,SpriteNum,sectnum;
     PLAYERp pp = NULL;
-    SPRITEp sp;
     USERp u;
     SECTOR_OBJECTp sop;
     SECT_USERp sectu;
-    int8_t code;
     ANIMp a;
-    uint8_t data_code;
-    int16_t data_ndx;
-    PANEL_SPRITEp psp,next,cur;
-    PANEL_SPRITE tpanel_sprite;
+    PANEL_SPRITEp psp,next;
     char game_name[80];
-    OrgTileP otp, next_otp;
+    OrgTileP otp;
 
-    int RotNdx;
-    int StateStartNdx;
-    int StateNdx;
-    int StateEndNdx;
     extern SWBOOL InMenuLevel;
 
     Saveable_Init();
@@ -797,7 +781,7 @@ int LoadGame(short save_num)
     MREAD(&Level,sizeof(Level),1,fil);
     MREAD(&Skill,sizeof(Skill),1,fil);
 
-    ScreenLoadSaveSetup(Player + myconnectindex);
+    ScreenLoadSaveSetup();
     ScreenLoad(fil);
     ScreenTileUnLock();
 
@@ -916,7 +900,6 @@ int LoadGame(short save_num)
     MREAD(&SpriteNum, sizeof(SpriteNum),1,fil);
     while (SpriteNum != -1)
     {
-        sp = &sprite[SpriteNum];
         User[SpriteNum] = u = (USERp)CallocMem(sizeof(USER), 1);
         MREAD(u,sizeof(USER),1,fil);
 
@@ -1313,11 +1296,9 @@ ScreenSave(MFILE_WRITE fout)
 void
 ScreenLoad(MFILE_READ fin)
 {
-    int num;
-
     renderSetTarget(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
 
-    num = MREAD((void *)waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, 1, fin);
+    MREAD((void *)waloff[SAVE_SCREEN_TILE], SAVE_SCREEN_XSIZE * SAVE_SCREEN_YSIZE, 1, fin);
 
     renderRestoreTarget();
 }

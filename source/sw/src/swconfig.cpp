@@ -108,7 +108,6 @@ void DecodePassword(char *pw)
 void ReadGameSetup(int32_t scripthandle)
 {
     int dummy;
-    int ret;
     extern char WangBangMacro[10][64];
 
     for (dummy = 0; dummy < 10; dummy++)
@@ -122,7 +121,7 @@ void ReadGameSetup(int32_t scripthandle)
 
     // option stuff
     dummy = -1;
-    ret = SCRIPT_GetNumber(scripthandle, "Options", "BorderNum",&dummy);
+    SCRIPT_GetNumber(scripthandle, "Options", "BorderNum",&dummy);
     if (dummy != -1) gs.BorderNum = dummy;
 
     dummy = -1;
@@ -364,7 +363,6 @@ void WriteGameSetup(int32_t scripthandle)
 
 void TermSetup(void)
 {
-    extern SWBOOL BotMode;
     CONFIG_WriteSetup();
     RTS_Shutdown();
 }

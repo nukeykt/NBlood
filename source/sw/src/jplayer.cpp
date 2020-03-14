@@ -122,7 +122,7 @@ int gametext(int x,int y,char *t,char s,short dabits)
     return x;
 }
 
-int minigametext(int x,int y,const char *t,char s,short dabits)
+int minigametext(int x,int y,const char *t,short dabits)
 {
     short ac,newx;
     char centre;
@@ -253,16 +253,16 @@ void operatefta(void)
         {
             // dont fade out
             if (k > 4)
-                minigametext(320>>1,j,user_quote[i],0,2+8);
+                minigametext(320>>1,j,user_quote[i],2+8);
             else if (k > 2)
-                minigametext(320>>1,j,user_quote[i],0,2+8+1);
+                minigametext(320>>1,j,user_quote[i],2+8+1);
             else
-                minigametext(320>>1,j,user_quote[i],0,2+8+1+32);
+                minigametext(320>>1,j,user_quote[i],2+8+1+32);
         }
         else
         {
             // dont fade out
-            minigametext(320>>1,j,user_quote[i],0,2+8);
+            minigametext(320>>1,j,user_quote[i],2+8);
         }
 
         j -= 6;
@@ -287,7 +287,7 @@ void addconquote(char *daquote)
 #define CON_ROT_FLAGS (ROTATE_SPRITE_CORNER|ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_NON_MASK)
 void operateconfta(void)
 {
-    int i, j, k;
+    int i, j;
 
     if (!ConPanel) return; // If panel isn't up, don't draw anything
 
@@ -344,7 +344,7 @@ void BOT_ChooseWeapon(PLAYERp p, USERp u, SW_PACKET *syn)
         }
 }
 
-int getspritescore(int snum, int dapicnum)
+int getspritescore(/*int snum, */int dapicnum)
 {
 
     switch (dapicnum)
@@ -424,7 +424,6 @@ void computergetinput(int snum, SW_PACKET *syn)
     walltype *wal;
     int myx, myy, myz, myang, mycursectnum;
     USERp u;
-    short weap;
     //extern SWBOOL Pachinko_Win_Cheat;
 
     if (!MoveSkip4) return; // Make it so the bots don't slow the game down so bad!
@@ -797,7 +796,7 @@ void computergetinput(int snum, SW_PACKET *syn)
                 for (j=headspritesect[i]; j>=0; j=nextspritesect[j])
                 {
                     if ((sprite[j].xrepeat <= 0) || (sprite[j].yrepeat <= 0)) continue;
-                    if (getspritescore(snum,sprite[j].picnum) <= 0) continue;
+                    if (getspritescore(/*snum,*/sprite[j].picnum) <= 0) continue;
                     if (FAFcansee(x1,y1,z1-(32<<8),damysect,sprite[j].x,sprite[j].y,sprite[j].z-(4<<8),i))
                     { goalx[snum] = sprite[j].x; goaly[snum] = sprite[j].y; goalz[snum] = sprite[j].z; goalsprite[snum] = j; break; }
                 }

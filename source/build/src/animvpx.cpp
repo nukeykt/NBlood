@@ -434,14 +434,13 @@ void animvpx_setup_glstate(int32_t animvpx_flags)
             OSD_Printf("animvpx link log: %s\n", logbuf);
 
         /* Finally, use the program. */
-        useShaderProgram(PHandle);
+        polymost_useShaderProgram(PHandle);
     }
 #endif
 
     ////////// GL STATE //////////
 
-    //Force fullscreen (glox1=-1 forces it to restore afterwards)
-    glViewport(0,0,xdim,ydim); glox1 = -1;
+    glViewport(0,0,xdim,ydim);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -490,7 +489,7 @@ void animvpx_restore_glstate(void)
 #ifdef USE_GLEXT
     if (glinfo.glsl)
     {
-        useShaderProgram(0);
+        polymost_useShaderProgram(0);
         polymost_resetProgram();
     }
 #endif

@@ -258,7 +258,7 @@ WallSetup(void)
         case TAG_WALL_SINE_Y_BEGIN:
         case TAG_WALL_SINE_X_BEGIN:
         {
-            short wall_num, cnt, last_wall, num_points, type, tag_end;
+            short wall_num, cnt, num_points, type, tag_end;
             SINE_WALLp sw;
             short range = 250, speed = 3, peak = 0;
 
@@ -376,10 +376,10 @@ SectorLiquidSet(short i)
 void
 SectorSetup(void)
 {
-    short i = 0, k, tag;
-    short NextSineWave = 0, rotcnt = 0, swingcnt = 0;
+    short i = 0, tag;
+    short NextSineWave = 0;
 
-    short startwall, endwall, j, ndx, door_sector;
+    short ndx;
 
     WallSetup();
 
@@ -635,13 +635,13 @@ SectorMidPoint(short sectnum, int *xmid, int *ymid, int *zmid)
 
 
 void
-DoSpringBoard(PLAYERp pp, short sectnum)
+DoSpringBoard(PLAYERp pp/*, short sectnum*/)
 {
-    int sb;
-    int i;
     void DoPlayerBeginForceJump(PLAYERp);
 
 #if 0
+    int sb;
+    int i;
     i = AnimGetGoal(&sector[sectnum].floorz);
 
     // if in motion return
@@ -840,8 +840,8 @@ SectorDistanceByMid(short sect1, int sect2)
 short
 DoSpawnActorTrigger(short match)
 {
-    int i, nexti, pnum;
-    short spawn_count = 0, hidden;
+    int i, nexti;
+    short spawn_count = 0;
     SPRITEp sp;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_SPAWN_TRIGGER], i, nexti)
@@ -871,7 +871,6 @@ OperateSector(short sectnum, short player_is_operating)
     if (!player_is_operating)
     {
         SPRITEp fsp;
-        short match;
         short i,nexti;
 
 
@@ -1030,8 +1029,6 @@ SectorExp(short SpriteNum, short sectnum, short orig_ang, int zh)
 {
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
-    SECT_USERp sectu = SectUser[sectnum];
-    SECTORp sectp = &sector[sectnum];
     short explosion;
     SPRITEp exp;
     USERp eu;
@@ -1073,13 +1070,7 @@ DoExplodeSector(short match)
 {
     short orig_ang;
     int zh;
-    USERp u;
     short cf,nextcf;
-    short ed,nexted;
-
-    int ss, nextss;
-    SECTORp dsectp, ssectp;
-    SPRITEp src_sp, dest_sp;
 
     SPRITEp esp;
     SECTORp sectp;
@@ -1094,7 +1085,7 @@ DoExplodeSector(short match)
             continue;
 
         if (!User[cf])
-            u = SpawnUser(cf, 0, NULL);
+            /*u = */SpawnUser(cf, 0, NULL);
 
         sectp = &sector[esp->sectnum];
 
@@ -1126,7 +1117,6 @@ DoExplodeSector(short match)
 int DoSpawnSpot(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
 
     if ((u->WaitTics -= synctics) < 0)
     {
@@ -1408,7 +1398,6 @@ WeaponExplodeSectorInRange(short weapon)
     SPRITEp sp;
     int dist;
     int radius;
-    short match;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_SPRITE_HIT_MATCH], i, nexti)
     {
@@ -1428,10 +1417,11 @@ WeaponExplodeSectorInRange(short weapon)
         if (!FAFcansee(wp->x,wp->y,wp->z,wp->sectnum,sp->x,sp->y,sp->z,sp->sectnum))
             continue;
 
+#if 0
+//        short match;
         match = sp->hitag;
         // this and every other crack sprite of this type is now dead
         // don't use them
-#if 0
         KillMatchingCrackSprites(match);
         DoExplodeSector(match);
         DoMatchEverything(NULL, match, -1);
@@ -1446,7 +1436,7 @@ WeaponExplodeSectorInRange(short weapon)
 
 
 void
-ShootableSwitch(short SpriteNum, short Weapon)
+ShootableSwitch(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
 
@@ -1609,7 +1599,7 @@ void DoMatchEverything(PLAYERp pp, short match, short state)
         DoVatorMatch(pp, match);
 
     if (!TestSpikeMatchActive(match))
-        DoSpikeMatch(pp, match);
+        DoSpikeMatch(match);
 
     if (!TestRotatorMatchActive(match))
         DoRotatorMatch(pp, match, FALSE);
@@ -1893,7 +1883,7 @@ OperateSprite(short SpriteNum, short player_is_operating)
             DoVatorMatch(pp, sp->hitag);
 
         if (!TestSpikeMatchActive(sp->hitag))
-            DoSpikeMatch(pp, sp->hitag);
+            DoSpikeMatch(sp->hitag);
 
         if (!TestRotatorMatchActive(sp->hitag))
             DoRotatorMatch(pp, sp->hitag, FALSE);
@@ -1907,7 +1897,7 @@ OperateSprite(short SpriteNum, short player_is_operating)
     case TAG_LEVEL_EXIT_SWITCH:
     {
         extern short Level;
-        extern SWBOOL QuitFlag, ExitLevel, FinishedLevel;
+        extern SWBOOL ExitLevel, FinishedLevel;
 
         AnimateSwitch(sp, -1);
 
@@ -2119,7 +2109,7 @@ OperateTripTrigger(PLAYERp pp)
     case TAG_LEVEL_EXIT_SWITCH:
     {
         extern short Level;
-        extern SWBOOL QuitFlag, ExitLevel, FinishedLevel;
+        extern SWBOOL ExitLevel, FinishedLevel;
 
         if (sectp->hitag)
             Level = sectp->hitag;
@@ -2157,7 +2147,7 @@ OperateTripTrigger(PLAYERp pp)
         if (!TestVatorMatchActive(sectp->hitag))
             DoVatorMatch(pp, sectp->hitag);
         if (!TestSpikeMatchActive(sectp->hitag))
-            DoSpikeMatch(pp, sectp->hitag);
+            DoSpikeMatch(sectp->hitag);
         if (!TestRotatorMatchActive(sectp->hitag))
             DoRotatorMatch(pp, sectp->hitag, FALSE);
         if (!TestSlidorMatchActive(sectp->hitag))
@@ -2331,9 +2321,6 @@ short PlayerTakeSectorDamage(PLAYERp pp)
 #define PLAYER_SOUNDEVENT_TAG 900
 SWBOOL NearThings(PLAYERp pp)
 {
-    short sectnum;
-    short rndnum;
-    int daz;
     short neartagsect, neartagwall, neartagsprite;
     int neartaghitdist;
 
@@ -2669,12 +2656,11 @@ PlayerOperateEnv(PLAYERp pp)
 
             {
                 int neartaghitdist;
-                short neartagsector, neartagsprite, neartagwall;
+                short neartagsector, neartagwall;
 
                 neartaghitdist = nti[0].dist;
                 neartagsector = nti[0].sectnum;
                 neartagwall = nti[0].wallnum;
-                neartagsprite = nti[0].spritenum;
 
                 if (neartagsector >= 0 && neartaghitdist < 1024)
                 {
@@ -2702,12 +2688,12 @@ PlayerOperateEnv(PLAYERp pp)
             {
             case TAG_VATOR:
                 DoVatorOperate(pp, pp->cursectnum);
-                DoSpikeOperate(pp, pp->cursectnum);
+                DoSpikeOperate(pp->cursectnum);
                 DoRotatorOperate(pp, pp->cursectnum);
                 DoSlidorOperate(pp, pp->cursectnum);
                 break;
             case TAG_SPRING_BOARD:
-                DoSpringBoard(pp, pp->cursectnum);
+                DoSpringBoard(pp/*, pp->cursectnum*/);
                 FLAG_KEY_RELEASE(pp, SK_OPERATE);
                 break;
             case TAG_DOOR_ROTATE:
@@ -2934,11 +2920,11 @@ DoAnim(int numtics)
 void
 AnimClear(void)
 {
-    int i, animval;
-
 #if 1
     AnimCnt = 0;
 #else
+    int i;
+
     for (i = AnimCnt - 1; i >= 0; i--)
     {
         if (Anim[i].extra)
@@ -3285,7 +3271,6 @@ DoPanning(void)
 void
 DoSector(void)
 {
-    short i;
     SECTOR_OBJECTp sop;
     SWBOOL riding;
     extern SWBOOL DebugActorFreeze;

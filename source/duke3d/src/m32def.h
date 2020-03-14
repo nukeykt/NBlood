@@ -79,10 +79,10 @@ typedef struct
     int32_t min, max;
 } memberlabel_t;
 
-extern const memberlabel_t SectorLabels[];
-extern const memberlabel_t WallLabels[];
-extern const memberlabel_t SpriteLabels[];
-extern const memberlabel_t LightLabels[];
+extern memberlabel_t const SectorLabels[];
+extern memberlabel_t const WallLabels[];
+extern memberlabel_t const SpriteLabels[];
+extern memberlabel_t const LightLabels[];
 
 
 typedef struct {

@@ -157,7 +157,7 @@ static void drawlinegl(int32_t x1, int32_t y1, int32_t x2, int32_t y2, palette_t
         glLoadIdentity();
     }
 
-    gloy1 = -1;
+    polymost2d = 1;
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);	// When using line antialiasing, this is needed
@@ -1590,7 +1590,7 @@ void polymostSet2dView(void)
         glLoadIdentity();
     }
 
-    gloy1 = -1;
+    polymost2d = 1;
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);

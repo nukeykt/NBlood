@@ -120,10 +120,6 @@ int32_t hud_showmapname = 1;
 
 int32_t g_levelTextTime = 0;
 
-int32_t r_maxfps = -1;
-int32_t r_maxfpsoffset;
-uint64_t g_frameDelay;
-
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
 extern char forcegl;
 #endif
@@ -3781,8 +3777,7 @@ void G_DoSpriteAnimations(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura
             t->z += mulscale16(smoothratio,ps->pos.z-ps->opos.z) -
                 (ps->dead_flag ? 0 : PHEIGHT) + PHEIGHT;
         }
-        else if ((pSprite->statnum == STAT_DEFAULT && pSprite->picnum != CRANEPOLE) || pSprite->statnum == STAT_PLAYER ||
-                 pSprite->statnum == STAT_STANDABLE || pSprite->statnum == STAT_PROJECTILE || pSprite->statnum == STAT_MISC || pSprite->statnum == STAT_ACTOR)
+        else if (pSprite->picnum != CRANEPOLE)
         {
             t->x -= mulscale16(65536-smoothratio,pSprite->x-actor[i].bpos.x);
             t->y -= mulscale16(65536-smoothratio,pSprite->y-actor[i].bpos.y);
@@ -6325,27 +6320,6 @@ void G_MaybeAllocPlayer(int32_t pnum)
 #endif
 }
 
-
-int G_FPSLimit(void)
-{
-    if (!r_maxfps)
-        return true;
-
-    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
-
-    uint64_t const  frameTicks     = timerGetPerformanceCounter();
-    static uint64_t nextFrameTicks = frameTicks + g_frameDelay;
-
-    if (frameTicks >= nextFrameTicks)
-    {
-        while (frameTicks >= nextFrameTicks)
-            nextFrameTicks += g_frameDelay;
-        return true;
-    }
-
-    return false;
-}
-
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
 EDUKE32_STATIC_ASSERT(sizeof(actor_t)%4 == 0);
 EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t)%4 == 0);
@@ -6749,18 +6723,12 @@ int app_main(int argc, char const * const * argv)
             ud.setup.bpp  = bpp;
         }
 
-        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, myplayer.palette, 0);
         S_SoundStartup();
         S_MusicStartup();
     }
 
-    // check if the minifont will support lowercase letters (3136-3161)
-    // there is room for them in tiles012.art between "[\]^_." and "{|}~"
-    minitext_lowercase = 1;
-
-    for (int i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
-        minitext_lowercase &= (int)tileLoad(i);
+    G_InitText();
 
     if (g_networkMode != NET_DEDICATED_SERVER)
     {
@@ -6971,7 +6939,7 @@ MAIN_LOOP_RESTART:
         {
             idle();
         }
-        else if (G_FPSLimit() || g_saveRequested)
+        else if (engineFPSLimit() || g_saveRequested)
         {
             if (!g_saveRequested)
             {

@@ -145,7 +145,7 @@ unsigned char keys[NUMGAMEKEYS] =
 {
     0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,
     0x1e,0x2c,0xd1,0xc9,0x33,0x34,
-    0x9c,0x1c,0xd,0xc,0xf
+    0x9c,0x1c,0xd,0xc,0xf,0x29
 };
 
 extern "C" {
@@ -191,7 +191,6 @@ static int nummoves;
 static signed char statrate[NUMSTATS] = {-1,0,-1,0,0,0,1,3,0,3,15,-1,-1};
 
 //Input structures
-static char networkmode;     //0 is 2(n-1) mode, 1 is n(n-1) mode
 static int locselectedgun, locselectedgun2;
 static input loc, oloc, loc2;
 static input ffsync[MAXPLAYERS], osync[MAXPLAYERS], ssync[MAXPLAYERS];
@@ -457,8 +456,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
 #if defined STARTUP_SETUP_WINDOW
     int cmdsetup = 0;
 #endif
-    int i, j, k /*, l, fil, waitplayers, x1, y1, x2, y2*/;
-    int /*other, packleng,*/ netparm;
+    int i, j, k /*, l, fil*/, waitplayers, x1, y1, x2, y2;
+    int other, /*packleng, */netparm;
 
     OSD_SetLogFile("ekenbuild.log");
 
@@ -472,41 +471,30 @@ int32_t app_main(int32_t argc, char const * const * argv)
         exit(1);
     }
 
-#ifdef USE_OPENGL
     OSD_RegisterFunction("restartvid","restartvid: reinitialise the video mode",osdcmd_restartvid);
     OSD_RegisterFunction("vidmode","vidmode [xdim ydim] [bpp] [fullscreen]: immediately change the video mode",osdcmd_vidmode);
-    OSD_RegisterFunction("map", "map [filename]: load a map", osdcmd_map);
+#ifdef USE_OPENGL
+    baselayer_osdcmd_vidmode_func = osdcmd_vidmode;
 #endif
+    OSD_RegisterFunction("map", "map [filename]: load a map", osdcmd_map);
 
     wm_setapptitle(AppProperName);
 
     Bstrcpy(boardfilename, "nukeland.map");
-    j = 0; netparm = argc;
+    netparm = argc;
     for (i=1; i<argc; i++)
     {
-        if ((!Bstrcasecmp("-net",argv[i])) || (!Bstrcasecmp("/net",argv[i]))) { j = 1; netparm = i; continue; }
-        if (j)
+        if ((!Bstrcasecmp("-net",argv[i])) || (!Bstrcasecmp("/net",argv[i]))) { netparm = i+1; break; }
+        if (!Bstrcasecmp(argv[i], "-setup"))
         {
-            if (argv[i][0] == '-' || argv[i][0] == '/')
-            {
-                if (((argv[i][1] == 'n') || (argv[i][1] == 'N')) && (argv[i][2] == '0')) { networkmode = 0; continue; }
-                if (((argv[i][1] == 'n') || (argv[i][1] == 'N')) && (argv[i][2] == '1')) { networkmode = 1; continue; }
-            }
-            if (isvalidipaddress(argv[i])) continue;
-        }
-        else
-        {
-            if (!Bstrcasecmp(argv[i], "-setup"))
-            {
 #if defined STARTUP_SETUP_WINDOW
                 cmdsetup = 1;
 #endif
-            }
-            else
-            {
-                Bstrcpy(boardfilename, argv[i]);
-                if (!Bstrrchr(boardfilename,'.')) Bstrcat(boardfilename,".map");
-            }
+        }
+        else
+        {
+            Bstrcpy(boardfilename, argv[i]);
+            if (!Bstrrchr(boardfilename,'.')) Bstrcat(boardfilename,".map");
         }
     }
 
@@ -605,7 +593,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
     loadsong("neatsong.kdm");
     musicon();
 
-#if 0
     if (option[4] > 0)
     {
         x1 = ((xdim-screensize)>>1);
@@ -665,9 +652,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
         else
             Bstrcat(getmessage," (Even)");
         getmessageleng = Bstrlen(getmessage);
-        getmessagetimeoff = totalclock+120;
+        getmessagetimeoff = (int32_t) totalclock+120;
     }
-#endif
     screenpeek = myconnectindex;
     reccnt = 0;
     for (i=connecthead; i>=0; i=connectpoint2[i]) initplayersprite((short)i);
@@ -1153,6 +1139,25 @@ void drawstatusbar(short snum)     // Andy did this
         }
         printext((xdim - 56L),(ydim - 20L),(char *)tempbuf,ALPHABET /*,80*/);
     }
+}
+
+static void refreshstatusbar(void)
+{
+    int32_t i;
+
+    rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    for (i = ((xdim-320)>>1)-8; i >= 0; i -= 8)
+        rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    if (i >= -4)
+    {
+        i += 4;
+        rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    }
+    for (i = ((xdim-320)>>1)+320; i <= xdim-8; i += 8)
+        rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
+    if (i <= xdim-4) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 4;
+
+    drawstatusbar(screenpeek);   // Andy did this
 }
 
 void prepareboard(char *daboardfilename)
@@ -3753,15 +3758,7 @@ void drawscreen(short snum, int dasmoothratio)
 
                 renderFlushPerms();
 
-                rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-                i = ((xdim-320)>>1);
-                while (i >= 8) i -= 8, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-                if (i >= 4) i -= 4, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-                i = ((xdim-320)>>1)+320;
-                while (i <= xdim-8) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 8;
-                if (i <= xdim-4) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 4;
-
-                drawstatusbar(screenpeek);   // Andy did this
+                refreshstatusbar();
             }
 
             x1 = ((xdim-screensize)>>1);
@@ -3964,7 +3961,9 @@ void drawscreen(short snum, int dasmoothratio)
             {
                 tiltlock = screentilt;
                 // Ken loves to interpolate
+#ifdef USE_OPENGL
                 renderSetRollAngle(oscreentilt + mulscale16(((screentilt-oscreentilt+1024)&2047)-1024,smoothratio));
+#endif
             }
 
             if ((gotpic[FLOORMIRROR>>3]&(1<<(FLOORMIRROR&7))) > 0)
@@ -4049,7 +4048,7 @@ void drawscreen(short snum, int dasmoothratio)
                         //position into tposx, tposy, and tang (tpos.z == cpos.z)
                         //Must call renderPrepareMirror before drawrooms and
                         //          renderCompleteMirror after drawrooms
-                        renderPrepareMirror(cpos.x,cpos.y,cpos.z,fix16_from_int(cang),choriz,
+                        renderPrepareMirror(cpos.x,cpos.y,cpos.z,fix16_from_int(cang),fix16_from_int(choriz),
                                       mirrorwall[i],/*mirrorsector[i],*/ &tposx,&tposy,&tang);
 
                         ovisibility = g_visibility;
@@ -4157,6 +4156,11 @@ void drawscreen(short snum, int dasmoothratio)
         if (dimensionmode[snum] == 2)
         {
             videoClearViewableArea(0L);  //Clear screen to specified color
+#ifdef USE_OPENGL
+            // Don't refresh with split screen
+            if ((videoGetRenderMode() >= REND_POLYMOST) && ((option[4] != 0) || (numplayers < 2)))
+                refreshstatusbar(); // Necessary GL fills the entire screen with black
+#endif
             renderDrawMapView(cpos.x,cpos.y,i,cang);
         }
         drawoverheadmap(cpos.x,cpos.y,i,cang);
@@ -4495,7 +4499,7 @@ void fakedomovethingscorrect(void)
         return;
 
     //Re-start fakedomovethings back to place of error
-    my = omy;
+    my = omy = pos[myconnectindex];
     myzvel = hvel[myconnectindex];
     myang = omyang = ang[myconnectindex];
     mycursectnum = cursectnum[myconnectindex];
@@ -4778,8 +4782,6 @@ void getinput(void)
 
 void initplayersprite(short snum)
 {
-    int i;
-
     if (playersprite[snum] >= 0) return;
 
     spawnsprite(playersprite[snum],pos[snum].x,pos[snum].y,pos[snum].z+EYEHEIGHT,
@@ -4901,17 +4903,7 @@ void setup3dscreen(void)
         drawtilebackground(/*0L,0L,*/ BACKGROUND,8,0L,0L,xdim-1L,ydim-1L,0);     //Draw background
 
     if (screensize <= xdim)
-    {
-        rotatesprite((xdim-320)<<15,(ydim-32)<<16,65536L,0,STATUSBAR,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-        i = ((xdim-320)>>1);
-        while (i >= 8) i -= 8, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-        if (i >= 4) i -= 4, rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L);
-        i = ((xdim-320)>>1)+320;
-        while (i <= xdim-8) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL8,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 8;
-        if (i <= xdim-4) rotatesprite(i<<16,(ydim-32)<<16,65536L,0,STATUSBARFILL4,0,0,8+16+64+128,0L,0L,xdim-1L,ydim-1L), i += 4;
-
-        drawstatusbar(screenpeek);   // Andy did this
-    }
+        refreshstatusbar();
 }
 
 void findrandomspot(int *x, int *y, short *sectnum)
@@ -4932,6 +4924,7 @@ void findrandomspot(int *x, int *y, short *sectnum)
         endwall = startwall+sector[dasector].wallnum;
         if (endwall <= startwall) continue;
 
+        da.x = da.y = 0;
         minx = 0x7fffffff; maxx = 0x80000000;
         miny = 0x7fffffff; maxy = 0x80000000;
 

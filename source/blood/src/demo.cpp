@@ -400,7 +400,7 @@ _DEMOPLAYBACK:
                 ProcessFrame();
             ready2send = 0;
         }
-        if (viewFPSLimit())
+        if (engineFPSLimit())
         {
             if (handleevents() && quitevent)
             {

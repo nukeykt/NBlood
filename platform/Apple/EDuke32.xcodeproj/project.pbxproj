@@ -105,7 +105,7 @@
 		0008E96919F1AC540091588D /* kplib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8EC19F1AC540091588D /* kplib.cpp */; };
 		0008E96B19F1AC540091588D /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8EE19F1AC540091588D /* lz4.c */; };
 		0008E96D19F1AC540091588D /* mdsprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F019F1AC540091588D /* mdsprite.cpp */; };
-		0008E97219F1AC540091588D /* mmulti_null.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F619F1AC540091588D /* mmulti_null.cpp */; };
+		0008E97219F1AC540091588D /* mmulti.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F619F1AC540091588D /* mmulti.cpp */; };
 		0008E97319F1AC540091588D /* mutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F719F1AC540091588D /* mutex.cpp */; };
 		0008E97419F1AC540091588D /* osd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F819F1AC540091588D /* osd.cpp */; };
 		0008E97519F1AC540091588D /* osxbits.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F919F1AC540091588D /* osxbits.mm */; };
@@ -226,7 +226,7 @@
 		0013829819F361B60007DA6C /* cache1d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8DE19F1AC530091588D /* cache1d.cpp */; };
 		0013829919F361B60007DA6C /* smalltextfont.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E90219F1AC540091588D /* smalltextfont.cpp */; };
 		0013829A19F361B60007DA6C /* polymer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8FA19F1AC540091588D /* polymer.cpp */; };
-		0013829B19F361B60007DA6C /* mmulti_null.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F619F1AC540091588D /* mmulti_null.cpp */; };
+		0013829B19F361B60007DA6C /* mmulti.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F619F1AC540091588D /* mmulti.cpp */; };
 		0013829C19F361B60007DA6C /* a-c.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00970E3319F207F000873EB9 /* a-c.cpp */; };
 		0013829D19F361B60007DA6C /* textfont.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E90719F1AC540091588D /* textfont.cpp */; };
 		0013829E19F361B60007DA6C /* mdsprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0008E8F019F1AC540091588D /* mdsprite.cpp */; };
@@ -603,8 +603,8 @@
 		20E16CE81C7022DE00EE8446 /* screens.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20E16CE61C7022DE00EE8446 /* screens.cpp */; };
 		20E16CE91C7022DE00EE8446 /* screens.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20E16CE61C7022DE00EE8446 /* screens.cpp */; };
 		20F70F131A8F25CE00F71870 /* libc++.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 0013832819F366720007DA6C /* libc++.dylib */; };
-		20F7124D1C6C19E5006B68D0 /* screentext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* screentext.cpp */; };
-		20F7124E1C6C19E5006B68D0 /* screentext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* screentext.cpp */; };
+		20F7124D1C6C19E5006B68D0 /* text.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* text.cpp */; };
+		20F7124E1C6C19E5006B68D0 /* text.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124B1C6C19E5006B68D0 /* text.cpp */; };
 		20F712511C6C19F4006B68D0 /* sbar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124F1C6C19F4006B68D0 /* sbar.cpp */; };
 		20F712521C6C19F4006B68D0 /* sbar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F7124F1C6C19F4006B68D0 /* sbar.cpp */; };
 		20F712551C6C1A07006B68D0 /* cheats.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 20F712531C6C1A07006B68D0 /* cheats.cpp */; };
@@ -810,7 +810,7 @@
 		0008E8EC19F1AC540091588D /* kplib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = kplib.cpp; sourceTree = "<group>"; };
 		0008E8EE19F1AC540091588D /* lz4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lz4.c; sourceTree = "<group>"; };
 		0008E8F019F1AC540091588D /* mdsprite.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = mdsprite.cpp; sourceTree = "<group>"; };
-		0008E8F619F1AC540091588D /* mmulti_null.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = mmulti_null.cpp; sourceTree = "<group>"; };
+		0008E8F619F1AC540091588D /* mmulti.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = mmulti.cpp; sourceTree = "<group>"; };
 		0008E8F719F1AC540091588D /* mutex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = mutex.cpp; sourceTree = "<group>"; };
 		0008E8F819F1AC540091588D /* osd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = osd.cpp; sourceTree = "<group>"; };
 		0008E8F919F1AC540091588D /* osxbits.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = osxbits.mm; sourceTree = "<group>"; };
@@ -1086,8 +1086,8 @@
 		20E16CE01C7022C300EE8446 /* cmdline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = cmdline.h; sourceTree = "<group>"; };
 		20E16CE61C7022DE00EE8446 /* screens.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = screens.cpp; sourceTree = "<group>"; };
 		20E16CE71C7022DE00EE8446 /* screens.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = screens.h; sourceTree = "<group>"; };
-		20F7124B1C6C19E5006B68D0 /* screentext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = screentext.cpp; sourceTree = "<group>"; };
-		20F7124C1C6C19E5006B68D0 /* screentext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = screentext.h; sourceTree = "<group>"; };
+		20F7124B1C6C19E5006B68D0 /* text.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = text.cpp; sourceTree = "<group>"; };
+		20F7124C1C6C19E5006B68D0 /* text.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = text.h; sourceTree = "<group>"; };
 		20F7124F1C6C19F4006B68D0 /* sbar.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = sbar.cpp; sourceTree = "<group>"; };
 		20F712501C6C19F4006B68D0 /* sbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = sbar.h; sourceTree = "<group>"; };
 		20F712531C6C1A07006B68D0 /* cheats.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.c; path = cheats.cpp; sourceTree = "<group>"; };
@@ -1495,7 +1495,7 @@
 				20B02C4923BF30DE00896299 /* miniz_tdef.c */,
 				20B02C4B23BF30DF00896299 /* miniz_tinfl.c */,
 				20B02C4A23BF30DE00896299 /* miniz.c */,
-				0008E8F619F1AC540091588D /* mmulti_null.cpp */,
+				0008E8F619F1AC540091588D /* mmulti.cpp */,
 				0008E8F719F1AC540091588D /* mutex.cpp */,
 				0008E8F819F1AC540091588D /* osd.cpp */,
 				0008E8F919F1AC540091588D /* osxbits.mm */,
@@ -1796,8 +1796,6 @@
 				20F712501C6C19F4006B68D0 /* sbar.h */,
 				20E16CE61C7022DE00EE8446 /* screens.cpp */,
 				20E16CE71C7022DE00EE8446 /* screens.h */,
-				20F7124B1C6C19E5006B68D0 /* screentext.cpp */,
-				20F7124C1C6C19E5006B68D0 /* screentext.h */,
 				0008E9DA19F1AD9B0091588D /* sector.cpp */,
 				0008E9DB19F1AD9B0091588D /* sector.h */,
 				0008E9DC19F1AD9B0091588D /* soundefs.h */,
@@ -1807,6 +1805,8 @@
 				0008E9E019F1AD9B0091588D /* soundsdyn.h */,
 				0008E9E119F1AD9B0091588D /* standard.h */,
 				0008E9E219F1AD9B0091588D /* startosx.game.mm */,
+				20F7124B1C6C19E5006B68D0 /* text.cpp */,
+				20F7124C1C6C19E5006B68D0 /* text.h */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -2523,7 +2523,7 @@
 				0008E9F519F1AD9B0091588D /* namesdyn.cpp in Sources */,
 				20E16CE81C7022DE00EE8446 /* screens.cpp in Sources */,
 				0008E9EB19F1AD9B0091588D /* gamedef.cpp in Sources */,
-				20F7124D1C6C19E5006B68D0 /* screentext.cpp in Sources */,
+				20F7124D1C6C19E5006B68D0 /* text.cpp in Sources */,
 				0008EA0219F1AD9B0091588D /* soundsdyn.cpp in Sources */,
 				0008E9EF19F1AD9B0091588D /* gamevars.cpp in Sources */,
 				0008E9EC19F1AD9B0091588D /* gameexec.cpp in Sources */,
@@ -2603,7 +2603,7 @@
 				0008E97E19F1AC540091588D /* smalltextfont.cpp in Sources */,
 				0008E97619F1AC540091588D /* polymer.cpp in Sources */,
 				20B02C4E23BF30DF00896299 /* miniz.c in Sources */,
-				0008E97219F1AC540091588D /* mmulti_null.cpp in Sources */,
+				0008E97219F1AC540091588D /* mmulti.cpp in Sources */,
 				2044C9991E08A72200A8C543 /* mhk.cpp in Sources */,
 				2044C9901E08A6BC00A8C543 /* screenshot.cpp in Sources */,
 				00970E3419F207F000873EB9 /* a-c.cpp in Sources */,
@@ -2727,7 +2727,7 @@
 				20F712521C6C19F4006B68D0 /* sbar.cpp in Sources */,
 				000C489919F35601006E6B52 /* common.cpp in Sources */,
 				000C48AF19F35601006E6B52 /* rts.cpp in Sources */,
-				20F7124E1C6C19E5006B68D0 /* screentext.cpp in Sources */,
+				20F7124E1C6C19E5006B68D0 /* text.cpp in Sources */,
 				000C489D19F35601006E6B52 /* demo.cpp in Sources */,
 				20F712561C6C1A07006B68D0 /* cheats.cpp in Sources */,
 				000C48A719F35601006E6B52 /* menus.cpp in Sources */,
@@ -2769,7 +2769,7 @@
 				0013829819F361B60007DA6C /* cache1d.cpp in Sources */,
 				0013829919F361B60007DA6C /* smalltextfont.cpp in Sources */,
 				0013829A19F361B60007DA6C /* polymer.cpp in Sources */,
-				0013829B19F361B60007DA6C /* mmulti_null.cpp in Sources */,
+				0013829B19F361B60007DA6C /* mmulti.cpp in Sources */,
 				0013829C19F361B60007DA6C /* a-c.cpp in Sources */,
 				2038AE9D1A8F126C0093B7B2 /* md4.cpp in Sources */,
 				0013829D19F361B60007DA6C /* textfont.cpp in Sources */,

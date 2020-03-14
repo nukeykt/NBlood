@@ -97,11 +97,9 @@ GetRotation(short tSpriteNum, int viewx, int viewy)
     static short RotTable8[] = {0, 7, 6, 5, 4, 3, 2, 1};
     static short RotTable5[] = {0, 1, 2, 3, 4, 3, 2, 1};
     short rotation;
-    extern short screenpeek;
 
     tspriteptr_t tsp = &tsprite[tSpriteNum];
     USERp tu = User[tsp->owner];
-    PLAYERp pp = Player + screenpeek;
     short angle2;
 
     if (tu->RotNum == 0)
@@ -236,7 +234,6 @@ DoShadowFindGroundPoint(tspriteptr_t sp)
     int ceilhit, florhit;
     int hiz, loz = u->loz;
     short save_cstat, bak_cstat;
-    SWBOOL found = FALSE;
 
     // recursive routine to find the ground - either sector or floor sprite
     // skips over enemy and other types of sprites
@@ -659,8 +656,8 @@ void DoStarView(tspriteptr_t tsp, USERp tu, int viewz)
 void
 analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 {
-    int tSpriteNum, j, k;
-    short SpriteNum, pnum;
+    int tSpriteNum;
+    short SpriteNum;
     int smr4, smr2;
     USERp tu;
     static int ang = 0;
@@ -1031,6 +1028,8 @@ post_analyzesprites(void)
 }
 #endif
 
+static ClockTicks mapzoomclock;
+
 void
 ResizeView(PLAYERp pp)
 {
@@ -1039,15 +1038,13 @@ ResizeView(PLAYERp pp)
 
     if (dimensionmode == 2 || dimensionmode == 5 || dimensionmode == 6)
     {
+        int32_t timepassed = (int32_t)(totalclock - mapzoomclock);
+        mapzoomclock += timepassed;
         if (PKEY_PRESSED(KEYSC_DASH)||PKEY_PRESSED(KEYSC_GMINUS))
-        {
-            if ((zoom -= (zoom >> 4)) < 48) zoom = 48;
-        }
+            zoom = max<int32_t>(zoom - mulscale7(timepassed * synctics, zoom), 48);
 
         if (PKEY_PRESSED(KEYSC_EQUAL)||PKEY_PRESSED(KEYSC_GPLUS))
-        {
-            if ((zoom += (zoom >> 4)) > 4096) zoom = 4096;
-        }
+            zoom = min<int32_t>(zoom + mulscale7(timepassed * synctics, zoom), 4096);
 
         if (KEY_PRESSED(KEYSC_ESC))
         {
@@ -1148,7 +1145,7 @@ BackView(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
     hitdata_t hitinfo;
-    int i, vx, vy, vz, hx, hy, hz;
+    int i, vx, vy, vz, hx, hy;
     short bakcstat, daang;
     PLAYERp pp = &Player[screenpeek];
     short ang;
@@ -1267,7 +1264,7 @@ CircleCamera(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
     hitdata_t hitinfo;
-    int i, vx, vy, vz, hx, hy, hz;
+    int i, vx, vy, vz, hx, hy;
     short bakcstat, daang;
     PLAYERp pp = &Player[screenpeek];
     short ang;
@@ -1681,9 +1678,9 @@ void ScreenCaptureKeys(void)
 void DrawCheckKeys(PLAYERp pp)
 {
     extern SWBOOL ResCheat;
-    extern SWBOOL PauseKeySet;
 
     /* JonoF: Who really needs this now?
+    extern SWBOOL PauseKeySet;
     if (KEY_PRESSED(KEYSC_F5) && !(KEY_PRESSED(KEYSC_RSHIFT) || KEY_PRESSED(KEYSC_LSHIFT) || KEY_PRESSED(KEYSC_ALT) || KEY_PRESSED(KEYSC_RALT)) && !PauseKeySet)
         {
         KEY_PRESSED(KEYSC_F5) = 0;
@@ -1706,7 +1703,7 @@ void DrawCheckKeys(PLAYERp pp)
 }
 
 #if 0
-void DrawMessageInput(PLAYERp pp)
+void DrawMessageInput(void)
 {
     short w,h;
     static SWBOOL cur_show;
@@ -1735,7 +1732,7 @@ void DrawMessageInput(PLAYERp pp)
     }
 }
 #else
-void DrawMessageInput(PLAYERp pp)
+void DrawMessageInput(void)
 {
     short w,h;
     static SWBOOL cur_show;
@@ -1751,19 +1748,19 @@ void DrawMessageInput(PLAYERp pp)
         cur_show ^= 1;
         if (cur_show)
         {
-            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,0,ROTATE_SPRITE_SCREEN_CLIP);
+            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
             rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
         }
         else
         {
-            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,0,ROTATE_SPRITE_SCREEN_CLIP);
+            minigametext(TEXT_XCENTER(w), MESSAGE_LINE, MessageInputString,ROTATE_SPRITE_SCREEN_CLIP);
             rotatesprite((TEXT_XCENTER(w)+w+2)<<16,(MESSAGE_LINE+1)<<16,20000,0,COINCURSOR+(((int32_t) totalclock>>3)%7),c,0,ROTATE_SPRITE_SCREEN_CLIP,0,0,xdim-1,ydim-1);
         }
     }
 }
 #endif
 
-void DrawConInput(PLAYERp pp)
+void DrawConInput(void)
 {
 #define PANELINPUTX 30
 #define PANELINPUTY 100
@@ -1796,7 +1793,6 @@ void DrawConInput(PLAYERp pp)
 
 void DrawCrosshair(PLAYERp pp)
 {
-    extern int CrosshairX, CrosshairY;
     extern SWBOOL DemoMode,CameraTestMode;
 
     if (!gs.Crosshair)
@@ -2015,8 +2011,6 @@ void
 PostDraw(void)
 {
     short i, nexti;
-    short sectnum,statnum;
-    SPRITEp sp;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FLOOR_SLOPE_DONT_DRAW], i, nexti)
     {
@@ -2032,9 +2026,9 @@ PostDraw(void)
         }
 
 #if DEBUG
-        sp = &sprite[i];
-        statnum = sp->statnum;
-        sectnum = sp->sectnum;
+        SPRITEp sp = &sprite[i];
+        short statnum = sp->statnum;
+        short sectnum = sp->sectnum;
         memset(sp, 0xCC, sizeof(SPRITE));
         sp->statnum = statnum;
         sp->sectnum = sectnum;
@@ -2114,16 +2108,9 @@ void PreDrawStackedWater(void)
 {
     short si,snexti;
     short i,nexti;
-    SPRITEp sp,np;
+    SPRITEp sp;
     USERp u,nu;
     short New;
-    int smr4,smr2;
-    int x,y,z;
-    short ang;
-    PLAYERp pp = Player + screenpeek;
-
-    smr4 = smoothratio + (((int) MoveSkip4) << 16);
-    smr2 = smoothratio + (((int) MoveSkip2) << 16);
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_CEILING_FLOOR_PIC_OVERRIDE], si, snexti)
     {
@@ -2147,8 +2134,6 @@ void PreDrawStackedWater(void)
                 New = ConnectCopySprite((uspritetype const *)sp);
                 if (New >= 0)
                 {
-                    np = &sprite[New];
-
                     // spawn a user
                     User[New] = nu = (USERp)CallocMem(sizeof(USER), 1);
                     ASSERT(nu != NULL);
@@ -2243,10 +2228,9 @@ void
 drawscreen(PLAYERp pp)
 {
     extern SWBOOL DemoMode,CameraTestMode;
-    int tx, ty, tz,thoriz,pp_siz;
+    int tx, ty, tz,thoriz;
     short tang,tsectnum;
     short i,j;
-    int tiltlock;
     int bob_amt = 0;
     int quake_z, quake_x, quake_y;
     short quake_ang;
@@ -2363,7 +2347,6 @@ drawscreen(PLAYERp pp)
     pp->six = tx;
     pp->siy = ty;
     pp->siz = tz - pp->posz;
-    pp_siz = tz;
     pp->siang = tang;
 
     if (pp->sop_riding || pp->sop_control)
@@ -2561,10 +2544,10 @@ drawscreen(PLAYERp pp)
 
     if (ConInputMode)
     {
-        DrawConInput(pp);   // Console panel input mode
+        DrawConInput();   // Console panel input mode
     }
     else
-        DrawMessageInput(pp);   // This is only used for non-multiplayer input now
+        DrawMessageInput();   // This is only used for non-multiplayer input now
 
     DrawCompass(pp);
     UpdateMiniBar(pp);
@@ -2621,7 +2604,6 @@ DrawCompass(PLAYERp pp)
     short x;
     short i;
     int flags;
-    PANEL_SPRITEp psp;
 
     static short CompassPic[32] =
     {
@@ -2697,12 +2679,8 @@ void ScreenTileUnLock(void)
 }
 
 int
-ScreenLoadSaveSetup(PLAYERp pp)
+ScreenLoadSaveSetup(void)
 {
-    int tx, ty, tz,thoriz,pp_siz;
-    short tang,tsectnum;
-    short i;
-
     // lock and allocate memory
 
     ScreenTileLock();
@@ -2717,11 +2695,9 @@ ScreenLoadSaveSetup(PLAYERp pp)
 }
 
 int
-ScreenSaveSetup(PLAYERp pp)
+ScreenSaveSetup(void)
 {
-    short i;
-
-    ScreenLoadSaveSetup(Player + myconnectindex);
+    ScreenLoadSaveSetup();
 
     renderSetTarget(SAVE_SCREEN_TILE, SAVE_SCREEN_YSIZE, SAVE_SCREEN_XSIZE);
 

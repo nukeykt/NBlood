@@ -59,7 +59,6 @@ void DebugMoveHit(short SpriteNum)
 {
     SPRITEp sp;
     USERp u = User[SpriteNum];
-    extern SWBOOL DebugActor;
 
     return;
 
@@ -97,7 +96,6 @@ void DebugMoveHit(short SpriteNum)
 SWBOOL ActorMoveHitReact(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     // Should only return TRUE if there is a reaction to what was hit that
     // would cause the calling function to abort
@@ -107,11 +105,9 @@ SWBOOL ActorMoveHitReact(short SpriteNum)
     case HIT_SPRITE:
     {
         short HitSprite = NORM_SPRITE(u->ret);
-        SPRITEp hsp;
         USERp hu;
         ANIMATORp action;
 
-        hsp = &sprite[HitSprite];
         hu = User[HitSprite];
 
 
@@ -314,7 +310,7 @@ CanSeePlayer(short SpriteNum)
 int
 CanHitPlayer(short SpriteNum)
 {
-    USERp u = User[SpriteNum], hu;
+    USERp u = User[SpriteNum];
     SPRITEp sp = User[SpriteNum]->SpriteP, hp;
     hitdata_t hitinfo;
     int xvect,yvect,zvect;
@@ -328,7 +324,6 @@ CanHitPlayer(short SpriteNum)
     zhs = sp->z - DIV2(SPRITEp_SIZE_Z(sp));
 
     hp = u->tgt_sp;
-    hu = User[u->tgt_sp - sprite];
 
     // get angle to target
     ang = getangle(hp->x - sp->x, hp->y - sp->y);
@@ -382,10 +377,9 @@ DoActorPickClosePlayer(short SpriteNum)
     SPRITEp sp = User[SpriteNum]->SpriteP;
     int dist, near_dist = MAX_ACTIVE_RANGE, a,b,c;
     short pnum;
-    PLAYERp pp,tp;
+    PLAYERp pp;
     // if actor can still see the player
     int look_height = SPRITEp_TOS(sp);
-    SWBOOL ICanSee = FALSE;
     SWBOOL found = FALSE;
     int i,nexti;
 
@@ -462,7 +456,7 @@ DoActorPickClosePlayer(short SpriteNum)
 
         DISTANCE(sp->x, sp->y, pp->posx, pp->posy, dist, a, b, c);
 
-        //ICanSee = FAFcansee(sp->x, sp->y, look_height, sp->sectnum, pp->SpriteP->x, pp->SpriteP->y, SPRITEp_UPPER(pp->SpriteP), pp->SpriteP->sectnum);
+        //SWBOOL ICanSee = FAFcansee(sp->x, sp->y, look_height, sp->sectnum, pp->SpriteP->x, pp->SpriteP->y, SPRITEp_UPPER(pp->SpriteP), pp->SpriteP->sectnum);
         if (dist < near_dist && FAFcansee(sp->x, sp->y, look_height, sp->sectnum, pp->SpriteP->x, pp->SpriteP->y, SPRITEp_UPPER(pp->SpriteP), pp->SpriteP->sectnum))
         {
             near_dist = dist;
@@ -503,7 +497,6 @@ int
 GetPlayerSpriteNum(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
     short pnum;
     PLAYERp pp;
 
@@ -625,9 +618,7 @@ DoActorActionDecide(short SpriteNum)
     USERp u = User[SpriteNum];
     SPRITEp sp = User[SpriteNum]->SpriteP;
     int dist;
-    short pnum;
     ANIMATORp action;
-    PLAYERp pp;
     USERp pu=NULL;
     SWBOOL ICanSee=FALSE;
 
@@ -1253,8 +1244,6 @@ FindTrackToPlayer(USERp u)
 short
 FindTrackAwayFromPlayer(USERp u)
 {
-    SPRITEp sp = u->SpriteP;
-
     short point, track_dir, track;
     unsigned int i;
 
@@ -1300,8 +1289,6 @@ FindTrackAwayFromPlayer(USERp u)
 short
 FindWanderTrack(USERp u)
 {
-    SPRITEp sp = u->SpriteP;
-
     short point, track_dir, track;
     unsigned int i;
 
@@ -1374,7 +1361,6 @@ int
 InitActorRunToward(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     //MONO_PRINT("InitActorRunToward\n");
 
@@ -1479,7 +1465,6 @@ InitActorAttack(short SpriteNum)
     {
         //#define SUICIDE_HEALTH_VALUE 26
 #define SUICIDE_HEALTH_VALUE 38
-        extern STATEp sg_NinjaGrabThroat[];
         //#define SUICIDE_HEALTH_VALUE 50
 
         if (u->Health < SUICIDE_HEALTH_VALUE)
@@ -1663,7 +1648,6 @@ int
 DoActorDuck(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     if ((u->WaitTics -= ACTORMOVETICS) < 0)
     {
@@ -2049,7 +2033,6 @@ int
 InitActorPause(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     u->ActorActionFunc = DoActorPause;
 
@@ -2066,7 +2049,6 @@ int
 DoActorPause(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     // Using Vis instead of WaitTics, var name sucks, but it's the same type
     // WaitTics is used by too much other actor code and causes problems here

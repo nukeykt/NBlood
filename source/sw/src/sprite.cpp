@@ -545,7 +545,6 @@ STATE s_IconFlag[] =
 void
 SetOwner(short owner, short child)
 {
-    SPRITEp op;
     SPRITEp cp = &sprite[child];
 
     if (owner == 0)
@@ -556,7 +555,6 @@ SetOwner(short owner, short child)
 
     if (owner >= 0)
     {
-        op = &sprite[owner];
         ASSERT(User[owner]);
         SET(User[owner]->Flags2, SPR2_CHILDREN);
     }
@@ -572,8 +570,6 @@ SetOwner(short owner, short child)
 void
 SetAttach(short owner, short child)
 {
-    SPRITEp op = &sprite[owner];
-    SPRITEp cp = &sprite[child];
     USERp cu = User[child];
 
     ASSERT(cu);
@@ -964,9 +960,7 @@ SpawnSprite(short stat, short id, STATEp state, short sectnum, int x, int y, int
 void
 PicAnimOff(short picnum)
 {
-    int i;
     short anim_type = TEST(picanm[picnum].sf, PICANM_ANIMTYPE_MASK) >> PICANM_ANIMTYPE_SHIFT;
-    short num;
 
     ASSERT(picnum >= 0 && picnum < MAXTILES);
 
@@ -974,6 +968,8 @@ PicAnimOff(short picnum)
         return;
 
     /*
+    int i;
+    short num;
     num = picanm[picnum].num;
     ASSERT(num < 20);
 
@@ -1005,7 +1001,6 @@ ActorTestSpawn(SPRITEp sp)
     if (sp->statnum == STAT_DEFAULT && sp->lotag == TAG_SPAWN_ACTOR)
     {
         short New;
-        short SpriteNum = sp - sprite;
         New = COVERinsertsprite(sp->sectnum, STAT_DEFAULT);
         memcpy(&sprite[New], sp, sizeof(SPRITE));
         change_sprite_stat(New, STAT_SPAWN_TRIGGER);
@@ -1571,12 +1566,9 @@ void PreMapCombineFloors(void)
 {
 #define MAX_FLOORS 32
     SPRITEp sp;
-    int xoff,yoff;
     int i, j, k;
     int16_t SpriteNum, NextSprite;
-    WALLp wp;
     int base_offset;
-    PLAYERp pp = &Player[myconnectindex];
     int dx,dy;
     short sectlist[MAXSECTORS];
     short sectlistplc, sectlistend, dasect, startwall, endwall, nextsector;
@@ -1780,10 +1772,8 @@ void
 SpriteSetup(void)
 {
     SPRITEp sp;
-    short SpriteNum = 0, NextSprite, ndx;
+    short SpriteNum = 0, NextSprite;
     USERp u;
-    TRACK_POINTp tp;
-    TRACKp t;
     short i, num;
     int cz,fz;
 
@@ -2083,10 +2073,6 @@ SpriteSetup(void)
 
                 case SECT_FLOOR_PAN:
                 {
-                    short i,nexti;
-                    SPRITEp ds;
-                    int cz,fz;
-
                     // if moves with SO
                     if (TEST_BOOL1(sp))
                         sp->xvel = 0;
@@ -2110,7 +2096,6 @@ SpriteSetup(void)
 
                 case SECT_WALL_PAN_SPEED:
                 {
-                    short i, found = FALSE;
                     vec3_t hit_pos = { sp->x, sp->y, sp->z - Z(8) };
                     hitdata_t hitinfo;
 
@@ -2362,7 +2347,6 @@ SpriteSetup(void)
                 {
                     ANIMATOR DoRotator;
                     SECTORp sectp = &sector[sp->sectnum];
-                    SECT_USERp sectu;
                     short time,type;
                     short wallcount,startwall,endwall,w;
                     u = SpawnUser(SpriteNum, 0, NULL);
@@ -2427,9 +2411,7 @@ SpriteSetup(void)
                 {
                     ANIMATOR DoSlidor;
                     SECTORp sectp = &sector[sp->sectnum];
-                    SECT_USERp sectu;
                     short time,type;
-                    short wallcount,startwall,endwall,w;
                     int DoSlidorInstantClose(short SpriteNum);
 
                     u = SpawnUser(SpriteNum, 0, NULL);
@@ -2571,7 +2553,6 @@ SpriteSetup(void)
                 {
                     short w, startwall, endwall;
                     short wallcount;
-                    void *void_ptr;
                     int8_t* wall_shade;
                     USERp u;
 
@@ -2629,7 +2610,6 @@ SpriteSetup(void)
                 {
                     short w, startwall, endwall;
                     short wallcount;
-                    void *void_ptr;
                     int8_t* wall_shade;
                     USERp u;
 
@@ -2761,8 +2741,6 @@ SpriteSetup(void)
 
                 case SECT_COPY_DEST:
                 {
-                    SECTORp sectp = &sector[sp->sectnum];
-
                     SetSectorWallBits(sp->sectnum, WALLFX_DONT_STICK, FALSE, TRUE);
                     change_sprite_stat(SpriteNum, STAT_COPY_DEST);
                     break;
@@ -4153,7 +4131,6 @@ int SpawnItemsMatch(short match)
     short SpriteNum;
     short si, nextsi;
     SPRITEp sp,sip;
-    SWBOOL found;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_SPAWN_ITEMS],si,nextsi)
     {
@@ -4627,7 +4604,6 @@ int
 NewStateGroup(short SpriteNum, STATEp StateGroup[])
 {
     USERp u = User[SpriteNum];
-    int i;
 
     //if (Prediction)
     //    return;
@@ -4701,9 +4677,6 @@ SpriteOverlapZ(int16_t spritenum_a, int16_t spritenum_b, int z_overlap)
 {
     SPRITEp spa = &sprite[spritenum_a], spb = &sprite[spritenum_b];
 
-    USERp ua = User[spritenum_a];
-    USERp ub = User[spritenum_b];
-
     int spa_tos, spa_bos, spb_tos, spb_bos;
 
     spa_tos = SPRITEp_TOS(spa);
@@ -4734,7 +4707,7 @@ getzrangepoint(int x, int y, int z, short sectnum,
                int32_t* ceilz, int32_t* ceilhit, int32_t* florz, int32_t* florhit)
 {
     spritetype *spr;
-    int i, j, k, l, dax, day, daz, xspan, yspan, xoff, yoff;
+    int j, k, l, dax, day, daz, xspan, yspan, xoff, yoff;
     int x1, y1, x2, y2, x3, y3, x4, y4, cosang, sinang, tilenum;
     short cstat;
     char clipyou;
@@ -4903,7 +4876,6 @@ DoActorZrange(short SpriteNum)
 int
 DoActorGlobZ(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
     u->loz = globloz;
@@ -4940,7 +4912,6 @@ SWBOOL
 ActorDrop(short SpriteNum, int x, int y, int z, short new_sector, short min_height)
 {
     SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
     int ceilhit, florhit, hiz, loz;
     short save_cstat;
 
@@ -4989,8 +4960,6 @@ ActorDrop(short SpriteNum, int x, int y, int z, short new_sector, short min_heig
 
     case HIT_SECTOR:
     {
-        SECTORp sectp = &sector[florhit & 4095];
-
         if (labs(loz - z) <= min_height)
         {
             return FALSE;
@@ -5050,7 +5019,7 @@ move_actor(short SpriteNum, int xchange, int ychange, int zchange)
     int x, y, z, loz, hiz;
     SPRITEp lo_sp, hi_sp;
     SECTORp lo_sectp, hi_sectp;
-    short sectnum,sect;
+    short sectnum;
     short dist;
     int cliptype = CLIPMASK_ACTOR;
 
@@ -5152,7 +5121,6 @@ int
 DoGrating(short SpriteNum)
 {
     SPRITEp sp = User[SpriteNum]->SpriteP;
-    int16_t x, y;
     int dir;
 #define GRATE_FACTOR 3
 
@@ -5261,7 +5229,6 @@ SpearOnCeiling(short SpriteNum)
 int
 DoKey(short SpriteNum)
 {
-    USERp u = User[SpriteNum];
     SPRITEp sp = User[SpriteNum]->SpriteP;
 
     sp->ang = NORM_ANGLE(sp->ang + (14 * ACTORMOVETICS));
@@ -5276,7 +5243,6 @@ int
 DoCoin(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
     int offset;
 
     u->WaitTics -= ACTORMOVETICS * 2;
@@ -5470,7 +5436,6 @@ DoSpawnItemTeleporterEffect(SPRITEp sp)
 {
     extern STATE s_TeleportEffect[];
     short effect;
-    USERp eu;
     SPRITEp ep;
 
     effect = SpawnSprite(STAT_MISSILE, 0, s_TeleportEffect, sp->sectnum,
@@ -5478,7 +5443,6 @@ DoSpawnItemTeleporterEffect(SPRITEp sp)
                          sp->ang, 0);
 
     ep = &sprite[effect];
-    eu = User[effect];
 
     ep->shade = -40;
     ep->xrepeat = ep->yrepeat = 36;
@@ -5523,8 +5487,7 @@ const char *ReadFortune[MAX_FORTUNES] =
 
 SWBOOL CanGetWeapon(PLAYERp pp, short SpriteNum, int WPN)
 {
-    USERp u = User[SpriteNum], pu;
-    SPRITEp sp = User[SpriteNum]->SpriteP;
+    USERp u = User[SpriteNum];
 
     switch (gNet.MultiGameType)
     {
@@ -6514,7 +6477,6 @@ void
 SetEnemyActive(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
 
     SET(u->Flags, SPR_ACTIVE);
     u->inactive_time = 0;
@@ -6524,7 +6486,6 @@ void
 SetEnemyInactive(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
 
     RESET(u->Flags, SPR_ACTIVE);
 }
@@ -6536,7 +6497,6 @@ void
 ProcessActiveVars(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
 #define TIME_TILL_INACTIVE (4*120)
 
     if (!TEST(u->Flags, SPR_ACTIVE))
@@ -7269,7 +7229,6 @@ int
 MissileWaterAdjust(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = u->SpriteP;
 
     if (u->lo_sectp)
     {
@@ -7442,11 +7401,11 @@ move_missile(short spritenum, int xchange, int ychange, int zchange, int ceildis
 
 
 int
-move_ground_missile(short spritenum, int xchange, int ychange, int zchange, int ceildist, int flordist, uint32_t cliptype, int numtics)
+move_ground_missile(short spritenum, int xchange, int ychange, int ceildist, int flordist, uint32_t cliptype, int numtics)
 {
     int daz;
-    int retval=0, zh;
-    short dasectnum, tempshort;
+    int retval=0;
+    short dasectnum;
     SPRITEp sp;
     USERp u = User[spritenum];
     short lastsectnum;
@@ -7461,7 +7420,6 @@ move_ground_missile(short spritenum, int xchange, int ychange, int zchange, int 
     dasectnum = lastsectnum = sp->sectnum;
 
     daz = sp->z;
-    zh = 0;
 
     // climbing a wall
     if (u->z_tgt)
@@ -7514,7 +7472,7 @@ move_ground_missile(short spritenum, int xchange, int ychange, int zchange, int 
 
     if (retval)  // ran into a white wall
     {
-        int new_loz,new_hiz;
+        //int new_loz,new_hiz;
 
         // back up and try to clip UP
         //dasectnum = lastsectnum = sp->sectnum;

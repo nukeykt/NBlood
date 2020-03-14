@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "cmdline.h"
 #include "palette.h"
 #include "al_midi.h"
+#include "playmve.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -107,10 +108,6 @@ GAME_STATIC GAME_INLINE int32_t G_MoveLoop(void);
 int32_t hud_showmapname = 1;
 
 int32_t g_levelTextTime = 0;
-
-int32_t r_maxfps = 60;
-int32_t r_maxfpsoffset = 0;
-double g_frameDelay = 0.0;
 
 #if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
 extern char forcegl;
@@ -3464,7 +3461,8 @@ rr_badguy:
                 }
                 else changespritestat(newSprite, STAT_ZOMBIEACTOR);
 
-                pSprite->shade = sprite[spriteNum].shade;
+                if (RR && spriteNum >= 0)
+                    pSprite->shade = sprite[spriteNum].shade;
             }
 
             break;
@@ -7506,7 +7504,7 @@ static void G_Startup(void)
 
     G_CompileScripts();
 
-    enginecompatibility_mode = ENGINECOMPATIBILITY_19961112;
+    enginecompatibilitymode = ENGINE_19961112;
 
     if (engineInit())
         G_FatalEngineError();
@@ -7792,38 +7790,6 @@ void G_MaybeAllocPlayer(int32_t pnum)
         g_player[pnum].inputBits = (input_t *)Xcalloc(1, sizeof(input_t));
 }
 
-
-int G_FPSLimit(void)
-{
-    if (!r_maxfps || r_maxfps + r_maxfpsoffset <= 0)
-        return true;
-
-    static double   nextPageDelay;
-    static uint64_t lastFrameTicks;
-
-    g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
-    nextPageDelay = clamp(nextPageDelay, 0.0, g_frameDelay);
-
-    uint64_t const frameTicks = timerGetPerformanceCounter();
-
-    if (lastFrameTicks > frameTicks)
-        lastFrameTicks = frameTicks;
-
-    uint64_t const elapsedTime  = frameTicks - lastFrameTicks;
-    double const   dElapsedTime = elapsedTime;
-
-    if (dElapsedTime >= nextPageDelay)
-    {
-        if (dElapsedTime <= nextPageDelay+g_frameDelay)
-            nextPageDelay += g_frameDelay-dElapsedTime;
-
-        lastFrameTicks = frameTicks;
-
-        return true;
-    }
-
-    return false;
-}
 
 // TODO: reorder (net)actor_t to eliminate slop and update assertion
 EDUKE32_STATIC_ASSERT(sizeof(actor_t)%4 == 0);
@@ -8240,7 +8206,7 @@ int app_main(int argc, char const * const * argv)
             ud.setup.bpp  = bpp;
         }
 
-        g_frameDelay = calcFrameDelay(r_maxfps + r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
         videoSetPalette(ud.brightness>>2, g_player[myconnectindex].ps->palette, 0);
         S_MusicStartup();
         S_SoundStartup();
@@ -8252,6 +8218,9 @@ int app_main(int argc, char const * const * argv)
 
     for (bssize_t i = MINIFONT + ('a'-'!'); minitext_lowercase && i < MINIFONT + ('z'-'!') + 1; ++i)
         minitext_lowercase &= (int)tileLoad(i);
+
+    if (RRRA)
+        playmve("REDINT.MVE");
 
     //if (g_networkMode != NET_DEDICATED_SERVER)
     {
@@ -8490,7 +8459,7 @@ MAIN_LOOP_RESTART:
         {
             idle();
         }
-        else */if (G_FPSLimit() || g_saveRequested)
+        else */if (engineFPSLimit() || g_saveRequested)
         {
             int const smoothRatio = calc_smoothratio(totalclock, ototalclock);
 

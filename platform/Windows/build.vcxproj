@@ -113,8 +113,9 @@
       <OmitFramePointers>true</OmitFramePointers>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -183,8 +184,9 @@
       <OmitFramePointers>true</OmitFramePointers>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -220,7 +222,6 @@
     <ClCompile Include="..\..\source\build\src\enet.cpp" />
     <ClCompile Include="..\..\source\build\src\engine.cpp" />
     <ClCompile Include="..\..\source\build\src\fix16.cpp" />
-    <ClCompile Include="..\..\source\build\src\fix16_str.cpp" />
     <ClCompile Include="..\..\source\build\src\glbuild.cpp" />
     <ClCompile Include="..\..\source\build\src\glsurface.cpp" />
     <ClCompile Include="..\..\source\build\src\gtkbits.cpp">
@@ -252,7 +253,7 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\miniz_tdef.c" />
     <ClCompile Include="..\..\source\build\src\miniz_tinfl.c" />
-    <ClCompile Include="..\..\source\build\src\mmulti_null.cpp" />
+    <ClCompile Include="..\..\source\build\src\mmulti.cpp" />
     <ClCompile Include="..\..\source\build\src\mutex.cpp" />
     <ClCompile Include="..\..\source\build\src\osd.cpp" />
     <ClCompile Include="..\..\source\build\src\palette.cpp" />
@@ -273,6 +274,7 @@
     </ClCompile>
     <ClCompile Include="..\..\source\build\src\rev.cpp" />
     <ClCompile Include="..\..\source\build\src\screenshot.cpp" />
+    <ClCompile Include="..\..\source\build\src\screentext.cpp" />
     <ClCompile Include="..\..\source\build\src\scriptfile.cpp" />
     <ClCompile Include="..\..\source\build\src\sdlayer.cpp" />
     <ClCompile Include="..\..\source\build\src\sdlayer12.cpp">
@@ -371,6 +373,7 @@
     <ClInclude Include="..\..\source\build\include\rawinput.h" />
     <ClInclude Include="..\..\source\build\include\renderlayer.h" />
     <ClInclude Include="..\..\source\build\include\scancodes.h" />
+    <ClInclude Include="..\..\source\build\include\screentext.h" />
     <ClInclude Include="..\..\source\build\include\scriptfile.h" />
     <ClInclude Include="..\..\source\build\include\sdlayer.h" />
     <ClInclude Include="..\..\source\build\include\sdl_inc.h" />

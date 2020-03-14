@@ -333,7 +333,6 @@ SetupHornet(short SpriteNum)
 int NullHornet(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     if (TEST(u->Flags,SPR_SLIDING))
         DoActorSlide(SpriteNum);
@@ -456,7 +455,6 @@ int DoHornetCircle(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
-    SPRITEp tsp = User[SpriteNum]->tgt_sp;
     long nx,ny,bound;
 
     sp->ang = NORM_ANGLE(sp->ang + u->Counter2);

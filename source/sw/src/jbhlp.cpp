@@ -67,7 +67,7 @@ void Msg(const char *string, char color)
 // # symbol precedes a comment in the help file
 long GetAToken(char *name, char *tc, long length)
 {
-    int i,x=0;
+    int x=0;
     char t,*tmp,tokenfound=0;
     char token[10];
     long count=0;
@@ -118,7 +118,7 @@ long GetAToken(char *name, char *tc, long length)
 
 void ContextHelp(short spritenum)
 {
-    int i,fp,x=0,y=4;
+    int fp,x=0,y=4;
     char t,*tc;
     char name[20];
     char *filebuffer;

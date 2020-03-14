@@ -255,7 +255,6 @@ engine_objs := \
     enet.cpp \
     engine.cpp \
     fix16.cpp \
-    fix16_str.cpp \
     hash.cpp \
     hightile.cpp \
     klzw.cpp \
@@ -266,7 +265,7 @@ engine_objs := \
     miniz.c \
     miniz_tdef.c \
     miniz_tinfl.c \
-    mmulti_null.cpp \
+    mmulti.cpp \
     mutex.cpp \
     osd.cpp \
     palette.cpp \
@@ -277,6 +276,7 @@ engine_objs := \
     pragmas.cpp \
     rev.cpp \
     screenshot.cpp \
+    screentext.cpp \
     scriptfile.cpp \
     sjson.cpp \
     smalltextfont.cpp \
@@ -586,6 +586,7 @@ duke3d_game_objs := \
     game.cpp \
     gamedef.cpp \
     gameexec.cpp \
+    gamestructures.cpp \
     gamevars.cpp \
     global.cpp \
     grpscan.cpp \
@@ -601,10 +602,10 @@ duke3d_game_objs := \
     savegame.cpp \
     sbar.cpp \
     screens.cpp \
-    screentext.cpp \
     sector.cpp \
     sounds.cpp \
     soundsdyn.cpp \
+    text.cpp \
 
 duke3d_editor_objs := \
     astub.cpp \
@@ -957,6 +958,8 @@ rr_game_objs := \
     screens.cpp \
     cmdline.cpp \
     rrdh.cpp \
+    filestream.cpp \
+    playmve.cpp \
 
 rr_editor_objs := \
     astub.cpp \

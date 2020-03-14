@@ -251,7 +251,7 @@ SWBOOL DebugActor = FALSE;
 SWBOOL DebugAnim = FALSE;
 SWBOOL DebugOperate = FALSE;
 SWBOOL DebugActorFreeze = FALSE;
-void LoadingLevelScreen(char *level_name);
+void LoadingLevelScreen(void);
 
 uint8_t FakeMultiNumPlayers;
 
@@ -648,9 +648,6 @@ setup2dscreen(void)
 void
 TerminateGame(void)
 {
-    int i,j;
-    int oldtotalclock;
-
     DemoTerm();
 
     ErrorCorrectionQuit();
@@ -686,8 +683,6 @@ TerminateGame(void)
 void
 LoadLevel(const char *filename)
 {
-    int pos;
-
     if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
@@ -703,9 +698,6 @@ LoadLevel(const char *filename)
 void
 LoadImages(const char *filename)
 {
-    short ndx;
-    FILE *fin;
-
     if (artLoadFiles(filename, 32*1048576) == -1)
     {
         TerminateGame();
@@ -768,7 +760,6 @@ void DisplayDemoText(void)
 void Set_GameMode(void)
 {
     int result;
-    char ch;
 
     //DSPRINTF(ds,"ScreenMode %d, ScreenWidth %d, ScreenHeight %d", ud_setup.ScreenMode, ud_setup.ScreenWidth, ud_setup.ScreenHeight);
     //MONO_PRINT(ds);
@@ -929,9 +920,10 @@ InitGame(int32_t argc, char const * const * argv)
     // sets numplayers, connecthead, connectpoint2, myconnectindex
 
     if (!firstnet)
-        initmultiplayers(0, NULL, 0, 0, 0);
+        initsingleplayers();
     else if (initmultiplayersparms(argc - firstnet, &argv[firstnet]))
     {
+        NetBroadcastMode = (networkmode == MMULTI_MODE_P2P);
         buildputs("Waiting for players...\n");
         while (initmultiplayerscycle())
         {
@@ -1062,7 +1054,7 @@ InitGame(int32_t argc, char const * const * argv)
     InitFX();   // JBF: do it down here so we get a hold of the window handle
     InitMusic();
 
-    enginecompatibility_mode = ENGINECOMPATIBILITY_19961112; // SW 1.0: 19970212, SW 1.1-1.2: 19970522
+    enginecompatibilitymode = ENGINE_19961112; // SW 1.0: 19970212, SW 1.1-1.2: 19970522
 }
 
 
@@ -1245,9 +1237,7 @@ void InitNewGame(void)
 
 void FindLevelInfo(char *map_name, short *level)
 {
-    char *ptr;
-    char buff[16];
-    short i,j;
+    short j;
 
     for (j = 1; j <= MAX_LEVELS; j++)
     {
@@ -1407,7 +1397,7 @@ InitLevel(void)
     if (NewGame)
         InitNewGame();
 
-    LoadingLevelScreen(LevelName);
+    LoadingLevelScreen();
     MONO_PRINT("LoadintLevelScreen");
     if (!DemoMode && !DemoInitOnce)
         DemoPlaySetup();
@@ -1684,7 +1674,9 @@ NewLevel(void)
         MONO_PRINT(ds);
         RunLevel();
 
-        if (!QuitFlag)
+        // On map change, or after master player quits
+        if (!QuitFlag ||
+            (!NetBroadcastMode && TEST_SYNC_KEY(Player + connecthead, SK_QUIT_GAME)))
         {
             // for good measure do this
             ready2send = 0;
@@ -1788,7 +1780,6 @@ LogoLevel(void)
     if (g_noLogo)
         return;
 
-    char called;
     int fin;
     unsigned char pal[PAL_SIZE];
     UserInput uinfo = { FALSE, FALSE, dir_None };
@@ -1863,9 +1854,6 @@ LogoLevel(void)
 void
 CreditsLevel(void)
 {
-    char called;
-    int fin;
-    int i;
     int curpic;
     int handle;
     uint32_t timer = 0;
@@ -2020,7 +2008,7 @@ TenScreen(void)
     //FadeIn(0, 3);
     ResetKeys();
 
-    while (!KeyPressed());
+    while (!KeyPressed() && !quitevent) handleevents();
 
     palookup[0] = palook_bak;
 
@@ -2041,10 +2029,6 @@ TenScreen(void)
 void
 TitleLevel(void)
 {
-    char called;
-    int fin;
-    unsigned char backup_pal[256*3];
-    unsigned char pal[PAL_SIZE];
     char tempbuf[256];
     char *palook_bak = palookup[0];
     int i;
@@ -2053,12 +2037,15 @@ TitleLevel(void)
         tempbuf[i] = i;
     palookup[0] = tempbuf;
 
+//    unsigned char backup_pal[256*3];
+//    unsigned char pal[PAL_SIZE];
     //GetPaletteFromVESA(pal);
     //memcpy(backup_pal, pal, PAL_SIZE);
 
     videoClearViewableArea(0L);
     videoNextPage();
 
+//    int fin;
 //    if ((fin = kopen4load("title.pal", 0)) != -1)
 //        {
 //        kread(fin, pal, PAL_SIZE);
@@ -2160,8 +2147,6 @@ void
 MenuLevel(void)
 {
     SWBOOL MNU_StartNetGame(void);
-    char called;
-    int fin;
     extern ClockTicks totalclocklock;
     short w,h;
 
@@ -2266,7 +2251,7 @@ MenuLevel(void)
         handleevents();
         OSD_DispatchQueued();
 
-        if (quitevent) QuitFlag = TRUE;
+        if (quitevent) CON_Quit();
 
         // taken from top of faketimerhandler
         // limits checks to max of 40 times a second
@@ -2282,7 +2267,6 @@ MenuLevel(void)
         {
             if (MultiPlayQuitFlag)
             {
-                short pnum;
                 uint8_t pbuf[1];
                 QuitFlag = TRUE;
                 pbuf[0] = PACKET_TYPE_MENU_LEVEL_QUIT;
@@ -2372,11 +2356,10 @@ SceneLevel(void)
 }
 
 void
-LoadingLevelScreen(char *level_name)
+LoadingLevelScreen(void)
 {
     short w,h;
     extern SWBOOL DemoMode;
-    extern char *MNU_LevelName[28];
     DrawLoadLevelScreen();
 
     if (DemoMode)
@@ -2430,21 +2413,21 @@ gStateControl(STATEp *State, int *tics)
         (*(*State)->Animator)(0);
 }
 
-int BonusPunchSound(short SpriteNum)
+int BonusPunchSound(short UNUSED(SpriteNum))
 {
     PLAYERp pp = Player + myconnectindex;
     PlaySound(DIGI_PLAYERYELL3, &pp->posx, &pp->posy, &pp->posz, v3df_none);
     return 0;
 }
 
-int BonusKickSound(short SpriteNum)
+int BonusKickSound(short UNUSED(SpriteNum))
 {
     PLAYERp pp = Player + myconnectindex;
     PlaySound(DIGI_PLAYERYELL2, &pp->posx, &pp->posy, &pp->posz, v3df_none);
     return 0;
 }
 
-int BonusGrabSound(short SpriteNum)
+int BonusGrabSound(short UNUSED(SpriteNum))
 {
     PLAYERp pp = Player + myconnectindex;
     PlaySound(DIGI_BONUS_GRAB, &pp->posx, &pp->posy, &pp->posz, v3df_none);
@@ -2452,18 +2435,13 @@ int BonusGrabSound(short SpriteNum)
 }
 
 void
-BonusScreen(PLAYERp pp)
+BonusScreen(void)
 {
     int minutes,seconds,second_tics;
-    extern SWBOOL FinishedLevel;
     extern int PlayClock;
     extern short LevelSecrets;
-    extern short TotalKillable;
     short w,h;
-    short pic,limit;
-    int zero=0;
-    int handle = 0;
-    short LI_Num;
+    short limit;
 
 
 #define BONUS_SCREEN_PIC 5120
@@ -2596,6 +2574,7 @@ BonusScreen(PLAYERp pp)
     while (!BonusDone)
     {
         handleevents();
+        getpackets();
 
         // taken from top of faketimerhandler
         if (totalclock < ototalclock + limit)
@@ -2704,7 +2683,7 @@ void EndGameSequence(void)
     if (anim_ok)
         playanm(FinishAnim);
 
-    BonusScreen(Player + myconnectindex);
+    BonusScreen();
 
     ExitLevel = FALSE;
     QuitFlag = FALSE;
@@ -2735,14 +2714,8 @@ void EndGameSequence(void)
 void
 StatScreen(PLAYERp mpp)
 {
-    int minutes,seconds,second_tics;
     extern SWBOOL FinishedLevel;
-    extern int PlayClock;
-    extern short LevelSecrets;
-    extern short TotalKillable;
     short w,h;
-    int zero=0;
-    int handle=0;
 
     short rows,cols,i,j;
     PLAYERp pp = NULL;
@@ -2778,7 +2751,7 @@ StatScreen(PLAYERp mpp)
     {
         if (!FinishedLevel)
             return;
-        BonusScreen(mpp);
+        BonusScreen();
         return;
     }
 
@@ -2816,7 +2789,7 @@ StatScreen(PLAYERp mpp)
         DisplayMiniBarSmString(mpp, x, y, 0, ds);
 
         sprintf(ds,"  %-13s", pp->PlayerName);
-        DisplayMiniBarSmString(mpp, x, y, User[pp->PlayerSprite]->spal, ds);
+        DisplayMiniBarSmString(mpp, x, y, PALETTE_PLAYER0 + pp->TeamColor, ds);
 
         x = STAT_TABLE_X;
         for (j = 0; j < cols; j++)
@@ -2832,7 +2805,7 @@ StatScreen(PLAYERp mpp)
             }
             else if (gNet.TeamPlay)
             {
-                if (User[pp->PlayerSprite]->spal == User[Player[j].PlayerSprite]->spal)
+                if (pp->TeamColor == Player[j].TeamColor)
                 {
                     // don't add kill for self or team player
                     pal = PALETTE_PLAYER0 + 4;
@@ -2892,7 +2865,7 @@ StatScreen(PLAYERp mpp)
 
     if (KeyPressed())
     {
-        while (KeyPressed()) ;
+        while (KeyPressed() && !quitevent) { handleevents(); getpackets(); }
     }
 
     KEY_PRESSED(KEYSC_SPACE) = 0;
@@ -2906,7 +2879,7 @@ StatScreen(PLAYERp mpp)
     while (!KEY_PRESSED(KEYSC_SPACE) && !KEY_PRESSED(KEYSC_ENTER))
     {
         handleevents();
-
+        getpackets();
         ScreenCaptureKeys();
     }
 
@@ -2953,6 +2926,8 @@ Control(int32_t argc, char const * const * argv)
 {
 
     InitGame(argc, argv);
+    if (QuitFlag)
+        return;
 
     MONO_PRINT("InitGame done");
     MNU_InitMenus();
@@ -3127,7 +3102,6 @@ void InitPlayerGameSettings(void)
 
 void InitRunLevel(void)
 {
-    int i;
     if (DemoEdit)
         return;
 
@@ -3215,7 +3189,6 @@ void InitRunLevel(void)
 void
 RunLevel(void)
 {
-    int i;
     InitRunLevel();
 
     FX_SetVolume(gs.SoundVolume);
@@ -3231,7 +3204,7 @@ RunLevel(void)
         handleevents();
         OSD_DispatchQueued();
 
-        if (quitevent) QuitFlag = TRUE;
+        if (quitevent) CON_Quit();
 
         //MONO_PRINT("Before MoveLoop");
         MoveLoop();
@@ -3444,13 +3417,10 @@ void CommandLineHelp(char const * const * argv)
 int32_t app_main(int32_t argc, char const * const * argv)
 {
     int i;
-    int stat, nexti;
-    char type;
     extern int MovesPerPacket;
     void DoSector(void);
     void gameinput(void);
     int cnt = 0;
-    uint32_t TotalMemory;
 
     for (i=1; i<argc; i++)
     {
@@ -3675,37 +3645,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
         if (*arg != '/' && *arg != '-') continue;
 
-        if (firstnet > 0)
-        {
-            arg++;
-            switch (arg[0])
-            {
-            case 'n':
-            case 'N':
-                if (arg[1] == '0')
-                {
-                    NetBroadcastMode = FALSE;
-                    buildputs("Network mode: master/slave\n");
-                    wm_msgbox("Multiplayer Option Error",
-                              "This release unfortunately does not support a master-slave networking "
-                              "mode because of certain bugs we have not been able to locate and fix "
-                              "at this time. However, peer-to-peer networking has been found to be "
-                              "playable, so we suggest attempting to use that for now. Details can be "
-                              "found in the release notes. Sorry for the inconvenience.");
-                    return 0;
-                }
-                else if (arg[1] == '1')
-                {
-                    NetBroadcastMode = TRUE;
-                    buildputs("Network mode: peer-to-peer\n");
-                }
-                break;
-            default:
-                break;
-            }
-            continue;
-        }
-
         // Store arg in command line array!
         CON_StoreArg(arg);
         arg++;
@@ -3746,10 +3685,8 @@ int32_t app_main(int32_t argc, char const * const * argv)
         }
         else if (Bstrncasecmp(arg, "net",3) == 0)
         {
-            if (cnt+1 < argc)
-            {
-                firstnet = cnt+1;
-            }
+            firstnet = cnt+1;
+            break; // All further args go to mmulti.
         }
 #if DEBUG
         else if (Bstrncasecmp(arg, "debug",5) == 0)
@@ -4112,7 +4049,6 @@ void
 ManualPlayerInsert(PLAYERp pp)
 {
     PLAYERp npp = Player + numplayers;
-    int i;
 
     if (numplayers < MAX_SW_PLAYERS)
     {
@@ -4144,7 +4080,6 @@ void
 BotPlayerInsert(PLAYERp pp)
 {
     PLAYERp npp = Player + numplayers;
-    int i;
 
     if (numplayers < MAX_SW_PLAYERS)
     {
@@ -4174,11 +4109,10 @@ BotPlayerInsert(PLAYERp pp)
 }
 
 void
-ManualPlayerDelete(PLAYERp cur_pp)
+ManualPlayerDelete(void)
 {
     short i, nexti;
     USERp u;
-    short save_myconnectindex;
     PLAYERp pp;
 
     if (numplayers > 1)
@@ -4304,7 +4238,7 @@ SinglePlayInput(PLAYERp pp)
     if (KEY_PRESSED(KEYSC_DEL))
     {
         KEY_PRESSED(KEYSC_DEL) = 0;
-        ManualPlayerDelete(pp);
+        ManualPlayerDelete();
     }
 
     // Move control to numbered player
@@ -4505,7 +4439,6 @@ SWBOOL DoQuickLoad()
 void
 FunctionKeys(PLAYERp pp)
 {
-    extern SWBOOL GamePaused;
     static int rts_delay = 0;
     int fn_key = 0;
 
@@ -4534,7 +4467,6 @@ FunctionKeys(PLAYERp pp)
 
             if (CommEnabled)
             {
-                short pnum;
                 PACKET_RTS p;
 
                 p.PacketType = PACKET_TYPE_RTS;
@@ -4723,7 +4655,6 @@ FunctionKeys(PLAYERp pp)
 void PauseKey(PLAYERp pp)
 {
     extern SWBOOL GamePaused,CheatInputMode;
-    extern SWBOOL enabled;
 
     if (KEY_PRESSED(sc_Pause) && !CommEnabled && !InputMode && !UsingMenus && !CheatInputMode && !ConPanel)
     {
@@ -4773,11 +4704,9 @@ void PauseKey(PLAYERp pp)
 void GetMessageInput(PLAYERp pp)
 {
     int pnum = myconnectindex;
-    short w,h;
     signed char MNU_InputSmallString(char *, short);
     signed char MNU_InputString(char *, short);
-    static SWBOOL cur_show;
-    static SWBOOL TeamSendAll, TeamSendTeam;
+    static SWBOOL TeamSendAll;
 #define TEAM_MENU "A - Send to ALL,  T - Send to TEAM"
     static char HoldMessageInputString[256];
     int i;
@@ -4791,7 +4720,6 @@ void GetMessageInput(PLAYERp pp)
             KB_FlushKeyboardQueue();
             MessageInputMode = TRUE;
             InputMode = TRUE;
-            TeamSendTeam = FALSE;
             TeamSendAll = FALSE;
 
             if (MessageInputMode)
@@ -4905,7 +4833,6 @@ SEND_MESSAGE:
                 else if (memcmp(MessageInputString, TEAM_MENU "t", sizeof(TEAM_MENU)+1) == 0)
                 {
                     strcpy(MessageInputString, HoldMessageInputString);
-                    TeamSendTeam = TRUE;
                     goto SEND_MESSAGE;
                 }
                 else
@@ -4923,13 +4850,10 @@ SEND_MESSAGE:
     }
 }
 
-void GetConInput(PLAYERp pp)
+void GetConInput(void)
 {
-    int pnum = myconnectindex;
-    short w,h;
     signed char MNU_InputSmallString(char *, short);
     signed char MNU_InputString(char *, short);
-    static SWBOOL cur_show;
 
     if (MessageInputMode || HelpInputMode)
         return;
@@ -5064,11 +4988,9 @@ short MirrorDelay;
 void
 getinput(SW_PACKET *loc)
 {
-    SWBOOL found = FALSE;
     int i;
     PLAYERp pp = Player + myconnectindex;
     PLAYERp newpp = Player + myconnectindex;
-    int pnum = myconnectindex;
     int inv_hotkey = 0;
 
 #define TURBOTURNTIME (120/8)
@@ -5098,6 +5020,9 @@ getinput(SW_PACKET *loc)
 
     // MAKE SURE THIS WILL GET SET
     SET_LOC_KEY(loc->bits, SK_QUIT_GAME, MultiPlayQuitFlag);
+    // Slave won't receive the quit bit back from the master, so handle it separately
+    if (MultiPlayQuitFlag && !NetBroadcastMode && (myconnectindex != connecthead))
+        QuitFlag = TRUE;
 
     if (gs.MouseAimingType == 1) // while held
     {
@@ -5147,7 +5072,7 @@ getinput(SW_PACKET *loc)
     if (!MenuInputMode && !UsingMenus)
     {
         GetMessageInput(pp);
-        GetConInput(pp);
+        GetConInput();
         GetHelpInput(pp);
     }
 
@@ -5528,7 +5453,7 @@ getinput(SW_PACKET *loc)
     if (BUTTON(gamefunc_Toggle_Crosshair))
     {
         CONTROL_ClearButton(gamefunc_Toggle_Crosshair);
-        pToggleCrosshair(pp);
+        pToggleCrosshair();
     }
 }
 
@@ -5573,7 +5498,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
 
     if (ScrollMode2D)
     {
-        minigametext(txt_x,txt_y-7,"Follow Mode",0,2+8);
+        minigametext(txt_x,txt_y-7,"Follow Mode",2+8);
     }
 
     if (UserMapName[0])
@@ -5581,7 +5506,7 @@ void drawoverheadmap(int cposx, int cposy, int czoom, short cang)
     else
         sprintf(ds,"%s",LevelInfo[Level].Description);
 
-    minigametext(txt_x,txt_y,ds,0,2+8);
+    minigametext(txt_x,txt_y,ds,2+8);
 
     //////////////////////////////////
 

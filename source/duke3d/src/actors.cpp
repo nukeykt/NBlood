@@ -2056,28 +2056,26 @@ ACTOR_STATIC void G_MoveStandables(void)
                 pSprite->y += sintable[(T6(spriteNum))&2047]>>9;
                 pSprite->z -= (3<<8);
 
-                setsprite(spriteNum,&pSprite->pos);
+                int16_t const oldSectNum = pSprite->sectnum;
+                int16_t       curSectNum = pSprite->sectnum;
 
-                int hitDist = A_CheckHitSprite(spriteNum, &hitSprite);
+                updatesectorneighbor(pSprite->x, pSprite->y, &curSectNum, 1024, 2048);
+                changespritesect(spriteNum, curSectNum);
+
+                int32_t hitDist = A_CheckHitSprite(spriteNum, &hitSprite);
 
                 actor[spriteNum].lastv.x = hitDist;
                 pSprite->ang = oldAng;
 
-                //                if(lTripBombControl & TRIPBOMB_TRIPWIRE)
+                // we're on a trip wire
                 if (actor[spriteNum].t_data[6] != 1)
                 {
-                    // we're on a trip wire
-                    int16_t cursectnum;
-
                     while (hitDist > 0)
                     {
-                        j = A_Spawn(spriteNum,LASERLINE);
-                        setsprite(j,&sprite[j].pos);
+                        j = A_Spawn(spriteNum, LASERLINE);
+
                         sprite[j].hitag = pSprite->hitag;
                         actor[j].t_data[1] = sprite[j].z;
-
-                        pSprite->x += sintable[(T6(spriteNum)+512)&2047]>>4;
-                        pSprite->y += sintable[(T6(spriteNum))&2047]>>4;
 
                         if (hitDist < 1024)
                         {
@@ -2086,20 +2084,27 @@ ACTOR_STATIC void G_MoveStandables(void)
                         }
                         hitDist -= 1024;
 
-                        cursectnum = pSprite->sectnum;
-                        updatesector(pSprite->x, pSprite->y, &cursectnum);
-                        if (cursectnum < 0)
+                        pSprite->x += sintable[(T6(spriteNum)+512)&2047]>>4;
+                        pSprite->y += sintable[(T6(spriteNum))&2047]>>4;
+
+                        updatesectorneighbor(pSprite->x, pSprite->y, &curSectNum, 1024, 2048);
+
+                        if (curSectNum == -1)
                             break;
+
+                        changespritesect(spriteNum, curSectNum);
+
+                        // this is a hack to work around the LASERLINE sprite's art tile offset
+                        changespritesect(j, curSectNum);
                     }
                 }
 
                 T1(spriteNum)++;
 
-                pSprite->x = T4(spriteNum);
-                pSprite->y = T5(spriteNum);
+                pSprite->pos.vec2 = { T4(spriteNum), T5(spriteNum) };
                 pSprite->z += (3<<8);
 
-                setsprite(spriteNum,&pSprite->pos);
+                changespritesect(spriteNum, oldSectNum);
                 T4(spriteNum) = T3(spriteNum) = 0;
 
                 if (hitSprite >= 0 && actor[spriteNum].t_data[6] != 1)
@@ -2124,10 +2129,9 @@ ACTOR_STATIC void G_MoveStandables(void)
 
                 setsprite(spriteNum, &pSprite->pos);
 
-                int hitDist = A_CheckHitSprite(spriteNum, NULL);
+                int32_t const hitDist = A_CheckHitSprite(spriteNum, NULL);
 
-                pSprite->x = T4(spriteNum);
-                pSprite->y = T5(spriteNum);
+                pSprite->pos.vec2 = { T4(spriteNum), T5(spriteNum) };
                 pSprite->z += (3<<8);
                 setsprite(spriteNum, &pSprite->pos);
 
@@ -6753,8 +6757,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             else pData[0]=0;
             break;
 
-        case SE_11_SWINGING_DOOR: //Swingdoor
-
+        case SE_11_SWINGING_DOOR:
             if (pData[5] > 0)
             {
                 pData[5]--;
@@ -6763,40 +6766,69 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
             if (pData[4])
             {
-                int const endWall = pSector->wallptr+pSector->wallnum;
-
-                for (j=pSector->wallptr; j<endWall; j++)
+                auto dukeLivesMatter = [&](vec2_t const *const pos, int const w, int const clipdist)
                 {
-                    for (SPRITES_OF(STAT_ACTOR, k))
+                    if (clipinsidebox(pos, w, clipdist))
                     {
-                        if (sprite[k].extra > 0 &&
-                            (pSprite->sectnum == sprite[k].sectnum ||
-                             sectoradjacent(pSprite->sectnum, sprite[k].sectnum)) &&
-                            A_CheckEnemySprite(&sprite[k]) &&
-                            clipinsidebox(&sprite[k].pos.vec2, j, 256) == 1)
-                            goto next_sprite;
+                        uint16_t const tag = sector[pSprite->sectnum].lotag & 0x8000u;
+
+                        for (auto SPRITES_OF(STAT_EFFECTOR, i))
+                        {
+                            if (tag == (sector[SECT(i)].lotag & 0x8000u) && SLT(i) == SE_11_SWINGING_DOOR && pSprite->hitag == SHT(i))
+                            {
+                                actor[i].t_data[5] = 2; // delay
+                                actor[i].t_data[2] -= l;
+                                actor[i].t_data[4] -= l;
+                                A_MoveSector(i);
+
+                                actor[i].t_data[3] = -actor[i].t_data[3];
+                                if (actor[i].t_data[4] < 0)
+                                    actor[i].t_data[4] += 512;
+                                else
+                                    actor[i].t_data[4] -= 512;
+                            }
+                        }
+
+                        A_CallSound(pSprite->sectnum, spriteNum);
+
+                        return true;
                     }
-                }
+
+                    return false;
+                };
+
+                int const endWall = pSector->wallptr+pSector->wallnum;
 
                 l = (SP(spriteNum) >> 3) * pData[3];
                 pData[2] += l;
                 pData[4] += l;
-                A_MoveSector(spriteNum);
-                setsprite(spriteNum, &pSprite->pos);
 
-                for (j=pSector->wallptr; j<endWall; j++)
+                A_MoveSector(spriteNum);
+
+                for (auto SPRITES_OF(STAT_ACTOR, spr))
                 {
-                    for (SPRITES_OF(STAT_PLAYER, k))
+                    auto const foundSprite = (uspriteptr_t)&sprite[spr];
+
+                    if (foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
                     {
-                        if (sprite[k].owner >= 0 && clipinsidebox(&sprite[k].pos.vec2, j, pPlayer->clipdist))
+                        auto const clipdist = A_GetClipdist(spr, -1);
+
+                        for (int w = pSector->wallptr; w < endWall; w++)
                         {
-                            pData[5] = 8;  // Delay
-                            pData[2] -= l;
-                            pData[4] -= l;
-                            A_MoveSector(spriteNum);
-                            setsprite(spriteNum, &pSprite->pos);
-                            goto next_sprite;
+                            if (dukeLivesMatter(&foundSprite->pos.vec2, w, clipdist))
+                                break;
                         }
+                    }
+                }
+
+                for (auto TRAVERSE_CONNECT(plr))
+                {
+                    auto const foundPlayer = g_player[plr].ps;
+
+                    for (int w = pSector->wallptr; w < endWall; w++)
+                    {
+                        if (dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
+                            break;
                     }
                 }
 
@@ -6805,8 +6837,6 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     pData[4] = 0;
                     pData[2] &= 0xffffff00;
                     A_MoveSector(spriteNum);
-                    setsprite(spriteNum, &pSprite->pos);
-                    break;
                 }
             }
             break;
@@ -6952,6 +6982,10 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         }
                     }
                 }
+
+                for (int SPRITES_OF_SECT(pSprite->sectnum, p))
+                    if (sprite[p].statnum >= STAT_DEFAULT && sprite[p].statnum <= STAT_ZOMBIEACTOR)
+                        A_GetZLimits(p);
 
                 if (++pData[2] > 256)
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
@@ -8575,6 +8609,24 @@ void G_RefreshLights(void)
 #endif
 }
 
+static void G_RecordOldSpritePos(void)
+{
+    int statNum = 0;
+    do
+    {
+        int spriteNum = headspritestat[statNum++];
+
+        while (spriteNum >= 0)
+        {
+            int const nextSprite = nextspritestat[spriteNum];
+            actor[spriteNum].bpos = sprite[spriteNum].pos;
+
+            spriteNum = nextSprite;
+        }
+    }
+    while (statNum < MAXSTATUS);
+}
+
 static void G_DoEventGame(int const nEventID)
 {
     if (VM_HaveEvent(nEventID))
@@ -8614,6 +8666,8 @@ void G_MoveWorld(void)
     VM_OnEvent(EVENT_PREWORLD);
 
     G_DoEventGame(EVENT_PREGAME);
+
+    G_RecordOldSpritePos();
 
     G_MoveZombieActors();     //ST 2
     G_MoveWeapons();          //ST 4

@@ -564,7 +564,6 @@ MenuItem_p cust_callback_item;
 
 // Prototypes ///////////////////////////////////////////////////////////////////////////////////
 
-static void MNU_ClearDialog(void);
 static SWBOOL MNU_Dialog(void);
 static void MNU_ItemPreProcess(MenuGroup *group);
 static void MNU_SelectItem(MenuGroup *group, short index, SWBOOL draw);
@@ -589,10 +588,9 @@ MNU_Ten(void)
 */
 // CTW REMOVED END
 SWBOOL
-MNU_DoEpisodeSelect(UserCall call, MenuItem *item)
+MNU_DoEpisodeSelect(UserCall UNUSED(call), MenuItem *UNUSED(item))
 {
     short w,h;
-    char TempString[80];
     char *extra_text;
 
     extra_text = EpisodeSubtitles[0];
@@ -606,7 +604,7 @@ MNU_DoEpisodeSelect(UserCall call, MenuItem *item)
 }
 
 SWBOOL
-MNU_DoParentalPassword(UserCall call, MenuItem_p item)
+MNU_DoParentalPassword(UserCall UNUSED(call), MenuItem_p UNUSED(item))
 {
     short w,h;
     signed char MNU_InputString(char *, short);
@@ -1256,7 +1254,7 @@ static SWBOOL MNU_SetAdvancedMouseFunctions(MenuItem_p item)
 
 static MenuItem_p joystick_button_item = NULL;
 
-static SWBOOL MNU_JoystickButtonsInitialise(MenuItem_p mitem)
+static SWBOOL MNU_JoystickButtonsInitialise(MenuItem_p UNUSED(mitem))
 {
     MenuItem_p item;
     MenuItem templayer = { DefLayer(0, JoystickButtonNames[0], &joybuttonsgroup), OPT_XS, OPT_LINE(0), 1, m_defshade, 0, NULL, NULL, MNU_JoystickButtonPostProcess };
@@ -1481,7 +1479,7 @@ static SWBOOL MNU_SetJoystickButtonFunctions(MenuItem_p item)
 
 static MenuItem_p joystick_axis_item = NULL;
 
-static SWBOOL MNU_JoystickAxesInitialise(MenuItem_p mitem)
+static SWBOOL MNU_JoystickAxesInitialise(MenuItem_p UNUSED(mitem))
 {
     if (!CONTROL_JoyPresent)
     {
@@ -1592,7 +1590,7 @@ static SWBOOL MNU_SetJoystickAxisFunctions(MenuItem_p item)
 SWBOOL
 MNU_OrderCustom(UserCall call, MenuItem *item)
 {
-    static signed char on_screen = 0,last_screen = 0;
+    static signed char on_screen = 0;
     UserInput order_input;
     static int limitmove=0;
     UserInput tst_input;
@@ -1611,7 +1609,8 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         4979,
         5113,
 
-        5120 // 5114    // JBF: for my credits
+        5120, // 5114    // JBF: for my credits
+        5120,
     };
     static short SWOrderScreen[] =
     {
@@ -1623,7 +1622,8 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         4979,
         5113,
 
-        5120 // 5114    // JBF: for my credits
+        5120, // 5114    // JBF: for my credits
+        5120,
     };
     short *OrderScreen, OrderScreenSiz;
 
@@ -1753,21 +1753,22 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         on_screen = 0;
 // CTW MODIFICATION END
 
-    int const shade = on_screen == OrderScreenSiz-1 ? 8 : 0;
+    int const shade = on_screen >= OrderScreenSiz-2 ? 8 : 0;
     rotatesprite(0,0,RS_SCALE,0,OrderScreen[on_screen], shade, 0,
                  (ROTATE_SPRITE_CORNER|ROTATE_SPRITE_SCREEN_CLIP|ROTATE_SPRITE_NON_MASK|ROTATE_SPRITE_IGNORE_START_MOST),
                  0, 0, xdim-1, ydim-1);
 
-    if (on_screen == OrderScreenSiz-1)
+    if (on_screen >= OrderScreenSiz-2)
     {
         // Jonathon's credits page hack :-)
 
         static const char *jtitle = "^Port Credits";
-        static const char *jtext[] =
+        static const char *text1[] =
         {
+            "*Technical Director",
+            " Evan \"Hendricks266\" Ramos",
             "*Developers",
             " Richard \"TerminX\" Gobeille",
-            " Evan \"Hendricks266\" Ramos",
             " Alex \"pogokeen\" Dawson",
             "*Retired developers",
             " Pierre-Loup \"Plagman\" Griffais",
@@ -1776,15 +1777,43 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             " Jonathon \"JonoF\" Fowler",
             "*Uses BUILD Engine technology by",
             " Ken \"Awesoken\" Silverman",
+        };
+        static const char *text2[] =
+        {
             "*Additional thanks to",
             " Alexey \"Nuke.YKT\" Skrybykin",
             " Jordon \"Striker\" Moss",
+            " Fox",
+            " NY00123",
+            " Barry \"sirlemonhead\" Duncan",
+            " Gennadii \"termit\" Potapov",
+            " Sergei Shubin",
             " Par \"Parkar\" Karlsson", // "Pär \"Parkar\" Karlsson",
             " Ben \"ProAsm\" Smit",
-            " NY00123",
+            " Charlie Wiederhold",
+            "-",
+            " This program is distributed under the terms of the",
+            " GNU General Public License version 2 as published by the",
+            " Free Software Foundation. See gpl-2.0.txt for details.",
+            " BUILD engine technology available under license. See buildlic.txt.",
             "-",
             " Visit eduke32.com for news and updates"
         };
+
+        const char ** jtext;
+        unsigned jtextsiz;
+
+        if (on_screen == OrderScreenSiz-2)
+        {
+            jtext = text1;
+            jtextsiz = SIZ(text1);
+        }
+        else
+        {
+            jtext = text2;
+            jtextsiz = SIZ(text2);
+        }
+
 #if 0
         static const char *scroller[] =
         {
@@ -1810,7 +1839,7 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
         MNU_DrawString(160-(dimx>>1), ycur, jtitle, 0, 0);
         ycur += dimy + 8;
 
-        for (ji = 0; ji < SIZ(jtext); ji++)
+        for (ji = 0; ji < jtextsiz; ji++)
         {
             switch (jtext[ji][0])
             {
@@ -1885,7 +1914,6 @@ ExitMenus(void)
 SWBOOL
 MNU_StartGame(void)
 {
-    PLAYERp pp = Player + screenpeek;
     int handle = 0;
     int zero = 0;
 
@@ -1938,7 +1966,6 @@ MNU_StartNetGame(void)
     // CTW REMOVED
     //extern int gTenActivated;
     // CTW REMOVED END
-    int pnum;
 
     // always assumed that a demo is playing
 
@@ -2023,7 +2050,6 @@ MNU_EpisodeCustom(void)
 SWBOOL
 MNU_QuitCustom(UserCall call, MenuItem_p item)
 {
-    int select;
     int ret;
     extern SWBOOL DrawScreen;
 
@@ -2068,10 +2094,7 @@ MNU_QuitCustom(UserCall call, MenuItem_p item)
 
     if (KB_KeyPressed(sc_Y) || KB_KeyPressed(sc_Enter) || mnu_input.button0)
     {
-        if (CommPlayers >= 2)
-            MultiPlayQuitFlag = TRUE;
-        else
-            QuitFlag = TRUE;
+        CON_Quit();
 
         ExitMenus();
     }
@@ -2084,7 +2107,6 @@ MNU_QuitCustom(UserCall call, MenuItem_p item)
 SWBOOL
 MNU_QuickLoadCustom(UserCall call, MenuItem_p item)
 {
-    int select;
     extern SWBOOL ReloadPrompt;
     int bak;
     PLAYERp pp = Player + myconnectindex;
@@ -2782,7 +2804,7 @@ SWBOOL
 MNU_GetSaveCustom(void)
 {
     short save_num;
-    extern SWBOOL InMenuLevel, LoadGameOutsideMoveLoop;
+    extern SWBOOL InMenuLevel;
 
     save_num = currentmenu->cursor;
 
@@ -2853,8 +2875,7 @@ MNU_LoadSaveMove(UserCall call, MenuItem_p item)
 {
     short i;
     short game_num;
-    short tile;
-    static short SaveGameEpisode, SaveGameLevel, SaveGameSkill;
+    static short SaveGameLevel, SaveGameSkill;
     SWBOOL GotInput = FALSE;
 
     if (!UsingMenus)
@@ -2949,11 +2970,10 @@ MNU_LoadSaveMove(UserCall call, MenuItem_p item)
 }
 
 SWBOOL
-MNU_LoadSaveDraw(UserCall call, MenuItem_p item)
+MNU_LoadSaveDraw(UserCall UNUSED(call), MenuItem_p UNUSED(item))
 {
     short i;
     short game_num;
-    short tile;
 
     game_num = currentmenu->cursor;
 
@@ -3303,10 +3323,10 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
     short shade = MENU_SHADE_DEFAULT;
     extern char LevelSong[];
     const char *extra_text = NULL;
-    PLAYERp pp = &Player[myconnectindex];
+//    PLAYERp pp = &Player[myconnectindex];
     int button_x,zero=0;
     int handle=0;
-    extern SWBOOL MusicInitialized,FxInitialized;
+    extern SWBOOL FxInitialized;
 
     button_x = OPT_XSIDE;
 
@@ -4147,7 +4167,6 @@ void
 MNU_ItemPostProcess(MenuGroup *group)
 {
     MenuItem *item;
-    int zero = 0;
 
     if (!group->items)
         return;
@@ -4265,7 +4284,6 @@ MNU_DrawItemIcon(MenuItem *item)
     //void BorderRefreshClip(PLAYERp pp, short x, short y, short x2, short y2);
     int x = item->x, y = item->y;
     int scale = MZ;
-    short w,h;
 
     int16_t cursorpic = tilesiz[pic_yinyang].x == 0 && tilesiz[pic_shuriken1].x != 0 ? pic_shuriken1 : pic_yinyang;
 
@@ -4295,9 +4313,6 @@ MNU_DrawItemIcon(MenuItem *item)
 static void
 MNU_DrawItem(MenuItem *item)
 {
-    char *ptr;
-    short px, py;
-
     MNU_ItemPostProcess(currentmenu);  // Put this in so things can be drawn on item select
 
     if (!item->pic)
@@ -4547,14 +4562,12 @@ SetupMenu(void)
 ////////////////////////////////////////////////
 #define MNU_SENSITIVITY 10              // The menu's mouse sensitivity, should be real low
 
-void MNU_DoMenu(CTLType type, PLAYERp pp)
+void MNU_DoMenu(CTLType UNUSED(type))
 {
     SWBOOL resetitem;
-    unsigned char key;
     int zero = 0;
     static int handle2;
     static int limitmove=0;
-    static SWBOOL select_held=FALSE;
 
     resetitem = TRUE;
 
@@ -4694,12 +4707,10 @@ void MNU_DoMenu(CTLType type, PLAYERp pp)
 void
 MNU_CheckForMenus(void)
 {
-    extern SWBOOL GamePaused;
-
     if (UsingMenus)
     {
         //if (MoveSkip2 == 0)
-        MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+        MNU_DoMenu(ct_mainmenu);
     }
     else
     {
@@ -4710,7 +4721,7 @@ MNU_CheckForMenus(void)
             KB_ClearKeysDown();
             // setup sliders/buttons
             MNU_InitMenus();
-            MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+            MNU_DoMenu(ct_mainmenu);
             pMenuClearTextLine(Player + myconnectindex);
             PauseGame();
         }
@@ -4723,7 +4734,7 @@ MNU_CheckForMenusAnyKey(void)
     if (UsingMenus)
     {
         //if (MoveSkip2 == 0)
-        MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+        MNU_DoMenu(ct_mainmenu);
     }
     else
     {
@@ -4732,7 +4743,7 @@ MNU_CheckForMenusAnyKey(void)
             ResetKeys();
             KB_ClearKeysDown();
             MNU_InitMenus();
-            MNU_DoMenu(ct_mainmenu, Player + myconnectindex);
+            MNU_DoMenu(ct_mainmenu);
             pMenuClearTextLine(Player + myconnectindex);
         }
     }
@@ -5139,7 +5150,7 @@ SetFadeAmt(PLAYERp pp, short damage, unsigned char startcolor)
 void
 DoPaletteFlash(PLAYERp pp)
 {
-    int i, palreg, tmpreg1 = 0, tmpreg2 = 0;
+    int palreg, tmpreg1 = 0, tmpreg2 = 0;
     unsigned char *pal_ptr = &ppalette[screenpeek][0];
 
 

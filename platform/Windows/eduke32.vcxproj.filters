@@ -141,7 +141,7 @@
     <ClInclude Include="..\..\source\duke3d\src\sbar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\duke3d\src\screentext.h">
+    <ClInclude Include="..\..\source\duke3d\src\text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\screens.h">
@@ -151,6 +151,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\duke3d\src\inv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\duke3d\src\gamestructures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -248,7 +251,7 @@
     <ClCompile Include="..\..\source\duke3d\src\sbar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\duke3d\src\screentext.cpp">
+    <ClCompile Include="..\..\source\duke3d\src\text.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\screens.cpp">

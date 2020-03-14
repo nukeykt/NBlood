@@ -82,7 +82,6 @@ TrackTowardPlayer(SPRITEp sp, TRACKp t, TRACK_POINTp start_point)
 short
 TrackStartCloserThanEnd(short SpriteNum, TRACKp t, TRACK_POINTp start_point)
 {
-    USERp u = User[SpriteNum];
     SPRITEp sp = User[SpriteNum]->SpriteP;
 
     TRACK_POINTp end_point;
@@ -591,8 +590,6 @@ TrackSetup(void)
     short SpriteNum = 0, NextSprite, ndx;
     TRACK_POINTp tp;
     TRACKp t;
-    SPRITEp nsp;
-    short new_sprite1, new_sprite2;
     TRACK_POINTp New;
     int size;
 
@@ -722,11 +719,9 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
     short sp_num, next_sp_num, startwall, endwall;
     int i, k, j;
     SPRITEp BoundSprite;
-    SWBOOL FoundOutsideLoop = FALSE, FoundSector = FALSE;
+    SWBOOL FoundOutsideLoop = FALSE;
     SWBOOL SectorInBounds;
     SECTORp *sectp;
-    PLAYERp pp;
-    short pnum;
     USERp u = User[sop->sp_child - sprite];
 
     static unsigned char StatList[] =
@@ -778,6 +773,8 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
 #if 0
     // look for players on sector object
+    PLAYERp pp;
+    short pnum;
     TRAVERSE_CONNECT(pnum)
     {
         pp = &Player[pnum];
@@ -1032,9 +1029,8 @@ SetupSectorObject(short sectnum, short tag)
 {
     SPRITEp sp;
     SECTOR_OBJECTp sop;
-    short object_num, ndx = 0, startwall, endwall, SpriteNum, NextSprite;
-    int trash;
-    short j, k;
+    short object_num, SpriteNum, NextSprite;
+    short j;
     short New;
     USERp u;
 
@@ -1470,7 +1466,6 @@ PlaceSectorObjectsOnTracks(void)
         int low_dist = 999999, dist;
         SECTOR_OBJECTp sop = &SectorObject[i];
         TRACK_POINTp tpoint = NULL;
-        short spnum, next_spnum;
 
         if (sop->xmid == INT32_MAX)
             continue;
@@ -1539,7 +1534,7 @@ PlaceSectorObjectsOnTracks(void)
 void
 PlaceActorsOnTracks(void)
 {
-    short i, nexti, j, tag, htag, new_ang;
+    short i, nexti, j, tag;
     SPRITEp sp;
     USERp u;
     TRACK_POINTp tpoint = NULL;
@@ -1553,7 +1548,6 @@ PlaceActorsOnTracks(void)
         u = User[i];
 
         tag = LOW_TAG_SPRITE(i);
-        htag = HIGH_TAG_SPRITE(i);
 
         if (tag < TAG_ACTOR_TRACK_BEGIN || tag > TAG_ACTOR_TRACK_END)
             continue;
@@ -1683,15 +1677,15 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
 void
 MovePoints(SECTOR_OBJECTp sop, short delta_ang, int nx, int ny)
 {
-    int j, k, c;
+    int j, k;
     vec2_t rxy;
-    short startwall, endwall, save_ang, pnum;
+    short startwall, endwall, pnum;
     PLAYERp pp;
     SECTORp *sectp;
     SPRITEp sp;
     WALLp wp;
     USERp u;
-    short i, nexti, rot_ang;
+    short i, rot_ang;
     SWBOOL PlayerMove = TRUE;
 
     if (sop->xmid >= MAXSO)
@@ -1944,7 +1938,6 @@ RefreshPoints(SECTOR_OBJECTp sop, int nx, int ny, SWBOOL dynamic)
     SECTORp *sectp;
     WALLp wp;
     short ang;
-    short new_ang;
     int dx,dy,x,y;
 
     // do scaling
@@ -2054,13 +2047,11 @@ void KillSectorObjectSprites(SECTOR_OBJECTp sop)
 void UpdateSectorObjectSprites(SECTOR_OBJECTp sop)
 {
     SPRITEp sp;
-    USERp u;
     int i;
 
     for (i = 0; sop->sp_num[i] != -1; i++)
     {
         sp = &sprite[sop->sp_num[i]];
-        u = User[sop->sp_num[i]];
 
         setspritez(sop->sp_num[i], (vec3_t *)sp);
     }
@@ -2179,9 +2170,6 @@ MoveZ(SECTOR_OBJECTp sop)
 
     if (sop->bob_amt)
     {
-        SPRITEp sp;
-        USERp u;
-
         sop->bob_sine_ndx = (totalsynctics << sop->bob_speed) & 2047;
         sop->bob_diff = ((sop->bob_amt * (int) sintable[sop->bob_sine_ndx]) >> 14);
 
@@ -2231,7 +2219,6 @@ MoveZ(SECTOR_OBJECTp sop)
 void CallbackSOsink(ANIMp ap, void *data)
 {
     SECTOR_OBJECTp sop;
-    SECTORp *sectp;
     SPRITEp sp;
     USERp u;
     SECT_USERp su;
@@ -2350,14 +2337,9 @@ void CallbackSOsink(ANIMp ap, void *data)
 void
 MoveSectorObjects(SECTOR_OBJECTp sop, short locktics)
 {
-    int j, k, c, nx, ny, nz, rx, ry, dx, dy, dz;
+    int nx, ny;
     short speed;
-    int dist;
-    short startwall, endwall;
     short delta_ang;
-    short pnum;
-    PLAYERp pp;
-    short sp, next_sp;
 
     if (sop->track >= SO_OPERATE_TRACK_START)
     {
@@ -2602,7 +2584,7 @@ void DoTrack(SECTOR_OBJECTp sop, short locktics, int *nx, int *ny)
         {
             // for lowering the whirlpool in level 1
             SECTORp *sectp;
-            short i,ndx;
+            short i;
             SECT_USERp sectu;
 
             for (i = 0, sectp = &sop->sectp[0]; *sectp; sectp++, i++)
@@ -2781,9 +2763,7 @@ void DoTrack(SECTOR_OBJECTp sop, short locktics, int *nx, int *ny)
 void
 OperateSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy)
 {
-    int i, nx, ny;
-    short speed;
-    short delta_ang;
+    int i;
     SECTORp *sectp;
 
     if (Prediction)
@@ -2807,17 +2787,10 @@ OperateSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy)
         }
     }
 
-    nx = 0;
-    ny = 0;
     GlobSpeedSO = 0;
-
-    delta_ang = 0;
 
     //sop->ang_tgt = newang;
     sop->ang_moving = newang;
-
-    // get delta to target angle
-    delta_ang = GetDeltaAngle(sop->ang_tgt, sop->ang);
 
     sop->spin_ang = 0;
     sop->ang = newang;
@@ -2826,7 +2799,7 @@ OperateSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy)
 }
 
 void
-PlaceSectorObject(SECTOR_OBJECTp sop, short newang, int newx, int newy)
+PlaceSectorObject(SECTOR_OBJECTp sop, int newx, int newy)
 {
     RefreshPoints(sop, newx - sop->xmid, newy - sop->ymid, FALSE);
 }
@@ -2878,10 +2851,6 @@ void VehicleSetSmoke(SECTOR_OBJECTp sop, ANIMATORp animator)
 void
 KillSectorObject(SECTOR_OBJECTp sop)
 {
-    int nx, ny, nz;
-    short speed;
-    short delta_ang;
-    SECTORp *sectp;
     int newx = MAXSO;
     int newy = MAXSO;
     short newang = 0;
@@ -2889,14 +2858,7 @@ KillSectorObject(SECTOR_OBJECTp sop)
     if (sop->track < SO_OPERATE_TRACK_START)
         return;
 
-    nx = 0;
-    ny = 0;
-    delta_ang = 0;
-
     sop->ang_tgt = sop->ang_moving = newang;
-
-    // get delta to target angle
-    delta_ang = GetDeltaAngle(sop->ang_tgt, sop->ang);
 
     sop->spin_ang = 0;
     sop->ang = sop->ang_tgt;
@@ -2940,8 +2902,6 @@ void TornadoSpin(SECTOR_OBJECTp sop)
 void
 DoTornadoObject(SECTOR_OBJECTp sop)
 {
-    short delta_ang;
-    SECTORp *sectp;
     int xvect,yvect;
     short cursect;
     // this made them move together more or less - cool!
@@ -2960,7 +2920,7 @@ DoTornadoObject(SECTOR_OBJECTp sop)
     pos.y = sop->ymid;
     pos.z = floor_dist;
 
-    PlaceSectorObject(sop, *ang, MAXSO, MAXSO);
+    PlaceSectorObject(sop, MAXSO, MAXSO);
     ret = clipmove(&pos, &cursect, xvect, yvect, (int)sop->clipdist, Z(0), floor_dist, CLIPMASK_ACTOR);
 
     if (ret)
@@ -2978,10 +2938,8 @@ DoAutoTurretObject(SECTOR_OBJECTp sop)
     short SpriteNum = sop->sp_child - sprite;
     SPRITEp shootp;
     USERp u = User[SpriteNum];
-    short new_ang;
     short delta_ang;
     int diff;
-    int dist;
     short i;
 
     if (sop->max_damage != -9999 && sop->max_damage <= 0)
@@ -3136,7 +3094,6 @@ void
 ActorLeaveTrack(short SpriteNum)
 {
     USERp u = User[SpriteNum];
-    SPRITEp sp = User[SpriteNum]->SpriteP;
 
     if (u->track == -1)
         return;

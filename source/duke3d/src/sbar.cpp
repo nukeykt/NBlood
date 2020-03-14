@@ -330,7 +330,7 @@ void G_DrawTXDigiNumZ(int32_t starttile, int32_t x, int32_t y, int32_t n, int32_
         y <<= 16;
     }
 
-    G_ScreenText(starttile, x, y, z, 0, 0, b, s, pal, cs|2|ROTATESPRITE_FULL16, 0, (4<<16), (8<<16), (1<<16), 0, TEXT_XCENTER|TEXT_DIGITALNUMBER, x1, y1, x2, y2);
+    G_ScreenText(starttile, x, y, z, 0, 0, b, s, pal, cs|2, 0, (4<<16), (8<<16), (1<<16), 0, TEXT_XCENTER|TEXT_DIGITALNUMBER, x1, y1, x2, y2);
 }
 
 static void G_DrawAltDigiNum(int32_t x, int32_t y, int32_t n, char s, int32_t cs)

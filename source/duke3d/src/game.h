@@ -341,8 +341,6 @@ extern int32_t g_quitDeadline;
 extern int32_t g_restorePalette;
 extern int32_t hud_glowingquotes;
 extern int32_t hud_showmapname;
-extern int32_t r_maxfps;
-extern int32_t r_maxfpsoffset;
 extern int32_t tempwallptr;
 extern int32_t ticrandomseed;
 extern int32_t vote_map;
@@ -355,17 +353,6 @@ extern int32_t MAXCACHE1DSIZE;
 
 extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
-
-extern uint64_t g_frameDelay;
-static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
-{
-    uint64_t const perfFreq = timerGetPerformanceFrequency();
-
-    if (maxFPS == -1)
-        return perfFreq / (refreshfreq - ceil(refreshfreq / 60.0));
-
-    return maxFPS ? perfFreq / (maxFPS + offset) : 0;
-}
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -406,7 +393,7 @@ void G_DrawFrags(void);
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t horiz, int32_t smoothratio);
 void G_DrawRooms(int32_t playerNum,int32_t smoothratio);
 void G_DrawTXDigiNumZ(int32_t starttile,int32_t x,int32_t y,int32_t n,int32_t s,int32_t pal,int32_t cs,int32_t x1,int32_t y1,int32_t x2,int32_t y2,int32_t z);
-int G_FPSLimit(void);
+int engineFPSLimit(void);
 void G_GameExit(const char *msg) ATTRIBUTE((noreturn));
 void G_GameQuit(void);
 void G_GetCrosshairColor(void);
@@ -421,10 +408,6 @@ void G_UpdatePlayerFromMenu(void);
 void M32RunScript(const char *s);
 void P_DoQuote(int32_t q,DukePlayer_t *p);
 void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set);
-
-#define NEG_ALPHA_TO_BLEND(alpha, blend, orientation) do { \
-    if (alpha < 0) { blend = -alpha; alpha = 0; orientation |= RS_TRANS1; } \
-} while (0)
 
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?
@@ -606,8 +589,6 @@ void El_SetCON(const char *conluacode);
 
 EXTERN_INLINE_HEADER void G_SetStatusBarScale(int32_t sc);
 
-EXTERN_INLINE_HEADER void SetIfGreater(int32_t *variable, int32_t potentialValue);
-
 #endif
 
 #ifdef __cplusplus
@@ -640,14 +621,6 @@ EXTERN_INLINE void G_SetStatusBarScale(int32_t sc)
 {
     ud.statusbarscale = clamp(sc, 50, 100);
     G_UpdateScreenArea();
-}
-
-// the point of this is to prevent re-running a function or calculation passed to potentialValue
-// without making a new variable under each individual circumstance
-EXTERN_INLINE void SetIfGreater(int32_t *variable, int32_t potentialValue)
-{
-    if (potentialValue > *variable)
-        *variable = potentialValue;
 }
 
 #endif

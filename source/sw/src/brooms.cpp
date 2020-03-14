@@ -38,7 +38,7 @@ extern int qsetmode;
 
 SWBOOL FindCeilingView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum);
 SWBOOL FindFloorView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum);
-short ViewSectorInScene(short cursectnum, short type, short level);
+short ViewSectorInScene(short cursectnum, short level);
 void Message(const char *string, char color);
 
 
@@ -114,7 +114,6 @@ void ToggleFAF(void)
         short match;
         int tx,ty,tz;
         short tsectnum;
-        short i;
         keystatus[KEYSC_4] = FALSE;
 
         tx = pos.x;
@@ -126,7 +125,7 @@ void ToggleFAF(void)
 
         if (sector[cursectnum].ceilingpicnum == FAF_MIRROR_PIC)
         {
-            match = ViewSectorInScene(tsectnum, VIEW_THRU_CEILING, VIEW_LEVEL1);
+            match = ViewSectorInScene(tsectnum, VIEW_LEVEL1);
 
             FAF_DontMoveSectors = TRUE;
             FindCeilingView(match, &tx, &ty, tz, &tsectnum);
@@ -139,7 +138,7 @@ void ToggleFAF(void)
         }
         else if (sector[cursectnum].floorpicnum == FAF_MIRROR_PIC)
         {
-            match = ViewSectorInScene(tsectnum, VIEW_THRU_FLOOR, VIEW_LEVEL2);
+            match = ViewSectorInScene(tsectnum, VIEW_LEVEL2);
 
             FAF_DontMoveSectors = TRUE;
             FindFloorView(match, &tx, &ty, tz, &tsectnum);
@@ -174,11 +173,8 @@ void
 SetupBuildFAF(void)
 {
     short i, nexti;
-    SPRITEp sp,vc_sp,vf_sp,vl_sp;
+    SPRITEp sp;
     short SpriteNum, NextSprite;
-    short vc,nextvc,vf,nextvf,l,nextl;
-    int zdiff;
-
     // move every sprite to the correct list
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_DEFAULT], SpriteNum, NextSprite)
     {
@@ -263,6 +259,10 @@ SetupBuildFAF(void)
 
 #if 0
     // check ceiling and floor heights
+    SPRITEp vc_sp,vf_sp,vl_sp;
+    short vc,nextvc,vf,nextvf,l,nextl;
+    int zdiff;
+
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FAF], vc, nextvc)
     {
         vc_sp = &sprite[vc];
@@ -367,7 +367,7 @@ PicInView(short tile_num, SWBOOL reset)
 void
 GetUpperLowerSector(short match, int x, int y, short *upper, short *lower)
 {
-    int i, j;
+    int i;
     short sectorlist[16];
     short sln = 0;
     short SpriteNum, Next;
@@ -449,7 +449,6 @@ FindCeilingView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum
     int yoff = 0;
     short i, nexti;
     SPRITEp sp = NULL;
-    short top_sprite = -1;
     int pix_diff;
     int newz;
 
@@ -638,13 +637,10 @@ SectorInScene(short tile_num)
 }
 
 short
-ViewSectorInScene(short cursectnum, short type, short level)
+ViewSectorInScene(short cursectnum, short level)
 {
     int i, nexti;
-    int j, nextj;
     SPRITEp sp;
-    SPRITEp sp2;
-    int cz, fz;
     short match;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FAF], i, nexti)
@@ -679,7 +675,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
 
     save.zcount = 0;
 
-    match = ViewSectorInScene(tsectnum, VIEW_THRU_CEILING, VIEW_LEVEL1);
+    match = ViewSectorInScene(tsectnum, VIEW_LEVEL1);
     if (match != -1)
     {
         FindCeilingView(match, &tx, &ty, tz, &tsectnum);
@@ -704,7 +700,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
     }
     else
     {
-        match = ViewSectorInScene(tsectnum, VIEW_THRU_FLOOR, VIEW_LEVEL2);
+        match = ViewSectorInScene(tsectnum, VIEW_LEVEL2);
         if (match != -1)
         {
             FindFloorView(match, &tx, &ty, tz, &tsectnum);

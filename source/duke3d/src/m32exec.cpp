@@ -2453,7 +2453,7 @@ badindex:
                         {
                             int32_t memberid=(code>>2)&63, lightp = (memberid >= LIGHT_X);
                             const char *pp1[4] = {"sprite","sector","wall","tsprite"};
-                            const memberlabel_t *pp2[4] = {SpriteLabels, SectorLabels, WallLabels, SpriteLabels};
+                            memberlabel_t const *pp2[4] = {SpriteLabels, SectorLabels, WallLabels, SpriteLabels};
                             if (lightp)
                             {
                                 pp1[3] = "light";

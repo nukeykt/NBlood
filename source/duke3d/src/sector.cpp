@@ -918,11 +918,15 @@ REDODOOR:
 
             if (j >= 0)
             {
+                for (SPRITES_OF(STAT_EFFECTOR, i))
+                    if (tag == (sector[SECT(i)].lotag & 0x8000u) && SLT(i) == SE_11_SWINGING_DOOR && sprite[j].hitag == SHT(i) && (T5(i)||T6(i)))
+                        return;
+
                 int soundPlayed = 0;
 
                 for (SPRITES_OF(STAT_EFFECTOR, i))
                 {
-                    if (tag == (sector[SECT(i)].lotag & 0x8000u) && SLT(i) == SE_11_SWINGING_DOOR && sprite[j].hitag == SHT(i) && !T5(i))
+                    if (tag == (sector[SECT(i)].lotag & 0x8000u) && SLT(i) == SE_11_SWINGING_DOOR && sprite[j].hitag == SHT(i))
                     {
                         if (sector[SECT(i)].lotag & 0x8000u) sector[SECT(i)].lotag &= 0x7fff;
                         else sector[SECT(i)].lotag |= 0x8000u;
@@ -3056,7 +3060,7 @@ CHECKINV1:
     }
 }
 
-int A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
+int32_t A_CheckHitSprite(int spriteNum, int16_t *hitSprite)
 {
     hitdata_t hitData;
     int32_t   zOffset = 0;

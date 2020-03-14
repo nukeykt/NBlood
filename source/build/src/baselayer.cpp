@@ -34,6 +34,10 @@ uint8_t g_keyAsciiEnd;
 char    g_keyRemapTable[NUMKEYS];
 char    g_keyNameTable[NUMKEYS][24];
 
+int32_t r_maxfps = -1;
+int32_t r_maxfpsoffset;
+uint64_t g_frameDelay;
+
 void (*keypresscallback)(int32_t, int32_t);
 
 void keySetCallback(void (*callback)(int32_t, int32_t)) { keypresscallback = callback; }
@@ -266,29 +270,84 @@ struct glinfo_t glinfo =
     "",         // extensions
 
     1.0,        // max anisotropy
-    0,          // brga texture format
-    0,          // clamp-to-edge support
-    0,          // texture compression
-    0,          // non-power-of-two textures
-    0,          // ARBfp
-    0,          // depth textures
-    0,          // shadow comparison
-    0,          // Frame Buffer Objects
-    0,          // rectangle textures
-    0,          // multitexturing
-    0,          // env_combine
-    0,          // Vertex Buffer Objects
-    0,          // VSync support
-    0,          // Shader Model 4 support
-    0,          // Occlusion Queries
-    0,          // GLSL
-    0,          // Debug Output
-    0,          // Buffer storage
-    0,          // Sync
-    0,          // Depth Clamp
-    0,          // Clip Control
-    0,          // GL info dumped
+    0,          // structure filled
+    0,          // supported extensions
 };
+
+void fill_glinfo(void)
+{
+    glinfo.extensions = (const char *)glGetString(GL_EXTENSIONS);
+    glinfo.renderer   = (const char *)glGetString(GL_RENDERER);
+    glinfo.vendor     = (const char *)glGetString(GL_VENDOR);
+    glinfo.version    = (const char *)glGetString(GL_VERSION);
+
+#ifdef POLYMER
+    if (!Bstrcmp(glinfo.vendor, "ATI Technologies Inc."))
+    {
+        pr_ati_fboworkaround = 1;
+        initprintf("Enabling ATI FBO color attachment workaround.\n");
+
+        if (Bstrstr(glinfo.renderer, "Radeon X1"))
+        {
+            pr_ati_nodepthoffset = 1;
+            initprintf("Enabling ATI R520 polygon offset workaround.\n");
+        }
+# ifdef __APPLE__
+        // See bug description at http://lists.apple.com/archives/mac-opengl/2005/Oct/msg00169.html
+        if (!Bstrncmp(glinfo.renderer, "ATI Radeon 9600", 15))
+        {
+            pr_ati_textureformat_one = 1;
+            initprintf("Enabling ATI Radeon 9600 texture format workaround.\n");
+        }
+# endif
+    }
+#endif  // defined POLYMER
+
+    // process the extensions string and flag stuff we recognize
+    glinfo.depthtex = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_texture");
+    glinfo.fbos     = !!Bstrstr(glinfo.extensions, "GL_EXT_framebuffer_object") || !!Bstrstr(glinfo.extensions, "GL_OES_framebuffer_object");
+    glinfo.shadow   = !!Bstrstr(glinfo.extensions, "GL_ARB_shadow");
+    glinfo.texnpot  = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_non_power_of_two") || !!Bstrstr(glinfo.extensions, "GL_OES_texture_npot");
+
+#if !defined EDUKE32_GLES
+    glinfo.bgra             = !!Bstrstr(glinfo.extensions, "GL_EXT_bgra");
+    glinfo.bufferstorage    = !!Bstrstr(glinfo.extensions, "GL_ARB_buffer_storage");
+    glinfo.clamptoedge      = !!Bstrstr(glinfo.extensions, "GL_EXT_texture_edge_clamp") || !!Bstrstr(glinfo.extensions, "GL_SGIS_texture_edge_clamp");
+    glinfo.debugoutput      = !!Bstrstr(glinfo.extensions, "GL_ARB_debug_output");
+    glinfo.depthclamp       = !!Bstrstr(glinfo.extensions, "GL_ARB_depth_clamp");
+    glinfo.glsl             = !!Bstrstr(glinfo.extensions, "GL_ARB_shader_objects");
+    glinfo.multitex         = !!Bstrstr(glinfo.extensions, "GL_ARB_multitexture");
+    glinfo.occlusionqueries = !!Bstrstr(glinfo.extensions, "GL_ARB_occlusion_query");
+    glinfo.rect             = !!Bstrstr(glinfo.extensions, "GL_NV_texture_rectangle") || !!Bstrstr(glinfo.extensions, "GL_EXT_texture_rectangle");
+    glinfo.sync             = !!Bstrstr(glinfo.extensions, "GL_ARB_sync");
+    glinfo.texcompr         = !!Bstrstr(glinfo.extensions, "GL_ARB_texture_compression") && Bstrcmp(glinfo.vendor, "ATI Technologies Inc.");
+    glinfo.vbos             = !!Bstrstr(glinfo.extensions, "GL_ARB_vertex_buffer_object");
+    glinfo.vsync            = !!Bstrstr(glinfo.extensions, "WGL_EXT_swap_control") || !!Bstrstr(glinfo.extensions, "GLX_EXT_swap_control");
+
+# ifdef DYNAMIC_GLEXT
+    if (glinfo.texcompr && (!glCompressedTexImage2D || !glGetCompressedTexImage))
+    {
+        // lacking the necessary extensions to do this
+        initprintf("Warning: the GL driver lacks necessary functions to use caching\n");
+        glinfo.texcompr = 0;
+    }
+# endif
+#else
+    // don't bother checking because ETC2 et al. are not listed in extensions anyway
+    glinfo.texcompr = 1; // !!Bstrstr(glinfo.extensions, "GL_OES_compressed_ETC1_RGB8_texture");
+#endif
+
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glinfo.maxanisotropy);
+
+    if (!glinfo.filled)
+    {
+        int32_t oldbpp = bpp;
+        bpp = 32;
+        osdcmd_glinfo(NULL);
+        glinfo.filled = 1;
+        bpp = oldbpp;
+    }
+}
 
 // Used to register the game's / editor's osdcmd_vidmode() functions here.
 int32_t (*baselayer_osdcmd_vidmode_func)(osdcmdptr_t parm);
@@ -388,7 +447,7 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
     initprintf("OpenGL information\n %s %s %s\n",
                glinfo.vendor, glinfo.renderer, glinfo.version);
 
-    if (!glinfo.dumped)
+    if (!glinfo.filled)
         return OSDCMD_OK;
 
     char const *s[] = { "supported", "not supported" };
@@ -396,24 +455,21 @@ int osdcmd_glinfo(osdcmdptr_t UNUSED(parm))
 #define SUPPORTED(x) (x ? s[0] : s[1])
 
     initprintf(" BGRA textures:           %s\n", SUPPORTED(glinfo.bgra));
-    initprintf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
     initprintf(" Clamp-to-edge:           %s\n", SUPPORTED(glinfo.clamptoedge));
-    initprintf(" Multi-texturing:         %s\n", SUPPORTED(glinfo.multitex));
     initprintf(" Framebuffer objects:     %s\n", SUPPORTED(glinfo.fbos));
+    initprintf(" Multi-texturing:         %s\n", SUPPORTED(glinfo.multitex));
+    initprintf(" Non-power-of-2 textures: %s\n", SUPPORTED(glinfo.texnpot));
 #ifndef EDUKE32_GLES
-    initprintf(" Texture compression:     %s\n", SUPPORTED(glinfo.texcompr));
-    initprintf(" ARBfp fragment programs: %s\n", SUPPORTED(glinfo.arbfp));
-    initprintf(" Depth textures:          %s\n", SUPPORTED(glinfo.depthtex));
-    initprintf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
-    initprintf(" Rectangle textures:      %s\n", SUPPORTED(glinfo.rect));
-    initprintf(" env_combine:             %s\n", SUPPORTED(glinfo.envcombine));
-    initprintf(" Vertex buffer objects:   %s\n", SUPPORTED(glinfo.vbos));
-    initprintf(" Shader model 4:          %s\n", SUPPORTED(glinfo.sm4));
-    initprintf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));
-    initprintf(" GLSL:                    %s\n", SUPPORTED(glinfo.glsl));
-    initprintf(" Debug output:            %s\n", SUPPORTED(glinfo.debugoutput));
     initprintf(" Buffer storage:          %s\n", SUPPORTED(glinfo.bufferstorage));
+    initprintf(" Debug output:            %s\n", SUPPORTED(glinfo.debugoutput));
+    initprintf(" Depth textures:          %s\n", SUPPORTED(glinfo.depthtex));
+    initprintf(" GLSL:                    %s\n", SUPPORTED(glinfo.glsl));
+    initprintf(" Occlusion queries:       %s\n", SUPPORTED(glinfo.occlusionqueries));
+    initprintf(" Rectangle textures:      %s\n", SUPPORTED(glinfo.rect));
+    initprintf(" Shadow textures:         %s\n", SUPPORTED(glinfo.shadow));
     initprintf(" Sync:                    %s\n", SUPPORTED(glinfo.sync));
+    initprintf(" Texture compression:     %s\n", SUPPORTED(glinfo.texcompr));
+    initprintf(" Vertex buffer objects:   %s\n", SUPPORTED(glinfo.vbos));
 #endif
     initprintf(" Maximum anisotropy:      %.1f%s\n", glinfo.maxanisotropy, glinfo.maxanisotropy > 1.0 ? "" : " (no anisotropic filtering)");
 
@@ -436,7 +492,11 @@ static int osdcmd_cvar_set_baselayer(osdcmdptr_t parm)
         videoSetPalette(GAMMA_CALC,0,0);
         return r;
     }
-
+    else if (!Bstrcasecmp(parm->name, "r_maxfps") || !Bstrcasecmp(parm->name, "r_maxfpsoffset"))
+    {
+        if (r_maxfps > 0) r_maxfps = clamp(r_maxfps, 30, 1000);
+        g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+    }
     return r;
 }
 
@@ -460,6 +520,8 @@ int32_t baselayer_init(void)
         { "r_fpgrouscan","use floating-point numbers for slope rendering",(void *) &r_fpgrouscan, CVAR_BOOL, 0, 1 },
         { "r_novoxmips","turn off/on the use of mipmaps when rendering 8-bit voxels",(void *) &novoxmips, CVAR_BOOL, 0, 1 },
         { "r_voxels","enable/disable automatic sprite->voxel rendering",(void *) &usevoxels, CVAR_BOOL, 0, 1 },
+        { "r_maxfps", "limit the frame rate", (void *)&r_maxfps, CVAR_INT | CVAR_FUNCPTR, -1, 1000 },
+        { "r_maxfpsoffset", "menu-controlled offset for r_maxfps", (void *)&r_maxfpsoffset, CVAR_INT | CVAR_FUNCPTR, -10, 10 },
 #ifdef YAX_ENABLE
         { "r_tror_nomaskpass", "enable/disable additional pass in TROR software rendering", (void *)&r_tror_nomaskpass, CVAR_BOOL, 0, 1 },
 #endif
@@ -525,4 +587,35 @@ void maybe_redirect_outputs(void)
         *stderr = *fp;
     }
 #endif
+}
+
+int engineFPSLimit(void)
+{
+    if (!r_maxfps)
+        return true;
+
+    g_frameDelay = calcFrameDelay(r_maxfps, r_maxfpsoffset);
+
+    uint64_t const  frameJitter = timerGetPerformanceFrequency() / 1000ull;
+    uint64_t        frameTicks;
+    static uint64_t nextFrameTicks;
+    static uint64_t frameDelay;
+
+    if (g_frameDelay != frameDelay)
+    {
+        nextFrameTicks = timerGetPerformanceCounter() + g_frameDelay;
+        frameDelay = g_frameDelay;
+    }
+
+    do { handleevents(); } while (nextFrameTicks - (frameTicks = timerGetPerformanceCounter()) < frameJitter);
+
+    if (nextFrameTicks - frameTicks > g_frameDelay)
+    {
+        while (nextFrameTicks - frameTicks > g_frameDelay)
+            nextFrameTicks += g_frameDelay;
+
+        return true;
+    }
+
+    return false;
 }

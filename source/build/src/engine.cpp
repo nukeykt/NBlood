@@ -208,6 +208,10 @@ int32_t(*getpalookup_replace)(int32_t davis, int32_t dashade) = NULL;
 
 int32_t bloodhack = 0;
 
+#ifndef EDUKE32_STANDALONE
+int32_t enginecompatibilitymode = ENGINE_EDUKE32;
+#endif
+
 // adapted from build.c
 static void getclosestpointonwall_internal(vec2_t const p, int32_t const dawall, vec2_t *const closest)
 {
@@ -7817,7 +7821,7 @@ LISTFN_STATIC int32_t insertspritestat(int16_t statnum)
     // make back-link of the new freelist head point to nil
     if (headspritestat[MAXSTATUS] >= 0)
         prevspritestat[headspritestat[MAXSTATUS]] = -1;
-    else if (enginecompatibility_mode == ENGINECOMPATIBILITY_NONE)
+    else if (enginecompatibilitymode == ENGINE_EDUKE32)
         tailspritefree = -1;
 
     do_insertsprite_at_headofstat(blanktouse, statnum);
@@ -7886,7 +7890,7 @@ int32_t deletesprite(int16_t spritenum)
     sprite[spritenum].sectnum = MAXSECTORS;
 
     // insert at tail of status freelist
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
         do_insertsprite_at_headofstat(spritenum, MAXSTATUS);
     else
     {
@@ -7967,7 +7971,7 @@ int32_t lintersect(const int32_t originX, const int32_t originY, const int32_t o
 
     if (rayCrossLineVec == 0)
     {
-        if (originDiffCrossRay != 0 || enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+        if (originDiffCrossRay != 0 || enginecompatibilitymode != ENGINE_EDUKE32)
         {
             // line segments are parallel
             return 0;
@@ -8081,7 +8085,7 @@ int32_t rintersect(int32_t x1, int32_t y1, int32_t z1,
 {
     //p1 towards p2 is a ray
 
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode != ENGINE_EDUKE32)
         return rintersect_old(x1,y1,z1,vx,vy,vz,x3,y3,x4,y4,intx,inty,intz);
 
     int64_t const x34=x3-x4, y34=y3-y4;
@@ -8627,7 +8631,7 @@ int32_t renderDrawRoomsQ16(int32_t daposx, int32_t daposy, int32_t daposz,
         polymer_glinit();
         polymer_drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum);
         glDisable(GL_CULL_FACE);
-        gloy1 = 0;
+        polymost2d = 0;
         return 0;
     }
 # endif
@@ -10894,7 +10898,7 @@ void vox_undefine(int32_t const tile)
 //
 // See http://fabiensanglard.net/duke3d/build_engine_internals.php,
 // "Inside details" for the idea behind the algorithm.
-int32_t inside_ps(int32_t x, int32_t y, int16_t sectnum)
+static int32_t inside_19950829(int32_t x, int32_t y, int16_t sectnum)
 {
     if (sectnum >= 0 && sectnum < numsectors)
     {
@@ -10920,7 +10924,8 @@ int32_t inside_ps(int32_t x, int32_t y, int16_t sectnum)
 
     return -1;
 }
-int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
+
+static int32_t inside_compat(int32_t x, int32_t y, int16_t sectnum)
 {
     if (sectnum >= 0 && sectnum < numsectors)
     {
@@ -10957,15 +10962,9 @@ int32_t inside_old(int32_t x, int32_t y, int16_t sectnum)
 
 int32_t inside(int32_t x, int32_t y, int16_t sectnum)
 {
-    switch (enginecompatibility_mode)
+    switch (enginecompatibilitymode)
     {
-    case ENGINECOMPATIBILITY_NONE:
-        break;
-    case ENGINECOMPATIBILITY_19950829:
-        return inside_ps(x, y, sectnum);
-    default:
-        return inside_old(x, y, sectnum);
-    }
+    case ENGINE_EDUKE32:
     if ((unsigned)sectnum < (unsigned)numsectors)
     {
         uint32_t cnt1 = 0, cnt2 = 0;
@@ -11017,8 +11016,12 @@ int32_t inside(int32_t x, int32_t y, int16_t sectnum)
 
         return (cnt1|cnt2)>>31;
     }
-
     return -1;
+    case ENGINE_19950829:
+        return inside_19950829(x, y, sectnum);
+    default:
+        return inside_compat(x, y, sectnum);
+    }
 }
 
 int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
@@ -11047,7 +11050,7 @@ int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
 //
 int32_t ksqrt(uint32_t num)
 {
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
+    if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(num);
     return nsqrtasm(num);
 }
@@ -11164,7 +11167,7 @@ int32_t nextsectorneighborz(int16_t sectnum, int32_t refz, int16_t topbottom, in
 //
 // cansee
 //
-int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t xe, int32_t ye, int32_t ze, int16_t sectnume)
+int32_t cansee_19950829(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t xe, int32_t ye, int32_t ze, int16_t sectnume)
 {
     sectortype *sec, *nsec;
     walltype *wal, *wal2;
@@ -11204,8 +11207,8 @@ int32_t cansee_old(int32_t xs, int32_t ys, int32_t zs, int16_t sectnums, int32_t
 
 int32_t cansee(int32_t x1, int32_t y1, int32_t z1, int16_t sect1, int32_t x2, int32_t y2, int32_t z2, int16_t sect2)
 {
-    if (enginecompatibility_mode == ENGINECOMPATIBILITY_19950829)
-        return cansee_old(x1, y1, z1, sect1, x2, y2, z2, sect2);
+    if (enginecompatibilitymode == ENGINE_19950829)
+        return cansee_19950829(x1, y1, z1, sect1, x2, y2, z2, sect2);
     int32_t dacnt, danum;
     const int32_t x21 = x2-x1, y21 = y2-y1, z21 = z2-z1;
 
@@ -11753,7 +11756,14 @@ int findwallbetweensectors(int sect1, int sect2)
 //
 void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
 {
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode == ENGINE_EDUKE32)
+    {
+        int16_t sect = *sectnum;
+        updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+        if (sect != -1)
+            SET_AND_RETURN(*sectnum, sect);
+    }
+    else
     {
         if (inside_p(x, y, *sectnum))
             return;
@@ -11772,13 +11782,6 @@ void updatesector(int32_t const x, int32_t const y, int16_t * const sectnum)
             }
             while (--wallsleft);
         }
-    }
-    else
-    {
-        int16_t sect = *sectnum;
-        updatesectorneighbor(x, y, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-        if (sect != -1)
-            SET_AND_RETURN(*sectnum, sect);
     }
 
     // we need to support passing in a sectnum of -1, unfortunately
@@ -11823,7 +11826,14 @@ void updatesectorexclude(int32_t const x, int32_t const y, int16_t * const sectn
 
 void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * const sectnum)
 {
-    if (enginecompatibility_mode != ENGINECOMPATIBILITY_NONE)
+    if (enginecompatibilitymode == ENGINE_EDUKE32)
+    {
+        int16_t sect = *sectnum;
+        updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
+        if (sect != -1)
+            SET_AND_RETURN(*sectnum, sect);
+    }
+    else
     {
         if ((uint32_t)(*sectnum) < 2*MAXSECTORS)
         {
@@ -11871,13 +11881,6 @@ void updatesectorz(int32_t const x, int32_t const y, int32_t const z, int16_t * 
             }
             while (--wallsleft);
         }
-    }
-    else
-    {
-        int16_t sect = *sectnum;
-        updatesectorneighborz(x, y, z, &sect, INITIALUPDATESECTORDIST, MAXUPDATESECTORDIST);
-        if (sect != -1)
-            SET_AND_RETURN(*sectnum, sect);
     }
 
     // we need to support passing in a sectnum of -1, unfortunately
@@ -12333,7 +12336,7 @@ void videoClearScreen(int32_t dacol)
     {
         palette_t const p = paletteGetColor(dacol);
 
-        glViewport(0,0,xdim,ydim); glox1 = -1;
+        glViewport(0,0,xdim,ydim);
         glClearColor((float)p.r * (1.f/255.f),
                       (float)p.g * (1.f/255.f),
                       (float)p.b * (1.f/255.f),
@@ -12610,7 +12613,7 @@ int32_t getceilzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     if (i == 0) return sec->ceilingz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    int const shift = (enginecompatibilitymode == ENGINE_EDUKE32);
     return sec->ceilingz + (scale(sec->ceilingheinum,j>>shift,i)<<shift);
 }
 
@@ -12629,7 +12632,7 @@ int32_t getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day)
     if (i == 0) return sec->floorz;
 
     int const j = dmulscale3(d.x, day-w.y, -d.y, dax-w.x);
-    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    int const shift = (enginecompatibilitymode == ENGINE_EDUKE32);
     return sec->floorz + (scale(sec->floorheinum,j>>shift,i)<<shift);
 }
 
@@ -12649,7 +12652,7 @@ void getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day, int32_t *ceilz,
     if (i == 0) return;
 
     int const j = dmulscale3(d.x,day-wal->y, -d.y,dax-wal->x);
-    int const shift = enginecompatibility_mode != ENGINECOMPATIBILITY_NONE ? 0 : 1;
+    int const shift = (enginecompatibilitymode == ENGINE_EDUKE32);
     if (sec->ceilingstat&2)
         *ceilz += scale(sec->ceilingheinum,j>>shift,i)<<shift;
     if (sec->floorstat&2)

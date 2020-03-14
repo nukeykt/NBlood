@@ -29,6 +29,7 @@ static int win_silentfocuschange;
 static HANDLE  g_singleInstanceSemaphore = nullptr;
 static int32_t win_togglecomposition;
 static int32_t win_systemtimermode;
+static int32_t win_performancemode;
 
 static OSVERSIONINFOEX osv;
 static FARPROC ntdll_wine_get_version;
@@ -36,15 +37,24 @@ static char const *enUSLayoutString = "00000409";
 
 DWM_TIMING_INFO timingInfo;
 
-void windowsSetupTimer(int ntDllVoodoo)
+static HMODULE hPOWRPROF;
+static GUID *systemPowerSchemeGUID;
+
+typedef DWORD(WINAPI *PFNPOWERGETACTIVESCHEME)(HKEY, GUID **);
+typedef DWORD(WINAPI *PFNPOWERSETACTIVESCHEME)(HKEY, CONST GUID *);
+
+static PFNPOWERGETACTIVESCHEME powrprof_PowerGetActiveScheme;
+static PFNPOWERSETACTIVESCHEME powrprof_PowerSetActiveScheme;
+
+void windowsSetupTimer(int const useNtTimer)
 {
+    if (ntdll_wine_get_version)
+        return;
+
     typedef HRESULT(NTAPI* PFNSETTIMERRESOLUTION)(ULONG, BOOLEAN, PULONG);
     typedef HRESULT(NTAPI* PFNQUERYTIMERRESOLUTION)(PULONG, PULONG, PULONG);
 
     TIMECAPS timeCaps;
-
-    if (ntdll_wine_get_version)
-        return;
 
     if (timeGetDevCaps(&timeCaps, sizeof(TIMECAPS)) == MMSYSERR_NOERROR)
     {
@@ -53,80 +63,75 @@ void windowsSetupTimer(int ntDllVoodoo)
 #else
         static constexpr int const onBattery = 0;
 #endif
-        static int   setPeriod;
-        static ULONG setTimerNT;
-        HMODULE      hNTDLL = GetModuleHandle("ntdll.dll");
+        static int     timePeriod;
+        static ULONG   ntTimerRes;
+        static HMODULE hNTDLL = GetModuleHandle("ntdll.dll");
 
         static PFNQUERYTIMERRESOLUTION ntdll_NtQueryTimerResolution;
-        static PFNSETTIMERRESOLUTION ntdll_NtSetTimerResolution;
+        static PFNSETTIMERRESOLUTION   ntdll_NtSetTimerResolution;
 
-        if (ntDllVoodoo)
+        if (useNtTimer)
         {
             if (!onBattery)
             {
-                if (hNTDLL != nullptr)
+                ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
+                ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
+
+                if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
                 {
-                    ntdll_NtQueryTimerResolution = (PFNQUERYTIMERRESOLUTION) (void(*))GetProcAddress(hNTDLL, "NtQueryTimerResolution");
-                    ntdll_NtSetTimerResolution   = (PFNSETTIMERRESOLUTION)   (void(*))GetProcAddress(hNTDLL, "NtSetTimerResolution");
-
-                    if (ntdll_NtQueryTimerResolution == nullptr || ntdll_NtSetTimerResolution == nullptr)
-                    {
-                        OSD_Printf("ERROR: unable to locate NtQueryTimerResolution or NtSetTimerResolution symbols in ntdll.dll!\n");
-                        goto failsafe;
-                    }
-
-                    ULONG minRes, maxRes, actualRes;
-
-                    ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
-
-                    if (setTimerNT != 0)
-                    {
-                        if (setTimerNT == actualRes)
-                            return;
-
-                        ntdll_NtSetTimerResolution(actualRes, FALSE, &actualRes);
-                    }
-
-                    ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes);
-
-                    setTimerNT = actualRes;
-                    setPeriod  = 0;
-
-                    if (!win_silentfocuschange)
-                        OSD_Printf("Low-latency system timer enabled: set %.1fms timer resolution\n", actualRes / 10000.0);
-
-                    return;
+                    OSD_Printf("ERROR: unable to locate NtQueryTimerResolution or NtSetTimerResolution symbols in ntdll.dll!\n");
+                    goto failsafe;
                 }
-                else
-                    OSD_Printf("ERROR: couldn't load ntdll.dll!\n");
+
+                ULONG minRes, maxRes, actualRes;
+
+                ntdll_NtQueryTimerResolution(&minRes, &maxRes, &actualRes);
+
+                if (ntTimerRes != 0)
+                {
+                    if (ntTimerRes == actualRes)
+                        return;
+
+                    ntdll_NtSetTimerResolution(actualRes, FALSE, &actualRes);
+                }
+
+                ntdll_NtSetTimerResolution(maxRes, TRUE, &actualRes);
+
+                ntTimerRes = actualRes;
+                timePeriod = 0;
+
+                if (!win_silentfocuschange)
+                    OSD_Printf("Initialized %.1fms system timer\n", actualRes / 10000.0);
+
+                return;
             }
             else if (!win_silentfocuschange)
                 OSD_Printf("Low-latency timer mode not supported on battery power!\n");
         }
-        else if (setTimerNT != 0)
+        else if (ntTimerRes != 0)
         {
-            ntdll_NtSetTimerResolution(setTimerNT, FALSE, &setTimerNT);
-            setTimerNT = 0;
+            ntdll_NtSetTimerResolution(ntTimerRes, FALSE, &ntTimerRes);
+            ntTimerRes = 0;
         }
 
 failsafe:
-        int const requestedPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
+        int const newPeriod = min(max(timeCaps.wPeriodMin, 1u << onBattery), timeCaps.wPeriodMax);
             
-        if (setPeriod != 0)
+        if (timePeriod != 0)
         {
-            if (setPeriod == requestedPeriod)
+            if (timePeriod == newPeriod)
                 return;
 
-            timeEndPeriod(requestedPeriod);
+            timeEndPeriod(timePeriod);
         }
 
-        timeBeginPeriod(requestedPeriod);
+        timeBeginPeriod(newPeriod);
 
-        setPeriod  = requestedPeriod;
-        setTimerNT = 0;
+        timePeriod = newPeriod;
+        ntTimerRes = 0;
 
         if (!win_silentfocuschange)
-            OSD_Printf("Initialized %ums system timer\n", requestedPeriod);
+            OSD_Printf("Initialized %ums system timer\n", newPeriod);
 
         return;
     }
@@ -298,6 +303,13 @@ void windowsPlatformInit(void)
           "   0: HIGH when game has focus, NORMAL when interacting with other programs\n"
           "   1: NORMAL when game has focus, IDLE when interacting with other programs",
           (void *)&win_priorityclass, CVAR_INT, -1, 1 },
+
+        { "win_performancemode",
+          "Windows performance mode:\n"
+          "   0: do not alter performance mode\n"
+          "   1: use HIGH PERFORMANCE power plan when game has focus",
+          (void *)&win_performancemode, CVAR_BOOL, 0, 1 },
+
     };
 
     static osdcvardata_t win_timer_cvar = { "win_systemtimermode",
@@ -318,6 +330,20 @@ void windowsPlatformInit(void)
 
     windowsPrintVersion();
     windowsSetupTimer(0);
+
+    if (osv.dwMajorVersion >= 6)
+    {
+        if (!hPOWRPROF && (hPOWRPROF = GetModuleHandle("powrprof.dll")))
+        {
+            powrprof_PowerGetActiveScheme = (PFNPOWERGETACTIVESCHEME)(void(*))GetProcAddress(hPOWRPROF, "PowerGetActiveScheme");
+            powrprof_PowerSetActiveScheme = (PFNPOWERSETACTIVESCHEME)(void(*))GetProcAddress(hPOWRPROF, "PowerSetActiveScheme");
+
+            if (powrprof_PowerGetActiveScheme == nullptr || powrprof_PowerSetActiveScheme == nullptr)
+                OSD_Printf("ERROR: unable to locate PowerGetActiveScheme or PowerSetActiveScheme symbols in powrprof.dll!\n");
+            else if (!systemPowerSchemeGUID)
+                powrprof_PowerGetActiveScheme(NULL, &systemPowerSchemeGUID);
+        }
+    }
 }
 
 typedef UINT D3DKMT_HANDLE;
@@ -476,6 +502,12 @@ void windowsPlatformCleanup(void)
         CloseHandle(g_singleInstanceSemaphore);
 
     windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName());
+
+    if (systemPowerSchemeGUID)
+    {
+        powrprof_PowerSetActiveScheme(NULL, systemPowerSchemeGUID);
+        LocalFree(systemPowerSchemeGUID);
+    }
 }
 
 
@@ -591,6 +623,9 @@ void windowsHandleFocusChange(int const appactive)
 
         windowsSetupTimer(win_systemtimermode);
         windowsSetKeyboardLayout(enUSLayoutString, true);
+
+        if (win_performancemode && systemPowerSchemeGUID)
+            powrprof_PowerSetActiveScheme(NULL, &GUID_MIN_POWER_SAVINGS);
     }
     else
     {
@@ -599,6 +634,9 @@ void windowsHandleFocusChange(int const appactive)
 
         windowsSetupTimer(0);
         windowsSetKeyboardLayout(windowsGetSystemKeyboardLayoutName(), true);
+
+        if (systemPowerSchemeGUID)
+            powrprof_PowerSetActiveScheme(NULL, systemPowerSchemeGUID);
     }
 
     win_silentfocuschange = false;

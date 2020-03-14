@@ -753,7 +753,6 @@ SetupSerp(short SpriteNum)
 
 int NullSerp(short SpriteNum)
 {
-    SPRITEp sp = &sprite[SpriteNum];
     USERp u = User[SpriteNum];
 
     if (TEST(u->Flags,SPR_SLIDING))
@@ -810,7 +809,6 @@ int DoSerpMove(short SpriteNum)
 int DoDeathSpecial(short SpriteNum)
 {
     SPRITEp sp = &sprite[SpriteNum];
-    USERp u = User[SpriteNum];
     static SWBOOL alreadydid = FALSE;
 
     DoMatchEverything(NULL, sp->lotag, ON);

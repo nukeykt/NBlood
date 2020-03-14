@@ -63,7 +63,7 @@ void initsynccrc(void)
 uint8_t
 PlayerSync(void)
 {
-    short i, j;
+    short i;
     unsigned short crc = 0;
     PLAYERp pp;
 
@@ -82,7 +82,7 @@ PlayerSync(void)
 uint8_t
 PlayerSync2(void)
 {
-    short i, j;
+    short i;
     unsigned short crc = 0;
     PLAYERp pp;
 
@@ -128,7 +128,6 @@ EnemySync(void)
     unsigned short crc = 0;
     short j, nextj;
     SPRITEp spr;
-    extern char DemoTmpName[];
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_ENEMY], j, nextj)
     {
@@ -140,6 +139,7 @@ EnemySync(void)
     }
 
 #if 0
+    extern char DemoTmpName[];
     //DSPRINTF(ds, "Demo Tmp Name %s", DemoTmpName);
     MONO_PRINT(ds);
 
@@ -312,7 +312,6 @@ getsyncstat(void)
     PLAYERp pp = Player + myconnectindex;
     unsigned int val;
     static unsigned int count;
-    extern int syncvaltail, syncvaltottail;
 
     if (!CommEnabled)
         return;
@@ -341,7 +340,7 @@ getsyncstat(void)
 void
 SyncStatMessage(void)
 {
-    int i, j, count = 0;
+    int i, j;
     static unsigned int MoveCount = 0;
     extern unsigned int MoveThingsCount;
 
@@ -422,7 +421,7 @@ void
 GetSyncInfoFromPacket(uint8_t *packbuf, int packbufleng, int *j, int otherconnectindex)
 {
     int sb, i;
-    extern int syncvaltail, syncvaltottail;
+    extern int syncvaltottail;
     PLAYERp ppo = &Player[otherconnectindex];
     SWBOOL found = FALSE;
 

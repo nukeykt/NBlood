@@ -135,8 +135,9 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -171,13 +172,15 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\duke3d\src\actors.h" />
     <ClInclude Include="..\..\source\duke3d\src\android.h" />
+    <ClInclude Include="..\..\source\duke3d\src\gamestructures.h" />
     <ClInclude Include="..\..\source\duke3d\src\in_android.h" />
     <ClInclude Include="..\..\source\duke3d\src\anim.h" />
     <ClInclude Include="..\..\source\duke3d\src\cheats.h" />
@@ -199,8 +202,8 @@
     <ClInclude Include="..\..\source\duke3d\src\savegame.h" />
     <ClInclude Include="..\..\source\duke3d\src\sbar.h" />
     <ClInclude Include="..\..\source\duke3d\src\screens.h" />
-    <ClInclude Include="..\..\source\duke3d\src\screentext.h" />
     <ClInclude Include="..\..\source\duke3d\src\sector.h" />
+    <ClInclude Include="..\..\source\duke3d\src\text.h" />
     <ClInclude Include="..\..\source\duke3d\src\_functio.h" />
     <ClInclude Include="..\..\source\duke3d\src\_midi.h" />
     <ClInclude Include="..\..\source\duke3d\src\_rts.h" />
@@ -236,10 +239,10 @@
     <ClCompile Include="..\..\source\duke3d\src\gamedef.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\gameexec.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\gamestructures.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\gamevars.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\global.cpp" />
@@ -257,7 +260,6 @@
     <ClCompile Include="..\..\source\duke3d\src\savegame.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sbar.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\screens.cpp" />
-    <ClCompile Include="..\..\source\duke3d\src\screentext.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sector.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\sounds.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\soundsdyn.cpp" />
@@ -268,6 +270,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\source\duke3d\src\startwin.game.cpp" />
+    <ClCompile Include="..\..\source\duke3d\src\text.cpp" />
     <ClCompile Include="..\..\source\duke3d\src\winbits.cpp" />
   </ItemGroup>
   <ItemGroup>

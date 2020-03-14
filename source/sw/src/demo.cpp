@@ -386,7 +386,6 @@ DemoPlayBack(void)
     static int buf_ndx;
     PLAYERp pp;
     ControlInfo info;
-    int Xdim, Ydim, ScreenSize;
 
     if (SW_SHAREWARE)
     {

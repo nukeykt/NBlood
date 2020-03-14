@@ -331,8 +331,6 @@ ToggleSprites()
 void
 DoAutoSize(tspriteptr_t tspr)
 {
-    short i;
-
     if (!bAutoSize)
         return;
 
@@ -483,7 +481,7 @@ short rotang = 0;
 void
 ExtAnalyzeSprites(int32_t ourx, int32_t oury, int32_t ourz, int32_t oura, int32_t smoothr)
 {
-    int i, currsprite;
+    int i;
     tspriteptr_t tspr;
 
     UNREFERENCED_PARAMETER(ourx);
@@ -729,8 +727,6 @@ ExtInit(void)
 #endif
 
 
-    int i, fil;
-
     // Store user log in time
     //LogUserTime(TRUE);              // Send true because user is logging
     // in.
@@ -740,6 +736,8 @@ ExtInit(void)
     SW_ExtInit();
 
     /*
+        int fil;
+
         if ((fil = open("setup.dat", O_BINARY | O_RDWR, S_IREAD)) != -1)
             {
             read(fil, &option[0], NUMOPTIONS);
@@ -2269,11 +2267,8 @@ ExtCheckKeys(void)
 }
 
 void
-ExtLoadMap(const char *mapname)
+ExtLoadMap(const char *UNUSED(mapname))
 {
-    SPRITEp sp;
-    int i;
-
     BuildStagTable();
 
     SetSpriteExtra();
@@ -2305,9 +2300,8 @@ ExtLoadMap(const char *mapname)
 }
 
 void
-ExtSaveMap(const char *mapname)
+ExtSaveMap(const char *UNUSED(mapname))
 {
-    SPRITEp sp;
     int i;
 
     SetSpriteExtra();
@@ -2853,7 +2847,7 @@ DrawClipBox(short spritenum)
 }
 
 void
-ExtShowSectorData(short sectnum)        // F5
+ExtShowSectorData(int16_t UNUSED(sectnum))        // F5
 {
     int i, x, y, x2;
 
@@ -3026,9 +3020,8 @@ ExtShowSpriteData(short spritenum)      // F6
 }
 
 void
-ExtEditSectorData(short sectnum)        // F7
+ExtEditSectorData(int16_t UNUSED(sectnum))        // F7
 {
-    short key_num;
     SPRITEp sp;
 
     if (in3dmode())
@@ -3055,7 +3048,7 @@ ExtEditSectorData(short sectnum)        // F7
 }
 
 void
-ExtEditWallData(short wallnum)          // F8
+ExtEditWallData(int16_t UNUSED(wallnum))          // F8
 {
 //    short nickdata;
 
@@ -3214,7 +3207,6 @@ DISPLAY:
 void
 PlaxSetShade(void)
 {
-    short data;
     short shade;
     int i, count = 0;
 
@@ -3247,7 +3239,6 @@ PlaxSetShade(void)
 void
 PlaxAdjustShade(void)
 {
-    short data;
     short shade;
     int i, count = 0;
 
@@ -3285,7 +3276,6 @@ PlaxAdjustShade(void)
 void
 AdjustShade(void)
 {
-    short data;
     short shade;
     int i, count;
     short SpriteNum, NextSprite;
@@ -3376,7 +3366,6 @@ SetClipdist2D(void)
 {
     short dist;
     int i;
-    short num;
 
     if (in3dmode())
         return;
@@ -3391,7 +3380,7 @@ SetClipdist2D(void)
     {
         if (TEST(highlight[i], SPRITE_FLAG))
         {
-            num = RESET(highlight[i], SPRITE_FLAG);
+            RESET(highlight[i], SPRITE_FLAG);
             sprite[highlight[i]].clipdist = dist;
         }
     }
@@ -3404,7 +3393,6 @@ SetClipdist2D(void)
 void
 AdjustVisibility(void)
 {
-    short data;
     short vis;
     int i, count = 0;
 
@@ -3424,7 +3412,7 @@ AdjustVisibility(void)
 
     if (highlightsectorcnt > -1)
     {
-        short i, j;
+        short i;
 
         for (i = 0; i < highlightsectorcnt; i++)
         {
@@ -3456,7 +3444,7 @@ AdjustVisibility(void)
 void
 FindSprite(short picnum, short findspritenum)
 {
-    int i, count;
+    int i;
     short SpriteNum, NextSprite;
     SPRITEp sp;
 
@@ -3528,10 +3516,9 @@ FindSprite(short picnum, short findspritenum)
 void
 FindNextSprite(short picnum)
 {
-    int i, count;
+    int i;
     short SpriteNum, NextSprite;
     SPRITEp sp;
-    short animlen;
 
     SWBOOL bFoundPicNum, bFoundHiTag, bFoundLowTag, bFoundIt;
 
@@ -3614,16 +3601,14 @@ ShowNextTag(void)
 void
 FindNextTag(void)
 {
-    int i, count, j;
+    int i;
     short SpriteNum, NextSprite;
-    short siNextFind;                   // Next tag that SHOULD be found
     SPRITEp sp;
 
     if (in3dmode())
         return;
 
     siNextTag = siNextEndTag = 0;       // Reset tags for new search
-    siNextFind = 0;
 
     // go to the first one
     for (i = 0; i < numsectors; i++)
@@ -3665,7 +3650,7 @@ ShadeMenu(void)                         // F8
 
     ResetKeys();
 
-    while ((key = BKeyPressed()) == NULL) ;
+    while ((key = BKeyPressed()) == NULL) handleevents();
 
     if (key == (uint8_t*)&KEY_PRESSED(KEYSC_1))
     {

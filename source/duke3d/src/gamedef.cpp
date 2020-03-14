@@ -28,10 +28,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crc32.h"
 #include "duke3d.h"
 #include "gameexec.h"
+#include "gamestructures.h"
+#include "kplib.h"
 #include "namesdyn.h"
 #include "osd.h"
 #include "savegame.h"
-
 #include "vfs.h"
 
 #define LINE_NUMBER (g_lineNumber << 12)
@@ -828,14 +829,31 @@ const tokenmap_t iter_tokens [] =
     { "walofsec",         ITER_WALLSOFSECTOR },
 };
 
-char const * VM_GetKeywordForID(int32_t id)
+// some keywords generate different opcodes depending on the context the keyword is used in
+// keywords_for_private_opcodes[] resolves those opcodes to the publicly facing keyword that can generate them
+static const tokenmap_t keywords_for_private_opcodes[] =
 {
-    // could be better but this is only called for diagnostics, ayy lmao
+    { "getactor", CON_GETSPRITEEXT },
+    { "getactor", CON_GETACTORSTRUCT },
+    { "getactor", CON_GETSPRITESTRUCT },
+
+    { "setactor", CON_SETSPRITEEXT },
+    { "setactor", CON_SETACTORSTRUCT },
+    { "setactor", CON_SETSPRITESTRUCT },
+};
+
+char const *VM_GetKeywordForID(int32_t id)
+{
+    // could be better, but this is used strictly for diagnostic warning and error messages
     for (tokenmap_t const & keyword : vm_keywords)
         if (keyword.val == id)
             return keyword.token;
 
-    return "<unknown>";
+    for (tokenmap_t const & keyword : keywords_for_private_opcodes)
+        if (keyword.val == id)
+            return keyword.token;
+
+    return "<unknown instruction>";
 }
 #endif
 
@@ -1168,7 +1186,7 @@ static inline bool C_IsLabelChar(const char c, int32_t const i)
     return (isalnum(c) || c == '_' || c == '*' || c == '?' || (i > 0 && (c == '+' || c == '-')));
 }
 
-static inline int32_t C_GetLabelNameID(const memberlabel_t *pLabel, hashtable_t const * const table, const char *psz)
+static inline int32_t C_GetLabelNameID(memberlabel_t const *pLabel, hashtable_t const * const table, const char *psz)
 {
     // find the label psz in the table pLabel.
     // returns the ID for the label, or -1
@@ -1956,9 +1974,18 @@ static void C_Include(const char *confile)
 #ifdef _WIN32
 static void check_filename_case(const char *fn)
 {
-    buildvfs_kfd fp;
-    if ((fp = kopen4loadfrommod(fn, g_loadFromGroupOnly)) != buildvfs_kfd_invalid)
-        kclose(fp);
+        static char buf[BMAX_PATH];
+
+        // .zip isn't case sensitive, and calling kopen4load on files in .zips is slow
+        Bstrcpy(buf, fn);
+        kzfindfilestart(buf);
+
+        if (!kzfindfile(buf))
+        {
+            buildvfs_kfd fp;
+            if ((fp = kopen4loadfrommod(fn, g_loadFromGroupOnly)) != buildvfs_kfd_invalid)
+                kclose(fp);
+        }
 }
 #else
 static void check_filename_case(const char *fn) { UNREFERENCED_PARAMETER(fn); }
@@ -3512,11 +3539,11 @@ DO_DEFSTATE:
                 if (label.offset != -1 && (label.flags & (LABEL_WRITEFUNC|LABEL_HASPARM2)) == 0)
                 {
                     if (labelNum >= ACTOR_SPRITEEXT_BEGIN)
-                        *ins = CON_SETSPRITEEXT;
+                        *ins = CON_SETSPRITEEXT | LINE_NUMBER;
                     else if (labelNum >= ACTOR_STRUCT_BEGIN)
-                        *ins = CON_SETACTORSTRUCT;
+                        *ins = CON_SETACTORSTRUCT | LINE_NUMBER;
                     else
-                        *ins = CON_SETSPRITESTRUCT;
+                        *ins = CON_SETSPRITESTRUCT | LINE_NUMBER;
                 }
 
                 scriptWriteValue(label.lId);
@@ -3543,11 +3570,11 @@ DO_DEFSTATE:
                 if (label.offset != -1 && (label.flags & (LABEL_READFUNC|LABEL_HASPARM2)) == 0)
                 {
                     if (labelNum >= ACTOR_SPRITEEXT_BEGIN)
-                        *ins = CON_GETSPRITEEXT;
+                        *ins = CON_GETSPRITEEXT | LINE_NUMBER;
                     else if (labelNum >= ACTOR_STRUCT_BEGIN)
-                        *ins = CON_GETACTORSTRUCT;
+                        *ins = CON_GETACTORSTRUCT | LINE_NUMBER;
                     else
-                        *ins = CON_GETSPRITESTRUCT;
+                        *ins = CON_GETSPRITESTRUCT | LINE_NUMBER;
                 }
 
                 scriptWriteValue(label.lId);
@@ -5190,7 +5217,7 @@ repeatcase:
             {
                 g_volumeNames[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_volumeNames[j])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_volumeNames[j])))
                 {
                     initprintf("%s:%d: warning: truncating volume name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_volumeNames[j])-1);
@@ -5256,10 +5283,10 @@ repeatcase:
                     scriptSkipLine();
                     break;
                 }
-                if (EDUKE32_PREDICT_FALSE(i >= MAXGAMEFUNCLEN-1))
+                if (EDUKE32_PREDICT_FALSE(i >= MAXGAMEFUNCLEN))
                 {
                     initprintf("%s:%d: warning: truncating function name to %d characters.\n",
-                        g_scriptFileName,g_lineNumber,MAXGAMEFUNCLEN);
+                        g_scriptFileName,g_lineNumber, MAXGAMEFUNCLEN-1);
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5315,7 +5342,7 @@ repeatcase:
             {
                 g_skillNames[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_skillNames[j])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_skillNames[j])))
                 {
                     initprintf("%s:%d: warning: truncating skill name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_skillNames[j])-1);
@@ -5347,7 +5374,7 @@ repeatcase:
                 {
                     gamename[i] = *textptr;
                     textptr++,i++;
-                    if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(gamename)-1))
+                    if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(gamename)))
                     {
                         initprintf("%s:%d: warning: truncating game name to %d characters.\n",
                             g_scriptFileName,g_lineNumber,(int32_t)sizeof(gamename)-1);
@@ -5423,7 +5450,7 @@ repeatcase:
             {
                 g_gametypeNames[j][i] = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_gametypeNames[j])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(g_gametypeNames[j])))
                 {
                     initprintf("%s:%d: warning: truncating gametype name to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(int32_t)sizeof(g_gametypeNames[j])-1);
@@ -5517,7 +5544,7 @@ repeatcase:
                 if (EDUKE32_PREDICT_FALSE(i >= 32))
                 {
                     initprintf("%s:%d: warning: truncating level name to %d characters.\n",
-                        g_scriptFileName,g_lineNumber,32);
+                        g_scriptFileName,g_lineNumber,31);
                     g_warningCnt++;
                     scriptSkipLine();
                     break;
@@ -5589,7 +5616,7 @@ repeatcase:
                 else
                     *(apXStrings[g_numXStrings]+i) = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= MAXQUOTELEN-1))
+                if (EDUKE32_PREDICT_FALSE(i >= MAXQUOTELEN))
                 {
                     initprintf("%s:%d: warning: truncating quote text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXQUOTELEN-1);
                     g_warningCnt++;
@@ -5635,7 +5662,7 @@ repeatcase:
             {
                 *(CheatDescriptions[k]+i) = *textptr;
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= MAXCHEATDESC-1))
+                if (EDUKE32_PREDICT_FALSE(i >= MAXCHEATDESC))
                 {
                     initprintf("%s:%d: warning: truncating cheat text to %d characters.\n",g_scriptFileName,g_lineNumber,MAXCHEATDESC-1);
                     g_warningCnt++;
@@ -5693,7 +5720,7 @@ repeatcase:
             {
                 CheatStrings[k][i] = Btolower(*textptr);
                 textptr++,i++;
-                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(CheatStrings[k])-1))
+                if (EDUKE32_PREDICT_FALSE(i >= (signed)sizeof(CheatStrings[k])))
                 {
                     initprintf("%s:%d: warning: truncating cheat string to %d characters.\n",
                         g_scriptFileName,g_lineNumber,(signed)sizeof(CheatStrings[k])-1);
@@ -6278,7 +6305,7 @@ void C_Compile(const char *fileName)
         actorMinMs = 1e308;
 
     scriptInitTables();
-    scriptInitStructTables();
+    VM_InitHashTables();
 
     Gv_Init();
     C_InitProjectiles();

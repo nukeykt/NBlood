@@ -559,8 +559,11 @@ static void _MIDI_SetChannelVolume(int channel, int volume)
     if (_MIDI_Funcs == nullptr || _MIDI_Funcs->ControlChange == nullptr)
         return;
 
-    volume *= _MIDI_TotalVolume;
-    volume = tabledivide32_noinline(volume, MIDI_MaxVolume);
+    if (_MIDI_Funcs->SetVolume == nullptr)
+    {
+        volume *= _MIDI_TotalVolume;
+        volume = tabledivide32_noinline(volume, MIDI_MaxVolume);
+    }
 
     _MIDI_Funcs->ControlChange(channel, MIDI_VOLUME, volume);
 }

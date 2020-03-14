@@ -4157,7 +4157,7 @@ static int32_t Menu_EntryOptionModify(MenuEntry_t *entry, int32_t newOption)
         }
     }
     else if (entry == &ME_VIDEOSETUP_FRAMELIMIT)
-        g_frameDelay = calcFrameDelay(newOption + r_maxfpsoffset);
+        g_frameDelay = calcFrameDelay(newOption, r_maxfpsoffset);
 
     switch (g_currentMenu)
     {
@@ -4256,7 +4256,7 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
     else if (entry == &ME_JOYSTICKAXIS_SATU)
         joySetDeadZone(M_JOYSTICKAXES.currentEntry, *MEO_JOYSTICKAXIS_DEAD.variable, newValue);
     else if (entry == &ME_VIDEOSETUP_FRAMELIMITOFFSET)
-        g_frameDelay = calcFrameDelay(r_maxfps + newValue);
+        g_frameDelay = calcFrameDelay(r_maxfps, newValue);
 
     return 0;
 }

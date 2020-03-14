@@ -448,7 +448,7 @@ SW_SendMessage(short pnum, const char *text)
 void
 InitNetPlayerOptions(void)
 {
-    short pnum;
+//    short pnum;
     PLAYERp pp = Player + myconnectindex;
     PACKET_OPTIONS p;
 
@@ -468,6 +468,7 @@ InitNetPlayerOptions(void)
     {
         p.PacketType = PACKET_TYPE_PLAYER_OPTIONS;
         p.AutoRun = gs.AutoRun;
+        p.MouseAimingOn = gs.MouseAimingOn;
         p.Color = gs.NetColor;
         strcpy(p.PlayerName, CommPlayerName);
 
@@ -485,7 +486,7 @@ InitNetPlayerOptions(void)
 void
 SendMulitNameChange(char *new_name)
 {
-    short pnum;
+//    short pnum;
     PLAYERp pp = Player + myconnectindex;
     PACKET_NAME_CHANGE p;
 
@@ -512,7 +513,7 @@ SendMulitNameChange(char *new_name)
 void
 SendVersion(int version)
 {
-    short pnum;
+//    short pnum;
     PLAYERp pp = Player + myconnectindex;
     PACKET_VERSION p;
 
@@ -537,7 +538,6 @@ void
 CheckVersion(int GameVersion)
 {
     short pnum;
-    PACKET_VERSION p;
 #define VERSION_MSG "You cannot play with different versions!"
 
     if (!CommEnabled)
@@ -576,9 +576,6 @@ CheckVersion(int GameVersion)
 void
 Connect(void)
 {
-    int players_found, i, yline;
-    short other;
-
     if (CommEnabled)
     {
 #if 0
@@ -591,7 +588,7 @@ Connect(void)
         x2 = x1 + screensize - 1;
         y1 = ((ydim) >> 1) - (((screensize * (ydim)) / xdim) >> 1);
         y2 = y1 + ((screensize * (ydim)) / xdim) - 1;
-        rotatespritetile(0L, 0L, BorderTest[gs.BorderTile], 0, x1, y1, x2, y2, 0);
+        rotatespritetile(BorderTest[gs.BorderTile], 0, x1, y1, x2, y2, 0);
         nextpage();
 #endif
 
@@ -608,7 +605,6 @@ void
 waitforeverybody(void)
 {
     int i, size = 1;
-    short other;
 
     if (!CommEnabled)
         return;
@@ -660,7 +656,7 @@ waitforeverybody(void)
             // allow exit
             //if (KEY_PRESSED(KEYSC_ESC))
             {
-                short pnum;
+//                short pnum;
                 //TRAVERSE_CONNECT(pnum)
                 {
                     //if (pnum != myconnectindex)
@@ -712,7 +708,6 @@ SWBOOL MyCommPlayerQuit(void)
     {
         if (TEST_SYNC_KEY(Player + i, SK_QUIT_GAME))
         {
-            short pnum;
             found = TRUE;
 
             quit_player_index = i;
@@ -721,6 +716,14 @@ SWBOOL MyCommPlayerQuit(void)
             {
                 sprintf(ds,"%s has quit the game.",Player[i].PlayerName);
                 adduserquote(ds);
+            }
+
+            // If master quits, all players should quit. Don't change players list.
+            if (!NetBroadcastMode && i == connecthead)
+            {
+                QuitFlag = TRUE;
+                ready2send = 0;
+                return TRUE;
             }
         }
     }
@@ -784,7 +787,6 @@ SWBOOL MyCommPlayerQuit(void)
 
 SWBOOL MenuCommPlayerQuit(short quit_player)
 {
-    PLAYERp pp;
     short i;
     short prev_player = 0;
     short pnum;
@@ -801,8 +803,6 @@ SWBOOL MenuCommPlayerQuit(short quit_player)
 
     TRAVERSE_CONNECT(i)
     {
-        pp = Player + i;
-
         // have to reorder the connect list
         if (i != quit_player)
         {
@@ -836,7 +836,7 @@ SWBOOL MenuCommPlayerQuit(short quit_player)
 void ErrorCorrectionQuit(void)
 {
     int oldtotalclock;
-    short i,j;
+    short j;
 
     if (CommPlayers > 1)
     {
@@ -934,10 +934,8 @@ AddSyncInfoToPacket(int *j)
 void
 faketimerhandler(void)
 {
-    short other, packbufleng;
-    int i, j, k, l;
+    int i, j, k;
     PLAYERp pp;
-    short pnum;
     void getinput(SW_PACKET *);
     extern SWBOOL BotMode;
 
@@ -1256,7 +1254,7 @@ void
 getpackets(void)
 {
     int otherconnectindex, packbufleng;
-    int i, j, k, l, fifoCheck, sb;
+    int i, j, sb;
     PLAYERp pp;
     SW_PACKET tempinput;
 
@@ -1348,7 +1346,7 @@ getpackets(void)
 
 #if !BIT_CODEC
                 if (i != myconnectindex)
-                    memcpy(&pp->inputfifo[pp->movefifoend & (MOVEFIFOSIZ - 1)], &packbuf[j], sizeof(SW_PACKET));
+                    memcpy(&pp->inputfifo[pp->movefifoend++ & (MOVEFIFOSIZ - 1)], &packbuf[j], sizeof(SW_PACKET));
                 j += sizeof(SW_PACKET);
 #else
                 if (i == myconnectindex)
@@ -1362,10 +1360,9 @@ getpackets(void)
                     j += DecodeBits(&pp->inputfifo[(pp->movefifoend) & (MOVEFIFOSIZ - 1)],
                                     &pp->inputfifo[(pp->movefifoend - 1) & (MOVEFIFOSIZ - 1)],
                                     &packbuf[j]);
+                    pp->movefifoend++;
                 }
 #endif
-
-                pp->movefifoend++;
             }
 
             while (j != packbufleng)
@@ -1452,9 +1449,8 @@ getpackets(void)
 
             PlaySound(DIGI_PMESSAGE,&tp->posx,&tp->posy,&tp->posz,v3df_dontpan);
 
-            memcpy(ds,&packbuf[3],packbufleng-3);
-            ds[packbufleng-3] = 0;
-            //sprintf(ds, "%s",&packbuf[3]);
+            memcpy(ds,&packbuf[1],packbufleng-1);
+            ds[packbufleng-1] = 0;
             adduserquote(ds);
             break;
         }
@@ -1563,6 +1559,12 @@ getpackets(void)
                 SET(pp->Flags, PF_LOCK_RUN);
             else
                 RESET(pp->Flags, PF_LOCK_RUN);
+
+            // mouse aiming (required for slope tilting)
+            if (p->MouseAimingOn)
+                SET(pp->Flags, PF_MOUSE_AIMING_ON);
+            else
+                RESET(pp->Flags, PF_MOUSE_AIMING_ON);
 
             // palette
             pp->TeamColor = p->Color;

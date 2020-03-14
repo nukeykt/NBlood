@@ -301,8 +301,6 @@ extern int32_t g_quitDeadline;
 extern int32_t g_restorePalette;
 extern int32_t hud_glowingquotes;
 extern int32_t hud_showmapname;
-extern int32_t r_maxfps;
-extern int32_t r_maxfpsoffset;
 extern int32_t tempwallptr;
 extern int32_t ticrandomseed;
 extern int32_t vote_map;
@@ -315,9 +313,6 @@ extern int32_t MAXCACHE1DSIZE;
 
 extern palette_t CrosshairColors;
 extern palette_t DefaultCrosshairColors;
-
-extern double g_frameDelay;
-static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
 
 int32_t A_CheckInventorySprite(spritetype *s);
 int32_t A_InsertSprite(int16_t whatsect, int32_t s_x, int32_t s_y, int32_t s_z, int16_t s_pn, int8_t s_s, uint8_t s_xr,
@@ -357,7 +352,6 @@ void G_DrawFrags(void);
 void G_HandleMirror(int32_t x, int32_t y, int32_t z, fix16_t a, fix16_t horiz, int32_t smoothratio);
 void G_DrawRooms(int32_t playerNum,int32_t smoothratio);
 void G_DrawTXDigiNumZ(int32_t starttile,int32_t x,int32_t y,int32_t n,int32_t s,int32_t pal,int32_t cs,int32_t x1,int32_t y1,int32_t x2,int32_t y2,int32_t z);
-int G_FPSLimit(void);
 void G_GameExit(const char *msg) ATTRIBUTE((noreturn));
 void G_GameQuit(void);
 void G_GetCrosshairColor(void);
@@ -376,10 +370,6 @@ void G_OnMotorcycle(DukePlayer_t *pPlayer, int spriteNum);
 void G_OffMotorcycle(DukePlayer_t *pPlayer);
 void G_OnBoat(DukePlayer_t *pPlayer, int spriteNum);
 void G_OffBoat(DukePlayer_t *pPlayer);
-
-#define NEG_ALPHA_TO_BLEND(alpha, blend, orientation) do { \
-    if (alpha < 0) { blend = -alpha; alpha = 0; orientation |= RS_TRANS1; } \
-} while (0)
 
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?

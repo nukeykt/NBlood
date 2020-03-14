@@ -18,25 +18,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "random.h"
 
-int randA = 0;
-int randB = 0x11111111;
-int randC = 0x1010101;
+static int randseed = 0x1010101;
 
 
 void InitRandom()
 {
-    randA = 0;
-    randB = 0x11111111;
-    randC = 0x1010101;
+    randseed = 0x1010101;
 }
 
-// TODO - checkme
 int RandomBit()
 {
-    randA = (randA >> 1) | (((randA ^ ((randA >> 1) ^ (randA >> 2) ^ (randA >> 31) ^ (randA >> 6) ^ (randA >> 4))) & 1) << 31);
-    randB = (randB >> 1) | ((((randB >> 2) ^ (randB >> 30)) & 1) << 30);
-    randC = (randC >> 1) | ((((randC >> 1) ^ (randC >> 28)) & 1) << 28);
-    return ((randA == 0) & randC | (randB & randA)) & 1;
+    randseed = (randseed >> 1) | ((((randseed >> 1) ^ (randseed >> 28)) & 1) << 28);
+    return randseed & 1;
 }
 
 char RandomByte()

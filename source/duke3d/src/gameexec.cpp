@@ -23,14 +23,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "anim.h"
 #include "cmdline.h"
 #include "colmatch.h"
+#include "communityapi.h"
 #include "compat.h"
 #include "duke3d.h"
+#include "gamestructures.h"
 #include "input.h"
 #include "menus.h"
 #include "osdcmds.h"
 #include "savegame.h"
 #include "scriplib.h"
-#include "communityapi.h"
 
 #ifdef LUNATIC
 # include "lunatic_game.h"
@@ -72,7 +73,6 @@ double g_eventTotalMs[MAXEVENTS], g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILE
 
 GAMEEXEC_STATIC void VM_Execute(int const loop = false);
 
-# include "gamestructures.cpp"
 #endif
 
 #if !defined LUNATIC
@@ -652,39 +652,36 @@ GAMEEXEC_STATIC void VM_Move(void)
 
     if (AC_MOVE_ID(vm.pData) == 0 || movflags == 0)
     {
-        if (deadflag || (vm.pActor->bpos.x != vm.pSprite->x) || (vm.pActor->bpos.y != vm.pSprite->y))
-        {
-            vm.pActor->bpos.vec2 = vm.pSprite->pos.vec2;
+        if (deadflag)
             setsprite(vm.spriteNum, &vm.pSprite->pos);
-        }
+
         return;
     }
 
-    if (deadflag)
-        goto dead;
-
-    if (movflags&face_player)
-        VM_FacePlayer(2);
-
-    if (movflags&spin)
-        vm.pSprite->ang += sintable[((AC_COUNT(vm.pData)<<3)&2047)]>>6;
-
-    if (movflags&face_player_slow)
-        VM_FacePlayer(4);
-
-    if ((movflags&jumptoplayer_bits) == jumptoplayer_bits)
+    if (!deadflag)
     {
-        if (AC_COUNT(vm.pData) < 16)
-            vm.pSprite->zvel -= (sintable[(512+(AC_COUNT(vm.pData)<<4))&2047]>>5);
+        if (movflags & face_player)
+            VM_FacePlayer(2);
+
+        if (movflags & spin)
+            vm.pSprite->ang += sintable[((AC_COUNT(vm.pData) << 3) & 2047)] >> 6;
+
+        if (movflags & face_player_slow)
+            VM_FacePlayer(4);
+
+        if ((movflags & jumptoplayer_bits) == jumptoplayer_bits)
+        {
+            if (AC_COUNT(vm.pData) < 16)
+                vm.pSprite->zvel -= (sintable[(512 + (AC_COUNT(vm.pData) << 4)) & 2047] >> 5);
+        }
+
+        if (movflags & face_player_smart)
+        {
+            vec2_t const vect = { vm.pPlayer->pos.x + (vm.pPlayer->vel.x / 768), vm.pPlayer->pos.y + (vm.pPlayer->vel.y / 768) };
+            VM_AddAngle(2, getangle(vect.x - vm.pSprite->x, vect.y - vm.pSprite->y));
+        }
     }
 
-    if (movflags&face_player_smart)
-    {
-        vec2_t const vect = { vm.pPlayer->pos.x + (vm.pPlayer->vel.x / 768), vm.pPlayer->pos.y + (vm.pPlayer->vel.y / 768) };
-        VM_AddAngle(2, getangle(vect.x - vm.pSprite->x, vect.y - vm.pSprite->y));
-    }
-
-dead:
 #if !defined LUNATIC
     if (EDUKE32_PREDICT_FALSE((unsigned)AC_MOVE_ID(vm.pData) >= (unsigned)g_scriptSize-1))
     {
@@ -1053,7 +1050,10 @@ static void VM_Fall(int const spriteNum, spritetype * const pSprite)
             if ((unsigned)newsect < MAXSECTORS)
                 changespritesect(spriteNum, newsect);
 
-            A_PlaySound(THUD, spriteNum);
+#ifndef EDUKE32_STANDALONE
+            if (!FURY)
+                A_PlaySound(THUD, spriteNum);
+#endif
         }
     }
 
@@ -1240,7 +1240,7 @@ void Screen_Play(void)
 
         ototalclock = totalclock + 1; // pause game like ANMs
 
-        if (!G_FPSLimit())
+        if (!engineFPSLimit())
             continue;
 
         videoClearScreen(0);
@@ -3612,9 +3612,27 @@ badindex:
                         CON_ERRPRINTF("invalid quote %d\n", v.quoteNum);
                     else
                     {
+                        if (!(v.orientation & ROTATESPRITE_FULL16))
+                        {
+                            v.vect.x <<= 16;
+                            v.vect.y <<= 16;
+                            v.offset.x <<= 16;
+                            v.offset.y <<= 16;
+                            v.between.x <<= 16;
+                            v.between.y <<= 16;
+                        }
+
+                        G_SetScreenTextEmpty(v.offset, v.tileNum, v.f);
+
                         vec2_t dim = G_ScreenTextSize(v.tileNum, v.vect.x, v.vect.y, v.vect.z, v.blockAngle, apStrings[v.quoteNum], 2 | v.orientation,
                                                       v.offset.x, v.offset.y, v.between.x, v.between.y, v.f, v.bound[0].x, v.bound[0].y, v.bound[1].x,
                                                       v.bound[1].y);
+
+                        if (!(v.orientation & ROTATESPRITE_FULL16))
+                        {
+                            dim.x >>= 16;
+                            dim.y >>= 16;
+                        }
 
                         Gv_SetVar(widthVar, dim.x);
                         Gv_SetVar(heightVar, dim.y);
@@ -4491,6 +4509,18 @@ badindex:
 
                     VM_ASSERT((unsigned)v.nQuote < MAXQUOTES && apStrings[v.nQuote], "invalid quote %d\n", v.nQuote);
 
+                    if (!(v.orientation & ROTATESPRITE_FULL16))
+                    {
+                        v.v.x <<= 16;
+                        v.v.y <<= 16;
+                        v.spacing.x <<= 16;
+                        v.spacing.y <<= 16;
+                        v.between.x <<= 16;
+                        v.between.y <<= 16;
+                    }
+
+                    G_SetScreenTextEmpty(v.spacing, v.tilenum, v.nFlags);
+
                     G_ScreenText(v.tilenum, v.v.x, v.v.y, v.v.z, v.blockangle, v.charangle, apStrings[v.nQuote], v.shade, v.pal,
                                  2 | (v.orientation & (ROTATESPRITE_MAX - 1)), v.alpha, v.spacing.x, v.spacing.y, v.between.x, v.between.y, v.nFlags,
                                  v.bound[0].x, v.bound[0].y, v.bound[1].x, v.bound[1].y);
@@ -5004,7 +5034,10 @@ badindex:
             vInstruction(CON_QUAKE):
                 insptr++;
                 g_earthquakeTime = Gv_GetVar(*insptr++);
-                A_PlaySound(EARTHQUAKE, g_player[screenpeek].ps->i);
+#ifndef EDUKE32_STANDALONE
+                if (!FURY)
+                    A_PlaySound(EARTHQUAKE, g_player[screenpeek].ps->i);
+#endif
                 dispatch();
 
             vInstruction(CON_RESETPLAYER):

@@ -94,7 +94,7 @@ int32_t yres=-1;
 int32_t fullscreen=0;
 int32_t bpp=0;
 int32_t bytesperline=0;
-int32_t refreshfreq=-1;
+double refreshfreq;
 int32_t lockcount=0;
 int32_t glcolourdepth=32;
 static int32_t vsync_renderlayer;
@@ -548,7 +548,7 @@ void uninitsystem(void)
 //
 void system_getcvars(void)
 {
-    windowsDwmSetupComposition(c == 8);
+    windowsDwmSetupComposition(0);
     vsync = videoSetVsync(vsync);
 }
 
@@ -2522,7 +2522,7 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
     };
     GLuint PixelFormat;
     int32_t minidriver;
-    int32_t err;
+    int32_t err = 0;
     pfd.cColorBits = bitspp;
 
     hGLWindow = CreateWindow(
@@ -2649,197 +2649,66 @@ static int32_t SetupOpenGL(int32_t width, int32_t height, int32_t bitspp)
     glHint(GL_TEXTURE_COMPRESSION_HINT, GL_NICEST);
     glDisable(GL_DITHER);
 
-    {
-        GLubyte *p,*p2,*p3;
-        int32_t err = 0;
+    fill_glinfo();
 
-        glinfo.vendor     = (char const *)glGetString(GL_VENDOR);
-        glinfo.renderer   = (char const *)glGetString(GL_RENDERER);
-        glinfo.version    = (char const *)glGetString(GL_VERSION);
-        glinfo.extensions = (char const *)glGetString(GL_EXTENSIONS);
+    err = 0;
 
-        // GL driver blacklist
-
-        if (!Bstrcmp(glinfo.vendor,"Microsoft Corporation")) err = 1;
+    // GL driver blacklist
+    if (!Bstrcmp(glinfo.vendor,"Microsoft Corporation")) err = 1;
 #if 0
-        else if (!Bstrcmp(glinfo.vendor,"SiS")) err = 1;
-        else if (!Bstrcmp(glinfo.vendor,"3Dfx Interactive Inc.")) err = 1;
+    else if (!Bstrcmp(glinfo.vendor,"SiS")) err = 1;
+    else if (!Bstrcmp(glinfo.vendor,"3Dfx Interactive Inc.")) err = 1;
 #endif
 #ifdef POLYMER
-        else if (!Bstrcmp(glinfo.vendor, "Intel"))
+    else if (!Bstrcmp(glinfo.vendor, "Intel"))
+        pr_ati_fboworkaround = 1;
+#endif
+    else
+    {
+        if (!Bstrcmp(glinfo.vendor,"ATI Technologies Inc."))
+        {
+            winlayer_have_ATI = 1;
+#ifdef POLYMER
             pr_ati_fboworkaround = 1;
 #endif
-        else
-        {
-            if (!Bstrcmp(glinfo.vendor,"ATI Technologies Inc."))
+            if (Bstrstr(glinfo.renderer,"Radeon X1"))
             {
-                winlayer_have_ATI = 1;
 #ifdef POLYMER
-                pr_ati_fboworkaround = 1;
-#endif
-                if (Bstrstr(glinfo.renderer,"Radeon X1"))
-                {
-#ifdef POLYMER
-                    pr_ati_nodepthoffset = 1;
-                    initprintf("Enabling ATI R520 polygon offset workaround.\n");
-#endif
-                }
-#ifdef POLYMER
-                else
-                    pr_ati_nodepthoffset = 0;
+                pr_ati_nodepthoffset = 1;
+                initprintf("Enabling ATI R520 polygon offset workaround.\n");
 #endif
             }
 #ifdef POLYMER
             else
-                pr_ati_fboworkaround = 0;
+                pr_ati_nodepthoffset = 0;
 #endif
         }
+#ifdef POLYMER
+        else
+            pr_ati_fboworkaround = 0;
+#endif
+    }
 
 #ifdef POLYMER
-        if (pr_ati_fboworkaround)
-            initprintf("Enabling Intel/ATI FBO color attachment workaround.\n");
+    if (pr_ati_fboworkaround)
+        initprintf("Enabling Intel/ATI FBO color attachment workaround.\n");
 #endif
 
-        if (!forcegl && err)
-        {
-            OSD_Printf("Unsupported OpenGL driver detected. GL modes will be unavailable. Use -forcegl to override.\n");
-            wm_msgbox("Unsupported OpenGL driver", "Unsupported OpenGL driver detected.  GL modes will be unavailable.");
-            ReleaseOpenGL();
-            //POGO: there is no equivalent to unloadgldriver() with GLAD's loader, but this shouldn't be a problem.
-            //unloadgldriver();
-            unloadwgl();
-            nogl = 1;
-            modeschecked = 0;
-            videoGetModes();
-            return TRUE;
-        }
-
-        glinfo.maxanisotropy = 1.0;
-        glinfo.bgra = 0;
-        glinfo.texcompr = 0;
-
-        // process the extensions string and flag stuff we recognize
-        p = (GLubyte *)Xstrdup(glinfo.extensions);
-        p3 = p;
-        while ((p2 = (GLubyte *)Bstrtoken(p3==p?(char *)p:NULL, " ", (char **)&p3, 1)) != NULL)
-        {
-            if (!Bstrcmp((char *)p2, "GL_EXT_texture_filter_anisotropic"))
-            {
-                // supports anisotropy. get the maximum anisotropy level
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glinfo.maxanisotropy);
-            }
-            else if (!Bstrcmp((char *)p2, "GL_EXT_texture_edge_clamp") ||
-                     !Bstrcmp((char *)p2, "GL_SGIS_texture_edge_clamp"))
-            {
-                // supports GL_CLAMP_TO_EDGE or GL_CLAMP_TO_EDGE_SGIS
-                glinfo.clamptoedge = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_EXT_bgra"))
-            {
-                // support bgra textures
-                glinfo.bgra = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_texture_compression") && Bstrcmp(glinfo.vendor,"ATI Technologies Inc."))
-            {
-                // support texture compression
-                glinfo.texcompr = 1;
-
-#ifdef DYNAMIC_GLEXT
-                if (!glCompressedTexImage2D || !glGetCompressedTexImage)
-                {
-                    // lacking the necessary extensions to do this
-                    initprintf("Warning: the GL driver lacks necessary functions to use caching\n");
-                    glinfo.texcompr = 0;
-                }
-#endif
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_texture_non_power_of_two"))
-            {
-                // support non-power-of-two texture sizes
-                glinfo.texnpot = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_fragment_program"))
-            {
-                glinfo.arbfp = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_depth_texture"))
-            {
-                glinfo.depthtex = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_shadow"))
-            {
-                glinfo.shadow = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_EXT_framebuffer_object"))
-            {
-                glinfo.fbos = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_NV_texture_rectangle") ||
-                     !Bstrcmp((char *)p2, "GL_EXT_texture_rectangle"))
-            {
-                glinfo.rect = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_multitexture"))
-            {
-                glinfo.multitex = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_texture_env_combine"))
-            {
-                glinfo.envcombine = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_vertex_buffer_object"))
-            {
-                glinfo.vbos = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "WGL_EXT_swap_control"))
-            {
-                glinfo.vsync = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_EXT_gpu_shader4"))
-            {
-                glinfo.sm4 = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_occlusion_query"))
-            {
-                glinfo.occlusionqueries = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_shader_objects"))
-            {
-                glinfo.glsl = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_debug_output"))
-            {
-                glinfo.debugoutput = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_buffer_storage"))
-            {
-                glinfo.bufferstorage = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_sync"))
-            {
-                glinfo.sync = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_depth_clamp"))
-            {
-                glinfo.depthclamp = 1;
-            }
-            else if (!Bstrcmp((char *)p2, "GL_ARB_clipcontrol"))
-            {
-                glinfo.clipcontrol = 1;
-            }
-        }
-        Xfree(p);
-    }
-    numpages = 2;	// KJS 20031225: tell rotatesprite that it's double buffered!
-
-    if (!glinfo.dumped)
+    if (!forcegl && err)
     {
-        int32_t oldbpp = bpp;
-        bpp = 32;
-        osdcmd_glinfo(NULL);
-        glinfo.dumped = TRUE;
-        bpp = oldbpp;
+        OSD_Printf("Unsupported OpenGL driver detected. GL modes will be unavailable. Use -forcegl to override.\n");
+        wm_msgbox("Unsupported OpenGL driver", "Unsupported OpenGL driver detected.  GL modes will be unavailable.");
+        ReleaseOpenGL();
+        //POGO: there is no equivalent to unloadgldriver() with GLAD's loader, but this shouldn't be a problem.
+        //unloadgldriver();
+        unloadwgl();
+        nogl = 1;
+        modeschecked = 0;
+        videoGetModes();
+        return TRUE;
     }
+
+    numpages = 2;	// KJS 20031225: tell rotatesprite that it's double buffered!
 
     return FALSE;
 }

@@ -90,7 +90,6 @@ FAF_Sector(short sectnum)
 {
     short SpriteNum, Next;
     SPRITEp sp;
-    SWBOOL found = FALSE;
 
     TRAVERSE_SPRITE_SECT(headspritesect[sectnum], SpriteNum, Next)
     {
@@ -171,7 +170,6 @@ FAFhitscan(int32_t x, int32_t y, int32_t z, int16_t sectnum,
         // hitscan warping
         if (TEST(wall[hitinfo->wall].cstat, CSTAT_WALL_WARP_HITSCAN))
         {
-            short src_sect = hitinfo->sect;
             short dest_sect;
 
             MONO_PRINT(ds);
@@ -556,7 +554,6 @@ void FAFgetzrange(int32_t x, int32_t y, int32_t z, int16_t sectnum,
         {
         case HIT_SECTOR:
         {
-            short hit_sector = NORM_SECTOR(*florhit);
             break;
         }
         case HIT_SPRITE:
@@ -668,9 +665,7 @@ void
 SetupMirrorTiles(void)
 {
     short i, nexti;
-    short j, nextj;
     SPRITEp sp;
-    SWBOOL found;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FAF], i, nexti)
     {
@@ -766,7 +761,7 @@ short GlobStackSect[2];
 void
 GetUpperLowerSector(short match, int x, int y, short *upper, short *lower)
 {
-    int i, j;
+    int i;
     short sectorlist[16];
     int sln = 0;
     short SpriteNum, Next;
@@ -886,7 +881,6 @@ FindCeilingView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum
     int yoff = 0;
     short i, nexti;
     SPRITEp sp = NULL;
-    short top_sprite = -1;
     int pix_diff;
     int newz;
 
@@ -1058,13 +1052,10 @@ FindFloorView(short match, int32_t* x, int32_t* y, int32_t z, int16_t* sectnum)
 }
 
 short
-ViewSectorInScene(short cursectnum, short type, short level)
+ViewSectorInScene(short cursectnum, short level)
 {
     int i, nexti;
-    int j, nextj;
     SPRITEp sp;
-    SPRITEp sp2;
-    int cz, fz;
     short match;
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_FAF], i, nexti)
@@ -1103,7 +1094,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
 
     save.zcount = 0;
 
-    match = ViewSectorInScene(tsectnum, VIEW_THRU_CEILING, VIEW_LEVEL1);
+    match = ViewSectorInScene(tsectnum, VIEW_LEVEL1);
     if (match != -1)
     {
         FindCeilingView(match, &tx, &ty, tz, &tsectnum);
@@ -1129,7 +1120,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
     }
     else
     {
-        match = ViewSectorInScene(tsectnum, VIEW_THRU_FLOOR, VIEW_LEVEL2);
+        match = ViewSectorInScene(tsectnum, VIEW_LEVEL2);
         if (match != -1)
         {
             FindFloorView(match, &tx, &ty, tz, &tsectnum);

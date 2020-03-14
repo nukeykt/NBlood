@@ -334,10 +334,10 @@ void
 InitFX(void)
 {
     VOC_INFOp vp;
-    short i;
 
 #if 0
     // DEBUG
+    short i;
     for (i=0; i<DIGI_MAX; i++)
     {
         globsndata[i] = globvpdata[i] = NULL;
@@ -377,7 +377,7 @@ ExternalSoundMod(void)
     VOC_INFOp vp;
     char name[40];
     char new_name[40];
-    int pri;
+//    int pri;
     int pitch_lo, pitch_hi;
     int ret;
 
@@ -707,7 +707,6 @@ SoundAngle(int x, int y)
 int _PlayerSound(const char *file, int line, int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
 //PlayerSound(int num, int *x, int *y, int *z, Voc3D_Flags flags, PLAYERp pp)
 {
-    int handle;
     VOC_INFOp vp;
 
     if (Prediction)
@@ -1538,7 +1537,6 @@ Delete3DSounds(void)
 {
     VOC3D_INFOp vp, dp;
     PLAYERp pp;
-    int cnt=0;
 
 
     vp = voc3dstart;
@@ -1711,7 +1709,6 @@ StopAmbientSound(void)
 void
 StartAmbientSound(void)
 {
-    VOC3D_INFOp p;
     short i,nexti;
     extern SWBOOL InMenuLevel;
 
@@ -1743,9 +1740,7 @@ DoUpdateSounds3D(void)
     VOC3D_INFOp p;
     SWBOOL looping;
     int pitch = 0, pitchmax;
-    int delta;
     short dist, angle;
-    SWBOOL deletesound = FALSE;
 
     TVOC_INFO TmpVocArray[32];
     int i;
@@ -1943,7 +1938,7 @@ DoUpdateSounds3D(void)
     //    {
     for (i=0; i<min((int)SIZ(TmpVocArray), NumVoices); i++)
     {
-        int handle;
+//        int handle;
 
         p = TmpVocArray[i].p;
 
@@ -1967,7 +1962,7 @@ DoUpdateSounds3D(void)
             Use_SoundSpriteNum = TRUE;
             SoundSpriteNum = p->owner;
 
-            handle = PlaySound(p->num, p->x, p->y, p->z, p->flags);
+            /*handle = */PlaySound(p->num, p->x, p->y, p->z, p->flags);
             //if(handle >= 0 || TEST(p->flags,v3df_ambient)) // After a valid PlaySound, it's ok to use voc3dend
             voc3dend->owner = p->owner; // Transfer the owner
             p->deleted = TRUE;
@@ -1992,7 +1987,7 @@ DoUpdateSounds3D(void)
             Use_SoundSpriteNum = TRUE;
             SoundSpriteNum = p->owner;
 
-            handle = PlaySound(p->num, &p->fx, &p->fy, &p->fz, p->flags);
+            /*handle = */PlaySound(p->num, &p->fx, &p->fy, &p->fz, p->flags);
             //if(handle >= 0 || TEST(p->flags,v3df_ambient))
             voc3dend->owner = p->owner; // Transfer the owner
             p->deleted = TRUE;

@@ -939,7 +939,7 @@ nextdemo_nomenu:
         if (Demo_IsProfiling())
             totalclock += TICSPERFRAME;
 
-        if (G_FPSLimit())
+        if (engineFPSLimit())
         {
             if (foundemo == 0)
             {
