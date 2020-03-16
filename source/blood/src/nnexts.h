@@ -140,7 +140,6 @@ struct TRPLAYERCTRL { // this one for controlling the player using triggers (mov
 };
 
 // - VARIABLES ------------------------------------------------------------------
-extern bool gModernMap;
 extern bool gTeamsSpawnUsed;
 extern ZONE gStartZoneTeam1[kMaxPlayers];
 extern ZONE gStartZoneTeam2[kMaxPlayers];

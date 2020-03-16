@@ -26,6 +26,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kMaxXWalls 512
 #define kMaxXSectors 512
 
+#ifdef NOONE_EXTENSIONS
+extern bool gModernMap;
+#endif // NOONE_EXTENSIONS
+
 
 
 // by NoOne: functions to quckly check range of specifical arrays

@@ -559,6 +559,14 @@ void G_RefreshLights(void)
         while (statNum < MAXSTATUS);
     }
 }
+
+void G_Polymer_UnInit(void)
+{
+    int32_t i;
+
+    for (i = 0; i < kMaxSprites; i++)
+        DeleteLight(i);
+}
 #endif // POLYMER
 
 
