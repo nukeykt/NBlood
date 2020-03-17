@@ -1241,7 +1241,7 @@ static char const *MEOSN_SOUND_MIDIDRIVER[] = {
 #ifdef _WIN32
     "Windows MME",
 #endif
-    "SF2 synth",
+    "SoundFont 2",
 };
 static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
     ASS_OPL3,

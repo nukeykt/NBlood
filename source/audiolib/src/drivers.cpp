@@ -152,20 +152,20 @@ static struct
     // TinySoundFont
     {
         "SoundFont2 synthesizer",
-        SF2_GetError,
-        SF2_ErrorString,
+        SF2Drv_GetError,
+        SF2Drv_ErrorString,
 
         UNSUPPORTED_PCM,
 
         EMIDI_GeneralMIDI,
-        SF2_MIDI_Init,
-        SF2_MIDI_Shutdown,
-        SF2_MIDI_StartPlayback,
-        SF2_MIDI_HaltPlayback,
-        SF2_MIDI_SetTempo,
+        SF2Drv_MIDI_Init,
+        SF2Drv_MIDI_Shutdown,
+        SF2Drv_MIDI_StartPlayback,
+        SF2Drv_MIDI_HaltPlayback,
+        SF2Drv_MIDI_SetTempo,
         nullptr,
         nullptr,
-        SF2_MIDI_Service,
+        SF2Drv_MIDI_Service,
     },
 };
 
