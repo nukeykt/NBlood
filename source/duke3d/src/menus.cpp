@@ -4456,10 +4456,13 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_SOUND_DEVSETUP:
-        soundrate = ud.config.MixRate;
-        soundvoices = ud.config.NumVoices;
-        musicdevice = ud.config.MusicDevice;
-        opl3stereo = AL_Stereo;
+        if (m_previousMenu->menuID != MENU_SOUND_SF2)
+        {
+            soundrate   = ud.config.MixRate;
+            soundvoices = ud.config.NumVoices;
+            musicdevice = ud.config.MusicDevice;
+            opl3stereo  = AL_Stereo;
+        }
         ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         break;
 
