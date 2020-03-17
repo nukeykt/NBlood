@@ -449,6 +449,7 @@ public:
     CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent&);
+    virtual bool MouseEvent(CGameMenuEvent &);
 };
 
 

@@ -3210,6 +3210,28 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             currentList = !currentList;
         MovementVefiry();
         return false;
+    case kMenuEventScrollUp:
+        if (findhigh[currentList] != NULL)
+        {
+            if (findhigh[currentList]->prev)
+            {
+                findhigh[currentList] = findhigh[currentList]->prev;
+                nTopDelta[currentList]--;
+            }
+        }
+        MovementVefiry();
+        return false;
+    case kMenuEventScrollDown:
+        if (findhigh[currentList] != NULL)
+        {
+            if (findhigh[currentList]->next)
+            {
+                findhigh[currentList] = findhigh[currentList]->next;
+                nTopDelta[currentList]++;
+            }
+        }
+        MovementVefiry();
+        return false;
     default:
         break;
     }
@@ -3272,11 +3294,41 @@ void CGameMenuFileSelect::FileSelectInit(void)
 void CGameMenuFileSelect::MovementVefiry(void)
 {
     int height;
+    if (!findhigh[currentList])
+        return;
     gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
+    int32_t rows = 0;
+    for (auto dir = findhigh[currentList]->usera; dir; dir = dir->next, rows++)
+    {
+    }
     int const maxRows = (162 - 40) / height;
     int item = findhigh[currentList]->type - nTopDelta[currentList];
     if (item < 0)
         nTopDelta[currentList] += item;
     else if (item >= maxRows)
         nTopDelta[currentList] += item - maxRows + 1;
+    if (nTopDelta[currentList] > rows - maxRows)
+        nTopDelta[currentList] = rows - maxRows;
+    if (nTopDelta[currentList] < 0)
+        nTopDelta[currentList] = 0;
+}
+
+bool CGameMenuFileSelect::MouseEvent(CGameMenuEvent &event)
+{
+    event.at0 = kMenuEventNone;
+    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELUP_MOUSE))
+    {
+        gGameMenuMgr.m_mouselastactivity = (int)totalclock;
+        MOUSE_ClearButton(WHEELUP_MOUSE);
+        event.at0 = kMenuEventScrollUp;
+    }
+    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+    {
+        gGameMenuMgr.m_mouselastactivity = (int)totalclock;
+        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        event.at0 = kMenuEventScrollDown;
+    }
+    else
+        return CGameMenuItem::MouseEvent(event);
+    return event.at0 != kMenuEventNone;
 }
