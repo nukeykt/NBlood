@@ -5,8 +5,6 @@
 #include "compat.h"
 #include "midifuncs.h"
 
-extern char SF2_BankFile[BMAX_PATH];
-
 enum
 {
     SF2_Error     = -1,

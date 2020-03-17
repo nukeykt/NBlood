@@ -22,14 +22,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "fx_man.h"
 
+#include "_multivc.h"
 #include "compat.h"
 #include "drivers.h"
 #include "driver_adlib.h"
 #include "driver_sf2.h"
 #include "midi.h"
 #include "multivoc.h"
+#include "music.h"
 #include "osd.h"
-#include "_multivc.h"
 
 #ifdef _WIN32
 # include "driver_winmm.h"

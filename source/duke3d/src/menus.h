@@ -23,7 +23,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef menus_h_
 #define menus_h_
 
+#include "common.h"
 #include "compat.h"
+#include "pragmas.h"
+#include "vfs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +84,8 @@ enum MenuIndex_t {
     MENU_NETWAITVOTES   = 603,
     MENU_SOUND          = 700,
     MENU_SOUND_INGAME   = 701,
-    MENU_ADVSOUND       = 702,
+    MENU_SOUND_DEVSETUP = 702,
+    MENU_SOUND_SF2      = 703,
     MENU_SAVESETUP      = 750,
     MENU_SAVECLEANVERIFY = 751,
     MENU_RESETSTATSVERIFY = 752,

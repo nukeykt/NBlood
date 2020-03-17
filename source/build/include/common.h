@@ -8,10 +8,10 @@
 #define EDUKE32_COMMON_H_
 
 #include "cache1d.h"
-#include "vfs.h"
 #include "compat.h"
 #include "pragmas.h"  // klabs
 #include "scriptfile.h"
+#include "vfs.h"
 
 
 #ifdef __cplusplus
