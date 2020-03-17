@@ -6786,6 +6786,9 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                                     actor[i].t_data[4] += 512;
                                 else
                                     actor[i].t_data[4] -= 512;
+
+                                if (sector[SECT(i)].lotag & 0x8000u) sector[SECT(i)].lotag &= 0x7fff;
+                                else sector[SECT(i)].lotag |= 0x8000u;
                             }
                         }
 
