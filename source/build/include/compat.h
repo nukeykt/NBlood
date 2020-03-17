@@ -607,7 +607,7 @@ typedef FILE BFILE;
 # define Bstrncasecmp strncasecmp
 #endif
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 # define Bsnprintf _snprintf
 # define Bvsnprintf _vsnprintf
 #else
