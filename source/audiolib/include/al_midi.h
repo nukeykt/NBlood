@@ -22,7 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "opl3.h"
 
-#include <inttypes.h>
+extern int AL_Stereo;
+extern int AL_AdditiveMode;
+extern int AL_PostAmp;
 
 typedef struct
 {

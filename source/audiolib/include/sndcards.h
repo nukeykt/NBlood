@@ -31,6 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __SNDCARDS_H
 #define __SNDCARDS_H
 
+extern int ASS_PCMSoundDriver;
+extern int ASS_MIDISoundDriver;
+extern int ASS_EMIDICard;
+
 typedef enum
 {
     ASS_SDL,
