@@ -1241,7 +1241,6 @@ static MenuEntry_t ME_SOUND_OPL3STEREO = MAKE_MENUENTRY( "OPL3 stereo mode:", &M
 
 static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 128, 0, 8, 1 );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
-#endif
 
 static char const *MEOSN_SOUND_MIDIDRIVER[] = {
     "OPL3 emu.",
@@ -1262,15 +1261,14 @@ static MenuOptionSet_t MEOS_SOUND_MIDIDRIVER = MAKE_MENUOPTIONSET( MEOSN_SOUND_M
 static MenuOption_t MEO_SOUND_MIDIDRIVER = MAKE_MENUOPTION( &MF_Redfont, &MEOS_SOUND_MIDIDRIVER, &musicdevice );
 static MenuEntry_t ME_SOUND_MIDIDRIVER = MAKE_MENUENTRY( "MIDI driver:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_MIDIDRIVER, Option );
 
-static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
-
-#ifndef EDUKE32_RETAIL_MENU
 static MenuLink_t MEO_SOUND_DEVSETUP = { MENU_SOUND_DEVSETUP, MA_Advance, };
 static MenuEntry_t ME_SOUND_DEVSETUP = MAKE_MENUENTRY( "Device configuration", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_DEVSETUP, Link );
 
 static MenuLink_t MEO_SOUND_SF2 = { MENU_SOUND_SF2, MA_Advance, };
 static MenuEntry_t ME_SOUND_SF2 = MAKE_MENUENTRY( sf2bankfile, &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_SF2, Link );
 #endif
+
+static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
 
 static MenuEntry_t *MEL_SOUND[] = {
     &ME_SOUND,
@@ -1589,7 +1587,9 @@ static Menu_t Menus[] = {
     { &M_SOUND, MENU_SOUND, MENU_OPTIONS, MA_Return, Menu },
     { &M_SOUND, MENU_SOUND_INGAME, MENU_CLOSE, MA_Return, Menu },
     { &M_SOUND_DEVSETUP, MENU_SOUND_DEVSETUP, MENU_SOUND, MA_Return, Menu },
+#ifndef EDUKE32_RETAIL_MENU
     { &M_SOUND_SF2, MENU_SOUND_SF2, MENU_SOUND_DEVSETUP, MA_Return, FileSelect },
+#endif
     { &M_SAVESETUP, MENU_SAVESETUP, MENU_OPTIONS, MA_Return, Menu },
     { &M_SAVECLEANVERIFY, MENU_SAVECLEANVERIFY, MENU_SAVESETUP, MA_None, Verify },
     { &M_RESETSTATSVERIFY, MENU_RESETSTATSVERIFY, MENU_SAVESETUP, MA_None, Verify },
@@ -4180,9 +4180,11 @@ static void Menu_FileSelect(int32_t input)
                 Menu_StartGameWithoutSkill();
         }
         break;
+#ifndef EDUKE32_RETAIL_MENU
     case MENU_SOUND_SF2:
         Menu_AnimateChange(MENU_SOUND_DEVSETUP, MA_Advance);
         break;
+#endif
     default:
         break;
     }
@@ -4450,20 +4452,22 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         newborderless = r_borderless;
         break;
 
+#ifndef EDUKE32_RETAIL_MENU
     case MENU_SOUND:
     case MENU_SOUND_SF2:
         Bstrcpy(sf2bankfile, SF2_BankFile);
         break;
 
     case MENU_SOUND_DEVSETUP:
+        ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         if (m_previousMenu->menuID != MENU_SOUND_SF2)
+#endif
         {
             soundrate   = ud.config.MixRate;
             soundvoices = ud.config.NumVoices;
             musicdevice = ud.config.MusicDevice;
             opl3stereo  = AL_Stereo;
         }
-        ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         break;
 
     default:
