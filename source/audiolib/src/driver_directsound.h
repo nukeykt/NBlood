@@ -22,7 +22,6 @@
 
 enum
 {
-    DSErr_Warning = -2,
     DSErr_Error   = -1,
     DSErr_Ok      = 0,
     DSErr_Uninitialised,

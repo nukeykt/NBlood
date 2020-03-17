@@ -1,5 +1,7 @@
 /*
 Copyright (C) 1994-1995 Apogee Software, Ltd.
+Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
+Copyright (C) EDuke32 developers and contributors
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -41,7 +43,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 enum
 {
-   AdLibErr_Warning = -2,
    AdLibErr_Error   = -1,
    AdLibErr_Ok      = 0,
 };
@@ -55,25 +56,12 @@ static int AL_Volume = MIDI_MaxVolume;
 
 const char *AdLibDrv_ErrorString(int const ErrorNumber)
 {
-    const char *ErrorString;
-    
-    switch( ErrorNumber )
+    switch (ErrorNumber)
     {
-        case AdLibErr_Warning :
-        case AdLibErr_Error :
-            ErrorString = AdLibDrv_ErrorString( ErrorCode );
-            break;
-
-        case AdLibErr_Ok :
-            ErrorString = "AdLib ok.";
-            break;
-            
-        default:
-            ErrorString = "Unknown AdLib error.";
-            break;
+        case AdLibErr_Error: return AdLibDrv_ErrorString(ErrorCode);
+        case AdLibErr_Ok:    return "AdLib ok.";
+        default:             return "Unknown AdLib error.";
     }
-        
-    return ErrorString;
 }
 
 int AdLibDrv_MIDI_Init(midifuncs * const funcs)
@@ -122,9 +110,8 @@ void AdLibDrv_MIDI_SetTempo(int const tempo, int const division)
 void AdLibDrv_MIDI_Service(void)
 {
     int16_t * buffer16 = (int16_t *)MV_MusicBuffer;
-    int32_t const samples = MV_MIXBUFFERSIZE;
 
-    for (int32_t i = 0; i < samples; i++)
+    for (int i = 0; i < MV_MIXBUFFERSIZE; i++)
     {
         Bit16s buf[2];
         while (MV_MIDIRenderTimer >= MV_MixRate)
@@ -527,23 +514,21 @@ static void AL_ResetVoices(void)
 
 static void AL_CalcPitchInfo(void)
 {
-    //   int    finetune;
-    //   double detune;
-
     for (int note = 0; note <= MAX_NOTE; note++)
     {
         NoteMod12[note] = note % 12;
         NoteDiv12[note] = note / 12;
     }
 
-    //   for( finetune = 1; finetune <= FINETUNE_MAX; finetune++ )
-    //      {
-    //      detune = pow( 2, ( double )finetune / ( 12.0 * FINETUNE_RANGE ) );
-    //      for( note = 0; note < 12; note++ )
-    //         {
-    //         NotePitch[ finetune ][ note ] = ( ( double )NotePitch[ 0 ][ note ] * detune );
-    //         }
-    //      }
+#if 0
+    for (int finetune = 1; finetune <= FINETUNE_MAX; finetune++)
+    {
+        double detune = pow(2, (double)finetune / (12.0 * FINETUNE_RANGE));
+
+        for (int note = 0; note < 12; note++)
+            NotePitch[finetune][note] = ((double)NotePitch[0][note] * detune);
+    }
+#endif
 }
 
 
@@ -760,10 +745,7 @@ static void AL_SetPitchBend(int const channel, int const lsb, int const msb)
 }
 
 
-static void AL_SetVolume(int volume)
-{
-    AL_Volume = clamp(volume, 0, MIDI_MaxVolume);
-}
+static void AL_SetVolume(int volume) { AL_Volume = clamp(volume, 0, MIDI_MaxVolume); }
 
 
 static void AL_Shutdown(void)

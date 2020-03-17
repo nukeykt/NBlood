@@ -1,5 +1,6 @@
 /*
  Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
+ Copyright (C) EDuke32 developers and contributors
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -37,7 +38,6 @@
 
 enum
 {
-    SDLErr_Warning = -2,
     SDLErr_Error   = -1,
     SDLErr_Ok      = 0,
     SDLErr_Uninitialised,
@@ -105,37 +105,15 @@ int SDLDrv_GetError(void) { return ErrorCode; }
 
 const char *SDLDrv_ErrorString(int ErrorNumber)
 {
-    const char *ErrorString;
-
     switch (ErrorNumber)
     {
-        case SDLErr_Warning:
-        case SDLErr_Error:
-            ErrorString = SDLDrv_ErrorString(ErrorCode);
-            break;
-
-        case SDLErr_Ok:
-            ErrorString = "SDL Audio ok.";
-            break;
-
-        case SDLErr_Uninitialised:
-            ErrorString = "SDL Audio uninitialised.";
-            break;
-
-        case SDLErr_InitSubSystem:
-            ErrorString = "SDL Audio: error in Init or InitSubSystem.";
-            break;
-
-        case SDLErr_OpenAudio:
-            ErrorString = "SDL Audio: error in OpenAudio.";
-            break;
-
-        default:
-            ErrorString = "Unknown SDL Audio error code.";
-            break;
+        case SDLErr_Error:         return SDLDrv_ErrorString(ErrorCode);
+        case SDLErr_Ok:            return "SDL Audio ok.";
+        case SDLErr_Uninitialised: return "SDL Audio uninitialized.";
+        case SDLErr_InitSubSystem: return "SDL Audio: error in Init or InitSubSystem.";
+        case SDLErr_OpenAudio:     return "SDL Audio: error in OpenAudio.";
+        default:                   return "Unknown SDL Audio error code.";
     }
-
-    return ErrorString;
 }
 
 #if SDL_MAJOR_VERSION >= 2
@@ -168,7 +146,6 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
 
     Uint32 inited;
     int err = 0;
-    SDL_AudioSpec spec, actual;
 
     if (Initialised)
         SDLDrv_PCM_Shutdown();
@@ -210,6 +187,8 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     chunksize = droidinfo.audio_buffer_size;
 #endif
 
+    SDL_AudioSpec spec = {};
+
     spec.freq = *mixrate;
     spec.format = AUDIO_S16SYS;
     spec.channels = *numchannels;
@@ -217,7 +196,7 @@ int SDLDrv_PCM_Init(int *mixrate, int *numchannels, void * initdata)
     spec.callback = fillData;
     spec.userdata = nullptr;
 
-    Bmemset(&actual, 0, sizeof(actual));
+    SDL_AudioSpec actual = {};
 
 #if (SDL_MAJOR_VERSION == 1)
     err = !SDL_OpenAudio(&spec, &actual);

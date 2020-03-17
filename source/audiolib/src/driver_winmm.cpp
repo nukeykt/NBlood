@@ -1,6 +1,7 @@
 /*
  Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
- 
+ Copyright (C) EDuke32 developers and contributors
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
  as published by the Free Software Foundation; either version 2
@@ -38,7 +39,6 @@
 
 enum
 {
-    WinMMErr_Warning = -2,
     WinMMErr_Error   = -1,
     WinMMErr_Ok      = 0,
     WinMMErr_Uninitialised,
@@ -88,52 +88,20 @@ int WinMMDrv_GetError(void)
     return ErrorCode;
 }
 
-const char *WinMMDrv_ErrorString( int ErrorNumber )
+const char *WinMMDrv_ErrorString(int ErrorNumber)
 {
-    const char *ErrorString;
-    
-   switch( ErrorNumber )
+    switch (ErrorNumber)
     {
-      case WinMMErr_Warning :
-      case WinMMErr_Error :
-         ErrorString = WinMMDrv_ErrorString( ErrorCode );
-         break;
-            
-      case WinMMErr_Ok :
-         ErrorString = "WinMM ok.";
-         break;
-            
-        case WinMMErr_Uninitialised:
-            ErrorString = "WinMM uninitialised.";
-            break;
-            
-        case WinMMErr_MIDIStreamOpen:
-            ErrorString = "MIDI error: failed opening stream.";
-            break;
-
-        case WinMMErr_MIDIStreamRestart:
-            ErrorString = "MIDI error: failed starting stream.";
-            break;
-
-        case WinMMErr_MIDICreateEvent:
-            ErrorString = "MIDI error: failed creating play thread quit event.";
-            break;
-
-        case WinMMErr_MIDIPlayThread:
-            ErrorString = "MIDI error: failed creating play thread.";
-            break;
-
-        case WinMMErr_MIDICreateMutex:
-            ErrorString = "MIDI error: failed creating play mutex.";
-            break;
-
-        default:
-            ErrorString = "Unknown WinMM error code.";
-            break;
+        case WinMMErr_Error:             return WinMMDrv_ErrorString(ErrorCode);
+        case WinMMErr_Ok:                return "WinMM ok.";
+        case WinMMErr_Uninitialised:     return "WinMM uninitialized.";
+        case WinMMErr_MIDIStreamOpen:    return "MIDI error: failed opening stream.";
+        case WinMMErr_MIDIStreamRestart: return "MIDI error: failed starting stream.";
+        case WinMMErr_MIDICreateEvent:   return "MIDI error: failed creating play thread quit event.";
+        case WinMMErr_MIDIPlayThread:    return "MIDI error: failed creating play thread.";
+        case WinMMErr_MIDICreateMutex:   return "MIDI error: failed creating play mutex.";
+        default:                         return "Unknown WinMM error code.";
     }
-    
-    return ErrorString;
-
 }
 
 
@@ -143,28 +111,29 @@ static void midi_error(MMRESULT rv, const char * fmt, ...)
     va_list va;
     const char * errtxt = "?";
     
-    switch (rv) {
-        case MMSYSERR_NOERROR: errtxt = "MMSYSERR_NOERROR"; break;
-        case MMSYSERR_BADDEVICEID: errtxt = "MMSYSERR_BADDEVICEID"; break;
-        case MMSYSERR_NOTENABLED: errtxt = "MMSYSERR_NOTENABLED"; break;
-        case MMSYSERR_ALLOCATED: errtxt = "MMSYSERR_ALLOCATED"; break;
-        case MMSYSERR_INVALHANDLE: errtxt = "MMSYSERR_INVALHANDLE"; break;
-        case MMSYSERR_NODRIVER: errtxt = "MMSYSERR_NODRIVER"; break;
-        case MMSYSERR_NOMEM: errtxt = "MMSYSERR_NOMEM"; break;
+    switch (rv)
+    {
+        case MMSYSERR_NOERROR:      errtxt = "MMSYSERR_NOERROR";      break;
+        case MMSYSERR_BADDEVICEID:  errtxt = "MMSYSERR_BADDEVICEID";  break;
+        case MMSYSERR_NOTENABLED:   errtxt = "MMSYSERR_NOTENABLED";   break;
+        case MMSYSERR_ALLOCATED:    errtxt = "MMSYSERR_ALLOCATED";    break;
+        case MMSYSERR_INVALHANDLE:  errtxt = "MMSYSERR_INVALHANDLE";  break;
+        case MMSYSERR_NODRIVER:     errtxt = "MMSYSERR_NODRIVER";     break;
+        case MMSYSERR_NOMEM:        errtxt = "MMSYSERR_NOMEM";        break;
         case MMSYSERR_NOTSUPPORTED: errtxt = "MMSYSERR_NOTSUPPORTED"; break;
-        case MMSYSERR_BADERRNUM: errtxt = "MMSYSERR_BADERRNUM"; break;
-        case MMSYSERR_INVALFLAG: errtxt = "MMSYSERR_INVALFLAG"; break;
-        case MMSYSERR_INVALPARAM: errtxt = "MMSYSERR_INVALPARAM"; break;
-        case MMSYSERR_HANDLEBUSY: errtxt = "MMSYSERR_HANDLEBUSY"; break;
+        case MMSYSERR_BADERRNUM:    errtxt = "MMSYSERR_BADERRNUM";    break;
+        case MMSYSERR_INVALFLAG:    errtxt = "MMSYSERR_INVALFLAG";    break;
+        case MMSYSERR_INVALPARAM:   errtxt = "MMSYSERR_INVALPARAM";   break;
+        case MMSYSERR_HANDLEBUSY:   errtxt = "MMSYSERR_HANDLEBUSY";   break;
         case MMSYSERR_INVALIDALIAS: errtxt = "MMSYSERR_INVALIDALIAS"; break;
-        case MMSYSERR_BADDB: errtxt = "MMSYSERR_BADDB"; break;
-        case MMSYSERR_KEYNOTFOUND: errtxt = "MMSYSERR_KEYNOTFOUND"; break;
-        case MMSYSERR_READERROR: errtxt = "MMSYSERR_READERROR"; break;
-        case MMSYSERR_WRITEERROR: errtxt = "MMSYSERR_WRITEERROR"; break;
-        case MMSYSERR_DELETEERROR: errtxt = "MMSYSERR_DELETEERROR"; break;
-        case MMSYSERR_VALNOTFOUND: errtxt = "MMSYSERR_VALNOTFOUND"; break;
-        case MMSYSERR_NODRIVERCB: errtxt = "MMSYSERR_NODRIVERCB"; break;
-        default: break;
+        case MMSYSERR_BADDB:        errtxt = "MMSYSERR_BADDB";        break;
+        case MMSYSERR_KEYNOTFOUND:  errtxt = "MMSYSERR_KEYNOTFOUND";  break;
+        case MMSYSERR_READERROR:    errtxt = "MMSYSERR_READERROR";    break;
+        case MMSYSERR_WRITEERROR:   errtxt = "MMSYSERR_WRITEERROR";   break;
+        case MMSYSERR_DELETEERROR:  errtxt = "MMSYSERR_DELETEERROR";  break;
+        case MMSYSERR_VALNOTFOUND:  errtxt = "MMSYSERR_VALNOTFOUND";  break;
+        case MMSYSERR_NODRIVERCB:   errtxt = "MMSYSERR_NODRIVERCB";   break;
+        default:                                                      break;
     }
     
     va_start(va, fmt);
@@ -840,9 +809,5 @@ void WinMMDrv_MIDI_Lock(void)
     }
 }
 
-void WinMMDrv_MIDI_Unlock(void)
-{
-    ReleaseMutex(midiMutex);
-}
-
+void WinMMDrv_MIDI_Unlock(void)  { ReleaseMutex(midiMutex); }
 void WinMMDrv_MIDI_Service(void) { MIDI_ServiceRoutine(); }

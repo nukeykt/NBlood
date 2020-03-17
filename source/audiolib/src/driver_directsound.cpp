@@ -1,5 +1,6 @@
 /*
  Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
+ Copyright (C) EDuke32 developers and contributors
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -333,92 +334,29 @@ void DirectSoundDrv_PCM_StopPlayback(void)
     Playing = 0;
 }
 
-void DirectSoundDrv_PCM_Lock(void)
-{
-    mutex_lock(&mutex);
-}
-
-void DirectSoundDrv_PCM_Unlock(void)
-{
-    mutex_unlock(&mutex);
-}
-
-int DirectSoundDrv_GetError(void)
-{
-    return ErrorCode;
-}
+void DirectSoundDrv_PCM_Lock(void)   { mutex_lock(&mutex); }
+void DirectSoundDrv_PCM_Unlock(void) { mutex_unlock(&mutex); }
+int DirectSoundDrv_GetError(void)    { return ErrorCode; }
 
 const char *DirectSoundDrv_ErrorString(int ErrorNumber)
 {
-    const char *ErrorString;
-
     switch (ErrorNumber)
     {
-        case DSErr_Warning:
-        case DSErr_Error:
-            ErrorString = DirectSoundDrv_ErrorString(ErrorCode);
-            break;
-
-        case DSErr_Ok:
-            ErrorString = "DirectSound ok.";
-            break;
-
-        case DSErr_Uninitialised:
-            ErrorString = "DirectSound uninitialised.";
-            break;
-
-        case DSErr_DirectSoundCreate:
-            ErrorString = "DirectSound error: DirectSoundCreate failed.";
-            break;
-
-        case DSErr_SetCooperativeLevel:
-            ErrorString = "DirectSound error: SetCooperativeLevel failed.";
-            break;
-
-        case DSErr_CreateSoundBuffer:
-            ErrorString = "DirectSound error: primary CreateSoundBuffer failed.";
-            break;
-
-        case DSErr_CreateSoundBufferSecondary:
-            ErrorString = "DirectSound error: secondary CreateSoundBuffer failed.";
-            break;
-
-        case DSErr_SetFormat:
-            ErrorString = "DirectSound error: primary buffer SetFormat failed.";
-            break;
-
-        case DSErr_SetFormatSecondary:
-            ErrorString = "DirectSound error: secondary buffer SetFormat failed.";
-            break;
-
-        case DSErr_Notify:
-            ErrorString = "DirectSound error: failed querying secondary buffer for notify interface.";
-            break;
-
-        case DSErr_NotifyEvents:
-            ErrorString = "DirectSound error: failed creating notify events.";
-            break;
-
-        case DSErr_SetNotificationPositions:
-            ErrorString = "DirectSound error: failed setting notification positions.";
-            break;
-
-        case DSErr_Play:
-            ErrorString = "DirectSound error: primary buffer Play failed.";
-            break;
-
-        case DSErr_PlaySecondary:
-            ErrorString = "DirectSound error: secondary buffer Play failed.";
-            break;
-
-        case DSErr_CreateThread:
-            ErrorString = "DirectSound error: failed creating mix thread.";
-            break;
-
-        default:
-            ErrorString = "Unknown DirectSound error code.";
-            break;
+        case DSErr_Error:                      return DirectSoundDrv_ErrorString(ErrorCode);
+        case DSErr_Ok:                         return "DirectSound ok.";
+        case DSErr_Uninitialised:              return "DirectSound uninitialized.";
+        case DSErr_DirectSoundCreate:          return "DirectSound error: DirectSoundCreate failed.";
+        case DSErr_SetCooperativeLevel:        return "DirectSound error: SetCooperativeLevel failed.";
+        case DSErr_CreateSoundBuffer:          return "DirectSound error: primary CreateSoundBuffer failed.";
+        case DSErr_CreateSoundBufferSecondary: return "DirectSound error: secondary CreateSoundBuffer failed.";
+        case DSErr_SetFormat:                  return "DirectSound error: primary buffer SetFormat failed.";
+        case DSErr_SetFormatSecondary:         return "DirectSound error: secondary buffer SetFormat failed.";
+        case DSErr_Notify:                     return "DirectSound error: failed querying secondary buffer for notify interface.";
+        case DSErr_NotifyEvents:               return "DirectSound error: failed creating notify events.";
+        case DSErr_SetNotificationPositions:   return "DirectSound error: failed setting notification positions.";
+        case DSErr_Play:                       return "DirectSound error: primary buffer Play failed.";
+        case DSErr_PlaySecondary:              return "DirectSound error: secondary buffer Play failed.";
+        case DSErr_CreateThread:               return "DirectSound error: failed creating mix thread.";
+        default:                               return "Unknown DirectSound error code.";
     }
-
-    return ErrorString;
 }
