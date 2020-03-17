@@ -432,6 +432,25 @@ public:
     virtual bool Event(CGameMenuEvent &);
 };
 
+class CGameMenuFileSelect : public CGameMenuItem
+{
+private:
+    const char *startdir;
+    const char *pattern;
+    char *destination;
+    BUILDVFS_FIND_REC *findhigh[2];
+    int32_t nTopDelta[2];
+    fnlist_t fnlist;
+    int32_t currentList;
+    bool Select(void);
+    void FileSelectInit(void);
+    void MovementVefiry(void);
+public:
+    CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination);
+    virtual void Draw(void);
+    virtual bool Event(CGameMenuEvent&);
+};
+
 
 class CGameMenu
 {

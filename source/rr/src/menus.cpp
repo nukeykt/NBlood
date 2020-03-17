@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
+#include "al_midi.h"
 #include "compat.h"
 #include "duke3d.h"
 #include "osdcmds.h"
@@ -335,6 +336,7 @@ static MenuEntryFormat_t MEF_OptionsMenu =      { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_CenterMenu =       { 7<<16,      0,          0 };
 static MenuEntryFormat_t MEF_BigOptions_Apply = { 4<<16, 16<<16, -(260<<16) };
 static MenuEntryFormat_t MEF_BigOptionsRt =     { 4<<16,      0, -(260<<16) };
+static MenuEntryFormat_t MEF_BigOptionsRtSections = { 3<<16,      0, -(260<<16) };
 #if defined USE_OPENGL || !defined EDUKE32_ANDROID_MENU
 static MenuEntryFormat_t MEF_SmallOptions =     { 1<<16,      0, -(260<<16) };
 #endif
@@ -569,18 +571,18 @@ MAKE_MENU_TOP_ENTRYLINK( "Player Setup", MEF_OptionsMenu, OPTIONS_PLAYERSETUP, M
 #ifndef EDUKE32_ANDROID_MENU
 MAKE_MENU_TOP_ENTRYLINK( "Control Setup", MEF_OptionsMenu, OPTIONS_CONTROLS, MENU_CONTROLS );
 
-MAKE_MENU_TOP_ENTRYLINK( "Keyboard Setup", MEF_CenterMenu, OPTIONS_KEYBOARDSETUP, MENU_KEYBOARDSETUP );
-MAKE_MENU_TOP_ENTRYLINK( "Mouse Setup", MEF_CenterMenu, OPTIONS_MOUSESETUP, MENU_MOUSESETUP );
+MAKE_MENU_TOP_ENTRYLINK( "Keyboard Setup", MEF_BigOptionsRtSections, OPTIONS_KEYBOARDSETUP, MENU_KEYBOARDSETUP );
+MAKE_MENU_TOP_ENTRYLINK( "Mouse Setup", MEF_BigOptionsRtSections, OPTIONS_MOUSESETUP, MENU_MOUSESETUP );
 #endif
-MAKE_MENU_TOP_ENTRYLINK( "Joystick Setup", MEF_CenterMenu, OPTIONS_JOYSTICKSETUP, MENU_JOYSTICKSETUP );
+MAKE_MENU_TOP_ENTRYLINK( "Joystick Setup", MEF_BigOptionsRtSections, OPTIONS_JOYSTICKSETUP, MENU_JOYSTICKSETUP );
 #ifdef EDUKE32_ANDROID_MENU
-MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_CenterMenu, OPTIONS_TOUCHSETUP, MENU_TOUCHSETUP );
+MAKE_MENU_TOP_ENTRYLINK( "Touch Setup", MEF_BigOptionsRtSections, OPTIONS_TOUCHSETUP, MENU_TOUCHSETUP );
 #endif
 #ifdef EDUKE32_SIMPLE_MENU
 MAKE_MENU_TOP_ENTRYLINK("Cheats", MEF_OptionsMenu, OPTIONS_CHEATS, MENU_CHEATS);
 #endif
 
-static int32_t newresolution, newrendermode, newfullscreen, newvsync;
+static int32_t newresolution, newrendermode, newfullscreen, newvsync, newborderless;
 
 enum resflags_t {
     RES_FS  = 0x1,
@@ -618,18 +620,35 @@ static MenuOption_t MEO_VIDEOSETUP_RENDERER = MAKE_MENUOPTION( &MF_Redfont, &MEO
 static MenuEntry_t ME_VIDEOSETUP_RENDERER = MAKE_MENUENTRY( "Renderer:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_RENDERER, Option );
 #endif
 
-static MenuOption_t MEO_VIDEOSETUP_FULLSCREEN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_NoYes, &newfullscreen );
-static MenuEntry_t ME_VIDEOSETUP_FULLSCREEN = MAKE_MENUENTRY( "Fullscreen:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FULLSCREEN, Option );
+static MenuOption_t MEO_VIDEOSETUP_FULLSCREEN = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &newfullscreen );
+static MenuEntry_t ME_VIDEOSETUP_FULLSCREEN = MAKE_MENUENTRY( "Windowed:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FULLSCREEN, Option );
 
+static char const *MEOSN_VIDEOSETUP_BORDERLESS [] = { "No", "Yes", "Auto", };
+static int32_t MEOSV_VIDEOSETUP_BORDERLESS [] = { 0, 1, 2, };
+static MenuOptionSet_t MEOS_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_BORDERLESS, MEOSV_VIDEOSETUP_BORDERLESS, 0x2);
+static MenuOption_t MEO_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_BORDERLESS, &newborderless);
+static MenuEntry_t ME_VIDEOSETUP_BORDERLESS = MAKE_MENUENTRY("Borderless:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_BORDERLESS, Option);
 
-static char const *MEOSN_VIDEOSETUP_VSYNC [] = { "Adaptive", "Off", "On", };
-static int32_t MEOSV_VIDEOSETUP_VSYNC [] = { -1, 0, 1, };
+static char const *MEOSN_VIDEOSETUP_VSYNC[] = { "Adaptive", "Off", "On",
+#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+                                                "KMT",
+#endif
+};
+
+static int32_t MEOSV_VIDEOSETUP_VSYNC[] = { -1, 0, 1,
+#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+                                             2,
+#endif
+};
+
 static MenuOptionSet_t MEOS_VIDEOSETUP_VSYNC = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_VSYNC, MEOSV_VIDEOSETUP_VSYNC, 0x2);
 static MenuOption_t MEO_VIDEOSETUP_VSYNC = MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_VSYNC, &newvsync);
 static MenuEntry_t ME_VIDEOSETUP_VSYNC = MAKE_MENUENTRY("VSync:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_VSYNC, Option);
 
-static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
-static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { 30, 60, 75, 100, 120, 144, 165, 240 };
+
+
+static char const *MEOSN_VIDEOSETUP_FRAMELIMIT [] = { "Auto", "None", "30 fps", "60 fps", "75 fps", "100 fps", "120 fps", "144 fps", "165 fps", "240 fps" };
+static int32_t MEOSV_VIDEOSETUP_FRAMELIMIT [] = { -1, 0, 30, 60, 75, 100, 120, 144, 165, 240 };
 static MenuOptionSet_t MEOS_VIDEOSETUP_FRAMELIMIT = MAKE_MENUOPTIONSET(MEOSN_VIDEOSETUP_FRAMELIMIT, MEOSV_VIDEOSETUP_FRAMELIMIT, 0x0);
 static MenuOption_t MEO_VIDEOSETUP_FRAMELIMIT= MAKE_MENUOPTION(&MF_Redfont, &MEOS_VIDEOSETUP_FRAMELIMIT, &r_maxfps);
 static MenuEntry_t ME_VIDEOSETUP_FRAMELIMIT = MAKE_MENUENTRY("Framerate limit:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_FRAMELIMIT, Option);
@@ -664,6 +683,7 @@ static MenuEntry_t ME_DISPLAYSETUP_FOV = MAKE_MENUENTRY( "FOV:", &MF_Redfont, &M
 #ifdef USE_OPENGL
 # if !(defined EDUKE32_STANDALONE) || defined POLYMER
 //POGOTODO: allow filtering again in standalone once indexed colour textures support filtering
+#ifdef TEXFILTER_MENU_OPTIONS
 static char const *MEOSN_DISPLAYSETUP_TEXFILTER[] = { "Classic", "Filtered" };
 static int32_t MEOSV_DISPLAYSETUP_TEXFILTER[] = { TEXFILTER_OFF, TEXFILTER_ON };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_TEXFILTER = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_TEXFILTER, MEOSV_DISPLAYSETUP_TEXFILTER, 0x2 );
@@ -675,6 +695,7 @@ static int32_t MEOSV_DISPLAYSETUP_ANISOTROPY[] = { 0, 1, 2, 4, 8, 16, };
 static MenuOptionSet_t MEOS_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTIONSET( MEOSN_DISPLAYSETUP_ANISOTROPY, MEOSV_DISPLAYSETUP_ANISOTROPY, 0x0 );
 static MenuOption_t MEO_DISPLAYSETUP_ANISOTROPY = MAKE_MENUOPTION(&MF_Redfont, &MEOS_DISPLAYSETUP_ANISOTROPY, &glanisotropy);
 static MenuEntry_t ME_DISPLAYSETUP_ANISOTROPY = MAKE_MENUENTRY( "Anisotropy:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_DISPLAYSETUP_ANISOTROPY, Option );
+#endif
 # endif
 
 # ifdef EDUKE32_ANDROID_MENU
@@ -839,12 +860,16 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL[] = {
     &ME_DISPLAYSETUP_ASPECTRATIO,
     &ME_DISPLAYSETUP_FOV,
 #endif
+#ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
+#endif
 #ifdef EDUKE32_ANDROID_MENU
     &ME_DISPLAYSETUP_HIDEDPAD,
     &ME_DISPLAYSETUP_TOUCHALPHA,
 #else
+#ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_ANISOTROPY,
+#endif
 # ifdef EDUKE32_SIMPLE_MENU
     &ME_DISPLAYSETUP_PALETTEEMULATION,
 # else
@@ -861,8 +886,10 @@ static MenuEntry_t *MEL_DISPLAYSETUP_GL_POLYMER[] = {
     &ME_DISPLAYSETUP_VIDEOSETUP,
     &ME_DISPLAYSETUP_FOV,
 #endif
+#ifdef TEXFILTER_MENU_OPTIONS
     &ME_DISPLAYSETUP_TEXFILTER,
     &ME_DISPLAYSETUP_ANISOTROPY,
+#endif
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_DISPLAYSETUP_ADVANCED_GL_POLYMER,
 #endif
@@ -1230,7 +1257,8 @@ static MenuEntry_t ME_SAVE_NEW = MAKE_MENUENTRY( s_NewSaveGame, &MF_Minifont, &M
 static MenuEntry_t *ME_SAVE;
 static MenuEntry_t **MEL_SAVE;
 
-static int32_t soundrate, soundvoices, musicdevice;
+static int32_t soundrate, soundvoices, musicdevice, opl3stereo;
+static char sf2bankfile[BMAX_PATH];
 static MenuOption_t MEO_SOUND = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.SoundToggle );
 static MenuEntry_t ME_SOUND = MAKE_MENUENTRY( "Sound:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND, Option );
 
@@ -1256,21 +1284,26 @@ static MenuOption_t MEO_SOUND_SAMPLINGRATE = MAKE_MENUOPTION( &MF_Redfont, &MEOS
 static MenuEntry_t ME_SOUND_SAMPLINGRATE = MAKE_MENUENTRY( "Sample rate:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_SAMPLINGRATE, Option );
 
 #ifndef EDUKE32_SIMPLE_MENU
+static MenuOption_t MEO_SOUND_OPL3STEREO = MAKE_MENUOPTION(&MF_Redfont, &MEOS_NoYes, &opl3stereo);
+static MenuEntry_t ME_SOUND_OPL3STEREO = MAKE_MENUENTRY( "OPL3 stereo mode:", &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_OPL3STEREO, Option );
+
 static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 256, 0, 16, 1 );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
 #endif
 
 static char const *MEOSN_SOUND_MIDIDRIVER[] = {
-    "OPL3",
+    "OPL3 emu.",
 #ifdef _WIN32
-    "Windows",
+    "Windows MME",
 #endif
+    ".sf2 synth",
 };
 static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
     ASS_OPL3,
 #ifdef _WIN32
     ASS_WinMM,
 #endif
+    ASS_SF2,
 };
 
 static MenuOptionSet_t MEOS_SOUND_MIDIDRIVER = MAKE_MENUOPTIONSET( MEOSN_SOUND_MIDIDRIVER, MEOSV_SOUND_MIDIDRIVER, 0x2 );
@@ -1280,8 +1313,11 @@ static MenuEntry_t ME_SOUND_MIDIDRIVER = MAKE_MENUENTRY( "MIDI driver:", &MF_Red
 static MenuEntry_t ME_SOUND_RESTART = MAKE_MENUENTRY( "Apply Changes", &MF_Redfont, &MEF_BigOptions_Apply, &MEO_NULL, Link );
 
 #ifndef EDUKE32_SIMPLE_MENU
-static MenuLink_t MEO_ADVSOUND = { MENU_ADVSOUND, MA_Advance, };
-static MenuEntry_t ME_SOUND_ADVSOUND = MAKE_MENUENTRY( "Advanced", &MF_Redfont, &MEF_BigOptionsRt, &MEO_ADVSOUND, Link );
+static MenuLink_t MEO_SOUND_DEVSETUP = { MENU_SOUND_DEVSETUP, MA_Advance, };
+static MenuEntry_t ME_SOUND_DEVSETUP = MAKE_MENUENTRY( "Device configuration", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_DEVSETUP, Link );
+
+static MenuLink_t MEO_SOUND_SF2 = { MENU_SOUND_SF2, MA_Advance, };
+static MenuEntry_t ME_SOUND_SF2 = MAKE_MENUENTRY( sf2bankfile, &MF_Redfont, &MEF_BigOptionsRtSections, &MEO_SOUND_SF2, Link );
 #endif
 
 static MenuEntry_t *MEL_SOUND[] = {
@@ -1291,18 +1327,18 @@ static MenuEntry_t *MEL_SOUND[] = {
     &ME_SOUND_VOLUME_MUSIC,
     &ME_SOUND_DUKETALK,
 #ifndef EDUKE32_SIMPLE_MENU
-    &ME_SOUND_ADVSOUND,
+    &ME_SOUND_DEVSETUP,
 #endif
 };
 
-static MenuEntry_t *MEL_ADVSOUND[] = {
+static MenuEntry_t *MEL_SOUND_DEVSETUP[] = {
     &ME_SOUND_SAMPLINGRATE,
-    &ME_Space2_Redfont,
 #ifndef EDUKE32_SIMPLE_MENU
     &ME_SOUND_NUMVOICES,
-    &ME_Space2_Redfont,
-#endif
     &ME_SOUND_MIDIDRIVER,
+    &ME_SOUND_OPL3STEREO,
+    &ME_SOUND_SF2,
+#endif
     &ME_Space2_Redfont,
     &ME_SOUND_RESTART,
 };
@@ -1530,7 +1566,7 @@ static MenuMenu_t M_DISPLAYSETUP = MAKE_MENUMENU( "Display Setup", &MMF_BigOptio
 static MenuMenu_t M_LOAD = MAKE_MENUMENU_CUSTOMSIZE( s_LoadGame, &MMF_LoadSave, MEL_LOAD );
 static MenuMenu_t M_SAVE = MAKE_MENUMENU_CUSTOMSIZE( s_SaveGame, &MMF_LoadSave, MEL_SAVE );
 static MenuMenu_t M_SOUND = MAKE_MENUMENU( "Sound Setup", &MMF_BigOptions, MEL_SOUND );
-static MenuMenu_t M_ADVSOUND = MAKE_MENUMENU( "Advanced Sound", &MMF_BigOptions, MEL_ADVSOUND );
+static MenuMenu_t M_SOUND_DEVSETUP = MAKE_MENUMENU( "Device Configuration", &MMF_BigOptions, MEL_SOUND_DEVSETUP);
 static MenuMenu_t M_CDPLAYER = MAKE_MENUMENU( "8 Track Player", &MMF_BigOptions, MEL_CDPLAYER );
 static MenuMenu_t M_SAVESETUP = MAKE_MENUMENU( "Save Setup", &MMF_BigOptions, MEL_SAVESETUP );
 static MenuMenu_t M_NETWORK = MAKE_MENUMENU( "Network Game", &MMF_Top_Joystick_Network, MEL_NETWORK );
@@ -1609,9 +1645,11 @@ static MenuTextForm_t M_CHEATENTRY = { NULL, "Enter Cheat Code:", MAXCHEATLEN, 0
 static MenuTextForm_t M_CHEAT_WARP = { NULL, "Enter Warp #:", 3, 0 };
 static MenuTextForm_t M_CHEAT_SKILL = { NULL, "Enter Skill #:", 1, 0 };
 
-#define MAKE_MENUFILESELECT(a, b, c) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, b, c, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
+#define MAKE_MENUFILESELECT(a, dir, b, c) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, dir, b, c, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
 
-static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "*.map", boardfilename );
+static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "./usermaps/", "*.map", boardfilename );
+
+static MenuFileSelect_t M_SOUND_SF2 = MAKE_MENUFILESELECT( "Select Sound Bank", "./", "*.sf2", sf2bankfile);
 
 // MUST be in ascending order of MenuID enum values due to binary search
 static Menu_t Menus[] = {
@@ -1663,7 +1701,8 @@ static Menu_t Menus[] = {
     { &M_NETWAITVOTES, MENU_NETWAITVOTES, MENU_MAIN, MA_Return, Message },
     { &M_SOUND, MENU_SOUND, MENU_OPTIONS, MA_Return, Menu },
     { &M_SOUND, MENU_SOUND_INGAME, MENU_CLOSE, MA_Return, Menu },
-    { &M_ADVSOUND, MENU_ADVSOUND, MENU_SOUND, MA_Return, Menu },
+    { &M_SOUND_DEVSETUP, MENU_SOUND_DEVSETUP, MENU_SOUND, MA_Return, Menu },
+    { &M_SOUND_SF2, MENU_SOUND_SF2, MENU_SOUND_DEVSETUP, MA_Return, FileSelect },
     { &M_CDPLAYER, MENU_CDPLAYER, MENU_SOUND, MA_Return, CdPlayer },
     { &M_SAVESETUP, MENU_SAVESETUP, MENU_OPTIONS, MA_Return, Menu },
     { &M_SAVECLEANVERIFY, MENU_SAVECLEANVERIFY, MENU_SAVESETUP, MA_None, Verify },
@@ -2222,6 +2261,7 @@ static void Menu_Pre(MenuID_t cm)
                  (ud.screen_size > 8 && !(ud.statusbarflags & STATUSBAR_NOSHRINK)) * ((ud.screen_size - 8) >> 2)
                  -1;
 
+#ifdef TEXFILTER_MENU_OPTIONS
         if (videoGetRenderMode() != REND_CLASSIC)
         {
             //POGOTODO: allow setting anisotropy again while r_useindexedcolortextures is set when support is added down the line
@@ -2240,6 +2280,7 @@ static void Menu_Pre(MenuID_t cm)
                 }
             }
         }
+#endif
         break;
 
     case MENU_POLYMER:
@@ -2258,6 +2299,53 @@ static void Menu_Pre(MenuID_t cm)
 
     case MENU_VIDEOSETUP:
     {
+        Bmemset(resolution, 0, sizeof(resolution));
+        MEOS_VIDEOSETUP_RESOLUTION.numOptions = 0;
+
+        // prepare video setup
+        for (int i = 0; i < validmodecnt; ++i)
+        {
+            int j;
+
+            for (j = 0; j < MEOS_VIDEOSETUP_RESOLUTION.numOptions; ++j)
+            {
+                if (validmode[i].xdim == resolution[j].xdim && validmode[i].ydim == resolution[j].ydim)
+                {
+                    resolution[j].flags |= validmode[i].fs ? RES_FS : RES_WIN;
+                    Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+                    MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+                    if (validmode[i].bpp > resolution[j].bppmax)
+                        resolution[j].bppmax = validmode[i].bpp;
+                    break;
+                }
+            }
+
+            if (j == MEOS_VIDEOSETUP_RESOLUTION.numOptions) // no match found
+            {
+                resolution[j].xdim = validmode[i].xdim;
+                resolution[j].ydim = validmode[i].ydim;
+                resolution[j].bppmax = validmode[i].bpp;
+                resolution[j].flags = validmode[i].fs ? RES_FS : RES_WIN;
+                Bsnprintf(resolution[j].name, MAXRESOLUTIONSTRINGLENGTH, "%d x %d%s", resolution[j].xdim, resolution[j].ydim, (resolution[j].flags & RES_FS) ? "" : "Win");
+                MEOSN_VIDEOSETUP_RESOLUTION[j] = resolution[j].name;
+                ++MEOS_VIDEOSETUP_RESOLUTION.numOptions;
+            }
+        }
+
+        if (newresolution == -1)
+        {
+            newresolution = 0;
+
+            for (int i = 0; i < MAXVALIDMODES; ++i)
+            {
+                if (resolution[i].xdim == xres && resolution[i].ydim == yres)
+                {
+                    newresolution = i;
+                    break;
+                }
+            }
+        }
+
         const int32_t nr = newresolution;
 
         // don't allow setting fullscreen mode if it's not supported by the resolution
@@ -2266,28 +2354,31 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_APPLY,
              (xres == resolution[nr].xdim && yres == resolution[nr].ydim &&
               videoGetRenderMode() == newrendermode && fullscreen == newfullscreen
-              && vsync == newvsync
+              && vsync == newvsync && r_borderless == newborderless
              )
              || (newrendermode != REND_CLASSIC && resolution[nr].bppmax <= 8));
-
-        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, !r_maxfps);
+        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_BORDERLESS, newfullscreen);
+        MenuEntry_DisableOnCondition(&ME_VIDEOSETUP_FRAMELIMITOFFSET, r_maxfps <= 0);
         break;
     }
 
     case MENU_SOUND:
     case MENU_SOUND_INGAME:
-    case MENU_ADVSOUND:
+    case MENU_SOUND_DEVSETUP:
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_FX, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_VOLUME_MUSIC, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_DUKETALK, !ud.config.SoundToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
 #ifndef EDUKE32_SIMPLE_MENU
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
+        MenuEntry_HideOnCondition(&ME_SOUND_OPL3STEREO, musicdevice != ASS_OPL3);
+        MenuEntry_HideOnCondition(&ME_SOUND_SF2, musicdevice != ASS_SF2);
 #endif
-        MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.MusicToggle);
         MenuEntry_DisableOnCondition(&ME_SOUND_RESTART, soundrate == ud.config.MixRate &&
                                                         soundvoices == ud.config.NumVoices &&
-                                                        musicdevice == ud.config.MusicDevice);
+                                                        musicdevice == ud.config.MusicDevice &&
+                                                        opl3stereo == AL_Stereo &&
+                                                        !Bstrcmp(sf2bankfile, SF2_BankFile));
         break;
 
     case MENU_SAVESETUP:
@@ -3967,15 +4058,21 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         resolution_t p = { xres, yres, fullscreen, bpp, 0 };
         int32_t prend = videoGetRenderMode();
         int32_t pvsync = vsync;
+        int pborderless = r_borderless;
 
         resolution_t n = { resolution[newresolution].xdim, resolution[newresolution].ydim,
                            (resolution[newresolution].flags & RES_FS) ? newfullscreen : 0,
                            (newrendermode == REND_CLASSIC) ? 8 : resolution[newresolution].bppmax, 0 };
-        int32_t nrend = newrendermode;
-        int32_t nvsync = newvsync;
+
+        if (r_borderless != newborderless)
+            videoResetMode();
+
+        r_borderless = newborderless;
 
         if (videoSetGameMode(n.flags, n.xdim, n.ydim, n.bppmax, upscalefactor) < 0)
         {
+            r_borderless = pborderless;
+
             if (videoSetGameMode(p.flags, p.xdim, p.ydim, p.bppmax, upscalefactor) < 0)
             {
                 videoSetRenderMode(prend);
@@ -3987,12 +4084,15 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
                 vsync = videoSetVsync(pvsync);
             }
         }
-        else onvideomodechange(n.bppmax > 8);
+        else
+        {
+            videoSetRenderMode(newrendermode);
+            vsync = videoSetVsync(newvsync);
+            onvideomodechange(n.bppmax > 8);
+        }
 
         g_restorePalette = -1;
         G_UpdateScreenArea();
-        videoSetRenderMode(nrend);
-        vsync = videoSetVsync(nvsync);
         ud.setup.fullscreen = fullscreen;
         ud.setup.xdim = xres;
         ud.setup.ydim = yres;
@@ -4000,21 +4100,36 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     }
     else if (entry == &ME_SOUND_RESTART)
     {
-        ud.config.MixRate = soundrate;
-        ud.config.NumVoices = soundvoices;
-        ud.config.MusicDevice = musicdevice;
+        if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices)
+        {
+            S_MusicShutdown();
+            S_SoundShutdown();
 
-        S_SoundShutdown();
-        S_MusicShutdown();
+            ud.config.MixRate = soundrate;
+            ud.config.NumVoices = soundvoices;
 
-        S_MusicStartup();
-        S_SoundStartup();
+            S_SoundStartup();
+            S_MusicStartup();
 
-        FX_StopAllSounds();
-        S_ClearSoundLocks();
+            S_ClearSoundLocks();
+        }
 
         if (ud.config.MusicToggle)
+        {
+            int const needsReInit = (ud.config.MusicDevice != musicdevice || (musicdevice == ASS_SF2 && Bstrcmp(SF2_BankFile, sf2bankfile)));
+
+            AL_Stereo = opl3stereo;
+            Bstrcpy(SF2_BankFile, sf2bankfile);
+
+            if (needsReInit)
+            {
+                S_MusicShutdown();
+                ud.config.MusicDevice = musicdevice;
+                S_MusicStartup();
+            }
+
             S_RestartMusic();
+        }
     }
     else if (entry == &ME_SAVESETUP_CLEANUP)
     {
@@ -4200,8 +4315,10 @@ static void Menu_EntryOptionDidModify(MenuEntry_t *entry)
         }
     }
 #ifdef USE_OPENGL
+#ifdef TEXFILTER_MENU_OPTIONS
     else if (entry == &ME_DISPLAYSETUP_ANISOTROPY || entry == &ME_DISPLAYSETUP_TEXFILTER)
         gltexapplyprops();
+#endif
     else if (entry == &ME_RENDERERSETUP_TEXQUALITY)
     {
         texcache_invalidate();
@@ -4673,7 +4790,16 @@ static void Menu_FileSelectInit(MenuFileSelect_t *object)
     fnlist_clearnames(&object->fnlist);
 
     if (object->destination[0] == 0)
-        Bstrcpy(object->destination, "./");
+    {
+        BDIR * usermaps = Bopendir(object->startdir);
+        if (usermaps)
+        {
+            Bclosedir(usermaps);
+            Bstrcpy(object->destination, object->startdir);
+        }
+        else
+            Bstrcpy(object->destination, "./");
+    }
     Bcorrectfilename(object->destination, 1);
 
     fnlist_getnames(&object->fnlist, object->destination, object->pattern, 0, 0);
@@ -4713,7 +4839,9 @@ static void Menu_FileSelect(int32_t input)
                 Menu_StartGameWithoutSkill();
         }
         break;
-
+    case MENU_SOUND_SF2:
+        Menu_AnimateChange(MENU_SOUND_DEVSETUP, MA_Advance);
+        break;
     default:
         break;
     }
@@ -4964,24 +5092,27 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         break;
 
     case MENU_VIDEOSETUP:
-        newresolution = 0;
-        for (int i = 0; i < MAXVALIDMODES; ++i)
-        {
-            if (resolution[i].xdim == xres && resolution[i].ydim == yres)
-            {
-                newresolution = i;
-                break;
-            }
-        }
+        newresolution = -1;
         newrendermode = videoGetRenderMode();
         newfullscreen = fullscreen;
         newvsync = vsync;
+        newborderless = r_borderless;
         break;
 
-    case MENU_ADVSOUND:
-        soundrate = ud.config.MixRate;
-        soundvoices = ud.config.NumVoices;
-        musicdevice = ud.config.MusicDevice;
+    case MENU_SOUND:
+    case MENU_SOUND_SF2:
+        Bstrcpy(sf2bankfile, SF2_BankFile);
+        break;
+
+    case MENU_SOUND_DEVSETUP:
+        if (m_previousMenu->menuID != MENU_SOUND_SF2)
+        {
+            soundrate   = ud.config.MixRate;
+            soundvoices = ud.config.NumVoices;
+            musicdevice = ud.config.MusicDevice;
+            opl3stereo  = AL_Stereo;
+        }
+        ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         break;
 
     default:

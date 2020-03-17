@@ -605,6 +605,7 @@ int nMusicDeviceValues[] = {
 #ifdef _WIN32
     ASS_WinMM,
 #endif
+    ASS_SF2,
 };
 
 const char *pzMusicDeviceStrings[] = {
@@ -612,7 +613,14 @@ const char *pzMusicDeviceStrings[] = {
 #ifdef _WIN32
     "SYSTEM MIDI",
 #endif
+    ".SF2 SYNTH",
 };
+static char sf2bankfile[BMAX_PATH];
+
+CGameMenu menuOptionsSoundSF2;
+
+CGameMenuItemTitle itemOptionsSoundSF2Title("SELECT SF2 BANK", 1, 160, 20, 2038);
+CGameMenuFileSelect itemOptionsSoundSF2FS("", 3, 0, 0, 0, "./", "*.sf2", sf2bankfile);
 
 CGameMenuItemTitle itemOptionsSoundTitle("SOUND SETUP", 1, 160, 20, 2038);
 CGameMenuItemZBool itemOptionsSoundSoundToggle("SOUND:", 3, 66, 60, 180, false, UpdateSoundToggle, NULL, NULL);
@@ -623,8 +631,9 @@ CGameMenuItemSlider itemOptionsSoundMusicVolume("MUSIC VOLUME:", 3, 66, 100, 180
 CGameMenuItemZCycle itemOptionsSoundSampleRate("SAMPLE RATE:", 3, 66, 110, 180, 0, UpdateSoundRate, pzSoundRateStrings, 3, 0);
 CGameMenuItemSlider itemOptionsSoundNumVoices("VOICES:", 3, 66, 120, 180, NumVoices, 16, 256, 16, UpdateNumVoices, -1, -1, kMenuSliderValue);
 CGameMenuItemZBool itemOptionsSoundCDToggle("REDBOOK AUDIO:", 3, 66, 130, 180, false, UpdateCDToggle, NULL, NULL);
-CGameMenuItemZCycle itemOptionsSoundMusicDevice("MUSIC DEVICE:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, ARRAY_SIZE(pzMusicDeviceStrings), 0);
-CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 150, 180, 0, NULL, 0, SetSound, 0);
+CGameMenuItemZCycle itemOptionsSoundMusicDevice("MIDI DRIVER:", 3, 66, 140, 180, 0, UpdateMusicDevice, pzMusicDeviceStrings, ARRAY_SIZE(pzMusicDeviceStrings), 0);
+CGameMenuItemChain itemOptionsSoundSF2Bank("SF2 BANK", 3, 66, 150, 180, 0, &menuOptionsSoundSF2, 0, NULL, 0);
+CGameMenuItemChain itemOptionsSoundApplyChanges("APPLY CHANGES", 3, 66, 160, 180, 0, NULL, 0, SetSound, 0);
 
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent);
@@ -1273,8 +1282,13 @@ void SetupOptionsMenu(void)
     menuOptionsSound.Add(&itemOptionsSoundNumVoices, false);
     menuOptionsSound.Add(&itemOptionsSoundCDToggle, false);
     menuOptionsSound.Add(&itemOptionsSoundMusicDevice, false);
+    menuOptionsSound.Add(&itemOptionsSoundSF2Bank, false);
+
     menuOptionsSound.Add(&itemOptionsSoundApplyChanges, false);
     menuOptionsSound.Add(&itemBloodQAV, false);
+
+    menuOptionsSoundSF2.Add(&itemOptionsSoundSF2Title, true);
+    menuOptionsSoundSF2.Add(&itemOptionsSoundSF2FS, true);
 
     menuOptionsPlayer.Add(&itemOptionsPlayerTitle, false);
     menuOptionsPlayer.Add(&itemOptionsPlayerName, true);
@@ -1882,7 +1896,15 @@ void UpdateNumVoices(CGameMenuItemSlider *pItem)
 
 void UpdateMusicDevice(CGameMenuItemZCycle *pItem)
 {
-    UNREFERENCED_PARAMETER(pItem);
+    itemOptionsSoundSF2Bank.bEnable = 0;
+    itemOptionsSoundSF2Bank.bNoDraw = 1;
+    switch (nMusicDeviceValues[itemOptionsSoundMusicDevice.m_nFocus])
+    {
+    case ASS_SF2:
+        itemOptionsSoundSF2Bank.bEnable = 1;
+        itemOptionsSoundSF2Bank.bNoDraw = 0;
+        break;
+    }
 }
 
 void SetSound(CGameMenuItemChain *pItem)
@@ -1891,6 +1913,7 @@ void SetSound(CGameMenuItemChain *pItem)
     MixRate = nSoundRateValues[itemOptionsSoundSampleRate.m_nFocus];
     NumVoices = itemOptionsSoundNumVoices.nValue;
     MusicDevice = nMusicDeviceValues[itemOptionsSoundMusicDevice.m_nFocus];
+    Bstrcpy(SF2_BankFile, sf2bankfile);
     sfxTerm();
     sndTerm();
 
@@ -1932,6 +1955,8 @@ void SetupOptionsSound(CGameMenuItemChain *pItem)
             break;
         }
     }
+
+    UpdateMusicDevice(NULL);
 }
 
 void UpdatePlayerName(CGameMenuItemZEdit *pItem, CGameMenuEvent *pEvent)
