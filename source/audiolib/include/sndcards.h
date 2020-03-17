@@ -37,6 +37,7 @@ typedef enum
     ASS_DirectSound,
     ASS_OPL3,
     ASS_WinMM,
+    ASS_SF2,
     ASS_NumSoundCards,
     ASS_AutoDetect = -2
 } soundcardnames;
