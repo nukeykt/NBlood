@@ -26,6 +26,7 @@
 #include "drivers.h"
 
 #include "driver_adlib.h"
+#include "driver_sf2.h"
 #include "_midi.h"
 
 #ifdef RENDERTYPESDL
@@ -146,6 +147,25 @@ static struct
     #else
         UNSUPPORTED_COMPLETELY
     #endif
+    },
+
+    // TinySoundFont
+    {
+        "SoundFont2 synthesizer",
+        SF2_GetError,
+        SF2_ErrorString,
+
+        UNSUPPORTED_PCM,
+
+        EMIDI_GeneralMIDI,
+        SF2_MIDI_Init,
+        SF2_MIDI_Shutdown,
+        SF2_MIDI_StartPlayback,
+        SF2_MIDI_HaltPlayback,
+        SF2_MIDI_SetTempo,
+        nullptr,
+        nullptr,
+        SF2_MIDI_Service,
     },
 };
 
