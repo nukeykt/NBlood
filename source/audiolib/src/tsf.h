@@ -550,6 +550,8 @@ static void tsf_region_envtosecs(struct tsf_envelope* p, TSF_BOOL sustainIsGain)
 	if (p->sustain < 0.0f) p->sustain = 0.0f;
 	else if (sustainIsGain) p->sustain = tsf_decibelsToGain(-p->sustain / 10.0f);
 	else p->sustain = 1.0f - (p->sustain / 1000.0f);
+
+	p->sustain = clamp(p->sustain, 0, 1.f);
 }
 
 static void tsf_load_presets(tsf* res, struct tsf_hydra *hydra, unsigned int fontSampleCount)
@@ -1265,7 +1267,7 @@ TSFDEF void tsf_note_on(tsf* f, int preset_index, int key, float vel)
 		voice->playingPreset = preset_index;
 		voice->playingKey = key;
 		voice->playIndex = voicePlayIndex;
-		voice->noteGainDB = f->globalGainDB - region->attenuation - tsf_gainToDecibels(1.0f / vel);
+		voice->noteGainDB = f->globalGainDB - clamp(region->attenuation, 0.f, 144.f) - tsf_gainToDecibels(1.0f / vel);
 
 		if (f->channels)
 		{
