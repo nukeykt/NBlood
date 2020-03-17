@@ -29,6 +29,17 @@
 #define WINMM_AFTER_TOUCH      0xD0
 #define WINMM_PITCH_BEND       0xE0
 
+enum
+{
+    WinMMErr_Error = -1,
+    WinMMErr_Ok    = 0,
+    WinMMErr_MIDIStreamOpen,
+    WinMMErr_MIDIStreamRestart,
+    WinMMErr_MIDICreateEvent,
+    WinMMErr_MIDIPlayThread,
+    WinMMErr_MIDICreateMutex
+};
+
 extern UINT WinMM_DeviceID;
 
 int WinMMDrv_GetError(void);
