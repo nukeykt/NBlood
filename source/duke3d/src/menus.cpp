@@ -6562,7 +6562,7 @@ static void Menu_RunInput_FileSelect_Movement(MenuFileSelect_t *object, MenuMove
     {
         case MM_Up:
             if (!object->findhigh[object->currentList])
-                break;
+                return;
             if (object->findhigh[object->currentList]->prev)
             {
                 object->findhigh[object->currentList] = object->findhigh[object->currentList]->prev;
@@ -6575,7 +6575,7 @@ static void Menu_RunInput_FileSelect_Movement(MenuFileSelect_t *object, MenuMove
 
         case MM_Down:
             if (!object->findhigh[object->currentList])
-                break;
+                return;
             if (object->findhigh[object->currentList]->next)
             {
                 object->findhigh[object->currentList] = object->findhigh[object->currentList]->next;
