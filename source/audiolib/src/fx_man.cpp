@@ -113,6 +113,7 @@ void FX_InitCvars(void)
         { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void*) &AL_PostAmp, CVAR_INT, 0, 3 },
         { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void*) &AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
         { "mus_sf2_bank", "SoundFont 2 (.sf2) bank filename",  (void*) SF2_BankFile, CVAR_STRING, 0, sizeof(SF2_BankFile) - 1 },
+        { "mus_sf2_sampleblocksize", "number of samples per effect processing block", (void*) &SF2_EffectSampleBlockSize, CVAR_INT, 1, 64 },
 #ifdef _WIN32
         { "mus_mme_device", "select Windows MME MIDI output device", (void*) &WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
 #endif
