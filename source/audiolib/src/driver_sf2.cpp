@@ -26,8 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "common.h"
 #include "midi.h"
 
+int SF2_EffectSampleBlockSize = 16;
+
 #define TSF_IMPLEMENTATION
 #define TSF_NO_STDIO
+#define TSF_RENDER_EFFECTSAMPLEBLOCK SF2_EffectSampleBlockSize
 #define TSF_MALLOC  Xmalloc
 #define TSF_REALLOC Xrealloc
 #define TSF_FREE    Xfree
@@ -182,6 +185,7 @@ void SF2Drv_MIDI_Service(void)
 {
     int16_t *    buffer16 = (int16_t *)MV_MusicBuffer;
     static float fbuf[MV_MIXBUFFERSIZE * 2];
+    float const  fvolume = SF2_Volume * (32768.f / MIDI_MaxVolume);
 
     for (int i = 0; i < MV_MIXBUFFERSIZE;)
     {
@@ -196,8 +200,7 @@ void SF2Drv_MIDI_Service(void)
         samples     = min(samples, MV_MIXBUFFERSIZE - i);
         tsf_render_float(sf2_synth, fbuf, samples);
 
-        int const   nsamples = samples * MV_Channels;
-        float const fvolume  = SF2_Volume * (32768.f / MIDI_MaxVolume);
+        int const nsamples = samples * MV_Channels;
 
         for (int j = 0; j < nsamples; j++)
             *buffer16++ = clamp(Blrintf(fbuf[j] * fvolume), INT16_MIN, INT16_MAX);
