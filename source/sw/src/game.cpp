@@ -634,7 +634,13 @@ MapSetAll2D(uint8_t fill)
 void
 MapSetup(void)
 {
+#define NO_AUTO_MAPPING FALSE
+
+#if NO_AUTO_MAPPING
     MapSetAll2D(0xFF);
+#else
+    automapping = TRUE;
+#endif
 }
 
 void
