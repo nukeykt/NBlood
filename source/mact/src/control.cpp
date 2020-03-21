@@ -873,7 +873,7 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     KB_Startup();
 
     CONTROL_NumMouseButtons = MAXMOUSEBUTTONS;
-    CONTROL_MousePresent    = Mouse_Init();
+    CONTROL_MousePresent    = MOUSE_Startup();
     CONTROL_MouseEnabled    = CONTROL_MousePresent;
 
     CONTROL_ResetJoystickValues();
