@@ -915,28 +915,21 @@ static MenuEntry_t ME_MOUSESETUP_MOUSEAIMING = MAKE_MENUENTRY( "Vertical aiming:
 static MenuOption_t MEO_MOUSESETUP_INVERT = MAKE_MENUOPTION( &MF_Redfont, &MEOS_YesNo, &ud.mouseflip );
 static MenuEntry_t ME_MOUSESETUP_INVERT = MAKE_MENUENTRY( "Invert aiming:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_INVERT, Option );
 
-#ifndef EDUKE32_RETAIL_MENU
-static MenuLink_t MEO_MOUSESETUP_ADVANCED = { MENU_MOUSEADVANCED, MA_Advance, };
-static MenuEntry_t ME_MOUSESETUP_ADVANCED = MAKE_MENUENTRY( "Advanced setup", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_ADVANCED, Link );
-#endif
-static MenuRangeInt32_t MEO_MOUSEADVANCED_SCALEX = MAKE_MENURANGE(&ud.config.MouseAnalogueScale[0], &MF_Redfont, -262144, 262144, 65536, 161, 3);
-static MenuEntry_t ME_MOUSEADVANCED_SCALEX = MAKE_MENUENTRY("X-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSEADVANCED_SCALEX, RangeInt32);
-static MenuRangeInt32_t MEO_MOUSEADVANCED_SCALEY = MAKE_MENURANGE(&ud.config.MouseAnalogueScale[1], &MF_Redfont, -262144, 262144, 65536, 161, 3);
-static MenuEntry_t ME_MOUSEADVANCED_SCALEY = MAKE_MENUENTRY("Y-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSEADVANCED_SCALEY, RangeInt32);
+static MenuRangeInt32_t MEO_MOUSESETUP_SCALEX = MAKE_MENURANGE(&CONTROL_MouseAxesScale[0], &MF_Redfont, 512, 65536, 65536, 128, 3 | EnforceIntervals);
+static MenuEntry_t ME_MOUSESETUP_SCALEX = MAKE_MENUENTRY("X-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SCALEX, RangeInt32);
+static MenuRangeInt32_t MEO_MOUSESETUP_SCALEY = MAKE_MENURANGE(&CONTROL_MouseAxesScale[1], &MF_Redfont, 512, 65536, 65536, 128, 3 | EnforceIntervals);
+static MenuEntry_t ME_MOUSESETUP_SCALEY = MAKE_MENUENTRY("Y-Scale:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_MOUSESETUP_SCALEY, RangeInt32);
 
 static MenuEntry_t *MEL_MOUSESETUP[] = {
     &ME_MOUSESETUP_BTNS,
     &ME_MOUSESETUP_SENSITIVITY,
-#ifdef EDUKE32_RETAIL_MENU
-    &ME_MOUSEADVANCED_SCALEX,
-    &ME_MOUSEADVANCED_SCALEY,
-#endif
+    &ME_MOUSESETUP_SCALEX,
+    &ME_MOUSESETUP_SCALEY,
     &ME_Space2_Redfont,
     &ME_MOUSESETUP_INVERT,
 #ifndef EDUKE32_RETAIL_MENU
     &ME_MOUSESETUP_MOUSEAIMINGTYPE,
     &ME_MOUSESETUP_MOUSEAIMING,
-    &ME_MOUSESETUP_ADVANCED,
 #endif
 };
 
@@ -1012,11 +1005,6 @@ static MenuEntry_t ME_JOYSTICKAXES[MAXJOYAXES];
 static char MenuJoystickAxes[MAXJOYAXES][MAXJOYBUTTONSTRINGLENGTH];
 
 static MenuEntry_t *MEL_JOYSTICKAXES[MAXJOYAXES];
-
-static MenuEntry_t *MEL_MOUSEADVANCED[] = {
-    &ME_MOUSEADVANCED_SCALEX,
-    &ME_MOUSEADVANCED_SCALEY,
-};
 
 static const char *MenuJoystickHatDirections[] = { "Up", "Right", "Down", "Left", };
 
@@ -1462,7 +1450,6 @@ static MenuMenu_t M_JOYSTICKBTNS = MAKE_MENUMENU( "Gamepad Buttons", &MMF_MouseJ
 static MenuMenu_t M_JOYSTICKAXES = MAKE_MENUMENU( "Gamepad Axes", &MMF_BigSliders, MEL_JOYSTICKAXES );
 static MenuMenu_t M_KEYBOARDKEYS = MAKE_MENUMENU( "Key Configuration", &MMF_KeyboardSetupFuncs, MEL_KEYBOARDSETUPFUNCS );
 static MenuMenu_t M_MOUSEBTNS = MAKE_MENUMENU( "Mouse Buttons", &MMF_MouseJoySetupBtns, MEL_MOUSESETUPBTNS );
-static MenuMenu_t M_MOUSEADVANCED = MAKE_MENUMENU( "Advanced Mouse", &MMF_BigSliders, MEL_MOUSEADVANCED );
 static MenuMenu_t M_JOYSTICKAXIS = MAKE_MENUMENU( NULL, &MMF_BigSliders, MEL_JOYSTICKAXIS );
 #ifdef USE_OPENGL
 static MenuMenu_t M_RENDERERSETUP_POLYMOST = MAKE_MENUMENU( "Polymost Setup", &MMF_SmallOptions, MEL_RENDERERSETUP_POLYMOST );
@@ -1556,7 +1543,6 @@ static Menu_t Menus[] = {
     { &M_JOYSTICKAXES, MENU_JOYSTICKAXES, MENU_JOYSTICKSETUP, MA_Return, Menu },
     { &M_KEYBOARDKEYS, MENU_KEYBOARDKEYS, MENU_KEYBOARDSETUP, MA_Return, Menu },
     { &M_MOUSEBTNS, MENU_MOUSEBTNS, MENU_MOUSESETUP, MA_Return, Menu },
-    { &M_MOUSEADVANCED, MENU_MOUSEADVANCED, MENU_MOUSESETUP, MA_Return, Menu },
     { &M_JOYSTICKAXIS, MENU_JOYSTICKAXIS, MENU_JOYSTICKAXES, MA_Return, Menu },
 #ifdef EDUKE32_ANDROID_MENU
     { &M_TOUCHSETUP, MENU_TOUCHSETUP, MENU_OPTIONS, MA_Return, Menu },
@@ -3092,7 +3078,6 @@ static void Menu_PreOptionListDraw(MenuEntry_t *entry, const vec2_t origin)
     switch (g_currentMenu)
     {
     case MENU_MOUSEBTNS:
-    case MENU_MOUSEADVANCED:
     case MENU_JOYSTICKBTNS:
     case MENU_JOYSTICKAXIS:
         mgametextcenter(origin.x, origin.y + (31<<16), "Select a function to assign");
@@ -3670,9 +3655,9 @@ static int32_t Menu_EntryRangeInt32Modify(MenuEntry_t *entry, int32_t newValue)
         FX_SetVolume(newValue);
     else if (entry == &ME_SOUND_VOLUME_MUSIC)
         S_MusicVolume(newValue);
-    else if (entry == &ME_MOUSEADVANCED_SCALEX)
+    else if (entry == &ME_MOUSESETUP_SCALEX)
         CONTROL_SetAnalogAxisScale(0, newValue, controldevice_mouse);
-    else if (entry == &ME_MOUSEADVANCED_SCALEY)
+    else if (entry == &ME_MOUSESETUP_SCALEY)
         CONTROL_SetAnalogAxisScale(1, newValue, controldevice_mouse);
     else if (entry == &ME_JOYSTICKAXIS_SCALE)
         CONTROL_SetAnalogAxisScale(M_JOYSTICKAXES.currentEntry, newValue, controldevice_joystick);

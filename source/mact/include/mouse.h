@@ -47,6 +47,8 @@ extern "C" {
 #define RIGHT_MOUSE_PRESSED(button)     (((button)&RIGHT_MOUSE) != 0)
 #define MIDDLE_MOUSE_PRESSED(button)    (((button)&MIDDLE_MOUSE) != 0)
 
+extern int32_t CONTROL_MouseAxesScale[2];
+extern float   CONTROL_MouseSensitivity;
 
 static inline bool Mouse_Init(void)
 {

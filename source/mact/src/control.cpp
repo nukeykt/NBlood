@@ -40,7 +40,7 @@ static controlflags      CONTROL_Flags[CONTROL_NUM_FLAGS];
 
 static controlkeymaptype  CONTROL_KeyMapping[CONTROL_NUM_FLAGS];
 
-static int32_t            CONTROL_MouseAxesScale[2];
+int32_t                   CONTROL_MouseAxesScale[2];
 
 static controlaxismaptype CONTROL_JoyAxesMap[MAXJOYAXES];
 static controlaxistype    CONTROL_JoyAxes[MAXJOYAXES];
