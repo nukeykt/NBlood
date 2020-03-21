@@ -4492,7 +4492,14 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 #ifndef EDUKE32_RETAIL_MENU
         ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         // enter in file selector = MENU_SOUND_SF2, esc in file selector = MENU_SOUND_DEVSETUP
-        if (m_previousMenu->menuID != MENU_SOUND_SF2 && m_previousMenu->menuID != MENU_SOUND_DEVSETUP)
+        if (m_previousMenu->menuID == MENU_SOUND_SF2 && sf2bankfile[0])
+        {
+            // vomit copied from CONFIG_GetMapEntryName()
+            char *p = Bstrrchr(sf2bankfile, '/');
+            if (!p) p = Bstrrchr(sf2bankfile,  '\\');
+            if (p == sf2bankfile) { Bmemmove(sf2bankfile, p+1, Bstrlen(p)); }
+        }
+        else if (m_previousMenu->menuID == MENU_SOUND)
 #endif
             Menu_RefreshSoundProperties();
         break;
