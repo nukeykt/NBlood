@@ -1434,6 +1434,8 @@ static void resizeglcheck(void)
 
     ratio = 1.f/ratio;
 
+    polymost2d = 0;
+
     glViewport(windowxy1.x-(fovcorrect/2), ydim-(windowxy2.y+1),
                 ourxdimen+fovcorrect, windowxy2.y-windowxy1.y+1);
 
