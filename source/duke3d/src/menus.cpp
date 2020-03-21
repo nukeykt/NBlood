@@ -3246,6 +3246,17 @@ static int32_t Menu_Cheat_Skill(char const * const number)
     return 0;
 }
 
+static void Menu_RefreshSoundProperties()
+{
+    ud.config.MixRate     = FX_MixRate;
+    ud.config.MusicDevice = MIDI_GetDevice();
+
+    soundrate   = ud.config.MixRate;
+    soundvoices = ud.config.NumVoices;
+    musicdevice = ud.config.MusicDevice;
+    opl3stereo  = AL_Stereo;
+}
+
 /*
 Functions where a "newValue" or similar is passed are run *before* the linked variable is actually changed.
 That way you can compare the new and old values and potentially block the change.
@@ -3422,6 +3433,8 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 
             S_RestartMusic();
         }
+
+        Menu_RefreshSoundProperties();
     }
     else if (entry == &ME_SAVESETUP_CLEANUP)
     {
@@ -4457,17 +4470,15 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
     case MENU_SOUND_SF2:
         Bstrcpy(sf2bankfile, SF2_BankFile);
         break;
+#endif
 
     case MENU_SOUND_DEVSETUP:
+#ifndef EDUKE32_RETAIL_MENU
         ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
-        if (m_previousMenu->menuID != MENU_SOUND_SF2)
+        // enter in file selector = MENU_SOUND_SF2, esc in file selector = MENU_SOUND_DEVSETUP
+        if (m_previousMenu->menuID != MENU_SOUND_SF2 && m_previousMenu->menuID != MENU_SOUND_DEVSETUP)
 #endif
-        {
-            soundrate   = ud.config.MixRate;
-            soundvoices = ud.config.NumVoices;
-            musicdevice = ud.config.MusicDevice;
-            opl3stereo  = AL_Stereo;
-        }
+            Menu_RefreshSoundProperties();
         break;
 
     default:
