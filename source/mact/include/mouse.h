@@ -50,7 +50,7 @@ extern "C" {
 extern int32_t CONTROL_MouseAxesScale[2];
 extern float   CONTROL_MouseSensitivity;
 
-static inline bool Mouse_Init(void)
+static inline bool MOUSE_Startup(void)
 {
     mouseInit();
     return ((inputdevices & 2) == 2);

@@ -241,9 +241,7 @@ typedef struct {
         // JBF 20031211: Store the input settings because
         // (currently) mact can't regurgitate them
         int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
-        int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
         int32_t MouseAnalogueAxes[MAXMOUSEAXES];
-        int32_t MouseAnalogueScale[MAXMOUSEAXES];
         int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];
         int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
         int32_t JoystickAnalogueAxes[MAXJOYAXES];
