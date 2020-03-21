@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 int FX_ErrorCode = FX_Ok;
 int FX_Installed;
+int FX_MixRate;
 
 const char *FX_ErrorString(int const ErrorNumber)
 {
@@ -166,9 +167,11 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
         status = FX_Error;
     }
 
+    FX_MixRate = MV_MixRate;
+
     if (status == FX_Ok)
     {
-        MV_Printf(": %.1f KHz %s with %d voices\n", mixrate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
+        MV_Printf(": %.1f KHz %s with %d voices\n", MV_MixRate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
         FX_Installed = TRUE;
     }
 
