@@ -4392,6 +4392,22 @@ static void Menu_ReadSaveGameHeaders()
     // lexicographical sorting?
 }
 
+static void Menu_CheckHiddenSelection(Menu_t* m)
+{
+    auto const menu = (MenuMenu_t *)m->object;
+    auto const orig = menu->currentEntry;
+
+    while (!menu->entrylist[menu->currentEntry] ||
+        (((MenuEntry_t*) menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
+        ((MenuEntry_t*) menu->entrylist[menu->currentEntry])->type == Spacer)
+    {
+        if (--menu->currentEntry < 0)
+            menu->currentEntry = menu->numEntries;
+        if (menu->currentEntry == orig)
+            G_GameExit("Menu_CheckHiddenSelection: menu has no entries!");
+    }
+}
+
 static void Menu_AboutToStartDisplaying(Menu_t * m)
 {
     switch (m->menuID)
@@ -4503,17 +4519,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
         if (menu->currentEntry >= menu->numEntries)
             menu->currentEntry = 0;
 
-        int32_t i = menu->currentEntry;
-        while (!menu->entrylist[menu->currentEntry] ||
-               (((MenuEntry_t*)menu->entrylist[menu->currentEntry])->flags & MEF_Hidden) ||
-               ((MenuEntry_t*)menu->entrylist[menu->currentEntry])->type == Spacer)
-        {
-            menu->currentEntry++;
-            if (menu->currentEntry >= menu->numEntries)
-                menu->currentEntry = 0;
-            if (menu->currentEntry == i)
-                G_GameExit("Menu_Change: Attempted to show a menu with no entries.");
-        }
+        Menu_CheckHiddenSelection(m);
 
         Menu_EntryFocus(/*currentry*/);
         break;
@@ -6089,6 +6095,8 @@ static void Menu_Run(Menu_t *cm, const vec2_t origin)
 
         case Menu:
         {
+            Menu_CheckHiddenSelection(cm);
+
             int32_t state;
 
             auto menu = (MenuMenu_t*)cm->object;
