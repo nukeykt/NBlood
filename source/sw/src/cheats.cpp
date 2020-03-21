@@ -80,18 +80,16 @@ void PrevCheat(PLAYERp UNUSED(pp), char *UNUSED(cheat_string))
     ExitLevel = TRUE;
 }
 
-static int32_t showallmap;
-
 void MapCheat(PLAYERp pp, char *UNUSED(cheat_string))
 {
-    showallmap ^= 1;
+    automapping ^= 1;
 
-    if (showallmap)
+    if (automapping)
         MapSetAll2D(0);
     else
         MapSetAll2D(0xFF);
 
-    sprintf(ds, "SHOWALLMAP %s", showallmap ? "ON" : "OFF");
+    sprintf(ds, "AUTOMAPPING %s", automapping ? "ON" : "OFF");
     PutStringInfo(pp, ds);
 }
 
