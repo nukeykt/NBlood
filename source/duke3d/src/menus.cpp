@@ -4475,8 +4475,10 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 
     case MENU_SOUND_DEVSETUP:
 #ifndef EDUKE32_RETAIL_MENU
-        ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         // enter in file selector = MENU_SOUND_SF2, esc in file selector = MENU_SOUND_DEVSETUP
+        if (m_previousMenu->menuID == MENU_SOUND_DEVSETUP && !sf2bankfile[0])
+            Bstrcpy(sf2bankfile, SF2_BankFile);
+        ME_SOUND_SF2.name = (!sf2bankfile[0]) ? "Select sound bank..." : sf2bankfile;
         if (m_previousMenu->menuID == MENU_SOUND_SF2 && sf2bankfile[0])
         {
             // vomit copied from CONFIG_GetMapEntryName()
