@@ -2425,7 +2425,9 @@ drawscreen(PLAYERp pp)
         JS_DrawMirrors(pp, tx, ty, tz, tang, thoriz);
     }
 
-    if (dimensionmode != 6 && !FAF_DebugView)
+    // TODO: This call is redundant if the tiled overhead map is shown, but the
+    // HUD elements should be properly outputted with hardware rendering first.
+    if (!FAF_DebugView)
         FAF_DrawRooms(tx, ty, tz, tang, thoriz, tsectnum);
 
     analyzesprites(tx, ty, tz, FALSE);
