@@ -74,7 +74,7 @@ const char *SF2Drv_ErrorString(int ErrorNumber)
 static int sf2_stream_read(void *handle, void *ptr, unsigned int size) { return kread(*(buildvfs_kfd *)handle, ptr, size); };
 static int sf2_stream_skip(void *handle, unsigned int size)            { return !klseek(*(buildvfs_kfd *)handle, size, SEEK_CUR); };
 
-static int SF2_Load(char const *const filename)
+static int SF2_LoadBank(char const *const filename)
 {
     buildvfs_kfd sf2_kfd    = kopen4loadfrommod(filename, 0);
     tsf_stream   sf2_stream = { &sf2_kfd, &sf2_stream_read, &sf2_stream_skip };
@@ -92,7 +92,7 @@ static int SF2_Load(char const *const filename)
         }
     }
 
-    MV_Printf(": error loading \"%s\"!", filename);
+    MV_Printf(": error loading \"%s\"!\n", filename);
     return SF2_Error;
 }
 
@@ -124,7 +124,7 @@ int SF2Drv_MIDI_Init(midifuncs* const funcs)
         }
     }
 
-    int const loaded = SF2_Load(filename);
+    int const loaded = SF2_LoadBank(filename);
 
     if (filename != SF2_BankFile)
         Xfree(filename);
