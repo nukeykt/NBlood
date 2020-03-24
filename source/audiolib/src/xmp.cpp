@@ -67,12 +67,6 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 
 int MV_PlayXMP3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int angle, int distance, int priority, fix16_t volume, intptr_t callbackval)
 {
-    int left;
-    int right;
-    int mid;
-    int vol;
-    int status;
-
     if (!MV_Installed)
         return MV_SetErrorCode(MV_NotInstalled);
 
@@ -82,32 +76,26 @@ int MV_PlayXMP3D(char *ptr, uint32_t length, int loophow, int pitchoffset, int a
         angle    += MV_NUMPANPOSITIONS / 2;
     }
 
-    vol = MIX_VOLUME(distance);
+    int vol = MIX_VOLUME(distance);
 
     // Ensure angle is within 0 - 127
     angle &= MV_MAXPANPOSITION;
 
-    left  = MV_PanTable[angle][vol].left;
-    right = MV_PanTable[angle][vol].right;
-    mid   = max( 0, 255 - distance );
+    int left  = MV_PanTable[angle][vol].left;
+    int right = MV_PanTable[angle][vol].right;
+    int mid   = max( 0, 255 - distance );
 
-    status = MV_PlayXMP(ptr, length, loophow, -1, pitchoffset, mid, left, right, priority, volume, callbackval);
-
-    return status;
+    return MV_PlayXMP(ptr, length, loophow, -1, pitchoffset, mid, left, right, priority, volume, callbackval);
 }
 
 int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
-    VoiceNode   *voice;
-    xmp_data * xmpd = 0;
-    int retval;
-
     UNREFERENCED_PARAMETER(loopend);
 
     if (!MV_Installed)
         return MV_SetErrorCode(MV_NotInstalled);
 
-    xmpd = (xmp_data *)Xcalloc(1, sizeof(xmp_data));
+    auto xmpd = (xmp_data *)Xcalloc(1, sizeof(xmp_data));
     if (!xmpd)
         return MV_SetErrorCode(MV_InvalidFile);
 
@@ -120,15 +108,18 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         return MV_SetErrorCode(MV_InvalidFile);
     }
 
-    if ((retval = xmp_load_module_from_memory(xmpd->context, ptr, length)) != 0)
+    int const xmp_status = xmp_load_module_from_memory(xmpd->context, ptr, length);
+
+    if (xmp_status)
     {
+        xmp_free_context(xmpd->context);
         Xfree(xmpd);
-        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", retval);
+        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
         return MV_SetErrorCode(MV_InvalidFile);
     }
 
     // Request a voice from the voice pool
-    voice = MV_AllocVoice(priority);
+    auto voice = MV_AllocVoice(priority);
     if (voice == nullptr)
     {
         xmp_release_module(xmpd->context);
@@ -250,12 +241,7 @@ int MV_PlayXMP3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, in
 static int it_test_memory(char const *ptr, uint32_t ptrlength)
 {
     static char const it_magic[] = "IMPM";
-
-    if (ptrlength < sizeof(it_magic)-1 ||
-        memcmp(ptr, it_magic, sizeof(it_magic)-1))
-        return -1;
-
-    return 0;
+    return !!(ptrlength < sizeof(it_magic) - 1 || Bmemcmp(ptr, it_magic, sizeof(it_magic) - 1));
 }
 
 static int mod_test_memory(char const *ptr, uint32_t ptrlength)
@@ -265,20 +251,20 @@ static int mod_test_memory(char const *ptr, uint32_t ptrlength)
 
     char const * const buf = ptr + 1080;
 
-    if (!strncmp(buf + 2, "CH", 2) && isdigit((int)buf[0]) && isdigit((int)buf[1]))
+    if (!Bstrncmp(buf + 2, "CH", 2) && isdigit((int)buf[0]) && isdigit((int)buf[1]))
     {
         int i = (buf[0] - '0') * 10 + buf[1] - '0';
         if (i > 0 && i <= 32)
             return 0;
     }
 
-    if (!strncmp(buf + 1, "CHN", 3) && isdigit((int)*buf))
+    if (!Bstrncmp(buf + 1, "CHN", 3) && isdigit((int)*buf))
     {
         if (*buf >= '0' && *buf <= '9')
             return 0;
     }
 
-    if (!memcmp(buf, "M.K.", 4))
+    if (!Bmemcmp(buf, "M.K.", 4))
         return 0;
 
     return -1;
@@ -289,34 +275,21 @@ static int s3m_test_memory(char const *ptr, uint32_t ptrlength)
     static char const s3m_magic[] = "SCRM";
     #define s3m_magic_offset 44
 
-    if (ptrlength < s3m_magic_offset + sizeof(s3m_magic)-1 ||
-        memcmp(ptr + s3m_magic_offset, s3m_magic, sizeof(s3m_magic)-1) ||
-        ptr[29] != 0x10)
-        return -1;
-
-    return 0;
+    return !!(ptrlength < s3m_magic_offset + sizeof(s3m_magic)-1 ||
+        Bmemcmp(ptr + s3m_magic_offset, s3m_magic, sizeof(s3m_magic)-1) ||
+        ptr[29] != 0x10);
 }
 
 static int xm_test_memory(char const *ptr, uint32_t ptrlength)
 {
     static char const xm_magic[] = "Extended Module: ";
-
-    if (ptrlength < sizeof(xm_magic)-1 ||
-        memcmp(ptr, xm_magic, sizeof(xm_magic)-1))
-        return -1;
-
-    return 0;
+    return !!(ptrlength < sizeof(xm_magic) - 1 || Bmemcmp(ptr, xm_magic, sizeof(xm_magic) - 1));
 }
 
 static int mtm_test_memory(char const *ptr, uint32_t ptrlength)
 {
     static char const mtm_magic[] = "MTM\x10";
-
-    if (ptrlength < sizeof(mtm_magic)-1 ||
-        memcmp(ptr, mtm_magic, sizeof(mtm_magic)-1))
-        return -1;
-
-    return 0;
+    return !!(ptrlength < sizeof(mtm_magic) - 1 || Bmemcmp(ptr, mtm_magic, sizeof(mtm_magic) - 1));
 }
 
 int MV_IdentifyXMP(char const *ptr, uint32_t ptrlength)

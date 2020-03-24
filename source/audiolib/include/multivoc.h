@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern "C" {
 #endif
 
-typedef enum : char
+typedef enum wavefmt_t : char
 {
     FMT_UNKNOWN,
     FMT_RAW,
