@@ -47,18 +47,14 @@ int FX_MixRate;
 
 const char *FX_ErrorString(int const ErrorNumber)
 {
-    const char *ErrorString;
-
     switch (ErrorNumber)
     {
         case FX_Warning:
-        case FX_Error:          ErrorString = FX_ErrorString(FX_ErrorCode); break;
-        case FX_Ok:             ErrorString = "Fx ok."; break;
-        case FX_MultiVocError:  ErrorString = MV_ErrorString(MV_Error); break;
-        default:                ErrorString = "Unknown Fx error code."; break;
+        case FX_Error:          return FX_ErrorString(FX_ErrorCode);
+        case FX_Ok:             return "Fx ok.";
+        case FX_MultiVocError:  return MV_ErrorString(MV_Error);
+        default:                return "Unknown Fx error code.";
     }
-
-    return ErrorString;
 }
 
 static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
@@ -144,7 +140,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
 
     MV_Printf("Initializing sound: ");
 
-    if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
+    if ((unsigned)SoundCard >= ASS_NumSoundCards)
     {
         FX_SetErrorCode(FX_InvalidCard);
         MV_Printf("failed! %s\n", FX_ErrorString(FX_InvalidCard));
@@ -196,10 +192,8 @@ int FX_Shutdown(void)
     return status;
 }
 
-int FX_GetDevice()
-{
-    return ASS_PCMSoundDriver;
-}
+int FX_GetDevice(void) { return ASS_PCMSoundDriver; }
+
 
 static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
 {
