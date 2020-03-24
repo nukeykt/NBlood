@@ -82,7 +82,11 @@ int FX_SetPrintf(void(*function)(const char *, ...));
 extern int FX_ErrorCode;
 extern int FX_MixRate;
 
-#define FX_SetErrorCode(status) FX_ErrorCode = (status);
+static FORCE_INLINE int FX_SetErrorCode(int status)
+{
+    FX_ErrorCode = status;
+    return FX_Error;
+}
 
 static FORCE_INLINE int FX_CheckMVErr(int status)
 {
