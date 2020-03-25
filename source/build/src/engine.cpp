@@ -5276,7 +5276,13 @@ static void classicDrawSprite(int32_t snum)
     if (cstat&2)
         setup_blend(blendidx, cstat&512);
 
-    vec2_t off = { picanm[tilenum].xofs + tspr->xoffset, picanm[tilenum].yofs + tspr->yoffset };
+    vec2_t off = { picanm[tilenum].xofs, picanm[tilenum].yofs };
+    int32_t heinum = tspriteGetSlope(tspr);
+    if (heinum == 0)
+    {
+        off.x += tspr->xoffset;
+        off.y += tspr->yoffset;
+    }
 
     if ((cstat&48) == 0)
     {
@@ -5742,7 +5748,7 @@ draw_as_face_sprite:
     else if ((cstat&48) == 32)
     {
         if ((cstat&64) != 0)
-            if ((globalposz > tspr->z) == ((cstat&8)==0))
+            if ((globalposz > tspriteGetZOfSlope(tspr, globalposx, globalposy)) == ((cstat&8)==0))
                 return;
 
         if ((cstat&4) > 0) off.x = -off.x;
@@ -5750,69 +5756,129 @@ draw_as_face_sprite:
 
         const int32_t xspan = tilesiz[tilenum].x;
         const int32_t yspan = tilesiz[tilenum].y;
+        const int32_t ratio = nsqrtasm(heinum * heinum + 16777216);
 
         //Rotate center point
         dax = tspr->x-globalposx;
         day = tspr->y-globalposy;
-        rzi[0] = dmulscale10(cosglobalang,dax,singlobalang,day);
-        rxi[0] = dmulscale10(cosglobalang,day,-singlobalang,dax);
+        const int32_t cz = dmulscale10(cosglobalang,dax,singlobalang,day);
+        const int32_t cx = dmulscale10(cosglobalang,day,-singlobalang,dax);
 
         //Get top-left corner
         int32_t cosang = dmulscale14(sintable[(tspr->ang+512)&2047], cosglobalang, sintable[tspr->ang&2047], singlobalang);
         int32_t sinang = dmulscale14(sintable[(tspr->ang+512)&2047], -singlobalang, sintable[tspr->ang&2047], cosglobalang);
-        dax = ((xspan>>1)+off.x)*tspr->xrepeat;
-        day = ((yspan>>1)+off.y)*tspr->yrepeat;
-        rzi[0] += dmulscale12(sinang,dax,cosang,day);
-        rxi[0] += dmulscale12(sinang,day,-cosang,dax);
+        dax = (((xspan>>1)+off.x)*tspr->xrepeat)<<8;
+        day = divscale20(((yspan>>1)+off.y)*tspr->yrepeat,ratio);
+        rzi[0] = cz+dmulscale20(sinang,dax,cosang,day);
+        rxi[0] = cx+dmulscale20(sinang,day,-cosang,dax);
 
         //Get other 3 corners
-        dax = xspan*tspr->xrepeat;
-        day = yspan*tspr->yrepeat;
-        rzi[1] = rzi[0]-mulscale12(sinang,dax);
-        rxi[1] = rxi[0]+mulscale12(cosang,dax);
-        dax = -mulscale12(cosang,day);
-        day = -mulscale12(sinang,day);
+        dax = (xspan*tspr->xrepeat)<<8;
+        day = divscale20(yspan*tspr->yrepeat,ratio);
+        rzi[1] = rzi[0]-mulscale20(sinang,dax);
+        rxi[1] = rxi[0]+mulscale20(cosang,dax);
+        dax = -mulscale20(cosang,day);
+        day = -mulscale20(sinang,day);
         rzi[2] = rzi[1]+dax; rxi[2] = rxi[1]+day;
         rzi[3] = rzi[0]+dax; rxi[3] = rxi[0]+day;
 
-        //Put all points on same z
-        ryi[0] = scale((tspr->z-globalposz),yxaspect,320<<8);
-        if (ryi[0] == 0) return;
-        ryi[1] = ryi[2] = ryi[3] = ryi[0];
+        float sgx, sgy, sgx2, sgy2, sgzd, sgzx, sgz, sdaz;
+        int32_t sgx1, sgy1;
 
-        if ((cstat&4) == 0)
-            { z = 0; z1 = 1; z2 = 3; }
-        else
-            { z = 1; z1 = 0; z2 = 2; }
-
-        dax = rzi[z1]-rzi[z]; day = rxi[z1]-rxi[z];
-        int32_t bot = dmulscale8(dax,dax,day,day);
-        if ((klabs(dax)>>13) >= bot || (klabs(day)>>13) >= bot)
-            return;
-        globalx1 = divscale18(dax,bot);
-        globalx2 = divscale18(day,bot);
-
-        dax = rzi[z2]-rzi[z]; day = rxi[z2]-rxi[z];
-        bot = dmulscale8(dax,dax,day,day);
-        if ((klabs(dax)>>13) >= bot || (klabs(day)>>13) >= bot)
-            return;
-        globaly1 = divscale18(dax,bot);
-        globaly2 = divscale18(day,bot);
-
-        //Calculate globals for hline texture mapping function
-        globalxpanning = (rxi[z]<<12);
-        globalypanning = (rzi[z]<<12);
-        globalzd = decltype(globalzd)(ryi[z])<<12;
-
-        rzi[0] = mulscale16(rzi[0],viewingrange);
-        rzi[1] = mulscale16(rzi[1],viewingrange);
-        rzi[2] = mulscale16(rzi[2],viewingrange);
-        rzi[3] = mulscale16(rzi[3],viewingrange);
-
-        if (ryi[0] < 0)   //If ceilsprite is above you, reverse order of points
+        if (heinum != 0) // slope
         {
-            i = rxi[1]; rxi[1] = rxi[3]; rxi[3] = i;
-            i = rzi[1]; rzi[1] = rzi[3]; rzi[3] = i;
+            int daz;
+            for (i = 0; i < 4; i++)
+            {
+                int const j = dmulscale8(-sinang, rxi[i]-cx,
+                                        -cosang, rzi[i]-cz);
+
+                int const z = (tspr->z + mulscale18(heinum, j) - globalposz);
+                if (i == 0)
+                    daz = z;
+                ryi[i] = scale(z,yxaspect,320<<8);
+            }
+            sgx = float(cosang)*float(xdimenrecip)*(1.f/524288.f);
+            sgy = float(sinang)*float(xdimenrecip)*(1.f/524288.f);
+            float const fi = (0-halfxdimen)*xdimenrecip;
+            sgx2 = -float(sinang)*float(viewingrangerecip)*(1.f/4096.f) + float(cosang)*fi*(1.f/134217728.f);
+            sgy2 = float(cosang)*float(viewingrangerecip)*(1.f/4096.f) + float(sinang)*fi*(1.f/134217728.f);
+            sgzd = xdimscale*512.f;
+            sgzx = sgy2*float(heinum)*(1.f/256.f) + (1-globalhoriz)*sgzd*(1.f/1024.f);
+            sgz = sgy*float(heinum)*(1.f/65536.f);
+            float const fx = 64.f/float(tspr->xrepeat);
+            float const fy = 64.f/float(tspr->yrepeat) * float(ratio) * (1.f / 4096.f);
+            sgx *= fx;
+            sgy *= fy;
+            sgx2 *= fx;
+            sgy2 *= fy;
+            sgx1 = divscale6(dmulscale10(rxi[0], -cosang, rzi[0], sinang), tspr->xrepeat);
+            sgy1 = mulscale12(divscale6(dmulscale10(rxi[0], sinang, rzi[0], cosang), tspr->yrepeat), ratio);
+            if (cstat & 4)
+            {
+                sgx1 = -sgx1;
+                sgx2 = -sgx2;
+                sgx = -sgx;
+            }
+
+            sdaz = float(heinum)*(float(sinang)*float(rxi[0])+float(cosang)*float(rzi[0]))*(1.f/262144.f) + float(daz)*256.f;
+            sgx2 = (sgx2*sdaz)*(1.f/1048576.f); sgx = (sgx*sdaz)*(1.f/268435456.f);
+            sgy2 = (sgy2*-sdaz)*(1.f/1048576.f); sgy = (sgy*-sdaz)*(1.f/268435456.f);
+
+            rzi[0] = mulscale16(rzi[0], viewingrange);
+            rzi[1] = mulscale16(rzi[1], viewingrange);
+            rzi[2] = mulscale16(rzi[2], viewingrange);
+            rzi[3] = mulscale16(rzi[3], viewingrange);
+
+            //If ceilsprite is above you, reverse order of points
+            if (globalposz > tspriteGetZOfSlope(tspr, globalposx, globalposy))
+            {
+                i = rxi[1]; rxi[1] = rxi[3]; rxi[3] = i;
+                i = rzi[1]; rzi[1] = rzi[3]; rzi[3] = i;
+                i = ryi[1]; ryi[1] = ryi[3]; ryi[3] = i;
+            }
+        }
+        else
+        {
+            //Put all points on same z
+            ryi[0] = scale((tspr->z-globalposz),yxaspect,320<<8);
+            if (ryi[0] == 0) return;
+            ryi[1] = ryi[2] = ryi[3] = ryi[0];
+
+            if ((cstat&4) == 0)
+                { z = 0; z1 = 1; z2 = 3; }
+            else
+                { z = 1; z1 = 0; z2 = 2; }
+
+            dax = rzi[z1]-rzi[z]; day = rxi[z1]-rxi[z];
+            int32_t bot = dmulscale8(dax,dax,day,day);
+            if ((klabs(dax)>>13) >= bot || (klabs(day)>>13) >= bot)
+                return;
+            globalx1 = divscale18(dax,bot);
+            globalx2 = divscale18(day,bot);
+
+            dax = rzi[z2]-rzi[z]; day = rxi[z2]-rxi[z];
+            bot = dmulscale8(dax,dax,day,day);
+            if ((klabs(dax)>>13) >= bot || (klabs(day)>>13) >= bot)
+                return;
+            globaly1 = divscale18(dax,bot);
+            globaly2 = divscale18(day,bot);
+
+            //Calculate globals for hline texture mapping function
+            globalxpanning = (rxi[z]<<12);
+            globalypanning = (rzi[z]<<12);
+            globalzd = decltype(globalzd)(ryi[z])<<12;
+
+            rzi[0] = mulscale16(rzi[0],viewingrange);
+            rzi[1] = mulscale16(rzi[1],viewingrange);
+            rzi[2] = mulscale16(rzi[2],viewingrange);
+            rzi[3] = mulscale16(rzi[3],viewingrange);
+
+            if (ryi[0] < 0)   //If ceilsprite is above you, reverse order of points
+            {
+                i = rxi[1]; rxi[1] = rxi[3]; rxi[3] = i;
+                i = rzi[1]; rzi[1] = rzi[3]; rzi[3] = i;
+            }
         }
 
         //Clip polygon in 3-space
@@ -6037,41 +6103,415 @@ draw_as_face_sprite:
         setgotpic(globalpicnum);
         globalbufplc = waloff[globalpicnum];
 
-        globvis = mulscale16(globalhisibility,viewingrange);
-        if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
-
-        x = picsiz[globalpicnum]; y = ((x>>4)&15); x &= 15;
-#if 0
-        if (pow2long[x] != xspan)
+        if (heinum != 0)
         {
-            x++;
-            globalx1 = mulscale(globalx1,xspan,x);
-            globalx2 = mulscale(globalx2,xspan,x);
+            x = picsiz[globalpicnum]; y = ((x>>4)&15); x &= 15;
+            int32_t ispow2 = (pow2long[x]==xspan && pow2long[y]==yspan);
+            sgx1 = divscale20(sgx1, xspan);
+            sgy1 = divscale20(sgy1, yspan);
+            sgx2 *= 256.f/float(xspan);
+            sgy2 *= 256.f/float(yspan);
+            sgx *= 256.f/float(xspan);
+            sgy *= 256.f/float(yspan);
+
+            sgx1 >>= 16;
+            sgy1 >>= 16;
+
+            //asm1 = -(globalzd>>(16-BITSOFPRECISION));
+            float bzinc = -sgzd*(1.f/65536.f);
+
+            {
+                int32_t vis = globalhisibility;
+                int64_t lvis;
+
+                if (sec->visibility != 0) vis = mulscale4(vis, (uint8_t)(sec->visibility+16));
+                lvis = ((uint64_t)(vis*sdaz)) >> 13;  // NOTE: lvis can be negative now!
+                lvis = (lvis * xdimscale) >> 16;
+                globvis = lvis;
+            }
+
+            intptr_t fj = FP_OFF(palookup[globalpal]);
+
+            setupslopevlin_alsotrans((picsiz[globalpicnum]&15) + ((picsiz[globalpicnum]>>4)<<8),
+                                     waloff[globalpicnum],-ylookup[1]);
+
+            int32_t const l = Blrintf((sgzd)*(1.f/65536.f));
+
+            int32_t const shinc = Blrintf(sgz*xdimenscale*(1.f/65536.f));
+
+            int32_t shoffs = (shinc > 0) ? (4 << 15) : ((16380 - ydimen) << 15);  // JBF: was 2044
+            int32_t y1 = uwall[lx];
+
+            int32_t m1 = Blrintf((y1*sgzd)*(1.f/65536.f) + sgzx*(1.f/64.f));
+            //Avoid visibility overflow by crossing horizon
+            m1 += klabs(l);
+            int32_t m2 = m1+l;
+            int32_t shy1 = y1+(shoffs>>15);
+            int32_t shy2;
+            if ((unsigned)shy1 >= SLOPALOOKUPSIZ-1)
+            {
+                OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing sprite %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
+                return;
+            }
+
+            intptr_t *mptr1 = &slopalookup[shy1]; intptr_t *mptr2 = mptr1+1;
+            sgx2 += sgx * lx;
+            sgy2 += sgy * lx;
+            sgzx += sgz * lx;
+            shoffs += shinc *lx;
+
+            for (int x=lx; x<rx; x++)
+            {
+                y1 = uwall[x]+1; y2 = dwall[x]-1;
+                if (y1 <= y2)
+                {
+                    shy1 = y1+(shoffs>>15);
+                    shy2 = y2+(shoffs>>15);
+
+                    // Ridiculously steep gradient?
+                    if ((unsigned)shy1 >= SLOPALOOKUPSIZ)
+                    {
+                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__, shy1, spritenum);
+                        goto next_most;
+                    }
+                    if ((unsigned)shy2 >= SLOPALOOKUPSIZ)
+                    {
+                        OSD_Printf("%s:%d: slopalookup[%" PRId32 "] overflow drawing spritenum %d!\n", EDUKE32_FUNCTION, __LINE__, shy2, spritenum);
+                        goto next_most;
+                    }
+
+                    intptr_t *nptr1 = &slopalookup[shy1];
+                    intptr_t *nptr2 = &slopalookup[shy2];
+
+                    while (nptr1 <= mptr1)
+                    {
+                        *mptr1-- = fj + getpalookupsh(mulscale24(krecipasm(m1),globvis));
+                        m1 -= l;
+                    }
+                    while (nptr2 >= mptr2)
+                    {
+                        *mptr2++ = fj + getpalookupsh(mulscale24(krecipasm(m2),globvis));
+                        m2 += l;
+                    }
+
+                    float sgx3 = sgx2*(1.f/1024.f);
+                    float sgy3 = sgy2*(1.f/1024.f);
+                    float bz = (y2*sgzd)*(1.f/65536.f) + sgzx*(1.f/64.f);
+                    uint8_t *p = (uint8_t*)(ylookup[y2]+x+frameoffset);
+                    intptr_t* A_C_RESTRICT slopalptr = (intptr_t*)nptr2;
+                    const char* const A_C_RESTRICT trans = paletteGetBlendTable(0);
+                    uint32_t u, v;
+                    int cnt = y2-y1+1;
+#define LINTERPSIZ 4
+                    int u0 = Blrintf(1048576.f*sgx3/bz);
+                    int v0 = Blrintf(1048576.f*sgy3/bz);
+                    //switch (globalorientation&0x180)
+                    //{
+                    //case 0:
+                    if (ispow2)
+                    {
+                        if ((cstat&2)==0)
+                        {
+                            while (cnt > 0)
+                            {
+                                bz += bzinc*(1<<LINTERPSIZ);
+                                int u1 = Blrintf(1048576.f*sgx3/bz);
+                                int v1 = Blrintf(1048576.f*sgy3/bz);
+                                u1 = (u1-u0)>>LINTERPSIZ;
+                                v1 = (v1-v0)>>LINTERPSIZ;
+                                int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                for (; cnt2>0; cnt2--)
+                                {
+                                    u = (sgx1+u0)&0xffff;
+                                    v = (sgy1+v0)&0xffff;
+                                    char ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
+                                    if (ch != 255)
+                                        *p = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                                    slopalptr--;
+                                    p += ggpinc;
+                                    u0 += u1;
+                                    v0 += v1;
+                                }
+                                cnt -= 1<<LINTERPSIZ;
+                            }
+                        }
+                        else
+                        {
+                            const char* const trans = paletteGetBlendTable(globalblend);
+                            if (cstat & 512)
+                            {
+                                while (cnt > 0)
+                                {
+                                    bz += bzinc*(1<<LINTERPSIZ);
+                                    int u1 = Blrintf(1048576.f*sgx3/bz);
+                                    int v1 = Blrintf(1048576.f*sgy3/bz);
+                                    u1 = (u1-u0)>>LINTERPSIZ;
+                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    for (; cnt2>0; cnt2--)
+                                    {
+                                        u = (sgx1+u0)&0xffff;
+                                        v = (sgy1+v0)&0xffff;
+                                        char ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
+                                        if (ch != 255)
+                                        {
+                                            ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                                            *p = trans[(ch<<8)|*p];
+                                        }
+                                        slopalptr--;
+                                        p += ggpinc;
+                                        u0 += u1;
+                                        v0 += v1;
+                                    }
+                                    cnt -= 1<<LINTERPSIZ;
+                                }
+                            }
+                            else
+                            {
+                                while (cnt > 0)
+                                {
+                                    bz += bzinc*(1<<LINTERPSIZ);
+                                    int u1 = Blrintf(1048576.f*sgx3/bz);
+                                    int v1 = Blrintf(1048576.f*sgy3/bz);
+                                    u1 = (u1-u0)>>LINTERPSIZ;
+                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    for (; cnt2>0; cnt2--)
+                                    {
+                                        u = (sgx1+u0)&0xffff;
+                                        v = (sgy1+v0)&0xffff;
+                                        char ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
+                                        if (ch != 255)
+                                        {
+                                            ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                                            *p = trans[(*p<<8)|ch];
+                                        }
+                                        slopalptr--;
+                                        p += ggpinc;
+                                        u0 += u1;
+                                        v0 += v1;
+                                    }
+                                    cnt -= 1<<LINTERPSIZ;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if ((cstat&2)==0)
+                        {
+                            while (cnt > 0)
+                            {
+                                bz += bzinc*(1<<LINTERPSIZ);
+                                int u1 = Blrintf(1048576.f*sgx3/bz);
+                                int v1 = Blrintf(1048576.f*sgy3/bz);
+                                u1 = (u1-u0)>>LINTERPSIZ;
+                                v1 = (v1-v0)>>LINTERPSIZ;
+                                int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                for (; cnt2>0; cnt2--)
+                                {
+                                    u = (sgx1+u0)&0xffff;
+                                    v = (sgy1+v0)&0xffff;
+                                    char ch = ggbuf[mulscale16(u, xspan)*yspan+mulscale16(v, yspan)];
+                                    if (ch != 255)
+                                        *p = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                                    slopalptr--;
+                                    p += ggpinc;
+                                    u0 += u1;
+                                    v0 += v1;
+                                }
+                                cnt -= 1<<LINTERPSIZ;
+                            }
+                        }
+                        else
+                        {
+                            const char* const trans = paletteGetBlendTable(globalblend);
+                            if (cstat & 512)
+                            {
+                                while (cnt > 0)
+                                {
+                                    bz += bzinc*(1<<LINTERPSIZ);
+                                    int u1 = Blrintf(1048576.f*sgx3/bz);
+                                    int v1 = Blrintf(1048576.f*sgy3/bz);
+                                    u1 = (u1-u0)>>LINTERPSIZ;
+                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    for (; cnt2>0; cnt2--)
+                                    {
+                                        u = (sgx1+u0)&0xffff;
+                                        v = (sgy1+v0)&0xffff;
+                                        char ch = ggbuf[mulscale16(u, xspan)*yspan+mulscale16(v, yspan)];
+                                        if (ch != 255)
+                                        {
+                                            ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                                            *p = trans[(ch<<8)|*p];
+                                        }
+                                        slopalptr--;
+                                        p += ggpinc;
+                                        u0 += u1;
+                                        v0 += v1;
+                                    }
+                                    cnt -= 1<<LINTERPSIZ;
+                                }
+                            }
+                            else
+                            {
+                                while (cnt > 0)
+                                {
+                                    bz += bzinc*(1<<LINTERPSIZ);
+                                    int u1 = Blrintf(1048576.f*sgx3/bz);
+                                    int v1 = Blrintf(1048576.f*sgy3/bz);
+                                    u1 = (u1-u0)>>LINTERPSIZ;
+                                    v1 = (v1-v0)>>LINTERPSIZ;
+                                    int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                                    for (; cnt2>0; cnt2--)
+                                    {
+                                        u = (sgx1+u0)&0xffff;
+                                        v = (sgy1+v0)&0xffff;
+                                        char ch = ggbuf[mulscale16(u, xspan)*yspan+mulscale16(v, yspan)];
+                                        if (ch != 255)
+                                        {
+                                            ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                                            *p = trans[(*p<<8)|ch];
+                                        }
+                                        slopalptr--;
+                                        p += ggpinc;
+                                        u0 += u1;
+                                        v0 += v1;
+                                    }
+                                    cnt -= 1<<LINTERPSIZ;
+                                }
+                            }
+                        }
+                    }
+                    //    break;
+                    //case 128:
+                    //    while (cnt > 0)
+                    //    {
+                    //        bz += bzinc*(1<<LINTERPSIZ);
+                    //        int u1 = Blrintf(1048576.f*globalx3/bz);
+                    //        int v1 = Blrintf(1048576.f*globaly3/bz);
+                    //        u1 = (u1-u0)>>LINTERPSIZ;
+                    //        v1 = (v1-v0)>>LINTERPSIZ;
+                    //        int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                    //        for (; cnt2>0; cnt2--)
+                    //        {
+                    //            u = (globalx1+u0)&0xffff;
+                    //            v = (globaly1+v0)&0xffff;
+                    //            uint8_t ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
+                    //            if (ch != 255)
+                    //                *p = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                    //            slopalptr--;
+                    //            p += ggpinc;
+                    //            u0 += u1;
+                    //            v0 += v1;
+                    //        }
+                    //        cnt -= 1<<LINTERPSIZ;
+                    //    }
+                    //    break;
+                    //case 256:
+                    //    while (cnt > 0)
+                    //    {
+                    //        bz += bzinc*(1<<LINTERPSIZ);
+                    //        int u1 = Blrintf(1048576.f*globalx3/bz);
+                    //        int v1 = Blrintf(1048576.f*globaly3/bz);
+                    //        u1 = (u1-u0)>>LINTERPSIZ;
+                    //        v1 = (v1-v0)>>LINTERPSIZ;
+                    //        int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                    //        for (; cnt2>0; cnt2--)
+                    //        {
+                    //            u = (globalx1+u0)&0xffff;
+                    //            v = (globaly1+v0)&0xffff;
+                    //            uint8_t ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
+                    //            if (ch != 255)
+                    //            {
+                    //                ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                    //                *p = trans[(*p<<8)|ch];
+                    //            }
+                    //            slopalptr--;
+                    //            p += ggpinc;
+                    //            u0 += u1;
+                    //            v0 += v1;
+                    //        }
+                    //        cnt -= 1<<LINTERPSIZ;
+                    //    }
+                    //    break;
+                    //case 384:
+                    //    while (cnt > 0)
+                    //    {
+                    //        bz += bzinc*(1<<LINTERPSIZ);
+                    //        int u1 = Blrintf(1048576.f*globalx3/bz);
+                    //        int v1 = Blrintf(1048576.f*globaly3/bz);
+                    //        u1 = (u1-u0)>>LINTERPSIZ;
+                    //        v1 = (v1-v0)>>LINTERPSIZ;
+                    //        int cnt2 = min(cnt, 1<<LINTERPSIZ);
+                    //        for (; cnt2>0; cnt2--)
+                    //        {
+                    //            u = (globalx1+u0)&0xffff;
+                    //            v = (globaly1+v0)&0xffff;
+                    //            uint8_t ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
+                    //            if (ch != 255)
+                    //            {
+                    //                ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
+                    //                *p = trans[ch<<8|*p];
+                    //            }
+                    //            slopalptr--;
+                    //            p += ggpinc;
+                    //            u0 += u1;
+                    //            v0 += v1;
+                    //        }
+                    //        cnt -= 1<<LINTERPSIZ;
+                    //    }
+                    //    break;
+                    //}
+#undef LINTERPSIZ
+                    if ((x&15) == 0) faketimerhandler();
+                }
+next_most:
+                sgx2 += sgx;
+                sgy2 += sgy;
+                sgzx += sgz;
+                shoffs += shinc;
+            }
         }
-#endif
-        dax = globalxpanning; day = globalypanning;
-        globalxpanning = -dmulscale6(globalx1,day,globalx2,dax);
-        globalypanning = -dmulscale6(globaly1,day,globaly2,dax);
-
-        globalx2 = mulscale16(globalx2,viewingrange);
-        globaly2 = mulscale16(globaly2,viewingrange);
-        globalzd = mulscale16(globalzd,viewingrangerecip);
-
-        globalx1 = (globalx1-globalx2)*halfxdimen;
-        globaly1 = (globaly1-globaly2)*halfxdimen;
-
-        if ((cstat&2) == 0)
-            msethlineshift(x,y);
         else
-            tsethlineshift(x,y);
+        {
+            globvis = mulscale16(globalhisibility,viewingrange);
+            if (sec->visibility != 0) globvis = mulscale4(globvis, (uint8_t)(sec->visibility+16));
 
-        globalispow2 = (pow2long[x]==xspan && pow2long[y]==yspan);
-        globalxspan = xspan;
-        globalyspan = yspan;
+            x = picsiz[globalpicnum]; y = ((x>>4)&15); x &= 15;
+#if 0
+            if (pow2long[x] != xspan)
+            {
+                x++;
+                globalx1 = mulscale(globalx1,xspan,x);
+                globalx2 = mulscale(globalx2,xspan,x);
+            }
+#endif
+            dax = globalxpanning; day = globalypanning;
+            globalxpanning = -dmulscale6(globalx1,day,globalx2,dax);
+            globalypanning = -dmulscale6(globaly1,day,globaly2,dax);
 
-        //Draw it!
-        ceilspritescan(lx,rx-1);
-        globalispow2 = 1;
+            globalx2 = mulscale16(globalx2,viewingrange);
+            globaly2 = mulscale16(globaly2,viewingrange);
+            globalzd = mulscale16(globalzd,viewingrangerecip);
+
+            globalx1 = (globalx1-globalx2)*halfxdimen;
+            globaly1 = (globaly1-globaly2)*halfxdimen;
+
+            if ((cstat&2) == 0)
+                msethlineshift(x,y);
+            else
+                tsethlineshift(x,y);
+
+            globalispow2 = (pow2long[x]==xspan && pow2long[y]==yspan);
+            globalxspan = xspan;
+            globalyspan = yspan;
+
+            //Draw it!
+            ceilspritescan(lx,rx-1);
+            globalispow2 = 1;
+        }
     }
     else if ((cstat&48) == 48)
     {
@@ -9708,7 +10148,7 @@ static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum,
     {
         int32_t removeit = 0;
 
-        if ((sprite[i].cstat & 48) == 48)
+        if ((sprite[i].cstat & 48) == 48 && (sprite[i].xoffset|sprite[i].yoffset) == 0)
             sprite[i].cstat &= ~48;
 
         if (sprite[i].statnum == MAXSTATUS)

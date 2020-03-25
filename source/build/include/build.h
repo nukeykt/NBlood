@@ -585,6 +585,7 @@ enum
     TSPR_FLAGS_DRAW_LAST = 1u<<1u,
     TSPR_FLAGS_NO_SHADOW = 1u<<2u,
     TSPR_FLAGS_INVISIBLE_WITH_SHADOW = 1u<<3u,
+    TSPR_FLAGS_SLOPE_SPRITE = 1u<<4u,
 };
 
 EXTERN int32_t guniqhudid;
@@ -715,12 +716,41 @@ static inline tspriteptr_t renderMakeTSpriteFromSprite(tspriteptr_t const tspr, 
     tspr->clipdist = 0;
     tspr->owner = spritenum;
 
+    if ((tspr->cstat & CSTAT_SPRITE_ALIGNMENT_MASK) == CSTAT_SPRITE_ALIGNMENT_SLOPE)
+    {
+        tspr->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
+        tspr->cstat |= CSTAT_SPRITE_ALIGNMENT_FLOOR;
+        tspr->clipdist |= TSPR_FLAGS_SLOPE_SPRITE;
+    }
+
     return tspr;
 }
 
 static inline tspriteptr_t renderAddTSpriteFromSprite(uint16_t const spritenum)
 {
     return renderMakeTSpriteFromSprite(&tsprite[spritesortcnt++], spritenum);
+}
+
+static inline void spriteSetSlope(uint16_t const spritenum, int16_t const heinum)
+{
+    auto const spr = &sprite[spritenum];
+    uint16_t const cstat = spr->cstat & CSTAT_SPRITE_ALIGNMENT_MASK;
+    if (cstat != CSTAT_SPRITE_ALIGNMENT_FLOOR && cstat != CSTAT_SPRITE_ALIGNMENT_SLOPE)
+        return;
+
+    spr->xoffset = heinum & 255;
+    spr->yoffset = (heinum >> 8) & 255;
+    spr->cstat &= ~CSTAT_SPRITE_ALIGNMENT_MASK;
+    spr->cstat |= heinum != 0 ? CSTAT_SPRITE_ALIGNMENT_SLOPE : CSTAT_SPRITE_ALIGNMENT_FLOOR;
+}
+
+static inline int16_t spriteGetSlope(uint16_t const spritenum)
+{
+    auto const spr = &sprite[spritenum];
+    uint16_t const cstat = spr->cstat & CSTAT_SPRITE_ALIGNMENT_MASK;
+    if (cstat != CSTAT_SPRITE_ALIGNMENT_SLOPE)
+        return 0;
+    return uint8_t(spr->xoffset) + (uint8_t(spr->yoffset) << 8);
 }
 
 
@@ -1674,6 +1704,34 @@ extern int32_t rintersect(int32_t x1, int32_t y1, int32_t z1,
     int32_t vx_, int32_t vy_, int32_t vz,
     int32_t x3, int32_t y3, int32_t x4, int32_t y4,
     int32_t *intx, int32_t *inty, int32_t *intz);
+
+static inline int16_t tspriteGetSlope(tspriteptr_t const tspr)
+{
+    if (!(tspr->clipdist & TSPR_FLAGS_SLOPE_SPRITE))
+        return 0;
+    return uint8_t(tspr->xoffset) + (uint8_t(tspr->yoffset) << 8);
+}
+
+static inline int32_t tspriteGetZOfSlope(tspriteptr_t const tspr, int32_t dax, int32_t day)
+{
+    int16_t const heinum = tspriteGetSlope(tspr);
+    if (heinum == 0)
+        return tspr->z;
+
+    int const j = dmulscale4(sintable[(tspr->ang+1024)&2047], day-tspr->y,
+                            -sintable[(tspr->ang+512)&2047], dax-tspr->x);
+    return tspr->z + mulscale18(heinum,j);
+}
+
+static inline float tspriteGetZOfSlopeFloat(tspriteptr_t const tspr, float dax, float day)
+{
+    int16_t const heinum = tspriteGetSlope(tspr);
+    if (heinum == 0)
+        return float(tspr->z);
+
+    float const f = sintable[(tspr->ang+1024)&2047] * (day-tspr->y) - sintable[(tspr->ang+512)&2047] * (dax-tspr->x);
+    return float(tspr->z) + heinum * f * (1.f/4194304.f);
+}
 
 #ifdef __cplusplus
 }

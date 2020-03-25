@@ -554,7 +554,7 @@ int32_t map_undoredo(int dir)
     // insert sprites
     for (int i=0; i<mapstate->num[UNDO_SPRITES]; i++)
     {
-        if ((sprite[i].cstat & 48) == 48) sprite[i].cstat &= ~48;
+        if ((sprite[i].cstat & 48) == 48 && (sprite[i].xoffset|sprite[i].yoffset) == 0) sprite[i].cstat &= ~48;
         Bassert((unsigned)sprite[i].sectnum < (unsigned)numsectors
                    && (unsigned)sprite[i].statnum < MAXSTATUS);
         insertsprite(sprite[i].sectnum, sprite[i].statnum);

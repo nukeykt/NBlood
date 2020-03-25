@@ -1016,7 +1016,7 @@ void spriteoncfz(int32_t i, int32_t *czptr, int32_t *fzptr)
     int32_t height, zofs;
 
     getzsofslope(sprite[i].sectnum, sprite[i].x,sprite[i].y, czptr, fzptr);
-    if ((sprite[i].cstat&48)==32)
+    if ((sprite[i].cstat&48)>=32)
         return;
 
     zofs = spriteheightofs(i, &height, 0);
@@ -2389,6 +2389,8 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
 
 void correct_sprite_yoffset(int32_t i)
 {
+    if ((sprite[i].cstat&48) >= 32)
+        return;
     int32_t tileyofs = picanm[sprite[i].picnum].yofs;
     int32_t tileysiz = tilesiz[sprite[i].picnum].y;
 

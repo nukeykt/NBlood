@@ -4391,13 +4391,19 @@ static void Keys3d(void)
                              sprite[searchwall].pal, sprite[searchwall].cstat, sprite[searchwall].lotag,
                              sprite[searchwall].hitag, sprite[searchwall].extra,sprite[searchwall].blend, sprite[searchwall].statnum, 0);
 
-                Bsprintf(lines[num++], "Repeat:  %d,%d",
-                    TrackerCast(sprite[searchwall].xrepeat), TrackerCast(sprite[searchwall].yrepeat));
-                Bsprintf(lines[num++], "PosXY:   %d,%d%s",
-                    TrackerCast(sprite[searchwall].x), TrackerCast(sprite[searchwall].y),
-                         sprite[searchwall].xoffset|sprite[searchwall].yoffset ? " ^251*":"");
-                Bsprintf(lines[num++], "PosZ: ""   %d", TrackerCast(sprite[searchwall].z));// prevents tab character
-                lines[num++][0]=0;
+                {
+                    int16_t const heinum = spriteGetSlope(searchwall);
+                    int32_t const notextended = heinum == 0;
+                    Bsprintf(lines[num++], "Repeat:  %d,%d",
+                        TrackerCast(sprite[searchwall].xrepeat), TrackerCast(sprite[searchwall].yrepeat));
+                    Bsprintf(lines[num++], "PosXY:   %d,%d%s",
+                        TrackerCast(sprite[searchwall].x), TrackerCast(sprite[searchwall].y),
+                             (sprite[searchwall].xoffset|sprite[searchwall].yoffset) && notextended ? " ^251*":"");
+                    Bsprintf(lines[num++], "PosZ: ""   %d", TrackerCast(sprite[searchwall].z));// prevents tab character
+                    if (!notextended)
+                        Bsprintf(lines[num++], "Slope:    %d", heinum);
+                    lines[num++][0]=0;
+                }
 
                 if (getmessageleng)
                     break;
@@ -5970,22 +5976,35 @@ static void Keys3d(void)
         else
         {
             if (AIMING_AT_CEILING_OR_FLOOR)
-#ifdef YAX_ENABLE
-            if (YAXCHK((bunchnum=yax_getbunch(searchsector, AIMING_AT_FLOOR)) < 0 ||
-                       (othersidesect=yax_is121(bunchnum, AIMING_AT_CEILING))>=0) &&
-                    (bunchnum < 0 || YAXSLOPECHK(searchsector, othersidesect)))
-#endif
             {
-                int32_t oldslope = (AIMED_CEILINGFLOOR(stat)&2) ? AIMED_CEILINGFLOOR(heinum) : 0;
-                int32_t newslope = clamp(oldslope + tsign*i, -BHEINUM_MAX, BHEINUM_MAX);
-
-                setslope(searchsector, AIMING_AT_FLOOR, newslope);
 #ifdef YAX_ENABLE
-                if (bunchnum >= 0)
-                    setslope(othersidesect, !AIMING_AT_FLOOR, newslope);
+                if (YAXCHK((bunchnum=yax_getbunch(searchsector, AIMING_AT_FLOOR)) < 0 ||
+                           (othersidesect=yax_is121(bunchnum, AIMING_AT_CEILING))>=0) &&
+                        (bunchnum < 0 || YAXSLOPECHK(searchsector, othersidesect)))
 #endif
-                silentmessage("Sector %d %s slope = %d", searchsector,
-                              typestr[searchstat], AIMED_CEILINGFLOOR(heinum));
+                {
+                    int32_t oldslope = (AIMED_CEILINGFLOOR(stat)&2) ? AIMED_CEILINGFLOOR(heinum) : 0;
+                    int32_t newslope = clamp(oldslope + tsign*i, -BHEINUM_MAX, BHEINUM_MAX);
+
+                    setslope(searchsector, AIMING_AT_FLOOR, newslope);
+#ifdef YAX_ENABLE
+                    if (bunchnum >= 0)
+                        setslope(othersidesect, !AIMING_AT_FLOOR, newslope);
+#endif
+                    silentmessage("Sector %d %s slope = %d", searchsector,
+                                  typestr[searchstat], AIMED_CEILINGFLOOR(heinum));
+                }
+            }
+            else if (AIMING_AT_SPRITE)
+            {
+                auto const cstat = sprite[searchwall].cstat & CSTAT_SPRITE_ALIGNMENT_MASK;
+                if (cstat == CSTAT_SPRITE_ALIGNMENT_FLOOR || cstat == CSTAT_SPRITE_ALIGNMENT_SLOPE)
+                {
+                    int32_t oldslope = spriteGetSlope(searchwall);
+                    int32_t newslope = clamp(oldslope + tsign*i, -BHEINUM_MAX, BHEINUM_MAX);
+                    spriteSetSlope(searchwall, newslope);
+                    silentmessage("Sprite %d slope = %d", searchwall, newslope);
+                }
             }
         }
 
