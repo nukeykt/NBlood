@@ -6199,7 +6199,6 @@ draw_as_face_sprite:
                     float bz = (y2*sgzd)*(1.f/65536.f) + sgzx*(1.f/64.f);
                     uint8_t *p = (uint8_t*)(ylookup[y2]+x+frameoffset);
                     intptr_t* A_C_RESTRICT slopalptr = (intptr_t*)nptr2;
-                    const char* const A_C_RESTRICT trans = paletteGetBlendTable(0);
                     uint32_t u, v;
                     int cnt = y2-y1+1;
 #define LINTERPSIZ 4

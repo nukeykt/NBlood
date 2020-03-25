@@ -8527,8 +8527,6 @@ void polymost_drawsprite(int32_t snum)
 
                 if (heinum != 0)
                 {
-                    double const px[3] = { pxy2[0].x, pxy2[1].x, pxy2[2].x };
-
                     vec3d_t const duv[3] = {
                         { (pxy2[0].x * xtex.d + pfy[0] * ytex.d + otex.d),
                           (pxy2[0].x * xtex.u + pfy[0] * ytex.u + otex.u),
