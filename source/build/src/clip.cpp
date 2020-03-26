@@ -1373,7 +1373,7 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     ryi[0] = p1.y;
 
                     get_floorspr_points((uspriteptr_t) spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
-                        &ryi[0], &ryi[1], &ryi[2], &ryi[3]);
+                        &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
 
                     vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
                                  mulscale14(sintable[(spr->ang-256)&2047], walldist) };
@@ -1994,15 +1994,16 @@ restart_grand:
                     }
 
                     case CSTAT_SPRITE_ALIGNMENT_FLOOR:
+                    case CSTAT_SPRITE_ALIGNMENT_SLOPE:
                     {
-                        daz = sprite[j].z; daz2 = daz;
+                        daz = spriteGetZOfSlope(j, pos->x, pos->y); daz2 = daz;
 
-                        if ((cstat&64) != 0 && (pos->z > daz) == ((cstat&8)==0))
+                        if ((cstat&64) != 0 && (pos->x > daz) == ((cstat&8)==0))
                             continue;
 
                         vec2_t v2, v3, v4;
                         get_floorspr_points((uspriteptr_t) &sprite[j], pos->x, pos->y, &v1.x, &v2.x, &v3.x, &v4.x,
-                                            &v1.y, &v2.y, &v3.y, &v4.y);
+                                            &v1.y, &v2.y, &v3.y, &v4.y, spriteGetSlope(j));
 
                         vec2_t const da = { mulscale14(sintable[(sprite[j].ang - 256 + 512) & 2047], walldist + 4),
                                             mulscale14(sintable[(sprite[j].ang - 256) & 2047], walldist + 4) };
@@ -2591,7 +2592,7 @@ restart_grand:
                     continue;
 
                 get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
-                                    &y1, &y2, &y3, &y4);
+                                    &y1, &y2, &y3, &y4, spriteGetSlope(z));
 
                 if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
                     hit_set(hit, dasector, -1, z, intx, inty, intz);

@@ -460,7 +460,8 @@ static inline void get_wallspr_points(T const * const spr, int32_t *x1, int32_t 
 template <typename T>
 static inline void get_floorspr_points(T const * const spr, int32_t px, int32_t py,
                                        int32_t *x1, int32_t *x2, int32_t *x3, int32_t *x4,
-                                       int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4)
+                                       int32_t *y1, int32_t *y2, int32_t *y3, int32_t *y4,
+                                       int32_t const heinum)
 {
     const int32_t tilenum = spr->picnum;
     const int32_t cosang = sintable[(spr->ang+512)&2047];
@@ -469,7 +470,15 @@ static inline void get_floorspr_points(T const * const spr, int32_t px, int32_t 
     vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
     vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
 
-    vec2_t adjofs = { picanm[tilenum].xofs + spr->xoffset, picanm[tilenum].yofs + spr->yoffset };
+    vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
+
+    int32_t const ratio = nsqrtasm(heinum*heinum+16777216);
+
+    if (heinum == 0)
+    {
+        adjofs.x += spr->xoffset;
+        adjofs.y += spr->yoffset;
+    }
 
     if (spr->cstat & 4)
         adjofs.x = -adjofs.x;
@@ -479,7 +488,7 @@ static inline void get_floorspr_points(T const * const spr, int32_t px, int32_t 
 
     vec2_t const center = { ((span.x >> 1) + adjofs.x) * repeat.x, ((span.y >> 1) + adjofs.y) * repeat.y };
     vec2_t const rspan  = { span.x * repeat.x, span.y * repeat.y };
-    vec2_t const ofs    = { -mulscale16(cosang, rspan.y), -mulscale16(sinang, rspan.y) };
+    vec2_t const ofs    = { -divscale12(mulscale16(cosang, rspan.y), ratio), -divscale12(mulscale16(sinang, rspan.y), ratio) };
 
     *x1 += dmulscale16(sinang, center.x, cosang, center.y) - px;
     *y1 += dmulscale16(sinang, center.y, -cosang, center.x) - py;

@@ -9676,7 +9676,8 @@ killsprite:
                             numpts = 4;
                             get_floorspr_points(tspr, 0, 0,
                                                 &xx[0], &xx[1], &xx[2], &xx[3],
-                                                &yy[0], &yy[1], &yy[2], &yy[3]);
+                                                &yy[0], &yy[1], &yy[2], &yy[3],
+                                                tspriteGetSlope(tspr));
                         }
                         else
                         {
@@ -9977,7 +9978,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
     for (s=sortnum-1; s>=0; s--)
     {
         auto const spr = (uspritetype * )&sprite[tsprite[s].owner];
-        if ((spr->cstat&48) == 32)
+        if ((spr->cstat&48) >= 32)
         {
             const int32_t xspan = tilesiz[spr->picnum].x;
 
@@ -9985,7 +9986,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
             vec2_t v1 = { spr->x, spr->y }, v2, v3, v4;
 
             get_floorspr_points(spr, 0, 0, &v1.x, &v2.x, &v3.x, &v4.x,
-                                &v1.y, &v2.y, &v3.y, &v4.y);
+                                &v1.y, &v2.y, &v3.y, &v4.y, spriteGetSlope(tsprite[s].owner));
 
             xb1[0] = 1; xb1[1] = 2; xb1[2] = 3; xb1[3] = 0;
             npoints = 4;
