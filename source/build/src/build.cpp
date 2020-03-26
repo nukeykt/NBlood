@@ -1016,8 +1016,17 @@ void spriteoncfz(int32_t i, int32_t *czptr, int32_t *fzptr)
     int32_t height, zofs;
 
     getzsofslope(sprite[i].sectnum, sprite[i].x,sprite[i].y, czptr, fzptr);
-    if ((sprite[i].cstat&48)>=32)
+    if ((sprite[i].cstat&48)==32)
         return;
+    if ((sprite[i].cstat&48)==48)
+    {
+        int32_t const heinum = klabs(spriteGetSlope(i));
+        int32_t ratio = divscale12(heinum, ksqrt(heinum*heinum+16777216));
+        int32_t h = mulscale11(ratio, sprite[i].yrepeat*tilesiz[sprite[i].picnum].y);
+        *czptr += h;
+        *fzptr -= h;
+        return;
+    }
 
     zofs = spriteheightofs(i, &height, 0);
 
