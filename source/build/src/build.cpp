@@ -1020,11 +1020,18 @@ void spriteoncfz(int32_t i, int32_t *czptr, int32_t *fzptr)
         return;
     if ((sprite[i].cstat&48)==48)
     {
-        int32_t const heinum = klabs(spriteGetSlope(i));
-        int32_t ratio = divscale12(heinum, ksqrt(heinum*heinum+16777216));
-        int32_t h = mulscale11(ratio, sprite[i].yrepeat*tilesiz[sprite[i].picnum].y);
-        *czptr += h;
-        *fzptr -= h;
+        int32_t const heinum = spriteGetSlope(i);
+        int32_t const ratio = divscale12(heinum, ksqrt(heinum*heinum+16777216));
+        int32_t const tilenum = sprite[i].picnum;
+        int32_t const yspan = tilesiz[tilenum].y;
+        int32_t const yoff = (sprite[i].cstat&CSTAT_SPRITE_YFLIP)
+                           ? -picanm[tilenum].yofs : picanm[tilenum].yofs;
+        int32_t const y1 = yspan/2+yoff;
+        int32_t const y2 = yspan - y1;
+        int32_t h1 = mulscale10(ratio, sprite[i].yrepeat*y1);
+        int32_t h2 = -mulscale10(ratio, sprite[i].yrepeat*y2);
+        *czptr += max(h1,h2);
+        *fzptr += min(h1,h2);
         return;
     }
 
