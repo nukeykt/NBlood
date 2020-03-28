@@ -1402,6 +1402,104 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 }
                 break;
             }
+
+            case CSTAT_SPRITE_ALIGNMENT_SLOPE:
+            {
+                int32_t const heinum = spriteGetSlope(j);
+
+                rxi[0] = p1.x;
+                ryi[0] = p1.y;
+                get_floorspr_points((uspriteptr_t) spr, pos->x, pos->y, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
+                    &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
+                if (!get_floorspr_clipyou({ rxi[0], ryi[0] }, { rxi[1], ryi[1] }, { rxi[2], ryi[2] }, { rxi[3], ryi[3] }))
+                {
+                    int32_t const sz = spriteGetZOfSlope(j, pos->x, pos->y);
+                    if (pos->z > sz-flordist && pos->z < sz+ceildist)
+                    {
+                        if ((cstat&64) != 0)
+                            if ((pos->z > sz) == ((cstat&8)==0))
+                                continue;
+
+                        rxi[0] = p1.x;
+                        ryi[0] = p1.y;
+
+                        get_floorspr_points((uspriteptr_t) spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
+                            &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
+
+                        vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                     mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+
+                        if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
+                        {
+                            if (clipinsideboxline(cent.x, cent.y, rxi[1], ryi[1], rxi[0], ryi[0], rad) != 0)
+                                addclipline(rxi[1]-v.y, ryi[1]+v.x, rxi[0]+v.x, ryi[0]+v.y, (int16_t)j+49152, false);
+                        }
+                        else if ((rxi[2]-pos->x) * (ryi[3]-pos->y) < (rxi[3]-pos->x) * (ryi[2]-pos->y))
+                        {
+                            if (clipinsideboxline(cent.x, cent.y, rxi[3], ryi[3], rxi[2], ryi[2], rad) != 0)
+                                addclipline(rxi[3]+v.y, ryi[3]-v.x, rxi[2]-v.x, ryi[2]-v.y, (int16_t)j+49152, false);
+                        }
+
+                        if ((rxi[1]-pos->x) * (ryi[2]-pos->y) < (rxi[2]-pos->x) * (ryi[1]-pos->y))
+                        {
+                            if (clipinsideboxline(cent.x, cent.y, rxi[2], ryi[2], rxi[1], ryi[1], rad) != 0)
+                                addclipline(rxi[2]-v.x, ryi[2]-v.y, rxi[1]-v.y, ryi[1]+v.x, (int16_t)j+49152, false);
+                        }
+                        else if ((rxi[3]-pos->x) * (ryi[0]-pos->y) < (rxi[0]-pos->x) * (ryi[3]-pos->y))
+                        {
+                            if (clipinsideboxline(cent.x, cent.y, rxi[0], ryi[0], rxi[3], ryi[3], rad) != 0)
+                                addclipline(rxi[0]+v.x, ryi[0]+v.y, rxi[3]+v.y, ryi[3]-v.x, (int16_t)j+49152, false);
+                        }
+                    }
+                }
+                else
+                {
+                    if (heinum == 0)
+                        continue;
+                    const int32_t tilenum = spr->picnum;
+                    const int32_t cosang = sintable[(spr->ang+512)&2047];
+                    const int32_t sinang = sintable[spr->ang&2047];
+                    vec2_t const span = { tilesiz[tilenum].x, tilesiz[tilenum].y};
+                    vec2_t const repeat = { spr->xrepeat, spr->yrepeat };
+                    vec2_t adjofs = { picanm[tilenum].xofs, picanm[tilenum].yofs };
+
+                    if (spr->cstat & 4)
+                        adjofs.x = -adjofs.x;
+
+                    if (spr->cstat & 8)
+                        adjofs.y = -adjofs.y;
+
+                    int32_t const centerx = ((span.x >> 1) + adjofs.x) * repeat.x;
+                    int32_t const rspanx = span.x * repeat.x;
+                    int32_t zz[3] = { pos->z, pos->z + flordist, pos->z - ceildist };
+                    for (int k = 0; k < 3; k++)
+                    {
+                        int32_t jj = divscale18(spr->z - zz[k], heinum);
+                        int32_t x1 = spr->x + mulscale16(sinang, centerx) + mulscale24(jj, cosang);
+                        int32_t y1 = spr->y - mulscale16(cosang, centerx) + mulscale24(jj, sinang);
+                        int32_t x2 = x1 - mulscale16(sinang, rspanx);
+                        int32_t y2 = y1 + mulscale16(cosang, rspanx);
+
+                        vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                        mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+
+                        if (clipinsideboxline(cent.x, cent.y, x1, y1, x2, y2, rad) != 0)
+                        {
+                            if ((x1-pos->x) * (y2-pos->y) >= (x2-pos->x) * (y1-pos->y))
+                            {
+                                addclipline(x1+v.x, y1+v.y, x2+v.y, y2-v.x, (int16_t)j+49152, false);
+                            }
+                            else
+                            {
+                                if ((cstat & 64) != 0)
+                                    continue;
+                                addclipline(x2-v.x, y2-v.y, x1-v.y, y1+v.x, (int16_t)j+49152, false);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
             }
         }
     } while (clipsectcnt < clipsectnum || clipspritecnt < clipspritenum);
