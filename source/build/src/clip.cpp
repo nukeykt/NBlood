@@ -1998,7 +1998,7 @@ restart_grand:
                     {
                         daz = spriteGetZOfSlope(j, pos->x, pos->y); daz2 = daz;
 
-                        if ((cstat&64) != 0 && (pos->x > daz) == ((cstat&8)==0))
+                        if ((cstat&64) != 0 && (pos->z > daz) == ((cstat&8)==0))
                             continue;
 
                         vec2_t v2, v3, v4;
