@@ -44,7 +44,6 @@ extern "C" {
 
 // KEEPINSYNC mact/include/_control.h, build/src/sdlayer.cpp
 #define MAXMOUSEAXES 2
-#define MAXMOUSEDIGITAL (MAXMOUSEAXES*2)
 
 // KEEPINSYNC mact/include/_control.h, build/src/sdlayer.cpp
 #define MAXJOYAXES 9
