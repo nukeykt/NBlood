@@ -671,8 +671,8 @@ CGameMenuItemSliderFloat itemOptionsControlMouseSensitivity("SENSITIVITY:", 3, 6
 CGameMenuItemZBool itemOptionsControlMouseAimFlipped("INVERT AIMING:", 3, 66, 80, 180, false, SetMouseAimFlipped, NULL, NULL);
 CGameMenuItemZBool itemOptionsControlMouseAimMode("AIMING TYPE:", 3, 66, 90, 180, false, SetMouseAimMode, "HOLD", "TOGGLE");
 CGameMenuItemZBool itemOptionsControlMouseVerticalAim("VERTICAL AIMING:", 3, 66, 100, 180, false, SetMouseVerticalAim, NULL, NULL);
-CGameMenuItemSlider itemOptionsControlMouseXScale("X-SCALE:", 3, 66, 110, 180, (int*)&MouseAnalogueScale[0], 0, 65536, 1024, SetMouseXScale, -1, -1, kMenuSliderQ16);
-CGameMenuItemSlider itemOptionsControlMouseYScale("Y-SCALE:", 3, 66, 120, 180, (int*)&MouseAnalogueScale[1], 0, 65536, 1024, SetMouseYScale, -1, -1, kMenuSliderQ16);
+CGameMenuItemSlider itemOptionsControlMouseXScale("X-SCALE:", 3, 66, 110, 180, NULL, 0, 65536, 1024, SetMouseXScale, -1, -1, kMenuSliderQ16);
+CGameMenuItemSlider itemOptionsControlMouseYScale("Y-SCALE:", 3, 66, 120, 180, NULL, 0, 65536, 1024, SetMouseYScale, -1, -1, kMenuSliderQ16);
 
 void SetupNetworkMenu(void);
 void SetupNetworkHostMenu(CGameMenuItemChain *pItem);
@@ -1978,13 +1978,11 @@ void SetMouseVerticalAim(CGameMenuItemZBool *pItem)
 
 void SetMouseXScale(CGameMenuItemSlider *pItem)
 {
-    MouseAnalogueScale[0] = pItem->nValue;
     CONTROL_SetAnalogAxisScale(0, pItem->nValue, controldevice_mouse);
 }
 
 void SetMouseYScale(CGameMenuItemSlider *pItem)
 {
-    MouseAnalogueScale[1] = pItem->nValue;
     CONTROL_SetAnalogAxisScale(1, pItem->nValue, controldevice_mouse);
 }
 
