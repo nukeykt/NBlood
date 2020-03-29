@@ -5813,7 +5813,9 @@ void actProcessSprites(void)
         if (pSprite->flags & 32)
             continue;
         int nXSprite = pSprite->extra;
-        dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
+        //dassert(nXSprite > 0 && nXSprite < kMaxXSprites);
+        if (nXSprite <= 0 || nXSprite >= kMaxXSprites)
+            continue;
         XSPRITE *pXSprite = &xsprite[nXSprite];
         switch (pSprite->type) {
         case kTrapSawCircular:
