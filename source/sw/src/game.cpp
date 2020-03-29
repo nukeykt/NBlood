@@ -689,7 +689,7 @@ TerminateGame(void)
 void
 LoadLevel(const char *filename)
 {
-    int16_t q16ang = fix16_to_int(Player[0].q16ang);
+    int16_t q16ang;
     if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &q16ang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
@@ -700,6 +700,7 @@ LoadLevel(const char *filename)
 #endif
         exit(0);
     }
+    Player[0].q16ang = fix16_from_int(q16ang);
 }
 
 void

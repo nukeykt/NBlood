@@ -1140,7 +1140,7 @@ ViewOutsidePlayerRecurse(PLAYERp pp, int32_t* vx, int32_t* vy, int32_t* vz, int1
 
 
 void
-BackView(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
+BackView(int *nx, int *ny, int *nz, short *vsect, fix16_t *nq16ang, short horiz)
 {
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
@@ -1152,7 +1152,7 @@ BackView(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
 
     ASSERT(*vsect >= 0 && *vsect < MAXSECTORS);
 
-    ang = *nang + pp->view_outside_dang;
+    ang = fix16_to_int(*nq16ang) + pp->view_outside_dang;
 
     // Calculate the vector (nx,ny,nz) to shoot backwards
     vx = (sintable[NORM_ANGLE(ang + 1536)] >> 3);
@@ -1214,7 +1214,7 @@ BackView(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
                 flag_backup = hsp->cstat;
                 RESET(hsp->cstat, CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_BLOCK_HITSCAN);
                 ASSERT(*vsect >= 0 && *vsect < MAXSECTORS);
-                BackView(nx, ny, nz, vsect, nang, horiz);
+                BackView(nx, ny, nz, vsect, nq16ang, horiz);
                 hsp->cstat = flag_backup;
                 return;
             }
@@ -1255,11 +1255,11 @@ BackView(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
     // Make sure vsect is correct
     updatesectorz(*nx, *ny, *nz, vsect);
 
-    *nang = ang;
+    *nq16ang = fix16_from_int(ang);
 }
 
 void
-CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
+CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nq16ang, short horiz)
 {
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
@@ -1269,7 +1269,7 @@ CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
     PLAYERp pp = &Player[screenpeek];
     short ang;
 
-    ang = *nang + pp->circle_camera_ang;
+    ang = fix16_to_int(*nq16ang) + pp->circle_camera_ang;
 
     // Calculate the vector (nx,ny,nz) to shoot backwards
     vx = (sintable[NORM_ANGLE(ang + 1536)] >> 4);
@@ -1335,7 +1335,7 @@ CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
                 flag_backup = hsp->cstat;
                 RESET(hsp->cstat, CSTAT_SPRITE_BLOCK|CSTAT_SPRITE_BLOCK_HITSCAN);
 
-                CircleCamera(nx, ny, nz, vsect, nang, horiz);
+                CircleCamera(nx, ny, nz, vsect, nq16ang, horiz);
                 hsp->cstat = flag_backup;
                 return;
             }
@@ -1364,7 +1364,7 @@ CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
     // Make sure vsect is correct
     updatesectorz(*nx, *ny, *nz, vsect);
 
-    *nang = ang;
+    *nq16ang = fix16_from_int(ang);
 }
 
 void PrintLocationInfo(PLAYERp pp)
@@ -1878,7 +1878,7 @@ void DrawCrosshair(PLAYERp pp)
 
 }
 
-void CameraView(PLAYERp pp, int *tx, int *ty, int *tz, short *tsectnum, int *tang, int *thoriz)
+void CameraView(PLAYERp pp, int *tx, int *ty, int *tz, short *tsectnum, fix16_t *tq16ang, fix16_t *tq16horiz)
 {
     int i,nexti;
     short ang;
@@ -1919,7 +1919,7 @@ void CameraView(PLAYERp pp, int *tx, int *ty, int *tz, short *tsectnum, int *tan
                 {
                 case 1:
                     pp->last_camera_sp = sp;
-                    CircleCamera(tx, ty, tz, tsectnum, tang, 100);
+                    CircleCamera(tx, ty, tz, tsectnum, tq16ang, 100);
                     found_camera = TRUE;
                     break;
 
@@ -1945,14 +1945,14 @@ void CameraView(PLAYERp pp, int *tx, int *ty, int *tz, short *tsectnum, int *tan
                         zvect = 0;
 
                     // new horiz to player
-                    *thoriz = 100 - (zvect/256);
-                    *thoriz = max(*thoriz, PLAYER_HORIZ_MIN);
-                    *thoriz = min(*thoriz, PLAYER_HORIZ_MAX);
+                    *tq16horiz = fix16_from_int(100 - (zvect/256));
+                    *tq16horiz = fix16_max(*tq16horiz, fix16_from_int(PLAYER_HORIZ_MIN));
+                    *tq16horiz = fix16_min(*tq16horiz, fix16_from_int(PLAYER_HORIZ_MAX));
 
-                    //DSPRINTF(ds,"xvect %d,yvect %d,zvect %d,thoriz %d",xvect,yvect,zvect,*thoriz);
+                    //DSPRINTF(ds,"xvect %d,yvect %d,zvect %d,tq16horiz %d",xvect,yvect,zvect,*tq16horiz);
                     MONO_PRINT(ds);
 
-                    *tang = ang;
+                    *tq16ang = fix16_from_int(ang);
                     *tx = sp->x;
                     *ty = sp->y;
                     *tz = sp->z;
@@ -2228,7 +2228,7 @@ void
 drawscreen(PLAYERp pp)
 {
     extern SWBOOL DemoMode,CameraTestMode;
-    int tx, ty, tz, tinthoriz, tintang;
+    int tx, ty, tz;
     fix16_t tq16horiz, tq16ang;
     short tsectnum;
     short i,j;
@@ -2384,8 +2384,7 @@ drawscreen(PLAYERp pp)
     //if (TEST(camerapp->Flags, PF_VIEW_FROM_OUTSIDE))
     if (TEST(pp->Flags, PF_VIEW_FROM_OUTSIDE))
     {
-        tintang = fix16_to_int(tq16ang);
-        BackView(&tx, &ty, &tz, &tsectnum, &tintang, fix16_to_int(tq16horiz));
+        BackView(&tx, &ty, &tz, &tsectnum, &tq16ang, fix16_to_int(tq16horiz));
     }
     else
     {
@@ -2393,9 +2392,7 @@ drawscreen(PLAYERp pp)
 
         if (DemoMode || CameraTestMode)
         {
-            tinthoriz = fix16_to_int(tq16horiz);
-            tintang = fix16_to_int(tq16ang);
-            CameraView(camerapp, &tx, &ty, &tz, &tsectnum, &tintang, &tinthoriz);
+            CameraView(camerapp, &tx, &ty, &tz, &tsectnum, &tq16ang, &tq16horiz);
         }
     }
 

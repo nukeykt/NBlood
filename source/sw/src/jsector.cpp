@@ -479,7 +479,7 @@ JS_InitMirrors(void)
 /////////////////////////////////////////////////////
 #if 1
 void drawroomstotile(int daposx, int daposy, int daposz,
-                     short daang, fix16_t daq16horiz, short dacursectnum, short tilenume)
+                     fix16_t daq16ang, fix16_t daq16horiz, short dacursectnum, short tilenume)
 {
     if (waloff[tilenume] == 0)
         tileLoad(tilenume);
@@ -488,7 +488,7 @@ void drawroomstotile(int daposx, int daposy, int daposz,
 
     renderSetTarget(tilenume, tilesiz[tilenume].x, tilesiz[tilenume].y);
 
-    drawrooms(daposx, daposy, daposz, daang, daq16horiz, dacursectnum);
+    renderDrawRoomsQ16(daposx, daposy, daposz, daq16ang, daq16horiz, dacursectnum);
     analyzesprites(daposx, daposy, daposz, FALSE);
     renderDrawMasks();
 
