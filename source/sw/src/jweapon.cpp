@@ -1389,7 +1389,7 @@ PlayerInitChemBomb(PLAYERp pp)
     // Spawn a shot
     // Inserting and setting up variables
     w = SpawnSprite(STAT_MISSILE, CHEMBOMB, s_ChemBomb, pp->cursectnum,
-                    nx, ny, nz, pp->pang, CHEMBOMB_VELOCITY);
+                    nx, ny, nz, fix16_to_int(pp->q16ang), CHEMBOMB_VELOCITY);
 
     wp = &sprite[w];
     wu = User[w];
@@ -1835,7 +1835,7 @@ PlayerInitCaltrops(PLAYERp pp)
     // Spawn a shot
     // Inserting and setting up variables
     w = SpawnSprite(STAT_DEAD_ACTOR, CALTROPS, s_Caltrops, pp->cursectnum,
-                    nx, ny, nz, pp->pang, (CHEMBOMB_VELOCITY + RANDOM_RANGE(CHEMBOMB_VELOCITY)) / 2);
+                    nx, ny, nz, fix16_to_int(pp->q16ang), (CHEMBOMB_VELOCITY + RANDOM_RANGE(CHEMBOMB_VELOCITY)) / 2);
 
     wp = &sprite[w];
     wu = User[w];
@@ -1863,7 +1863,7 @@ PlayerInitCaltrops(PLAYERp pp)
         SET(wu->Flags, SPR_UNDERWATER);
 
     // They go out at different angles
-//        wp->ang = NORM_ANGLE(pp->pang + (RANDOM_RANGE(50) - 25));
+//        wp->ang = NORM_ANGLE(fix16_to_int(pp->q16ang) + (RANDOM_RANGE(50) - 25));
 
     wp->zvel = ((100 - fix16_to_int(pp->q16horiz)) * HORIZ_MULT);
 

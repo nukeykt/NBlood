@@ -879,7 +879,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
                     }
 
                     tsp->z = tsp->z + pp->siz;
-                    tsp->ang = pp->siang;
+                    tsp->ang = fix16_to_int(pp->siang);
                     //continue;
                 }
                 else
@@ -1092,7 +1092,7 @@ ViewOutsidePlayerRecurse(PLAYERp pp, int32_t* vx, int32_t* vy, int32_t* vz, int1
     *vz = pp->posz;
     *vsectnum = pp->cursectnum;
 
-    *ang = pp->pang + pp->view_outside_dang;
+    *ang = fix16_to_int(pp->q16ang) + pp->view_outside_dang;
 
     nx = sintable[NORM_ANGLE(*ang + 512 + 1024)] << 11;
     ny = sintable[NORM_ANGLE(*ang + 1024)] << 11;
@@ -1140,7 +1140,7 @@ ViewOutsidePlayerRecurse(PLAYERp pp, int32_t* vx, int32_t* vy, int32_t* vz, int1
 
 
 void
-BackView(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
+BackView(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
 {
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
@@ -1259,7 +1259,7 @@ BackView(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
 }
 
 void
-CircleCamera(int *nx, int *ny, int *nz, short *vsect, short *nang, short horiz)
+CircleCamera(int *nx, int *ny, int *nz, short *vsect, int *nang, short horiz)
 {
     vec3_t n = { *nx, *ny, *nz };
     SPRITEp sp;
@@ -1402,7 +1402,7 @@ void PrintLocationInfo(PLAYERp pp)
             sprintf(buffer, "POSZ:%d", pp->posz);
             printext256(x, y, 1, -1, buffer, 1);
             y += Y_STEP;
-            sprintf(buffer, "ANG:%d", (int32_t) pp->pang);
+            sprintf(buffer, "ANG:%d", (int32_t) fix16_to_int(pp->q16ang));
             printext256(x, y, 1, -1, buffer, 1);
             y += Y_STEP;
         }
@@ -1878,7 +1878,7 @@ void DrawCrosshair(PLAYERp pp)
 
 }
 
-void CameraView(PLAYERp pp, int *tx, int *ty, int *tz, short *tsectnum, short *tang, int *thoriz)
+void CameraView(PLAYERp pp, int *tx, int *ty, int *tz, short *tsectnum, int *tang, int *thoriz)
 {
     int i,nexti;
     short ang;
@@ -2167,7 +2167,7 @@ void PreDrawStackedWater(void)
 }
 
 
-void FAF_DrawRooms(int x, int y, int z, short ang, fix16_t q16horiz, short sectnum)
+void FAF_DrawRooms(int x, int y, int z, fix16_t q16ang, fix16_t q16horiz, short sectnum)
 {
     short i,nexti;
 
@@ -2194,7 +2194,7 @@ void FAF_DrawRooms(int x, int y, int z, short ang, fix16_t q16horiz, short sectn
         }
     }
 
-    renderDrawRoomsQ16(x,y,z,fix16_from_int(ang),q16horiz,sectnum);
+    renderDrawRoomsQ16(x,y,z,q16ang,q16horiz,sectnum);
 
     TRAVERSE_SPRITE_STAT(headspritestat[STAT_CEILING_FLOOR_PIC_OVERRIDE], i, nexti)
     {
@@ -2228,9 +2228,9 @@ void
 drawscreen(PLAYERp pp)
 {
     extern SWBOOL DemoMode,CameraTestMode;
-    int tx, ty, tz,tinthoriz;
-    fix16_t tq16horiz;
-    short tang,tsectnum;
+    int tx, ty, tz, tinthoriz, tintang;
+    fix16_t tq16horiz, tq16ang;
+    short tsectnum;
     short i,j;
     int bob_amt = 0;
     int quake_z, quake_x, quake_y;
@@ -2313,7 +2313,7 @@ drawscreen(PLAYERp pp)
     tx = camerapp->oposx + mulscale16(camerapp->posx - camerapp->oposx, smoothratio);
     ty = camerapp->oposy + mulscale16(camerapp->posy - camerapp->oposy, smoothratio);
     tz = camerapp->oposz + mulscale16(camerapp->posz - camerapp->oposz, smoothratio);
-    tang = camerapp->oang + mulscale16(((camerapp->pang + 1024 - camerapp->oang) & 2047) - 1024, smoothratio);
+    tq16ang = camerapp->oq16ang + mulscale16(((camerapp->q16ang + fix16_from_int(1024) - camerapp->oq16ang) & 0x7FFFFFF) - fix16_from_int(1024), smoothratio);
     tq16horiz = camerapp->oq16horiz + mulscale16(camerapp->q16horiz - camerapp->oq16horiz, smoothratio);
     tsectnum = camerapp->cursectnum;
 
@@ -2348,21 +2348,21 @@ drawscreen(PLAYERp pp)
     pp->six = tx;
     pp->siy = ty;
     pp->siz = tz - pp->posz;
-    pp->siang = tang;
+    pp->siang = tq16ang;
 
     if (pp->sop_riding || pp->sop_control)
     {
         tx = pp->posx;
         ty = pp->posy;
         tz = pp->posz;
-        tang = pp->pang;
+        tq16ang = pp->q16ang;
         tsectnum = pp->cursectnum;
         updatesectorz(tx, ty, tz, &tsectnum);
 
         pp->six = tx;
         pp->siy = ty;
         pp->siz = tz - pp->posz;
-        pp->siang = tang;
+        pp->siang = tq16ang;
     }
 
     QuakeViewChange(camerapp, &quake_z, &quake_x, &quake_y, &quake_ang);
@@ -2371,20 +2371,21 @@ drawscreen(PLAYERp pp)
     tx = tx + quake_x;
     ty = ty + quake_y;
     //tq16horiz = tq16horiz + fix16_from_int(quake_x);
-    tang = NORM_ANGLE(tang + quake_ang);
+    tq16ang = fix16_from_int(NORM_ANGLE(fix16_to_int(tq16ang) + quake_ang));
 
     if (pp->sop_remote)
     {
         if (TEST_BOOL1(pp->remote_sprite))
-            tang = pp->remote_sprite->ang;
+            tq16ang = fix16_from_int(pp->remote_sprite->ang);
         else
-            tang = getangle(pp->sop_remote->xmid - tx, pp->sop_remote->ymid - ty);
+            tq16ang = fix16_from_int(getangle(pp->sop_remote->xmid - tx, pp->sop_remote->ymid - ty));
     }
 
     //if (TEST(camerapp->Flags, PF_VIEW_FROM_OUTSIDE))
     if (TEST(pp->Flags, PF_VIEW_FROM_OUTSIDE))
     {
-        BackView(&tx, &ty, &tz, &tsectnum, &tang, fix16_to_int(tq16horiz));
+        tintang = fix16_to_int(tq16ang);
+        BackView(&tx, &ty, &tz, &tsectnum, &tintang, fix16_to_int(tq16horiz));
     }
     else
     {
@@ -2393,7 +2394,8 @@ drawscreen(PLAYERp pp)
         if (DemoMode || CameraTestMode)
         {
             tinthoriz = fix16_to_int(tq16horiz);
-            CameraView(camerapp, &tx, &ty, &tz, &tsectnum, &tang, &tinthoriz);
+            tintang = fix16_to_int(tq16ang);
+            CameraView(camerapp, &tx, &ty, &tz, &tsectnum, &tintang, &tinthoriz);
         }
     }
 
@@ -2419,20 +2421,20 @@ drawscreen(PLAYERp pp)
         videoClearViewableArea(255L);
 
     OverlapDraw = TRUE;
-    DrawOverlapRoom(tx, ty, tz, tang, tq16horiz, tsectnum);
+    DrawOverlapRoom(tx, ty, tz, tq16ang, tq16horiz, tsectnum);
     OverlapDraw = FALSE;
 
     if (dimensionmode != 6 && !ScreenSavePic)
     {
         // TEST this! Changed to camerapp
-        //JS_DrawMirrors(camerapp, tx, ty, tz, tang, tq16horiz);
-        JS_DrawMirrors(pp, tx, ty, tz, tang, tq16horiz);
+        //JS_DrawMirrors(camerapp, tx, ty, tz, tq16ang, tq16horiz);
+        JS_DrawMirrors(pp, tx, ty, tz, tq16ang, tq16horiz);
     }
 
     // TODO: This call is redundant if the tiled overhead map is shown, but the
     // HUD elements should be properly outputted with hardware rendering first.
     if (!FAF_DebugView)
-        FAF_DrawRooms(tx, ty, tz, tang, tq16horiz, tsectnum);
+        FAF_DrawRooms(tx, ty, tz, tq16ang, tq16horiz, tsectnum);
 
     analyzesprites(tx, ty, tz, FALSE);
     post_analyzesprites();
@@ -2505,11 +2507,11 @@ drawscreen(PLAYERp pp)
         if (dimensionmode == 6)
         {
             videoClearViewableArea(0L);
-            renderDrawMapView(tx, ty, zoom, tang);
+            renderDrawMapView(tx, ty, zoom, fix16_to_int(tq16ang));
         }
 
         // Draw the line map on top of texture 2d map or just stand alone
-        drawoverheadmap(tx, ty, zoom, tang);
+        drawoverheadmap(tx, ty, zoom, fix16_to_int(tq16ang));
     }
 
     for (j = 0; j < MAXSPRITES; j++)
@@ -2645,7 +2647,7 @@ DrawCompass(PLAYERp pp)
     if (gs.BorderNum < BORDER_BAR || pp - Player != screenpeek)
         return;
 
-    ang = pp->pang;
+    ang = fix16_to_int(pp->q16ang);
 
     if (pp->sop_remote)
         ang = 0;
