@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "savegame.h"
 #include "xxhash.h"
 #include "music.h"
+#include "sbar.h"
 
 #ifndef __ANDROID__
 droidinput_t droidinput;
@@ -2439,9 +2440,11 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
     case MENU_COLCORR:
     case MENU_COLCORR_INGAME:
+    {
         // center panel
         rotatesprite_fs(origin.x + (120<<16), origin.y + (32<<16), 16384, 0, 3290, 0, 0, 2|8|16);
-        rotatesprite_fs(origin.x + (160<<16) - (tilesiz[BOTTOMSTATUSBAR].x<<13), origin.y + (82<<16) - (tilesiz[BOTTOMSTATUSBAR].y<<14), 16384, 0, BOTTOMSTATUSBAR, 0, 0, 2|8|16);
+        int32_t const statusTile = sbartile();
+        rotatesprite_fs(origin.x + (160<<16) - (tilesiz[statusTile].x<<13), origin.y + (82<<16) - (tilesiz[statusTile].y<<14), 16384, 0, statusTile, 0, 0, 2|8|16);
 
         // left panel
         rotatesprite_fs(origin.x + (40<<16), origin.y + (32<<16), 16384, 0, BONUSSCREEN, 0, 0, 2|8|16);
@@ -2449,6 +2452,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         // right panel
         rotatesprite_fs(origin.x + (200<<16), origin.y + (32<<16), 16384, 0, LOADSCREEN, 0, 0, 2|8|16);
         break;
+    }
 
     case MENU_NETSETUP:
     case MENU_NETHOST:
