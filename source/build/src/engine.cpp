@@ -9882,7 +9882,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
                 if (sprite[i].cstat & 32768)
                     continue;
 
-                if ((sprite[i].cstat & 48) == 32)
+                if ((sprite[i].cstat & 48) >= 32)
                 {
                     if ((sprite[i].cstat & (64 + 8)) == (64 + 8))
                         continue;
