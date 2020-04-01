@@ -984,7 +984,10 @@ bool CGameMenuItemChain7F2F0::Event(CGameMenuEvent &event)
     {
     case kMenuEventEnter:
         if (at34 > -1)
+        {
             gGameOptions.nEpisode = at34;
+            Bstrcpy(gGameOptions.szUserMap, "\0");
+        }
         return CGameMenuItemChain::Event(event);
     }
     return CGameMenuItem::Event(event);
@@ -3006,6 +3009,17 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
 
 CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination)
 {
+    InitObject(_pzText, _nFont, _x, _y, _nWidth, _startdir, _pattern, _destination);
+}
+
+CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination, void(*_onFileSelectedEventHandler)() )
+{
+    InitObject(_pzText, _nFont, _x, _y, _nWidth, _startdir, _pattern, _destination);
+    onFileSelectedEventHandler = _onFileSelectedEventHandler;
+}
+
+void CGameMenuFileSelect::InitObject(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination)
+{
     m_pzText = _pzText;
     m_nFont = _nFont;
     m_nX = _x;
@@ -3182,7 +3196,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             findhigh[currentList] = findhigh[currentList]->userb;
             break;
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventUp:
         if (findhigh[currentList] != NULL)
@@ -3192,7 +3206,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             else
                 findhigh[currentList] = findhigh[currentList]->userb;
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventDown:
         if (findhigh[currentList] != NULL)
@@ -3202,13 +3216,13 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             else
                 findhigh[currentList] = findhigh[currentList]->usera;
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventLeft:
     case kMenuEventRight:
         if ((currentList ? fnlist.numdirs : fnlist.numfiles) > 0)
             currentList = !currentList;
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventScrollUp:
         if (findhigh[currentList] != NULL)
@@ -3219,7 +3233,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
                 nTopDelta[currentList]--;
             }
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventScrollDown:
         if (findhigh[currentList] != NULL)
@@ -3230,7 +3244,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
                 nTopDelta[currentList]++;
             }
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     default:
         break;
@@ -3243,7 +3257,8 @@ bool CGameMenuFileSelect::Select(void)
     if (!findhigh[currentList])
         return false;
 
-    Bstrcat(destination, findhigh[currentList]->name);
+    if (IsDestinationEndsWithSlash())
+        Bstrcat(destination, findhigh[currentList]->name);
 
     if (currentList == 0)
     {
@@ -3253,6 +3268,10 @@ bool CGameMenuFileSelect::Select(void)
         FileSelectInit();
         return false;
     }
+
+    if (onFileSelectedEventHandler)
+        onFileSelectedEventHandler();
+
     return true;
 }
 
@@ -3291,7 +3310,7 @@ void CGameMenuFileSelect::FileSelectInit(void)
     KB_FlushKeyboardQueueScans();
 }
 
-void CGameMenuFileSelect::MovementVefiry(void)
+void CGameMenuFileSelect::MovementVerify(void)
 {
     int height;
     if (!findhigh[currentList])
@@ -3332,3 +3351,15 @@ bool CGameMenuFileSelect::MouseEvent(CGameMenuEvent &event)
         return CGameMenuItem::MouseEvent(event);
     return event.at0 != kMenuEventNone;
 }
+
+bool CGameMenuFileSelect::IsDestinationEndsWithSlash(void)
+{
+    int i = 0;
+    char c = 0;
+
+    while (destination[i] != 0)
+        c = destination[i++];
+
+    return '/' == c;
+}
+
