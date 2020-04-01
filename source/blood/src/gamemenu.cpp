@@ -3257,8 +3257,17 @@ bool CGameMenuFileSelect::Select(void)
     if (!findhigh[currentList])
         return false;
 
-    if (IsDestinationEndsWithSlash())
-        Bstrcat(destination, findhigh[currentList]->name);
+    char name[MAX_PATH];
+    Bstrcpy(name, findhigh[currentList]->name);
+    if (!Bstrcmp(name, ".."))
+    {
+        SetDestinationToParentDir();
+    }
+    else
+    {
+        RemoveFilenameFromDestination();
+        Bstrcat(destination, name);
+    }
 
     if (currentList == 0)
     {
@@ -3352,14 +3361,51 @@ bool CGameMenuFileSelect::MouseEvent(CGameMenuEvent &event)
     return event.at0 != kMenuEventNone;
 }
 
-bool CGameMenuFileSelect::IsDestinationEndsWithSlash(void)
+void CGameMenuFileSelect::RemoveFilenameFromDestination(void)
 {
+    int lastSlashIndex = -1;
     int i = 0;
-    char c = 0;
-
     while (destination[i] != 0)
-        c = destination[i++];
+    {
+        if (destination[i] == '/')
+            lastSlashIndex = i;
+        i++;
+    }
 
-    return '/' == c;
+    char newDestination[MAX_PATH];
+    for (i = 0; i <= lastSlashIndex; i++)
+        newDestination[i] = destination[i];
+    newDestination[i] = 0;
+
+    Bstrcpy(destination, newDestination);
 }
 
+void CGameMenuFileSelect::SetDestinationToParentDir(void)
+{
+    int lastSlashIndex = -1;
+    int previousSlashIndex = -1;
+    int i = 0;
+    while (destination[i] != 0)
+    {
+        if (destination[i] == '/')
+        {
+            if (lastSlashIndex != -1)
+            {
+                previousSlashIndex = lastSlashIndex;
+                lastSlashIndex = i;
+            }
+            else
+            {
+                lastSlashIndex = i;
+            }
+        }
+        i++;
+    }
+
+    char newDestination[MAX_PATH];
+    for (i = 0; i <= previousSlashIndex; i++)
+        newDestination[i] = destination[i];
+    newDestination[i] = 0;
+
+    Bstrcpy(destination, newDestination);
+}
