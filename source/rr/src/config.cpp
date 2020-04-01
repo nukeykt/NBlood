@@ -384,8 +384,7 @@ void CONFIG_SetDefaults(void)
 
     for (i=0; i<MAXMOUSEAXES; i++)
     {
-        ud.config.MouseAnalogueScale[i] = DEFAULTMOUSEANALOGUESCALE;
-        CONTROL_SetAnalogAxisScale(i, ud.config.MouseAnalogueScale[i], controldevice_mouse);
+        CONTROL_SetAnalogAxisScale(i, DEFAULTMOUSEANALOGUESCALE, controldevice_mouse);
 
         ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
         CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
@@ -498,11 +497,6 @@ void CONFIG_SetupMouse(void)
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
             if (CONFIG_AnalogNameToNum(temp) != -1 || (!temp[0] && CONFIG_FunctionNameToNum(temp) != -1))
                 ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
-
-        Bsprintf(str,"MouseAnalogScale%d",i);
-        scale = ud.config.MouseAnalogueScale[i];
-        SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str,&scale);
-        ud.config.MouseAnalogueScale[i] = scale;
     }
 
     {
@@ -517,10 +511,7 @@ void CONFIG_SetupMouse(void)
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1,  controldevice_mouse);
     }
     for (i=0; i<MAXMOUSEAXES; i++)
-    {
         CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
-        CONTROL_SetAnalogAxisScale(i, ud.config.MouseAnalogueScale[i], controldevice_mouse);
-    }
 }
 
 
@@ -847,12 +838,6 @@ void CONFIG_WriteSetup(uint32_t flags)
             {
                 Bsprintf(buf, "MouseAnalogAxes%d", dummy);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[dummy]));
-            }
-
-            if (ud.config.MouseAnalogueScale[dummy] != DEFAULTMOUSEANALOGUESCALE)
-            {
-                Bsprintf(buf, "MouseAnalogScale%d", dummy);
-                SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.MouseAnalogueScale[dummy], FALSE, FALSE);
             }
         }
     }

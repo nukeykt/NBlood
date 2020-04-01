@@ -995,7 +995,7 @@ void polymost_glinit()
     currentTextureID = 0;
 
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &tilesheetSize);
-#ifdef _MSC_VER
+#if (defined _MSC_VER) || (!defined BITNESS64)
     if (tilesheetSize > 8192)
         tilesheetSize = 8192;
 #endif
@@ -1454,6 +1454,8 @@ static void resizeglcheck(void)
     const int32_t fovcorrect = (int32_t)(ourxdimen*ratio - ourxdimen);
 
     ratio = 1.f/ratio;
+
+    polymost2d = 0;
 
     glViewport(windowxy1.x-(fovcorrect/2), ydim-(windowxy2.y+1),
                 ourxdimen+fovcorrect, windowxy2.y-windowxy1.y+1);

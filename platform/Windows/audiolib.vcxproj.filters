@@ -71,6 +71,9 @@
     <ClCompile Include="..\..\source\audiolib\src\driver_adlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\audiolib\src\driver_sf2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\audiolib\src\pitch.h">
@@ -112,9 +115,6 @@
     <ClInclude Include="..\..\source\audiolib\src\midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\audiolib\src\midifuncs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\audiolib\src\_al_midi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -131,6 +131,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\opl3_reg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\src\tsf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\include\driver_sf2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,7 @@
 /*
  Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
- 
+ Copyright (C) EDuke32 developers and contributors
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
  as published by the Free Software Foundation; either version 2
@@ -26,6 +27,7 @@
 #include "drivers.h"
 
 #include "driver_adlib.h"
+#include "driver_sf2.h"
 #include "_midi.h"
 
 #ifdef RENDERTYPESDL
@@ -146,6 +148,25 @@ static struct
     #else
         UNSUPPORTED_COMPLETELY
     #endif
+    },
+
+    // TinySoundFont
+    {
+        "SoundFont2 synthesizer",
+        SF2Drv_GetError,
+        SF2Drv_ErrorString,
+
+        UNSUPPORTED_PCM,
+
+        EMIDI_GeneralMIDI,
+        SF2Drv_MIDI_Init,
+        SF2Drv_MIDI_Shutdown,
+        SF2Drv_MIDI_StartPlayback,
+        SF2Drv_MIDI_HaltPlayback,
+        SF2Drv_MIDI_SetTempo,
+        nullptr,
+        nullptr,
+        SF2Drv_MIDI_Service,
     },
 };
 

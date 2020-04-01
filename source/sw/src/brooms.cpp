@@ -70,7 +70,6 @@ typedef struct
 
 SAVE save;
 
-SWBOOL FAF_DebugView = 0;
 SWBOOL FAFon = 0;
 SWBOOL FAF_DontMoveSectors = FALSE;
 

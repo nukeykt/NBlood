@@ -28,10 +28,6 @@
 extern "C" {
 #endif
 
-extern int ASS_PCMSoundDriver;
-extern int ASS_MIDISoundDriver;
-extern int ASS_EMIDICard;
-
 int SoundDriver_IsPCMSupported(int driver);
 int SoundDriver_IsMIDISupported(int driver);
 

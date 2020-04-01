@@ -4422,70 +4422,6 @@ static inline void SpriteName(int16_t spritenum, char *lo2)
     Bstrcpy(lo2, names[sprite[spritenum].picnum]);
 }// end SpriteName
 
-
-static void m32_showmouse(void)
-{
-    int32_t i, col;
-
-    mousecol = M32_THROB;
-
-    if (whitecol > editorcolors[0])
-        col = whitecol - mousecol;
-    else col = whitecol + mousecol;
-
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        renderDisableFog();
-        polymost_useColorOnly(true);
-    }
-#endif
-
-    int const lores = !!(xdim <= 640);
-
-    for (i = (3 - lores); i <= (7 >> lores); i++)
-    {
-        plotpixel(searchx+i,searchy,col);
-        plotpixel(searchx-i,searchy,col);
-        plotpixel(searchx,searchy-i,col);
-        plotpixel(searchx,searchy+i,col);
-    }
-
-    for (i=1; i<=(2 >> lores); i++)
-    {
-        plotpixel(searchx+i,searchy,whitecol);
-        plotpixel(searchx-i,searchy,whitecol);
-        plotpixel(searchx,searchy-i,whitecol);
-        plotpixel(searchx,searchy+i,whitecol);
-    }
-
-    i = (8 >> lores);
-
-    plotpixel(searchx+i,searchy,editorcolors[0]);
-    plotpixel(searchx-i,searchy,editorcolors[0]);
-    plotpixel(searchx,searchy-i,editorcolors[0]);
-    plotpixel(searchx,searchy+i,editorcolors[0]);
-
-    if (!lores)
-    {
-        for (i=1; i<=4; i++)
-        {
-            plotpixel(searchx+i,searchy,whitecol);
-            plotpixel(searchx-i,searchy,whitecol);
-            plotpixel(searchx,searchy-i,whitecol);
-            plotpixel(searchx,searchy+i,whitecol);
-        }
-    }
-
-#ifdef USE_OPENGL
-    if (videoGetRenderMode() >= REND_POLYMOST)
-    {
-        renderEnableFog();
-        polymost_useColorOnly(false);
-    }
-#endif
-}
-
 int32_t AskIfSure(const char *text)
 {
     int32_t retval=1;
@@ -10043,6 +9979,7 @@ static void Keys2d(void)
     }
 }// end key2d
 
+#if 0
 static void InitCustomColors(void)
 {
     int32_t i;
@@ -10142,6 +10079,7 @@ static void InitCustomColors(void)
         }
     }
 }
+#endif
 
 int32_t ExtPreSaveMap(void)
 {
@@ -12071,7 +12009,7 @@ void ExtPostInit(void)
 {
     keytimerstuff = timerSetCallback(timerCallback);
 
-    InitCustomColors();
+    // InitCustomColors();
 
     //if (!(duke3d_m32_globalflags & DUKE3D_NO_PALETTE_CHANGES))
     //{

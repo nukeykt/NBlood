@@ -152,7 +152,7 @@ int32_t wm_msgbox(const char *name, const char *fmt, ...)
     UNREFERENCED_PARAMETER(name);
 
     va_start(va,fmt);
-    vsnprintf(buf,sizeof(buf),fmt,va);
+    Bvsnprintf(buf,sizeof(buf),fmt,va);
     va_end(va);
 
 #if defined EDUKE32_OSX
@@ -198,7 +198,7 @@ int32_t wm_ynbox(const char *name, const char *fmt, ...)
     UNREFERENCED_PARAMETER(name);
 
     va_start(va,fmt);
-    vsnprintf(buf,sizeof(buf),fmt,va);
+    Bvsnprintf(buf,sizeof(buf),fmt,va);
     va_end(va);
 
 #if defined EDUKE32_OSX

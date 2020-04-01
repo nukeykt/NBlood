@@ -190,7 +190,6 @@ struct TRCONDITION {
 
 
 // - VARIABLES ------------------------------------------------------------------
-extern bool gModernMap;
 extern bool gTeamsSpawnUsed;
 extern bool gEventRedirectsUsed;
 extern ZONE gStartZoneTeam1[kMaxPlayers];

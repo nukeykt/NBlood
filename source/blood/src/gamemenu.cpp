@@ -3003,3 +3003,332 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
     }
     return CGameMenuItem::Event(event);
 }
+
+CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination)
+{
+    m_pzText = _pzText;
+    m_nFont = _nFont;
+    m_nX = _x;
+    m_nY = _y;
+    m_nWidth = _nWidth;
+    startdir = _startdir;
+    pattern = _pattern;
+    destination = _destination;
+}
+
+static int32_t xdim_from_320_16(int32_t x)
+{
+    const int32_t screenwidth = scale(240<<16, xdim, ydim);
+    return scale(x + (screenwidth>>1) - (160<<16), xdim, screenwidth);
+}
+static int32_t ydim_from_200_16(int32_t y)
+{
+    y = mulscale16(y + rotatesprite_y_offset - (200<<15), rotatesprite_yxaspect) + (200<<15);
+    return scale(y, ydim, 200<<16);
+}
+
+static void Menu_BlackRectangle(int32_t x, int32_t y, int32_t width, int32_t height, int32_t orientation)
+{
+    const int shadow_pal = 5;
+    const int32_t xscale = divscale16(width, tilesiz[0].x<<16), yscale = divscale16(height, tilesiz[0].y<<16);
+
+    rotatesprite_(x, y, max(xscale, yscale), 0, 0, 127, shadow_pal, (orientation&(1|32))|2|8|16, 0, 0, xdim_from_320_16(x), ydim_from_200_16(y), xdim_from_320_16(x + width), ydim_from_200_16(y + height));
+}
+
+static char tempbuf[1024];
+#define USERMAPENTRYLENGTH 25
+
+static void Menu_Run_AbbreviateNameIntoBuffer(const char* name, int32_t entrylength)
+{
+    int32_t len = Bstrlen(name);
+    Bstrncpy(tempbuf, name, ARRAY_SIZE(tempbuf));
+    if (len > entrylength)
+    {
+        len = entrylength-3;
+        tempbuf[len] = 0;
+        while (len < entrylength)
+            tempbuf[len++] = '.';
+    }
+    tempbuf[len] = 0;
+}
+
+void CGameMenuFileSelect::Draw(void)
+{
+    int height, width;
+    vec2_t format[2] = { 40, 45, 164, 45 };
+
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
+
+    // black translucent background underneath file lists
+    Menu_BlackRectangle((m_nX<<16) + (36<<16), (m_nY<<16) + (42<<16), 248<<16, 123<<16, 1|32);
+
+    // path
+    Bsnprintf(tempbuf, sizeof(tempbuf), "Path: %s", destination);
+    gMenuTextMgr.DrawText(tempbuf, m_nFont, m_nX+40, m_nY+32, 0, 0, 0);
+
+    int const maxRows = (162 - 40) / height;
+    bool bClick = false;
+
+    for (int i = 0; i < 2; ++i)
+    {
+        if (findhigh[i])
+        {
+            BUILDVFS_FIND_REC *dir;
+            int32_t y = 0;
+
+            int32_t rows = 0;
+            for (dir = findhigh[i]->usera; dir; dir = dir->next, rows++)
+            {
+            }
+            y = format[i].y;
+
+            int32_t row = 0;
+
+            for (dir = findhigh[i]->usera; dir; dir = dir->next, row++)
+            {
+                bool const bSelected = dir == findhigh[i] && currentList == i;
+
+                // pal = dir->source==BUILDVFS_SOURCE_ZIP ? 8 : 2
+
+                Menu_Run_AbbreviateNameIntoBuffer(dir->name, USERMAPENTRYLENGTH);
+
+                const int32_t thisx = format[i].x;
+                const int32_t thisr = row - nTopDelta[i];
+                const int32_t thisy = y + thisr * height;
+
+                if (0 <= thisr && thisr < maxRows)
+                {
+                    gMenuTextMgr.GetFontInfo(m_nFont, tempbuf, &width, &height);
+                    viewDrawText(m_nFont, tempbuf, thisx, thisy, bSelected ? 32-((int)totalclock&63) : 32, 0, 0, 0);
+                    int mx = thisx<<16;
+                    int my = thisy<<16;
+                    int mw = width<<16;
+                    int mh = height<<16;
+                    if (bEnable && MOUSEACTIVECONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousepos, mx, my, mw, mh)))
+                    {
+                        if (MOUSEWATCHPOINTCONDITIONAL(!gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_prevmousepos, mx, my, mw, mh)))
+                        {
+                            findhigh[i] = dir;
+                            currentList = i;
+                        }
+
+                        if (!gGameMenuMgr.m_mousecaught && g_mouseClickState == MOUSE_RELEASED && !gGameMenuMgr.MouseOutsideBounds(&gGameMenuMgr.m_mousedownpos, mx, my, mw, mh))
+                        {
+                            findhigh[i] = dir;
+                            currentList = i;
+                            gGameMenuMgr.m_mousecaught = 1;
+                            bClick = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (bClick)
+    {
+        gGameMenuMgr.m_mousecaught = 1;
+
+        if (Select())
+            gGameMenuMgr.PostPop();
+    }
+}
+
+void klistbookends(BUILDVFS_FIND_REC *start)
+{
+    auto end = start;
+
+    if (!start)
+        return;
+
+    while (start->prev)
+        start = start->prev;
+
+    while (end->next)
+        end = end->next;
+
+    int i = 0;
+
+    for (auto n = start; n; n = n->next)
+    {
+        n->type = i; // overload this...
+        n->usera = start;
+        n->userb = end;
+        i++;
+    }
+}
+
+bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
+{
+    switch (event.at0)
+    {
+    case kMenuEventInit:
+        FileSelectInit();
+        break;
+    case kMenuEventDeInit:
+        fnlist_clearnames(&fnlist);
+        break;
+    case kMenuEventEscape:
+        destination[0] = 0;
+        return true;
+    case kMenuEventEnter:
+        return Select();
+    case kMenuEventKey:
+        switch (event.at2)
+        {
+        case sc_Home:
+            findhigh[currentList] = findhigh[currentList]->usera;
+            break;
+        case sc_End:
+            findhigh[currentList] = findhigh[currentList]->userb;
+            break;
+        }
+        MovementVefiry();
+        return false;
+    case kMenuEventUp:
+        if (findhigh[currentList] != NULL)
+        {
+            if (findhigh[currentList]->prev)
+                findhigh[currentList] = findhigh[currentList]->prev;
+            else
+                findhigh[currentList] = findhigh[currentList]->userb;
+        }
+        MovementVefiry();
+        return false;
+    case kMenuEventDown:
+        if (findhigh[currentList] != NULL)
+        {
+            if (findhigh[currentList]->next)
+                findhigh[currentList] = findhigh[currentList]->next;
+            else
+                findhigh[currentList] = findhigh[currentList]->usera;
+        }
+        MovementVefiry();
+        return false;
+    case kMenuEventLeft:
+    case kMenuEventRight:
+        if ((currentList ? fnlist.numdirs : fnlist.numfiles) > 0)
+            currentList = !currentList;
+        MovementVefiry();
+        return false;
+    case kMenuEventScrollUp:
+        if (findhigh[currentList] != NULL)
+        {
+            if (findhigh[currentList]->prev)
+            {
+                findhigh[currentList] = findhigh[currentList]->prev;
+                nTopDelta[currentList]--;
+            }
+        }
+        MovementVefiry();
+        return false;
+    case kMenuEventScrollDown:
+        if (findhigh[currentList] != NULL)
+        {
+            if (findhigh[currentList]->next)
+            {
+                findhigh[currentList] = findhigh[currentList]->next;
+                nTopDelta[currentList]++;
+            }
+        }
+        MovementVefiry();
+        return false;
+    default:
+        break;
+    }
+    return CGameMenuItem::Event(event);
+}
+
+bool CGameMenuFileSelect::Select(void)
+{
+    if (!findhigh[currentList])
+        return false;
+
+    Bstrcat(destination, findhigh[currentList]->name);
+
+    if (currentList == 0)
+    {
+        Bstrcat(destination, "/");
+        Bcorrectfilename(destination, 1);
+
+        FileSelectInit();
+        return false;
+    }
+    return true;
+}
+
+void CGameMenuFileSelect::FileSelectInit(void)
+{
+    fnlist_clearnames(&fnlist);
+
+    if (destination[0] == 0)
+    {
+        BDIR * usermaps = Bopendir(startdir);
+        if (usermaps)
+        {
+            Bclosedir(usermaps);
+            Bstrcpy(destination, startdir);
+        }
+        else
+            Bstrcpy(destination, "./");
+    }
+    Bcorrectfilename(destination, 1);
+
+    fnlist_getnames(&fnlist, destination, pattern, 0, 0);
+    findhigh[0] = fnlist.finddirs;
+    findhigh[1] = fnlist.findfiles;
+
+    for (int i = 0; i < 2; ++i)
+    {
+        nTopDelta[i] = 0;
+        klistbookends(findhigh[i]);
+    }
+
+    currentList = 0;
+    if (findhigh[1])
+        currentList = 1;
+
+    KB_FlushKeyboardQueue();
+    KB_FlushKeyboardQueueScans();
+}
+
+void CGameMenuFileSelect::MovementVefiry(void)
+{
+    int height;
+    if (!findhigh[currentList])
+        return;
+    gMenuTextMgr.GetFontInfo(m_nFont, NULL, NULL, &height);
+    int32_t rows = 0;
+    for (auto dir = findhigh[currentList]->usera; dir; dir = dir->next, rows++)
+    {
+    }
+    int const maxRows = (162 - 40) / height;
+    int item = findhigh[currentList]->type - nTopDelta[currentList];
+    if (item < 0)
+        nTopDelta[currentList] += item;
+    else if (item >= maxRows)
+        nTopDelta[currentList] += item - maxRows + 1;
+    if (nTopDelta[currentList] > rows - maxRows)
+        nTopDelta[currentList] = rows - maxRows;
+    if (nTopDelta[currentList] < 0)
+        nTopDelta[currentList] = 0;
+}
+
+bool CGameMenuFileSelect::MouseEvent(CGameMenuEvent &event)
+{
+    event.at0 = kMenuEventNone;
+    if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELUP_MOUSE))
+    {
+        gGameMenuMgr.m_mouselastactivity = (int)totalclock;
+        MOUSE_ClearButton(WHEELUP_MOUSE);
+        event.at0 = kMenuEventScrollUp;
+    }
+    else if (MOUSEACTIVECONDITIONAL(MOUSE_GetButtons()&WHEELDOWN_MOUSE))
+    {
+        gGameMenuMgr.m_mouselastactivity = (int)totalclock;
+        MOUSE_ClearButton(WHEELDOWN_MOUSE);
+        event.at0 = kMenuEventScrollDown;
+    }
+    else
+        return CGameMenuItem::MouseEvent(event);
+    return event.at0 != kMenuEventNone;
+}

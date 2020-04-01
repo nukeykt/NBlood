@@ -80,7 +80,13 @@ int FX_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
 int FX_SetPrintf(void(*function)(const char *, ...));
 
 extern int FX_ErrorCode;
-#define FX_SetErrorCode(status) FX_ErrorCode = (status);
+extern int FX_MixRate;
+
+static FORCE_INLINE int FX_SetErrorCode(int status)
+{
+    FX_ErrorCode = status;
+    return FX_Error;
+}
 
 static FORCE_INLINE int FX_CheckMVErr(int status)
 {

@@ -55,7 +55,6 @@ enum MenuIndex_t {
     MENU_JOYSTICKAXES   = 208,
     MENU_KEYBOARDKEYS   = 209,
     MENU_MOUSEBTNS      = 210,
-    MENU_MOUSEADVANCED  = 212,
     MENU_JOYSTICKAXIS   = 213,
     MENU_TOUCHSETUP     = 214,
     MENU_TOUCHSENS      = 215,
@@ -80,8 +79,9 @@ enum MenuIndex_t {
     MENU_NETWAITVOTES   = 603,
     MENU_SOUND          = 700,
     MENU_SOUND_INGAME   = 701,
-    MENU_ADVSOUND       = 702,
-    MENU_CDPLAYER       = 703,
+    MENU_SOUND_DEVSETUP = 702,
+    MENU_SOUND_SF2      = 703,
+    MENU_CDPLAYER       = 704,
     MENU_SAVESETUP      = 750,
     MENU_SAVECLEANVERIFY = 751,
     MENU_CHEATS         = 800,
@@ -448,6 +448,7 @@ typedef struct MenuFileSelect_t
     MenuFont_t *font[2];
 
     // traits
+    const char * startdir;
     const char *pattern;
     char *destination;
 

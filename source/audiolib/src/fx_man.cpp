@@ -22,13 +22,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "fx_man.h"
 
+#include "_multivc.h"
 #include "compat.h"
 #include "drivers.h"
 #include "driver_adlib.h"
+#include "driver_sf2.h"
 #include "midi.h"
 #include "multivoc.h"
+#include "music.h"
 #include "osd.h"
-#include "_multivc.h"
 
 #ifdef _WIN32
 # include "driver_winmm.h"
@@ -41,21 +43,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 int FX_ErrorCode = FX_Ok;
 int FX_Installed;
+int FX_MixRate;
 
 const char *FX_ErrorString(int const ErrorNumber)
 {
-    const char *ErrorString;
-
     switch (ErrorNumber)
     {
         case FX_Warning:
-        case FX_Error:          ErrorString = FX_ErrorString(FX_ErrorCode); break;
-        case FX_Ok:             ErrorString = "Fx ok."; break;
-        case FX_MultiVocError:  ErrorString = MV_ErrorString(MV_Error); break;
-        default:                ErrorString = "Unknown Fx error code."; break;
+        case FX_Error:          return FX_ErrorString(FX_ErrorCode);
+        case FX_Ok:             return "Fx ok.";
+        case FX_MultiVocError:  return MV_ErrorString(MV_Error);
+        default:                return "Unknown Fx error code.";
     }
-
-    return ErrorString;
 }
 
 static int osdcmd_cvar_set_audiolib(osdcmdptr_t parm)
@@ -110,8 +109,10 @@ void FX_InitCvars(void)
         { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void*) &AL_AdditiveMode, CVAR_BOOL, 0, 1 },
         { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void*) &AL_PostAmp, CVAR_INT, 0, 3 },
         { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void*) &AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },
+        { "mus_sf2_bank", "SoundFont 2 (.sf2) bank filename",  (void*) SF2_BankFile, CVAR_STRING, 0, sizeof(SF2_BankFile) - 1 },
+        { "mus_sf2_sampleblocksize", "number of samples per effect processing block", (void*) &SF2_EffectSampleBlockSize, CVAR_INT, 1, 64 },
 #ifdef _WIN32
-        { "mus_winmm_device", "select Windows MME MIDI device", (void*) &WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
+        { "mus_mme_device", "select Windows MME MIDI output device", (void*) &WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
 #endif
 #ifdef HAVE_XMP
         { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void*) &MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
@@ -139,7 +140,7 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
 
     MV_Printf("Initializing sound: ");
 
-    if (SoundCard < 0 || SoundCard >= ASS_NumSoundCards)
+    if ((unsigned)SoundCard >= ASS_NumSoundCards)
     {
         FX_SetErrorCode(FX_InvalidCard);
         MV_Printf("failed! %s\n", FX_ErrorString(FX_InvalidCard));
@@ -162,9 +163,11 @@ int FX_Init(int numvoices, int numchannels, int mixrate, void* initdata)
         status = FX_Error;
     }
 
+    FX_MixRate = MV_MixRate;
+
     if (status == FX_Ok)
     {
-        MV_Printf(": %.1f KHz %s with %d voices\n", mixrate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
+        MV_Printf(": %.1f KHz %s with %d voices\n", MV_MixRate/1000.f, numchannels == 1 ? "mono" : "stereo", numvoices);
         FX_Installed = TRUE;
     }
 
@@ -189,61 +192,53 @@ int FX_Shutdown(void)
     return status;
 }
 
-int FX_GetDevice()
-{
-    return ASS_PCMSoundDriver;
-}
+int FX_GetDevice(void) { return ASS_PCMSoundDriver; }
 
-static wavefmt_t FX_DetectFormat(char const * const ptr, uint32_t length)
+
+#define FMT_MAGIC(i, j, k, l) (i + (j << 8) + (k << 16) + (l << 24))
+uint32_t constexpr FMT_CDXA_MAGIC = FMT_MAGIC('C','D','X','A');
+uint32_t constexpr FMT_FLAC_MAGIC = FMT_MAGIC('f','L','a','C');
+uint32_t constexpr FMT_OGG_MAGIC  = FMT_MAGIC('O','g','g','S');
+uint32_t constexpr FMT_RIFF_MAGIC = FMT_MAGIC('R','I','F','F');
+uint32_t constexpr FMT_VOC_MAGIC  = FMT_MAGIC('C','r','e','a');
+uint32_t constexpr FMT_WAVE_MAGIC = FMT_MAGIC('W','A','V','E');
+#undef FMT_MAGIC
+
+static wavefmt_t FX_ReadFmt(char const * const ptr, uint32_t length)
 {
     if (length < 12)
         return FMT_UNKNOWN;
 
-    wavefmt_t fmt = FMT_UNKNOWN;
+    auto const ptr32 = (uint32_t const *)ptr;
 
-    switch (B_LITTLE32(*(int const *)ptr))
+    switch (B_LITTLE32(*ptr32))
     {
-        case 'C' + ('r' << 8) + ('e' << 16) + ('a' << 24):  // Crea
-            fmt = FMT_VOC;
-            break;
-        case 'O' + ('g' << 8) + ('g' << 16) + ('S' << 24):  // OggS
-            fmt = FMT_VORBIS;
-            break;
-        case 'R' + ('I' << 8) + ('F' << 16) + ('F' << 24):  // RIFF
-            switch (B_LITTLE32(*(int const *)(ptr + 8)))
-            {
-                case 'C' + ('D' << 8) + ('X' << 16) + ('A' << 24):  // CDXA
-                    fmt = FMT_XA;
-                    break;
-                case 'W' + ('A' << 8) + ('V' << 16) + ('E' << 24):  // WAVE
-                    fmt = FMT_WAV;
-                    break;
-            }
-            break;
-        case 'f' + ('L' << 8) + ('a' << 16) + ('C' << 24):  // fLaC
-            fmt = FMT_FLAC;
+        case FMT_OGG_MAGIC:  return FMT_VORBIS;
+        case FMT_VOC_MAGIC:  return FMT_VOC;
+        case FMT_FLAC_MAGIC: return FMT_FLAC;
+        case FMT_RIFF_MAGIC:
+            if (B_LITTLE32(ptr32[2]) == FMT_WAVE_MAGIC) return FMT_WAV;
+            if (B_LITTLE32(ptr32[2]) == FMT_CDXA_MAGIC) return FMT_XA;
             break;
         default:
-            if (MV_IdentifyXMP(ptr, length))
-                fmt = FMT_XMP;
+            if (MV_IdentifyXMP(ptr, length)) return FMT_XMP;
             break;
     }
 
-    return fmt;
+    return FMT_UNKNOWN;
 }
 
+static int FX_BadFmt(char *, uint32_t, int, int, int, int, int, int, int, fix16_t, intptr_t) { return MV_SetErrorCode(MV_InvalidFile); }
+static int FX_BadFmt3D(char *, uint32_t, int, int, int, int, int, fix16_t, intptr_t)         { return MV_SetErrorCode(MV_InvalidFile); }
+
 int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
-                          int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+            int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
 {
-    static constexpr decltype(MV_PlayVOC) *func[] =
-    { nullptr, nullptr, MV_PlayVOC, MV_PlayWAV, MV_PlayVorbis, MV_PlayFLAC, MV_PlayXA, MV_PlayXMP };
+    static constexpr decltype(FX_Play) *func[] = { FX_BadFmt, nullptr, MV_PlayVOC, MV_PlayWAV, MV_PlayVorbis, MV_PlayFLAC, MV_PlayXA, MV_PlayXMP };
 
     EDUKE32_STATIC_ASSERT(FMT_MAX == ARRAY_SIZE(func));
 
-    wavefmt_t const fmt = FX_DetectFormat(ptr, ptrlength);
-
-    int handle =
-    (func[fmt]) ? func[fmt](ptr, ptrlength, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval) : -1;
+    int handle = func[FX_ReadFmt(ptr, ptrlength)](ptr, ptrlength, loopstart, loopend, pitchoffset, vol, left, right, priority, volume, callbackval);
 
     if (handle <= MV_Ok)
     {
@@ -255,17 +250,13 @@ int FX_Play(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitch
 }
 
 int FX_Play3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle, int distance,
-                      int priority, fix16_t volume, intptr_t callbackval)
+              int priority, fix16_t volume, intptr_t callbackval)
 {
-    static constexpr decltype(MV_PlayVOC3D) *func[] =
-    { nullptr, nullptr, MV_PlayVOC3D, MV_PlayWAV3D, MV_PlayVorbis3D, MV_PlayFLAC3D, MV_PlayXA3D, MV_PlayXMP3D };
+    static constexpr decltype(FX_Play3D) *func[] = { FX_BadFmt3D, nullptr, MV_PlayVOC3D, MV_PlayWAV3D, MV_PlayVorbis3D, MV_PlayFLAC3D, MV_PlayXA3D, MV_PlayXMP3D };
 
     EDUKE32_STATIC_ASSERT(FMT_MAX == ARRAY_SIZE(func));
 
-    wavefmt_t const fmt = FX_DetectFormat(ptr, ptrlength);
-
-    int handle =
-    (func[fmt]) ? func[fmt](ptr, ptrlength, loophow, pitchoffset, angle, distance, priority, volume, callbackval) : -1;
+    int handle = func[FX_ReadFmt(ptr, ptrlength)](ptr, ptrlength, loophow, pitchoffset, angle, distance, priority, volume, callbackval);
 
     if (handle <= MV_Ok)
     {

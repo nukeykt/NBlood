@@ -10233,7 +10233,7 @@ int32_t fillsector_maybetrans(int16_t sectnum, int32_t fillcolor, uint8_t dotran
 
                 if (y1 <= sy && sy < y2)
                 {
-                    if (fillcnt == ARRAY_SIZE(fillist))
+                    if (fillcnt == ARRAY_SSIZE(fillist))
                         break;
 
                     x1 += scale(sy-y1, x2-x1, y2-y1);
@@ -10258,7 +10258,7 @@ int32_t fillsector_maybetrans(int16_t sectnum, int32_t fillcolor, uint8_t dotran
                     dax = halfxdim16 + (((dax-pos.x)*zoom)>>14);
                     if (dax >= lborder)
                     {
-                        if (fillcnt == ARRAY_SIZE(fillist))
+                        if (fillcnt == ARRAY_SSIZE(fillist))
                             break;
 
                         fillist[fillcnt++] = dax;

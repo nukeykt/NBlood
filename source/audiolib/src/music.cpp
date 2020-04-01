@@ -35,20 +35,16 @@ static midifuncs MUSIC_MidiFunctions;
 
 #define MUSIC_SetErrorCode(status) MUSIC_ErrorCode = (status);
 
-const char *MUSIC_ErrorString(int ErrorNumber)
+const char *MUSIC_ErrorString(int const ErrorNumber)
 {
-    const char *ErrorString;
-
     switch (ErrorNumber)
     {
         case MUSIC_Warning:
-        case MUSIC_Error:       ErrorString = MUSIC_ErrorString(MUSIC_ErrorCode); break;
-        case MUSIC_Ok:          ErrorString = "Music ok."; break;
-        case MUSIC_MidiError:   ErrorString = "Error playing MIDI file."; break;
-        default:                ErrorString = "Unknown Music error code."; break;
+        case MUSIC_Error:       return MUSIC_ErrorString(MUSIC_ErrorCode);
+        case MUSIC_Ok:          return "Music ok.";
+        case MUSIC_MidiError:   return "Error playing MIDI file.";
+        default:                return "Unknown Music error code.";
     }
-
-    return ErrorString;
 }
 
 
@@ -108,18 +104,15 @@ failed:
 int MUSIC_Shutdown(void)
 {
     MIDI_StopSong();
-
     return MUSIC_Ok;
 }
 
 
-void MUSIC_SetVolume(int volume) { MIDI_SetVolume(min(max(0, volume), 255)); }
-
-
-int MUSIC_GetVolume(void) { return MIDI_GetVolume(); }
-void MUSIC_SetLoopFlag(int loopflag) { MIDI_SetLoopFlag(loopflag); }
-void MUSIC_Continue(void) { MIDI_ContinueSong(); }
-void MUSIC_Pause(void) { MIDI_PauseSong(); }
+void MUSIC_SetVolume(int volume) { MIDI_SetVolume(clamp(volume, 0, 255)); }
+int  MUSIC_GetVolume(void)       { return MIDI_GetVolume(); }
+void MUSIC_SetLoopFlag(int loop) { MIDI_SetLoopFlag(loop); }
+void MUSIC_Continue(void)        { MIDI_ContinueSong(); }
+void MUSIC_Pause(void)           { MIDI_PauseSong(); }
 
 int MUSIC_StopSong(void)
 {
@@ -146,6 +139,4 @@ int MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn /*= nu
 }
 
 
-void MUSIC_Update(void)
-{
-}
+void MUSIC_Update(void) {}

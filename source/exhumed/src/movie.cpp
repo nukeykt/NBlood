@@ -53,7 +53,7 @@ static uint8_t* CurFrame = NULL;
 
 bool bServedSample = false;
 palette_t moviepal[256];
-static mutex_t mutex = 0;
+static mutex_t mutex;
 
 
 int ReadFrame(FILE *fp)

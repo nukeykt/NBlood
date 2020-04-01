@@ -49,7 +49,6 @@ enum MIDI_Errors
 };
 
 
-
 #define MIDI_MaxVolume 255
 
 int  MIDI_AllNotesOff(void);

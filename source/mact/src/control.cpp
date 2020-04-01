@@ -40,7 +40,7 @@ static controlflags      CONTROL_Flags[CONTROL_NUM_FLAGS];
 
 static controlkeymaptype  CONTROL_KeyMapping[CONTROL_NUM_FLAGS];
 
-static int32_t            CONTROL_MouseAxesScale[2];
+int32_t                   CONTROL_MouseAxesScale[2];
 
 static controlaxismaptype CONTROL_JoyAxesMap[MAXJOYAXES];
 static controlaxistype    CONTROL_JoyAxes[MAXJOYAXES];
@@ -873,7 +873,7 @@ bool CONTROL_Startup(controltype which, int32_t(*TimeFunction)(void), int32_t ti
     KB_Startup();
 
     CONTROL_NumMouseButtons = MAXMOUSEBUTTONS;
-    CONTROL_MousePresent    = Mouse_Init();
+    CONTROL_MousePresent    = MOUSE_Startup();
     CONTROL_MouseEnabled    = CONTROL_MousePresent;
 
     CONTROL_ResetJoystickValues();

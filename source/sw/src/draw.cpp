@@ -2425,11 +2425,10 @@ drawscreen(PLAYERp pp)
         JS_DrawMirrors(pp, tx, ty, tz, tang, thoriz);
     }
 
+    // TODO: This call is redundant if the tiled overhead map is shown, but the
+    // HUD elements should be properly outputted with hardware rendering first.
     if (!FAF_DebugView)
-    {
         FAF_DrawRooms(tx, ty, tz, tang, thoriz, tsectnum);
-        PicInView(FAF_MIRROR_PIC, FALSE);
-    }
 
     analyzesprites(tx, ty, tz, FALSE);
     post_analyzesprites();

@@ -726,6 +726,11 @@ void idle_waitevent_timeout(uint32_t timeout)
 }
 
 
+void mouseMoveToCenter()
+{
+}
+
+
 //
 // setjoydeadzone() -- sets the dead and saturation zones for the joystick
 //

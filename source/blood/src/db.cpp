@@ -37,6 +37,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "eventq.h"
 #include "nnexts.h"
 
+#ifdef NOONE_EXTENSIONS
+bool gModernMap = false;
+#endif // !NOONE_EXTENSIONS
+
+
 unsigned short gStatCount[kMaxStatus + 1];
 
 XSPRITE xsprite[kMaxXSprites];
@@ -167,14 +172,6 @@ void DeleteLight(int32_t s)
     gPolymerLight[s].lightptr = NULL;
 }
 
-
-void G_Polymer_UnInit(void)
-{
-    int32_t i;
-
-    for (i = 0; i < kMaxSprites; i++)
-        DeleteLight(i);
-}
 #endif
 
 

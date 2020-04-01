@@ -343,7 +343,6 @@ void CONFIG_SetDefaults(void)
     CONFIG_SetDefaultKeys(keydefaults);
 
     memset(ud.config.MouseFunctions, -1, sizeof(ud.config.MouseFunctions));
-    memset(ud.config.MouseDigitalFunctions, -1, sizeof(ud.config.MouseDigitalFunctions));
     memset(ud.config.JoystickFunctions, -1, sizeof(ud.config.JoystickFunctions));
     memset(ud.config.JoystickDigitalFunctions, -1, sizeof(ud.config.JoystickDigitalFunctions));
 
@@ -360,13 +359,7 @@ void CONFIG_SetDefaults(void)
 
     for (int i=0; i<MAXMOUSEAXES; i++)
     {
-        ud.config.MouseAnalogueScale[i] = DEFAULTMOUSEANALOGUESCALE;
-        CONTROL_SetAnalogAxisScale(i, ud.config.MouseAnalogueScale[i], controldevice_mouse);
-
-        ud.config.MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2]);
-        ud.config.MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i*2+1]);
-        CONTROL_MapDigitalAxis(i, ud.config.MouseDigitalFunctions[i][0], 0, controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, ud.config.MouseDigitalFunctions[i][1], 1, controldevice_mouse);
+        CONTROL_SetAnalogAxisScale(i, DEFAULTMOUSEANALOGUESCALE, controldevice_mouse);
 
         ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
         CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
@@ -482,21 +475,6 @@ void CONFIG_SetupMouse(void)
         temp[0] = 0;
         if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
             ud.config.MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
-
-        Bsprintf(str,"MouseDigitalAxes%d_0",i);
-        temp[0] = 0;
-        if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            ud.config.MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
-
-        Bsprintf(str,"MouseDigitalAxes%d_1",i);
-        temp[0] = 0;
-        if (!SCRIPT_GetString(ud.config.scripthandle, "Controls", str,temp))
-            ud.config.MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
-
-        Bsprintf(str,"MouseAnalogScale%d",i);
-        int32_t scale = ud.config.MouseAnalogueScale[i];
-        SCRIPT_GetNumber(ud.config.scripthandle, "Controls", str, &scale);
-        ud.config.MouseAnalogueScale[i] = scale;
     }
 
     for (int i=0; i<MAXMOUSEBUTTONS; i++)
@@ -505,12 +483,7 @@ void CONFIG_SetupMouse(void)
         CONTROL_MapButton(ud.config.MouseFunctions[i][1], i, 1,  controldevice_mouse);
     }
     for (int i=0; i<MAXMOUSEAXES; i++)
-    {
         CONTROL_MapAnalogAxis(i, ud.config.MouseAnalogueAxes[i], controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, ud.config.MouseDigitalFunctions[i][0], 0,controldevice_mouse);
-        CONTROL_MapDigitalAxis(i, ud.config.MouseDigitalFunctions[i][1], 1,controldevice_mouse);
-        CONTROL_SetAnalogAxisScale(i, ud.config.MouseAnalogueScale[i], controldevice_mouse);
-    }
 }
 
 
@@ -1042,21 +1015,6 @@ void CONFIG_WriteSetup(uint32_t flags)
                 Bsprintf(buf, "MouseAnalogAxes%d", i);
                 SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_AnalogNumToName(ud.config.MouseAnalogueAxes[i]));
             }
-
-            if (CONFIG_FunctionNumToName(ud.config.MouseDigitalFunctions[i][0]))
-            {
-                Bsprintf(buf, "MouseDigitalAxes%d_0", i);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseDigitalFunctions[i][0]));
-            }
-
-            if (CONFIG_FunctionNumToName(ud.config.MouseDigitalFunctions[i][1]))
-            {
-                Bsprintf(buf, "MouseDigitalAxes%d_1", i);
-                SCRIPT_PutString(ud.config.scripthandle, "Controls", buf, CONFIG_FunctionNumToName(ud.config.MouseDigitalFunctions[i][1]));
-            }
-
-            Bsprintf(buf, "MouseAnalogScale%d", i);
-            SCRIPT_PutNumber(ud.config.scripthandle, "Controls", buf, ud.config.MouseAnalogueScale[i], FALSE, FALSE);
         }
     }
 

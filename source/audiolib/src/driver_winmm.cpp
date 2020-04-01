@@ -1,6 +1,7 @@
 /*
  Copyright (C) 2009 Jonathon Fowler <jf@jonof.id.au>
- 
+ Copyright (C) EDuke32 developers and contributors
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
  as published by the Free Software Foundation; either version 2
@@ -36,20 +37,6 @@
 #define inline _inline
 #endif
 
-enum
-{
-    WinMMErr_Warning = -2,
-    WinMMErr_Error   = -1,
-    WinMMErr_Ok      = 0,
-    WinMMErr_Uninitialised,
-    WinMMErr_NotifyWindow,
-    WinMMErr_MIDIStreamOpen,
-    WinMMErr_MIDIStreamRestart,
-    WinMMErr_MIDICreateEvent,
-    WinMMErr_MIDIPlayThread,
-    WinMMErr_MIDICreateMutex
-};
-
 UINT WinMM_DeviceID = MIDI_MAPPER;
 
 static int ErrorCode = WinMMErr_Ok;
@@ -67,10 +54,11 @@ static HANDLE   midiMutex;
 static BOOL     midiStreamRunning;
 static int      midiLastDivision;
 
-#define THREAD_QUEUE_INTERVAL 10       // 1/10 sec
-#define MIDI_BUFFER_SPACE (12 * 128u)  // 128 note-on events
+#define MME_THREAD_QUEUE_INTERVAL 10       // 1/10 sec
+#define MME_MIDI_BUFFER_SPACE (12 * 128u)  // 128 note-on events
 
-typedef struct MidiBuffer {
+typedef struct MidiBuffer
+{
     struct MidiBuffer *next;
     struct MidiBuffer *prev;
 
@@ -82,58 +70,21 @@ static MidiBuffer activeMidiBuffers;
 static MidiBuffer spareMidiBuffers;
 static MidiBuffer *currentMidiBuffer;
 
+int WinMMDrv_GetError(void) { return ErrorCode; }
 
-int WinMMDrv_GetError(void)
+const char *WinMMDrv_ErrorString(int ErrorNumber)
 {
-    return ErrorCode;
-}
-
-const char *WinMMDrv_ErrorString( int ErrorNumber )
-{
-    const char *ErrorString;
-    
-   switch( ErrorNumber )
+    switch (ErrorNumber)
     {
-      case WinMMErr_Warning :
-      case WinMMErr_Error :
-         ErrorString = WinMMDrv_ErrorString( ErrorCode );
-         break;
-            
-      case WinMMErr_Ok :
-         ErrorString = "WinMM ok.";
-         break;
-            
-        case WinMMErr_Uninitialised:
-            ErrorString = "WinMM uninitialised.";
-            break;
-            
-        case WinMMErr_MIDIStreamOpen:
-            ErrorString = "MIDI error: failed opening stream.";
-            break;
-
-        case WinMMErr_MIDIStreamRestart:
-            ErrorString = "MIDI error: failed starting stream.";
-            break;
-
-        case WinMMErr_MIDICreateEvent:
-            ErrorString = "MIDI error: failed creating play thread quit event.";
-            break;
-
-        case WinMMErr_MIDIPlayThread:
-            ErrorString = "MIDI error: failed creating play thread.";
-            break;
-
-        case WinMMErr_MIDICreateMutex:
-            ErrorString = "MIDI error: failed creating play mutex.";
-            break;
-
-        default:
-            ErrorString = "Unknown WinMM error code.";
-            break;
+        case WinMMErr_Error:             return WinMMDrv_ErrorString(ErrorCode);
+        case WinMMErr_Ok:                return "MME ok.";
+        case WinMMErr_MIDIStreamOpen:    return "MIDI error: failed opening stream.";
+        case WinMMErr_MIDIStreamRestart: return "MIDI error: failed starting stream.";
+        case WinMMErr_MIDICreateEvent:   return "MIDI error: failed creating play thread quit event.";
+        case WinMMErr_MIDIPlayThread:    return "MIDI error: failed creating play thread.";
+        case WinMMErr_MIDICreateMutex:   return "MIDI error: failed creating play mutex.";
+        default:                         return "Unknown MME error code.";
     }
-    
-    return ErrorString;
-
 }
 
 
@@ -143,28 +94,29 @@ static void midi_error(MMRESULT rv, const char * fmt, ...)
     va_list va;
     const char * errtxt = "?";
     
-    switch (rv) {
-        case MMSYSERR_NOERROR: errtxt = "MMSYSERR_NOERROR"; break;
-        case MMSYSERR_BADDEVICEID: errtxt = "MMSYSERR_BADDEVICEID"; break;
-        case MMSYSERR_NOTENABLED: errtxt = "MMSYSERR_NOTENABLED"; break;
-        case MMSYSERR_ALLOCATED: errtxt = "MMSYSERR_ALLOCATED"; break;
-        case MMSYSERR_INVALHANDLE: errtxt = "MMSYSERR_INVALHANDLE"; break;
-        case MMSYSERR_NODRIVER: errtxt = "MMSYSERR_NODRIVER"; break;
-        case MMSYSERR_NOMEM: errtxt = "MMSYSERR_NOMEM"; break;
+    switch (rv)
+    {
+        case MMSYSERR_NOERROR:      errtxt = "MMSYSERR_NOERROR";      break;
+        case MMSYSERR_BADDEVICEID:  errtxt = "MMSYSERR_BADDEVICEID";  break;
+        case MMSYSERR_NOTENABLED:   errtxt = "MMSYSERR_NOTENABLED";   break;
+        case MMSYSERR_ALLOCATED:    errtxt = "MMSYSERR_ALLOCATED";    break;
+        case MMSYSERR_INVALHANDLE:  errtxt = "MMSYSERR_INVALHANDLE";  break;
+        case MMSYSERR_NODRIVER:     errtxt = "MMSYSERR_NODRIVER";     break;
+        case MMSYSERR_NOMEM:        errtxt = "MMSYSERR_NOMEM";        break;
         case MMSYSERR_NOTSUPPORTED: errtxt = "MMSYSERR_NOTSUPPORTED"; break;
-        case MMSYSERR_BADERRNUM: errtxt = "MMSYSERR_BADERRNUM"; break;
-        case MMSYSERR_INVALFLAG: errtxt = "MMSYSERR_INVALFLAG"; break;
-        case MMSYSERR_INVALPARAM: errtxt = "MMSYSERR_INVALPARAM"; break;
-        case MMSYSERR_HANDLEBUSY: errtxt = "MMSYSERR_HANDLEBUSY"; break;
+        case MMSYSERR_BADERRNUM:    errtxt = "MMSYSERR_BADERRNUM";    break;
+        case MMSYSERR_INVALFLAG:    errtxt = "MMSYSERR_INVALFLAG";    break;
+        case MMSYSERR_INVALPARAM:   errtxt = "MMSYSERR_INVALPARAM";   break;
+        case MMSYSERR_HANDLEBUSY:   errtxt = "MMSYSERR_HANDLEBUSY";   break;
         case MMSYSERR_INVALIDALIAS: errtxt = "MMSYSERR_INVALIDALIAS"; break;
-        case MMSYSERR_BADDB: errtxt = "MMSYSERR_BADDB"; break;
-        case MMSYSERR_KEYNOTFOUND: errtxt = "MMSYSERR_KEYNOTFOUND"; break;
-        case MMSYSERR_READERROR: errtxt = "MMSYSERR_READERROR"; break;
-        case MMSYSERR_WRITEERROR: errtxt = "MMSYSERR_WRITEERROR"; break;
-        case MMSYSERR_DELETEERROR: errtxt = "MMSYSERR_DELETEERROR"; break;
-        case MMSYSERR_VALNOTFOUND: errtxt = "MMSYSERR_VALNOTFOUND"; break;
-        case MMSYSERR_NODRIVERCB: errtxt = "MMSYSERR_NODRIVERCB"; break;
-        default: break;
+        case MMSYSERR_BADDB:        errtxt = "MMSYSERR_BADDB";        break;
+        case MMSYSERR_KEYNOTFOUND:  errtxt = "MMSYSERR_KEYNOTFOUND";  break;
+        case MMSYSERR_READERROR:    errtxt = "MMSYSERR_READERROR";    break;
+        case MMSYSERR_WRITEERROR:   errtxt = "MMSYSERR_WRITEERROR";   break;
+        case MMSYSERR_DELETEERROR:  errtxt = "MMSYSERR_DELETEERROR";  break;
+        case MMSYSERR_VALNOTFOUND:  errtxt = "MMSYSERR_VALNOTFOUND";  break;
+        case MMSYSERR_NODRIVERCB:   errtxt = "MMSYSERR_NODRIVERCB";   break;
+        default:                                                      break;
     }
     
     va_start(va, fmt);
@@ -174,51 +126,47 @@ static void midi_error(MMRESULT rv, const char * fmt, ...)
     MV_Printf(" err %d (%s)\n", (int)rv, errtxt);
 }
 
-static void midi_dispose_buffer(MidiBuffer * node, const char * caller)
+static void midi_dispose_buffer(MidiBuffer *node, const char *caller)
 {
-    MMRESULT rv;
-    
-    if (node->prepared) {
-        rv = midiOutUnprepareHeader( (HMIDIOUT) midiStream, &node->hdr, sizeof(MIDIHDR) );
-        if (rv != MMSYSERR_NOERROR) {
-            midi_error(rv, "WinMM %s/midi_dispose_buffer midiOutUnprepareHeader", caller);
-        }
+    if (node->prepared)
+    {
+        auto rv = midiOutUnprepareHeader((HMIDIOUT)midiStream, &node->hdr, sizeof(MIDIHDR));
+        if (rv != MMSYSERR_NOERROR)
+            midi_error(rv, "MME %s/midi_dispose_buffer midiOutUnprepareHeader", caller);
         node->prepared = FALSE;
     }
 
-    if (midiThread) {
+    if (midiThread)
+    {
         // remove the node from the activeMidiBuffers list
-        LL_Remove( node, next, prev );
-    
+        LL_Remove(node, next, prev);
+
         // when playing, we keep the buffers
-        LL_Add( (MidiBuffer*) &spareMidiBuffers, node, next, prev );
-        //MV_Printf("WinMM %s/midi_dispose_buffer recycling buffer %p\n", caller, node);
-    } else {
+        LL_Add((MidiBuffer *)&spareMidiBuffers, node, next, prev);
+        //MV_Printf("MME %s/midi_dispose_buffer recycling buffer %p\n", caller, node);
+    }
+    else
+    {
         // when not, we throw them away
         Xfree(node);
-        //MV_Printf("WinMM %s/midi_dispose_buffer freeing buffer %p\n", caller, node);
+        //MV_Printf("MME %s/midi_dispose_buffer freeing buffer %p\n", caller, node);
     }
 }
 
 static void midi_gc_buffers(void)
 {
-    MidiBuffer *node, *next;
-
-    for ( node = activeMidiBuffers.next; node != &activeMidiBuffers; node = next ) {
-        next = node->next;
-
-        if (node->hdr.dwFlags & MHDR_DONE) {
+    for (auto node = activeMidiBuffers.next, next = node->next; node != &activeMidiBuffers; node = next, next = node->next)
+    {
+        if (node->hdr.dwFlags & MHDR_DONE)
             midi_dispose_buffer(node, "midi_gc_buffers");
-        }
     }
 }
 
 static void midi_free_buffers(void)
 {
-    MidiBuffer *node, *next;
-
     //MV_Printf("waiting for active buffers to return\n");
-    while (!LL_ListEmpty(&activeMidiBuffers, next, prev)) {
+    while (!LL_ListEmpty(&activeMidiBuffers, next, prev))
+    {
         // wait for Windows to finish with all the buffers queued
         midi_gc_buffers();
         //MV_Printf("waiting...\n");
@@ -226,112 +174,116 @@ static void midi_free_buffers(void)
     }
     //MV_Printf("waiting over\n");
 
-    for ( node = spareMidiBuffers.next; node != &spareMidiBuffers; node = next ) {
-        next = node->next;
-        LL_Remove( node, next, prev );
+    for (auto node = spareMidiBuffers.next, next = node->next; node != &spareMidiBuffers; node = next, next = node->next)
+    {
+        LL_Remove(node, next, prev);
         Xfree(node);
-        //MV_Printf("WinMM midi_free_buffers freeing buffer %p\n", node);
+        //MV_Printf("MME midi_free_buffers freeing buffer %p\n", node);
     }
-    
-    assert(currentMidiBuffer == 0);
+
+    Bassert(currentMidiBuffer == 0);
 }
 
 static void midi_flush_current_buffer(void)
 {
-    MMRESULT rv;
-    MIDIEVENT * evt;
     BOOL needsPrepare = FALSE;
 
-    if (!currentMidiBuffer) {
+    if (!currentMidiBuffer)
         return;
-    }
 
-    evt = (MIDIEVENT *) currentMidiBuffer->hdr.lpData;
+    auto evt = (MIDIEVENT *)currentMidiBuffer->hdr.lpData;
 
-    if (!midiThread) {
+    if (!midiThread)
+    {
         // immediate messages don't use a MIDIEVENT header so strip it off and
         // make some adjustments
 
-        currentMidiBuffer->hdr.dwBufferLength = currentMidiBuffer->hdr.dwBytesRecorded - 12;
+        currentMidiBuffer->hdr.dwBufferLength  = currentMidiBuffer->hdr.dwBytesRecorded - 12;
         currentMidiBuffer->hdr.dwBytesRecorded = 0;
-        currentMidiBuffer->hdr.lpData = (LPSTR) &evt->dwParms[0];
-        
-        if (currentMidiBuffer->hdr.dwBufferLength > 0) {
+        currentMidiBuffer->hdr.lpData          = (LPSTR)&evt->dwParms[0];
+
+        if (currentMidiBuffer->hdr.dwBufferLength > 0)
             needsPrepare = TRUE;
-        }
-    } else {
-        needsPrepare = TRUE;
     }
-    
-    if (needsPrepare) {
+    else
+        needsPrepare = TRUE;
+
+    if (needsPrepare)
+    {
         // playing a file, or sending a sysex when not playing means
         // we need to prepare the buffer
-        rv = midiOutPrepareHeader( (HMIDIOUT) midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR) );
-        if (rv != MMSYSERR_NOERROR) {
-            midi_error(rv, "WinMM midi_flush_current_buffer midiOutPrepareHeader");
+        auto rv = midiOutPrepareHeader((HMIDIOUT)midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR));
+        if (rv != MMSYSERR_NOERROR)
+        {
+            midi_error(rv, "MME midi_flush_current_buffer midiOutPrepareHeader");
             return;
         }
 
         currentMidiBuffer->prepared = TRUE;
     }
 
-    if (midiThread) {
+    if (midiThread)
+    {
         // midi file playing, so send events to the stream
 
-        LL_Add( (MidiBuffer*) &activeMidiBuffers, currentMidiBuffer, next, prev );
+        LL_Add((MidiBuffer *)&activeMidiBuffers, currentMidiBuffer, next, prev);
 
-        rv = midiStreamOut(midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR));
-        if (rv != MMSYSERR_NOERROR) {
-            midi_error(rv, "WinMM midi_flush_current_buffer midiStreamOut");
+        auto rv = midiStreamOut(midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR));
+        if (rv != MMSYSERR_NOERROR)
+        {
+            midi_error(rv, "MME midi_flush_current_buffer midiStreamOut");
             midi_dispose_buffer(currentMidiBuffer, "midi_flush_current_buffer");
             return;
         }
 
-        //MV_Printf("WinMM midi_flush_current_buffer queued buffer %p\n", currentMidiBuffer);
-    } else {
+        //MV_Printf("MME midi_flush_current_buffer queued buffer %p\n", currentMidiBuffer);
+    }
+    else
+    {
         // midi file not playing, so send immediately
-        
-        if (currentMidiBuffer->hdr.dwBufferLength > 0) {
-            rv = midiOutLongMsg( (HMIDIOUT) midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR) );
-            if (rv == MMSYSERR_NOERROR) {
+
+        if (currentMidiBuffer->hdr.dwBufferLength > 0)
+        {
+            auto rv = midiOutLongMsg((HMIDIOUT)midiStream, &currentMidiBuffer->hdr, sizeof(MIDIHDR));
+            if (rv == MMSYSERR_NOERROR)
+            {
                 // busy-wait for Windows to be done with it
-                while (!(currentMidiBuffer->hdr.dwFlags & MHDR_DONE)) ;
-                
-                //MV_Printf("WinMM midi_flush_current_buffer sent immediate long\n");
-            } else {
-                midi_error(rv, "WinMM midi_flush_current_buffer midiOutLongMsg");
+                while (!(currentMidiBuffer->hdr.dwFlags & MHDR_DONE));
+
+                //MV_Printf("MME midi_flush_current_buffer sent immediate long\n");
             }
-        } else {
-            rv = midiOutShortMsg( (HMIDIOUT) midiStream, evt->dwEvent );
-            if (rv == MMSYSERR_NOERROR) {
-                //MV_Printf("WinMM midi_flush_current_buffer sent immediate short\n");
-            } else {
-                midi_error(rv, "WinMM midi_flush_current_buffer midiOutShortMsg");
-            }
+            else
+                midi_error(rv, "MME midi_flush_current_buffer midiOutLongMsg");
+        }
+        else
+        {
+            auto rv = midiOutShortMsg((HMIDIOUT)midiStream, evt->dwEvent);
+            if (rv != MMSYSERR_NOERROR)
+                midi_error(rv, "MME midi_flush_current_buffer midiOutShortMsg");
         }
 
         midi_dispose_buffer(currentMidiBuffer, "midi_flush_current_buffer");
     }
-    
+
     currentMidiBuffer = 0;
 }
 
-static void midi_setup_event(int length, unsigned char ** data)
+static void midi_setup_event(int length, unsigned char **data)
 {
-    MIDIEVENT * evt;
-
-    evt = (MIDIEVENT *) ((intptr_t) currentMidiBuffer->hdr.lpData +
-            currentMidiBuffer->hdr.dwBytesRecorded);
+    auto evt = (MIDIEVENT *)((intptr_t)currentMidiBuffer->hdr.lpData + currentMidiBuffer->hdr.dwBytesRecorded);
 
     evt->dwDeltaTime = midiThread ? (midiThreadTimer - midiLastEventTime) : 0;
-    evt->dwStreamID = 0;
+    evt->dwStreamID  = 0;
 
-    if (length <= 3) {
+    if (length <= 3)
+    {
         evt->dwEvent = (DWORD)MEVT_SHORTMSG << 24;
-        *data = (unsigned char *) &evt->dwEvent;
-    } else {
+        *data        = (unsigned char *)&evt->dwEvent;
+    }
+    else
+    {
         evt->dwEvent = ((DWORD)MEVT_LONGMSG << 24) | (length & 0x00ffffff);
-        *data = (unsigned char *) &evt->dwParms[0];
+        *data        = (unsigned char *)&evt->dwParms[0];
     }
 }
 
@@ -342,207 +294,221 @@ static void midi_setup_event(int length, unsigned char ** data)
    
    Returns a pointer to starting writing at in 'data'.
  */
-static BOOL midi_get_buffer(int length, unsigned char ** data)
+static BOOL midi_get_buffer(int length, unsigned char **data)
 {
-    uint32_t datalen;
-    MidiBuffer * node;
-    
+    uint32_t    datalen;
+
     // determine the space to alloc.
     // the size of a MIDIEVENT is 3*sizeof(DWORD) = 12.
     // short messages need only that amount of space.
     // long messages need additional space equal to the length of
     //    the message, padded to 4 bytes
-    
-    if (length <= 3) {
+
+    if (length <= 3)
         datalen = 12;
-    } else {
+    else
+    {
         datalen = 12 + length;
-        if ((datalen & 3) > 0) {
+        if ((datalen & 3) > 0)
             datalen += 4 - (datalen & 3);
-        }
     }
-    
-    if (!midiThread) {
-        assert(currentMidiBuffer == 0);
-    }
-    
-    if (currentMidiBuffer && (currentMidiBuffer->hdr.dwBufferLength -
-            currentMidiBuffer->hdr.dwBytesRecorded) >= datalen) {
+
+    if (!midiThread)
+        Bassert(currentMidiBuffer == 0);
+
+    if (currentMidiBuffer && (currentMidiBuffer->hdr.dwBufferLength - currentMidiBuffer->hdr.dwBytesRecorded) >= datalen)
+    {
         // there was enough space in the current buffer, so hand that back
         midi_setup_event(length, data);
-        
+
         currentMidiBuffer->hdr.dwBytesRecorded += datalen;
-        
+
         return TRUE;
     }
-    
-    if (currentMidiBuffer) {
+
+    if (currentMidiBuffer)
+    {
         // not enough space in the current buffer to accommodate the
         // new data, so flush it to the stream
         midi_flush_current_buffer();
         currentMidiBuffer = 0;
     }
-    
+
     // check if there's a spare buffer big enough to hold the message
-    if (midiThread) {
-        for ( node = spareMidiBuffers.next; node != &spareMidiBuffers; node = node->next ) {
-            if (node->hdr.dwBufferLength >= datalen) {
+    if (midiThread)
+    {
+        for (auto node = spareMidiBuffers.next; node != &spareMidiBuffers; node = node->next)
+        {
+            if (node->hdr.dwBufferLength >= datalen)
+            {
                 // yes!
-                LL_Remove( node, next, prev );
-                
+                LL_Remove(node, next, prev);
+
                 node->hdr.dwBytesRecorded = 0;
-                memset(node->hdr.lpData, 0, node->hdr.dwBufferLength);
-                
+                Bmemset(node->hdr.lpData, 0, node->hdr.dwBufferLength);
+
                 currentMidiBuffer = node;
-                
-                //MV_Printf("WinMM midi_get_buffer fetched buffer %p\n", node);
+
+                //MV_Printf("MME midi_get_buffer fetched buffer %p\n", node);
                 break;
             }
         }
     }
-    
-    if (!currentMidiBuffer) {
-        // there were no spare buffers, or none were big enough, so
-        // allocate a new one
-        int size;
-        
-        if (midiThread) {
-            // playing a file, so allocate a buffer for more than
-            // one event
-            size = max(MIDI_BUFFER_SPACE, datalen);
-        } else {
-            // not playing a file, so allocate just a buffer for
-            // the event we'll be sending immediately
-            size = datalen;
-        }
-        
-        node = (MidiBuffer *) Xmalloc( sizeof(MidiBuffer) + size );
-        if (node == 0) {
-            return FALSE;
-        }
 
-        memset(node, 0, sizeof(MidiBuffer) + datalen);
-        node->hdr.dwUser = (DWORD_PTR) node;
-        node->hdr.lpData = (LPSTR) ((intptr_t)node + sizeof(MidiBuffer));
-        node->hdr.dwBufferLength = size;
+    if (!currentMidiBuffer)
+    {
+        // there were no spare buffers, or none were big enough, so allocate a new one
+        int const size = midiThread ? max(MME_MIDI_BUFFER_SPACE, datalen) : datalen;
+        auto      node = (MidiBuffer *)Xmalloc(sizeof(MidiBuffer) + size);
+
+        Bmemset(node, 0, sizeof(MidiBuffer) + datalen);
+
+        node->hdr.dwUser = (DWORD_PTR)node;
+        node->hdr.lpData = (LPSTR)((intptr_t)node + sizeof(MidiBuffer));
+
+        node->hdr.dwBufferLength  = size;
         node->hdr.dwBytesRecorded = 0;
-        
+
         currentMidiBuffer = node;
-        
-        //MV_Printf("WinMM midi_get_buffer allocated buffer %p\n", node);
+
+        //MV_Printf("MME midi_get_buffer allocated buffer %p\n", node);
     }
 
     midi_setup_event(length, data);
 
     currentMidiBuffer->hdr.dwBytesRecorded += datalen;
-    
+
     return TRUE;
 }
 
 static inline void midi_sequence_event(void)
 {
-    if (!midiThread) {
+    if (!midiThread)
+    {
         // a midi event being sent out of playback (streaming) mode
         midi_flush_current_buffer();
         return;
     }
-    
-    //MV_Printf("WinMM midi_sequence_event buffered\n");
 
-    // update the delta time counter
+    //MV_Printf("MME midi_sequence_event buffered\n");
+
     midiLastEventTime = midiThreadTimer;
 }
 
-static void Func_NoteOff( int channel, int key, int velocity )
+static void MME_NoteOff(int channel, int key, int velocity)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(3, &data)) {
+    if (midi_get_buffer(3, &data))
+    {
         data[0] = WINMM_NOTE_OFF | channel;
         data[1] = key;
         data[2] = velocity;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_NoteOff error\n");
+    }
+    else
+        MV_Printf("MME_NoteOff error\n");
 }
 
-static void Func_NoteOn( int channel, int key, int velocity )
+static void MME_NoteOn(int channel, int key, int velocity)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(3, &data)) {
+    if (midi_get_buffer(3, &data))
+    {
         data[0] = WINMM_NOTE_ON | channel;
         data[1] = key;
         data[2] = velocity;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_NoteOn error\n");
+    }
+    else
+        MV_Printf("MME_NoteOn error\n");
 }
 
-static void Func_PolyAftertouch( int channel, int key, int pressure )
+static void MME_PolyAftertouch(int channel, int key, int pressure)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(3, &data)) {
+    if (midi_get_buffer(3, &data))
+    {
         data[0] = WINMM_POLY_AFTER_TCH | channel;
         data[1] = key;
         data[2] = pressure;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_PolyAftertouch error\n");
+    }
+    else
+        MV_Printf("MME_PolyAftertouch error\n");
 }
 
-static void Func_ControlChange( int channel, int number, int value )
+static void MME_ControlChange(int channel, int number, int value)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(3, &data)) {
+    if (midi_get_buffer(3, &data))
+    {
         data[0] = WINMM_CONTROL_CHANGE | channel;
         data[1] = number;
         data[2] = value;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_ControlChange error\n");
+    }
+    else
+        MV_Printf("MME_ControlChange error\n");
 }
 
-static void Func_ProgramChange( int channel, int program )
+static void MME_ProgramChange(int channel, int program)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(2, &data)) {
+    if (midi_get_buffer(2, &data))
+    {
         data[0] = WINMM_PROGRAM_CHANGE | channel;
         data[1] = program;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_ProgramChange error\n");
+    }
+    else
+        MV_Printf("MME_ProgramChange error\n");
 }
 
-static void Func_ChannelAftertouch( int channel, int pressure )
+static void MME_ChannelAftertouch(int channel, int pressure)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(2, &data)) {
+    if (midi_get_buffer(2, &data))
+    {
         data[0] = WINMM_AFTER_TOUCH | channel;
         data[1] = pressure;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_ChannelAftertouch error\n");
+    }
+    else
+        MV_Printf("MME_ChannelAftertouch error\n");
 }
 
-static void Func_PitchBend( int channel, int lsb, int msb )
+static void MME_PitchBend(int channel, int lsb, int msb)
 {
-    unsigned char * data;
+    unsigned char *data;
 
-    if (midi_get_buffer(3, &data)) {
+    if (midi_get_buffer(3, &data))
+    {
         data[0] = WINMM_PITCH_BEND | channel;
         data[1] = lsb;
         data[2] = msb;
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_PitchBend error\n");
+    }
+    else
+        MV_Printf("MME_PitchBend error\n");
 }
 
-static void Func_SysEx( const unsigned char * data, int length )
+static void MME_SysEx(const unsigned char *data, int length)
 {
-    unsigned char * wdata;
-    
-    if (midi_get_buffer(length, &wdata)) {
-        memcpy(wdata, data, length);
+    unsigned char *wdata;
+
+    if (midi_get_buffer(length, &wdata))
+    {
+        Bmemcpy(wdata, data, length);
         midi_sequence_event();
-    } else MV_Printf("WinMM Func_SysEx error\n");
+    }
+    else
+        MV_Printf("MME_SysEx error\n");
 }
 
 void WinMMDrv_MIDI_PrintDevices(void)
@@ -563,47 +529,48 @@ int WinMMDrv_MIDI_GetNumDevices(void) { return midiOutGetNumDevs(); }
 
 int WinMMDrv_MIDI_Init(midifuncs * funcs)
 {
-    MMRESULT rv;
-
-    if (midiInstalled) {
+    if (midiInstalled)
         WinMMDrv_MIDI_Shutdown();
-    }
 
-    memset(funcs, 0, sizeof(midifuncs));
+    Bmemset(funcs, 0, sizeof(midifuncs));
 
-    LL_Reset( (MidiBuffer*) &activeMidiBuffers, next, prev );
-    LL_Reset( (MidiBuffer*) &spareMidiBuffers, next, prev );
+    LL_Reset((MidiBuffer *)&activeMidiBuffers, next, prev);
+    LL_Reset((MidiBuffer *)&spareMidiBuffers, next, prev);
 
-    midiMutex = CreateMutex(0, FALSE, 0);
-    if (!midiMutex) {
+    if ((midiMutex = CreateMutex(0, FALSE, 0)) == 0)
+    {
         ErrorCode = WinMMErr_MIDICreateMutex;
         return WinMMErr_Error;
     }
 
     MIDIOUTCAPS midicaps;
-    if (WinMM_DeviceID > midiOutGetNumDevs() || midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
-    WinMM_DeviceID = MIDI_MAPPER;
-        if (!midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
-            MV_Printf(": [%d] %s", WinMM_DeviceID, midicaps.szPname);
 
-    rv = midiStreamOpen(&midiStream, &WinMM_DeviceID, 1, (DWORD_PTR) 0, (DWORD_PTR) 0, CALLBACK_NULL);
-    if (rv != MMSYSERR_NOERROR) {
+    if (WinMM_DeviceID > midiOutGetNumDevs() || midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
+        WinMM_DeviceID = MIDI_MAPPER;
+
+    if (!midiOutGetDevCaps(WinMM_DeviceID, &midicaps, sizeof(MIDIOUTCAPS)))
+        MV_Printf(": [%d] %s", WinMM_DeviceID, midicaps.szPname);
+
+    auto rv = midiStreamOpen(&midiStream, &WinMM_DeviceID, 1, (DWORD_PTR)0, (DWORD_PTR)0, CALLBACK_NULL);
+
+    if (rv != MMSYSERR_NOERROR)
+    {
         CloseHandle(midiMutex);
         midiMutex = 0;
 
-        midi_error(rv, "WinMM MIDI_Init midiStreamOpen");
+        midi_error(rv, "MME MIDI_Init midiStreamOpen");
         ErrorCode = WinMMErr_MIDIStreamOpen;
         return WinMMErr_Error;
     }
     
-    funcs->NoteOff = Func_NoteOff;
-    funcs->NoteOn  = Func_NoteOn;
-    funcs->PolyAftertouch = Func_PolyAftertouch;
-    funcs->ControlChange = Func_ControlChange;
-    funcs->ProgramChange = Func_ProgramChange;
-    funcs->ChannelAftertouch = Func_ChannelAftertouch;
-    funcs->PitchBend = Func_PitchBend;
-    funcs->SysEx = Func_SysEx;
+    funcs->NoteOff           = MME_NoteOff;
+    funcs->NoteOn            = MME_NoteOn;
+    funcs->PolyAftertouch    = MME_PolyAftertouch;
+    funcs->ControlChange     = MME_ControlChange;
+    funcs->ProgramChange     = MME_ProgramChange;
+    funcs->ChannelAftertouch = MME_ChannelAftertouch;
+    funcs->PitchBend         = MME_PitchBend;
+    funcs->SysEx             = MME_SysEx;
 
     midiInstalled = TRUE;
     
@@ -612,41 +579,35 @@ int WinMMDrv_MIDI_Init(midifuncs * funcs)
 
 void WinMMDrv_MIDI_Shutdown(void)
 {
-    MMRESULT rv;
-
-    if (!midiInstalled) {
+    if (!midiInstalled)
         return;
-    }
 
     WinMMDrv_MIDI_HaltPlayback();
 
-    if (midiStream) {
-        rv = midiStreamClose(midiStream);
-        if (rv != MMSYSERR_NOERROR) {
-            midi_error(rv, "WinMM MIDI_Shutdown midiStreamClose");
-        }
+    if (midiStream)
+    {
+        auto rv = midiStreamClose(midiStream);
+        if (rv != MMSYSERR_NOERROR)
+            midi_error(rv, "MME MIDI_Shutdown midiStreamClose");
     }
 
-    if (midiMutex) {
+    if (midiMutex)
         CloseHandle(midiMutex);
-    }
 
     midiStream = 0;
-    midiMutex = 0;
+    midiMutex  = 0;
 
     midiInstalled = FALSE;
 }
 
 static DWORD midi_get_tick(void)
 {
-    MMRESULT rv;
-    MMTIME mmtime;
+    MMTIME mmtime = { TIME_TICKS, 0 };
 
-    mmtime.wType = TIME_TICKS;
-
-    rv = midiStreamPosition(midiStream, &mmtime, sizeof(MMTIME));
-    if (rv != MMSYSERR_NOERROR) {
-        midi_error(rv, "WinMM midi_get_tick midiStreamPosition");
+    auto rv = midiStreamPosition(midiStream, &mmtime, sizeof(MMTIME));
+    if (rv != MMSYSERR_NOERROR)
+    {
+        midi_error(rv, "MME midi_get_tick midiStreamPosition");
         return 0;
     }
 
@@ -657,14 +618,8 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
 
-    DWORD waitret;
-    DWORD sequenceTime;
-    DWORD sleepAmount = 100 / THREAD_QUEUE_INTERVAL;
-    
-    // MV_Printf("WinMM midiDataThread: started\n");
-
-    midiThreadTimer = midi_get_tick();
-    midiLastEventTime = midiThreadTimer;
+    midiThreadTimer      = midi_get_tick();
+    midiLastEventTime    = midiThreadTimer;
     midiThreadQueueTimer = midiThreadTimer + midiThreadQueueTicks;
 
     WinMMDrv_MIDI_Lock();
@@ -677,17 +632,22 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
     midi_flush_current_buffer();
     WinMMDrv_MIDI_Unlock();
 
-    do {
-        waitret = WaitForSingleObject(midiThreadQuitEvent, sleepAmount);
-        if (waitret == WAIT_OBJECT_0) {
-            // MV_Printf("WinMM midiDataThread: exiting\n");
-            break;
-        } else if (waitret == WAIT_TIMEOUT) {
-            // queue a tick
-            sequenceTime = midi_get_tick();
+    DWORD sleepAmount = 100 / MME_THREAD_QUEUE_INTERVAL;
 
-            sleepAmount = 100 / THREAD_QUEUE_INTERVAL;
-            if ((midiThreadTimer - sequenceTime) > midiThreadQueueTicks) {
+    do
+    {
+        auto waitret = WaitForSingleObject(midiThreadQuitEvent, sleepAmount);
+
+        if (waitret == WAIT_OBJECT_0)
+            break;
+        else if (waitret == WAIT_TIMEOUT)
+        {
+            // queue a tick
+            auto sequenceTime = midi_get_tick();
+
+            sleepAmount = 100 / MME_THREAD_QUEUE_INTERVAL;
+            if ((midiThreadTimer - sequenceTime) > midiThreadQueueTicks)
+            {
                 // we're running ahead, so sleep for half the usual
                 // amount and try again
                 sleepAmount /= 2;
@@ -705,10 +665,9 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
             }
             midi_flush_current_buffer();
             WinMMDrv_MIDI_Unlock();
-
-        } else {
-            MV_Printf("WinMM midiDataThread: wfmo err %d\n", (int) waitret);
         }
+        else
+            MV_Printf("MME midiDataThread: wfmo err %d\n", (int)waitret);
     } while (1);
 
     return 0;
@@ -716,21 +675,21 @@ static DWORD WINAPI midiDataThread(LPVOID lpParameter)
 
 int WinMMDrv_MIDI_StartPlayback(void)
 {
-    MMRESULT rv;
-
     WinMMDrv_MIDI_HaltPlayback();
-
     midiThreadService = WinMMDrv_MIDI_Service;
 
     midiThreadQuitEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (!midiThreadQuitEvent) {
+    if (!midiThreadQuitEvent)
+    {
         ErrorCode = WinMMErr_MIDICreateEvent;
         return WinMMErr_Error;
     }
 
-    if (!midiStreamRunning) {
-        rv = midiStreamRestart(midiStream);
-        if (rv != MMSYSERR_NOERROR) {
+    if (!midiStreamRunning)
+    {
+        auto rv = midiStreamRestart(midiStream);
+        if (rv != MMSYSERR_NOERROR)
+        {
             midi_error(rv, "MIDI_StartPlayback midiStreamRestart");
             WinMMDrv_MIDI_HaltPlayback();
             ErrorCode = WinMMErr_MIDIStreamRestart;
@@ -741,7 +700,8 @@ int WinMMDrv_MIDI_StartPlayback(void)
     }
 
     midiThread = CreateThread(nullptr, 0, midiDataThread, 0, 0, 0);
-    if (!midiThread) {
+    if (!midiThread)
+    {
         WinMMDrv_MIDI_HaltPlayback();
         ErrorCode = WinMMErr_MIDIPlayThread;
         return WinMMErr_Error;
@@ -754,95 +714,77 @@ int WinMMDrv_MIDI_StartPlayback(void)
 
 void WinMMDrv_MIDI_HaltPlayback(void)
 {
-    MMRESULT rv;
-    
-    if (midiThread) {
+    if (midiThread)
+    {
         SetEvent(midiThreadQuitEvent);
 
         WaitForSingleObject(midiThread, INFINITE);
-        // MV_Printf("WinMM MIDI_HaltPlayback synched\n");
+        // MV_Printf("MME MIDI_HaltPlayback synched\n");
 
         CloseHandle(midiThread);
     }
 
-    if (midiThreadQuitEvent) {
+    if (midiThreadQuitEvent)
         CloseHandle(midiThreadQuitEvent);
-    }
-    
-    if (midiStreamRunning) {
+
+    if (midiStreamRunning)
+    {
         // MV_Printf("stopping stream\n");
-        rv = midiStreamStop(midiStream);
-        if (rv != MMSYSERR_NOERROR) {
-            midi_error(rv, "WinMM MIDI_HaltPlayback midiStreamStop");
-        }
+        auto rv = midiStreamStop(midiStream);
+        if (rv != MMSYSERR_NOERROR)
+            midi_error(rv, "MME MIDI_HaltPlayback midiStreamStop");
         // MV_Printf("stream stopped\n");
-    
+
         midiStreamRunning = FALSE;
     }
 
     midi_free_buffers();
-    
-    midiThread = 0;
+
+    midiThread          = 0;
     midiThreadQuitEvent = 0;
 }
 
 void WinMMDrv_MIDI_SetTempo(int tempo, int division)
 {
-    MMRESULT rv;
-    MIDIPROPTEMPO propTempo;
-    MIDIPROPTIMEDIV propTimediv;
-    BOOL running = midiStreamRunning;
+    BOOL const running = midiStreamRunning;
 
     //MV_Printf("MIDI_SetTempo %d/%d\n", tempo, division);
+    MIDIPROPTEMPO   propTempo   = { sizeof(MIDIPROPTEMPO), (DWORD)(60000000l / tempo) };
+    MIDIPROPTIMEDIV propTimediv = { sizeof(MIDIPROPTIMEDIV), (DWORD)division };
 
-    propTempo.cbStruct = sizeof(MIDIPROPTEMPO);
-    propTempo.dwTempo = 60000000l / tempo;
-    propTimediv.cbStruct = sizeof(MIDIPROPTIMEDIV);
-    propTimediv.dwTimeDiv = division;
-
-    if (midiLastDivision != division) {
+    if (midiLastDivision != division)
+    {
         // changing the division means halting the stream
         WinMMDrv_MIDI_HaltPlayback();
 
-        rv = midiStreamProperty(midiStream, (LPBYTE) &propTimediv, MIDIPROP_SET | MIDIPROP_TIMEDIV);
-        if (rv != MMSYSERR_NOERROR) {
-            midi_error(rv, "WinMM MIDI_SetTempo midiStreamProperty timediv");
-        }
+        auto rv = midiStreamProperty(midiStream, (LPBYTE)&propTimediv, MIDIPROP_SET | MIDIPROP_TIMEDIV);
+        if (rv != MMSYSERR_NOERROR)
+            midi_error(rv, "MME MIDI_SetTempo midiStreamProperty timediv");
     }
 
-    rv = midiStreamProperty(midiStream, (LPBYTE) &propTempo, MIDIPROP_SET | MIDIPROP_TEMPO);
-    if (rv != MMSYSERR_NOERROR) {
-        midi_error(rv, "WinMM MIDI_SetTempo midiStreamProperty tempo");
-    }
+    auto rv = midiStreamProperty(midiStream, (LPBYTE)&propTempo, MIDIPROP_SET | MIDIPROP_TEMPO);
+    if (rv != MMSYSERR_NOERROR)
+        midi_error(rv, "MME MIDI_SetTempo midiStreamProperty tempo");
 
-    if (midiLastDivision != division) {
-        if (running && WinMMDrv_MIDI_StartPlayback() != WinMMErr_Ok) {
+    if (midiLastDivision != division)
+    {
+        if (running && WinMMDrv_MIDI_StartPlayback() != WinMMErr_Ok)
             return;
-        }
 
         midiLastDivision = division;
     }
 
-    midiThreadQueueTicks = (int) ceil( ( ( (double) tempo * (double) division ) / 60.0 ) /
-            (double) THREAD_QUEUE_INTERVAL );
-    if (midiThreadQueueTicks <= 0) {
+    midiThreadQueueTicks = (int)ceil((((double)tempo * (double)division) / 60.0) / (double)MME_THREAD_QUEUE_INTERVAL);
+    if (midiThreadQueueTicks <= 0)
         midiThreadQueueTicks = 1;
-    }
 }
 
 void WinMMDrv_MIDI_Lock(void)
 {
-    DWORD err;
-
-    err = WaitForSingleObject(midiMutex, INFINITE);
-    if (err != WAIT_OBJECT_0) {
-        MV_Printf("WinMM midiMutex lock: wfso %d\n", (int) err);
-    }
+    DWORD err = WaitForSingleObject(midiMutex, INFINITE);
+    if (err != WAIT_OBJECT_0)
+        MV_Printf("MME midiMutex lock: wfso %d\n", (int) err);
 }
 
-void WinMMDrv_MIDI_Unlock(void)
-{
-    ReleaseMutex(midiMutex);
-}
-
+void WinMMDrv_MIDI_Unlock(void)  { ReleaseMutex(midiMutex); }
 void WinMMDrv_MIDI_Service(void) { MIDI_ServiceRoutine(); }

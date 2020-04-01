@@ -72,4 +72,7 @@ int  MUSIC_StopSong(void);
 int  MUSIC_PlaySong(char *song, int songsize, int loopflag, const char *fn = nullptr);
 void MUSIC_Update(void);
 
+extern char SF2_BankFile[BMAX_PATH];
+extern int SF2_EffectSampleBlockSize;
+
 #endif
