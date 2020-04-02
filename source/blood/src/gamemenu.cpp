@@ -3007,18 +3007,7 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
     return CGameMenuItem::Event(event);
 }
 
-CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination)
-{
-    InitObject(_pzText, _nFont, _x, _y, _nWidth, _startdir, _pattern, _destination);
-}
-
 CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination, void(*_onFileSelectedEventHandler)() )
-{
-    InitObject(_pzText, _nFont, _x, _y, _nWidth, _startdir, _pattern, _destination);
-    onFileSelectedEventHandler = _onFileSelectedEventHandler;
-}
-
-void CGameMenuFileSelect::InitObject(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination)
 {
     m_pzText = _pzText;
     m_nFont = _nFont;
@@ -3028,6 +3017,7 @@ void CGameMenuFileSelect::InitObject(const char *_pzText, int _nFont, int _x, in
     startdir = _startdir;
     pattern = _pattern;
     destination = _destination;
+    onFileSelectedEventHandler = _onFileSelectedEventHandler;
 }
 
 static int32_t xdim_from_320_16(int32_t x)

@@ -446,12 +446,10 @@ private:
     bool Select(void);
     void FileSelectInit(void);
     void MovementVerify(void);
-    void InitObject(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination);
     void RemoveFilenameFromDestination(void);
     void SetDestinationToParentDir(void);
 public:
-    CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination);
-    CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination, void(*)());
+    CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination, void(*)() = nullptr);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent&);
     virtual bool MouseEvent(CGameMenuEvent &);
