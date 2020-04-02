@@ -234,7 +234,7 @@ CGameMenuItemChain7F2F0 itemEpisodes[kMaxEpisodes-1];
 CGameMenu menuUserMap;
 CGameMenuItemChain itemUserMap("USER MAP", 1, 0, 60, 320, 1, &menuUserMap, 0, NULL, 0);
 CGameMenuItemTitle itemUserMapTitle("USER MAP", 1, 160, 20, 2038);
-CGameMenuFileSelect itemUserMapList("", 3, 0, 0, 0, "./", "*.map", gGameOptions.szUserMap, ShowDifficulties);
+CGameMenuFileSelect itemUserMapList("", 3, 0, 0, 0, "./", "*.map", gGameOptions.szUserMap, ShowDifficulties, 0);
 
 CGameMenuItemTitle itemDifficultyTitle("DIFFICULTY", 1, 160, 20, 2038);
 CGameMenuItemChain itemDifficulty1("STILL KICKING", 1, 0, 60, 320, 1, NULL, -1, SetDifficultyAndStart, 0);
@@ -1573,10 +1573,6 @@ extern bool gStartNewGame;
 
 void ShowDifficulties()
 {
-    gGameMenuMgr.Push(&menuDifficulty, 3);
-
-    // Need to push twice because parent menu item will do
-    // gGameMenuMgr.Pop() once after selecting the user map
     gGameMenuMgr.Push(&menuDifficulty, 3);
 }
 

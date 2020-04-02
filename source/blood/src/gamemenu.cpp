@@ -3007,7 +3007,7 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
     return CGameMenuItem::Event(event);
 }
 
-CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination, void(*_onFileSelectedEventHandler)() )
+CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination, void(*_onFileSelectedEventHandler)(), const char _doPop)
 {
     m_pzText = _pzText;
     m_nFont = _nFont;
@@ -3018,6 +3018,7 @@ CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x
     pattern = _pattern;
     destination = _destination;
     onFileSelectedEventHandler = _onFileSelectedEventHandler;
+    doPop = _doPop;
 }
 
 static int32_t xdim_from_320_16(int32_t x)
@@ -3270,6 +3271,9 @@ bool CGameMenuFileSelect::Select(void)
 
     if (onFileSelectedEventHandler)
         onFileSelectedEventHandler();
+
+    if (!doPop)
+        return false;
 
     return true;
 }

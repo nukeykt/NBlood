@@ -439,6 +439,7 @@ private:
     const char *pattern;
     char *destination;
     void (*onFileSelectedEventHandler)();
+    char doPop;
     BUILDVFS_FIND_REC *findhigh[2];
     int32_t nTopDelta[2];
     fnlist_t fnlist;
@@ -449,7 +450,7 @@ private:
     void RemoveFilenameFromDestination(void);
     void SetDestinationToParentDir(void);
 public:
-    CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination, void(*)() = nullptr);
+    CGameMenuFileSelect(const char *_pzText, int _nFont, int _x, int _y, int _nWidth, const char *_startdir, const char *_pattern, char *_destination, void(*)() = nullptr, const char doPop = 1);
     virtual void Draw(void);
     virtual bool Event(CGameMenuEvent&);
     virtual bool MouseEvent(CGameMenuEvent &);
