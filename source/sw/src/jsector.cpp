@@ -861,7 +861,7 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
 
                                 if (TEST_BOOL11(sp) && numplayers > 1)
                                 {
-                                    drawroomstotile(cp->posx, cp->posy, cp->posz, cp->pang, cp->horiz, cp->cursectnum, mirror[cnt].campic);
+                                    drawroomstotile(cp->posx, cp->posy, cp->posz, fix16_to_int(cp->q16ang), fix16_to_int(cp->q16horiz), cp->cursectnum, mirror[cnt].campic);
                                 }
                                 else
                                 {

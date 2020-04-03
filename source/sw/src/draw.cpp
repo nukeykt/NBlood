@@ -1828,7 +1828,7 @@ void DrawCrosshair(PLAYERp pp)
             vec2_t dxy = { hp->x - pp->posx, hp->y - pp->posy };
             int dz = ((hp->z - (SPRITE_SIZE_Z(hit_sprite)/2)) - pp->posz) >> 4;
 
-            rotatepoint(zero, dxy, (-pp->pang)&2047, &dxy);
+            rotatepoint(zero, dxy, (-fix16_to_int(pp->q16ang))&2047, &dxy);
 
             if (dxy.x == 0) return;
 
