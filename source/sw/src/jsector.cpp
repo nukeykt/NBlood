@@ -501,7 +501,7 @@ void drawroomstotile(int daposx, int daposy, int daposz,
 #else
 void
 drawroomstotile(int daposx, int daposy, int daposz,
-                short daang, int dahoriz, short dacursectnum, short tilenume)
+                fix16_t daq16ang, fix16_t daq16horiz, short dacursectnum, short tilenume)
 {
 
     int i, j, k, bakchainnumpages, bakvidoption;
@@ -534,7 +534,7 @@ drawroomstotile(int daposx, int daposy, int daposz,
     }
 
     // DRAWS TO TILE HERE
-    drawrooms(daposx, daposy, daposz, daang, dahoriz, dacursectnum + MAXSECTORS);
+    renderDrawRoomsQ16(daposx, daposy, daposz, daq16ang, daq16horiz, dacursectnum + MAXSETORS);
     analyzesprites(daposx, daposy, daposz, FALSE);
     renderDrawMasks();
 
