@@ -3248,7 +3248,7 @@ bool CGameMenuFileSelect::Select(void)
     if (!findhigh[currentList])
         return false;
 
-    char name[MAX_PATH];
+    char name[BMAX_PATH];
     Bstrcpy(name, findhigh[currentList]->name);
     if (!Bstrcmp(name, ".."))
     {
@@ -3366,7 +3366,7 @@ void CGameMenuFileSelect::RemoveFilenameFromDestination(void)
         i++;
     }
 
-    char newDestination[MAX_PATH];
+    char newDestination[BMAX_PATH];
     for (i = 0; i <= lastSlashIndex; i++)
         newDestination[i] = destination[i];
     newDestination[i] = 0;
@@ -3396,7 +3396,7 @@ void CGameMenuFileSelect::SetDestinationToParentDir(void)
         i++;
     }
 
-    char newDestination[MAX_PATH];
+    char newDestination[BMAX_PATH];
     for (i = 0; i <= previousSlashIndex; i++)
         newDestination[i] = destination[i];
     newDestination[i] = 0;
