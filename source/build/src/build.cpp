@@ -1028,10 +1028,19 @@ void spriteoncfz(int32_t i, int32_t *czptr, int32_t *fzptr)
                            ? -picanm[tilenum].yofs : picanm[tilenum].yofs;
         int32_t const y1 = yspan/2+yoff;
         int32_t const y2 = yspan - y1;
-        int32_t h1 = mulscale10(ratio, sprite[i].yrepeat*y1);
-        int32_t h2 = -mulscale10(ratio, sprite[i].yrepeat*y2);
-        *czptr += max(h1,h2);
-        *fzptr += min(h1,h2);
+        int32_t const h1 = mulscale10(ratio, sprite[i].yrepeat*y1);
+        int32_t const h2 = -mulscale10(ratio, sprite[i].yrepeat*y2);
+        usectorptr_t sect = (usectorptr_t)&sector[sprite[i].sectnum];
+        int32_t const wallang = (getangle(wall[wall[sect->wallptr].point2].x-wall[sect->wallptr].x,
+                                         wall[wall[sect->wallptr].point2].y-wall[sect->wallptr].y)+1536)&2047;
+        if (heinum == sector[sprite[i].sectnum].ceilingheinum && wallang == (sprite[i].ang&2047))
+            *czptr += 2;
+        else
+            *czptr += max(h1,h2);
+        if (heinum == sector[sprite[i].sectnum].floorheinum && wallang == (sprite[i].ang&2047))
+            *fzptr -= 2;
+        else
+            *fzptr += min(h1,h2);
         return;
     }
 
