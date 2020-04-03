@@ -879,7 +879,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
                     }
 
                     tsp->z = tsp->z + pp->siz;
-                    tsp->ang = fix16_to_int(pp->siang);
+                    tsp->ang = pp->siang;
                     //continue;
                 }
                 else
@@ -2358,7 +2358,7 @@ drawscreen(PLAYERp pp)
     pp->six = tx;
     pp->siy = ty;
     pp->siz = tz - pp->posz;
-    pp->siang = tq16ang;
+    pp->siang = fix16_to_int(tq16ang);
 
     QuakeViewChange(camerapp, &quake_z, &quake_x, &quake_y, &quake_ang);
     VisViewChange(camerapp, &g_visibility);

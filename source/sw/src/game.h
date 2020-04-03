@@ -1064,7 +1064,7 @@ struct PLAYERstruct
     int camera_dist; // view mode dist
     int circle_camera_dist;
     int six,siy,siz; // save player interp position for PlayerSprite
-    fix16_t siang;
+    short siang;
 
     int xvect, yvect;
     int oxvect, oyvect;
