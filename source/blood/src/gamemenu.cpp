@@ -984,7 +984,10 @@ bool CGameMenuItemChain7F2F0::Event(CGameMenuEvent &event)
     {
     case kMenuEventEnter:
         if (at34 > -1)
+        {
             gGameOptions.nEpisode = at34;
+            Bstrcpy(gGameOptions.szUserMap, "\0");
+        }
         return CGameMenuItemChain::Event(event);
     }
     return CGameMenuItem::Event(event);
@@ -3004,7 +3007,7 @@ bool CGameMenuItemPassword::Event(CGameMenuEvent &event)
     return CGameMenuItem::Event(event);
 }
 
-CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination)
+CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x, int _y, int _nWidth, const char* _startdir, const char* _pattern, char* _destination, void(*_onFileSelectedEventHandler)(), const char _doPop)
 {
     m_pzText = _pzText;
     m_nFont = _nFont;
@@ -3014,6 +3017,8 @@ CGameMenuFileSelect::CGameMenuFileSelect(const char* _pzText, int _nFont, int _x
     startdir = _startdir;
     pattern = _pattern;
     destination = _destination;
+    onFileSelectedEventHandler = _onFileSelectedEventHandler;
+    doPop = _doPop;
 }
 
 static int32_t xdim_from_320_16(int32_t x)
@@ -3182,7 +3187,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             findhigh[currentList] = findhigh[currentList]->userb;
             break;
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventUp:
         if (findhigh[currentList] != NULL)
@@ -3192,7 +3197,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             else
                 findhigh[currentList] = findhigh[currentList]->userb;
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventDown:
         if (findhigh[currentList] != NULL)
@@ -3202,13 +3207,13 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
             else
                 findhigh[currentList] = findhigh[currentList]->usera;
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventLeft:
     case kMenuEventRight:
         if ((currentList ? fnlist.numdirs : fnlist.numfiles) > 0)
             currentList = !currentList;
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventScrollUp:
         if (findhigh[currentList] != NULL)
@@ -3219,7 +3224,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
                 nTopDelta[currentList]--;
             }
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     case kMenuEventScrollDown:
         if (findhigh[currentList] != NULL)
@@ -3230,7 +3235,7 @@ bool CGameMenuFileSelect::Event(CGameMenuEvent &event)
                 nTopDelta[currentList]++;
             }
         }
-        MovementVefiry();
+        MovementVerify();
         return false;
     default:
         break;
@@ -3243,7 +3248,17 @@ bool CGameMenuFileSelect::Select(void)
     if (!findhigh[currentList])
         return false;
 
-    Bstrcat(destination, findhigh[currentList]->name);
+    char name[MAX_PATH];
+    Bstrcpy(name, findhigh[currentList]->name);
+    if (!Bstrcmp(name, ".."))
+    {
+        SetDestinationToParentDir();
+    }
+    else
+    {
+        RemoveFilenameFromDestination();
+        Bstrcat(destination, name);
+    }
 
     if (currentList == 0)
     {
@@ -3253,6 +3268,13 @@ bool CGameMenuFileSelect::Select(void)
         FileSelectInit();
         return false;
     }
+
+    if (onFileSelectedEventHandler)
+        onFileSelectedEventHandler();
+
+    if (!doPop)
+        return false;
+
     return true;
 }
 
@@ -3291,7 +3313,7 @@ void CGameMenuFileSelect::FileSelectInit(void)
     KB_FlushKeyboardQueueScans();
 }
 
-void CGameMenuFileSelect::MovementVefiry(void)
+void CGameMenuFileSelect::MovementVerify(void)
 {
     int height;
     if (!findhigh[currentList])
@@ -3331,4 +3353,53 @@ bool CGameMenuFileSelect::MouseEvent(CGameMenuEvent &event)
     else
         return CGameMenuItem::MouseEvent(event);
     return event.at0 != kMenuEventNone;
+}
+
+void CGameMenuFileSelect::RemoveFilenameFromDestination(void)
+{
+    int lastSlashIndex = -1;
+    int i = 0;
+    while (destination[i] != 0)
+    {
+        if (destination[i] == '/')
+            lastSlashIndex = i;
+        i++;
+    }
+
+    char newDestination[MAX_PATH];
+    for (i = 0; i <= lastSlashIndex; i++)
+        newDestination[i] = destination[i];
+    newDestination[i] = 0;
+
+    Bstrcpy(destination, newDestination);
+}
+
+void CGameMenuFileSelect::SetDestinationToParentDir(void)
+{
+    int lastSlashIndex = -1;
+    int previousSlashIndex = -1;
+    int i = 0;
+    while (destination[i] != 0)
+    {
+        if (destination[i] == '/')
+        {
+            if (lastSlashIndex != -1)
+            {
+                previousSlashIndex = lastSlashIndex;
+                lastSlashIndex = i;
+            }
+            else
+            {
+                lastSlashIndex = i;
+            }
+        }
+        i++;
+    }
+
+    char newDestination[MAX_PATH];
+    for (i = 0; i <= previousSlashIndex; i++)
+        newDestination[i] = destination[i];
+    newDestination[i] = 0;
+
+    Bstrcpy(destination, newDestination);
 }
