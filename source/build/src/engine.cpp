@@ -8304,6 +8304,9 @@ int32_t engineInit(void)
         tiletovox[i] = -1;
     clearbuf(voxscale, sizeof(voxscale)>>2, 65536);
     clearbufbyte(voxrotate, sizeof(voxrotate), 0);
+#ifdef USE_OPENGL
+    clearbufbyte(modelrotate, sizeof(modelrotate), 0);
+#endif
 
     paletteloaded = 0;
 

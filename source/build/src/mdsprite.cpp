@@ -549,6 +549,8 @@ int32_t md_undefinetile(int32_t tile)
     if (!mdinited) return 0;
     if ((unsigned)tile >= (unsigned)MAXTILES) return -1;
 
+    auto modelid = tile2model[tile].modelid;
+    modelrotate[modelid>>3] &= ~pow2char[modelid&7];
     tile2model[tile].modelid = -1;
     tile2model[tile].nexttile = -1;
     DO_FREE_AND_NULL(tile2model[tile].hudmem[0]);

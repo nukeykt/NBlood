@@ -1537,6 +1537,7 @@ typedef struct
 
 EXTERN int32_t mdinited;
 EXTERN tile2model_t tile2model[MAXTILES+EXTRATILES];
+EXTERN int8_t modelrotate[(MAXTILES+EXTRATILES+7)>>3];
 
 static FORCE_INLINE int32_t md_tilehasmodel(int32_t const tilenume, int32_t const pal)
 {

@@ -1440,6 +1440,7 @@ static int32_t defsparser(scriptfile *script)
                 { "normal",   T_NORMAL   },
                 { "hud",      T_HUD      },
                 { "flags",    T_FLAGS    },
+                { "rotate",   T_ROTATE   },
             };
 
             Bmemset(usedframebitmap, 0, sizeof(usedframebitmap));
@@ -1844,6 +1845,13 @@ static int32_t defsparser(scriptfile *script)
 
                         model_ok &= happy;
                     }
+#endif
+                }
+                break;
+                case T_ROTATE:
+                {
+#ifdef USE_OPENGL
+                    modelrotate[lastmodelid>>3] |= pow2char[lastmodelid&7];
 #endif
                 }
                 break;
