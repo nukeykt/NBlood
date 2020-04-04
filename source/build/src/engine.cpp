@@ -10596,6 +10596,15 @@ static void PolymostProcessVoxels(void)
         if (voxmodels[i])
             voxvboalloc(voxmodels[i]);
     }
+
+    if (models)
+    {
+        for (bssize_t i = 0; i < nextmodelid; i++)
+        {
+            if (models[i]->mdnum == 1)
+                voxvboalloc((voxmodel_t*)models[i]);
+        }
+    }
 # endif
     if (PolymostProcessVoxels_Callback)
         PolymostProcessVoxels_Callback();
@@ -10613,6 +10622,9 @@ static void PolymostProcessVoxels(void)
         {
             voxmodels[i] = voxload(voxfilenames[i]);
             voxmodels[i]->scale = voxscale[i]*(1.f/65536.f);
+# ifdef USE_GLEXT
+            voxvboalloc(voxmodels[i]);
+# endif
             DO_FREE_AND_NULL(voxfilenames[i]);
         }
     }
@@ -10625,6 +10637,15 @@ static void PolymostFreeVBOs(void)
     {
         if (voxmodels[i])
             voxvbofree(voxmodels[i]);
+    }
+
+    if (models)
+    {
+        for (bssize_t i = 0; i < nextmodelid; i++)
+        {
+            if (models[i]->mdnum == 1)
+                voxvbofree((voxmodel_t*)models[i]);
+        }
     }
 # endif
 }

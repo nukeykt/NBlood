@@ -402,6 +402,8 @@ static FORCE_INLINE int isair(int32_t i)
 #ifdef USE_GLEXT
 void voxvboalloc(voxmodel_t *vm)
 {
+    if (!r_vbos)
+        return;
     const float phack[2] = { 0, 1.f / 256.f };
     glGenBuffers(1, &vm->vbo);
     glGenBuffers(1, &vm->vboindex);
@@ -450,8 +452,11 @@ void voxvboalloc(voxmodel_t *vm)
 
 void voxvbofree(voxmodel_t *vm)
 {
+    if (!vm->vbo)
+        return;
     glDeleteBuffers(1, &vm->vbo);
     glDeleteBuffers(1, &vm->vboindex);
+    vm->vbo = 0;
 }
 #endif
 
@@ -669,11 +674,6 @@ skindidntfit:
 
     Xfree(shp); Xfree(zbit); Xfree(bx0);
 
-#ifdef USE_GLEXT
-    if (r_vbos)
-        voxvboalloc(gvox);
-#endif
-
     return gvox;
 }
 
@@ -887,9 +887,9 @@ static int32_t loadkv6(const char *filnam)
     voxsiz.y = B_LITTLE32(voxsiz.y);
     voxsiz.z = B_LITTLE32(voxsiz.z);
 #endif
-    kread(fil, &i, 4);       voxpiv.x = (float)B_LITTLE32(i);
-    kread(fil, &i, 4);       voxpiv.y = (float)B_LITTLE32(i);
-    kread(fil, &i, 4);       voxpiv.z = (float)B_LITTLE32(i);
+    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.x = *(float*)&i;
+    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.y = *(float*)&i;
+    kread(fil, &i, 4); i = B_LITTLE32(i); voxpiv.z = *(float*)&i;
 
     int32_t numvoxs;
     kread(fil, &numvoxs, 4); numvoxs = B_LITTLE32(numvoxs);
