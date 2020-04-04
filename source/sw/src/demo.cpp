@@ -367,6 +367,9 @@ DemoTerm(void)
 
     if (DemoSyncTest||DemoSyncRecord)
     {
+        if (DemoSyncFile == NULL)
+            return;
+
         fclose(DemoSyncFile);
         DemoSyncFile = NULL;
     }
