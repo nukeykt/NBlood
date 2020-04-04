@@ -61,3 +61,5 @@ inline DUDEINFO *getDudeInfo(int const nType)
         return &dudeInfo[nType - kDudeBase];
     return &fakeDudeInfo;
 }
+
+int dudeGetStartHp(spritetype* pDude);
