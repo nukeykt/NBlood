@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 void SaveGame(CGameMenuItemZEditBitmap *, CGameMenuEvent *);
 
 void SaveGameProcess(CGameMenuItemChain *);
+void ShowDifficulties();
 void SetDifficultyAndStart(CGameMenuItemChain *);
 void SetDetail(CGameMenuItemSlider *);
 void SetGamma(CGameMenuItemSlider *);
@@ -228,7 +229,12 @@ CGameMenuItemChain itemMainSave7("END GAME", 1, 0, 135, 320, 1, &menuRestart, -1
 CGameMenuItemChain itemMainSave8("QUIT", 1, 0, 150, 320, 1, &menuQuit, -1, NULL, 0);
 
 CGameMenuItemTitle itemEpisodesTitle("EPISODES", 1, 160, 20, 2038);
-CGameMenuItemChain7F2F0 itemEpisodes[6];
+CGameMenuItemChain7F2F0 itemEpisodes[kMaxEpisodes-1];
+
+CGameMenu menuUserMap;
+CGameMenuItemChain itemUserMap("USER MAP", 1, 0, 60, 320, 1, &menuUserMap, 0, NULL, 0);
+CGameMenuItemTitle itemUserMapTitle("USER MAP", 1, 160, 20, 2038);
+CGameMenuFileSelect itemUserMapList("", 3, 0, 0, 0, "./", "*.map", gGameOptions.szUserMap, ShowDifficulties, 0);
 
 CGameMenuItemTitle itemDifficultyTitle("DIFFICULTY", 1, 160, 20, 2038);
 CGameMenuItemChain itemDifficulty1("STILL KICKING", 1, 0, 60, 320, 1, NULL, -1, SetDifficultyAndStart, 0);
@@ -830,7 +836,7 @@ void SetupEpisodeMenu(void)
     int height;
     gMenuTextMgr.GetFontInfo(1, NULL, NULL, &height);
     int j = 0;
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < kMaxEpisodes-1; i++)
     {
         EPISODEINFO *pEpisode = &gEpisodeInfo[i];
         if (!pEpisode->bloodbath || gGameOptions.nGameType != 0)
@@ -867,7 +873,13 @@ void SetupEpisodeMenu(void)
             j++;
         }
     }
+
+    itemUserMap.m_nY = 55+(height+8)*(gEpisodeCount-1);
+    menuEpisode.Add(&itemUserMap, false);
     menuEpisode.Add(&itemBloodQAV, false);
+
+    menuUserMap.Add(&itemUserMapTitle, true);
+    menuUserMap.Add(&itemUserMapList, true);
 }
 
 void SetupMainMenu(void)
@@ -1559,6 +1571,11 @@ void SetWeaponSwitch(CGameMenuItemZCycle *pItem)
 
 extern bool gStartNewGame;
 
+void ShowDifficulties()
+{
+    gGameMenuMgr.Push(&menuDifficulty, 3);
+}
+
 void SetDifficultyAndStart(CGameMenuItemChain *pItem)
 {
     gGameOptions.nDifficulty = pItem->at30;
@@ -1568,6 +1585,13 @@ void SetDifficultyAndStart(CGameMenuItemChain *pItem)
         gDemo.StopPlayback();
     gStartNewGame = true;
     gCheatMgr.sub_5BCF4();
+    if (Bstrlen(gGameOptions.szUserMap))
+    {
+        levelAddUserMap(gGameOptions.szUserMap);
+        levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+        StartLevel(&gGameOptions);
+        viewResizeView(gViewSize);
+    }
     gGameMenuMgr.Deactivate();
 }
 

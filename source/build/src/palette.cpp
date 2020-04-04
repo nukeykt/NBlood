@@ -224,48 +224,25 @@ void paletteLoadFromDisk(void)
 
     // PALETTE_SHADES
 
-    if (kread_and_test(fil, &numshades, 2))
-        return kclose(fil);
-    numshades = B_LITTLE16(numshades);
-
-    if (numshades <= 1)
-    {
-        initprintf("Warning: Invalid number of shades in \"palette.dat\"!\n");
-        numshades = 0;
-        return kclose(fil);
-    }
-
     // Auto-detect LameDuke. Its PALETTE.DAT doesn't have a 'numshades' 16-bit
     // int after the base palette, but starts directly with the shade tables.
-    // Thus, the first two bytes will be 00 01, which is 256 if read as
-    // little-endian int16_t.
-    int32_t lamedukep = 0;
-    if (numshades >= 256)
+    int lamedukep = 0;
+    if (kfilelength(fil) == 41600)
     {
-        static char const * const seekfail = "Warning: klseek() failed in loadpalette()!\n";
-
-        uint16_t temp;
-        if (kread_and_test(fil, &temp, 2))
+        numshades = 32;
+        lamedukep = 1;
+    }
+    else
+    {
+        if (kread_and_test(fil, &numshades, 2))
             return kclose(fil);
-        temp = B_LITTLE16(temp);
-        if (temp == 770 || numshades > 256) // 02 03
-        {
-            if (klseek(fil, -4, BSEEK_CUR) < 0)
-            {
-                initputs(seekfail);
-                return kclose(fil);
-            }
+        numshades = B_LITTLE16(numshades);
 
-            numshades = 32;
-            lamedukep = 1;
-        }
-        else
+        if (numshades <= 1)
         {
-            if (klseek(fil, -2, BSEEK_CUR) < 0)
-            {
-                initputs(seekfail);
-                return kclose(fil);
-            }
+            initprintf("Warning: Invalid number of shades in \"palette.dat\"!\n");
+            numshades = 0;
+            return kclose(fil);
         }
     }
 
