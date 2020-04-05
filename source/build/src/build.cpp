@@ -9474,6 +9474,9 @@ int32_t _getnumber16(const char *namestart, int32_t num, int32_t maxnumber, char
             printext16(n<<3, ydim-STATUS2DSIZ+128, editorcolors[11], -1, buffer,0);
         }
 
+        g_iReturnVar = danum;
+        VM_OnEvent(EVENT_GETNUMBER, -1);
+
         videoShowFrame(1);
 
         n = 0;
@@ -9558,6 +9561,9 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
             Bsnprintf(buffer, sizeof(buffer), "%s", func(danum));
             printmessage256(0, 9, buffer);
         }
+
+        g_iReturnVar = danum;
+        VM_OnEvent(EVENT_GETNUMBER, -1);
 
         videoShowFrame(1);
 
