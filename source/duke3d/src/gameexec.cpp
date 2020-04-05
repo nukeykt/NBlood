@@ -6536,8 +6536,9 @@ void G_SaveMapState(void)
 
     for (native_t i=g_gameVarCount-1; i>=0; i--)
     {
-        if (aGameVars[i].flags & GAMEVAR_NORESET)
+        if (aGameVars[i].flags & SAVEGAMEMAPSTATEVARSKIPMASK)
             continue;
+
         if (aGameVars[i].flags & GAMEVAR_PERPLAYER)
         {
             if (!save->vars[i])
@@ -6556,7 +6557,7 @@ void G_SaveMapState(void)
 
     for (native_t i=g_gameArrayCount-1; i>=0; i--)
     {
-        if ((aGameArrays[i].flags & GAMEARRAY_RESTORE) == 0)
+        if (aGameArrays[i].flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
             continue;
 
         save->arraysiz[i] = aGameArrays[i].size;
@@ -6650,8 +6651,9 @@ void G_RestoreMapState(void)
 
         for (native_t i=g_gameVarCount-1; i>=0; i--)
         {
-            if (aGameVars[i].flags & GAMEVAR_NORESET)
+            if (aGameVars[i].flags & SAVEGAMEMAPSTATEVARSKIPMASK)
                 continue;
+
             if (aGameVars[i].flags & GAMEVAR_PERPLAYER)
             {
                 if (!pSavedState->vars[i])
@@ -6670,7 +6672,7 @@ void G_RestoreMapState(void)
 
         for (native_t i=g_gameArrayCount-1; i>=0; i--)
         {
-            if ((aGameArrays[i].flags & GAMEARRAY_RESTORE) == 0)
+            if (aGameArrays[i].flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
                 continue;
 
             aGameArrays[i].size = pSavedState->arraysiz[i];

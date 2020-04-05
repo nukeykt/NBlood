@@ -54,7 +54,6 @@ char g_scriptFileName[BMAX_PATH] = "(none)";  // file we're currently compiling
 
 int32_t g_totalLines;
 int32_t g_lineNumber;
-uint32_t g_scriptcrc;
 char g_szBuf[1024];
 
 static char *textptr;
@@ -136,7 +135,6 @@ static hashtable_t *const tables[] = {
 static hashtable_t *const tables_free[] = {
     &h_iter,
     &h_keywords,
-    &h_labels,
 };
 
 static tokenmap_t const vm_keywords[] =
@@ -1960,7 +1958,6 @@ static void C_Include(const char *confile)
     kclose(fp);
 
     mptr[len] = 0;
-    g_scriptcrc = Bcrc32(mptr, len, g_scriptcrc);
 
     if (*textptr == '"') // skip past the closing quote if it's there so we don't screw up the next line
         textptr++;
@@ -6347,9 +6344,6 @@ void C_Compile(const char *fileName)
     textptr = (char *)mptr;
     kread(kFile, (char *)textptr, kFileLen);
     kclose(kFile);
-
-    g_scriptcrc = Bcrc32(NULL, 0, 0L);
-    g_scriptcrc = Bcrc32(textptr, kFileLen, g_scriptcrc);
 
     Xfree(apScript);
 

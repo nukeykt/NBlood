@@ -101,78 +101,123 @@ void Gv_Clear(void)
         hash_free(i);
 }
 
+static int Gv_GetVarIndex(const char *szGameLabel);
+static int Gv_GetArrayIndex(const char *szArrayLabel);
+
+static constexpr char const s_gamevars[] = "gamevars";
+static constexpr char const s_arrays[]   = "arrays";
+static constexpr char const s_mapstate[] = "mapstate";
+
+#ifdef NDEBUG
+# define A_(x) do { if (!(x)) return -__LINE__; } while (0)
+#else
+# define A_(x) Bassert(x)
+#endif
+
+static int Gv_SkipLZ4Block(buildvfs_kfd kFile, size_t const size)
+{
+    auto skipvarbuf = (intptr_t*) Xmalloc(size);
+    A_(kdfread_LZ4(skipvarbuf, size, 1, kFile) == 1);
+    Xfree(skipvarbuf);
+    return 0;
+}
+
 int Gv_ReadSave(buildvfs_kfd kFile)
 {
-    char tbuf[12];
+    char buf[32];
+    auto startofs = ktell(kFile);
 
-    if (kread(kFile, tbuf, 12)!=12) goto corrupt;
-    if (Bmemcmp(tbuf, "BEG: EDuke32", 12)) { OSD_Printf("BEG ERR\n"); return 2; }
+    A_(!kread_and_test(kFile, buf, Bstrlen(s_gamevars)));
+    A_(!Bmemcmp(buf, s_gamevars, Bstrlen(s_gamevars)));
 
-    Gv_Free(); // nuke 'em from orbit, it's the only way to be sure...
+    int32_t savedVarCount;
+    A_(!kread_and_test(kFile, &savedVarCount, sizeof(savedVarCount)));
 
-    if (kdfread_LZ4(&g_gameVarCount,sizeof(g_gameVarCount),1,kFile) != 1) goto corrupt;
-    for (bssize_t i=0; i<g_gameVarCount; i++)
+    int32_t varLabelCount;
+    A_(!kread_and_test(kFile, &varLabelCount, sizeof(varLabelCount)));
+
+    auto varlabels = (char *)Xcalloc(varLabelCount, MAXVARLABEL);
+    A_(kdfread_LZ4(varlabels, varLabelCount * MAXVARLABEL, 1, kFile) == 1);
+
+    gamevar_t readVar;
+    int32_t varLabelIndex;
+
+    for (native_t i = 0; i < savedVarCount; i++)
     {
-        char *const olabel = aGameVars[i].szLabel;
+        A_(!kread_and_test(kFile, &varLabelIndex, sizeof(varLabelIndex)));
+        A_(!kread_and_test(kFile, &readVar, sizeof(gamevar_t)));
 
-        if (kdfread_LZ4(&aGameVars[i], sizeof(gamevar_t), 1, kFile) != 1)
-            goto corrupt;
+        int const index = Gv_GetVarIndex(&varlabels[varLabelIndex * MAXVARLABEL]);
 
-        aGameVars[i].szLabel = (char *)Xrealloc(olabel, MAXVARLABEL * sizeof(uint8_t));
-
-        if (kdfread_LZ4(aGameVars[i].szLabel, MAXVARLABEL, 1, kFile) != 1)
-            goto corrupt;
-        hash_add(&h_gamevars, aGameVars[i].szLabel,i, 1);
-
-        if (aGameVars[i].flags & GAMEVAR_PERPLAYER)
+        if (index < 0 || aGameVars[index].flags & SAVEGAMEVARSKIPMASK || aGameVars[index].flags != readVar.flags)
         {
-            aGameVars[i].pValues = (intptr_t*)Xaligned_alloc(PLAYER_VAR_ALIGNMENT, MAXPLAYERS * sizeof(intptr_t));
-            if (kdfread_LZ4(aGameVars[i].pValues,sizeof(intptr_t) * MAXPLAYERS, 1, kFile) != 1) goto corrupt;
+            OSD_Printf("Gv_ReadSave(): variable %s not valid in current script\n", &varlabels[varLabelIndex * MAXVARLABEL]);
+            if (readVar.flags & GAMEVAR_PERPLAYER) A_(!Gv_SkipLZ4Block(kFile, MAXPLAYERS * sizeof(readVar.pValues[0])));
+            else if (readVar.flags & GAMEVAR_PERACTOR) A_(!Gv_SkipLZ4Block(kFile, MAXSPRITES * sizeof(readVar.pValues[0])));
+            continue;
         }
-        else if (aGameVars[i].flags & GAMEVAR_PERACTOR)
+
+        auto &writeVar = aGameVars[index];
+
+        if (readVar.flags & GAMEVAR_PERPLAYER) A_(kdfread_LZ4(writeVar.pValues, sizeof(writeVar.pValues[0]) * MAXPLAYERS, 1, kFile) == 1);
+        else if (readVar.flags & GAMEVAR_PERACTOR) A_(kdfread_LZ4(writeVar.pValues, sizeof(writeVar.pValues[0]) * MAXSPRITES, 1, kFile) == 1);
+        else writeVar.global = readVar.global;
+    }
+
+    A_(!kread_and_test(kFile, buf, Bstrlen(s_arrays)));
+    A_(!Bmemcmp(buf, s_arrays, Bstrlen(s_arrays)));
+
+    int32_t savedArrayCount;
+    A_(!kread_and_test(kFile, &savedArrayCount, sizeof(savedArrayCount)));
+
+    int32_t arrayLabelCount;
+    A_(!kread_and_test(kFile, &arrayLabelCount, sizeof(arrayLabelCount)));
+
+    auto arrlabels = (char *)Xcalloc(arrayLabelCount, MAXARRAYLABEL);
+    A_(kdfread_LZ4(arrlabels, arrayLabelCount * MAXARRAYLABEL, 1, kFile) == 1);
+
+    int32_t     arrayLabelIndex, arrayAllocSize;
+    gamearray_t readArray;
+
+    for (native_t i = 0; i < savedArrayCount; i++)
+    {
+        A_(!kread_and_test(kFile, &arrayLabelIndex, sizeof(arrayLabelIndex)));
+        A_(!kread_and_test(kFile, &readArray, sizeof(gamearray_t)));
+        A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
+
+        int const index = Gv_GetArrayIndex(&arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+
+        if (index < 0 || aGameArrays[index].flags & SAVEGAMEARRAYSKIPMASK || aGameArrays[index].flags != readArray.flags)
         {
-            aGameVars[i].pValues = (intptr_t*)Xaligned_alloc(ACTOR_VAR_ALIGNMENT, MAXSPRITES * sizeof(intptr_t));
-            if (kdfread_LZ4(aGameVars[i].pValues,sizeof(intptr_t) * MAXSPRITES, 1, kFile) != 1) goto corrupt;
+            OSD_Printf("Gv_ReadSave(): array %s not valid in current script\n", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+            A_(!arrayAllocSize || !Gv_SkipLZ4Block(kFile, arrayAllocSize));
+            continue;
+        }
+
+        auto &writeArray = aGameArrays[index];
+        writeArray.size = readArray.size;
+        ALIGNED_FREE_AND_NULL(writeArray.pValues);
+
+        if (readArray.size != 0)
+        {
+            Bassert(arrayAllocSize == Gv_GetArrayAllocSize(index));
+            writeArray.pValues = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSize(index));
+            A_(kdfread_LZ4(writeArray.pValues, Gv_GetArrayAllocSize(index), 1, kFile) == 1);
         }
     }
 
-    Gv_InitWeaponPointers();
-
-    if (kdfread_LZ4(&g_gameArrayCount,sizeof(g_gameArrayCount),1,kFile) != 1) goto corrupt;
-    for (bssize_t i=0; i<g_gameArrayCount; i++)
-    {
-        char *const olabel = aGameArrays[i].szLabel;
-
-        // read for .size and .dwFlags (the rest are pointers):
-        if (kdfread_LZ4(&aGameArrays[i], sizeof(gamearray_t), 1, kFile) != 1)
-            goto corrupt;
-
-        aGameArrays[i].szLabel = (char *) Xrealloc(olabel, MAXARRAYLABEL * sizeof(uint8_t));
-
-        if (kdfread_LZ4(aGameArrays[i].szLabel,sizeof(uint8_t) * MAXARRAYLABEL, 1, kFile) != 1)
-            goto corrupt;
-
-        hash_add(&h_arrays, aGameArrays[i].szLabel, i, 1);
-
-        intptr_t const asize = aGameArrays[i].size;
-
-        if (asize != 0 && !(aGameArrays[i].flags & GAMEARRAY_SYSTEM))
-        {
-            aGameArrays[i].pValues = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSize(i));
-            if (kdfread_LZ4(aGameArrays[i].pValues, Gv_GetArrayAllocSize(i), 1, kFile) < 1) goto corrupt;
-        }
-        else
-            aGameArrays[i].pValues = NULL;
-    }
-
-    Gv_RefreshPointers();
+    A_(!kread_and_test(kFile, buf, Bstrlen(s_mapstate)));
+    A_(!Bmemcmp(buf, s_mapstate, Bstrlen(s_mapstate)));
 
     uint8_t savedstate[MAXVOLUMES*MAXLEVELS];
     Bmemset(savedstate, 0, sizeof(savedstate));
 
-    if (kdfread_LZ4(savedstate, sizeof(savedstate), 1, kFile) != 1) goto corrupt;
+    A_(kdfread_LZ4(savedstate, sizeof(savedstate), 1, kFile) == 1);
 
-    for (bssize_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
+    A_(!kread_and_test(kFile, &savedVarCount, sizeof(savedVarCount)));
+    A_(!kread_and_test(kFile, &savedArrayCount, sizeof(savedArrayCount)));
+
+    for (native_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
     {
         G_FreeMapState(i);
 
@@ -180,112 +225,259 @@ int Gv_ReadSave(buildvfs_kfd kFile)
             continue;
 
         g_mapInfo[i].savedstate = (mapstate_t *)Xaligned_alloc(ACTOR_VAR_ALIGNMENT, sizeof(mapstate_t));
-        if (kdfread_LZ4(g_mapInfo[i].savedstate, sizeof(mapstate_t), 1, kFile) != 1) return -8;
+        A_(kdfread_LZ4(g_mapInfo[i].savedstate, sizeof(mapstate_t), 1, kFile) == 1);
 
         mapstate_t &sv = *g_mapInfo[i].savedstate;
 
-        for (bssize_t j = 0; j < g_gameVarCount; j++)
+        A_(!kread_and_test(kFile, buf, Bstrlen(s_gamevars)));
+        A_(!Bmemcmp(buf, s_gamevars, Bstrlen(s_gamevars)));
+
+        for (native_t j = 0; j < savedVarCount; j++)
         {
-            if (aGameVars[j].flags & GAMEVAR_NORESET) continue;
-            if (aGameVars[j].flags & GAMEVAR_PERPLAYER)
+            A_(!kread_and_test(kFile, &varLabelIndex, sizeof(varLabelIndex)));
+            A_(!kread_and_test(kFile, &readVar, sizeof(gamevar_t)));
+
+            int const index = Gv_GetVarIndex(&varlabels[varLabelIndex * MAXVARLABEL]);
+
+            if (index < 0 || aGameVars[index].flags & SAVEGAMEMAPSTATEVARSKIPMASK || aGameVars[index].flags != readVar.flags)
             {
-                sv.vars[j] = (intptr_t *) Xaligned_alloc(PLAYER_VAR_ALIGNMENT, MAXPLAYERS * sizeof(intptr_t));
-                if (kdfread_LZ4(sv.vars[j], sizeof(intptr_t) * MAXPLAYERS, 1, kFile) != 1) return -9;
+                OSD_Printf("Gv_ReadSave(): variable %s not valid in current script\n", &varlabels[varLabelIndex * MAXVARLABEL]);
+
+                if (readVar.flags & GAMEVAR_PERPLAYER) A_(!Gv_SkipLZ4Block(kFile, MAXPLAYERS * sizeof(readVar.pValues[0])));
+                else if (readVar.flags & GAMEVAR_PERACTOR) A_(!Gv_SkipLZ4Block(kFile, MAXSPRITES * sizeof(readVar.pValues[0])));
+                else
+                {
+                    intptr_t dummy;
+                    A_(!kread_and_test(kFile, &dummy, sizeof(dummy)));
+                }
+
+                continue;
             }
-            else if (aGameVars[j].flags & GAMEVAR_PERACTOR)
+
+            if (readVar.flags & GAMEVAR_PERPLAYER)
             {
-                sv.vars[j] = (intptr_t *) Xaligned_alloc(ACTOR_VAR_ALIGNMENT, MAXSPRITES * sizeof(intptr_t));
-                if (kdfread_LZ4(sv.vars[j], sizeof(intptr_t) * MAXSPRITES, 1, kFile) != 1) return -10;
+                sv.vars[index] = (intptr_t *) Xaligned_alloc(PLAYER_VAR_ALIGNMENT, MAXPLAYERS * sizeof(sv.vars[0][0]));
+                A_(kdfread_LZ4(sv.vars[index], sizeof(sv.vars[0][0]) * MAXPLAYERS, 1, kFile) == 1);
             }
+            else if (readVar.flags & GAMEVAR_PERACTOR)
+            {
+                sv.vars[index] = (intptr_t *) Xaligned_alloc(ACTOR_VAR_ALIGNMENT, MAXSPRITES * sizeof(sv.vars[0][0]));
+                A_(kdfread_LZ4(sv.vars[index], sizeof(sv.vars[0][0]) * MAXSPRITES, 1, kFile) == 1);
+            }
+            else A_(!kread_and_test(kFile, &sv.vars[index], sizeof(sv.vars[0][0])));
         }
 
-        if (kdfread_LZ4(sv.arraysiz, sizeof(sv.arraysiz), 1, kFile) < 1)
-            return -11;
+        A_(!kread_and_test(kFile, buf, Bstrlen(s_arrays)));
+        A_(!Bmemcmp(buf, s_arrays, Bstrlen(s_arrays)));
 
-        for (bssize_t j = 0; j < g_gameArrayCount; j++)
-            if (aGameArrays[j].flags & GAMEARRAY_RESTORE)
+        for (native_t j = 0; j < savedArrayCount; j++)
+        {
+            A_(!kread_and_test(kFile, &arrayLabelIndex, sizeof(arrayLabelIndex)));
+
+            int const index = Gv_GetArrayIndex(&arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+
+            if (index < 0 || aGameArrays[index].flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
             {
-                size_t const siz = Gv_GetArrayAllocSizeForCount(j, sv.arraysiz[j]);
-                sv.arrays[j] = (intptr_t *) Xaligned_alloc(ARRAY_ALIGNMENT, siz);
-                if (kdfread_LZ4(sv.arrays[j], siz, 1, kFile) < 1) return -12;
+                OSD_Printf("Gv_ReadSave(): array %s not valid in current script\n", &arrlabels[arrayLabelIndex * MAXARRAYLABEL]);
+                A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
+                A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
+                A_(!arrayAllocSize || !Gv_SkipLZ4Block(kFile, arrayAllocSize));
+                continue;
             }
+
+            A_(!kread_and_test(kFile, &sv.arraysiz[index], sizeof(sv.arraysiz[0])));
+            A_(!kread_and_test(kFile, &arrayAllocSize, sizeof(arrayAllocSize)));
+            A_((unsigned)arrayAllocSize == Gv_GetArrayAllocSizeForCount(index, sv.arraysiz[index]));
+            sv.arrays[index] = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, arrayAllocSize);
+            A_(!arrayAllocSize || kdfread_LZ4(sv.arrays[index], arrayAllocSize, 1, kFile) == 1);
+        }
     }
 
-    if (kread(kFile, tbuf, 12) != 12) return -13;
-    if (Bmemcmp(tbuf, "EOF: EDuke32", 12)) { OSD_Printf("EOF ERR\n"); return 2; }
+    A_(!kread_and_test(kFile, buf, 12));
+    A_(!Bmemcmp(buf, "EOF: EDuke32", 12));
+
+    OSD_Printf("Gv_ReadSave(): read %d bytes extended data from offset %d\n", ktell(kFile) - startofs, startofs);
+
+    Xfree(varlabels);
+    Xfree(arrlabels);
+
+    Gv_InitWeaponPointers();
+    Gv_RefreshPointers();
 
     return 0;
-
-corrupt:
-    return -7;
 }
+#undef A_
 
 void Gv_WriteSave(buildvfs_FILE fil)
 {
+    int startofs = buildvfs_ftell(fil);
     //   AddLog("Saving Game Vars to File");
-    buildvfs_fwrite("BEG: EDuke32", 12, 1, fil);
+    buildvfs_fwrite(s_gamevars, Bstrlen(s_gamevars), 1, fil);
 
-    dfwrite_LZ4(&g_gameVarCount,sizeof(g_gameVarCount),1,fil);
-
-    for (bssize_t i = 0; i < g_gameVarCount; i++)
+    int32_t savedVarCount = 0;
+    for (native_t i = 0; i < g_gameVarCount; i++)
     {
-        dfwrite_LZ4(&(aGameVars[i]), sizeof(gamevar_t), 1, fil);
-        dfwrite_LZ4(aGameVars[i].szLabel, sizeof(uint8_t) * MAXVARLABEL, 1, fil);
+        if (aGameVars[i].flags & SAVEGAMEVARSKIPMASK)
+            continue;
 
-        if (aGameVars[i].flags & GAMEVAR_PERPLAYER)
-            dfwrite_LZ4(aGameVars[i].pValues, sizeof(intptr_t) * MAXPLAYERS, 1, fil);
-        else if (aGameVars[i].flags & GAMEVAR_PERACTOR)
-            dfwrite_LZ4(aGameVars[i].pValues, sizeof(intptr_t) * MAXSPRITES, 1, fil);
+        savedVarCount++;
     }
 
-    dfwrite_LZ4(&g_gameArrayCount,sizeof(g_gameArrayCount),1,fil);
+    buildvfs_fwrite(&savedVarCount, sizeof(savedVarCount), 1, fil);
+    buildvfs_fwrite(&g_gameVarCount, sizeof(g_gameVarCount), 1, fil);
 
-    for (bssize_t i = 0; i < g_gameArrayCount; i++)
+    char *varlabels = (char *)Xcalloc(g_gameVarCount, MAXVARLABEL);
+
+    for (native_t i = 0; i < g_gameVarCount; i++)
     {
+        if (aGameVars[i].flags & SAVEGAMEVARSKIPMASK)
+            continue;
+        Bmemcpy(&varlabels[i * MAXVARLABEL], aGameVars[i].szLabel, MAXVARLABEL);
+    }
+
+    dfwrite_LZ4(varlabels, g_gameVarCount * MAXVARLABEL, 1, fil);
+
+    for (int32_t idx = 0; idx < g_gameVarCount; idx++)
+    {
+        auto &var = aGameVars[idx];
+
+        if (var.flags & SAVEGAMEVARSKIPMASK)
+            continue;
+
+        buildvfs_fwrite(&idx, sizeof(idx), 1, fil);
+        buildvfs_fwrite(&var, sizeof(gamevar_t), 1, fil);
+
+        if (var.flags & GAMEVAR_PERPLAYER)
+            dfwrite_LZ4(var.pValues, sizeof(var.pValues[0]) * MAXPLAYERS, 1, fil);
+        else if (var.flags & GAMEVAR_PERACTOR)
+            dfwrite_LZ4(var.pValues, sizeof(var.pValues[0]) * MAXSPRITES, 1, fil);
+    }
+
+    buildvfs_fwrite(s_arrays, Bstrlen(s_arrays), 1, fil);
+
+    int32_t savedArrayCount = 0;
+    for (native_t i = 0; i < g_gameArrayCount; i++)
+    {
+        if (aGameArrays[i].flags & SAVEGAMEARRAYSKIPMASK)
+            continue;
+
+        savedArrayCount++;
+    }
+    buildvfs_fwrite(&savedArrayCount, sizeof(savedArrayCount), 1, fil);
+    buildvfs_fwrite(&g_gameArrayCount, sizeof(g_gameArrayCount), 1, fil);
+
+    char *arrlabels = (char *)Xcalloc(g_gameArrayCount, MAXARRAYLABEL);
+
+    for (native_t i = 0; i < g_gameArrayCount; i++)
+    {
+        if (aGameArrays[i].flags & SAVEGAMEVARSKIPMASK)
+            continue;
+        Bmemcpy(&arrlabels[i * MAXARRAYLABEL], aGameArrays[i].szLabel, MAXARRAYLABEL);
+    }
+
+    dfwrite_LZ4(arrlabels, g_gameArrayCount * MAXARRAYLABEL, 1, fil);
+
+    int32_t arrayAllocSize;
+    for (int32_t idx = 0; idx < g_gameArrayCount; idx++)
+    {
+        auto &array = aGameArrays[idx];
+
+        if (array.flags & SAVEGAMEARRAYSKIPMASK)
+            continue;
+
         // write for .size and .dwFlags (the rest are pointers):
-        dfwrite_LZ4(&aGameArrays[i], sizeof(gamearray_t), 1, fil);
-        dfwrite_LZ4(aGameArrays[i].szLabel, sizeof(uint8_t) * MAXARRAYLABEL, 1, fil);
+        buildvfs_fwrite(&idx, sizeof(idx), 1, fil);
+        buildvfs_fwrite(&array, sizeof(gamearray_t), 1, fil);
 
-        if ((aGameArrays[i].flags & GAMEARRAY_SYSTEM) != GAMEARRAY_SYSTEM)
-            dfwrite_LZ4(aGameArrays[i].pValues, Gv_GetArrayAllocSize(i), 1, fil);
+        arrayAllocSize = Gv_GetArrayAllocSize(idx);
+        buildvfs_fwrite(&arrayAllocSize, sizeof(arrayAllocSize), 1, fil);
+
+        if (arrayAllocSize > 0)
+            dfwrite_LZ4(array.pValues, arrayAllocSize, 1, fil);
     }
+
+    buildvfs_fwrite(s_mapstate, Bstrlen(s_mapstate), 1, fil);
 
     uint8_t savedstate[MAXVOLUMES * MAXLEVELS];
     Bmemset(savedstate, 0, sizeof(savedstate));
 
-    for (bssize_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
-        if (g_mapInfo[i].savedstate != NULL)
+    for (native_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
+        if (g_mapInfo[i].savedstate != nullptr)
             savedstate[i] = 1;
 
     dfwrite_LZ4(savedstate, sizeof(savedstate), 1, fil);
 
-    for (bssize_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
+    // these are separate from the ones above because mapstate_t uses a different mask than the general savegame format
+    savedVarCount = 0;
+    for (native_t i = 0; i < g_gameVarCount; i++)
     {
-        if (!savedstate[i]) continue;
+        if (aGameVars[i].flags & SAVEGAMEMAPSTATEVARSKIPMASK)
+            continue;
+
+        savedVarCount++;
+    }
+    buildvfs_fwrite(&savedVarCount,sizeof(savedVarCount),1,fil);
+
+    savedArrayCount = 0;
+    for (native_t i = 0; i < g_gameArrayCount; i++)
+    {
+        if (aGameArrays[i].flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
+            continue;
+
+        savedArrayCount++;
+    }
+    buildvfs_fwrite(&savedArrayCount,sizeof(savedArrayCount),1,fil);
+
+    for (native_t i = 0; i < (MAXVOLUMES * MAXLEVELS); i++)
+    {
+        if (g_mapInfo[i].savedstate == nullptr) continue;
 
         mapstate_t &sv = *g_mapInfo[i].savedstate;
 
         dfwrite_LZ4(g_mapInfo[i].savedstate, sizeof(mapstate_t), 1, fil);
 
-        for (bssize_t j = 0; j < g_gameVarCount; j++)
+        buildvfs_fwrite(s_gamevars, Bstrlen(s_gamevars), 1, fil);
+
+        for (int32_t idx = 0; idx < g_gameVarCount; idx++)
         {
-            if (aGameVars[j].flags & GAMEVAR_NORESET) continue;
-            if (aGameVars[j].flags & GAMEVAR_PERPLAYER)
-                dfwrite_LZ4(sv.vars[j], sizeof(intptr_t) * MAXPLAYERS, 1, fil);
-            else if (aGameVars[j].flags & GAMEVAR_PERACTOR)
-                dfwrite_LZ4(sv.vars[j], sizeof(intptr_t) * MAXSPRITES, 1, fil);
+            auto &var = aGameVars[idx];
+
+            if (var.flags & SAVEGAMEMAPSTATEVARSKIPMASK)
+                continue;
+
+            buildvfs_fwrite(&idx, sizeof(idx), 1, fil);
+            buildvfs_fwrite(&var, sizeof(var), 1, fil);
+
+            if (var.flags & GAMEVAR_PERPLAYER)
+                dfwrite_LZ4(sv.vars[idx], sizeof(sv.vars[0][0]) * MAXPLAYERS, 1, fil);
+            else if (var.flags & GAMEVAR_PERACTOR)
+                dfwrite_LZ4(sv.vars[idx], sizeof(sv.vars[0][0]) * MAXSPRITES, 1, fil);
+            else
+                buildvfs_fwrite(&sv.vars[idx], sizeof(sv.vars[0][0]), 1, fil);
         }
 
-        dfwrite_LZ4(sv.arraysiz, sizeof(sv.arraysiz), 1, fil);
+        buildvfs_fwrite(s_arrays, Bstrlen(s_arrays), 1, fil);
 
-        for (bssize_t j = 0; j < g_gameArrayCount; j++)
-            if (aGameArrays[j].flags & GAMEARRAY_RESTORE)
-            {
-                dfwrite_LZ4(sv.arrays[j], Gv_GetArrayAllocSizeForCount(j, sv.arraysiz[j]), 1, fil);
-            }
+        for (int32_t idx = 0; idx < g_gameArrayCount; idx++)
+        {
+            auto &array = aGameArrays[idx];
+
+            if (array.flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
+                continue;
+
+            buildvfs_fwrite(&idx, sizeof(idx), 1, fil);
+            buildvfs_fwrite(&sv.arraysiz[idx], sizeof(sv.arraysiz[0]), 1, fil);
+            arrayAllocSize = Gv_GetArrayAllocSizeForCount(idx, sv.arraysiz[idx]);
+            buildvfs_fwrite(&arrayAllocSize, sizeof(arrayAllocSize), 1, fil);
+            if (arrayAllocSize > 0)
+                dfwrite_LZ4(sv.arrays[idx], arrayAllocSize, 1, fil);
+        }
     }
 
     buildvfs_fwrite("EOF: EDuke32", 12, 1, fil);
+    OSD_Printf("Gv_WriteSave(): wrote %d bytes extended data at offset %d\n", (int)buildvfs_ftell(fil) - startofs, startofs);
+    Xfree(varlabels);
+    Xfree(arrlabels);
 }
 
 void Gv_DumpValues(void)
@@ -531,7 +723,7 @@ static int Gv_GetVarIndex(const char *szGameLabel)
     if (EDUKE32_PREDICT_FALSE((unsigned)gameVar >= MAXGAMEVARS))
     {
         OSD_Printf(OSD_ERROR "Gv_GetVarIndex(): INTERNAL ERROR: couldn't find gamevar %s!\n", szGameLabel);
-        return 0;
+        return -1;
     }
 
     return gameVar;
@@ -544,7 +736,7 @@ static int Gv_GetArrayIndex(const char *szArrayLabel)
     if (EDUKE32_PREDICT_FALSE((unsigned)arrayIdx >= MAXGAMEARRAYS))
     {
         OSD_Printf(OSD_ERROR "Gv_GetArrayIndex(): INTERNAL ERROR: couldn't find array %s!\n", szArrayLabel);
-        return 0;
+        return -1;
     }
 
     return arrayIdx;

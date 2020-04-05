@@ -865,7 +865,7 @@ static int A_ShootCustom(int const spriteNum, int const projecTile, int shootAng
         pSprite->x += x;
         pSprite->y += y;
         G_AddGameLight(0, spriteNum, PHEIGHT, 8192, pProj->flashcolor, PR_LIGHT_PRIO_MAX_GAME);
-        actor[spriteNum].lightcount = 2;
+        practor[spriteNum].lightcount = 2;
         pSprite->x -= x;
         pSprite->y -= y;
     }
@@ -1714,7 +1714,7 @@ int A_ShootWithZvel(int const spriteNum, int const projecTile, int const forceZv
                     pSprite->x += v.x;
                     pSprite->y += v.y;
                     G_AddGameLight(0, spriteNum, PHEIGHT, 8192, 255 + (95 << 8), PR_LIGHT_PRIO_MAX_GAME);
-                    actor[spriteNum].lightcount = 2;
+                    practor[spriteNum].lightcount = 2;
                     pSprite->x -= v.x;
                     pSprite->y -= v.y;
                 }
@@ -2068,7 +2068,7 @@ static void P_FireWeapon(int playerNum)
         s->y += y;
         G_AddGameLight(0, pPlayer->i, PHEIGHT, 8192, PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor),
                        PR_LIGHT_PRIO_MAX_GAME);
-        actor[pPlayer->i].lightcount = 2;
+        practor[pPlayer->i].lightcount = 2;
         s->x -= x;
         s->y -= y;
 #endif  // POLYMER
@@ -4127,7 +4127,7 @@ static void P_ProcessWeapon(int playerNum)
             G_AddGameLight(0, pPlayer->i, PHEIGHT, max(glowRange, 0),
                            PWEAPON(playerNum, pPlayer->curr_weapon, FlashColor), PR_LIGHT_PRIO_HIGH_GAME);
 
-            actor[pPlayer->i].lightcount = 2;
+            practor[pPlayer->i].lightcount = 2;
 
             pSprite->x -= glowXOffset;
             pSprite->y -= glowYOffset;

@@ -815,11 +815,11 @@ void onvideomodechange(int32_t newmode)
 
         while (i < MAXSPRITES)
         {
-            if (actor[i].lightptr)
+            if (practor[i].lightptr)
             {
-                polymer_deletelight(actor[i].lightId);
-                actor[i].lightptr = NULL;
-                actor[i].lightId = -1;
+                polymer_deletelight(practor[i].lightId);
+                practor[i].lightptr = NULL;
+                practor[i].lightId = -1;
             }
             i++;
         }
