@@ -9490,7 +9490,7 @@ int32_t _getnumber16(const char *namestart, int32_t num, int32_t maxnumber, char
     }
 
     if (keystatus[sc_Escape] && (flags&4))
-        oldnum = -1;
+        oldnum = INT32_MIN;
 
     clearkeys();
 
@@ -9572,7 +9572,7 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
     }
 
     if (keystatus[sc_Escape] && (flags&4))
-        oldnum = -1;
+        oldnum = INT32_MIN;
 
     clearkeys();
 

@@ -3637,6 +3637,8 @@ static void C_AddDefaultDefinitions(void)
 
     C_AddDefinition("NO",0, LABEL_DEFINE);
     C_AddDefinition("COLOR_WHITE",31, LABEL_DEFINE);
+
+    C_AddDefinition("INT32_MIN", INT32_MIN, LABEL_DEFINE);
 }
 
 void C_CompilationInfo(void)
