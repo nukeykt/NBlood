@@ -2696,7 +2696,7 @@ restart_grand:
 
             case CSTAT_SPRITE_ALIGNMENT_SLOPE:
             {
-                int32_t x3, y3, x4, y4, zz;
+                int32_t x3, y3, x4, y4;
                 int32_t const heinum = spriteGetSlope(z);
                 int32_t const dax = (heinum * sintable[(spr->ang+1024)&2047]) << 1;
                 int32_t const day = (heinum * sintable[(spr->ang+512)&2047]) << 1;

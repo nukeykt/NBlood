@@ -6204,9 +6204,6 @@ draw_as_face_sprite:
 #define LINTERPSIZ 4
                     int u0 = Blrintf(1048576.f*sgx3/bz);
                     int v0 = Blrintf(1048576.f*sgy3/bz);
-                    //switch (globalorientation&0x180)
-                    //{
-                    //case 0:
                     if (ispow2)
                     {
                         if ((cstat&2)==0)
@@ -6383,86 +6380,6 @@ draw_as_face_sprite:
                             }
                         }
                     }
-                    //    break;
-                    //case 128:
-                    //    while (cnt > 0)
-                    //    {
-                    //        bz += bzinc*(1<<LINTERPSIZ);
-                    //        int u1 = Blrintf(1048576.f*globalx3/bz);
-                    //        int v1 = Blrintf(1048576.f*globaly3/bz);
-                    //        u1 = (u1-u0)>>LINTERPSIZ;
-                    //        v1 = (v1-v0)>>LINTERPSIZ;
-                    //        int cnt2 = min(cnt, 1<<LINTERPSIZ);
-                    //        for (; cnt2>0; cnt2--)
-                    //        {
-                    //            u = (globalx1+u0)&0xffff;
-                    //            v = (globaly1+v0)&0xffff;
-                    //            uint8_t ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
-                    //            if (ch != 255)
-                    //                *p = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
-                    //            slopalptr--;
-                    //            p += ggpinc;
-                    //            u0 += u1;
-                    //            v0 += v1;
-                    //        }
-                    //        cnt -= 1<<LINTERPSIZ;
-                    //    }
-                    //    break;
-                    //case 256:
-                    //    while (cnt > 0)
-                    //    {
-                    //        bz += bzinc*(1<<LINTERPSIZ);
-                    //        int u1 = Blrintf(1048576.f*globalx3/bz);
-                    //        int v1 = Blrintf(1048576.f*globaly3/bz);
-                    //        u1 = (u1-u0)>>LINTERPSIZ;
-                    //        v1 = (v1-v0)>>LINTERPSIZ;
-                    //        int cnt2 = min(cnt, 1<<LINTERPSIZ);
-                    //        for (; cnt2>0; cnt2--)
-                    //        {
-                    //            u = (globalx1+u0)&0xffff;
-                    //            v = (globaly1+v0)&0xffff;
-                    //            uint8_t ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
-                    //            if (ch != 255)
-                    //            {
-                    //                ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
-                    //                *p = trans[(*p<<8)|ch];
-                    //            }
-                    //            slopalptr--;
-                    //            p += ggpinc;
-                    //            u0 += u1;
-                    //            v0 += v1;
-                    //        }
-                    //        cnt -= 1<<LINTERPSIZ;
-                    //    }
-                    //    break;
-                    //case 384:
-                    //    while (cnt > 0)
-                    //    {
-                    //        bz += bzinc*(1<<LINTERPSIZ);
-                    //        int u1 = Blrintf(1048576.f*globalx3/bz);
-                    //        int v1 = Blrintf(1048576.f*globaly3/bz);
-                    //        u1 = (u1-u0)>>LINTERPSIZ;
-                    //        v1 = (v1-v0)>>LINTERPSIZ;
-                    //        int cnt2 = min(cnt, 1<<LINTERPSIZ);
-                    //        for (; cnt2>0; cnt2--)
-                    //        {
-                    //            u = (globalx1+u0)&0xffff;
-                    //            v = (globaly1+v0)&0xffff;
-                    //            uint8_t ch = ggbuf[((u>>(16-gglogx))<<gglogy)+(v>>(16-gglogy))];
-                    //            if (ch != 255)
-                    //            {
-                    //                ch = *(uint8_t *)(((intptr_t)slopalptr[0])+ch);
-                    //                *p = trans[ch<<8|*p];
-                    //            }
-                    //            slopalptr--;
-                    //            p += ggpinc;
-                    //            u0 += u1;
-                    //            v0 += v1;
-                    //        }
-                    //        cnt -= 1<<LINTERPSIZ;
-                    //    }
-                    //    break;
-                    //}
 #undef LINTERPSIZ
                     if ((x&15) == 0) faketimerhandler();
                 }
