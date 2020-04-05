@@ -91,7 +91,6 @@ typedef struct PACKED
 {
     uint8_t PacketType;  // first byte is always packet type
     SWBOOL AutoRun;
-    SWBOOL MouseAimingOn; // required for slope tilting
     uint8_t Color;
     char PlayerName[32];
 } PACKET_OPTIONS,*PACKET_OPTIONSp;
