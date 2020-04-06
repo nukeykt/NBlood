@@ -10986,58 +10986,58 @@ int32_t inside(int32_t x, int32_t y, int16_t sectnum)
     switch (enginecompatibilitymode)
     {
     case ENGINE_EDUKE32:
-    if ((unsigned)sectnum < (unsigned)numsectors)
-    {
-        uint32_t cnt1 = 0, cnt2 = 0;
-
-        auto wal       = (uwallptr_t)&wall[sector[sectnum].wallptr];
-        int  wallsleft = sector[sectnum].wallnum;
-
-        do
+        if ((unsigned)sectnum < (unsigned)numsectors)
         {
-            // Get the x and y components of the [tested point]-->[wall
-            // point{1,2}] vectors.
-            vec2_t v1 = { wal->x - x, wal->y - y };
-            auto const &wal2 = *(uwallptr_t)&wall[wal->point2];
-            vec2_t v2 = { wal2.x - x, wal2.y - y };
+            uint32_t cnt1 = 0, cnt2 = 0;
 
-            // First, test if the point is EXACTLY_ON_WALL_POINT.
-            if ((v1.x|v1.y) == 0 || (v2.x|v2.y)==0)
-                return 1;
+            auto wal       = (uwallptr_t)&wall[sector[sectnum].wallptr];
+            int  wallsleft = sector[sectnum].wallnum;
 
-            // If their signs differ[*], ...
-            //
-            // [*] where '-' corresponds to <0 and '+' corresponds to >=0.
-            // Equivalently, the branch is taken iff
-            //   y1 != y2 AND y_m <= y < y_M,
-            // where y_m := min(y1, y2) and y_M := max(y1, y2).
-            if ((v1.y^v2.y) < 0)
-                cnt1 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
-
-            v1.y--;
-            v2.y--;
-
-            // Now, do the same comparisons, but with the interval half-open on
-            // the other side! That is, take the branch iff
-            //   y1 != y2 AND y_m < y <= y_M,
-            // For a rectangular sector, without EXACTLY_ON_WALL_POINT, this
-            // would still leave the lower left and upper right points
-            // "outside" the sector.
-            if ((v1.y^v2.y) < 0)
+            do
             {
-                v1.x--;
-                v2.x--;
+                // Get the x and y components of the [tested point]-->[wall
+                // point{1,2}] vectors.
+                vec2_t v1 = { wal->x - x, wal->y - y };
+                auto const &wal2 = *(uwallptr_t)&wall[wal->point2];
+                vec2_t v2 = { wal2.x - x, wal2.y - y };
 
-                cnt2 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+                // First, test if the point is EXACTLY_ON_WALL_POINT.
+                if ((v1.x|v1.y) == 0 || (v2.x|v2.y)==0)
+                    return 1;
+
+                // If their signs differ[*], ...
+                //
+                // [*] where '-' corresponds to <0 and '+' corresponds to >=0.
+                // Equivalently, the branch is taken iff
+                //   y1 != y2 AND y_m <= y < y_M,
+                // where y_m := min(y1, y2) and y_M := max(y1, y2).
+                if ((v1.y^v2.y) < 0)
+                    cnt1 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+
+                v1.y--;
+                v2.y--;
+
+                // Now, do the same comparisons, but with the interval half-open on
+                // the other side! That is, take the branch iff
+                //   y1 != y2 AND y_m < y <= y_M,
+                // For a rectangular sector, without EXACTLY_ON_WALL_POINT, this
+                // would still leave the lower left and upper right points
+                // "outside" the sector.
+                if ((v1.y^v2.y) < 0)
+                {
+                    v1.x--;
+                    v2.x--;
+
+                    cnt2 ^= (((v1.x^v2.x) >= 0) ? v1.x : (v1.x*v2.y-v2.x*v1.y)^v2.y);
+                }
+
+                wal++;
             }
+            while (--wallsleft);
 
-            wal++;
+            return (cnt1|cnt2)>>31;
         }
-        while (--wallsleft);
-
-        return (cnt1|cnt2)>>31;
-    }
-    return -1;
+        return -1;
     case ENGINE_19950829:
         return inside_19950829(x, y, sectnum);
     default:
