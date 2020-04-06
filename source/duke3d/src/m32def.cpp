@@ -3501,6 +3501,7 @@ static void C_AddDefaultDefinitions(void)
     C_AddDefinition("EVENT_PRELOADMAP", EVENT_PRELOADMAP, LABEL_EVENT);
     C_AddDefinition("EVENT_PRESAVEMAP", EVENT_PRESAVEMAP, LABEL_EVENT);
     C_AddDefinition("EVENT_PREDRAW2DSCREEN", EVENT_PREDRAW2DSCREEN, LABEL_EVENT);
+    C_AddDefinition("EVENT_GETNUMBER", EVENT_GETNUMBER, LABEL_EVENT);
 
     C_AddDefinition("CLIPMASK0", CLIPMASK0, LABEL_DEFINE);
     C_AddDefinition("CLIPMASK1", CLIPMASK1, LABEL_DEFINE);
@@ -3637,6 +3638,8 @@ static void C_AddDefaultDefinitions(void)
 
     C_AddDefinition("NO",0, LABEL_DEFINE);
     C_AddDefinition("COLOR_WHITE",31, LABEL_DEFINE);
+
+    C_AddDefinition("INT32_MIN", INT32_MIN, LABEL_DEFINE);
 }
 
 void C_CompilationInfo(void)

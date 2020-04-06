@@ -1521,7 +1521,9 @@ static MenuTextForm_t M_CHEAT_SKILL = { NULL, "Enter Skill #:", 1, 0 };
 
 static MenuFileSelect_t M_USERMAP = MAKE_MENUFILESELECT( "Select A User Map", "./usermaps/", "*.map", boardfilename );
 
+#ifndef EDUKE32_RETAIL_MENU
 static MenuFileSelect_t M_SOUND_SF2 = MAKE_MENUFILESELECT( "Select Sound Bank", "./", "*.sf2", sf2bankfile);
+#endif
 
 // MUST be in ascending order of MenuID enum values due to binary search
 static Menu_t Menus[] = {

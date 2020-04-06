@@ -1241,7 +1241,7 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
 
     auto const spr = &sprite[j];
     int16_t const blocking = (spr->cstat&1), hitblocking = (spr->cstat&256);
-    int16_t const flooraligned = (spr->cstat&32), wallaligned = (spr->cstat&16);
+    int16_t const flooraligned = (spr->cstat&48) >= 32, wallaligned = (spr->cstat&48) == 16;
 
     int16_t const angofs = m32_sideview ? m32_sideang : 0;
     uint8_t spritecol = spritecol2d[spr->picnum][blocking];
@@ -1320,8 +1320,10 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
 
         if (flooraligned)
         {
+            int32_t heinum = spriteGetSlope(j);
+            int32_t ratio = ksqrt(heinum * heinum + 16777216);
             int32_t fx = mulscale10(mulscale6(tilesiz[spr->picnum].x, spr->xrepeat), zoome) >> 1;
-            int32_t fy = mulscale10(mulscale6(tilesiz[spr->picnum].y, spr->yrepeat), zoome) >> 1;
+            int32_t fy = divscale12(mulscale10(mulscale6(tilesiz[spr->picnum].y, spr->yrepeat), zoome) >> 1, ratio);
             int32_t co[4][2], ii, in;
             int32_t sinang = sintable[(spr->ang+angofs+1536)&2047];
             int32_t cosang = sintable[(spr->ang+angofs+1024)&2047];

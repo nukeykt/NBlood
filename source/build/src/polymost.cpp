@@ -7943,8 +7943,13 @@ void polymost_drawsprite(int32_t snum)
     if ((globalorientation & 48) != 48)  // only non-voxel sprites should do this
     {
         int const flag = usehightile && h_xsize[globalpicnum];
-        off = { (int32_t)tspr->xoffset + (flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs),
-                (int32_t)tspr->yoffset + (flag ? h_yoffs[globalpicnum] : picanm[globalpicnum].yofs) };
+        off = { flag ? h_xoffs[globalpicnum] : picanm[globalpicnum].xofs,
+                flag ? h_yoffs[globalpicnum] : picanm[globalpicnum].yofs };
+        if (!(tspr->clipdist & TSPR_FLAGS_SLOPE_SPRITE))
+        {
+            off.x += tspr->xoffset;
+            off.y += tspr->yoffset;
+        }
     }
 
     int32_t method = DAMETH_MASK | DAMETH_CLAMPED;
@@ -8384,24 +8389,29 @@ void polymost_drawsprite(int32_t snum)
                 globvis2 = mulscale4(globvis2, (uint8_t)(sector[tspr->sectnum].visibility + 16));
             polymost_setVisibility(globvis2);
 
-            if ((globalorientation & 64) != 0 && (globalposz > pos.z) == (!(globalorientation & 8)))
+            if ((globalorientation & 64) != 0
+             && (globalposz > tspriteGetZOfSlope(tspr, globalposx, globalposy)) == (!(globalorientation & 8)))
                 goto _drawsprite_return;
             else
             {
+                int16_t const heinum = tspriteGetSlope(tspr);
+                float const fheinum = heinum * (1.f / 4096.f);
+                float ratio = polymost_invsqrt_approximation(fheinum * fheinum + 1.f);
+
                 if ((globalorientation & 4) > 0)
                     off.x = -off.x;
                 if ((globalorientation & 8) > 0)
                     off.y = -off.y;
 
                 vec2f_t const p0 = { (float)(((tsiz.x + 1) >> 1) - off.x) * tspr->xrepeat,
-                                     (float)(((tsiz.y + 1) >> 1) - off.y) * tspr->yrepeat },
+                                     (float)(((tsiz.y + 1) >> 1) - off.y) * tspr->yrepeat * ratio },
                               p1 = { (float)((tsiz.x >> 1) + off.x) * tspr->xrepeat,
-                                     (float)((tsiz.y >> 1) + off.y) * tspr->yrepeat };
+                                     (float)((tsiz.y >> 1) + off.y) * tspr->yrepeat * ratio };
 
                 float const c = sintable[(tspr->ang + 512) & 2047] * (1.0f / 65536.f);
                 float const s = sintable[tspr->ang & 2047] * (1.0f / 65536.f);
 
-                vec2f_t pxy[6];
+                vec3f_t pxy[6];
 
                 // Project 3D to 2D
                 for (bssize_t j = 0; j < 4; j++)
@@ -8429,20 +8439,23 @@ void polymost_drawsprite(int32_t snum)
                         s0.y -= c * p1.x;
                     }
 
-                    pxy[j] = { s0.y * gcosang - s0.x * gsinang, s0.x * gcosang2 + s0.y * gsinang2 };
+                    pxy[j] = { s0.y * gcosang - s0.x * gsinang, s0.x * gcosang2 + s0.y * gsinang2, float(tspriteGetZOfSlopeFloat(tspr, s0.x+globalposx, s0.y+globalposy))};
                 }
 
-                if (pos.z < globalposz)  // if floor sprite is above you, reverse order of points
+                if (tspriteGetZOfSlope(tspr, globalposx, globalposy) < globalposz)  // if floor sprite is above you, reverse order of points
                 {
-                    EDUKE32_STATIC_ASSERT(sizeof(uint64_t) == sizeof(vec2f_t));
+                    vec3f_t t = pxy[0];
+                    pxy[0] = pxy[1];
+                    pxy[1] = t;
 
-                    swap64bit(&pxy[0], &pxy[1]);
-                    swap64bit(&pxy[2], &pxy[3]);
+                    t = pxy[2];
+                    pxy[2] = pxy[3];
+                    pxy[3] = t;
                 }
 
                 // Clip to SCISDIST plane
                 int32_t npoints = 0;
-                vec2f_t p2[6];
+                vec3f_t p2[6];
 
                 for (bssize_t i = 0, j = 1; i < 4; j = ((++i + 1) & 3))
                 {
@@ -8452,8 +8465,9 @@ void polymost_drawsprite(int32_t snum)
                     if ((pxy[i].y >= SCISDIST) != (pxy[j].y >= SCISDIST))
                     {
                         float const f = (SCISDIST - pxy[i].y) / (pxy[j].y - pxy[i].y);
-                        vec2f_t const t = { (pxy[j].x - pxy[i].x) * f + pxy[i].x,
-                                            (pxy[j].y - pxy[i].y) * f + pxy[i].y };
+                        vec3f_t const t = { (pxy[j].x - pxy[i].x) * f + pxy[i].x,
+                                            (pxy[j].y - pxy[i].y) * f + pxy[i].y,
+                                            (pxy[j].z - pxy[i].z) * f + pxy[i].z };
                         p2[npoints++] = t;
                     }
                 }
@@ -8465,32 +8479,40 @@ void polymost_drawsprite(int32_t snum)
 
                 int fadjust = 0;
 
-                // unfortunately, offsetting by only 1 isn't enough on most Android devices
-                if (pos.z == sec->ceilingz || pos.z == sec->ceilingz + 1)
-                    pos.z = sec->ceilingz + 2, fadjust = (tspr->owner & 31);
+                if (heinum == 0)
+                {
+                    // unfortunately, offsetting by only 1 isn't enough on most Android devices
+                    if (pos.z == sec->ceilingz || pos.z == sec->ceilingz + 1)
+                        pos.z = sec->ceilingz + 2, fadjust = (tspr->owner & 31);
 
-                if (pos.z == sec->floorz || pos.z == sec->floorz - 1)
-                    pos.z = sec->floorz - 2, fadjust = -((tspr->owner & 31));
+                    if (pos.z == sec->floorz || pos.z == sec->floorz - 1)
+                        pos.z = sec->floorz - 2, fadjust = -((tspr->owner & 31));
+                }
 
-                float f = (float)(pos.z - globalposz + fadjust) * gyxscale;
+                vec2f_t pxy2[6];
+                double pfy[6];
 
                 for (bssize_t j = 0; j < npoints; j++)
                 {
                     float const ryp0 = 1.f / p2[j].y;
-                    pxy[j] = { ghalfx * p2[j].x * ryp0 + ghalfx, f * ryp0 + ghoriz };
+                    float const fs = (float)(p2[j].z - globalposz + fadjust) * gyxscale;
+                    pxy2[j] = { ghalfx * p2[j].x * ryp0 + ghalfx, fs * ryp0 + ghoriz };
+                    pfy[j] = double(gyxscale * ryp0) + ghoriz;
                 }
 
                 // gd? Copied from floor rendering code
 
                 xtex.d = 0;
-                ytex.d = gxyaspect / (double)(pos.z - globalposz + fadjust);
+                ytex.d = gxyaspect;
+                if (heinum == 0)
+                    ytex.d /= (double)(pos.z - globalposz + fadjust);
                 otex.d = -ghoriz * ytex.d;
 
                 // copied&modified from relative alignment
                 vec2f_t const vv = { (float)tspr->x + s * p1.x + c * p1.y, (float)tspr->y + s * p1.y - c * p1.x };
                 vec2f_t ff = { -(p0.x + p1.x) * s, (p0.x + p1.x) * c };
 
-                f = polymost_invsqrt_approximation(ff.x * ff.x + ff.y * ff.y);
+                float f = polymost_invsqrt_approximation(ff.x * ff.x + ff.y * ff.y);
 
                 ff.x *= f;
                 ff.y *= f;
@@ -8538,10 +8560,48 @@ void polymost_drawsprite(int32_t snum)
 
                 if (spriteext[spritenum].ypanning)
                 {
-                    float const f = ((float)(spriteext[spritenum].ypanning) * (1.0f / 255.f)) * ftsiz.y;
+                    float const f = ((float)(spriteext[spritenum].ypanning) * (1.0f / 255.f)) * ftsiz.y * ratio;
                     ytex.v -= ytex.d * f;
                     otex.v -= otex.d * f;
                     drawpoly_trepeat = 1;
+                }
+
+                if (heinum != 0)
+                {
+                    vec3d_t const duv[3] = {
+                        { (pxy2[0].x * xtex.d + pfy[0] * ytex.d + otex.d),
+                          (pxy2[0].x * xtex.u + pfy[0] * ytex.u + otex.u),
+                          (pxy2[0].x * xtex.v + pfy[0] * ytex.v + otex.v)
+                        },
+                        { (pxy2[1].x * xtex.d + pfy[1] * ytex.d + otex.d),
+                          (pxy2[1].x * xtex.u + pfy[1] * ytex.u + otex.u),
+                          (pxy2[1].x * xtex.v + pfy[1] * ytex.v + otex.v)
+                        },
+                        { (pxy2[2].x * xtex.d + pfy[2] * ytex.d + otex.d),
+                          (pxy2[2].x * xtex.u + pfy[2] * ytex.u + otex.u),
+                          (pxy2[2].x * xtex.v + pfy[2] * ytex.v + otex.v)
+                        }
+                    };
+
+                    vec3f_t oxyz[2] = { { (float)(pxy2[1].y - pxy2[2].y), (float)(pxy2[2].y - pxy2[0].y), (float)(pxy2[0].y - pxy2[1].y) },
+                                        { (float)(pxy2[2].x - pxy2[1].x), (float)(pxy2[0].x - pxy2[2].x), (float)(pxy2[1].x - pxy2[0].x) } };
+
+                    float const r = 1.f / (oxyz[0].x * pxy2[0].x + oxyz[0].y * pxy2[1].x + oxyz[0].z * pxy2[2].x);
+
+                    xtex.d = (oxyz[0].x * duv[0].d + oxyz[0].y * duv[1].d + oxyz[0].z * duv[2].d) * r;
+                    xtex.u = (oxyz[0].x * duv[0].u + oxyz[0].y * duv[1].u + oxyz[0].z * duv[2].u) * r;
+                    xtex.v = (oxyz[0].x * duv[0].v + oxyz[0].y * duv[1].v + oxyz[0].z * duv[2].v) * r;
+
+                    ytex.d = (oxyz[1].x * duv[0].d + oxyz[1].y * duv[1].d + oxyz[1].z * duv[2].d) * r;
+                    ytex.u = (oxyz[1].x * duv[0].u + oxyz[1].y * duv[1].u + oxyz[1].z * duv[2].u) * r;
+                    ytex.v = (oxyz[1].x * duv[0].v + oxyz[1].y * duv[1].v + oxyz[1].z * duv[2].v) * r;
+
+                    otex.d = duv[0].d - pxy2[0].x * xtex.d - pxy2[0].y * ytex.d;
+                    otex.u = duv[0].u - pxy2[0].x * xtex.u - pxy2[0].y * ytex.u;
+                    otex.v = duv[0].v - pxy2[0].x * xtex.v - pxy2[0].y * ytex.v;
+
+                    float const rr = Bsqrtf(fheinum * fheinum + 1.f);
+                    xtex.v *= rr; ytex.v *= rr; otex.v *= rr;
                 }
                 
                 tilesiz[globalpicnum] = { (int16_t)tsiz.x, (int16_t)tsiz.y };
@@ -8557,7 +8617,7 @@ void polymost_drawsprite(int32_t snum)
                     psearchstat = 3;
                     doeditorcheck = 1;
                 }
-                polymost_drawpoly(pxy, npoints, method);
+                polymost_drawpoly(pxy2, npoints, method);
                 doeditorcheck = 0;
 
                 drawpoly_srepeat = 0;

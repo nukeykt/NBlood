@@ -320,6 +320,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     int32_t dax, day, cosang, sinang, xspan, yspan, sprx, spry;
     int32_t xrepeat, yrepeat, z1, z2, startwall, endwall, tilenum, daang;
     int32_t xvect, yvect, xvect2, yvect2;
+    int32_t ratio, heinum, sinang2, cosang2;
     int16_t p;
     char col;
     uwallptr_t wal, wal2;
@@ -455,15 +456,25 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
                 break;
 
             case 32:
+            case 48:
+                heinum = spriteGetSlope(j);
+                ratio = ksqrt(heinum * heinum + 16777216);
                 tilenum = spr->picnum;
-                xoff = picanm[tilenum].xofs + spr->xoffset;
-                yoff = picanm[tilenum].yofs + spr->yoffset;
+                xoff = picanm[tilenum].xofs;
+                yoff = picanm[tilenum].yofs;
+                if ((spr->cstat & 48) != 48)
+                {
+                    xoff += spr->xoffset;
+                    yoff += spr->yoffset;
+                }
                 if ((spr->cstat&4) > 0) xoff = -xoff;
                 if ((spr->cstat&8) > 0) yoff = -yoff;
 
                 k = spr->ang;
                 cosang = sintable[(k+512)&2047];
                 sinang = sintable[k&2047];
+                cosang2 = divscale12(cosang, ratio);
+                sinang2 = divscale12(sinang, ratio);
                 xspan = tilesiz[tilenum].x;
                 xrepeat = spr->xrepeat;
                 yspan = tilesiz[tilenum].y;
@@ -471,16 +482,16 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
                 dax = ((xspan>>1)+xoff)*xrepeat;
                 day = ((yspan>>1)+yoff)*yrepeat;
-                x1 = sprx + dmulscale16(sinang, dax, cosang, day);
-                y1 = spry + dmulscale16(sinang, day, -cosang, dax);
+                x1 = sprx + dmulscale16(sinang, dax, cosang2, day);
+                y1 = spry + dmulscale16(sinang2, day, -cosang, dax);
                 l = xspan*xrepeat;
                 x2 = x1 - mulscale16(sinang, l);
                 y2 = y1 + mulscale16(cosang, l);
                 l = yspan*yrepeat;
-                k = -mulscale16(cosang, l);
+                k = -mulscale16(cosang2, l);
                 x3 = x2+k;
                 x4 = x1+k;
-                k = -mulscale16(sinang, l);
+                k = -mulscale16(sinang2, l);
                 y3 = y2+k;
                 y4 = y1+k;
 
