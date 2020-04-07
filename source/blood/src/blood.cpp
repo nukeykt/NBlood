@@ -458,11 +458,10 @@ void PreloadCache(void)
     {
         sndTryPlaySpecialMusic(MUS_LOADING);
     }
-    else
-    {
-        nPrecacheCount = 0;
-        PreloadTiles();
-    }
+   
+    nPrecacheCount = 0;
+    PreloadTiles();
+ 
     ClockTicks clock = totalclock;
     int cnt = 0;
     int percentDisplayed = -1;
