@@ -1640,7 +1640,9 @@ spritetype* genDudeSpawn(spritetype* pSprite, int nDist) {
     if (pSource->clipdist > 0) pDude->clipdist = pSource->clipdist;
 
     // inherit custom hp settings
-    pXDude->health = dudeGetStartHp(pDude);
+    if (pXSource->data4 <= 0) pXDude->health = dudeInfo[nType - kDudeBase].startHealth << 4;
+    else pXDude->health = ClipRange(pXSource->data4 << 4, 1, 65535);
+
 
     if (pSource->flags & kModernTypeFlag1) {
         switch (pSource->type) {
@@ -1733,8 +1735,8 @@ void genDudeTransform(spritetype* pSprite) {
     pXSprite->data1 = pXIncarnation->data1;
     pXSprite->data2 = pXIncarnation->data2;
 
-    pXSprite->sysData1 = pXIncarnation->data3;
-    pXSprite->sysData2 = pXIncarnation->data4;
+    pXSprite->sysData1 = pXIncarnation->data3;  // soundBase id
+    pXSprite->sysData2 = pXIncarnation->data4;  // start hp
 
     pXSprite->dudeGuard = pXIncarnation->dudeGuard;
     pXSprite->dudeDeaf = pXIncarnation->dudeDeaf;
@@ -1751,7 +1753,8 @@ void genDudeTransform(spritetype* pSprite) {
     pXIncarnation->key = pXIncarnation->dropMsg = 0;
 
     // set hp
-    pXSprite->health = dudeGetStartHp(pSprite);
+    if (pXSprite->sysData2 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
+    else pXSprite->health = ClipRange(pXSprite->sysData2 << 4, 1, 65535);
 
     int seqId = dudeInfo[pSprite->type - kDudeBase].seqStartID;
     switch (pSprite->type) {
@@ -1946,9 +1949,9 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
         case kGenDudePropertyAll:
         case kGenDudePropertyInitVals:
             pExtra->moveSpeed = getGenDudeMoveSpeed(pSprite, 0, true, false);
-            pExtra->initVals[0]     = pSprite->xrepeat;
-            pExtra->initVals[1]     = pSprite->yrepeat;
-            pExtra->initVals[2]     = pSprite->clipdist;
+            pExtra->initVals[0] = pSprite->xrepeat;
+            pExtra->initVals[1] = pSprite->yrepeat;
+            pExtra->initVals[2] = pSprite->clipdist;
             if (propId) break;
             fallthrough__;
 
