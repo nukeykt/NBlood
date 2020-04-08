@@ -1160,23 +1160,30 @@ static void editorDraw2dSprite(int32_t j, int32_t posxe, int32_t posye, int32_t 
         {
             int32_t heinum = spriteGetSlope(j);
             int32_t ratio = ksqrt(heinum * heinum + 16777216);
+            int32_t ratioz = divscale12(heinum, ratio);
+            int32_t yspan = mulscale6(tilesiz[spr->picnum].y, spr->yrepeat);
             int32_t fx = mulscale10(mulscale6(tilesiz[spr->picnum].x, spr->xrepeat), zoome) >> 1;
-            int32_t fy = divscale12(mulscale10(mulscale6(tilesiz[spr->picnum].y, spr->yrepeat), zoome) >> 1, ratio);
-            int32_t co[4][2], ii, in;
+            int32_t fy = divscale12(mulscale10(yspan, zoome) >> 1, ratio);
+            int32_t fz = getscreenvdisp(mulscale4(yspan, ratioz) >> 1, zoome);
+            int32_t co[4][3], ii, in;
             int32_t sinang = sintable[(spr->ang+angofs+1536)&2047];
             int32_t cosang = sintable[(spr->ang+angofs+1024)&2047];
             int32_t r, s;
 
             co[0][0] = co[3][0] = -fx;
             co[0][1] = co[1][1] = -fy;
+            co[0][2] = co[1][2] = -fz;
             co[1][0] = co[2][0] = fx;
             co[2][1] = co[3][1] = fy;
+            co[2][2] = co[3][2] = fz;
 
             for (ii=3; ii>=0; ii--)
             {
                 r = mulscale14(cosang, co[ii][0]) - mulscale14(sinang, co[ii][1]);
                 s = mulscale14(sinang, co[ii][0]) + mulscale14(cosang, co[ii][1]);
                 s = scalescreeny(s);
+                if (m32_sideview)
+                    s += co[ii][2];
                 co[ii][0] = r;
                 co[ii][1] = s;
             }
