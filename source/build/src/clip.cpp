@@ -2686,6 +2686,36 @@ restart_grand:
                     continue;
 
                 get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
+                                    &y1, &y2, &y3, &y4, 0);
+
+                if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
+                    hit_set(hit, dasector, -1, z, intx, inty, intz);
+
+                break;
+            }
+
+            case CSTAT_SPRITE_ALIGNMENT_SLOPE:
+            {
+                int32_t x3, y3, x4, y4;
+                int32_t const heinum = spriteGetSlope(z);
+                int32_t const dax = (heinum * sintable[(spr->ang+1024)&2047]) << 1;
+                int32_t const day = (heinum * sintable[(spr->ang+512)&2047]) << 1;
+                int32_t const j = (vz<<8)-dmulscale15(dax,vy,-day,vx);
+                if (j == 0) continue;
+                if ((cstat&64) != 0)
+                    if ((j < 0) == ((cstat&8)==0)) continue;
+                int32_t i = ((spr->z-sv->z)<<8)+dmulscale15(dax,sv->y-spr->y,-day,sv->x-spr->x);
+                if ((i^j) < 0 || (klabs(i)>>1) >= klabs(j)) continue;
+
+                i = divscale30(i,j);
+                intx = sv->x + mulscale30(vx,i);
+                inty = sv->y + mulscale30(vy,i);
+                intz = sv->z + mulscale30(vz,i);
+
+                if (klabs(intx-sv->x)+klabs(inty-sv->y) > klabs((hit->pos.x)-sv->x)+klabs((hit->pos.y)-sv->y))
+                    continue;
+
+                get_floorspr_points((uspriteptr_t)spr, intx, inty, &x1, &x2, &x3, &x4,
                                     &y1, &y2, &y3, &y4, spriteGetSlope(z));
 
                 if (get_floorspr_clipyou({x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}))
