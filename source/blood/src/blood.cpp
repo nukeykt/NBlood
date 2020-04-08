@@ -456,8 +456,12 @@ void PreloadCache(void)
     gSysRes.PrecacheSounds();
     gSoundRes.PrecacheSounds();
     if (MusicRestartsOnLoadToggle)
+    {
         sndTryPlaySpecialMusic(MUS_LOADING);
+    }
+   
     PreloadTiles();
+ 
     ClockTicks clock = totalclock;
     int cnt = 0;
     int percentDisplayed = -1;

@@ -147,6 +147,7 @@ void tileProcessGLVoxels(void)
             continue;
         char *pVox = (char*)gSysRes.Load(hVox);
         voxmodels[i] = loadkvxfrombuf(pVox, hVox->size);
+        voxvboalloc(voxmodels[i]);
     }
 }
 #endif
