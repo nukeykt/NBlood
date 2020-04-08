@@ -47,10 +47,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifdef EDUKE32_STANDALONE
     #define VOLUMEALL           (1)
     #define PLUTOPAK            (1)
+    #define WORLDTOUR           (0)
     #define VOLUMEONE           (0)
 #else
     #define VOLUMEALL           (g_Shareware == 0)
     #define PLUTOPAK            (g_scriptVersion >= 14)
+    #define WORLDTOUR           (DUKE && g_scriptVersion >= 16)
     #define VOLUMEONE           (g_Shareware == 1)
 #endif
 
@@ -121,6 +123,8 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 // JBF 20040604: sync is a function on some platforms
 #define sync                dsync
 
+#define WT_WIDE(x) (WORLDTOUR ? (x ## WIDE) : (x))
+
 // Uncomment the following to remove calls to a.nasm functions with the GL renderers
 // so that debugging with valgrind --smc-check=none is possible:
 //#define DEBUG_VALGRIND_NO_SMC
@@ -154,21 +158,21 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 # include "lunatic_game.h"
 #endif
 
-static inline int32_t G_HaveActor(int spriteNum)
+static inline int32_t G_TileHasActor(int const tileNum)
 {
 #ifdef LUNATIC
-    return El_HaveActor(spriteNum);
+    return El_HaveActor(tileNum);
 #else
-    return g_tile[spriteNum].execPtr!=NULL;
+    return g_tile[tileNum].execPtr!=NULL;
 #endif
 }
 
-static inline int32_t G_DefaultActorHealth(int spriteNum)
+static inline int32_t G_DefaultActorHealthForTile(int const tileNum)
 {
 #ifdef LUNATIC
-    return g_elActors[spriteNum].strength;
+    return g_elActors[tileNum].strength;
 #else
-    return G_HaveActor(spriteNum) ? g_tile[spriteNum].execPtr[0] : 0;
+    return G_TileHasActor(tileNum) ? g_tile[tileNum].execPtr[0] : 0;
 #endif
 }
 

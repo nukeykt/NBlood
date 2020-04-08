@@ -57,8 +57,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #ifndef EDUKE32_STANDALONE
 #define AFLAMABLE(X) (X==BOX||X==TREE1||X==TREE2||X==TIRE||X==CONE)
-#else
-#define AFLAMABLE(X) (0)
 #endif
 #define rnd(X) ((krand()>>8)>=(255-(X)))
 

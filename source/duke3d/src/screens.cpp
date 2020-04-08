@@ -320,6 +320,7 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
     int32_t dax, day, cosang, sinang, xspan, yspan, sprx, spry;
     int32_t xrepeat, yrepeat, z1, z2, startwall, endwall, tilenum, daang;
     int32_t xvect, yvect, xvect2, yvect2;
+    int32_t ratio, heinum, sinang2, cosang2;
     int16_t p;
     char col;
     uwallptr_t wal, wal2;
@@ -455,15 +456,25 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
                 break;
 
             case 32:
+            case 48:
+                heinum = spriteGetSlope(j);
+                ratio = ksqrt(heinum * heinum + 16777216);
                 tilenum = spr->picnum;
-                xoff = picanm[tilenum].xofs + spr->xoffset;
-                yoff = picanm[tilenum].yofs + spr->yoffset;
+                xoff = picanm[tilenum].xofs;
+                yoff = picanm[tilenum].yofs;
+                if ((spr->cstat & 48) != 48)
+                {
+                    xoff += spr->xoffset;
+                    yoff += spr->yoffset;
+                }
                 if ((spr->cstat&4) > 0) xoff = -xoff;
                 if ((spr->cstat&8) > 0) yoff = -yoff;
 
                 k = spr->ang;
                 cosang = sintable[(k+512)&2047];
                 sinang = sintable[k&2047];
+                cosang2 = divscale12(cosang, ratio);
+                sinang2 = divscale12(sinang, ratio);
                 xspan = tilesiz[tilenum].x;
                 xrepeat = spr->xrepeat;
                 yspan = tilesiz[tilenum].y;
@@ -471,16 +482,16 @@ static void G_DrawOverheadMap(int32_t cposx, int32_t cposy, int32_t czoom, int16
 
                 dax = ((xspan>>1)+xoff)*xrepeat;
                 day = ((yspan>>1)+yoff)*yrepeat;
-                x1 = sprx + dmulscale16(sinang, dax, cosang, day);
-                y1 = spry + dmulscale16(sinang, day, -cosang, dax);
+                x1 = sprx + dmulscale16(sinang, dax, cosang2, day);
+                y1 = spry + dmulscale16(sinang2, day, -cosang, dax);
                 l = xspan*xrepeat;
                 x2 = x1 - mulscale16(sinang, l);
                 y2 = y1 + mulscale16(cosang, l);
                 l = yspan*yrepeat;
-                k = -mulscale16(cosang, l);
+                k = -mulscale16(cosang2, l);
                 x3 = x2+k;
                 x4 = x1+k;
-                k = -mulscale16(sinang, l);
+                k = -mulscale16(sinang2, l);
                 y3 = y2+k;
                 y4 = y1+k;
 
@@ -1305,7 +1316,7 @@ void G_DisplayRest(int32_t smoothratio)
                 i -= sbarsc(ud.althud ? (tilesiz[BIGALPHANUM].y+8)<<16 : tilesiz[INVENTORYBOX].y<<16);
         }
         else if (ud.screen_size > 2)
-            i -= sbarsc(tilesiz[BOTTOMSTATUSBAR].y<<16);
+            i -= sbarsc(tilesiz[sbartile()].y<<16);
 
         int32_t const xbetween = (tilesiz[MF_Bluefont.tilenum + 'A' - '!'].x<<16) + MF_Bluefont.between.x;
 
@@ -2108,6 +2119,49 @@ static void G_BonusCutscenes(void)
 
         videoClearScreen(0L);
 
+        break;
+
+    case 4:
+        if (!WORLDTOUR)
+            return;
+
+        if (ud.lockout == 0)
+        {
+            S_StopMusic();
+            totalclocklock = totalclock = 0;
+
+            videoClearScreen(0L);
+            rotatesprite_fs(160<<16, 100<<16, 65536L, 0, FIREFLYGROWEFFECT, 0, 0, 2+8+64+BGSTRETCH);
+            videoNextPage();
+
+            fadepal(0, 0, 0, 252, 0, -4);
+
+            I_ClearAllInput();
+
+            S_PlaySound(E5L7_DUKE_QUIT_YOU);
+
+            do
+            {
+                if (engineFPSLimit())
+                {
+                    totalclocklock = totalclock;
+
+                    videoClearScreen(0L);
+                    rotatesprite_fs(160<<16, 100<<16, 65536L, 0, FIREFLYGROWEFFECT, 0, 0, 2+8+64+BGSTRETCH);
+                    videoNextPage();
+                }
+
+                gameHandleEvents();
+
+                if (I_GeneralTrigger()) break;
+            } while (1);
+
+            fadepal(0, 0, 0, 0, 252, 4);
+        }
+
+        S_StopMusic();
+        FX_StopAllSounds();
+        S_ClearSoundLocks();
         break;
     }
 }

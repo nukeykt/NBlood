@@ -3943,7 +3943,7 @@ static inline void  polymer_scansprites(int16_t sectnum, tspriteptr_t localtspri
 void                polymer_updatesprite(int32_t snum)
 {
     int32_t         xsize, ysize, i, j;
-    int32_t         tilexoff, tileyoff, xoff, yoff, centeryoff=0;
+    int32_t         tilexoff, tileyoff, xoff, yoff, centeryoff=0, heinum;
     auto const      tspr = tspriteptr[snum];
     float           xratio, yratio, ang;
     float           spos[3];
@@ -4034,10 +4034,16 @@ void                polymer_updatesprite(int32_t snum)
     xsize = (int32_t)(xsize * xratio);
     ysize = (int32_t)(ysize * yratio);
 
-    tilexoff = (int32_t)tspr->xoffset;
-    tileyoff = (int32_t)tspr->yoffset;
-    tilexoff += (usehightile && h_xsize[curpicnum]) ? h_xoffs[curpicnum] : picanm[curpicnum].xofs;
-    tileyoff += (usehightile && h_xsize[curpicnum]) ? h_yoffs[curpicnum] : picanm[curpicnum].yofs;
+    tilexoff = (usehightile && h_xsize[curpicnum]) ? h_xoffs[curpicnum] : picanm[curpicnum].xofs;
+    tileyoff = (usehightile && h_xsize[curpicnum]) ? h_yoffs[curpicnum] : picanm[curpicnum].yofs;
+    
+    heinum = tspriteGetSlope(tspr);
+    
+    if (heinum == 0)
+    {
+        tilexoff += (int32_t)tspr->xoffset;
+        tileyoff += (int32_t)tspr->yoffset;
+    }
 
     xoff = (int32_t)(tilexoff * xratio);
     yoff = (int32_t)(tileyoff * yratio);
@@ -4102,15 +4108,19 @@ void                polymer_updatesprite(int32_t snum)
         glScalef((float)(xsize), (float)(ysize), 1.0f);
         break;
     case SPR_FLOOR:
+    {
+        float const sang = atan2f(float(heinum), 4096.f) * (180.f * float(M_1_PI));
         ang = (float)((tspr->ang + 1024) & 2047) * (360.f/2048.f);
 
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(-ang, 0.0f, 1.0f, 0.0f);
+        glRotatef(-sang, 1.0f, 0.0f, 0.0f);
         glTranslatef((float)(-xoff), 1.0f, (float)(yoff));
         glScalef((float)(xsize), 1.0f, (float)(ysize));
 
         inbuffer = horizsprite;
         break;
+    }
     }
 
     glGetFloatv(GL_MODELVIEW_MATRIX, spritemodelview);

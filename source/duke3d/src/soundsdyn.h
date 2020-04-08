@@ -163,6 +163,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define EXPANDERSHOOT__STATIC       388
 #define INTRO4_B__STATIC            392
 #define BIGBANG__STATIC             393
+#define FLAMETHROWER_INTRO__STATIC  398
+#define FLAMETHROWER_LOOP__STATIC   399
+#define FLAMETHROWER_END__STATIC    400
+#define E5L7_DUKE_QUIT_YOU__STATIC  401
 
 extern int16_t DynamicSoundMap[MAXSOUNDS];
 
@@ -315,6 +319,10 @@ extern int32_t WHIPYOURASS;
 extern int32_t WIERDSHOT_FLY;
 extern int32_t WIND_AMBIENCE;
 extern int32_t WIND_REPEAT;
+extern int32_t FLAMETHROWER_INTRO;
+extern int32_t FLAMETHROWER_LOOP;
+extern int32_t FLAMETHROWER_END;
+extern int32_t E5L7_DUKE_QUIT_YOU;
 
 #define DYNAMICSOUNDMAP(Soundnum) (DynamicSoundMap[Soundnum])
 

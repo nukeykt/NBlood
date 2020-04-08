@@ -1019,6 +1019,31 @@ void spriteoncfz(int32_t i, int32_t *czptr, int32_t *fzptr)
     getzsofslope(sprite[i].sectnum, sprite[i].x,sprite[i].y, czptr, fzptr);
     if ((sprite[i].cstat&48)==32)
         return;
+    if ((sprite[i].cstat&48)==48)
+    {
+        int32_t const heinum = spriteGetSlope(i);
+        int32_t const ratio = divscale12(heinum, ksqrt(heinum*heinum+16777216));
+        int32_t const tilenum = sprite[i].picnum;
+        int32_t const yspan = tilesiz[tilenum].y;
+        int32_t const yoff = (sprite[i].cstat&CSTAT_SPRITE_YFLIP)
+                           ? -picanm[tilenum].yofs : picanm[tilenum].yofs;
+        int32_t const y1 = yspan/2+yoff;
+        int32_t const y2 = yspan - y1;
+        int32_t const h1 = mulscale10(ratio, sprite[i].yrepeat*y1);
+        int32_t const h2 = -mulscale10(ratio, sprite[i].yrepeat*y2);
+        usectorptr_t sect = (usectorptr_t)&sector[sprite[i].sectnum];
+        int32_t const wallang = (getangle(wall[wall[sect->wallptr].point2].x-wall[sect->wallptr].x,
+                                         wall[wall[sect->wallptr].point2].y-wall[sect->wallptr].y)+1536)&2047;
+        if (heinum == sector[sprite[i].sectnum].ceilingheinum && wallang == (sprite[i].ang&2047))
+            *czptr += 2;
+        else
+            *czptr += max(h1,h2);
+        if (heinum == sector[sprite[i].sectnum].floorheinum && wallang == (sprite[i].ang&2047))
+            *fzptr -= 2;
+        else
+            *fzptr += min(h1,h2);
+        return;
+    }
 
     zofs = spriteheightofs(i, &height, 0);
 
@@ -2390,6 +2415,8 @@ static int32_t insert_sprite_common(int32_t sectnum, int32_t dax, int32_t day)
 
 void correct_sprite_yoffset(int32_t i)
 {
+    if ((sprite[i].cstat&48) >= 32)
+        return;
     int32_t tileyofs = picanm[sprite[i].picnum].yofs;
     int32_t tileysiz = tilesiz[sprite[i].picnum].y;
 
@@ -9489,6 +9516,9 @@ int32_t _getnumber16(const char *namestart, int32_t num, int32_t maxnumber, char
             printext16(n<<3, ydim-STATUS2DSIZ+128, editorcolors[11], -1, buffer,0);
         }
 
+        g_iReturnVar = danum;
+        VM_OnEvent(EVENT_GETNUMBER, -1);
+
         videoShowFrame(1);
 
         n = 0;
@@ -9505,7 +9535,7 @@ int32_t _getnumber16(const char *namestart, int32_t num, int32_t maxnumber, char
     }
 
     if (keystatus[sc_Escape] && (flags&4))
-        oldnum = -1;
+        oldnum = INT32_MIN;
 
     clearkeys();
 
@@ -9574,6 +9604,9 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
             printmessage256(0, 9, buffer);
         }
 
+        g_iReturnVar = danum;
+        VM_OnEvent(EVENT_GETNUMBER, -1);
+
         videoShowFrame(1);
 
         if (getnumber_internal1(ch, &danum, maxnumber, sign) ||
@@ -9587,7 +9620,7 @@ int32_t _getnumber256(const char *namestart, int32_t num, int32_t maxnumber, cha
     }
 
     if (keystatus[sc_Escape] && (flags&4))
-        oldnum = -1;
+        oldnum = INT32_MIN;
 
     clearkeys();
 

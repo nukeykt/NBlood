@@ -2049,6 +2049,9 @@ void G_DoGameStartup(const int32_t *params)
             g_deleteQueueSize   = clamp(params[j++], 0, ARRAY_SSIZE(SpriteDeletionQueue));
             g_tripbombLaserMode = params[j++];
         }
+
+        if (g_scriptVersion >= 16)
+            p0.max_ammo_amount[FLAMETHROWER_WEAPON] = params[j++];
     }
 }
 
