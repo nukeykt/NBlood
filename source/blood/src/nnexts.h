@@ -63,11 +63,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // modern statnums
 enum {
 kStatModernBase                     = 20,
-kStatModernDudeTargetChanger        = 20,
+kStatModernDudeTargetChanger        = kStatModernBase,
 kStatModernCondition                = 21,
 kStatModernEventRedirector          = 22,
 kStatModernPlayerLinker             = 23,
-kStatModernMax                      = 64,
+kStatModernMax                      = 40,
 };
 
 // modern sprite types
