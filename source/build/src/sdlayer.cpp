@@ -1808,11 +1808,14 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
+        if (finishbeforeswap == 1 || vsync_renderlayer == 2)
+        {
+            glFinish();
+        }
+
 #ifdef _WIN32
         if (vsync_renderlayer == 2)
         {
-            glFinish();
-
             static uint64_t nextSwapTime = timerGetPerformanceCounter();
             uint64_t const  swapInterval = (timerGetPerformanceFrequency() / refreshfreq);
             uint64_t const  swapTime     = timerGetPerformanceCounter();
@@ -1829,6 +1832,11 @@ void videoShowFrame(int32_t w)
 #endif
 
         SDL_GL_SwapWindow(sdl_window);
+
+        if (finishbeforeswap == 0 && vsync_renderlayer != 2)
+        {
+            glFinish();
+        }
 
         return;
     }

@@ -20,6 +20,7 @@ extern "C"
 #endif // _WIN32
 
 int32_t g_borderless=2;
+int32_t finishbeforeswap=0;
 
 // input
 char    inputdevices = 0;
