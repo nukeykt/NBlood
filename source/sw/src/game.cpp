@@ -4997,6 +4997,9 @@ void GetHelpInput(PLAYERp pp)
 
 short MirrorDelay;
 
+double elapsedInputTicks;
+double scaleAdjustmentToInterval(double x) { return x * (120 / synctics) / (1000.0 / elapsedInputTicks); }
+
 void
 getinput(SW_PACKET *loc)
 {
