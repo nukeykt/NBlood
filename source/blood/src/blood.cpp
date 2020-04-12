@@ -990,7 +990,7 @@ void ProcessFrame(void)
     for (int i = connecthead; i >= 0; i = connectpoint2[i])
     {
         if (gFifoInput[gNetFifoTail & 255][i].syncFlags.byte)
-        gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
+            gPlayer[i].input.buttonFlags = gFifoInput[gNetFifoTail&255][i].buttonFlags;
         gPlayer[i].input.keyFlags.word |= gFifoInput[gNetFifoTail&255][i].keyFlags.word;
         gPlayer[i].input.useFlags.byte |= gFifoInput[gNetFifoTail&255][i].useFlags.byte;
         if (gFifoInput[gNetFifoTail&255][i].newWeapon)
