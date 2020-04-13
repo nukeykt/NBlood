@@ -29,6 +29,8 @@ extern char modechange;
 extern char nogl;
 
 extern int32_t vsync;
+extern int32_t r_finishbeforeswap;
+extern int32_t r_glfinish;
 extern int32_t r_borderless;
 extern int32_t r_displayindex;
 

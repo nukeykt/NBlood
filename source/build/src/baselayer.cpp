@@ -259,6 +259,8 @@ void makeasmwriteable(void)
 }
 
 int32_t vsync=0;
+int32_t r_finishbeforeswap=0;
+int32_t r_glfinish=0;
 int32_t g_logFlushWindow = 1;
 
 #ifdef USE_OPENGL
