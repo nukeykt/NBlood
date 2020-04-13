@@ -1808,7 +1808,7 @@ void videoShowFrame(int32_t w)
             glsurface_blitBuffer();
         }
 
-        if (finishbeforeswap == 1 || vsync_renderlayer == 2)
+        if ((glfinish == 1 && finishbeforeswap == 1) || vsync_renderlayer == 2)
         {
             glFinish();
         }
@@ -1833,7 +1833,7 @@ void videoShowFrame(int32_t w)
 
         SDL_GL_SwapWindow(sdl_window);
 
-        if (finishbeforeswap == 0 && vsync_renderlayer != 2)
+        if (glfinish == 1 && finishbeforeswap == 0 && vsync_renderlayer != 2)
         {
             glFinish();
         }
