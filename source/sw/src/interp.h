@@ -24,13 +24,19 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 */
 //-------------------------------------------------------------------------
 
+#ifndef INTERP_H
+
+#define INTERP_H
+
+#include "build.h"
+
 #define SHORT_MAXINTERPOLATIONS 256
 extern short short_numinterpolations;
 extern short short_oldipos[SHORT_MAXINTERPOLATIONS];
 extern short short_bakipos[SHORT_MAXINTERPOLATIONS];
 extern short *short_curipos[SHORT_MAXINTERPOLATIONS];
 
-#define MAXINTERPOLATIONS 1024
+#define MAXINTERPOLATIONS MAXSPRITES
 extern int numinterpolations;
 extern int oldipos[MAXINTERPOLATIONS];
 extern int bakipos[MAXINTERPOLATIONS];
@@ -41,3 +47,5 @@ void stopinterpolation(int *posptr);
 void updateinterpolations(void);
 void dointerpolations(int smoothratio);
 void restoreinterpolations(void);
+
+#endif
