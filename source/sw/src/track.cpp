@@ -1625,6 +1625,8 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
     pp->posx += BOUND_4PIX(nx);
     pp->posy += BOUND_4PIX(ny);
 
+    pp->oposx = pp->posx;
+    pp->oposy = pp->posy;
 
     if (TEST(sop->flags, SOBJ_DONT_ROTATE))
     {
@@ -1669,7 +1671,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
 
     // New angle is formed by taking last known angle and
     // adjusting by the delta angle
-    pp->q16ang = fix16_from_int(NORM_ANGLE(pp->RevolveAng + pp->RevolveDeltaAng));
+    pp->oq16ang = pp->q16ang = fix16_from_int(NORM_ANGLE(pp->RevolveAng + pp->RevolveDeltaAng));
 
     UpdatePlayerSprite(pp);
 }
@@ -1922,6 +1924,7 @@ PlayerPart:
                     pp->SpriteP->z = pp->loz;
                 }
             }
+            pp->oposz = pp->posz;
         }
         else
         {
