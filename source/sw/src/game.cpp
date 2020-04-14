@@ -171,6 +171,8 @@ SWBOOL NoDemoStartup = FALSE;
 SWBOOL FirstTimeIntoGame;
 extern uint8_t RedBookSong[40];
 
+SWBOOL PedanticMode;
+
 SWBOOL BorderAdjust = TRUE;
 SWBOOL LocationInfo = 0;
 void drawoverheadmap(int cposx, int cposy, int czoom, short cang);
@@ -1301,6 +1303,8 @@ void InitLevelGlobals(void)
     sumowasseen = FALSE;
     zillawasseen = FALSE;
     memset(BossSpriteNum,-1,sizeof(BossSpriteNum));
+
+    PedanticMode = (DemoPlaying || DemoRecording || DemoEdit || DemoMode);
 }
 
 void InitLevelGlobals2(void)
@@ -3069,7 +3073,7 @@ void MoveLoop(void)
     }
 
     // Get input again to update q16ang/q16horiz.
-    if (!PEDANTIC_MODE)
+    if (!PedanticMode)
         getinput(&loc, TRUE);
 
     if (!InputMode && !PauseKeySet)
@@ -5212,7 +5216,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
         if (BUTTON(gamefunc_Turn_Left))
         {
             turnheldtime += synctics;
-            if (PEDANTIC_MODE)
+            if (PedanticMode)
             {
                 if (turnheldtime >= TURBOTURNTIME)
                     q16angvel -= fix16_from_int(turnamount);
@@ -5225,7 +5229,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
         else if (BUTTON(gamefunc_Turn_Right))
         {
             turnheldtime += synctics;
-            if (PEDANTIC_MODE)
+            if (PedanticMode)
             {
                 if (turnheldtime >= TURBOTURNTIME)
                     q16angvel += fix16_from_int(turnamount);
@@ -5265,7 +5269,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     q16angvel = fix16_clamp(q16angvel, -fix16_from_int(MAXANGVEL), fix16_from_int(MAXANGVEL));
     q16aimvel = fix16_clamp(q16aimvel, -fix16_from_int(MAXHORIZVEL), fix16_from_int(MAXHORIZVEL));
 
-    if (PEDANTIC_MODE)
+    if (PedanticMode)
     {
         q16angvel = fix16_floor(q16angvel);
         q16aimvel = fix16_floor(q16aimvel);
