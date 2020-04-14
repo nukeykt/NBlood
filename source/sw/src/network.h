@@ -50,27 +50,16 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #define SYNC_TEST TRUE
 #define MAXSYNCBYTES 16
 
-#ifdef __GNUC__
-# define PACKED __attribute__ ((packed))
-#else
-# define PACKED
-# ifdef _MSC_VER
-#  pragma pack(1)
-# endif
-# ifdef __WATCOMC__
-#  pragma pack(push,1);
-# endif
-#endif
-
+#pragma pack(push,1)
 // Slave->Master: PlayerIndex = who to send the packet to (-1 = all)
 // Master->Slave: PlayerIndex = who sent the packet originally
-typedef struct PACKED
+typedef struct
 {
     uint8_t PacketType;  // first byte is always packet type
     uint8_t PlayerIndex;
 } PACKET_PROXY,*PACKET_PROXYp;
 
-typedef struct PACKED
+typedef struct
 {
     uint8_t PacketType;  // first byte is always packet type
     uint8_t FirstPlayerIndex;
@@ -87,7 +76,7 @@ typedef struct PACKED
     SWBOOL Nuke;
 } PACKET_NEW_GAME,*PACKET_NEW_GAMEp;
 
-typedef struct PACKED
+typedef struct
 {
     uint8_t PacketType;  // first byte is always packet type
     SWBOOL AutoRun;
@@ -95,31 +84,24 @@ typedef struct PACKED
     char PlayerName[32];
 } PACKET_OPTIONS,*PACKET_OPTIONSp;
 
-typedef struct PACKED
+typedef struct
 {
     uint8_t PacketType;  // first byte is always packet type
     char PlayerName[32];
 } PACKET_NAME_CHANGE,*PACKET_NAME_CHANGEp;
 
-typedef struct PACKED
+typedef struct
 {
     uint8_t PacketType;  // first byte is always packet type
     uint8_t RTSnum;
 } PACKET_RTS,*PACKET_RTSp;
 
-typedef struct PACKED
+typedef struct
 {
     uint8_t PacketType;  // first byte is always packet type
     int Version;
 } PACKET_VERSION,*PACKET_VERSIONp;
-
-#undef PACKED
-#ifdef _MSC_VER
-# pragma pack()
-#endif
-#ifdef __WATCOMC__
-# pragma pack(pop);
-#endif
+#pragma pack(pop)
 
 extern uint8_t syncstat[MAXSYNCBYTES];
 extern SWBOOL PredictionOn;
