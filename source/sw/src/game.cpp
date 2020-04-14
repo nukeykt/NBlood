@@ -2226,7 +2226,6 @@ MenuLevel(void)
 {
     SWBOOL MNU_StartNetGame(void);
     extern ClockTicks totalclocklock;
-    extern int wfe_Clock;
     extern SWBOOL (*wfe_ExitCallback)(void);
     short w,h;
 
@@ -2250,7 +2249,6 @@ MenuLevel(void)
 
         videoNextPage();
 
-        wfe_Clock = (int)totalclock;
         wfe_ExitCallback = &wfe_Esc;
         waitforeverybody();
         wfe_ExitCallback = 0;
@@ -2307,7 +2305,6 @@ MenuLevel(void)
     videoNextPage();
     //FadeIn(0, 3);
 
-    wfe_Clock = (int)totalclock;
     wfe_ExitCallback = &wfe_Esc;
     waitforeverybody();
     wfe_ExitCallback = 0;

@@ -610,7 +610,6 @@ Connect(void)
     //InitTimingVars();                   // resettiming();
 }
 
-int wfe_Clock;
 SWBOOL (*wfe_ExitCallback)(void);
 
 void
