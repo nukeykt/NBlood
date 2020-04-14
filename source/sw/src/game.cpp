@@ -2161,11 +2161,73 @@ IntroAnimLevel(void)
     playanm(0);
 }
 
+SWBOOL
+wfe_Esc(void)
+{
+    int16_t w,h;
+    static SWBOOL wfe_Show = 0;
+
+    // taken from top of faketimerhandler
+    // limits checks to max of 40 times a second
+    if (totalclock >= ototalclock + synctics)
+    {
+        ototalclock += synctics;
+    }
+
+    DrawMenuLevelScreen();
+
+    if (KEY_PRESSED(KEYSC_ESC))
+    {
+        KEY_PRESSED(KEYSC_ESC) = 0;
+        wfe_Show = TRUE;
+    }
+
+    if (wfe_Show)
+    {
+        sprintf(ds,"Lo Wang is afraid!  Exit game Y/N?");
+        MNU_MeasureString(ds, &w, &h);
+        MNU_DrawString(TEXT_TEST_COL(w), 170, ds, 1, 16);
+
+        videoNextPage();
+
+        if (KEY_PRESSED(KEYSC_Y))
+        {
+            KEY_PRESSED(KEYSC_Y) = 0;
+            wfe_Show = FALSE;
+            return TRUE;
+        }
+        else if (KEY_PRESSED(KEYSC_N))
+        {
+            KEY_PRESSED(KEYSC_N) = 0;
+            wfe_Show = FALSE;
+            return FALSE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+
+    sprintf(ds,"Lo Wang is waiting for other players...");
+    MNU_MeasureString(ds, &w, &h);
+    MNU_DrawString(TEXT_TEST_COL(w), 170, ds, 1, 16);
+
+    sprintf(ds,"They are afraid!");
+    MNU_MeasureString(ds, &w, &h);
+    MNU_DrawString(TEXT_TEST_COL(w), 180, ds, 1, 16);
+
+    videoNextPage();
+
+    return FALSE;
+}
+
 void
 MenuLevel(void)
 {
     SWBOOL MNU_StartNetGame(void);
     extern ClockTicks totalclocklock;
+    extern int wfe_Clock;
+    extern SWBOOL (*wfe_ExitCallback)(void);
     short w,h;
 
     DSPRINTF(ds,"MenuLevel...");
@@ -2188,7 +2250,10 @@ MenuLevel(void)
 
         videoNextPage();
 
+        wfe_Clock = (int)totalclock;
+        wfe_ExitCallback = &wfe_Esc;
         waitforeverybody();
+        wfe_ExitCallback = 0;
         FirstTimeIntoGame = TRUE;
         MNU_StartNetGame();
         FirstTimeIntoGame = FALSE;
@@ -2242,7 +2307,10 @@ MenuLevel(void)
     videoNextPage();
     //FadeIn(0, 3);
 
+    wfe_Clock = (int)totalclock;
+    wfe_ExitCallback = &wfe_Esc;
     waitforeverybody();
+    wfe_ExitCallback = 0;
 
     // don't allow BorderAdjusting in these menus
     BorderAdjust = FALSE;
