@@ -42,6 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "palette.h"
 #include "al_midi.h"
 #include "playmve.h"
+#include "reality.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -7501,6 +7502,11 @@ static void G_Startup(void)
     timerSetCallback(gameTimerHandler);
 
     initcrc32table();
+
+#ifdef USE_OPENGL
+    if (REALITY)
+        RT_Init();
+#endif
 
     G_CompileScripts();
 

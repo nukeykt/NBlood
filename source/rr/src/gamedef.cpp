@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "osd.h"
 #include "crc32.h"
 
+#include "reality.h"
+
 #define LINE_NUMBER (g_lineNumber << 12)
 
 int32_t g_scriptVersion = 14; // 13 = 1.3D-style CON files, 14 = 1.4/1.5 style CON files
@@ -2826,6 +2828,15 @@ void C_Compile(const char *fileName)
 
     if (kFile == -1) // JBF: was 0
     {
+#ifdef USE_OPENGL
+        if (REALITY)
+        {
+            if (RT_PrepareScript())
+                G_GameExit("Script error");
+            return;
+        }
+#endif
+
         if (g_loadFromGroupOnly == 1 || numgroupfiles == 0)
         {
             char const *gf = G_GrpFile();
