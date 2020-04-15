@@ -5345,7 +5345,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     {
         void DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel);
         void DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel);
-        if (!TEST(pp->Flags, PF_CLIMBING))
+        if (!TEST(pp->Flags, PF_CLIMBING) && !pp->sop_control)
             DoPlayerTurn(pp, &pp->camq16ang, q16angvel);
         DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
     }
