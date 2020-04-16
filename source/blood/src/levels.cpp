@@ -82,6 +82,16 @@ void levelOverrideINI(const char *pzIni)
     strcpy(BloodIniFile, pzIni);
 }
 
+void showWaitingScreenForCoop(void)
+{
+    if (gGameOptions.nGameType == 2)
+    {
+        viewLoadingScreen(2518, "Network Game", "Playing Cinematic", "Waiting for other player(s) to skip...");
+        videoNextPage();
+        netWaitForEveryone(0);
+    }
+}
+
 void levelPlayIntroScene(int nEpisode)
 {
     gGameOptions.uGameFlags &= ~4;
@@ -92,7 +102,7 @@ void levelPlayIntroScene(int nEpisode)
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
     credPlaySmk(pEpisode->cutsceneASmkPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
-    netWaitForEveryone(0);
+    showWaitingScreenForCoop();
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
@@ -109,7 +119,7 @@ void levelPlayEndScene(int nEpisode)
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
     credPlaySmk(pEpisode->cutsceneBSmkPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
-    netWaitForEveryone(0);
+    showWaitingScreenForCoop();
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
