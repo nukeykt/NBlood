@@ -92,6 +92,7 @@ void levelPlayIntroScene(int nEpisode)
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
     credPlaySmk(pEpisode->cutsceneASmkPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
+    netWaitForEveryone(0);
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();
@@ -108,6 +109,7 @@ void levelPlayEndScene(int nEpisode)
     seqKillAll();
     EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
     credPlaySmk(pEpisode->cutsceneBSmkPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
+    netWaitForEveryone(0);
     scrSetDac();
     viewResizeView(gViewSize);
     credReset();

@@ -588,7 +588,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
-    if (gGameOptions.nGameType == 0)
+    if (gGameOptions.nGameType == 0 || gGameOptions.nGameType == 2)
     {
         if (!(gGameOptions.uGameFlags&1))
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
