@@ -1549,6 +1549,7 @@ DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel)
 
     if (!PedanticMode && (pq16ang == &pp->q16ang))
     {
+        SET(pp->Flags2, PF2_INPUT_CAN_TURN);
         pp->q16ang = pp->oq16ang = pp->input.q16ang;
         sprite[pp->PlayerSprite].ang = fix16_to_int(*pq16ang);
         if (!Prediction)
@@ -1921,6 +1922,7 @@ DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel)
 
     if (!PedanticMode && (pq16horiz == &pp->q16horiz))
     {
+        SET(pp->Flags2, PF2_INPUT_CAN_AIM);
         pp->q16horiz = pp->oq16horiz = pp->input.q16horiz;
         return;
     }
@@ -6851,6 +6853,9 @@ void DoPlayerDeathFollowKiller(PLAYERp pp)
     //DoPlayerDeathTilt(pp, pp->tilt_dest, 4 * synctics);
 
     // allow turning
+    if (TEST(pp->Flags, PF_DEAD_HEAD|PF_HEAD_CONTROL))
+        SET(pp->Flags2, PF2_INPUT_CAN_TURN);
+
     if ((TEST(pp->Flags, PF_DEAD_HEAD) && pp->input.q16angvel != 0) || TEST(pp->Flags, PF_HEAD_CONTROL))
     {
         // Allow them to turn fast
@@ -8093,6 +8098,8 @@ domovethings(void)
         DoPlayerSectorUpdatePreMove(pp);
         ChopsCheck(pp);
 
+        // Reset flags used while tying input to framerate
+        RESET(pp->Flags2, PF2_INPUT_CAN_TURN|PF2_INPUT_CAN_AIM);
 //        extern SWBOOL ScrollMode2D;
         //if (!ScrollMode2D)
         (*pp->DoPlayerAction)(pp);
