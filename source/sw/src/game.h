@@ -1078,7 +1078,6 @@ struct PLAYERstruct
     short slide_ang;
     int slide_dec;
     int drive_angvel;
-    int drive_oangvel;
 
 
 
