@@ -1186,7 +1186,7 @@ void PrintHelp(void)
         "-g [file.grp]\tLoad additional game data\n"
         "-h [file.def]\tLoad an alternate definitions file\n"
         "-ini [file.ini]\tSpecify an INI file name (default is blood.ini)\n"
-        "-j [dir]\t\tAdd a directory to " APPNAME "'s search list\n"
+        "-j=\"[dir]\"\t\tAdd a directory to " APPNAME "'s search list\n"
         "-map [file.map]\tLoad an external map file\n"
         "-mh [file.def]\tInclude an additional definitions module\n"
         "-noautoload\tDisable loading from autoload directory\n"
