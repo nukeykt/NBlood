@@ -166,7 +166,6 @@ short HelpPage = 0;
 short HelpPagePic[] = { 5115, 5116, 5117 };
 SWBOOL InputMode = FALSE;
 SWBOOL MessageInput = FALSE;
-extern SWBOOL GamePaused;
 short screenpeek = 0;
 SWBOOL NoDemoStartup = FALSE;
 SWBOOL FirstTimeIntoGame;
@@ -4743,7 +4742,7 @@ FunctionKeys(PLAYERp pp)
 
 void PauseKey(PLAYERp pp)
 {
-    extern SWBOOL GamePaused,CheatInputMode;
+    extern SWBOOL CheatInputMode;
 
     if (KEY_PRESSED(sc_Pause) && !CommEnabled && !InputMode && !UsingMenus && !CheatInputMode && !ConPanel)
     {
@@ -4995,8 +4994,6 @@ void GetConInput(void)
 
 void GetHelpInput(PLAYERp pp)
 {
-    extern SWBOOL GamePaused;
-
     if (KEY_PRESSED(KEYSC_ALT) || KEY_PRESSED(KEYSC_RALT))
         return;
 

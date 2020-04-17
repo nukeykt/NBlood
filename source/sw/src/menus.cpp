@@ -2108,7 +2108,6 @@ MNU_QuitCustom(UserCall call, MenuItem_p item)
 SWBOOL
 MNU_QuickLoadCustom(UserCall call, MenuItem_p item)
 {
-    extern SWBOOL ReloadPrompt;
     int bak;
     PLAYERp pp = Player + myconnectindex;
     extern short GlobInfoStringTime;

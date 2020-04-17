@@ -6504,7 +6504,6 @@ DoPlayerDeathMessage(PLAYERp pp, PLAYERp killer)
 void
 DoPlayerBeginDie(PLAYERp pp)
 {
-    extern SWBOOL ReloadPrompt;
     void KillAllPanelInv(PLAYERp pp);
     void DoPlayerDeathDrown(PLAYERp pp);
     void pWeaponForceRest(PLAYERp pp);
@@ -7868,7 +7867,6 @@ void PauseMultiPlay(void)
     static SWBOOL SavePrediction;
     PLAYERp pp;
     short pnum,p;
-    extern SWBOOL GamePaused;
 
     // check for pause of multi-play game
     TRAVERSE_CONNECT(pnum)
@@ -7924,11 +7922,9 @@ domovethings(void)
     extern int PlayClock;
     short i, pnum;
     int WeaponOperate(PLAYERp pp);
-    extern SWBOOL GamePaused;
     PLAYERp pp;
     SWBOOL MyCommPlayerQuit(void);
     extern unsigned int MoveThingsCount;
-    extern SWBOOL ReloadPrompt;
     extern int FinishTimer;
 
 
