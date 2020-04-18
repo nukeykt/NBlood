@@ -1472,13 +1472,6 @@ getpackets(void)
 
             pp = Player + otherconnectindex;
 
-            // retransmit if master and the message is not addressed to us
-            if (!NetBroadcastMode && myconnectindex == connecthead && packbuf[1] != myconnectindex)
-            {
-                netsendpacket(packbuf[1], packbuf, packbufleng);
-                break;
-            }
-
             PlaySound(DIGI_PMESSAGE,&tp->posx,&tp->posy,&tp->posz,v3df_dontpan);
 
             memcpy(ds,&packbuf[1],packbufleng-1);
