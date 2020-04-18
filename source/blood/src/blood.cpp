@@ -588,7 +588,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
     if (gDemo.at0 && gGameStarted)
         gDemo.Close();
     netWaitForEveryone(0);
-    if (gGameOptions.nGameType == 0 || gGameOptions.nGameType == 2)
+    if (gGameOptions.nGameType == 0)
     {
         if (!(gGameOptions.uGameFlags&1))
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
@@ -618,6 +618,12 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             levelAddUserMap(gPacketStartGame.userMapName);
         else
             levelSetupOptions(gGameOptions.nEpisode, gGameOptions.nLevel);
+
+        if (gEpisodeInfo[gGameOptions.nEpisode].cutALevel == gGameOptions.nLevel
+            && gEpisodeInfo[gGameOptions.nEpisode].cutsceneASmkPath)
+            gGameOptions.uGameFlags |= 4;
+        if (gGameOptions.nGameType == 1 && (gGameOptions.uGameFlags&4) && !gPacketStartGame.userMap)
+            levelPlayIntroScene(gGameOptions.nEpisode);
 
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
@@ -1098,12 +1104,16 @@ void ProcessFrame(void)
         seqKillAll();
         if (gGameOptions.uGameFlags&2)
         {
-            if (gGameOptions.nGameType == 0)
+            if (gGameOptions.nGameType <= 1)
             {
                 if (gGameOptions.uGameFlags&8)
                     levelPlayEndScene(gGameOptions.nEpisode);
-                gGameMenuMgr.Deactivate();
-                gGameMenuMgr.Push(&menuCredits,-1);
+
+                if (gGameOptions.nGameType == 0)
+                {
+                    gGameMenuMgr.Deactivate();
+                    gGameMenuMgr.Push(&menuCredits,-1);
+                }
             }
             gGameOptions.uGameFlags &= ~3;
             gRestartGame = 1;

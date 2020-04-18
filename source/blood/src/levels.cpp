@@ -84,7 +84,7 @@ void levelOverrideINI(const char *pzIni)
 
 void showWaitingScreenForCoop(void)
 {
-    if (gGameOptions.nGameType == 2)
+    if (gGameOptions.nGameType == 1)
     {
         viewLoadingScreen(2518, "Network Game", "Playing Cinematic", "Waiting for other player(s) to skip...");
         videoNextPage();
