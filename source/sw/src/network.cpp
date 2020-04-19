@@ -71,6 +71,8 @@ gNET gNet;
 extern short PlayerQuitMenuLevel;
 extern SWBOOL QuitFlag;
 
+//#define NET_DEBUG_MSGS
+
 #define TIMERUPDATESIZ 32
 
 //SW_PACKET fsync;
@@ -143,10 +145,12 @@ void netsendpacket(int ind, uint8_t* buf, int len)
             len = sizeof(packbuf);
         }
 
+#ifdef NET_DEBUG_MSGS
         buildprintf("netsendpacket() sends proxy to %d\nPlayerIndex=%d Contents:",connecthead,ind);
         for (i=0; i<len; i++)
             buildprintf(" %02x", buf[i]);
         buildputs("\n");
+#endif
 
         prx->PacketType = PACKET_TYPE_PROXY;
         prx->PlayerIndex = (uint8_t)ind;
@@ -159,10 +163,12 @@ void netsendpacket(int ind, uint8_t* buf, int len)
 
     sendpacket(ind, buf, len);
 
+#ifdef NET_DEBUG_MSGS
     buildprintf("netsendpacket() sends normal to %d\nContents:",ind);
     for (i=0; i<len; i++)
         buildprintf(" %02x", buf[i]);
     buildputs("\n");
+#endif
 }
 
 void netbroadcastpacket(uint8_t* buf, int len)
@@ -180,10 +186,12 @@ void netbroadcastpacket(uint8_t* buf, int len)
             len = sizeof(packbuf);
         }
 
+#ifdef NET_DEBUG_MSGS
         buildprintf("netbroadcastpacket() sends proxy to %d\nPlayerIndex=255 Contents:",connecthead);
         for (i=0; i<len; i++)
             buildprintf(" %02x", buf[i]);
         buildputs("\n");
+#endif
 
         prx->PacketType = PACKET_TYPE_PROXY;
         prx->PlayerIndex = (uint8_t)(-1);
@@ -198,12 +206,16 @@ void netbroadcastpacket(uint8_t* buf, int len)
     {
         if (i == myconnectindex) continue;
         sendpacket(i, buf, len);
+#ifdef NET_DEBUG_MSGS
         buildprintf("netsendpacket() sends normal to %d\n",i);
+#endif
     }
+#ifdef NET_DEBUG_MSGS
     buildputs("Contents:");
     for (i=0; i<len; i++)
         buildprintf(" %02x", buf[i]);
     buildputs("\n");
+#endif
 }
 
 int netgetpacket(int *ind, uint8_t* buf)
@@ -215,6 +227,7 @@ int netgetpacket(int *ind, uint8_t* buf)
     len = getpacket(ind, buf);
     if ((unsigned)len < sizeof(PACKET_PROXY) || buf[0] != PACKET_TYPE_PROXY)
     {
+#ifdef NET_DEBUG_MSGS
         if (len > 0)
         {
             buildprintf("netgetpacket() gets normal from %d\nContents:",*ind);
@@ -222,15 +235,18 @@ int netgetpacket(int *ind, uint8_t* buf)
                 buildprintf(" %02x", buf[i]);
             buildputs("\n");
         }
+#endif
         return len;
     }
 
     prx = (PACKET_PROXYp)buf;
 
+#ifdef NET_DEBUG_MSGS
     buildprintf("netgetpacket() got proxy from %d\nPlayerIndex=%d Contents:",*ind,prx->PlayerIndex);
     for (i=0; i<len-(int)sizeof(PACKET_PROXY); i++)
         buildprintf(" %02x", *(((char *)&prx[1])+i));
     buildputs("\n");
+#endif
 
     if (myconnectindex == connecthead)
     {
@@ -247,7 +263,9 @@ int netgetpacket(int *ind, uint8_t* buf)
             for (i = connecthead; i >= 0; i = connectpoint2[i])
             {
                 if (i == myconnectindex || i == *ind) continue;
+#ifdef NET_DEBUG_MSGS
                 buildprintf("netgetpacket(): distributing to %d\n", i);
+#endif
                 sendpacket(i, buf, len);
             }
 
@@ -273,7 +291,9 @@ int netgetpacket(int *ind, uint8_t* buf)
                 return len;
             }
 
+#ifdef NET_DEBUG_MSGS
             buildprintf("netgetpacket(): forwarding to %d\n", i);
+#endif
             sendpacket(i, buf, len);
             return 0;   // nothing for us to do
         }
