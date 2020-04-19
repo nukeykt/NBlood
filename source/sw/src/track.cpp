@@ -33,6 +33,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "ai.h"
 #include "player.h"
 #include "game.h"
+#include "interp.h"
 #include "network.h"
 #include "sprite.h"
 #include "track.h"
@@ -781,7 +782,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
         if (pp->posx > xlow && pp->posx < xhigh && pp->posy > ylow && pp->posy < yhigh)
         {
-            pp->RevolveAng = pp->pang;
+            pp->RevolveAng = fix16_to_int(pp->q16ang);
             pp->RevolveX = pp->posx;
             pp->RevolveY = pp->posy;
             pp->RevolveDeltaAng = 0;
@@ -841,6 +842,7 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
     //
     // Make sure every sector object has an outer loop tagged - important
+    // Further setup interpolation
     //
 
     FoundOutsideLoop = FALSE;
@@ -853,6 +855,21 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
         // move all walls in sectors
         for (k = startwall; k <= endwall; k++)
         {
+            uint16_t const nextwall = wall[k].nextwall;
+
+            // setup interpolation
+            if (InterpolateSectObj)
+            {
+                setinterpolation(&wall[k].x);
+                setinterpolation(&wall[k].y);
+
+                if (nextwall < MAXWALLS)
+                {
+                    setinterpolation(&wall[wall[nextwall].point2].x);
+                    setinterpolation(&wall[wall[nextwall].point2].y);
+                }
+            }
+
             // for morph point - tornado style
             if (wall[k].lotag == TAG_WALL_ALIGN_SLOPE_TO_POINT)
                 sop->morph_wall_point = k;
@@ -862,9 +879,15 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
 
             // each wall has this set - for collision detection
             SET(wall[k].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
-            uint16_t const nextwall = wall[k].nextwall;
             if (nextwall < MAXWALLS)
                 SET(wall[nextwall].extra, WALLFX_SECTOR_OBJECT|WALLFX_DONT_STICK);
+        }
+
+        // interpolate floor and ceiling
+        if (InterpolateSectObj && (k != startwall))
+        {
+            setinterpolation(&(*sectp)->ceilingz);
+            setinterpolation(&(*sectp)->floorz);
         }
     }
 
@@ -967,6 +990,8 @@ SectorObjectSetupBounds(SECTOR_OBJECTp sop)
                 ASSERT(sn < SIZ(sop->sp_num) - 1);
 
                 sop->sp_num[sn] = sp_num;
+                if (InterpolateSectObj)
+                    setspriteinterpolation(sp);
 
 
                 if (!TEST(sop->flags, SOBJ_SPRITE_OBJ))
@@ -1614,7 +1639,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
     {
         SET(pp->Flags, PF_PLAYER_RIDING);
 
-        pp->RevolveAng = pp->pang;
+        pp->RevolveAng = fix16_to_int(pp->q16ang);
         pp->RevolveX = pp->posx;
         pp->RevolveY = pp->posy;
 
@@ -1625,6 +1650,11 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
     pp->posx += BOUND_4PIX(nx);
     pp->posy += BOUND_4PIX(ny);
 
+    if (!InterpolateSectObj)
+    {
+        pp->oposx = pp->posx;
+        pp->oposy = pp->posy;
+    }
 
     if (TEST(sop->flags, SOBJ_DONT_ROTATE))
     {
@@ -1639,7 +1669,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         // save the current information so when Player stops
         // moving then you
         // know where he was last
-        pp->RevolveAng = pp->pang;
+        pp->RevolveAng = fix16_to_int(pp->q16ang);
         pp->RevolveX = pp->posx;
         pp->RevolveY = pp->posy;
 
@@ -1655,7 +1685,7 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
         pp->RevolveY += BOUND_4PIX(ny);
 
         // Last known angle is now adjusted by the delta angle
-        pp->RevolveAng = NORM_ANGLE(pp->pang - pp->RevolveDeltaAng);
+        pp->RevolveAng = NORM_ANGLE(fix16_to_int(pp->q16ang) - pp->RevolveDeltaAng);
     }
 
     // increment Players delta angle
@@ -1669,7 +1699,9 @@ MovePlayer(PLAYERp pp, SECTOR_OBJECTp sop, int nx, int ny)
 
     // New angle is formed by taking last known angle and
     // adjusting by the delta angle
-    pp->pang = NORM_ANGLE(pp->RevolveAng + pp->RevolveDeltaAng);
+    pp->q16ang = fix16_from_int(NORM_ANGLE(pp->RevolveAng + pp->RevolveDeltaAng));
+    if (!InterpolateSectObj)
+        pp->oq16ang = pp->q16ang;
 
     UpdatePlayerSprite(pp);
 }
@@ -1922,6 +1954,8 @@ PlayerPart:
                     pp->SpriteP->z = pp->loz;
                 }
             }
+            if (!InterpolateSectObj)
+                pp->oposz = pp->posz;
         }
         else
         {
@@ -2037,6 +2071,8 @@ void KillSectorObjectSprites(SECTOR_OBJECTp sop)
         if (sp->picnum == ST1 && sp->hitag == SPAWN_SPOT)
             continue;
 
+        if (InterpolateSectObj)
+            stopspriteinterpolation(sp);
         KillSprite(sop->sp_num[i]);
     }
 

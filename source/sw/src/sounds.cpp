@@ -694,7 +694,7 @@ SoundAngle(int x, int y)
 
     angle = getangle(x - Player[screenpeek].posx, y - Player[screenpeek].posy);
 
-    delta_angle = GetDeltaAngle(angle, Player[screenpeek].pang);
+    delta_angle = GetDeltaAngle(angle, fix16_to_int(Player[screenpeek].q16ang));
 
     // convert a delta_angle to a real angle if negative
     if (delta_angle < 0)
