@@ -7,8 +7,8 @@
 #include "vfs.h"
 #include "crc32.h"
 #include "reality.h"
-#include "..\duke3d.h"
-#include "..\gamedef.h"
+#include "../duke3d.h"
+#include "../gamedef.h"
 
 
 #define RT_TILE8BIT 0x8000

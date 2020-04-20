@@ -25,7 +25,7 @@
 
 #include "common.h"
 #include "common_game.h"
-#include "n64\reality.h"
+#include "n64/reality.h"
 
 struct grpfile_t const *g_selectedGrp;
 
