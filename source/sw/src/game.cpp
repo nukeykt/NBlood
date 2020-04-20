@@ -51,6 +51,7 @@ Things required to make savegames work:
 #include "names2.h"
 #include "panel.h"
 #include "game.h"
+#include "interp.h"
 #include "tags.h"
 #include "sector.h"
 #include "sprite.h"
@@ -170,6 +171,9 @@ short screenpeek = 0;
 SWBOOL NoDemoStartup = FALSE;
 SWBOOL FirstTimeIntoGame;
 extern uint8_t RedBookSong[40];
+
+SWBOOL PedanticMode;
+SWBOOL InterpolateSectObj;
 
 SWBOOL BorderAdjust = TRUE;
 SWBOOL LocationInfo = 0;
@@ -689,7 +693,8 @@ TerminateGame(void)
 void
 LoadLevel(const char *filename)
 {
-    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &Player[0].pang, &Player[0].cursectnum) == -1)
+    int16_t ang;
+    if (engineLoadBoard(filename, SW_SHAREWARE ? 1 : 0, (vec3_t *)&Player[0], &ang, &Player[0].cursectnum) == -1)
     {
         TerminateGame();
 #if 1 /* defined RENDERTYPEWIN */
@@ -699,6 +704,7 @@ LoadLevel(const char *filename)
 #endif
         exit(0);
     }
+    Player[0].q16ang = fix16_from_int(ang);
 }
 
 void
@@ -1292,6 +1298,7 @@ void InitLevelGlobals(void)
     AnimCnt = 0;
     left_foot = FALSE;
     screenpeek = myconnectindex;
+    numinterpolations = short_numinterpolations = 0;
 
     gNet.TimeLimitClock = gNet.TimeLimit;
 
@@ -1299,6 +1306,9 @@ void InitLevelGlobals(void)
     sumowasseen = FALSE;
     zillawasseen = FALSE;
     memset(BossSpriteNum,-1,sizeof(BossSpriteNum));
+
+    PedanticMode = (DemoPlaying || DemoRecording || DemoEdit || DemoMode);
+    InterpolateSectObj = !CommEnabled && !PedanticMode;
 }
 
 void InitLevelGlobals2(void)
@@ -1684,9 +1694,7 @@ NewLevel(void)
         MONO_PRINT(ds);
         RunLevel();
 
-        // On map change, or after master player quits
-        if (!QuitFlag ||
-            (!NetBroadcastMode && TEST_SYNC_KEY(Player + connecthead, SK_QUIT_GAME)))
+        if (!QuitFlag)
         {
             // for good measure do this
             ready2send = 0;
@@ -2153,11 +2161,72 @@ IntroAnimLevel(void)
     playanm(0);
 }
 
+SWBOOL
+wfe_Esc(void)
+{
+    int16_t w,h;
+    static SWBOOL wfe_Show = 0;
+
+    // taken from top of faketimerhandler
+    // limits checks to max of 40 times a second
+    if (totalclock >= ototalclock + synctics)
+    {
+        ototalclock += synctics;
+    }
+
+    DrawMenuLevelScreen();
+
+    if (KEY_PRESSED(KEYSC_ESC))
+    {
+        KEY_PRESSED(KEYSC_ESC) = 0;
+        wfe_Show = TRUE;
+    }
+
+    if (wfe_Show)
+    {
+        sprintf(ds,"Lo Wang is afraid!  Exit game Y/N?");
+        MNU_MeasureString(ds, &w, &h);
+        MNU_DrawString(TEXT_TEST_COL(w), 170, ds, 1, 16);
+
+        videoNextPage();
+
+        if (KEY_PRESSED(KEYSC_Y))
+        {
+            KEY_PRESSED(KEYSC_Y) = 0;
+            wfe_Show = FALSE;
+            return TRUE;
+        }
+        else if (KEY_PRESSED(KEYSC_N))
+        {
+            KEY_PRESSED(KEYSC_N) = 0;
+            wfe_Show = FALSE;
+            return FALSE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+
+    sprintf(ds,"Lo Wang is waiting for other players...");
+    MNU_MeasureString(ds, &w, &h);
+    MNU_DrawString(TEXT_TEST_COL(w), 170, ds, 1, 16);
+
+    sprintf(ds,"They are afraid!");
+    MNU_MeasureString(ds, &w, &h);
+    MNU_DrawString(TEXT_TEST_COL(w), 180, ds, 1, 16);
+
+    videoNextPage();
+
+    return FALSE;
+}
+
 void
 MenuLevel(void)
 {
     SWBOOL MNU_StartNetGame(void);
     extern ClockTicks totalclocklock;
+    extern SWBOOL (*wfe_ExitCallback)(void);
     short w,h;
 
     DSPRINTF(ds,"MenuLevel...");
@@ -2180,7 +2249,9 @@ MenuLevel(void)
 
         videoNextPage();
 
+        wfe_ExitCallback = &wfe_Esc;
         waitforeverybody();
+        wfe_ExitCallback = 0;
         FirstTimeIntoGame = TRUE;
         MNU_StartNetGame();
         FirstTimeIntoGame = FALSE;
@@ -2234,7 +2305,9 @@ MenuLevel(void)
     videoNextPage();
     //FadeIn(0, 3);
 
+    wfe_ExitCallback = &wfe_Esc;
     waitforeverybody();
+    wfe_ExitCallback = 0;
 
     // don't allow BorderAdjusting in these menus
     BorderAdjust = FALSE;
@@ -3023,6 +3096,8 @@ dsprintf_null(char *str, const char *format, ...)
     va_list arglist;
 }
 
+void getinput(SW_PACKET *, SWBOOL);
+
 void MoveLoop(void)
 {
     int pnum;
@@ -3063,6 +3138,10 @@ void MoveLoop(void)
         //    demosync_record();
 #endif
     }
+
+    // Get input again to update q16ang/q16horiz.
+    if (!PedanticMode)
+        getinput(&loc, TRUE);
 
     if (!InputMode && !PauseKeySet)
         MNU_CheckForMenus();
@@ -4068,7 +4147,7 @@ ManualPlayerInsert(PLAYERp pp)
         npp->posx = pp->posx;
         npp->posy = pp->posy;
         npp->posz = pp->posz;
-        npp->pang = pp->pang;
+        npp->q16ang = pp->q16ang;
         npp->cursectnum = pp->cursectnum;
 
         myconnectindex = numplayers;
@@ -4099,7 +4178,7 @@ BotPlayerInsert(PLAYERp pp)
         npp->posx = pp->posx;
         npp->posy = pp->posy;
         npp->posz = pp->posz-Z(100);
-        npp->pang = pp->pang;
+        npp->q16ang = pp->q16ang;
         npp->cursectnum = pp->cursectnum;
 
         //myconnectindex = numplayers;
@@ -4995,8 +5074,11 @@ void GetHelpInput(PLAYERp pp)
 
 short MirrorDelay;
 
+double elapsedInputTicks;
+double scaleAdjustmentToInterval(double x) { return x * (120 / synctics) / (1000.0 / elapsedInputTicks); }
+
 void
-getinput(SW_PACKET *loc)
+getinput(SW_PACKET *loc, SWBOOL tied)
 {
     int i;
     PLAYERp pp = Player + myconnectindex;
@@ -5011,7 +5093,7 @@ getinput(SW_PACKET *loc)
 #define MAXVEL       ((NORMALKEYMOVE*2)+10)
 #define MAXSVEL      ((NORMALKEYMOVE*2)+10)
 #define MAXANGVEL    100
-#define MAXAIMVEL    128
+#define MAXHORIZVEL  128
 #define SET_LOC_KEY(loc, sync_num, key_test) SET(loc, ((!!(key_test)) << (sync_num)))
 
     static int32_t turnheldtime;
@@ -5025,14 +5107,15 @@ getinput(SW_PACKET *loc)
         newpp = ppp;
     }
 
-    // reset all syncbits
-    loc->bits = 0;
+    static double lastInputTicks;
+
+    auto const currentHiTicks = timerGetHiTicks();
+    elapsedInputTicks = currentHiTicks - lastInputTicks;
+
+    lastInputTicks = currentHiTicks;
 
     // MAKE SURE THIS WILL GET SET
     SET_LOC_KEY(loc->bits, SK_QUIT_GAME, MultiPlayQuitFlag);
-    // Slave won't receive the quit bit back from the master, so handle it separately
-    if (MultiPlayQuitFlag && !NetBroadcastMode && (myconnectindex != connecthead))
-        QuitFlag = TRUE;
 
     if (gs.MouseAimingType == 1) // while held
     {
@@ -5123,7 +5206,7 @@ getinput(SW_PACKET *loc)
     // If in 2D follow mode, scroll around using glob vars
     // Tried calling this in domovethings, but key response it too poor, skips key presses
     // Note: ScrollMode2D = Follow mode, so this get called only during follow mode
-    if (ScrollMode2D && pp == Player + myconnectindex && !Prediction)
+    if (!tied && ScrollMode2D && pp == Player + myconnectindex && !Prediction)
         MoveScrollMode2D(Player + myconnectindex);
 
     // !JIM! Added UsingMenus so that you don't move at all while using menus
@@ -5156,10 +5239,14 @@ getinput(SW_PACKET *loc)
         keymove = NORMALKEYMOVE;
     }
 
+    if (tied)
+        keymove = 0;
+
     info.dz = (info.dz * move_scale)>>8;
     info.dyaw = (info.dyaw * turn_scale)>>8;
 
-    int32_t svel = 0, vel = 0, angvel = 0, aimvel = 0;
+    int32_t svel = 0, vel = 0;
+    fix16_t q16aimvel = 0, q16angvel = 0;
 
     if (BUTTON(gamefunc_Strafe) && !pp->sop)
     {
@@ -5168,19 +5255,19 @@ getinput(SW_PACKET *loc)
     }
     else
     {
-        angvel = info.mousex / 32;
-        angvel += info.dyaw * (turnamount << 1) / analogExtent;
+        q16angvel = fix16_div(fix16_from_int(info.mousex), fix16_from_int(32));
+        q16angvel += fix16_from_int(info.dyaw) / analogExtent * (turnamount << 1);
     }
 
     if (aimMode)
-        aimvel = -info.mousey / 64;
+        q16aimvel = -fix16_div(fix16_from_int(info.mousey), fix16_from_int(64));
     else
         vel = -(info.mousey >> 6);
 
     if (gs.MouseInvert)
-        aimvel = -aimvel;
+        q16aimvel = -q16aimvel;
 
-    aimvel -= info.dpitch * turnamount / analogExtent;
+    q16aimvel -= fix16_from_int(info.dpitch) * turnamount / analogExtent;
     svel -= info.dx * keymove / analogExtent;
     vel -= info.dz * keymove / analogExtent;
 
@@ -5196,18 +5283,28 @@ getinput(SW_PACKET *loc)
         if (BUTTON(gamefunc_Turn_Left))
         {
             turnheldtime += synctics;
-            if (turnheldtime >= TURBOTURNTIME)
-                angvel -= turnamount;
+            if (PedanticMode)
+            {
+                if (turnheldtime >= TURBOTURNTIME)
+                    q16angvel -= fix16_from_int(turnamount);
+                else
+                    q16angvel -= fix16_from_int(PREAMBLETURN);
+            }
             else
-                angvel -= PREAMBLETURN;
+                q16angvel = fix16_ssub(q16angvel, fix16_from_float(scaleAdjustmentToInterval((turnheldtime >= TURBOTURNTIME) ? turnamount : PREAMBLETURN)));
         }
         else if (BUTTON(gamefunc_Turn_Right))
         {
             turnheldtime += synctics;
-            if (turnheldtime >= TURBOTURNTIME)
-                angvel += turnamount;
+            if (PedanticMode)
+            {
+                if (turnheldtime >= TURBOTURNTIME)
+                    q16angvel += fix16_from_int(turnamount);
+                else
+                    q16angvel += fix16_from_int(PREAMBLETURN);
+            }
             else
-                angvel += PREAMBLETURN;
+                q16angvel = fix16_sadd(q16angvel, fix16_from_float(scaleAdjustmentToInterval((turnheldtime >= TURBOTURNTIME) ? turnamount : PREAMBLETURN)));
         }
         else
         {
@@ -5236,22 +5333,43 @@ getinput(SW_PACKET *loc)
     if (BUTTON(gamefunc_Move_Backward))
         vel += -keymove;
 
-    vel = clamp(vel, -MAXVEL, MAXVEL);
-    svel = clamp(svel, -MAXSVEL, MAXSVEL);
+    q16angvel = fix16_clamp(q16angvel, -fix16_from_int(MAXANGVEL), fix16_from_int(MAXANGVEL));
+    q16aimvel = fix16_clamp(q16aimvel, -fix16_from_int(MAXHORIZVEL), fix16_from_int(MAXHORIZVEL));
 
-    angvel = clamp(angvel, -MAXANGVEL, MAXANGVEL);
-    aimvel = clamp(aimvel, -MAXAIMVEL, MAXAIMVEL);
+    if (PedanticMode)
+    {
+        q16angvel = fix16_floor(q16angvel);
+        q16aimvel = fix16_floor(q16aimvel);
+    }
+    else if (!TEST(pp->Flags, PF_DEAD))
+    {
+        void DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel);
+        void DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel);
+        if (!TEST(pp->Flags, PF_CLIMBING))
+            DoPlayerTurn(pp, &pp->camq16ang, q16angvel);
+        DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
+    }
 
-    momx = mulscale9(vel, sintable[NORM_ANGLE(newpp->pang + 512)]);
-    momy = mulscale9(vel, sintable[NORM_ANGLE(newpp->pang)]);
+    loc->vel += vel;
+    loc->svel += svel;
 
-    momx += mulscale9(svel, sintable[NORM_ANGLE(newpp->pang)]);
-    momy += mulscale9(svel, sintable[NORM_ANGLE(newpp->pang + 1536)]);
+    if (!tied)
+    {
+        vel = clamp(loc->vel, -MAXVEL, MAXVEL);
+        svel = clamp(loc->svel, -MAXSVEL, MAXSVEL);
 
-    loc->vel = momx;
-    loc->svel = momy;
-    loc->angvel = angvel;
-    loc->aimvel = aimvel;
+        momx = mulscale9(vel, sintable[NORM_ANGLE(fix16_to_int(newpp->q16ang) + 512)]);
+        momy = mulscale9(vel, sintable[NORM_ANGLE(fix16_to_int(newpp->q16ang))]);
+
+        momx += mulscale9(svel, sintable[NORM_ANGLE(fix16_to_int(newpp->q16ang))]);
+        momy += mulscale9(svel, sintable[NORM_ANGLE(fix16_to_int(newpp->q16ang) + 1536)]);
+
+        loc->vel = momx;
+        loc->svel = momy;
+    }
+
+    loc->q16angvel += q16angvel;
+    loc->q16aimvel += q16aimvel;
 
     if (MenuButtonAutoRun)
     {

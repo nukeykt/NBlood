@@ -6941,12 +6941,21 @@ paste_ceiling_or_floor:
         }
         else if (AIMING_AT_SPRITE)
         {
-            if (eitherSHIFT)
-                sprite[searchwall].xrepeat = sprite[searchwall].yrepeat;
-            else
+            if (!eitherCTRL)
             {
-                sprite[searchwall].xrepeat = 64;
-                sprite[searchwall].yrepeat = 64;
+                if (eitherSHIFT)
+                    sprite[searchwall].xrepeat = sprite[searchwall].yrepeat;
+                else
+                {
+                    sprite[searchwall].xrepeat = 64;
+                    sprite[searchwall].yrepeat = 64;
+                }
+            }
+
+            if (!eitherALT)
+            {
+                sprite[searchwall].xoffset = 0;
+                sprite[searchwall].yoffset = 0;
             }
 
             correct_sprite_yoffset(searchwall);
@@ -6954,7 +6963,7 @@ paste_ceiling_or_floor:
 
         if (ASSERT_AIMING)
         {
-            message("%s's size and panning reset", Typestr[searchstat]);
+            message("%s's size, panning and slope reset", Typestr[searchstat]);
             asksave = 1;
         }
     }

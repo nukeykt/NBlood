@@ -54,7 +54,7 @@ int MultiClipMove(PLAYERp pp, int z, int floor_dist)
 
     for (i = 0; i < sop->clipbox_num; i++)
     {
-        ang = NORM_ANGLE(pp->pang + sop->clipbox_ang[i]);
+        ang = NORM_ANGLE(fix16_to_int(pp->q16ang) + sop->clipbox_ang[i]);
         ox[i] = x[i] = pp->posx + (sop->clipbox_vdist[i] * sintable[NORM_ANGLE(ang + 512)] >> 14);
         oy[i] = y[i] = pp->posy + (sop->clipbox_vdist[i] * sintable[ang] >> 14);
 
@@ -98,7 +98,7 @@ int MultiClipMove(PLAYERp pp, int z, int floor_dist)
 
     for (i = 0; i < sop->clipbox_num; i++)
     {
-        ang = NORM_ANGLE(pp->pang + sop->clipbox_ang[i]);
+        ang = NORM_ANGLE(fix16_to_int(pp->q16ang) + sop->clipbox_ang[i]);
         ox[i] = x[i] = pp->posx + (sop->clipbox_vdist[i] * sintable[NORM_ANGLE(ang + 512)] >> 14);
         oy[i] = y[i] = pp->posy + (sop->clipbox_vdist[i] * sintable[ang] >> 14);
 
@@ -149,7 +149,7 @@ int MultiClipMove(PLAYERp pp, int z, int floor_dist)
     {
         // move the box to position instead of using offset- this prevents small rounding errors
         // allowing you to move through wall
-        ang = NORM_ANGLE(pp->pang + sop->clipbox_ang[i]);
+        ang = NORM_ANGLE(fix16_to_int(pp->q16ang) + sop->clipbox_ang[i]);
 
         xs = pp->posx;
         ys = pp->posy;
@@ -215,7 +215,7 @@ int MultiClipMove(PLAYERp pp, int z, int floor_dist)
     {
         // move the box to position instead of using offset- this prevents small rounding errors
         // allowing you to move through wall
-        ang = NORM_ANGLE(pp->pang + sop->clipbox_ang[i]);
+        ang = NORM_ANGLE(fix16_to_int(pp->q16ang) + sop->clipbox_ang[i]);
 
         xs = pp->posx;
         ys = pp->posy;
@@ -296,7 +296,7 @@ int MultiClipMove(PLAYERp pp, int z, int floor_dist)
     {
         // move the box to position instead of using offset- this prevents small rounding errors
         // allowing you to move through wall
-        ang = NORM_ANGLE(pp->pang + sop->clipbox_ang[i]);
+        ang = NORM_ANGLE(fix16_to_int(pp->q16ang) + sop->clipbox_ang[i]);
 
         xs = pp->posx;
         ys = pp->posy;

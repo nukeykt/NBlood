@@ -1790,6 +1790,7 @@ MNU_OrderCustom(UserCall call, MenuItem *item)
             " Sergei Shubin",
             " Par \"Parkar\" Karlsson", // "Pär \"Parkar\" Karlsson",
             " Ben \"ProAsm\" Smit",
+            " Mitchell \"mjr4077au\" Richters",
             " Charlie Wiederhold",
             "-",
             " This program is distributed under the terms of the",

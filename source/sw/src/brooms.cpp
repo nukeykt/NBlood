@@ -667,7 +667,7 @@ ViewSectorInScene(short cursectnum, short level)
 }
 
 void
-DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
+DrawOverlapRoom(int tx, int ty, int tz, fix16_t tq16ang, fix16_t tq16horiz, short tsectnum)
 {
     short i;
     short match;
@@ -686,7 +686,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
             return;
         }
 
-        drawrooms(tx, ty, tz, tang, thoriz, tsectnum);
+        renderDrawRoomsQ16(tx, ty, tz, tq16ang, tq16horiz, tsectnum);
         renderDrawMasks();
 
         // reset Z's
@@ -711,7 +711,7 @@ DrawOverlapRoom(int tx, int ty, int tz, short tang, int thoriz, short tsectnum)
                 return;
             }
 
-            drawrooms(tx, ty, tz, tang, thoriz, tsectnum);
+            renderDrawRoomsQ16(tx, ty, tz, tq16ang, tq16horiz, tsectnum);
             renderDrawMasks();
 
             // reset Z's
