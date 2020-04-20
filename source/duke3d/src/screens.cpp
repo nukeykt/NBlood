@@ -62,9 +62,9 @@ static void G_HandleEventsWhileNoInput(void)
 
 static int32_t G_PlaySoundWhileNoInput(int32_t soundnum)
 {
-    S_PlaySound(soundnum);
+    auto const voice = S_PlaySound(soundnum);
     I_ClearAllInput();
-    while (S_CheckSoundPlaying(soundnum))
+    while (FX_SoundActive(voice))
     {
         gameHandleEvents();
         if (I_GeneralTrigger())
