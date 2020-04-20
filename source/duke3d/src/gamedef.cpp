@@ -5951,15 +5951,18 @@ repeatcase:
             continue;
 
         case CON_NULLOP:
-            if (EDUKE32_PREDICT_FALSE(C_GetKeyword() != CON_ELSE))
+        {
+            auto const kw = C_GetKeyword();
+            if (EDUKE32_PREDICT_FALSE(kw != CON_ELSE && kw != CON_LEFTBRACE))
             {
                 C_ReportError(-1);
                 g_warningCnt++;
-                initprintf("%s:%d: warning: `nullop' found without `else'\n",g_scriptFileName,g_lineNumber);
+                initprintf("%s:%d: warning: `nullop' found without accompanying branch.\n",g_scriptFileName,g_lineNumber);
                 g_scriptPtr--;
                 g_skipBranch = true;
             }
             continue;
+        }
 
         case CON_GAMESTARTUP:
             {

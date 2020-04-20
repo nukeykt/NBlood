@@ -1659,13 +1659,16 @@ static int32_t C_ParseCommand(void)
 
 // *** basic commands
     case CON_NULLOP:
-        if (C_GetKeyword() != CON_ELSE)
+    {
+        auto const kw = C_GetKeyword();
+        if (kw != CON_ELSE && kw != CON_LEFTBRACE)
         {
-            C_CUSTOMWARNING("`nullop' found without `else'");
+            C_CUSTOMWARNING("`nullop' found without accompanying branch.");
             g_scriptPtr--;
             cs.ifElseAborted = 1;
         }
         return 0;
+    }
 
     case CON_DEFINE:
     {
