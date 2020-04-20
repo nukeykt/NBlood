@@ -1662,6 +1662,8 @@ static MenuEntry_t *Menu_AdjustForCurrentEntryAssignment(MenuMenu_t *menu)
 {
     MenuEntry_t *currentry = menu->entrylist[menu->currentEntry];
 
+    Bassert(currentry);
+
     Menu_EntryFocus(/*currentry*/);
 
     if (currentry->ybottom - menu->scrollPos > klabs(menu->format->bottomcutoff))
@@ -1900,6 +1902,10 @@ void Menu_Init(void)
     MEOSN_NetSkills[g_skillCnt] = MenuSkillNone;
     MMF_Top_Skill.pos.y = (58 + (4-g_skillCnt)*6)<<16;
     M_SKILL.currentEntry = ud.default_skill;
+
+    if (M_SKILL.currentEntry >= M_SKILL.numEntries-1)
+        M_SKILL.currentEntry = 0;
+
     Menu_AdjustForCurrentEntryAssignmentBlind(&M_SKILL);
 
     // prepare multiplayer gametypes
