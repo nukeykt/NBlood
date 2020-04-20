@@ -1039,6 +1039,9 @@ extern int32_t enginecompatibilitymode;
 static CONSTEXPR int32_t const enginecompatibilitymode = ENGINE_EDUKE32;
 #endif
 
+EXTERN int32_t duke64;
+extern bool (*rt_tileload_callback)(int16_t tileNum);
+
 /*************************************************************************
 POSITION VARIABLES:
 

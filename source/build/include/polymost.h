@@ -206,6 +206,8 @@ enum {
 
     DAMETH_INDEXED = 512,
 
+    DAMETH_N64 = 1024,
+
     // used internally by polymost_domost
     DAMETH_BACKFACECULL = -1,
 
@@ -267,6 +269,8 @@ enum pthtyp_flags {
 
     PTH_INDEXED = 512,
     PTH_ONEBITALPHA = 1024,
+
+    PTH_N64 = 2048,
 };
 
 typedef struct pthtyp_t
@@ -297,6 +301,8 @@ EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_TRANS1) == 0);
 EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_MASKPROPS) == 0);
 #define TO_PTH_INDEXED(dameth) ((dameth)&DAMETH_INDEXED)
 EDUKE32_STATIC_ASSERT(TO_PTH_INDEXED(DAMETH_INDEXED) == PTH_INDEXED);
+#define TO_PTH_N64(dameth) (((dameth)&DAMETH_N64)<<1)
+EDUKE32_STATIC_ASSERT(TO_PTH_N64(DAMETH_N64) == PTH_N64);
 
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);
