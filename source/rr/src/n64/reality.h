@@ -1,35 +1,16 @@
 // Copyright: 2020 Nuke.YKT, EDuke32 developers
 // License: GPLv2
 
+#pragma once
+
 #ifdef USE_OPENGL
-#include "build.h"
+
 #include "vfs.h"
-#include "crc32.h"
-#include "duke3d.h"
-#include "reality.h"
-#include "gamedef.h"
 
-buildvfs_kfd rt_group = buildvfs_kfd_invalid;
-static bool rt_group_init;
-static int32_t rt_scriptsize;
+#pragma pack(push, 1)
 
-buildvfs_kfd RT_InitGRP(const char *filename)
-{
-    auto grp = openfrompath(filename, BO_RDONLY|BO_BINARY, BS_IREAD);
-    if (grp != buildvfs_kfd_invalid)
-    {
-        rt_group_init = true;
-        rt_group = grp;
-    } 
-    return rt_group;
-}
-
-void RT_Init(void)
-{
-    if (!rt_group_init)
-        G_GameExit("RT_Init: No GRP initialized");
-
-}
+#define RT_TILENUM 2851
+#define RT_BOARDNUM 34
 
 enum rt_con_t {
     RT_CON_DEFINELEVELNAME,     // 0
@@ -146,33 +127,118 @@ enum rt_con_t {
     RT_CON_IFANGDIFFL,          // 111
 };
 
-int RT_PrepareScript(void)
-{
-    const int rt_scriptoffset = 0xa4500;
-    const int rt_scriptsize = 0x34a1;
-    int32_t *rt_script = (int32_t*)Xmalloc(rt_scriptsize*4);
-    if (rt_script == nullptr)
-    {
-        initprintf("RT_PrepareScript: can't allocate memory\n");
-        return 1;
-    }
+struct tileinfo_t {
+    int32_t fileoff;
+    int32_t waloff;
+    int32_t picanm;
+    int16_t sizx;
+    int16_t sizy;
+    uint16_t filesiz;
+    int16_t dimx;
+    int16_t dimy;
+    uint16_t flags;
+    int16_t tile;
+    uint8_t pad[2];
+};
 
-    lseek(rt_group, rt_scriptoffset, SEEK_SET);
-    if (read(rt_group, rt_script, rt_scriptsize*4) != rt_scriptsize*4)
-    {
-        initprintf("RT_PrepareScript: file read error\n");
-        return 1;
-    }
+struct boardinfo_t {
+    uint32_t datastart;
+    uint32_t dataend;
+    uint32_t sectoroffset;
+    uint32_t walloffset;
+    uint32_t spriteoffset;
+    uint32_t numsector;
+    uint32_t numsprites;
+    uint32_t numwall;
+    uint32_t posx;
+    uint32_t posy;
+    uint32_t posz;
+    uint32_t ang;
+    uint32_t pad[6];
+};
 
-    g_scriptcrc = Bcrc32(NULL, 0, 0L);
-    g_scriptcrc = Bcrc32(rt_script, rt_scriptsize*4, g_scriptcrc);
+struct rt_sectortype {
+    int32_t ceilingz;
+    int32_t floorz;
+    int16_t wallptr;
+    int16_t wallnum;
+    int16_t ceilingstat;
+    int16_t floorstat;
+    int16_t ceilingpicnum;
+    int16_t ceilingheinum;
+    int16_t floorpicnum;
+    int16_t floorheinum;
+    int16_t lotag;
+    int16_t hitag;
+    int16_t extra;
+    int16_t pad1[2];
+    int8_t ceilingshade;
+    uint8_t ceilingpal;
+    uint8_t ceilingxpanning;
+    uint8_t ceilingypanning;
+    int8_t floorshade;
+    uint8_t floorpal;
+    uint8_t floorxpanning;
+    uint8_t floorypanning;
+    uint8_t visibility;
+    uint8_t pad2[5];
+};
 
-    g_scriptSize = rt_scriptsize;
-    Bfree(apScript);
-    apScript = (intptr_t *)Xcalloc(1, g_scriptSize * sizeof(intptr_t));
-    for (int i = 0; i < rt_scriptsize; i++)
-        apScript[i] = B_BIG32(rt_script[i]);
-    return 0;
-}
+struct rt_walltype {
+    int32_t x, y;
+    int16_t point2;
+    int16_t nextwall;
+    int16_t nextsector;
+    int16_t cstat;
+    int16_t picnum;
+    int16_t overpicnum;
+    int16_t lotag;
+    int16_t hitag;
+    int16_t extra;
+    int16_t pad1[1];
+    int8_t shade;
+    uint8_t pal;
+    uint8_t xrepeat;
+    uint8_t yrepeat;
+    uint8_t xpanning;
+    uint8_t ypanning;
+    uint8_t pad2[2];
+};
+
+struct rt_spritetype {
+    int32_t x, y, z;
+    int16_t cstat;
+    int16_t picnum;
+    int16_t sectnum;
+    int16_t statnum;
+    int16_t ang;
+    int16_t owner;
+    int16_t xvel;
+    int16_t yvel;
+    int16_t zvel;
+    int16_t lotag;
+    int16_t hitag;
+    int16_t extra;
+    int8_t shade;
+    uint8_t pal;
+    uint8_t clipdist;
+    uint8_t xrepeat;
+    uint8_t yrepeat;
+    uint8_t xoffset;
+    uint8_t yoffset;
+    uint8_t filler;
+};
+
+#pragma pack(pop)
+
+extern buildvfs_kfd rt_group;
+
+
+buildvfs_kfd RT_InitGRP(const char *filename);
+void RT_Init(void);
+int RT_PrepareScript(void);
+void RT_LoadTiles(void);
+void RT_LoadBoard(int boardnum);
+void RT_Execute(int spriteNum, int playerNum, int playerDist);
 
 #endif

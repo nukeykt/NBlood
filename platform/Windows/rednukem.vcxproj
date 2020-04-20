@@ -188,12 +188,12 @@
     <ClInclude Include="..\..\source\rr\src\input.h" />
     <ClInclude Include="..\..\source\rr\src\inv.h" />
     <ClInclude Include="..\..\source\rr\src\menus.h" />
+    <ClInclude Include="..\..\source\rr\src\n64\reality.h" />
     <ClInclude Include="..\..\source\rr\src\net.h" />
     <ClInclude Include="..\..\source\rr\src\player.h" />
     <ClInclude Include="..\..\source\rr\src\playmve.h" />
     <ClInclude Include="..\..\source\rr\src\premap.h" />
     <ClInclude Include="..\..\source\rr\src\quotes.h" />
-    <ClInclude Include="..\..\source\rr\src\reality.h" />
     <ClInclude Include="..\..\source\rr\src\rrdh.h" />
     <ClInclude Include="..\..\source\rr\src\savegame.h" />
     <ClInclude Include="..\..\source\rr\src\sbar.h" />
@@ -240,6 +240,7 @@
     <ClCompile Include="..\..\source\rr\src\input.cpp" />
     <ClCompile Include="..\..\source\rr\src\mdump.cpp" />
     <ClCompile Include="..\..\source\rr\src\menus.cpp" />
+    <ClCompile Include="..\..\source\rr\src\n64\reality.cpp" />
     <ClCompile Include="..\..\source\rr\src\namesdyn.cpp" />
     <ClCompile Include="..\..\source\rr\src\net.cpp" />
     <ClCompile Include="..\..\source\rr\src\osdcmds.cpp" />
@@ -247,7 +248,6 @@
     <ClCompile Include="..\..\source\rr\src\player.cpp" />
     <ClCompile Include="..\..\source\rr\src\playmve.cpp" />
     <ClCompile Include="..\..\source\rr\src\premap.cpp" />
-    <ClCompile Include="..\..\source\rr\src\reality.cpp" />
     <ClCompile Include="..\..\source\rr\src\rrdh.cpp" />
     <ClCompile Include="..\..\source\rr\src\rts.cpp" />
     <ClCompile Include="..\..\source\rr\src\savegame.cpp" />

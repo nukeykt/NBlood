@@ -2402,7 +2402,7 @@ int G_EnterLevel(int gameMode)
 
     mii = (ud.volume_number*MAXLEVELS)+ud.level_number;
 
-    if (g_mapInfo[mii].name == NULL || g_mapInfo[mii].filename == NULL)
+    if (!REALITY && (g_mapInfo[mii].name == NULL || g_mapInfo[mii].filename == NULL))
     {
         if (RR && g_lastLevel)
         {
@@ -2476,6 +2476,10 @@ int G_EnterLevel(int gameMode)
         G_LoadMapHack(levelName, boardfilename);
         G_SetupFilenameBasedMusic(levelName, boardfilename, ud.m_level_number);
     }
+    else if (REALITY)
+    {
+        RT_LoadBoard(ud.m_level_number);
+    }
     else if (engineLoadBoard(g_mapInfo[mii].filename, VOLUMEONE, &pPlayer->pos, &lbang, &pPlayer->cursectnum) < 0)
     {
         OSD_Printf(OSD_ERROR "Map \"%s\" not found or invalid map version!\n", g_mapInfo[mii].filename);
@@ -2493,7 +2497,8 @@ int G_EnterLevel(int gameMode)
         g_player[0].ps->gotweapon &= (1<<KNEE_WEAPON);
     }
 
-    pPlayer->q16ang = fix16_from_int(lbang);
+    if (!REALITY)
+        pPlayer->q16ang = fix16_from_int(lbang);
 
     g_precacheCount = 0;
     Bmemset(gotpic, 0, sizeof(gotpic));

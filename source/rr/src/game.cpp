@@ -42,7 +42,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "palette.h"
 #include "al_midi.h"
 #include "playmve.h"
-#include "reality.h"
 
 #ifdef __ANDROID__
 #include "android.h"
@@ -7645,6 +7644,9 @@ static void G_Startup(void)
         else if (artLoadFiles("tiles%03i.art",MAXCACHE1DSIZE) < 0)
             G_GameExit("Failed loading art.");
     }
+
+    if (REALITY)
+        RT_LoadTiles();
 
     // Make the fullscreen nuke logo background non-fullbright.  Has to be
     // after dynamic tile remapping (from C_Compile) and loading tiles.

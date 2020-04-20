@@ -71,6 +71,7 @@ uint32_t g_actorCalls[MAXTILES];
 double g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];
 
 GAMEEXEC_STATIC void VM_Execute(native_t loop);
+GAMEEXEC_STATIC void RT_VM_Execute(native_t loop);
 
 # include "gamestructures.cpp"
 
@@ -2898,6 +2899,11 @@ void VM_UpdateAnim(int spriteNum, int32_t *pData)
 // NORECURSE
 void A_Execute(int spriteNum, int playerNum, int playerDist)
 {
+    if (REALITY)
+    {
+        RT_Execute(spriteNum, playerNum, playerDist);
+        return;
+    }
     vmstate_t tempvm
     = { spriteNum, playerNum, playerDist, 0, &sprite[spriteNum], &actor[spriteNum].t_data[0], g_player[playerNum].ps, &actor[spriteNum] };
     vm = tempvm;
@@ -2990,3 +2996,1056 @@ safe_delete:
     if (vm.flags & VM_SAFEDELETE)
         A_DeleteSprite(spriteNum);
 }
+
+#ifdef USE_OPENGL
+
+
+// #define RT_VM_CONDITIONAL(xxx)                                                                                         \
+//     {                                                                                                                  \
+//         if ((xxx) || ((insptr = (intptr_t *)*(insptr + 1)) && (((*insptr) & VM_INSTMASK) == RT_CON_ELSE)))             \
+//         {                                                                                                              \
+//             insptr += 2;                                                                                               \
+//             RT_VM_Execute(0);                                                                                          \
+//         }                                                                                                              \
+//     }
+
+static inline void RT_VM_CONDITIONAL(int condition)
+{
+    if ((condition) || ((insptr = (intptr_t*)&apScript[*(insptr + 1)]) && (((*insptr) & VM_INSTMASK) == RT_CON_ELSE)))
+    {
+        insptr += 2;
+        RT_VM_Execute(0);
+    }
+}
+
+GAMEEXEC_STATIC void RT_VM_Execute(native_t loop)
+{
+    native_t            tw      = *insptr;
+    DukePlayer_t *const pPlayer = vm.pPlayer;
+
+    // jump directly into the loop, skipping branches during the first iteration
+    goto skip_check;
+
+    while (loop)
+    {
+        if (vm.flags & (VM_RETURN | VM_KILL | VM_NOEXECUTE))
+            break;
+
+        tw = *insptr;
+
+    skip_check:
+        //      Bsprintf(g_szBuf,"Parsing: %d",*insptr);
+        //      AddLog(g_szBuf);
+
+        g_errorLineNum = tw >> 12;
+        g_tw           = tw &= VM_INSTMASK;
+
+        if (tw == RT_CON_LEFTBRACE)
+        {
+            insptr++, loop++;
+            continue;
+        }
+        else if (tw == RT_CON_RIGHTBRACE)
+        {
+            insptr++, loop--;
+            continue;
+        }
+        else if (tw == RT_CON_ELSE)
+        {
+            insptr = (intptr_t *)&apScript[*(insptr + 1)];
+            continue;
+        }
+        else if (tw == RT_CON_STATE)
+        {
+            intptr_t const *const tempscrptr = insptr + 2;
+            insptr                           = (intptr_t *)&apScript[*(insptr + 1)];
+            RT_VM_Execute(1);
+            insptr = tempscrptr;
+            continue;
+        }
+
+        switch (tw)
+        {
+            case RT_CON_ENDA:
+            case RT_CON_BREAK:
+            case RT_CON_ENDS: return;
+
+            case RT_CON_IFRND: RT_VM_CONDITIONAL(rnd(*(++insptr))); continue;
+
+            case RT_CON_IFCANSHOOTTARGET:
+            {
+                if (vm.playerDist > 1024)
+                {
+                    int16_t temphit;
+
+                    if ((tw = A_CheckHitSprite(vm.spriteNum, &temphit)) == (1 << 30))
+                    {
+                        RT_VM_CONDITIONAL(1);
+                        continue;
+                    }
+
+                    int dist    = 768;
+                    int angDiff = 16;
+
+                    if (A_CheckEnemySprite(vm.pSprite) && vm.pSprite->xrepeat > 56)
+                    {
+                        dist    = 3084;
+                        angDiff = 48;
+                    }
+
+#define RT_CHECK(x)                                                                                                                                     \
+    if (x >= 0 && sprite[x].picnum == vm.pSprite->picnum)                                                                                            \
+    {                                                                                                                                                \
+        RT_VM_CONDITIONAL(0);                                                                                                                           \
+        continue;                                                                                                                                    \
+    }
+#define RT_CHECK2(x)                                                                                                                                    \
+    do                                                                                                                                               \
+    {                                                                                                                                                \
+        vm.pSprite->ang += x;                                                                                                                        \
+        tw = A_CheckHitSprite(vm.spriteNum, &temphit);                                                                                               \
+        vm.pSprite->ang -= x;                                                                                                                        \
+    } while (0)
+
+                    if (tw > dist)
+                    {
+                        RT_CHECK(temphit);
+                        RT_CHECK2(angDiff);
+
+                        if (tw > dist)
+                        {
+                            RT_CHECK(temphit);
+                            RT_CHECK2(-angDiff);
+
+                            if (tw > 768)
+                            {
+                                RT_CHECK(temphit);
+                                RT_VM_CONDITIONAL(1);
+                                continue;
+                            }
+                        }
+                    }
+                    RT_VM_CONDITIONAL(0);
+                    continue;
+                }
+                RT_VM_CONDITIONAL(1);
+            }
+                continue;
+
+            case RT_CON_IFCANSEETARGET:
+                tw = cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - ((krand2() & 41) << 8), vm.pSprite->sectnum, pPlayer->pos.x, pPlayer->pos.y,
+                            pPlayer->pos.z /*-((krand2()&41)<<8)*/, sprite[pPlayer->i].sectnum);
+                RT_VM_CONDITIONAL(tw);
+                if (tw)
+                    vm.pActor->timetosleep = SLEEPTIME;
+                continue;
+
+            case RT_CON_IFACTORNOTSTAYPUT: RT_VM_CONDITIONAL(vm.pActor->actorstayput == -1); continue;
+
+            case RT_CON_IFCANSEE:
+            {
+                uspritetype *pSprite = (uspritetype *)&sprite[pPlayer->i];
+
+// select sprite for monster to target
+// if holoduke is on, let them target holoduke first.
+//
+                if (pPlayer->holoduke_on >= 0)
+                {
+                    pSprite = (uspritetype *)&sprite[pPlayer->holoduke_on];
+                    tw = cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - (krand2() & (ZOFFSET5 - 1)), vm.pSprite->sectnum, pSprite->x, pSprite->y,
+                                pSprite->z, pSprite->sectnum);
+
+                    if (tw == 0)
+                    {
+                        // they can't see player's holoduke
+                        // check for player...
+                        pSprite = (uspritetype *)&sprite[pPlayer->i];
+                    }
+                }
+                // can they see player, (or player's holoduke)
+                tw = cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - (krand2() & ((47 << 8))), vm.pSprite->sectnum, pSprite->x, pSprite->y,
+                            pSprite->z - (24 << 8), pSprite->sectnum);
+
+                if (tw == 0)
+                {
+                    // search around for target player
+
+                    // also modifies 'target' x&y if found..
+
+                    tw = 1;
+                    if (A_FurthestVisiblePoint(vm.spriteNum, pSprite, &vm.pActor->lastv) == -1)
+                        tw = 0;
+                }
+                else
+                {
+                    // else, they did see it.
+                    // save where we were looking...
+                    vm.pActor->lastv.x = pSprite->x;
+                    vm.pActor->lastv.y = pSprite->y;
+                }
+
+                if (tw && (vm.pSprite->statnum == STAT_ACTOR || vm.pSprite->statnum == STAT_STANDABLE))
+                    vm.pActor->timetosleep = SLEEPTIME;
+
+                RT_VM_CONDITIONAL(tw);
+                continue;
+            }
+
+            case RT_CON_IFHITWEAPON:
+                RT_VM_CONDITIONAL(A_IncurDamage(vm.spriteNum) >= 0);
+                continue;
+
+            case RT_CON_IFSQUISHED: RT_VM_CONDITIONAL(VM_CheckSquished()); continue;
+
+            case RT_CON_IFDEAD: RT_VM_CONDITIONAL(vm.pSprite->extra - (vm.pSprite->picnum == APLAYER) < 0); continue;
+
+            case RT_CON_AI:
+                insptr++;
+                // Following changed to use pointersizes
+                AC_AI_ID(vm.pData)     = *insptr++;                         // Ai
+                AC_ACTION_ID(vm.pData) = *(apScript + AC_AI_ID(vm.pData));  // Action
+                AC_MOVE_ID(vm.pData) = *(apScript + AC_AI_ID(vm.pData) + 1);  // move
+
+                vm.pSprite->hitag = *(apScript + AC_AI_ID(vm.pData) + 2);  // move flags
+
+                AC_COUNT(vm.pData)        = 0;
+                AC_ACTION_COUNT(vm.pData) = 0;
+                AC_CURFRAME(vm.pData)     = 0;
+
+                if (vm.pSprite->hitag & random_angle)
+                    vm.pSprite->ang = krand2() & 2047;
+                continue;
+
+            case RT_CON_ACTION:
+                insptr++;
+                AC_ACTION_COUNT(vm.pData) = 0;
+                AC_CURFRAME(vm.pData)     = 0;
+                AC_ACTION_ID(vm.pData)    = *insptr++;
+                continue;
+
+            case RT_CON_IFPDISTL:
+                insptr++;
+                RT_VM_CONDITIONAL(vm.playerDist < *(insptr));
+                if (vm.playerDist > MAXSLEEPDIST && vm.pActor->timetosleep == 0)
+                    vm.pActor->timetosleep = SLEEPTIME;
+                continue;
+
+            case RT_CON_IFPDISTG:
+                RT_VM_CONDITIONAL(vm.playerDist > *(++insptr));
+                if (vm.playerDist > MAXSLEEPDIST && vm.pActor->timetosleep == 0)
+                    vm.pActor->timetosleep = SLEEPTIME;
+                continue;
+
+            case RT_CON_ADDSTRENGTH:
+                insptr++;
+                vm.pSprite->extra += *insptr++;
+                continue;
+
+            case RT_CON_STRENGTH:
+                insptr++;
+                vm.pSprite->extra = *insptr++;
+                continue;
+
+            case RT_CON_IFGOTWEAPONCE:
+                insptr++;
+
+                if ((g_gametypeFlags[ud.coop] & GAMETYPE_WEAPSTAY) && (g_netServer || ud.multimode > 1))
+                {
+                    if (*insptr == 0)
+                    {
+                        int j = 0;
+                        for (; j < pPlayer->weapreccnt; ++j)
+                            if (pPlayer->weaprecs[j] == vm.pSprite->picnum)
+                                break;
+
+                        RT_VM_CONDITIONAL(j < pPlayer->weapreccnt && vm.pSprite->owner == vm.spriteNum);
+                        continue;
+                    }
+                    else if (pPlayer->weapreccnt < MAX_WEAPON_RECS-1)
+                    {
+                        pPlayer->weaprecs[pPlayer->weapreccnt++] = vm.pSprite->picnum;
+                        RT_VM_CONDITIONAL(vm.pSprite->owner == vm.spriteNum);
+                        continue;
+                    }
+                }
+                RT_VM_CONDITIONAL(0);
+                continue;
+
+            case RT_CON_GETLASTPAL:
+                insptr++;
+                if (vm.pSprite->picnum == APLAYER)
+                    vm.pSprite->pal = g_player[P_GetP(vm.pSprite)].ps->palookup;
+                else
+                    vm.pSprite->pal = vm.pActor->tempang;
+                vm.pActor->tempang = 0;
+                continue;
+
+            case RT_CON_TOSSWEAPON:
+                insptr++;
+                // NOTE: assumes that current actor is APLAYER
+                P_DropWeapon(P_GetP(vm.pSprite));
+                continue;
+
+            case RT_CON_MIKESND:
+                insptr++;
+                if (EDUKE32_PREDICT_FALSE(((unsigned)vm.pSprite->yvel >= MAXSOUNDS)))
+                {
+                    CON_ERRPRINTF("invalid sound %d\n", vm.pUSprite->yvel);
+                    continue;
+                }
+                if (!S_CheckSoundPlaying(vm.spriteNum, vm.pSprite->yvel))
+                    A_PlaySound(vm.pSprite->yvel, vm.spriteNum);
+                continue;
+
+            case RT_CON_PKICK:
+                insptr++;
+
+                if ((g_netServer || ud.multimode > 1) && vm.pSprite->picnum == APLAYER)
+                {
+                    if (g_player[otherp].ps->quick_kick == 0)
+                        g_player[otherp].ps->quick_kick = 14;
+                }
+                else if (vm.pSprite->picnum != APLAYER && pPlayer->quick_kick == 0)
+                    pPlayer->quick_kick = 14;
+                continue;
+
+            case RT_CON_SIZETO:
+                insptr++;
+
+                tw = (*insptr++ - vm.pSprite->xrepeat) << 1;
+                vm.pSprite->xrepeat += ksgn(tw);
+
+                if ((vm.pSprite->picnum == APLAYER && vm.pSprite->yrepeat < 36) || *insptr < vm.pSprite->yrepeat
+                    || ((vm.pSprite->yrepeat * (tilesiz[vm.pSprite->picnum].y + 8)) << 2) < (vm.pActor->floorz - vm.pActor->ceilingz))
+                {
+                    tw = ((*insptr) - vm.pSprite->yrepeat) << 1;
+                    if (klabs(tw))
+                        vm.pSprite->yrepeat += ksgn(tw);
+                }
+
+                insptr++;
+
+                continue;
+
+            case RT_CON_SIZEAT:
+                insptr++;
+                vm.pSprite->xrepeat = (uint8_t)*insptr++;
+                vm.pSprite->yrepeat = (uint8_t)*insptr++;
+                continue;
+
+            case RT_CON_SHOOT:
+                insptr++;
+                if (EDUKE32_PREDICT_FALSE((unsigned)vm.pSprite->sectnum >= (unsigned)numsectors))
+                {
+                    CON_ERRPRINTF("invalid sector %d\n", vm.pUSprite->sectnum);
+                    continue;
+                }
+                A_Shoot(vm.spriteNum, *insptr++);
+                continue;
+
+            case RT_CON_SOUNDONCE:
+                if (EDUKE32_PREDICT_FALSE((unsigned)*(++insptr) >= MAXSOUNDS))
+                {
+                    CON_ERRPRINTF("invalid sound %d\n", (int32_t)*insptr++);
+                    continue;
+                }
+
+                if (!S_CheckSoundPlaying(vm.spriteNum, *insptr++))
+                    A_PlaySound(*(insptr - 1), vm.spriteNum);
+
+                continue;
+
+            case RT_CON_STOPSOUND:
+                if (EDUKE32_PREDICT_FALSE((unsigned)*(++insptr) >= MAXSOUNDS))
+                {
+                    CON_ERRPRINTF("invalid sound %d\n", (int32_t)*insptr);
+                    insptr++;
+                    continue;
+                }
+                if (S_CheckSoundPlaying(vm.spriteNum, *insptr))
+                    S_StopSound((int16_t)*insptr);
+                insptr++;
+                continue;
+
+            case RT_CON_GLOBALSOUND:
+                if (EDUKE32_PREDICT_FALSE((unsigned)*(++insptr) >= MAXSOUNDS))
+                {
+                    CON_ERRPRINTF("invalid sound %d\n", (int32_t)*insptr);
+                    insptr++;
+                    continue;
+                }
+                if (vm.playerNum == screenpeek || (g_gametypeFlags[ud.coop] & GAMETYPE_COOPSOUND)
+#ifdef SPLITSCREEN_MOD_HACKS
+                    || (g_fakeMultiMode == 2)
+#endif
+                    )
+                    A_PlaySound(*insptr, g_player[screenpeek].ps->i);
+                insptr++;
+                continue;
+
+            case RT_CON_SOUND:
+                if (EDUKE32_PREDICT_FALSE((unsigned)*(++insptr) >= MAXSOUNDS))
+                {
+                    CON_ERRPRINTF("invalid sound %d\n", (int32_t)*insptr);
+                    insptr++;
+                    continue;
+                }
+                A_PlaySound(*insptr++, vm.spriteNum);
+                continue;
+
+            case RT_CON_TIP:
+                insptr++;
+                pPlayer->tipincs = GAMETICSPERSEC;
+                continue;
+
+            case RT_CON_FALL:
+                insptr++;
+                VM_Fall(vm.spriteNum, vm.pSprite);
+                continue;
+
+            case RT_CON_NULLOP: insptr++; continue;
+
+            case RT_CON_ADDAMMO:
+                insptr++;
+                {
+                    int const weaponNum = *insptr++;
+                    int const addAmount = *insptr++;
+
+                    VM_AddAmmo(pPlayer, weaponNum, addAmount);
+
+                    continue;
+                }
+
+            case RT_CON_MONEY:
+                insptr++;
+                A_SpawnMultiple(vm.spriteNum, MONEY, *insptr++);
+                continue;
+
+            case RT_CON_MAIL:
+                insptr++;
+                A_SpawnMultiple(vm.spriteNum, MAIL, *insptr++);
+                continue;
+
+            case RT_CON_SLEEPTIME:
+                insptr++;
+                vm.pActor->timetosleep = (int16_t)*insptr++;
+                continue;
+
+            case RT_CON_PAPER:
+                insptr++;
+                A_SpawnMultiple(vm.spriteNum, PAPER, *insptr++);
+                continue;
+
+            case RT_CON_ADDKILLS:
+                insptr++;
+                P_AddKills(pPlayer, *insptr);
+                insptr++;
+                vm.pActor->actorstayput = -1;
+                continue;
+
+            case RT_CON_LOTSOFGLASS:
+                insptr++;
+                A_SpawnGlass(vm.spriteNum, *insptr++);
+                continue;
+
+            case RT_CON_KILLIT:
+                insptr++;
+                vm.flags |= VM_KILL;
+                return;
+
+            case RT_CON_ADDWEAPON:
+                insptr++;
+                {
+                    int const weaponNum = *insptr++;
+                    VM_AddWeapon(pPlayer, weaponNum, *insptr++);
+                    continue;
+                }
+
+            case RT_CON_DEBUG:
+                insptr++;
+                buildprint(*insptr++, "\n");
+                continue;
+
+            case RT_CON_ENDOFGAME:
+                insptr++;
+                pPlayer->timebeforeexit  = *insptr++;
+                pPlayer->customexitsound = -1;
+                ud.eog                   = 1;
+                continue;
+
+            case RT_CON_ADDPHEALTH:
+                insptr++;
+
+                {
+                    if (pPlayer->newowner >= 0)
+                        G_ClearCameraView(pPlayer);
+
+                    int newHealth = sprite[pPlayer->i].extra;
+
+                    if (vm.pSprite->picnum != ATOMICHEALTH)
+                    {
+                        if (newHealth > pPlayer->max_player_health && *insptr > 0)
+                        {
+                            insptr++;
+                            continue;
+                        }
+                        else
+                        {
+                            if (newHealth > 0)
+                                newHealth += *insptr;
+                            if (newHealth > pPlayer->max_player_health && *insptr > 0)
+                                newHealth = pPlayer->max_player_health;
+                        }
+                    }
+                    else
+                    {
+                        if (newHealth > 0)
+                            newHealth += *insptr;
+                        if (newHealth > (pPlayer->max_player_health << 1))
+                            newHealth = (pPlayer->max_player_health << 1);
+                    }
+
+                    if (newHealth < 0)
+                        newHealth = 0;
+
+                    if (ud.god == 0)
+                    {
+                        if (*insptr > 0)
+                        {
+                            if ((newHealth - *insptr) < (pPlayer->max_player_health >> 2) && newHealth >= (pPlayer->max_player_health >> 2))
+                                A_PlaySound(DUKE_GOTHEALTHATLOW, pPlayer->i);
+                            pPlayer->last_extra = newHealth;
+                        }
+
+                        sprite[pPlayer->i].extra = newHealth;
+                    }
+                }
+
+                insptr++;
+                continue;
+
+            case RT_CON_MOVE:
+                insptr++;
+                AC_COUNT(vm.pData)   = 0;
+                AC_MOVE_ID(vm.pData) = *insptr++;
+                vm.pSprite->hitag    = *insptr++;
+                if (vm.pSprite->hitag & random_angle)
+                    vm.pSprite->ang = krand2() & 2047;
+                continue;
+
+            case RT_CON_SPAWN:
+                insptr++;
+                if ((unsigned)vm.pSprite->sectnum >= MAXSECTORS)
+                {
+                    CON_ERRPRINTF("invalid sector %d\n", vm.pUSprite->sectnum);
+                    insptr++;
+                    continue;
+                }
+                A_Spawn(vm.spriteNum, *insptr++);
+                continue;
+
+            case RT_CON_IFWASWEAPON:
+            case RT_CON_IFSPAWNEDBY:
+                insptr++;
+                RT_VM_CONDITIONAL(vm.pActor->picnum == *insptr);
+                continue;
+
+            case RT_CON_IFAI:
+                insptr++;
+                RT_VM_CONDITIONAL(AC_AI_ID(vm.pData) == *insptr);
+                continue;
+
+            case RT_CON_IFACTION:
+                insptr++;
+                RT_VM_CONDITIONAL(AC_ACTION_ID(vm.pData) == *insptr);
+                continue;
+
+            case RT_CON_IFACTIONCOUNT:
+                insptr++;
+                RT_VM_CONDITIONAL(AC_ACTION_COUNT(vm.pData) >= *insptr);
+                continue;
+
+            case RT_CON_RESETACTIONCOUNT:
+                insptr++;
+                AC_ACTION_COUNT(vm.pData) = 0;
+                continue;
+
+            case RT_CON_DEBRIS:
+                insptr++;
+                {
+                    int debrisTile = *insptr++;
+
+                    if ((unsigned)vm.pSprite->sectnum < MAXSECTORS)
+                        for (native_t cnt = (*insptr) - 1; cnt >= 0; cnt--)
+                        {
+                            int const tileOffset = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? 0 : (krand2() % 3);
+
+                            int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2(), r5 = krand2(), r6 = krand2(), r7 = krand2(), r8 = krand2();
+                            int const spriteNum = A_InsertSprite(vm.pSprite->sectnum, vm.pSprite->x + (r8 & 255) - 128,
+                                                                 vm.pSprite->y + (r7 & 255) - 128, vm.pSprite->z - (8 << 8) - (r6 & 8191),
+                                                                 debrisTile + tileOffset, vm.pSprite->shade, 32 + (r5 & 15), 32 + (r4 & 15),
+                                                                 r3 & 2047, (r2 & 127) + 32, -(r1 & 2047), vm.spriteNum, 5);
+
+                            sprite[spriteNum].yvel = (vm.pSprite->picnum == BLIMP && debrisTile == SCRAP1) ? g_blimpSpawnItems[cnt % 14] : -1;
+                            sprite[spriteNum].pal  = vm.pSprite->pal;
+                        }
+                    insptr++;
+                }
+                continue;
+
+            case RT_CON_COUNT:
+                insptr++;
+                AC_COUNT(vm.pData) = (int16_t)*insptr++;
+                continue;
+
+            case RT_CON_CSTATOR:
+                insptr++;
+                vm.pSprite->cstat |= (int16_t)*insptr++;
+                continue;
+
+            case RT_CON_CLIPDIST:
+                insptr++;
+                vm.pSprite->clipdist = (int16_t)*insptr++;
+                continue;
+
+            case RT_CON_CSTAT:
+                insptr++;
+                vm.pSprite->cstat = (int16_t)*insptr++;
+                continue;
+
+            case RT_CON_IFMOVE:
+                insptr++;
+                RT_VM_CONDITIONAL(AC_MOVE_ID(vm.pData) == *insptr);
+                continue;
+
+            case RT_CON_RESETPLAYER:
+                insptr++;
+                vm.flags = VM_ResetPlayer(vm.playerNum, vm.flags);
+                continue;
+
+            case RT_CON_IFONWATER:
+                RT_VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_1_ABOVE_WATER
+                               && klabs(vm.pSprite->z - sector[vm.pSprite->sectnum].floorz) < ZOFFSET5);
+                continue;
+
+            case RT_CON_IFINWATER:
+                RT_VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_2_UNDERWATER);
+                continue;
+
+            case RT_CON_IFCOUNT:
+                insptr++;
+                RT_VM_CONDITIONAL(AC_COUNT(vm.pData) >= *insptr);
+                continue;
+
+            case RT_CON_IFACTOR:
+                insptr++;
+                RT_VM_CONDITIONAL(vm.pSprite->picnum == *insptr);
+                continue;
+
+            case RT_CON_RESETCOUNT:
+                insptr++;
+                AC_COUNT(vm.pData) = 0;
+                continue;
+
+            case RT_CON_ADDINVENTORY:
+                insptr += 2;
+
+                VM_AddInventory(pPlayer, *(insptr - 1), *insptr);
+
+                insptr++;
+                continue;
+
+            case RT_CON_HITRADIUS:
+                A_RadiusDamage(vm.spriteNum, *(insptr + 1), *(insptr + 2), *(insptr + 3), *(insptr + 4), *(insptr + 5));
+                insptr += 6;
+                continue;
+
+            case RT_CON_IFP:
+            {
+                int const moveFlags  = *(++insptr);
+                int       nResult    = 0;
+                int const playerXVel = sprite[pPlayer->i].xvel;
+                int const syncBits   = g_player[vm.playerNum].inputBits->bits;
+
+                if (((moveFlags & pducking) && pPlayer->on_ground && (TEST_SYNC_KEY(syncBits, SK_CROUCH) ^ vm.pPlayer->crouch_toggle))
+                    || ((moveFlags & pfalling) && pPlayer->jumping_counter == 0 && !pPlayer->on_ground && pPlayer->vel.z > 2048)
+                    || ((moveFlags & pjumping) && pPlayer->jumping_counter > 348)
+                    || ((moveFlags & pstanding) && playerXVel >= 0 && playerXVel < 8)
+                    || ((moveFlags & pwalking) && playerXVel >= 8 && !TEST_SYNC_KEY(syncBits, SK_RUN))
+                    || ((moveFlags & prunning) && playerXVel >= 8 && TEST_SYNC_KEY(syncBits, SK_RUN))
+                    || ((moveFlags & phigher) && pPlayer->pos.z < (vm.pSprite->z - (48 << 8)))
+                    || ((moveFlags & pwalkingback) && playerXVel <= -8 && !TEST_SYNC_KEY(syncBits, SK_RUN))
+                    || ((moveFlags & prunningback) && playerXVel <= -8 && TEST_SYNC_KEY(syncBits, SK_RUN))
+                    || ((moveFlags & pkicking) && (pPlayer->quick_kick > 0
+                            || (pPlayer->curr_weapon == KNEE_WEAPON && pPlayer->kickback_pic > 0)))
+                    || ((moveFlags & pshrunk) && sprite[pPlayer->i].xrepeat < 32)
+                    || ((moveFlags & pjetpack) && pPlayer->jetpack_on)
+                    || ((moveFlags & ponsteroids) && pPlayer->inv_amount[GET_STEROIDS] > 0 && pPlayer->inv_amount[GET_STEROIDS] < 400)
+                    || ((moveFlags & ponground) && pPlayer->on_ground)
+                    || ((moveFlags & palive) && sprite[pPlayer->i].xrepeat > 32 && sprite[pPlayer->i].extra > 0 && pPlayer->timebeforeexit == 0)
+                    || ((moveFlags & pdead) && sprite[pPlayer->i].extra <= 0))
+                    nResult = 1;
+                else if ((moveFlags & pfacing))
+                {
+                    nResult
+                    = (vm.pSprite->picnum == APLAYER && (g_netServer || ud.multimode > 1))
+                      ? G_GetAngleDelta(fix16_to_int(g_player[otherp].ps->q16ang),
+                                        getangle(pPlayer->pos.x - g_player[otherp].ps->pos.x, pPlayer->pos.y - g_player[otherp].ps->pos.y))
+                      : G_GetAngleDelta(fix16_to_int(pPlayer->q16ang), getangle(vm.pSprite->x - pPlayer->pos.x, vm.pSprite->y - pPlayer->pos.y));
+
+                    nResult = (nResult > -128 && nResult < 128);
+                }
+                RT_VM_CONDITIONAL(nResult);
+            }
+                continue;
+
+            case RT_CON_IFSTRENGTH:
+                insptr++;
+                RT_VM_CONDITIONAL(vm.pSprite->extra <= *insptr);
+                continue;
+
+            case RT_CON_GUTS:
+                A_DoGuts(vm.spriteNum, *(insptr + 1), *(insptr + 2));
+                insptr += 3;
+                continue;
+
+            case RT_CON_WACKPLAYER:
+                insptr++;
+                P_ForceAngle(pPlayer);
+                continue;
+
+            case RT_CON_IFGAPZL:
+                insptr++;
+                RT_VM_CONDITIONAL(((vm.pActor->floorz - vm.pActor->ceilingz) >> 8) < *insptr);
+                continue;
+
+            case RT_CON_IFHITSPACE: RT_VM_CONDITIONAL(TEST_SYNC_KEY(g_player[vm.playerNum].inputBits->bits, SK_OPEN)); continue;
+
+            case RT_CON_IFOUTSIDE:
+                RT_VM_CONDITIONAL(sector[vm.pSprite->sectnum].ceilingstat & 1);
+                continue;
+
+            case RT_CON_IFMULTIPLAYER: RT_VM_CONDITIONAL((g_netServer || g_netClient || ud.multimode > 1)); continue;
+
+            case RT_CON_OPERATE:
+                insptr++;
+                if (sector[vm.pSprite->sectnum].lotag == 0)
+                {
+                    int16_t foundSect, foundWall, foundSprite;
+                    int32_t foundDist;
+
+                    neartag(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - ZOFFSET5, vm.pSprite->sectnum, vm.pSprite->ang, &foundSect, &foundWall,
+                            &foundSprite, &foundDist, 768, 4 + 1, NULL);
+
+                    if (foundSect >= 0 && isanearoperator(sector[foundSect].lotag))
+                        if ((sector[foundSect].lotag & 0xff) == ST_23_SWINGING_DOOR || sector[foundSect].floorz == sector[foundSect].ceilingz)
+                            if ((sector[foundSect].lotag & (16384u | 32768u)) == 0)
+                            {
+                                int32_t j;
+
+                                for (SPRITES_OF_SECT(foundSect, j))
+                                    if (sprite[j].picnum == ACTIVATOR)
+                                        break;
+
+                                if (j == -1)
+                                    G_OperateSectors(foundSect, vm.spriteNum);
+                            }
+                }
+                continue;
+
+            case RT_CON_IFINSPACE: RT_VM_CONDITIONAL(G_CheckForSpaceCeiling(vm.pSprite->sectnum)); continue;
+
+            case RT_CON_SPRITEPAL:
+                insptr++;
+                if (vm.pSprite->picnum != APLAYER)
+                    vm.pActor->tempang = vm.pSprite->pal;
+                vm.pSprite->pal        = *insptr++;
+                continue;
+
+            case RT_CON_CACTOR:
+                insptr++;
+                vm.pSprite->picnum = *insptr++;
+                continue;
+
+            case RT_CON_IFBULLETNEAR: RT_VM_CONDITIONAL(A_Dodge(vm.pSprite) == 1); continue;
+
+            case RT_CON_IFRESPAWN:
+                if (A_CheckEnemySprite(vm.pSprite))
+                    RT_VM_CONDITIONAL(ud.respawn_monsters);
+                else if (A_CheckInventorySprite(vm.pSprite))
+                    RT_VM_CONDITIONAL(ud.respawn_inventory);
+                else
+                    RT_VM_CONDITIONAL(ud.respawn_items);
+                continue;
+
+            case RT_CON_IFFLOORDISTL:
+                insptr++;
+                RT_VM_CONDITIONAL((vm.pActor->floorz - vm.pSprite->z) <= ((*insptr) << 8));
+                continue;
+
+            case RT_CON_IFCEILINGDISTL:
+                insptr++;
+                RT_VM_CONDITIONAL((vm.pSprite->z - vm.pActor->ceilingz) <= ((*insptr) << 8));
+                continue;
+
+            case RT_CON_PALFROM:
+                insptr++;
+                if (EDUKE32_PREDICT_FALSE((unsigned)vm.playerNum >= (unsigned)g_mostConcurrentPlayers))
+                {
+                    CON_ERRPRINTF("invalid player %d\n", vm.playerNum);
+                    insptr += 4;
+                }
+                else
+                {
+                    palette_t const pal = { (uint8_t) * (insptr + 1), (uint8_t) * (insptr + 2), (uint8_t) * (insptr + 3), (uint8_t) * (insptr) };
+                    insptr += 4;
+                    P_PalFrom(pPlayer, pal.f, pal.r, pal.g, pal.b);
+                }
+                continue;
+
+            case RT_CON_IFPHEALTHL:
+                insptr++;
+                RT_VM_CONDITIONAL(sprite[pPlayer->i].extra < *insptr);
+                continue;
+
+            case RT_CON_IFPINVENTORY:
+                insptr++;
+
+                switch (*insptr++)
+                {
+                    case GET_STEROIDS:
+                    case GET_SCUBA:
+                    case GET_HOLODUKE:
+                    case GET_HEATS:
+                    case GET_FIRSTAID:
+                    case GET_BOOTS:
+                    case GET_JETPACK: tw = (pPlayer->inv_amount[*(insptr - 1)] != *insptr); break;
+
+                    case GET_SHIELD:
+                        tw = (pPlayer->inv_amount[GET_SHIELD] != pPlayer->max_player_health); break;
+                    case GET_ACCESS:
+                        switch (vm.pSprite->pal)
+                        {
+                            case 0: tw  = (pPlayer->got_access & 1); break;
+                            case 21: tw = (pPlayer->got_access & 2); break;
+                            case 23: tw = (pPlayer->got_access & 4); break;
+                        }
+                        break;
+                    default: tw = 0; CON_ERRPRINTF("invalid inventory item %d\n", (int32_t) * (insptr - 1));
+                }
+
+                RT_VM_CONDITIONAL(tw);
+                continue;
+
+            case RT_CON_PSTOMP:
+                insptr++;
+                if (pPlayer->knee_incs == 0 && sprite[pPlayer->i].xrepeat >= 40)
+                    if (cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - ZOFFSET6, vm.pSprite->sectnum, pPlayer->pos.x, pPlayer->pos.y,
+                               pPlayer->pos.z + ZOFFSET2, sprite[pPlayer->i].sectnum))
+                    {
+                        if (pPlayer->weapon_pos == 0)
+                            pPlayer->weapon_pos = -1;
+
+                        pPlayer->actorsqu  = vm.spriteNum;
+                        pPlayer->knee_incs = 1;
+                    }
+                continue;
+
+            case RT_CON_IFAWAYFROMWALL:
+            {
+                int16_t otherSectnum = vm.pSprite->sectnum;
+                tw                   = 0;
+
+#define IFAWAYDIST 108
+
+                updatesector(vm.pSprite->x + IFAWAYDIST, vm.pSprite->y + IFAWAYDIST, &otherSectnum);
+                if (otherSectnum == vm.pSprite->sectnum)
+                {
+                    updatesector(vm.pSprite->x - IFAWAYDIST, vm.pSprite->y - IFAWAYDIST, &otherSectnum);
+                    if (otherSectnum == vm.pSprite->sectnum)
+                    {
+                        updatesector(vm.pSprite->x + IFAWAYDIST, vm.pSprite->y - IFAWAYDIST, &otherSectnum);
+                        if (otherSectnum == vm.pSprite->sectnum)
+                        {
+                            updatesector(vm.pSprite->x - IFAWAYDIST, vm.pSprite->y + IFAWAYDIST, &otherSectnum);
+                            if (otherSectnum == vm.pSprite->sectnum)
+                                tw = 1;
+                        }
+                    }
+                }
+
+                RT_VM_CONDITIONAL(tw);
+
+#undef IFAWAYDIST
+            }
+                continue;
+
+            case RT_CON_QUOTE:
+                insptr++;
+
+                if (EDUKE32_PREDICT_FALSE((unsigned)(*insptr) >= MAXQUOTES) || apStrings[*insptr] == NULL)
+                {
+                    CON_ERRPRINTF("invalid quote %d\n", (int32_t)(*insptr));
+                    insptr++;
+                    continue;
+                }
+
+                if (EDUKE32_PREDICT_FALSE((unsigned)vm.playerNum >= MAXPLAYERS))
+                {
+                    CON_ERRPRINTF("invalid player %d\n", vm.playerNum);
+                    insptr++;
+                    continue;
+                }
+
+                P_DoQuote(*(insptr++) | MAXQUOTES, pPlayer);
+                continue;
+
+            case RT_CON_IFINOUTERSPACE: RT_VM_CONDITIONAL(G_CheckForSpaceFloor(vm.pSprite->sectnum)); continue;
+
+            case RT_CON_IFNOTMOVING: RT_VM_CONDITIONAL((vm.pActor->movflag & 49152) > 16384); continue;
+
+            case RT_CON_RESPAWNHITAG:
+                insptr++;
+                switch (DYNAMICTILEMAP(vm.pSprite->picnum))
+                {
+                    case FEM1__STATIC:
+                    case FEM2__STATIC:
+                    case FEM3__STATIC:
+                    case FEM4__STATIC:
+                    case FEM5__STATIC:
+                    case FEM6__STATIC:
+                    case FEM7__STATIC:
+                    case FEM8__STATIC:
+                    case FEM9__STATIC:
+                    case PODFEM1__STATIC:
+                    case FEM10__STATIC:
+                    case NAKED1__STATIC:
+                    case STATUE__STATIC:
+                        if (vm.pSprite->yvel)
+                            G_OperateRespawns(vm.pSprite->yvel);
+                        break;
+                    default:
+                        if (vm.pSprite->hitag >= 0)
+                            G_OperateRespawns(vm.pSprite->hitag);
+                        break;
+                }
+                continue;
+
+            case RT_CON_IFSPRITEPAL:
+                insptr++;
+                RT_VM_CONDITIONAL(vm.pSprite->pal == *insptr);
+                continue;
+
+            case RT_CON_IFANGDIFFL:
+                insptr++;
+                tw = klabs(G_GetAngleDelta(fix16_to_int(pPlayer->q16ang), vm.pSprite->ang));
+                RT_VM_CONDITIONAL(tw <= *insptr);
+                continue;
+
+            case RT_CON_IFNOSOUNDS: RT_VM_CONDITIONAL(!A_CheckAnySoundPlaying(vm.spriteNum)); continue;
+
+            default:  // you aren't supposed to be here!
+                debug_break();
+                VM_ScriptInfo(insptr, 64);
+                G_GameExit("An error has occurred in the " APPNAME " virtual machine.\n\n"
+                           "If you are an end user, please e-mail the file " APPBASENAME ".log\n"
+                           "along with links to any mods you're using to development@voidpoint.com.\n\n"
+                           "If you are a developer, please attach all of your script files\n"
+                           "along with instructions on how to reproduce this error.\n\n"
+                           "Thank you!");
+                break;
+        }
+    }
+}
+
+void RT_Execute(int spriteNum, int playerNum, int playerDist)
+{
+    vmstate_t tempvm
+    = { spriteNum, playerNum, playerDist, 0, &sprite[spriteNum], &actor[spriteNum].t_data[0], g_player[playerNum].ps, &actor[spriteNum] };
+    vm = tempvm;
+
+/*
+    if (g_netClient && A_CheckSpriteFlags(spriteNum, SFLAG_NULL))
+    {
+        A_DeleteSprite(spriteNum);
+        return;
+    }
+*/
+
+    //if (g_netClient) // [75] The server should not overwrite its own randomseed
+    //    randomseed = ticrandomseed;
+
+    if (EDUKE32_PREDICT_FALSE((unsigned)vm.pSprite->sectnum >= MAXSECTORS))
+    {
+        if (A_CheckEnemySprite(vm.pSprite))
+            P_AddKills(vm.pPlayer, 1);
+
+        A_DeleteSprite(vm.spriteNum);
+        return;
+    }
+
+    VM_UpdateAnim(vm.spriteNum, vm.pData);
+
+    double t = timerGetHiTicks();
+    int const picnum = vm.pSprite->picnum;
+    insptr = 4 + (g_tile[vm.pSprite->picnum].execPtr);
+    RT_VM_Execute(1);
+    insptr = NULL;
+
+    t = timerGetHiTicks()-t;
+    g_actorTotalMs[picnum] += t;
+    g_actorMinMs[picnum] = min(g_actorMinMs[picnum], t);
+    g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], t);
+    g_actorCalls[picnum]++;
+
+    if (vm.flags & VM_KILL)
+    {
+        VM_DeleteSprite(spriteNum, playerNum);
+        return;
+    }
+
+    VM_Move();
+
+    if (vm.pSprite->statnum != STAT_ACTOR)
+    {
+        if (vm.pSprite->statnum == STAT_STANDABLE)
+        {
+            switch (DYNAMICTILEMAP(vm.pSprite->picnum))
+            {
+                case RUBBERCAN__STATIC:
+                case EXPLODINGBARREL__STATIC:
+                case WOODENHORSE__STATIC:
+                case HORSEONSIDE__STATIC:
+                case CANWITHSOMETHING__STATIC:
+                case FIREBARREL__STATIC:
+                case NUKEBARREL__STATIC:
+                case NUKEBARRELDENTED__STATIC:
+                case NUKEBARRELLEAKED__STATIC:
+                case TRIPBOMB__STATIC:
+                case EGG__STATIC:
+                    if (vm.pActor->timetosleep > 1)
+                        vm.pActor->timetosleep--;
+                    else if (vm.pActor->timetosleep == 1)
+                        changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);
+                default: break;
+            }
+        }
+        return;
+    }
+
+    if (A_CheckEnemySprite(vm.pSprite))
+    {
+        if (vm.pSprite->xrepeat > 60 || (ud.respawn_monsters == 1 && vm.pSprite->extra <= 0))
+            return;
+    }
+    else if (EDUKE32_PREDICT_FALSE(ud.respawn_items == 1 && (vm.pSprite->cstat & 32768)))
+        return;
+
+    if (A_CheckSpriteFlags(vm.spriteNum, SFLAG_USEACTIVATOR) && sector[vm.pSprite->sectnum].lotag & 16384)
+        changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);
+    else if (vm.pActor->timetosleep > 1)
+        vm.pActor->timetosleep--;
+    else if (vm.pActor->timetosleep == 1)
+        changespritestat(vm.spriteNum, STAT_ZOMBIEACTOR);
+}
+#endif

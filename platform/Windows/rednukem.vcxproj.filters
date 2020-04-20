@@ -13,6 +13,12 @@
     <Filter Include="Resource Files">
       <UniqueIdentifier>{598e3748-14c8-47c3-9bb6-eea06f762413}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\n64">
+      <UniqueIdentifier>{833ae8e0-91c5-4c40-9c85-bd88760d4f2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\n64">
+      <UniqueIdentifier>{833fb20c-89e6-433e-a0af-96a4734f5def}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\rr\src\_functio.h">
@@ -159,8 +165,8 @@
     <ClInclude Include="..\..\source\rr\src\playmve.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\source\rr\src\reality.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\source\rr\src\n64\reality.h">
+      <Filter>Header Files\n64</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -275,8 +281,8 @@
     <ClCompile Include="..\..\source\rr\src\playmve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\rr\src\reality.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\source\rr\src\n64\reality.cpp">
+      <Filter>Source Files\n64</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
