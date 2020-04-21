@@ -6900,10 +6900,20 @@ static void renderFillPolygon(int32_t npoints)
 
                 const intptr_t p = ylookup[y]+x1+frameplace;
 
-                if (globalpolytype == 1)
-                    mhline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                if (globalispow2)
+                {
+                    if (globalpolytype == 1)
+                        mhline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                    else
+                        thline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                }
                 else
-                    thline(globalbufplc,bx,(x2-x1)<<16,0L,by,p);
+                {
+                    if (globalpolytype == 1)
+                        nonpow2_mhline(globalbufplc,bx,(x2-x1)<<16,by,(char *)p);
+                    else
+                        nonpow2_thline(globalbufplc,bx,(x2-x1)<<16,by,(char *)p);
+                }
             }
         }
 
@@ -9898,6 +9908,7 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
         if ((spr->cstat&48) >= 32)
         {
             const int32_t xspan = tilesiz[spr->picnum].x;
+            const int32_t yspan = tilesiz[spr->picnum].y;
 
             int32_t npoints = 0;
             vec2_t v1 = { spr->x, spr->y }, v2, v3, v4;
@@ -9979,12 +9990,6 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
             globaly2 = mulscale10(dmulscale10(ox,bakgvect.y,-oy,bakgvect.x),i);
 
             ox = picsiz[globalpicnum]; oy = ((ox>>4)&15); ox &= 15;
-            if (pow2long[ox] != xspan)
-            {
-                ox++;
-                globalx1 = mulscale(globalx1,xspan,ox);
-                globaly1 = mulscale(globaly1,xspan,ox);
-            }
 
             bak.x = (bak.x>>4)-(xdim<<7); bak.y = (bak.y>>4)-(ydim<<7);
             globalposx = dmulscale28(-bak.y,globalx1,-bak.x,globaly1);
@@ -10004,9 +10009,15 @@ void renderDrawMapView(int32_t dax, int32_t day, int32_t zoome, int16_t ang)
 
             set_globalpos(globalposx, globalposy, globalposz);
 
+            globalispow2 = (pow2long[ox]==xspan && pow2long[oy]==yspan);
+            globalxspan = xspan;
+            globalyspan = yspan;
+
             // so polymost can get the translucency. ignored in software mode:
             globalorientation = ((spr->cstat&2)<<7) | ((spr->cstat&512)>>2);
             renderFillPolygon(npoints);
+
+            globalispow2 = 1;
         }
     }
 
