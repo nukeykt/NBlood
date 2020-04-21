@@ -1358,7 +1358,7 @@ static void ReadHelpFile(const char *name)
 
     if ((fp=fopenfrompath(name,"rb")) == NULL)
     {
-        initprintf("Error initializing integrated help: file \"%s\" not found.\n", name);
+        // initprintf("Error initializing integrated help: file \"%s\" not found.\n", name);
         return;
     }
 
