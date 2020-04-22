@@ -377,14 +377,13 @@ static int32_t G_LoadGrpDependencyChain(grpfile_t const * const grp)
     if (grp->type->game & GAMEFLAG_REALITY)
         return RT_InitGRP(grp->filename);
     else
-#else
+#endif
     {
-        int32_t const i = G_TryLoadingGrp(grp->filename);
+        i = G_TryLoadingGrp(grp->filename);
 
         if (grp->type->postprocessing)
             grp->type->postprocessing(i);
     }
-#endif
 
     return i;
 }
