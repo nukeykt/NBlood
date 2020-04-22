@@ -258,8 +258,8 @@ void sndStopSong(void)
 
 void SoundCallback(intptr_t val)
 {
-    SAMPLE2D *pChannel = (SAMPLE2D*)val;
-    pChannel->at0 = 0;
+    int *phVoice = (int*)val;
+    *phVoice = 0;
 }
 
 void sndKillSound(SAMPLE2D *pChannel);
