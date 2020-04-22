@@ -752,7 +752,7 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
     }
 
     videoSetGamma();
-    j = (!gammabrightness || (flags & 32) != 0)?curbrightness:0;
+    j = (!gammabrightness || ((flags & 32) != 0 && videoGetRenderMode() != REND_POLYMOST))?curbrightness:0;
 
     for (i=0; i<256; i++)
     {
@@ -770,7 +770,7 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
     }
 
     if ((flags & 32) != 0 && videoGetRenderMode() == REND_POLYMOST)
-        r_brightnesshack = j;
+        r_brightnesshack = curbrightness;
     else
         r_brightnesshack = 0;
 
