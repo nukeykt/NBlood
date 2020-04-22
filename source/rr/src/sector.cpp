@@ -5271,7 +5271,7 @@ void G_Thunder(void)
         {
             brightness = ud.brightness>>2;
             g_thunderFlash = 0;
-            videoSetPalette(brightness,g_player[screenpeek].ps->palette,32);
+            videoSetPalette(brightness,g_player[screenpeek].ps->palette,2|8|32);
             g_visibility = g_player[screenpeek].ps->visibility;
         }
     }
@@ -5314,7 +5314,7 @@ void G_Thunder(void)
         g_visibility = 2048;
         if (brightness > 8)
             brightness = 0;
-        videoSetPalette(brightness,g_player[screenpeek].ps->palette,32);
+        videoSetPalette(brightness,g_player[screenpeek].ps->palette,2|8|32);
     }
     if (g_winderFlash == 1)
     {

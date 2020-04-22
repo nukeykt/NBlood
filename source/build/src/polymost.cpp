@@ -138,6 +138,7 @@ int32_t r_vbocount = 64;
 int32_t r_animsmoothing = 1;
 int32_t r_downsize = 0;
 int32_t r_downsizevar = -1;
+int32_t r_brightnesshack = 0;
 
 int32_t r_rortexture = 0;
 int32_t r_rortexturerange = 0;
@@ -219,6 +220,8 @@ static GLint polymost1NPOTEmulationFactorLoc = -1;
 static float polymost1NPOTEmulationFactor = 1.f;
 static GLint polymost1NPOTEmulationXOffsetLoc = -1;
 static float polymost1NPOTEmulationXOffset = 0.f;
+static GLint polymost1BrightnessLoc = -1;
+static float polymost1Brightness = 1.f;
 static GLint polymost1RotMatrixLoc = -1;
 static float polymost1RotMatrix[16] = { 1.f, 0.f, 0.f, 0.f,
                                         0.f, 1.f, 0.f, 0.f,
@@ -671,6 +674,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     polymost1NPOTEmulationLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulation");
     polymost1NPOTEmulationFactorLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationFactor");
     polymost1NPOTEmulationXOffsetLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_npotEmulationXOffset");
+    polymost1BrightnessLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_brightness");
     polymost1RotMatrixLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_rotMatrix");
     polymost1ShadeInterpolateLoc = glGetUniformLocation(polymost1CurrentShaderProgramID, "u_shadeInterpolate");
 
@@ -691,6 +695,7 @@ static void polymost_setCurrentShaderProgram(uint32_t programID)
     glUniform1f(polymost1NPOTEmulationLoc, polymost1NPOTEmulation);
     glUniform1f(polymost1NPOTEmulationFactorLoc, polymost1NPOTEmulationFactor);
     glUniform1f(polymost1NPOTEmulationXOffsetLoc, polymost1NPOTEmulationXOffset);
+    glUniform1f(polymost1BrightnessLoc, polymost1Brightness);
     glUniformMatrix4fv(polymost1RotMatrixLoc, 1, false, polymost1RotMatrix);
     glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
 }
@@ -872,6 +877,15 @@ void polymost_shadeInterpolate(int32_t shadeInterpolate)
     {
         polymost1ShadeInterpolate = shadeInterpolate;
         glUniform1f(polymost1ShadeInterpolateLoc, polymost1ShadeInterpolate);
+    }
+}
+
+void polymost_setBrightness(int brightness)
+{
+    if (currentShaderProgramID == polymost1CurrentShaderProgramID)
+    {
+        polymost1Brightness = 8.f / (brightness + 8.f);
+        glUniform1f(polymost1BrightnessLoc, polymost1Brightness);
     }
 }
 
@@ -6777,6 +6791,8 @@ void polymost_drawrooms()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_ALWAYS); //NEVER,LESS,(,L)EQUAL,GREATER,(NOT,G)EQUAL,ALWAYS
 //        glDepthRange(0.0, 1.0); //<- this is more widely supported than glPolygonOffset
+
+    polymost_setBrightness(r_brightnesshack);
 
     gvrcorrection = viewingrange*(1.f/65536.f);
     if (glprojectionhacks == 2)

@@ -34,6 +34,7 @@ uniform float u_usePalette;
 uniform float u_npotEmulation;
 uniform float u_npotEmulationFactor;
 uniform float u_npotEmulationXOffset;
+uniform float u_brightness;
 uniform float u_shadeInterpolate;
 
 #ifdef POLYMOST1_EXTENDED
@@ -107,11 +108,19 @@ void main()
     color.rgb = mix(gl_Fog.color.rgb, color.rgb, fogFactor);
 
 #ifdef POLYMOST1_EXTENDED
-    vec4 glowColor = texture2D(s_glow, gl_TexCoord[4].xy);
+    coordY = mix(gl_TexCoord[4].y,gl_TexCoord[4].x,u_usePalette);
+    coordX = mix(gl_TexCoord[4].x,gl_TexCoord[4].y,u_usePalette);
+    period = floor(coordY/u_npotEmulationFactor);
+    coordX += u_npotEmulationXOffset*floor(mod(coordY,u_npotEmulationFactor));
+    coordY = period+mod(coordY,u_npotEmulationFactor);
+    newCoord = mix(gl_TexCoord[4].xy,mix(vec2(coordX,coordY),vec2(coordY,coordX),u_usePalette),u_npotEmulation);
+    vec4 glowColor = texture2D(s_glow, newCoord);
     color.rgb = mix(color.rgb, glowColor.rgb, u_useGlowMapping*glowColor.a*(c_one-u_useColorOnly));
 #endif
 
     color.a *= v_color.a;
+
+    color.rgb = pow(color.rgb, vec3(u_brightness));
 
     gl_FragData[0] = color;
 }
