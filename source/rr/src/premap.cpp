@@ -2032,6 +2032,21 @@ end_vol4a:
     }
 
     display_mirror = 0;
+
+    if (ud.multimode > 1)
+    {
+        if (numplayers < 2)
+        {
+            connecthead = 0;
+            for (int i = 0; i < MAXPLAYERS; i++) connectpoint2[i] = i + 1;
+            connectpoint2[ud.multimode - 1] = -1;
+        }
+    }
+    else
+    {
+        connecthead = 0;
+        connectpoint2[0] = -1;
+    }
 }
 
 static void resetpspritevars(char gameMode)
@@ -2605,6 +2620,9 @@ int G_EnterLevel(int gameMode)
     G_ClearFIFO();
 
     for (i=g_interpolationCnt-1; i>=0; i--) bakipos[i] = *curipos[i];
+
+    for (i=0; i<ud.multimode; i++)
+        g_player[i].playerquitflag = 1;
 
     g_player[myconnectindex].ps->over_shoulder_on = 0;
 

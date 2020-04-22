@@ -206,6 +206,8 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
         OSD_Printf("demo %d duration: %d min %d sec\n", g_whichDemo, i/60, i%60);
         g_demo_cnt = 1;
 
+        g_mostConcurrentPlayers = ud.multimode;
+
         ud.god = ud.cashman = ud.eog = ud.showallmap = 0;
         ud.noclip = ud.scrollmode = ud.overhead_on = 0; //= ud.pause_on = 0;
 
@@ -239,6 +241,8 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
 
     g_demo_cnt = 1;
     ud.reccnt = 0;
+
+    g_mostConcurrentPlayers = ud.multimode;
 
     ud.god = ud.cashman = ud.eog = ud.showallmap = 0;
     ud.noclip = ud.scrollmode = ud.overhead_on = 0; //= ud.pause_on = 0;

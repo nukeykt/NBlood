@@ -5209,12 +5209,10 @@ void P_FragPlayer(int playerNum)
 
             if (ud.obituaries)
             {
-                Bsprintf(tempbuf, apStrings[OBITQUOTEINDEX + (krand2() % g_numObituaries)],
+                Bsprintf(tempbuf, apStrings[OBITQUOTEINDEX + (g_globalRandom % g_numObituaries)],
                          &g_player[pPlayer->frag_ps].user_name[0], &g_player[playerNum].user_name[0]);
                 G_AddUserQuote(tempbuf);
             }
-            else
-                krand2();
         }
         else
         {

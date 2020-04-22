@@ -86,14 +86,14 @@ void RT_LoadTiles(void)
             char *pix = outbuf+32;
             for (int i = 0; i < 16; i++)
             {
-		        int t = (outbuf[i*2+1] << 8) + outbuf[i*2];
-		        int r = (t >> 11) & 31;
-		        int g = (t >> 6) & 31;
-		        int b = (t >> 1) & 31;
+                int t = (outbuf[i*2+1] << 8) + outbuf[i*2];
+                int r = (t >> 11) & 31;
+                int g = (t >> 6) & 31;
+                int b = (t >> 1) & 31;
                 int a = (t >> 0) & 1;
-		        r = (r << 3) + (r >> 2);
-		        g = (g << 3) + (g >> 2);
-		        b = (b << 3) + (b >> 2);
+                r = (r << 3) + (r >> 2);
+                g = (g << 3) + (g >> 2);
+                b = (b << 3) + (b >> 2);
                 if (a == 0)
                     palremap[i] = 255;
                 else
@@ -176,14 +176,14 @@ bool RT_TileLoad(int16_t tilenum)
             char *pix = src+32;
             for (int i = 0; i < 16; i++)
             {
-		        int t = (src[i*2+1] << 8) + src[i*2];
-		        int r = (t >> 11) & 31;
-		        int g = (t >> 6) & 31;
-		        int b = (t >> 1) & 31;
+                int t = (src[i*2+1] << 8) + src[i*2];
+                int r = (t >> 11) & 31;
+                int g = (t >> 6) & 31;
+                int b = (t >> 1) & 31;
                 int a = (t >> 0) & 1;
-		        r = (r << 3) + (r >> 2);
-		        g = (g << 3) + (g >> 2);
-		        b = (b << 3) + (b >> 2);
+                r = (r << 3) + (r >> 2);
+                g = (g << 3) + (g >> 2);
+                b = (b << 3) + (b >> 2);
                 if (a == 0)
                     palremap[i] = 255;
                 else
