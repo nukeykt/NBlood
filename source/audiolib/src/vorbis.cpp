@@ -432,11 +432,11 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
 
     auto vd = (vorbis_data *)voice->rawdataptr;
 
+    ov_clear(&vd->vf);
+
     voice->length = 0;
     voice->sound = nullptr;
     voice->ptrlock = CACHE1D_UNLOCKED;
-
-    ov_clear(&vd->vf);
 }
 #else
 #include "_multivc.h"
