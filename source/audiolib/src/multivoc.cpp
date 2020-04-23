@@ -543,24 +543,14 @@ int MV_GetFrequency(int handle, int *frequency)
 ---------------------------------------------------------------------*/
 
 void MV_SetVoiceMixMode(VoiceNode *voice)
-{
-    int type = T_DEFAULT;
-
-    if (MV_Channels == 1)
-        type |= T_MONO;
-
-    if (voice->bits == 16)
-        type |= T_16BITSOURCE;
-
-    if (voice->channels == 2)
-        type |= T_STEREOSOURCE;
-
+{    
     // stereo look-up table
     static constexpr decltype(voice->mix) mixslut[]
     = { MV_MixStereo<uint8_t, int16_t>,       MV_MixMono<uint8_t, int16_t>,       MV_MixStereo<int16_t, int16_t>,       MV_MixMono<int16_t, int16_t>,
         MV_MixStereoStereo<uint8_t, int16_t>, MV_MixMonoStereo<uint8_t, int16_t>, MV_MixStereoStereo<int16_t, int16_t>, MV_MixMonoStereo<int16_t, int16_t> };
 
-    voice->mix = mixslut[type];
+    // corresponds to T_MONO, T_16BITSOURCE, and T_STEREOSOURCE
+    voice->mix = mixslut[(MV_Channels == 1) | ((voice->bits == 16) << 1) | ((voice->channels == 2) << 2)];
 }
 
 void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t volume)
