@@ -427,7 +427,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     return voice->handle;
 }
 
-void MV_ReleaseVorbisVoice( VoiceNode * voice )
+void MV_ReleaseVorbisVoice(VoiceNode *voice)
 {
     if (voice->wavetype != FMT_VORBIS)
         return;
@@ -435,11 +435,11 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
     if (voice->rawdataptr)
     {
         auto vd = (vorbis_data *)voice->rawdataptr;
+        voice->rawdataptr = nullptr;
+
         ov_clear(&vd->vf);
     }
 
-    voice->length = 0;
-    voice->sound = nullptr;
     voice->ptrlock = CACHE1D_UNLOCKED;
 }
 #else

@@ -170,14 +170,11 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 
 void MV_ReleaseXMPVoice(VoiceNode * voice)
 {
-    auto xmpd = (xmp_data *) voice->rawdataptr;
-
     if (voice->wavetype != FMT_XMP)
         return;
 
-    voice->rawdataptr = 0;
-    voice->length = 0;
-    voice->sound = nullptr;
+    auto xmpd = (xmp_data *) voice->rawdataptr;
+    voice->rawdataptr = nullptr;
 
     xmp_end_player(xmpd->context);
     xmp_release_module(xmpd->context);

@@ -194,6 +194,9 @@ static void MV_CleanupVoice(VoiceNode *voice)
     }
 
     voice->handle = 0;
+    voice->length = 0;
+    voice->sound = nullptr;
+    voice->wavetype = FMT_UNKNOWN;
 }
 
 static void MV_StopVoice(VoiceNode *voice)

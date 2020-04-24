@@ -632,25 +632,24 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
 
 void MV_ReleaseFLACVoice(VoiceNode *voice)
 {
-    flac_data *fd = (flac_data *)voice->rawdataptr;
-
     if (voice->wavetype != FMT_FLAC)
-    {
         return;
-    }
 
-    voice->rawdataptr = 0;
+    flac_data *fd = (flac_data *)voice->rawdataptr;
+    voice->rawdataptr = nullptr;
+
     if (fd->stream != nullptr)
     {
-    auto stream = fd->stream;
-    fd->stream = nullptr;
+        auto stream = fd->stream;
+        fd->stream = nullptr;
+
         FLAC__stream_decoder_finish(stream);
         FLAC__stream_decoder_delete(stream);
     }
+
     auto block = fd->block;
-    voice->length = 0;
-    voice->sound = nullptr;
     fd->block = nullptr;
+
     Xfree(block);
     Xfree(fd);
 }
