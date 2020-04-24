@@ -277,6 +277,8 @@ static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
         else if (bytes < 0)
         {
             MV_Printf("MV_GetNextVorbisBlock ov_read: err %d\n", bytes);
+            voice->rawdataptr = nullptr;
+            MV_ReleaseVorbisVoice(voice);
             return NoMoreData;
         }
     } while (bytesread < BLOCKSIZE);
@@ -430,9 +432,11 @@ void MV_ReleaseVorbisVoice( VoiceNode * voice )
     if (voice->wavetype != FMT_VORBIS)
         return;
 
-    auto vd = (vorbis_data *)voice->rawdataptr;
-
-    ov_clear(&vd->vf);
+    if (voice->rawdataptr)
+    {
+        auto vd = (vorbis_data *)voice->rawdataptr;
+        ov_clear(&vd->vf);
+    }
 
     voice->length = 0;
     voice->sound = nullptr;
