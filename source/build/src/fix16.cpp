@@ -4,7 +4,6 @@
 /* Subtraction and addition with overflow detection.
  * The versions without overflow detection are inlined in the header.
  */
-#ifndef FIXMATH_NO_OVERFLOW
 fix16_t fix16_add(fix16_t a, fix16_t b)
 {
     // Use unsigned integers because overflow with signed integers is
@@ -53,7 +52,6 @@ fix16_t fix16_ssub(fix16_t a, fix16_t b)
 
     return result;
 }
-#endif
 
 
 
@@ -67,17 +65,13 @@ fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
 {
     int64_t product = (int64_t)inArg0 * inArg1;
 
-    #ifndef FIXMATH_NO_OVERFLOW
     // The upper 17 bits should all be the same (the sign).
     uint32_t upper = (product >> 47);
-    #endif
 
     if (product < 0)
     {
-        #ifndef FIXMATH_NO_OVERFLOW
         if (~upper)
                 return FIX16_OVERFLOW;
-        #endif
 
         #ifndef FIXMATH_NO_ROUNDING
         // This adjustment is required in order to round -1/2 correctly
@@ -86,10 +80,8 @@ fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
     }
     else
     {
-        #ifndef FIXMATH_NO_OVERFLOW
         if (upper)
                 return FIX16_OVERFLOW;
-        #endif
     }
 
     #ifdef FIXMATH_NO_ROUNDING
@@ -102,7 +94,6 @@ fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
     #endif
 }
 
-#ifndef FIXMATH_NO_OVERFLOW
 /* Wrapper around fix16_mul to add saturating arithmetic. */
 fix16_t fix16_smul(fix16_t inArg0, fix16_t inArg1)
 {
@@ -118,7 +109,6 @@ fix16_t fix16_smul(fix16_t inArg0, fix16_t inArg1)
 
     return result;
 }
-#endif
 
 /* 32-bit implementation of fix16_div. Fastest version for e.g. ARM Cortex M3.
  * Performs 32-bit divisions repeatedly to reduce the remainder. For this to
@@ -180,10 +170,8 @@ fix16_t fix16_div(fix16_t a, fix16_t b)
         remainder = remainder % divider;
         quotient += div << bit_pos;
 
-        #ifndef FIXMATH_NO_OVERFLOW
         if (div & ~(0xFFFFFFFF >> bit_pos))
                 return FIX16_OVERFLOW;
-        #endif
 
         remainder <<= 1;
         bit_pos--;
@@ -199,10 +187,8 @@ fix16_t fix16_div(fix16_t a, fix16_t b)
     // Figure out the sign of the result
     if ((a ^ b) & 0x80000000)
     {
-        #ifndef FIXMATH_NO_OVERFLOW
         if (result == FIX16_MIN)
                 return FIX16_OVERFLOW;
-        #endif
 
         result = -result;
     }
@@ -210,7 +196,6 @@ fix16_t fix16_div(fix16_t a, fix16_t b)
     return result;
 }
 
-#ifndef FIXMATH_NO_OVERFLOW
 /* Wrapper around fix16_div to add saturating arithmetic. */
 fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1)
 {
@@ -226,7 +211,6 @@ fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1)
 
     return result;
 }
-#endif
 
 fix16_t fix16_lerp8(fix16_t inArg0, fix16_t inArg1, uint8_t inFract)
 {
