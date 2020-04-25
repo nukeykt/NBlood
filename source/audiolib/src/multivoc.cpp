@@ -565,8 +565,8 @@ void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t v
         swap(&left, &right);
 #endif
 
-    voice->LeftVolumeDest = left*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
-    voice->RightVolumeDest = right*fix16_from_float(1.f/MV_MAXTOTALVOLUME);
+    voice->LeftVolumeDest = fix16_smul(fix16_from_int(left), F16(1.f/MV_MAXTOTALVOLUME));
+    voice->RightVolumeDest = fix16_smul(fix16_from_int(right), F16(1.f/MV_MAXTOTALVOLUME));
     voice->volume = volume;
 
     MV_SetVoiceMixMode(voice);
@@ -689,7 +689,7 @@ int MV_Pan3D(int handle, int angle, int distance)
 void MV_SetReverb(int reverb)
 {
     MV_ReverbLevel = MIX_VOLUME(reverb);
-    MV_ReverbVolume = MV_ReverbLevel*fix16_from_float(1.f/MV_MAXVOLUME);
+    MV_ReverbVolume = fix16_smul(fix16_from_int(MV_ReverbLevel), F16(1.f/MV_MAXVOLUME));
 }
 
 int MV_GetMaxReverbDelay(void) { return MV_MIXBUFFERSIZE * MV_NumberOfBuffers; }
@@ -781,7 +781,7 @@ static void MV_CalcPanTable(void)
 void MV_SetVolume(int volume)
 {
     MV_TotalVolume  = min(max(0, volume), MV_MAXTOTALVOLUME);
-    MV_GlobalVolume = volume * fix16_from_float(1.0f / 255.f);
+    MV_GlobalVolume = fix16_smul(fix16_from_int(volume), F16(1.f/255.f));
     // MV_CalcVolume(MV_TotalVolume);
 }
 
