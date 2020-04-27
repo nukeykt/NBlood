@@ -87,7 +87,6 @@ char SetupFilename[BMAX_PATH] = SETUPFILENAME;
 int32_t gNoSetup = 0, gCommandSetup = 0;
 
 INPUT_MODE gInputMode;
-
 #ifdef USE_QHEAP
 unsigned int nMaxAlloc = 0x4000000;
 #endif
@@ -624,6 +623,7 @@ void StartLevel(GAMEOPTIONS *gameOptions)
             gGameOptions.uGameFlags |= 4;
         if (gGameOptions.nGameType == 1 && (gGameOptions.uGameFlags&4) && !gPacketStartGame.userMap)
             levelPlayIntroScene(gGameOptions.nEpisode);
+            
 
         ///////
         gGameOptions.weaponsV10x = gPacketStartGame.weaponsV10x;
@@ -1108,6 +1108,7 @@ void ProcessFrame(void)
             {
                 if (gGameOptions.uGameFlags&8)
                     levelPlayEndScene(gGameOptions.nEpisode);
+                    
 
                 if (gGameOptions.nGameType == 0)
                 {

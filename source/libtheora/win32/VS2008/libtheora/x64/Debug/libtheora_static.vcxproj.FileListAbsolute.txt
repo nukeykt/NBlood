@@ -1,0 +1,7 @@
+D:\Backup\Games\Blood\Media-master\SDL_theora_working\SDL_theora\lib\theora\libtheora.pdb
+D:\Backup\Games\Blood\Media-master\SDL_theora_working\SDL_theora\libtheora-1.1.1\libtheora-1.1.1\win32\VS2008\libtheora\x64\Debug\libtheora.pdb
+D:\Backup\Games\Blood\MexMeRcUrY\platform\Windows\lib\64\libtheora.pdb
+D:\Backup\Games\Blood\MexMeRcUrY\source\SDL_theora\libtheora-1.1.1\win32\VS2008\libtheora\x64\Debug\libtheora.pdb
+D:\Backup\Games\Blood\MexMeRcUrY_Cagazon\platform\Windows\lib\64\libtheora.pdb
+D:\Backup\Games\Blood\MexMeRcUrY_Cagazon\source\SDLtheora\libtheora-1.1.1\win32\VS2008\libtheora\x64\Debug\libtheora.pdb
+D:\Backup\GAmes\Blood\MexMeRcUrY\source\SDLtheora\libtheora-1.1.1\win32\VS2008\libtheora\x64\Debug\libtheora.pdb

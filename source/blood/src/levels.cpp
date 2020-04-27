@@ -41,6 +41,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sfx.h"
 #include "view.h"
 #include "eventq.h"
+#include "sdltheora/sdltheora.h"
+#ifdef _WIN32
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#endif
+#include<iostream>
+
 
 GAMEOPTIONS gGameOptions;
 
@@ -92,6 +102,55 @@ void showWaitingScreenForCoop(void)
     }
 }
 
+void getCutScenePath(char* episodeCS, char* nBloodMoveFullPath, char* ogvMovieFullPath, char* smkMovieFullPath) {
+
+    char* cutscene = new char [strlen(episodeCS)];
+    strcpy(cutscene, episodeCS);
+    char* gameDir = new char[MAX_PATH];
+    char buff[FILENAME_MAX];
+    GetCurrentDir(buff, FILENAME_MAX);
+    std::string current_working_dir(buff);
+    size_t wdSize = current_working_dir.length();
+
+    G_GetGameDir(gameDir);
+    strcpy(ogvMovieFullPath, gameDir);
+    strcpy(smkMovieFullPath, gameDir);
+    strcpy(nBloodMoveFullPath, current_working_dir.c_str());
+    
+    char* cs = new char[strlen(cutscene)];
+    strcpy(cs, cutscene);
+    //strip the drive letter (OUWB)
+    char* driveLetter = strrchr(cs, ':');
+    if (driveLetter)
+    {
+        size_t pathSize = strlen(driveLetter);
+        cs[0] = 0;
+        cs = new char[pathSize - 1];
+        memcpy(cs, &driveLetter[1], pathSize);
+        cs[pathSize-1] = '\0';
+        strcat(smkMovieFullPath, cs);
+        strcat(ogvMovieFullPath, cs);
+        strcat(nBloodMoveFullPath, cs);
+
+    }
+    else
+    {
+        strcat(smkMovieFullPath, "\\");
+        strcat(smkMovieFullPath, cs);
+        strcat(ogvMovieFullPath, "\\");
+        strcat(ogvMovieFullPath, cs);
+        strcat(nBloodMoveFullPath, "\\");
+        strcat(nBloodMoveFullPath, cs);
+        
+    }
+    //Freshsupply files
+    if (ogvMovieFullPath)
+    {
+        ogvMovieFullPath[strlen(ogvMovieFullPath) - 1] = 'v';
+        ogvMovieFullPath[strlen(ogvMovieFullPath) - 2] = 'g';
+        ogvMovieFullPath[strlen(ogvMovieFullPath) - 3] = 'o';
+    }
+}
 void levelPlayIntroScene(int nEpisode)
 {
     gGameOptions.uGameFlags &= ~4;
@@ -100,14 +159,75 @@ void levelPlayIntroScene(int nEpisode)
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
-    EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
-    credPlaySmk(pEpisode->cutsceneASmkPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
-    showWaitingScreenForCoop();
-    scrSetDac();
-    viewResizeView(gViewSize);
-    credReset();
-    scrSetDac();
+    EPISODEINFO* pEpisode = &gEpisodeInfo[nEpisode];
+    char* smkMovieFullPath = new char[MAX_PATH];
+    char* ogvMovieFullPath = new char[MAX_PATH];
+    char* nBloodMovieFullPath = new char[MAX_PATH];
+    
+    getCutScenePath(pEpisode->cutsceneASmkPath, nBloodMovieFullPath, ogvMovieFullPath, smkMovieFullPath);
+    bool moviePlayed = false;
+    struct stat buf;
+    bool filefound = false;
+
+    //Nblood folder movie 
+    if (strlen(nBloodMovieFullPath) > 0)
+    {
+        size_t pathSize = strlen(nBloodMovieFullPath);
+        filefound = stat(nBloodMovieFullPath, &buf) == 0;
+        if (filefound)
+        {
+            moviePlayed = credPlaySmk(pEpisode->cutsceneASmkPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
+            showWaitingScreenForCoop();
+            scrSetDac();
+            viewResizeView(gViewSize);
+            credReset();
+            scrSetDac();
+        }
+        if (!moviePlayed)
+        {
+            nBloodMovieFullPath[pathSize - 1] = 'v';
+            nBloodMovieFullPath[pathSize - 2] = 'g';
+            nBloodMovieFullPath[pathSize - 3] = 'o';
+            filefound = stat(nBloodMovieFullPath, &buf) == 0;
+            if (filefound)
+            {
+                moviePlayed = credPlayTheora(nBloodMovieFullPath);
+                
+                showWaitingScreenForCoop();
+                //videoClearScreen(0);
+            }
+        }
+    }
+
+    //try movies in game Data path
+    if (!moviePlayed)
+    {
+        filefound = stat(ogvMovieFullPath, &buf) == 0;
+        if (filefound)
+        {
+            moviePlayed = credPlayTheora(ogvMovieFullPath);
+            showWaitingScreenForCoop();
+            //videoClearScreen(0);
+        }
+    }
+    if (!moviePlayed)
+    {
+        filefound = stat(smkMovieFullPath, &buf) == 0;
+        if (filefound)
+        {
+
+            moviePlayed = credPlaySmk(smkMovieFullPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
+            showWaitingScreenForCoop();
+            scrSetDac();
+            viewResizeView(gViewSize);
+            credReset();
+            scrSetDac();
+
+
+        }
+    }
 }
+
 
 void levelPlayEndScene(int nEpisode)
 {
@@ -117,13 +237,110 @@ void levelPlayEndScene(int nEpisode)
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
-    EPISODEINFO *pEpisode = &gEpisodeInfo[nEpisode];
-    credPlaySmk(pEpisode->cutsceneBSmkPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
-    showWaitingScreenForCoop();
-    scrSetDac();
-    viewResizeView(gViewSize);
-    credReset();
-    scrSetDac();
+    EPISODEINFO* pEpisode = &gEpisodeInfo[nEpisode];
+    char* smkMovieFullPath = new char[MAX_PATH];
+    char* ogvMovieFullPath = new char[MAX_PATH];
+    char* nBloodMovieFullPath = new char[MAX_PATH];
+
+    getCutScenePath(pEpisode->cutsceneBSmkPath, nBloodMovieFullPath, ogvMovieFullPath, smkMovieFullPath);
+    bool moviePlayed = false;
+    struct stat buf;
+    bool filefound = false;
+
+    //Nblood folder movie 
+    if (strlen(nBloodMovieFullPath) > 0)
+    {
+        size_t pathSize = strlen(nBloodMovieFullPath);
+        filefound = stat(nBloodMovieFullPath, &buf) == 0;
+        if (filefound)
+        {
+            moviePlayed = credPlaySmk(nBloodMovieFullPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
+            showWaitingScreenForCoop();
+            scrSetDac();
+            viewResizeView(gViewSize);
+            credReset();
+            scrSetDac();
+        }
+        if (!moviePlayed)
+        {
+            nBloodMovieFullPath[pathSize - 1] = 'v';
+            nBloodMovieFullPath[pathSize - 2] = 'g';
+            nBloodMovieFullPath[pathSize - 3] = 'o';
+            filefound = stat(nBloodMovieFullPath, &buf) == 0;
+            if (filefound)
+            {
+                moviePlayed = credPlayTheora(nBloodMovieFullPath);
+                showWaitingScreenForCoop();
+                scrSetDac();
+                viewResizeView(gViewSize);
+                credReset();
+                scrSetDac();
+            }
+        }
+    }
+
+    //try movies in game files path
+    if (!moviePlayed)
+    {
+        filefound = stat(ogvMovieFullPath, &buf) == 0;
+        if (filefound)
+        {
+            moviePlayed = credPlayTheora(ogvMovieFullPath);
+            showWaitingScreenForCoop();
+            scrSetDac();
+            viewResizeView(gViewSize);
+            credReset();
+            scrSetDac();
+            moviePlayed = true;
+        }
+    }
+    if (!moviePlayed)
+    {
+        filefound = stat(smkMovieFullPath, &buf) == 0;
+        if (filefound)
+        {
+            
+            moviePlayed = credPlaySmk(smkMovieFullPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
+            showWaitingScreenForCoop();
+            scrSetDac();
+            viewResizeView(gViewSize);
+            credReset();
+            scrSetDac();
+
+
+        }
+    }
+    ////reshsupply support
+    ////ogv video File Exists
+    //int const pathSize = strlen(pEpisode->cutsceneBSmkPath);
+    //char* subbuff = new char[pathSize - 2];
+    //memcpy(subbuff, &pEpisode->cutsceneBSmkPath[3], pathSize - 2);
+    //subbuff[pathSize - 4] = 'v';
+    //subbuff[pathSize - 5] = 'g';
+    //subbuff[pathSize - 6] = 'o';
+    //subbuff[pathSize - 2] = '\0';
+
+    //struct stat buf;
+    //bool filefound = stat(subbuff, &buf) == 0;
+    //if (filefound)
+    //{
+    //    credPlayTheora(subbuff);
+    //    showWaitingScreenForCoop();
+    //    scrSetDac();
+    //    viewResizeView(gViewSize);
+    //    credReset();
+    //    scrSetDac();
+    //}
+    //else
+    //{
+    //    credPlaySmk(pEpisode->cutsceneBSmkPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
+    //    showWaitingScreenForCoop();
+    //    scrSetDac();
+    //    viewResizeView(gViewSize);
+    //    credReset();
+    //    scrSetDac();
+
+    //}
 }
 
 void levelClearSecrets(void)

@@ -66,6 +66,7 @@ extern void clearDefNamePtr(void);
 
 void G_AddGroup(const char *buffer);
 void G_AddPath(const char *buffer);
+void G_GetGameDir(char* srcString);
 void G_AddDef(const char *buffer);
 void G_AddDefModule(const char *buffer);
 #ifdef HAVE_CLIPSHAPE_FEATURE
