@@ -1853,6 +1853,9 @@ static int P_DisplayAccess(int accessShade)
 
 void P_DisplayWeapon(void)
 {
+    if (REALITY)
+        return RT_P_DisplayWeapon();
+
     DukePlayer_t *const  pPlayer     = g_player[screenpeek].ps;
     const uint8_t *const weaponFrame = &pPlayer->kickback_pic;
 
@@ -5251,6 +5254,9 @@ static void P_ProcessWeapon(int playerNum)
     int const           playerShrunk = (sprite[pPlayer->i].yrepeat < (RR ? 8 : 32));
     uint32_t            playerBits   = g_player[playerNum].inputBits->bits;
     int const           sectorLotag  = sector[pPlayer->cursectnum].lotag;
+
+    if (REALITY)
+        return RT_P_ProcessWeapon(playerNum);
 
     if (RR)
     {

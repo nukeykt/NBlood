@@ -7,10 +7,12 @@
 
 #include "vfs.h"
 #include "reality_defs.h"
+#include "reality_player.h"
 #include "reality_render.h"
 #include "reality_util.h"
 
 extern buildvfs_kfd rt_group;
+extern int rt_gamestate, rt_gamestatus;
 
 buildvfs_kfd RT_InitGRP(const char *filename);
 void RT_Init(void);

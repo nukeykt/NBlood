@@ -225,6 +225,10 @@ typedef struct {
 
     int32_t dhat60f, dhat613, dhat617, dhat61b, dhat61f;
 
+    int16_t dn64_370, dn64_372;
+
+    int32_t dn_388;
+
     int8_t crouch_toggle;
     int8_t padding_[3];
 } DukePlayer_t;

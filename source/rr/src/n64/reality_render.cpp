@@ -7,6 +7,8 @@ int32_t rt_tilemap[MAXTILES];
 intptr_t rt_waloff[RT_TILENUM];
 char rt_walock[RT_TILENUM];
 
+float rt_viewhorizang;
+
 static bool RT_TileLoad(int16_t tilenum);
 
 void RT_LoadTiles(void)

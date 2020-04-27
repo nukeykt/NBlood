@@ -1007,6 +1007,7 @@ n64_src := $(rr_src)/$(n64)
 n64_obj := $(rr_obj)/$(n64)
 n64_objs := \
     reality.cpp \
+    reality_player.cpp \
     reality_render.cpp \
     reality_util.cpp \
 

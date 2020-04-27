@@ -366,6 +366,7 @@ void palettePostLoadTables(void)
     redcol = paletteGetClosestColor(255, 0, 0);
 
     // Bmemset(PaletteIndexFullbrights, 0, sizeof(PaletteIndexFullbrights));
+    if (!duke64)
     for (bssize_t c = 0; c < 255; ++c) // skipping transparent color
     {
         uint8_t const index = palookup0[c];

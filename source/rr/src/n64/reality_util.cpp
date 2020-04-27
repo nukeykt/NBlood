@@ -1,5 +1,6 @@
 #include "compat.h"
 #include "reality.h"
+#include "../duke3d.h"
 
 struct Huffman {
     uint32_t f_0;
@@ -176,4 +177,67 @@ int RNCDecompress(const char *inbuf, char *outbuf)
         }
     }
     return -1;
+}
+
+int RT_FakeKRand(void)
+{
+    if (rt_gamestate == 2)
+        return krand2();
+    return 42;
+}
+
+int RT_KRand2(void)
+{
+    if (rt_gamestatus == 0)
+        return krand2();
+    return 62007;
+}
+
+static float rt_gatable[513];
+
+void RT_BuildAngleTable(void)
+{
+    for (int i = 0; i <= 512; i++)
+        rt_gatable[i] = atanf(i * (1.f / 512.f));
+}
+
+float RT_GetAngle(float dy, float dx)
+{
+    if (dy == 0.f && dx == 0.f)
+        return 0.f;
+    if (dy < 0)
+    {
+        if (dx < 0)
+        {
+            if (dy < dx)
+                return -(fPI/2.f) - rt_gatable[Blrintf(dx / dy * 512.f)];
+            else
+                return -fPI + rt_gatable[Blrintf(dy / dx * 512.f)];
+        }
+        else
+        {
+            if (-dy > dx)
+                return -(fPI/2.f) + rt_gatable[Blrintf(-dx / dy * 512.f)];
+            else
+                return -rt_gatable[Blrintf(-dy / dx * 512.f)];
+        }
+    }
+    else
+    {
+        if (dx < 0)
+        {
+            if (dy > -dx)
+                return (fPI/2.f) + rt_gatable[Blrintf(-dx / dy * 512.f)];
+            else
+                return fPI - rt_gatable[Blrintf(-dy / dx * 512.f)];
+        }
+        else
+        {
+            if (dy > dx)
+                return (fPI/2.f) - rt_gatable[Blrintf(dx / dy * 512.f)];
+            else
+                return rt_gatable[Blrintf(dy / dx * 512.f)];
+        }
+    }
+    return 0.f;
 }

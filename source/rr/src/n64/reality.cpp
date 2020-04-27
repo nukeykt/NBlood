@@ -11,6 +11,7 @@
 #include "../gamedef.h"
 
 
+int rt_gamestate = 2, rt_gamestatus = 0;
 
 buildvfs_kfd rt_group = buildvfs_kfd_invalid;
 static bool rt_group_init;
@@ -18,6 +19,7 @@ static bool rt_group_init;
 static boardinfo_t boardinfo[RT_BOARDNUM];
 
 static void RT_LoadPalette(void);
+
 
 buildvfs_kfd RT_InitGRP(const char *filename)
 {
@@ -62,7 +64,11 @@ void RT_Init(void)
     }
 
     duke64 = true;
+
+    RT_BuildAngleTable();
 }
+
+#define RT_QUOTES 131
 
 int RT_PrepareScript(void)
 {
@@ -140,6 +146,35 @@ int RT_PrepareScript(void)
     g_player[0].ps->max_ammo_amount[13] = 20;
     g_player[0].ps->max_ammo_amount[14] = 25;
 
+    const int quote_offset = 0xb4784;
+    const int quote_delta = 0xbba50- 0x80105e50;
+    const int quote_count = 131;
+
+    int32_t *quote_table = (int32_t*)Xmalloc(quote_count * 4);
+    Blseek(rt_group, quote_offset, SEEK_SET);
+    if (Bread(rt_group, quote_table, quote_count*4) != quote_count*4)
+    {
+        initprintf("RT_PrepareScript: file read error\n");
+        return 1;
+    }
+    for (int i = 0; i < quote_count; i++)
+    {
+        int const offset = B_BIG32(quote_table[i]) + quote_delta;
+        C_AllocQuote(i);
+        Blseek(rt_group, offset, SEEK_SET);
+        Bread(rt_group, apStrings[i], MAXQUOTELEN-1);
+        for (int j = 0; j < MAXQUOTELEN; j++)
+        {
+            if (apStrings[i][j] == 0)
+            {
+                for (; j < MAXQUOTELEN; j++)
+                    apStrings[i][j] = 0;
+                break;
+            }
+        }
+    }
+    Bfree(quote_table);
+
     return 0;
 }
 
@@ -186,6 +221,11 @@ static void RT_LoadPalette(void)
     for (int i = 1; i < MAXPALOOKUPS; i++)
     {
         palookup[i] = palookup[0];
+    }
+
+    for (int i = 0; i < MAXPALOOKUPS; i++)
+    {
+        palookupfogfactor[i] = 1.f;
     }
 
     blendtable[0] = (char*)Xcalloc(1, 256 * 256);
