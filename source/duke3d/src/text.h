@@ -98,6 +98,21 @@ static inline int32_t PopulateConstWidth(TileFontPtr_t tilefontPtr, int32_t font
     return (tilesiz[tile].x - 1) << 16;
 }
 
+extern size_t g_screentextbufcount;
+extern ScreenTextGlyph_t * g_screentextbuf;
+
+static inline ScreenTextGlyph_t * G_ScreenTextGetBuf(size_t textbufcount)
+{
+    if (g_screentextbufcount < textbufcount)
+    {
+        g_screentextbufcount = textbufcount;
+        Xfree(g_screentextbuf);
+        g_screentextbuf = (ScreenTextGlyph_t *)Xmalloc(sizeof(ScreenTextGlyph_t) * textbufcount);
+    }
+
+    return g_screentextbuf;
+}
+
 static inline vec2_t G_ScreenTextSize(const int32_t font,
     int32_t x, int32_t y, const int32_t zoom, const int32_t blockangle,
     const char * str, const int32_t o,
@@ -121,7 +136,7 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = ((f & TEXT_CONSTWIDTHNUMS) ? strbuflen << 1 : strbuflen) + 1;
-    auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
+    auto text = G_ScreenTextGetBuf(textbufcount);
     uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, tilefontPtr, font, f);
     data.text = text;
     data.len = textlen;
@@ -162,7 +177,7 @@ static inline vec2_t G_ScreenText(const int32_t font,
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = ((f & TEXT_CONSTWIDTHNUMS) ? strbuflen << 1 : strbuflen) + 1;
-    auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
+    auto text = G_ScreenTextGetBuf(textbufcount);
     uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, tilefontPtr, font, f);
     data.text = text;
     data.len = textlen;
@@ -208,7 +223,7 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = strbuflen + 1;
-    auto text = (ScreenTextGlyph_t *)Balloca(sizeof(ScreenTextGlyph_t) * textbufcount);
+    auto text = G_ScreenTextGetBuf(textbufcount);
     uint32_t const textlen = G_ScreenTextFromString(text, str, str + strbuflen, tilefontPtr, font, f);
     data.text = text;
     data.len = textlen;

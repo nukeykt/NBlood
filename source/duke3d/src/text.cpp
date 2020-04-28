@@ -27,8 +27,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 int32_t g_textstat = RS_AUTO | RS_NOCLIP | RS_TOPLEFT;
 
+size_t g_screentextbufcount = 256;
+ScreenTextGlyph_t * g_screentextbuf;
+
 void G_InitText()
 {
+    g_screentextbuf = (ScreenTextGlyph_t *)Xmalloc(sizeof(ScreenTextGlyph_t) * g_screentextbufcount);
+
     // check if the minifont will support lowercase letters (3136-3161)
     // there is room for them in tiles012.art between "[\]^_." and "{|}~"
     minitext_lowercase = 1;
