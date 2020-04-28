@@ -2459,9 +2459,13 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         mgametextcenter(origin.x, origin.y + (144<<16), "Activate in-game with Shift-F#");
         break;
 
+#ifndef EDUKE32_STANDALONE
     case MENU_COLCORR:
     case MENU_COLCORR_INGAME:
     {
+        if (FURY)
+            break;
+
         // center panel
         rotatesprite_fs(origin.x + (120<<16), origin.y + (32<<16), 16384, 0, 3290, 0, 0, 2|8|16);
         int32_t const statusTile = sbartile();
@@ -2474,6 +2478,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         rotatesprite_fs(origin.x + (200<<16), origin.y + (32<<16), 16384, 0, LOADSCREEN, 0, 0, 2|8|16);
         break;
     }
+#endif
 
     case MENU_NETSETUP:
     case MENU_NETHOST:
