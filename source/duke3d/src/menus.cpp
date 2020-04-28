@@ -134,14 +134,30 @@ static void Menu_DrawTopBar(const vec2_t origin)
 
 static void Menu_DrawTopBarCaption(const char *caption, const vec2_t origin)
 {
-    static char t[64];
+    static char t[128];
     size_t const srclen = strlen(caption);
     size_t const dstlen = min(srclen, ARRAY_SIZE(t)-1);
     memcpy(t, caption, dstlen);
     t[dstlen] = '\0';
     char *p = &t[dstlen-1];
     if (*p == ':')
-        *p = '\0';
+    {
+        char const * const newcaption = localeLookup(t);
+        if (newcaption != t)
+        {
+            size_t const newsrclen = strlen(newcaption);
+            size_t const newdstlen = min(newsrclen, ARRAY_SIZE(t)-1);
+            memcpy(t, newcaption, newdstlen);
+            t[newdstlen] = '\0';
+            char * newp = &t[newdstlen-1];
+            if (*newp == ':')
+                *newp = '\0';
+        }
+        else
+        {
+            *p = '\0';
+        }
+    }
     captionmenutext(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + TopBarY, t);
 }
 
@@ -2577,7 +2593,8 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
             {
                 const char *name = g_mapInfo[(savehead.volnum*MAXLEVELS) + savehead.levnum].name;
-                Bsprintf(tempbuf, "%s / %s", name ? name : "^10unnamed^0", g_skillNames[savehead.skill-1]);
+                const char *skill = g_skillNames[savehead.skill-1];
+                Bsprintf(tempbuf, "%s / %s", name ? localeLookup(name) : "^10unnamed^0", localeLookup(skill));
             }
 
             mgametextcenter(origin.x, origin.y + (168<<16), tempbuf);
@@ -4870,7 +4887,7 @@ static vec2_t Menu_Text(int32_t x, int32_t y, const MenuFont_t *font, const char
         ybetween = font->emptychar.y; // <^ the battle against 'Q'
     }
     if (status & MT_Literal)
-        f |= TEXT_LITERALESCAPE;
+        f |= TEXT_LITERALESCAPE | TEXT_NOLOCALE;
 
     int32_t z = font->zoom;
 
@@ -4891,7 +4908,7 @@ static vec2_t Menu_TextSize(int32_t x, int32_t y, const MenuFont_t *font, const 
 {
     int32_t f = font->textflags;
     if (status & MT_Literal)
-        f |= TEXT_LITERALESCAPE;
+        f |= TEXT_LITERALESCAPE | TEXT_NOLOCALE;
 
     return G_ScreenTextSize(font->tilenum, x, y, font->zoom, 0, t, g_textstat, font->emptychar.x, font->emptychar.y, font->between.x, font->between.y, f, 0, 0, xdim-1, ydim-1);
 }

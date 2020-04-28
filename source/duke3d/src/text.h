@@ -54,6 +54,8 @@ enum {
     TEXT_DIGITALNUMBER   = 0x00080000,
     TEXT_BIGALPHANUM     = 0x00100000,
     TEXT_GRAYFONT        = 0x00200000,
+
+    TEXT_NOLOCALE        = 0x00400000,
 };
 
 extern int32_t minitext_(int32_t x, int32_t y, const char *t, int32_t s, int32_t p, int32_t sb);
@@ -130,7 +132,8 @@ static inline vec2_t G_ScreenTextSize(const int32_t font,
 
     ScreenTextSize_t data{};
 
-    str = localeLookup(str);
+    if (!(f & TEXT_NOLOCALE))
+        str = localeLookup(str);
 
     data.constwidth = PopulateConstWidth(tilefontPtr, font, f);
 
@@ -171,7 +174,8 @@ static inline vec2_t G_ScreenText(const int32_t font,
 
     ScreenText_t data{};
 
-    str = localeLookup(str);
+    if (!(f & TEXT_NOLOCALE))
+        str = localeLookup(str);
 
     data.constwidth = PopulateConstWidth(tilefontPtr, font, f);
 
@@ -219,7 +223,8 @@ static inline vec2_t G_ScreenTextShadow(int32_t sx, int32_t sy, int32_t sp, cons
 
     Bassert(!(f & TEXT_CONSTWIDTHNUMS));
 
-    str = localeLookup(str);
+    if (!(f & TEXT_NOLOCALE))
+        str = localeLookup(str);
 
     size_t const strbuflen = strlen(str);
     size_t const textbufcount = strbuflen + 1;
