@@ -153,12 +153,23 @@ void getCutScenePath(char* episodeCS, char* nBloodMoveFullPath, char* ogvMovieFu
 }
 void levelPlayIntroScene(int nEpisode)
 {
+    
     gGameOptions.uGameFlags &= ~4;
     sndStopSong();
     sndKillAllSounds();
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
+
+    if (!gCutScenes)
+    {
+        scrSetDac();
+        viewResizeView(gViewSize);
+        credReset();
+        scrSetDac();
+        return;
+    }
+
     EPISODEINFO* pEpisode = &gEpisodeInfo[nEpisode];
     char* smkMovieFullPath = new char[MAX_PATH];
     char* ogvMovieFullPath = new char[MAX_PATH];
@@ -217,6 +228,15 @@ void levelPlayEndScene(int nEpisode)
     sfxKillAllSounds();
     ambKillAll();
     seqKillAll();
+
+    if (!gCutScenes)
+    {
+        scrSetDac();
+        viewResizeView(gViewSize);
+        credReset();
+        scrSetDac();
+        return;
+    }
     EPISODEINFO* pEpisode = &gEpisodeInfo[nEpisode];
     char* smkMovieFullPath = new char[MAX_PATH];
     char* ogvMovieFullPath = new char[MAX_PATH];

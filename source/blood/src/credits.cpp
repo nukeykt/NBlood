@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sdltheora/sdltheora.h"
 #include <SDL_video.h>
 #include "renderlayer.h" //getwindow
-//#include "levels.cpp"
+
 char Wait(int nTicks)
 {
 	totalclock = 0;
@@ -88,7 +88,7 @@ char DoUnFade(int nTicks)
 void credLogosDos(void)
 {
 	char bShift = keystatus[sc_LeftShift] | keystatus[sc_RightShift];
-	if (bShift)
+	if (bShift || !gCutScenes)
 		return;
 
 	videoClearScreen(0);
