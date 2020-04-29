@@ -322,7 +322,7 @@ char credPlayTheora(const char* ogvideo)
 		ShowWindow(hWindow, SW_HIDE);
 		win = SDL_CreateWindow("", posX, posY, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP);
 	}
-	elsew
+	else
 	{
 		MapWindowPoints(HWND_DESKTOP, GetParent(hWindow), (LPPOINT)&Rect, 2);
 		posX = Rect.left;
