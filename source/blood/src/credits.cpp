@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "sdltheora/sdltheora.h"
 #include <SDL_video.h>
+#include "renderlayer.h" //getwindow
 char Wait(int nTicks)
 {
 	totalclock = 0;
@@ -303,62 +304,38 @@ char credPlaySmk(const char* _pzSMK, const char* _pzWAV, int nWav)
 
 char credPlayTheora(const char* ogvideo)
 {
-	//Todo: get Nuke engine window coordinates and size proplery. for now FULLScreen Mode Default
-	uint32_t nWidth, nHeight;
-	nWidth = GetSystemMetrics(SM_CXSCREEN);
-	nHeight = GetSystemMetrics(SM_CYSCREEN);
-	//While application is running
+	int posX = 0, posY = 0, width, height;
+	HWND hWindow = win_gethwnd(); // blood main window
+	RECT Rect;
+	GetWindowRect(hWindow, &Rect);
+	MapWindowPoints(HWND_DESKTOP, GetParent(hWindow), (LPPOINT)&Rect, 2);
+	posX = Rect.left;
+	posY = Rect.top;
+	width = GetSystemMetrics(SM_CXSCREEN);
+	height = GetSystemMetrics(SM_CYSCREEN);
+	//width = Rect.right;
+	//height = Rect.bottom;
 	int quit = 0;
 	SDL_Event e;
 	SDL_Window* win = NULL;
 	SDL_Renderer* renderer = NULL;
-	int posX = 0, posY = 0, width = nWidth, height = nHeight;
-	//if (gSetup.fullscreen)
-	//{
-
-		//credReset();
-		//TODO: Mercury FULL SCREEN HAS FOCUS ISSUES
-		//scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
-		int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
-		//SDL_GetDesktopDisplayMode(display, &desktopmode);
-		//int const matchedResolution = (desktopmode.w == gSetup.xdim && desktopmode.h == gSetup.ydim);
-		win = SDL_CreateWindow("", (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
-		//SDL_RaiseWindow(win);
-		//SDL_DisplayMode dm;
+	
+	int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+	if (gSetup.fullscreen)
+	{
 		
-		//SDL_GetDesktopDisplayMode(0, &dm);
-		//SDL_SetWindowFullscreen(win, ((gSetup.fullscreen & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
-		//SDL_SetVideoMode(width, height, gSetup.bpp, 0);
-		//SDL_SetWindowDisplayMode(win, &dm);
-					//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_BORDERLESS);
-		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_FULLSCREEN);
+		win = SDL_CreateWindow("", (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), width, height, SDL_WINDOW_OPENGL);
+		
 		//SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
-	//}
-	//else
-	//{
-		//win = SDL_CreateWindow("", posX, posY, width, height, 0);
-	//	win = SDL_CreateWindow("", 0, 0, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
-		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_HIDDEN);
+		//SDL_RaiseWindow(win);
+	}
+	else
+	{
+		width = gSetup.xdim;
+		height = gSetup.ydim;
+		win = SDL_CreateWindow("", posX + 9 , posY + 30, width, height, SDL_WINDOW_OPENGL);
+	}
 
-		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_OPENGL);
-	   // win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_BORDERLESS);
-	//}
-	//SDL_RaiseWindow(win);
-#ifdef USE_OPENGL
-	//if (win)
-	//{
-	//	SDL_GLContext sdlc = SDL_GL_CreateContext(win);
-	//	glClearColor(0, 0, 0, 1);
-	//	glClear(GL_COLOR_BUFFER_BIT);
-	//	SDL_GL_SwapWindow(win);
-	//	// Once finished with OpenGL functions, the SDL_GLContext can be deleted.
-	//	SDL_GL_DeleteContext(sdlc);
-	//}
-	//integrate with build OpenGL?
-	//win = SDL_CreateWindow("", posX, posY, width, height, SDL_WINDOW_OPENGL);
-#else
-	win = SDL_CreateWindow("", posX, posY, width, height, SDL_WINDOW_OPENGL);
-#endif
 	if (win == NULL)
 	{
 		return false;//SDL_GetError();
@@ -373,13 +350,7 @@ char credPlayTheora(const char* ogvideo)
 	else
 	{
 		//Initialize renderer color
-		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-		//Grab window identifier
-		//mWindowID = SDL_GetWindowID(win);
-
-		//Flag as opened
-		//mShown = true;
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 	}
 
 	intptr_t my_video = THR_Load(ogvideo, renderer);
@@ -412,9 +383,11 @@ char credPlayTheora(const char* ogvideo)
 			quit = 1;
 			THR_DestroyVideo(my_video, win);
 			THR_Quit();
+			//focus main blood window hidden in fullscreen
 			videoClearScreen(0);
-			videoCheckMode(&gSetup.xdim, &gSetup.ydim, gSetup.bpp, gSetup.fullscreen, 1);
-			
+			ShowWindow(hWindow, SW_SHOWNORMAL);
+			SetForegroundWindow(hWindow);
+			SetFocus(hWindow);
 		}
 		else
 			video_texture = THR_UpdateVideo(my_video);
