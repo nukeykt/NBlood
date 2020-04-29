@@ -304,36 +304,33 @@ char credPlaySmk(const char* _pzSMK, const char* _pzWAV, int nWav)
 
 char credPlayTheora(const char* ogvideo)
 {
-	int posX = 0, posY = 0, width, height;
+	uint32_t posX = 0, posY = 0, width = 0, height = 0;
 	HWND hWindow = win_gethwnd(); // blood main window
-	RECT Rect;
-	GetWindowRect(hWindow, &Rect);
-	MapWindowPoints(HWND_DESKTOP, GetParent(hWindow), (LPPOINT)&Rect, 2);
-	posX = Rect.left;
-	posY = Rect.top;
 	width = GetSystemMetrics(SM_CXSCREEN);
 	height = GetSystemMetrics(SM_CYSCREEN);
-	//width = Rect.right;
-	//height = Rect.bottom;
 	int quit = 0;
 	SDL_Event e;
 	SDL_Window* win = NULL;
 	SDL_Renderer* renderer = NULL;
-	
+	RECT Rect;
+	GetWindowRect(hWindow, &Rect);
 	int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+
 	if (gSetup.fullscreen)
 	{
-		
-		win = SDL_CreateWindow("", (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), width, height, SDL_WINDOW_OPENGL);
-		
-		//SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
-		//SDL_RaiseWindow(win);
+		//cannot hanlde 2 windows in fullscreen. so hide main one while movie playing
+		ShowWindow(hWindow, SW_HIDE);
+		win = SDL_CreateWindow("", posX, posY, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP);
 	}
-	else
+	elsew
 	{
+		MapWindowPoints(HWND_DESKTOP, GetParent(hWindow), (LPPOINT)&Rect, 2);
+		posX = Rect.left;
+		posY = Rect.top;
 		width = gSetup.xdim;
 		height = gSetup.ydim;
-		win = SDL_CreateWindow("", posX + 9 , posY + 30, width, height, SDL_WINDOW_OPENGL);
+		win = SDL_CreateWindow("", posX + 9 , posY + 30, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+	
 	}
 
 	if (win == NULL)
@@ -366,7 +363,7 @@ char credPlayTheora(const char* ogvideo)
 			//User requests quit
 			if (e.type == SDL_QUIT)
 			{
-				quit = 1; //NO ONE WANTS TO PLAY WITH ME!
+				quit = 1; 
 			}
 		}
 
@@ -384,10 +381,10 @@ char credPlayTheora(const char* ogvideo)
 			THR_DestroyVideo(my_video, win);
 			THR_Quit();
 			//focus main blood window hidden in fullscreen
-			videoClearScreen(0);
 			ShowWindow(hWindow, SW_SHOWNORMAL);
 			SetForegroundWindow(hWindow);
 			SetFocus(hWindow);
+			videoClearScreen(0);
 		}
 		else
 			video_texture = THR_UpdateVideo(my_video);
