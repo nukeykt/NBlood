@@ -224,41 +224,39 @@ intptr_t THR_Load(const char *file, SDL_Renderer* renderer)
 	return  thr_video;
 }
 
-SDL_Texture* THR_UpdateVideo(intptr_t video_id)
+SDL_Texture* THR_UpdateVideo(THR_video* videoID)
 {
-	THR_video* vid = video_id;
-
-	if(vid != NULL && (vid->decoder != NULL && THEORAPLAY_isDecoding(vid->decoder)))
+	if(videoID != NULL && (videoID->decoder != NULL && THEORAPLAY_isDecoding(videoID->decoder)))
 	{
 		// load next frame if we have to (if we loaded a frame last time video should be null)
-		if(!vid->video)
-			vid->video = THEORAPLAY_getVideo(vid->decoder);
+		if(!videoID->video)
+			videoID->video = THEORAPLAY_getVideo(videoID->decoder);
 
-		const Uint32 now = SDL_GetTicks() - vid->baseticks;
+		const Uint32 now = SDL_GetTicks() - videoID->baseticks;
 
 		// Play video frames when it's time.
-		if(vid->video && (vid->video->playms <= now))
+		if(videoID->video && (videoID->video->playms <= now))
 		{
-			if(vid->framems && ((now - vid->video->playms) >= vid->framems))
+			if(videoID->framems && ((now - videoID->video->playms) >= videoID->framems))
 			{
 				// Skip frames to catch up, but keep track of the last one
 				//  in case we catch up to a series of dupe frames, which
 				//  means we'd have to draw that final frame and then wait for
 				//  more.
-				const THEORAPLAY_VideoFrame *last = vid->video;
-				while((vid->video = THEORAPLAY_getVideo(vid->decoder)) != NULL)
+				const THEORAPLAY_VideoFrame *last = videoID->video;
+				while((videoID->video = THEORAPLAY_getVideo(videoID->decoder)) != NULL)
 				{
 					THEORAPLAY_freeVideo(last);
-					last = vid->video;
-					if((now - vid->video->playms) < vid->framems)
+					last = videoID->video;
+					if((now - videoID->video->playms) < videoID->framems)
 						break;
 				}
 
-				if(!vid->video)
-					vid->video = last;
+				if(!videoID->video)
+					videoID->video = last;
 			}
 
-			if(!vid->video)  // do nothing; we're far behind and out of options.
+			if(!videoID->video)  // do nothing; we're far behind and out of options.
 			{
 				THR_SetError("WARNING: Playback can't keep up!");
 				return NULL;
@@ -266,29 +264,27 @@ SDL_Texture* THR_UpdateVideo(intptr_t video_id)
 			else
 			{
 				// http://www.fourcc.org/yuv.php#YV12
-				int half_w = vid->video->width / 2;
+				int half_w = videoID->video->width / 2;
 
-				const Uint8 *y = (const Uint8 *)vid->video->pixels;
-				const Uint8 *u = y + (vid->video->width * vid->video->height);
-				const Uint8 *v = u + (half_w * (vid->video->height / 2));
+				const Uint8 *y = (const Uint8 *)videoID->video->pixels;
+				const Uint8 *u = y + (videoID->video->width * videoID->video->height);
+				const Uint8 *v = u + (half_w * (videoID->video->height / 2));
 
-				SDL_UpdateYUVTexture(vid->texture, NULL, y, vid->video->width, u, half_w, v, half_w);
+				SDL_UpdateYUVTexture(videoID->texture, NULL, y, videoID->video->width, u, half_w, v, half_w);
 			}
-			THEORAPLAY_freeVideo(vid->video);
-			vid->video = NULL;
+			THEORAPLAY_freeVideo(videoID->video);
+			videoID->video = NULL;
 		}
 	}
 
-	while(vid!= NULL && (vid->audio = THEORAPLAY_getAudio(vid->decoder)) != NULL)
-		queue_audio(vid->audio);
+	while(videoID!= NULL && (videoID->audio = THEORAPLAY_getAudio(videoID->decoder)) != NULL)
+		queue_audio(videoID->audio);
 
-	return (vid != NULL? vid->texture : 0);
+	return (videoID != NULL? videoID->texture : 0);
 }
 
 void THR_DestroyVideo(THR_video* video, SDL_Window* win)
 {
-	THR_video* vid = video;
-
 	while (audio_queue != NULL)
 	{
 		SDL_LockAudio();
@@ -296,12 +292,12 @@ void THR_DestroyVideo(THR_video* video, SDL_Window* win)
 		SDL_Delay(10);
 	}
 	SDL_CloseAudio();
-	if (vid != NULL)
+	if (video != NULL)
 	{
-		SDL_DestroyTexture(vid->texture);
-		THEORAPLAY_freeVideo(vid->video);
-		THEORAPLAY_freeAudio(vid->audio);
-		THEORAPLAY_stopDecode(vid->decoder);
+		SDL_DestroyTexture(video->texture);
+		THEORAPLAY_freeVideo(video->video);
+		THEORAPLAY_freeAudio(video->audio);
+		THEORAPLAY_stopDecode(video->decoder);
 		// Close and destroy the window
 		SDL_DestroyWindow(win);
 	}

@@ -111,7 +111,7 @@ int32_t gShowMapTitle;
 int32_t gFov;
 int32_t gCenterHoriz;
 int32_t gDeliriumBlur;
-
+int32_t gCutScenes;
 //////////
 int gWeaponsV10x;
 /////////
@@ -404,7 +404,7 @@ void CONFIG_SetDefaults(void)
     gMouseAim = 1;
     gAutoAim = 1;
     gWeaponSwitch = 1;
-
+    gCutScenes = 1;
     Bstrcpy(szPlayerName, "Player");
 
     Bstrcpy(CommbatMacro[0], "I love the smell of napalm...");
@@ -669,6 +669,7 @@ int CONFIG_ReadSetup(void)
     ///////
     SCRIPT_GetNumber(scripthandle, "Game Options", "WeaponsV10x", &gWeaponsV10x);
     ///////
+    SCRIPT_GetNumber(scripthandle, "Game Options", "CutScenes", &gCutScenes);
 
     char commmacro[] = "CommbatMacro# ";
 
@@ -962,7 +963,7 @@ void CONFIG_WriteSetup(uint32_t flags)
     ///////
     SCRIPT_PutNumber(scripthandle, "Game Options", "WeaponsV10x", gWeaponsV10x, FALSE, FALSE);
     ///////
-    
+    SCRIPT_PutNumber(scripthandle, "Game Options", "CutScenes", gCutScenes, FALSE, FALSE);
     SCRIPT_Save(scripthandle, SetupFilename);
 
     if ((flags & 2) == 0)

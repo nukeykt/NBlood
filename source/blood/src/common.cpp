@@ -351,19 +351,19 @@ void G_AddSearchPaths(void)
     char buf[BMAX_PATH] = {0};
     DWORD bufsize;
     bool found = false;
-    //todo: comment to debug  uncomment mercury !
-    //// Blood: Fresh Supply - Steam
-    //bufsize = sizeof(buf);
-    //if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1010750)", "InstallLocation", buf, &bufsize))
-    //{
-    //    char* const suffix = buf + bufsize - 1;
-    //    DWORD const remaining = sizeof(buf) - bufsize;
 
-    //    addsearchpath(buf);
-    //    strncpy(suffix, "/addons/Cryptic Passage", remaining);
-    //    addsearchpath(buf);
-    //    found = true;
-    //}
+    // Blood: Fresh Supply - Steam
+    bufsize = sizeof(buf);
+    if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1010750)", "InstallLocation", buf, &bufsize))
+    {
+        char* const suffix = buf + bufsize - 1;
+        DWORD const remaining = sizeof(buf) - bufsize;
+
+        addsearchpath(buf);
+        strncpy(suffix, "/addons/Cryptic Passage", remaining);
+        addsearchpath(buf);
+        found = true;
+    }
     // Blood: One Unit Whole Blood - Steam
     bufsize = sizeof(buf);
     if (!found && Paths_ReadRegistryValue(R"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 299030)", "InstallLocation", buf, &bufsize))

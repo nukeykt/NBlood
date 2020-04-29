@@ -57,6 +57,7 @@ void SetShowPlayerNames(CGameMenuItemZBool *);
 void SetShowWeapons(CGameMenuItemZCycle *);
 
 void SetWeaponsV10X(CGameMenuItemZBool*);
+void SetCutScenes(CGameMenuItemZBool*);
 
 void SetSlopeTilting(CGameMenuItemZBool *);
 void SetViewBobbing(CGameMenuItemZBool *);
@@ -319,7 +320,7 @@ CGameMenuItemZBool itemNetStart9("KEEP KEYS ON RESPAWN:", 3, 66, 140, 180, false
 CGameMenuItemZBool itemNetStart10("V1.0x WEAPONS BALANCE:", 3, 66, 150, 180, false, 0, NULL, NULL);
 CGameMenuItemZEdit itemNetStart11("USER MAP:", 3, 66, 160, 180, zUserMapName, 13, 0, NULL, 0);
 CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, StartNetGame, 0);
-
+CGameMenuItemZBool itemNetStart13("CUT-SCENES:", 3, 66, 150, 180, false, 0, NULL, NULL);
 CGameMenuItemText itemLoadingText("LOADING...", 1, 160, 100, 1);
 
 CGameMenuItemTitle itemSoundsTitle("SOUNDS", 1, 160, 20, 2038);
@@ -426,6 +427,7 @@ CGameMenuItemTitle itemOptionsGameTitle("GAME SETUP", 1, 160, 20, 2038);
 ///////////////
 CGameMenuItemZBool itemOptionsGameBoolWeaponsV10X("V1.0x WEAPONS BALANCE:", 3, 66, 130, 180, gWeaponsV10x, SetWeaponsV10X, NULL, NULL);
 ///////////////////
+CGameMenuItemZBool itemOptionsGameBoolCutScenes("Cutscenes:", 3, 66, 140, 180, gCutScenes, SetCutScenes, NULL, NULL);
 
 CGameMenuItemZBool itemOptionsGameBoolShowPlayerNames("SHOW PLAYER NAMES:", 3, 66, 60, 180, gShowPlayerNames, SetShowPlayerNames, NULL, NULL);
 CGameMenuItemZCycle itemOptionsGameShowWeapons("SHOW WEAPONS:", 3, 66, 70, 180, 0, SetShowWeapons, pzShowWeaponStrings, ARRAY_SSIZE(pzShowWeaponStrings), 0);
@@ -951,6 +953,7 @@ void SetupNetStartMenu(void)
     menuNetStart.Add(&itemNetStart10, false);
     menuNetStart.Add(&itemNetStart11, false);
     menuNetStart.Add(&itemNetStart12, false);
+    menuNetStart.Add(&itemNetStart13, false);
     itemNetStart1.SetTextIndex(1);
     itemNetStart4.SetTextIndex(2);
     itemNetStart5.SetTextIndex(0);
@@ -1165,7 +1168,7 @@ void SetupOptionsMenu(void)
         menuOptionsGame.Add(&itemOptionsGameBoolWeaponsV10X, false);
     }
     /////////////////////
-
+    menuOptionsGame.Add(&itemOptionsGameBoolCutScenes, false);
     //menuOptionsGame.Add(&itemOptionsGameChainParentalLock, false);
     menuOptionsGame.Add(&itemBloodQAV, false);
     itemOptionsGameBoolShowPlayerNames.at20 = gShowPlayerNames;
@@ -1179,6 +1182,7 @@ void SetupOptionsMenu(void)
     ///////
     itemOptionsGameBoolWeaponsV10X.at20 = gWeaponsV10x;
     ///////
+    itemOptionsGameBoolCutScenes.at20 = gCutScenes;
 
     menuOptionsDisplay.Add(&itemOptionsDisplayTitle, false);
     menuOptionsDisplay.Add(&itemOptionsDisplayColor, true);
@@ -1448,6 +1452,11 @@ void SetWeaponsV10X(CGameMenuItemZBool* pItem)
     }
 }
 ////
+
+void SetCutScenes(CGameMenuItemZBool* pItem)
+{
+    gCutScenes = pItem->at20;
+}
 
 void SetShowPlayerNames(CGameMenuItemZBool *pItem)
 {

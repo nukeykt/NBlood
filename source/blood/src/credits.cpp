@@ -92,7 +92,7 @@ void credLogosDos(void)
 
 	videoClearScreen(0);
 	DoUnFade(1);
-
+	//TODO mercury
 	if (!credPlaySmk("LOGO.SMK", "logo811m.wav", 300))
 	{
 		rotatesprite(160 << 16, 100 << 16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim - 1, ydim - 1);

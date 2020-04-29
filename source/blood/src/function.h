@@ -99,6 +99,7 @@ enum GameFunction_t
    gamefunc_ProximityBombs,
    gamefunc_RemoteBombs,
    gamefunc_Show_Console,
+   gamefunc_CutScenes,
    };
 #ifdef __cplusplus
 }
