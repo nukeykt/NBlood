@@ -313,26 +313,36 @@ char credPlayTheora(const char* ogvideo)
 	SDL_Window* win = NULL;
 	SDL_Renderer* renderer = NULL;
 	int posX = 0, posY = 0, width = nWidth, height = nHeight;
-	if (gSetup.fullscreen)
-	{
+	//if (gSetup.fullscreen)
+	//{
 
 		//credReset();
 		//TODO: Mercury FULL SCREEN HAS FOCUS ISSUES
 		//scrSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp);
-		win = SDL_CreateWindow("", 0, 0, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
-		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_BORDERLESS);
+		int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
+		//SDL_GetDesktopDisplayMode(display, &desktopmode);
+		//int const matchedResolution = (desktopmode.w == gSetup.xdim && desktopmode.h == gSetup.ydim);
+		win = SDL_CreateWindow("", (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), (int)SDL_WINDOWPOS_CENTERED_DISPLAY(display), width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+		//SDL_RaiseWindow(win);
+		//SDL_DisplayMode dm;
+		
+		//SDL_GetDesktopDisplayMode(0, &dm);
+		//SDL_SetWindowFullscreen(win, ((gSetup.fullscreen & 1) ? (matchedResolution ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0));
+		//SDL_SetVideoMode(width, height, gSetup.bpp, 0);
+		//SDL_SetWindowDisplayMode(win, &dm);
+					//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_BORDERLESS);
 		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_FULLSCREEN);
 		//SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
-	}
-	else
-	{
+	//}
+	//else
+	//{
 		//win = SDL_CreateWindow("", posX, posY, width, height, 0);
-		win = SDL_CreateWindow("", 0, 0, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+	//	win = SDL_CreateWindow("", 0, 0, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
 		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_HIDDEN);
 
 		//win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_OPENGL);
 	   // win = SDL_CreateWindow("", posX, posY, nWidth, nHeight, SDL_WINDOW_BORDERLESS);
-	}
+	//}
 	//SDL_RaiseWindow(win);
 #ifdef USE_OPENGL
 	//if (win)
@@ -403,6 +413,8 @@ char credPlayTheora(const char* ogvideo)
 			THR_DestroyVideo(my_video, win);
 			THR_Quit();
 			videoClearScreen(0);
+			videoCheckMode(&gSetup.xdim, &gSetup.ydim, gSetup.bpp, gSetup.fullscreen, 1);
+			
 		}
 		else
 			video_texture = THR_UpdateVideo(my_video);
