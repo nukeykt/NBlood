@@ -166,65 +166,45 @@ void levelPlayIntroScene(int nEpisode)
     
     getCutScenePath(pEpisode->cutsceneASmkPath, nBloodMovieFullPath, ogvMovieFullPath, smkMovieFullPath);
     bool moviePlayed = false;
-    struct stat buf;
+//    struct stat buf;
     bool filefound = false;
 
     //Nblood folder movie 
     if (strlen(nBloodMovieFullPath) > 0)
     {
         size_t pathSize = strlen(nBloodMovieFullPath);
-        filefound = stat(nBloodMovieFullPath, &buf) == 0;
-        if (filefound)
-        {
+
             moviePlayed = credPlaySmk(pEpisode->cutsceneASmkPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
             showWaitingScreenForCoop();
             scrSetDac();
             viewResizeView(gViewSize);
             credReset();
             scrSetDac();
-        }
+    
         if (!moviePlayed)
         {
             nBloodMovieFullPath[pathSize - 1] = 'v';
             nBloodMovieFullPath[pathSize - 2] = 'g';
             nBloodMovieFullPath[pathSize - 3] = 'o';
-            filefound = stat(nBloodMovieFullPath, &buf) == 0;
-            if (filefound)
-            {
                 moviePlayed = credPlayTheora(nBloodMovieFullPath);
-                
                 showWaitingScreenForCoop();
-                //videoClearScreen(0);
-            }
         }
     }
 
     //try movies in game Data path
     if (!moviePlayed)
     {
-        filefound = stat(ogvMovieFullPath, &buf) == 0;
-        if (filefound)
-        {
             moviePlayed = credPlayTheora(ogvMovieFullPath);
             showWaitingScreenForCoop();
-            //videoClearScreen(0);
-        }
     }
     if (!moviePlayed)
     {
-        filefound = stat(smkMovieFullPath, &buf) == 0;
-        if (filefound)
-        {
-
             moviePlayed = credPlaySmk(smkMovieFullPath, pEpisode->cutsceneAWavPath, pEpisode->cutsceneAWavRsrcID);
             showWaitingScreenForCoop();
             scrSetDac();
             viewResizeView(gViewSize);
             credReset();
             scrSetDac();
-
-
-        }
     }
 }
 
@@ -244,103 +224,53 @@ void levelPlayEndScene(int nEpisode)
 
     getCutScenePath(pEpisode->cutsceneBSmkPath, nBloodMovieFullPath, ogvMovieFullPath, smkMovieFullPath);
     bool moviePlayed = false;
-    struct stat buf;
-    bool filefound = false;
 
     //Nblood folder movie 
     if (strlen(nBloodMovieFullPath) > 0)
     {
         size_t pathSize = strlen(nBloodMovieFullPath);
-        filefound = stat(nBloodMovieFullPath, &buf) == 0;
-        if (filefound)
-        {
+
             moviePlayed = credPlaySmk(nBloodMovieFullPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
             showWaitingScreenForCoop();
             scrSetDac();
             viewResizeView(gViewSize);
             credReset();
             scrSetDac();
-        }
+
         if (!moviePlayed)
         {
             nBloodMovieFullPath[pathSize - 1] = 'v';
             nBloodMovieFullPath[pathSize - 2] = 'g';
             nBloodMovieFullPath[pathSize - 3] = 'o';
-            filefound = stat(nBloodMovieFullPath, &buf) == 0;
-            if (filefound)
-            {
+
                 moviePlayed = credPlayTheora(nBloodMovieFullPath);
                 showWaitingScreenForCoop();
                 scrSetDac();
                 viewResizeView(gViewSize);
                 credReset();
                 scrSetDac();
-            }
         }
     }
 
     //try movies in game files path
     if (!moviePlayed)
     {
-        filefound = stat(ogvMovieFullPath, &buf) == 0;
-        if (filefound)
-        {
             moviePlayed = credPlayTheora(ogvMovieFullPath);
             showWaitingScreenForCoop();
             scrSetDac();
             viewResizeView(gViewSize);
             credReset();
-            scrSetDac();
-            moviePlayed = true;
-        }
+            scrSetDac();      
     }
     if (!moviePlayed)
     {
-        filefound = stat(smkMovieFullPath, &buf) == 0;
-        if (filefound)
-        {
-            
             moviePlayed = credPlaySmk(smkMovieFullPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
             showWaitingScreenForCoop();
             scrSetDac();
             viewResizeView(gViewSize);
             credReset();
             scrSetDac();
-
-
-        }
     }
-    ////reshsupply support
-    ////ogv video File Exists
-    //int const pathSize = strlen(pEpisode->cutsceneBSmkPath);
-    //char* subbuff = new char[pathSize - 2];
-    //memcpy(subbuff, &pEpisode->cutsceneBSmkPath[3], pathSize - 2);
-    //subbuff[pathSize - 4] = 'v';
-    //subbuff[pathSize - 5] = 'g';
-    //subbuff[pathSize - 6] = 'o';
-    //subbuff[pathSize - 2] = '\0';
-
-    //struct stat buf;
-    //bool filefound = stat(subbuff, &buf) == 0;
-    //if (filefound)
-    //{
-    //    credPlayTheora(subbuff);
-    //    showWaitingScreenForCoop();
-    //    scrSetDac();
-    //    viewResizeView(gViewSize);
-    //    credReset();
-    //    scrSetDac();
-    //}
-    //else
-    //{
-    //    credPlaySmk(pEpisode->cutsceneBSmkPath, pEpisode->cutsceneBWavPath, pEpisode->cutsceneBWavRsrcID);
-    //    showWaitingScreenForCoop();
-    //    scrSetDac();
-    //    viewResizeView(gViewSize);
-    //    credReset();
-    //    scrSetDac();
-
-    //}
 }
 
 void levelClearSecrets(void)

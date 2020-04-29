@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sdltheora/sdltheora.h"
 #include <SDL_video.h>
 #include "renderlayer.h" //getwindow
+//#include "levels.cpp"
 char Wait(int nTicks)
 {
 	totalclock = 0;
@@ -92,8 +93,18 @@ void credLogosDos(void)
 
 	videoClearScreen(0);
 	DoUnFade(1);
-	//TODO mercury
-	if (!credPlaySmk("LOGO.SMK", "logo811m.wav", 300))
+	
+	char* smkMovieFullPath = new char[MAX_PATH];
+	char* ogvMovieFullPath = new char[MAX_PATH];
+	char* nBloodMovieFullPath = new char[MAX_PATH];
+	char logoVideo[] = "movie\\MONOLITH.SMK";
+	getCutScenePath(logoVideo, nBloodMovieFullPath, ogvMovieFullPath, smkMovieFullPath);
+	bool moviePlayed = false;
+
+	moviePlayed = credPlaySmk("LOGO.SMK", "logo811m.wav", 300);
+	if (!moviePlayed)
+		moviePlayed = credPlayTheora(ogvMovieFullPath);
+	if (!moviePlayed)
 	{
 		rotatesprite(160 << 16, 100 << 16, 65536, 0, 2050, 0, 0, 0x4a, 0, 0, xdim - 1, ydim - 1);
 		scrNextPage();
@@ -106,8 +117,12 @@ void credLogosDos(void)
 	}
 
 	credReset();
-
-	if (!credPlaySmk("GTI.SMK", "gti.wav", 301))
+	char gtiVideo[] = "movie\\GTI.SMK";
+	getCutScenePath(gtiVideo, nBloodMovieFullPath, ogvMovieFullPath, smkMovieFullPath);
+	moviePlayed = credPlaySmk("GTI.SMK", "gti.wav", 301);
+	if (!moviePlayed)
+		moviePlayed = credPlayTheora(ogvMovieFullPath);
+	if (!moviePlayed)
 	{
 		rotatesprite(160 << 16, 100 << 16, 65536, 0, 2052, 0, 0, 0x0a, 0, 0, xdim - 1, ydim - 1);
 		scrNextPage();
@@ -304,10 +319,26 @@ char credPlaySmk(const char* _pzSMK, const char* _pzWAV, int nWav)
 
 char credPlayTheora(const char* ogvideo)
 {
+	struct stat buf;
+	
+	if (stat(ogvideo, &buf) != 0)
+	{
+		return false;
+	}
+
 	uint32_t posX = 0, posY = 0, width = 0, height = 0;
 	HWND hWindow = win_gethwnd(); // blood main window
-	width = GetSystemMetrics(SM_CXSCREEN);
-	height = GetSystemMetrics(SM_CYSCREEN);
+	if (validmodecnt)
+	{
+		//max valid resolution
+		width = validmode[0].xdim; 
+		height = validmode[0].ydim;
+	}
+	else
+	{
+		width = 640;
+		height = 480;
+	}
 	int quit = 0;
 	SDL_Event e;
 	SDL_Window* win = NULL;
@@ -394,3 +425,4 @@ char credPlayTheora(const char* ogvideo)
 
 	return TRUE;
 }
+

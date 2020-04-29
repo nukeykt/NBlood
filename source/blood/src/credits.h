@@ -26,3 +26,4 @@ void credLogosDos(void);
 void credReset(void);
 char credPlaySmk(const char *pzSMK, const char *pzWAV, int nWAV);
 char credPlayTheora(const char* ogvideo);
+void getCutScenePath(char* episodeCS, char* nBloodMoveFullPath, char* ogvMovieFullPath, char* smkMovieFullPath);
