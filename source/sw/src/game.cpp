@@ -209,6 +209,7 @@ const GAME_SET gs_defaults =
     FALSE, // auto run
     TRUE, // crosshair
     TRUE, // auto aim
+    TRUE, // interpolate sector objects
     TRUE, // messages
     TRUE, // fx on
     TRUE, // Music on

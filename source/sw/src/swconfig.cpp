@@ -157,6 +157,10 @@ void ReadGameSetup(int32_t scripthandle)
     if (dummy != -1) gs.AutoAim = dummy;
 
     dummy = -1;
+    SCRIPT_GetNumber(scripthandle, "Options", "InterpolateSO",&dummy);
+    if (dummy != -1) gs.InterpolateSO = dummy;
+
+    dummy = -1;
     SCRIPT_GetNumber(scripthandle, "Options", "Messages",&dummy);
     if (dummy != -1) gs.Messages = dummy;
 
@@ -298,6 +302,8 @@ void WriteGameSetup(int32_t scripthandle)
     SCRIPT_PutNumber(scripthandle, "Options", "Crosshair",dummy,FALSE,FALSE);
     dummy = gs.AutoAim;
     SCRIPT_PutNumber(scripthandle, "Options", "AutoAim",dummy,FALSE,FALSE);
+    dummy = gs.InterpolateSO;
+    SCRIPT_PutNumber(scripthandle, "Options", "InterpolateSO",dummy,FALSE,FALSE);
     dummy = gs.Messages;
     SCRIPT_PutNumber(scripthandle, "Options", "Messages",dummy,FALSE,FALSE);
     dummy = gs.Talking;

@@ -45,6 +45,7 @@ typedef struct
     SWBOOL AutoRun;
     SWBOOL Crosshair;
     SWBOOL AutoAim;
+    SWBOOL InterpolateSO;
     SWBOOL Messages;
     SWBOOL FxOn;
     SWBOOL MusicOn;
