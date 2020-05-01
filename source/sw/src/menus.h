@@ -212,6 +212,7 @@ typedef enum
     btn_videofs,
     btn_darts,
     btn_autoswitch,
+    btn_interpolate_so,
     btn_max
 } BTNType;
 

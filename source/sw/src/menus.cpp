@@ -394,6 +394,7 @@ MenuItem options_i[] =
     {DefButton(btn_stats, 0, "Level Stats"), OPT_XS,             OPT_LINE(11), 1, m_defshade, 0, NULL, MNU_StatCheck, NULL},
     {DefButton(btn_darts, 0, "Use Darts"), OPT_XS,               OPT_LINE(12), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefButton(btn_autoswitch, 0, "Equip Pickups"), OPT_XS,      OPT_LINE(13), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefButton(btn_interpolate_so, 0, "Interpolate SO"), OPT_XS,          OPT_LINE(14), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefNone}
 };
 
@@ -2238,6 +2239,7 @@ MNU_InitMenus(void)
     buttonsettings[btn_stats] = gs.Stats;
     buttonsettings[btn_darts] = gs.Darts;
     buttonsettings[btn_autoswitch] = gs.WeaponAutoSwitch;
+    buttonsettings[btn_interpolate_so] = gs.InterpolateSO;
 
     slidersettings[sldr_gametype] = gs.NetGameType;
     slidersettings[sldr_netlevel] = gs.NetLevel;
@@ -3356,6 +3358,9 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
             break;
         case btn_autoswitch:
             gs.WeaponAutoSwitch = state = buttonsettings[item->button];
+            break;
+        case btn_interpolate_so:
+            gs.InterpolateSO = state = buttonsettings[item->button];
             break;
         case btn_markers:
             gs.NetSpawnMarkers = state = buttonsettings[item->button];
