@@ -85,6 +85,9 @@
     <ClCompile Include="..\..\source\sw\src\interpsh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\sw\src\interpso.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\sw\src\inv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -331,6 +334,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\sw\src\interp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\sw\src\interpso.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\sw\src\inv.h">
