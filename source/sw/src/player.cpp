@@ -63,6 +63,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "vis.h"
 #include "track.h"
 #include "interp.h"
+#include "interpso.h"
 
 
 #define SO_DRIVE_SOUND 2
@@ -8017,6 +8018,7 @@ domovethings(void)
 
     updateinterpolations();                  // Stick at beginning of domovethings
     short_updateinterpolations();            // Stick at beginning of domovethings
+    so_updateinterpolations();               // Stick at beginning of domovethings
     MoveSkipSavePos();
 
 #if 0
