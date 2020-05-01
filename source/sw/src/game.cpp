@@ -5574,7 +5574,8 @@ getinput(SW_PACKET *loc, SWBOOL tied)
         SinglePlayInput(pp);
 #endif
 
-    FunctionKeys(pp);
+    if (!tied)
+        FunctionKeys(pp);
 
     if (BUTTON(gamefunc_Toggle_Crosshair))
     {
