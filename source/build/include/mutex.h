@@ -27,6 +27,7 @@ extern int32_t mutex_init(mutex_t *mutex);
 extern void mutex_destroy(mutex_t *mutex);
 extern void mutex_lock(mutex_t *mutex);
 extern void mutex_unlock(mutex_t *mutex);
+extern void mutex_try(mutex_t *mutex);
 
 
 #ifdef __cplusplus

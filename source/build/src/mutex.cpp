@@ -61,3 +61,14 @@ void mutex_unlock(mutex_t *mutex)
     SDL_UnlockMutex(*mutex);
 #endif
 }
+
+void mutex_try(mutex_t *mutex)
+{
+#if SDL_MAJOR_VERSION >= 2
+    SDL_AtomicTryLock(mutex);
+#elif defined _WIN32
+    TryEnterCriticalSection(mutex);
+#elif SDL_MAJOR_VERSION == 1
+    SDL_TryLockMutex(*mutex);
+#endif
+}
