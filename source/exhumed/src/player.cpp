@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "runlist.h"
 #include "exhumed.h"
 #include "names.h"
+#include "ramses.h"
 #include "gun.h"
 #include "items.h"
 #include "engine.h"

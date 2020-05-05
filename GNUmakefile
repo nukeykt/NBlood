@@ -1193,6 +1193,7 @@ exhumed_game_objs := \
     player.cpp \
     queen.cpp \
     ra.cpp \
+    ramses.cpp \
     random.cpp \
     rat.cpp \
     record.cpp \
