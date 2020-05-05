@@ -41,6 +41,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # include "driver_sdl.h"
 #endif
 
+#ifdef __linux__
+# include "driver_alsa.h"
+#endif
+
 int FX_ErrorCode = FX_Ok;
 int FX_Installed;
 int FX_MixRate;
@@ -106,6 +110,10 @@ void FX_InitCvars(void)
 {
     static osdcvardata_t cvars_audiolib [] ={
         { "mus_emidicard", "force a specific EMIDI instrument set", (void*) &ASS_EMIDICard, CVAR_INT | CVAR_FUNCPTR, -1, 10 },
+#ifdef __linux__
+        { "mus_alsa_clientid", "specify the ALSA MIDI client ID", (void*) &ALSA_ClientID, CVAR_INT, 0, 255 },
+        { "mus_alsa_portid", "specify the ALSA MIDI port ID", (void*) &ALSA_PortID, CVAR_INT, 0, 15 },
+#endif
         { "mus_al_additivemode", "enable/disable alternate additive AdLib timbre mode", (void*) &AL_AdditiveMode, CVAR_BOOL, 0, 1 },
         { "mus_al_postamp", "controls post-synthesization OPL3 volume amplification", (void*) &AL_PostAmp, CVAR_INT, 0, 3 },
         { "mus_al_stereo", "enable/disable OPL3 stereo mode", (void*) &AL_Stereo, CVAR_BOOL | CVAR_FUNCPTR, 0, 1 },

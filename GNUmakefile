@@ -395,6 +395,9 @@ audiolib_deps :=
 ifeq ($(PLATFORM),WINDOWS)
     audiolib_objs += driver_directsound.cpp driver_winmm.cpp 
 endif
+ifeq ($(SUBPLATFORM),LINUX)
+    audiolib_objs += driver_alsa.cpp
+endif
 
 ifeq ($(RENDERTYPE),SDL)
     ifeq (,$(filter $(PLATFORM),DARWIN WINDOWS WII))
@@ -682,7 +685,7 @@ ifneq (0,$(LUNATIC))
 endif
 
 ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lasound
 endif
 
 ifeq ($(PLATFORM),BSD)
