@@ -4515,6 +4515,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 
 #ifndef EDUKE32_RETAIL_MENU
     case MENU_SOUND:
+    case MENU_SOUND_INGAME:
     case MENU_SOUND_SF2:
         Bstrcpy(sf2bankfile, SF2_BankFile);
         break;
@@ -4533,7 +4534,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
             if (!p) p = Bstrrchr(sf2bankfile,  '\\');
             if (p == sf2bankfile) { Bmemmove(sf2bankfile, p+1, Bstrlen(p)); }
         }
-        else if (m_previousMenu->menuID == MENU_SOUND)
+        else if (m_previousMenu->menuID == MENU_SOUND || m_previousMenu->menuID == MENU_SOUND_INGAME)
 #endif
             Menu_RefreshSoundProperties();
         break;
