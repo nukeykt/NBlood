@@ -114,7 +114,7 @@ void FX_InitCvars(void)
 #ifdef _WIN32
         { "mus_mme_device", "select Windows MME MIDI output device", (void*) &WinMM_DeviceID, CVAR_INT | CVAR_FUNCPTR, -1, WinMMDrv_MIDI_GetNumDevices()-1 },
 #endif
-#ifdef HAVE_XMP
+#if defined HAVE_XMP && 0
         { "mus_xmp_interpolation", "XMP output interpolation: 0: none  1: linear  2: spline", (void*) &MV_XMPInterpolation, CVAR_INT | CVAR_FUNCPTR, 0, 2 },
 #endif
 #if defined RENDERTYPESDL && SDL_MAJOR_VERSION >= 2
