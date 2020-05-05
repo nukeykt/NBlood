@@ -36,6 +36,22 @@ Modifications for JonoF's port by Jonathon Fowler (jf@jonof.id.au)
 
 extern int MUSIC_ErrorCode;
 
+#ifdef __linux__
+#include <vector>
+
+typedef struct
+{
+  std::string name;
+  int clntid;
+  int portid;
+} alsa_mididevinfo_t;
+
+std::vector<alsa_mididevinfo_t> ALSADrv_MIDI_ListPorts();
+
+extern int32_t ALSA_ClientID;
+extern int32_t ALSA_PortID;
+#endif
+
 enum MUSIC_ERRORS
 {
     MUSIC_Warning = -2,
