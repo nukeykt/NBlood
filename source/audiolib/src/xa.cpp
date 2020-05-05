@@ -468,7 +468,7 @@ int MV_PlayXA(char *ptr, uint32_t length, int loopstart, int loopend, int pitcho
 
 void MV_ReleaseXAVoice( VoiceNode * voice )
 {
-    if (voice->wavetype != FMT_XA)
+    if (voice->wavetype != FMT_XA || voice->rawdataptr == nullptr)
         return;
 
     auto xad = (xa_data *) voice->rawdataptr;

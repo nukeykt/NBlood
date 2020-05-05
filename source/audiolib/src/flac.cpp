@@ -632,7 +632,7 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
 
 void MV_ReleaseFLACVoice(VoiceNode *voice)
 {
-    if (voice->wavetype != FMT_FLAC)
+    if (voice->wavetype != FMT_FLAC || voice->rawdataptr == nullptr)
         return;
 
     flac_data *fd = (flac_data *)voice->rawdataptr;
