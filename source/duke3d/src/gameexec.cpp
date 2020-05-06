@@ -2696,14 +2696,6 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     dispatch();
                 }
 
-#define CON_FOR_ITERATION()       \
-    do                            \
-    {                             \
-        Gv_SetVar(returnVar, jj); \
-        insptr = pNext;           \
-        VM_Execute();             \
-    } while (0)
-
             vInstruction(CON_FOR):  // special-purpose iteration
                 insptr++;
                 {
@@ -2714,6 +2706,13 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     auto const pEnd  = insptr + *insptr;
                     auto const pNext = ++insptr;
 
+                    auto execute = [&](int index) {
+                        Gv_SetVar(returnVar, index);
+                        insptr = pNext;
+                        VM_Execute();
+                        return !!(vm.flags & VM_RETURN);
+                    };
+
                     switch (iterType)
                     {
                         case ITER_ALLSPRITES:
@@ -2721,7 +2720,9 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             {
                                 if (sprite[jj].statnum == MAXSTATUS)
                                     continue;
-                                CON_FOR_ITERATION();
+
+                                if (execute(jj))
+                                    return;
                             }
                             break;
 
@@ -2729,7 +2730,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             for (native_t statNum = 0; statNum < MAXSTATUS; ++statNum)
                             {
                                 for (native_t kk, SPRITES_OF_STAT_SAFE(statNum, jj, kk))
-                                    CON_FOR_ITERATION();
+                                    if (execute(jj))
+                                        return;
                             }
                             break;
 
@@ -2737,18 +2739,21 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             for (native_t sectNum = 0; sectNum < numsectors; ++sectNum)
                             {
                                 for (native_t kk, SPRITES_OF_SECT_SAFE(sectNum, jj, kk))
-                                    CON_FOR_ITERATION();
+                                    if (execute(jj))
+                                        return;
                             }
                             break;
 
                         case ITER_ALLSECTORS:
                             for (native_t jj = 0; jj < numsectors; ++jj)
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 
                         case ITER_ALLWALLS:
                             for (native_t jj = 0; jj < numwalls; ++jj)
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 
                         case ITER_ACTIVELIGHTS:
@@ -2757,14 +2762,17 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                             {
                                 if (!prlights[jj].flags.active)
                                     continue;
-                                CON_FOR_ITERATION();
+
+                                if (execute(jj))
+                                    return;
                             }
 #endif
                             break;
 
                         case ITER_DRAWNSPRITES:
                             for (native_t jj = 0; jj < spritesortcnt; jj++)
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 
                         case ITER_SPRITESOFSECTOR:
@@ -2772,7 +2780,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t kk, SPRITES_OF_SECT_SAFE(nIndex, jj, kk))
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 
                         case ITER_SPRITESOFSTATUS:
@@ -2780,7 +2789,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t kk, SPRITES_OF_STAT_SAFE(nIndex, jj, kk))
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 
                         case ITER_WALLSOFSECTOR:
@@ -2788,7 +2798,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 goto badindex;
 
                             for (native_t jj = sector[nIndex].wallptr, endwall = jj + sector[nIndex].wallnum - 1; jj <= endwall; jj++)
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 
                         case ITER_LOOPOFWALL:
@@ -2798,7 +2809,9 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                                 int jj = nIndex;
                                 do
                                 {
-                                    CON_FOR_ITERATION();
+                                    if (execute(jj))
+                                        return;
+
                                     jj = wall[jj].point2;
                                 } while (jj != nIndex);
                             }
@@ -2806,7 +2819,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 
                         case ITER_RANGE:
                             for (native_t jj = 0; jj < nIndex; jj++)
-                                CON_FOR_ITERATION();
+                                if (execute(jj))
+                                    return;
                             break;
 badindex:
                             OSD_Printf(OSD_ERROR "Line %d, for %s: index %d out of range!\n", VM_DECODE_LINE_NUMBER(g_tw), iter_tokens[iterType].token, nIndex);
@@ -2816,7 +2830,6 @@ badindex:
                     insptr = pEnd;
                 }
                 dispatch();
-#undef CON_FOR_ITERATION
 
             vInstruction(CON_REDEFINEQUOTE):
                 insptr++;
