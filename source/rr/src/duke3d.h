@@ -112,6 +112,7 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 // so that debugging with valgrind --smc-check=none is possible:
 //#define DEBUG_VALGRIND_NO_SMC
 
+#include "n64/reality.h"
 #include "_rts.h"
 #include "actors.h"
 #include "common_game.h"
@@ -137,7 +138,6 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 #include "sounds.h"
 #include "soundsdyn.h"
 #include "rrdh.h"
-#include "n64/reality.h"
 
 static inline int32_t G_HaveActor(int spriteNum)
 {

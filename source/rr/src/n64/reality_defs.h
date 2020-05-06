@@ -4,6 +4,7 @@
 
 #define RT_TILENUM 2851
 #define RT_BOARDNUM 34
+#define RT_PALNUM 12
 
 
 #define RT_TILE8BIT 0x8000
@@ -152,7 +153,7 @@ struct boardinfo_t {
     uint32_t posy;
     uint32_t posz;
     uint32_t ang;
-    uint32_t pad[6];
+    float sky[6];
 };
 
 struct rt_sectortype {

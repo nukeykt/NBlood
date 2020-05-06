@@ -18,6 +18,8 @@ static bool rt_group_init;
 
 static boardinfo_t boardinfo[RT_BOARDNUM];
 
+uint16_t rt_palette[RT_PALNUM][256];
+
 static void RT_LoadPalette(void);
 
 
@@ -61,11 +63,20 @@ void RT_Init(void)
         b.posy = B_BIG32(b.posy);
         b.posz = B_BIG32(b.posz);
         b.ang = B_BIG32(b.ang);
+        for (int j = 0; j < 6; j++)
+        {
+            int t = *(int*)&b.sky[j];
+            *(int*)&b.sky[j] = B_BIG32(t);
+        }
     }
 
     duke64 = true;
 
+    // FIXME
+    PolymostProcessVoxels_Callback = RT_GLInit;
+
     RT_BuildAngleTable();
+
 }
 
 #define RT_QUOTES 131
@@ -181,16 +192,22 @@ int RT_PrepareScript(void)
 static void RT_LoadPalette(void)
 {
     const int paletteOffset = 0xc0880;
-    char buffer[520];
-    Blseek(rt_group, paletteOffset, SEEK_SET);
-    if (Bread(rt_group, buffer, 520) != 520)
+    for (int p = 0; p < RT_PALNUM; p++)
     {
-        initprintf("RT_LoadPalette: file read error");
-        return;
+        Blseek(rt_group, paletteOffset + 520 * p + 8, SEEK_SET);
+        if (Bread(rt_group, rt_palette[p], 512) != 512)
+        {
+            initprintf("RT_LoadPalette: file read error");
+            return;
+        }
+        for (int i = 0; i < 256; i++)
+        {
+            rt_palette[p][i] = B_BIG16(rt_palette[p][i]);
+        }
     }
     for (int i = 0; i < 256; i++)
     {
-        int t = (buffer[8+i*2] << 8) + buffer[8+i*2+1];
+        int t = rt_palette[0][i];
         int r = (t >> 11) & 31;
         int g = (t >> 6) & 31;
         int b = (t >> 1) & 31;
@@ -251,6 +268,13 @@ void RT_LoadBoard(int boardnum)
     int numsprites = board->numsprites;
     numsectors = board->numsector;
     numwalls = board->numwall;
+
+    rt_sky_color[0][0] = board->sky[0];
+    rt_sky_color[1][0] = board->sky[3];
+    rt_sky_color[0][1] = board->sky[1];
+    rt_sky_color[1][1] = board->sky[4];
+    rt_sky_color[0][2] = board->sky[2];
+    rt_sky_color[1][2] = board->sky[5];
     
     initspritelists();
 

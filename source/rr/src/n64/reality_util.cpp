@@ -182,14 +182,14 @@ int RNCDecompress(const char *inbuf, char *outbuf)
 int RT_FakeKRand(void)
 {
     if (rt_gamestate == 2)
-        return krand2();
+        return _krand();
     return 42;
 }
 
 int RT_KRand2(void)
 {
     if (rt_gamestatus == 0)
-        return krand2();
+        return _krand();
     return 62007;
 }
 

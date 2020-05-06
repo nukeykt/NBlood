@@ -1470,6 +1470,10 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
             renderDrawMasks();
         }
+        else if (REALITY)
+        {
+            RT_DrawRooms(CAMERA(pos.x),CAMERA(pos.y),CAMERA(pos.z),CAMERA(q16ang),CAMERA(q16horiz),CAMERA(sect));
+        }
         else
         {
             yax_preparedrawrooms();
@@ -1480,12 +1484,12 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 G_OROR_DupeSprites(&sprite[ror_sprite]);
 #endif
             G_DoSpriteAnimations(CAMERA(pos.x),CAMERA(pos.y),CAMERA(pos.z),fix16_to_int(CAMERA(q16ang)),smoothRatio);
-        }
 #ifdef LEGACY_ROR
-        drawing_ror = 0;
+            drawing_ror = 0;
 #endif
-        renderDrawMasks();
+            renderDrawMasks();
 #endif
+        }
 
         if (g_screenCapture)
         {

@@ -13,6 +13,7 @@
 
 extern buildvfs_kfd rt_group;
 extern int rt_gamestate, rt_gamestatus;
+extern uint16_t rt_palette[RT_PALNUM][256];
 
 buildvfs_kfd RT_InitGRP(const char *filename);
 void RT_Init(void);

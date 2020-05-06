@@ -480,7 +480,7 @@ static void calcmat(vec3f_t a0, const vec2f_t *offset, float f, float mat[16], i
     mat[14] = (mat[14] + a0.y*mat[2]) + (a0.z*mat[6] + a0.x*mat[10]);
 }
 
-static GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int * pLength = nullptr)
+GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int * pLength)
 {
     GLuint shaderID = glCreateShader(shaderType);
     if (shaderID == 0)
@@ -1993,7 +1993,7 @@ static int32_t tile_is_sky(int32_t tilenum)
 # define clamp_if_tile_is_sky(x, y) (GL_REPEAT)
 #endif
 
-static void polymost_setuptexture(const int32_t dameth, int filter)
+void polymost_setuptexture(const int32_t dameth, int filter)
 {
     const GLuint clamp_mode = glinfo.clamptoedge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 

@@ -297,6 +297,12 @@ static int32_t safeldist(int32_t spriteNum, const void *pSprite)
     return distance ? distance : 1;
 }
 
+static int32_t safeFindDistance2D(int x, int y)
+{
+    int32_t distance = FindDistance2D(x, y);
+    return distance ? distance : 1;
+}
+
 // flags:
 //  1: do sprite center adjustment (cen-=(8<<8)) for GREENSLIME or ROTATEGUN
 //  2: do auto getangle only if not RECON (if clear, do unconditionally)
@@ -304,14 +310,20 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
                                const vec3_t *startPos, int projVel, int32_t *pZvel, int *pAng)
 {
     int returnSprite = -1;
+    int aimang;
 
     Bassert((unsigned)playerNum < MAXPLAYERS);
 
-    Gv_SetVar(g_aimAngleVarID, (g_player[playerNum].ps->auto_aim == 3 && (!RRRA || projecTile != RPG2)) ? AUTO_AIM_ANGLE<<1 : AUTO_AIM_ANGLE, spriteNum, playerNum);
+    if (projecTile == DN64TILE2606)
+        aimang = 192;
+    else
+    {
+        Gv_SetVar(g_aimAngleVarID, (g_player[playerNum].ps->auto_aim == 3 && (!RRRA || projecTile != RPG2)) ? AUTO_AIM_ANGLE<<1 : AUTO_AIM_ANGLE, spriteNum, playerNum);
 
-    VM_OnEvent(EVENT_GETAUTOAIMANGLE, spriteNum, playerNum);
+        VM_OnEvent(EVENT_GETAUTOAIMANGLE, spriteNum, playerNum);
 
-    int aimang = Gv_GetVar(g_aimAngleVarID, spriteNum, playerNum);
+        aimang = Gv_GetVar(g_aimAngleVarID, spriteNum, playerNum);
+    }
     if (aimang > 0)
         returnSprite = A_FindTargetSprite(&sprite[spriteNum], aimang, projecTile);
 
@@ -410,7 +422,13 @@ notarget:
             *zvel = fix16_to_int(F16(100)-pPlayer->q16horiz-pPlayer->q16horizoff)<<5;
         }
 
-        Proj_MaybeAddSpreadSwapped(doSpread, zvel, shootAng, zRange, angRange);
+        if (REALITY && !accurateAim)
+        {
+            if (projecTile != DN64TILE2599)
+                Proj_MaybeAddSpread(doSpread, zvel, shootAng, zRange, angRange);
+        }
+        else
+            Proj_MaybeAddSpreadSwapped(doSpread, zvel, shootAng, zRange, angRange);
     }
 
     srcVect->z -= (2<<8);
@@ -511,7 +529,7 @@ static int Proj_CheckBlood(vec3_t const *const srcVect, hitdata_t const *const h
     return 0;
 }
 
-int A_Shoot(int const spriteNum, int const projecTile)
+int A_Shoot(int const spriteNum, int projecTile)
 {
     Bassert(projecTile >= 0);
     
@@ -658,7 +676,7 @@ growspark_rr:
                         int k = A_Spawn(kneeSprite, SMALLSMOKE);
                         sprite[k].z -= ZOFFSET3;
                         if (!RR || projecTile == KNEE)
-                            A_PlaySound(KICK_HIT, kneeSprite);
+                            A_PlaySound(REALITY ? 0 : KICK_HIT, kneeSprite);
                         else if (RRRA && projecTile == SLINGBLADE)
                             A_PlaySound(260, kneeSprite);
                     }
@@ -697,10 +715,23 @@ growspark_rr:
             }
             break;
 
+        case DN64TILE2596__STATIC:
+        case DN64TILE2597__STATIC:
+        case DN64TILE2598__STATIC:
+        case DN64TILE2599__STATIC:
+            if (!REALITY)
+                break;
         case SHOTSPARK1__STATIC:
         case SHOTGUN__STATIC:
         case CHAINGUN__STATIC:
         {
+            if (REALITY)
+            {
+                if (projecTile == SHOTGUN)
+                    projecTile = DN64TILE2596;
+                if (projecTile == CHAINGUN)
+                    projecTile = DN64TILE2597;
+            }
             if (pSprite->extra >= 0)
                 pSprite->shade = -96;
 
@@ -723,15 +754,31 @@ growspark_rr:
 
             if (playerNum >= 0)
             {
-                spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, SHOTSPARK1, -15, 10, 10, shootAng, 0, 0, spriteNum, 4);
+                spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, REALITY ? projecTile : SHOTSPARK1, -15, 10, 10, shootAng, 0, 0, spriteNum, 4);
                 sprite[spawnedSprite].extra = G_DefaultActorHealth(projecTile);
                 sprite[spawnedSprite].extra += (krand2()%6);
+
+                if (REALITY)
+                {
+                    sprite[spawnedSprite].cstat |= 128;
+                    if ((krand2()&255) < 128)
+                        sprite[spawnedSprite].cstat |= 4;
+                    if ((krand2()&255) < 128)
+                        sprite[spawnedSprite].cstat |= 8;
+                    sprite[spawnedSprite].x += (sintable[(shootAng+1536)&2047]>>10);
+                    sprite[spawnedSprite].y += (sintable[(shootAng+1024)&2047]>>10);
+                }
 
                 
                 if (hitData.wall == -1 && hitData.sprite == -1)
                 {
                     if (Zvel < 0)
                     {
+                        if (REALITY && (sector[hitData.sect].ceilingpicnum == 200 || sector[hitData.sect].ceilingpicnum == 336))
+                        {
+                            sprite[spawnedSprite].xrepeat = 0;
+                            sprite[spawnedSprite].yrepeat = 0;
+                        }
                         if (sector[hitData.sect].ceilingstat & 1)
                         {
                             sprite[spawnedSprite].xrepeat = 0;
@@ -741,32 +788,59 @@ growspark_rr:
                         else
                             Sect_DamageCeiling(hitData.sect);
                     }
+                    else
+                    {
+                        if (REALITY && (sector[hitData.sect].floorpicnum == 200 || sector[hitData.sect].floorpicnum == 336))
+                        {
+                            sprite[spawnedSprite].xrepeat = 0;
+                            sprite[spawnedSprite].yrepeat = 0;
+                        }
+                    }
 
                     if (!RR || sector[hitData.sect].lotag != ST_1_ABOVE_WATER)
                         A_Spawn(spawnedSprite, SMALLSMOKE);
                 }
+
+                if (REALITY && projecTile == DN64TILE2599)
+                {
+                    int spr = A_Spawn(spawnedSprite, EXPLOSION2);
+                    sprite[spr].xvel = 348;
+                    sprite[spr].ang = (sprite[spawnedSprite].ang + 1024) & 2047;
+                    A_SetSprite(spr, CLIPMASK0);
+                    int dmg = sprite[spawnedSprite].extra;
+                    A_RadiusDamage(spr, 2500, dmg >> 2, dmg >> 1, dmg - (dmg >> 2), dmg);
+                    A_PlaySound(12, spr);
+                }
                 
-                if (hitData.sprite >= 0)
+                if (hitData.sprite >= 0 && (!REALITY || projecTile != DN64TILE2599))
                 {
                     if (RR && sprite[hitData.sprite].picnum == TORNADO)
                         return -1;
                     A_DamageObject(hitData.sprite, spawnedSprite);
 
-                    if (sprite[hitData.sprite].picnum == APLAYER &&
-                        (ud.ffire == 1 || (!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY) && GTFLAGS(GAMETYPE_TDM) &&
-                                           g_player[P_Get(hitData.sprite)].ps->team != g_player[P_Get(spriteNum)].ps->team)))
+                    if (REALITY)
                     {
-                        int jibSprite = A_Spawn(spawnedSprite, JIBS6);
-
-                        sprite[spawnedSprite].xrepeat = sprite[spawnedSprite].yrepeat = 0;
-                        sprite[jibSprite].z += ZOFFSET6;
-                        sprite[jibSprite].xvel    = 16;
-                        sprite[jibSprite].xrepeat = sprite[jibSprite].yrepeat = 24;
-                        sprite[jibSprite].ang += 64 - (krand2() & 127);
+                        sprite[spawnedSprite].xrepeat = 0;
+                        sprite[spawnedSprite].yrepeat = 0;
                     }
                     else
                     {
-                        A_Spawn(spawnedSprite, SMALLSMOKE);
+                        if (sprite[hitData.sprite].picnum == APLAYER &&
+                            (ud.ffire == 1 || (!GTFLAGS(GAMETYPE_PLAYERSFRIENDLY) && GTFLAGS(GAMETYPE_TDM) &&
+                                               g_player[P_Get(hitData.sprite)].ps->team != g_player[P_Get(spriteNum)].ps->team)))
+                        {
+                            int jibSprite = A_Spawn(spawnedSprite, JIBS6);
+
+                            sprite[spawnedSprite].xrepeat = sprite[spawnedSprite].yrepeat = 0;
+                            sprite[jibSprite].z += ZOFFSET6;
+                            sprite[jibSprite].xvel    = 16;
+                            sprite[jibSprite].xrepeat = sprite[jibSprite].yrepeat = 24;
+                            sprite[jibSprite].ang += 64 - (krand2() & 127);
+                        }
+                        else
+                        {
+                            A_Spawn(spawnedSprite, SMALLSMOKE);
+                        }
                     }
 
                     if (playerNum >= 0 && CheckShootSwitchTile(sprite[hitData.sprite].picnum))
@@ -779,7 +853,8 @@ growspark_rr:
                 {
                     uwalltype const * const hitWall = (uwalltype *)&wall[hitData.wall];
 
-                    A_Spawn(spawnedSprite, SMALLSMOKE);
+                    if (!REALITY)
+                        A_Spawn(spawnedSprite, SMALLSMOKE);
 
                     if (CheckDoorTile(hitWall->picnum) == 1)
                         goto SKIPBULLETHOLE;
@@ -792,6 +867,9 @@ growspark_rr:
                         P_ActivateSwitch(playerNum, hitData.wall, 0);
                         return -1;
                     }
+
+                    if (REALITY && numplayers != 1)
+                        goto SKIPBULLETHOLE;
 
                     if (hitWall->hitag != 0 || (hitWall->nextwall >= 0 && wall[hitWall->nextwall].hitag != 0))
                         goto SKIPBULLETHOLE;
@@ -806,14 +884,24 @@ growspark_rr:
                             goto SKIPBULLETHOLE;
 
                         for (SPRITES_OF(STAT_MISC, decalSprite))
-                            if (sprite[decalSprite].picnum == BULLETHOLE && dist(&sprite[decalSprite], &sprite[spawnedSprite]) < (12 + (krand2() & 7)))
+                            if (sprite[decalSprite].picnum == BULLETHOLE && dist(&sprite[decalSprite], &sprite[spawnedSprite])
+                                < (((REALITY && (projecTile == DN64TILE2598 || projecTile == DN64TILE2599)) ? 36 : 12) + (krand2() & 7)))
                                 goto SKIPBULLETHOLE;
 
                         decalSprite = A_Spawn(spawnedSprite, BULLETHOLE);
 
-                        sprite[decalSprite].xvel = -1;
+                        sprite[decalSprite].xvel = REALITY ? 0 : -1;
                         sprite[decalSprite].ang
                         = (getangle(hitWall->x - wall[hitWall->point2].x, hitWall->y - wall[hitWall->point2].y) + 512) & 2047;
+                        if (REALITY)
+                        {
+                            sprite[decalSprite].ang = (sprite[decalSprite].ang + 1024) & 2047;
+                            if (projecTile == DN64TILE2598 || projecTile == DN64TILE2599)
+                            {
+                                sprite[decalSprite].xrepeat *= 3;
+                                sprite[decalSprite].yrepeat *= 3;
+                            }
+                        }
 
                         A_SetSprite(decalSprite, CLIPMASK0);
                     }
@@ -821,18 +909,20 @@ growspark_rr:
                 SKIPBULLETHOLE:
 
                     HandleHitWall(&hitData);
-                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.pos, SHOTSPARK1);
+                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.pos, REALITY ? projecTile : SHOTSPARK1);
                 }
             }
             else
             {
-                spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, SHOTSPARK1, -15, 24, 24, shootAng, 0, 0, spriteNum, 4);
+                spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, REALITY ? projecTile : SHOTSPARK1, -15, 24, 24, shootAng, 0, 0, spriteNum, 4);
                 sprite[spawnedSprite].extra = G_DefaultActorHealth(projecTile);
+                if (REALITY)
+                    sprite[spawnedSprite].cstat |= 0x80;
 
                 if (hitData.sprite >= 0)
                 {
                     A_DamageObject(hitData.sprite, spawnedSprite);
-                    if (sprite[hitData.sprite].picnum != APLAYER)
+                    if (!REALITY && sprite[hitData.sprite].picnum != APLAYER)
                         A_Spawn(spawnedSprite, SMALLSMOKE);
                     else
                     {
@@ -841,7 +931,17 @@ growspark_rr:
                     }
                 }
                 else if (hitData.wall >= 0)
-                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.pos, SHOTSPARK1);
+                    A_DamageWall(spawnedSprite, hitData.wall, &hitData.pos, REALITY ? projecTile : SHOTSPARK1);
+            }
+
+            if (REALITY)
+            {
+                if (hitData.wall >= 0 && (krand2()&255) < 32)
+                {
+                    if (g_tile[projecTile].execPtr != g_tile[DN64TILE2599].execPtr && g_tile[projecTile].execPtr != g_tile[DN64TILE2596].execPtr)
+                        S_PlaySound3D(272+(krand2()%5), spawnedSprite, &hitData.pos);
+                }
+                return -1;
             }
 
             if ((krand2() & 255) < (RR ? 10 : 4))
@@ -966,6 +1066,22 @@ growspark_rr:
                         vel = RR ? 400 : 292;
                     break;
                 case COOLEXPLOSION1__STATIC:
+                    if (REALITY)
+                    {
+                        if (pSprite->picnum == BOSS2)
+                        {
+                            vel = 644;
+                            startPos.z -= 12288.0;
+                            startPos.x += (sintable[(pSprite->ang+512)&2047] * 1000) >> 14;
+                            startPos.y += (sintable[pSprite->ang&2047] * 1000) >> 14;
+                        }
+                        else
+                        {
+                            vel = 348;
+                            startPos.z -= (4 << 7);
+                        }
+                        break;
+                    }
                     if (!RR)
                     {
                         vel = (pSprite->picnum == BOSS2) ? 644 : 348;
@@ -1015,7 +1131,8 @@ growspark_rr:
                 }
                 else
                     shootAng           += 16 - (krand2() & 31);
-                hitData.pos.x         = safeldist(g_player[otherPlayer].ps->i, pSprite);
+                hitData.pos.x         = REALITY ? safeFindDistance2D(sprite[g_player[otherPlayer].ps->i].x - pSprite->x, sprite[g_player[otherPlayer].ps->i].y - pSprite->y)
+                                                : safeldist(g_player[otherPlayer].ps->i, pSprite);
                 Zvel                  = tabledivide32_noinline((g_player[otherPlayer].ps->opos.z - startPos.z + (3 << 8)) * vel, hitData.pos.x);
             }
 
@@ -1052,10 +1169,13 @@ growspark_rr:
 
                 if (PN(spriteNum) == BOSS2)
                 {
-                    int const saveXvel        = sprite[returnSprite].xvel;
-                    sprite[returnSprite].xvel = 1024;
-                    A_SetSprite(returnSprite, CLIPMASK0);
-                    sprite[returnSprite].xvel = saveXvel;
+                    if (!REALITY)
+                    {
+                        int const saveXvel        = sprite[returnSprite].xvel;
+                        sprite[returnSprite].xvel = 1024;
+                        A_SetSprite(returnSprite, CLIPMASK0);
+                        sprite[returnSprite].xvel = saveXvel;
+                    }
                     sprite[returnSprite].ang += 128 - (krand2() & 255);
                 }
             }
@@ -1063,8 +1183,11 @@ growspark_rr:
             sprite[returnSprite].cstat    = 128;
             sprite[returnSprite].clipdist = 4;
 
-            shootAng = pSprite->ang + 32 - (krand2() & 63);
-            Zvel += 512 - (krand2() & 1023);
+            if (!REALITY)
+            {
+                shootAng = pSprite->ang + 32 - (krand2() & 63);
+                Zvel += 512 - (krand2() & 1023);
+            }
 
             if (RR && projecTile == FIRELASER)
                 sprite[returnSprite].xrepeat = sprite[returnSprite].yrepeat = 8;
@@ -1073,15 +1196,19 @@ growspark_rr:
         }
 
         case FREEZEBLAST__STATIC:
+            if (REALITY) break;
             startPos.z += (3 << 8);
             fallthrough__;
         case RPG__STATIC:
+        case DN64TILE2606__STATIC:
         case RPG2__STATICRR:
         case RRTILE1790__STATICRR:
         case SHRINKSPARK__STATIC:
+        case DN64TILE3841__STATIC:
         {
             if (!RR && projecTile == SHRINKSPARK) break;
             if (RR && !RRRA && (projecTile == RPG2 || projecTile == RRTILE1790)) break;
+            if (!REALITY && (projecTile == DN64TILE2599 || projecTile == DN64TILE3841)) break;
 
             int targetSprite = 0;
 
@@ -1091,12 +1218,24 @@ growspark_rr:
 
             vel = 644;
 
+            int projecTile2 = projecTile;
+
             int otherSprite = -1;
 
             if (playerNum >= 0)
             {
                 // NOTE: otherSprite is a SPRITE_INDEX
-                otherSprite = GetAutoAimAng(spriteNum, playerNum, projecTile, 8 << 8, 0 + 2, &startPos, vel, &Zvel, &shootAng);
+                if (projecTile == DN64TILE2606)
+                {
+                    char t = pPlayer->dn64_385;
+                    pPlayer->dn64_385 = 1;
+                    otherSprite = GetAutoAimAng(spriteNum, playerNum, projecTile, 8 << 8, 0 + 2, &startPos, vel, &Zvel, &shootAng);
+                    pPlayer->dn64_385 = t;
+                    vel = 512;
+                    projecTile2 = RPG;
+                }
+                else
+                    otherSprite = GetAutoAimAng(spriteNum, playerNum, projecTile, 8 << 8, 0 + 2, &startPos, vel, &Zvel, &shootAng);
 
                 if (RRRA && projecTile == RPG2 && otherSprite >= 0)
                 {
@@ -1106,10 +1245,10 @@ growspark_rr:
                         targetSprite = otherSprite;
                 }
 
-                if (otherSprite < 0)
+                if (projecTile == DN64TILE2606 || otherSprite < 0)
                     Zvel = fix16_to_int(F16(100) - pPlayer->q16horiz - pPlayer->q16horizoff) * 81;
 
-                if (projecTile == RPG)
+                if (projecTile2 == RPG)
                     A_PlaySound(RPG_SHOOT, spriteNum);
                 else if (RRRA)
                 {
@@ -1125,14 +1264,26 @@ growspark_rr:
                 otherSprite          = A_FindPlayer(pSprite, NULL);
                 shootAng = getangle(g_player[otherSprite].ps->opos.x - startPos.x, g_player[otherSprite].ps->opos.y - startPos.y);
                 if (PN(spriteNum) == BOSS3)
+                {
                     startPos.z -= ZOFFSET5;
+                    if (REALITY && pSprite->pal != 0)
+                        startPos.z -= ZOFFSET2;
+                }
                 else if (PN(spriteNum) == BOSS2)
                 {
                     vel += 128;
-                    startPos.z += 24<<8;
+                    if (REALITY)
+                    {
+                        startPos.x = startPos.x + ((sintable[shootAng&2047] << 2) / 56) / 1.3 + ((sintable[(shootAng+512)&2047] << 11) >> 14) / 1.3;
+                        startPos.y = startPos.y + ((sintable[(shootAng+1536)&2047] << 2) / 56) / 1.3 + ((sintable[shootAng&2047] << 11) >> 14) / 1.3;
+                    }
+                    else
+                        startPos.z += 24<<8;
                 }
 
-                Zvel = tabledivide32_noinline((g_player[otherSprite].ps->opos.z - startPos.z) * vel, safeldist(g_player[otherSprite].ps->i, pSprite));
+                Zvel = tabledivide32_noinline((g_player[otherSprite].ps->opos.z - startPos.z) * vel,
+                    REALITY ? safeFindDistance2D(sprite[g_player[otherSprite].ps->i].x - pSprite->x, sprite[g_player[otherSprite].ps->i].y - pSprite->y)
+                            : safeldist(g_player[otherSprite].ps->i, pSprite));
 
                 if (A_CheckEnemySprite(pSprite) && (AC_MOVFLAGS(pSprite, &actor[spriteNum]) & face_player_smart))
                     shootAng = pSprite->ang + (krand2() & 31) - 16;
@@ -1149,7 +1300,7 @@ growspark_rr:
 
             int const returnSprite = A_InsertSprite(spriteSectnum, startPos.x + (sintable[(348 + shootAng + 512) & 2047] / 448),
                                                     startPos.y + (sintable[(shootAng + 348) & 2047] / 448), startPos.z - (1 << 8),
-                                                    projecTile, 0, 14, 14, shootAng, vel, Zvel, spriteNum, 4);
+                                                    projecTile2, 0, 14, 14, shootAng, vel, Zvel, spriteNum, 4);
             spritetype *const pReturn = &sprite[returnSprite];
 
             if (RRRA)
@@ -1168,14 +1319,36 @@ growspark_rr:
             }
 
             pReturn->extra += (krand2() & 7);
-            if (projecTile != FREEZEBLAST)
-                pReturn->yvel = (playerNum >= 0 && otherSprite >= 0) ? otherSprite : -1;  // RPG_YVEL
+            if (REALITY)
+            {
+                if (projecTile == RPG)
+                    pReturn->yvel = (playerNum >= 0 && otherSprite >= 0) ? otherSprite : -1;  // RPG_YVEL
+                if (projecTile == DN64TILE2606)
+                {
+                    if ((krand2() & 63) < 32)
+                        pReturn->xvel = 513;
+                }
+                if (projecTile == DN64TILE3841)
+                {
+                    pReturn->zvel -= 32;
+                    if (playerNum >= 0)
+                        pReturn->yvel = pPlayer->hbomb_hold_delay;
+                    else
+                        pReturn->yvel = 66;
+                    pReturn->extra += (pReturn->yvel * pReturn->yvel) / 10;
+                }
+            }
             else
             {
-                pReturn->yvel = g_numFreezeBounces;
-                pReturn->xrepeat >>= 1;
-                pReturn->yrepeat >>= 1;
-                pReturn->zvel -= (2 << 4);
+                if (projecTile != FREEZEBLAST)
+                    pReturn->yvel = (playerNum >= 0 && otherSprite >= 0) ? otherSprite : -1;  // RPG_YVEL
+                else
+                {
+                    pReturn->yvel = g_numFreezeBounces;
+                    pReturn->xrepeat >>= 1;
+                    pReturn->yrepeat >>= 1;
+                    pReturn->zvel -= (2 << 4);
+                }
             }
 
             if (playerNum == -1)
@@ -1187,37 +1360,58 @@ growspark_rr:
                 }
                 else if (!RR && PN(spriteNum) == BOSS3)
                 {
+                    int dx, dy;
                     if (krand2() & 1)
                     {
-                        pReturn->x -= sintable[shootAng & 2047] >> 6;
-                        pReturn->y -= sintable[(shootAng + 1024 + 512) & 2047] >> 6;
+                        dx = -(sintable[shootAng & 2047] >> 6);
+                        dy = -(sintable[(shootAng + 1024 + 512) & 2047] >> 6);
                         pReturn->ang -= 8;
                     }
                     else
                     {
-                        pReturn->x += sintable[shootAng & 2047] >> 6;
-                        pReturn->y += sintable[(shootAng + 1024 + 512) & 2047] >> 6;
+                        dx = sintable[shootAng & 2047] >> 6;
+                        dy = sintable[(shootAng + 1024 + 512) & 2047] >> 6;
                         pReturn->ang += 4;
                     }
-                    pReturn->xrepeat = 42;
-                    pReturn->yrepeat = 42;
+                    if (REALITY)
+                    {
+                        if (pSprite->pal != 0)
+                        {
+                            dx /= 2;
+                            dy /= 2;
+                        }
+                        pReturn->x += dx;
+                        pReturn->y += dy;
+                        pReturn->xrepeat = 21;
+                        pReturn->yrepeat = 21;
+                    }
+                    else
+                    {
+                        pReturn->x += dx;
+                        pReturn->y += dy;
+                        pReturn->xrepeat = 42;
+                        pReturn->yrepeat = 42;
+                    }
                 }
                 else if (!RR && PN(spriteNum) == BOSS2)
                 {
-                    pReturn->x -= sintable[shootAng & 2047] / 56;
-                    pReturn->y -= sintable[(shootAng + 1024 + 512) & 2047] / 56;
+                    if (!REALITY)
+                    {
+                        pReturn->x -= sintable[shootAng & 2047] / 56;
+                        pReturn->y -= sintable[(shootAng + 1024 + 512) & 2047] / 56;
+                    }
                     pReturn->ang -= 8 + (krand2() & 255) - 128;
                     pReturn->xrepeat = 24;
                     pReturn->yrepeat = 24;
                 }
-                else if (projecTile != FREEZEBLAST)
+                else if ((!REALITY && projecTile != FREEZEBLAST) || (REALITY && projecTile != DN64TILE3841))
                 {
                     pReturn->xrepeat = 30;
                     pReturn->yrepeat = 30;
                     pReturn->extra >>= 2;
                 }
             }
-            else if ((WW2GI ? PWEAPON(playerNum, g_player[playerNum].ps->curr_weapon, WorksLike) : g_player[playerNum].ps->curr_weapon) == DEVISTATOR_WEAPON)
+            else if (!REALITY && (WW2GI ? PWEAPON(playerNum, g_player[playerNum].ps->curr_weapon, WorksLike) : g_player[playerNum].ps->curr_weapon) == DEVISTATOR_WEAPON)
             {
                 pReturn->extra >>= 2;
                 pReturn->ang += 16 - (krand2() & 31);
@@ -1238,7 +1432,7 @@ growspark_rr:
             }
 
             pReturn->cstat    = 128;
-            pReturn->clipdist = (projecTile == RPG) ? 4 : 40;
+            pReturn->clipdist = (projecTile2 == RPG) ? 4 : (REALITY ? 80 : 40);
 
             if (RRRA && (projecTile == RPG2 || projecTile == RRTILE1790))
                 pReturn->clipdist = 4;
@@ -8938,7 +9132,9 @@ HORIZONLY:;
         pPlayer->q16horiz -= fix16_from_int(pPlayer->hard_landing<<4);
     }
 
-    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz + ((ud.recstat == 2 && g_demo_legacy && !pPlayer->aim_mode) ? 0 : g_player[playerNum].inputBits->q16horz), F16(HORIZ_MIN), F16(HORIZ_MAX));
+    const fix16_t horiz_max = REALITY ? F16(228) : F16(HORIZ_MAX);
+    const fix16_t horiz_min = REALITY ? F16(-28) : F16(HORIZ_MIN);
+    pPlayer->q16horiz = fix16_clamp(pPlayer->q16horiz + ((ud.recstat == 2 && g_demo_legacy && !pPlayer->aim_mode) ? 0 : g_player[playerNum].inputBits->q16horz), horiz_min, horiz_max);
 
     if (ud.recstat == 2 && g_demo_legacy) centerHoriz = !pPlayer->aim_mode;
 

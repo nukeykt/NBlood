@@ -35,6 +35,7 @@ extern void Polymost_prepare_loadboard(void);
 void polymost_outputGLDebugMessage(uint8_t severity, const char* format, ...);
 
 //void phex(char v, char *s);
+void polymost_setuptexture(const int32_t dameth, int filter);
 void uploadtexture(int32_t doalloc, vec2_t siz, int32_t texfmt, coltype *pic, vec2_t tsiz, int32_t dameth);
 void uploadtextureindexed(int32_t doalloc, vec2_t offset, vec2_t siz, intptr_t tile);
 void uploadbasepalette(int32_t basepalnum);
@@ -70,6 +71,7 @@ void polymost_activeTexture(GLenum texture);
 void polymost_bindTexture(GLenum target, uint32_t textureID);
 void polymost_updatePalette(void);
 void polymost_useShaderProgram(uint32_t shaderID);
+GLuint polymost2_compileShader(GLenum shaderType, const char* const source, int* pLength = nullptr);
 
 float* multiplyMatrix4f(float m0[4*4], const float m1[4*4]);
 
@@ -207,6 +209,7 @@ enum {
     DAMETH_INDEXED = 512,
 
     DAMETH_N64 = 1024,
+    DAMETH_N64_INTENSIVITY = 2048,
 
     // used internally by polymost_domost
     DAMETH_BACKFACECULL = -1,
@@ -271,6 +274,7 @@ enum pthtyp_flags {
     PTH_ONEBITALPHA = 1024,
 
     PTH_N64 = 2048,
+    PTH_N64_INTENSIVITY = 4096,
 };
 
 typedef struct pthtyp_t
@@ -303,6 +307,8 @@ EDUKE32_STATIC_ASSERT(TO_PTH_NOTRANSFIX(DAMETH_MASKPROPS) == 0);
 EDUKE32_STATIC_ASSERT(TO_PTH_INDEXED(DAMETH_INDEXED) == PTH_INDEXED);
 #define TO_PTH_N64(dameth) (((dameth)&DAMETH_N64)<<1)
 EDUKE32_STATIC_ASSERT(TO_PTH_N64(DAMETH_N64) == PTH_N64);
+#define TO_PTH_N64_INTENSIVITY(dameth) (((dameth)&DAMETH_N64_INTENSIVITY)<<1)
+EDUKE32_STATIC_ASSERT(TO_PTH_N64_INTENSIVITY(DAMETH_N64_INTENSIVITY) == PTH_N64_INTENSIVITY);
 
 extern void gloadtile_art(int32_t,int32_t,int32_t,int32_t,int32_t,pthtyp *,int32_t);
 extern int32_t gloadtile_hi(int32_t,int32_t,int32_t,hicreplctyp *,int32_t,pthtyp *,int32_t,polytintflags_t);

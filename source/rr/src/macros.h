@@ -27,10 +27,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 // Macros, some from SW source
 
-static FORCE_INLINE int32_t krand2(void)
+static FORCE_INLINE int32_t _krand(void)
 {
     randomseed = (randomseed * 27584621ul) + 1ul;
     return ((uint32_t) randomseed)>>16;
+}
+
+static FORCE_INLINE int32_t krand2(void)
+{
+    if (REALITY)
+        return RT_KRand2();
+    return _krand();
 }
 
 #define BGSTRETCH (ud.bgstretch ? 1024 : 0)

@@ -227,10 +227,12 @@ typedef struct {
 
     int16_t dn64_370, dn64_372;
 
+    uint8_t dn64_385;
+
     int32_t dn_388;
 
     int8_t crouch_toggle;
-    int8_t padding_[3];
+    int8_t padding_[2];
 } DukePlayer_t;
 
 // KEEPINSYNC lunatic/_defs_game.lua
