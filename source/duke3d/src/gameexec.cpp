@@ -1362,19 +1362,17 @@ static void ResizeArray(int const arrayNum, int const newSize)
         }                                        \
     } while (0)
 
-// be careful when changing this--the assignment used as a condition doubles as a null pointer check
-#define VM_CONDITIONAL(xxx)                                                                       \
-    do                                                                                            \
-    {                                                                                             \
-        if ((xxx) || ((insptr = (intptr_t *)insptr[1]) && (VM_DECODE_INST(*insptr) == CON_ELSE))) \
-        {                                                                                         \
-            insptr += 2;                                                                          \
-            VM_Execute();                                                                         \
-        }                                                                                         \
-    } while (0)
-
 GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
 {
+    // be careful when changing this--the assignment used as a condition doubles as the nullptr check!
+    auto branch = [&](int x) {
+        if (x || ((insptr = (intptr_t *)insptr[1]) && (VM_DECODE_INST(*insptr) == CON_ELSE)))
+        {
+            insptr += 2;
+            VM_Execute();
+        }
+    };
+
     int vm_execution_depth = loop;
 #ifdef CON_USE_COMPUTED_GOTO
     static void *const jumpTable[] = JUMP_TABLE_ARRAY_LITERAL;
@@ -1418,77 +1416,77 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_IFVARE_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw == *insptr);
+                branch(tw == *insptr);
                 dispatch();
             vInstruction(CON_IFVARN_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw != *insptr);
+                branch(tw != *insptr);
                 dispatch();
             vInstruction(CON_IFVARAND_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw & *insptr);
+                branch(tw & *insptr);
                 dispatch();
             vInstruction(CON_IFVAROR_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw | *insptr);
+                branch(tw | *insptr);
                 dispatch();
             vInstruction(CON_IFVARXOR_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw ^ *insptr);
+                branch(tw ^ *insptr);
                 dispatch();
             vInstruction(CON_IFVAREITHER_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw || *insptr);
+                branch(tw || *insptr);
                 dispatch();
             vInstruction(CON_IFVARBOTH_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw && *insptr);
+                branch(tw && *insptr);
                 dispatch();
             vInstruction(CON_IFVARG_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw > *insptr);
+                branch(tw > *insptr);
                 dispatch();
             vInstruction(CON_IFVARGE_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw >= *insptr);
+                branch(tw >= *insptr);
                 dispatch();
             vInstruction(CON_IFVARL_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw < *insptr);
+                branch(tw < *insptr);
                 dispatch();
             vInstruction(CON_IFVARLE_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL(tw <= *insptr);
+                branch(tw <= *insptr);
                 dispatch();
             vInstruction(CON_IFVARA_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL((uint32_t)tw > (uint32_t)*insptr);
+                branch((uint32_t)tw > (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARAE_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL((uint32_t)tw >= (uint32_t)*insptr);
+                branch((uint32_t)tw >= (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARB_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL((uint32_t)tw < (uint32_t)*insptr);
+                branch((uint32_t)tw < (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARBE_GLOBAL):
                 insptr++;
                 tw = aGameVars[*insptr++].global;
-                VM_CONDITIONAL((uint32_t)tw <= (uint32_t)*insptr);
+                branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_SETVAR_GLOBAL):
@@ -1540,77 +1538,77 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_IFVARE_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw == *insptr);
+                branch(tw == *insptr);
                 dispatch();
             vInstruction(CON_IFVARN_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw != *insptr);
+                branch(tw != *insptr);
                 dispatch();
             vInstruction(CON_IFVARAND_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw & *insptr);
+                branch(tw & *insptr);
                 dispatch();
             vInstruction(CON_IFVAROR_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw | *insptr);
+                branch(tw | *insptr);
                 dispatch();
             vInstruction(CON_IFVARXOR_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw ^ *insptr);
+                branch(tw ^ *insptr);
                 dispatch();
             vInstruction(CON_IFVAREITHER_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw || *insptr);
+                branch(tw || *insptr);
                 dispatch();
             vInstruction(CON_IFVARBOTH_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw && *insptr);
+                branch(tw && *insptr);
                 dispatch();
             vInstruction(CON_IFVARG_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw > *insptr);
+                branch(tw > *insptr);
                 dispatch();
             vInstruction(CON_IFVARGE_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw >= *insptr);
+                branch(tw >= *insptr);
                 dispatch();
             vInstruction(CON_IFVARL_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw < *insptr);
+                branch(tw < *insptr);
                 dispatch();
             vInstruction(CON_IFVARLE_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL(tw <= *insptr);
+                branch(tw <= *insptr);
                 dispatch();
             vInstruction(CON_IFVARA_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL((uint32_t)tw > (uint32_t)*insptr);
+                branch((uint32_t)tw > (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARAE_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL((uint32_t)tw >= (uint32_t)*insptr);
+                branch((uint32_t)tw >= (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARB_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL((uint32_t)tw < (uint32_t)*insptr);
+                branch((uint32_t)tw < (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARBE_ACTOR):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.spriteNum & (MAXSPRITES-1)];
-                VM_CONDITIONAL((uint32_t)tw <= (uint32_t)*insptr);
+                branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_SETVAR_ACTOR):
@@ -1662,77 +1660,77 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_IFVARE_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw == *insptr);
+                branch(tw == *insptr);
                 dispatch();
             vInstruction(CON_IFVARN_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw != *insptr);
+                branch(tw != *insptr);
                 dispatch();
             vInstruction(CON_IFVARAND_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw & *insptr);
+                branch(tw & *insptr);
                 dispatch();
             vInstruction(CON_IFVAROR_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw | *insptr);
+                branch(tw | *insptr);
                 dispatch();
             vInstruction(CON_IFVARXOR_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw ^ *insptr);
+                branch(tw ^ *insptr);
                 dispatch();
             vInstruction(CON_IFVAREITHER_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw || *insptr);
+                branch(tw || *insptr);
                 dispatch();
             vInstruction(CON_IFVARBOTH_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw && *insptr);
+                branch(tw && *insptr);
                 dispatch();
             vInstruction(CON_IFVARG_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw > *insptr);
+                branch(tw > *insptr);
                 dispatch();
             vInstruction(CON_IFVARGE_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw >= *insptr);
+                branch(tw >= *insptr);
                 dispatch();
             vInstruction(CON_IFVARL_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw < *insptr);
+                branch(tw < *insptr);
                 dispatch();
             vInstruction(CON_IFVARLE_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL(tw <= *insptr);
+                branch(tw <= *insptr);
                 dispatch();
             vInstruction(CON_IFVARA_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL((uint32_t)tw > (uint32_t)*insptr);
+                branch((uint32_t)tw > (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARAE_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL((uint32_t)tw >= (uint32_t)*insptr);
+                branch((uint32_t)tw >= (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARB_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL((uint32_t)tw < (uint32_t)*insptr);
+                branch((uint32_t)tw < (uint32_t)*insptr);
                 dispatch();
             vInstruction(CON_IFVARBE_PLAYER):
                 insptr++;
                 tw = aGameVars[*insptr++].pValues[vm.playerNum & (MAXPLAYERS-1)];
-                VM_CONDITIONAL((uint32_t)tw <= (uint32_t)*insptr);
+                branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_SETVAR_PLAYER):
@@ -1788,7 +1786,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     tw = (aGameVars[insptr[-1]].global != *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
                 dispatch();
             }
@@ -1800,7 +1798,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     tw = (aGameVars[insptr[-1]].global < *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
                 dispatch();
             }
@@ -1813,7 +1811,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     tw = (v != *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
 
                 dispatch();
@@ -1827,7 +1825,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     tw = (v < *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
 
                 dispatch();
@@ -1841,7 +1839,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     tw = (v != *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
 
                 dispatch();
@@ -1855,7 +1853,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 {
                     insptr = savedinsptr;
                     tw = (v < *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
 
                 dispatch();
@@ -1881,83 +1879,83 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_IFVARAND):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw & *insptr);
+                branch(tw & *insptr);
                 dispatch();
 
             vInstruction(CON_IFVAROR):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw | *insptr);
+                branch(tw | *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARXOR):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw ^ *insptr);
+                branch(tw ^ *insptr);
                 dispatch();
 
             vInstruction(CON_IFVAREITHER):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw || *insptr);
+                branch(tw || *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARBOTH):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw && *insptr);
+                branch(tw && *insptr);
                 dispatch();
 
             vInstruction(CON_IFRND):
-                VM_CONDITIONAL(rnd(*(++insptr)));
+                branch(rnd(*(++insptr)));
                 dispatch();
 
             vInstruction(CON_IFVARG):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw > *insptr);
+                branch(tw > *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARGE):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw >= *insptr);
+                branch(tw >= *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARL):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw < *insptr);
+                branch(tw < *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARLE):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw <= *insptr);
+                branch(tw <= *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARA):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL((uint32_t)tw > (uint32_t)*insptr);
+                branch((uint32_t)tw > (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_IFVARAE):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL((uint32_t)tw >= (uint32_t)*insptr);
+                branch((uint32_t)tw >= (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_IFVARB):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL((uint32_t)tw < (uint32_t)*insptr);
+                branch((uint32_t)tw < (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_IFVARBE):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL((uint32_t)tw <= (uint32_t)*insptr);
+                branch((uint32_t)tw <= (uint32_t)*insptr);
                 dispatch();
 
             vInstruction(CON_SETVARVAR):
@@ -2065,13 +2063,13 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
             vInstruction(CON_IFVARE):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw == *insptr);
+                branch(tw == *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARN):
                 insptr++;
                 tw = Gv_GetVar(*insptr++);
-                VM_CONDITIONAL(tw != *insptr);
+                branch(tw != *insptr);
                 dispatch();
 
             vInstruction(CON_IFVARVARE):
@@ -2079,7 +2077,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (tw == Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARN):
@@ -2087,7 +2085,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (tw != Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARG):
@@ -2095,7 +2093,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (tw > Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARGE):
@@ -2103,7 +2101,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (tw >= Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARL):
@@ -2111,7 +2109,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (tw < Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARLE):
@@ -2119,7 +2117,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (tw <= Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARA):
@@ -2127,7 +2125,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = ((uint32_t)tw > (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARAE):
@@ -2135,7 +2133,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = ((uint32_t)tw >= (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARB):
@@ -2143,7 +2141,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = ((uint32_t)tw < (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARBE):
@@ -2151,7 +2149,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = ((uint32_t)tw <= (uint32_t)Gv_GetVar(*insptr++));
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARAND):
@@ -2159,7 +2157,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw &= Gv_GetVar(*insptr++);
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVAROR):
@@ -2167,7 +2165,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw |= Gv_GetVar(*insptr++);
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARXOR):
@@ -2175,7 +2173,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw ^= Gv_GetVar(*insptr++);
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVAREITHER):
@@ -2183,7 +2181,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (Gv_GetVar(*insptr++) || tw);
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_IFVARVARBOTH):
@@ -2191,7 +2189,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 tw = Gv_GetVar(*insptr++);
                 tw = (Gv_GetVar(*insptr++) && tw);
                 insptr--;
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_WHILEVARN):
@@ -2200,8 +2198,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 do
                 {
                     insptr = savedinsptr;
-                    tw = (Gv_GetVar(insptr[-1]) != *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch((tw = (Gv_GetVar(insptr[-1]) != *insptr)));
                 } while (tw);
                 dispatch();
             }
@@ -2215,7 +2212,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     tw = Gv_GetVar(insptr[-1]);
                     tw = (tw != Gv_GetVar(*insptr++));
                     insptr--;
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
                 dispatch();
             }
@@ -2226,8 +2223,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                 do
                 {
                     insptr = savedinsptr;
-                    tw = (Gv_GetVar(insptr[-1]) < *insptr);
-                    VM_CONDITIONAL(tw);
+                    branch((tw = (Gv_GetVar(insptr[-1]) < *insptr)));
                 } while (tw);
                 dispatch();
             }
@@ -2241,7 +2237,7 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     tw = Gv_GetVar(insptr[-1]);
                     tw = (tw < Gv_GetVar(*insptr++));
                     insptr--;
-                    VM_CONDITIONAL(tw);
+                    branch(tw);
                 } while (tw);
                 dispatch();
             }
@@ -2869,22 +2865,22 @@ badindex:
 #define CHECK_PICNUM(x)                                                     \
     if ((unsigned)x < MAXSPRITES && sprite[x].picnum == vm.pSprite->picnum) \
     {                                                                       \
-        VM_CONDITIONAL(0);                                                  \
+        branch(false);                                                      \
         dispatch();                                                         \
     }
-
-#define CHECK_HIT_SPRITE(x)                        \
-    vm.pSprite->ang += x;                          \
-    tw = A_CheckHitSprite(vm.spriteNum, &temphit); \
-    vm.pSprite->ang -= x;
 
                 if (vm.playerDist > 1024)
                 {
                     int16_t temphit;
+                    auto checkHitSprite = [&](int x) {
+                        vm.pSprite->ang += x;
+                        tw = A_CheckHitSprite(vm.spriteNum, &temphit);
+                        vm.pSprite->ang -= x;
+                    };
 
                     if ((tw = A_CheckHitSprite(vm.spriteNum, &temphit)) == (1 << 30))
                     {
-                        VM_CONDITIONAL(1);
+                        branch(true);
                         dispatch();
                     }
 
@@ -2900,171 +2896,170 @@ badindex:
                     if (tw > dist)
                     {
                         CHECK_PICNUM(temphit);
-                        CHECK_HIT_SPRITE(angDiff);
+                        checkHitSprite(angDiff);
 
                         if (tw > dist)
                         {
                             CHECK_PICNUM(temphit);
-                            CHECK_HIT_SPRITE(-angDiff);
+                            checkHitSprite(-angDiff);
 
                             if (tw > 768)
                             {
                                 CHECK_PICNUM(temphit);
-                                VM_CONDITIONAL(1);
+                                branch(true);
                                 dispatch();
                             }
                         }
                     }
-                    VM_CONDITIONAL(0);
+                    branch(false);
                     dispatch();
                 }
-                VM_CONDITIONAL(1);
+                branch(true);
 #undef CHECK_PICNUM
-#undef CHECK_HIT_SPRITE
             }
                 dispatch();
 
             vInstruction(CON_IFCANSEETARGET):
                 tw = cansee(vm.pSprite->x, vm.pSprite->y, vm.pSprite->z - ((krand() & 41) << 8), vm.pSprite->sectnum, vm.pPlayer->pos.x, vm.pPlayer->pos.y,
                             vm.pPlayer->pos.z /*-((krand()&41)<<8)*/, sprite[vm.pPlayer->i].sectnum);
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 if (tw)
                     vm.pActor->timetosleep = SLEEPTIME;
                 dispatch();
 
             vInstruction(CON_IFACTION):
-                VM_CONDITIONAL(AC_ACTION_ID(vm.pData) == *(++insptr));
+                branch(AC_ACTION_ID(vm.pData) == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFACTIONCOUNT):
-                VM_CONDITIONAL(AC_ACTION_COUNT(vm.pData) >= *(++insptr));
+                branch(AC_ACTION_COUNT(vm.pData) >= *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFACTOR):
-                VM_CONDITIONAL(vm.pSprite->picnum == *(++insptr));
+                branch(vm.pSprite->picnum == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFACTORNOTSTAYPUT):
-                VM_CONDITIONAL(vm.pActor->stayput == -1);
+                branch(vm.pActor->stayput == -1);
                 dispatch();
 
             vInstruction(CON_IFAI):
-                VM_CONDITIONAL(AC_AI_ID(vm.pData) == *(++insptr));
+                branch(AC_AI_ID(vm.pData) == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFBULLETNEAR):
-                VM_CONDITIONAL(A_Dodge(vm.pSprite) == 1);
+                branch(A_Dodge(vm.pSprite) == 1);
                 dispatch();
 
             vInstruction(CON_IFCEILINGDISTL):
-                VM_CONDITIONAL((vm.pSprite->z - vm.pActor->ceilingz) <= (*(++insptr) << 8));
+                branch((vm.pSprite->z - vm.pActor->ceilingz) <= (*(++insptr) << 8));
                 dispatch();
 
             vInstruction(CON_IFCLIENT):
-                VM_CONDITIONAL(g_netClient != NULL);
+                branch(g_netClient != NULL);
                 dispatch();
 
             vInstruction(CON_IFCOUNT):
-                VM_CONDITIONAL(AC_COUNT(vm.pData) >= *(++insptr));
+                branch(AC_COUNT(vm.pData) >= *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFDEAD):
-                VM_CONDITIONAL(vm.pSprite->extra <= 0);
+                branch(vm.pSprite->extra <= 0);
                 dispatch();
 
             vInstruction(CON_IFFLOORDISTL):
-                VM_CONDITIONAL((vm.pActor->floorz - vm.pSprite->z) <= (*(++insptr) << 8));
+                branch((vm.pActor->floorz - vm.pSprite->z) <= (*(++insptr) << 8));
                 dispatch();
 
             vInstruction(CON_IFGAPZL):
-                VM_CONDITIONAL(((vm.pActor->floorz - vm.pActor->ceilingz) >> 8) < *(++insptr));
+                branch(((vm.pActor->floorz - vm.pActor->ceilingz) >> 8) < *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFHITSPACE):
-                VM_CONDITIONAL(TEST_SYNC_KEY(g_player[vm.playerNum].input->bits, SK_OPEN));
+                branch(TEST_SYNC_KEY(g_player[vm.playerNum].input->bits, SK_OPEN));
                 dispatch();
 
             vInstruction(CON_IFHITWEAPON):
-                VM_CONDITIONAL(A_IncurDamage(vm.spriteNum) >= 0);
+                branch(A_IncurDamage(vm.spriteNum) >= 0);
                 dispatch();
 
             vInstruction(CON_IFINSPACE):
-                VM_CONDITIONAL(G_CheckForSpaceCeiling(vm.pSprite->sectnum));
+                branch(G_CheckForSpaceCeiling(vm.pSprite->sectnum));
                 dispatch();
 
             vInstruction(CON_IFINWATER):
-                VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_2_UNDERWATER);
+                branch(sector[vm.pSprite->sectnum].lotag == ST_2_UNDERWATER);
                 dispatch();
 
             vInstruction(CON_IFONWATER):
-                VM_CONDITIONAL(sector[vm.pSprite->sectnum].lotag == ST_1_ABOVE_WATER
+                branch(sector[vm.pSprite->sectnum].lotag == ST_1_ABOVE_WATER
                                && klabs(vm.pSprite->z - sector[vm.pSprite->sectnum].floorz) < ZOFFSET5);
                 dispatch();
 
             vInstruction(CON_IFMOVE):
-                VM_CONDITIONAL(AC_MOVE_ID(vm.pData) == *(++insptr));
+                branch(AC_MOVE_ID(vm.pData) == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFMULTIPLAYER):
-                VM_CONDITIONAL((g_netServer || g_netClient || ud.multimode > 1));
+                branch((g_netServer || g_netClient || ud.multimode > 1));
                 dispatch();
 
             vInstruction(CON_IFOUTSIDE):
-                VM_CONDITIONAL(sector[vm.pSprite->sectnum].ceilingstat & 1);
+                branch(sector[vm.pSprite->sectnum].ceilingstat & 1);
                 dispatch();
 
             vInstruction(CON_IFPLAYBACKON):
-                VM_CONDITIONAL(0);
+                branch(false);
                 dispatch();
 
             vInstruction(CON_IFPLAYERSL):
-                VM_CONDITIONAL(numplayers < *(++insptr));
+                branch(numplayers < *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFSERVER):
-                VM_CONDITIONAL(g_netServer != NULL);
+                branch(g_netServer != NULL);
                 dispatch();
 
             vInstruction(CON_IFSQUISHED):
-                VM_CONDITIONAL(VM_CheckSquished());
+                branch(VM_CheckSquished());
                 dispatch();
 
             vInstruction(CON_IFSTRENGTH):
-                VM_CONDITIONAL(vm.pSprite->extra <= *(++insptr));
+                branch(vm.pSprite->extra <= *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFSPAWNEDBY):
             vInstruction(CON_IFWASWEAPON):
-                VM_CONDITIONAL(vm.pActor->picnum == *(++insptr));
+                branch(vm.pActor->picnum == *(++insptr));
                 dispatch();
 
             vInstruction(CON_IFPDISTL):
-                VM_CONDITIONAL(vm.playerDist < *(++insptr));
+                branch(vm.playerDist < *(++insptr));
                 if (vm.playerDist > MAXSLEEPDIST && vm.pActor->timetosleep == 0)
                     vm.pActor->timetosleep = SLEEPTIME;
                 dispatch();
 
             vInstruction(CON_IFPDISTG):
-                VM_CONDITIONAL(vm.playerDist > *(++insptr));
+                branch(vm.playerDist > *(++insptr));
                 if (vm.playerDist > MAXSLEEPDIST && vm.pActor->timetosleep == 0)
                     vm.pActor->timetosleep = SLEEPTIME;
                 dispatch();
 
             vInstruction(CON_IFRESPAWN):
                 if (A_CheckEnemySprite(vm.pSprite))
-                    VM_CONDITIONAL(ud.respawn_monsters);
+                    branch(ud.respawn_monsters);
                 else if (A_CheckInventorySprite(vm.pSprite))
-                    VM_CONDITIONAL(ud.respawn_inventory);
+                    branch(ud.respawn_inventory);
                 else
-                    VM_CONDITIONAL(ud.respawn_items);
+                    branch(ud.respawn_items);
                 dispatch();
 
             vInstruction(CON_IFINOUTERSPACE):
-                VM_CONDITIONAL(G_CheckForSpaceFloor(vm.pSprite->sectnum));
+                branch(G_CheckForSpaceFloor(vm.pSprite->sectnum));
                 dispatch();
 
             vInstruction(CON_IFNOTMOVING):
-                VM_CONDITIONAL((vm.pActor->movflag & 49152) > 16384);
+                branch((vm.pActor->movflag & 49152) > 16384);
                 dispatch();
 
             vInstruction(CON_IFCANSEE):
@@ -3111,7 +3106,7 @@ badindex:
                 if (tw && (vm.pSprite->statnum == STAT_ACTOR || vm.pSprite->statnum == STAT_STANDABLE))
                     vm.pActor->timetosleep = SLEEPTIME;
 
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
             }
 
@@ -3165,17 +3160,17 @@ badindex:
                             if (vm.pPlayer->weaprecs[j] == vm.pSprite->picnum)
                                 break;
 
-                        VM_CONDITIONAL(j < vm.pPlayer->weapreccnt && vm.pSprite->owner == vm.spriteNum);
+                        branch(j < vm.pPlayer->weapreccnt && vm.pSprite->owner == vm.spriteNum);
                         dispatch();
                     }
                     else if (vm.pPlayer->weapreccnt < MAX_WEAPONS)
                     {
                         vm.pPlayer->weaprecs[vm.pPlayer->weapreccnt++] = vm.pSprite->picnum;
-                        VM_CONDITIONAL(vm.pSprite->owner == vm.spriteNum);
+                        branch(vm.pSprite->owner == vm.spriteNum);
                         dispatch();
                     }
                 }
-                VM_CONDITIONAL(0);
+                branch(false);
                 dispatch();
 
             vInstruction(CON_GETLASTPAL):
@@ -3253,7 +3248,7 @@ badindex:
                     VM_ASSERT((unsigned)soundNum < MAXSOUNDS, "invalid sound %d\n", soundNum);
 
                     insptr--;
-                    VM_CONDITIONAL(A_CheckSoundPlaying(spriteNum, soundNum));
+                    branch(A_CheckSoundPlaying(spriteNum, soundNum));
                 }
                 dispatch();
 
@@ -3263,7 +3258,7 @@ badindex:
                     CON_ERRPRINTF("invalid sound %d\n", (int32_t)*insptr);
                     abort_after_error();
                 }
-                VM_CONDITIONAL(S_CheckSoundPlaying(*insptr));
+                branch(S_CheckSoundPlaying(*insptr));
                 //    VM_DoConditional(SoundOwner[*insptr][0].ow == vm.spriteNum);
                 dispatch();
 
@@ -4320,7 +4315,7 @@ badindex:
                     if (VM_DECODE_INST(tw) == CON_IFCUTSCENE)
                     {
                         insptr--;
-                        VM_CONDITIONAL(g_animPtr == Anim_Find(apStrings[nQuote]));
+                        branch(g_animPtr == Anim_Find(apStrings[nQuote]));
                         dispatch();
                     }
 
@@ -5137,7 +5132,7 @@ badindex:
 
                     nResult = (nResult > -128 && nResult < 128);
                 }
-                VM_CONDITIONAL(nResult);
+                branch(nResult);
             }
                 dispatch();
 
@@ -6231,7 +6226,7 @@ badindex:
 
             vInstruction(CON_IFPHEALTHL):
                 insptr++;
-                VM_CONDITIONAL(sprite[vm.pPlayer->i].extra < *insptr);
+                branch(sprite[vm.pPlayer->i].extra < *insptr);
                 dispatch();
 
             vInstruction(CON_IFPINVENTORY):
@@ -6260,7 +6255,7 @@ badindex:
                         dispatch();
                 }
 
-                VM_CONDITIONAL(tw);
+                branch(tw);
                 dispatch();
 
             vInstruction(CON_PSTOMP):
@@ -6311,7 +6306,7 @@ badindex:
                     }
                 }
 
-                VM_CONDITIONAL(tw);
+                branch(tw);
 
 #undef IFAWAYDIST
             }
@@ -6378,16 +6373,16 @@ badindex:
 
             vInstruction(CON_IFSPRITEPAL):
                 insptr++;
-                VM_CONDITIONAL(vm.pSprite->pal == *insptr);
+                branch(vm.pSprite->pal == *insptr);
                 dispatch();
 
             vInstruction(CON_IFANGDIFFL):
                 insptr++;
                 tw = klabs(G_GetAngleDelta(fix16_to_int(vm.pPlayer->q16ang), vm.pSprite->ang));
-                VM_CONDITIONAL(tw <= *insptr);
+                branch(tw <= *insptr);
                 dispatch();
 
-            vInstruction(CON_IFNOSOUNDS): VM_CONDITIONAL(!A_CheckAnySoundPlaying(vm.spriteNum)); dispatch();
+            vInstruction(CON_IFNOSOUNDS): branch(!A_CheckAnySoundPlaying(vm.spriteNum)); dispatch();
 
             vInstruction(CON_SPRITEFLAGS):
                 insptr++;
