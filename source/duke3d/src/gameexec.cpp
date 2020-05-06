@@ -2353,6 +2353,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const labelNum  = *insptr++;
                     int const lParm2    = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
 
+                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d\n", playerNum);
+
                     VM_SetPlayer(playerNum, labelNum, lParm2, Gv_GetVar(*insptr++));
                     dispatch();
                 }
@@ -2363,6 +2365,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const playerNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.playerNum;
                     int const labelNum  = *insptr++;
                     int const lParm2    = (PlayerLabels[labelNum].flags & LABEL_HASPARM2) ? Gv_GetVar(*insptr++) : 0;
+
+                    VM_ASSERT((unsigned)playerNum < MAXPLAYERS, "invalid player %d\n", playerNum);
 
                     Gv_SetVar(*insptr++, VM_GetPlayer(playerNum, labelNum, lParm2));
                     dispatch();
@@ -2376,6 +2380,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const labelNum = *insptr++;
                     int const newValue = Gv_GetVar(*insptr++);
                     auto const &wallLabel = WallLabels[labelNum];
+
+                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
 
                     if (wallLabel.offset == -1 || wallLabel.flags & LABEL_WRITEFUNC)
                     {
@@ -2396,6 +2402,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const wallNum  = Gv_GetVar(tw);
                     int const labelNum = *insptr++;
                     auto const &wallLabel = WallLabels[labelNum];
+
+                    VM_ASSERT((unsigned)wallNum < MAXWALLS, "invalid wall %d\n", wallNum);
 
                     Gv_SetVar(*insptr++,
                                (wallLabel.offset != -1 && (wallLabel.flags & LABEL_READFUNC) != LABEL_READFUNC)
@@ -2563,6 +2571,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const labelNum  = *insptr++;
                     auto const &tsprLabel = TsprLabels[labelNum];
 
+                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d\n", spriteNum);
+
                     VM_SetStruct(tsprLabel.flags, (intptr_t *)((char *)spriteext[spriteNum].tspr + tsprLabel.offset), Gv_GetVar(*insptr++));
                     dispatch();
                 }
@@ -2573,6 +2583,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const spriteNum = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.spriteNum;
                     int const labelNum  = *insptr++;
                     auto const &tsprLabel = TsprLabels[labelNum];
+
+                    VM_ASSERT((unsigned)spriteNum < MAXSPRITES, "invalid sprite %d\n", spriteNum);
 
                     Gv_SetVar(*insptr++, VM_GetStruct(tsprLabel.flags, (intptr_t *)((char *)spriteext[spriteNum].tspr + tsprLabel.offset)));
                     dispatch();
@@ -2585,6 +2597,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const   labelNum  = *insptr++;
                     auto const &sectLabel = SectorLabels[labelNum];
                     int const   newValue  = Gv_GetVar(*insptr++);
+
+                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
 
                     if (sectLabel.offset == -1 || sectLabel.flags & LABEL_WRITEFUNC)
                     {
@@ -2602,6 +2616,8 @@ GAMEEXEC_STATIC void VM_Execute(int const loop /*= false*/)
                     int const   sectNum   = (*insptr++ != g_thisActorVarID) ? Gv_GetVar(insptr[-1]) : vm.pSprite->sectnum;
                     int const   labelNum  = *insptr++;
                     auto const &sectLabel = SectorLabels[labelNum];
+
+                    VM_ASSERT((unsigned)sectNum < MAXSECTORS, "invalid sector %d\n", sectNum);
 
                     Gv_SetVar(*insptr++,
                                (sectLabel.offset != -1 && (sectLabel.flags & LABEL_READFUNC) != LABEL_READFUNC)
