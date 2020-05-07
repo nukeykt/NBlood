@@ -33,6 +33,12 @@ void MV_SetXMPPosition(VoiceNode *voice, int position)
 
 static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 {
+    if (voice->rawdataptr == nullptr)
+    {
+        MV_Printf("MV_GetNextXMPBlock(): rawdataptr is null?!\n");
+        return NoMoreData;
+    }
+
     auto xmpd = (xmp_data *)voice->rawdataptr;
     struct xmp_frame_info mi;
 

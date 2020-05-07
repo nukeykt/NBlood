@@ -264,6 +264,12 @@ static void MV_ServiceVoc(void)
             if (voice->Paused)
                 continue;
 
+            if (voice->rawdataptr == nullptr)
+            {
+                MV_Printf("MV_ServiceVoc(): rawdataptr is null?!\n");
+                continue;
+            }
+
             MV_BufferEmpty[ MV_MixPage ] = FALSE;
 
             // Is this voice done?
