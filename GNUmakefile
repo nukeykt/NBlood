@@ -74,7 +74,6 @@ libxmplite_objs := \
     scan.c \
     smix.c \
     virtual.c \
-    win32.c \
     xm_load.c \
 
 libxmplite_root := $(source)/$(libxmplite)
