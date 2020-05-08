@@ -254,7 +254,7 @@ static void MV_ServiceVoc(void)
 
     if (VoiceList.next && VoiceList.next != &VoiceList)
     {
-        VoiceNode *voice = VoiceList.next;
+        auto voice = VoiceList.next;
         VoiceNode *next;
 
         do
@@ -304,7 +304,7 @@ static VoiceNode *MV_GetVoice(int handle)
 
     MV_Lock();
 
-    for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
+    for (auto voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
     {
         if (handle == voice->handle)
         {
@@ -323,7 +323,7 @@ VoiceNode *MV_BeginService(int handle)
     if (!MV_Installed)
         return nullptr;
 
-    VoiceNode *voice = MV_GetVoice(handle);
+    auto voice = MV_GetVoice(handle);
 
     if (voice == nullptr)
     {
@@ -356,7 +356,7 @@ int MV_KillAllVoices(void)
         return MV_Ok;
     }
 
-    VoiceNode * voice = VoiceList.prev;
+    auto voice = VoiceList.prev;
 
     // Remove all the voices from the list
     while (voice != &VoiceList)
@@ -378,7 +378,7 @@ int MV_KillAllVoices(void)
 
 int MV_Kill(int handle)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -398,7 +398,7 @@ int MV_VoicesPlaying(void)
 
     int NumVoices = 0;
 
-    for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
+    for (auto voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
         NumVoices++;
 
     MV_Unlock();
@@ -491,7 +491,7 @@ void MV_SetVoicePitch(VoiceNode *voice, uint32_t rate, int pitchoffset)
 
 int MV_SetPitch(int handle, int pitchoffset)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -504,7 +504,7 @@ int MV_SetPitch(int handle, int pitchoffset)
 
 int MV_SetFrequency(int handle, int frequency)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -517,7 +517,7 @@ int MV_SetFrequency(int handle, int frequency)
 
 int MV_GetFrequency(int handle, int *frequency)
 {
-    VoiceNode* voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == NULL || !frequency)
         return MV_Error;
@@ -580,7 +580,7 @@ void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t v
 
 int MV_PauseVoice(int handle, int pause)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -593,7 +593,7 @@ int MV_PauseVoice(int handle, int pause)
 
 int MV_GetPosition(int handle, int *position)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -620,7 +620,7 @@ int MV_GetPosition(int handle, int *position)
 
 int MV_SetPosition(int handle, int position)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -647,7 +647,7 @@ int MV_SetPosition(int handle, int position)
 
 int MV_EndLooping(int handle)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
@@ -663,7 +663,7 @@ int MV_EndLooping(int handle)
 
 int MV_SetPan(int handle, int vol, int left, int right)
 {
-    VoiceNode *voice = MV_BeginService(handle);
+    auto voice = MV_BeginService(handle);
 
     if (voice == nullptr)
         return MV_Error;
