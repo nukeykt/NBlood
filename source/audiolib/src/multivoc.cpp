@@ -406,23 +406,30 @@ int MV_VoicesPlaying(void)
     return NumVoices;
 }
 
+static VoiceNode *MV_GetLowestPriorityVoice(void)
+{
+    auto voice = VoiceList.next;
+
+    // check if we have a higher priority than a voice that is playing.
+    for (auto node = voice; node != &VoiceList; node = node->next)
+    {
+        if (node->priority < voice->priority)
+            voice = node;
+    }
+
+    return voice;
+}
+
 VoiceNode *MV_AllocVoice(int priority)
 {
-    VoiceNode   *voice;
-
     MV_Lock();
 
     // Check if we have any free voices
     if (LL::Empty(&VoicePool))
     {
-        // check if we have a higher priority than a voice that is playing.
-        for (auto node = voice = VoiceList.next; node != &VoiceList; node = node->next)
-        {
-            if (node->priority < voice->priority)
-                voice = node;
-        }
+        auto voice = MV_GetLowestPriorityVoice();
 
-        if (priority >= voice->priority && voice != &VoiceList && voice->handle >= MV_MINVOICEHANDLE)
+        if (voice != &VoiceList && voice->priority <= priority && voice->handle >= MV_MINVOICEHANDLE)
             MV_Kill(voice->handle);
 
         if (LL::Empty(&VoicePool))
@@ -433,8 +440,9 @@ VoiceNode *MV_AllocVoice(int priority)
         }
     }
 
-    voice = VoicePool.next;
+    auto voice = VoicePool.next;
     LL::Remove(voice);
+
     MV_Unlock();
 
     int vhan = MV_MINVOICEHANDLE;
@@ -459,16 +467,9 @@ int MV_VoiceAvailable(int priority)
 
     MV_Lock();
 
-    VoiceNode   *voice;
+    auto const voice = MV_GetLowestPriorityVoice();
 
-    // check if we have a higher priority than a voice that is playing.
-    for (auto node = voice = VoiceList.next; node != &VoiceList; node = node->next)
-    {
-        if (node->priority < voice->priority)
-            voice = node;
-    }
-
-    if ((voice == &VoiceList) || (priority < voice->priority))
+    if (voice == &VoiceList || voice->priority > priority)
     {
         MV_Unlock();
         return FALSE;
