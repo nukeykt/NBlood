@@ -11,59 +11,40 @@
 #define BUILDING_STATIC
 #include "libxmp-lite/xmp.h"
 
-typedef struct {
-    void * ptr;
-    VoiceNode *owner;
-    size_t length;
-    xmp_context context;
-    int time;
-} xmp_data;
-
-int MV_GetXMPPosition(VoiceNode *voice)
-{
-    auto xmpd = (xmp_data *)voice->rawdataptr;
-    return xmpd->time;
-}
-
-void MV_SetXMPPosition(VoiceNode *voice, int position)
-{
-    auto xmpd = (xmp_data *)voice->rawdataptr;
-    xmp_seek_time(xmpd->context, position);
-}
+int  MV_GetXMPPosition(VoiceNode *voice)               { return voice->position; }
+void MV_SetXMPPosition(VoiceNode *voice, int position) { xmp_seek_time((xmp_context)voice->rawdataptr, position); }
 
 static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 {
     if (voice->rawdataptr == nullptr)
     {
-        MV_Printf("MV_GetNextXMPBlock(): rawdataptr is null?!\n");
+        MV_Printf("MV_GetNextXMPBlock(): no XMP context!\n");
         return NoMoreData;
     }
 
-    auto xmpd = (xmp_data *)voice->rawdataptr;
-    struct xmp_frame_info mi;
+    auto ctx = (xmp_context)voice->rawdataptr;
 
-    if (xmp_play_frame(xmpd->context) != 0)
+    if (xmp_play_frame(ctx) != 0)
     {
         if (voice->LoopSize > 0)
         {
-            xmp_restart_module(xmpd->context);
-            if (xmp_play_frame(xmpd->context) != 0)
+            xmp_restart_module(ctx);
+            if (xmp_play_frame(ctx) != 0)
                 return NoMoreData;
         }
         else
             return NoMoreData;
     }
 
-    xmp_get_frame_info(xmpd->context, &mi);
-
-    xmpd->time = mi.time;
+    xmp_frame_info mi;
+    xmp_get_frame_info(ctx, &mi);
 
     uint32_t const samples = mi.buffer_size / (2 * (16/8)); // since 2-channel, 16-bit is hardcoded
     // uint32_t const samples = mi.buffer_size / (voice->channels * (voice->bits / 8));
 
     voice->sound        = (char const *)mi.buffer;
     voice->length       = samples << 16;
-    voice->position     = 0;
+    voice->position     = mi.time;
     voice->BlockLength  = 0;
 
     MV_SetVoiceMixMode(voice);
@@ -101,46 +82,28 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     if (!MV_Installed)
         return MV_SetErrorCode(MV_NotInstalled);
 
-    auto xmpd = (xmp_data *)Xcalloc(1, sizeof(xmp_data));
-    if (!xmpd)
-        return MV_SetErrorCode(MV_InvalidFile);
-
-    xmpd->ptr = ptr;
-    xmpd->length = length;
-
-    if ((xmpd->context = xmp_create_context()) == nullptr)
-    {
-        Xfree(xmpd);
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
-
-    int const xmp_status = xmp_load_module_from_memory(xmpd->context, ptr, length);
-
-    if (xmp_status)
-    {
-        xmp_free_context(xmpd->context);
-        Xfree(xmpd);
-        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
-
     // Request a voice from the voice pool
     auto voice = MV_AllocVoice(priority);
     if (voice == nullptr)
-    {
-        xmp_release_module(xmpd->context);
-        xmp_free_context(xmpd->context);
-        Xfree(xmpd);
         return MV_SetErrorCode(MV_NoVoices);
-    }
 
-    xmpd->owner = voice;
+    auto ctx = xmp_create_context();
+    if (ctx == nullptr)
+        return MV_SetErrorCode(MV_NoMem);
+
+    int const xmp_status = xmp_load_module_from_memory(ctx, ptr, length);
+    if (xmp_status)
+    {
+        xmp_free_context(ctx);
+        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
+        return MV_SetErrorCode(MV_InvalidFile);
+    }
 
     voice->length      = 0;
     voice->sound       = 0;
 
     voice->wavetype    = FMT_XMP;
-    voice->rawdataptr  = (void*)xmpd;
+    voice->rawdataptr  = ctx;
     voice->GetSound    = MV_GetNextXMPBlock;
     voice->LoopCount   = 0;
     voice->BlockLength = 0;
@@ -160,8 +123,8 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     voice->LoopEnd     = 0;
     voice->LoopSize    = loopstart >= 0 ? 1 : 0;
 
-    xmp_start_player(xmpd->context, MV_MixRate, 0);
-    xmp_set_player(xmpd->context, XMP_PLAYER_INTERP, MV_XMPInterpolation);
+    xmp_start_player(ctx, MV_MixRate, 0);
+    xmp_set_player(ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 
     // CODEDUP multivoc.c MV_SetVoicePitch
     voice->RateScale = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
@@ -179,13 +142,12 @@ void MV_ReleaseXMPVoice(VoiceNode * voice)
     if (voice->wavetype != FMT_XMP || voice->rawdataptr == nullptr)
         return;
 
-    auto xmpd = (xmp_data *) voice->rawdataptr;
+    auto ctx = (xmp_context)voice->rawdataptr;
     voice->rawdataptr = nullptr;
 
-    xmp_end_player(xmpd->context);
-    xmp_release_module(xmpd->context);
-    xmp_free_context(xmpd->context);
-    Xfree(xmpd);
+    xmp_end_player(ctx);
+    xmp_release_module(ctx);
+    xmp_free_context(ctx);
 }
 
 void MV_SetXMPInterpolation(void)
