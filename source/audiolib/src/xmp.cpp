@@ -204,38 +204,14 @@ void MV_SetXMPInterpolation(void)
 
 static char const NoXMP[] = "MV_PlayXMP: libxmp-lite support not included in this binary.\n";
 
-int MV_PlayXMP(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset, int vol,
-                   int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+int MV_PlayXMP(char *, uint32_t, int, int, int, int, int, int, int, fix16_t, intptr_t)
 {
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(ptrlength);
-    UNREFERENCED_PARAMETER(loopstart);
-    UNREFERENCED_PARAMETER(loopend);
-    UNREFERENCED_PARAMETER(pitchoffset);
-    UNREFERENCED_PARAMETER(vol);
-    UNREFERENCED_PARAMETER(left);
-    UNREFERENCED_PARAMETER(right);
-    UNREFERENCED_PARAMETER(priority);
-    UNREFERENCED_PARAMETER(volume);
-    UNREFERENCED_PARAMETER(callbackval);
-
     MV_Printf(NoXMP);
     return -1;
 }
 
-int MV_PlayXMP3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-                     int distance, int priority, fix16_t volume, intptr_t callbackval)
+int MV_PlayXMP3D(char *, uint32_t, int, int, int, int, int, fix16_t, intptr_t)
 {
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(ptrlength);
-    UNREFERENCED_PARAMETER(loophow);
-    UNREFERENCED_PARAMETER(pitchoffset);
-    UNREFERENCED_PARAMETER(angle);
-    UNREFERENCED_PARAMETER(distance);
-    UNREFERENCED_PARAMETER(priority);
-    UNREFERENCED_PARAMETER(volume);
-    UNREFERENCED_PARAMETER(callbackval);
-
     MV_Printf(NoXMP);
     return -1;
 }
