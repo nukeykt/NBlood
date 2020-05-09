@@ -14,6 +14,9 @@
 extern buildvfs_kfd rt_group;
 extern int rt_gamestate, rt_gamestatus;
 extern uint16_t rt_palette[RT_PALNUM][256];
+extern rt_vertex_t *rt_sectvtx;
+extern rt_walltype *rt_wall;
+extern rt_sectortype *rt_sector;
 
 buildvfs_kfd RT_InitGRP(const char *filename);
 void RT_Init(void);

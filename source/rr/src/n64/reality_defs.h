@@ -170,7 +170,8 @@ struct rt_sectortype {
     int16_t lotag;
     int16_t hitag;
     int16_t extra;
-    int16_t pad1[2];
+    int16_t floorvertexptr;
+    int16_t ceilingvertexptr;
     int8_t ceilingshade;
     uint8_t ceilingpal;
     uint8_t ceilingxpanning;
@@ -180,7 +181,9 @@ struct rt_sectortype {
     uint8_t floorxpanning;
     uint8_t floorypanning;
     uint8_t visibility;
-    uint8_t pad2[5];
+    uint8_t floorvertexnum;
+    uint8_t ceilingvertexnum;
+    uint8_t pad2[3];
 };
 
 struct rt_walltype {
@@ -194,7 +197,7 @@ struct rt_walltype {
     int16_t lotag;
     int16_t hitag;
     int16_t extra;
-    int16_t pad1[1];
+    int16_t sectnum;
     int8_t shade;
     uint8_t pal;
     uint8_t xrepeat;
@@ -226,6 +229,10 @@ struct rt_spritetype {
     uint8_t xoffset;
     uint8_t yoffset;
     uint8_t filler;
+};
+
+struct rt_vertex_t {
+    int16_t x, y, z, u, v;
 };
 
 #pragma pack(pop)

@@ -530,8 +530,9 @@ void RT_GLInit(void)
          \n\
          void main()\n\
          {\n\
-            #ifdef GL_ARB_shader_texture_lod\n\
-            vec4 color = texture2DGradARB(s_texture, gl_TexCoord[0].xy, dFdx(gl_TexCoord[0].xy), dFdy(gl_TexCoord[0].xy));\n\
+         #ifdef GL_ARB_shader_texture_lod\n\
+            //vec4 color = texture2DGradARB(s_texture, gl_TexCoord[0].xy, dFdx(gl_TexCoord[0].xy), dFdy(gl_TexCoord[0].xy));\n\
+            vec4 color = texture2D(s_texture, gl_TexCoord[0].xy);\n\
          #else\n\
             vec2 transitionBlend = fwidth(floor(gl_TexCoord[0].xy));\n\
             transitionBlend = fwidth(transitionBlend)+transitionBlend;\n\
@@ -543,9 +544,6 @@ void RT_GLInit(void)
             colorcomb.rgb = mix(v_color.rgb, u_color2.rgb, color.r);\n\
             colorcomb.a = color.a * v_color.a;\n\
             color.rgb = v_color.rgb * color.rgb;\n\
-            \n\
-            float fogFactor = (gl_Fog.end-gl_FogFragCoord)*gl_Fog.scale;\n\
-            color.rgb = mix(gl_Fog.color.rgb, color.rgb, fogFactor);\n\
             \n\
             color.a *= v_color.a;\n\
             \n\
@@ -563,9 +561,10 @@ void RT_GLInit(void)
     glLinkProgram(rt_shaderprogram);
 }
 
-float x_vt = 160.f;
-float y_vt = 120.f;
-float vp_scale = 1.f;
+static float x_vt = 160.f;
+static float y_vt = 120.f;
+static float vp_scale = 1.f;
+static float rt_globaldepth;
 
 void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, int flags)
 {
@@ -609,17 +608,19 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glDisable(GL_BLEND);
     glOrtho(0, 320.f, 240.f, 0, -1.f, 1.f);
     glBegin(GL_TRIANGLE_FAN);
-    glTexCoord2f(0, 0); glVertex2f(x1, y1);
-    glTexCoord2f(1, 0); glVertex2f(x2, y1);
-    glTexCoord2f(1, 1); glVertex2f(x2, y2);
-    glTexCoord2f(0, 1); glVertex2f(x1, y2);
+    glTexCoord2f(0, 0); glVertex3f(x1, y1, rt_globaldepth);
+    glTexCoord2f(1, 0); glVertex3f(x2, y1, rt_globaldepth);
+    glTexCoord2f(1, 1); glVertex3f(x2, y2, rt_globaldepth);
+    glTexCoord2f(0, 1); glVertex3f(x1, y2, rt_globaldepth);
     glEnd();
     glPopMatrix();
 }
 
 float rt_sky_color[2][3];
 
-static fix16_t rt_globalhoriz;
+static float rt_globalhoriz;
+static float rt_globalposx, rt_globalposy, rt_globalposz;
+static float rt_globalang;
 
 void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
 {
@@ -632,8 +633,13 @@ void RT_DisplaySky(void)
 {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    rt_globaldepth = 0.f;
     setfxcolor(rt_sky_color[0][0], rt_sky_color[0][1], rt_sky_color[0][2], rt_sky_color[1][0], rt_sky_color[1][1], rt_sky_color[1][2]);
-    RT_DisplayTileWorld(x_vt, y_vt + fix16_to_float(rt_globalhoriz) - 100.f, 52.f, 103.f, 3976, 0);
+    RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f, 103.f, 3976, 0);
+    RT_SetTexComb(0);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
 }
 
 void RT_DisablePolymost()
@@ -644,9 +650,61 @@ void RT_DisablePolymost()
 
 void RT_EnablePolymost()
 {
+    glDisable(GL_CULL_FACE);
     polymost_resetVertexPointers();
     polymost_setFogEnabled(true);
     polymost_usePaletteIndexing(true);
+}
+
+void RT_SetupMatrix(void)
+{
+    float dx = 512.f * cosf(rt_globalang / (1024.f / fPI));
+    float dy = 512.f * sinf(rt_globalang / (1024.f / fPI));
+    float dz = -(rt_globalhoriz - 100.f) * 4.f;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    bgluPerspective(60.f, 4.f/3.f, 1.f, 16384.f);
+    bgluLookAt(rt_globalposx*2, rt_globalposy*2, rt_globalposz*2, (rt_globalposx*2 + dx), (rt_globalposy*2 + dy), (rt_globalposz*2 + dz), 0.f, 0.f, -1.f);
+}
+
+void RT_DrawCeiling(int sectnum)
+{
+    auto sect = &rt_sector[sectnum];
+    RT_SetTexComb(0);
+    int method = DAMETH_N64;
+    pthtyp *pth = texcache_fetch(sector[sectnum].ceilingpicnum, 0, 0, method);
+    if (pth)
+        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    glBegin(GL_TRIANGLES);
+    for (int i = 0; i < sect->ceilingvertexnum * 3; i++)
+    {
+        auto vtx = rt_sectvtx[sect->ceilingvertexptr+i];
+        float x = vtx.x * 2;
+        float y = vtx.y * 2;
+        float z = getceilzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 16.f;
+        glTexCoord2f(vtx.u / 2048.f, vtx.v / 2048.f); glVertex3f(x, y, z);
+    }
+    glEnd();
+}
+
+void RT_DrawFloor(int sectnum)
+{
+    auto sect = &rt_sector[sectnum];
+    RT_SetTexComb(0);
+    int method = DAMETH_N64;
+    pthtyp *pth = texcache_fetch(sector[sectnum].floorpicnum, 0, 0, method);
+    if (pth)
+        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    glBegin(GL_TRIANGLES);
+    for (int i = 0; i < sect->floorvertexnum * 3; i++)
+    {
+        auto vtx = rt_sectvtx[sect->floorvertexptr+i];
+        float x = vtx.x * 2;
+        float y = vtx.y * 2;
+        float z = getflorzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 16.f;
+        glTexCoord2f(vtx.u / 2048.f, vtx.v / 2048.f); glVertex3f(x, y, z);
+    }
+    glEnd();
 }
 
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum)
@@ -671,10 +729,31 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     glTexCoord2f(0, 1); glVertex2f(0, 40.f);
     glEnd();
 #endif
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
 
-    rt_globalhoriz = horiz;
-
+    rt_globalposx = x * 0.5f;
+    rt_globalposy = y * 0.5f;
+    rt_globalposz = z * (1.f/32.f);
+    rt_globalhoriz = fix16_to_float(horiz);
+    rt_globalang = fix16_to_float(ang);
+    RT_SetupMatrix();
     RT_DisplaySky();
+
+    glColor4f(1.f, 1.f, 1.f, 1.f);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    for (int i = 0; i < numsectors; i++)
+    {
+        RT_DrawCeiling(i);
+        RT_DrawFloor(i);
+    }
 
     RT_EnablePolymost();
 }

@@ -22,6 +22,9 @@ uint16_t rt_palette[RT_PALNUM][256];
 
 static void RT_LoadPalette(void);
 
+rt_vertex_t *rt_sectvtx;
+rt_walltype *rt_wall;
+rt_sectortype *rt_sector;
 
 buildvfs_kfd RT_InitGRP(const char *filename)
 {
@@ -300,13 +303,20 @@ void RT_LoadBoard(int boardnum)
     g_player[0].ps->over_shoulder_on = 0;
     g_player[0].ps->q16ang = fix16_from_int(board->ang);
 
-    rt_sectortype* rt_sector = (rt_sectortype*)Xmalloc(sizeof(rt_sectortype) * numsectors);
-    rt_walltype* rt_wall = (rt_walltype*)Xmalloc(sizeof(rt_walltype) * numwalls);
+    if (rt_sector)
+        Xfree(rt_sector);
+    if (rt_wall)
+        Xfree(rt_wall);
+
+    rt_sector = (rt_sectortype*)Xmalloc(sizeof(rt_sectortype) * numsectors);
+    rt_wall = (rt_walltype*)Xmalloc(sizeof(rt_walltype) * numwalls);
     rt_spritetype* rt_sprite = (rt_spritetype*)Xmalloc(sizeof(rt_spritetype) * numsprites);
 
     RNCDecompress(&boardbuf[board->sectoroffset-baseOffset], (char*)rt_sector);
     RNCDecompress(&boardbuf[board->walloffset-baseOffset], (char*)rt_wall);
     RNCDecompress(&boardbuf[board->spriteoffset-baseOffset], (char*)rt_sprite);
+
+    int vtxnum = 0;
     
     for (int i = 0; i < numsectors; i++)
     {
@@ -323,6 +333,8 @@ void RT_LoadBoard(int boardnum)
         sector[i].lotag = B_BIG16(rt_sector[i].lotag);
         sector[i].hitag = B_BIG16(rt_sector[i].hitag);
         sector[i].extra = B_BIG16(rt_sector[i].extra);
+        rt_sector[i].floorvertexptr = B_BIG16(rt_sector[i].floorvertexptr);
+        rt_sector[i].ceilingvertexptr = B_BIG16(rt_sector[i].ceilingvertexptr);
         sector[i].ceilingshade = rt_sector[i].ceilingshade;
         sector[i].ceilingpal = rt_sector[i].ceilingpal;
         sector[i].ceilingxpanning = rt_sector[i].ceilingxpanning;
@@ -333,6 +345,8 @@ void RT_LoadBoard(int boardnum)
         sector[i].floorypanning = rt_sector[i].floorypanning;
         sector[i].visibility = rt_sector[i].visibility;
         sector[i].fogpal = 0;
+
+        vtxnum += rt_sector[i].floorvertexnum + rt_sector[i].ceilingvertexnum;
     }
     
     for (int i = 0; i < numwalls; i++)
@@ -354,6 +368,7 @@ void RT_LoadBoard(int boardnum)
         wall[i].yrepeat = rt_wall[i].yrepeat;
         wall[i].xpanning = rt_wall[i].xpanning;
         wall[i].ypanning = rt_wall[i].ypanning;
+        rt_wall[i].sectnum = B_BIG16(rt_wall[i].sectnum);
     }
     
     for (int i = 0; i < numsprites; i++)
@@ -391,9 +406,22 @@ void RT_LoadBoard(int boardnum)
     yax_update(1);
 #endif
 
+    if (rt_sectvtx)
+        Xfree(rt_sectvtx);
+
+    rt_sectvtx = (rt_vertex_t*)Xmalloc(sizeof(rt_vertex_t) * vtxnum * 3);
+    RNCDecompress(boardbuf, (char*)rt_sectvtx);
+    
+    for (int i = 0; i < vtxnum * 3; i++)
+    {
+        rt_sectvtx[i].x = B_BIG16(rt_sectvtx[i].x);
+        rt_sectvtx[i].y = B_BIG16(rt_sectvtx[i].y);
+        rt_sectvtx[i].z = B_BIG16(rt_sectvtx[i].z);
+        rt_sectvtx[i].u = B_BIG16(rt_sectvtx[i].u);
+        rt_sectvtx[i].v = B_BIG16(rt_sectvtx[i].v);
+    }
+
     Xfree(boardbuf);
-    Xfree(rt_sector);
-    Xfree(rt_wall);
     Xfree(rt_sprite);
 }
 

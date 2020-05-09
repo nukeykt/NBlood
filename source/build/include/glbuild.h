@@ -106,6 +106,9 @@ extern bgluProjectProcPtr bgluProject;
 typedef GLint            (APIENTRY * bgluUnProjectProcPtr)(GLdouble winX, GLdouble winY, GLdouble winZ, const GLdouble * model, const GLdouble * proj, const GLint * view, GLdouble* objX, GLdouble* objY, GLdouble* objZ);
 extern bgluUnProjectProcPtr bgluUnProject;
 
+typedef void             (APIENTRY * bgluLookAtProcPtr)(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble centerX, GLdouble centerY, GLdouble centerZ, GLdouble upX, GLdouble upY, GLdouble upZ);
+extern bgluLookAtProcPtr bgluLookAt;
+
 #else
 
 #define bgluTessBeginContour gluTessBeginContour
@@ -125,6 +128,8 @@ extern bgluUnProjectProcPtr bgluUnProject;
 
 #define bgluProject gluProject
 #define bgluUnProject gluUnProject
+
+#define bgluLookAt gluLookAt
 
 #endif
 

@@ -56,6 +56,8 @@ bgluErrorStringProcPtr bgluErrorString;
 bgluProjectProcPtr bgluProject;
 bgluUnProjectProcPtr bgluUnProject;
 
+bgluLookAtProcPtr bgluLookAt;
+
 #endif
 
 #if defined DYNAMIC_GL || defined DYNAMIC_GLEXT || defined DYNAMIC_GLU
@@ -231,6 +233,8 @@ int32_t loadglulibrary(const char *driver)
     bgluProject = (bgluProjectProcPtr) GLUGETPROC("gluProject");
     bgluUnProject = (bgluUnProjectProcPtr) GLUGETPROC("gluUnProject");
 
+    bgluLookAt = (bgluLookAtProcPtr) GLUGETPROC("gluLookAt");
+
     if (err) unloadglulibrary();
     return err;
 #else
@@ -273,6 +277,8 @@ int32_t unloadglulibrary(void)
 
     bgluProject = (bgluProjectProcPtr) NULL;
     bgluUnProject = (bgluUnProjectProcPtr) NULL;
+
+    bgluLookAt = (bgluLookAtProcPtr)NULL;
 #endif
 
     return 0;
