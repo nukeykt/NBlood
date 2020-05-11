@@ -3335,6 +3335,7 @@ void P_GetInput(int const playerNum)
         if ((!pPlayer->return_to_center && thisPlayer.horizRecenter) || (pPlayer->q16horiz >= F16(99.9) && pPlayer->q16horiz <= F16(100.1)))
         {
             pPlayer->q16horiz = F16(100);
+            pPlayer->return_to_center = 0;
             thisPlayer.horizRecenter = false;
         }
 
@@ -5746,6 +5747,7 @@ RECHECK:
         {
             thisPlayer.horizAngleAdjust = float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
+            pPlayer->return_to_center   = 0;
         }
     }
 
@@ -5755,6 +5757,7 @@ RECHECK:
         {
             thisPlayer.horizAngleAdjust = -float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
+            pPlayer->return_to_center   = 0;
         }
     }
 
