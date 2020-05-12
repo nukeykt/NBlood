@@ -1217,7 +1217,7 @@ static MenuEntry_t **MEL_SAVE;
 
 #ifdef __linux__
 static int32_t alsadevice;
-static std::vector<alsa_mididevinfo_t> alsadevices = ALSADrv_MIDI_ListPorts();
+static std::vector<alsa_mididevinfo_t> const alsadevices = ALSADrv_MIDI_ListPorts();
 #endif
 
 static int32_t soundrate, soundvoices, musicdevice, opl3stereo;
@@ -3312,11 +3312,11 @@ static void Menu_RefreshSoundProperties()
     ud.config.MixRate     = FX_MixRate;
     ud.config.MusicDevice = MIDI_GetDevice();
 
-#ifdef __linux__
+#if !defined(EDUKE32_RETAIL_MENU) && defined (__linux__)
     MEOS_SOUND_ALSADEVICE.numOptions = 0;
-    for (alsa_mididevinfo_t &device : alsadevices)
+    for (alsa_mididevinfo_t device : alsadevices)
     {
-        MEOSN_SOUND_ALSADEVICE[MEOS_SOUND_ALSADEVICE.numOptions] = device.name.c_str();
+        MEOSN_SOUND_ALSADEVICE[MEOS_SOUND_ALSADEVICE.numOptions] = device.name;
 
         if (device.clntid == ALSA_ClientID && device.portid == ALSA_PortID)
             alsadevice = MEOS_SOUND_ALSADEVICE.numOptions;

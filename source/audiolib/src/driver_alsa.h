@@ -19,6 +19,7 @@
  */
 
 #include "music.h"
+#include "midifuncs.h"
 
 int ALSADrv_GetError(void);
 const char *ALSADrv_ErrorString( int ErrorNumber );

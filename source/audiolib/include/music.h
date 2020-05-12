@@ -41,12 +41,12 @@ extern int MUSIC_ErrorCode;
 
 typedef struct
 {
-  std::string name;
+  const char *name;
   int clntid;
   int portid;
 } alsa_mididevinfo_t;
 
-std::vector<alsa_mididevinfo_t> ALSADrv_MIDI_ListPorts();
+std::vector<alsa_mididevinfo_t> const ALSADrv_MIDI_ListPorts();
 
 extern int32_t ALSA_ClientID;
 extern int32_t ALSA_PortID;
