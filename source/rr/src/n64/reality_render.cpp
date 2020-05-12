@@ -3,6 +3,7 @@
 #include "build.h"
 #include "colmatch.h"
 #include "reality.h"
+#include "../duke3d.h"
 
 tileinfo_t rt_tileinfo[RT_TILENUM];
 int32_t rt_tilemap[MAXTILES];
@@ -588,7 +589,7 @@ static int rt_fxtile = 0;
 void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, int flags)
 {
     int xflip = (flags & 4) != 0;
-    int yflip = (flags & 4) != 0;
+    int yflip = (flags & 8) != 0;
 
     sx *= vp_scale;
     sy *= vp_scale;
@@ -610,6 +611,29 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     float y1 = y - sizy;
     float y2 = y + sizy;
 
+    float u1, u2, v1, v2;
+    if (!xflip)
+    {
+        u1 = 0.f;
+        u2 = 1.f;
+    }
+    else
+    {
+        u1 = 1.f;
+        u2 = 0.f;
+    }
+
+    if (!yflip)
+    {
+        v1 = 0.f;
+        v2 = 1.f;
+    }
+    else
+    {
+        v1 = 0.f;
+        v2 = 1.f;
+    }
+
     if (!waloff[picnum])
         tileLoad(picnum);
     
@@ -628,10 +652,10 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     glLoadIdentity();
     glOrtho(0, 320.f, 240.f, 0, -1.f, 1.f);
     glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex3f(x1, y1, -rt_globaldepth);
-    glTexCoord2f(1, 0); glVertex3f(x2, y1, -rt_globaldepth);
-    glTexCoord2f(1, 1); glVertex3f(x2, y2, -rt_globaldepth);
-    glTexCoord2f(0, 1); glVertex3f(x1, y2, -rt_globaldepth);
+    glTexCoord2f(u1, v1); glVertex3f(x1, y1, -rt_globaldepth);
+    glTexCoord2f(u2, v1); glVertex3f(x2, y1, -rt_globaldepth);
+    glTexCoord2f(u2, v2); glVertex3f(x2, y2, -rt_globaldepth);
+    glTexCoord2f(u1, v2); glVertex3f(x1, y2, -rt_globaldepth);
     glEnd();
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -915,12 +939,14 @@ void RT_HandleWallCstatSlope(int cstat)
 struct maskdraw_t {
     int dist;
     uint16_t index;
+    int16_t sectnum;
 };
 
 maskdraw_t maskdrawlist[10240];
 static int sortspritescnt = 0;
 
-static int globalposx, globalposy, globalposz;
+static int globalposx, globalposy, globalposz, rt_smoothRatio;
+static fix16_t globalang;
 
 int RT_WallCalc_NoSlope(int sectnum, int wallnum)
 {
@@ -1404,7 +1430,7 @@ int RT_WallCalc(int sectnum, int wallnum)
 
 static tspritetype rt_tsprite, *rt_tspriteptr;
 
-static int rt_tspritepicnum;
+static int rt_tspritetileid, rt_tspritepicnum;
 static int rt_fxcolor;
 static int rt_curfxcolor, rt_boss2, rt_lastpicnum, rt_spritezbufferhack;
 static float viewangsin, viewangcos;
@@ -1425,6 +1451,7 @@ void RT_SetupDrawMask(void)
     glEnable(GL_BLEND);
     glEnable(GL_ALPHA_TEST);
     glDisable(GL_CULL_FACE);
+    glDepthMask(GL_FALSE);
 }
 
 static vec3_t colortable[14][2] = {
@@ -1467,7 +1494,7 @@ void RT_DrawSpriteFace(float x, float y, float z, int pn)
 
     glColor4f(1.f, 1.f, 1.f, rt_globalalpha * (1.f / 255.f));
     RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, rt_tspriteptr->xrepeat * tt * 4.f, rt_tspriteptr->yrepeat * tt * 4.f,
-        rt_tspriteptr->picnum, rt_tspriteptr->cstat);
+        rt_tspritepicnum, rt_tspriteptr->cstat);
     //RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, 4.f, 4.f,
     //    rt_tspriteptr->picnum, rt_tspriteptr->cstat);
 }
@@ -1477,10 +1504,10 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
     rt_lastpicnum = 0;
     globalpal = rt_tspriteptr->pal;
     // TODO: shade
-    int xoff = int8_t((rt_tileinfo[rt_tspritepicnum].picanm>>8)&255);
-    int yoff = int8_t((rt_tileinfo[rt_tspritepicnum].picanm>>16)&255);
-    int v20 = (rt_tileinfo[rt_tspritepicnum].sizx * rt_tspriteptr->xrepeat) / 16;
-    int v11 = (rt_tileinfo[rt_tspritepicnum].sizy * rt_tspriteptr->yrepeat) / 8;
+    int xoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>8)&255);
+    int yoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>16)&255);
+    int v20 = (rt_tileinfo[rt_tspritetileid].sizx * rt_tspriteptr->xrepeat) / 16;
+    int v11 = (rt_tileinfo[rt_tspritetileid].sizy * rt_tspriteptr->yrepeat) / 8;
     int v6 = ((xoff + rt_tspriteptr->xoffset) * rt_tspriteptr->xrepeat) / 8;
     if (rt_tspriteptr->cstat&128)
         rt_tspriteptr->z += (yoff >> 1) * 32;
@@ -1515,20 +1542,72 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
 
     if((rt_tspriteptr->cstat&48)==0)
     {
-        // TODO: display face sprite
-        if (1)
+        switch(sprite[spritenum].picnum)
         {
+        case 0xa0:
+        case 0x21a:
+        case 0x220:
+        case 0x23d:
+        case 0x244:
+        case 0x245:
+        case 0x246:
+        case 0x247:
+        case 0x25f:
+        case 0x260:
+        case 0x267:
+        case 0x268:
+        case 0x269:
+        case 0x26a:
+        case 0x26b:
+        case 0x279:
+        case 0x27a:
+        case 0x27b:
+        case 0x27c:
+        case 0x27d:
+        case 700:
+        case 0x38c:
+        case 0x38d:
+        case 0x38e:
+        case 0x398:
+        case 0x399:
+        case 0x3ac:
+        case 0x3b6:
+        case 0x3ce:
+        case 0x3cf:
+        case 0x3d1:
+        case 0x3df:
+        case 0x3e1:
+        case 0x3e2:
+        case 0x3e3:
+        case 0x3e4:
+        case 0x3e5:
+        case 0x3ed:
+        case 0x444:
+        case 0x4c5:
+        case 0x4c9:
+        case 0x4ec:
+        case 0x8df:
+        case 0x8fc:
+        case 0x905:
+        case 0x907:
+        case 0xd65:
+        case 0x1119:
+        case 0x11c6:
+        case 0x11e7:
+        case 0x11ea:
+        case 0x11eb:
+        case 0x131a:
+            break;
+        default:
             RT_DrawSpriteFace(v40/2, v48/2, (sz + (v11>>1))/2, rt_tspritepicnum);
+            return;
         }
-        else
-        {
-            float ds = viewangsin * v20;
-            float dc = viewangcos * v20;
-            v40 += ds;
-            v3e -= ds;
-            v46 += dc;
-            v48 -= dc;
-        }
+        float ds = viewangsin * v20;
+        float dc = viewangcos * v20;
+        v40 += ds;
+        v3e -= ds;
+        v46 += dc;
+        v48 -= dc;
     }
     else if((rt_tspriteptr->cstat&48)==16)
     {
@@ -1564,17 +1643,96 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
     }
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
-    pthtyp *pth = texcache_fetch(rt_tspriteptr->picnum, 0, 0, method);
+    pthtyp *pth = texcache_fetch(rt_tspritepicnum, 0, 0, method);
 
     if (!pth)
         return;
 
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    //rt_globalalpha = 128;
     glBegin(GL_QUADS);
     glTexCoord2f(v1, 0.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v3e, v46, sz);
     glTexCoord2f(v2, 0.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v40, v48, sz);
     glTexCoord2f(v2, 1.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v40, v48, sz2);
     glTexCoord2f(v1, 1.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v3e, v46, sz2);
+    glEnd();
+}
+
+void RT_DrawSpriteFloor(void)
+{
+    float u1, v1, u2, v2;
+    if ((rt_tspriteptr->cstat&8) == 0)
+    {
+        v1 = 1.f;
+        v2 = 0.f;
+    }
+    else
+    {
+        v1 = 0.f;
+        v2 = 1.f;
+    }
+    if ((rt_tspriteptr->cstat&4) == 0)
+    {
+        u1 = 1.f;
+        u2 = 0.f;
+    }
+    else
+    {
+        u1 = 0.f;
+        u2 = 1.f;
+    }
+
+    uint8_t alpha;
+    if ((rt_tspriteptr->cstat & 2) == 0)
+        alpha = 255;
+    else
+    {
+        if (rt_tspriteptr->cstat & 512)
+            alpha = 128;
+        else
+            alpha = 192;
+    }
+
+    globalpal = rt_tspriteptr->pal;
+
+    // TODO: shade
+
+    int sx = (rt_tileinfo[rt_tspritetileid].sizx * rt_tspriteptr->xrepeat) / 16;
+    int sy = (rt_tileinfo[rt_tspritetileid].sizy * rt_tspriteptr->yrepeat) / 16;
+
+    float ang = (rt_tspriteptr->ang / (1024.f/180.f) + 90.f) / (180.f/fPI);
+    float ds = sin(ang);
+    float dc = cos(ang);
+
+    float x = rt_tspriteptr->x / 2;
+    float y = rt_tspriteptr->y / 2;
+    float z;
+    if (rt_spritezbufferhack)
+    {
+        int dz = abs(globalposz - rt_tspriteptr->z);
+        z = (-rt_tspriteptr->z)>>5;
+        if (rt_tspriteptr->z == sector[rt_tspritesect].ceilingz)
+            z -= (dz + 16) / 1024;
+        if (rt_tspriteptr->z == sector[rt_tspritesect].floorz)
+            z += (dz + 16) / 1024;
+
+    }
+    else
+        z = (-rt_tspriteptr->z)>>5;
+    
+    int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
+    pthtyp *pth = texcache_fetch(rt_tspritepicnum, 0, 0, method);
+
+    if (!pth)
+        return;
+
+    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(u1, v2); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x + sx * dc + sy * ds, y - sy * dc + sx * ds, -z);
+    glTexCoord2f(u2, v2); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x - sx * dc + sy * ds, y - sy * dc - sx * ds, -z);
+    glTexCoord2f(u2, v1); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x - sx * dc - sy * ds, y + sy * dc - sx * ds, -z);
+    glTexCoord2f(u1, v1); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x + sx * dc - sy * ds, y + sy * dc + sx * ds, -z);
     glEnd();
 }
 
@@ -1588,22 +1746,31 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
     if (sprite[spritenum].xrepeat == 0)
         return;
 
-    rt_tspriteptr = &rt_tsprite;
+    //rt_tspriteptr = &rt_tsprite;
 
-    Bmemcpy(&rt_tsprite, &sprite[spritenum], sizeof(spritetype));
+    //Bmemcpy(&rt_tsprite, &sprite[spritenum], sizeof(spritetype));
 
-    // TODO: animatesprites
-    // HACK:
-    if ((rt_tsprite.picnum == 1405))
-        return;
+    spritesortcnt = 0;
+    rt_tspriteptr = renderAddTSpriteFromSprite(spritenum);
+    G_DoSpriteAnimations(globalposx, globalposy, globalposz, fix16_to_int(globalang), rt_smoothRatio);
+
+    //// TODO: animatesprites
+    //// HACK:
+    //if ((rt_tsprite.picnum == 1405))
+    //    return;
     if (rt_tspriteptr->xrepeat == 0)
         return;
 
-    rt_tspritepicnum = rt_tilemap[rt_tspriteptr->picnum];
-    if (rt_tspritepicnum == 1)
+    rt_tspritepicnum = rt_tspriteptr->picnum;
+    rt_tspritetileid = rt_tilemap[rt_tspritepicnum];
+    if (rt_tspritetileid == 1)
         return;
-    if (rt_tileinfo[rt_tspritepicnum].picanm & 192)
-        rt_tspritepicnum += animateoffs(rt_tspriteptr->picnum, 0);
+    if (rt_tileinfo[rt_tspritetileid].picanm & 192)
+    {
+        int anim = animateoffs(rt_tspritepicnum, 0);;
+        rt_tspritetileid += anim;
+        rt_tspritepicnum += anim;
+    }
 
     pn = sprite[spritenum].picnum;
 
@@ -1708,7 +1875,7 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
         RT_SetColor2(colortable[rt_fxcolor][0].x, colortable[rt_fxcolor][0].y, colortable[rt_fxcolor][0].z, 255);
     }
     rt_spritezbufferhack = (rt_tspriteptr->cstat & 16384) != 0;
-    rt_spritedim = { rt_tileinfo[rt_tspritepicnum].dimx, rt_tileinfo[rt_tspritepicnum].dimy };
+    rt_spritedim = { rt_tileinfo[rt_tspritetileid].dimx, rt_tileinfo[rt_tspritetileid].dimy };
     rt_spritedimtotal = rt_spritedim.x * rt_spritedim.y;
     rt_tspritesect = sectnum;
     if ((rt_tspriteptr->cstat & 48) == 16 && (rt_tspriteptr->cstat&64))
@@ -1723,7 +1890,21 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
     }
     if ((rt_tspriteptr->cstat&48) == 32)
     {
-        // TODO: floor aligned sprite
+        if (rt_tspriteptr->cstat & 64)
+        {
+            if ((rt_tspriteptr->cstat & 8) == 0)
+            {
+                if (rt_tspriteptr->z < globalposz)
+                    return;
+            }
+            else
+            {
+                if (rt_tspriteptr->z > globalposz)
+                    return;
+            }
+        }
+        if (rt_spritedimtotal <= 4096)
+            RT_DrawSpriteFloor();
         return;
     }
     RT_DrawSpriteFlat(spritenum, rt_tspritesect, distance);
@@ -1771,8 +1952,296 @@ void RT_DrawWall(int wallnum)
     }
 }
 
-void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum)
+uint8_t viswalltbit[(MAXWALLS+7)>>3];
+uint8_t wallbitcheck[(MAXWALLS+7)>>3];
+uint8_t floorbitcheck[(MAXSECTORS+7)>>3];
+uint8_t ceilingbitcheck[(MAXSECTORS+7)>>3];
+uint8_t vissectbit1[(MAXSECTORS+7)>>3];
+
+int viswallcnt;
+int drawallcnt;
+int drawceilcnt;
+int drawfloorcnt;
+int visiblesectornum;
+
+float viswallr1[MAXWALLS], viswallr2[MAXWALLS];
+int viswall[MAXWALLS];
+
+float getanglef2(float x1, float y1, float x2, float y2)
 {
+    return 270.f - RT_GetAngle(y2 - y1, x2 - x1) * (180.f / fPI);
+}
+
+float getangledelta(float a1, float a2)
+{
+    float delta;
+    if (a1 > a2)
+    {
+        delta = a1 - a2;
+        if (delta > 180.f)
+            delta -= 360.f;
+        return -delta;
+    }
+    delta = a2 - a1;
+    if (delta > 180.f)
+        delta -= 360.f;
+    return delta;
+}
+
+int viswallcheck(int w, float f1, float f2)
+{
+    for (int i = 0; i < viswallcnt; i++)
+    {
+        if (viswall[i] == w)
+        {
+            if (getangledelta(f1, viswallr1[i]) <= 0.f && getangledelta(f2, viswallr2[i]) >= 0.f)
+                return 0;
+        }
+    }
+    return 1;
+}
+
+void RT_ScanSector(float lx, float rx, int sectnum)
+{
+    if (sector[sectnum].floorheinum == 0)
+    {
+        if (globalposz < sector[sectnum].floorz)
+            floorbitcheck[sectnum>>3] |= pow2char[sectnum&7];
+    }
+    else
+        floorbitcheck[sectnum>>3] |= pow2char[sectnum&7];
+    if (sector[sectnum].ceilingheinum == 0)
+    {
+        if (globalposz> sector[sectnum].ceilingz)
+            ceilingbitcheck[sectnum>>3] |= pow2char[sectnum&7];
+    }
+    else
+        ceilingbitcheck[sectnum>>3] |= pow2char[sectnum&7];
+
+    vissectbit1[sectnum>>3] |= pow2char[sectnum&7];
+
+    float x1 = globalposx + sin(lx * (fPI/180.f)) * 5000.f;
+    float y1 = globalposy + cos(lx * (fPI/180.f)) * 5000.f;
+    float x2 = globalposx + sin(rx * (fPI/180.f)) * 5000.f;
+    float y2 = globalposy + cos(rx * (fPI/180.f)) * 5000.f;
+    int oviswalcnt = viswallcnt;
+    int startwall = sector[sectnum].wallptr;
+    int endwall = startwall + sector[sectnum].wallnum;
+    for (int w = startwall; w < endwall; w++)
+    {
+        if (wallbitcheck[w>>3]&pow2char[w&7])
+            continue;
+
+        float wx1 = wall[w].x;
+        float wy1 = wall[w].y;
+        float wx2 = wall[wall[w].point2].x;
+        float wy2 = wall[wall[w].point2].y;
+        // Side check
+        if ((wx1 - globalposx) * (wy2 - globalposy) < (wx2 - globalposx) * (wy1 - globalposy))
+        {
+            wallbitcheck[w>>3] |= pow2char[w&7];
+            continue;
+        }
+        //// Visibility check
+        if ((globalposx - wx1) * (y2 - wy1) < (globalposy - wy1) * (x2 - wx1)
+         || (globalposy - wy1) * (x1 - wx1) <= (globalposx - wx1) * (y1 - wy1))
+        {
+            if ((globalposx - wx2) * (y2 - wy2) < (globalposy - wy2) * (x2 - wx2)
+             || (globalposy - wy2) * (x1 - wx2) <= (globalposx - wx2) * (y1 - wy2))
+            {
+                if ((globalposx - wx1) * (y2 - wy1) >= (globalposy - wy1) * (x2 - wx1)
+                    || (globalposy - wy1) * (x1 - wx1) <= (globalposx - wx1) * (y1 - wy1)
+                    || (globalposx - wx2) * (y2 - wy2) < (globalposy - wy2) * (x2 - wx2)
+                    || (globalposy - wy2) * (x1 - wx2) > (globalposx - wx2) * (y1 - wy2))
+                    continue;
+            }
+        }
+        viswalltbit[w>>3] |= pow2char[w&7];
+        int nextsectnum = wall[w].nextsector;
+        if (nextsectnum == -1)
+        {
+            wallbitcheck[w>>3] |= pow2char[w&7];
+            continue;
+        }
+        if (sector[nextsectnum].floorz == sector[nextsectnum].ceilingz
+            && sector[nextsectnum].ceilingheinum == sector[nextsectnum].floorheinum)
+        {
+            wallbitcheck[w>>3] |= pow2char[w&7];
+            continue;
+        }
+        float wa2 = getanglef2(wx2, wy2, globalposx, globalposy);
+        float wa1 = getanglef2(wx1, wy1, globalposx, globalposy);
+        float a2 = lx;
+        float d2 = getangledelta(lx, wa2);
+        if (d2 >= 0.f)
+            a2 = wa2;
+        float a1 = rx;
+        float d1 = getangledelta(rx, wa1);
+        if (d1 <= 0.f)
+            a1 = wa1;
+        if (d1 <= 0 && d2 >= 0)
+        {
+            wallbitcheck[w>>3] |= pow2char[w&7];
+        }
+        if (viswallcheck(w, a2, a1))
+        {
+            viswall[viswallcnt] = w;
+            viswallr1[viswallcnt] = a2;
+            viswallr2[viswallcnt] = a1;
+            viswallcnt++;
+            // if (viswallcnt > 511)
+            //     return;
+        }
+    }
+    for (int i = oviswalcnt; i < viswallcnt; i++)
+    {
+        RT_ScanSector(viswallr1[i], viswallr2[i], wall[viswall[i]].nextsector);
+    }
+}
+
+int drawalllist[MAXWALLS];
+int drawfloorlist[MAXSECTORS];
+int drawceilinglist[MAXSECTORS];
+int visiblesectors[MAXSECTORS];
+
+void RT_ScanSectors(int sectnum)
+{
+    float viewhorizang = RT_GetAngle(rt_globalhoriz - 100.f, 128.f) * (-180.f / fPI);
+    float viewrange = fabs(viewhorizang) * (29.f / 46.f) + 35.f;
+    float viewangle = RT_AngleMod(-rt_globalang / (1024.f/180.f) + 90.f);
+    float viewangler1 = viewangle + viewrange;
+    float viewangler2 = viewangle - viewrange;
+    
+    drawallcnt = 0;
+    drawceilcnt = 0;
+    drawfloorcnt = 0;
+    viswallcnt = 0;
+    visiblesectornum = 0;
+    memset(viswalltbit, 0, sizeof(viswalltbit));
+    memset(wallbitcheck, 0, sizeof(wallbitcheck));
+    memset(floorbitcheck, 0, sizeof(floorbitcheck));
+    memset(ceilingbitcheck, 0, sizeof(ceilingbitcheck));
+    memset(vissectbit1, 0, sizeof(vissectbit1));
+
+    RT_ScanSector(viewangler2, viewangler1, sectnum);
+    for (int i = 0; i < ((MAXWALLS+7)>>3); i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (viswalltbit[i] & pow2char[j])
+            {
+                drawalllist[drawallcnt++] = i * 8 + j;
+            }
+        }
+    }
+    for (int i = 0; i < ((MAXSECTORS+7)>>3); i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (floorbitcheck[i] & pow2char[j])
+            {
+                drawfloorlist[drawfloorcnt++] = i * 8 + j;
+            }
+        }
+    }
+    for (int i = 0; i < ((MAXSECTORS+7)>>3); i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (ceilingbitcheck[i] & pow2char[j])
+            {
+                drawceilinglist[drawceilcnt++] = i * 8 + j;
+            }
+        }
+    }
+    for (int i = 0; i < ((MAXSECTORS+7)>>3); i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (vissectbit1[i] & pow2char[j])
+            {
+                visiblesectors[visiblesectornum++] = i * 8 + j;
+            }
+        }
+    }
+    visiblesectors[visiblesectornum] = -1;
+    drawceilinglist[drawceilcnt] = -1;
+    drawfloorlist[drawfloorcnt] = -1;
+    drawalllist[drawallcnt] = -1;
+}
+
+void RT_DrawMasks(void)
+{
+    RT_SetupDrawMask();
+
+    for (int i = 0; i < visiblesectornum; i++)
+    {
+        int sect = visiblesectors[i];
+        for (int j = headspritesect[sect]; j >= 0; j = nextspritesect[j])
+        {
+            if (sprite[j].cstat & 32768)
+                continue;
+            if (sprite[j].picnum < 11)
+                continue;
+            if (sprite[j].xrepeat == 0)
+                continue;
+            int wx = abs(globalposx - sprite[j].x);
+            int wy = abs(globalposy - sprite[j].y);
+            int dist = (min(wx, wy) >> 3) + max(wx, wy) + (min(wx, wy) >> 2);
+
+            if (sortspritescnt == 10240)
+                continue;
+
+            maskdrawlist[sortspritescnt].dist = dist;
+            maskdrawlist[sortspritescnt].index = j;
+            maskdrawlist[sortspritescnt].sectnum = sect;
+            sortspritescnt++;
+        }
+    }
+
+    for (int gap = sortspritescnt >> 1; gap; gap >>= 1)
+        for (int i = 0; i < sortspritescnt - gap; i++)
+            for (int j = i; j >= 0; j -= gap)
+            {
+                if (maskdrawlist[j].dist < maskdrawlist[j+gap].dist)
+                {
+                    int t = maskdrawlist[j].dist;
+                    maskdrawlist[j].dist = maskdrawlist[j+gap].dist;
+                    maskdrawlist[j+gap].dist = t;
+                    t = maskdrawlist[j].index;
+                    maskdrawlist[j].index = maskdrawlist[j+gap].index;
+                    maskdrawlist[j+gap].index = t;
+                    t = maskdrawlist[j].sectnum;
+                    maskdrawlist[j].sectnum = maskdrawlist[j+gap].sectnum;
+                    maskdrawlist[j+gap].sectnum = t;
+                }
+            }
+
+    for (int i = 0; i < sortspritescnt; i++)
+    {
+        auto &ms = maskdrawlist[i];
+        if (ms.index & 32768)
+        {
+            // TODO: maskwall
+        }
+        else
+        {
+            RT_DrawSprite(ms.index, ms.sectnum, ms.dist);
+        }
+    }
+
+    glDepthMask(GL_TRUE);
+}
+
+void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio)
+{
+    updatesector(x, y, &sectnum);
+
+    if (sectnum < 0)
+    {
+        return;
+    }
+
     RT_DisablePolymost();
 #if 0
     // Test code
@@ -1802,6 +2271,8 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     globalposx = x;
     globalposy = y;
     globalposz = z;
+    globalang = ang;
+    rt_smoothRatio = smoothRatio;
 
     rt_globalpicnum = -1;
     rt_globalposx = x * 0.5f;
@@ -1819,30 +2290,50 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
-    for (int i = 0; i < numsectors; i++)
+
+    RT_ScanSectors(sectnum);
+
+    for (int i = 0; i < drawceilcnt; i++)
     {
-        RT_DrawCeiling(i);
-        RT_DrawFloor(i);
+        RT_DrawCeiling(drawceilinglist[i]);
     }
 
-    for (int i = 0; i < numwalls; i++)
+    for (int i = 0; i < drawfloorcnt; i++)
+    {
+        RT_DrawFloor(drawfloorlist[i]);
+    }
+
+    for (int i = 0; i < drawallcnt; i++)
     {
         //if (rt_wall[i].sectnum != sectnum)
         //    continue;
-        RT_DrawWall(i);
+        RT_DrawWall(drawalllist[i]);
     }
 
-    RT_SetupDrawMask();
+    //for (int i = 0; i < numsectors; i++)
+    //{
+    //    RT_DrawCeiling(i);
+    //    RT_DrawFloor(i);
+    //}
+    //
+    //for (int i = 0; i < numwalls; i++)
+    //{
+    //    //if (rt_wall[i].sectnum != sectnum)
+    //    //    continue;
+    //    RT_DrawWall(i);
+    //}
 
-    for (int i = 0; i < MAXSPRITES; i++)
-    {
-        if (sprite[i].statnum != MAXSTATUS)
-        {
-            int wx = abs(globalposx - sprite[i].x);
-            int wy = abs(globalposy - sprite[i].y);
-            RT_DrawSprite(i, sprite[i].sectnum, (min(wx, wy) >> 3) + max(wx, wy) + (min(wx, wy) >> 2));
-        }
-    }
+    RT_DrawMasks();
+
+    //for (int i = 0; i < MAXSPRITES; i++)
+    //{
+    //    if (sprite[i].statnum != MAXSTATUS)
+    //    {
+    //        int wx = abs(globalposx - sprite[i].x);
+    //        int wy = abs(globalposy - sprite[i].y);
+    //        RT_DrawSprite(i, sprite[i].sectnum, (min(wx, wy) >> 3) + max(wx, wy) + (min(wx, wy) >> 2));
+    //    }
+    //}
 
     RT_EnablePolymost();
 }

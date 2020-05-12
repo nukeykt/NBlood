@@ -1472,7 +1472,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         }
         else if (REALITY)
         {
-            RT_DrawRooms(CAMERA(pos.x),CAMERA(pos.y),CAMERA(pos.z),CAMERA(q16ang),CAMERA(q16horiz),CAMERA(sect));
+            RT_DrawRooms(CAMERA(pos.x),CAMERA(pos.y),CAMERA(pos.z),CAMERA(q16ang),CAMERA(q16horiz),CAMERA(sect),smoothRatio);
         }
         else
         {

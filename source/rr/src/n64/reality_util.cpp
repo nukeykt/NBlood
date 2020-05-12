@@ -241,3 +241,16 @@ float RT_GetAngle(float dy, float dx)
     }
     return 0.f;
 }
+
+float RT_AngleMod(float a)
+{
+    while (a < 0.f)
+    {
+        a += 360.f;
+    }
+    while (a >= 360.f)
+    {
+        a -= 360.f;
+    }
+    return a;
+}
