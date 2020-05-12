@@ -370,7 +370,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     voice->ptrlock = CACHE1D_PERMANENT;
 
     if (voice->rawdataptr == nullptr || voice->wavetype != FMT_VORBIS)
-        g_cache.allocateBlock((intptr_t *)&voice->rawdataptr, sizeof(vorbis_data), &voice->ptrlock);
+        voice->rawdataptr = Xcalloc(sizeof(vorbis_data), 1);
 
     vorbis_data *vd = (vorbis_data *)voice->rawdataptr;
 
@@ -390,7 +390,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
         else
             MV_Printf("MV_PlayVorbis: err %d\n", status);
 
-        voice->ptrlock = CACHE1D_FREE;
+        DO_FREE_AND_NULL(voice->rawdataptr);
         return MV_SetErrorCode(MV_InvalidFile);
     }
 
@@ -437,7 +437,7 @@ void MV_ReleaseVorbisVoice(VoiceNode *voice)
 
     ov_clear(&vd->vf);
 
-    voice->ptrlock = CACHE1D_UNLOCKED;
+    DO_FREE_AND_NULL(vd);
 }
 #else
 #include "_multivc.h"
