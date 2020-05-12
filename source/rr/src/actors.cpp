@@ -675,6 +675,9 @@ void A_MoveSector(int spriteNum)
     pSprite->x += (pSprite->xvel * (sintable[(pSprite->ang + 512) & 2047])) >> 14;
     pSprite->y += (pSprite->xvel * (sintable[pSprite->ang & 2047])) >> 14;
 
+    if (REALITY)
+        RT_MS_Update(pSprite->sectnum, rotateAngle, pSprite->x, pSprite->y);
+
     int const endWall = sector[pSprite->sectnum].wallptr + sector[pSprite->sectnum].wallnum;
 
     for (bssize_t wallNum = sector[pSprite->sectnum].wallptr; wallNum < endWall; wallNum++)

@@ -12,6 +12,20 @@ char rt_walock[RT_TILENUM];
 
 float rt_viewhorizang;
 
+struct maskdraw_t {
+    int dist;
+    uint16_t index;
+    int16_t sectnum;
+};
+
+maskdraw_t maskdrawlist[10240];
+static int sortspritescnt = 0;
+
+static int globalposx, globalposy, globalposz, rt_smoothRatio;
+static fix16_t globalang;
+
+static int globalpal, globalshade;
+
 extern void (*gloadtile_n64)(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp* pth, int32_t doalloc);
 
 static bool RT_TileLoad(int16_t tilenum);
@@ -776,37 +790,125 @@ void RT_SetTexture(int tilenum)
     }
 }
 
+int globalcolorred, globalcolorgreen, globalcolorblue;
+
+void RT_CalculateShade(int x, int y, int z, int shade)
+{
+    if (shade > 126)
+        shade = -127;
+    shade = (28 - shade) * 9;
+    if (shade > 256)
+        shade = 256;
+    if (shade < 0)
+        shade = 0;
+
+    int dx = abs(globalposx/2 - x);
+    int dy = abs(globalposy/2 - y);
+    globalcolorblue = 256 - ((min(dx, dy) >> 3) + max(dx, dy) + (min(dx, dy) >> 2)) / 60;
+    if (shade == 256)
+        globalcolorblue = 256;
+
+    int sectnum;
+    if (g_player[screenpeek].ps->newowner >= 0)
+        sectnum = sprite[g_player[screenpeek].ps->newowner].sectnum;
+    else
+        sectnum = g_player[screenpeek].ps->cursectnum;
+
+    if (sectnum >= 0 && sector[sectnum].lotag == ST_2_UNDERWATER)
+        globalpal = 1;
+
+    globalcolorred = globalcolorblue;
+    globalcolorgreen = globalcolorblue;
+    switch (globalpal)
+    {
+    case 1:
+        globalcolorred /= 2;
+        globalcolorgreen /= 2;
+        break;
+    case 2:
+        globalcolorgreen /= 2;
+        globalcolorblue /= 2;
+        break;
+    case 4:
+        globalcolorred = 0;
+        globalcolorgreen = 0;
+        globalcolorblue = 0;
+        break;
+    case 6:
+    case 8:
+    case 14:
+        globalcolorred /= 2;
+        globalcolorblue /= 2;
+        break;
+    }
+
+    if (g_player[screenpeek].ps->heat_on)
+    {
+        globalcolorgreen = (globalcolorgreen * 0x180) >> 8;
+        globalcolorred = (globalcolorred * 0xab) >> 8;
+        globalcolorblue = (globalcolorblue * 0xab) >> 8;
+        shade = (shade + 512) / 3;
+    }
+    globalcolorred = (globalcolorred * shade) / 256;
+    globalcolorgreen = (globalcolorgreen * shade) / 256;
+    globalcolorblue = (globalcolorblue * shade) / 256;
+    if (globalcolorred < 0)
+        globalcolorred = 0;
+    if (globalcolorred > 255)
+        globalcolorred = 255;
+    if (globalcolorgreen < 0)
+        globalcolorgreen = 0;
+    if (globalcolorgreen > 255)
+        globalcolorgreen = 255;
+    if (globalcolorblue < 0)
+        globalcolorblue = 0;
+    if (globalcolorblue > 255)
+        globalcolorblue = 255;
+}
+
 void RT_DrawCeiling(int sectnum)
 {
-    auto sect = &rt_sector[sectnum];
+    auto rt_sect = &rt_sector[sectnum];
+    auto sect = &sector[sectnum];
     RT_SetTexComb(0);
     RT_SetTexture(sector[sectnum].ceilingpicnum);
+    globalpal = sect->ceilingpal;
+    globalshade = sect->ceilingshade;
     glBegin(GL_TRIANGLES);
-    for (int i = 0; i < sect->ceilingvertexnum * 3; i++)
+    for (int i = 0; i < rt_sect->ceilingvertexnum * 3; i++)
     {
-        auto vtx = rt_sectvtx[sect->ceilingvertexptr+i];
+        auto vtx = rt_sectvtx[rt_sect->ceilingvertexptr+i];
         float x = vtx.x;
         float y = vtx.y;
         float z = getceilzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 32.f;
-        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); glVertex3f(x, y, z);
+        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); 
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
+        glVertex3f(x, y, z);
     }
     glEnd();
 }
 
 void RT_DrawFloor(int sectnum)
 {
-    auto sect = &rt_sector[sectnum];
+    auto rt_sect = &rt_sector[sectnum];
+    auto sect = &sector[sectnum];
     RT_SetTexComb(0);
     int method = DAMETH_N64;
     RT_SetTexture(sector[sectnum].floorpicnum);
+    globalpal = sect->floorpal;
+    globalshade = sect->floorshade;
     glBegin(GL_TRIANGLES);
-    for (int i = 0; i < sect->floorvertexnum * 3; i++)
+    for (int i = 0; i < rt_sect->floorvertexnum * 3; i++)
     {
-        auto vtx = rt_sectvtx[sect->floorvertexptr+i];
+        auto vtx = rt_sectvtx[rt_sect->floorvertexptr+i];
         float x = vtx.x;
         float y = vtx.y;
         float z = getflorzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 32.f;
-        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); glVertex3f(x, y, z);
+        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); 
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
+        glVertex3f(x, y, z);
     }
     glEnd();
 }
@@ -935,18 +1037,6 @@ void RT_HandleWallCstatSlope(int cstat)
     }
 
 }
-
-struct maskdraw_t {
-    int dist;
-    uint16_t index;
-    int16_t sectnum;
-};
-
-maskdraw_t maskdrawlist[10240];
-static int sortspritescnt = 0;
-
-static int globalposx, globalposy, globalposz, rt_smoothRatio;
-static fix16_t globalang;
 
 int RT_WallCalc_NoSlope(int sectnum, int wallnum)
 {
@@ -1492,7 +1582,7 @@ void RT_DrawSpriteFace(float x, float y, float z, int pn)
 
     float tt = 1.f - sz;
 
-    glColor4f(1.f, 1.f, 1.f, rt_globalalpha * (1.f / 255.f));
+    glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, rt_tspriteptr->xrepeat * tt * 4.f, rt_tspriteptr->yrepeat * tt * 4.f,
         rt_tspritepicnum, rt_tspriteptr->cstat);
     //RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, 4.f, 4.f,
@@ -1503,14 +1593,14 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
 {
     rt_lastpicnum = 0;
     globalpal = rt_tspriteptr->pal;
-    // TODO: shade
+    RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
     int xoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>8)&255);
     int yoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>16)&255);
     int v20 = (rt_tileinfo[rt_tspritetileid].sizx * rt_tspriteptr->xrepeat) / 16;
     int v11 = (rt_tileinfo[rt_tspritetileid].sizy * rt_tspriteptr->yrepeat) / 8;
     int v6 = ((xoff + rt_tspriteptr->xoffset) * rt_tspriteptr->xrepeat) / 8;
     if (rt_tspriteptr->cstat&128)
-        rt_tspriteptr->z += (yoff >> 1) * 32;
+        rt_tspriteptr->z += (v11 >> 1) * 32;
     if (rt_tspriteptr->cstat&8) {
     }
 
@@ -1650,11 +1740,12 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
 
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
     //rt_globalalpha = 128;
+    glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), rt_globalalpha * (1.f / 255.f));
     glBegin(GL_QUADS);
-    glTexCoord2f(v1, 0.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v3e, v46, sz);
-    glTexCoord2f(v2, 0.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v40, v48, sz);
-    glTexCoord2f(v2, 1.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v40, v48, sz2);
-    glTexCoord2f(v1, 1.f); glColor4f(1.f, 1.f, 1.f, rt_globalalpha*(1.f/255.f)); glVertex3f(v3e, v46, sz2);
+    glTexCoord2f(v1, 0.f); glVertex3f(v3e, v46, sz);
+    glTexCoord2f(v2, 0.f); glVertex3f(v40, v48, sz);
+    glTexCoord2f(v2, 1.f); glVertex3f(v40, v48, sz2);
+    glTexCoord2f(v1, 1.f); glVertex3f(v3e, v46, sz2);
     glEnd();
 }
 
@@ -1695,7 +1786,7 @@ void RT_DrawSpriteFloor(void)
 
     globalpal = rt_tspriteptr->pal;
 
-    // TODO: shade
+    RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
 
     int sx = (rt_tileinfo[rt_tspritetileid].sizx * rt_tspriteptr->xrepeat) / 16;
     int sy = (rt_tileinfo[rt_tspritetileid].sizy * rt_tspriteptr->yrepeat) / 16;
@@ -1728,11 +1819,13 @@ void RT_DrawSpriteFloor(void)
 
     glBindTexture(GL_TEXTURE_2D, pth->glpic);
 
+    glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), alpha * (1.f / 255.f));
+
     glBegin(GL_QUADS);
-    glTexCoord2f(u1, v2); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x + sx * dc + sy * ds, y - sy * dc + sx * ds, -z);
-    glTexCoord2f(u2, v2); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x - sx * dc + sy * ds, y - sy * dc - sx * ds, -z);
-    glTexCoord2f(u2, v1); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x - sx * dc - sy * ds, y + sy * dc - sx * ds, -z);
-    glTexCoord2f(u1, v1); glColor4f(1.f, 1.f, 1.f, alpha*(1.f/255.f)); glVertex3f(x + sx * dc - sy * ds, y + sy * dc + sx * ds, -z);
+    glTexCoord2f(u1, v2); glVertex3f(x + sx * dc + sy * ds, y - sy * dc + sx * ds, -z);
+    glTexCoord2f(u2, v2); glVertex3f(x - sx * dc + sy * ds, y - sy * dc - sx * ds, -z);
+    glTexCoord2f(u2, v1); glVertex3f(x - sx * dc - sy * ds, y + sy * dc - sx * ds, -z);
+    glTexCoord2f(u1, v1); glVertex3f(x + sx * dc - sy * ds, y + sy * dc + sx * ds, -z);
     glEnd();
 }
 
@@ -1910,8 +2003,6 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
     RT_DrawSpriteFlat(spritenum, rt_tspritesect, distance);
 }
 
-static int globalpal, globalshade;
-
 void RT_DrawWall(int wallnum)
 {
     rt_wallcalcres = RT_WallCalc(rt_wall[wallnum].sectnum, wallnum);
@@ -1927,7 +2018,10 @@ void RT_DrawWall(int wallnum)
     for (int i = 0; i < (rt_haswhitewall + rt_hastopwall) * 4; i++)
     {
         auto vtx = wallvtx[j++];
-        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); glVertex3f(vtx.x, vtx.y, vtx.z);
+        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
+        glVertex3f(vtx.x, vtx.y, vtx.z);
     }
     glEnd();
     if (wall[wallnum].cstat & 2)
@@ -1936,17 +2030,23 @@ void RT_DrawWall(int wallnum)
     for (int i = 0; i < rt_hasbottomwall * 4; i++)
     {
         auto vtx = wallvtx[j++];
-        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); glVertex3f(vtx.x, vtx.y, vtx.z);
+        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
+        glVertex3f(vtx.x, vtx.y, vtx.z);
     }
     glEnd();
     if (rt_hasoneway)
     {
         RT_SetTexture(wall[wallnum].overpicnum);
         glBegin(GL_QUADS);
-        for (int i = 0; i < rt_hasoneway * 4; i++)
+        for (int i = 0; i < 4; i++)
         {
             auto vtx = wallvtx[j++];
-            glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); glVertex3f(vtx.x, vtx.y, vtx.z);
+            glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
+            RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+            glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
+            glVertex3f(vtx.x, vtx.y, vtx.z);
         }
         glEnd();
     }
@@ -2083,7 +2183,7 @@ void RT_ScanSector(float lx, float rx, int sectnum)
         {
             wallbitcheck[w>>3] |= pow2char[w&7];
         }
-        if (viswallcheck(w, a2, a1))
+        if (viswallcheck(w, a2, a1) && viswallcnt < MAXWALLS)
         {
             viswall[viswallcnt] = w;
             viswallr1[viswallcnt] = a2;
@@ -2170,6 +2270,167 @@ void RT_ScanSectors(int sectnum)
     drawalllist[drawallcnt] = -1;
 }
 
+void RT_DrawMaskWall(int wallnum)
+{
+    walltype &w = wall[wallnum];
+    int tileid = rt_tilemap[wall[wallnum].overpicnum];
+    if (tileid == -1)
+        return;
+    
+    if (rt_fxtile)
+    {
+        RT_SetTexComb(0);
+        glEnable(GL_ALPHA_TEST);
+        rt_fxtile = 0;
+        glColor4f(1.f, 1.f, 1.f, 1.f);
+    }
+
+    if (rt_spritezbufferhack)
+        rt_spritezbufferhack = 0;
+
+    int wx1 = w.x;
+    int wy1 = w.y;
+    int wx2 = wall[w.point2].x;
+    int wy2 = wall[w.point2].y;
+
+    int z1 = getceilzofslope(rt_wall[wallnum].sectnum, wx1, wy1);
+    int z2 = getceilzofslope(rt_wall[wallnum].sectnum, wx2, wy2);
+    int z3 = getceilzofslope(w.nextsector, wx1, wy1);
+    int z4 = getceilzofslope(w.nextsector, wx2, wy2);
+
+    int l20;
+    int l14;
+    if ((z1 >> 4) > (z3 >> 4))
+    {
+        l14 = z1 >> 4;
+        l20 = z2 >> 4;
+    }
+    else
+    {
+        l14 = z3 >> 4;
+        l20 = z4 >> 4;
+    }
+
+
+    int z5 = getflorzofslope(rt_wall[wallnum].sectnum, wx1, wy1);
+    int z6 = getflorzofslope(rt_wall[wallnum].sectnum, wx2, wy2);
+    int z7 = getflorzofslope(w.nextsector, wx1, wy1);
+    int z8 = getflorzofslope(w.nextsector, wx2, wy2);
+
+    int l18, l1c;
+    if ((z5 >> 4) < (z7 >> 4))
+    {
+        l18 = z5 >> 4;
+        l1c = z6 >> 4;
+    }
+    else
+    {
+        l18 = z7 >> 4;
+        l1c = z8 >> 4;
+    }
+
+    int v4;
+
+    if (w.cstat & 4)
+    {
+        int t1 = sector[w.nextsector].floorz >> 4;
+        int t2 = sector[rt_wall[wallnum].sectnum].floorz >> 4;
+        if (t2 < t1)
+            v4 = t2;
+        else
+            v4 = t1;
+    }
+    else
+    {
+        int t1 = sector[rt_wall[wallnum].sectnum].ceilingz >> 4;
+        int t2 = sector[w.nextsector].ceilingz >> 4;
+        if (t2 > t1)
+            v4 = t2;
+        else
+            v4 = t1;
+    }
+
+    RT_SetTileGlobals(w.overpicnum);
+    RT_SetWallGlobals(wallnum, w.cstat & ~4);
+    globalwallv1 = (v4 - l14) * globalyrepeat + globalwallvoffset;
+    globalwallv2 = (v4 - l18) * globalyrepeat + globalwallvoffset;
+    globalwallv3 = (v4 - l1c) * globalyrepeat + globalwallvoffset;
+    globalwallv4 = (v4 - l20) * globalyrepeat + globalwallvoffset;
+    RT_HandleWallCstatSlope(w.cstat & ~4);
+    wallvtx[0].x = wx1 >> 1;
+    wallvtx[0].y = wy1 >> 1;
+    wallvtx[0].z = l14 >> 1;
+    wallvtx[0].u = globalwallu1;
+    wallvtx[0].v = globalwallv1;
+    wallvtx[1].x = wx1 >> 1;
+    wallvtx[1].y = wy1 >> 1;
+    wallvtx[1].z = l18 >> 1;
+    wallvtx[1].u = globalwallu1;
+    wallvtx[1].v = globalwallv2;
+    wallvtx[2].x = wx2 >> 1;
+    wallvtx[2].y = wy2 >> 1;
+    wallvtx[2].z = l1c >> 1;
+    wallvtx[2].u = globalwallu2;
+    wallvtx[2].v = globalwallv3;
+    wallvtx[3].x = wx2 >> 1;
+    wallvtx[3].y = wy2 >> 1;
+    wallvtx[3].z = l20 >> 1;
+    wallvtx[3].u = globalwallu2;
+    wallvtx[3].v = globalwallv4;
+
+    int alpha;
+
+    if ((w.cstat & 128) == 0)
+        alpha = 255;
+    else
+    {
+        if (w.cstat & 512)
+            alpha = 64;
+        else
+            alpha = 128;
+    }
+
+    globalpal = w.pal;
+
+    int pn = w.overpicnum;
+
+    if (rt_tileinfo[tileid].picanm & 192)
+    {
+        int anim = animateoffs(w.overpicnum, 0);
+        tileid += anim;
+        pn += anim;
+    }
+
+    int method = DAMETH_N64;
+    pthtyp* pth = texcache_fetch(pn, 0, 0, method);
+    if (pth)
+        glBindTexture(GL_TEXTURE_2D, pth->glpic);
+
+    if (tileid >= 0)
+    {
+        auto& tinfo = rt_tileinfo[tileid];
+        int logx = RT_PicSizLog(tinfo.dimx);
+        int logy = RT_PicSizLog(tinfo.dimy);
+        rt_uvscale.x = 1.f / float(32 << logx);
+        rt_uvscale.y = 1.f / float(32 << logy);
+    }
+    else
+    {
+        rt_uvscale.x = 1.f;
+        rt_uvscale.y = 1.f;
+    }
+    glBegin(GL_QUADS);
+    for (int i = 0; i < 4; i++)
+    {
+        auto vtx = wallvtx[i];
+        glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, w.shade);
+        glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), alpha*(1.f/255.f));
+        glVertex3f(vtx.x, vtx.y, vtx.z);
+    }
+    glEnd();
+}
+
 void RT_DrawMasks(void)
 {
     RT_SetupDrawMask();
@@ -2222,7 +2483,7 @@ void RT_DrawMasks(void)
         auto &ms = maskdrawlist[i];
         if (ms.index & 32768)
         {
-            // TODO: maskwall
+            RT_DrawMaskWall(ms.index & ~32768);
         }
         else
         {
@@ -2338,3 +2599,132 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     RT_EnablePolymost();
 }
 
+int ms_x, ms_y, ms_angle;
+int ms_list[40], ms_listvtxptr[40];
+int ms_list_cnt, ms_vtx_cnt;
+int ms_dx[1024], ms_dy[1024];
+
+void RT_MS_Reset(void)
+{
+    ms_list_cnt = 0;
+    ms_vtx_cnt = 0;
+    memset(ms_list, -1, sizeof(ms_list));
+    memset(ms_listvtxptr, -1, sizeof(ms_listvtxptr));
+    memset(ms_dx, -1, sizeof(ms_dx));
+    memset(ms_dy, -1, sizeof(ms_dy));
+}
+
+static void RT_MS_Add_(int sectnum)
+{
+    for (int i = 0; i < 40; i++)
+    {
+        if (ms_list[i] == sectnum)
+            return;
+    }
+    int vc = 0;
+    rt_vertex_t *vptr;
+    if (sector[sectnum].ceilingstat&64)
+    {
+        vc += rt_sector[sectnum].ceilingvertexnum * 3;
+        vptr = &rt_sectvtx[rt_sector[sectnum].ceilingvertexptr];
+    }
+    if (sector[sectnum].floorstat&64)
+    {
+        vc += rt_sector[sectnum].floorvertexnum * 3;
+        vptr = &rt_sectvtx[rt_sector[sectnum].floorvertexptr];
+    }
+    if (ms_list_cnt >= 40)
+        return;
+    ms_list[ms_list_cnt] = sectnum;
+    ms_listvtxptr[ms_list_cnt] = ms_vtx_cnt;
+    ms_list_cnt++;
+
+    for (int i = 0; i < vc; i++)
+    {
+        if (ms_vtx_cnt >= 1024)
+            return;
+        ms_dx[ms_vtx_cnt] = vptr[i].x - ms_x;
+        ms_dy[ms_vtx_cnt] = vptr[i].y - ms_y;
+        ms_vtx_cnt++;
+    }
+}
+
+void RT_MS_Add(int sectnum, int x, int y)
+{
+    ms_x = x/2;
+    ms_y = y/2;
+
+    RT_MS_Add_(sectnum);
+
+    int lotag = sector[sectnum].lotag;
+    if (lotag)
+    {
+        int startwall = sector[sectnum].wallptr;
+        int endwall = startwall+sector[sectnum].wallnum;
+        for (int i = startwall; i < endwall; i++)
+        {
+            int nextsectnum = wall[i].nextsector;
+            if (nextsectnum != -1 && sector[nextsectnum].lotag == lotag)
+            {
+                RT_MS_Add_(nextsectnum);
+            }
+        }
+    }
+}
+
+static void RT_MS_Update_(int sectnum)
+{
+    int vc = 0;
+    rt_vertex_t *vptr;
+    if (sector[sectnum].ceilingstat&64)
+    {
+        vc += rt_sector[sectnum].ceilingvertexnum * 3;
+        vptr = &rt_sectvtx[rt_sector[sectnum].ceilingvertexptr];
+    }
+    if (sector[sectnum].floorstat&64)
+    {
+        vc += rt_sector[sectnum].floorvertexnum * 3;
+        vptr = &rt_sectvtx[rt_sector[sectnum].floorvertexptr];
+    }
+    for (int i = 0; i < 40; i++)
+    {
+        if (ms_list[i] == sectnum)
+        {
+            for (int j = 0; j < vc; j++)
+            {
+                vec2_t pivot = { 0, 0 };
+                vec2_t p = { ms_dx[ms_listvtxptr[i]+j]<<1, ms_dy[ms_listvtxptr[i]+j]<<1 };
+                vec2_t po;
+                rotatepoint(pivot, p, ms_angle & 2047, &po);
+
+                vptr[j].x = (ms_x + po.x) / 2;
+                vptr[j].y = (ms_y + po.y) / 2;
+            }
+            return;
+        }
+    }
+}
+
+void RT_MS_Update(int sectnum, int ang, int x, int y)
+{
+    ms_x = x;
+    ms_y = y;
+    ms_angle = ang;
+
+    RT_MS_Update_(sectnum);
+
+    int lotag = sector[sectnum].lotag;
+    if (lotag)
+    {
+        int startwall = sector[sectnum].wallptr;
+        int endwall = startwall+sector[sectnum].wallnum;
+        for (int i = startwall; i < endwall; i++)
+        {
+            int nextsectnum = wall[i].nextsector;
+            if (nextsectnum != -1 && sector[nextsectnum].lotag == lotag)
+            {
+                RT_MS_Update_(nextsectnum);
+            }
+        }
+    }
+}

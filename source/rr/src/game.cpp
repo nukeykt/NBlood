@@ -4349,6 +4349,9 @@ rr_badguy:
                     pSprite->owner = spriteNum;
                 }
 
+                if (REALITY)
+                    RT_MS_Add(sectNum, pSprite->x, pSprite->y);
+
                 {
                     int const startWall = sector[sectNum].wallptr;
                     int const endWall = startWall+sector[sectNum].wallnum;

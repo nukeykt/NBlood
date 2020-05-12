@@ -278,6 +278,8 @@ void RT_LoadBoard(int boardnum)
     rt_sky_color[1][1] = board->sky[4];
     rt_sky_color[0][2] = board->sky[2];
     rt_sky_color[1][2] = board->sky[5];
+
+    RT_MS_Reset();
     
     initspritelists();
 
