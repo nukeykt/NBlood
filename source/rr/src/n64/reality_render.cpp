@@ -26,6 +26,15 @@ static fix16_t globalang;
 
 static int globalpal, globalshade;
 
+const int MOVESECTNUM = 40;
+const int MOVESECTVTXNUM = 1024;
+
+int ms_x, ms_y, ms_angle;
+int ms_list[MOVESECTNUM], ms_listvtxptr[MOVESECTNUM];
+int ms_list_cnt, ms_vtx_cnt;
+int ms_dx[MOVESECTVTXNUM], ms_dy[MOVESECTVTXNUM];
+int ms_vx[MOVESECTVTXNUM], ms_vy[MOVESECTVTXNUM];
+
 extern void (*gloadtile_n64)(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t dashade, int32_t dameth, pthtyp* pth, int32_t doalloc);
 
 static bool RT_TileLoad(int16_t tilenum);
@@ -2504,25 +2513,28 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     }
 
     RT_DisablePolymost();
-#if 0
-    // Test code
-    int32_t method = 0;
-    pthtyp* testpth = texcache_fetch(26, 0, 0, method);
-    glBindTexture(GL_TEXTURE_2D, testpth->glpic);
-    glViewport(0, 0, xdim, ydim);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 320.f, 240.f, 0, -1.f, 1.f);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    glColor3f(1, 1, 1);
-    glBegin(GL_TRIANGLE_FAN);
-    glTexCoord2f(0, 0); glVertex2f(0, 0);
-    glTexCoord2f(1, 0); glVertex2f(96.f, 0);
-    glTexCoord2f(1, 1); glVertex2f(96.f, 40.f);
-    glTexCoord2f(0, 1); glVertex2f(0, 40.f);
-    glEnd();
-#endif
+
+    for (int i = 0; i < ms_list_cnt; i++)
+    {
+        int s = ms_list[i];
+        int vc = 0;
+        rt_vertex_t *vptr;
+        if (sector[s].ceilingstat&64)
+        {
+            vc += rt_sector[s].ceilingvertexnum * 3;
+            vptr = &rt_sectvtx[rt_sector[s].ceilingvertexptr];
+        }
+        if (sector[s].floorstat&64)
+        {
+            vc += rt_sector[s].floorvertexnum * 3;
+            vptr = &rt_sectvtx[rt_sector[s].floorvertexptr];
+        }
+        for (int j = 0; j < vc; j++)
+        {
+            vptr[j].x = ms_vx[ms_listvtxptr[i]+j];
+            vptr[j].y = ms_vy[ms_listvtxptr[i]+j];
+        }
+    }
     
     glDisable(GL_ALPHA_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -2599,11 +2611,6 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     RT_EnablePolymost();
 }
 
-int ms_x, ms_y, ms_angle;
-int ms_list[40], ms_listvtxptr[40];
-int ms_list_cnt, ms_vtx_cnt;
-int ms_dx[1024], ms_dy[1024];
-
 void RT_MS_Reset(void)
 {
     ms_list_cnt = 0;
@@ -2612,11 +2619,13 @@ void RT_MS_Reset(void)
     memset(ms_listvtxptr, -1, sizeof(ms_listvtxptr));
     memset(ms_dx, -1, sizeof(ms_dx));
     memset(ms_dy, -1, sizeof(ms_dy));
+    memset(ms_vx, -1, sizeof(ms_vx));
+    memset(ms_vy, -1, sizeof(ms_vy));
 }
 
 static void RT_MS_Add_(int sectnum)
 {
-    for (int i = 0; i < 40; i++)
+    for (int i = 0; i < MOVESECTNUM; i++)
     {
         if (ms_list[i] == sectnum)
             return;
@@ -2633,7 +2642,7 @@ static void RT_MS_Add_(int sectnum)
         vc += rt_sector[sectnum].floorvertexnum * 3;
         vptr = &rt_sectvtx[rt_sector[sectnum].floorvertexptr];
     }
-    if (ms_list_cnt >= 40)
+    if (ms_list_cnt >= MOVESECTNUM)
         return;
     ms_list[ms_list_cnt] = sectnum;
     ms_listvtxptr[ms_list_cnt] = ms_vtx_cnt;
@@ -2641,10 +2650,12 @@ static void RT_MS_Add_(int sectnum)
 
     for (int i = 0; i < vc; i++)
     {
-        if (ms_vtx_cnt >= 1024)
+        if (ms_vtx_cnt >= MOVESECTVTXNUM)
             return;
         ms_dx[ms_vtx_cnt] = vptr[i].x - ms_x;
         ms_dy[ms_vtx_cnt] = vptr[i].y - ms_y;
+        ms_vx[ms_vtx_cnt] = vptr[i].x;
+        ms_vy[ms_vtx_cnt] = vptr[i].y;
         ms_vtx_cnt++;
     }
 }
@@ -2686,7 +2697,7 @@ static void RT_MS_Update_(int sectnum)
         vc += rt_sector[sectnum].floorvertexnum * 3;
         vptr = &rt_sectvtx[rt_sector[sectnum].floorvertexptr];
     }
-    for (int i = 0; i < 40; i++)
+    for (int i = 0; i < MOVESECTNUM; i++)
     {
         if (ms_list[i] == sectnum)
         {
@@ -2697,8 +2708,8 @@ static void RT_MS_Update_(int sectnum)
                 vec2_t po;
                 rotatepoint(pivot, p, ms_angle & 2047, &po);
 
-                vptr[j].x = (ms_x + po.x) / 2;
-                vptr[j].y = (ms_y + po.y) / 2;
+                ms_vx[ms_listvtxptr[i]+j] = (ms_x + po.x) / 2;
+                ms_vy[ms_listvtxptr[i]+j] = (ms_y + po.y) / 2;
             }
             return;
         }
@@ -2724,6 +2735,50 @@ void RT_MS_Update(int sectnum, int ang, int x, int y)
             if (nextsectnum != -1 && sector[nextsectnum].lotag == lotag)
             {
                 RT_MS_Update_(nextsectnum);
+            }
+        }
+    }
+}
+
+static void RT_MS_SetInterpolation_(int sectnum)
+{
+    for (int i = 0; i < MOVESECTNUM; i++)
+    {
+        if (ms_list[i] == sectnum)
+        {
+            int vc = 0;
+            if (sector[sectnum].ceilingstat & 64)
+            {
+                vc += rt_sector[sectnum].ceilingvertexnum * 3;
+            }
+            if (sector[sectnum].floorstat & 64)
+            {
+                vc += rt_sector[sectnum].floorvertexnum * 3;
+            }
+            for (int j = 0; j < vc; j++)
+            {
+                G_SetInterpolation(&ms_vx[ms_listvtxptr[i]+j]);
+                G_SetInterpolation(&ms_vy[ms_listvtxptr[i]+j]);
+            }
+        }
+    }
+}
+
+void RT_MS_SetInterpolation(int sectnum)
+{
+    RT_MS_SetInterpolation_(sectnum);
+
+    int lotag = sector[sectnum].lotag;
+    if (lotag)
+    {
+        int startwall = sector[sectnum].wallptr;
+        int endwall = startwall+sector[sectnum].wallnum;
+        for (int i = startwall; i < endwall; i++)
+        {
+            int nextsectnum = wall[i].nextsector;
+            if (nextsectnum != -1 && sector[nextsectnum].lotag == lotag)
+            {
+                RT_MS_SetInterpolation_(nextsectnum);
             }
         }
     }

@@ -4482,7 +4482,11 @@ rr_badguy:
                 case SE_11_SWINGING_DOOR:
                 case SE_15_SLIDING_DOOR:
                 case SE_16_REACTOR:
-                case SE_26: Sect_SetInterpolation(sprite[newSprite].sectnum); break;
+                case SE_26:
+                    Sect_SetInterpolation(sprite[newSprite].sectnum);
+                    if (REALITY)
+                        RT_MS_SetInterpolation(sprite[newSprite].sectnum);
+                    break;
             }
 
             if (RRRA && sprite[newSprite].lotag >= 150 && sprite[newSprite].lotag <= 155)
