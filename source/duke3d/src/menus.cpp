@@ -97,22 +97,12 @@ static vec2_t mgametextcenter(int32_t x, int32_t y, char const * t, int32_t f = 
 #ifndef EDUKE32_STANDALONE
 static void shadowminitext(int32_t x, int32_t y, const char *t, int32_t p)
 {
-    int32_t f = 0;
-
-    if (!minitext_lowercase)
-        f |= TEXT_UPPERCASE;
-
-    G_ScreenTextShadow(1, 1, 4, MINIFONT, x, y, 65536, 0, 0, t, 0, p, g_textstat, 0, 4<<16, 8<<16, 1<<16, 0, f, 0, 0, xdim-1, ydim-1);
+    G_ScreenTextShadow(1, 1, 4, MF_Minifont.tilenum, x, y, MF_Minifont.zoom, 0, 0, t, 0, p, g_textstat, 0, MF_Minifont.emptychar.x, MF_Minifont.emptychar.y, MF_Minifont.between.x, MF_Minifont.between.y, MF_Minifont.textflags, 0, 0, xdim-1, ydim-1);
 }
 #endif
 static void creditsminitext(int32_t x, int32_t y, const char *t, int32_t p)
 {
-    int32_t f = TEXT_XCENTER;
-
-    if (!minitext_lowercase)
-        f |= TEXT_UPPERCASE;
-
-    G_ScreenTextShadow(1, 1, 4, MINIFONT, x, y, 65536, 0, 0, t, 0, p, g_textstat, 0, 4<<16, 8<<16, 1<<16, 0, f, 0, 0, xdim-1, ydim-1);
+    G_ScreenTextShadow(1, 1, 4, MF_Minifont.tilenum, x, y, MF_Minifont.zoom, 0, 0, t, 0, p, g_textstat, 0, MF_Minifont.emptychar.x, MF_Minifont.emptychar.y, MF_Minifont.between.x, MF_Minifont.between.y, MF_Minifont.textflags|TEXT_XCENTER, 0, 0, xdim-1, ydim-1);
 }
 
 #pragma pack(push,1)
