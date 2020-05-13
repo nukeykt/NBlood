@@ -154,14 +154,10 @@ void StartFadeIn();
 int DoFadeIn();
 void DoPassword(int nPassword);
 
-void InitSpiritHead();
-
 int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
 
 // TODO - relocate
 void StatusMessage(int messageTime, const char *fmt, ...);
-
-int DoSpiritHead();
 
 void UpdateScreenSize();
 
@@ -198,8 +194,6 @@ extern short nEnergyTowers;
 
 extern short nEnergyChan;
 
-extern short nSpiritSprite;
-
 extern short bInDemo;
 
 extern short nFreeze;
@@ -216,8 +210,6 @@ extern short levelnum;
 extern short nMapMode;
 
 extern short nButtonColor;
-
-extern short nHeadStage;
 
 extern short lastfps;
 

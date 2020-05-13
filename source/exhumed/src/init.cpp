@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "switch.h"
 #include "object.h"
 #include "aistuff.h"
+#include "ramses.h"
 #include "player.h"
 #include "mummy.h"
 #include "move.h"

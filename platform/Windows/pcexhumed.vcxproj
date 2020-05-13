@@ -237,6 +237,7 @@
     <ClCompile Include="..\..\source\exhumed\src\player.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\queen.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\ra.cpp" />
+    <ClCompile Include="..\..\source\exhumed\src\ramses.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\random.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\rat.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\record.cpp" />
@@ -300,6 +301,7 @@
     <ClInclude Include="..\..\source\exhumed\src\player.h" />
     <ClInclude Include="..\..\source\exhumed\src\queen.h" />
     <ClInclude Include="..\..\source\exhumed\src\ra.h" />
+    <ClInclude Include="..\..\source\exhumed\src\ramses.h" />
     <ClInclude Include="..\..\source\exhumed\src\random.h" />
     <ClInclude Include="..\..\source\exhumed\src\rat.h" />
     <ClInclude Include="..\..\source\exhumed\src\record.h" />

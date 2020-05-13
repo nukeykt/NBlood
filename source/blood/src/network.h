@@ -74,7 +74,7 @@ struct PKT_STARTGAME {
     char gameType, difficulty, monsterSettings, weaponSettings, itemSettings, respawnSettings;
     char episodeId, levelId;
     int unk;
-    char userMap, userMapName[13];
+    char userMap, userMapName[BMAX_PATH];
     int weaponsV10x;
     bool bFriendlyFire;
     bool bKeepKeysOnRespawn;

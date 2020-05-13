@@ -3444,7 +3444,7 @@ void P_GetInput(int playerNum)
     else
     {
         input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
-        input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
+        input.q16avel += fix16_from_int(info.dyaw * analogTurnAmount / (analogExtent >> 1));
     }
 
     if (g_myAimMode)
@@ -3737,7 +3737,7 @@ void P_GetInputMotorcycle(int playerNum)
     input_t input {};
 
     input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
-    input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
+    input.q16avel += fix16_from_int(info.dyaw * analogTurnAmount / (analogExtent >> 1));
 
     input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
 
@@ -4035,7 +4035,7 @@ void P_GetInputBoat(int playerNum)
     input_t input {};
 
     input.q16avel = fix16_div(fix16_from_int(info.mousex), F16(32));
-    input.q16avel += fix16_from_int(info.dyaw) / analogExtent * (analogTurnAmount << 1);
+    input.q16avel += fix16_from_int(info.dyaw * analogTurnAmount / (analogExtent >> 1));
 
     input.q16horz = fix16_div(fix16_from_int(info.mousey), F16(64));
 

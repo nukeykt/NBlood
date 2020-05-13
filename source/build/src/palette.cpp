@@ -753,7 +753,7 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
     }
 
     videoSetGamma();
-    j = !gammabrightness ? curbrightness : 0;
+    j = (!gammabrightness || ((flags & 32) != 0 && videoGetRenderMode() != REND_POLYMOST))?curbrightness:0;
 
     for (i=0; i<256; i++)
     {
@@ -769,6 +769,11 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
         curpalettefaded[i].r = britable[j][curpalette[i].r];
         curpalettefaded[i].f = 0;
     }
+
+    if ((flags & 32) != 0 && videoGetRenderMode() == REND_POLYMOST)
+        r_brightnesshack = curbrightness;
+    else
+        r_brightnesshack = 0;
 
     if ((flags&16) && palfadedelta)  // keep the fade
         paletteSetFade(palfadedelta>>2);

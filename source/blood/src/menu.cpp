@@ -164,7 +164,7 @@ const char *pzShowWeaponStrings[] = {
     "VOXEL"
 };
 
-char zUserMapName[16];
+char zUserMapName[BMAX_PATH];
 const char *zEpisodeNames[6];
 const char *zLevelNames[6][16];
 
@@ -306,6 +306,11 @@ CGameMenuItemZEditBitmap itemLoadGame9(NULL, 3, 20, 140, 320, strRestoreGameStri
 CGameMenuItemZEditBitmap itemLoadGame10(NULL, 3, 20, 150, 320, strRestoreGameStrings[9], 16, 1, LoadGame, 9);
 CGameMenuItemBitmapLS itemLoadGamePic(NULL, 3, 0, 0, 2518);
 
+CGameMenu menuMultiUserMaps;
+
+CGameMenuItemTitle itemNetStartUserMapTitle("USER MAP", 1, 160, 20, 2038);
+CGameMenuFileSelect menuMultiUserMap("", 3, 0, 0, 0, "./", "*.map", zUserMapName);
+
 CGameMenuItemTitle itemNetStartTitle("MULTIPLAYER", 1, 160, 20, 2038);
 CGameMenuItemZCycle itemNetStart1("GAME:", 3, 66, 60, 180, 0, 0, zNetGameTypes, 3, 0);
 CGameMenuItemZCycle itemNetStart2("EPISODE:", 3, 66, 70, 180, 0, SetupNetLevels, NULL, 0, 0);
@@ -317,7 +322,7 @@ CGameMenuItemZCycle itemNetStart7("ITEMS:", 3, 66, 120, 180, 0, 0, zItemStrings,
 CGameMenuItemZBool itemNetStart8("FRIENDLY FIRE:", 3, 66, 130, 180, true, 0, NULL, NULL);
 CGameMenuItemZBool itemNetStart9("KEEP KEYS ON RESPAWN:", 3, 66, 140, 180, false, 0, NULL, NULL);
 CGameMenuItemZBool itemNetStart10("V1.0x WEAPONS BALANCE:", 3, 66, 150, 180, false, 0, NULL, NULL);
-CGameMenuItemZEdit itemNetStart11("USER MAP:", 3, 66, 160, 180, zUserMapName, 13, 0, NULL, 0);
+CGameMenuItemChain itemNetStart11("USER MAP", 3, 66, 160, 180, 0, &menuMultiUserMaps, 0, NULL, 0);
 CGameMenuItemChain itemNetStart12("START GAME", 1, 66, 175, 280, 0, 0, -1, StartNetGame, 0);
 
 CGameMenuItemText itemLoadingText("LOADING...", 1, 160, 100, 1);
@@ -951,6 +956,8 @@ void SetupNetStartMenu(void)
     menuNetStart.Add(&itemNetStart10, false);
     menuNetStart.Add(&itemNetStart11, false);
     menuNetStart.Add(&itemNetStart12, false);
+    menuMultiUserMaps.Add(&itemNetStartUserMapTitle, true);
+    menuMultiUserMaps.Add(&menuMultiUserMap, true);
     itemNetStart1.SetTextIndex(1);
     itemNetStart4.SetTextIndex(2);
     itemNetStart5.SetTextIndex(0);
@@ -2247,9 +2254,7 @@ void StartNetGame(CGameMenuItemChain *pItem)
     gPacketStartGame.weaponsV10x = itemNetStart10.at20;
     ////
     gPacketStartGame.unk = 0;
-    gPacketStartGame.userMapName[0] = 0;
-    strncpy(gPacketStartGame.userMapName, itemNetStart11.at20, 13);
-    gPacketStartGame.userMapName[12] = 0;
+    Bstrncpy(gPacketStartGame.userMapName, zUserMapName, Bstrlen(zUserMapName));
     gPacketStartGame.userMap = gPacketStartGame.userMapName[0] != 0;
 
     netBroadcastNewGame();

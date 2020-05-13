@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "move.h"
 #include "init.h"
 #include "lighting.h"
+#include "ramses.h"
 #include "bubbles.h"
 #include "object.h"
 #include "player.h"

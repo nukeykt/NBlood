@@ -702,8 +702,8 @@ void StartSwirly(int nActiveSound)
 
     pASound->hFX = FX_Play(SoundBuf[StaticSound[kSoundMana1]], SoundLen[StaticSound[kSoundMana1]], -1, 0, 0, max(nLeft, nRight), nLeft, nRight, 0, fix16_one, nActiveSound);
 
-    if (pASound->hFX > -1)
-        FX_SetFrequency(pASound->hFX, nPitch);
+//    if (pASound->hFX >= 0)
+//y        FX_SetFrequency(pASound->hFX, nPitch);
 
 #if 0
     AIL_set_sample_volume(pASound->f_e, nVolume);
@@ -741,7 +741,8 @@ void UpdateSwirlies()
             int nLeft, nRight;
             int nPan = 64+(Sin((int)totalclock<<(4+i))>>8);
             CalcASSPan(nPan, pASound->f_4, &nLeft, &nRight);
-            MV_SetPan(pASound->hFX, max(nLeft, nRight), nLeft, nRight);
+            FX_SetPan(pASound->hFX, max(nLeft, nRight), nLeft, nRight);
+            FX_SetFrequency(pASound->hFX, pASound->f_16);
         }
         //AIL_set_sample_pan(pASound->f_e, 64+(Sin((int)totalclock<<(4+i))>>8));
     }

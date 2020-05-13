@@ -526,6 +526,66 @@ ifeq ($(PLATFORM),DARWIN)
 endif
 
 
+#### TekWar
+
+tekwar := tekwar
+
+tekwar_root := $(source)/$(tekwar)
+tekwar_src := $(tekwar_root)/src
+tekwar_rsrc := $(tekwar_root)/rsrc
+tekwar_obj := $(obj)/$(tekwar)
+
+tekwar_cflags := -I$(tekwar_src)
+
+tekwar_game := etekwar
+tekwar_editor := etekwar-editor
+
+tekwar_game_proper := ETekWar
+tekwar_editor_proper := ETekWar Editor
+
+tekwar_game_deps := libsmackerdec
+
+tekwar_game_objs := \
+    b5compat.cpp \
+    config.cpp \
+    tekcdr.cpp \
+    tekchng.cpp \
+    tekgame.cpp \
+    tekgun.cpp \
+    tekldsv.cpp \
+    tekmap.cpp \
+    tekmsc.cpp \
+    tekprep.cpp \
+    teksmk.cpp \
+    teksnd.cpp \
+    tekspr.cpp \
+    tekstat.cpp \
+    tektag.cpp \
+    tektxt.cpp \
+    tekver.cpp \
+
+tekwar_editor_objs := \
+    bstub.cpp \
+
+tekwar_game_rsrc_objs :=
+tekwar_editor_rsrc_objs :=
+tekwar_game_gen_objs :=
+tekwar_editor_rsrc_objs :=
+
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
+    tekwar_game_objs += startgtk.game.cpp
+endif
+ifeq ($(PLATFORM),WINDOWS)
+    tekwar_game_objs += startwin.game.cpp
+    tekwar_game_rsrc_objs += gameres.rc
+endif
+ifeq ($(PLATFORM),DARWIN)
+    ifeq ($(STARTUP_WINDOW),1)
+        tekwar_game_objs += StartupWinController.game.mm
+    endif
+endif
+
+
 #### Duke Nukem 3D
 
 duke3d := duke3d
@@ -1201,6 +1261,7 @@ exhumed_game_objs := \
     player.cpp \
     queen.cpp \
     ra.cpp \
+    ramses.cpp \
     random.cpp \
     rat.cpp \
     record.cpp \
@@ -1248,6 +1309,67 @@ ifeq ($(PLATFORM),WINDOWS)
 endif
 
 
+#### Witchaven
+
+witchaven := witchaven
+
+witchaven_root := $(source)/$(witchaven)
+witchaven_src := $(witchaven_root)/src
+witchaven_rsrc := $(witchaven_root)/rsrc
+witchaven_obj := $(obj)/$(witchaven)
+
+witchaven_cflags := -I$(witchaven_src)
+
+witchaven_game_deps := duke3d_common_midi audiolib mact
+witchaven_editor_deps := audiolib
+
+witchaven_game := ewitchaven
+witchaven_editor := ewitchaven_editor
+
+witchaven_game_proper := EWitchaven
+witchaven_editor_proper := EWitchaven_editor
+
+witchaven_game_objs := \
+    animation.cpp \
+    common.cpp \
+    config.cpp \
+    effects.cpp \
+    enginesubs.cpp \
+    grpscan.cpp \
+    input.cpp \
+    menu.cpp \
+    network.cpp \
+    objects.cpp \
+    osdcmds.cpp \
+    player.cpp \
+    sound.cpp \
+    tags.cpp \
+    view.cpp \
+    witchaven.cpp \
+
+witchaven_editor_objs :=
+
+witchaven_game_rsrc_objs :=
+witchaven_editor_rsrc_objs :=
+witchaven_game_gen_objs :=
+witchaven_editor_gen_objs :=
+
+ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
+    witchaven_game_objs += startgtk.game.cpp
+    witchaven_game_gen_objs += game_banner.c
+    witchaven_editor_gen_objs += build_banner.c
+endif
+ifeq ($(RENDERTYPE),SDL)
+    witchaven_game_rsrc_objs += game_icon.c
+    witchaven_editor_rsrc_objs += game_icon.c
+endif
+ifeq ($(PLATFORM),WINDOWS)
+    witchaven_game_objs += startwin.game.cpp
+    witchaven_game_rsrc_objs += gameres.rc
+    witchaven_editor_rsrc_objs += buildres.rc
+endif
+
+
 #### Final setup
 
 COMPILERFLAGS += \
@@ -1273,6 +1395,7 @@ games := \
     rr \
     sw \
     exhumed \
+    witchaven \
 
 libraries := \
     audiolib \
