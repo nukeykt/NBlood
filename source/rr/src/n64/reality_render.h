@@ -12,8 +12,17 @@ void RT_LoadTiles(void);
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio);
 void RT_GLInit(void);
 
+void RT_DisablePolymost();
+void RT_EnablePolymost();
+
 void RT_MS_Reset(void);
 void RT_MS_Add(int sectnum, int x, int y);
 void RT_MS_Update(int sectnum, int ang, int x, int y);
 void RT_MS_SetInterpolation(int sectnum);
+void RT_AdjustCeilingPanning(int sectnum, int x, int y);
+void RT_AdjustFloorPanning(int sectnum, int x, int y);
+void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4);
+void RT_RotateSpriteSetShadePal(int ss, int shade, int pal);
+void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation);
+void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientation, int color);
 

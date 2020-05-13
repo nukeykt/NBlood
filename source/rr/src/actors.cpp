@@ -8549,8 +8549,14 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 pSector->floorxpanning -= vect.x >> 3;
                 pSector->floorypanning -= vect.y >> 3;
 
+                if (REALITY)
+                    RT_AdjustFloorPanning(pSprite->sectnum, (-vect.x) >> 3, (-vect.y) >> 3);
+
                 pSector->ceilingxpanning -= vect.x >> 3;
                 pSector->ceilingypanning -= vect.y >> 3;
+
+                if (REALITY)
+                    RT_AdjustCeilingPanning(pSprite->sectnum, (-vect.x) >> 3, (-vect.y) >> 3);
             }
 
             break;
@@ -8685,7 +8691,11 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 }
             }
             if (!RRRA || spriteLotag != 156)
+            {
                 pSector->floorxpanning += SP(spriteNum)>>7;
+                if (REALITY)
+                    RT_AdjustFloorPanning(pSprite->sectnum, SP(spriteNum)>>7, 0);
+            }
 
             break;
         }

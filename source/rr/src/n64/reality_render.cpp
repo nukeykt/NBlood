@@ -653,8 +653,8 @@ void RT_DisplayTileWorld(float x, float y, float sx, float sy, int16_t picnum, i
     }
     else
     {
-        v1 = 0.f;
-        v2 = 1.f;
+        v1 = 1.f;
+        v2 = 0.f;
     }
 
     if (!waloff[picnum])
@@ -696,8 +696,9 @@ void setfxcolor(int a1, int a2, int a3, int a4, int a5, int a6)
     rt_fxtile = 1;
     glEnable(GL_BLEND);
     glDisable(GL_ALPHA_TEST);
-    RT_SetColor1(a1, a2, a3, 255);
-    RT_SetColor2(a4, a5, a6, 255);
+    glColor4f(1.f, 1.f, 1.f, 1.f);
+    RT_SetColor1(a4, a5, a6, 255);
+    RT_SetColor2(a1, a2, a3, 255);
     RT_SetTexComb(1);
 }
 
@@ -714,7 +715,7 @@ void RT_DisplaySky(void)
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     rt_globaldepth = 0.f;
-    setfxcolor(rt_sky_color[0][0], rt_sky_color[0][1], rt_sky_color[0][2], rt_sky_color[1][0], rt_sky_color[1][1], rt_sky_color[1][2]);
+    setfxcolor(rt_sky_color[1][0], rt_sky_color[1][1], rt_sky_color[1][2], rt_sky_color[0][0], rt_sky_color[0][1], rt_sky_color[0][2]);
     glDisable(GL_BLEND);
     RT_DisplayTileWorld(x_vt, y_vt + rt_globalhoriz - 100.f, 52.f, 103.f, 3976, 0);
     glDepthMask(GL_TRUE);
@@ -772,6 +773,9 @@ void RT_SetTexture(int tilenum)
 {
     if (rt_globalpicnum == tilenum)
         return;
+
+    if (!waloff[tilenum])
+        tileLoad(tilenum);
     
     rt_globalpicnum = tilenum;
 
@@ -1740,6 +1744,9 @@ void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
     {
         sz2 = sz + v11;
     }
+
+    if (!waloff[rt_tspritepicnum])
+        tileLoad(rt_tspritepicnum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
     pthtyp *pth = texcache_fetch(rt_tspritepicnum, 0, 0, method);
@@ -1819,6 +1826,9 @@ void RT_DrawSpriteFloor(void)
     }
     else
         z = (-rt_tspriteptr->z)>>5;
+
+    if (!waloff[rt_tspritepicnum])
+        tileLoad(rt_tspritepicnum);
     
     int method = DAMETH_CLAMPED | DAMETH_N64 | (rt_fxtile ? DAMETH_N64_INTENSIVITY : 0);
     pthtyp *pth = texcache_fetch(rt_tspritepicnum, 0, 0, method);
@@ -2410,6 +2420,9 @@ void RT_DrawMaskWall(int wallnum)
         pn += anim;
     }
 
+    if (!waloff[pn])
+        tileLoad(pn);
+
     int method = DAMETH_N64;
     pthtyp* pth = texcache_fetch(pn, 0, 0, method);
     if (pth)
@@ -2782,4 +2795,331 @@ void RT_MS_SetInterpolation(int sectnum)
             }
         }
     }
+}
+
+void RT_AdjustCeilingPanning(int sectnum, int x, int y)
+{
+    int u[3], v[3];
+    int vc = rt_sector[sectnum].ceilingvertexnum;
+    rt_vertex_t *vptr = &rt_sectvtx[rt_sector[sectnum].ceilingvertexptr];
+    for (int i = 0; i < vc; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            u[j] = vptr[3*i+j].u + (x<<3);
+            v[j] = vptr[3*i+j].v + (y<<3);
+        }
+        while (u[0] < 32760 || u[1] < 32760 || u[2] < 32760)
+        {
+            u[0] += 4096;
+            u[1] += 4096;
+            u[2] += 4096;
+        }
+        while (u[0] > 32760 || u[1] > 32760 || u[2] > 32760)
+        {
+            u[0] -= 4096;
+            u[1] -= 4096;
+            u[2] -= 4096;
+        }
+        while (v[0] < 32760 || v[1] < 32760 || v[2] < 32760)
+        {
+            v[0] += 4096;
+            v[1] += 4096;
+            v[2] += 4096;
+        }
+        while (v[0] > 32760 || v[1] > 32760 || v[2] > 32760)
+        {
+            v[0] -= 4096;
+            v[1] -= 4096;
+            v[2] -= 4096;
+        }
+        for (int j = 0; j < 3; j++)
+        {
+            vptr[3*i+j].u = u[j];
+            vptr[3*i+j].v = v[j];
+        }
+    }
+}
+
+void RT_AdjustFloorPanning(int sectnum, int x, int y)
+{
+    int u[3], v[3];
+    int vc = rt_sector[sectnum].floorvertexnum;
+    rt_vertex_t *vptr = &rt_sectvtx[rt_sector[sectnum].floorvertexptr];
+    for (int i = 0; i < vc; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            u[j] = vptr[3*i+j].u + (x<<3);
+            v[j] = vptr[3*i+j].v + (y<<3);
+        }
+        while (u[0] < 32760 || u[1] < 32760 || u[2] < 32760)
+        {
+            u[0] += 4096;
+            u[1] += 4096;
+            u[2] += 4096;
+        }
+        while (u[0] > 32760 || u[1] > 32760 || u[2] > 32760)
+        {
+            u[0] -= 4096;
+            u[1] -= 4096;
+            u[2] -= 4096;
+        }
+        while (v[0] < 32760 || v[1] < 32760 || v[2] < 32760)
+        {
+            v[0] += 4096;
+            v[1] += 4096;
+            v[2] += 4096;
+        }
+        while (v[0] > 32760 || v[1] > 32760 || v[2] > 32760)
+        {
+            v[0] -= 4096;
+            v[1] -= 4096;
+            v[2] -= 4096;
+        }
+        for (int j = 0; j < 3; j++)
+        {
+            vptr[3*i+j].u = u[j];
+            vptr[3*i+j].v = v[j];
+        }
+    }
+}
+
+void RT_RotateSpriteSetColor(int a1, int a2, int a3, int a4)
+{
+    if (a1 < 0)
+        a1 = 0;
+    if (a1 > 255)
+        a1 = 255;
+    if (a2 < 0)
+        a2 = 0;
+    if (a2 > 255)
+        a2 = 255;
+    if (a3 < 0)
+        a3 = 0;
+    if (a3 > 255)
+        a3 = 255;
+    if (a4 > 255)
+    {
+        // TODO: TEX_EDGE mode (a4 == 666)
+        RT_SetTexComb(1);
+        RT_SetColor1(a1, a2, a3, 255);
+        RT_SetColor2(a1, a2, a3, 255);
+    }
+    else
+    {
+        RT_SetTexComb(0);
+        glColor4f(a1 * (1.f / 255.f), a2 * (1.f / 255.f), a3 * (1.f / 255.f), a4 * (1.f / 255.f));
+    }
+}
+
+void RT_RotateSpriteSetShadePal(int ss, int shade, int pal)
+{
+    shade = (28 - shade) * 9;
+    if (shade > 256)
+        shade = 256;
+    else if (shade < 0)
+        shade = 0;
+
+    globalcolorred = shade;
+    globalcolorblue = shade;
+    globalcolorgreen = shade;
+
+    if (pal == 1)
+    {
+        globalcolorred = shade / 2;
+        globalcolorblue = shade;
+        globalcolorgreen = shade / 2;
+    }
+    else if (pal == 2)
+    {
+        globalcolorred = shade;
+        globalcolorblue = shade / 2;
+        globalcolorgreen = shade / 2;
+    }
+    else if (pal == 6 || pal == 8)
+    {
+        globalcolorred = shade / 2;
+        globalcolorblue = shade / 2;
+        globalcolorgreen = shade;
+    }
+
+    if (g_player[ss].ps->heat_on && g_player[ss].ps->newowner == -1)
+    {
+        globalcolorgreen = (globalcolorgreen * 384) >> 8;
+        globalcolorred = (globalcolorred * 171) >> 8;
+        globalcolorblue = (globalcolorblue * 384) >> 8;
+        shade = (shade + 512) / 3;
+    }
+    globalcolorred = (shade * globalcolorred) / 256;
+    globalcolorgreen = (shade * globalcolorgreen) / 256;
+    globalcolorblue = (shade * globalcolorblue) / 256;
+    if (g_player[ss].ps->pals.f > 0 && g_player[ss].ps->loogcnt == 0)
+    {
+        globalcolorred += ((g_player[ss].ps->pals.r * 4 - globalcolorred) * g_player[ss].ps->pals.f) / 64;
+        globalcolorgreen += ((g_player[ss].ps->pals.g * 4 - globalcolorgreen) * g_player[ss].ps->pals.f) / 64;
+        globalcolorblue += ((g_player[ss].ps->pals.b * 4 - globalcolorblue) * g_player[ss].ps->pals.f) / 64;
+    }
+    if (globalcolorred < 0)
+        globalcolorred = 0;
+    if (globalcolorred > 255)
+        globalcolorred = 255;
+    if (globalcolorgreen < 0)
+        globalcolorgreen = 0;
+    if (globalcolorgreen > 255)
+        globalcolorgreen = 255;
+    if (globalcolorblue < 0)
+        globalcolorblue = 0;
+    if (globalcolorblue > 255)
+        globalcolorblue = 255;
+    RT_SetTexComb(0);
+    glColor4f(globalcolorred * (1.f / 255.f), globalcolorgreen * (1.f / 255.f), globalcolorblue * (1.f / 255.f), 1.f);
+}
+
+void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orientation)
+{
+    int otilenum = tilenum;
+    int xflip = (orientation & 4) != 0;
+    int yflip = (orientation & 8) != 0;
+    int tileid = rt_tilemap[tilenum];
+    if (tileid == -1)
+        return;
+
+    if (rt_tileinfo[tileid].picanm&192)
+    {
+        int anim = animateoffs(tilenum, 0);
+        tilenum += anim;
+        tileid += anim;
+    }
+    if (tileid == 1)
+        return;
+
+    sx *= vp_scale;
+    sy *= vp_scale;
+
+    float xoff = picanm[tilenum].xofs;
+    float yoff = picanm[tilenum].yofs;
+
+    if (rt_tileinfo[tileid].sizy & 1)
+        yoff -= 1.f;
+
+    xoff = (xoff * sx) / 100.f;
+    yoff = (yoff * sy) / 100.f;
+    if (xflip)
+        xoff = -xoff;
+    if (yflip)
+        yoff = -yoff;
+
+    x -= xoff;
+    y -= yoff;
+
+    float sizx = tilesiz[tilenum].x * sx / 200.f;
+    float sizy = tilesiz[tilenum].y * sy / 200.f;
+
+    if (sizx < 1.f && sizy < 1.f)
+        return;
+
+    float x1 = x - sizx;
+    float x2 = x + sizx;
+    float y1 = y - sizy;
+    float y2 = y + sizy;
+
+    float u1, u2, v1, v2;
+    if (!xflip)
+    {
+        u1 = 0.f;
+        u2 = 1.f;
+    }
+    else
+    {
+        u1 = 1.f;
+        u2 = 0.f;
+    }
+
+    if (!yflip)
+    {
+        v1 = 0.f;
+        v2 = 1.f;
+    }
+    else
+    {
+        v1 = 1.f;
+        v2 = 0.f;
+    }
+
+    int pal = 0;
+    switch (otilenum)
+    {
+    case 0xe09:
+        pal = 1;
+        break;
+    case 0xe5d:
+        pal = 10;
+        break;
+    case 0xe68:
+    case 0xe69:
+        pal = 11;
+        break;
+    case 0xe6b:
+        pal = 2;
+        break;
+    case 0xe6c:
+        pal = 3;
+        break;
+    case 0xe6d:
+        pal = 4;
+        break;
+    case 0xe6e:
+        pal = 5;
+        break;
+    case 0xe6f:
+        pal = 6;
+        break;
+    case 0xe70:
+        pal = 7;
+        break;
+    case 0xe71:
+        pal = 8;
+        break;
+    case 0xe72:
+        pal = 9;
+        break;
+    }
+
+    if (!waloff[tilenum])
+        tileLoad(tilenum);
+    
+    int method = DAMETH_CLAMPED | DAMETH_N64;
+    pthtyp *pth = texcache_fetch(tilenum, pal, 0, method);
+
+    if (!pth)
+        return;
+
+    glDisable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, pth->glpic);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, 320.f, 240.f, 0, -1.f, 1.f);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u1, v1); glVertex2f(x1, y1);
+    glTexCoord2f(u2, v1); glVertex2f(x2, y1);
+    glTexCoord2f(u2, v2); glVertex2f(x2, y2);
+    glTexCoord2f(u1, v2); glVertex2f(x1, y2);
+    glEnd();
+}
+
+void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientation, int color)
+{
+    sx *= 3.f;
+    sy *= 3.f;
+    if (picnum == 0xf01)
+        setfxcolor(15, 255, (g_player[screenpeek].ps->hbomb_hold_delay * 255) / 99, 115, 0, 170);
+    else
+        setfxcolor(colortable[color][0].x, colortable[color][0].y, colortable[color][0].z,
+            colortable[color][1].x, colortable[color][1].y, colortable[color][1].z);
+    glDisable(GL_DEPTH_TEST);
+    RT_DisplayTileWorld(x, y, sx, sy, picnum, orientation);
+    unsetfxcolor();
 }

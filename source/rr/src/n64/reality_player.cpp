@@ -63,6 +63,13 @@ static int32_t g_dts_yadd;
 static void RT_DrawTileScaled(int drawX, int drawY, int tileNum, int drawShade, int drawBits, int drawPal,
     int drawScale = 65536, int angleOffset = 0)
 {
+    if (drawPal == 255)
+        RT_RotateSpriteSetColor(255, 255, 255, 666);
+    else
+        RT_RotateSpriteSetShadePal(screenpeek, drawShade, drawPal);
+
+    RT_RotateSprite(drawX, drawY, 100.f, 100.f, tileNum, drawBits);
+#if 0
     int32_t wx[2] = { windowxy1.x, windowxy2.x };
     int32_t wy[2] = { windowxy1.y, windowxy2.y };
 
@@ -118,6 +125,7 @@ static void RT_DrawTileScaled(int drawX, int drawY, int tileNum, int drawShade, 
                  weapsc((drawY<<16) + g_dts_yadd) + ((200<<16)-weapsc(200<<16)) + drawYOffset,
                  weapsc(drawScale),drawAng,tileNum,drawShade,drawPal,(2|drawBits),
                  wx[0],wy[0], wx[1],wy[1]);
+#endif
 }
 
 static inline void RT_DrawWeaponTileWithID(int uniqueID, int weaponX, int weaponY, int weaponTile, int weaponShade,
@@ -284,7 +292,7 @@ RPG2 = 14
 void RT_P_DisplayWeapon(void)
 {
     DukePlayer_t *const  pPlayer     = g_player[screenpeek].ps;
-    const uint8_t *const weaponFrame = &pPlayer->kickback_pic;
+    const int16_t *const weaponFrame = &pPlayer->kickback_pic;
 
     int currentWeapon, quickKickFrame;
     int v2;
@@ -296,6 +304,8 @@ void RT_P_DisplayWeapon(void)
     if (pPlayer->newowner >= 0 || ud.camerasprite >= 0 || pPlayer->over_shoulder_on > 0
         || (sprite[pPlayer->i].pal != 1 && sprite[pPlayer->i].extra <= 0))
         return;
+
+    RT_DisablePolymost();
 
     int weaponX       = (160) - 90;
     int weaponY       = klabs(pPlayer->look_ang) / 9;
@@ -532,7 +542,10 @@ void RT_P_DisplayWeapon(void)
 
                 if (doAnim)
                     weaponX += (RT_FakeKRand()&3);
-                // TODO: flash sprite
+                
+                float siz = ((RT_FakeKRand() & 255) * (1.f/256.f) + 0.7);
+
+                RT_DrawTileFlash(weaponX + 215 - halfLookAng, weaponY + 205 - weaponYOffset, 0xf4f, siz, siz, 0, 12);
             }
 
             RT_DrawWeaponTileWithID(currentWeapon, weaponX + 235 - (pPlayer->look_ang >> 1), weaponY + 265 - weaponYOffset,
@@ -546,7 +559,10 @@ void RT_P_DisplayWeapon(void)
 
                 if (doAnim)
                     weaponX -= (RT_FakeKRand()&3);
-                // TODO: flash sprite
+                
+                float siz = ((RT_FakeKRand() & 255) * (1.f/256.f) + 0.7);
+
+                RT_DrawTileFlash(-weaponX + 105 - halfLookAng, weaponY + 205 - weaponYOffset, 0xf4f, siz, siz, 4, 12);
             }
             RT_DrawWeaponTileWithID(currentWeapon<<1, -weaponX + 85 - (pPlayer->look_ang >> 1), weaponY + 265 - weaponYOffset,
                                     CHAINGUN, weaponShade, weaponBits|4, weaponPal);
@@ -562,8 +578,13 @@ void RT_P_DisplayWeapon(void)
 
                 if ((*weaponFrame) == 2)
                     pistolOffset += 6;
+                
+                if (pistolFrames[*weaponFrame > 2 ? 0 : *weaponFrame])
+                {
+                    float siz = ((RT_FakeKRand() & 127) * (1.f/256.f) + 0.75);
 
-                // TODO: Flash sprite
+                    RT_DrawTileFlash(pistolOffset + 30 - halfLookAng, weaponY + 205 - weaponYOffset, 0xf4f, siz, siz, 0, 1);
+                }
 
                 RT_DrawWeaponTileWithID(currentWeapon, (pistolOffset - (pPlayer->look_ang >> 1))+115, (weaponY + 285 - weaponYOffset),
                                         FIRSTGUN + pistolFrames[*weaponFrame > 2 ? 0 : *weaponFrame], weaponShade, 0,
@@ -683,7 +704,11 @@ void RT_P_DisplayWeapon(void)
                     weaponX += RT_FakeKRand() & 3;
                     weaponY += RT_FakeKRand() & 3;
                 }
-                // TODO: flash sprite
+                
+                float sizx = ((RT_FakeKRand() & 255) * (1.f/256.f) + 1.5f);
+                float sizy = ((RT_FakeKRand() & 255) * (1.f/256.f) + 1.5f);
+
+                RT_DrawTileFlash(weaponX + 175 - halfLookAng, weaponY + 215 - weaponYOffset, 0xf01, sizx, sizy, RT_FakeKRand()&255, 4);
             }
             RT_DrawWeaponTileWithID(currentWeapon, weaponX + 155 - (pPlayer->look_ang >> 1), weaponY + 290 - weaponYOffset,
                                     FREEZE, weaponShade, weaponBits, weaponPal);
@@ -714,6 +739,8 @@ void RT_P_DisplayWeapon(void)
 
 enddisplayweapon:
     RT_P_DisplaySpit();
+
+    RT_EnablePolymost();
 }
 
 static int lastvisinc;
@@ -721,7 +748,7 @@ static int lastvisinc;
 void RT_P_ProcessWeapon(int playerNum)
 {
     DukePlayer_t *const pPlayer      = g_player[playerNum].ps;
-    uint8_t *const      weaponFrame  = &pPlayer->kickback_pic;
+    int16_t *const      weaponFrame  = &pPlayer->kickback_pic;
     int const           playerShrunk = (sprite[pPlayer->i].yrepeat < 32);
     uint32_t            playerBits   = g_player[playerNum].inputBits->bits;
     int const           sectorLotag  = sector[pPlayer->cursectnum].lotag;
@@ -1204,7 +1231,7 @@ void RT_P_ProcessWeapon(int playerNum)
                 if (!pPlayer->dn_388)
                     pPlayer->dn_388 = A_PlaySound(265, pPlayer->i);
             }
-            else
+            else if (*weaponFrame > 3)
             {
                 int dmg = pPlayer->hbomb_hold_delay / 3;
                 if (dmg < 1)

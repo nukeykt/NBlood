@@ -211,7 +211,7 @@ static int A_FindTargetSprite(const spritetype *pSprite, int projAng, int projec
     int const spriteAng = pSprite->ang;
 
     int isShrinker = (!RR && pSprite->picnum == APLAYER && g_player[playerNum].ps->curr_weapon == SHRINKER_WEAPON);
-    int isFreezer  = (!RR && pSprite->picnum == APLAYER && g_player[playerNum].ps->curr_weapon == FREEZE_WEAPON);
+    int isFreezer  = (!RR && !REALITY && pSprite->picnum == APLAYER && g_player[playerNum].ps->curr_weapon == FREEZE_WEAPON);
 
     if (WW2GI)
     {
@@ -1023,6 +1023,9 @@ growspark_rr:
         {
             if (RR)
                 goto growspark_rr;
+            if (REALITY && pSprite->extra >= 0)
+                pSprite->shade = -96;
+
             if (playerNum >= 0)
                 P_PreFireHitscan(spriteNum, playerNum, projecTile, &startPos, &Zvel, &shootAng, 1, 1);
             else
@@ -1483,7 +1486,7 @@ growspark_rr:
                     sprite[spawnedSprite].extra = lLifetime + mulscale14(krand2(), lLifetimeVar) - lLifetimeVar;
                 }
                 sprite[spawnedSprite].hitag = spawnedSprite;
-                A_PlaySound(LASERTRIP_ONWALL, spawnedSprite);
+                A_PlaySound(REALITY ? 13 : LASERTRIP_ONWALL, spawnedSprite);
                 sprite[spawnedSprite].xvel = -20;
                 A_SetSprite(spawnedSprite, CLIPMASK0);
                 sprite[spawnedSprite].cstat = 16;
@@ -2051,7 +2054,7 @@ void P_DisplayWeapon(void)
         return RT_P_DisplayWeapon();
 
     DukePlayer_t *const  pPlayer     = g_player[screenpeek].ps;
-    const uint8_t *const weaponFrame = &pPlayer->kickback_pic;
+    const int16_t *const weaponFrame = &pPlayer->kickback_pic;
 
     int currentWeapon, quickKickFrame;
 
@@ -5444,7 +5447,7 @@ void P_FragPlayer(int playerNum)
 static void P_ProcessWeapon(int playerNum)
 {
     DukePlayer_t *const pPlayer      = g_player[playerNum].ps;
-    uint8_t *const      weaponFrame  = &pPlayer->kickback_pic;
+    int16_t *const      weaponFrame  = &pPlayer->kickback_pic;
     int const           playerShrunk = (sprite[pPlayer->i].yrepeat < (RR ? 8 : 32));
     uint32_t            playerBits   = g_player[playerNum].inputBits->bits;
     int const           sectorLotag  = sector[pPlayer->cursectnum].lotag;
@@ -8156,7 +8159,7 @@ check_enemy_sprite:
     }
 
     int                  velocityModifier = TICSPERFRAME;
-    const uint8_t *const weaponFrame      = &pPlayer->kickback_pic;
+    const int16_t *const weaponFrame      = &pPlayer->kickback_pic;
     int                  floorZOffset     = 40;
     int const            playerShrunk     = (pSprite->yrepeat < (RR ? 8 : 32));
 
@@ -9433,7 +9436,7 @@ void P_DHProcessInput(int playerNum)
     }
 
     int                  velocityModifier = TICSPERFRAME;
-    const uint8_t *const weaponFrame      = &pPlayer->kickback_pic;
+    const int16_t *const weaponFrame      = &pPlayer->kickback_pic;
     int                  floorZOffset     = 40;
     int const            playerShrunk     = (pSprite->yrepeat < 8);
 

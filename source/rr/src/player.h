@@ -160,7 +160,7 @@ typedef struct {
 
     int16_t newowner, jumping_counter, airleft;
     int16_t fta, ftq, access_wallnum, access_spritenum;
-    int16_t got_access, weapon_ang, visibility;
+    int16_t kickback_pic, got_access, weapon_ang, visibility;
     int16_t somethingonplayer, on_crane, i, one_parallax_sectnum;
     int16_t random_club_frame, one_eighty_count;
     int16_t dummyplayersprite, extra_extra8;
@@ -177,7 +177,7 @@ typedef struct {
     uint8_t frag, fraggedself, quick_kick, last_quick_kick;
     uint8_t return_to_center, reloading, weapreccnt;
     uint8_t aim_mode, auto_aim, weaponswitch, movement_lock, team;
-    uint8_t tipincs, hbomb_hold_delay, frag_ps, kickback_pic;
+    uint8_t tipincs, hbomb_hold_delay, frag_ps;
 
     uint8_t gm, on_warping_sector, footprintcount, hurt_delay;
     uint8_t hbomb_on, jumping_toggle, rapid_fire_hold, on_ground;
@@ -232,7 +232,7 @@ typedef struct {
     int32_t dn_388;
 
     int8_t crouch_toggle;
-    int8_t padding_[2];
+    int8_t padding_[1];
 } DukePlayer_t;
 
 // KEEPINSYNC lunatic/_defs_game.lua
