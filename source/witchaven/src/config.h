@@ -1,8 +1,8 @@
 //-------------------------------------------------------------------------
 /*
-Copyright (C) 2010-2019 EDuke32 developers and contributors
-Copyright (C) 2019 sirlemonhead, Nuke.YKT
-This file is part of PCExhumed.
+Copyright (C) 2010-2020 EDuke32 developers and contributors
+Copyright (C) 2020 sirlemonhead, Nuke.YKT
+This file is part of EWitchaven.
 PCExhumed is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License version 2
 as published by the Free Software Foundation.
