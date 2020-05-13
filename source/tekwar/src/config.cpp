@@ -1,221 +1,1050 @@
-// Evil and Nasty Configuration File Reader for KenBuild
-// Repurposes for JFTekWar
-// by Jonathon Fowler
+//-------------------------------------------------------------------------
+/*
+Copyright (C) 2010-2019 EDuke32 developers and contributors
+Copyright (C) 2019 sirlemonhead, Nuke.YKT
+This file is part of PCExhumed.
+PCExhumed is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 2
+as published by the Free Software Foundation.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+//-------------------------------------------------------------------------
 
 #include "compat.h"
+#include "renderlayer.h"
+#include "_control.h"
 #include "build.h"
-#include "osd.h"
+#include "cache1d.h"
+#include "keyboard.h"
+#include "control.h"
 #include "tekwar.h"
+#include "scriplib.h"
 
-#ifdef RENDERTYPEWIN
-#include "winlayer.h"
-#endif
-#include "baselayer.h"
+#include "config.h"
 
-static int readconfig(BFILE *fp, const char *key, char *value, unsigned len)
+#include <string>
+//#include <io.h>
+#include <stdio.h>
+#include <time.h>
+
+const char gamefunctions[kMaxGameFunctions][kMaxGameFuncLen] =
 {
-	char buf[1000], *k, *v, *eq;
-	int x=0;
+  "Move_Forward",
+  "Move_Backward",
+  "Turn_Left",
+  "Turn_Right",
+  "Strafe",
+  "Strafe_Left",
+  "Strafe_Right",
+  "Run",
+  "Jump",
+  "Crouch",
+  "Fire",
+  "Open",
+  "Fly_Up",
+  "Fly_Down",
+  "Look_Up",
+  "Look_Down",
+  "Look_Straight",
+  "Aim_Up",
+  "Aim_Down",
+  "SendMessage",
+  "Weapon_0",
+  "Weapon_1",
+  "Weapon_2",
+  "Weapon_3",
+  "Weapon_4",
+  "Weapon_5",
+  "Weapon_6",
+  "Weapon_7",
+  "Weapon_8",
+  "Weapon_9",
+  "Spell_Left",
+  "Spell_Right",
+  "Cast_Spell",
+  "Potion_Left",
+  "Potion_Right",
+  "Use_Potion",
+  "Pause",
+  "Map",
+  "Zoom_In",
+  "Zoom_Out",
+  "Gamma_Correction",
+  "Escape",
+  "Shrink_Screen",
+  "Enlarge_Screen",
+  "Mouse_Sensitivity_Up",
+  "Mouse_Sensitivity_Down",
+  "Show_Console",
+  "Mouse_Aiming",
+  "Toggle_Crosshair"
+};
 
-	if (len < 1) return 0;
+const char keydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
+{
+   "W", "Kpad8",
+   "S", "Kpad2",
+   "Left", "Kpad4",
+   "Right", "KPad6",
+   "LAlt", "RAlt",
+   "A", "",
+   "D", "",
+   "LShift", "RShift",
+   "Space", "",
+   "LCtrl", "",
+   "RCtrl", "",
+   "E", "",
+   "Insert", "",
+   "Delete", "",
+   "PgUp", "",
+   "PgDn", "",
+   "Home", "",
+   "", "", // aim up
+   "", "", // aim down
+   "T", "",
+   "0", "",
+   "1", "",
+   "2", "",
+   "3", "",
+   "4", "",
+   "5", "",
+   "6", "",
+   "7", "",
+   "8", "",
+   "9", "",
+   "", "", // spell left
+   "", "", // spell right
+   "'", "", // cast spell
+   "[", "", // potion left
+   "]", "", // potion right
+   "Enter", "",  // use potion
+   "Pause", "",
+   "Tab", "",
+   "=", "",
+   "-", "",
+   "F11", "",
+   "Escape", "",
+   "Kpad-", "",
+   "Kpad+", "",
+   "", "", // sensitivity up
+   "", "", // sensitivity down
+   "`", "",
+   "U", "",
+   "I", "",
+};
 
-	Brewind(fp);
+const char oldkeydefaults[kMaxGameFunctions * 2][kMaxGameFuncLen] =
+{
+   "Up", "Kpad8",
+   "Down", "Kpad2",
+   "Left", "Kpad4",
+   "Right", "KPad6",
+   "LAlt", "RAlt",
+   ",", "",
+   ".", "",
+   "LShift", "RShift",
+   "A", "",
+   "Z", "",
+   "LCtrl", "RCtrl",
+   "Space", "",
+   "PgUp", "",
+   "PgDn", "",
+   "Home", "",
+   "Insert", "",
+   "Delete", "",
+   "T", "",
+   "1", "",
+   "2", "",
+   "3", "",
+   "4", "",
+   "5", "",
+   "6", "",
+   "7", "",
+   "Pause", "",
+   "Tab", "",
+   "=", "",
+   "-", "",
+   "F11", "",
+   "Escape", "",
+   "Kpad-", "",
+   "Kpad+", "",
+   "Enter", "",
+   "[", "",
+   "]", "",
+   "F7", "",
+   "F8", "",
+   "`", "",
+   "U", "",
+   "I", "",
+};
 
-	while (1) {
-		if (!Bfgets(buf, 1000, fp)) return 0;
+static const char* mousedefaults[MAXMOUSEBUTTONS] =
+{
+   "Fire",
+   "Strafe",
+   "Move_Forward"
+   "",
+   "",
+   "",
+};
 
-		if (buf[0] == ';') continue;
+static const char* mouseclickeddefaults[MAXMOUSEBUTTONS] =
+{
+};
 
-		eq = Bstrchr(buf, '=');
-		if (!eq) continue;
+static const char* mouseanalogdefaults[MAXMOUSEAXES] =
+{
+"analog_strafing",
+"analog_moving",
+};
 
-		k = buf;
-		v = eq+1;
 
-		while (*k == ' ' || *k == '\t') k++;
-		*(eq--) = 0;
-		while ((*eq == ' ' || *eq == '\t') && eq>=k) *(eq--) = 0;
+static const char* mousedigitaldefaults[MAXMOUSEDIGITAL] =
+{
+};
 
-		if (Bstrcasecmp(k, key)) continue;
-		
-		while (*v == ' ' || *k == '\t') v++;
-		eq = v + Bstrlen(v)-1;
+ud_setup_t gSetup;
 
-		while ((*eq == ' ' || *eq == '\t' || *eq == '\r' || *eq == '\n') && eq>=v) *(eq--) = 0;
+char setupfilename[128] = {kSetupFilename};
 
-		value[--len] = 0;
-		do value[x] = v[x]; while (v[x++] != 0 && len-- > 0);
+int lMouseSens = 32;
 
-		return x-1;
-	}
+int32_t FXVolume;
+int32_t MusicVolume;
+int32_t MixRate;
+int32_t MidiPort;
+int32_t NumVoices;
+int32_t NumChannels;
+int32_t NumBits;
+int32_t ReverseStereo;
+int32_t MusicDevice;
+int32_t FXDevice;
+int32_t ControllerType;
+
+int32_t scripthandle;
+int32_t setupread;
+// TODO: implement precaching toggle
+int32_t useprecache;
+int32_t MouseDeadZone, MouseBias;
+
+// JBF 20031211: Store the input settings because
+// (currently) mact can't regurgitate them
+int32_t MouseFunctions[MAXMOUSEBUTTONS][2];
+int32_t MouseDigitalFunctions[MAXMOUSEAXES][2];
+int32_t MouseAnalogueAxes[MAXMOUSEAXES];
+int32_t MouseAnalogueScale[MAXMOUSEAXES];
+int32_t JoystickFunctions[MAXJOYBUTTONSANDHATS][2];
+int32_t JoystickDigitalFunctions[MAXJOYAXES][2];
+int32_t JoystickAnalogueAxes[MAXJOYAXES];
+int32_t JoystickAnalogueScale[MAXJOYAXES];
+int32_t JoystickAnalogueInvert[MAXJOYAXES];
+int32_t JoystickAnalogueDead[MAXJOYAXES];
+int32_t JoystickAnalogueSaturate[MAXJOYAXES];
+uint8_t KeyboardKeys[kMaxGameFunctions][2];
+
+int32_t MAXCACHE1DSIZE = (96 * 1024 * 1024);
+
+
+void SetupGameButtons()
+{
+    CONTROL_DefineFlag(gamefunc_Move_Forward, FALSE);
+    CONTROL_DefineFlag(gamefunc_Move_Backward, FALSE);
+    CONTROL_DefineFlag(gamefunc_Turn_Left, FALSE);
+    CONTROL_DefineFlag(gamefunc_Turn_Right, FALSE);
+    CONTROL_DefineFlag(gamefunc_Strafe, FALSE);
+    CONTROL_DefineFlag(gamefunc_Strafe_Left, FALSE);
+    CONTROL_DefineFlag(gamefunc_Strafe_Right, FALSE);
+    CONTROL_DefineFlag(gamefunc_Run, FALSE);
+    CONTROL_DefineFlag(gamefunc_Jump, FALSE);
+    CONTROL_DefineFlag(gamefunc_Crouch, FALSE);
+    CONTROL_DefineFlag(gamefunc_Fire, FALSE);
+    CONTROL_DefineFlag(gamefunc_Open, FALSE);
+    CONTROL_DefineFlag(gamefunc_Fly_Up, FALSE);
+    CONTROL_DefineFlag(gamefunc_Fly_Down, FALSE);
+    CONTROL_DefineFlag(gamefunc_Look_Up, FALSE);
+    CONTROL_DefineFlag(gamefunc_Look_Down, FALSE);
+    CONTROL_DefineFlag(gamefunc_Look_Straight, FALSE);
+    CONTROL_DefineFlag(gamefunc_Aim_Up, FALSE);
+    CONTROL_DefineFlag(gamefunc_Aim_Down, FALSE);
+    CONTROL_DefineFlag(gamefunc_SendMessage, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_1, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_2, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_3, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_4, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_5, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_6, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_7, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_8, FALSE);
+    CONTROL_DefineFlag(gamefunc_Weapon_9, FALSE);
+    CONTROL_DefineFlag(gamefunc_Spell_Left, FALSE);
+    CONTROL_DefineFlag(gamefunc_Spell_Right, FALSE);
+    CONTROL_DefineFlag(gamefunc_Cast_Spell, FALSE);
+    CONTROL_DefineFlag(gamefunc_Potion_Left, FALSE);
+    CONTROL_DefineFlag(gamefunc_Potion_Right, FALSE);
+    CONTROL_DefineFlag(gamefunc_Use_Potion, FALSE);
+    CONTROL_DefineFlag(gamefunc_Pause, FALSE);
+    CONTROL_DefineFlag(gamefunc_Map, FALSE);
+    CONTROL_DefineFlag(gamefunc_Zoom_In, FALSE);
+    CONTROL_DefineFlag(gamefunc_Zoom_Out, FALSE);
+    CONTROL_DefineFlag(gamefunc_Gamma_Correction, FALSE);
+    CONTROL_DefineFlag(gamefunc_Escape, FALSE);
+    CONTROL_DefineFlag(gamefunc_Shrink_Screen, FALSE);
+    CONTROL_DefineFlag(gamefunc_Enlarge_Screen, FALSE);
+    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Up, FALSE);
+    CONTROL_DefineFlag(gamefunc_Mouse_Sensitivity_Down, FALSE);
+    CONTROL_DefineFlag(gamefunc_Mouse_Aiming, FALSE);
+    CONTROL_DefineFlag(gamefunc_Toggle_Crosshair, FALSE);
+}
+
+hashtable_t h_gamefuncs = {kMaxGameFunctions << 1, NULL};
+
+int32_t CONFIG_FunctionNameToNum(const char* func)
+{
+    if (!func)
+        return -1;
+
+    return hash_findcase(&h_gamefuncs, func);
 }
 
 
-int loadsetup(const char *fn)
+static char const* CONFIG_FunctionNumToName(int32_t func)
 {
-	BFILE *fp;
-#define VL 32
-	char val[VL];
-	int i;
-
-	if ((fp = Bfopen(fn, "rt")) == NULL) return -1;
-
-	if (readconfig(fp, "forcesetup", val, VL) > 0) { forcesetup = (Batoi(val) != 0); }
-	if (readconfig(fp, "fullscreen", val, VL) > 0) { fullscreen = (Batoi(val) != 0); }
-	if (readconfig(fp, "xdim", val, VL) > 0) xdimgame = Batoi(val);
-	if (readconfig(fp, "ydim", val, VL) > 0) ydimgame = Batoi(val);
-	if (readconfig(fp, "bpp", val, VL) > 0) bppgame = Batoi(val);
-	if (readconfig(fp, "mouse", val, VL) > 0) { option[3] = (Batoi(val) != 0); }
-	if (readconfig(fp, "brightness", val, VL) > 0) brightness = min(max(Batoi(val),0),15);
-
-#ifdef RENDERTYPEWIN
-	if (readconfig(fp, "maxrefreshfreq", val, VL) > 0) maxrefreshfreq = Batoi(val);
-#endif
-
-	if (readconfig(fp, "keyforward", val, VL) > 0) keys[0] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keybackward", val, VL) > 0) keys[1] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyturnleft", val, VL) > 0) keys[2] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyturnright", val, VL) > 0) keys[3] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyrun", val, VL) > 0) keys[4] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keystrafe", val, VL) > 0) keys[5] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyfire", val, VL) > 0) keys[6] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyuse", val, VL) > 0) keys[7] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyjump", val, VL) > 0) keys[8] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keycrouch", val, VL) > 0) keys[9] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keylookup", val, VL) > 0) keys[10] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keylookdown", val, VL) > 0) keys[11] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keystrafeleft", val, VL) > 0) keys[12] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keystraferight", val, VL) > 0) keys[13] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keymapmode", val, VL) > 0) keys[14] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyviewcycle", val, VL) > 0) keys[15] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyexpandview", val, VL) > 0) keys[16] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshrinkview", val, VL) > 0) keys[17] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keychat", val, VL) > 0) keys[18] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyautocenter", val, VL) > 0) keys[19] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowrearview", val, VL) > 0) keys[20] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowprepitem", val, VL) > 0) keys[21] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowhealth", val, VL) > 0) keys[22] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowcrosshair", val, VL) > 0) keys[23] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowtime", val, VL) > 0) keys[24] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowscore", val, VL) > 0) keys[25] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyshowinventory", val, VL) > 0) keys[26] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyconcealgun", val, VL) > 0) keys[27] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keymouselook", val, VL) > 0) keys[28] = Bstrtol(val, NULL, 16);
-	if (readconfig(fp, "keyconsole", val, VL) > 0) { keys[29] = Bstrtol(val, NULL, 16); OSD_CaptureKey(keys[29]); }
-
-	Bfclose(fp);
-
-	return 0;
+    if ((unsigned)func >= (unsigned)kMaxGameFunctions)
+        return "";
+    return gamefunctions[func];
 }
 
-int writesetup(const char *fn)
+
+int32_t CONFIG_AnalogNameToNum(const char* func)
 {
-	BFILE *fp;
+    if (!func)
+        return -1;
+    else if (!Bstrcasecmp(func, "analog_turning"))
+        return analog_turning;
+    else if (!Bstrcasecmp(func, "analog_strafing"))
+        return analog_strafing;
+    else if (!Bstrcasecmp(func, "analog_moving"))
+        return analog_moving;
+    else if (!Bstrcasecmp(func, "analog_lookingupanddown"))
+        return analog_lookingupanddown;
+    else
+        return -1;
+}
 
-	fp = Bfopen(fn,"wt");
-	if (!fp) return -1;
-	
-	Bfprintf(fp,
-	"; Always show configuration options on startup\n"
-	";   0 - No\n"
-	";   1 - Yes\n"
-	"forcesetup = %d\n"
-	"\n"
-	"; Video mode selection\n"
-	";   0 - Windowed\n"
-	";   1 - Fullscreen\n"
-	"fullscreen = %d\n"
-	"\n"
-	"; Video resolution\n"
-	"xdim = %d\n"
-	"ydim = %d\n"
-	"\n"
-	"; Colour depth\n"
-	"bpp = %d\n"
-	"\n"
-#ifdef RENDERTYPEWIN
-	"; Maximum OpenGL mode refresh rate (Windows only, in Hertz)\n"
-	"maxrefreshfreq = %d\n"
-	"\n"
-#endif
-	"; Brightness setting\n"
-	";   0  - lowest\n"
-	";   15 - highest\n"
-	"brightness = %d\n"
-	"\n"
-	"; Enable mouse\n"
-	";   0 - No\n"
-	";   1 - Yes\n"
-	"mouse = %d\n"
-	"\n"
-	"; Key Settings\n"
-	";  Here's a map of all the keyboard scan codes: NOTE: values are listed in hex!\n"
-	"; +---------------------------------------------------------------------------------------------+\n"
-	"; | 01   3B  3C  3D  3E   3F  40  41  42   43  44  57  58          46                           |\n"
-	"; |ESC   F1  F2  F3  F4   F5  F6  F7  F8   F9 F10 F11 F12        SCROLL                         |\n"
-	"; |                                                                                             |\n"
-	"; |29  02  03  04  05  06  07  08  09  0A  0B  0C  0D   0E     D2  C7  C9      45  B5  37  4A   |\n"
-	"; | ` '1' '2' '3' '4' '5' '6' '7' '8' '9' '0'  -   =  BACK    INS HOME PGUP  NUMLK KP/ KP* KP-  |\n"
-	"; |                                                                                             |\n"
-	"; | 0F  10  11  12  13  14  15  16  17  18  19  1A  1B  2B     D3  CF  D1      47  48  49  4E   |\n"
-	"; |TAB  Q   W   E   R   T   Y   U   I   O   P   [   ]    \\    DEL END PGDN    KP7 KP8 KP9 KP+   |\n"
-	"; |                                                                                             |\n"
-	"; | 3A   1E  1F  20  21  22  23  24  25  26  27  28     1C                     4B  4C  4D       |\n"
-	"; |CAPS  A   S   D   F   G   H   J   K   L   ;   '   ENTER                    KP4 KP5 KP6    9C |\n"
-	"; |                                                                                      KPENTER|\n"
-	"; |  2A    2C  2D  2E  2F  30  31  32  33  34  35    36            C8          4F  50  51       |\n"
-	"; |LSHIFT  Z   X   C   V   B   N   M   ,   .   /   RSHIFT          UP         KP1 KP2 KP3       |\n"
-	"; |                                                                                             |\n"
-	"; | 1D     38              39                  B8     9D       CB  D0   CD      52    53        |\n"
-	"; |LCTRL  LALT           SPACE                RALT   RCTRL   LEFT DOWN RIGHT    KP0    KP.      |\n"
-	"; +---------------------------------------------------------------------------------------------+\n"
-	"\n"
-	"keyforward = %X\n"
-	"keybackward = %X\n"
-	"keyturnleft = %X\n"
-	"keyturnright = %X\n"
-	"keyrun = %X\n"
-	"keystrafe = %X\n"
-	"keyfire = %X\n"
-	"keyuse = %X\n"
-	"keyjump = %X\n"
-	"keycrouch = %X\n"
-	"keylookup = %X\n"
-	"keylookdown = %X\n"
-	"keystrafeleft = %X\n"
-	"keystraferight = %X\n"
-	"keymapmode = %X\n"
-	"keyviewcycle = %X\n"
-	"keyexpandview = %X\n"
-	"keyshrinkview = %X\n"
-	"keychat = %X\n"
-	"keyautocenter = %X\n"
-	"keyshowrearview = %X\n"
-	"keyshowprepitem = %X\n"
-	"keyshowhealth = %X\n"
-	"keyshowcrosshair = %X\n"
-	"keyshowtime = %X\n"
-	"keyshowscore = %X\n"
-	"keyshowinventory = %X\n"
-	"keyconcealgun = %X\n"
-	"keymouselook = %X\n"
-	"keyconsole = %X\n"
-	"\n",
-	
-	forcesetup, fullscreen, xdimgame, ydimgame, bppgame,
-#ifdef RENDERTYPEWIN
-	maxrefreshfreq,
-#endif
-	brightness,
-	option[3],
-	keys[0],  keys[1],  keys[2],  keys[3],  keys[4],  keys[5],
-	keys[6],  keys[7],  keys[8],  keys[9],  keys[10], keys[11],
-	keys[12], keys[13], keys[14], keys[15], keys[16], keys[17],
-	keys[18], keys[19], keys[20], keys[21], keys[22], keys[23],
-	keys[24], keys[25], keys[26], keys[27], keys[28], keys[29]
-		);
 
-	Bfclose(fp);
+static char const* CONFIG_AnalogNumToName(int32_t func)
+{
+    switch (func)
+    {
+        case analog_turning:
+        return "analog_turning";
+        case analog_strafing:
+        return "analog_strafing";
+        case analog_moving:
+        return "analog_moving";
+        case analog_lookingupanddown:
+        return "analog_lookingupanddown";
+    }
 
-	return 0;
+    return "";
+}
+
+
+static void CONFIG_SetJoystickButtonFunction(int i, int j, int function)
+{
+    JoystickFunctions[i][j] = function;
+    CONTROL_MapButton(function, i, j, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisScale(int i, int scale)
+{
+    JoystickAnalogueScale[i] = scale;
+    CONTROL_SetAnalogAxisScale(i, scale, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisInvert(int i, int invert)
+{
+    JoystickAnalogueInvert[i] = invert;
+    CONTROL_SetAnalogAxisInvert(i, invert, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisDeadSaturate(int i, int dead, int saturate)
+{
+    JoystickAnalogueDead[i] = dead;
+    JoystickAnalogueSaturate[i] = saturate;
+    joySetDeadZone(i, dead, saturate);
+}
+static void CONFIG_SetJoystickDigitalAxisFunction(int i, int j, int function)
+{
+    JoystickDigitalFunctions[i][j] = function;
+    CONTROL_MapDigitalAxis(i, function, j, controldevice_joystick);
+}
+static void CONFIG_SetJoystickAnalogAxisFunction(int i, int function)
+{
+    JoystickAnalogueAxes[i] = function;
+    CONTROL_MapAnalogAxis(i, function, controldevice_joystick);
+}
+
+
+void CONFIG_SetDefaultKeys(const char(*keyptr)[kMaxGameFuncLen], bool lazy/*=false*/)
+{
+    static char const s_gamefunc_[] = "gamefunc_";
+    int constexpr strlen_gamefunc_ = ARRAY_SIZE(s_gamefunc_) - 1;
+
+    if (!lazy)
+    {
+        Bmemset(KeyboardKeys, 0xff, sizeof(KeyboardKeys));
+        CONTROL_ClearAllBinds();
+    }
+
+    for (int i = 0; i < ARRAY_SSIZE(gamefunctions); ++i)
+    {
+        if (gamefunctions[i][0] == '\0')
+            continue;
+
+        auto& key = KeyboardKeys[i];
+
+        int const default0 = KB_StringToScanCode(keyptr[i << 1]);
+        int const default1 = KB_StringToScanCode(keyptr[(i << 1) + 1]);
+
+        // skip the function if the default key is already used
+        // or the function is assigned to another key
+        if (lazy && (key[0] != 0xff || (CONTROL_KeyIsBound(default0) && Bstrlen(CONTROL_KeyBinds[default0].cmdstr) > strlen_gamefunc_
+            && CONFIG_FunctionNameToNum(CONTROL_KeyBinds[default0].cmdstr + strlen_gamefunc_) >= 0)))
+        {
+            #if 0 // defined(DEBUGGINGAIDS)
+            if (key[0] != 0xff)
+                initprintf("Skipping %s bound to %s\n", keyptr[i << 1], CONTROL_KeyBinds[default0].cmdstr);
+            #endif
+            continue;
+        }
+
+        key[0] = default0;
+        key[1] = default1;
+
+        if (key[0])
+            CONTROL_FreeKeyBind(key[0]);
+
+        if (key[1])
+            CONTROL_FreeKeyBind(key[1]);
+
+        if (i == gamefunc_Show_Console)
+            OSD_CaptureKey(key[0]);
+        else
+            CONFIG_MapKey(i, key[0], 0, key[1], 0);
+    }
+}
+
+void CONFIG_SetDefaults()
+{
+    scripthandle = -1;
+    # if defined RENDERTYPESDL && SDL_MAJOR_VERSION > 1
+    uint32_t inited = SDL_WasInit(SDL_INIT_VIDEO);
+    if (inited == 0)
+        SDL_Init(SDL_INIT_VIDEO);
+    else if (!(inited & SDL_INIT_VIDEO))
+        SDL_InitSubSystem(SDL_INIT_VIDEO);
+
+    SDL_DisplayMode dm;
+    if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
+    {
+        gSetup.xdim = dm.w;
+        gSetup.ydim = dm.h;
+    }
+    else
+        # endif
+    {
+        gSetup.xdim = 1024;
+        gSetup.ydim = 768;
+    }
+
+    #ifdef USE_OPENGL
+    gSetup.bpp = 32;
+    #else
+    gSetup.bpp = 8;
+    #endif
+
+    // currently settings.cfg is only read after the startup window launches the game,
+    // and rereading binds might be fickle so just enable this
+    gSetup.usejoystick = 1;
+
+    gSetup.forcesetup = 1;
+    gSetup.noautoload = 1;
+    gSetup.fullscreen = 1;
+    gSetup.usemouse = 1;
+
+    MixRate = 44100;
+    FXVolume = 255;
+    MusicVolume = 255;
+    NumChannels = 2;
+    NumBits = 16;
+    NumVoices = 32;
+    /* // TODO
+        mouseaiming = 0;
+        aimmode = 1;
+        mouseflip = 1;
+        runkey_mode = 0;
+        auto_run = 1;
+
+        gFov = 90;
+    */
+    CONFIG_SetDefaultKeys(keydefaults);
+
+    memset(MouseFunctions, -1, sizeof(MouseFunctions));
+    memset(MouseDigitalFunctions, -1, sizeof(MouseDigitalFunctions));
+    memset(JoystickFunctions, -1, sizeof(JoystickFunctions));
+    memset(JoystickDigitalFunctions, -1, sizeof(JoystickDigitalFunctions));
+
+    CONTROL_MouseSensitivity = DEFAULTMOUSESENSITIVITY;
+
+    for (int i = 0; i < MAXMOUSEBUTTONS; i++)
+    {
+        MouseFunctions[i][0] = CONFIG_FunctionNameToNum(mousedefaults[i]);
+        CONTROL_MapButton(MouseFunctions[i][0], i, 0, controldevice_mouse);
+        if (i >= 4) continue;
+        MouseFunctions[i][1] = CONFIG_FunctionNameToNum(mouseclickeddefaults[i]);
+        CONTROL_MapButton(MouseFunctions[i][1], i, 1, controldevice_mouse);
+    }
+
+    for (int i = 0; i < MAXMOUSEAXES; i++)
+    {
+        MouseAnalogueScale[i] = DEFAULTMOUSEANALOGUESCALE;
+        CONTROL_SetAnalogAxisScale(i, MouseAnalogueScale[i], controldevice_mouse);
+
+        MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i * 2]);
+        MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(mousedigitaldefaults[i * 2 + 1]);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0, controldevice_mouse);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1, controldevice_mouse);
+
+        MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(mouseanalogdefaults[i]);
+        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i], controldevice_mouse);
+    }
+
+    // TODO:
+    //CONFIG_SetGameControllerDefaultsStandard();
+
+    #if 0
+    FXVolume = 128;
+    MusicVolume = 128;
+    ReverseStereo = 0;
+    ControllerType = controltype_keyboardandmouse;
+    lMouseSens = 8;
+    #endif
+}
+
+int CONFIG_ReadSetup()
+{
+    //char tempbuf[1024];
+
+    CONTROL_ClearAssignments();
+    CONFIG_SetDefaults();
+
+    setupread = 1;
+    pathsearchmode = 1;
+
+    if (scripthandle < 0)
+    {
+        if (buildvfs_exists(setupfilename))  // JBF 20031211
+            scripthandle = SCRIPT_Load(setupfilename);
+        else if (buildvfs_exists(kSetupFilename))
+        {
+            int const i = wm_ynbox("Import Configuration Settings",
+                "The configuration file \"%s\" was not found. "
+                "Import configuration data from \"%s\"?",
+                setupfilename, kSetupFilename);
+            if (i)
+                scripthandle = SCRIPT_Load(kSetupFilename);
+        }
+    }
+
+    pathsearchmode = 0;
+
+    if (scripthandle < 0)
+        return -1;
+
+    SCRIPT_GetNumber(scripthandle, "Options", "Difficulty", &difficulty);
+// TODO    SCRIPT_GetNumber(scripthandle, "Options", "Brightness", &gbrightness);
+
+    SCRIPT_GetNumber(scripthandle, "Setup", "ForceSetup", &gSetup.forcesetup);
+    SCRIPT_GetNumber(scripthandle, "Setup", "NoAutoLoad", &gSetup.noautoload);
+
+    int32_t cachesize;
+    SCRIPT_GetNumber(scripthandle, "Setup", "CacheSize", &cachesize);
+
+    if (cachesize > MAXCACHE1DSIZE)
+        MAXCACHE1DSIZE = cachesize;
+
+
+    if (g_noSetup == 0 && g_modDir[0] == '/')
+    {
+        SCRIPT_GetString(scripthandle, "Setup", "ModDir", &g_modDir[0]);
+
+        if (!buildvfs_isdir(g_modDir))
+        {
+            initprintf("Invalid mod dir in cfg!\n");
+            Bsprintf(g_modDir, "/");
+        }
+    }
+
+    windowx = -1;
+    windowy = -1;
+
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", (int32_t*)&maxrefreshfreq);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenBPP", &gSetup.bpp);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenHeight", &gSetup.ydim);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenMode", &gSetup.fullscreen);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "ScreenWidth", &gSetup.xdim);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosX", (int32_t*)&windowx);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPosY", (int32_t*)&windowy);
+    SCRIPT_GetNumber(scripthandle, "Screen Setup", "WindowPositioning", (int32_t*)&windowpos);
+
+    if (gSetup.bpp < 8) gSetup.bpp = 32;
+
+    setupread = 1;
+    return 0;
+}
+
+// wrapper for CONTROL_MapKey(), generates key bindings to reflect changes to keyboard setup
+void CONFIG_MapKey(int which, kb_scancode key1, kb_scancode oldkey1, kb_scancode key2, kb_scancode oldkey2)
+{
+    char tempbuf[256];
+    int const keys[] = {key1, key2, oldkey1, oldkey2};
+    char buf[2 * kMaxGameFuncLen];
+
+    if (which == gamefunc_Show_Console)
+        OSD_CaptureKey(key1);
+
+    for (int k = 0; (unsigned)k < ARRAY_SIZE(keys); k++)
+    {
+        if (keys[k] == 0xff || !keys[k])
+            continue;
+
+        int match = 0;
+
+        for (; match < ARRAY_SSIZE(sctokeylut); ++match)
+        {
+            if (keys[k] == sctokeylut[match].sc)
+                break;
+        }
+
+        tempbuf[0] = 0;
+
+        for (int i = kMaxGameFunctions - 1; i >= 0; i--)
+        {
+            if (KeyboardKeys[i][0] == keys[k] || KeyboardKeys[i][1] == keys[k])
+            {
+                Bsprintf(buf, "gamefunc_%s; ", CONFIG_FunctionNumToName(i));
+                Bstrcat(tempbuf, buf);
+            }
+        }
+
+        int const len = Bstrlen(tempbuf);
+
+        if (len >= 2)
+        {
+            tempbuf[len - 2] = 0;  // cut off the trailing "; "
+            CONTROL_BindKey(keys[k], tempbuf, 1, sctokeylut[match].key?sctokeylut[match].key:"<?>");
+        }
+        else
+        {
+            CONTROL_FreeKeyBind(keys[k]);
+        }
+    }
+}
+
+
+void CONFIG_SetupMouse(void)
+{
+    if (scripthandle < 0)
+        return;
+
+    char str[80];
+    char temp[80];
+
+    for (int i = 0; i < MAXMOUSEBUTTONS; i++)
+    {
+        Bsprintf(str, "MouseButton%d", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            MouseFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
+
+        Bsprintf(str, "MouseButtonClicked%d", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            MouseFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
+    }
+
+    // map over the axes
+    for (int i = 0; i < MAXMOUSEAXES; i++)
+    {
+        Bsprintf(str, "MouseAnalogAxes%d", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            MouseAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
+
+        Bsprintf(str, "MouseDigitalAxes%d_0", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            MouseDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
+
+        Bsprintf(str, "MouseDigitalAxes%d_1", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            MouseDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
+
+        Bsprintf(str, "MouseAnalogScale%d", i);
+        int32_t scale = MouseAnalogueScale[i];
+        SCRIPT_GetNumber(scripthandle, "Controls", str, &scale);
+        MouseAnalogueScale[i] = scale;
+    }
+
+    for (int i = 0; i < MAXMOUSEBUTTONS; i++)
+    {
+        CONTROL_MapButton(MouseFunctions[i][0], i, 0, controldevice_mouse);
+        CONTROL_MapButton(MouseFunctions[i][1], i, 1, controldevice_mouse);
+    }
+    for (int i = 0; i < MAXMOUSEAXES; i++)
+    {
+        CONTROL_MapAnalogAxis(i, MouseAnalogueAxes[i], controldevice_mouse);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][0], 0, controldevice_mouse);
+        CONTROL_MapDigitalAxis(i, MouseDigitalFunctions[i][1], 1, controldevice_mouse);
+        CONTROL_SetAnalogAxisScale(i, MouseAnalogueScale[i], controldevice_mouse);
+    }
+}
+
+
+void CONFIG_SetupJoystick(void)
+{
+    int32_t i;
+    char str[80];
+    char temp[80];
+    int32_t scale;
+
+    if (scripthandle < 0) return;
+
+    for (i = 0; i < MAXJOYBUTTONSANDHATS; i++)
+    {
+        Bsprintf(str, "ControllerButton%d", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            JoystickFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
+
+        Bsprintf(str, "ControllerButtonClicked%d", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            JoystickFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
+    }
+
+    // map over the axes
+    for (i = 0; i < MAXJOYAXES; i++)
+    {
+        Bsprintf(str, "ControllerAnalogAxes%d", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            JoystickAnalogueAxes[i] = CONFIG_AnalogNameToNum(temp);
+
+        Bsprintf(str, "ControllerDigitalAxes%d_0", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            JoystickDigitalFunctions[i][0] = CONFIG_FunctionNameToNum(temp);
+
+        Bsprintf(str, "ControllerDigitalAxes%d_1", i);
+        temp[0] = 0;
+        if (!SCRIPT_GetString(scripthandle, "Controls", str, temp))
+            JoystickDigitalFunctions[i][1] = CONFIG_FunctionNameToNum(temp);
+
+        Bsprintf(str, "ControllerAnalogScale%d", i);
+        scale = JoystickAnalogueScale[i];
+        SCRIPT_GetNumber(scripthandle, "Controls", str, &scale);
+        JoystickAnalogueScale[i] = scale;
+
+        Bsprintf(str, "ControllerAnalogInvert%d", i);
+        scale = JoystickAnalogueInvert[i];
+        SCRIPT_GetNumber(scripthandle, "Controls", str, &scale);
+        JoystickAnalogueInvert[i] = scale;
+
+        Bsprintf(str, "ControllerAnalogDead%d", i);
+        scale = JoystickAnalogueDead[i];
+        SCRIPT_GetNumber(scripthandle, "Controls", str, &scale);
+        JoystickAnalogueDead[i] = scale;
+
+        Bsprintf(str, "ControllerAnalogSaturate%d", i);
+        scale = JoystickAnalogueSaturate[i];
+        SCRIPT_GetNumber(scripthandle, "Controls", str, &scale);
+        JoystickAnalogueSaturate[i] = scale;
+    }
+
+    for (i = 0; i < MAXJOYBUTTONSANDHATS; i++)
+    {
+        CONTROL_MapButton(JoystickFunctions[i][0], i, 0, controldevice_joystick);
+        CONTROL_MapButton(JoystickFunctions[i][1], i, 1, controldevice_joystick);
+    }
+    for (i = 0; i < MAXJOYAXES; i++)
+    {
+        CONTROL_MapAnalogAxis(i, JoystickAnalogueAxes[i], controldevice_joystick);
+        CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][0], 0, controldevice_joystick);
+        CONTROL_MapDigitalAxis(i, JoystickDigitalFunctions[i][1], 1, controldevice_joystick);
+        CONTROL_SetAnalogAxisScale(i, JoystickAnalogueScale[i], controldevice_joystick);
+        CONTROL_SetAnalogAxisInvert(i, JoystickAnalogueInvert[i], controldevice_joystick);
+    }
+}
+
+void SetupInput()
+{
+    if (CONTROL_Startup(controltype_keyboardandmouse, &BGetTime, CLKIPS))
+    {
+        ERRprintf("There was an error initializing the CONTROL system.\n");
+        engineUnInit();
+        Bexit(5);
+    }
+    SetupGameButtons();
+    CONFIG_SetupMouse();
+    CONFIG_SetupJoystick();
+
+    CONTROL_JoystickEnabled = (gSetup.usejoystick && CONTROL_JoyPresent);
+    CONTROL_MouseEnabled = (gSetup.usemouse && CONTROL_MousePresent);
+
+    // JBF 20040215: evil and nasty place to do this, but joysticks are evil and nasty too
+    for (int i = 0; i < joystick.numAxes; i++)
+        joySetDeadZone(i, JoystickAnalogueDead[i], JoystickAnalogueSaturate[i]);
+}
+
+void CONFIG_WriteSettings(void) // save binds and aliases to <cfgname>_settings.cfg
+{
+    char filename[BMAX_PATH];
+
+    if (!Bstrcmp(setupfilename, kSetupFilename))
+        Bsprintf(filename, "settings.cfg");
+    else
+        Bsprintf(filename, "%s_settings.cfg", strtok(setupfilename, "."));
+
+    buildvfs_FILE fp = buildvfs_fopen_write(filename);
+
+    if (fp)
+    {
+        buildvfs_fputstr(fp, "// this file is automatically generated by ");
+        buildvfs_fputstrptr(fp, AppProperName);
+        buildvfs_fputstr(fp, "\nunbindall\n");
+
+        for (int i = 0; i < MAXBOUNDKEYS + MAXMOUSEBUTTONS; i++)
+        {
+            if (CONTROL_KeyIsBound(i))
+            {
+                buildvfs_fputstr(fp, "bind \"");
+                buildvfs_fputstrptr(fp, CONTROL_KeyBinds[i].key);
+                if (CONTROL_KeyBinds[i].repeat)
+                    buildvfs_fputstr(fp, "\" \"");
+                else
+                    buildvfs_fputstr(fp, "\" norepeat \"");
+                buildvfs_fputstrptr(fp, CONTROL_KeyBinds[i].cmdstr);
+                buildvfs_fputstr(fp, "\"\n");
+            }
+        }
+
+        for (int i = 0; i < kMaxGameFunctions; ++i)
+        {
+            char const* name = CONFIG_FunctionNumToName(i);
+            if (name && name[0] != '\0' && (KeyboardKeys[i][0] == 0xff || !KeyboardKeys[i][0]))
+            {
+                buildvfs_fputstr(fp, "unbound ");
+                buildvfs_fputstrptr(fp, name);
+                buildvfs_fputstr(fp, "\n");
+            }
+        }
+
+        OSD_WriteAliases(fp);
+
+        //if (g_crosshairSum != -1 && g_crosshairSum != DefaultCrosshairColors.r+(DefaultCrosshairColors.g<<8)+(DefaultCrosshairColors.b<<16))
+        //{
+        //    buildvfs_fputstr(fp, "crosshaircolor ");
+        //    char buf[64];
+        //    snprintf(buf, sizeof(buf), "%d %d %d\n", CrosshairColors.r, CrosshairColors.g, CrosshairColors.b);
+        //    buildvfs_fputstrptr(fp, buf);
+        //}
+
+        OSD_WriteCvars(fp);
+
+        buildvfs_fclose(fp);
+
+        OSD_Printf("Wrote %s\n", filename);
+
+        return;
+    }
+
+    OSD_Printf("Error writing %s: %s\n", filename, strerror(errno));
+}
+
+void CONFIG_WriteSetup(uint32_t flags)
+{
+    char buf[256];
+    if (!setupread) return;
+
+    if (scripthandle < 0)
+        scripthandle = SCRIPT_Init(setupfilename);
+
+    SCRIPT_PutNumber(scripthandle, "Options", "Difficulty", difficulty, FALSE, 2);
+// TODO    SCRIPT_PutNumber(scripthandle, "Options", "Brightness", gbrightness, FALSE, 0);
+
+    SCRIPT_PutNumber(scripthandle, "Setup", "CacheSize", MAXCACHE1DSIZE, FALSE, FALSE);
+    //SCRIPT_PutNumber(scripthandle, "Setup", "ConfigVersion", BYTEVERSION_EDUKE32, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Setup", "ForceSetup", gSetup.forcesetup, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Setup", "NoAutoLoad", gSetup.noautoload, FALSE, FALSE);
+
+    //#ifdef POLYMER
+    //    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "Polymer", glrendmode == REND_POLYMER, FALSE, FALSE);
+    //#endif
+
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenBPP", gSetup.bpp, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenHeight", gSetup.ydim, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenMode", gSetup.fullscreen, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "ScreenWidth", gSetup.xdim, FALSE, FALSE);
+
+    //if (g_grpNamePtr && !g_addonNum)
+    //    SCRIPT_PutString(ud.config.scripthandle, "Setup", "SelectedGRP", g_grpNamePtr);
+
+    #ifdef STARTUP_SETUP_WINDOW
+    if (g_noSetup == 0)
+        SCRIPT_PutString(scripthandle, "Setup", "ModDir", &g_modDir[0]);
+    #endif
+    // exit early after only updating the values that can be changed from the startup window
+    if (flags & 1)
+    {
+        SCRIPT_Save(scripthandle, setupfilename);
+        SCRIPT_Free(scripthandle);
+        return;
+    }
+
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "MaxRefreshFreq", maxrefreshfreq, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPosX", windowx, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPosY", windowy, FALSE, FALSE);
+    SCRIPT_PutNumber(scripthandle, "Screen Setup", "WindowPositioning", windowpos, FALSE, FALSE);
+
+    //if (!NAM_WW2GI)
+    //{
+    //    SCRIPT_PutNumber(ud.config.scripthandle, "Screen Setup", "Out",ud.lockout,FALSE,FALSE);
+    //    SCRIPT_PutString(ud.config.scripthandle, "Screen Setup", "Password",ud.pwlockout);
+    //}
+
+//#ifdef _WIN32
+//    SCRIPT_PutNumber(ud.config.scripthandle, "Updates", "CheckForUpdates", ud.config.CheckForUpdates, FALSE, FALSE);
+//    SCRIPT_PutNumber(ud.config.scripthandle, "Updates", "LastUpdateCheck", ud.config.LastUpdateCheck, FALSE, FALSE);
+//#endif
+
+    if (gSetup.usemouse)
+    {
+        for (int i = 0; i < MAXMOUSEBUTTONS; i++)
+        {
+            if (CONFIG_FunctionNumToName(MouseFunctions[i][0]))
+            {
+                Bsprintf(buf, "MouseButton%d", i);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseFunctions[i][0]));
+            }
+
+            if (i >= (MAXMOUSEBUTTONS - 2)) continue;
+
+            if (CONFIG_FunctionNumToName(MouseFunctions[i][1]))
+            {
+                Bsprintf(buf, "MouseButtonClicked%d", i);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseFunctions[i][1]));
+            }
+        }
+
+        for (int i = 0; i < MAXMOUSEAXES; i++)
+        {
+            if (CONFIG_AnalogNumToName(MouseAnalogueAxes[i]))
+            {
+                Bsprintf(buf, "MouseAnalogAxes%d", i);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_AnalogNumToName(MouseAnalogueAxes[i]));
+            }
+
+            if (CONFIG_FunctionNumToName(MouseDigitalFunctions[i][0]))
+            {
+                Bsprintf(buf, "MouseDigitalAxes%d_0", i);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseDigitalFunctions[i][0]));
+            }
+
+            if (CONFIG_FunctionNumToName(MouseDigitalFunctions[i][1]))
+            {
+                Bsprintf(buf, "MouseDigitalAxes%d_1", i);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(MouseDigitalFunctions[i][1]));
+            }
+
+            Bsprintf(buf, "MouseAnalogScale%d", i);
+            SCRIPT_PutNumber(scripthandle, "Controls", buf, MouseAnalogueScale[i], FALSE, FALSE);
+        }
+    }
+
+    if (gSetup.usejoystick)
+    {
+        for (int dummy = 0; dummy < MAXJOYBUTTONSANDHATS; dummy++)
+        {
+            if (CONFIG_FunctionNumToName(JoystickFunctions[dummy][0]))
+            {
+                Bsprintf(buf, "ControllerButton%d", dummy);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(JoystickFunctions[dummy][0]));
+            }
+
+            if (CONFIG_FunctionNumToName(JoystickFunctions[dummy][1]))
+            {
+                Bsprintf(buf, "ControllerButtonClicked%d", dummy);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(JoystickFunctions[dummy][1]));
+            }
+        }
+        for (int dummy = 0; dummy < MAXJOYAXES; dummy++)
+        {
+            if (CONFIG_AnalogNumToName(JoystickAnalogueAxes[dummy]))
+            {
+                Bsprintf(buf, "ControllerAnalogAxes%d", dummy);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_AnalogNumToName(JoystickAnalogueAxes[dummy]));
+            }
+
+            if (CONFIG_FunctionNumToName(JoystickDigitalFunctions[dummy][0]))
+            {
+                Bsprintf(buf, "ControllerDigitalAxes%d_0", dummy);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(JoystickDigitalFunctions[dummy][0]));
+            }
+
+            if (CONFIG_FunctionNumToName(JoystickDigitalFunctions[dummy][1]))
+            {
+                Bsprintf(buf, "ControllerDigitalAxes%d_1", dummy);
+                SCRIPT_PutString(scripthandle, "Controls", buf, CONFIG_FunctionNumToName(JoystickDigitalFunctions[dummy][1]));
+            }
+
+            Bsprintf(buf, "ControllerAnalogScale%d", dummy);
+            SCRIPT_PutNumber(scripthandle, "Controls", buf, JoystickAnalogueScale[dummy], FALSE, FALSE);
+
+            Bsprintf(buf, "ControllerAnalogInvert%d", dummy);
+            SCRIPT_PutNumber(scripthandle, "Controls", buf, JoystickAnalogueInvert[dummy], FALSE, FALSE);
+
+            Bsprintf(buf, "ControllerAnalogDead%d", dummy);
+            SCRIPT_PutNumber(scripthandle, "Controls", buf, JoystickAnalogueDead[dummy], FALSE, FALSE);
+
+            Bsprintf(buf, "ControllerAnalogSaturate%d", dummy);
+            SCRIPT_PutNumber(scripthandle, "Controls", buf, JoystickAnalogueSaturate[dummy], FALSE, FALSE);
+        }
+    }
+
+    //SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","PlayerName",&szPlayerName[0]);
+
+    //SCRIPT_PutString(ud.config.scripthandle, "Comm Setup","RTSName",&ud.rtsname[0]);
+
+ //   char commmacro[] = "CommbatMacro# ";
+
+    //for (int dummy = 0; dummy < MAXRIDECULE; dummy++)
+    //{
+    //    commmacro[13] = dummy+'0';
+    //    SCRIPT_PutString(ud.config.scripthandle, "Comm Setup",commmacro,&ud.ridecule[dummy][0]);
+    //}
+
+    SCRIPT_Save(scripthandle, setupfilename);
+
+    if ((flags & 2) == 0)
+        SCRIPT_Free(scripthandle);
+
+    OSD_Printf("Wrote %s\n", setupfilename);
+    CONFIG_WriteSettings();
+    Bfflush(NULL);
 }

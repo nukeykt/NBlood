@@ -1,4 +1,5 @@
 #include "build.h"
+#include "common_game.h"
 
 void permanentwritesprite(int thex, int they, short tilenum, signed char shade,
         int cx1, int cy1, int cx2, int cy2, unsigned char dapalnum) {
@@ -10,8 +11,8 @@ void permanentwritespritetile(int UNUSED(thex), int UNUSED(they), short tilenum,
         int cx1, int cy1, int cx2, int cy2, unsigned char dapalnum) {
     int x, y, xsiz, ysiz, tx1, ty1, tx2, ty2;
     
-    xsiz = tilesizx[tilenum]; tx1 = cx1/xsiz; tx2 = cx2/xsiz;
-    ysiz = tilesizy[tilenum]; ty1 = cy1/ysiz; ty2 = cy2/ysiz;
+    xsiz = tilesiz[tilenum].x; tx1 = cx1/xsiz; tx2 = cx2/xsiz;
+    ysiz = tilesiz[tilenum].y; ty1 = cy1/ysiz; ty2 = cy2/ysiz;
     
     for (x=tx1;x<=tx2;x++) {
         for (y=ty1;y<=ty2;y++) {
@@ -23,12 +24,12 @@ void permanentwritespritetile(int UNUSED(thex), int UNUSED(they), short tilenum,
 
 void overwritesprite(int thex, int they, short tilenum, signed char shade,
         char stat, unsigned char dapalnum) {
-    rotatesprite(thex<<16,they<<16,65536L,(stat&8)<<7,tilenum,shade,dapalnum,
-                 (((stat&1)^1)<<4)+(stat&2)+((stat&4)>>2)+(((stat&16)>>2)^((stat&8)>>1)),
-                 windowx1,windowy1,windowx2,windowy2);
+    rotatesprite(thex << 16, they << 16, 65536L, (stat & 8) << 7, tilenum, shade, dapalnum,
+        (((stat & 1) ^ 1) << 4) + (stat & 2) + ((stat & 4) >> 2) + (((stat & 16) >> 2) ^ ((stat & 8) >> 1)),
+        windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
 }
 
-void printext(int x, int y, char *buffer, short tilenum, char UNUSED(invisiblecol))
+void printext(int x, int y, const char *buffer, short tilenum, char UNUSED(invisiblecol))
 {
     int i;
     unsigned char ch;
@@ -47,4 +48,9 @@ void resettiming()
 
 void precache()
 {
+}
+
+void setbrightness(int32_t brightness)
+{
+    videoSetPalette(brightness, BASEPAL, 2 | 8 | 32);
 }

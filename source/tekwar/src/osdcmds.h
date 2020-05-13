@@ -20,28 +20,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 //-------------------------------------------------------------------------
 
-// resource ids
-#define WIN_STARTWIN		1000
-#define WIN_STARTWINPAGE_CONFIG 2000
-#define WIN_STARTWIN_BITMAP	100	// banner bitmap
-#define WIN_STARTWIN_TABCTL	101
-#define WIN_STARTWIN_CANCEL	IDCANCEL
-#define WIN_STARTWIN_START	IDOK
+#ifndef osdcmds_h_
+#define osdcmds_h_
 
-#define WIN_STARTWIN_MESSAGES	104	// output list box
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define RSRC_ICON		100
-#define RSRC_BMP		200
+int32_t registerosdcommands(void);
+void onvideomodechange(int32_t newmode);
+void GAME_onshowosd(int shown);
+void GAME_clearbackground(int numcols, int numrows);
 
-// config page
-#define IDCFULLSCREEN	100
-#define IDCVMODE	    101
-#define IDCSOUNDDRV	    102
-#define IDCMIDIDEV	    103
-#define IDCCDADEV	    104
-#define IDCALWAYSSHOW	105
-#define IDCDATA         106
-#define IDCGAMEDIR      107
-#define IDCPOLYMER      108
-#define IDCAUTOLOAD     109
-#define IDCINPUT	    110
+//extern float r_ambientlight,r_ambientlightrecip;
+
+extern const char *const ConsoleButtons[];
+
+//extern uint32_t cl_cheatmask;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif	// osdcmds_h_
+

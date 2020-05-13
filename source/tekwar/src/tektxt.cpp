@@ -22,7 +22,7 @@
 char      bypasscdcheck=0;
 
 void
-crash(char *s,...)
+crash(const char *s,...)
 {
      va_list argptr;
      
@@ -31,9 +31,9 @@ crash(char *s,...)
      uninitmultiplayers();
      uninitsb();
      cduninit();
-     uninittimer();
+     //uninittimer();
      uninitinput();
-     uninitengine();
+     engineUnInit();
      uninitgroupfile();
      teksavesetup();
      

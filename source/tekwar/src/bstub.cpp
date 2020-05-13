@@ -7,12 +7,12 @@
 static long frameval[AVERAGEFRAMES], framecnt = 0;
 
 #define NUMOPTIONS 8
-#define NUMKEYS 19
+#define NUMBUILDKEYS 19
 
 long vesares[7][2] = {{320,200},{640,400},{640,480},{800,600},{1024,768},
 									  {1280,1024},{1600,1200}};
 char option[NUMOPTIONS] = {0,0,0,0,0,0,98,0};
-char keys[NUMKEYS] =
+char keys[NUMBUILDKEYS] =
 {
 	0xc8,0xd0,0xcb,0xcd,0x2a,0x9d,0x1d,0x39,
 	0x1e,0x2c,0xd1,0xc9,0x33,0x34,
@@ -98,7 +98,7 @@ struct    picattribtype  {
      };
 
 struct    spriteextension {
-     char      class;
+     char      classification;
      char      hitpoints;
      unsigned  short     target;
      unsigned  short     fxmask;  
@@ -792,11 +792,11 @@ JS_ShowSpriteExts(short spritenum)
           break;
      }
 
-     if( spriteXT[i].class != CLASS_NULL ) {
-          sprintf(quip, "1 of %d ", numinclass[spriteXT[i].class]);
+     if( spriteXT[i].classification != CLASS_NULL ) {
+          sprintf(quip, "1 of %d ", numinclass[spriteXT[i].classification]);
           PrintStatusStr(quip,"",1,12,2);
           }
-     switch ( spriteXT[i].class ) {
+     switch ( spriteXT[i].classification) {
      case CLASS_NULL:
           break;
      case CLASS_FCIAGENT:
@@ -837,7 +837,7 @@ JS_ShowSpriteExts(short spritenum)
           break;
      }
 
-     PrintStatus("Class     ", ( int)spriteXT[i].class    ,18,4,11);
+     PrintStatus("Class     ", ( int)spriteXT[i].classification,18,4,11);
      PrintStatus("Hitpoints ", ( int)spriteXT[i].hitpoints,18,5,11);
      PrintStatus("Target    ", ( int)spriteXT[i].target   ,18,6,11);
      PrintStatus("BaseStat  ", ( int)spriteXT[i].basestat ,18,7,11);
@@ -1158,7 +1158,7 @@ JS_GetNumInClass(void)
      }
      for( i=0; i<MAXSPRITES; i++ ) {
           if( spriteXT[i].lock == 0xFF ) {
-               numinclass[spriteXT[i].class]++;
+               numinclass[spriteXT[i].classification]++;
           }
      }
 
@@ -1204,8 +1204,8 @@ JS_EditSpriteExts(short spritenum)
 
      JS_ShowSpriteExts(spritenum);
 
-     sprintf(what, "spriteextra[%d].class     = ", j);
-     spriteXT[j].class=getnumber16(what, spriteXT[j].class, 12L);
+     sprintf(what, "spriteextra[%d].classification     = ", j);
+     spriteXT[j].classification =getnumber16(what, spriteXT[j].classification, 12L);
 
      sprintf(what, "spriteextra[%d].hitpoints = ", j);
      spriteXT[j].hitpoints=getnumber16(what, spriteXT[j].hitpoints, 256L);
@@ -1359,8 +1359,8 @@ void ExtInit(void)
 	if ((fil = open("setup.dat",O_BINARY|O_RDWR,S_IREAD)) != -1)
 	{
 		read(fil,&option[0],NUMOPTIONS);
-		read(fil,&keys[0],NUMKEYS);
-		memcpy((void *)buildkeys,(void *)keys,NUMKEYS);   //Trick to make build use setup.dat keys
+		read(fil,&keys[0],NUMBUILDKEYS);
+		memcpy((void *)buildkeys,(void *)keys,NUMBUILDKEYS);   //Trick to make build use setup.dat keys
 		close(fil);
 	}
     #endif

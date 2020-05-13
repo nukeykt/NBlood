@@ -4,6 +4,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "common_game.h"
+
 #define TEKWAR 
 
 #define BETA   1
@@ -33,16 +35,18 @@ extern int vel2, svel2, angvel2;
 extern volatile int recsnddone, recsndoffs;
 extern int recording;
 
+extern int r_showfps;
+
 
 #define   NUMOPTIONS          8
-#define   NUMKEYS             32
+#define   NUMGAMEKEYS         32
 #define   MAXMOREOPTIONS      21
 #define   MAXTOGGLES          16
 #define   MAXGAMESTUFF        16
 extern int fullscreen, xdimgame, ydimgame, bppgame;
 extern int forcesetup;
 extern unsigned char option[NUMOPTIONS];
-extern unsigned char keys[NUMKEYS];
+extern unsigned char keys[NUMGAMEKEYS];
 extern unsigned char moreoptions[MAXMOREOPTIONS];
 extern char toggles[MAXTOGGLES];
 extern int  gamestuff[MAXGAMESTUFF];
@@ -215,7 +219,7 @@ struct    picattribtype  {
 #endif
 
 struct TPACK spriteextension {
-     unsigned  char      class;
+     unsigned  char      classification;
      signed    char      hitpoints;
      unsigned  short     target;
      unsigned  short     fxmask;  
@@ -593,13 +597,14 @@ void permanentwritesprite(int thex, int they, short tilenum, signed char shade,
         int cx1, int cy1, int cx2, int cy2, unsigned char dapalnum);
 void permanentwritespritetile(int thex, int they, short tilenum, signed char shade,
         int cx1, int cy1, int cx2, int cy2, unsigned char dapalnum);
-void printext(int x, int y, char *buffer, short tilenum, char invisiblecol);
+void printext(int x, int y, const char *buffer, short tilenum, char invisiblecol);
 void precache();
 void resettiming();
+void setbrightness(int32_t brightness);
 
 // config.c
-int loadsetup(const char *fn);
-int writesetup(const char *fn);
+//int loadsetup(const char *fn);
+//int writesetup(const char *fn);
 
 // tekcdr.c
 
@@ -626,6 +631,8 @@ extern char      biasthreshholdon;
 extern int      headbob;
 extern char      localname[MAXNAMESIZE];
 extern char      netnames[MAXPLAYERS][MAXNAMESIZE];
+
+extern int32_t   g_noSetup;
 
 void checkmasterslaveswitch();
 void doanimations();
@@ -677,7 +684,7 @@ extern char      dofadein;
 extern char      gameover;
 extern char      generalplay;
 extern char      loadsavenames[MAXLOADSAVEOPTS][MAXLOADSAVESIZE];
-extern char      *mapnames[TOTALMAPS];
+extern const char      *mapnames[TOTALMAPS];
 extern int       mission;
 extern int       mousesensitivity;
 extern int       nochaseflag;
@@ -708,14 +715,14 @@ void initmoreoptions();
 int initpaletteshifts(void);
 void missionaccomplished(int  sn);
 int missionfailed();
-void newgame(char *mapname);
+void newgame(const char *mapname);
 void newmap(int mapno);
 void nextnetlevel();
 void rearview(int snum);
 void redrawbackfx(void);
 void teksavemissioninfo(int fil);
 void setup3dscreen();
-void showmessage(char *fmt,...);
+void showmessage(const char *fmt,...);
 void tekargv(int argc,char const * const argv[]);
 void tekgamestarted(void);
 void tekloadmissioninfo(int fil);
@@ -750,8 +757,8 @@ void tekview(int *x1,int *y1, int *x2,int *y2);
 
 void smkclosemenu();
 void smkmenuframe(int fn);
-void smkopenmenu(char *name);
-void smkplayseq(char *name);
+void smkopenmenu(const char *name);
+void smkplayseq(const char *name);
 void smkshowmenu();
 
 // teksnd.c
@@ -828,7 +835,7 @@ extern int       headbobon;
 extern char onelev[MAXPLAYERS];
 
 void checkmapsndfx(short p);
-int krand_intercept(char *stg);
+int krand_intercept(const char *stg);
 void movedoors(int d);
 void movefloordoor(int d);
 void movesprelevs(int e);
@@ -856,4 +863,4 @@ void warpsprite(short spritenum);
 
 extern char      bypasscdcheck;
 
-void crash(char *s,...);
+void crash(const char *s,...);

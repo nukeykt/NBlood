@@ -560,14 +560,13 @@ noext:
 int
 isvisible(short i, short target)
 {
-
      if( !validplayer(target) ) {
           crash("isvisible: bad targetnum");
      }
 
 	if( sintable[(sprptr[i]->ang+2560)&2047]*(posx[target]-sprptr[i]->x) + sintable[(sprptr[i]->ang+2048)&2047]*(posy[target]-sprptr[i]->y) >= 0) {
 	     if( cansee(posx[target],posy[target],(posz[target])>>1,cursectnum[target],
-                     sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<7),sprptr[i]->sectnum) == 1) {
+                     sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<7),sprptr[i]->sectnum) == 1) {
           return(1);
           }
      }
@@ -575,30 +574,30 @@ isvisible(short i, short target)
      return(0);
 }
 
-void
-getpicinfo(short picnum)
+void getpicinfo(short picnum)
 {
-     int      amask=picanm[picnum];
+    #if 0 // TODO
+    int amask = picanm[picnum];
 
-     picinfoptr->numframes=amask&0x0000003F;     
-     picinfoptr->animtype =( amask&0x000000C0 )>>6;
-     picinfoptr->xcenteroffset=( amask&0x0000FF00 )>>8;
-     picinfoptr->ycenteroffset=( amask&0x00FF0000 )>>16;
-     picinfoptr->animspeed=( amask&0x0F000000 )>>24;
+    picinfoptr->numframes = amask & 0x0000003F;
+    picinfoptr->animtype = (amask & 0x000000C0) >> 6;
+    #endif
+    picinfoptr->xcenteroffset = picanm[picnum].xofs; //(amask & 0x0000FF00) >> 8;
+    picinfoptr->ycenteroffset = picanm[picnum].yofs; //(amask & 0x00FF0000) >> 16;
+    picinfoptr->animspeed = picanm[picnum].sf; //(amask & 0x0F000000) >> 24;
 }
 
-short
-wallangle(int wn)
+short wallangle(int wn)
 {
-     int      w1x,w1y, w2x,w2y;
-     short     wang;
+    int  w1x, w1y, w2x, w2y;
+    short wang;
 
-     w1x=wallptr[wn]->x; w1y=wallptr[wn]->y;
-     wn=wallptr[wn]->point2;
-     w2x=wallptr[wn]->x; w2y=wallptr[wn]->y;
-     wang=getangle(w2x-w1x, w2y-w1y); 
+    w1x = wallptr[wn]->x; w1y = wallptr[wn]->y;
+    wn = wallptr[wn]->point2;
+    w2x = wallptr[wn]->x; w2y = wallptr[wn]->y;
+    wang = getangle(w2x - w1x, w2y - w1y);
 
- return(wang);
+    return wang;
 }
 
 short
@@ -1016,10 +1015,12 @@ bloodonwall(int wn, int x,int y,int z, short sect, short daang, int hitx, int hi
           break;
      }
 
-     if( wallptr[wn]->lotag == 0 ) {
+     if( wallptr[wn]->lotag == 0 )
+     {
           wallptr[wn]->lotag=1;
-		neartag(x,y,z,sect,daang,
-                  &neartagsector,&neartagwall,&neartagsprite,&neartaghitdist,512L,1);
+
+          neartag(x, y, z, sect, daang, &neartagsector,&neartagwall,&neartagsprite,&neartaghitdist,512L,1, nullptr);
+
           if( neartagwall != -1 ) {
                j=jsinsertsprite(sect, BLOODFLOW);
                if( j != -1 ) {
@@ -1073,7 +1074,7 @@ spewblood(int sprnum, int hitz, short UNUSED(daang))
      case SAMWALKPIC:
           j=jsinsertsprite(sprptr[sprnum]->sectnum, RUNTHRU);
           if( j != -1 ) {
-     	     fillsprite(j,sprptr[sprnum]->x,sprptr[sprnum]->y,sprptr[sprnum]->z-(tilesizy[sprptr[sprnum]->picnum]<<6),128,
+     	     fillsprite(j,sprptr[sprnum]->x,sprptr[sprnum]->y,sprptr[sprnum]->z-(tilesiz[sprptr[sprnum]->picnum].y<<6),128,
                           0,0,12,16,16,0,0, BLOODSPLAT,sprptr[sprnum]->ang,
 		                sintable[(sprptr[sprnum]->ang+2560)&2047]>>6,sintable[(sprptr[sprnum]->ang+2048)&2047]>>6,
 		                30L,sprnum+4096,sprptr[sprnum]->sectnum, RUNTHRU,0,0,0);
@@ -1248,7 +1249,7 @@ deathdropitem(short sprnum)
 
      j=jsinsertsprite(sprptr[sprnum]->sectnum, DROPSIES);
      if( j != -1 ) {
-	     fillsprite(j,sprptr[sprnum]->x,sprptr[sprnum]->y,sprptr[sprnum]->z-(tilesizy[sprptr[sprnum]->picnum]<<6),128,
+	     fillsprite(j,sprptr[sprnum]->x,sprptr[sprnum]->y,sprptr[sprnum]->z-(tilesiz[sprptr[sprnum]->picnum].y<<6),128,
                      0,0,12,16,16,0,0,pic,sprptr[sprnum]->ang,
 		           sintable[(sprptr[sprnum]->ang+2560)&2047]>>6,sintable[(sprptr[sprnum]->ang+2048)&2047]>>6,
 		           30L,sprnum+4096,sprptr[sprnum]->sectnum,DROPSIES,0,0,0);
@@ -1474,7 +1475,7 @@ newstatus(short sn, int  seq)
           case FLOATING:
                if( sectptr[sprptr[sn]->sectnum]->lotag  == 4 ) {
           	     if( (sprptr[sn]->cstat&128) == 0 ) {
-		               zoffs = -((tilesizy[sprptr[sn]->picnum]*sprptr[sn]->yrepeat)<<1);
+		               zoffs = -((tilesiz[sprptr[sn]->picnum].y*sprptr[sn]->yrepeat)<<1);
                     }
           	     else {
 		               zoffs = 0;
@@ -2089,8 +2090,9 @@ void
 enemyshootgun(short sprnum,int x,int y,int z,short daang,int dahoriz,
               short dasectnum,char guntype)
 {
-     short     hitsect,hitwall,hitsprite,daang2;
-     int       j,daz2,hitx,hity,hitz,discrim;
+     hitdata_t hitinfo;
+     short     daang2;
+     int       j,daz2,discrim;
      int       ext,target,pnum;
 
     #ifdef PLRSPRDEBUG
@@ -2215,22 +2217,23 @@ enemyshootgun(short sprnum,int x,int y,int z,short daang,int dahoriz,
           daang2=daang;
           daz2=((100-dahoriz)<<11);
           z=posz[target];     // instead of calculating a dot product angle
-          hitscan(x,y,z,dasectnum,sintable[(daang2+2560)&2047],
-               sintable[(daang2+2048)&2047],daz2,
-               &hitsect,&hitwall,&hitsprite,&hitx,&hity,&hitz,CLIPMASK1);
-          if( hitsprite > 0 ) {
-               if( playerhit(hitsprite, &pnum) ) {
+          vec3_t pos;
+          pos.x = x; pos.y = y; pos.z = z;
+
+          hitscan(&pos,dasectnum,sintable[(daang2+2560)&2047], sintable[(daang2+2048)&2047],daz2, &hitinfo, CLIPMASK1);
+          if( hitinfo.sprite > 0 ) {
+               if( playerhit(hitinfo.sprite, &pnum) ) {
                     playerpainsound(pnum);
                     enemywoundplayer(pnum,sprnum,3);
                }
                else {
-                    damagesprite(hitsprite,tekgundamage(guntype,x,y,z,hitsprite));
+                    damagesprite(hitinfo.sprite,tekgundamage(guntype,x,y,z, hitinfo.sprite));
                }
           }
           else {                   
-               j=jsinsertsprite(hitsect, 3);
+               j=jsinsertsprite(hitinfo.sect, 3);
                if( j != -1 ) {
-                    fillsprite(j,hitx,hity,hitz+(8<<8),2,-4,0,32,16,16,0,0,
+                    fillsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(8<<8),2,-4,0,32,16,16,0,0,
                                EXPLOSION,daang,0,0,0,sprnum+MAXSPRITES,hitsect,3,63,0,0);
                }
           }
@@ -2449,6 +2452,7 @@ givewarning(short i, short ext)
 void
 statuslistcode()
 {
+    vec3_t pos;
 	short     p, target, hitobject, daang, osectnum, movestat, hitsprite,ext;
 	int      i, nexti, dax, day, daz, dist, mindist;
      int      prevx,prevy,prevz;
@@ -2480,9 +2484,11 @@ statuslistcode()
                     spr=sprptr[i];
 	               tempshort=spr->cstat; 
                     spr->cstat&=~1;
-               	getzrange(spr->x,spr->y,spr->z-1,spr->sectnum,
-     				     &globhiz,&globhihit,&globloz,&globlohit,
-     				     ((int)spr->clipdist)<<2,CLIPMASK1);
+
+                    vec3_t pos;
+                    pos.x = spr->x; pos.y = spr->y; pos.z = spr->z - 1;
+
+               	getzrange(&pos,spr->sectnum, &globhiz,&globhihit,&globloz,&globlohit, ((int)spr->clipdist)<<2,CLIPMASK1);
                	spr->cstat=tempshort;
                     if( spr->z != globloz ) {
                          spr->hitag=0;
@@ -2517,9 +2523,11 @@ statuslistcode()
 
           tempshort=spr->cstat; 
           spr->cstat&=~1;
-         	getzrange(spr->x,spr->y,spr->z-1,spr->sectnum,
-			     &globhiz,&globhihit,&globloz,&globlohit,
-     	          ((int)spr->clipdist)<<2,CLIPMASK1);
+
+          vec3_t pos;
+          pos.x = spr->x; pos.y = spr->y; pos.z = spr->z - 1;
+
+         	getzrange(&pos,spr->sectnum, &globhiz,&globhihit,&globloz,&globlohit, ((int)spr->clipdist)<<2,CLIPMASK1);
          	spr->cstat=tempshort;
           if( spr->z >= globloz ) {
                spr->z=globloz;
@@ -2614,15 +2622,18 @@ statuslistcode()
 	     day=( ((sintable[sprptr[i]->ang])*sprptr[i]->yvel) <<3 );
           movestat=floatmovesprite(i,dax,day,0L,1024L,1024L,NORMALCLIP);
           if( (movestat&0xC000) == 32768 ) {
-               setsprite(i, prevx,prevy,prevz);
+              pos.x = prevx; pos.y = prevy; pos.z = prevz;
+               setsprite(i, &pos);
                sprptr[i]->ang=walldeflect(movestat&0x0FFF,sprptr[i]->ang);
           }
           else if( (movestat&0xC000) == 49152 ) {
-               setsprite(i, prevx,prevy,prevz);
+              pos.x = prevx; pos.y = prevy; pos.z = prevz;
+               setsprite(i, &pos);
                sprptr[i]->ang=spritedeflect(movestat&0x0FFF,sprptr[i]->ang);
           }
           else if( prevsect != sprptr[i]->sectnum ) {
-               setsprite(i, prevx,prevy,prevz);
+              pos.x = prevx; pos.y = prevy; pos.z = prevz;
+               setsprite(i, &pos);
                sprptr[i]->ang=arbitraryangle();
           }
 
@@ -2653,13 +2664,15 @@ statuslistcode()
           movestat=flymovesprite(i,dax,day,0L,1024L,1024L,NORMALCLIP);
 
           if( (movestat&0xC000) == 32768 ) {
-               setsprite(i, prevx,prevy,prevz);
+              pos.x = prevx; pos.y = prevy; pos.z = prevz;
+               setsprite(i, &pos);
                sprptr[i]->ang=walldeflect(movestat&0x0FFF,sprptr[i]->ang);
                movestat=flymovesprite(i,dax,day,0L,1024L,1024L,NORMALCLIP);
           }
           else if( (movestat&0xC000) == 49152 ) {
                hitsprite=(movestat&0x0FFF);
-               setsprite(i, prevx,prevy,prevz);
+               pos.x = prevx; pos.y = prevy; pos.z = prevz;
+               setsprite(i, &pos);
                if( playerhit(hitsprite, &pnum) ) {
                     sprXTptr[ext]->target=pnum;
                     newstatus(i, ATTACK);
@@ -2736,12 +2749,12 @@ statuslistcode()
 
 		sprite[i].z += sprite[i].zvel;
 		sprite[i].zvel += (TICSPERFRAME<<2);
-		if (sprite[i].z < globhiz+(tilesizy[KLIPPIC]<<6)) {
-			sprite[i].z = globhiz+(tilesizy[KLIPPIC]<<6);
+		if (sprite[i].z < globhiz+(tilesiz[KLIPPIC].y<<6)) {
+			sprite[i].z = globhiz+(tilesiz[KLIPPIC].y<<6);
 			sprite[i].zvel = -(sprite[i].zvel>>1);
 		}
-		if (sprite[i].z > globloz-(tilesizy[KLIPPIC]<<6)) {
-			sprite[i].z = globloz-(tilesizy[KLIPPIC]<<6);
+		if (sprite[i].z > globloz-(tilesiz[KLIPPIC].y<<6)) {
+			sprite[i].z = globloz-(tilesiz[KLIPPIC].y<<6);
 			sprite[i].zvel = -(sprite[i].zvel>>1);
 		}
 
@@ -2750,7 +2763,7 @@ statuslistcode()
 		if (dist < 46000) {
                if( sectptr[sprptr[i]->sectnum]->lotag == 4 ) {
           	     if( (sprptr[i]->cstat&128) == 0 ) {
-		               zoffs = -((tilesizy[sprptr[i]->picnum]*sprptr[i]->yrepeat)<<1);
+		               zoffs = -((tilesiz[sprptr[i]->picnum].y*sprptr[i]->yrepeat)<<1);
                     }
           	     else {
 		               zoffs = 0;
@@ -2848,11 +2861,11 @@ dropsiescontinue:
 
 		sprite[i].z += sprite[i].zvel;
 		sprite[i].zvel += (TICSPERFRAME<<5);
-		if( sprite[i].z < globhiz+(tilesizy[BOMB]<<6) ) {
-			sprite[i].z = globhiz+(tilesizy[BOMB]<<6);
+		if( sprite[i].z < globhiz+(tilesiz[BOMB].y<<6) ) {
+			sprite[i].z = globhiz+(tilesiz[BOMB].y<<6);
 			sprite[i].zvel = -(sprite[i].zvel>>1);
 		}
-		if( sprite[i].z > globloz-(tilesizy[BOMB]<<4) ) {
+		if( sprite[i].z > globloz-(tilesiz[BOMB].y<<4) ) {
                switch( globlohit&0xC000 ) {
                case 49152: 
                     // direct hit on head
@@ -2868,7 +2881,7 @@ dropsiescontinue:
 		     case 16384:
                     if( (sectptr[globlohit&0x0FFF]->lotag == 4) && (sprptr[i]->picnum != RATTHROWPIC) ) {
           	          if( (sprptr[i]->cstat&128) == 0 ) {
-		                    zoffs = -((tilesizy[sprptr[i]->picnum]*sprptr[i]->yrepeat)<<1);
+		                    zoffs = -((tilesiz[sprptr[i]->picnum].y*sprptr[i]->yrepeat)<<1);
                          }
           	          else {
 		                    zoffs = 0;
@@ -2898,7 +2911,7 @@ dropsiescontinue:
                     }
                     break;
                }
-			sprite[i].z = globloz-(tilesizy[BOMB]<<4);
+			sprite[i].z = globloz-(tilesiz[BOMB].y<<4);
 			sprite[i].zvel = -(sprite[i].zvel>>1);
                sprptr[i]->hitag++;
 		}
@@ -3112,7 +3125,8 @@ ambushcontinue:
 
           if( sprptr[i]->sectnum != prevsect ) {
                if( sectptr[sprptr[i]->sectnum]->lotag == SECT_LOTAG_OFFLIMITS_ALL ) {
-                    setsprite(i,prevx,prevy,prevz);
+                   pos.x = prevx; pos.y = prevy; pos.z = prevz;
+                    setsprite(i,&pos);
                     sprptr[i]->ang=arbitraryangle();
                }
                else {
@@ -3176,7 +3190,7 @@ stalkcontinue:
           // can player see target if they squat ?
           seecan=0;
 		if( cansee(targx,targy,targz,targsect,
-                     sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<6),sprptr[i]->sectnum) == 1) {
+                     sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<6),sprptr[i]->sectnum) == 1) {
                seecan=1;
           }
 
@@ -3247,7 +3261,8 @@ stalkcontinue:
           }
           if( sprptr[i]->sectnum != prevsect ) {
                if( sectptr[sprptr[i]->sectnum]->lotag == SECT_LOTAG_OFFLIMITS_ALL ) {
-                    setsprite(i,prevx,prevy,prevz);
+                   pos.x = prevx; pos.y = prevy; pos.z = prevz;
+                    setsprite(i,&pos);
                     sprptr[i]->ang=arbitraryangle();
                }
                else {
@@ -3299,7 +3314,7 @@ chasecontinue:
 
           if( ((sprXTptr[ext]->aimask)&AI_JUSTSHOTAT) ) { 
 	          if( cansee(targx,targy,targz,targsect, sprptr[i]->x,sprptr[i]->y,
-                          sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<7),sprptr[i]->sectnum) == 1 ) {
+                          sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<7),sprptr[i]->sectnum) == 1 ) {
                     sprptr[i]->ang=getangle(targx-sprptr[i]->x,targy-sprptr[i]->y);               
                     sprXTptr[ext]->aimask|=AI_WASATTACKED;  // guard needs to take action
                }
@@ -3336,7 +3351,7 @@ chasecontinue:
                break;
           default:
               if( (RMOD4("STAT3575") == 0) && (cansee(targx,targy,targz,targsect, sprptr[i]->x,sprptr[i]->y,
-                          sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<7),sprptr[i]->sectnum) == 1) ) {
+                          sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<7),sprptr[i]->sectnum) == 1) ) {
                     sprptr[i]->ang=getangle(targx-sprptr[i]->x,targy-sprptr[i]->y);               
                     newstatus(i, ATTACK);
                }
@@ -3352,7 +3367,8 @@ chasecontinue:
           }
 
           if( (prevsect != sprptr[i]->sectnum) ) {
-               setsprite(i,prevx,prevy,prevz);
+              pos.x = prevx; pos.y = prevy; pos.z = prevz;
+               setsprite(i,&pos);
                sprptr[i]->ang=arbitraryangle();
           }
 
@@ -3417,7 +3433,7 @@ guardcontinue:
                     sprptr[i]->ang=arbitraryangle();
                     break;
                }
-	          if( cansee(targx,targy,targz,targsect,sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<7),sprptr[i]->sectnum) == 1 ) {
+	          if( cansee(targx,targy,targz,targsect,sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<7),sprptr[i]->sectnum) == 1 ) {
                     attackifclose(i, target, dist);
                     if( sprptr[i]->statnum != ATTACK ) {
                          daang=getangle(targx-sprptr[i]->x,targy-sprptr[i]->y);               
@@ -3435,7 +3451,8 @@ guardcontinue:
            
           if( sprptr[i]->sectnum != prevsect ) {
                if( sectptr[sprptr[i]->sectnum]->lotag == SECT_LOTAG_OFFLIMITS_ALL ) {
-                    setsprite(i,prevx,prevy,prevz);
+                   pos.x = prevx; pos.y = prevy; pos.z = prevz;
+                    setsprite(i,&pos);
                     sprptr[i]->ang=arbitraryangle();
                }
                else {
@@ -3538,8 +3555,9 @@ fleecontinue:
 
           if( sprptr[i]->sectnum != prevsect ) {
                if( (sectptr[sprptr[i]->sectnum]->lotag == SECT_LOTAG_OFFLIMITS_CIVILLIAN) ||
-                   (sectptr[sprptr[i]->sectnum]->lotag == SECT_LOTAG_OFFLIMITS_ALL) ) {  
-                    setsprite(i,prevx,prevy,prevz);
+                   (sectptr[sprptr[i]->sectnum]->lotag == SECT_LOTAG_OFFLIMITS_ALL) ) {
+                   pos.x = prevx; pos.y = prevy; pos.z = prevz;
+                    setsprite(i,&pos);
                     sprptr[i]->ang=arbitraryangle();
                }
                else {
@@ -3588,7 +3606,7 @@ strollcontinue:
                }
           }
           if( cansee(posx[target],posy[target],posz[target],cursectnum[target],
-              sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<7),sprptr[i]->sectnum) ) {
+              sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<7),sprptr[i]->sectnum) ) {
                if( sprXTptr[ext]->weapon == 0 ) {
                     if( dist < 5120 ) {
                          sprptr[i]->ang=getangle(posx[target]-sprptr[i]->x,posy[target]-sprptr[i]->y);               
@@ -4054,7 +4072,7 @@ deathcontinue:
           sprptr[i]->x=sprptr[host]->x;
           sprptr[i]->y=sprptr[host]->y;
           if( sprptr[i]->picnum == FIREPIC ) {
-               sprptr[i]->z=sprptr[host]->z-(tilesizy[sprptr[host]->picnum]<<4);
+               sprptr[i]->z=sprptr[host]->z-(tilesiz[sprptr[host]->picnum].y<<4);
           }
           else {
                sprptr[i]->z=sprptr[host]->z;
@@ -4326,7 +4344,7 @@ genexplosion2(int i)
 
      j=jsinsertsprite(sprptr[i]->sectnum, 5);
      if( j != -1 ) {
-          fillsprite(j,sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesizy[sprptr[i]->picnum]<<3),0,
+          fillsprite(j,sprptr[i]->x,sprptr[i]->y,sprptr[i]->z-(tilesiz[sprptr[i]->picnum].y<<3),0,
                      -16,0,0,64,64,0,0,GENEXP2PIC,sprptr[i]->ang,
 	                sintable[(sprptr[i]->ang+2560)&2047]>>6,sintable[(sprptr[i]->ang+2048)&2047]>>6,
 	                30L,i+4096,sprptr[i]->sectnum, 5,32,0,-1);

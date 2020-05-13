@@ -54,16 +54,32 @@ prepareboard(char *daboardfilename)
      locselectedgun=1;
      locselectedgun2=1;
 
-     if (loadoldboard(daboardfilename,0,&posx[0],&posy[0],&posz[0],&ang[0],&cursectnum[0]) == -1)
+     vec3_t startPos;
+     int status = engineLoadBoard(daboardfilename, 0, &startPos, &ang[0], &cursectnum[0]);
+     if (status == -2)
+         status = engineLoadBoardV5V6(daboardfilename, 0, &startPos, &ang[0], &cursectnum[0]);
+
+     if (status == -1)
      {
+         crash("Board not found");
+     }
+
+     posx[0] = startPos.x;
+     posy[0] = startPos.y;
+     posz[0] = startPos.z;
+
+     //if (loadoldboard(daboardfilename,0,&posx[0],&posy[0],&posz[0],&ang[0],&cursectnum[0]) == -1)
+     {
+         #if 0 // TODO
           musicoff();
           uninitmultiplayers();
-          uninittimer();
-        uninitinput();
-          uninitengine();
+          //uninittimer();
+          uninitinput();
+          engineUnInit();
           uninitsb();
           printf("Board not found\n");
           exit(0);
+          #endif
      }
 
      startx=posx[0];
@@ -71,6 +87,20 @@ prepareboard(char *daboardfilename)
      startz=posz[0];
      starta=ang[0];
      starts=cursectnum[0];
+     
+     psky_t* pSky = tileSetupSky(0);
+
+     pSky->tileofs[0] = 0;
+     pSky->tileofs[1] = 0;
+     pSky->tileofs[2] = 0;
+     pSky->tileofs[3] = 0;
+     pSky->yoffs = 256;
+     pSky->lognumtiles = 2;
+     pSky->horizfrac = 65536;
+     pSky->yscale = 65536;
+     parallaxtype = 2;
+     g_visibility = 2048;
+
 
      for(i=0;i<MAXPLAYERS;i++)
      {
@@ -559,7 +589,7 @@ placerandompic(int picnum)
                               fillsprite(j,dax,day,sector[k].floorz,0,-8,0,
                                          12,16,16,0,0,0,0,
                                          0,0,0,0,k,0,0,0,-1);
-                              sprite[j].z-=((tilesizy[sprite[j].picnum]*sprite[j].yrepeat)<<1);
+                              sprite[j].z-=((tilesiz[sprite[j].picnum].y*sprite[j].yrepeat)<<1);
                               switch( picnum ) {
                               }
                               sprite[j].picnum=picnum;
@@ -575,7 +605,9 @@ placerandompic(int picnum)
 void
 tekrestoreplayer(short snum)
 {
-     setsprite(playersprite[snum],posx[snum],posy[snum],posz[snum]+(KENSPLAYERHEIGHT<<8));
+    vec3_t pos;
+    pos.x = posx[snum]; pos.y = posy[snum]; pos.z = posz[snum] + (KENSPLAYERHEIGHT << 8);
+     setsprite(playersprite[snum],&pos);
      sprite[playersprite[snum]].ang = ang[snum];
      sprite[playersprite[snum]].xrepeat = 24;
      sprite[playersprite[snum]].yrepeat = 24;
@@ -600,102 +632,113 @@ tekrestoreplayer(short snum)
      }
 }
 
-void
-initplayersprite(short snum)
+void initplayersprite(short snum)
 {
-     int      i;
+    int i;
 
-     if (playersprite[snum] >= 0) return;
+    if (playersprite[snum] >= 0)
+        return;
 
-     i=jsinsertsprite(cursectnum[snum], 8);
-     if( i == -1 ) {
-          crash("initplayersprite: jsinsertsprite on player %d failed", snum);
-     }
-     playersprite[snum]=i;
-     sprite[i].x=posx[snum];
-     sprite[i].y=posy[snum];
-     sprite[i].z=posz[snum]+(KENSPLAYERHEIGHT<<8);
-     sprite[i].cstat = 0x101;
-     sprite[i].shade=0;
-     if( option[4] == 0 ) {
-          sprite[i].pal=0;
-     }
-     else {
-          sprite[i].pal=snum+16;
-     }
-     sprite[i].clipdist=32;
-     sprite[i].xrepeat=24;
-     sprite[i].yrepeat=24;
-     sprite[i].xoffset=0;
-     sprite[i].yoffset=0;
-     sprite[i].picnum=DOOMGUY;
-     sprite[i].ang=ang[snum];
-     sprite[i].xvel=0;
-     sprite[i].yvel=0;
-     sprite[i].zvel=0;
-     sprite[i].owner=snum+4096;
-     sprite[i].sectnum=cursectnum[snum];
-     sprite[i].statnum=8;
-     sprite[i].lotag=0;
-     sprite[i].hitag=0;
-     // important to set extra = -1
-     sprite[i].extra=-1;     
+    i = jsinsertsprite(cursectnum[snum], 8);
+    if (i == -1) {
+        crash("initplayersprite: jsinsertsprite on player %d failed", snum);
+    }
 
-     tekrestoreplayer(snum);
+    playersprite[snum] = i;
+
+    sprite[i].x = posx[snum];
+    sprite[i].y = posy[snum];
+    sprite[i].z = posz[snum] + (KENSPLAYERHEIGHT << 8);
+    sprite[i].cstat = 0x101;
+    sprite[i].shade = 0;
+
+    if (option[4] == 0) {
+        sprite[i].pal = 0;
+    }
+    else {
+        sprite[i].pal = snum + 16;
+    }
+
+    sprite[i].clipdist = 32;
+    sprite[i].xrepeat = 24;
+    sprite[i].yrepeat = 24;
+    sprite[i].xoffset = 0;
+    sprite[i].yoffset = 0;
+    sprite[i].picnum = DOOMGUY;
+    sprite[i].ang = ang[snum];
+    sprite[i].xvel = 0;
+    sprite[i].yvel = 0;
+    sprite[i].zvel = 0;
+    sprite[i].owner = snum + 4096;
+    sprite[i].sectnum = cursectnum[snum];
+    sprite[i].statnum = 8;
+    sprite[i].lotag = 0;
+    sprite[i].hitag = 0;
+    // important to set extra = -1
+    sprite[i].extra = -1;
+
+    tekrestoreplayer(snum);
 }
 
-int
-initptrlists()
+int initptrlists()
 {
-     int       i;
+    int i;
 
-     for( i=0; i < MAXSPRITES; i++ ) {
-          sprptr[i]=&sprite[i];
-          sprXTptr[i]=&spriteXT[i];
-     }
-     for( i=0; i < MAXSECTORS; i++ ) {
-          sectptr[i]=&sector[i];
-     }
-     for( i=0; i < MAXWALLS; i++ ) {
-          wallptr[i]=&wall[i];
-     }
+    for (i = 0; i < MAXSPRITES; i++)
+    {
+        sprptr[i] = &sprite[i];
+        sprXTptr[i] = &spriteXT[i];
+    }
+    for (i = 0; i < MAXSECTORS; i++)
+    {
+        sectptr[i] = &sector[i];
+    }
+    for (i = 0; i < MAXWALLS; i++)
+    {
+        wallptr[i] = &wall[i];
+    }
 
-     return 0;
+    return 0;
 }
 
-int
-tekpreinit(void)
+int tekpreinit(void)
 {
      int  i,j,k,l;
      int fh;
 
      cdpreinit();
 
-     if( (fh=kopen4load("lookup.dat",0)) >= 0 ) {
-          l=kgetc(fh);
-          for (j=0 ; j < l ; j++) {
-               k=kgetc(fh);
-               for (i=0 ; i < 256 ; i++) {
-                    tempbuf[i]=kgetc(fh);
-               }
-               makepalookup(k,tempbuf,0,0,0,1);
-          }
-          kclose(fh);
-     }
-     if( (option[4] != 0) && ((fh=kopen4load("nlookup.dat",0)) >= 0) ) {  
-          l=kgetc(fh);
-          for (j=0 ; j < l ; j++) {
-               k=kgetc(fh);
-               for (i=0 ; i < 256 ; i++) {
-                    tempbuf[i]=kgetc(fh);
-               }
-               makepalookup(k+15,tempbuf,0,0,0,1);
-          }
-          kclose(fh);
+     if ((fh = kopen4loadfrommod("lookup.dat", 0)) >= 0)
+     {
+         kread(fh, &l, 1);
+
+         for (j = 0; j < l; j++)
+         {
+             kread(fh, &k, 1);
+             kread(fh, tempbuf, 256);
+
+             paletteMakeLookupTable(k, (const char*)tempbuf, 0, 0, 0, 1);
+         }
+         kclose(fh);
      }
 
-     makepalookup(255,tempbuf,60,60,60,1);
+     if ((option[4] != 0) && ((fh = kopen4load("nlookup.dat", 0)) >= 0))
+     {
+         kread(fh, &l, 1);
 
+         for (j = 0; j < l; j++)
+         {
+             kread(fh, &k, 1);
+             kread(fh, tempbuf, 256);
+
+             paletteMakeLookupTable(k + 15, (const char*)tempbuf, 0, 0, 0, 1);
+         }
+         kclose(fh);
+     }
+
+     paletteMakeLookupTable(255, (const char*)tempbuf,60,60,60,1);
+
+     #if 0// TODO
      pskyoff[0]=0;  // 2 tiles
      pskyoff[1]=1;
      pskyoff[2]=2;
@@ -703,12 +746,14 @@ tekpreinit(void)
      pskybits=2;    // tile 4 times, every 90 deg.
      parallaxtype=1;   
      parallaxyoffs=112;
+     #endif
      initptrlists();
      initpaletteshifts();
      initmenu();
      initmoreoptions();
-     if( screensize == 0 ) {
-          screensize=MAXXDIM;
+
+     if (screensize == 0) {
+         screensize = MAXXDIM;
      }
      activemenu=0;
 
@@ -741,7 +786,8 @@ teknetpickmap(void)
      if (switchlevelsflag) {
           strcpy(boardfilename,"NET1.MAP");
      }
-     setgamemode(fullscreen, xdimgame, ydimgame, bppgame);
+
+// TODO     setgamemode(fullscreen, xdimgame, ydimgame, bppgame);
      initpaletteshifts();
 //     memcpy(palette1, palette, 768);
 /*     memset(palette, 0, 768);
@@ -798,7 +844,7 @@ teknetpickmap(void)
 skippick:*/
      prepareboard(boardfilename);
      precache();
-     clearview(0);
+     videoClearViewableArea(0);
 //     memcpy(palette, palette1, 768);
      fadein(0,255,16);
 }
@@ -812,12 +858,12 @@ tekloadsetup()
      if ((fil = open("setup.dat",O_BINARY|O_RDWR,S_IREAD)) != -1)
      {
           read(fil,&option[0],NUMOPTIONS);
-          read(fil,&keys[0],NUMKEYS);
+          read(fil,&keys[0],NUMGAMEKEYS);
           tekloadmoreoptions(fil);
           close(fil);
      }
      */
-    loadsetup("tekwar.ini");
+//    loadsetup("tekwar.ini");
 }
 
 void
@@ -831,12 +877,12 @@ teksavesetup(void)
                option[4]=0;
           }
           write(fil,&option[0],NUMOPTIONS);
-          write(fil,&keys[0],NUMKEYS);
+          write(fil,&keys[0],NUMGAMEKEYS);
           teksavemoreoptions(fil);
           close(fil);
      }
      */
-     writesetup("tekwar.ini");
+//     writesetup("tekwar.ini");
 }
 
 void

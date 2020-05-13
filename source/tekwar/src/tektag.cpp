@@ -452,7 +452,7 @@ tagcode()
           if (wall[startwall].x+dragxdir[i] > dragx2[i]) dragxdir[i] = -16;
           if (wall[startwall].y+dragydir[i] > dragy2[i]) dragydir[i] = -16;
           for( j=startwall; j<=endwall; j++) {
-               dragpoint(j,wall[j].x+dragxdir[i],wall[j].y+dragydir[i]);
+               dragpoint(j,wall[j].x+dragxdir[i],wall[j].y+dragydir[i], 0);
           }
           j = sector[dasector].floorz;
           sector[dasector].floorz = dragfloorz[i]+(sintable[(lockclock<<4)&2047]>>3);
@@ -461,7 +461,9 @@ tagcode()
                     posx[p] += dragxdir[i];
                     posy[p] += dragydir[i];
                     posz[p] += (sector[dasector].floorz-j);
-                    setsprite(playersprite[p],posx[p],posy[p],posz[p]+(KENSPLAYERHEIGHT<<8));
+                    vec3_t pos;
+                    pos.x = posx[p]; pos.y = posy[p]; pos.z = posz[p] + (KENSPLAYERHEIGHT << 8);
+                    setsprite(playersprite[p],&pos);
                     sprite[playersprite[p]].ang = ang[p];
                     frameinterpolate = 0;
                }
@@ -490,8 +492,17 @@ tagcode()
                          swinganginc[i] = 0;
                     }
                }
-               for(k=1;k<=3;k++)
-                    rotatepoint(swingx[i][0],swingy[i][0],swingx[i][k],swingy[i][k],swingang[i],&wall[swingwall[i][k]].x,&wall[swingwall[i][k]].y);
+               for (k = 1; k <= 3; k++)
+               {
+                   vec2_t pivot;
+                   pivot.x = swingx[i][0]; pivot.y = swingy[i][0];
+                   vec2_t p;
+                   p.x = swingx[i][k]; p.y = swingy[i][k];
+                   vec2_t p2;
+                   rotatepoint(pivot, p, swingang[i], &p2);
+                   wall[swingwall[i][k]].x = p.x;
+                   wall[swingwall[i][k]].y = p.y;
+               }
 
                if (swinganginc[i] != 0)
                {
@@ -505,12 +516,16 @@ tagcode()
 
                                         //swingangopendir is -1 if forwards, 1 is backwards
                                    l = (swingangopendir[i] > 0);
-                                   for(k=l+3;k>=l;k--)
-                                        if (clipinsidebox(posx[p],posy[p],swingwall[i][k],128L) != 0)
-                                        {
-                                             good = 0;
-                                             break;
-                                        }
+                                   for (k = l + 3; k >= l; k--)
+                                   {
+                                       vec2_t pos;
+                                       pos.x = posx[p]; pos.y = posy[p];
+                                       if (clipinsidebox(&pos, swingwall[i][k], 128L) != 0)
+                                       {
+                                           good = 0;
+                                           break;
+                                       }
+                                   }
 
                                    if (good == 0)
                                    {
@@ -523,8 +538,19 @@ tagcode()
                                         {
                                              swingang[i] = ((swingang[i]+2048-swinganginc[i])&2047);
                                         }
-                                        for(k=1;k<=3;k++)
-                                             rotatepoint(swingx[i][0],swingy[i][0],swingx[i][k],swingy[i][k],swingang[i],&wall[swingwall[i][k]].x,&wall[swingwall[i][k]].y);
+
+                                        for (k = 1; k <= 3; k++)
+                                        {
+                                            vec2_t pivot;
+                                            pivot.x = swingx[i][0]; pivot.y = swingy[i][0];
+                                            vec2_t p;
+                                            p.x = swingx[i][k]; p.y = swingy[i][k];
+                                            vec2_t p2;
+                                            rotatepoint(pivot, p, swingang[i], &p2);
+                                            wall[swingwall[i][k]].x = p2.x;
+                                            wall[swingwall[i][k]].y = p2.y;
+                                        }
+
                                         if (swingang[i] == swingangclosed[i])
                                         {
                                              swinganginc[i] = 0;
@@ -552,8 +578,15 @@ tagcode()
           revolveang[i] = ((revolveang[i]+2048-(TICSPERFRAME<<2))&2047);
           for(k=startwall;k<=endwall;k++)
           {
-               rotatepoint(revolvepivotx[i],revolvepivoty[i],revolvex[i][k-startwall],revolvey[i][k-startwall],revolveang[i],&dax,&day);
-               dragpoint(k,dax,day);
+              vec2_t pivot;
+              pivot.x = revolvepivotx[i]; pivot.y = revolvepivoty[i];
+              vec2_t p;
+              p.x = revolvex[i][k - startwall];
+              p.y = revolvey[i][k - startwall];
+              vec2_t p2;
+               rotatepoint(pivot,p,revolveang[i],&p2);
+               dax = p2.x; day = p2.y;
+               dragpoint(k,dax,day, 0);
           }
      }
 
@@ -607,7 +640,9 @@ tagcode()
                                              posx[p] += (subwayvel[i]&0xfffffffc);
 
                                                   //Update sprite representation of player
-                                             setsprite(playersprite[p],posx[p],posy[p],posz[p]+(KENSPLAYERHEIGHT<<8));
+                                             vec3_t pos;
+                                             pos.x = posx[p]; pos.y = posy[p]; pos.z = posz[p]+(KENSPLAYERHEIGHT << 8);
+                                             setsprite(playersprite[p],&pos);
                                              sprite[playersprite[p]].ang = ang[p];
                                              frameinterpolate = 0;
                                         }
@@ -875,14 +910,14 @@ tekpreptags()
                y1=wallptr[w1]->y;
                x2=wallptr[w4]->x;
                y2=wallptr[w4]->y;
-               dragpoint(w1,(x1+x2)/2,(y1+y2)/2);
+               dragpoint(w1,(x1+x2)/2,(y1+y2)/2, 0);
                if (x1 != x2) {
                     if (x1 < x2) {
-                         dragpoint(w4,(x1+x2)/2+1,(y1+y2)/2);
+                         dragpoint(w4,(x1+x2)/2+1,(y1+y2)/2, 0);
                          floordoorptr[k]->dir=3;
                     }
                     else {
-                         dragpoint(w4,(x1+x2)/2-1,(y1+y2)/2);
+                         dragpoint(w4,(x1+x2)/2-1,(y1+y2)/2, 0);
                          floordoorptr[k]->dir=1;
                     }
                     x1=wallptr[w1]->x;
@@ -891,11 +926,11 @@ tekpreptags()
                }
                else if (y1 != y2) {
                     if (y1 < y2) {
-                         dragpoint(w4,(x1+x2)/2,(y1+y2)/2+1);
+                         dragpoint(w4,(x1+x2)/2,(y1+y2)/2+1, 0);
                          floordoorptr[k]->dir=0;
                     }
                     else {
-                         dragpoint(w4,(x1+x2)/2,(y1+y2)/2-1);
+                         dragpoint(w4,(x1+x2)/2,(y1+y2)/2-1, 0);
                          floordoorptr[k]->dir=2;
                     }
                     y1=wallptr[w1]->y;
@@ -906,13 +941,13 @@ tekpreptags()
                y1=wallptr[w2]->y;
                x2=wallptr[w3]->x;
                y2=wallptr[w3]->y;
-               dragpoint(w2,(x1+x2)/2,(y1+y2)/2);
+               dragpoint(w2,(x1+x2)/2,(y1+y2)/2, 0);
                if (x1 != x2) {
                     if (x1 < x2) {
-                         dragpoint(w3,(x1+x2)/2+1,(y1+y2)/2);
+                         dragpoint(w3,(x1+x2)/2+1,(y1+y2)/2, 0);
                     }
                     else {
-                         dragpoint(w3,(x1+x2)/2-1,(y1+y2)/2);
+                         dragpoint(w3,(x1+x2)/2-1,(y1+y2)/2, 0);
                     }
                     x1=wallptr[w2]->x;
                     w2=wallptr[wallptr[wallptr[w2]->nextwall]->point2]->point2;
@@ -920,10 +955,10 @@ tekpreptags()
                }
                else if (y1 != y2) {
                     if (y1 < y2) {
-                         dragpoint(w3,(x1+x2)/2,(y1+y2)/2+1);
+                         dragpoint(w3,(x1+x2)/2,(y1+y2)/2+1, 0);
                     }
                     else {
-                         dragpoint(w3,(x1+x2)/2,(y1+y2)/2-1);
+                         dragpoint(w3,(x1+x2)/2,(y1+y2)/2-1, 0);
                     }
                     y1=wallptr[w2]->y;
                     w2=wallptr[wallptr[wallptr[w2]->nextwall]->point2]->point2;
@@ -1407,11 +1442,19 @@ tektagcode(void)
                     }
                     for( p=connecthead; p >= 0; p=connectpoint2[p] ) {
                          if( cursectnum[p] == s ) {
-                              if( posz[p] >= (sect->floorz-(42<<8)) ) {
-                                   clipmove(&posx[p],&posy[p],&posz[p],
-                                            &cursectnum[p],dax<<4,day<<4,128L,4<<8,4<<8,CLIPMASK0);
-                                   setsprite(playersprite[p],posx[p],posy[p],posz[p]+(42<<8));
-                                   revolvedoorstat[p]=1;
+                              if( posz[p] >= (sect->floorz-(42<<8)) )
+                              {
+                                  vec3_t pos;
+                                  pos.x = posx[p]; pos.y = posy[p]; pos.z = posz[p];
+
+                                  clipmove(&pos, &cursectnum[p],dax<<4,day<<4,128L,4<<8,4<<8,CLIPMASK0);
+
+                                  posx[p] = pos.x; posy[p] = pos.y; posz[p] = pos.z;
+
+                                  pos.z += (42 << 8);
+
+                                  setsprite(playersprite[p], &pos);
+                                  revolvedoorstat[p]=1;
                               }
                          }
                     }
@@ -1927,7 +1970,7 @@ movedoors(int d)
                          j=door->walls[i];
                          z=wallptr[j]->y;
                          z=stepdoor(z,door->goalz[i>>1],door,D_OPENSOUND);
-                         dragpoint(j,wallptr[j]->x,z);
+                         dragpoint(j,wallptr[j]->x,z, 0);
                     }
                }
                else {
@@ -1935,7 +1978,7 @@ movedoors(int d)
                          j=door->walls[i];
                          z=wallptr[j]->x;
                          z=stepdoor(z,door->goalz[i>>1],door,D_OPENSOUND);
-                         dragpoint(j,z,wallptr[j]->y);
+                         dragpoint(j,z,wallptr[j]->y, 0);
                     }
                }
                break;
@@ -1997,7 +2040,7 @@ movedoors(int d)
                          j=door->walls[i];
                          z=wallptr[j]->y;
                          z=stepdoor(z,door->goalz[i>>1],door,D_SHUTSOUND);
-                         dragpoint(j,wallptr[j]->x,z);
+                         dragpoint(j,wallptr[j]->x,z, 0);
                     }
                }
                else {
@@ -2005,7 +2048,7 @@ movedoors(int d)
                          j=door->walls[i];
                          z=wallptr[j]->x;
                          z=stepdoor(z,door->goalz[i>>1],door,D_SHUTSOUND);
-                         dragpoint(j,z,wallptr[j]->y);
+                         dragpoint(j,z,wallptr[j]->y, 0);
                     }
                }
                break;
@@ -2245,27 +2288,27 @@ movefloordoor(int d)
                switch (dptr->dir) {
                case 0:
                     j=dptr->wall1;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s,0 );
                     break;
                case 1:
                     j=dptr->wall1;
-                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y, 0);
                     break;
                case 2:
                     j=dptr->wall1;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s, 0);
                     break;
                case 3:
                     j=dptr->wall1;
-                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y, 0);
                     break;
                }
           }
@@ -2279,27 +2322,27 @@ movefloordoor(int d)
                switch (dptr->dir) {
                case 0:
                     j=dptr->wall2;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y+s, 0);
                     break;
                case 1:
                     j=dptr->wall2;
-                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x-s,wallptr[j]->y, 0);
                     break;
                case 2:
                     j=dptr->wall2;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s);
+                    dragpoint(j,wallptr[j]->x,wallptr[j]->y-s, 0);
                     break;
                case 3:
                     j=dptr->wall2;
-                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y, 0);
                     j=wallptr[j]->point2;
-                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y);
+                    dragpoint(j,wallptr[j]->x+s,wallptr[j]->y, 0);
                     break;
                }
           }
@@ -2339,7 +2382,7 @@ movevehicles(int v)
      if( vptr->soundindex == -1 ) {
                                         
           for( i=0; i<32; i++) {        //find mapno using names array
-               if( !(strcasecmp(boardfilename,mapnames[i]) ) )
+               if( !(Bstrcasecmp(boardfilename,mapnames[i]) ) )
                     break;
           }
           switch( v ) {
@@ -2508,7 +2551,7 @@ movevehicles(int v)
           switch( v ) {
           //jsa vehicles
           case 0:
-               if( !(strcasecmp(boardfilename,"CITY1.MAP")) || !(strcasecmp(boardfilename,"WARE2.MAP")))
+               if( !(Bstrcasecmp(boardfilename,"CITY1.MAP")) || !(Bstrcasecmp(boardfilename,"WARE2.MAP")))
                     playsound(S_TRUCKSTOP,vptr->pivotx,vptr->pivoty,0,ST_AMBUPDATE);      
                break;
           default:
@@ -2520,12 +2563,23 @@ movevehicles(int v)
      px+=xvect2;
      py+=yvect2;
      n=vptr->numpoints;
-     for( i=0 ; i < n ; i++ ) {
+     for( i=0 ; i < n ; i++ )
+     {
           p=vptr->point[i];
           x=vptr->pointx[i];
           y=vptr->pointy[i];
-          rotatepoint(px,py,px-x,py-y,curang,&x,&y);
-          dragpoint(p,x,y);
+
+          vec2_t pivot;
+          pivot.x = px;
+          pivot.y = py;
+          vec2_t p1;
+          p1.x = px - x;
+          p1.y = py - y;
+          vec2_t p2;
+
+          rotatepoint(pivot,p1,curang,&p2);
+          x = p2.x; y = p2.y;
+          dragpoint(p,x,y, 0);
      }
      vptr->pivotx=px;
      vptr->pivoty=py;
@@ -2551,13 +2605,23 @@ movevehicles(int v)
      memset(onveh,0,sizeof(short)*MAXPLAYERS);
      for( i=0 ; i < n ; i++ ) {
           p=headspritesect[vptr->sector[i]];
-          while (p >= 0) {
+          while (p >= 0)
+          {
                s=nextspritesect[p];
                x=sprptr[p]->x;
                y=sprptr[p]->y;
                x+=xvect2;
                y+=yvect2;
-               rotatepoint(px,py,x,y,rotang,&sprptr[p]->x,&sprptr[p]->y);
+
+               vec2_t pivot;
+               pivot.x = px; pivot.y = py;
+               vec2_t p1;
+               p1.x = x; p1.y = y;
+               vec2_t p2;
+               rotatepoint(pivot,p1,rotang,&p2);
+               sprptr[p]->x = p2.x;
+               sprptr[p]->y = p2.y;
+
                sprptr[p]->ang+=rotang;
                p=s;
           }
@@ -2567,7 +2631,13 @@ movevehicles(int v)
                if( cursectnum[p] == vptr->sector[i] ) {
                     x+=xvect2;
                     y+=yvect2;
-                    rotatepoint(px,py,x,y,rotang,&posx[p],&posy[p]);
+                    vec2_t pivot;
+                    pivot.x = px; pivot.y = py;
+                    vec2_t p2;
+                    p2.x = x; p2.y = y;
+                    vec2_t pos;
+                    rotatepoint(pivot,p2,rotang,&pos);
+                    posx[p] = pos.x; posy[p] = pos.y;
                     ang[p]+=rotang;
                     onveh[p]=1;
                }
@@ -2740,7 +2810,7 @@ checkmapsndfx(short p)
           }
      }
 
-     if( !strncasecmp("SUBWAY",boardfilename,6) ) {
+     if( !Bstrncasecmp("SUBWAY",boardfilename,6) ) {
           if( ambsubloop == -1 ) {
                ambsubloop=playsound(S_SUBSTATIONLOOP, 0, 0, -1, ST_IMMEDIATE);
           }
@@ -2957,7 +3027,7 @@ tekswitchtrigger(short snum)
 }
 
 int
-krand_intercept(char *stg)
+krand_intercept(const char *stg)
 {
      if (dbgflag) {
           if (dbgcolumn > 80) {
