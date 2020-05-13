@@ -2063,6 +2063,8 @@ void Menu_Init(void)
         SELECTDIR_z = 16384;
 
         g_textstat &= ~RS_TOPLEFT;
+        MF_Redfont.textflags |= TEXT_VARHEIGHT;
+        MF_Bluefont.textflags |= TEXT_VARHEIGHT;
     }
 
     // prepare shareware

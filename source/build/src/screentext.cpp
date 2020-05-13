@@ -241,7 +241,7 @@ vec2_t screentextRender(ScreenText_t const & data)
     glyph_t glyph;
     int constwidthactive = 0;
 
-    if (!(o & RS_TOPLEFT))
+    if ((data.f & TEXT_VARHEIGHT) && !(o & RS_TOPLEFT))
         origin.y = mulscale16(data.standardhalfheight, data.zoom);
 
     // near-CODEDUP "alignments"
@@ -383,7 +383,7 @@ vec2_t screentextRender(ScreenText_t const & data)
             AddCoordsFromRotation(&location, &Xdirection, pos.x);
             AddCoordsFromRotation(&location, &Ydirection, pos.y);
 
-            if (!(o & RS_TOPLEFT))
+            if ((data.f & TEXT_VARHEIGHT) && !(o & RS_TOPLEFT))
                 AddCoordsFromRotation(&location, &Xdirection, (siz.x >> 1) * data.zoom);
 
             rotatesprite_(location.x, location.y, data.zoom, angle, tile, data.shade, pal, o, alpha, blendidx, data.b1.x, data.b1.y, data.b2.x, data.b2.y);

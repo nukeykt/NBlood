@@ -98,6 +98,8 @@ enum ScreenTextFlags_t
     TEXT_XJUSTIFY        = 0x00000200,
     TEXT_YOFFSETZERO     = 0x00000400,
     TEXT_YJUSTIFY        = 0x00000800,
+
+    TEXT_VARHEIGHT       = 0x00800000,
 };
 
 struct ScreenTextSize_t
