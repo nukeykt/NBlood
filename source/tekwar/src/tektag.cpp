@@ -212,7 +212,7 @@ struct    spriteelev     spriteelev[MAXSPRITEELEVS];
 struct    spriteelev     *sprelevptr[MAXSPRITEELEVS];
 int       sprelevcnt;
 
-int flags32[32]={
+uint32_t flags32[32]={
      0x80000000,0x40000000,0x20000000,0x10000000,
      0x08000000,0x04000000,0x02000000,0x01000000,
      0x00800000,0x00400000,0x00200000,0x00100000,

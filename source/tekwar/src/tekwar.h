@@ -286,7 +286,7 @@ extern    int      firedonetics[MAXPLAYERS];
 extern    int      lastgun[MAXPLAYERS];
 extern    int       drawweap[MAXPLAYERS];
 
-extern    int      flags32[];                                                  
+extern    uint32_t      flags32[];                                                  
 
 #define   TOGGLE_RETICULE     0
 #define   TOGGLE_TIME         1
