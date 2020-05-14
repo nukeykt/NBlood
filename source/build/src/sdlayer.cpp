@@ -1176,6 +1176,15 @@ void mouseUninit(void)
 //                    furthermore return 0 if successful.
 //
 
+#ifdef _WIN32
+static void SetWindowGrab(SDL_Window *pWindow, int const clipToWindow)
+{
+    UNREFERENCED_PARAMETER(pWindow);
+    RECT rect { windowx, windowy, windowx + xdim, windowy + ydim };
+    ClipCursor(clipToWindow ? &rect : nullptr);
+}
+#define SDL_SetWindowGrab SetWindowGrab
+#endif
 static inline char grabmouse_low(char a)
 {
 #if !defined EDUKE32_TOUCH_DEVICES
@@ -1189,6 +1198,7 @@ static inline char grabmouse_low(char a)
     return 0;
 #endif
 }
+#undef SDL_SetWindowGrab
 #endif
 
 //
