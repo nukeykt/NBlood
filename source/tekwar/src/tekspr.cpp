@@ -48,7 +48,7 @@ kenmovesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordis
 
      pos.x = spr->x; pos.y = spr->y; pos.z = daz;
      retval = clipmove(&pos,&dasectnum,dx,dy,((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
-     spr->x = posx; spr->y = pos.y; daz = pos.z;
+     spr->x = pos.x; spr->y = pos.y; daz = pos.z;
 
      if ((dasectnum != spr->sectnum) && (dasectnum >= 0))
           changespritesect(spritenum,dasectnum);
