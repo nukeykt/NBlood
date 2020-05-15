@@ -179,7 +179,7 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
     insptr = apScript + apScriptEvents[eventNum];
     globalReturn = returnValue;
 
-    double const t = timerGetHiTicks();
+    auto const t = timerGetPerformanceCounter();
 
     if ((unsigned)spriteNum >= MAXSPRITES)
         VM_DummySprite();
@@ -192,7 +192,7 @@ static FORCE_INLINE int32_t VM_EventInlineInternal__(int const eventNum, int con
     if (vm.flags & VM_KILL)
         VM_DeleteSprite(vm.spriteNum, vm.playerNum);
 
-    g_eventTotalMs[eventNum] += timerGetHiTicks()-t;
+    g_eventTotalMs[eventNum] += (double)(1000*(timerGetPerformanceCounter()-t))/timerGetPerformanceFrequency();
     g_eventCalls[eventNum]++;
 
     // restoring these needs to happen after VM_DeleteSprite() due to event recursion
@@ -6389,7 +6389,7 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     VM_UpdateAnim(vm.spriteNum, vm.pData);
     int const picnum = vm.pSprite->picnum;
 
-    double t = timerGetHiTicks();
+    auto t = timerGetPerformanceCounter();
 
 #ifdef LUNATIC
     int32_t killit=0;
@@ -6401,10 +6401,10 @@ void A_Execute(int const spriteNum, int const playerNum, int const playerDist)
     insptr = NULL;
 #endif
 
-    t = timerGetHiTicks()-t;
-    g_actorTotalMs[picnum] += t;
-    g_actorMinMs[picnum] = min(g_actorMinMs[picnum], t);
-    g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], t);
+    auto ms = (double)(1000*(timerGetPerformanceCounter()-t))/timerGetPerformanceFrequency();
+    g_actorTotalMs[picnum] += ms;
+    g_actorMinMs[picnum] = min(g_actorMinMs[picnum], ms);
+    g_actorMaxMs[picnum] = max(g_actorMaxMs[picnum], ms);
     g_actorCalls[picnum]++;
 
 #ifdef LUNATIC
