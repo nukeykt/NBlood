@@ -160,6 +160,8 @@ int RT_PrepareScript(void)
     g_player[0].ps->max_ammo_amount[13] = 20;
     g_player[0].ps->max_ammo_amount[14] = 25;
 
+    g_shrinkerRadius = 680;
+
     const int quote_offset = 0xb4784;
     const int quote_delta = 0xbba50- 0x80105e50;
     const int quote_count = 131;

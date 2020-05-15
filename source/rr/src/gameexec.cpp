@@ -221,7 +221,7 @@ static int32_t VM_CheckSquished(void)
     usectortype const * const pSector = (usectortype *)&sector[vm.pSprite->sectnum];
 
     if (pSector->lotag == ST_23_SWINGING_DOOR ||
-        (vm.pSprite->picnum == APLAYER && ud.noclip))
+        (vm.pSprite->picnum == APLAYER && (ud.noclip || (REALITY && vm.pSprite->extra <= 0))))
         return 0;
 
     int32_t floorZ = pSector->floorz;

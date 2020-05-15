@@ -168,6 +168,24 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
     g_player[0].wchoice[9] = 1;
     Bsprintf(ud.wchoice, "3457860291");
 
+    if (REALITY)
+    {
+        g_player[0].wchoice[0] = 13;
+        g_player[0].wchoice[1] = 12;
+        g_player[0].wchoice[2] = 2;
+        g_player[0].wchoice[3] = 3;
+        g_player[0].wchoice[4] = 7;
+        g_player[0].wchoice[5] = 4;
+        g_player[0].wchoice[6] = 10;
+        g_player[0].wchoice[7] = 6;
+        g_player[0].wchoice[8] = 14;
+        g_player[0].wchoice[9] = 8;
+        g_player[0].wchoice[10] = 5;
+        g_player[0].wchoice[11] = 1;
+        g_player[0].wchoice[12] = 9;
+        g_player[0].wchoice[13] = 0;
+    }
+
 #ifdef HAVE_CLIPSHAPE_FEATURE
     // pre-form the default 10 clipmaps
     for (j = '0'; j<='9'; ++j)

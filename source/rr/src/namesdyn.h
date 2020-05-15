@@ -628,7 +628,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define FEM9__STATIC 3450
 #define DN64TILE3634__STATIC 3634
 #define FOOTPRINT__STATIC 3701
+#define DN64TILE3713__STATIC 3713
+#define DN64TILE3714__STATIC 3714
+#define DN64TILE3715__STATIC 3715
+#define DN64TILE3716__STATIC 3716
 #define DN64TILE3841__STATIC 3841
+#define DN64TILE3845__STATIC 3845
 #define POOP__STATIC 4094
 #define FRAMEEFFECT1__STATIC 4095
 #define PANNEL3__STATIC 4099
@@ -654,6 +659,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define W_MILKSHELF__STATIC 4181
 #define W_MILKSHELFBROKE__STATIC 4203
 #define PURPLELAVA__STATIC 4240
+#define DN64TILE4250__STATIC 4250
 #define LAVABUBBLE__STATIC 4340
 #define DUKECUTOUT__STATIC 4352
 #define TARGET__STATIC 4359
@@ -741,6 +747,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define NEWBEASTJUMP__STATIC 4690
 #define NEWBEASTHANG__STATIC 4670
 #define NEWBEASTHANGDEAD__STATIC 4671
+#define DN64TILE4690__STATIC 4690
 #define BOSS4__STATIC 4740
 #define BOSS4STAYPUT__STATIC 4741
 #define FEM10__STATIC 4864
@@ -2738,7 +2745,12 @@ extern int32_t BLIMP;
 extern int32_t FEM9;
 extern int32_t DN64TILE3634;
 extern int32_t FOOTPRINT;
+extern int32_t DN64TILE3713;
+extern int32_t DN64TILE3714;
+extern int32_t DN64TILE3715;
+extern int32_t DN64TILE3716;
 extern int32_t DN64TILE3841;
+extern int32_t DN64TILE3845;
 extern int32_t POOP;
 extern int32_t FRAMEEFFECT1;
 extern int32_t PANNEL3;
@@ -2764,6 +2776,7 @@ extern int32_t W_HITTECHWALL15;
 extern int32_t W_MILKSHELF;
 extern int32_t W_MILKSHELFBROKE;
 extern int32_t PURPLELAVA;
+extern int32_t DN64TILE4250;
 extern int32_t LAVABUBBLE;
 extern int32_t DUKECUTOUT;
 extern int32_t TARGET;
@@ -2851,6 +2864,7 @@ extern int32_t NEWBEASTSTAYPUT;
 extern int32_t NEWBEASTJUMP;
 extern int32_t NEWBEASTHANG;
 extern int32_t NEWBEASTHANGDEAD;
+extern int32_t DN64TILE4690;
 extern int32_t BOSS4;
 extern int32_t BOSS4STAYPUT;
 extern int32_t FEM10;

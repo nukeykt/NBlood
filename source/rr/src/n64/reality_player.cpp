@@ -2,8 +2,23 @@
 #include "build.h"
 #include "../duke3d.h"
 
+int rt_pfade;
 
 //////////////////// HUD WEAPON / MISC. DISPLAY CODE ////////////////////
+
+int RT_P_GetHudPal(const DukePlayer_t *p)
+{
+    if (p->cursectnum >= 0)
+    {
+        if (sector[p->cursectnum].lotag == ST_2_UNDERWATER)
+            return 1;
+        int const hudPal = sector[p->cursectnum].floorpal;
+        if (!g_noFloorPal[hudPal])
+            return hudPal;
+    }
+
+    return 0;
+}
 
 static void RT_P_DisplaySpit(void)
 {
@@ -18,11 +33,10 @@ static void RT_P_DisplaySpit(void)
     for (bssize_t i=0; i < pPlayer->numloogs; i++)
     {
         int const rotAng = klabs(sintable[((loogCounter + i) << 5) & 2047]) >> 5;
-        int const rotZoom  = 4096 + ((loogCounter + i) << 9);
+        int const rotZoom  = (4096 + ((loogCounter + i) << 9) - (i<<8))*100/65536;
         int const rotX     = (-fix16_to_int(g_player[screenpeek].inputBits->q16avel) >> 1) + (sintable[((loogCounter + i) << 6) & 2047] >> 10);
 
-        rotatesprite_fs((pPlayer->loogiex[i] + rotX) << 16, (200 + pPlayer->loogiey[i] - rotY) << 16, rotZoom - (i << 8),
-                        256 - rotAng, LOOGIE, 0, 0, 2);
+        RT_RotateSprite(pPlayer->loogiex[i] + rotX, 200 + pPlayer->loogiey[i] - rotY, rotZoom, rotZoom, LOOGIE, 0);
     }
 }
 
@@ -38,10 +52,9 @@ static int RT_P_DisplayFist(int const fistShade)
         return 0;
 
     int const fistY       = klabs(pPlayer->look_ang) / 9;
-    int const fistZoom    = clamp(65536 - (sintable[(512 + (fistInc << 6)) & 2047] << 2), 40920, 90612);
-    int const fistYOffset = 194 + (sintable[((6 + fistInc) << 7) & 2047] >> 9);
-    int const fistPal     = P_GetHudPal(pPlayer);
-    int       wx[2]       = { windowxy1.x, windowxy2.x };
+    int       fistZoom    = min(65536 - (sintable[(512 + (fistInc << 6)) & 2047] << 2), 90612);
+    if (fistZoom < 40920) fistZoom = 40290;
+    int const fistYOffset = 214 + (sintable[((6 + fistInc) << 7) & 2047] >> 9);
 
 #ifdef SPLITSCREEN_MOD_HACKS
     // XXX: this is outdated, doesn't handle above/below split.
@@ -49,8 +62,8 @@ static int RT_P_DisplayFist(int const fistShade)
         wx[(g_snum==0)] = (wx[0]+wx[1])/2+1;
 #endif
 
-    rotatesprite((-fistInc + 222 + (fix16_to_int(g_player[screenpeek].inputBits->q16avel) >> 5)) << 16, (fistY + fistYOffset) << 16,
-                 fistZoom, 0, FIST, fistShade, fistPal, 2, wx[0], windowxy1.y, wx[1], windowxy2.y);
+    RT_RotateSprite(-fistInc + 222 + (fix16_to_int(g_player[screenpeek].inputBits->q16avel) >> 3), fistY + fistYOffset,
+                 (fistZoom*100)/65536, (fistZoom*100)/65536, FIST, 0);
 
     return 1;
 }
@@ -151,10 +164,10 @@ static int RT_P_DisplayKnee(int kneeShade)
         return 0;
 
     int const kneeY   = knee_y[ps->knee_incs] + (klabs(ps->look_ang) / 9) - (ps->hard_landing << 3);
-    int const kneePal = P_GetKneePal(ps);
+    int const kneePal = RT_P_GetHudPal(ps);
 
     RT_DrawTileScaled(105+(fix16_to_int(g_player[screenpeek].inputBits->q16avel)>>5)-(ps->look_ang>>1)+(knee_y[ps->knee_incs]>>2),
-                     kneeY+280-(fix16_to_int(ps->q16horiz-ps->q16horizoff)>>4),KNEE,kneeShade,4+DRAWEAP_CENTER,kneePal);
+                     kneeY+331-(fix16_to_int(ps->q16horiz-ps->q16horizoff)>>4),KNEE,kneeShade,4+DRAWEAP_CENTER,kneePal);
 
     return 1;
 }
@@ -172,7 +185,7 @@ static int RT_P_DisplayKnuckles(int knuckleShade)
         return 0;
 
     int const knuckleY   = (klabs(pPlayer->look_ang) / 9) - (pPlayer->hard_landing << 3);
-    int const knucklePal = P_GetHudPal(pPlayer);
+    int const knucklePal = RT_P_GetHudPal(pPlayer);
 
     RT_DrawTileScaled(160 + (fix16_to_int(g_player[screenpeek].inputBits->q16avel) >> 5) - (pPlayer->look_ang >> 1),
                      knuckleY + 180 - (fix16_to_int(pPlayer->q16horiz - pPlayer->q16horizoff) >> 4),
@@ -188,19 +201,17 @@ void RT_P_DisplayScuba(void)
     {
         const DukePlayer_t *const pPlayer = g_player[screenpeek].ps;
 
-        int const scubaPal = P_GetHudPal(pPlayer);
+        int const scubaPal = RT_P_GetHudPal(pPlayer);
 
 #ifdef SPLITSCREEN_MOD_HACKS
         g_snum = screenpeek;
 #endif
+        RT_DisablePolymost();
 
-        // this is a hack to hide the seam that appears between the two halves of the mask in GL
-#ifdef USE_OPENGL
-        if (videoGetRenderMode() >= REND_POLYMOST)
-            RT_DrawTileScaled(44, (200 - tilesiz[SCUBAMASK].y), SCUBAMASK, 0, 2 + 16 + DRAWEAP_CENTER, scubaPal);
-#endif
-        RT_DrawTileScaled(43, (200 - tilesiz[SCUBAMASK].y), SCUBAMASK, 0, 2 + 16 + DRAWEAP_CENTER, scubaPal);
-        RT_DrawTileScaled(320 - 43, (200 - tilesiz[SCUBAMASK].y), SCUBAMASK, 0, 2 + 4 + 16 + DRAWEAP_CENTER, scubaPal);
+        RT_DrawTileScaled(103, 208, SCUBAMASK, 0, 0, scubaPal);
+        RT_DrawTileScaled(217, 208, SCUBAMASK, 0, 4, scubaPal);
+
+        RT_EnablePolymost();
     }
 }
 
@@ -221,7 +232,7 @@ static int RT_P_DisplayTip(int tipShade)
         return 1;
 
     int const tipY       = (klabs(pPlayer->look_ang) / 9) - (pPlayer->hard_landing << 3);
-    int const tipPal     = P_GetHudPal(pPlayer);
+    int const tipPal     = RT_P_GetHudPal(pPlayer);
     int const tipYOffset = access_tip_y[pPlayer->tipincs] >> 1;
 
     guniqhudid = 201;
@@ -242,12 +253,12 @@ static int RT_P_DisplayAccess(int accessShade)
     if (pSprite->access_incs == 0)
         return 0;
 
-    if ((unsigned)pSprite->access_incs >= ARRAY_SIZE(access_tip_y)-4 || sprite[pSprite->i].extra <= 0)
+    if ((unsigned)pSprite->access_incs >= ARRAY_SIZE(access_tip_y) || sprite[pSprite->i].extra <= 0)
         return 1;
 
     int const accessX   = access_tip_y[pSprite->access_incs] >> 2;
     int const accessY   = access_tip_y[pSprite->access_incs] + (klabs(pSprite->look_ang) / 9) - (pSprite->hard_landing << 3);
-    int const accessPal = (pSprite->access_spritenum >= 0) ? sprite[pSprite->access_spritenum].pal : 0;
+    int const accessPal = RT_P_GetHudPal(pSprite);
 
     guniqhudid = 200;
 
@@ -259,8 +270,21 @@ static int RT_P_DisplayAccess(int accessShade)
     }
     else
     {
+        int accessPal = 0;
+        if (pSprite->access_spritenum >= 0)
+            accessPal = sprite[pSprite->access_spritenum].pal;
+        int accessTile = 0;
+        if (accessPal == 0)
+            accessTile = DN64TILE3715;
+        else if (accessPal == 21)
+            accessTile = DN64TILE3713;
+        else if (accessPal == 23)
+            accessTile = DN64TILE3714;
         RT_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].inputBits->q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
-                         accessY + 266 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4), HANDHOLDINGACCESS, accessShade,
+                         accessY + 279 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4), DN64TILE3716, accessShade,
+                         4 + DRAWEAP_CENTER, accessPal);
+        RT_DrawTileScaled(170 + (fix16_to_int(g_player[screenpeek].inputBits->q16avel) >> 5) - (pSprite->look_ang >> 1) + accessX,
+                         accessY + 279 - (fix16_to_int(pSprite->q16horiz - pSprite->q16horizoff) >> 4), accessTile, accessShade,
                          4 + DRAWEAP_CENTER, accessPal);
     }
 
@@ -311,7 +335,7 @@ void RT_P_DisplayWeapon(void)
     int weaponY       = klabs(pPlayer->look_ang) / 9;
     int weaponYOffset = 60 - (pPlayer->weapon_pos * pPlayer->weapon_pos);
     int weaponShade   = sprite[pPlayer->i].shade <= 24 ? sprite[pPlayer->i].shade : 24;
-    int weaponPal     = P_GetHudPal(pPlayer);
+    int weaponPal     = RT_P_GetHudPal(pPlayer);
 
     int32_t weaponBits = 0;
     UNREFERENCED_PARAMETER(weaponBits);
@@ -400,15 +424,13 @@ void RT_P_DisplayWeapon(void)
         {
         case KNEE_WEAPON__STATIC:
         {
-            int const kneePal = P_GetKneePal(pPlayer, weaponPal);
-
             guniqhudid = currentWeapon;
             if (*weaponFrame < 5 || *weaponFrame > 9)
                 RT_DrawTileScaled(weaponX + 260 - halfLookAng, weaponY + 321 - weaponYOffset, KNEE,
-                                    weaponShade, weaponBits, kneePal);
+                                    weaponShade, weaponBits, weaponPal);
             else
                 RT_DrawTileScaled(weaponX + 200 - halfLookAng, weaponY + 285 - weaponYOffset, KNEE + 1,
-                                    weaponShade, weaponBits, kneePal);
+                                    weaponShade, weaponBits, weaponPal);
             guniqhudid = 0;
             break;
         }

@@ -1302,7 +1302,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         ceilZ  = actor[pPlayer->i].ceilingz;
         floorZ = actor[pPlayer->i].floorz;
 
-        if (g_earthquakeTime > 0 && pPlayer->on_ground == 1)
+        if (g_earthquakeTime > 0 && (REALITY || pPlayer->on_ground == 1))
         {
             CAMERA(pos.z) += 256 - (((g_earthquakeTime)&1) << 9);
             CAMERA(q16ang)   += fix16_from_int((2 - ((g_earthquakeTime)&2)) << 2);
@@ -1310,6 +1310,9 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 
         if (sprite[pPlayer->i].pal == 1)
             CAMERA(pos.z) -= (18<<8);
+
+        if (REALITY && pPlayer->newowner < 0)
+            CAMERA(q16horiz) += fix16_from_int(pPlayer->dn64_370);
 
         if (pPlayer->newowner < 0 && pPlayer->spritebridge == 0)
         {
@@ -7441,6 +7444,36 @@ static void A_InitEnemyFlags(void)
         for (bssize_t i = ARRAY_SIZE(NoCanSeeCheck) - 1; i >= 0; i--)
             SETFLAG(NoCanSeeCheck[i], SFLAG_NOCANSEECHECK);
     }
+    else if (REALITY)
+    {
+        int DukeEnemies[] = {
+            SHARK, RECON, DRONE,
+            LIZTROOPONTOILET, LIZTROOPJUSTSIT, LIZTROOPSTAYPUT, LIZTROOPSHOOT,
+            LIZTROOPJETPACK, LIZTROOPDUCKING, LIZTROOPRUNNING, LIZTROOP,
+            OCTABRAIN, COMMANDER, COMMANDERSTAYPUT, PIGCOP, EGG, PIGCOPSTAYPUT, PIGCOPDIVE,
+            LIZMAN, LIZMANSPITTING, LIZMANFEEDING, LIZMANJUMP,
+            BOSS1, BOSS2, BOSS3, RAT, ROTATEGUN,
+            NEWBEAST, NEWBEASTSTAYPUT, NEWBEASTHANG, NEWBEASTHANGDEAD, DN64TILE4690 };
+
+        int SolidEnemies[] = { BOSS1, BOSS2, BOSS3, RECON, ROTATEGUN };
+        int NoWaterDipEnemies[] = { OCTABRAIN, COMMANDER, DRONE };
+        int GreenSlimeFoodEnemies[] = { LIZTROOP, LIZMAN, PIGCOP, NEWBEAST };
+
+        for (bssize_t i=GREENSLIME; i<=GREENSLIME+7; i++)
+            SETFLAG(i, SFLAG_HARDCODED_BADGUY|SFLAG_BADGUY_TILE);
+
+        for (bssize_t i=ARRAY_SIZE(DukeEnemies)-1; i>=0; i--)
+            SETFLAG(DukeEnemies[i], SFLAG_HARDCODED_BADGUY|SFLAG_BADGUY_TILE);
+
+        for (bssize_t i=ARRAY_SIZE(SolidEnemies)-1; i>=0; i--)
+            SETFLAG(SolidEnemies[i], SFLAG_NODAMAGEPUSH);
+
+        for (bssize_t i=ARRAY_SIZE(NoWaterDipEnemies)-1; i>=0; i--)
+            SETFLAG(NoWaterDipEnemies[i], SFLAG_NOWATERDIP);
+
+        for (bssize_t i=ARRAY_SIZE(GreenSlimeFoodEnemies)-1; i>=0; i--)
+            SETFLAG(GreenSlimeFoodEnemies[i], SFLAG_GREENSLIMEFOOD);
+    }
     else
     {
         int DukeEnemies[] = {
@@ -8665,7 +8698,8 @@ int G_DoMoveThings(void)
     if (ud.pause_on == 0)
     {
         g_globalRandom = krand2();
-        A_MoveDummyPlayers();//ST 13
+        if (!REALITY)
+            A_MoveDummyPlayers();//ST 13
     }
 
     for (bssize_t TRAVERSE_CONNECT(i))

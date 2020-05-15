@@ -1045,7 +1045,12 @@ void G_DisplayRest(int32_t smoothratio)
 #endif
 
                 if (pp->over_shoulder_on == 0)
-                    P_DisplayScuba();
+                {
+                    if (REALITY)
+                        RT_P_DisplayScuba();
+                    else
+                        P_DisplayScuba();
+                }
 #ifdef SPLITSCREEN_MOD_HACKS
                 if (pp2 && pp2->over_shoulder_on == 0)  // HACK
                 {
