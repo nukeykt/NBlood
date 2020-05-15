@@ -6969,6 +6969,12 @@ MAIN_LOOP_RESTART:
 
     do //main loop
     {
+        if (gameHandleEvents() && quitevent)
+        {
+            KB_KeyDown[sc_Escape] = 1;
+            quitevent = 0;
+        }
+
         static bool frameJustDrawn;
         bool gameUpdate = false;
         double gameUpdateStartTime = timerGetHiTicks();
@@ -7061,12 +7067,6 @@ MAIN_LOOP_RESTART:
         {
             if (!g_saveRequested)
             {
-                if (gameHandleEvents() && quitevent)
-                {
-                    KB_KeyDown[sc_Escape] = 1;
-                    quitevent = 0;
-                }
-
                 // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
                 CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
 
