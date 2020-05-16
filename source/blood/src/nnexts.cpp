@@ -4765,11 +4765,11 @@ void playerQavSceneProcess(PLAYER* pPlayer, QAVSCENE* pQavScene) {
                     nnExtTriggerObject(rxBucket[i].type, rxBucket[i].index, pXSprite->command);
 
                 }
-            } else {
+            } //else {
                 
                 trPlayerCtrlStopScene(pPlayer);
 
-            }
+            //}
 
         } else {
             
