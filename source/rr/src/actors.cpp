@@ -2763,7 +2763,7 @@ ACTOR_STATIC void G_MoveWeapons(void)
                 goto next_sprite;
 
             case FREEZEBLAST__STATIC:
-                if (!REALITY) goto next_sprite;
+                if (REALITY) goto next_sprite;
                 if (pSprite->yvel < 1 || pSprite->extra < 2 || (pSprite->xvel | pSprite->zvel) == 0)
                 {
                     int const newSprite       = A_Spawn(spriteNum, TRANSPORTERSTAR);
