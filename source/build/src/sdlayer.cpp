@@ -1177,6 +1177,7 @@ void mouseUninit(void)
 //
 
 #ifdef _WIN32
+// bypass SDL_SetWindowGrab--see https://bugzilla.libsdl.org/show_bug.cgi?id=4748
 static void SetWindowGrab(SDL_Window *pWindow, int const clipToWindow)
 {
     UNREFERENCED_PARAMETER(pWindow);
