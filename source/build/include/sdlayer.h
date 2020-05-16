@@ -20,7 +20,7 @@ HINSTANCE win_gethinstance(void);
 
 #include "sdlappicon.h"
 
-#if (SDL_MAJOR_VERSION == 1 && SDL_MINOR_VERSION < 3) // SDL 1.2
+#if (SDL_MAJOR_VERSION < 2 && SDL_MINOR_VERSION < 3) // SDL 1.2
 int32_t SDL_WaitEventTimeout(SDL_Event *event, int32_t timeout);
 #endif
 
@@ -66,7 +66,7 @@ int32_t SDL_WaitEventTimeout(SDL_Event *event, int32_t timeout);
         h = MAXYDIM;                                                                                                   \
     }
 
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 #define SDL2_VIDEO_ERR(XX)                                                                                             \
     {                                                                                                                  \
         initprintf("Unable to set video mode: " XX " failed: %s\n", SDL_GetError());                                   \

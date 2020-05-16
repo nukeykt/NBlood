@@ -52,7 +52,7 @@ static FORCE_INLINE void Menu_StartTextInput()
 {
     KB_FlushKeyboardQueue();
     KB_ClearKeysDown();
-#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION > 1
+#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION >= 2
 # if defined __ANDROID__
     AndroidShowKeyboard(1);
 # else
@@ -63,7 +63,7 @@ static FORCE_INLINE void Menu_StartTextInput()
 
 static FORCE_INLINE void Menu_StopTextInput()
 {
-#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION > 1
+#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION >= 2
 # if defined __ANDROID__
     AndroidShowKeyboard(0);
 # else
@@ -556,13 +556,13 @@ static MenuOption_t MEO_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTION(&MF_Redfont, &ME
 static MenuEntry_t ME_VIDEOSETUP_BORDERLESS = MAKE_MENUENTRY("Borderless:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_BORDERLESS, Option);
 
 static char const *MEOSN_VIDEOSETUP_VSYNC[] = { "Adaptive", "Off", "On",
-#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+#if defined _WIN32 && SDL_MAJOR_VERSION >= 2
                                                 "KMT",
 #endif
 };
 
 static int32_t MEOSV_VIDEOSETUP_VSYNC[] = { -1, 0, 1,
-#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+#if defined _WIN32 && SDL_MAJOR_VERSION >= 2
                                              2,
 #endif
 };

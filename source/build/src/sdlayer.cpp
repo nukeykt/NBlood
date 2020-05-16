@@ -42,7 +42,7 @@
 #include "vfs.h"
 #include "communityapi.h"
 
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 static SDL_version linked;
 #else
 #define SDL_JoystickNameForIndex(x) SDL_JoystickName(x)
@@ -74,7 +74,7 @@ char quitevent=0, appactive=1, novideo=0;
 // video
 static SDL_Surface *sdl_surface/*=NULL*/;
 
-#if SDL_MAJOR_VERSION==2
+#if SDL_MAJOR_VERSION >= 2
 static SDL_Window *sdl_window=NULL;
 static SDL_GLContext sdl_context=NULL;
 #endif
@@ -114,7 +114,7 @@ static mutex_t m_initprintf;
 uint16_t joydead[9], joysatur[9];
 
 #ifdef _WIN32
-# if SDL_MAJOR_VERSION != 1
+# if SDL_MAJOR_VERSION >= 2
 //
 // win_gethwnd() -- gets the window handle
 //
@@ -171,7 +171,7 @@ int32_t wm_msgbox(const char *name, const char *fmt, ...)
     if (gtkbuild_msgbox(name, buf) >= 0)
         return 0;
 # endif
-# if SDL_MAJOR_VERSION > 1
+# if SDL_MAJOR_VERSION >= 2
 #  if !defined _WIN32
     // Replace all tab chars with spaces because the hand-rolled SDL message
     // box diplays the former as N/L instead of whitespace.
@@ -219,7 +219,7 @@ int32_t wm_ynbox(const char *name, const char *fmt, ...)
     if (ret >= 0)
         return ret;
 # endif
-# if SDL_MAJOR_VERSION > 1
+# if SDL_MAJOR_VERSION >= 2
     int r = -1;
 
     const SDL_MessageBoxButtonData buttons[] = {
@@ -269,12 +269,7 @@ void wm_setapptitle(const char *name)
         appicon = loadappicon();
 #endif
 
-#if SDL_MAJOR_VERSION == 1
-    SDL_WM_SetCaption(apptitle, NULL);
-
-    if (appicon && sdl_surface)
-        SDL_WM_SetIcon(appicon, 0);
-#else
+#if SDL_MAJOR_VERSION >= 2
     if (sdl_window)
     {
         SDL_SetWindowTitle(sdl_window, apptitle);
@@ -287,6 +282,11 @@ void wm_setapptitle(const char *name)
             SDL_SetWindowIcon(sdl_window, appicon);
         }
     }
+#else
+    SDL_WM_SetCaption(apptitle, NULL);
+
+    if (appicon && sdl_surface)
+        SDL_WM_SetIcon(appicon, 0);
 #endif
 
     startwin_settitle(apptitle);
@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
 }
 
 
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 static int sdlayer_getswapinterval(int const syncMode)
 {
     static int intervals[] = { -1, 0, 1, 0};
@@ -610,7 +610,7 @@ int32_t videoSetVsync(int32_t newSync)
 #endif
 
 int32_t sdlayer_checkversion(void);
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 int32_t sdlayer_checkversion(void)
 {
     SDL_version compiled;
@@ -665,7 +665,7 @@ int32_t initsystem(void)
 #endif
     }
 
-#if SDL_MAJOR_VERSION > 1
+#if SDL_MAJOR_VERSION >= 2
     SDL_StopTextInput();
     SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 #endif
@@ -729,7 +729,7 @@ void uninitsystem(void)
     SDL_Quit();
 
 #ifdef USE_OPENGL
-# if SDL_MAJOR_VERSION!=1
+# if SDL_MAJOR_VERSION >= 2
     SDL_GL_UnloadLibrary();
 # endif
 # ifdef POLYMER
@@ -1012,7 +1012,7 @@ int32_t initinput(void)
 
     memset(g_keyNameTable, 0, sizeof(g_keyNameTable));
 
-#if SDL_MAJOR_VERSION == 1
+#if SDL_MAJOR_VERSION < 2
 #define SDL_SCANCODE_TO_KEYCODE(x) (SDLKey)(x)
 #define SDL_NUM_SCANCODES SDLK_LAST
     if (SDL_EnableKeyRepeat(250, 30))
@@ -1170,7 +1170,7 @@ void mouseUninit(void)
 }
 
 
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 //
 // grabmouse_low() -- show/hide mouse cursor, lower level (doesn't check state).
 //                    furthermore return 0 if successful.
@@ -1282,7 +1282,7 @@ static int sortmodes(const void *a_, const void *b_)
 
 static char modeschecked=0;
 
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 void videoGetModes(void)
 {
     int32_t i, maxx = 0, maxy = 0;
@@ -1410,7 +1410,7 @@ static void destroy_window_resources()
 /* We should NOT destroy the window surface. This is done automatically
    when SDL_DestroyWindow or SDL_SetVideoMode is called.             */
 
-#if SDL_MAJOR_VERSION == 2
+#if SDL_MAJOR_VERSION >= 2
     if (sdl_context)
         SDL_GL_DeleteContext(sdl_context);
     sdl_context = NULL;
@@ -1517,7 +1517,7 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
     if (!gammabrightness)
     {
         //        float f = 1.0 + ((float)curbrightness / 10.0);
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
         if (SDL_GetWindowGammaRamp(sdl_window, sysgamma[0], sysgamma[1], sysgamma[2]) == 0)
 #else
         if (SDL_GetGammaRamp(sysgamma[0], sysgamma[1], sysgamma[2]) >= 0)
@@ -1536,7 +1536,7 @@ void setvideomode_sdlcommonpost(int32_t x, int32_t y, int32_t c, int32_t fs, int
         mouseGrabInput(g_mouseLockedToWindow);
 }
 
-#if SDL_MAJOR_VERSION!=1
+#if SDL_MAJOR_VERSION >= 2
 void setrefreshrate(void)
 {
     int const display = r_displayindex < SDL_GetNumVideoDisplays() ? r_displayindex : 0;
@@ -1788,7 +1788,7 @@ void videoEndDrawing(void)
 //
 // showframe() -- update the display
 //
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 
 #ifdef __ANDROID__
 extern "C" void AndroidDrawControls();
@@ -1930,14 +1930,15 @@ int32_t videoSetGamma(void)
         gammaTable[i] = gammaTable[i + 256] = gammaTable[i + 512] = (uint16_t)max(0.f, min(65535.f, val * 256.f));
     }
 
-#if SDL_MAJOR_VERSION == 1
-    i = SDL_SetGammaRamp(&gammaTable[0], &gammaTable[256], &gammaTable[512]);
-    if (i != -1)
-#else
+#if SDL_MAJOR_VERSION >= 2
     i = INT32_MIN;
 
     if (sdl_window)
         i = SDL_SetWindowGammaRamp(sdl_window, &gammaTable[0], &gammaTable[256], &gammaTable[512]);
+#else
+    i = SDL_SetGammaRamp(&gammaTable[0], &gammaTable[256], &gammaTable[512]);
+    if (i != -1)
+#endif
 
     if (i < 0)
     {
@@ -1951,18 +1952,16 @@ int32_t videoSetGamma(void)
         OSD_Printf("videoSetGamma(): %s\n", SDL_GetError());
 
 #ifndef EDUKE32_GLES
-#if SDL_MAJOR_VERSION == 1
-        SDL_SetGammaRamp(&sysgamma[0][0], &sysgamma[1][0], &sysgamma[2][0]);
-#else
-
+#if SDL_MAJOR_VERSION >= 2
         if (sdl_window)
             SDL_SetWindowGammaRamp(sdl_window, &sysgamma[0][0], &sysgamma[1][0], &sysgamma[2][0]);
+#else
+        SDL_SetGammaRamp(&sysgamma[0][0], &sysgamma[1][0], &sysgamma[2][0]);
 #endif
         gammabrightness = 0;
 #endif
     }
     else
-#endif
     {
         lastvidgcb[0] = gamma;
         lastvidgcb[1] = contrast;
@@ -1998,10 +1997,10 @@ int32_t handleevents_peekkeys(void)
 {
     SDL_PumpEvents();
 
-#if SDL_MAJOR_VERSION==1
-    return SDL_PeepEvents(NULL, 1, SDL_PEEKEVENT, SDL_EVENTMASK(SDL_KEYDOWN));
-#else
+#if SDL_MAJOR_VERSION >= 2
     return SDL_PeepEvents(NULL, 1, SDL_PEEKEVENT, SDL_KEYDOWN, SDL_KEYDOWN);
+#else
+    return SDL_PeepEvents(NULL, 1, SDL_PEEKEVENT, SDL_EVENTMASK(SDL_KEYDOWN));
 #endif
 }
 
@@ -2034,13 +2033,13 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             //  <VER> is 1.3 for PK, 1.2 for tueidj
             if (appactive && g_mouseGrabbed)
             {
-# if SDL_MAJOR_VERSION==1
+# if SDL_MAJOR_VERSION < 2
                 if (ev->motion.x != xdim >> 1 || ev->motion.y != ydim >> 1)
 # endif
                 {
                     g_mousePos.x += ev->motion.xrel;
                     g_mousePos.y += ev->motion.yrel;
-# if SDL_MAJOR_VERSION==1
+# if SDL_MAJOR_VERSION < 2
                     SDL_WarpMouse(xdim>>1, ydim>>1);
 # endif
                 }
@@ -2060,14 +2059,14 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
                 case SDL_BUTTON_RIGHT: j = 1; break;
                 case SDL_BUTTON_MIDDLE: j = 2; break;
 
-#if SDL_MAJOR_VERSION == 1
+#if SDL_MAJOR_VERSION < 2
                 case SDL_BUTTON_WHEELUP:    // 4
                 case SDL_BUTTON_WHEELDOWN:  // 5
                     j = ev->button.button;
                     break;
 #endif
                 /* Thumb buttons. */
-#if SDL_MAJOR_VERSION==1
+#if SDL_MAJOR_VERSION < 2
                 // NOTE: SDL1 does have SDL_BUTTON_X1, but that's not what is
                 // generated. (Only tested on Linux and Windows.)
                 case 8: j = 3; break;
@@ -2086,7 +2085,7 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             if (ev->button.state == SDL_PRESSED)
                 g_mouseBits |= (1 << j);
             else
-#if SDL_MAJOR_VERSION==1
+#if SDL_MAJOR_VERSION < 2
                 if (j != SDL_BUTTON_WHEELUP && j != SDL_BUTTON_WHEELDOWN)
 #endif
                 g_mouseBits &= ~(1 << j);
@@ -2096,7 +2095,7 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
             break;
         }
 #else
-# if SDL_MAJOR_VERSION != 1
+# if SDL_MAJOR_VERSION >= 2
         case SDL_FINGERUP:
             g_mouseClickState = MOUSE_RELEASED;
             break;
@@ -2189,7 +2188,7 @@ int32_t handleevents_sdlcommon(SDL_Event *ev)
 }
 
 int32_t handleevents_pollsdl(void);
-#if SDL_MAJOR_VERSION != 1
+#if SDL_MAJOR_VERSION >= 2
 // SDL 2.0 specific event handling
 int32_t handleevents_pollsdl(void)
 {
@@ -2466,6 +2465,6 @@ int32_t handleevents(void)
     return rv;
 }
 
-#if SDL_MAJOR_VERSION == 1
-#include "sdlayer12.cpp"
+#if SDL_MAJOR_VERSION < 2
+# include "sdlayer12.cpp"
 #endif
