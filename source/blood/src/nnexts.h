@@ -59,8 +59,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kModernTypeFlag4 0x0004
 
 #define kMaxRandomizeRetries 16
-#define kPercentFull 100
+#define kPercFull 100
 #define kCondRange 100
+
+
 
 // modern statnums
 enum {
@@ -69,7 +71,7 @@ kStatModernDudeTargetChanger        = kStatModernBase,
 kStatModernCondition                = 21,
 kStatModernEventRedirector          = 22,
 kStatModernPlayerLinker             = 23,
-kStatModernSeqSpawner               = 24,
+kStatModernBrokenDudeLeech          = 24,
 kStatModernQavScene                 = 25,
 kStatModernTmp                      = 39,
 kStatModernMax                      = 40,
@@ -193,6 +195,7 @@ struct OBJECTS_TO_TRACK {
 };
 
 struct TRCONDITION {
+    signed   int xindex:    16;
     unsigned int length:    8;
     OBJECTS_TO_TRACK obj[kMaxTracedObjects];
 };
@@ -249,7 +252,6 @@ void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite);
 int aiFightGetTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget);
 int aiFightGetFineTargetDist(spritetype* pSprite, spritetype* pTarget);
 bool aiFightDudeCanSeeTarget(XSPRITE* pXDude, DUDEINFO* pDudeInfo, spritetype* pTarget);
-bool aiFightIsAnnoyingUnit(spritetype* pDude);
 bool aiFightUnitCanFly(spritetype* pDude);
 bool aiFightIsMeleeUnit(spritetype* pDude);
 bool aiFightDudeIsAffected(XSPRITE* pXDude);
@@ -286,7 +288,7 @@ void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernS
 //  -------------------------------------------------------------------------   //
 void trPlayerCtrlLink(XSPRITE* pXSource, PLAYER* pPlayer, bool checkCondition);
 void trPlayerCtrlSetRace(XSPRITE* pXSource, PLAYER* pPlayer);
-void trPlayerCtrlStartScene(XSPRITE* pXSource, PLAYER* pPlayer);
+void trPlayerCtrlStartScene(XSPRITE* pXSource, PLAYER* pPlayer, bool force);
 void trPlayerCtrlStopScene(PLAYER* pPlayer);
 void trPlayerCtrlSetMoveSpeed(XSPRITE* pXSource, PLAYER* pPlayer);
 void trPlayerCtrlSetJumpHeight(XSPRITE* pXSource, PLAYER* pPlayer);

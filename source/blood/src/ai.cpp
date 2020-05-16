@@ -1739,11 +1739,7 @@ void aiInitSprite(spritetype *pSprite)
     case kDudePodFire:
     case kDudeTentacleFire:
     case kDudeTentacleMother:
-        if (gModernMap && (pSprite->cstat & CSTAT_SPRITE_YFLIP)) {
-            if (!(pSprite->flags & kModernTypeFlag1)) // don't add autoaim for player if hitag 1 specified in editor.
-                pSprite->flags = kHitagAutoAim;
-            break;
-        }
+        if (gModernMap && (pSprite->cstat & CSTAT_SPRITE_YFLIP)) break;
         fallthrough__;
     // go default
     #endif

@@ -160,7 +160,6 @@ struct GENDUDEEXTRA {
     unsigned short weaponType;
     unsigned short baseDispersion;
     unsigned short slaveCount;              // how many dudes is summoned
-    //unsigned short incarnationsCount;
     signed short nLifeLeech;                // spritenum of dropped dude's leech
     signed short slave[kGenDudeMaxSlaves];  // index of the ones dude is summon
     signed short dmgControl[kDamageMax];    // depends of current weapon, drop armor item, sprite yrepeat and surface type
