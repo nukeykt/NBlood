@@ -1595,6 +1595,28 @@ growspark_rr:
 
             return returnSprite;
         }
+
+        case DN64TILE3634__STATIC:
+        {
+            if (!REALITY)
+                break;
+
+            float viewang = RT_GetAngle(fix16_to_float(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100)), 128.f) * (-180.f / fPI);
+            int vc = int(cos(viewang * fPI / 180.f) * 768.f);
+            int vs = int(sin(viewang * fPI / 180.f) * 768.f);
+            if (sector[spriteSectnum].lotag == ST_2_UNDERWATER)
+            {
+                vc /= 2;
+                vs /= 2;
+            }
+
+            int const returnSprite = A_InsertSprite(spriteSectnum, startPos.x + sintable[(shootAng + 512 + 348) & 2047] / 448,
+                startPos.y + sintable[(shootAng + 348) & 2047] / 448, startPos.z - ZOFFSET, DN64TILE3634, 0, 18, 18,
+                shootAng, vc, vs << 4, spriteNum, 1);
+            sprite[returnSprite].yvel = 0;
+
+            return returnSprite;
+        }
     }
 
     return -1;

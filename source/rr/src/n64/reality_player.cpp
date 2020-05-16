@@ -974,7 +974,7 @@ void RT_P_ProcessWeapon(int playerNum)
                 pPlayer->weapon_pos = WEAPON_POS_RAISE;
                 pPlayer->curr_weapon = HANDREMOTE_WEAPON;
                 pPlayer->wantweaponfire = HANDREMOTE_WEAPON;
-                pPlayer->dn64_370 = HANDREMOTE_WEAPON;
+                pPlayer->dn64_372 = HANDREMOTE_WEAPON;
                 pPlayer->last_weapon = -1;
             }
             break;

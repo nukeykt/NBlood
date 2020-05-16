@@ -3282,7 +3282,7 @@ static int P_Submerge(int const spriteNum, int const playerNum, DukePlayer_t * c
         }
 
         if (RR || sprite[pPlayer->i].extra > 0)
-            A_PlaySound(DUKE_UNDERWATER, spriteNum);
+            A_PlaySound(REALITY ? 37 : DUKE_UNDERWATER, spriteNum);
 
         pPlayer->opos.z = pPlayer->pos.z = sector[otherSect].ceilingz + (7<<8);
 
@@ -3315,7 +3315,7 @@ static int P_Emerge(int const spriteNum, int const playerNum, DukePlayer_t * con
             S_ClearSoundLocks();
         }
 
-        A_PlaySound(DUKE_GASP, spriteNum);
+        A_PlaySound(REALITY ? 21 : DUKE_GASP, spriteNum);
 
         pPlayer->opos.z = pPlayer->pos.z = sector[otherSect].floorz - (7<<8);
         //pPlayer->vel.z = 0;
@@ -3425,7 +3425,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                 if (RR || sprite[spriteNum].pal == 0)
                                 {
                                     A_Spawn(spriteNum, TRANSPORTERBEAM);
-                                    A_PlaySound(TELEPORTER, spriteNum);
+                                    A_PlaySound(REALITY ? 45 : TELEPORTER, spriteNum);
                                 }
                                 for (int TRAVERSE_CONNECT(otherPlayer))
                                 {
@@ -3445,10 +3445,10 @@ ACTOR_STATIC void G_MoveTransports(void)
                                     pPlayer->transporter_hold      = 13;
                                 }
 
-                                pPlayer->pos    = *(vec3_t *)&sprite[OW(spriteNum)];
+                                pPlayer->pos    = sprite[OW(spriteNum)].pos;
                                 pPlayer->pos.z -= PHEIGHT-(RR ? (4<<8) : 0);
                                 pPlayer->opos   = pPlayer->pos;
-                                pPlayer->bobpos = *(vec2_t *)&pPlayer->pos;
+                                pPlayer->bobpos = pPlayer->pos.vec2;
 
                                 changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
                                 pPlayer->cursectnum = sprite[sectSprite].sectnum;
@@ -3456,7 +3456,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                 if (RR || sprite[spriteNum].pal == 0)
                                 {
                                     int const newSprite = A_Spawn(OW(spriteNum), TRANSPORTERBEAM);
-                                    A_PlaySound(TELEPORTER, newSprite);
+                                    A_PlaySound(REALITY ? 45 : TELEPORTER, newSprite);
                                 }
                                 break;
                             }
@@ -3669,7 +3669,7 @@ default_case:
                                             sprite[sectSprite].y += sprite[OW(spriteNum)].y - SY(spriteNum);
                                             sprite[sectSprite].z = (sectLotag == ST_1_ABOVE_WATER) ? sector[osect].ceilingz+absZvel : sector[osect].floorz-absZvel;
 
-                                            actor[sectSprite].bpos = *(vec3_t *)&sprite[sectSprite];
+                                            actor[sectSprite].bpos = sprite[sectSprite].pos;
 
                                             changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
                                         }
@@ -3679,7 +3679,7 @@ default_case:
                                             sprite[sectSprite].y += sprite[OW(spriteNum)].y - SY(spriteNum);
                                             sprite[sectSprite].z = (sectLotag == 160) ? sector[osect].ceilingz+absZdiff : sector[osect].floorz-absZdiff;
 
-                                            actor[sectSprite].bpos = *(vec3_t *)&sprite[sectSprite];
+                                            actor[sectSprite].bpos = sprite[sectSprite].pos;
 
                                             changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
 
@@ -3707,15 +3707,15 @@ default_case:
                                                 sprite[sectSprite].z -= SZ(spriteNum) - sector[sprite[OW(spriteNum)].sectnum].floorz;
 
                                                 sprite[sectSprite].ang = sprite[OW(spriteNum)].ang;
-                                                actor[sectSprite].bpos = *(vec3_t *)&sprite[sectSprite];
+                                                actor[sectSprite].bpos = sprite[sectSprite].pos;
 
                                                 if (RR || sprite[spriteNum].pal == 0)
                                                 {
                                                     int newSprite = A_Spawn(spriteNum, TRANSPORTERBEAM);
-                                                    A_PlaySound(TELEPORTER, newSprite);
+                                                    A_PlaySound(REALITY ? 45 : TELEPORTER, newSprite);
 
                                                     newSprite = A_Spawn(OW(spriteNum), TRANSPORTERBEAM);
-                                                    A_PlaySound(TELEPORTER, newSprite);
+                                                    A_PlaySound(REALITY ? 45 : TELEPORTER, newSprite);
                                                 }
 
                                                 if (sprite[OW(spriteNum)].owner != OW(spriteNum))
@@ -3733,7 +3733,7 @@ default_case:
                                             sprite[sectSprite].y += (sprite[OW(spriteNum)].y - SY(spriteNum));
                                             sprite[sectSprite].z = sprite[OW(spriteNum)].z + 4096;
 
-                                            actor[sectSprite].bpos = *(vec3_t *)&sprite[sectSprite];
+                                            actor[sectSprite].bpos = sprite[sectSprite].pos;
 
                                             changespritesect(sectSprite, sprite[OW(spriteNum)].sectnum);
                                         }
@@ -4049,6 +4049,14 @@ void A_ResetLanePics(void)
             tileCopySection(LANEPICS, 0, 0, 8, 8, tileNumber, x - 4, y - 10);
         }
     }
+}
+
+static inline int A_ManhattanDistance(int s1, int s2)
+{
+    int dx = klabs(sprite[s1].x - sprite[s2].x);
+    int dy = klabs(sprite[s1].y - sprite[s2].y);
+    int dz = klabs(sprite[s1].z - sprite[s2].z);
+    return dx + dy + (dz >> 4);
 }
 
 ACTOR_STATIC void G_MoveActors(void)
@@ -4738,19 +4746,26 @@ ACTOR_STATIC void G_MoveActors(void)
         case HELECOPT__STATIC:
         case DUKECAR__STATIC:
             if (RR) break;
-            pSprite->z += pSprite->zvel;
+            if (!REALITY)
+                pSprite->z += pSprite->zvel;
             pData[0]++;
 
             if (pData[0] == 4)
-                A_PlaySound(WAR_AMBIENCE2,spriteNum);
+                A_PlaySound(REALITY ? 186 : WAR_AMBIENCE2,spriteNum);
 
             if (pData[0] > (GAMETICSPERSEC*8))
             {
                 g_earthquakeTime = 16;
-                S_PlaySound(RPG_EXPLODE);
+                S_PlaySound(REALITY ? 8 : RPG_EXPLODE);
 
                 for (bssize_t j  = 0; j < 32; j++)
                     RANDOMSCRAP(pSprite, spriteNum);
+
+                if (REALITY)
+                {
+                    A_Spawn(spriteNum,EXPLOSION2);
+                    // TODO: explostion mdl
+                }
 
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
             }
@@ -4764,7 +4779,7 @@ ACTOR_STATIC void G_MoveActors(void)
             A_Fall(spriteNum);
             if (A_SetSprite(spriteNum, CLIPMASK0))
             {
-                if (!RRRA && (krand2()&255) < 3) A_PlaySound(RATTY,spriteNum);
+                if (!RRRA && (krand2()&255) < 3) A_PlaySound(REALITY ? 198 : RATTY,spriteNum);
                 pSprite->ang += (krand2()&31)-15+(sintable[(pData[0]<<8)&2047]>>11);
             }
             else
@@ -5155,9 +5170,14 @@ ACTOR_STATIC void G_MoveActors(void)
                 }
 
                 if (!RR)
-                    A_PlaySound(RECO_PAIN,spriteNum);
+                    A_PlaySound(REALITY ? 99 : RECO_PAIN,spriteNum);
                 RANDOMSCRAP(pSprite, spriteNum);
             }
+
+            int32_t playerDist;
+
+            if (REALITY)
+                playerNum = A_FindPlayer(pSprite, &playerDist);
 
             if (pData[0] == -1)
             {
@@ -5177,7 +5197,8 @@ ACTOR_STATIC void G_MoveActors(void)
                         RANDOMSCRAP(pSprite, spriteNum);
 
                     //int const newSprite = A_Spawn(spriteNum, EXPLOSION2);
-                    A_PlaySound(LASERTRIP_EXPLODE, spriteNum);
+                    A_PlaySound(REALITY ? 15 : LASERTRIP_EXPLODE, spriteNum);
+                    // TODO: explosion mdl
                     if (RR)
                     {
                         if (RRRA && g_ufoSpawnMinion)
@@ -5195,7 +5216,7 @@ ACTOR_STATIC void G_MoveActors(void)
                     }
                     else
                         A_Spawn(spriteNum, PIGCOP);
-                    P_AddKills(g_player[myconnectindex].ps, 1);
+                    P_AddKills(g_player[REALITY ? playerNum : myconnectindex].ps, 1);
                     DELETE_SPRITE_AND_CONTINUE(spriteNum);
                 }
 
@@ -5207,8 +5228,8 @@ ACTOR_STATIC void G_MoveActors(void)
                     pSprite->z = actor[spriteNum].floorz-(48<<8);
             }
 
-            int32_t playerDist;
-            playerNum = A_FindPlayer(pSprite, &playerDist);
+            if (!REALITY)
+                playerNum = A_FindPlayer(pSprite, &playerDist);
             pPlayer   = g_player[playerNum].ps;
 
             int const spriteOwner = pSprite->owner;
@@ -5222,7 +5243,7 @@ ACTOR_STATIC void G_MoveActors(void)
                     int const saveAng = pSprite->ang;
                     pSprite->ang      = actor[spriteNum].tempang;
                     if (!RR)
-                        A_PlaySound(RECO_ATTACK, spriteNum);
+                        A_PlaySound(REALITY ? 98 : RECO_ATTACK, spriteNum);
                     A_Shoot(spriteNum, FIRELASER);
                     pSprite->ang      = saveAng;
                 }
@@ -5263,7 +5284,7 @@ ACTOR_STATIC void G_MoveActors(void)
                     else if ((pData[2]&15) == 0)
                     {
                         if (!RR)
-                            A_PlaySound(RECO_ATTACK,spriteNum);
+                            A_PlaySound(REALITY ? 98 : RECO_ATTACK,spriteNum);
                         A_Shoot(spriteNum,FIRELASER);
                     }
                 }
@@ -5336,7 +5357,7 @@ ACTOR_STATIC void G_MoveActors(void)
                     pSprite->z -= 1024;
             }
 
-            int sndNum = RR ? 457 : RECO_ROAM;
+            int sndNum = RR ? 457 : (REALITY ? 96 : RECO_ROAM);
 
             if (!A_CheckSoundPlaying(spriteNum,sndNum))
                 A_PlaySound(sndNum,spriteNum);
@@ -5397,7 +5418,7 @@ ACTOR_STATIC void G_MoveActors(void)
                 }
             }
 
-            if (pData[0] == -5) // FROZEN
+            if (!REALITY && pData[0] == -5) // FROZEN
             {
                 pData[3]++;
                 if (pData[3] > 280)
@@ -5466,15 +5487,20 @@ ACTOR_STATIC void G_MoveActors(void)
                     {
                         for (bssize_t x = 0; x < 8; ++x)
                         {
-                            int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+                            int32_t r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+                            if (REALITY)
+                            {
+                                swap(&r1, &r4);
+                                swap(&r2, &r3);
+                            }
                             int const j
                             = A_InsertSprite(sectNum, pSprite->x, pSprite->y, pSprite->z - ZOFFSET3, SCRAP3 + (r4 & 3), -8, 48, 48,
                                              r3 & 2047, (r2 & 63) + 64, -(r1 & 4095) - (pSprite->zvel >> 2), spriteNum, 5);
                             sprite[j].pal = 6;
                         }
 
-                        A_PlaySound(SLIM_DYING,spriteNum);
-                        A_PlaySound(SQUISHED,spriteNum);
+                        A_PlaySound(REALITY ? 116 : SLIM_DYING,spriteNum);
+                        A_PlaySound(REALITY ? 44 : SQUISHED,spriteNum);
 
                         if ((krand2()&255) < 32)
                         {
@@ -5511,7 +5537,7 @@ ACTOR_STATIC void G_MoveActors(void)
                     if (pData[3] == 5)
                     {
                         sprite[pPlayer->i].extra += -(5 + (krand2() & 3));
-                        A_PlaySound(SLIM_ATTACK, spriteNum);
+                        A_PlaySound(REALITY ? 27 : SLIM_ATTACK, spriteNum);
                     }
 
                     if (pData[3] < 7)
@@ -5550,14 +5576,14 @@ ACTOR_STATIC void G_MoveActors(void)
             int const damageTile = A_IncurDamage(spriteNum);
             if (damageTile >= 0)
             {
-                A_PlaySound(SLIM_DYING,spriteNum);
+                A_PlaySound(REALITY ? 116 : SLIM_DYING,spriteNum);
 
                 P_AddKills(pPlayer, 1);
 
                 if (pPlayer->somethingonplayer == spriteNum)
                     pPlayer->somethingonplayer = -1;
 
-                if (damageTile == FREEZEBLAST)
+                if (!REALITY && damageTile == FREEZEBLAST)
                 {
                     A_PlaySound(SOMETHINGFROZE, spriteNum);
                     pData[0] = -5;
@@ -5573,7 +5599,12 @@ ACTOR_STATIC void G_MoveActors(void)
 
                 for (bssize_t x=0; x<8; x++)
                 {
-                    int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+                    int32_t r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+                    if (REALITY)
+                    {
+                        swap(&r1, &r4);
+                        swap(&r2, &r3);
+                    }
                     int const j = A_InsertSprite(sectNum, pSprite->x, pSprite->y, pSprite->z - ZOFFSET3, SCRAP3 + (r4 & 3), -8,
                                                  48, 48, r3 & 2047, (r2 & 63) + 64, -(r1 & 4095) - (pSprite->zvel >> 2),
                                                  spriteNum, 5);
@@ -5663,7 +5694,7 @@ ACTOR_STATIC void G_MoveActors(void)
                 pSprite->picnum = GREENSLIME;
 
                 if ((krand2()&511) == 0)
-                    A_PlaySound(SLIM_ROAM,spriteNum);
+                    A_PlaySound(REALITY ? 127 : SLIM_ROAM,spriteNum);
 
                 if (pData[0]==2)
                 {
@@ -5793,15 +5824,18 @@ ACTOR_STATIC void G_MoveActors(void)
             if (RR) break;
             fallthrough__;
         case MORTER__STATIC:
-            if (!RR)
+            if (!RR && !REALITY)
             {
                 int const j        = A_Spawn(spriteNum, FRAMEEFFECT1);
                 actor[j].t_data[0] = 3;
             }
             fallthrough__;
+        case DN64TILE3634__STATIC:
         case HEAVYHBOMB__STATIC:
         case CHEERBOMB__STATICRR:
         {
+            if (!REALITY && pSprite->picnum == DN64TILE3634)
+                break;
             int           playerNum;
             DukePlayer_t *pPlayer;
             int           detonatePlayer;
@@ -5810,7 +5844,7 @@ ACTOR_STATIC void G_MoveActors(void)
             {
                 if (--pData[2] <= 0)
                 {
-                    A_PlaySound(TELEPORTER, spriteNum);
+                    A_PlaySound(REALITY ? 45 : TELEPORTER, spriteNum);
                     A_Spawn(spriteNum, TRANSPORTERSTAR);
                     pSprite->cstat = 257;
                 }
@@ -5836,15 +5870,121 @@ ACTOR_STATIC void G_MoveActors(void)
                     pSprite->xvel  = 0;
                     goto DETONATEB;
                 }
+
+                if (REALITY)
+                {
+                    if (pSprite->picnum == MORTER)
+                    {
+                        if (pSprite->xvel == 0)
+                        {
+                            pData[3] = 1;
+                            pData[4] = 0;
+                            detonatePlayer = 0;
+                            goto DETONATEB;
+                        }
+                        if (pSprite->lotag == ST_2_UNDERWATER)
+                        {
+                            if (krand2() & 8)
+                                A_Spawn(spriteNum, WATERBUBBLE);
+                        }
+                        else
+                            A_Spawn(spriteNum, SMALLSMOKE);
+                    }
+                    if (pSprite->picnum == DN64TILE3634)
+                    {
+                        if (++pSprite->yvel == 64)
+                        {
+                            pData[3] = 1;
+                            pData[4] = 0;
+                            detonatePlayer = 0;
+                            pSprite->xvel = 0;
+                            goto DETONATEB;
+                        }
+                        if (pSprite->yvel > 5 && numplayers == 1)
+                        {
+                            if (pSprite->lotag == ST_2_UNDERWATER)
+                            {
+                                if (krand2() & 8)
+                                    A_Spawn(spriteNum, WATERBUBBLE);
+                            }
+                            else
+                                A_Spawn(spriteNum, SMALLSMOKE);
+                        }
+                    }
+                }
             }
+
+            int moveSprite, zvel;
+            zvel = pSprite->zvel;
 
             if (RR || pSprite->picnum != BOUNCEMINE)
             {
-                A_Fall(spriteNum);
+                if (REALITY)
+                {
+                    A_FallBomb(spriteNum);
+                    vec3_t tmpvect = {
+                                (pSprite->xvel * (sintable[(pSprite->ang + 512) & 2047])) >> 14,
+                                (pSprite->xvel * (sintable[pSprite->ang & 2047])) >> 14,
+                                pSprite->zvel };
+
+                    moveSprite = A_MoveSprite(spriteNum, &tmpvect, REALITY ? CLIPMASK1 : CLIPMASK0);
+
+                    if (pSprite->picnum == DN64TILE3634 && pData[3] == 0 && pSprite->yvel > 5)
+                    {
+                        int otherSprite, nextOtherSprite;
+                        for (SPRITES_OF_STAT_SAFE(STAT_ACTOR, otherSprite, nextOtherSprite))
+                        {
+                            if (A_CheckSpriteFlags(otherSprite, SFLAG_HARDCODED_BADGUY))
+                            {
+                                int d1 = 1024;
+                                if (sprite[otherSprite].picnum == BOSS1 || sprite[otherSprite].picnum == BOSS2
+                                    || sprite[otherSprite].picnum == BOSS3)
+                                {
+                                    d1 = 3072;
+                                }
+                                if (A_ManhattanDistance(spriteNum, otherSprite) < d1)
+                                {
+                                    pData[3]       = 1;
+                                    pData[4]       = 1;
+                                    detonatePlayer = 0;
+                                    pSprite->xvel  = 0;
+                                    goto DETONATEB;
+                                }
+                            }
+                        }
+                        for (SPRITES_OF_STAT_SAFE(STAT_PLAYER, otherSprite, nextOtherSprite))
+                        {
+                            if (pSprite->owner != otherSprite || pSprite->yvel > 10)
+                                if (sprite[otherSprite].extra > 0 && A_ManhattanDistance(spriteNum, otherSprite) < 1024)
+                                {
+                                    pData[3]       = 1;
+                                    pData[4]       = 1;
+                                    detonatePlayer = 0;
+                                    pSprite->xvel  = 0;
+                                    goto DETONATEB;
+                                }
+                        }
+                        for (SPRITES_OF_STAT_SAFE(STAT_STANDABLE, otherSprite, nextOtherSprite))
+                        {
+                            if (pSprite->picnum >= CRACK1 && pSprite->picnum <= CRACK4)
+                                if (A_ManhattanDistance(spriteNum, otherSprite) < 1024)
+                                {
+                                    pData[3] = 1;
+                                    pData[4] = 1;
+                                    detonatePlayer = 0;
+                                    pSprite->xvel = 0;
+                                    goto DETONATEB;
+                                }
+                        }
+                    }
+
+                }
+                else
+                    A_Fall(spriteNum);
 
                 if (sector[sectNum].lotag != ST_1_ABOVE_WATER && (!RRRA || sector[sectNum].lotag != 160) && pSprite->z >= actor[spriteNum].floorz-(ZOFFSET) && pSprite->yvel < 3)
                 {
-                    if (pSprite->yvel > 0 || (pSprite->yvel == 0 && actor[spriteNum].floorz == sector[sectNum].floorz))
+                    if (REALITY || pSprite->yvel > 0 || (pSprite->yvel == 0 && actor[spriteNum].floorz == sector[sectNum].floorz))
                     {
                         if (RRRA && pSprite->picnum == CHEERBOMB)
                         {
@@ -5853,13 +5993,34 @@ ACTOR_STATIC void G_MoveActors(void)
                             detonatePlayer = 0;
                             goto DETONATEB;
                         }
+                        else if (REALITY && pSprite->picnum == HEAVYHBOMB)
+                        {
+                            if (pSprite->yvel > 0 || (pSprite->yvel == 0 && actor[spriteNum].floorz == sector[sectNum].floorz))
+                                A_PlaySound(11, spriteNum);
+                            pSprite->zvel = -((4-pSprite->yvel)<<8);
+                            pSprite->yvel++;
+                            pSprite->cstat ^= 4;
+                        }
                         else
-                            A_PlaySound(PIPEBOMB_BOUNCE,spriteNum);
+                        {
+                            A_PlaySound(REALITY ? 11 : PIPEBOMB_BOUNCE,spriteNum);
+                            if (REALITY)
+                                pSprite->zvel = -(zvel >> 1);
+                        }
                     }
-                    pSprite->zvel = -((4-pSprite->yvel)<<8);
-                    if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER)
-                        pSprite->zvel >>= 2;
-                    pSprite->yvel++;
+                    if (REALITY)
+                    {
+                        if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER)
+                            pSprite->zvel >>= 2;
+                        pSprite->xvel >>= 1;
+                    }
+                    else
+                    {
+                        pSprite->zvel = -((4-pSprite->yvel)<<8);
+                        if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER)
+                            pSprite->zvel >>= 2;
+                        pSprite->yvel++;
+                    }
                 }
                 if (RR)
                 {
@@ -5867,6 +6028,14 @@ ACTOR_STATIC void G_MoveActors(void)
                     {
                         pSprite->z = actor[spriteNum].ceilingz+(16<<8);
                         pSprite->zvel = 0;
+                    }
+                }
+                else if (REALITY)
+                {
+                    if (pSprite->z <= actor[spriteNum].ceilingz)
+                    {
+                        pSprite->z = actor[spriteNum].ceilingz+(3<<8);
+                        pSprite->zvel = -(zvel >> 1);
                     }
                 }
                 else
@@ -5877,6 +6046,9 @@ ACTOR_STATIC void G_MoveActors(void)
                         pSprite->zvel = 0;
                     }
                 }
+
+                if (REALITY)
+                    goto __skip_movesprite;
             }
 
             // can't initialize this because of the goto above
@@ -5885,14 +6057,17 @@ ACTOR_STATIC void G_MoveActors(void)
             tmpvect.y = (pSprite->xvel * (sintable[pSprite->ang & 2047])) >> 14;
             tmpvect.z = pSprite->zvel;
 
-            int moveSprite;
-            moveSprite = A_MoveSprite(spriteNum, &tmpvect, CLIPMASK0);
+            moveSprite = A_MoveSprite(spriteNum, &tmpvect, REALITY ? CLIPMASK1 : CLIPMASK0);
+
+__skip_movesprite:
 
             //actor[spriteNum].movflag = moveSprite;
 
             if (sector[SECT(spriteNum)].lotag == ST_1_ABOVE_WATER && pSprite->zvel == 0)
             {
                 pSprite->z += ZOFFSET5;
+                if (REALITY)
+                    pSprite->zvel = zvel;
                 if (pData[5] == 0)
                 {
                     pData[5] = 1;
@@ -5913,19 +6088,35 @@ ACTOR_STATIC void G_MoveActors(void)
                 goto DETONATEB;
             }
 
-            if (sprite[pSprite->owner].picnum == APLAYER)
+            if (sprite[pSprite->owner].picnum == APLAYER && (!REALITY || pSprite->picnum == HEAVYHBOMB))
                 detonatePlayer = P_Get(pSprite->owner);
             else detonatePlayer = -1;
 
-            if (pSprite->xvel > 0)
+            if (REALITY)
             {
-                pSprite->xvel -= 5;
                 if (sector[sectNum].lotag == ST_2_UNDERWATER)
-                    pSprite->xvel -= 10;
-
+                {
+                    pSprite->xvel *= 0.95;
+                    pSprite->zvel *= 0.95;
+                }
+                if (pSprite->zvel == 0)
+                    pSprite->xvel -= 5;
                 if (pSprite->xvel < 0)
                     pSprite->xvel = 0;
-                if (pSprite->xvel&8) pSprite->cstat ^= 4;
+                if (pSprite->picnum == HEAVYHBOMB && (pSprite->xvel&8)) pSprite->cstat ^= 4;
+            }
+            else
+            {
+                if (pSprite->xvel > 0)
+                {
+                    pSprite->xvel -= 5;
+                    if (sector[sectNum].lotag == ST_2_UNDERWATER)
+                        pSprite->xvel -= 10;
+
+                    if (pSprite->xvel < 0)
+                        pSprite->xvel = 0;
+                    if (pSprite->xvel&8) pSprite->cstat ^= 4;
+                }
             }
 
             if ((moveSprite&49152) == 32768)
@@ -5941,8 +6132,15 @@ ACTOR_STATIC void G_MoveActors(void)
                     pSprite->xvel = 0;
                     goto DETONATEB;
                 }
-                Proj_BounceOffWall(pSprite, moveSprite);
+                if (!REALITY || (wall[moveSprite].overpicnum != GLASS && wall[moveSprite].overpicnum != GLASS2))
+                {
+                    Proj_BounceOffWall(pSprite, moveSprite);
+                    if (REALITY)
+                        A_PlaySound(11, spriteNum);
+                }
                 pSprite->xvel >>= 1;
+                if (REALITY)
+                    pSprite->zvel >>= 1;
             }
 
 DETONATEB:
@@ -5974,6 +6172,7 @@ DETONATEB:
                         case MORTER__STATIC: radius     = g_morterRadius; break;
                         case BOUNCEMINE__STATIC: if (!RR) radius = g_bouncemineRadius; break;
                         case CHEERBOMB__STATICRR: if (RRRA) radius = g_morterRadius; break;
+                        case DN64TILE3634__STATIC: if (REALITY) radius = g_pipebombRadius; break;
                     }
 
                     if (!RR || sector[pSprite->sectnum].lotag != 800)
@@ -5981,12 +6180,12 @@ DETONATEB:
                         A_RadiusDamage(spriteNum, radius, x >> 2, x >> 1, x - (x >> 2), x);
 
                         int const j = A_Spawn(spriteNum, EXPLOSION2);
-                        A_PlaySound(PIPEBOMB_EXPLODE, j);
+                        A_PlaySound(REALITY ? 12 : PIPEBOMB_EXPLODE, j);
 
                         if (RRRA && pSprite->picnum == CHEERBOMB)
                             A_Spawn(spriteNum, BURNING);
 
-                        if (!RR && pSprite->zvel == 0)
+                        if (!RR && !REALITY && pSprite->zvel == 0)
                             A_Spawn(spriteNum,EXPLOSION2BOT);
 
                         for (bssize_t x = 0; x < 8; ++x)
@@ -6043,13 +6242,18 @@ DETONATEB:
                         P_AddAmmo(pPlayer, HANDBOMB_WEAPON, 1);
                         if (RR)
                             P_AddAmmo(pPlayer, RPG_WEAPON, 1);
-                        A_PlaySound(DUKE_GET, pPlayer->i);
+                        A_PlaySound(REALITY ? 167 : DUKE_GET, pPlayer->i);
 
                         if ((pPlayer->gotweapon & (1<<HANDBOMB_WEAPON)) == 0 || pSprite->owner == pPlayer->i)
                             P_AddWeapon(pPlayer, HANDBOMB_WEAPON);
 
                         if (sprite[pSprite->owner].picnum != APLAYER)
-                            P_PalFrom(pPlayer, 32, 0, 32, 0);
+                        {
+                            if (REALITY)
+                                P_PalFrom(pPlayer, 32, 0, 0, 32);
+                            else
+                                P_PalFrom(pPlayer, 32, 0, 32, 0);
+                        }
 
                         if ((RR && actor[pSprite->owner].picnum != HEAVYHBOMB) || (!RR && pSprite->owner != spriteNum)
                             || ud.respawn_items == 0)

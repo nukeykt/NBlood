@@ -475,6 +475,60 @@ void A_Fall(int const spriteNum)
         }
 }
 
+void A_FallBomb(int const spriteNum)
+{
+    spritetype *const pSprite = &sprite[spriteNum];
+    int spriteGravity = g_spriteGravity;
+
+    if (EDUKE32_PREDICT_FALSE(G_CheckForSpaceFloor(pSprite->sectnum)))
+        spriteGravity = 0;
+    else if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER || EDUKE32_PREDICT_FALSE(G_CheckForSpaceCeiling(pSprite->sectnum)))
+        spriteGravity = g_spriteGravity/6;
+
+    if (pSprite->picnum == HEAVYHBOMB || pSprite->picnum == DN64TILE3634)
+        spriteGravity *= 1.5;
+
+    if (pSprite->statnum == STAT_ACTOR || pSprite->statnum == STAT_PLAYER || pSprite->statnum == STAT_ZOMBIEACTOR
+        || pSprite->statnum == STAT_STANDABLE)
+    {
+        int32_t ceilhit, florhit;
+        VM_GetZRange(spriteNum, &ceilhit, &florhit, 127);
+    }
+    else
+    {
+        actor[spriteNum].ceilingz = sector[pSprite->sectnum].ceilingz;
+        actor[spriteNum].floorz   = sector[pSprite->sectnum].floorz;
+    }
+
+#ifdef YAX_ENABLE
+    int fbunch = (sector[pSprite->sectnum].floorstat&512) ? -1 : yax_getbunch(pSprite->sectnum, YAX_FLOOR);
+#endif
+
+    if (pSprite->z < actor[spriteNum].floorz-ZOFFSET
+#ifdef YAX_ENABLE
+            || fbunch >= 0
+#endif
+       )
+    {
+        pSprite->zvel += spriteGravity;
+        if (sector[pSprite->sectnum].lotag == ST_2_UNDERWATER && pSprite->zvel > 3072)
+            pSprite->zvel = 3072;
+        if (pSprite->zvel > 6144)
+            pSprite->zvel = 6144;
+    }
+
+#ifdef YAX_ENABLE
+    if (fbunch >= 0)
+        setspritez(spriteNum, (vec3_t *)pSprite);
+    else
+#endif
+        if (pSprite->z + pSprite->zvel >= actor[spriteNum].floorz-ZOFFSET)
+        {
+            pSprite->z = actor[spriteNum].floorz-ZOFFSET;
+            pSprite->zvel = 0;
+        }
+}
+
 int32_t __fastcall G_GetAngleDelta(int32_t currAngle, int32_t newAngle)
 {
     currAngle &= 2047;
