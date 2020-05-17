@@ -162,29 +162,11 @@ See Windows/src/dxlibs.
   * libraries: libdsound.a libdxguid.a libdxguid_sdl.a
 
 
-LuaJIT
-------
-### Download ###
-Download: LuaJIT-<version>.tar.gz
-However, Git HEAD is highly recommended.
-  * Stable: http://luajit.org/download.html
-  * Git: git clone http://luajit.org/git/luajit-2.0.git
-### Modifications ###
-  * Modify src/luaconf.h as follows:
-      * #define LUAI_MAXCSTACK 64000 // (instead of the default 8000.)
-### Build ###
-    make BUILDMODE=static
-### Desired Results ###
-  * headers: lauxlib.h lua.h lua.hpp luaconf.h luajit.h lualib.h
-  * libraries: libluajit.a
-
 LPeg
 ----
 ### Download ###
 Download: lpeg-<version>.tar.gz
   * Stable: http://www.inf.puc-rio.br/~roberto/lpeg
-### Modifications ###
-  * Apply "lpeg-lunatic.patch".
 ### Build ###
     make liblpeg.a
 ### Desired Results ###
