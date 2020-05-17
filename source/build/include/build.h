@@ -88,8 +88,6 @@ enum rendmode_t {
 
 #ifdef LUNATIC
 # define NEW_MAP_FORMAT
-// A marker for LuaJIT C function callbacks, but not merely:
-# define LUNATIC_CB ATTRIBUTE((used))
 #else
 # ifdef NEW_MAP_FORMAT
 #  error "New map format can only be used with Lunatic"
