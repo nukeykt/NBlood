@@ -86,13 +86,7 @@ enum rendmode_t {
 # define M32_FIXME_SECTORS 0
 #endif
 
-#ifdef LUNATIC
-# define NEW_MAP_FORMAT
-#else
-# ifdef NEW_MAP_FORMAT
-#  error "New map format can only be used with Lunatic"
-# endif
-#endif
+//define NEW_MAP_FORMAT
 
 #define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
 
