@@ -1469,7 +1469,7 @@ static void M_UnregisterFunction(StatusBarMenu *m, intptr_t auxdata)
         }
 }
 
-static void M_RegisterFunction(StatusBarMenu *m, const char *name, intptr_t auxdata, const char *description)
+static void M_RegisterFunction(StatusBarMenu *m, const char *name, intptr_t auxdata)
 {
     int32_t i;
 
@@ -1494,8 +1494,6 @@ static void M_RegisterFunction(StatusBarMenu *m, const char *name, intptr_t auxd
 
     Bstrncpyz(m->name[m->numentries], name, MENU_ENTRY_SIZE);
     m->auxdata[m->numentries] = auxdata;
-
-    UNREFERENCED_PARAMETER(description);
 
     m->numentries++;
 }
@@ -1642,7 +1640,7 @@ void FuncMenu(void)
 void registerMenuFunction(const char *funcname, int32_t stateidx)
 {
     if (funcname)
-        M_RegisterFunction(&g_specialFuncMenu, funcname, stateidx, NULL);
+        M_RegisterFunction(&g_specialFuncMenu, funcname, stateidx);
     else
         M_UnregisterFunction(&g_specialFuncMenu, stateidx);
 }
