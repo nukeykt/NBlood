@@ -2466,6 +2466,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                 pTSprite->ang = (pTSprite->ang+((int)totalclock<<3))&2047;
         }
 
+#ifdef USE_OPENGL
         if ((pTSprite->cstat&48) != 48 && usemodels && !(spriteext[nSprite].flags&SPREXT_NOTMD))
         {
             int const nRootTile = pTSprite->picnum;
@@ -2481,6 +2482,7 @@ void viewProcessSprites(int32_t cX, int32_t cY, int32_t cZ, int32_t cA, int32_t 
                     pTSprite->ang = (pTSprite->ang+((int)totalclock<<3))&2047;
             }
         }
+#endif
 
         sectortype *pSector = &sector[pTSprite->sectnum];
         XSECTOR *pXSector;
