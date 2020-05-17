@@ -476,13 +476,6 @@ void paletteFreeBlendTable(int32_t const blend)
     DO_FREE_AND_NULL(blendtable[blend]);
 }
 
-#ifdef LUNATIC
-const char *(paletteGetBlendTable) (int32_t blend)
-{
-    return blendtable[blend];
-}
-#endif
-
 #ifdef USE_OPENGL
 glblend_t const nullglblend =
 {
