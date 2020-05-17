@@ -147,7 +147,6 @@ static inline int32_t G_GetLogoFlags(void)
 
 #define MAX_ARRAYRANGE_VALUES 32
 
-// KEEPINSYNC lunatic/_defs_game.lua
 typedef struct ud_setup_s {
     int32_t usejoystick;
     int32_t usemouse;

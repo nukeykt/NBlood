@@ -35,7 +35,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern "C" {
 #endif
 
-// KEEPINSYNC lunatic/con_lang.lua
 #define MAXSOUNDS           4096
 #define MAXSOUNDINSTANCES   8
 #define LOUDESTVOLUME       111

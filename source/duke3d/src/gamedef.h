@@ -192,7 +192,6 @@ extern const tokenmap_t iter_tokens[];
 
 extern char const * VM_GetKeywordForID(int32_t id);
 
-// KEEPINSYNC lunatic/con_lang.lua
 enum SystemString_t {
     STR_MAPNAME,
     STR_MAPFILENAME,
@@ -749,7 +748,6 @@ enum PalDataLabel_t
     PALDATA_END
 };
 
-// KEEPINSYNC lunatic/con_lang.lua
 enum ProjectileLabel_t
 {
     PROJ_WORKSLIKE,  // 0
@@ -1340,8 +1338,6 @@ enum IterationTypes_t
     TRANSFORM(CON_USERACTOR) DELIMITER \
     \
     TRANSFORM(CON_END)
-
-// KEEPINSYNC with the keyword list in lunatic/con_lang.lua
 
 #define ENUM_TRANSFORM(ENUM_CONST) ENUM_CONST
 #define COMMA ,
