@@ -62,20 +62,6 @@ L_State g_engState;
 //#define DEBUG_TILEOFFSETS
 //////////
 
-#ifdef LUNATIC
-# if !defined DEBUG_MAIN_ARRAYS
-LUNATIC_EXTERN const int32_t engine_main_arrays_are_static = 0;  // for Lunatic
-# else
-LUNATIC_EXTERN const int32_t engine_main_arrays_are_static = 1;
-# endif
-
-#if MAXSECTORS==MAXSECTORSV8
-LUNATIC_EXTERN const int32_t engine_v8 = 1;
-#else
-LUNATIC_EXTERN const int32_t engine_v8 = 0;
-#endif
-#endif
-
 #ifdef DEBUGGINGAIDS
 float debug1, debug2;
 #endif
@@ -11371,13 +11357,6 @@ int32_t ksqrt(uint32_t num)
         return ksqrtasm_old(num);
     return nsqrtasm(num);
 }
-
-#ifdef LUNATIC
-int32_t Mulscale(int32_t a, int32_t b, int32_t sh)
-{
-    return mulscale(a, b, sh);
-}
-#endif
 
 // Gets the BUILD unit height and z offset of a sprite.
 // Returns the z offset, 'height' may be NULL.
