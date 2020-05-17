@@ -769,10 +769,12 @@ void videoSetPalette(char dabrightness, uint8_t dapalid, uint8_t flags)
         curpalettefaded[i].f = 0;
     }
 
+#ifdef USE_OPENGL
     if ((flags & 32) != 0 && videoGetRenderMode() == REND_POLYMOST)
         r_brightnesshack = curbrightness;
     else
         r_brightnesshack = 0;
+#endif
 
     if ((flags&16) && palfadedelta)  // keep the fade
         paletteSetFade(palfadedelta>>2);
