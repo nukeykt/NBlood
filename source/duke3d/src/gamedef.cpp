@@ -2114,7 +2114,7 @@ void C_UndefineLevel(int32_t vol, int32_t lev)
     map->designertime = 0;
 }
 
-LUNATIC_EXTERN int32_t C_SetDefName(const char *name)
+static int32_t C_SetDefName(const char *name)
 {
     clearDefNamePtr();
     g_defNamePtr = dup_filename(name);
@@ -2140,7 +2140,7 @@ void C_FreeProjectile(int32_t j)
 }
 
 
-LUNATIC_EXTERN void C_DefineProjectile(int32_t j, int32_t what, int32_t val)
+static void C_DefineProjectile(int32_t j, int32_t what, int32_t val)
 {
     if (g_tile[j].proj == NULL)
     {
@@ -2315,7 +2315,7 @@ void C_InitQuotes(void)
     }
 }
 
-LUNATIC_EXTERN void C_SetCfgName(const char *cfgname)
+static void C_SetCfgName(const char *cfgname)
 {
     if (Bstrcmp(g_setupFileName, cfgname) == 0) // no need to do anything if name is the same
         return;
