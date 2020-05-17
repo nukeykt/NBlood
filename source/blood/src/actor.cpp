@@ -2257,9 +2257,9 @@ THINGINFO thingInfo[] = {
         800,
         (char)-128,
         0,
-        48,
-        48,
-        64, 64, 112, 64, 0, 96, 96,
+        44,
+        44,
+        0, 1024, 512, 1024, 0, 64, 512,
     },
 };
 
@@ -2456,11 +2456,13 @@ int DudeDifficulty[5] = {
 void actInit(bool bSaveLoad) {
     
     #ifdef NOONE_EXTENSIONS
-        if (!gModernMap) initprintf("> This map *does not* provides modern features.\n");
-        else {
-            initprintf("> This map provides modern features.\n");
-            nnExtInitModernStuff(bSaveLoad);
-        }
+    if (!gModernMap) {
+        initprintf("> This map *does not* provides modern features.\n");
+        nnExtResetGlobals();
+    } else {
+        initprintf("> This map provides modern features.\n");
+        nnExtInitModernStuff(bSaveLoad);
+    }
     #endif
     
     for (int nSprite = headspritestat[kStatItem]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
@@ -2583,8 +2585,8 @@ void actInit(bool bSaveLoad) {
                 
                 #ifdef NOONE_EXTENSIONS
                     // add a way to set custom hp for every enemy - should work only if map just started and not loaded.
-                    if (!gModernMap || pXSprite->data4 <= 0) pXSprite->health = dudeInfo[nType].startHealth << 4;
-                    else pXSprite->health = ClipRange(pXSprite->data4 << 4, 1, 65535);
+                    if (!gModernMap || pXSprite->sysData2 <= 0) pXSprite->health = dudeInfo[nType].startHealth << 4;
+                    else pXSprite->health = ClipRange(pXSprite->sysData2 << 4, 1, 65535);
                 #else
                     pXSprite->health = dudeInfo[nType].startHealth << 4;
                 #endif
@@ -3232,26 +3234,28 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
             seqSpawn(dudeInfo[nType].seqStartID+15, 3, nXSprite, nDudeToGibClient2);
         break;
 #ifdef NOONE_EXTENSIONS
-    case kDudeModernCustom:
+    case kDudeModernCustom: {
         playGenDudeSound(pSprite, kGenDudeSndDeathNormal);
+        int dudeToGib = (actCheckRespawn(pSprite)) ? -1 : ((nSeq == 3) ? nDudeToGibClient2 : nDudeToGibClient1);
         if (nSeq == 3) {
-            
+
             GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
-            if (pExtra->availDeaths[kDmgBurn] == 3) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (pExtra->availDeaths[kDmgBurn] == 2) seqSpawn(16 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (pExtra->availDeaths[kDmgBurn] == 1) seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else if (gSysRes.Lookup(pXSprite->data2 + nSeq, "SEQ"))seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
-            else seqSpawn(1 + pXSprite->data2, 3, nXSprite, nDudeToGibClient2);
+            if (pExtra->availDeaths[kDmgBurn] == 3) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, dudeToGib);
+            else if (pExtra->availDeaths[kDmgBurn] == 2) seqSpawn(16 + pXSprite->data2, 3, nXSprite, dudeToGib);
+            else if (pExtra->availDeaths[kDmgBurn] == 1) seqSpawn(15 + pXSprite->data2, 3, nXSprite, dudeToGib);
+            else if (gSysRes.Lookup(pXSprite->data2 + nSeq, "SEQ"))seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, dudeToGib);
+            else seqSpawn(1 + pXSprite->data2, 3, nXSprite, dudeToGib);
 
-         } else {
-            seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
-         }
+        } else {
+            seqSpawn(nSeq + pXSprite->data2, 3, nXSprite, dudeToGib);
+        }
+        genDudePostDeath(pSprite, damageType, damage);
+        return;
 
-        pXSprite->txID = 0; // to avoid second trigger.
-        break;
-
+    }
     case kDudeModernCustomBurning: {
         playGenDudeSound(pSprite, kGenDudeSndDeathExplode);
+        int dudeToGib = (actCheckRespawn(pSprite)) ? -1 : nDudeToGibClient1;
         damageType = DAMAGE_TYPE_3;
 
         if (Chance(0x4000)) {
@@ -3263,11 +3267,12 @@ void actKillDude(int nKillerSprite, spritetype *pSprite, DAMAGE_TYPE damageType,
         }
 
         GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
-        if (pExtra->availDeaths[kDmgBurn] == 3) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
-        else if (pExtra->availDeaths[kDmgBurn] == 2) seqSpawn(16 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
-        else if (pExtra->availDeaths[kDmgBurn] == 1) seqSpawn(15 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
-        else seqSpawn(1 + pXSprite->data2, 3, nXSprite, nDudeToGibClient1);
-        break;
+        if (pExtra->availDeaths[kDmgBurn] == 3) seqSpawn((15 + Random(2)) + pXSprite->data2, 3, nXSprite, dudeToGib);
+        else if (pExtra->availDeaths[kDmgBurn] == 2) seqSpawn(16 + pXSprite->data2, 3, nXSprite, dudeToGib);
+        else if (pExtra->availDeaths[kDmgBurn] == 1) seqSpawn(15 + pXSprite->data2, 3, nXSprite, dudeToGib);
+        else seqSpawn(1 + pXSprite->data2, 3, nXSprite, dudeToGib);
+        genDudePostDeath(pSprite, damageType, damage);
+        return;
     }
 #endif
     case kDudeBurningZombieAxe:
@@ -3974,6 +3979,11 @@ void actImpactMissile(spritetype *pMissile, int hitCode)
             }
             break;
     }
+    
+    #ifdef NOONE_EXTENSIONS
+    if (gModernMap && pXSpriteHit && pXSpriteHit->state != pXSpriteHit->restState && pXSpriteHit->Impact)
+        trTriggerSprite(nSpriteHit, pXSpriteHit, kCmdSpriteImpact);
+    #endif
     pMissile->cstat &= ~257;
 }
 
@@ -5764,21 +5774,6 @@ void actProcessSprites(void)
             }
         }
         
-        #ifdef NOONE_EXTENSIONS
-        // add impulse for sprites from physics list
-        if (gPhysSpritesCount > 0 && pExplodeInfo->dmgType != 0 && pXSprite->data1 != 0) {
-            for (int i = 0; i < gPhysSpritesCount; i++) {
-                if (gPhysSpritesList[i] == -1) continue;
-
-                else if (sprite[gPhysSpritesList[i]].sectnum < 0 || (sprite[gPhysSpritesList[i]].flags & kHitagFree) != 0)
-                    continue;
-
-                spritetype* pDebris = &sprite[gPhysSpritesList[i]];
-                if (!TestBitString(v24c, pDebris->sectnum) || !CheckProximity(pDebris, x, y, z, nSector, radius)) continue;
-                else debrisConcuss(nOwner, i, x, y, z, pExplodeInfo->dmgType);
-            }
-        }
-        #endif
         for (int p = connecthead; p >= 0; p = connectpoint2[p])
         {
             spritetype *pSprite2 = gPlayer[p].pSprite;
@@ -5789,7 +5784,40 @@ void actProcessSprites(void)
             int t = divscale16(pXSprite->data2, nDist);
             gPlayer[p].flickerEffect += t;
         }
+
         #ifdef NOONE_EXTENSIONS
+        if (pXSprite->data1 != 0) {
+            
+            // add impulse for sprites from physics list
+            if (gPhysSpritesCount > 0 && pExplodeInfo->dmgType != 0) {
+                for (int i = 0; i < gPhysSpritesCount; i++) {
+                    if (gPhysSpritesList[i] == -1) continue;
+                    else if (sprite[gPhysSpritesList[i]].sectnum < 0 || (sprite[gPhysSpritesList[i]].flags & kHitagFree) != 0)
+                        continue;
+
+                    spritetype* pDebris = &sprite[gPhysSpritesList[i]];
+                    if (!TestBitString(v24c, pDebris->sectnum) || !CheckProximity(pDebris, x, y, z, nSector, radius)) continue;
+                    else debrisConcuss(nOwner, i, x, y, z, pExplodeInfo->dmgType);
+                }
+            }
+
+            // trigger sprites from impact list
+            if (gImpactSpritesCount > 0) {
+                for (int i = 0; i < gImpactSpritesCount; i++) {
+                    if (gImpactSpritesList[i] == -1) continue;
+                    else if (sprite[gImpactSpritesList[i]].sectnum < 0 || (sprite[gImpactSpritesList[i]].flags & kHitagFree) != 0)
+                        continue;
+
+                    spritetype* pImpact = &sprite[gImpactSpritesList[i]]; XSPRITE* pXImpact = &xsprite[pImpact->extra];
+                    if (/*pXImpact->state == pXImpact->restState ||*/ !TestBitString(v24c, pImpact->sectnum) || !CheckProximity(pImpact, x, y, z, nSector, radius))
+                        continue;
+                    
+                    trTriggerSprite(pImpact->index, pXImpact, kCmdSpriteImpact);
+                }
+            }
+
+        }
+        
         if (!gModernMap || !(pSprite->flags & kModernTypeFlag1)) {
             // if data4 > 0, do not remove explosion. This can be useful when designer wants put explosion generator in map manually
             // via sprite statnum 2.
@@ -6713,8 +6741,8 @@ void actFireVector(spritetype *pShooter, int a2, int a3, int a4, int a5, int a6,
                         actBurnSprite(actSpriteIdToOwnerId(nShooter), &xsprite[nXSprite], pVectorData->burnTime);
                     }
 
-                    if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
-                        changespritestat(pSprite->index, kStatThing);
+                    //if (pSprite->type >= kThingBase && pSprite->type < kThingMax)
+                        //changespritestat(pSprite->index, kStatThing);
                         //actPostSprite(pSprite->index, kStatThing); // if it was a thing, return it's statnum back
                 }
             }

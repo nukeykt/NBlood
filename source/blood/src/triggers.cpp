@@ -328,6 +328,11 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
 {
     spritetype *pSprite = &sprite[nSprite];
     
+    #ifdef NOONE_EXTENSIONS
+        if (gModernMap && modernTypeOperateSprite(nSprite, pSprite, pXSprite, event))
+            return;
+    #endif
+    
     switch (event.cmd) {
         case kCmdLock:
             pXSprite->locked = 1;
@@ -339,11 +344,6 @@ void OperateSprite(int nSprite, XSPRITE *pXSprite, EVENT event)
             pXSprite->locked = pXSprite->locked ^ 1;
             return;
     }
-
-    #ifdef NOONE_EXTENSIONS
-    if (gModernMap && modernTypeOperateSprite(nSprite, pSprite, pXSprite, event))
-        return;
-    #endif
 
     if (pSprite->statnum == kStatDude && pSprite->type >= kDudeBase && pSprite->type < kDudeMax) {
         
@@ -1552,7 +1552,7 @@ void OperateSector(unsigned int nSector, XSECTOR *pXSector, EVENT event)
                     case kCmdUnlock:
                     case kCmdToggleLock:
                         if (pXSector->locked != 1) break;
-                        pXSector->state = 0;
+                        SetSectorState(nSector, pXSector, 0);
                         evPost(nSector, 6, 0, kCallbackCounterCheck);
                         break;
                 }
@@ -1697,14 +1697,6 @@ void LinkSector(int nSector, XSECTOR *pXSector, EVENT event)
         case kSectorRotate:
             RDoorBusy(nSector, nBusy);
             break;
-        #ifdef NOONE_EXTENSIONS
-        // add link support for counter sectors so they can change necessary type and count of types
-        case kSectorCounter:
-            if (!gModernMap) break;
-            pXSector->waitTimeA = xsector[sector[event.index].extra].waitTimeA;
-            pXSector->data = xsector[sector[event.index].extra].data;
-            break;
-        #endif
         default:
             pXSector->busy = nBusy;
             if ((pXSector->busy&0xffff) == 0)
@@ -1716,10 +1708,7 @@ void LinkSector(int nSector, XSECTOR *pXSector, EVENT event)
 void LinkSprite(int nSprite, XSPRITE *pXSprite, EVENT event) {
     spritetype *pSprite = &sprite[nSprite];
     int nBusy = GetSourceBusy(event);
-    #ifdef NOONE_EXTENSIONS
-    if (gModernMap && modernTypeLinkSprite(pSprite, pXSprite, event))
-        return;
-    #endif
+
     switch (pSprite->type)  {
         case kSwitchCombo:
         {
@@ -2059,11 +2048,12 @@ void trInit(void)
             switch (pSector->type)
             {
             case kSectorCounter:
-                // no need to trigger once it, instead lock so it can be unlocked and used again.
                 #ifdef NOONE_EXTENSIONS 
-                    if (!gModernMap) 
+                if (gModernMap)
+                    pXSector->triggerOff = false;
+                else
                 #endif
-                    pXSector->triggerOnce = 1;
+                pXSector->triggerOnce = 1;
                 evPost(i, 6, 0, kCallbackCounterCheck);
                 break;
             case kSectorZMotion:
@@ -2136,7 +2126,9 @@ void trInit(void)
             case kModernRandom:
             case kModernRandom2:
                 if (!gModernMap || pXSprite->state == pXSprite->restState) break;
-                else evPost(i, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat);
+                evPost(i, 3, (120 * pXSprite->busyTime) / 10, kCmdRepeat);
+                if (pXSprite->waitTime > 0)
+                    evPost(i, 3, (pXSprite->waitTime * 120) / 10, pXSprite->restState ? kCmdOn : kCmdOff);
                 break;
             case kModernSeqSpawner:
             case kModernObjDataAccumulator:
@@ -2144,7 +2136,9 @@ void trInit(void)
             case kModernEffectSpawner:
             case kModernWindGenerator:
                 if (pXSprite->state == pXSprite->restState) break;
-                else evPost(i, 3, 0, kCmdRepeat);
+                evPost(i, 3, 0, kCmdRepeat);
+                if (pXSprite->waitTime > 0)
+                    evPost(i, 3, (pXSprite->waitTime * 120) / 10, pXSprite->restState ? kCmdOn : kCmdOff);
                 break;
             #endif
             case kGenTrigger:

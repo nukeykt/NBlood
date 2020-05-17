@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "triggers.h"
 #include "view.h"
 #include "nnexts.h"
+#include "aiunicult.h"
 
 void fxFlameLick(int nSprite) // 0
 {
@@ -264,10 +265,25 @@ void Respawn(int nSprite) // 9
                 pSprite->y = baseSprite[nSprite].y;
                 pSprite->z = baseSprite[nSprite].z;
                 pSprite->cstat |= 0x1101;
-                pSprite->clipdist = getDudeInfo(nType+kDudeBase)->clipdist;
-                pXSprite->health = getDudeInfo(nType+kDudeBase)->startHealth<<4;
-                if (gSysRes.Lookup(getDudeInfo(nType+kDudeBase)->seqStartID, "SEQ"))
-                    seqSpawn(getDudeInfo(nType+kDudeBase)->seqStartID, 3, pSprite->extra, -1);
+                #ifdef NOONE_EXTENSIONS
+                if (!gModernMap || pXSprite->sysData2 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
+                else pXSprite->health = ClipRange(pXSprite->sysData2 << 4, 1, 65535);
+                switch (pSprite->type) {
+                    default:
+                        pSprite->clipdist = getDudeInfo(nType + kDudeBase)->clipdist;
+                        if (gSysRes.Lookup(getDudeInfo(nType + kDudeBase)->seqStartID, "SEQ"))
+                            seqSpawn(getDudeInfo(nType + kDudeBase)->seqStartID, 3, pSprite->extra, -1);
+                        break;
+                    case kDudeModernCustom:
+                        seqSpawn(genDudeSeqStartId(pXSprite), 3, pSprite->extra, -1);
+                        break;
+                }
+                #else
+                pSprite->clipdist = getDudeInfo(nType + kDudeBase)->clipdist;
+                pXSprite->health = getDudeInfo(nType + kDudeBase)->startHealth << 4;
+                if (gSysRes.Lookup(getDudeInfo(nType + kDudeBase)->seqStartID, "SEQ"))
+                    seqSpawn(getDudeInfo(nType + kDudeBase)->seqStartID, 3, pSprite->extra, -1);
+                #endif
                 aiInitSprite(pSprite);
                 pXSprite->key = 0;
             } else if (pSprite->type == kThingTNTBarrel) {
@@ -338,11 +354,7 @@ void EnemyBubble(int nSprite) // 11
 void CounterCheck(int nSector) // 12
 {
     dassert(nSector >= 0 && nSector < kMaxSectors);
-    
-    // remove check below, so every sector can be counter if command 12 (this callback) received.
-    #ifndef NOONE_EXTENSIONS
     if (sector[nSector].type != kSectorCounter) return;
-    #endif
     if (sector[nSector].extra <= 0) return;
     
     XSECTOR *pXSector = &xsector[sector[nSector].extra];
