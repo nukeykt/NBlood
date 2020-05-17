@@ -540,14 +540,7 @@ static int osdcmd_spawn(osdcmdptr_t parm)
         }
         else
         {
-            int32_t i;
-#ifdef LUNATIC
-            i = g_labelCnt;
-            picnum = El_GetLabelValue(parm->parms[0]);
-            if (picnum != INT32_MIN)
-                i = !i;
-#else
-            int32_t j;
+            int32_t i, j;
 
             for (j=0; j<2; j++)
             {
@@ -564,7 +557,6 @@ static int osdcmd_spawn(osdcmdptr_t parm)
                 if (i < g_labelCnt)
                     break;
             }
-#endif
             if (i==g_labelCnt)
             {
                 OSD_Printf("spawn: Invalid tile label given\n");
