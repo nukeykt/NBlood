@@ -35,11 +35,6 @@
 # include "polymost.h"
 #endif
 
-#ifdef LUNATIC
-# include "lunatic.h"
-L_State g_engState;
-#endif
-
 #include "vfs.h"
 
 #include "communityapi.h"
@@ -8606,18 +8601,6 @@ int32_t engineInit(void)
 #ifdef USE_OPENGL
     if (!hicinitcounter) hicinit();
     if (!mdinited) mdinit();
-#endif
-
-#ifdef LUNATIC
-    if (L_CreateState(&g_engState, "eng", NULL))
-        return engineFatalError("Failed creating engine Lua state!");
-
-    {
-        static char const * const luastr = "_LUNATIC_AUX=true; decl=require('ffi').cdef; require'defs_common'";
-
-        if (L_RunString(&g_engState, luastr, -1, "eng"))
-            return engineFatalError("Failed setting up engine Lua state");
-    }
 #endif
 
     return 0;
