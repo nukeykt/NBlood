@@ -78,14 +78,11 @@ enum
         g_warningCnt++;                                                                          \
     } while (0)
 
-#if !defined LUNATIC
 extern intptr_t const * insptr;
 void VM_ScriptInfo(intptr_t const * const ptr, int const range);
-#endif
 
 extern hashtable_t h_gamefuncs;
 
-#if !defined LUNATIC
 extern hashtable_t h_gamevars;
 extern hashtable_t h_arrays;
 extern hashtable_t h_labels;
@@ -127,7 +124,6 @@ extern int32_t g_structVarIDs;
 
 #include "events_defs.h"
 extern intptr_t apScriptEvents[MAXEVENTS];
-#endif
 
 extern char g_scriptFileName[BMAX_PATH];
 
@@ -146,9 +142,7 @@ extern uint8_t *bitptr;
 
 extern const char *EventNames[MAXEVENTS];
 
-#if !defined LUNATIC
 extern intptr_t *g_scriptPtr;
-#endif
 
 typedef projectile_t defaultprojectile_t;
 
@@ -184,20 +178,6 @@ void C_DefineVolumeFlags(int32_t vol, int32_t flags);
 void C_UndefineVolume(int32_t vol);
 void C_UndefineSkill(int32_t skill);
 void C_UndefineLevel(int32_t vol, int32_t lev);
-#if defined LUNATIC
-void C_DefineSound(int32_t sndidx, const char *fn, int32_t args[5]);
-void C_DefineQuote(int32_t qnum, const char *qstr);
-void C_DefineVolumeName(int32_t vol, const char *name);
-void C_DefineSkillName(int32_t skill, const char *name);
-void C_DefineLevelName(int32_t vol, int32_t lev, const char *fn,
-                       int32_t partime, int32_t designertime,
-                       const char *levelname);
-void C_DefineGameFuncName(int32_t idx, const char *name);
-void C_DefineGameType(int32_t idx, int32_t flags, const char *name);
-int32_t C_SetDefName(const char *name);
-void C_DefineProjectile(int32_t j, int32_t what, int32_t val);
-void C_SetCfgName(const char *cfgname);
-#else
 void C_ReportError(int error);
 void C_Compile(const char *filenam);
 
@@ -769,7 +749,6 @@ enum PalDataLabel_t
     PALDATA_END
 };
 
-#endif
 // KEEPINSYNC lunatic/con_lang.lua
 enum ProjectileLabel_t
 {
@@ -805,7 +784,6 @@ enum ProjectileLabel_t
     PROJ_USERDATA,
     PROJ_END
 };
-#if !defined LUNATIC
 
 enum IterationTypes_t
 {
@@ -1374,8 +1352,6 @@ enum ScriptKeywords_t
 };
 #undef ENUM_TRANSFORM
 #undef COMMA
-
-#endif
 
 #ifdef __cplusplus
 }

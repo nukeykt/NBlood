@@ -46,7 +46,6 @@ int32_t g_lineNumber;
 uint32_t g_scriptcrc;
 char g_szBuf[1024];
 
-#if !defined LUNATIC
 static char *textptr;
 
 static char g_szCurrentBlockName[64] = "(none)";
@@ -77,17 +76,11 @@ static intptr_t *g_caseTablePtr;
 
 static bool C_ParseCommand(bool loop = false);
 static void C_SetScriptSize(int32_t newsize);
-#endif
 
 int32_t g_errorCnt;
 int32_t g_warningCnt;
 int32_t g_numXStrings;
 
-#ifdef LUNATIC
-weapondata_t g_playerWeapon[MAXPLAYERS][MAX_WEAPONS];
-#endif
-
-#if !defined LUNATIC
 static char *C_GetLabelType(int const type)
 {
     static tokenmap_t const LabelType[] =
@@ -855,7 +848,6 @@ char const *VM_GetKeywordForID(int32_t id)
 
     return "<unknown instruction>";
 }
-#endif
 
 // KEEPINSYNC with enum GameEvent_t and lunatic/con_lang.lua
 const char *EventNames[MAXEVENTS] =
@@ -1017,9 +1009,6 @@ const char *EventNames[MAXEVENTS] =
     "EVENT_NEWGAMECUSTOM",
     "EVENT_INITCOMPLETE",
     "EVENT_CAPIR",
-#ifdef LUNATIC
-    "EVENT_ANIMATEALLSPRITES",
-#endif
 };
 
 uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointers
@@ -1028,7 +1017,6 @@ uint8_t *bitptr; // pointer to bitmap of which bytecode positions contain pointe
 #define BITPTR_CLEAR(x) bitmap_clear(bitptr, x)
 #define BITPTR_IS_POINTER(x) bitmap_test(bitptr, x)
 
-#if !defined LUNATIC
 hashtable_t h_arrays   = { MAXGAMEARRAYS >> 1, NULL };
 hashtable_t h_gamevars = { MAXGAMEVARS >> 1, NULL };
 hashtable_t h_labels   = { 11264 >> 1, NULL };
@@ -1969,7 +1957,6 @@ static void C_Include(const char *confile)
 
     Xfree(mptr);
 }
-#endif  // !defined LUNATIC
 
 #ifdef _WIN32
 static void check_filename_case(const char *fn)
@@ -2069,92 +2056,6 @@ void C_DefineMusic(int volumeNum, int levelNum, const char *fileName)
     pMapInfo->musicfn = dup_filename(fileName);
     check_filename_case(pMapInfo->musicfn);
 }
-
-#ifdef LUNATIC
-void C_DefineSound(int32_t sndidx, const char *fn, int32_t args[5])
-{
-    Bassert((unsigned)sndidx < MAXSOUNDS);
-
-    {
-        sound_t *const snd = &g_sounds[sndidx];
-
-        Xfree(snd->filename);
-        snd->filename = dup_filename(fn);
-        check_filename_case(snd->filename);
-
-        snd->ps = args[0];
-        snd->pe = args[1];
-        snd->pr = args[2];
-        snd->m = args[3] & ~SF_ONEINST_INTERNAL;
-        if (args[3] & SF_LOOP)
-            snd->m |= SF_ONEINST_INTERNAL;
-        snd->vo = args[4];
-
-        if (sndidx > g_highestSoundIdx)
-            g_highestSoundIdx = sndidx;
-    }
-}
-
-void C_DefineQuote(int32_t qnum, const char *qstr)
-{
-    C_AllocQuote(qnum);
-    Bstrncpyz(apStrings[qnum], qstr, MAXQUOTELEN);
-}
-
-void C_DefineVolumeName(int32_t vol, const char *name)
-{
-    Bassert((unsigned)vol < MAXVOLUMES);
-    Bstrncpyz(g_volumeNames[vol], name, sizeof(g_volumeNames[vol]));
-    g_volumeCnt = vol+1;
-}
-
-void C_DefineSkillName(int32_t skill, const char *name)
-{
-    Bassert((unsigned)skill < MAXSKILLS);
-    Bstrncpyz(g_skillNames[skill], name, sizeof(g_skillNames[skill]));
-    g_skillCnt = max(g_skillCnt, skill+1);  // TODO: bring in line with C-CON?
-}
-
-void C_DefineLevelName(int32_t vol, int32_t lev, const char *fn,
-                       int32_t partime, int32_t designertime,
-                       const char *levelname)
-{
-    Bassert((unsigned)vol < MAXVOLUMES);
-    Bassert((unsigned)lev < MAXLEVELS);
-
-    {
-        map_t *const map = &g_mapInfo[(MAXLEVELS*vol)+lev];
-
-        Xfree(map->filename);
-        map->filename = dup_filename(fn);
-
-        // TODO: truncate to 32 chars?
-        Xfree(map->name);
-        map->name = Xstrdup(levelname);
-
-        map->partime = REALGAMETICSPERSEC * partime;
-        map->designertime = REALGAMETICSPERSEC * designertime;
-    }
-}
-
-void C_DefineGameFuncName(int32_t idx, const char *name)
-{
-    assert((unsigned)idx < NUMGAMEFUNCTIONS);
-
-    Bstrncpyz(gamefunctions[idx], name, MAXGAMEFUNCLEN);
-
-    hash_add(&h_gamefuncs, gamefunctions[idx], idx, 0);
-}
-
-void C_DefineGameType(int32_t idx, int32_t flags, const char *name)
-{
-    Bassert((unsigned)idx < MAXGAMETYPES);
-
-    g_gametypeFlags[idx] = flags;
-    Bstrncpyz(g_gametypeNames[idx], name, sizeof(g_gametypeNames[idx]));
-    g_gametypeCnt = idx+1;
-}
-#endif
 
 void C_DefineVolumeFlags(int32_t vol, int32_t flags)
 {
@@ -2460,7 +2361,6 @@ LUNATIC_EXTERN void C_SetCfgName(const char *cfgname)
 #endif
 }
 
-#if !defined LUNATIC
 static inline void C_BitOrNextValue(int32_t *valptr)
 {
     C_GetNextValue(LABEL_DEFINE);
@@ -6177,7 +6077,6 @@ static void C_AddDefaultDefinitions(void)
 
     C_AddDefinition("NO", 0, LABEL_DEFINE | LABEL_ACTION | LABEL_AI | LABEL_MOVE);
 }
-#endif
 
 void C_InitProjectiles(void)
 {
@@ -6212,7 +6111,6 @@ void C_InitProjectiles(void)
     }
 }
 
-#if !defined LUNATIC
 static char const * C_ScriptVersionString(int32_t version)
 {
 #ifdef EDUKE32_STANDALONE
@@ -6530,4 +6428,3 @@ void C_ReportError(int error)
         break;
     }
 }
-#endif

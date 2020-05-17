@@ -31,10 +31,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "savegame.h"
 #include "sbar.h"
 
-#ifdef LUNATIC
-# include "lunatic_game.h"
-#endif
-
 #ifdef EDUKE32_TOUCH_DEVICES
 #include "in_android.h"
 #endif
@@ -502,11 +498,6 @@ static int osdcmd_vidmode(osdcmdptr_t parm)
     return OSDCMD_OK;
 }
 
-#ifdef LUNATIC
-// Returns: INT32_MIN if no such CON label, its value else.
-LUNATIC_CB int32_t (*El_GetLabelValue)(const char *label);
-#endif
-
 static int osdcmd_spawn(osdcmdptr_t parm)
 {
     int32_t picnum = 0;
@@ -608,7 +599,6 @@ static int osdcmd_spawn(osdcmdptr_t parm)
     return OSDCMD_OK;
 }
 
-#if !defined LUNATIC
 static int osdcmd_setvar(osdcmdptr_t parm)
 {
     if (numplayers > 1)
@@ -701,40 +691,6 @@ static int osdcmd_setactorvar(osdcmdptr_t parm)
 
     return OSDCMD_OK;
 }
-#else
-static int osdcmd_lua(osdcmdptr_t parm)
-{
-    // Should be used like
-    // lua "lua code..."
-    // (the quotes making the whole string passed as one argument)
-
-    int32_t ret;
-
-    if (parm->numparms != 1)
-        return OSDCMD_SHOWHELP;
-
-    if (!L_IsInitialized(&g_ElState))
-    {
-        OSD_Printf("Lua state is not initialized.\n");
-        return OSDCMD_OK;
-    }
-
-    // TODO: "=<expr>" as shorthand for "print(<expr>)", like in the
-    //  stand-alone Lua interpreter?
-    // TODO: reserve some table to explicitly store stuff on the top level, for
-    //  debugging convenience?
-
-    // For the 'lua' OSD command, don't make errors appear on-screen:
-    el_addNewErrors = 0;
-    ret = L_RunString(&g_ElState, parm->parms[0], -1, "console");
-    el_addNewErrors = 1;
-
-    if (ret != 0)
-        OSD_Printf("Error running the Lua code (error code %d)\n", ret);
-
-    return OSDCMD_OK;
-}
-#endif
 
 static int osdcmd_addpath(osdcmdptr_t parm)
 {
@@ -1826,14 +1782,10 @@ int32_t registerosdcommands(void)
     OSD_RegisterFunction("restartmap", "restartmap: restarts the current map", osdcmd_restartmap);
     OSD_RegisterFunction("restartsound","restartsound: reinitializes the sound system",osdcmd_restartsound);
     OSD_RegisterFunction("restartvid","restartvid: reinitializes the video mode",osdcmd_restartvid);
-#if !defined LUNATIC
     OSD_RegisterFunction("addlogvar","addlogvar <gamevar>: prints the value of a gamevar", osdcmd_addlogvar);
     OSD_RegisterFunction("setvar","setvar <gamevar> <value>: sets the value of a gamevar", osdcmd_setvar);
     OSD_RegisterFunction("setvarvar","setvarvar <gamevar1> <gamevar2>: sets the value of <gamevar1> to <gamevar2>", osdcmd_setvar);
     OSD_RegisterFunction("setactorvar","setactorvar <actor#> <gamevar> <value>: sets the value of <actor#>'s <gamevar> to <value>", osdcmd_setactorvar);
-#else
-    OSD_RegisterFunction("lua", "lua \"Lua code...\": runs Lunatic code", osdcmd_lua);
-#endif
     OSD_RegisterFunction("screenshot","screenshot [format]: takes a screenshot.", osdcmd_screenshot);
 
     OSD_RegisterFunction("spawn","spawn <picnum> [palnum] [cstat] [ang] [x y z]: spawns a sprite with the given properties",osdcmd_spawn);

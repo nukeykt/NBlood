@@ -57,13 +57,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #endif
 
 // increase by 3, because atomic GRP adds 1, and Shareware adds 2
-#ifdef LUNATIC
-// Lunatic
-# define BYTEVERSION_EDUKE32      339
-#else
-// Non-Lua build
-# define BYTEVERSION_EDUKE32      339
-#endif
+#define BYTEVERSION_EDUKE32      339
 
 //#define BYTEVERSION_13      27
 //#define BYTEVERSION_14      116
@@ -154,26 +148,14 @@ EDUKE32_STATIC_ASSERT(7 <= MAXTILES-MAXUSERTILES);
 #include "soundsdyn.h"
 #include "text.h"
 
-#ifdef LUNATIC
-# include "lunatic_game.h"
-#endif
-
 static inline int32_t G_TileHasActor(int const tileNum)
 {
-#ifdef LUNATIC
-    return El_HaveActor(tileNum);
-#else
     return g_tile[tileNum].execPtr!=NULL;
-#endif
 }
 
 static inline int32_t G_DefaultActorHealthForTile(int const tileNum)
 {
-#ifdef LUNATIC
-    return g_elActors[tileNum].strength;
-#else
     return G_TileHasActor(tileNum) ? g_tile[tileNum].execPtr[0] : 0;
-#endif
 }
 
 #endif
