@@ -1289,7 +1289,7 @@ int32_t checksectorpointer(int16_t i, int16_t sectnum);
 
 void   mouseGetValues(int32_t *mousx, int32_t *mousy, int32_t *bstatus) ATTRIBUTE((nonnull(1,2,3)));
 
-#if !KRANDDEBUG && !defined LUNATIC
+#if !KRANDDEBUG
 static FORCE_INLINE int32_t krand(void)
 {
     randomseed = (randomseed * 1664525ul) + 221297ul;
