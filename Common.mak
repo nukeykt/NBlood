@@ -208,9 +208,6 @@ STRIP := $(CROSS)strip$(CROSS_SUFFIX)
 
 AS := nasm
 
-# LuaJIT standalone interpreter executable:
-LUAJIT := luajit$(HOSTEXESUFFIX)
-
 PKG_CONFIG := pkg-config
 
 ELF2DOL := elf2dol
@@ -344,8 +341,6 @@ STARTUP_WINDOW ?= 1
 RETAIL_MENU ?= 0
 POLYMER ?= 1
 USE_OPENGL := 1
-LUNATIC := 0
-USE_LUAJIT_2_1 := 0
 
 # Library toggles
 HAVE_GTK2 := 1
@@ -453,11 +448,6 @@ ifneq (0,$(CLANG))
         LTO := 0
     endif
 endif
-ifneq ($(LUNATIC),0)
-    # FIXME: Lunatic builds with LTO don't start up properly as the required
-    # symbol names are apparently not exported.
-    override LTO := 0
-endif
 ifeq (0,$(CLANG))
     ifeq (0,$(GCC_PREREQ_4))
         override LTO := 0
@@ -495,8 +485,6 @@ CXXONLYFLAGS := $(CXXSTD) -fno-exceptions -fno-rtti
 
 ASFLAGS := -s #-g
 
-LUAJIT_BCOPTS :=
-
 LINKERFLAGS :=
 L_CXXONLYFLAGS :=
 
@@ -508,8 +496,6 @@ LIBDIRS :=
 ##### Mandatory platform parameters
 
 ASFORMAT := elf$(BITS)
-# Options to "luajit -b" for synthesis. Since it runs on Linux, we need to tell
-# the native LuaJIT to emit PE object files.
 ifeq ($(PLATFORM),WINDOWS)
     LINKERFLAGS += -static-libgcc -static
     ifeq (0,$(CLANG))
@@ -535,14 +521,6 @@ ifeq ($(PLATFORM),WINDOWS)
     LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat $(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
-    endif
-
-    LUAJIT_BCOPTS := -o windows
-    ifeq (32,$(BITS))
-        LUAJIT_BCOPTS += -a x86
-    endif
-    ifeq (64,$(BITS))
-        LUAJIT_BCOPTS += -a x64
     endif
 else ifeq ($(PLATFORM),DARWIN)
     ifneq ($(ARCH),)
@@ -896,18 +874,6 @@ endif
 
 
 ##### External libraries
-
-ifneq ($(LUNATIC),0)
-    ifneq ($(USE_LUAJIT_2_1),0)
-        COMPILERFLAGS += -DUSE_LUAJIT_2_1
-    endif
-
-    ifeq ($(PLATFORM),WINDOWS)
-        LIBS += -lluajit
-    else
-        LIBS += -lluajit-5.1
-    endif
-endif
 
 ifneq (0,$(USE_LIBVPX))
     COMPILERFLAGS += -DUSE_LIBVPX
