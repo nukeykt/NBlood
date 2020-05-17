@@ -92,13 +92,11 @@ enum rendmode_t {
 # define LUNATIC_CB ATTRIBUTE((used))
 // Used for variables and functions referenced from Lua:
 # define LUNATIC_EXTERN ATTRIBUTE((used))
-# define LUNATIC_FASTCALL
 #else
 # ifdef NEW_MAP_FORMAT
 #  error "New map format can only be used with Lunatic"
 # endif
 # define LUNATIC_EXTERN static
-# define LUNATIC_FASTCALL __fastcall
 #endif
 
 #define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
@@ -1300,10 +1298,10 @@ int32_t    krand(void);
 #endif
 
 int32_t   ksqrt(uint32_t num);
-int32_t   LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect);
-fix16_t   LUNATIC_FASTCALL gethiq16angle(int32_t xvect, int32_t yvect);
+int32_t   __fastcall getangle(int32_t xvect, int32_t yvect);
+fix16_t   __fastcall gethiq16angle(int32_t xvect, int32_t yvect);
 
-static FORCE_INLINE fix16_t LUNATIC_FASTCALL getq16angle(int32_t xvect, int32_t yvect)
+static FORCE_INLINE fix16_t __fastcall getq16angle(int32_t xvect, int32_t yvect)
 {
     return fix16_from_int(getangle(xvect, yvect));
 }
