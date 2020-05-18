@@ -39,24 +39,22 @@ extern int32_t minitext_yofs;
 
 void G_InitText(void);
 
-enum {
-    TEXT_INTERNALSPACE   = 0x00000010,
-    TEXT_TILESPACE       = 0x00000020,
-    TEXT_INTERNALLINE    = 0x00000040,
-    TEXT_TILELINE        = 0x00000080,
+#define TEXT_INTERNALSPACE    (0x00000010)
+#define TEXT_TILESPACE        (0x00000020)
+#define TEXT_INTERNALLINE     (0x00000040)
+#define TEXT_TILELINE         (0x00000080)
 
-    TEXT_UPPERCASE       = 0x00002000,
-    TEXT_INVERTCASE      = 0x00004000,
-    TEXT_IGNOREESCAPE    = 0x00008000,
-    TEXT_LITERALESCAPE   = 0x00010000,
+#define TEXT_UPPERCASE        (0x00002000)
+#define TEXT_INVERTCASE       (0x00004000)
+#define TEXT_IGNOREESCAPE     (0x00008000)
+#define TEXT_LITERALESCAPE    (0x00010000)
 
-    TEXT_CONSTWIDTHNUMS  = 0x00040000,
-    TEXT_DIGITALNUMBER   = 0x00080000,
-    TEXT_BIGALPHANUM     = 0x00100000,
-    TEXT_GRAYFONT        = 0x00200000,
+#define TEXT_CONSTWIDTHNUMS   (0x00040000)
+#define TEXT_DIGITALNUMBER    (0x00080000)
+#define TEXT_BIGALPHANUM      (0x00100000)
+#define TEXT_GRAYFONT         (0x00200000)
 
-    TEXT_NOLOCALE        = 0x00400000,
-};
+#define TEXT_NOLOCALE         (0x00400000)
 
 extern int32_t minitext_(int32_t x, int32_t y, const char *t, int32_t s, int32_t p, int32_t sb);
 extern void menutext_(int32_t x, int32_t y, int32_t s, char const *t, int32_t o, int32_t f);

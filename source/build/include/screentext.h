@@ -87,20 +87,17 @@ static inline int screentextGlyphIsTab(ScreenTextGlyph_t g)
   return (g & SCREENTEXT_TAB) == SCREENTEXT_TAB;
 }
 
-enum ScreenTextFlags_t
-{
-    TEXT_XRIGHT          = 0x00000001,
-    TEXT_XCENTER         = 0x00000002,
-    TEXT_YBOTTOM         = 0x00000004,
-    TEXT_YCENTER         = 0x00000008,
+#define TEXT_XRIGHT           (0x00000001)
+#define TEXT_XCENTER          (0x00000002)
+#define TEXT_YBOTTOM          (0x00000004)
+#define TEXT_YCENTER          (0x00000008)
 
-    TEXT_XOFFSETZERO     = 0x00000100,
-    TEXT_XJUSTIFY        = 0x00000200,
-    TEXT_YOFFSETZERO     = 0x00000400,
-    TEXT_YJUSTIFY        = 0x00000800,
+#define TEXT_XOFFSETZERO      (0x00000100)
+#define TEXT_XJUSTIFY         (0x00000200)
+#define TEXT_YOFFSETZERO      (0x00000400)
+#define TEXT_YJUSTIFY         (0x00000800)
 
-    TEXT_VARHEIGHT       = 0x00800000,
-};
+#define TEXT_VARHEIGHT        (0x00800000)
 
 struct ScreenTextSize_t
 {
