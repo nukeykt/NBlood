@@ -4116,6 +4116,7 @@ MNU_SetupMenu(void)
     MNU_ItemPreProcess(currentmenu);
 }
 
+#if 0
 ////////////////////////////////////////////////
 // Draw an item
 ////////////////////////////////////////////////
@@ -4134,6 +4135,7 @@ MNU_ClearFlags(MenuGroup *node)
             MNU_ClearFlags((MenuGroup *) i->child);
     }
 }
+#endif
 
 ////////////////////////////////////////////////
 // Pop a group off the menu stack
