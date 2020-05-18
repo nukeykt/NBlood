@@ -994,7 +994,12 @@ ifeq ($(PLATFORM),WINDOWS)
     ifneq (0,$(GCC_PREREQ_4))
         L_SSP := -lssp
     endif
-    LIBS += -lmingwex -lgdi32 -lpthread
+    LIBS += -lmingwex -lgdi32
+    ifneq (0,$(CLANG))
+        LIBS += -pthread
+    else
+        LIBS += -lpthread
+    endif
     ifeq ($(RENDERTYPE),WIN)
         LIBS += -ldxguid
     else ifeq ($(SDL_TARGET),1)
