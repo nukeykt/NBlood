@@ -607,7 +607,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
         if (option[4] < 5) waitplayers = 2; else waitplayers = option[4]-3;
         while (numplayers < waitplayers)
         {
-            sprintf(tempbuf,"%ld of %ld players in...",numplayers,waitplayers);
+            sprintf(tempbuf,"%d of %d players in...",numplayers,waitplayers);
             printext256(68L,84L,31,0,tempbuf,0);
             videoNextPage();
 
@@ -643,7 +643,7 @@ int32_t app_main(int32_t argc, char const * const * argv)
             if (myconnectindex == i) break;
             j++;
         }
-        sprintf(getmessage,"Player %ld",j);
+        sprintf(getmessage,"Player %d",j);
         if (networkmode == 0)
         {
             if (j == 1) Bstrcat(getmessage," (Master)");
