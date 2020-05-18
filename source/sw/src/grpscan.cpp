@@ -267,6 +267,8 @@ int ScanGroups(void)
         klistfree(srch);
     }
 
+    FreeGroupsCache();
+
     for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
     {
         if (grp->type->flags & GRP_HAS_DEPENDENCY)
