@@ -3196,12 +3196,12 @@ ACTOR_STATIC void G_MoveWeapons(void)
                                     }
                                 }
                                 g_earthquakeTime = 15;
-                                // TODO: explosion mdl
+                                RT_AddExplosion(pSprite->x >> 1, pSprite->y >> 1, pSprite->z >> 5, 4);
                             }
                             else
                             {
                                 A_PlaySound(8, newSprite);
-                                // TODO: explosion mdl
+                                RT_AddExplosion(pSprite->x >> 1, pSprite->y >> 1, pSprite->z >> 5, 6);
                             }
                             int const x = pSprite->extra;
                             A_RadiusDamage(spriteNum, g_rpgRadius + pSprite->yvel * 30, x >> 2, x >> 1, x - (x >> 2), x);
@@ -4764,7 +4764,7 @@ ACTOR_STATIC void G_MoveActors(void)
                 if (REALITY)
                 {
                     A_Spawn(spriteNum,EXPLOSION2);
-                    // TODO: explostion mdl
+                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 7);
                 }
 
                 DELETE_SPRITE_AND_CONTINUE(spriteNum);
@@ -5198,7 +5198,8 @@ ACTOR_STATIC void G_MoveActors(void)
 
                     //int const newSprite = A_Spawn(spriteNum, EXPLOSION2);
                     A_PlaySound(REALITY ? 15 : LASERTRIP_EXPLODE, spriteNum);
-                    // TODO: explosion mdl
+                    if (REALITY)
+                        RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 1);
                     if (RR)
                     {
                         if (RRRA && g_ufoSpawnMinion)

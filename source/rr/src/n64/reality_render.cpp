@@ -18,6 +18,116 @@ struct maskdraw_t {
     int16_t sectnum;
 };
 
+#define MAXEXPLOSIONS 16
+
+struct explosionvtx_t {
+    float x, y, z;
+    int16_t u, v;
+};
+
+static explosionvtx_t explosionvtx[12] = {
+    { 0.695685, -0.81192, -0.195662, 2048, 544 },
+    { -0.005248, -0.412966, -1.005438, 704, 0 },
+    { 0.856927, 0.234403, -0.626263, 1632, 544 },
+    { 0.964815, 0.056042, 0.49746, 1824, 1472 },
+    { 0.169318, -0.701561, 0.812784, 192, 1472 },
+    { -0.430214, -0.991424, -0.116058, 384, 544 },
+    { -0.964815, -0.056042, -0.49746, 800, 544 },
+    { -0.169318, 0.701561, -0.812784, 1216, 544 },
+    { 0.430214, 0.991424, 0.116058, 1408, 1472 },
+    { -0.695685, 0.81192, 0.195662, 1024, 1472 },
+    { 0.005248, 0.412966, 1.005438, 1472, 2048 },
+    { -0.856927, -0.234403, 0.626263, 608, 1472 },
+};
+
+static short explosiontris[20][3] = {
+    { 1, 2, 0 },
+    { 2, 3, 0 },
+    { 3, 4, 0 },
+    { 4, 5, 0 },
+    { 5, 1, 0 },
+    { 5, 6, 1 },
+    { 6, 7, 1 },
+    { 7, 2, 1 },
+    { 2, 8, 3 },
+    { 2, 7, 8 },
+    { 6, 9, 7 },
+    { 9, 8, 7 },
+    { 8, 10, 3 },
+    { 8, 9, 10 },
+    { 6, 11, 9 },
+    { 11, 10, 9 },
+    { 10, 4, 3 },
+    { 10, 11, 4 },
+    { 6, 5, 11 },
+    { 5, 4, 11 },
+};
+
+struct explosioninfo_t {
+    uint8_t enable;
+    int16_t time, startsize, step, stepdec;
+    uint8_t color1[3], color2[3];
+};
+
+static explosioninfo_t explosioninfo[9][2] = {
+    {
+        { 1, 30, 30, 45, 0, 255, 190, 70, 255, 30, 0 },
+        { 1, 30, 30, 25, 0, 255, 215, 8, 255, 96, 30 }
+    },
+    {
+        { 1, 25, 1, 22, 0, 9, 9, 9, 2, 2, 2 },
+        { 0, 17, 44, 65, 0, 255, 235, 178, 255, 190, 90 }
+    },
+    {
+        { 1, 36, 14, 65, 3, 165, 165, 165, 105, 105, 105 },
+        { 1, 17, 10, 60, 0, 255, 255, 248, 255, 246, 246 },
+    },
+    {
+        { 1, 27, 44, 55, 2, 255, 255, 128, 255, 0, 0 },
+        { 1, 27, 44, 75, 0, 255, 255, 148, 255, 190, 200 }
+    },
+    {
+        { 1, 73, 64, 75, 0, 15, 255, 255, 115, 0, 170 },
+        { 1, 73, 134, 255, -2, 65, 255, 255, 165, 0, 170 },
+    },
+    {
+        { 1, 23, -1516, 65, 0, 19, 219, 5, 9, 0, 250 },
+        { 0, 37, 244, 76, 5, 0, 171, 0, 0, 130, 164 },
+    },
+    {
+        { 1, 26, 20, 15, 0, 15, 255, 255, 5, 0, 170 },
+        { 1, 25, 24, 25, 0, 5, 195, 255, 16, 80, 255 },
+    },
+    {
+        { 1, 50, 24, 0, 5, 255, 255, 128, 255, 0, 0 },
+        { 1, 53, 34, 75, 15, 255, 255, 128, 255, 0, 0 },
+    },
+    {
+        { 1, 30, 44, 25, 0, 135, 0, 20, 139, 0, 12 },
+        { 0, 20, 34, 135, 0, 255, 9, 255, 255, 9, 255 },
+    }
+};
+
+struct explosioninstance_t {
+    uint8_t status;
+    uint8_t type;
+    uint8_t c_enable, r_enable;
+    int16_t x, y, z;
+    int16_t c_size, r_size, r_time, c_time, c_step, r_step;
+};
+
+static explosioninstance_t explosions[MAXEXPLOSIONS];
+
+struct smokeinstance_t {
+    uint8_t status;
+    uint8_t type;
+    int16_t x, y, z;
+    int16_t orientation;
+    float scale, phase, phase_step;
+};
+
+static smokeinstance_t smoke[MAXEXPLOSIONS];
+
 maskdraw_t maskdrawlist[10240];
 static int sortspritescnt = 0;
 
@@ -769,7 +879,7 @@ static inline int RT_PicSizLog(int siz)
     return lg;
 }
 
-void RT_SetTexture(int tilenum)
+void RT_SetTexture(int tilenum, int explosion = 0)
 {
     if (rt_globalpicnum == tilenum)
         return;
@@ -783,7 +893,7 @@ void RT_SetTexture(int tilenum)
 
     int tileid = rt_tilemap[tilenum];
 
-    int method = DAMETH_N64;
+    int method = DAMETH_N64 | (explosion ? DAMETH_N64_INTENSIVITY : 0);
     pthtyp *pth = texcache_fetch(tilenum, 0, 0, method);
     if (pth)
         glBindTexture(GL_TEXTURE_2D, pth->glpic);
@@ -2516,6 +2626,277 @@ void RT_DrawMasks(void)
     glDepthMask(GL_TRUE);
 }
 
+void RT_AddExplosion(int16_t x, int16_t y, int16_t z, uint8_t type)
+{
+    if (numplayers != 1)
+        return;
+    for (int i = 0; i < MAXEXPLOSIONS; i++)
+    {
+        if (explosions[i].status == 0)
+        {
+            explosions[i].status = 1;
+            explosions[i].type = type;
+            explosions[i].x = x;
+            explosions[i].y = y;
+            explosions[i].z = z;
+            explosions[i].c_size = explosioninfo[type][0].startsize;
+            explosions[i].r_size = explosioninfo[type][1].startsize;
+            explosions[i].c_time = explosioninfo[type][0].time;
+            explosions[i].r_time = explosioninfo[type][1].time;
+            explosions[i].c_step = explosioninfo[type][0].step;
+            explosions[i].r_step = explosioninfo[type][1].step;
+            explosions[i].c_enable = explosioninfo[type][0].enable;
+            explosions[i].r_enable = explosioninfo[type][1].enable;
+            return;
+        }
+    }
+}
+
+static uint8_t rt_explosionuv;
+
+void RT_AnimateExplosions(void)
+{
+    rt_explosionuv++;
+    for (int i = 0; i < MAXEXPLOSIONS; i++)
+    {
+        auto &e = explosions[i];
+        if (e.status)
+        {
+            e.c_size += e.c_step;
+            e.r_size += e.r_step;
+            e.c_step -= explosioninfo[e.type][0].stepdec;
+            e.r_step -= explosioninfo[e.type][1].stepdec;
+            if (--e.c_time == 0)
+                e.c_enable = 0;
+            if (--e.r_time == 0)
+                e.r_enable = 0;
+            if (!e.c_enable && !e.r_enable)
+                e.status = 0;
+        }
+    }
+}
+
+void RT_AnimateSmoke(void)
+{
+    for (int i = 0; i < MAXEXPLOSIONS; i++)
+    {
+        auto &s = smoke[i];
+        if (s.status)
+        {
+            s.scale += s.phase;
+            s.phase -= s.phase_step;
+            s.z -= s.phase;
+            if (s.phase <= 0.f)
+                s.status = 0;
+        }
+    }
+}
+
+int rt_explosionalpha_c, rt_explosionalpha_r;
+
+struct vtx_t {
+    int16_t x, y, z;
+    int16_t u, v;
+    uint8_t color[4];
+};
+
+static vtx_t rt_c_vtx[12];
+static vtx_t rt_r_vtx[4];
+
+void RT_PrepareExplosion(int index, int bottom)
+{
+    auto &e = explosions[index];
+    for (int i = 0; i < 12; i++)
+    {
+        auto &v = rt_c_vtx[i];
+        if (!bottom)
+        {
+            v.x = int16_t(e.x + explosionvtx[i].x * e.c_size);
+            v.y = int16_t(e.y + explosionvtx[i].y * e.c_size);
+            v.z = int16_t(e.z + explosionvtx[i].z * e.c_size);
+            v.v = explosionvtx[i].v + 64 * rt_explosionuv;
+            v.u = explosionvtx[i].u + 64 * rt_explosionuv;
+        }
+        else
+        {
+            v.x = int16_t(e.x + explosionvtx[i].x * e.c_size);
+            v.y = int16_t(e.y + explosionvtx[i].y * e.c_size);
+            v.z = int16_t(e.z - explosionvtx[i].z * e.c_size);
+            v.u = explosionvtx[i].u - 64 * rt_explosionuv;
+            v.v = explosionvtx[i].v - 64 * rt_explosionuv;
+        }
+        v.color[0] = 255;
+        v.color[1] = 255;
+        v.color[2] = 255;
+        v.color[3] = rt_explosionalpha_c;
+    }
+    rt_r_vtx[0].x = e.x - e.r_size;
+    rt_r_vtx[0].y = e.y - e.r_size;
+    rt_r_vtx[0].z = e.z;
+    rt_r_vtx[0].u = 0;
+    rt_r_vtx[0].v = 0;
+    rt_r_vtx[0].color[0] = 255;
+    rt_r_vtx[0].color[1] = 255;
+    rt_r_vtx[0].color[2] = 255;
+    rt_r_vtx[0].color[3] = rt_explosionalpha_r;
+
+    rt_r_vtx[1].x = e.x - e.r_size;
+    rt_r_vtx[1].y = e.y + e.r_size;
+    rt_r_vtx[1].z = e.z;
+    rt_r_vtx[1].u = 0;
+    rt_r_vtx[1].v = 2048;
+    rt_r_vtx[1].color[0] = 255;
+    rt_r_vtx[1].color[1] = 255;
+    rt_r_vtx[1].color[2] = 255;
+    rt_r_vtx[1].color[3] = rt_explosionalpha_r;
+
+    rt_r_vtx[2].x = e.x + e.r_size;
+    rt_r_vtx[2].y = e.y + e.r_size;
+    rt_r_vtx[2].z = e.z;
+    rt_r_vtx[2].u = 2048;
+    rt_r_vtx[2].v = 2048;
+    rt_r_vtx[2].color[0] = 255;
+    rt_r_vtx[2].color[1] = 255;
+    rt_r_vtx[2].color[2] = 255;
+    rt_r_vtx[2].color[3] = rt_explosionalpha_r;
+
+    rt_r_vtx[3].x = e.x + e.r_size;
+    rt_r_vtx[3].y = e.y - e.r_size;
+    rt_r_vtx[3].z = e.z;
+    rt_r_vtx[3].u = 2048;
+    rt_r_vtx[3].v = 0;
+    rt_r_vtx[3].color[0] = 255;
+    rt_r_vtx[3].color[1] = 255;
+    rt_r_vtx[3].color[2] = 255;
+    rt_r_vtx[3].color[3] = rt_explosionalpha_r;
+}
+
+void RT_DisplayExplosion(int index, int bottom)
+{
+    auto &e = explosions[index];
+    if (e.c_enable)
+    {
+        RT_SetTexture(0xf51, 1);
+        RT_SetColor2(explosioninfo[e.type][0].color1[0], explosioninfo[e.type][0].color1[1],
+            explosioninfo[e.type][0].color1[2], 255);
+        RT_SetColor1(explosioninfo[e.type][0].color2[0], explosioninfo[e.type][0].color2[1],
+            explosioninfo[e.type][0].color2[2], 255);
+        glBegin(GL_TRIANGLES);
+        for (int i = 0; i < 20; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                int tr = explosiontris[i][j];
+                auto &v = rt_c_vtx[tr];
+                glTexCoord2f(v.u * rt_uvscale.x, v.v * rt_uvscale.y);
+                glColor4f(v.color[0] * (1.f/255.f), v.color[1] * (1.f/255.f), v.color[2] * (1.f/255.f), v.color[3] * (1.f/255.f));
+                glVertex3f(v.x, v.y, v.z);
+            }
+        }
+        glEnd();
+    }
+    if (e.r_enable && !bottom)
+    {
+        RT_SetTexture(0xe5a, 1);
+        RT_SetColor2(explosioninfo[e.type][1].color1[0], explosioninfo[e.type][1].color1[1],
+            explosioninfo[e.type][1].color1[2], 255);
+        RT_SetColor1(explosioninfo[e.type][1].color2[0], explosioninfo[e.type][1].color2[1],
+            explosioninfo[e.type][1].color2[2], 255);
+        glBegin(GL_QUADS);
+        for (int i = 0; i < 4; i++)
+        {
+            auto &v = rt_r_vtx[i];
+            glTexCoord2f(v.u * rt_uvscale.x, v.v * rt_uvscale.y);
+            glColor4f(v.color[0] * (1.f/255.f), v.color[1] * (1.f/255.f), v.color[2] * (1.f/255.f), v.color[3] * (1.f/255.f));
+            glVertex3f(v.x, v.y, v.z);
+        }
+        glEnd();
+    }
+}
+
+void RT_AddSmoke(int16_t x, int16_t y, int16_t z, uint8_t type)
+{
+    for (int i = 0; i < MAXEXPLOSIONS; i++)
+    {
+        auto &s = smoke[i];
+        if (!s.status)
+        {
+            s.status = 1;
+            s.type = type;
+            s.x = x;
+            s.y = y;
+            s.z = z;
+            s.scale = 40.f;
+            s.phase = 10.f;
+            s.phase_step = 0.1;
+            s.orientation = krand2();
+            return;
+        }
+    }
+}
+
+void RT_DisplayExplosions(void)
+{
+    RT_SetTexComb(1);
+    glDisable(GL_DEPTH);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
+    for (int i = 0; i < MAXEXPLOSIONS; i++)
+    {
+        auto& e = explosions[i];
+        if (e.status)
+        {
+            rt_explosionalpha_c = (e.c_time * 255) / explosioninfo[e.type][0].time + 1;
+            rt_explosionalpha_r = (e.r_time * 255) / explosioninfo[e.type][1].time + 1;
+            RT_PrepareExplosion(i, 0);
+            RT_DisplayExplosion(i, 0);
+            RT_PrepareExplosion(i, 1);
+            RT_DisplayExplosion(i, 1);
+        }
+    }
+    setfxcolor(255, 255, 255, 0, 0, 0);
+    for (int i = 0; i < MAXEXPLOSIONS; i++)
+    {
+        auto& s = smoke[i];
+        if (s.status)
+        {
+            int x = s.x / 2;
+            int y = s.y / 2;
+            int z = s.z / 2;
+            float sw = rt_projmatrix[15] + rt_projmatrix[3] * x + rt_projmatrix[7] * y + rt_projmatrix[11] * z;
+            if (sw == 0.f)
+                continue;
+            float sy = (rt_projmatrix[13] + rt_projmatrix[1] * x + rt_projmatrix[5] * y + rt_projmatrix[9] * z) / sw;
+            float sx = (rt_projmatrix[12] + rt_projmatrix[0] * x + rt_projmatrix[4] * y + rt_projmatrix[8] * z) / sw;
+            float sz = (rt_projmatrix[14] + rt_projmatrix[2] * x + rt_projmatrix[6] * y + rt_projmatrix[10] * z) / sw;
+            if (sx < -2 || sx > 2.f || sy < -2.f || sy > 2.f || sz < 0.f || sz > 1.f)
+                continue;
+
+            rt_globaldepth = sz;
+
+            float tt = 1.f - sz;
+
+            int alpha = int(s.phase * 25.f);
+
+            if (!s.type)
+            {
+                RT_SetColor2(200, 200, 200, 255);
+                RT_SetColor1(0, 0, 0, 255);
+            }
+            else
+            {
+                RT_SetColor2(0, 0, 0, 255);
+                RT_SetColor1(0, 0, 0, 255);
+            }
+            glColor4f(1.f, 1.f, 1.f, alpha * (1.f/255.f));
+            RT_DisplayTileWorld(sx * x_vs + x_vt, -sy * y_vs + y_vt, s.scale * tt * 4.f, s.scale * tt * 4.f,
+                0xe4a, s.orientation);
+        }
+    }
+}
+
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio)
 {
     updatesector(x, y, &sectnum);
@@ -2620,6 +3001,8 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     //        RT_DrawSprite(i, sprite[i].sectnum, (min(wx, wy) >> 3) + max(wx, wy) + (min(wx, wy) >> 2));
     //    }
     //}
+
+    RT_DisplayExplosions();
 
     RT_EnablePolymost();
 }

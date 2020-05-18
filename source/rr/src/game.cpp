@@ -2783,6 +2783,45 @@ rrbloodpool_fallthrough:
 
         case EXPLOSION2__STATIC:
         case EXPLOSION3__STATICRR:
+            if (REALITY)
+            {
+                switch (DYNAMICTILEMAP(sprite[spriteNum].picnum))
+                {
+                case HEAVYHBOMB__STATIC:
+                case DN64TILE3634__STATIC:
+                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 2);
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
+                    break;
+                case TRIPBOMB__STATIC:
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 1);
+                    break;
+                case DN64TILE2599__STATIC:
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 1);
+                    break;
+                case RPG__STATIC:
+                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 3);
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
+                    break;
+                case HELECOPT__STATIC:
+                case RECON__STATIC:
+                case DUKECAR__STATIC:
+                    break;
+                default:
+                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
+                    break;
+                }
+                if (sprite[spriteNum].picnum == HEAVYHBOMB)
+                {
+                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 2);
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
+                }
+                if (sprite[spriteNum].picnum == HEAVYHBOMB)
+                {
+                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 2);
+                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
+                }
+            }
 #ifdef POLYMER
             if (pSprite->yrepeat > 32)
             {
@@ -2791,11 +2830,16 @@ rrbloodpool_fallthrough:
             }
             fallthrough__;
 #endif
+        case SHRINKEREXPLOSION__STATIC:
+            if (REALITY && pSprite->picnum == SHRINKEREXPLOSION)
+            {
+                RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 5);
+            }
+            fallthrough__;
         case EXPLOSION2BOT__STATIC:
         case BURNING__STATIC:
         case BURNING2__STATIC:
         case SMALLSMOKE__STATIC:
-        case SHRINKEREXPLOSION__STATIC:
         case COOLEXPLOSION1__STATIC:
             if (RR && (pSprite->picnum == EXPLOSION2BOT || pSprite->picnum == BURNING2
                 || pSprite->picnum == SHRINKEREXPLOSION || pSprite->picnum == COOLEXPLOSION1)) goto default_case;
@@ -8761,6 +8805,12 @@ int G_DoMoveThings(void)
 
     if (RR && ud.recstat == 0 && ud.multimode < 2 && g_torchCnt)
         G_DoTorch();
+
+    if (REALITY)
+    {
+        RT_AnimateExplosions();
+        RT_AnimateSmoke();
+    }
 
     return 0;
 }
