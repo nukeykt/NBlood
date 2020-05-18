@@ -3036,13 +3036,17 @@ enum inputlock_t
 
 static int P_CheckLockedMovement(int const playerNum)
 {
-    auto const pPlayer = g_player[playerNum].ps;
+    auto &     thisPlayer = g_player[playerNum];
+    auto const pPlayer    = thisPlayer.ps;
 
     if (pPlayer->on_crane >= 0)
         return IL_NOMOVE|IL_NOANGLE;
 
     if (pPlayer->newowner != -1)
         return IL_NOANGLE|IL_NOHORIZ;
+
+    if (pPlayer->return_to_center > 0 || thisPlayer.horizRecenter)
+        return IL_NOHORIZ;
 
     if (pPlayer->dead_flag || pPlayer->fist_incs || pPlayer->transporter_hold > 2 || pPlayer->hard_landing || pPlayer->access_incs > 0
         || pPlayer->knee_incs > 0
