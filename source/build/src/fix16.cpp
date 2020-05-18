@@ -4,7 +4,7 @@
 /* Subtraction and addition with overflow detection.
  * The versions without overflow detection are inlined in the header.
  */
-fix16_t fix16_add(fix16_t a, fix16_t b)
+FIXMATH_FUNC_ATTRS fix16_t fix16_add(fix16_t a, fix16_t b)
 {
     // Use unsigned integers because overflow with signed integers is
     // an undefined operation (http://www.airs.com/blog/archives/120).
@@ -19,7 +19,7 @@ fix16_t fix16_add(fix16_t a, fix16_t b)
     return sum;
 }
 
-fix16_t fix16_sub(fix16_t a, fix16_t b)
+FIXMATH_FUNC_ATTRS fix16_t fix16_sub(fix16_t a, fix16_t b)
 {
     uint32_t _a = a, _b = b;
     uint32_t diff = _a - _b;
@@ -33,7 +33,7 @@ fix16_t fix16_sub(fix16_t a, fix16_t b)
 }
 
 /* Saturating arithmetic */
-fix16_t fix16_sadd(fix16_t a, fix16_t b)
+FIXMATH_FUNC_ATTRS fix16_t fix16_sadd(fix16_t a, fix16_t b)
 {
     fix16_t result = fix16_add(a, b);
 
@@ -43,7 +43,7 @@ fix16_t fix16_sadd(fix16_t a, fix16_t b)
     return result;
 }
 
-fix16_t fix16_ssub(fix16_t a, fix16_t b)
+FIXMATH_FUNC_ATTRS fix16_t fix16_ssub(fix16_t a, fix16_t b)
 {
     fix16_t result = fix16_sub(a, b);
 
@@ -61,7 +61,7 @@ fix16_t fix16_ssub(fix16_t a, fix16_t b)
  * detection.
  */
 
-fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
+FIXMATH_FUNC_ATTRS fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
 {
     int64_t product = (int64_t)inArg0 * inArg1;
 
@@ -95,7 +95,7 @@ fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
 }
 
 /* Wrapper around fix16_mul to add saturating arithmetic. */
-fix16_t fix16_smul(fix16_t inArg0, fix16_t inArg1)
+FIXMATH_FUNC_ATTRS fix16_t fix16_smul(fix16_t inArg0, fix16_t inArg1)
 {
     fix16_t result = fix16_mul(inArg0, inArg1);
 
@@ -128,7 +128,7 @@ static uint8_t clz(uint32_t x)
 }
 #endif
 
-fix16_t fix16_div(fix16_t a, fix16_t b)
+FIXMATH_FUNC_ATTRS fix16_t fix16_div(fix16_t a, fix16_t b)
 {
     // This uses a hardware 32/32 bit division multiple times, until we have
     // computed all the bits in (a<<17)/b. Usually this takes 1-3 iterations.
@@ -197,7 +197,7 @@ fix16_t fix16_div(fix16_t a, fix16_t b)
 }
 
 /* Wrapper around fix16_div to add saturating arithmetic. */
-fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1)
+FIXMATH_FUNC_ATTRS fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1)
 {
     fix16_t result = fix16_div(inArg0, inArg1);
 
@@ -212,7 +212,7 @@ fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1)
     return result;
 }
 
-fix16_t fix16_lerp8(fix16_t inArg0, fix16_t inArg1, uint8_t inFract)
+FIXMATH_FUNC_ATTRS fix16_t fix16_lerp8(fix16_t inArg0, fix16_t inArg1, uint8_t inFract)
 {
     int64_t tempOut = int64_mul_i32_i32(inArg0, ((1 << 8) - inFract));
     tempOut = int64_add(tempOut, int64_mul_i32_i32(inArg1, inFract));
@@ -220,7 +220,7 @@ fix16_t fix16_lerp8(fix16_t inArg0, fix16_t inArg1, uint8_t inFract)
     return (fix16_t)int64_lo(tempOut);
 }
 
-fix16_t fix16_lerp16(fix16_t inArg0, fix16_t inArg1, uint16_t inFract)
+FIXMATH_FUNC_ATTRS fix16_t fix16_lerp16(fix16_t inArg0, fix16_t inArg1, uint16_t inFract)
 {
     int64_t tempOut = int64_mul_i32_i32(inArg0, (((int32_t)1 << 16) - inFract));
     tempOut = int64_add(tempOut, int64_mul_i32_i32(inArg1, inFract));
@@ -228,7 +228,7 @@ fix16_t fix16_lerp16(fix16_t inArg0, fix16_t inArg1, uint16_t inFract)
     return (fix16_t)int64_lo(tempOut);
 }
 
-fix16_t fix16_lerp32(fix16_t inArg0, fix16_t inArg1, uint32_t inFract)
+FIXMATH_FUNC_ATTRS fix16_t fix16_lerp32(fix16_t inArg0, fix16_t inArg1, uint32_t inFract)
 {
     int64_t tempOut;
     tempOut  = ((int64_t)inArg0 * (0 - inFract));
