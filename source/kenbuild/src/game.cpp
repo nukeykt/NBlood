@@ -41,10 +41,7 @@ static int32_t setsprite_eyeheight(int16_t spritenum, const vec3_t *pos)
     return setsprite(spritenum, &eyepos);
 }
 
-int ksqr(int eax)
-{
-    return eax*eax;
-}
+static FORCE_INLINE int32_t ksqr(int32_t a) { return a * a; }
 
 // declared in sound.c
 void initsb(char,char,int,char,char,char,char);
@@ -2373,8 +2370,6 @@ void tagcode(void)
         }
     }
 }
-
-static FORCE_INLINE int32_t sqr(int32_t a) { return a * a; }
 
 void statuslistcode(void)
 {
