@@ -5967,7 +5967,7 @@ ACTOR_STATIC void G_MoveActors(void)
                         }
                         for (SPRITES_OF_STAT_SAFE(STAT_STANDABLE, otherSprite, nextOtherSprite))
                         {
-                            if (pSprite->picnum >= CRACK1 && pSprite->picnum <= CRACK4)
+                            if (sprite[otherSprite].picnum >= CRACK1 && sprite[otherSprite].picnum <= CRACK4)
                                 if (A_ManhattanDistance(spriteNum, otherSprite) < 1024)
                                 {
                                     pData[3] = 1;
