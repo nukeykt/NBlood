@@ -133,7 +133,7 @@ static bool MV_Mix(VoiceNode * const voice, int const buffer)
         // beyond the length of the sample block
         if ((position + bufsiz) >= voclen)
         {
-            if (position >= voclen)
+            if (position >= voclen - voice->channels)
             {
                 voice->GetSound(voice);
                 break;
@@ -145,7 +145,7 @@ static bool MV_Mix(VoiceNode * const voice, int const buffer)
         voice->position = voice->mix(voice, mixlen);
         length -= mixlen;
 
-        if (voice->position >= voclen)
+        if (voice->position >= voclen - voice->channels)
         {
             // Get the next block of sound
             if (voice->GetSound(voice) == NoMoreData)
