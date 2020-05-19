@@ -2811,16 +2811,6 @@ rrbloodpool_fallthrough:
                     RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
                     break;
                 }
-                if (sprite[spriteNum].picnum == HEAVYHBOMB)
-                {
-                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 2);
-                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
-                }
-                if (sprite[spriteNum].picnum == HEAVYHBOMB)
-                {
-                    RT_AddExplosion(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 2);
-                    RT_AddSmoke(pSprite->x>>1, pSprite->y>>1, pSprite->z>>5, 0);
-                }
             }
 #ifdef POLYMER
             if (pSprite->yrepeat > 32)
