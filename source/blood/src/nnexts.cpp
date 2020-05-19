@@ -238,7 +238,7 @@ void nnExtResetGlobals() {
 
     // reset tracking conditions, if any
     if (gTrackingCondsCount > 0) {
-        for (int i = 0; i <= gTrackingCondsCount; i++) {
+        for (int i = 0; i < gTrackingCondsCount; i++) {
             TRCONDITION* pCond = &gCondition[i];
             for (int k = 0; k < pCond->length; k++) {
                 pCond->obj[k].index = pCond->obj[k].cmd = 0;
@@ -257,7 +257,7 @@ void nnExtInitModernStuff(bool bSaveLoad) {
     nnExtResetGlobals();
 
     // use true random only for single player mode, otherwise use Blood's default one.
-    if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) {
+    /*if (gGameOptions.nGameType == 0 && !VanillaMode() && !DemoRecordStatus()) {
         
         gStdRandom.seed(std::random_device()());
 
@@ -270,10 +270,10 @@ void nnExtInitModernStuff(bool bSaveLoad) {
                 gAllowTrueRandom = true;
         }
 
-    }
+    }*/
 
-    if (!gAllowTrueRandom)
-        initprintf("> True randomness is not available, using in-game random function(s)");
+    if (!gAllowTrueRandom) initprintf("> STD randomness is not available, using in-game random function(s)");
+    else initprintf("> Using STD randomness function(s).");
     
     for (int i = 0; i < kMaxXSprites; i++) {
 
@@ -550,7 +550,7 @@ void nnExtInitModernStuff(bool bSaveLoad) {
 
                 if (pXCond2->rxID != rx || pCond2->index == pCond->index || sum1 != sum2) continue;
                 else if ((pCond2->type != pCond->type) ^ (pCond2->cstat != pCond->cstat)) {
-                    initprintf("ELSE IF found for condition #%d (RX ID: %d, CONDID: %d)\n", i, rx, pXCond->data1);
+                    initprintf("> ELSE IF found for condition #%d (RX ID: %d, CONDID: %d)\n", i, rx, pXCond->data1);
                     pXCond2->rxID = pXCond2->busyTime = 0;
                     pXCond->sysData2 = pCond2->index;
                     i = a; found = true;
@@ -2143,8 +2143,8 @@ void useEffectGen(XSPRITE* pXSource, spritetype* pSprite) {
             case 1:
                 pos = bottom;
                 break;
-            case 2:
-                pos = pSprite->z + (top / 4);
+            case 2: // middle
+                pos = pSprite->z + (tilesiz[pSprite->picnum].y / 2 + picanm[pSprite->picnum].yofs);
                 break;
             case 3:
             case 4:
@@ -2824,6 +2824,16 @@ bool condCheckWall(XSPRITE* pXCond, int cmpOp, bool PUSH) {
                 if (!sectRangeIsFine(var = sectorofwall(pWall->nextwall))) return false;
                 else if (PUSH) condPush(pXCond, OBJ_SECTOR, var);
                 return true;
+            /*case 57: // someone touching this wall?
+                for (int i = headspritestat[kStatDude]; i >= 0; i = nextspritestat[i]) {
+                    if (!xspriRangeIsFine(sprite[i].extra) || (gSpriteHit[sprite[i].extra].hit & 0xc000) != 0x8000) continue;
+                    else if ((gSpriteHit[sprite[i].extra].hit & 0x3fff) != objIndex) continue;
+                    else if (PUSH) {
+                        condPush(pXCond, OBJ_SPRITE, i);
+                        return true;
+                    }
+                }
+                return false;*/
         }
     }
 
