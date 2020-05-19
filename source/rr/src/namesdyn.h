@@ -69,6 +69,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define HEATSENSOR__STATIC 59
 #define ACCESSCARD__STATIC 60
 #define BOOTS__STATIC 61
+#define DN64TILE65__STATIC 65
+#define DN64TILE66__STATIC 66
 #define MIRRORBROKE__STATIC 70
 #define CLOUDYOCEAN__STATIC 78
 #define CLOUDYSKIES__STATIC 79
@@ -115,6 +117,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define TECHSWITCH__STATIC 166
 #define DIPSWITCH3__STATIC 168
 #define ACCESSSWITCH2__STATIC 170
+#define DN64TILE172__STATIC 172
+#define DN64TILE174__STATIC 174
+#define DN64TILE176__STATIC 176
+#define DN64TILE178__STATIC 178
 #define REFLECTWATERTILE__STATIC 180
 #define FLOORSLIME__STATIC 200
 #define BIGFORCE__STATIC 230
@@ -632,8 +638,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DN64TILE3714__STATIC 3714
 #define DN64TILE3715__STATIC 3715
 #define DN64TILE3716__STATIC 3716
+#define DN64TILE3831__STATIC 3831
 #define DN64TILE3841__STATIC 3841
 #define DN64TILE3845__STATIC 3845
+#define DN64TILE3922__STATIC 3922
 #define POOP__STATIC 4094
 #define FRAMEEFFECT1__STATIC 4095
 #define PANNEL3__STATIC 4099
@@ -2186,6 +2194,8 @@ extern int32_t JETPACK;
 extern int32_t HEATSENSOR;
 extern int32_t ACCESSCARD;
 extern int32_t BOOTS;
+extern int32_t DN64TILE65;
+extern int32_t DN64TILE66;
 extern int32_t MIRRORBROKE;
 extern int32_t CLOUDYOCEAN;
 extern int32_t CLOUDYSKIES;
@@ -2232,6 +2242,10 @@ extern int32_t DIPSWITCH2;
 extern int32_t TECHSWITCH;
 extern int32_t DIPSWITCH3;
 extern int32_t ACCESSSWITCH2;
+extern int32_t DN64TILE172;
+extern int32_t DN64TILE174;
+extern int32_t DN64TILE176;
+extern int32_t DN64TILE178;
 extern int32_t REFLECTWATERTILE;
 extern int32_t FLOORSLIME;
 extern int32_t BIGFORCE;
@@ -2749,8 +2763,10 @@ extern int32_t DN64TILE3713;
 extern int32_t DN64TILE3714;
 extern int32_t DN64TILE3715;
 extern int32_t DN64TILE3716;
+extern int32_t DN64TILE3831;
 extern int32_t DN64TILE3841;
 extern int32_t DN64TILE3845;
+extern int32_t DN64TILE3922;
 extern int32_t POOP;
 extern int32_t FRAMEEFFECT1;
 extern int32_t PANNEL3;

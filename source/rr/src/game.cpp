@@ -4747,6 +4747,17 @@ static int G_CheckAdultTile(int tileNum)
         case FEMPIC7__STATIC:
         case BLOODYPOLE__STATIC:
         case FEM6PAD__STATIC:
+        case TAMPON__STATIC:
+        case XXXSTACY__STATIC:
+        case 4946:
+        case 4947:
+        case 4560:
+        case 4561:
+        case 4562:
+        case 4498:
+        case 4957:
+            if (REALITY) return 0;
+            fallthrough__;
         case OOZ2__STATIC:
         case WALLBLOOD7__STATIC:
         case WALLBLOOD8__STATIC:
@@ -4755,17 +4766,8 @@ static int G_CheckAdultTile(int tileNum)
         case FETUSBROKE__STATIC:
         case HOTMEAT__STATIC:
         case FOODOBJECT16__STATIC:
-        case TAMPON__STATIC:
-        case XXXSTACY__STATIC:
-        case 4946:
-        case 4947:
         case 693:
         case 2254:
-        case 4560:
-        case 4561:
-        case 4562:
-        case 4498:
-        case 4957:
             if (RR) return 0;
             return 1;
         case FEM10__STATIC:
@@ -4774,6 +4776,11 @@ static int G_CheckAdultTile(int tileNum)
         case FEMMAG2__STATIC:
         case STATUE__STATIC:
         case STATUEFLASH__STATIC:
+        case DOLPHIN1__STATIC:
+        case DOLPHIN2__STATIC:
+        case TOUGHGAL__STATIC:
+            if (REALITY) return 0;
+            fallthrough__;
         case OOZ__STATIC:
         case WALLBLOOD1__STATIC:
         case WALLBLOOD2__STATIC:
@@ -4784,9 +4791,6 @@ static int G_CheckAdultTile(int tileNum)
         case SUSHIPLATE2__STATIC:
         case SUSHIPLATE3__STATIC:
         case SUSHIPLATE4__STATIC:
-        case DOLPHIN1__STATIC:
-        case DOLPHIN2__STATIC:
-        case TOUGHGAL__STATIC:
             return 1;
     }
     return 0;
@@ -5024,6 +5028,8 @@ default_case1:
             switchpic = SCRAP5;
         else if ((pSprite->picnum==MONEY+1) || (pSprite->picnum==MAIL+1) || (pSprite->picnum==PAPER+1))
             switchpic--;
+        else if (REALITY && ((pSprite->picnum==ACCESSSWITCH+1) || (pSprite->picnum==ACCESSSWITCH2+1)))
+            switchpic--;
 
         switch (DYNAMICTILEMAP(switchpic))
         {
@@ -5114,6 +5120,9 @@ default_case1:
         case ATOMICHEALTH__STATIC:
             t->z -= ZOFFSET6;
             break;
+        case GROWAMMO__STATIC:
+            if (!REALITY) goto default_case2;
+            fallthrough__;
         case CRYSTALAMMO__STATIC:
             t->shade = (sintable[((int32_t) totalclock<<4)&2047]>>10);
             if (RR) break;
@@ -5286,7 +5295,7 @@ default_case1:
         case APLAYER__STATIC:
             playerNum = P_GetP(pSprite);
 
-            if (t->pal == 1) t->z -= (18<<8);
+            if (!REALITY && t->pal == 1) t->z -= (18<<8);
 
             if (g_player[playerNum].ps->over_shoulder_on > 0 && g_player[playerNum].ps->newowner < 0)
             {
@@ -5330,7 +5339,7 @@ default_case1:
 
             }
 
-            if ((g_netServer || ud.multimode > 1) && (display_mirror || screenpeek != playerNum || pSprite->owner == -1))
+            if (!REALITY && (g_netServer || ud.multimode > 1) && (display_mirror || screenpeek != playerNum || pSprite->owner == -1))
             {
                 if (ud.showweapons && sprite[g_player[playerNum].ps->i].extra > 0 && g_player[playerNum].ps->curr_weapon > 0
                         && spritesortcnt < maxspritesonscreen)
@@ -5615,6 +5624,69 @@ PALONLY:
                 break;
             }
             fallthrough__;
+        case ACCESSCARD__STATIC:
+            if (!REALITY)
+                goto default_case2;
+            if (t->pal == 21)
+                t->picnum = DN64TILE65;
+            else if (t->pal == 23)
+                t->picnum = DN64TILE66;
+            break;
+        case ACCESSSWITCH__STATIC:
+            if (!REALITY)
+                goto default_case2;
+            if (t->pal == 21)
+                t->picnum += DN64TILE172 - ACCESSSWITCH;
+            else if (t->pal == 23)
+                t->picnum += DN64TILE174 - ACCESSSWITCH;
+            break;
+        case ACCESSSWITCH2__STATIC:
+            if (!REALITY)
+                goto default_case2;
+            if (t->pal == 21)
+                t->picnum += DN64TILE176 - ACCESSSWITCH2;
+            else if (t->pal == 23)
+                t->picnum += DN64TILE178 - ACCESSSWITCH2;
+            break;
+        case LASERLINE__STATIC:
+            if (!REALITY)
+                goto default_case2;
+            t->picnum = DN64TILE3922 + ((int32_t)totalclock/4) % 3;
+            break;
+        case DN64TILE3634__STATIC:
+        {
+            if (!REALITY)
+                goto default_case2;
+            int offset;
+            if (t->xvel == 0)
+                offset = 0;
+            else
+                offset = ((int)totalclock>>5) % 5;
+            if (t->zvel == 0)
+            {
+                if (offset > 2)
+                {
+                    offset = 5 - offset;
+                    t->cstat |= 4;
+                }
+                t->picnum = DN64TILE3831+offset;
+            }
+            else
+            {
+                if (offset > 2)
+                {
+                    offset = 5 - offset;
+                    t->cstat |= 8;
+                }
+                t->picnum = DN64TILE3634+offset;
+            }
+            break;
+        }
+        case DN64TILE3841__STATIC:
+            if (!REALITY)
+                goto default_case2;
+            t->xrepeat = t->yrepeat = (t->yvel + 100) / 4;
+            break;
         default:
 default_case2:
             G_MaybeTakeOnFloorPal(t, sect);
@@ -5714,8 +5786,13 @@ skip:
         if (!RR && g_player[screenpeek].ps->inv_amount[GET_HEATS] > 0 && g_player[screenpeek].ps->heat_on &&
                 (A_CheckEnemySprite(pSprite) || A_CheckSpriteFlags(t->owner,SFLAG_NVG) || pSprite->picnum == APLAYER || pSprite->statnum == STAT_DUMMYPLAYER))
         {
-            t->pal = 6;
-            t->shade = 0;
+            if (REALITY)
+                t->shade = -127;
+            else
+            {
+                t->pal = 6;
+                t->shade = 0;
+            }
         }
 
         if (RR && !RRRA && pSprite->picnum == SBMOVE)
@@ -5737,7 +5814,7 @@ skip:
                     continue;
                 }
 
-                if (actor[i].flags & SFLAG_NOFLOORSHADOW)
+                if ((actor[i].flags & SFLAG_NOFLOORSHADOW) || REALITY)
                     continue;
 
                 if (ud.shadows && spritesortcnt < (maxspritesonscreen-2)
@@ -5811,12 +5888,18 @@ skip:
                 t->yrepeat = 0;
             fallthrough__;
         case EXPLOSION2BOT__STATIC:
+            if (REALITY && pSprite->picnum == EXPLOSION2BOT)
+                break;
+            fallthrough__;
         case GROWSPARK__STATIC:
         case SHRINKEREXPLOSION__STATIC:
         case FLOORFLAME__STATIC:
             if (RR) break;
             fallthrough__;
         case FREEZEBLAST__STATIC:
+            if (REALITY && pSprite->picnum == FREEZEBLAST)
+                break;
+            fallthrough__;
         case ATOMICHEALTH__STATIC:
         case FIRELASER__STATIC:
         case SHRINKSPARK__STATIC:
@@ -5987,7 +6070,7 @@ rrcoolexplosion1:
             fallthrough__;
         case SHOTGUNSHELL__STATIC:
             t->cstat |= 12;
-            if (T1(i) > 2) t->cstat &= ~16;
+            if (T1(i) > 2) t->cstat &= ~12;
             else if (T1(i) > 1) t->cstat &= ~4;
             break;
         case FRAMEEFFECT1__STATIC:
@@ -6030,6 +6113,10 @@ rrcoolexplosion1:
 #endif
             frameOffset = getofs_viewtype_mirrored<5>(t->cstat, t->ang - oura);
             t->picnum = pSprite->picnum+frameOffset;
+            break;
+        case DN64TILE3841__STATIC:
+            t->shade = -127;
+            t->clipdist |= TSPR_FLAGS_DRAW_LAST | TSPR_FLAGS_NO_SHADOW;
             break;
         }
 

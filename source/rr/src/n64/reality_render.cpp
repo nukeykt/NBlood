@@ -883,13 +883,13 @@ void RT_SetTexture(int tilenum, int explosion = 0)
 {
     if (rt_globalpicnum == tilenum)
         return;
-
-    if (!waloff[tilenum])
-        tileLoad(tilenum);
     
     rt_globalpicnum = tilenum;
 
     tilenum += animateoffs(tilenum, 0);
+
+    if (!waloff[tilenum])
+        tileLoad(tilenum);
 
     int tileid = rt_tilemap[tilenum];
 
