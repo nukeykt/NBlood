@@ -34,5 +34,18 @@ int getpacket(int *other, unsigned char *bufptr);
 void flushpackets(void);
 void genericmultifunction(int other, unsigned char *bufptr, int messleng, int command);
 
+#define mmulti_initsingleplayers initsingleplayers
+#define mmulti_initmultiplayers initmultiplayers
+#define mmulti_initmultiplayersparms initmultiplayersparms
+#define mmulti_initmultiplayerscycle initmultiplayerscycle
+#define mmulti_setpackettimeout setpackettimeout
+#define mmulti_uninitmultiplayers uninitmultiplayers
+#define mmulti_sendlogon sendlogon
+#define mmulti_sendlogoff sendlogoff
+#define mmulti_sendpacket sendpacket
+#define mmulti_getpacket getpacket
+#define mmulti_flushpackets flushpackets
+#define mmulti_genericmultifunction genericmultifunction
+
 #endif	// mmulti_h
 
