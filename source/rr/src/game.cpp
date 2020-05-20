@@ -954,7 +954,6 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 {
     DukePlayer_t *const pPlayer = g_player[playerNum].ps;
 
-    int yxAspect     = yxaspect;
     int viewingRange = viewingrange;
 
     //if (g_networkMode == NET_DEDICATED_SERVER) return;
@@ -1025,30 +1024,99 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         int32_t floorZ, ceilZ;
         int32_t tiltcx, tiltcy, tiltcs=0;    // JBF 20030807
 
-        int const vr            = divscale22(1, RR ? 64 : (sprite[pPlayer->i].yrepeat + 28));
-        int       screenTilting = (videoGetRenderMode() == REND_CLASSIC && (((ud.screen_tilting && pPlayer->rotscrnang) || (RR && pPlayer->drink_amt > 89)
+        int vr            = divscale22(1, RR ? 64 : (sprite[pPlayer->i].yrepeat + 28));
+        int screenTilting = (videoGetRenderMode() == REND_CLASSIC && (((ud.screen_tilting && pPlayer->rotscrnang) || (RR && pPlayer->drink_amt > 89)
 #ifdef SPLITSCREEN_MOD_HACKS
                                                                   && !g_fakeMultiMode
 #endif
                                                                   )));
 
-        viewingRange = Blrintf(float(vr) * tanf(ud.fov * (PI/360.f)));
-
-        if (!RRRA || !pPlayer->drug_mode)
+        if (RRRA && pPlayer->drug_mode > 0)
         {
-            if (!r_usenewaspect)
-                renderSetAspect(viewingRange, yxaspect);
-            else
+            while (pPlayer->drug_timer < totalclock && !(pPlayer->gm & MODE_MENU) && !ud.pause_on)
             {
-                yxAspect     = tabledivide32_noinline(65536 * ydim * 8, xdim * 5);
+                int aspect;
+                if (pPlayer->drug_stat[0] == 0)
+                {
+                    pPlayer->drug_stat[1]++;
+                    aspect = vr + pPlayer->drug_stat[1] * 5000;
+                    if (vr * 3 < aspect)
+                    {
+                        pPlayer->drug_aspect = vr * 3;
+                        pPlayer->drug_stat[0] = 2;
+                    }
+                    else
+                    {
+                        pPlayer->drug_aspect = aspect;
+                    }
+                    P_UpdateScreenPal(pPlayer);
+                }
+                else if (pPlayer->drug_stat[0] == 3)
+                {
+                    pPlayer->drug_stat[1]--;
+                    aspect = vr + pPlayer->drug_stat[1] * 5000;
+                    if (aspect < vr)
+                    {
+                        pPlayer->drug_mode = 0;
+                        pPlayer->drug_stat[0] = 0;
+                        pPlayer->drug_stat[2] = 0;
+                        pPlayer->drug_stat[1] = 0;
+                        pPlayer->drug_aspect = vr;
+                    }
+                    else
+                    {
+                        pPlayer->drug_aspect = aspect;
+                    }
+                    P_UpdateScreenPal(pPlayer);
+                }
+                else if (pPlayer->drug_stat[0] == 2)
+                {
+                    if (pPlayer->drug_stat[2] > 30)
+                    {
+                        pPlayer->drug_stat[0] = 1;
+                    }
+                    else
+                    {
+                        pPlayer->drug_stat[2]++;
+                        aspect = pPlayer->drug_stat[2] * 500 + vr * 3;
+                        pPlayer->drug_aspect = aspect;
+                        P_UpdateScreenPal(pPlayer);
+                    }
+                }
+                else
+                {
+                    if (pPlayer->drug_stat[2] < 1)
+                    {
+                        pPlayer->drug_stat[0] = 2;
+                        pPlayer->drug_mode--;
+                        if (pPlayer->drug_mode == 1)
+                            pPlayer->drug_stat[0] = 3;
+                    }
+                    else
+                    {
+                        pPlayer->drug_stat[2]--;
+                        aspect = pPlayer->drug_stat[2] * 500 + vr * 3;
+                        pPlayer->drug_aspect = aspect;
+                        P_UpdateScreenPal(pPlayer);
+                    }
+                }
 
-                renderSetAspect(mulscale16(viewingRange,viewingrange), yxaspect);
+                pPlayer->drug_timer += TICSPERFRAME / 2;
             }
+            vr = pPlayer->drug_aspect;
+            P_UpdateScreenPal(pPlayer);
         }
+
+        vr = Blrintf(float(vr) * tanf(ud.fov * (PI/360.f)));
+
+        if (!r_usenewaspect)
+            renderSetAspect(vr, yxaspect);
+        else
+            renderSetAspect(mulscale16(vr,viewingrange), yxaspect);
 
         if (g_screenCapture)
         {
-            walock[TILE_SAVESHOT] = 199;
+            walock[TILE_SAVESHOT] = CACHE1D_PERMANENT;
             if (waloff[TILE_SAVESHOT] == 0)
                 g_cache.allocateBlock(&waloff[TILE_SAVESHOT],200*320,&walock[TILE_SAVESHOT]);
 
@@ -1057,7 +1125,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
         }
         else if (screenTilting)
         {
-            int32_t oviewingrange = viewingrange;  // save it from setaspect()
+            int32_t oviewingrange = viewingrange;  // save it from renderSetAspect()
             const int16_t tang = (ud.screen_tilting) ? pPlayer->rotscrnang : 0;
 
             if (tang == 1024)
@@ -1108,7 +1176,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                 const int32_t viewtilexsiz = (tang&1023) ? tiltcx : tiltcy;
                 const int32_t viewtileysiz = tiltcx;
 
-                walock[TILE_TILT] = 255;
+                walock[TILE_TILT] = CACHE1D_PERMANENT;
                 if (waloff[TILE_TILT] == 0)
                     g_cache.allocateBlock(&waloff[TILE_TILT], maxTiltSize, &walock[TILE_TILT]);
 
@@ -1133,108 +1201,28 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                     vRange = 512 - vRange;
 
                 vRange = sintable[vRange + 512] * 8 + sintable[vRange] * 5;
-
-                //                setaspect(i>>1, yxaspect);
                 renderSetAspect(mulscale16(oviewingrange, vRange >> 1), yxaspect);
-
-                viewingRange = vRange >> 1;
-                yxAspect     = tabledivide32_noinline(65536 * ydim * 8, xdim * 5);
             }
         }
-        else if (videoGetRenderMode() >= REND_POLYMOST && (ud.screen_tilting
+        else if (videoGetRenderMode() >= REND_POLYMOST)
+        {
+            if (ud.screen_tilting
 #ifdef SPLITSCREEN_MOD_HACKS
         && !g_fakeMultiMode
 #endif
-        ))
-        {
-#ifdef USE_OPENGL
-            renderSetRollAngle(pPlayer->orotscrnang + mulscale16(((pPlayer->rotscrnang - pPlayer->orotscrnang + 1024)&2047)-1024, smoothRatio));
-#endif
-            pPlayer->orotscrnang = pPlayer->rotscrnang;
-        }
-
-        if (RRRA && pPlayer->drug_mode > 0)
-        {
-            while (pPlayer->drug_timer < totalclock && !(pPlayer->gm & MODE_MENU) && !ud.pause_on)
+            )
             {
-                int aspect;
-                if (pPlayer->drug_stat[0] == 0)
-                {
-                    pPlayer->drug_stat[1]++;
-                    aspect = viewingRange + pPlayer->drug_stat[1] * 5000;
-                    if (viewingRange * 3 < aspect)
-                    {
-                        pPlayer->drug_aspect = viewingRange * 3;
-                        pPlayer->drug_stat[0] = 2;
-                    }
-                    else
-                    {
-                        pPlayer->drug_aspect = aspect;
-                    }
-                    P_UpdateScreenPal(pPlayer);
-                }
-                else if (pPlayer->drug_stat[0] == 3)
-                {
-                    pPlayer->drug_stat[1]--;
-                    aspect = viewingRange + pPlayer->drug_stat[1] * 5000;
-                    if (aspect < viewingRange)
-                    {
-                        pPlayer->drug_mode = 0;
-                        pPlayer->drug_stat[0] = 0;
-                        pPlayer->drug_stat[2] = 0;
-                        pPlayer->drug_stat[1] = 0;
-                        pPlayer->drug_aspect = viewingRange;
-                    }
-                    else
-                    {
-                        pPlayer->drug_aspect = aspect;
-                    }
-                    P_UpdateScreenPal(pPlayer);
-                }
-                else if (pPlayer->drug_stat[0] == 2)
-                {
-                    if (pPlayer->drug_stat[2] > 30)
-                    {
-                        pPlayer->drug_stat[0] = 1;
-                    }
-                    else
-                    {
-                        pPlayer->drug_stat[2]++;
-                        aspect = pPlayer->drug_stat[2] * 500 + viewingRange * 3;
-                        pPlayer->drug_aspect = aspect;
-                        P_UpdateScreenPal(pPlayer);
-                    }
-                }
-                else
-                {
-                    if (pPlayer->drug_stat[2] < 1)
-                    {
-                        pPlayer->drug_stat[0] = 2;
-                        pPlayer->drug_mode--;
-                        if (pPlayer->drug_mode == 1)
-                            pPlayer->drug_stat[0] = 3;
-                    }
-                    else
-                    {
-                        pPlayer->drug_stat[2]--;
-                        aspect = pPlayer->drug_stat[2] * 500 + viewingRange * 3;
-                        pPlayer->drug_aspect = aspect;
-                        P_UpdateScreenPal(pPlayer);
-                    }
-                }
-
-                pPlayer->drug_timer += TICSPERFRAME / 2;
+#ifdef USE_OPENGL
+                renderSetRollAngle(pPlayer->orotscrnang + mulscale16(((pPlayer->rotscrnang - pPlayer->orotscrnang + 1024)&2047)-1024, smoothRatio));
+#endif
+                pPlayer->orotscrnang = pPlayer->rotscrnang;
             }
-            if (!r_usenewaspect)
-                renderSetAspect(pPlayer->drug_aspect, yxaspect);
+#ifdef USE_OPENGL
             else
             {
-                viewingRange = pPlayer->drug_aspect;
-                yxAspect = tabledivide32_noinline(65536 * ydim * 8, xdim * 5);
-
-                renderSetAspect(mulscale16(viewingRange, viewingrange), yxaspect);
+                renderSetRollAngle(0);
             }
-            P_UpdateScreenPal(pPlayer);
+#endif
         }
 
         if (pPlayer->newowner < 0)
@@ -1590,7 +1578,7 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
     if (r_usenewaspect)
     {
         newaspect_enable = 0;
-        renderSetAspect(viewingRange, yxAspect);
+        renderSetAspect(viewingRange, tabledivide32_noinline(65536 * ydim * 8, xdim * 5));
     }
 }
 
