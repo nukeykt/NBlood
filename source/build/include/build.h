@@ -1303,6 +1303,12 @@ int32_t    krand(void);
 
 int32_t   ksqrt(uint32_t num);
 int32_t   LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect);
+fix16_t   LUNATIC_FASTCALL gethiq16angle(int32_t xvect, int32_t yvect);
+
+static FORCE_INLINE fix16_t LUNATIC_FASTCALL getq16angle(int32_t xvect, int32_t yvect)
+{
+    return fix16_from_int(getangle(xvect, yvect));
+}
 
 static FORCE_INLINE CONSTEXPR uint32_t uhypsq(int32_t const dx, int32_t const dy)
 {
@@ -1324,6 +1330,9 @@ int32_t   getflorzofslopeptr(usectorptr_t sec, int32_t dax, int32_t day) ATTRIBU
 void   getzsofslopeptr(usectorptr_t sec, int32_t dax, int32_t day,
                        int32_t *ceilz, int32_t *florz) ATTRIBUTE((nonnull(1,4,5)));
 void yax_getzsofslope(int sectNum, int playerX, int playerY, int32_t* pCeilZ, int32_t* pFloorZ);
+
+int32_t yax_getceilzofslope(int const sectnum, vec2_t const vect);
+int32_t yax_getflorzofslope(int const sectnum, vec2_t const vect);
 
 static FORCE_INLINE int32_t getceilzofslope(int16_t sectnum, int32_t dax, int32_t day)
 {

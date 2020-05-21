@@ -6244,8 +6244,6 @@ pChopsShake(PANEL_SPRITEp psp)
 void
 pChopsWait(PANEL_SPRITEp psp)
 {
-    //extern SWBOOL GamePaused;
-
     //if (!GamePaused && RANDOM_P2(1024) < 10)
     if (RANDOM_P2(1024) < 10)
     {
@@ -7942,6 +7940,15 @@ PANEL_STATE ps_PanelKeyYellow[] =
 
 #include "saveable.h"
 
+static saveable_code saveable_panel_code[] =
+{
+    SAVE_CODE(pSuicide),
+    SAVE_CODE(SwordBlur),
+    SAVE_CODE(SpecialUziRetractFunc),
+    SAVE_CODE(FistBlur),
+    SAVE_CODE(StringTimer),
+};
+
 static saveable_data saveable_panel_data[] =
 {
     SAVE_DATA(ps_PresentSword),
@@ -8084,8 +8091,8 @@ static saveable_data saveable_panel_data[] =
 saveable_module saveable_panel =
 {
     // code
-    NULL,
-    0,
+    saveable_panel_code,
+    SIZ(saveable_panel_code),
 
     // data
     saveable_panel_data,

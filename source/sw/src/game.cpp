@@ -52,6 +52,7 @@ Things required to make savegames work:
 #include "panel.h"
 #include "game.h"
 #include "interp.h"
+#include "interpso.h"
 #include "tags.h"
 #include "sector.h"
 #include "sprite.h"
@@ -145,7 +146,6 @@ SWBOOL DemoModeMenuInit = FALSE;
 SWBOOL FinishAnim = 0;
 SWBOOL ShortGameMode = FALSE;
 SWBOOL ReloadPrompt = FALSE;
-SWBOOL ReloadPromptMode = FALSE;
 SWBOOL NewGame = TRUE;
 SWBOOL InMenuLevel = FALSE;
 SWBOOL LoadGameOutsideMoveLoop = FALSE;
@@ -166,14 +166,12 @@ short HelpPage = 0;
 short HelpPagePic[] = { 5115, 5116, 5117 };
 SWBOOL InputMode = FALSE;
 SWBOOL MessageInput = FALSE;
-extern SWBOOL GamePaused;
 short screenpeek = 0;
 SWBOOL NoDemoStartup = FALSE;
 SWBOOL FirstTimeIntoGame;
 extern uint8_t RedBookSong[40];
 
 SWBOOL PedanticMode;
-SWBOOL InterpolateSectObj;
 
 SWBOOL BorderAdjust = TRUE;
 SWBOOL LocationInfo = 0;
@@ -211,6 +209,7 @@ const GAME_SET gs_defaults =
     FALSE, // auto run
     TRUE, // crosshair
     TRUE, // auto aim
+    TRUE, // interpolate sector objects
     TRUE, // messages
     TRUE, // fx on
     TRUE, // Music on
@@ -238,6 +237,7 @@ const GAME_SET gs_defaults =
     "Track??", // waveform track name
     FALSE,
     TRUE,
+    90, // FOV
 };
 GAME_SET gs;
 
@@ -1308,7 +1308,6 @@ void InitLevelGlobals(void)
     memset(BossSpriteNum,-1,sizeof(BossSpriteNum));
 
     PedanticMode = (DemoPlaying || DemoRecording || DemoEdit || DemoMode);
-    InterpolateSectObj = !CommEnabled && !PedanticMode;
 }
 
 void InitLevelGlobals2(void)
@@ -3635,8 +3634,6 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     SW_ScanGroups();
 
-    wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
-
 #ifdef STARTUP_SETUP_WINDOW
     if (i < 0 || CommandSetup || (ud_setup.ForceSetup && !g_noSetup))
     {
@@ -4743,7 +4740,7 @@ FunctionKeys(PLAYERp pp)
 
 void PauseKey(PLAYERp pp)
 {
-    extern SWBOOL GamePaused,CheatInputMode;
+    extern SWBOOL CheatInputMode;
 
     if (KEY_PRESSED(sc_Pause) && !CommEnabled && !InputMode && !UsingMenus && !CheatInputMode && !ConPanel)
     {
@@ -4995,8 +4992,6 @@ void GetConInput(void)
 
 void GetHelpInput(PLAYERp pp)
 {
-    extern SWBOOL GamePaused;
-
     if (KEY_PRESSED(KEYSC_ALT) || KEY_PRESSED(KEYSC_RALT))
         return;
 
@@ -5336,18 +5331,20 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     q16angvel = fix16_clamp(q16angvel, -fix16_from_int(MAXANGVEL), fix16_from_int(MAXANGVEL));
     q16aimvel = fix16_clamp(q16aimvel, -fix16_from_int(MAXHORIZVEL), fix16_from_int(MAXHORIZVEL));
 
+    void DoPlayerTeleportPause(PLAYERp pp);
     if (PedanticMode)
     {
         q16angvel = fix16_floor(q16angvel);
         q16aimvel = fix16_floor(q16aimvel);
     }
-    else if (!TEST(pp->Flags, PF_DEAD))
+    else
     {
         void DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel);
         void DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel);
-        if (!TEST(pp->Flags, PF_CLIMBING))
+        if (TEST(pp->Flags2, PF2_INPUT_CAN_TURN))
             DoPlayerTurn(pp, &pp->camq16ang, q16angvel);
-        DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
+        if (TEST(pp->Flags2, PF2_INPUT_CAN_AIM))
+            DoPlayerHorizon(pp, &pp->camq16horiz, q16aimvel);
     }
 
     loc->vel += vel;
@@ -5576,7 +5573,8 @@ getinput(SW_PACKET *loc, SWBOOL tied)
         SinglePlayInput(pp);
 #endif
 
-    FunctionKeys(pp);
+    if (!tied)
+        FunctionKeys(pp);
 
     if (BUTTON(gamefunc_Toggle_Crosshair))
     {

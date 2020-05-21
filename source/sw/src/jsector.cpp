@@ -53,8 +53,7 @@ MIRRORTYPE mirror[MAXMIRRORS];
 short mirrorcnt; //, floormirrorcnt;
 //short floormirrorsector[MAXMIRRORS];
 SWBOOL mirrorinview;
-
-SWBOOL MirrorMoveSkip16 = 0;
+uint32_t oscilationclock;
 
 // Voxel stuff
 //SWBOOL bVoxelsOn = TRUE;                  // Turn voxels on by default
@@ -329,6 +328,7 @@ JS_InitMirrors(void)
     mirrorcnt = 0;
     tilesiz[MIRROR].x = 0;
     tilesiz[MIRROR].y = 0;
+    oscilationclock = ototalclock;
 
     for (i = 0; i < MAXMIRRORS; i++)
     {
@@ -347,6 +347,13 @@ JS_InitMirrors(void)
         {
             if ((sector[s].floorstat & 1) == 0)
             {
+                if (mirrorcnt >= MAXMIRRORS)
+                {
+                    buildprintf("MAXMIRRORS reached! Skipping mirror wall[%d]\n", i);
+                    wall[i].overpicnum = sector[s].ceilingpicnum;
+                    continue;
+                }
+
                 wall[i].overpicnum = MIRRORLABEL + mirrorcnt;
                 wall[i].picnum = MIRRORLABEL + mirrorcnt;
                 sector[s].ceilingpicnum = MIRRORLABEL + mirrorcnt;
@@ -356,12 +363,11 @@ JS_InitMirrors(void)
                 mirror[mirrorcnt].mirrorsector = s;
                 mirror[mirrorcnt].numspawnspots = 0;
                 mirror[mirrorcnt].ismagic = FALSE;
-                if (wall[i].lotag == TAG_WALL_MAGIC_MIRROR)
+                do if (wall[i].lotag == TAG_WALL_MAGIC_MIRROR)
                 {
                     short ii, nextii;
                     SPRITEp sp;
 
-                    mirror[mirrorcnt].ismagic = TRUE;
                     Found_Cam = FALSE;
                     TRAVERSE_SPRITE_STAT(headspritestat[STAT_ST1], ii, nextii)
                     {
@@ -396,10 +402,12 @@ JS_InitMirrors(void)
 
                     if (!Found_Cam)
                     {
-                        printf("Cound not find the camera view sprite for match %d\n",TrackerCast(wall[i].hitag));
-                        printf("Map Coordinates: x = %d, y = %d\n",TrackerCast(wall[i].x),TrackerCast(wall[i].y));
-                        exit(0);
+                        buildprintf("Could not find the camera view sprite for match %d\n",TrackerCast(wall[i].hitag));
+                        buildprintf("Map Coordinates: x = %d, y = %d\n",TrackerCast(wall[i].x),TrackerCast(wall[i].y));
+                        break;
                     }
+
+                    mirror[mirrorcnt].ismagic = TRUE;
 
                     Found_Cam = FALSE;
                     if (TEST_BOOL1(&sprite[mirror[mirrorcnt].camera]))
@@ -422,10 +430,10 @@ JS_InitMirrors(void)
 
                         if (!Found_Cam)
                         {
-                            printf("Did not find drawtotile for camera number %d\n",mirrorcnt);
-                            printf("wall[%d].hitag == %d\n",i,TrackerCast(wall[i].hitag));
-                            printf("Map Coordinates: x = %d, y = %d\n", TrackerCast(wall[i].x), TrackerCast(wall[i].y));
-                            exit(0);
+                            buildprintf("Did not find drawtotile for camera number %d\n",mirrorcnt);
+                            buildprintf("wall[%d].hitag == %d\n",i,TrackerCast(wall[i].hitag));
+                            buildprintf("Map Coordinates: x = %d, y = %d\n", TrackerCast(wall[i].x), TrackerCast(wall[i].y));
+                            RESET_BOOL1(&sprite[mirror[mirrorcnt].camera]);
                         }
                     }
 
@@ -436,6 +444,7 @@ JS_InitMirrors(void)
                     mirror[mirrorcnt].maxtics = 60 * 30;
 
                 }
+                while (0);
 
                 mirror[mirrorcnt].mstate = m_normal;
 
@@ -453,7 +462,6 @@ JS_InitMirrors(void)
                 }
 
                 mirrorcnt++;
-                ASSERT(mirrorcnt < MAXMIRRORS);
             }
             else
                 wall[i].overpicnum = sector[s].ceilingpicnum;
@@ -646,8 +654,6 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
     // drift!
     SWBOOL bIsWallMirror = FALSE;
 
-    MirrorMoveSkip16 = (MirrorMoveSkip16 + 1) & 15;
-
     camloopcnt += (int32_t) (totalclock - ototalclock);
     if (camloopcnt > (60 * 5))          // 5 seconds per player view
     {
@@ -661,6 +667,10 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
     longptr = (int *)&gotpic[MIRRORLABEL >> 3];
     if (longptr && (longptr[0] || longptr[1]))
     {
+        uint32_t oscilation_delta = ototalclock - oscilationclock;
+        oscilation_delta -= oscilation_delta % 4;
+        oscilationclock += oscilation_delta;
+        oscilation_delta *= 2;
         for (cnt = MAXMIRRORS - 1; cnt >= 0; cnt--)
             //if (TEST_GOTPIC(cnt + MIRRORLABEL) || TEST_GOTPIC(cnt + CAMSPRITE))
             if (TEST_GOTPIC(cnt + MIRRORLABEL) || ((unsigned)mirror[cnt].campic < MAXTILES && TEST_GOTPIC(mirror[cnt].campic)))
@@ -786,28 +796,27 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
                     }
                     else
                     {
-                        SWBOOL DoCam = FALSE;
-
                         if (mirror[cnt].campic == -1)
                         {
                             TerminateGame();
-                            printf("Missing campic for mirror %d\n",cnt);
-                            printf("Map Coordinates: x = %d, y = %d\n",midx,midy);
+                            buildprintf("Missing campic for mirror %d\n",cnt);
+                            buildprintf("Map Coordinates: x = %d, y = %d\n",midx,midy);
                             exit(0);
                         }
 
                         // BOOL2 = Oscilate camera
-                        if (TEST_BOOL2(sp) && MoveSkip2 == 0)
+                        if (TEST_BOOL2(sp))
                         {
                             if (TEST_BOOL3(sp)) // If true add increment to
                             // angle else subtract
                             {
                                 // Store current angle in TAG5
-                                SP_TAG5(sp) = NORM_ANGLE((SP_TAG5(sp) + 4));
+                                SP_TAG5(sp) = NORM_ANGLE((SP_TAG5(sp) + oscilation_delta));
 
                                 // TAG6 = Turn radius
                                 if (klabs(GetDeltaAngle(SP_TAG5(sp), sp->ang)) >= SP_TAG6(sp))
                                 {
+                                    SP_TAG5(sp) = NORM_ANGLE((SP_TAG5(sp) - oscilation_delta));
                                     RESET_BOOL3(sp);    // Reverse turn
                                     // direction.
                                 }
@@ -815,11 +824,12 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
                             else
                             {
                                 // Store current angle in TAG5
-                                SP_TAG5(sp) = NORM_ANGLE((SP_TAG5(sp) - 4));
+                                SP_TAG5(sp) = NORM_ANGLE((SP_TAG5(sp) - oscilation_delta));
 
                                 // TAG6 = Turn radius
                                 if (klabs(GetDeltaAngle(SP_TAG5(sp), sp->ang)) >= SP_TAG6(sp))
                                 {
+                                    SP_TAG5(sp) = NORM_ANGLE((SP_TAG5(sp) + oscilation_delta));
                                     SET_BOOL3(sp);      // Reverse turn
                                     // direction.
                                 }
@@ -844,29 +854,20 @@ JS_DrawMirrors(PLAYERp pp, int tx, int ty, int tz, fix16_t tpq16ang, fix16_t tpq
                         else
                             camhoriz = 100;     // Default
 
-                        // If player is dead still then update at MoveSkip4
-                        // rate.
-                        if (pp->posx == pp->oposx && pp->posy == pp->oposy && pp->posz == pp->oposz)
-                            DoCam = TRUE;
-
-
                         // Set up the tile for drawing
                         tilesiz[mirror[cnt].campic].x = tilesiz[mirror[cnt].campic].y = 128;
 
-                        if (MirrorMoveSkip16 == 0 || (DoCam && (MoveSkip4 == 0)))
+                        if (dist < MAXCAMDIST)
                         {
-                            if (dist < MAXCAMDIST)
-                            {
-                                PLAYERp cp = Player + camplayerview;
+                            PLAYERp cp = Player + camplayerview;
 
-                                if (TEST_BOOL11(sp) && numplayers > 1)
-                                {
-                                    drawroomstotile(cp->posx, cp->posy, cp->posz, cp->q16ang, cp->q16horiz, cp->cursectnum, mirror[cnt].campic);
-                                }
-                                else
-                                {
-                                    drawroomstotile(sp->x, sp->y, sp->z, fix16_from_int(SP_TAG5(sp)), fix16_from_int(camhoriz), sp->sectnum, mirror[cnt].campic);
-                                }
+                            if (TEST_BOOL11(sp) && numplayers > 1)
+                            {
+                                drawroomstotile(cp->posx, cp->posy, cp->posz, cp->q16ang, cp->q16horiz, cp->cursectnum, mirror[cnt].campic);
+                            }
+                            else
+                            {
+                                drawroomstotile(sp->x, sp->y, sp->z, fix16_from_int(SP_TAG5(sp)), fix16_from_int(camhoriz), sp->sectnum, mirror[cnt].campic);
                             }
                         }
                     }

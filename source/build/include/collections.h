@@ -11,7 +11,7 @@
 // GrowArray - heap-allocated storage that can expand at runtime
 // requirements: type must work properly with realloc -- otherwise, use std::vector
 
-template <typename T, size_t increment_ = 1, typename = enable_if_t<std::is_pod<T>::value>, typename = enable_if_t<(increment_ > 0)>>
+template <typename T, size_t increment_ = 1, typename = enable_if_t<std::is_standard_layout<T>::value>, typename = enable_if_t<std::is_trivial<T>::value>, typename = enable_if_t<(increment_ > 0)>>
 struct GrowArray
 {
     FORCE_INLINE T * begin() const { return data_; }

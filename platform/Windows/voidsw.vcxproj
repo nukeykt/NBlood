@@ -208,6 +208,7 @@
     <ClCompile Include="..\..\source\sw\src\hornet.cpp" />
     <ClCompile Include="..\..\source\sw\src\interp.cpp" />
     <ClCompile Include="..\..\source\sw\src\interpsh.cpp" />
+    <ClCompile Include="..\..\source\sw\src\interpso.cpp" />
     <ClCompile Include="..\..\source\sw\src\inv.cpp" />
     <ClCompile Include="..\..\source\sw\src\jbhlp.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -327,6 +328,7 @@
     <ClInclude Include="..\..\source\sw\src\GrpFile.game.h" />
     <ClInclude Include="..\..\source\sw\src\grpscan.h" />
     <ClInclude Include="..\..\source\sw\src\interp.h" />
+    <ClInclude Include="..\..\source\sw\src\interpso.h" />
     <ClInclude Include="..\..\source\sw\src\inv.h" />
     <ClInclude Include="..\..\source\sw\src\jnames.h" />
     <ClInclude Include="..\..\source\sw\src\jsector.h" />

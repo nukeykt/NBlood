@@ -39,6 +39,10 @@
 # include "driver_winmm.h"
 #endif
 
+#ifdef __linux__
+# include "driver_alsa.h"
+#endif
+
 int ASS_PCMSoundDriver  = ASS_AutoDetect;
 int ASS_MIDISoundDriver = ASS_AutoDetect;
 int ASS_EMIDICard = -1;
@@ -167,6 +171,29 @@ static struct
         nullptr,
         nullptr,
         SF2Drv_MIDI_Service,
+    },
+
+    // ALSA MIDI synthesiser
+    {
+        "ALSA",
+    #ifdef __linux__
+        ALSADrv_GetError,
+        ALSADrv_ErrorString,
+
+        UNSUPPORTED_PCM,
+
+        EMIDI_GeneralMIDI,
+        ALSADrv_MIDI_Init,
+        ALSADrv_MIDI_Shutdown,
+        ALSADrv_MIDI_StartPlayback,
+        ALSADrv_MIDI_HaltPlayback,
+        ALSADrv_MIDI_SetTempo,
+        ALSADrv_MIDI_Lock,
+        ALSADrv_MIDI_Unlock,
+        ALSADrv_MIDI_Service,
+    #else
+        UNSUPPORTED_COMPLETELY
+    #endif
     },
 };
 

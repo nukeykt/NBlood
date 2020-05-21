@@ -227,12 +227,15 @@ MenuItem screen_i[] =
     {DefSlider(sldr_brightness, KEYSC_B, "Brightness"), OPT_XS,  OPT_LINE(2), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(2), 0, m_defshade, 0, NULL, NULL, NULL},
 
-    {DefButton(btn_videofs, 0, "Fullscreen"), OPT_XS,            OPT_LINE(4), 1, m_defshade, 0, NULL, NULL, NULL},
-    {DefSlider(sldr_videobpp, 0, "Colour"), OPT_XS,              OPT_LINE(5), 1, m_defshade, 0, NULL, NULL, NULL},
-    {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(5), 0, m_defshade, 0, NULL, NULL, NULL},
-    {DefSlider(sldr_videores, 0, "Resolution"), OPT_XS,          OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefSlider(sldr_fov, 0, "FOV"), OPT_XS,                      OPT_LINE(3), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(3), 0, m_defshade, 0, NULL, NULL, NULL},
+
+    {DefButton(btn_videofs, 0, "Fullscreen"), OPT_XS,            OPT_LINE(5), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefSlider(sldr_videobpp, 0, "Colour"), OPT_XS,              OPT_LINE(6), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(6), 0, m_defshade, 0, NULL, NULL, NULL},
-    {DefOption(0, "Apply Settings"), OPT_XSIDE,                  OPT_LINE(8), 1, m_defshade, 0, ApplyModeSettings, NULL, NULL},
+    {DefSlider(sldr_videores, 0, "Resolution"), OPT_XS,          OPT_LINE(7), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefInert(0, NULL), OPT_XSIDE,                               OPT_LINE(7), 0, m_defshade, 0, NULL, NULL, NULL},
+    {DefOption(0, "Apply Settings"), OPT_XSIDE,                  OPT_LINE(9), 1, m_defshade, 0, ApplyModeSettings, NULL, NULL},
     {DefNone}
 };
 
@@ -394,6 +397,7 @@ MenuItem options_i[] =
     {DefButton(btn_stats, 0, "Level Stats"), OPT_XS,             OPT_LINE(11), 1, m_defshade, 0, NULL, MNU_StatCheck, NULL},
     {DefButton(btn_darts, 0, "Use Darts"), OPT_XS,               OPT_LINE(12), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefButton(btn_autoswitch, 0, "Equip Pickups"), OPT_XS,      OPT_LINE(13), 1, m_defshade, 0, NULL, NULL, NULL},
+    {DefButton(btn_interpolate_so, 0, "Interpolate SO"), OPT_XS,          OPT_LINE(14), 1, m_defshade, 0, NULL, NULL, NULL},
     {DefNone}
 };
 
@@ -2108,7 +2112,6 @@ MNU_QuitCustom(UserCall call, MenuItem_p item)
 SWBOOL
 MNU_QuickLoadCustom(UserCall call, MenuItem_p item)
 {
-    extern SWBOOL ReloadPrompt;
     int bak;
     PLAYERp pp = Player + myconnectindex;
     extern short GlobInfoStringTime;
@@ -2201,6 +2204,7 @@ MNU_InitMenus(void)
     slidersettings[sldr_scrsize] = gs.BorderNum;
     slidersettings[sldr_brightness] = gs.Brightness;
     slidersettings[sldr_bordertile] = gs.BorderTile;
+    slidersettings[sldr_fov] = (gs.FOV - MinFOV) / IncFOV;
 
     {
         int i,newx=xdim,newy=ydim;
@@ -2239,6 +2243,7 @@ MNU_InitMenus(void)
     buttonsettings[btn_stats] = gs.Stats;
     buttonsettings[btn_darts] = gs.Darts;
     buttonsettings[btn_autoswitch] = gs.WeaponAutoSwitch;
+    buttonsettings[btn_interpolate_so] = gs.InterpolateSO;
 
     slidersettings[sldr_gametype] = gs.NetGameType;
     slidersettings[sldr_netlevel] = gs.NetLevel;
@@ -3358,6 +3363,9 @@ MNU_DoButton(MenuItem_p item, SWBOOL draw)
         case btn_autoswitch:
             gs.WeaponAutoSwitch = state = buttonsettings[item->button];
             break;
+        case btn_interpolate_so:
+            gs.InterpolateSO = state = buttonsettings[item->button];
+            break;
         case btn_markers:
             gs.NetSpawnMarkers = state = buttonsettings[item->button];
             break;
@@ -3896,6 +3904,25 @@ MNU_DoSlider(short dir, MenuItem_p item, SWBOOL draw)
         MNU_DrawString(OPT_XSIDE+tilesiz[pic_slidelend].x+tilesiz[pic_sliderend].x+(barwidth+1)*tilesiz[pic_slidebar].x, item->y, tmp_text, 1, 16);
     } break;
 
+    case sldr_fov:
+    {
+        constexpr int numvalid = (MaxFOV - MinFOV) / IncFOV + 1;
+        offset = clamp(slidersettings[sldr_fov] + dir, 0, numvalid-1);
+        barwidth = numvalid;
+
+        if (TEST(item->flags, mf_disabled))
+            break;
+
+        if (dir)
+        {
+            slidersettings[sldr_fov] = offset;
+            gs.FOV = offset * IncFOV + MinFOV;
+        }
+
+        sprintf(tmp_text, "%d", gs.FOV);
+        MNU_DrawString(OPT_XSIDE+tilesiz[pic_slidelend].x+tilesiz[pic_sliderend].x+(barwidth+1)*tilesiz[pic_slidebar].x, item->y, tmp_text, 1, 16);
+    } break;
+
     case sldr_mousescalex:
     case sldr_mousescaley:
         barwidth = 8+1+8;
@@ -4089,6 +4116,7 @@ MNU_SetupMenu(void)
     MNU_ItemPreProcess(currentmenu);
 }
 
+#if 0
 ////////////////////////////////////////////////
 // Draw an item
 ////////////////////////////////////////////////
@@ -4107,6 +4135,7 @@ MNU_ClearFlags(MenuGroup *node)
             MNU_ClearFlags((MenuGroup *) i->child);
     }
 }
+#endif
 
 ////////////////////////////////////////////////
 // Pop a group off the menu stack

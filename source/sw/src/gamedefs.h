@@ -216,6 +216,9 @@ enum
     screenmode_redblue,
 };
 
+#define MinFOV 60
+#define MaxFOV 145
+#define IncFOV 5
 
 #ifdef __cplusplus
 };

@@ -74,6 +74,9 @@
     <ClCompile Include="..\..\source\audiolib\src\driver_sf2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\audiolib\src\driver_alsa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\audiolib\src\pitch.h">
@@ -137,6 +140,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\audiolib\include\driver_sf2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\audiolib\src\driver_alsa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

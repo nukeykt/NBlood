@@ -148,9 +148,6 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
             || (pSprite->picnum == MORTER && otherSprite == pSprite->owner))
             return;
 #endif
-        if (pOther->picnum == APLAYER)
-            spriteDist = FindDistance3D(pSprite->x - pOther->x, pSprite->y - pOther->y, pSprite->z - (pOther->z - PHEIGHT));
-
         if (spriteDist >= blastRadius || !cansee(pOther->x, pOther->y, pOther->z - ZOFFSET3, pOther->sectnum,
                                                  pSprite->x, pSprite->y, pSprite->z - ZOFFSET4, pSprite->sectnum))
             return;
@@ -348,7 +345,9 @@ SKIPWALLCHECK:
 
             if (bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
             {
-                int const spriteDist = dist(pSprite, pDamage);
+                int const spriteDist = (pDamage->picnum == APLAYER)
+                                       ? FindDistance3D(pSprite->x - pDamage->x, pSprite->y - pDamage->y, pSprite->z - (pDamage->z - PHEIGHT))
+                                       : dist(pSprite, pDamage);
 
                 if (spriteDist < blastRadius)
                     A_RadiusDamageObject_Internal(spriteNum, damageSprite, blastRadius, spriteDist, randomZOffset, dmg1, dmg2, dmg3, dmg4);
@@ -6433,27 +6432,31 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 m = (pSprite->xvel*sintable[(pSprite->ang+512)&2047])>>14;
                 x = (pSprite->xvel*sintable[pSprite->ang&2047])>>14;
 
-                for (TRAVERSE_CONNECT(playerNum))
+                if (sector[pSprite->sectnum].lotag != ST_2_UNDERWATER)
                 {
-                    auto const pPlayer = g_player[playerNum].ps;
-
-                    // might happen when squished into void space
-                    if (pPlayer->cursectnum < 0)
-                        break;
-
-                    if (sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
+                    // Move player spawns with sector.
+                    for (int spawnNum = 0; spawnNum < g_playerSpawnCnt; spawnNum++)
                     {
-                        if (g_playerSpawnPoints[playerNum].sect == pSprite->sectnum)
+                        if (g_playerSpawnPoints[spawnNum].sect == pSprite->sectnum)
                         {
-                            g_playerSpawnPoints[playerNum].pos.x += m;
-                            g_playerSpawnPoints[playerNum].pos.y += x;
+                            g_playerSpawnPoints[spawnNum].pos.x += m;
+                            g_playerSpawnPoints[spawnNum].pos.y += x;
                         }
+                    }
+
+                    for (TRAVERSE_CONNECT(playerNum))
+                    {
+                        auto const pPlayer = g_player[playerNum].ps;
+
+                        // might happen when squished into void space
+                        if (pPlayer->cursectnum < 0)
+                            break;
 
                         if (pSprite->sectnum == pPlayer->cursectnum
 #ifdef YAX_ENABLE
-                                || (pData[9]>=0 && pData[9] == pPlayer->cursectnum)
+                            || (pData[9] >= 0 && pData[9] == pPlayer->cursectnum)
 #endif
-                            )
+                        )
                         {
                             rotatepoint(pSprite->pos.vec2, pPlayer->pos.vec2, q, &pPlayer->pos.vec2);
 
@@ -6466,56 +6469,38 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                             pPlayer->q16ang += fix16_from_int(q);
                             pPlayer->q16ang &= 0x7FFFFFF;
 
-                            if (g_netServer || numplayers > 1)
-                            {
-                                pPlayer->opos.x = pPlayer->pos.x;
-                                pPlayer->opos.y = pPlayer->pos.y;
-                            }
                             if (sprite[pPlayer->i].extra <= 0)
+                                sprite[pPlayer->i].pos.vec2 = pPlayer->pos.vec2;
+                        }
+                    }
+
+                    // NOTE: special loop handling
+                    j = headspritesect[pSprite->sectnum];
+                    while (j >= 0)
+                    {
+                        if ((sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT || sprite[j].lotag == SE_50_SPOT_LIGHT))
+                            && sprite[j].picnum != LOCATORS)
+                        {
+                            if (move_rotfixed_sprite(j, pSprite - sprite, pData[2]))
+                                rotatepoint(pSprite->pos.vec2, sprite[j].pos.vec2, q, &sprite[j].pos.vec2);
+
+                            sprite[j].x += m;
+                            sprite[j].y += x;
+
+                            sprite[j].ang += q;
+                        }
+                        j = nextspritesect[j];
+#ifdef YAX_ENABLE
+                        if (j < 0)
+                        {
+                            if (pData[9] >= 0 && firstrun)
                             {
-                                sprite[pPlayer->i].x = pPlayer->pos.x;
-                                sprite[pPlayer->i].y = pPlayer->pos.y;
+                                firstrun = 0;
+                                j = headspritesect[pData[9]];
                             }
                         }
-                    }
-                }
-
-                // NOTE: special loop handling
-                j = headspritesect[pSprite->sectnum];
-                while (j >= 0)
-                {
-                    // KEEPINSYNC2
-                    // XXX: underwater check?
-                    if (sprite[j].statnum != STAT_PLAYER && sector[sprite[j].sectnum].lotag != ST_2_UNDERWATER &&
-                            (sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT||sprite[j].lotag == SE_50_SPOT_LIGHT))
-                            && sprite[j].picnum != LOCATORS)
-                    {
-                        // fix interpolation
-                        if (numplayers < 2 && !g_netServer)
-                            actor[j].bpos.vec2 = sprite[j].pos.vec2;
-
-                        if (move_rotfixed_sprite(j, pSprite-sprite, pData[2]))
-                            rotatepoint(pSprite->pos.vec2, sprite[j].pos.vec2, q, &sprite[j].pos.vec2);
-
-                        sprite[j].x+= m;
-                        sprite[j].y+= x;
-
-                        sprite[j].ang+=q;
-
-                        if (g_netServer || numplayers > 1)
-                            actor[j].bpos.vec2 = sprite[j].pos.vec2;
-                    }
-                    j = nextspritesect[j];
-#ifdef YAX_ENABLE
-                    if (j < 0)
-                    {
-                        if (pData[9]>=0 && firstrun)
-                        {
-                            firstrun = 0;
-                            j = headspritesect[pData[9]];
-                        }
-                    }
 #endif
+                    }
                 }
 
                 A_MoveSector(spriteNum);
@@ -6527,18 +6512,6 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         MaybeTrainKillPlayer(pSprite, 1);
 
                     MaybeTrainKillEnemies(spriteNum);
-                }
-            }
-            else
-            {
-                // fix for jittering of sprites in halted subways
-                for (SPRITES_OF_SECT(pSprite->sectnum, j))
-                {
-                    // KEEPINSYNC2
-                    if (sprite[j].statnum != STAT_PLAYER && sector[sprite[j].sectnum].lotag != ST_2_UNDERWATER &&
-                            (sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT||sprite[j].lotag == SE_50_SPOT_LIGHT))
-                            && sprite[j].picnum != LOCATORS)
-                        actor[j].bpos.vec2 = sprite[j].pos.vec2;
                 }
             }
 
@@ -6602,6 +6575,16 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     if (ud.noclip == 0)
                         MaybeTrainKillPlayer(pSprite, 0);
 
+                // Move player spawns with sector.
+                for (int spawnNum = 0; spawnNum < g_playerSpawnCnt; spawnNum++)
+                {
+                    if (g_playerSpawnPoints[spawnNum].sect == pSprite->sectnum)
+                    {
+                        g_playerSpawnPoints[spawnNum].pos.x += l;
+                        g_playerSpawnPoints[spawnNum].pos.y += x;
+                    }
+                }
+
                 for (int TRAVERSE_CONNECT(playerNum))
                 {
                     auto const pPlayer = g_player[playerNum].ps;
@@ -6616,12 +6599,6 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                         pPlayer->bobpos.x += l;
                         pPlayer->bobpos.y += x;
-                    }
-
-                    if (g_playerSpawnPoints[playerNum].sect == pSprite->sectnum)
-                    {
-                        g_playerSpawnPoints[playerNum].pos.x += l;
-                        g_playerSpawnPoints[playerNum].pos.y += x;
                     }
                 }
 
@@ -8248,29 +8225,33 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             {
                 walltype *pWall = &wall[pData[2]];
 
-                if (pWall->cstat|32)
+#if 0
+                // Due to a typo in the original source code, this block never executes.
+                if (!(pWall->cstat & 32))
                 {
-                    pWall->cstat &= (255-32);
-                    pWall->cstat |= 16;
+                    pWall->overpicnum++;
                     if (pWall->nextwall >= 0)
+                        wall[pWall->nextwall].overpicnum++;
+
+                    if (pData[0] < pData[1]) pData[0]++;
+                    else
                     {
-                        wall[pWall->nextwall].cstat &= (255-32);
-                        wall[pWall->nextwall].cstat |= 16;
+                        pWall->cstat &= (128+32+8+4+2);
+                        if (pWall->nextwall >= 0)
+                            wall[pWall->nextwall].cstat &= (128+32+8+4+2);
+                        DELETE_SPRITE_AND_CONTINUE(spriteNum);
                     }
+
+                    break;
                 }
-                else break;
+#endif
 
-                pWall->overpicnum++;
+                pWall->cstat &= (255-32);
+                pWall->cstat |= 16;
                 if (pWall->nextwall >= 0)
-                    wall[pWall->nextwall].overpicnum++;
-
-                if (pData[0] < pData[1]) pData[0]++;
-                else
                 {
-                    pWall->cstat &= (128+32+8+4+2);
-                    if (pWall->nextwall >= 0)
-                        wall[pWall->nextwall].cstat &= (128+32+8+4+2);
-                    DELETE_SPRITE_AND_CONTINUE(spriteNum);
+                    wall[pWall->nextwall].cstat &= (255-32);
+                    wall[pWall->nextwall].cstat |= 16;
                 }
             }
             break;

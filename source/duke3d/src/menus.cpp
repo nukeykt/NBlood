@@ -52,7 +52,7 @@ static FORCE_INLINE void Menu_StartTextInput()
 {
     KB_FlushKeyboardQueue();
     KB_ClearKeysDown();
-#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION > 1
+#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION >= 2
 # if defined __ANDROID__
     AndroidShowKeyboard(1);
 # else
@@ -63,7 +63,7 @@ static FORCE_INLINE void Menu_StartTextInput()
 
 static FORCE_INLINE void Menu_StopTextInput()
 {
-#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION > 1
+#if defined EDUKE32_TOUCH_DEVICES && defined SDL_MAJOR_VERSION && SDL_MAJOR_VERSION >= 2
 # if defined __ANDROID__
     AndroidShowKeyboard(0);
 # else
@@ -79,40 +79,30 @@ static FORCE_INLINE void rotatesprite_ybounds(int32_t sx, int32_t sy, int32_t z,
 
 static void mgametext(int32_t x, int32_t y, char const * t)
 {
-    G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, 0, MF_Bluefont.pal, 2|8|16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags, 0, 0, xdim-1, ydim-1);
+    G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, 0, MF_Bluefont.pal, g_textstat, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags, 0, 0, xdim-1, ydim-1);
 }
 
 static vec2_t mgametextcenterat(int32_t x, int32_t y, char const * t, int32_t f = 0)
 {
-    return G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, 0, MF_Bluefont.pal, 2|8|16, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f|TEXT_XCENTER, 0, 0, xdim-1, ydim-1);
+    return G_ScreenText(MF_Bluefont.tilenum, x, y, MF_Bluefont.zoom, 0, 0, t, 0, MF_Bluefont.pal, g_textstat, 0, MF_Bluefont.emptychar.x, MF_Bluefont.emptychar.y, MF_Bluefont.between.x, MF_Bluefont.between.y, MF_Bluefont.textflags|f|TEXT_XCENTER, 0, 0, xdim-1, ydim-1);
 }
 static vec2_t mgametextcenter(int32_t x, int32_t y, char const * t, int32_t f = 0)
 {
     return mgametextcenterat((MENU_MARGIN_CENTER<<16) + x, y, t, f);
 }
 
-#define mminitext(x,y,t,p) minitext_(x, y, t, 0, p, 2|8|16|ROTATESPRITE_FULL16)
+#define mminitext(x,y,t,p) minitext_(x, y, t, 0, p, g_textstat|ROTATESPRITE_FULL16)
 #define mmenutext menutext
 
 #ifndef EDUKE32_STANDALONE
 static void shadowminitext(int32_t x, int32_t y, const char *t, int32_t p)
 {
-    int32_t f = 0;
-
-    if (!minitext_lowercase)
-        f |= TEXT_UPPERCASE;
-
-    G_ScreenTextShadow(1, 1, 4, MINIFONT, x, y, 65536, 0, 0, t, 0, p, 2|8|16, 0, 4<<16, 8<<16, 1<<16, 0, f, 0, 0, xdim-1, ydim-1);
+    G_ScreenTextShadow(1, 1, 4, MF_Minifont.tilenum, x, y, MF_Minifont.zoom, 0, 0, t, 0, p, g_textstat, 0, MF_Minifont.emptychar.x, MF_Minifont.emptychar.y, MF_Minifont.between.x, MF_Minifont.between.y, MF_Minifont.textflags, 0, 0, xdim-1, ydim-1);
 }
 #endif
 static void creditsminitext(int32_t x, int32_t y, const char *t, int32_t p)
 {
-    int32_t f = TEXT_XCENTER;
-
-    if (!minitext_lowercase)
-        f |= TEXT_UPPERCASE;
-
-    G_ScreenTextShadow(1, 1, 4, MINIFONT, x, y, 65536, 0, 0, t, 0, p, 2|8|16, 0, 4<<16, 8<<16, 1<<16, 0, f, 0, 0, xdim-1, ydim-1);
+    G_ScreenTextShadow(1, 1, 4, MF_Minifont.tilenum, x, y, MF_Minifont.zoom, 0, 0, t, 0, p, g_textstat, 0, MF_Minifont.emptychar.x, MF_Minifont.emptychar.y, MF_Minifont.between.x, MF_Minifont.between.y, MF_Minifont.textflags|TEXT_XCENTER, 0, 0, xdim-1, ydim-1);
 }
 
 #pragma pack(push,1)
@@ -124,23 +114,41 @@ static void Menu_DrawBackground(const vec2_t origin)
     rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (100<<16), 65536L,0,MENUSCREEN,16,0,10+64);
 }
 
+static constexpr int32_t const TopBarY = 19<<16;
+
 static void Menu_DrawTopBar(const vec2_t origin)
 {
     if ((G_GetLogoFlags() & LOGO_NOTITLEBAR) == 0)
-        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (19<<16), MF_Redfont.cursorScale, 0,MENUBAR,16,0,10);
+        rotatesprite_fs(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + TopBarY, MF_Redfont.cursorScale, 0,MENUBAR,16,0,10);
 }
 
 static void Menu_DrawTopBarCaption(const char *caption, const vec2_t origin)
 {
-    static char t[64];
+    static char t[128];
     size_t const srclen = strlen(caption);
     size_t const dstlen = min(srclen, ARRAY_SIZE(t)-1);
     memcpy(t, caption, dstlen);
     t[dstlen] = '\0';
     char *p = &t[dstlen-1];
     if (*p == ':')
-        *p = '\0';
-    captionmenutext(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + (24<<16) + ((15>>1)<<16), t);
+    {
+        char const * const newcaption = localeLookup(t);
+        if (newcaption != t)
+        {
+            size_t const newsrclen = strlen(newcaption);
+            size_t const newdstlen = min(newsrclen, ARRAY_SIZE(t)-1);
+            memcpy(t, newcaption, newdstlen);
+            t[newdstlen] = '\0';
+            char * newp = &t[newdstlen-1];
+            if (*newp == ':')
+                *newp = '\0';
+        }
+        else
+        {
+            *p = '\0';
+        }
+    }
+    captionmenutext(origin.x + (MENU_MARGIN_CENTER<<16), origin.y + TopBarY, t);
 }
 
 static FORCE_INLINE int32_t Menu_CursorShade(void)
@@ -205,13 +213,13 @@ MenuGameplayStemEntry g_MenuGameplayEntries[MAXMENUGAMEPLAYENTRIES];
 
 //                                      emptychar x,y       between x,y         zoom                cursorLeft          cursorCenter        cursorScale         textflags
 //                                      tilenum             shade_deselected    shade_disabled      pal                 pal_selected        pal_deselected      pal_disabled
-MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 },           65536,              20<<16,             110<<16,            65536,              TEXT_BIGALPHANUM | TEXT_UPPERCASE,
+MenuFont_t MF_Redfont =               { { 5<<16, 15<<16 },  { 0, 0 }, 0,        65536,              20<<16,             110<<16,            65536,              TEXT_BIGALPHANUM | TEXT_UPPERCASE,
                                         -1,                 10,                 0,                  0,                  0,                  0,                  1,
                                         0,                  0,                  1 };
-MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 },           65536,              10<<16,             110<<16,            32768,              0,
+MenuFont_t MF_Bluefont =              { { 5<<16, 7<<16 },   { 0, 0 }, 0,        65536,              10<<16,             110<<16,            32768,              0,
                                         -1,                 10,                 0,                  0,                  10,                 10,                 16,
                                         0,                  0,                  16 };
-MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },   65536,              10<<16,             110<<16,            32768,              0,
+MenuFont_t MF_Minifont =              { { 4<<16, 5<<16 },   { 1<<16, 1<<16 },0, 65536,              10<<16,             110<<16,            32768,              0,
                                         -1,                 10,                 0,                  0,                  2,                  2,                  0,
                                         0,                  0,                  16 };
 
@@ -309,6 +317,9 @@ MAKE_SPACER( Space2, 2<<16 ); // bigoptions
 MAKE_SPACER( Space4, 4<<16 ); // usermap, smalloptions, anything else non-top
 MAKE_SPACER( Space6, 6<<16 ); // videosetup
 MAKE_SPACER( Space8, 8<<16 ); // colcorr, redslide
+
+MAKE_SPACER( Space12, 12<<16 );
+MAKE_SPACER( Space16, 16<<16 );
 
 static MenuEntry_t ME_Space2_Redfont = MAKE_MENUENTRY( NULL, &MF_Redfont, &MEF_Null, &MEO_Space2, Spacer );
 static MenuEntry_t ME_Space4_Bluefont = MAKE_MENUENTRY( NULL, &MF_Bluefont, &MEF_Null, &MEO_Space4, Spacer );
@@ -545,13 +556,13 @@ static MenuOption_t MEO_VIDEOSETUP_BORDERLESS = MAKE_MENUOPTION(&MF_Redfont, &ME
 static MenuEntry_t ME_VIDEOSETUP_BORDERLESS = MAKE_MENUENTRY("Borderless:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_VIDEOSETUP_BORDERLESS, Option);
 
 static char const *MEOSN_VIDEOSETUP_VSYNC[] = { "Adaptive", "Off", "On",
-#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+#if defined _WIN32 && SDL_MAJOR_VERSION >= 2
                                                 "KMT",
 #endif
 };
 
 static int32_t MEOSV_VIDEOSETUP_VSYNC[] = { -1, 0, 1,
-#if defined _WIN32 && SDL_MAJOR_VERSION == 2
+#if defined _WIN32 && SDL_MAJOR_VERSION >= 2
                                              2,
 #endif
 };
@@ -1194,6 +1205,11 @@ static MenuEntry_t ME_SAVE_NEW = MAKE_MENUENTRY( s_NewSaveGame, &MF_Minifont, &M
 static MenuEntry_t *ME_SAVE;
 static MenuEntry_t **MEL_SAVE;
 
+#ifdef __linux__
+static int32_t alsadevice;
+static std::vector<alsa_mididevinfo_t> const alsadevices = ALSADrv_MIDI_ListPorts();
+#endif
+
 static int32_t soundrate, soundvoices, musicdevice, opl3stereo;
 static char sf2bankfile[BMAX_PATH];
 static MenuOption_t MEO_SOUND = MAKE_MENUOPTION( &MF_Redfont, &MEOS_OffOn, &ud.config.SoundToggle );
@@ -1231,10 +1247,20 @@ static MenuEntry_t ME_SOUND_OPL3STEREO = MAKE_MENUENTRY( "OPL3 stereo mode:", &M
 static MenuRangeInt32_t MEO_SOUND_NUMVOICES = MAKE_MENURANGE( &soundvoices, &MF_Redfont, 16, 128, 0, 8, 1 );
 static MenuEntry_t ME_SOUND_NUMVOICES = MAKE_MENUENTRY( "Voices:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_NUMVOICES, RangeInt32 );
 
+#ifdef __linux__
+static char const *MEOSN_SOUND_ALSADEVICE[MAXVALIDMODES];
+static MenuOptionSet_t MEOS_SOUND_ALSADEVICE = MAKE_MENUOPTIONSETDYN( MEOSN_SOUND_ALSADEVICE, NULL, 0, 0x0 );
+static MenuOption_t MEO_SOUND_ALSADEVICE = MAKE_MENUOPTION( &MF_Redfont, &MEOS_SOUND_ALSADEVICE, &alsadevice );
+static MenuEntry_t ME_SOUND_ALSADEVICE = MAKE_MENUENTRY( "Device:", &MF_Redfont, &MEF_BigOptionsRt, &MEO_SOUND_ALSADEVICE, Option );
+#endif
+
 static char const *MEOSN_SOUND_MIDIDRIVER[] = {
     "OPL3 emu.",
 #ifdef _WIN32
     "Windows MME",
+#endif
+#ifdef __linux__
+    "ALSA MIDI",
 #endif
     ".sf2 synth",
 };
@@ -1242,6 +1268,9 @@ static int32_t MEOSV_SOUND_MIDIDRIVER[] = {
     ASS_OPL3,
 #ifdef _WIN32
     ASS_WinMM,
+#endif
+#ifdef __linux__
+    ASS_ALSA,
 #endif
     ASS_SF2,
 };
@@ -1276,6 +1305,9 @@ static MenuEntry_t *MEL_SOUND_DEVSETUP[] = {
 #ifndef EDUKE32_RETAIL_MENU
     &ME_SOUND_NUMVOICES,
     &ME_SOUND_MIDIDRIVER,
+#ifdef __linux__
+    &ME_SOUND_ALSADEVICE,
+#endif
     &ME_SOUND_OPL3STEREO,
     &ME_SOUND_SF2,
 #endif
@@ -1514,8 +1546,8 @@ static MenuMessage_t M_BUYDUKE = { CURSOR_BOTTOMRIGHT, MENU_EPISODE, MA_Return, 
 
 static MenuTextForm_t M_ADULTPASSWORD = { NULL, "Enter Password:", MAXPWLOCKOUT, MTF_Password };
 static MenuTextForm_t M_CHEATENTRY = { NULL, "Enter Cheat Code:", MAXCHEATLEN, 0 };
-static MenuTextForm_t M_CHEAT_WARP = { NULL, "Enter Warp #:", 3, 0 };
-static MenuTextForm_t M_CHEAT_SKILL = { NULL, "Enter Skill #:", 1, 0 };
+static MenuTextForm_t M_CHEAT_WARP = { NULL, "Enter Warp #:", 4, 0 };
+static MenuTextForm_t M_CHEAT_SKILL = { NULL, "Enter Skill #:", 2, 0 };
 
 #define MAKE_MENUFILESELECT(a, dir, b, c) { a, { &MMF_FileSelectLeft, &MMF_FileSelectRight }, { &MF_Minifont, &MF_Minifont }, dir, b, c, { NULL, NULL }, { 0, 0 }, { 3<<16, 3<<16 }, FNLIST_INITIALIZER, 0 }
 
@@ -1661,6 +1693,8 @@ static void Menu_EntryFocus(/*MenuEntry_t *entry*/);
 static MenuEntry_t *Menu_AdjustForCurrentEntryAssignment(MenuMenu_t *menu)
 {
     MenuEntry_t *currentry = menu->entrylist[menu->currentEntry];
+
+    Bassert(currentry);
 
     Menu_EntryFocus(/*currentry*/);
 
@@ -1900,6 +1934,10 @@ void Menu_Init(void)
     MEOSN_NetSkills[g_skillCnt] = MenuSkillNone;
     MMF_Top_Skill.pos.y = (58 + (4-g_skillCnt)*6)<<16;
     M_SKILL.currentEntry = ud.default_skill;
+
+    if (M_SKILL.currentEntry >= M_SKILL.numEntries-1)
+        M_SKILL.currentEntry = 0;
+
     Menu_AdjustForCurrentEntryAssignmentBlind(&M_SKILL);
 
     // prepare multiplayer gametypes
@@ -2000,8 +2038,14 @@ void Menu_Init(void)
     {
         MF_Redfont.between.x = 2<<16;
         MF_Redfont.cursorScale = 32768;
-        MF_Redfont.zoom = 16384;
+        MF_Redfont.zoom = 12288;
+        MF_Redfont.ypadding = 10<<16;
         MF_Bluefont.zoom = 16384;
+
+        ME_Space2_Redfont.entry = &MEO_Space4;
+        ME_Space4_Redfont.entry = &MEO_Space8;
+        ME_Space6_Redfont.entry = &MEO_Space12;
+        ME_Space8_Redfont.entry = &MEO_Space16;
 
         // hack; should swap out pointers
         MF_Minifont = MF_Bluefont;
@@ -2017,6 +2061,10 @@ void Menu_Init(void)
         M_OPTIONS.title = NoTitle;
 
         SELECTDIR_z = 16384;
+
+        g_textstat &= ~RS_TOPLEFT;
+        MF_Redfont.textflags |= TEXT_VARHEIGHT;
+        MF_Bluefont.textflags |= TEXT_VARHEIGHT;
     }
 
     // prepare shareware
@@ -2236,6 +2284,9 @@ static void Menu_Pre(MenuID_t cm)
         MenuEntry_DisableOnCondition(&ME_SOUND_SAMPLINGRATE, !ud.config.SoundToggle && !ud.config.MusicToggle);
 #ifndef EDUKE32_RETAIL_MENU
         MenuEntry_DisableOnCondition(&ME_SOUND_NUMVOICES, !ud.config.SoundToggle);
+#ifdef __linux__
+        MenuEntry_HideOnCondition(&ME_SOUND_ALSADEVICE, musicdevice != ASS_ALSA);
+#endif
         MenuEntry_HideOnCondition(&ME_SOUND_OPL3STEREO, musicdevice != ASS_OPL3);
         MenuEntry_HideOnCondition(&ME_SOUND_SF2, musicdevice != ASS_SF2);
 #endif
@@ -2243,7 +2294,12 @@ static void Menu_Pre(MenuID_t cm)
                                                         soundvoices == ud.config.NumVoices &&
                                                         musicdevice == ud.config.MusicDevice &&
                                                         opl3stereo == AL_Stereo &&
-                                                        !Bstrcmp(sf2bankfile, SF2_BankFile));
+                                                        !Bstrcmp(sf2bankfile, SF2_BankFile)
+#ifdef __linux__
+                                                        && alsadevices[alsadevice].clntid == ALSA_ClientID
+                                                        && alsadevices[alsadevice].portid == ALSA_PortID
+#endif
+);
         break;
 
     case MENU_SAVESETUP:
@@ -2440,9 +2496,13 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         mgametextcenter(origin.x, origin.y + (144<<16), "Activate in-game with Shift-F#");
         break;
 
+#ifndef EDUKE32_STANDALONE
     case MENU_COLCORR:
     case MENU_COLCORR_INGAME:
     {
+        if (FURY)
+            break;
+
         // center panel
         rotatesprite_fs(origin.x + (120<<16), origin.y + (32<<16), 16384, 0, 3290, 0, 0, 2|8|16);
         int32_t const statusTile = sbartile();
@@ -2455,6 +2515,7 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
         rotatesprite_fs(origin.x + (200<<16), origin.y + (32<<16), 16384, 0, LOADSCREEN, 0, 0, 2|8|16);
         break;
     }
+#endif
 
     case MENU_NETSETUP:
     case MENU_NETHOST:
@@ -2553,7 +2614,8 @@ static void Menu_PreDraw(MenuID_t cm, MenuEntry_t *entry, const vec2_t origin)
 
             {
                 const char *name = g_mapInfo[(savehead.volnum*MAXLEVELS) + savehead.levnum].name;
-                Bsprintf(tempbuf, "%s / %s", name ? name : "^10unnamed^0", g_skillNames[savehead.skill-1]);
+                const char *skill = g_skillNames[savehead.skill-1];
+                Bsprintf(tempbuf, "%s / %s", name ? localeLookup(name) : "^10unnamed^0", localeLookup(skill));
             }
 
             mgametextcenter(origin.x, origin.y + (168<<16), tempbuf);
@@ -3242,10 +3304,22 @@ static void Menu_RefreshSoundProperties()
     ud.config.MixRate     = FX_MixRate;
     ud.config.MusicDevice = MIDI_GetDevice();
 
-    soundrate   = ud.config.MixRate;
-    soundvoices = ud.config.NumVoices;
-    musicdevice = ud.config.MusicDevice;
-    opl3stereo  = AL_Stereo;
+#if !defined(EDUKE32_RETAIL_MENU) && defined (__linux__)
+    MEOS_SOUND_ALSADEVICE.numOptions = 0;
+    for (alsa_mididevinfo_t device : alsadevices)
+    {
+        MEOSN_SOUND_ALSADEVICE[MEOS_SOUND_ALSADEVICE.numOptions] = device.name;
+
+        if (device.clntid == ALSA_ClientID && device.portid == ALSA_PortID)
+            alsadevice = MEOS_SOUND_ALSADEVICE.numOptions;
+
+        MEOS_SOUND_ALSADEVICE.numOptions += 1;
+    }    
+#endif
+    soundrate    = ud.config.MixRate;
+    soundvoices  = ud.config.NumVoices;
+    musicdevice  = ud.config.MusicDevice;
+    opl3stereo   = AL_Stereo;
 }
 
 /*
@@ -3394,11 +3468,19 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     }
     else if (entry == &ME_SOUND_RESTART)
     {
-        if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices)
+        if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices
+#ifdef __linux__
+            || (musicdevice == ASS_ALSA && (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
+#endif
+)
         {
             S_MusicShutdown();
             S_SoundShutdown();
 
+#ifdef __linux__
+            ALSA_ClientID = alsadevices[alsadevice].clntid;
+            ALSA_PortID = alsadevices[alsadevice].portid;
+#endif
             ud.config.MixRate = soundrate;
             ud.config.NumVoices = soundvoices;
 
@@ -3410,7 +3492,11 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
 
         if (ud.config.MusicToggle)
         {
-            int const needsReInit = (ud.config.MusicDevice != musicdevice || (musicdevice == ASS_SF2 && Bstrcmp(SF2_BankFile, sf2bankfile)));
+            int const needsReInit = (ud.config.MusicDevice != musicdevice || (musicdevice == ASS_SF2 && Bstrcmp(SF2_BankFile, sf2bankfile))
+#ifdef __linux__
+            || (musicdevice == ASS_ALSA && (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
+#endif
+);
 
             AL_Stereo = opl3stereo;
             Bstrcpy(SF2_BankFile, sf2bankfile);
@@ -4474,6 +4560,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
 
 #ifndef EDUKE32_RETAIL_MENU
     case MENU_SOUND:
+    case MENU_SOUND_INGAME:
     case MENU_SOUND_SF2:
         Bstrcpy(sf2bankfile, SF2_BankFile);
         break;
@@ -4492,7 +4579,7 @@ static void Menu_AboutToStartDisplaying(Menu_t * m)
             if (!p) p = Bstrrchr(sf2bankfile,  '\\');
             if (p == sf2bankfile) { Bmemmove(sf2bankfile, p+1, Bstrlen(p)); }
         }
-        else if (m_previousMenu->menuID == MENU_SOUND)
+        else if (m_previousMenu->menuID == MENU_SOUND || m_previousMenu->menuID == MENU_SOUND_INGAME)
 #endif
             Menu_RefreshSoundProperties();
         break;
@@ -4846,7 +4933,7 @@ static vec2_t Menu_Text(int32_t x, int32_t y, const MenuFont_t *font, const char
         ybetween = font->emptychar.y; // <^ the battle against 'Q'
     }
     if (status & MT_Literal)
-        f |= TEXT_LITERALESCAPE;
+        f |= TEXT_LITERALESCAPE | TEXT_NOLOCALE;
 
     int32_t z = font->zoom;
 
@@ -4859,7 +4946,7 @@ static vec2_t Menu_Text(int32_t x, int32_t y, const MenuFont_t *font, const char
 
     Menu_GetFmt(font, status, &s, &z);
 
-    return G_ScreenText(font->tilenum, x, y, z, 0, 0, t, s, p, 2|8|16, 0, font->emptychar.x, font->emptychar.y, font->between.x, ybetween, f, 0, ydim_upper, xdim-1, ydim_lower);
+    return G_ScreenText(font->tilenum, x, y, z, 0, 0, t, s, p, g_textstat, 0, font->emptychar.x, font->emptychar.y, font->between.x, ybetween, f, 0, ydim_upper, xdim-1, ydim_lower);
 }
 
 #if 0
@@ -4867,9 +4954,9 @@ static vec2_t Menu_TextSize(int32_t x, int32_t y, const MenuFont_t *font, const 
 {
     int32_t f = font->textflags;
     if (status & MT_Literal)
-        f |= TEXT_LITERALESCAPE;
+        f |= TEXT_LITERALESCAPE | TEXT_NOLOCALE;
 
-    return G_ScreenTextSize(font->tilenum, x, y, font->zoom, 0, t, 2|8|16, font->emptychar.x, font->emptychar.y, font->between.x, font->between.y, f, 0, 0, xdim-1, ydim-1);
+    return G_ScreenTextSize(font->tilenum, x, y, font->zoom, 0, t, g_textstat, font->emptychar.x, font->emptychar.y, font->between.x, font->between.y, f, 0, 0, xdim-1, ydim-1);
 }
 #endif
 
@@ -5102,8 +5189,9 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                                y - menu->scrollPos <= klabs(menu->format->bottomcutoff) - menu->format->pos.y;
 
             int32_t const height = entry->getHeight(); // max(textsize.y, entry->font->get_yline()); // bluefont Q ruins this
+            int32_t const padding = entry->font->get_yoffset();
             status |= MT_YCenter;
-            int32_t const y_internal = origin.y + y_upper + y + ((height>>17)<<16) - menu->scrollPos;
+            int32_t const y_internal = origin.y + y_upper + y + ((height>>17)<<16) + (padding>>1) - menu->scrollPos;
 
             vec2_t textsize{};
             if (dodraw && entry->name != nullptr)

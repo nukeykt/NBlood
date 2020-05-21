@@ -52,6 +52,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "text.h"
 #include "menus.h"
 #include "interp.h"
+#include "interpso.h"
 #include "sector.h"
 #include "config.h"
 
@@ -361,7 +362,7 @@ DoVoxelShadow(SPRITEp tspr)
 #endif
 
 void
-DoShadows(tspriteptr_t tsp, int viewz)
+DoShadows(tspriteptr_t tsp, int viewz, SWBOOL mirror)
 {
     tspriteptr_t New = &tsprite[spritesortcnt];
     USERp tu = User[tsp->owner];
@@ -448,6 +449,28 @@ DoShadows(tspriteptr_t tsp, int viewz)
 
     New->xrepeat = xrepeat;
     New->yrepeat = yrepeat;
+
+#ifdef USE_OPENGL
+    if (videoGetRenderMode() >= REND_POLYMOST)
+    {
+        if (tilehasmodelorvoxel(tsp->picnum,tsp->pal))
+        {
+            New->yrepeat = 0;
+            // cstat:    trans reverse
+            // clipdist: tell mdsprite.cpp to use Z-buffer hacks to hide overdraw issues
+            New->clipdist |= TSPR_FLAGS_MDHACK;
+            New->cstat |= 512;
+        }
+        else
+        {
+            int const camang = mirror ? NORM_ANGLE(2048 - Player[screenpeek].siang) : Player[screenpeek].siang;
+            vec2_t const ofs = { sintable[NORM_ANGLE(camang+512)]>>11, sintable[NORM_ANGLE(camang)]>>11};
+
+            New->x += ofs.x;
+            New->y += ofs.y;
+        }
+    }
+#endif
 
     // Check for voxel items and use a round generic pic if so
     //DoVoxelShadow(New);
@@ -751,7 +774,7 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
 
             if (gs.Shadows && TEST(tu->Flags, SPR_SHADOW))
             {
-                DoShadows(tsp, viewz);
+                DoShadows(tsp, viewz, mirror);
             }
 
             //#define UK_VERSION 1
@@ -888,6 +911,14 @@ analyzesprites(int viewx, int viewy, int viewz, SWBOOL mirror)
                     tsp->owner = -1;
                     //SET(tsp->cstat, CSTAT_SPRITE_INVISIBLE);
                 }
+            }
+            else if (!PedanticMode) // Otherwise just interpolate the player sprite
+            {
+                PLAYERp pp = tu->PlayerP;
+                tsp->x -= mulscale16(pp->posx - pp->oposx, 65536-smoothratio);
+                tsp->y -= mulscale16(pp->posy - pp->oposy, 65536-smoothratio);
+                tsp->z -= mulscale16(pp->posz - pp->oposz, 65536-smoothratio);
+                tsp->ang -= fix16_to_int(mulscale16(pp->q16ang - pp->oq16ang, 65536-smoothratio));
             }
         }
 
@@ -2296,11 +2327,15 @@ drawscreen(PLAYERp pp)
 
 
     smoothratio = min(max(((int32_t) totalclock - ototalclock) * (65536 / synctics),0),65536);
+    if (GamePaused && !ReloadPrompt) // The checks were brought over from domovethings
+        smoothratio = 65536;
 
     if (!ScreenSavePic)
     {
         dointerpolations(smoothratio);                      // Stick at beginning of drawscreen
         short_dointerpolations(smoothratio);                      // Stick at beginning of drawscreen
+        if (gs.InterpolateSO)
+            so_dointerpolations(smoothratio);                           // Stick at beginning of drawscreen
     }
 
     // TENSW: when rendering with prediction, the only thing that counts should
@@ -2313,11 +2348,15 @@ drawscreen(PLAYERp pp)
     tx = camerapp->oposx + mulscale16(camerapp->posx - camerapp->oposx, smoothratio);
     ty = camerapp->oposy + mulscale16(camerapp->posy - camerapp->oposy, smoothratio);
     tz = camerapp->oposz + mulscale16(camerapp->posz - camerapp->oposz, smoothratio);
-    if (PedanticMode || pp->sop_control ||
-        pp == Player+myconnectindex && TEST(pp->Flags, PF_DEAD))
+    if (PedanticMode || (pp != Player+myconnectindex))
     {
         tq16ang = camerapp->oq16ang + mulscale16(((camerapp->q16ang + fix16_from_int(1024) - camerapp->oq16ang) & 0x7FFFFFF) - fix16_from_int(1024), smoothratio);
         tq16horiz = camerapp->oq16horiz + mulscale16(camerapp->q16horiz - camerapp->oq16horiz, smoothratio);
+    }
+    else if (gs.InterpolateSO && !CommEnabled)
+    {
+        tq16ang = camerapp->oq16ang + mulscale16(((pp->camq16ang + fix16_from_int(1024) - camerapp->oq16ang) & 0x7FFFFFF) - fix16_from_int(1024), smoothratio);
+        tq16horiz = camerapp->oq16horiz + mulscale16(pp->camq16horiz - camerapp->oq16horiz, smoothratio);
     }
     else
     {
@@ -2356,7 +2395,8 @@ drawscreen(PLAYERp pp)
 
     if (pp->sop_riding || pp->sop_control)
     {
-        if (pp->sop_control && !InterpolateSectObj)
+        if (pp->sop_control &&
+            (!gs.InterpolateSO || (CommEnabled && !pp->sop_remote)))
         {
             tx = pp->posx;
             ty = pp->posy;
@@ -2385,7 +2425,7 @@ drawscreen(PLAYERp pp)
         if (TEST_BOOL1(pp->remote_sprite))
             tq16ang = fix16_from_int(pp->remote_sprite->ang);
         else
-            tq16ang = fix16_from_int(getangle(pp->sop_remote->xmid - tx, pp->sop_remote->ymid - ty));
+            tq16ang = GetQ16AngleFromVect(pp->sop_remote->xmid - tx, pp->sop_remote->ymid - ty);
     }
 
     //if (TEST(camerapp->Flags, PF_VIEW_FROM_OUTSIDE))
@@ -2406,7 +2446,8 @@ drawscreen(PLAYERp pp)
     if (!TEST(pp->Flags, PF_VIEW_FROM_CAMERA|PF_VIEW_FROM_OUTSIDE))
     {
         tz += bob_amt;
-        tz += camerapp->bob_z;
+        tz += PedanticMode ? camerapp->bob_z :
+                             pp->obob_z + mulscale16(pp->bob_z - pp->obob_z, smoothratio);
 
         // recoil only when not in camera
         //tq16horiz = tq16horiz + fix16_from_int(camerapp->recoil_horizoff);
@@ -2420,6 +2461,8 @@ drawscreen(PLAYERp pp)
         newaspect_enable = 1;
         videoSetCorrectedAspect();
     }
+
+    renderSetAspect(Blrintf(float(viewingrange) * tanf(gs.FOV * (fPI/360.f))), yxaspect);
 
     if (FAF_DebugView)
         videoClearViewableArea(255L);
@@ -2577,6 +2620,8 @@ drawscreen(PLAYERp pp)
 
     restoreinterpolations();                 // Stick at end of drawscreen
     short_restoreinterpolations();                 // Stick at end of drawscreen
+    if (gs.InterpolateSO)
+        so_restoreinterpolations();                       // Stick at end of drawscreen
 
     PostDraw();
     DrawScreen = FALSE;

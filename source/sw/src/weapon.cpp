@@ -31,6 +31,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "panel.h"
 #include "game.h"
 #include "interp.h"
+#include "interpso.h"
 #include "tags.h"
 #include "common_game.h"
 #include "break.h"
@@ -11384,8 +11385,7 @@ AddSpriteToSectorObject(short SpriteNum, SECTOR_OBJECTp sop)
 
     ASSERT(sn < SIZ(sop->sp_num) - 1);
     sop->sp_num[sn] = SpriteNum;
-    if (InterpolateSectObj)
-        setspriteinterpolation(sp);
+    so_setspriteinterpolation(sop, sp);
 
     SET(u->Flags, SPR_ON_SO_SECTOR|SPR_SO_ATTACHED);
 
@@ -11452,8 +11452,7 @@ SpawnBigGunFlames(int16_t Weapon, int16_t Operator, SECTOR_OBJECTp sop)
 
     ASSERT(sn < SIZ(sop->sp_num) - 1);
     sop->sp_num[sn] = explosion;
-    if (InterpolateSectObj)
-        setspriteinterpolation(exp);
+    so_setspriteinterpolation(sop, exp);
 
     // Place sprite exactly where shoot point is
     //exp->x = eu->ox = sop->xmid - u->sx;

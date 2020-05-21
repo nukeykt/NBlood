@@ -277,6 +277,8 @@ static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
         else if (bytes < 0)
         {
             MV_Printf("MV_GetNextVorbisBlock ov_read: err %d\n", bytes);
+            voice->rawdataptr = nullptr;
+            MV_ReleaseVorbisVoice(voice);
             return NoMoreData;
         }
     } while (bytesread < BLOCKSIZE);
@@ -368,7 +370,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     voice->ptrlock = CACHE1D_PERMANENT;
 
     if (voice->rawdataptr == nullptr || voice->wavetype != FMT_VORBIS)
-        g_cache.allocateBlock((intptr_t *)&voice->rawdataptr, sizeof(vorbis_data), &voice->ptrlock);
+        voice->rawdataptr = Xcalloc(sizeof(vorbis_data), 1);
 
     vorbis_data *vd = (vorbis_data *)voice->rawdataptr;
 
@@ -388,7 +390,7 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
         else
             MV_Printf("MV_PlayVorbis: err %d\n", status);
 
-        voice->ptrlock = CACHE1D_FREE;
+        DO_FREE_AND_NULL(voice->rawdataptr);
         return MV_SetErrorCode(MV_InvalidFile);
     }
 
@@ -425,54 +427,29 @@ int MV_PlayVorbis(char *ptr, uint32_t length, int loopstart, int loopend, int pi
     return voice->handle;
 }
 
-void MV_ReleaseVorbisVoice( VoiceNode * voice )
+void MV_ReleaseVorbisVoice(VoiceNode *voice)
 {
-    if (voice->wavetype != FMT_VORBIS)
+    if (voice->wavetype != FMT_VORBIS || voice->rawdataptr == nullptr)
         return;
 
     auto vd = (vorbis_data *)voice->rawdataptr;
-
-    voice->length = 0;
-    voice->sound = nullptr;
-    voice->ptrlock = CACHE1D_UNLOCKED;
+    voice->rawdataptr = nullptr;
 
     ov_clear(&vd->vf);
+
+    DO_FREE_AND_NULL(vd);
 }
 #else
 #include "_multivc.h"
 
-int MV_PlayVorbis(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset,
-    int vol, int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+int MV_PlayVorbis(char *, uint32_t, int, int, int, int, int, int, int, fix16_t, intptr_t)
 {
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(ptrlength);
-    UNREFERENCED_PARAMETER(loopstart);
-    UNREFERENCED_PARAMETER(loopend);
-    UNREFERENCED_PARAMETER(pitchoffset);
-    UNREFERENCED_PARAMETER(vol);
-    UNREFERENCED_PARAMETER(left);
-    UNREFERENCED_PARAMETER(right);
-    UNREFERENCED_PARAMETER(priority);
-    UNREFERENCED_PARAMETER(volume);
-    UNREFERENCED_PARAMETER(callbackval);
-
     MV_Printf("MV_PlayVorbis: OggVorbis support not included in this binary.\n");
     return -1;
 }
 
-int MV_PlayVorbis3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-    int distance, int priority, fix16_t volume, intptr_t callbackval)
+int MV_PlayVorbis3D(char *, uint32_t, int, int, int, int, int, fix16_t, intptr_t)
 {
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(ptrlength);
-    UNREFERENCED_PARAMETER(loophow);
-    UNREFERENCED_PARAMETER(pitchoffset);
-    UNREFERENCED_PARAMETER(angle);
-    UNREFERENCED_PARAMETER(distance);
-    UNREFERENCED_PARAMETER(priority);
-    UNREFERENCED_PARAMETER(volume);
-    UNREFERENCED_PARAMETER(callbackval);
-
     MV_Printf("MV_PlayVorbis: OggVorbis support not included in this binary.\n");
     return -1;
 }

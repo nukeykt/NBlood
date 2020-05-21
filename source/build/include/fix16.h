@@ -30,7 +30,7 @@ typedef int32_t fix16_t;
 
 static CONSTEXPR const fix16_t FIX16_MAX      = 0x7FFFFFFF; /*!< the maximum value of fix16_t */
 static CONSTEXPR const fix16_t FIX16_MIN      = 0x80000000; /*!< the minimum value of fix16_t */
-static CONSTEXPR const fix16_t FIX16_OVERFLOW = 0x80000000; /*!< the value used to indicate overflows when FIXMATH_NO_OVERFLOW is not specified */
+static CONSTEXPR const fix16_t FIX16_OVERFLOW = 0x80000000; /*!< the value used to indicate overflows */
 
 static CONSTEXPR const fix16_t fix16_one = 0x00010000; /*!< fix16_t value of 1 */
 
@@ -94,22 +94,13 @@ static FORCE_INLINE CONSTEXPR fix16_t fix16_max(fix16_t x, fix16_t y)
 static FORCE_INLINE CONSTEXPR fix16_t fix16_clamp(fix16_t x, fix16_t lo, fix16_t hi)
     { return fix16_min(fix16_max(x, lo), hi); }
 
-/* Subtraction and addition with (optional) overflow detection. */
-#ifdef FIXMATH_NO_OVERFLOW
-
-static FORCE_INLINE CONSTEXPR fix16_t fix16_add(fix16_t inArg0, fix16_t inArg1) { return (inArg0 + inArg1); }
-static FORCE_INLINE CONSTEXPR fix16_t fix16_sub(fix16_t inArg0, fix16_t inArg1) { return (inArg0 - inArg1); }
-
-#else
-
+/* Subtraction and addition with overflow detection. */
 extern fix16_t fix16_add(fix16_t a, fix16_t b) FIXMATH_FUNC_ATTRS;
 extern fix16_t fix16_sub(fix16_t a, fix16_t b) FIXMATH_FUNC_ATTRS;
 
 /* Saturating arithmetic */
 extern fix16_t fix16_sadd(fix16_t a, fix16_t b) FIXMATH_FUNC_ATTRS;
 extern fix16_t fix16_ssub(fix16_t a, fix16_t b) FIXMATH_FUNC_ATTRS;
-
-#endif
 
 /*! Multiplies the two given fix16_t's and returns the result.
 */
@@ -119,7 +110,6 @@ extern fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
 */
 extern fix16_t fix16_div(fix16_t a, fix16_t b) FIXMATH_FUNC_ATTRS;
 
-#ifndef FIXMATH_NO_OVERFLOW
 /*! Performs a saturated multiplication (overflow-protected) of the two given fix16_t's and returns the result.
 */
 extern fix16_t fix16_smul(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
@@ -127,7 +117,6 @@ extern fix16_t fix16_smul(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
 /*! Performs a saturated division (overflow-protected) of the first fix16_t by the second and returns the result.
 */
 extern fix16_t fix16_sdiv(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
-#endif
 
 /*! Divides the first given fix16_t by the second and returns the remainder.
 */
