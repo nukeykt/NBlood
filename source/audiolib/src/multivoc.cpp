@@ -104,7 +104,6 @@ int MV_Locked;
 
 char *MV_MusicBuffer;
 static void (*MV_MusicCallback)(void);
-static int MV_MixMusic = FALSE;
 
 static bool MV_Mix(VoiceNode * const voice, int const buffer)
 {
@@ -261,6 +260,8 @@ static void MV_ServiceVoc(void)
         } while (length > 0);
     }
 
+    VoiceNode *MusicVoice = nullptr;
+
     if (VoiceList.next && VoiceList.next != &VoiceList)
     {
         auto voice = VoiceList.next;
@@ -273,9 +274,9 @@ static void MV_ServiceVoc(void)
             if (voice->Paused)
                 continue;
 
-            if (voice->rawdataptr == nullptr)
+            if (voice->priority == FX_MUSIC_PRIORITY)
             {
-                MV_Printf("MV_ServiceVoc(): rawdataptr is null?!\n");
+                MusicVoice = voice;
                 continue;
             }
 
@@ -293,13 +294,19 @@ static void MV_ServiceVoc(void)
 
     Bmemcpy(MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers], MV_MixBuffer[MV_MixPage], MV_BufferSize);
 
-    if (MV_MixMusic)
+    if (MV_MusicCallback)
     {
         MV_MusicCallback();
         int16_t * __restrict source = (int16_t*)MV_MusicBuffer;
         int16_t * __restrict dest = (int16_t*)MV_MixBuffer[MV_MixPage+MV_NumberOfBuffers];
         for (int32_t i = 0; i < MV_BufferSize>>1; i++, dest++)
             *dest = clamp(*dest + *source++,INT16_MIN, INT16_MAX);
+    }
+
+    if (MusicVoice && !MV_Mix(MusicVoice, MV_MixPage + MV_NumberOfBuffers))
+    {
+        MV_CleanupVoice(MusicVoice);
+        LL::Move(MusicVoice, &VoicePool);
     }
 }
 
@@ -936,7 +943,6 @@ void MV_HookMusicRoutine(void(*callback)(void))
 {
     MV_Lock();
     MV_MusicCallback = callback;
-    MV_MixMusic = TRUE;
     MV_Unlock();
 }
 
@@ -946,7 +952,6 @@ void MV_UnhookMusicRoutine(void)
     {
         MV_Lock();
         MV_MusicCallback = nullptr;
-        MV_MixMusic      = FALSE;
         MV_Unlock();
     }
 }
