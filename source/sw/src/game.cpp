@@ -5275,7 +5275,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
     }
     else
     {
-        if (BUTTON(gamefunc_Turn_Left))
+        if (BUTTON(gamefunc_Turn_Left) || (BUTTON(gamefunc_Strafe_Left) && pp->sop))
         {
             turnheldtime += synctics;
             if (PedanticMode)
@@ -5288,7 +5288,7 @@ getinput(SW_PACKET *loc, SWBOOL tied)
             else
                 q16angvel = fix16_ssub(q16angvel, fix16_from_float(scaleAdjustmentToInterval((turnheldtime >= TURBOTURNTIME) ? turnamount : PREAMBLETURN)));
         }
-        else if (BUTTON(gamefunc_Turn_Right))
+        else if (BUTTON(gamefunc_Turn_Right) || (BUTTON(gamefunc_Strafe_Right) && pp->sop))
         {
             turnheldtime += synctics;
             if (PedanticMode)
