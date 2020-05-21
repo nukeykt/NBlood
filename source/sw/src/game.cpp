@@ -3309,6 +3309,10 @@ RunLevel(void)
             ExitLevel = FALSE;
             break;
         }
+
+        timerUpdateClock();
+        while (ready2send && (totalclock >= ototalclock + synctics))
+            faketimerhandler();
     }
 
     ready2send = 0;
