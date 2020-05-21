@@ -8080,11 +8080,7 @@ domovethings(void)
         JS_ProcessEchoSpot();
     }
 
-    FAKETIMERHANDLER();
-
     SpriteControl();
-
-    FAKETIMERHANDLER();
 
     TRAVERSE_CONNECT(pnum)
     {
@@ -8114,8 +8110,6 @@ domovethings(void)
             PlayerOperateEnv(pp);
 #endif
         }
-
-        FAKETIMERHANDLER();
 
         // do for moving sectors
         DoPlayerSectorUpdatePreMove(pp);
