@@ -7073,19 +7073,12 @@ MAIN_LOOP_RESTART:
 
                     ototalclock += TICSPERFRAME;
 
-                    auto const moveClock = totalclock;
-
                     if (((ud.show_help == 0 && (myplayer.gm & MODE_MENU) != MODE_MENU) || ud.recstat == 2 || (g_netServer || ud.multimode > 1))
                         && (myplayer.gm & MODE_GAME))
                     {
                         Net_GetPackets();
                         G_DoMoveThings();
                     }
-
-                    // computing a tic is taking too long.
-                    // rather than tightly spinning here, go draw a frame since we're fucked anyway
-                    if ((int)(totalclock - moveClock) >= (TICSPERFRAME >> 1))
-                        break;
                 }
                 while (((g_netClient || g_netServer) || (myplayer.gm & (MODE_MENU | MODE_DEMO)) == 0) && (int)(totalclock - ototalclock) >= TICSPERFRAME);
 
