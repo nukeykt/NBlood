@@ -978,13 +978,6 @@ UpdateInputs(void)
     void getinput(SW_PACKET *, SWBOOL);
     extern SWBOOL BotMode;
 
-    timerUpdateClock();
-    if ((totalclock < ototalclock + synctics))
-        return;
-
-    if (!ready2send)
-        return;
-
     ototalclock += synctics;
 
     getpackets();
