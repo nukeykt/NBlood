@@ -39,7 +39,7 @@ extern "C" {
 #define SV_MINOR_VER 7
 
 #pragma pack(push,1)
-typedef struct
+typedef struct _savehead
 {
     char headerstr[11];
     uint8_t majorver, minorver, ptrsize;
