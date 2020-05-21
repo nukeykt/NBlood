@@ -34,11 +34,11 @@ static playbackstatus MV_GetNextWAVBlock(VoiceNode *voice)
 {
     if (voice->BlockLength == 0)
     {
-        if (voice->LoopStart == nullptr)
+        if (voice->Loop.Start == nullptr)
             return NoMoreData;
 
-        voice->BlockLength = voice->LoopSize;
-        voice->NextBlock   = voice->LoopStart;
+        voice->BlockLength = voice->Loop.Size;
+        voice->NextBlock   = voice->Loop.Start;
         voice->length      = 0;
         voice->position    = 0;
     }
@@ -95,7 +95,7 @@ static playbackstatus MV_GetNextVOCBlock(VoiceNode *voice)
         // terminator is not mandatory according to
         // http://wiki.multimedia.cx/index.php?title=Creative_Voice
 
-        if (ptr - (uint8_t *)voice->rawdataptr >= voice->ptrlength)
+        if (ptr - (uint8_t *)voice->rawdataptr >= voice->rawdatasiz)
             blocktype = 0;  // fake a terminator
         else
             blocktype = *ptr;
@@ -114,14 +114,14 @@ static playbackstatus MV_GetNextVOCBlock(VoiceNode *voice)
         case 0 :
 end_of_data:
             // End of data
-            if ((voice->LoopStart == nullptr) ||
-                    ((intptr_t) voice->LoopStart >= ((intptr_t) ptr - 4)))
+            if ((voice->Loop.Start == nullptr) ||
+                    ((intptr_t) voice->Loop.Start >= ((intptr_t) ptr - 4)))
             {
                 done = 2;
             }
             else
             {
-                voice->NextBlock    = voice->LoopStart;
+                voice->NextBlock    = voice->Loop.Start;
                 voice->BlockLength  = 0;
                 voice->position     = 0;
                 return MV_GetNextVOCBlock(voice);
@@ -149,7 +149,7 @@ end_of_data:
             else
                 done = TRUE;
 
-            if (ptr - (uint8_t *)voice->rawdataptr >= voice->ptrlength)
+            if (ptr - (uint8_t *)voice->rawdataptr >= voice->rawdatasiz)
                 goto end_of_data;
 
             voicemode = 0;
@@ -173,10 +173,10 @@ end_of_data:
 
         case 6 :
             // Repeat begin
-            if (voice->LoopEnd == nullptr)
+            if (voice->Loop.End == nullptr)
             {
-                voice->LoopCount = B_LITTLE16(*(uint16_t const *)ptr);
-                voice->LoopStart = (char *)((intptr_t) ptr + blocklength);
+                voice->Loop.Count = B_LITTLE16(*(uint16_t const *)ptr);
+                voice->Loop.Start = (char *)((intptr_t) ptr + blocklength);
             }
             ptr += blocklength;
             break;
@@ -185,17 +185,17 @@ end_of_data:
             // Repeat end
             ptr += blocklength;
             if (lastblocktype == 6)
-                voice->LoopCount = 0;
+                voice->Loop.Count = 0;
             else
             {
-                if ((voice->LoopCount > 0) && (voice->LoopStart != nullptr))
+                if ((voice->Loop.Count > 0) && (voice->Loop.Start != nullptr))
                 {
-                    ptr = (uint8_t const *) voice->LoopStart;
+                    ptr = (uint8_t const *) voice->Loop.Start;
 
-                    if (voice->LoopCount < 0xffff)
+                    if (voice->Loop.Count < 0xffff)
                     {
-                        if (--voice->LoopCount == 0)
-                            voice->LoopStart = nullptr;
+                        if (--voice->Loop.Count == 0)
+                            voice->Loop.Start = nullptr;
                     }
                 }
             }
@@ -242,7 +242,7 @@ end_of_data:
             // CAUTION:
             //  SNAKRM.VOC is corrupt!  blocklength gets us beyond the
             //  end of the file.
-            if (ptr - (uint8_t *)voice->rawdataptr >= voice->ptrlength)
+            if (ptr - (uint8_t *)voice->rawdataptr >= voice->rawdatasiz)
                 goto end_of_data;
 
             break;
@@ -270,16 +270,16 @@ end_of_data:
         voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) -
                                       voice->RateScale;
 
-        if (voice->LoopEnd != nullptr)
+        if (voice->Loop.End != nullptr)
         {
-            if (blocklength > (uintptr_t)voice->LoopEnd)
-                blocklength = (uintptr_t)voice->LoopEnd;
+            if (blocklength > (uintptr_t)voice->Loop.End)
+                blocklength = (uintptr_t)voice->Loop.End;
             else
-                voice->LoopEnd = (char *)blocklength;
+                voice->Loop.End = (char *)blocklength;
 
-            voice->LoopStart = voice->sound + (uintptr_t)voice->LoopStart;
-            voice->LoopEnd   = voice->sound + (uintptr_t)voice->LoopEnd;
-            voice->LoopSize  = voice->LoopEnd - voice->LoopStart;
+            voice->Loop.Start = voice->sound + (uintptr_t)voice->Loop.Start;
+            voice->Loop.End   = voice->sound + (uintptr_t)voice->Loop.End;
+            voice->Loop.Size  = voice->Loop.End - voice->Loop.Start;
         }
 
         if (voice->bits == 16)
@@ -305,11 +305,11 @@ static playbackstatus MV_GetNextRAWBlock(VoiceNode *voice)
 {
     if (voice->BlockLength == 0)
     {
-        if (voice->LoopStart == NULL)
+        if (voice->Loop.Start == NULL)
             return NoMoreData;
 
-        voice->BlockLength = voice->LoopSize;
-        voice->NextBlock   = voice->LoopStart;
+        voice->BlockLength = voice->Loop.Size;
+        voice->NextBlock   = voice->Loop.Start;
         voice->length      = 0;
         voice->position    = 0;
     }
@@ -379,7 +379,7 @@ int MV_PlayWAV(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 
     // Request a voice from the voice pool
 
-    VoiceNode     *voice = MV_AllocVoice(priority);
+    auto voice = MV_AllocVoice(priority);
 
     if (voice == nullptr)
         return MV_SetErrorCode(MV_NoVoices);
@@ -403,21 +403,17 @@ int MV_PlayWAV(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         blocklen    /= 2;
     }
 
-    voice->rawdataptr = (uint8_t *)ptr;
-    voice->ptrlength  = length;
-    voice->Paused      = FALSE;
-    voice->LoopCount   = 0;
-    voice->position    = 0;
-    voice->length      = 0;
-    voice->BlockLength = blocklen;
-    voice->NextBlock   = (char *)((intptr_t) ptr + sizeof(riff_header) + riff.format_size + sizeof(data_header));
-    voice->next        = nullptr;
-    voice->prev        = nullptr;
-    voice->priority    = priority;
-    voice->callbackval = callbackval;
-    voice->LoopStart   = loopstart >= 0 ? voice->NextBlock : nullptr;
-    voice->LoopEnd     = nullptr;
-    voice->LoopSize    = loopend > 0 ? loopend - loopstart + 1 : blocklen;
+    voice->rawdataptr   = (uint8_t *)ptr;
+    voice->rawdatasiz   = length;
+    voice->position     = 0;
+    voice->BlockLength  = blocklen;
+    voice->NextBlock    = (char *)((intptr_t)ptr + sizeof(riff_header) + riff.format_size + sizeof(data_header));
+    voice->priority     = priority;
+    voice->callbackval  = callbackval;
+    voice->Loop.Start   = loopstart >= 0 ? voice->NextBlock : nullptr;
+    voice->Loop.End     = nullptr;
+    voice->Loop.Count   = 0;
+    voice->Loop.Size    = loopend > 0 ? loopend - loopstart + 1 : blocklen;
 
     MV_SetVoicePitch(voice, format.nSamplesPerSec, pitchoffset);
     MV_SetVoiceVolume(voice, vol, left, right, volume);
@@ -458,30 +454,22 @@ int MV_PlayVOC(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         return MV_SetErrorCode(MV_InvalidFile);
 
     // Request a voice from the voice pool
-    VoiceNode *voice = MV_AllocVoice(priority);
+    auto voice = MV_AllocVoice(priority);
 
     if (voice == nullptr)
         return MV_SetErrorCode(MV_NoVoices);
 
-    voice->rawdataptr = (uint8_t *)ptr;
-    voice->ptrlength = length;
-    voice->Paused = FALSE;
+    voice->rawdataptr  = (uint8_t *)ptr;
+    voice->rawdatasiz  = length;
     voice->wavetype    = FMT_VOC;
     voice->bits        = 8;
     voice->channels    = 1;
     voice->GetSound    = MV_GetNextVOCBlock;
     voice->NextBlock   = ptr + B_LITTLE16(*(uint16_t *)(ptr + 0x14));
-    voice->LoopCount   = 0;
-    voice->BlockLength = 0;
     voice->PitchScale  = PITCH_GetScale(pitchoffset);
-    voice->length      = 0;
-    voice->next        = nullptr;
-    voice->prev        = nullptr;
     voice->priority    = priority;
     voice->callbackval = callbackval;
-    voice->LoopStart   = loopstart >= 0 ? voice->NextBlock : nullptr;
-    voice->LoopEnd     = nullptr;
-    voice->LoopSize    = loopend - loopstart + 1;
+    voice->Loop        = { loopstart >= 0 ? voice->NextBlock : nullptr, nullptr, 0, (uint32_t)(loopend - loopstart + 1) };
 
     MV_SetVoiceVolume(voice, vol, left, right, volume);
     MV_PlayVoice(voice);
@@ -496,35 +484,24 @@ int MV_PlayRAW(char *ptr, uint32_t length, int rate, char *loopstart, char *loop
         return MV_Error;
 
     // Request a voice from the voice pool
-    VoiceNode *voice = MV_AllocVoice(priority);
+    auto voice = MV_AllocVoice(priority);
 
-    if (voice == NULL)
-    {
-        MV_SetErrorCode(MV_NoVoices);
-        return MV_Error;
-    }
+    if (voice == nullptr)
+        return MV_SetErrorCode(MV_NoVoices);
 
-    voice->rawdataptr = (uint8_t *)ptr;
-    voice->ptrlength = length;
-    voice->Paused = FALSE;
+    voice->rawdataptr  = (uint8_t *)ptr;
+    voice->rawdatasiz  = length;
     voice->wavetype    = FMT_RAW;
     voice->bits        = 8;
     voice->channels    = 1;
     voice->GetSound    = MV_GetNextRAWBlock;
     voice->NextBlock   = ptr;
-    voice->LoopCount   = 0;
     voice->position    = 0;
     voice->BlockLength = length;
     voice->PitchScale  = PITCH_GetScale(pitchoffset);
-    voice->length      = 0;
-    voice->next        = NULL;
-    voice->prev        = NULL;
     voice->priority    = priority;
     voice->callbackval = callbackval;
-    voice->LoopStart   = loopstart;
-    voice->LoopEnd     = loopend;
-    voice->LoopSize    = loopend - loopstart + 1;
-
+    voice->Loop        = { loopstart, loopend, 0, (uint32_t)(loopend - loopstart + 1) };
     voice->volume      = volume;
 
     MV_SetVoicePitch(voice, rate, pitchoffset);

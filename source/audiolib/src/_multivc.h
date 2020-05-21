@@ -57,70 +57,35 @@ extern struct VoiceNode  VoiceList;
 extern struct VoiceNode  VoicePool;
 
 extern fix16_t MV_GlobalVolume;
-extern fix16_t MV_VolumeSmooth;
+extern fix16_t MV_VolumeSmoothFactor;
 
-static FORCE_INLINE fix16_t SMOOTH_VOLUME(fix16_t const volume, fix16_t const dest)
-{
-    return volume + fix16_fast_trunc_mul(dest - volume, MV_VolumeSmooth);
-}
+static FORCE_INLINE fix16_t SMOOTH_VOLUME(fix16_t const volume, fix16_t const dest) { return volume + fix16_fast_trunc_mul(dest - volume, MV_VolumeSmoothFactor); }
 
-template <typename T>
-static inline conditional_t< is_signed<T>::value, make_unsigned_t<T>, make_signed_t<T> > FLIP_SIGN(T src)
+template <typename T> static inline conditional_t<is_signed<T>::value, make_unsigned_t<T>, make_signed_t<T>> FLIP_SIGN(T src)
 {
     static constexpr make_unsigned_t<T> msb = ((make_unsigned_t<T>)1) << (sizeof(T) * CHAR_BIT - 1u);
     return src ^ msb;
 }
 
-template <typename T>
-static inline enable_if_t<is_signed<T>::value, T> SCALE_SAMPLE(T src, fix16_t volume)
+template <typename T> static inline enable_if_t<is_signed<T>::value, T> SCALE_SAMPLE(T src, fix16_t volume)
 {
     return (T)fix16_fast_trunc_mul_int_by_fix16(src, volume);
 }
 
-template <typename T>
-static inline T CONVERT_SAMPLE_FROM_SIGNED(int src);
+template <typename T> static inline T CONVERT_SAMPLE_FROM_SIGNED(int src);
+template <> inline int16_t CONVERT_SAMPLE_FROM_SIGNED<int16_t>(int src) { return src; }
 
-template<>
-inline int16_t CONVERT_SAMPLE_FROM_SIGNED<int16_t>(int src)
-{
-    return src;
-}
+template <typename T> static inline int CONVERT_SAMPLE_TO_SIGNED(T src);
+template <> inline int CONVERT_SAMPLE_TO_SIGNED<int16_t>(int16_t src) { return src; }
 
-template <typename T>
-static inline int CONVERT_SAMPLE_TO_SIGNED(T src);
+template <typename S, typename D> static inline int CONVERT_LE_SAMPLE_TO_SIGNED(S src);
+template <> inline int CONVERT_LE_SAMPLE_TO_SIGNED<uint8_t, int16_t>(uint8_t src) { return FLIP_SIGN(src) << 8; }
+template <> inline int CONVERT_LE_SAMPLE_TO_SIGNED<int16_t, int16_t>(int16_t src) { return B_LITTLE16(src); }
 
-template<>
-inline int CONVERT_SAMPLE_TO_SIGNED<int16_t>(int16_t src)
-{
-    return src;
-}
+template <typename T> static int CLAMP_SAMPLE(int src);
+template <> inline int CLAMP_SAMPLE<int16_t>(int src) { return clamp(src, INT16_MIN, INT16_MAX); }
 
-template <typename S, typename D>
-static inline int CONVERT_LE_SAMPLE_TO_SIGNED(S src);
-
-template<>
-inline int CONVERT_LE_SAMPLE_TO_SIGNED<uint8_t, int16_t>(uint8_t src)
-{
-    return FLIP_SIGN(src) << 8;
-}
-
-template<>
-inline int CONVERT_LE_SAMPLE_TO_SIGNED<int16_t, int16_t>(int16_t src)
-{
-    return B_LITTLE16(src);
-}
-
-template <typename T>
-static int CLAMP_SAMPLE(int src);
-
-template<>
-inline int CLAMP_SAMPLE<int16_t>(int src)
-{
-    return clamp(src, INT16_MIN, INT16_MAX);
-}
-
-template <typename T>
-static T MIX_SAMPLES(int signed_sample, T untouched_sample)
+template <typename T> static T MIX_SAMPLES(int signed_sample, T untouched_sample)
 {
     return CONVERT_SAMPLE_FROM_SIGNED<T>(CLAMP_SAMPLE<T>(signed_sample + CONVERT_SAMPLE_TO_SIGNED<T>(untouched_sample)));
 }
@@ -164,9 +129,6 @@ typedef struct VoiceNode
 
     const char *sound;
 
-    fix16_t LeftVolume, LeftVolumeDest;
-    fix16_t RightVolume, RightVolumeDest;
-
     union
     {
         void *rawdataptr;
@@ -174,21 +136,33 @@ typedef struct VoiceNode
     };
 
     const char *NextBlock;
-    const char *LoopStart;
-    const char *LoopEnd;
+
+    struct
+    {
+        const char *Start;
+        const char *End;
+        int         Count;
+        uint32_t    Size;
+    } Loop;
+
+    intptr_t callbackval;
+
+    struct
+    {
+        fix16_t Left;
+        fix16_t Right;
+    } PannedVolume, GoalVolume;
 
     wavefmt_t wavetype;
-    char bits;
-    char channels;
-    char ptrlock;
+
+    int bits;
+    int channels;
 
     fix16_t volume;
 
-    int      LoopCount;
-    uint32_t LoopSize;
     uint32_t BlockLength;
 
-    int ptrlength;  // ptrlength-1 is the max permissible index for rawdataptr
+    uint32_t rawdatasiz;  // rawdatasiz-1 is the max permissible index for rawdataptr
 
     uint32_t PitchScale;
     uint32_t FixedPointBufferSize;
@@ -202,8 +176,6 @@ typedef struct VoiceNode
     int handle;
     int priority;
 
-    intptr_t callbackval;
-    void *userdata;
 } VoiceNode;
 
 typedef struct
@@ -243,6 +215,7 @@ extern int MV_Installed;
 extern int MV_MixRate;
 extern char *MV_MusicBuffer;
 extern int MV_BufferSize;
+extern int MV_LazyAlloc;
 
 extern int MV_MaxVoices;
 extern int MV_Channels;
@@ -260,7 +233,7 @@ static FORCE_INLINE int MV_SetErrorCode(int status)
 
 void MV_PlayVoice(VoiceNode *voice);
 
-VoiceNode *MV_AllocVoice(int priority);
+VoiceNode *MV_AllocVoice(int priority, uint32_t allocsize = 0);
 
 void MV_SetVoiceMixMode(VoiceNode *voice);
 void MV_SetVoiceVolume(VoiceNode *voice, int vol, int left, int right, fix16_t volume);
