@@ -7036,7 +7036,9 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 {
                     auto const foundSprite = (uspriteptr_t)&sprite[spr];
 
-                    if (foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
+                    if ((foundSprite->pos.z > pSector->floorz
+                         || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < pSector->ceilingz)
+                        && foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
                     {
                         auto const clipdist = A_GetClipdist(spr, -1);
 
@@ -7051,10 +7053,12 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 for (auto TRAVERSE_CONNECT(plr))
                 {
                     auto const foundPlayer = g_player[plr].ps;
+                    auto const foundPlayerSprite = &sprite[foundPlayer->i];
 
                     for (int w = pSector->wallptr; w < endWall; w++)
                     {
-                        if (dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
+                        if ((foundPlayerSprite->pos.z > pSector->floorz || foundPlayer->pos.z < pSector->ceilingz)
+                            && dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
                             break;
                     }
                 }
