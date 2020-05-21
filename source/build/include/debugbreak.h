@@ -43,15 +43,14 @@ extern "C" {
 
 #if defined(__i386__) || defined(__x86_64__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
-__inline__ static void trap_instruction(void)
+static FORCE_INLINE void trap_instruction(void)
 {
 	__asm__ volatile("int $0x03");
 }
 #elif defined(__thumb__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
 /* FIXME: handle __THUMB_INTERWORK__ */
-__attribute__((gnu_inline, always_inline))
-__inline__ static void trap_instruction(void)
+static FORCE_INLINE void trap_instruction(void)
 {
 	/* See 'arm-linux-tdep.c' in GDB source.
 	 * Both instruction sequences below work. */
@@ -82,8 +81,7 @@ __inline__ static void trap_instruction(void)
 }
 #elif defined(__arm__) && !defined(__thumb__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
-__attribute__((gnu_inline, always_inline))
-__inline__ static void trap_instruction(void)
+static FORCE_INLINE void trap_instruction(void)
 {
 	/* See 'arm-linux-tdep.c' in GDB source,
 	 * 'eabi_linux_arm_le_breakpoint' */
@@ -95,8 +93,7 @@ __inline__ static void trap_instruction(void)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BULTIN_TRAP
 #elif defined(__aarch64__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
-__attribute__((gnu_inline, always_inline))
-__inline__ static void trap_instruction(void)
+static FORCE_INLINE void trap_instruction(void)
 {
 	/* See 'aarch64-tdep.c' in GDB source,
 	 * 'aarch64_default_breakpoint' */
@@ -105,8 +102,7 @@ __inline__ static void trap_instruction(void)
 #elif defined(__powerpc__)
 	/* PPC 32 or 64-bit, big or little endian */
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
-__attribute__((gnu_inline, always_inline))
-__inline__ static void trap_instruction(void)
+static FORCE_INLINE void trap_instruction(void)
 {
 	/* See 'rs6000-tdep.c' in GDB source,
 	 * 'rs6000_breakpoint' */
@@ -127,21 +123,18 @@ __inline__ static void trap_instruction(void)
 #ifndef DEBUG_BREAK_IMPL
 #error "debugbreak.h is not supported on this target"
 #elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_TRAP_INSTRUCTION
-__attribute__((gnu_inline, always_inline))
-__inline__ static void debug_break(void)
+static FORCE_INLINE void debug_break(void)
 {
 	trap_instruction();
 }
 #elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_BULTIN_TRAP
-__attribute__((gnu_inline, always_inline))
-__inline__ static void debug_break(void)
+static FORCE_INLINE void debug_break(void)
 {
 	__builtin_trap();
 }
 #elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_SIGTRAP
 #include <signal.h>
-__attribute__((gnu_inline, always_inline))
-__inline__ static void debug_break(void)
+static FORCE_INLINE void debug_break(void)
 {
 	raise(SIGTRAP);
 }

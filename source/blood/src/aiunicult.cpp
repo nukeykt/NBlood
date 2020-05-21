@@ -49,6 +49,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "view.h"
 #include "tile.h"
 
+#include "gib.h"
+#include "aiburn.h"
+
 static void genDudeAttack1(int, int);
 static void punchCallback(int, int);
 static void ThrowCallback1(int, int);
@@ -169,14 +172,13 @@ bool genDudeAdjustSlope(spritetype* pSprite, XSPRITE* pXSprite, int dist, int we
 }
 
 GENDUDEEXTRA* genDudeExtra(spritetype* pGenDude) {
-    dassert(spriRangeIsFine(pGenDude->index));
     return &gGenDudeExtra[pGenDude->index];
 }
 
 void genDudeUpdate(spritetype* pSprite) {
+    GENDUDEEXTRA* pExtra = genDudeExtra(pSprite);
     for (int i = 0; i < kGenDudePropertyMax; i++) {
-        if (gGenDudeExtra[pSprite->index].updReq[i])
-            genDudePrepare(pSprite, i);
+        if (pExtra->updReq[i]) genDudePrepare(pSprite, i);
     }
 }
 
@@ -358,14 +360,14 @@ static void ThrowThing(int nXIndex, bool impact) {
         case kModernThingEnemyLifeLeech:
             XSPRITE* pXThing = &xsprite[pThing->extra];
             if (pLeech != NULL) pXThing->health = pXLeech->health;
-            else pXThing->health = 300 * gGameOptions.nDifficulty;
+            else pXThing->health = ((pThinkInfo->startHealth << 4) * gGameOptions.nDifficulty) >> 1;
 
             sfxPlay3DSound(pSprite, 490, -1, 0);
 
-            if (gGameOptions.nDifficulty <= 2) pXThing->data3 = 32700;
-            else pXThing->data3 = Random(10);
+            pXThing->data3 = 512 / (gGameOptions.nDifficulty + 1);
             pThing->cstat &= ~CSTAT_SPRITE_BLOCK;
-            pThing->pal = 6; 
+            pThing->pal = 6;
+            pThing->clipdist = 0;
             pXThing->target = pTarget->index;
             pXThing->Proximity = true;
             pXThing->stateTimer = 1;
@@ -431,6 +433,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
     if (pXTarget == NULL) {  // target lost
         if(spriteIsUnderwater(pSprite,false)) aiGenDudeNewState(pSprite, &genDudeSearchShortW);
         else aiGenDudeNewState(pSprite, &genDudeSearchShortL);
+        pXSprite->target = -1;
         return;
 
     } else if (pXTarget->health <= 0) { // target is dead
@@ -442,6 +445,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
         } 
         else if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeGotoW);
         else aiGenDudeNewState(pSprite, &genDudeGotoL);
+        pXSprite->target = -1;
         return;
     }
     
@@ -470,6 +474,7 @@ static void thinkChase( spritetype* pSprite, XSPRITE* pXSprite ) {
         if (powerupCheck(pPlayer, kPwUpShadowCloak) > 0)  {
             if (spriteIsUnderwater(pSprite, false)) aiGenDudeNewState(pSprite, &genDudeSearchShortW);
             else aiGenDudeNewState(pSprite, &genDudeSearchShortL);
+            pXSprite->target = -1;
             return;
         }
     }
@@ -1247,13 +1252,8 @@ XSPRITE* getNextIncarnation(XSPRITE* pXSprite) {
         if (rxBucket[i].type != 3 || rxBucket[i].index == pXSprite->reference)
             continue;
         
-        switch (sprite[rxBucket[i].index].statnum) {
-            case kStatDude:
-            case kStatInactive: // inactive (ambush) dudes
-                if (xsprite[sprite[rxBucket[i].index].extra].health > 0)
-                    return &xsprite[sprite[rxBucket[i].index].extra];
-        }
-
+        if (sprite[rxBucket[i].index].statnum == kStatInactive)
+            return &xsprite[sprite[rxBucket[i].index].extra];
     }
     return NULL;
 }
@@ -1266,83 +1266,76 @@ void scaleDamage(XSPRITE* pXSprite) {
 
     short curWeapon = gGenDudeExtra[sprite[pXSprite->reference].index].curWeapon;
     short weaponType = gGenDudeExtra[sprite[pXSprite->reference].index].weaponType;
-    unsigned short* curScale = gGenDudeExtra[sprite[pXSprite->reference].index].dmgControl;
+    signed short* curScale = gGenDudeExtra[sprite[pXSprite->reference].index].dmgControl;
     for (int i = 0; i < kDmgMax; i++)
         curScale[i] = getDudeInfo(kDudeModernCustom)->startDamage[i];
 
-    // all enemies with vector weapons gets extra resistance to bullet damage
-    if (weaponType == kGenDudeWeaponHitscan) {
-        
-        curScale[kDmgBullet] -= 10;
-
-    // just copy damage resistance of dude that should be summoned
-    } else if (weaponType == kGenDudeWeaponSummon) {
-        
-        for (int i = 0; i < kDmgMax; i++)
-            curScale[i] = getDudeInfo(curWeapon)->startDamage[i];
-
-    // these does not like the explosions and burning
-    } else if (weaponType == kGenDudeWeaponKamikaze) {
-
-        curScale[kDmgBurn] = curScale[kDmgExplode] = 512;
-
-    } else if (weaponType == kGenDudeWeaponMissile || weaponType == kGenDudeWeaponThrow) {
-
-        switch (curWeapon) {
-            case kMissileButcherKnife:
-                curScale[kDmgBullet] = 100;
-                fallthrough__;
-            case kMissileEctoSkull:
-                curScale[kDmgSpirit] = 32;
-                break;
-            case kMissileLifeLeechAltNormal:
-            case kMissileLifeLeechAltSmall:
-            case kMissileArcGargoyle:
-                curScale[kDmgSpirit] = 32;
-                curScale[kDmgElectric] = 52;
-                break;
-            case kMissileFlareRegular:
-            case kMissileFlareAlt:
-            case kMissileFlameSpray:
-            case kMissileFlameHound:
-            case kThingArmedSpray:
-            case kThingPodFireBall:
-            case kThingNapalmBall:
-                curScale[kDmgBurn] = 32;
-                curScale[kDmgExplode] -= 20;
-                break;
-            case kMissileLifeLeechRegular:
-            case kThingDroppedLifeLeech:
-            case kModernThingEnemyLifeLeech:
-                curScale[kDmgSpirit] = 32 + Random(18);
-                curScale[kDmgBurn] = 60 + Random(4);
-                for (int i = 2; i < kDmgMax; i++) {
-                    if (Chance(0x1000) && i != kDmgSpirit)
-                        curScale[i] = 48 + Random(32);
-                }
-                break;
-            case kMissileFireball:
-            case kMissileFireballNapam:
-            case kMissileFireballCerberus:
-            case kMissileFireballTchernobog:
-                curScale[kDmgBurn] = 50;
-                curScale[kDmgExplode] = 32;
-                curScale[kDmgFall] = 65 + Random(15);
-                break;
-            case kThingTNTBarrel:
-            case kThingArmedProxBomb:
-            case kThingArmedRemoteBomb:
-            case kThingArmedTNTBundle:
-            case kThingArmedTNTStick:
-            case kModernThingTNTProx:
-                curScale[kDmgExplode] = 32;
-                curScale[kDmgFall] = 65 + Random(15);
-                break;
-            case kMissileTeslaAlt:
-            case kMissileTeslaRegular:
-                curScale[kDmgElectric] = 32 + Random(8);
-                break;
-        }
+    switch (weaponType) {
+        // just copy damage resistance of dude that should be summoned
+        case kGenDudeWeaponSummon:
+            for (int i = 0; i < kDmgMax; i++)
+                curScale[i] = getDudeInfo(curWeapon)->startDamage[i];
+            break;
+        // these does not like the explosions and burning
+        case kGenDudeWeaponKamikaze:
+            curScale[kDmgBurn] = curScale[kDmgExplode] = curScale[kDmgElectric] = 1024;
+            break;
+        case kGenDudeWeaponMissile:
+        case kGenDudeWeaponThrow:
+            switch (curWeapon) {
+                case kMissileButcherKnife:
+                    curScale[kDmgBullet] = 100;
+                    fallthrough__;
+                case kMissileEctoSkull:
+                    curScale[kDmgSpirit] = 32;
+                    break;
+                case kMissileLifeLeechAltNormal:
+                case kMissileLifeLeechAltSmall:
+                case kMissileArcGargoyle:
+                    curScale[kDmgSpirit] -= 32;
+                    curScale[kDmgElectric] = 52;
+                    break;
+                case kMissileFlareRegular:
+                case kMissileFlareAlt:
+                case kMissileFlameSpray:
+                case kMissileFlameHound:
+                case kThingArmedSpray:
+                case kThingPodFireBall:
+                case kThingNapalmBall:
+                    curScale[kDmgBurn] = 32;
+                    curScale[kDmgExplode] -= 32;
+                    break;
+                case kMissileLifeLeechRegular:
+                    curScale[kDmgBurn] = 60 + Random(4);
+                    fallthrough__;
+                case kThingDroppedLifeLeech:
+                case kModernThingEnemyLifeLeech:
+                    curScale[kDmgSpirit] = 32 + Random(18);
+                    break;
+                case kMissileFireball:
+                case kMissileFireballNapam:
+                case kMissileFireballCerberus:
+                case kMissileFireballTchernobog:
+                    curScale[kDmgBurn] = 50;
+                    curScale[kDmgExplode] = 32;
+                    curScale[kDmgFall] = 65 + Random(15);
+                    break;
+                case kThingTNTBarrel:
+                case kThingArmedProxBomb:
+                case kThingArmedRemoteBomb:
+                case kThingArmedTNTBundle:
+                case kThingArmedTNTStick:
+                case kModernThingTNTProx:
+                    curScale[kDmgBurn] -= 32;
+                    curScale[kDmgExplode] = 32;
+                    curScale[kDmgFall] = 65 + Random(15);
+                    break;
+                case kMissileTeslaAlt:
+                case kMissileTeslaRegular:
+                    curScale[kDmgElectric] = 32 + Random(8);
+                    break;
+            }
+            break;
 
     }
 
@@ -1383,66 +1376,65 @@ void scaleDamage(XSPRITE* pXSprite) {
     if (yrepeat < 64) {
         for (int i = 0; i < kDmgMax; i++) curScale[i] += (64 - yrepeat);
     } else if (yrepeat > 64) {
-        for (int i = 0; i < kDmgMax; i++) curScale[i] -= ((yrepeat - 64) / 2);
+        for (int i = 0; i < kDmgMax; i++) curScale[i] -= ((yrepeat - 64) >> 2);
     }
 
     // take surface type into account
     int surfType = tileGetSurfType(sprite[pXSprite->reference].index + 0xc000);
-    //int surfType = 4;
     switch (surfType) {
         case 1:  // stone
             curScale[kDmgFall] = 0;
-            curScale[kDmgBullet] -= 128;
-            curScale[kDmgBurn] -= 50;
-            curScale[kDmgExplode] -= 40;
+            curScale[kDmgBullet] -= 200;
+            curScale[kDmgBurn] -= 100;
+            curScale[kDmgExplode] -= 80;
             curScale[kDmgChoke] += 30;
             curScale[kDmgElectric] += 20;
             break;
         case 2:  // metal
             curScale[kDmgFall] = 16;
-            curScale[kDmgBullet] -= 64;
-            curScale[kDmgBurn] -= 45;
-            curScale[kDmgExplode] -= 35;
+            curScale[kDmgBullet] -= 128;
+            curScale[kDmgBurn] -= 90;
+            curScale[kDmgExplode] -= 55;
             curScale[kDmgChoke] += 20;
             curScale[kDmgElectric] += 30;
             break;
         case 3:  // wood 
-            curScale[kDmgBullet] -= 5;
+            curScale[kDmgBullet] -= 10;
             curScale[kDmgBurn] += 50;
             curScale[kDmgExplode] += 40;
             curScale[kDmgChoke] += 10;
-            curScale[kDmgElectric] -= 30;
+            curScale[kDmgElectric] -= 60;
             break;
         case 5:  // water
         case 6:  // dirt
         case 7:  // clay
         case 13: // goo
             curScale[kDmgFall] = 8;
-            curScale[kDmgBullet] -= 10;
-            curScale[kDmgBurn] -= 128;
-            curScale[kDmgExplode] -= 30;
+            curScale[kDmgBullet] -= 20;
+            curScale[kDmgBurn] -= 200;
+            curScale[kDmgExplode] -= 60;
             curScale[kDmgChoke] = 0;
             curScale[kDmgElectric] += 40;
             break;
         case 8:  // snow
         case 9:  // ice
             curScale[kDmgFall] = 8;
-            curScale[kDmgBullet] -= 10;
-            curScale[kDmgBurn] -= 60;
-            curScale[kDmgExplode] -= 40;
+            curScale[kDmgBullet] -= 20;
+            curScale[kDmgBurn] -= 100;
+            curScale[kDmgExplode] -= 50;
             curScale[kDmgChoke] = 0;
             curScale[kDmgElectric] += 40;
             break;
         case 10: // leaves
         case 12: // plant
             curScale[kDmgFall] = 0;
-            curScale[kDmgBullet] -= 5;
+            curScale[kDmgBullet] -= 10;
             curScale[kDmgBurn] += 70;
             curScale[kDmgExplode] += 50;
             break;
         case 11: // cloth
             curScale[kDmgFall] = 8;
-            curScale[kDmgBullet] -= 5;
+            curScale[kDmgBullet] -= 10;
             curScale[kDmgBurn] += 30;
             curScale[kDmgExplode] += 20;
             break;
@@ -1722,7 +1714,7 @@ void genDudeTransform(spritetype* pSprite) {
     // trigger dude death before transform
     trTriggerSprite(pSprite->index, pXSprite, kCmdOff);
 
-    pSprite->type = pIncarnation->type;
+    pSprite->type = pSprite->inittype = pIncarnation->type;
     pSprite->flags = pIncarnation->flags;
     pSprite->pal = pIncarnation->pal;
     pSprite->shade = pIncarnation->shade;
@@ -1737,17 +1729,18 @@ void genDudeTransform(spritetype* pSprite) {
     pXSprite->busyTime = pXIncarnation->busyTime;
     pXSprite->waitTime = pXIncarnation->waitTime;
 
+    // inherit respawn properties
+    pXSprite->respawn = pXIncarnation->respawn;
+    pXSprite->respawnPending = pXIncarnation->respawnPending;
+
     pXSprite->burnTime = 0;
     pXSprite->burnSource = -1;
 
     pXSprite->data1 = pXIncarnation->data1;
     pXSprite->data2 = pXIncarnation->data2;
 
-    // if incarnation is active dude, it's sndStartId will be stored in sysData1, otherwise it will be data3
-    if (pIncarnation->statnum == kStatDude && pIncarnation->type == kDudeModernCustom) pXSprite->sysData1 = pXIncarnation->sysData1;
-    else pXSprite->sysData1 = pXIncarnation->data3;
-
-    pXSprite->data4 = pXIncarnation->data4;
+    pXSprite->sysData1 = pXIncarnation->data3;  // soundBase id
+    pXSprite->sysData2 = pXIncarnation->data4;  // start hp
 
     pXSprite->dudeGuard = pXIncarnation->dudeGuard;
     pXSprite->dudeDeaf = pXIncarnation->dudeDeaf;
@@ -1764,8 +1757,8 @@ void genDudeTransform(spritetype* pSprite) {
     pXIncarnation->key = pXIncarnation->dropMsg = 0;
 
     // set hp
-    if (pXSprite->data4 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
-    else pXSprite->health = ClipRange(pXSprite->data4 << 4, 1, 65535);
+    if (pXSprite->sysData2 <= 0) pXSprite->health = dudeInfo[pSprite->type - kDudeBase].startHealth << 4;
+    else pXSprite->health = ClipRange(pXSprite->sysData2 << 4, 1, 65535);
 
     int seqId = dudeInfo[pSprite->type - kDudeBase].seqStartID;
     switch (pSprite->type) {
@@ -1795,8 +1788,10 @@ void genDudeTransform(spritetype* pSprite) {
 
             break;
     }
+    pXIncarnation->triggerOn = triggerOn;
+    pXIncarnation->triggerOff = triggerOff;
 
-    // remove the incarnation in case if non-locked
+    /*// remove the incarnation in case if non-locked
     if (pXIncarnation->locked == 0) {
         pXIncarnation->txID = pIncarnation->type = 0;
         actPostSprite(pIncarnation->index, kStatFree);
@@ -1804,7 +1799,7 @@ void genDudeTransform(spritetype* pSprite) {
     } else {
         pXIncarnation->triggerOn = triggerOn;
         pXIncarnation->triggerOff = triggerOff;
-    }
+    }*/
 }
 
 
@@ -1937,11 +1932,11 @@ int genDudeSeqStartId(XSPRITE* pXSprite) {
 }
 
 bool genDudePrepare(spritetype* pSprite, int propId) {
-    if (!(pSprite->index >= 0 && pSprite->index < kMaxSprites)) {
-        consoleSysMsg("pSprite->index >= 0 && pSprite->index < kMaxSprites");
+    if (!spriRangeIsFine(pSprite->index)) {
+        consoleSysMsg("!spriRangeIsFine(pSprite->index)");
         return false;
-    } else if (!(pSprite->extra >= 0 && pSprite->extra < kMaxXSprites)) {
-        consoleSysMsg("pSprite->extra >= 0 && pSprite->extra < kMaxXSprites");
+    } else if (!xspriRangeIsFine(pSprite->extra)) {
+        consoleSysMsg("!xspriRangeIsFine(pSprite->extra)");
         return false;
     } else if (pSprite->type != kDudeModernCustom) {
         consoleSysMsg("pSprite->type != kDudeModernCustom");
@@ -1967,8 +1962,8 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
         case kGenDudePropertyWeapon: {
             pExtra->curWeapon = pXSprite->data1;
             switch (pXSprite->data1) {
-                case 19: pExtra->curWeapon = 2; break;
-                case 310: pExtra->curWeapon = kMissileArcGargoyle; break;
+                case VECTOR_TYPE_19: pExtra->curWeapon = VECTOR_TYPE_2; break;
+                case kMissileUnused: pExtra->curWeapon = kMissileArcGargoyle; break;
                 case kThingDroppedLifeLeech: pExtra->curWeapon = kModernThingEnemyLifeLeech; break;
             }
 
@@ -2010,7 +2005,7 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
             fallthrough__;
         }
         case kGenDudePropertyAttack:
-            pExtra->fireDist = getRangeAttackDist(pSprite, 1200, 45000);
+            pExtra->fireDist = getRangeAttackDist(pSprite, 3000, 45000);
             pExtra->throwDist = pExtra->fireDist; // temp
             pExtra->baseDispersion = getDispersionModifier(pSprite, 200, 3500);
             if (propId) break;
@@ -2117,7 +2112,7 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
             pExtra->nLifeLeech = -1;
             if (pSprite->owner != kMaxSprites - 1) {
                 for (int nSprite = headspritestat[kStatThing]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
-                    if (sprite[nSprite].owner == pSprite->index && pSprite->type == kModernThingEnemyLifeLeech) {
+                    if (sprite[nSprite].owner == pSprite->index && sprite[nSprite].type == kModernThingEnemyLifeLeech) {
                         pExtra->nLifeLeech = nSprite;
                         break;
                     }
@@ -2159,6 +2154,41 @@ bool genDudePrepare(spritetype* pSprite, int propId) {
     }
 
     return true;
+}
+
+void genDudePostDeath(spritetype* pSprite, DAMAGE_TYPE damageType, int damage) {
+    if (damageType == DAMAGE_TYPE_3) {
+        DUDEINFO* pDudeInfo = getDudeInfo(pSprite->type);
+        for (int i = 0; i < 3; i++)
+            if (pDudeInfo->nGibType[i] > -1)
+                GibSprite(pSprite, (GIBTYPE)pDudeInfo->nGibType[i], NULL, NULL);
+
+        for (int i = 0; i < 4; i++)
+            fxSpawnBlood(pSprite, damage);
+    }
+    
+    gKillMgr.AddKill(pSprite);
+
+    pSprite->type = kThingBloodChunks;
+    actPostSprite(pSprite->index, kStatThing);
+}
+
+void aiGenDudeInitSprite(spritetype* pSprite, XSPRITE* pXSprite) {
+    switch (pSprite->type) {
+        case kDudeModernCustom: {
+            DUDEEXTRA_at6_u1* pDudeExtraE = &gDudeExtra[pSprite->extra].at6.u1;
+            pDudeExtraE->at8 = pDudeExtraE->at0 = 0;
+            aiGenDudeNewState(pSprite, &genDudeIdleL);
+            break;
+        }
+        case kDudeModernCustomBurning:
+            aiGenDudeNewState(pSprite, &genDudeBurnGoto);
+            pXSprite->burnTime = 1200;
+            break;
+    }
+    
+    pSprite->flags = 15;
+    return;
 }
 
 #endif

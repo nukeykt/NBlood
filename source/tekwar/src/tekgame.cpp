@@ -3,10 +3,52 @@
 #include "pragmas.h"
 #include "cache1d.h"
 #include "baselayer.h"
+#include "renderlayer.h"
+#include "common.h"
 #include "mmulti.h"
-
+#include "keyboard.h"
+#include "control.h"
+#include "config.h"
 #include "tekwar.h"
-#include "tekver.c"
+#include "tekver.cpp"
+#include "grpscan.h"
+#include "osdcmds.h"
+#include "common_game.h"
+
+#ifdef _WIN32
+# include "winbits.h"
+#endif /* _WIN32 */
+
+#ifdef __cplusplus
+extern "C" {
+    #endif
+    extern const char* s_buildRev;
+    extern const char* s_buildTimestamp;
+    #ifdef __cplusplus
+}
+#endif
+
+const char* AppProperName = APPNAME;
+const char* AppTechnicalName = APPBASENAME;
+
+static char g_rootDir[BMAX_PATH];
+
+int mouseaiming, aimmode, mouseflip;
+int runkey_mode, auto_run;
+
+
+#if defined GEKKO
+# define FPS_YOFFSET 16
+#else
+# define FPS_YOFFSET 0
+#endif
+
+void M32RunScript(const char* s) { UNREFERENCED_PARAMETER(s); }
+void app_crashhandler(void)
+{
+// TODO    shutdown();
+}
+
 
 #define   SECT_LOTAG_CLIMB                    5060
 
@@ -53,7 +95,7 @@ unsigned char option[NUMOPTIONS] = {
       2,       // 6  VIDEO RES CHOICE
       0        // 7  SOUND FREQ
 };
-unsigned char keys[NUMKEYS] = {
+unsigned char keys[NUMGAMEKEYS] = {
      200,         // 0  FWD
      208,         // 1  BKWD
      203,         // 2  RIGHT
@@ -262,6 +304,226 @@ char scantoascwithshift[128] =
 int *animateptr[MAXANIMATES], animategoal[MAXANIMATES];
 int animatevel[MAXANIMATES], animateacc[MAXANIMATES], animatecnt = 0;
 
+int32_t g_commandSetup = 0;
+int32_t g_noSetup = 0;
+int32_t g_noAutoLoad = 0;
+
+//////////
+
+enum gametokens
+{
+    T_INCLUDE = 0,
+    T_INTERFACE = 0,
+    T_LOADGRP = 1,
+    T_MODE = 1,
+    T_CACHESIZE = 2,
+    T_ALLOW = 2,
+    T_NOAUTOLOAD,
+    T_INCLUDEDEFAULT,
+    T_MUSIC,
+    T_SOUND,
+    T_FILE,
+    T_CUTSCENE,
+    T_ANIMSOUNDS,
+    T_NOFLOORPALRANGE,
+    T_ID,
+    T_MINPITCH,
+    T_MAXPITCH,
+    T_PRIORITY,
+    T_TYPE,
+    T_DISTANCE,
+    T_VOLUME,
+    T_DELAY,
+    T_RENAMEFILE,
+    T_GLOBALGAMEFLAGS,
+    T_ASPECT,
+    T_FORCEFILTER,
+    T_FORCENOFILTER,
+    T_TEXTUREFILTER,
+    T_NEWGAMECHOICES,
+    T_CHOICE,
+    T_NAME,
+    T_LOCKED,
+    T_HIDDEN,
+    T_USERCONTENT,
+};
+
+int tekwar_globalflags;
+
+static int parsedefinitions_game(scriptfile*, int);
+
+static void parsedefinitions_game_include(const char* fileName, scriptfile* pScript, const char* cmdtokptr, int const firstPass)
+{
+    scriptfile* included = scriptfile_fromfile(fileName);
+
+    if (!included)
+    {
+        if (!Bstrcasecmp(cmdtokptr, "null") || pScript == NULL) // this is a bit overboard to prevent unused parameter warnings
+        {
+            // initprintf("Warning: Failed including %s as module\n", fn);
+        }
+        /*
+                else
+                    {
+                    initprintf("Warning: Failed including %s on line %s:%d\n",
+                               fn, script->filename,scriptfile_getlinum(script,cmdtokptr));
+                    }
+        */
+    }
+    else
+    {
+        parsedefinitions_game(included, firstPass);
+        scriptfile_close(included);
+    }
+}
+
+static int parsedefinitions_game(scriptfile* pScript, int firstPass)
+{
+    int   token;
+    char* pToken;
+
+    static const tokenlist tokens[] =
+    {
+        { "include",         T_INCLUDE          },
+        { "#include",        T_INCLUDE          },
+        { "includedefault",  T_INCLUDEDEFAULT   },
+        { "#includedefault", T_INCLUDEDEFAULT   },
+        { "loadgrp",         T_LOADGRP          },
+        { "cachesize",       T_CACHESIZE        },
+        { "noautoload",      T_NOAUTOLOAD       },
+        { "renamefile",      T_RENAMEFILE       },
+        { "globalgameflags", T_GLOBALGAMEFLAGS  },
+    };
+
+    do
+    {
+        token = getatoken(pScript, tokens, ARRAY_SIZE(tokens));
+        pToken = pScript->ltextptr;
+
+        switch (token)
+        {
+            case T_LOADGRP:
+            {
+                char* fileName;
+
+                pathsearchmode = 1;
+                if (!scriptfile_getstring(pScript, &fileName) && firstPass)
+                {
+                    if (initgroupfile(fileName) == -1)
+                        initprintf("Could not find file \"%s\".\n", fileName);
+                    else
+                    {
+                        initprintf("Using file \"%s\" as game data.\n", fileName);
+                        if (!g_noAutoLoad && !gSetup.noautoload)
+                            G_DoAutoload(fileName);
+                    }
+                }
+
+                pathsearchmode = 0;
+            }
+            break;
+            case T_CACHESIZE:
+            {
+                int32_t cacheSize;
+
+                if (scriptfile_getnumber(pScript, &cacheSize) || !firstPass)
+                    break;
+
+                if (cacheSize > 0)
+                    MAXCACHE1DSIZE = cacheSize << 10;
+            }
+            break;
+            case T_INCLUDE:
+            {
+                char* fileName;
+
+                if (!scriptfile_getstring(pScript, &fileName))
+                    parsedefinitions_game_include(fileName, pScript, pToken, firstPass);
+
+                break;
+            }
+            case T_INCLUDEDEFAULT:
+            {
+                parsedefinitions_game_include(G_DefaultDefFile(), pScript, pToken, firstPass);
+                break;
+            }
+            case T_NOAUTOLOAD:
+            if (firstPass)
+                g_noAutoLoad = 1;
+            break;
+            case T_GLOBALGAMEFLAGS: scriptfile_getnumber(pScript, &tekwar_globalflags); break;
+            case T_EOF: return 0;
+            default: break;
+        }
+    } while (1);
+
+    return 0;
+}
+
+int loaddefinitions_game(const char* fileName, int32_t firstPass)
+{
+    scriptfile* pScript = scriptfile_fromfile(fileName);
+
+    if (pScript)
+        parsedefinitions_game(pScript, firstPass);
+
+    for (char const* m : g_defModules)
+        parsedefinitions_game_include(m, NULL, "null", firstPass);
+
+    if (pScript)
+        scriptfile_close(pScript);
+
+    scriptfile_clearsymbols();
+
+    return 0;
+}
+
+#define FPS_COLOR(x) ((x) ? COLOR_RED : COLOR_WHITE)
+
+#define COLOR_RED redcol
+#define COLOR_WHITE whitecol
+
+#define LOW_FPS ((videoGetRenderMode() == REND_CLASSIC) ? 35 : 50)
+#define SLOW_FRAME_TIME 20
+
+static void G_PrintFPS(void)
+{
+    static char tempbuf[256];
+    static int32_t frameCount;
+    static double cumulativeFrameDelay;
+    static double lastFrameTime;
+    static float lastFPS; // , minFPS = std::numeric_limits<float>::max(), maxFPS;
+    //static double minGameUpdate = std::numeric_limits<double>::max(), maxGameUpdate;
+
+    double frameTime = timerGetHiTicks();
+    double frameDelay = frameTime - lastFrameTime;
+    cumulativeFrameDelay += frameDelay;
+
+    if (frameDelay >= 0)
+    {
+        int32_t x = (xdim <= 640);
+
+        if (r_showfps)
+        {
+            int32_t chars = Bsprintf(tempbuf, "%.1f ms, %5.1f fps", frameDelay, lastFPS);
+
+            printext256(windowxy2.x - (chars << (3 - x)) + 1, windowxy1.y + 2 + FPS_YOFFSET, blackcol, -1, tempbuf, x);
+            printext256(windowxy2.x - (chars << (3 - x)), windowxy1.y + 1 + FPS_YOFFSET,
+                FPS_COLOR(lastFPS < LOW_FPS), -1, tempbuf, x);
+        }
+
+        if (cumulativeFrameDelay >= 1000.0)
+        {
+            lastFPS = 1000.f * frameCount / cumulativeFrameDelay;
+            // g_frameRate = Blrintf(lastFPS);
+            frameCount = 0;
+            cumulativeFrameDelay = 0.0;
+        }
+        frameCount++;
+    }
+    lastFrameTime = frameTime;
+}
+
 void
 debugout(short p)
 {
@@ -291,8 +553,8 @@ char      netnames[MAXPLAYERS][MAXNAMESIZE];
 
 extern int startwin_run(void);
 
-int
-app_main(int argc, char const * const argv[])
+
+int app_main(int argc, char const * const argv[])
 {
      int      i, waitplayers;
      int     other;
@@ -300,8 +562,32 @@ app_main(int argc, char const * const argv[])
      sprintf(tektempbuf, TITLE, VERS);
      initputs(tektempbuf);
      initputs("\n\n");
-     wm_setapptitle(tektempbuf);
+//     wm_setapptitle(tektempbuf);
 
+#ifdef _WIN32
+#ifndef DEBUGGINGAIDS
+     if (!G_CheckCmdSwitch(argc, argv, "-noinstancechecking") && !windowsCheckAlreadyRunning())
+     {
+#ifdef EDUKE32_STANDALONE
+         if (!wm_ynbox(APPNAME, "It looks like " APPNAME " is already running.\n\n"
+#else
+         if (!wm_ynbox(APPNAME, "It looks like the game is already running.\n\n"
+#endif
+             "Are you sure you want to start another copy?"))
+             return 3;
+     }
+#endif
+
+#ifndef USE_PHYSFS
+#ifdef DEBUGGINGAIDS
+     extern int32_t(*check_filename_casing_fn)(void);
+     check_filename_casing_fn = check_filename_casing;
+#endif
+#endif
+#endif
+
+
+     #if 0
 #if defined(PREFIX)
      {
           const char *prefixdir = PREFIX;
@@ -369,12 +655,73 @@ app_main(int argc, char const * const argv[])
      }
 
      buildsetlogfile("tekwar.log");
+     #endif
 
-     if (preinitengine()) {
+     G_ExtPreInit(argc, argv);
+
+     OSD_SetLogFile(APPBASENAME ".log");
+
+     wm_setapptitle(APPNAME);
+
+     initprintf("TekWar %s\n", s_buildRev);
+     PrintBuildInfo();
+
+     // This needs to happen afterwards, as G_CheckCommandLine() is where we set
+     // up the command-line-provided search paths (duh).
+     G_ExtInit();
+
+#if defined(RENDERTYPEWIN) && defined(USE_OPENGL)
+     if (forcegl) initprintf("GL driver blacklist disabled.\n");
+#endif
+
+     // used with binds for fast function lookup
+     hash_init(&h_gamefuncs);
+     for (bssize_t i = kMaxGameFunctions - 1; i >= 0; i--)
+     {
+         if (gamefunctions[i][0] == '\0')
+             continue;
+
+         hash_add(&h_gamefuncs, gamefunctions[i], i, 0);
+     }
+
+#ifdef STARTUP_SETUP_WINDOW
+     int const readSetup =
+#endif
+     CONFIG_ReadSetup();
+
+     if (enginePreInit()) {
           wm_msgbox("Build Engine Initialisation Error",
                "There was a problem initialising the Build engine: %s", engineerrstr);
           exit(1);
      }
+
+     if (Bstrcmp(setupfilename, kSetupFilename))
+         initprintf("Using config file \"%s\".\n", setupfilename);
+
+     G_ScanGroups();
+
+// REVERT     wm_msgbox("Pre-Release Software Warning", "%s is not ready for public use. Proceed with caution!", AppProperName);
+
+     #ifdef STARTUP_SETUP_WINDOW
+     if (readSetup < 0 || (!g_noSetup && gSetup.forcesetup) || g_commandSetup)
+     {
+         if (quitevent || !startwin_run())
+         {
+             engineUnInit();
+             Bexit(0);
+         }
+    }
+     #endif
+
+     G_LoadGroups(!g_noAutoLoad && !gSetup.noautoload);
+
+     CONFIG_WriteSetup(1);
+     CONFIG_ReadSetup();
+
+  // TODO  Bsprintf(tempbuf, "TekWar %s", s_buildRev);
+  // TODO   OSD_SetVersion(tempbuf, 10, 0);
+     OSD_SetParameters(0, 0, 0, 0, 0, 0, OSD_ERROR, OSDTEXT_RED, gamefunctions[gamefunc_Show_Console][0] == '\0'?OSD_PROTECTED:0);
+     registerosdcommands();
 
      lm("tekloadsetup");
      tekloadsetup();
@@ -391,20 +738,21 @@ app_main(int argc, char const * const argv[])
      lm("initgroupfile");
      initgroupfile("stuff.dat");
 
-     if (initengine()) {
+     if (engineInit()) {
           wm_msgbox("Build Engine Initialisation Error",
                "There was a problem initialising the Build engine: %s", engineerrstr);
           exit(1);
      }
 
      lm("inittimer");
-     inittimer(CLKIPS);
+     timerInit(CLKIPS);
+// TODO     timerSetCallback(timerhandler);
      lm("tekinitmultiplayers");
      tekinitmultiplayers(0, NULL);
      lm("initsb");
      initsb(option[1],option[2],0,0,0,0,0);
      lm("loadpics");
-     loadpics("tiles000.art", 8*1048576);
+     artLoadFiles("tiles%03i.art", MAXCACHE1DSIZE);
      lm("tekpreinit");
      tekpreinit();
      lm("tekgamestarted");
@@ -412,7 +760,7 @@ app_main(int argc, char const * const argv[])
      lm("initinput");
      initinput();
      lm("initmouse");
-     if( option[3] != 0 ) initmouse();
+// TODO     if( option[3] != 0 ) initmouse();
 
      if (dbgflag) {
           lm("debug mode: ON");
@@ -423,7 +771,8 @@ app_main(int argc, char const * const argv[])
           dbgcolumn=0;
      }
 
-     setgamemode(fullscreen, xdimgame, ydimgame, bppgame);
+     videoSetGameMode(gSetup.fullscreen, gSetup.xdim, gSetup.ydim, gSetup.bpp, 0);
+     //setgamemode(fullscreen, xdimgame, ydimgame, bppgame);
 
      if( option[4] > 0 ) {
         lm("multiplayer init");
@@ -436,13 +785,13 @@ app_main(int argc, char const * const argv[])
                waitplayers=option[4]-3;
           }
           while( numplayers < waitplayers ) {
-               clearview(0);
+               videoClearViewableArea(0);
                overwritesprite((xdim>>1)-160,0,408,0,0,0);
                sprintf((char *)tempbuf,"  MULTIPLAYER MODE  ");
                printext((xdim>>1)-80,(ydim>>1)-24,(char *)tempbuf,ALPHABET2,0);
                sprintf((char *)tempbuf,"%2d OF %2d PLAYERS IN",numplayers,waitplayers);
                printext((xdim>>1)-80,ydim>>1,(char *)tempbuf,ALPHABET2,0);
-               nextpage();
+               videoNextPage();
                if( getpacket(&other,tempbuf) > 0 ) {
                     if( tempbuf[0] == 255 ) {
                          keystatus[1] = 1;
@@ -453,7 +802,7 @@ app_main(int argc, char const * const argv[])
                }
           }
           screenpeek = myconnectindex;
-          clearview(0);
+          videoClearViewableArea(0);
      }
      for( i=connecthead ; i >= 0 ; i=connectpoint2[i] ) {
           initplayersprite((short)i);
@@ -513,7 +862,7 @@ missionselection:
           while( movefifoplc != movefifoend ) {
                domovethings();
           }
-          drawscreen(screenpeek,(totalclock-gotlastpacketclock)*(65536/TICSPERFRAME));
+          drawscreen(screenpeek,(((int)totalclock)-gotlastpacketclock)*(65536/TICSPERFRAME));
      }
      ready2send = 0;
 
@@ -530,9 +879,9 @@ gameends:
      uninitmultiplayers();
      uninitsb();
      cduninit();
-     uninittimer();
+     //uninittimer();
      uninitinput();
-     uninitengine();
+     engineUnInit();
      uninitgroupfile();
 
      teksavesetup();
@@ -551,6 +900,7 @@ processinput(short snum)
      int      i,j, doubvel, xvect, yvect, goalz;
      int      dax, day;
      char      *ptr;
+     vec3_t   pos;
 
      // move player snum
      if (snum < 0 || snum >= MAXPLAYERS) {
@@ -580,7 +930,12 @@ processinput(short snum)
                xvect += ((((int)syncsvel[snum])*doubvel*(int)sintable[(ang[snum]+2048)&2047])>>3);
                yvect += ((((int)syncsvel[snum])*doubvel*(int)sintable[(ang[snum]+1536)&2047])>>3);
           }
-          clipmove(&posx[snum],&posy[snum],&posz[snum],&cursectnum[snum],xvect,yvect,128L,4<<8,4<<8,CLIPMASK0);
+
+          pos.x = posx[snum]; pos.y = posy[snum]; pos.z = posz[snum];
+          clipmove(&pos,&cursectnum[snum],xvect,yvect,128L,4<<8,4<<8,CLIPMASK0);
+
+          posx[snum] = pos.x; posy[snum] = pos.y; posz[snum] = pos.z;
+
           frameinterpolate = 1;
           revolvedoorstat[snum] = 1;
           if( option[4] == 0 ) {
@@ -593,10 +948,14 @@ processinput(short snum)
      }
 
      // push player away from walls if clipmove doesn't work
-     if( pushmove(&posx[snum],&posy[snum],&posz[snum],&cursectnum[snum],128L,4<<8,4<<8,CLIPMASK0) < 0 ) {
+     pos.x = posx[snum]; pos.y = posy[snum]; pos.z = posz[snum];
+
+     if( pushmove(&pos,&cursectnum[snum],128L,4<<8,4<<8,CLIPMASK0) < 0 ) {
           changehealth(snum,-1000);  // if this fails then instant death
           changescore(snum,-5);
      }
+
+     posx[snum] = pos.x; posy[snum] = pos.y; posz[snum] = pos.z;
 
      if (cursectnum[snum] < 0 || cursectnum[snum] >= numsectors) {
           crash("game748: Invalid sector for player %d @ %ld,%ld (%d)",snum,
@@ -610,7 +969,9 @@ processinput(short snum)
      // NOT just a point.  This prevents you from falling off cliffs
      // when you step only slightly over the cliff.
      sprite[playersprite[snum]].cstat ^= 1;
-     getzrange(posx[snum],posy[snum],posz[snum],cursectnum[snum],&globhiz,&globhihit,&globloz,&globlohit,128L,CLIPMASK0);
+
+     pos.x = posx[snum]; pos.y = posy[snum]; pos.z = posz[snum];
+     getzrange(&pos,cursectnum[snum],&globhiz,&globhihit,&globloz,&globlohit,128L,CLIPMASK0);
      sprite[playersprite[snum]].cstat ^= 1;
 
      if( cursectnum[snum] != ocursectnum[snum] ) {
@@ -716,8 +1077,12 @@ processinput(short snum)
           // if not on a sprite
           if( (globlohit&0xc000) != 49152 ) {
                goalz = globloz-(8<<8);
-               if( posz[snum] >= goalz-(2<<8) ) {
-                    clipmove(&posx[snum],&posy[snum],&posz[snum],&cursectnum[snum],-TICSPERFRAME<<14,-TICSPERFRAME<<14,128L,4<<8,4<<8,CLIPMASK0);
+               if( posz[snum] >= goalz-(2<<8) )
+               {
+                   pos.x = posx[snum]; pos.y = posy[snum]; pos.z = posz[snum];
+                   clipmove(&pos,&cursectnum[snum],-TICSPERFRAME<<14,-TICSPERFRAME<<14,128L,4<<8,4<<8,CLIPMASK0);
+                   posx[snum] = pos.x; posy[snum] = pos.y; posz[snum] = pos.z;
+
                     frameinterpolate = 0;
                     if( slimesoundcnt[snum] >= 0 ) {
                          slimesoundcnt[snum] -= TICSPERFRAME;
@@ -827,7 +1192,8 @@ processinput(short snum)
 
      // update sprite representation of player
      // should be after movement, but before shooting code
-     setsprite(playersprite[snum],posx[snum],posy[snum],posz[snum]+(KENSPLAYERHEIGHT<<8));
+     pos.x = posx[snum]; pos.y = posy[snum]; pos.z = posz[snum] + (KENSPLAYERHEIGHT << 8);
+     setsprite(playersprite[snum],&pos);
      sprite[playersprite[snum]].ang = ang[snum];
 
      // in wrong sector or is ceiling/floor smooshing player
@@ -872,7 +1238,7 @@ processinput(short snum)
      }
      else if( (syncbits[snum]&1024) > 0 ) {
           // continuous triggers
-          neartag(posx[snum],posy[snum],(posz[snum]+(8<<8)),cursectnum[snum],ang[snum],&neartagsector,&neartagwall,&neartagsprite,&neartaghitdist,1024L,3);
+          neartag(posx[snum],posy[snum],(posz[snum]+(8<<8)),cursectnum[snum],ang[snum],&neartagsector,&neartagwall,&neartagsprite,&neartaghitdist,1024L,3,nullptr);
           if( neartagsector == -1 ) {
                i = cursectnum[snum];
                if( (sector[i].lotag|sector[i].hitag) != 0 ) {
@@ -986,7 +1352,7 @@ processinput(short snum)
           }
 #endif
           if( snum == screenpeek ) {
-               if (dimensionmode[snum] == 2) setview(0L,0L,xdim-1,(ydim-1)>>detailmode);
+               if (dimensionmode[snum] == 2) videoSetViewableArea(0L,0L,xdim-1,(ydim-1)>>detailmode);
                if (dimensionmode[snum] == 3) setup3dscreen();
           }
      }
@@ -1025,30 +1391,30 @@ drawscreen(short snum, int dasmoothratio)
                     if( frame2draw[i] != 0 ) {
                          if( numplayers <= 4 ) {
                               switch( j ) {
-                                   case 0: setview(0,0,(xdim>>1)-1,(ydim>>1)-1); break;
-                                   case 1: setview((xdim>>1),0,xdim-1,(ydim>>1)-1); break;
-                                   case 2: setview(0,(ydim>>1),(xdim>>1)-1,ydim-1); break;
-                                   case 3: setview((xdim>>1),(ydim>>1),xdim-1,ydim-1); break;
+                                   case 0: videoSetViewableArea(0,0,(xdim>>1)-1,(ydim>>1)-1); break;
+                                   case 1: videoSetViewableArea((xdim>>1),0,xdim-1,(ydim>>1)-1); break;
+                                   case 2: videoSetViewableArea(0,(ydim>>1),(xdim>>1)-1,ydim-1); break;
+                                   case 3: videoSetViewableArea((xdim>>1),(ydim>>1),xdim-1,ydim-1); break;
                               }
                          }
                          else {
                               switch( j ) {
-                                   case 0: setview(0,0,(xdim>>2)-1,(ydim>>2)-1); break;
-                                   case 1: setview(xdim>>2,0,(xdim>>1)-1,(ydim>>2)-1); break;
-                                   case 2: setview(xdim>>1,0,xdim-(xdim>>2)-1,(ydim>>2)-1); break;
-                                   case 3: setview(xdim-(xdim>>2),0,xdim-1,(ydim>>2)-1); break;
-                                   case 4: setview(0,ydim>>2,(xdim>>2)-1,(ydim>>1)-1); break;
-                                   case 5: setview(xdim>>2,ydim>>2,(xdim>>1)-1,(ydim>>1)-1); break;
-                                   case 6: setview(xdim>>1,ydim>>2,xdim-(xdim>>2)-1,(ydim>>1)-1); break;
-                                   case 7: setview(xdim-(xdim>>2),ydim>>2,xdim-1,(ydim>>1)-1); break;
-                                   case 8: setview(0,ydim>>1,(xdim>>2)-1,ydim-(ydim>>2)-1); break;
-                                   case 9: setview(xdim>>2,ydim>>1,(xdim>>1)-1,ydim-(ydim>>2)-1); break;
-                                   case 10: setview(xdim>>1,ydim>>1,xdim-(xdim>>2)-1,ydim-(ydim>>2)-1); break;
-                                   case 11: setview(xdim-(xdim>>2),ydim>>1,xdim-1,ydim-(ydim>>2)-1); break;
-                                   case 12: setview(0,ydim-(ydim>>2),(xdim>>2)-1,ydim-1); break;
-                                   case 13: setview(xdim>>2,ydim-(ydim>>2),(xdim>>1)-1,ydim-1); break;
-                                   case 14: setview(xdim>>1,ydim-(ydim>>2),xdim-(xdim>>2)-1,ydim-1); break;
-                                   case 15: setview(xdim-(xdim>>2),ydim-(ydim>>2),xdim-1,ydim-1); break;
+                                   case 0: videoSetViewableArea(0,0,(xdim>>2)-1,(ydim>>2)-1); break;
+                                   case 1: videoSetViewableArea(xdim>>2,0,(xdim>>1)-1,(ydim>>2)-1); break;
+                                   case 2: videoSetViewableArea(xdim>>1,0,xdim-(xdim>>2)-1,(ydim>>2)-1); break;
+                                   case 3: videoSetViewableArea(xdim-(xdim>>2),0,xdim-1,(ydim>>2)-1); break;
+                                   case 4: videoSetViewableArea(0,ydim>>2,(xdim>>2)-1,(ydim>>1)-1); break;
+                                   case 5: videoSetViewableArea(xdim>>2,ydim>>2,(xdim>>1)-1,(ydim>>1)-1); break;
+                                   case 6: videoSetViewableArea(xdim>>1,ydim>>2,xdim-(xdim>>2)-1,(ydim>>1)-1); break;
+                                   case 7: videoSetViewableArea(xdim-(xdim>>2),ydim>>2,xdim-1,(ydim>>1)-1); break;
+                                   case 8: videoSetViewableArea(0,ydim>>1,(xdim>>2)-1,ydim-(ydim>>2)-1); break;
+                                   case 9: videoSetViewableArea(xdim>>2,ydim>>1,(xdim>>1)-1,ydim-(ydim>>2)-1); break;
+                                   case 10: videoSetViewableArea(xdim>>1,ydim>>1,xdim-(xdim>>2)-1,ydim-(ydim>>2)-1); break;
+                                   case 11: videoSetViewableArea(xdim-(xdim>>2),ydim>>1,xdim-1,ydim-(ydim>>2)-1); break;
+                                   case 12: videoSetViewableArea(0,ydim-(ydim>>2),(xdim>>2)-1,ydim-1); break;
+                                   case 13: videoSetViewableArea(xdim>>2,ydim-(ydim>>2),(xdim>>1)-1,ydim-1); break;
+                                   case 14: videoSetViewableArea(xdim>>1,ydim-(ydim>>2),xdim-(xdim>>2)-1,ydim-1); break;
+                                   case 15: videoSetViewableArea(xdim-(xdim>>2),ydim-(ydim>>2),xdim-1,ydim-1); break;
                               }
                          }
                          if( i == snum ) {
@@ -1058,7 +1424,7 @@ drawscreen(short snum, int dasmoothratio)
                               drawrooms(posx[i],posy[i],posz[i],ang[i],horiz[i],cursectnum[i]);
                          }
                          analyzesprites(posx[i],posy[i]);
-                         drawmasks();
+                         renderDrawMasks();
                          tekdrawgun((syncbits[i]>>13)&15,i);
                     }
                }
@@ -1067,7 +1433,7 @@ drawscreen(short snum, int dasmoothratio)
                redrawbackfx();
                drawrooms(cposx,cposy,cposz,cang,choriz,cursectnum[snum]);
                analyzesprites(posx[snum],posy[snum]);
-               drawmasks();
+               renderDrawMasks();
                tekdrawgun((syncbits[screenpeek]>>13)&15,screenpeek);
           }
      }
@@ -1077,8 +1443,8 @@ drawscreen(short snum, int dasmoothratio)
           cposx += (sintable[(cang+512)&2047]<<6) / czoom;
           cposy += (sintable[cang&2047]<<6) / czoom;
           if( dimensionmode[snum] == 2 ) {
-               clearview(0L);  //Clear screen to specified color
-               drawmapview(cposx,cposy,czoom,cang);
+              videoClearViewableArea(0L);  //Clear screen to specified color
+// TODO               drawmapview(cposx,cposy,czoom,cang);
           }
           drawoverheadmap(cposx,cposy,czoom,cang);
      }
@@ -1131,7 +1497,7 @@ drawscreen(short snum, int dasmoothratio)
                     y1 = ((ydim-32)>>1)-(((screensize*(ydim-32))/xdim)>>1);
                     y2 = y1+((screensize*(ydim-32))/xdim)-1;
                     tekview(&x1,&y1,&x2,&y2);
-                    setview(x1,y1>>detailmode,x2,y2>>detailmode);
+                    videoSetViewableArea(x1,y1>>detailmode,x2,y2>>detailmode);
                     permanentwritespritetile(0L,0L,BACKGROUND,0,ox1,oy1,x1-1,oy2,0);
                     permanentwritespritetile(0L,0L,BACKGROUND,0,x2+1,oy1,ox2,oy2,0);
                     permanentwritespritetile(0L,0L,BACKGROUND,0,x1,oy1,x2,y1-1,0);
@@ -1152,7 +1518,7 @@ drawscreen(short snum, int dasmoothratio)
                          y2 = y1+((screensize*(ydim-32))/xdim)-1;
                     }
                     tekview(&x1,&y1,&x2,&y2);
-                    setview(x1,y1>>detailmode,x2,y2>>detailmode);
+                    videoSetViewableArea(x1,y1>>detailmode,x2,y2>>detailmode);
                }
                screensizeflag = locbits;
           }
@@ -1172,7 +1538,7 @@ drawscreen(short snum, int dasmoothratio)
                }
                printext256(0L,((i/charsperline)<<3)+(200-32-8)-(((getmessageleng-1)/charsperline)<<3),151,-1,(char *)tempbuf,0);
           }
-          if( totalclock > getmessagetimeoff ) {
+          if( ((int)totalclock) > getmessagetimeoff ) {
                getmessageleng = 0;
           }
      }
@@ -1209,7 +1575,7 @@ drawscreen(short snum, int dasmoothratio)
      }
     #endif
 
-     nextpage();
+     videoNextPage();
      if( dofadein != 0 ) {
           fadein(0,255,dofadein);
      }
@@ -1234,7 +1600,7 @@ drawscreen(short snum, int dasmoothratio)
      // F12 key
      if( keystatus[0x58] > 0 ) {
           keystatus[0x58] = 0;
-          screencapture("captxxxx.pcx",keystatus[0x2a]|keystatus[0x36]);
+// TODO          screencapture("captxxxx.pcx",keystatus[0x2a]|keystatus[0x36]);
      }
 
     #ifdef STEREOMODE_ADJUSTMENT_ACTIVE
@@ -1301,7 +1667,7 @@ movethings()
 {
      int      i;
 
-     gotlastpacketclock = totalclock;
+     gotlastpacketclock = (int)totalclock;
      for( i=connecthead; i>=0; i=connectpoint2[i] ) {
           baksyncvel[movefifoend][i] = fsyncvel[i];
           baksyncsvel[movefifoend][i] = fsyncsvel[i];
@@ -1483,6 +1849,7 @@ getinput()
 //**        if needed
 
      mousx=mousy=bstatus=0;
+     #if 0 // TODO
      if( moreoptions[0] != 0 ) {
           getmousevalues(&mousx,&mousy,&bstatus);
           if( biasthreshholdon && (bstatus&6) ) {
@@ -1499,8 +1866,12 @@ getinput()
                }
           }
      }
+     #endif
+
 //** Les START - 09/26/95
      locbits=(locselectedgun<<13);                          // Les 09/28/95 moved from below
+
+     #if 0 // TODO
      if (jstickenabled) {
 //          showmessage("X: %05d Y: %05d B:%04X",joyx,joyy,joyb);
           if (joyaxis[0] < jlowx) {
@@ -1545,6 +1916,8 @@ getinput()
           }
           oldjoyb=joyb;
      }
+     #endif
+
 //** Les END   - 09/26/95
 
 //** Les START - 09/28/95
@@ -1701,12 +2074,14 @@ getinput()
           locbits &= ~((keystatus[keys[14]]==1)<<12);
      }
 
+     #if 0 // TODO
      if( (joyb == 236) || (joyb == 220) || (joyb == 124) || (joyb == 188) ) {
           keystatus[keys[moreoptions[4]]]=0;
           keystatus[keys[moreoptions[5]]]=0;
           keystatus[keys[moreoptions[6]]]=0;
           keystatus[keys[moreoptions[7]]]=0;
      }
+     #endif
 
      oldmousebstatus = bstatus;
      if( (locbits&2048) > 0 ) {
@@ -1724,7 +2099,7 @@ getinput()
           keystatus[67] = 0;
           brightness++;
           if( brightness > 8 ) brightness = 0;
-          setbrightness(brightness,palette,0);
+          setbrightness(brightness);
      }
 
     #ifdef OOGIE
@@ -1761,11 +2136,14 @@ getinput()
           if( (keystatus[keys[18]]) > 0 ) {
                keystatus[keys[18]] = 0;
                typemode = 1;
-               keyfifoplc = keyfifoend;
+// TODO               keyfifoplc = keyfifoend;
           }
      }
      else {
-          while( keyfifoplc != keyfifoend ) {
+
+         #if 0 // TODO
+          while( keyfifoplc != keyfifoend )
+          {
                ch = keyfifo[keyfifoplc];
                keystate = keyfifo[(keyfifoplc+1)&(KEYFIFOSIZ-1)];
                keyfifoplc = ((keyfifoplc+2)&(KEYFIFOSIZ-1));
@@ -1815,6 +2193,8 @@ getinput()
                     }
                }
           }
+          #endif
+
           // here's a trick of making key repeat after a 1/2 second
           if( keystatus[0xe] > 0 ) {
                if( keystatus[0xe] < 30 ) {
@@ -1843,7 +2223,7 @@ playback()
      recstat = 0; i = reccnt;
      while (keystatus[1] == 0)
      {
-          while (totalclock >= lockclock+TICSPERFRAME)
+          while (((int)totalclock) >= lockclock+TICSPERFRAME)
           {
                if (i >= reccnt)
                {
@@ -1866,7 +2246,7 @@ playback()
                movethings(); domovethings();
                i++;
           }
-          drawscreen(screenpeek,(totalclock-lockclock)*(65536/TICSPERFRAME));
+          drawscreen(screenpeek,(((int)totalclock)-lockclock)*(65536/TICSPERFRAME));
 
           if (keystatus[keys[15]] > 0)
           {
@@ -1880,7 +2260,7 @@ playback()
                keystatus[keys[14]] = 0;
                dimensionmode[screenpeek]++;
                if (dimensionmode[screenpeek] > 3) dimensionmode[screenpeek] = 1;
-               if (dimensionmode[screenpeek] == 2) setview(0L,0L,xdim-1,(ydim-1)>>detailmode);
+               if (dimensionmode[screenpeek] == 2) videoSetViewableArea(0L,0L,xdim-1,(ydim-1)>>detailmode);
                if (dimensionmode[screenpeek] == 3) setup3dscreen();
           }
      }
@@ -1888,9 +2268,9 @@ playback()
      musicoff();
 
      uninitmultiplayers();
-     uninittimer();
+     //uninittimer();
      uninitinput();
-     uninitengine();
+     engineUnInit();
      uninitsb();
      uninitgroupfile();
      cduninit();
@@ -2007,9 +2387,9 @@ faketimerhandler()
      short other;
      int i, j, k, l;
 
-     if (totalclock < ototalclock+TICSPERFRAME) return;
+     if (((int)totalclock) < ototalclock+TICSPERFRAME) return;
      if (ready2send == 0) return;
-     ototalclock = totalclock;
+     ototalclock = (int)totalclock;
 
      // I am the MASTER (or 1 player game)
      if ((myconnectindex == connecthead) || (option[4] == 0))
@@ -2233,7 +2613,7 @@ getpackets()
                case 2:
                     getmessageleng = tempbufleng-1;
                     for(j=getmessageleng-1;j>=0;j--) getmessage[j] = tempbuf[j+1];
-                    getmessagetimeoff = totalclock+360+(getmessageleng<<4);
+                    getmessagetimeoff = ((int)totalclock)+360+(getmessageleng<<4);
                     break;
                case 3:
                     break;
@@ -2270,13 +2650,13 @@ waitforeverybody()
           {
                for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])
                     playerreadyflag[i] = 0;
-               oldtotalclock = totalclock-8;
+               oldtotalclock = ((int)totalclock)-8;
                do
                {
                     getpackets();
-                    if (totalclock >= oldtotalclock+8)
+                    if (((int)totalclock) >= oldtotalclock+8)
                     {
-                         oldtotalclock = totalclock;
+                         oldtotalclock = (int)totalclock;
                          tempbuf[0] = 5;
                          tempbuf[1] = j;
                          for(i=connectpoint2[connecthead];i>=0;i=connectpoint2[i])

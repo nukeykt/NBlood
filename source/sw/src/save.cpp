@@ -35,6 +35,8 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "tags.h"
 #include "lists.h"
 #include "interp.h"
+#include "interpso.h"
+#include "text.h"
 
 #include "network.h"
 //#include "save.h"
@@ -606,6 +608,8 @@ int SaveGame(short save_num)
     for (i = short_numinterpolations - 1; i >= 0; i--)
         saveisshot |= SaveSymDataInfo(fil, short_curipos[i]);
 
+    // SO interpolations
+    saveisshot |= so_writeinterpolations(fil);
 
     // parental lock
     for (i = 0; i < (int)SIZ(otlist); i++)
@@ -678,6 +682,8 @@ int SaveGame(short save_num)
 
     if (saveisshot)
         CON_Message("There was a problem saving. See \"Save Help\" section of release notes.");
+    else
+        PutStringInfo(&Player[myconnectindex], "Game Saved");
 
     return saveisshot ? -1 : 0;
 }
@@ -1082,6 +1088,10 @@ int LoadGame(short save_num)
     MREAD(short_bakipos,sizeof(short_bakipos),1,fil);
     for (i = short_numinterpolations - 1; i >= 0; i--)
         saveisshot |= LoadSymDataInfo(fil, (void **)&short_curipos[i]);
+    if (saveisshot) { MCLOSE_READ(fil); return -1; }
+
+    // SO interpolations
+    saveisshot |= so_readinterpolations(fil);
     if (saveisshot) { MCLOSE_READ(fil); return -1; }
 
     // parental lock

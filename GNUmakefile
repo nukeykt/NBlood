@@ -74,7 +74,6 @@ libxmplite_objs := \
     scan.c \
     smix.c \
     virtual.c \
-    win32.c \
     xm_load.c \
 
 libxmplite_root := $(source)/$(libxmplite)
@@ -414,6 +413,9 @@ audiolib_deps :=
 
 ifeq ($(PLATFORM),WINDOWS)
     audiolib_objs += driver_directsound.cpp driver_winmm.cpp 
+endif
+ifeq ($(SUBPLATFORM),LINUX)
+    audiolib_objs += driver_alsa.cpp
 endif
 
 ifeq ($(RENDERTYPE),SDL)
@@ -762,7 +764,7 @@ ifneq (0,$(LUNATIC))
 endif
 
 ifeq ($(SUBPLATFORM),LINUX)
-    LIBS += -lFLAC -lvorbisfile -lvorbis -logg
+    LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lasound
 endif
 
 ifeq ($(PLATFORM),BSD)
@@ -1122,6 +1124,7 @@ sw_game_objs := \
     hornet.cpp \
     interp.cpp \
     interpsh.cpp \
+    interpso.cpp \
     inv.cpp \
     jplayer.cpp \
     jsector.cpp \

@@ -13,6 +13,7 @@
 void
 drawoverheadmap(int cposx, int cposy, int czoom, short cang)
 {
+    #if 0// TODO
      int i, j, k, l, x1, y1, x2, y2, x3, y3, x4, y4, ox, oy, xoff, yoff;
      int dax, day, cosang, sinang, xspan, yspan, sprx, spry;
      int xrepeat, yrepeat, z1, z2, startwall, endwall, tilenum, daang;
@@ -130,18 +131,18 @@ drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                                         daang = (spr->ang-cang)&2047;
                                         if (j == playersprite[screenpeek])
                                              { x1 = 0; y1 = (yxaspect<<2); daang = 0; }
-                                        rotatesprite((x1<<4)+(xdim<<15),(y1<<4)+(ydim<<15),mulscale(czoom*spr->yrepeat,yxaspect,16),daang,spr->picnum,spr->shade,spr->pal,(spr->cstat&2)>>1, windowx1, windowy1, windowx2, windowy2);
+                                        rotatesprite((x1<<4)+(xdim<<15),(y1<<4)+(ydim<<15),mulscale(czoom*spr->yrepeat,yxaspect,16),daang,spr->picnum,spr->shade,spr->pal,(spr->cstat&2)>>1, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
                                    }
                               }
                               break;
                          case 16:
                               x1 = sprx; y1 = spry;
                               tilenum = spr->picnum;
-                              xoff = (int)((signed char)((picanm[tilenum]>>8)&255))+((int)spr->xoffset);
+                              xoff = (int)((signed char)((picanm[tilenum].xofs)&255))+((int)spr->xoffset);
                               if ((spr->cstat&4) > 0) xoff = -xoff;
                               k = spr->ang; l = spr->xrepeat;
                               dax = sintable[k&2047]*l; day = sintable[(k+1536)&2047]*l;
-                              l = tilesizx[tilenum]; k = (l>>1)+xoff;
+                              l = tilesiz[tilenum].x; k = (l>>1)+xoff;
                               x1 -= mulscale(dax,k,16); x2 = x1+mulscale(dax,l,16);
                               y1 -= mulscale(day,k,16); y2 = y1+mulscale(day,l,16);
 
@@ -161,15 +162,15 @@ drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                               if (dimensionmode[screenpeek] == 1)
                               {
                                    tilenum = spr->picnum;
-                                   xoff = (int)((signed char)((picanm[tilenum]>>8)&255))+((int)spr->xoffset);
-                                   yoff = (int)((signed char)((picanm[tilenum]>>16)&255))+((int)spr->yoffset);
+                                   xoff = (int)((signed char)((picanm[tilenum].xofs)&255))+((int)spr->xoffset);
+                                   yoff = (int)((signed char)((picanm[tilenum].yofs)&255))+((int)spr->yoffset);
                                    if ((spr->cstat&4) > 0) xoff = -xoff;
                                    if ((spr->cstat&8) > 0) yoff = -yoff;
 
                                    k = spr->ang;
                                    cosang = sintable[(k+512)&2047]; sinang = sintable[k];
-                                   xspan = tilesizx[tilenum]; xrepeat = spr->xrepeat;
-                                   yspan = tilesizy[tilenum]; yrepeat = spr->yrepeat;
+                                   xspan = tilesiz[tilenum].x; xrepeat = spr->xrepeat;
+                                   yspan = tilesiz[tilenum].y; yrepeat = spr->yrepeat;
 
                                    dax = ((xspan>>1)+xoff)*xrepeat; day = ((yspan>>1)+yoff)*yrepeat;
                                    x1 = sprx + mulscale(sinang,dax,16) + mulscale(cosang,day,16);
@@ -226,8 +227,8 @@ drawoverheadmap(int cposx, int cposy, int czoom, short cang)
 
                if ((show2dwall[j>>3]&(1<<(j&7))) == 0) continue;
 
-               if (tilesizx[wal->picnum] == 0) continue;
-               if (tilesizy[wal->picnum] == 0) continue;
+               if (tilesiz[wal->picnum].x == 0) continue;
+               if (tilesiz[wal->picnum].y == 0) continue;
 
                ox = wal->x-cposx; oy = wal->y-cposy;
                x1 = mulscale(ox,xvect,16) - mulscale(oy,yvect,16);
@@ -241,5 +242,6 @@ drawoverheadmap(int cposx, int cposy, int czoom, short cang)
                drawline256(x1+(xdim<<11),y1+(ydim<<11),x2+(xdim<<11),y2+(ydim<<11),239);
           }
      }
+     #endif
 }
 

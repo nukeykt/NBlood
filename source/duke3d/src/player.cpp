@@ -3036,13 +3036,17 @@ enum inputlock_t
 
 static int P_CheckLockedMovement(int const playerNum)
 {
-    auto const pPlayer = g_player[playerNum].ps;
+    auto &     thisPlayer = g_player[playerNum];
+    auto const pPlayer    = thisPlayer.ps;
 
     if (pPlayer->on_crane >= 0)
         return IL_NOMOVE|IL_NOANGLE;
 
     if (pPlayer->newowner != -1)
         return IL_NOANGLE|IL_NOHORIZ;
+
+    if (pPlayer->return_to_center > 0 || thisPlayer.horizRecenter)
+        return IL_NOHORIZ;
 
     if (pPlayer->dead_flag || pPlayer->fist_incs || pPlayer->transporter_hold > 2 || pPlayer->hard_landing || pPlayer->access_incs > 0
         || pPlayer->knee_incs > 0
@@ -3335,6 +3339,7 @@ void P_GetInput(int const playerNum)
         if ((!pPlayer->return_to_center && thisPlayer.horizRecenter) || (pPlayer->q16horiz >= F16(99.9) && pPlayer->q16horiz <= F16(100.1)))
         {
             pPlayer->q16horiz = F16(100);
+            pPlayer->return_to_center = 0;
             thisPlayer.horizRecenter = false;
         }
 
@@ -4766,6 +4771,8 @@ static void P_DoJetpack(int const playerNum, int const playerBits, int const pla
     pPlayer->pycount        &= 2047;
     pPlayer->pyoff           = sintable[pPlayer->pycount] >> 7;
 
+    g_player[playerNum].horizSkew = 0;
+
     if (pPlayer->jetpack_on < 11)
     {
         pPlayer->jetpack_on++;
@@ -4906,11 +4913,11 @@ void P_ProcessInput(int playerNum)
 {
     auto &thisPlayer = g_player[playerNum];
 
-    thisPlayer.horizAngleAdjust = 0;
-    thisPlayer.horizSkew = 0;
-
     if (thisPlayer.playerquitflag == 0)
         return;
+
+    thisPlayer.horizAngleAdjust = 0;
+    thisPlayer.horizSkew = 0;
 
     auto const pPlayer = thisPlayer.ps;
     auto const pSprite = &sprite[pPlayer->i];
@@ -5744,6 +5751,7 @@ RECHECK:
         {
             thisPlayer.horizAngleAdjust = float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
+            pPlayer->return_to_center   = 0;
         }
     }
 
@@ -5753,6 +5761,7 @@ RECHECK:
         {
             thisPlayer.horizAngleAdjust = -float(6 << (int)(TEST_SYNC_KEY(playerBits, SK_RUN)));
             thisPlayer.horizRecenter    = false;
+            pPlayer->return_to_center   = 0;
         }
     }
 

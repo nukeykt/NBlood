@@ -9,7 +9,8 @@
 #include "pragmas.h"
 #include "mmulti.h"
 #include "baselayer.h"
-
+#include "compat.h"
+#include "scancodes.h"
 #include "tekwar.h"
 
 #define   NUMWHITESHIFTS      3
@@ -37,7 +38,7 @@ char      headbobstr[13]={"HEAD BOB ON"};
 struct menu {
      short x,y;
      char proportional,shade,pal;
-     char *label;
+     const char *label;
      struct menu *nextopt;
      char tomenu,backmenu;
 } menu[][MAXSUBOPTIONS]={
@@ -265,14 +266,11 @@ fadein(int UNUSED(start), int UNUSED(end), int UNUSED(steps))
      clearkeys();
 }
 
-void
-fog()
+void fog()
 {
-     unsigned char      *temp;
-
-     temp=palookup[0];
-     palookup[0]=palookup[255];
-     palookup[255]=temp;
+    char* temp = palookup[0];
+    palookup[0] = palookup[255];
+    palookup[255] = temp;
 }
 
 int
@@ -432,7 +430,7 @@ setup3dscreen()
           day = ((ydim-32)>>1)-(((screensize*(ydim-32))/xdim)>>1);
           day2 = day + ((screensize*(ydim-32))/xdim)-1;
           tekview(&dax,&day,&dax2,&day2);
-          setview(dax,day>>detailmode,dax2,day2>>detailmode);
+          videoSetViewableArea(dax,day>>detailmode,dax2,day2>>detailmode);
      }
      if( screensize <= xdim ) {
           permanentwritespritetile(0L,0L,BACKGROUND,0,0L,0L,xdim-1,ydim-1,0);
@@ -459,7 +457,7 @@ finishpaletteshifts(void)
 }
 
 void
-showmessage(char *fmt,...)
+showmessage(const char *fmt,...)
 {
      va_list   vargs;
 
@@ -505,15 +503,15 @@ tektitlescreen()
 void
 tekfirstpass()
 {
-     setbrightness(brightness, palette, 0);
+// TODO     setbrightness(brightness, palette, 0);
 }
 
 void
 tekgamestarted(void)
 {
-     hcpos=-tilesizx[HCDEVICE];
-     wppos=-tilesizx[WPDEVICE];
-     rvpos=-tilesizx[RVDEVICE];
+     hcpos=-tilesiz[HCDEVICE].x;
+     wppos=-tilesiz[WPDEVICE].x;
+     rvpos=-tilesiz[RVDEVICE].x;
      seconds=minutes=hours=0;
      show2dsprite[playersprite[myconnectindex]>>3]|=
           (1<<(playersprite[myconnectindex]&7));
@@ -811,50 +809,50 @@ showinv(int snum)
           shade=0;
           if( symbolsdeposited[0] )
                shade=32;
-          rotatesprite((windowx2-(30*8))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL1PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*8))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL1PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
      if( symbols[1] ) {
           shade=0;
           if( symbolsdeposited[1] )
                shade=32;
-          rotatesprite((windowx2-(30*7))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL2PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*7))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL2PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
      if( symbols[2] ) {
           shade=0;
           if( symbolsdeposited[2] )
                shade=32;
-          rotatesprite((windowx2-(30*6))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL3PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*6))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL3PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
      if( symbols[3] ) {
           shade=0;
           if( symbolsdeposited[3] )
                shade=32;
-          rotatesprite((windowx2-(30*5))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL4PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*5))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL4PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
      if( symbols[4] ) {
           shade=0;
           if( symbolsdeposited[4] )
                shade=32;
-          rotatesprite((windowx2-(30*4))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL5PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*4))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL5PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
      if( symbols[5] ) {
           shade=0;
           if( symbolsdeposited[5] )
                shade=32;
-          rotatesprite((windowx2-(30*3))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL6PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*3))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL6PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
      if( symbols[6] ) {
           shade=0;
           if( symbolsdeposited[6] )
                shade=32;
-          rotatesprite((windowx2-(30*2))<<16, (windowy2-32)<<16, 65536l, 0, SYMBOL7PIC,
-               shade, 0, 8+16, windowx1, windowy1, windowx2, windowy2);
+          rotatesprite((windowxy2.x-(30*2))<<16, (windowxy2.y-32)<<16, 65536l, 0, SYMBOL7PIC,
+               shade, 0, 8+16, windowxy1.x, windowxy1.y, windowxy2.x, windowxy2.y);
      }
 
 skipsyms:
@@ -865,7 +863,7 @@ skipsyms:
                toggles[TOGGLE_INVENTORY]=0;
      }
 
-     if( (windowx2 >= (xdim-24)) && ti ) {
+     if( (windowxy2.x >= (xdim-24)) && ti ) {
           if( invbluecards[snum] != 0 ) {
                rotatesprite((xdim-24)<<16, ((ydim>>1)-14)<<16, 65536l, 0, 483,
                     0, 0, 8+16, 0, 0, xdim-1, ydim-1);
@@ -1016,7 +1014,7 @@ netstats()
               #endif
                if( (toggles[TOGGLE_SCORE]) && (screensize >= xdim) ) {
                     sprintf(tektempbuf,"%2d %10s %6d",i,netnames[i],score[i]);
-                    printext(12,(windowy1+32)+(i<<3),tektempbuf,ALPHABET,255);
+                    printext(12,(windowxy1.y+32)+(i<<3),tektempbuf,ALPHABET,255);
                }
           }
          #if 0
@@ -1082,8 +1080,8 @@ tekscreenfx(void)
                     rvpic=RVDEVICEON;
                }
                else {
-                    n=tilesizx[RVDEVICE]/(RVDEVICEON-RVDEVICE);
-                    n=(tilesizx[RVDEVICE]-abs(rvpos))/n;
+                    n=tilesiz[RVDEVICE].x/(RVDEVICEON-RVDEVICE);
+                    n=(tilesiz[RVDEVICE].x-abs(rvpos))/n;
                     rvpic=RVDEVICE+n;
                }
           }
@@ -1093,15 +1091,15 @@ tekscreenfx(void)
                rearview(screenpeek);
           }
      }
-     else if (abs(rvpos) < tilesizx[RVDEVICE]) {
+     else if (abs(rvpos) < tilesiz[RVDEVICE].x) {
           rvpos-=(TICSPERFRAME<<2);
-          if (abs(rvpos) > tilesizx[RVDEVICE]) {
-               rvpos=-tilesizx[RVDEVICE];
+          if (abs(rvpos) > tilesiz[RVDEVICE].x) {
+               rvpos=-tilesiz[RVDEVICE].x;
                rvpic=RVDEVICE;
           }
           else {
-               n=tilesizx[RVDEVICE]/(RVDEVICEON-RVDEVICE);
-               n=(tilesizx[RVDEVICE]-abs(rvpos))/n;
+               n=tilesiz[RVDEVICE].x/(RVDEVICEON-RVDEVICE);
+               n=(tilesiz[RVDEVICE].x-abs(rvpos))/n;
                rvpic=RVDEVICE+n;
           }
           rotatesprite(rvpos<<16, 0<<16, 65536l, 0, rvpic,
@@ -1115,8 +1113,8 @@ tekscreenfx(void)
                     wppic=WPDEVICEON;
                }
                else {
-                    n=tilesizx[WPDEVICE]/(WPDEVICEON-WPDEVICE);
-                    n=(tilesizx[WPDEVICE]-abs(wppos))/n;
+                    n=tilesiz[WPDEVICE].x/(WPDEVICEON-WPDEVICE);
+                    n=(tilesiz[WPDEVICE].x-abs(wppos))/n;
                     wppic=WPDEVICE+n;
                }
           }
@@ -1138,22 +1136,22 @@ tekscreenfx(void)
                     break;
                }
           }
-          rotatesprite((xdim-1-(tilesizx[WPDEVICE]+wppos))<<16, 0<<16, 65536l, 0, WPDEVICE,
+          rotatesprite((xdim-1-(tilesiz[WPDEVICE].x+wppos))<<16, 0<<16, 65536l, 0, WPDEVICE,
                0, 0, 8+16, 0, 0, xdim-1, ydim-1);
      }
-     else if (abs(wppos) < tilesizx[WPDEVICE]) {
+     else if (abs(wppos) < tilesiz[WPDEVICE].x) {
           wppos-=(TICSPERFRAME<<2);
-          if (abs(wppos) > tilesizx[WPDEVICE]) {
-               wppos=-tilesizx[WPDEVICE];
+          if (abs(wppos) > tilesiz[WPDEVICE].x) {
+               wppos=-tilesiz[WPDEVICE].x;
                wppic=WPDEVICE;
           }
           else {
-               n=tilesizx[WPDEVICE]/(WPDEVICEON-WPDEVICE);
-               n=(tilesizx[WPDEVICE]-abs(wppos))/n;
+               n=tilesiz[WPDEVICE].x/(WPDEVICEON-WPDEVICE);
+               n=(tilesiz[WPDEVICE].x-abs(wppos))/n;
                wppic=WPDEVICE+n;
           }
           //overwritesprite(wppos,0,wppic,0,0,0);
-          rotatesprite((xdim-1-(tilesizx[WPDEVICE]+wppos))<<16, 0<<16, 65536l, 0, WPDEVICE,
+          rotatesprite((xdim-1-(tilesiz[WPDEVICE].x+wppos))<<16, 0<<16, 65536l, 0, WPDEVICE,
                0, 0, 8+16, 0, 0, xdim-1, ydim-1);
      }
     #define  SCOREANDTIMEONWPDEVICE
@@ -1185,20 +1183,20 @@ tekscreenfx(void)
                     hcpic=HCDEVICEON;
                }
                else {
-                    n=tilesizx[HCDEVICE]/(HCDEVICEON-HCDEVICE);
-                    n=(tilesizx[HCDEVICE]-abs(hcpos))/n;
+                    n=tilesiz[HCDEVICE].x/(HCDEVICEON-HCDEVICE);
+                    n=(tilesiz[HCDEVICE].x-abs(hcpos))/n;
                     hcpic=HCDEVICE+n;
                }
           }
-          rotatesprite(hcpos<<16, (ydim-tilesizy[hcpic])<<16, 65536l, 0, hcpic,
+          rotatesprite(hcpos<<16, (ydim-tilesiz[hcpic].y)<<16, 65536l, 0, hcpic,
                0, 0, 8+16, 0, 0, xdim-1, ydim-1);
           if (hcpic == HCDEVICEON) {
                for (n=0 ; n < health[screenpeek]/HCSCALE ; n++) {
-                    rotatesprite((hcpos+34+(n*5))<<16, (ydim-tilesizy[hcpic]+7)<<16, 65536l, 0, GREENLIGHTPIC,
+                    rotatesprite((hcpos+34+(n*5))<<16, (ydim-tilesiz[hcpic].y+7)<<16, 65536l, 0, GREENLIGHTPIC,
                          (health[screenpeek]/HCSCALE)-n, 0, 8+16, 0, 0, xdim-1, ydim-1);
                }
                for (n=0 ; n < stun[screenpeek]/HCSCALE ; n++) {
-                    rotatesprite((hcpos+34+(n*5))<<16, (ydim-tilesizy[hcpic]+13)<<16, 65536l, 0, YELLOWLIGHTPIC,
+                    rotatesprite((hcpos+34+(n*5))<<16, (ydim-tilesiz[hcpic].y+13)<<16, 65536l, 0, YELLOWLIGHTPIC,
                          (stun[screenpeek]/HCSCALE)-n, 0, 8+16, 0, 0, xdim-1, ydim-1);
                }
                switch (locselectedgun) {
@@ -1234,23 +1232,23 @@ tekscreenfx(void)
                     ammo =MAXAMMO-1;
                }
                for (n=0 ; n < ammo/AMMOSCALE ; n++) {
-                    rotatesprite((hcpos+34+(n*5))<<16, (ydim-tilesizy[hcpic]+19)<<16, 65536l, 0, BLUELIGHTPIC,
+                    rotatesprite((hcpos+34+(n*5))<<16, (ydim-tilesiz[hcpic].y+19)<<16, 65536l, 0, BLUELIGHTPIC,
                          (ammo/AMMOSCALE)-n, 0, 8+16, 0, 0, xdim-1, ydim-1);
                }
           }
      }
-     else if (abs(hcpos) < tilesizx[HCDEVICE]) {
+     else if (abs(hcpos) < tilesiz[HCDEVICE].x) {
           hcpos-=(TICSPERFRAME<<2);
-          if (abs(hcpos) > tilesizx[HCDEVICE]) {
-               hcpos=-tilesizx[HCDEVICE];
+          if (abs(hcpos) > tilesiz[HCDEVICE].x) {
+               hcpos=-tilesiz[HCDEVICE].x;
                hcpic=HCDEVICE;
           }
           else {
-               n=tilesizx[HCDEVICE]/(HCDEVICEON-HCDEVICE);
-               n=(tilesizx[HCDEVICE]-abs(hcpos))/n;
+               n=tilesiz[HCDEVICE].x/(HCDEVICEON-HCDEVICE);
+               n=(tilesiz[HCDEVICE].x-abs(hcpos))/n;
                hcpic=HCDEVICE+n;
           }
-          rotatesprite(hcpos<<16, (ydim-tilesizy[hcpic])<<16, 65536l, 0, hcpic,
+          rotatesprite(hcpos<<16, (ydim-tilesiz[hcpic].y)<<16, 65536l, 0, hcpic,
                0, 0, 8+16, 0, 0, xdim-1, ydim-1);
      }
 
@@ -1270,13 +1268,13 @@ tekscreenfx(void)
 
      if( biasthreshholdon ) {
           sprintf((char *)tempbuf,"SET BIAS THRESHHOLD %3d", biasthreshhold);
-          printext((xdim>>1)-96,windowy2-10,(char *)tempbuf,ALPHABET2,255);
+          printext((xdim>>1)-96,windowxy2.y-10,(char *)tempbuf,ALPHABET2,255);
      }
      else if( (activemenu == 0) && messageon ) {
-          if( messagex > windowx1 )
-                printext(messagex,windowy2-32,messagebuf,ALPHABET2,255);
+          if( messagex > windowxy1.x )
+                printext(messagex,windowxy2.y-32,messagebuf,ALPHABET2,255);
      }
-     if( (activemenu == 0) && (toggles[TOGGLE_HEALTH] == 0) && (hcpos == -tilesizx[HCDEVICE]) && (screensize > 140) ) {
+     if( (activemenu == 0) && (toggles[TOGGLE_HEALTH] == 0) && (hcpos == -tilesiz[HCDEVICE].x) && (screensize > 140) ) {
           if (!(biasthreshholdon)) {
                if( health[screenpeek] < 0 ) {
                     sprintf(tektempbuf,"%4d", 0);
@@ -1287,7 +1285,7 @@ tekscreenfx(void)
                else {
                     sprintf(tektempbuf,"%4d", health[screenpeek]);
                }
-               printext(windowx1+6,windowy2-10,tektempbuf,ALPHABET2,255);
+               printext(windowxy1.x+6,windowxy2.y-10,tektempbuf,ALPHABET2,255);
           }
      }
      if (activemenu) {
@@ -1332,7 +1330,7 @@ initmenu(void)
 }
 
 void
-newgame(char *mapname)
+newgame(const char *mapname)
 {
      int  i;
 
@@ -1356,7 +1354,7 @@ newgame(char *mapname)
      ready2send=1;
 }
 
-char *mapnames[TOTALMAPS] = {
+const char *mapnames[TOTALMAPS] = {
      "subway0.map",    // 0
      "subway1.map",    // 1
      "subway2.map",    // 2
@@ -1504,7 +1502,7 @@ newmap(int mapno)
 
      drawscreen(screenpeek,0);
      printext((xdim>>1)-44,(ydim>>1)-32,"LOADING MAP",ALPHABET2,255);
-     nextpage();
+     videoNextPage();
 
      initpaletteshifts();
      p=screenpeek;
@@ -1625,7 +1623,7 @@ getloadsavenames(void)
 }
 
 void
-mprintf(short x,short y,char prop,char shade,char palnum,char *stg,...)
+mprintf(short x,short y,char prop,char shade,char palnum,const char *stg,...)
 {
      int  i,n,pic,propx;
      va_list vargs;
@@ -1649,7 +1647,7 @@ mprintf(short x,short y,char prop,char shade,char palnum,char *stg,...)
                     else if (tempbuf[i] > ' ' && tempbuf[i] < '0') {
                          pic=MFONT_SPECIAL1+tempbuf[i]-'!';
                     }
-                    propx+=tilesizx[pic];
+                    propx+=tilesiz[pic].x;
                }
                x=(xdim>>1)-(propx>>1);
           }
@@ -1681,7 +1679,7 @@ mprintf(short x,short y,char prop,char shade,char palnum,char *stg,...)
                rotatesprite(x<<16, y<<16, 65536l, 0, pic, shade, palnum, 8+16, 0, 0, xdim-1, ydim-1);
           }
           if (prop) {
-               x+=tilesizx[pic];
+               x+=tilesiz[pic].x;
           }
           else {
                if (tempbuf[i] == ' ') {
@@ -1701,8 +1699,8 @@ showmenu(void)
         rotatesprite(160<<16,100<<16, 65536, 0, MENUSTATION, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
         rotatesprite(160<<16,100<<16, 65536, 0, MENUGLASS, 0, 0, 1+2+8, 0, 0, xdim-1, ydim-1);
     } else {
-        rotatesprite(160<<16,50<<16, divscale15(200, tilesizy[MENUPANEL4801]), 0, MENUPANEL4801, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
-        rotatesprite(160<<16,150<<16, divscale15(200, tilesizy[MENUPANEL4802]), 0, MENUPANEL4802, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
+        rotatesprite(160<<16,50<<16, divscale15(200, tilesiz[MENUPANEL4801].y), 0, MENUPANEL4801, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
+        rotatesprite(160<<16,150<<16, divscale15(200, tilesiz[MENUPANEL4802].y), 0, MENUPANEL4802, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
     }
 }
 
@@ -1712,8 +1710,8 @@ showhelpscreen(void)
     if (xdim < 640) {
         rotatesprite(160<<16,160<<16, 65536, 0, HELPSCREENPIC, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
     } else {
-        rotatesprite(160<<16,50<<16, divscale15(200, tilesizy[HELPSCREEN4801]), 0, HELPSCREEN4801, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
-        rotatesprite(160<<16,150<<16, divscale15(200, tilesizy[HELPSCREEN4802]), 0, HELPSCREEN4802, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
+        rotatesprite(160<<16,50<<16, divscale15(200, tilesiz[HELPSCREEN4801].y), 0, HELPSCREEN4801, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
+        rotatesprite(160<<16,150<<16, divscale15(200, tilesiz[HELPSCREEN4802].y), 0, HELPSCREEN4802, 0, 0, 2+8, 0, 0, xdim-1, ydim-1);
     }
 }
 
@@ -1762,10 +1760,10 @@ domenu(void)
      vel=svel=angvel=0;
      mptr=&menu[activemenu][0];
      if (redrawborders) {
-          dax=windowx1;
-          dax2=windowx2;
-          day=windowy1;
-          day2=windowy2;
+          dax=windowxy1.x;
+          dax2=windowxy2.x;
+          day=windowxy1.y;
+          day2=windowxy2.y;
           if (dax2-dax < xdim-1 || day2-day < ydim-1) {
                setup3dscreen();
           }
@@ -1817,8 +1815,8 @@ domenu(void)
           activemenu=255;
      }
      if (activemenu == 6 || activemenu == 7) {    // load/save a game
-          dax=(xdim>>1)-((MAXLOADSAVESIZE*tilesizx[MFONT_A])>>1);
-          dax-=tilesizx[MFONT_A];
+          dax=(xdim>>1)-((MAXLOADSAVESIZE*tilesiz[MFONT_A].x)>>1);
+          dax-=tilesiz[MFONT_A].x;
           for (i=1 ; i <= MAXLOADSAVEOPTS ; i++) {
                if (selopt == i) {
                     pal=4;
@@ -1827,8 +1825,8 @@ domenu(void)
                     }
                     else {
                          mprintf(dax,2+i,0,0,pal,"%d %s",i,lockeybuf);
-                         if (totalclock > curblinkclock) {
-                              curblinkclock=totalclock+(CLKIPS>>2);
+                         if (((int)totalclock) > curblinkclock) {
+                              curblinkclock=((int)totalclock)+(CLKIPS>>2);
                               curblink^=1;
                          }
                          if (curblink) {
@@ -1848,7 +1846,7 @@ domenu(void)
           }
      }
      else if (activemenu == 8) {   // sound/music volume
-          dax=(xdim>>1)-(tilesizx[SLIDERBARPIC]>>1);
+          dax=(xdim>>1)-(tilesiz[SLIDERBARPIC].x>>1);
           day=50;
           if (ydim >= 400) {
                day<<=1;
@@ -1867,7 +1865,7 @@ domenu(void)
                0, 0, 8+16, 0, 0, xdim-1, ydim-1);
      }
      else if (activemenu == 9) {   // mouse sensitivity
-          dax=(xdim>>1)-(tilesizx[SLIDERBARPIC]>>1);
+          dax=(xdim>>1)-(tilesiz[SLIDERBARPIC].x>>1);
           day=26;
           if (ydim >= 400) {
                day<<=1;
@@ -1883,7 +1881,7 @@ domenu(void)
 void
 domenuinput(void)
 {
-     int c,keystate;
+     int keystate;
      int  tries;
      struct menu *mptr = 0;
 
@@ -1901,27 +1899,33 @@ domenuinput(void)
           }
           return;
      }
-     if (loctypemode) {
-          while (keyfifoplc != keyfifoend) {
-               c=keyfifo[keyfifoplc];
-               keystate=keyfifo[(keyfifoplc+1)&(KEYFIFOSIZ-1)];
-               keyfifoplc=((keyfifoplc+2)&(KEYFIFOSIZ-1));
-               if (keystate != 0) {
-                    if (c == 0x01) {              // ESC key
-                         keystatus[1]=0;
+     if (loctypemode)
+     {
+         // TODO
+         do
+          //while (g_keyFIFOpos != g_keyFIFOend)
+          {
+               //c= g_keyFIFO[g_keyFIFOpos];
+               //keystate= g_keyFIFO[(g_keyFIFOpos +1)&(KEYFIFOSIZ-1)];
+               //g_keyFIFOpos =((g_keyFIFOpos +2)&(KEYFIFOSIZ-1));
+
+               //if (keystate != 0)
+               {
+                    if (keystatus[sc_Escape]) {              // ESC key
+                         keystatus[sc_Escape]=0;
                          locmessagelen=0;
                          loctypemode=0;
                     }
-                    if (c == 0x0E) {              // backspace key
-                         keystatus[14]=0;
+                    if (keystatus[sc_BackSpace]) {              // backspace key
+                         keystatus[sc_BackSpace]=0;
                          if (locmessagelen == 0) {
                               break;
                          }
                          locmessagelen--;
                          lockeybuf[locmessagelen]=0;
                     }
-                    if (c == 0x1C || c == 0x9C) { // enter keys
-                         keystatus[0x1C]=keystatus[0x9C]=0;
+                    if (keystatus[sc_Enter] || keystatus[sc_kpad_Enter]) { // enter keys
+                         keystatus[sc_Enter]=keystatus[sc_kpad_Enter]=0;
                          if (locmessagelen > 0) {
                               strncpy(loadsavenames[selopt-1],lockeybuf,
                                    MAXLOADSAVESIZE);
@@ -1934,8 +1938,9 @@ domenuinput(void)
                          activemenu=255;
                          break;
                     }
+                    #if 0 // TODO
                     if (locmessagelen < (MAXLOADSAVESIZE-1) && c < 128) {
-                         if (keystatus[0x2A] || keystatus[0x36]) {
+                         if (keystatus[sc_LeftShift] || keystatus[sc_RightShift]) {
                               c=scantoascwithshift[c];
                          }
                          else {
@@ -1948,8 +1953,9 @@ domenuinput(void)
                               }
                          }
                     }
+                    #endif
                }
-          }
+         } while (0);
           return;
      }
      mptr=&menu[activemenu][selopt];
@@ -2059,7 +2065,7 @@ domenuinput(void)
                case 7:                                 // save game
                     keystatus[0x1C]=keystatus[0x9C]=0;
                     loctypemode=1;
-                    keyfifoplc=keyfifoend;
+ // TODO                   keyfifoplc=keyfifoend;
                     if (strcmp(loadsavenames[selopt-1],"-EMPTY-") != 0) {
                          strncpy(lockeybuf,loadsavenames[selopt-1],
                               MAXLOADSAVESIZE);
@@ -2143,12 +2149,12 @@ rearview(int snum)
           return;
      }
 
-     oldwx1=windowx1; oldwx2=windowx2;
-     oldwy1=windowy1; oldwy2=windowy2;
+     oldwx1=windowxy1.x; oldwx2=windowxy2.x;
+     oldwy1=windowxy1.y; oldwy2=windowxy2.y;
 
      plrang=ang[snum];
      plrhoriz=ohoriz[snum];
-     setview(67,9,130,40);
+     videoSetViewableArea(67,9,130,40);
 
      oang[snum]=(plrang+1024)&2047;
      ohoriz[snum]=(200-plrhoriz);
@@ -2166,11 +2172,11 @@ rearview(int snum)
      rearviewdraw=1;
      analyzesprites(posx[snum],posy[snum]);
      rearviewdraw=0;
-     drawmasks();
+     renderDrawMasks();
 
      oang[snum]=plrang;
      ohoriz[snum]=plrhoriz;
-     setview(oldwx1,oldwy1, oldwx2,oldwy2);
+     videoSetViewableArea(oldwx1,oldwy1, oldwx2,oldwy2);
 }
 
 void
@@ -2207,15 +2213,15 @@ tekargv(int argc, char const * const argv[])
      goreflag=1;
 
      for( p=1 ; p < argc ; p++ ) {
-          if (strcasecmp(argv[p],"PRACTICE") == 0) {
+          if (Bstrcasecmp(argv[p],"PRACTICE") == 0) {
                generalplay=1;
                argmatch++;
           }
-          if (strcasecmp(argv[p],"NOVIDEOID") == 0) {
+          if (Bstrcasecmp(argv[p],"NOVIDEOID") == 0) {
                novideoid=1;
                argmatch++;
           }
-          if (strcasecmp(argv[p],"NETNAME") == 0) {
+          if (Bstrcasecmp(argv[p],"NETNAME") == 0) {
                bypasscdcheck=1;
                if( (p+1) < argc ) {
                     memset(localname,0,sizeof(localname));
@@ -2224,47 +2230,47 @@ tekargv(int argc, char const * const argv[])
                }
                argmatch++;
           }
-          if (strcasecmp(argv[p],"NOGORE") == 0) {
+          if (Bstrcasecmp(argv[p],"NOGORE") == 0) {
                argmatch++;
                goreflag=0;
           }
-          if (strcasecmp(argv[p],"NOENEMIES") == 0) {
+          if (Bstrcasecmp(argv[p],"NOENEMIES") == 0) {
                argmatch++;
                noenemiesflag=1;
           }
-          if (strcasecmp(argv[p],"NOGUARD") == 0) {
+          if (Bstrcasecmp(argv[p],"NOGUARD") == 0) {
                argmatch++;
                noguardflag=1;
           }
-          if (strcasecmp(argv[p],"NOSTALK") == 0) {
+          if (Bstrcasecmp(argv[p],"NOSTALK") == 0) {
                argmatch++;
                nostalkflag=1;
           }
-          if (strcasecmp(argv[p],"NOCHASE") == 0) {
+          if (Bstrcasecmp(argv[p],"NOCHASE") == 0) {
                argmatch++;
                nochaseflag=1;
           }
-          if (strcasecmp(argv[p],"NOSTROLL") == 0) {
+          if (Bstrcasecmp(argv[p],"NOSTROLL") == 0) {
                argmatch++;
                nostrollflag=1;
           }
-          if (strcasecmp(argv[p],"DIGILOOPS") == 0) {
+          if (Bstrcasecmp(argv[p],"DIGILOOPS") == 0) {
                argmatch++;
                digiloopflag=1;
           }
-          if (strcasecmp(argv[p],"NOBRIEFS") == 0) {
+          if (Bstrcasecmp(argv[p],"NOBRIEFS") == 0) {
                argmatch++;
                nobriefflag=1;
           }
-          if (strcasecmp(argv[p],"DEBUG") == 0) {
+          if (Bstrcasecmp(argv[p],"DEBUG") == 0) {
                argmatch++;
                dbgflag=1;
           }
-          if (strcasecmp(argv[p],"COOP") == 0) {
+          if (Bstrcasecmp(argv[p],"COOP") == 0) {
                argmatch++;
                coopmode=1;
           }
-          if (strcasecmp(argv[p],"SWITCHLEVELS") == 0) {
+          if (Bstrcasecmp(argv[p],"SWITCHLEVELS") == 0) {
                argmatch++;
                switchlevelsflag=1;
           }
@@ -2350,51 +2356,51 @@ tekendscreen()
 
      memset(keystatus, 0, sizeof(keystatus));
      if( xdim == 640 ) {
-          setview(0L,0L,xdim-1,ydim-1);
-          loadtile(ES1A_SVGA);
+          videoSetViewableArea(0L,0L,xdim-1,ydim-1);
+          tileLoad(ES1A_SVGA);
           overwritesprite(0L,0L,ES1A_SVGA,0,0,0);
-          loadtile(ES1B_SVGA);
+          tileLoad(ES1B_SVGA);
           overwritesprite(0L,239L,ES1B_SVGA,0,0,0);
-          nextpage();
+          videoNextPage();
           fadein(0,255,50);
           while( (keystatus[1] == 0) && (keystatus[57] == 0) && (keystatus[28] == 0) ) {
           }
           memset(keystatus, 0, sizeof(keystatus));
-          loadtile(ES2A_SVGA);
+          tileLoad(ES2A_SVGA);
           overwritesprite(0L,0L,ES2A_SVGA,0,0,0);
-          loadtile(ES2B_SVGA);
+          tileLoad(ES2B_SVGA);
           overwritesprite(0L,239L,ES2B_SVGA,0,0,0);
-          nextpage();
+          videoNextPage();
           while( (keystatus[1] == 0) && (keystatus[57] == 0) && (keystatus[28] == 0) ) {
           }
      }
      else if( xdim == 320 ) {
-          setview(0L,0L,xdim-1,ydim-1);
-          loadtile(ES1_VGA);
+          videoSetViewableArea(0L,0L,xdim-1,ydim-1);
+          tileLoad(ES1_VGA);
           overwritesprite(0L,0L,ES1_VGA,0,0,0);
-          nextpage();
+          videoNextPage();
           fadein(0,255,50);
           while( (keystatus[1] == 0) && (keystatus[57] == 0) && (keystatus[28] == 0) ) {
           }
           memset(keystatus, 0, sizeof(keystatus));
-          loadtile(ES2_VGA);
+          tileLoad(ES2_VGA);
           overwritesprite(0L,0L,ES2_VGA,0,0,0);
-          nextpage();
+          videoNextPage();
           while( (keystatus[1] == 0) && (keystatus[57] == 0) && (keystatus[28] == 0) ) {
           }
      }
      else {
-          setview(0L,0L,xdim-1,ydim-1);
-          loadtile(ES1_VGA);
+          videoSetViewableArea(0L,0L,xdim-1,ydim-1);
+          tileLoad(ES1_VGA);
           overwritesprite(0,0,ES1_VGA,0,0x02,0);
-          nextpage();
+          videoNextPage();
           fadein(0,255,50);
           while( (keystatus[1] == 0) && (keystatus[57] == 0) && (keystatus[28] == 0) ) {
           }
           memset(keystatus, 0, sizeof(keystatus));
-          loadtile(ES2_VGA);
+          tileLoad(ES2_VGA);
           overwritesprite(0,0,ES2_VGA,0,0x02,0);
-          nextpage();
+          videoNextPage();
           while( (keystatus[1] == 0) && (keystatus[57] == 0) && (keystatus[28] == 0) ) {
           }
      }
@@ -2520,7 +2526,7 @@ choosingmission:
      }
      lastmission=mission;
 
-     helpclock=totalclock;
+     helpclock=(int)totalclock;
      while( (keystatus[1]   == 0) &&
             (keystatus[28]  == 0) &&
             (keystatus[57]  == 0) &&
@@ -2530,7 +2536,7 @@ choosingmission:
             (keystatus[200] == 0) &&
             (keystatus[35]  == 0) &&
             (keystatus[208] == 0)  ) {
-          if( (totalclock - helpclock) > 1024 ) {
+          if( (((int)totalclock) - helpclock) > 1024 ) {
                keystatus[35]=1;
           }
          smkshowmenu();
@@ -2582,8 +2588,8 @@ nextmissionright:
               (symbols[4] == 0) && (symbols[5] == 0) && (symbols[6] == 0) ) {
                playsound(S_BOOP,0,0,0,ST_IMMEDIATE);
                smkmenuframe(53);
-               clock=totalclock;
-               while( (totalclock-clock) < 128 ) {
+               clock=(int)totalclock;
+               while( (((int)totalclock)-clock) < 128 ) {
                     smkshowmenu();
                     handleevents();
                }
@@ -2659,11 +2665,11 @@ nextmissionright:
           keystatus[35]=0;
           smkmenuframe(55);
           keystatus[1]=0;
-          helpclock=totalclock;
+          helpclock=(int)totalclock;
           while( (keystatus[1]  == 0) &&
                  (keystatus[28] == 0) &&
                  (keystatus[57] == 0) ) {
-                 if( (totalclock-helpclock) > 2048 ) {
+                 if( (((int)totalclock)-helpclock) > 2048 ) {
                     keystatus[1]=1;
                  }
               smkshowmenu();
@@ -2755,9 +2761,9 @@ donewgame:
 
      fadeout(0,255,0,0,0,50);
 
-     clearview(0);
-     setbrightness(brightness, palette, 0);
-     clearview(0);
+     videoClearViewableArea(0);
+     setbrightness(brightness);
+     videoClearViewableArea(0);
      switch( mission ) {
      case 0:
      case 1:
@@ -2786,7 +2792,7 @@ donewgame:
           newgame("final1.map");
           break;
      }
-     clearview(0);
+     videoClearViewableArea(0);
      //memcpy(palette, palette1, 768);
      dofadein=32;
      initpaletteshifts();
@@ -2880,12 +2886,12 @@ teknetmenu()
      //memcpy(palette1, palette, 768);
      //memset(palette, 0, 768);
 
-     clearview(0);
+     videoClearViewableArea(0);
      strcpy(boardfilename,"NET1.MAP");
      prepareboard(boardfilename);
      precache();
 
-     clearview(0);
+     videoClearViewableArea(0);
      //memcpy(palette, palette1, 768);
      fadein(0,255,16);
 }
@@ -2893,7 +2899,7 @@ teknetmenu()
 void
 copyrightscreen()
 {
-     clearview(0);
+    videoClearViewableArea(0);
      smkopenmenu("smkgm.smk");
      smkmenuframe(81);
      fadein(0,255,10);
@@ -2994,7 +3000,7 @@ choosingmap:
      smkshowmenu();
      lastmap=map;
 
-     helpclock=totalclock;
+     helpclock=(int)totalclock;
      while( (keystatus[1]   == 0) &&
             (keystatus[28]  == 0) &&
             (keystatus[57]  == 0) &&
@@ -3005,7 +3011,7 @@ choosingmap:
             (keystatus[31]  == 0) &&
             (keystatus[35]  == 0) &&
             (keystatus[208] == 0)  ) {
-          if( (totalclock - helpclock) > 1024 ) {
+          if( (((int)totalclock) - helpclock) > 1024 ) {
                keystatus[35]=1;
           }
      };
@@ -3088,11 +3094,11 @@ choosingmap:
           smkmenuframe(79);
           smkshowmenu();
           keystatus[1]=0;
-          helpclock=totalclock;
+          helpclock=(int)totalclock;
           while( (keystatus[1]  == 0) &&
                  (keystatus[28] == 0) &&
                  (keystatus[57] == 0) ) {
-               if( (totalclock-helpclock) > 2048 ) {
+               if( (((int)totalclock)-helpclock) > 2048 ) {
                     keystatus[1]=1;
                }
           }
@@ -3113,8 +3119,8 @@ choosingmap:
      if( (keystatus[57] != 0)  || (keystatus[28] != 0) ) {
           switch( map ) {
           case 4:
-               stall=totalclock;
-               while( (totalclock-stall) < 32 )
+               stall=(int)totalclock;
+               while( (((int)totalclock)-stall) < 32 )
                     ;
                if( set == 0 ) {
                     set=1;
@@ -3141,7 +3147,7 @@ choosingmap:
 
      fadeout(0,255,0,0,0,50);
 
-     clearview(0);
+     videoClearViewableArea(0);
 
      if( set == 0 ) {
           switch( map ) {
@@ -3172,7 +3178,7 @@ choosingmap:
           }
      }
 
-     clearview(0);
+     videoClearViewableArea(0);
      dofadein=32;
      initpaletteshifts();
 
@@ -3197,10 +3203,10 @@ missionaccomplished(int  sn)
           return;
      }
 
-     if( sprXTptr[ext]->class == CLASS_CIVILLIAN ) {
+     if( sprXTptr[ext]->classification == CLASS_CIVILLIAN ) {
           civillianskilled++;
      }
-     if( sprXTptr[ext]->class != CLASS_TEKLORD ) {
+     if( sprXTptr[ext]->classification != CLASS_TEKLORD ) {
           return;
      }
 

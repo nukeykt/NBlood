@@ -138,12 +138,13 @@ vec2_t screentextGetSize(ScreenTextSize_t const & data)
         else
         {
             uint16_t const tile = screentextGlyphGetTile(glyph);
+            vec2_16_t const siz = tilesiz[tile];
 
             // width
-            extent.x = constwidthactive ? constwidth : tilesiz[tile].x * data.zoom;
+            extent.x = constwidthactive ? constwidth : siz.x * data.zoom;
 
             // height
-            SetIfGreater(&extent.y, (tilesiz[tile].y * data.zoom));
+            SetIfGreater(&extent.y, (siz.y * data.zoom));
         }
 
         // incrementing the coordinate counters
@@ -240,6 +241,9 @@ vec2_t screentextRender(ScreenText_t const & data)
     glyph_t glyph;
     int constwidthactive = 0;
 
+    if ((data.f & TEXT_VARHEIGHT) && !(o & RS_TOPLEFT))
+        origin.y = mulscale16(data.standardhalfheight, data.zoom);
+
     // near-CODEDUP "alignments"
     {
         int32_t lines = GetStringNumLines(text, end);
@@ -280,9 +284,9 @@ vec2_t screentextRender(ScreenText_t const & data)
         }
 
         if (data.f & TEXT_YBOTTOM)
-            origin.y = -(size.y/data.zoom*data.zoom);
+            origin.y += -(size.y/data.zoom*data.zoom);
         else if (data.f & TEXT_YCENTER)
-            origin.y = -(size.y/2/data.zoom*data.zoom);
+            origin.y += -(size.y/2/data.zoom*data.zoom);
     }
 
     // loop through the string
@@ -349,9 +353,9 @@ vec2_t screentextRender(ScreenText_t const & data)
                     }
 
                     if (data.f & TEXT_XRIGHT)
-                        origin.x = -linewidth;
+                        origin.x = -(linewidth/data.zoom*data.zoom);
                     else if (data.f & TEXT_XCENTER)
-                        origin.x = -(linewidth / 2);
+                        origin.x = -(linewidth/2/data.zoom*data.zoom);
                 }
             }
             else if (screentextGlyphIsPalChange(glyph))
@@ -370,6 +374,7 @@ vec2_t screentextRender(ScreenText_t const & data)
         else
         {
             uint16_t const tile = screentextGlyphGetTile(glyph);
+            vec2_16_t const siz = tilesiz[tile];
             vec2_t location{data.pos};
 
             AddCoordsFromRotation(&location, &Xdirection, origin.x);
@@ -378,13 +383,16 @@ vec2_t screentextRender(ScreenText_t const & data)
             AddCoordsFromRotation(&location, &Xdirection, pos.x);
             AddCoordsFromRotation(&location, &Ydirection, pos.y);
 
+            if ((data.f & TEXT_VARHEIGHT) && !(o & RS_TOPLEFT))
+                AddCoordsFromRotation(&location, &Xdirection, (siz.x >> 1) * data.zoom);
+
             rotatesprite_(location.x, location.y, data.zoom, angle, tile, data.shade, pal, o, alpha, blendidx, data.b1.x, data.b1.y, data.b2.x, data.b2.y);
 
             // width
-            extent.x = constwidthactive ? constwidth : tilesiz[tile].x * data.zoom;
+            extent.x = constwidthactive ? constwidth : siz.x * data.zoom;
 
             // height
-            SetIfGreater(&extent.y, (tilesiz[tile].y * data.zoom));
+            SetIfGreater(&extent.y, (siz.y * data.zoom));
         }
 
         // incrementing the coordinate counters
@@ -421,4 +429,93 @@ vec2_t screentextRenderShadow(ScreenText_t const & data, vec2_t shadowpos, int32
     screentextRender(shadow);
 
     return screentextRender(data);
+}
+
+#include <string>
+#include <unordered_map>
+
+using tilefont_map_t = std::unordered_map<uint32_t, uint16_t>;
+static std::unordered_map<uint16_t, tilefont_map_t> tilefontList;
+
+TileFontPtr_t tilefontGetPtr(uint16_t tilenum)
+{
+    tilefont_map_t & myTileFont = tilefontList[tilenum];
+    return TileFontPtr_t{&myTileFont};
+}
+
+TileFontPtr_t tilefontFind(uint16_t tilenum)
+{
+    auto iter = tilefontList.find(tilenum);
+    if (iter == tilefontList.end())
+        return TileFontPtr_t{nullptr};
+
+    tilefont_map_t & myTileFont = iter->second;
+    return TileFontPtr_t{&myTileFont};
+}
+
+void tilefontDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum)
+{
+    auto & myTileFont = *(tilefont_map_t *)tilefontPtr.opaque;
+    myTileFont[chr] = tilenum;
+}
+
+void tilefontMaybeDefineMapping(TileFontPtr_t tilefontPtr, uint32_t chr, uint16_t tilenum)
+{
+    auto & myTileFont = *(tilefont_map_t *)tilefontPtr.opaque;
+    myTileFont.emplace(chr, tilenum);
+}
+
+uint16_t tilefontLookup(TileFontPtr_t tilefontPtr, uint32_t chr)
+{
+    auto & myTileFont = *(tilefont_map_t *)tilefontPtr.opaque;
+
+    auto iter = myTileFont.find(chr);
+    if (iter == myTileFont.end())
+        return 0;
+
+    return iter->second;
+}
+
+using locale_map_t = std::unordered_map<std::string, std::string>;
+static std::unordered_map<std::string, locale_map_t> localeList{{"en", {}}};
+static locale_map_t * currentLocale;
+
+LocalePtr_t localeGetPtr(const char * localeName)
+{
+    locale_map_t & myLocale = localeList[localeName];
+    return LocalePtr_t{&myLocale};
+}
+
+void localeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val)
+{
+    auto & myLocale = *(locale_map_t *)localePtr.opaque;
+    myLocale[key] = val;
+}
+
+void localeMaybeDefineMapping(LocalePtr_t localePtr, const char * key, const char * val)
+{
+    auto & myLocale = *(locale_map_t *)localePtr.opaque;
+    myLocale.emplace(key, val);
+}
+
+void localeSetCurrent(const char * localeName)
+{
+    auto iter = localeList.find(localeName);
+    if (iter == localeList.end())
+        return;
+
+    locale_map_t & myLocale = iter->second;
+    currentLocale = &myLocale;
+}
+
+const char * localeLookup(const char * str)
+{
+    if (currentLocale == nullptr)
+        return str;
+
+    auto iter = currentLocale->find(str);
+    if (iter == currentLocale->end())
+        return str;
+
+    return iter->second.c_str();
 }

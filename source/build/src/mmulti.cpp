@@ -651,6 +651,7 @@ void initsingleplayers(void)
 	// 192.168.1.2     game /n1 * 192.168.1.100  game /n1 * 192.168.1.100 192.168.1.4
 	// 192.168.1.100   game /n2 192.168.1.2 *    game /n1 192.168.1.2 * 192.168.1.4
 	// 192.168.1.4                               game /n1 192.168.1.2 192.168.1.100 *
+	// Note: '.' may also be used in place of '*'
 int initmultiplayersparms(int argc, char const * const argv[])
 {
 	int i, j, daindex, danumplayers, danetmode, portnum = NETPORT;
@@ -735,10 +736,10 @@ int initmultiplayersparms(int argc, char const * const argv[])
 			return 0;
 		}
 
-		if (argv[i][0] == '*' && argv[i][1] == 0) {
+		if ((argv[i][0] == '*' || argv[i][0] == '.') && argv[i][1] == 0) {
 			// 'self' placeholder
 			if (danetmode == MMULTI_MODE_MS) {
-				initprintf("mmulti: * is not valid in master-slave mode\n");
+				initprintf("mmulti: %c is not valid in master-slave mode\n", argv[i][0]);
 				netuninit();
 				return 0;
 			} else {

@@ -610,6 +610,10 @@ PauseSong(SWBOOL pauseon)
 void
 SetSongVolume(int volume)
 {
+    if (SongType == SongTypeWave && SongVoice > 0)
+        FX_SetPan(SongVoice, volume, volume, volume);
+
+    MUSIC_SetVolume(volume);
 }
 
 SWBOOL

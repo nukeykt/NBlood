@@ -153,7 +153,6 @@ extern GENDUDESND gCustomDudeSnd[];
 struct GENDUDEEXTRA {
     unsigned short initVals[3];             // xrepeat, yrepeat, clipdist
     unsigned short availDeaths[kDamageMax]; // list of seqs with deaths for each damage type
-    unsigned short dmgControl[kDamageMax];  // depends of current weapon, drop armor item, sprite yrepeat and surface type
     unsigned int moveSpeed;
     unsigned int fireDist;                  // counts from sprite size
     unsigned int throwDist;                 // counts from sprite size
@@ -163,6 +162,7 @@ struct GENDUDEEXTRA {
     unsigned short slaveCount;              // how many dudes is summoned
     signed short nLifeLeech;                // spritenum of dropped dude's leech
     signed short slave[kGenDudeMaxSlaves];  // index of the ones dude is summon
+    signed short dmgControl[kDamageMax];    // depends of current weapon, drop armor item, sprite yrepeat and surface type
     bool updReq[kGenDudePropertyMax];       // update requests
     bool sndPlaying;                        // indicate if sound of AISTATE currently playing
     bool forcePunch;                        // indicate if there is no fire trigger in punch state seq
@@ -212,10 +212,12 @@ short inSearch(AISTATE* aiState);
 short inChase(AISTATE* aiState);
 short inDuck(AISTATE* aiState);
 int genDudeSeqStartId(XSPRITE* pXSprite);
-int getRangeAttackDist(spritetype* pSprite, int minDist = 1200, int maxDist = 80000);
+int getRangeAttackDist(spritetype* pSprite, int minDist = 3000, int maxDist = 80000);
 int getDispersionModifier(spritetype* pSprite, int minDisp, int maxDisp);
 void scaleDamage(XSPRITE* pXSprite);
-bool genDudePrepare(spritetype* pSprite, int propId = kGenDudePropertyAll);
+bool genDudePrepare(spritetype* pSprite, int propId);
 void genDudeUpdate(spritetype* pSprite);
 bool genDudeAdjustSlope(spritetype* pSprite, XSPRITE* pXSprite, int dist, int weaponType, int by = 64);
+void genDudePostDeath(spritetype* pSprite, DAMAGE_TYPE damageType, int damage);
+void aiGenDudeInitSprite(spritetype* pSprite, XSPRITE* pXSprite);
 #endif

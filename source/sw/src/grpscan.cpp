@@ -257,6 +257,8 @@ int ScanGroups(void)
     static char const * extensions[] =
     {
         "*.grp",
+        "*.ssi",
+        "*.dat",
         "*.zip",
     };
 
@@ -266,6 +268,8 @@ int ScanGroups(void)
         ProcessGroups(srch, maxsize);
         klistfree(srch);
     }
+
+    FreeGroupsCache();
 
     for (grpfile_t *grp = foundgrps; grp; grp=grp->next)
     {

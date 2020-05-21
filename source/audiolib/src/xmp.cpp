@@ -11,53 +11,40 @@
 #define BUILDING_STATIC
 #include "libxmp-lite/xmp.h"
 
-typedef struct {
-    void * ptr;
-    VoiceNode *owner;
-    size_t length;
-    xmp_context context;
-    int time;
-} xmp_data;
-
-int MV_GetXMPPosition(VoiceNode *voice)
-{
-    auto xmpd = (xmp_data *)voice->rawdataptr;
-    return xmpd->time;
-}
-
-void MV_SetXMPPosition(VoiceNode *voice, int position)
-{
-    auto xmpd = (xmp_data *)voice->rawdataptr;
-    xmp_seek_time(xmpd->context, position);
-}
+int  MV_GetXMPPosition(VoiceNode *voice)               { return voice->position; }
+void MV_SetXMPPosition(VoiceNode *voice, int position) { xmp_seek_time((xmp_context)voice->rawdataptr, position); }
 
 static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 {
-    auto xmpd = (xmp_data *)voice->rawdataptr;
-    struct xmp_frame_info mi;
+    if (voice->rawdataptr == nullptr)
+    {
+        MV_Printf("MV_GetNextXMPBlock(): no XMP context!\n");
+        return NoMoreData;
+    }
 
-    if (xmp_play_frame(xmpd->context) != 0)
+    auto ctx = (xmp_context)voice->rawdataptr;
+
+    if (xmp_play_frame(ctx) != 0)
     {
         if (voice->LoopSize > 0)
         {
-            xmp_restart_module(xmpd->context);
-            if (xmp_play_frame(xmpd->context) != 0)
+            xmp_restart_module(ctx);
+            if (xmp_play_frame(ctx) != 0)
                 return NoMoreData;
         }
         else
             return NoMoreData;
     }
 
-    xmp_get_frame_info(xmpd->context, &mi);
-
-    xmpd->time = mi.time;
+    xmp_frame_info mi;
+    xmp_get_frame_info(ctx, &mi);
 
     uint32_t const samples = mi.buffer_size / (2 * (16/8)); // since 2-channel, 16-bit is hardcoded
     // uint32_t const samples = mi.buffer_size / (voice->channels * (voice->bits / 8));
 
     voice->sound        = (char const *)mi.buffer;
     voice->length       = samples << 16;
-    voice->position     = 0;
+    voice->position     = mi.time;
     voice->BlockLength  = 0;
 
     MV_SetVoiceMixMode(voice);
@@ -95,46 +82,28 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     if (!MV_Installed)
         return MV_SetErrorCode(MV_NotInstalled);
 
-    auto xmpd = (xmp_data *)Xcalloc(1, sizeof(xmp_data));
-    if (!xmpd)
-        return MV_SetErrorCode(MV_InvalidFile);
-
-    xmpd->ptr = ptr;
-    xmpd->length = length;
-
-    if ((xmpd->context = xmp_create_context()) == nullptr)
-    {
-        Xfree(xmpd);
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
-
-    int const xmp_status = xmp_load_module_from_memory(xmpd->context, ptr, length);
-
-    if (xmp_status)
-    {
-        xmp_free_context(xmpd->context);
-        Xfree(xmpd);
-        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
-        return MV_SetErrorCode(MV_InvalidFile);
-    }
-
     // Request a voice from the voice pool
     auto voice = MV_AllocVoice(priority);
     if (voice == nullptr)
-    {
-        xmp_release_module(xmpd->context);
-        xmp_free_context(xmpd->context);
-        Xfree(xmpd);
         return MV_SetErrorCode(MV_NoVoices);
-    }
 
-    xmpd->owner = voice;
+    auto ctx = xmp_create_context();
+    if (ctx == nullptr)
+        return MV_SetErrorCode(MV_NoMem);
+
+    int const xmp_status = xmp_load_module_from_memory(ctx, ptr, length);
+    if (xmp_status)
+    {
+        xmp_free_context(ctx);
+        MV_Printf("MV_PlayXMP: xmp_load_module_from_memory failed (%i)\n", xmp_status);
+        return MV_SetErrorCode(MV_InvalidFile);
+    }
 
     voice->length      = 0;
     voice->sound       = 0;
 
     voice->wavetype    = FMT_XMP;
-    voice->rawdataptr  = (void*)xmpd;
+    voice->rawdataptr  = ctx;
     voice->GetSound    = MV_GetNextXMPBlock;
     voice->LoopCount   = 0;
     voice->BlockLength = 0;
@@ -154,8 +123,8 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     voice->LoopEnd     = 0;
     voice->LoopSize    = loopstart >= 0 ? 1 : 0;
 
-    xmp_start_player(xmpd->context, MV_MixRate, 0);
-    xmp_set_player(xmpd->context, XMP_PLAYER_INTERP, MV_XMPInterpolation);
+    xmp_start_player(ctx, MV_MixRate, 0);
+    xmp_set_player(ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 
     // CODEDUP multivoc.c MV_SetVoicePitch
     voice->RateScale = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
@@ -170,23 +139,22 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 
 void MV_ReleaseXMPVoice(VoiceNode * voice)
 {
-    auto xmpd = (xmp_data *) voice->rawdataptr;
-
-    if (voice->wavetype != FMT_XMP)
+    if (voice->wavetype != FMT_XMP || voice->rawdataptr == nullptr)
         return;
 
-    voice->rawdataptr = 0;
-    voice->length = 0;
-    voice->sound = nullptr;
+    auto ctx = (xmp_context)voice->rawdataptr;
+    voice->rawdataptr = nullptr;
 
-    xmp_end_player(xmpd->context);
-    xmp_release_module(xmpd->context);
-    xmp_free_context(xmpd->context);
-    Xfree(xmpd);
+    xmp_end_player(ctx);
+    xmp_release_module(ctx);
+    xmp_free_context(ctx);
 }
 
 void MV_SetXMPInterpolation(void)
 {
+    if (!MV_Installed)
+        return;
+
     for (VoiceNode *voice = VoiceList.next; voice != &VoiceList; voice = voice->next)
         if (voice->wavetype == FMT_XMP)
             xmp_set_player((xmp_context)voice->rawdataptr, XMP_PLAYER_INTERP, MV_XMPInterpolation);
@@ -198,38 +166,14 @@ void MV_SetXMPInterpolation(void)
 
 static char const NoXMP[] = "MV_PlayXMP: libxmp-lite support not included in this binary.\n";
 
-int MV_PlayXMP(char *ptr, uint32_t ptrlength, int loopstart, int loopend, int pitchoffset, int vol,
-                   int left, int right, int priority, fix16_t volume, intptr_t callbackval)
+int MV_PlayXMP(char *, uint32_t, int, int, int, int, int, int, int, fix16_t, intptr_t)
 {
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(ptrlength);
-    UNREFERENCED_PARAMETER(loopstart);
-    UNREFERENCED_PARAMETER(loopend);
-    UNREFERENCED_PARAMETER(pitchoffset);
-    UNREFERENCED_PARAMETER(vol);
-    UNREFERENCED_PARAMETER(left);
-    UNREFERENCED_PARAMETER(right);
-    UNREFERENCED_PARAMETER(priority);
-    UNREFERENCED_PARAMETER(volume);
-    UNREFERENCED_PARAMETER(callbackval);
-
     MV_Printf(NoXMP);
     return -1;
 }
 
-int MV_PlayXMP3D(char *ptr, uint32_t ptrlength, int loophow, int pitchoffset, int angle,
-                     int distance, int priority, fix16_t volume, intptr_t callbackval)
+int MV_PlayXMP3D(char *, uint32_t, int, int, int, int, int, fix16_t, intptr_t)
 {
-    UNREFERENCED_PARAMETER(ptr);
-    UNREFERENCED_PARAMETER(ptrlength);
-    UNREFERENCED_PARAMETER(loophow);
-    UNREFERENCED_PARAMETER(pitchoffset);
-    UNREFERENCED_PARAMETER(angle);
-    UNREFERENCED_PARAMETER(distance);
-    UNREFERENCED_PARAMETER(priority);
-    UNREFERENCED_PARAMETER(volume);
-    UNREFERENCED_PARAMETER(callbackval);
-
     MV_Printf(NoXMP);
     return -1;
 }

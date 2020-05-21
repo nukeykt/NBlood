@@ -1527,20 +1527,17 @@ void aiInitSprite(spritetype *pSprite)
     DUDEEXTRA *pDudeExtra = &gDudeExtra[pSprite->extra];
     pDudeExtra->at4 = 0;
     pDudeExtra->at0 = 0;
+
     switch (pSprite->type) {
-#ifdef NOONE_EXTENSIONS
-    case kDudeModernCustom: {
-        DUDEEXTRA_at6_u1* pDudeExtraE = &gDudeExtra[nXSprite].at6.u1;
-        pDudeExtraE->at8 = pDudeExtraE->at0 = 0;
-        aiGenDudeNewState(pSprite, &genDudeIdleL);
-        genDudePrepare(pSprite);
-        break;
-    }
+    #ifdef NOONE_EXTENSIONS
+    case kDudeModernCustom:
+        aiGenDudeInitSprite(pSprite, pXSprite);
+        genDudePrepare(pSprite, kGenDudePropertyAll);
+        return;
     case kDudeModernCustomBurning:
-        aiGenDudeNewState(pSprite, &genDudeBurnGoto);
-        pXSprite->burnTime = 1200;
-        break;
-#endif
+        aiGenDudeInitSprite(pSprite, pXSprite);
+        return;
+    #endif
     case kDudeCultistTommy:
     case kDudeCultistShotgun:
     case kDudeCultistTesla:
@@ -1742,11 +1739,7 @@ void aiInitSprite(spritetype *pSprite)
     case kDudePodFire:
     case kDudeTentacleFire:
     case kDudeTentacleMother:
-        if (gModernMap && (pSprite->cstat & CSTAT_SPRITE_YFLIP)) {
-            if (!(pSprite->flags & kModernTypeFlag1)) // don't add autoaim for player if hitag 1 specified in editor.
-                pSprite->flags = kHitagAutoAim;
-            break;
-        }
+        if (gModernMap && (pSprite->cstat & CSTAT_SPRITE_YFLIP)) break;
         fallthrough__;
     // go default
     #endif

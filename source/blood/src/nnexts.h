@@ -42,6 +42,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // CONSTANTS
 // additional non-thing proximity, sight and physics sprites 
 #define kMaxSuperXSprites 128
+#define kMaxTrackingConditions 64
+#define kMaxTracedObjects 32 // per one tracking condition
 
 // additional physics attributes for debris sprites
 #define kPhysDebrisFly 0x0008 // *debris* affected by negative gravity (fly instead of falling, DO NOT mess with kHitagAutoAim)
@@ -50,16 +52,33 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define kPhysDebrisExplode 0x0800 // *debris* can be affected by explosions
 
 // *modern types only hitag*
-#define kModernTypeFlag0 0x0
-#define kModernTypeFlag1 0x1
-#define kModernTypeFlag2 0x2
-#define kModernTypeFlag3 0x3
+#define kModernTypeFlag0 0x0000
+#define kModernTypeFlag1 0x0001
+#define kModernTypeFlag2 0x0002
+#define kModernTypeFlag3 0x0003
+#define kModernTypeFlag4 0x0004
 
 #define kMaxRandomizeRetries 16
+#define kPercFull 100
+#define kCondRange 100
+
+
+
+// modern statnums
+enum {
+kStatModernBase                     = 20,
+kStatModernDudeTargetChanger        = kStatModernBase,
+kStatModernCondition                = 21,
+kStatModernEventRedirector          = 22,
+kStatModernPlayerLinker             = 23,
+kStatModernBrokenDudeLeech          = 24,
+kStatModernQavScene                 = 25,
+kStatModernTmp                      = 39,
+kStatModernMax                      = 40,
+};
 
 // modern sprite types
 enum {
-kStatModernDudeTargetChanger        = 20,
 kModernCustomDudeSpawn              = 24,
 kModernRandomTX                     = 25,
 kModernSequentialTX                 = 26,
@@ -85,6 +104,8 @@ kModernThingTNTProx                 = 433, // detects only players
 kModernThingThrowableRock           = 434, // does small damage if hits target
 kModernThingEnemyLifeLeech          = 435, // the same as normal, except it aims in specified target only
 kModernPlayerControl                = 500, /// WIP
+kModernCondition                    = 501, /// WIP, sends command only if specified conditions == true
+kModernConditionFalse               = 502, /// WIP, sends command only if specified conditions != true
 kGenModernMissileUniversal          = 704,
 kGenModernSound                     = 708,
 };
@@ -103,6 +124,27 @@ OBJ_SPRITE                          = 3,
 OBJ_SECTOR                          = 6,
 };
 
+enum {
+kCondMixedBase                      = 100,
+kCondMixedMax                       = 200,
+kCondWallBase                       = 200,
+kCondWallMax                        = 300,
+kCondSectorBase                     = 300,
+kCondSectorMax                      = 400,
+kCondPlayerBase                     = 400,
+kCondPlayerMax                      = 450,
+kCondDudeBase                       = 450,
+kCondDudeMax                        = 500,
+kCondSpriteBase                     = 500,
+kCondSpriteMax                      = 600,
+};
+
+enum {
+kCondSerialSector                   = 100000,
+kCondSerialWall                     = 200000,
+kCondSerialSprite                   = 300000,
+kCondSerialMax                      = 400000,
+};
 
 // - STRUCTS ------------------------------------------------------------------
 struct SPRITEMASS { // sprite mass info for getSpriteMassBySize();
@@ -133,27 +175,54 @@ struct VECTORINFO_EXTRA {
 struct MISSILEINFO_EXTRA {
     int fireSound[2]; // predefined fire sounds. used by kDudeModernCustom, but can be used for something else.
     bool dmgType[kDamageMax]; // list of damages types missile can use
+    bool allowImpact; // allow to trigger object with Impact flag enabled with this missile
+};
+
+struct DUDEINFO_EXTRA {
+    bool flying;    // used by kModernDudeTargetChanger (ai fight)
+    bool melee;     // used by kModernDudeTargetChanger (ai fight)
+    bool annoying;  // used by kModernDudeTargetChanger (ai fight)
 };
 
 struct TRPLAYERCTRL { // this one for controlling the player using triggers (movement speed, jumps and other stuff)
     QAVSCENE qavScene;
 };
 
+struct OBJECTS_TO_TRACK {
+    signed int type:     3;
+    unsigned int index:  16;
+    unsigned int cmd:    8;
+};
+
+struct TRCONDITION {
+    signed   int xindex:    16;
+    unsigned int length:    8;
+    OBJECTS_TO_TRACK obj[kMaxTracedObjects];
+};
+
+
+
 // - VARIABLES ------------------------------------------------------------------
 extern bool gTeamsSpawnUsed;
+extern bool gEventRedirectsUsed;
 extern ZONE gStartZoneTeam1[kMaxPlayers];
 extern ZONE gStartZoneTeam2[kMaxPlayers];
 extern THINGINFO_EXTRA gThingInfoExtra[kThingMax];
 extern VECTORINFO_EXTRA gVectorInfoExtra[kVectorMax];
 extern MISSILEINFO_EXTRA gMissileInfoExtra[kMissileMax];
+extern DUDEINFO_EXTRA gDudeInfoExtra[kDudeMax];
 extern TRPLAYERCTRL gPlayerCtrl[kMaxPlayers];
 extern SPRITEMASS gSpriteMass[kMaxXSprites];
+extern TRCONDITION gCondition[kMaxTrackingConditions];
 extern short gProxySpritesList[kMaxSuperXSprites];
 extern short gSightSpritesList[kMaxSuperXSprites];
 extern short gPhysSpritesList[kMaxSuperXSprites];
+extern short gImpactSpritesList[kMaxSuperXSprites];
 extern short gProxySpritesCount;
 extern short gSightSpritesCount;
 extern short gPhysSpritesCount;
+extern short gImpactSpritesCount;
+extern short gTrackingCondsCount;
 
 // - FUNCTIONS ------------------------------------------------------------------
 bool nnExtEraseModernStuff(spritetype* pSprite, XSPRITE* pXSprite);
@@ -161,6 +230,8 @@ void nnExtInitModernStuff(bool bSaveLoad);
 void nnExtProcessSuperSprites(void);
 bool nnExtIsImmune(spritetype* pSprite, int dmgType, int minScale = 16);
 int nnExtRandom(int a, int b);
+void nnExtResetGlobals();
+void nnExtTriggerObject(int objType, int objIndex, int command);
 //  -------------------------------------------------------------------------   //
 spritetype* randomDropPickupObject(spritetype* pSprite, short prevItem);
 spritetype* randomSpawnDude(spritetype* pSprite);
@@ -181,15 +252,12 @@ void aiSetGenIdleState(spritetype* pSprite, XSPRITE* pXSprite);
 int aiFightGetTargetDist(spritetype* pSprite, DUDEINFO* pDudeInfo, spritetype* pTarget);
 int aiFightGetFineTargetDist(spritetype* pSprite, spritetype* pTarget);
 bool aiFightDudeCanSeeTarget(XSPRITE* pXDude, DUDEINFO* pDudeInfo, spritetype* pTarget);
-bool aiFightIsAnnoyingUnit(spritetype* pDude);
 bool aiFightUnitCanFly(spritetype* pDude);
 bool aiFightIsMeleeUnit(spritetype* pDude);
 bool aiFightDudeIsAffected(XSPRITE* pXDude);
 bool aiFightMatesHaveSameTarget(XSPRITE* pXLeader, spritetype* pTarget, int allow);
 bool aiFightGetDudesForBattle(XSPRITE* pXSprite);
-inline bool aiFightIsMateOf(XSPRITE* pXDude, XSPRITE* pXSprite) {
-    return (pXDude->rxID == pXSprite->rxID);
-}
+bool aiFightIsMateOf(XSPRITE* pXDude, XSPRITE* pXSprite);
 void aiFightAlarmDudesInSight(spritetype* pSprite, int max);
 void aiFightActivateDudes(int rx);
 void aiFightFreeTargets(int nSprite);
@@ -213,23 +281,26 @@ void useSectorLigthChanger(XSPRITE* pXSource, XSECTOR* pXSector);
 void useTargetChanger(XSPRITE* pXSource, spritetype* pSprite);
 void usePictureChanger(XSPRITE* pXSource, int objType, int objIndex);
 void usePropertiesChanger(XSPRITE* pXSource, short objType, int objIndex);
+void useSequentialTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState);
+void useRandomTx(XSPRITE* pXSource, COMMAND_ID cmd, bool setState);
+bool txIsRanged(XSPRITE* pXSource);
+void seqTxSendCmdAll(XSPRITE* pXSource, int nIndex, COMMAND_ID cmd, bool modernSend);
 //  -------------------------------------------------------------------------   //
-void trPlayerCtrlLink(XSPRITE* pXSource, PLAYER* pPlayer);
+void trPlayerCtrlLink(XSPRITE* pXSource, PLAYER* pPlayer, bool checkCondition);
 void trPlayerCtrlSetRace(XSPRITE* pXSource, PLAYER* pPlayer);
-void trPlayerCtrlStartScene(XSPRITE* pXSource, PLAYER* pPlayer);
-void trPlayerCtrlStopScene(XSPRITE* pXSource, PLAYER* pPlayer);
+void trPlayerCtrlStartScene(XSPRITE* pXSource, PLAYER* pPlayer, bool force);
+void trPlayerCtrlStopScene(PLAYER* pPlayer);
 void trPlayerCtrlSetMoveSpeed(XSPRITE* pXSource, PLAYER* pPlayer);
 void trPlayerCtrlSetJumpHeight(XSPRITE* pXSource, PLAYER* pPlayer);
 void trPlayerCtrlSetScreenEffect(XSPRITE* pXSource, PLAYER* pPlayer);
 void trPlayerCtrlSetLookAngle(XSPRITE* pXSource, PLAYER* pPlayer);
 void trPlayerCtrlEraseStuff(XSPRITE* pXSource, PLAYER* pPlayer);
 void trPlayerCtrlGiveStuff(XSPRITE* pXSource, PLAYER* pPlayer, TRPLAYERCTRL* pCtrl);
-void trPlayerCtrlUsePackItem(XSPRITE* pXSource, PLAYER* pPlayer);
+void trPlayerCtrlUsePackItem(XSPRITE* pXSource, PLAYER* pPlayer, int evCmd);
 //  -------------------------------------------------------------------------   //
 void modernTypeTrigger(int type, int nDest, EVENT event);
 char modernTypeSetSpriteState(int nSprite, XSPRITE* pXSprite, int nState);
 bool modernTypeOperateSprite(int nSprite, spritetype* pSprite, XSPRITE* pXSprite, EVENT event);
-bool modernTypeLinkSprite(spritetype* pSprite, XSPRITE* pXSprite, EVENT event);
 bool modernTypeOperateWall(int nWall, walltype* pWall, XWALL* pXWall, EVENT event);
 void modernTypeSendCommand(int nSprite, int channel, COMMAND_ID command);
 //  -------------------------------------------------------------------------   //
@@ -262,6 +333,23 @@ void windGenStopWindOnSectors(XSPRITE* pXSource);
 int getSpriteMassBySize(spritetype* pSprite);
 bool ceilIsTooLow(spritetype* pSprite);
 void levelEndLevelCustom(int nLevel);
+int useCondition(spritetype* pSource, XSPRITE* pXSource, EVENT event);
+bool condPush(XSPRITE* pXSprite, int objType, int objIndex);
+bool condRestore(XSPRITE* pXSprite);
+bool condCmp(int val, int arg1, int arg2, int comOp);
+bool condCmpne(int arg1, int arg2, int comOp);
+void condError(XSPRITE* pXCond, const char* pzFormat, ...);
+bool condCheckMixed(XSPRITE* pXCond, EVENT event, int cmpOp, bool PUSH);
+bool condCheckSector(XSPRITE* pXCond, int cmpOp, bool PUSH);
+bool condCheckWall(XSPRITE* pXCond, int cmpOp, bool PUSH);
+bool condCheckSprite(XSPRITE* pXCond, int cmpOp, bool PUSH);
+bool condCheckPlayer(XSPRITE* pXCond, int cmpOp, bool PUSH);
+bool condCheckDude(XSPRITE* pXCond, int cmpOp, bool PUSH);
+void condUpdateObjectIndex(int objType, int oldIndex, int newIndex);
+XSPRITE* evrListRedirectors(int objType, int objXIndex, XSPRITE* pXRedir, int* tx);
+XSPRITE* evrIsRedirector(int nSprite);
+int listTx(XSPRITE* pXRedir, int tx);
+void seqSpawnerOffSameTx(XSPRITE* pXSource);
 #endif
 
 ////////////////////////////////////////////////////////////////////////

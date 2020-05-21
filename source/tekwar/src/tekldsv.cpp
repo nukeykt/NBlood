@@ -72,10 +72,12 @@ loadgame(int loadno)
      short     dummyscreensize;
      int       rv;
      intptr_t tmpanimates[MAXANIMATES];
+     char filename[BMAX_PATH];
 
-     sprintf((char *)tempbuf,"savegam%d.tek",loadno);
-     if( (fil=open((char *)tempbuf,O_BINARY|O_RDWR,S_IREAD)) == -1 ) {
-          return(-1);
+     sprintf(filename, "savegam%d.tek", loadno);
+     if ((fil = open(filename, O_BINARY | O_RDWR, S_IREAD)) == -1)
+     {
+         return -1;
      }
 
      lseek(fil, 0, SEEK_SET);
@@ -249,6 +251,7 @@ loadgame(int loadno)
      read(fil,startdmost,MAXXDIM<<1);
     #endif
 
+     #if 0 // TODO
      read(fil,&numpalookups,2);
 
      read(fil,&visibility,4);
@@ -256,6 +259,7 @@ loadgame(int loadno)
      read(fil,&parallaxyoffs,4);
      read(fil,pskyoff,MAXPSKYTILES<<1);
      read(fil,&pskybits,2);
+     #endif
 
      read(fil,show2dsector,MAXSECTORS>>3);
      read(fil,show2dwall,MAXWALLS>>3);
@@ -463,6 +467,7 @@ savegame(int saveno)
      rv=write(fil,startdmost,MAXXDIM<<1);
     #endif
  
+     #if 0 // TODO
      rv=write(fil,&numpalookups,2);
 
      rv=write(fil,&visibility,4);
@@ -470,6 +475,7 @@ savegame(int saveno)
      rv=write(fil,&parallaxyoffs,4);
      rv=write(fil,pskyoff,MAXPSKYTILES<<1);
      rv=write(fil,&pskybits,2);
+     #endif
 
      rv=write(fil,show2dsector,MAXSECTORS>>3);
      rv=write(fil,show2dwall,MAXWALLS>>3);

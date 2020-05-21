@@ -22,6 +22,7 @@ kenmovesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordis
      short retval, dasectnum, tempshort;
      unsigned int dcliptype;
      spritetype *spr;
+     vec3_t pos;
 
     #ifdef PLRSPRDEBUG
      if( isaplayersprite(spritenum) ) {
@@ -38,14 +39,16 @@ kenmovesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordis
      spr = &sprite[spritenum];
 
      if ((spr->cstat&128) == 0)
-          zoffs = -((tilesizy[spr->picnum]*spr->yrepeat)<<1);
+          zoffs = -((tilesiz[spr->picnum].y*spr->yrepeat)<<1);
      else
           zoffs = 0;
 
      dasectnum = spr->sectnum;  //Can't modify sprite sectors directly becuase of linked lists
      daz = spr->z+zoffs;  //Must do this if not using the new centered centering (of course)
-     retval = clipmove(&spr->x,&spr->y,&daz,&dasectnum,dx,dy,
-                                   ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+
+     pos.x = spr->x; pos.y = spr->y; pos.z = daz;
+     retval = clipmove(&pos,&dasectnum,dx,dy,((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+     spr->x = pos.x; spr->y = pos.y; daz = pos.z;
 
      if ((dasectnum != spr->sectnum) && (dasectnum >= 0))
           changespritesect(spritenum,dasectnum);
@@ -53,9 +56,10 @@ kenmovesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordis
           //Set the blocking bit to 0 temporarly so getzrange doesn't pick up
           //its own sprite
      tempshort = spr->cstat; spr->cstat &= ~1;
-     getzrange(spr->x,spr->y,spr->z-1,spr->sectnum,
-                     &globhiz,&globhihit,&globloz,&globlohit,
-                     ((int)spr->clipdist)<<2,dcliptype);
+
+     pos.x = spr->x; pos.y = spr->y; pos.z = spr->z-1;
+     getzrange(&pos,spr->sectnum,&globhiz,&globhihit,&globloz,&globlohit, ((int)spr->clipdist)<<2,dcliptype);
+
      spr->cstat = tempshort;
 
      daz = spr->z+zoffs + dz;
@@ -75,6 +79,7 @@ floatmovesprite(short spritenum, int dx, int dy, int UNUSED(dz), int ceildist, i
      short retval, dasectnum;
      unsigned int dcliptype;
      spritetype *spr;
+     vec3_t pos;
 
     #ifdef PLRSPRDEBUG
      if( isaplayersprite(spritenum) ) {
@@ -91,14 +96,16 @@ floatmovesprite(short spritenum, int dx, int dy, int UNUSED(dz), int ceildist, i
      spr = &sprite[spritenum];
 
      if ((spr->cstat&128) == 0)
-          zoffs = -((tilesizy[spr->picnum]*spr->yrepeat)<<1);
+          zoffs = -((tilesiz[spr->picnum].y*spr->yrepeat)<<1);
      else
           zoffs = 0;
 
      dasectnum = spr->sectnum;  //Can't modify sprite sectors directly becuase of linked lists
      daz = spr->z+zoffs;  //Must do this if not using the new centered centering (of course)
-     retval = clipmove(&spr->x,&spr->y,&daz,&dasectnum,dx,dy,
-                                   ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+
+     pos.x = spr->x; pos.y = spr->y; pos.z = daz;
+     retval = clipmove(&pos,&dasectnum,dx,dy, ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+     spr->x = pos.x; spr->y = pos.y;
 
      if ((dasectnum != spr->sectnum) && (dasectnum >= 0))
           changespritesect(spritenum,dasectnum);
@@ -116,6 +123,7 @@ movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordist, 
      short          failedsectnum;
      unsigned int dcliptype;
      spritetype     *spr;
+     vec3_t        pos;
 
     #ifdef PLRSPRDEBUG
      if( isaplayersprite(spritenum) ) {
@@ -132,7 +140,7 @@ movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordist, 
      spr = &sprite[spritenum];
 
      if ((spr->cstat&128) == 0)
-          zoffs = -((tilesizy[spr->picnum]*spr->yrepeat)<<1);
+          zoffs = -((tilesiz[spr->picnum].y*spr->yrepeat)<<1);
      else
           zoffs = 0;
 
@@ -141,11 +149,13 @@ movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordist, 
      py=spr->y;
      pz=spr->z;
      daz = spr->z+zoffs; 
-     retval = clipmove(&spr->x,&spr->y,&daz,&dasectnum,dx,dy,
-                                   ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+
+     pos.x = spr->x; pos.y = spr->y; pos.z = daz;
+     retval = clipmove(&pos,&dasectnum,dx,dy, ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
      if( (dasectnum != spr->sectnum) && (dasectnum >= 0) ) {
           changespritesect(spritenum,dasectnum);
      }
+     spr->x = pos.x; spr->y = pos.y;
 
      if( dasectnum >= 0 && (sectptr[dasectnum]->lotag == 4) && (spr->extra != -1) ) {
           switch( spr->statnum ) {
@@ -159,9 +169,12 @@ movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordist, 
      }
 
      tempshort = spr->cstat; spr->cstat &= ~1;
-     getzrange(spr->x,spr->y,spr->z-1,spr->sectnum,
+
+     pos.x = spr->x; pos.y = spr->y; pos.z = spr->z-1;
+     getzrange(&pos,spr->sectnum,
                      &globhiz,&globhihit,&globloz,&globlohit,
                      ((int)spr->clipdist)<<2,dcliptype);
+
      spr->cstat = tempshort;
      daz = spr->z+zoffs + dz;
      if( (daz <= globhiz) || (daz > globloz) ) {
@@ -175,11 +188,13 @@ movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordist, 
      if( (globloz != pz) && (spr->extra >= 0) && (spr->extra < MAXSPRITES) ) {
           spr->z=globloz;
           deltaz=labs(pz-globloz);
-          jumpz=tilesizy[spr->picnum]+(spr->yrepeat-64);
+          jumpz=tilesiz[spr->picnum].y+(spr->yrepeat-64);
           jumpz<<=8;
           if( deltaz > jumpz ) {
                failedsectnum=spr->sectnum;
-               setsprite(spritenum,px,py,pz);
+               vec3_t pos;
+               pos.x = px; pos.y = py; pos.z = pz;
+               setsprite(spritenum,&pos);
                retval=failedsectnum+16384;
           }
      }
@@ -190,13 +205,13 @@ movesprite(short spritenum, int dx, int dy, int dz, int ceildist, int flordist, 
      return(retval);
 }
 
-short
-flymovesprite(short spritenum, int dx, int dy, int UNUSED(dz), int ceildist, int flordist, char cliptype)
+short flymovesprite(short spritenum, int dx, int dy, int UNUSED(dz), int ceildist, int flordist, char cliptype)
 {
      int           daz;
      short          retval, dasectnum, tempshort;
-    unsigned int dcliptype;
+     unsigned int dcliptype;
      spritetype *spr;
+     vec3_t pos;
 
     #ifdef PLRSPRDEBUG
      if( isaplayersprite(spritenum) ) {
@@ -204,7 +219,8 @@ flymovesprite(short spritenum, int dx, int dy, int UNUSED(dz), int ceildist, int
      }
     #endif
     
-     switch (cliptype) {
+     switch (cliptype)
+     {
           case NORMALCLIP: dcliptype = CLIPMASK0; break;
           case PROJECTILECLIP: dcliptype = CLIPMASK1; break;
           case CLIFFCLIP: dcliptype = CLIPMASK0; break;
@@ -212,24 +228,27 @@ flymovesprite(short spritenum, int dx, int dy, int UNUSED(dz), int ceildist, int
 
      spr = &sprite[spritenum];
 
-     dasectnum = spr->sectnum; 
-     retval = clipmove(&spr->x,&spr->y,&spr->z,&dasectnum,dx,dy,
-                                   ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+     dasectnum = spr->sectnum;
+
+     pos.x = spr->x; pos.y = spr->y; pos.z = spr->z;
+     retval = clipmove(&pos,&dasectnum,dx,dy, ((int)spr->clipdist)<<2,ceildist,flordist,dcliptype);
+     spr->x = pos.x; spr->y = pos.y; spr->z = pos.z;
 
      if ((dasectnum != spr->sectnum) && (dasectnum >= 0))
           changespritesect(spritenum,dasectnum);
 
-     if( spr->statnum != PINBALL ) {
-          tempshort = spr->cstat; spr->cstat &= ~1;
-          getzrange(spr->x,spr->y,spr->z-1,spr->sectnum,
-                          &globhiz,&globhihit,&globloz,&globlohit,
-                          ((int)spr->clipdist)<<2,dcliptype);
-          spr->cstat = tempshort;
-          daz=(globloz+globhiz);
-          spr->z=(daz>>1);
+     if (spr->statnum != PINBALL)
+     {
+         tempshort = spr->cstat; spr->cstat &= ~1;
+
+         pos.x = spr->x; pos.y = spr->y; pos.z = spr->z - 1;
+         getzrange(&pos, spr->sectnum, &globhiz, &globhihit, &globloz, &globlohit, ((int)spr->clipdist) << 2, dcliptype);
+         spr->cstat = tempshort;
+         daz = (globloz + globhiz);
+         spr->z = (daz >> 1);
      }
  
-     return(retval);
+     return retval;
 }
 
 void
@@ -238,10 +257,10 @@ analyzesprites(int dax, int day)
      int           i, k;
      int            ext;
      point3d        *ospr;
-     spritetype     *tspr;
+     tspritetype     *tspr;
 
-     for( i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++ ) {
-
+     for( i=0,tspr=&tsprite[0]; i<spritesortcnt; i++,tspr++ )
+     {
           ext=tspr->extra;
           if( validext(ext) ) {
                if( rearviewdraw == 0 ) {
@@ -459,7 +478,7 @@ checktouchsprite(short snum, short sectnum)
      while (i != -1)
      {
           nexti = nextspritesect[i];
-          if ((labs(posx[snum]-sprite[i].x)+labs(posy[snum]-sprite[i].y) < 512) && (labs((posz[snum]>>8)-((sprite[i].z>>8)-(tilesizy[sprite[i].picnum]>>1))) <= 40))
+          if ((labs(posx[snum]-sprite[i].x)+labs(posy[snum]-sprite[i].y) < 512) && (labs((posz[snum]>>8)-((sprite[i].z>>8)-(tilesiz[sprite[i].picnum].y>>1))) <= 40))
           {
                // must jive with tekinitplayer settings
                switch( difficulty ) {

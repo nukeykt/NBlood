@@ -188,6 +188,7 @@ enum gametokens
     T_LOCKED,
     T_HIDDEN,
     T_USERCONTENT,
+    T_LOCALIZATION,
 };
 
 static void gameTimerHandler(void)
@@ -971,9 +972,21 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                                      pPlayer->opos.y + mulscale16(pPlayer->pos.y - pPlayer->opos.y, smoothRatio),
                                      pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
 
-            CAMERA(pos)      = camVect;
-            CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
-            CAMERA(q16horiz) = pPlayer->q16horiz + pPlayer->q16horizoff;
+            CAMERA(pos) = camVect;
+
+            if (pPlayer->wackedbyactor >= 0)
+            {
+                CAMERA(q16ang)   = pPlayer->oq16ang
+                                 + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)
+                                 + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16horiz) = pPlayer->oq16horiz + pPlayer->oq16horizoff
+                                 + mulscale16((pPlayer->q16horiz + pPlayer->q16horizoff - pPlayer->oq16horiz - pPlayer->oq16horizoff), smoothRatio);
+            }
+            else
+            {
+                CAMERA(q16ang)   = pPlayer->q16ang + fix16_from_int(pPlayer->look_ang);
+                CAMERA(q16horiz) = pPlayer->q16horiz + pPlayer->q16horizoff;
+            }
 
             if (ud.viewbob)
             {
@@ -5385,6 +5398,7 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
         { "renamefile",      T_RENAMEFILE       },
         { "globalgameflags", T_GLOBALGAMEFLAGS  },
         { "newgamechoices",  T_NEWGAMECHOICES   },
+        { "localization"  ,  T_LOCALIZATION     },
     };
 
     static const tokenlist soundTokens[] =
@@ -5794,6 +5808,21 @@ static int parsedefinitions_game(scriptfile *pScript, int firstPass)
 
             break;
         }
+
+        case T_LOCALIZATION: // silence game-side warnings due to strings like "Music"
+        {
+            char * localeName;
+            if (scriptfile_getstring(pScript, &localeName))
+                break;
+
+            char * blockend;
+            if (scriptfile_getbraces(pScript, &blockend))
+                break;
+
+            pScript->textptr = blockend+1;
+            break;
+        }
+
         case T_EOF: return 0;
         default: break;
         }
@@ -6940,6 +6969,12 @@ MAIN_LOOP_RESTART:
 
     do //main loop
     {
+        if (gameHandleEvents() && quitevent)
+        {
+            KB_KeyDown[sc_Escape] = 1;
+            quitevent = 0;
+        }
+
         static bool frameJustDrawn;
         bool gameUpdate = false;
         double gameUpdateStartTime = timerGetHiTicks();
@@ -7032,12 +7067,6 @@ MAIN_LOOP_RESTART:
         {
             if (!g_saveRequested)
             {
-                if (gameHandleEvents() && quitevent)
-                {
-                    KB_KeyDown[sc_Escape] = 1;
-                    quitevent = 0;
-                }
-
                 // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
                 CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
 

@@ -13,7 +13,7 @@ GLenum BuildGLError;
 void BuildGLErrorCheck(void)
 {
     volatile GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR)
+    while (err = glGetError(), err != GL_NO_ERROR)
     {
         BuildGLError = err; // set a watchpoint/breakpoint here
     }

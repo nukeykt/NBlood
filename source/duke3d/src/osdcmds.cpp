@@ -1577,6 +1577,16 @@ static int osdcmd_cvar_set_multi(osdcmdptr_t parm)
     return r;
 }
 
+static int osdcmd_locale(osdcmdptr_t parm)
+{
+    if (parm->numparms != 1)
+        return OSDCMD_SHOWHELP;
+
+    localeSetCurrent(parm->parms[0]);
+
+    return OSDCMD_OK;
+}
+
 #define CVAR_BOOL_OPTSTR ":\n 0: disabled\n 1: enabled"
 
 int32_t registerosdcommands(void)
@@ -1796,6 +1806,9 @@ int32_t registerosdcommands(void)
 #ifdef DEBUGGINGAIDS
     OSD_RegisterFunction("inittimer","debug", osdcmd_inittimer);
 #endif
+
+    OSD_RegisterFunction("locale","locale: changes the locale", osdcmd_locale);
+
     OSD_RegisterFunction("music","music E<ep>L<lev>: change music", osdcmd_music);
 
     OSD_RegisterFunction("noclip","noclip: toggles clipping mode", osdcmd_noclip);

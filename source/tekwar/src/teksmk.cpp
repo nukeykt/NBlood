@@ -9,115 +9,101 @@
 #include "baselayer.h"
 #include "pragmas.h"
 #include "cache1d.h"
-
 #include "tekwar.h"
+#include "SmackerDecoder.h"
 
-#include "smacker.h"
+SmackerHandle hSMK;
+uint8_t* pFrame = nullptr;
+uint8_t* pMenuBackground = nullptr;
+uint32_t nWidth, nHeight;
 
-static smk smkmenu;
-static unsigned char *smkbuf;
+#define kSMKPal 5
 #define SMKPICNUM (MAXTILES-1)
 
-void
-smkplayseq(char *name)
+
+void smkplayseq(const char *name)
 {
-     debugprintf("smkplayseq(\"%s\")\n", name);
+    debugprintf("smkplayseq(\"%s\")\n", name);
 }
 
-void
-smkopenmenu(char *name)
+void smkopenmenu(const char *name)
 {
-     unsigned long xsiz, ysiz;
-     int fh, flen;
+    hSMK = Smacker_Open(name);
+    if (!hSMK.isValid)
+    {
+        return;
+    }
 
-     fh = kopen4load(name, 0);
-     if (fh < 0) {
-          debugprintf("smkopenmenu(\"%s\") failed\n", name);
-          return;
-     }
+    Smacker_GetFrameSize(hSMK, nWidth, nHeight);
+    Smacker_GotoFrame(hSMK, 0);
 
-     flen = kfilelength(fh);
-     smkbuf = (unsigned char *)malloc(flen);
+    Smacker_GetPalette(hSMK, palette);
+    paletteSetColorTable(kSMKPal, palette);
+    videoSetPalette(/*gBrightness >> 2*/8, kSMKPal, 8 + 2);
 
-     if (smkbuf == NULL) {
-          kclose(fh);
-          debugprintf("smkopenmenu(\"%s\") malloc of %d bytes failed\n", name, flen);
-          return;
-     }
+    pFrame = (uint8_t*)Xmalloc(nWidth * nHeight);
+    pMenuBackground = (uint8_t*)Xmalloc(nWidth * nHeight);
 
-     kread(fh, smkbuf, flen);
-     kclose(fh);
+    walock[SMKPICNUM] = CACHE1D_PERMANENT;
+    waloff[SMKPICNUM] = (intptr_t)pFrame;
+    tileSetSize(SMKPICNUM, nHeight, nWidth);
+    tileInvalidate(SMKPICNUM, 0, 1 << 4);  // JBF 20031228
     
-     smkmenu = smk_open_memory(smkbuf, flen);
-     if (!smkmenu) {
-          free(smkbuf);
-          smkbuf = 0;
-          debugprintf("smk_open_file(\"%s\") returned null\n", name);
-          return;
-     }
-
-     // Smacker frames are decoded linewise, but BUILD expects its
-     // tiles columnwise, so we will treat the tile as though it's
-     // rotated 90 degrees and flipped horizontally.
-    
-     smk_enable_all(smkmenu, SMK_VIDEO_TRACK);
-     smk_info_video(smkmenu, &xsiz, &ysiz, NULL);
-     tilesizx[SMKPICNUM] = ysiz;
-     tilesizy[SMKPICNUM] = xsiz;
+    // first frame is menu background - keep a copy around for later
+    Smacker_GetFrame(hSMK, pMenuBackground);
+    memcpy(pFrame, pMenuBackground, nWidth * nHeight);
 }
 
-void
-smkmenuframe(int fn)
+void smkmenuframe(int fn)
 {
-     unsigned char spal[768], *palptr;
-     int i;
-    
-     if (!smkmenu) {
-          return;
-     }
-    
-     // Render the first frame as the menu background.
-     smk_first(smkmenu);
-    
-     // Next, render the particular frame requested.
-     smk_render_frame(smkmenu, fn-1);
+    if (!hSMK.isValid)
+        return;
 
-     // Convert the palette to the VGA (0-63) range BUILD uses.
-     palptr = smk_get_palette(smkmenu);
-     for (i=0; i<768; i++, palptr++) {
-          spal[i] = (*palptr) >> 2;
-     }
-    
-     waloff[SMKPICNUM] = (intptr_t)smk_get_video(smkmenu);
-     invalidatetile(SMKPICNUM, 0, -1);
+    Smacker_GetPalette(hSMK, palette);
+    paletteSetColorTable(kSMKPal, palette);
+    videoSetPalette(/*gBrightness >> 2*/8, kSMKPal, 8 + 2);
 
-     setbrightness(brightness, spal, 0);
+    tileInvalidate(SMKPICNUM, 0, 1 << 4);  // JBF 20031228
+
+    Smacker_GotoFrame(hSMK, fn - 1);
+    Smacker_GetFrame(hSMK, pFrame);
+
+    // replace transparent pixels on overlay with background pixel
+    for (int y = 0; y < nHeight; y++)
+    {
+        for (int x = 0; x < nWidth; x++)
+        {
+            uint32_t nPos = (y * nWidth) + x;
+            if (pFrame[nPos] == 232) {
+                pFrame[nPos] = pMenuBackground[nPos];
+            }
+        }
+    }
 }
 
-void
-smkshowmenu()
+void smkshowmenu()
 {
-     if (!smkmenu) {
-          return;
-     }
+    if (!hSMK.isValid)
+        return;
 
-     setview(0,0, xdim-1, ydim-1);
-     clearview(0);
-     rotatesprite(160<<16, 100<<16, divscale16(200, tilesizx[SMKPICNUM]),
-                 512, SMKPICNUM, 0, 0, 2+4, 0, 0, xdim-1, ydim-1);
-     nextpage();
+    videoSetViewableArea(0, 0, xdim - 1, ydim - 1);
+    videoClearViewableArea(0);
+    rotatesprite(160 << 16, 100 << 16, divscale16(200, tilesiz[SMKPICNUM].x),
+        512, SMKPICNUM, 0, 0, 2 + 4, 0, 0, xdim - 1, ydim - 1);
+
+    videoNextPage();
 }
 
-void
-smkclosemenu()
+void smkclosemenu()
 {
-     if (!smkmenu) {
-          return;
-     }
-    
-     waloff[SMKPICNUM] = 0;
-    
-     smk_close(smkmenu);
-     free(smkbuf);
-     smkbuf = 0;
+    if (!hSMK.isValid)
+        return;
+
+    Smacker_Close(hSMK);
+
+    walock[SMKPICNUM] = 0;
+    waloff[SMKPICNUM] = 0;
+    tileSetSize(SMKPICNUM, 0, 0);
+    Bfree(pFrame);
+    Bfree(pMenuBackground);
 }

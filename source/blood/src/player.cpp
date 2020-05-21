@@ -645,7 +645,7 @@ void playerStart(int nPlayer, int bNewLevel)
     PLAYER* pPlayer = &gPlayer[nPlayer];
     GINPUT* pInput = &pPlayer->input;
     ZONE* pStartZone = NULL;
-    
+
     // normal start position
     if (gGameOptions.nGameType <= 1)
         pStartZone = &gStartZone[nPlayer];
@@ -773,6 +773,22 @@ void playerStart(int nPlayer, int bNewLevel)
     pPlayer->weaponQav = -1;
     #ifdef NOONE_EXTENSIONS
     playerQavSceneReset(pPlayer); // reset qav scene
+    
+    // assign or update player's sprite index for conditions
+    if (gModernMap) {
+
+        for (int nSprite = headspritestat[kStatModernPlayerLinker]; nSprite >= 0; nSprite = nextspritestat[nSprite]) {
+            XSPRITE* pXCtrl = &xsprite[sprite[nSprite].extra];
+            if (pXCtrl->data1 == pPlayer->nPlayer + 1) {
+                int nSpriteOld = pXCtrl->sysData1;
+                trPlayerCtrlLink(pXCtrl, pPlayer, (nSpriteOld < 0) ? true : false);
+                if (nSpriteOld > 0)
+                    condUpdateObjectIndex(OBJ_SPRITE, nSpriteOld, pXCtrl->sysData1);
+            }
+        }
+
+    }
+
     #endif
     pPlayer->hand = 0;
     pPlayer->nWaterPal = 0;

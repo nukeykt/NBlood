@@ -63,6 +63,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "vis.h"
 #include "track.h"
 #include "interp.h"
+#include "interpso.h"
 
 
 #define SO_DRIVE_SOUND 2
@@ -1157,6 +1158,25 @@ GetDeltaAngle(short ang1, short ang2)
 
 }
 
+fix16_t
+GetDeltaQ16Angle(fix16_t ang1, fix16_t ang2)
+{
+    // Look at the smaller angle if > 1024 (180 degrees)
+    if (fix16_abs(ang1 - ang2) > fix16_from_int(1024))
+    {
+        if (ang1 <= fix16_from_int(1024))
+            ang1 += fix16_from_int(2048);
+
+        if (ang2 <= fix16_from_int(1024))
+            ang2 += fix16_from_int(2048);
+    }
+
+    //if (ang1 - ang2 == -fix16_from_int(1024))
+    //    return(fix16_from_int(1024));
+
+    return ang1 - ang2;
+}
+
 TARGET_SORT TargetSort[MAX_TARGET_SORT];
 unsigned TargetSortCount;
 
@@ -1304,7 +1324,6 @@ DoPlayerResetMovement(PLAYERp pp)
     pp->slide_xvect = 0;
     pp->slide_yvect = 0;
     pp->drive_angvel = 0;
-    pp->drive_oangvel = 0;
     RESET(pp->Flags, PF_PLAYER_MOVED);
 }
 
@@ -1337,6 +1356,7 @@ void
 DoPlayerTeleportToSprite(PLAYERp pp, SPRITEp sp)
 {
     pp->camq16ang = pp->q16ang = pp->oq16ang = fix16_from_int(sp->ang);
+    pp->camq16horiz = pp->q16horiz; // Ensure horiz is initially locked
     pp->posx = pp->oposx = pp->oldposx = sp->x;
     pp->posy = pp->oposy = pp->oldposy = sp->y;
 
@@ -1548,7 +1568,10 @@ DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel)
 
     if (!PedanticMode && (pq16ang == &pp->q16ang))
     {
-        *pq16ang = pp->input.q16ang;
+        SET(pp->Flags2, PF2_INPUT_CAN_TURN);
+        pp->q16ang = pp->input.q16ang;
+        if ((pp == &Player[myconnectindex]) || (pp == ppp)) // No coop view?
+            pp->oq16ang = pp->q16ang;
         sprite[pp->PlayerSprite].ang = fix16_to_int(*pq16ang);
         if (!Prediction)
         {
@@ -1629,9 +1652,7 @@ DoPlayerTurn(PLAYERp pp, fix16_t *pq16ang, fix16_t q16angvel)
         q16angvel += fix16_sdiv(q16angvel, fix16_from_int(4));
 
         *pq16ang += fix16_sdiv(fix16_mul(q16angvel, fix16_from_int(synctics)), fix16_from_int(32));
-        *pq16ang = NORM_Q16ANGLE(*pq16ang);
-        if (PedanticMode)
-            *pq16ang = fix16_floor(*pq16ang);
+        *pq16ang = PedanticQ16AngleFloor(NORM_Q16ANGLE(*pq16ang));
 
         // update players sprite angle
         // NOTE: It's also updated in UpdatePlayerSprite, but needs to be
@@ -1659,11 +1680,11 @@ DoPlayerTurnBoat(PLAYERp pp)
 
     if (sop->drive_angspeed)
     {
-        pp->drive_oangvel = pp->drive_angvel;
+        int drive_oangvel = pp->drive_angvel;
         pp->drive_angvel = mulscale16(fix16_to_int(pp->input.q16angvel), sop->drive_angspeed);
 
         angslide = sop->drive_angslide;
-        pp->drive_angvel = (pp->drive_angvel + (pp->drive_oangvel*(angslide-1)))/angslide;
+        pp->drive_angvel = (pp->drive_angvel + (drive_oangvel*(angslide-1)))/angslide;
 
         angvel = pp->drive_angvel;
     }
@@ -1691,11 +1712,11 @@ DoPlayerTurnTank(PLAYERp pp, int z, int floor_dist)
     {
         int angslide;
 
-        pp->drive_oangvel = pp->drive_angvel;
+        int drive_oangvel = pp->drive_angvel;
         pp->drive_angvel = mulscale16(fix16_to_int(pp->input.q16angvel), sop->drive_angspeed);
 
         angslide = sop->drive_angslide;
-        pp->drive_angvel = (pp->drive_angvel + (pp->drive_oangvel*(angslide-1)))/angslide;
+        pp->drive_angvel = (pp->drive_angvel + (drive_oangvel*(angslide-1)))/angslide;
 
         angvel = pp->drive_angvel;
     }
@@ -1724,11 +1745,11 @@ DoPlayerTurnTankRect(PLAYERp pp, int *x, int *y, int *ox, int *oy)
     {
         int angslide;
 
-        pp->drive_oangvel = pp->drive_angvel;
+        int drive_oangvel = pp->drive_angvel;
         pp->drive_angvel = mulscale16(fix16_to_int(pp->input.q16angvel), sop->drive_angspeed);
 
         angslide = sop->drive_angslide;
-        pp->drive_angvel = (pp->drive_angvel + (pp->drive_oangvel*(angslide-1)))/angslide;
+        pp->drive_angvel = (pp->drive_angvel + (drive_oangvel*(angslide-1)))/angslide;
 
         angvel = pp->drive_angvel;
     }
@@ -1773,11 +1794,11 @@ DoPlayerTurnTurret(PLAYERp pp)
     {
         int angslide;
 
-        pp->drive_oangvel = pp->drive_angvel;
+        int drive_oangvel = pp->drive_angvel;
         pp->drive_angvel = mulscale16(fix16_to_int(pp->input.q16angvel), sop->drive_angspeed);
 
         angslide = sop->drive_angslide;
-        pp->drive_angvel = (pp->drive_angvel + (pp->drive_oangvel*(angslide-1)))/angslide;
+        pp->drive_angvel = (pp->drive_angvel + (drive_oangvel*(angslide-1)))/angslide;
 
         angvel = pp->drive_angvel;
     }
@@ -1920,7 +1941,10 @@ DoPlayerHorizon(PLAYERp pp, fix16_t *pq16horiz, fix16_t q16aimvel)
 
     if (!PedanticMode && (pq16horiz == &pp->q16horiz))
     {
-        *pq16horiz = pp->input.q16horiz;
+        SET(pp->Flags2, PF2_INPUT_CAN_AIM);
+        pp->q16horiz = pp->input.q16horiz;
+        if ((pp == &Player[myconnectindex]) || (pp == ppp)) // No coop view?
+            pp->oq16horiz = pp->q16horiz;
         return;
     }
 
@@ -6503,7 +6527,6 @@ DoPlayerDeathMessage(PLAYERp pp, PLAYERp killer)
 void
 DoPlayerBeginDie(PLAYERp pp)
 {
-    extern SWBOOL ReloadPrompt;
     void KillAllPanelInv(PLAYERp pp);
     void DoPlayerDeathDrown(PLAYERp pp);
     void pWeaponForceRest(PLAYERp pp);
@@ -6534,6 +6557,10 @@ DoPlayerBeginDie(PLAYERp pp)
 
     if (GodMode)
         return;
+
+    // Ensure these are initially locked
+    pp->camq16ang = pp->q16ang;
+    pp->camq16horiz = pp->q16horiz;
 
     // Override any previous talking, death scream has precedance
     if (pp->PlayerTalking)
@@ -6847,6 +6874,9 @@ void DoPlayerDeathFollowKiller(PLAYERp pp)
     //DoPlayerDeathTilt(pp, pp->tilt_dest, 4 * synctics);
 
     // allow turning
+    if (TEST(pp->Flags, PF_DEAD_HEAD|PF_HEAD_CONTROL))
+        SET(pp->Flags2, PF2_INPUT_CAN_TURN);
+
     if ((TEST(pp->Flags, PF_DEAD_HEAD) && pp->input.q16angvel != 0) || TEST(pp->Flags, PF_HEAD_CONTROL))
     {
         // Allow them to turn fast
@@ -6860,15 +6890,15 @@ void DoPlayerDeathFollowKiller(PLAYERp pp)
     if (pp->Killer > -1)
     {
         SPRITEp kp = &sprite[pp->Killer];
-        short ang2,delta_ang;
+        fix16_t q16ang2, delta_q16ang;
 
         if (FAFcansee(kp->x, kp->y, SPRITEp_TOS(kp), kp->sectnum,
                       pp->posx, pp->posy, pp->posz, pp->cursectnum))
         {
-            ang2 = getangle(kp->x - pp->posx, kp->y - pp->posy);
+            q16ang2 = GetQ16AngleFromVect(kp->x - pp->posx, kp->y - pp->posy);
 
-            delta_ang = GetDeltaAngle(ang2, fix16_to_int(pp->q16ang));
-            pp->camq16ang = pp->q16ang = fix16_from_int(NORM_ANGLE(fix16_to_int(pp->q16ang) + (delta_ang >> 4)));
+            delta_q16ang = GetDeltaQ16Angle(q16ang2, pp->q16ang);
+            pp->camq16ang = pp->q16ang = NORM_Q16ANGLE(pp->q16ang + PedanticQ16AngleFloor(delta_q16ang >> 4));
         }
     }
 }
@@ -7607,6 +7637,7 @@ MoveSkipSavePos(void)
         pp->oposz = pp->posz;
         pp->oq16ang = pp->q16ang;
         pp->oq16horiz = pp->q16horiz;
+        pp->obob_z = pp->bob_z;
     }
 
     // save off stats for skip4
@@ -7867,7 +7898,6 @@ void PauseMultiPlay(void)
     static SWBOOL SavePrediction;
     PLAYERp pp;
     short pnum,p;
-    extern SWBOOL GamePaused;
 
     // check for pause of multi-play game
     TRAVERSE_CONNECT(pnum)
@@ -7923,11 +7953,9 @@ domovethings(void)
     extern int PlayClock;
     short i, pnum;
     int WeaponOperate(PLAYERp pp);
-    extern SWBOOL GamePaused;
     PLAYERp pp;
     SWBOOL MyCommPlayerQuit(void);
     extern unsigned int MoveThingsCount;
-    extern SWBOOL ReloadPrompt;
     extern int FinishTimer;
 
 
@@ -7994,6 +8022,7 @@ domovethings(void)
 
     updateinterpolations();                  // Stick at beginning of domovethings
     short_updateinterpolations();            // Stick at beginning of domovethings
+    so_updateinterpolations();               // Stick at beginning of domovethings
     MoveSkipSavePos();
 
 #if 0
@@ -8092,6 +8121,8 @@ domovethings(void)
         DoPlayerSectorUpdatePreMove(pp);
         ChopsCheck(pp);
 
+        // Reset flags used while tying input to framerate
+        RESET(pp->Flags2, PF2_INPUT_CAN_TURN|PF2_INPUT_CAN_AIM);
 //        extern SWBOOL ScrollMode2D;
         //if (!ScrollMode2D)
         (*pp->DoPlayerAction)(pp);

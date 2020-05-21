@@ -237,7 +237,7 @@ killscore(short hs, short snum, char guntype)
           score=100;
      }
      else {
-          switch( sprXTptr[ext]->class ) {
+          switch( sprXTptr[ext]->classification) {
           case CLASS_NULL:
                return;       
           case CLASS_FCIAGENT:
@@ -309,10 +309,11 @@ void
 shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
      short dasectnum,char guntype)
 {
-     short hitsect,hitwall,hitsprite,daang2;
-     short bloodhitsect,bloodhitwall,bloodhitsprite;
-     int  bloodhitx,bloodhity,bloodhitz;
-     int  cx,cy,i,j,daz2,hitx,hity,hitz,xydist,zdist;
+    vec3_t pos;
+     hitdata_t hitinfo;
+     hitdata_t bloodhitinfo;
+     short daang2;
+     int  cx,cy,i,j,daz2,xydist,zdist;
      int   rv,pnum;
 
      if( health[snum] <= 0 ) {     
@@ -340,48 +341,59 @@ shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
           }
           daang2=daang;
           daz2=(100-dahoriz)*2000;
-          hitscan(x,y,z,dasectnum,sintable[(daang2+2560)&2047],
+
+          pos.x = x; pos.y = y; pos.z = z;
+          hitscan(&pos,dasectnum,sintable[(daang2+2560)&2047],
                   sintable[(daang2+2048)&2047],daz2,
-                  &hitsect,&hitwall,&hitsprite,&hitx,&hity,&hitz,CLIPMASK1);
-          if( (hitsprite >= 0) && (sprptr[hitsprite]->statnum < MAXSTATUS)) {
-               if( playerhit(hitsprite, &pnum) ) {
+                  &hitinfo,CLIPMASK1);
+
+          x = pos.x; y = pos.y; z = pos.z;
+
+          if( (hitinfo.sprite >= 0) && (sprptr[hitinfo.sprite]->statnum < MAXSTATUS)) {
+               if( playerhit(hitinfo.sprite, &pnum) ) {
                     playerpainsound(pnum);
                     playerwoundplayer(pnum,snum,2);
                }
                else {
-                    switch( sprptr[hitsprite]->picnum ) {
+                    switch( sprptr[hitinfo.sprite]->picnum ) {
                     default:
-                         rv=damagesprite(hitsprite,tekgundamage(guntype,x,y,z,hitsprite));
+                         rv=damagesprite(hitinfo.sprite,tekgundamage(guntype,x,y,z, hitinfo.sprite));
                          if( (rv == 1) && (goreflag) ) {
-                              if( spewblood(hitsprite, hitz, daang) != 0 ) {
-                                   sprptr[hitsprite]->cstat&=0xFEFE;  // non hitscan and non block
+                              if( spewblood(hitinfo.sprite, hitinfo.pos.z, daang) != 0 ) {
+                                   sprptr[hitinfo.sprite]->cstat&=0xFEFE;  // non hitscan and non block
                                    // must preserve values from previous hitscan call, 
                                    // thus the bloodxhitx, bloodwall, etc...
-                                   hitscan(x,y,z,dasectnum,sintable[(daang2+2560)&2047],
-                                           sintable[(daang2+2048)&2047],daz2,
-                                           &bloodhitsect,&bloodhitwall,&bloodhitsprite,&bloodhitx,&bloodhity,&bloodhitz,CLIPMASK1);
-                                   if( bloodhitwall != -1 ) {
-                                        bloodonwall(bloodhitwall,sprptr[hitsprite]->x,sprptr[hitsprite]->y,sprptr[hitsprite]->z,
-                                                    sprptr[hitsprite]->sectnum,daang2,bloodhitx,bloodhity,bloodhitz);
+
+                                   vec3_t pos;
+                                   pos.x = x; pos.y = y; pos.z = z;
+
+                                   hitscan(&pos,dasectnum,sintable[(daang2+2560)&2047],
+                                           sintable[(daang2+2048)&2047],daz2, &bloodhitinfo,CLIPMASK1);
+
+                                   x = pos.x; y = pos.y; z = pos.z;
+
+                                   if(bloodhitinfo.wall != -1 ) {
+                                        bloodonwall(bloodhitinfo.wall,sprptr[hitinfo.sprite]->x,sprptr[hitinfo.sprite]->y,sprptr[hitinfo.sprite]->z,
+                                                    sprptr[hitinfo.sprite]->sectnum,daang2, bloodhitinfo.pos.x, bloodhitinfo.pos.y, bloodhitinfo.pos.z);
                                    }
                               }
                          }
                          if( rv == 1 ) {
-                              killscore(hitsprite,snum,guntype);
+                              killscore(hitinfo.sprite,snum,guntype);
                          }
                     break;
                }
                }
           }
-          if( hitwall >= 0 ) {
-               j=jsinsertsprite(hitsect, 3);
+          if(hitinfo.wall >= 0 ) {
+               j=jsinsertsprite(hitinfo.sect, 3);
                if( j != -1 ) {
-                    fillsprite(j,hitx,hity,hitz+(8<<8),2,0,0,32,22,22,0,0,
-                               EXPLOSION,daang,0,0,0,snum+MAXSPRITES,hitsect,3,63,0,-1);
+                    fillsprite(j,hitinfo.pos.x,hitinfo.pos.y,hitinfo.pos.z+(8<<8),2,0,0,32,22,22,0,0,
+                               EXPLOSION,daang,0,0,0,snum+MAXSPRITES,hitinfo.sect,3,63,0,-1);
                     movesprite((short)j,
                                -(((int)sintable[(512+daang)&2047]*TICSPERFRAME)<<4),
                                -(((int)sintable[daang]*TICSPERFRAME)<<4),0L,4L<<8,4L<<8,1);
-                    playsound(S_RIC1,hitx,hity,0,ST_NOUPDATE);
+                    playsound(S_RIC1, hitinfo.pos.x, hitinfo.pos.y,0,ST_NOUPDATE);
                }
           }
           break;
@@ -436,23 +448,29 @@ shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
      case GUN5FLAG:
           daang2=daang;
           daz2=(100-dahoriz)*2000;
-          hitscan(x,y,z,dasectnum,sintable[(daang2+2560)&2047],
+
+          pos.x = x; pos.y = y; pos.z = z;
+
+          hitscan(&pos,dasectnum,sintable[(daang2+2560)&2047],
                   sintable[(daang2+2048)&2047],daz2,
-                  &hitsect,&hitwall,&hitsprite,&hitx,&hity,&hitz,CLIPMASK1);
-          if( (hitsprite >= 0) && (sprptr[hitsprite]->statnum < MAXSTATUS)) {
-               xydist=klabs(posx[snum]-sprptr[hitsprite]->x)+klabs(posy[snum]-sprptr[hitsprite]->y);
-               zdist=klabs( (posz[snum]>>8)-((sprptr[hitsprite]->z>>8)-(tilesizy[sprptr[hitsprite]->picnum]>>1)) ); 
+                  &hitinfo,CLIPMASK1);
+
+          x = pos.x; y = pos.y; z = pos.z;
+
+          if( (hitinfo.sprite >= 0) && (sprptr[hitinfo.sprite]->statnum < MAXSTATUS)) {
+               xydist=klabs(posx[snum]-sprptr[hitinfo.sprite]->x)+klabs(posy[snum]-sprptr[hitinfo.sprite]->y);
+               zdist=klabs( (posz[snum]>>8)-((sprptr[hitinfo.sprite]->z>>8)-(tilesiz[sprptr[hitinfo.sprite]->picnum].y>>1)) );
                if( (xydist > 768) || (zdist > 50) ) {
                     break;
                }
-               if( playerhit(hitsprite, &pnum) ) {
+               if( playerhit(hitinfo.sprite, &pnum) ) {
                     playerpainsound(pnum);
                     playerwoundplayer(pnum,snum,5);
                }
                else {
-                    rv=damagesprite(hitsprite,tekgundamage(guntype,x,y,z,hitsprite));
+                    rv=damagesprite(hitinfo.sprite,tekgundamage(guntype,x,y,z, hitinfo.sprite));
                     if( rv == 1 ) {
-                         killscore(hitsprite, snum, guntype);
+                         killscore(hitinfo.sprite, snum, guntype);
                     }
                }
           }
@@ -465,22 +483,25 @@ shootgun(short snum,int x,int y,int z,short daang,int dahoriz,
           }
           daang2=daang;
           daz2=(100-dahoriz)*2000;
-          hitscan(x,y,z,dasectnum,sintable[(daang2+2560)&2047],
-                  sintable[(daang2+2048)&2047],daz2,
-                  &hitsect,&hitwall,&hitsprite,&hitx,&hity,&hitz,CLIPMASK1);
-          if( (hitsprite >= 0) && (sprptr[hitsprite]->statnum < MAXSTATUS)) {
-               xydist=klabs(posx[snum]-sprptr[hitsprite]->x)+klabs(posy[snum]-sprptr[hitsprite]->y);
-               zdist=klabs( (posz[snum]>>8)-((sprptr[hitsprite]->z>>8)-(tilesizy[sprptr[hitsprite]->picnum]>>1)) ); 
+
+          pos.x = x; pos.y = y; pos.z = z;
+          hitscan(&pos,dasectnum,sintable[(daang2+2560)&2047], sintable[(daang2+2048)&2047],daz2, &hitinfo,CLIPMASK1);
+
+          x = pos.x; y = pos.y; z = pos.z;
+
+          if( (hitinfo.sprite >= 0) && (sprptr[hitinfo.sprite]->statnum < MAXSTATUS)) {
+               xydist=klabs(posx[snum]-sprptr[hitinfo.sprite]->x)+klabs(posy[snum]-sprptr[hitinfo.sprite]->y);
+               zdist=klabs( (posz[snum]>>8)-((sprptr[hitinfo.sprite]->z>>8)-(tilesiz[sprptr[hitinfo.sprite]->picnum].y>>1)) );
                if( (xydist > 2560) || (zdist > 576) ) {
                     break;
                }
-               if( playerhit(hitsprite, &pnum) ) {
+               if( playerhit(hitinfo.sprite, &pnum) ) {
                     if( playervirus(pnum, FIREPIC) ) {
                          playerwoundplayer(pnum,snum,6);
                     }
                }
                else {
-                    attachvirus(hitsprite, FIREPIC);
+                    attachvirus(hitinfo.sprite, FIREPIC);
                }
           }
           break;
@@ -1118,8 +1139,8 @@ tekdrawgun(int gun,short p)
      if( difficulty <= 1 )
           apic=BIGAIMPIC;
      if( (toggles[TOGGLE_RETICULE]) && (dimensionmode[myconnectindex] == 3) ) {
-          overwritesprite(windowx1+((windowx2-windowx1)>>1),
-                          windowy1+((windowy2-windowy1)>>1),apic,16,0x01,0);
+          overwritesprite(windowxy1.x+((windowxy2.x-windowxy1.x)>>1),
+                          windowxy1.y+((windowxy2.y-windowxy1.y)>>1),apic,16,0x01,0);
      }
      gun=lastgun[p];
      if( firedonetics[p] > 0 ) {
