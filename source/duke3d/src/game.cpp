@@ -6442,7 +6442,61 @@ void G_MaybeAllocPlayer(int32_t pnum)
 EDUKE32_STATIC_ASSERT(sizeof(actor_t)%4 == 0);
 EDUKE32_STATIC_ASSERT(sizeof(DukePlayer_t)%4 == 0);
 
-int app_main(int argc, char const * const * argv)
+#ifndef NETCODE_DISABLE
+void Net_DedicatedServerStdin(void)
+{
+# ifndef _WIN32
+    // stdin -> OSD input for dedicated server
+    if (g_networkMode == NET_DEDICATED_SERVER)
+    {
+        int32_t nb;
+        char ch;
+        static uint32_t bufpos = 0;
+        static char buf[128];
+# ifndef GEKKO
+        int32_t flag = 1;
+        ioctl(0, FIONBIO, &flag);
+# endif
+        if ((nb = read(0, &ch, 1)) > 0 && bufpos < sizeof(buf))
+        {
+            if (ch != '\n')
+                buf[bufpos++] = ch;
+
+            if (ch == '\n' || bufpos >= sizeof(buf)-1)
+            {
+                buf[bufpos] = 0;
+                OSD_Dispatch(buf);
+                bufpos = 0;
+            }
+        }
+    }
+# endif
+}
+#endif
+
+void G_DrawFrame(void)
+{
+    if (!g_saveRequested)
+    {
+        // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
+        CONTROL_BindsEnabled = !!(g_player[myconnectindex].ps->gm & (MODE_GAME|MODE_DEMO));
+
+        G_HandleLocalKeys();
+        OSD_DispatchQueued();
+        P_GetInput(myconnectindex);
+    }
+
+    int const smoothRatio = calc_smoothratio(totalclock, ototalclock);
+
+    G_DrawRooms(screenpeek, smoothRatio);
+    if (videoGetRenderMode() >= REND_POLYMOST)
+        G_DrawBackground();
+    G_DisplayRest(smoothRatio);
+    videoNextPage();
+    S_Update();
+}
+
+int app_main(int argc, char const* const* argv)
 {
 #ifndef NETCODE_DISABLE
     if (enet_initialize() != 0)
@@ -7044,8 +7098,6 @@ MAIN_LOOP_RESTART:
                 g_gameUpdateAvgTime
                 = ((GAMEUPDATEAVGTIMENUMSAMPLES - 1.f) * g_gameUpdateAvgTime + g_gameUpdateTime) / ((float)GAMEUPDATEAVGTIMENUMSAMPLES);
             } while (0);
-
-            S_Update();
         }
 
         G_DoCheats();
@@ -7069,50 +7121,12 @@ MAIN_LOOP_RESTART:
             {
                 // only allow binds to function if the player is actually in a game (not in a menu, typing, et cetera) or demo
                 CONTROL_BindsEnabled = !!(myplayer.gm & (MODE_GAME|MODE_DEMO));
-
 #ifndef NETCODE_DISABLE
-# ifndef _WIN32
-                // stdin -> OSD input for dedicated server
-                if (g_networkMode == NET_DEDICATED_SERVER)
-                {
-                    int32_t nb;
-                    char ch;
-                    static uint32_t bufpos = 0;
-                    static char buf[128];
-# ifndef GEKKO
-                    int32_t flag = 1;
-                    ioctl(0, FIONBIO, &flag);
-# endif
-                    if ((nb = read(0, &ch, 1)) > 0 && bufpos < sizeof(buf))
-                    {
-                        if (ch != '\n')
-                            buf[bufpos++] = ch;
-
-                        if (ch == '\n' || bufpos >= sizeof(buf)-1)
-                        {
-                            buf[bufpos] = 0;
-                            OSD_Dispatch(buf);
-                            bufpos = 0;
-                        }
-                    }
-                }
-                else
-# endif
+                Net_DedicatedServerStdin();
 #endif
-                    G_HandleLocalKeys();
-
-                OSD_DispatchQueued();
-
-                P_GetInput(myconnectindex);
             }
 
-            int const smoothRatio = calc_smoothratio(totalclock, ototalclock);
-
-            G_DrawRooms(screenpeek, smoothRatio);
-            if (videoGetRenderMode() >= REND_POLYMOST)
-                G_DrawBackground();
-            G_DisplayRest(smoothRatio);
-            videoNextPage();
+            G_DrawFrame();
 
             if (gameUpdate)
                 g_gameUpdateAndDrawTime = timerGetHiTicks()-gameUpdateStartTime;

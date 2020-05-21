@@ -406,6 +406,7 @@ void G_UpdatePlayerFromMenu(void);
 void M32RunScript(const char *s);
 void P_DoQuote(int32_t q,DukePlayer_t *p);
 void P_SetGamePalette(DukePlayer_t *player, uint32_t palid, int32_t set);
+void G_DrawFrame(void);
 
 // Cstat protection mask for (currently) spawned MASKWALL* sprites.
 // TODO: look at more cases of cstat=(cstat&PROTECTED)|ADDED in A_Spawn()?
