@@ -1832,8 +1832,7 @@ void videoShowFrame(int32_t w)
             // TODO: use timing information to determine swap time and just busy loop ourselves for more timing control
             if (swapTime < nextSwapTime)
                 windowsWaitForVBlank();
-
-            if (swapTime > nextSwapTime + swapInterval)
+            else if (swapTime - nextSwapTime >= swapInterval)
                 nextSwapTime += swapInterval;
 
             nextSwapTime += swapInterval;
