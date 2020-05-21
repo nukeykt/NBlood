@@ -134,7 +134,7 @@ static int sortspritescnt = 0;
 static int globalposx, globalposy, globalposz, rt_smoothRatio;
 static fix16_t globalang;
 
-static int globalpal, globalshade;
+static int rt_globalpal, rt_globalshade;
 
 const int MOVESECTNUM = 40;
 const int MOVESECTVTXNUM = 1024;
@@ -938,11 +938,11 @@ void RT_CalculateShade(int x, int y, int z, int shade)
         sectnum = g_player[screenpeek].ps->cursectnum;
 
     if (sectnum >= 0 && sector[sectnum].lotag == ST_2_UNDERWATER)
-        globalpal = 1;
+        rt_globalpal = 1;
 
     globalcolorred = globalcolorblue;
     globalcolorgreen = globalcolorblue;
-    switch (globalpal)
+    switch (rt_globalpal)
     {
     case 1:
         globalcolorred /= 2;
@@ -995,8 +995,8 @@ void RT_DrawCeiling(int sectnum)
     auto sect = &sector[sectnum];
     RT_SetTexComb(0);
     RT_SetTexture(sector[sectnum].ceilingpicnum);
-    globalpal = sect->ceilingpal;
-    globalshade = sect->ceilingshade;
+    rt_globalpal = sect->ceilingpal;
+    rt_globalshade = sect->ceilingshade;
     glBegin(GL_TRIANGLES);
     for (int i = 0; i < rt_sect->ceilingvertexnum * 3; i++)
     {
@@ -1005,7 +1005,7 @@ void RT_DrawCeiling(int sectnum)
         float y = vtx.y;
         float z = getceilzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 32.f;
         glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); 
-        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
         glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
         glVertex3f(x, y, z);
     }
@@ -1019,8 +1019,8 @@ void RT_DrawFloor(int sectnum)
     RT_SetTexComb(0);
     int method = DAMETH_N64;
     RT_SetTexture(sector[sectnum].floorpicnum);
-    globalpal = sect->floorpal;
-    globalshade = sect->floorshade;
+    rt_globalpal = sect->floorpal;
+    rt_globalshade = sect->floorshade;
     glBegin(GL_TRIANGLES);
     for (int i = 0; i < rt_sect->floorvertexnum * 3; i++)
     {
@@ -1029,7 +1029,7 @@ void RT_DrawFloor(int sectnum)
         float y = vtx.y;
         float z = getflorzofslope(sectnum, vtx.x * 2, vtx.y * 2) / 32.f;
         glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y); 
-        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
         glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
         glVertex3f(x, y, z);
     }
@@ -1715,7 +1715,7 @@ void RT_DrawSpriteFace(float x, float y, float z, int pn)
 void RT_DrawSpriteFlat(int spritenum, int sectnum, int distance)
 {
     rt_lastpicnum = 0;
-    globalpal = rt_tspriteptr->pal;
+    rt_globalpal = rt_tspriteptr->pal;
     RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
     int xoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>8)&255);
     int yoff = int8_t((rt_tileinfo[rt_tspritetileid].picanm>>16)&255);
@@ -1910,7 +1910,7 @@ void RT_DrawSpriteFloor(void)
             alpha = 192;
     }
 
-    globalpal = rt_tspriteptr->pal;
+    rt_globalpal = rt_tspriteptr->pal;
 
     RT_CalculateShade(rt_tspriteptr->x/2, rt_tspriteptr->y/2,rt_tspriteptr->z/2, rt_tspriteptr->shade);
 
@@ -2127,8 +2127,8 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
 void RT_DrawWall(int wallnum)
 {
     rt_wallcalcres = RT_WallCalc(rt_wall[wallnum].sectnum, wallnum);
-    globalpal = wall[wallnum].pal;
-    globalshade = wall[wallnum].shade;
+    rt_globalpal = wall[wallnum].pal;
+    rt_globalshade = wall[wallnum].shade;
     rt_haswhitewall = (rt_wallcalcres & 8) != 0;
     rt_hastopwall = (rt_wallcalcres & 1) != 0;
     rt_hasbottomwall = (rt_wallcalcres & 2) != 0;
@@ -2140,7 +2140,7 @@ void RT_DrawWall(int wallnum)
     {
         auto vtx = wallvtx[j++];
         glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
-        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
         glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
         glVertex3f(vtx.x, vtx.y, vtx.z);
     }
@@ -2152,7 +2152,7 @@ void RT_DrawWall(int wallnum)
     {
         auto vtx = wallvtx[j++];
         glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
-        RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+        RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
         glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
         glVertex3f(vtx.x, vtx.y, vtx.z);
     }
@@ -2165,7 +2165,7 @@ void RT_DrawWall(int wallnum)
         {
             auto vtx = wallvtx[j++];
             glTexCoord2f(vtx.u * rt_uvscale.x, vtx.v * rt_uvscale.y);
-            RT_CalculateShade(vtx.x, vtx.y, vtx.z, globalshade);
+            RT_CalculateShade(vtx.x, vtx.y, vtx.z, rt_globalshade);
             glColor4f(globalcolorred*(1.f/255.f), globalcolorgreen*(1.f/255.f), globalcolorblue*(1.f/255.f), 1.f);
             glVertex3f(vtx.x, vtx.y, vtx.z);
         }
@@ -2511,7 +2511,7 @@ void RT_DrawMaskWall(int wallnum)
             alpha = 128;
     }
 
-    globalpal = w.pal;
+    rt_globalpal = w.pal;
 
     int pn = w.overpicnum;
 
