@@ -1767,7 +1767,7 @@ int A_Spawn(int spriteNum, int tileNum)
 
             if (A_CheckSwitchTile(newSprite) && (pSprite->cstat & 16))
             {
-                if (pSprite->pal && pSprite->picnum != ACCESSSWITCH && pSprite->picnum != ACCESSSWITCH2)
+                if ((REALITY ? pSprite->pal == 1 : pSprite->pal) && pSprite->picnum != ACCESSSWITCH && pSprite->picnum != ACCESSSWITCH2)
                 {
                     if (((!g_netServer && ud.multimode < 2)) || ((g_netServer || ud.multimode > 1) && !GTFLAGS(GAMETYPE_DMSWITCHES)))
                     {
@@ -1779,6 +1779,9 @@ int A_Spawn(int spriteNum, int tileNum)
                 }
 
                 pSprite->cstat |= 257;
+
+                if (REALITY && pSprite->pal == 69)
+                    pSprite->cstat |= 32768;
 
                 if (pSprite->pal && pSprite->picnum != ACCESSSWITCH && pSprite->picnum != ACCESSSWITCH2)
                     pSprite->pal = 0;
@@ -1793,6 +1796,12 @@ int A_Spawn(int spriteNum, int tileNum)
                 pSprite->extra = g_impactDamage;
                 goto SPAWN_END;
             }
+        }
+
+        if (REALITY && pSprite->pal == 69)
+        {
+            pSprite->cstat |= 32768;
+            pSprite->pal = 0;
         }
 
         if (pSprite->cstat & 1)
@@ -2026,6 +2035,9 @@ default_case:
             pSprite->shade = -16;
             pSprite->cstat |= 128;
 
+            if (REALITY)
+                pSprite->cstat |= 2;
+
             if (spriteNum >= 0)
             {
                 if (sector[sprite[spriteNum].sectnum].lotag == ST_2_UNDERWATER)
@@ -2038,7 +2050,7 @@ default_case:
             }
 
             if (sector[sectNum].floorpicnum == FLOORSLIME || sector[sectNum].ceilingpicnum == FLOORSLIME)
-                pSprite->pal = 7;
+                pSprite->pal = REALITY ? 8 : 7;
             fallthrough__;
         case NEON1__STATIC:
         case NEON2__STATIC:
@@ -2053,6 +2065,8 @@ default_case:
         case NUKEBUTTON__STATIC:
             if (RR && pSprite->picnum == NUKEBUTTON)
                 goto default_case;
+            // if (REALITY && pSprite->picnum == NUKEBUTTON && ud.multimode > 1 && ud.coop == 0 && dukematch_mode != 1)
+            //     pSprite->xrepeat = pSprite->yrepeat = 0;
             if (pSprite->picnum == DOMELITE)
                 pSprite->cstat |= 257;
             fallthrough__;
@@ -2143,6 +2157,8 @@ default_case:
             if (RR) goto default_case;
             pSprite->cstat &= ~257;
             pSprite->cstat |= 32768;
+            if (REALITY)
+                pSprite->cstat |= 2;
             break;
         case TRANSPORTERSTAR__STATIC:
         case TRANSPORTERBEAM__STATIC:
@@ -2206,6 +2222,8 @@ default_case:
                 pSprite->xrepeat = 0;
                 pSprite->yrepeat = 0;
             }
+            if (REALITY)
+                pSprite->cstat |= 512 + 2;
 
             if (spriteNum >= 0) pSprite->ang = actor[spriteNum].t_data[5]+512;
             changespritestat(newSprite, STAT_MISC);
@@ -2227,7 +2245,7 @@ default_case:
         case BLOOD__STATIC:
             pSprite->xrepeat = pSprite->yrepeat = RR ? 4 : 16;
             pSprite->z -= (26<<8);
-            if (!RR && spriteNum >= 0 && sprite[spriteNum].pal == 6)
+            if (!RR && spriteNum >= 0 && (sprite[spriteNum].pal == 6 || (REALITY && sprite[spriteNum].picnum == NEWBEAST)))
                 pSprite->pal = 6;
             changespritestat(newSprite, STAT_MISC);
             break;
@@ -2281,6 +2299,8 @@ default_case:
                     pSprite->shade = 127;
             }
             pSprite->cstat |= 32;
+            if (REALITY)
+                pSprite->cstat |= 16384;
             if (RR) goto rrbloodpool_fallthrough;
             fallthrough__;
         }
@@ -2297,6 +2317,8 @@ default_case:
         case BLOODSPLAT4__STATIC:
 rrbloodpool_fallthrough:
             pSprite->cstat |= 16;
+            if (REALITY)
+                pSprite->cstat |= 16384;
             pSprite->xrepeat = 7 + (krand2() & 7);
             pSprite->yrepeat = 7 + (krand2() & 7);
             pSprite->z -= ZOFFSET2;
@@ -2304,7 +2326,7 @@ rrbloodpool_fallthrough:
             if (pSprite->picnum == BLOODPOOL)
                 pSprite->cstat |= 32768;
 
-            if (spriteNum >= 0 && sprite[spriteNum].pal == 6)
+            if (spriteNum >= 0 && (sprite[spriteNum].pal == 6 || (REALITY && sprite[spriteNum].picnum == NEWBEAST)))
                 pSprite->pal = 6;
 
             A_AddToDeleteQueue(newSprite);
@@ -2493,6 +2515,8 @@ rrbloodpool_fallthrough:
                 }
 
                 pSprite->cstat = 32 + ((g_player[P_Get(spriteNum)].ps->footprintcount & 1) << 2);
+                if (REALITY)
+                    pSprite->cstat |= 16384;
                 pSprite->ang   = sprite[spriteNum].ang;
             }
 
@@ -2507,14 +2531,35 @@ rrbloodpool_fallthrough:
 
         case PODFEM1__STATIC:
             if (RR) goto default_case;
-            pSprite->extra <<= 1;
+            if (!REALITY)
+                pSprite->extra <<= 1;
+            fallthrough__;
+        case FEM5__STATIC:
+        case FEM6__STATIC:
+        case DN64TILE3821__STATIC:
+        case DN64TILE3805__STATIC:
+        case DN64TILE3797__STATIC:
+            if (REALITY)
+            {
+                if (pSprite->picnum == PODFEM1)
+                    pSprite->picnum = DN64TILE3821;
+                else if (pSprite->picnum == FEM5)
+                    pSprite->picnum = DN64TILE3805;
+                else if (pSprite->picnum == FEM6)
+                    pSprite->picnum = DN64TILE3797;
+                if (ud.multimode > 1 && &ud.coop == 0)
+                {
+                    pSprite->xrepeat = pSprite->yrepeat = 0;
+                    changespritestat(newSprite, STAT_MISC);
+                    break;
+                }
+                g_player[myconnectindex].ps->dn64_36d++;
+            }
             fallthrough__;
         case FEM1__STATIC:
         case FEM2__STATIC:
         case FEM3__STATIC:
         case FEM4__STATIC:
-        case FEM5__STATIC:
-        case FEM6__STATIC:
         case FEM7__STATIC:
         case FEM8__STATIC:
         case FEM9__STATIC:
@@ -2637,9 +2682,27 @@ rrbloodpool_fallthrough:
             //                if(sp->picnum == HELECOPT || sp->picnum == DUKECAR) sp->xvel = 1024;
             if (RR && (pSprite->picnum == DUKECAR || pSprite->picnum == HELECOPT)) goto default_case;
             pSprite->cstat = 0;
+            if (REALITY)
+                pSprite->cstat |= 128;
             pSprite->extra = 1;
-            pSprite->xvel  = 292;
-            pSprite->zvel  = 360;
+            if (REALITY)
+            {
+                if (pSprite->picnum == DUKECAR)
+                {
+                    pSprite->xvel  = 275;
+                    pSprite->zvel  = 600;
+                }
+                else
+                {
+                    pSprite->xvel  = 360;
+                    pSprite->zvel  = 300;
+                }
+            }
+            else
+            {
+                pSprite->xvel  = 292;
+                pSprite->zvel  = 360;
+            }
             fallthrough__;
         case BLIMP__STATIC:
             if (RR && pSprite->picnum == BLIMP) goto default_case;
@@ -2673,6 +2736,8 @@ rrbloodpool_fallthrough:
             pSprite->xrepeat = 3;
             pSprite->yrepeat = 3;
             pSprite->cstat   = 16 + (krand2() & 12);
+            if (REALITY)
+                pSprite->cstat |= 16384;
 
             A_AddToDeleteQueue(newSprite);
             changespritestat(newSprite, STAT_MISC);
@@ -2728,8 +2793,16 @@ rrbloodpool_fallthrough:
                     pSprite->z = sprite[spriteNum].z - PHEIGHT + (RR ? (7 << 8) : (3 << 8));
                 }
 
-                pSprite->x     = sprite[spriteNum].x + (sintable[(shellAng + 512) & 2047] >> 7);
-                pSprite->y     = sprite[spriteNum].y + (sintable[shellAng & 2047] >> 7);
+                if (REALITY)
+                {
+                    pSprite->x     = sprite[spriteNum].x + (sintable[(shellAng + 80 + 512) & 2047] >> 7);
+                    pSprite->y     = sprite[spriteNum].y + (sintable[(shellAng + 80) & 2047] >> 7);
+                }
+                else
+                {
+                    pSprite->x     = sprite[spriteNum].x + (sintable[(shellAng + 512) & 2047] >> 7);
+                    pSprite->y     = sprite[spriteNum].y + (sintable[shellAng & 2047] >> 7);
+                }
                 pSprite->shade = -8;
 
                 if (NAM_WW2GI)
@@ -2743,7 +2816,7 @@ rrbloodpool_fallthrough:
                     pSprite->xvel = 20;
                 }
 
-                if (RR && pSprite->picnum == SHELL)
+                if (REALITY || (RR && pSprite->picnum == SHELL))
                     pSprite->xrepeat = pSprite->yrepeat = 2;
                 else
                     pSprite->xrepeat = pSprite->yrepeat = 4;
@@ -2815,17 +2888,24 @@ rrbloodpool_fallthrough:
             }
             fallthrough__;
         case EXPLOSION2BOT__STATIC:
+            if (REALITY && pSprite->picnum == EXPLOSION2BOT) goto default_case;
+            fallthrough__;
         case BURNING__STATIC:
         case BURNING2__STATIC:
         case SMALLSMOKE__STATIC:
         case COOLEXPLOSION1__STATIC:
+        case DN64TILE3953__STATIC:
             if (RR && (pSprite->picnum == EXPLOSION2BOT || pSprite->picnum == BURNING2
                 || pSprite->picnum == SHRINKEREXPLOSION || pSprite->picnum == COOLEXPLOSION1)) goto default_case;
+            if (!REALITY && pSprite->picnum == DN64TILE3953)
+                goto default_case;
             if (spriteNum >= 0)
             {
                 pSprite->ang = sprite[spriteNum].ang;
                 pSprite->shade = -64;
                 pSprite->cstat = 128|(krand2()&4);
+                if (REALITY)
+                    pSprite->cstat |= 2;
             }
 
             if (pSprite->picnum == EXPLOSION2 || (!RR && pSprite->picnum == EXPLOSION2BOT))
@@ -2846,9 +2926,23 @@ rrbloodpool_fallthrough:
             {
                 // 64 "money"
                 pSprite->xrepeat = pSprite->yrepeat = RR ? 12 : 24;
+                if ((krand2() % 256) < 128)
+                    pSprite->cstat |= 4;
+                if ((krand2() % 256) < 128)
+                    pSprite->cstat |= 8;
             }
             else if (pSprite->picnum == BURNING || (!RR && pSprite->picnum == BURNING2))
                 pSprite->xrepeat = pSprite->yrepeat = 4;
+            else if (REALITY && pSprite->picnum == DN64TILE3953)
+            {
+                pSprite->xrepeat = 64;
+                pSprite->xrepeat = 64;
+                pSprite->z -= (30<<8);
+                if ((krand2() % 256) < 128)
+                    pSprite->cstat |= 4;
+                if ((krand2() % 256) < 128)
+                    pSprite->cstat |= 8;
+            }
 
             pSprite->cstat |= 8192;
 
@@ -2895,6 +2989,9 @@ rrbloodpool_fallthrough:
 
                 pSprite->ang = sprite[spriteNum].ang;
             }
+
+            if (REALITY)
+                pSprite->cstat |= 2;
 
             pSprite->xrepeat = pSprite->yrepeat = RR ? (1+(krand2()&7)) : 4;
             changespritestat(newSprite, STAT_MISC);
@@ -2973,6 +3070,8 @@ rrbloodpool_fallthrough:
                 if (!RR)
                     T2(newSprite) = krand2()&127;
             }
+            if (REALITY)
+                pSprite->cstat |= 2;
             fallthrough__;
         case WATERDRIPSPLASH__STATIC:
             if (RR && pSprite->picnum == WATERDRIPSPLASH) goto default_case;
@@ -3016,6 +3115,9 @@ rrbloodpool_fallthrough:
             T2(newSprite) = pSprite->yrepeat;
             pSprite->yvel = 0;
 
+            if (REALITY)
+                pSprite->cstat |= 2;
+
             changespritestat(newSprite, STAT_STANDABLE);
             break;
 
@@ -3034,7 +3136,8 @@ rrbloodpool_fallthrough:
             pSprite->cstat |= 257;
             changespritestat(newSprite, STAT_ACTOR);
             break;
-
+            
+        case NEWBEASTSTAYPUT__STATIC:
         case OCTABRAINSTAYPUT__STATIC:
         case LIZTROOPSTAYPUT__STATIC:
         case PIGCOPSTAYPUT__STATIC:
@@ -3043,6 +3146,8 @@ rrbloodpool_fallthrough:
         case PIGCOPDIVE__STATIC:
         case COMMANDERSTAYPUT__STATIC:
         case BOSS4STAYPUT__STATIC:
+            if (!REALITY && pSprite->picnum == NEWBEASTSTAYPUT) goto default_case;
+            if (REALITY && pSprite->picnum == BOSS4STAYPUT) goto default_case;
             if (RR) goto default_case;
             pActor->actorstayput = pSprite->sectnum;
             fallthrough__;
@@ -3052,6 +3157,7 @@ rrbloodpool_fallthrough:
         case BOSS4__STATIC:
         case ROTATEGUN__STATIC:
         case GREENSLIME__STATIC:
+            if (REALITY && pSprite->picnum == BOSS4) goto default_case;
             if (RR) goto default_case;
             if (pSprite->picnum == GREENSLIME)
                 pSprite->extra = 1;
@@ -3074,12 +3180,20 @@ rrbloodpool_fallthrough:
         case ORGANTIC__STATIC:
         case RAT__STATIC:
         case SHARK__STATIC:
+        case NEWBEAST__STATIC:
+        case NEWBEASTHANG__STATIC://
+        case NEWBEASTHANGDEAD__STATIC://
+        case DN64TILE4690__STATIC://
+            if (REALITY && pSprite->picnum == ORGANTIC) goto default_case;
             if (RR)
             {
                 if (pSprite->picnum == RAT || pSprite->picnum == SHARK || pSprite->picnum == DRONE)
                     goto rr_badguy;
                 goto default_case;
             }
+
+            if (!REALITY && (pSprite->picnum == NEWBEAST || pSprite->picnum == NEWBEASTHANG || pSprite->picnum == NEWBEASTHANGDEAD || pSprite->picnum == DN64TILE4690))
+                goto default_case;
 
             if (pSprite->pal == 0)
             {
@@ -3101,8 +3215,8 @@ rrbloodpool_fallthrough:
                     pSprite->extra <<= 1;
             }
 
-            if (pSprite->picnum == BOSS4STAYPUT || pSprite->picnum == BOSS1 || pSprite->picnum == BOSS2 ||
-                pSprite->picnum == BOSS1STAYPUT || pSprite->picnum == BOSS3 || pSprite->picnum == BOSS4)
+            if ((!REALITY && pSprite->picnum == BOSS4STAYPUT) || pSprite->picnum == BOSS1 || pSprite->picnum == BOSS2 ||
+                pSprite->picnum == BOSS1STAYPUT || pSprite->picnum == BOSS3 || (!REALITY && pSprite->picnum == BOSS4))
             {
                 if (spriteNum >= 0 && sprite[spriteNum].picnum == RESPAWN)
                     pSprite->pal = sprite[spriteNum].pal;
@@ -3116,6 +3230,12 @@ rrbloodpool_fallthrough:
                 {
                     pSprite->xrepeat  = pSprite->yrepeat = 80;
                     pSprite->clipdist = 164;
+                }
+
+                if (REALITY && pSprite->picnum == BOSS2)
+                {
+                    pSprite->xrepeat = pSprite->yrepeat = 120;
+                    pSprite->clipdist = 246;
                 }
             }
             else
@@ -3157,11 +3277,11 @@ rrbloodpool_fallthrough:
                 {
                     pSprite->cstat |= 257;
 
-                    if (pSprite->picnum != SHARK)
+                    if (REALITY || pSprite->picnum != SHARK)
                         g_player[myconnectindex].ps->max_actors_killed++;
                 }
 
-                if (pSprite->picnum == ORGANTIC) pSprite->cstat |= 128;
+                if (!REALITY && pSprite->picnum == ORGANTIC) pSprite->cstat |= 128;
 
                 if (spriteNum >= 0)
                 {
@@ -3618,6 +3738,11 @@ rr_badguy:
 
             changespritestat(newSprite, STAT_ZOMBIEACTOR);
             break;
+        case DN64TILE34__STATIC:
+        case DN64TILE43__STATIC:
+        case DN64TILE50__STATIC:
+            if (!REALITY)
+                goto default_case;
 
         case ATOMICHEALTH__STATIC:
         case STEROIDS__STATIC:
@@ -3699,7 +3824,7 @@ rr_badguy:
             }
             else
             {
-                if (pSprite->picnum == AMMO)
+                if (pSprite->picnum == AMMO || (REALITY && pSprite->picnum == DN64TILE34))
                     pSprite->xrepeat = pSprite->yrepeat = 16;
                 else pSprite->xrepeat = pSprite->yrepeat = 32;
             }
@@ -4654,6 +4779,8 @@ rr_badguy:
 
         case TOILETWATER__STATIC:
             pSprite->shade = -16;
+            if (REALITY)
+                pSprite->cstat |= 2;
             changespritestat(newSprite, STAT_STANDABLE);
             break;
         case RRTILE63__STATICRR:
@@ -4662,6 +4789,13 @@ rr_badguy:
             pSprite->yrepeat = 1;
             pSprite->clipdist = 1;
             changespritestat(newSprite, 100);
+            break;
+        case DN64TILE3809__STATIC://
+        case DN64TILE3804__STATIC://
+            if (!REALITY) goto default_case;
+            pSprite->cstat |= 257;
+            pSprite->clipdist = 32;
+            changespritestat(newSprite, STAT_ZOMBIEACTOR);
             break;
         }
 

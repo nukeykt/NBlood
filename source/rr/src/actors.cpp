@@ -6097,8 +6097,8 @@ __skip_movesprite:
             {
                 if (sector[sectNum].lotag == ST_2_UNDERWATER)
                 {
-                    pSprite->xvel *= 0.95;
-                    pSprite->zvel *= 0.95;
+                    pSprite->xvel = pSprite->xvel*0.95;
+                    pSprite->zvel = pSprite->zvel*0.95;
                 }
                 if (pSprite->zvel == 0)
                     pSprite->xvel -= 5;
@@ -6332,10 +6332,10 @@ DETONATEB:
             {
                 if ((krand2() & 255) < 16)
                 {
-                    if (!A_CheckSoundPlaying(pPlayer->i, DUKE_LONGTERM_PAIN))
-                        A_PlaySound(DUKE_LONGTERM_PAIN, pPlayer->i);
+                    if (!A_CheckSoundPlaying(pPlayer->i, REALITY ? 168 : DUKE_LONGTERM_PAIN))
+                        A_PlaySound(REALITY ? 168 : DUKE_LONGTERM_PAIN, pPlayer->i);
 
-                    A_PlaySound(SHORT_CIRCUIT, spriteNum);
+                    A_PlaySound(REALITY ? 19 : SHORT_CIRCUIT, spriteNum);
                     sprite[pPlayer->i].extra--;
                     P_PalFrom(pPlayer, 32, 32, 0, 0);
                 }
@@ -6382,7 +6382,7 @@ DETONATEB:
                         break;
                 }
 
-                for (bssize_t x = 0; x < 16; x++)
+                for (bssize_t x = 0; x < ((REALITY && numplayers > 1) ? 1 : 16); x++)
                     RANDOMSCRAP(pSprite, spriteNum);
 
                 pSprite->z = pData[4];
@@ -6390,7 +6390,7 @@ DETONATEB:
             }
             else if (A_IncurDamage(spriteNum) >= 0)
             {
-                for (bssize_t x = 0; x < 32; x++)
+                for (bssize_t x = 0; x < ((REALITY && numplayers > 1) ? 1 : 32); x++)
                     RANDOMSCRAP(pSprite, spriteNum);
 
                 if (pSprite->extra < 0)
@@ -6501,6 +6501,7 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
         }
         else switch (DYNAMICTILEMAP(switchPic))
             {
+
             //case APLAYER__STATIC: pSprite->cstat = 32768; goto next_sprite;
 
             case SHOTGUNSPRITE__STATIC:
@@ -6539,6 +6540,9 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                 //        case NUKEBUTTON+3:
 
                 if (RR) break;
+
+                // if (REALITY && ud.multimode > 1 && ud.coop == 0 && dukematch_mode != 1)
+                //     goto next_sprite;
 
                 if (pData[0])
                 {
@@ -6623,8 +6627,8 @@ ACTOR_STATIC void G_MoveMisc(void)  // STATNUM 5
                     }
                     else
                     */
-                    if (!S_CheckSoundPlaying(spriteNum,ITEM_SPLASH))
-                        A_PlaySound(ITEM_SPLASH,spriteNum);
+                    if (!S_CheckSoundPlaying(spriteNum,REALITY ? 20 : ITEM_SPLASH))
+                        A_PlaySound(REALITY ? 20 : ITEM_SPLASH,spriteNum);
                 }
                 if (pData[0] == 3)
                 {
@@ -6937,8 +6941,8 @@ jib_code:
                             pPlayer->inv_amount[GET_BOOTS]--;
                         else
                         {
-                            if (!A_CheckSoundPlaying(pPlayer->i,DUKE_LONGTERM_PAIN))
-                                A_PlaySound(DUKE_LONGTERM_PAIN,pPlayer->i);
+                            if (!A_CheckSoundPlaying(pPlayer->i,REALITY ? 168 : DUKE_LONGTERM_PAIN))
+                                A_PlaySound(REALITY ? 168 : DUKE_LONGTERM_PAIN,pPlayer->i);
 
                             sprite[pPlayer->i].extra --;
 
@@ -6951,6 +6955,11 @@ jib_code:
                     pData[1] = 1;
 
                     pPlayer->footprintcount = (actor[spriteNum].picnum == TIRE) ? 10 : 3;
+                    if (REALITY && sprite[spriteNum].picnum == BLOODPOOL && sprite[spriteNum].xrepeat >= 30)
+                    {
+                        if ((krand2()&255) < 16)
+                            A_PlaySound(0x104, pPlayer->i);
+                    }
                     pPlayer->footprintpal   = pSprite->pal;
                     pPlayer->footprintshade = pSprite->shade;
 
@@ -6967,10 +6976,12 @@ jib_code:
                 goto next_sprite;
             }
 
-            case BURNING2__STATIC:
-            case FECES__STATIC:
             case SHRINKEREXPLOSION__STATIC:
             case EXPLOSION2BOT__STATIC:
+                if (REALITY) break;
+                fallthrough__;
+            case BURNING2__STATIC:
+            case FECES__STATIC:
             case LASERSITE__STATIC:
                 if (RR) break;
                 fallthrough__;
@@ -7025,10 +7036,13 @@ jib_code:
                         pData[0] &= 3;
                     }
                     if (pSprite->zvel < 512) pSprite->zvel += (g_spriteGravity/3); // 52;
-                    if (pSprite->xvel > 0)
-                        pSprite->xvel --;
-                    else
-                        DELETE_SPRITE_AND_CONTINUE(spriteNum);
+                    if (!REALITY)
+                    {
+                        if (pSprite->xvel > 0)
+                            pSprite->xvel --;
+                        else
+                            DELETE_SPRITE_AND_CONTINUE(spriteNum);
+                    }
                 }
 
                 goto next_sprite;
@@ -7068,6 +7082,20 @@ jib_code:
                 A_SetSprite(spriteNum,CLIPMASK0);
 
                 goto next_sprite;
+            case DN64TILE3845__STATIC:
+                if (!REALITY) break;
+                if (pSprite->extra != 999)
+                    pSprite->extra = 999;
+                else DELETE_SPRITE_AND_CONTINUE(spriteNum);
+                break;
+            case DN64TILE3953__STATIC:
+            {
+                if (!REALITY || !G_HaveActor(sprite[spriteNum].picnum))
+                    goto next_sprite;
+                int const playerNum = A_FindPlayer(pSprite, &playerDist);
+                A_Execute(spriteNum, playerNum, playerDist);
+                goto next_sprite;
+            }
             }
 
         if (PN(spriteNum) >= SCRAP6 && PN(spriteNum) <= SCRAP5+3)
@@ -7214,7 +7242,7 @@ static void MaybeTrainKillEnemies(int const spriteNum, int const gutSpawnCnt)
             if (sprite[findSprite].extra >= 0 && sectNum == sprite[spriteNum].sectnum)
             {
                 A_DoGutsDir(findSprite, JIBS6, gutSpawnCnt);
-                A_PlaySound(SQUISHED, findSprite);
+                A_PlaySound(REALITY ? 44 :SQUISHED, findSprite);
                 A_DeleteSprite(findSprite);
             }
         }
@@ -7352,15 +7380,15 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         pPlayer->pos.z += zchange;
 
                         vec2_t r;
-                        rotatepoint(*(vec2_t *)&sprite[j],*(vec2_t *)&pPlayer->pos,(q*l),&r);
+                        rotatepoint(sprite[j].pos.vec2,pPlayer->pos.vec2,(q*l),&r);
 
                         pPlayer->bobpos.x += r.x-pPlayer->pos.x;
                         pPlayer->bobpos.y += r.y-pPlayer->pos.y;
 
-                        *(vec2_t *)&pPlayer->pos = r;
+                        pPlayer->pos.vec2 = r;
 
                         if (sprite[pPlayer->i].extra <= 0)
-                            *(vec2_t *)&sprite[pPlayer->i] = r;
+                            sprite[pPlayer->i].pos.vec2 = r;
                     }
                 }
 
@@ -7378,7 +7406,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                             sprite[p].z += zchange;
 
-                            rotatepoint(*(vec2_t *)&sprite[j], *(vec2_t *)&sprite[p], (q * l), (vec2_t *)&sprite[p].x);
+                            rotatepoint(sprite[j].pos.vec2, sprite[p].pos.vec2, (q * l), &sprite[p].pos.vec2);
                         }
                 }
 
@@ -7586,7 +7614,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                     // might happen when squished into void space
                     if (pPlayer->cursectnum < 0)
-                        break;
+                        continue;
 
                     if (sector[pPlayer->cursectnum].lotag != ST_2_UNDERWATER)
                     {
@@ -7637,7 +7665,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                             (sprite[j].picnum != SECTOREFFECTOR || (sprite[j].lotag == SE_49_POINT_LIGHT||sprite[j].lotag == SE_50_SPOT_LIGHT))
                             && sprite[j].picnum != LOCATORS)
                     {
-                        rotatepoint(*(vec2_t *)pSprite,*(vec2_t *)&sprite[j],q,(vec2_t *)&sprite[j].x);
+                        rotatepoint(pSprite->pos.vec2,sprite[j].pos.vec2,q,&sprite[j].pos.vec2);
 
                         sprite[j].x+= m;
                         sprite[j].y+= x;
@@ -7664,7 +7692,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 }
 
                 A_MoveSector(spriteNum);
-                setsprite(spriteNum,(vec3_t *)pSprite);
+                setsprite(spriteNum,&pSprite->pos);
 
                 if ((pSector->floorz-pSector->ceilingz) < (108<<8))
                 {
@@ -7678,6 +7706,15 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             break;
 
         case SE_30_TWO_WAY_TRAIN:
+            if (REALITY)
+            {
+                if (pSprite->xvel && pSprite->pal == 0)
+                    if (!S_CheckSoundPlaying(spriteNum,actor[spriteNum].lastv.x))
+                        A_PlaySound(actor[spriteNum].lastv.x,spriteNum);
+
+                if (pData[4] == 0 && pSprite->pal)
+                    pData[4] = 300;
+            }
             if (pSprite->owner == -1)
             {
                 pData[3] = !pData[3];
@@ -7692,7 +7729,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         pData[4] = 2;
                     else
                     {
-                        if (pSprite->xvel == 0)
+                        if (pSprite->xvel == 0 && (!REALITY || pSprite->pal == 0))
                             G_OperateActivators(pSprite->hitag+(!pData[3]),-1);
                         if (pSprite->xvel < 256)
                             pSprite->xvel += 16;
@@ -7710,11 +7747,13 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     else
                     {
                         pSprite->xvel = 0;
-                        G_OperateActivators(pSprite->hitag+(int16_t)pData[3],-1);
+                        if (!REALITY || pSprite->pal == 0)
+                            G_OperateActivators(pSprite->hitag+(int16_t)pData[3],-1);
                         pSprite->owner = -1;
                         pSprite->ang += 1024;
                         pData[4] = 0;
-                        G_OperateForceFields(spriteNum,pSprite->hitag);
+                        if (!REALITY || pSprite->pal == 0)
+                            G_OperateForceFields(spriteNum,pSprite->hitag);
 
                         for (SPRITES_OF_SECT(pSprite->sectnum, j))
                         {
@@ -7726,6 +7765,11 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                         }
 
                     }
+                }
+                if (REALITY && pData[4] > 10)
+                {
+                    if (--pData[4] == 10)
+                        pData[4] = 1;
                 }
             }
 
@@ -7827,13 +7871,16 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     if ((pData[0]&31) ==  8)
                     {
                         g_earthquakeTime = 48;
-                        A_PlaySound(EARTHQUAKE,g_player[screenpeek].ps->i);
+                        A_PlaySound(REALITY ? 54 : EARTHQUAKE,g_player[screenpeek].ps->i);
                     }
 
                     pSector->floorheinum = (klabs(pSector->floorheinum - pData[5]) < 8)
                                            ? pData[5]
                                            : pSector->floorheinum + (ksgn(pData[5] - pSector->floorheinum) << 4);
                 }
+
+                if (REALITY)
+                    break;
 
                 vec2_t const vect = { (pSprite->xvel * sintable[(pSprite->ang + 512) & 2047]) >> 14,
                                       (pSprite->xvel * sintable[pSprite->ang & 2047]) >> 14 };
@@ -7969,6 +8016,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
             //BOSS
         case SE_5:
         {
+            if (REALITY) break;
             if (playerDist < 8192)
             {
                 int const saveAng = pSprite->ang;
@@ -8465,7 +8513,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                         pSector->floorshade = pSprite->shade;
 
-                        if (g_player[0].ps->one_parallax_sectnum >= 0)
+                        if (!REALITY && g_player[0].ps->one_parallax_sectnum >= 0)
                         {
                             pSector->ceilingpicnum = sector[g_player[0].ps->one_parallax_sectnum].ceilingpicnum;
                             pSector->ceilingshade  = sector[g_player[0].ps->one_parallax_sectnum].ceilingshade;
@@ -9244,9 +9292,9 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     break;
                 }
                 else if (T3(spriteNum) == (T2(spriteNum)>>1))
-                    A_PlaySound(THUNDER,spriteNum);
+                    A_PlaySound(REALITY ? 247 : THUNDER,spriteNum);
                 else if (T3(spriteNum) == (T2(spriteNum)>>3))
-                    A_PlaySound(LIGHTNING_SLAP,spriteNum);
+                    A_PlaySound(REALITY ? 246 : LIGHTNING_SLAP,spriteNum);
                 else if (T3(spriteNum) == (T2(spriteNum)>>2))
                 {
                     for (SPRITES_OF(STAT_DEFAULT, j))
@@ -9285,9 +9333,9 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                                 x = ldist(&sprite[ps->i], &sprite[j]);
                                 if (x < 768)
                                 {
-                                    if (!A_CheckSoundPlaying(ps->i,DUKE_LONGTERM_PAIN))
-                                        A_PlaySound(DUKE_LONGTERM_PAIN,ps->i);
-                                    A_PlaySound(SHORT_CIRCUIT,ps->i);
+                                    if (!A_CheckSoundPlaying(ps->i,REALITY ? 168 : DUKE_LONGTERM_PAIN))
+                                        A_PlaySound(REALITY ? 168 : DUKE_LONGTERM_PAIN,ps->i);
+                                    A_PlaySound(REALITY ? 19 : SHORT_CIRCUIT,ps->i);
                                     sprite[ps->i].extra -= 8+(krand2()&7);
 
                                     P_PalFrom(ps, 32, 16,0,0);
@@ -9949,26 +9997,26 @@ void A_PlayAlertSound(int spriteNum)
             case LIZTROOPJETPACK__STATIC:
             case LIZTROOPDUCKING__STATIC:
             case LIZTROOPRUNNING__STATIC:
-            case LIZTROOP__STATIC:         A_PlaySound(PRED_RECOG, spriteNum); break;
+            case LIZTROOP__STATIC:         A_PlaySound(REALITY ? 82 : PRED_RECOG, spriteNum); break;
             case LIZMAN__STATIC:
             case LIZMANSPITTING__STATIC:
             case LIZMANFEEDING__STATIC:
-            case LIZMANJUMP__STATIC:       A_PlaySound(CAPT_RECOG, spriteNum); break;
+            case LIZMANJUMP__STATIC:       A_PlaySound(REALITY ? 88 : CAPT_RECOG, spriteNum); break;
             case PIGCOP__STATIC:
-            case PIGCOPDIVE__STATIC:       A_PlaySound(PIG_RECOG, spriteNum); break;
-            case RECON__STATIC:            A_PlaySound(RECO_RECOG, spriteNum); break;
-            case DRONE__STATIC:            A_PlaySound(DRON_RECOG, spriteNum); break;
+            case PIGCOPDIVE__STATIC:       A_PlaySound(REALITY ? 92 : PIG_RECOG, spriteNum); break;
+            case RECON__STATIC:            A_PlaySound(REALITY ? 97 : RECO_RECOG, spriteNum); break;
+            case DRONE__STATIC:            A_PlaySound(REALITY ? 82 : DRON_RECOG, spriteNum); break;
             case COMMANDER__STATIC:
-            case COMMANDERSTAYPUT__STATIC: A_PlaySound(COMM_RECOG, spriteNum); break;
-            case ORGANTIC__STATIC:         A_PlaySound(TURR_RECOG, spriteNum); break;
+            case COMMANDERSTAYPUT__STATIC: A_PlaySound(REALITY ? 101 : COMM_RECOG, spriteNum); break;
+            case ORGANTIC__STATIC:         if (REALITY) break; A_PlaySound(TURR_RECOG, spriteNum); break;
             case OCTABRAIN__STATIC:
-            case OCTABRAINSTAYPUT__STATIC: A_PlaySound(OCTA_RECOG, spriteNum); break;
-            case BOSS1__STATIC:            S_PlaySound(BOS1_RECOG); break;
-            case BOSS2__STATIC:            S_PlaySound((sprite[spriteNum].pal == 1) ? BOS2_RECOG : WHIPYOURASS); break;
-            case BOSS3__STATIC:            S_PlaySound((sprite[spriteNum].pal == 1) ? BOS3_RECOG : RIPHEADNECK); break;
+            case OCTABRAINSTAYPUT__STATIC: A_PlaySound(REALITY ? 111 : OCTA_RECOG, spriteNum); break;
+            case BOSS1__STATIC:            S_PlaySound(REALITY ? 226 : BOS1_RECOG); break;
+            case BOSS2__STATIC:            S_PlaySound((sprite[spriteNum].pal == 1) ? (REALITY ? 68 : BOS2_RECOG) : (REALITY ? 262 : WHIPYOURASS)); break;
+            case BOSS3__STATIC:            S_PlaySound((sprite[spriteNum].pal == 1) ? (REALITY ? 118 : BOS3_RECOG) : (REALITY ? 261 : RIPHEADNECK)); break;
             case BOSS4__STATIC:
-            case BOSS4STAYPUT__STATIC:     if (sprite[spriteNum].pal == 1) S_PlaySound(BOS4_RECOG); S_PlaySound(BOSS4_FIRSTSEE); break;
-            case GREENSLIME__STATIC:       A_PlaySound(SLIM_RECOG, spriteNum); break;
+            case BOSS4STAYPUT__STATIC:     if (REALITY) break; if (sprite[spriteNum].pal == 1) S_PlaySound(BOS4_RECOG); S_PlaySound(BOSS4_FIRSTSEE); break;
+            case GREENSLIME__STATIC:       A_PlaySound(REALITY ? 22 : SLIM_RECOG, spriteNum); break;
         }
     }
 }

@@ -1968,18 +1968,10 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
     if (sprite[spritenum].xrepeat == 0)
         return;
 
-    //rt_tspriteptr = &rt_tsprite;
-
-    //Bmemcpy(&rt_tsprite, &sprite[spritenum], sizeof(spritetype));
-
     spritesortcnt = 0;
     rt_tspriteptr = renderAddTSpriteFromSprite(spritenum);
     G_DoSpriteAnimations(globalposx, globalposy, globalposz, fix16_to_int(globalang), rt_smoothRatio);
 
-    //// TODO: animatesprites
-    //// HACK:
-    //if ((rt_tsprite.picnum == 1405))
-    //    return;
     if (rt_tspriteptr->xrepeat == 0)
         return;
 

@@ -1106,9 +1106,9 @@ void RT_P_ProcessWeapon(int playerNum)
                     {
                         int v6 = fix16_to_int(pPlayer->q16horiz + pPlayer->q16horizoff - F16(100));
                         if (v6 > 0)
-                            v6 /= 4;
+                            v6 = v6/4;
                         else
-                            v6 /= 2;
+                            v6 = -(v6/2);
 
                         v6 += 140;
                         
