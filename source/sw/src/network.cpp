@@ -968,8 +968,10 @@ AddSyncInfoToPacket(int *j)
     }
 }
 
+void faketimerhandler(void) { ; }
+
 void
-faketimerhandler(void)
+UpdateInputs(void)
 {
     int i, j, k;
     PLAYERp pp;
