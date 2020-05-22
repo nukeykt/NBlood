@@ -1337,7 +1337,7 @@ DoSectorObjectKillMatch(short match)
 
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
-        if (sop->xmid == INT32_MAX)
+        if (SO_EMPTY(sop))
             continue;
 
         if (sop->match_event == match)
@@ -3308,7 +3308,7 @@ DoSector(void)
     for (sop = SectorObject; sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++)
     {
 
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
 
 
