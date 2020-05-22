@@ -351,6 +351,8 @@ playanm(short anim_num)
             break;
         }
 
+        videoClearViewableArea(0L);
+
         waloff[ANIM_TILE(ANIMnum)] = (intptr_t)ANIM_DrawFrame(i);
         tileInvalidate(ANIM_TILE(ANIMnum), 0, 1<<4);
 
