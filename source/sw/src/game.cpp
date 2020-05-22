@@ -3606,6 +3606,26 @@ int32_t app_main(int32_t argc, char const * const * argv)
 
     SW_ExtInit();
 
+    for (cnt = 1; cnt < argc; ++cnt)
+    {
+        char const * arg = argv[cnt];
+        if (*arg != '/' && *arg != '-')
+            continue;
+        ++arg;
+
+        if (Bstrncasecmp(arg, "j", 1) == 0 && !SW_SHAREWARE)
+        {
+            if (strlen(arg) > 1)
+            {
+                const char * dir = arg+1;
+                int err = addsearchpath(dir);
+                if (err < 0)
+                    buildprintf("Failed adding %s for game data: %s\n", dir,
+                                err==-1 ? "not a directory" : "no such directory");
+            }
+        }
+    }
+
     // hackish since SW's init order is a bit different right now
     if (G_CheckCmdSwitch(argc, argv, "-addon0"))
     {
