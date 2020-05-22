@@ -906,24 +906,36 @@ static int32_t defsparser(scriptfile *script)
                 break;
             }
 
+            int32_t orig_crc32{};
             if (have_crc32)
             {
-                int32_t const orig_crc32 = tileGetCRC32(tile);
-                if (orig_crc32 != tile_crc32)
-                {
-                    // initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
-                    break;
-                }
+                orig_crc32 = tileGetCRC32(tile);
+                if (orig_crc32 == tile_crc32)
+                    have_crc32 = 0;
+#if 0
+                else
+                    initprintf("CRC32 of tile %d doesn't match! CRC32: %d, Expected: %d\n", tile, orig_crc32, tile_crc32);
+#endif
             }
 
+            vec2_16_t orig_size{};
             if (have_size)
             {
-                vec2_16_t const orig_size = tileGetSize(tile);
-                if (orig_size.x != tile_size.x && orig_size.y != tile_size.y)
-                {
-                    // initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
-                    break;
-                }
+                orig_size = tileGetSize(tile);
+                if (orig_size.x == tile_size.x && orig_size.y == tile_size.y)
+                    have_size = 0;
+#if 0
+                else
+                    initprintf("Size of tile %d doesn't match! Size: (%d, %d), Expected: (%d, %d)\n", tile, orig_size.x, orig_size.y, tile_size.x, tile_size.y);
+#endif
+            }
+
+            if (have_crc32 || have_size)
+            {
+#if 0
+                initprintf("tilefromtexture %d { ifmatch { size %d %d crc32 %d } }\n", tile, orig_size.x, orig_size.y, orig_crc32);
+#endif
+                break;
             }
 
             if (!fn)
