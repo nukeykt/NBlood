@@ -526,14 +526,15 @@ ifeq ($(PLATFORM),WINDOWS)
 
     ifneq ($(RELEASE),0)
         ifeq ($(FORCEDEBUG),0)
-            DYNAMICBASE := ,--dynamicbase
+            DYNAMICBASE := -Wl,--dynamicbase
+            ifeq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
+                DYNAMICBASE := $(DYNAMICBASE),--high-entropy-va
+            endif
         endif
     endif
-    LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat$(DYNAMICBASE)
+    LINKERFLAGS += -Wl,--enable-auto-import,--nxcompat $(DYNAMICBASE)
     ifneq ($(findstring x86_64,$(COMPILERTARGET)),x86_64)
         LINKERFLAGS += -Wl,--large-address-aware
-    else
-        LINKERFLAGS += -Wl,--high-entropy-va
     endif
 
     LUAJIT_BCOPTS := -o windows
