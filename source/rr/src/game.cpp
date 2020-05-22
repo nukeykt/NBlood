@@ -9005,11 +9005,8 @@ int G_DoMoveThings(void)
     if (RR && ud.recstat == 0 && ud.multimode < 2 && g_torchCnt)
         G_DoTorch();
 
-    if (REALITY)
-    {
-        RT_AnimateExplosions();
-        RT_AnimateSmoke();
-    }
+    if (REALITY && ud.pause_on == 0)
+        RT_AnimateModels();
 
     return 0;
 }

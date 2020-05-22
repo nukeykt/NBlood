@@ -12,6 +12,20 @@ char rt_walock[RT_TILENUM];
 
 float rt_viewhorizang;
 
+static int rt_globalpicnum = -1;
+static vec2f_t rt_uvscale;
+
+static tspritetype rt_tsprite, *rt_tspriteptr;
+
+static int rt_tspritetileid, rt_tspritepicnum;
+static int rt_fxcolor;
+static int rt_curfxcolor, rt_lastpicnum, rt_spritezbufferhack;
+static float viewangsin, viewangcos;
+static vec2_t rt_spritedim;
+static int rt_spritedimtotal;
+static int rt_boss2, rt_boss2_sprite, rt_boss2_x, rt_boss2_y, rt_boss2_ang;
+static float rt_boss2_sin, rt_boss2_cos;
+
 struct maskdraw_t {
     int dist;
     uint16_t index;
@@ -853,6 +867,34 @@ void RT_EnablePolymost()
 static GLfloat rt_projmatrix[16];
 
 
+static vec3f_t rt_look[2];
+
+void RT_LookVectorCalc(float dx, float dy, float dz)
+{
+    GLfloat tempmat[16];
+    // TODO: replace
+    glPushMatrix();
+    glLoadIdentity();
+    bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
+    glGetFloatv(GL_PROJECTION_MATRIX, tempmat);
+    rt_look[0].x = tempmat[0];
+    rt_look[0].y = tempmat[4];
+    rt_look[0].z = tempmat[8];
+    rt_look[1].x = tempmat[0+1];
+    rt_look[1].y = tempmat[4+1];
+    rt_look[1].z = tempmat[8+1];
+    glPopMatrix();
+}
+
+void RT_SetSpecularCoords(float nx, float ny, float nz)
+{
+    float tx = nx * rt_boss2_cos - ny * rt_boss2_sin;
+    float ty = nx * rt_boss2_sin + ny * rt_boss2_cos;
+    float u = tx * rt_look[0].x + ty * rt_look[0].y + nz * rt_look[0].z;
+    float v = tx * rt_look[1].x + ty * rt_look[1].y + nz * rt_look[1].z;
+    glTexCoord2f((1.f + u) * 1008.f * rt_uvscale.x, (1.f + v) * 1008.f  * rt_uvscale.y);
+}
+
 void RT_SetupMatrix(void)
 {
     float dx = 512.f * cosf(rt_globalang / (1024.f / fPI));
@@ -866,10 +908,8 @@ void RT_SetupMatrix(void)
     bgluPerspective(60.f, 4.f/3.f, 5.f, 16384.f);
     bgluLookAt(rt_globalposx * 0.5f, rt_globalposy * 0.5f, rt_globalposz * 0.5f, (rt_globalposx * 0.5f + dx), (rt_globalposy * 0.5f + dy), (rt_globalposz * 0.5f + dz), 0.f, 0.f, -1.f);
     glGetFloatv(GL_PROJECTION_MATRIX, rt_projmatrix);
+    RT_LookVectorCalc(dx, dy, dz);
 }
-
-static int rt_globalpicnum = -1;
-static vec2f_t rt_uvscale;
 
 static inline int RT_PicSizLog(int siz)
 {
@@ -1641,15 +1681,6 @@ int RT_WallCalc(int sectnum, int wallnum)
     return RT_WallCalc_NoSlope(sectnum, wallnum);
 }
 
-static tspritetype rt_tsprite, *rt_tspriteptr;
-
-static int rt_tspritetileid, rt_tspritepicnum;
-static int rt_fxcolor;
-static int rt_curfxcolor, rt_boss2, rt_lastpicnum, rt_spritezbufferhack;
-static float viewangsin, viewangcos;
-static vec2_t rt_spritedim;
-static int rt_spritedimtotal;
-
 void RT_SetupDrawMask(void)
 {
     rt_lastpicnum = 0;
@@ -1988,7 +2019,15 @@ void RT_DrawSprite(int spritenum, int sectnum, int distance)
 
     pn = sprite[spritenum].picnum;
 
-    // TODO: BOSS2 code
+    if (pn == BOSS2)
+    {
+        rt_boss2 = 1;
+        rt_boss2_sprite = spritenum;
+        rt_boss2_x = rt_tspriteptr->x;
+        rt_boss2_y = rt_tspriteptr->y;
+        rt_boss2_ang = rt_tspriteptr->ang;
+        return;
+    }
 
     rt_fxcolor = 0;
     if (pn == 1360 || pn == 1671)
@@ -2646,7 +2685,7 @@ void RT_AddExplosion(int16_t x, int16_t y, int16_t z, uint8_t type)
 
 static uint8_t rt_explosionuv;
 
-void RT_AnimateExplosions(void)
+static void RT_AnimateExplosions(void)
 {
     rt_explosionuv++;
     for (int i = 0; i < MAXEXPLOSIONS; i++)
@@ -2668,7 +2707,7 @@ void RT_AnimateExplosions(void)
     }
 }
 
-void RT_AnimateSmoke(void)
+static void RT_AnimateSmoke(void)
 {
     for (int i = 0; i < MAXEXPLOSIONS; i++)
     {
@@ -2889,14 +2928,282 @@ void RT_DisplayExplosions(void)
     }
 }
 
+
+#define BOSS2_VTXNUM 418
+#define BOSS2_TRIS 469
+#define BOSS2_FRAMES 15
+
+#pragma pack(push, 1)
+struct boss2vtx_t {
+    int16_t x, y, z, u, v;
+    int16_t color[3];
+};
+
+struct boss2tris_t {
+    int16_t vtx[3];
+    int16_t tile;
+};
+
+#pragma pack(pop)
+static boss2vtx_t *boss2vtx;
+static boss2vtx_t boss2vtx_current[BOSS2_VTXNUM];
+static boss2tris_t boss2tris[BOSS2_TRIS];
+static char rt_boss2mdllock;
+
+static int8_t boss2seq0[9] = {
+    0, 1, 2, 3, 4, 5, 6, 7, -1
+};
+
+static int8_t boss2seq1[4] = {
+    5, 6, 7, -1
+};
+
+static int8_t boss2seq2[3] = {
+    6, 7, -1
+};
+
+static int8_t boss2seq3[3] = {
+    8, 9, -2
+};
+
+static int8_t boss2seq4[7] = {
+    11, 11, 10, 10, 10, -3
+};
+
+static int8_t boss2seq5[5] = {
+    11, 12, 13, 14, -5
+};
+
+static int8_t boss2seq6[2] = {
+    14, -5
+};
+
+static int8_t *boss2seq;
+static int boss2mdlstate, boss2mdlstate2;
+static int boss2timer_step;
+static int boss2_frame, boss2_frame2;
+static int boss2timer;
+static float boss2_interp;
+
+void RT_LoadBOSS2MDL(void)
+{
+    static int loaded = 0;
+    if (!loaded)
+    {
+        static int rt_mdloffset = 0x3e9550;
+        static int rt_mdlsize = 0xb3f8;
+        static int rt_trisoffset = 0x895b0;
+        rt_boss2mdllock = CACHE1D_PERMANENT;
+        g_cache.allocateBlock((intptr_t*)&boss2vtx, sizeof(boss2vtx_t)*BOSS2_VTXNUM*BOSS2_FRAMES, &rt_boss2mdllock);
+        char *tbuff = (char*)Xmalloc(rt_mdlsize);
+        if (!tbuff)
+            return;
+        lseek(rt_group, rt_mdloffset, SEEK_SET);
+        if (read(rt_group, tbuff, rt_mdlsize) != rt_mdlsize)
+            return;
+        RNCDecompress(tbuff, (char*)boss2vtx);
+        for (int i = 0; i < BOSS2_VTXNUM*BOSS2_FRAMES; i++)
+        {
+            boss2vtx[i].x = B_BIG16(boss2vtx[i].x);
+            boss2vtx[i].y = B_BIG16(boss2vtx[i].y);
+            boss2vtx[i].z = B_BIG16(boss2vtx[i].z);
+            boss2vtx[i].u = B_BIG16(boss2vtx[i].u);
+            boss2vtx[i].v = B_BIG16(boss2vtx[i].v);
+            boss2vtx[i].color[0] = B_BIG16(boss2vtx[i].color[0]);
+            boss2vtx[i].color[1] = B_BIG16(boss2vtx[i].color[1]);
+            boss2vtx[i].color[2] = B_BIG16(boss2vtx[i].color[2]);
+        }
+        lseek(rt_group, rt_trisoffset, SEEK_SET);
+        if (read(rt_group, boss2tris, sizeof(boss2tris)) != sizeof(boss2tris))
+            return;
+
+        for (auto& v : boss2tris)
+        {
+            v.vtx[0] = B_BIG16(v.vtx[0]);
+            v.vtx[1] = B_BIG16(v.vtx[1]);
+            v.vtx[2] = B_BIG16(v.vtx[2]);
+            v.tile = B_BIG16(v.tile);
+        }
+
+        loaded = 1;
+    }
+
+    boss2seq = nullptr;
+    boss2mdlstate = boss2mdlstate2 = 1;
+    boss2timer_step = 20;
+    boss2_frame = 0;
+    boss2_frame2 = 0;
+    boss2timer = 0;
+    boss2_interp = 0;
+}
+
+void RT_AnimateBOSS2(void)
+{
+    if (boss2seq == nullptr)
+        boss2seq = boss2seq0;
+
+    boss2mdlstate = sprite[rt_boss2_sprite].pal;
+    if (boss2mdlstate == 0)
+    {
+        boss2mdlstate = sprite[rt_boss2_sprite].pal = 5;
+    }
+    boss2timer += boss2timer_step;
+    if (boss2timer > 100.0)
+    {
+        boss2timer -= 100.0;
+        boss2seq++;
+        boss2_frame2 = boss2_frame;
+        do
+        {
+            boss2_frame = *boss2seq;
+            switch (boss2_frame)
+            {
+            case -1:
+                boss2seq = boss2seq0;
+                break;
+            case -2:
+                boss2seq = boss2seq3;
+                break;
+            case -3:
+                boss2seq = boss2seq4;
+                break;
+            case -5:
+                boss2seq = boss2seq6;
+                break;
+            case 6:
+                if (boss2mdlstate != 2)
+                    goto _end;
+                boss2seq = boss2seq3;
+                boss2timer_step = 20;
+                boss2mdlstate2 = boss2mdlstate;
+                break;
+            case 7:
+                if (boss2mdlstate == 3)
+                {
+                    boss2seq = boss2seq4;
+                    boss2timer_step = 16;
+                    boss2mdlstate2 = boss2mdlstate;
+                }
+                else
+                {
+                    if (boss2mdlstate != 4)
+                        goto _end;
+                    boss2seq = boss2seq5;
+                    boss2timer_step = 10;
+                    boss2mdlstate2 = boss2mdlstate;
+                }
+                break;
+            case 9:
+                if (boss2mdlstate != 1)
+                    goto _end;
+                boss2seq = boss2seq1;
+                boss2timer_step = 20;
+                boss2mdlstate2 = boss2mdlstate;
+                break;
+            case 10:
+                if (boss2mdlstate != 1)
+                    goto _end;
+                boss2seq = boss2seq2;
+                boss2timer_step = 20;
+                boss2mdlstate2 = boss2mdlstate;
+                break;
+            default:
+                goto _end;
+            }
+        } while (1);
+    }
+_end:
+    boss2_interp = boss2timer / 100.f;
+    if (boss2mdlstate2 == boss2mdlstate)
+        sprite[rt_boss2_sprite].pal = boss2mdlstate + 4;
+}
+
+void RT_AnimateModels(void)
+{
+    RT_AnimateBOSS2();
+    RT_AnimateExplosions();
+    RT_AnimateSmoke();
+}
+
+void RT_BOSS2CalcVTX(void)
+{
+    boss2vtx_t *frame1 = &boss2vtx[BOSS2_VTXNUM * boss2_frame];
+    boss2vtx_t *frame2 = &boss2vtx[BOSS2_VTXNUM * boss2_frame2];
+    for (int i = 0; i < BOSS2_VTXNUM; i++)
+    {
+        auto &f = boss2vtx_current[i];
+        f.x = frame2[i].x + (frame1[i].x - frame2[i].x) * boss2_interp;
+        f.y = frame2[i].y + (frame1[i].y - frame2[i].y) * boss2_interp;
+        f.z = -frame2[i].z + (-frame1[i].z - -frame2[i].z) * boss2_interp;
+        f.u = frame2[i].u;
+        f.v = frame2[i].v;
+        f.color[0] = frame2[i].color[0] + (frame1[i].color[0] - frame2[i].color[0]) * boss2_interp;
+        f.color[1] = frame2[i].color[1] + (frame1[i].color[1] - frame2[i].color[1]) * boss2_interp;
+        f.color[2] = frame2[i].color[2] + (frame1[i].color[2] - frame2[i].color[2]) * boss2_interp;
+    }
+}
+
+void RT_BOSS2Draw(int x, int y, int z, int ang)
+{
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glMatrixMode(GL_MODELVIEW);
+    glDisable(GL_CULL_FACE);
+    glPushMatrix();
+    glLoadIdentity();
+    glTranslatef(x / 4, y / 4, (z - 0x6800) / 32);
+    ang = 90.f + ang * (180.f / 1024.f);
+    glRotatef(ang, 0.f, 0.f, 1.f);
+    rt_boss2_cos = cos(ang * (fPI / 180.f));
+    rt_boss2_sin = sin(ang * (fPI / 180.f));
+    RT_SetTexComb(0);
+
+    for (int i = 0; i < BOSS2_TRIS; i++)
+    {
+        if (boss2tris[i].tile == 0 || boss2tris[i].tile == 3668)
+        {
+            RT_SetTexture(3668);
+            glBegin(GL_TRIANGLES);
+            for (int j = 0; j < 3; j++)
+            {
+                auto &v = boss2vtx_current[boss2tris[i].vtx[j]];
+                glColor4f(1.f, 1.f, 1.f, 1.f);
+                RT_SetSpecularCoords(int8_t(v.color[0])*(1.f/128.f), int8_t(v.color[1])*(1.f/128.f), int8_t(v.color[2])*(1.f/128.f));
+                glVertex3f(v.x, v.y, v.z);
+            }
+            glEnd();
+        }
+        else
+        {
+            RT_SetTexture(boss2tris[i].tile);
+            glBegin(GL_TRIANGLES);
+            for (int j = 0; j < 3; j++)
+            {
+                auto &v = boss2vtx_current[boss2tris[i].vtx[j]];
+                glColor4f(v.color[0] * (1.f/255.f), v.color[1] * (1.f/255.f), v.color[2] * (1.f/255.f), 1.f);
+                glTexCoord2f(v.u * rt_uvscale.x, v.v * rt_uvscale.y);
+                glVertex3f(v.x, v.y, v.z);
+            }
+            glEnd();
+        }
+    }
+
+    glPopMatrix();
+}
+
 void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectnum, int smoothRatio)
 {
-    updatesector(x, y, &sectnum);
-
+    int16_t newsectnum = sectnum;
+    updatesector(x, y, &newsectnum);
+    if (newsectnum >= 0)
+        sectnum = newsectnum;
     if (sectnum < 0)
-    {
         return;
-    }
+
+    if (rt_boardnum == 27)
+        RT_BOSS2CalcVTX();
 
     RT_DisablePolymost();
 
@@ -2981,6 +3288,9 @@ void RT_DrawRooms(int x, int y, int z, fix16_t ang, fix16_t horiz, int16_t sectn
     //    //    continue;
     //    RT_DrawWall(i);
     //}
+
+    if (rt_boardnum == 27 && ud.monsters_off == 0)
+        RT_BOSS2Draw(rt_boss2_x, rt_boss2_y, 8192, rt_boss2_ang);
 
     RT_DrawMasks();
 

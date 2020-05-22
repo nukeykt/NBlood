@@ -26,6 +26,8 @@ rt_vertex_t *rt_sectvtx;
 rt_walltype *rt_wall;
 rt_sectortype *rt_sector;
 
+int rt_boardnum;
+
 buildvfs_kfd RT_InitGRP(const char *filename)
 {
     auto grp = openfrompath(filename, BO_RDONLY|BO_BINARY, BS_IREAD);
@@ -258,6 +260,7 @@ static void RT_LoadPalette(void)
 void RT_LoadBoard(int boardnum)
 {
     const uint32_t baseOffset = 0x8035a800;
+    rt_boardnum = boardnum;
     auto board = &boardinfo[boardnum];
     uint32_t siz = board->dataend - board->datastart;
     char *boardbuf = (char*)Xmalloc(siz);
@@ -425,6 +428,9 @@ void RT_LoadBoard(int boardnum)
 
     Xfree(boardbuf);
     Xfree(rt_sprite);
+
+    if (boardnum == 27)
+        RT_LoadBOSS2MDL();
 }
 
 #endif

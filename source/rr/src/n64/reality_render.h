@@ -27,5 +27,5 @@ void RT_RotateSprite(float x, float y, float sx, float sy, int tilenum, int orie
 void RT_DrawTileFlash(int x, int y, int picnum, float sx, float sy, int orientation, int color);
 void RT_AddSmoke(int16_t x, int16_t y, int16_t z, uint8_t type);
 void RT_AddExplosion(int16_t x, int16_t y, int16_t z, uint8_t type);
-void RT_AnimateExplosions(void);
-void RT_AnimateSmoke(void);
+void RT_AnimateModels(void);
+void RT_LoadBOSS2MDL(void);
