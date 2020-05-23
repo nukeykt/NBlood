@@ -1020,7 +1020,7 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
         return;
     }
 
-    if (inside_p(pos.x, pos.y, *sectnum))
+    if (inside(pos.x, pos.y, *sectnum) == 1)
         return;
 
     int16_t nsecs = min<int16_t>(getsectordist(pos, *sectnum), INT16_MAX);
@@ -1035,6 +1035,10 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
 
     static int16_t sectlist[MAXSECTORS];
     static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
+    static uint8_t insidemap[(MAXSECTORS+7)>>3];
+
+    Bmemset(insidemap, 0, sizeof(insidemap));
+    bitmap_set(insidemap, *sectnum);
 
     bfirst_search_init(sectlist, sectbitmap, &nsecs, MAXSECTORS, *sectnum);
 
@@ -1042,8 +1046,10 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
     {
         int const listsectnum = sectlist[sectcnt];
 
-        if (inside_p(pos.x, pos.y, listsectnum))
+        if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
             SET_AND_RETURN(*sectnum, listsectnum);
+
+        bitmap_set(insidemap, listsectnum);
 
         auto const sec       = &sector[listsectnum];
         int const  startwall = sec->wallptr;
@@ -1061,13 +1067,15 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
     {
         int const listsectnum = sectlist[sectcnt];
 
-        if (inside_p(pos.x, pos.y, listsectnum))
+        if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
         {
             // add sector to clipping list so the next call to clipupdatesector()
             // finishes in the loop above this one
             addclipsect(listsectnum);
             SET_AND_RETURN(*sectnum, listsectnum);
         }
+
+        bitmap_set(insidemap, listsectnum);
 
         auto const sec       = &sector[listsectnum];
         int const  startwall = sec->wallptr;
