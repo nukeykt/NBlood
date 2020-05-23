@@ -1027,7 +1027,9 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
 
     if (nsecs > (walldist + 8))
     {
+#ifdef DEBUGGINGAIDS
         OSD_Printf("%s(): initial position (%d, %d) not within initial sector %d; shortest distance %d.\n", EDUKE32_FUNCTION, pos.x, pos.y, *sectnum, nsecs);
+#endif
         walldist = 0x7fff;
     }
 
