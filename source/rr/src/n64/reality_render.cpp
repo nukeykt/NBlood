@@ -3148,7 +3148,7 @@ void RT_BOSS2Draw(int x, int y, int z, int ang)
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_ALPHA_TEST);
     glMatrixMode(GL_MODELVIEW);
     glDisable(GL_CULL_FACE);
     glPushMatrix();
