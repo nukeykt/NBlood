@@ -2926,10 +2926,13 @@ rrbloodpool_fallthrough:
             {
                 // 64 "money"
                 pSprite->xrepeat = pSprite->yrepeat = RR ? 12 : 24;
-                if ((krand2() % 256) < 128)
-                    pSprite->cstat |= 4;
-                if ((krand2() % 256) < 128)
-                    pSprite->cstat |= 8;
+                if (REALITY)
+                {
+                    if ((krand2() % 256) < 128)
+                        pSprite->cstat |= 4;
+                    if ((krand2() % 256) < 128)
+                        pSprite->cstat |= 8;
+                }
             }
             else if (pSprite->picnum == BURNING || (!RR && pSprite->picnum == BURNING2))
                 pSprite->xrepeat = pSprite->yrepeat = 4;

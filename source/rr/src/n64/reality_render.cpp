@@ -3024,6 +3024,7 @@ void RT_LoadBOSS2MDL(void)
             v.vtx[2] = B_BIG16(v.vtx[2]);
             v.tile = B_BIG16(v.tile);
         }
+        Xfree(tbuff);
 
         loaded = 1;
     }
@@ -3159,13 +3160,19 @@ void RT_BOSS2Draw(int x, int y, int z, int ang)
     rt_boss2_cos = cos(ang * (fPI / 180.f));
     rt_boss2_sin = sin(ang * (fPI / 180.f));
     RT_SetTexComb(0);
-
+    int lasttex = -1;
+    glBegin(GL_TRIANGLES);
     for (int i = 0; i < BOSS2_TRIS; i++)
     {
         if (boss2tris[i].tile == 0 || boss2tris[i].tile == 3668)
         {
-            RT_SetTexture(3668);
-            glBegin(GL_TRIANGLES);
+            if (lasttex != 3668)
+            {
+                glEnd();
+                RT_SetTexture(3668);
+                glBegin(GL_TRIANGLES);
+                lasttex = 3668;
+            }
             for (int j = 0; j < 3; j++)
             {
                 auto &v = boss2vtx_current[boss2tris[i].vtx[j]];
@@ -3173,12 +3180,16 @@ void RT_BOSS2Draw(int x, int y, int z, int ang)
                 RT_SetSpecularCoords(int8_t(v.color[0])*(1.f/128.f), int8_t(v.color[1])*(1.f/128.f), int8_t(v.color[2])*(1.f/128.f));
                 glVertex3f(v.x, v.y, v.z);
             }
-            glEnd();
         }
         else
         {
-            RT_SetTexture(boss2tris[i].tile);
-            glBegin(GL_TRIANGLES);
+            if (lasttex != boss2tris[i].tile)
+            {
+                glEnd();
+                RT_SetTexture(boss2tris[i].tile);
+                glBegin(GL_TRIANGLES);
+                lasttex = boss2tris[i].tile;
+            }
             for (int j = 0; j < 3; j++)
             {
                 auto &v = boss2vtx_current[boss2tris[i].vtx[j]];
@@ -3186,9 +3197,9 @@ void RT_BOSS2Draw(int x, int y, int z, int ang)
                 glTexCoord2f(v.u * rt_uvscale.x, v.v * rt_uvscale.y);
                 glVertex3f(v.x, v.y, v.z);
             }
-            glEnd();
         }
     }
+    glEnd();
 
     glPopMatrix();
 }
