@@ -26,6 +26,7 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 
     if (xmp_play_frame(ctx) != 0)
     {
+#if 0
         if (voice->Loop.Size > 0)
         {
             xmp_restart_module(ctx);
@@ -33,6 +34,7 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
                 return NoMoreData;
         }
         else
+#endif
             return NoMoreData;
     }
 
