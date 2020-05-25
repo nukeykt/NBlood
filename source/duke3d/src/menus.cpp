@@ -2036,6 +2036,10 @@ void Menu_Init(void)
 
     if (FURY)
     {
+        g_textstat &= ~RS_TOPLEFT;
+        MF_Redfont.textflags |= TEXT_VARHEIGHT;
+        MF_Bluefont.textflags |= TEXT_VARHEIGHT;
+
         MF_Redfont.between.x = 2<<16;
         MF_Redfont.cursorScale = 32768;
         MF_Redfont.zoom = 12288;
@@ -2061,10 +2065,6 @@ void Menu_Init(void)
         M_OPTIONS.title = NoTitle;
 
         SELECTDIR_z = 16384;
-
-        g_textstat &= ~RS_TOPLEFT;
-        MF_Redfont.textflags |= TEXT_VARHEIGHT;
-        MF_Bluefont.textflags |= TEXT_VARHEIGHT;
     }
 
     // prepare shareware
