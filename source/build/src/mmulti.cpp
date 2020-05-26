@@ -242,7 +242,7 @@ int netinit (int portnum)
 				initprintf("mmulti error: could not enable IPV4 packet info on socket.\n");
 				break;
 			} else {
-				initprintf("mmulti warning: could not enable IPV4 packet info on socket.\n");
+				initprintf("mmulti warning: could not enable IPV6 packet info on socket.\n");
 			}
 		}
 
