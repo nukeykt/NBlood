@@ -2042,89 +2042,6 @@ TenScreen(void)
 */
 // CTW REMOVED END
 
-void
-TitleLevel(void)
-{
-    char tempbuf[256];
-    char *palook_bak = palookup[0];
-    int i;
-
-    for (i = 0; i < 256; i++)
-        tempbuf[i] = i;
-    palookup[0] = tempbuf;
-
-//    unsigned char backup_pal[256*3];
-//    unsigned char pal[PAL_SIZE];
-    //GetPaletteFromVESA(pal);
-    //memcpy(backup_pal, pal, PAL_SIZE);
-
-    videoClearViewableArea(0L);
-    videoNextPage();
-
-//    int fin;
-//    if ((fin = kopen4load("title.pal", 0)) != -1)
-//        {
-//        kread(fin, pal, PAL_SIZE);
-//        kclose(fin);
-//        SetPaletteToVESA(pal);
-//        }
-
-//    clearview(0);
-//    nextpage();
-
-    //FadeOut(0, 0);
-    ready2send = 0;
-    totalclock = 0;
-    ototalclock = 0;
-
-    rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-    videoNextPage();
-    //FadeIn(0, 3);
-
-    ResetKeys();
-    while (TRUE)
-    {
-        handleevents();
-        OSD_DispatchQueued();
-
-        // taken from top of faketimerhandler
-        // limits checks to max of 40 times a second
-        if (totalclock >= ototalclock + synctics)
-        {
-            //void MNU_CheckForMenusAnyKey( void );
-
-            ototalclock += synctics;
-            //MNU_CheckForMenusAnyKey();
-        }
-
-        //if (UsingMenus)
-        //    MNU_DrawMenu();
-
-        //drawscreen as fast as you can
-        rotatesprite(0, 0, RS_SCALE, 0, TITLE_PIC, 0, 0, TITLE_ROT_FLAGS, 0, 0, xdim - 1, ydim - 1);
-
-        videoNextPage();
-
-        if (totalclock > 5*120 || KeyPressed())
-        {
-            DemoMode = TRUE;
-            DemoPlaying = TRUE;
-            break;
-        }
-    }
-
-    palookup[0] = palook_bak;
-
-//    clearview(0);
-//    nextpage();
-    //SetPaletteToVESA(backup_pal);
-
-    // put up a blank screen while loading
-//    clearview(0);
-//    nextpage();
-}
-
-
 void DrawMenuLevelScreen(void)
 {
     renderFlushPerms();
@@ -2962,7 +2879,6 @@ GameIntro(void)
     {
         LogoLevel();
         //CreditsLevel();
-        //TitleLevel();
         IntroAnimLevel();
         IntroAnimCount = 0;
     }
