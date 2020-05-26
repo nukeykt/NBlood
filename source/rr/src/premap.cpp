@@ -1062,6 +1062,8 @@ void P_ResetWeapons(int playerNum)
 
     pPlayer->weapon_pos                 = WEAPON_POS_START;
     pPlayer->curr_weapon                = PISTOL_WEAPON;
+    if (REALITY)
+        pPlayer->dn64_372               = PISTOL_WEAPON;
     pPlayer->kickback_pic               = 5;
     pPlayer->gotweapon                  = ((1 << PISTOL_WEAPON) | (1 << KNEE_WEAPON) | (1 << HANDREMOTE_WEAPON));
     pPlayer->ammo_amount[PISTOL_WEAPON] = min<int16_t>(pPlayer->max_ammo_amount[PISTOL_WEAPON], 48);

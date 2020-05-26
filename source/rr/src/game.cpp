@@ -9021,7 +9021,9 @@ void A_SpawnWallGlass(int spriteNum, int wallNum, int glassCnt)
         for (bssize_t j = glassCnt - 1; j >= 0; --j)
         {
             int const a = SA(spriteNum) - 256 + (krand2() & 511) + 1024;
-            int32_t const r1 = krand2(), r2 = krand2();
+            int32_t r1 = krand2(), r2 = krand2();
+            if (REALITY)
+                swap(&r1, &r2);
             A_InsertSprite(SECT(spriteNum), SX(spriteNum), SY(spriteNum), SZ(spriteNum), GLASSPIECES + (j % 3), -32, 36, 36, a,
                            32 + (r2 & 63), 1024 - (r1 & 1023), spriteNum, 5);
         }
@@ -9052,7 +9054,9 @@ void A_SpawnWallGlass(int spriteNum, int wallNum, int glassCnt)
             if (z < -ZOFFSET5 || z > ZOFFSET5)
                 z = SZ(spriteNum) - ZOFFSET5 + (krand2() & ((64 << 8) - 1));
 
-            int32_t const r1 = krand2(), r2 = krand2();
+            int32_t r1 = krand2(), r2 = krand2();
+            if (REALITY)
+                swap(&r1, &r2);
             A_InsertSprite(SECT(spriteNum), v1.x, v1.y, z, GLASSPIECES + (j % 3), -32, 36, 36, SA(spriteNum) - 1024, 32 + (r2 & 63),
                            -(r1 & 1023), spriteNum, 5);
         }
@@ -9110,7 +9114,9 @@ void A_SpawnGlass(int spriteNum, int glassCnt)
     {
         int const a = krand2()&2047;
         int const z = SZ(spriteNum)-((krand2()&16)<<8);
-        int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2();
+        int32_t r1 = krand2(), r2 = krand2(), r3 = krand2();
+        if (REALITY)
+            swap(&r1, &r3);
         int const k
         = A_InsertSprite(SECT(spriteNum), SX(spriteNum), SY(spriteNum), z, GLASSPIECES + (glassCnt % 3),
                          r3 & 15, 36, 36, a, 32 + (r2 & 63), -512 - (r1 & 2047), spriteNum, 5);
@@ -9148,7 +9154,9 @@ void A_SpawnRandomGlass(int spriteNum, int wallNum, int glassCnt)
         for (bssize_t j = glassCnt - 1; j >= 0; j--)
         {
             int const a = krand2() & 2047;
-            int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2();
+            int32_t r1 = krand2(), r2 = krand2(), r3 = krand2();
+            if (REALITY)
+                swap(&r1, &r3);
             int const k
             = A_InsertSprite(SECT(spriteNum), SX(spriteNum), SY(spriteNum), SZ(spriteNum) - (r3 & (63 << 8)), GLASSPIECES + (j % 3),
                              -32, 36, 36, a, 32 + (r2 & 63), 1024 - (r1 & 2047), spriteNum, 5);
@@ -9174,7 +9182,9 @@ void A_SpawnRandomGlass(int spriteNum, int wallNum, int glassCnt)
         if (z < -ZOFFSET5 || z > ZOFFSET5)
             z       = SZ(spriteNum) - ZOFFSET5 + (krand2() & ((64 << 8) - 1));
 
-        int32_t const r1 = krand2(), r2 = krand2();
+        int32_t r1 = krand2(), r2 = krand2();
+        if (REALITY)
+            swap(&r1, &r2);
         int const k = A_InsertSprite(SECT(spriteNum), v1.x, v1.y, z, GLASSPIECES + (j % 3), -32, 36, 36, SA(spriteNum) - 1024,
                                      32 + (r2 & 63), -(r1 & 2047), spriteNum, 5);
         sprite[k].pal = krand2() & 7;

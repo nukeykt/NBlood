@@ -6976,10 +6976,10 @@ jib_code:
                 goto next_sprite;
             }
 
-            case SHRINKEREXPLOSION__STATIC:
             case EXPLOSION2BOT__STATIC:
                 if (REALITY) break;
                 fallthrough__;
+            case SHRINKEREXPLOSION__STATIC:
             case BURNING2__STATIC:
             case FECES__STATIC:
             case LASERSITE__STATIC:

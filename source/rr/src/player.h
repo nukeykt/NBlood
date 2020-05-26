@@ -147,7 +147,7 @@ typedef struct {
     int32_t runspeed, max_player_health, max_shield_amount;
     int32_t autostep, autostep_sbw;
 
-    uint32_t interface_toggle_flag;
+    int32_t interface_toggle_flag;
     uint16_t max_actors_killed, actors_killed;
     uint32_t gotweapon;
     uint16_t zoom;
@@ -227,14 +227,14 @@ typedef struct {
 
     uint8_t dn64_36d;
 
-    int16_t dn64_370, dn64_372;
+    int16_t dn64_370, dn64_372, dn64_374, dn64_376, dn64_378;
 
     uint8_t dn64_385;
 
     int32_t dn_388;
 
     int8_t crouch_toggle;
-    int8_t padding_[4];
+    int8_t padding_[2];
 } DukePlayer_t;
 
 // KEEPINSYNC lunatic/_defs_game.lua

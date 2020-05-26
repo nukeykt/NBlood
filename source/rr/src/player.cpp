@@ -43,10 +43,10 @@ int32_t g_numSelfObituaries = 0;
 
 
 int const icon_to_inv[ICON_MAX] = { GET_FIRSTAID, GET_FIRSTAID, GET_STEROIDS, GET_HOLODUKE,
-                                    GET_JETPACK,  GET_HEATS,    GET_SCUBA,    GET_BOOTS };
+                                    GET_JETPACK,  GET_HEATS,    GET_SCUBA,    GET_BOOTS,    GET_SHIELD };
 
-int const inv_to_icon[GET_MAX] = { ICON_STEROIDS, ICON_NONE,  ICON_SCUBA, ICON_HOLODUKE, ICON_JETPACK, ICON_NONE,
-                                   ICON_NONE,     ICON_HEATS, ICON_NONE,  ICON_FIRSTAID, ICON_BOOTS };
+int const inv_to_icon[GET_MAX] = { ICON_STEROIDS, ICON_SHIELD, ICON_SCUBA, ICON_HOLODUKE, ICON_JETPACK, ICON_NONE,
+                                   ICON_NONE,     ICON_HEATS,  ICON_NONE,  ICON_FIRSTAID, ICON_BOOTS };
 
 void P_AddKills(DukePlayer_t * const pPlayer, uint16_t kills)
 {
@@ -5189,6 +5189,12 @@ void P_CheckWeapon(DukePlayer_t *pPlayer)
         if (weaponNum == pPlayer->curr_weapon)
             return;
 
+        if (REALITY && (weaponNum == KNEE_WEAPON || weaponNum == HANDREMOTE_WEAPON))
+        {
+            P_AddWeapon(pPlayer, weaponNum);
+            return;
+        }
+
         if ((pPlayer->gotweapon & (1<<weaponNum)) && pPlayer->ammo_amount[weaponNum] > 0)
         {
             P_AddWeapon(pPlayer, weaponNum);
@@ -5291,7 +5297,7 @@ static void P_CheckTouchDamage(DukePlayer_t *pPlayer, int touchObject)
 
                 pPlayer->hurt_delay = 16;
                 P_PalFrom(pPlayer, 32, 32, 0, 0);
-                A_PlaySound(DUKE_LONGTERM_PAIN, pPlayer->i);
+                A_PlaySound(REALITY ? 168 : DUKE_LONGTERM_PAIN, pPlayer->i);
             }
         }
         return;
@@ -5319,7 +5325,7 @@ static void P_CheckTouchDamage(DukePlayer_t *pPlayer, int touchObject)
 
             pPlayer->vel.x = -(sintable[(fix16_to_int(pPlayer->q16ang)+512)&2047]<<8);
             pPlayer->vel.y = -(sintable[(fix16_to_int(pPlayer->q16ang))&2047]<<8);
-            A_PlaySound(DUKE_LONGTERM_PAIN,pPlayer->i);
+            A_PlaySound(REALITY ? 168 : DUKE_LONGTERM_PAIN,pPlayer->i);
 
             DoWallTouchDamage(pPlayer, touchWall);
             break;
@@ -7093,6 +7099,11 @@ static void P_ProcessWeapon(int playerNum)
 
 void P_EndLevel(void)
 {
+    // if (REALITY)
+    // {
+    //     if (ud.multimode != 1 && ud.coop != 1 && dukematch_mode != 1)
+    //         return;
+    // }
     for (bssize_t TRAVERSE_CONNECT(playerNum))
         g_player[playerNum].ps->gm = MODE_EOL;
 

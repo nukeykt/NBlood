@@ -534,7 +534,7 @@ void G_AnimateCamSprite(int smoothRatio)
         if (pPlayer->newowner >= 0)
             OW(spriteNum) = pPlayer->newowner;
 
-        if (OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < VIEWSCREEN_ACTIVE_DISTANCE)
+        if (!REALITY && OW(spriteNum) >= 0 && dist(&sprite[pPlayer->i], &sprite[spriteNum]) < VIEWSCREEN_ACTIVE_DISTANCE)
         {
             int const viewscrShift = G_GetViewscreenSizeShift((const uspritetype *)&sprite[spriteNum]);
             int const viewscrTile  = TILE_VIEWSCR - viewscrShift;
@@ -1654,13 +1654,13 @@ default_case:
         case DIPSWITCH_LIKE_CASES:
             if (G_IsLikeDipswitch(nSwitchPicnum))
             {
-                S_PlaySound3D((nSwitchPicnum == ALIENSWITCH || nSwitchPicnum == ALIENSWITCH + 1) ? ALIEN_SWITCH1 : SWITCH_ON,
+                S_PlaySound3D((nSwitchPicnum == ALIENSWITCH || nSwitchPicnum == ALIENSWITCH + 1) ? (REALITY ? 214 : ALIEN_SWITCH1) : (REALITY ? 51 : SWITCH_ON),
                               (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
 
                 if (numDips != correctDips)
                     break;
 
-                S_PlaySound3D(END_OF_LEVEL_WARN, g_player[playerNum].ps->i, &davector);
+                S_PlaySound3D(REALITY ? 56 : END_OF_LEVEL_WARN, g_player[playerNum].ps->i, &davector);
             }
             fallthrough__;
         case ACCESSSWITCH_CASES:
@@ -1779,7 +1779,7 @@ default_case:
                 return 1;
 
             if (!hitag && CheckDoorTile(nSwitchPicnum) == 0)
-                S_PlaySound3D(SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
+                S_PlaySound3D(REALITY ? 51 : SWITCH_ON, (switchType == SWITCH_SPRITE) ? wallOrSprite : g_player[playerNum].ps->i, &davector);
             else if (hitag)
             {
                 if (switchType == SWITCH_SPRITE && (g_sounds[hitag].m & SF_TALK) == 0)
@@ -1813,8 +1813,8 @@ void G_ActivateBySector(int sectNum, int spriteNum)
 static void G_BreakWall(int tileNum, int spriteNum, int wallNum)
 {
     wall[wallNum].picnum = tileNum;
-    A_PlaySound(VENT_BUST,spriteNum);
-    A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
+    A_PlaySound(REALITY ? 16 : VENT_BUST,spriteNum);
+    A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
     A_SpawnWallGlass(spriteNum,wallNum,10);
 }
 
@@ -1837,6 +1837,9 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
             case HYDRENT__STATIC:
             case OOZFILTER__STATIC:
             case EXPLODINGBARREL__STATIC:
+            case DN64TILE2599__STATIC:
+                if (!REALITY && weaponNum == DN64TILE2599)
+                    break;
                 A_SpawnWallGlass(spriteNum, wallNum, 70);
                 A_PlaySound(GLASS_HEAVYBREAK, spriteNum);
                 pWall->cstat &= ~16;
@@ -1881,7 +1884,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
                 CS(i) |= 18 + 128;
                 SA(i) = getangle(pWall->x - wall[pWall->point2].x, pWall->y - wall[pWall->point2].y) - 512;
 
-                A_PlaySound(SOMETHINGHITFORCE, i);
+                A_PlaySound(REALITY ? 28 : SOMETHINGHITFORCE, i);
             }
                 return;
                 
@@ -1893,8 +1896,8 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
                     wall[pWall->nextwall].overpicnum = FANSPRITEBROKE;
                     wall[pWall->nextwall].cstat &= 65535 - 65;
                 }
-                A_PlaySound(VENT_BUST, spriteNum);
-                A_PlaySound(GLASS_BREAKING, spriteNum);
+                A_PlaySound(REALITY ? 16 : VENT_BUST, spriteNum);
+                A_PlaySound(REALITY ? 17 : GLASS_BREAKING, spriteNum);
                 return;
 
             case RRTILE1973__STATICRR:
@@ -1935,7 +1938,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
                     SLT(i) = 128;
                     T2(i)  = RR ? 2 : 5;
                     T3(i)  = wallNum;
-                    A_PlaySound(GLASS_BREAKING, i);
+                    A_PlaySound(REALITY ? 17 : GLASS_BREAKING, i);
                 }
                 return;
 
@@ -1947,8 +1950,8 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
                 pWall->cstat = 0;
                 if (pWall->nextwall >= 0)
                     wall[pWall->nextwall].cstat = 0;
-                A_PlaySound(VENT_BUST, spriteNum);
-                A_PlaySound(GLASS_BREAKING, spriteNum);
+                A_PlaySound(REALITY ? 16 : VENT_BUST, spriteNum);
+                A_PlaySound(REALITY ? 17 : GLASS_BREAKING, spriteNum);
                 return;
         }
     }
@@ -1960,6 +1963,10 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
 
     switch (DYNAMICTILEMAP(wallPicnum))
     {
+        case DN64TILE3627__STATIC:
+            if (!REALITY) break;
+            G_BreakWall(DN64TILE3727, spriteNum, wallNum);
+            break;
         case RRTILE3643__STATICRR:
             {
                 int jj = headspritesect[wall[pWall->nextwall].nextsector];
@@ -2113,7 +2120,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
         case COLAMACHINE__STATIC:
         case VENDMACHINE__STATIC:
             G_BreakWall(pWall->picnum + 2, spriteNum, wallNum);
-            A_PlaySound(RR ? GLASS_BREAKING : VENT_BUST, spriteNum);
+            A_PlaySound(RR ? GLASS_BREAKING : (REALITY ? 16 : VENT_BUST), spriteNum);
             return;
 
         case FEMPIC2__STATIC:
@@ -2145,7 +2152,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
         case SCREENBREAK7__STATIC:
         case SCREENBREAK8__STATIC:
             A_SpawnWallGlass(spriteNum, wallNum, 30);
-            A_PlaySound(GLASS_HEAVYBREAK, spriteNum);
+            A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK, spriteNum);
             pWall->picnum = W_SCREENBREAK + (krand2() % (RRRA ? 2: 3));
             return;
 
@@ -2205,7 +2212,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
         case ATM__STATIC:
             pWall->picnum = ATMBROKE;
             A_SpawnMultiple(spriteNum, MONEY, 1 + (krand2() & 7));
-            A_PlaySound(GLASS_HEAVYBREAK, spriteNum);
+            A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK, spriteNum);
             break;
 
         case WALLLIGHT2__STATIC:
@@ -2231,7 +2238,7 @@ void A_DamageWall(int spriteNum, int wallNum, const vec3_t *vPos, int weaponNum)
         case RRTILE3206__STATICRR:
         case RRTILE3208__STATICRR:
         {
-            A_PlaySound(rnd(128) ? GLASS_HEAVYBREAK : GLASS_BREAKING, spriteNum);
+            A_PlaySound(rnd(128) ? (REALITY ? 18 : GLASS_HEAVYBREAK) : (REALITY ? 17 : GLASS_BREAKING), spriteNum);
             A_SpawnWallGlass(spriteNum, wallNum, 30);
 
             if (RR)
@@ -2349,7 +2356,7 @@ void Sect_DamageCeiling(int const sectNum)
         case TECHLIGHT4__STATIC: *pPicnum = TECHLIGHTBUST4;
     GLASSBREAK_CODE:
             A_SpawnCeilingGlass(g_player[myconnectindex].ps->i, sectNum, 10);
-            A_PlaySound(GLASS_BREAKING, g_player[screenpeek].ps->i);
+            A_PlaySound(REALITY ? 17 : GLASS_BREAKING, g_player[screenpeek].ps->i);
             if (sector[sectNum].hitag == 0)
             {
                 for (bssize_t SPRITES_OF_SECT(sectNum, i))
@@ -3036,8 +3043,8 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
             sprite[dmgSrc].xvel = (sprite[spriteNum].xvel>>1)+(sprite[spriteNum].xvel>>2);
             sprite[dmgSrc].ang -= (SA(spriteNum)<<1)+1024;
             SA(spriteNum) = getangle(SX(spriteNum)-sprite[dmgSrc].x,SY(spriteNum)-sprite[dmgSrc].y)-512;
-            if (g_sounds[POOLBALLHIT].num < 2)
-                A_PlaySound(POOLBALLHIT, spriteNum);
+            if (g_sounds[REALITY ? 7 : POOLBALLHIT].num < 2)
+                A_PlaySound(REALITY ? 7 : POOLBALLHIT, spriteNum);
         }
         else if (RR && (sprite[dmgSrc].picnum == RRTILE3440 || sprite[dmgSrc].picnum == RRTILE3440+1))
         {
@@ -3092,6 +3099,10 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         case FIRELASER__STATIC:
         case HYDRENT__STATIC:
         case HEAVYHBOMB__STATIC:
+        case DN64TILE2599__STATIC:
+        case DN64TILE3634__STATIC:
+            if (!REALITY && (sprite[dmgSrc].picnum == DN64TILE2599 || sprite[dmgSrc].picnum == DN64TILE3634))
+                break;
             if (T1(spriteNum) == 0)
             {
                 CS(spriteNum) &= ~257;
@@ -3121,9 +3132,18 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         case FIRELASER__STATIC:
         case HYDRENT__STATIC:
         case HEAVYHBOMB__STATIC:
+        case DN64TILE2599__STATIC:
+        case DN64TILE3634__STATIC:
+            if (!REALITY && (sprite[dmgSrc].picnum == DN64TILE2599 || sprite[dmgSrc].picnum == DN64TILE3634))
+                break;
             for (bssize_t k=64; k>0; k--)
             {
-                int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2(), r5 = krand2();
+                int32_t r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2(), r5 = krand2();
+                if (REALITY)
+                {
+                    swap(&r1, &r5);
+                    swap(&r2, &r4);
+                }
                 int newSprite =
                     A_InsertSprite(SECT(spriteNum), SX(spriteNum), SY(spriteNum), SZ(spriteNum) - (r5 % (48 << 8)), SCRAP3 + (r4 & 3), -8, 48, 48,
                         r3 & 2047, (r2 & 63) + 64, -(r1 & 4095) - (sprite[spriteNum].zvel >> 2), spriteNum, 5);
@@ -3143,10 +3163,15 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         if (RR) goto default_case;
         for (bssize_t k=6; k>0; k--)
         {
-            int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+            int32_t r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+            if (REALITY)
+            {
+                swap(&r1, &r4);
+                swap(&r2, &r3);
+            }
             A_InsertSprite(SECT(spriteNum),SX(spriteNum),SY(spriteNum),SZ(spriteNum)-ZOFFSET3,SCRAP1+(r4&15),-8,48,48,r3&2047,(r2&63)+64,-(r1&4095)-(sprite[spriteNum].zvel>>2),spriteNum,5);
         }
-        A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
         A_DeleteSprite(spriteNum);
         break;
         
@@ -3156,7 +3181,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         if (!RR && sector[SECT(spriteNum)].floorpicnum == FANSHADOW)
             sector[SECT(spriteNum)].floorpicnum = FANSHADOWBROKE;
 
-        A_PlaySound(GLASS_HEAVYBREAK, spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK, spriteNum);
 
         for (bssize_t j=16; j>0; j--)
         {
@@ -3181,7 +3206,12 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         {
             for (bssize_t j=0; j<15; j++)
             {
-                int32_t const r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+                int32_t r1 = krand2(), r2 = krand2(), r3 = krand2(), r4 = krand2();
+                if (REALITY)
+                {
+                    swap(&r1, &r4);
+                    swap(&r2, &r3);
+                }
                 A_InsertSprite(SECT(spriteNum),SX(spriteNum),SY(spriteNum),sector[SECT(spriteNum)].floorz-ZOFFSET4-(j<<9),SCRAP1+(r4&15),-8,64,64,
                                r3&2047,(r2&127)+64,-(r1&511)-256,spriteNum,5);
             }
@@ -3227,12 +3257,12 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         else if (PN(spriteNum) == STATUE || PN(spriteNum) == STATUEFLASH)
         {
             A_SpawnRandomGlass(spriteNum,-1,40);
-            A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
+            A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
         }
         else if (PN(spriteNum) == VASE)
             A_SpawnWallGlass(spriteNum,-1,40);
 
-        A_PlaySound(GLASS_BREAKING,spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_BREAKING,spriteNum);
         SA(spriteNum) = krand2()&2047;
         A_SpawnWallGlass(spriteNum,-1,8);
         A_DeleteSprite(spriteNum);
@@ -3241,7 +3271,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
     case FETUS__STATIC:
         if (RR) goto default_case;
         PN(spriteNum) = FETUSBROKE;
-        A_PlaySound(GLASS_BREAKING,spriteNum);
+        A_PlaySound(REALITY ? 17 : GLASS_BREAKING,spriteNum);
         A_SpawnWallGlass(spriteNum,-1,10);
         break;
 
@@ -3252,11 +3282,11 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
             A_Shoot(spriteNum,BLOODSPLAT1);
             SA(spriteNum) += 333;
         }
-        A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
-        A_PlaySound(SQUISHED,spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
+        A_PlaySound(REALITY ? 44 : SQUISHED,spriteNum);
         fallthrough__;
     case BOTTLE7__STATIC:
-        A_PlaySound(GLASS_BREAKING,spriteNum);
+        A_PlaySound(REALITY ? 17 : GLASS_BREAKING,spriteNum);
         A_SpawnWallGlass(spriteNum,-1,10);
         A_DeleteSprite(spriteNum);
         break;
@@ -3272,7 +3302,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
     case HYDROPLANT__STATIC:
         if (RR) goto default_case;
         PN(spriteNum) = BROKEHYDROPLANT;
-        A_PlaySound(GLASS_BREAKING,spriteNum);
+        A_PlaySound(REALITY ? 17 : GLASS_BREAKING,spriteNum);
         A_SpawnWallGlass(spriteNum,-1,10);
         break;
 
@@ -3288,7 +3318,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         if (RR) goto default_case;
         if (CS(spriteNum)&1)
         {
-            A_PlaySound(GLASS_BREAKING,spriteNum);
+            A_PlaySound(REALITY ? 17 : GLASS_BREAKING,spriteNum);
             SZ(spriteNum) += ZOFFSET2;
             CS(spriteNum) = 0;
             A_SpawnWallGlass(spriteNum,-1,5);
@@ -3300,7 +3330,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         CS(spriteNum) |= (krand2()&1)<<2;
         CS(spriteNum) &= ~257;
         A_Spawn(spriteNum,TOILETWATER);
-        A_PlaySound(GLASS_BREAKING,spriteNum);
+        A_PlaySound(REALITY ? 17 : GLASS_BREAKING,spriteNum);
         break;
 
     case STALL__STATIC:
@@ -3308,7 +3338,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         CS(spriteNum) |= (krand2()&1)<<2;
         CS(spriteNum) &= ~257;
         A_Spawn(spriteNum,TOILETWATER);
-        A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
         break;
 
     case HYDRENT__STATIC:
@@ -3320,19 +3350,19 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         //            j = A_InsertSprite(SECT,SX,SY,SZ-(krand2()%(48<<8)),SCRAP3+(krand2()&3),-8,48,48,krand2()&2047,(krand2()&63)+64,-(krand2()&4095)-(sprite[i].zvel>>2),i,5);
         //          sprite[j].pal = 2;
         //    }
-        A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
         break;
         
     case GRATE1__STATIC:
         PN(spriteNum) = BGRATE1;
         CS(spriteNum) &= (65535-256-1);
-        A_PlaySound(VENT_BUST, spriteNum);
+        A_PlaySound(REALITY ? 16 : VENT_BUST, spriteNum);
         break;
 
     case CIRCLEPANNEL__STATIC:
         PN(spriteNum) = CIRCLEPANNELBROKE;
         CS(spriteNum) &= (65535-256-1);
-        A_PlaySound(VENT_BUST,spriteNum);
+        A_PlaySound(REALITY ? 16 : VENT_BUST,spriteNum);
         break;
 
     case PANNEL1__STATIC:
@@ -3340,14 +3370,14 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         if (RR) goto default_case;
         PN(spriteNum) = BPANNEL1;
         CS(spriteNum) &= (65535-256-1);
-        A_PlaySound(VENT_BUST,spriteNum);
+        A_PlaySound(REALITY ? 16 : VENT_BUST,spriteNum);
         break;
 
     case PANNEL3__STATIC:
         if (RR) goto default_case;
         PN(spriteNum) = BPANNEL3;
         CS(spriteNum) &= (65535-256-1);
-        A_PlaySound(VENT_BUST,spriteNum);
+        A_PlaySound(REALITY ? 16 : VENT_BUST,spriteNum);
         break;
 
     case PIPE1__STATIC:
@@ -3418,7 +3448,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
         A_DoGuts(spriteNum,JIBS4,4);
         A_DoGuts(spriteNum,JIBS5,1);
         A_DoGuts(spriteNum,JIBS3,6);
-        S_PlaySound(SQUISHED);
+        S_PlaySound(REALITY ? 44 : SQUISHED);
         A_DeleteSprite(spriteNum);
         break;
 
@@ -3440,7 +3470,7 @@ void A_DamageObject(int spriteNum, int const dmgSrc)
     case POT1__STATIC:
     case POT2__STATIC:
     case POT3__STATIC:
-        A_PlaySound(GLASS_HEAVYBREAK,spriteNum);
+        A_PlaySound(REALITY ? 18 : GLASS_HEAVYBREAK,spriteNum);
         for (bssize_t j=16; j>0; j--)
         {
             spritetype * const pSprite = &sprite[spriteNum];
@@ -3457,7 +3487,7 @@ default_case:
         if ((sprite[spriteNum].cstat&16) && SHT(spriteNum) == 0 && SLT(spriteNum) == 0 && sprite[spriteNum].statnum == STAT_DEFAULT)
             break;
 
-        if (((RR && sprite[dmgSrc].picnum == SHRINKSPARK) || sprite[dmgSrc].picnum == FREEZEBLAST || sprite[dmgSrc].owner != spriteNum) && sprite[spriteNum].statnum != STAT_PROJECTILE)
+        if (((RR && sprite[dmgSrc].picnum == SHRINKSPARK) || (!REALITY && sprite[dmgSrc].picnum == FREEZEBLAST) || sprite[dmgSrc].owner != spriteNum) && sprite[spriteNum].statnum != STAT_PROJECTILE)
         {
             if (A_CheckEnemySprite(&sprite[spriteNum]) == 1)
             {
@@ -3465,8 +3495,8 @@ default_case:
                     sprite[dmgSrc].extra <<= 1;
 
                 if ((PN(spriteNum) != DRONE) && (RR || ((PN(spriteNum) != ROTATEGUN) && (PN(spriteNum) != COMMANDER) && (PN(spriteNum) < GREENSLIME || PN(spriteNum) > GREENSLIME+7))))
-                    if (sprite[dmgSrc].picnum != FREEZEBLAST)
-                        if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY))
+                    if (REALITY || sprite[dmgSrc].picnum != FREEZEBLAST)
+                        if (!A_CheckSpriteFlags(spriteNum, SFLAG_BADGUY) || REALITY)
                         {
                             int const newSprite       = A_Spawn(dmgSrc, JIBS6);
                             sprite[newSprite].z      += ZOFFSET6;
@@ -3514,7 +3544,7 @@ default_case:
 
             if (sprite[spriteNum].statnum != STAT_ZOMBIEACTOR)
             {
-                if (sprite[dmgSrc].picnum == FREEZEBLAST && ((PN(spriteNum) == APLAYER && sprite[spriteNum].pal == 1) || (g_freezerSelfDamage == 0 && sprite[dmgSrc].owner == spriteNum)))
+                if (!REALITY && sprite[dmgSrc].picnum == FREEZEBLAST && ((PN(spriteNum) == APLAYER && sprite[spriteNum].pal == 1) || (g_freezerSelfDamage == 0 && sprite[dmgSrc].owner == spriteNum)))
                     return;
                 actor[spriteNum].picnum = sprite[dmgSrc].picnum;
                 actor[spriteNum].extra += sprite[dmgSrc].extra;
@@ -3561,8 +3591,384 @@ void G_AlignWarpElevators(void)
     }
 }
 
+int P_NextWeapon(DukePlayer_t* p, int k, int j)
+{
+    int i, l;
+    int f = 0;
+
+    while (1)
+    {
+        if (k == HANDREMOTE_WEAPON)
+        {
+            if (j == -1)
+            {
+                k = HANDBOMB_WEAPON;
+                if (p->ammo_amount[k] > 0)
+                    f = 1;
+                else
+                    k = DEVISTATOR_WEAPON;
+            }
+            else
+                k = SHRINKER_WEAPON;
+        }
+        else
+        {
+            k += j;
+        }
+        if (k < 0)
+            k = 10;
+        if (k > 10)
+            k = 0;
+        if (k == HANDBOMB_WEAPON && (p->gotweapon&(1<<HANDBOMB_WEAPON)))
+        {
+            if (p->ammo_amount[HANDBOMB_WEAPON] == 0)
+            {
+                i = headspritestat[1];
+                while (i >= 0)
+                {
+                    if (sprite[i].picnum == HEAVYHBOMB && p->i == sprite[i].owner)
+                        return HANDREMOTE_WEAPON;
+                    i = nextspritestat[i];
+                }
+            }
+            else
+            {
+                l = 0;
+                i = headspritestat[1];
+                while (i >= 0)
+                {
+                    if (sprite[i].picnum == HEAVYHBOMB && p->i == sprite[i].owner)
+                        l++;
+                    i = nextspritestat[i];
+                }
+                if (l < 5)
+                    return HANDBOMB_WEAPON;
+                if (!f)
+                    return HANDREMOTE_WEAPON;
+
+                continue;
+            }
+        }
+        if (p->gotweapon&(1<<k))
+        {
+            if (k == PISTOL_WEAPON && p->ammo_amount[BOWLINGBALL_WEAPON])
+                return BOWLINGBALL_WEAPON;
+            if (k == SHOTGUN_WEAPON && p->ammo_amount[MOTORCYCLE_WEAPON])
+                return MOTORCYCLE_WEAPON;
+            if (k == RPG_WEAPON && p->ammo_amount[BOAT_WEAPON])
+                return BOAT_WEAPON;
+            if (k == KNEE_WEAPON)
+                return KNEE_WEAPON;
+            if (p->ammo_amount[k] > 0)
+                return k;
+        }
+    }
+}
+
+void P_HandleKeys(int playerNum)
+{
+    DukePlayer_t *const pPlayer = g_player[playerNum].ps;
+
+    if (pPlayer->cheat_phase == 1) return;
+
+    uint32_t playerBits = g_player[playerNum].inputBits->bits;
+    if (sprite[pPlayer->i].extra <= 0)
+        return;
+    if (pPlayer->aim_mode)
+        pPlayer->return_to_center = 9;
+    
+    if (TEST_SYNC_KEY(playerBits, SK_QUICK_KICK) && pPlayer->quick_kick == 0)
+        if (pPlayer->curr_weapon != KNEE_WEAPON || pPlayer->kickback_pic == 0)
+        {
+            pPlayer->quick_kick = 14;
+            if (pPlayer->fta == 0 || pPlayer->ftq == 80)
+                P_DoQuote(QUOTE_MIGHTY_FOOT,pPlayer);
+        }
+
+    if (!(playerBits&(15u<<SK_WEAPON_BITS)))
+    {
+        if (--pPlayer->dn64_376 <= 0)
+        {
+            if (pPlayer->dn64_372 != pPlayer->curr_weapon)
+            {
+                if (pPlayer->dn64_372 != KNEE_WEAPON && pPlayer->dn64_372 != HANDREMOTE_WEAPON)
+                {
+                    if ((pPlayer->gotweapon&(1<<pPlayer->dn64_372)) && pPlayer->ammo_amount[pPlayer->dn64_372])
+                        pPlayer->wantweaponfire = pPlayer->dn64_372;
+                }
+                else
+                    pPlayer->wantweaponfire = pPlayer->dn64_372;
+            }
+            pPlayer->dn64_376 = 0;
+            pPlayer->dn64_378 = max(pPlayer->dn64_378-2, 0);
+        }
+    }
+    else
+    {
+        pPlayer->dn64_376 = 12;
+        pPlayer->dn64_378 = min(pPlayer->dn64_378+15, 30);
+    }
+
+    if (pPlayer->wantweaponfire >= 0 && pPlayer->kickback_pic == 0)
+        P_CheckWeapon(pPlayer);
+    if (pPlayer->dn64_374 > 0)
+        pPlayer->dn64_374 = max(pPlayer->dn64_374-12, 0);
+    else
+        pPlayer->dn64_374 = min(pPlayer->dn64_374+12, 0);
+    pPlayer->interface_toggle_flag = max(pPlayer->interface_toggle_flag-1, 0);
+    if (!(playerBits & ((15u<<SK_WEAPON_BITS)|BIT(SK_STEROIDS)|BIT(SK_NIGHTVISION)|BIT(SK_MEDKIT)|BIT(SK_QUICK_KICK)| \
+                   BIT(SK_HOLSTER)|BIT(SK_INV_LEFT)|BIT(SK_PAUSE)|BIT(SK_HOLODUKE)|BIT(SK_JETPACK)|BIT(SK_INV_RIGHT)| \
+                   BIT(SK_TURNAROUND)|BIT(SK_INVENTORY)|BIT(SK_ESCAPE))))
+    {
+        pPlayer->interface_toggle_flag = min(pPlayer->interface_toggle_flag, 5);
+    }
+    else if (pPlayer->interface_toggle_flag == 0)
+    {
+        pPlayer->interface_toggle_flag = 12;
+
+        if (TEST_SYNC_KEY(playerBits, SK_PAUSE))
+        {
+            KB_ClearKeyDown(sc_Pause);
+            if (ud.pause_on)
+                ud.pause_on = 0;
+            else ud.pause_on = 1+SHIFTS_IS_PRESSED;
+            if (ud.pause_on)
+            {
+                S_PauseMusic(true);
+                S_PauseSounds(true);
+            }
+            else
+            {
+                if (ud.config.MusicToggle) S_PauseMusic(false);
+
+                S_PauseSounds(false);
+
+                pub = NUMPAGES;
+                pus = NUMPAGES;
+            }
+        }
+
+        if (ud.pause_on) return;
+
+        if (sprite[pPlayer->i].extra <= 0) return;		// if dead...
+
+        if (TEST_SYNC_KEY(playerBits, SK_INVENTORY) && pPlayer->newowner == -1)	// inventory button generates event for selected item
+        {
+            pPlayer->invdisptime = 100;
+            switch (pPlayer->inven_icon)
+            {
+                case ICON_JETPACK: playerBits |= BIT(SK_JETPACK); break;
+                case ICON_HOLODUKE: playerBits |= BIT(SK_HOLODUKE); break;
+                case ICON_HEATS: playerBits |= BIT(SK_NIGHTVISION); break;
+                case ICON_FIRSTAID: playerBits |= BIT(SK_MEDKIT); break;
+                case ICON_STEROIDS: playerBits |= BIT(SK_STEROIDS); break;
+            }
+        }
+
+        if (TEST_SYNC_KEY(playerBits, SK_NIGHTVISION))
+        {
+            if (pPlayer->inv_amount[GET_HEATS] > 0)
+            {
+                pPlayer->heat_on = !pPlayer->heat_on;
+                P_UpdateScreenPal(pPlayer);
+                pPlayer->inven_icon = ICON_HEATS;
+                A_PlaySound(REALITY ? 170 : NITEVISION_ONOFF,pPlayer->i);
+                P_DoQuote(QUOTE_NVG_OFF-!!pPlayer->heat_on,pPlayer);
+            }
+        }
+
+        if (TEST_SYNC_KEY(playerBits, SK_STEROIDS))
+        {
+            if (pPlayer->inv_amount[GET_STEROIDS] == 400)
+            {
+                pPlayer->inv_amount[GET_STEROIDS]--;
+                pPlayer->inven_icon = ICON_STEROIDS;
+                A_PlaySound(REALITY ? 174 : DUKE_TAKEPILLS,pPlayer->i);
+                P_DoQuote(QUOTE_USED_STEROIDS,pPlayer);
+            }
+            return;		// is there significance to returning?
+        }
+
+        if (pPlayer->newowner == -1 && (TEST_SYNC_KEY(playerBits, SK_INV_LEFT) || TEST_SYNC_KEY(playerBits, SK_INV_RIGHT)) || pPlayer->refresh_inventory)
+        {
+            pPlayer->invdisptime = 100;
+
+            int const inventoryRight = !!(TEST_SYNC_KEY(playerBits, SK_INV_RIGHT));
+
+            if (pPlayer->refresh_inventory) pPlayer->refresh_inventory = 0;
+            int32_t inventoryIcon = pPlayer->inven_icon;
+
+            int i = 0;
+
+CHECKINV1:
+            if (i < 9)
+            {
+                i++;
+
+                switch (inventoryIcon)
+                {
+                    case ICON_JETPACK:
+                    case ICON_SCUBA:
+                    case ICON_STEROIDS:
+                    case ICON_HOLODUKE:
+                    case ICON_HEATS:
+                    case ICON_BOOTS:
+                        if (pPlayer->inv_amount[icon_to_inv[inventoryIcon]] > 0 && i > 1)
+                            break;
+                        if (inventoryRight)
+                            inventoryIcon++;
+                        else
+                            inventoryIcon--;
+                        goto CHECKINV1;
+                    case ICON_NONE:
+                    case ICON_FIRSTAID:
+                        if (pPlayer->inv_amount[GET_FIRSTAID] > 0 && i > 1)
+                            break;
+                        inventoryIcon = inventoryRight ? 2 : 8;
+                        goto CHECKINV1;
+                    case ICON_SHIELD:
+                        if (pPlayer->inv_amount[GET_SHIELD] > 0 && i > 1)
+                            break;
+                        inventoryIcon = inventoryRight ? 1 : 7;
+                        goto CHECKINV1;
+                }
+            }
+            else inventoryIcon = 0;
+
+            if (inventoryIcon >= 1)
+            {
+                pPlayer->inven_icon = inventoryIcon;
+                static const int32_t invQuotes[8] = { QUOTE_MEDKIT, QUOTE_STEROIDS, QUOTE_HOLODUKE,
+                    QUOTE_JETPACK, QUOTE_NVG, QUOTE_SCUBA, QUOTE_BOOTS, QUOTE_DN64ARMOR };
+                if (inventoryIcon-1 < ARRAY_SSIZE(invQuotes))
+                    P_DoQuote(invQuotes[inventoryIcon-1], pPlayer);
+            }
+        }
+
+        if (pPlayer->last_pissed_time <= (GAMETICSPERSEC * 218) &&
+            pPlayer->kickback_pic == 0 && pPlayer->quick_kick == 0 && sprite[pPlayer->i].xrepeat > 32 && pPlayer->access_incs == 0 &&
+            pPlayer->knee_incs == 0)
+        {
+            int weaponNum = ((playerBits & (15 << SK_WEAPON_BITS)) >> SK_WEAPON_BITS) - 1;
+            if (weaponNum == 10 || weaponNum == 11)
+            {
+                int currentWeapon = pPlayer->dn64_372;
+                if (currentWeapon == BOWLINGBALL_WEAPON)
+                    currentWeapon = PISTOL_WEAPON;
+                else if (currentWeapon == MOTORCYCLE_WEAPON)
+                    currentWeapon = SHOTGUN_WEAPON;
+                else if (currentWeapon == BOAT_WEAPON)
+                    currentWeapon = RPG_WEAPON;
+
+                weaponNum = (weaponNum == 10 ? -1 : 1);  // JBF: prev (-1) or next (1) weapon choice
+                
+                pPlayer->dn64_374 = weaponNum * -60;
+
+                int nextWeapon = P_NextWeapon(pPlayer, currentWeapon, weaponNum);
+
+                if (pPlayer->holster_weapon)
+                {
+                    playerBits |= BIT(SK_HOLSTER);
+                    pPlayer->weapon_pos = WEAPON_POS_LOWER;
+                }
+                else if (pPlayer->gotweapon&(1<<nextWeapon))
+                    pPlayer->dn64_372 = nextWeapon;
+            }
+        }
+
+        if (TEST_SYNC_KEY(playerBits, SK_HOLODUKE) && pPlayer->newowner == -1)
+        {
+            if (pPlayer->holoduke_on == -1)
+            {
+                if (pPlayer->inv_amount[GET_HOLODUKE] > 0)
+                {
+                    pPlayer->inven_icon = ICON_HOLODUKE;
+
+                    if (pPlayer->cursectnum > -1)
+                    {
+                        int const i = A_InsertSprite(pPlayer->cursectnum, pPlayer->pos.x, pPlayer->pos.y,
+                            pPlayer->pos.z+(30<<8), APLAYER, -64, 0, 0, fix16_to_int(pPlayer->q16ang), 0, 0, -1, 10);
+                        pPlayer->holoduke_on = i;
+                        T4(i) = T5(i) = 0;
+                        sprite[i].yvel = playerNum;
+                        sprite[i].extra = 0;
+                        P_DoQuote(QUOTE_HOLODUKE_ON,pPlayer);
+                        A_PlaySound(45,pPlayer->holoduke_on);
+                    }
+                }
+                else P_DoQuote(QUOTE_HOLODUKE_NOT_FOUND,pPlayer);
+            }
+            else
+            {
+                A_PlaySound(45,pPlayer->holoduke_on);
+                pPlayer->holoduke_on = -1;
+                P_DoQuote(QUOTE_HOLODUKE_OFF,pPlayer);
+            }
+        }
+
+        if (TEST_SYNC_KEY(playerBits, SK_MEDKIT))
+        {
+            if (pPlayer->inv_amount[GET_FIRSTAID] > 0 && sprite[pPlayer->i].extra < pPlayer->max_player_health)
+            {
+                int healthDiff = pPlayer->max_player_health-sprite[pPlayer->i].extra;
+
+                if (pPlayer->inv_amount[GET_FIRSTAID] > healthDiff)
+                {
+                    pPlayer->inv_amount[GET_FIRSTAID] -= healthDiff;
+                    sprite[pPlayer->i].extra = pPlayer->max_player_health;
+                    pPlayer->inven_icon = ICON_FIRSTAID;
+                }
+                else
+                {
+                    sprite[pPlayer->i].extra += pPlayer->inv_amount[GET_FIRSTAID];
+                    pPlayer->inv_amount[GET_FIRSTAID] = 0;
+                    P_SelectNextInvItem(pPlayer);
+                }
+                if ((krand2()&63) < 50)
+                    A_PlaySound(173,pPlayer->i);
+                else
+                    A_PlaySound(256,pPlayer->i);
+            }
+        }
+
+        if (pPlayer->newowner == -1 && TEST_SYNC_KEY(playerBits, SK_JETPACK))
+        {
+            if (pPlayer->inv_amount[GET_JETPACK] > 0)
+            {
+                pPlayer->jetpack_on = !pPlayer->jetpack_on;
+                if (pPlayer->jetpack_on)
+                {
+                    pPlayer->inven_icon = ICON_JETPACK;
+                    if (pPlayer->scream_voice > FX_Ok)
+                    {
+                        FX_StopSound(pPlayer->scream_voice);
+                        pPlayer->scream_voice = -1;
+                    }
+
+                    A_PlaySound(38,pPlayer->i);
+
+                    P_DoQuote(QUOTE_JETPACK_ON,pPlayer);
+                }
+                else
+                {
+                    pPlayer->hard_landing = 0;
+                    pPlayer->vel.z = 0;
+                    A_PlaySound(40,pPlayer->i);
+                    S_StopEnvSound(39,pPlayer->i);
+                    S_StopEnvSound(38,pPlayer->i);
+                    P_DoQuote(QUOTE_JETPACK_OFF,pPlayer);
+                }
+            }
+            else P_DoQuote(QUOTE_JETPACK_NOT_FOUND,pPlayer);
+        }
+    }
+
+}
+
 void P_HandleSharedKeys(int playerNum)
 {
+    if (REALITY)
+        return P_HandleKeys(playerNum);
     DukePlayer_t *const pPlayer = g_player[playerNum].ps;
 
     if (pPlayer->cheat_phase == 1) return;

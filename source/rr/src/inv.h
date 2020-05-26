@@ -49,6 +49,7 @@ enum dukeinvicon_t
     ICON_HEATS,  // 5
     ICON_SCUBA,
     ICON_BOOTS,
+    ICON_SHIELD,
     ICON_MAX
 };
 
