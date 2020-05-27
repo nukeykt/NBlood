@@ -104,6 +104,7 @@ enum
 
     HICR_NODOWNSIZE = 16,
     HICR_ARTIMMUNITY = 32,
+    HICR_INDEXED = 64,
 };
 
 // hictinting[].f / gloadtile_hi() and mdloadskin() <effect> arg bits
