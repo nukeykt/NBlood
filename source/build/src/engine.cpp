@@ -2335,6 +2335,8 @@ static void prepwall(int32_t z, uwallptr_t wal)
     int32_t l=0, ol=0, x;
 
     int32_t walxrepeat = (wal->xrepeat<<3);
+    if (globalht)
+        walxrepeat <<= globalht->upscale.x;
 
     //lwall calculation
     int32_t tmpx = xb1[z]-halfxdimen;
@@ -3073,6 +3075,12 @@ static void wallscan(int32_t x1, int32_t x2,
 
     if (waloff[globalpicnum] == 0) tileLoad(globalpicnum);
 
+    if (globalht)
+    {
+        tsiz.x <<= globalht->upscale.x;
+        tsiz.y <<= globalht->upscale.y;
+    }
+
     tweak_tsizes(&tsiz);
 
     fpalookup = FP_OFF(palookup[globalpal]);
@@ -3098,7 +3106,7 @@ static void wallscan(int32_t x1, int32_t x2,
 
         palookupoffse[0] = fpalookup + getpalookupsh(mulscale16(swal[x],globvis));
 
-        calc_bufplc(&bufplce[0], lwal[x], tsiz);
+        calc_bufplc(&bufplce[0], lwal[x], tsiz, globalht);
         calc_vplcinc(&vplce[0], &vince[0], swal, x, y1ve[0]);
 
         vlineasm1(vince[0],palookupoffse[0],y2ve[0]-y1ve[0]-1,vplce[0],bufplce[0],x+frameoffset+ylookup[y1ve[0]]);
@@ -3112,7 +3120,7 @@ static void wallscan(int32_t x1, int32_t x2,
             y2ve[z] = min(dwal[x+z],dmost[x+z])-1;
             if (y2ve[z] < y1ve[z]) { bad += pow2char[z]; continue; }
 
-            calc_bufplc(&bufplce[z], lwal[x+z], tsiz);
+            calc_bufplc(&bufplce[z], lwal[x+z], tsiz, globalht);
             calc_vplcinc(&vplce[z], &vince[z], swal, x+z, y1ve[z]);
         }
         if (bad == 15) continue;
@@ -3169,7 +3177,7 @@ do_vlineasm1:
 
         palookupoffse[0] = fpalookup + getpalookupsh(mulscale16(swal[x],globvis));
 
-        calc_bufplc(&bufplce[0], lwal[x], tsiz);
+        calc_bufplc(&bufplce[0], lwal[x], tsiz, globalht);
         calc_vplcinc(&vplce[0], &vince[0], swal, x, y1ve[0]);
 
 #ifdef NONPOW2_YSIZE_ASM
@@ -4176,6 +4184,13 @@ static void parascan(char dastat, int32_t bunch)
     if (tsizy==0)
         return;
 
+    globalht = classic_hightile(globalpicnum);
+    vec2_t upscale = {};
+    if (globalht)
+        upscale = globalht->upscale;
+    globalxpanning <<= upscale.x;
+    logtilesizy += upscale.y;
+    tsizy <<= upscale.y;
 
     int32_t dapyscale, dapskybits, dapyoffs, daptileyscale;
     int8_t const * const dapskyoff = getpsky(globalpicnum, &dapyscale, &dapskybits, &dapyoffs, &daptileyscale);
@@ -4190,7 +4205,7 @@ static void parascan(char dastat, int32_t bunch)
     if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
-        globalyscale = 65536 / tsizy;
+        globalyscale = (65536<<upscale.y) / tsizy;
         globalshiftval = 0;
         globalzd = divscale32(((tsizy>>1)+dapyoffs), tsizy) + ((uint32_t)globalypanning<<24);
     }
@@ -4198,7 +4213,7 @@ static void parascan(char dastat, int32_t bunch)
 #endif
     {
         globalshiftval = 32-globalshiftval;
-        globalyscale = (8<<(globalshiftval-19));
+        globalyscale = (8<<(globalshiftval+upscale.y-19));
         globalzd = (decltype(globalzd)((tsizy >> 1) + dapyoffs) << globalshiftval) + (decltype(globalzd)(globalypanning) << 24);
     }
     globalyscale = divscale16(globalyscale,daptileyscale);
@@ -4208,7 +4223,7 @@ static void parascan(char dastat, int32_t bunch)
     if (dapyscale != 65536)
         globalhoriz = mulscale16(globalhoriz-(ydimen>>1),dapyscale) + (ydimen>>1);
 
-    k = 27 - (picsiz[globalpicnum]&15) - dapskybits;
+    k = 27 - upscale.y - (picsiz[globalpicnum]&15) - dapskybits;
 
     // WGR2 SVN: select new episode after playing wgmicky1 with Polymer
     //  (maybe switched to classic earlier).
@@ -4312,6 +4327,7 @@ static void parascan(char dastat, int32_t bunch)
         globalpicnum = l;
     }
     globalhoriz = globalhorizbak;
+    globalht = nullptr;
 }
 
 
@@ -4323,8 +4339,12 @@ static void setup_globals_wall1(uwallptr_t wal, int32_t dapicnum)
     globalpicnum = dapicnum;
     if ((unsigned)globalpicnum >= MAXTILES) globalpicnum = 0;
     tileUpdatePicnum(&globalpicnum, 16384);
+    globalht = classic_hightile(globalpicnum);
+    vec2_t upscale = {};
+    if (globalht)
+        upscale = globalht->upscale;
 
-    globalxpanning = wal->xpanning;
+    globalxpanning = wal->xpanning<<upscale.x;
     globalypanning = wal->ypanning;
 
     globalshade = wal->shade;
@@ -4334,8 +4354,11 @@ static void setup_globals_wall1(uwallptr_t wal, int32_t dapicnum)
 
 static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t topzref, int32_t botzref)
 {
-    const int32_t logtilesizy = (picsiz[globalpicnum]>>4);
-    const int32_t tsizy = tilesiz[globalpicnum].y;
+    vec2_t upscale = {};
+    if (globalht)
+        upscale = globalht->upscale;
+    const int32_t logtilesizy = (picsiz[globalpicnum]>>4) + upscale.y;
+    const int32_t tsizy = tilesiz[globalpicnum].y << upscale.y;
 
     if (tsizy==0)
     {
@@ -4357,7 +4380,7 @@ static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t t
     if ((!oldnonpow2() && pow2long[logtilesizy] != tsizy) || tsizy > 512)
     {
         globaltilesizy = tsizy;
-        globalyscale = divscale13(wal->yrepeat, tsizy);
+        globalyscale = divscale13(wal->yrepeat<<upscale.y, tsizy);
         globalshiftval = 0;
     }
     else
@@ -4366,7 +4389,7 @@ static void setup_globals_wall2(uwallptr_t wal, uint8_t secvisibility, int32_t t
         // globalshiftval==13 --> globalshiftval==19
         //  ==> upper texture y size limit *here* = 8192
         globalshiftval = 32-globalshiftval;
-        globalyscale = wal->yrepeat<<(globalshiftval-19);
+        globalyscale = wal->yrepeat<<(globalshiftval+upscale.y-19);
     }
 
     if ((globalorientation&4) == 0)
@@ -4658,6 +4681,8 @@ static void classicDrawBunches(int32_t bunch)
                     prepwall(z,wal);
                     wallscan(x1,x2,uplc,dwall,swall,lwall);
 
+                    globalht = nullptr;
+
                     if ((cz[2] >= cz[0]) && (cz[3] >= cz[1]))
                     {
 #ifdef YAX_ENABLE
@@ -4769,6 +4794,8 @@ static void classicDrawBunches(int32_t bunch)
                     if (gotswall == 0) { gotswall = 1; prepwall(z,wal); }
                     wallscan(x1,x2,uwall,dplc,swall,lwall);
 
+                    globalht = nullptr;
+
                     if ((fz[2] <= fz[0]) && (fz[3] <= fz[1]))
                     {
 #ifdef YAX_ENABLE
@@ -4874,6 +4901,8 @@ static void classicDrawBunches(int32_t bunch)
 
             if (gotswall == 0) { gotswall = 1; prepwall(z,wal); }
             wallscan(x1,x2,uplc,dplc,swall,lwall);
+
+            globalht = nullptr;
 
 #ifdef YAX_ENABLE
             // TODO: slopes?
@@ -6916,10 +6945,11 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
     for (bssize_t x=xb1[z]; x<=xb2[z]; x++)
         if (dplc[x] < dwall[x])
             dwall[x] = dplc[x];
-    prepwall(z,wal);
 
     setup_globals_wall1(wal, wal->overpicnum);
     setup_globals_wall2(wal, sec->visibility, z1, z2);
+
+    prepwall(z,wal);
 
     for (bssize_t i=smostwallcnt-1; i>=0; i--)
     {
@@ -6973,6 +7003,8 @@ static void renderDrawMaskedWall(int16_t damaskwallcnt)
 #endif
         transmaskwallscan(xb1[z],xb2[z], 0);
     }
+
+    globalht = nullptr;
 }
 
 
