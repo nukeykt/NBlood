@@ -54,7 +54,7 @@ void ctrlClearAllInput(void)
     JOYSTICK_ClearAllButtons();
 }
 
-GINPUT gInput;
+GINPUT gInput, gNetInput;
 bool bSilentAim = false;
 
 int32_t GetTime(void)

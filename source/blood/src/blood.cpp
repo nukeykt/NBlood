@@ -1762,6 +1762,7 @@ RESTART:
             gGameMenuMgr.Push(&menuNetStart, 1);
     }
     ready2send = 1;
+    static bool frameJustDrawn;
     while (!gQuitGame)
     {
         bool bDraw;
@@ -1775,22 +1776,33 @@ RESTART:
             }
             if (numplayers == 1)
                 gBufferJitter = 0;
-            while (totalclock >= gNetFifoClock && ready2send)
+            if (totalclock >= gNetFifoClock && ready2send)
             {
-                netGetInput();
-                gNetFifoClock += 4;
-                while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
+                do
                 {
-                    int i;
-                    for (i = connecthead; i >= 0; i = connectpoint2[i])
-                        if (gNetFifoHead[i] == gNetFifoTail)
-                            break;
-                    if (i >= 0)
+                    if (!frameJustDrawn)
                         break;
-                    faketimerhandler();
-                    ProcessFrame();
+                    frameJustDrawn = false;
+                    gNetInput = gInput;
+                    gInput = {};
+                    do
+                    {
+                        netGetInput();
+                        gNetFifoClock += 4;
+                        while (gNetFifoHead[myconnectindex]-gNetFifoTail > gBufferJitter && !gStartNewGame && !gQuitGame)
+                        {
+                            int i;
+                            for (i = connecthead; i >= 0; i = connectpoint2[i])
+                                if (gNetFifoHead[i] == gNetFifoTail)
+                                    break;
+                            if (i >= 0)
+                                break;
+                            faketimerhandler();
+                            ProcessFrame();
+                        }
+                    } while (totalclock >= gNetFifoClock && ready2send);
                     gameUpdate = true;
-                }
+                } while (0);
             }
             if (gameUpdate)
             {
@@ -1868,6 +1880,7 @@ RESTART:
             default:
                 break;
             }
+            frameJustDrawn = true;
             videoNextPage();
         }
         //scrNextPage();
