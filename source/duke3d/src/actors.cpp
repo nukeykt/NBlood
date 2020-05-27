@@ -7036,8 +7036,10 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 {
                     auto const foundSprite = (uspriteptr_t)&sprite[spr];
 
-                    if ((foundSprite->pos.z > pSector->floorz
-                         || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < pSector->ceilingz)
+                    int32_t floorZ, ceilZ;
+                    getcorrectzsofslope(pSprite->sectnum, foundSprite->pos.x, foundSprite->pos.y, &ceilZ, &floorZ);
+
+                    if ((foundSprite->pos.z > floorZ || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < ceilZ)
                         && foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
                     {
                         auto const clipdist = A_GetClipdist(spr, -1);
@@ -7055,9 +7057,12 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     auto const foundPlayer = g_player[plr].ps;
                     auto const foundPlayerSprite = &sprite[foundPlayer->i];
 
+                    int32_t floorZ, ceilZ;
+                    getcorrectzsofslope(pSprite->sectnum, foundPlayer->pos.x, foundPlayer->pos.y, &ceilZ, &floorZ);
+
                     for (int w = pSector->wallptr; w < endWall; w++)
                     {
-                        if ((foundPlayerSprite->pos.z > pSector->floorz || foundPlayer->pos.z < pSector->ceilingz)
+                        if ((foundPlayerSprite->pos.z > floorZ || foundPlayer->pos.z < ceilZ) && foundPlayerSprite->extra > 0
                             && dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
                             break;
                     }
