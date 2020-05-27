@@ -1020,19 +1020,25 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
         return;
     }
 
-    if (inside_p(pos.x, pos.y, *sectnum))
+    if (inside(pos.x, pos.y, *sectnum) == 1)
         return;
 
     int16_t nsecs = min<int16_t>(getsectordist(pos, *sectnum), INT16_MAX);
 
     if (nsecs > (walldist + 8))
     {
+#ifdef DEBUGGINGAIDS
         OSD_Printf("%s(): initial position (%d, %d) not within initial sector %d; shortest distance %d.\n", EDUKE32_FUNCTION, pos.x, pos.y, *sectnum, nsecs);
+#endif
         walldist = 0x7fff;
     }
 
     static int16_t sectlist[MAXSECTORS];
     static uint8_t sectbitmap[(MAXSECTORS+7)>>3];
+    static uint8_t insidemap[(MAXSECTORS+7)>>3];
+
+    Bmemset(insidemap, 0, sizeof(insidemap));
+    bitmap_set(insidemap, *sectnum);
 
     bfirst_search_init(sectlist, sectbitmap, &nsecs, MAXSECTORS, *sectnum);
 
@@ -1040,8 +1046,10 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
     {
         int const listsectnum = sectlist[sectcnt];
 
-        if (inside_p(pos.x, pos.y, listsectnum))
+        if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
             SET_AND_RETURN(*sectnum, listsectnum);
+
+        bitmap_set(insidemap, listsectnum);
 
         auto const sec       = &sector[listsectnum];
         int const  startwall = sec->wallptr;
@@ -1059,13 +1067,15 @@ static void clipupdatesector(vec2_t const pos, int16_t * const sectnum, int wall
     {
         int const listsectnum = sectlist[sectcnt];
 
-        if (inside_p(pos.x, pos.y, listsectnum))
+        if (bitmap_test(insidemap, listsectnum) == 0 && inside(pos.x, pos.y, listsectnum) == 1)
         {
             // add sector to clipping list so the next call to clipupdatesector()
             // finishes in the loop above this one
             addclipsect(listsectnum);
             SET_AND_RETURN(*sectnum, listsectnum);
         }
+
+        bitmap_set(insidemap, listsectnum);
 
         auto const sec       = &sector[listsectnum];
         int const  startwall = sec->wallptr;
@@ -1175,9 +1185,9 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                 (wal->y < clipMin.y && wal2->y < clipMin.y) || (wal->y > clipMax.y && wal2->y > clipMax.y))
                 continue;
 
-            vec2_t p1 = wal->pos;
-            vec2_t p2 = wal2->pos;
-            vec2_t d  = { p2.x-p1.x, p2.y-p1.y };
+            vec2_t const p1 = wal->pos;
+            vec2_t const p2 = wal2->pos;
+            vec2_t const d  = { p2.x-p1.x, p2.y-p1.y };
 
             if (d.x * (pos->y-p1.y) < (pos->x-p1.x) * d.y)
                 continue;  //If wall's not facing you
@@ -1346,8 +1356,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
 
                     if (clipinsideboxline(cent.x, cent.y, p1.x, p1.y, p2.x, p2.y, rad) != 0)
                     {
-                        vec2_t v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
-                                     mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
+                        vec2_t const v = { mulscale14(sintable[(spr->ang+256+512) & 2047], walldist),
+                                           mulscale14(sintable[(spr->ang+256) & 2047], walldist) };
 
                         if ((p1.x-pos->x) * (p2.y-pos->y) >= (p2.x-pos->x) * (p1.y-pos->y))  // Front
                             addclipline(p1.x+v.x, p1.y+v.y, p2.x+v.y, p2.y-v.x, (int16_t)j+49152, false);
@@ -1382,8 +1392,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     get_floorspr_points((uspriteptr_t) spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
                         &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
 
-                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                 mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                       mulscale14(sintable[(spr->ang-256)&2047], walldist) };
 
                     if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
                     {
@@ -1427,8 +1437,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     get_floorspr_points((uspriteptr_t) spr, 0, 0, &rxi[0], &rxi[1], &rxi[2], &rxi[3],
                         &ryi[0], &ryi[1], &ryi[2], &ryi[3], spriteGetSlope(j));
 
-                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                    mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                       mulscale14(sintable[(spr->ang-256)&2047], walldist) };
 
                     if ((rxi[0]-pos->x) * (ryi[1]-pos->y) < (rxi[1]-pos->x) * (ryi[0]-pos->y))
                     {
@@ -1484,8 +1494,8 @@ int32_t clipmove(vec3_t * const pos, int16_t * const sectnum, int32_t xvect, int
                     int32_t x2 = x1 - mulscale16(sinang, rspanx);
                     int32_t y2 = y1 + mulscale16(cosang, rspanx);
 
-                    vec2_t v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
-                                    mulscale14(sintable[(spr->ang-256)&2047], walldist) };
+                    vec2_t const v = { mulscale14(sintable[(spr->ang-256+512)&2047], walldist),
+                                       mulscale14(sintable[(spr->ang-256)&2047], walldist) };
 
                     if (clipinsideboxline(cent.x, cent.y, x1, y1, x2, y2, rad) != 0)
                     {

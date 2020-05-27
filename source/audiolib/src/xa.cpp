@@ -298,7 +298,7 @@ Controls playback of XA data
 static playbackstatus MV_GetNextXABlock
 (
  VoiceNode *voice
- )
+)
 {
     auto xad = (xa_data *) voice->rawdataptr;
     XASector ssct;
@@ -326,8 +326,8 @@ static playbackstatus MV_GetNextXABlock
 
     // CODEDUP multivoc.c MV_SetVoicePitch
     voice->RateScale    = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
-    voice->FixedPointBufferSize = ( voice->RateScale * MV_MIXBUFFERSIZE ) - voice->RateScale;
-    MV_SetVoiceMixMode( voice );
+    voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
+    MV_SetVoiceMixMode(voice);
 
     uint32_t samples;
 
@@ -342,19 +342,20 @@ static playbackstatus MV_GetNextXABlock
         samples = kSamplesMono;
     }
 
-    voice->sound        = (char *)xad->block;
-    voice->length       = samples << 16;
-    voice->position     = 0;
-    voice->BlockLength  = 0;
+    voice->sound    = (char *)xad->block;
+    voice->length   = samples << 16;
+    voice->position = 0;
 
     if (xad->length == xad->pos)
     {
-        if (voice->LoopSize > 0)
+#if 0
+        if (voice->Loop.Size > 0)
         {
             xad->pos = XA_DATA_START;
             xad->t1 = xad->t2 = xad->t1_x = xad->t2_x = 0;
         }
         else
+#endif
             return NoMoreData;
     }
 
@@ -412,42 +413,30 @@ priority.
 int MV_PlayXA(char *ptr, uint32_t length, int loopstart, int loopend, int pitchoffset, int vol, int left, int right,
                   int priority, fix16_t volume, intptr_t callbackval)
 {
-   VoiceNode   *voice;
-   xa_data * xad = 0;
-
    UNREFERENCED_PARAMETER(loopend);
 
    if (!MV_Installed)
        return MV_SetErrorCode(MV_NotInstalled);
 
-   xad = (xa_data *) Xcalloc( 1, sizeof(xa_data) );
-   if (!xad)
-       return MV_SetErrorCode(MV_InvalidFile);
+   // Request a voice from the voice pool
+   auto voice = MV_AllocVoice(priority, sizeof(xa_data));
+
+   if (voice == nullptr)
+       return MV_SetErrorCode(MV_NoVoices);
+
+   auto xad = (xa_data *)voice->rawdataptr;
 
    xad->ptr = ptr;
    xad->pos = XA_DATA_START;
    xad->t1 = xad->t2 = xad->t1_x = xad->t2_x = 0;
    xad->length = length;
 
-   // Request a voice from the voice pool
-   voice = MV_AllocVoice(priority);
-   if (voice == nullptr)
-   {
-       Xfree(xad);
-       return MV_SetErrorCode(MV_NoVoices);
-   }
-
    xad->owner = voice;
 
    voice->wavetype    = FMT_XA;
-   voice->rawdataptr  = (void*)xad;
    voice->GetSound    = MV_GetNextXABlock;
    voice->NextBlock   = (char *)xad->block;
-   voice->LoopCount   = 0;
-   voice->BlockLength = 0;
-   voice->PitchScale  = PITCH_GetScale( pitchoffset );
-   voice->next        = nullptr;
-   voice->prev        = nullptr;
+   voice->PitchScale  = PITCH_GetScale(pitchoffset);
    voice->priority    = priority;
    voice->callbackval = callbackval;
 
@@ -455,24 +444,26 @@ int MV_PlayXA(char *ptr, uint32_t length, int loopstart, int loopend, int pitcho
 
    voice->Paused      = FALSE;
 
-   voice->LoopStart   = 0;
-   voice->LoopEnd     = 0;
-   voice->LoopSize    = (loopstart >= 0 ? 1 : 0);
+   voice->Loop = { nullptr, nullptr, 0, loopstart >= 0 };
 
-   MV_SetVoiceVolume( voice, vol, left, right, volume );
-   MV_PlayVoice( voice );
+   MV_SetVoiceVolume(voice, vol, left, right, volume);
+   MV_PlayVoice(voice);
 
    return voice->handle;
 }
 
 
-void MV_ReleaseXAVoice( VoiceNode * voice )
+void MV_ReleaseXAVoice(VoiceNode * voice)
 {
-    if (voice->wavetype != FMT_XA || voice->rawdataptr == nullptr)
+    Bassert(voice->wavetype == FMT_XA && voice->rawdataptr != nullptr && voice->rawdatasiz == sizeof(xa_data));
+
+    if (MV_LazyAlloc)
         return;
 
-    auto xad = (xa_data *) voice->rawdataptr;
-    voice->rawdataptr = nullptr;
+    auto xad = (xa_data *)voice->rawdataptr;
 
-    Xfree(xad);
+    voice->rawdataptr = nullptr;
+    voice->rawdatasiz = 0;
+
+    ALIGNED_FREE_AND_NULL(xad);
 }

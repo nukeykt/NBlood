@@ -376,6 +376,8 @@ int SaveGame(short save_num)
     MWRITE(&numwalls,sizeof(numwalls),1,fil);
     MWRITE(wall,sizeof(WALL),numwalls,fil);
 
+    MWRITE(&Numsprites,sizeof(Numsprites),1,fil);
+    //Preserve sprite indices
     for (i = 0; i < MAXSPRITES; i++)
     {
         if (sprite[i].statnum != MAXSTATUS)
@@ -882,7 +884,8 @@ int LoadGame(short save_num)
     MREAD(&numwalls,sizeof(numwalls),1,fil);
     MREAD(wall,sizeof(WALL),numwalls,fil);
 
-    //Store all sprites to preserve indeces
+    MREAD(&Numsprites,sizeof(Numsprites),1,fil);
+    //Preserve sprite indices
     MREAD(&i, sizeof(i),1,fil);
     while (i != -1)
     {

@@ -26,13 +26,15 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
 
     if (xmp_play_frame(ctx) != 0)
     {
-        if (voice->LoopSize > 0)
+#if 0
+        if (voice->Loop.Size > 0)
         {
             xmp_restart_module(ctx);
             if (xmp_play_frame(ctx) != 0)
                 return NoMoreData;
         }
         else
+#endif
             return NoMoreData;
     }
 
@@ -42,10 +44,9 @@ static playbackstatus MV_GetNextXMPBlock(VoiceNode *voice)
     uint32_t const samples = mi.buffer_size / (2 * (16/8)); // since 2-channel, 16-bit is hardcoded
     // uint32_t const samples = mi.buffer_size / (voice->channels * (voice->bits / 8));
 
-    voice->sound        = (char const *)mi.buffer;
-    voice->length       = samples << 16;
-    voice->position     = mi.time;
-    voice->BlockLength  = 0;
+    voice->sound    = (char const *)mi.buffer;
+    voice->length   = samples << 16;
+    voice->position = mi.time;
 
     MV_SetVoiceMixMode(voice);
 
@@ -87,9 +88,12 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     if (voice == nullptr)
         return MV_SetErrorCode(MV_NoVoices);
 
-    auto ctx = xmp_create_context();
+    xmp_context ctx = (voice->rawdataptr == nullptr || voice->rawdatasiz != 0x1337) ? xmp_create_context() : (xmp_context)voice->rawdataptr;
     if (ctx == nullptr)
-        return MV_SetErrorCode(MV_NoMem);
+    {
+        MV_Printf("MV_PlayXMP: xmp_create_context failed\n");
+        return MV_SetErrorCode(MV_InvalidFile);
+    }
 
     int const xmp_status = xmp_load_module_from_memory(ctx, ptr, length);
     if (xmp_status)
@@ -99,17 +103,13 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
         return MV_SetErrorCode(MV_InvalidFile);
     }
 
-    voice->length      = 0;
     voice->sound       = 0;
 
     voice->wavetype    = FMT_XMP;
     voice->rawdataptr  = ctx;
+    voice->rawdatasiz  = 0x1337;
     voice->GetSound    = MV_GetNextXMPBlock;
-    voice->LoopCount   = 0;
-    voice->BlockLength = 0;
     voice->PitchScale  = PITCH_GetScale(pitchoffset);
-    voice->next        = nullptr;
-    voice->prev        = nullptr;
     voice->priority    = priority;
     voice->callbackval = callbackval;
 
@@ -117,11 +117,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     voice->channels    = 2;
     voice->SamplingRate = MV_MixRate;
 
-    voice->Paused      = FALSE;
-
-    voice->LoopStart   = 0;
-    voice->LoopEnd     = 0;
-    voice->LoopSize    = loopstart >= 0 ? 1 : 0;
+    voice->Loop = { nullptr, nullptr, 0, loopstart >= 0 };
 
     xmp_start_player(ctx, MV_MixRate, 0);
     xmp_set_player(ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
@@ -139,15 +135,21 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
 
 void MV_ReleaseXMPVoice(VoiceNode * voice)
 {
-    if (voice->wavetype != FMT_XMP || voice->rawdataptr == nullptr)
-        return;
+    Bassert(voice->wavetype == FMT_XMP && voice->rawdataptr != nullptr && voice->rawdatasiz == 0x1337);
 
     auto ctx = (xmp_context)voice->rawdataptr;
-    voice->rawdataptr = nullptr;
+
+    if (!MV_LazyAlloc)
+    {
+        voice->rawdataptr = nullptr;
+        voice->rawdatasiz = 0;
+    }
 
     xmp_end_player(ctx);
     xmp_release_module(ctx);
-    xmp_free_context(ctx);
+
+    if (!MV_LazyAlloc)
+        xmp_free_context(ctx);
 }
 
 void MV_SetXMPInterpolation(void)

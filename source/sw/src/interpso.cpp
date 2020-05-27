@@ -30,6 +30,7 @@ Prepared for public release: 03/28/2005 - Charlie Wiederhold, 3D Realms
 #include "game.h"
 #include "interp.h"
 #include "interpso.h"
+#include "names2.h"
 
 #define SO_MAXINTERPOLATIONS MAXINTERPOLATIONS
 
@@ -48,6 +49,7 @@ static struct so_interp
 
     int32_t numinterpolations;
     int32_t tic, lasttic;
+    SWBOOL hasvator;
 } so_interpdata[MAX_SECTOR_OBJECTS];
 
 static void so_setpointinterpolation(so_interp *interp, int32_t *posptr)
@@ -112,6 +114,7 @@ void so_addinterpolation(SECTOR_OBJECTp sop)
 
     so_interp *interp = &so_interpdata[sop - SectorObject];
     interp->numinterpolations = 0;
+    interp->hasvator = FALSE;
 
     for (sectp = sop->sectp; *sectp; sectp++)
     {
@@ -132,9 +135,18 @@ void so_addinterpolation(SECTOR_OBJECTp sop)
             }
         }
 
-        so_setpointinterpolation(interp, &(*sectp)->ceilingz);
-        so_setpointinterpolation(interp, &(*sectp)->floorz);
+        for (SPRITES_OF_SECT(*sectp - sector, i))
+            if (sprite[i].statnum == STAT_VATOR && SP_TAG1(sprite+i) == SECT_VATOR)
+                break;
+        interp->hasvator |= (i >= 0);
     }
+
+    if (!interp->hasvator)
+        for (sectp = sop->sectp; *sectp; sectp++)
+        {
+            so_setpointinterpolation(interp, &(*sectp)->ceilingz);
+            so_setpointinterpolation(interp, &(*sectp)->floorz);
+        }
 
     // interpolate midpoint, for aiming at a remote controlled SO
     so_setpointinterpolation(interp, &sop->xmid);
@@ -151,7 +163,8 @@ void so_setspriteinterpolation(SECTOR_OBJECTp sop, spritetype *sp)
 
     so_setpointinterpolation(interp, &sp->x);
     so_setpointinterpolation(interp, &sp->y);
-    so_setpointinterpolation(interp, &sp->z);
+    if (!interp->hasvator)
+        so_setpointinterpolation(interp, &sp->z);
     so_setspriteanginterpolation(interp, &sp->ang, sp - sprite);
 }
 
@@ -161,7 +174,8 @@ void so_stopspriteinterpolation(SECTOR_OBJECTp sop, spritetype *sp)
 
     so_stopdatainterpolation(interp, &sp->x);
     so_stopdatainterpolation(interp, &sp->y);
-    so_stopdatainterpolation(interp, &sp->z);
+    if (!interp->hasvator)
+        so_stopdatainterpolation(interp, &sp->z);
     so_stopdatainterpolation(interp, &sp->ang);
 }
 
@@ -184,7 +198,7 @@ void so_updateinterpolations(void) // Stick at beginning of domovethings
     for (sop = SectorObject, interp = so_interpdata;
          sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++, interp++)
     {
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
         if (interp->tic < interp->lasttic)
             interp->tic += synctics;
@@ -222,7 +236,7 @@ void so_dointerpolations(int32_t smoothratio)                      // Stick at b
     for (sop = SectorObject, interp = so_interpdata;
          sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++, interp++)
     {
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
 
         for (i = 0; i < interp->numinterpolations; i++)
@@ -248,7 +262,11 @@ void so_dointerpolations(int32_t smoothratio)                      // Stick at b
     for (sop = SectorObject, interp = so_interpdata;
          sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++, interp++)
     {
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
+            continue;
+
+        // Check if interpolation has been explicitly disabled
+        if (interp->lasttic == 0)
             continue;
 
         // Unfortunately, interpolating over less samples doesn't work well
@@ -261,11 +279,28 @@ void so_dointerpolations(int32_t smoothratio)                      // Stick at b
                !Player[screenpeek].sop_remote)))
             continue;
 
+        int32_t ratio = smoothratio * synctics + 65536 * interp->tic;
+        ratio /= interp->lasttic;
+        ratio = (interp->tic == interp->lasttic) ? 65536 : ratio;
+
         for (i = 0, data = interp->data; i < interp->numinterpolations; i++, data++)
         {
-            int32_t ratio = smoothratio * synctics + 65536 * interp->tic;
-            ratio /= interp->lasttic;
-            ratio = (interp->tic == interp->lasttic) ? 65536 : ratio;
+            // Hack for jittery coolies in level 1's train.
+            // Based in idea on code from draw.cpp:analyzesprites.
+            // TODO: It could be better. In particular, it could be better
+            // to conditionally disable the interpolation from analyzesprites
+            // instead, using TSPRITE info if possible.
+            if (((uintptr_t)(data->curipos) >= (uintptr_t)sprite) &&
+                ((uintptr_t)(data->curipos) < (uintptr_t)(sprite + Numsprites)))
+            {
+                int32_t sprnum = ((char *)data->curipos - (char *)sprite) / sizeof(*sprite);
+                USERp u = User[sprnum];
+                if (u && (sprite[sprnum].statnum != STAT_DEFAULT) &&
+                    ((TEST(u->Flags, SPR_SKIP4) && (sprite[sprnum].statnum <= STAT_SKIP4_INTERP_END)) ||
+                     (TEST(u->Flags, SPR_SKIP2) && (sprite[sprnum].statnum <= STAT_SKIP2_INTERP_END))))
+                    continue;
+            }
+
             if (data->spriteofang >= 0)
                 *(int16_t *)(data->curipos) = NORM_ANGLE(data->lastoldipos + mulscale16(data->lastangdiff, ratio));
             else
@@ -287,7 +322,7 @@ void so_restoreinterpolations(void)                 // Stick at end of drawscree
     for (sop = SectorObject, interp = so_interpdata;
          sop < &SectorObject[MAX_SECTOR_OBJECTS]; sop++, interp++)
     {
-        if (sop->xmid == INT32_MAX /*|| sop->xmid == MAXSO*/)
+        if (SO_EMPTY(sop))
             continue;
 
         for (i = 0, data = interp->data; i < interp->numinterpolations; i++, data++)
@@ -312,6 +347,7 @@ SWBOOL so_writeinterpolations(MFILE_WRITE fil)
     {
         const so_interp::interp_data *data = interp->data;
         MWRITE(&interp->numinterpolations,sizeof(interp->numinterpolations),1,fil);
+        MWRITE(&interp->hasvator,sizeof(interp->hasvator),1,fil);
         for (i = 0; i < interp->numinterpolations; i++, data++)
         {
             saveisshot |= SaveSymDataInfo(fil, data->curipos);
@@ -336,6 +372,7 @@ SWBOOL so_readinterpolations(MFILE_READ fil)
     {
         so_interp::interp_data *data = interp->data;
         MREAD(&interp->numinterpolations,sizeof(interp->numinterpolations),1,fil);
+        MREAD(&interp->hasvator,sizeof(interp->hasvator),1,fil);
         for (i = 0; i < interp->numinterpolations; i++, data++)
         {
             saveisshot |= LoadSymDataInfo(fil, (void **)&data->curipos);

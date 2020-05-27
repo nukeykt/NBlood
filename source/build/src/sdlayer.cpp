@@ -95,6 +95,7 @@ static uint16_t sysgamma[3][256];
 char nogl=0;
 #endif
 static int32_t vsync_renderlayer;
+static int vsync_unsupported;
 int32_t maxrefreshfreq=0;
 // last gamma, contrast, brightness
 static float lastvidgcb[3];
@@ -559,14 +560,21 @@ static int sdlayer_checkvsync(int checkSync)
     int const actualSync = SDL_GL_GetSwapInterval();
     if (actualSync != sdlayer_getswapinterval(checkSync))
     {
-        OSD_Printf("debug: GL driver forcing SwapInterval %d!\n", actualSync);
+        OSD_Printf("GL: driver enforcing SwapInterval %d, unable to configure VSync!\n", actualSync);
         checkSync = actualSync;
+        vsync_unsupported = true;
     }
     return checkSync;
 }
 
 int32_t videoSetVsync(int32_t newSync)
 {
+    if (vsync_unsupported)
+    {
+        OSD_Printf("GL: VSync configuration locked by driver.\n");
+        return vsync_renderlayer;
+    }
+
     if (vsync_renderlayer == newSync)
         return newSync;
 
@@ -579,7 +587,7 @@ int32_t videoSetVsync(int32_t newSync)
         {
             if (newSync == -1)
             {
-                OSD_Printf("debug: GL driver rejected SwapInterval %d!\n", sdlayer_getswapinterval(newSync));
+                OSD_Printf("GL: driver rejected SwapInterval %d, unable to configure adaptive VSync!\n", sdlayer_getswapinterval(newSync));
 
                 newSync = 1;
                 result  = SDL_GL_SetSwapInterval(sdlayer_getswapinterval(newSync));
@@ -587,7 +595,7 @@ int32_t videoSetVsync(int32_t newSync)
 
             if (result == -1)
             {
-                OSD_Printf("debug: GL driver rejected SwapInterval %d!\n", sdlayer_getswapinterval(newSync));
+                OSD_Printf("GL: driver rejected SwapInterval %d, unable to configure VSync!\n", sdlayer_getswapinterval(newSync));
                 newSync = 0;
             }
         }
@@ -1844,8 +1852,7 @@ void videoShowFrame(int32_t w)
             // TODO: use timing information to determine swap time and just busy loop ourselves for more timing control
             if (swapTime < nextSwapTime)
                 windowsWaitForVBlank();
-
-            if (swapTime > nextSwapTime + swapInterval)
+            else if (swapTime - nextSwapTime >= swapInterval)
                 nextSwapTime += swapInterval;
 
             nextSwapTime += swapInterval;
