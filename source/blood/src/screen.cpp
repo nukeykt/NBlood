@@ -236,7 +236,7 @@ void scrLoadPalette(void)
         palookupfogfactor[i] = 1.f;
 #endif
 
-    paletteInitClosestColorMap(palette);
+    paletteInitClosestColorMap((uint8_t*)palTable[0]);
     palettePostLoadTables();
     // Make color index 255 of palette black.
     for (int i = 0; i < 5; i++)
