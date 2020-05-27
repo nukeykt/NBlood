@@ -37,6 +37,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sequence.h"
 #include "cd.h"
 
+#define kMaxFXVolume   255
+
 #if 0
 extern "C" {
 #include "usrhooks.h"
@@ -350,6 +352,8 @@ void InitFX(void)
     nTotalSoundBytes = 0;
     nSoundCount = 0;
     nCreepyTimer = kCreepyCount;
+
+    SetMasterFXVolume(gFXVolume);
 
 #if 0
     int status = FX_Init(FXDevice, NumVoices, NumChannels, NumBits, MixRate);
@@ -811,11 +815,11 @@ void UpdateSounds()
                 return;
             }
 
-            int nVolume = gFXVolume+10-(Sin(nDist<<1)>>6);
+            int nVolume = kMaxFXVolume - nDist;
             if (nVolume < 0)
                 nVolume = 0;
-            if (nVolume > 255)
-                nVolume = 255;
+            if (nVolume > kMaxFXVolume)
+                nVolume = kMaxFXVolume;
 
             int nPitch = pASound->f_16;
             short nSoundSect;
@@ -906,7 +910,7 @@ void UpdateLocalSound(void)
         return;
 
     if (sActiveSound[nLocalChan].hFX >= 0)
-        FX_SetPan(sActiveSound[nLocalChan].hFX, gFXVolume, gFXVolume, gFXVolume);
+        FX_SetPan(sActiveSound[nLocalChan].hFX, kMaxFXVolume, kMaxFXVolume, kMaxFXVolume);
 }
 
 void StopLocalSound(void)
@@ -942,18 +946,28 @@ void PlaySound(int nSound)
     if (handle >= 0)
         FX_StopSound(handle);
 
-    handle = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, gFXVolume, gFXVolume, gFXVolume, 0, fix16_one, -1);
+    handle = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, kMaxFXVolume, kMaxFXVolume, kMaxFXVolume, 0, fix16_one, -1);
 
 #if 0
     AIL_init_sample(handle);
     AIL_set_sample_file(handle, SoundBuf[nSound], -1);
-    AIL_set_sample_volume(handle, gFXVolume>>1);
+    AIL_set_sample_volume(handle, kMaxFXVolume >>1);
 
     if (SoundBuf[nSound][26] == 6)
         AIL_set_sample_loop_count(handle, 0);
 
     AIL_start_sample(handle);
 #endif
+}
+
+void SetMasterFXVolume(int nVolume)
+{
+    if (nVolume > 255)
+        nVolume = 255;
+    if (nVolume < 0)
+        nVolume = 0;
+
+    FX_SetVolume(nVolume);
 }
 
 void PlayLocalSound(short nSound, short nRate)
@@ -977,7 +991,7 @@ void PlayLocalSound(short nSound, short nRate)
     if (pASound->hFX >= 0)
         FX_StopSound(pASound->hFX);
 
-    pASound->hFX = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, gFXVolume, gFXVolume, gFXVolume, 0, fix16_one, nLocalChan);
+    pASound->hFX = FX_Play(SoundBuf[nSound], SoundLen[nSound], bLoop ? 0 : -1, 0, 0, kMaxFXVolume, kMaxFXVolume, kMaxFXVolume, 0, fix16_one, nLocalChan);
 
     if (nRate)
     {
@@ -988,7 +1002,7 @@ void PlayLocalSound(short nSound, short nRate)
 #if 0
     AIL_init_sample(pASound->f_e);
     AIL_set_sample_file(pASound->f_e, SoundBuf[nSound], -1);
-    AIL_set_sample_volume(pASound->f_e, gFXVolume>>1);
+    AIL_set_sample_volume(pASound->f_e, kMaxFXVolume >>1);
 
     if (nRate)
         AIL_set_sample_playback_rate(pASound->f_e, AIL_sample_playback_rate(pASound->f_e)+nRate);
@@ -1068,18 +1082,18 @@ short PlayFX2(unsigned short nSound, short nSprite)
 
     if (!v1c)
     {
-        nVolume = gFXVolume+10-(Sin(nDist<<1)>>6)-10;
+        nVolume = kMaxFXVolume - nDist;
         if (nVolume <= 0)
         {
             if (nSprite > -1)
                 StopSpriteSound(nSprite);
             return -1;
         }
-        if (nVolume > 255)
-            nVolume = 255;
+        if (nVolume > kMaxFXVolume)
+            nVolume = kMaxFXVolume;
     }
     else
-        nVolume = gFXVolume;
+        nVolume = kMaxFXVolume;
 
     short vc = nSound & (~0x1ff);
     short v4 = nSound & 0x2000;

@@ -145,4 +145,6 @@ void PlayGameOverSound(void);
 
 void SoundBigEntrance(void);
 
+void SetMasterFXVolume(int nVolume);
+
 #endif

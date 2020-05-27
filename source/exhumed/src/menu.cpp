@@ -972,6 +972,8 @@ void menu_AdjustVolume()
                         gFXVolume -= 4;
                     }
 
+                    SetMasterFXVolume(gFXVolume);
+
                     if (LocalSoundPlaying()) {
                         UpdateLocalSound();
                     }
@@ -1003,6 +1005,8 @@ void menu_AdjustVolume()
                     if (gFXVolume < 252) {
                         gFXVolume += 4;
                     }
+
+                    SetMasterFXVolume(gFXVolume);
 
                     if (LocalSoundPlaying()) {
                         UpdateLocalSound();
