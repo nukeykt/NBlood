@@ -130,7 +130,17 @@ pthtyp *texcache_fetchmulti(pthtyp *pth, hicreplctyp *si, int32_t dapicnum, int3
 pthtyp *texcache_fetch(int32_t dapicnum, int32_t dapalnum, int32_t dashade, int32_t dameth)
 {
     const int32_t j = dapicnum & (GLTEXCACHEADSIZ - 1);
+    int indexed = 0;
     hicreplctyp *si = usehightile ? hicfindsubst(dapicnum, dapalnum, hictinting[dapalnum].f & HICTINT_ALWAYSUSEART) : NULL;
+    if (usehightile && (dameth & DAMETH_INDEXED) && !(hictinting[dapalnum].f & HICTINT_ALWAYSUSEART))
+    {
+        hicreplctyp *pal0 = hicfindsubst(dapicnum, 0, 0);
+        if (pal0 && pal0->flags & HICR_INDEXED)
+        {
+            indexed = 1;
+            si = pal0;
+        }
+    }
 
     if (drawingskybox && usehightile)
         if ((si = hicfindskybox(dapicnum, dapalnum)) == NULL)
@@ -144,6 +154,8 @@ pthtyp *texcache_fetch(int32_t dapicnum, int32_t dapalnum, int32_t dashade, int3
         return (dapalnum >= (MAXPALOOKUPS - RESERVEDPALS) || hicprecaching) ?
                 NULL : texcache_tryart(dapicnum, dapalnum, dashade, dameth);
     }
+    if (!indexed)
+        dameth &= ~DAMETH_INDEXED;
 
     /* if palette > 0 && replacement found
      *    no effects are applied to the texture
@@ -160,8 +172,8 @@ pthtyp *texcache_fetch(int32_t dapicnum, int32_t dapalnum, int32_t dashade, int3
     for (pthtyp *pth = texcache.list[j]; pth; pth = pth->next)
     {
         if (pth->picnum == dapicnum && pth->palnum == checkcachepal && (checktintpal > 0 ? 1 : (pth->effects == tintflags))
-            && (pth->flags & (PTH_CLAMPED | PTH_HIGHTILE | PTH_SKYBOX | PTH_NOTRANSFIX))
-               == (TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | PTH_HIGHTILE | (drawingskybox > 0) * PTH_SKYBOX)
+            && (pth->flags & (PTH_CLAMPED | PTH_HIGHTILE | PTH_SKYBOX | PTH_NOTRANSFIX | PTH_INDEXED))
+               == (TO_PTH_CLAMPED(dameth) | TO_PTH_NOTRANSFIX(dameth) | PTH_HIGHTILE | (drawingskybox > 0) * PTH_SKYBOX | indexed * PTH_INDEXED)
             && (drawingskybox > 0 ? (pth->skyface == drawingskybox) : 1))
         {
             if (pth->flags & PTH_INVALIDATED)

@@ -16,6 +16,7 @@ Ken Silverman's official web site: http://www.advsys.net/ken
 #include "polymost.h"
 #include "microprofile.h"
 #include "tilepacker.h"
+#include "colmatch.h"
 #include "texcache.h"
 #include "hash.h"
 
@@ -2284,13 +2285,12 @@ void gloadtile_art(int32_t dapic, int32_t dapal, int32_t tintpalnum, int32_t das
 
 int gloadtile_willprint;
 
-coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, char *const onebitalpha, polytintflags_t effect,
-                                     int32_t dapalnum, char *const al)
+static bool gloadtile_mdloadskin_check(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, int *isart)
 {
-    int32_t isart = 0;
+    *isart = 0;
     int32_t const length = kpzbufload(fn);
     if (length == 0)
-        return nullptr;
+        return false;
 
     // tsizx/y = replacement texture's natural size
     // xsiz/y = 2^x size of replacement
@@ -2302,14 +2302,14 @@ coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const 
     if (tsiz->x == 0 || tsiz->y == 0)
     {
         if (artCheckUnitFileHeader((uint8_t*)kpzbuf, picfillen))
-            return nullptr;
+            return false;
 
         *tsiz = { B_LITTLE16(B_UNBUF16(&kpzbuf[16])), B_LITTLE16(B_UNBUF16(&kpzbuf[18])) };
 
         if (tsiz->x == 0 || tsiz->y == 0)
-            return nullptr;
+            return false;
 
-        isart = 1;
+        *isart = 1;
     }
 
     if (!glinfo.texnpot)
@@ -2320,11 +2320,65 @@ coltype *gloadtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const 
     else
         *siz = *tsiz;
 
-    if (isart)
+    if (*isart)
     {
         if (tsiz->x * tsiz->y + ARTv1_UNITOFFSET > picfillen)
-            return nullptr;// -2;
+            return false;
     }
+
+    return true;
+}
+
+uint8_t *gloadindexedtile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, hicreplctyp* hicr)
+{
+    int32_t isart;
+    if (!gloadtile_mdloadskin_check(fn, picfillen, tsiz, siz, &isart))
+        return nullptr;
+
+    uint8_t *pic = (uint8_t *)Xcalloc(tsiz->x, tsiz->y);
+
+    if (isart)
+    {
+        Bmemcpy(pic, &kpzbuf[ARTv1_UNITOFFSET], tsiz->x * tsiz->y);
+    }
+#ifdef WITHKPLIB
+    else
+    {
+        int32_t const bytesperline = tsiz->x * sizeof(coltype);
+        coltype *temppic = (coltype *)Xcalloc(tsiz->y, bytesperline);
+        if (kprender(kpzbuf,picfillen,(intptr_t)temppic,bytesperline,tsiz->x,tsiz->y))
+        {
+            Xfree(pic);
+            Xfree(temppic);
+            return nullptr; //-2;
+        }
+
+        paletteFlushClosestColor();
+
+        int alphacut = clamp((int)(255.f - 255.f * hicr->alphacut), 0, 255);
+
+        for (int j = 0; j < tsiz->y; ++j)
+        {
+            int const ofs = j * tsiz->x;
+            for (int i = 0; i < tsiz->x; ++i)
+            {
+                coltype const *const col = &temppic[ofs + i];
+                pic[(i * tsiz->y) + j] =
+                (col->a < alphacut) ? 255 : paletteGetClosestColorUpToIndex(col->b, col->g, col->r, 254);
+            }
+        }
+        Xfree(temppic);
+    }
+#endif
+    return pic;
+}
+
+coltype *gloadtruecolortile_mdloadskin_shared(char *fn, int32_t picfillen, vec2_t *const tsiz, vec2_t *const siz, char *const onebitalpha, polytintflags_t effect,
+                                             int32_t dapalnum, char *const al)
+{
+    int32_t isart;
+    if (!gloadtile_mdloadskin_check(fn, picfillen, tsiz, siz, &isart))
+        return nullptr;
 
     int32_t const bytesperline = siz->x * sizeof(coltype);
     coltype* pic = (coltype*)Xcalloc(siz->y, bytesperline);
@@ -2446,8 +2500,9 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     texcache_calcid(texcacheid, fn, picfillen+(dapalnum<<8), DAMETH_NARROW_MASKPROPS(dameth), effect & HICTINT_IN_MEMORY);
     int32_t gotcache = texcache_readtexheader(texcacheid, &cachead, 0);
     vec2_t siz = { 0, 0 }, tsiz = { 0, 0 };
+    int32_t indexed = (hicr->flags & HICR_INDEXED) && (dameth & DAMETH_INDEXED);
 
-    if (gotcache && !texcache_loadtile(&cachead, &doalloc, pth))
+    if (!indexed && gotcache && !texcache_loadtile(&cachead, &doalloc, pth))
     {
         tsiz = { cachead.xdim, cachead.ydim };
         hasalpha = !!(cachead.flags & CACHEAD_HASALPHA);
@@ -2457,69 +2512,111 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
         // CODEDUP: mdloadskin
         gotcache = 0;	// the compressed version will be saved to disk
         char al = 255;
-        auto pic = gloadtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, effect, dapalnum, &al);
-        if (!pic) return -1;
 
-        hasalpha = (al != 255);
-        onebitalpha &= hasalpha;
-
-        if ((!(dameth & DAMETH_CLAMPED)) || facen) //Duplicate texture pixels (wrapping tricks for non power of 2 texture sizes)
+        if (indexed)
         {
-            if (siz.x > tsiz.x)  // Copy left to right
+            uint8_t *pic = gloadindexedtile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, hicr);
+            if (!pic) return -1;
+
+            hasalpha = 1;
+            gloadtile_willprint=2;
+
+            if ((doalloc&3)==1)
+                glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
+            buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+
+            if (doalloc)
             {
-                for (int32_t y = 0, *lptr = (int32_t *)pic; y < tsiz.y; y++, lptr += siz.x)
-                    Bmemcpy(&lptr[tsiz.x], lptr, (siz.x - tsiz.x) << 2);
+                if (!(dameth & DAMETH_CLAMPED))
+                {
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_if_tile_is_sky(dapic, GL_CLAMP_TO_EDGE));
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                }
+                else
+                {
+                    // For sprite textures, clamping looks better than wrapping
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                }
             }
 
-            if (siz.y > tsiz.y)  // Copy top to bottom
-                Bmemcpy(&pic[siz.x * tsiz.y], pic, (siz.y - tsiz.y) * siz.x << 2);
-        }
-
-        if (!glinfo.bgra)
-        {
-            for (bssize_t i=siz.x*siz.y, j=0; j<i; j++)
-                swapchar(&pic[j].r, &pic[j].b);
-        }
-
-        // end CODEDUP
-
-        if (tsiz.x>>r_downsize <= tilesiz[dapic].x || tsiz.y>>r_downsize <= tilesiz[dapic].y)
-            hicr->flags |= HICR_ARTIMMUNITY;
-
-        if ((doalloc&3)==1)
-            glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
-        buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
-
-        fixtransparency(pic,tsiz,siz,dameth);
-
-        int32_t const texfmt = glinfo.bgra ? GL_BGRA : GL_RGBA;
-
-        if (!doalloc)
-        {
-            vec2_t pthSiz2 = pth->siz;
-            if (!glinfo.texnpot)
+            if (!doalloc &&
+                (siz.x != pth->siz.x ||
+                 siz.y != pth->siz.y))
             {
-                for (pthSiz2.x=1; pthSiz2.x < pth->siz.x; pthSiz2.x+=pthSiz2.x) { }
-                for (pthSiz2.y=1; pthSiz2.y < pth->siz.y; pthSiz2.y+=pthSiz2.y) { }
-            }
-            else
-                pthSiz2 = tsiz;
-            if (siz.x > pthSiz2.x ||
-                siz.y > pthSiz2.y)
-            {
-                //POGO: grow our texture to hold the tile data
+                //POGO: resize our texture to match the tile data
                 doalloc = true;
             }
-        }
-        uploadtexture(doalloc,siz,texfmt,pic,tsiz,
-                      dameth | DAMETH_HI | DAMETH_NOFIX |
-                      TO_DAMETH_NODOWNSIZE(hicr->flags) |
-                      TO_DAMETH_NOTEXCOMPRESS(hicr->flags) |
-                      TO_DAMETH_ARTIMMUNITY(hicr->flags) |
-                      (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
-                      (hasalpha ? DAMETH_HASALPHA : 0));
+            uploadtextureindexed(doalloc, {}, tsiz, (intptr_t)pic);
 
-        Xfree(pic);
+            Xfree(pic);
+        }
+        else
+        {
+            coltype *pic = gloadtruecolortile_mdloadskin_shared(fn, picfillen, &tsiz, &siz, &onebitalpha, effect, dapalnum, &al);
+            if (!pic) return -1;
+
+            hasalpha = (al != 255);
+            onebitalpha &= hasalpha;
+
+            if ((!(dameth & DAMETH_CLAMPED)) || facen) //Duplicate texture pixels (wrapping tricks for non power of 2 texture sizes)
+            {
+                if (siz.x > tsiz.x)  // Copy left to right
+                {
+                    for (int32_t y = 0, *lptr = (int32_t *)pic; y < tsiz.y; y++, lptr += siz.x)
+                        Bmemcpy(&lptr[tsiz.x], lptr, (siz.x - tsiz.x) << 2);
+                }
+
+                if (siz.y > tsiz.y)  // Copy top to bottom
+                    Bmemcpy(&pic[siz.x * tsiz.y], pic, (siz.y - tsiz.y) * siz.x << 2);
+            }
+
+            if (!glinfo.bgra)
+            {
+                for (bssize_t i=siz.x*siz.y, j=0; j<i; j++)
+                    swapchar(&pic[j].r, &pic[j].b);
+            }
+
+            // end CODEDUP
+
+            if (tsiz.x>>r_downsize <= tilesiz[dapic].x || tsiz.y>>r_downsize <= tilesiz[dapic].y)
+                hicr->flags |= HICR_ARTIMMUNITY;
+
+            if ((doalloc&3)==1)
+                glGenTextures(1, &pth->glpic); //# of textures (make OpenGL allocate structure)
+            buildgl_bindTexture(GL_TEXTURE_2D, pth->glpic);
+
+            fixtransparency(pic,tsiz,siz,dameth);
+
+            int32_t const texfmt = glinfo.bgra ? GL_BGRA : GL_RGBA;
+
+            if (!doalloc)
+            {
+                vec2_t pthSiz2 = pth->siz;
+                if (!glinfo.texnpot)
+                {
+                    for (pthSiz2.x=1; pthSiz2.x < pth->siz.x; pthSiz2.x+=pthSiz2.x) { }
+                    for (pthSiz2.y=1; pthSiz2.y < pth->siz.y; pthSiz2.y+=pthSiz2.y) { }
+                }
+                else
+                    pthSiz2 = tsiz;
+                if (siz.x > pthSiz2.x ||
+                    siz.y > pthSiz2.y)
+                {
+                    //POGO: grow our texture to hold the tile data
+                    doalloc = true;
+                }
+            }
+            uploadtexture(doalloc,siz,texfmt,pic,tsiz,
+                          dameth | DAMETH_HI | DAMETH_NOFIX |
+                          TO_DAMETH_NODOWNSIZE(hicr->flags) |
+                          TO_DAMETH_NOTEXCOMPRESS(hicr->flags) |
+                          TO_DAMETH_ARTIMMUNITY(hicr->flags) |
+                          (onebitalpha ? DAMETH_ONEBITALPHA : 0) |
+                          (hasalpha ? DAMETH_HASALPHA : 0));
+
+            Xfree(pic);
+        }
     }
 
     // precalculate scaling parameters for replacement
@@ -2528,7 +2625,8 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
     else
         pth->scale = { (float)tsiz.x / (float)tilesiz[dapic].x, (float)tsiz.y / (float)tilesiz[dapic].y };
 
-    polymost_setuptexture(dameth, (hicr->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : -1);
+    if (!indexed)
+        polymost_setuptexture(dameth, (hicr->flags & HICR_FORCEFILTER) ? TEXFILTER_ON : -1);
 
     if (tsiz.x>>r_downsize <= tilesiz[dapic].x || tsiz.y>>r_downsize <= tilesiz[dapic].y)
         hicr->flags |= HICR_ARTIMMUNITY;
@@ -2539,7 +2637,8 @@ int32_t gloadtile_hi(int32_t dapic, int32_t dapalnum, int32_t facen, hicreplctyp
                  PTH_HIGHTILE | ((facen>0) * PTH_SKYBOX) |
                  (onebitalpha ? PTH_ONEBITALPHA : 0) |
                  (hasalpha ? PTH_HASALPHA : 0) |
-                 ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0);
+                 ((hicr->flags & HICR_FORCEFILTER) ? PTH_FORCEFILTER : 0) |
+                 (indexed ? PTH_INDEXED : 0);
     pth->skyface = facen;
     pth->hicr = hicr;
     pth->siz = tsiz;
