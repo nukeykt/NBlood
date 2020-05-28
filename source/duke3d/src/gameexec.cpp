@@ -6756,7 +6756,7 @@ void G_RestoreMapState(void)
                 switch (DYNAMICTILEMAP(wall[animwall[x].wallnum].picnum))
                 {
                     case FEMPIC1__STATIC: wall[animwall[x].wallnum].picnum = BLANKSCREEN; break;
-                case FEMPIC2__STATIC:
+                    case FEMPIC2__STATIC:
                     case FEMPIC3__STATIC: wall[animwall[x].wallnum].picnum = SCREENBREAK6; break;
                 }
         }
