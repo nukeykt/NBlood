@@ -7133,7 +7133,6 @@ MAIN_LOOP_RESTART:
         if (g_saveRequested)
         {
             KB_FlushKeyboardQueue();
-            videoNextPage();
 
             g_screenCapture = 1;
             G_DrawRooms(myconnectindex, 65536);
