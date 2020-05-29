@@ -295,9 +295,9 @@ savegame(int saveno)
      int       rv;
      intptr_t tmpanimates[MAXANIMATES];
 
-     sprintf((char *)tempbuf,"savegam%d.tek",saveno);
+     sprintf(tempbuf,"savegam%d.tek",saveno);
    
-     if( (fil = open((char *)tempbuf,O_BINARY|O_TRUNC|O_CREAT|O_WRONLY,S_IWRITE)) == -1 ) {
+     if( (fil = open(tempbuf,O_BINARY|O_TRUNC|O_CREAT|O_WRONLY,S_IWRITE)) == -1 ) {
           return(-1);
      }
 

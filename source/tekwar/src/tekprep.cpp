@@ -23,18 +23,19 @@ short starta,starts;
 
 #define   MAXSTARTSPOTS  16
 int       startspotcnt;
-struct    startspottype {
-     int      x,y,z;
-     short     sectnum;
+
+struct startspottype
+{
+    int   x, y, z;
+    short sectnum;
 };
-struct    startspottype       startspot[MAXSTARTSPOTS];
+startspottype startspot[MAXSTARTSPOTS];
 
-int       firsttimethru=1;
+int firsttimethru=1;
+int subwaysound[4];
 
-int       subwaysound[4];
 
-void
-prepareboard(char *daboardfilename)
+void prepareboard(char *daboardfilename)
 {
      short     startwall, endwall, dasector;
      int      i, j, k, s, dax, day, daz, dax2, day2;
@@ -87,6 +88,10 @@ prepareboard(char *daboardfilename)
      startz=posz[0];
      starta=ang[0];
      starts=cursectnum[0];
+
+#ifdef YAX_ENABLE
+     yax_update(1);
+#endif
      
      psky_t* pSky = tileSetupSky(0);
 
@@ -94,11 +99,11 @@ prepareboard(char *daboardfilename)
      pSky->tileofs[1] = 0;
      pSky->tileofs[2] = 0;
      pSky->tileofs[3] = 0;
-     pSky->yoffs = 256;
+     pSky->yoffs = 112;
      pSky->lognumtiles = 2;
      pSky->horizfrac = 65536;
      pSky->yscale = 65536;
-     parallaxtype = 2;
+     parallaxtype = 1;
      g_visibility = 2048;
 
 
@@ -703,61 +708,66 @@ int initptrlists()
 
 int tekpreinit(void)
 {
-     int  i,j,k,l;
-     int fh;
+    uint8_t palbuf[256];
+    int fh;
 
-     cdpreinit();
+    cdpreinit();
 
-     if ((fh = kopen4loadfrommod("lookup.dat", 0)) >= 0)
-     {
-         kread(fh, &l, 1);
+    if ((fh = kopen4loadfrommod("lookup.dat", 0)) >= 0)
+    {
+        uint8_t num_tables = 0;
+        kread(fh, &num_tables, 1);
 
-         for (j = 0; j < l; j++)
-         {
-             kread(fh, &k, 1);
-             kread(fh, tempbuf, 256);
+        for (int j = 0; j < num_tables; j++)
+        {
+            char lookup_num;
+            kread(fh, &lookup_num, 1);
+            kread(fh, palbuf, 256);
 
-             paletteMakeLookupTable(k, (const char*)tempbuf, 0, 0, 0, 1);
-         }
-         kclose(fh);
-     }
+            paletteMakeLookupTable(lookup_num, (const char*)palbuf, 0, 0, 0, 1);
+        }
+        kclose(fh);
+    }
 
-     if ((option[4] != 0) && ((fh = kopen4load("nlookup.dat", 0)) >= 0))
-     {
-         kread(fh, &l, 1);
+    if ((option[4] != 0) && ((fh = kopen4load("nlookup.dat", 0)) >= 0))
+    {
+        uint8_t num_tables = 0;
+        kread(fh, &num_tables, 1);
 
-         for (j = 0; j < l; j++)
-         {
-             kread(fh, &k, 1);
-             kread(fh, tempbuf, 256);
+        for (int j = 0; j < num_tables; j++)
+        {
+            char lookup_num;
+            kread(fh, &lookup_num, 1);
+            kread(fh, palbuf, 256);
 
-             paletteMakeLookupTable(k + 15, (const char*)tempbuf, 0, 0, 0, 1);
-         }
-         kclose(fh);
-     }
+            paletteMakeLookupTable(lookup_num + 15, (const char*)palbuf, 0, 0, 0, 1);
+        }
+        kclose(fh);
+    }
 
-     paletteMakeLookupTable(255, (const char*)tempbuf,60,60,60,1);
+    paletteMakeLookupTable(255, (const char*)palbuf, 60, 60, 60, 1);
 
-     #if 0// TODO
-     pskyoff[0]=0;  // 2 tiles
-     pskyoff[1]=1;
-     pskyoff[2]=2;
-     pskyoff[3]=3;
-     pskybits=2;    // tile 4 times, every 90 deg.
-     parallaxtype=1;   
-     parallaxyoffs=112;
-     #endif
-     initptrlists();
-     initpaletteshifts();
-     initmenu();
-     initmoreoptions();
+    #if 0// TODO
+    pskyoff[0] = 0;  // 2 tiles
+    pskyoff[1] = 1;
+    pskyoff[2] = 2;
+    pskyoff[3] = 3;
+    pskybits = 2;    // tile 4 times, every 90 deg.
+    parallaxtype = 1;
+    parallaxyoffs = 112;
+    #endif
 
-     if (screensize == 0) {
-         screensize = MAXXDIM;
-     }
-     activemenu=0;
+    initptrlists();
+    initpaletteshifts();
+    initmenu();
+    initmoreoptions();
 
-     return 0;
+    if (screensize == 0) {
+        screensize = MAXXDIM;
+    }
+
+    activemenu = 0;
+    return 0;
 }
 
 void
@@ -829,8 +839,8 @@ teknetpickmap(void)
           clearview(0);
           rotatesprite(xdim<<15,ydim<<15,zoom,rotangle,mappic[map],0,0,0, 0, 0, xdim-1, ydim-1);
           overwritesprite((xdim>>1)-160,0,408,0,0,0);
-          sprintf((char *)tempbuf,"MULTIPLAYER MAP %d",map+1);
-          printext((xdim>>1)-(strlen(tempbuf)<<2),ydim-16,(char *)tempbuf,ALPHABET2,255);
+          sprintf(tempbuf,"MULTIPLAYER MAP %d",map+1);
+          printext((xdim>>1)-(strlen(tempbuf)<<2),ydim-16,tempbuf,ALPHABET2,255);
           nextpage();
      } while (keystatus[0x1C] == 0 && keystatus[0x9C] == 0 && keystatus[0x01] == 0);
      if (keystatus[0x1C] || keystatus[0x9C]) {

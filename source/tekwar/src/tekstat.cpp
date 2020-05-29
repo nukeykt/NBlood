@@ -121,7 +121,7 @@ FILE      *dbgfp2;
 #define   RMOD16(s) ( (krand_intercept(s))&15L )
 
 int           pickupclock;
-spritetype     pickup;
+uspritetype     pickup;
 struct    picattribtype  picinfo;
 struct    picattribtype  *picinfoptr=&picinfo;
 
