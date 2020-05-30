@@ -42,6 +42,7 @@ enum
     ALSAErr_CreateSimplePort,
     ALSAErr_AllocQueue,
     ALSAErr_ConnectTo,
+    ALSAErr_DeviceNotFound,
     ALSAErr_StartQueue,
     ALSAErr_StopQueue,
     ALSAErr_PlayThread
@@ -105,6 +106,10 @@ const char *ALSADrv_ErrorString(int ErrorNumber)
 
         case ALSAErr_ConnectTo:
             ErrorString = "ALSA error: failed in snd_seq_connect_to.\n";
+            break;
+
+        case ALSAErr_DeviceNotFound:
+            ErrorString = "ALSA error: device not found.\n";
             break;
 
         default:
@@ -293,6 +298,20 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
         return ALSAErr_Error;
     }
     
+    ALSADrv_MIDI_ListPorts();
+    auto it = validDevices.begin();
+    for (; it != validDevices.end(); ++it)
+        if ((it->clntid == ALSA_ClientID) && (it->portid == ALSA_PortID))
+            break;
+
+    if (it == validDevices.end())
+    {
+        ALSADrv_MIDI_Shutdown();
+        MV_Printf("ALSA device not found\n");
+        ErrorCode = ALSAErr_DeviceNotFound;
+        return ALSAErr_Error;
+    }
+
     result = snd_seq_connect_to(seq, seq_port, ALSA_ClientID, ALSA_PortID);
     if (result < 0)
     {
@@ -302,8 +321,6 @@ int ALSADrv_MIDI_Init(midifuncs * funcs)
         return ALSAErr_Error;
     }
     
-    ALSADrv_MIDI_ListPorts();
-
     funcs->NoteOff           = Func_NoteOff;
     funcs->NoteOn            = Func_NoteOn;
     funcs->PolyAftertouch    = Func_PolyAftertouch;
