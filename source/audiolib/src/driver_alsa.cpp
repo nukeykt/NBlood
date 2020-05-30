@@ -349,8 +349,8 @@ void ALSADrv_MIDI_Shutdown(void)
     seq_port  = -1;
     seq       = 0;
 
-//    for (auto &device : validDevices)
-//        DO_FREE_AND_NULL(device.name);
+    for (auto &device : validDevices)
+        DO_FREE_AND_NULL(device.name);
 
     validDevices.clear();
 }

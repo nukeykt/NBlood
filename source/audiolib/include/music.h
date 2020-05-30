@@ -41,7 +41,7 @@ extern int MUSIC_ErrorCode;
 
 typedef struct
 {
-  const char *name;
+  char *name;
   int clntid;
   int portid;
 } alsa_mididevinfo_t;
