@@ -2296,6 +2296,7 @@ static void Menu_Pre(MenuID_t cm)
                                                         opl3stereo == AL_Stereo &&
                                                         !Bstrcmp(sf2bankfile, SF2_BankFile)
 #ifdef __linux__
+                                                        && alsadevices.size() > 0
                                                         && alsadevices[alsadevice].clntid == ALSA_ClientID
                                                         && alsadevices[alsadevice].portid == ALSA_PortID
 #endif
@@ -3478,7 +3479,8 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
     {
         if (ud.config.MixRate != soundrate || ud.config.NumVoices != soundvoices
 #ifdef __linux__
-            || (musicdevice == ASS_ALSA && (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
+            || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
+                (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
 #endif
 )
         {
@@ -3502,7 +3504,8 @@ static void Menu_EntryLinkActivate(MenuEntry_t *entry)
         {
             int const needsReInit = (ud.config.MusicDevice != musicdevice || (musicdevice == ASS_SF2 && Bstrcmp(SF2_BankFile, sf2bankfile))
 #ifdef __linux__
-            || (musicdevice == ASS_ALSA && (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
+            || (musicdevice == ASS_ALSA && (size_t)alsadevice < alsadevices.size() &&
+                (ALSA_ClientID != alsadevices[alsadevice].clntid || ALSA_PortID != alsadevices[alsadevice].portid))
 #endif
 );
 
@@ -5286,7 +5289,7 @@ static int32_t M_RunMenu_Menu(Menu_t *cm, MenuMenu_t *menu, MenuEntry_t *current
                         const int32_t optiontexty = origin.y + y_upper + y - menu->scrollPos;
 
                         const vec2_t optiontextsize = Menu_Text(optiontextx, optiontexty + ((height>>17)<<16), object->font,
-                            currentOption < 0 ? MenuCustom : currentOption < object->options->numOptions ? object->options->optionNames[currentOption] : NULL,
+                            currentOption < 0 ? MenuCustom : currentOption < object->options->numOptions ? object->options->optionNames[currentOption] : "",
                             status, ydim_upper, ydim_lower);
 
                         if (!(status & MT_XRight))
