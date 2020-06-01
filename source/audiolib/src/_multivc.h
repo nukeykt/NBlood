@@ -128,14 +128,13 @@ typedef struct VoiceNode
     uint32_t (*mix)(struct VoiceNode *, uint32_t);
 
     const char *sound;
+    void *rawdataptr;
 
     union
     {
-        void *rawdataptr;
+        const char *NextBlock;
         void (*DemandFeed)(const char** ptr, uint32_t* length, void* userdata);
     };
-
-    const char *NextBlock;
 
     struct
     {
