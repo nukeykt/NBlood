@@ -2873,9 +2873,9 @@ DO_DEFSTATE:
                 }
 
                 for (k=j; k>=0; k--)
-                {
                     scriptWriteValue(0);
-                }
+
+                scriptWriteValue(CON_MOVE);
             }
             continue;
 
@@ -3008,18 +3008,13 @@ DO_DEFSTATE:
                             C_BitOrNextValue(&k);
 
                         C_FinishBitOr(k);
-                        j = 666;
-                        break;
                     }
                 }
 
-                if (j == 666)
-                    continue;
-
                 for (k=j; k<3; k++)
-                {
                     scriptWriteValue(0);
-                }
+
+                scriptWriteValue(CON_AI);
             }
             continue;
 
@@ -3068,9 +3063,9 @@ DO_DEFSTATE:
                     C_GetNextValue(LABEL_DEFINE);
                 }
                 for (k=j; k>=0; k--)
-                {
                     scriptWriteValue(0);
-                }
+
+                scriptWriteValue(CON_ACTION);
             }
             continue;
 

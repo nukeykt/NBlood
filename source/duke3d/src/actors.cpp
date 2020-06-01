@@ -108,9 +108,8 @@ void A_RadiusDamageObject_Internal(int const spriteNum, int const otherSprite, i
 #ifndef EDUKE32_STANDALONE
     if (WORLDTOUR && pSprite->picnum == FLAMETHROWERFLAME)
     {
-        if (sprite[pSprite->owner].picnum == FIREFLY && pOther->picnum == FIREFLY)
-            return;
-        if (sprite[pSprite->owner].picnum == BOSS5 && pOther->picnum == BOSS5)
+        // enemies in WT don't damage other enemies of the same type with FLAMETHROWERFLAME
+        if (sprite[pSprite->owner].picnum == pOther->picnum && pOther->picnum != APLAYER)
             return;
     }
 #endif
@@ -264,28 +263,95 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
     auto const pSprite = (uspriteptr_t)&sprite[spriteNum];
 
-    int16_t sectorList[MAXDAMAGESECTORS];
-    uint8_t sectorMap[(MAXSECTORS+7)>>3];
-    int16_t numSectors;
-
-    bfirst_search_init(sectorList, sectorMap, &numSectors, MAXSECTORS, pSprite->sectnum);
+    int16_t numSectors, sectorList[MAXDAMAGESECTORS];
+    uint8_t * const sectorMap = (uint8_t *)Balloca((numsectors+7)>>3);
+    bfirst_search_init(sectorList, sectorMap, &numSectors, numsectors, pSprite->sectnum);
 
 #ifndef EDUKE32_STANDALONE
+    // rockets from the Devastator skip propagating damage to other sectors
     if (!FURY && (pSprite->picnum == RPG && pSprite->xrepeat < 11))
-        goto SKIPWALLCHECK;
+        goto wallsfinished;
 #endif
+
+    uint8_t *wallTouched;
+    wallTouched = (uint8_t *)Balloca((numwalls+7)>>3);
+    Bmemset(wallTouched, 0, (numwalls+7)>>3);
+
+    uint8_t *wallCanSee;
+    wallCanSee = (uint8_t *)Balloca((numwalls+7)>>3);
+    Bmemset(wallCanSee, 0, (numwalls+7)>>3);
 
     for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
     {
         int const   sectorNum  = sectorList[sectorCount];
         auto const &listSector = sector[sectorNum];
-        vec2_t      closest;
 
-        if (getsectordist(pSprite->pos.vec2, sectorNum, &closest) >= blastRadius)
-            continue;
+        vec2_t  closest  = {};
+        int32_t distance = INT32_MAX;
 
         int const startWall = listSector.wallptr;
         int const endWall   = listSector.wallnum + startWall;
+
+        int w = startWall;
+        
+        for (auto pWall = (uwallptr_t)&wall[startWall]; w < endWall; ++w, ++pWall)
+        {
+            vec2_t  p        = pSprite->pos.vec2;
+            int32_t walldist = blastRadius - 1;
+
+            if (bitmap_test(wallTouched, w) == 0)
+                walldist = getwalldist(p, w, &p);
+
+            if (walldist < blastRadius)
+            {
+                if (walldist < distance)
+                {
+                    distance = walldist;
+                    closest  = p;
+                }
+
+                int16_t aSector = sectorNum;
+                vec3_t  vect    = { (((pWall->x + wall[pWall->point2].x) >> 1) + pSprite->x) >> 1,
+                                    (((pWall->y + wall[pWall->point2].y) >> 1) + pSprite->y) >> 1, pSprite->z };
+
+                updatesector(vect.x, vect.y, &aSector);
+
+                if (aSector == -1)
+                {
+                    vect.vec2 = p;
+                    aSector   = sectorNum;
+                }
+
+                bitmap_set(wallTouched, w);
+
+                if (pWall->nextwall != -1)
+                    bitmap_set(wallTouched, pWall->nextwall);
+
+                if (bitmap_test(wallCanSee, w) == 1 || cansee(vect.x, vect.y, vect.z, aSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
+                {
+                    bitmap_set(wallCanSee, w);
+
+                    if (pWall->nextwall != -1)
+                        bitmap_set(wallCanSee, pWall->nextwall);
+
+                    A_DamageWall_Internal(spriteNum, w, { p.x, p.y, pSprite->z }, pSprite->picnum);
+                }
+
+                int const nextSector = pWall->nextsector;
+
+                if (nextSector >= 0)
+                    bfirst_search_try(sectorList, sectorMap, &numSectors, nextSector);
+
+                if (numSectors == MAXDAMAGESECTORS)
+                {
+                    OSD_Printf("Sprite %d tried to damage more than %d sectors!\n", spriteNum, MAXDAMAGESECTORS);
+                    goto wallsfinished;
+                }
+            }
+        }
+
+        if (distance >= blastRadius)
+            continue;
 
         int32_t floorZ, ceilZ;
         getzsofslope(sectorNum, closest.x, closest.y, &ceilZ, &floorZ);
@@ -295,43 +361,9 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
 
         if (((pSprite->z - floorZ) >> 8) < blastRadius)
             Sect_DamageFloor_Internal(spriteNum, sectorNum);
-
-        int w = startWall;
-        
-        for (auto pWall = (uwallptr_t)&wall[startWall]; w < endWall; ++w, ++pWall)
-        {
-            if (getwalldist(pSprite->pos.vec2, w, &closest) >= blastRadius)
-                continue;
-
-            int16_t aSector = sectorNum;
-            vec3_t  vect    = { (((pWall->x + wall[pWall->point2].x) >> 1) + pSprite->x) >> 1,
-                                (((pWall->y + wall[pWall->point2].y) >> 1) + pSprite->y) >> 1, pSprite->z };
-
-            updatesector(vect.x, vect.y, &aSector);
-
-            if (aSector == -1)
-            {
-                vect.vec2 = closest;
-                aSector   = sectorNum;
-            }
-
-            if (cansee(vect.x, vect.y, vect.z, aSector, pSprite->x, pSprite->y, pSprite->z, pSprite->sectnum))
-                A_DamageWall_Internal(spriteNum, w, { closest.x, closest.y, pSprite->z }, pSprite->picnum);
-
-            int const nextSector = pWall->nextsector;
-
-            if (nextSector >= 0)
-                bfirst_search_try(sectorList, sectorMap, &numSectors, nextSector);
-
-            if (numSectors == MAXDAMAGESECTORS)
-            {
-                OSD_Printf("Sprite %d tried to damage more than %d sectors!\n", spriteNum, MAXDAMAGESECTORS);
-                goto SKIPWALLCHECK;
-            }
-        }
     }
 
-SKIPWALLCHECK:
+wallsfinished:
     int const randomZOffset = -ZOFFSET2 + (krand()&(ZOFFSET5-1));
 
     for (int sectorCount=0; sectorCount < numSectors; ++sectorCount)
@@ -345,9 +377,10 @@ SKIPWALLCHECK:
 
             if (bitmap_test(g_radiusDmgStatnums, pDamage->statnum))
             {
-                int const spriteDist = (pDamage->picnum == APLAYER)
-                                       ? FindDistance3D(pSprite->x - pDamage->x, pSprite->y - pDamage->y, pSprite->z - (pDamage->z - PHEIGHT))
-                                       : dist(pSprite, pDamage);
+                int spriteDist = dist(pSprite, pDamage);
+                
+                if (pDamage->picnum == APLAYER)
+                    spriteDist = FindDistance3D(pSprite->x - pDamage->x, pSprite->y - pDamage->y, pSprite->z - (pDamage->z - PHEIGHT));
 
                 if (spriteDist < blastRadius)
                     A_RadiusDamageObject_Internal(spriteNum, damageSprite, blastRadius, spriteDist, randomZOffset, dmg1, dmg2, dmg3, dmg4);
@@ -7036,8 +7069,10 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                 {
                     auto const foundSprite = (uspriteptr_t)&sprite[spr];
 
-                    if ((foundSprite->pos.z > pSector->floorz
-                         || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < pSector->ceilingz)
+                    int32_t floorZ, ceilZ;
+                    getcorrectzsofslope(pSprite->sectnum, foundSprite->pos.x, foundSprite->pos.y, &ceilZ, &floorZ);
+
+                    if ((foundSprite->pos.z > floorZ || foundSprite->pos.z - ((foundSprite->yrepeat * tilesiz[foundSprite->picnum].y) << 2) < ceilZ)
                         && foundSprite->extra > 0 && A_CheckEnemySprite(foundSprite))
                     {
                         auto const clipdist = A_GetClipdist(spr, -1);
@@ -7055,9 +7090,12 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
                     auto const foundPlayer = g_player[plr].ps;
                     auto const foundPlayerSprite = &sprite[foundPlayer->i];
 
+                    int32_t floorZ, ceilZ;
+                    getcorrectzsofslope(pSprite->sectnum, foundPlayer->pos.x, foundPlayer->pos.y, &ceilZ, &floorZ);
+
                     for (int w = pSector->wallptr; w < endWall; w++)
                     {
-                        if ((foundPlayerSprite->pos.z > pSector->floorz || foundPlayer->pos.z < pSector->ceilingz)
+                        if ((foundPlayerSprite->pos.z > floorZ || foundPlayer->pos.z < ceilZ) && foundPlayerSprite->extra > 0
                             && dukeLivesMatter(&foundPlayer->pos.vec2, w, foundPlayer->clipdist))
                             break;
                     }

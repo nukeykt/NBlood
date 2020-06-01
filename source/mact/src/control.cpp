@@ -610,6 +610,7 @@ static void CONTROL_ApplyAxis(int axis, ControlInfo *info, controldevice device)
 static void CONTROL_PollDevices(ControlInfo *info)
 {
     memset(info, 0, sizeof(ControlInfo));
+    handleevents();
 
 #ifdef __ANDROID__
     CONTROL_Android_PollDevices(info);

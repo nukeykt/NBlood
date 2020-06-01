@@ -1031,7 +1031,6 @@ int MV_StartDemandFeedPlayback(void (*function)(const char** ptr, uint32_t* leng
     voice->bits = bitdepth;
     voice->channels = channels;
     voice->GetSound = MV_GetNextDemandFeedBlock;
-    voice->NextBlock  = nullptr;
     voice->DemandFeed = function;
     voice->position = 0;
     voice->sound  = nullptr;
