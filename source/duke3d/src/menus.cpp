@@ -4867,7 +4867,8 @@ void Menu_Close(uint8_t playerID)
 
         walock[TILE_SAVESHOT] = CACHE1D_FREE;
         G_UpdateScreenArea();
-        S_PauseSounds(false);
+        if (!ud.pause_on)
+            S_PauseSounds(false);
     }
 }
 
