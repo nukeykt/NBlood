@@ -33,7 +33,6 @@ const char *g_failedVarname;
 #include "vfs.h"
 
 static OutputFileCounter savecounter;
-char previousboardfilename[BMAX_PATH];
 
 // For storing pointers in files.
 //  back_p==0: ptr -> "small int"
