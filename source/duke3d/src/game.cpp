@@ -7128,8 +7128,6 @@ MAIN_LOOP_RESTART:
             frameJustDrawn = true;
         }
 
-        S_Update();
-
         // handle CON_SAVE and CON_SAVENN
         if (g_saveRequested)
         {
