@@ -8672,7 +8672,6 @@ void engineUnInit(void)
 
     Buninitart();
 
-    DO_FREE_AND_NULL(lookups);
     for (bssize_t i=0; i<DISTRECIPCACHESIZE; i++)
         ALIGNED_FREE_AND_NULL(distrecipcache[i].distrecip);
     Bmemset(distrecipcache, 0, sizeof(distrecipcache));
@@ -10838,12 +10837,16 @@ static void videoAllocateBuffers(void)
           { (void **)&swplc, xdim * sizeof(int32_t) },
           { (void **)&lplc, xdim * sizeof(int32_t) },
           { (void **)&swall, xdim * sizeof(int32_t) },
+#ifdef HIGH_PRECISION_SPRITE
+          { (void **)&swallf, xdim * sizeof(float) },
+#endif
           { (void **)&lwall, (xdim + 4) * sizeof(int32_t) },
           { (void **)&radarang2, xdim * sizeof(int32_t) },
           { (void **)&dotp1, clamped_ydim * sizeof(intptr_t) },
           { (void **)&dotp2, clamped_ydim * sizeof(intptr_t) },
           { (void **)&lastx, clamped_ydim * sizeof(int32_t) },
           { (void **)&mirrorBuffer, (size_t) (xdim * ydim)},
+          { (void **)&lookups, (ydim << 2) * (sizeof(lookups[0]) << 1) },
       };
 
     for (i = 0; i < (signed)ARRAY_SIZE(dynarray); i++)
@@ -10852,6 +10855,10 @@ static void videoAllocateBuffers(void)
 
         *dynarray[i].ptr = Xaligned_alloc(16, dynarray[i].size);
     }
+
+    horizlookup  = lookups;
+    horizlookup2 = lookups + (ydim << 2);
+    horizycent   = (ydim << 2) >> 1;
 
     ysavecnt = YSAVES;
     nodesperline = tabledivide32_noinline(YSAVES, ydim);
@@ -10944,8 +10951,6 @@ static void PolymostFreeVBOs(void)
 extern char videomodereset;
 int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daupscaledydim, int32_t dabpp, int32_t daupscalefactor)
 {
-    int32_t j;
-
 #ifdef USE_OPENGL
     if (nogl) dabpp = 8;
 #endif
@@ -10964,8 +10969,6 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     //if (checkvideomode(&daxdim, &daydim, dabpp, davidoption)<0) return -1;
 
     //bytesperline is set in this function
-
-    j = bpp;
 
     g_lastpalettesum = 0;
 #ifdef USE_OPENGL
@@ -11001,20 +11004,7 @@ int32_t videoSetGameMode(char davidoption, int32_t daupscaledxdim, int32_t daups
     OSD_ResizeDisplay(xdim, ydim);
 
     videoAllocateBuffers();
-
-#ifdef HIGH_PRECISION_SPRITE
-    swallf = (float *) Xrealloc(swallf, xdim * sizeof(float));
-#endif
-
-    Xfree(lookups);
-
-    j = ydim*4;  //Leave room for horizlookup&horizlookup2
-    lookups = (int32_t *)Xmalloc(2*j*sizeof(lookups[0]));
-
-    horizlookup = lookups;
-    horizlookup2 = lookups + j;
-    horizycent = ((ydim*4)>>1);
-
+    
     //Force drawrooms to call dosetaspect & recalculate stuff
     oxyaspect = oxdimen = oviewingrange = -1;
 
