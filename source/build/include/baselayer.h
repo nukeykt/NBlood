@@ -293,7 +293,7 @@ static inline uint64_t calcFrameDelay(int const maxFPS, int const offset)
     uint64_t const perfFreq = timerGetPerformanceFrequency();
 
     if (maxFPS == -1)
-        return perfFreq / (refreshfreq - ceil(refreshfreq / 60.0));
+        return perfFreq / refreshfreq;
 
     return maxFPS ? perfFreq / (maxFPS + offset) : 0;
 }
