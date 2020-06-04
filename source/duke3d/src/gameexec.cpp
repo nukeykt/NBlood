@@ -356,10 +356,23 @@ int A_FurthestVisiblePoint(int const spriteNum, uspriteptr_t const ts, vec2_t * 
     return -1;
 }
 
-void VM_GetZRange(int const spriteNum, int32_t * const ceilhit, int32_t * const florhit, int const wallDist)
+static inline uint16_t getlzsum(uspriteptr_t pSprite, uspriteptr_t pTouched, int const wallDist)
 {
-    auto const pSprite = &sprite[spriteNum];
-    int const  ocstat  = pSprite->cstat;
+    uint16_t lzsum = (uint16_t)pSprite->x ^ (uint16_t)pSprite->y ^ (uint16_t)pSprite->z ^ (uint16_t)sector[pSprite->sectnum].floorz
+                     ^ (uint16_t)sector[pSprite->sectnum].ceilingz ^ wallDist ^ (uint16_t)pSprite->xvel ^ (uint16_t)pSprite->zvel;
+    if (pTouched) lzsum ^= (uint16_t)pTouched->x ^ (uint16_t)pTouched->y ^ (uint16_t)pTouched->z ^ (uint16_t)pTouched->xvel ^ (uint16_t)pTouched->zvel;
+    return lzsum;
+}
+
+void VM_GetZRange(int const spriteNum, int32_t* const ceilhit, int32_t* const florhit, int const wallDist)
+{
+    auto const pSprite  = &sprite[spriteNum];
+    auto       pTouched = ((actor[spriteNum].florhit & 49152) == 49152) ? (uspriteptr_t)&sprite[actor[spriteNum].florhit & (MAXSPRITES-1)] : nullptr;
+
+    if (actor[spriteNum].lzsum == getlzsum((uspriteptr_t)pSprite, pTouched, wallDist))
+        return;
+
+    int const ocstat = pSprite->cstat;
 
     pSprite->cstat = 0;
     pSprite->z -= ACTOR_FLOOR_OFFSET;
@@ -368,12 +381,17 @@ void VM_GetZRange(int const spriteNum, int32_t * const ceilhit, int32_t * const 
 
     pSprite->z += ACTOR_FLOOR_OFFSET;
     pSprite->cstat = ocstat;
+
+    actor[spriteNum].florhit = *florhit;
+    pTouched = ((actor[spriteNum].florhit & 49152) == 49152) ? (uspriteptr_t)&sprite[actor[spriteNum].florhit & (MAXSPRITES-1)] : nullptr;
+
+    actor[spriteNum].lzsum = getlzsum((uspriteptr_t)pSprite, pTouched, wallDist);
 }
 
 void A_GetZLimits(int const spriteNum)
 {
     auto const pSprite = &sprite[spriteNum];
-    int32_t    ceilhit, florhit;
+    int32_t    ceilhit = 0, florhit = actor[spriteNum].florhit;
     int const  clipDist = A_GetClipdist(spriteNum, -1);
     auto const oceilz   = actor[spriteNum].ceilingz;
 
