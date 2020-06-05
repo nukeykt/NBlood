@@ -5859,7 +5859,7 @@ void G_UpdateAppTitle(char const * const name /*= nullptr*/)
     {
         if (g_gameNamePtr)
 #ifdef EDUKE32_STANDALONE
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", m.name, g_gameNamePtr);
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", name, g_gameNamePtr);
 #else
             Bsnprintf(apptitle, sizeof(apptitle), "%s - %s - %s", name, g_gameNamePtr, tempbuf);
 #endif
