@@ -5851,23 +5851,39 @@ int loaddefinitions_game(const char *fileName, int32_t firstPass)
     return 0;
 }
 
-
-
-void G_UpdateAppTitle(void)
+void G_UpdateAppTitle(char const * const name /*= nullptr*/)
 {
-    if (g_gameNamePtr)
+    Bsprintf(tempbuf, APPNAME " %s", s_buildRev);
+
+    if (name != nullptr)
+    {
+        if (g_gameNamePtr)
+#ifdef EDUKE32_STANDALONE
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", m.name, g_gameNamePtr);
+#else
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s - %s", name, g_gameNamePtr, tempbuf);
+#endif
+        else
+            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", name, tempbuf);
+    }
+    else if (g_gameNamePtr)
     {
 #ifdef EDUKE32_STANDALONE
-        Bstrcpy(tempbuf, g_gameNamePtr);
+        Bstrncpyz(apptitle, g_gameNamePtr, sizeof(apptitle));
 #else
-        Bsprintf(tempbuf, "%s - " APPNAME, g_gameNamePtr);
+        Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", g_gameNamePtr, tempbuf);
 #endif
-        wm_setapptitle(tempbuf);
     }
     else
     {
-        wm_setapptitle(APPNAME);
+#ifdef EDUKE32_STANDALONE
+        Bstrncpyz(apptitle, APPNAME, sizeof(apptitle));
+#else
+        Bstrncpyz(apptitle, tempbuf, sizeof(apptitle));
+#endif
     }
+
+    wm_setapptitle(apptitle);
 }
 
 static void G_FreeHashAnim(const char * /*string*/, intptr_t key)
@@ -6550,7 +6566,7 @@ int app_main(int argc, char const* const* argv)
                      BGetTime,
                      GAME_onshowosd);
 
-    wm_setapptitle(APPNAME);
+    G_UpdateAppTitle();
 
     initprintf(HEAD2 " %s\n", s_buildRev);
     PrintBuildInfo();
