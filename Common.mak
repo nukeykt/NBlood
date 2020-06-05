@@ -1043,7 +1043,7 @@ ifeq (,$(VC_REV))
     VC_REV := $(shell git rev-list --count origin 2>&1)
 endif
 ifeq (,$(VC_HASH))
-    VC_HASH := $(shell git rev-parse --short origin 2>&1)
+    VC_HASH := $(shell git rev-parse --short HEAD 2>&1)
 endif
 ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
     REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
