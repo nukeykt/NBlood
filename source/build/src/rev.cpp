@@ -2,11 +2,15 @@
 
 #ifdef _WIN32
 # include "windows_inc.h"
-#endif
-
-#ifndef REVSTR
-# define REVSTR "r(?)"
-# define EDUKE32_UNKNOWN_REVISION
+#else
+# if defined REV
+#  define REV__(x) #x
+#  define REV_(x) REV__(x)
+#  define REVSTR REV_(REV)
+# else
+#  define REVSTR "r(?)"
+#  define EDUKE32_UNKNOWN_REVISION
+# endif
 #endif
 
 #ifdef __cplusplus
