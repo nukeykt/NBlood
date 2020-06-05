@@ -4596,6 +4596,7 @@ void G_InitTimer(int32_t ticspersec)
     {
         timerUninit();
         timerInit(ticspersec);
+        timerSetCallback(gameTimerHandler);
         g_timerTicsPerSecond = ticspersec;
     }
 }
