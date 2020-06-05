@@ -372,6 +372,7 @@
     <ClInclude Include="..\..\source\build\include\prlights.h" />
     <ClInclude Include="..\..\source\build\include\rawinput.h" />
     <ClInclude Include="..\..\source\build\include\renderlayer.h" />
+    <ClInclude Include="..\..\source\build\include\rev.h" />
     <ClInclude Include="..\..\source\build\include\scancodes.h" />
     <ClInclude Include="..\..\source\build\include\screentext.h" />
     <ClInclude Include="..\..\source\build\include\scriptfile.h" />
