@@ -31,7 +31,7 @@ int32_t animvpx_read_ivf_header(buildvfs_kfd inhandle, animvpx_ivf_header_t *hdr
 {
     int32_t err;
 
-    if (kread(inhandle, hdr, sizeof(animvpx_ivf_header_t)) != sizeof(animvpx_ivf_header_t))
+    if (kread_and_test(inhandle, hdr, sizeof(animvpx_ivf_header_t)))
         return 1;  // "couldn't read header"
 
     err = animvpx_check_header(hdr);
@@ -158,7 +158,7 @@ static int32_t animvpx_read_frame(buildvfs_kfd inhandle, uint8_t **bufptr, uint3
     struct { uint32_t framesiz; uint64_t timestamp; } hdr;
 #pragma pack(pop)
 
-    if (kread(inhandle, &hdr, sizeof(hdr)) != sizeof(hdr))
+    if (kread_and_test(inhandle, &hdr, sizeof(hdr)))
         return 1;
 
     if (hdr.framesiz == 0)
@@ -183,7 +183,7 @@ static int32_t animvpx_read_frame(buildvfs_kfd inhandle, uint8_t **bufptr, uint3
 
     *bufsizptr = hdr.framesiz;
 
-    if (kread(inhandle, *bufptr, hdr.framesiz) != (signed)hdr.framesiz)
+    if (kread_and_test(inhandle, *bufptr, hdr.framesiz))
         return 3;
 
     return 0;
