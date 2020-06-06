@@ -10376,175 +10376,238 @@ skip_reading_mapbin:
 // Witchaven 1 and TekWar and LameDuke use v5
 int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
 {
-    int32_t i;
+    buildvfs_kfd fil;
+
+    if ((fil = kopen4load(filename, fromwhere)) == buildvfs_kfd_invalid)
+    {
+        mapversion = 5L;
+        return -1;
+    }
+
+    if (kread_and_test(fil, &mapversion, sizeof(int32_t)))
+        goto error;
+
+    mapversion = B_LITTLE32(mapversion);
+
+    if (mapversion != 5L && mapversion != 6L)
+    {
+        kclose(fil);
+        return -2;
+    }
+
+    if (enginePrepareLoadBoard(fil, dapos, daang, dacursectnum))
+        goto error;
+
+    if (kread_and_test(fil, &numsectors, sizeof(int16_t)))
+        goto error;
+
+    numsectors = B_LITTLE16(numsectors);
+
+    if (numsectors > MAXSECTORS)
+    {
+    error:
+        kclose(fil);
+        return -1; 
+    }
+
+    switch (mapversion)
+    {
+        case 5:
+        {
+            struct sectortypev5 v5sect;
+            struct sectortypev6 v6sect;
+
+            for (int i = 0; i < numsectors; i++)
+            {
+                if (kread_and_test(fil, &v5sect, sizeof(struct sectortypev5)))
+                    goto error;
+
+                v5sect.wallptr       = B_LITTLE16(v5sect.wallptr);
+                v5sect.wallnum       = B_LITTLE16(v5sect.wallnum);
+                v5sect.ceilingpicnum = B_LITTLE16(v5sect.ceilingpicnum);
+                v5sect.floorpicnum   = B_LITTLE16(v5sect.floorpicnum);
+                v5sect.ceilingheinum = B_LITTLE16(v5sect.ceilingheinum);
+                v5sect.floorheinum   = B_LITTLE16(v5sect.floorheinum);
+                v5sect.ceilingz      = B_LITTLE32(v5sect.ceilingz);
+                v5sect.floorz        = B_LITTLE32(v5sect.floorz);
+                v5sect.lotag         = B_LITTLE16(v5sect.lotag);
+                v5sect.hitag         = B_LITTLE16(v5sect.hitag);
+                v5sect.extra         = B_LITTLE16(v5sect.extra);
+
+                convertv5sectv6(&v5sect, &v6sect);
+                convertv6sectv7(&v6sect, &sector[i]);
+            }
+            break;
+        }
+
+        case 6:
+        {
+            struct sectortypev6 v6sect;
+
+            for (int i = 0; i < numsectors; i++)
+            {
+                if (kread_and_test(fil, &v6sect, sizeof(struct sectortypev6)))
+                    goto error;
+
+                v6sect.wallptr       = B_LITTLE16(v6sect.wallptr);
+                v6sect.wallnum       = B_LITTLE16(v6sect.wallnum);
+                v6sect.ceilingpicnum = B_LITTLE16(v6sect.ceilingpicnum);
+                v6sect.floorpicnum   = B_LITTLE16(v6sect.floorpicnum);
+                v6sect.ceilingheinum = B_LITTLE16(v6sect.ceilingheinum);
+                v6sect.floorheinum   = B_LITTLE16(v6sect.floorheinum);
+                v6sect.ceilingz      = B_LITTLE32(v6sect.ceilingz);
+                v6sect.floorz        = B_LITTLE32(v6sect.floorz);
+                v6sect.lotag         = B_LITTLE16(v6sect.lotag);
+                v6sect.hitag         = B_LITTLE16(v6sect.hitag);
+                v6sect.extra         = B_LITTLE16(v6sect.extra);
+
+                convertv6sectv7(&v6sect, &sector[i]);
+            }
+            break;
+        }
+    }
+
+    if (kread_and_test(fil, &numwalls, sizeof(int16_t)))
+        goto error;
+
+    numwalls = B_LITTLE16(numwalls);
+
+    if (numwalls > MAXWALLS)
+        goto error;
+
+    switch (mapversion)
+    {
+        case 5:
+        {
+            struct walltypev5 v5wall;
+            struct walltypev6 v6wall;
+
+            for (int i = 0; i < numwalls; i++)
+            {
+                if (kread_and_test(fil, &v5wall, sizeof(struct walltypev5)))
+                    goto error;
+
+                v5wall.x           = B_LITTLE32(v5wall.x);
+                v5wall.y           = B_LITTLE32(v5wall.y);
+                v5wall.point2      = B_LITTLE16(v5wall.point2);
+                v5wall.picnum      = B_LITTLE16(v5wall.picnum);
+                v5wall.overpicnum  = B_LITTLE16(v5wall.overpicnum);
+                v5wall.cstat       = B_LITTLE16(v5wall.cstat);
+                v5wall.nextsector1 = B_LITTLE16(v5wall.nextsector1);
+                v5wall.nextwall1   = B_LITTLE16(v5wall.nextwall1);
+                v5wall.nextsector2 = B_LITTLE16(v5wall.nextsector2);
+                v5wall.nextwall2   = B_LITTLE16(v5wall.nextwall2);
+                v5wall.lotag       = B_LITTLE16(v5wall.lotag);
+                v5wall.hitag       = B_LITTLE16(v5wall.hitag);
+                v5wall.extra       = B_LITTLE16(v5wall.extra);
+
+                convertv5wallv6(&v5wall, &v6wall, i);
+                convertv6wallv7(&v6wall, &wall[i]);
+            }
+            break;
+        }
+
+        case 6:
+        {
+            struct walltypev6 v6wall;
+
+            for (int i = 0; i < numwalls; i++)
+            {
+                if (kread_and_test(fil, &v6wall, sizeof(struct walltypev6)))
+                    goto error;
+
+                v6wall.x          = B_LITTLE32(v6wall.x);
+                v6wall.y          = B_LITTLE32(v6wall.y);
+                v6wall.point2     = B_LITTLE16(v6wall.point2);
+                v6wall.nextsector = B_LITTLE16(v6wall.nextsector);
+                v6wall.nextwall   = B_LITTLE16(v6wall.nextwall);
+                v6wall.picnum     = B_LITTLE16(v6wall.picnum);
+                v6wall.overpicnum = B_LITTLE16(v6wall.overpicnum);
+                v6wall.cstat      = B_LITTLE16(v6wall.cstat);
+                v6wall.lotag      = B_LITTLE16(v6wall.lotag);
+                v6wall.hitag      = B_LITTLE16(v6wall.hitag);
+                v6wall.extra      = B_LITTLE16(v6wall.extra);
+
+                convertv6wallv7(&v6wall, &wall[i]);
+            }
+            break;
+        }
+    }
+
     int16_t numsprites;
 
-    struct sectortypev5 v5sect;
-    struct walltypev5   v5wall;
-    struct spritetypev5 v5spr;
-    struct sectortypev6 v6sect;
-    struct walltypev6   v6wall;
-    struct spritetypev6 v6spr;
+    if (kread_and_test(fil, &numsprites, sizeof(int16_t)))
+        goto error;
 
-    buildvfs_kfd fil;
-    if ((fil = kopen4load(filename,fromwhere)) == buildvfs_kfd_invalid)
-        { mapversion = 5L; return -1; }
+    numsprites = B_LITTLE16(numsprites);
 
-    kread(fil,&mapversion,4); mapversion = B_LITTLE32(mapversion);
-    if (mapversion != 5L && mapversion != 6L) { kclose(fil); return -2; }
+    if (numsprites > MAXSPRITES)
+        goto error;
 
-    enginePrepareLoadBoard(fil, dapos, daang, dacursectnum);
-
-    kread(fil,&numsectors,2); numsectors = B_LITTLE16(numsectors);
-    if (numsectors > MAXSECTORS) { kclose(fil); return -1; }
-    for (i=0; i<numsectors; i++)
+    switch (mapversion)
     {
-        switch (mapversion)
-        {
         case 5:
-            kread(fil,&v5sect,sizeof(struct sectortypev5));
-            v5sect.wallptr = B_LITTLE16(v5sect.wallptr);
-            v5sect.wallnum = B_LITTLE16(v5sect.wallnum);
-            v5sect.ceilingpicnum = B_LITTLE16(v5sect.ceilingpicnum);
-            v5sect.floorpicnum = B_LITTLE16(v5sect.floorpicnum);
-            v5sect.ceilingheinum = B_LITTLE16(v5sect.ceilingheinum);
-            v5sect.floorheinum = B_LITTLE16(v5sect.floorheinum);
-            v5sect.ceilingz = B_LITTLE32(v5sect.ceilingz);
-            v5sect.floorz = B_LITTLE32(v5sect.floorz);
-            v5sect.lotag = B_LITTLE16(v5sect.lotag);
-            v5sect.hitag = B_LITTLE16(v5sect.hitag);
-            v5sect.extra = B_LITTLE16(v5sect.extra);
-            break;
-        case 6:
-            kread(fil,&v6sect,sizeof(struct sectortypev6));
-            v6sect.wallptr = B_LITTLE16(v6sect.wallptr);
-            v6sect.wallnum = B_LITTLE16(v6sect.wallnum);
-            v6sect.ceilingpicnum = B_LITTLE16(v6sect.ceilingpicnum);
-            v6sect.floorpicnum = B_LITTLE16(v6sect.floorpicnum);
-            v6sect.ceilingheinum = B_LITTLE16(v6sect.ceilingheinum);
-            v6sect.floorheinum = B_LITTLE16(v6sect.floorheinum);
-            v6sect.ceilingz = B_LITTLE32(v6sect.ceilingz);
-            v6sect.floorz = B_LITTLE32(v6sect.floorz);
-            v6sect.lotag = B_LITTLE16(v6sect.lotag);
-            v6sect.hitag = B_LITTLE16(v6sect.hitag);
-            v6sect.extra = B_LITTLE16(v6sect.extra);
+        {
+            struct spritetypev5 v5spr;
+            struct spritetypev6 v6spr;
+
+            for (int i = 0; i < numsprites; i++)
+            {
+                if (kread_and_test(fil, &v5spr, sizeof(struct spritetypev5)))
+                    goto error;
+
+                v5spr.x       = B_LITTLE32(v5spr.x);
+                v5spr.y       = B_LITTLE32(v5spr.y);
+                v5spr.z       = B_LITTLE32(v5spr.z);
+                v5spr.picnum  = B_LITTLE16(v5spr.picnum);
+                v5spr.ang     = B_LITTLE16(v5spr.ang);
+                v5spr.xvel    = B_LITTLE16(v5spr.xvel);
+                v5spr.yvel    = B_LITTLE16(v5spr.yvel);
+                v5spr.zvel    = B_LITTLE16(v5spr.zvel);
+                v5spr.owner   = B_LITTLE16(v5spr.owner);
+                v5spr.sectnum = B_LITTLE16(v5spr.sectnum);
+                v5spr.statnum = B_LITTLE16(v5spr.statnum);
+                v5spr.lotag   = B_LITTLE16(v5spr.lotag);
+                v5spr.hitag   = B_LITTLE16(v5spr.hitag);
+                v5spr.extra   = B_LITTLE16(v5spr.extra);
+
+                convertv5sprv6(&v5spr, &v6spr);
+                convertv6sprv7(&v6spr, &sprite[i]);
+                check_sprite(i);
+            }
             break;
         }
 
-        switch (mapversion)
-        {
-        case 5:
-            convertv5sectv6(&v5sect,&v6sect);
-            fallthrough__;
         case 6:
-            convertv6sectv7(&v6sect,&sector[i]);
+        {
+            struct spritetypev6 v6spr;
+
+            for (int i = 0; i < numsprites; i++)
+            {
+                if (kread_and_test(fil, &v6spr, sizeof(struct spritetypev6)))
+                    goto error;
+
+                v6spr.x       = B_LITTLE32(v6spr.x);
+                v6spr.y       = B_LITTLE32(v6spr.y);
+                v6spr.z       = B_LITTLE32(v6spr.z);
+                v6spr.cstat   = B_LITTLE16(v6spr.cstat);
+                v6spr.picnum  = B_LITTLE16(v6spr.picnum);
+                v6spr.ang     = B_LITTLE16(v6spr.ang);
+                v6spr.xvel    = B_LITTLE16(v6spr.xvel);
+                v6spr.yvel    = B_LITTLE16(v6spr.yvel);
+                v6spr.zvel    = B_LITTLE16(v6spr.zvel);
+                v6spr.owner   = B_LITTLE16(v6spr.owner);
+                v6spr.sectnum = B_LITTLE16(v6spr.sectnum);
+                v6spr.statnum = B_LITTLE16(v6spr.statnum);
+                v6spr.lotag   = B_LITTLE16(v6spr.lotag);
+                v6spr.hitag   = B_LITTLE16(v6spr.hitag);
+                v6spr.extra   = B_LITTLE16(v6spr.extra);
+                
+                convertv6sprv7(&v6spr, &sprite[i]);
+                check_sprite(i);
+            }
             break;
         }
-    }
-
-    kread(fil,&numwalls,2); numwalls = B_LITTLE16(numwalls);
-    if (numwalls > MAXWALLS) { kclose(fil); return -1; }
-    for (i=0; i<numwalls; i++)
-    {
-        switch (mapversion)
-        {
-        case 5:
-            kread(fil,&v5wall,sizeof(struct walltypev5));
-            v5wall.x = B_LITTLE32(v5wall.x);
-            v5wall.y = B_LITTLE32(v5wall.y);
-            v5wall.point2 = B_LITTLE16(v5wall.point2);
-            v5wall.picnum = B_LITTLE16(v5wall.picnum);
-            v5wall.overpicnum = B_LITTLE16(v5wall.overpicnum);
-            v5wall.cstat = B_LITTLE16(v5wall.cstat);
-            v5wall.nextsector1 = B_LITTLE16(v5wall.nextsector1);
-            v5wall.nextwall1 = B_LITTLE16(v5wall.nextwall1);
-            v5wall.nextsector2 = B_LITTLE16(v5wall.nextsector2);
-            v5wall.nextwall2 = B_LITTLE16(v5wall.nextwall2);
-            v5wall.lotag = B_LITTLE16(v5wall.lotag);
-            v5wall.hitag = B_LITTLE16(v5wall.hitag);
-            v5wall.extra = B_LITTLE16(v5wall.extra);
-            break;
-        case 6:
-            kread(fil,&v6wall,sizeof(struct walltypev6));
-            v6wall.x = B_LITTLE32(v6wall.x);
-            v6wall.y = B_LITTLE32(v6wall.y);
-            v6wall.point2 = B_LITTLE16(v6wall.point2);
-            v6wall.nextsector = B_LITTLE16(v6wall.nextsector);
-            v6wall.nextwall = B_LITTLE16(v6wall.nextwall);
-            v6wall.picnum = B_LITTLE16(v6wall.picnum);
-            v6wall.overpicnum = B_LITTLE16(v6wall.overpicnum);
-            v6wall.cstat = B_LITTLE16(v6wall.cstat);
-            v6wall.lotag = B_LITTLE16(v6wall.lotag);
-            v6wall.hitag = B_LITTLE16(v6wall.hitag);
-            v6wall.extra = B_LITTLE16(v6wall.extra);
-            break;
-        }
-
-        switch (mapversion)
-        {
-        case 5:
-            convertv5wallv6(&v5wall,&v6wall,i);
-            fallthrough__;
-        case 6:
-            convertv6wallv7(&v6wall,&wall[i]);
-            break;
-        }
-    }
-
-    kread(fil,&numsprites,2); numsprites = B_LITTLE16(numsprites);
-    if (numsprites > MAXSPRITES) { kclose(fil); return -1; }
-    for (i=0; i<numsprites; i++)
-    {
-        switch (mapversion)
-        {
-        case 5:
-            kread(fil,&v5spr,sizeof(struct spritetypev5));
-            v5spr.x = B_LITTLE32(v5spr.x);
-            v5spr.y = B_LITTLE32(v5spr.y);
-            v5spr.z = B_LITTLE32(v5spr.z);
-            v5spr.picnum = B_LITTLE16(v5spr.picnum);
-            v5spr.ang = B_LITTLE16(v5spr.ang);
-            v5spr.xvel = B_LITTLE16(v5spr.xvel);
-            v5spr.yvel = B_LITTLE16(v5spr.yvel);
-            v5spr.zvel = B_LITTLE16(v5spr.zvel);
-            v5spr.owner = B_LITTLE16(v5spr.owner);
-            v5spr.sectnum = B_LITTLE16(v5spr.sectnum);
-            v5spr.statnum = B_LITTLE16(v5spr.statnum);
-            v5spr.lotag = B_LITTLE16(v5spr.lotag);
-            v5spr.hitag = B_LITTLE16(v5spr.hitag);
-            v5spr.extra = B_LITTLE16(v5spr.extra);
-            break;
-        case 6:
-            kread(fil,&v6spr,sizeof(struct spritetypev6));
-            v6spr.x = B_LITTLE32(v6spr.x);
-            v6spr.y = B_LITTLE32(v6spr.y);
-            v6spr.z = B_LITTLE32(v6spr.z);
-            v6spr.cstat = B_LITTLE16(v6spr.cstat);
-            v6spr.picnum = B_LITTLE16(v6spr.picnum);
-            v6spr.ang = B_LITTLE16(v6spr.ang);
-            v6spr.xvel = B_LITTLE16(v6spr.xvel);
-            v6spr.yvel = B_LITTLE16(v6spr.yvel);
-            v6spr.zvel = B_LITTLE16(v6spr.zvel);
-            v6spr.owner = B_LITTLE16(v6spr.owner);
-            v6spr.sectnum = B_LITTLE16(v6spr.sectnum);
-            v6spr.statnum = B_LITTLE16(v6spr.statnum);
-            v6spr.lotag = B_LITTLE16(v6spr.lotag);
-            v6spr.hitag = B_LITTLE16(v6spr.hitag);
-            v6spr.extra = B_LITTLE16(v6spr.extra);
-            break;
-        }
-
-        switch (mapversion)
-        {
-        case 5:
-            convertv5sprv6(&v5spr,&v6spr);
-            fallthrough__;
-        case 6:
-            convertv6sprv7(&v6spr,&sprite[i]);
-            break;
-        }
-
-        check_sprite(i);
     }
 
     kclose(fil);
