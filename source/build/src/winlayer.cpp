@@ -204,7 +204,7 @@ int32_t wm_ynbox(const char *name, const char *fmt, ...)
 //
 void wm_setapptitle(const char *name)
 {
-    if (name)
+    if (name != apptitle)
         Bstrncpyz(apptitle, name, sizeof(apptitle));
 
     if (hWindow) SetWindowText(hWindow, apptitle);

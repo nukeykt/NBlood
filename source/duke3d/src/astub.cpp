@@ -2689,6 +2689,10 @@ static int32_t m32gettile(int32_t idInitialTile)
             g_mouseBits &= ~32;
             iTopLeftTile += (nXTiles*scrollamount);
         }
+        else if (bstatus&48 && scrollmode)
+        {
+            g_mouseBits &= ~48;
+        }
 
         mtile = tileNum = searchx/zoomsz + ((searchy-moffset)/zoomsz)*nXTiles + iTopLeftTile;
         while (tileNum >= iTopLeftTile + nDisplayedTiles)

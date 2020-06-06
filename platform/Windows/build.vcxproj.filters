@@ -433,6 +433,9 @@
     <ClInclude Include="..\..\source\build\include\screentext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\build\include\rev.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\source\build\src\polymost1Frag.glsl">

@@ -1,13 +1,5 @@
 // This file is recompiled unconditionally so the timestamp gets updated, even for a partial recompile.
-
-#ifdef _WIN32
-# include "windows_inc.h"
-#endif
-
-#ifndef REVSTR
-# define REVSTR "r(?)"
-# define EDUKE32_UNKNOWN_REVISION
-#endif
+#include "rev.h"
 
 #ifdef __cplusplus
 extern "C" {

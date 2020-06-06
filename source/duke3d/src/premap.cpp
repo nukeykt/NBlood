@@ -692,7 +692,6 @@ void P_ResetMultiPlayer(int playerNum)
 
     s.pos = p.pos;
 
-    updatesector(p.pos.x, p.pos.y, &p.cursectnum);
     setsprite(p.i, &tmpvect);
 
     s.clipdist = 64;
@@ -1579,7 +1578,7 @@ static void G_CollectSpawnPoints(int gameMode)
 
         p.oq16ang = p.q16ang = fix16_from_int(s.ang);
 
-        updatesector(s.x, s.y, &p.cursectnum);
+        p.cursectnum = s.sectnum;
 
         pindex++;
 
@@ -1931,31 +1930,7 @@ int G_EnterLevel(int gameMode)
 
     ud.screen_size = ssize;
 
-    if (Menu_HaveUserMap())
-    {
-        if (g_gameNamePtr)
-#ifdef EDUKE32_STANDALONE
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s", boardfilename, g_gameNamePtr);
-#else
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - %s - " APPNAME, boardfilename, g_gameNamePtr);
-#endif
-        else
-            Bsnprintf(apptitle, sizeof(apptitle), "%s - " APPNAME, boardfilename);
-    }
-    else
-    {
-        if (g_gameNamePtr)
-#ifdef EDUKE32_STANDALONE
-            Bsprintf(apptitle,"%s - %s",m.name,g_gameNamePtr);
-#else
-            Bsprintf(apptitle, "%s - %s - " APPNAME, m.name, g_gameNamePtr);
-#endif
-        else
-            Bsprintf(apptitle,"%s - " APPNAME,m.name);
-    }
-
-    Bstrcpy(tempbuf,apptitle);
-    wm_setapptitle(tempbuf);
+    G_UpdateAppTitle(Menu_HaveUserMap() ? boardfilename : m.name);
 
     auto   &p0 = *g_player[0].ps;
     int16_t playerAngle;
@@ -2066,6 +2041,7 @@ int G_EnterLevel(int gameMode)
     G_ResetTimers(0);  // Here we go
 
     Bmemcpy(currentboardfilename, boardfilename, BMAX_PATH);
+    Bmemcpy(previousboardfilename, boardfilename, BMAX_PATH);
 
     G_CheckIfStateless();
 

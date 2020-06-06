@@ -1041,20 +1041,16 @@ LIBS += -lm
 ##### Detect version control revision, if applicable
 
 VC_REV :=
+VC_HASH :=
 -include EDUKE32_REVISION.mak
 ifeq (,$(VC_REV))
-    VC_REV := $(filter v%,$(shell git describe --tags))
+    VC_REV := $(shell git rev-list --count origin 2>&1)
 endif
-#ifeq (,$(VC_REV))
-#    VC_REV := $(word 2,$(subst :, ,$(filter Revision:%,$(subst : ,:,$(strip $(shell svn info 2>&1))))))
-#endif
-#ifeq (,$(VC_REV))
-#    GIT_SVN_URL := $(strip $(shell git config --local svn-remote.svn.url))
-#    GIT_SVN_FETCH := $(strip $(shell git config --local svn-remote.svn.fetch))
-#    VC_REV := $(word 2,$(subst @, ,$(filter git-svn-id:$(GIT_SVN_URL)@%,$(subst : ,:,$(shell git log -1 $(GIT_SVN_FETCH::%=%))))))
-#endif
-ifneq (,$(VC_REV)$(VC_REV_CUSTOM))
-    REVFLAG := -DREV="$(VC_REV)$(VC_REV_CUSTOM)"
+ifeq (,$(VC_HASH))
+    VC_HASH := $(shell git rev-parse --short=9 HEAD 2>&1)
+endif
+ifneq (,$(VC_REV)$(VC_HASH)$(VC_REV_CUSTOM))
+    REVFLAG := -DREV="r$(VC_REV)-$(VC_HASH)$(VC_REV_CUSTOM)"
 endif
 
 
