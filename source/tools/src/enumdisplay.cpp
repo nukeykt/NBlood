@@ -64,10 +64,10 @@ int InitDirectDraw(void)
     hDDrawDLL = LoadLibrary("DDRAW.DLL");
     if (!hDDrawDLL) { fprintf(output, "Failed loading DDRAW.DLL\n"); return -1; }
 
-    aDirectDrawEnumerate = (aDirectDrawEnumerateType)GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
+    aDirectDrawEnumerate = (aDirectDrawEnumerateType)(void (*)(void))GetProcAddress(hDDrawDLL, "DirectDrawEnumerateA");
     if (!aDirectDrawEnumerate) { fprintf(output, "Error fetching DirectDrawEnumerate\n"); return -1; }
 
-    aDirectDrawCreate = (aDirectDrawCreateType)GetProcAddress(hDDrawDLL, "DirectDrawCreate");
+    aDirectDrawCreate = (aDirectDrawCreateType)(void (*)(void))GetProcAddress(hDDrawDLL, "DirectDrawCreate");
     if (!aDirectDrawCreate) { fprintf(output, "Error fetching DirectDrawCreate\n"); return -1; }
 
     result = aDirectDrawCreate(NULL, &lpDD, NULL);
