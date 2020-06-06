@@ -9970,7 +9970,7 @@ static FORCE_INLINE int32_t have_maptext(void)
     return (mapversion >= 10);
 }
 
-static void enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
+static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum)
 {
     initspritelists();
 
@@ -9990,12 +9990,14 @@ static void enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daa
 
     if (!have_maptext())
     {
-        kread(fil,&dapos->x,4); dapos->x = B_LITTLE32(dapos->x);
-        kread(fil,&dapos->y,4); dapos->y = B_LITTLE32(dapos->y);
-        kread(fil,&dapos->z,4); dapos->z = B_LITTLE32(dapos->z);
-        kread(fil,daang,2);  *daang  = B_LITTLE16(*daang) & 2047;
-        kread(fil,dacursectnum,2); *dacursectnum = B_LITTLE16(*dacursectnum);
+        if (kread_and_test(fil, &dapos->x, 4))    return -1; dapos->x      = B_LITTLE32(dapos->x); 
+        if (kread_and_test(fil, &dapos->y, 4))    return -1; dapos->y      = B_LITTLE32(dapos->y); 
+        if (kread_and_test(fil, &dapos->z, 4))    return -1; dapos->z      = B_LITTLE32(dapos->z);
+        if (kread_and_test(fil, daang, 2))        return -1; *daang        = B_LITTLE16(*daang) & 2047;
+        if (kread_and_test(fil, dacursectnum, 2)) return -1; *dacursectnum = B_LITTLE16(*dacursectnum);
     }
+
+    return 0;
 }
 
 static int32_t engineFinishLoadBoard(const vec3_t *dapos, int16_t *dacursectnum, int16_t numsprites, char myflags)
@@ -10192,7 +10194,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
         }
     }
 
-    enginePrepareLoadBoard(fil, dapos, daang, dacursectnum);
+    if (enginePrepareLoadBoard(fil, dapos, daang, dacursectnum)) goto error;
 
 #ifdef NEW_MAP_FORMAT
     if (have_maptext())
@@ -10215,7 +10217,8 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read sectors //////////
 
-    kread(fil,&numsectors,2); numsectors = B_LITTLE16(numsectors);
+    if (kread_and_test(fil,&numsectors,2)) goto error;
+    numsectors = B_LITTLE16(numsectors);
     if ((unsigned)numsectors >= MYMAXSECTORS() + 1)
     {
     error:
@@ -10226,7 +10229,7 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
         return -3;
     }
 
-    kread(fil, sector, sizeof(sectortypev7)*numsectors);
+    if (kread_and_test(fil, sector, sizeof(sectortypev7)*numsectors)) goto error;
 
     for (i=numsectors-1; i>=0; i--)
     {
@@ -10255,10 +10258,11 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read walls //////////
 
-    kread(fil,&numwalls,2); numwalls = B_LITTLE16(numwalls);
+    if (kread_and_test(fil,&numwalls,2)) goto error;
+    numwalls = B_LITTLE16(numwalls);
     if ((unsigned)numwalls >= MYMAXWALLS()+1) goto error;
 
-    kread(fil, wall, sizeof(walltypev7)*numwalls);
+    if (kread_and_test(fil, wall, sizeof(walltypev7)*numwalls)) goto error;
 
     for (i=numwalls-1; i>=0; i--)
     {
@@ -10285,10 +10289,11 @@ int32_t engineLoadBoard(const char *filename, char flags, vec3_t *dapos, int16_t
 
     ////////// Read sprites //////////
 
-    kread(fil,&numsprites,2); numsprites = B_LITTLE16(numsprites);
+    if (kread_and_test(fil,&numsprites,2)) goto error; 
+    numsprites = B_LITTLE16(numsprites);
     if ((unsigned)numsprites >= MYMAXSPRITES()+1) goto error;
 
-    kread(fil, sprite, sizeof(spritetype)*numsprites);
+    if (kread_and_test(fil, sprite, sizeof(spritetype)*numsprites)) goto error;
 
 #ifdef NEW_MAP_FORMAT
 skip_reading_mapbin:
@@ -10297,7 +10302,7 @@ skip_reading_mapbin:
     klseek(fil, 0, SEEK_SET);
     int32_t boardsize = kfilelength(fil);
     uint8_t *fullboard = (uint8_t*)Xmalloc(boardsize);
-    kread(fil, fullboard, boardsize);
+    if (kread_and_test(fil, fullboard, boardsize)) { Xfree(fullboard); goto error; }
     md4once(fullboard, boardsize, g_loadedMapHack.md4);
     Xfree(fullboard);
 
