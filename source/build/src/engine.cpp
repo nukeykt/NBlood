@@ -5747,13 +5747,13 @@ draw_as_face_sprite:
         rzi[2] = rzi[1]+dax; rxi[2] = rxi[1]+day;
         rzi[3] = rzi[0]+dax; rxi[3] = rxi[0]+day;
 
-        float sgzd, sgzx, sgz, sdaz;
+        float sgzd = 0, sgzx = 0, sgz = 0, sdaz = 0;
         vec2f_t sg_f = {}, sg_f2 = {};
         vec2_t sg1 = {};
 
         if (slope != 0)
         {
-            int daz;
+            int daz = 0;
             float const fslope  = (float)slope;
             float const fsinang = (float)sinang;
             float const fcosang = (float)cosang;
@@ -9990,11 +9990,16 @@ static int enginePrepareLoadBoard(buildvfs_kfd fil, vec3_t *dapos, int16_t *daan
 
     if (!have_maptext())
     {
-        if (kread_and_test(fil, &dapos->x, 4))    return -1; dapos->x      = B_LITTLE32(dapos->x); 
-        if (kread_and_test(fil, &dapos->y, 4))    return -1; dapos->y      = B_LITTLE32(dapos->y); 
-        if (kread_and_test(fil, &dapos->z, 4))    return -1; dapos->z      = B_LITTLE32(dapos->z);
-        if (kread_and_test(fil, daang, 2))        return -1; *daang        = B_LITTLE16(*daang) & 2047;
-        if (kread_and_test(fil, dacursectnum, 2)) return -1; *dacursectnum = B_LITTLE16(*dacursectnum);
+        if (kread_and_test(fil, &dapos->x, 4)) return -1;
+        dapos->x = B_LITTLE32(dapos->x);
+        if (kread_and_test(fil, &dapos->y, 4)) return -1;
+        dapos->y = B_LITTLE32(dapos->y);
+        if (kread_and_test(fil, &dapos->z, 4)) return -1;
+        dapos->z = B_LITTLE32(dapos->z);
+        if (kread_and_test(fil, daang, 2)) return -1;
+        *daang = B_LITTLE16(*daang) & 2047;
+        if (kread_and_test(fil, dacursectnum, 2)) return -1;
+        *dacursectnum = B_LITTLE16(*dacursectnum);
     }
 
     return 0;
