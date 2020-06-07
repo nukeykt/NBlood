@@ -24,11 +24,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "premap.h"
 #include "prlights.h"
 #include "savegame.h"
-#ifdef LUNATIC
-# include "lunatic_game.h"
-static int32_t g_savedOK;
-const char *g_failedVarname;
-#endif
 
 #include "vfs.h"
 
@@ -509,11 +504,9 @@ int32_t G_LoadPlayer(savebrief_t & sv)
 
             Menu_Close(0);
 
-#if !defined LUNATIC
             Gv_ResetVars();
             Gv_InitWeaponPointers();
             Gv_RefreshPointers();
-#endif
             Gv_ResetSystemDefaults();
 
             for (int i=0; i < (MAXVOLUMES*MAXLEVELS); i++)
@@ -837,12 +830,7 @@ int32_t G_SavePlayer(savebrief_t & sv, bool isAutoSave)
     if (!g_netServer && ud.multimode < 2)
     {
         OSD_Printf("Saved: %s\n", fn);
-#ifdef LUNATIC
-        if (!g_savedOK)
-            Bstrcpy(apStrings[QUOTE_RESERVED4], "^10Failed Saving Game");
-        else
-#endif
-            Bstrcpy(apStrings[QUOTE_RESERVED4], "Game Saved");
+        Bstrcpy(apStrings[QUOTE_RESERVED4], "Game Saved");
         P_DoQuote(QUOTE_RESERVED4, g_player[myconnectindex].ps);
     }
 
@@ -1362,16 +1350,6 @@ static uint32_t calcsz(const dataspec_t *spec)
 static void sv_prespriteextsave();
 static void sv_postspriteext();
 #endif
-#if defined LUNATIC
-// Recreate Lua state.
-// XXX: It may matter a great deal when this is run from if the Lua code refers
-// to C-side data at file scope. Such usage is strongly discouraged though.
-static void sv_create_lua_state(void)
-{
-    El_CreateGameState();
-    G_PostCreateGameState();
-}
-#endif
 static void sv_postactordata();
 static void sv_preanimateptrsave();
 static void sv_postanimateptr();
@@ -1439,11 +1417,6 @@ static const dataspec_t svgm_udnetw[] =
     { 0, connectpoint2, sizeof(connectpoint2), 1 },
     { 0, &randomseed, sizeof(randomseed), 1 },
     { 0, &g_globalRandom, sizeof(g_globalRandom), 1 },
-#ifdef LUNATIC
-    // Save game tic count for Lunatic because it is exposed to userland. See
-    // test/helixspawner.lua for an example.
-    { 0, &g_moveThingsCount, sizeof(g_moveThingsCount), 1 },
-#endif
 //    { 0, &lockclock_dummy, sizeof(lockclock), 1 },
     { DS_END, 0, 0, 0 }
 };
@@ -1514,9 +1487,6 @@ static const dataspec_t svgm_script[] =
     { DS_LOADFN, (void *) &sv_postprojectileload, 0, 1 },
     { 0, &actor[0], sizeof(actor_t), MAXSPRITES },
     { DS_SAVEFN|DS_LOADFN, (void *)&sv_postactordata, 0, 1 },
-#if defined LUNATIC
-    { DS_LOADFN|DS_NOCHK, (void *)&sv_create_lua_state, 0, 1 },
-#endif
     { DS_END, 0, 0, 0 }
 };
 
@@ -1557,9 +1527,6 @@ static const dataspec_t svgm_anmisc[] =
     { DS_NOCHK|DS_DYNAMIC|DS_CNT(g_numXStrings), &savegame_quoteredefs, MAXQUOTELEN, (intptr_t)&g_numXStrings },
     { DS_NOCHK|DS_LOADFN, (void *)&sv_quoteredefload, 0, 1 },
     { DS_NOCHK|DS_SAVEFN|DS_LOADFN, (void *)&sv_postquoteredef, 0, 1 },
-#ifdef LUNATIC
-    { 0, g_playerWeapon, sizeof(weapondata_t), MAXPLAYERS*MAX_WEAPONS },
-#endif
     { DS_SAVEFN, (void *)&sv_restsave, 0, 1 },
     { 0, savegame_restdata, 1, sizeof(savegame_restdata) },  // sz/cnt swapped for kdfread
     { DS_LOADFN, (void *)&sv_restload, 0, 1 },
@@ -1568,9 +1535,7 @@ static const dataspec_t svgm_anmisc[] =
     { DS_END, 0, 0, 0 }
 };
 
-#if !defined LUNATIC
 static dataspec_gv_t *svgm_vars=NULL;
-#endif
 static uint8_t *dosaveplayer2(buildvfs_FILE fil, uint8_t *mem);
 static int32_t doloadplayer2(buildvfs_kfd fil, uint8_t **memptr);
 static void postloadplayer(int32_t savegamep);
@@ -1584,7 +1549,6 @@ static uint8_t *svdiff;
 
 #include "gamedef.h"
 
-#if !defined LUNATIC
 #define SV_SKIPMASK (/*GAMEVAR_SYSTEM|*/ GAMEVAR_READONLY | GAMEVAR_PTR_MASK | /*GAMEVAR_NORESET |*/ GAMEVAR_SPECIAL)
 
 static char svgm_vars_string [] = "blK:vars";
@@ -1654,7 +1618,6 @@ static void sv_makevarspec()
     svgm_vars[vcnt].size  = 0;
     svgm_vars[vcnt].cnt   = 0;
 }
-#endif
 
 void sv_freemem()
 {
@@ -1684,12 +1647,8 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
     savegame_diffcompress = diffcompress;
 
     // calculate total snapshot size
-#if !defined LUNATIC
     sv_makevarspec();
     svsnapsiz = calcsz((const dataspec_t *)svgm_vars);
-#else
-    svsnapsiz = 0;
-#endif
     svsnapsiz += calcsz(svgm_udnetw) + calcsz(svgm_secwsp) + calcsz(svgm_script) + calcsz(svgm_anmisc);
 
 
@@ -1776,15 +1735,6 @@ int32_t sv_saveandmakesnapshot(buildvfs_FILE fil, char const *name, int8_t spot,
     {
         // savegame
         dosaveplayer2(fil, NULL);
-#ifdef LUNATIC
-        if (!g_savedOK)
-        {
-            OSD_Printf("sv_saveandmakesnapshot: failed serializing Lunatic gamevar \"%s\".\n",
-                       g_failedVarname);
-            g_failedVarname = NULL;
-            return 1;
-        }
-#endif
     }
     else
     {
@@ -1957,9 +1907,7 @@ uint32_t sv_writediff(buildvfs_FILE fil)
     cmpspecdata(svgm_secwsp, &p, &d);
     cmpspecdata(svgm_script, &p, &d);
     cmpspecdata(svgm_anmisc, &p, &d);
-#if !defined LUNATIC
     cmpspecdata((const dataspec_t *)svgm_vars, &p, &d);
-#endif
 
     if (p != svsnapshot+svsnapsiz)
         OSD_Printf("sv_writediff: dump+siz=%p, p=%p!\n", svsnapshot+svsnapsiz, p);
@@ -2002,9 +1950,7 @@ int32_t sv_readdiff(buildvfs_kfd fil)
     if (applydiff(svgm_secwsp, &p, &d)) return -4;
     if (applydiff(svgm_script, &p, &d)) return -5;
     if (applydiff(svgm_anmisc, &p, &d)) return -6;
-#if !defined LUNATIC
     if (applydiff((const dataspec_t *)svgm_vars, &p, &d)) return -7;
-#endif
 
     int i = 0;
 
@@ -2238,12 +2184,6 @@ static void sv_restload()
 # define PRINTSIZE(name) do { } while (0)
 #endif
 
-#ifdef LUNATIC
-// <levelnum>: if we're not serializing for a mapstate, -1
-//  otherwise, the linearized level number
-LUNATIC_CB const char *(*El_SerializeGamevars)(int32_t *slenptr, int32_t levelnum);
-#endif
-
 static uint8_t *dosaveplayer2(buildvfs_FILE fil, uint8_t *mem)
 {
 #ifdef DEBUGGINGAIDS
@@ -2254,105 +2194,17 @@ static uint8_t *dosaveplayer2(buildvfs_FILE fil, uint8_t *mem)
     PRINTSIZE("ud");
     mem=writespecdata(svgm_secwsp, fil, mem);  // sector, wall, sprite
     PRINTSIZE("sws");
-#ifdef LUNATIC
-    {
-        // Serialize Lunatic gamevars. When loading, the restoration code must
-        // be present before Lua state creation in svgm_script, so save it
-        // right before, too.
-        int32_t slen, slen_ext;
-        const char *svcode = El_SerializeGamevars(&slen, -1);
-
-        if (slen < 0)
-        {
-            // Serialization failed.
-            g_savedOK = 0;
-            g_failedVarname = svcode;
-            return mem;
-        }
-
-        buildvfs_fwrite("\0\1LunaGVAR\3\4", 12, 1, fil);
-        slen_ext = B_LITTLE32(slen);
-        buildvfs_fwrite(&slen_ext, sizeof(slen_ext), 1, fil);
-        dfwrite_LZ4(svcode, 1, slen, fil);  // cnt and sz swapped
-
-        g_savedOK = 1;
-    }
-#endif
     mem=writespecdata(svgm_script, fil, mem);  // script
     PRINTSIZE("script");
     mem=writespecdata(svgm_anmisc, fil, mem);  // animates, quotes & misc.
     PRINTSIZE("animisc");
 
-#if !defined LUNATIC
     Gv_WriteSave(fil);  // gamevars
     mem=writespecdata((const dataspec_t *)svgm_vars, 0, mem);
     PRINTSIZE("vars");
-#endif
 
     return mem;
 }
-
-#ifdef LUNATIC
-char *g_elSavecode = NULL;
-
-static int32_t El_ReadSaveCode(buildvfs_kfd fil)
-{
-    // Read Lua code to restore gamevar values from the savegame.
-    // It will be run from Lua with its state creation later on.
-
-    char header[12];
-    int32_t slen;
-
-    if (kread(fil, header, 12) != 12)
-    {
-        OSD_Printf("doloadplayer2: failed reading Lunatic gamevar header.\n");
-        return -100;
-    }
-
-    if (Bmemcmp(header, "\0\1LunaGVAR\3\4", 12))
-    {
-        OSD_Printf("doloadplayer2: Lunatic gamevar header doesn't match.\n");
-        return -101;
-    }
-
-    if (kread(fil, &slen, sizeof(slen)) != sizeof(slen))
-    {
-        OSD_Printf("doloadplayer2: failed reading Lunatic gamevar string size.\n");
-        return -102;
-    }
-
-    slen = B_LITTLE32(slen);
-    if (slen < 0)
-    {
-        OSD_Printf("doloadplayer2: invalid Lunatic gamevar string size %d.\n", slen);
-        return -103;
-    }
-
-    if (slen > 0)
-    {
-        char *svcode = (char *)Xmalloc(slen+1);
-
-        if (kdfread_LZ4(svcode, 1, slen, fil) != slen)  // cnt and sz swapped
-        {
-            OSD_Printf("doloadplayer2: failed reading Lunatic gamevar restoration code.\n");
-            Xfree(svcode);
-            return -104;
-        }
-
-        svcode[slen] = 0;
-        g_elSavecode = svcode;
-    }
-
-    return 0;
-}
-
-void El_FreeSaveCode(void)
-{
-    // Free Lunatic gamevar savegame restoration Lua code.
-    Xfree(g_elSavecode);
-    g_elSavecode = NULL;
-}
-#endif
 
 static int32_t doloadplayer2(buildvfs_kfd fil, uint8_t **memptr)
 {
@@ -2365,19 +2217,11 @@ static int32_t doloadplayer2(buildvfs_kfd fil, uint8_t **memptr)
     PRINTSIZE("ud");
     if (readspecdata(svgm_secwsp, fil, &mem)) return -4;
     PRINTSIZE("sws");
-#ifdef LUNATIC
-    {
-        int32_t ret = El_ReadSaveCode(fil);
-        if (ret < 0)
-            return ret;
-    }
-#endif
     if (readspecdata(svgm_script, fil, &mem)) return -5;
     PRINTSIZE("script");
     if (readspecdata(svgm_anmisc, fil, &mem)) return -6;
     PRINTSIZE("animisc");
 
-#if !defined LUNATIC
     int i;
 
     if ((i = Gv_ReadSave(fil))) return i;
@@ -2394,7 +2238,6 @@ static int32_t doloadplayer2(buildvfs_kfd fil, uint8_t **memptr)
         }
     }
     PRINTSIZE("vars");
-#endif
 
     if (memptr)
         *memptr = mem;
@@ -2413,9 +2256,7 @@ int32_t sv_updatestate(int32_t frominit)
     if (readspecdata(svgm_script, buildvfs_kfd_invalid, &p)) return -5;
     if (readspecdata(svgm_anmisc, buildvfs_kfd_invalid, &p)) return -6;
 
-#if !defined LUNATIC
     if (readspecdata((const dataspec_t *)svgm_vars, buildvfs_kfd_invalid, &p)) return -8;
-#endif
 
     if (p != pbeg+svsnapsiz)
     {
@@ -2553,11 +2394,7 @@ static void postloadplayer(int32_t savegamep)
 
     //8
     // if (savegamep)  ?
-#ifdef LUNATIC
-    G_ResetTimers(1);
-#else
     G_ResetTimers(0);
-#endif
 
 #ifdef USE_STRUCT_TRACKERS
     Bmemset(sectorchanged, 0, sizeof(sectorchanged));

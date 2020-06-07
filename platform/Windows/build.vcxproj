@@ -235,7 +235,6 @@
     <ClCompile Include="..\..\source\build\src\jwzgles.c" />
     <ClCompile Include="..\..\source\build\src\klzw.cpp" />
     <ClCompile Include="..\..\source\build\src\kplib.cpp" />
-    <ClCompile Include="..\..\source\build\src\lunatic.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

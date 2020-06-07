@@ -30,11 +30,7 @@ extern "C" {
 
 extern uint8_t curbasepal;
 
-#ifdef LUNATIC
-extern const char *(paletteGetBlendTable) (int32_t blend);
-#else
 #define paletteGetBlendTable(blend) (blendtable[blend])
-#endif
 
 extern uint8_t PaletteIndexFullbrights[32];
 #define IsPaletteIndexFullbright(col) (PaletteIndexFullbrights[(col)>>3] & (1u<<((col)&7)))

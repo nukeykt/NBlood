@@ -35,11 +35,6 @@
 # include "polymost.h"
 #endif
 
-#ifdef LUNATIC
-# include "lunatic.h"
-L_State g_engState;
-#endif
-
 #include "vfs.h"
 
 #include "communityapi.h"
@@ -61,20 +56,6 @@ L_State g_engState;
 //#define DEBUG_TILESIZY_512
 //#define DEBUG_TILEOFFSETS
 //////////
-
-#ifdef LUNATIC
-# if !defined DEBUG_MAIN_ARRAYS
-LUNATIC_EXTERN const int32_t engine_main_arrays_are_static = 0;  // for Lunatic
-# else
-LUNATIC_EXTERN const int32_t engine_main_arrays_are_static = 1;
-# endif
-
-#if MAXSECTORS==MAXSECTORSV8
-LUNATIC_EXTERN const int32_t engine_v8 = 1;
-#else
-LUNATIC_EXTERN const int32_t engine_v8 = 0;
-#endif
-#endif
 
 #ifdef DEBUGGINGAIDS
 float debug1, debug2;
@@ -8622,18 +8603,6 @@ int32_t engineInit(void)
     if (!mdinited) mdinit();
 #endif
 
-#ifdef LUNATIC
-    if (L_CreateState(&g_engState, "eng", NULL))
-        return engineFatalError("Failed creating engine Lua state!");
-
-    {
-        static char const * const luastr = "_LUNATIC_AUX=true; decl=require('ffi').cdef; require'defs_common'";
-
-        if (L_RunString(&g_engState, luastr, -1, "eng"))
-            return engineFatalError("Failed setting up engine Lua state");
-    }
-#endif
-
     return 0;
 }
 
@@ -10160,7 +10129,7 @@ static void check_sprite(int32_t i)
 
 #ifdef NEW_MAP_FORMAT
 // Returns the number of sprites, or <0 on error.
-LUNATIC_CB int32_t (*loadboard_maptext)(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum);
+int32_t (*loadboard_maptext)(buildvfs_kfd fil, vec3_t *dapos, int16_t *daang, int16_t *dacursectnum);
 #endif
 
 #include "md4.h"
@@ -10581,7 +10550,7 @@ int32_t engineLoadBoardV5V6(const char *filename, char fromwhere, vec3_t *dapos,
 
 
 #ifdef NEW_MAP_FORMAT
-LUNATIC_CB int32_t (*saveboard_maptext)(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum);
+int32_t (*saveboard_maptext)(const char *filename, const vec3_t *dapos, int16_t daang, int16_t dacursectnum);
 #endif
 
 // Get map version of external map format (<10: old binary format, ==10: new
@@ -11320,7 +11289,7 @@ int32_t inside(int32_t x, int32_t y, int16_t sectnum)
     }
 }
 
-int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
+int32_t __fastcall getangle(int32_t xvect, int32_t yvect)
 {
     int32_t rv;
 
@@ -11341,7 +11310,7 @@ int32_t LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect)
     return rv;
 }
 
-fix16_t LUNATIC_FASTCALL gethiq16angle(int32_t xvect, int32_t yvect)
+fix16_t __fastcall gethiq16angle(int32_t xvect, int32_t yvect)
 {
     fix16_t rv;
 
@@ -11371,13 +11340,6 @@ int32_t ksqrt(uint32_t num)
         return ksqrtasm_old(num);
     return nsqrtasm(num);
 }
-
-#ifdef LUNATIC
-int32_t Mulscale(int32_t a, int32_t b, int32_t sh)
-{
-    return mulscale(a, b, sh);
-}
-#endif
 
 // Gets the BUILD unit height and z offset of a sprite.
 // Returns the z offset, 'height' may be NULL.
@@ -12378,7 +12340,7 @@ int32_t krd_print(const char *filename)
 }
 #endif  // KRANDDEBUG
 
-#if KRANDDEBUG || defined LUNATIC
+#if KRANDDEBUG
 //
 // krand
 //
@@ -12386,14 +12348,12 @@ int32_t krand(void)
 {
 //    randomseed = (randomseed*27584621)+1;
     randomseed = (randomseed * 1664525ul) + 221297ul;
-#ifdef KRANDDEBUG
     if (krd_enabled)
         if (krd_numcalls < KRD_MAXCALLS)
         {
             backtrace(krd_fromwhere[krd_numcalls], KRD_DEPTH);
             krd_numcalls++;
         }
-#endif
     return ((uint32_t)randomseed)>>16;
 }
 #endif

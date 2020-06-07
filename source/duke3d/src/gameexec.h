@@ -28,10 +28,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gamedef.h"  // vmstate_t
 #include "sector.h"  // mapstate_t
 
-#ifdef LUNATIC
-# include "lunatic_game.h"
-#endif
-
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist, int32_t const nReturn);
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum, int const nDist);
 int32_t VM_ExecuteEvent(int const nEventID, int const spriteNum, int const playerNum);
@@ -39,11 +35,7 @@ int32_t VM_ExecuteEventWithValue(int const nEventID, int const spriteNum, int co
 
 static FORCE_INLINE int VM_HaveEvent(int const nEventID)
 {
-#ifdef LUNATIC
-    return L_IsInitialized(&g_ElState) && El_HaveEvent(nEventID);
-#else
     return !!apScriptEvents[nEventID];
-#endif
 }
 
 static FORCE_INLINE int32_t VM_OnEvent(int nEventID, int spriteNum, int playerNum, int nDist, int32_t nReturn)
@@ -80,12 +72,10 @@ enum vmflags_t
 extern int32_t ticrandomseed;
 
 extern vmstate_t vm;
-#if !defined LUNATIC
 extern int32_t g_tw;
 extern int32_t g_currentEvent;
 
 void A_LoadActor(int const spriteNum);
-#endif
 
 extern uint32_t g_eventCalls[MAXEVENTS], g_actorCalls[MAXTILES];
 extern double g_eventTotalMs[MAXEVENTS], g_actorTotalMs[MAXTILES], g_actorMinMs[MAXTILES], g_actorMaxMs[MAXTILES];
@@ -101,7 +91,6 @@ void G_SaveMapState();
 void VM_DrawTileGeneric(int32_t x, int32_t y, int32_t zoom, int32_t tilenum,
     int32_t shade, int32_t orientation, int32_t p);
 
-#if !defined LUNATIC
 void VM_DrawTile(int32_t x, int32_t y, int32_t tilenum, int32_t shade, int32_t orientation);
 static inline void VM_DrawTilePal(int32_t x, int32_t y, int32_t tilenum, int32_t shade, int32_t orientation, int32_t p)
 {
@@ -112,7 +101,6 @@ static inline void VM_DrawTilePalSmall(int32_t x, int32_t y, int32_t tilenum, in
     VM_DrawTileGeneric(x, y, 32768, tilenum, shade, orientation, p);
 }
 void VM_DrawTileSmall(int32_t x, int32_t y, int32_t tilenum, int32_t shade, int32_t orientation);
-#endif
 
 #define CON_ERRPRINTF(Text, ...) do { \
     vm.flags |= VM_RETURN; \
@@ -127,14 +115,6 @@ void VM_DrawTileSmall(int32_t x, int32_t y, int32_t tilenum, int32_t shade, int3
 
 void G_GetTimeDate(int32_t * pValues);
 int G_StartTrack(int levelNum);
-#ifdef LUNATIC
-void G_ShowView(vec3_t vec, fix16_t a, fix16_t horiz, int sect,
-                int ix1, int iy1, int ix2, int iy2, int unbiasedp);
-void P_AddWeaponMaybeSwitchI(int32_t snum, int32_t weap);
-void VM_FallSprite(int32_t i);
-int32_t VM_ResetPlayer2(int32_t snum, int32_t flags);
-int32_t VM_CheckSquished2(int32_t i, int32_t snum);
-#endif
 
 void VM_UpdateAnim(int const spriteNum, int32_t * const pData);
 void VM_GetZRange(int const spriteNum, int32_t * const ceilhit, int32_t * const florhit, int const wallDist);

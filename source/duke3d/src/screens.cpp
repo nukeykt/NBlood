@@ -1360,10 +1360,6 @@ void G_DisplayRest(int32_t smoothratio)
     if (g_Debug)
         G_ShowCacheLocks();
 
-#ifdef LUNATIC
-    El_DisplayErrors();
-#endif
-
 #ifndef EDUKE32_TOUCH_DEVICES
     if (VOLUMEONE)
     {
@@ -1465,10 +1461,6 @@ static void fadepaltile(int32_t r, int32_t g, int32_t b, int32_t start, int32_t 
         start += step;
     } while (start != end+step);
 }
-
-#ifdef LUNATIC
-int32_t g_logoFlags = 255;
-#endif
 
 #ifdef __ANDROID__
 int inExtraScreens = 0;
@@ -1677,9 +1669,6 @@ void gameDisplayTitleScreen(void)
                 }
             }
 
-#ifdef LUNATIC
-            g_elEventError = 0;
-#endif
             VM_OnEvent(EVENT_LOGO, -1, screenpeek);
 
             if (g_restorePalette)
@@ -1689,11 +1678,6 @@ void gameDisplayTitleScreen(void)
             }
 
             videoNextPage();
-
-#ifdef LUNATIC
-            if (g_elEventError)
-                break;
-#endif
         }
 
         gameHandleEvents();

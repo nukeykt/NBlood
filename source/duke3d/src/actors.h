@@ -41,7 +41,6 @@ extern "C" {
 #define ACTOR_MAXFALLINGZVEL 6144
 #define ACTOR_ONWATER_ADDZ (24<<8)
 
-// KEEPINSYNC lunatic/con_lang.lua
 #define STAT_DEFAULT        0
 #define STAT_ACTOR          1
 #define STAT_ZOMBIEACTOR    2
@@ -115,55 +114,16 @@ enum actionflags
     AF_VIEWPOINT = 1u<<0u,
 };
 
-#ifdef LUNATIC
-struct action
-{
-    // These members MUST be in this exact order because FFI cdata of this type
-    // can be initialized by passing a table with numeric indices (con.action).
-    int16_t startframe, numframes;
-    int16_t viewtype, incval, delay;
-    uint16_t flags;
-};
-
-struct move
-{
-    // These members MUST be in this exact order.
-    int16_t hvel, vvel;
-};
-
-#pragma pack(push,1)
-typedef struct { int32_t id; struct move mv; } con_move_t;
-typedef struct { int32_t id; struct action ac; } con_action_t;
-#pragma pack(pop)
-#endif
-
-// Select an actor's actiontics and movflags locations depending on
-// whether we compile the Lunatic build.
 // <spr>: sprite pointer
 // <a>: actor_t pointer
-#ifdef LUNATIC
-# define AC_ACTIONTICS(spr, a) ((a)->actiontics)
-# define AC_MOVFLAGS(spr, a) ((a)->movflags)
-#else
-# define AC_ACTIONTICS(spr, a) ((spr)->lotag)
-# define AC_MOVFLAGS(spr, a) ((spr)->hitag)
-#endif
+#define AC_ACTIONTICS(spr, a) ((spr)->lotag)
+#define AC_MOVFLAGS(spr, a) ((spr)->hitag)
 
 // (+ 40 16 16 4 8 6 8 6 4 20)
 #pragma pack(push, 1)
 typedef struct
 {
     int32_t t_data[10];  // 40b sometimes used to hold offsets to con code
-
-#ifdef LUNATIC
-    // total: 18b
-    struct move   mv;
-    struct action ac;
-    // Gets incremented by TICSPERFRAME on each A_Execute() call:
-    uint16_t actiontics;
-    // Movement flags, sprite[i].hitag in C-CON:
-    uint16_t movflags;
-#endif
 
     int32_t flags;                             // 4b
     vec3_t  bpos;                              // 12b
@@ -207,26 +167,6 @@ typedef struct netactor_s
         t_data_8,
         t_data_9;
 
-#ifdef LUNATIC
-
-    int32_t
-        hvel,
-        vvel;
-
-
-    int32_t
-        startframe,
-        numframes;
-
-    int32_t
-        viewtype,
-        incval,
-        delay;
-
-    int32_t
-        actiontics;
-#endif
-
     int32_t
         flags;
 
@@ -255,11 +195,6 @@ typedef struct netactor_s
 
         stayput,
         dispicnum;
-
-
-#if defined LUNATIC
-    int32_t movflags;
-#endif
 
     // note: lightId, lightcount, lightmaxrange are not synchronized between client and server
 
@@ -354,10 +289,8 @@ typedef struct netactor_s
 
 typedef struct
 {
-#if !defined  LUNATIC
     intptr_t *execPtr;  // pointer to CON script for this tile, formerly actorscrptr
     intptr_t *loadPtr;  // pointer to load time CON script, formerly actorLoadEventScrPtr or something
-#endif
     projectile_t *proj;
     projectile_t *defproj;
     uint32_t      flags;       // formerly SpriteFlags, ActorType
@@ -365,7 +298,6 @@ typedef struct
 } tiledata_t;
 
 
-// KEEPINSYNC lunatic/con_lang.lua
 enum sflags_t
 {
     SFLAG_SHADOW        = 0x00000001,
@@ -468,10 +400,6 @@ void G_StopInterpolation(const int32_t *posptr);
 void                Sect_ToggleInterpolation(int sectnum, int setInterpolation);
 static FORCE_INLINE void   Sect_ClearInterpolation(int sectnum) { Sect_ToggleInterpolation(sectnum, 0); }
 static FORCE_INLINE void   Sect_SetInterpolation(int sectnum) { Sect_ToggleInterpolation(sectnum, 1); }
-
-#ifdef LUNATIC
-int32_t G_ToggleWallInterpolation(int32_t w, int32_t doset);
-#endif
 
 #if KRANDDEBUG
 # define ACTOR_INLINE __fastcall

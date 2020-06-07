@@ -26,11 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "renderlayer.h"
 #include "cmdline.h"
 
-#ifdef LUNATIC
-char const * const * g_argv;
-const char **g_elModules;
-#endif
-
 int32_t g_commandSetup = 0;
 int32_t g_noSetup = 0;
 int32_t g_noAutoLoad = 0;
@@ -119,11 +114,6 @@ void G_ShowDebugHelp(void)
         "-z#/-condebug\tEnable line-by-line CON compile debugging at level #\n"
         "-conversion YYYYMMDD\tSelects CON script version for compatibility with older mods\n"
         "-rotatesprite-no-widescreen\tStretch screen drawing from scripts to fullscreen\n"
-#ifdef LUNATIC
-        "-Lopts=<opt1>,<opt2>,...\n"
-        "  Pass options to Lunatic, valid ones are:\n"
-        "  diag, nojit, traces, dump, strict\n"
-#endif
         ;
 #ifdef WM_MSGBOX_WINDOW
     Bsnprintf(tempbuf, sizeof(tempbuf), HEAD2 " %s", s_buildRev);
@@ -169,10 +159,6 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
     int16_t i = 1, j;
     const char *c, *k;
 
-#ifdef LUNATIC
-    g_argv = argv;
-    g_elModules = (const char **) Xcalloc(argc+1, sizeof(char *));
-#endif
     ud.fta_on = 1;
     ud.god = 0;
     ud.m_respawn_items = 0;
@@ -207,9 +193,6 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
 
     if (argc > 1)
     {
-#ifdef LUNATIC
-        int32_t numlmods = 0;
-#endif
         initprintf("Application parameters: ");
         while (i < argc)
             initprintf("%s ", argv[i++]);
@@ -619,10 +602,6 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                         G_AddDemo(c);
                     break;
                 }
-#ifdef LUNATIC
-                case 'f':
-                    break;
-#endif
                 case 'g':
                     c++;
                     if (*c)
@@ -782,10 +761,6 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                 case 'w':
                     ud.coords = 1;
                     break;
-#ifdef LUNATIC
-                case 'W':
-                    break;
-#endif
                 case 'x':
                     c++;
                     if (*c)
@@ -840,13 +815,6 @@ void G_CheckCommandLine(int32_t argc, char const * const * argv)
                         initprintf("Using RTS file \"%s\".\n", g_rtsNamePtr);
                         continue;
                     }
-#ifdef LUNATIC
-                    if (!Bstrcmp(k, ".lua"))  // NOTE: case sensitive!
-                    {
-                        g_elModules[numlmods++] = argv[i++];
-                        continue;
-                    }
-#endif
                 }
             }
 

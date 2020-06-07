@@ -355,19 +355,11 @@ static int GetAutoAimAng(int spriteNum, int playerNum, int projecTile, int zAdju
 
     Bassert((unsigned)playerNum < MAXPLAYERS);
 
-#ifdef LUNATIC
-    g_player[playerNum].ps->autoaimang = g_player[playerNum].ps->auto_aim == 3 ? AUTO_AIM_ANGLE<<1 : AUTO_AIM_ANGLE;
-#else
     Gv_SetVar(g_aimAngleVarID, g_player[playerNum].ps->auto_aim == 3 ? AUTO_AIM_ANGLE<<1 : AUTO_AIM_ANGLE, spriteNum, playerNum);
-#endif
 
     VM_OnEvent(EVENT_GETAUTOAIMANGLE, spriteNum, playerNum);
 
-#ifdef LUNATIC
-    int aimang = g_player[playerNum].ps->autoaimang;
-#else
     int aimang = Gv_GetVar(g_aimAngleVarID, spriteNum, playerNum);
-#endif
     if (aimang > 0)
         returnSprite = A_FindTargetSprite(&sprite[spriteNum], aimang, projecTile);
 
@@ -474,23 +466,13 @@ static void P_PreFireHitscan(int spriteNum, int playerNum, int projecTile, vec3_
 
     auto const pPlayer = g_player[playerNum].ps;
 
-#ifdef LUNATIC
-    pPlayer->angrange = angRange;
-    pPlayer->zrange = zRange;
-#else
     Gv_SetVar(g_angRangeVarID, angRange, spriteNum, playerNum);
     Gv_SetVar(g_zRangeVarID, zRange, spriteNum, playerNum);
-#endif
 
     VM_OnEvent(EVENT_GETSHOTRANGE, spriteNum, playerNum);
 
-#ifdef LUNATIC
-    angRange = pPlayer->angrange;
-    zRange   = pPlayer->zrange;
-#else
     angRange = Gv_GetVar(g_angRangeVarID, spriteNum, playerNum);
     zRange   = Gv_GetVar(g_zRangeVarID, spriteNum, playerNum);
-#endif
 
     if (accurateAim)
     {
@@ -1502,24 +1484,15 @@ static int32_t A_ShootHardcoded(int spriteNum, int projecTile, int shootAng, vec
             if (placeMine == 1)
             {
                 int const tripBombMode = (playerNum < 0) ? 0 :
-#ifdef LUNATIC
-                                                           g_player[playerNum].ps->tripbombControl;
-#else
                                                            Gv_GetVarByLabel("TRIPBOMB_CONTROL", TRIPBOMB_TRIPWIRE,
                                                                             g_player[playerNum].ps->i, playerNum);
-#endif
                 int const spawnedSprite = A_InsertSprite(hitData.sect, hitData.pos.x, hitData.pos.y, hitData.pos.z, TRIPBOMB, -16, 4, 5,
                                                          shootAng, 0, 0, spriteNum, 6);
                 if (tripBombMode & TRIPBOMB_TIMER)
                 {
-#ifdef LUNATIC
-                    int32_t lLifetime    = g_player[playerNum].ps->tripbombLifetime;
-                    int32_t lLifetimeVar = g_player[playerNum].ps->tripbombLifetimeVar;
-#else
                     int32_t lLifetime = Gv_GetVarByLabel("STICKYBOMB_LIFETIME", NAM_GRENADE_LIFETIME, g_player[playerNum].ps->i, playerNum);
                     int32_t lLifetimeVar
                     = Gv_GetVarByLabel("STICKYBOMB_LIFETIME_VAR", NAM_GRENADE_LIFETIME_VAR, g_player[playerNum].ps->i, playerNum);
-#endif
                     // set timer.  blows up when at zero....
                     actor[spawnedSprite].t_data[7] = lLifetime + mulscale14(krand(), lLifetimeVar) - lLifetimeVar;
                     // TIMER_CONTROL
@@ -2035,8 +2008,6 @@ static int P_DisplayKnuckles(int knuckleShade)
     return 1;
 }
 
-#if !defined LUNATIC
-// Set C-CON's WEAPON and WORKSLIKE gamevars.
 void P_SetWeaponGamevars(int playerNum, const DukePlayer_t * const pPlayer)
 {
     Gv_SetVar(g_weaponVarID, pPlayer->curr_weapon, pPlayer->i, playerNum);
@@ -2044,7 +2015,6 @@ void P_SetWeaponGamevars(int playerNum, const DukePlayer_t * const pPlayer)
               ((unsigned)pPlayer->curr_weapon < MAX_WEAPONS) ? PWEAPON(playerNum, pPlayer->curr_weapon, WorksLike) : -1,
               pPlayer->i, playerNum);
 }
-#endif
 
 static void P_FireWeapon(int playerNum)
 {
@@ -3772,13 +3742,6 @@ void P_CheckWeapon(DukePlayer_t *pPlayer)
     P_ChangeWeapon(pPlayer, weaponNum);
 }
 
-#ifdef LUNATIC
-void P_CheckWeaponI(int playerNum)
-{
-    P_CheckWeapon(g_player[playerNum].ps);
-}
-#endif
-
 static void DoWallTouchDamage(const DukePlayer_t *pPlayer, int32_t wallNum)
 {
     vec3_t const davect = { pPlayer->pos.x + (sintable[(fix16_to_int(pPlayer->q16ang) + 512) & 2047] >> 9),
@@ -4072,11 +4035,7 @@ void P_FragPlayer(int playerNum)
     }
 }
 
-#ifdef LUNATIC
-# define PIPEBOMB_CONTROL(playerNum) (g_player[playerNum].ps->pipebombControl)
-#else
-# define PIPEBOMB_CONTROL(playerNum) (Gv_GetVarByLabel("PIPEBOMB_CONTROL", PIPEBOMB_REMOTE, -1, playerNum))
-#endif
+#define PIPEBOMB_CONTROL(playerNum) (Gv_GetVarByLabel("PIPEBOMB_CONTROL", PIPEBOMB_REMOTE, -1, playerNum))
 
 static void P_ProcessWeapon(int playerNum)
 {
@@ -4394,13 +4353,8 @@ static void P_ProcessWeapon(int playerNum)
 
                     if (pipeBombType & PIPEBOMB_TIMER)
                     {
-#ifdef LUNATIC
-                        int pipeLifeTime     = g_player[playerNum].ps->pipebombLifetime;
-                        int pipeLifeVariance = g_player[playerNum].ps->pipebombLifetimeVar;
-#else
                         int pipeLifeTime     = Gv_GetVarByLabel("GRENADE_LIFETIME", NAM_GRENADE_LIFETIME, -1, playerNum);
                         int pipeLifeVariance = Gv_GetVarByLabel("GRENADE_LIFETIME_VAR", NAM_GRENADE_LIFETIME_VAR, -1, playerNum);
-#endif
                         actor[pipeSpriteNum].t_data[7]= pipeLifeTime
                                             + mulscale14(krand(), pipeLifeVariance)
                                             - pipeLifeVariance;
@@ -4869,34 +4823,6 @@ static void P_Dead(int const playerNum, int const sectorLotag, int const floorZ,
 }
 
 
-static void P_HandlePal(DukePlayer_t *const pPlayer)
-{
-#if !defined LUNATIC
-    pPlayer->pals.f--;
-#else
-    if (pPlayer->palsfadespeed > 0)
-    {
-        // <palsfadespeed> is the tint fade speed is in
-        // decrements/P_ProcessInput() calls.
-        pPlayer->pals.f = max(pPlayer->pals.f - pPlayer->palsfadespeed, 0);
-    }
-    else
-    {
-        // <palsfadespeed> is a negated count of how many times we
-        // (P_ProcessInput()) should be called before decrementing the tint
-        // fading by one. <palsfadenext> is the live counter.
-        if (pPlayer->palsfadenext < 0)
-            pPlayer->palsfadenext++;
-
-        if (pPlayer->palsfadenext == 0)
-        {
-            pPlayer->palsfadenext = pPlayer->palsfadespeed;
-            pPlayer->pals.f--;
-        }
-    }
-#endif
-}
-
 // Duke3D needs the player sprite to actually be in the floor when shrunk in order to walk under enemies.
 // This sucks.
 static void P_ClampZ(DukePlayer_t* const pPlayer, int const sectorLotag, int32_t const ceilZ, int32_t const floorZ)
@@ -5084,7 +5010,7 @@ void P_ProcessInput(int playerNum)
     }
 
     if (pPlayer->pals.f > 0)
-        P_HandlePal(pPlayer);
+        pPlayer->pals.f--;
 
     if (pPlayer->fta > 0 && --pPlayer->fta == 0)
     {
