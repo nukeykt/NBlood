@@ -746,7 +746,8 @@ static void G_ReadGLFrame(void)
 
 void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
 {
-    auto const pPlayer = g_player[playerNum].ps;
+    auto const &thisPlayer = g_player[playerNum];
+    auto const  pPlayer    = thisPlayer.ps;
 
     int const viewingRange = viewingrange;
 
@@ -962,8 +963,8 @@ void G_DrawRooms(int32_t playerNum, int32_t smoothRatio)
                                      pPlayer->opos.z + mulscale16(pPlayer->pos.z - pPlayer->opos.z, smoothRatio) };
 
             CAMERA(pos) = camVect;
-
-            if (pPlayer->wackedbyactor >= 0)
+            
+            if (thisPlayer.smoothcamera)
             {
                 CAMERA(q16ang)   = pPlayer->oq16ang
                                  + mulscale16(((pPlayer->q16ang + F16(1024) - pPlayer->oq16ang) & 0x7FFFFFF) - F16(1024), smoothRatio)

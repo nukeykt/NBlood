@@ -1350,7 +1350,9 @@ ACTOR_STATIC void G_MovePlayers(void)
     {
         int const  nextSprite = nextspritestat[spriteNum];
         auto const pSprite    = &sprite[spriteNum];
-        auto const pPlayer    = g_player[P_GetP(pSprite)].ps;
+        int const  playerNum  = P_GetP(pSprite);
+        auto &     thisPlayer = g_player[playerNum];
+        auto const pPlayer    = thisPlayer.ps;
 
         if (pSprite->owner >= 0)
         {
@@ -1395,10 +1397,19 @@ ACTOR_STATIC void G_MovePlayers(void)
                 if (G_TileHasActor(sprite[spriteNum].picnum))
                     A_Execute(spriteNum, P_GetP(pSprite), otherPlayerDist);
 
+                thisPlayer.smoothcamera = false;
+
                 pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
                 pPlayer->oq16ang      = pPlayer->q16ang;
                 pPlayer->oq16horiz    = pPlayer->q16horiz;
                 pPlayer->oq16horizoff = pPlayer->q16horizoff;
+
+                if (pPlayer->one_eighty_count < 0)
+                {
+                    thisPlayer.smoothcamera = true;
+                    pPlayer->one_eighty_count += 128;
+                    pPlayer->q16ang += F16(128);
+                }
 
                 if (g_netServer || ud.multimode > 1)
                 {
@@ -1421,6 +1432,14 @@ ACTOR_STATIC void G_MovePlayers(void)
                             }
                         }
                     }
+                }
+
+                if (pPlayer->actorsqu >= 0)
+                {
+                    thisPlayer.smoothcamera = true;
+                    pPlayer->q16ang += fix16_from_int(
+                    G_GetAngleDelta(fix16_to_int(pPlayer->q16ang), getangle(sprite[pPlayer->actorsqu].x - pPlayer->pos.x, sprite[pPlayer->actorsqu].y - pPlayer->pos.y))
+                    >> 2);
                 }
 
                 if (ud.god)
@@ -1457,6 +1476,7 @@ ACTOR_STATIC void G_MovePlayers(void)
 
                     if (pPlayer->wackedbyactor >= 0 && sprite[pPlayer->wackedbyactor].statnum < MAXSTATUS)
                     {
+                        thisPlayer.smoothcamera = true;
                         pPlayer->q16ang += fix16_from_int(G_GetAngleDelta(fix16_to_int(pPlayer->q16ang),
                                                                       getangle(sprite[pPlayer->wackedbyactor].x - pPlayer->pos.x,
                                                                                sprite[pPlayer->wackedbyactor].y - pPlayer->pos.y))
@@ -1857,6 +1877,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                         pSprite->owner = -2;
                         g_player[p].ps->on_crane = spriteNum;
                         A_PlaySound(DUKE_GRUNT,g_player[p].ps->i);
+                        g_player[p].smoothcamera = true;
                         g_player[p].ps->q16ang = fix16_from_int(pSprite->ang+1024);
                     }
                     else
@@ -3699,8 +3720,9 @@ ACTOR_STATIC void G_MoveTransports(void)
                 case STAT_PLAYER:
                     if (sprite[sectSprite].owner != -1)
                     {
-                        int const  playerNum = P_Get(sectSprite);
-                        auto const pPlayer   = g_player[playerNum].ps;
+                        int const  playerNum  = P_Get(sectSprite);
+                        auto &     thisPlayer = g_player[playerNum];
+                        auto const pPlayer    = thisPlayer.ps;
 
                         pPlayer->on_warping_sector = 1;
 
@@ -3724,6 +3746,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                     }
                                 }
 
+                                thisPlayer.smoothcamera = true;
                                 pPlayer->q16ang = fix16_from_int(sprite[OW(spriteNum)].ang);
 
                                 if (sprite[OW(spriteNum)].owner != OW(spriteNum))
@@ -3752,12 +3775,12 @@ ACTOR_STATIC void G_MoveTransports(void)
                             }
 
                             if (onFloor == 0 && klabs(SZ(spriteNum) - pPlayer->pos.z) < 6144)
-                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
-                                    || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH))
+                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
+                                    || TEST_SYNC_KEY(thisPlayer.input->bits, SK_CROUCH))
                                 {
                                     pPlayer->pos.x += sprite[OW(spriteNum)].x - SX(spriteNum);
                                     pPlayer->pos.y += sprite[OW(spriteNum)].y - SY(spriteNum);
-                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
+                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
                                                                               || pPlayer->jetpack_on < 11))
                                                      ? sprite[OW(spriteNum)].z - 6144
                                                      : sprite[OW(spriteNum)].z + 6144;
@@ -6271,6 +6294,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                     if (pPlayer->cursectnum == pSprite->sectnum && pPlayer->on_ground == 1)
                     {
+                        g_player[playerNum].smoothcamera = true;
                         pPlayer->q16ang += fix16_from_int(l*q);
                         pPlayer->q16ang &= 0x7FFFFFF;
 
@@ -6493,6 +6517,8 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                             pPlayer->bobpos.x += m;
                             pPlayer->bobpos.y += x;
+
+                            g_player[playerNum].smoothcamera = true;
 
                             pPlayer->q16ang += fix16_from_int(q);
                             pPlayer->q16ang &= 0x7FFFFFF;

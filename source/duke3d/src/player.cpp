@@ -5115,12 +5115,6 @@ void P_ProcessInput(int playerNum)
     if (!ud.noclip)
         pushmove(&pPlayer->pos, &pPlayer->cursectnum, pPlayer->clipdist - 1, (4L<<8), stepHeight, CLIPMASK0);
 
-    if (pPlayer->one_eighty_count < 0)
-    {
-        pPlayer->one_eighty_count += 128;
-        pPlayer->q16ang += F16(128);
-    }
-
     // Shrinking code
 
     if (sectorLotag == ST_2_UNDERWATER)
@@ -5782,11 +5776,6 @@ RECHECK:
             }
             pPlayer->actorsqu = -1;
         }
-        else if (pPlayer->actorsqu >= 0)
-            pPlayer->q16ang += fix16_from_int(
-            G_GetAngleDelta(fix16_to_int(pPlayer->q16ang),
-                            getangle(sprite[pPlayer->actorsqu].x - pPlayer->pos.x, sprite[pPlayer->actorsqu].y - pPlayer->pos.y))
-            >> 2);
     }
 #endif
 
