@@ -6548,12 +6548,12 @@ next_most:
             }
         }
 
-        x = tspr->x + spriteext[spritenum].position_offset.x;
-        y = tspr->y + spriteext[spritenum].position_offset.y;
-        z = tspr->z + spriteext[spritenum].position_offset.z;
+        x = tspr->x + spriteext[spritenum].mdposition_offset.x;
+        y = tspr->y + spriteext[spritenum].mdposition_offset.y;
+        z = tspr->z + spriteext[spritenum].mdposition_offset.z;
 
         i = (int32_t)tspr->ang+1536;
-        i += spriteext[spritenum].angoff;
+        i += spriteext[spritenum].mdangoff;
 
         const int32_t ceilingz = (sec->ceilingstat&3) == 0 ? sec->ceilingz : INT32_MIN;
         const int32_t floorz = (sec->floorstat&3) == 0 ? sec->floorz : INT32_MAX;

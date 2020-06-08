@@ -263,16 +263,16 @@ memberlabel_t const ActorLabels[]=
 
     // model flags
 
-    LABEL_SETUP(spriteext, angoff, ACTOR_ANGOFF),
-    LABEL_SETUP(spriteext, pitch, ACTOR_PITCH),
-    LABEL_SETUP(spriteext, roll, ACTOR_ROLL),
+    LABEL_SETUP_UNMATCHED(spriteext, mdangoff, "angoff", ACTOR_ANGOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdpitch, "pitch", ACTOR_PITCH),
+    LABEL_SETUP_UNMATCHED(spriteext, mdroll, "roll", ACTOR_ROLL),
 
-    LABEL_SETUP_UNMATCHED(spriteext, pivot_offset.x, "mdxoff",  ACTOR_MDPIVOTXOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, pivot_offset.y, "mdyoff",  ACTOR_MDPIVOTYOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, pivot_offset.z, "mdzoff",  ACTOR_MDPIVOTZOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, position_offset.x, "mdposxoff",  ACTOR_MDPOSITIONXOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, position_offset.y, "mdposyoff",  ACTOR_MDPOSITIONYOFF),
-    LABEL_SETUP_UNMATCHED(spriteext, position_offset.z, "mdposzoff",  ACTOR_MDPOSITIONZOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdpivot_offset.x, "mdxoff",  ACTOR_MDPIVOTXOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdpivot_offset.y, "mdyoff",  ACTOR_MDPIVOTYOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdpivot_offset.z, "mdzoff",  ACTOR_MDPIVOTZOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdposition_offset.x, "mdposxoff",  ACTOR_MDPOSITIONXOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdposition_offset.y, "mdposyoff",  ACTOR_MDPOSITIONYOFF),
+    LABEL_SETUP_UNMATCHED(spriteext, mdposition_offset.z, "mdposzoff",  ACTOR_MDPOSITIONZOFF),
     LABEL_SETUP_UNMATCHED(spriteext, flags,    "mdflags", ACTOR_MDFLAGS),
 
     LABEL_SETUP(spriteext, xpanning, ACTOR_XPANNING),

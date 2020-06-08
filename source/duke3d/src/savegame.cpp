@@ -1451,7 +1451,7 @@ static const dataspec_t svgm_secwsp[] =
 #ifdef USE_OPENGL
     { DS_SAVEFN, (void *)&sv_prespriteextsave, 0, 1 },
 #endif
-    { DS_MAINAR, &spriteext, sizeof(spriteext_t), MAXSPRITES },
+    { DS_MAINAR, &spriteext, sizeof(spriteext_t), MAXSPRITES+MAXUNIQHUDID },
 #ifndef NEW_MAP_FORMAT
     { DS_MAINAR, &wallext, sizeof(wallext_t), MAXWALLS },
 #endif
@@ -1973,7 +1973,7 @@ static void sv_postudload()
 #ifdef USE_OPENGL
 static void sv_prespriteextsave()
 {
-    for (int i=0; i<MAXSPRITES; i++)
+    for (int i=0; i<MAXSPRITES+MAXUNIQHUDID; i++)
         if (spriteext[i].mdanimtims)
         {
             spriteext[i].mdanimtims -= mdtims;
@@ -1983,7 +1983,7 @@ static void sv_prespriteextsave()
 }
 static void sv_postspriteext()
 {
-    for (int i=0; i<MAXSPRITES; i++)
+    for (int i=0; i<MAXSPRITES+MAXUNIQHUDID; i++)
         if (spriteext[i].mdanimtims)
             spriteext[i].mdanimtims += mdtims;
 }

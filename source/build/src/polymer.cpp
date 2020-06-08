@@ -4412,14 +4412,14 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         spos2[1] = (z - fglobalposz) * (-1.f/16.f);
         spos2[2] = fglobalposx - x;
     } else {
-        spos[0] = (float)tspr->y+spriteext[tspr->owner].position_offset.y;
-        spos[1] = -(float)(tspr->z+spriteext[tspr->owner].position_offset.z) / 16.0f;
-        spos[2] = -(float)(tspr->x+spriteext[tspr->owner].position_offset.x);
+        spos[0] = (float)tspr->y+spriteext[tspr->owner].mdposition_offset.y;
+        spos[1] = -(float)(tspr->z+spriteext[tspr->owner].mdposition_offset.z) / 16.0f;
+        spos[2] = -(float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x);
 
         spos2[0] = spos2[1] = spos2[2] = 0.0f;
     }
 
-    ang = (float)((tspr->ang+spriteext[tspr->owner].angoff) & 2047) * (360.f/2048.f);
+    ang = (float)((tspr->ang+spriteext[tspr->owner].mdangoff) & 2047) * (360.f/2048.f);
     ang -= 90.0f;
     if (((tspr->cstat>>4) & 3) == 2)
         ang -= 90.0f;
@@ -4442,11 +4442,11 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
         radplayerang = (globalang & 2047) * (2.0f * fPI / 2048.0f);
         cosminusradplayerang = cos(-radplayerang);
         sinminusradplayerang = sin(-radplayerang);
-        hudzoom = 65536.0 / spriteext[tspr->owner].pivot_offset.z;
+        hudzoom = 65536.0 / spriteext[tspr->owner].mdpivot_offset.z;
 
         glTranslatef(spos[0], spos[1], spos[2]);
         glRotatef(horizang, -cosminusradplayerang, 0.0f, sinminusradplayerang);
-        glRotatef(spriteext[tspr->owner].roll * (360.f/2048.f), sinminusradplayerang, 0.0f, cosminusradplayerang);
+        glRotatef(spriteext[tspr->owner].mdroll * (360.f/2048.f), sinminusradplayerang, 0.0f, cosminusradplayerang);
         glRotatef(-playerang, 0.0f, 1.0f, 0.0f);
         glScalef(hudzoom, 1.0f, 1.0f);
         glRotatef(playerang, 0.0f, 1.0f, 0.0f);
@@ -4490,16 +4490,16 @@ static void         polymer_drawmdsprite(tspriteptr_t tspr)
 
     // scripted model rotation
     if (tspr->owner < MAXSPRITES &&
-        (spriteext[tspr->owner].pitch || spriteext[tspr->owner].roll))
+        (spriteext[tspr->owner].mdpitch || spriteext[tspr->owner].mdroll))
     {
         float       pitchang, rollang, offsets[3];
 
-        pitchang = (float)(spriteext[tspr->owner].pitch) * (360.f/2048.f);
-        rollang = (float)(spriteext[tspr->owner].roll) * (360.f/2048.f);
+        pitchang = (float)(spriteext[tspr->owner].mdpitch) * (360.f/2048.f);
+        rollang = (float)(spriteext[tspr->owner].mdroll) * (360.f/2048.f);
 
-        offsets[0] = -spriteext[tspr->owner].pivot_offset.x / (scale * tspr->xrepeat);
-        offsets[1] = -spriteext[tspr->owner].pivot_offset.y / (scale * tspr->xrepeat);
-        offsets[2] = (float)(spriteext[tspr->owner].pivot_offset.z) / 16.0f / (scale * tspr->yrepeat);
+        offsets[0] = -spriteext[tspr->owner].mdpivot_offset.x / (scale * tspr->xrepeat);
+        offsets[1] = -spriteext[tspr->owner].mdpivot_offset.y / (scale * tspr->xrepeat);
+        offsets[2] = (float)(spriteext[tspr->owner].mdpivot_offset.z) / 16.0f / (scale * tspr->yrepeat);
 
         glTranslatef(-offsets[0], -offsets[1], -offsets[2]);
 

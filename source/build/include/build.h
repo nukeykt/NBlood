@@ -520,32 +520,45 @@ int32_t getwalldist(vec2_t const in, int const wallnum, vec2_t * const out);
 extern "C" {
 #endif
 
+#pragma pack(push,1)
 typedef struct {
-    uint32_t mdanimtims;
-    int16_t mdanimcur;
-    int16_t angoff, pitch, roll;
-    vec3_t pivot_offset, position_offset;
-    uint8_t flags;
-    uint8_t xpanning, ypanning;
-    uint8_t filler;
-    uint32_t filler2;
-    float alpha;
-    // NOTE: keep 'tspr' on an 8-byte boundary:
-    tspriteptr_t tspr;
+    union
+    {
+        tspriteptr_t tspr;
 #if !defined UINTPTR_MAX
 # error Need UINTPTR_MAX define to select between 32- and 64-bit structs
 #endif
-#if UINTPTR_MAX == 0xffffffff
-    /* On a 32-bit build, pad the struct so it has the same size everywhere. */
-    intptr_t dummy_;
+#if UINTPTR_MAX != UINT64_MAX
+        /* On a 32-bit build, pad the struct so it has the same size everywhere. */
+        uint64_t ptrfill;
 #endif
+    };
+    
+    float    alpha;
+    uint16_t flags;
+
+    // this is organized so that most of the bytes that will usually be zero are adjacent
+    int16_t  mdanimcur;
+    uint32_t mdanimtims;
+    int16_t  mdangoff;
+    uint8_t  xpanning, ypanning;
+    int16_t  mdpitch, mdroll;
+    vec3_t   mdpivot_offset, mdposition_offset;
+
+    // since this goes into savegames, pad to 64 bytes for future usage
+    uint8_t  filler[12];
 } spriteext_t;
+
+EDUKE32_STATIC_ASSERT(offsetof(spriteext_t, flags) % 4 == 0);
+EDUKE32_STATIC_ASSERT(offsetof(spriteext_t, mdangoff) % 4 == 0);
+EDUKE32_STATIC_ASSERT(offsetof(spriteext_t, mdanimtims) % 4 == 0);
+EDUKE32_STATIC_ASSERT(offsetof(spriteext_t, mdposition_offset) % 4 == 0);
+EDUKE32_STATIC_ASSERT(sizeof(spriteext_t) == 64);
 
 typedef struct {
     float smoothduration;
     int16_t mdcurframe, mdoldframe;
     int16_t mdsmooth;
-    uint8_t filler[2];
 } spritesmooth_t;
 
 #ifndef NEW_MAP_FORMAT
@@ -553,6 +566,7 @@ typedef struct {
     uint8_t blend;
 } wallext_t;
 #endif
+#pragma pack(pop)
 
 #define SPREXT_NOTMD 1
 #define SPREXT_NOMDANIM 2

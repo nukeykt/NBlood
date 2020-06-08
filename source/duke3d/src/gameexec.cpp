@@ -5567,7 +5567,7 @@ badindex:
 
             vInstruction(CON_ANGOFF):
                 insptr++;
-                spriteext[vm.spriteNum].angoff = Gv_GetVar(*insptr++);
+                spriteext[vm.spriteNum].mdangoff = Gv_GetVar(*insptr++);
                 dispatch();
 
             vInstruction(CON_LOCKPLAYER):

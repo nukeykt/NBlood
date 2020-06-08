@@ -1016,8 +1016,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     f = (float) tspr->xrepeat * (256.f/320.f) * k0;
     if ((sprite[tspr->owner].cstat&48)==16)
         f *= 1.25f;
-    a0.y -= tspr->xoffset*sintable[(spriteext[tspr->owner].angoff+512)&2047]*(1.f/(64.f*16384.f));
-    a0.x += tspr->xoffset*sintable[spriteext[tspr->owner].angoff&2047]*(1.f/(64.f*16384.f));
+    a0.y -= tspr->xoffset*sintable[(spriteext[tspr->owner].mdangoff+512)&2047]*(1.f/(64.f*16384.f));
+    a0.x += tspr->xoffset*sintable[spriteext[tspr->owner].mdangoff&2047]*(1.f/(64.f*16384.f));
 
     if (globalorientation&8) { m0.z = -m0.z; a0.z = -a0.z; } //y-flipping
     if (globalorientation&4) { m0.x = -m0.x; a0.x = -a0.x; a0.y = -a0.y; } //x-flipping
@@ -1027,7 +1027,7 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
     f = (float) tspr->yrepeat * k0;
     m0.z *= f; a0.z *= f;
 
-    k0 = (float) (tspr->z+spriteext[tspr->owner].position_offset.z);
+    k0 = (float) (tspr->z+spriteext[tspr->owner].mdposition_offset.z);
     f = ((globalorientation&8) && (sprite[tspr->owner].cstat&48)!=0) ? -4.f : 4.f;
     k0 -= (tspr->yoffset*tspr->yrepeat)*f*m->bscale;
     zoff = m->siz.z*.5f;
@@ -1045,8 +1045,8 @@ int32_t polymost_voxdraw(voxmodel_t *m, tspriteptr_t const tspr)
 
     int const shadowHack = !!(tspr->clipdist & TSPR_FLAGS_MDHACK);
 
-    m0.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].position_offset.x-globalposx)) * (1.f/1024.f) + a0.y) * f;
-    m0.x *=-f; a0.x = (((float)(tspr->y+spriteext[tspr->owner].position_offset.y-globalposy)) * -(1.f/1024.f) + a0.x) * -f;
+    m0.y *= f; a0.y = (((float)(tspr->x+spriteext[tspr->owner].mdposition_offset.x-globalposx)) * (1.f/1024.f) + a0.y) * f;
+    m0.x *=-f; a0.x = (((float)(tspr->y+spriteext[tspr->owner].mdposition_offset.y-globalposy)) * -(1.f/1024.f) + a0.x) * -f;
     m0.z *= g; a0.z = (((float)(k0     -globalposz - shadowHack)) * -(1.f/16384.f) + a0.z) * g;
 
     float mat[16];
