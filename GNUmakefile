@@ -1243,7 +1243,6 @@ exhumed_game_objs := \
     light.cpp \
     lighting.cpp \
     lion.cpp \
-    main.cpp \
     map.cpp \
     menu.cpp \
     mono.cpp \
@@ -1253,7 +1252,6 @@ exhumed_game_objs := \
     network.cpp \
     object.cpp \
     osdcmds.cpp \
-    paul.cpp \
     player.cpp \
     queen.cpp \
     ra.cpp \

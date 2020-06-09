@@ -223,7 +223,6 @@
     <ClCompile Include="..\..\source\exhumed\src\light.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\lighting.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\lion.cpp" />
-    <ClCompile Include="..\..\source\exhumed\src\main.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\map.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\menu.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\mono.cpp" />
@@ -233,7 +232,6 @@
     <ClCompile Include="..\..\source\exhumed\src\network.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\object.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\osdcmds.cpp" />
-    <ClCompile Include="..\..\source\exhumed\src\paul.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\player.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\queen.cpp" />
     <ClCompile Include="..\..\source\exhumed\src\ra.cpp" />
@@ -297,7 +295,6 @@
     <ClInclude Include="..\..\source\exhumed\src\network.h" />
     <ClInclude Include="..\..\source\exhumed\src\object.h" />
     <ClInclude Include="..\..\source\exhumed\src\osdcmds.h" />
-    <ClInclude Include="..\..\source\exhumed\src\paul.h" />
     <ClInclude Include="..\..\source\exhumed\src\player.h" />
     <ClInclude Include="..\..\source\exhumed\src\queen.h" />
     <ClInclude Include="..\..\source\exhumed\src\ra.h" />
