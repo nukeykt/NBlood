@@ -56,8 +56,8 @@ typedef struct _savehead
     uint8_t numplayers, volnum, levnum, skill;
 
     // this is kind of shitty, but changing the size of savehead_t would break the checkpoint saves in Fury
-    char boardfn[BMAX_PATH-16];
-    char scriptname[16];
+    char boardfn[BMAX_PATH-32];
+    char scriptname[32];
 
     // 286 bytes
 #ifdef __ANDROID__

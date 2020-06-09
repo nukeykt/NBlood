@@ -6575,13 +6575,15 @@ void G_SaveMapState(void)
 
     for (native_t i=g_gameArrayCount-1; i>=0; i--)
     {
-        if (aGameArrays[i].flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
+        auto &array = aGameArrays[i];
+
+        if (((array.flags & GAMEARRAY_RESTORE) != GAMEARRAY_RESTORE) || array.flags & SAVEGAMEARRAYSKIPMASK)
             continue;
 
-        save->arraysiz[i] = aGameArrays[i].size;
+        save->arraysiz[i] = array.size;
         Xaligned_free(save->arrays[i]);
         save->arrays[i] = (intptr_t *)Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSize(i));
-        Bmemcpy(&save->arrays[i][0], aGameArrays[i].pValues, Gv_GetArrayAllocSize(i));
+        Bmemcpy(&save->arrays[i][0], array.pValues, Gv_GetArrayAllocSize(i));
     }
     ototalclock = totalclock;
 }
@@ -6690,14 +6692,16 @@ void G_RestoreMapState(void)
 
         for (native_t i=g_gameArrayCount-1; i>=0; i--)
         {
-            if (aGameArrays[i].flags & SAVEGAMEMAPSTATEARRAYSKIPMASK)
+            auto &array = aGameArrays[i];
+
+            if (((array.flags & GAMEARRAY_RESTORE) != GAMEARRAY_RESTORE) || array.flags & SAVEGAMEARRAYSKIPMASK)
                 continue;
 
-            aGameArrays[i].size = pSavedState->arraysiz[i];
-            Xaligned_free(aGameArrays[i].pValues);
-            aGameArrays[i].pValues = (intptr_t *) Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSize(i));
+            array.size = pSavedState->arraysiz[i];
+            Xaligned_free(array.pValues);
+            array.pValues = (intptr_t *) Xaligned_alloc(ARRAY_ALIGNMENT, Gv_GetArrayAllocSize(i));
 
-            Bmemcpy(aGameArrays[i].pValues, pSavedState->arrays[i], Gv_GetArrayAllocSize(i));
+            Bmemcpy(array.pValues, pSavedState->arrays[i], Gv_GetArrayAllocSize(i));
         }
 
         Gv_RefreshPointers();

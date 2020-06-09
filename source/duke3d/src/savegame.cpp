@@ -1492,7 +1492,6 @@ static const dataspec_t svgm_script[] =
 };
 
 static char svgm_anmisc_string [] = "blK:anms";
-static char svgm_end_string [] = "savegame_end";
 
 static const dataspec_t svgm_anmisc[] =
 {
@@ -1521,7 +1520,6 @@ static const dataspec_t svgm_anmisc[] =
     { 0, savegame_restdata, 1, sizeof(savegame_restdata) },  // sz/cnt swapped for kdfread
     { DS_LOADFN, (void *)&sv_restload, 0, 1 },
 
-    { DS_STRING, (void *)svgm_end_string, 0, 1 },
     { DS_END, 0, 0, 0 }
 };
 

@@ -2074,7 +2074,7 @@ void G_FreeMapState(int levelNum)
 
     for (int j=0; j<g_gameVarCount; j++)
     {
-        if (aGameVars[j].flags & GAMEVAR_NORESET)
+        if (aGameVars[j].flags & SAVEGAMEMAPSTATEVARSKIPMASK)
             continue;
 
         if (aGameVars[j].flags & (GAMEVAR_PERPLAYER|GAMEVAR_PERACTOR))
@@ -2083,6 +2083,9 @@ void G_FreeMapState(int levelNum)
 
     for (int j=0; j<g_gameArrayCount; j++)
     {
+        if (aGameArrays[j].flags & SAVEGAMEARRAYSKIPMASK)
+            continue;
+
         if (aGameArrays[j].flags & GAMEARRAY_RESTORE)
             ALIGNED_FREE_AND_NULL(board.savedstate->arrays[j]);
     }
