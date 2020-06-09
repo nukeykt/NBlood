@@ -9381,22 +9381,21 @@ killsprite:
 
         if (spritesortcnt < numSprites)
         {
-            i = spritesortcnt;
-            for (bssize_t i = spritesortcnt; i < numSprites;)
+            for (bssize_t i = numSprites-1; i >= spritesortcnt;)
             {
                 int32_t py = spritesxyz[i].y;
                 int32_t pcstat = tspriteptr[i]->cstat & 48;
                 int32_t pangle = tspriteptr[i]->ang;
-                int j = i + 1;
+                int j = i - 1;
                 if (!polymost_spriteIsModelOrVoxel(tspriteptr[i]))
                 {
-                    while (j < numSprites && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
+                    while (j >= spritesortcnt && py == spritesxyz[j].y && pcstat == (tspriteptr[j]->cstat & 48) && (pcstat != 16 || pangle == tspriteptr[j]->ang)
                         && !polymost_spriteIsModelOrVoxel(tspriteptr[j]))
                     {
-                        j++;
+                        j--;
                     }
                 }
-                if (j - i == 1)
+                if (i - j == 1)
                 {
                     debugmask_add(i | 32768, tspriteptr[i]->owner);
                     renderDrawSprite(i);
@@ -9406,7 +9405,7 @@ killsprite:
                 {
                     glDepthMask(GL_FALSE);
 
-                    for (bssize_t k = j-1; k >= i; k--)
+                    for (bssize_t k = i; k > j; k--)
                     {
                         debugmask_add(k | 32768, tspriteptr[k]->owner);
                         renderDrawSprite(k);
@@ -9416,7 +9415,7 @@ killsprite:
 
                     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
                     
-                    for (bssize_t k = j-1; k >= i; k--)
+                    for (bssize_t k = i; k > j; k--)
                     {
                         renderDrawSprite(k);
                         tspriteptr[k] = NULL;
