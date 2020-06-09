@@ -203,6 +203,9 @@
     <ClCompile Include="..\..\source\exhumed\src\ramses.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\exhumed\src\common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\exhumed\src\cdaudio.h">
@@ -389,6 +392,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\ramses.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\exhumed\src\common_game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

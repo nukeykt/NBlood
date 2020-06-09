@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "compat.h"
 #include "cache1d.h"
 #include "vfs.h"
+#include "common_game.h"
 #include "grpscan.h"
 
 #define kTimerTicks		120
@@ -29,31 +30,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifdef __WATCOMC__
 void handleevents();
 #endif
-
-#ifndef APPNAME
-#define APPNAME             "PCExhumed"
-#endif
-
-#ifndef APPBASENAME
-#define APPBASENAME         "pcexhumed"
-#endif
-
-// TODO:
-#define OSDTEXT_DEFAULT   "^00"
-#define OSDTEXT_DARKRED   "^00"
-#define OSDTEXT_GREEN     "^00"
-#define OSDTEXT_RED       "^00"
-#define OSDTEXT_YELLOW    "^00"
-
-#define OSDTEXT_BRIGHT    "^S0"
-
-#define OSD_ERROR OSDTEXT_DARKRED OSDTEXT_BRIGHT
-
-enum basepal_t {
-    BASEPAL = 0,
-    ANIMPAL,
-    BASEPALCOUNT
-};
 
 #pragma pack(push, 1)
 struct demo_header
@@ -107,160 +83,8 @@ struct demo_input
 };
 #pragma pack(pop)
 
-void ExitGame();
-void ShutDown(void);
-void DebugOut(const char *fmt, ...);
-void bail2dos(const char *fmt, ...);
-int ExhumedMain(int argc, char *argv[]);
-
-void FinishLevel();
-
-void SetHiRes();
-
-void BlackOut();
-
-void DoGameOverScene();
-
-int Query(short n, short l, ...);
-
-extern unsigned char curpal[];
-
-void TintPalette(int a, int b, int c);
-//void MySetPalette(unsigned char *palette);
-//void GetCurPal(unsigned char *palette);
-
-void EraseScreen(int eax);
-
-void RestorePalette();
-
-int FindGString(const char *str);
-
-void WaitTicks(int nTicks);
-
-void FadeIn();
-void FadeOut(int bFadeMusic);
-
-int myprintext(int x, int y, const char *str, int shade);
-int MyGetStringWidth(const char *str);
-
-void mychangespritesect(int nSprite, int nSector);
-void mydeletesprite(int nSprite);
-
-void GrabPalette();
-
-void mysetbrightness(char nBrightness);
-
-void StartFadeIn();
-int DoFadeIn();
-void DoPassword(int nPassword);
-
-int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
-
-// TODO - relocate
-void StatusMessage(int messageTime, const char *fmt, ...);
-
-void UpdateScreenSize();
-
-void HandleAsync();
-
-extern int32_t g_commandSetup;
-extern int32_t g_noSetup;
-
-extern char sHollyStr[];
-
-extern int localclock;
-
-extern int moveframes;
-
-extern short bSerialPlay;
-
-extern int nNetPlayerCount;
-
-extern int htimer;
-
-extern int nNetTime;
-
-extern short nTotalPlayers;
-
-extern short nFontFirstChar;
-extern short nBackgroundPic;
-extern short nShadowPic;
-
-extern short nCreaturesLeft;
-
-extern int lLocalButtons;
-
-extern short nEnergyTowers;
-
-extern short nEnergyChan;
-
-extern short bInDemo;
-
-extern short nFreeze;
-
-extern short nCurBodyNum;
-extern short nBodyTotal;
-
-extern short bSnakeCam;
-
-extern short levelnum;
-//extern short nScreenWidth;
-//extern short nScreenHeight;
-
-extern short nMapMode;
-
-extern short nButtonColor;
-
-extern short lastfps;
-
-extern int flash;
-
-extern short bNoCreatures;
-
-extern short nLocalSpr;
-extern short levelnew;
-
-extern short textpages;
-
-extern short nSnakeCam;
-
-extern short bHiRes;
-extern short bCoordinates;
-extern short bFullScreen;
-
-extern short bHolly;
-
-extern short screensize;
-
-extern int totalmoves;
-
-extern short nGamma;
-
-extern int lCountDown;
-
-extern short bSlipMode;
-
-extern short nItemTextIndex;
-extern const char* gString[];
-extern const char* gPSDemoString[];
-extern const char* gEXDemoString[];
-
-extern short bNoSound;
-
-extern int bVanilla;
-
-extern int32_t g_gameType;
-
-#define POWERSLAVE  (g_gameType & GAMEFLAG_POWERSLAVE)
-#define EXHUMED     (g_gameType & GAMEFLAG_EXHUMED)
-#define ISDEMOVER   (g_gameType & GAMEFLAG_DEMO)
-
-extern int mouseaiming, aimmode, mouseflip;
-extern int runkey_mode, auto_run;
-
-static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
-
-enum {
+enum
+{
     kPalNormal = 0,
     kPalNoDim,
     kPalTorch,
@@ -275,12 +99,97 @@ enum {
     kPalBrite2
 };
 
+void ExitGame();
+void ShutDown(void);
+void DebugOut(const char *fmt, ...);
+void bail2dos(const char *fmt, ...);
+int ExhumedMain(int argc, char *argv[]);
+void FinishLevel();
+void SetHiRes();
+void BlackOut();
+void DoGameOverScene();
+int Query(short n, short l, ...);
+void TintPalette(int a, int b, int c);
+//void MySetPalette(unsigned char *palette);
+//void GetCurPal(unsigned char *palette);
+void EraseScreen(int eax);
+void RestorePalette();
+int FindGString(const char *str);
+void WaitTicks(int nTicks);
+void FadeIn();
+void FadeOut(int bFadeMusic);
+int myprintext(int x, int y, const char *str, int shade);
+int MyGetStringWidth(const char *str);
+void mychangespritesect(int nSprite, int nSector);
+void mydeletesprite(int nSprite);
+void GrabPalette();
+void mysetbrightness(char nBrightness);
+void StartFadeIn();
+int DoFadeIn();
+void DoPassword(int nPassword);
+int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
+
+// TODO - relocate
+void StatusMessage(int messageTime, const char *fmt, ...);
+void UpdateScreenSize();
+void HandleAsync();
+
+extern unsigned char curpal[];
+
+extern int32_t g_commandSetup;
+extern int32_t g_noSetup;
+
+extern char sHollyStr[];
+extern int localclock;
+extern int moveframes;
+extern short bSerialPlay;
+extern int nNetPlayerCount;
+extern int htimer;
+extern int nNetTime;
+extern short nTotalPlayers;
+extern short nFontFirstChar;
+extern short nBackgroundPic;
+extern short nShadowPic;
+extern short nCreaturesLeft;
+extern int lLocalButtons;
+extern short nEnergyTowers;
+extern short nEnergyChan;
+extern short bInDemo;
+extern short nFreeze;
+extern short nCurBodyNum;
+extern short nBodyTotal;
+extern short bSnakeCam;
+extern short levelnum;
+extern short nMapMode;
+extern short nButtonColor;
+extern short lastfps;
+extern int flash;
+extern short bNoCreatures;
+extern short nLocalSpr;
+extern short levelnew;
+extern short textpages;
+extern short nSnakeCam;
+extern short bHiRes;
+extern short bCoordinates;
+extern short bFullScreen;
+extern short bHolly;
+extern short screensize;
+extern int totalmoves;
+extern short nGamma;
+extern int lCountDown;
+extern short bSlipMode;
+extern short nItemTextIndex;
+extern const char* gString[];
+extern const char* gPSDemoString[];
+extern const char* gEXDemoString[];
+extern short bNoSound;
+extern int bVanilla;
+
+extern int mouseaiming, aimmode, mouseflip;
+extern int runkey_mode, auto_run;
+
+static inline double calcFrameDelay(unsigned int const maxFPS) { return maxFPS ? timerGetPerformanceFrequency() / (double)maxFPS : 0.0; }
+
 extern int r_showfps;
-
-extern struct grpfile_t const* g_selectedGrp;
-
-extern int loaddefinitions_game(const char* fn, int32_t preload);
-void G_LoadGroupsInDir(const char* dirname);
-void G_DoAutoload(const char* dirname);
 
 #endif

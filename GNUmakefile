@@ -1228,6 +1228,7 @@ exhumed_game_objs := \
     bullet.cpp \
     cd.cpp \
     cdaudio.cpp \
+	common.cpp \
     config.cpp \
     enginesubs.cpp \
     exhumed.cpp \
