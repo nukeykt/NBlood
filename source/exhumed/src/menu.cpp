@@ -37,7 +37,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "object.h"
 #include "light.h"
 #include "cd.h"
-#include "cdaudio.h"
 #include <string>
 
 #include <assert.h>

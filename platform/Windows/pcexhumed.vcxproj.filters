@@ -74,9 +74,6 @@
     <ClCompile Include="..\..\source\exhumed\src\cd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\exhumed\src\cdaudio.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\exhumed\src\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -208,9 +205,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\source\exhumed\src\cdaudio.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\exhumed\src\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>

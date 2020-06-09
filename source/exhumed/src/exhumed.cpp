@@ -59,7 +59,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "wasp.h"
 #include "scorp.h"
 #include "rat.h"
-#include "cdaudio.h"
 #include "serial.h"
 #include "network.h"
 #include "random.h"
@@ -2422,8 +2421,6 @@ LOOP3:
         if (CDplaying()) {
             fadecdaudio();
         }
-
-        CheckCD();
 
         if (levelnew == kMap20)
         {
