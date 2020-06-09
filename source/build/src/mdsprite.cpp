@@ -2264,7 +2264,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
         if (alphahackarray[globalpicnum] != 0)
             al=alphahackarray[globalpicnum] * (1.f/255.f);
         glEnable(GL_BLEND);
-        glEnable(GL_ALPHA_TEST);
+        // glEnable(GL_ALPHA_TEST);
         glAlphaFunc(GL_GREATER,al);
     }
     else
@@ -2596,7 +2596,7 @@ static int32_t polymost_md3draw(md3model_t *m, tspriteptr_t tspr)
     }
     //------------
 
-    if (m->usesalpha) glDisable(GL_ALPHA_TEST);
+    // if (m->usesalpha) glDisable(GL_ALPHA_TEST);
 
     glDisable(GL_CULL_FACE);
 //    glPopAttrib();
