@@ -154,8 +154,9 @@ void prepareboard(char *daboardfilename)
      {
           waterfountainwall[i] = -1;
           waterfountaincnt[i] = 0;
+          slimesoundcnt[i] = 0;
      }
-     slimesoundcnt[i] = 0;
+     
      warpsectorcnt = 0;      //Make a list of warping sectors
      xpanningsectorcnt = 0;  //Make a list of wall x-panning sectors
      floorpanningcnt = 0;    //Make a list of slime sectors
