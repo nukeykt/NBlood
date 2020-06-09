@@ -546,11 +546,14 @@ tekwar_editor := etekwar-editor
 tekwar_game_proper := ETekWar
 tekwar_editor_proper := ETekWar Editor
 
-tekwar_game_deps := libsmackerdec
+tekwar_game_deps := audiolib mact libsmackerdec
 
 tekwar_game_objs := \
     b5compat.cpp \
+    common.cpp \
     config.cpp \
+    grpscan.cpp \
+    osdcmds.cpp \
     tekcdr.cpp \
     tekchng.cpp \
     tekgame.cpp \
@@ -577,15 +580,17 @@ tekwar_editor_rsrc_objs :=
 
 ifeq (11,$(HAVE_GTK2)$(STARTUP_WINDOW))
     tekwar_game_objs += startgtk.game.cpp
+    tekwar_game_gen_objs += game_banner.c
+    tekwar_editor_gen_objs += build_banner.c
+endif
+ifeq ($(RENDERTYPE),SDL)
+    tekwar_game_rsrc_objs += game_icon.c
+    tekwar_editor_rsrc_objs += game_icon.c
 endif
 ifeq ($(PLATFORM),WINDOWS)
     tekwar_game_objs += startwin.game.cpp
     tekwar_game_rsrc_objs += gameres.rc
-endif
-ifeq ($(PLATFORM),DARWIN)
-    ifeq ($(STARTUP_WINDOW),1)
-        tekwar_game_objs += StartupWinController.game.mm
-    endif
+    tekwar_editor_rsrc_objs += buildres.rc
 endif
 
 
@@ -1390,6 +1395,7 @@ games := \
     sw \
     exhumed \
     witchaven \
+	tekwar \
 
 libraries := \
     audiolib \
