@@ -83,22 +83,6 @@ struct demo_input
 };
 #pragma pack(pop)
 
-enum
-{
-    kPalNormal = 0,
-    kPalNoDim,
-    kPalTorch,
-    kPalNoTorch,
-    kPalBrite,
-    kPalRedBrite,
-    kPalGreenBrite,
-    kPalNormal2,
-    kPalNoDim2,
-    kPalTorch2,
-    kPalNoTorch2,
-    kPalBrite2
-};
-
 void ExitGame();
 void ShutDown(void);
 void DebugOut(const char *fmt, ...);
@@ -106,26 +90,16 @@ void bail2dos(const char *fmt, ...);
 int ExhumedMain(int argc, char *argv[]);
 void FinishLevel();
 void SetHiRes();
-void BlackOut();
 void DoGameOverScene();
 int Query(short n, short l, ...);
-void TintPalette(int a, int b, int c);
-//void MySetPalette(unsigned char *palette);
-//void GetCurPal(unsigned char *palette);
-void EraseScreen(int eax);
-void RestorePalette();
+void EraseScreen(int nClearColour);
 int FindGString(const char *str);
 void WaitTicks(int nTicks);
-void FadeIn();
-void FadeOut(int bFadeMusic);
 int myprintext(int x, int y, const char *str, int shade);
 int MyGetStringWidth(const char *str);
 void mychangespritesect(int nSprite, int nSector);
 void mydeletesprite(int nSprite);
-void GrabPalette();
 void mysetbrightness(char nBrightness);
-void StartFadeIn();
-int DoFadeIn();
 void DoPassword(int nPassword);
 int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
 
@@ -133,8 +107,6 @@ int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
 void StatusMessage(int messageTime, const char *fmt, ...);
 void UpdateScreenSize();
 void HandleAsync();
-
-extern unsigned char curpal[];
 
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;

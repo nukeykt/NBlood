@@ -49,7 +49,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "mummy.h"
 #include "fish.h"
 #include "lion.h"
-#include "light.h"
 #include "move.h"
 #include "lavadude.h"
 #include "rex.h"
@@ -65,6 +64,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "items.h"
 #include "trigdat.h"
 #include "record.h"
+#include "light.h"
 #include "lighting.h"
 #include "grpscan.h"
 #include <string.h>
@@ -627,12 +627,10 @@ void CopyTileToBitmap(short nSrcTile, short nDestTile, int xPos, int yPos);
 void DoTitle();
 
 // void TestSaveLoad();
-void EraseScreen(int nVal);
 void LoadStatus();
 int FindGString(const char *str);
 void MySetView(int x1, int y1, int x2, int y2);
 void mysetbrightness(char al);
-void FadeIn();
 
 char sHollyStr[40];
 
@@ -2798,7 +2796,6 @@ void mydeletesprite(int nSprite)
     }
 }
 
-
 void KeyFn1()
 {
     menu_DoPlasma();
@@ -3121,17 +3118,17 @@ int myprintext(int x, int y, const char *str, int shade)
     return x;
 }
 
-void EraseScreen(int nVal)
+void EraseScreen(int nClearColour)
 {
-    if (nVal == -1) {
-        nVal = overscanindex;
+    if (nClearColour == -1) {
+        nClearColour = overscanindex;
     }
 
-    videoClearScreen(nVal);
+    videoClearScreen(nClearColour);
 #if 0
     for (int i = 0; i < numpages; i++)
     {
-        videoClearScreen(nVal);
+        videoClearScreen(nClearColour);
         videoNextPage();
     }
 #endif

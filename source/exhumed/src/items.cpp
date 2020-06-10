@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "anims.h"
 #include "player.h"
 #include "exhumed.h"
+#include "light.h"
 #include "lighting.h"
 #include "sound.h"
 #include "status.h"

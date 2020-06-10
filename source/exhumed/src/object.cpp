@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "runlist.h"
 #include "names.h"
 #include "sequence.h"
+#include "light.h"
 #include "lighting.h"
 #include "anims.h"
 #include "items.h"
