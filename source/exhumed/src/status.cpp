@@ -672,6 +672,11 @@ void StatusMessage(int messageTime, const char *fmt, ...)
     }
 }
 
+void DrawSnakeCamStatus()
+{
+    printext(0, 0, "S E R P E N T   C A M", kTile159, 255);
+}
+
 void DrawStatus()
 {
     char numberBuf[10] = {0};
@@ -842,9 +847,5 @@ void DrawStatus()
         if (message_timer) {
             printext(0, 0, message_text, kTile159, 255);
         }
-    }
-    else
-    {
-        printext(0, 0, "S E R P E N T   C A M", kTile159, 255);
     }
 }

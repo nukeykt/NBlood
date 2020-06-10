@@ -762,7 +762,7 @@ void UpdateSounds()
     int x, y;
     short ang;
 
-    if (nSnakeCam > -1)
+    if (nSnakeCam >= 0)
     {
         Snake *pSnake = &SnakeList[nSnakeCam];
         spritetype *pSnakeSprite = &sprite[pSnake->nSprites[0]];
