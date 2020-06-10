@@ -325,7 +325,7 @@ static playbackstatus MV_GetNextXABlock
     voice->SamplingRate = (((coding >> 2) & 3) == 1) ? 18900 : 37800;
 
     // CODEDUP multivoc.c MV_SetVoicePitch
-    voice->RateScale    = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
+    voice->RateScale    = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
     voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
     MV_SetVoiceMixMode(voice);
 
