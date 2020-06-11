@@ -123,7 +123,7 @@ int MV_PlayXMP(char *ptr, uint32_t length, int loopstart, int loopend, int pitch
     xmp_set_player(ctx, XMP_PLAYER_INTERP, MV_XMPInterpolation);
 
     // CODEDUP multivoc.c MV_SetVoicePitch
-    voice->RateScale = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
+    voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
     voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
     MV_SetVoiceMixMode(voice);
 

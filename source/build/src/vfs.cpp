@@ -1448,7 +1448,7 @@ int32_t kdfread_LZ4(void *buffer, int dasizeof, int count, buildvfs_kfd fil)
     int32_t leng;
 
     // read compressed data length
-    if (kread(fil, &leng, sizeof(leng)) != sizeof(leng))
+    if (kread_and_test(fil, &leng, sizeof(leng)))
         return -1;
 
     leng = B_LITTLE32(leng);
@@ -1458,7 +1458,7 @@ int32_t kdfread_LZ4(void *buffer, int dasizeof, int count, buildvfs_kfd fil)
     if (leng > ARRAY_SSIZE(compressedDataStackBuf))
         pCompressedData = (char *)Xaligned_alloc(16, leng);
 
-    if (kread(fil, pCompressedData, leng) != leng)
+    if (kread_and_test(fil, pCompressedData, leng))
         return -1;
 
     int32_t decompressedLength = LZ4_decompress_safe(pCompressedData, (char*) buffer, leng, dasizeof*count);

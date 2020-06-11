@@ -519,7 +519,7 @@ void MV_SetVoicePitch(VoiceNode *voice, uint32_t rate, int pitchoffset)
 {
     voice->SamplingRate = rate;
     voice->PitchScale   = PITCH_GetScale(pitchoffset);
-    voice->RateScale    = divideu32(rate * voice->PitchScale, MV_MixRate);
+    voice->RateScale    = divideu64((uint64_t)rate * voice->PitchScale, MV_MixRate);
 
     // Multiply by MV_MIXBUFFERSIZE - 1
     voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) -

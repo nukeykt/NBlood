@@ -95,7 +95,7 @@ static playbackstatus MV_GetNextVOCBlock(VoiceNode *voice)
         // terminator is not mandatory according to
         // http://wiki.multimedia.cx/index.php?title=Creative_Voice
 
-        if (ptr - (uint8_t *)voice->rawdataptr >= voice->rawdatasiz)
+        if ((uint32_t)(ptr - (uint8_t *)voice->rawdataptr) >= voice->rawdatasiz)
             blocktype = 0;  // fake a terminator
         else
             blocktype = *ptr;
@@ -149,7 +149,7 @@ end_of_data:
             else
                 done = TRUE;
 
-            if (ptr - (uint8_t *)voice->rawdataptr >= voice->rawdatasiz)
+            if ((uint32_t)(ptr - (uint8_t *)voice->rawdataptr) >= voice->rawdatasiz)
                 goto end_of_data;
 
             voicemode = 0;
@@ -242,7 +242,7 @@ end_of_data:
             // CAUTION:
             //  SNAKRM.VOC is corrupt!  blocklength gets us beyond the
             //  end of the file.
-            if (ptr - (uint8_t *)voice->rawdataptr >= voice->rawdatasiz)
+            if ((uint32_t)(ptr - (uint8_t *)voice->rawdataptr) >= voice->rawdatasiz)
                 goto end_of_data;
 
             break;
@@ -264,7 +264,7 @@ end_of_data:
 
         // CODEDUP multivoc.c MV_SetVoicePitch
         voice->SamplingRate = samplespeed;
-        voice->RateScale    = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
+        voice->RateScale    = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
 
         // Multiply by MV_MIXBUFFERSIZE - 1
         voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) -

@@ -237,7 +237,7 @@ FLAC__StreamDecoderWriteStatus write_flac_stream(const FLAC__StreamDecoder *deco
 
     voice->position = 0;
     // CODEDUP multivoc.c MV_SetVoicePitch
-    voice->RateScale = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
+    voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
     voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
     MV_SetVoiceMixMode(voice);
 
@@ -595,7 +595,7 @@ int MV_PlayFLAC(char *ptr, uint32_t length, int loopstart, int loopend, int pitc
         MV_Printf("Error allocating FLAC__Metadata_Chain!\n");
 
     // CODEDUP multivoc.c MV_SetVoicePitch
-    voice->RateScale = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
+    voice->RateScale = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
     voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
     MV_SetVoiceMixMode(voice);
 

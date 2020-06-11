@@ -290,7 +290,7 @@ static playbackstatus MV_GetNextVorbisBlock(VoiceNode *voice)
 
         voice->channels     = vi->channels;
         voice->SamplingRate = vi->rate;
-        voice->RateScale    = divideu32(voice->SamplingRate * voice->PitchScale, MV_MixRate);
+        voice->RateScale    = divideu64((uint64_t)voice->SamplingRate * voice->PitchScale, MV_MixRate);
 
         voice->FixedPointBufferSize = (voice->RateScale * MV_MIXBUFFERSIZE) - voice->RateScale;
         vd->lastbitstream = bitstream;

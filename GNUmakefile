@@ -85,23 +85,6 @@ libxmplite_obj := $(obj)/$(libxmplite)
 libxmplite_cflags := -DHAVE_ROUND -DLIBXMP_CORE_PLAYER -DBUILDING_STATIC -I$(libxmplite_inc)/libxmp-lite -Wno-unused-parameter -Wno-sign-compare
 
 
-#### LPeg
-
-lpeg := lpeg
-
-lpeg_objs := \
-    lpcap.c \
-    lpcode.c \
-    lpprint.c \
-    lptree.c \
-    lpvm.c \
-
-lpeg_root := $(source)/$(lpeg)
-lpeg_src := $(lpeg_root)/src
-lpeg_inc := $(lpeg_root)/include
-lpeg_obj := $(obj)/$(lpeg)
-
-
 #### PhysicsFS
 
 physfs := physfs
@@ -318,9 +301,6 @@ ifeq (1,$(USE_OPENGL))
     ifeq (1,$(POLYMER))
         engine_objs += glbuild.cpp polymer.cpp
     endif
-endif
-ifneq (0,$(LUNATIC))
-    engine_objs += lunatic.cpp
 endif
 ifeq ($(PLATFORM),DARWIN)
     engine_objs += osxbits.mm
@@ -623,11 +603,6 @@ common_editor_deps := duke3d_common_editor engine_editor
 duke3d_game_deps := audiolib mact
 duke3d_editor_deps := audiolib
 
-ifneq (0,$(LUNATIC))
-    duke3d_game_deps += lunatic lunatic_game lpeg
-    duke3d_editor_deps += lunatic lunatic_editor lpeg
-endif
-
 duke3d_game := eduke32
 duke3d_editor := mapster32
 
@@ -691,83 +666,6 @@ duke3d_game_miscdeps :=
 duke3d_editor_miscdeps :=
 duke3d_game_orderonlydeps :=
 duke3d_editor_orderonlydeps :=
-
-## Lunatic devel
-lunatic := lunatic
-lunatic_src := $(duke3d_src)/$(lunatic)
-lunatic_obj := $(duke3d_obj)
-
-ifneq (0,$(LUNATIC))
-    COMPILERFLAGS += -I$(lunatic_src) -DLUNATIC
-
-    # Determine size of _defs*.lua bytecode once.
-    ifndef DEFS_BC_SIZE
-        DEFS_BC_SIZE := $(shell $(LUAJIT) -bg -t h $(lunatic_src)/_defs_game.lua -)
-        DEFS_BC_SIZE := $(word 3, $(DEFS_BC_SIZE))
-    endif
-    ifndef DEFS_M32_BC_SIZE
-        DEFS_M32_BC_SIZE := $(shell $(LUAJIT) -bg -t h $(lunatic_src)/_defs_editor.lua -)
-        DEFS_M32_BC_SIZE := $(word 3, $(DEFS_M32_BC_SIZE))
-    endif
-    duke3d_cflags += -DLUNATIC_DEFS_BC_SIZE=$(DEFS_BC_SIZE) -DLUNATIC_DEFS_M32_BC_SIZE=$(DEFS_M32_BC_SIZE)
-
-    # Lunatic object base names. These are not used in targets directly.
-    lunatic_objs := \
-        defs_common.lua \
-        engine_maptext.lua \
-        engine.lua \
-        bcarray.lua \
-        bcheck.lua \
-        bitar.lua \
-        xmath.lua \
-        v.lua \
-        dump.lua \
-        dis_x86.lua \
-        dis_x64.lua \
-
-    lunatic_game_objs := \
-        lunatic_game.cpp \
-        _defs_game.lua \
-        con_lang.lua \
-        lunacon.lua \
-        randgen.lua \
-        stat.lua \
-        control.lua \
-        lunasave.lua \
-        fs.lua \
-
-    lunatic_editor_objs := \
-        lunatic_editor.cpp \
-        _defs_editor.lua \
-
-    # TODO: remove debugging modules from release build
-
-    # now, take care of having the necessary symbols (sector, wall, etc.) in the
-    # executable no matter what the debugging level
-
-    ifeq ($(PLATFORM),DARWIN)
-        # strip on OSX says: removing global symbols from a final linked no longer supported.
-        #                    Use -exported_symbols_list at link time when building
-        # But, following _their_ directions does not give us the symbols! wtf?
-        # Instead of using -alias_list and -exported_symbols_list, prevent stripping them.
-        duke3d_game_stripflags += -s $(duke3d_obj)/lunatic_dynsymlist_game_osx
-        duke3d_editor_stripflags += -s $(duke3d_obj)/lunatic_dynsymlist_editor_osx
-
-        duke3d_game_orderonlydeps += $(duke3d_obj)/lunatic_dynsymlist_game_osx
-        duke3d_editor_orderonlydeps += $(duke3d_obj)/lunatic_dynsymlist_editor_osx
-        LINKERFLAGS += -pagezero_size 10000 -image_base 100000000
-    endif
-    ifeq ($(PLATFORM),WINDOWS)
-        override STRIP :=
-        duke3d_game_miscdeps += $(duke3d_obj)/lunatic_dynsymlist_game.def
-        duke3d_editor_miscdeps += $(duke3d_obj)/lunatic_dynsymlist_editor.def
-    endif
-    ifeq ($(SUBPLATFORM),LINUX)
-        override STRIP :=
-        duke3d_game_ldflags += -Wl,--dynamic-list=$(lunatic_src)/dynsymlist_game.lds
-        duke3d_editor_ldflags += -Wl,--dynamic-list=$(lunatic_src)/dynsymlist_editor.lds
-    endif
-endif
 
 ifeq ($(SUBPLATFORM),LINUX)
     LIBS += -lFLAC -lvorbisfile -lvorbis -logg -lasound
@@ -1402,7 +1300,6 @@ libraries := \
     engine \
     glad \
     libxmplite \
-    lpeg \
     mact \
     voidwrap \
     libsmackerdec \
@@ -1518,27 +1415,6 @@ getdxdidf$(EXESUFFIX): $(tools_obj)/getdxdidf.$o
 $(voidwrap_lib): $(foreach i,$(voidwrap),$(call expandobjs,$i))
 	$(LINK_STATUS)
 	$(RECIPE_IF) $(LINKER) -shared -Wl,-soname,$@ -o $@ $^ $(LIBDIRS) $(voidwrap_root)/sdk/redistributable_bin/$(steamworks_lib) $(RECIPE_RESULT_LINK)
-
-
-### Lunatic
-
-# Create object files directly with luajit
-$(duke3d_obj)/%.$o: $(lunatic_src)/%.lua | $(duke3d_obj)
-	$(COMPILE_STATUS)
-	$(RECIPE_IF) $(LUAJIT) -bg $(LUAJIT_BCOPTS) $< $@ $(RECIPE_RESULT_COMPILE)
-
-$(duke3d_obj)/%.$o: $(lunatic_src)/%.cpp | $(duke3d_obj)
-	$(COMPILE_STATUS)
-	$(RECIPE_IF) $(COMPILER_CXX) $(duke3d_cflags) -c $< -o $@ $(RECIPE_RESULT_COMPILE)
-
-# List of exported symbols, OS X
-$(duke3d_obj)/lunatic_%_osx: $(lunatic_src)/%.lds | $(duke3d_obj)
-	sed 's/[{};]//g;s/[A-Za-z_][A-Za-z_0-9]*/_&/g' $< > $@
-
-# List of exported symbols, Windows
-$(duke3d_obj)/lunatic_%.def: $(lunatic_src)/%.lds | $(duke3d_obj)
-	echo EXPORTS > $@
-	sed 's/[{};]//g' $< >> $@
 
 
 ### Main Rules

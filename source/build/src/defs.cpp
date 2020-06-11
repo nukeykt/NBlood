@@ -2140,7 +2140,7 @@ static int32_t defsparser(scriptfile *script)
                 filebuf = (char *)Xmalloc(filesize);
 
                 klseek(fd, 0, SEEK_SET);
-                if (kread(fd, filebuf, filesize)!=filesize)
+                if (kread_and_test(fd, filebuf, filesize))
                     { kclose(fd); Xfree(highpaldata); initprintf("Error: didn't read all of \"%s\".\n", fn); break; }
 
                 kclose(fd);

@@ -268,9 +268,11 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
     bfirst_search_init(sectorList, sectorMap, &numSectors, numsectors, pSprite->sectnum);
 
 #ifndef EDUKE32_STANDALONE
+    int wallDamage = true;
+
     // rockets from the Devastator skip propagating damage to other sectors
     if (!FURY && (pSprite->picnum == RPG && pSprite->xrepeat < 11))
-        goto wallsfinished;
+        wallDamage = false;
 #endif
 
     uint8_t *wallTouched;
@@ -334,7 +336,10 @@ void A_RadiusDamage(int const spriteNum, int const blastRadius, int const dmg1, 
                     if (pWall->nextwall != -1)
                         bitmap_set(wallCanSee, pWall->nextwall);
 
-                    A_DamageWall_Internal(spriteNum, w, { p.x, p.y, pSprite->z }, pSprite->picnum);
+#ifndef EDUKE32_STANDALONE
+                    if (wallDamage)
+#endif
+                        A_DamageWall_Internal(spriteNum, w, { p.x, p.y, pSprite->z }, pSprite->picnum);
                 }
 
                 int const nextSector = pWall->nextsector;
@@ -836,7 +841,7 @@ void A_DoGutsDir(int spriteNum, int tileNum, int spawnCnt)
 }
 #endif
 
-LUNATIC_EXTERN int32_t G_ToggleWallInterpolation(int32_t wallNum, int32_t setInterpolation)
+static int32_t G_ToggleWallInterpolation(int32_t wallNum, int32_t setInterpolation)
 {
     if (setInterpolation)
     {
@@ -908,13 +913,8 @@ void A_MoveSector(int spriteNum)
     }
 }
 
-#if !defined LUNATIC
 // NOTE: T5 is AC_ACTION_ID
-# define LIGHTRAD_PICOFS(i) (T5(i) ? *(apScript + T5(i)) + (*(apScript + T5(i) + 2)) * AC_CURFRAME(actor[i].t_data) : 0)
-#else
-// startframe + viewtype*[cyclic counter]
-# define LIGHTRAD_PICOFS(i) (actor[i].ac.startframe + actor[i].ac.viewtype * AC_CURFRAME(actor[i].t_data))
-#endif
+#define LIGHTRAD_PICOFS(i) (T5(i) ? *(apScript + T5(i)) + (*(apScript + T5(i) + 2)) * AC_CURFRAME(actor[i].t_data) : 0)
 
 // this is the same crap as in game.c's tspr manipulation.  puke.
 // XXX: may access tilesizy out-of-bounds by bad user code.
@@ -1355,7 +1355,9 @@ ACTOR_STATIC void G_MovePlayers(void)
     {
         int const  nextSprite = nextspritestat[spriteNum];
         auto const pSprite    = &sprite[spriteNum];
-        auto const pPlayer    = g_player[P_GetP(pSprite)].ps;
+        int const  playerNum  = P_GetP(pSprite);
+        auto &     thisPlayer = g_player[playerNum];
+        auto const pPlayer    = thisPlayer.ps;
 
         if (pSprite->owner >= 0)
         {
@@ -1400,10 +1402,19 @@ ACTOR_STATIC void G_MovePlayers(void)
                 if (G_TileHasActor(sprite[spriteNum].picnum))
                     A_Execute(spriteNum, P_GetP(pSprite), otherPlayerDist);
 
+                thisPlayer.smoothcamera = false;
+
                 pPlayer->q16angvel    = P_GetQ16AngleDeltaForTic(pPlayer);
                 pPlayer->oq16ang      = pPlayer->q16ang;
                 pPlayer->oq16horiz    = pPlayer->q16horiz;
                 pPlayer->oq16horizoff = pPlayer->q16horizoff;
+
+                if (pPlayer->one_eighty_count < 0)
+                {
+                    thisPlayer.smoothcamera = true;
+                    pPlayer->one_eighty_count += 128;
+                    pPlayer->q16ang += F16(128);
+                }
 
                 if (g_netServer || ud.multimode > 1)
                 {
@@ -1426,6 +1437,14 @@ ACTOR_STATIC void G_MovePlayers(void)
                             }
                         }
                     }
+                }
+
+                if (pPlayer->actorsqu >= 0)
+                {
+                    thisPlayer.smoothcamera = true;
+                    pPlayer->q16ang += fix16_from_int(
+                    G_GetAngleDelta(fix16_to_int(pPlayer->q16ang), getangle(sprite[pPlayer->actorsqu].x - pPlayer->pos.x, sprite[pPlayer->actorsqu].y - pPlayer->pos.y))
+                    >> 2);
                 }
 
                 if (ud.god)
@@ -1462,6 +1481,7 @@ ACTOR_STATIC void G_MovePlayers(void)
 
                     if (pPlayer->wackedbyactor >= 0 && sprite[pPlayer->wackedbyactor].statnum < MAXSTATUS)
                     {
+                        thisPlayer.smoothcamera = true;
                         pPlayer->q16ang += fix16_from_int(G_GetAngleDelta(fix16_to_int(pPlayer->q16ang),
                                                                       getangle(sprite[pPlayer->wackedbyactor].x - pPlayer->pos.x,
                                                                                sprite[pPlayer->wackedbyactor].y - pPlayer->pos.y))
@@ -1862,6 +1882,7 @@ ACTOR_STATIC void G_MoveStandables(void)
                         pSprite->owner = -2;
                         g_player[p].ps->on_crane = spriteNum;
                         A_PlaySound(DUKE_GRUNT,g_player[p].ps->i);
+                        g_player[p].smoothcamera = true;
                         g_player[p].ps->q16ang = fix16_from_int(pSprite->ang+1024);
                     }
                     else
@@ -3704,8 +3725,9 @@ ACTOR_STATIC void G_MoveTransports(void)
                 case STAT_PLAYER:
                     if (sprite[sectSprite].owner != -1)
                     {
-                        int const  playerNum = P_Get(sectSprite);
-                        auto const pPlayer   = g_player[playerNum].ps;
+                        int const  playerNum  = P_Get(sectSprite);
+                        auto &     thisPlayer = g_player[playerNum];
+                        auto const pPlayer    = thisPlayer.ps;
 
                         pPlayer->on_warping_sector = 1;
 
@@ -3729,6 +3751,7 @@ ACTOR_STATIC void G_MoveTransports(void)
                                     }
                                 }
 
+                                thisPlayer.smoothcamera = true;
                                 pPlayer->q16ang = fix16_from_int(sprite[OW(spriteNum)].ang);
 
                                 if (sprite[OW(spriteNum)].owner != OW(spriteNum))
@@ -3757,12 +3780,12 @@ ACTOR_STATIC void G_MoveTransports(void)
                             }
 
                             if (onFloor == 0 && klabs(SZ(spriteNum) - pPlayer->pos.z) < 6144)
-                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
-                                    || TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_CROUCH))
+                                if (!pPlayer->jetpack_on || TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
+                                    || TEST_SYNC_KEY(thisPlayer.input->bits, SK_CROUCH))
                                 {
                                     pPlayer->pos.x += sprite[OW(spriteNum)].x - SX(spriteNum);
                                     pPlayer->pos.y += sprite[OW(spriteNum)].y - SY(spriteNum);
-                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(g_player[playerNum].input->bits, SK_JUMP)
+                                    pPlayer->pos.z = (pPlayer->jetpack_on && (TEST_SYNC_KEY(thisPlayer.input->bits, SK_JUMP)
                                                                               || pPlayer->jetpack_on < 11))
                                                      ? sprite[OW(spriteNum)].z - 6144
                                                      : sprite[OW(spriteNum)].z + 6144;
@@ -6276,6 +6299,7 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                     if (pPlayer->cursectnum == pSprite->sectnum && pPlayer->on_ground == 1)
                     {
+                        g_player[playerNum].smoothcamera = true;
                         pPlayer->q16ang += fix16_from_int(l*q);
                         pPlayer->q16ang &= 0x7FFFFFF;
 
@@ -6498,6 +6522,8 @@ ACTOR_STATIC void G_MoveEffectors(void)   //STATNUM 3
 
                             pPlayer->bobpos.x += m;
                             pPlayer->bobpos.y += x;
+
+                            g_player[playerNum].smoothcamera = true;
 
                             pPlayer->q16ang += fix16_from_int(q);
                             pPlayer->q16ang &= 0x7FFFFFF;

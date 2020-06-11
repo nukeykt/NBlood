@@ -86,20 +86,7 @@ enum rendmode_t {
 # define M32_FIXME_SECTORS 0
 #endif
 
-#ifdef LUNATIC
-# define NEW_MAP_FORMAT
-// A marker for LuaJIT C function callbacks, but not merely:
-# define LUNATIC_CB ATTRIBUTE((used))
-// Used for variables and functions referenced from Lua:
-# define LUNATIC_EXTERN ATTRIBUTE((used))
-# define LUNATIC_FASTCALL
-#else
-# ifdef NEW_MAP_FORMAT
-#  error "New map format can only be used with Lunatic"
-# endif
-# define LUNATIC_EXTERN static
-# define LUNATIC_FASTCALL __fastcall
-#endif
+//define NEW_MAP_FORMAT
 
 #define MAXWALLSB ((MAXWALLS>>2)+(MAXWALLS>>3))
 
@@ -1291,7 +1278,7 @@ int32_t checksectorpointer(int16_t i, int16_t sectnum);
 
 void   mouseGetValues(int32_t *mousx, int32_t *mousy, int32_t *bstatus) ATTRIBUTE((nonnull(1,2,3)));
 
-#if !KRANDDEBUG && !defined LUNATIC
+#if !KRANDDEBUG
 static FORCE_INLINE int32_t krand(void)
 {
     randomseed = (randomseed * 1664525ul) + 221297ul;
@@ -1302,10 +1289,10 @@ int32_t    krand(void);
 #endif
 
 int32_t   ksqrt(uint32_t num);
-int32_t   LUNATIC_FASTCALL getangle(int32_t xvect, int32_t yvect);
-fix16_t   LUNATIC_FASTCALL gethiq16angle(int32_t xvect, int32_t yvect);
+int32_t   __fastcall getangle(int32_t xvect, int32_t yvect);
+fix16_t   __fastcall gethiq16angle(int32_t xvect, int32_t yvect);
 
-static FORCE_INLINE fix16_t LUNATIC_FASTCALL getq16angle(int32_t xvect, int32_t yvect)
+static FORCE_INLINE fix16_t __fastcall getq16angle(int32_t xvect, int32_t yvect)
 {
     return fix16_from_int(getangle(xvect, yvect));
 }
@@ -1646,12 +1633,6 @@ static FORCE_INLINE void renderEnableFog(void)
 }
 
 static vec2_t const zerovec = { 0, 0 };
-
-#ifdef LUNATIC
-extern const int32_t engine_main_arrays_are_static;
-extern const int32_t engine_v8;
-int32_t Mulscale(int32_t a, int32_t b, int32_t sh);
-#endif
 
 static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int const sectnum) { return (sectnum >= 0 && inside(x, y, sectnum) == 1); }
 
