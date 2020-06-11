@@ -428,6 +428,9 @@ void sdlayer_sethints()
 #if defined SDL_HINT_AUDIO_RESAMPLING_MODE
     SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "3");
 #endif
+#if defined SDL_HINT_MOUSE_RELATIVE_SCALING
+    SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SCALING, "0");
+#endif
 }
 
 #ifdef _WIN32
