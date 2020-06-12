@@ -209,7 +209,7 @@ classicht_t *classic_hightile(int dapicnum)
 {
     classicht_t *cht = &classicht[dapicnum];
     hicreplctyp *si = usehightile ? hicfindsubst(dapicnum, 0, 0) : NULL;
-    if (!si)
+    if (!si || !(si->flags & HICR_INDEXED))
         return NULL;
 
     if (tilesiz[dapicnum].x <= 0 || tilesiz[dapicnum].y <= 0)
