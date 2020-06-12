@@ -233,11 +233,23 @@ classicht_t *classic_hightile(int dapicnum)
 #endif
         if (!picptr)
             return NULL;
-        if (EDUKE32_PREDICT_FALSE(xsiz <= 0 || ysiz <= 0))
-            return NULL;
 
-        if (!(paletteloaded & PALETTE_MAIN))
+        if (EDUKE32_PREDICT_FALSE(xsiz <= 0 || ysiz <= 0))
+        {
+            Xfree(picptr);
             return NULL;
+        }
+
+        vec2_t upscale = {};
+        vec2_16_t tsiz = tilesiz[dapicnum];
+        while (tsiz.x < xsiz) { tsiz.x <<= 1; upscale.x++; }
+        while (tsiz.y < ysiz) { tsiz.y <<= 1; upscale.y++; }
+
+        if (tsiz.x != xsiz || tsiz.y != ysiz || !(paletteloaded & PALETTE_MAIN))
+        {
+            Xfree(picptr);
+            return NULL;
+        }
 
         int const siz = xsiz * ysiz;
 
@@ -262,10 +274,6 @@ classicht_t *classic_hightile(int dapicnum)
         }
 
         cht->siz = { xsiz, ysiz };
-        vec2_t upscale = {};
-        vec2_16_t tsiz = tilesiz[dapicnum];
-        while (tsiz.x < xsiz) { tsiz.x <<= 1; upscale.x++; }
-        while (tsiz.y < ysiz) { tsiz.y <<= 1; upscale.y++; }
         cht->upscale = upscale;
     }
     else if (cht->lock < CACHE1D_UNLOCKED)
