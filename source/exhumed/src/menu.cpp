@@ -1534,7 +1534,7 @@ void menu_ResetZoom()
     PlayLocalSound(StaticSound[kSound31], 0);
 }
 
-int menu_Menu(int nVal)
+int menu_Menu(int bInLevelMenus)
 {
     GrabPalette();
 
@@ -1570,6 +1570,7 @@ int menu_Menu(int nVal)
     while (1)
     {
         HandleAsync();
+        OSD_DispatchQueued();
 
         // skip any disabled menu items so we're selecting the first active one
         while (!ptr[nMenu])
@@ -1590,7 +1591,7 @@ int menu_Menu(int nVal)
         }
 
         // menu idle timer - will play the demo file if no keys pressed after timer runs out
-        if (!nVal && (int)totalclock > keytimer) {
+        if (!bInLevelMenus && (int)totalclock > keytimer) {
             return 9;
         }
 
@@ -1654,7 +1655,7 @@ int menu_Menu(int nVal)
             PlayLocalSound(StaticSound[kSound33], 0);
             KB_KeyDown[sc_Escape] = 0;
 
-            if (nVal)
+            if (bInLevelMenus)
             {
                 StopAllSounds();
                 PlayLocalSound(StaticSound[kSound33], 0);
