@@ -208,6 +208,7 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 static inline int32_t ksqrtasm_old(uint32_t n)
 {
     uint32_t shift = 0;
+    n = klabs((int32_t)n);
     while (n >= 2048)
     {
         n >>= 2;
