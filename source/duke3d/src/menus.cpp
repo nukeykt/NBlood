@@ -2419,6 +2419,14 @@ static void Menu_Pre(MenuID_t cm)
         ud.m_player_skill = M_SKILL.currentEntry+1;
         break;
 
+    case MENU_NEWGAMECUSTOM:
+        ud.m_newgamecustom = M_NEWGAMECUSTOM.currentEntry;
+        break;
+
+    case MENU_NEWGAMECUSTOMSUB:
+        ud.m_newgamecustomsub = M_NEWGAMECUSTOMSUB.currentEntry;
+        break;
+
     default:
         break;
     }
