@@ -4692,6 +4692,7 @@ void Net_Connect(const char *srvaddr)
     if (g_netClient == NULL)
     {
         initprintf("An error occurred while trying to create an ENet client host.\n");
+        Xfree(oursrvaddr);
         return;
     }
 
@@ -4705,6 +4706,7 @@ void Net_Connect(const char *srvaddr)
     if (g_netClientPeer == NULL)
     {
         initprintf("No available peers for initiating an ENet connection.\n");
+        Xfree(oursrvaddr);
         return;
     }
 

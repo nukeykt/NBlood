@@ -205,20 +205,20 @@ extern uint16_t ATTRIBUTE((used)) sqrtable[4096], ATTRIBUTE((used)) shlookup[409
 
 #endif
 
-static inline int32_t ksqrtasm_old(int32_t n)
+static inline int32_t ksqrtasm_old(uint32_t n)
 {
-    uint32_t u = klabs(n);
     uint32_t shift = 0;
-    while (u >= 2048)
+    n = klabs((int32_t)n);
+    while (n >= 2048)
     {
-        u >>= 2;
+        n >>= 2;
         ++shift;
     }
-    uint32_t const s = sqrtable_old[u];
+    uint32_t const s = sqrtable_old[n];
     return (s << shift) >> 10;
 }
 
-static inline int32_t clip_nsqrtasm(int32_t n)
+static inline int32_t clip_nsqrtasm(uint32_t n)
 {
     if (enginecompatibilitymode == ENGINE_19950829)
         return ksqrtasm_old(n);
