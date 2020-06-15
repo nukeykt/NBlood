@@ -518,6 +518,7 @@ RECHECK:
     if (foundemo == 0)
     {
         ud.recstat = 0;
+        g_player[myconnectindex].ps->gm &= ~MODE_DEMO;
 
         if (g_whichDemo > 1)
         {
