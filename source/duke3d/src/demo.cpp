@@ -779,7 +779,12 @@ nextdemo_nomenu:
         }
         else if (foundemo && g_demo_paused)
         {
+            // problem: this locks menu animations as well, should probably be overhauled
             totalclock = lockclock;
+
+            // bandaid fix for menu lockup
+            m_animation.start = 0;
+            m_animation.length = 0;
         }
 
         if (Demo_IsProfiling())
