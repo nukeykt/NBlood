@@ -77,6 +77,14 @@ void Demo_PrepareWarp(void)
     S_ClearSoundLocks();
 }
 
+static void Demo_SetAllClocks(int32_t clocktime)
+{
+    totalclock = ototalclock = lockclock = clocktime;
+    
+    // reset menu transition
+    m_animation.start = 0;
+    m_animation.length = 0;
+}
 
 static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
 {
@@ -125,7 +133,7 @@ static int32_t G_OpenDemoRead(int32_t g_whichDemo) // 0 = mine
     ud.god = ud.cashman = ud.eog = ud.showallmap = 0;
     ud.noclip = ud.scrollmode = ud.overhead_on = 0; //= ud.pause_on = 0;
 
-    totalclock = ototalclock = lockclock = 0;
+    Demo_SetAllClocks(0);
 
     return 1;
 }
@@ -478,9 +486,7 @@ int32_t G_PlaybackDemo(void)
     static int32_t in_menu = 0;
     //    static int32_t tmpdifftime=0;
 
-    totalclock = 0;
-    ototalclock = 0;
-    lockclock = 0;
+    Demo_SetAllClocks(0);
 
     if (ready2send)
         return 0;
@@ -597,7 +603,7 @@ RECHECK:
                         klseek(g_demo_recFilePtr, lastsyncofs, SEEK_SET);
                         ud.reccnt = 0;
 
-                        totalclock = ototalclock = lockclock = lastsyncclock;
+                        Demo_SetAllClocks(lastsyncclock);
                     }
                     else CORRUPT(-1);
                 }
@@ -615,7 +621,7 @@ RECHECK:
                         //                        ud.god = ud.cashman = ud.eog = ud.showallmap = 0;
                         //                        ud.noclip = ud.scrollmode = ud.overhead_on = ud.pause_on = 0;
 
-                        totalclock = ototalclock = lockclock = 0;
+                        Demo_SetAllClocks(0);
                     }
                     else CORRUPT(0);
                 }
