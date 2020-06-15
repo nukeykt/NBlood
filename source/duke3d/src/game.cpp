@@ -4703,8 +4703,7 @@ void G_HandleLocalKeys(void)
             g_demo_paused = !g_demo_paused;
             g_demo_rewind = 0;
 
-            if (g_demo_paused)
-                FX_StopAllSounds();
+            S_PauseSounds(g_demo_paused || ud.pause_on);
         }
 
         if (KB_KeyPressed(sc_Tab))
