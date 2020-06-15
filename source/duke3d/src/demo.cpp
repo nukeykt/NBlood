@@ -67,12 +67,6 @@ static void Demo_RestoreModes(int32_t menu)
 
 void Demo_PrepareWarp(void)
 {
-    if (!g_demo_paused)
-    {
-        g_demo_soundToggle = ud.config.SoundToggle;
-        ud.config.SoundToggle = 0;
-    }
-
     FX_StopAllSounds();
     S_ClearSoundLocks();
 }
@@ -711,10 +705,7 @@ nextdemo_nomenu:
                         kclose(g_demo_recFilePtr); g_demo_recFilePtr = buildvfs_kfd_invalid;
 
                         if (g_demo_goalCnt>0)
-                        {
                             g_demo_goalCnt=0;
-                            ud.config.SoundToggle = g_demo_soundToggle;
-                        }
 
                         if (Demo_IsProfiling())  // don't reset g_demo_profile if it's < 0
                             Demo_FinishProfile();
@@ -771,10 +762,7 @@ nextdemo_nomenu:
 //                    OSD_Printf("t:%d, l+T:%d; cnt:%d, goal:%d%s", totalclock, (lockclock+TICSPERFRAME),
 //                               g_demo_cnt, g_demo_goalCnt, g_demo_cnt>=g_demo_goalCnt?" ":"\n");
                     if (g_demo_cnt>=g_demo_goalCnt)
-                    {
                         g_demo_goalCnt = 0;
-                        ud.config.SoundToggle = g_demo_soundToggle;
-                    }
                 }
             }
         }
