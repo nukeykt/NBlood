@@ -4849,7 +4849,7 @@ void Menu_Open(uint8_t playerID)
 void Menu_Close(uint8_t playerID)
 {
     auto & gm = g_player[playerID].ps->gm;
-    if (gm & MODE_GAME || gm & MODE_DEMO)
+    if (gm & (MODE_GAME | MODE_DEMO))
     {
         if (gm & MODE_MENU)
             I_ClearAllInput();
