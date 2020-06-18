@@ -1478,7 +1478,7 @@ void editinput(void)
 
             vec2_t da = { 16384, divscale14(searchx-(xdim>>1), xdim>>1) };
 
-            rotatepoint(zerovec, da, ang, &da);
+            rotatevec(da, ang, &da);
 
 #ifdef USE_OPENGL
             if (videoGetRenderMode() == REND_POLYMOST)
@@ -8681,7 +8681,7 @@ void getpoint(int32_t searchxe, int32_t searchye, int32_t *x, int32_t *y)
     {
         if (m32_sidesin!=0)
             svec.y = divscale14(svec.y, m32_sidesin);
-        rotatepoint(zerovec, svec, -m32_sideang, &svec);
+        rotatevec(svec, -m32_sideang, &svec);
     }
 
     *x = pos.x + divscale14(svec.x,zoom);

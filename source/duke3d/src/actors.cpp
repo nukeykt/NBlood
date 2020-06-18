@@ -878,7 +878,7 @@ static int32_t move_rotfixed_sprite(int32_t spriteNum, int32_t pivotSpriteNum, i
           A_CheckSpriteFlags(spriteNum, SFLAG_ROTFIXED))) &&
         actor[spriteNum].t_data[7] == (ROTFIXSPR_MAGIC | pivotSpriteNum))
     {
-        rotatepoint(zerovec, *(vec2_t *)&actor[spriteNum].t_data[8], pivotAngle & 2047, &sprite[spriteNum].pos.vec2);
+        rotatevec(*(vec2_t *)&actor[spriteNum].t_data[8], pivotAngle & 2047, &sprite[spriteNum].pos.vec2);
         sprite[spriteNum].x += sprite[pivotSpriteNum].x;
         sprite[spriteNum].y += sprite[pivotSpriteNum].y;
         return 0;
@@ -906,7 +906,7 @@ void A_MoveSector(int spriteNum)
     {
         vec2_t const origin = g_origins[originIdx];
         vec2_t result;
-        rotatepoint(zerovec, origin, rotateAngle & 2047, &result);
+        rotatevec(origin, rotateAngle & 2047, &result);
         dragpoint(wallNum, pSprite->x + result.x, pSprite->y + result.y, 0);
 
         originIdx++;
