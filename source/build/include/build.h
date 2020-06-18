@@ -1635,7 +1635,7 @@ static FORCE_INLINE CONSTEXPR int inside_p(int32_t const x, int32_t const y, int
         return;                    \
     } while (0)
 
-static inline int64_t compat_maybe_truncate_to_int32(int64_t val)
+static FORCE_INLINE int64_t compat_maybe_truncate_to_int32(int64_t val)
 {
     return enginecompatibilitymode != ENGINE_EDUKE32 ? (int32_t)val : val;
 }
