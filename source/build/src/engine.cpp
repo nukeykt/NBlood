@@ -12349,8 +12349,7 @@ void rotatepoint(vec2_t const pivot, vec2_t p, int16_t const daang, vec2_t * con
     int const dasin = sintable[(daang+2048)&2047];
     p.x -= pivot.x;
     p.y -= pivot.y;
-    p2->x = dmulscale14(p.x, dacos, -p.y, dasin) + pivot.x;
-    p2->y = dmulscale14(p.y, dacos, p.x, dasin) + pivot.y;
+    *p2 = { dmulscale14(p.x, dacos, -p.y, dasin) + pivot.x, dmulscale14(p.y, dacos, p.x, dasin) + pivot.y };
 }
 
 
