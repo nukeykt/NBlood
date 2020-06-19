@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "anims.h"
 #include "random.h"
 #include "bullet.h"
+#include "save.h"
 #include <string.h>
 #include <assert.h>
 #ifndef __WATCOMC__
@@ -43,23 +44,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //#include <math.h>
 #endif
 
-short NearSector[kMaxSectors] = { 0 };
-
-short nPushBlocks;
-
-// TODO - moveme?
-short overridesect;
-short NearCount = -1;
-
-short nBodySprite[50];
-
-int hihit, sprceiling, sprfloor, lohit;
-
 #define kMaxPushBlocks	100
 #define kMaxChunks	75
 
-// think this belongs in init.c?
+short NearCount = -1;
+short NearSector[kMaxSectors] = { 0 };
+
+short nPushBlocks;
 BlockInfo sBlockInfo[kMaxPushBlocks];
+
+// TODO - moveme?
+short overridesect;
+short nBodySprite[50];
+int hihit, sprceiling, sprfloor, lohit;
 
 short nChunkSprite[kMaxChunks];
 
@@ -360,7 +357,7 @@ int movespritez(short nSprite, int z, int height, int UNUSED(flordist), int clip
         if (SectFlag[edi] & kSectUnderwater)
         {
             if (nSprite == PlayerList[nLocalPlayer].nSprite) {
-                D3PlayFX(StaticSound[kSound2], nSprite);
+                D3PlayFX(StaticSound[kSoundBubbleLow], nSprite);
             }
 
             if (pSprite->statnum <= 107) {
@@ -1490,4 +1487,60 @@ short UpdateEnemy(short *nEnemy)
     }
 
     return *nEnemy;
+}
+
+class MoveLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void MoveLoadSave::Load()
+{
+    Read(&NearCount, sizeof(NearCount));
+    Read(NearSector, sizeof(NearSector[0]) * NearCount);
+    Read(&nPushBlocks, sizeof(nPushBlocks));
+    Read(sBlockInfo, sizeof(sBlockInfo[0]) * nPushBlocks);
+    Read(&overridesect, sizeof(overridesect));
+    
+    Read(&nCurBodyNum, sizeof(nCurBodyNum));
+    Read(nBodySprite, sizeof(nBodySprite[0]) * nCurBodyNum);
+    Read(&nBodyTotal, sizeof(nBodyTotal));
+
+    Read(&hihit, sizeof(hihit));
+    Read(&sprceiling, sizeof(sprceiling));
+    Read(&sprfloor, sizeof(sprfloor));
+    Read(&lohit, sizeof(lohit));
+
+    Read(&nCurChunkNum, sizeof(nCurChunkNum));
+    Read(nChunkSprite, sizeof(nChunkSprite[0]) * nCurChunkNum);
+}
+
+void MoveLoadSave::Save()
+{
+    Write(&NearCount, sizeof(NearCount));
+    Write(NearSector, sizeof(NearSector[0]) * NearCount);
+    Write(&nPushBlocks, sizeof(nPushBlocks));
+    Write(sBlockInfo, sizeof(sBlockInfo[0]) * nPushBlocks);
+    Write(&overridesect, sizeof(overridesect));
+
+    Write(&nCurBodyNum, sizeof(nCurBodyNum));
+    Write(nBodySprite, sizeof(nBodySprite[0]) * nCurBodyNum);
+    Write(&nBodyTotal, sizeof(nBodyTotal));
+
+    Write(&hihit, sizeof(hihit));
+    Write(&sprceiling, sizeof(sprceiling));
+    Write(&sprfloor, sizeof(sprfloor));
+    Write(&lohit, sizeof(lohit));
+
+    Write(&nCurChunkNum, sizeof(nCurChunkNum));
+    Write(nChunkSprite, sizeof(nChunkSprite[0]) * nCurChunkNum);
+}
+
+static MoveLoadSave* myLoadSave;
+
+void MoveLoadSaveConstruct()
+{
+    myLoadSave = new MoveLoadSave();
 }

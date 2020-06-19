@@ -120,6 +120,8 @@ extern int nYDamage[kMaxPlayers];
 extern int nPlayerDY[kMaxPlayers];
 extern int nPlayerDX[kMaxPlayers];
 
+extern short nLocalSpr;
+
 short GetPlayerFromSprite(short nSprite);
 void SetPlayerMummified(int nPlayer, int bIsMummified);
 int AddAmmo(int nPlayer, int nWeapon, int nAmmoAmount);

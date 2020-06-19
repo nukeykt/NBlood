@@ -67,6 +67,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "light.h"
 #include "lighting.h"
 #include "grpscan.h"
+#include "save.h"
 #include <string.h>
 #include <cstdio> // for printf
 #include <cstdlib>
@@ -647,8 +648,6 @@ short bFullScreen;
 short nSnakeCam = -1;
 
 short nBestLevel;
-
-short nLocalSpr;
 short levelnew = 1;
 
 int nNetPlayerCount = 0;
@@ -687,15 +686,13 @@ short nCodeMax = 0;
 short nCodeIndex = 0;
 
 short levelnum = -1;
-//short nScreenWidth = 320;
-//short nScreenHeight = 200;
+
 int moveframes;
 int flash;
 int localclock;
 int totalmoves;
 
 short nCurBodyNum = 0;
-
 short nBodyTotal = 0;
 
 short textpages;
@@ -712,20 +709,16 @@ short nFirstPassword = 0;
 short nFirstPassInfo = 0;
 short nPasswordCount = 0;
 
-short word_964B0 = 0;
-
-short word_9AC30 = 0;
-
-short word_96E3C = 0;
-short word_96E3E = -1;
-short word_96E40 = 0;
+// short word_964B0 = 0;
+// short word_9AC30 = 0;
+// short word_96E3C = 0;
+// short word_96E3E = -1;
+// short word_96E40 = 0;
+// short word_CB326;
 
 short nGamma = 0;
 
-short word_CB326;
-
 short screensize;
-
 short bSnakeCam = kFalse;
 short bRecord = kFalse;
 short bPlayback = kFalse;
@@ -741,8 +734,8 @@ short nItemTextIndex;
 
 short scan_char = 0;
 
-int nStartLevel;
-int nTimeLimit;
+// int nStartLevel;
+// int nTimeLimit;
 
 int bVanilla = 0;
 
@@ -1473,8 +1466,28 @@ EDUKE32_STATIC_ASSERT(sizeof(demo_input) == 36);
 
 void WritePlaybackInputs()
 {
-    fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
-    fwrite(&sPlayerInput[nLocalPlayer], sizeof(PlayerInput), 1, vcrfp);
+    demo_input output;
+    output.moveframes = moveframes;
+    output.xVel = sPlayerInput[nLocalPlayer].xVel;
+    output.yVel = sPlayerInput[nLocalPlayer].yVel;
+    output.nAngle = fix16_to_int(sPlayerInput[nLocalPlayer].nAngle >> 2);
+    output.buttons = sPlayerInput[nLocalPlayer].buttons;
+    output.nTarget = sPlayerInput[nLocalPlayer].nTarget;
+    output.horizon = fix16_to_int(sPlayerInput[nLocalPlayer].horizon);
+    output.nItem = sPlayerInput[nLocalPlayer].nItem;
+    output.h = sPlayerInput[nLocalPlayer].h;
+    output.i = sPlayerInput[nLocalPlayer].i;
+
+    if (!fwrite(&output, 1, sizeof(output), vcrfp))
+    {
+        fclose(vcrfp);
+        vcrfp = NULL;
+        bRecord = kFalse;
+        return;
+    }
+
+    //fwrite(&moveframes, sizeof(moveframes), 1, vcrfp);
+    //fwrite(&sPlayerInput[nLocalPlayer], sizeof(PlayerInput), 1, vcrfp);
 }
 
 uint8_t ReadPlaybackInputs()
@@ -1516,7 +1529,7 @@ void SetHiRes()
 void DoClockBeep()
 {
     for (int i = headspritestat[407]; i != -1; i = nextspritestat[i]) {
-        PlayFX2(StaticSound[kSound74], i);
+        PlayFX2(StaticSound[kSoundTick1], i);
     }
 }
 
@@ -2275,6 +2288,7 @@ int app_main(int argc, char const* const* argv)
 
     nBestLevel = 0;
 
+    LoadSaveSetup();
     UpdateScreenSize();
 
     EraseScreen(overscanindex);

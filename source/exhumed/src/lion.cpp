@@ -26,12 +26,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "random.h"
 #include "trigdat.h"
 #include "items.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxLions   40
-
-short LionCount = -1;
-short MoveHook[kMaxLions];
 
 static actionSeq ActionSeq[] = {
     {54, 1},
@@ -59,20 +57,23 @@ struct Lion
     short _g;
 };
 
+short LionCount = 0;
+short MoveHook[kMaxLions];
 Lion LionList[kMaxLions];
 
 
 void InitLion()
 {
-    LionCount = kMaxLions;
+    LionCount = 0;
 }
 
 int BuildLion(short nSprite, int x, int y, int z, short nSector, short nAngle)
 {
-    LionCount--;
+    
     short nLion = LionCount;
+    LionCount++;
 
-    if (LionCount < 0) {
+    if (LionCount >= kMaxLions) {
         return -1;
     }
 
@@ -275,7 +276,7 @@ void FuncLion(int a, int nDamage, int nRun)
                             nTarget = FindPlayer(nSprite, 40);
                             if (nTarget >= 0)
                             {
-                                D3PlayFX(StaticSound[kSound24], nSprite);
+                                D3PlayFX(StaticSound[kSoundCatICU], nSprite);
                                 LionList[nLion].nAction = 2;
                                 LionList[nLion].nFrame = 0;
 
@@ -470,7 +471,7 @@ void FuncLion(int a, int nDamage, int nRun)
                         LionList[nLion].nAction = 6;
                         sprite[nSprite].xvel = (Cos(sprite[nSprite].ang)) - (Cos(sprite[nSprite].ang) >> 3);
                         sprite[nSprite].yvel = (Sin(sprite[nSprite].ang)) - (Sin(sprite[nSprite].ang) >> 3);
-                        D3PlayFX(StaticSound[kSound24], nSprite);
+                        D3PlayFX(StaticSound[kSoundCatICU], nSprite);
                     }
 
                     return;
@@ -537,7 +538,7 @@ void FuncLion(int a, int nDamage, int nRun)
                         LionList[nLion].nAction = 6;
                         sprite[nSprite].xvel = (Cos(sprite[nSprite].ang)) - (Cos(sprite[nSprite].ang) >> 3);
                         sprite[nSprite].yvel = (Sin(sprite[nSprite].ang)) - (Sin(sprite[nSprite].ang) >> 3);
-                        D3PlayFX(StaticSound[kSound24], nSprite);
+                        D3PlayFX(StaticSound[kSoundCatICU], nSprite);
                     }
 
                     return;
@@ -595,4 +596,32 @@ void FuncLion(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class LionLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void LionLoadSave::Load()
+{
+    Read(&LionCount, sizeof(LionCount));
+    Read(&MoveHook, sizeof(MoveHook[0]) * LionCount);
+    Read(&LionList, sizeof(LionList[0]) * LionCount);
+}
+
+void LionLoadSave::Save()
+{
+    Write(&LionCount, sizeof(LionCount));
+    Write(&MoveHook, sizeof(MoveHook[0]) * LionCount);
+    Write(&LionList, sizeof(LionList[0]) * LionCount);
+}
+
+static LionLoadSave* myLoadSave;
+
+void LionLoadSaveConstruct()
+{
+    myLoadSave = new LionLoadSave();
 }

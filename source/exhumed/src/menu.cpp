@@ -915,7 +915,7 @@ void menu_AdjustVolume()
 
         if (KB_KeyDown[sc_Escape] || KB_KeyDown[sc_Return] || KB_KeyDown[sc_Space])
         {
-            PlayLocalSound(StaticSound[kSound33], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
             KB_KeyDown[sc_Escape] = 0;
             KB_KeyDown[sc_Space]  = 0;
             KB_KeyDown[sc_Return] = 0;
@@ -927,7 +927,7 @@ void menu_AdjustVolume()
             if (nOption > 0)
             {
                 nOption--;
-                PlayLocalSound(StaticSound[kSound35], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
             }
 
             KB_KeyDown[sc_UpArrow] = 0;
@@ -938,7 +938,7 @@ void menu_AdjustVolume()
             if (nOption < 1)
             {
                 nOption++;
-                PlayLocalSound(StaticSound[kSound35], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
             }
 
             KB_KeyDown[sc_DownArrow] = 0;
@@ -977,7 +977,7 @@ void menu_AdjustVolume()
                         UpdateLocalSound();
                     }
                     else {
-                        PlayLocalSound(StaticSound[kSound23], 0);
+                        PlayLocalSound(StaticSound[kSoundAmbientStone], 0);
                     }
                     continue;
                 }
@@ -1011,7 +1011,7 @@ void menu_AdjustVolume()
                         UpdateLocalSound();
                     }
                     else {
-                        PlayLocalSound(StaticSound[kSound23], 0);
+                        PlayLocalSound(StaticSound[kSoundAmbientStone], 0);
                     }
                     continue;
                 }
@@ -1030,39 +1030,39 @@ void menu_AdjustVolume()
 int menu_NewGameMenu()
 {
     const char endMark = 0xF;
-    char nameList[5][25];
-    int nNameLen = sizeof(nameList);
+    char nameList[kMaxSaveSlots][kMaxSaveSlotChars];
+    int nameListSize = sizeof(nameList);
 
     int nNameOffset = 0; // char index into slot name string
-
-    //int nPages = numpages;
+    int nSlot = 0;
 
     int arg_3E = tilesiz[kMenuBlankTitleTile].x - 10;
-
-    int nSlot = 0;
 
     FILE *fp = fopen(kSaveFileName, "rb");
     if (fp == NULL)
     {
-        memset(nameList, 0, nNameLen);
+        memset(nameList,   0, nameListSize);
         memset(&GameStats, 0, sizeof(GameStat));
 
         fp = fopen(kSaveFileName, "wb+");
         if (fp != NULL)
         {
-            fwrite(nameList, nNameLen, 1, fp);
-            fwrite(&GameStats, 75, 1, fp); //fwrite(&GameStats, 75, 5, fp); // CHECKME! the size
-            fwrite(&endMark, sizeof(endMark), 1, fp);
+            // write new blank save file
+            fwrite(nameList, nameListSize, 1, fp);
+            for (int i = 0; i < kMaxSaveSlots; i++) {
+                fwrite(&GameStats, sizeof(GameStats), 1, fp);
+            }
 
+            fwrite(&endMark, sizeof(endMark), 1, fp);
             fclose(fp);
         }
     }
     else
     {
-        int nRead = fread(nameList, 1, nNameLen, fp);
-        if (nRead != nNameLen)
+        int nRead = fread(nameList, 1, nameListSize, fp);
+        if (nRead != nameListSize)
         {
-            memset(nameList, 0, nNameLen);
+            memset(nameList, 0, nameListSize);
         }
 
         fclose(fp);
@@ -1113,14 +1113,14 @@ int menu_NewGameMenu()
 
             if (KB_KeyDown[sc_Escape])
             {
-                PlayLocalSound(StaticSound[kSound33], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                 KB_KeyDown[sc_Escape] = 0;
                 return -1;
             }
 
             if (KB_KeyDown[sc_UpArrow])
             {
-                PlayLocalSound(StaticSound[kSound35], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
                 if (nSlot <= 0) {
                     nSlot = 4;
                 }
@@ -1135,7 +1135,7 @@ int menu_NewGameMenu()
 
             if (KB_KeyDown[sc_DownArrow])
             {
-                PlayLocalSound(StaticSound[kSound35], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
                 if (nSlot >= 4) {
                     nSlot = 0;
                 }
@@ -1155,7 +1155,7 @@ int menu_NewGameMenu()
         }
     }
 
-    PlayLocalSound(StaticSound[kSound33], 0);
+    PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
     if (KB_KeyDown[sc_Return]) {
         ClearAllKeys();
     }
@@ -1211,7 +1211,7 @@ check_keys:
                 // loc_39ACA:
                 nameList[nSlot][nNameOffset] = 0;
 
-                PlayLocalSound(StaticSound[kSound33], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                 KB_KeyDown[sc_Return] = 0;
 
                 if (nameList[nSlot][0] == 0) {
@@ -1259,7 +1259,7 @@ check_keys:
                 }
                 else if (ch == asc_Escape)
                 {
-                    PlayLocalSound(StaticSound[kSound33], 0);
+                    PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                     KB_ClearKeysDown();
                     KB_FlushKeyboardQueue();
                     KB_KeyDown[sc_Escape] = 0;
@@ -1363,14 +1363,14 @@ int menu_LoadGameMenu()
 
         if (KB_KeyDown[sc_Escape])
         {
-            PlayLocalSound(StaticSound[kSound33], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
             KB_KeyDown[sc_Escape] = 0;
             return -1;
         }
 
         if (KB_KeyDown[sc_UpArrow])
         {
-            PlayLocalSound(StaticSound[kSound35], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
             if (nSlot > 0) {
                 nSlot--;
             }
@@ -1383,7 +1383,7 @@ int menu_LoadGameMenu()
 
         if (KB_KeyDown[sc_DownArrow]) // checkme - is 0x5b in disassembly
         {
-            PlayLocalSound(StaticSound[kSound35], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
             if (nSlot < kMaxSaveSlots - 1) {
                 nSlot++;
             }
@@ -1398,7 +1398,7 @@ int menu_LoadGameMenu()
             continue;
         }
 
-        PlayLocalSound(StaticSound[kSound33], 0);
+        PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
         KB_KeyDown[sc_Return] = 0;
         KB_ClearKeysDown();
         KB_FlushKeyboardQueue();
@@ -1531,7 +1531,7 @@ void menu_GameSave(int nSaveSlot)
 void menu_ResetZoom()
 {
     zoomsize = 0;
-    PlayLocalSound(StaticSound[kSound31], 0);
+    PlayLocalSound(StaticSound[kSoundItemUse], 0);
 }
 
 int menu_Menu(int bInLevelMenus)
@@ -1652,13 +1652,13 @@ int menu_Menu(int bInLevelMenus)
         {
             HandleAsync();
 
-            PlayLocalSound(StaticSound[kSound33], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
             KB_KeyDown[sc_Escape] = 0;
 
             if (bInLevelMenus)
             {
                 StopAllSounds();
-                PlayLocalSound(StaticSound[kSound33], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                 MySetView(nViewLeft, nViewTop, nViewRight, nViewBottom);
                 return -1;
             }
@@ -1670,7 +1670,7 @@ LABEL_21:
 
             if (l != nMenu)
             {
-                PlayLocalSound(StaticSound[kSound35], 0);
+                PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
                 KB_KeyDown[nMenuKeys[l]] = 0;
                 nMenu = l;
             }
@@ -1684,7 +1684,7 @@ LABEL_21:
         {
             var_1C = 0;
 
-            PlayLocalSound(StaticSound[kSound33], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
 
             switch (nMenu) // TODO - change var name?
             {
@@ -1707,7 +1707,7 @@ LABEL_21:
                     StopAllSounds();
 
                     StopAllSounds();
-                    PlayLocalSound(StaticSound[kSound33], 0);
+                    PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                     MySetView(nViewLeft, nViewTop, nViewRight, nViewBottom);
                     return 1;
                 }
@@ -1731,7 +1731,7 @@ LABEL_21:
                     StopAllSounds();
 
                     StopAllSounds();
-                    PlayLocalSound(StaticSound[kSound33], 0);
+                    PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                     MySetView(nViewLeft, nViewTop, nViewRight, nViewBottom);
                     return 2;
                 }
@@ -1745,7 +1745,7 @@ LABEL_21:
                     }
 
                     StopAllSounds();
-                    PlayLocalSound(StaticSound[kSound33], 0);
+                    PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                     MySetView(nViewLeft, nViewTop, nViewRight, nViewBottom);
                     return 3;
                 }
@@ -1762,7 +1762,7 @@ LABEL_21:
                 {
                     StopAllSounds();
                     StopAllSounds();
-                    PlayLocalSound(StaticSound[kSound33], 0);
+                    PlayLocalSound(StaticSound[kSoundSwitchFoot], 0);
                     MySetView(nViewLeft, nViewTop, nViewRight, nViewBottom);
                     return 0;
                 }
@@ -1776,7 +1776,7 @@ LABEL_21:
 
         if (KB_KeyDown[sc_UpArrow])
         {
-            PlayLocalSound(StaticSound[kSound35], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
             if (nMenu <= 0) {
                 nMenu = 4;
             }
@@ -1790,7 +1790,7 @@ LABEL_21:
 
         if (KB_KeyDown[sc_DownArrow]) // FIXME - is this down arrow? value is '5B' in disassembly
         {
-            PlayLocalSound(StaticSound[kSound35], 0);
+            PlayLocalSound(StaticSound[kSoundSwitchWtr1], 0);
             if (nMenu >= 4) {
                 nMenu = 0;
             }
@@ -2323,7 +2323,7 @@ void DoLastLevelCinema()
 
     int nString = FindGString("LASTLEVEL");
 
-    PlayLocalSound(StaticSound[kSound75], 0);
+    PlayLocalSound(StaticSound[kSoundScorpionZap], 0);
 
     tileLoad(kTileLoboLaptop);
 
@@ -2408,7 +2408,7 @@ void DoLastLevelCinema()
                 HandleAsync();
 
                 if (*nChar != ' ') {
-                    PlayLocalSound(StaticSound[kSound71], 0);
+                    PlayLocalSound(StaticSound[kSoundPotPc1], 0);
                 }
 
                 xPos += CopyCharToBitmap(*nChar, kTileLoboLaptop, xPos, ebp);
@@ -2448,7 +2448,7 @@ void DoLastLevelCinema()
     while (KB_GetCh() != 27);
 
 LABEL_28:
-    PlayLocalSound(StaticSound[kSound75], 0);
+    PlayLocalSound(StaticSound[kSoundScorpionZap], 0);
 
     nEndTime = (int)totalclock + 240;
 

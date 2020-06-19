@@ -102,15 +102,11 @@ void mydeletesprite(int nSprite);
 void mysetbrightness(char nBrightness);
 void DoPassword(int nPassword);
 int CopyCharToBitmap(char nChar, int nTile, int xPos, int yPos);
-
-// TODO - relocate
-void StatusMessage(int messageTime, const char *fmt, ...);
 void UpdateScreenSize();
 void HandleAsync();
 
 extern int32_t g_commandSetup;
 extern int32_t g_noSetup;
-
 extern char sHollyStr[];
 extern int localclock;
 extern int moveframes;
@@ -131,6 +127,7 @@ extern short nFreeze;
 extern short nCurBodyNum;
 extern short nBodyTotal;
 extern short bSnakeCam;
+extern short nBestLevel;
 extern short levelnum;
 extern short nMapMode;
 extern short nButtonColor;
@@ -156,6 +153,11 @@ extern const char* gPSDemoString[];
 extern const char* gEXDemoString[];
 extern short bNoSound;
 extern int bVanilla;
+
+extern ClockTicks tclocks, tclocks2;
+extern short nRedTicks;
+extern short nAlarmTicks;
+extern short nClockVal;
 
 extern int mouseaiming, aimmode, mouseflip;
 extern int runkey_mode, auto_run;

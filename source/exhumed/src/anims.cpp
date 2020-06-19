@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "sound.h"
 #include "random.h"
 #include "init.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxAnims	400
@@ -301,12 +302,12 @@ int BuildSplash(int nSprite, int nSector)
     if (sprite[nSprite].statnum != 200)
     {
         nRepeat = sprite[nSprite].xrepeat + (RandomWord() % sprite[nSprite].xrepeat);
-        nSound = kSound0;
+        nSound = kSoundSplashBig;
     }
     else
     {
         nRepeat = 20;
-        nSound = kSound1;
+        nSound = kSoundSplashSmall;
     }
 
     int bIsLava = SectFlag[nSector] & kSectLava;
@@ -332,4 +333,44 @@ int BuildSplash(int nSprite, int nSector)
     }
 
     return AnimList[nAnim].nSprite;
+}
+
+class AnimsLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void AnimsLoadSave::Load()
+{
+    Read(&nMagicSeq, sizeof(nMagicSeq));
+    Read(&nPreMagicSeq, sizeof(nPreMagicSeq));
+    Read(&nSavePointSeq, sizeof(nSavePointSeq));
+    Read(&nAnimsFree, sizeof(nAnimsFree));
+
+    Read(AnimRunRec, sizeof(AnimRunRec));
+    Read(AnimsFree, sizeof(AnimsFree));
+    Read(AnimList, sizeof(AnimList));
+    Read(AnimFlags, sizeof(AnimFlags));
+}
+
+void AnimsLoadSave::Save()
+{
+    Write(&nMagicSeq, sizeof(nMagicSeq));
+    Write(&nPreMagicSeq, sizeof(nPreMagicSeq));
+    Write(&nSavePointSeq, sizeof(nSavePointSeq));
+    Write(&nAnimsFree, sizeof(nAnimsFree));
+
+    Write(AnimRunRec, sizeof(AnimRunRec));
+    Write(AnimsFree, sizeof(AnimsFree));
+    Write(AnimList, sizeof(AnimList));
+    Write(AnimFlags, sizeof(AnimFlags));
+}
+
+static AnimsLoadSave* myLoadSave;
+
+void AnimsLoadSaveConstruct()
+{
+    myLoadSave = new AnimsLoadSave();
 }

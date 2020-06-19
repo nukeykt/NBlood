@@ -26,10 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include "bullet.h"
 #include "items.h"
+#include "save.h"
 #include <assert.h>
 #include "engine.h"
-
-short nMummies = -1;
 
 struct Mummy
 {
@@ -43,8 +42,6 @@ struct Mummy
     short H;
 };
 
-Mummy MummyList[kMaxMummies];
-
 static actionSeq ActionSeq[] = {
     {8,  0},
     {0,  0},
@@ -55,6 +52,10 @@ static actionSeq ActionSeq[] = {
     {48, 1},
     {50, 0}
 };
+
+short nMummies = -1;
+Mummy MummyList[kMaxMummies];
+
 
 void InitMummy()
 {
@@ -230,7 +231,7 @@ void FuncMummy(int a, int nDamage, int nRun)
                             int nTarget = FindPlayer(nSprite, 100);
                             if (nTarget >= 0)
                             {
-                                D3PlayFX(StaticSound[kSound7], nSprite);
+                                D3PlayFX(StaticSound[kSoundMummyChant0], nSprite);
                                 MummyList[nMummy].B = 0;
                                 MummyList[nMummy].nTarget = nTarget;
                                 MummyList[nMummy].nAction = 1;
@@ -517,4 +518,30 @@ void FuncMummy(int a, int nDamage, int nRun)
             return;
         }
     }
+}
+
+class MummyLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void MummyLoadSave::Load()
+{
+    Read(&nMummies, sizeof(nMummies));
+    Read(&MummyList, sizeof(MummyList[0]) * nMummies);
+}
+
+void MummyLoadSave::Save()
+{
+    Write(&nMummies, sizeof(nMummies));
+    Write(&MummyList, sizeof(MummyList[0]) * nMummies);
+}
+
+static MummyLoadSave* myLoadSave;
+
+void MummyLoadSaveConstruct()
+{
+    myLoadSave = new MummyLoadSave();
 }

@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "trigdat.h"
 #include "bullet.h"
 #include "spider.h"
+#include "save.h"
 #include <assert.h>
 
 /*
@@ -34,8 +35,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #define kMaxScorpions   5
-
-short ScorpCount = -1;
 
 struct Scorpion
 {
@@ -50,9 +49,6 @@ struct Scorpion
     int8_t i;
 };
 
-Scorpion scorpion[kMaxScorpions];
-short ScorpChan[kMaxScorpions];
-
 static actionSeq ActionSeq[] = {
     {0,  0},
     {8,  0},
@@ -66,20 +62,25 @@ static actionSeq ActionSeq[] = {
     {53, 1}
 };
 
+short ScorpCount = -1;
+
+Scorpion scorpion[kMaxScorpions];
+short ScorpChan[kMaxScorpions];
+
 
 void InitScorp()
 {
-    ScorpCount = kMaxScorpions;
+    ScorpCount = 0;
 }
 
 int BuildScorp(short nSprite, int x, int y, int z, short nSector, short nAngle, int nChannel)
 {
-    ScorpCount--;
-    if (ScorpCount < 0) {
+    short nScorp = ScorpCount;
+    ScorpCount++;
+
+    if (ScorpCount >= kMaxScorpions) {
         return -1;
     }
-
-    short nScorp = ScorpCount;
 
     if (nSprite == -1)
     {
@@ -221,7 +222,7 @@ void FuncScorp(int a, int nDamage, int nRun)
                     return;
                 }
 
-                D3PlayFX(StaticSound[kSound41], nSprite);
+                D3PlayFX(StaticSound[kSoundScorpionICU], nSprite);
 
                 goto FS_Pink_A;
             }
@@ -270,7 +271,7 @@ void FuncScorp(int a, int nDamage, int nRun)
 
                             if (nTarget >= 0)
                             {
-                                D3PlayFX(StaticSound[kSound41], nSprite);
+                                D3PlayFX(StaticSound[kSoundScorpionICU], nSprite);
 
                                 scorpion[nScorp].nFrame = 0;
                                 sprite[nSprite].xvel = Cos(sprite[nSprite].ang);
@@ -510,4 +511,32 @@ FS_Red:
         sprite[nSprite].xvel = 0;
         sprite[nSprite].yvel = 0;
     }
+}
+
+class ScorpLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void ScorpLoadSave::Load()
+{
+    Read(&ScorpCount, sizeof(ScorpCount));
+    Read(scorpion, sizeof(scorpion[0]) * ScorpCount);
+    Read(ScorpChan, sizeof(ScorpChan[0]) * ScorpCount);
+}
+
+void ScorpLoadSave::Save()
+{
+    Write(&ScorpCount, sizeof(ScorpCount));
+    Write(scorpion, sizeof(scorpion[0]) * ScorpCount);
+    Write(ScorpChan, sizeof(ScorpChan[0]) * ScorpCount);
+}
+
+static ScorpLoadSave* myLoadSave;
+
+void ScorpLoadSaveConstruct()
+{
+    myLoadSave = new ScorpLoadSave();
 }

@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "move.h"
 #include "bullet.h"
 #include "sound.h"
+#include "save.h"
 #include <assert.h>
 
 #define kMaxLavas   20
@@ -42,10 +43,6 @@ struct Lava
     short nChannel;
 };
 
-Lava LavaList[kMaxLavas];
-
-short LavaCount = 0;
-
 static actionSeq ActionSeq[] = {
     {0,  1},
     {0,  1},
@@ -57,6 +54,10 @@ static actionSeq ActionSeq[] = {
     {33, 0},
     {42, 1}
 };
+
+short LavaCount = 0;
+
+Lava LavaList[kMaxLavas];
 
 
 void InitLava()
@@ -446,7 +447,7 @@ void FuncLava(int a, int nDamage, int nRun)
                     if (nFlag & 0x40)
                     {
                         int nLimbSprite = BuildLavaLimb(nSprite, LavaList[nLava].nFrame, 64000);
-                        D3PlayFX(StaticSound[kSound26], nLimbSprite);
+                        D3PlayFX(StaticSound[kSoundSetLand], nLimbSprite);
                     }
 
                     if (LavaList[nLava].nFrame)
@@ -509,4 +510,30 @@ void FuncLava(int a, int nDamage, int nRun)
             sprite[nSprite].pal = 1;
         }
     }
+}
+
+class LavaDudeLoadSave : public LoadSave
+{
+public:
+    virtual void Load();
+    virtual void Save();
+};
+
+void LavaDudeLoadSave::Load()
+{
+    Read(&LavaCount, sizeof(LavaCount));
+    Read(&LavaList, sizeof(LavaList[0]) * LavaCount);
+}
+
+void LavaDudeLoadSave::Save()
+{
+    Write(&LavaCount, sizeof(LavaCount));
+    Write(&LavaList, sizeof(LavaList[0]) * LavaCount);
+}
+
+static LavaDudeLoadSave* myLoadSave;
+
+void LavaDudeLoadSaveConstruct()
+{
+    myLoadSave = new LavaDudeLoadSave();
 }
